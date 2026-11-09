@@ -140,7 +140,48 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
         <?php endif; ?>
     </header>
 
-    <div class="pil-row pil-row--wide">
+    <?php
+    $pilChart = is_array($orgActivityChart ?? null) ? $orgActivityChart : [];
+    $pilPortal = is_array($pilChart['portal'] ?? null) ? $pilChart['portal'] : [];
+    $pilAtak = is_array($pilChart['atak'] ?? null) ? $pilChart['atak'] : [];
+    $pilDays = is_array($pilChart['days'] ?? null) ? $pilChart['days'] : [];
+    $pilMax = max(1, (int) ($pilChart['max'] ?? 1));
+    $pilPeriod = (int) ($pilChart['period_days'] ?? 14);
+    $pilMessages = is_array($orgMessagesRecent ?? null) ? array_slice($orgMessagesRecent, 0, 3) : [];
+    ?>
+    <?php
+    // Accueil personnalisable : ordre, blocs masqués et largeur par personne (App\Services\BackOffice\Home\HomeLayout).
+    $home = is_array($home ?? null) ? $home : [];
+    $homeItems = is_array($home['items'] ?? null) ? $home['items'] : \App\Services\BackOffice\Home\HomeLayout::defaults(\App\Services\BackOffice\Home\HomeLayout::ROLE_MANAGER);
+    $homeSheets = is_array($home['sheets'] ?? null) ? $home['sheets'] : [];
+    $homeTasks = is_array($home['tasks'] ?? null) ? $home['tasks'] : [];
+    $homeTaskTotal = array_sum(array_map(static fn (array $t): int => (int) $t['count'], $homeTasks));
+    // Raccourcis = favoris du menu (libellés et droits déjà résolus par le menu latéral).
+    $homeShortcuts = isset($athMenu) && is_array($athMenu['favorites'] ?? null) ? $athMenu['favorites'] : [];
+    $homeVisible = array_values(array_filter($homeItems, static fn (array $i): bool => empty($i['hidden'])));
+    ?>
+    <div class="home-bar">
+        <?php if (!empty($home['customize'])): ?>
+        <span class="home-bar__state">Mode personnalisation</span>
+        <?php else: ?>
+        <a class="pil-btn pil-btn--sm" href="<?= $pilH(url('back-office') . '?personnaliser=1#personnaliser') ?>">Personnaliser</a>
+        <?php endif; ?>
+    </div>
+    <?php if (!empty($home['customize'])): ?>
+        <?php require base_path('views/admin/organization/_home_customize.php'); ?>
+    <?php endif; ?>
+
+    <?php if ($homeVisible === []): ?>
+    <section class="pil-card pil-empty-home">
+        <p class="pil-empty">Tous les blocs sont masqués. <a class="pil-link" href="<?= $pilH(url('back-office') . '?personnaliser=1#personnaliser') ?>">Choisir des blocs à afficher</a></p>
+    </section>
+    <?php endif; ?>
+
+    <div class="home-grid">
+    <?php foreach ($homeVisible as $homeItem): ?>
+    <?php $homeWid = (string) $homeItem['id']; if (\App\Services\BackOffice\Home\HomeLayout::isSheet($homeWid) && !isset($homeSheets[\App\Services\BackOffice\Home\HomeLayout::sheetId($homeWid)])) { continue; } if ($homeWid === 'pipeline' && $pilPipeline === null) { continue; } ?>
+    <div class="home-w home-w--<?= $pilH((string) $homeItem['size']) ?>" data-widget="<?= $pilH($homeWid) ?>">
+    <?php if ($homeWid === 'operation'): ?>
         <?php if ($pilHero !== null): ?>
         <section class="pil-op<?= !empty($pilHero['cover_url']) ? ' pil-op--cover' : '' ?>" aria-labelledby="pil-op-title">
             <?php if (!empty($pilHero['cover_url'])): ?>
@@ -205,7 +246,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
             <?php endif; ?>
         </section>
         <?php endif; ?>
-
+    <?php elseif ($homeWid === 'decisions'): ?>
         <section class="pil-card" aria-labelledby="pil-dec-title">
             <div class="pil-card__h">
                 <div>
@@ -237,12 +278,10 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
             <?php endif; ?>
             <?php endif; ?>
         </section>
-    </div>
-
+    <?php elseif ($homeWid === 'kpis'): ?>
     <?php if ($pilKpiError !== ''): ?>
     <p class="pil-banner pil-banner--warn" role="status"><?= $pilIcon('warn') ?><span class="pil-banner__text"><?= $pilH($pilKpiError) ?></span></p>
     <?php endif; ?>
-
     <div class="pil-kpis">
         <?php foreach ($pilKpis as $pilKpi): ?>
         <div class="pil-card pil-kpi">
@@ -263,8 +302,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
         </div>
         <?php endforeach; ?>
     </div>
-
-    <div class="pil-row pil-row--wide">
+    <?php elseif ($homeWid === 'participation'): ?>
         <section class="pil-card" aria-labelledby="pil-part-title">
             <div class="pil-card__h">
                 <div>
@@ -301,7 +339,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
             <?php endif; ?>
             <?php endif; ?>
         </section>
-
+    <?php elseif ($homeWid === 'units'): ?>
         <section class="pil-card" aria-labelledby="pil-units-title">
             <div class="pil-card__h">
                 <div>
@@ -330,10 +368,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
             <p class="pil-note">Score : postes pourvus, qualifications à jour et activité récente.</p>
             <?php endif; ?>
         </section>
-    </div>
-
-    <div class="pil-row3<?= $pilPipeline === null ? ' pil-row3--two' : '' ?>">
-        <?php if ($pilPipeline !== null): ?>
+    <?php elseif ($homeWid === 'pipeline'): ?>
         <section class="pil-card" aria-labelledby="pil-rec-title">
             <div class="pil-card__h">
                 <div>
@@ -363,8 +398,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
             </ul>
             <?php endif; ?>
         </section>
-        <?php endif; ?>
-
+    <?php elseif ($homeWid === 'agenda'): ?>
         <section class="pil-card" aria-labelledby="pil-ag-title">
             <div class="pil-card__h">
                 <div>
@@ -395,7 +429,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
             </ul>
             <?php endif; ?>
         </section>
-
+    <?php elseif ($homeWid === 'feed'): ?>
         <section class="pil-card" aria-labelledby="pil-feed-title">
             <div class="pil-card__h">
                 <div>
@@ -419,18 +453,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
             </ul>
             <?php endif; ?>
         </section>
-    </div>
-
-    <?php
-    $pilChart = is_array($orgActivityChart ?? null) ? $orgActivityChart : [];
-    $pilPortal = is_array($pilChart['portal'] ?? null) ? $pilChart['portal'] : [];
-    $pilAtak = is_array($pilChart['atak'] ?? null) ? $pilChart['atak'] : [];
-    $pilDays = is_array($pilChart['days'] ?? null) ? $pilChart['days'] : [];
-    $pilMax = max(1, (int) ($pilChart['max'] ?? 1));
-    $pilPeriod = (int) ($pilChart['period_days'] ?? 14);
-    $pilMessages = is_array($orgMessagesRecent ?? null) ? array_slice($orgMessagesRecent, 0, 3) : [];
-    ?>
-    <div class="pil-row pil-row--usage">
+    <?php elseif ($homeWid === 'usage'): ?>
         <section class="pil-card" aria-labelledby="pil-use-title">
             <div class="pil-card__h">
                 <div>
@@ -459,7 +482,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
             </div>
             <?php endif; ?>
         </section>
-
+    <?php elseif ($homeWid === 'messages'): ?>
         <section class="pil-card" aria-labelledby="pil-msg-title">
             <div class="pil-card__h">
                 <div>
@@ -492,8 +515,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
             </ul>
             <?php endif; ?>
         </section>
-    </div>
-
+    <?php elseif ($homeWid === 'gaps'): ?>
     <?php $pilGapTotal = (int) (is_array($orgProfileGaps ?? null) ? ($orgProfileGaps['total'] ?? 0) : 0); ?>
     <details class="pil-gaps" id="dossiers-incomplets">
         <summary>
@@ -504,6 +526,65 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
             <?php require base_path('views/partials/org_dashboard_profile_gaps.php'); ?>
         </div>
     </details>
+    <?php elseif ($homeWid === 'tasks'): ?>
+        <section class="pil-card" aria-labelledby="pil-task-title">
+            <div class="pil-card__h">
+                <div>
+                    <p class="pil-kicker">Tâches</p>
+                    <h2 class="pil-card__title" id="pil-task-title">En attente</h2>
+                </div>
+                <?php if ($homeTaskTotal > 0): ?>
+                <span class="pil-count" aria-label="<?= (int) $homeTaskTotal ?> en attente"><?= $pilH(\App\Services\BackOffice\Menu\BackOfficeMenuBadges::format($homeTaskTotal)) ?></span>
+                <?php endif; ?>
+            </div>
+            <?php if ($homeTasks === []): ?>
+            <div class="pil-done">
+                <?= $pilIcon('check', 'pil-i pil-done__i') ?>
+                <b>Rien en attente</b>
+                <span>Les compteurs du menu sont à zéro : candidatures, corrections, signalements, mise à niveau.</span>
+            </div>
+            <?php else: ?>
+            <ul class="home-tasks">
+                <?php foreach ($homeTasks as $homeTask): ?>
+                <li>
+                    <a href="<?= $pilH(url($homeTask['path'])) ?>" class="home-tasks__it">
+                        <span class="ath-mbadge <?= !empty($homeTask['important']) ? 'ath-mbadge--important' : 'ath-mbadge--notif' ?>"><?= $pilH(\App\Services\BackOffice\Menu\BackOfficeMenuBadges::format((int) $homeTask['count'])) ?></span>
+                        <span><?= $pilH((string) $homeTask['title']) ?></span>
+                    </a>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+            <?php endif; ?>
+        </section>
+    <?php elseif ($homeWid === 'shortcuts'): ?>
+        <section class="pil-card" aria-labelledby="pil-sc-title">
+            <div class="pil-card__h">
+                <div>
+                    <p class="pil-kicker">Raccourcis</p>
+                    <h2 class="pil-card__title" id="pil-sc-title">Vos pages</h2>
+                </div>
+            </div>
+            <?php if ($homeShortcuts === []): ?>
+            <p class="pil-empty">Aucun raccourci. Survolez une page du menu de gauche et cliquez sur l’étoile : elle apparaîtra ici et en tête du menu.</p>
+            <?php else: ?>
+            <ul class="home-sc">
+                <?php foreach ($homeShortcuts as $homeSc): ?>
+                <li><a class="home-sc__it" href="<?= $pilH(url((string) $homeSc['path'])) ?>"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"></path></svg><span><?= $pilH((string) $homeSc['label']) ?></span></a></li>
+                <?php endforeach; ?>
+            </ul>
+            <?php endif; ?>
+        </section>
+    <?php elseif (\App\Services\BackOffice\Home\HomeLayout::isSheet($homeWid)): ?>
+        <?php $homeSid = \App\Services\BackOffice\Home\HomeLayout::sheetId($homeWid); ?>
+        <?php if (isset($homeSheets[$homeSid])): ?>
+        <section class="pil-card home-sheet" aria-label="<?= $pilH('Tableau ' . $homeSheets[$homeSid]['title']) ?>">
+            <?php $sheetView = $homeSheets[$homeSid]; $sheetCompact = true; require base_path('views/admin/organization/_sheet.php'); ?>
+        </section>
+        <?php endif; ?>
+    <?php endif; ?>
+    </div>
+    <?php endforeach; ?>
+    </div>
 </div>
 <script>
 (function () {
@@ -545,3 +626,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
     }
 })();
 </script>
+<script defer src="<?= $pilH(asset_url('assets/js/back-office-sheet.js')) ?>"></script>
+<?php if (!empty($home['customize'])): ?>
+<script defer src="<?= $pilH(asset_url('assets/js/back-office-home.js')) ?>"></script>
+<?php endif; ?>

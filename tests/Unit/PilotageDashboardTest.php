@@ -260,7 +260,9 @@ final class PilotageDashboardTest extends TestCase
         self::assertStringNotContainsString('Ouvrir la fiche', $html);
         self::assertStringNotContainsString('>Effectifs<', $html);
         self::assertStringNotContainsString('back-office/audit', $html);
-        self::assertStringContainsString('pil-row3--two', $html);
+        // Accueil en blocs (HomeLayout) : sans accès au recrutement, le bloc n'est pas rendu du tout.
+        self::assertStringNotContainsString('data-widget="pipeline"', $html);
+        self::assertStringContainsString('data-widget="agenda"', $html);
         self::assertStringContainsString('Op. Aube Rouge', $html, 'Le résumé de l’opération reste lisible.');
     }
 
