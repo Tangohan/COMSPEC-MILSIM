@@ -341,6 +341,13 @@ final class MemberIdentityPapersController
             error_log('Mes papiers : couvertures du jeu indisponibles : ' . $e->getMessage());
         }
 
+        $coverPanel = null;
+        try {
+            $coverPanel = (new \App\Services\Sse\SseCoverExportService())->panel($tenantId, $userId, false, true);
+        } catch (\Throwable $e) {
+            error_log('Mes papiers : couvertures générées indisponibles : ' . $e->getMessage());
+        }
+
         return Response::view('layout.main', [
             'title' => 'Mes papiers',
             'content' => 'admin.member_situation.mes_papiers',
@@ -356,6 +363,7 @@ final class MemberIdentityPapersController
             'gameCovers' => $gameCovers,
             'coverStatus' => \App\Services\Sse\SseIdGameCoverService::status($data['steam_linked'], $briefs, $data['kits'], $gameCovers),
             'maps' => self::maps(),
+            'coverPanel' => $coverPanel,
         ]);
     }
 

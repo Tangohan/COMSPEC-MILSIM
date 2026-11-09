@@ -1240,6 +1240,89 @@ class EffectifsWorkspaceController
         ]);
     }
 
+    /** Effectifs › Sans compte : personnes sans compte utilisable, filtrables, avec statut, origine et dernière activité. */
+    public function sansComptes(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $gate = Gate::getInstance();
+        $directory = new \App\Services\Effectifs\NoAccountDirectory($this->userRepository);
+        $all = $directory->list($tenantId);
+        $filters = [
+            'q' => mb_substr(trim((string) $request->query('q', '')), 0, 80, 'UTF-8'),
+            'status' => (string) $request->query('statut', ''),
+            'source' => (string) $request->query('origine', ''),
+            'sort' => (string) $request->query('tri', 'activite'),
+        ];
+        if (!isset(\App\Services\Effectifs\NoAccountDirectory::STATUSES[$filters['status']])) {
+            $filters['status'] = '';
+        }
+        if (!isset(\App\Services\Effectifs\NoAccountDirectory::SOURCES[$filters['source']])) {
+            $filters['source'] = '';
+        }
+        $ficheId = (int) $request->query('fiche', 0);
+        $selected = null;
+        foreach ($all as $r) {
+            if ($r['id'] === $ficheId) {
+                $selected = $r;
+                break;
+            }
+        }
+        $history = [];
+        $accounts = [];
+        if ($selected !== null) {
+            $history = (new \App\Repositories\RosterFicheEventRepository())->listForUser($tenantId, $ficheId, 60);
+            foreach ($this->userRepository->allForTenant($tenantId) as $u) {
+                if (\App\Services\Effectifs\NoAccountDirectory::classify($u) === null && !\App\Support\RosterOnlyMember::isRosterEmail((string) ($u['email'] ?? '')) && (int) ($u['tenant_id'] ?? 0) === $tenantId) {
+                    $label = trim((string) ($u['display_name'] ?? '')) ?: trim((string) ($u['callsign'] ?? ''));
+                    if ($label !== '') {
+                        $accounts[] = ['id' => (int) $u['id'], 'label' => $label . ' #' . (int) $u['id']];
+                    }
+                }
+                if (count($accounts) >= 1500) {
+                    break;
+                }
+            }
+        }
+        $counts = [];
+        foreach ($all as $r) {
+            $counts[$r['status']] = ($counts[$r['status']] ?? 0) + 1;
+        }
+
+        return $this->shell('admin.effectifs_workspace.sans_comptes', [
+            'title' => 'Sans compte',
+            'effectifsNav' => 'sans_comptes',
+            'ncRows' => \App\Services\Effectifs\NoAccountDirectory::filter($all, $filters),
+            'ncTotal' => count($all),
+            'ncCounts' => $counts,
+            'ncFilters' => $filters,
+            'ncSelected' => $selected,
+            'ncHistory' => $history,
+            'ncAccounts' => $accounts,
+            'ncCanCreate' => EffectifsLmsAccess::canCreateMembers($gate),
+            'ncCanEdit' => EffectifsLmsAccess::canEditProfiles($gate),
+            'ncCanInvite' => EffectifsLmsAccess::canInviteMembers($gate) && (new \App\Services\Effectifs\MemberProfileInviteService())->available(),
+            'csrfToken' => Csrf::token(),
+        ]);
+    }
+
+    /** Effectifs › Tableaux : constructeur de tableaux de données (source, colonnes, filtres, tri, regroupement). */
+    public function tableaux(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+
+        return $this->shell('admin.effectifs_workspace.tableaux', array_merge(
+            ['title' => 'Tableaux de données', 'effectifsNav' => 'tableaux'],
+            (new EffectifsTablesController())->pageData($request)
+        ));
+    }
+
     /**
      * Panneau « Invitations » de la fiche (liens, étapes faites, actions).
      *
@@ -4355,7 +4438,7 @@ class EffectifsWorkspaceController
             'boSkipPageHead' => true,
             // The member page embeds the personnel editor. Its response only contains
             // the view body, so its component stylesheet must be loaded by this shell.
-            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'effectifs-kit.css'],
+            'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'back-office-effectifs-sanscompte.css', 'effectifs-kit.css'],
             'showPortalFooter' => false,
             'rosterCounts' => $counts,
             'elevationOpenCount' => $elevationOpen,

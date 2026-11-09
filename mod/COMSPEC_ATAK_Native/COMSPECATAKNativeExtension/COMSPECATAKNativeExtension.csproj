@@ -9,8 +9,8 @@
     <!-- Même code que COMSPEC Link (Extension.cs) : la DLL native suit le numéro de Link, sinon le plancher
          de version d'Athena (« game_min_link_version », SEC-001) refuserait la DLL native corrigée, qui
          annonçait « 1.0.0-native » dans son User-Agent. Le suffixe « -native » distingue les deux builds. -->
-    <Version>2.0.121</Version>
-    <InformationalVersion>2.0.121-native</InformationalVersion>
+    <Version>2.0.122</Version>
+    <InformationalVersion>2.0.122-native</InformationalVersion>
     <DefineConstants>$(DefineConstants);COMSPEC_ATAK_NATIVE</DefineConstants>
     <PublishDir>bin\publish\</PublishDir>
     <Deterministic>true</Deterministic>
@@ -35,6 +35,8 @@
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_WardrobeCache.cs" Link="Extension_WardrobeCache.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_MedicalRoster.cs" Link="Extension_MedicalRoster.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_Identity.cs" Link="Extension_Identity.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_CoverImport.cs" Link="Extension_CoverImport.cs" />
+    <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_YearReview.cs" Link="Extension_YearReview.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_CommunityOrbat.cs" Link="Extension_CommunityOrbat.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_ItemIcons.cs" Link="Extension_ItemIcons.cs" />
     <Compile Include="..\..\UptoDate\COMSPECExtension\Extension_MapCapture.cs" Link="Extension_MapCapture.cs" />

@@ -61,64 +61,83 @@ EN : An icon for the MPU radio in the phone status bar
 
 ## À venir : vrais symboles militaires MIL-STD-2525D / APP-6D et curseurs GPS (ATAK natif, version à attribuer)
 
+## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)
+## À venir : importer sa couverture générée sur Athena (SSE et COMSPEC Link, version à attribuer)
+
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : nouveauté
-FR : De vrais symboles militaires sur la carte du téléphone
-- Réglages > Carte, « Icônes des unités » : nouveau choix 2525D. Chaque unité a son vrai symbole OTAN : cadre selon le camp, type (infanterie, mécanisée, blindé, reco, artillerie, santé, génie, drone, hélico...), niveau (équipe, groupe, section, compagnie), poste de commandement et état.
-- Le symbole se déduit de ce que fait vraiment l'unité : son rôle, son véhicule et sa place dans l'ORBAT du site. Sans information, le cadre reste vide plutôt que de deviner.
-- « Mon point GPS » et « Forme des alliés » proposent aussi ces symboles : votre symbole automatique ou celui que vous choisissez.
-EN : Real military symbols on the phone map
-- Settings > Map, "Unit icons": new 2525D choice. Every unit gets its real NATO symbol: frame by side, type (infantry, mechanized, armor, recon, artillery, medical, engineer, drone, helicopter...), echelon (team, squad, platoon, company), command post and status.
-- The symbol comes from what the unit really is: its role, its vehicle and its place in the site ORBAT. With no information, the frame stays empty instead of guessing.
-- "My GPS point" and "Ally shape" offer these symbols too: your automatic symbol or the one you pick.
+FR : Importez votre couverture générée sur Athena, sans connexion
+- Sur Athena, Ma couverture (Mes papiers), cliquez Générer puis Télécharger : vous obtenez un fichier de couverture complet (nom, famille, métier, employeur, motif du déplacement, adresse, téléphone, personnes qui peuvent confirmer, papier).
+- Déposez-le dans Documents\Arma 3 - COMSPEC, ouvrez Ma couverture sur le téléphone et cliquez IMPORTER MA COUVERTURE. Le jeu n'a pas besoin d'être connecté à Athena : le fichier est lu sur votre PC.
+- Votre fiche, « À retenir » et les questions des contrôleurs suivent cette couverture. « Oublier l'import » revient à la légende d'avant. Vos papiers ne changent pas.
+- Demande une mise à jour de COMSPEC Link (nouvelle commande de lecture du fichier).
+EN : Import the cover you generated on Athena, offline
+- On Athena, My cover (My papers), click Generate then Download: you get a complete cover file (name, family, job, employer, reason for travel, address, phone, people who can vouch, paper).
+- Drop it in Documents\Arma 3 - COMSPEC, open My cover on the phone and click IMPORT MY COVER. The game does not need to be connected to Athena: the file is read on your PC.
+- Your sheet, "To remember" and the controllers' questions follow this cover. "Forget the import" goes back to the previous legend. Your papers do not change.
+- Needs an update of COMSPEC Link (new command that reads the file).
 
 ### Détail technique
-- `tools/gen_milstd.py` : 189 textures 128 px DXT5 (ImageToPAA, ancien PAA supprimé avant conversion, en-tête DXT5 vérifié) dans `items/data/milstd` (+4,5 Mo dans items.pbo, main.pbo inchangé). Couches blanches colorées par `drawIcon` (thèmes clair, sombre, nuit sans texture en plus).
-- `fn_milSym` (association, règle dans `docs/ATAK_SYMBOLES_MILSTD.md`, code 2525D pour le site), `fn_milDraw` (3 à 7 `drawIcon` par symbole, couches gardées par descripteur et thème). `fn_mapOnDraw` : mode `MILSTD`, formes `MS` / `MS:<pictogramme>` (moi) et `MILSTD` (alliés).
-- ORBAT du site (`/api/atak/community-orbat`) : `function` et `hq` par unité ; `fn_bftOrbat` garde échelon, fonction, QG, parent et le type de poste des titulaires.
-## À venir : bouton de déverrouillage et titres des apps (ATAK natif, version à attribuer)
+- Site : PR feat/identite-couverture-export (fichier `comspec-couverture-CVR-XXXXXXXX.json`, format `comspec-cover` v1, migration 4230). Contrat de lecture : `docs/ATAK_COUVERTURE_IMPORT.md`.
+- DLL (`Extension_CoverImport.cs`, aussi compilée par la DLL ATAK native) : `ReadCoverFile` / `ReadCoverFileChunk`, lecture locale seulement, aucune requête réseau ni autorisation d'Athena. Fichier de forme `comspec-couverture-CVR-XXXXXXXX.json` dans `Documents\Arma 3 - COMSPEC`, 256 Kio au plus, JSON UTF-8 de profondeur 6, clés connues et uniques, aucun caractère de contrôle, SHA-256 du texte de `cover`, date de fin, photo JPEG vérifiée mais non affichée. Annoncée dans `GetAtakFeatures`.
+- SSE : `fn_idCoverImport` (lecture, nettoyage une seconde fois, profil du joueur, envoi au serveur `coverImport` / `coverForget`), `fn_idLegend` (la couverture importée l'emporte champ par champ sur la légende, après le brief Athena et le texte de l'éditeur), `fn_idCoverSync` (une couverture importée ne repart pas vers Athena), `fn_idCoverPage` (zone Importer ma couverture, ligne Couverture de la liaison Athena). Ni `fn_radioGuard`, ni les profils d'identité du registre SSE, ni les papiers ne sont touchés ; la couverture importée n'ouvre pas l'infiltration.
+- Limite connue : la photo du fichier n'est pas affichée en jeu (Arma ne lit pas une image hors de ses dossiers) ; elle reste dans le fichier.
+- `i18n/en.txt` et `tools/i18n_identity_en.tsv` : 27 textes.
+## À venir : Bilan de l'année sur le téléphone et vidéos YouTube (ATAK natif et COMSPEC Link, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : Écran de verrouillage plus sobre, titres des apps jamais coupés
-- Le bouton « Déverrouiller » est un bouton net, aux proportions fixes, dans la couleur d'accent choisie dans Réglages > Personnalisation, aligné avec CARTE et MESSAGES. Il réagit au survol et à l'appui.
-- Le rappel « Sans code : réglez-en un… » ne s'affiche plus qu'une fois.
-- Les titres des apps ne sont plus coupés en petit format : le titre prend toute la place libre de la barre, puis passe à une abréviation (« MSG », « DIST », « CR »…) ou à l'icône de l'app, sans jamais descendre sous 14 px.
-EN : Cleaner lock screen, app titles never cut off
-- The "Unlock" button is a clean button with fixed proportions, in the accent colour chosen in Settings > Personalisation, aligned with MAP and MESSAGES. It reacts to hover and press.
-- The "No code: set one in…" reminder now shows only once.
-- App titles are no longer cut off on a small phone: the title uses all the free room of the bar, then switches to a short form ("MSG", "DIST", "RPT"…) or to the app icon, never below 14 px.
+Type : nouveauté
+FR : Votre bilan de l'année sur le téléphone, et des vidéos YouTube
+- Nouvelle app « Bilan de l'année » (espace Mission) : la rétrospective du site, écran par écran : heures de jeu, kilomètres, blessures, SSE, comptes rendus, et le bilan de l'unité quand la formule de votre communauté le comprend. Il faut que votre compte Athena soit relié.
+- Nouvelle app « Vidéo YouTube » (espace Civil) : collez un lien YouTube et lancez la lecture dans le téléphone. Désactivée par défaut : l'administrateur du serveur l'active dans les réglages CBA. YouTube n'est contacté que lorsque vous lancez une lecture, et votre lien n'est partagé avec personne.
+EN : Your year in review on the phone, and YouTube videos
+- New "Year in review" app (Mission space): the site's year review, screen by screen: play time, distance, injuries, SSE, reports, and your unit's review when your community's plan includes it. Your Athena account must be linked.
+- New "YouTube video" app (Civil space): paste a YouTube link and play it in the phone. Off by default: the server admin turns it on in the CBA settings. YouTube is only contacted when you start playback, and your link is shared with nobody.
 
 ### Détail technique
-- Cause du bouton : texture `items/data/lock/pill.paa` étirée en style 48 sur un rectangle d'environ 15:1 (46 % de la rangée en paysage) : ses bouts arrondis devenaient une ellipse aplatie. Couleur : jeton `accent` plein, c'est-à-dire l'accent du profil (`COMSPEC_ATAK_Accent`, ici BLEU), seule grande surface vive de l'écran.
-- `fn_lockScreen` : rectangles (fond + filet d'un pixel) sans texture, largeur plafonnée (12 hauteurs de police pour le bouton, 8 pour les raccourcis), rangée centrée en paysage, deux rangées centrées en portrait. Bouton tonal : nouveaux jetons `accentSoft`, `accentSoftHi`, `onAccentSoft` (`fn_theme`), états survol, focus clavier et pressé. Rappel « sans code » : profil `COMSPEC_ATAK_LockPinTip`, marqué au premier déverrouillage. Comportement de déverrouillage et de code inchangé.
-- Cause des titres coupés : largeur du titre `_dw - 4 pas de bouton`, sans lien avec les boutons réellement affichés (le pas suit la police, pas l'écran) : 3 à 65 px en mini réduit ou texte agrandi ; `fn_textFit` s'arrêtait à 65 % (et à 85 % de 14 px) puis coupait. « ITINÉRAIRE » passait, « DISTANCES » non : seuls les titres les plus larges parmi ceux testés tombaient.
-- `fn_layoutApply` : le titre va jusqu'au premier bouton de droite affiché ; boutons resserrés quand la barre est étroite ; pastille « main + touche » prise en compte. Nouveau `fn_titleFit` : police jusqu'à 14 px, puis bouton de rotation masqué (sens dans Réglages > Emplacement), abréviation (attribut `short` de `COMSPEC_ATAK_Apps`, 25 apps), icône de l'app.
-- Tests : `AtakThemeContrastTest` (bouton tonal, 6 accents x 3 thèmes, AA 4,5), `AtakUiTruncationTest`. Autotest : étape `tel_verrouillage_themes` (3 thèmes, portrait et paysage).
+- Site : `GET /api/atak/year-review` (`AtakApiController::yearReview`, `AtakYearReviewService`) : mêmes écrans que `/retrospective` (`YearReviewStory`), mêmes droits (calendrier publié, `YearReviewAccess::collectiveAllowed`), joueur relié par la clé du jeu (`matchedUserId`), jamais d'identifiant en paramètre. Lecture seule, écrans payants omis, texte nettoyé et borné. Les textes restent en français (le téléphone ne les traduit pas).
+- COMSPEC Link : `GetYearReview` (Async seulement) et `GetYearReviewChunk` (`Extension_YearReview.cs`), même circuit que `GetCommunityOrbat`. **La DLL doit être recompilée** (non faite dans cette PR) ; sans elle l'app dit « COMSPEC Link trop ancienne ».
+- Mod : `fn_yearReview` (aucune lecture avant `COMSPEC_AthenaReady`, règle de licence), `fn_pageYearReview`, app `YearReview` (`short="Bilan"`, icône `app_reports` existante, aucun nouveau binaire).
+- YouTube : `fn_youtube` (identifiant de 11 caractères `[A-Za-z0-9_-]` validé strictement ; hôtes `youtube.com`, `youtube-nocookie.com`, `youtu.be` ; watch, embed, shorts, live, v), `fn_pageYoutube`, classe `COMSPEC_RscWebBrowserExt` (`allowExternalURL=1`, seulement cette app), réglage `comspec_atak_native_youtube` (décoché, imposé par le serveur). Repli `openYoutubeVideo` (surcouche Steam). Pas de lecture sur les écrans 3D du jeu (voir la PR).
+- Non vérifié sans Arma : le navigateur intégré charge-t-il une adresse externe et lit-il la vidéo, avec le son.
+- Tests : `AtakYearReviewTest`. Autotest : étape `tel_bilan_youtube`.
 
----
+## À venir : vrais symboles militaires MIL-STD-2525D / APP-6D et curseurs GPS (ATAK natif, version à attribuer)
 
-## À venir : photos du téléphone bloquées, dossier des captures plein (ATAK natif, Overwatch connect et COMSPEC Link, version à attribuer)
-## À venir : radio ACRE2 reconnue dans l'app Wave Relay (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
+### À annoncer
 Type : correctif
-FR : L'app Wave Relay reconnaît votre radio ACRE2
-- La ligne « Radio » de MON NŒUD donne la radio réellement détectée (par exemple la MPU-5 d'ACRE), sa portée et sa liaison (câble EUD ou Wi-Fi) ; elle ne dit plus « sans MPU5 » quand une MPU5 est reliée.
-- Avec ACRE2, une nouvelle section dit la radio ACRE reconnue et l'état de la voix par le réseau, même désactivée, avec la façon de l'activer. L'onglet VOIX le redit et propose de relier votre radio quand le serveur l'autorise.
-- Le cadenas « EN CLAIR » explique pourquoi la liaison n'est pas chiffrée : chiffrement inactif par défaut, ou clé non chargée.
-EN : The Wave Relay app recognises your ACRE2 radio
-- The "Radio" line in MY NODE shows the radio actually detected (for example the ACRE MPU-5), its range and its link (EUD cable or Wi-Fi); it no longer says "no MPU5" while an MPU5 is linked.
-- With ACRE2, a new section shows the ACRE radio recognised and the state of voice over the network, even when it is off, with how to turn it on. The VOICE tab repeats it and offers to link your radio when the server allows it.
-- The "CLEAR" padlock explains why the link is not encrypted: encryption off by default, or key not loaded.
+FR : ATAK 4.1.1 : photos réparées, radio ACRE2 reconnue, écran de verrouillage sobre et vrais symboles militaires
+- **Photos** : une ancienne photo effacée ne bloque plus l'envoi des nouvelles ; les photos envoyées sont gardées dans Documents\Arma 3 - COMSPEC\Captures et le dossier Screenshots du jeu ne se remplit plus.
+- **Radio** : l'app Wave Relay reconnaît votre radio ACRE2 (MPU-5), dit l'état de la voix par le réseau et explique le cadenas « EN CLAIR ».
+- **Écran de verrouillage et titres** : bouton « Déverrouiller » net aux proportions fixes, titres des apps jamais coupés en petit format.
+- **Carte** : nouveau choix d'icônes 2525D dans Réglages > Carte, avec les vrais symboles OTAN selon le camp, le type et le niveau de l'unité.
+EN : ATAK 4.1.1: photos fixed, ACRE2 radio recognised, cleaner lock screen and real military symbols
+- **Photos**: an old deleted picture no longer blocks new ones; sent photos are kept in Documents\Arma 3 - COMSPEC\Captures and the game's Screenshots folder no longer fills up.
+- **Radio**: the Wave Relay app recognises your ACRE2 radio (MPU-5), shows the state of voice over the network and explains the "CLEAR" padlock.
+- **Lock screen and titles**: a clean "Unlock" button with fixed proportions, app titles never cut off on a small phone.
+- **Map**: new 2525D unit icons in Settings > Map, with real NATO symbols by side, type and echelon.
 
 ### Détail technique
+- `fn_captureReconImage` : la pause `COMSPEC_FeedSnapFailUntil` (5 min après un `file_not_found`, `ERR|feed_backoff`) ne vaut plus que pour les aperçus automatiques des flux (flux donné, pas de fiche). `fn_photoMode` / `fn_photoCam` (flux vide, fiche) n'y passent plus.
+- `fn_extensionCallback` (`PhotoUpload`) : `file_not_found` sur un nom qui n'est pas `COMSPEC_…` (Photo Library, BCE) → phase `warn`, pas de notification, dernier retour de la Galerie inchangé, pas de pause des flux ; liste `COMSPEC_Athena_PhotoDead` portée de 200 à 600 entrées (au-delà de ~70 photos disparues, les plus anciennes revenaient toutes les 30 s). `_fnc_shotMissing` lit `size=` : dossier ≥ 240 Mo → message « dossier des captures plein ».
+- COMSPEC Link : `IsStaleTimestampedShot` (nom `AAAA_MM_JJ_HH_MM_SS…` de plus d'une heure) → un seul essai, sans les 20 s d'attente ni les relances de 150 s qui occupaient le fil des photos ; `DescribeImageLookupFailure` ajoute `size=<Mo>` du dossier en service.
+- Dossier Captures : après envoi réussi, `FinishUploadedShot` garde la copie de `Documents\Arma 3 - COMSPEC\Captures` (200 fichiers, 1 Go au plus) et retire l'original `COMSPEC_*` de Screenshots si la copie est complète (jamais une image du joueur ni le dossier du réglage). Avant (depuis e22416deb, 3 octobre), la copie était effacée et l'original restait : ~20 Mo par photo jusqu'aux 250 Mo d'Arma. `EnsureScreenshotQuota` toutes les 5 min (seuil 150 Mo) et après un `file_not_found`, au lieu d'une fois par partie.
+- `Shots.Check` ajoute la taille du dossier et le dossier Captures ; `Shots.OpenCaptures` (explorateur) ; `fn_shotDir` « open », avertissement à 200 Mo (vérification 20 s après le chargement) ; boutons dans `fn_pageGallery` (ENVOIS) et `fn_pageSettings`.
+- Ticket Athena #938 (Z01, connect 1.6.34, Link 2.0.120). Notes `docs/bugs/2026-11-08-photos-telephone-bloquees-feed-backoff.md`, `2026-11-08-photos-screenshots-limite-250-mo.md`, `2026-11-08-photo-library-ancienne-photo-bloque-file.md`.
 - Cause (4.1.0) : avec la liaison réaliste (`comspec_atak_native_mpu_real`, cochée par défaut), `fn_mpu5 "source"` renvoie toujours `[]` ; la ligne « Radio » de `fn_pageWaveRelay` le lisait et affichait « téléphone seul · portée 3.0 km (sans MPU5) » (portée de repli `COMSPEC_ATAK_MeshRange`), alors que le facteur de débit de `fn_linkQuality` lisait `fn_mpuLink "status"` (MPU5 reliée par câble). L'`ACRE_MPU5_ID_n` était bien détectée.
 - `fn_mpu5 "isMpu"` : seule règle de reconnaissance (nom « MPU5 », `acre_baseClass`, `Iceman_WR_isMPU5`, réglage `mpu5_items`), utilisée par "has", "gear" et `fn_mpuLink`. `fn_mpu5 "detected"` : seule source de la ligne « Radio », de l'objet détecté et du nom du facteur de débit.
 - `fn_mpuVoice "summary"` : état de la voix par le réseau en clair (réglage admin, coupe-circuit, liaison réaliste, pont, maillage). Section ACRE2 sur MON NŒUD, en tête de l'onglet VOIX, bouton de pont (même geste que l'action ACE).
 - `fn_meshKeys "link"` : détails du cadenas réécrits (cause et remède) ; ligne d'explication « EN CLAIR » dans l'app.
 - Autotest : étape `acre_radio_detectee` (groupe `acre`) avec `ACRE_MPU5`, 152 et 343, captures MON NŒUD et VOIX ; `ingame_test.ps1` charge `ACRE_MPU5.pbo` seul (`-SansAcreMpu5` pour l'éviter).
 - Note : `docs/bugs/2026-11-08-atak-wave-relay-radio-acre-mpu5.md`.
+- Cause du bouton : texture `items/data/lock/pill.paa` étirée en style 48 sur un rectangle d'environ 15:1 (46 % de la rangée en paysage) : ses bouts arrondis devenaient une ellipse aplatie. Couleur : jeton `accent` plein, c'est-à-dire l'accent du profil (`COMSPEC_ATAK_Accent`, ici BLEU), seule grande surface vive de l'écran.
+- `fn_lockScreen` : rectangles (fond + filet d'un pixel) sans texture, largeur plafonnée (12 hauteurs de police pour le bouton, 8 pour les raccourcis), rangée centrée en paysage, deux rangées centrées en portrait. Bouton tonal : nouveaux jetons `accentSoft`, `accentSoftHi`, `onAccentSoft` (`fn_theme`), états survol, focus clavier et pressé. Rappel « sans code » : profil `COMSPEC_ATAK_LockPinTip`, marqué au premier déverrouillage. Comportement de déverrouillage et de code inchangé.
+- Cause des titres coupés : largeur du titre `_dw - 4 pas de bouton`, sans lien avec les boutons réellement affichés (le pas suit la police, pas l'écran) : 3 à 65 px en mini réduit ou texte agrandi ; `fn_textFit` s'arrêtait à 65 % (et à 85 % de 14 px) puis coupait. « ITINÉRAIRE » passait, « DISTANCES » non : seuls les titres les plus larges parmi ceux testés tombaient.
+- `fn_layoutApply` : le titre va jusqu'au premier bouton de droite affiché ; boutons resserrés quand la barre est étroite ; pastille « main + touche » prise en compte. Nouveau `fn_titleFit` : police jusqu'à 14 px, puis bouton de rotation masqué (sens dans Réglages > Emplacement), abréviation (attribut `short` de `COMSPEC_ATAK_Apps`, 25 apps), icône de l'app.
+- Tests : `AtakThemeContrastTest` (bouton tonal, 6 accents x 3 thèmes, AA 4,5), `AtakUiTruncationTest`. Autotest : étape `tel_verrouillage_themes` (3 thèmes, portrait et paysage).
+- `tools/gen_milstd.py` : 189 textures 128 px DXT5 (ImageToPAA, ancien PAA supprimé avant conversion, en-tête DXT5 vérifié) dans `items/data/milstd` (+4,5 Mo dans items.pbo, main.pbo inchangé). Couches blanches colorées par `drawIcon` (thèmes clair, sombre, nuit sans texture en plus).
+- `fn_milSym` (association, règle dans `docs/ATAK_SYMBOLES_MILSTD.md`, code 2525D pour le site), `fn_milDraw` (3 à 7 `drawIcon` par symbole, couches gardées par descripteur et thème). `fn_mapOnDraw` : mode `MILSTD`, formes `MS` / `MS:<pictogramme>` (moi) et `MILSTD` (alliés).
+- ORBAT du site (`/api/atak/community-orbat`) : `function` et `hq` par unité ; `fn_bftOrbat` garde échelon, fonction, QG, parent et le type de poste des titulaires.
 
 ---
 
