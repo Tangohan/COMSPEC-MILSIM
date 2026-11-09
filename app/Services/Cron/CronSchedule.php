@@ -58,6 +58,8 @@ final class CronSchedule
         'org_low_member_reminders' => 1440,
         // Annonce de la rétrospective annuelle : une part du quota d'e-mails par jour, pendant 14 jours.
         'year_review_mail' => 1440,
+        // Academy : chapitres sans réponse du formateur depuis le délai de la communauté (72 h par défaut) ; passage horaire, plafonné.
+        'academy_auto_validation' => 60,
         // Rôles liés Discord : chaque compte relié est renvoyé au plus une fois par 24 h, 50 par passage.
         'discord_linked_roles_sync' => 60,
         // E-mails reportés par le quota quotidien ou mis en file (MAIL_QUEUE).

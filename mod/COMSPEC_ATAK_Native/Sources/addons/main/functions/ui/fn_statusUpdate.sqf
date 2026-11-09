@@ -85,6 +85,21 @@ if (!isNull _lockCtrl) then {
     [_lockTxt, "cs_tt", _lockTt] call _put;
 };
 
+// Icône de la radio MPU5 (fn_mpuLink "badge") : non reliée, câble, Wi-Fi, transmet, coupée. Lit le statut en cache ; texture, couleur et infobulle
+// ne sont réécrites que si elles changent. Ne se montre que si elle tient dans la barre (fn_layoutApply).
+private _mpuCtrl = uiNamespace getVariable ["COMSPEC_ATAK_MpuCtrl", controlNull];
+if (!isNull _mpuCtrl) then {
+    (["badge"] call comspec_atak_native_fnc_mpuLink) params ["_mpuCode", "_mpuImg", "_mpuCol", "_mpuTip"];
+    private _mpuShow = _mpuCode isNotEqualTo "off" && {_mpuCtrl getVariable ["fit", false]};
+    if ((ctrlShown _mpuCtrl) isNotEqualTo _mpuShow) then { _mpuCtrl ctrlShow _mpuShow; };
+    if (_mpuShow) then {
+        [_mpuCtrl, "cs_t", _mpuImg] call _put;
+        [_mpuCtrl, "cs_c", _mpuCol] call _put;
+        private _mpuWhy = ["", format [" %1", ((["status"] call comspec_atak_native_fnc_mpuLink) getOrDefault ["why", ""]) call comspec_atak_native_fnc_tr]] select (_mpuCode isEqualTo "cut");
+        [_mpuCtrl, "cs_tt", (_mpuTip call comspec_atak_native_fnc_tr) + _mpuWhy] call _put;
+    };
+};
+
 ([] call comspec_atak_native_fnc_weather) params ["_temp", "_speed", "_card"];
 [_d displayCtrl 88524, "cs_t", (format ["%1°C   %2 %3", _temp, _card, round _speed]) call comspec_atak_native_fnc_tr] call _put;
 [_d displayCtrl 88524, "cs_tt", (format ["Vent du %1, %2 m/s", _card, round _speed]) call comspec_atak_native_fnc_tr] call _put;
