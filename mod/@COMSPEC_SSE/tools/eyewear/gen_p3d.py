@@ -852,35 +852,61 @@ def model_cfg(names):
     return "\n".join(lines) + "\n"
 
 
+def write_variant(name, cid, vis, sh, geo, off, skinned, stats):
+    mats = materials_for(cid)
+    v, s_, g_ = vis.moved(off), sh.moved(off), geo.moved(off)
+    sel_v, sel_s = (), ()
+    if skinned:
+        at = add(anchor_point(cid), off)
+        sel_v = skin_map(v, add_bone_anchors(v, ("frame", "lens"), at))
+        sel_s = skin_map(s_, add_bone_anchors(s_, ("shadow",), at))
+    lods = [
+        lod_bytes(v, 1.0, mats, selections=sel_v, props=(("lodnoshadow", "1"),)),
+        lod_bytes(s_, 10000.0, {}, selections=sel_s, sharp_all=True, uvset=False),
+        # Géométrie : sans pondération (aucune collision utile, ne sert qu'à autocenter=0 et à la masse).
+        lod_bytes(g_, 1e13, {}, selections=("component01",), props=(("autocenter", "0"),), mass=0.03,
+                  sharp_all=True, uvset=False),
+    ]
+    if stats:
+        print("%-28s visuel %5d faces %5d triangles %5d points | ombre %4d triangles" % (
+            name, len(v.faces), v.tris(), len(v.pts), s_.tris()))
+        return
+    size = write_p3d(os.path.join(OUT, name + ".p3d"), lods)
+    print("écrit %s.p3d (%d Ko, %d triangles)" % (name, size // 1024, v.tris()))
+
+
+# Variantes de CALIBRATION (temporaires, test en jeu seulement) : Radar blanche décalée vers l'avant (Z) ou plus large.
+# (étiquette, décalage Z ajouté à HEAD_OFFSET, écart des branches xt ou None, pondérée sur « head »)
+CALIBRATION = [
+    ("z03", 0.03, None, True),
+    ("z06", 0.06, None, True),
+    ("z09", 0.09, None, True),
+    ("z12", 0.12, None, True),
+    ("w", 0.06, 0.082, True),
+    ("noskin", 0.0, None, False),
+]
+
+
 def main():
     stats = "--stats" in sys.argv
     os.makedirs(OUT, exist_ok=True)
     names = []
     for cid in S.ORDER:
         vis, sh, geo = build_all(cid)
-        mats = materials_for(cid)
         for suffix, (off, skinned) in VARIANTS.items():
             name = "ew_" + cid + suffix
             names.append((name, skinned))
-            v, s_, g_ = vis.moved(off), sh.moved(off), geo.moved(off)
-            sel_v, sel_s = (), ()
-            if skinned:
-                at = add(anchor_point(cid), off)
-                sel_v = skin_map(v, add_bone_anchors(v, ("frame", "lens"), at))
-                sel_s = skin_map(s_, add_bone_anchors(s_, ("shadow",), at))
-            lods = [
-                lod_bytes(v, 1.0, mats, selections=sel_v, props=(("lodnoshadow", "1"),)),
-                lod_bytes(s_, 10000.0, {}, selections=sel_s, sharp_all=True, uvset=False),
-                # Géométrie : sans pondération (aucune collision utile, ne sert qu'à autocenter=0 et à la masse).
-                lod_bytes(g_, 1e13, {}, selections=("component01",), props=(("autocenter", "0"),), mass=0.03,
-                          sharp_all=True, uvset=False),
-            ]
-            if stats:
-                print("%-28s visuel %5d faces %5d triangles %5d points | ombre %4d triangles" % (
-                    name, len(v.faces), v.tris(), len(v.pts), s_.tris()))
-                continue
-            size = write_p3d(os.path.join(OUT, name + ".p3d"), lods)
-            print("écrit %s.p3d (%d Ko, %d triangles)" % (name, size // 1024, v.tris()))
+            write_variant(name, cid, vis, sh, geo, off, skinned, stats)
+    xt0 = S.SHAPES["radar"]["xt"]
+    for tag, dz, xt, skinned in CALIBRATION:
+        S.SHAPES["radar"]["xt"] = xt if xt is not None else xt0
+        _HINGES.clear()
+        vis, sh, geo = build_all("radar_white")
+        name = "ew_cal_" + tag
+        names.append((name, skinned))
+        write_variant(name, "radar_white", vis, sh, geo, add(S.HEAD_OFFSET, (0.0, 0.0, dz)), skinned, stats)
+    S.SHAPES["radar"]["xt"] = xt0
+    _HINGES.clear()
     if not stats:
         with open(os.path.join(OUT, "model.cfg"), "w", encoding="utf-8", newline="\n") as f:
             f.write(model_cfg(names))

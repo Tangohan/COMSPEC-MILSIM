@@ -113,6 +113,50 @@ AT_fnc_ewPose = {
     call AT_fnc_done;
 }, 40] call AT_fnc_run;
 
+// Mesures en jeu (objets simples locaux) : boîtes englobantes des lunettes et JVN vanilla et des nôtres, et une capture
+// des modèles posés devant la caméra, hors personnage (le maillage complet est-il dessiné ?).
+["eyewear_mesures", {
+    private _modeles = [
+        "a3\characters_f\heads\glasses\g_sport_red.p3d",
+        "a3\weapons_f\binocular\nvg_proxy.p3d",
+        "z\comspec_sse\addons\eyewear\data\models\ew_radar_white.p3d",
+        "z\comspec_sse\addons\eyewear\data\models\ew_radar_white_nvg.p3d",
+        "z\comspec_sse\addons\eyewear\data\models\ew_radar_white_head.p3d",
+        "z\comspec_sse\addons\eyewear\data\models\ew_cal_noskin.p3d"
+    ];
+    private _dir = getDir player;
+    private _fwd = [sin _dir, cos _dir, 0];
+    private _right = [cos _dir, -(sin _dir), 0];
+    private _centre = (eyePos player) vectorAdd (_fwd vectorMultiply 1.6);
+    private _objs = [];
+    {
+        // Les modèles du repère personnage ont les yeux à ~0,7 m au-dessus de leur origine ; le modèle « _head » à 0.
+        private _dz = [-0.70, 0] select ((_x find "_head") >= 0);
+        private _pos = _centre vectorAdd (_right vectorMultiply ((_forEachIndex - 2.5) * 0.2)) vectorAdd [0, 0, _dz];
+        private _o = createSimpleObject [_x, _pos, true];
+        if (isNull _o) then {
+            (format ["bbox|%1|createSimpleObject a échoué", _x]) call AT_fnc_ewLog;
+        } else {
+            _o setDir (_dir + 180);
+            _o setPosASL _pos;
+            _objs pushBack _o;
+            (format ["bbox|%1|boundingBoxReal=%2|boundingCenter=%3|getModelInfo=%4|origine posée=%5|origine modèle=%6",
+                _x, boundingBoxReal _o, boundingCenter _o, getModelInfo _o, _pos, _o modelToWorldVisualWorld [0, 0, 0]]) call AT_fnc_ewLog;
+        };
+    } forEach _modeles;
+    uiSleep 0.5;
+    // Caméra entre le joueur et la rangée, à hauteur des verres, de face puis de trois quarts.
+    private _cible = _centre;
+    [player, 0, -1.0, 0.05, _cible, 0.75] call AT_fnc_ewCamera;
+    ["eyewear_objets_simples"] call AT_fnc_shot;
+    [player, 30, -0.9, 0.12, _cible, 0.75] call AT_fnc_ewCamera;
+    ["eyewear_objets_simples_34"] call AT_fnc_shot;
+    call AT_fnc_ewCameraEnd;
+    "ordre de gauche à droite (vu du joueur) : g_sport_red, nvg_proxy, ew_radar_white, ew_radar_white_nvg, ew_radar_white_head, ew_cal_noskin ; maillage complet ?" call AT_fnc_visuel;
+    { deleteVehicle _x; } forEach _objs;
+    call AT_fnc_done;
+}, 40] call AT_fnc_run;
+
 ["eyewear_slot_virtuel", {
     if (["comspec_sse_fnc_eyewearWear", "comspec_sse_fnc_eyewearRemove", "comspec_sse_fnc_eyewearRender"] call AT_fnc_nil) exitWith {};
     private _e = "radar_white" call AT_fnc_ewCat;
@@ -129,10 +173,20 @@ AT_fnc_ewPose = {
     [[{ !isNull (call _obj) }, 3] call AT_fnc_wait, "objet 3D non créé"] call AT_fnc_check;
     private _o = call _obj;
     private _hg0 = headgear player;
+    private _hmd0 = hmd player;
     removeHeadgear player;
+    if (_hmd0 isNotEqualTo "") then { player unlinkItem _hmd0; };
     player switchCamera "EXTERNAL";
     call AT_fnc_ewPose;
     uiSleep 0.5;
+    // Recalage automatique de l'accroche (fn_eyewearRender, étape 3) : origine du modèle sur eyePos.
+    private _etat = { ((missionNamespace getVariable ["comspec_sse_eyewear_drawn", []]) select { (_x select 0) isEqualTo player }) param [0, []] };
+    [{ ((call _etat) param [3, 0]) isEqualTo 99 }, 5] call AT_fnc_wait;
+    if (!isNull _o) then {
+        private _ecart = (eyePos player) vectorDistance (_o modelToWorldVisualWorld [0, 0, 0]);
+        (format ["recalage : étape=%1 décalage=%2 point=%3 écart origine/yeux=%4 m", (call _etat) param [3, -1], (call _etat) param [4, []], (call _etat) param [5, ""], _ecart toFixed 4]) call AT_fnc_ewLog;
+        [_ecart < 0.02, format ["objet à %1 m des yeux après recalage", _ecart toFixed 3]] call AT_fnc_check;
+    };
     if (!isNull _o) then {
         [(attachedTo _o) isEqualTo player, "objet 3D non accroché au joueur"] call AT_fnc_check;
         [(typeOf _o) isEqualTo (_e get "head"), format ["objet 3D de classe %1", typeOf _o]] call AT_fnc_check;
@@ -157,6 +211,7 @@ AT_fnc_ewPose = {
     ["virtuel"] call AT_fnc_ewCorps;
     call AT_fnc_ewCameraEnd;
     if (_hg0 isNotEqualTo "") then { player addHeadgear _hg0; };
+    if (_hmd0 isNotEqualTo "") then { player linkItem _hmd0; };
     "lunettes du slot virtuel posées sur les yeux (corriger comspec_sse_eyewearAttachOffset sinon)" call AT_fnc_visuel;
     [(([player, true] call comspec_sse_fnc_eyewearRemove)) isEqualTo "radar_white", "eyewearRemove n'a rien retiré"] call AT_fnc_check;
     [(player getVariable ["comspec_sse_eyewear_worn", ""]) isEqualTo "", "variable comspec_sse_eyewear_worn restée posée"] call AT_fnc_check;
@@ -228,6 +283,25 @@ AT_fnc_ewPose = {
     if (_h0 isNotEqualTo "") then { player unlinkItem _h0; };
     player switchCamera "EXTERNAL";
     call AT_fnc_ewPose;
+    // Référence : lunettes de sport vanilla, mêmes caméras.
+    player addGoggles "G_Sport_Red";
+    uiSleep 0.4;
+    [player, 0] call AT_fnc_ewCamera;
+    ["eyewear_ref_vanilla_face"] call AT_fnc_shot;
+    [player, 45] call AT_fnc_ewCamera;
+    ["eyewear_ref_vanilla_profil"] call AT_fnc_shot;
+    // Calibration TEMPORAIRE : Radar blanche avancée de 3 à 12 cm, plus large (w), sans pondération (noskin).
+    {
+        private _cls = "COMSPEC_SSE_G_Cal_" + toUpper _x;
+        if (isClass (configFile >> "CfgGlasses" >> _cls)) then {
+            player addGoggles _cls;
+            uiSleep 0.4;
+            [player, 0] call AT_fnc_ewCamera;
+            [format ["eyewear_cal_%1_face", _x]] call AT_fnc_shot;
+            [player, 45] call AT_fnc_ewCamera;
+            [format ["eyewear_cal_%1_profil", _x]] call AT_fnc_shot;
+        };
+    } forEach ["z03", "z06", "z09", "z12", "w", "noskin"];
     {
         private _e = _x call AT_fnc_ewCat;
         player addGoggles (_e get "glasses");
@@ -255,5 +329,5 @@ AT_fnc_ewPose = {
     if (_hg0 isNotEqualTo "") then { player addHeadgear _hg0; };
     setDate _date0;
     call AT_fnc_done;
-}, 240] call AT_fnc_run;
+}, 360] call AT_fnc_run;
 call AT_fnc_ewCameraEnd;

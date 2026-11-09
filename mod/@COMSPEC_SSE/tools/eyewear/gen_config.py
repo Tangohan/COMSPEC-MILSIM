@@ -94,6 +94,16 @@ def cfg():
               '        model = "%smodels\\ew_%s.p3d";' % (D, cid),
               '        comspec_sse_eyewear = "%s";' % cid,
               "    };"]
+    # Calibration TEMPORAIRE (autotest seulement, scope 1) : Radar blanche décalée, voir gen_p3d.CALIBRATION.
+    L.append("    // CALIBRATION TEMPORAIRE : variantes de position pour l'autotest (scope 1), à retirer une fois la position choisie.")
+    for tag, label in (("z03", "Z +0,03"), ("z06", "Z +0,06"), ("z09", "Z +0,09"), ("z12", "Z +0,12"),
+                       ("w", "Z +0,06, branches 0,082"), ("noskin", "sans pondération")):
+        L += ["    class COMSPEC_SSE_G_Cal_%s: COMSPEC_SSE_G_Eyewear_Base {" % tag.upper(),
+              "        scope = 1;",
+              '        displayName = "Calibration lunettes %s (test)";' % label,
+              '        picture = "%sicon_radar_white_ca.paa";' % D,
+              '        model = "%smodels\\ew_cal_%s.p3d";' % (D, tag),
+              "    };"]
     L += ["};", ""]
     # b) et c) CfgWeapons
     L += ["class CfgWeapons {", "    class NVGoggles;", "    class CBA_MiscItem;", "    class CBA_MiscItem_ItemInfo;",

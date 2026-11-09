@@ -107,6 +107,43 @@ class CfgGlasses {
         model = "\z\comspec_sse\addons\eyewear\data\models\ew_wind_orange.p3d";
         comspec_sse_eyewear = "wind_orange";
     };
+    // CALIBRATION TEMPORAIRE : variantes de position pour l'autotest (scope 1), à retirer une fois la position choisie.
+    class COMSPEC_SSE_G_Cal_Z03: COMSPEC_SSE_G_Eyewear_Base {
+        scope = 1;
+        displayName = "Calibration lunettes Z +0,03 (test)";
+        picture = "\z\comspec_sse\addons\eyewear\data\icon_radar_white_ca.paa";
+        model = "\z\comspec_sse\addons\eyewear\data\models\ew_cal_z03.p3d";
+    };
+    class COMSPEC_SSE_G_Cal_Z06: COMSPEC_SSE_G_Eyewear_Base {
+        scope = 1;
+        displayName = "Calibration lunettes Z +0,06 (test)";
+        picture = "\z\comspec_sse\addons\eyewear\data\icon_radar_white_ca.paa";
+        model = "\z\comspec_sse\addons\eyewear\data\models\ew_cal_z06.p3d";
+    };
+    class COMSPEC_SSE_G_Cal_Z09: COMSPEC_SSE_G_Eyewear_Base {
+        scope = 1;
+        displayName = "Calibration lunettes Z +0,09 (test)";
+        picture = "\z\comspec_sse\addons\eyewear\data\icon_radar_white_ca.paa";
+        model = "\z\comspec_sse\addons\eyewear\data\models\ew_cal_z09.p3d";
+    };
+    class COMSPEC_SSE_G_Cal_Z12: COMSPEC_SSE_G_Eyewear_Base {
+        scope = 1;
+        displayName = "Calibration lunettes Z +0,12 (test)";
+        picture = "\z\comspec_sse\addons\eyewear\data\icon_radar_white_ca.paa";
+        model = "\z\comspec_sse\addons\eyewear\data\models\ew_cal_z12.p3d";
+    };
+    class COMSPEC_SSE_G_Cal_W: COMSPEC_SSE_G_Eyewear_Base {
+        scope = 1;
+        displayName = "Calibration lunettes Z +0,06, branches 0,082 (test)";
+        picture = "\z\comspec_sse\addons\eyewear\data\icon_radar_white_ca.paa";
+        model = "\z\comspec_sse\addons\eyewear\data\models\ew_cal_w.p3d";
+    };
+    class COMSPEC_SSE_G_Cal_NOSKIN: COMSPEC_SSE_G_Eyewear_Base {
+        scope = 1;
+        displayName = "Calibration lunettes sans pondération (test)";
+        picture = "\z\comspec_sse\addons\eyewear\data\icon_radar_white_ca.paa";
+        model = "\z\comspec_sse\addons\eyewear\data\models\ew_cal_noskin.p3d";
+    };
 };
 
 class CfgWeapons {
