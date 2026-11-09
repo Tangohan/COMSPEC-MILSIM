@@ -285,6 +285,10 @@ private _compSkip = ["skip"] call comspec_atak_native_fnc_compromiseView;
 private _tacDisc = "\z\comspec_atak_native\addons\main\data\map_pawn_disc.paa";
 private _tacRing = "\z\comspec_atak_native\addons\main\data\map_pawn_ring.paa";
 private _tacTick = "\z\comspec_atak_native\addons\main\data\map_pawn_tick.paa";
+// Contacts (fn_contactStyle) : taille suivant le zoom (paliers de 5 %), au plus 80 symboles à forme par image (les autres gardent le pion rond), mètres par pixel lus une fois et seulement si une piste périmée est dessinée.
+private _ctK = ["scaleK", _scale] call comspec_atak_native_fnc_contactStyle;
+private _ctN = 0;
+private _ctMpx = 0;
 private _dcAll = uiNamespace getVariable "COMSPEC_ATAK_MapDrawCache";
 if (isNil "_dcAll") then { _dcAll = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_MapDrawCache", _dcAll]; };
 // Unités parties : entrées périmées retirées de temps en temps (pas de table sans fin).
@@ -420,6 +424,17 @@ if (_selfCfg select 4) then {
     if ((_self && {_shapeSelfNew}) || {!_self && {_shapeAllyNew} && {(_entity getOrDefault ["affiliation", ""]) isEqualTo "friend"}}) then {
         ["draw", [_map, [_shapeAlly, _shapeSelf] select _self, _pos, _size * 1.35, _color, _entity getOrDefault ["heading", 0], _dc select 8]] call comspec_atak_native_fnc_mapShape;
     } else {
+    if (_tacP && {(_entity getOrDefault ["affiliation", ""]) isNotEqualTo "friend"} && {_ctN < 80}) then {
+        // Contact (ennemi, neutre, inconnu, civil) : forme de l'affiliation (losange, carré, carré à bras, triangle) en plus de
+        // la couleur ; cap seulement s'il est connu ; âge sous le symbole d'une piste périmée (fn_contactStyle).
+        _ctN = _ctN + 1;
+        private _ctAge = -1;
+        if (_freshness in ["STALE", "LOST", "OFFLINE"]) then {
+            _ctAge = diag_tickTime - (_entity getOrDefault ["updated", diag_tickTime]);
+            if (_ctMpx isEqualTo 0) then { _ctMpx = ["mpx", _map] call comspec_atak_native_fnc_planGfx; };
+        };
+        ["draw", [_map, ["aff", _entity] call comspec_atak_native_fnc_contactStyle, _pos, _size * 0.8 * _ctK, _color, [-1, _entity get "heading"] select ("heading" in _entity), _ctAge, [0, 0.019 * _kt * _tsL] select (_scale < 0.12), _ctMpx]] call comspec_atak_native_fnc_contactStyle;
+    } else {
     if (_tacP) then {
         // Pion : disque sombre, anneau à la couleur de l'unité, lettre d'équipe, triangle de direction (texture tournée par
         // drawIcon : aucune position à calculer). Textures fixes, 3 à 4 dessins par unité visible.
@@ -431,6 +446,7 @@ if (_selfCfg select 4) then {
         if ("heading" in _entity) then { _map drawIcon [_tacTick, [1, 1, 1, _pa], _pos, _ps * 1.5, _ps * 1.5, _entity get "heading", "", 0]; };
     } else {
         _map drawIcon [_icon,_color,_pos,_size,_size,_dir,"",0];
+    };
     };
     };
     };

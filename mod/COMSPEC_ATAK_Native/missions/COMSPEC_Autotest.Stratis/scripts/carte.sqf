@@ -174,3 +174,73 @@ if !("carte" call AT_fnc_groupe) exitWith {};
     ["tool", ""] call comspec_atak_native_fnc_planAction;
     call AT_fnc_done;
 }, 45] call AT_fnc_run;
+
+// Style de la carte (Tactique / Classique) et contacts : repères ennemi, neutre, inconnu et ami, fiche de contact au toucher, dans les
+// trois thèmes, en portrait (mini) et en paysage (plein écran). Contacts ENI : losange ; neutre : carré ; inconnu : carré à bras.
+["carte_style_contacts", {
+    if (["comspec_atak_native_fnc_contactStyle", "comspec_atak_native_fnc_contactCard", "comspec_atak_native_fnc_mapColors", "comspec_atak_native_fnc_theme"] call AT_fnc_nil) exitWith {};
+    ["aff", ["o_inf", "n_inf", "u_unknown", "b_inf", "mil_dot"] apply { ["markerAff", _x] call comspec_atak_native_fnc_contactStyle }] call AT_fnc_info;
+    [(["markerAff", "o_inf"] call comspec_atak_native_fnc_contactStyle) isEqualTo "hostile", "o_inf n'est pas ennemi"] call AT_fnc_check;
+    [(["markerAff", "mil_dot"] call comspec_atak_native_fnc_contactStyle) isEqualTo "", "mil_dot ne doit pas avoir d'affiliation"] call AT_fnc_check;
+    private _mode0 = profileNamespace getVariable ["COMSPEC_ATAK_Mode", "MINI"];
+    private _orient0 = profileNamespace getVariable ["COMSPEC_ATAK_Orientation", "PORTRAIT"];
+    private _style0 = profileNamespace getVariable ["COMSPEC_ATAK_MapDrawStyle", "TACTICAL"];
+    private _bg0 = [] call comspec_atak_native_fnc_mapStyle;
+    private _mks = [];
+    {
+        _x params ["_nom", "_type", "_dx", "_dy", "_txt"];
+        private _m = createMarkerLocal [format ["cat_contact_%1", _nom], (getPosATL player) vectorAdd [_dx, _dy, 0]];
+        _m setMarkerTypeLocal _type;
+        _m setMarkerColorLocal "Default";
+        _m setMarkerTextLocal _txt;
+        _mks pushBack _m;
+    } forEach [["eni", "o_inf", 35, 30, "AT ENI"], ["neu", "n_inf", -35, 30, "AT NEUTRE"], ["inc", "u_unknown", 0, 55, "AT INCONNU"], ["ami", "b_inf", 0, -40, "AT AMI"]];
+    uiSleep 1;
+    private _s = call AT_fnc_etat;
+    {
+        _x params ["_mode", "_orient", "_nom"];
+        profileNamespace setVariable ["COMSPEC_ATAK_Mode", _mode];
+        profileNamespace setVariable ["COMSPEC_ATAK_Orientation", _orient];
+        [true] call comspec_atak_native_fnc_open;
+        [[{ !isNull ([] call comspec_atak_native_fnc_display) }, 8] call AT_fnc_wait, format ["téléphone non ouvert (%1)", _nom]] call AT_fnc_check;
+        uiSleep 1.5;
+        {
+            _x params ["_style", "_themes"];
+            profileNamespace setVariable ["COMSPEC_ATAK_MapDrawStyle", _style];
+            {
+                ["set", _x] call comspec_atak_native_fnc_theme;
+                ["SLATE"] call comspec_atak_native_fnc_mapStyle;
+                _s set ["selectedMarker", ""];
+                ["MAP", 2] call AT_fnc_page;
+                [0.006] call AT_fnc_centre;
+                [format ["style_%1_%2_%3_contacts", toLower _style, toLower _x, _nom]] call AT_fnc_shot;
+                if (_style isEqualTo "TACTICAL") then {
+                    // Fiche de contact : repère ennemi touché (pastille en losange, affiliation en toutes lettres, âge, distance et azimut).
+                    _s set ["selectedMarker", _mks select 0];
+                    ["MAP"] call comspec_atak_native_fnc_pageRender;
+                    uiSleep 1;
+                    [format ["style_%1_%2_%3_fiche", toLower _style, toLower _x, _nom]] call AT_fnc_shot;
+                };
+            } forEach _themes;
+        } forEach [["TACTICAL", ["DARK", "DAY", "NVG"]], ["STANDARD", ["DARK"]]];
+    } forEach [["MINI", "PORTRAIT", "portrait"], ["FULL", "LANDSCAPE", "paysage"]];
+    "contacts : losange ennemi, carré neutre, carré à bras inconnu, cercle ami, jamais la couleur seule ; plaques sans chevauchement ; fiche lisible dans les trois thèmes ; Classique garde les symboles OTAN" call AT_fnc_visuel;
+    // MARQUER : une piste de contact devient un repère partagé à sa position, la palette de marqueurs retrouvée telle quelle.
+    private _aff0 = _s getOrDefault ["markerAff", "o"];
+    private _nm = count allMapMarkers;
+    private _m = ["mark", createHashMapFromArray [["affiliation", "hostile"], ["callsign", "AT PISTE"], ["position", getPosATL player vectorAdd [20, 20, 0]]]] call comspec_atak_native_fnc_contactStyle;
+    if (isNil "_m") then { _m = ""; };
+    [(markerShape _m) isNotEqualTo "", "MARQUER : repère non posé"] call AT_fnc_check;
+    [(_s getOrDefault ["markerAff", "o"]) isEqualTo _aff0, "MARQUER : palette de marqueurs modifiée"] call AT_fnc_check;
+    if (_m isNotEqualTo "") then { [_m] call comspec_atak_native_fnc_markerDelete; };
+    { deleteMarkerLocal _x; } forEach _mks;
+    _s set ["selectedMarker", ""];
+    profileNamespace setVariable ["COMSPEC_ATAK_MapDrawStyle", _style0];
+    [_bg0] call comspec_atak_native_fnc_mapStyle;
+    ["set", "DARK"] call comspec_atak_native_fnc_theme;
+    profileNamespace setVariable ["COMSPEC_ATAK_Mode", _mode0];
+    profileNamespace setVariable ["COMSPEC_ATAK_Orientation", _orient0];
+    [true] call comspec_atak_native_fnc_open;
+    uiSleep 1;
+    call AT_fnc_done;
+}, 300] call AT_fnc_run;

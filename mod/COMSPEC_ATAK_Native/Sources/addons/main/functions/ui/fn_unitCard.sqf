@@ -74,7 +74,9 @@ private _catalog = {
         [["vibe", "buzz"] select (_ctx in ["bft", "bftp"]), ["VIBRER", "HORS LIGNE"] select _off, _net && {_dev} && {!_off}, ["Pas de téléphone ATAK chez cet allié", "Fait vibrer son téléphone (une fois toutes les 5 s)"] select _dev, ""],
         ["ping", "PING", _has, "Ping sur sa position, visible de tout le camp", ""]
     ];
-    if (!_friend) exitWith { [_car] + (_all select { (_x select 0) in ["route", "ping"] }) };
+    // Contact (ennemi, neutre, inconnu, civil) : aller, ping vers mon camp, et MARQUER (repère partagé à sa position, qui reste
+    // quand la piste disparaît).
+    if (!_friend) exitWith { [_car] + (_all select { (_x select 0) in ["route", "ping"] }) + [["mark", "MARQUER", _has && {(count (_e getOrDefault ["position", []])) >= 2}, "Pose un repère à sa position, partagé sur le canal", ""]] };
     if (_me) exitWith { [_car] + (_all select { (_x select 0) isEqualTo "ping" }) + [["viewshed", "CHAMP DE VISION", _al, "Ce qui est visible depuis vous", ""]] };
     private _tail = [];
     private _grp = group player;
@@ -171,6 +173,7 @@ switch (_mode) do {
             case "vibe": { ["vibe"] call comspec_atak_native_fnc_bftAction; };
             case "buzz": { ["buzz"] call comspec_atak_native_fnc_bftAction; };
             case "ping": { ["ping"] call comspec_atak_native_fnc_bftAction; };
+            case "mark": { ["mark", _e] call comspec_atak_native_fnc_contactStyle; };
             case "cam": { ["cam"] call comspec_atak_native_fnc_bftAction; };
             case "follow": {
                 if ((_s getOrDefault ["mapFollowId", ""]) isEqualTo _eid) then {
@@ -281,7 +284,7 @@ switch (_mode) do {
             private _ph = _rr * (_h + _gap) + _gap;
             private _py = _y0 - _ph;
             private _bg = ["COMSPEC_RscText", [_x0, _py, _w, _ph], "", _inGroup] call comspec_atak_native_fnc_pageCtrl;
-            _bg ctrlSetBackgroundColor ([_th get "surface", [0.035, 0.042, 0.038, 0.97]] select _isMap);
+            _bg ctrlSetBackgroundColor ([_th get "surface", _th get "mapCard"] select _isMap);
             private _panel = [_bg];
             private _pw = (_w - (_pp + 1) * _gap) / _pp;
             {
@@ -366,19 +369,34 @@ switch (_mode) do {
             if ((_ft get "id") isNotEqualTo "") then { _color = _ft get "rgba"; };
         };
         private _rgb = [_color select 0, _color select 1, _color select 2, 1];
+        // Contact : encre de l'affiliation (jetons de fn_theme) et pastille à la forme de l'affiliation, jamais la couleur seule.
+        private _cAff = ["aff", _e] call comspec_atak_native_fnc_contactStyle;
+        private _contact = _cAff isNotEqualTo "friend";
+        if (_contact) then { _rgb = ["ink", _cAff] call comspec_atak_native_fnc_contactStyle; };
         private _brd = ["COMSPEC_RscText", [_px - pixelW, _py - pixelH, _pw + pixelW * 2, _ph + pixelH * 2]] call _mk;
-        _brd ctrlSetBackgroundColor [0.30, 0.36, 0.32, 0.9];
+        _brd ctrlSetBackgroundColor (_th get "mapCardEdge");
         private _cbg = ["COMSPEC_RscText", [_px, _py, _pw, _ph]] call _mk;
-        _cbg ctrlSetBackgroundColor [0.035, 0.042, 0.038, 0.97];
+        _cbg ctrlSetBackgroundColor (_th get "mapCard");
         private _edge = ["COMSPEC_RscText", [_px, _py, pixelW * 4, _ph]] call _mk;
         _edge ctrlSetBackgroundColor _rgb;
-        // Pastille : le symbole de l'unité dans sa couleur.
+        // Pastille : le symbole de l'unité dans sa couleur ; pour un contact, la forme de son affiliation avec le symbole dedans.
         private _x0 = _px + pixelW * 4 + _in / _ratio * 0.6;
         private _chipW = _tap / _ratio;
-        private _chip = ["COMSPEC_RscText", [_x0, _py + _in, _chipW, _tap]] call _mk;
-        _chip ctrlSetBackgroundColor [_rgb select 0, _rgb select 1, _rgb select 2, 0.16];
-        private _ic = ["COMSPEC_RscIcon", [_x0 + _chipW * 0.15, _py + _in + _tap * 0.15, _chipW * 0.7, _tap * 0.7], _icon] call _mk;
-        _ic ctrlSetTextColor _rgb;
+        if (_contact) then {
+            {
+                _x params ["_ctex", "_crole", "_csc"];
+                private _ck = 0.25 * _csc;
+                private _cic = ["COMSPEC_RscIcon", [_x0 + _chipW * (0.5 - _ck), _py + _in + _tap * (0.5 - _ck), _chipW * 2 * _ck, _tap * 2 * _ck], _ctex] call _mk;
+                _cic ctrlSetTextColor ([_rgb, _th get "mapCard"] select (_crole isEqualTo "DARK"));
+            } forEach (["layers", _cAff] call comspec_atak_native_fnc_contactStyle);
+            private _ic = ["COMSPEC_RscIcon", [_x0 + _chipW * 0.25, _py + _in + _tap * 0.25, _chipW * 0.5, _tap * 0.5], _icon] call _mk;
+            _ic ctrlSetTextColor _rgb;
+        } else {
+            private _chip = ["COMSPEC_RscText", [_x0, _py + _in, _chipW, _tap]] call _mk;
+            _chip ctrlSetBackgroundColor [_rgb select 0, _rgb select 1, _rgb select 2, 0.16];
+            private _ic = ["COMSPEC_RscIcon", [_x0 + _chipW * 0.15, _py + _in + _tap * 0.15, _chipW * 0.7, _tap * 0.7], _icon] call _mk;
+            _ic ctrlSetTextColor _rgb;
+        };
         // Passer en revue : précédent, n/m, suivant ; puis fermer. Cibles de la hauteur tactile.
         private _peers = call _peerList;
         private _at = _peers findIf { (_x getOrDefault ["id", ""]) isEqualTo (_e getOrDefault ["id", ""]) };
@@ -455,7 +473,12 @@ switch (_mode) do {
                 if ((_ft get "roleShort") isNotEqualTo "") then { _parts pushBack ((_ft get "roleShort") call _esc); };
                 if (isPlayer _o) then { _parts pushBack ((name _o) call _esc); };
             };
-            if (!_friend) then { _parts pushBack ((_e getOrDefault ["affiliation", "unknown"]) call comspec_atak_native_fnc_tr); };
+            if (!_friend) then {
+                // Affiliation en toutes lettres à sa couleur (jetons de fn_theme), puis « position ancienne » si la piste est figée.
+                private _cAff = ["aff", _e] call comspec_atak_native_fnc_contactStyle;
+                _parts pushBack format ["<t color='%1'>%2</t>", ["hex", _cAff] call comspec_atak_native_fnc_contactStyle, ["label", _cAff] call comspec_atak_native_fnc_contactStyle];
+                if ((_e getOrDefault ["freshness", "LIVE"]) in ["STALE", "LOST", "OFFLINE"]) then { _parts pushBack format ["<t color='%1'>%2</t>", _th get "hexMapWarn", ("POSITION ANCIENNE") call comspec_atak_native_fnc_tr]; };
+            };
             if (!isNull _o && {(vehicle _o) isNotEqualTo _o}) then { _parts pushBack format [("à bord %1") call comspec_atak_native_fnc_tr, (getText (configOf vehicle _o >> "displayName")) call _esc]; };
             private _p = _e getOrDefault ["position", [0, 0, 0]];
             private _dd = player distance2D _p;

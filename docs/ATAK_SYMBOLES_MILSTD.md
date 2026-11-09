@@ -43,3 +43,14 @@ Choix manuel : Réglages de la carte, « Forme » (mon symbole : AUTO 2525 ou un
 
 `["sidc", descripteur] call comspec_atak_native_fnc_milSym` donne le code 2525D à 20 chiffres (identité, jeu de symboles,
 statut, QG, échelon, entité), lu par milsymbol sur le site.
+
+## Style tactique de la carte et contacts
+
+Les symboles 2525D ne changent pas : ils restent dessinés entiers par `fn_milDraw` quand « Icônes des unités » vaut 2525D (cadre,
+pictogramme, échelon, hampe), quel que soit le style de la carte. Le style tactique (Réglages > Carte > « Marqueurs et traits » :
+TACTIQUE par défaut, CLASSIQUE, AUTO) habille le reste : pions, plaques, routes, zones, mesure.
+
+Contacts non amis du style tactique (`fn_contactStyle`) : l'affiliation se lit à la forme, comme dans la norme, jamais à la couleur
+seule. Ami : cercle ; ennemi : losange ; neutre : carré ; inconnu : carré à quatre bras ; civil : triangle. Les repères de classe
+`o_`, `n_`, `u_`, `b_`, `c_` portent la même forme sous leur symbole. Une piste figée ou perdue est estompée et affiche son âge. Les
+cadres 2525D (rectangle ami, losange hostile, carré neutre, trèfle inconnu) et ces formes de pions suivent donc la même convention.
