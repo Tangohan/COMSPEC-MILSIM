@@ -205,7 +205,9 @@
   function boot() {
     if (!document.getElementById('ow-support-auto')) return;
     poll();
-    window.setInterval(poll, POLL_MS);
+    // Onglet caché : aucune requête, une lecture au retour.
+    window.setInterval(function () { if (!document.hidden) poll(); }, POLL_MS);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) poll(); });
     window.addEventListener('overwatch:units-updated', function (ev) {
       watchUnits(ev && ev.detail && ev.detail.units);
     });

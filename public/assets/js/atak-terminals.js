@@ -412,7 +412,8 @@
 
   function ensureTimer() {
     if (timer) return;
-    timer = window.setInterval(load, 12000);
+    // Onglet caché : aucune requête.
+    timer = window.setInterval(function () { if (!document.hidden) load(); }, 12000);
   }
 
   function onTab(tab) {

@@ -285,6 +285,7 @@ final class AtakMarkerIconsService
             }
         } catch (\Throwable) {
         }
+        \App\Repositories\TenantAtakConfigRepository::forgetMemo();
     }
 
     private function ensureSchema(): void

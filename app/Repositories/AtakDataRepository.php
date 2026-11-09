@@ -2086,6 +2086,16 @@ class AtakDataRepository
         if (isset($seeded[$cacheKey])) {
             return;
         }
+        // Entre les requêtes aussi : chaque sondage de /api/chat/channels refaisait une écriture INSERT IGNORE par canal
+        // système. Les canaux système ne se suppriment pas ; la liste des clés entre dans la clé (nouveau canal livré :
+        // semé au sondage suivant).
+        $sharedKey = 'chatsys:' . $tenantId . ':' . $mapId . ':'
+            . substr(sha1(implode(',', array_column(\App\Support\AtakChatChannel::systemRows(), 'channel_key'))), 0, 12);
+        if (ShortCache::get($sharedKey) === true) {
+            $seeded[$cacheKey] = true;
+
+            return;
+        }
         try {
             $ins = $this->pdo()->prepare(
                 'INSERT IGNORE INTO atak_chat_channels
@@ -2102,6 +2112,7 @@ class AtakDataRepository
                 ]);
             }
             $seeded[$cacheKey] = true;
+            ShortCache::put($sharedKey, true, 3600);
         } catch (\Throwable) {
             // Table absente avant migration : ignorer.
         }

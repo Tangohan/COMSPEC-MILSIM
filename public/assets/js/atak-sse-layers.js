@@ -350,7 +350,8 @@
   function startPolling() {
     if (pollTimer) return;
     refresh();
-    pollTimer = setInterval(refresh, 20000);
+    // Onglet caché : aucune requête.
+    pollTimer = setInterval(function () { if (!document.hidden) refresh(); }, 20000);
   }
 
   function stopPolling() {

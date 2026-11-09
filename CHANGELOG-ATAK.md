@@ -38,108 +38,29 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## À venir : configurateur d'équipement et caisse « Prendre mon kit » (site et COMSPEC SSE, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Composez vos armes et vos tenues sur Athena, retrouvez-les en jeu
-- Page Équipement > Configurateur : choisissez une arme, puis à l'établi glissez une optique, une bouche, un rail ou un bipied et un chargeur. Seuls les accessoires compatibles s'accrochent ; sinon la raison s'affiche.
-- Uniforme, gilet et sac s'ouvrent avec leur jauge de charge : glissez chargeurs, objets et armes complètes de l'un à l'autre, d'une tenue à l'autre (Ctrl pour copier), Ctrl+Z pour annuler. Tout marche aussi au doigt et au clavier.
-- Récupérez une tenue (la vôtre, un kit, un modèle, ce que vous portiez en jeu), enregistrez-la dans vos tenues (arsenal, panneau Athena · Tenues) ou, pour les responsables, en kit pour un rôle, une qualification ou un membre, avec l'historique des versions.
-- En jeu, à une caisse de kits posée par le Zeus ou dans l'éditeur : menu ACE « Prendre mon kit ». Menu ACE sur soi : « Copier ma tenue pour Athena » pour la recoller sur le site.
-EN : Build your weapons and loadouts on Athena, find them in game
-- Equipment page > Configurator: pick a weapon, then at the workbench drag an optic, a muzzle device, a rail item or a bipod and a magazine. Only compatible attachments snap on; otherwise the reason is shown.
-- Uniform, vest and backpack open with their load gauge: drag magazines, items and complete weapons from one to another, from one loadout to another (Ctrl to copy), Ctrl+Z to undo. Everything also works by touch and with the keyboard.
-- Retrieve a loadout (yours, a kit, a template, what you wore in game), save it in your loadouts (arsenal, Athena · Loadouts panel) or, for managers, as a kit for a role, a qualification or a member, with version history.
-- In game, at a kit crate placed by Zeus or in the editor: ACE menu "Take my kit". ACE self menu: "Copy my loadout for Athena" to paste it on the site.
-
-### Détail technique
-- Site : `/equipment/configurateur` (`EquipmentConfiguratorController`, vue `equipment/configurator.php`, `equipment-configurator.js` / `.css`, JS natif, palette virtualisée, thème clair et sombre). Lecture stricte `LoadoutDocument` (getUnitLoadout, bornes : 256 Ko, 150 lignes par conteneur, 400 au total, quantités) et règles `LoadoutValidator` (emplacement, accessoires et chargeurs compatibles, allowedSlots, maximumLoad, masse), mêmes règles côté navigateur. Enregistrement dans les systèmes existants : tenues d'arsenal (`arsenal_wardrobes`, sources `configurator` et `template`, collection « Modèles d'équipement ») et kits de départ (`RoleKitService`, source `configurator`). Audit `equipment.*` dans `audit_logs`.
-- Catalogue : `game_item_catalog` (vu en jeu) complété par `game_item_specs`, importé d'un export hors ligne (`comspec_sse_fnc_loadoutCatalog` ou `tools/arma/export_catalogue_equipement.sqf`). Sans import : compatibilités et charges « non vérifiées », jamais inventées.
-- Kits : destinataire membre ou qualification (`game_role_kits.member_user_id`, `qualification_id`), historique `game_role_kit_versions` (50 versions, restauration). Migration `4270_equipment_configurator` à lancer.
-- Jeu : bloc `settings.loadouts` du paquet d'identité Athena (`LoadoutPackBuilder`), lu par le nouvel addon SSE `comspec_sse_loadout` (`loadoutApply` avec liste des objets absents et remplacement d'un chargeur seulement s'il n'est pas ambigu, `loadoutExport`, caisse « Prendre mon kit » contrôlée par le serveur : distance, kit proposé, anti-spam ; module Eden / Zeus « Caisse de kits »). Aucune requête réseau de l'addon. Autotest `scripts\equipement.sqf`. `hemtt check` de l'addon sans erreur.
-- À tester en jeu : pose réelle d'un kit (ACE, mods tiers), réexport identique, caisse en multijoueur (serveur dédié, JIP), module Zeus, fenêtre de copie en multijoueur.
-## À venir : un seul trait entre deux alliés et fond des noms sur la carte (ATAK natif, version à attribuer)
+## À venir : API plus légères, moins de relectures (site et ATAK, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : correctif
-FR : Un seul trait entre deux alliés, et des noms lisibles sur la carte du téléphone
-- Deux alliés proches ne sont plus reliés par plusieurs traits presque parallèles : chaque paire d'unités a au plus un trait, quel que soit le calque qui le demande.
-- Le trait de distance vers le curseur n'est plus tracé quand le curseur est posé sur une unité : il doublait le trait vers cet allié. La distance reste affichée.
-- Nouveau réglage « Fond des noms » (Réglages > Carte, et CONFIGURATION > Étiquettes de l'app Carte) : NON, LÉGER, NORMAL ou OPAQUE, fond SOMBRE, CLAIR ou AUTO, opacité à la réglette. Par défaut LÉGER sombre, lisible sur la photo satellite.
-- Le fond est à la taille exacte du nom : indicatifs, noms des repères et des lieux, distances et mesures.
-EN : One line between two allies, and readable names on the phone map
-- Two nearby allies are no longer joined by several almost parallel lines: each pair of units gets at most one line, whichever layer asks for it.
-- The distance line to the cursor is no longer drawn when the cursor rests on a unit: it doubled the line to that ally. The distance is still shown.
-- New "Name background" setting (Settings > Map, and the Map app's CONFIGURATION > Labels): NO, LIGHT, NORMAL or OPAQUE, DARK, LIGHT or AUTO colour, opacity slider. Default: LIGHT level with a dark colour, readable on the satellite photo.
-- The background fits each name exactly: callsigns, marker and place names, distances and measurements.
+FR : Athena répond plus vite pendant les parties
+- Les alertes médicales et tactiques, les repères et les canaux du tchat demandent beaucoup moins de travail au site : la carte et le téléphone restent fluides quand beaucoup de joueurs sont connectés.
+- Votre paquet d'identité (papiers, kits, fiches de couverture) n'est plus renvoyé en entier quand rien n'a changé depuis la dernière lecture.
+- Les pages ATAK et Overwatch laissées dans un onglet en arrière-plan ne sondent plus Athena : elles se remettent à jour dès que vous revenez sur l'onglet.
+EN : Athena answers faster during games
+- Medical and tactical alerts, markers and chat channels need far less work from the site: the map and the phone stay smooth when many players are connected.
+- Your identity pack (papers, kits, cover sheets) is no longer sent again in full when nothing has changed since the last read.
+- ATAK and Overwatch pages left in a background tab no longer poll Athena: they refresh as soon as you come back to the tab.
 
 ### Détail technique
-- Sources de traits entre unités sur la carte du téléphone : `fn_meshDraw` (liens du maillage, calque Wave Relay + « Traits entre alliés » ; trait vers mon relais ; répéteur vers son relais amont ; triangulations), `fn_mapOnDraw` (trait de distance vers le curseur, mesure A-B, fil d'Ariane, ligne de vue, ligne de tir), `fn_mapLabels` / `fn_mapMarkerText` (traits de rappel des cartouches), `fn_wpDraw` (trait épais = 5 `drawLine` décalés, seulement entre étapes), `fn_routeDraw`, `fn_strokeDraw`, `fn_planDraw`, `fn_aiOrder`, `fn_droneDraw`, `fn_ewDraw` (relèvement + 2 traits du cône d'erreur), `fn_jtacDraw`. Entre deux alliés : maillage, trait vers mon relais (radio MPU5 portée par l'allié), trait de distance au curseur.
-- Ce qui multipliait les traits : le second trait décalé de l'ossature (retiré avant) ; un même allié présent deux fois dans le maillage (moi et mon véhicule, radio portée) ou un lien reçu dans les deux sens, l'union-find gardant alors deux arêtes vers la même unité ; le trait vers mon relais MPU5 posé sur la vraie position de l'allié (`getPosASLVisual`) alors que le maillage et le symbole sont au dernier point reçu (PLI) : en zoom rapproché, deux traits vers le même allié à quelques pixels d'écart ; le trait de distance au curseur posé sur un allié.
-- `fn_meshDraw` : registre des paires de l'image (`_pairAdd`, clé par objet, sens indifférent, moi = mon véhicule) partagé par le maillage, le trait vers mon relais et le trait répéteur → relais ; une paire = un trait. Liste `[objet A, objet B, source]` exposée dans `uiNamespace COMSPEC_ATAK_MeshDrawn` ; le cache du tri des liens passe à `missionNamespace COMSPEC_ATAK_MeshKeep`. Radio MPU5 d'un allié : pastille et traits au point PLI de son symbole.
-- `fn_mapOnDraw` : trait de distance vers le curseur sauté quand le curseur est à moins de 14 px d'un symbole d'unité (plaque gardée).
-- Fond des noms : `fn_mapPrefs` « nameBg » (réglage préparé au changement, `COMSPEC_ATAK_NameBgAlpha` défaut 0,45, `COMSPEC_ATAK_NameBgTone` DARK | LIGHT | AUTO), « nameBgSet », « nameBgDraw » (rectangle à la largeur `fn_mapTextW` en cache, hauteur de la police + 2 px, marge 4 px, du côté où `drawIcon` écrit : décalé de la demi-icône, à gauche avec `"left"`), « rows » « names » (Réglages > Carte sous les réglettes de taille, volet CONFIGURATION > Étiquettes). `fn_mapOnDraw` pose `COMSPEC_ATAK_NameBgNow` [couleur, clair, m par unité d'écran x, y] une fois par image. Appliqué aux indicatifs simples (petite carte), à la distance au curseur et à la mesure (chiffres mesurés en 0 : pas de nouvelle mesure quand le curseur bouge), aux noms des relais et des triangulations, aux noms des repères CONTOUR et CLASSIQUE, aux noms des lieux (sauf ÉTIQUETTE). Les cartouches et plaques gardent leur fond (« Fond des étiquettes »). Fond clair : texte sombre sans contour. Rien sous un texte vide ni sous un nom masqué (dézoom).
-- Autotest `carte.sqf` : `carte_un_trait` (maillage injecté avec liens en double, contrôle d'un trait par paire dans `COMSPEC_ATAK_MeshDrawn`, capture `carte_un_trait`) et `carte_fond_noms` (chaque niveau, fond clair, défaut LÉGER sombre ; captures `carte_fond_noms_*` et `carte_fond_noms`). Non exécutés ; rendu en jeu non vérifié.
-
-## À venir : chiffrement plus réaliste (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Chiffrement plus réaliste : chargeur de clés, clés qui périment, interception
-- Nouveaux réglages du serveur (Échap > Réalisme > Brouillage et clés), tous coupés par défaut sauf un léger coût : charger les clés au chargeur de clés (6 s, menu ACE Téléphone ATAK > Radio de données), clés qui périment au bout d'un temps (par exemple 2 h, alerte 10 min avant), renouvellement à distance par le chef de groupe (OTAR), interception par un goniomètre ennemi.
-- Le cadenas de la barre d'état dit où vous en êtes : CHIFFRÉ, RENOUVELER, PÉRIMÉE, COMPROMISE ou EN CLAIR. Son infobulle explique pourquoi, avec un exemple.
-- Clé périmée : vos messages de groupe partent en clair et votre MPU5 sort du maillage chiffré jusqu'au rechargement. Effacer les clés (urgence) avant d'être capturé : la MPU5 ramassée par l'ennemi ne compromet plus rien.
-- Un message en clair intercepté donne à l'ennemi la position de l'émetteur et une partie du texte ; chiffré, seulement qu'une radio émet et dans quelle direction.
-EN : More realistic encryption: key loader, expiring keys, interception
-- New server settings (Esc > Realism > Jamming and keys), all off by default except a light cost: load keys with a key loader (6 s, ACE menu ATAK phone > Data radio), keys that expire after a while (for example 2 h, warning 10 min before), remote renewal by the squad leader (OTAR), interception by an enemy direction finder.
-- The padlock in the status bar tells you where you stand: ENCRYPTED, REKEY, STALE, COMPROMISED or CLEAR. Its tooltip explains why, with an example.
-- Expired key: your group messages go out in the clear and your MPU5 leaves the encrypted mesh until you reload. Erase the keys (emergency) before being captured: an MPU5 picked up by the enemy no longer compromises anything.
-- An intercepted clear message gives the enemy the sender's position and part of the text; encrypted, only that a radio is transmitting and from which direction.
-
-### Détail technique
-- `fn_meshKeys` : chargeur (`comspec_atak_native_mesh_keys_fill`, décoché) : action `"fill"` (barre ACE de 6 s, sans ACE `CBA_fnc_waitAndExecute`), chargeur `COMSPEC_ATAK_KeyLoader` ou poste de commandement ; le serveur refuse un rechargement manuel sans l'un des deux, même avec le chargement automatique (qui reste celui de `mesh_keys_auto`). Bouton CHARGER LES CLÉS de l'app Wave Relay et actions ACE (`"aceInit"`, appelé par `fn_aceMenu`) sous Téléphone ATAK > Radio de données : Charger les clés, Effacer les clés (urgence, 2 s), Renouveler les clés du groupe (OTAR).
-- Période cryptographique (`comspec_atak_native_mesh_keys_period`, liste 0 / 30 / 60 / 120 / 240 / 480 min, 0) : heure de chargement par clé dans `COMSPEC_ATAK_MeshKeysAt` (posée par `comspec_atak_native_meshKeyGive`, 3e paramètre `"fill"` ou `"otar"`). Nouvel état `"périmée"` (après `"à renouveler"`) : `"nodeKey"` publie -1 (hors du graphe, donc clé inconnue des autres), `"voiceOk"` faux, `"open"` illisible, code TFAR rendu, nouvelle action `"stampTx"` (étiquette vide : le message de groupe part en clair, `fn_meshGroups "send"`). Alertes à T-10 min et à l'expiration (`COMSPEC_ATAK_MeshKeysWarned`).
-- OTAR (`comspec_atak_native_mesh_keys_otar`, décoché) : chef de groupe ou poste de commandement, sa clé de réseau `"valide"`, vers les équipiers joints (`fn_meshGraph "peer"`) ; le serveur vérifie camp, groupe et rôle, jamais vers l'appelant.
-- Effacement d'urgence : `"zeroize"` vide aussi les heures de chargement et publie `COMSPEC_ATAK_MeshKeysHeld = []` ; le tick publie les clés portées. `"taken"` : appareil effacé, rien ; clés connues, `"compromiseSide"` compromet celles-là (réseau et groupes) ; ancienne version (pas de variable), clé de réseau seule comme avant.
-- Coût (`comspec_atak_native_mesh_crypto_cost`, liste Aucun / Discret / Marqué, Discret par défaut, sans effet sans clés du maillage) : `"cost"` -> [-5 % de débit, +20 ms, +0,02 % de batterie par minute] ou [-15 %, +60 ms, +0,05], seulement cadenas `enc` ou `soon` ; facteur « Chiffrement de la liaison » de `fn_linkQuality` (app Réseau, Débit du téléphone, et « Ce qui coûte du signal » du menu Échap), facteur « Chiffrement » de `fn_battery`.
-- Interception (`comspec_atak_native_mesh_intercept`, décoché) : `"intercept"` à l'envoi d'un message de groupe vers les ennemis à 1,5 x la portée de la MPU5 qui portent un goniomètre (`CBA_fnc_targetEvent` `comspec_atak_native_meshIntercept`, gestionnaire dans `fn_meshEW "init"`) ; `"heard"` : spécialiste (`fn_meshEW "allowed"`) et goniomètre ; en clair (ou clé détenue après compromission) : relèvement juste, bande de 200 m, carré à 6 chiffres, texte partiel (20 à 70 % de mots perdus selon la distance) ; chiffré : relèvement à 3 à 18° près, bande de distance, rien d'autre. Relèvements dans `COMSPEC_ATAK_EwBearings` (carte et onglet GONIO), journal `COMSPEC_ATAK_MeshIntercepts` (10 entrées, `"interceptRows"`, texte échappé) dans l'onglet GONIO (`fn_pageEw`).
-- Barre d'état (`fn_statusUpdate`) : `"link"` rend un 8e élément (exemple de l'infobulle) ; nouveaux codes `soon` (« RENOUVELER », « CLÉ À RENOUVELER ») et `expired` (« PÉRIMÉE », « CLÉ PÉRIMÉE », cadenas ouvert) ; `enc` affiche « CHIFFRÉ » au lieu de « ENCRYPTED ». Libellés courts au plus aussi larges que « COMPROMISE », la mesure de `fn_layoutApply` (inchangé) : le libellé garde sa priorité sur la RAM.
-- `"diag"` : HashMap en lecture seule pour le dépannage MPU (code et raison du cadenas, période, temps restant, état de la clé de réseau, appareils à clé inconnue à portée, voix couverte, réglages) ; `fn_mpuDiag` n'est pas modifié.
-- Le profil Arcade coupe chargeur, période, OTAR, coût et interception. Catalogue (`fn_realismCatalog`, thème Brouillage et clés) et aide (`fn_realismHelp`) avec explication et exemple ; aide de « Compromission automatique des clés » complétée. Autotest `scripts/chiffrement.sqf` (étapes `chiffrement_*`, captures `chiffrement_barre`, `chiffrement_barre_perimee`, `chiffrement_interceptions`). Non vérifié en jeu ni en multijoueur.
-
-## À venir : notification MPU à l'écran (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Pendant l'alternat, l'écran dit si votre voix passe par la MPU5
-- Quand vous parlez à la radio et que votre voix part par le maillage, un petit encadré s'allume juste au-dessus du cadre ACRE, en bas à droite : « MPU · voix par le maillage », puis le nombre de sauts et de correspondants (exemple : « 2 sauts · 3 correspondants »).
-- Quand un équipier relié vous parle par le maillage, l'encadré affiche son indicatif (exemple : « DUPONT via MPU », « 3 sauts »).
-- Option « Dire pourquoi la MPU n'est pas utilisée » : une ligne grise donne la raison (exemple : « MPU : non utilisée (aucun relais) »).
-- Se coupe dans les paramètres de l'addon (ATAK · Radio de données (MPU5)) ou dans le téléphone (Réglages > Matériel et réseau > Notification MPU à l'écran) ; un autre réglage le monte ou le descend.
-EN : While you press push-to-talk, the screen tells you whether your voice goes through the MPU5
-- When you talk on the radio and your voice goes over the mesh, a small box lights up just above the ACRE frame, at the bottom right: "MPU · voice over the mesh", then the number of hops and peers (example: "2 hops · 3 peers").
-- When a linked teammate talks to you over the mesh, the box shows their callsign (example: "DUPONT via MPU", "3 hops").
-- Option "Say why the MPU is not used": one grey line gives the reason (example: "MPU: not used (no relay)").
-- Turn it off in the addon options (ATAK · Data radio (MPU5)) or on the phone (Settings > Hardware and network > On-screen MPU notification); another setting moves it up or down.
-
-### Détail technique
-- `fn_mpuHud` (nouveau, CfgFunctions `network`) : calque `COMSPEC_RscTitleMpuHud` (`ui/displays.hpp`, `cutRsc`, couche `COMSPEC_ATAK_MpuHud`). Émission : `uiNamespace COMSPEC_ATAK_PttMine` (ACRE2 ; la radio doit être la radio pontée, `COMSPEC_ATAK_VoiceMe` select 0 / 1) ou `COMSPEC_ATAK_VoiceTx` (TFAR). Voix portée si `fn_mpuVoice "enabled"` (réglage, relais, `radioGuard "voice"`, liaison réaliste ; relu au plus chaque seconde), pont en service et au moins un correspondant ponté joint sur la même fréquence (`VoiceMe` select 3). Cause courte : première étape KO de `fn_mpuDiag "steps"` (réglage `comspec_atak_native_mpu_hud_why`). Réception : `fn_mpu5 "speakers"` (fréquences entendues) ou `COMSPEC_ATAK_TfRxActive` (TFAR), émetteur sur sa radio pontée et joint (`fn_mpuVoice "linkOf"`, nouvelle action : même règle `_linked` que la voix).
-- Position : cadre d'ACRE2 lu dans son code (`acre_sys_list` 2.14 : 0,352 x 0,128, `IGUI_grid_ACRE_notification_X / Y`, notifications empilées vers le haut ; `acre_sys_list_hintBuffer` lu pour compter les cases occupées), au-dessus de la case RELAIS ATAK si elle est placée au-dessus du cadre, plus `comspec_atak_native_mpu_hud_dy` (% de l'écran). Sans ACRE2 : bas droit, 12 % de la hauteur d'écran au-dessus du bord.
-- Coût : événements `acre_*Speaking` (lecture seule) et `fn_mpuVoice` (`tfBefore`, `tfRx`, à l'image suivante) ; boucle CBA de 0,25 s seulement pendant une émission, retirée 0,4 s après ; fondu 0,15 s ; masqué carte ouverte, téléphone plein écran, HUD caché, Zeus, spectateur. Aucune requête réseau, rien de diffusé, aucun appel ACRE2 / TFAR hors `fn_radioGuard`.
-- Réglages client (CBA, `_mpuCat`) : `comspec_atak_native_mpu_hud` (coché), `_why` (décoché), `_dy` (-20 à 60, 0) ; interrupteurs dans Réglages > Matériel et réseau > Radio (`_cbaSwitch`, même valeur CBA). Autotest `mpu_hud` (`scripts/mpuhud.sqf`). Non vérifié en jeu, ni avec ACRE2 réel ni avec TFAR.
-
-## À venir : zoom de la carte du téléphone mémorisé (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : Le zoom de la carte du téléphone est gardé quand vous fermez l'ATAK
-- Vous zoomez (molette, boutons ou glissement), vous rangez le téléphone, vous le rouvrez : la carte garde votre zoom au lieu de revenir au zoom par défaut.
-EN : The phone map zoom is kept when you close the ATAK
-- You zoom (wheel, buttons or drag), put the phone away, then reopen it: the map keeps your zoom instead of going back to the default.
-
-### Détail technique
-- `fn_mapOnDraw` : l'échelle de la carte (`ctrlMapScale`) est mémorisée dans `COMSPEC_ATAK_MapScale` dès qu'elle change de plus de 2 %, une fois la carte centrée à l'ouverture (`mapCentered`). Avant, seuls les boutons + / - (`fn_mapZoom`) l'enregistraient : molette et glissement ne comptaient pas et `fn_pageMap` recentrait à 0,08 à chaque ouverture. Non vérifié en jeu.
+- `GET /api/sse/identity/pack` : champ `revision` (empreinte du contenu sans `generated_at`) et `ETag` `W/"idp-…"` ; `since_rev` identique → `{"unchanged":true,…}` sans charge, `If-None-Match` identique → 304. Sans révision envoyée : paquet complet comme avant (+ `revision`). Contrat : `docs/technical/ICD-ATHENA-ATAK.md`, ICD-SSE-PACK-REV-001. COMSPEC Link publié profite déjà du 304 quand l'URL se répète ; le prochain pourra envoyer `since_rev`.
+- `SseIdentityPackCache` : paquet et révision 5 min dans `ShortCache`, clé par communauté, carte, opération, `since`, page ; vidé après toute écriture réussie du registre (hook dans `Application`, chemins `/atak/sse/`, `/api/sse/`, `/papiers`, `/couverture`, `/renseignement`, `identit`). `GameApiResponseCompactor` garde l'`ETag` posé par la route.
+- `RateLimitMiddleware` : 60 pages de paquet par minute et par appelant, 240 `documents/lookup` ; 429 + `Retry-After`.
+- `TenantAtakConfigRepository::getByTenantId` gardé le temps de la requête (jamais en CLI ni avec une PDO injectée, vidé à chaque écriture, `forgetMemo()` pour les écritures de `ReconPhotoHudService` et `AtakMarkerIconsService`) : 2 à 4 `SELECT *` de moins par sondage (effets roleplay, brouillage, vue renseignement).
+- `GET /api/atak/medical-alerts` : partie commune (chat, télémétrie, triage, unités, réconciliation) 3 s par communauté et carte, vidée au triage ; brouillage, droits et vue renseignement par appelant. `GET /api/atak/tactical-alerts` : lecture du chat 3 s.
+- `GET /api/atak/markers` : règles de détection 10 s, repères publiés d'Athena et marqueurs retirés 2 s (génération `markers:`, fenêtre de 15 s gardée).
+- `ensureSystemChatChannels` : drapeau partagé 1 h par communauté et carte (`ShortCache::get` / `put`), plus d'`INSERT IGNORE` à chaque sondage de `/api/chat/channels`.
+- Pages web : 19 sondages ne lisent plus rien quand l'onglet est caché (`document.hidden`) et relisent au retour (`visibilitychange`) ; calques de champ de vision : 8 s puis attente doublée jusqu'à 60 s tant que rien ne change.
+- Aucune migration. Tests : `SseIdentityPackRevisionTest`, `AtakHiddenTabPollingAssetTest`, ajouts à `GameApiResponseCompactorTest`, `RateLimitMiddlewareTest`, `ShortCacheTest`.
 
 ## À venir : parler aux IA en texte libre et atelier IA en Eden et en Zeus (COMSPEC SSE, version à attribuer)
 

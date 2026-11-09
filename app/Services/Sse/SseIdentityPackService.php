@@ -301,6 +301,17 @@ final class SseIdentityPackService
         return $out;
     }
 
+    /**
+     * Révision d'une page du paquet : empreinte de son contenu, sans l'heure de génération (qui change à chaque appel).
+     * Même contenu = même révision ; un papier, un pays, un kit, un brief, un avis ou un réglage modifié la change.
+     */
+    public static function revisionOf(array $pack): string
+    {
+        unset($pack['generated_at'], $pack['revision'], $pack['unchanged']);
+
+        return substr(hash('sha256', (string) json_encode($pack, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR)), 0, 24);
+    }
+
     /** « since » accepté en ISO 8601 ou AAAA-MM-JJ HH:MM:SS, ramené en UTC base de données ; sinon ignoré. */
     public static function normalizeSince(?string $since): ?string
     {

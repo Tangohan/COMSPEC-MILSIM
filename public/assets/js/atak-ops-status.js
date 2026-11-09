@@ -239,7 +239,9 @@ window.ATAKOpsStatus = (function () {
 
   function bind() {
     refresh();
-    setInterval(refresh, 12000);
+    // Onglet caché : aucune requête, une lecture au retour.
+    setInterval(function () { if (!document.hidden) refresh(); }, 12000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
