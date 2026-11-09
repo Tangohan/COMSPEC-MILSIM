@@ -6,7 +6,7 @@
                     lunettes relevées de 15 à 20° (l'os n'a pas l'axe du visage).
       position    : point mémoire « pilot » (eyePos est ~15 cm trop bas sur un fantassin debout, « pilot » ~5 cm trop
                     haut) + décalage de la config (comspec_sse_eyewearAttachOffset, repère du regard : x droite, y avant,
-                    z haut ; défaut 1 cm devant, 5,5 cm plus bas), moins l'écart mesuré entre le décalage posé et
+                    z haut ; défaut 2 cm à droite, 5 cm devant, 5,5 cm plus bas ; x droite = regard x haut), moins l'écart mesuré entre le décalage posé et
                     l'origine du modèle réellement dessinée (moyenne glissante sur quelques images).
     Coût : quelques commandes par paire de lunettes visible et par image.
 */
