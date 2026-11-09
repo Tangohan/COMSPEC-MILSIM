@@ -889,14 +889,10 @@ def write_variant(name, cid, vis, sh, geo, off, skinned, stats, pivot_back=None,
 
 
 # Variantes de CALIBRATION (temporaires, test en jeu seulement), Radar blanche : écart axe de demi-tour / yeux
-# (SKIN_PIVOT_BACK) de 0, 0,07 et 0,12 m autour de la valeur retenue, et le modèle d'origine (non tourné) laissé
-# en MLOD non binarisé (data/mlod, lu par le moteur au chargement) pour voir si le défaut vient de binarize.
-# (étiquette, écart ou False = non tourné, dossier MLOD ou None)
+# (SKIN_PIVOT_BACK) de part et d'autre de la valeur retenue. (étiquette, écart ou False = non tourné, dossier MLOD ou None)
 CALIBRATION = [
-    ("p000", 0.0, None),
-    ("p070", 0.07, None),
-    ("p120", 0.12, None),
-    ("mlod", False, "mlod"),
+    ("p056", 0.056, None),
+    ("p072", 0.072, None),
 ]
 
 

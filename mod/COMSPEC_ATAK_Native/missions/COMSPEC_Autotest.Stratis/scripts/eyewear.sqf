@@ -183,12 +183,17 @@ AT_fnc_ewPose = {
         params ["_o", "_quand"];
         if (isNull _o) exitWith {};
         private _orig = _o modelToWorldVisualWorld [0, 0, 0];
-        private _ecart = (eyePos player) vectorDistance _orig;
         private _pilot = player modelToWorldVisualWorld (player selectionPosition ["pilot", "Memory"]);
-        (format ["%1 : origine modèle=%2 eyePos=%3 pilot (monde)=%4 écart origine/yeux=%5 m dir=%6 up=%7 entrée=%8", _quand, _orig, eyePos player, _pilot,
-            _ecart toFixed 4, vectorDirVisual _o, vectorUpVisual _o,
-            ((missionNamespace getVariable ["comspec_sse_eyewear_drawn", []]) select { (_x select 0) isEqualTo player }) param [0, []]]) call AT_fnc_ewLog;
-        [_ecart < 0.02, format ["%1 : objet à %2 m des yeux", _quand, _ecart toFixed 3]] call AT_fnc_check;
+        // Origine attendue : « pilot » + décalage de la config (repère de l'objet : x droite, y avant, z haut).
+        private _tune = getArray (configFile >> "CfgVehicles" >> typeOf _o >> "comspec_sse_eyewearAttachOffset");
+        _tune params [["_tx", 0], ["_ty", 0], ["_tz", 0]];
+        private _d = vectorDirVisual _o;
+        private _up = vectorUpVisual _o;
+        private _attendu = _pilot vectorAdd ((_d vectorCrossProduct _up) vectorMultiply _tx) vectorAdd (_d vectorMultiply _ty) vectorAdd (_up vectorMultiply _tz);
+        private _ecart = _attendu vectorDistance _orig;
+        (format ["%1 : origine modèle=%2 pilot (monde)=%3 attendu=%4 écart=%5 m distance origine/pilot=%6 m eyePos=%7 dir=%8 up=%9", _quand, _orig, _pilot, _attendu,
+            _ecart toFixed 4, (_orig vectorDistance _pilot) toFixed 4, eyePos player, _d, _up]) call AT_fnc_ewLog;
+        [_ecart < 0.02, format ["%1 : origine du modèle à %2 m de « pilot » + décalage", _quand, _ecart toFixed 3]] call AT_fnc_check;
     };
     if (!isNull _o) then {
         [(attachedTo _o) isEqualTo player, "objet 3D non accroché au joueur"] call AT_fnc_check;
@@ -295,8 +300,8 @@ AT_fnc_ewPose = {
     ["eyewear_ref_vanilla_face"] call AT_fnc_shot;
     [player, 45] call AT_fnc_ewCamera;
     ["eyewear_ref_vanilla_profil"] call AT_fnc_shot;
-    // Calibration TEMPORAIRE : Radar blanche tournée d'un demi-tour autour d'un axe à 0, 7 et 12 cm derrière les yeux,
-    // et non tournée en MLOD non binarisé (le modèle retenu, ew_radar_white, est tourné autour d'un axe à 9,5 cm).
+    // Calibration TEMPORAIRE : Radar blanche tournée autour d'un axe à 5,6 et 7,2 cm derrière les yeux (le modèle
+    // retenu, ew_radar_white, autour d'un axe à 6,4 cm).
     {
         private _cls = "COMSPEC_SSE_G_Cal_" + toUpper _x;
         if (isClass (configFile >> "CfgGlasses" >> _cls)) then {
@@ -307,7 +312,7 @@ AT_fnc_ewPose = {
             [player, 45] call AT_fnc_ewCamera;
             [format ["eyewear_cal_%1_profil", _x]] call AT_fnc_shot;
         };
-    } forEach ["p000", "p070", "p120", "mlod"];
+    } forEach ["p056", "p072"];
     {
         private _e = _x call AT_fnc_ewCat;
         player addGoggles (_e get "glasses");

@@ -1,11 +1,11 @@
 /*
     Slot virtuel COMSPEC (EXPÉRIMENTAL), à chaque image (événement EachFrame posé par fn_eyewearRender tant qu'il y a des
     lunettes à dessiner) : chaque objet de lunettes suit la tête de son porteur.
-      position    : eyePos du porteur, ramenée dans le repère de l'unité (offset d'attachTo), moins l'écart mesuré entre
+      position    : point mémoire « pilot » du porteur (repère de l'unité, offset d'attachTo), moins l'écart mesuré entre
                     le décalage posé et l'origine du modèle réellement dessinée (moyenne glissante sur quelques images) ;
       orientation : celle de l'os de la tête (selectionVectorDirAndUp sur « pilot », mémoire), sinon eyeDirection.
-    Le décalage de réglage de la config (comspec_sse_eyewearAttachOffset, repère tête : x droite, y avant, z haut)
-    s'ajoute. Coût : quelques commandes par paire de lunettes visible et par image.
+    Le décalage de la config (comspec_sse_eyewearAttachOffset, repère tête : x droite, y avant, z haut ; 2 cm vers
+    l'avant par défaut) s'ajoute. Coût : quelques commandes par paire de lunettes visible et par image.
 */
 {
     _x params ["_u", "_o", "_id", ["_corr", [0, 0, 0]], ["_tune", [0, 0, 0]]];
@@ -17,7 +17,8 @@
             _up = [0, 0, 1];
         };
         private _right = _dir vectorCrossProduct _up;
-        private _eyeM = _u worldToModelVisual (ASLToAGL (eyePos _u));
+        // Point mémoire « pilot » (les yeux du modèle) : eyePos est ~15 cm plus bas sur un fantassin debout (relevé en jeu).
+        private _eyeM = _u worldToModelVisual (ASLToAGL (_u modelToWorldVisualWorld (_u selectionPosition ["pilot", "Memory"])));
         private _wantM = _eyeM vectorAdd ((_right vectorMultiply (_tune select 0)) vectorAdd (_dir vectorMultiply (_tune select 1)) vectorAdd (_up vectorMultiply (_tune select 2)));
         // Écart entre le décalage posé à l'image précédente et l'origine du modèle effectivement dessinée (même repère :
         // indépendant du mouvement de l'unité) : moyenne glissante, retranchée au décalage suivant.

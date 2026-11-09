@@ -9,7 +9,7 @@
     copie d'après la variable publique comspec_sse_eyewear_worn de l'unité) et accroché par attachTo à l'unité.
     attachTo sur le point « pilot » avec followBoneRotation a été essayé : position mesurée juste au recalage, puis
     décalée de 15 cm après un changement de posture (le repère du décalage n'est pas celui de l'os). D'où le suivi à
-    chaque image : position = eyePos, orientation = os de la tête (selectionVectorDirAndUp), recalée sur l'écart mesuré.
+    chaque image : position = point « pilot » (eyePos est 15 cm trop bas), orientation = os de la tête, écart mesuré retranché.
     Caché : pour le joueur en vue subjective (il verrait l'intérieur du modèle), dans un véhicule (un objet accroché à
     une unité embarquée ne suit pas le modèle dessiné dans le véhicule). Supprimé : mort, retrait, au-delà de 300 m.
 */
@@ -35,7 +35,7 @@ private _drawn = _list apply { _x select 0 };
         private _cls = (_byId getOrDefault [_id, createHashMap]) getOrDefault ["head", ""];
         if (_cls isNotEqualTo "" && {isClass (configFile >> "CfgVehicles" >> _cls)}) then {
             private _o = _cls createVehicleLocal [0, 0, 0];
-            _o attachTo [_x, _x worldToModelVisual (ASLToAGL (eyePos _x))];
+            _o attachTo [_x, _x selectionPosition ["pilot", "Memory"]];
             _list pushBack [_x, _o, _id, [0, 0, 0], getArray (configFile >> "CfgVehicles" >> _cls >> "comspec_sse_eyewearAttachOffset"), []];
         };
     };

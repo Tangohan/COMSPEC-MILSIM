@@ -96,8 +96,7 @@ def cfg():
               "    };"]
     # Calibration TEMPORAIRE (autotest seulement, scope 1) : Radar blanche décalée, voir gen_p3d.CALIBRATION.
     L.append("    // CALIBRATION TEMPORAIRE : variantes de position pour l'autotest (scope 1), à retirer une fois la position choisie.")
-    for tag, label, folder in (("p000", "demi-tour à 0", "models"), ("p070", "demi-tour à 0,07", "models"),
-                               ("p120", "demi-tour à 0,12", "models"), ("mlod", "non tourné, MLOD", "mlod")):
+    for tag, label, folder in (("p056", "demi-tour à 0,056", "models"), ("p072", "demi-tour à 0,072", "models")):
         L += ["    class COMSPEC_SSE_G_Cal_%s: COMSPEC_SSE_G_Eyewear_Base {" % tag.upper(),
               "        scope = 1;",
               '        displayName = "Calibration lunettes %s (test)";' % label,
@@ -144,13 +143,13 @@ def cfg():
     # CfgVehicles : objets accrochés à la tête (slot virtuel) et caisse.
     L += ["class CfgVehicles {", "    class NonStrategic;", "    class Box_NATO_Support_F;",
           "    // Objet 3D du slot virtuel : créé localement par chaque client (createVehicleLocal) et accroché à la tête du porteur.",
-          "    // Suivi de la tête à chaque image (fn_eyewearFollow) : origine du modèle sur eyePos ; réglage fin ici (mètres,",
+          "    // Suivi de la tête à chaque image (fn_eyewearFollow) : origine du modèle sur le point « pilot » ; décalage ici (mètres,",
           "    // repère de la tête : x droite, y avant, z haut).",
           "    class COMSPEC_SSE_EyewearHead_Base: NonStrategic {",
           '        author = "COMSPEC";', "        scope = 1;", "        scopeCurator = 0;",
           '        displayName = "$STR_COMSPEC_SSE_EYEWEAR_HEAD";', '        destrType = "DestructNo";',
           '        model = "\\A3\\Weapons_F\\empty.p3d";',
-          "        comspec_sse_eyewearAttachOffset[] = {0, 0, 0};",
+          "        comspec_sse_eyewearAttachOffset[] = {0, 0.02, 0};",
           "    };"]
     for cid in S.ORDER:
         L += ["    class COMSPEC_SSE_EyewearHead_%s: COMSPEC_SSE_EyewearHead_Base {" % cid,
