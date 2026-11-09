@@ -216,4 +216,35 @@ final class AtakMapClearServiceTest extends TestCase
             self::assertStringNotContainsString($needle, $svc);
         }
     }
+
+    public function testManagerRightsComeFromTheRoleNotTheEmptyApiGate(): void
+    {
+        self::assertTrue(AtakMapClearService::managerFromRole('platform', false));
+        self::assertTrue(AtakMapClearService::managerFromRole('manager', false));
+        self::assertTrue(AtakMapClearService::managerFromRole(null, true));
+        self::assertFalse(AtakMapClearService::managerFromRole(null, false));
+        $api = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Api/AtakApiController.php');
+        $guard = substr($api, (int) strpos($api, 'private function mapClearGuard'), 2600);
+        self::assertStringNotContainsString("can('admin", $guard);
+        self::assertStringContainsString('AtakGameAdminService', $guard);
+    }
+
+    public function testGameMarkersCountForManagersAndPreviewMatchesClear(): void
+    {
+        $p = $this->service()->preview(3, 2, self::player(true));
+        self::assertTrue($p['canAll']);
+        self::assertSame([], $p['needs']);
+        self::assertSame(7, $p['total']);
+        self::assertGreaterThan(0, $p['counts']['marker']);
+        $r = $this->service()->clear(3, 2, self::player(true), 'all', [], 'SUPPRIMER');
+        self::assertSame($p['total'], $r['total']);
+        self::assertSame($p['counts'], $r['counts']);
+        $q = $this->service()->preview(3, 2, self::player());
+        self::assertFalse($q['canAll']);
+        self::assertContains('admin.system', $q['needs']);
+        self::assertContains('atak.mission_cycle.manage', $q['needs']);
+        $this->deletedMarkers = [];
+        $mine = $this->service()->clear(3, 2, self::player(), 'mine', [], 'SUPPRIMER');
+        self::assertSame($q['totalMine'], $mine['total']);
+    }
 }

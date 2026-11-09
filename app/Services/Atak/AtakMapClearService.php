@@ -53,6 +53,18 @@ final class AtakMapClearService
         return $want === [] ? self::TYPES : array_values(array_filter(self::TYPES, static fn (string $t): bool => isset($want[$t])));
     }
 
+    /** Droits qui ouvrent « tout effacer » (pour le message d'aide). */
+    public const MANAGE_RIGHTS = ['admin.system', 'admin.organization', 'admin.access', 'atak.mission_cycle.manage'];
+
+    /**
+     * @param string|null $role "platform" / "manager" (AtakGameAdminService::role) ou null
+     * @param bool $missionManage droit atak.mission_cycle.manage dans la communauté
+     */
+    public static function managerFromRole(?string $role, bool $missionManage): bool
+    {
+        return $role === 'platform' || $role === 'manager' || $missionManage;
+    }
+
     /** @param array<string, mixed> $shape ligne de MapShapeRepository::list() */
     public static function shapeKind(array $shape): string
     {
@@ -118,7 +130,7 @@ final class AtakMapClearService
      * Ce qui est sur la carte, par type, au total et pour moi.
      *
      * @param array{userId:int, aliases:list<string>, canManage:bool} $actor
-     * @return array{counts: array<string, int>, mine: array<string, int>, total: int, totalMine: int, canAll: bool}
+     * @return array{counts: array<string, int>, mine: array<string, int>, total: int, totalMine: int, canAll: bool, needs: list<string>}
      */
     public function preview(int $tenantId, int $mapId, array $actor): array
     {
@@ -137,6 +149,7 @@ final class AtakMapClearService
             'total' => array_sum($counts),
             'totalMine' => array_sum($mine),
             'canAll' => $actor['canManage'],
+            'needs' => $actor['canManage'] ? [] : self::MANAGE_RIGHTS,
         ];
     }
 
