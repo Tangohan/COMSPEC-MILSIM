@@ -1630,3 +1630,14 @@ html[data-bo-theme="dark"] .pa-field :is(input, select, textarea) { background: 
 a.pa-sheet__sort { color: inherit; text-decoration: none; font-weight: 800; }
 a.pa-sheet__flag { text-decoration: none; display: inline-block; }
 @media (max-width: 480px) { .pa-sheet__flags { flex-wrap: wrap; } }
+
+/* Fiche communauté : onglets (liens, fonctionnent sans JavaScript) et diagnostic */
+.pa-tabs { display: flex; gap: 0.4rem; margin: 0 0 1.1rem; padding: 0.25rem; border: 1px solid var(--pa-line); border-radius: 12px; background: var(--pa-surface); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.pa-tab { flex: 0 0 auto; min-height: 2.75rem; display: inline-flex; align-items: center; padding: 0 1rem; border-radius: 9px; color: var(--pa-muted); font-weight: 800; text-decoration: none; }
+.pa-tab:hover { background: var(--pa-surface-2); color: var(--pa-ink); }
+.pa-tab.is-active { background: var(--pa-ink); color: var(--pa-surface); }
+.pa-tab:focus-visible { outline: 2px solid var(--pa-mint); outline-offset: 2px; }
+.pa-diag__report { width: 100%; box-sizing: border-box; padding: 0.75rem; border: 1px solid var(--pa-line); border-radius: 10px; background: var(--pa-surface-2); color: var(--pa-ink); font: 0.8rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; resize: vertical; }
+.pa-diag__h { margin: 1rem 0 0.35rem; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pa-muted); }
+.pa-diag__list { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.3rem; overflow-wrap: anywhere; }
+.pa-diag__preview { margin-top: 1rem; }

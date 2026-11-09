@@ -400,6 +400,14 @@ class TenantRepository
         $this->forgetCache();
     }
 
+    /** Fuseau horaire par défaut de la communauté (colonne default_timezone ; valeur déjà validée par l'appelant). */
+    public function updateTimezone(int $tenantId, string $timezone): void
+    {
+        $stmt = $this->pdo()->prepare('UPDATE tenants SET default_timezone = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([substr($timezone, 0, 64), $tenantId]);
+        $this->forgetCache();
+    }
+
     /** Retire explicitement le logo (contrairement à updateLogoUrl(), qui ignore les valeurs vides). */
     public function clearLogoUrl(int $tenantId): void
     {

@@ -82,7 +82,8 @@ final class PlatformSiteAdminAssetTest extends TestCase
         $root = dirname(__DIR__, 2);
         $routes = (string) file_get_contents($root . '/routes/web.php');
         $controller = (string) file_get_contents($root . '/app/Controllers/Admin/System/SystemTenantsController.php');
-        $view = (string) file_get_contents($root . '/views/admin/system/tenants_plan_form.php');
+        $view = (string) file_get_contents($root . '/views/admin/system/tenants_plan_form.php')
+            . (string) file_get_contents($root . '/views/admin/system/tenant_edit/_forms_legacy.php');
         $index = (string) file_get_contents($root . '/views/admin/system/tenants_index.php');
         $container = (string) file_get_contents($root . '/app/Core/Container.php');
 

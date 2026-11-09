@@ -214,6 +214,15 @@ final class AuditAction
     /** Profil d’outils d’une communauté (Complet / Effectifs / ATAK) depuis l’administration du site. */
     public const TENANT_TYPE_ASSIGNED = 'platform.tenant_type_assigned';
 
+    /** Langue et fuseau horaire d’une communauté depuis l’administration du site. */
+    public const TENANT_LOCALE_UPDATED = 'platform.tenant_locale_updated';
+
+    /** Propriétaire (contact) d’une communauté depuis l’administration du site. */
+    public const TENANT_OWNER_UPDATED = 'platform.tenant_owner_updated';
+
+    /** Logo d’une communauté retiré depuis l’administration du site. */
+    public const TENANT_LOGO_REMOVED = 'platform.tenant_logo_removed';
+
     public const DEPLOYMENT_MODULE_CREATED = 'deployment.module_created';
     public const DEPLOYMENT_MODULE_UPDATED = 'deployment.module_updated';
     public const DEPLOYMENT_VERSION_CREATED = 'deployment.version_created';
