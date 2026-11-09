@@ -154,6 +154,25 @@ if !("telephone" call AT_fnc_groupe) exitWith {};
     call AT_fnc_done;
 }, 30] call AT_fnc_run;
 
+// Icône de la radio MPU5 dans la barre d'état : code et texture cohérents, icône « transmet » seulement si la radio est reliée et sert.
+["tel_icone_mpu", {
+    if (["comspec_atak_native_fnc_mpuLink", "comspec_atak_native_fnc_statusUpdate"] call AT_fnc_nil) exitWith {};
+    private _b = ["badge"] call comspec_atak_native_fnc_mpuLink;
+    [_b isEqualType [] && {(count _b) isEqualTo 4}, "badge MPU : format inattendu"] call AT_fnc_check;
+    _b params ["_code", "_img", "_col", "_tip"];
+    [_code in ["off", "idle", "cable", "wifi", "tx", "cut"], format ["badge MPU : code inconnu (%1)", _code]] call AT_fnc_check;
+    [(_code isEqualTo "off") isEqualTo (_img isEqualTo ""), "badge MPU : texture absente ou en trop"] call AT_fnc_check;
+    [(_code isEqualTo "off") isEqualTo (_tip isEqualTo ""), "badge MPU : infobulle absente ou en trop"] call AT_fnc_check;
+    // Sans radio reliée et en service, la marque d'émission ne doit rien changer.
+    private _st = ["status"] call comspec_atak_native_fnc_mpuLink;
+    uiNamespace setVariable ["COMSPEC_ATAK_MpuTxUntil", 0];
+    ["txMark", [2]] call comspec_atak_native_fnc_mpuLink;
+    private _marked = (uiNamespace getVariable ["COMSPEC_ATAK_MpuTxUntil", 0]) > diag_tickTime;
+    [_marked isEqualTo ((_st getOrDefault ["kind", ""]) isEqualTo "mpu" && {_st getOrDefault ["ok", false]}), "marque d'émission posée sans radio reliée en service"] call AT_fnc_check;
+    uiNamespace setVariable ["COMSPEC_ATAK_MpuTxUntil", 0];
+    call AT_fnc_done;
+}] call AT_fnc_run;
+
 // Bilan de l'année et Vidéo YouTube (4.2.0) : analyse des liens (fonction pure, aucune requête), puis les deux pages dessinées
 // sans réseau (mission en mode local : le bilan dit qu'Athena n'est pas relié, YouTube est coupé par défaut).
 ["tel_bilan_youtube", {
