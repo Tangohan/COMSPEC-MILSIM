@@ -89,5 +89,5 @@ return [
     ['id' => 'atak_sse_ai_profiles', 'label' => 'Profils d’IA du Bureau SSE (identité, camp, papiers, comportement) reliés aux IA en jeu, et éléments gardés d’une partie à l’autre', 'group' => 'schema', 'file' => '4120_atak_sse_ai_profiles.php', 'rerun' => true],
     ['id' => 'bo_user_nav_prefs', 'label' => 'Back-office : favoris du menu, pages nouvelles déjà vues et accueil personnalisé, par compte et par communauté', 'group' => 'schema', 'file' => '4170_bo_user_nav_prefs.php', 'rerun' => true],
     ['id' => 'broadcast_center', 'label' => 'Centre de diffusion : lien entre le bandeau du site et les messages aux joueurs d’une même diffusion (colonne broadcast_key)', 'group' => 'schema', 'file' => '4190_broadcast_center.php', 'rerun' => true],
-    ['id' => 'sse_cover_exports', 'label' => 'Couvertures générées sur Athena puis téléchargées pour le jeu (historique, limite de régénération), personnes fictives seulement', 'group' => 'schema', 'file' => '4220_sse_cover_exports.php', 'rerun' => true],
+    ['id' => 'sse_cover_exports', 'label' => 'Couvertures générées sur Athena puis téléchargées pour le jeu (historique, limite de régénération), personnes fictives seulement', 'group' => 'schema', 'file' => '4230_sse_cover_exports.php', 'rerun' => true],
 ];

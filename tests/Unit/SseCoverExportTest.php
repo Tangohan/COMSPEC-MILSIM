@@ -312,7 +312,7 @@ final class SseCoverExportTest extends TestCase
         $migrate($this->pdo);
         $migrate($this->pdo);
         $registry = (string) file_get_contents(dirname(__DIR__, 2) . '/database/steps/registry.php');
-        self::assertMatchesRegularExpression("/'id' => 'sse_cover_exports'.*4220_sse_cover_exports\\.php.*'rerun' => true/", $registry);
-        self::assertFileExists(dirname(__DIR__, 2) . '/database/steps/4220_sse_cover_exports.php');
+        self::assertMatchesRegularExpression("/'id' => 'sse_cover_exports'.*4230_sse_cover_exports\\.php.*'rerun' => true/", $registry);
+        self::assertFileExists(dirname(__DIR__, 2) . '/database/steps/4230_sse_cover_exports.php');
     }
 }
