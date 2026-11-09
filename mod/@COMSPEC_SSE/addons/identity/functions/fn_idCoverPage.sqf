@@ -11,6 +11,10 @@
       refresh · tab · answer [qid, index] · open netId (Zeus) · back · fold clé · pull (paquet Athena)
       received [ancienne fiche, nouvelle] · synced   réponses du serveur et d'Athena ; même fiche : page laissée telle quelle,
                  seule la note change sur place s'il n'y a que ça de nouveau
+      ask [unité, complète] · dirty ("" | "server")   demande de fiche ; fiche périmée par un évènement (XEH_postInitClient)
+    Fiche en cache, jamais relue en boucle : demandée si elle manque, si un évènement l'a périmée (équipement, papiers,
+    réponse, paquet Athena rechargé) ou si elle a plus de 10 min (1 min en infiltration) ; Actualiser et Demander la mise à
+    jour la relisent toujours. Le serveur ne renvoie pas une fiche inchangée (empreinte « rev », réponse coverSame).
     État local (jamais diffusé) : comspec_sse_idCoverSheets (netId -> fiche reçue du serveur), comspec_sse_idQuestion,
     comspec_sse_idCoverSync (fn_idCoverSync). Couleurs : jetons de fn_theme, lisibles dans les trois thèmes. Texte structuré :
     0,8 au moins (fn_theme, docs/ui/atak-design-system.md : jamais sous 14 px).
@@ -26,6 +30,20 @@ private _sheets = missionNamespace getVariable ["comspec_sse_idCoverSheets", cre
 missionNamespace setVariable ["comspec_sse_idCoverSheets", _sheets];
 private _zeus = !isNull (getAssignedCuratorLogic player);
 private _tr = { _this call comspec_sse_fnc_tr };
+// Fiche en cache (empreinte « rev » posée par le serveur) : la demande joint l'empreinte connue, le serveur ne renvoie alors
+// que l'état et la cohérence (coverSame). _force : fiche complète (Actualiser, cache douteux).
+// Compteur comspec_sse_idCoverAsks (demandes de fiche envoyées) : relevé par l'autotest, rien d'autre ne le lit.
+private _ask = {
+    params [["_u", objNull], ["_force", false]];
+    if (isNull _u) then { _u = player; };
+    if (_u isEqualTo player) then {
+        missionNamespace setVariable ["comspec_sse_idCoverAskAt", time];
+        missionNamespace setVariable ["comspec_sse_idCoverDirty", false];
+    };
+    missionNamespace setVariable ["comspec_sse_idCoverAsks", (missionNamespace getVariable ["comspec_sse_idCoverAsks", 0]) + 1];
+    private _rev = if (_force) then { "" } else { (_sheets getOrDefault [netId _u, createHashMap]) getOrDefault ["rev", ""] };
+    ["send", ["coverSheet", [player, _u, _rev]]] call comspec_sse_fnc_idClient;
+};
 // Note de cohérence (texte structuré) : aussi posée sur place, sans redessiner la page.
 private _scoreText = {
     params ["_score", "_th"];
@@ -41,13 +59,21 @@ private _scoreText = {
 if (_page isEqualTo "act") exitWith {
     switch (_rect) do {
         case "refresh": {
+            // Actualiser : relecture complète, toujours (jamais servie par le cache).
             _st set ["force", true];
-            _st set ["asked", time];
-            ["send", ["coverSheet", [player, [player, objectFromNetId (_st getOrDefault ["open", ""])] select ((_st getOrDefault ["open", ""]) isNotEqualTo "")]]] call comspec_sse_fnc_idClient;
+            [[player, objectFromNetId (_st getOrDefault ["open", ""])] select ((_st getOrDefault ["open", ""]) isNotEqualTo ""), true] call _ask;
             if (_zeus) then { ["send", ["coverList", [player]]] call comspec_sse_fnc_idClient; };
         };
         case "tab": { _st set ["tab", _arg]; _st set ["open", ""]; if (_arg isEqualTo "zeus") then { ["send", ["coverList", [player]]] call comspec_sse_fnc_idClient; }; call _render; };
-        case "open": { _st set ["open", _arg]; ["send", ["coverSheet", [player, objectFromNetId _arg]]] call comspec_sse_fnc_idClient; call _render; };
+        case "open": { _st set ["open", _arg]; [objectFromNetId _arg] call _ask; call _render; };
+        // Demande venue d'ailleurs (fn_idClient : cache vidé entre-temps) : [unité, complète].
+        case "ask": { _arg params [["_u", player], ["_f", false]]; [_u, _f] call _ask; };
+        // Fiche périmée (évènement : équipement, papiers, paquet Athena rechargé par le serveur) : relue à la prochaine
+        // ouverture de la page, tout de suite si elle est ouverte et que l'évènement vient du serveur (_arg « server »).
+        case "dirty": {
+            missionNamespace setVariable ["comspec_sse_idCoverDirty", true];
+            if (_arg isEqualTo "server" && {call _isOpen}) then { call _render; };
+        };
         case "back": { _st set ["open", ""]; call _render; };
         case "fold": {
             private _f = _st getOrDefault ["folds", createHashMap];
@@ -60,6 +86,10 @@ if (_page isEqualTo "act") exitWith {
         case "pull": {
             ["send", ["coverPull", [player]]] call comspec_sse_fnc_idClient;
             _st set ["pulled", time];
+            // Relecture forcée de la fiche ; une fois le paquet rechargé (et seulement s'il a changé), le serveur prévient
+            // tous les postes (comspec_sse_idCoverDirty) et la page ouverte se relit d'elle-même.
+            _st set ["force", true];
+            [player, true] call _ask;
             call _render;
         };
         case "answer": {
@@ -68,6 +98,8 @@ if (_page isEqualTo "act") exitWith {
             if (_q isEqualTo []) exitWith {};
             (_q select 3) set [_qid, _i];
             ["send", ["answer", [player, _qid, _i]]] call comspec_sse_fnc_idClient;
+            // La réponse change la cohérence : fiche relue au rendu qui suit.
+            missionNamespace setVariable ["comspec_sse_idCoverDirty", true];
             call _render;
         };
         case "received": {
@@ -279,7 +311,9 @@ private _sheetRows = {
         if (_isOpen) then {
             { _rows pushBack (["check"] + _x); } forEach _lines;
             if (_source isNotEqualTo "athena") then {
-                private _wait = (time - (_st getOrDefault ["pulled", -1000])) < 120;
+                // État de l'app gardé dans uiNamespace (survit à la mission) : une date d'une partie précédente ne bloque pas le bouton.
+                private _pulled = _st getOrDefault ["pulled", -1000];
+                private _wait = _pulled <= time && {(time - _pulled) < 120};
                 _rows pushBack ["buttons", [["Demander la mise à jour" call _tr, ["pull"] call _act, false, !_wait, "Recharge le paquet d'identité du serveur (au plus une fois toutes les 2 minutes)." call _tr]]];
             };
         };
@@ -334,11 +368,16 @@ if (_tab isEqualTo "zeus") then {
     } forEach _lst;
 } else {
     private _s = _sheets getOrDefault [netId player, createHashMap];
-    // Fiche relue en arrivant sur la page, au plus toutes les 15 s : même contenu, rien n'est redessiné (« received »).
-    if ((time - (_st getOrDefault ["asked", -100])) > ([15, 10] select ((count _s) isEqualTo 0))) then {
-        _st set ["asked", time];
-        ["send", ["coverSheet", [player, player]]] call comspec_sse_fnc_idClient;
-    };
+    // Fiche en cache : redemandée en arrivant sur la page seulement si elle manque (nouvel essai toutes les 10 s), si un
+    // évènement l'a rendue périmée (équipement, papiers, paquet Athena rechargé) ou si elle a plus de 10 min (1 min pendant
+    // une infiltration : la cohérence suit les soupçons et la position). Avant : relue à chaque arrivée, au plus toutes les
+    // 15 s. Même contenu : le serveur ne renvoie que l'état et la cohérence, rien n'est redessiné (« received »).
+    private _age = time - ((missionNamespace getVariable ["comspec_sse_idCoverAt", createHashMap]) getOrDefault [netId player, -1e6]);
+    private _askAt = missionNamespace getVariable ["comspec_sse_idCoverAskAt", -100];
+    private _empty = (count _s) isEqualTo 0;
+    private _stale = _empty || {missionNamespace getVariable ["comspec_sse_idCoverDirty", false]}
+        || {_age > ([600, 60] select ((_s getOrDefault ["state", "off"]) isEqualTo "on"))};
+    if (_stale && {(time - _askAt) > ([5, 10] select _empty)}) then { [player] call _ask; };
     if ((count _s) isEqualTo 0) exitWith {
         _rows pushBack ["empty", _icon, "Fiche en chargement" call _tr, "Votre fiche est demandée au serveur." call _tr];
     };

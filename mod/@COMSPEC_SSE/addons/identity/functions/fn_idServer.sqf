@@ -24,7 +24,8 @@
       curfew   [moi, vrai | faux]        Zeus : couvre-feu (les civils dehors sont plus nerveux)
     Lot 4 (couvertures) et Lot 5 (HVT) :
       check    [moi, _h, 4]              N4 : comparaison du visage (fn_idBio ; durée réglable, matériel « face »)
-      coverSheet [moi, personne]         fiche RP (la sienne ; le Zeus : celle de tous) · coverList [moi]  infiltrés (Zeus)
+      coverSheet [moi, personne, empreinte]   fiche RP (la sienne ; le Zeus : celle de tous) ; empreinte de la fiche en
+                                         cache égale : réponse coverSame (état et cohérence seuls) · coverList [moi]  infiltrés (Zeus)
       coverFired [moi]                   tir d'un infiltré (FiredMan de son poste)
       coverImport [moi, couverture] · coverForget [moi]   couverture importée d'un fichier Athena, ou oubliée (fn_idCoverImport)
       coverPull [moi]                    recharge le paquet Athena (app Ma couverture, au plus une fois par 2 min, tous postes)
@@ -510,18 +511,28 @@ switch (_op) do {
     };
 
     case "coverSheet": {
-        _args params ["", ["_t", objNull, [objNull]]];
+        // 3e argument (facultatif) : empreinte de la fiche que le poste a déjà en cache (« rev », posée ici).
+        _args params ["", ["_t", objNull, [objNull]], ["_known", ""]];
         if (isNull _t) then { _t = _me; };
         private _auth = [_me] call comspec_sse_fnc_isAuthority;
         if (_t isNotEqualTo _me && {!_auth}) exitWith {};
         private _sheet = ["sheet", [_t, _auth && {_t isNotEqualTo _me}]] call comspec_sse_fnc_idLegend;
+        // Empreinte du contenu stable (légende, papiers, liaison Athena) : sans l'état et la cohérence, qui bougent en jeu.
+        // Clés triées : même fiche, même empreinte, quel que soit l'ordre interne de la table.
+        private _keys = keys _sheet;
+        _keys sort true;
+        private _fp = hashValue str (_keys apply { [_x, _sheet get _x] });
         private _cs = ["state", [_t]] call comspec_sse_fnc_idCover;
-        _sheet set ["state", ["off", ["on", "burnt"] select (_cs getOrDefault ["burnt", false])] select ((count _cs) > 0)];
-        _sheet set ["burnWhy", _cs getOrDefault ["burnWhy", ""]];
         (["score", [_t]] call comspec_sse_fnc_idCover) params ["_sc", "_why", ["_todo", []]];
-        _sheet set ["score", _sc];
-        _sheet set ["why", _why];
-        _sheet set ["todo", _todo];
+        private _live = createHashMapFromArray [
+            ["state", ["off", ["on", "burnt"] select (_cs getOrDefault ["burnt", false])] select ((count _cs) > 0)],
+            ["burnWhy", _cs getOrDefault ["burnWhy", ""]], ["score", _sc], ["why", _why], ["todo", _todo]
+        ];
+        // Le poste a déjà cette fiche : seuls l'état et la cohérence repartent (quelques octets au lieu de toute la fiche).
+        // Poste plus ancien (pas d'empreinte envoyée) : fiche complète, comme avant.
+        if (_known isEqualTo _fp) exitWith { ["coverSame", [netId _t, _fp, _live]] call _reply; };
+        _sheet merge [_live, true];
+        _sheet set ["rev", _fp];
         ["coverSheet", [netId _t, _sheet]] call _reply;
     };
     case "coverList": {
@@ -626,6 +637,8 @@ switch (_op) do {
             };
             case "reload": {
                 _reg set ["aiKeptDone", createHashMap];
+                // Rechargement demandé par le Zeus : le paquet est réappliqué même s'il n'a pas changé (éléments gardés remis).
+                _reg set ["packFp", ""];
                 ["load"] call comspec_sse_fnc_idAthenaPack;
                 ["zeus", ["Éléments gardés : rechargement demandé à Athena.", "info"]] call _reply;
             };

@@ -7,7 +7,8 @@
       notify [texte, type] · zeus [texte, genre] · packFetch []
       say [nom, phrase, type, indice]   phrase courte d'une IA contrôlée (IA réalistes), traduite ici
     Lot 4 et 5 : question [demandeur, [[qid, question, réponses]…], délai] · questionEnd [qid, juste, évasif]
-      coverSheet [netId, fiche] · coverList [infiltrés] · coverState [on | off | burnt | warn, motif]
+      coverSheet [netId, fiche] · coverSame [netId, empreinte, état et cohérence] (fiche en cache inchangée)
+      coverList [infiltrés] · coverState [on | off | burnt | warn, motif]
       talk [ia, clé, réponse, indice] (réponse d'un PNJ à ma question) · hvtTip [netId, sources, position, texte, par]
       athenaWatch [charge]   envoi d'un BOLO / d'une HVT à Athena par la DLL de ce poste (serveur dédié compris)
     État local (jamais diffusé) : comspec_sse_idTokens (documents présentés), comspec_sse_idSearch (dernière fouille),
@@ -141,6 +142,8 @@ switch (_op) do {
         if !(_qid in (_q select 3)) then { (_q select 3) set [_qid, -1]; };
         // Plus aucune question ouverte : la fenêtre se ferme.
         if (((_q select 1) findIf { !((_x select 0) in (_q select 3)) }) < 0) then { missionNamespace setVariable ["comspec_sse_idQuestion", []]; };
+        // Question close (juste, fausse, sans réponse) : la cohérence a bougé, la fiche de Ma couverture est relue au rendu.
+        missionNamespace setVariable ["comspec_sse_idCoverDirty", true];
         [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "IDCOVER") then { ["IDCOVER"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
     };
     case "coverSheet": {
@@ -149,9 +152,34 @@ switch (_op) do {
         missionNamespace setVariable ["comspec_sse_idCoverSheets", _all];
         private _old = _all getOrDefault [_net, createHashMap];
         _all set [_net, _sheet];
+        // Âge de la fiche en cache (fn_idCoverPage ne la redemande pas tant qu'elle est fraîche).
+        private _at = missionNamespace getVariable ["comspec_sse_idCoverAt", createHashMap];
+        missionNamespace setVariable ["comspec_sse_idCoverAt", _at];
+        _at set [_net, time];
         // Couverture née en jeu : remontée à Athena par le compte relié de ce poste (fn_idCoverSync).
         if (_net isEqualTo netId player) then { ["push", _sheet] call comspec_sse_fnc_idCoverSync; };
         ["act", "received", [_old, _sheet]] call comspec_sse_fnc_idCoverPage;
+    };
+    // Fiche inchangée sur le serveur (même empreinte que celle du cache) : seuls l'état et la cohérence arrivent.
+    case "coverSame": {
+        _a params [["_net", ""], ["_fp", ""], ["_live", createHashMap]];
+        private _all = missionNamespace getVariable ["comspec_sse_idCoverSheets", createHashMap];
+        missionNamespace setVariable ["comspec_sse_idCoverSheets", _all];
+        private _old = _all getOrDefault [_net, createHashMap];
+        // Cache vidé entre-temps (couverture levée, respawn) : la fiche complète est redemandée.
+        if ((count _old) isEqualTo 0 || {(_old getOrDefault ["rev", ""]) isNotEqualTo _fp}) exitWith {
+            private _u = objectFromNetId _net;
+            if (!isNull _u) then { ["act", "ask", [_u, true]] call comspec_sse_fnc_idCoverPage; };
+        };
+        private _new = +_old;
+        if (_live isEqualType createHashMap) then { _new merge [_live, true]; };
+        _all set [_net, _new];
+        private _at = missionNamespace getVariable ["comspec_sse_idCoverAt", createHashMap];
+        missionNamespace setVariable ["comspec_sse_idCoverAt", _at];
+        _at set [_net, time];
+        // Même fiche : fn_idCoverSync ne renvoie rien si elle est déjà partie (nouvel essai après une erreur, comme avant).
+        if (_net isEqualTo netId player) then { ["push", _new] call comspec_sse_fnc_idCoverSync; };
+        ["act", "received", [_old, _new]] call comspec_sse_fnc_idCoverPage;
     };
     case "coverList": {
         _a params [["_l", []]];

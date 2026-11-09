@@ -19,8 +19,8 @@ if (_why isNotEqualTo "") exitWith {
 };
 if ((_now - (_state getOrDefault ["lastSecond",0])) >= 1) then { _state set ["lastSecond",_now]; [] call comspec_atak_native_fnc_statusUpdate; [] call comspec_atak_native_fnc_notificationsRender; };
 private _refresh = profileNamespace getVariable ["COMSPEC_ATAK_BftRefresh",3];
-if ((_now - (_state getOrDefault ["lastRemote",0])) >= _refresh) then { _state set ["lastRemote",_now]; [] call comspec_atak_native_fnc_remoteSync; };
+if ((_now - (_state getOrDefault ["lastRemote",0])) >= _refresh) then { _state set ["lastRemote",_now]; private _t = diag_tickTime; [] call comspec_atak_native_fnc_remoteSync; ["Athena : unités, marqueurs, ordres, messages", _t] call comspec_atak_native_fnc_perfAcc; };
 // Réponses d'Athena (positions, télémétrie) : lues en mémoire dans COMSPEC Link pour l'app Réseau et la barre d'état.
-if ((_now - (_state getOrDefault ["lastPulse",0])) >= 5) then { _state set ["lastPulse",_now]; [] call comspec_atak_native_fnc_athenaPulse; };
-if ((_now - (_state getOrDefault ["lastSlow",0])) >= 10) then { _state set ["lastSlow",_now]; [] call comspec_atak_native_fnc_importLegacyData; };
+if ((_now - (_state getOrDefault ["lastPulse",0])) >= 5) then { _state set ["lastPulse",_now]; private _t = diag_tickTime; [] call comspec_atak_native_fnc_athenaPulse; ["Athena : état de la liaison", _t] call comspec_atak_native_fnc_perfAcc; };
+if ((_now - (_state getOrDefault ["lastSlow",0])) >= 10) then { _state set ["lastSlow",_now]; private _t = diag_tickTime; [] call comspec_atak_native_fnc_importLegacyData; ["COMSPEC Link : ordres, alertes, intel", _t] call comspec_atak_native_fnc_perfAcc; };
 ["téléphone : passage 0,2 s", _perfT] call comspec_atak_native_fnc_perfAcc;

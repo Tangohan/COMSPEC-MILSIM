@@ -16965,5 +16965,8 @@
 ["Opacité du fond des noms", "", "Name background opacity"],
 ["Exemple : 30 % pour deviner la carte sous le nom, 90 % pour un nom toujours lisible", "", "Example: 30 % to still see the map under the name, 90 % for a name that is always readable"],
 ["NON", "", "NO"],
-["OPAQUE", "", "OPAQUE"]
+["OPAQUE", "", "OPAQUE"],
+["Athena : unités, marqueurs, ordres, messages", "", "Athena: units, markers, orders, messages"],
+["Athena : état de la liaison", "", "Athena: link status"],
+["COMSPEC Link : ordres, alertes, intel", "", "COMSPEC Link: orders, alerts, intel"]
 ]
