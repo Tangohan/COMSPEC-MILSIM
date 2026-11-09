@@ -21,6 +21,10 @@ final class AcademyAccess
         if (!in_array($effective, PlanPaymentService::PAID_PLANS, true)) {
             return false;
         }
+        // Aperçu de formule (administrateur de la plateforme) : la formule simulée tient lieu de facturation.
+        if (\App\Services\Platform\EffectivePlan::previewSlugFor((int) $tenant['id']) !== null) {
+            return true;
+        }
         // An active administrative grant takes precedence over the billing status of the base plan.
         if (PlanGift::activeFromSettings($tenant['settings'] ?? null, $now) !== null) {
             return true;
@@ -49,6 +53,6 @@ final class AcademyAccess
 
     public static function planSlug(array $tenant, ?int $now = null): string
     {
-        return strtolower(trim(PlanGift::effectivePlanSlug($tenant, $now)));
+        return strtolower(trim(\App\Services\Platform\EffectivePlan::slugFor($tenant, $now)));
     }
 }
