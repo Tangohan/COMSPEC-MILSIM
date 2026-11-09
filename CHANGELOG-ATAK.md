@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : lunettes de sport Oakley et D.Franklin (SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Des lunettes de sport Oakley et D.Franklin, à porter sans perdre ses JVN ni sa cagoule
+- Cinq modèles en vraie 3D : Oakley Radar EV Path blanche (verre Prizm Road) et noire (Prizm Golf), D.Franklin Hurricane noire, D.Franklin Wind Rainbow et Orange. Dans l'Arsenal, au Zeus et dans la « Caisse de lunettes de sport » de l'éditeur.
+- Chaque modèle se porte au choix dans le slot des lunettes, dans le slot des JVN (sans vision nocturne), ou dans le slot « Lunettes » COMSPEC : gardez-les dans le sac et utilisez l'action personnelle « Lunettes », vos JVN et votre cagoule restent en place. Ce dernier slot est expérimental.
+- Option dans les réglages (COMSPEC SSE, Lunettes), coupée par défaut : l'écran prend la teinte du verre porté, avec un curseur de force. Elle se coupe quand les JVN sont allumées et en vue extérieure.
+EN : Oakley and D.Franklin sport glasses, worn without giving up your NVGs or balaclava
+- Five models in real 3D: Oakley Radar EV Path white (Prizm Road lens) and black (Prizm Golf), D.Franklin Hurricane black, D.Franklin Wind Rainbow and Orange. In the Arsenal, in Zeus and in the editor's "Sport glasses crate".
+- Each model can be worn in the glasses slot, in the NVG slot (no night vision), or in the COMSPEC "Glasses" slot: keep them in your pack and use the "Glasses" self-action, your NVGs and balaclava stay on. This last slot is experimental.
+- Option in the settings (COMSPEC SSE, Glasses), off by default: the screen takes the tint of the lens you wear, with a strength slider. It switches off with NVGs on and in third person.
+
+### Détail technique
+- Nouvel addon `comspec_sse_eyewear.pbo` (`addons/eyewear`). Modèles MLOD générés par `tools/eyewear/gen_p3d.py` (verre torique enveloppant avec épaisseur et tranche, barre ou cadre balayés le long du bord du verre, branches balayées le long d'une spline, plaquettes de nez, plaque logo ; 7 700 à 8 000 triangles, LOD ombre fermée, LOD géométrie avec `autocenter=0`), trois par coloris : `ew_<id>.p3d` (CfgGlasses), `ew_<id>_nvg.p3d` (proxy JVN), `ew_<id>_head.p3d` (slot virtuel). Non binarisés (le build du SSE est en `-packonly`, comme les objets de l'ATAK natif). Squelette `OFP2_ManSkeleton` dans `data/models/model.cfg` (pondération sur « head », comme les lunettes vanilla).
+- Position relevée sur les lunettes et JVN vanilla (boîtes englobantes de `g_sport_red.p3d` et `nvg_proxy.p3d`) : `HEAD_OFFSET` et `NVG_OFFSET` en tête de `tools/eyewear/eyewear_spec.py` ; slot virtuel : `comspec_sse_eyewearAttachPoint` / `comspec_sse_eyewearAttachOffset` de `COMSPEC_SSE_EyewearHead_Base`.
+- Textures (`tools/eyewear/gen_textures.py`, PNG sources dans `tools/eyewear/src`) : atlas de monture 1024 `_co` / `_nohq` / `_smdi`, verre 512 `_ca` en dégradé miroir, icônes 128 rendues depuis le maillage, rvmat Super (le verre vanilla d'Arma 3 est aussi en Super). Config et stringtable générées par `tools/eyewear/gen_config.py`.
+- Slot virtuel (EXPÉRIMENTAL, `fn_eyewearRender`) : état public `comspec_sse_eyewear_worn` sur l'unité ; chaque client crée localement l'objet `COMSPEC_SSE_EyewearHead_<id>` et l'accroche au point « pilot » avec `attachTo` et `followBoneRotation` ; caché en vue subjective pour le porteur et dans un véhicule ; retiré à la mort (rendu à l'inventaire du corps), au changement d'unité et à la déconnexion. Actions ACE personnelles « Lunettes », sinon menu molette.
+- Teinte (`fn_eyewearTint`, réglages `comspec_sse_eyewear_tint` et `comspec_sse_eyewear_tint_force`) : `ColorCorrections` par verre (`tint[]` du catalogue `COMSPEC_SSE_Eyewear`), boucle CBA à 0,5 s, transition 0,5 s.
+- Autotest : `scripts/eyewear.sqf` (groupe `eyewear`, aussi lancé avec `sse`) : classes, trois slots, objet du slot virtuel, teinte, captures `eyewear_<id>_face` et `eyewear_<id>_profil`. Non exécuté : rendu, échelle et position en jeu à vérifier.
+
 ## À venir : carte du téléphone au style tactique et contacts redessinés (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

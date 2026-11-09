@@ -70,6 +70,7 @@ $requiredPbos = @(
     'comspec_sse_analysis.pbo',
     'comspec_sse_campaign.pbo',
     'comspec_sse_guide.pbo',
+    'comspec_sse_eyewear.pbo',
     'comspec_sse_compat_bii.pbo',
     'comspec_sse_compat_ace.pbo',
     'comspec_sse_compat_atak.pbo'

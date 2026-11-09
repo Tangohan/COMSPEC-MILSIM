@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Généré par tools/eyewear/gen_config.py : ne pas modifier à la main. -->
+<Project name="COMSPEC_SSE">
+    <Package name="eyewear">
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_RADAR_WHITE_NAME">
+            <Original>Oakley Radar EV Path (Polished White / Prizm Road)</Original>
+            <English>Oakley Radar EV Path (Polished White / Prizm Road)</English>
+            <French>Oakley Radar EV Path (Blanc / Prizm Road)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_RADAR_WHITE_NAME_NVG">
+            <Original>Oakley Radar EV Path (Polished White / Prizm Road) - NVG slot</Original>
+            <English>Oakley Radar EV Path (Polished White / Prizm Road) - NVG slot</English>
+            <French>Oakley Radar EV Path (Blanc / Prizm Road) - slot JVN</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_RADAR_WHITE_NAME_ITEM">
+            <Original>Oakley Radar EV Path (Polished White / Prizm Road) - eyewear slot</Original>
+            <English>Oakley Radar EV Path (Polished White / Prizm Road) - eyewear slot</English>
+            <French>Oakley Radar EV Path (Blanc / Prizm Road) - slot Lunettes</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_RADAR_WHITE_DESC">
+            <Original>Oakley Radar EV Path sport glasses, polished white frame, red temples, Prizm Road lens (red-pink-yellow mirror).</Original>
+            <English>Oakley Radar EV Path sport glasses, polished white frame, red temples, Prizm Road lens (red-pink-yellow mirror).</English>
+            <French>Lunettes de sport Oakley Radar EV Path, monture blanc brillant, branches rouges, verre Prizm Road (miroir rouge-rose-jaune).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_RADAR_WHITE_DESC_NVG">
+            <Original>Oakley Radar EV Path sport glasses, polished white frame, red temples, Prizm Road lens (red-pink-yellow mirror). Worn in the night vision slot: no night vision, keeps the face slot free.</Original>
+            <English>Oakley Radar EV Path sport glasses, polished white frame, red temples, Prizm Road lens (red-pink-yellow mirror). Worn in the night vision slot: no night vision, keeps the face slot free.</English>
+            <French>Lunettes de sport Oakley Radar EV Path, monture blanc brillant, branches rouges, verre Prizm Road (miroir rouge-rose-jaune). Portées dans le slot des JVN : aucune vision nocturne, le slot du visage reste libre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_RADAR_WHITE_DESC_ITEM">
+            <Original>Oakley Radar EV Path sport glasses, polished white frame, red temples, Prizm Road lens (red-pink-yellow mirror). Keep it in your inventory and use the self-interaction « Glasses » to put it on: face and NVG slots stay free (experimental).</Original>
+            <English>Oakley Radar EV Path sport glasses, polished white frame, red temples, Prizm Road lens (red-pink-yellow mirror). Keep it in your inventory and use the self-interaction « Glasses » to put it on: face and NVG slots stay free (experimental).</English>
+            <French>Lunettes de sport Oakley Radar EV Path, monture blanc brillant, branches rouges, verre Prizm Road (miroir rouge-rose-jaune). À garder dans l'inventaire : action personnelle « Lunettes » pour les porter ; les slots du visage et des JVN restent libres (expérimental).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_RADAR_BLACK_NAME">
+            <Original>Oakley Radar EV Path (Polished Black / Prizm Golf)</Original>
+            <English>Oakley Radar EV Path (Polished Black / Prizm Golf)</English>
+            <French>Oakley Radar EV Path (Noir / Prizm Golf)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_RADAR_BLACK_NAME_NVG">
+            <Original>Oakley Radar EV Path (Polished Black / Prizm Golf) - NVG slot</Original>
+            <English>Oakley Radar EV Path (Polished Black / Prizm Golf) - NVG slot</English>
+            <French>Oakley Radar EV Path (Noir / Prizm Golf) - slot JVN</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_RADAR_BLACK_NAME_ITEM">
+            <Original>Oakley Radar EV Path (Polished Black / Prizm Golf) - eyewear slot</Original>
+            <English>Oakley Radar EV Path (Polished Black / Prizm Golf) - eyewear slot</English>
+            <French>Oakley Radar EV Path (Noir / Prizm Golf) - slot Lunettes</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_RADAR_BLACK_DESC">
+            <Original>Oakley Radar EV Path sport glasses, polished black frame, Prizm Golf lens (violet to jade mirror).</Original>
+            <English>Oakley Radar EV Path sport glasses, polished black frame, Prizm Golf lens (violet to jade mirror).</English>
+            <French>Lunettes de sport Oakley Radar EV Path, monture noir brillant, verre Prizm Golf (miroir violet-vert jade).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_RADAR_BLACK_DESC_NVG">
+            <Original>Oakley Radar EV Path sport glasses, polished black frame, Prizm Golf lens (violet to jade mirror). Worn in the night vision slot: no night vision, keeps the face slot free.</Original>
+            <English>Oakley Radar EV Path sport glasses, polished black frame, Prizm Golf lens (violet to jade mirror). Worn in the night vision slot: no night vision, keeps the face slot free.</English>
+            <French>Lunettes de sport Oakley Radar EV Path, monture noir brillant, verre Prizm Golf (miroir violet-vert jade). Portées dans le slot des JVN : aucune vision nocturne, le slot du visage reste libre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_RADAR_BLACK_DESC_ITEM">
+            <Original>Oakley Radar EV Path sport glasses, polished black frame, Prizm Golf lens (violet to jade mirror). Keep it in your inventory and use the self-interaction « Glasses » to put it on: face and NVG slots stay free (experimental).</Original>
+            <English>Oakley Radar EV Path sport glasses, polished black frame, Prizm Golf lens (violet to jade mirror). Keep it in your inventory and use the self-interaction « Glasses » to put it on: face and NVG slots stay free (experimental).</English>
+            <French>Lunettes de sport Oakley Radar EV Path, monture noir brillant, verre Prizm Golf (miroir violet-vert jade). À garder dans l'inventaire : action personnelle « Lunettes » pour les porter ; les slots du visage et des JVN restent libres (expérimental).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_HURRICANE_BLACK_NAME">
+            <Original>D.Franklin Hurricane (Black)</Original>
+            <English>D.Franklin Hurricane (Black)</English>
+            <French>D.Franklin Hurricane (Noir)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_HURRICANE_BLACK_NAME_NVG">
+            <Original>D.Franklin Hurricane (Black) - NVG slot</Original>
+            <English>D.Franklin Hurricane (Black) - NVG slot</English>
+            <French>D.Franklin Hurricane (Noir) - slot JVN</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_HURRICANE_BLACK_NAME_ITEM">
+            <Original>D.Franklin Hurricane (Black) - eyewear slot</Original>
+            <English>D.Franklin Hurricane (Black) - eyewear slot</English>
+            <French>D.Franklin Hurricane (Noir) - slot Lunettes</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_HURRICANE_BLACK_DESC">
+            <Original>D.Franklin Hurricane shield glasses, full matte black frame, centre bridge, dark grey shield lens.</Original>
+            <English>D.Franklin Hurricane shield glasses, full matte black frame, centre bridge, dark grey shield lens.</English>
+            <French>Lunettes masque D.Franklin Hurricane, monture noire mate pleine, pont central, verre écran gris foncé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_HURRICANE_BLACK_DESC_NVG">
+            <Original>D.Franklin Hurricane shield glasses, full matte black frame, centre bridge, dark grey shield lens. Worn in the night vision slot: no night vision, keeps the face slot free.</Original>
+            <English>D.Franklin Hurricane shield glasses, full matte black frame, centre bridge, dark grey shield lens. Worn in the night vision slot: no night vision, keeps the face slot free.</English>
+            <French>Lunettes masque D.Franklin Hurricane, monture noire mate pleine, pont central, verre écran gris foncé. Portées dans le slot des JVN : aucune vision nocturne, le slot du visage reste libre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_HURRICANE_BLACK_DESC_ITEM">
+            <Original>D.Franklin Hurricane shield glasses, full matte black frame, centre bridge, dark grey shield lens. Keep it in your inventory and use the self-interaction « Glasses » to put it on: face and NVG slots stay free (experimental).</Original>
+            <English>D.Franklin Hurricane shield glasses, full matte black frame, centre bridge, dark grey shield lens. Keep it in your inventory and use the self-interaction « Glasses » to put it on: face and NVG slots stay free (experimental).</English>
+            <French>Lunettes masque D.Franklin Hurricane, monture noire mate pleine, pont central, verre écran gris foncé. À garder dans l'inventaire : action personnelle « Lunettes » pour les porter ; les slots du visage et des JVN restent libres (expérimental).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_WIND_RAINBOW_NAME">
+            <Original>D.Franklin Wind (Rainbow)</Original>
+            <English>D.Franklin Wind (Rainbow)</English>
+            <French>D.Franklin Wind (Rainbow)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_WIND_RAINBOW_NAME_NVG">
+            <Original>D.Franklin Wind (Rainbow) - NVG slot</Original>
+            <English>D.Franklin Wind (Rainbow) - NVG slot</English>
+            <French>D.Franklin Wind (Rainbow) - slot JVN</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_WIND_RAINBOW_NAME_ITEM">
+            <Original>D.Franklin Wind (Rainbow) - eyewear slot</Original>
+            <English>D.Franklin Wind (Rainbow) - eyewear slot</English>
+            <French>D.Franklin Wind (Rainbow) - slot Lunettes</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_WIND_RAINBOW_DESC">
+            <Original>D.Franklin Wind sport glasses, translucent purple-pink-blue half frame, violet mirror lens.</Original>
+            <English>D.Franklin Wind sport glasses, translucent purple-pink-blue half frame, violet mirror lens.</English>
+            <French>Lunettes de sport D.Franklin Wind, demi-monture translucide violet-rose-bleu, verre miroir violet.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_WIND_RAINBOW_DESC_NVG">
+            <Original>D.Franklin Wind sport glasses, translucent purple-pink-blue half frame, violet mirror lens. Worn in the night vision slot: no night vision, keeps the face slot free.</Original>
+            <English>D.Franklin Wind sport glasses, translucent purple-pink-blue half frame, violet mirror lens. Worn in the night vision slot: no night vision, keeps the face slot free.</English>
+            <French>Lunettes de sport D.Franklin Wind, demi-monture translucide violet-rose-bleu, verre miroir violet. Portées dans le slot des JVN : aucune vision nocturne, le slot du visage reste libre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_WIND_RAINBOW_DESC_ITEM">
+            <Original>D.Franklin Wind sport glasses, translucent purple-pink-blue half frame, violet mirror lens. Keep it in your inventory and use the self-interaction « Glasses » to put it on: face and NVG slots stay free (experimental).</Original>
+            <English>D.Franklin Wind sport glasses, translucent purple-pink-blue half frame, violet mirror lens. Keep it in your inventory and use the self-interaction « Glasses » to put it on: face and NVG slots stay free (experimental).</English>
+            <French>Lunettes de sport D.Franklin Wind, demi-monture translucide violet-rose-bleu, verre miroir violet. À garder dans l'inventaire : action personnelle « Lunettes » pour les porter ; les slots du visage et des JVN restent libres (expérimental).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_WIND_ORANGE_NAME">
+            <Original>D.Franklin Wind (Orange)</Original>
+            <English>D.Franklin Wind (Orange)</English>
+            <French>D.Franklin Wind (Orange)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_WIND_ORANGE_NAME_NVG">
+            <Original>D.Franklin Wind (Orange) - NVG slot</Original>
+            <English>D.Franklin Wind (Orange) - NVG slot</English>
+            <French>D.Franklin Wind (Orange) - slot JVN</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_WIND_ORANGE_NAME_ITEM">
+            <Original>D.Franklin Wind (Orange) - eyewear slot</Original>
+            <English>D.Franklin Wind (Orange) - eyewear slot</English>
+            <French>D.Franklin Wind (Orange) - slot Lunettes</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_WIND_ORANGE_DESC">
+            <Original>D.Franklin Wind sport glasses, translucent orange and black half frame, red-orange mirror lens.</Original>
+            <English>D.Franklin Wind sport glasses, translucent orange and black half frame, red-orange mirror lens.</English>
+            <French>Lunettes de sport D.Franklin Wind, demi-monture translucide orange et noire, verre miroir rouge-orange.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_WIND_ORANGE_DESC_NVG">
+            <Original>D.Franklin Wind sport glasses, translucent orange and black half frame, red-orange mirror lens. Worn in the night vision slot: no night vision, keeps the face slot free.</Original>
+            <English>D.Franklin Wind sport glasses, translucent orange and black half frame, red-orange mirror lens. Worn in the night vision slot: no night vision, keeps the face slot free.</English>
+            <French>Lunettes de sport D.Franklin Wind, demi-monture translucide orange et noire, verre miroir rouge-orange. Portées dans le slot des JVN : aucune vision nocturne, le slot du visage reste libre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_WIND_ORANGE_DESC_ITEM">
+            <Original>D.Franklin Wind sport glasses, translucent orange and black half frame, red-orange mirror lens. Keep it in your inventory and use the self-interaction « Glasses » to put it on: face and NVG slots stay free (experimental).</Original>
+            <English>D.Franklin Wind sport glasses, translucent orange and black half frame, red-orange mirror lens. Keep it in your inventory and use the self-interaction « Glasses » to put it on: face and NVG slots stay free (experimental).</English>
+            <French>Lunettes de sport D.Franklin Wind, demi-monture translucide orange et noire, verre miroir rouge-orange. À garder dans l'inventaire : action personnelle « Lunettes » pour les porter ; les slots du visage et des JVN restent libres (expérimental).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_BOX">
+            <Original>Sport glasses crate (COMSPEC)</Original>
+            <English>Sport glasses crate (COMSPEC)</English>
+            <French>Caisse de lunettes de sport (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EYEWEAR_HEAD">
+            <Original>Sport glasses (worn)</Original>
+            <English>Sport glasses (worn)</English>
+            <French>Lunettes de sport (portées)</French>
+        </Key>
+    </Package>
+</Project>
