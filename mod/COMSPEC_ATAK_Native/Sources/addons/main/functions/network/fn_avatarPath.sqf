@@ -77,7 +77,7 @@ _cache set [_uid, [_path, diag_tickTime]];
         if (_old isEqualTo _p) exitWith {};
         // Redessiner la page qui attend l'image (le volet rapide suit seul : sa signature inclut le portrait).
         private _page = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""];
-        if (_page in ["ATHENA", "GROUP", "PROFILE", "CHAT", "DATING"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call comspec_atak_native_fnc_nextFrame; };
+        if (_page in ["ATHENA", "GROUP", "PROFILE", "CHAT", "SMS", "DATING"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call comspec_atak_native_fnc_nextFrame; };
     };
     call {
         private _res = { params ["_r"]; if (_r isEqualType []) then { _r param [0, ""] } else { _r } };
