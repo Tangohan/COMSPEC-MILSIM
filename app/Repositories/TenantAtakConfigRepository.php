@@ -23,12 +23,40 @@ class TenantAtakConfigRepository
         $this->injectedPdo = $pdo !== null;
     }
 
+    /**
+     * Ligne lue pendant la requête HTTP en cours, par communauté. Un sondage du jeu (unités, tchat, alertes) relisait
+     * la même ligne 3 à 5 fois (effets roleplay, brouillage, vue renseignement). Jamais en CLI (cron, worker : une
+     * boucle longue relirait une valeur périmée) ni avec une PDO injectée (tests). Vidé à chaque écriture.
+     *
+     * @var array<int, array<string, mixed>|null>
+     */
+    private static array $rowMemo = [];
+
+    /** Écriture de tenant_atak_config hors de ce dépôt (icônes de repères, HUD photo) : relire la ligne ensuite. */
+    public static function forgetMemo(): void
+    {
+        self::$rowMemo = [];
+    }
+
+    private function memoOn(): bool
+    {
+        return !$this->injectedPdo && PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg';
+    }
+
     public function getByTenantId(int $tenantId): ?array
     {
+        if ($this->memoOn() && array_key_exists($tenantId, self::$rowMemo)) {
+            return self::$rowMemo[$tenantId];
+        }
         $stmt = $this->pdo()->prepare('SELECT * FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
         $stmt->execute([$tenantId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row ?: null;
+        $row = $row ?: null;
+        if ($this->memoOn()) {
+            self::$rowMemo[$tenantId] = $row;
+        }
+
+        return $row;
     }
 
     /**
@@ -106,6 +134,7 @@ class TenantAtakConfigRepository
      */
     public function updateRoleplayConfig(int $tenantId, array $config): void
     {
+        self::$rowMemo = [];
         if ($tenantId < 1 || !$this->hasRoleplayColumns()) {
             return;
         }
@@ -273,6 +302,7 @@ class TenantAtakConfigRepository
 
     public function createOrUpdate(int $tenantId, array $data): void
     {
+        self::$rowMemo = [];
         $stmt = $this->pdo()->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
         $stmt->execute([$tenantId]);
         $exists = (bool) $stmt->fetchColumn();
@@ -360,6 +390,7 @@ class TenantAtakConfigRepository
      */
     public function setMaintenance(int $tenantId, bool $enabled, ?string $message = null): bool
     {
+        self::$rowMemo = [];
         if ($tenantId < 1) {
             return false;
         }
@@ -413,6 +444,7 @@ class TenantAtakConfigRepository
      */
     private function ensureMaintenanceSchema(): void
     {
+        self::$rowMemo = [];
         static $attempted = false;
         if ($attempted) {
             return;
@@ -541,6 +573,7 @@ class TenantAtakConfigRepository
      */
     public function generateAccessKey(int $tenantId): ?array
     {
+        self::$rowMemo = [];
         if ($tenantId < 1) {
             return null;
         }
@@ -577,6 +610,7 @@ class TenantAtakConfigRepository
      */
     public function ensureAccessKey(int $tenantId): string
     {
+        self::$rowMemo = [];
         if ($tenantId < 1 || !$this->hasAccessKeyColumn()) {
             return '';
         }
@@ -720,6 +754,7 @@ class TenantAtakConfigRepository
      */
     public function saveExperienceConfig(int $tenantId, array $config): bool
     {
+        self::$rowMemo = [];
         if ($tenantId < 1) {
             return false;
         }
@@ -757,6 +792,7 @@ class TenantAtakConfigRepository
 
     private function ensureExperienceSchema(): void
     {
+        self::$rowMemo = [];
         static $attempted = false;
         if ($attempted) {
             return;
@@ -850,6 +886,7 @@ class TenantAtakConfigRepository
      */
     public function saveOverwatchGameExperience(int $tenantId, array $config): bool
     {
+        self::$rowMemo = [];
         if ($tenantId < 1) {
             return false;
         }
@@ -885,6 +922,7 @@ class TenantAtakConfigRepository
 
     private function ensureOverwatchGameExperienceSchema(): void
     {
+        self::$rowMemo = [];
         static $attempted = false;
         if ($attempted) {
             return;

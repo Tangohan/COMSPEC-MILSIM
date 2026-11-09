@@ -584,6 +584,8 @@ window.ATAKTerrain = (function () {
     loadMeta();
     loadCoverage();
     setInterval(function () {
+      // Onglet caché : aucune requête.
+      if (document.hidden) return;
       loadMeta();
       if (lookPanelOpen()) loadCoverage();
     }, 45000);

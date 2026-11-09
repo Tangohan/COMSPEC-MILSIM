@@ -124,3 +124,51 @@ Le SSE n'a plus de menu ACE personnel. Le travail passe par l'app **SSE terrain*
 - **Photos de preuve** : app Photo de l'ATAK (les pièces cadrées sont inscrites au dossier) ou bouton « Photo de preuve » de l'app SSE terrain.
 - **Qualité de collecte** : gants, lumière, pluie, blessure, compétence, nombre de tentatives, et doctrine (pièce photographiée en place, cône posé avant le déplacement).
 - **Test de résidus de tir** : positif si la personne a tiré dans les 20 dernières minutes, faible jusqu'à 45 minutes ou sous forte pluie, négatif au-delà.
+
+## Kits et configurateur (addon loadout)
+
+L'addon `comspec_sse_loadout` pose en jeu les tenues complètes préparées sur Athena (Équipement › Configurateur). Il ne fait aucune requête réseau : les kits arrivent avec le paquet d'identité Athena, déjà chargé par le serveur au début de la mission.
+
+**Chemin** : site → paquet d'identité (`settings.loadouts`, lu par `comspec_sse_fnc_idAthenaPack`) → registre du serveur (`comspec_sse_fnc_loadoutRegistry`) → caisse de kits → action ACE « Prendre mon kit » → tenue posée chez le joueur (`comspec_sse_fnc_loadoutApply`).
+
+Format du bloc (objet JSON, converti en paires par la liaison comme le reste du paquet) :
+
+```json
+{"kits": [{"id": 12, "name": "Fusilier", "loadout": "[[\"arifle_MX_F\",\"\",…],…]"}],
+ "players": [{"uid": "7656119…", "kits": [12, 15], "default": 12}]}
+```
+
+- `loadout` est un **texte** : le JSON du `getUnitLoadout` à 10 entrées (64 Ko au plus). Les emballages `[tenue, infos étendues ACE]`, `[nom, tenue]` et `[tenue, version]` sont aussi lus.
+- `uid` est le Steam ID **en texte** (un nombre perd sa précision en JSON : l'entrée est ignorée).
+- `default` vaut 0 ou manque si le joueur n'a pas de kit attribué. Il choisit alors parmi ses `kits`.
+- Bornes : 200 kits, 500 joueurs. Une entrée illisible est ignorée et notée au RPT.
+
+**Caisse de kits** : tout objet qui porte la variable publique `comspec_sse_loadoutCrate` (caisse, objet, véhicule).
+
+- Module « Caisse de kits (Athena) » (catégorie SSE, Eden et Zeus). Dans Eden, on le synchronise à l'objet ou on le pose dessus (3 m). Dans Zeus, on le pose sur l'objet et un formulaire s'ouvre : nom, tenue collée ou « Ma tenue actuelle ».
+- Attributs d'objet dans Eden (« COMSPEC SSE · Caisse de kits ») : case « Caisse de kits », nom et tenue collée (JSON d'Athena).
+- Par script, sur le serveur : `["crate", [_objet, "Plongeur", _texteJson]] call comspec_sse_fnc_loadoutTake;`
+
+**Menu ACE de la caisse** :
+
+- « Prendre mon kit » : kit attribué sur Athena, sinon tenue de la caisse, sinon le seul kit proposé.
+- « Kits proposés » : un kit par ligne, plus la tenue de la caisse s'il y en a une.
+
+Le serveur vérifie la demande : réglage activé, joueur vivant, distance (5 m par défaut), 3 s entre deux demandes, kit proposé à ce joueur ou tenue propre à la caisse. Il envoie la tenue au seul joueur concerné.
+Chaque refus est expliqué. Sans paquet, par exemple : « Kits Athena non chargés : collez une tenue dans la caisse (attribut Eden) ou demandez au Zeus. »
+
+**Pose de la tenue** : chaque classe est vérifiée dans les mods chargés. La casse est corrigée sans rien signaler.
+
+- Une classe absente est retirée et listée au joueur (et au RPT).
+- Un chargeur absent engagé dans une arme est remplacé seulement par l'unique chargeur compatible de même contenance. Sinon, il est retiré.
+- Aucun objet n'est ajouté sans le dire. Les munitions données sont gardées (chargeurs partiels).
+
+**Export vers Athena** : menu ACE personnel › Équipement › « Copier ma tenue pour Athena » (`comspec_sse_fnc_loadoutExport`). Le JSON va au presse-papiers en solo. En multijoueur, où le presse-papiers est inopérant, une fenêtre s'ouvre avec le texte sélectionné (Ctrl+C).
+
+**Catalogue des objets** pour le configurateur : il liste les armes, accessoires, chargeurs, tenues, sacs et lunettes des mods de la communauté, avec masse, charge, compatibilités et mod d'origine.
+
+1. Lancez Arma avec ces mods, en solo ou dans l'éditeur.
+2. Dans la console de débogage, exécutez en local `[] call comspec_sse_fnc_loadoutCatalog`. Sans le mod SSE, collez le script `tools/arma/export_catalogue_equipement.sqf`.
+3. Collez le résultat dans Athena › Équipement › Configurateur › Importer le catalogue.
+
+Réglages CBA (COMSPEC SSE › Équipement) : « Prendre mon kit », distance de la caisse, liste des objets absents ou remplacés.

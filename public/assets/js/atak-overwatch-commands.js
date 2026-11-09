@@ -159,7 +159,8 @@
   /* ---------------- Données ---------------- */
 
   function refresh() {
-    if (!openNow) return;
+    // Onglet caché : aucune requête (lecture au retour, visibilitychange posé dans boot).
+    if (!openNow || document.hidden) return;
     var jobs = [];
     if (view === 'uav') {
       jobs.push(api('/api/atak/vehicles?' + mapQ() + '&vehicle_class=UAV').then(function (p) {
@@ -539,7 +540,8 @@
       api('/api/atak/my-phone/notifs').then(function (p) { notifData = p; paintBadge(); if (openNow && view === 'notif') render(); }).catch(function () {});
     };
     badge();
-    setInterval(function () { if (!openNow || view !== 'notif') badge(); }, 30000);
+    setInterval(function () { if (!document.hidden && (!openNow || view !== 'notif')) badge(); }, 30000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden && openNow) refresh(); });
     return true;
   }
   if (!boot()) {

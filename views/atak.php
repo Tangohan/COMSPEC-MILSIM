@@ -4690,7 +4690,8 @@ if ($atakMapConfig) {
         function startPoll(token) {
           stopPoll();
           activeToken = token;
-          pollTimer = setInterval(function () { refreshStatus(token); }, 3000);
+          // Onglet caché : aucune requête (statut relu au tick suivant, une fois l'onglet revenu).
+          pollTimer = setInterval(function () { if (!document.hidden) refreshStatus(token); }, 3000);
         }
 
         refreshStatus(null);

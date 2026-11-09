@@ -575,6 +575,23 @@ Réponse `{"id": nombre, "ref": texte}` : `saved;AAAA-MM-JJ HH:MM`, `unchanged;A
 
 Confidentialité : ces lignes (`sse_id_game_covers`) ne rejoignent ni le registre des identités, ni les listes de surveillance, ni le paquet. Lecture : le joueur dans Mes papiers, l'habilitation Confidentiel sur la fiche du membre.
 
+## ICD-SSE-PACK-REV-001 — Révision du paquet d'identité (304 / unchanged)
+
+`GET /api/sse/identity/pack` porte une révision par page : empreinte du contenu de la page (pays, identités, papiers, avis, kits, population, recherchés, briefs, réglages, pagination), sans `generated_at`. Même contenu = même révision. Rétrocompatible : sans révision envoyée, la réponse est le paquet de toujours, plus un champ `revision` que la DLL publiée ignore (elle ne recopie que `version`, `generated_at`, `map`, `op`, `since`, `settings`).
+
+| Sens | Champ | Contenu |
+|---|---|---|
+| Site → jeu | `revision` (corps) | 24 caractères hexadécimaux |
+| Site → jeu | en-tête `ETag` | `W/"idp-<revision>"` |
+| Jeu → site | `since_rev=<revision>` (paramètre, facultatif) | réponse 200 `{"version":1,"unchanged":true,"revision":…,"generated_at":…,"map":…,"op":…,"paging":{…}}`, sans aucun bloc de données |
+| Jeu → site | en-tête `If-None-Match: W/"idp-<revision>"` (facultatif) | réponse 304 sans corps, même `ETag` |
+
+- Révision par page (`offset`, `limit`) : le client garde celle de chaque page et la renvoie avec la même URL (`map`, `op`, `since`, `offset`, `limit`). La page 0 inchangée ne dit rien des suivantes : un client qui lit plusieurs pages envoie `since_rev` à chacune et suit `paging.next_offset` de la réponse `unchanged`.
+- COMSPEC Link publié (2.0.118 et plus) : il envoie déjà `If-None-Match` avec l'empreinte reçue pour la même URL et ressert sa copie sur un 304 (GameApiResponseCompactor garde l'`ETag` posé par la route au lieu de l'empreinte du corps). Comme `since` = le `generated_at` de la dernière réponse, l'URL change dès qu'un nouveau paquet arrive : le 304 joue quand l'URL se répète (même `since`, ou rechargement sans `since`).
+- Prochain COMSPEC Link : garder `revision` par page et l'envoyer en `since_rev` (ou garder l'URL et l'`ETag`) ; sur `unchanged`, ne rien reconvertir ni rejouer côté SQF (`fn_idAthenaPack` « apply »), garder le paquet en mémoire.
+- Cache serveur : paquet et révision gardés 5 min par communauté (clé : communauté, carte, opération, `since`, page ; jamais partagés entre communautés, droits vérifiés avant chaque lecture). Toute écriture réussie du registre (portail SSE, papiers et kit d'un membre, couverture, identité, envois du jeu vers `/api/sse/`) le vide. `generated_at` d'une réponse servie par le cache = heure du calcul : l'utiliser comme `since` relit au pire un peu plus de papiers, jamais moins.
+- Débit : 60 pages par minute et par appelant (compte du jeton de jeu, sinon communauté de la clé et IP), 240 contrôles `documents/lookup` par minute ; au-delà 429 `too_many_requests` avec `Retry-After`. Usage normal : 5 pages au début de la mission, puis au plus un paquet toutes les 2 min.
+
 ## Web Tacmap poll frequencies (implementation)
 
 | Client | Interval | Target |

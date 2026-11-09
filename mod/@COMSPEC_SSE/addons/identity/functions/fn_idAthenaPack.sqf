@@ -30,6 +30,9 @@
       wanted     ref (OPW-n), identity_id, person_id, last_name, first_name, alias, level (surveillance | recherche |
                  hvt), sides (camps qui y ont accès, vide = tous), zone, documents (ids), has_photo : recherchés de
                  l'opération, avis locaux (N3 hors ligne, checkpoints) limités à ces camps ; papiers connus = BOLO
+    Dans « settings » (comme ai_profiles) : loadouts { kits [{id, name, loadout (texte JSON du getUnitLoadout)}],
+      players [{uid, kits [ids], default}] } : kits du configurateur d'équipement, remis au registre de l'addon
+      loadout (fn_loadoutRegistry, caisses de kits) s'il est chargé.
 */
 params [["_op", ""], ["_a", []]];
 switch (_op) do {
@@ -108,6 +111,8 @@ switch (_op) do {
         };
         // Profils d'IA et éléments gardés : dans « settings » (la DLL publiée le transmet sans connaître ces blocs).
         if ("ai_profiles" in _settings) then { ["ingest", [_settings get "ai_profiles", _settings getOrDefault ["ai_placements", []]]] call comspec_sse_fnc_idAiConfig; };
+        // Kits du configurateur d'équipement (addon loadout, peut être absent) : registre serveur des caisses de kits.
+        if ("loadouts" in _settings && {!isNil "comspec_sse_fnc_loadoutRegistry"}) then { ["ingest", [_settings get "loadouts"]] call comspec_sse_fnc_loadoutRegistry; };
         private _nC = 0; private _nD = 0; private _nW = 0;
         {
             private _c = [_x, ["code", "name", "mrz_code", "number_format", "fictional", "name_en", "authority", "theme", "languages", "doc_types", "colors", "active", "real_sim", "zone", "name_native", "validity"]] call _rec;

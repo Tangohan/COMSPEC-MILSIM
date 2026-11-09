@@ -186,7 +186,11 @@
   window.addEventListener('atak:mapready', function () {
     ensureGroup(getMap());
     poll();
-    if (!timer) timer = setInterval(poll, 10000);
+    // Onglet caché : aucune requête, une lecture au retour.
+    if (!timer) {
+      timer = setInterval(function () { if (!document.hidden) poll(); }, 10000);
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) poll(); });
+    }
   });
   window.addEventListener('atak:display-prefs-changed', function () {
     lastSig = '';

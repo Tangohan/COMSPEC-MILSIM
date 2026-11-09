@@ -7,15 +7,13 @@ declare(strict_types=1);
 $kid = (int) ($kit['id'] ?? 0);
 $unitName = trim((string) ($kit['unit_name'] ?? ''));
 $roleName = trim((string) ($kit['role_name'] ?? ''));
-$audience = 'all';
-if (($kit['unit_id'] ?? null) !== null) {
-    $audience = 'unit:' . (int) $kit['unit_id'];
-} elseif (($kit['job_role_id'] ?? null) !== null) {
-    $audience = 'role:' . (int) $kit['job_role_id'];
-}
+$memberName = trim((string) ($kit['member_name'] ?? ''));
+$qualName = trim((string) ($kit['qualification_name'] ?? ''));
+$audience = \App\Services\GameEquipment\RoleKitService::audienceValue($kit);
 $sourceLabel = match ((string) ($kit['source'] ?? 'scratch')) {
     'game_loadout' => 'Tenue remontée du jeu',
     'assistant' => 'Créé avec l’assistant',
+    'configurator' => 'Composé au configurateur',
     default => 'Créé de zéro',
 };
 $preview = is_array($kit['preview'] ?? null) ? $kit['preview'] : [];
@@ -48,7 +46,11 @@ $desc = trim((string) ($kit['description'] ?? ''));
         </span>
         <div class="eqx-kit__body">
             <p class="eqx-kit__for">
-                <?php if ($unitName !== ''): ?>
+                <?php if ($memberName !== ''): ?>
+                Attribué à <strong translate="no"><?= $h($memberName) ?></strong>
+                <?php elseif ($qualName !== ''): ?>
+                Pour la qualification <strong translate="no"><?= $h($qualName) ?></strong>
+                <?php elseif ($unitName !== ''): ?>
                 Pour l’unité <strong translate="no"><?= $h($unitName) ?></strong>
                 <?php elseif ($roleName !== ''): ?>
                 Pour le rôle <strong translate="no"><?= $h($roleName) ?></strong>
@@ -94,6 +96,7 @@ $desc = trim((string) ($kit['description'] ?? ''));
         <?php if ($copyId > 0): ?>
         <a class="eq-hub__btn eq-hub__btn--outline" href="<?= $h(url('equipment') . '?tenue=' . $copyId) ?>">Voir ma copie</a>
         <?php endif; ?>
+        <a class="eq-hub__btn eq-hub__btn--outline" href="<?= $h(url('equipment/configurateur') . '?ouvrir=k:' . $kid) ?>"><?= !empty($canManageKits) ? 'Modifier au configurateur' : 'Ouvrir au configurateur' ?></a>
     </div>
 
     <?php if (!empty($canManageKits)): ?>

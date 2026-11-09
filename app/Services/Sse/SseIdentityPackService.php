@@ -44,6 +44,7 @@ final class SseIdentityPackService
         private ?SseIdOperationRepository $operations = null,
         private ?SseIdSettingsRepository $settings = null,
         private ?SseAiProfileRepository $aiProfiles = null,
+        private ?\App\Services\GameEquipment\Configurator\LoadoutPackBuilder $loadouts = null,
     ) {
         $this->documents ??= new SseIdDocumentRepository();
         $this->identities ??= new SseIdentityRepository();
@@ -151,7 +152,10 @@ final class SseIdentityPackService
             'briefs' => $briefs,
             // Réglage de la communauté, ignoré par un ancien mod.
             // Profils d'IA et éléments gardés : dans « settings », seul bloc libre que la DLL publiée transmet sans le connaître.
-            'settings' => ['auto_transmit' => $this->settings->autoTransmit($tenantId)] + ($offset === 0 ? $this->aiBlocks($tenantId, $mapId, $opKey) : []),
+            // Kits d'équipement (« Prendre mon kit » d'une caisse, addon loadout du SSE) : aussi dans « settings ».
+            'settings' => ['auto_transmit' => $this->settings->autoTransmit($tenantId)]
+                + ($offset === 0 ? $this->aiBlocks($tenantId, $mapId, $opKey) : [])
+                + ($offset === 0 ? $this->loadoutBlock($tenantId) : []),
             'paging' => [
                 'offset' => $offset,
                 'limit' => $limit,
@@ -203,6 +207,22 @@ final class SseIdentityPackService
         } catch (\Throwable) {
             return [];
         }
+    }
+
+    /**
+     * Kits d'équipement de la communauté et kits proposés à chaque joueur (LoadoutPackBuilder) ; absent sans kit.
+     *
+     * @return array<string, mixed>
+     */
+    private function loadoutBlock(int $tenantId): array
+    {
+        try {
+            $block = ($this->loadouts ?? new \App\Services\GameEquipment\Configurator\LoadoutPackBuilder())->build($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return $block === null ? [] : ['loadouts' => $block];
     }
 
     /**
@@ -279,6 +299,17 @@ final class SseIdentityPackService
         }
 
         return $out;
+    }
+
+    /**
+     * Révision d'une page du paquet : empreinte de son contenu, sans l'heure de génération (qui change à chaque appel).
+     * Même contenu = même révision ; un papier, un pays, un kit, un brief, un avis ou un réglage modifié la change.
+     */
+    public static function revisionOf(array $pack): string
+    {
+        unset($pack['generated_at'], $pack['revision'], $pack['unchanged']);
+
+        return substr(hash('sha256', (string) json_encode($pack, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR)), 0, 24);
     }
 
     /** « since » accepté en ISO 8601 ou AAAA-MM-JJ HH:MM:SS, ramené en UTC base de données ; sinon ignoré. */

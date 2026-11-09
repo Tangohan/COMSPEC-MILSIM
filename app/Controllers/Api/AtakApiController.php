@@ -4523,7 +4523,12 @@ class AtakApiController
         }
         $out = array_map(fn ($r) => ['id' => $r['id'], 'layerId' => $r['layerId'], 'markerData' => $r['markerData'], 'updated_at' => $r['updated_at']], $rows);
         try {
-            $detectRules = $this->markerDetectionService()->enabledRules($tenantId);
+            // Règles de la communauté (réglage rare) : lues une fois toutes les 10 s, pas à chaque sondage des marqueurs.
+            $detectRules = ShortCache::remember(
+                'markerrules:' . $tenantId,
+                10,
+                fn (): array => $this->markerDetectionService()->enabledRules($tenantId)
+            );
             if ($detectRules !== []) {
                 $out = array_map(
                     fn (array $row): array => $this->markerDetectionService()->decorateRow($row, $detectRules),
@@ -4537,7 +4542,12 @@ class AtakApiController
         $world = preg_replace('/[^A-Za-z0-9_.-]/', '', (string) $request->query('world_name', ''));
         if ($world !== '') {
             try {
-                $authoritative = (new \App\Repositories\AthenaTacticalRepository())->markers($tenantId, $world, false);
+                // Repères publiés d'Athena : même lecture pour tous les joueurs du théâtre, 2 s comme la liste des marqueurs.
+                $authoritative = ShortCache::remember(
+                    'athena_markers:' . $tenantId . ':' . sha1($world) . ':' . ShortCache::gen('markers:' . $tenantId),
+                    2,
+                    static fn (): array => (new \App\Repositories\AthenaTacticalRepository())->markers($tenantId, $world, false)
+                );
                 foreach ($authoritative as $marker) {
                     if (($marker['geometry_type'] ?? '') !== 'POINT') {
                         continue;
@@ -4571,7 +4581,12 @@ class AtakApiController
                         'pos' => $g['pos'], 'type' => 'comspec_del', 'text' => $g['arma_name'], 'color' => '', 'source' => 'game_del',
                     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                     'updated_at' => null,
-                ], $this->atak->recentlySuppressedGameMarkers($tenantId, $mapId));
+                ], ShortCache::remember(
+                    // Balayage LIKE des marqueurs retirés : 2 s par carte ; la fenêtre de 15 s entre dans la clé.
+                    'suppressed_markers:' . $tenantId . ':' . $mapId . ':' . intdiv(time(), 15) . ':' . ShortCache::gen('markers:' . $tenantId),
+                    2,
+                    fn (): array => $this->atak->recentlySuppressedGameMarkers($tenantId, $mapId)
+                ));
                 $out = array_merge($gone, $out);
             } catch (\Throwable) {
                 // La liste des marqueurs reste servie sans ce complément.
@@ -8254,7 +8269,49 @@ class AtakApiController
         $mapId = $this->mapId($request);
         $limit = (int) ($request->query('limit') ?: 40);
         $this->logStaleUnitDisconnects($tenantId, $mapId);
-        $alerts = $this->atak->getMedicalAlertsFromChat($tenantId, $mapId, min($limit, 100));
+        // Partie commune à tous les joueurs de la carte (chat, télémétrie, triage, unités, réconciliation) : calculée
+        // une fois toutes les 3 s au plus, par communauté et carte (une quinzaine de requêtes SQL, sondée toutes les
+        // 8 s par chaque joueur). Brouillage, droits de triage et vue renseignement restent propres à l'appelant.
+        $limit = max(1, min($limit, 100));
+        [$alerts, $criticalUnits, $emergencyCount] = ShortCache::remember(
+            'medalerts:' . $tenantId . ':' . $mapId . ':' . $limit . ':' . ShortCache::gen('medalerts:' . $tenantId),
+            3,
+            fn (): array => $this->computeMedicalAlerts($tenantId, $mapId, $limit)
+        );
+
+        $alerts = $this->applyIntelScramble($request, $tenantId, $mapId, 'alert', $alerts);
+        $criticalUnits = $this->applyIntelScramble($request, $tenantId, $mapId, 'unit', $criticalUnits);
+
+        return Response::json([
+            'mapId' => $mapId,
+            'alerts' => $alerts,
+            'criticalUnits' => $criticalUnits,
+            'counts' => [
+                'alerts' => count($alerts),
+                'criticalUnits' => count($criticalUnits),
+                'emergency' => $emergencyCount,
+            ],
+            'active_window_seconds' => MedicalAlertParser::ACTIVE_WINDOW_SECONDS,
+            'can_triage' => $this->canTriageMedicalAlerts(),
+            'triage_statuses' => array_map(
+                static fn (string $s): array => [
+                    'value' => $s,
+                    'label' => MedicalAlertParser::triageLabelFr($s),
+                ],
+                MedicalAlertParser::TRIAGE_STATUSES
+            ),
+            'intel_view' => $this->resolveIntelView($request, $tenantId, $mapId),
+        ]);
+    }
+
+    /**
+     * Alertes médicales d'une carte, avant brouillage : [alertes, unités critiques, urgences].
+     *
+     * @return array{0: array<array-key, mixed>, 1: array<array-key, mixed>, 2: int}
+     */
+    private function computeMedicalAlerts(int $tenantId, int $mapId, int $limit): array
+    {
+        $alerts = $this->atak->getMedicalAlertsFromChat($tenantId, $mapId, $limit);
         try {
             $structured = (new \App\Services\Tactical\AtakTelemetryMedicalStore())->listActive($tenantId, $mapId, min($limit, 100));
             if ($structured !== []) {
@@ -8296,29 +8353,7 @@ class AtakApiController
             }
         }
 
-        $alerts = $this->applyIntelScramble($request, $tenantId, $mapId, 'alert', $alerts);
-        $criticalUnits = $this->applyIntelScramble($request, $tenantId, $mapId, 'unit', $criticalUnits);
-
-        return Response::json([
-            'mapId' => $mapId,
-            'alerts' => $alerts,
-            'criticalUnits' => $criticalUnits,
-            'counts' => [
-                'alerts' => count($alerts),
-                'criticalUnits' => count($criticalUnits),
-                'emergency' => $emergencyCount,
-            ],
-            'active_window_seconds' => MedicalAlertParser::ACTIVE_WINDOW_SECONDS,
-            'can_triage' => $this->canTriageMedicalAlerts(),
-            'triage_statuses' => array_map(
-                static fn (string $s): array => [
-                    'value' => $s,
-                    'label' => MedicalAlertParser::triageLabelFr($s),
-                ],
-                MedicalAlertParser::TRIAGE_STATUSES
-            ),
-            'intel_view' => $this->resolveIntelView($request, $tenantId, $mapId),
-        ]);
+        return [$alerts, $criticalUnits, $emergencyCount];
     }
 
     /**
@@ -8332,8 +8367,13 @@ class AtakApiController
         }
         $tenantId = $r;
         $mapId = $this->mapId($request);
-        $limit = (int) ($request->query('limit') ?: 40);
-        $alerts = $this->atak->getTacticalAlertsFromChat($tenantId, $mapId, min($limit, 100));
+        $limit = min((int) ($request->query('limit') ?: 40), 100);
+        // Lecture du chat (jusqu'à 1 000 lignes quand il n'y a aucune alerte) commune à la carte : 3 s au plus.
+        $alerts = ShortCache::remember(
+            'tacalerts:' . $tenantId . ':' . $mapId . ':' . $limit,
+            3,
+            fn (): array => $this->atak->getTacticalAlertsFromChat($tenantId, $mapId, $limit)
+        );
         $alerts = $this->applyIntelScramble($request, $tenantId, $mapId, 'alert', $alerts);
 
         return Response::json([
@@ -8807,6 +8847,8 @@ class AtakApiController
         }
 
         $triage = $this->medicalTriageRepository->upsert($tenantId, $mapId, $chatId, $status, $by, $note);
+        // Liste des alertes médicales gardée 3 s (medicalAlertsIndex) : le triage se voit au sondage suivant.
+        ShortCache::bump('medalerts:' . $tenantId);
         if ($triage === null) {
             return Response::json([
                 'error' => 'save_failed',

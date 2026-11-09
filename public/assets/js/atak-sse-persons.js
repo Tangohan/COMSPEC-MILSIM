@@ -159,7 +159,9 @@
   function start() {
     if (timer) return;
     refresh();
-    timer = window.setInterval(refresh, POLL_MS);
+    // Onglet caché : aucune requête, une lecture au retour.
+    timer = window.setInterval(function () { if (!document.hidden) refresh(); }, POLL_MS);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
   }
 
   function bind() {

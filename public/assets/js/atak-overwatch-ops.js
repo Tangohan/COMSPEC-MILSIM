@@ -2078,8 +2078,10 @@
     loadTraffic();
     loadRelays();
     loadSitreps();
-    window.setInterval(loadTraffic, 10000);
-    window.setInterval(loadRelays, 15000);
+    // Onglet caché : aucune requête, une lecture au retour.
+    window.setInterval(function () { if (!document.hidden) loadTraffic(); }, 10000);
+    window.setInterval(function () { if (!document.hidden) loadRelays(); }, 15000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) { loadTraffic(); loadRelays(); } });
     window.setInterval(renderMarkerIntel, 15000);
   }
 

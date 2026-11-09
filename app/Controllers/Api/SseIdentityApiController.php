@@ -19,6 +19,8 @@ use App\Services\Sse\SseIdGameCoverService;
 use App\Services\Sse\SseIdWatchFromGameService;
 use App\Support\ComspecApiKeyAuth;
 use App\Support\HttpJsonBody;
+use App\Support\ShortCache;
+use App\Support\SseIdentityPackCache;
 
 /**
  * API COMSPEC IDENTITY (Lot 1) — lue par COMSPEC Link pour le mod SSE.
@@ -71,15 +73,45 @@ final class SseIdentityApiController
         }
         $offset = (int) ($request->query('offset') ?? 0);
         $limit = (int) ($request->query('limit') ?? SseIdentityPackService::DEFAULT_LIMIT);
+        $limit = $limit > 0 ? $limit : SseIdentityPackService::DEFAULT_LIMIT;
+        $mapId = $this->mapId($request);
+        $op = self::queryText($request, 'op');
+        $since = self::queryText($request, 'since');
 
-        return Response::json($this->pack->build(
-            $tenantId,
-            $this->mapId($request),
-            self::queryText($request, 'op'),
-            self::queryText($request, 'since'),
-            $offset,
-            $limit > 0 ? $limit : SseIdentityPackService::DEFAULT_LIMIT
-        ));
+        // Paquet et révision gardés quelques minutes par communauté (invalidés à chaque écriture du registre).
+        $entry = ShortCache::remember(
+            SseIdentityPackCache::key($tenantId, $mapId, $op, $since, $offset, $limit),
+            SseIdentityPackCache::TTL,
+            function () use ($tenantId, $mapId, $op, $since, $offset, $limit): array {
+                $pack = $this->pack->build($tenantId, $mapId, $op, $since, $offset, $limit);
+
+                return ['pack' => $pack, 'revision' => SseIdentityPackService::revisionOf($pack)];
+            }
+        );
+        $pack = $entry['pack'];
+        $revision = (string) $entry['revision'];
+        $etag = SseIdentityPackCache::etag($revision);
+
+        // Révision déjà connue du client (paramètre since_rev ou en-tête If-None-Match) : rien à renvoyer.
+        // Sans l'un ni l'autre, la réponse est le paquet complet, comme avant (plus le champ « revision »).
+        if (self::queryText($request, 'since_rev') === $revision) {
+            return Response::json([
+                'version' => $pack['version'] ?? SseIdentityPackService::VERSION,
+                'unchanged' => true,
+                'revision' => $revision,
+                'generated_at' => $pack['generated_at'] ?? null,
+                'map' => $pack['map'] ?? $mapId,
+                'op' => $pack['op'] ?? null,
+                'paging' => $pack['paging'] ?? null,
+            ])->header('ETag', $etag)->header('Cache-Control', 'private, no-cache');
+        }
+        if (SseIdentityPackCache::ifNoneMatchHits($request->header('If-None-Match'), $etag)) {
+            return (new Response())->setStatusCode(304)->header('ETag', $etag)->header('Cache-Control', 'private, no-cache');
+        }
+
+        $pack['revision'] = $revision;
+
+        return Response::json($pack)->header('ETag', $etag)->header('Cache-Control', 'private, no-cache');
     }
 
     /** GET /api/sse/identity/documents/lookup?country=&type=&number=&last=&first=&dob= */

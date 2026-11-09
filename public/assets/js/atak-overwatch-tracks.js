@@ -377,7 +377,9 @@
     bindUi();
     refresh();
     if (pollTimer) clearInterval(pollTimer);
-    pollTimer = setInterval(refresh, 8000);
+    // Onglet caché : aucune requête, une lecture au retour.
+    pollTimer = setInterval(function () { if (!document.hidden) refresh(); }, 8000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
   }
 
   function boot() {

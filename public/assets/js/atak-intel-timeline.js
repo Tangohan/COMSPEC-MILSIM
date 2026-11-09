@@ -3,6 +3,7 @@ window.ATAKIntelTimeline = (function () {
   'use strict';
 
   var timer = null;
+  var visibilityBound = false;
   var lastId = 0;
   var flashed = {};
   var mutedBeforeId = 0;
@@ -183,7 +184,12 @@ window.ATAKIntelTimeline = (function () {
     bindDetails();
     poll();
     if (timer) clearInterval(timer);
-    timer = setInterval(poll, 5000);
+    // Onglet caché : aucune requête, une lecture au retour.
+    timer = setInterval(function () { if (!document.hidden) poll(); }, 5000);
+    if (!visibilityBound) {
+      visibilityBound = true;
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) poll(); });
+    }
   }
 
   if (document.readyState === 'loading') {
