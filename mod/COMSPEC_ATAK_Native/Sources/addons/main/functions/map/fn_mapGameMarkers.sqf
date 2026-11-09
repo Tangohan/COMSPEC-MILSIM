@@ -37,7 +37,7 @@ if (isNil "_pend") then { _pend = createHashMap; missionNamespace setVariable ["
 private _dead = missionNamespace getVariable "COMSPEC_ATAK_GmDead";
 if (isNil "_dead") then { _dead = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_GmDead", _dead]; };
 private _pendDue = (count _pend) > 0 && {_now > (missionNamespace getVariable ["COMSPEC_ATAK_GmPendAt", 0])};
-private _full = _now > (_cache select 0) || {"" in _dirty} || {(_cache param [3, false]) isNotEqualTo (_pal get "dark")};
+private _full = _now > (_cache select 0) || {"" in _dirty} || {(_cache param [3, false]) isNotEqualTo (_pal get "dark")} || {(_cache param [4, false]) isNotEqualTo _tac};
 if (_full || {(count _dirty) > 0} || {_pendDue}) then {
     missionNamespace setVariable ["COMSPEC_ATAK_MkDirtyGm", createHashMap];
     if (_pendDue) then {
@@ -87,7 +87,16 @@ if (_full || {(count _dirty) > 0} || {_pendDue}) then {
                 };
                 private _halo = [_pal get "halo", _pal get "haloLight"] select (((_c select 0) * 0.3 + (_c select 1) * 0.59 + (_c select 2) * 0.11) < 0.25);
                 private _keyC = if ((markerText _x) isNotEqualTo "") then { [_c select 0, _c select 1, _c select 2, 0.75] } else { [] };
-                [0, _x, _ic select 0, _c, (_ic select 1) * (abs _sw), (_ic select 1) * (abs _sh), markerDir _x, [0, 1] select ((_ic select 2) > 0), _halo, _keyC]
+                // Repère de contact (o_ n_ u_ b_ c_) en style tactique : forme de l'affiliation sous le symbole (fn_contactStyle),
+                // couleur de la forme et couleur du symbole gardées avec l'entrée (symbole éclairci s'il se perdrait sur le fond sombre).
+                private _aff = ["markerAff", _type] call comspec_atak_native_fnc_contactStyle;
+                private _cFr = [];
+                private _cIc = _c;
+                if (_tac && {_aff isNotEqualTo ""}) then {
+                    _cFr = ["rgb", _aff] call comspec_atak_native_fnc_contactStyle;
+                    if (((_c select 0) * 0.3 + (_c select 1) * 0.59 + (_c select 2) * 0.11) < 0.35) then { _cIc = +_cFr; };
+                };
+                [0, _x, _ic select 0, _c, (_ic select 1) * (abs _sw), (_ic select 1) * (abs _sh), markerDir _x, [0, 1] select ((_ic select 2) > 0), _halo, _keyC, _aff, _cFr, _cIc]
             };
             case "POLYLINE": {
                 private _flat = markerPolyline _x;
@@ -137,7 +146,7 @@ if (_full || {(count _dirty) > 0} || {_pendDue}) then {
             private _e = call _entry;
             if ((count _e) > 0) then { _index set [_x, count _list]; _list pushBack _e; };
         } forEach allMapMarkers;
-        _cache = [_now + 300, _list, _index, _pal get "dark"];
+        _cache = [_now + 300, _list, _index, _pal get "dark", _tac];
     } else {
         // Marqueur changé : son entrée est remplacée à sa place (ordre de dessin gardé), ajoutée s'il est nouveau,
         // vidée s'il a disparu ; la liste est recompactée à la prochaine relecture complète.
@@ -169,13 +178,14 @@ private _clustOn = (ctrlMapScale _map) >= 0.12;
 private _cw = (((_view select 2) - (_view select 0)) / 16) max 1;
 private _clu = createHashMap;
 private _keyRing = "\z\comspec_atak_native\addons\main\data\map_keyring.paa";
+private _frN = 0;
 // Un pixel en mètres, une fois par image et seulement en style tactique (contour doublé des zones).
 private _wpx = if (_tac) then { (((_view select 2) - (_view select 0)) / (_mw + 2 * _mg)) * pixelW } else { 0 };
 {
     if ((count _x) isEqualTo 0) then { continue };
     switch (_x select 0) do {
         case 0: {
-            _x params ["", "_m", "_icon", "_c", "_w", "_h", "_dir", "_shadow", ["_halo", []], ["_keyC", []]];
+            _x params ["", "_m", "_icon", "_c", "_w", "_h", "_dir", "_shadow", ["_halo", []], ["_keyC", []], ["_aff", ""], ["_cFr", []], ["_cIc", []]];
             private _pos = getMarkerPos _m;
             if ((_pos select 0) < (_view select 0) || {(_pos select 0) > (_view select 2)} || {(_pos select 1) < (_view select 1)} || {(_pos select 1) > (_view select 3)}) then { continue };
             if (_clustOn) then {
@@ -185,9 +195,16 @@ private _wpx = if (_tac) then { (((_view select 2) - (_view select 0)) / (_mw + 
                 _clu set [_ck, [1, _pos, _c]];
             };
             private _iw = (_w * _mk) max 7; private _ih = (_h * _mk) max 7;
-            if ((count _halo) > 0) then { _map drawIcon [_icon, _halo, _pos, _iw * 1.3, _ih * 1.3, _dir, "", 0]; };
-            _map drawIcon [_icon, _c, _pos, _iw, _ih, _dir, "", _shadow];
-            if (_tac && {!_clustOn} && {(count _keyC) > 0}) then { private _kr = (_iw max _ih) * 2; _map drawIcon [_keyRing, _keyC, _pos, _kr, _kr, 0, "", 0]; };
+            // Forme d'affiliation sous le symbole (zoom rapproché seulement, 60 formes au plus par image).
+            private _framed = _tac && {!_clustOn} && {(count _cFr) > 0} && {_frN < 60};
+            if (_framed) then {
+                _frN = _frN + 1;
+                ["frame", [_map, _aff, _pos, (_iw max _ih) * 0.8, _cFr]] call comspec_atak_native_fnc_contactStyle;
+            } else {
+                if ((count _halo) > 0) then { _map drawIcon [_icon, _halo, _pos, _iw * 1.3, _ih * 1.3, _dir, "", 0]; };
+            };
+            _map drawIcon [_icon, [_c, _cIc] select (_framed && {(count _cIc) > 0}), _pos, _iw, _ih, _dir, "", _shadow];
+            if (_tac && {!_clustOn} && {!_framed} && {(count _keyC) > 0}) then { private _kr = (_iw max _ih) * 2; _map drawIcon [_keyRing, _keyC, _pos, _kr, _kr, 0, "", 0]; };
         };
         case 1: {
             _x params ["", "", "_pts", "_c", ["_bb", []]];

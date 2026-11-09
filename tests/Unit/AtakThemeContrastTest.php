@@ -177,4 +177,101 @@ final class AtakThemeContrastTest extends TestCase
         self::assertStringContainsString('if !(_th get "dark") then { _col = [(_col select 0) * 0.55', $src);
         self::assertStringNotContainsString('_p ctrlSetTextColor [1, 1, 1, 1];', $src);
     }
+
+    /**
+     * Fiche de contact et affiliations sur la carte (fn_contactCard, fn_contactStyle, fn_unitCard) : encres d'affiliation, texte,
+     * texte secondaire, avertissement et alerte lisibles à 4,5 sur le fond de fiche (mapCard) dans les trois thèmes.
+     * Les jetons sont des paires [sombre ou jour, nuit JVN] de fn_theme (le calque de la carte reste sombre en thème jour).
+     *
+     * @return array<string, array<string, array{float, float, float}>>
+     */
+    private function mapTokens(): array
+    {
+        $src = str_replace("\r\n", "\n", (string) file_get_contents(self::MAIN . '/functions/ui/fn_theme.sqf'));
+        $rgb = '\[([0-9.]+), ([0-9.]+), ([0-9.]+), [0-9.]+\]';
+        $out = ['std' => [], 'nvg' => []];
+        preg_match_all('/_th set \["(map(?:Card|Friend|Hostile|Neutral|Unknown|Civil|Warn|Alert))", \[' . $rgb . ', ' . $rgb . '\] select _nvg\]/', $src, $m, PREG_SET_ORDER);
+        foreach ($m as $r) {
+            $out['std'][$r[1]] = [(float) $r[2], (float) $r[3], (float) $r[4]];
+            $out['nvg'][$r[1]] = [(float) $r[5], (float) $r[6], (float) $r[7]];
+        }
+        // mapText = onChrome, mapDim = onChromeDim (mêmes paires dans fn_theme).
+        foreach (['onChrome' => 'mapText', 'onChromeDim' => 'mapDim'] as $from => $to) {
+            preg_match('/_th set \["' . $from . '", \[' . $rgb . ', ' . $rgb . '\] select/', $src, $r);
+            self::assertNotEmpty($r, $from);
+            $out['std'][$to] = [(float) $r[1], (float) $r[2], (float) $r[3]];
+            $out['nvg'][$to] = [(float) $r[4], (float) $r[5], (float) $r[6]];
+        }
+
+        return $out;
+    }
+
+    /** @return array<string, array{string}> */
+    public static function jeuxDeCarte(): array
+    {
+        return ['sombre' => ['std'], 'jour' => ['std'], 'nuit JVN' => ['nvg']];
+    }
+
+    #[DataProvider('jeuxDeCarte')]
+    public function testFicheDeContactLisible(string $set): void
+    {
+        $t = $this->mapTokens()[$set];
+        foreach (['mapCard', 'mapFriend', 'mapHostile', 'mapNeutral', 'mapUnknown', 'mapCivil', 'mapWarn', 'mapAlert', 'mapText', 'mapDim'] as $k) {
+            self::assertArrayHasKey($k, $t, $k);
+        }
+        foreach (['mapFriend', 'mapHostile', 'mapNeutral', 'mapUnknown', 'mapCivil', 'mapWarn', 'mapAlert', 'mapText', 'mapDim'] as $ink) {
+            $c = self::contrast($t[$ink], $t['mapCard']);
+            self::assertGreaterThanOrEqual(4.5, round($c, 2), "{$ink} sur mapCard : contraste " . round($c, 2));
+        }
+    }
+
+    public function testAffiliationParLaFormeEtNonLaCouleurSeule(): void
+    {
+        $src = (string) file_get_contents(self::MAIN . '/functions/map/fn_contactStyle.sqf');
+        preg_match_all('/\["(friend|hostile|neutral|unknown|civil)", \[\[_d \+ "(\w+)\.paa", "COL", ([0-9.]+)\]/', $src, $m, PREG_SET_ORDER);
+        self::assertCount(5, $m, 'une couche de liseré par affiliation');
+        $formes = array_map(static fn (array $r): string => $r[2], $m);
+        self::assertSame(array_unique($formes), $formes, 'chaque affiliation a sa propre forme, hors cercle partagé');
+        // Cercle ami, losange ennemi, carré neutre, triangle civil : quatre formes de base distinctes, l'inconnu garde ses bras.
+        self::assertCount(5, array_unique($formes));
+        // Aucun dessin de contact par image sans plafond.
+        $draw = (string) file_get_contents(self::MAIN . '/functions/map/fn_mapOnDraw.sqf');
+        self::assertStringContainsString('{_ctN < 80}', $draw);
+        $gm = (string) file_get_contents(self::MAIN . '/functions/map/fn_mapGameMarkers.sqf');
+        self::assertStringContainsString('{_frN < 60}', $gm);
+    }
+
+    public function testFichesDeContactSansCouleurFixeEtTraduites(): void
+    {
+        $card = (string) file_get_contents(self::MAIN . '/functions/map/fn_contactCard.sqf');
+        $unit = (string) file_get_contents(self::MAIN . '/functions/ui/fn_unitCard.sqf');
+        $page = (string) file_get_contents(self::MAIN . '/functions/pages/fn_pageMap.sqf');
+        self::assertStringNotContainsString('0.035, 0.042, 0.038', $card . $unit . $page);
+        self::assertStringContainsString('_th get "mapCard"', $card);
+        self::assertStringContainsString('_th get "mapCard"', $unit);
+        self::assertStringContainsString('comspec_atak_native_fnc_contactCard', $page);
+        $cfg = (string) file_get_contents(self::MAIN . '/config.cpp');
+        self::assertStringContainsString('class contactStyle {}; class contactCard {};', $cfg);
+        // Actions de la fiche : aller, partager, centrer ou modifier, supprimer ; MARQUER sur une piste de contact.
+        foreach (['"Y ALLER"', '"PARTAGER"', '"CENTRER"', '"MODIFIER"', '"SUPPRIMER"'] as $a) {
+            self::assertStringContainsString($a, $card);
+        }
+        self::assertStringContainsString('["mark", "MARQUER"', $unit);
+        // Textes en français tous présents dans le dictionnaire anglais.
+        $en = (string) file_get_contents(self::MAIN . '/i18n/en.txt');
+        preg_match_all('/\("([^"]+)"\) call comspec_atak_native_fnc_tr/', (string) file_get_contents(self::MAIN . '/functions/map/fn_contactStyle.sqf') . $card, $m);
+        foreach (array_unique($m[1]) as $k) {
+            self::assertStringContainsString('["' . $k . '", "', $en, $k);
+        }
+        foreach (['AMI', 'ENNEMI', 'NEUTRE', 'INCONNU', 'CIVIL', 'POSITION ANCIENNE', 'CLASSIQUE', 'MARQUER', 'PARTAGER'] as $k) {
+            self::assertStringContainsString('["' . $k . '", "', $en, $k);
+        }
+    }
+
+    public function testChoixTactiqueClassiqueDansLesReglages(): void
+    {
+        $set = (string) file_get_contents(self::MAIN . '/functions/pages/fn_pageSettings.sqf');
+        self::assertStringContainsString('["COMSPEC_ATAK_MapDrawStyle", "TACTICAL", "Marqueurs et traits", [["AUTO", "AUTO"], ["TACTIQUE", "TACTICAL"], ["CLASSIQUE", "STANDARD"]]', $set);
+        self::assertStringContainsString('getVariable ["COMSPEC_ATAK_MapDrawStyle", "TACTICAL"]', (string) file_get_contents(self::MAIN . '/functions/map/fn_mapColors.sqf'));
+    }
 }

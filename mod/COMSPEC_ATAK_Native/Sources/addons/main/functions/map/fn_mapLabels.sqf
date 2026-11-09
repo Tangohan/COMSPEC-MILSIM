@@ -70,7 +70,13 @@ if (_eniOn && {_now > (_eni select 0)} && {(_eni param [2, -1]) isNotEqualTo _eR
         // Heure affichée « 15:01 » (avant : « 150179 », heure, minutes et secondes collées, illisible).
         private _hm = [_hms, format ["%1:%2", _hms select [0, 2], _hms select [2, 2]]] select ((count _hms) >= 4);
         private _title = ["cut", toUpper ([_txt, ["ENY CONTACT", "ENI CONTACT"] select (_eLang isEqualTo "fr")] select (_txt isEqualTo "")), 18] call comspec_atak_native_fnc_mapFmt;
-        _list pushBack [_key, [_pos select 0, _pos select 1, 0], _title, [_hm, (format ["%1 · signalé %2", _hm, toUpper _who]) call comspec_atak_native_fnc_tr] select (_who isNotEqualTo "")];
+        // Âge du contact (heure du jeu) : « 15:01 · 4 min · signalé TA1 » ; la liste est refaite au plus toutes les 15 s.
+        private _ageTxt = "";
+        if ((count _hms) >= 6) then {
+            _ageTxt = ["ageShort", ((dayTime * 3600 - ((parseNumber (_hms select [0, 2])) * 3600 + (parseNumber (_hms select [2, 2])) * 60 + parseNumber (_hms select [4, 2]))) + 86400) mod 86400] call comspec_atak_native_fnc_contactStyle;
+        };
+        private _hmAge = [_hm, _hm + " · " + _ageTxt] select (_ageTxt isNotEqualTo "");
+        _list pushBack [_key, [_pos select 0, _pos select 1, 0], _title, [_hmAge, format [("%1 · signalé %2") call comspec_atak_native_fnc_tr, _hmAge, toUpper _who]] select (_who isNotEqualTo "")];
     } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["markers", createHashMap]);
     _eni = [_now + 1, _list, _eRev, _now + 15, _eLang];
     missionNamespace setVariable ["COMSPEC_ATAK_EniList", _eni];

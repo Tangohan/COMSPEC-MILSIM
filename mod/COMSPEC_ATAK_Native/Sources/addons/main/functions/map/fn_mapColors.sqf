@@ -10,8 +10,8 @@
     et en mode nuit ou filtre JVN, qui voilent tout l'écran : la teinte claire garde l'écart avec le fond.
     « lift » [couleur, classe] : couleur de marqueur Arma gardée telle quelle ; sur carte sombre, noir, bleu pur et
                    autres couleurs trop sombres -> leur version vive (table par classe). « halo » : contour sous l'icône.
-    Style tactique des marqueurs et traits (Réglages > Carte, COMSPEC_ATAK_MapDrawStyle : AUTO, allumé avec le fond ARDOISE ;
-    TACTICAL toujours ; STANDARD jamais) : « tac » et ses couleurs, lus par les fonctions de dessin sans autre calcul.
+    Style tactique des marqueurs et traits (Réglages > Carte, COMSPEC_ATAK_MapDrawStyle : TACTICAL par défaut, AUTO allumé avec le fond ARDOISE ;
+    TACTICAL toujours ; STANDARD = CLASSIQUE, jamais) : « tac » et ses couleurs, lus par les fonctions de dessin sans autre calcul.
     Table refaite seulement quand le fond, le mode nuit, les couleurs choisies, l'opacité ou le style changent.
     Params : [fond de carte (fn_mapStyle)] -> table ; sans paramètre : la dernière table (fonctions appelées par fn_mapOnDraw).
 */
@@ -21,7 +21,7 @@ if (_bg isEqualTo "") exitWith { if ((count _pal) > 0) then { _pal } else { [[] 
 private _night = (profileNamespace getVariable ["COMSPEC_ATAK_NightMode", "OFF"]) isNotEqualTo "OFF" || {profileNamespace getVariable ["COMSPEC_ATAK_NvgFilter", false]};
 private _bgA = profileNamespace getVariable ["COMSPEC_ATAK_LblBgAlpha", 0.8];
 if !(_bgA isEqualType 0) then { _bgA = 0.8; };
-private _drawStyle = profileNamespace getVariable ["COMSPEC_ATAK_MapDrawStyle", "AUTO"];
+private _drawStyle = profileNamespace getVariable ["COMSPEC_ATAK_MapDrawStyle", "TACTICAL"];
 private _sig = [_bg, _night, profileNamespace getVariable ["COMSPEC_ATAK_AllyColor", "BLUE"], profileNamespace getVariable ["COMSPEC_ATAK_SelfColor", "CYAN"], _bgA, _drawStyle];
 if ((_pal getOrDefault ["sig", []]) isEqualTo _sig) exitWith { _pal };
 private _dark = _bg in ["DARK", "NIGHT", "PHOTO", "SAT", "HYBRID", "SLATE"];
