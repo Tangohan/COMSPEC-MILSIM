@@ -40,6 +40,7 @@
     groupe ; "" : maillage local seulement), sauts jusqu'à la passerelle, nom de la radio] ou [] ; publiée seulement quand
     elle change.
       "enabled"  -> vrai si le réglage et la liaison réaliste sont actifs
+      "linkOf" [unité] -> sauts par le maillage vers ce joueur ponté (même règle que la voix), -1 sinon (fn_mpuHud)
       "summary"  -> [code, état court, aide] : état de la voix par le réseau en clair (app Wave Relay)
       "radios"   -> radios ACRE2 / TFAR portées : [[clé, type, nom]...]
       "preferred"-> radio à ponter par défaut (active) : [clé, type, nom] ou []
@@ -218,6 +219,8 @@ switch (_act) do {
         _u setVariable ["tf_sendingDistanceMultiplicator", _v];
         missionNamespace setVariable ["COMSPEC_ATAK_VoiceTx", [_u, _base, _v, _targets, _hadTx]];
         { ["comspec_atak_native_meshTfTx", [_u, true], _x] call CBA_fnc_targetEvent; } forEach _targets;
+        // Notification MPU à l'écran (fn_mpuHud) : hors du chemin TFAR, à l'image suivante.
+        [{ ["kick"] call comspec_atak_native_fnc_mpuHud; }] call comspec_atak_native_fnc_nextFrame;
         // Portée vraiment allongée pour joindre un correspondant ponté : case RELAIS ATAK (fn_relayTxBadge). Sauts : le plus court des correspondants sur cette fréquence.
         if (_v > _base) then {
             private _hs = (((missionNamespace getVariable ["COMSPEC_ATAK_VoiceMe", []]) param [3, []]) select { _x select 3 }) apply { _x select 1 };
@@ -244,8 +247,15 @@ switch (_act) do {
         if (_down) then { _act2 set [netId _from, diag_tickTime]; } else { _act2 deleteAt (netId _from); };
         missionNamespace setVariable ["COMSPEC_ATAK_TfRxActive", _act2];
         ["tick"] call comspec_atak_native_fnc_mpuVoice;
+        [{ ["kick"] call comspec_atak_native_fnc_mpuHud; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "enabled": { call _enabled };
+    // Notification MPU à l'écran (fn_mpuHud) : sauts vers un émetteur ponté, même règle que la voix, -1 sinon.
+    case "linkOf": {
+        private _u = _arg param [0, objNull];
+        if (!(_u isEqualType objNull) || {isNull _u}) exitWith { -1 };
+        [_u, ["voice", _u] call comspec_atak_native_fnc_meshRead] call _linked
+    };
     case "summary": {
         // Voix par le réseau, en clair, pour l'app Wave Relay (MON NŒUD, VOIX) : jamais un écran muet.
         // -> [code ("off" | "cut" | "noreal" | "nobridge" | "wait" | "on"), état court, aide]

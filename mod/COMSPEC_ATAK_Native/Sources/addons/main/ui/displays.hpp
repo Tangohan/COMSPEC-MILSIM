@@ -101,6 +101,17 @@ class RscTitles {
             class Label: COMSPEC_RscTextCenter { idc=7752; x=-2; y=-2; w=0.05; h=0.05; colorBackground[]={0,0,0,0}; colorText[]={0.92,0.72,0.2,1}; };
         };
     };
+    // Notification MPU à l'écran pendant l'alternat (fn_mpuHud), juste au-dessus du cadre d'ACRE2 : placée par le code.
+    class COMSPEC_RscTitleMpuHud {
+        idd=-1; duration=1e+011; fadein=0; fadeout=0; movingEnable=0;
+        onLoad="uiNamespace setVariable ['COMSPEC_ATAK_MpuHudDisplay', _this select 0]";
+        class controls {
+            class Back: COMSPEC_RscText { idc=7771; x=-2; y=-2; w=0.05; h=0.05; colorBackground[]={0.03,0.05,0.04,0.78}; };
+            class Bar: COMSPEC_RscText { idc=7772; x=-2; y=-2; w=0.004; h=0.05; colorBackground[]={0.36,0.78,0.42,1}; };
+            class Icon: COMSPEC_RscIcon { idc=7773; x=-2; y=-2; w=0.03; h=0.04; text="\z\comspec_atak_native\addons\main\data\mpu_tx.paa"; };
+            class Label: COMSPEC_RscStructuredText { idc=7774; x=-2; y=-2; w=0.05; h=0.05; text=""; };
+        };
+    };
     // GPS de poignet (fn_wristGps) : contrôles créés par le code.
     class COMSPEC_RscTitleWristGps {
         idd=-1; duration=1e+011; fadein=0; fadeout=0; movingEnable=0;

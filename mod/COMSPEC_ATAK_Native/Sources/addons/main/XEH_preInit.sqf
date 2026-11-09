@@ -681,6 +681,17 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_relay_tx_badge_pos", "LIST",
     ["Position de la case RELAIS ATAK", "Le cadre d'ACRE2 se déplace dans la disposition de l'interface d'Arma : les deux premiers choix le suivent."],
     _mpuCat, [[0, 1, 2, 3], ["À gauche du cadre ACRE", "Au-dessus du cadre ACRE", "En haut à droite de l'écran", "En bas à gauche de l'écran"], 0], 0] call comspec_atak_native_fnc_addSetting;
+// Notification MPU à l'écran pendant l'alternat (fn_mpuHud), juste au-dessus du cadre ACRE : choix du joueur, même valeur que l'interrupteur
+// du téléphone (Réglages > Matériel et réseau).
+["comspec_atak_native_mpu_hud", "CHECKBOX",
+    ["Notification MPU à l'écran (alternat)", "Pendant que vous parlez à la radio (alternat ACRE2 ou TFAR), un petit encadré juste au-dessus du cadre ACRE, en bas à droite de l'écran, dit si votre voix passe par le maillage MPU5, et qui vous entendez par lui. Exemple : « MPU · voix par le maillage », puis « 2 sauts · 3 correspondants » ; en réception : « DUPONT via MPU », puis « 3 sauts ». Rien ne s'affiche quand la voix ne passe pas par la MPU5. Aussi dans le téléphone : Réglages > Matériel et réseau."],
+    _mpuCat, true, 0, { if (!(_this isEqualTo true) && {hasInterface}) then { ["stop"] call comspec_atak_native_fnc_mpuHud; }; }] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_hud_why", "CHECKBOX",
+    ["Dire pourquoi la MPU n'est pas utilisée", "Coché : pendant l'alternat, quand votre voix ne passe pas par la MPU5, l'encadré le dit en une ligne grise. Exemple : « MPU : non utilisée (aucun relais) ». Décoché (par défaut) : rien ne s'affiche dans ce cas."],
+    _mpuCat, false, 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_hud_dy", "SLIDER",
+    ["Notification MPU : décalage vertical (%)", "Monte (valeur positive) ou descend (valeur négative) l'encadré, en pourcentage de la hauteur de l'écran, s'il gêne un autre affichage. Exemple : 5 le monte d'un vingtième de l'écran. 0 : juste au-dessus du cadre ACRE."],
+    _mpuCat, [-20, 60, 0, 0], 0] call comspec_atak_native_fnc_addSetting;
 // Tutoriel de l'app Wave Relay (fn_waveRelayTuto) : le bouton « ? » reste toujours là.
 ["comspec_atak_native_wr_tuto_offer", "CHECKBOX",
     ["Proposer le tutoriel du réseau", "Une seule fois, à la première ouverture de l'app Wave Relay. Le bouton « ? » de l'app l'ouvre à tout moment."],
@@ -792,6 +803,22 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mesh_backup_delay", "SLIDER",
     ["Délai avant le canal de secours (s)", "Temps de brouillage subi avant la bascule."],
     _mpuCat, [2, 60, 10, 0], 1] call comspec_atak_native_fnc_addSetting;
+// Chiffrement plus réaliste (fn_meshKeys) : sans effet tant que « Clés du maillage » est décoché ; nouveaux réglages décochés, sauf le coût discret. Le profil Arcade les coupe.
+["comspec_atak_native_mesh_keys_fill", "CHECKBOX",
+    ["Chargeur de clés : chargement manuel", "Coché : CHARGER LES CLÉS (app Wave Relay ou menu ACE Téléphone ATAK > Radio de données) demande un chargeur de clés dans l'inventaire ou le poste de commandement, et dure 6 s. Le chargement au démarrage suit toujours « Clés chargées automatiquement ». Décoché : comportement d'avant."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_keys_period", "LIST",
+    ["Période cryptographique", "Durée de vie d'une clé chargée. Alerte 10 min avant ; ensuite le cadenas passe en PÉRIMÉE, les messages partent en clair et la MPU5 quitte le maillage chiffré jusqu'au rechargement (chargeur, poste de commandement ou OTAR). Aucune : une clé ne périme jamais, comme avant."],
+    _mpuCat, [[0, 30, 60, 120, 240, 480], ["Aucune", "30 min", "1 h", "2 h", "4 h", "8 h"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_keys_otar", "CHECKBOX",
+    ["Rechargement à distance (OTAR)", "Coché : le chef de groupe (ou le poste de commandement), avec une clé valide, renouvelle les clés des équipiers joints par le maillage : bouton RENOUVELER LE GROUPE (OTAR) de l'app Wave Relay. Un équipier hors maillage passe au chargeur."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_crypto_cost", "LIST",
+    ["Coût du chiffrement", "Tant que la liaison est chiffrée : un peu de débit en moins, de délai et de batterie en plus. Visible dans l'app Réseau, Débit du téléphone. Sans clés du maillage : sans effet."],
+    _mpuCat, [[0, 1, 2], ["Aucun", "Discret (-5 % de débit, +20 ms)", "Marqué (-15 % de débit, +60 ms)"], 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_intercept", "CHECKBOX",
+    ["Interception du trafic en clair", "Coché : un spécialiste ennemi avec un goniomètre intercepte les messages de groupe émis à portée. En clair : position de l'émetteur à 100 m près et une partie du texte. Chiffré : une émission et sa direction, jamais le contenu. App Guerre électronique, onglet GONIO."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_mesh_tools", "CHECKBOX",
     ["Outils du maillage (Zeus et joueurs)", "Clic droit Zeus « ATAK · Maillage » ; topologie, ping et prévision de couverture dans l'app Wave Relay."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;

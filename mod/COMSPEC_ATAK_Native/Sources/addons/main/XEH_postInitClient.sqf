@@ -230,6 +230,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 [{ ["offer"] call comspec_atak_native_fnc_setupWizard; }, [], 30] call comspec_atak_native_fnc_waitAndExec;
 // Case « RELAIS ATAK » pendant une émission ACRE2 (fn_relayTxBadge) : événements seulement, rien ne tourne hors émission.
 ["init"] call comspec_atak_native_fnc_relayTxBadge;
+// Notification MPU à l'écran pendant l'alternat (fn_mpuHud) : événements seulement, une boucle de 0,25 s tant que quelqu'un émet.
+["init"] call comspec_atak_native_fnc_mpuHud;
 // Messages des groupes de conversation (fn_meshGroups).
 ["init"] call comspec_atak_native_fnc_meshGroups;
 // Mode de discrétion imposé par le chef (fn_meshEW).
