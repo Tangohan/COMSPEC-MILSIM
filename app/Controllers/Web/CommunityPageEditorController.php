@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantRepository;
 use App\Services\Community\CommunityPageEditorAccess;
+use App\Services\Community\PageImageUploader;
 use App\Services\Community\PublicPageBuilder;
 
 /**
@@ -19,7 +20,6 @@ use App\Services\Community\PublicPageBuilder;
 final class CommunityPageEditorController
 {
     private const MAX_PAYLOAD = 400_000;
-    private const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
 
     public function __construct(
         private TenantRepository $tenantRepository,
@@ -122,75 +122,9 @@ final class CommunityPageEditorController
         if ($err !== null) {
             return $err;
         }
-        $slug = strtolower(trim((string) ($tenant['slug'] ?? '')));
-        if (!preg_match('/^[a-z0-9-]{1,80}$/', $slug)) {
-            return Response::json(['ok' => false, 'error' => 'Définissez d’abord l’identifiant public de la communauté.'], 422);
-        }
-        $file = $_FILES['image'] ?? null;
-        if (!is_array($file) || (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            return Response::json(['ok' => false, 'error' => 'Envoi impossible. Vérifiez la taille (6 Mo maximum) et réessayez.'], 422);
-        }
-        $tmp = (string) ($file['tmp_name'] ?? '');
-        if ($tmp === '' || !is_uploaded_file($tmp) || (int) ($file['size'] ?? 0) > self::MAX_IMAGE_BYTES) {
-            return Response::json(['ok' => false, 'error' => 'Image trop volumineuse ou invalide (6 Mo maximum).'], 422);
-        }
-        $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($tmp) ?: '';
-        if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) {
-            return Response::json(['ok' => false, 'error' => 'Format non pris en charge. Utilisez JPG, PNG ou WebP.'], 422);
-        }
-        $rel = 'assets/img/communities/' . $slug . '/page';
-        $dir = base_path('public/' . $rel);
-        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
-            return Response::json(['ok' => false, 'error' => 'Le stockage des images n’est pas disponible pour le moment.'], 500);
-        }
-        $name = gmdate('Ymd') . '-' . bin2hex(random_bytes(6));
-        $ext = $this->writeImage($tmp, $mime, $dir . '/' . $name);
-        if ($ext === null) {
-            return Response::json(['ok' => false, 'error' => 'Impossible de traiter cette image. Essayez avec un autre fichier.'], 422);
-        }
-        $path = $rel . '/' . $name . '.' . $ext;
+        $res = PageImageUploader::store($_FILES['image'] ?? null, (string) ($tenant['slug'] ?? ''));
 
-        return Response::json(['ok' => true, 'path' => $path, 'url' => PublicPageBuilder::imageUrl($path)]);
-    }
-
-    /** Réencode l’image (retire les métadonnées, borne la largeur) ; retourne l’extension écrite. */
-    private function writeImage(string $tmp, string $mime, string $destNoExt): ?string
-    {
-        if (!function_exists('imagecreatefromstring')) {
-            $ext = match ($mime) { 'image/png' => 'png', 'image/webp' => 'webp', default => 'jpg' };
-
-            return @copy($tmp, $destNoExt . '.' . $ext) ? $ext : null;
-        }
-        $bin = @file_get_contents($tmp);
-        $im = $bin !== false ? @imagecreatefromstring($bin) : false;
-        if (!$im) {
-            return null;
-        }
-        $w = imagesx($im);
-        $h = imagesy($im);
-        $maxW = 2400;
-        if ($w > $maxW) {
-            $nh = max(1, (int) round($h * $maxW / $w));
-            $scaled = imagecreatetruecolor($maxW, $nh);
-            if ($mime === 'image/png') {
-                imagealphablending($scaled, false);
-                imagesavealpha($scaled, true);
-            }
-            imagecopyresampled($scaled, $im, 0, 0, 0, 0, $maxW, $nh, $w, $h);
-            imagedestroy($im);
-            $im = $scaled;
-        }
-        if ($mime === 'image/png') {
-            imagesavealpha($im, true);
-            $ok = @imagepng($im, $destNoExt . '.png', 7);
-            $ext = 'png';
-        } else {
-            $ok = @imagejpeg($im, $destNoExt . '.jpg', 86);
-            $ext = 'jpg';
-        }
-        imagedestroy($im);
-
-        return $ok ? $ext : null;
+        return Response::json($res['body'], $res['status']);
     }
 
     /**

@@ -1497,7 +1497,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_FormH", _y + _pad];
 // Messagerie exclue (elle tient son propre défilement, fil en bas).
 private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _pg = _st getOrDefault ["pageDrawn", ""];
-if (_pg isNotEqualTo "" && {_pg isNotEqualTo "CHAT"}) then {
+if (_pg isNotEqualTo "" && {!(_pg in ["CHAT", "SMS"])}) then {
     private _sg = uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []];
     private _nm = format ["form|%1|%2|%3|%4", _pg, count _sg, _st getOrDefault ["backSub", ""], str ((_rows select [0, 3]) apply { [_x param [0, ""], if ((_x param [0, ""]) isEqualTo "segment" && {(_x param [2, ""]) isEqualType []}) then { (_x select 2) apply { _x param [2, false] } } else { [] }] })];
     _sg pushBack [_nm, _grp];

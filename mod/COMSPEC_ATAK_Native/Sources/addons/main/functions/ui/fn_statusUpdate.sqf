@@ -207,7 +207,7 @@ if (_prevIn >= 0 && {_inCount > _prevIn}) then { [] call comspec_atak_native_fnc
 uiNamespace setVariable ["COMSPEC_ATAK_InCount", _inCount];
 
 // Pastilles : on ne reconstruit le dock (et le lanceur) que si un compteur change.
-private _badges = [["CHAT"] call comspec_atak_native_fnc_appBadge, ["TASK"] call comspec_atak_native_fnc_appBadge];
+private _badges = [["CHAT"] call comspec_atak_native_fnc_appBadge, ["SMS"] call comspec_atak_native_fnc_appBadge, ["TASK"] call comspec_atak_native_fnc_appBadge];
 if (_badges isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BadgeSig", []])) then {
     uiNamespace setVariable ["COMSPEC_ATAK_BadgeSig", _badges];
     if (_page isEqualTo "LAUNCHER") then { [_page] call comspec_atak_native_fnc_pageRender; } else { [] call comspec_atak_native_fnc_dockRender; };
@@ -216,7 +216,7 @@ if (_badges isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BadgeSig", []])
 // Pages vivantes : re-rendu quand leurs données changent (le brouillon de message est conservé).
 private _pageSig = switch (_page) do {
     // Dernier message compris : la liste est plafonnée, son nombre seul ne bouge plus une fois pleine.
-    case "CHAT": {
+    case "CHAT"; case "SMS": {
         private _all = [] call comspec_atak_native_fnc_messagesAll;
         private _last = _all param [(count _all) - 1, createHashMap];
         [count _all, _last getOrDefault ["id", ""], _last getOrDefault ["time", ""], _last getOrDefault ["body", ""], count (_data getOrDefault ["p2p", []])]

@@ -130,7 +130,7 @@ switch (toLower _act) do {
                 };
                 if (!isNull ([] call comspec_atak_native_fnc_display)) then {
                     private _page = _s getOrDefault ["activePage", ""];
-                    if (_page in ["CHAT", "TASK", "ALERTS", "NETWORK", "REPORTS", "MEDICAL"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call comspec_atak_native_fnc_nextFrame; };
+                    if (_page in ["CHAT", "SMS", "TASK", "ALERTS", "NETWORK", "REPORTS", "MEDICAL"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call comspec_atak_native_fnc_nextFrame; };
                 };
             };
             case (_on): { _st set ["sync", call _hhmm]; };
