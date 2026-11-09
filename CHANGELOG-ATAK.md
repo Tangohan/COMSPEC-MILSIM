@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : configurateur d'équipement et caisse « Prendre mon kit » (site et COMSPEC SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Composez vos armes et vos tenues sur Athena, retrouvez-les en jeu
+- Page Équipement > Configurateur : choisissez une arme, puis à l'établi glissez une optique, une bouche, un rail ou un bipied et un chargeur. Seuls les accessoires compatibles s'accrochent ; sinon la raison s'affiche.
+- Uniforme, gilet et sac s'ouvrent avec leur jauge de charge : glissez chargeurs, objets et armes complètes de l'un à l'autre, d'une tenue à l'autre (Ctrl pour copier), Ctrl+Z pour annuler. Tout marche aussi au doigt et au clavier.
+- Récupérez une tenue (la vôtre, un kit, un modèle, ce que vous portiez en jeu), enregistrez-la dans vos tenues (arsenal, panneau Athena · Tenues) ou, pour les responsables, en kit pour un rôle, une qualification ou un membre, avec l'historique des versions.
+- En jeu, à une caisse de kits posée par le Zeus ou dans l'éditeur : menu ACE « Prendre mon kit ». Menu ACE sur soi : « Copier ma tenue pour Athena » pour la recoller sur le site.
+EN : Build your weapons and loadouts on Athena, find them in game
+- Equipment page > Configurator: pick a weapon, then at the workbench drag an optic, a muzzle device, a rail item or a bipod and a magazine. Only compatible attachments snap on; otherwise the reason is shown.
+- Uniform, vest and backpack open with their load gauge: drag magazines, items and complete weapons from one to another, from one loadout to another (Ctrl to copy), Ctrl+Z to undo. Everything also works by touch and with the keyboard.
+- Retrieve a loadout (yours, a kit, a template, what you wore in game), save it in your loadouts (arsenal, Athena · Loadouts panel) or, for managers, as a kit for a role, a qualification or a member, with version history.
+- In game, at a kit crate placed by Zeus or in the editor: ACE menu "Take my kit". ACE self menu: "Copy my loadout for Athena" to paste it on the site.
+
+### Détail technique
+- Site : `/equipment/configurateur` (`EquipmentConfiguratorController`, vue `equipment/configurator.php`, `equipment-configurator.js` / `.css`, JS natif, palette virtualisée, thème clair et sombre). Lecture stricte `LoadoutDocument` (getUnitLoadout, bornes : 256 Ko, 150 lignes par conteneur, 400 au total, quantités) et règles `LoadoutValidator` (emplacement, accessoires et chargeurs compatibles, allowedSlots, maximumLoad, masse), mêmes règles côté navigateur. Enregistrement dans les systèmes existants : tenues d'arsenal (`arsenal_wardrobes`, sources `configurator` et `template`, collection « Modèles d'équipement ») et kits de départ (`RoleKitService`, source `configurator`). Audit `equipment.*` dans `audit_logs`.
+- Catalogue : `game_item_catalog` (vu en jeu) complété par `game_item_specs`, importé d'un export hors ligne (`comspec_sse_fnc_loadoutCatalog` ou `tools/arma/export_catalogue_equipement.sqf`). Sans import : compatibilités et charges « non vérifiées », jamais inventées.
+- Kits : destinataire membre ou qualification (`game_role_kits.member_user_id`, `qualification_id`), historique `game_role_kit_versions` (50 versions, restauration). Migration `4270_equipment_configurator` à lancer.
+- Jeu : bloc `settings.loadouts` du paquet d'identité Athena (`LoadoutPackBuilder`), lu par le nouvel addon SSE `comspec_sse_loadout` (`loadoutApply` avec liste des objets absents et remplacement d'un chargeur seulement s'il n'est pas ambigu, `loadoutExport`, caisse « Prendre mon kit » contrôlée par le serveur : distance, kit proposé, anti-spam ; module Eden / Zeus « Caisse de kits »). Aucune requête réseau de l'addon. Autotest `scripts\equipement.sqf`. `hemtt check` de l'addon sans erreur.
+- À tester en jeu : pose réelle d'un kit (ACE, mods tiers), réexport identique, caisse en multijoueur (serveur dédié, JIP), module Zeus, fenêtre de copie en multijoueur.
+
 ## À venir : parler aux IA en texte libre et atelier IA en Eden et en Zeus (COMSPEC SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
