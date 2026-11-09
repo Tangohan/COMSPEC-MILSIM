@@ -1786,6 +1786,7 @@
         missionFrames = [];
         missionEvents = [];
         clearMissionGhosts();
+        clearMissionOverlays();
         paintReplayEvents(null);
         toast('Replay de la session en cours.');
       }
@@ -1865,6 +1866,7 @@
     api.api('/api/replay/events/' + encodeURIComponent(missionId()) + replayQuery()).then(function (payload) {
       missionEvents = Array.isArray(payload && payload.events) ? payload.events : [];
       paintReplayEvents(missionFrames.length ? missionFrames[0].timestamp : null);
+      drawEventMarkers();
     }).catch(function () { missionEvents = []; paintReplayEvents(null); });
   }
   function replayMs(ts) {
@@ -1878,7 +1880,7 @@
   function paintReplayEvents(frameTs) {
     var box = document.getElementById('ow-replay-events');
     if (!box) return;
-    if (!missionEvents.length) { box.hidden = true; box.innerHTML = ''; return; }
+    if (!missionEvents.length || !replayOpts.events) { box.hidden = true; box.innerHTML = ''; return; }
     var t = replayMs(frameTs);
     var list = isFinite(t)
       ? missionEvents.filter(function (ev) { var et = replayMs(ev.timestamp); return isFinite(et) && Math.abs(et - t) <= 120000; }).slice(0, 6)
@@ -1902,6 +1904,7 @@
     loadReplayEvents();
     api.api('/api/replay/mission/' + encodeURIComponent(missionId()) + replayQuery()).then(function (payload) {
       missionFrames = (payload && payload.timeline) || [];
+      drawMissionTrails();
       if (!missionFrames.length) {
         toast('Aucune mission enregistrée pour rejouer.');
         return;
@@ -1909,6 +1912,117 @@
       toast('Replay de mission chargé (' + missionFrames.length + ' instants).');
       applyMissionFrame(0);
     }).catch(function () { toast('Replay de mission indisponible.'); });
+  }
+
+  /* Options du replay chargé depuis la fenêtre de sélection (trajectoires, marqueurs d'événements, étiquettes). */
+  var replayOpts = { trails: false, events: true, labels: true };
+  var missionTrails = [];
+  var missionEventLayers = [];
+  function clearMissionOverlays() {
+    var api = ow();
+    missionTrails.concat(missionEventLayers).forEach(function (layer) { if (api) try { api.map.removeLayer(layer); } catch (e) {} });
+    missionTrails = [];
+    missionEventLayers = [];
+  }
+  function drawMissionTrails() {
+    var api = ow();
+    missionTrails.forEach(function (layer) { if (api) try { api.map.removeLayer(layer); } catch (e) {} });
+    missionTrails = [];
+    if (!api || !replayOpts.trails) return;
+    var paths = {};
+    missionFrames.forEach(function (frame) {
+      (frame.units || []).forEach(function (u) {
+        var id = String(u.unitId || u.callsign || '');
+        var x = Number(u.pos_x != null ? u.pos_x : u.x);
+        var y = Number(u.pos_y != null ? u.pos_y : u.y);
+        if (!id || !isFinite(x) || !isFinite(y)) return;
+        (paths[id] = paths[id] || []).push(api.worldToLatLng(x, y));
+      });
+    });
+    Object.keys(paths).forEach(function (id) {
+      if (paths[id].length < 2) return;
+      missionTrails.push(L.polyline(paths[id], { color: '#8b8bf0', weight: 2, opacity: 0.55, dashArray: '4 4', interactive: false }).addTo(api.map));
+    });
+  }
+  function drawEventMarkers() {
+    var api = ow();
+    missionEventLayers.forEach(function (layer) { if (api) try { api.map.removeLayer(layer); } catch (e) {} });
+    missionEventLayers = [];
+    if (!api || !replayOpts.events || !missionFrames.length) return;
+    missionEvents.slice(0, 300).forEach(function (ev) {
+      var x = Number(ev.x);
+      var y = Number(ev.y);
+      if (!isFinite(x) || !isFinite(y)) return;
+      var marker = L.circleMarker(api.worldToLatLng(x, y), { radius: 4, color: '#e7b14d', weight: 2, fillOpacity: 0.7 });
+      if (marker.bindTooltip) marker.bindTooltip(String(ev.label || ev.type || 'Événement'), { direction: 'top' });
+      missionEventLayers.push(marker.addTo(api.map));
+    });
+  }
+  function frameIndexForTs(ts) {
+    var target = Number(ts);
+    var best = 0;
+    var bestGap = Infinity;
+    missionFrames.forEach(function (frame, i) {
+      var gap = Math.abs(replayMs(frame.timestamp) - target);
+      if (gap < bestGap) { bestGap = gap; best = i; }
+    });
+    return best;
+  }
+
+  /* Chargement d'un replay choisi dans la fenêtre « Charger un replay » ; même API que la barre. */
+  function replayLoad(opts) {
+    opts = opts || {};
+    var api = ow();
+    if (!api) return Promise.reject(new Error('unavailable'));
+    var source = document.getElementById('ow-replay-source');
+    var wrap = document.getElementById('ow-replay-session-wrap');
+    var speed = document.getElementById('ow-replay-speed');
+    var scrub = document.getElementById('ow-replay-scrub');
+    var bar = document.getElementById('ow-timeline');
+    var play = document.getElementById('ow-replay-play');
+    replayOpts = { trails: !!opts.trails, events: opts.events !== false, labels: opts.labels !== false };
+    replayPlaying = false;
+    if (replayTimer) { window.clearTimeout(replayTimer); replayTimer = null; }
+    if (play) play.textContent = 'Lecture';
+    if (speed && opts.speed) speed.value = String(opts.speed);
+    if (bar) bar.hidden = false;
+    clearMissionOverlays();
+    if (opts.kind === 'live' || opts.kind === 'clip') {
+      if (source) {
+        source.value = opts.kind === 'clip' ? String(opts.value || '') : 'session';
+        if (wrap) wrap.hidden = true;
+        source.dispatchEvent(new Event('change'));
+      }
+      if (scrub) {
+        scrub.value = opts.kind === 'clip' ? '0' : '100';
+        scrub.dispatchEvent(new Event('input'));
+      }
+      return Promise.resolve({ kind: opts.kind, frames: 0 });
+    }
+    replayMissionKey = String(opts.key || '');
+    if (source) source.value = 'mission';
+    if (wrap) wrap.hidden = false;
+    loadReplaySessions();
+    clearMissionGhosts();
+    missionFrames = [];
+    missionEvents = [];
+    return api.api('/api/replay/mission/' + encodeURIComponent(missionId()) + replayQuery()).then(function (payload) {
+      var frames = (payload && payload.timeline) || [];
+      if (!frames.length) throw new Error('empty');
+      missionFrames = frames;
+      loadReplayEvents();
+      drawMissionTrails();
+      var idx = isFinite(opts.startTs) ? frameIndexForTs(opts.startTs) : 0;
+      var pct = frames.length > 1 ? (idx / (frames.length - 1)) * 100 : 0;
+      if (scrub) scrub.value = String(pct);
+      applyMissionFrame(pct);
+      if (opts.autoplay) {
+        replayPlaying = true;
+        if (play) play.textContent = 'Pause';
+        tickReplay();
+      }
+      return { kind: 'server', frames: frames.length };
+    });
   }
 
   function clearMissionGhosts() {
@@ -1939,7 +2053,7 @@
       var ll = api.worldToLatLng(x, y);
       if (!missionGhosts[id]) {
         missionGhosts[id] = L.circleMarker(ll, { radius: 5, color: '#8b8bf0', weight: 2 }).addTo(api.map);
-        if (missionGhosts[id].bindTooltip) missionGhosts[id].bindTooltip(String(u.callsign || id), { permanent: true, direction: 'right' });
+        if (missionGhosts[id].bindTooltip) missionGhosts[id].bindTooltip(String(u.callsign || id), { permanent: replayOpts.labels !== false, direction: 'right' });
       } else {
         missionGhosts[id].setLatLng(ll);
       }
@@ -1970,6 +2084,7 @@
   }
 
   window.OverwatchOps = {
+    replayLoad: replayLoad,
     promptShape: promptShape,
     promptMarker: promptMarker,
     openSitrep: openSitrep,

@@ -1008,6 +1008,9 @@ return function (Router $router) {
     $router->post('/atak/sse/papiers/membres/{id}/documents/{docId}/action', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentAction'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/documents/{docId}', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentUpdate'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/kit', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'kitSave'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/synchro-jeu', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncResolve'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/historique/{hid}/restaurer', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncRestore'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/envoyer-jeu', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncSend'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/couverture', [\App\Controllers\Admin\MemberCoverExportController::class, 'generateFor'], $mwSsePortal);
     $router->get('/atak/sse/papiers/membres/{id}/couverture/{exportId}/telecharger', [\App\Controllers\Admin\MemberCoverExportController::class, 'downloadFor'], $mwSsePortal);
     // RENS › Identités & documents (COMSPEC IDENTITY, Lot 6) : atelier, kits types, préparation de mission, briefs, import/export.
@@ -1320,6 +1323,14 @@ return function (Router $router) {
     $router->post('/admin/system/alerts/{id}/delete', [SystemPlatformAlertsController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/alerts/{id}/send-email', [SystemPlatformAlertsController::class, 'sendEmail'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/alerts', [SystemPlatformAlertsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/messages-communautes', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/messages-communautes/create', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'create'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/messages-communautes/apercu', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'preview'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/messages-communautes', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/messages-communautes/{id}/edit', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/messages-communautes/{id}/update', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/messages-communautes/{id}/toggle', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'toggle'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/messages-communautes/{id}/delete', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cooperation/catalog', [SystemCooperationCatalogController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cooperation/catalog/create', [SystemCooperationCatalogController::class, 'create'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cooperation/catalog', [SystemCooperationCatalogController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1378,6 +1389,9 @@ return function (Router $router) {
     $router->post('/admin/tenants/{id}/identity', [SystemTenantsController::class, 'updateIdentity'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/profil', [SystemTenantsController::class, 'updateType'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/plan', [SystemTenantsController::class, 'updatePlan'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/tenants/{id}/langue', [SystemTenantsController::class, 'updateLocale'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/tenants/{id}/contact', [SystemTenantsController::class, 'updateOwner'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/tenants/{id}/logo', [SystemTenantsController::class, 'removeLogo'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/tenants/{id}/retrait', [SystemTenantsController::class, 'removal'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/archiver', [SystemTenantsController::class, 'archive'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/restaurer', [SystemTenantsController::class, 'restore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1813,6 +1827,10 @@ return function (Router $router) {
     $router->post('/back-office/planification/{id}/postes/{slotId}/deplacer', [MissionPlanningController::class, 'moveSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/planification/{id}/postes/{slotId}/rapprocher', [MissionPlanningController::class, 'reconcile'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/courrier/traceabilite', [CourrierDashboardController::class, 'traceability'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/messages-plateforme', [\App\Controllers\Admin\Organization\PlatformMessagesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/messages-plateforme/{id}/fermer', [\App\Controllers\Admin\Organization\PlatformMessagesController::class, 'dismiss'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/messages-plateforme/{id}/acquitter', [\App\Controllers\Admin\Organization\PlatformMessagesController::class, 'ack'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/messages-plateforme/{id}/lien', [\App\Controllers\Admin\Organization\PlatformMessagesController::class, 'link'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions', [RolesFunctionsAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions/referentiel', [RolesFunctionsAdminController::class, 'referentiel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions/catalogue', [RolesFunctionsAdminController::class, 'catalogue'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2183,6 +2201,9 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/documents/{docId}/action', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentAction'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/documents/{docId}', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/kit', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'kitSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/synchro-jeu', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncResolve'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/historique/{hid}/restaurer', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncRestore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/envoyer-jeu', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncSend'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}/modifier', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/statut', [EffectifsWorkspaceController::class, 'quickStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

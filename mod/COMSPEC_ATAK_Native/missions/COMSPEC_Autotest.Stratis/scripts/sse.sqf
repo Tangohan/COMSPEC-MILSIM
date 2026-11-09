@@ -122,6 +122,52 @@ AT_fnc_ia = {
     call AT_fnc_done;
 }, 45] call AT_fnc_run;
 
+// Papier relié à une identité Athena (API fn_idPaperLink / idPaperOf / idPaperOwner, évènements CBA) : une IA reçoit sa
+// carte, elle est reliée à l'identité IDT-000001 d'un propriétaire, une autre unité puis le joueur la ramassent ; l'identité
+// renvoyée reste celle du papier (jamais celle du porteur). Noms d'objets sans « simulation » (la mention est sur le papier).
+["sse_papier_lie", {
+    if (["comspec_sse_fnc_idIssue", "comspec_sse_fnc_idPaperOf", "comspec_sse_fnc_idPaperOwner", "comspec_sse_fnc_idPaperLink", "comspec_sse_fnc_idPaperTrack"] call AT_fnc_nil) exitWith {};
+    {
+        private _n = getText (configFile >> "CfgWeapons" >> _x >> "displayName");
+        [_n isNotEqualTo "" && {((toLower _n) find "simulation") < 0}, format ["nom d'objet avec « simulation » : %1 (%2)", _x, _n]] call AT_fnc_check;
+    } forEach ["COMSPEC_ID_Card", "COMSPEC_ID_Passport", "COMSPEC_ID_DrivingLicense", "COMSPEC_ID_MilitaryCard", "COMSPEC_ID_Card_001", "COMSPEC_ID_MilitaryCard_001"];
+    private _a = call AT_fnc_ia;
+    private _b = call AT_fnc_ia;
+    _b setPosATL (player getPos [3.5, getDir player]);
+    uiSleep 1;
+    private _doc = [_a, createHashMapFromArray [["type", "id_card"], ["materialize", true]]] call comspec_sse_fnc_idIssue;
+    if !([_doc isNotEqualTo "", "papier de l'IA non délivré (fn_idIssue)"] call AT_fnc_check) exitWith { deleteVehicle _a; deleteVehicle _b; call AT_fnc_done; };
+    private _p0 = [_doc] call comspec_sse_fnc_idPaperOf;
+    private _cls = _p0 getOrDefault ["cls", ""];
+    [_cls isNotEqualTo "" && {(_p0 get "holder") isEqualTo _a}, format ["exemplaire non posé chez l'IA (%1)", _cls]] call AT_fnc_check;
+    [[_cls, createHashMapFromArray [["athenaIdentity", "IDT-000001"], ["ownerUid", "AUTOTEST-OWNER"], ["ownerName", "Propriétaire"]]] call comspec_sse_fnc_idPaperLink, "lien papier ↔ identité Athena refusé"] call AT_fnc_check;
+    private _p1 = [_cls] call comspec_sse_fnc_idPaperOf;
+    [(_p1 get "athenaRef") isEqualTo "IDT-000001" && {(_p1 get "athenaIdentityId") isEqualTo "1"}, format ["identité Athena du papier : %1", _p1 get "athenaRef"]] call AT_fnc_check;
+    // Ramassé par une autre unité, puis par le joueur : évènement CBA, porteur suivi, identité inchangée.
+    missionNamespace setVariable ["AT_paperPicked", []];
+    private _eh = ["comspec_sse_identity_paperPicked", { missionNamespace setVariable ["AT_paperPicked", _this]; }] call CBA_fnc_addEventHandler;
+    _a removeItem _cls;
+    _b addItem _cls;
+    ["take", [_b, _cls, _a]] call comspec_sse_fnc_idPaperTrack;
+    [[{ ((missionNamespace getVariable ["AT_paperPicked", []]) param [1, ""]) isEqualTo _cls }, 3] call AT_fnc_wait, "évènement comspec_sse_identity_paperPicked non reçu"] call AT_fnc_check;
+    private _p2 = [_cls] call comspec_sse_fnc_idPaperOf;
+    [(_p2 get "holder") isEqualTo _b, "porteur non suivi après ramassage"] call AT_fnc_check;
+    [(_p2 get "last") isEqualTo (_p0 get "last") && {(_p2 get "first") isEqualTo (_p0 get "first")}, format ["identité du papier changée : %1 %2", _p2 get "last", _p2 get "first"]] call AT_fnc_check;
+    _b removeItem _cls;
+    player addItem _cls;
+    ["take", [player, _cls, _b]] call comspec_sse_fnc_idPaperTrack;
+    private _own = [_cls] call comspec_sse_fnc_idPaperOwner;
+    [(_own select 0) isEqualTo "AUTOTEST-OWNER" && {(_own select 2) isEqualTo player}, format ["propriétaire / porteur : %1", _own]] call AT_fnc_check;
+    [(_own select 4) isEqualTo ((getPlayerUID player) isNotEqualTo ""), "papier d'un autre non signalé « foreign »"] call AT_fnc_check;
+    [((([_cls] call comspec_sse_fnc_idPaperOf) get "custody") apply { _x select 1 }) isEqualTo ["issued", "link", "take", "take"], "chaîne de possession incomplète"] call AT_fnc_check;
+    (format ["papier %1 : %2 %3 (%4), porté par %5", _cls, _p2 get "last", _p2 get "first", _p2 get "athenaRef", name player]) call AT_fnc_info;
+    ["comspec_sse_identity_paperPicked", _eh] call CBA_fnc_removeEventHandler;
+    player removeItem _cls;
+    deleteVehicle _a;
+    deleteVehicle _b;
+    call AT_fnc_done;
+}, 45] call AT_fnc_run;
+
 // Papiers de la visionneuse : une pièce par papier (jour), capture de chacune ; textures de nuit présentes ; long texte non coupé.
 ["sse_papiers", {
     if (["comspec_sse_fnc_paperSkin", "comspec_sse_fnc_showResult"] call AT_fnc_nil) exitWith {};

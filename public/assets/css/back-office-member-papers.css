@@ -198,3 +198,74 @@
     gap: 4px 12px;
     align-items: baseline;
 }
+/* Transmission en jeu et différence avec le jeu (member_papers_sync.php). */
+.idm-state--blocked {
+    border-color: var(--fm-danger-line, rgba(220, 38, 38, 0.45));
+    background: var(--fm-danger-soft, rgba(220, 38, 38, 0.1));
+    color: var(--fm-danger, #b91c1c);
+}
+.idm-sync__block {
+    display: grid;
+    gap: 6px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    border: 1px solid var(--fm-border, var(--ath-border, rgba(127, 127, 127, 0.3)));
+    border-radius: 8px;
+}
+.idm-sync__doc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    align-items: center;
+    padding-left: 12px;
+}
+.idm-sync__issues {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+}
+.idm-sync__issue {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 6px 10px;
+    align-items: start;
+}
+.idm-sync__issue p {
+    margin: 2px 0 0;
+}
+.idm-sync__ex {
+    color: var(--fm-muted, var(--ath-muted, #64748b));
+}
+.idm-sync__fix {
+    display: inline;
+    margin: 0;
+}
+.idm-sync__title {
+    margin: 14px 0 4px;
+}
+.idm-sync__table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.idm-sync__table th,
+.idm-sync__table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--fm-border, var(--ath-border, rgba(127, 127, 127, 0.3)));
+    text-align: left;
+    vertical-align: top;
+}
+@media (max-width: 640px) {
+    .idm-sync__issue {
+        grid-template-columns: 1fr;
+    }
+    .idm-sync__table thead {
+        display: none;
+    }
+    .idm-sync__table tr,
+    .idm-sync__table th,
+    .idm-sync__table td {
+        display: block;
+    }
+}

@@ -16,6 +16,7 @@ use App\Repositories\SseIdCountryRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Services\Sse\MemberIdentityPapersService;
+use App\Services\Sse\MemberIdentitySyncService;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseIdentityGeneratorService;
 use App\Support\EffectifsLmsAccess;
@@ -115,6 +116,7 @@ final class MemberIdentityPapersController
                     error_log('Fiche membre : couvertures du jeu indisponibles : ' . $e->getMessage());
                 }
             }
+            $data['sync'] = self::syncFor($tenantId, $userId, $data, $rights['truth']);
 
             return $data;
         } catch (\Throwable $e) {
@@ -122,6 +124,88 @@ final class MemberIdentityPapersController
 
             return null;
         }
+    }
+
+    /**
+     * Transmission en jeu (état par identité et par papier), différence avec le jeu et historique des valeurs écartées.
+     * Indisponible (étape 4250 pas encore passée) : diagnostic seul.
+     *
+     * @param array<string, mixed> $section
+     * @return array{diag: array<string, mixed>, reports: list<array<string, mixed>>, history: list<array<string, mixed>>}
+     */
+    public static function syncFor(int $tenantId, int $userId, array $section, bool $truth): array
+    {
+        $diag = MemberIdentitySyncService::diagnose($section, (new SseIdCountryRepository())->listForTenant($tenantId, false));
+        $reports = [];
+        $history = [];
+        try {
+            $sync = new MemberIdentitySyncService();
+            $reports = $sync->gameReports($tenantId, $userId, $section['identities'], $truth);
+            $history = $sync->historyFor($tenantId, $userId, $section['identities']);
+        } catch (\Throwable $e) {
+            error_log('Fiche membre : différence avec le jeu indisponible : ' . $e->getMessage());
+        }
+
+        return ['diag' => $diag, 'reports' => $reports, 'history' => $history];
+    }
+
+    /** « Différence avec le jeu » : reprise champ par champ, ou « Garder les deux ». */
+    public function syncResolve(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guard($request, $params);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId, $rights] = $ctx;
+        $raw = $request->input('choice', []);
+        $choices = [];
+        if (is_array($raw)) {
+            foreach ($raw as $field => $choice) {
+                if (is_string($field) && isset(MemberIdentitySyncService::FIELDS[$field]) && in_array($choice, ['athena', 'game'], true)) {
+                    $choices[$field] = $choice;
+                }
+            }
+        }
+        $res = (new MemberIdentitySyncService())->resolve(
+            $tenantId,
+            $userId,
+            (int) $request->input('game_cover_id', 0),
+            $choices,
+            $request->inputString('keep_both') === '1',
+            $rights['truth'],
+            $this->actorId()
+        );
+        Session::flash($res['ok'] ? 'success' : 'error', $res['message']);
+
+        return Response::redirect($this->back($userId) . '-synchro');
+    }
+
+    /** Historique : remettre une valeur écartée. */
+    public function syncRestore(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guard($request, $params);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId, $rights] = $ctx;
+        $res = (new MemberIdentitySyncService())->restore($tenantId, $userId, (int) ($params['hid'] ?? 0), $rights['truth'], $this->actorId());
+        Session::flash($res['ok'] ? 'success' : 'error', $res['message']);
+
+        return Response::redirect($this->back($userId) . '-synchro');
+    }
+
+    /** « Envoyer la version Athena vers le jeu » : kit par défaut composé des papiers valables de l'identité. */
+    public function syncSend(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guard($request, $params);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId, $rights] = $ctx;
+        $res = (new MemberIdentitySyncService())->sendToGame($tenantId, $userId, (int) $request->input('identity_id', 0), $rights['truth'], $this->actorId());
+        Session::flash($res['ok'] ? 'success' : 'error', $res['message']);
+
+        return Response::redirect($this->back($userId) . '-synchro');
     }
 
     public function savePrimary(Request $request, array $params = []): Response

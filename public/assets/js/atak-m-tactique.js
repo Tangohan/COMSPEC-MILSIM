@@ -17,7 +17,7 @@ window.MMTactique = (function () {
   var CHAR_W = 7.4;
   var PLATE_PAD = 12;
   var PLATE_H = 20;
-  var PLATE_MAX = 22;
+  var PLATE_MAX = 16;
   // Priorité d'affichage des plaques : la plus basse passe d'abord.
   var PRIO = { me: 0, med: 1, unit: 2, objective: 3, marker: 4, area: 5 };
 
@@ -179,13 +179,13 @@ window.MMTactique = (function () {
       var cs = Kit.unitCallsign(u);
       var color = st.disc ? OFFLINE : view.team.color;
       if (view.med) {
-        return makeIcon({ glyph: medGlyph(st.disc ? OFFLINE : RED), plate: cs, half: 20, prio: PRIO.med, sig: view.sig, cls: (st.me ? ' mmt--me' : '') + (st.disc ? ' mmt--off-link' : '') });
+        return makeIcon({ glyph: medGlyph(st.disc ? OFFLINE : RED), plate: cs, half: 17, prio: PRIO.med, sig: view.sig, cls: (st.me ? ' mmt--me' : '') + (st.disc ? ' mmt--off-link' : '') });
       }
       var tick = view.heading === null ? '' : '<i class="mmt-tick" style="transform:rotate(' + Math.round(view.heading) + 'deg)"></i>';
       return makeIcon({
         glyph: '<span class="mmt-pawn" style="--c:' + color + '"><b translate="no">' + esc(view.team.letter) + '</b>' + tick + '</span>',
         plate: cs,
-        half: 18,
+        half: 16,
         prio: st.me ? PRIO.me : PRIO.unit,
         sig: view.sig,
         cls: (st.me ? ' mmt--me' : '') + (st.disc ? ' mmt--off-link' : '')
@@ -242,7 +242,7 @@ window.MMTactique = (function () {
       if (existing && existing.options.icon.options.mmSig === sig) return null;
       var type = String(data.type || '').toLowerCase();
       var key = dec.typeKey;
-      var o = { plate: plate, half: 20, prio: PRIO.marker, sig: sig };
+      var o = { plate: plate, half: 17, prio: PRIO.marker, sig: sig };
       if (/(^|_)med(_|$)|hospital|medevac|casevac/.test(type) || dec.roleKey === 'medical' || /\b(m[ée]dic|medevac|casevac|bless[ée])/i.test(plate)) {
         o.glyph = medGlyph(RED);
       } else if (key === 'objective') {
@@ -345,7 +345,7 @@ window.MMTactique = (function () {
           seen[id] = true;
           if (store[id]) return;
           var ll = kit.worldToLatLng(x, y);
-          var layer = L.marker(ll, { keyboard: false, zIndexOffset: 400, icon: makeIcon({ glyph: medGlyph(PING), plate: p.message || p.author, half: 20, prio: PRIO.marker, sig: id }) }).addTo(map);
+          var layer = L.marker(ll, { keyboard: false, zIndexOffset: 400, icon: makeIcon({ glyph: medGlyph(PING), plate: p.message || p.author, half: 17, prio: PRIO.marker, sig: id }) }).addTo(map);
           store[id] = layer;
           tapped(layer, function () {
             popup(ll, '<strong translate="no">' + esc(p.message || '') + '</strong><br><small translate="no">' + esc(p.author || '') + '</small><br><span>Grille</span> <b class="mm-mono" translate="no">' + esc(ctx.grid(x, y)) + '</b>');
@@ -365,8 +365,14 @@ window.MMTactique = (function () {
       }
       return false;
     }
-    /** Place chaque plaque (dessous, dessus, droite, gauche, dans l'écran) ou la masque : le nom se lit en touchant le symbole. */
-    function declutter() {
+    /**
+     * Place chaque plaque (dessous, dessus, droite, gauche, dans l'écran) ou la masque : le nom se lit en touchant le symbole.
+     * Appelée par atak-m.js après le regroupement des piles (mm-grp-off : plaque masquée) ; symboles à l'échelle du zoom.
+     * taken : cadres (points du calque) des noms déjà affichés par atak-m.js (appareils), que les plaques évitent.
+     */
+    function declutter(taken) {
+      var k = ctx.scale ? ctx.scale() : 1;
+      var far = wrap.classList.contains('mm-z-far');
       var items = [];
       var tl = map.containerPointToLayerPoint([0, 0]);
       var size = map.getSize();
@@ -379,16 +385,16 @@ window.MMTactique = (function () {
       });
       items.sort(function (a, b) { return a.o.mmPrio - b.o.mmPrio; });
       var used = items.filter(function (it) { return it.o.mmHalf > 0; }).map(function (it) {
-        var h = it.o.mmHalf * 0.75;
+        var h = it.o.mmHalf * k * 0.75;
         return [it.p.x - h, it.p.y - h, it.p.x + h, it.p.y + h];
-      });
+      }).concat(taken || []);
       items.forEach(function (it) {
         var w = it.o.mmW;
         var place = 'off';
-        if (w) {
+        if (w && (it.o.mmPrio === PRIO.me || (!far && !it.el.classList.contains('mm-grp-off')))) {
           var x = it.p.x;
           var y = it.p.y;
-          var g = it.o.mmHalf + 2;
+          var g = it.o.mmHalf * k + 2;
           var anchorSeen = inView([x, y, x, y]) && !it.o.mmFixed;
           var spots = it.o.mmFixed
             ? [['c', x - w / 2, y - PLATE_H / 2]]
@@ -409,8 +415,6 @@ window.MMTactique = (function () {
         it.el.classList.toggle('mmt--hide', place === 'off');
       });
     }
-    map.on('moveend', function () { if (isOn()) declutter(); });
-
     applyBase();
 
     return {

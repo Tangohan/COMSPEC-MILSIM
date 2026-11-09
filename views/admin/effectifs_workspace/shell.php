@@ -160,6 +160,11 @@ $compColors = ['#f4f4f0', '#34d399', '#60a5fa', '#fbbf24', '#a78bfa', '#38bdf8']
                     <span class="bo-eff-sv__v"><?= $attentionCount ?></span>
                     <span class="bo-eff-sv__h">dossiers, affectations, échéances</span>
                 </a>
+                <a class="bo-eff-sv" href="<?= $h(url('back-office/integration-membres')) ?>">
+                    <span class="bo-eff-sv__t">En intégration<i style="background:#0284c7"></i></span>
+                    <span class="bo-eff-sv__v"><?= (int) ($integrationOpenCount ?? 0) ?></span>
+                    <span class="bo-eff-sv__h">parcours d’intégration ouverts</span>
+                </a>
                 <a class="bo-eff-sv" href="<?= $h(effectifs_workspace_url('departs')) ?>">
                     <span class="bo-eff-sv__t">Arrivées / départs<i style="background:#34d399"></i></span>
                     <span class="bo-eff-sv__v"><?= (int) ($kpi['arrivals'] ?? 0) ?> / <?= (int) ($kpi['departures'] ?? 0) ?></span>

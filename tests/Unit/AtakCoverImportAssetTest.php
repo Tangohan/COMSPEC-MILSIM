@@ -66,7 +66,11 @@ final class AtakCoverImportAssetTest extends TestCase
         self::assertStringContainsString('(_reg getOrDefault ["imports", createHashMap])', $legend);
         self::assertStringContainsString('_L set ["imported", true];', $legend);
 
-        self::assertStringContainsString('["athena", "import"]', self::read($dir . 'functions/fn_idCoverSync.sqf'));
+        // Identité utilisée en jeu remontée quelle que soit son origine (athena, import compris), seulement si la transmission
+        // automatique est permise : le site la compare sans l'écrire (MemberIdentitySyncService).
+        $sync = self::read($dir . 'functions/fn_idCoverSync.sqf');
+        self::assertStringContainsString('["origin", _origin]', $sync);
+        self::assertStringContainsString('comspec_sse_id_autoTransmitCommunity', $sync);
         self::assertStringContainsString('["resend"] call comspec_sse_fnc_idCoverImport;', self::read($dir . 'XEH_postInitClient.sqf'));
 
         $page = self::read($dir . 'functions/fn_idCoverPage.sqf');
@@ -102,31 +106,22 @@ final class AtakCoverImportAssetTest extends TestCase
 
     public function testChangelogAnnouncesItWithBothLanguages(): void
     {
-        $log = str_replace("
-", "
-", self::read('CHANGELOG-ATAK.md'));
+        $log = str_replace("\r\n", "\n", self::read('CHANGELOG-ATAK.md'));
         $i = strpos($log, '## À venir : importer sa couverture générée sur Athena');
         if ($i !== false) {
             // Avant la sortie : entrée non versionnée.
             $block = substr($log, $i, 3000);
-            self::assertStringContainsString("### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : ", $block);
-            self::assertStringContainsString("
-EN : ", $block);
+            self::assertStringContainsString("### À annoncer (devient « Résumé joueur » avec le numéro de version)\nType : nouveauté\nFR : ", $block);
+            self::assertStringContainsString("\nEN : ", $block);
             return;
         }
         // Après la sortie : l'import de la couverture est annoncé dans le « Résumé joueur » du pack, en français et en anglais.
         $i = strpos($log, '## Pack 4.2.0 Washington');
         self::assertNotFalse($i);
-        $end = strpos($log, "
-## ", $i + 1);
+        $end = strpos($log, "\n## ", $i + 1);
         $block = substr($log, $i, $end === false ? null : $end - $i);
-        self::assertStringContainsString("### Résumé joueur
-Type : nouveauté
-FR : ", $block);
-        self::assertStringContainsString("
-EN : ", $block);
+        self::assertStringContainsString("### Résumé joueur\nType : nouveauté\nFR : ", $block);
+        self::assertStringContainsString("\nEN : ", $block);
         self::assertStringContainsString('couverture', $block);
         self::assertStringContainsString('cover', $block);
     }

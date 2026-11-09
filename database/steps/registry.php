@@ -94,4 +94,6 @@ return [
     ['id' => 'sse_cover_exports', 'label' => 'Couvertures générées sur Athena puis téléchargées pour le jeu (historique, limite de régénération), personnes fictives seulement', 'group' => 'schema', 'file' => '4230_sse_cover_exports.php', 'rerun' => true],
     ['id' => 'roster_fiche_events', 'label' => 'Effectifs : historique des personnes sans compte (création, correction, invitation, rattachement, import)', 'group' => 'schema', 'file' => '4200_roster_fiche_events.php', 'rerun' => true],
     ['id' => 'bo_table_defs', 'label' => 'Back-office : tableaux de données enregistrés (source, colonnes, filtres, tri, regroupement, partage)', 'group' => 'schema', 'file' => '4210_bo_table_defs.php', 'rerun' => true],
+    ['id' => 'platform_bo_messages', 'label' => 'Messages de la plateforme aux back-offices des communautés (ciblage, FR/EN, vu, fermé, cliqué, acquittement)', 'group' => 'schema', 'file' => '4240_platform_bo_messages.php', 'rerun' => true],
+    ['id' => 'sse_identity_sync', 'label' => 'Identités : historique des valeurs écartées (restaurables) et différence avec le jeu déjà examinée (synchronisation Athena ↔ jeu sans écrasement)', 'group' => 'schema', 'file' => '4250_sse_identity_sync.php', 'rerun' => true],
 ];
