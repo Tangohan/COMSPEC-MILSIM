@@ -23,7 +23,7 @@ param(
     [switch]$SansSse,
     # MPU-5 d'ACRE (ACRE_MPU5.pbo seul, tiré du pack 3026491672) pour l'étape acre_radio_detectee : retiré avec ce paramètre.
     [switch]$SansAcreMpu5,
-    # Groupes de la mission (vide : tous) : fonctions telephone carte antennes gps explo sse zeus acre reseau mpudiag
+    # Groupes de la mission (vide : tous) : fonctions telephone carte antennes gps explo sse equipement zeus acre reseau mpudiag
     [string[]]$Groupes = @(),
     [int]$DureeMaxMinutes = 45,
     # Attente de la première ligne AUTOTEST avant de passer au plan suivant.
