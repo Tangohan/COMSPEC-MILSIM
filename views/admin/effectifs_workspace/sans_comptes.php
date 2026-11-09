@@ -55,6 +55,9 @@ $day = static fn (string $d): string => $d !== '' && strtotime($d) !== false ? d
                 <?php foreach ($sources as $key => $label): ?><option value="<?= $h($key) ?>"<?= $f['source'] === $key ? ' selected' : '' ?>><?= $h($label) ?></option><?php endforeach; ?>
             </select>
         </label>
+        <label class="eff-nc__live" hidden>Filtrer la liste affichée
+            <input type="search" placeholder="Taper pour filtrer…" autocomplete="off" data-grid-filter>
+        </label>
         <label>Trier par
             <select name="tri">
                 <option value="activite"<?= $f['sort'] === 'activite' ? ' selected' : '' ?>>Dernière activité</option>
@@ -68,10 +71,10 @@ $day = static fn (string $d): string => $d !== '' && strtotime($d) !== false ? d
     <?php if ($ncRows === []): ?>
         <p class="eff-nc__empty"><?= (int) $ncTotal === 0 ? 'Personne n’est sans compte pour l’instant : tous vos membres ont un compte actif.' : 'Aucune personne ne correspond à ces filtres.' ?></p>
     <?php else: ?>
-        <div class="eff-nc__tablewrap">
-            <table class="eff-nc__table">
+        <div class="eff-nc__tablewrap" data-grid>
+            <table class="eff-nc__table" data-grid-table>
                 <thead>
-                    <tr><th scope="col">Nom</th><th scope="col">Indicatif</th><th scope="col">Statut</th><th scope="col">Origine</th><th scope="col">Dernière activité</th><th scope="col"><span class="eff-sr">Actions</span></th></tr>
+                    <tr><th scope="col">Nom<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Indicatif<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Statut<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Origine<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col">Dernière activité<span class="dt-grid__arrow" aria-hidden="true"></span></th><th scope="col" data-nosort><span class="eff-sr">Actions</span></th></tr>
                 </thead>
                 <tbody>
                 <?php foreach ($ncRows as $r): ?>
@@ -86,6 +89,7 @@ $day = static fn (string $d): string => $d !== '' && strtotime($d) !== false ? d
                 <?php endforeach; ?>
                 </tbody>
             </table>
+            <p class="eff-nc__nomatch" data-grid-none hidden>Aucune personne affichée ne contient ce texte.</p>
         </div>
     <?php endif; ?>
 
@@ -165,3 +169,4 @@ $day = static fn (string $d): string => $d !== '' && strtotime($d) !== false ? d
         <?php endif; ?>
     </div>
 </section>
+<script defer src="<?= $h(asset_url('assets/js/back-office-tableaux.js')) ?>"></script>
