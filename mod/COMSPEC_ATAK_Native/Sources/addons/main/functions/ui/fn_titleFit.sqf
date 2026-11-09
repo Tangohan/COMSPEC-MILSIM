@@ -27,6 +27,9 @@ if (isNull _ic || {(ctrlParent _ic) isNotEqualTo _d}) then {
     uiNamespace setVariable ["COMSPEC_ATAK_TitleIcon", _ic];
 };
 _ic ctrlShow false;
+// Carte en mode PETIT : le titre « CARTE » ne sert à rien (on est sur la carte, l'écran est étroit) ; la barre garde ses boutons.
+private _lay = [] call comspec_atak_native_fnc_layoutGet;
+if ((_lay get "mini") && {!(_lay get "texture")} && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP"}) exitWith { _c ctrlSetText ""; "" };
 private _box = uiNamespace getVariable ["COMSPEC_ATAK_TitleBox", []];
 if ((count _box) < 5) exitWith { _c ctrlSetText _full; _full }; // i18n:brut (déjà traduit)
 _box params ["_tx", "_ty", "_tw", "_th", "_tw2"];

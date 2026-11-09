@@ -13,7 +13,7 @@ private _flat = {
 };
 private _pal = uiNamespace getVariable "COMSPEC_ATAK_MapPalette";
 if (isNil "_pal") then {
-    _pal = createHashMapFromArray [["BLUE", [0.28, 0.70, 1, 1]], ["CYAN", [0.20, 0.90, 0.95, 1]], ["GREEN", [0.36, 0.85, 0.42, 1]], ["WHITE", [0.95, 0.95, 0.95, 1]], ["YELLOW", [1, 0.85, 0.15, 1]], ["ORANGE", [1, 0.55, 0.15, 1]], ["PINK", [1, 0.45, 0.75, 1]]];
+    _pal = createHashMapFromArray [["BLUE", [0.28, 0.70, 1, 1]], ["CYAN", [0.20, 0.90, 0.95, 1]], ["GREEN", [0.36, 0.85, 0.42, 1]], ["WHITE", [0.95, 0.95, 0.95, 1]], ["YELLOW", [1, 0.85, 0.15, 1]], ["ORANGE", [1, 0.55, 0.15, 1]], ["PINK", [1, 0.45, 0.75, 1]], ["FUCHSIA", [1,0.12,0.80,1]], ["LIME", [0.62,1,0.05,1]], ["VIOLET", [0.74,0.40,1,1]], ["TURQ", [0.10,1,0.88,1]], ["NEON", [1,1,0.20,1]]];
     uiNamespace setVariable ["COMSPEC_ATAK_MapPalette", _pal];
 };
 private _ally = _pal getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_AllyColor", "BLUE"], [0.28, 0.70, 1, 1]];

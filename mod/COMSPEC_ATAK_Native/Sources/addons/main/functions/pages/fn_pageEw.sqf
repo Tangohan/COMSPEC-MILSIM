@@ -131,6 +131,8 @@ switch (_tab) do {
         };
     };
 };
+// GONIO : interceptions du trafic du maillage (fn_meshKeys, réglage « Interception du trafic en clair ») sous les relèvements.
+if (_tab isEqualTo "DF") then { _rows append (["interceptRows"] call comspec_atak_native_fnc_meshKeys); };
 // GONIO : spectre et boussole en tête, le formulaire dessous.
 if (_tab isEqualTo "DF" && {_allowed}) then {
     private _vh = _bh * 0.42;

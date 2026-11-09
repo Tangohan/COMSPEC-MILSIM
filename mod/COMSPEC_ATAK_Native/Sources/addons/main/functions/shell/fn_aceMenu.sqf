@@ -228,6 +228,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
 
 // Radio de données (liaison réaliste, fn_mpuLink) : relier le téléphone à la MPU5, batterie.
 ["aceInit"] call comspec_atak_native_fnc_mpuLink;
+// Clés du maillage (fn_meshKeys) : charger les clés, effacement d'urgence, rechargement à distance, sous « Radio de données ».
+["aceInit"] call comspec_atak_native_fnc_meshKeys;
 // Caméras IP fixes : « Caméras > Poser une caméra » et actions sur la caméra posée (fn_camAction).
 ["aceInit"] call comspec_atak_native_fnc_camAction;
 // Antennes transportables : « Équipement > Déployer » et « Replier l'antenne » sur l'objet posé (fn_antennaKit).

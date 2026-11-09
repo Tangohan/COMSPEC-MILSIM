@@ -56,6 +56,9 @@ if (!isNull (missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull]))
 private _tx = (missionNamespace getVariable ["COMSPEC_ATAK_NetTxAt", []]) select { _now - _x < 60 };
 missionNamespace setVariable ["COMSPEC_ATAK_NetTxAt", _tx];
 if ((count _tx) > 0) then { _f pushBack [format ["Envois de données (%1 / min)", count _tx], (0.03 * count _tx) min 0.4]; };
+// Chiffrement actif (fn_meshKeys "cost", réglage mesh_crypto_cost) : un peu plus de calcul.
+private _cryB = (["cost"] call comspec_atak_native_fnc_meshKeys) param [2, 0];
+if (_cryB > 0) then { _f pushBack ["Chiffrement", _cryB]; };
 // Un téléphone qui cherche le réseau pousse son émetteur : signal faible ou absent, batterie qui fond.
 private _lq = [] call comspec_atak_native_fnc_linkQuality;
 if ((_lq getOrDefault ["sim", true]) && {(_lq getOrDefault ["bars", 4]) <= 1}) then { _f pushBack ["Recherche de réseau", 0.15]; };

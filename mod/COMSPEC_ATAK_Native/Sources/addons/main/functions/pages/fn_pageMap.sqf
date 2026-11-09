@@ -642,6 +642,8 @@ if (_interactive) then {
                             ["", "Indicatifs, noms et coordonnées ; réglage fin dans Réglages > Carte"] select _full];
                         _rows pushBack ["segment", "Fond des étiquettes", ["COMSPEC_ATAK_LblBgAlpha", _baNow, [["LÉGER", 0.55], ["NORMAL", 0.8], ["OPAQUE", 0.95]]] call _lblSeg,
                             ["", "Plaque sombre derrière les noms : plus opaque, plus lisible sur une carte chargée"] select _full];
+                        // Fond des noms sans plaque (indicatifs simples, repères, lieux, distances) : mêmes lignes que Réglages > Carte.
+                        _rows append (["rows", "names"] call comspec_atak_native_fnc_mapPrefs);
                     };
                 };
             } forEach _groups;
