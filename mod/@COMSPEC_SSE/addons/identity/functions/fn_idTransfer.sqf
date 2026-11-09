@@ -16,6 +16,10 @@ if (_from isKindOf "CAManBase") then {
     clearItemCargoGlobal _from;
     { _from addItemCargoGlobal [_x, 1]; } forEach _items;
 };
+// Porteur connu et chaîne de possession (API fn_idPaperOf) : saisie, remise, rendu.
+private _doc = ["ofClass", [_cls]] call comspec_sse_fnc_idRegistry;
+["hold", [_doc, _to]] call comspec_sse_fnc_idPaperTrack;
+["log", [_doc, "transfer", [objNull, _to] select (_to isKindOf "CAManBase")]] call comspec_sse_fnc_idPaperTrack;
 if (_to isKindOf "CAManBase") then {
     ["comspec_sse_idLocalAdd", [_to, _cls], _to] call CBA_fnc_targetEvent;
 } else {

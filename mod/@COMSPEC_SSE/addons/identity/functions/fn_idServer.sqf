@@ -15,6 +15,7 @@
       return   [moi, cible, classe]      je rends un document saisi
       vehicle  [moi, véhicule]           contrôle des occupants        dismount [moi, véhicule]  faire descendre
       kit      [moi, ancien corps | objNull]   papiers du kit Athena (connexion, JIP, respawn ; Steam ID lu ici)
+      paperMoved [moi, classe, conteneur, take | put]   j'ai pris / posé un papier (fn_idPaperTrack, sans anti-flood)
       give / report / truth / pack       Zeus (curateur) : donner des papiers, signaler, vraie identité, paquet Athena
       aiCfg    [moi, sous-op, args]      Zeus : fenêtre de configuration des IA (fn_idAiConfig, éditeur SSE › IA)
       fsmForce [moi, ia, état]           Zeus : impose un état à une IA (automate des IA réalistes, fn_idAiFsm)
@@ -51,7 +52,7 @@ if (isMultiplayer && {isRemoteExecuted} && {(owner _me) isNotEqualTo _owner}) ex
 private _floodKey = format ["%1|%2", _owner, _op];
 // Anti-flood des postes distants seulement : les appels internes du serveur (checkpoints IA) passent tous.
 // La fenêtre du Zeus enchaîne ses demandes (liste, puis papiers de la ligne choisie) : réservée au Zeus, elle n'est pas bridée.
-if (isRemoteExecuted && {!(_op in ["begin", "aiCfg"])} && {(time - ((_reg get "flood") getOrDefault [_floodKey, -10])) < 0.5}) exitWith {};
+if (isRemoteExecuted && {!(_op in ["begin", "aiCfg", "paperMoved"])} && {(time - ((_reg get "flood") getOrDefault [_floodKey, -10])) < 0.5}) exitWith {};
 (_reg get "flood") set [_floodKey, time];
 
 private _reply = {
@@ -633,6 +634,13 @@ switch (_op) do {
                 _reg set ["aiPlacements", (_reg getOrDefault ["aiPlacements", []]) select { (_x getOrDefault ["id", 0]) isNotEqualTo _idK }];
             };
         };
+    };
+
+    // Papier pris ou posé (évènements Take / Put du poste du joueur) : porteur, chaîne de possession, évènements CBA.
+    case "paperMoved": {
+        _args params ["", ["_cls", "", [""]], ["_box", objNull, [objNull]], ["_how", "take", [""]]];
+        if !(_how in ["take", "put"]) exitWith {};
+        [_how, [_me, _cls, _box]] call comspec_sse_fnc_idPaperTrack;
     };
 
     case "pack": {

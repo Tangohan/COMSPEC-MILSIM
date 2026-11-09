@@ -1,7 +1,8 @@
 /*
     App « Ma couverture » du téléphone ATAK (page IDCOVER, déclarée dans COMSPEC_ATAK_Apps du SSE, main.pbo intact).
       MA FICHE   fiche RP du seul joueur concerné, du plus urgent au détail : question d'un contrôleur (réponses au choix),
-                 état de l'infiltration, cohérence (note et actions pour la corriger), ce que disent ses papiers, légende à
+                 état de l'infiltration, cohérence (note et actions pour la corriger), ce que disent ses papiers et pourquoi
+                 l'identité d'Athena n'a pas pu être utilisée (paquet non chargé, aucun papier pour ce compte…), légende à
                  retenir (ce qu'un contrôleur demande), liaison Athena (compte, couverture reçue ou locale, date, quoi
                  faire), puis sections repliables : contacts, documents complémentaires, histoire, phrases types, sujets
                  sensibles, secrets, consignes
@@ -181,6 +182,12 @@ private _sheetRows = {
     if (_carried isEqualTo []) then {
         _rows pushBack ["text", format ["<t color='%1'>%2</t>", _hWarn, ([["Aucun papier sur vous : rien ne prouve encore l'identité ci-dessous à un contrôle.", "Vos papiers ne sont pas sur vous : rien ne prouve l'identité ci-dessous à un contrôle."] select (_docs isNotEqualTo []) call _tr] call _esc)], _surface];
     };
+    // Pourquoi cette identité (et pas celle d'Athena) : étape où la transmission s'est arrêtée (fn_idLegend « sheet », diag).
+    {
+        _x params [["_lv", "warn"], ["_t", ""], ["_why", ""]];
+        if (_lv isNotEqualTo "ok" || {_carried isNotEqualTo []}) then { _rows pushBack ["check", _lv, _t call _tr, "", _why call _tr]; };
+    } forEach (_s getOrDefault ["diag", []]);
+    if ((_s getOrDefault ["athenaRef", ""]) isNotEqualTo "") then { _rows pushBack ["info", "Identité Athena" call _tr, ([_s get "athenaRef"] call _esc) call _ink]; };
     _rows pushBack ["person", "\z\comspec_sse\addons\identity\data\silhouette_co.paa",
         format ["<t size='1.1' font='COMSPEC_BarlowBold' color='%5'>%1</t><br/><t size='0.85' color='%4'>%2 · %3</t>", [_s getOrDefault ["name", "?"]] call _esc,
             [_s getOrDefault ["dob", ""]] call _esc, [_s getOrDefault ["pob", ""]] call _esc, _hDim, _hText], [], [1, 1, 1, 1]];

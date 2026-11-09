@@ -73,6 +73,11 @@ final class SseIdentitySqlite
             $out .= $m;
         });
 
+        $sync = require dirname(__DIR__, 2) . '/bootstrap/sse_identity_sync_migration.php';
+        $sync($pdo, static function (string $m) use (&$out): void {
+            $out .= $m;
+        });
+
         return $out;
     }
 

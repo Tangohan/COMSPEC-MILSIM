@@ -12,6 +12,7 @@
                     | stolen_blank (vierge volé) ; défaut tiré selon la qualité
       last, first, sex, dob, pob, number, issued, expires, chip    imposés (Zeus, paquet Athena)
       report        "" | vole | perdu | revoque      athenaId  identifiant Athena      materialize  true : objet tout de suite
+      athenaIdentity  identifiant de l'identité Athena (IDT-…)     ownerUid, ownerName  propriétaire (défaut : la personne)
     Vérité gardée sur le document (jamais envoyée aux joueurs) : trueLast, trueFirst, kind, quality, forgeryKind, flaws.
 */
 params [["_u", objNull, [objNull]], ["_spec", createHashMap, [createHashMap]]];
@@ -101,7 +102,13 @@ private _doc = createHashMapFromArray [
     ["chip", ["absent", "ok"] select (_type in ["id_card", "passport", "military_id"])], ["chipExpected", _type in ["id_card", "passport", "military_id"]],
     ["kind", _kind], ["quality", _q], ["forgeryKind", ""], ["flaws", []], ["report", _spec getOrDefault ["report", ""]],
     ["holderKey", _key], ["trueLast", _trueLast], ["trueFirst", _trueFirst], ["athenaId", _spec getOrDefault ["athenaId", ""]],
-    ["chipNote", ""], ["issuedAt", time]
+    ["chipNote", ""], ["issuedAt", time],
+    // Lien avec Athena et propriétaire (API fn_idPaperOf / fn_idPaperOwner) : identité Athena du papier, joueur à qui il
+    // a été remis (Steam ID, nom), chaîne de possession (fn_idPaperTrack).
+    ["athenaIdentity", _spec getOrDefault ["athenaIdentity", ""]],
+    ["ownerUid", _spec getOrDefault ["ownerUid", if (isNull _u) then { "" } else { getPlayerUID _u }]],
+    ["ownerName", _spec getOrDefault ["ownerName", if (isNull _u) then { "" } else { name _u }]],
+    ["custody", []]
 ];
 
 // Carte militaire : grade, force et camp de la force, lus par fn_idEvaluate (N3).

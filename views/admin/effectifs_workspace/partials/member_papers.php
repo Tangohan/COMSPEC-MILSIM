@@ -81,6 +81,8 @@ $identityFields = static function (array $v, bool $withKind) use ($ph, $countrie
     </header>
     <div class="eff-fm-cards">
 
+    <?php require __DIR__ . '/member_papers_sync.php'; ?>
+
     <article class="eff-fm-card" id="papiers-identite">
         <div class="eff-fm-card__head">
             <h3>Identité principale</h3>
@@ -306,7 +308,7 @@ $identityFields = static function (array $v, bool $withKind) use ($ph, $countrie
             <p class="eff-card__hint">Le compte de ce membre n’est pas lié à Steam : le serveur de jeu ne peut pas lui remettre son kit.</p>
         <?php endif; ?>
         <?php if ($pp['kits'] === []): ?>
-            <p class="eff-fm-lead">Aucun kit : le joueur arrive sans papiers.</p>
+            <p class="eff-fm-lead">Aucun kit composé : le joueur reçoit automatiquement les papiers émis et valables de son identité principale (ou de sa couverture si une fiche de couverture la lui attribue).</p>
         <?php else: ?>
             <ul class="eff-fm-list">
                 <?php foreach ($pp['kits'] as $kit): ?>

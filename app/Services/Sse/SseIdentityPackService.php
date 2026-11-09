@@ -134,6 +134,8 @@ final class SseIdentityPackService
         }
 
         $next = $offset + count($docs);
+        $briefs = $offset === 0 ? $this->operations->briefsForPack($tenantId, $mapId, $opKey) : [];
+        $kits = $offset === 0 ? $this->kitsWithAuto($tenantId, $mapId, $opKey, $briefs) : [];
         $pack = [
             'version' => self::VERSION,
             'generated_at' => gmdate('Y-m-d\TH:i:s\Z'),
@@ -143,10 +145,10 @@ final class SseIdentityPackService
             'identities' => $identities,
             'documents' => $documents,
             'watch' => $offset === 0 ? $this->watch($tenantId, $mapId) : [],
-            'kits' => $offset === 0 ? $this->kits->forPack($tenantId, $mapId, $opKey) : [],
+            'kits' => $kits,
             'population' => $offset === 0 ? $this->operations->populationForPack($tenantId, $mapId, $opKey) : [],
             'wanted' => $offset === 0 ? $this->wanted($tenantId, $mapId, $opKey) : [],
-            'briefs' => $offset === 0 ? $this->operations->briefsForPack($tenantId, $mapId, $opKey) : [],
+            'briefs' => $briefs,
             // Réglage de la communauté, ignoré par un ancien mod.
             // Profils d'IA et éléments gardés : dans « settings », seul bloc libre que la DLL publiée transmet sans le connaître.
             'settings' => ['auto_transmit' => $this->settings->autoTransmit($tenantId)] + ($offset === 0 ? $this->aiBlocks($tenantId, $mapId, $opKey) : []),
@@ -163,6 +165,28 @@ final class SseIdentityPackService
         }
 
         return $pack;
+    }
+
+    /**
+     * Kits composés, puis kit automatique (portée « auto ») des membres qui n'en ont aucun : chaque membre reçoit les
+     * papiers émis de son identité principale, ou ceux de son identité de couverture si une fiche de couverture la lui
+     * attribue pour cette carte / opération (SseIdKitRepository::autoForPack). Les papiers sont tous dans le pack.
+     *
+     * @param list<array<string, mixed>> $briefs
+     * @return list<array{uid: string, user_id: int, scope: string, documents: list<int>}>
+     */
+    private function kitsWithAuto(int $tenantId, int $mapId, ?string $opKey, array $briefs): array
+    {
+        $kits = $this->kits->forPack($tenantId, $mapId, $opKey);
+        $covers = [];
+        foreach ($briefs as $b) {
+            if ((int) ($b['identity_id'] ?? 0) > 0) {
+                $covers[(int) $b['user_id']] = (int) $b['identity_id'];
+            }
+        }
+        $auto = $this->kits->autoForPack($tenantId, $mapId, $opKey, array_map(static fn (array $k): int => (int) $k['user_id'], $kits), $covers);
+
+        return array_merge($kits, $auto);
     }
 
     /**
