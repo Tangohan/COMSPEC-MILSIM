@@ -61,7 +61,7 @@ final class PlanGiftTest extends TestCase
         $fiche = (string) file_get_contents($root . '/views/admin/system/tenants_plan_form.php');
         self::assertStringContainsString('PlanGift::effectivePlanSlug($tenant)', $fiche);
         $gate = (string) file_get_contents($root . '/app/Services/Platform/FeatureGateService.php');
-        self::assertStringContainsString('return PlanGift::effectivePlanSlug($tenant);', $gate);
+        self::assertStringContainsString('return EffectivePlan::slugFor($tenant);', $gate);
     }
 
     public function testEndDateFromDurationOrCustomDate(): void
