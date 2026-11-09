@@ -15,7 +15,8 @@ namespace App\Support;
  * Réglages plateforme (platform_settings) :
  *   plan_grace_enabled        0|1   (0 par défaut : comportement inchangé, coupure le jour de la fin)
  *   plan_grace_days           entier, 7 par défaut
- *   plan_end_warning_days     entier, 7 par défaut (bandeau et e-mail N jours avant la fin)
+ *   plan_end_warning_days     entier, 3 par défaut (bandeau et e-mail N jours avant la fin)
+ *   plan_trial_days           entier 1..60, 7 par défaut (durée de l'essai fondateur des NOUVELLES communautés)
  *   plan_end_warning_email    0|1   (0 par défaut : e-mail aux gestionnaires désactivé)
  */
 final class PlanAccessWindow
@@ -24,9 +25,15 @@ final class PlanAccessWindow
     public const SETTING_GRACE_DAYS = 'plan_grace_days';
     public const SETTING_WARNING_DAYS = 'plan_end_warning_days';
     public const SETTING_WARNING_EMAIL = 'plan_end_warning_email';
+    public const SETTING_TRIAL_DAYS = 'plan_trial_days';
+
+    /** Durée de l'essai fondateur (jours) : unique source, jamais appliquée rétroactivement aux fins déjà enregistrées. */
+    public const DEFAULT_TRIAL_DAYS = 7;
 
     public const DEFAULT_GRACE_DAYS = 7;
-    public const DEFAULT_WARNING_DAYS = 7;
+    public const DEFAULT_WARNING_DAYS = 3;
+    /** Premier rappel d'une formule payée quand l'avertissement est à 0. */
+    public const DEFAULT_PAID_REMINDER_DAYS = 7;
     public const MAX_DAYS = 60;
 
     /** Clé tenants.settings : dernière fin annoncée par e-mail (« trial|2026-10-20T… »). */
@@ -200,7 +207,19 @@ final class PlanAccessWindow
     /** Délai des rappels de formule payée : le réglage d'avertissement, 7 jours s'il est à 0. */
     public static function paidReminderDays(int $warningDays): int
     {
-        return $warningDays > 0 ? $warningDays : self::DEFAULT_WARNING_DAYS;
+        return $warningDays > 0 ? $warningDays : self::DEFAULT_PAID_REMINDER_DAYS;
+    }
+
+    /** Durée d'essai valide (au moins 1 jour) ; défaut DEFAULT_TRIAL_DAYS si vide ou invalide. */
+    public static function normalizeTrialDays(mixed $raw): int
+    {
+        return max(1, self::clampDays($raw, self::DEFAULT_TRIAL_DAYS));
+    }
+
+    /** Date de fin (ISO 8601) d'un essai commençant à $now. */
+    public static function trialEndsAtFor(int $days, ?int $now = null): string
+    {
+        return date('c', ($now ?? time()) + max(1, $days) * 86400);
     }
 
     /** Nombre de jours borné (0..MAX_DAYS) ; $fallback si la valeur est vide ou invalide. */

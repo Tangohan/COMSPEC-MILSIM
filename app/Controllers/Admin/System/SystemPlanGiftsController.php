@@ -149,6 +149,7 @@ final class SystemPlanGiftsController
                 'grace_days' => $request->input('grace_days', ''),
                 'warning_days' => $request->input('warning_days', ''),
                 'warning_email' => $request->input('warning_email', ''),
+                'trial_days' => $request->input('trial_days', ''),
             ]);
             Session::flash('success', 'Réglages des fins de formule enregistrés.');
         } catch (\Throwable) {

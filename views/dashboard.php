@@ -299,7 +299,7 @@ require base_path('views/partials/alert_banners.php');
                         <p class="dash-start-card__text"><?= $n('Une communauté est l’espace de votre unité sur Athena : effectifs et ORBAT, formations, manœuvres, recrutement et carte ATAK partagés par tous vos membres.') ?></p>
                         <ul class="dash-start-card__list">
                             <li><?= $n('Gratuit pour démarrer') ?></li>
-                            <li><?= $n('Formule Pro offerte 30 jours au fondateur') ?></li>
+                            <li><?= $n('Formule Pro offerte 7 jours au fondateur') ?></li>
                             <li><?= $n('Assistant de création pas à pas, tout reste modifiable ensuite') ?></li>
                         </ul>
                         <div class="dash-start-card__actions">
