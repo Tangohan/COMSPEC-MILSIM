@@ -132,6 +132,8 @@ switch (_act) do {
     case "init": {
         if (!hasInterface) exitWith {};
         ["comspec_atak_native_meshMode", { ["mode", _this] call comspec_atak_native_fnc_meshEW; }] call CBA_fnc_addEventHandler;
+        // Interception du trafic (réglage mesh_intercept, fn_meshKeys "heard") : reçue même clés du maillage coupées (tout passe alors en clair).
+        ["comspec_atak_native_meshIntercept", { ["heard", _this] call comspec_atak_native_fnc_meshKeys; }] call CBA_fnc_addEventHandler;
     };
     case "tick": {
         // Canal de secours : brouillage d'un canal subi quelques secondes, réseau perdu : bascule une fois (les autres font de même de leur côté).

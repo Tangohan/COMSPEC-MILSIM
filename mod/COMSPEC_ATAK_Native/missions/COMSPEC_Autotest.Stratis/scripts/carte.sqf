@@ -400,3 +400,89 @@ if !("carte" call AT_fnc_groupe) exitWith {};
     deleteVehicle _ia;
     call AT_fnc_done;
 }, 60] call AT_fnc_run;
+
+// Un seul trait par paire d'alliés : maillage injecté avec des liens en double (A-B puis B-A, deux nœuds pour le même
+// allié) ; fn_meshDraw expose les traits de l'image (uiNamespace COMSPEC_ATAK_MeshDrawn, [objet A, objet B, source]).
+["carte_un_trait", {
+    if (["comspec_atak_native_fnc_meshDraw", "comspec_atak_native_fnc_waveRelayAction", "comspec_atak_native_fnc_mpuLink"] call AT_fnc_nil) exitWith {};
+    if (["active"] call comspec_atak_native_fnc_mpuLink) exitWith { "liaison réaliste active : maillage lu du graphe, pas d'injection" call AT_fnc_skip; };
+    ["MAP", 2] call AT_fnc_page;
+    private _old = [profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false], profileNamespace getVariable ["COMSPEC_ATAK_MeshLinks", false]];
+    profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", true];
+    profileNamespace setVariable ["COMSPEC_ATAK_MeshLinks", true];
+    private _a = (group player) createUnit [typeOf player, player getPos [12, 300], [], 0, "NONE"];
+    private _b = (group player) createUnit [typeOf player, player getPos [9, 330], [], 0, "NONE"];
+    { _x disableAI "PATH"; _x setVariable ["COMSPEC_ATAK_AiAtak", true, true]; } forEach [_a, _b];
+    private _ant = { params ["_u"]; (eyePos _u) vectorAdd [0, 0, 0.5] };
+    private _mesh = createHashMapFromArray [
+        ["nodes", [[player, [player] call _ant, "MOI", "me", 3000], [_a, [_a] call _ant, "A", "node", 3000], [_b, [_b] call _ant, "B", "node", 3000], [_a, [_a] call _ant, "A bis", "node", 3000]]],
+        ["links", [[0, 1, 90], [1, 0, 90], [0, 2, 80], [2, 0, 80], [1, 2, 70], [3, 0, 85], [3, 1, 99], [2, 3, 60]]],
+        ["hops", [0, 1, 1, 1]], ["me", 0], ["gw", -1], ["gwLabel", ""], ["range", 3000]
+    ];
+    [0.004] call AT_fnc_centre;
+    // Cache de l'action « scan » (3 s) rafraîchi pendant l'attente : la carte dessine ce maillage-là.
+    private _fin = diag_tickTime + 2;
+    while { diag_tickTime < _fin } do { uiNamespace setVariable ["COMSPEC_ATAK_Mesh", [diag_tickTime, _mesh]]; uiSleep 0.2; };
+    private _dr = +(uiNamespace getVariable ["COMSPEC_ATAK_MeshDrawn", []]);
+    private _keys = [];
+    {
+        _x params ["_oa", "_ob"];
+        private _k = [str _oa, str _ob];
+        _k sort true;
+        _keys pushBackUnique (_k joinString "|");
+    } forEach _dr;
+    (format ["traits dessinés : %1", _dr apply { format ["%1-%2 (%3)", name (_x select 0), name (_x select 1), _x select 2] }]) call AT_fnc_info;
+    [(count _dr) > 0, "aucun trait entre alliés dessiné (calque Wave Relay ?)"] call AT_fnc_check;
+    [(count _keys) isEqualTo (count _dr), format ["%1 traits pour %2 paires : une paire dessinée deux fois", count _dr, count _keys]] call AT_fnc_check;
+    [(_dr findIf { (_x select 0) isEqualTo (_x select 1) }) < 0, "trait d'un allié vers lui-même (deux nœuds du même porteur)"] call AT_fnc_check;
+    [(count _dr) <= 2, format ["%1 traits pour 3 unités (au plus 2 attendus)", count _dr]] call AT_fnc_check;
+    uiNamespace setVariable ["COMSPEC_ATAK_Mesh", [diag_tickTime, _mesh]];
+    ["carte_un_trait"] call AT_fnc_shot;
+    "un seul trait vert entre moi et chaque allié proche, aucun trait doublé ni décalé" call AT_fnc_visuel;
+    profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", _old select 0];
+    profileNamespace setVariable ["COMSPEC_ATAK_MeshLinks", _old select 1];
+    uiNamespace setVariable ["COMSPEC_ATAK_Mesh", nil];
+    missionNamespace setVariable ["COMSPEC_ATAK_MeshKeep", nil];
+    deleteVehicle _a;
+    deleteVehicle _b;
+    call AT_fnc_done;
+}, 40] call AT_fnc_run;
+
+// Fond des noms (Réglages > Carte) : chaque niveau sur le fond satellite, un allié proche nommé, capture par niveau.
+["carte_fond_noms", {
+    if (["comspec_atak_native_fnc_mapPrefs", "comspec_atak_native_fnc_mapStyle"] call AT_fnc_nil) exitWith {};
+    ["MAP", 2] call AT_fnc_page;
+    private _ia = (group player) createUnit [typeOf player, player getPos [15, 300], [], 0, "NONE"];
+    _ia setVariable ["COMSPEC_ATAK_AiAtak", true, true];
+    _ia disableAI "PATH";
+    private _style = [] call comspec_atak_native_fnc_mapStyle;
+    ["SAT"] call comspec_atak_native_fnc_mapStyle;
+    ["MAP"] call comspec_atak_native_fnc_pageRender;
+    uiSleep 2;
+    [0.01] call AT_fnc_centre;
+    {
+        _x params ["_nom", "_a", "_ton"];
+        ["nameBgSet", ["tone", _ton]] call comspec_atak_native_fnc_mapPrefs;
+        ["nameBgSet", ["alpha", _a]] call comspec_atak_native_fnc_mapPrefs;
+        uiSleep 1;
+        private _now = uiNamespace getVariable ["COMSPEC_ATAK_NameBgNow", []];
+        if (_a <= 0) then {
+            [_now isEqualTo [], format ["%1 : un fond reste dessiné (%2)", _nom, _now]] call AT_fnc_check;
+        } else {
+            [(count _now) isEqualTo 4 && {abs ((((_now select 0) select 3)) - _a) < 0.01}, format ["%1 : fond attendu à %2, état %3", _nom, _a, _now]] call AT_fnc_check;
+            [(_now param [1, false]) isEqualTo (_ton isEqualTo "LIGHT"), format ["%1 : couleur du fond (%2)", _nom, _ton]] call AT_fnc_check;
+        };
+        [format ["carte_fond_noms_%1", _nom]] call AT_fnc_shot;
+    } forEach [["non", 0, "DARK"], ["leger", 0.45, "DARK"], ["normal", 0.7, "DARK"], ["opaque", 0.92, "DARK"], ["clair", 0.7, "LIGHT"]];
+    // Défaut : LÉGER sombre.
+    { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_NameBgAlpha", "COMSPEC_ATAK_NameBgTone"];
+    uiNamespace setVariable ["COMSPEC_ATAK_NameBgCfg", []];
+    uiSleep 1;
+    private _def = uiNamespace getVariable ["COMSPEC_ATAK_NameBgNow", []];
+    [(count _def) isEqualTo 4 && {abs ((((_def select 0) select 3)) - 0.45) < 0.01} && {!(_def select 1)}, format ["défaut attendu LÉGER sombre : %1", _def]] call AT_fnc_check;
+    ["carte_fond_noms"] call AT_fnc_shot;
+    "indicatifs, noms des lieux et des repères, distance au curseur sur un fond à la taille exacte du texte, du bon côté du symbole" call AT_fnc_visuel;
+    [_style] call comspec_atak_native_fnc_mapStyle;
+    deleteVehicle _ia;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;

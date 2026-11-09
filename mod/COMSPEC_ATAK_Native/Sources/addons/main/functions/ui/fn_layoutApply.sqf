@@ -26,29 +26,10 @@ private _set = {
 };
 
 private _phone = [88509, _l get "phone"] call _set;
-// Bordure à l'accent de l'interaction avec la miniature (Maj+U, fn_miniInteract) : exactement autour du cadre visible
-// du téléphone, suivie à chaque mise en page (glisser, position, orientation) ; retirée hors de cette interaction.
+// Bordure bleue de l'interaction avec la miniature (Maj+U, fn_miniInteract) : retirée à la demande (« contour bleu » trop grand, bien
+// au-delà du cadre du téléphone). Seul le nettoyage reste, pour une bordure créée par une mise en page d'avant.
 private _bord = _d getVariable ["COMSPEC_MiniBorder", []];
-if (_interactive && {_l get "mini"} && {(uiNamespace getVariable ["COMSPEC_ATAK_MiniPrevMode", ""]) isNotEqualTo ""}) then {
-    (_l get "visible") params ["_vx", "_vy", "_vw", "_vh"];
-    if ((count _bord) isNotEqualTo 4) then {
-        ([] call comspec_atak_native_fnc_accent) params ["_acc"];
-        _bord = [0, 1, 2, 3] apply {
-            private _c = _d ctrlCreate ["COMSPEC_RscText", -1];
-            _c ctrlSetBackgroundColor [_acc select 0, _acc select 1, _acc select 2, 0.85];
-            _c ctrlEnable false;
-            _c
-        };
-        _d setVariable ["COMSPEC_MiniBorder", _bord];
-    };
-    private _t = pixelH * 2; private _tw = pixelW * 2;
-    {
-        (_bord select _forEachIndex) ctrlSetPosition _x;
-        (_bord select _forEachIndex) ctrlCommit 0;
-    } forEach [[_vx - _tw, _vy - _t, _vw + _tw * 2, _t], [_vx - _tw, _vy + _vh, _vw + _tw * 2, _t], [_vx - _tw, _vy, _tw, _vh], [_vx + _vw, _vy, _tw, _vh]];
-} else {
-    if ((count _bord) > 0) then { { ctrlDelete _x; } forEach _bord; _d setVariable ["COMSPEC_MiniBorder", []]; };
-};
+if ((count _bord) > 0) then { { ctrlDelete _x; } forEach _bord; _d setVariable ["COMSPEC_MiniBorder", []]; };
 _phone ctrlSetText (((_l get "phoneTexture")) call comspec_atak_native_fnc_tr);
 (_l get "device") params ["_dx", "_dy", "_dw", "_dh"];
 (_l get "status") params ["", "_sy", "", "_sh"];
@@ -76,7 +57,10 @@ private _iy = _sy + (_sh - _ih) / 2;
 [88512, [_dx + _pad, _iy, _iw, _ih]] call _set;
 [88513, [_dx + _pad + _iw, _sy, _iw * 1.3, _sh]] call _set;
 private _wx = _dx + _pad * 2 + _iw * 2.3;
-private _ww = _iw * 3.6;
+// Largeur de la météo : celle d'origine, réduite pour ne pas toucher l'heure (42 % de l'écran) sur un écran étroit (mode petit).
+private _ww = (_iw * 3.6) min ((_dx + _dw * 0.41) - _wx);
+// Météo : affichée en mode petit aussi si elle tient (au moins la place d'une icône et de « 6°C ») ; avant, masquée d'office.
+private _weatherFits = _ww >= (_iw * 2.2);
 [88514, [_wx, _sy + _sh * 0.08, _ww, _sh * 0.84]] call _set;
 [88523, [_wx + _pad * 0.5, _iy, _ih / _ratio, _ih]] call _set;
 [88524, [_wx + _pad + _ih / _ratio, _sy, _ww - _ih / _ratio - _pad, _sh]] call _set;
@@ -135,9 +119,9 @@ _ram ctrlSetPosition [_rx0, _sy, (_rx1 - _rx0) max 0, _sh];
 _ram ctrlSetFontHeight (_fontS * 0.9);
 _ram ctrlCommit 0;
 if ((ctrlText _ram) isEqualTo "") then { _ram ctrlSetText (("RAM 00%") call comspec_atak_native_fnc_tr); };
-// Mode PETIT : barre d'état allégée (batterie, heure, notifications, réseau) ; météo et mémoire vive masquées.
+// Mode PETIT : barre d'état allégée (batterie, météo si elle tient, heure, notifications, réseau) ; mémoire vive masquée.
 private _slimBar = (_l get "mini") && {!(_l get "texture")};
-{ (_d displayCtrl _x) ctrlShow !_slimBar; } forEach [88514, 88523, 88524];
+{ (_d displayCtrl _x) ctrlShow (!_slimBar || _weatherFits); } forEach [88514, 88523, 88524];
 _ram ctrlShow (!_slimBar && {(ctrlTextWidth _ram) <= (_rx1 - _rx0)});
 _lockTxt ctrlShow (!_slimBar && {_lockFits});
 (_d displayCtrl 88525) ctrlSetFontHeight _font;

@@ -55,12 +55,23 @@ switch (_op) do {
         _a params [["_holder", objNull], ["_id", ""], ["_label", ""], ["_end", 0]];
         // Fin de validité en temps serveur ramenée à l'horloge locale (time diffère d'un poste à l'autre).
         _tokens set [_id, [_holder, _label, time + ((missionNamespace getVariable ["comspec_sse_id_tokenTime", 120]) - 1)]];
-        ["", "INFO", objNull, format [("Papiers de %1 : %2. Menu ACE › Contrôle d'identité › Contrôler l'identité." call comspec_sse_fnc_tr), [name _holder, "?"] select (isNull _holder), _label]] call comspec_sse_fnc_toast;
+        // Papiers tendus : le document s'ouvre à l'écran (la visionneuse), comme l'« Examiner » du menu ACE, sans y aller à la main.
+        private _auto = (missionNamespace getVariable ["comspec_sse_id_autoView", true]) isEqualTo true;
+        if (_auto) then {
+            [format [("Papiers de %1 : %2.") call comspec_sse_fnc_tr, [name _holder, "?"] select (isNull _holder), _label], "INFO"] call comspec_sse_fnc_toast;
+            ["send", ["begin", [player, "view", _id]]] call comspec_sse_fnc_idClient;
+            // 60 % de la durée d'examen (2 s) exigés par le serveur, plus la latence.
+            [{ ["send", ["view", [player, _this]]] call comspec_sse_fnc_idClient; }, _id, 1.5] call CBA_fnc_waitAndExecute;
+        } else {
+            ["", "INFO", objNull, format [("Papiers de %1 : %2. Menu ACE › Contrôle d'identité › Contrôler l'identité." call comspec_sse_fnc_tr), [name _holder, "?"] select (isNull _holder), _label]] call comspec_sse_fnc_toast;
+        };
     };
     case "say": {
         _a params [["_n", ""], ["_t", ""], ["_type", "INFO"], ["_hint", ""], ["_u", objNull]];
         // Bulle au-dessus de sa tête, sinon toast : ce que dit une IA n'a rien à faire dans le centre de notifications.
-        [_t, _type, _u, _hint] call comspec_sse_fnc_toast;
+        // Témoin à moins de 15 m : la bulle seulement (jamais de toast quand l'IA n'est pas à l'écran) ; la réponse faite à celui qui
+        // l'interroge arrive par « answer », toast compris.
+        [_t, _type, _u, _hint, true] call comspec_sse_fnc_toast;
     };
     case "answer": {
         _a params [["_t", objNull], ["_ans", ""], ["_text", ""]];

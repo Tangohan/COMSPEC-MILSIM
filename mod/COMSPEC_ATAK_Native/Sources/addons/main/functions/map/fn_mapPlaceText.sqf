@@ -89,6 +89,10 @@ private _toW = { params ["_sx", "_sy"]; private _w = _map ctrlMapScreenToWorld [
 private _grid = createHashMap;
 { [_grid, _x, 2] call comspec_atak_native_fnc_mapLblGrid; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_LblRects", []]);
 private _tagBg = _palP get "lblBg";
+// Fond des noms (fn_mapPrefs « nameBg », posé par fn_mapOnDraw) ; fond clair : texte sombre sans contour.
+private _nbg = uiNamespace getVariable ["COMSPEC_ATAK_NameBgNow", []];
+private _nbgLight = (count _nbg) >= 2 && {_nbg select 1};
+private _nbgTxt = [0.04, 0.05, 0.05, 1];
 private _smallCols = [[0.80, 0.94, 0.90, 1], [0.72, 0.88, 0.84, 1], [0.62, 0.78, 0.75, 1], [0.98, 0.74, 0.42, 1]];
 private _smallDot = "\z\comspec_atak_native\addons\main\data\map_pawn_disc.paa";
 private _n = 0;
@@ -117,11 +121,16 @@ private _n = 0;
     // Nom coupé par le bord de la carte : pas écrit (il réapparaît en déplaçant la carte).
     if ((_r select 0) < _mx || {(_r select 2) > (_mx + _mw)} || {(_r select 1) < _my} || {(_r select 3) > (_my + _mh)}) then { continue };
     if ([_grid, _r, 1] call comspec_atak_native_fnc_mapLblGrid) then { continue };
+    // Fond des noms (Réglages > Carte) : rectangle à la taille du nom, sauf ÉTIQUETTE qui a déjà sa plaque.
+    if (!_tag && {_nbg isNotEqualTo []}) then {
+        private _ty = [_sy, _sy - _bh * 0.72] select _small;
+        _map drawRectangle [[_sx, _ty] call _toW, (_w / 2 + 4 * pixelW) * _mpx, (_fs / 2 + 2 * pixelH) * _mpy, 0, _nbg select 0, _fill];
+    };
     switch (_style) do {
         case "SMALL": {
             private _ds = 9 * _kt;
             _map drawIcon [_smallDot, [0.30, 0.85, 0.78, 1], _pos, _ds, _ds, 0, "", 0];
-            _map drawIcon [_none, _smallCols select _cat, [_sx, _sy - _bh * 0.72] call _toW, 0, 0, 0, _t, 1, _fs, _font, "center"];
+            _map drawIcon [_none, [_smallCols select _cat, _nbgTxt] select _nbgLight, [_sx, _sy - _bh * 0.72] call _toW, 0, 0, 0, _t, 1, _fs, _font, "center"];
         };
         case "TAG": {
             _r params ["_x0", "_y0", "_x1", "_y1"];
@@ -131,13 +140,13 @@ private _n = 0;
             _map drawIcon [_none, [0.96, 0.95, 0.92, 1], [_x0 + _pad + _dw, _sy] call _toW, 0, 0, 0, _t, 0, _fs, _font, "right"];
         };
         case "QUIET": {
-            _map drawIcon [_none, [0.93, 0.93, 0.90, 0.85], _pos, 0, 0, 0, _t, 2, _fs, _font, "center"];
+            _map drawIcon [_none, [[0.93, 0.93, 0.90, 0.85], _nbgTxt] select _nbgLight, _pos, 0, 0, 0, _t, [2, 0] select _nbgLight, _fs, _font, "center"];
         };
         case "CLASSIC": {
             _map drawIcon [_none, _acol, _pos, 0, 0, 0, _t, 0, _fs, _font, "center"];
         };
         default {
-            _map drawIcon [_none, _cols select _cat, _pos, 0, 0, 0, _t, 2, _fs, _font, "center"];
+            _map drawIcon [_none, [_cols select _cat, _nbgTxt] select _nbgLight, _pos, 0, 0, 0, _t, [2, 0] select _nbgLight, _fs, _font, "center"];
         };
     };
     _n = _n + 1;
