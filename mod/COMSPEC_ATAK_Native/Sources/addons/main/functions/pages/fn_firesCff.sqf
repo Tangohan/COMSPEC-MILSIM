@@ -18,25 +18,29 @@ private _form = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_Form", _form];
 private _v = { params ["_k", ["_def", ""]]; _f getOrDefault [_k, _def] };
 
-// Couleurs : thème sombre du téléphone (fond vert nuit, panneaux, accent choisi), lisible de nuit et sous NVG.
-// Le thème clair du clip délavait l'écran en jeu.
-private _acc = ([] call comspec_atak_native_fnc_accent) select 0;
-private _cPage = [0.030, 0.038, 0.034, 1];
-private _cPanel = [0.058, 0.070, 0.063, 1];
-private _cHead = [0.60, 0.68, 0.64, 1];
-private _cLine = COMSPEC_ATAK_Th get "border";
-private _cBlue = [_acc select 0, _acc select 1, _acc select 2, 1];
-private _cWhite = [0.94, 0.97, 0.95, 1];
-private _cBtn = [0.11, 0.135, 0.12, 1];
-private _cField = COMSPEC_ATAK_Th get "field";
-private _cOnAcc = [0.03, 0.05, 0.04, 1];
-private _cInk = COMSPEC_ATAK_Th get "onState";
-private _cDim = COMSPEC_ATAK_Th get "textDim";
-private _cYellow = [0.90, 0.66, 0.20, 1];
-private _cDark = [0.018, 0.024, 0.021, 1];
-private _cValue = [0.86, 0.95, 0.62, 1];
-private _cGrey = [0.20, 0.235, 0.215, 1];
-private _cRed = COMSPEC_ATAK_Th get "alert";
+// Couleurs : jetons du thème (fn_theme : sombre, jour, nuit JVN), jamais de couleur fixe. Encres vérifiées à 4,5 : AtakThemeContrastTest.
+// Avant : texte foncé (onState) sur champs et boutons sombres, gris pâle sur panneaux, texte noir sur l'accent : illisible.
+private _th = COMSPEC_ATAK_Th;
+private _cPage = _th get "bg1";
+private _cPanel = _th get "surface";
+private _cHead = _th get "textDim";
+private _cLine = _th get "border";
+private _cWhite = _th get "text";
+private _cBtn = _th get "surface2";
+private _cField = _th get "field";
+private _cInk = _th get "text";
+private _cDim = _th get "textDim";
+// Bouton actif ou principal : fond tonal d'accent, encre d'accent lisible dessus, libellé entre crochets (l'état ne tient pas qu'à la couleur).
+private _cSel = _th get "accentSoftHi";
+private _cOnSel = _th get "onAccentSoft";
+private _cDark = _th get "surfaceAlt";
+private _cValue = _th get "text";
+private _cGrey = _th get "surface2";
+private _cRed = _th get "alert";
+private _cRedBg = [[_cRed select 0, _cRed select 1, _cRed select 2, 1], [(_cRed select 0) * 0.6, (_cRed select 1) * 0.6, (_cRed select 2) * 0.6, 1]] select (_th get "dark");
+private _cOnRed = [_th get "onState", _th get "text"] select (_th get "dark");
+private _cNote = _th get "warn";
+private _cInfo = _th get "info";
 
 private _land = (_rw / pixelW) > (_rh / pixelH) * 1.15;
 private _rowH = _font * 1.45;
@@ -64,15 +68,18 @@ private _mk = {
 private _btn = {
     params ["_pos", "_txt", "_code", ["_style", "off"], ["_parent", controlNull], ["_tip", ""]];
     private _cols = switch (_style) do {
-        case "sel": { [_cBlue, _cOnAcc] };
-        case "yellow": { [_cYellow, _cOnAcc] };
-        case "blue": { [_cBlue, _cOnAcc] };
-        case "grey": { [_cGrey, _cWhite] };
-        case "red": { [_cRed, _cWhite] };
-        case "flat": { [_cBtn, _cDim] };
+        case "sel";
+        case "blue": { [_cSel, _cOnSel] };
+        case "grey";
+        case "yellow": { [_cGrey, _cInk] };
+        case "red": { [_cRedBg, _cOnRed] };
+        case "flat": { [_cBtn, _cInk] };
         default { [_cBtn, _cInk] };
     };
     private _b = ["COMSPEC_RscButton", _pos, _txt, _cols select 0, _cols select 1, _fs * 0.95, _parent] call _mk;
+    // Choisi : crochets autour du libellé (forme + texte, pas seulement la couleur).
+    if (_style isEqualTo "sel") then { _b ctrlSetText format ["[%1]", ctrlText _b]; };
+    [_b, _fs * 0.95, true, 0.8] call comspec_atak_native_fnc_textFit;
     _b ctrlAddEventHandler ["ButtonClick", _code];
     if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
     _b
@@ -82,15 +89,16 @@ private _label = {
     ["COMSPEC_RscText", _pos, _txt, [], _cHead, _fs * 0.9, _parent] call _mk
 };
 private _edit = {
-    params ["_key", "_pos", "_val"];
+    params ["_key", "_pos", "_val", ["_tip", ""]];
     private _e = ["COMSPEC_RscEdit", _pos, _val, _cField, _cInk, _font * 0.95] call _mk;
+    if (_tip isNotEqualTo "") then { _e ctrlSetTooltip (_tip call comspec_atak_native_fnc_tr); };
     _form set [_key, _e];
     _e
 };
 // Valeur affichée seulement (champ grisé du clip).
 private _ro = {
     params ["_pos", "_txt"];
-    ["COMSPEC_RscText", _pos, _txt, [0.045, 0.055, 0.050, 1], _cDim, _font * 0.95] call _mk
+    ["COMSPEC_RscText", _pos, _txt, _cPage, _cInk, _font * 0.95] call _mk
 };
 // Panneau titré : fond, liseré, titre ; renvoie le y du contenu.
 private _panel = {
@@ -185,7 +193,7 @@ private _drawFiring = {
     private _lw = _iw * 0.14;
     [[_ix, _cy, _lw, _rowH], "GRILLE"] call _label;
     switch (_gunId) do {
-        case "MAN": { ["gunGrid", [_ix + _lw, _cy, _iw * 0.48, _rowH], ["gunGrid"] call _v] call _edit; };
+        case "MAN": { ["gunGrid", [_ix + _lw, _cy, _iw * 0.48, _rowH], ["gunGrid"] call _v, "GRILLE : position de la pièce, ex. 123 456"] call _edit; };
         // Batterie simulée (appui feu typé) : pas de position sur la carte.
         case "SIM": { [[_ix + _lw, _cy, _iw * 0.48, _rowH], "HORS CARTE"] call _ro; };
         default { [[_ix + _lw, _cy, _iw * 0.48, _rowH], [objectFromNetId _gunId, 10] call comspec_atak_native_fnc_gridRef] call _ro; };
@@ -200,7 +208,7 @@ private _drawFiring = {
 private _drawTarget = {
     params ["_px", "_py", "_pw"];
     private _nRows = 4 + ([0, 1] select (_mode isEqualTo "POLAR" && {_from isEqualTo "OBS"}));
-    private _h = _rowH * 0.9 + _pad * (_nRows + 2) + _rowH * _nRows;
+    private _h = _rowH * 0.9 + _pad * (_nRows + 2) + _rowH * _nRows + _rowH * 1.9;
     private _cy = [_px, _py, _pw, _h, "Cible"] call _panel;
     [[_px + _pw - _pad - _pw * 0.17, _py + _rowH * 0.1, _pw * 0.17, _rowH * 0.7], "EFFACER", { ["clearTgt"] call comspec_atak_native_fnc_firesAction; }, "flat", controlNull, "Vide la cible et la solution"] call _btn;
     private _ix = _px + _pad;
@@ -219,42 +227,47 @@ private _drawTarget = {
     _cy = _cy + _rowH + _pad;
     if (_mode isEqualTo "POLAR" && {_from isEqualTo "OBS"}) then {
         [[_ix, _cy, _u * 2.2, _rowH], "OBS"] call _label;
-        ["obsGrid", [_ix + _u * 2.2, _cy, _u * 5, _rowH], ["obsGrid", [player, 10] call comspec_atak_native_fnc_gridRef] call _v] call _edit;
+        ["obsGrid", [_ix + _u * 2.2, _cy, _u * 5, _rowH], ["obsGrid", [player, 10] call comspec_atak_native_fnc_gridRef] call _v, "OBS : grille de l'observateur, ex. 123 456"] call _edit;
         _cy = _cy + _rowH + _pad;
     };
     // AZ, DIST, CIBLE (polaire) ou grille de la cible.
     if (_mode isEqualTo "POLAR") then {
         [[_ix, _cy, _u * 1.2, _rowH], "AZ"] call _label;
-        ["az", [_ix + _u * 1.2, _cy, _u * 2.4, _rowH], ["az", str round ((getDir player) * 6400 / 360)] call _v] call _edit;
+        ["az", [_ix + _u * 1.2, _cy, _u * 2.4, _rowH], ["az", str round ((getDir player) * 6400 / 360)] call _v, "AZ : azimut de la cible en mils, ex. 1600"] call _edit;
         [[_ix + _u * 4, _cy, _u * 1.5, _rowH], "DIST"] call _label;
-        ["dist", [_ix + _u * 5.5, _cy, _u * 2.2, _rowH], ["dist", "600"] call _v] call _edit;
+        ["dist", [_ix + _u * 5.5, _cy, _u * 2.2, _rowH], ["dist", "600"] call _v, "DIST : distance à la cible en mètres, ex. 600"] call _edit;
         [[_ix + _u * 8, _cy, _u * 1.1, _rowH], "CIBLE"] call _label;
         [[_ix + _u * 9.1, _cy, _u * 2.9, _rowH], [_tgtGrid, "—"] select (_tgtGrid isEqualTo "")] call _ro;
     } else {
         [[_ix, _cy, _u * 2.2, _rowH], "GRILLE"] call _label;
-        ["tgtGrid", [_ix + _u * 2.2, _cy, _u * 5.5, _rowH], ["tgtGrid", _tgtGrid] call _v] call _edit;
+        ["tgtGrid", [_ix + _u * 2.2, _cy, _u * 5.5, _rowH], ["tgtGrid", _tgtGrid] call _v, "GRILLE : position de la cible, ex. 123 456"] call _edit;
     };
     _cy = _cy + _rowH + _pad;
     // ENNEMI, munition, nombre de coups.
     [[_ix, _cy, _u * 2.2, _rowH], "ENNEMI"] call _label;
-    ["enemy", [_ix + _u * 2.2, _cy, _u * 3.3, _rowH], ["enemy", ""] call _v] call _edit;
+    ["enemy", [_ix + _u * 2.2, _cy, _u * 3.3, _rowH], ["enemy", ""] call _v, "ENNEMI : description, ex. infanterie à découvert"] call _edit;
     {
         _x params ["_t", "_k", "_tip"];
         [[_ix + _u * (5.8 + _forEachIndex * 1.55), _cy, _u * 1.55, _rowH], _t, compile format ["['ammo', '%1'] call comspec_atak_native_fnc_firesAction;", _k], ["off", "sel"] select (_ammo isEqualTo _k), controlNull, _tip] call _btn;
     } forEach ([["HE", "HE", "Explosif"], ["ILM", "ILLUM", "Éclairant"], ["FUM", "SMOKE", "Fumigène"]] select { (_x select 1) in _fsAmmo });
     [[_ix + _u * 10.6, _cy, _u * 0.5, _rowH], "X"] call _label;
-    ["rounds", [_ix + _u * 11.1, _cy, _u * 0.9, _rowH], ["rounds", "3"] call _v] call _edit;
+    ["rounds", [_ix + _u * 11.1, _cy, _u * 0.9, _rowH], ["rounds", "3"] call _v, "X : nombre de coups, ex. 3"] call _edit;
     _cy = _cy + _rowH + _pad;
     // Gerbe.
     [[_ix, _cy, _u * 1.7, _rowH], "OFF", { if ((call comspec_atak_native_fnc_firesState) getOrDefault ["sheaf", false]) then { ["sheaf"] call comspec_atak_native_fnc_firesAction; }; }, ["off", "sel"] select !_sheaf, controlNull, "Tous les coups au même point"] call _btn;
     [[_ix + _u * 1.7, _cy, _u * 2.4, _rowH], "GERBE", { if !((call comspec_atak_native_fnc_firesState) getOrDefault ["sheaf", false]) then { ["sheaf"] call comspec_atak_native_fnc_firesAction; }; }, ["off", "sel"] select _sheaf, controlNull, "Coups répartis autour de la cible"] call _btn;
+    _cy = _cy + _rowH + _pad;
+    // Aide : sens des champs, avec un exemple (Arma n'a pas de texte fantôme dans un champ).
+    private _hc = ["COMSPEC_RscStructuredText", [_ix, _cy, _iw, _rowH * 1.9], "", [], [], _fs * 0.9] call _mk;
+    _hc ctrlSetStructuredText parseText format ["<t color='%1'>%2</t>", _th get "hexTextDim", (("AZ : azimut de la cible en mils, ex. 1600 · DIST : distance en mètres, ex. 600 · X : nombre de coups, ex. 3. GERBE répartit les coups autour de la cible, OFF les tire au même point.") call comspec_atak_native_fnc_tr) regexReplace ["[<>&]", ""]]; // i18n:brut
+    _hc ctrlEnable false;
     _py + _h + _pad
 };
 
 // ---------- SOLUTION (bandeau sombre) ----------
 private _drawSolution = {
     params ["_px", "_py", "_pw"];
-    private _h = _rowH * ([2.6, 3.4] select _fsOn);
+    private _h = _rowH * ([3.6, 4.4] select _fsOn);
     ["COMSPEC_RscText", [_px, _py, _pw, _h], "", _cDark] call _mk;
     private _has = (count _sol) > 0;
     private _num = { params ["_k", "_fmt"]; if (!_has || {(_sol getOrDefault [_k, -1]) isEqualTo -1}) exitWith { "—" }; format [_fmt, _sol get _k] };
@@ -269,7 +282,7 @@ private _drawSolution = {
     private _cw = (_pw - 2 * _pad) / 6;
     {
         _x params ["_t", "_val"];
-        ["COMSPEC_RscText", [_px + _pad + _forEachIndex * _cw, _py + _pad * 0.6, _cw, _fs], _t, [], _cDim, _fs * 0.72] call _mk;
+        ["COMSPEC_RscText", [_px + _pad + _forEachIndex * _cw, _py + _pad * 0.6, _cw, _fs], _t, [], _cDim, _fs * 0.85] call _mk;
         private _vc = ["COMSPEC_RscMono", [_px + _pad + _forEachIndex * _cw, _py + _pad * 0.6 + _fs, _cw, _rowH], "", [], _cValue, _font * 1.05] call _mk;
         _vc ctrlSetText ((_val) call comspec_atak_native_fnc_tr);
     } forEach _cells;
@@ -277,8 +290,12 @@ private _drawSolution = {
     private _note = if (_has) then {
         format ["VI %1%2M APPLIQUÉ · DÉRIVE VENT ~%3M%4", ["", "+"] select ((_sol getOrDefault ["vi", 0]) >= 0), round (_sol getOrDefault ["vi", 0]), round (_sol getOrDefault ["drift", 0]),
             [("  ·  HORS PORTÉE") call comspec_atak_native_fnc_tr, ""] select (_sol getOrDefault ["inRange", true])]
-    } else { "CALCULER pour obtenir la solution de tir" };
-    ["COMSPEC_RscText", [_px + _pad, _py + _h - _rowH * 0.85, _pw - 2 * _pad, _rowH * 0.8], _note, [], [[0.95, 0.85, 0.40, 1], _cRed] select (_has && {!(_sol getOrDefault ["inRange", true])}), _fs * 0.85] call _mk;
+    } else { "Appuyez sur CALCULER après avoir renseigné la pièce et la cible : la solution de tir apparaît ici." };
+    // Note sur plusieurs lignes (texte structuré : retour à la ligne automatique).
+    private _noteC = ["COMSPEC_RscStructuredText", [_px + _pad, _py + _h - _rowH * 1.6, _pw - 2 * _pad, _rowH * 1.5], "", [], [], _fs * 0.9] call _mk;
+    private _noteHex = [_th get "hexWarn", _th get "hexAlert"] select (_has && {!(_sol getOrDefault ["inRange", true])});
+    _noteC ctrlSetStructuredText parseText format ["<t color='%1'>%2</t>", _noteHex, ((_note) call comspec_atak_native_fnc_tr) regexReplace ["[<>&]", ""]]; // i18n:brut
+    _noteC ctrlEnable false;
     // Appui feu typé : portée du moyen et distance de sécurité (ami le plus proche de la cible).
     if (_fsOn) then {
         private _fr = _sol getOrDefault ["friend", -1];
@@ -288,7 +305,7 @@ private _drawSolution = {
         private _n2 = (if (_rMax > 0) then { format [("PORTÉE %1–%2 M") call comspec_atak_native_fnc_tr, _sol getOrDefault ["rMin", _fsT getOrDefault ["min", 0]], _rMax] + "  ·  " } else { "" })
             + (if (_close) then { format [("DANGER CLOSE : AMIS À %1 M (SÉCURITÉ %2 M)") call comspec_atak_native_fnc_tr, _fr, _dc] } else { format [("DISTANCE DE SÉCURITÉ %1 M") call comspec_atak_native_fnc_tr, _dc] })
             + (if (_fsType isEqualTo "") then { "" } else { "  ·  " + format [("%1 COUPS MAX") call comspec_atak_native_fnc_tr, _fsT get "rounds"] });
-        private _c2 = ["COMSPEC_RscText", [_px + _pad, _py + _h - _rowH * 1.65, _pw - 2 * _pad, _rowH * 0.8], "", [], [[0.70, 0.86, 1, 1], _cRed] select _close, _fs * 0.85] call _mk;
+        private _c2 = ["COMSPEC_RscText", [_px + _pad, _py + _h - _rowH * 2.45, _pw - 2 * _pad, _rowH * 0.8], "", [], [_cInfo, _cRed] select _close, _fs * 0.85] call _mk;
         _c2 ctrlSetText _n2; // i18n:brut (morceaux déjà traduits)
     };
     _py + _h + _pad
@@ -346,24 +363,27 @@ private _drawLog = {
     params ["_px", "_py", "_pw", ["_hMin", 0]];
     private _msn = _f getOrDefault ["missions", []];
     private _n = (count _msn) min 8;
-    private _h = (_rowH * 0.9 + _pad * 2 + ((_rowH * 0.95) * (_n max 1))) max _hMin;
+    private _h = (_rowH * 0.9 + _pad * 2 + ((_rowH * 0.95) * ([_n, 2.4] select (_n isEqualTo 0)))) max _hMin;
     private _cy = [_px, _py, _pw, _h, "Journal · toucher pour rappeler"] call _panel;
     [[_px + _pw - _pad - _pw * 0.26, _py + _rowH * 0.1, _pw * 0.26, _rowH * 0.7], "NOUVELLE MSN", { ["newMsn"] call comspec_atak_native_fnc_firesAction; }, "flat", controlNull, "Nouvelle mission : cible et solution remises à zéro"] call _btn;
     if (_n isEqualTo 0) then {
-        ["COMSPEC_RscText", [_px + _pad, _cy, _pw - 2 * _pad, _rowH], "AUCUNE MISSION ENREGISTRÉE", [], _cDim, _fs * 0.9] call _mk;
+        private _e0 = ["COMSPEC_RscStructuredText", [_px + _pad, _cy, _pw - 2 * _pad, _rowH * 2.3], "", [], [], _fs * 0.9] call _mk;
+        _e0 ctrlSetStructuredText parseText format ["<t color='%1'>%2</t>", _th get "hexTextDim", (("Aucune mission enregistrée. Après CALCULER puis TIR, la mission apparaît ici : touchez-la pour la rappeler.") call comspec_atak_native_fnc_tr) regexReplace ["[<>&]", ""]]; // i18n:brut
+        _e0 ctrlEnable false;
     };
     for "_i" from 0 to (_n - 1) do {
         private _idx = (count _msn) - 1 - _i;
         (_msn select _idx) params ["_t", "_g", "_a", "_r", "_st"];
         private _b = [[_px + _pad, _cy + _i * _rowH * 0.95, _pw - 2 * _pad, _rowH * 0.85], format ["%1  %2  %3 x%4  %5", _t, _g, _a, _r, _st], compile format ["['recall', %1] call comspec_atak_native_fnc_firesAction;", _idx], "off"] call _btn;
-        _b ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
+        _b ctrlSetFontHeight ((_fs * 0.95) max COMSPEC_ATAK_FontMin);
+        [_b, (_fs * 0.95) max COMSPEC_ATAK_FontMin, true, 0.8] call comspec_atak_native_fnc_textFit;
         _b ctrlSetTooltip (("Rappeler cette mission (cible, munition, coups)") call comspec_atak_native_fnc_tr);
     };
     _py + _h + _pad
 };
 
 // Disposition.
-private _y0 = _pad;
+private _y0 = _pad * 1.5;
 if (_land) then {
     private _wL = (_gw - 3 * _pad) * 0.56;
     private _wR = (_gw - 3 * _pad) - _wL;
@@ -390,9 +410,10 @@ private _bw = _rw * ([0.16, 0.25] select !_land);
 {
     _x params ["_t", "_code", "_style", "_tip"];
     private _b = ["COMSPEC_RscButton", [_rx + _pad + _forEachIndex * (_bw + _pad), _by + _pad * 0.4, _bw, _barH - _pad * 0.8], _t, [], [], _font * 0.9, _d displayCtrl 88531] call _mk;
-    private _cols = switch (_style) do { case "blue": { [_cBlue, _cOnAcc] }; case "red": { [_cRed, _cWhite] }; default { [_cGrey, _cWhite] }; };
+    private _cols = switch (_style) do { case "blue": { [_cSel, _cOnSel] }; case "red": { [_cRedBg, _cOnRed] }; default { [_cGrey, _cInk] }; };
     _b ctrlSetBackgroundColor (_cols select 0);
     _b ctrlSetTextColor (_cols select 1);
+    [_b, _font * 0.9, true, 0.8] call comspec_atak_native_fnc_textFit;
     _b ctrlAddEventHandler ["ButtonClick", _code];
     _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
     (uiNamespace getVariable ["COMSPEC_ATAK_PageControls", []]) pushBack _b;
@@ -406,7 +427,7 @@ private _state = if ((_hint select 0) isNotEqualTo "") then { (_hint select 0) c
     if (_f getOrDefault ["active", false]) then { format [("%1 EN TIR · CIBLE %2") call comspec_atak_native_fnc_tr, _gunLabel, _stGrid] } else { "" }
 };
 if (_state isNotEqualTo "") then {
-    private _st = ["COMSPEC_RscTextRight", [_rx + _pad * 4 + 3 * (_bw + _pad), _by, _rw - _pad * 5 - 3 * (_bw + _pad), _barH], "", [], [_cHead, [0.95, 0.42, 0.36, 1]] select (_hint select 1), _fs * 0.95, _d displayCtrl 88531] call _mk;
+    private _st = ["COMSPEC_RscTextRight", [_rx + _pad * 4 + 3 * (_bw + _pad), _by, _rw - _pad * 5 - 3 * (_bw + _pad), _barH], "", [], [_cDim, _cRed] select (_hint select 1), _fs * 0.95, _d displayCtrl 88531] call _mk;
     _st ctrlSetText ((_state) call comspec_atak_native_fnc_tr);
     (uiNamespace getVariable ["COMSPEC_ATAK_PageControls", []]) pushBack _st;
 };

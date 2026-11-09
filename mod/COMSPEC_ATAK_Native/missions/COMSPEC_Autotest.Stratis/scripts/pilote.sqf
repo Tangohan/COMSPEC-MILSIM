@@ -68,6 +68,36 @@ if !("pilote" call AT_fnc_groupe) exitWith {};
     call AT_fnc_done;
 }, 40] call AT_fnc_run;
 
+// FIRES court : choix des destinataires (sélecteur ouvert, vide expliqué, retour à « tous »).
+["fires_court_destinataires", {
+    if (["comspec_atak_native_fnc_firesQuick", "comspec_atak_native_fnc_pageQuickMap"] call AT_fnc_nil) exitWith {};
+    if !(call AT_fnc_tel) exitWith { "téléphone absent" call AT_fnc_skip; };
+    ["FIRESQ"] call comspec_atak_native_fnc_navigate;
+    uiSleep 2;
+    ["picker"] call comspec_atak_native_fnc_firesQuick;
+    uiSleep 1;
+    [(uiNamespace getVariable ["COMSPEC_ATAK_FiresQ", createHashMap]) getOrDefault ["pick", false], "sélecteur de destinataires non ouvert"] call AT_fnc_check;
+    ["fires_court_destinataires_liste"] call AT_fnc_shot;
+    private _c = ["cands"] call comspec_atak_native_fnc_firesQuick;
+    if ((count _c) > 0) then {
+        ["destToggle", netId ((_c select 0) select 1)] call comspec_atak_native_fnc_firesQuick;
+        [(count (["recipients"] call comspec_atak_native_fnc_firesQuick)) isEqualTo 1, "un seul destinataire attendu après le choix"] call AT_fnc_check;
+        uiSleep 0.5;
+        ["fires_court_destinataires_choisi"] call AT_fnc_shot;
+        ["destAll"] call comspec_atak_native_fnc_firesQuick;
+        [(count (["recipients"] call comspec_atak_native_fnc_firesQuick)) isEqualTo (count _c), "retour à tous les destinataires"] call AT_fnc_check;
+    } else {
+        "aucun pilote ni JTAC en ligne : le message d'aide avec exemple doit s'afficher" call AT_fnc_visuel;
+    };
+    ["search", "zzzz"] call comspec_atak_native_fnc_firesQuick;
+    uiSleep 0.5;
+    ["fires_court_destinataires_recherche"] call AT_fnc_shot;
+    ["search", ""] call comspec_atak_native_fnc_firesQuick;
+    ["picker"] call comspec_atak_native_fnc_firesQuick;
+    [] call comspec_atak_native_fnc_close;
+    call AT_fnc_done;
+}, 40] call AT_fnc_run;
+
 ["pilote_mission", {
     if (["comspec_atak_native_fnc_pilotMode", "comspec_atak_native_fnc_airBrief"] call AT_fnc_nil) exitWith {};
     if !(call AT_fnc_tel) exitWith { "téléphone absent" call AT_fnc_skip; };

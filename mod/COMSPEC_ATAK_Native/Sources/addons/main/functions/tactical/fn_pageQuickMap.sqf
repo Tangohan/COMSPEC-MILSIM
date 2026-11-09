@@ -107,12 +107,15 @@ private _x0 = _bx + _pad / _ratio * 0.5;
 private _yB = _by + _mh - _pad;
 if (_interactive && {_armed}) then {
     private _per = [5, 3] select (_mini && {!(_l get "landscape")});
-    private _h = _fs * 1.5 + _tap * (1 + ceil (5 / _per)) + _pad * 1.5;
+    private _h = _fs * 1.5 + _tap * (2 + ceil (5 / _per)) + _pad * 1.8;
     private _y = _yB - _h;
     private _pnl = [[_x0, _y, _w, _h]] call _panel;
     private _tg = _q getOrDefault ["target", []];
-    private _n = count (["recipients"] call comspec_atak_native_fnc_firesQuick);
-    private _dest = format [("%1 pilote(s) ou JTAC en ligne") call _tr, _n];
+    private _cands = ["cands"] call comspec_atak_native_fnc_firesQuick;
+    private _recips = ["recipients"] call comspec_atak_native_fnc_firesQuick;
+    private _chosen = ["dest"] call comspec_atak_native_fnc_firesQuick;
+    private _n = count _recips;
+    private _dest = format [("%1 pilote(s) ou JTAC en ligne") call _tr, count _cands];
     private _head = if ((count _tg) >= 2) then {
         private _d = player distance2D _tg;
         format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t> <t color='%3'>%4 · %5° · %6</t>", _th get "hexMapWarn", [_tg, 8] call comspec_atak_native_fnc_gridRef, _th get "hexMapText",
@@ -135,7 +138,16 @@ if (_interactive && {_armed}) then {
     private _list = ["ammoList"] call comspec_atak_native_fnc_firesQuick;
     private _now = ["ammoNow"] call comspec_atak_native_fnc_firesQuick;
     private _cw = (_w - _pad * 0.3 * (_per + 1)) / _per;
-    private _ya = _y + _hh + _fs * 0.1 + _pad * 0.3;
+    // Destinataires : bouton du sélecteur (TOUS, ou les unités choisies), puis les munitions.
+    private _yd = _y + _hh + _fs * 0.1 + _pad * 0.3;
+    private _destLb = if ((count _cands) isEqualTo 0) then { ("DESTINATAIRES : AUCUN EN LIGNE") call _tr } else {
+        if (_chosen isEqualTo [] || {_n isEqualTo (count _cands)}) then { format [("DESTINATAIRES : TOUS (%1)") call _tr, count _cands] } else {
+            format [("DESTINATAIRES : %1") call _tr, ((_recips apply { _x select 0 }) select [0, 2]) joinString ", "] + (["", format [" +%1", _n - 2]] select (_n > 2))
+        }
+    };
+    private _pk = _q getOrDefault ["pick", false];
+    private _db = [[_x0 + _pad * 0.3, _yd, _w - _pad * 0.6, _tap], _destLb, { ["picker"] call comspec_atak_native_fnc_firesQuick; }, _pk, true, "Choisir les unités à appeler : toutes par défaut"] call _btn;
+    private _ya = _yd + _tap + _pad * 0.3;
     {
         _x params ["_k", "_lb"];
         private _b = [[_x0 + _pad * 0.3 + (_forEachIndex mod _per) * (_cw + _pad * 0.3), _ya + (floor (_forEachIndex / _per)) * _tap, _cw, _tap], _lb, {
@@ -152,6 +164,54 @@ if (_interactive && {_armed}) then {
         [[_x0 + _pad * 0.9 + _bw3 * 2.3, _yb, _bw3 * 0.7, _tap], "FERMER", { ["panel"] call comspec_atak_native_fnc_firesQuick; }] call _btn;
     };
     _yB = _y - _pad * 0.4;
+    // Sélecteur de destinataires : recherche, liste (5 lignes), aide. Toucher la carte près d'une unité la choisit aussi.
+    if (_pk) then {
+        private _qs = toLower (_q getOrDefault ["q", ""]);
+        private _shown = _cands select { _qs isEqualTo "" || {((toLower (_x select 2)) find _qs) >= 0} };
+        private _max5 = 5;
+        private _rowsN = (count _shown) min _max5;
+        private _helpTxt = if ((count _cands) isEqualTo 0) then {
+            ("Aucun pilote ni JTAC avec téléphone en ligne : la demande reste posée sur la carte et le site. Exemple : un pilote « RAVEN 1 » connecté apparaît ici, touchez son nom ou sa position sur la carte.") call _tr
+        } else {
+            ("Touchez un nom (ou une unité sur la carte) pour l'appeler seul. Rien de choisi : tous. Exemple : RAVEN 1 pour un seul pilote.") call _tr
+        };
+        private _hp = [[_x0 + _pad * 0.3, _yB, _w - _pad * 0.6, _fs * 2.6], format ["<t color='%1'>%2</t>", _th get "hexMapDim", _helpTxt call _esc]] call _txt;
+        private _hhp = (ctrlTextHeight _hp) max (_fs * 1.5);
+        private _ph = _hhp + _tap * (1 + _rowsN + ([0, 1] select ((count _shown) > _max5))) + _pad * 2;
+        private _py = _yB - _ph;
+        [[_x0, _py, _w, _ph]] call _panel;
+        _hp ctrlSetPosition [_x0 + _pad * 0.3, _py + _pad * 0.3, _w - _pad * 0.6, _hhp];
+        _hp ctrlCommit 0;
+        private _yy = _py + _hhp + _pad * 0.8;
+        // Recherche : le champ est lu au toucher de CHERCHER (un redessin à chaque lettre ferait perdre la saisie).
+        private _ed = ["COMSPEC_RscEdit", [_x0 + _pad * 0.3, _yy, _w * 0.44, _tap], _q getOrDefault ["q", ""], false] call _mk;
+        _ed ctrlSetFontHeight _fs;
+        _ed ctrlSetBackgroundColor (_th get "field");
+        _ed ctrlSetTextColor (_th get "text");
+        _ed ctrlSetTooltip (("Cherchez par indicatif ou nom, ex. RAVEN") call _tr);
+        _ed ctrlEnable _interactive;
+        uiNamespace setVariable ["COMSPEC_ATAK_QvSearch", _ed];
+        [[_x0 + _pad * 0.6 + _w * 0.44, _yy, _w * 0.3, _tap], "CHERCHER", {
+            private _e = uiNamespace getVariable ["COMSPEC_ATAK_QvSearch", controlNull];
+            ["search", [ctrlText _e, ""] select isNull _e] call comspec_atak_native_fnc_firesQuick;
+        }, false, _interactive, "Filtrer la liste (vide : toutes les unités)"] call _btn;
+        [[_x0 + _pad * 0.9 + _w * 0.74, _yy, _w * 0.26 - _pad * 1.2, _tap], "TOUS", { ["destAll"] call comspec_atak_native_fnc_firesQuick; }, false, _chosen isNotEqualTo [], "Appeler tous les pilotes et JTAC"] call _btn;
+        _yy = _yy + _tap;
+        {
+            _x params ["_cs", "_o", "_lb"];
+            private _on = (netId _o) in _chosen;
+            private _b = [[_x0 + _pad * 0.3, _yy, _w - _pad * 0.6, _tap], [_lb, format ["[ %1 ]", _lb]] select _on, {
+                params ["_c"];
+                ["destToggle", _c getVariable ["nid", ""]] call comspec_atak_native_fnc_firesQuick;
+            }, _on, _interactive] call _btn;
+            _b setVariable ["nid", netId _o];
+            _yy = _yy + _tap;
+        } forEach (_shown select [0, _max5]);
+        if ((count _shown) > _max5) then {
+            [[_x0 + _pad * 0.3, _yy, _w - _pad * 0.6, _tap], format [("+ %1 autres : affinez la recherche") call _tr, (count _shown) - _max5]] call _txt;
+        };
+        _yB = _py - _pad * 0.4;
+    };
 };
 
 // Missions reçues : accepter et clôturer sans menu. Demandes envoyées : accusés et fin de demande.

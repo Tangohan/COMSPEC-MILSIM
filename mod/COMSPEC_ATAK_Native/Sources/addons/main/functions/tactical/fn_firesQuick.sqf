@@ -10,6 +10,8 @@
       "can" -> FIRES court permis (app ni retirée ni interdite)
       "armed" -> un clic sur la carte pose la cible ; "open", position ou [] : ouvre l'écran ; "panel" : montre ou cache le panneau
       "target", position ; "ammo", clé ; "ammoList" -> [[clé, libellé]...] ; "ammoNow" -> clé
+      "cands" -> [[indicatif, unité, libellé]...] destinataires possibles ; "dest" -> choisis (netId) ; "destToggle", netId ; "destAll"
+      "picker" : ouvre ou ferme le sélecteur de destinataires ; "search", texte : filtre du sélecteur
       "send" : envoie ; "full" : ouvre le 9-LINE complet avec la cible ; "recipients" -> [[indicatif, unité]...]
       "missions" -> briefs à traiter, du plus récent au plus ancien (hors clôturés) ; "tpos", brief -> position de la cible ou []
       "mine" -> demandes envoyées encore ouvertes ; "cancel", ref ; "closed", ref : la demande est terminée, marqueur retiré
@@ -34,7 +36,9 @@ private _ammoNow = {
     if (_a isEqualType "" && {(_ammoList findIf { (_x select 0) isEqualTo _a }) >= 0}) then { _a } else { "LIBRE" }
 };
 private _ammoName = { params ["_k"]; ((_ammoList select { (_x select 0) isEqualTo _k }) param [0, ["", _k]]) select 1 };
-private _recipients = {
+// Destinataires possibles : pilotes et JTAC du camp avec un téléphone (appareils aériens regroupés par appareil).
+// Chaque ligne : [indicatif, unité ou appareil, libellé du sélecteur].
+private _cands = {
     private _out = [];
     private _me = group player;
     private _seenV = [];
@@ -46,12 +50,23 @@ private _recipients = {
         if (_v isNotEqualTo _u && {_v isKindOf "Air"}) then {
             if (_v in _seenV) then { continue };
             _seenV pushBack _v;
-            _out pushBack [["airCs", _v] call comspec_atak_native_fnc_airBrief, _v];
+            private _cs = ["airCs", _v] call comspec_atak_native_fnc_airBrief;
+            _out pushBack [_cs, _v, format ["%1 · %2", _cs, name _u]];
         } else {
-            _out pushBack [[_u] call comspec_atak_native_fnc_unitCallsign, _u];
+            private _cs = [_u] call comspec_atak_native_fnc_unitCallsign;
+            _out pushBack [_cs, _u, [format ["%1 · %2", _cs, name _u], name _u] select (_cs isEqualTo "")];
         };
     } forEach allPlayers;
     _out
+};
+// Destinataires retenus : ceux choisis dans le sélecteur (encore en ligne), sinon tous.
+private _recipients = {
+    private _all = call _cands;
+    private _sel = _st getOrDefault ["dest", []];
+    if (_sel isEqualTo []) exitWith { _all apply { [_x select 0, _x select 1] } };
+    private _kept = _all select { (netId (_x select 1)) in _sel };
+    if (_kept isEqualTo []) then { _kept = _all; };
+    _kept apply { [_x select 0, _x select 1] }
 };
 private _send = {
     params ["_pos", "_ammo"];
@@ -114,6 +129,18 @@ switch (_act) do {
         true
     };
     case "target": {
+        // Sélecteur ouvert : toucher la carte près d'un pilote ou JTAC le (dé)sélectionne, sinon la cible est posée.
+        private _picked = false;
+        if (_st getOrDefault ["pick", false]) then {
+            private _near = (call _cands) select { ((getPosATL (_x select 1)) distance2D _arg) < 150 };
+            if (_near isNotEqualTo []) then {
+                _near = [_near, [], { (getPosATL (_x select 1)) distance2D _arg }, "ASCEND"] call BIS_fnc_sortBy;
+                ["destToggle", netId ((_near select 0) select 1)] call comspec_atak_native_fnc_firesQuick;
+                playSound "ClickSoft";
+                _picked = true;
+            };
+        };
+        if (_picked) exitWith { true };
         _st set ["target", [_arg select 0, _arg select 1, 0]];
         playSound "ClickSoft";
         call _redraw;
@@ -128,6 +155,18 @@ switch (_act) do {
     case "ammoNow": { call _ammoNow };
     case "ammoName": { [_arg] call _ammoName };
     case "recipients": { call _recipients };
+    case "cands": { call _cands };
+    case "dest": { _st getOrDefault ["dest", []] };
+    case "destToggle": {
+        private _s = +(_st getOrDefault ["dest", []]);
+        if (_arg in _s) then { _s = _s - [_arg]; } else { _s pushBack _arg; };
+        _st set ["dest", _s];
+        call _redraw;
+        true
+    };
+    case "destAll": { _st set ["dest", []]; call _redraw; true };
+    case "picker": { _st set ["pick", !(_st getOrDefault ["pick", false])]; call _redraw; true };
+    case "search": { _st set ["q", _arg]; call _redraw; true };
     case "send": {
         private _t = _st getOrDefault ["target", []];
         if ((count _t) < 2) exitWith { ["WARNING", "Touchez d'abord la cible sur la carte", 3, 30] call comspec_atak_native_fnc_notify; "" };
@@ -136,6 +175,7 @@ switch (_act) do {
         private _ref = [_t, call _ammoNow] call _send;
         _st set ["target", []];
         _st set ["open", false];
+        _st set ["pick", false];
         [] call comspec_atak_native_fnc_saveProfile;
         call _redraw;
         _ref
