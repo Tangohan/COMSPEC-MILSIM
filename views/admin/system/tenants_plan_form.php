@@ -124,6 +124,35 @@ $err = \App\Core\Session::getFlash('error');
                     <?php endif; ?>
                 </dl>
 
+                <section id="membres" class="pa-card scroll-mt-24">
+                    <p class="pa-card__kicker">Membres</p>
+                    <h2 class="pa-card__title">Comptes de la communauté</h2>
+                    <dl class="pa-stats">
+                        <?php foreach (($platformMemberLabels ?? []) as $mKey => $mLabel): ?>
+                            <div class="pa-stat">
+                                <dt><?= $h((string) $mLabel) ?></dt>
+                                <dd style="font-size:1rem;"><a class="pa-count-link" href="<?= $h((string) $platformMembersUrl . ($mKey === 'all' ? '' : '?filter=' . rawurlencode((string) $mKey))) ?>"><?= (int) (($platformMemberCounts ?? [])[$mKey] ?? 0) ?></a></dd>
+                            </div>
+                        <?php endforeach; ?>
+                    </dl>
+                    <div class="pa-sheet__scroll">
+                        <table class="pa-sheet__grid">
+                            <thead><tr><th>Nom</th><th>Statut</th><th>Dernière connexion</th></tr></thead>
+                            <tbody>
+                                <?php foreach (($platformMemberRows ?? []) as $mr): ?>
+                                    <?php $mt = !empty($mr['last_login_at']) ? strtotime((string) $mr['last_login_at']) : false; ?>
+                                    <tr>
+                                        <td><?= $h((string) ($mr['display_name'] ?? '')) ?></td>
+                                        <td><?= $h((string) ($mr['status'] ?? '')) ?></td>
+                                        <td><?= $mt ? $h(date('d/m/Y H:i', $mt)) : '—' ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="pa-card__help"><a href="<?= $h((string) ($platformMembersUrl ?? '#')) ?>">Voir tous les comptes, avec recherche, tri et export</a></p>
+                </section>
+
                 <form id="identite" class="pa-card scroll-mt-24" method="post" action="<?= $h($identityAction) ?>">
                     <?= \App\Core\Csrf::field() ?>
                     <p class="pa-card__kicker">01 · Identité</p>

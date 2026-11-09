@@ -53046,6 +53046,7 @@ return [
     'Voir sur la carte' => 'View on map',
     'Voir sur la carte ATAK' => 'View on the ATAK map',
     'Voir tous' => 'See all',
+    'Voir tous les comptes, avec recherche, tri et export' => 'View all accounts, with search, sorting and export',
     'Voir tous les documents' => 'View all documents',
     'Voir tous les effectifs' => 'View entire roster',
     'Voir tous les membres' => 'Show all members',
