@@ -1318,6 +1318,14 @@ return function (Router $router) {
     $router->post('/admin/system/alerts/{id}/delete', [SystemPlatformAlertsController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/alerts/{id}/send-email', [SystemPlatformAlertsController::class, 'sendEmail'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/alerts', [SystemPlatformAlertsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/messages-communautes', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/messages-communautes/create', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'create'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/messages-communautes/apercu', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'preview'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/messages-communautes', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/messages-communautes/{id}/edit', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/messages-communautes/{id}/update', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'update'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/messages-communautes/{id}/toggle', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'toggle'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/messages-communautes/{id}/delete', [\App\Controllers\Admin\System\SystemPlatformBoMessagesController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cooperation/catalog', [SystemCooperationCatalogController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cooperation/catalog/create', [SystemCooperationCatalogController::class, 'create'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cooperation/catalog', [SystemCooperationCatalogController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1809,6 +1817,10 @@ return function (Router $router) {
     $router->post('/back-office/planification/{id}/postes/{slotId}/deplacer', [MissionPlanningController::class, 'moveSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/planification/{id}/postes/{slotId}/rapprocher', [MissionPlanningController::class, 'reconcile'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/courrier/traceabilite', [CourrierDashboardController::class, 'traceability'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/messages-plateforme', [\App\Controllers\Admin\Organization\PlatformMessagesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/messages-plateforme/{id}/fermer', [\App\Controllers\Admin\Organization\PlatformMessagesController::class, 'dismiss'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/messages-plateforme/{id}/acquitter', [\App\Controllers\Admin\Organization\PlatformMessagesController::class, 'ack'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/messages-plateforme/{id}/lien', [\App\Controllers\Admin\Organization\PlatformMessagesController::class, 'link'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions', [RolesFunctionsAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions/referentiel', [RolesFunctionsAdminController::class, 'referentiel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions/catalogue', [RolesFunctionsAdminController::class, 'catalogue'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

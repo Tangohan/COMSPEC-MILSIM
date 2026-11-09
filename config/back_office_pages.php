@@ -294,6 +294,7 @@ return [
         // Messagerie interne (/messages) : le contrôleur charge aussi cette feuille, la page restant dans la coque portail.
         ['path' => 'messages', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGERIE', 'title' => 'Messagerie interne', 'subtitle' => 'Vos échanges avec l’encadrement de la communauté.', 'css' => ['back-office-messages.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/signalements', 'group' => 'Système', 'kicker' => 'SYSTÈME · SIGNALEMENTS', 'title' => 'Signalements membres', 'subtitle' => 'Les fiches, photos et contenus signalés par les membres, à instruire puis clore.'],
+        ['path' => 'back-office/messages-plateforme', 'group' => 'Système', 'kicker' => 'SYSTÈME', 'title' => 'Messages de la plateforme', 'subtitle' => 'Ce que l’équipe de la plateforme vous a écrit : annonces, invitations, consignes.', 'css' => ['platform-messages.css']],
         ['path' => 'back-office/courrier/traceabilite', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Traçabilité du courrier', 'subtitle' => 'Qui a reçu et lu chaque message officiel.'],
         ['path' => 'back-office/doctrine/referentiel', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · DOCTRINE', 'title' => 'Référentiel doctrinal', 'subtitle' => 'Les textes de référence sur lesquels s’appuient vos procédures.', 'quick' => [
             ['label' => 'Doctrine et SOP', 'href' => 'back-office/doctrine'],

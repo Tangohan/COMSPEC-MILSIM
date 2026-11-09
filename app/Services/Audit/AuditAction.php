@@ -203,6 +203,14 @@ final class AuditAction
     /** Formule offerte à une communauté (durée ou sans limite, e-mail + fenêtre aux gestionnaires). */
     public const TENANT_PLAN_GIFTED = 'platform.tenant_plan_gifted';
 
+    /** Message de l’administration du site aux back-offices des communautés : publié, modifié, activé, supprimé. */
+    public const PLATFORM_BO_MESSAGE_CREATED = 'platform.bo_message_created';
+    public const PLATFORM_BO_MESSAGE_UPDATED = 'platform.bo_message_updated';
+    public const PLATFORM_BO_MESSAGE_TOGGLED = 'platform.bo_message_toggled';
+    public const PLATFORM_BO_MESSAGE_DELETED = 'platform.bo_message_deleted';
+    /** Message urgent acquitté par un gestionnaire de la communauté. */
+    public const PLATFORM_BO_MESSAGE_ACKED = 'platform.bo_message_acked';
+
     /** Formule offerte retirée avant son terme. */
     public const TENANT_PLAN_GIFT_REVOKED = 'platform.tenant_plan_gift_revoked';
 

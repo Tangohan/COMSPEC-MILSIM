@@ -80,6 +80,8 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
 ?>
 <div class="pil" data-pilotage>
 
+    <?php require base_path('views/partials/platform_messages_cards.php'); ?>
+
     <?php if ($discordInviteMissing): ?>
     <div class="pil-banner pil-banner--warn" role="alert">
         <?= $pilIcon('warn') ?>
