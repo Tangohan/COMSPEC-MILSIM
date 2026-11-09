@@ -205,6 +205,14 @@ final class AuditAction
     /** Formule offerte à une communauté (durée ou sans limite, e-mail + fenêtre aux gestionnaires). */
     public const TENANT_PLAN_GIFTED = 'platform.tenant_plan_gifted';
 
+    /** Message de l’administration du site aux back-offices des communautés : publié, modifié, activé, supprimé. */
+    public const PLATFORM_BO_MESSAGE_CREATED = 'platform.bo_message_created';
+    public const PLATFORM_BO_MESSAGE_UPDATED = 'platform.bo_message_updated';
+    public const PLATFORM_BO_MESSAGE_TOGGLED = 'platform.bo_message_toggled';
+    public const PLATFORM_BO_MESSAGE_DELETED = 'platform.bo_message_deleted';
+    /** Message urgent acquitté par un gestionnaire de la communauté. */
+    public const PLATFORM_BO_MESSAGE_ACKED = 'platform.bo_message_acked';
+
     /** Formule offerte retirée avant son terme. */
     public const TENANT_PLAN_GIFT_REVOKED = 'platform.tenant_plan_gift_revoked';
 
@@ -213,6 +221,15 @@ final class AuditAction
 
     /** Profil d’outils d’une communauté (Complet / Effectifs / ATAK) depuis l’administration du site. */
     public const TENANT_TYPE_ASSIGNED = 'platform.tenant_type_assigned';
+
+    /** Langue et fuseau horaire d’une communauté depuis l’administration du site. */
+    public const TENANT_LOCALE_UPDATED = 'platform.tenant_locale_updated';
+
+    /** Propriétaire (contact) d’une communauté depuis l’administration du site. */
+    public const TENANT_OWNER_UPDATED = 'platform.tenant_owner_updated';
+
+    /** Logo d’une communauté retiré depuis l’administration du site. */
+    public const TENANT_LOGO_REMOVED = 'platform.tenant_logo_removed';
 
     public const DEPLOYMENT_MODULE_CREATED = 'deployment.module_created';
     public const DEPLOYMENT_MODULE_UPDATED = 'deployment.module_updated';
