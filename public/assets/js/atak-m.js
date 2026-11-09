@@ -164,7 +164,70 @@
     });
     if (!kit) return null;
     var map = kit.map;
-    var tac = opts.tactical && window.MMTactique ? window.MMTactique.create(kit, wrap, { grid: grid, placing: opts.placing }) : null;
+    var tac = opts.tactical && window.MMTactique ? window.MMTactique.create(kit, wrap, { grid: grid, placing: opts.placing, scale: iconScale }) : null;
+
+    // Symboles à la taille du zoom (bornée : 100 % de près, 70 % au plus loin) ; noms masqués au plus loin, sauf le mien.
+    function iconScale() {
+      var d = map.getMaxZoom() - map.getZoom();
+      return Math.max(0.7, Math.min(1, 1 - 0.15 * (d - 3)));
+    }
+    function applyScale() {
+      var k = iconScale();
+      wrap.style.setProperty('--mm-k', k.toFixed(2));
+      wrap.classList.toggle('mm-z-far', k <= 0.7);
+    }
+    // Symboles superposés : un seul nom par pile (celui du plus prioritaire : mon appareil, moi, appareils, amis), « +N ».
+    // Noms des appareils et des amis (style classique) : masqués s'ils en recouvrent un autre, réservés pour les plaques.
+    var STACK_PX = 22;
+    function groupLabels() {
+      var k = iconScale();
+      var r = STACK_PX * k;
+      var items = [];
+      [stores.units, stores.air, stores.pings, stores.markers].forEach(function (store) {
+        Object.keys(store).forEach(function (id) {
+          var layer = store[id];
+          if (!(layer instanceof L.Marker) || !layer._icon || layer.options.icon.options.mmFixed) return;
+          items.push({ el: layer._icon, z: Number(layer.options.zIndexOffset) || 0, p: map.latLngToLayerPoint(layer.getLatLng()), n: 0 });
+        });
+      });
+      items.sort(function (a, b) { return b.z - a.z; });
+      var leads = [];
+      items.forEach(function (it) {
+        var lead = null;
+        for (var i = 0; i < leads.length && !lead; i += 1) {
+          if (Math.abs(leads[i].p.x - it.p.x) < r && Math.abs(leads[i].p.y - it.p.y) < r) lead = leads[i];
+        }
+        it.el.classList.toggle('mm-grp-off', !!lead);
+        it.el.removeAttribute('data-mm-more');
+        if (lead) lead.n += 1; else leads.push(it);
+      });
+      var far = wrap.classList.contains('mm-z-far');
+      // Pastilles « +N » d'abord : un nom ne passe jamais dessous.
+      var used = leads.filter(function (l) { return l.n; }).map(function (l) {
+        l.el.setAttribute('data-mm-more', '+' + l.n);
+        return [l.p.x + 2, l.p.y - 32, l.p.x + 42, l.p.y - 2];
+      });
+      leads.forEach(function (l) {
+        var label = l.el.querySelector('.nato-sidc-label, .ow-cs');
+        if (!label) return;
+        var w = label.textContent.length * 7.5 + 10;
+        var me = l.el.classList.contains('is-me');
+        var box = label.classList.contains('ow-cs')
+          ? [l.p.x + 8 * k, l.p.y - 13, l.p.x + 8 * k + w, l.p.y + 13]
+          : [l.p.x - w / 2, l.p.y + 11 * k, l.p.x + w / 2, l.p.y + 11 * k + 16];
+        var hit = (far && !me) || used.some(function (o) { return box[0] < o[2] && box[2] > o[0] && box[1] < o[3] && box[3] > o[1]; });
+        l.el.classList.toggle('mm-lbl-off', hit && !me);
+        if (!hit || me) used.push(box);
+      });
+      return used;
+    }
+    function layoutLabels() {
+      var used = groupLabels();
+      if (tac && tac.isOn()) tac.declutter(used);
+    }
+    map.on('zoomend', applyScale);
+    map.on('moveend', layoutLabels);
+    applyScale();
     if (tac) {
       $all('[data-map-style]', wrap).forEach(function (radio) {
         radio.checked = radio.value === tac.name();
@@ -355,8 +418,8 @@
       renderMe();
       if (tac) {
         tac.syncPings(stores.pings, state.pings, shown.pings);
-        if (tac.isOn()) tac.declutter();
       }
+      layoutLabels();
       if (opts.onData) opts.onData(state);
     }
 
