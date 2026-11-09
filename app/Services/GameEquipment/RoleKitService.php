@@ -7,6 +7,7 @@ namespace App\Services\GameEquipment;
 use App\Repositories\ArsenalWardrobeRepository;
 use App\Repositories\GameEquipmentRepository;
 use App\Repositories\GameRoleKitRepository;
+use App\Repositories\GameRoleKitVersionRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\UnitRepository;
 use App\Support\ArsenalLoadoutItems;
@@ -35,8 +36,79 @@ final class RoleKitService
         private ArsenalWardrobeRepository $wardrobes,
         private PersonnelJobRoleRepository $roles,
         private ?UnitRepository $units = null,
+        private ?GameRoleKitVersionRepository $versions = null,
     ) {
         $this->units ??= new UnitRepository();
+        $this->versions ??= new GameRoleKitVersionRepository();
+    }
+
+    /** Un kit peut être attribué à un membre ou à une qualification (étape equipment_configurator appliquée). */
+    public function targetsReady(): bool
+    {
+        return $this->kits->targetsReady();
+    }
+
+    /**
+     * Membres actifs de la communauté proposés comme destinataire personnel d'un kit : [id => indicatif ou nom].
+     *
+     * @return array<int, string>
+     */
+    public function memberOptions(int $tenantId): array
+    {
+        if (!$this->kits->targetsReady()) {
+            return [];
+        }
+        try {
+            $rows = (new \App\Repositories\UserRepository())->allForTenant($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $u) {
+            $id = (int) ($u['id'] ?? 0);
+            if ($id < 1 || (string) ($u['status'] ?? 'active') !== 'active') {
+                continue;
+            }
+            $label = trim((string) ($u['callsign'] ?? ''));
+            if ($label === '') {
+                $label = trim((string) ($u['display_name'] ?? ''));
+            }
+            if ($label === '') {
+                $label = trim((string) ($u['first_name'] ?? '') . ' ' . (string) ($u['last_name'] ?? ''));
+            }
+            $out[$id] = $label !== '' ? mb_substr($label, 0, 80) : 'Membre ' . $id;
+        }
+        asort($out, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return $out;
+    }
+
+    /**
+     * Qualifications de la communauté proposées comme destinataire d'un kit : [id => nom].
+     *
+     * @return array<int, string>
+     */
+    public function qualificationOptions(int $tenantId): array
+    {
+        if (!$this->kits->targetsReady()) {
+            return [];
+        }
+        try {
+            $rows = (new \App\Repositories\QualificationDefinitionRepository())->listForTenant($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $q) {
+            $id = (int) ($q['id'] ?? 0);
+            $name = trim((string) ($q['name'] ?? ''));
+            if ($id > 0 && $name !== '') {
+                $out[$id] = $name;
+            }
+        }
+        asort($out, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return $out;
     }
 
     public function ready(): bool
@@ -104,14 +176,44 @@ final class RoleKitService
         $roles = $this->roleOptions($tenantId);
         $units = $this->unitOptions($tenantId);
         $rows = $this->kits->listForTenant($tenantId);
+        $members = $this->hasTargets($rows, 'member_user_id') ? $this->memberOptions($tenantId) : [];
+        $quals = $this->hasTargets($rows, 'qualification_id') ? $this->qualificationOptions($tenantId) : [];
         foreach ($rows as &$row) {
             $row['role_name'] = $row['job_role_id'] !== null ? ($roles[$row['job_role_id']] ?? 'Rôle supprimé') : null;
             $row['unit_name'] = $row['unit_id'] !== null ? ($units[$row['unit_id']] ?? 'Unité supprimée') : null;
+            $row['member_name'] = ($row['member_user_id'] ?? null) !== null ? ($members[$row['member_user_id']] ?? 'Membre parti') : null;
+            $row['qualification_name'] = ($row['qualification_id'] ?? null) !== null ? ($quals[$row['qualification_id']] ?? 'Qualification supprimée') : null;
             $row['item_count'] = count(RoleKitLoadout::classes(RoleKitLoadout::normalize($row['slots'])));
         }
         unset($row);
 
         return $rows;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     */
+    private function hasTargets(array $rows, string $column): bool
+    {
+        foreach ($rows as $r) {
+            if (($r[$column] ?? null) !== null) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Destinataire d'un kit sous la forme de la liste du formulaire : all, unit:ID, role:ID, member:ID, qualification:ID. */
+    public static function audienceValue(array $kit): string
+    {
+        return match (true) {
+            ($kit['member_user_id'] ?? null) !== null => 'member:' . (int) $kit['member_user_id'],
+            ($kit['qualification_id'] ?? null) !== null => 'qualification:' . (int) $kit['qualification_id'],
+            ($kit['unit_id'] ?? null) !== null => 'unit:' . (int) $kit['unit_id'],
+            ($kit['job_role_id'] ?? null) !== null => 'role:' . (int) $kit['job_role_id'],
+            default => 'all',
+        };
     }
 
     /**
@@ -136,14 +238,56 @@ final class RoleKitService
         }
         $roles = $this->roleOptions($tenantId);
         $units = $this->unitOptions($tenantId);
-        $rows = $this->kits->listForRoles($tenantId, $roleIds, $this->memberUnitIds($tenantId, $userId));
+        $rows = $this->kits->listForRoles(
+            $tenantId,
+            $roleIds,
+            $this->memberUnitIds($tenantId, $userId),
+            $userId,
+            $this->kits->targetsReady() ? $this->kits->qualificationIdsForUser($tenantId, $userId) : [],
+        );
+        $quals = $this->hasTargets($rows, 'qualification_id') ? $this->qualificationOptions($tenantId) : [];
         foreach ($rows as &$row) {
             $row['role_name'] = $row['job_role_id'] !== null ? ($roles[$row['job_role_id']] ?? null) : null;
             $row['unit_name'] = $row['unit_id'] !== null ? ($units[$row['unit_id']] ?? null) : null;
+            $row['member_name'] = ($row['member_user_id'] ?? null) !== null ? 'Vous' : null;
+            $row['qualification_name'] = ($row['qualification_id'] ?? null) !== null ? ($quals[$row['qualification_id']] ?? null) : null;
         }
         unset($row);
 
         return $rows;
+    }
+
+    /**
+     * Kit qu'un membre reçoit en jeu par « Prendre mon kit » : celui qui lui est attribué personnellement, sinon le seul
+     * kit d'une qualification, d'un rôle ou d'une unité quand il n'y en a qu'un ; 0 si le choix serait ambigu (le
+     * membre choisit alors parmi les kits proposés).
+     *
+     * @param list<array<string, mixed>> $offered kits de listForMember, dans l'ordre (les plus ciblés d'abord)
+     */
+    public static function defaultKitId(array $offered): int
+    {
+        foreach ($offered as $k) {
+            if (($k['member_user_id'] ?? null) !== null) {
+                return (int) $k['id'];
+            }
+        }
+        foreach (['qualification_id', 'job_role_id', 'unit_id'] as $col) {
+            $ids = [];
+            foreach ($offered as $k) {
+                if (($k[$col] ?? null) !== null) {
+                    $ids[] = (int) $k['id'];
+                }
+            }
+            if (count($ids) === 1) {
+                return $ids[0];
+            }
+            if (count($ids) > 1) {
+                return 0;
+            }
+        }
+        $all = array_values(array_filter($offered, static fn (array $k): bool => self::audienceValue($k) === 'all'));
+
+        return count($all) === 1 ? (int) $all[0]['id'] : 0;
     }
 
     /**
@@ -189,41 +333,74 @@ final class RoleKitService
         $value = is_string($value) ? trim($value) : '';
         $unitId = null;
         $roleId = null;
+        $memberId = null;
+        $qualId = null;
         if (preg_match('/^unit:(\d{1,10})$/', $value, $m) === 1) {
             $unitId = (int) $m[1];
         } elseif (preg_match('/^role:(\d{1,10})$/', $value, $m) === 1) {
             $roleId = (int) $m[1];
+        } elseif (preg_match('/^member:(\d{1,10})$/', $value, $m) === 1) {
+            $memberId = (int) $m[1];
+        } elseif (preg_match('/^qualification:(\d{1,10})$/', $value, $m) === 1) {
+            $qualId = (int) $m[1];
         } elseif ($value !== '' && $value !== 'all') {
-            return ['ok' => false, 'error' => 'Choisissez à qui proposer ce kit.', 'unit_id' => null, 'job_role_id' => null];
+            return ['ok' => false, 'error' => 'Choisissez à qui proposer ce kit.'] + self::noAudience();
         }
 
-        return $this->checkAudience($tenantId, $unitId, $roleId);
+        return $this->checkAudience($tenantId, $unitId, $roleId, $memberId, $qualId);
+    }
+
+    /** @return array{unit_id: null, job_role_id: null, member_user_id: null, qualification_id: null} */
+    private static function noAudience(): array
+    {
+        return ['unit_id' => null, 'job_role_id' => null, 'member_user_id' => null, 'qualification_id' => null];
     }
 
     /**
-     * @return array{ok: bool, error?: string, unit_id: int|null, job_role_id: int|null}
+     * @return array{ok: bool, error?: string, unit_id: int|null, job_role_id: int|null, member_user_id: int|null, qualification_id: int|null}
      */
-    private function checkAudience(int $tenantId, ?int $unitId, ?int $roleId): array
+    private function checkAudience(int $tenantId, ?int $unitId, ?int $roleId, ?int $memberId = null, ?int $qualId = null): array
     {
-        if ($unitId !== null && $unitId > 0) {
-            if (!$this->kits->audienceReady()) {
-                return ['ok' => false, 'error' => 'Proposer un kit à une unité arrive avec la prochaine mise à jour de la base : appliquez les migrations.', 'unit_id' => null, 'job_role_id' => null];
+        $later = 'Attribuer un kit à un membre ou à une qualification arrive avec la prochaine mise à jour de la base : appliquez les migrations.';
+        if ($memberId !== null && $memberId > 0) {
+            if (!$this->kits->targetsReady()) {
+                return ['ok' => false, 'error' => $later] + self::noAudience();
             }
-            if (!isset($this->unitOptions($tenantId)[$unitId])) {
-                return ['ok' => false, 'error' => 'Cette unité n’existe pas dans la communauté.', 'unit_id' => null, 'job_role_id' => null];
+            if (!isset($this->memberOptions($tenantId)[$memberId])) {
+                return ['ok' => false, 'error' => 'Ce membre n’est pas (ou plus) actif dans la communauté.'] + self::noAudience();
             }
 
-            return ['ok' => true, 'unit_id' => $unitId, 'job_role_id' => null];
+            return ['ok' => true, 'member_user_id' => $memberId] + self::noAudience();
+        }
+        if ($qualId !== null && $qualId > 0) {
+            if (!$this->kits->targetsReady()) {
+                return ['ok' => false, 'error' => $later] + self::noAudience();
+            }
+            if (!isset($this->qualificationOptions($tenantId)[$qualId])) {
+                return ['ok' => false, 'error' => 'Cette qualification n’existe pas dans la communauté.'] + self::noAudience();
+            }
+
+            return ['ok' => true, 'qualification_id' => $qualId] + self::noAudience();
+        }
+        if ($unitId !== null && $unitId > 0) {
+            if (!$this->kits->audienceReady()) {
+                return ['ok' => false, 'error' => 'Proposer un kit à une unité arrive avec la prochaine mise à jour de la base : appliquez les migrations.'] + self::noAudience();
+            }
+            if (!isset($this->unitOptions($tenantId)[$unitId])) {
+                return ['ok' => false, 'error' => 'Cette unité n’existe pas dans la communauté.'] + self::noAudience();
+            }
+
+            return ['ok' => true, 'unit_id' => $unitId] + self::noAudience();
         }
         if ($roleId !== null && $roleId > 0) {
             if (!isset($this->roleOptions($tenantId)[$roleId])) {
-                return ['ok' => false, 'error' => 'Ce rôle n’existe pas dans la communauté.', 'unit_id' => null, 'job_role_id' => null];
+                return ['ok' => false, 'error' => 'Ce rôle n’existe pas dans la communauté.'] + self::noAudience();
             }
 
-            return ['ok' => true, 'unit_id' => null, 'job_role_id' => $roleId];
+            return ['ok' => true, 'job_role_id' => $roleId] + self::noAudience();
         }
 
-        return ['ok' => true, 'unit_id' => null, 'job_role_id' => null];
+        return ['ok' => true] + self::noAudience();
     }
 
     /**
@@ -258,6 +435,11 @@ final class RoleKitService
             // Ancien formulaire (Kits par rôle) : sans unité envoyée, le kit garde la sienne tant qu'aucun rôle n'est choisi.
             $unitId = array_key_exists('unit_id', $input) ? (int) $input['unit_id'] : (int) ($existing['unit_id'] ?? 0);
             $audience = $this->checkAudience($tenantId, $roleId > 0 ? null : ($unitId > 0 ? $unitId : null), $roleId > 0 ? $roleId : null);
+            // Ancien formulaire : un membre ou une qualification déjà attribués restent tant qu'aucun rôle ni unité n'est choisi.
+            if ($audience['ok'] && $audience['job_role_id'] === null && $audience['unit_id'] === null && $existing !== null) {
+                $audience['member_user_id'] = $existing['member_user_id'] ?? null;
+                $audience['qualification_id'] = $existing['qualification_id'] ?? null;
+            }
         }
         if (!$audience['ok']) {
             return ['ok' => false, 'error' => (string) ($audience['error'] ?? 'Destinataire invalide.')];
@@ -283,6 +465,8 @@ final class RoleKitService
         $data = [
             'job_role_id' => $audience['job_role_id'],
             'unit_id' => $audience['unit_id'],
+            'member_user_id' => $audience['member_user_id'] ?? null,
+            'qualification_id' => $audience['qualification_id'] ?? null,
             'source' => (string) ($input['source'] ?? ($existing['source'] ?? 'scratch')),
             'name' => $name,
             'description' => $description !== '' ? $description : null,
@@ -295,6 +479,12 @@ final class RoleKitService
             $id = (int) $kitId;
         } else {
             $id = $this->kits->create($tenantId, $userId, $data);
+        }
+        try {
+            $this->versions->record($tenantId, $id, $userId, $name, $payload, (string) ($input['version_note'] ?? ''));
+        } catch (\Throwable $e) {
+            // L'historique ne bloque jamais l'enregistrement du kit.
+            error_log('[role-kits] version failed: ' . $e->getMessage());
         }
         $warnings = [];
         $unknown = RoleKitLoadout::unknownClasses($classes, $catalog);
@@ -353,7 +543,7 @@ final class RoleKitService
         if (!$parsed['ok']) {
             return ['ok' => false, 'error' => (string) ($parsed['error'] ?? 'Destinataire invalide.')];
         }
-        $this->kits->setAudience($tenantId, $kitId, $parsed['unit_id'], $parsed['job_role_id'], $userId);
+        $this->kits->setAudience($tenantId, $kitId, $parsed['unit_id'], $parsed['job_role_id'], $userId, $parsed['member_user_id'], $parsed['qualification_id']);
         $this->syncPublication($tenantId, $userId, $kitId);
 
         return ['ok' => true];
@@ -414,14 +604,17 @@ final class RoleKitService
         }
     }
 
-    /** Publie la tenue d’arsenal du kit, sauf pour un kit réservé à une unité (alors la tenue publiée est retirée). */
+    /**
+     * Publie la tenue d’arsenal du kit, sauf pour un kit réservé à une unité, à un membre ou à une qualification (alors
+     * la tenue publiée est retirée : les destinataires le copient dans leurs tenues ou le prennent en jeu).
+     */
     public function syncPublication(int $tenantId, int $userId, int $kitId): bool
     {
         $kit = $this->kits->find($tenantId, $kitId);
         if ($kit === null) {
             return false;
         }
-        if ($kit['unit_id'] !== null) {
+        if ($kit['unit_id'] !== null || ($kit['member_user_id'] ?? null) !== null || ($kit['qualification_id'] ?? null) !== null) {
             $this->unpublish($tenantId, $kit);
 
             return true;
@@ -506,6 +699,65 @@ final class RoleKitService
         } catch (\Throwable $e) {
             error_log('[role-kits] unpublish failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Versions enregistrées d'un kit (la plus récente d'abord).
+     *
+     * @return list<array{version_no: int, name: string, note: string, created_at: string, author: string, bytes: int}>
+     */
+    public function versions(int $tenantId, int $kitId): array
+    {
+        if ($this->kits->find($tenantId, $kitId) === null) {
+            return [];
+        }
+        try {
+            return $this->versions->listForKit($tenantId, $kitId);
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** Contenu d'une version (tenue getUnitLoadout en texte) ; null si absente. */
+    public function versionPayload(int $tenantId, int $kitId, int $versionNo): ?array
+    {
+        if ($this->kits->find($tenantId, $kitId) === null) {
+            return null;
+        }
+        try {
+            return $this->versions->find($tenantId, $kitId, $versionNo);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Restaure une version : le kit reprend son nom et son contenu, et la restauration devient une nouvelle version
+     * (rien n'est effacé de l'historique). Le destinataire et la description restent ceux d'aujourd'hui.
+     *
+     * @return array{ok: bool, error?: string, id?: int, warnings?: list<string>}
+     */
+    public function restoreVersion(int $tenantId, int $userId, int $kitId, int $versionNo): array
+    {
+        $kit = $this->kits->find($tenantId, $kitId);
+        $version = $kit !== null ? $this->versionPayload($tenantId, $kitId, $versionNo) : null;
+        if ($kit === null || $version === null) {
+            return ['ok' => false, 'error' => 'Cette version n’existe plus.'];
+        }
+        $slots = RoleKitLoadout::fromPayload($version['payload_text']);
+        if ($slots === null) {
+            return ['ok' => false, 'error' => 'Cette version est illisible : elle ne peut pas être restaurée.'];
+        }
+
+        return $this->save($tenantId, $userId, $kitId, [
+            'name' => mb_substr($version['name'], 0, 90),
+            'description' => (string) ($kit['description'] ?? ''),
+            'audience' => self::audienceValue($kit),
+            'kit' => $slots,
+            'payload' => $version['payload_text'],
+            'source' => (string) ($kit['source'] ?? 'scratch'),
+            'version_note' => 'Restauration de la version ' . $versionNo,
+        ]);
     }
 
     public function delete(int $tenantId, int $kitId): bool

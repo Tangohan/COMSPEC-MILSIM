@@ -889,6 +889,18 @@ return function (Router $router) {
     $router->post('/equipment/wardrobes/collections', [ArsenalWardrobeController::class, 'storeCollection'], [AuthMiddleware::class]);
     $router->post('/equipment/wardrobes/collections/{id}/delete', [ArsenalWardrobeController::class, 'destroyCollection'], [AuthMiddleware::class]);
     $router->post('/equipment/wardrobes/{id}/delete', [ArsenalWardrobeController::class, 'destroyWardrobe'], [AuthMiddleware::class]);
+    // Configurateur d'équipement (armes, accessoires, tenues, kits) : avant /equipment/{slug}.
+    $router->get('/equipment/configurateur', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/equipment/configurateur/catalogue', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'catalogue'], [AuthMiddleware::class]);
+    $router->post('/equipment/configurateur/catalogue/import', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'importCatalog'], [AuthMiddleware::class]);
+    $router->get('/equipment/configurateur/script-export.sqf', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'exportScript'], [AuthMiddleware::class]);
+    $router->get('/equipment/configurateur/sources', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'sources'], [AuthMiddleware::class]);
+    $router->get('/equipment/configurateur/source', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'source'], [AuthMiddleware::class]);
+    $router->post('/equipment/configurateur/analyser', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'analyse'], [AuthMiddleware::class]);
+    $router->post('/equipment/configurateur/enregistrer', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'save'], [AuthMiddleware::class]);
+    $router->get('/equipment/configurateur/kits/{id}/versions', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'versions'], [AuthMiddleware::class]);
+    $router->get('/equipment/configurateur/kits/{id}/versions/{version}', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'version'], [AuthMiddleware::class]);
+    $router->post('/equipment/configurateur/kits/{id}/versions/{version}/restaurer', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'restore'], [AuthMiddleware::class]);
     $router->get('/equipment/{slug}', [EquipmentController::class, 'show'], [AuthMiddleware::class]);
     // Modpacks retirés : les mods sont servis par le Steam Workshop, les anciennes adresses mènent au guide d'installation.
     foreach (['/modpacks', '/modpacks/images/{id}', '/modpacks/{id}/download', '/modpacks/{slug}'] as $legacyModpack) {

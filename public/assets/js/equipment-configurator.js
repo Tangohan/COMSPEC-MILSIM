@@ -1,0 +1,1656 @@
+/*
+ * Configurateur d'équipement (/equipment/configurateur, vue views/equipment/configurator.php).
+ *
+ * Modèle : deux tenues (A en cours, B pour récupérer et copier), chacune au format getUnitLoadout d'Arma 3 une fois
+ * sérialisée. Règles (mêmes que App\Services\GameEquipment\Configurator\LoadoutValidator, le serveur a le dernier mot) :
+ * bon emplacement, accessoires et chargeurs compatibles avec l'arme, objets acceptés par le conteneur (allowedSlots),
+ * charge maximale (maximumLoad). Rien n'est inventé : une donnée absente du catalogue est signalée « non vérifiée ».
+ *
+ * Glisser-déposer : événements pointer (souris, stylet ; au doigt par la poignée ⋮⋮), copie avec Ctrl / Alt, retrait en
+ * lâchant hors de la tenue ou de l'arme. Alternative clavier : Entrée ouvre le menu d'actions de l'objet (ajouter,
+ * déplacer, copier vers…), Ctrl+C / Ctrl+V, Suppr. Annuler / rétablir : Ctrl+Z / Ctrl+Y (120 étapes).
+ * Palette virtualisée (plusieurs milliers d'objets). Textes du jeu toujours échappés (esc) et marqués translate="no".
+ */
+(function () {
+    'use strict';
+    var root = document.querySelector('[data-cfg]');
+    var bootEl = document.getElementById('cfg-boot');
+    if (!root || !bootEl) {
+        return;
+    }
+    var boot = {};
+    try { boot = JSON.parse(bootEl.textContent || '{}'); } catch (e) { boot = {}; }
+    var urls = boot.urls || {};
+    var can = boot.can || {};
+
+    // ------------------------------------------------------------------ outils
+    function esc(v) {
+        return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+    function fold(s) {
+        return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+    function $(sel, ctx) { return (ctx || root).querySelector(sel); }
+    function $$(sel, ctx) { return Array.prototype.slice.call((ctx || root).querySelectorAll(sel)); }
+    function clone(o) { return o == null ? o : JSON.parse(JSON.stringify(o)); }
+    function fmtMass(m) {
+        if (m == null) { return '?'; }
+        return (Math.round(m * 10) / 10).toLocaleString('fr-FR');
+    }
+    function kg(m) {
+        // Masse Arma = dixièmes de livre (convention d'ACE) : 1 unité ≈ 45 g.
+        return m == null ? '' : (Math.round(m * 0.0453592 * 10) / 10).toLocaleString('fr-FR') + ' kg';
+    }
+    function rounds(n) { return n + (n > 1 ? ' coups' : ' coup'); }
+    function store(key, value) {
+        try {
+            if (value === undefined) { return window.localStorage.getItem(key); }
+            if (value === null) { window.localStorage.removeItem(key); } else { window.localStorage.setItem(key, value); }
+        } catch (e) { /* stockage indisponible : simple confort perdu */ }
+        return null;
+    }
+    function request(url, opts) {
+        opts = opts || {};
+        var init = { credentials: 'same-origin', headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } };
+        if (opts.form) {
+            init.method = 'POST';
+            opts.form.append('_csrf_token', boot.csrf || '');
+            init.body = opts.form;
+        }
+        return fetch(url, init).then(function (r) {
+            return r.json().catch(function () { return { ok: false, error: 'Réponse illisible du serveur.' }; }).then(function (j) {
+                j = j || {};
+                j.status = r.status;
+                return j;
+            });
+        }).catch(function () { return { ok: false, error: 'Serveur injoignable : vérifiez la connexion.' }; });
+    }
+    var live = $('[data-cfg-live]');
+    function announce(msg) { if (live) { live.textContent = ''; window.setTimeout(function () { live.textContent = msg; }, 30); } }
+    var toastEl = $('[data-cfg-toast]');
+    var toastTimer = 0;
+    function toast(msg, kind) {
+        if (!toastEl) { return; }
+        toastEl.textContent = msg;
+        toastEl.className = 'cfg-toast' + (kind ? ' cfg-toast--' + kind : '');
+        toastEl.hidden = false;
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(function () { toastEl.hidden = true; }, kind === 'err' ? 6500 : 3800);
+        announce(msg);
+    }
+
+    // ------------------------------------------------------------------ libellés
+    var KIND_LABEL = {
+        primary: 'Arme principale', secondary: 'Lanceur', handgun: 'Arme de poing', muzzle: 'Bouche', optic: 'Optique',
+        pointer: 'Rail latéral', bipod: 'Bipied ou poignée', magazine: 'Chargeur ou munition', uniform: 'Uniforme',
+        vest: 'Gilet', backpack: 'Sac à dos', headgear: 'Casque ou coiffe', goggles: 'Lunettes', nvg: 'Vision nocturne',
+        binocular: 'Jumelles', radio: 'Radio', map: 'Carte', gps: 'GPS ou terminal', compass: 'Boussole', watch: 'Montre',
+        medical: 'Médical', item: 'Objet'
+    };
+    var CAT_LABEL = {
+        fusil: 'Fusils', pm: 'Pistolets-mitrailleurs', mitrailleuse: 'Mitrailleuses', precision: 'Précision',
+        pompe: 'Fusils à pompe', 'lance-grenades': 'Lance-grenades', pistolet: 'Pistolets', lanceur: 'Lanceurs',
+        balles: 'Balles', grenades: 'Grenades et fumigènes', roquettes: 'Roquettes et missiles', explosifs: 'Mines et explosifs'
+    };
+    var FAMILIES = [
+        { id: 'all', label: 'Tout', kinds: null },
+        { id: 'weapons', label: 'Armes', kinds: ['primary', 'handgun', 'secondary'] },
+        { id: 'acc', label: 'Accessoires', kinds: ['optic', 'muzzle', 'pointer', 'bipod'] },
+        { id: 'ammo', label: 'Munitions', kinds: ['magazine'] },
+        { id: 'uniform', label: 'Uniformes', kinds: ['uniform'] },
+        { id: 'vest', label: 'Gilets', kinds: ['vest'] },
+        { id: 'backpack', label: 'Sacs', kinds: ['backpack'] },
+        { id: 'head', label: 'Casques et lunettes', kinds: ['headgear', 'goggles'] },
+        { id: 'optics', label: 'Vision et jumelles', kinds: ['nvg', 'binocular'] },
+        { id: 'tools', label: 'Radio, carte, GPS', kinds: ['radio', 'map', 'gps', 'compass', 'watch'] },
+        { id: 'medical', label: 'Médical', kinds: ['medical'] },
+        { id: 'item', label: 'Autres objets', kinds: ['item'] }
+    ];
+    var WEAPON_SLOTS = [['primary', 'Arme principale'], ['handgun', 'Arme de poing'], ['secondary', 'Lanceur']];
+    var GEAR_SLOTS = [['headgear', 'Casque'], ['goggles', 'Lunettes'], ['nvg', 'Vision nocturne'], ['binocular', 'Jumelles'],
+        ['radio', 'Radio'], ['map', 'Carte'], ['gps', 'GPS'], ['compass', 'Boussole'], ['watch', 'Montre']];
+    var CONTAINERS = [['uniform', 'Uniforme'], ['vest', 'Gilet'], ['backpack', 'Sac à dos']];
+    var CONTAINER_CODE = { uniform: 801, vest: 701, backpack: 901 };
+    var ATTACH = [['muzzle', 'Bouche'], ['optic', 'Optique'], ['pointer', 'Rail latéral'], ['bipod', 'Bipied / poignée'], ['mag', 'Chargeur'], ['mag2', 'Chargeur 2']];
+    var ATT_SHORT = { muzzle: 'mu', optic: 'op', pointer: 'po', bipod: 'bi' };
+    var OUTFIT_NAME = { a: 'Tenue A', b: 'Tenue B' };
+    function slotLabel(slot) {
+        var all = WEAPON_SLOTS.concat(GEAR_SLOTS, CONTAINERS, ATTACH);
+        for (var i = 0; i < all.length; i++) { if (all[i][0] === slot) { return all[i][1]; } }
+        return slot;
+    }
+
+    // ------------------------------------------------------------------ catalogue
+    var CAT = { items: [], byKey: {}, groups: [], sets: [], ready: false, specs: 0 };
+    function spec(cls) { return cls ? (CAT.byKey[String(cls).toLowerCase()] || null) : null; }
+    function nameOf(cls) { var s = spec(cls); return s && s.n ? s.n : String(cls || ''); }
+    function groupSet(i) {
+        if (i == null || !CAT.groups[i]) { return null; }
+        if (!CAT.sets[i]) {
+            var set = {};
+            CAT.groups[i].forEach(function (c) { set[c] = true; });
+            CAT.sets[i] = set;
+        }
+        return CAT.sets[i];
+    }
+    function compat(weaponCls, short) {
+        var s = spec(weaponCls);
+        return s && s.x && s.x[short] !== undefined ? groupSet(s.x[short]) : null;
+    }
+    function loadCatalog() {
+        return request(urls.catalogue).then(function (j) {
+            if (!j.ok) {
+                $('[data-cfg-count]').textContent = j.error || 'Catalogue indisponible.';
+                return;
+            }
+            CAT.items = j.items || [];
+            CAT.groups = j.groups || [];
+            CAT.sets = [];
+            CAT.byKey = {};
+            CAT.specs = 0;
+            CAT.items.forEach(function (it, idx) {
+                it._i = idx;
+                it._f = fold((it.n || '') + ' ' + it.c);
+                CAT.byKey[it.c.toLowerCase()] = it;
+                if (it.v) { CAT.specs++; }
+            });
+            CAT.items.sort(function (a, b) { return (b.p || 0) - (a.p || 0) || (a.n || a.c).localeCompare(b.n || b.c); });
+            CAT.items.forEach(function (it, idx) { it._i = idx; });
+            CAT.ready = true;
+            renderFamilies();
+            filterPalette();
+            renderAll();
+        });
+    }
+
+    // ------------------------------------------------------------------ modèle
+    function blankOutfit() {
+        return { name: '', ref: '', meta: {}, primary: null, secondary: null, handgun: null, binocular: null,
+            uniform: null, vest: null, backpack: null, headgear: '', goggles: '', map: '', gps: '', radio: '', compass: '', watch: '', nvg: '' };
+    }
+    function weaponFrom(a) {
+        if (!Array.isArray(a) || !a.length || typeof a[0] !== 'string' || a[0] === '') { return null; }
+        function mag(m) { return Array.isArray(m) && m.length && m[0] ? { cls: String(m[0]), ammo: Math.max(0, parseInt(m[1], 10) || 0) } : null; }
+        return { cls: a[0], muzzle: a[1] || '', pointer: a[2] || '', optic: a[3] || '', mag: mag(a[4]), mag2: mag(a[5]), bipod: a[6] || '' };
+    }
+    function weaponTo(w) {
+        if (!w) { return []; }
+        function mag(m) { return m ? [m.cls, m.ammo] : []; }
+        return [w.cls, w.muzzle || '', w.pointer || '', w.optic || '', mag(w.mag), mag(w.mag2), w.bipod || ''];
+    }
+    function containerFrom(a) {
+        if (!Array.isArray(a) || !a.length || !a[0]) { return null; }
+        var items = [];
+        (Array.isArray(a[1]) ? a[1] : []).forEach(function (e) {
+            if (!Array.isArray(e) || e.length < 2) { return; }
+            if (Array.isArray(e[0])) {
+                var w = weaponFrom(e[0]);
+                if (w) { items.push({ t: 'weapon', w: w, n: Math.max(1, parseInt(e[1], 10) || 1) }); }
+            } else if (e[1] === true || e[1] === false) {
+                items.push({ t: 'pack', cls: String(e[0]), n: 1 });
+            } else if (e.length >= 3) {
+                items.push({ t: 'mag', cls: String(e[0]), n: Math.max(1, parseInt(e[1], 10) || 1), ammo: Math.max(0, parseInt(e[2], 10) || 0) });
+            } else {
+                items.push({ t: 'item', cls: String(e[0]), n: Math.max(1, parseInt(e[1], 10) || 1) });
+            }
+        });
+        return { cls: a[0], items: items };
+    }
+    function containerTo(c) {
+        if (!c) { return []; }
+        return [c.cls, c.items.map(function (e) {
+            if (e.t === 'weapon') { return [weaponTo(e.w), e.n]; }
+            if (e.t === 'pack') { return [e.cls, true]; }
+            if (e.t === 'mag') { return [e.cls, e.n, e.ammo]; }
+            return [e.cls, e.n];
+        })];
+    }
+    function outfitFrom(lo, name, ref, meta) {
+        var o = blankOutfit();
+        o.name = name || '';
+        o.ref = ref || '';
+        o.meta = meta || {};
+        if (!Array.isArray(lo)) { return o; }
+        o.primary = weaponFrom(lo[0]);
+        o.secondary = weaponFrom(lo[1]);
+        o.handgun = weaponFrom(lo[2]);
+        o.uniform = containerFrom(lo[3]);
+        o.vest = containerFrom(lo[4]);
+        o.backpack = containerFrom(lo[5]);
+        o.headgear = typeof lo[6] === 'string' ? lo[6] : '';
+        o.goggles = typeof lo[7] === 'string' ? lo[7] : '';
+        o.binocular = weaponFrom(lo[8]);
+        var as = Array.isArray(lo[9]) ? lo[9] : [];
+        ['map', 'gps', 'radio', 'compass', 'watch', 'nvg'].forEach(function (k, i) { o[k] = typeof as[i] === 'string' ? as[i] : ''; });
+        return o;
+    }
+    function outfitTo(o) {
+        return [weaponTo(o.primary), weaponTo(o.secondary), weaponTo(o.handgun), containerTo(o.uniform), containerTo(o.vest),
+            containerTo(o.backpack), o.headgear || '', o.goggles || '', o.binocular ? weaponTo(o.binocular) : [],
+            [o.map || '', o.gps || '', o.radio || '', o.compass || '', o.watch || '', o.nvg || '']];
+    }
+    function outfitClasses(o) {
+        var out = {};
+        function add(c) { if (c) { out[c.toLowerCase()] = c; } }
+        function weapon(w) {
+            if (!w) { return; }
+            add(w.cls); add(w.muzzle); add(w.pointer); add(w.optic); add(w.bipod);
+            if (w.mag) { add(w.mag.cls); }
+            if (w.mag2) { add(w.mag2.cls); }
+        }
+        weapon(o.primary); weapon(o.secondary); weapon(o.handgun); weapon(o.binocular);
+        CONTAINERS.forEach(function (c) {
+            var ct = o[c[0]];
+            if (!ct) { return; }
+            add(ct.cls);
+            ct.items.forEach(function (e) { if (e.t === 'weapon') { weapon(e.w); } else { add(e.cls); } });
+        });
+        ['headgear', 'goggles', 'map', 'gps', 'radio', 'compass', 'watch', 'nvg'].forEach(function (k) { add(o[k]); });
+        return Object.keys(out).map(function (k) { return out[k]; });
+    }
+    function ammoFor(cls) {
+        var s = spec(cls);
+        if (s && s.a) { return { ammo: s.a, known: true }; }
+        // Même règle que RoleKitLoadout::ammoFor : nombre lu dans la classe (« 30Rnd ») ; le mod remplit les chargeurs.
+        var m = /(\d{1,4})\s*rnd/i.exec(cls || '');
+        return { ammo: m ? parseInt(m[1], 10) : 1, known: false };
+    }
+
+    // ------------------------------------------------------------------ masses et règles
+    function massOf(cls) { var s = spec(cls); return s && typeof s.m === 'number' ? s.m : null; }
+    function weaponMass(w) {
+        if (!w) { return 0; }
+        var parts = [w.cls, w.muzzle, w.pointer, w.optic, w.bipod, w.mag && w.mag.cls, w.mag2 && w.mag2.cls].filter(Boolean);
+        var t = 0;
+        for (var i = 0; i < parts.length; i++) {
+            var m = massOf(parts[i]);
+            if (m == null) { return null; }
+            t += m;
+        }
+        return t;
+    }
+    function entryMass(e) {
+        var m = e.t === 'weapon' ? weaponMass(e.w) : massOf(e.cls);
+        return m == null ? null : m * (e.n || 1);
+    }
+    function containerLoad(c) {
+        if (!c) { return { load: 0, max: null, known: true }; }
+        var t = 0;
+        var known = true;
+        c.items.forEach(function (e) { var m = entryMass(e); if (m == null) { known = false; } else { t += m; } });
+        var s = spec(c.cls);
+        return { load: t, max: s && s.l ? s.l : null, known: known };
+    }
+    function outfitMass(o) {
+        var t = 0;
+        var known = true;
+        function add(m) { if (m == null) { known = false; } else { t += m; } }
+        ['primary', 'secondary', 'handgun', 'binocular'].forEach(function (k) { add(weaponMass(o[k])); });
+        CONTAINERS.forEach(function (c) {
+            var ct = o[c[0]];
+            if (!ct) { return; }
+            add(massOf(ct.cls));
+            var l = containerLoad(ct);
+            add(l.known ? l.load : null);
+        });
+        ['headgear', 'goggles', 'map', 'gps', 'radio', 'compass', 'watch', 'nvg'].forEach(function (k) { if (o[k]) { add(massOf(o[k])); } });
+        return known ? t : null;
+    }
+    function acceptedKinds(slot) {
+        if (slot === 'map' || slot === 'gps' || slot === 'compass' || slot === 'watch') { return [slot, 'item']; }
+        if (slot === 'radio') { return ['radio', 'item']; }
+        return [slot];
+    }
+    /** L'objet va-t-il à cet emplacement de la tenue ? {ok, reason} */
+    function kindFits(slot, cls) {
+        var s = spec(cls);
+        if (!s) { return { ok: false, reason: '« ' + cls + ' » est absent du catalogue de la communauté.' }; }
+        var kinds = acceptedKinds(slot);
+        if (kinds.indexOf(s.k) >= 0 && !(s.k === 'item' && s.v && slot !== 'radio' && kinds.length > 1 && slot !== s.k)) {
+            return { ok: true };
+        }
+        if (s.k === 'item' && !s.v && kinds.indexOf('item') >= 0) { return { ok: true }; }
+        return { ok: false, reason: '« ' + nameOf(cls) + ' » (' + (KIND_LABEL[s.k] || s.k) + ') ne va pas à l’emplacement ' + slotLabel(slot) + '.' };
+    }
+    /** Accessoire ou chargeur compatible avec l'arme ? {ok, reason, unchecked} */
+    function attachFits(weaponCls, att, cls) {
+        var s = spec(cls);
+        if (!s) { return { ok: false, reason: '« ' + cls + ' » est absent du catalogue de la communauté.' }; }
+        if (att === 'mag' || att === 'mag2') {
+            if (s.k !== 'magazine') { return { ok: false, reason: '« ' + nameOf(cls) + ' » n’est pas un chargeur.' }; }
+            var mags = compat(weaponCls, 'mg');
+            if (!mags) { return { ok: true, unchecked: true }; }
+            return mags[cls.toLowerCase()] ? { ok: true } : { ok: false, reason: '« ' + nameOf(cls) + ' » ne va pas dans « ' + nameOf(weaponCls) + ' » (chargeur incompatible).' };
+        }
+        if (s.k !== att) { return { ok: false, reason: '« ' + nameOf(cls) + ' » (' + (KIND_LABEL[s.k] || s.k) + ') ne se monte pas à l’emplacement ' + slotLabel(att) + '.' }; }
+        var list = compat(weaponCls, ATT_SHORT[att]);
+        if (!list) { return { ok: true, unchecked: true }; }
+        return list[cls.toLowerCase()] ? { ok: true } : { ok: false, reason: '« ' + nameOf(cls) + ' » ne se monte pas sur « ' + nameOf(weaponCls) + ' » (emplacement ' + slotLabel(att).toLowerCase() + ').' };
+    }
+    /** Le conteneur accepte-t-il cet objet, et y a-t-il la place ? */
+    function containerFits(o, slot, entry, sameRef) {
+        var c = o[slot];
+        if (!c) { return { ok: false, reason: 'Posez d’abord ' + (slot === 'backpack' ? 'un sac' : (slot === 'vest' ? 'un gilet' : 'un uniforme')) + ' pour y ranger des objets.' }; }
+        var cls = entry.t === 'weapon' ? entry.w.cls : entry.cls;
+        var s = spec(cls);
+        if (!s) { return { ok: false, reason: '« ' + cls + ' » est absent du catalogue de la communauté.' }; }
+        if (s.k === 'backpack') { return { ok: false, reason: 'Arma ne range pas un sac dans un conteneur porté.' }; }
+        if (s.s && s.s.length && s.s.indexOf(CONTAINER_CODE[slot]) < 0) {
+            return { ok: false, reason: '« ' + nameOf(cls) + ' » ne se range pas dans ' + (slot === 'backpack' ? 'le sac' : (slot === 'vest' ? 'le gilet' : 'l’uniforme')) + ' (le jeu le refuse).' };
+        }
+        var load = containerLoad(c);
+        var add = entryMass(entry);
+        if (sameRef) { return { ok: true }; }
+        if (load.max != null && load.known && add != null && load.load + add > load.max + 0.0001) {
+            return { ok: false, reason: 'Plus de place : ' + fmtMass(load.load) + ' / ' + load.max + ', il faut ' + fmtMass(add) + '.' };
+        }
+        return { ok: true, unchecked: load.max == null || !load.known || add == null };
+    }
+    /** Points à corriger et avertissements d'une tenue (mêmes règles que le serveur). */
+    function checkOutfit(o) {
+        var errors = [];
+        var warns = [];
+        var unknown = outfitClasses(o).filter(function (c) { return !spec(c); });
+        if (unknown.length) { errors.push('Absent du catalogue : ' + unknown.slice(0, 6).join(', ') + (unknown.length > 6 ? '…' : '') + '.'); }
+        function weapon(w, slot) {
+            if (!w) { return; }
+            if (slot) { var k = kindFits(slot, w.cls); if (!k.ok && spec(w.cls)) { errors.push(k.reason); } }
+            var unchecked = false;
+            ['muzzle', 'optic', 'pointer', 'bipod'].forEach(function (a) {
+                if (!w[a] || !spec(w[a])) { return; }
+                var f = attachFits(w.cls, a, w[a]);
+                if (!f.ok) { errors.push(f.reason); } else if (f.unchecked) { unchecked = true; }
+            });
+            ['mag', 'mag2'].forEach(function (a) {
+                if (!w[a] || !spec(w[a].cls)) { return; }
+                var f = attachFits(w.cls, a, w[a].cls);
+                if (!f.ok) { errors.push(f.reason); } else if (f.unchecked) { unchecked = true; }
+            });
+            if (unchecked && spec(w.cls)) { warns.push('Compatibilités de « ' + nameOf(w.cls) + ' » non vérifiées (catalogue de configuration à importer).'); }
+        }
+        weapon(o.primary, 'primary'); weapon(o.secondary, 'secondary'); weapon(o.handgun, 'handgun'); weapon(o.binocular, 'binocular');
+        GEAR_SLOTS.forEach(function (g) {
+            if (g[0] !== 'binocular' && o[g[0]] && spec(o[g[0]])) { var k = kindFits(g[0], o[g[0]]); if (!k.ok) { errors.push(k.reason); } }
+        });
+        CONTAINERS.forEach(function (c) {
+            var ct = o[c[0]];
+            if (!ct) { return; }
+            if (spec(ct.cls)) { var k = kindFits(c[0], ct.cls); if (!k.ok) { errors.push(k.reason); } }
+            ct.items.forEach(function (e) {
+                if (e.t === 'weapon') { weapon(e.w, null); }
+                var cls = e.t === 'weapon' ? e.w.cls : e.cls;
+                var s = spec(cls);
+                if (s && s.s && s.s.length && s.s.indexOf(CONTAINER_CODE[c[0]]) < 0) { errors.push('« ' + nameOf(cls) + ' » ne se range pas dans : ' + c[1] + '.'); }
+            });
+            var l = containerLoad(ct);
+            if (l.max != null && l.known && l.load > l.max + 0.0001) { errors.push(c[1] + ' déborde : ' + fmtMass(l.load) + ' / ' + l.max + '.'); }
+            if (ct.items.length && (l.max == null || !l.known)) { warns.push('Charge non vérifiée : ' + c[1] + ' (masse ou capacité inconnue).'); }
+        });
+        return { errors: errors.filter(uniq), warns: warns.filter(uniq) };
+    }
+    function uniq(v, i, a) { return a.indexOf(v) === i; }
+
+    // ------------------------------------------------------------------ état et historique
+    var S = { outfits: { a: blankOutfit(), b: null }, bench: null };
+    var undoStack = [];
+    var redoStack = [];
+    function snapshot() { return JSON.stringify(S.outfits); }
+    function commit(label, fn) {
+        var before = snapshot();
+        var res = fn();
+        if (res === false) { return false; }
+        if (snapshot() === before) { return false; }
+        undoStack.push(before);
+        if (undoStack.length > 120) { undoStack.shift(); }
+        redoStack = [];
+        afterChange(label);
+        return true;
+    }
+    function afterChange(label) {
+        renderAll();
+        saveDraft();
+        if (label) { announce(label); }
+    }
+    function undo() {
+        if (!undoStack.length) { return; }
+        redoStack.push(snapshot());
+        S.outfits = JSON.parse(undoStack.pop());
+        afterChange('Annulé.');
+        toast('Annulé.');
+    }
+    function redo() {
+        if (!redoStack.length) { return; }
+        undoStack.push(snapshot());
+        S.outfits = JSON.parse(redoStack.pop());
+        afterChange('Rétabli.');
+        toast('Rétabli.');
+    }
+    var draftTimer = 0;
+    function saveDraft() {
+        window.clearTimeout(draftTimer);
+        draftTimer = window.setTimeout(function () {
+            store('athena.cfg.draft.v1', JSON.stringify({ outfits: S.outfits, at: Date.now() }));
+        }, 400);
+    }
+
+    // ------------------------------------------------------------------ icônes
+    var ICONS = {
+        primary: 'M2 12h13l2-2h5v3h-3l-1 3h-3l-1-2H8l-2 4H3l1-4H2z', handgun: 'M3 8h15v4h-6l-1 2h-2l-1 5H4l1-6H3z',
+        secondary: 'M2 10h18l2 2-2 2H2zM6 14v4M14 14v3', optic: 'M4 9h16v6H4zM8 9V6h8v3M8 15v3', muzzle: 'M3 10h14v4H3zM17 9h4v6h-4',
+        pointer: 'M4 9h10v6H4zM14 11h7M14 13h7', bipod: 'M12 4v8M12 12l-6 8M12 12l6 8', magazine: 'M8 3h8l-1 18H9zM9 8h6M9 12h6',
+        uniform: 'M8 3l4 2 4-2 5 4-3 3-2-1v12H8V9L6 10 3 7z', vest: 'M7 3h3l2 3 2-3h3l1 18H6zM6 10h12', backpack: 'M7 6a5 5 0 0 1 10 0v15H7zM9 12h6v5H9z',
+        headgear: 'M3 16a9 9 0 0 1 18 0zM2 16h20v2H2z', goggles: 'M3 10h18v5h-7l-2-2-2 2H3z', nvg: 'M6 8h12v6H6zM8 14v4M16 14v4M9 5h6',
+        binocular: 'M4 8h6v11H4zM14 8h6v11h-6zM10 11h4', radio: 'M7 7h10v14H7zM10 3v4M10 11h4M10 15h4', map: 'M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z',
+        gps: 'M6 3h12v18H6zM9 7h6v6H9z', compass: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM14 10l-4 4 1-5z', watch: 'M9 2h6v4H9zM9 18h6v4H9zM12 6a6 6 0 1 1 0 12 6 6 0 0 1 0-12zM12 9v3h2',
+        medical: 'M4 7h16v12H4zM12 9v8M8 13h8', item: 'M4 8l8-4 8 4v8l-8 4-8-4zM4 8l8 4 8-4M12 12v8'
+    };
+    function iconHtml(cls, fallbackKind) {
+        var s = spec(cls);
+        if (s && s.i && urls.icons) {
+            return '<img class="cfg-ico" src="' + esc(urls.icons + s.i + '.png') + '" alt="" loading="lazy" decoding="async">';
+        }
+        var k = (s && s.k) || fallbackKind || 'item';
+        return '<svg class="cfg-ico cfg-ico--svg" viewBox="0 0 24 24" aria-hidden="true"><path d="' + (ICONS[k] || ICONS.item) + '"/></svg>';
+    }
+
+    // ------------------------------------------------------------------ palette virtualisée
+    var P = { list: [], family: 'all', cat: '', q: '', rowH: 56 };
+    var vlist = $('[data-cfg-vlist]');
+    var vspacer = $('[data-cfg-vspacer]');
+    function renderFamilies() {
+        var present = {};
+        CAT.items.forEach(function (it) { present[it.k] = true; });
+        var html = FAMILIES.filter(function (f) {
+            return !f.kinds || f.kinds.some(function (k) { return present[k]; });
+        }).map(function (f) {
+            return '<button type="button" class="cfg-chip' + (P.family === f.id ? ' is-on' : '') + '" data-family="' + f.id + '" aria-pressed="' + (P.family === f.id) + '">' + esc(f.label) + '</button>';
+        }).join('');
+        $('[data-cfg-families]').innerHTML = html;
+        renderCats();
+    }
+    function familyKinds() {
+        for (var i = 0; i < FAMILIES.length; i++) { if (FAMILIES[i].id === P.family) { return FAMILIES[i].kinds; } }
+        return null;
+    }
+    function renderCats() {
+        var box = $('[data-cfg-cats]');
+        var kinds = familyKinds();
+        var chips = [];
+        if (P.family === 'weapons' || P.family === 'ammo') {
+            var cats = {};
+            CAT.items.forEach(function (it) { if (it.g && kinds.indexOf(it.k) >= 0) { cats[it.g] = true; } });
+            chips = Object.keys(CAT_LABEL).filter(function (c) { return cats[c]; }).map(function (c) { return [c, CAT_LABEL[c]]; });
+        } else if (P.family === 'acc') {
+            chips = [['optic', 'Optiques'], ['muzzle', 'Bouches'], ['pointer', 'Rails latéraux'], ['bipod', 'Bipieds']];
+        }
+        if (!chips.length) { box.hidden = true; box.innerHTML = ''; return; }
+        box.hidden = false;
+        box.innerHTML = '<button type="button" class="cfg-chip cfg-chip--sub' + (P.cat === '' ? ' is-on' : '') + '" data-cat="" aria-pressed="' + (P.cat === '') + '">' + esc('Toutes') + '</button>'
+            + chips.map(function (c) {
+                return '<button type="button" class="cfg-chip cfg-chip--sub' + (P.cat === c[0] ? ' is-on' : '') + '" data-cat="' + esc(c[0]) + '" aria-pressed="' + (P.cat === c[0]) + '">' + esc(c[1]) + '</button>';
+            }).join('');
+    }
+    function filterPalette() {
+        var kinds = familyKinds();
+        var words = fold(P.q).split(/\s+/).filter(Boolean);
+        P.list = CAT.items.filter(function (it) {
+            if (kinds && kinds.indexOf(it.k) < 0) { return false; }
+            if (P.cat && (P.family === 'acc' ? it.k !== P.cat : it.g !== P.cat)) { return false; }
+            for (var i = 0; i < words.length; i++) { if (it._f.indexOf(words[i]) < 0) { return false; } }
+            return true;
+        });
+        var count = $('[data-cfg-count]');
+        var empty = $('[data-cfg-palette-empty]');
+        if (!CAT.items.length) {
+            count.textContent = 'Catalogue vide.';
+            empty.hidden = false;
+            empty.innerHTML = '<p><strong>Aucun objet dans le catalogue.</strong></p><p>Les objets apparaissent dès qu’un membre joue avec COMSPEC Link (ce qu’il porte est remonté), ou après l’import du catalogue de configuration.</p>'
+                + (can.catalog ? '<button type="button" class="cfg-btn cfg-btn--primary" data-cfg-open="catalog">Importer le catalogue</button>' : '');
+        } else if (!P.list.length) {
+            count.textContent = 'Aucun résultat.';
+            empty.hidden = false;
+            empty.innerHTML = '<p>Rien ne correspond à « ' + esc(P.q) + ' ». Essayez une partie du nom (ex. « MX », « carryall ») ou la classe Arma.</p>';
+        } else {
+            empty.hidden = true;
+            count.textContent = P.list.length.toLocaleString('fr-FR') + ' objet' + (P.list.length > 1 ? 's' : '') + (CAT.specs ? '' : ' · compatibilités non importées');
+        }
+        vspacer.style.height = (P.list.length * P.rowH) + 'px';
+        vlist.scrollTop = 0;
+        renderRows();
+    }
+    var rowsFrame = 0;
+    function renderRows() {
+        rowsFrame = 0;
+        var top = vlist.scrollTop;
+        var h = vlist.clientHeight || 600;
+        var first = Math.max(0, Math.floor(top / P.rowH) - 8);
+        var last = Math.min(P.list.length, Math.ceil((top + h) / P.rowH) + 8);
+        var html = '';
+        for (var i = first; i < last; i++) {
+            var it = P.list[i];
+            var meta = [KIND_LABEL[it.k] || ''];
+            if (it.m != null) { meta.push(fmtMass(it.m)); }
+            if (it.l) { meta.push('charge ' + it.l); }
+            if (it.a) { meta.push(rounds(it.a)); }
+            html += '<div class="cfg-row" role="option" tabindex="-1" style="top:' + (i * P.rowH) + 'px" data-dnd="pal:' + it._i + '" data-pal-index="' + i + '" aria-label="' + esc((it.n || it.c) + ' — ' + (KIND_LABEL[it.k] || '')) + '">'
+                + '<span class="cfg-grip" data-grip aria-hidden="true">⋮⋮</span>' + iconHtml(it.c)
+                + '<span class="cfg-row__txt"><span class="cfg-row__name" translate="no">' + esc(it.n || it.c) + '</span>'
+                + '<span class="cfg-row__meta"><span translate="no">' + esc(it.c) + '</span> · ' + esc(meta.join(' · ')) + '</span></span>'
+                + '<button type="button" class="cfg-row__add" data-cfg-menu-for="pal:' + it._i + '" aria-label="' + esc('Ajouter à la tenue') + '" title="' + esc('Ajouter à…') + '">+</button></div>';
+        }
+        $$('.cfg-row', vlist).forEach(function (r) { r.remove(); });
+        vspacer.insertAdjacentHTML('afterend', html);
+    }
+    vlist.addEventListener('scroll', function () { if (!rowsFrame) { rowsFrame = window.requestAnimationFrame(renderRows); } }, { passive: true });
+    window.addEventListener('resize', function () { if (!rowsFrame) { rowsFrame = window.requestAnimationFrame(renderRows); } });
+    var searchTimer = 0;
+    $('[data-cfg-search]').addEventListener('input', function (e) {
+        window.clearTimeout(searchTimer);
+        var v = e.target.value;
+        searchTimer = window.setTimeout(function () { P.q = v; filterPalette(); }, 90);
+    });
+    root.addEventListener('click', function (e) {
+        var f = e.target.closest('[data-family]');
+        if (f) { P.family = f.getAttribute('data-family'); P.cat = ''; renderFamilies(); filterPalette(); return; }
+        var c = e.target.closest('[data-cat]');
+        if (c) { P.cat = c.getAttribute('data-cat'); renderCats(); filterPalette(); }
+    });
+    // Clavier dans la liste : flèches pour parcourir, Entrée pour le menu d'actions.
+    vlist.addEventListener('keydown', function (e) {
+        if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') { return; }
+        e.preventDefault();
+        var cur = document.activeElement && document.activeElement.closest('.cfg-row');
+        var idx = cur ? parseInt(cur.getAttribute('data-pal-index'), 10) : -1;
+        idx = Math.max(0, Math.min(P.list.length - 1, idx + (e.key === 'ArrowDown' ? 1 : -1)));
+        if (idx * P.rowH < vlist.scrollTop || (idx + 1) * P.rowH > vlist.scrollTop + vlist.clientHeight) {
+            vlist.scrollTop = Math.max(0, idx * P.rowH - vlist.clientHeight / 2);
+        }
+        renderRows();
+        var row = vlist.querySelector('[data-pal-index="' + idx + '"]');
+        if (row) { row.focus(); }
+    });
+
+    // ------------------------------------------------------------------ rendu des tenues
+    function weaponAttrs(o, slot, i) { return o + ':' + slot + ':' + (i == null ? '-' : i); }
+    function weaponCard(o, slot, label) {
+        var out = S.outfits[o];
+        var w = out[slot];
+        var drop = 'w:' + o + ':' + slot;
+        if (!w) {
+            return '<div class="cfg-slot cfg-slot--weapon is-empty" data-cfg-drop="' + drop + '" tabindex="0" aria-label="' + esc(label + ' : vide') + '">'
+                + '<span class="cfg-slot__label">' + esc(label) + '</span>'
+                + '<span class="cfg-slot__hint">Glissez une arme ici</span></div>';
+        }
+        var m = weaponMass(w);
+        var chips = ATTACH.map(function (a) {
+            var v = a[0] === 'mag' || a[0] === 'mag2' ? (w[a[0]] && w[a[0]].cls) : w[a[0]];
+            if (a[0] === 'mag2' && !v) { return ''; }
+            return '<span class="cfg-att' + (v ? ' is-set' : '') + '" title="' + esc(a[1] + (v ? ' : ' + nameOf(v) : ' : vide')) + '">' + esc(a[1]) + (v ? ' · <span translate="no">' + esc(nameOf(v)) + '</span>' : '') + '</span>';
+        }).join('');
+        return '<div class="cfg-slot cfg-slot--weapon" data-cfg-drop="' + drop + '">'
+            + '<div class="cfg-piece" data-dnd="w:' + o + ':' + slot + '" tabindex="0" aria-label="' + esc(label + ' : ' + nameOf(w.cls)) + '">'
+            + '<span class="cfg-grip" data-grip aria-hidden="true">⋮⋮</span>' + iconHtml(w.cls, slot)
+            + '<span class="cfg-piece__txt"><span class="cfg-slot__label">' + esc(label) + '</span><span class="cfg-piece__name" translate="no">' + esc(nameOf(w.cls)) + '</span>'
+            + '<span class="cfg-piece__meta">' + (m == null ? 'masse inconnue' : fmtMass(m) + ' · ' + kg(m)) + '</span></span></div>'
+            + '<div class="cfg-atts">' + chips + '</div>'
+            + '<div class="cfg-piece__actions">'
+            + '<button type="button" class="cfg-btn cfg-btn--sm cfg-btn--primary" data-cfg-bench="' + weaponAttrs(o, slot) + '">' + esc('Établi') + '</button>'
+            + '<button type="button" class="cfg-btn cfg-btn--sm" data-cfg-copy-weapon="' + weaponAttrs(o, slot) + '">Copier…</button>'
+            + '<button type="button" class="cfg-btn cfg-btn--sm cfg-btn--quiet" data-cfg-menu-for="w:' + o + ':' + slot + '" aria-label="Actions : ' + esc(nameOf(w.cls)) + '">⋯</button>'
+            + '</div></div>';
+    }
+    function gearTile(o, slot, label) {
+        var out = S.outfits[o];
+        var drop = (slot === 'binocular' ? 'w:' : 'g:') + o + ':' + slot;
+        var v = slot === 'binocular' ? (out.binocular && out.binocular.cls) : out[slot];
+        if (!v) {
+            return '<div class="cfg-tile is-empty" data-cfg-drop="' + drop + '" tabindex="0" aria-label="' + esc(label + ' : vide') + '">'
+                + '<svg class="cfg-ico cfg-ico--svg cfg-ico--ghost" viewBox="0 0 24 24" aria-hidden="true"><path d="' + (ICONS[slot] || ICONS.item) + '"/></svg><span class="cfg-tile__label">' + esc(label) + '</span></div>';
+        }
+        return '<div class="cfg-tile" data-cfg-drop="' + drop + '">'
+            + '<div class="cfg-piece cfg-piece--tile" data-dnd="' + drop + '" tabindex="0" aria-label="' + esc(label + ' : ' + nameOf(v)) + '">' + iconHtml(v, slot)
+            + '<span class="cfg-tile__label">' + esc(label) + '</span><span class="cfg-tile__name" translate="no">' + esc(nameOf(v)) + '</span></div>'
+            + '<button type="button" class="cfg-tile__menu" data-cfg-menu-for="' + drop + '" aria-label="Actions : ' + esc(nameOf(v)) + '">⋯</button></div>';
+    }
+    function loadBar(l) {
+        if (l.max == null) {
+            return '<div class="cfg-load"><span class="cfg-load__txt">Charge ' + (l.known ? fmtMass(l.load) : '?') + ' · capacité inconnue</span></div>';
+        }
+        var pct = l.known ? Math.min(100, Math.round(l.load / l.max * 100)) : 0;
+        var tone = !l.known ? 'unk' : (l.load > l.max + 0.0001 ? 'over' : (pct >= 90 ? 'high' : (pct >= 65 ? 'mid' : 'low')));
+        return '<div class="cfg-load cfg-load--' + tone + '" role="meter" aria-valuemin="0" aria-valuemax="' + l.max + '" aria-valuenow="' + (l.known ? Math.round(l.load) : 0) + '" aria-label="Charge">'
+            + '<span class="cfg-load__bar"><i style="width:' + pct + '%"></i></span>'
+            + '<span class="cfg-load__txt">' + (l.known ? fmtMass(l.load) : '?') + ' / ' + l.max + (l.known ? ' · ' + pct + ' %' : ' · masse inconnue') + '</span></div>';
+    }
+    var openContainers = { a: { uniform: true, vest: true, backpack: true }, b: { uniform: true, vest: true, backpack: true } };
+    function containerCard(o, slot, label) {
+        var out = S.outfits[o];
+        var c = out[slot];
+        var head = 'c:' + o + ':' + slot;
+        if (!c) {
+            return '<div class="cfg-box is-empty" data-cfg-drop="' + head + '" tabindex="0" aria-label="' + esc(label + ' : vide') + '">'
+                + '<svg class="cfg-ico cfg-ico--svg cfg-ico--ghost" viewBox="0 0 24 24" aria-hidden="true"><path d="' + ICONS[slot] + '"/></svg>'
+                + '<span class="cfg-slot__label">' + esc(label) + '</span><span class="cfg-slot__hint">Glissez ' + (slot === 'backpack' ? 'un sac' : (slot === 'vest' ? 'un gilet' : 'un uniforme')) + ' ici</span></div>';
+        }
+        var l = containerLoad(c);
+        var open = openContainers[o][slot] !== false;
+        var rows = c.items.map(function (e, i) {
+            var cls = e.t === 'weapon' ? e.w.cls : e.cls;
+            var extra = '';
+            if (e.t === 'weapon') {
+                var parts = [e.w.optic, e.w.muzzle, e.w.pointer, e.w.bipod].filter(Boolean).map(nameOf);
+                extra = parts.length ? '<span class="cfg-line__sub" translate="no">' + esc(parts.join(' · ')) + '</span>' : '<span class="cfg-line__sub">sans accessoire</span>';
+            } else if (e.t === 'mag') {
+                extra = '<span class="cfg-line__sub">' + rounds(e.ammo) + '</span>';
+            }
+            var m = entryMass(e);
+            return '<li class="cfg-line" data-cfg-drop="cc:' + o + ':' + slot + '">'
+                + '<div class="cfg-piece cfg-piece--line" data-dnd="e:' + o + ':' + slot + ':' + i + '" tabindex="0" aria-label="' + esc(nameOf(cls) + ' × ' + e.n) + '">'
+                + '<span class="cfg-grip" data-grip aria-hidden="true">⋮⋮</span>' + iconHtml(cls)
+                + '<span class="cfg-line__txt"><span class="cfg-line__name" translate="no">' + esc(nameOf(cls)) + '</span>' + extra + '</span>'
+                + '<span class="cfg-line__mass">' + (m == null ? '?' : fmtMass(m)) + '</span></div>'
+                + (e.t === 'weapon'
+                    ? '<button type="button" class="cfg-btn cfg-btn--sm" data-cfg-bench="' + weaponAttrs(o, slot, i) + '">' + esc('Établi') + '</button>'
+                    : '<span class="cfg-qty"><button type="button" data-cfg-qty="' + o + ':' + slot + ':' + i + ':-1" aria-label="' + esc('Un de moins') + '">−</button><span>' + e.n + '</span><button type="button" data-cfg-qty="' + o + ':' + slot + ':' + i + ':1" aria-label="' + esc('Un de plus') + '">+</button></span>')
+                + '<button type="button" class="cfg-line__menu" data-cfg-menu-for="e:' + o + ':' + slot + ':' + i + '" aria-label="Actions : ' + esc(nameOf(cls)) + '">⋯</button></li>';
+        }).join('');
+        return '<div class="cfg-box' + (open ? ' is-open' : '') + '">'
+            + '<div class="cfg-box__head" data-cfg-drop="' + head + '">'
+            + '<div class="cfg-piece" data-dnd="' + head + '" tabindex="0" aria-label="' + esc(label + ' : ' + nameOf(c.cls)) + '">'
+            + '<span class="cfg-grip" data-grip aria-hidden="true">⋮⋮</span>' + iconHtml(c.cls, slot)
+            + '<span class="cfg-piece__txt"><span class="cfg-slot__label">' + esc(label) + '</span><span class="cfg-piece__name" translate="no">' + esc(nameOf(c.cls)) + '</span></span></div>'
+            + '<button type="button" class="cfg-box__toggle" data-cfg-toggle="' + o + ':' + slot + '" aria-expanded="' + open + '">' + (open ? 'Fermer' : 'Ouvrir') + ' (' + c.items.length + ')</button>'
+            + '<button type="button" class="cfg-box__menu" data-cfg-menu-for="' + head + '" aria-label="Actions : ' + esc(nameOf(c.cls)) + '">⋯</button></div>'
+            + loadBar(l)
+            + (open ? '<ul class="cfg-lines" data-cfg-drop="cc:' + o + ':' + slot + '" tabindex="0" aria-label="' + esc('Contenu : ' + label) + '">' + (rows || '<li class="cfg-lines__empty">Vide : glissez des chargeurs, objets ou une arme ici.</li>') + '</ul>' : '')
+            + '</div>';
+    }
+    function outfitHtml(o) {
+        var out = S.outfits[o];
+        if (!out) {
+            return '<div class="cfg-outfit__empty"><h2>Tenue B</h2><p>Ouvrez une deuxième tenue pour copier une arme, un sac ou tout un contenu d’une tenue à l’autre : glissez de B vers A (ou l’inverse), en tenant <kbd>Ctrl</kbd> pour copier.</p>'
+                + '<p class="cfg-muted">Exemple : récupérez le kit « Fusilier » en B, puis glissez son gilet sur la tenue A.</p>'
+                + '<div class="cfg-row-actions"><button type="button" class="cfg-btn cfg-btn--primary" data-cfg-open="sources" data-cfg-target="b">Récupérer une tenue en B</button>'
+                + '<button type="button" class="cfg-btn" data-cfg-act="new-b">Tenue B vide</button></div></div>';
+        }
+        var m = outfitMass(out);
+        var chk = checkOutfit(out);
+        var source = out.ref ? ({ w: 'Tenue', k: 'Kit de départ', p: 'Porté en jeu', m: 'Porté en jeu' }[out.ref.charAt(0)] || '') : '';
+        var head = '<header class="cfg-outfit__head">'
+            + '<span class="cfg-outfit__tag">' + esc(OUTFIT_NAME[o]) + '</span>'
+            + '<label class="cfg-outfit__name"><span class="cfg-sr">Nom de la tenue</span><input type="text" maxlength="90" value="' + esc(out.name) + '" placeholder="' + esc('Tenue sans nom') + '" data-cfg-name="' + o + '" translate="no"></label>'
+            + (source ? '<span class="cfg-pill">' + esc(source) + '</span>' : '')
+            + '<span class="cfg-outfit__mass" title="Masse totale portée">' + (m == null ? 'Masse : incomplète' : 'Masse ' + fmtMass(m) + ' · ' + kg(m)) + '</span>'
+            + '<span class="cfg-outfit__acts">'
+            + (o === 'b' ? '<button type="button" class="cfg-btn cfg-btn--sm" data-cfg-act="swap">Échanger A ↔ B</button><button type="button" class="cfg-btn cfg-btn--sm cfg-btn--quiet" data-cfg-act="close-b">Fermer</button>' : '')
+            + (o === 'a' && /^k:\d+$/.test(out.ref) && can.kits ? '<button type="button" class="cfg-btn cfg-btn--sm" data-cfg-open="versions">Historique</button>' : '')
+            + '<button type="button" class="cfg-btn cfg-btn--sm cfg-btn--quiet" data-cfg-act="clear-' + o + '">Vider</button>'
+            + '</span></header>';
+        var verdict = chk.errors.length
+            ? '<details class="cfg-check-box cfg-check-box--err" open><summary>' + chk.errors.length + ' point' + (chk.errors.length > 1 ? 's' : '') + ' à corriger avant d’enregistrer</summary><ul>' + chk.errors.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></details>'
+            : (outfitClasses(out).length ? '<p class="cfg-check-box cfg-check-box--ok">Tenue valide' + (chk.warns.length ? ' (' + chk.warns.length + ' vérification' + (chk.warns.length > 1 ? 's' : '') + ' impossible' + (chk.warns.length > 1 ? 's' : '') + ')' : '') + '.</p>' : '');
+        var warns = chk.warns.length ? '<details class="cfg-check-box cfg-check-box--warn"><summary>Non vérifié faute de données du jeu</summary><ul>' + chk.warns.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></details>' : '';
+        var empty = !outfitClasses(out).length
+            ? '<p class="cfg-hint-empty">' + esc('Tenue vide. Glissez une arme, un uniforme ou un sac depuis la palette, ou') + ' <button type="button" class="cfg-link" data-cfg-open="sources" data-cfg-target="' + o + '">' + esc('récupérez une tenue existante') + '</button>.</p>'
+            : '';
+        return head + empty + verdict + warns
+            + '<div class="cfg-grid-weapons">' + WEAPON_SLOTS.map(function (s) { return weaponCard(o, s[0], s[1]); }).join('') + '</div>'
+            + '<div class="cfg-grid-gear">' + GEAR_SLOTS.map(function (s) { return gearTile(o, s[0], s[1]); }).join('') + '</div>'
+            + '<div class="cfg-grid-boxes">' + CONTAINERS.map(function (s) { return containerCard(o, s[0], s[1]); }).join('') + '</div>';
+    }
+    function renderAll() {
+        var focusKey = document.activeElement && (document.activeElement.getAttribute('data-dnd') || document.activeElement.getAttribute('data-cfg-drop'));
+        var nameFocus = document.activeElement && document.activeElement.getAttribute('data-cfg-name');
+        ['a', 'b'].forEach(function (o) {
+            var host = $('[data-cfg-outfit="' + o + '"]');
+            host.innerHTML = outfitHtml(o);
+            host.classList.toggle('is-closed', !S.outfits[o]);
+        });
+        if (nameFocus) {
+            var n = $('[data-cfg-name="' + nameFocus + '"]');
+            if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
+        } else if (focusKey) {
+            var el = $('[data-dnd="' + focusKey + '"]') || $('[data-cfg-drop="' + focusKey + '"]');
+            if (el) { el.focus({ preventScroll: true }); }
+        }
+        $('[data-cfg-act="undo"]').disabled = !undoStack.length;
+        $('[data-cfg-act="redo"]').disabled = !redoStack.length;
+        if (S.bench) { renderBench(); }
+    }
+    root.addEventListener('input', function (e) {
+        var o = e.target.getAttribute && e.target.getAttribute('data-cfg-name');
+        if (o && S.outfits[o]) {
+            S.outfits[o].name = e.target.value.slice(0, 90);
+            saveDraft();
+        }
+    });
+
+    // ------------------------------------------------------------------ emplacements, charges utiles et dépôts
+    /** Arme désignée par « o:slot:i » (i = « - » pour un emplacement d'arme, sinon l'index dans le conteneur). */
+    function weaponAt(ref) {
+        var p = String(ref).split(':');
+        var out = S.outfits[p[0]];
+        if (!out) { return null; }
+        if (p[2] === '-' || p[2] === undefined) { return out[p[1]] || null; }
+        var c = out[p[1]];
+        var e = c && c.items[parseInt(p[2], 10)];
+        return e && e.t === 'weapon' ? e.w : null;
+    }
+    /** Charge utile d'une source (palette, pièce posée, ligne de conteneur, accessoire). */
+    function payloadFrom(src) {
+        var p = String(src).split(':');
+        var out;
+        if (p[0] === 'pal') {
+            var it = CAT.items[parseInt(p[1], 10)];
+            return it ? { k: 'cls', cls: it.c, n: 1 } : null;
+        }
+        if (p[0] === 'bl') {
+            var b = S.benchList && S.benchList[parseInt(p[1], 10)];
+            return b ? { k: 'cls', cls: b, n: 1 } : null;
+        }
+        out = S.outfits[p[1]];
+        if (!out) { return null; }
+        if (p[0] === 'w') { return out[p[2]] ? { k: 'weapon', w: clone(out[p[2]]), n: 1, src: src } : null; }
+        if (p[0] === 'g') { return out[p[2]] ? { k: 'cls', cls: out[p[2]], n: 1, src: src } : null; }
+        if (p[0] === 'c') { return out[p[2]] ? { k: 'container', c: clone(out[p[2]]), src: src } : null; }
+        if (p[0] === 'e') {
+            var e = out[p[2]] && out[p[2]].items[parseInt(p[3], 10)];
+            if (!e) { return null; }
+            if (e.t === 'weapon') { return { k: 'weapon', w: clone(e.w), n: e.n, src: src }; }
+            if (e.t === 'mag') { return { k: 'mag', cls: e.cls, ammo: e.ammo, n: e.n, src: src }; }
+            return { k: 'cls', cls: e.cls, n: e.n, src: src };
+        }
+        if (p[0] === 'a') {
+            var w = weaponAt(p[1] + ':' + p[2] + ':' + p[3]);
+            var att = p[4];
+            if (!w) { return null; }
+            if (att === 'mag' || att === 'mag2') { return w[att] ? { k: 'mag', cls: w[att].cls, ammo: w[att].ammo, n: 1, src: src } : null; }
+            return w[att] ? { k: 'cls', cls: w[att], n: 1, src: src } : null;
+        }
+        return null;
+    }
+    function payloadName(pl) {
+        if (pl.k === 'weapon') { return nameOf(pl.w.cls); }
+        if (pl.k === 'container') { return nameOf(pl.c.cls); }
+        return nameOf(pl.cls);
+    }
+    function payloadCls(pl) { return pl.k === 'weapon' ? pl.w.cls : (pl.k === 'container' ? pl.c.cls : pl.cls); }
+    /** Ligne de conteneur à créer pour une charge utile. */
+    function entryFor(pl) {
+        if (pl.k === 'weapon') { return { t: 'weapon', w: clone(pl.w), n: Math.min(pl.n || 1, 20) }; }
+        if (pl.k === 'container') { return { t: 'item', cls: pl.c.cls, n: 1 }; }
+        var s = spec(pl.cls);
+        if (pl.k === 'mag' || (s && s.k === 'magazine')) {
+            var a = pl.k === 'mag' ? { ammo: pl.ammo } : ammoFor(pl.cls);
+            return { t: 'mag', cls: pl.cls, n: pl.n || 1, ammo: a.ammo, guessed: a.known === false };
+        }
+        return { t: 'item', cls: pl.cls, n: pl.n || 1 };
+    }
+    /** Le dépôt de cette charge utile sur cette cible est-il permis ? {ok, reason, noop} */
+    function canDrop(pl, target) {
+        if (!pl) { return { ok: false }; }
+        var t = String(target).split(':');
+        if (t[0] === 'trash' || t[0] === 'pal') { return pl.src ? { ok: true } : { ok: false, noop: true }; }
+        var out = S.outfits[t[1]];
+        if (!out) { return { ok: false }; }
+        if (pl.src && (pl.src === target || (t[0] === 'cc' && pl.src.indexOf('e:' + t[1] + ':' + t[2] + ':') === 0))) { return { ok: false, noop: true }; }
+        var cls = payloadCls(pl);
+        if (t[0] === 'w') {
+            if (pl.k === 'container' || pl.k === 'mag') { return { ok: false, reason: 'Seule une arme va à l’emplacement ' + slotLabel(t[2]) + '.' }; }
+            return kindFits(t[2], cls);
+        }
+        if (t[0] === 'g') {
+            if (pl.k !== 'cls') { return { ok: false, reason: 'Cet emplacement reçoit un objet seul (' + slotLabel(t[2]) + ').' }; }
+            return kindFits(t[2], cls);
+        }
+        if (t[0] === 'c') {
+            if (pl.k === 'weapon' || pl.k === 'mag') { return { ok: false, reason: 'Glissez-le dans le contenu, pas sur ' + slotLabel(t[2]).toLowerCase() + '.' }; }
+            return kindFits(t[2], cls);
+        }
+        if (t[0] === 'cc') {
+            return containerFits(out, t[2], entryFor(pl), false);
+        }
+        if (t[0] === 'a') {
+            var w = weaponAt(t[1] + ':' + t[2] + ':' + t[3]);
+            if (!w) { return { ok: false }; }
+            if (pl.k === 'weapon' || pl.k === 'container') { return { ok: false, reason: 'Seul un accessoire ou un chargeur se monte sur l’arme.' }; }
+            return attachFits(w.cls, t[4], cls);
+        }
+        return { ok: false };
+    }
+    /** Retire la source d'un déplacement (n unités d'une ligne, ou tout). */
+    function removeSource(src, units) {
+        var p = String(src).split(':');
+        var out = S.outfits[p[1]];
+        if (!out) { return; }
+        if (p[0] === 'w' || p[0] === 'c') { out[p[2]] = null; return; }
+        if (p[0] === 'g') { out[p[2]] = ''; return; }
+        if (p[0] === 'e') {
+            var list = out[p[2]] && out[p[2]].items;
+            var i = parseInt(p[3], 10);
+            if (!list || !list[i]) { return; }
+            if (units && list[i].n > units) { list[i].n -= units; } else { list.splice(i, 1); }
+            return;
+        }
+        if (p[0] === 'a') {
+            var w = weaponAt(p[1] + ':' + p[2] + ':' + p[3]);
+            if (w) { w[p[4]] = (p[4] === 'mag' || p[4] === 'mag2') ? null : ''; }
+        }
+    }
+    /** Ajoute une ligne à un conteneur (même objet = même pile). */
+    function addEntry(c, e) {
+        if (e.t !== 'weapon' && e.t !== 'pack') {
+            for (var i = 0; i < c.items.length; i++) {
+                var x = c.items[i];
+                if (x.t === e.t && x.cls.toLowerCase() === e.cls.toLowerCase() && (e.t !== 'mag' || x.ammo === e.ammo)) {
+                    x.n = Math.min(999, x.n + e.n);
+                    return;
+                }
+            }
+        }
+        delete e.guessed;
+        c.items.push(e);
+    }
+    /** Dépose (copie ou déplacement). Retourne le message à annoncer, ou une chaîne vide. */
+    function applyDrop(pl, target, copy) {
+        var t = String(target).split(':');
+        var msg = '';
+        var move = !copy && !!pl.src;
+        if (t[0] === 'trash' || t[0] === 'pal') {
+            removeSource(pl.src);
+            return 'Retiré : ' + payloadName(pl) + ' (Ctrl+Z pour annuler).';
+        }
+        var out = S.outfits[t[1]];
+        // Cible résolue avant de retirer la source : un index de conteneur peut bouger.
+        var weaponTarget = t[0] === 'a' ? weaponAt(t[1] + ':' + t[2] + ':' + t[3]) : null;
+        var containerTarget = t[0] === 'cc' ? out[t[2]] : null;
+        var mountOne = t[0] === 'a';
+        if (move) { removeSource(pl.src, mountOne ? 1 : 0); }
+        if (t[0] === 'w') {
+            var prevW = out[t[2]];
+            out[t[2]] = pl.k === 'weapon' ? clone(pl.w) : { cls: pl.cls, muzzle: '', pointer: '', optic: '', bipod: '', mag: null, mag2: null };
+            msg = (prevW ? '« ' + nameOf(prevW.cls) + ' » remplacé par « ' + payloadName(pl) + ' »' : payloadName(pl) + ' posé : ' + slotLabel(t[2])) + '.';
+        } else if (t[0] === 'g') {
+            var prevG = out[t[2]];
+            out[t[2]] = pl.cls;
+            msg = (prevG ? '« ' + nameOf(prevG) + ' » remplacé par « ' + payloadName(pl) + ' »' : payloadName(pl) + ' posé : ' + slotLabel(t[2])) + '.';
+        } else if (t[0] === 'c') {
+            var prevC = out[t[2]];
+            if (pl.k === 'container') {
+                out[t[2]] = clone(pl.c);
+            } else {
+                // Nouveau conteneur : le contenu de l'ancien est gardé (la jauge dit s'il tient).
+                out[t[2]] = { cls: pl.cls, items: prevC ? prevC.items : [] };
+            }
+            msg = (prevC ? '« ' + nameOf(prevC.cls) + ' » remplacé par « ' + payloadName(pl) + ' »' : payloadName(pl) + ' posé : ' + slotLabel(t[2])) + '.';
+        } else if (t[0] === 'cc') {
+            var e = entryFor(pl);
+            var guessed = e.guessed;
+            addEntry(containerTarget, e);
+            msg = payloadName(pl) + (e.n > 1 ? ' × ' + e.n : '') + ' rangé : ' + slotLabel(t[2]) + '.' + (guessed ? ' Munitions du chargeur non fournies par le jeu : ' + e.ammo + ' (le mod remplit le chargeur).' : '');
+        } else if (t[0] === 'a') {
+            var att = t[4];
+            if (att === 'mag' || att === 'mag2') {
+                var prevM = weaponTarget[att];
+                var a = pl.k === 'mag' ? pl.ammo : ammoFor(pl.cls).ammo;
+                weaponTarget[att] = { cls: pl.cls, ammo: a };
+                msg = (prevM ? '« ' + nameOf(prevM.cls) + ' » remplacé par « ' + payloadName(pl) + ' »' : payloadName(pl) + ' engagé') + '.';
+            } else {
+                var prevA = weaponTarget[att];
+                weaponTarget[att] = pl.cls;
+                msg = (prevA ? '« ' + nameOf(prevA) + ' » remplacé par « ' + payloadName(pl) + ' »' : payloadName(pl) + ' monté : ' + slotLabel(att).toLowerCase()) + '.';
+            }
+        }
+        return (copy && pl.src ? 'Copie · ' : '') + msg;
+    }
+    function tryDrop(pl, target, copy) {
+        var chk = canDrop(pl, target);
+        if (!chk.ok) {
+            if (!chk.noop && chk.reason) { toast(chk.reason, 'err'); }
+            return false;
+        }
+        var msg = '';
+        commit('', function () { msg = applyDrop(pl, target, copy); });
+        if (msg) { toast(msg, chk.unchecked ? 'warn' : ''); }
+        return true;
+    }
+
+    // ------------------------------------------------------------------ glisser-déposer (pointer : souris, stylet, doigt)
+    var D = null;
+    var ghost = null;
+    var trash = $('[data-cfg-drop="trash"]');
+    function allTargets() { return $$('[data-cfg-drop]', document); }
+    function dropTargetAt(x, y) {
+        var el = document.elementFromPoint(x, y);
+        return el ? el.closest('[data-cfg-drop]') : null;
+    }
+    function startDrag() {
+        D.pl = payloadFrom(D.src);
+        if (!D.pl) { D = null; return; }
+        D.started = true;
+        document.body.classList.add('cfg-dragging');
+        if (D.pl.src) { trash.classList.add('is-visible'); }
+        ghost = document.createElement('div');
+        ghost.className = 'cfg-ghost';
+        ghost.setAttribute('aria-hidden', 'true');
+        ghost.innerHTML = iconHtml(payloadCls(D.pl)) + '<span><strong translate="no">' + esc(payloadName(D.pl)) + '</strong><em data-ghost-hint>Lâchez sur un emplacement</em></span>';
+        // Fenêtre modale ouverte (établi) : elle est au premier plan, le fantôme doit y être aussi.
+        (benchDlg.open ? benchDlg : document.body).appendChild(ghost);
+        allTargets().forEach(function (el) {
+            var c = canDrop(D.pl, el.getAttribute('data-cfg-drop'));
+            if (c.ok) { el.classList.add('cfg-can'); } else if (!c.noop) { el.classList.add('cfg-cannot'); }
+        });
+    }
+    function moveGhost(x, y, copy) {
+        if (!ghost) { return; }
+        ghost.style.transform = 'translate(' + (x + 14) + 'px,' + (y + 12) + 'px)';
+        ghost.classList.toggle('is-copy', !!copy && !!D.pl.src);
+        var over = dropTargetAt(x, y);
+        if (D.over && D.over !== over) { D.over.classList.remove('cfg-over'); }
+        D.over = over;
+        var hint = ghost.querySelector('[data-ghost-hint]');
+        if (over) {
+            over.classList.add('cfg-over');
+            var c = canDrop(D.pl, over.getAttribute('data-cfg-drop'));
+            ghost.classList.toggle('is-bad', !c.ok && !c.noop);
+            hint.textContent = c.ok ? (copy && D.pl.src ? 'Lâchez pour copier' : 'Lâchez pour poser') : (c.reason || 'Pas ici');
+        } else {
+            ghost.classList.remove('is-bad');
+            hint.textContent = D.pl.src && !copy ? 'Lâchez hors de la tenue pour retirer' : 'Lâchez sur un emplacement';
+        }
+        autoScroll(x, y);
+    }
+    function autoScroll(x, y) {
+        var edge = 48;
+        if (y < edge) { window.scrollBy(0, -14); } else if (y > window.innerHeight - edge) { window.scrollBy(0, 14); }
+        var r = vlist.getBoundingClientRect();
+        if (x >= r.left && x <= r.right) {
+            if (y < r.top + 30 && y > r.top - 10) { vlist.scrollTop -= 18; } else if (y > r.bottom - 30 && y < r.bottom + 10) { vlist.scrollTop += 18; }
+        }
+    }
+    function endDrag(x, y, copy, cancelled) {
+        var d = D;
+        D = null;
+        document.body.classList.remove('cfg-dragging');
+        trash.classList.remove('is-visible');
+        allTargets().forEach(function (el) { el.classList.remove('cfg-can', 'cfg-cannot', 'cfg-over'); });
+        if (ghost) { ghost.remove(); ghost = null; }
+        if (!d || !d.started || cancelled) { return; }
+        var over = dropTargetAt(x, y);
+        if (over) {
+            tryDrop(d.pl, over.getAttribute('data-cfg-drop'), copy);
+            return;
+        }
+        // Lâché hors de toute cible : un objet posé est retiré (« drop »), un objet de la palette ne fait rien.
+        if (d.pl.src && !copy) { tryDrop(d.pl, 'trash', false); }
+    }
+    document.addEventListener('pointerdown', function (e) {
+        if (e.button !== 0 || D) { return; }
+        var h = e.target.closest('[data-dnd]');
+        if (!h) { return; }
+        if (!root.contains(h) && !(S.benchHost && S.benchHost.contains(h))) { return; }
+        var onGrip = !!e.target.closest('[data-grip]');
+        if (e.pointerType === 'touch' && !onGrip) { return; }
+        if (!onGrip && e.target.closest('button, input, select, textarea, a')) { return; }
+        D = { src: h.getAttribute('data-dnd'), x: e.clientX, y: e.clientY, id: e.pointerId, started: false, over: null };
+        if (onGrip) { e.preventDefault(); }
+    });
+    document.addEventListener('pointermove', function (e) {
+        if (!D || e.pointerId !== D.id) { return; }
+        if (!D.started) {
+            if (Math.abs(e.clientX - D.x) + Math.abs(e.clientY - D.y) < 7) { return; }
+            startDrag();
+            if (!D) { return; }
+        }
+        e.preventDefault();
+        moveGhost(e.clientX, e.clientY, e.ctrlKey || e.altKey || e.metaKey);
+    }, { passive: false });
+    document.addEventListener('pointerup', function (e) {
+        if (!D || e.pointerId !== D.id) { return; }
+        endDrag(e.clientX, e.clientY, e.ctrlKey || e.altKey || e.metaKey, false);
+    });
+    document.addEventListener('pointercancel', function () { if (D) { endDrag(0, 0, false, true); } });
+    // Glisser natif du navigateur (images, liens) : jamais pendant un glisser du configurateur.
+    root.addEventListener('dragstart', function (e) { if (e.target.closest('[data-dnd]')) { e.preventDefault(); } });
+
+    // ------------------------------------------------------------------ menu d'actions (alternative au glisser)
+    var menu = $('[data-cfg-menu]');
+    var menuFor = null;
+    /** Toutes les cibles possibles, avec leur libellé (menus « Ajouter à… », « Déplacer vers… »). */
+    function targetList() {
+        var list = [];
+        ['a', 'b'].forEach(function (o) {
+            var out = S.outfits[o];
+            if (!out) { return; }
+            var pre = OUTFIT_NAME[o] + ' · ';
+            WEAPON_SLOTS.forEach(function (s) { list.push(['w:' + o + ':' + s[0], pre + s[1]]); });
+            GEAR_SLOTS.forEach(function (s) { list.push([(s[0] === 'binocular' ? 'w:' : 'g:') + o + ':' + s[0], pre + s[1]]); });
+            CONTAINERS.forEach(function (s) {
+                list.push(['c:' + o + ':' + s[0], pre + s[1]]);
+                if (out[s[0]]) { list.push(['cc:' + o + ':' + s[0], pre + 'dans ' + s[1].toLowerCase()]); }
+            });
+            WEAPON_SLOTS.forEach(function (s) {
+                if (!out[s[0]]) { return; }
+                ATTACH.forEach(function (a) { list.push(['a:' + o + ':' + s[0] + ':-:' + a[0], pre + s[1] + ' › ' + a[1]]); });
+            });
+        });
+        return list;
+    }
+    function openMenu(src, anchor) {
+        var pl = payloadFrom(src);
+        if (!pl) { return; }
+        menuFor = { src: src, anchor: anchor };
+        var valid = targetList().filter(function (t) { return canDrop(pl, t[0]).ok; });
+        var html = '<p class="cfg-menu__title" translate="no">' + esc(payloadName(pl)) + '</p>';
+        if (pl.k === 'weapon' && pl.src) {
+            var wp = pl.src.split(':');
+            html += '<button type="button" role="menuitem" data-menu-bench="' + (wp[0] === 'w' ? wp[1] + ':' + wp[2] + ':-' : wp[1] + ':' + wp[2] + ':' + wp[3]) + '">' + esc('Ouvrir l’établi') + '</button>';
+        }
+        if (!valid.length) {
+            html += '<p class="cfg-menu__none">Aucun emplacement libre ne l’accepte' + (pl.k === 'cls' && !spec(pl.cls) ? ' (objet absent du catalogue)' : '') + '.</p>';
+        } else if (pl.src) {
+            html += '<p class="cfg-menu__group">Déplacer vers</p>' + valid.slice(0, 24).map(function (t) { return '<button type="button" role="menuitem" data-menu-drop="' + esc(t[0]) + '">' + esc(t[1]) + '</button>'; }).join('');
+            html += '<p class="cfg-menu__group">Copier vers</p>' + valid.slice(0, 24).map(function (t) { return '<button type="button" role="menuitem" data-menu-copy="' + esc(t[0]) + '">' + esc(t[1]) + '</button>'; }).join('');
+        } else {
+            html += '<p class="cfg-menu__group">Ajouter à</p>' + valid.slice(0, 30).map(function (t) { return '<button type="button" role="menuitem" data-menu-copy="' + esc(t[0]) + '">' + esc(t[1]) + '</button>'; }).join('');
+        }
+        if (pl.src) { html += '<button type="button" role="menuitem" class="cfg-menu__danger" data-menu-remove>Retirer</button>'; }
+        html += '<button type="button" role="menuitem" data-menu-close>Fermer</button>';
+        menu.innerHTML = html;
+        menu.hidden = false;
+        var r = (anchor || document.activeElement || root).getBoundingClientRect();
+        var host = S.benchHost && S.benchHost.contains(anchor) ? S.benchHost : null;
+        if (host && menu.parentNode !== host) { host.appendChild(menu); } else if (!host && menu.parentNode !== root) { root.appendChild(menu); }
+        var top = Math.min(window.innerHeight - 20, r.bottom + 4);
+        menu.style.left = Math.max(8, Math.min(window.innerWidth - 320, r.left)) + 'px';
+        menu.style.top = top + 'px';
+        menu.style.maxHeight = Math.max(180, window.innerHeight - top - 16) + 'px';
+        var first = menu.querySelector('button');
+        if (first) { first.focus(); }
+    }
+    function closeMenu(restore) {
+        if (menu.hidden) { return; }
+        menu.hidden = true;
+        if (restore && menuFor && menuFor.anchor && document.body.contains(menuFor.anchor)) { menuFor.anchor.focus(); }
+        menuFor = null;
+    }
+    document.addEventListener('click', function (e) {
+        var m = e.target.closest('[data-cfg-menu]');
+        if (m) {
+            var b = e.target.closest('button');
+            if (!b || !menuFor) { return; }
+            var pl = payloadFrom(menuFor.src);
+            if (b.hasAttribute('data-menu-drop')) { closeMenu(false); tryDrop(pl, b.getAttribute('data-menu-drop'), false); return; }
+            if (b.hasAttribute('data-menu-copy')) { closeMenu(false); tryDrop(pl, b.getAttribute('data-menu-copy'), true); return; }
+            if (b.hasAttribute('data-menu-remove')) { closeMenu(false); tryDrop(pl, 'trash', false); return; }
+            if (b.hasAttribute('data-menu-bench')) { closeMenu(false); openBench(b.getAttribute('data-menu-bench')); return; }
+            closeMenu(true);
+            return;
+        }
+        if (!menu.hidden) { closeMenu(false); }
+        var mf = e.target.closest('[data-cfg-menu-for]');
+        if (mf) { e.stopPropagation(); openMenu(mf.getAttribute('data-cfg-menu-for'), mf); }
+    }, true);
+    menu.addEventListener('keydown', function (e) {
+        var items = $$('button', menu);
+        var i = items.indexOf(document.activeElement);
+        if (e.key === 'ArrowDown') { e.preventDefault(); (items[i + 1] || items[0]).focus(); }
+        if (e.key === 'ArrowUp') { e.preventDefault(); (items[i - 1] || items[items.length - 1]).focus(); }
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeMenu(true); }
+    });
+
+    // ------------------------------------------------------------------ boutons des tenues
+    root.addEventListener('click', function (e) {
+        var b = e.target.closest('button');
+        if (!b || !root.contains(b)) { return; }
+        var q = b.getAttribute('data-cfg-qty');
+        if (q) {
+            var p = q.split(':');
+            commit('', function () {
+                var c = S.outfits[p[0]][p[1]];
+                var en = c && c.items[parseInt(p[2], 10)];
+                if (!en) { return false; }
+                var n = en.n + parseInt(p[3], 10);
+                if (n < 1) { c.items.splice(parseInt(p[2], 10), 1); return true; }
+                if (n > 999) { return false; }
+                if (parseInt(p[3], 10) > 0) {
+                    var chk = containerFits(S.outfits[p[0]], p[1], { t: en.t, cls: en.cls, n: 1, w: en.w }, false);
+                    if (!chk.ok) { toast(chk.reason, 'err'); return false; }
+                }
+                en.n = n;
+                return true;
+            });
+            return;
+        }
+        var tg = b.getAttribute('data-cfg-toggle');
+        if (tg) {
+            var tp = tg.split(':');
+            openContainers[tp[0]][tp[1]] = !(openContainers[tp[0]][tp[1]] !== false);
+            renderAll();
+            return;
+        }
+        var bench = b.getAttribute('data-cfg-bench');
+        if (bench) { openBench(bench); return; }
+        var cw = b.getAttribute('data-cfg-copy-weapon');
+        if (cw) {
+            var cp = cw.split(':');
+            openMenu(cp[2] === '-' ? 'w:' + cp[0] + ':' + cp[1] : 'e:' + cp[0] + ':' + cp[1] + ':' + cp[2], b);
+            return;
+        }
+        var act = b.getAttribute('data-cfg-act');
+        if (act === 'undo') { undo(); }
+        if (act === 'redo') { redo(); }
+        if (act === 'new') { commit('Nouvelle tenue.', function () { S.outfits.a = blankOutfit(); }); }
+        if (act === 'new-b') { commit('Tenue B ouverte.', function () { S.outfits.b = blankOutfit(); }); }
+        if (act === 'close-b') { commit('Tenue B fermée.', function () { S.outfits.b = null; }); }
+        if (act === 'clear-a' || act === 'clear-b') {
+            var o = act.slice(-1);
+            commit('Tenue vidée.', function () { var keep = S.outfits[o]; S.outfits[o] = blankOutfit(); S.outfits[o].name = keep.name; S.outfits[o].ref = keep.ref; S.outfits[o].meta = keep.meta; });
+            toast('Tenue vidée (Ctrl+Z pour annuler).');
+        }
+        if (act === 'swap') { commit('Tenues A et B échangées.', function () { var a = S.outfits.a; S.outfits.a = S.outfits.b; S.outfits.b = a; }); }
+        if (act === 'theme') { cycleTheme(); }
+        var open = b.getAttribute('data-cfg-open');
+        if (open) { openDialog(open, b.getAttribute('data-cfg-target') || 'a'); }
+    });
+
+    // ------------------------------------------------------------------ établi d'arme
+    var benchDlg = document.getElementById('cfg-bench');
+    var benchHost = benchDlg.querySelector('[data-cfg-bench]');
+    S.benchHost = benchDlg;
+    var benchTab = 'optic';
+    var benchShowAll = false;
+    var benchQ = '';
+    function openBench(ref) {
+        if (!weaponAt(ref)) { return; }
+        S.bench = ref;
+        benchTab = 'optic';
+        benchQ = '';
+        renderBench();
+        if (!benchDlg.open) { benchDlg.showModal(); }
+        var f = benchHost.querySelector('[data-bench-tab].is-on');
+        if (f) { f.focus(); }
+    }
+    function benchCandidates(w) {
+        var kind = benchTab === 'mag' ? 'magazine' : benchTab;
+        var short = benchTab === 'mag' ? 'mg' : ATT_SHORT[benchTab];
+        var list = compat(w.cls, short);
+        var words = fold(benchQ).split(/\s+/).filter(Boolean);
+        var rows = [];
+        CAT.items.forEach(function (it) {
+            if (it.k !== kind) { return; }
+            var ok = list ? !!list[it.c.toLowerCase()] : true;
+            if (!ok && !benchShowAll) { return; }
+            for (var i = 0; i < words.length; i++) { if (it._f.indexOf(words[i]) < 0) { return; } }
+            rows.push({ it: it, ok: ok });
+        });
+        rows.sort(function (a, b) { return (b.ok - a.ok) || ((b.it.p || 0) - (a.it.p || 0)); });
+        return { rows: rows.slice(0, 400), total: rows.length, known: !!list };
+    }
+    function benchSlot(w, att, label, cls) {
+        var ref = S.bench.split(':');
+        var drop = 'a:' + ref[0] + ':' + ref[1] + ':' + ref[2] + ':' + att;
+        var v = att === 'mag' || att === 'mag2' ? (w[att] && w[att].cls) : w[att];
+        var inner = v
+            ? '<div class="cfg-piece" data-dnd="' + drop + '" tabindex="0" aria-label="' + esc(label + ' : ' + nameOf(v)) + '"><span class="cfg-grip" data-grip aria-hidden="true">⋮⋮</span>' + iconHtml(v, att === 'mag2' ? 'magazine' : (att === 'mag' ? 'magazine' : att))
+                + '<span class="cfg-piece__txt"><span class="cfg-slot__label">' + esc(label) + '</span><span class="cfg-piece__name" translate="no">' + esc(nameOf(v)) + '</span>'
+                + (att === 'mag' || att === 'mag2' ? '<span class="cfg-piece__meta">' + rounds(w[att].ammo) + '</span>' : '') + '</span>'
+                + '<button type="button" class="cfg-piece__x" data-bench-remove="' + att + '" aria-label="Retirer : ' + esc(nameOf(v)) + '">×</button></div>'
+            : '<span class="cfg-slot__label">' + esc(label) + '</span><span class="cfg-slot__hint">vide</span>';
+        return '<div class="cfg-bslot cfg-bslot--' + att + (v ? '' : ' is-empty') + (benchTab === att ? ' is-tab' : '') + '" data-cfg-drop="' + drop + '" tabindex="' + (v ? -1 : 0) + '" data-bench-focus="' + att + '">' + inner + '</div>';
+    }
+    function renderBench() {
+        var w = weaponAt(S.bench);
+        if (!w) { closeBench(); return; }
+        var ref = S.bench.split(':');
+        var m = weaponMass(w);
+        var cand = benchCandidates(w);
+        S.benchList = cand.rows.map(function (r) { return r.it.c; });
+        var tabLabel = { optic: 'Optiques', muzzle: 'Bouches', pointer: 'Rail latéral', bipod: 'Bipieds', mag: 'Chargeurs' };
+        var catLabel = spec(w.cls) && spec(w.cls).g ? CAT_LABEL[spec(w.cls).g] : '';
+        var html = '<header class="cfg-dialog__head"><div><p class="cfg-kicker">Établi · ' + esc(OUTFIT_NAME[ref[0]]) + ' · ' + esc(ref[2] === '-' ? slotLabel(ref[1]) : 'rangée dans ' + slotLabel(ref[1]).toLowerCase()) + '</p>'
+            + '<h2 id="cfg-bench-title" translate="no">' + esc(nameOf(w.cls)) + '</h2>'
+            + '<p class="cfg-muted">' + (catLabel ? esc(catLabel) + ' · ' : '') + 'Masse montée ' + (m == null ? 'inconnue' : fmtMass(m) + ' · ' + kg(m)) + '</p></div>'
+            + '<button type="button" class="cfg-dialog__close" data-bench-close aria-label="Fermer l’établi">×</button></header>'
+            + '<div class="cfg-bench">'
+            + '<div class="cfg-board" role="group" aria-label="Arme et ses emplacements">'
+            + '<div class="cfg-board__weapon">' + iconHtml(w.cls, ref[1] === 'handgun' ? 'handgun' : (ref[1] === 'secondary' ? 'secondary' : 'primary')) + '</div>'
+            + benchSlot(w, 'optic', 'Optique') + benchSlot(w, 'muzzle', 'Bouche') + benchSlot(w, 'pointer', 'Rail latéral')
+            + benchSlot(w, 'bipod', 'Bipied / poignée') + benchSlot(w, 'mag', 'Chargeur') + benchSlot(w, 'mag2', 'Chargeur 2')
+            + '<p class="cfg-board__help">Glissez un accessoire de la liste sur son emplacement. Pour retirer, glissez-le hors de l’arme ou cliquez sur ×.</p></div>'
+            + '<div class="cfg-bench__list">'
+            + '<div class="cfg-tabs" role="tablist">' + ['optic', 'muzzle', 'pointer', 'bipod', 'mag'].map(function (k) {
+                return '<button type="button" role="tab" class="cfg-chip' + (benchTab === k ? ' is-on' : '') + '" aria-selected="' + (benchTab === k) + '" data-bench-tab="' + k + '">' + esc(tabLabel[k]) + '</button>';
+            }).join('') + '</div>'
+            + '<label class="cfg-search"><span class="cfg-sr">' + esc('Chercher un accessoire') + '</span><input type="search" value="' + esc(benchQ) + '" placeholder="' + esc('Chercher dans la liste') + '" data-bench-q></label>'
+            + '<label class="cfg-check"><input type="checkbox" data-bench-all' + (benchShowAll ? ' checked' : '') + '> <span>Montrer aussi les incompatibles (grisés, avec la raison)</span></label>'
+            + (cand.known ? '' : '<p class="cfg-notice cfg-notice--sm">Compatibilités de cette arme inconnues : tous les objets de la famille sont proposés et rien n’est vérifié. Importez le catalogue de configuration pour filtrer.</p>')
+            + '<ul class="cfg-blist">' + (cand.rows.length ? cand.rows.map(function (r, i) {
+                var reason = r.ok ? '' : attachFits(w.cls, benchTab, r.it.c).reason;
+                return '<li class="cfg-bline' + (r.ok ? '' : ' is-off') + '"' + (r.ok ? ' data-dnd="bl:' + i + '"' : '') + ' title="' + esc(reason) + '">'
+                    + (r.ok ? '<span class="cfg-grip" data-grip aria-hidden="true">⋮⋮</span>' : '') + iconHtml(r.it.c)
+                    + '<span class="cfg-line__txt"><span class="cfg-line__name" translate="no">' + esc(r.it.n || r.it.c) + '</span><span class="cfg-line__sub">' + (r.ok ? (r.it.m != null ? fmtMass(r.it.m) : 'masse inconnue') + (r.it.a ? ' · ' + rounds(r.it.a) : '') : esc(reason)) + '</span></span>'
+                    + (r.ok ? '<button type="button" class="cfg-btn cfg-btn--sm" data-bench-mount="' + i + '">' + (benchTab === 'mag' ? 'Engager' : 'Monter') + '</button>' : '') + '</li>';
+            }).join('') : '<li class="cfg-lines__empty">' + (cand.known ? 'Aucun objet compatible dans le catalogue pour cet emplacement.' : 'Aucun objet de cette famille dans le catalogue.') + '</li>')
+            + '</ul>' + (cand.total > cand.rows.length ? '<p class="cfg-muted">' + cand.rows.length + ' premiers sur ' + cand.total + ' : précisez la recherche.</p>' : '') + '</div></div>'
+            + '<footer class="cfg-dialog__foot">'
+            + '<button type="button" class="cfg-btn" data-bench-copy>Copier l’arme complète…</button>'
+            + (ref[2] === '-' && S.outfits[ref[0]].backpack ? '<button type="button" class="cfg-btn" data-bench-stow>Ranger dans le sac</button>' : '')
+            + '<button type="button" class="cfg-btn cfg-btn--primary" data-bench-close>Terminer</button></footer>';
+        var focus = document.activeElement && benchHost.contains(document.activeElement) ? (document.activeElement.getAttribute('data-bench-tab') || document.activeElement.getAttribute('data-bench-q') !== null && 'q') : null;
+        benchHost.innerHTML = html;
+        if (focus === 'q') {
+            var q = benchHost.querySelector('[data-bench-q]');
+            q.focus();
+            q.setSelectionRange(q.value.length, q.value.length);
+        } else if (focus) {
+            var tb = benchHost.querySelector('[data-bench-tab="' + focus + '"]');
+            if (tb) { tb.focus(); }
+        }
+    }
+    function closeBench() {
+        S.bench = null;
+        if (benchDlg.open) { benchDlg.close(); }
+    }
+    benchDlg.addEventListener('close', function () { S.bench = null; });
+    benchDlg.addEventListener('click', function (e) {
+        var b = e.target.closest('button, [data-bench-focus]');
+        if (e.target === benchDlg) { closeBench(); return; }
+        if (!b) { return; }
+        if (b.hasAttribute('data-bench-close')) { closeBench(); return; }
+        if (b.hasAttribute('data-bench-tab')) { benchTab = b.getAttribute('data-bench-tab'); renderBench(); return; }
+        if (b.hasAttribute('data-bench-focus') && !b.querySelector('.cfg-piece')) {
+            var att = b.getAttribute('data-bench-focus');
+            benchTab = att === 'mag2' ? 'mag' : att;
+            renderBench();
+            return;
+        }
+        var ref = S.bench.split(':');
+        if (b.hasAttribute('data-bench-mount')) {
+            var cls = S.benchList[parseInt(b.getAttribute('data-bench-mount'), 10)];
+            tryDrop({ k: 'cls', cls: cls, n: 1 }, 'a:' + ref[0] + ':' + ref[1] + ':' + ref[2] + ':' + benchTab, true);
+            return;
+        }
+        if (b.hasAttribute('data-bench-remove')) {
+            var a = b.getAttribute('data-bench-remove');
+            tryDrop(payloadFrom('a:' + ref[0] + ':' + ref[1] + ':' + ref[2] + ':' + a), 'trash', false);
+            return;
+        }
+        if (b.hasAttribute('data-bench-copy')) {
+            openMenu(ref[2] === '-' ? 'w:' + ref[0] + ':' + ref[1] : 'e:' + ref[0] + ':' + ref[1] + ':' + ref[2], b);
+            return;
+        }
+        if (b.hasAttribute('data-bench-stow')) {
+            var pl = payloadFrom('w:' + ref[0] + ':' + ref[1]);
+            if (tryDrop(pl, 'cc:' + ref[0] + ':backpack', false)) { closeBench(); }
+        }
+    });
+    benchDlg.addEventListener('input', function (e) {
+        if (e.target.hasAttribute('data-bench-q')) { benchQ = e.target.value; renderBench(); }
+    });
+    benchDlg.addEventListener('change', function (e) {
+        if (e.target.hasAttribute('data-bench-all')) { benchShowAll = e.target.checked; renderBench(); }
+    });
+
+    // ------------------------------------------------------------------ clavier
+    var clip = null;
+    document.addEventListener('keydown', function (e) {
+        var typing = e.target.closest && e.target.closest('input, textarea, select');
+        var mod = e.ctrlKey || e.metaKey;
+        if (e.key === 'Escape' && D) { endDrag(0, 0, false, true); return; }
+        if (mod && !e.shiftKey && (e.key === 'z' || e.key === 'Z') && !typing) { e.preventDefault(); undo(); return; }
+        if (mod && ((e.key === 'y' || e.key === 'Y') || (e.shiftKey && (e.key === 'z' || e.key === 'Z'))) && !typing) { e.preventDefault(); redo(); return; }
+        if (mod && (e.key === 's' || e.key === 'S')) { e.preventDefault(); openDialog('save', 'a'); return; }
+        if (typing) { return; }
+        var focus = document.activeElement;
+        var src = focus && focus.getAttribute && focus.getAttribute('data-dnd');
+        if (e.key === '/' && !mod) { e.preventDefault(); $('[data-cfg-search]').focus(); return; }
+        if ((e.key === 'Enter' || e.key === ' ') && src && !e.target.closest('button')) { e.preventDefault(); openMenu(src, focus); return; }
+        if ((e.key === 'Delete' || e.key === 'Backspace') && src && src.indexOf('pal:') !== 0 && src.indexOf('bl:') !== 0) {
+            e.preventDefault();
+            tryDrop(payloadFrom(src), 'trash', false);
+            return;
+        }
+        if (mod && (e.key === 'c' || e.key === 'C') && src) {
+            var pl = payloadFrom(src);
+            if (pl) { clip = clone(pl); delete clip.src; toast('Copié : ' + payloadName(pl) + '. Sélectionnez un emplacement puis Ctrl+V.'); }
+            return;
+        }
+        if (mod && (e.key === 'v' || e.key === 'V') && clip) {
+            var tgt = focus && focus.closest && focus.closest('[data-cfg-drop]');
+            if (tgt) { e.preventDefault(); tryDrop(clone(clip), tgt.getAttribute('data-cfg-drop'), true); }
+        }
+    });
+
+    // ------------------------------------------------------------------ fenêtres
+    function dlg(id) { return document.getElementById(id); }
+    function openDialog(name, target) {
+        closeMenu(false);
+        if (name === 'sources') { openSources(target || 'a'); return; }
+        if (name === 'import') { dlg('cfg-import').showModal(); dlg('cfg-import').querySelector('textarea').focus(); return; }
+        if (name === 'export') { renderExport(); dlg('cfg-export').showModal(); return; }
+        if (name === 'save') { prepareSave(); dlg('cfg-save').showModal(); return; }
+        if (name === 'versions') { openVersions(); return; }
+        if (name === 'catalog') { dlg('cfg-catalog').showModal(); }
+    }
+    document.addEventListener('click', function (e) {
+        var c = e.target.closest('[data-cfg-close]');
+        if (c) { var d = c.closest('dialog'); if (d) { d.close(); } }
+    });
+    $$('dialog.cfg-dialog', document).forEach(function (d) {
+        d.addEventListener('click', function (e) { if (e.target === d) { d.close(); } });
+    });
+
+    // Récupérer une tenue
+    var sourcesCache = null;
+    var sourcesTarget = 'a';
+    var GROUPS = [['mine', 'Mes tenues'], ['kits', 'Kits de départ'], ['models', 'Modèles de la communauté'], ['community', 'Tenues de la communauté'], ['game', 'Porté en jeu']];
+    function openSources(target) {
+        sourcesTarget = target;
+        var d = dlg('cfg-sources');
+        d.showModal();
+        var q = d.querySelector('[data-cfg-sources-q]');
+        q.value = '';
+        q.focus();
+        if (sourcesCache) { renderSources(); return; }
+        request(urls.sources).then(function (j) {
+            sourcesCache = j.ok ? (j.sources || []) : [];
+            if (!j.ok) { d.querySelector('[data-cfg-sources-list]').innerHTML = '<p class="cfg-flash cfg-flash--err">' + esc(j.error || 'Liste indisponible.') + '</p>'; return; }
+            renderSources();
+        });
+    }
+    function renderSources() {
+        var d = dlg('cfg-sources');
+        var words = fold(d.querySelector('[data-cfg-sources-q]').value).split(/\s+/).filter(Boolean);
+        var list = sourcesCache.filter(function (s) {
+            var hay = fold(s.name + ' ' + (s.owner || ''));
+            return words.every(function (w) { return hay.indexOf(w) >= 0; });
+        });
+        var html = '';
+        GROUPS.forEach(function (g) {
+            var rows = list.filter(function (s) { return s.group === g[0]; });
+            if (!rows.length) { return; }
+            html += '<section class="cfg-sources__group"><h3>' + esc(g[1]) + ' <span>' + rows.length + '</span></h3><ul>' + rows.slice(0, 200).map(function (s) {
+                return '<li><span class="cfg-sources__txt"><strong translate="no">' + esc(s.name) + '</strong>' + (s.owner ? '<em translate="no">' + esc(s.owner) + '</em>' : '') + '</span>'
+                    + '<button type="button" class="cfg-btn cfg-btn--sm' + (sourcesTarget === 'a' ? ' cfg-btn--primary' : '') + '" data-src-open="' + esc(s.ref) + '" data-src-to="a">' + esc('Ouvrir en A') + '</button>'
+                    + '<button type="button" class="cfg-btn cfg-btn--sm' + (sourcesTarget === 'b' ? ' cfg-btn--primary' : '') + '" data-src-open="' + esc(s.ref) + '" data-src-to="b">' + esc('En B') + '</button></li>';
+            }).join('') + '</ul></section>';
+        });
+        d.querySelector('[data-cfg-sources-list]').innerHTML = html || (sourcesCache.length
+            ? '<p class="cfg-muted">Aucune tenue ne correspond au filtre.</p>'
+            : '<div class="cfg-empty"><p><strong>Aucune tenue à récupérer pour l’instant.</strong></p><p>Enregistrez une tenue depuis l’arsenal en jeu (COMSPEC Link), avec ce configurateur, ou copiez un kit de départ.</p></div>');
+    }
+    dlg('cfg-sources').addEventListener('input', function (e) { if (e.target.hasAttribute('data-cfg-sources-q') && sourcesCache) { renderSources(); } });
+    dlg('cfg-sources').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-src-open]');
+        if (!b) { return; }
+        loadSource(b.getAttribute('data-src-open'), b.getAttribute('data-src-to'), function () { dlg('cfg-sources').close(); });
+    });
+    function loadSource(ref, to, done) {
+        request(urls.source + '?ref=' + encodeURIComponent(ref)).then(function (j) {
+            if (!j.ok) { toast(j.error || 'Tenue indisponible.', 'err'); return; }
+            commit('Tenue ouverte.', function () { S.outfits[to] = outfitFrom(j.loadout, j.name, ref, j.meta || {}); });
+            var unk = j.report && j.report.unknown ? j.report.unknown.length : 0;
+            toast('« ' + j.name + ' » ouverte en ' + OUTFIT_NAME[to] + '.' + (unk ? ' ' + unk + ' objet(s) absent(s) du catalogue : à remplacer avant d’enregistrer.' : ''), unk ? 'warn' : '');
+            if (done) { done(); }
+        });
+    }
+
+    // Importer
+    var imported = null;
+    var importDlg = dlg('cfg-import');
+    importDlg.querySelector('[data-cfg-import-analyse]').addEventListener('click', function () {
+        var fd = new FormData();
+        fd.append('text', importDlg.querySelector('[data-cfg-import-text]').value);
+        request(urls.analyse, { form: fd }).then(function (j) {
+            var box = importDlg.querySelector('[data-cfg-import-report]');
+            box.hidden = false;
+            imported = j.ok ? j : null;
+            $$('[data-cfg-import-open]', importDlg).forEach(function (b) { b.disabled = !j.ok; });
+            importDlg.querySelector('[data-cfg-import-strip]').hidden = !(j.ok && j.report && j.report.unknown && j.report.unknown.length);
+            box.innerHTML = j.ok ? reportHtml(j.report, 'Tenue lisible.') : '<p class="cfg-flash cfg-flash--err">' + esc(j.error || 'Texte illisible.') + '</p>';
+        });
+    });
+    importDlg.querySelector('[data-cfg-import-strip]').addEventListener('click', function () {
+        if (!imported) { return; }
+        var unknown = {};
+        imported.report.unknown.forEach(function (c) { unknown[c.toLowerCase()] = true; });
+        var o = outfitFrom(imported.loadout, '', '', {});
+        stripUnknown(o, unknown);
+        imported.loadout = outfitTo(o);
+        imported.report.unknown = [];
+        this.hidden = true;
+        importDlg.querySelector('[data-cfg-import-report]').innerHTML = '<p class="cfg-flash cfg-flash--ok">Objets inconnus retirés : la tenue ne contient plus que des objets du catalogue.</p>';
+    });
+    $$('[data-cfg-import-open]', importDlg).forEach(function (b) {
+        b.addEventListener('click', function () {
+            if (!imported) { return; }
+            var to = b.getAttribute('data-cfg-import-open');
+            commit('Tenue importée.', function () { S.outfits[to] = outfitFrom(imported.loadout, 'Tenue importée', '', {}); });
+            importDlg.close();
+            toast('Tenue importée en ' + OUTFIT_NAME[to] + '.');
+        });
+    });
+    function stripUnknown(o, unknown) {
+        function bad(c) { return c && unknown[c.toLowerCase()]; }
+        function weapon(w) {
+            if (!w) { return null; }
+            if (bad(w.cls)) { return null; }
+            ['muzzle', 'pointer', 'optic', 'bipod'].forEach(function (k) { if (bad(w[k])) { w[k] = ''; } });
+            ['mag', 'mag2'].forEach(function (k) { if (w[k] && bad(w[k].cls)) { w[k] = null; } });
+            return w;
+        }
+        ['primary', 'secondary', 'handgun', 'binocular'].forEach(function (k) { o[k] = weapon(o[k]); });
+        CONTAINERS.forEach(function (c) {
+            var ct = o[c[0]];
+            if (!ct) { return; }
+            if (bad(ct.cls)) { o[c[0]] = null; return; }
+            ct.items = ct.items.filter(function (e) { return e.t === 'weapon' ? !!weapon(e.w) : !bad(e.cls); });
+        });
+        ['headgear', 'goggles', 'map', 'gps', 'radio', 'compass', 'watch', 'nvg'].forEach(function (k) { if (bad(o[k])) { o[k] = ''; } });
+    }
+    function reportHtml(r, okText) {
+        if (!r) { return ''; }
+        var html = '';
+        if (r.errors && r.errors.length) { html += '<p class="cfg-report__title cfg-report__title--err">À corriger</p><ul>' + r.errors.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; }
+        if (r.warnings && r.warnings.length) { html += '<p class="cfg-report__title">Avertissements</p><ul>' + r.warnings.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; }
+        return html || '<p class="cfg-flash cfg-flash--ok">' + esc(okText) + '</p>';
+    }
+
+    // Exporter
+    var exportDlg = dlg('cfg-export');
+    function renderExport() {
+        var fmt = exportDlg.querySelector('[data-cfg-export-format]:checked').value;
+        var a = S.outfits.a;
+        var lo = outfitTo(a);
+        exportDlg.querySelector('[data-cfg-export-text]').value = fmt === 'ace' ? JSON.stringify(lo) : JSON.stringify({ format: 'comspec-loadout', v: 1, name: a.name || '', loadout: lo });
+        exportDlg.querySelector('[data-cfg-export-status]').textContent = '';
+    }
+    $$('[data-cfg-export-format]', exportDlg).forEach(function (r) { r.addEventListener('change', renderExport); });
+    exportDlg.querySelector('[data-cfg-export-copy]').addEventListener('click', function () {
+        var ta = exportDlg.querySelector('[data-cfg-export-text]');
+        var status = exportDlg.querySelector('[data-cfg-export-status]');
+        var done = function () { status.textContent = 'Copié dans le presse-papier.'; };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(ta.value).then(done, function () { ta.select(); status.textContent = 'Texte sélectionné : Ctrl+C pour copier.'; });
+        } else {
+            ta.select();
+            status.textContent = 'Texte sélectionné : Ctrl+C pour copier.';
+        }
+    });
+
+    // Enregistrer
+    var saveDlg = dlg('cfg-save');
+    var saveForm = saveDlg.querySelector('[data-cfg-save-form]');
+    function fillAudiences(selected) {
+        var sel = saveForm.querySelector('[data-cfg-audience]');
+        if (!sel) { return; }
+        sel.innerHTML = (boot.audiences || []).map(function (g) {
+            var opts = g.options.map(function (o) { return '<option value="' + esc(o.value) + '"' + (o.value === selected ? ' selected' : '') + ' translate="no">' + esc(o.label) + '</option>'; }).join('');
+            return g.label ? '<optgroup label="' + esc(g.label) + '">' + opts + '</optgroup>' : opts;
+        }).join('');
+    }
+    function prepareSave() {
+        var a = S.outfits.a;
+        var ref = a.ref || '';
+        var meta = a.meta || {};
+        var target = 'tenue';
+        var canUpdate = false;
+        var label = '';
+        if (/^k:\d+$/.test(ref) && can.kits && meta.editable) { target = 'kit'; canUpdate = true; label = 'Mettre à jour le kit « ' + a.name + ' » (nouvelle version)'; }
+        if (/^w:\d+$/.test(ref) && meta.mine) {
+            target = meta.kind === 'model' && can.kits ? 'modele' : 'tenue';
+            canUpdate = true;
+            label = 'Mettre à jour « ' + a.name + ' » au lieu d’en créer une nouvelle';
+        }
+        var radio = saveForm.querySelector('input[name="target"][value="' + target + '"]') || saveForm.querySelector('input[name="target"]');
+        radio.checked = true;
+        saveForm.querySelector('input[name="name"]').value = a.name || '';
+        saveForm.querySelector('textarea[name="description"]').value = meta.description || '';
+        var wrap = saveForm.querySelector('[data-cfg-save-update-wrap]');
+        wrap.hidden = !canUpdate;
+        saveForm.querySelector('[data-cfg-save-update-label]').textContent = label;
+        saveForm.querySelector('[data-cfg-save-update]').checked = canUpdate;
+        fillAudiences(meta.audience || 'all');
+        toggleKitFields();
+        var rep = saveForm.querySelector('[data-cfg-save-report]');
+        var chk = checkOutfit(a);
+        rep.hidden = !chk.errors.length;
+        rep.innerHTML = chk.errors.length ? reportHtml({ errors: chk.errors }, '') : '';
+    }
+    function toggleKitFields() {
+        var t = saveForm.querySelector('input[name="target"]:checked');
+        var f = saveForm.querySelector('[data-cfg-kit-fields]');
+        if (f) { f.hidden = !t || t.value !== 'kit'; }
+    }
+    saveForm.addEventListener('change', function (e) { if (e.target.name === 'target') { toggleKitFields(); } });
+    saveForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var a = S.outfits.a;
+        var fd = new FormData(saveForm);
+        var target = fd.get('target');
+        var update = fd.get('update') === '1';
+        fd.delete('update');
+        var ref = a.ref || '';
+        if (!(update && ((target === 'kit' && /^k:/.test(ref)) || (target !== 'kit' && /^w:/.test(ref))))) { ref = ''; }
+        fd.append('ref', ref);
+        fd.append('loadout', JSON.stringify(outfitTo(a)));
+        var btn = saveForm.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        request(urls.save, { form: fd }).then(function (j) {
+            btn.disabled = false;
+            var rep = saveForm.querySelector('[data-cfg-save-report]');
+            if (!j.ok) {
+                rep.hidden = false;
+                rep.innerHTML = '<p class="cfg-flash cfg-flash--err">' + esc(j.error || 'Enregistrement impossible.') + '</p>' + reportHtml(j.report, '');
+                return;
+            }
+            a.name = String(fd.get('name') || a.name);
+            a.ref = j.ref || a.ref;
+            a.meta = { kind: target === 'kit' ? 'kit' : (target === 'modele' ? 'model' : 'wardrobe'), mine: true, editable: true, audience: fd.get('audience') || 'all', description: String(fd.get('description') || '') };
+            sourcesCache = null;
+            saveDlg.close();
+            renderAll();
+            saveDraft();
+            toast(j.message + (j.warnings && j.warnings.length ? ' ' + j.warnings.length + ' vérification(s) impossible(s) faute de données du jeu.' : ''), j.warnings && j.warnings.length ? 'warn' : 'ok');
+        });
+    });
+
+    // Historique d'un kit
+    function openVersions() {
+        var m = /^k:(\d+)$/.exec(S.outfits.a.ref || '');
+        if (!m) { return; }
+        var d = dlg('cfg-versions');
+        var box = d.querySelector('[data-cfg-versions-list]');
+        box.innerHTML = '<p class="cfg-muted">Chargement…</p>';
+        d.showModal();
+        request(urls.versions + m[1] + '/versions').then(function (j) {
+            if (!j.ok) { box.innerHTML = '<p class="cfg-flash cfg-flash--err">' + esc(j.error || 'Historique indisponible.') + '</p>'; return; }
+            var v = j.versions || [];
+            box.innerHTML = v.length ? '<ol class="cfg-versions__list">' + v.map(function (x, i) {
+                return '<li><span><strong>Version ' + x.version_no + '</strong>' + (i === 0 ? ' <span class="cfg-pill">en cours</span>' : '') + '<em>' + esc(x.created_at) + (x.author ? ' · <span translate="no">' + esc(x.author) + '</span>' : '') + '</em>'
+                    + (x.note ? '<small translate="no">' + esc(x.note) + '</small>' : '') + '</span>'
+                    + '<button type="button" class="cfg-btn cfg-btn--sm" data-ver-open="' + x.version_no + '">' + esc('Ouvrir en B') + '</button>'
+                    + (i > 0 ? '<button type="button" class="cfg-btn cfg-btn--sm cfg-btn--primary" data-ver-restore="' + x.version_no + '">' + esc('Restaurer') + '</button>' : '') + '</li>';
+            }).join('') + '</ol>' : '<div class="cfg-empty"><p>Pas encore d’historique : la première version est gardée au prochain enregistrement du kit.</p></div>';
+        });
+        box.onclick = function (e) {
+            var o = e.target.closest('[data-ver-open]');
+            var r = e.target.closest('[data-ver-restore]');
+            if (o) {
+                request(urls.versions + m[1] + '/versions/' + o.getAttribute('data-ver-open')).then(function (j) {
+                    if (!j.ok) { toast(j.error || 'Version indisponible.', 'err'); return; }
+                    commit('Version ouverte en B.', function () { S.outfits.b = outfitFrom(j.loadout, j.name + ' (v' + o.getAttribute('data-ver-open') + ')', '', {}); });
+                    d.close();
+                });
+            }
+            if (r) {
+                if (!window.confirm('Restaurer la version ' + r.getAttribute('data-ver-restore') + ' ? Elle devient la version en cours ; l’historique est gardé.')) { return; }
+                request(urls.versions + m[1] + '/versions/' + r.getAttribute('data-ver-restore') + '/restaurer', { form: new FormData() }).then(function (j) {
+                    if (!j.ok) { toast(j.error || 'Restauration impossible.', 'err'); return; }
+                    d.close();
+                    toast(j.message, 'ok');
+                    loadSource('k:' + m[1], 'a');
+                });
+            }
+        };
+    }
+
+    // Import du catalogue de configuration
+    var catForm = dlg('cfg-catalog').querySelector('[data-cfg-catalog-form]');
+    catForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var rep = catForm.querySelector('[data-cfg-catalog-report]');
+        var btn = catForm.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        rep.hidden = false;
+        rep.innerHTML = '<p class="cfg-muted">Import en cours…</p>';
+        request(urls.import, { form: new FormData(catForm) }).then(function (j) {
+            btn.disabled = false;
+            if (!j.ok) { rep.innerHTML = '<p class="cfg-flash cfg-flash--err">' + esc(j.error || 'Import impossible.') + '</p>'; return; }
+            rep.innerHTML = '<p class="cfg-flash cfg-flash--ok">' + esc(j.message) + ' Le catalogue est rechargé.</p>';
+            var notice = $('[data-cfg-specs-notice]');
+            if (notice) { notice.hidden = true; }
+            loadCatalog();
+        });
+    });
+
+    // ------------------------------------------------------------------ thème et démarrage
+    function applyTheme(t) {
+        root.setAttribute('data-cfg-theme', t);
+        var b = $('[data-cfg-act="theme"]');
+        if (b) { b.textContent = { auto: 'Thème : auto', dark: 'Thème : sombre', light: 'Thème : clair' }[t]; }
+    }
+    function cycleTheme() {
+        var cur = root.getAttribute('data-cfg-theme') || 'auto';
+        var next = { auto: 'dark', dark: 'light', light: 'auto' }[cur];
+        applyTheme(next);
+        store('athena.cfg.theme', next);
+    }
+    applyTheme(['auto', 'dark', 'light'].indexOf(store('athena.cfg.theme')) >= 0 ? store('athena.cfg.theme') : 'auto');
+    var guide = $('[data-cfg-guide]');
+    if (guide) {
+        if (store('athena.cfg.guide.seen') !== '1') { guide.open = true; }
+        guide.addEventListener('toggle', function () { if (!guide.open) { store('athena.cfg.guide.seen', '1'); } });
+    }
+
+    renderAll();
+    loadCatalog().then(function () {
+        if (boot.open) {
+            loadSource(boot.open, 'a');
+            return;
+        }
+        var raw = store('athena.cfg.draft.v1');
+        if (!raw) { return; }
+        try {
+            var d = JSON.parse(raw);
+            if (d && d.outfits && d.outfits.a && (outfitClasses(d.outfits.a).length || (d.outfits.b && outfitClasses(d.outfits.b).length))) {
+                S.outfits = d.outfits;
+                renderAll();
+                toast('Brouillon de votre dernière session restauré. « Nouvelle tenue » pour repartir de zéro.');
+            }
+        } catch (err) { /* brouillon illisible : ignoré */ }
+    });
+})();

@@ -388,6 +388,9 @@ class ArsenalWardrobeController
             return Response::redirect($back);
         }
         $result = $this->kitService()->updateAudience($tenantId, $userId, (int) ($params['id'] ?? 0), $request->input('audience', 'all'));
+        if ($result['ok']) {
+            \App\Services\GameEquipment\Configurator\EquipmentAudit::log('equipment.kit.audience', $tenantId, $userId, (int) ($params['id'] ?? 0), ['audience' => $request->inputString('audience', 'all')]);
+        }
         Session::flash($result['ok'] ? 'success' : 'error', $result['ok'] ? 'Destinataire du kit mis à jour.' : (string) ($result['error'] ?? 'Mise à jour impossible.'));
 
         return Response::redirect($back);
@@ -416,6 +419,9 @@ class ArsenalWardrobeController
         }
         // Suppression permise même si la formule a baissé : on ne garde pas un kit que l'on ne peut plus gérer.
         $ok = $this->kitService()->delete($tenantId, (int) ($params['id'] ?? 0));
+        if ($ok) {
+            \App\Services\GameEquipment\Configurator\EquipmentAudit::log('equipment.kit.delete', $tenantId, (int) Session::get('user_id'), (int) ($params['id'] ?? 0), []);
+        }
         Session::flash($ok ? 'success' : 'error', $ok ? 'Kit supprimé. Les copies des membres restent dans leurs tenues.' : 'Ce kit n’existe plus.');
 
         return Response::redirect($back);
@@ -1521,6 +1527,8 @@ class ArsenalWardrobeController
         $catalogCount = 0;
         $kitUnits = [];
         $kitRoles = [];
+        $kitMembers = [];
+        $kitQualifications = [];
         $unitsReady = false;
         if (!$migrationMissing) {
             try {
@@ -1533,6 +1541,11 @@ class ArsenalWardrobeController
                 $kitUnits = $service->unitOptions((int) Session::get('tenant_id'));
                 $kitRoles = $service->roleOptions((int) Session::get('tenant_id'));
                 $unitsReady = $service->unitsReady();
+                // Kits : la liste des membres ne sert qu'à l'espace Kits (fiche « Gérer ce kit »).
+                if (($nav['espace'] ?? '') === 'kits') {
+                    $kitMembers = $service->memberOptions((int) Session::get('tenant_id'));
+                    $kitQualifications = $service->qualificationOptions((int) Session::get('tenant_id'));
+                }
             }
         }
 
@@ -1552,6 +1565,8 @@ class ArsenalWardrobeController
             'canManageKits' => $canManageKits,
             'kitUnitOptions' => $kitUnits,
             'kitRoleOptions' => $kitRoles,
+            'kitMemberOptions' => $kitMembers,
+            'kitQualificationOptions' => $kitQualifications,
             'kitUnitsReady' => $unitsReady,
             'catalogCount' => $catalogCount,
             'upgradeUrl' => url('platform/upgrade') . '?from=equipment_kits&feature=equipment_kits',

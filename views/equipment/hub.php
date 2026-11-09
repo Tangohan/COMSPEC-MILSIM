@@ -173,7 +173,8 @@ if ($catalogCount > 0) {
                 <p class="eqx-hero__lead">Composez une tenue une fois, retrouvez-la à chaque opération. Enfilez-la depuis l’arsenal en jeu, partagez-la avec votre communauté ou exportez-la pour ACE.</p>
                 <?php endif; ?>
                 <div class="eqx-hero__actions">
-                    <a class="eqx-btn eqx-btn--primary" href="<?= $h(url('equipment/assistant')) ?>" data-ath-modal>
+                    <a class="eqx-btn eqx-btn--primary" href="<?= $h(url('equipment/configurateur')) ?>">Configurateur</a>
+                    <a class="eqx-btn" href="<?= $h(url('equipment/assistant')) ?>" data-ath-modal>
                         Assistant de création<?= $kitsAllowed ? '' : ' <span class="eqx-pill">Pro</span>' ?>
                     </a>
                     <?php if ($myGameKit !== null): ?>
@@ -223,6 +224,7 @@ if ($catalogCount > 0) {
                 </a>
             </li>
             <?php endforeach; ?>
+            <li><a href="<?= $h(url('equipment/configurateur')) ?>">Configurateur</a></li>
         </ul>
     </nav>
 
