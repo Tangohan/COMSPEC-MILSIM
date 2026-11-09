@@ -328,7 +328,6 @@ final class AcademyCurriculum
         // ATH-ACADEMY numérotée à la fin. Les anciennes copies du JTAC n’ont pas de license_code : « JTAC ».
         $internalLicense = ($course['built_in'] ?? false) === true
             && (($course['key'] ?? '') === 'jtac-licence-ath-academy' || isset($course['license_code']));
-        $licenseCode = preg_match('/\A[A-Z0-9]{2,12}\z/', (string) ($course['license_code'] ?? '')) === 1 ? (string) $course['license_code'] : 'JTAC';
         if ($internalLicense) {
             $passingAttempts = array_filter($state['attempts'] ?? [], static fn (array $attempt): bool =>
                 ($attempt['chapter'] ?? null) === $index && empty($attempt['expired'])
@@ -346,18 +345,7 @@ final class AcademyCurriculum
         $next = self::nextUnvalidated($state['validations'], count($course['chapters']), $index + 1);
         if ($next === null) {
             $state['completed'] = true;
-            if ($internalLicense) {
-                if (!empty($state['license'])) {
-                    $state['license_history'][] = $state['license'];
-                }
-                $state['license'] = [
-                    'number' => 'ATH-ACADEMY-' . $licenseCode . '-' . strtoupper(bin2hex(random_bytes(6))),
-                    'issued_at' => $now,
-                    'validated_by' => $instructorId,
-                    'course_version' => $course['version'] ?? '1.0',
-                    'scope' => 'simulation',
-                ];
-            }
+            $state = self::issueLicense($state, $course, $instructorId, $now);
         } else {
             $state['chapter'] = $next;
             $state['stage'] = 0;
@@ -367,19 +355,48 @@ final class AcademyCurriculum
         return $state;
     }
 
+    /**
+     * Licence ATH-ACADEMY numérotée des cours intégrés (JTAC et cours inspirés des standards OTAN), délivrée à la fin du
+     * cours. Commune à la validation d'un formateur et à celle d'Athena ($extra marque l'origine automatique).
+     *
+     * @param array<string, mixed> $extra
+     */
+    private static function issueLicense(array $state, array $course, int $validatedBy, int $now, array $extra = []): array
+    {
+        $internalLicense = ($course['built_in'] ?? false) === true
+            && (($course['key'] ?? '') === 'jtac-licence-ath-academy' || isset($course['license_code']));
+        if (!$internalLicense) {
+            return $state;
+        }
+        $licenseCode = preg_match('/\A[A-Z0-9]{2,12}\z/', (string) ($course['license_code'] ?? '')) === 1 ? (string) $course['license_code'] : 'JTAC';
+        if (!empty($state['license'])) {
+            $state['license_history'][] = $state['license'];
+        }
+        $state['license'] = [
+            'number' => 'ATH-ACADEMY-' . $licenseCode . '-' . strtoupper(bin2hex(random_bytes(6))),
+            'issued_at' => $now,
+            'validated_by' => $validatedBy,
+            'course_version' => $course['version'] ?? '1.0',
+            'scope' => 'simulation',
+        ] + $extra;
+
+        return $state;
+    }
+
     /** Délai par défaut (heures) avant la vérification automatique d'un chapitre resté sans réponse du formateur. */
     public const AUTO_DEFAULT_HOURS = 72;
 
     /**
      * Vérification automatique d'un chapitre en attente (stage 6) : uniquement des critères objectifs, jamais d'avis.
-     * Exigés : chapitre non final (le dernier chapitre délivre l'attestation, la licence et les qualifications : toujours
-     * un formateur), cours non exclu par la communauté, évaluation du chapitre passée (non expirée, seuil atteint) avec
+     * Exigés : chapitre non final sauf si la communauté l'autorise pour ce cours (le dernier chapitre délivre l'attestation,
+     * la licence et les qualifications), cours non exclu par la communauté, évaluation du chapitre passée (non expirée, seuil atteint) avec
      * des questions corrigées par le serveur, débriefing remis, chapitres précédents tous validés, stagiaire non dispensé.
      *
      * @param list<string> $excludedCourses clés de cours exclues par la communauté
+     * @param list<string> $finalAllowed clés de cours dont la communauté autorise la validation automatique du dernier chapitre
      * @return array{ok: bool, reasons: list<string>} codes : not_pending, excluded_course, final_chapter, no_objective_criteria, manual_only (chapitre marqué « validation par un formateur uniquement »), exam_not_passed, debrief_missing, prerequisites
      */
-    public static function autoValidationCheck(array $state, array $course, array $excludedCourses = []): array
+    public static function autoValidationCheck(array $state, array $course, array $excludedCourses = [], array $finalAllowed = []): array
     {
         $index = $state['chapter'] ?? null;
         if (($state['stage'] ?? 0) !== 6 || !is_int($index) || !isset($course['chapters'][$index]) || !empty($state['completed']) || !empty($state['exempt'])) {
@@ -391,7 +408,7 @@ final class AcademyCurriculum
             $reasons[] = 'excluded_course';
         }
         $validations = is_array($state['validations'] ?? null) ? $state['validations'] : [];
-        if (self::nextUnvalidated($validations, count($course['chapters']), $index + 1) === null) {
+        if (self::nextUnvalidated($validations, count($course['chapters']), $index + 1) === null && !in_array((string) ($course['key'] ?? ''), $finalAllowed, true)) {
             $reasons[] = 'final_chapter';
         }
         if (!empty($chapter['validation']['manual_only'])) {
@@ -433,10 +450,11 @@ final class AcademyCurriculum
      * la vérification n'est pas entièrement satisfaite : ne jamais appeler sans autoValidationCheck().
      *
      * @param list<string> $excludedCourses
+     * @param list<string> $finalAllowed
      */
-    public static function autoValidateChapter(array $state, array $course, array $excludedCourses, int $hours, int $now): array
+    public static function autoValidateChapter(array $state, array $course, array $excludedCourses, array $finalAllowed, int $hours, int $now): array
     {
-        if (!self::autoValidationCheck($state, $course, $excludedCourses)['ok'] || $hours < 1) {
+        if (!self::autoValidationCheck($state, $course, $excludedCourses, $finalAllowed)['ok'] || $hours < 1) {
             throw new \DomainException('locked');
         }
         $index = (int) $state['chapter'];
@@ -446,8 +464,15 @@ final class AcademyCurriculum
             'comment' => sprintf("Validée automatiquement par Athena après %d h sans réponse du formateur (évaluation réussie, débriefing remis, chapitres précédents validés). Le formateur peut annuler cette validation.\nAutomatically validated by Athena after %d h without a trainer response (assessment passed, debrief submitted, previous chapters validated). A trainer can cancel this validation.", $hours, $hours),
         ];
         unset($state['feedback'], $state['auto_check'], $state['last_practice_feedback']);
-        $state['chapter'] = $next;
-        $state['stage'] = 0;
+        if ($next === null) {
+            // Dernier chapitre autorisé par la communauté : le cours se termine, attestation et licence marquées « auto Athena ».
+            $state['validations'][$index]['final'] = true;
+            $state['completed'] = true;
+            $state = self::issueLicense($state, $course, 0, $now, ['auto' => true, 'hours' => $hours]);
+        } else {
+            $state['chapter'] = $next;
+            $state['stage'] = 0;
+        }
         $state['updated'] = $now;
 
         return $state;
@@ -461,8 +486,31 @@ final class AcademyCurriculum
     public static function revokeAutoValidation(array $state, int $index, int $instructorId, int $now): array
     {
         $entry = $state['validations'][$index] ?? null;
-        if (!is_array($entry) || empty($entry['auto']) || $instructorId < 1 || !empty($state['completed'])) {
+        if (!is_array($entry) || empty($entry['auto']) || $instructorId < 1 || (!empty($state['completed']) && empty($entry['final']))) {
             throw new \DomainException('locked');
+        }
+        if (!empty($entry['final'])) {
+            // Dernier chapitre : le cours redevient en cours, la licence délivrée par Athena (et elle seule) est retirée.
+            if (empty($state['completed']) || (int) ($state['chapter'] ?? -1) !== $index) {
+                throw new \DomainException('locked');
+            }
+            unset($state['validations'][$index], $state['completed'], $state['feedback'], $state['auto_awards']);
+            if (!empty($state['license']['auto'])) {
+                $history = is_array($state['license_history'] ?? null) ? $state['license_history'] : [];
+                $state['license'] = array_pop($history);
+                $state['license_history'] = $history;
+                if ($state['license'] === null) {
+                    unset($state['license']);
+                }
+                if (empty($state['license_history'])) {
+                    unset($state['license_history']);
+                }
+            }
+            $state['revoked_auto'][] = ['chapter' => $index, 'by' => $instructorId, 'at' => $now, 'validated_at' => (int) ($entry['at'] ?? 0), 'final' => true];
+            $state['stage'] = 6;
+            $state['updated'] = $now;
+
+            return $state;
         }
         foreach (['attempts', 'practice'] as $log) {
             foreach ($state[$log] ?? [] as $row) {

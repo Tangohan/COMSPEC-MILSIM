@@ -55,7 +55,7 @@ final class AcademyAutoValidation
     }
 
     /**
-     * @param array{enabled: bool, hours: int, excluded: list<string>} $settings
+     * @param array{enabled: bool, hours: int, excluded: list<string>, final_allowed?: list<string>} $settings
      * @return 'validated'|'unmet'|'skipped'
      */
     public function process(int $tenantId, int $userId, string $key, array $settings, int $now): string
@@ -65,8 +65,9 @@ final class AcademyAutoValidation
         $chapter = -1;
         $title = $key;
         $validated = false;
+        $final = false;
         try {
-            $this->store->apply($tenantId, $userId, $key, function (array $state) use ($key, $settings, $hours, $now, &$reasons, &$chapter, &$title, &$validated): array {
+            $this->store->apply($tenantId, $userId, $key, function (array $state) use ($key, $settings, $hours, $now, &$reasons, &$chapter, &$title, &$validated, &$final): array {
                 $course = is_array($state['snapshot'] ?? null) ? $state['snapshot'] : [];
                 $course['key'] = $key;
                 $chapter = is_int($state['chapter'] ?? null) ? $state['chapter'] : -1;
@@ -75,14 +76,16 @@ final class AcademyAutoValidation
                 if (($state['stage'] ?? 0) !== 6 || !empty($state['completed']) || (int) ($state['updated'] ?? 0) > $now - $hours * 3600) {
                     throw new \DomainException('locked');
                 }
-                $verdict = AcademyCurriculum::autoValidationCheck($state, $course, $settings['excluded']);
+                $verdict = AcademyCurriculum::autoValidationCheck($state, $course, $settings['excluded'], $settings['final_allowed'] ?? []);
                 if (!$verdict['ok']) {
                     $reasons = $verdict['reasons'];
                     throw new \DomainException('unmet');
                 }
                 $validated = true;
 
-                return AcademyCurriculum::autoValidateChapter($state, $course, $settings['excluded'], $hours, $now);
+                $final = AcademyCurriculum::nextUnvalidated($state['validations'] ?? [], count($course['chapters']), $chapter + 1) === null;
+
+                return AcademyCurriculum::autoValidateChapter($state, $course, $settings['excluded'], $settings['final_allowed'] ?? [], $hours, $now);
             });
         } catch (\DomainException $e) {
             return $e->getMessage() === 'unmet' ? $this->unmet($tenantId, $userId, $key, $chapter, $title, $reasons, $hours, $now) : 'skipped';
@@ -94,8 +97,24 @@ final class AcademyAutoValidation
         if (!$validated) {
             return 'skipped';
         }
-        $this->store->audit('academy.learner.auto_validated', $tenantId, ['course' => $key, 'learner' => $userId, 'chapter' => $chapter, 'hours' => $hours, 'rule' => 'athena_auto_validation', 'actor' => 'system']);
-        $payload = ['course' => $title, 'chapter' => $chapter + 1, 'hours' => $hours];
+        $awards = [];
+        if ($final) {
+            // Attestation, licence et qualifications : même logique que la validation manuelle, auteur système.
+            try {
+                $awards = $this->store->awardCredentials($tenantId, $userId, $key, $hours);
+                if ($awards !== []) {
+                    $this->store->apply($tenantId, $userId, $key, static function (array $state) use ($awards): array {
+                        $state['auto_awards'] = $awards;
+
+                        return $state;
+                    });
+                }
+            } catch (\Throwable $e) {
+                error_log('[academy-auto] attribution ' . $key . ' : ' . $e->getMessage());
+            }
+        }
+        $this->store->audit('academy.learner.auto_validated', $tenantId, ['course' => $key, 'learner' => $userId, 'chapter' => $chapter, 'hours' => $hours, 'final' => $final, 'awards' => $awards, 'rule' => 'athena_auto_validation', 'actor' => 'system']);
+        $payload = ['course' => $title, 'chapter' => $chapter + 1, 'hours' => $hours, 'final' => $final];
         $this->safely(fn () => $this->store->notify($tenantId, $userId, 'academy_auto_validated', $payload + ['for' => 'learner', 'href' => '/academy/classroom?course=' . rawurlencode($key)]));
         foreach ($this->store->instructorIds($tenantId) as $id) {
             if ($id !== $userId) {
@@ -130,8 +149,17 @@ final class AcademyAutoValidation
         if ($instructorId < 1 || $instructorId === $learnerId) {
             throw new \DomainException('locked');
         }
-        $this->store->apply($tenantId, $learnerId, $key, static fn (array $state): array => AcademyCurriculum::revokeAutoValidation($state, $chapter, $instructorId, $now));
-        $this->store->audit('academy.learner.auto_validation_revoked', $tenantId, ['course' => $key, 'learner' => $learnerId, 'chapter' => $chapter, 'by' => $instructorId]);
+        $awards = [];
+        $this->store->apply($tenantId, $learnerId, $key, static function (array $state) use ($chapter, $instructorId, $now, &$awards): array {
+            $awards = array_values(array_filter(array_map('intval', (array) ($state['auto_awards'] ?? [])), static fn (int $id): bool => $id > 0));
+
+            return AcademyCurriculum::revokeAutoValidation($state, $chapter, $instructorId, $now);
+        });
+        // Seules les attributions créées par Athena pour ce dernier chapitre sont révoquées.
+        if ($awards !== []) {
+            $this->store->revokeAwards($tenantId, $awards, $instructorId);
+        }
+        $this->store->audit('academy.learner.auto_validation_revoked', $tenantId, ['course' => $key, 'learner' => $learnerId, 'chapter' => $chapter, 'by' => $instructorId, 'revoked_awards' => $awards]);
         $this->safely(fn () => $this->store->notify($tenantId, $learnerId, 'academy_auto_revoked', ['chapter' => $chapter + 1, 'href' => '/academy/classroom?course=' . rawurlencode($key)]));
     }
 

@@ -36,7 +36,7 @@ final class AcademyAutoValidationTest extends TestCase
         ];
     }
 
-    private static function store(array $states, array $tenants = [1 => ['enabled' => true, 'hours' => 72, 'excluded' => []]]): object
+    private static function store(array $states, array $tenants = [1 => ['enabled' => true, 'hours' => 72, 'excluded' => [], 'final_allowed' => []]]): object
     {
         return new class ($states, $tenants) extends AcademyAutoValidationRepository {
             /** @var list<array<string, mixed>> */
@@ -46,6 +46,11 @@ final class AcademyAutoValidationTest extends TestCase
             /** @var list<array<string, mixed>> */
             public array $checks = [];
             public int $applies = 0;
+            /** @var list<array{int, int, string}> */
+            public array $granted = [];
+            /** @var list<int> */
+            public array $revoked = [];
+            private int $nextAward = 500;
             /** @var list<int> */
             public array $instructors = [900, 901];
 
@@ -92,6 +97,18 @@ final class AcademyAutoValidationTest extends TestCase
                 $this->checks[] = $check;
 
                 return true;
+            }
+
+            public function awardCredentials(int $tenantId, int $learnerId, string $key, int $hours): array
+            {
+                $this->granted[] = [$tenantId, $learnerId, $key];
+
+                return [$this->nextAward++, $this->nextAward++];
+            }
+
+            public function revokeAwards(int $tenantId, array $ids, int $instructorId): void
+            {
+                $this->revoked = array_merge($this->revoked, $ids);
             }
 
             public function instructorIds(int $tenantId): array
@@ -323,7 +340,7 @@ final class AcademyAutoValidationTest extends TestCase
     public function testQueueShowsAutoValidationAndFlagsInconclusiveCheck(): void
     {
         $state = self::pending(0, 73);
-        $auto = AcademyCurriculum::autoValidateChapter($state, AcademyCurriculum::demo(), [], 72, self::NOW);
+        $auto = AcademyCurriculum::autoValidateChapter($state, AcademyCurriculum::demo(), [], [], 72, self::NOW);
         $flag = self::pending(0, 80, ['auto_check' => ['at' => self::NOW, 'chapter' => 0, 'hours' => 72, 'reasons' => ['exam_not_passed']]]);
         $row = static fn (int $u, array $s): array => ['user_id' => $u, 'course_key' => self::KEY, 'updated_at' => date('Y-m-d H:i:s', self::NOW - 3600), 'state' => $s];
         $queue = AcademyInstructorQueue::build([$row(5, $auto), $row(6, $flag)], static fn (string $k): bool => true, true, [], [], 99, self::NOW);
@@ -344,6 +361,114 @@ final class AcademyAutoValidationTest extends TestCase
         self::assertTrue($s['enabled']);
         self::assertSame(720, $s['hours']);
         self::assertSame(['jtac-licence-ath-academy'], $s['excluded']);
-        self::assertSame(['enabled' => false, 'hours' => 72, 'excluded' => []], AcademyAutoValidationRepository::normalize([]));
+        self::assertSame(['enabled' => false, 'hours' => 72, 'excluded' => [], 'final_allowed' => []], AcademyAutoValidationRepository::normalize([]));
+    }
+
+    private static function finalSettings(array $over = []): array
+    {
+        return [1 => $over + ['enabled' => true, 'hours' => 72, 'excluded' => [], 'final_allowed' => [self::KEY]]];
+    }
+
+    private static function finalPending(): array
+    {
+        $last = count(AcademyCurriculum::demo()['chapters']) - 1;
+
+        return self::pending($last, 100);
+    }
+
+    public function testFinalChapterAllowedIsGrantedWithMentionAndCredentials(): void
+    {
+        $store = self::store([self::id() => self::finalPending()], self::finalSettings());
+        $r = (new AcademyAutoValidation($store))->run(self::NOW);
+        self::assertSame(1, $r['validated']);
+        $state = $store->states[self::id()];
+        $last = count(AcademyCurriculum::demo()['chapters']) - 1;
+        self::assertTrue($state['completed']);
+        self::assertTrue($state['validations'][$last]['auto']);
+        self::assertTrue($state['validations'][$last]['final']);
+        self::assertStringContainsString('Athena', $state['validations'][$last]['comment']);
+        self::assertSame([[1, 5, self::KEY]], $store->granted);
+        self::assertSame([500, 501], $state['auto_awards']);
+        self::assertTrue($store->audit[0]['final']);
+        self::assertSame([500, 501], $store->audit[0]['awards']);
+        // Notifications avec l'indication « final ».
+        self::assertContains([1, 5, 'academy_auto_validated'], $store->notes);
+    }
+
+    public function testFinalChapterStaysManualByDefaultAndWhenCourseExcluded(): void
+    {
+        $default = self::store([self::id() => self::finalPending()]);
+        (new AcademyAutoValidation($default))->run(self::NOW);
+        self::assertContains('final_chapter', $default->states[self::id()]['auto_check']['reasons']);
+        self::assertSame([], $default->granted);
+
+        $excluded = self::store([self::id() => self::finalPending()], self::finalSettings(['excluded' => [self::KEY]]));
+        (new AcademyAutoValidation($excluded))->run(self::NOW);
+        self::assertContains('excluded_course', $excluded->states[self::id()]['auto_check']['reasons']);
+        self::assertEmpty($excluded->states[self::id()]['completed'] ?? false);
+        self::assertSame([], $excluded->granted);
+    }
+
+    public function testFinalDoubleRunDoesNotGrantTwice(): void
+    {
+        $store = self::store([self::id() => self::finalPending()], self::finalSettings());
+        $service = new AcademyAutoValidation($store);
+        $service->run(self::NOW);
+        $service->run(self::NOW + 7200);
+        self::assertCount(1, $store->granted);
+    }
+
+    public function testRevokingFinalChapterRevokesOnlyAutoGrantedCredentials(): void
+    {
+        $store = self::store([self::id() => self::finalPending()], self::finalSettings());
+        $service = new AcademyAutoValidation($store);
+        $service->run(self::NOW);
+        $service->revoke(1, 5, self::KEY, count(AcademyCurriculum::demo()['chapters']) - 1, 99, self::NOW + 10);
+        $state = $store->states[self::id()];
+        self::assertEmpty($state['completed'] ?? false);
+        self::assertSame(6, $state['stage']);
+        self::assertArrayNotHasKey('auto_awards', $state);
+        self::assertSame([500, 501], $store->revoked);
+        self::assertSame('academy.learner.auto_validation_revoked', end($store->audit)['action']);
+    }
+
+    public function testManualFinalValidationIsNotRevocableAsAuto(): void
+    {
+        $state = self::finalPending();
+        $done = AcademyCurriculum::validateChapter($state, AcademyCurriculum::demo(), 99, 'Compétence démontrée, bien joué.', self::NOW);
+        $this->expectException(\DomainException::class);
+        AcademyCurriculum::revokeAutoValidation($done, (int) $state['chapter'], 98, self::NOW);
+    }
+
+    public function testInstructorWhoValidatedFinalFirstWins(): void
+    {
+        $store = self::store([self::id() => self::finalPending()], self::finalSettings());
+        $store->states[self::id()] = AcademyCurriculum::validateChapter($store->states[self::id()], AcademyCurriculum::demo(), 99, 'Compétence démontrée, bien joué.', self::NOW - 60);
+        self::assertSame('skipped', (new AcademyAutoValidation($store))->process(1, 5, self::KEY, self::finalSettings()[1], self::NOW));
+        self::assertSame([], $store->granted);
+    }
+
+    public function testFinalGrantStaysInsideItsCommunity(): void
+    {
+        $store = self::store([self::id() => self::finalPending(), '2|6|' . self::KEY => self::finalPending()], self::finalSettings());
+        (new AcademyAutoValidation($store))->run(self::NOW);
+        self::assertSame([[1, 5, self::KEY]], $store->granted);
+        self::assertEmpty($store->states['2|6|' . self::KEY]['completed'] ?? false);
+    }
+
+    public function testBuiltInLicenseIsMarkedAutoAndRestoredOnRevoke(): void
+    {
+        $course = AcademyCurriculum::demo();
+        $course['built_in'] = true;
+        $course['license_code'] = 'TST';
+        $last = count($course['chapters']) - 1;
+        $state = self::pending($last, 100, ['snapshot' => $course]);
+        $done = AcademyCurriculum::autoValidateChapter($state, $course + ['key' => self::KEY], [], [self::KEY], 72, self::NOW);
+        self::assertTrue($done['license']['auto']);
+        self::assertSame(0, $done['license']['validated_by']);
+        self::assertStringStartsWith('ATH-ACADEMY-TST-', $done['license']['number']);
+        $back = AcademyCurriculum::revokeAutoValidation($done, $last, 99, self::NOW + 1);
+        self::assertArrayNotHasKey('license', $back);
+        self::assertEmpty($back['completed'] ?? false);
     }
 }

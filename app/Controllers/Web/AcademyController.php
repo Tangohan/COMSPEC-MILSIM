@@ -422,16 +422,8 @@ final class AcademyController
             if (!is_array($state) || ($state['completed'] ?? false) !== true) {
                 return;
             }
-            $builtIn = \App\Services\Academy\AcademyBuiltInQualifications::forPdo(\App\Core\Database::getPdo());
-            $definitionId = 0;
-            if (isset(AcademyBuiltInCourses::qualifications()[$key])) {
-                $definitionId = $builtIn->ensureDefinition($tenantId, $key, function_exists('locale') ? (string) locale() : 'fr', $instructorId);
-                if ($definitionId > 0) {
-                    Container::get(\App\Services\Personnel\QualificationAwardRuleService::class)->runAuto($tenantId, $definitionId);
-                }
-            }
-            // Qualifications et brevets du Studio qui demandent ce cours (ou une version qu'il remplace).
-            $this->credentials()->awardForCourse($tenantId, $key, $builtIn->lineage($tenantId)[$key] ?? [], $definitionId);
+            // Logique commune avec la validation automatique d'Athena (AcademyCredentialAwarder).
+            (new \App\Services\Academy\AcademyCredentialAwarder())->awardCompleted($tenantId, $learnerId, $key, $instructorId);
         } catch (\Throwable $e) {
             error_log('[academy] qualification du cours ' . $key . ' : ' . $e->getMessage());
         }
@@ -1029,12 +1021,14 @@ final class AcademyController
         }
         $asked = $request->input('excluded', []);
         $excluded = array_values(array_intersect(is_array($asked) ? array_map('strval', $asked) : [], $known));
+        $askedFinal = $request->input('final_allowed', []);
+        $finalAllowed = array_values(array_intersect(is_array($askedFinal) ? array_map('strval', $askedFinal) : [], $known));
         $enabled = $request->inputString('enabled') === '1';
         $hours = max(AcademyAutoValidationRepository::MIN_HOURS, min(AcademyAutoValidationRepository::MAX_HOURS, (int) $request->input('hours', AcademyCurriculum::AUTO_DEFAULT_HOURS)));
         $store = new AcademyAutoValidationRepository();
         $before = $store->settings($tenantId);
-        $store->saveSettings($tenantId, $enabled, $hours, $excluded, $userId ?: null);
-        $this->audit('academy.auto_validation.settings', $tenantId, 'academy', ['before' => $before, 'after' => ['enabled' => $enabled, 'hours' => $hours, 'excluded' => $excluded]]);
+        $store->saveSettings($tenantId, $enabled, $hours, $excluded, $userId ?: null, $finalAllowed);
+        $this->audit('academy.auto_validation.settings', $tenantId, 'academy', ['before' => $before, 'after' => ['enabled' => $enabled, 'hours' => $hours, 'excluded' => $excluded, 'final_allowed' => $finalAllowed]]);
         Session::set('academy_notice', 'auto_saved');
 
         return Response::redirect(url('academy/droits') . '#validation-auto', 303);

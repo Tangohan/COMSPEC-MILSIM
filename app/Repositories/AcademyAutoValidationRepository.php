@@ -25,12 +25,12 @@ class AcademyAutoValidationRepository
         $this->pdo = $pdo ?? Database::getPdo();
     }
 
-    /** @return array{enabled: bool, hours: int, excluded: list<string>} */
+    /** @return array{enabled: bool, hours: int, excluded: list<string>, final_allowed: list<string>} */
     public function settings(int $tenantId): array
     {
-        $defaults = ['enabled' => false, 'hours' => AcademyCurriculum::AUTO_DEFAULT_HOURS, 'excluded' => []];
+        $defaults = ['enabled' => false, 'hours' => AcademyCurriculum::AUTO_DEFAULT_HOURS, 'excluded' => [], 'final_allowed' => []];
         try {
-            $stmt = $this->pdo->prepare('SELECT enabled, delay_hours, excluded_courses FROM academy_auto_validation_settings WHERE tenant_id = ?');
+            $stmt = $this->pdo->prepare('SELECT enabled, delay_hours, excluded_courses, final_courses FROM academy_auto_validation_settings WHERE tenant_id = ?');
             $stmt->execute([$tenantId]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (\PDOException) {
@@ -42,38 +42,46 @@ class AcademyAutoValidationRepository
 
     /**
      * @param array<string, mixed> $row
-     * @return array{enabled: bool, hours: int, excluded: list<string>}
+     * @return array{enabled: bool, hours: int, excluded: list<string>, final_allowed: list<string>}
      */
     public static function normalize(array $row): array
     {
-        $excluded = json_decode((string) ($row['excluded_courses'] ?? ''), true);
-        $excluded = is_array($excluded)
-            ? array_values(array_unique(array_filter($excluded, static fn (mixed $k): bool => is_string($k) && preg_match('/\A[a-z0-9-]{1,64}\z/', $k) === 1)))
-            : [];
+        $keys = static function (mixed $json): array {
+            $list = json_decode((string) $json, true);
+
+            return is_array($list)
+                ? array_values(array_unique(array_filter($list, static fn (mixed $k): bool => is_string($k) && preg_match('/\A[a-z0-9-]{1,64}\z/', $k) === 1)))
+                : [];
+        };
+        $excluded = $keys($row['excluded_courses'] ?? '');
 
         return [
             'enabled' => (int) ($row['enabled'] ?? 0) === 1,
             'hours' => max(self::MIN_HOURS, min(self::MAX_HOURS, (int) ($row['delay_hours'] ?? AcademyCurriculum::AUTO_DEFAULT_HOURS))),
             'excluded' => $excluded,
+            'final_allowed' => $keys($row['final_courses'] ?? ''),
         ];
     }
 
-    /** @param list<string> $excluded */
-    public function saveSettings(int $tenantId, bool $enabled, int $hours, array $excluded, ?int $by): void
+    /**
+     * @param list<string> $excluded
+     * @param list<string> $finalAllowed cours dont le dernier chapitre peut être validé automatiquement
+     */
+    public function saveSettings(int $tenantId, bool $enabled, int $hours, array $excluded, ?int $by, array $finalAllowed = []): void
     {
         $hours = max(self::MIN_HOURS, min(self::MAX_HOURS, $hours));
-        $excluded = self::normalize(['excluded_courses' => json_encode($excluded)])['excluded'];
+        $clean = self::normalize(['excluded_courses' => json_encode($excluded), 'final_courses' => json_encode($finalAllowed)]);
         $this->pdo->prepare(
-            'INSERT INTO academy_auto_validation_settings (tenant_id, enabled, delay_hours, excluded_courses, updated_by) VALUES (?, ?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE enabled = VALUES(enabled), delay_hours = VALUES(delay_hours), excluded_courses = VALUES(excluded_courses), updated_by = VALUES(updated_by)'
-        )->execute([$tenantId, $enabled ? 1 : 0, $hours, json_encode($excluded), $by]);
+            'INSERT INTO academy_auto_validation_settings (tenant_id, enabled, delay_hours, excluded_courses, final_courses, updated_by) VALUES (?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE enabled = VALUES(enabled), delay_hours = VALUES(delay_hours), excluded_courses = VALUES(excluded_courses), final_courses = VALUES(final_courses), updated_by = VALUES(updated_by)'
+        )->execute([$tenantId, $enabled ? 1 : 0, $hours, json_encode($clean['excluded']), json_encode($clean['final_allowed']), $by]);
     }
 
-    /** @return array<int, array{enabled: bool, hours: int, excluded: list<string>}> communautés qui ont activé la fonction, par identifiant */
+    /** @return array<int, array{enabled: bool, hours: int, excluded: list<string>, final_allowed: list<string>}> communautés qui ont activé la fonction, par identifiant */
     public function enabledTenants(): array
     {
         try {
-            $rows = $this->pdo->query('SELECT tenant_id, enabled, delay_hours, excluded_courses FROM academy_auto_validation_settings WHERE enabled = 1 ORDER BY tenant_id')->fetchAll(PDO::FETCH_ASSOC);
+            $rows = $this->pdo->query('SELECT tenant_id, enabled, delay_hours, excluded_courses, final_courses FROM academy_auto_validation_settings WHERE enabled = 1 ORDER BY tenant_id')->fetchAll(PDO::FETCH_ASSOC);
         } catch (\PDOException) {
             return [];
         }
@@ -182,6 +190,37 @@ class AcademyAutoValidationRepository
         unset($ids[0]);
 
         return array_keys($ids);
+    }
+
+    /**
+     * Attestation, licence et qualifications du cours terminé, attribuées au nom d'Athena par la logique commune avec la
+     * validation manuelle (AcademyCredentialAwarder). Chaque attribution nouvelle porte l'origine « auto Athena » dans son historique.
+     *
+     * @return list<int> attributions créées pour ce stagiaire
+     */
+    public function awardCredentials(int $tenantId, int $learnerId, string $key, int $hours): array
+    {
+        $ids = (new \App\Services\Academy\AcademyCredentialAwarder())->awardCompleted($tenantId, $learnerId, $key, 0);
+        $awards = new QualificationAwardRepository();
+        foreach ($ids as $id) {
+            $awards->addHistory($tenantId, $id, 'auto_athena', null, sprintf('Attribuée automatiquement par Athena après %d h sans réponse du formateur (Academy : %s)', $hours, $key));
+        }
+
+        return $ids;
+    }
+
+    /** @param list<int> $ids */
+    public function revokeAwards(int $tenantId, array $ids, int $instructorId): void
+    {
+        $awards = new QualificationAwardRepository();
+        foreach ($ids as $id) {
+            $row = $awards->find($id, $tenantId);
+            if ($row === null) {
+                continue;
+            }
+            $awards->setAdminStatus($id, \App\Support\QualificationAdminStatus::REVOKED, $instructorId, 'Validation automatique par Athena annulée par un formateur');
+            $awards->addHistory($tenantId, $id, 'auto_athena_revoked', $instructorId, 'Attribution automatique par Athena annulée par un formateur');
+        }
     }
 
     /** @param array<string, mixed> $payload */

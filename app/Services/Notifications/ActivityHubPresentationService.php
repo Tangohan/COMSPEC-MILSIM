@@ -79,8 +79,11 @@ final class ActivityHubPresentationService
             'academy_auto_validated' => [
                 'title' => self::fr() ? 'Chapitre validé automatiquement par Athena' : 'Chapter automatically validated by Athena',
                 'detail' => sprintf(
-                    self::fr() ? '« %s », chapitre %d : validé automatiquement par Athena après %d h sans réponse du formateur. Un formateur peut annuler cette validation.'
-                        : '"%s", chapter %d: automatically validated by Athena after %d h without a trainer response. A trainer can cancel this validation.',
+                    !empty($payload['final'])
+                        ? (self::fr() ? '« %s », chapitre %d (dernier) : attestation et qualifications attribuées automatiquement par Athena après %d h sans réponse du formateur. Un formateur peut annuler cette attribution.'
+                            : '"%s", chapter %d (last): certificate and qualifications automatically granted by Athena after %d h without a trainer response. A trainer can cancel this grant.')
+                        : (self::fr() ? '« %s », chapitre %d : validé automatiquement par Athena après %d h sans réponse du formateur. Un formateur peut annuler cette validation.'
+                            : '"%s", chapter %d: automatically validated by Athena after %d h without a trainer response. A trainer can cancel this validation.'),
                     trim((string) ($payload['course'] ?? '')),
                     (int) ($payload['chapter'] ?? 0),
                     (int) ($payload['hours'] ?? 72)

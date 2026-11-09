@@ -21,6 +21,7 @@ if ($academyAutoSchema->tableExists('academy_auto_validation_settings')) {
             enabled TINYINT(1) NOT NULL DEFAULT 0,
             delay_hours SMALLINT UNSIGNED NOT NULL DEFAULT 72,
             excluded_courses TEXT NULL,
+            final_courses TEXT NULL,
             updated_by INT UNSIGNED NULL,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (tenant_id),
@@ -28,4 +29,7 @@ if ($academyAutoSchema->tableExists('academy_auto_validation_settings')) {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
     );
     echo "  [OK] Table academy_auto_validation_settings créée.\n";
+}
+if ($academyAutoSchema->addColumnIfMissing('academy_auto_validation_settings', 'final_courses', 'TEXT NULL')) {
+    echo "  [OK] academy_auto_validation_settings.final_courses (cours dont le dernier chapitre peut être validé automatiquement)\n";
 }

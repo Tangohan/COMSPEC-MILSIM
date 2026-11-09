@@ -121,7 +121,7 @@ final class AcademyInstructorQueue
                 'id' => 'auto-' . $uid . '-' . $key . '-' . (int) $index, 'type' => 'auto', 'course_key' => $key,
                 'course_title' => $state['snapshot']['title'] ?? '', 'learner_id' => $uid, 'chapter' => (int) $index,
                 'chapter_title' => $chapters[$index]['title'] ?? '', 'since' => (int) $entry['at'], 'hours' => (int) ($entry['hours'] ?? 0),
-                'revocable' => $revocable, 'can' => $uid === $me ? 'own' : (!$teaches($key) ? 'not_allowed' : 'ok'), 'row' => $row,
+                'revocable' => $revocable, 'final' => !empty($entry['final']), 'can' => $uid === $me ? 'own' : (!$teaches($key) ? 'not_allowed' : 'ok'), 'row' => $row,
             ];
         }
 
