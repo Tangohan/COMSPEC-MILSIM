@@ -490,6 +490,7 @@ return [
                         ['label' => 'Édition avancée de fiche', 'path' => 'admin/system/advanced-fiche-edit', 'permission' => 'admin.system', 'description' => 'Autoriser une modification exceptionnelle d’une fiche'],
                         ['label' => 'Paramètres système', 'path' => 'admin/settings', 'permission' => 'admin.system'],
                         ['label' => 'Alertes plateforme', 'path' => 'admin/system/alerts', 'permission' => 'admin.system'],
+                        ['label' => 'Messages aux communautés', 'path' => 'admin/system/messages-communautes', 'permission' => 'admin.system', 'description' => 'Écrire aux back-offices des communautés : invitation Discord, consigne, annonce'],
                         ['label' => 'Maintenance des données', 'path' => 'admin/maintenance', 'permission' => 'admin.system'],
                         ['label' => 'Tâches automatiques', 'path' => 'admin/system/cron', 'permission' => 'admin.system', 'description' => 'Planification et historique des travaux récurrents'],
                         ['label' => 'Charge et surcharge', 'path' => 'admin/system/surcharge', 'permission' => 'admin.system', 'description' => 'Requêtes par route et par communauté, erreurs, seuils d’alerte, priorité des formules payantes sous charge'],

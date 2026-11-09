@@ -282,6 +282,17 @@ class OrganizationDashboardController
 
         $home = $this->homeData($tenantId, $viewerId, $request->queryString('personnaliser') === '1');
 
+        // Messages de l'administration du site : jamais bloquants, une erreur les masque simplement.
+        $platformMessages = [];
+        try {
+            $tenantForMessages = (new TenantRepository())->findById($tenantId);
+            if (is_array($tenantForMessages)) {
+                $platformMessages = (new \App\Services\Platform\PlatformBoMessageService())->forTenant($tenantForMessages, $viewerId, locale(), false, true);
+            }
+        } catch (\Throwable $e) {
+            error_log('[messages-plateforme] accueil : ' . $e->getMessage());
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.dashboard',
             'title' => 'Tableau de bord',
@@ -292,8 +303,10 @@ class OrganizationDashboardController
             'boSkipPageHead' => true,
             'boPageAction' => 'Publier une annonce',
             'boPageActionUrl' => url('back-office/alerts/create'),
-            'backOfficePageCss' => array_merge(['back-office-dashboard.css', 'pilotage-dashboard.css', 'back-office-home.css'], isset($home['custom']) ? ['community-page-builder.css', 'back-office-blocks.css'] : []),
+            'backOfficePageCss' => array_merge(['back-office-dashboard.css', 'pilotage-dashboard.css', 'back-office-home.css', 'platform-messages.css'], isset($home['custom']) ? ['community-page-builder.css', 'back-office-blocks.css'] : []),
             'home' => $home,
+            'platformMessages' => $platformMessages,
+            'canAckPlatformMessages' => true,
             'adminKpiBlockError' => $metrics['blockError'],
             'pilotage' => $pilotage,
             'skipGlobalAlertBanners' => true,

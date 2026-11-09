@@ -175,6 +175,11 @@ final class AuditActionLabel
         'platform.tenant_logo_removed' => 'Logo d’une communauté retiré',
         'platform.tenant_plan_gifted' => 'Formule offerte à une communauté',
         'platform.tenant_plan_gift_revoked' => 'Formule offerte retirée',
+        'platform.bo_message_created' => 'Message aux back-offices des communautés publié',
+        'platform.bo_message_updated' => 'Message aux back-offices des communautés modifié',
+        'platform.bo_message_toggled' => 'Message aux back-offices des communautés activé ou désactivé',
+        'platform.bo_message_deleted' => 'Message aux back-offices des communautés supprimé',
+        'platform.bo_message_acked' => 'Message urgent de la plateforme acquitté par la communauté',
         'audit.rollback' => 'Restauration d’état depuis le journal',
         'audit.rollback_alert' => 'Alerte envoyée depuis le journal',
     ];
