@@ -1205,6 +1205,7 @@
     var markers = window.__owArmaRows || [];
     var html = '<label class="ow-search ow-layers-search"><span>⌕</span><input id="ow-layers-q" type="search" placeholder="Rechercher un calque, un libellé…" value="' + esc(q) + '"></label>';
     html += '<p class="ow-help">Recherchez, recentrez ou retirez. Un retrait demande confirmation.</p>';
+    html += '<div class="ow-form-actions"><button type="button" class="ow-ctx-danger" id="ow-clear-map">Effacer la carte…</button></div>';
     if (recents.length) {
       html += '<p class="ow-kicker">Récents</p>';
       recents.forEach(function (row) {
@@ -1252,6 +1253,8 @@
       if (api) api.openDrawer('Cartographie', 'Calques', layersHtml());
       bindLayers();
     });
+    var clearBtn = document.getElementById('ow-clear-map');
+    if (clearBtn) clearBtn.addEventListener('click', openClearMap);
     document.querySelectorAll('[data-ow-focus]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var parts = String(btn.getAttribute('data-ow-focus') || '').split(':');
@@ -1274,6 +1277,24 @@
       btn.addEventListener('click', function () {
         confirmDelete('relay', btn.getAttribute('data-del-relay'), 'ce relais');
       });
+    });
+  }
+
+  function openClearMap() {
+    var api = ow();
+    if (!api || !window.AtakMapClear) return;
+    window.AtakMapClear.open({
+      previewPath: '/api/atak/map/clear',
+      undoPath: '/api/atak/map/clear/undo',
+      call: function (path, payload) {
+        return api.api(path, { method: 'POST', body: Object.assign({ mapId: api.mapId }, payload) })
+          .catch(function (err) { return { ok: false, error: String(err && err.message) === '403' ? 'forbidden' : (String(err && err.message) === '419' ? 'csrf' : 'failed') }; });
+      },
+      onChange: function () {
+        if (api.loadShapes) api.loadShapes();
+        if (api.loadArmaMarkers) api.loadArmaMarkers();
+        api.openView('layers');
+      }
     });
   }
 

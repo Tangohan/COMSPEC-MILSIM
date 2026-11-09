@@ -39,6 +39,7 @@ if (!empty($mapStyleChoice)) {
         <?php foreach ($layers as $key => $label): ?>
           <label class="mm-layer"><input type="checkbox" data-layer="<?= $h($key) ?>" checked> <span><?= $h($label) ?></span></label>
         <?php endforeach; ?>
+        <?php if (!empty($mapCanAdd)): ?><button type="button" class="mm-btn mm-btn--danger" data-map-clear>Effacer la carte…</button><?php endif; ?>
       </div>
       <nav class="mm-maptools" aria-label="Outils de la carte">
         <button type="button" class="mm-tool" data-map-me><?= $h($mapMeLabel ?? 'Moi') ?></button>
