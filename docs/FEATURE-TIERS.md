@@ -204,7 +204,8 @@ Ajuster `limits_json` (sans redéploiement si édition SQL/admin futur) ; docume
 
 - `App\Support\PlanAccessWindow` : ce qui donne la formule actuelle (`gift`, `paid`, `trial`, `base`), fin prochaine, dernière fin passée, période de grâce.
 - Réglages `platform_settings` (Administration > Formules offertes, section « Fins de formule ») :
-  `plan_end_warning_days` (7), `plan_end_warning_email` (0), `plan_grace_enabled` (0), `plan_grace_days` (7).
+  `plan_trial_days` (7 : durée de l'essai fondateur des nouvelles communautés, constante `PlanAccessWindow::DEFAULT_TRIAL_DAYS`), `plan_end_warning_days` (3), `plan_end_warning_email` (0), `plan_grace_enabled` (0), `plan_grace_days` (7).
+- L'essai était de 30 jours ; il est de 7 jours pour les nouvelles communautés seulement : `tenants.settings.founder_trial_ends_at` déjà posé n'est jamais recalculé. Aucune migration.
 - Bandeau `views/partials/plan_end_banner.php` pour le propriétaire, les fondateurs et les administrateurs de la communauté.
 - E-mail `plan_end_warning` (tâche `plan_end_warning`, toutes les 6 h), une fois par fin (`tenants.settings.plan_end_warning_sent`).
 - Grâce : `FeatureGateService::allows` / `allowsLimitedFeatureModule` laissent ouverts, pendant N jours après la fin, les modules de la formule terminée (dont `atak`, donc la liaison avec le jeu). Désactivée par défaut.

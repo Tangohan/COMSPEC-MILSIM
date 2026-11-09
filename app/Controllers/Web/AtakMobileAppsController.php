@@ -9,6 +9,9 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Repositories\AtakDataRepository;
 use App\Repositories\AtakMapRepository;
+use App\Repositories\MapShapeRepository;
+use App\Services\Atak\AtakMapClearService;
+use App\Services\Tactical\AtakActivityLogService;
 use App\Services\Atak\AtakMobileHistoryService;
 use App\Services\Atak\AtakMobileLinkService;
 use App\Services\Security\FileRateLimiter;
@@ -420,6 +423,53 @@ final class AtakMobileAppsController
         $this->atak()->deleteMarker((int) $link['tenant_id'], $id);
 
         return Response::json(['ok' => true]);
+    }
+
+    /**
+     * Effacer ma carte depuis le téléphone : {mode: preview|clear, types[], confirm}. Uniquement mes marqueurs et mes
+     * tracés (le lien du téléphone ne porte pas le droit de gestion de la carte). Même service que l'Overwatch.
+     */
+    public function mapClear(Request $request, array $params = []): Response
+    {
+        $link = $this->guardPost($request);
+        if ($link instanceof Response) {
+            return $link;
+        }
+        $service = $this->clearService();
+        $actor = $this->clearActor($link);
+        $tenantId = (int) $link['tenant_id'];
+        $mapId = (int) $link['map_id'];
+        if ((string) $request->input('mode', 'preview') !== 'clear') {
+            return Response::json(['ok' => true] + $service->preview($tenantId, $mapId, $actor));
+        }
+        $types = $request->input('types', []);
+        $result = $service->clear($tenantId, $mapId, $actor, AtakMapClearService::SCOPE_MINE, is_array($types) ? $types : [], (string) $request->input('confirm', ''));
+
+        return Response::json($result, $result['ok'] ? 200 : 422);
+    }
+
+    public function mapClearUndo(Request $request, array $params = []): Response
+    {
+        $link = $this->guardPost($request);
+        if ($link instanceof Response) {
+            return $link;
+        }
+        $result = $this->clearService()->undo((int) $link['tenant_id'], (int) $link['map_id'], $this->clearActor($link), (string) $request->input('batch', ''));
+
+        return Response::json($result, $result['ok'] ? 200 : ($result['error'] === 'forbidden' ? 403 : 410));
+    }
+
+    private function clearService(): AtakMapClearService
+    {
+        return new AtakMapClearService($this->atak(), new MapShapeRepository(), new AtakActivityLogService());
+    }
+
+    /** @return array{userId:int, aliases:list<string>, canManage:bool} */
+    private function clearActor(array $link): array
+    {
+        $name = trim((string) ($link['player_name'] ?? ''));
+
+        return ['userId' => (int) $link['user_id'], 'aliases' => $name !== '' ? [$name] : [], 'canManage' => false];
     }
 
     public function briefs(Request $request, array $params = []): Response

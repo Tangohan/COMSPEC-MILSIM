@@ -57,7 +57,7 @@ final class PlanEndWarningService
     }
 
     /**
-     * @return array{grace_enabled: bool, grace_days: int, warning_days: int, warning_email: bool}
+     * @return array{grace_enabled: bool, grace_days: int, warning_days: int, warning_email: bool, trial_days: int}
      */
     public function config(): array
     {
@@ -68,6 +68,7 @@ final class PlanEndWarningService
             'grace_days' => PlanAccessWindow::clampDays($repo->get(PlanAccessWindow::SETTING_GRACE_DAYS, ''), PlanAccessWindow::DEFAULT_GRACE_DAYS),
             'warning_days' => PlanAccessWindow::clampDays($repo->get(PlanAccessWindow::SETTING_WARNING_DAYS, ''), PlanAccessWindow::DEFAULT_WARNING_DAYS),
             'warning_email' => $repo->getBool(PlanAccessWindow::SETTING_WARNING_EMAIL, false),
+            'trial_days' => PlanAccessWindow::normalizeTrialDays($repo->get(PlanAccessWindow::SETTING_TRIAL_DAYS, '')),
         ];
     }
 
@@ -87,6 +88,7 @@ final class PlanEndWarningService
             PlanAccessWindow::SETTING_GRACE_DAYS => (string) PlanAccessWindow::clampDays($input['grace_days'] ?? null, PlanAccessWindow::DEFAULT_GRACE_DAYS),
             PlanAccessWindow::SETTING_WARNING_DAYS => (string) PlanAccessWindow::clampDays($input['warning_days'] ?? null, PlanAccessWindow::DEFAULT_WARNING_DAYS),
             PlanAccessWindow::SETTING_WARNING_EMAIL => !empty($input['warning_email']) ? '1' : '0',
+            PlanAccessWindow::SETTING_TRIAL_DAYS => (string) PlanAccessWindow::normalizeTrialDays($input['trial_days'] ?? null),
         ]);
         self::$configCache = null;
     }

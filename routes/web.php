@@ -775,6 +775,8 @@ return function (Router $router) {
     $router->post('/m/api/marqueurs', [\App\Controllers\Web\AtakMobileAppsController::class, 'markerStore']);
     $router->post('/m/api/marqueurs/{id}', [\App\Controllers\Web\AtakMobileAppsController::class, 'markerUpdate']);
     $router->post('/m/api/marqueurs/{id}/supprimer', [\App\Controllers\Web\AtakMobileAppsController::class, 'markerDelete']);
+    $router->post('/m/api/carte/effacer', [\App\Controllers\Web\AtakMobileAppsController::class, 'mapClear']);
+    $router->post('/m/api/carte/effacer/annuler', [\App\Controllers\Web\AtakMobileAppsController::class, 'mapClearUndo']);
     $router->get('/m/api/briefs', [\App\Controllers\Web\AtakMobileAppsController::class, 'briefsData']);
     $router->post('/m/api/briefs/{id}/reponse', [\App\Controllers\Web\AtakMobileAppsController::class, 'briefRespond']);
     $router->get('/m/api/suivi/{id}', [\App\Controllers\Web\AtakMobileAppsController::class, 'noticeStatus']);
@@ -3046,6 +3048,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->patch('/api/markers/{id}', [AtakApiController::class, 'markersUpdate']);
     $router->post('/api/atak/markers/{id}/reached', [AtakApiController::class, 'markersPoReached']);
     $router->delete('/api/markers/{id}', [AtakApiController::class, 'markersDelete']);
+    $router->post('/api/atak/map/clear', [AtakApiController::class, 'mapClear']);
+    $router->post('/api/atak/map/clear/undo', [AtakApiController::class, 'mapClearUndo']);
     $router->get('/api/atak/markers', [AtakApiController::class, 'markersIndex']);
     $router->get('/api/atak/marker-detection-rules', [AtakApiController::class, 'markerDetectionRulesIndex']);
     $router->post('/api/atak/marker', [AtakApiController::class, 'markerUpsert']);
