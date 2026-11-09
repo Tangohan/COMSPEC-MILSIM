@@ -89,6 +89,38 @@ switch (_act) do {
         if (isNil "_s") then { _s = createHashMapFromArray [["active", true], ["kind", ""], ["link", ""], ["ok", false], ["why", "sans radio de données"], ["kbps", 0], ["lat", 0], ["loss", 0], ["hops", -1], ["gw", ""], ["via", ""], ["mode", ""], ["nodes", []], ["wifiD", -1], ["wifiQ", 0], ["level", 3]]; };
         _s
     };
+    // Icône de la barre d'état (fn_statusUpdate) : [code, texture, couleur, infobulle]. Ne lit que le statut en cache et le nœud publié : aucun calcul de plus.
+    // Forme ET couleur : radio vide (non reliée), radio + câble (câble EUD), radio + ondes Wi-Fi (Wi-Fi), radio + flèche (transmet), radio barrée (coupée).
+    // N'appelle rien d'ACRE2 ni de TFAR ; la voix relayée n'y entre que par "txMark" (fn_relayTxBadge).
+    case "badge": {
+        if !(call _active) exitWith { ["off", "", [1, 1, 1, 1], ""] };
+        private _s = ["status"] call comspec_atak_native_fnc_mpuLink;
+        private _k = _s getOrDefault ["kind", ""];
+        private _dir = "\z\comspec_atak_native\addons\main\data\";
+        private _code = switch (true) do {
+            case (_k isEqualTo "mpu" && {!(_s getOrDefault ["ok", false])}): { "cut" };
+            case (_k isEqualTo "mpu" && {diag_tickTime < (uiNamespace getVariable ["COMSPEC_ATAK_MpuTxUntil", 0])}): { "tx" };
+            case (_k isEqualTo "mpu"): { _s getOrDefault ["link", "cable"] };
+            case (_k isEqualTo "" && {(player getVariable ["COMSPEC_ATAK_MpuNode", []]) isNotEqualTo []}): { "idle" };
+            default { "off" };
+        };
+        private _dim = ([] call comspec_atak_native_fnc_theme) get "onChromeDim";
+        switch (_code) do {
+            case "cable": { [_code, _dir + "mpu_cable.paa", [0.36, 0.78, 0.42, 1], "MPU-5 reliée par câble EUD : le téléphone passe par la radio, portée 3 km (exemple à puissance moyenne)."] };
+            case "wifi": { [_code, _dir + "mpu_wifi.paa", [0.36, 0.78, 0.42, 1], "MPU-5 reliée en Wi-Fi : le téléphone passe par la radio tant que vous restez à quelques mètres d'elle (exemple : 8 m)."] };
+            case "tx": { [_code, _dir + "mpu_tx.paa", [0.30, 0.74, 0.95, 1], "Émission par la MPU-5 : position, message, photo ou voix partent par la radio (exemple : une photo met quelques secondes)."] };
+            case "cut": { [_code, _dir + "mpu_cut.paa", [0.88, 0.25, 0.22, 1], "Liaison MPU-5 coupée : le téléphone ne passe plus par la radio (exemple : radio éteinte ou hors de portée Wi-Fi). Cause :"] };
+            case "idle": { [_code, _dir + "mpu_idle.paa", _dim, "MPU-5 allumée, téléphone non relié : reliez-le par câble EUD ou Wi-Fi (exemple : câble branché, le téléphone passe par la radio, portée 3 km)."] };
+            default { ["off", "", [1, 1, 1, 1], ""] };
+        }
+    };
+    // Émission en cours par la radio (fn_netSend, fn_relayTxBadge) : l'icône « transmet » reste affichée jusqu'à cette heure (au plus 6 s).
+    case "txMark": {
+        if !(call _active) exitWith {};
+        private _s = ["status"] call comspec_atak_native_fnc_mpuLink;
+        if ((_s getOrDefault ["kind", ""]) isNotEqualTo "mpu" || {!(_s getOrDefault ["ok", false])}) exitWith {};
+        uiNamespace setVariable ["COMSPEC_ATAK_MpuTxUntil", diag_tickTime + ((_arg param [0, 2]) max 1.5 min 6)];
+    };
     case "noDirect": {
         if !(call _active) exitWith { false };
         private _s = ["status"] call comspec_atak_native_fnc_mpuLink;
