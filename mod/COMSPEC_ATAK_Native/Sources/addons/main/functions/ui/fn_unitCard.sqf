@@ -476,7 +476,8 @@ switch (_mode) do {
             if (!_friend) then {
                 // Affiliation en toutes lettres à sa couleur (jetons de fn_theme), puis « position ancienne » si la piste est figée.
                 private _cAff = ["aff", _e] call comspec_atak_native_fnc_contactStyle;
-                _parts pushBack format ["<t color='%1'>%2</t>", ["hex", _cAff] call comspec_atak_native_fnc_contactStyle, ["label", _cAff] call comspec_atak_native_fnc_contactStyle];
+                // Téléphone tracé (fn_pollUnits) : « TÉLÉPHONE », jamais un camp deviné.
+                _parts pushBack format ["<t color='%1'>%2</t>", ["hex", _cAff] call comspec_atak_native_fnc_contactStyle, [["label", _cAff] call comspec_atak_native_fnc_contactStyle, ("TÉLÉPHONE") call comspec_atak_native_fnc_tr] select (_e getOrDefault ["phone", false])];
                 if ((_e getOrDefault ["freshness", "LIVE"]) in ["STALE", "LOST", "OFFLINE"]) then { _parts pushBack format ["<t color='%1'>%2</t>", _th get "hexMapWarn", ("POSITION ANCIENNE") call comspec_atak_native_fnc_tr]; };
             };
             if (!isNull _o && {(vehicle _o) isNotEqualTo _o}) then { _parts pushBack format [("à bord %1") call comspec_atak_native_fnc_tr, (getText (configOf vehicle _o >> "displayName")) call _esc]; };

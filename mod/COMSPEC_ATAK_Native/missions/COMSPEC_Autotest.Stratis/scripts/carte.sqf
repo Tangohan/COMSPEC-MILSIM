@@ -244,3 +244,159 @@ if !("carte" call AT_fnc_groupe) exitWith {};
     uiSleep 1;
     call AT_fnc_done;
 }, 300] call AT_fnc_run;
+
+// Téléphone tracé : ni « Infanterie… » ni « AMI / ALLIÉ » sur la carte, que la position vienne de RECHERCHER (GÉOLOC par
+// IMEI) ou d'une piste Athena « Téléphone » (suivi Zeus / ordre de géoloc, fn_pollUnits) ; symbole d'émetteur.
+["carte_telephone_trace", {
+    if (["comspec_atak_native_fnc_mapSearch", "comspec_atak_native_fnc_phoneIdent", "comspec_atak_native_fnc_symbology", "comspec_atak_native_fnc_natoSymbol", "comspec_atak_native_fnc_unitCard", "comspec_atak_native_fnc_localDataRefresh", "comspec_atak_native_fnc_storeSet"] call AT_fnc_nil) exitWith {};
+    [["MAP", 2] call AT_fnc_page, "page MAP non ouverte"] call AT_fnc_check;
+    // Mot d'infanterie ou d'allié dans un texte affiché (balises de texte structuré écartées).
+    private _bad = {
+        params ["_t"];
+        private _w = (toLower _t) splitString " ·:,;.()[]<>/='""#-+";
+        (_w findIf { _x in ["ami", "amie", "allié", "alliée", "allie", "alliÉ", "friend", "frd", "infanterie", "infantry"] }) >= 0
+    };
+    // 1) RECHERCHER > IMEI : téléphone d'une IA ennemie équipée.
+    private _grp = createGroup [east, true];
+    private _ia = _grp createUnit ["O_Soldier_F", player getPos [45, 60], [], 0, "NONE"];
+    _ia setVariable ["COMSPEC_ATAK_AiAtak", true, true];
+    _ia disableAI "PATH";
+    _ia disableAI "TARGET";
+    _ia disableAI "AUTOTARGET";
+    uiSleep 1;
+    private _imei = ([_ia] call comspec_atak_native_fnc_phoneIdent) select 1;
+    private _st = uiNamespace getVariable ["COMSPEC_ATAK_MapSearch", createHashMap];
+    uiNamespace setVariable ["COMSPEC_ATAK_MapSearch", _st];
+    uiNamespace setVariable ["COMSPEC_ATAK_MapSearchCtl", [controlNull, controlNull]];
+    uiNamespace setVariable ["COMSPEC_ATAK_GeoNext", 0];
+    _st set ["type", "IMEI"];
+    _st set ["q", _imei];
+    ["go"] call comspec_atak_native_fnc_mapSearch;
+    private _found = [{ (((uiNamespace getVariable ["COMSPEC_ATAK_MapSearch", createHashMap]) getOrDefault ["hit", createHashMap]) getOrDefault ["status", ""]) in ["OK", "SOS"] }, 12] call AT_fnc_wait;
+    private _hit = _st getOrDefault ["hit", createHashMap];
+    if (_found) then {
+        private _lbl = [_hit getOrDefault ["owner", ""], _hit getOrDefault ["q", ""]] select ((_hit getOrDefault ["owner", ""]) isEqualTo "");
+        [_lbl isNotEqualTo "", "RECHERCHER : téléphone localisé sans libellé"] call AT_fnc_check;
+        [!([_lbl] call _bad), format ["RECHERCHER : libellé « %1 »", _lbl]] call AT_fnc_check;
+        private _card = ["cardText"] call comspec_atak_native_fnc_mapSearch;
+        [!([_card] call _bad), format ["RECHERCHER : fiche « %1 »", _card]] call AT_fnc_check;
+    } else {
+        (format ["RECHERCHER : téléphone non localisé ici (%1 %2), partie GÉOLOC non vérifiée", _hit getOrDefault ["status", "?"], (_st getOrDefault ["msg", []]) param [0, ""]]) call AT_fnc_info;
+    };
+    // 2) Piste Athena « Téléphone » telle que fn_pollUnits la range (Athena coupée ici : magasin rempli à la main).
+    private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
+    private _ru0 = _data getOrDefault ["remoteUnits", createHashMap];
+    private _id = "athena:tél. at cible";
+    ["remoteUnits", createHashMapFromArray [[_id, createHashMapFromArray [
+        ["id", _id], ["callsign", "Tél. AT Cible"], ["position", (getPosATL player) vectorAdd [-45, 35, 0]], ["heading", 0],
+        ["affiliation", "unknown"], ["type", "phone"], ["phone", true], ["freshness", "LIVE"], ["updated", diag_tickTime],
+        ["role", "Téléphone"], ["status", "linked"]
+    ]]], -1, "at_tel_trace"] call comspec_atak_native_fnc_storeSet;
+    [] call comspec_atak_native_fnc_localDataRefresh;
+    private _u = (_data getOrDefault ["units", createHashMap]) getOrDefault [_id, createHashMap];
+    [(count _u) > 0, "piste téléphone absente de la carte"] call AT_fnc_check;
+    if ((count _u) > 0) then {
+        [(_u getOrDefault ["affiliation", ""]) isNotEqualTo "friend", "piste téléphone rangée en allié"] call AT_fnc_check;
+        private _ic = ([_u] call comspec_atak_native_fnc_symbology) select 0;
+        [((toLower _ic) find "transmitter") >= 0, format ["symbole de la piste téléphone : %1", _ic]] call AT_fnc_check;
+        private _nt = ([_u] call comspec_atak_native_fnc_natoSymbol) select 0;
+        [((toLower _nt) find "transmitter") >= 0, format ["symbole OTAN de la piste téléphone : %1", _nt]] call AT_fnc_check;
+        (call AT_fnc_etat) set ["selectedEntity", _u];
+        ["mapCard"] call comspec_atak_native_fnc_unitCard;
+        uiSleep 1;
+        private _txt = ((uiNamespace getVariable ["COMSPEC_ATAK_UnitCard", createHashMap]) getOrDefault ["texts", ["", ""]]) joinString " ";
+        [!([_txt] call _bad), format ["fiche de la piste téléphone : « %1 »", _txt]] call AT_fnc_check;
+    };
+    [0.012] call AT_fnc_centre;
+    ["telephone_trace_carte"] call AT_fnc_shot;
+    "téléphones tracés : symbole d'émetteur, libellé IMEI ou « Tél. … », fiche « TÉLÉPHONE », jamais infanterie ni allié" call AT_fnc_visuel;
+    (call AT_fnc_etat) set ["selectedEntity", createHashMap];
+    ["mapCard"] call comspec_atak_native_fnc_unitCard;
+    ["clear"] call comspec_atak_native_fnc_mapSearch;
+    ["remoteUnits", _ru0, -1, "at_tel_trace_fin"] call comspec_atak_native_fnc_storeSet;
+    [] call comspec_atak_native_fnc_localDataRefresh;
+    deleteVehicle _ia;
+    call AT_fnc_done;
+}, 90] call AT_fnc_run;
+// Fiche d'unité de la carte (fn_unitCard « mapCard ») : à pied, pas de bloc ENGIN ; à bord d'un avion, silhouette d'avion,
+// pastille d'état du vol et bloc ENGIN (place, altitude sol, vitesse, cap). Rien de coupé, fiche dans la carte, pas refaite
+// à chaque seconde.
+["carte_fiche_unite", {
+    if (["comspec_atak_native_fnc_unitCard", "comspec_atak_native_fnc_localDataRefresh", "comspec_atak_native_fnc_mapCenter"] call AT_fnc_nil) exitWith {};
+    [["MAP", 2] call AT_fnc_page, "page MAP non ouverte"] call AT_fnc_check;
+    private _fiche = { uiNamespace getVariable ["COMSPEC_ATAK_UnitCard", createHashMap] };
+    // Ouvre la fiche d'un objet (piste de la carte si elle existe), attend son contenu.
+    private _ouvre = {
+        params ["_o"];
+        [] call comspec_atak_native_fnc_localDataRefresh;
+        private _u = ["resolve", _o] call comspec_atak_native_fnc_unitCard;
+        (call AT_fnc_etat) set ["selectedMarker", ""];
+        (call AT_fnc_etat) set ["selectedEntity", _u];
+        ["mapCard"] call comspec_atak_native_fnc_unitCard;
+        [{ ((call _fiche) getOrDefault ["texts", []]) isNotEqualTo [] }, 4] call AT_fnc_wait
+    };
+    // Rien de coupé, fiche entière dans la carte.
+    private _tient = {
+        params ["_nom"];
+        private _c = call _fiche;
+        { [_x, format ["%1 : texte", _nom]] call AT_fnc_tient; } forEach ([_c get "title", _c get "role", _c get "head"] + (_c getOrDefault ["pills", []]) + ((_c getOrDefault ["tiles", []]) apply { _x select 1 }));
+        private _geo = uiNamespace getVariable ["COMSPEC_ATAK_UnitCardGeom", []];
+        private _bg = (_c getOrDefault ["ctrls", []]) param [1, controlNull];
+        if ((count _geo) >= 4 && {!isNull _bg}) then {
+            _geo params ["", "_by", "", "_mh"];
+            (ctrlPosition _bg) params ["", "_y", "", "_h"];
+            [_y >= _by - 0.001 && {(_y + _h) <= (_by + _mh + 0.001)}, format ["%1 : fiche hors de la carte (%2 + %3)", _nom, _y, _h]] call AT_fnc_check;
+        };
+        // Un tour de rafraîchissement : la fiche n'est pas refaite (pas de boucle de remesure).
+        private _c0 = _c get "ctrls";
+        ["tick"] call comspec_atak_native_fnc_unitCard;
+        [((call _fiche) getOrDefault ["ctrls", []]) isEqualTo _c0, format ["%1 : fiche refaite au rafraîchissement", _nom]] call AT_fnc_check;
+    };
+    // 1) À pied : un équipier de mon groupe, à 30 m.
+    private _ia = (group player) createUnit [typeOf player, player getPos [30, 45], [], 0, "NONE"];
+    _ia setVariable ["COMSPEC_ATAK_AiAtak", true, true];
+    _ia disableAI "PATH";
+    uiSleep 2;
+    [[_ia] call _ouvre, "fiche à pied non ouverte"] call AT_fnc_check;
+    private _c = call _fiche;
+    [!(_c getOrDefault ["aboard", true]) && {isNull (_c getOrDefault ["head", controlNull])}, "à pied : bloc ENGIN présent"] call AT_fnc_check;
+    private _lbl = (_c getOrDefault ["tiles", []]) apply { _x select 0 };
+    [!("PLACE" in _lbl) && {"GRILLE" in _lbl} && {"DERNIER SIGNAL" in _lbl}, format ["à pied : tuiles %1", _lbl]] call AT_fnc_check;
+    ["à pied"] call _tient;
+    [0.01] call AT_fnc_centre;
+    ["fiche_unite_pied"] call AT_fnc_shot;
+    // 2) En avion : A-164 en vol à 500 m, pilote IA de mon groupe.
+    private _pos = player getPos [1500, 90];
+    private _av = createVehicle ["B_Plane_CAS_01_dynamicLoadout_F", [_pos select 0, _pos select 1, 500], [], 0, "FLY"];
+    _av allowDamage false;
+    _av setPosASL [_pos select 0, _pos select 1, 500 + getTerrainHeightASL _pos];
+    _av setDir 270;
+    _av setVelocityModelSpace [0, 110, 0];
+    private _pil = (group player) createUnit ["B_Pilot_F", player getPos [5, 0], [], 0, "NONE"];
+    _pil setVariable ["COMSPEC_ATAK_AiAtak", true, true];
+    _pil allowDamage false;
+    _pil moveInDriver _av;
+    _av flyInHeight 500;
+    uiSleep 3;
+    [(objectParent _pil) isEqualTo _av, "pilote pas à bord"] call AT_fnc_check;
+    [[_pil] call _ouvre, "fiche de l'aviateur non ouverte"] call AT_fnc_check;
+    _c = call _fiche;
+    [_c getOrDefault ["aboard", false] && {!isNull (_c getOrDefault ["head", controlNull])}, "en avion : bloc ENGIN absent"] call AT_fnc_check;
+    [((toLower (_c getOrDefault ["icon", ""])) find "iconplane") >= 0, format ["en avion : icône %1", _c getOrDefault ["icon", ""]]] call AT_fnc_check;
+    _lbl = (_c getOrDefault ["tiles", []]) apply { _x select 0 };
+    [({ _x in _lbl } count ["PLACE", "ALT. SOL", "VITESSE", "CAP"]) isEqualTo 4, format ["en avion : tuiles %1", _lbl]] call AT_fnc_check;
+    private _etat = ctrlText ((_c getOrDefault ["pills", []]) param [1, controlNull]);
+    [_etat isNotEqualTo "", "en avion : pastille d'état du vol vide"] call AT_fnc_check;
+    (format ["pastille du vol : %1 ; textes : %2", _etat, (_c getOrDefault ["texts", []]) joinString " | "]) call AT_fnc_info;
+    ["en avion"] call _tient;
+    [_av, 0.08] call comspec_atak_native_fnc_mapCenter;
+    uiSleep 1;
+    ["fiche_unite_avion"] call AT_fnc_shot;
+    "fiche d'unité : silhouette d'avion, pastilles APTE et EN VOL, bloc ENGIN (A-164, AVION, place, altitude, vitesse, cap), grille, distance, azimut avec point cardinal, « il y a … s »" call AT_fnc_visuel;
+    (call AT_fnc_etat) set ["selectedEntity", createHashMap];
+    ["mapCard"] call comspec_atak_native_fnc_unitCard;
+    deleteVehicle _pil;
+    deleteVehicle _av;
+    deleteVehicle _ia;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;

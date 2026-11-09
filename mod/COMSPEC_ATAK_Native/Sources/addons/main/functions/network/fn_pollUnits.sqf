@@ -8,10 +8,15 @@ private _add = {
     _callsign = trim _callsign;
     if (_callsign isEqualTo "" || {_wx isEqualTo 0 && {_wy isEqualTo 0}}) exitWith {};
     private _id = "athena:" + toLower _callsign;
+    // Téléphone tracé (Zeus ou ordre de géoloc d'Athena, COMSPEC Link fn_reportPhonePosition : rôle « Téléphone »,
+    // indicatif « Tél. Nom » ou « TEL-… ») : ni allié ni infanterie. Avant, toute piste Athena devenait « ami,
+    // infanterie » : le téléphone tracé d'une IA ennemie s'affichait en allié (symbole bleu, BFT « Infanterie »).
+    private _phone = (_role in ["Téléphone", "téléphone", "TÉLÉPHONE", "Telephone", "telephone", "Phone", "phone"])
+        || {(_callsign find "Tél. ") isEqualTo 0} || {(_callsign find "TEL-") isEqualTo 0};
     _units set [_id, createHashMapFromArray [
         ["id", _id], ["callsign", _callsign], ["position", [_wx, _wy, 0]], ["heading", 0],
-        ["affiliation", "friend"], ["type", "infantry"], ["freshness", "LIVE"], ["updated", _now - _age],
-        ["role", _role], ["status", _status]
+        ["affiliation", ["friend", "unknown"] select _phone], ["type", ["infantry", "phone"] select _phone], ["phone", _phone],
+        ["freshness", "LIVE"], ["updated", _now - _age], ["role", _role], ["status", _status]
     ]];
 };
 if ([] call comspec_atak_native_fnc_bridge) then {

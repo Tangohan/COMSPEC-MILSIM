@@ -61,21 +61,21 @@ private _edge = ["COMSPEC_RscText", [_px, _py, pixelW * 4, _ph]] call _mk;
 _edge ctrlSetBackgroundColor _ink;
 
 // Pastille : forme de l'affiliation (liseré à la couleur, fond sombre) et symbole du repère dedans.
-private _tH = _fs * 1.3 + _lineH;
-private _tW = _tH / _ratio;
+private _chipH = _fs * 1.3 + _lineH;
+private _chipW = _chipH / _ratio;
 private _tx0 = _px + pixelW * 4 + _in / _ratio * 0.6;
 if (_aff isEqualTo "") then {
-    private _chip = ["COMSPEC_RscText", [_tx0, _py + _in, _tW, _tH]] call _mk;
+    private _chip = ["COMSPEC_RscText", [_tx0, _py + _in, _chipW, _chipH]] call _mk;
     _chip ctrlSetBackgroundColor [_rgba select 0, _rgba select 1, _rgba select 2, 0.16];
 } else {
     {
         _x params ["_tex", "_role", "_sc"];
         private _k = 0.5 * _sc / 2.0;
-        private _ic0 = ["COMSPEC_RscIcon", [_tx0 + _tW * (0.5 - _k), _py + _in + _tH * (0.5 - _k), _tW * 2 * _k, _tH * 2 * _k], _tex] call _mk;
+        private _ic0 = ["COMSPEC_RscIcon", [_tx0 + _chipW * (0.5 - _k), _py + _in + _chipH * (0.5 - _k), _chipW * 2 * _k, _chipH * 2 * _k], _tex] call _mk;
         _ic0 ctrlSetTextColor ([_ink, _th get "mapCard"] select (_role isEqualTo "DARK"));
     } forEach (["layers", _aff] call comspec_atak_native_fnc_contactStyle);
 };
-private _ic = ["COMSPEC_RscIcon", [_tx0 + _tW * 0.25, _py + _in + _tH * 0.25, _tW * 0.5, _tH * 0.5], getText (configFile >> "CfgMarkers" >> _type >> "icon")] call _mk;
+private _ic = ["COMSPEC_RscIcon", [_tx0 + _chipW * 0.25, _py + _in + _chipH * 0.25, _chipW * 0.5, _chipH * 0.5], getText (configFile >> "CfgMarkers" >> _type >> "icon")] call _mk;
 _ic ctrlSetTextColor ([_rgba, _ink] select (_aff isNotEqualTo ""));
 
 // Fermer (en haut à droite).
@@ -92,8 +92,8 @@ private _dd = player distance2D _mp;
 private _kindTxt = (["MISSION", "JOUEUR", "ALERTE"] select _kind) call comspec_atak_native_fnc_tr;
 private _kindCol = [_th get "hexMapDim", _th get "hexMapOk", _th get "hexMapWarn"] select _kind;
 private _affTxt = ["", format ["<t size='0.72' color='%1'>%2</t>  ", ["hex", _aff] call comspec_atak_native_fnc_contactStyle, ["label", _aff] call comspec_atak_native_fnc_contactStyle]] select (_aff isNotEqualTo "");
-private _txX = _tx0 + _tW + _in / _ratio * 0.6;
-private _txt = ["COMSPEC_RscStructuredText", [_txX, _py + _in - _fs * 0.1, _cx - _txX - _in / _ratio * 0.4, _tH + ([0, _lineH] select (_stamp isNotEqualTo "")) + ([0, _lineH] select (_note isNotEqualTo "")) + _fs * 0.2]] call _mk;
+private _txX = _tx0 + _chipW + _in / _ratio * 0.6;
+private _txt = ["COMSPEC_RscStructuredText", [_txX, _py + _in - _fs * 0.1, _cx - _txX - _in / _ratio * 0.4, _chipH + ([0, _lineH] select (_stamp isNotEqualTo "")) + ([0, _lineH] select (_note isNotEqualTo "")) + _fs * 0.2]] call _mk;
 private _esc = { _this regexReplace ["[<>&]", ""] };
 private _name = [([markerText _sel] call comspec_atak_native_fnc_markerAutoName), ("(sans titre)") call comspec_atak_native_fnc_tr] select ((markerText _sel) isEqualTo "");
 private _l3 = "";

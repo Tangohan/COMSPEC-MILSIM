@@ -382,6 +382,11 @@ if (_interactive) then {
         (uiNamespace getVariable ["COMSPEC_ATAK_MapSearch", createHashMap]) set ["open", false];
         [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     }];
+    // Raccourci « Sur mon téléphone » : le logo Athena de la barre donne le QR code de la carte sur le vrai téléphone
+    // (retiré de la barre par la refonte « barre d'outils par usage » ; l'outil du menu OUTILS reste).
+    if !(_l get "mini") then {
+        _tools pushBack ["phoneqr", "\z\comspec_atak_native\addons\main\data\app_athena.paa", "Sur mon téléphone : QR code de la carte", { ["PHONE"] call comspec_atak_native_fnc_mapToolMenu; }];
+    };
     // Drone appairé : bascule carte / vue drone plein écran / vue incrustée.
     if (alive (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])) then {
         _tools pushBack ["droneview", "app_drone", "Vue drone : carte, plein écran ou incrustée", { ["view"] call comspec_atak_native_fnc_droneAction; }];

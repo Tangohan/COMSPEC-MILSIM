@@ -15,13 +15,13 @@ private _tr = { if (_this isEqualTo "") then { "" } else { _this call comspec_ss
 private _line = _text call _tr;
 private _tip = _hint call _tr;
 private _showToast = {
-    params ["_t", "_k"];
+    params ["_t", "_k", ["_who", ""]];
     if (_t isEqualTo "") exitWith {};
-    if (!isNil "comspec_atak_native_fnc_aiOrder") exitWith { ["toast", [_t, _k]] call comspec_atak_native_fnc_aiOrder; };
+    if (!isNil "comspec_atak_native_fnc_aiOrder") exitWith { ["toast", [_t, _k, _who]] call comspec_atak_native_fnc_aiOrder; };
     hintSilent _t;
 };
 if (isNull _unit || {_line isEqualTo ""} || {isNil "comspec_atak_native_fnc_aiBubble"}) exitWith {
-    [(([_line, _tip] select { _x isNotEqualTo "" }) joinString " · "), _type] call _showToast;
+    [(([_line, _tip] select { _x isNotEqualTo "" }) joinString " · "), _type, ["", ([_unit getVariable ["comspec_sse_idName", ""], "Anonyme" call _tr] select ((_unit getVariable ["comspec_sse_idName", ""]) isEqualTo ""))] select (isNull _unit)] call _showToast;
     false
 };
 private _at = time max (_unit getVariable ["comspec_sse_toastFree", 0]);
@@ -31,7 +31,7 @@ private _go = {
     private _seen = !isNull _unit && {["say", [_unit, _line, _unit getVariable ["comspec_sse_idName", name _unit], _type]] call comspec_atak_native_fnc_aiBubble};
     // Bulle vue : l'indice seul en toast. Sinon la phrase, avec son auteur, et l'indice.
     private _parts = if (_seen) then { [_tip] } else { [format ["%1 : %2", [_unit getVariable ["comspec_sse_idName", name _unit], "?"] select (isNull _unit), _line], _tip] };
-    [((_parts select { _x isNotEqualTo "" }) joinString " · "), _type] call _showToast;
+    [((_parts select { _x isNotEqualTo "" }) joinString " · "), _type, [_unit getVariable ["comspec_sse_idName", ""], "Anonyme" call _tr] select ((_unit getVariable ["comspec_sse_idName", ""]) isEqualTo "")] call _showToast;
     _seen
 };
 if (_at <= time) exitWith { [_line, _type, _unit, _tip, _showToast] call _go };

@@ -38,132 +38,78 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## À venir : carte du téléphone au style tactique et contacts redessinés (ATAK natif, version à attribuer)
+## Pack 4.2.0 Washington : carte tactique, contacts, SMS, bilan de l'année, YouTube, couverture importée, réglages expliqués (ATAK natif 4.2.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.6.0)
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
+### Résumé joueur
 Type : nouveauté
-FR : La carte du téléphone prend le style tactique du site, et les contacts sont redessinés
-- Réglages > Carte > « Marqueurs et traits » : TACTIQUE (par défaut), CLASSIQUE ou AUTO. Le style tactique reprend celui de la carte du site sur téléphone : pions à anneau avec la lettre d'équipe, plaques de nom à chasse fixe, routes orange à flèche, zones hachurées, mesure en tirets avec sa distance.
-- Les contacts se reconnaissent à leur forme et pas seulement à leur couleur : losange pour un ennemi, carré pour un neutre, carré à bras pour un inconnu, triangle pour un civil, cercle pour un ami. Une position ancienne est estompée et porte son âge.
-- La fiche d'un contact ou d'un repère montre son affiliation, sa distance et son azimut depuis vous, son âge et son auteur, avec Y ALLER, PARTAGER, CENTRER ou MODIFIER, SUPPRIMER. Sur une piste ennemie, MARQUER pose un repère partagé à sa position.
-- Lisible dans les trois thèmes (sombre, jour, nuit JVN). Les symboles MIL-STD-2525D restent disponibles dans « Icônes des unités ».
-EN : The phone map gets the site's tactical style, and contacts are redrawn
-- Settings > Map > "Markers and lines": TACTICAL (default), CLASSIC or AUTO. The tactical style follows the site's phone map: ring pawns with the team letter, fixed-width name plates, orange routes with an arrow, hatched zones, dashed measuring line with its distance.
-- Contacts are told apart by shape, not only by colour: diamond for an enemy, square for a neutral, square with arms for an unknown, triangle for a civilian, circle for a friend. An old position is dimmed and shows its age.
-- A contact or marker card shows its affiliation, distance and bearing from you, its age and author, with GO THERE, SHARE, CENTRE or EDIT, DELETE. On an enemy track, MARK places a shared marker at its position.
-- Readable in all three themes (dark, day, NVG). MIL-STD-2525D symbols stay available in "Unit icons".
+FR : ATAK 4.2.0 : carte tactique, contacts redessinés, app SMS, bilan de l'année, couverture importée et réglages expliqués
+- **Carte** : style tactique par défaut (pions à anneau, plaques de nom, routes à flèche, zones hachurées, mesure avec distance) et contacts reconnaissables à leur forme : losange pour un ennemi, carré pour un neutre, cercle pour un ami. Position ancienne estompée avec son âge, fiche de contact refaite avec MARQUER, PARTAGER, Y ALLER.
+- **Messages** : nouvelle app SMS, les conversations de joueur à joueur dans l'interface de Messages ; sans réseau, le SMS part au retour du signal.
+- **Barre du téléphone** : une icône pour la radio MPU (reliée par câble ou Wi-Fi, en transmission, coupée).
+- **Bilan de l'année** et **Vidéo YouTube** (désactivée par défaut, activée par l'administrateur du serveur) dans le téléphone.
+- **Ma couverture** : générez-la sur Athena, téléchargez le fichier, importez-le dans le téléphone sans connexion.
+- **FIRES court et CAS** : choisissez l'unité à appeler ; l'app CAS est lisible dans les trois thèmes.
+- **Réglages du serveur** : chaque réglage de Échap > Réalisme est expliqué avec un exemple, la voix relayée par le maillage s'y règle, l'onglet VOIX de Wave Relay est clarifié.
+- **SSE** : quinze papiers variés pour les documents trouvés (carreaux, carnet, ticket, formulaire, feuilles sales ou brûlées).
+- **Dépannage MPU** : personne ne vous entend par la MPU5 ? App Réseau, Voix radio par le maillage, DÉPANNAGE MPU : l'assistant vérifie le réglage du serveur, votre radio, TeamSpeak, la MPU5, le pont radio, le maillage et la fréquence d'un camarade, montre le maillon cassé, propose la correction et copie un rapport à coller sur Discord. Il répond aussi à « faut-il un relais ? » : non dans votre groupe ou entre voisins directs, oui au-delà.
+- **Correctif important** : après un retour au menu puis une nouvelle partie, des textes et des couleurs disparaissaient dans les apps (lignes vides dans Comptes rendus, ligne distance / cap / altitude manquante sous la carte). Corrigé.
+- **Téléphones tracés** : un téléphone localisé n'apparaît plus comme « infanterie amie » sur la carte (icône d'émetteur, mention « téléphone »).
+- **Équipe (BFT)** : symboles qui ne recouvrent plus les indicatifs, légendes sous le tableau, fiche de droite qui ne disparaît plus.
+- **SSE** : « Ouvrir mes papiers » ouvre directement le document (plus de barre ni de message d'interruption), messages des IA sans bip et titrés du nom de l'IA, fiche « Ma couverture » expliquée avec des exemples.
+- **Retiré** : l'action « Mesurer tension et SpO2 » (brassard, oxymètre) du menu ACE.
+EN : ATAK 4.2.0: tactical map, redrawn contacts, SMS app, year in review, imported cover and explained settings
+- **Map**: tactical style by default (ring pawns, name plates, routes with an arrow, hatched zones, measure with distance) and contacts told apart by shape: diamond for an enemy, square for a neutral, circle for a friend. Old positions are dimmed and show their age; the contact card is redone with MARK, SHARE, GO THERE.
+- **Messages**: new SMS app, player-to-player conversations in the Messages interface; with no network, the SMS goes out when the signal returns.
+- **Phone status bar**: an icon for the MPU radio (linked by cable or Wi-Fi, transmitting, lost).
+- **Year in review** and **YouTube video** (off by default, turned on by the server admin) in the phone.
+- **My cover**: generate it on Athena, download the file, import it in the phone offline.
+- **FIRES quick and CAS**: pick the unit to call; the CAS app is readable in all three themes.
+- **Server settings**: every Esc > Realism setting is explained with an example, voice relayed by the mesh is set there, the Wave Relay VOICE tab is clearer.
+- **SSE**: fifteen varied papers for found documents (squared, notebook, receipt, form, dirty or burnt sheets).
+- **MPU troubleshooting**: nobody hears you through the MPU5? Network app, Radio voice over the mesh, MPU TROUBLESHOOTING: the assistant checks the server setting, your radio, TeamSpeak, the MPU5, the radio bridge, the mesh and a teammate's frequency, shows the broken link, offers the fix and copies a report to paste on Discord. It also answers “do I need a relay?”: no within your group or between direct neighbours, yes beyond.
+- **Important fix**: after going back to the menu and starting a new game, texts and colours vanished in the apps (empty rows in Reports, missing distance / heading / altitude line under the map). Fixed.
+- **Traced phones**: a located phone no longer shows as "friendly infantry" on the map (transmitter icon, "phone" label).
+- **Team (BFT)**: symbols no longer cover callsigns, legends under the table, the right-hand card no longer disappears.
+- **SSE**: "Open my papers" opens the document straight away (no progress bar or interruption message), AI messages have no beep and carry the AI's name, the "My cover" sheet is explained with examples.
+- **Removed**: the "Measure blood pressure and SpO2" action (cuff, oximeter) from the ACE menu.
 
 ### Détail technique
 - Le style tactique de la carte existait déjà dans le mod (`fn_mapColors` « tac », pions, plaques, routes, zones, mesure) ; cette PR le rend par défaut (`COMSPEC_ATAK_MapDrawStyle` TACTICAL, AUTO conservé, STANDARD affiché CLASSIQUE) et ajoute ce qui manquait par rapport au web (`atak-m-tactique.js`) : formes d'affiliation, âge, fiche.
 - `fn_contactStyle` (nouveau) : table des couches par affiliation (liseré + fond, textures de `data\` déjà livrées, aucun PAA nouveau), `aff`, `markerAff`, `rgb`, `ink`, `hex`, `label`, `age`, `ageShort`, `scaleK` (taille par paliers de 5 % selon le zoom), `mark`. `fn_mapOnDraw` : contacts non amis en forme d'affiliation (80 au plus par image, taille suivant le zoom, cap seulement s'il est connu, âge sous une piste périmée), `fn_mapGameMarkers` : forme sous les repères o_ n_ u_ b_ c_ en zoom rapproché (60 au plus, cache invalidé au changement de style), `fn_mapLabels` : âge dans la ligne 2 des contacts ENI.
 - `fn_contactCard` (nouveau, sorti de `fn_pageMap`) : fiche du marqueur sélectionné, jetons `mapCard`, `mapCardEdge`, `mapFriend`… de `fn_theme` (4,5 sur le fond de fiche dans les 3 thèmes, `AtakThemeContrastTest`). `fn_unitCard` : pastille à la forme de l'affiliation, MARQUER sur une piste non amie.
 - Non vérifié en jeu : rendu des formes (`map_shape_cross` en carré à bras), tailles, fiche dans les 6 combinaisons thème x orientation. Autotest `carte_style_contacts` (carte.sqf), non exécuté. Le côté web (carte Athena) n'est pas touché : la fiche et les formes demandent un travail propre côté `atak-overwatch-mapkit.js`.
-
-## À venir : FIRES court (destinataires) et app CAS lisible (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : FIRES court : choisir l'unité à appeler, et l'app CAS enfin lisible
-- FIRES court : un bouton « Destinataires » ouvre la liste des pilotes et JTAC en ligne, avec recherche. Touchez un nom, ou une unité sur la carte, pour l'appeler seule ; rien de choisi, tous sont appelés comme avant.
-- Si personne n'est en ligne, un message l'explique avec un exemple.
-- App CAS (9-LINE, 5-LINE, APPEL DE FEU, COURT) : textes, champs et boutons suivent le thème sombre, jour ou nuit JVN, avec un contraste lisible. Le bouton choisi est entouré de crochets en plus de sa couleur.
-- Des aides courtes avec exemple (AZ, DIST, X), des messages explicites quand la solution de tir ou le journal sont vides, et un journal en plus grosse police.
-EN : FIRES quick: pick the unit to call, and a readable CAS app
-- FIRES quick: a "Recipients" button opens the list of online pilots and JTACs, with search. Tap a name, or a unit on the map, to call only that one; with nothing picked, everyone is called as before.
-- When nobody is online, a message explains it with an example.
-- CAS app (9-LINE, 5-LINE, CALL FOR FIRE, QUICK): texts, fields and buttons follow the dark, day or NVG theme with readable contrast. The chosen button is wrapped in brackets as well as coloured.
-- Short help lines with examples (AZ, DIST, X), explicit messages when the fire solution or the log is empty, and a larger log font.
-
-### Détail technique
 - Cause (code, non vérifiée en jeu) : `fn_firesQuick` "recipients" calculait la liste (pilotes et JTAC avec téléphone et espace d'app) sans aucun choix, et l'écran n'affichait que « N pilote(s) ou JTAC en ligne ». Aucun sélecteur, et liste vide sans explication si le filtre (téléphone, espace d'app) écartait tout le monde.
 - `fn_firesQuick` : "cands", "dest", "destToggle", "destAll", "picker", "search" ; "recipients" renvoie les choisis encore en ligne, sinon tous ; "target" avec le sélecteur ouvert choisit l'unité à moins de 150 m du toucher. `fn_pageQuickMap` : bouton, panneau de sélection (aide, recherche, 5 lignes).
 - `fn_firesCff`, `fn_pageFires` : plus de couleur fixe, jetons de `fn_theme` ; cause de l'illisible : `onState` (encre sombre) utilisé comme texte des champs et boutons sombres, `accent` + encre 0,03 sur l'état actif, gris pâles. Actif : `accentSoftHi` + `onAccentSoft` (testés à 4,5 dans AtakThemeContrastTest) et crochets. Libellés réduits par `fn_textFit` (plancher 80 %).
 - Autotest : `fires_court_destinataires` (pilote.sqf), `cas_lisibilite_themes` (telephone.sqf), non exécutés.
-## À venir : réglages du serveur expliqués et onglet VOIX clarifié (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : Chaque réglage du réalisme est expliqué, avec un exemple
-- Échap > Réalisme et réseau : sous chaque réglage, une phrase dit ce que ça change en jeu, un exemple chiffré l'illustre, et la valeur par défaut est rappelée. L'assistant de configuration reprend les mêmes explications.
-- La voix relayée par le maillage se règle maintenant depuis cette fenêtre (section Maillage), avec Appliquer au serveur. Elle reste désactivée par défaut.
-- App Wave Relay, onglet VOIX : un encadré explique à quoi il sert, l'état dit le prochain pas à faire (avec le chemin exact), chaque section est expliquée, et les boutons ÉCOUTER sont plus sobres : l'état s'affiche par une case cochée ou vide, pas seulement par la couleur.
-EN : Every realism setting is explained, with an example
-- Esc > Realism and network: under each setting, a sentence says what it changes in game, a worked example illustrates it, and the default value is shown. The setup assistant uses the same explanations.
-- Voice relayed by the mesh can now be set from this window (Mesh section), with Apply to server. It stays off by default.
-- Wave Relay app, VOICE tab: a box explains what it is for, the status tells you the next step (with the exact path), every section is explained, and the LISTEN buttons are calmer: state is shown by a ticked or empty box, not only by color.
-
-### Détail technique
 - Nouveau `fn_realismHelp` (77 réglages : explication et exemple FR, EN dans `i18n/en.txt` et `localisation/template/xx.txt`). `fn_netConfig` : ligne qui grandit avec le texte (`ctrlTextHeight`), valeur d'usine lue (`fn_realismCatalog` "state", CBA "default", ou défauts de `fn_netCond`). `fn_setupWizard` : mêmes textes.
 - `mpu_voice` déplacé de « Radio et voix » à « Maillage » dans le catalogue (même circuit serveur, `realismSet`). Défaut inchangé (désactivé). `fn_mpuVoice` "summary" cite Échap > Réalisme.
 - `fn_pageWaveRelay` (VOIX) et `fn_meshGroups` "rows" : encadré d'aide, prochain pas, états vides, boutons `[ ] / [x]`. `fn_radioGuard`, ACRE2 / TFAR et valeurs par défaut non touchés. Rien n'a tourné en jeu.
 - Test : `AtakReglagesExplicationsTest`.
-## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)
-
-## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)
-## À venir : icône de la radio MPU dans la barre d'état (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Une icône pour la radio MPU dans la barre du téléphone
-- Quand une radio MPU-5 est reliée au téléphone, une petite icône de radio apparaît en haut, à côté du cadenas : radio vide (allumée, pas reliée), radio + câble (câble EUD), radio + ondes (Wi-Fi), radio barrée (liaison coupée).
-- Pendant que le téléphone envoie vraiment quelque chose par la radio (position, message, photo, voix relayée), l'icône devient une radio avec une flèche montante.
-- Survolez l'icône pour lire ce qu'elle veut dire, avec un exemple. Le logo hexagonal vert à maillon reste celui de COMSPEC Link (compte Athena), il n'a rien à voir avec la radio.
-- Quand la barre est trop étroite, l'icône passe avant le libellé du cadenas et la mémoire vive.
-EN : An icon for the MPU radio in the phone status bar
-- When an MPU-5 radio is linked to the phone, a small radio icon shows at the top next to the padlock: empty radio (on, not linked), radio + cable (EUD cable), radio + waves (Wi-Fi), crossed-out radio (link lost).
-- While the phone is really sending something through the radio (position, message, photo, relayed voice), the icon becomes a radio with an up arrow.
-- Hover the icon to read what it means, with an example. The green hexagon logo with a link is still COMSPEC Link (Athena account); it has nothing to do with the radio.
-- When the bar is too narrow, the icon is kept before the padlock label and the RAM.
-
-### Détail technique
 - `fn_mpuLink` : actions `badge` (code `off`/`idle`/`cable`/`wifi`/`tx`/`cut`, texture, couleur du thème pour `idle`, infobulle ; ne lit que `status` en cache et `COMSPEC_ATAK_MpuNode`) et `txMark` (pose `COMSPEC_ATAK_MpuTxUntil`, 1,5 à 6 s, seulement si le téléphone est relié et le réseau en service). Appelée par `fn_netSend` (envois réellement partis) et `fn_relayTxBadge` (voix relayée, événements ACRE2 déjà écoutés ; aucun appel ACRE2 / TFAR de plus).
 - `fn_layoutApply` : nouveau contrôle `COMSPEC_ATAK_MpuCtrl` après le cadenas ; priorité d'affichage cadenas > icône MPU > libellé du cadenas > RAM, chacun seulement s'il tient en entier. `fn_statusUpdate` : écritures seulement si la valeur change.
 - `tools/gen_mpu_status_icons.py` : 5 PAA 64 px (`mpu_idle`, `mpu_cable`, `mpu_wifi`, `mpu_tx`, `mpu_cut`) dans `main/data`, blancs sur transparent, ancien fichier supprimé avant conversion. Formes distinctes : la couleur n'est jamais seule.
 - Autotest : étape `tel_icone_mpu`. Chaînes anglaises dans `i18n/en.txt`.
-
-## À venir : importer sa couverture générée sur Athena (SSE et COMSPEC Link, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Importez votre couverture générée sur Athena, sans connexion
-- Sur Athena, Ma couverture (Mes papiers), cliquez Générer puis Télécharger : vous obtenez un fichier de couverture complet (nom, famille, métier, employeur, motif du déplacement, adresse, téléphone, personnes qui peuvent confirmer, papier).
-- Déposez-le dans Documents\Arma 3 - COMSPEC, ouvrez Ma couverture sur le téléphone et cliquez IMPORTER MA COUVERTURE. Le jeu n'a pas besoin d'être connecté à Athena : le fichier est lu sur votre PC.
-- Votre fiche, « À retenir » et les questions des contrôleurs suivent cette couverture. « Oublier l'import » revient à la légende d'avant. Vos papiers ne changent pas.
-- Demande une mise à jour de COMSPEC Link (nouvelle commande de lecture du fichier).
-EN : Import the cover you generated on Athena, offline
-- On Athena, My cover (My papers), click Generate then Download: you get a complete cover file (name, family, job, employer, reason for travel, address, phone, people who can vouch, paper).
-- Drop it in Documents\Arma 3 - COMSPEC, open My cover on the phone and click IMPORT MY COVER. The game does not need to be connected to Athena: the file is read on your PC.
-- Your sheet, "To remember" and the controllers' questions follow this cover. "Forget the import" goes back to the previous legend. Your papers do not change.
-- Needs an update of COMSPEC Link (new command that reads the file).
-
-### Détail technique
 - Site : PR feat/identite-couverture-export (fichier `comspec-couverture-CVR-XXXXXXXX.json`, format `comspec-cover` v1, migration 4230). Contrat de lecture : `docs/ATAK_COUVERTURE_IMPORT.md`.
 - DLL (`Extension_CoverImport.cs`, aussi compilée par la DLL ATAK native) : `ReadCoverFile` / `ReadCoverFileChunk`, lecture locale seulement, aucune requête réseau ni autorisation d'Athena. Fichier de forme `comspec-couverture-CVR-XXXXXXXX.json` dans `Documents\Arma 3 - COMSPEC`, 256 Kio au plus, JSON UTF-8 de profondeur 6, clés connues et uniques, aucun caractère de contrôle, SHA-256 du texte de `cover`, date de fin, photo JPEG vérifiée mais non affichée. Annoncée dans `GetAtakFeatures`.
 - SSE : `fn_idCoverImport` (lecture, nettoyage une seconde fois, profil du joueur, envoi au serveur `coverImport` / `coverForget`), `fn_idLegend` (la couverture importée l'emporte champ par champ sur la légende, après le brief Athena et le texte de l'éditeur), `fn_idCoverSync` (une couverture importée ne repart pas vers Athena), `fn_idCoverPage` (zone Importer ma couverture, ligne Couverture de la liaison Athena). Ni `fn_radioGuard`, ni les profils d'identité du registre SSE, ni les papiers ne sont touchés ; la couverture importée n'ouvre pas l'infiltration.
 - Limite connue : la photo du fichier n'est pas affichée en jeu (Arma ne lit pas une image hors de ses dossiers) ; elle reste dans le fichier.
 - `i18n/en.txt` et `tools/i18n_identity_en.tsv` : 27 textes.
-## À venir : Bilan de l'année sur le téléphone et vidéos YouTube (ATAK natif et COMSPEC Link, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Votre bilan de l'année sur le téléphone, et des vidéos YouTube
-- Nouvelle app « Bilan de l'année » (espace Mission) : la rétrospective du site, écran par écran : heures de jeu, kilomètres, blessures, SSE, comptes rendus, et le bilan de l'unité quand la formule de votre communauté le comprend. Il faut que votre compte Athena soit relié.
-- Nouvelle app « Vidéo YouTube » (espace Civil) : collez un lien YouTube et lancez la lecture dans le téléphone. Désactivée par défaut : l'administrateur du serveur l'active dans les réglages CBA. YouTube n'est contacté que lorsque vous lancez une lecture, et votre lien n'est partagé avec personne.
-EN : Your year in review on the phone, and YouTube videos
-- New "Year in review" app (Mission space): the site's year review, screen by screen: play time, distance, injuries, SSE, reports, and your unit's review when your community's plan includes it. Your Athena account must be linked.
-- New "YouTube video" app (Civil space): paste a YouTube link and play it in the phone. Off by default: the server admin turns it on in the CBA settings. YouTube is only contacted when you start playback, and your link is shared with nobody.
-
-### Détail technique
 - Site : `GET /api/atak/year-review` (`AtakApiController::yearReview`, `AtakYearReviewService`) : mêmes écrans que `/retrospective` (`YearReviewStory`), mêmes droits (calendrier publié, `YearReviewAccess::collectiveAllowed`), joueur relié par la clé du jeu (`matchedUserId`), jamais d'identifiant en paramètre. Lecture seule, écrans payants omis, texte nettoyé et borné. Les textes restent en français (le téléphone ne les traduit pas).
 - COMSPEC Link : `GetYearReview` (Async seulement) et `GetYearReviewChunk` (`Extension_YearReview.cs`), même circuit que `GetCommunityOrbat`. **La DLL doit être recompilée** (non faite dans cette PR) ; sans elle l'app dit « COMSPEC Link trop ancienne ».
 - Mod : `fn_yearReview` (aucune lecture avant `COMSPEC_AthenaReady`, règle de licence), `fn_pageYearReview`, app `YearReview` (`short="Bilan"`, icône `app_reports` existante, aucun nouveau binaire).
 - YouTube : `fn_youtube` (identifiant de 11 caractères `[A-Za-z0-9_-]` validé strictement ; hôtes `youtube.com`, `youtube-nocookie.com`, `youtu.be` ; watch, embed, shorts, live, v), `fn_pageYoutube`, classe `COMSPEC_RscWebBrowserExt` (`allowExternalURL=1`, seulement cette app), réglage `comspec_atak_native_youtube` (décoché, imposé par le serveur). Repli `openYoutubeVideo` (surcouche Steam). Pas de lecture sur les écrans 3D du jeu (voir la PR).
 - Non vérifié sans Arma : le navigateur intégré charge-t-il une adresse externe et lit-il la vidéo, avec le son.
 - Tests : `AtakYearReviewTest`. Autotest : étape `tel_bilan_youtube`.
+- Téléphones tracés : cause `fn_pollUnits`, qui rangeait toute piste Athena en « ami / infanterie » ; la position d'un téléphone suivi (COMSPEC Link `fn_reportPhonePosition`, rôle « Téléphone », indicatif « Tél. … » ou « TEL-… ») sortait donc en allié (symbole bleu, BFT « Infanterie », comptée parmi les alliés, sur la montre et dans FIRES). Elle est maintenant `affiliation` « unknown », `type` « phone », `phone` vrai ; `fn_symbology` et `fn_natoSymbol` donnent l'émetteur (`transmitter_CA`), `fn_mapOnDraw` ne lui met ni pion tactique, ni cadre MIL-STD, ni cap ; fiche (`fn_unitCard`, `fn_inspectorUpdate`) « TÉLÉPHONE », BFT « Téléphone ». Autotest `carte_telephone_trace` (carte.sqf, capture `telephone_trace_carte`), non exécuté ; rôle renvoyé par `/api/units` non vérifié contre un serveur.
+- Dépannage MPU : `fn_mpuDiag` (nouveau, CfgFunctions network) lit l'état sans rien écrire ni envoyer (cache 1 s, mesuré par l'autotest) et rend 11 étapes `[id, OK | KO | ATTENTION | INCONNU, titre, explication, action, valeur, correction]` : réglage `mpu_voice`, liaison réaliste, ACRE2 / TFAR (`fn_radioGuard` seulement), TeamSpeak (ACRE2 2.14 `acre_api_fnc_isVOIPConnected` et `getVOIPChannelName`, lus dans son code ; TFAR `TFAR_fnc_isTeamSpeakPluginEnabled`, non vérifié), MPU5, pont, maillage (`COMSPEC_ATAK_MpuMesh`), camarade (même règle que `_linked` de `fn_mpuVoice`), fréquence, TFAR, licence. `fn_pageNetwork` : section voix toujours affichée avec le bouton DÉPANNAGE MPU, volet en `fn_formRender` (chaîne, première étape en échec et sa correction, camarade, « Faut-il un relais ? », COPIER LE RAPPORT). `fn_realismHelp` : `mpu_voice` réexpliqué. Autotest `mpudiag` (`mpu_diag_etats`, `mpu_diag_volet`, captures `mpu_depannage` et `mpu_depannage_ko`), non exécuté ; rien n'a tourné en jeu ni avec ACRE2 / TFAR réels.
 
-## À venir : vrais symboles militaires MIL-STD-2525D / APP-6D et curseurs GPS (ATAK natif, version à attribuer)
+---
 
-### À annoncer
+## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)
+
+
+### Résumé joueur
 Type : correctif
 FR : ATAK 4.1.1 : photos réparées, radio ACRE2 reconnue, écran de verrouillage sobre et vrais symboles militaires
 - **Photos** : une ancienne photo effacée ne bloque plus l'envoi des nouvelles ; les photos envoyées sont gardées dans Documents\Arma 3 - COMSPEC\Captures et le dossier Screenshots du jeu ne se remplit plus.
@@ -197,6 +143,8 @@ EN : ATAK 4.1.1: photos fixed, ACRE2 radio recognised, cleaner lock screen and r
 - `tools/gen_milstd.py` : 189 textures 128 px DXT5 (ImageToPAA, ancien PAA supprimé avant conversion, en-tête DXT5 vérifié) dans `items/data/milstd` (+4,5 Mo dans items.pbo, main.pbo inchangé). Couches blanches colorées par `drawIcon` (thèmes clair, sombre, nuit sans texture en plus).
 - `fn_milSym` (association, règle dans `docs/ATAK_SYMBOLES_MILSTD.md`, code 2525D pour le site), `fn_milDraw` (3 à 7 `drawIcon` par symbole, couches gardées par descripteur et thème). `fn_mapOnDraw` : mode `MILSTD`, formes `MS` / `MS:<pictogramme>` (moi) et `MILSTD` (alliés).
 - ORBAT du site (`/api/atak/community-orbat`) : `function` et `hq` par unité ; `fn_bftOrbat` garde échelon, fonction, QG, parent et le type de poste des titulaires.
+
+---
 
 ---
 
