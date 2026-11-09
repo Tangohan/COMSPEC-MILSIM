@@ -70,6 +70,7 @@ final class EffectifsInvitesController
                 $ok = $ok && $res['ok'];
             }
         }
+        (new \App\Repositories\RosterFicheEventRepository())->record($tenantId, $userId, $actorId, 'invited', 'invite', 'lien créé (' . MemberProfileInviteService::normalizeHours($request->input('duration_hours', 48)) . ' h)');
         Session::flash('profile_invite_new', $issued['id']);
 
         return $this->reply($request, $ok, implode(' ', $messages), $back, ['invite_id' => $issued['id'], 'url' => $issued['url']]);
@@ -205,6 +206,9 @@ final class EffectifsInvitesController
         $from = (string) $request->input('return_to', '');
         if ($from === 'invitations') {
             return effectifs_workspace_url('invitations');
+        }
+        if ($from === 'sans-comptes') {
+            return effectifs_workspace_url('sans-comptes') . ($userId > 0 ? '?fiche=' . $userId : '');
         }
 
         return $userId > 0 ? effectifs_workspace_url('membres/' . $userId) . '#invitations' : effectifs_workspace_url('invitations');

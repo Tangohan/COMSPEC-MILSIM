@@ -530,6 +530,8 @@ final class AtakExperienceService
             ['id' => 'Debug', 'name' => 'Debug', 'description' => 'Diagnostic technique du téléphone', 'section' => 'Système'],
             ['id' => 'Credits', 'name' => 'Crédits', 'description' => 'Auteurs et remerciements', 'section' => 'Système'],
             ['id' => 'Music', 'name' => 'Musique', 'description' => 'Lecteur de musique', 'section' => 'Civil'],
+            ['id' => 'YearReview', 'name' => "Bilan de l'année", 'description' => 'Votre année sur le terrain, comme la rétrospective du site', 'section' => 'Mission'],
+            ['id' => 'Youtube', 'name' => 'Vidéo YouTube', 'description' => "Lire une vidéo YouTube collée par lien (si le serveur l'autorise)", 'section' => 'Civil'],
             ['id' => 'Calc', 'name' => 'Calculette', 'description' => 'Calculatrice : opérations courantes', 'section' => 'Civil'],
             ['id' => 'Notes', 'name' => 'Bloc-notes', 'description' => 'Notes personnelles enregistrées sur ce poste', 'section' => 'Civil'],
             ['id' => 'Food', 'name' => 'UberEats', 'description' => 'Rations livrées par drone', 'section' => 'Civil'],

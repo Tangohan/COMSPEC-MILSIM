@@ -2365,6 +2365,11 @@ class Container
             \App\Controllers\Admin\BackOfficeMenuController::class => new \App\Controllers\Admin\BackOfficeMenuController(
                 self::get(\App\Services\BackOffice\Menu\BackOfficeMenuState::class)
             ),
+            \App\Repositories\BoSheetRepository::class => new \App\Repositories\BoSheetRepository(),
+            \App\Controllers\Admin\BackOfficeHomeController::class => new \App\Controllers\Admin\BackOfficeHomeController(
+                self::get(\App\Repositories\BoSheetRepository::class),
+                self::get(\App\Repositories\BackOfficeNavPrefsRepository::class)
+            ),
             \App\Repositories\AthenaTacticalRepository::class => new \App\Repositories\AthenaTacticalRepository(),
             \App\Controllers\Admin\AdminAthenaTacticalMapController::class => new \App\Controllers\Admin\AdminAthenaTacticalMapController(
                 self::get(\App\Repositories\AtakMapRepository::class)

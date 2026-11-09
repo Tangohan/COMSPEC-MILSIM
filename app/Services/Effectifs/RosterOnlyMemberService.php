@@ -172,9 +172,10 @@ final class RosterOnlyMemberService
      * sont laissées telles quelles.
      *
      * @param list<array<string, string>> $rows
+     * @param (callable(int, string): void)|null $onCreated appelé avec l’identifiant et le nom de chaque fiche créée
      * @return array{created: int, skipped: list<string>, unknown_grades: list<string>, unknown_units: list<string>}
      */
-    public function import(int $tenantId, int $actorUserId, array $rows): array
+    public function import(int $tenantId, int $actorUserId, array $rows, ?callable $onCreated = null): array
     {
         $out = ['created' => 0, 'skipped' => [], 'unknown_grades' => [], 'unknown_units' => []];
         if (count($rows) > self::IMPORT_MAX_ROWS) {
@@ -227,7 +228,7 @@ final class RosterOnlyMemberService
                 }
             }
             try {
-                $this->create($tenantId, $actorUserId, [
+                $newId = $this->create($tenantId, $actorUserId, [
                     'first_name' => $first,
                     'last_name' => $last,
                     'display_name' => $display,
@@ -239,6 +240,12 @@ final class RosterOnlyMemberService
             } catch (\Throwable $e) {
                 $out['skipped'][] = 'Ligne ' . $lineNo . ' : ' . $e->getMessage();
                 continue;
+            }
+            if ($onCreated !== null) {
+                try {
+                    $onCreated($newId, $display);
+                } catch (\Throwable) {
+                }
             }
             $knownNames[$nameKey] = true;
             if ($callKey !== '') {

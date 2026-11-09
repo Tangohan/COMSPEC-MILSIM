@@ -1347,3 +1347,5 @@ favoris sur	fragment du modèle traduit « %1 favoris sur %2 »	views/partials/b
 favoris sur	fragment du modèle traduit « %1 favoris sur %2 »	public/assets/js/back-office-menu.js
 » aux favoris	fragment du modèle traduit « Ajouter « %1 » aux favoris »	public/assets/js/back-office-menu.js
 » des favoris	fragment du modèle traduit « Retirer « %1 » des favoris »	public/assets/js/back-office-menu.js
+Largeur de	fragment du modèle traduit « Largeur de %1 »	views/admin/organization/_home_customize.php
+En-tête de la colonne	fragment du modèle traduit « En-tête de la colonne %1 »	views/admin/organization/_sheet.php
