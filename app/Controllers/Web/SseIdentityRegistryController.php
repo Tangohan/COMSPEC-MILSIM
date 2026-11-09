@@ -915,6 +915,7 @@ final class SseIdentityRegistryController
             'filters' => $filters,
             'papersTab' => 'controles',
             'autoTransmit' => (new SseIdSettingsRepository())->autoTransmit($this->tenantId()),
+            'realWithCover' => (new SseIdSettingsRepository())->realWithCover($this->tenantId()),
             'canManageSettings' => $this->canManage(),
             'csrfToken' => Csrf::token(),
         ]);
@@ -930,6 +931,16 @@ final class SseIdentityRegistryController
         $enabled = $request->inputString('auto_transmit') === '1';
         (new SseIdSettingsRepository())->setAutoTransmit($tenantId, $enabled);
         $this->audit($tenantId, 'id_settings.auto_transmit', $tenantId, ['auto_transmit' => $enabled]);
+        if ($request->inputString('real_with_cover_form') === '1') {
+            $real = $request->inputString('real_with_cover') === '1';
+            try {
+                (new SseIdSettingsRepository())->setRealWithCover($tenantId, $real);
+                $this->audit($tenantId, 'id_settings.real_with_cover', $tenantId, ['real_with_cover' => $real]);
+            } catch (\Throwable $e) {
+                // Étape 4260 pas encore passée : réglage par défaut (oui) gardé.
+                error_log('Réglage identité réelle + couverture indisponible : ' . $e->getMessage());
+            }
+        }
         Session::flash('success', 'Réglage enregistré. Il s’applique en jeu au prochain chargement du paquet.');
 
         return Response::redirect(url(self::BASE . '/controles'));

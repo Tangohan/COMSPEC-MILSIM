@@ -9,6 +9,7 @@
       ZEUS       (curateur seulement) les infiltrés et leur cohérence ; un clic ouvre la fiche de l'un d'eux
     Rendu : [page, rectangle] (fn_pageRender de l'ATAK). Actions : ["act", action, argument] call comspec_sse_fnc_idCoverPage
       refresh · tab · answer [qid, index] · open netId (Zeus) · back · fold clé · pull (paquet Athena)
+      switch real | cover (identité présentée quand il porte les deux, fn_idActive)
       received [ancienne fiche, nouvelle] · synced   réponses du serveur et d'Athena ; même fiche : page laissée telle quelle,
                  seule la note change sur place s'il n'y a que ça de nouveau
     État local (jamais diffusé) : comspec_sse_idCoverSheets (netId -> fiche reçue du serveur), comspec_sse_idQuestion,
@@ -56,6 +57,12 @@ if (_page isEqualTo "act") exitWith {
             call _render;
         };
         case "import": { ["run"] call comspec_sse_fnc_idCoverImport; };
+        // Identité présentée (réelle / couverture) : le serveur change, renvoie les rôles, puis la fiche est relue.
+        case "switch": {
+            ["send", ["identitySwitch", [player, _arg]]] call comspec_sse_fnc_idClient;
+            _st set ["force", true];
+            [{ ["send", ["coverSheet", [player, player]]] call comspec_sse_fnc_idClient; }, [], 1] call CBA_fnc_waitAndExecute;
+        };
         case "forget": { ["forget"] call comspec_sse_fnc_idCoverImport; };
         case "pull": {
             ["send", ["coverPull", [player]]] call comspec_sse_fnc_idClient;
@@ -191,11 +198,25 @@ private _sheetRows = {
     _rows pushBack ["person", "\z\comspec_sse\addons\identity\data\silhouette_co.paa",
         format ["<t size='1.1' font='COMSPEC_BarlowBold' color='%5'>%1</t><br/><t size='0.85' color='%4'>%2 · %3</t>", [_s getOrDefault ["name", "?"]] call _esc,
             [_s getOrDefault ["dob", ""]] call _esc, [_s getOrDefault ["pob", ""]] call _esc, _hDim, _hText], [], [1, 1, 1, 1]];
+    // Identité réelle + couverture portées ensemble : celle présentée, l'autre cachée ; changer d'un clic (sa fiche).
+    private _activeRole = _s getOrDefault ["activeRole", "real"];
+    private _hasBoth = (_s getOrDefault ["hasBoth", false]) isEqualTo true;
+    if (_hasBoth) then {
+        _rows pushBack ["check", "ok", "Identité présentée" call _tr, (["Réelle", "Couverture"] select (_activeRole isEqualTo "cover")) call _tr,
+            "L'autre reste dans vos affaires, cachée : une fouille la trouve." call _tr];
+        if (_mine) then {
+            _rows pushBack ["buttons", [[(["Passer à ma couverture", "Passer à mon identité réelle"] select (_activeRole isEqualTo "cover")) call _tr,
+                ["switch", ["cover", "real"] select (_activeRole isEqualTo "cover")] call _act, false, true,
+                "Change l'identité que vous présentez aux contrôles (papiers, légende, Ma couverture)." call _tr]]];
+        };
+    };
     {
-        _x params ["_type", "_country", "_number", "_expires", ["_on", false]];
+        _x params ["_type", "_country", "_number", "_expires", ["_on", false], ["_role", ""]];
+        private _hiddenDoc = _hasBoth && {_role isNotEqualTo ""} && {_role isNotEqualTo _activeRole};
         _rows pushBack ["info", format ["%1 · %2", _type call _tr, [_country] call _esc],
-            format ["%1%2", (format ["%1%2", [_number] call _esc, ["", format [" · %1 %2", "valable jusqu'au" call _tr, [_expires] call _esc]] select (_expires isNotEqualTo "")]) call _ink,
-                ["", format [" · <t color='%1'>%2</t>", _hWarn, "pas sur vous" call _tr]] select !_on]];
+            format ["%1%2%3", (format ["%1%2", [_number] call _esc, ["", format [" · %1 %2", "valable jusqu'au" call _tr, [_expires] call _esc]] select (_expires isNotEqualTo "")]) call _ink,
+                ["", format [" · <t color='%1'>%2</t>", _hWarn, "pas sur vous" call _tr]] select !_on,
+                ["", format [" · <t color='%1'>%2</t>", _hDim, "cachée (autre identité)" call _tr]] select _hiddenDoc]];
     } forEach _docs;
 
     // À retenir : ce qu'un contrôleur demande (mêmes questions que fn_idLegend), réponses en gras.

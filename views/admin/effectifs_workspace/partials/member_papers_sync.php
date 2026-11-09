@@ -31,8 +31,48 @@ $identityById = [];
 foreach ($pp['identities'] as $i) {
     $identityById[(int) $i['id']] = $i;
 }
+$portrait = (string) ($pp['portrait'] ?? '');
+$photoMax = (int) ($pp['photo_max_mb'] ?? 4);
+// Formulaire de photo d'identité : fichier (JPEG / PNG), ou photo de profil du membre après confirmation.
+$photoForm = static function (int $identityId, bool $has) use ($ph, $manage, $base, $csrfToken, $portrait, $photoMax): void {
+    if (!$manage) {
+        return;
+    }
+    $action = $base . '/identites/' . $identityId . '/photo';
+    ?>
+    <form method="post" action="<?= $ph($action) ?>" enctype="multipart/form-data" class="idm-sync__photo" id="papiers-photo-<?= $identityId ?>">
+        <input type="hidden" name="_csrf_token" value="<?= $ph($csrfToken) ?>">
+        <label><?= $has ? 'Changer la photo' : 'Photo d’identité' ?> <input type="file" name="photo" accept="image/jpeg,image/png" required></label>
+        <button type="submit" class="eff-fm-btn is-sm"><?= $has ? 'Remplacer' : 'Ajouter une photo' ?></button>
+        <span class="eff-card__hint">JPEG ou PNG, <?= $photoMax ?> Mo au plus, recadrée au carré, métadonnées retirées.</span>
+    </form>
+    <?php if ($portrait !== ''): ?>
+        <form method="post" action="<?= $ph($action) ?>" class="idm-sync__fix" onsubmit="return confirm(this.dataset.confirm);" data-confirm="Reprendre la photo de profil du membre comme photo d’identité ?">
+            <input type="hidden" name="_csrf_token" value="<?= $ph($csrfToken) ?>">
+            <input type="hidden" name="from_profile" value="1">
+            <button type="submit" class="eff-fm-btn is-sm">Reprendre la photo de profil</button>
+        </form>
+    <?php endif;
+};
 $fix = static function (array $f) use ($ph, $manage, $base, $csrfToken): void {
     $label = (string) ($f['label'] ?? '');
+    if ($f === []) {
+        return;
+    }
+    if (isset($f['kitadd']) && $manage) {
+        ?>
+        <form method="post" action="<?= $ph($base . '/kit-ajout') ?>" class="idm-sync__fix">
+            <input type="hidden" name="_csrf_token" value="<?= $ph($csrfToken) ?>">
+            <?php foreach ((array) $f['kitadd'] as $kd): ?><input type="hidden" name="document_ids[]" value="<?= (int) $kd ?>"><?php endforeach; ?>
+            <button type="submit" class="eff-fm-btn is-sm"><?= $ph($label) ?></button>
+        </form>
+        <?php
+        return;
+    }
+    if (isset($f['photo']) && $manage) {
+        ?><a class="eff-fm-btn is-sm" href="#papiers-photo-<?= (int) $f['photo'] ?>"><?= $ph($label) ?></a><?php
+        return;
+    }
     if (isset($f['do'], $f['doc']) && $manage) {
         ?>
         <form method="post" action="<?= $ph($base . '/documents/' . (int) $f['doc'] . '/action') ?>" class="idm-sync__fix">
@@ -68,7 +108,7 @@ $issues = static function (array $list) use ($ph, $stateChip, $stateLabels, $fix
                     <b><?= $ph($is['title']) ?></b>
                     <p><?= $ph($is['why']) ?> <span class="idm-sync__ex"><?= $ph($is['example']) ?></span></p>
                 </div>
-                <?php $fix($is['fix']); ?>
+                <span class="idm-sync__fixes"><?php $fix($is['fix']); $fix($is['fix2'] ?? []); ?></span>
             </li>
         <?php endforeach; ?>
     </ul>
@@ -79,9 +119,15 @@ $issues = static function (array $list) use ($ph, $stateChip, $stateLabels, $fix
     <div class="eff-fm-card__head">
         <h3>Transmission en jeu</h3>
         <span class="eff-fm-chip <?= $ph($stateChip[$diag['state']] ?? '') ?>"><?= $ph($stateLabels[$diag['state']] ?? '') ?></span>
+        <?php if ($manage): ?>
+            <form method="post" action="<?= $ph($base . '/tout-generer') ?>" class="idm-sync__fix">
+                <input type="hidden" name="_csrf_token" value="<?= $ph($csrfToken) ?>">
+                <button type="submit" class="eff-btn eff-btn--primary" title="Crée ce qui manque : identité principale complète, papiers émis selon le pays et le grade, papiers de la couverture. Ne remplace rien.">Tout générer</button>
+            </form>
+        <?php endif; ?>
     </div>
     <p class="eff-fm-lead">Ce qui part réellement en jeu et ce qui l’en empêche. Sans papier d’Athena remis, le jeu tire au hasard une identité au joueur : c’est elle qu’il voit sur son téléphone (Ma couverture), pas celle d’Athena.</p>
-    <p class="eff-card__hint">Prêt : part tel quel · Incomplet : part, le jeu complète au hasard · Erroné : part avec une donnée fausse · Bloqué : ne part pas.<?= $diag['auto_kit'] ? ' Aucun kit composé : kit automatique (identité principale).' : '' ?></p>
+    <p class="eff-card__hint">Prêt : part tel quel · Incomplet : part, le jeu complète au hasard · Erroné : part avec une donnée fausse · Bloqué : ne part pas.<?= $diag['auto_kit'] ? ' Aucun kit composé : kit automatique.' : '' ?> <?= !empty($diag['real_with_cover']) ? 'Identité réelle transmise avec la couverture (réglage de la communauté) : le joueur porte les deux, la couverture présentée, la réelle cachée.' : 'Couverture seule transmise quand une fiche de couverture l’attribue (réglage de la communauté).' ?></p>
     <?php $issues($diag['account']); ?>
     <?php foreach ($diag['identities'] as $iid => $st): ?>
         <?php $i = $identityById[(int) $iid] ?? null; if ($i === null) { continue; } ?>
@@ -91,7 +137,8 @@ $issues = static function (array $list) use ($ph, $stateChip, $stateLabels, $fix
                 <span class="idm-doc__num" translate="no"><?= $ph($i['ref']) ?></span>
                 <span class="eff-fm-chip <?= $ph($stateChip[$st['state']] ?? '') ?>"><?= $ph($st['state_label']) ?></span>
                 <span class="idm-doc__meta"><?= $ph($st['note']) ?></span>
-                <?php if ($manage && (int) $iid !== (int) ($diag['sent_identity_id'] ?? 0)): ?>
+                <?php if (in_array((int) $iid, $diag['sent_identity_ids'] ?? [], true)): ?><span class="eff-fm-chip is-ok"><?= ($i['kind'] ?? '') === 'civil' ? 'Réelle, en jeu' : 'Couverture, en jeu' ?></span><?php endif; ?>
+                <?php if ($manage && !in_array((int) $iid, $diag['sent_identity_ids'] ?? [], true)): ?>
                     <form method="post" action="<?= $ph($base . '/envoyer-jeu') ?>" class="idm-sync__fix">
                         <input type="hidden" name="_csrf_token" value="<?= $ph($csrfToken) ?>">
                         <input type="hidden" name="identity_id" value="<?= (int) $iid ?>">
@@ -100,6 +147,7 @@ $issues = static function (array $list) use ($ph, $stateChip, $stateLabels, $fix
                 <?php endif; ?>
             </div>
             <?php $issues($st['issues']); ?>
+            <?php $photoForm((int) $iid, ($i['photo_path'] ?? null) !== null); ?>
             <?php foreach ($diag['documents'] as $did => $dst): ?>
                 <?php $d = $docById[(int) $did] ?? null; if ($d === null || (int) $d['identity_id'] !== (int) $iid) { continue; } ?>
                 <div class="idm-sync__doc">

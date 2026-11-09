@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @var int $imagesDocId papier d'où vient la demande (retour), 0 sinon
  */
 $h = $h ?? static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
-$imgPhoto = ($identity['photo_path'] ?? null) !== null ? (string) url((string) $identity['photo_path']) : null;
+$imgPhoto = \App\Services\Sse\SseIdMemberPhotoService::url($identity['photo_path'] ?? null);
 $imgSign = ($identity['signature_path'] ?? null) !== null ? (string) url((string) $identity['signature_path']) : null;
 $imagesDocId = (int) ($imagesDocId ?? 0);
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-id-workshop.css')) . '">';

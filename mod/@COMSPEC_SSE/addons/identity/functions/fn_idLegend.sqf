@@ -32,6 +32,10 @@ if (_op isEqualTo "reset") exitWith { _legends deleteAt _key; true };
 
 private _build = {
     private _docs = (["unitDocs", [_u]] call comspec_sse_fnc_idRegistry) apply { ["doc", [_x]] call comspec_sse_fnc_idRegistry };
+    // Identité réelle + couverture portées ensemble : la légende est celle de l'identité active (fn_idActive).
+    private _activeRole = ["get", [_u]] call comspec_sse_fnc_idActive;
+    private _ofActive = _docs select { (_x getOrDefault ["role", ""]) in ["", _activeRole] };
+    if (_ofActive isNotEqualTo []) then { _docs = _ofActive; };
     private _main = createHashMap;
     // Papier remis depuis l'éditeur avec son texte (le plus récent) : c'est lui, la légende voulue.
     { if ((_x getOrDefault ["legendText", ""]) isNotEqualTo "") then { _main = _x; }; } forEach _docs;
@@ -236,7 +240,7 @@ private _build = {
 private _get = {
     private _L = _legends getOrDefault [_key, createHashMap];
     // Papiers changés depuis (couverture donnée, kit remis) : légende recalculée.
-    private _now = str (["unitDocs", [_u]] call comspec_sse_fnc_idRegistry);
+    private _now = str [["unitDocs", [_u]] call comspec_sse_fnc_idRegistry, ["get", [_u]] call comspec_sse_fnc_idActive];
     if ((count _L) > 0 && {(_L getOrDefault ["docsSig", ""]) isEqualTo _now}) exitWith { _L };
     _L = call _build;
     _L set ["docsSig", _now];
@@ -310,9 +314,14 @@ switch (_op) do {
                 ["Carte d'identité", "Passeport", "Permis de conduire", "Carte militaire"] select ((["id_card", "passport", "driving_license", "military_id"] find (_x getOrDefault ["type", ""])) max 0),
                 (_countries getOrDefault [_x getOrDefault ["country", ""], createHashMap]) getOrDefault ["name", _x getOrDefault ["country", ""]],
                 _x getOrDefault ["number", ""], _x getOrDefault ["expires", ""],
-                ((_x getOrDefault ["cls", ""]) isNotEqualTo "") && {(_x getOrDefault ["cls", ""]) in _onHim}
+                ((_x getOrDefault ["cls", ""]) isNotEqualTo "") && {(_x getOrDefault ["cls", ""]) in _onHim},
+                _x getOrDefault ["role", ""]
             ]
         }];
+        // Identité réelle + couverture : laquelle il présente, et s'il peut changer (papiers des deux rôles).
+        (["roles", [_u]] call comspec_sse_fnc_idActive) params [["_activeR", "real"], "", ["_bothR", false]];
+        _L set ["activeRole", _activeR];
+        _L set ["hasBoth", _bothR];
         // Origine de l'identité montrée et pourquoi Athena n'a pas pu la fournir (diag : [niveau ok | warn | ko, titre, phrase]).
         // Cause du décalage Athena / jeu : sans papier Athena remis, la fiche montre l'identité générée par le mod (clé
         // biométrique), jamais celle d'Athena. Ce qui suit dit à quelle étape la chaîne s'est arrêtée.

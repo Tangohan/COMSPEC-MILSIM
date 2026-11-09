@@ -16,6 +16,7 @@
       vehicle  [moi, véhicule]           contrôle des occupants        dismount [moi, véhicule]  faire descendre
       kit      [moi, ancien corps | objNull]   papiers du kit Athena (connexion, JIP, respawn ; Steam ID lu ici)
       paperMoved [moi, classe, conteneur, take | put]   j'ai pris / posé un papier (fn_idPaperTrack, sans anti-flood)
+      identitySwitch [moi, real | cover]  identité présentée (fn_idActive) ; évènement serveur comspec_sse_identity_identitySwitched
       give / report / truth / pack       Zeus (curateur) : donner des papiers, signaler, vraie identité, paquet Athena
       aiCfg    [moi, sous-op, args]      Zeus : fenêtre de configuration des IA (fn_idAiConfig, éditeur SSE › IA)
       fsmForce [moi, ia, état]           Zeus : impose un état à une IA (automate des IA réalistes, fn_idAiFsm)
@@ -112,6 +113,8 @@ private _pub = {
     _p set ["faceNetId", if (_forged || {isNull _holderUnit}) then { "" } else { netId _holderUnit }];
     _p set ["faceAvoid", if (isNull _holderUnit) then { "" } else { face _holderUnit }];
     _p set ["photoSwap", (_d getOrDefault ["forgeryKind", ""]) isEqualTo "photo_swap"];
+    // Photo d'identité d'Athena (portrait réduit du paquet) : imprimée sur le papier à la place de la scène en direct.
+    _p set ["photoMosaic", _d getOrDefault ["photoMosaic", ""]];
     _p
 };
 // Poignée -> [document, porteur (unité / conteneur / objNull), autorisé, sujet (personne contrôlée ou objNull)].
@@ -634,6 +637,18 @@ switch (_op) do {
                 _reg set ["aiPlacements", (_reg getOrDefault ["aiPlacements", []]) select { (_x getOrDefault ["id", 0]) isNotEqualTo _idK }];
             };
         };
+    };
+
+    // Changer d'identité (réelle / couverture) : celle présentée ; l'autre reste cachée dans ses affaires.
+    case "identitySwitch": {
+        _args params ["", ["_role", "", [""]]];
+        private _ok = ["set", [_me, _role]] call comspec_sse_fnc_idActive;
+        if !(_ok isEqualTo true) exitWith { [_me, "Vous n'avez pas de papiers de cette identité sur vous.", "WARNING"] call _tell; };
+        ["push", [_me]] call comspec_sse_fnc_idActive;
+        // Passer à sa couverture : l'infiltration s'ouvre si elle ne l'est pas (fn_idCover « auto »).
+        if (_role isEqualTo "cover") then { ["auto", [_me]] call comspec_sse_fnc_idCover; };
+        [_me, ["Vous présentez désormais votre identité réelle ; la couverture reste cachée.", "Vous présentez désormais votre couverture ; votre identité réelle reste cachée."] select (_role isEqualTo "cover")] call _tell;
+        ["comspec_sse_identity_identitySwitched", [_me, _role]] call CBA_fnc_localEvent;
     };
 
     // Papier pris ou posé (évènements Take / Put du poste du joueur) : porteur, chaîne de possession, évènements CBA.

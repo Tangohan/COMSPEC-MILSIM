@@ -78,6 +78,11 @@ final class SseIdentitySqlite
             $out .= $m;
         });
 
+        $dual = require dirname(__DIR__, 2) . '/bootstrap/sse_identity_dual_photo_migration.php';
+        $dual($pdo, static function (string $m) use (&$out): void {
+            $out .= $m;
+        });
+
         return $out;
     }
 

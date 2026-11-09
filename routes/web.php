@@ -1011,6 +1011,9 @@ return function (Router $router) {
     $router->post('/atak/sse/papiers/membres/{id}/synchro-jeu', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncResolve'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/historique/{hid}/restaurer', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncRestore'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/envoyer-jeu', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncSend'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/tout-generer', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'generateAll'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/kit-ajout', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'kitAdd'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/identites/{iid}/photo', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'photoUpload'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/couverture', [\App\Controllers\Admin\MemberCoverExportController::class, 'generateFor'], $mwSsePortal);
     $router->get('/atak/sse/papiers/membres/{id}/couverture/{exportId}/telecharger', [\App\Controllers\Admin\MemberCoverExportController::class, 'downloadFor'], $mwSsePortal);
     // RENS › Identités & documents (COMSPEC IDENTITY, Lot 6) : atelier, kits types, préparation de mission, briefs, import/export.
@@ -2204,6 +2207,11 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/synchro-jeu', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncResolve'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/historique/{hid}/restaurer', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncRestore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/envoyer-jeu', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncSend'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/tout-generer', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'generateAll'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/kit-ajout', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'kitAdd'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/identites/{iid}/photo', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'photoUpload'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Photo d'identité privée (hors racine web) : droits vérifiés par le contrôleur (fiche membre ou bureau SSE).
+    $router->get('/back-office/sse-id-photos/{tenant}/{name}', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'photo'], [AuthMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}/modifier', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/statut', [EffectifsWorkspaceController::class, 'quickStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

@@ -285,9 +285,9 @@ Joueur formé au contrôle (meilleur examen visuel) : `_unit setVariable ["COMSP
 
 ### Papiers reliés à Athena (API pour les mods et les scripts)
 
-Chaque membre reçoit **sa** carte : celle de son identité Athena principale, ou de sa couverture si une fiche de
-couverture la lui attribue (kit composé sur Athena, sinon kit automatique). Un autre joueur peut la ramasser sur le corps
-ou au sol : au contrôle, c'est l'identité Athena liée à la carte qui s'affiche (photo : le visage du propriétaire), jamais
+Chaque membre reçoit **sa** carte : celle de son identité Athena principale, et celle de sa couverture s'il en a une
+(kit composé sur Athena, sinon kit automatique ; voir plus bas). Un autre joueur peut la ramasser sur le corps
+ou au sol : au contrôle, c'est l'identité Athena liée à la carte qui s'affiche (photo d'Athena, sinon le visage du propriétaire), jamais
 celle du porteur. Les papiers volés, perdus ou révoqués sur Athena sont signalés au contrôle (base locale, N3).
 
 - `[classe | docId] call comspec_sse_fnc_idPaperOf` (serveur) -> HashMap : imprimé (`last`, `first`, `dob`, `pob`,
@@ -319,6 +319,22 @@ pourquoi (paquet non chargé, aucun papier pour ce compte Steam, papiers du kit 
 transmission automatique est permise (réglage, celui de la communauté l'emporte), l'identité utilisée en jeu remonte à
 Athena ; la fiche membre la compare champ par champ et ne l'écrit qu'au choix du responsable (valeur écartée historisée,
 restaurable).
+
+### Identité réelle + couverture, photo d'identité
+
+Avec le réglage de la communauté « Transmettre aussi l'identité réelle avec la couverture » (oui par défaut), un membre
+infiltré reçoit ses deux jeux de papiers : la couverture **présentée**, la réelle **cachée** (menu ACE « Présenter » :
+sous « Papiers cachés » ; une fouille trouve les deux et relève « papiers à plusieurs noms »). Identité présentée par
+défaut : la couverture si une fiche de couverture Athena la lui attribue, sinon la réelle. Le joueur change dans
+Ma couverture (« Passer à ma couverture » / « Passer à mon identité réelle ») ; légende, cohérence et infiltration suivent.
+
+- `["get" | "set" | "roles" | "push", [unité, rôle]] call comspec_sse_fnc_idActive` (serveur) ; rôle d'un papier dans
+  `idPaperOf` (`role`) ; évènement serveur `comspec_sse_identity_identitySwitched` [unité, real | cover].
+
+Photo : Arma n'affiche pas une image téléchargée (il faudrait `-filePatching` et le fichier sur le disque de chaque
+joueur). La photo d'Athena part donc dans le paquet en **portrait réduit** (15 × 20 cases, 16 niveaux de gris, bloc
+`settings.photos`) que la visionneuse redessine case par case, teinte sépia ; `idPaperOf` › `hasPhoto`. Sans photo sur
+Athena (ou sans GD sur le serveur web) : visage du personnage en direct, comme avant.
 
 ## Vérifier la MRZ
 

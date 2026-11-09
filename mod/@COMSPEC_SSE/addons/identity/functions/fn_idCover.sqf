@@ -93,8 +93,12 @@ switch (_op) do {
         if ((count _s0) > 0) exitWith { if (_s0 get "on") then { [_u, "coverState", ["on", ""]] call _tell; }; false };
         private _uid = getPlayerUID _u;
         private _brief = if (_uid isEqualTo "") then { createHashMap } else { (_reg getOrDefault ["briefs", createHashMap]) getOrDefault [_uid, createHashMap] };
-        private _cov = ((["unitDocs", [_u]] call comspec_sse_fnc_idRegistry) findIf { ((["doc", [_x]] call comspec_sse_fnc_idRegistry) getOrDefault ["kind", ""]) isEqualTo "cover" }) >= 0;
-        private _bc = ((_brief getOrDefault ["identity_id", ""]) isNotEqualTo "") || {((_brief getOrDefault ["cover_name", ""]) isNotEqualTo "")};
+        // Identité réelle + couverture portées ensemble (papiers Athena avec un rôle) : infiltré seulement si c'est la
+        // couverture qu'il présente. Papiers sans rôle (Zeus, Eden) : comme avant.
+        private _myDocs = (["unitDocs", [_u]] call comspec_sse_fnc_idRegistry) apply { ["doc", [_x]] call comspec_sse_fnc_idRegistry };
+        private _activeOk = ((_myDocs findIf { (_x getOrDefault ["role", ""]) isNotEqualTo "" }) < 0) || {(["get", [_u]] call comspec_sse_fnc_idActive) isEqualTo "cover"};
+        private _cov = _activeOk && {(_myDocs findIf { (_x getOrDefault ["kind", ""]) isEqualTo "cover" }) >= 0};
+        private _bc = _activeOk && {((_brief getOrDefault ["identity_id", ""]) isNotEqualTo "") || {((_brief getOrDefault ["cover_name", ""]) isNotEqualTo "")}};
         if !(_cov || _bc) exitWith { false };
         ["start", [_u, createHashMap]] call comspec_sse_fnc_idCover;
         true
@@ -178,6 +182,9 @@ switch (_op) do {
         private _L = ["get", [_u]] call comspec_sse_fnc_idLegend;
         // Papiers (35) : la pièce de la légende, un seul nom, sa qualité.
         private _docs = (["unitDocs", [_u]] call comspec_sse_fnc_idRegistry) apply { ["doc", [_x]] call comspec_sse_fnc_idRegistry };
+        // Papiers de l'autre identité (réelle cachée) : ne comptent qu'à la fouille, pas dans les papiers présentés.
+        private _activeRole = ["get", [_u]] call comspec_sse_fnc_idActive;
+        _docs = _docs select { (_x getOrDefault ["role", ""]) in ["", _activeRole] };
         private _names = [];
         { _names pushBackUnique toUpper format ["%1 %2", _x getOrDefault ["last", ""], _x getOrDefault ["first", ""]]; } forEach _docs;
         private _paper = 0;

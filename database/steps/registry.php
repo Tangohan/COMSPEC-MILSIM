@@ -96,4 +96,5 @@ return [
     ['id' => 'bo_table_defs', 'label' => 'Back-office : tableaux de données enregistrés (source, colonnes, filtres, tri, regroupement, partage)', 'group' => 'schema', 'file' => '4210_bo_table_defs.php', 'rerun' => true],
     ['id' => 'platform_bo_messages', 'label' => 'Messages de la plateforme aux back-offices des communautés (ciblage, FR/EN, vu, fermé, cliqué, acquittement)', 'group' => 'schema', 'file' => '4240_platform_bo_messages.php', 'rerun' => true],
     ['id' => 'sse_identity_sync', 'label' => 'Identités : historique des valeurs écartées (restaurables) et différence avec le jeu déjà examinée (synchronisation Athena ↔ jeu sans écrasement)', 'group' => 'schema', 'file' => '4250_sse_identity_sync.php', 'rerun' => true],
+    ['id' => 'sse_identity_dual_photo', 'label' => 'Identités : identité réelle transmise avec la couverture (réglage par communauté) et photo d’identité envoyée au jeu (portrait réduit)', 'group' => 'schema', 'file' => '4260_sse_identity_dual_photo.php', 'rerun' => true],
 ];

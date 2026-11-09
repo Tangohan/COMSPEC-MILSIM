@@ -108,7 +108,9 @@ private _doc = createHashMapFromArray [
     ["athenaIdentity", _spec getOrDefault ["athenaIdentity", ""]],
     ["ownerUid", _spec getOrDefault ["ownerUid", if (isNull _u) then { "" } else { getPlayerUID _u }]],
     ["ownerName", _spec getOrDefault ["ownerName", if (isNull _u) then { "" } else { name _u }]],
-    ["custody", []]
+    ["custody", []],
+    // Papier Athena : rôle (real | cover, fn_idActive) et photo d'identité en portrait réduit (fn_idViewerOnLoad).
+    ["role", _spec getOrDefault ["role", ""]], ["photoMosaic", _spec getOrDefault ["photoMosaic", ""]]
 ];
 
 // Carte militaire : grade, force et camp de la force, lus par fn_idEvaluate (N3).

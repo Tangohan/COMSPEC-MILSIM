@@ -109,6 +109,24 @@ private _photo = {
     private _spot = if (_swap) then { [_fx + 0.008, _fy + 0.012, _fw * 0.97, _fh * 0.97, 2.5] } else { [_fx, _fy, _fw, _fh, 0] };
     _spot params ["_px", "_py", "_pw", "_ph", "_angle"];
     [_px, _py, _pw, _ph, _dir + "silhouette_co.paa", _angle] call _pic;
+    // Photo d'identité d'Athena (portrait réduit du paquet, 15 × 20 cases, 16 niveaux de gris) : imprimée case par case,
+    // teinte sépia de photo de papier. Arma n'affiche pas une image téléchargée sans -filePatching. Sans portrait :
+    // visage du titulaire en direct (fn_idFace), comme avant.
+    private _mosaic = _doc getOrDefault ["photoMosaic", ""];
+    if (_mosaic isEqualType "" && {(count _mosaic) isEqualTo 300}) exitWith {
+        private _hexd = "0123456789abcdef";
+        private _cwd = _pw / 15;
+        private _chd = _ph / 20;
+        for "_i" from 0 to 299 do {
+            private _v = (_hexd find (_mosaic select [_i, 1])) max 0;
+            private _g = 0.12 + 0.82 * (_v / 15);
+            private _c = _d ctrlCreate ["RscText", -1];
+            _c ctrlSetPosition [_cx + (_px + (_i mod 15) * _cwd) * _cw, _cy + (_py + (floor (_i / 15)) * _chd) * _ch, _cwd * _cw + 0.0005, _chd * _ch + 0.0005];
+            _c ctrlSetBackgroundColor [_g * 1.0, _g * 0.95, _g * 0.86, 1];
+            _c ctrlCommit 0;
+            _ctrls pushBack _c;
+        };
+    };
     if (_face isNotEqualTo "") then { [_px, _py, _pw, _ph, _face, _angle] call _pic; };
 };
 private _holo = { params ["_fx", "_fy", "_fw"]; if (_doc getOrDefault ["holo", true]) then { [_fx, _fy, _fw, _fw * _ratio, _dir + "hologram_ca.paa"] call _pic; }; };

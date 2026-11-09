@@ -16,7 +16,10 @@ use App\Repositories\SseIdCountryRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Services\Sse\MemberIdentityPapersService;
+use App\Services\Sse\MemberIdentityAutoService;
 use App\Services\Sse\MemberIdentitySyncService;
+use App\Services\Sse\SseIdMemberPhotoService;
+use App\Repositories\SseIdSettingsRepository;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseIdentityGeneratorService;
 use App\Support\EffectifsLmsAccess;
@@ -117,6 +120,9 @@ final class MemberIdentityPapersController
                 }
             }
             $data['sync'] = self::syncFor($tenantId, $userId, $data, $rights['truth']);
+            // Photo de profil du membre (portrait opérateur), proposée pour la photo d'identité (avec confirmation).
+            $data['portrait'] = trim((string) (((new PersonnelProfileRepository())->getByUserId($userId, $tenantId) ?? [])['character_portrait_path'] ?? ''));
+            $data['photo_max_mb'] = (int) (SseIdMemberPhotoService::MAX_BYTES / (1024 * 1024));
 
             return $data;
         } catch (\Throwable $e) {
@@ -135,7 +141,8 @@ final class MemberIdentityPapersController
      */
     public static function syncFor(int $tenantId, int $userId, array $section, bool $truth): array
     {
-        $diag = MemberIdentitySyncService::diagnose($section, (new SseIdCountryRepository())->listForTenant($tenantId, false));
+        $realWithCover = (new SseIdSettingsRepository())->realWithCover($tenantId);
+        $diag = MemberIdentitySyncService::diagnose($section, (new SseIdCountryRepository())->listForTenant($tenantId, false), null, $realWithCover, $truth ? self::briefCoverId($tenantId, $userId) : 0);
         $reports = [];
         $history = [];
         try {
@@ -147,6 +154,129 @@ final class MemberIdentityPapersController
         }
 
         return ['diag' => $diag, 'reports' => $reports, 'history' => $history];
+    }
+
+    /** Identité de couverture que la fiche de couverture du membre lui attribue (0 : aucune). */
+    private static function briefCoverId(int $tenantId, int $userId): int
+    {
+        try {
+            foreach ((new \App\Repositories\SseIdOperationRepository())->briefsForUser($tenantId, $userId) as $b) {
+                if ((int) ($b['identity_id'] ?? 0) > 0) {
+                    return (int) $b['identity_id'];
+                }
+            }
+        } catch (\Throwable) {
+        }
+
+        return 0;
+    }
+
+    /**
+     * « Tout générer » : identité principale complète, papiers émis selon le pays et le grade, papiers de la couverture
+     * (habilitation Confidentiel). Une ligne dit ce qui a été fait.
+     */
+    public function generateAll(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guard($request, $params);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId, $rights] = $ctx;
+        $member = $this->users->findById($userId, $tenantId) ?? [];
+        $proposal = MemberIdentityPapersService::primaryProposal(
+            (new UserProfileRepository())->getByUserId($userId) ?? [],
+            (new PersonnelProfileRepository())->getByUserId($userId, $tenantId) ?? [],
+            $this->countries->listForTenant($tenantId)
+        );
+        $res = (new MemberIdentityAutoService())->generateAll($tenantId, $userId, $proposal, (int) ($member['grade_id'] ?? 0) > 0, $rights['truth'], $this->actorId());
+        Session::flash($res['ok'] ? 'success' : 'error', $res['message']);
+
+        return Response::redirect($this->back($userId) . '-synchro');
+    }
+
+    /** « Ajouter au kit » / « Ajouter automatiquement » : un clic depuis « Transmission en jeu ». */
+    public function kitAdd(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guard($request, $params);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId, $rights] = $ctx;
+        $raw = $request->input('document_ids', []);
+        $res = (new MemberIdentitySyncService())->kitAdd($tenantId, $userId, is_array($raw) ? array_map('intval', $raw) : [], $rights['truth'], (new SseIdSettingsRepository())->realWithCover($tenantId), $this->actorId(), self::briefCoverId($tenantId, $userId));
+        Session::flash($res['ok'] ? 'success' : 'error', $res['message']);
+
+        return Response::redirect($this->back($userId) . '-synchro');
+    }
+
+    /**
+     * Photo d'identité d'une identité du membre : fichier envoyé (JPEG / PNG, 4 Mo, recadré au carré, métadonnées
+     * retirées, rangé hors de la racine web) ou photo de profil du membre (from_profile=1, confirmée dans la page).
+     */
+    public function photoUpload(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guard($request, $params);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId, $rights] = $ctx;
+        $identity = $this->papers->ownedIdentity($tenantId, $userId, (int) ($params['iid'] ?? 0), $rights['truth']);
+        if ($identity === null) {
+            Session::flash('error', 'Identité introuvable.');
+
+            return Response::redirect($this->back($userId) . '-synchro');
+        }
+        $photos = new SseIdMemberPhotoService();
+        $res = $request->inputString('from_profile') === '1'
+            ? $photos->fromPortrait((string) (((new PersonnelProfileRepository())->getByUserId($userId, $tenantId) ?? [])['character_portrait_path'] ?? ''), $tenantId)
+            : $photos->storeUpload($_FILES['photo'] ?? null, $tenantId);
+        if (!$res['ok']) {
+            Session::flash('error', 'Photo : ' . ($res['error'] ?? 'image refusée.'));
+
+            return Response::redirect($this->back($userId) . '-synchro');
+        }
+        (new \App\Repositories\SseIdentityRepository())->setImages((int) $identity['id'], $tenantId, ['photo_path' => $res['path']]);
+        try {
+            (new \App\Repositories\SseAuditLogRepository())->write([
+                'tenant_id' => $tenantId, 'actor_user_id' => $this->actorId(), 'actor_label' => 'Fiche membre', 'action' => 'id_member.photo_set',
+                'object_type' => 'sse_identity', 'object_id' => (int) $identity['id'],
+                'after' => ['member_user_id' => $userId, 'source' => $request->inputString('from_profile') === '1' ? 'profile' : 'upload'],
+            ]);
+        } catch (\Throwable $e) {
+            error_log('Photo d’identité : journal d’audit indisponible : ' . $e->getMessage());
+        }
+        Session::flash('success', 'Photo enregistrée : elle part en jeu avec les papiers au prochain chargement du paquet.');
+
+        return Response::redirect($this->back($userId) . '-synchro');
+    }
+
+    /**
+     * Photo d'identité privée (storage/uploads/sse-id-photos) : connexion, même communauté, droit de voir les papiers
+     * des membres (fiche membre ou bureau SSE).
+     */
+    public function photo(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $tenant = (int) ($params['tenant'] ?? 0);
+        $name = (string) ($params['name'] ?? '');
+        $rights = self::currentRights($this->clearance);
+        $abs = (new SseIdMemberPhotoService())->absolute(SseIdMemberPhotoService::PREFIX . SseIdMemberPhotoService::DIR . '/' . $tenant . '/' . $name);
+        if ((int) Session::get('user_id') < 1 || $tenantId < 1 || $tenant !== $tenantId || !($rights['view'] || $rights['sse']) || $abs === null || !is_file($abs)) {
+            return Response::json(['error' => 'not_found'], 404);
+        }
+        $response = new Response();
+        $response->header('Content-Type', str_ends_with($name, '.png') ? 'image/png' : 'image/jpeg')
+            ->header('Cache-Control', 'private, max-age=3600')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->setBodyStream(static function () use ($abs): void {
+                $fh = fopen($abs, 'rb');
+                if ($fh !== false) {
+                    fpassthru($fh);
+                    fclose($fh);
+                }
+            });
+
+        return $response;
     }
 
     /** « Différence avec le jeu » : reprise champ par champ, ou « Garder les deux ». */

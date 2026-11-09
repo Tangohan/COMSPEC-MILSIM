@@ -103,6 +103,8 @@ class CfgFunctions {
             class idPaperLink {};
             class idPaperGive {};
             class idPaperTrack {};
+            // Identité réelle + couverture portées ensemble : identité active (présentée), l'autre cachée.
+            class idActive {};
         };
     };
 };

@@ -252,7 +252,7 @@ require __DIR__ . '/_subnav.php';
                             <tbody>
                             <?php foreach ($board['wanted'] as $w): ?>
                                 <tr>
-                                    <td><?php if ($w['photo_path'] !== null): ?><img class="idw-avatar" src="<?= $h(url($w['photo_path'])) ?>" alt=""><?php endif; ?></td>
+                                    <td><?php if ($w['photo_path'] !== null): ?><img class="idw-avatar" src="<?= $h((string) \App\Services\Sse\SseIdMemberPhotoService::url($w['photo_path'])) ?>" alt=""><?php endif; ?></td>
                                     <td><a class="link" href="<?= $h(url('atak/sse/papiers/identites/' . (int) $w['identity_id'])) ?>"><?= $h(mb_strtoupper($w['last_name']) . ' ' . $w['first_name']) ?></a></td>
                                     <td><?= $h($w['alias'] !== '' ? $w['alias'] : '—') ?></td>
                                     <td><span class="badge idp-verdict--<?= $h($w['level'] === 'hvt' ? 'hvt' : ($w['level'] === 'recherche' ? 'recherche' : 'signale')) ?>"><?= $h($w['level_label']) ?></span></td>

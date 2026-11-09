@@ -127,7 +127,7 @@ final class MemberIdentitySyncTest extends TestCase
         self::assertSame([10], array_column($this->pack(1)['kits'], 'user_id'), 'membre sans Steam : pas de kit');
     }
 
-    public function testAComposedKitWinsAndACoverBriefSwitchesTheAutomaticKitToTheCover(): void
+    public function testAComposedKitWinsAndTheAutomaticKitCarriesRealAndCover(): void
     {
         [, $doc] = $this->jake();
         [, $doc12] = $this->jake(12);
@@ -141,9 +141,10 @@ final class MemberIdentitySyncTest extends TestCase
         $cover = $s->createAlias(1, 10, ['kind' => 'cover', 'last_name' => 'Oscar', 'first_name' => 'De-Aligeara', 'nationality' => 'ALT'], true, 1)['id'];
         $coverDoc = $s->saveDocument(1, 10, $s->ownedIdentity(1, 10, $cover, true), null, ['doc_type' => 'passport', 'country_code' => 'ALT'], true, 1)['id'];
         $s->action(1, 10, $s->ownedDocument(1, 10, $coverDoc, true), 'issue', '', 1);
-        self::assertSame([$doc], $this->pack(1)['kits'][0]['documents'], 'sans fiche de couverture : identité principale');
+        self::assertEqualsCanonicalizing([$doc, $coverDoc], $this->pack(1)['kits'][0]['documents'], 'réglage par défaut : identité réelle et couverture');
         $this->pdo->exec("INSERT INTO sse_id_briefs (tenant_id, user_id, identity_id, title, created_at) VALUES (1, 10, {$cover}, 'Infiltration', '2026-11-01 10:00:00')");
-        self::assertSame([$coverDoc], $this->pack(1)['kits'][0]['documents']);
+        // Réglage par défaut « identité réelle avec la couverture » : les deux partent (MemberIdentityDualPhotoTest).
+        self::assertEqualsCanonicalizing([$doc, $coverDoc], $this->pack(1)['kits'][0]['documents']);
         self::assertSame([], $this->pack(2)['kits'], 'autre communauté : rien');
     }
 

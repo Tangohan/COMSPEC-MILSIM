@@ -67,6 +67,19 @@ switch (_mode) do {
         } forEach _s;
     };
     case "present": {
+        // Identité réelle + couverture portées ensemble : celles de l'identité active d'abord ; l'autre sous « Papiers
+        // cachés » (rôle connu par fn_idActive « push »). Rôle inconnu : présenté comme avant.
+        (missionNamespace getVariable ["comspec_sse_idMyRoles", ["real", createHashMap, false]]) params [["_active", "real"], ["_roleOf", createHashMap], ["_both", false]];
+        private _hidden = _mine select { private _r = _roleOf getOrDefault [_x, ""]; _both && {_r isNotEqualTo ""} && {_r isNotEqualTo _active} };
+        if (_hidden isNotEqualTo []) then {
+            ["COMSPEC_ID_Hidden", "Papiers cachés (autre identité)", {}, [_hidden], {
+                params ["_t", "_p", "_args"];
+                ((_args select 0) apply {
+                    private _cls = _x;
+                    [[format ["COMSPEC_ID_HPres_%1", _cls], getText (configFile >> "CfgWeapons" >> _cls >> "displayName"), "", { ["present", [(_this select 2) select 0, "present"]] call comspec_sse_fnc_idPresentPrompt }, { true }, {}, [_cls]] call comspec_sse_fnc_aceAction, [], _t]
+                })
+            }, "\z\comspec_sse\addons\identity\data\icon_card_ca.paa"] call _add;
+        };
         {
             [format ["COMSPEC_ID_Pres_%1", _forEachIndex], _x call _nameOf, {}, [_x], {
                 params ["_t", "_p", "_args"];
@@ -76,7 +89,7 @@ switch (_mode) do {
                     [["COMSPEC_ID_GiveOne", "Remettre", "", { ["present", [(_this select 2) select 0, "give"]] call comspec_sse_fnc_idPresentPrompt }, { true }, {}, [_cls]] call comspec_sse_fnc_aceAction, [], _t]
                 ]
             }, "\z\comspec_sse\addons\identity\data\icon_card_ca.paa"] call _add;
-        } forEach _mine;
+        } forEach (_mine - _hidden);
     };
     case "questions": {
         {

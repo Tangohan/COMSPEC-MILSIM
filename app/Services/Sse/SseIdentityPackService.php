@@ -151,7 +151,9 @@ final class SseIdentityPackService
             'briefs' => $briefs,
             // Réglage de la communauté, ignoré par un ancien mod.
             // Profils d'IA et éléments gardés : dans « settings », seul bloc libre que la DLL publiée transmet sans le connaître.
-            'settings' => ['auto_transmit' => $this->settings->autoTransmit($tenantId)] + ($offset === 0 ? $this->aiBlocks($tenantId, $mapId, $opKey) : []),
+            // Portraits réduits des papiers remis (photo d'identité visible en jeu) et réglage identité réelle + couverture.
+            'settings' => ['auto_transmit' => $this->settings->autoTransmit($tenantId), 'real_with_cover' => $this->settings->realWithCover($tenantId)]
+                + ($offset === 0 ? $this->aiBlocks($tenantId, $mapId, $opKey) + ['photos' => $this->photoBlock($tenantId, $kits)] : []),
             'paging' => [
                 'offset' => $offset,
                 'limit' => $limit,
@@ -168,9 +170,9 @@ final class SseIdentityPackService
     }
 
     /**
-     * Kits composés, puis kit automatique (portée « auto ») des membres qui n'en ont aucun : chaque membre reçoit les
-     * papiers émis de son identité principale, ou ceux de son identité de couverture si une fiche de couverture la lui
-     * attribue pour cette carte / opération (SseIdKitRepository::autoForPack). Les papiers sont tous dans le pack.
+     * Kits composés, puis kit automatique (portée « auto ») des membres qui n'en ont aucun : identité réelle et / ou
+     * couverture selon la fiche de couverture et le réglage « Transmettre aussi l'identité réelle avec la couverture »
+     * (SseIdKitRepository::completeForPack). Les papiers sont tous dans le pack.
      *
      * @param list<array<string, mixed>> $briefs
      * @return list<array{uid: string, user_id: int, scope: string, documents: list<int>}>
@@ -184,9 +186,45 @@ final class SseIdentityPackService
                 $covers[(int) $b['user_id']] = (int) $b['identity_id'];
             }
         }
-        $auto = $this->kits->autoForPack($tenantId, $mapId, $opKey, array_map(static fn (array $k): int => (int) $k['user_id'], $kits), $covers);
 
-        return array_merge($kits, $auto);
+        return $this->kits->completeForPack($tenantId, $mapId, $opKey, $kits, $covers, $this->settings->realWithCover($tenantId));
+    }
+
+    /**
+     * Photos d'identité des papiers remis aux joueurs, en portrait réduit (SseIdMemberPhotoService::mosaic) : bloc
+     * « settings.photos » [[id d'identité, portrait]…], seul bloc libre que la DLL publiée transmet. Le portrait est gardé
+     * en base (photo_mosaic, étape 4260) et recalculé quand la photo change ; sans GD ou avant l'étape : rien.
+     *
+     * @param list<array{documents: list<int>}> $kits
+     * @return list<array{0: int, 1: string}>
+     */
+    private function photoBlock(int $tenantId, array $kits): array
+    {
+        $docIds = [];
+        foreach ($kits as $k) {
+            foreach ($k['documents'] as $d) {
+                $docIds[] = (int) $d;
+            }
+        }
+        $out = [];
+        try {
+            $photos = new SseIdMemberPhotoService();
+            foreach ($this->identities->photosForDocuments($tenantId, $docIds) as $row) {
+                $mosaic = (string) ($row['photo_mosaic'] ?? '');
+                if ((string) ($row['photo_mosaic_src'] ?? '') !== (string) $row['photo_path']) {
+                    $abs = $photos->absolute((string) $row['photo_path']);
+                    $mosaic = $abs !== null ? (string) SseIdMemberPhotoService::mosaic($abs) : '';
+                    $this->identities->saveMosaic($tenantId, (int) $row['id'], $mosaic !== '' ? $mosaic : null, (string) $row['photo_path']);
+                }
+                if ($mosaic !== '') {
+                    $out[] = [(int) $row['id'], $mosaic];
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('Paquet d’identité : portraits indisponibles : ' . $e->getMessage());
+        }
+
+        return $out;
     }
 
     /**

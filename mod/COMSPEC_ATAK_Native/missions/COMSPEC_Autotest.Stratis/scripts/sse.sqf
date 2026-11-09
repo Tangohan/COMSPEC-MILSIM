@@ -164,8 +164,40 @@ AT_fnc_ia = {
     player removeItem _cls;
     deleteVehicle _a;
     deleteVehicle _b;
+
+    // Deux identités sur le même membre (réelle + couverture, kit Athena) : la réelle présentée par défaut, la couverture
+    // cachée ; changer d'identité ; la légende (Ma couverture) suit l'identité présentée ; portrait d'Athena imprimé.
+    if (isNil "comspec_sse_fnc_idActive") exitWith { "fn_idActive absente de ce build" call AT_fnc_info; call AT_fnc_done; };
+    private _mosaic = ""; for "_i" from 0 to 299 do { _mosaic = _mosaic + ("0123456789abcdef" select [_i mod 16, 1]); };
+    private _real = [player, createHashMapFromArray [["type", "id_card"], ["materialize", true], ["role", "real"], ["last", "GYLENHALL"], ["first", "Jake"], ["photoMosaic", _mosaic]]] call comspec_sse_fnc_idIssue;
+    private _cov = [player, createHashMapFromArray [["type", "passport"], ["materialize", true], ["role", "cover"], ["kind", "cover"], ["last", "OSCAR"], ["first", "De-Aligeara"]]] call comspec_sse_fnc_idIssue;
+    if !([_real isNotEqualTo "" && {_cov isNotEqualTo ""}, "papiers réel / couverture non délivrés"] call AT_fnc_check) exitWith { call AT_fnc_done; };
+    uiSleep 1;
+    (["roles", [player]] call comspec_sse_fnc_idActive) params ["_act0", "_list0", "_both0"];
+    [_both0 && {_act0 isEqualTo "real"}, format ["deux identités non reconnues (actif %1, les deux %2)", _act0, _both0]] call AT_fnc_check;
+    [((["get", [player]] call comspec_sse_fnc_idLegend) get "last") isEqualTo "GYLENHALL", "légende de l'identité réelle attendue"] call AT_fnc_check;
+    [(([_real] call comspec_sse_fnc_idPaperOf) get "hasPhoto") && {(([_real] call comspec_sse_fnc_idPaperOf) get "role") isEqualTo "real"}, "papier réel : rôle ou portrait absent"] call AT_fnc_check;
+    [["set", [player, "cover"]] call comspec_sse_fnc_idActive, "changement d'identité refusé"] call AT_fnc_check;
+    ["push", [player]] call comspec_sse_fnc_idActive;
+    [[{ ((missionNamespace getVariable ["comspec_sse_idMyRoles", ["real"]]) select 0) isEqualTo "cover" }, 3] call AT_fnc_wait, "rôles non reçus par le poste"] call AT_fnc_check;
+    [((["get", [player]] call comspec_sse_fnc_idLegend) get "last") isEqualTo "OSCAR", "légende de la couverture attendue après le changement"] call AT_fnc_check;
+    // Menu ACE « Mes papiers › Présenter » : la carte réelle passe sous « Papiers cachés ».
+    private _menu = ["present", player, player, ""] call comspec_sse_fnc_idActionChildren;
+    [(_menu findIf { ((_x select 0) select 0) isEqualTo "COMSPEC_ID_Hidden" }) >= 0, "papiers cachés absents du menu Présenter"] call AT_fnc_check;
+    ["set", [player, "real"]] call comspec_sse_fnc_idActive;
+    // Nettoyage : objets retirés, documents rendus au stock et sortis du registre du joueur.
+    {
+        private _dd = ["doc", [_x]] call comspec_sse_fnc_idRegistry;
+        player removeItem (_dd getOrDefault ["cls", ""]);
+        ["release", [_dd getOrDefault ["cls", ""]]] call comspec_sse_fnc_idRegistry;
+        private _k = [player] call comspec_sse_fnc_bioPersonKey;
+        private _l = (comspec_sse_idReg get "units") getOrDefault [_k, []];
+        _l deleteAt (_l find _x);
+    } forEach [_real, _cov];
+    ["reset", [player]] call comspec_sse_fnc_idLegend;
+    ["push", [player]] call comspec_sse_fnc_idActive;
     call AT_fnc_done;
-}, 45] call AT_fnc_run;
+}, 60] call AT_fnc_run;
 
 // Papiers de la visionneuse : une pièce par papier (jour), capture de chacune ; textures de nuit présentes ; long texte non coupé.
 ["sse_papiers", {

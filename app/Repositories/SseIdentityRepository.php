@@ -185,6 +185,41 @@ final class SseIdentityRepository
         return $this->db->execute('UPDATE sse_identities SET ' . implode(', ', $set) . ', updated_at = :now WHERE id = :id AND tenant_id = :t', $params) > 0;
     }
 
+    /**
+     * Identités (avec photo) des papiers donnés, pour les portraits réduits du paquet (étape 4260).
+     *
+     * @param list<int> $documentIds
+     * @return list<array{id: int, photo_path: string, photo_mosaic: ?string, photo_mosaic_src: ?string}>
+     */
+    public function photosForDocuments(int $tenantId, array $documentIds): array
+    {
+        $ids = array_slice(array_values(array_unique(array_filter(array_map('intval', $documentIds), static fn (int $i): bool => $i > 0))), 0, 500);
+        if ($ids === []) {
+            return [];
+        }
+        $params = ['t' => $tenantId];
+        $marks = [];
+        foreach ($ids as $k => $id) {
+            $marks[] = ':d' . $k;
+            $params['d' . $k] = $id;
+        }
+
+        return array_values($this->db->fetchAll(
+            'SELECT DISTINCT i.id, i.photo_path, i.photo_mosaic, i.photo_mosaic_src FROM sse_id_documents d
+             JOIN sse_identities i ON i.id = d.identity_id AND i.tenant_id = d.tenant_id
+             WHERE d.tenant_id = :t AND i.photo_path IS NOT NULL AND d.id IN (' . implode(', ', $marks) . ')',
+            $params
+        ));
+    }
+
+    public function saveMosaic(int $tenantId, int $id, ?string $mosaic, string $source): void
+    {
+        $this->db->execute(
+            'UPDATE sse_identities SET photo_mosaic = :m, photo_mosaic_src = :s WHERE id = :id AND tenant_id = :t',
+            ['m' => $mosaic, 's' => mb_substr($source, 0, 255), 'id' => $id, 't' => $tenantId]
+        );
+    }
+
     public function find(int $id, int $tenantId): ?array
     {
         $row = $this->db->fetchOne('SELECT * FROM sse_identities WHERE id = :id AND tenant_id = :t', ['id' => $id, 't' => $tenantId]);

@@ -142,6 +142,12 @@ switch (_op) do {
         if (_net isEqualTo netId player) then { ["push", _sheet] call comspec_sse_fnc_idCoverSync; };
         ["act", "received", [_old, _sheet]] call comspec_sse_fnc_idCoverPage;
     };
+    // Identité active et rôle de mes papiers (fn_idActive « push ») : menu ACE « Mes papiers », Ma couverture.
+    case "roles": {
+        _a params [["_active", "real"], ["_list", []], ["_both", false]];
+        missionNamespace setVariable ["comspec_sse_idMyRoles", [_active, createHashMapFromArray (_list select { _x isEqualType [] && {(count _x) isEqualTo 2} }), _both]];
+        ["act", "synced"] call comspec_sse_fnc_idCoverPage;
+    };
     case "coverList": {
         _a params [["_l", []]];
         missionNamespace setVariable ["comspec_sse_idCoverList", _l];

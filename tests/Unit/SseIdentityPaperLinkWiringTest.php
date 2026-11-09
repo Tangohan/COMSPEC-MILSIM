@@ -90,6 +90,51 @@ final class SseIdentityPaperLinkWiringTest extends TestCase
         self::assertStringContainsString('["sse_papier_lie", {', self::read('mod/COMSPEC_ATAK_Native/missions/COMSPEC_Autotest.Stratis/scripts/sse.sqf'));
     }
 
+    public function testRealAndCoverIdentitiesAndThePhotoAreWiredInTheModAndTheSite(): void
+    {
+        // Mod : rôle de chaque papier Athena, identité présentée, changement d'identité, papiers cachés, portrait imprimé.
+        self::assertStringContainsString('class idActive {};', self::read(self::ID . 'config.cpp'));
+        $active = self::read(self::ID . 'functions/fn_idActive.sqf');
+        foreach (['case "get":', 'case "set":', 'case "roles":', 'case "push":', '"activeRole"'] as $needle) {
+            self::assertStringContainsString($needle, $active);
+        }
+        $give = self::read(self::ID . 'functions/fn_idModuleGive.sqf');
+        self::assertStringContainsString('["role", ["real", "cover"] select', $give);
+        self::assertStringContainsString('"athenaPhotos"', $give);
+        self::assertStringContainsString('if ("photos" in _settings) then {', self::read(self::ID . 'functions/fn_idAthenaPack.sqf'));
+        self::assertStringContainsString('_p set ["photoMosaic", _d getOrDefault ["photoMosaic", ""]];', self::read(self::ID . 'functions/fn_idServer.sqf'));
+        self::assertStringContainsString('case "identitySwitch": {', self::read(self::ID . 'functions/fn_idServer.sqf'));
+        self::assertStringContainsString('(count _mosaic) isEqualTo 300', self::read(self::ID . 'functions/fn_idViewerOnLoad.sqf'));
+        self::assertStringContainsString('case "roles": {', self::read(self::ID . 'functions/fn_idClient.sqf'));
+        self::assertStringContainsString('"COMSPEC_ID_Hidden", "Papiers cachés (autre identité)"', self::read(self::ID . 'functions/fn_idActionChildren.sqf'));
+        self::assertStringContainsString('case "switch": {', self::read(self::ID . 'functions/fn_idCoverPage.sqf'));
+        self::assertStringContainsString('_L set ["hasBoth", _bothR];', self::read(self::ID . 'functions/fn_idLegend.sqf'));
+        self::assertStringContainsString('["push", [_this]] call comspec_sse_fnc_idActive;', self::read(self::ID . 'functions/fn_idKit.sqf'));
+        self::assertStringContainsString('Deux identités sur le même membre', self::read('mod/COMSPEC_ATAK_Native/missions/COMSPEC_Autotest.Stratis/scripts/sse.sqf'));
+
+        // Site : routes, contrôle de la communauté et des droits pour servir la photo, réglage, étape 4260.
+        $routes = self::read('routes/web.php');
+        $c = '[\\App\\Controllers\\Admin\\MemberIdentityPapersController::class, ';
+        foreach (['tout-generer' => 'generateAll', 'kit-ajout' => 'kitAdd', 'identites/{iid}/photo' => 'photoUpload'] as $path => $m) {
+            self::assertStringContainsString("post('/back-office/ressources/effectifs/membres/{id}/papiers/{$path}', {$c}'{$m}']", $routes);
+            self::assertStringContainsString("post('/atak/sse/papiers/membres/{id}/{$path}', {$c}'{$m}'], \$mwSsePortal)", $routes);
+        }
+        self::assertStringContainsString("get('/back-office/sse-id-photos/{tenant}/{name}', {$c}'photo'], [AuthMiddleware::class])", $routes);
+        $ctrl = self::read('app/Controllers/Admin/MemberIdentityPapersController.php');
+        self::assertStringContainsString('$tenant !== $tenantId || !($rights[\'view\'] || $rights[\'sse\'])', $ctrl);
+        self::assertStringContainsString("->header('X-Content-Type-Options', 'nosniff')", $ctrl);
+        $partial = self::read('views/admin/effectifs_workspace/partials/member_papers_sync.php');
+        foreach (['Tout générer', 'enctype="multipart/form-data"', 'accept="image/jpeg,image/png"', 'Reprendre la photo de profil', "/kit-ajout'", 'data-confirm='] as $needle) {
+            self::assertStringContainsString($needle, $partial);
+        }
+        self::assertStringContainsString('name="real_with_cover"', self::read('views/atak/sse/papers/checks.php'));
+        self::assertStringContainsString("'file' => '4260_sse_identity_dual_photo.php', 'rerun' => true]", self::read('database/steps/registry.php'));
+        // Photos affichées par l'adresse qui sait servir une photo privée.
+        foreach (['views/atak/sse/papers/_holder_images.php', 'views/atak/sse/papers/document_show.php', 'views/atak/sse/papers/mission_prep.php', 'app/Services/Sse/SseIdWorkshopService.php'] as $f) {
+            self::assertStringContainsString('SseIdMemberPhotoService::url(', self::read($f), $f);
+        }
+    }
+
     public function testMemberSheetSyncRoutesBlockAndMigrationAreWired(): void
     {
         $routes = self::read('routes/web.php');

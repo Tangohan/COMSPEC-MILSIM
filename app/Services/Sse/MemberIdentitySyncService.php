@@ -81,9 +81,14 @@ final class MemberIdentitySyncService
      *
      * @param array<string, mixed> $section
      * @param list<array<string, mixed>> $countries
-     * @return array{state: string, account: list<array<string, mixed>>, identities: array<int, array<string, mixed>>, documents: array<int, array<string, mixed>>, sent_identity_id: ?int, auto_kit: bool}
+     * Ce qui part : même règle que SseIdKitRepository::completeForPack (kit automatique ou kits composés, identité réelle
+     * ajoutée à une couverture si $realWithCover). « Bloqué » seulement quand rien ne part pour le membre, ou pour un papier
+     * qui ne peut pas partir (non émis, révoqué) ; un papier en plus resté hors du kit est « Incomplet », avec « Ajouter
+     * au kit » en un clic.
+     *
+     * @return array{state: string, account: list<array<string, mixed>>, identities: array<int, array<string, mixed>>, documents: array<int, array<string, mixed>>, sent_identity_id: ?int, sent_identity_ids: list<int>, auto_kit: bool, real_with_cover: bool}
      */
-    public static function diagnose(array $section, array $countries, ?string $today = null): array
+    public static function diagnose(array $section, array $countries, ?string $today = null, bool $realWithCover = true, int $briefCoverId = 0): array
     {
         $today ??= gmdate('Y-m-d');
         $byCode = [];
@@ -109,13 +114,58 @@ final class MemberIdentitySyncService
         $usable = static fn (array $d): bool => ($d['workflow'] ?? '') === 'issued'
             && !in_array($d['st_validity'] ?? 'valid', ['revoked', 'suspended'], true)
             && !in_array($d['st_report'] ?? 'none', ['stolen', 'lost'], true);
-        $sent = static function (array $d) use ($autoKit, $inKit, $primary, $usable): bool {
-            if ($autoKit) {
-                return $primary !== null && (int) $d['identity_id'] === (int) $primary['id'] && $usable($d);
+        // Papiers retenus par identité : un par type, le plus récent.
+        $best = [];
+        foreach ($docs as $d) {
+            if ($usable($d) && ((int) $d['id']) > ($best[(int) $d['identity_id']][(string) $d['doc_type']] ?? 0)) {
+                $best[(int) $d['identity_id']][(string) $d['doc_type']] = (int) $d['id'];
             }
-
-            return isset($inKit[(int) $d['id']]) && ($d['workflow'] ?? '') === 'issued';
-        };
+        }
+        $kindOf = array_column($identities, 'kind', 'id');
+        $primaryId = $primary !== null ? (int) $primary['id'] : 0;
+        $realDocs = array_values($best[$primaryId] ?? []);
+        if ($autoKit) {
+            $coverId = $briefCoverId > 0 && isset($best[$briefCoverId]) ? $briefCoverId : 0;
+            if ($coverId === 0) {
+                foreach ($identities as $i) {
+                    if (($i['kind'] ?? '') === 'cover' && isset($best[(int) $i['id']])) {
+                        $coverId = (int) $i['id'];
+                        break;
+                    }
+                }
+            }
+            $coverDocs = array_values($best[$coverId] ?? []);
+            $ids = match (true) {
+                $realWithCover => array_merge($realDocs, $coverDocs),
+                $briefCoverId > 0 && $coverDocs !== [] => $coverDocs,
+                default => $realDocs,
+            };
+        } else {
+            $ids = array_keys($inKit);
+            $hasCover = false;
+            $hasReal = false;
+            foreach ($docs as $d) {
+                if (isset($inKit[(int) $d['id']])) {
+                    $hasCover = $hasCover || in_array($kindOf[(int) $d['identity_id']] ?? '', ['cover', 'alias'], true);
+                    $hasReal = $hasReal || (int) $d['identity_id'] === $primaryId;
+                }
+            }
+            if ($realWithCover && $hasCover && !$hasReal) {
+                $ids = array_merge($ids, $realDocs);
+            }
+        }
+        $sentIds = [];
+        foreach ($ids as $i) {
+            $sentIds[(int) $i] = true;
+        }
+        $sent = static fn (array $d): bool => isset($sentIds[(int) $d['id']]) && ($d['workflow'] ?? '') === 'issued';
+        $sentIdentities = [];
+        foreach ($docs as $d) {
+            if ($sent($d)) {
+                $sentIdentities[(int) $d['identity_id']] = true;
+            }
+        }
+        $nothingSent = $sentIdentities === [];
 
         $account = [];
         if (empty($section['steam_linked'])) {
@@ -172,13 +222,14 @@ final class MemberIdentitySyncService
                     ['label' => 'Modifier les dates', 'edit' => $id]);
             }
             if ($wf === 'issued' && $issues === [] && !$sent($d)) {
+                // Bloqué seulement si rien ne part pour ce membre ; sinon c'est un papier en plus, à ajouter d'un clic.
                 $issues[] = $autoKit
-                    ? self::issue('not_primary', 'blocked', 'Papier d’une autre identité : non transmis',
-                        'Sans kit composé, seul le papier de l’identité principale part en jeu.', 'Ex. : alias ou couverture à remettre pour une opération.',
-                        ['label' => 'Composer un kit', 'href' => '#papiers-kit'])
-                    : self::issue('not_in_kit', 'blocked', 'Hors du kit de mission',
+                    ? self::issue('not_primary', $nothingSent ? 'blocked' : 'incomplete', 'Papier d’une autre identité : non transmis',
+                        'Sans kit composé, seuls les papiers de l’identité réelle (et de la couverture, selon le réglage) partent en jeu.', 'Ex. : alias à remettre pour une opération.',
+                        ['label' => 'Ajouter au kit', 'kitadd' => [$id]], ['label' => 'Composer un kit', 'href' => '#papiers-kit'])
+                    : self::issue('not_in_kit', $nothingSent ? 'blocked' : 'incomplete', 'Hors du kit de mission',
                         'Un kit est composé pour ce membre et ce papier n’y est pas : il ne part pas en jeu.', 'Ex. : kit de l’opération sans la carte d’identité.',
-                        ['label' => 'Composer le kit', 'href' => '#papiers-kit']);
+                        ['label' => 'Ajouter au kit', 'kitadd' => [$id]], ['label' => 'Composer le kit', 'href' => '#papiers-kit']);
             }
             $docOut[$id] = self::summarize($issues, $sent($d) ? ($autoKit ? 'Part en jeu (kit automatique).' : 'Part en jeu (kit de mission).') : 'Ne part pas en jeu.');
         }
@@ -229,7 +280,7 @@ final class MemberIdentitySyncService
                 $issues[] = self::issue('sex_missing', 'incomplete', 'Sexe non précisé', 'Le jeu imprime M par défaut.', 'Ex. : M ou F.', ['label' => 'Modifier l’identité', 'href' => '#papiers-identite']);
             }
             if (($i['photo_path'] ?? null) === null) {
-                $issues[] = self::issue('photo_missing', 'incomplete', 'Photo absente', 'Le papier d’Athena n’a pas de photo ; en jeu, la photo est le visage du personnage.', 'Ex. : photo d’identité ajoutée dans l’atelier des papiers.', ['label' => 'Ajouter une photo', 'href' => '']);
+                $issues[] = self::issue('photo_missing', 'incomplete', 'Photo absente', 'Le papier n’a pas de photo : en jeu, la photo est le visage du personnage.', 'Ex. : photo de face, JPEG ou PNG, 4 Mo au plus (recadrée au carré).', ['label' => 'Ajouter une photo', 'photo' => $id]);
             }
             $mine = $docsByIdentity[$id] ?? [];
             $issued = array_values(array_filter($mine, static fn (array $d): bool => ($d['workflow'] ?? '') === 'issued'));
@@ -240,12 +291,16 @@ final class MemberIdentitySyncService
                 $issues[] = self::issue('nat_no_paper', 'incomplete', 'Nationalité sans papier émis', 'Aucun papier émis par son pays : le contrôle s’étonne d’un étranger sans pièce de son pays.', 'Ex. : nationalité ' . $nat . ', seulement un permis d’un autre pays.',
                     ['label' => 'Générer un papier', 'new' => $id]);
             }
-            $isSent = array_filter($mine, $sent) !== [];
+            $isSent = isset($sentIdentities[$id]);
             if ($isSent) {
                 $sentIdentity ??= $id;
             } elseif ($issued !== []) {
-                $issues[] = self::issue('identity_not_sent', 'blocked', 'Identité non transmise', $autoKit ? 'Sans kit composé, seule l’identité principale part en jeu.' : 'Aucun de ses papiers n’est dans le kit de mission.', 'Ex. : couverture prévue mais pas dans le kit.',
-                    ['label' => 'Composer un kit', 'href' => '#papiers-kit']);
+                $usableIds = array_values($best[$id] ?? []);
+                $issues[] = self::issue('identity_not_sent', $nothingSent ? 'blocked' : 'incomplete', 'Identité non transmise',
+                    $autoKit ? 'Sans kit composé, seules l’identité réelle et la couverture partent en jeu.' : 'Aucun de ses papiers n’est dans le kit de mission.',
+                    $id === $primaryId ? 'Ex. : kit de couverture sans l’identité réelle ; « Ajouter automatiquement » y met ses papiers valables.' : 'Ex. : couverture prévue mais pas dans le kit.',
+                    $usableIds !== [] ? ['label' => $id === $primaryId ? 'Ajouter automatiquement' : 'Ajouter au kit', 'kitadd' => $usableIds] : ['label' => 'Composer un kit', 'href' => '#papiers-kit'],
+                    ['label' => 'Composer le kit', 'href' => '#papiers-kit']);
             }
             $identityOut[$id] = self::summarize($issues, $isSent ? 'Utilisée en jeu.' : 'Pas utilisée en jeu.');
         }
@@ -255,7 +310,11 @@ final class MemberIdentitySyncService
             $worst = self::worse($worst, $a['level']);
         }
         if ($sentIdentity !== null) {
-            $worst = self::worse($worst, $identityOut[$sentIdentity]['state']);
+            foreach (array_keys($sentIdentities) as $sid) {
+                if (isset($identityOut[$sid])) {
+                    $worst = self::worse($worst, $identityOut[$sid]['state']);
+                }
+            }
             foreach ($docs as $d) {
                 if ($sent($d)) {
                     $worst = self::worse($worst, $docOut[(int) $d['id']]['state']);
@@ -265,7 +324,8 @@ final class MemberIdentitySyncService
             $worst = 'blocked';
         }
 
-        return ['state' => $worst, 'account' => $account, 'identities' => $identityOut, 'documents' => $docOut, 'sent_identity_id' => $sentIdentity, 'auto_kit' => $autoKit];
+        return ['state' => $worst, 'account' => $account, 'identities' => $identityOut, 'documents' => $docOut, 'sent_identity_id' => $sentIdentity,
+            'sent_identity_ids' => array_keys($sentIdentities), 'sent_document_ids' => array_values(array_map('intval', array_keys(array_filter(array_column($docs, null, 'id'), $sent)))), 'auto_kit' => $autoKit, 'real_with_cover' => $realWithCover];
     }
 
     /** Lettres (accents compris), espaces, tirets, apostrophes ; 40 caractères au plus (bande MRZ). */
@@ -530,6 +590,47 @@ final class MemberIdentitySyncService
     }
 
     /**
+     * « Ajouter au kit » / « Ajouter automatiquement » (un clic) : les papiers donnés rejoignent chaque kit composé du
+     * membre ; sans kit composé, un kit par défaut est créé avec ce qui partait déjà (kit automatique) plus ces papiers,
+     * pour ne rien retirer. Seuls les papiers émis du membre, visibles par ce responsable, sont retenus.
+     *
+     * @param list<int> $documentIds
+     * @return array{ok: bool, message: string}
+     */
+    public function kitAdd(int $tenantId, int $userId, array $documentIds, bool $truth, bool $realWithCover, ?int $actorId, int $briefCoverId = 0): array
+    {
+        $papers = new MemberIdentityPapersService($this->identities, $this->documents, $this->kits, null, null, $this->audit);
+        $section = $papers->section($tenantId, $userId, '', $truth);
+        $issued = [];
+        foreach ($section['documents'] as $d) {
+            if ($d['workflow'] === 'issued') {
+                $issued[(int) $d['id']] = true;
+            }
+        }
+        $add = array_values(array_filter(array_unique(array_map('intval', $documentIds)), static fn (int $i): bool => isset($issued[$i])));
+        if ($add === []) {
+            return ['ok' => false, 'message' => 'Aucun papier émis à ajouter au kit.'];
+        }
+        $kits = $this->kits->listForUser($tenantId, $userId);
+        $keepTruth = $truth;
+        if ($kits === []) {
+            // Ce que le kit automatique envoyait, couverture comprise même pour un responsable sans habilitation (calcul
+            // interne, rien n'est montré) : le kit par défaut créé n'en retire rien.
+            $full = $papers->section($tenantId, $userId, '', true);
+            $base = self::diagnose($full, (new \App\Repositories\SseIdCountryRepository())->listForTenant($tenantId, false), null, $realWithCover, $briefCoverId)['sent_document_ids'];
+            $kits = [['context_id' => null, 'op_key' => null, 'document_ids' => $base]];
+            $keepTruth = true;
+        }
+        $n = 0;
+        foreach ($kits as $k) {
+            $n = $papers->saveKit($tenantId, $userId, $k['context_id'], $k['op_key'], array_values(array_unique(array_merge($k['document_ids'], $add))), $keepTruth, $actorId);
+        }
+        $this->log($tenantId, $actorId, 'id_member.sync_kit_add', 0, $userId, ['documents' => $add, 'scopes' => count($kits)]);
+
+        return ['ok' => $n > 0, 'message' => $n > 0 ? count($add) . ' papier(s) ajouté(s) au kit de mission : remis au prochain chargement du paquet.' : 'Rien n’a pu être ajouté.'];
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     public function historyFor(int $tenantId, int $userId, array $identities): array
@@ -589,9 +690,9 @@ final class MemberIdentitySyncService
      *                                  new (nouveau papier pour l'identité)
      * @return array{code: string, level: string, title: string, why: string, example: string, fix: array<string, mixed>}
      */
-    private static function issue(string $code, string $level, string $title, string $why, string $example, array $fix): array
+    private static function issue(string $code, string $level, string $title, string $why, string $example, array $fix, array $fix2 = []): array
     {
-        return ['code' => $code, 'level' => $level, 'title' => $title, 'why' => $why, 'example' => $example, 'fix' => $fix];
+        return ['code' => $code, 'level' => $level, 'title' => $title, 'why' => $why, 'example' => $example, 'fix' => $fix, 'fix2' => $fix2];
     }
 
     /** @param array<string, mixed> $extra */

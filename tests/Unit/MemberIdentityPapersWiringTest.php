@@ -92,7 +92,7 @@ final class MemberIdentityPapersWiringTest extends TestCase
         $pack = self::read('app/Services/Sse/SseIdentityPackService.php');
         self::assertStringContainsString("'kits' => \$kits,", $pack);
         self::assertStringContainsString('$this->kits->forPack($tenantId, $mapId, $opKey)', $pack);
-        self::assertStringContainsString('$this->kits->autoForPack(', $pack);
+        self::assertStringContainsString('$this->kits->completeForPack(', $pack);
         self::assertStringContainsString('getPlayerUID', $pack);
         self::assertStringContainsString("'subject_steam_id' =>", self::read('app/Services/Sse/SseIdCheckService.php'));
         self::assertStringContainsString('JOIN users u ON u.id = k.user_id', self::read('app/Repositories/SseIdKitRepository.php'));

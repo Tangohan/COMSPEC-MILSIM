@@ -62,6 +62,8 @@ private _n = 0;
     private _id = [_u, _spec] call comspec_sse_fnc_idIssue;
     if (_id isNotEqualTo "") then { _mine pushBack _id; _n = _n + 1; };
 } forEach _kit;
+// Identité active (réelle / couverture) et rôle de chaque papier porté : pour le menu ACE « Mes papiers » du joueur.
+[{ ["push", [_this]] call comspec_sse_fnc_idActive; }, _u, 1] call CBA_fnc_waitAndExecute;
 if (_n > 0) then {
     diag_log text format ["[COMSPEC SSE] Identité : kit Athena remis à %1 (%2 papier(s)%3).", name _u, _n, ["", ", respawn"] select _respawn];
     if (isPlayer _u) then {

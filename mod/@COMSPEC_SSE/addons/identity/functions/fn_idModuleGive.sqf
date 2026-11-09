@@ -35,7 +35,14 @@ if (_u isEqualType "") exitWith {
             private _iid = _d getOrDefault ["identity_id", ""];
             if (_iid isEqualType 0) exitWith { ["", str _iid] select (_iid > 0) };
             [_iid, ""] select !(_iid isEqualType "")
-        }]
+        }],
+        // Rôle du papier pour un joueur qui porte ses deux identités : couverture (couverture, alias, faux) ou réelle.
+        ["role", ["real", "cover"] select (((_i getOrDefault ["kind", ""]) in ["cover", "alias", "forged"]) || {(_d getOrDefault ["origin", ""]) in ["cover", "forged"]})],
+        // Photo d'identité d'Athena en portrait réduit (paquet, settings.photos) : redessinée par la visionneuse.
+        ["photoMosaic", ((missionNamespace getVariable ["comspec_sse_idReg", createHashMap]) getOrDefault ["athenaPhotos", createHashMap]) getOrDefault [call {
+            private _iid = _d getOrDefault ["identity_id", ""];
+            [_iid, str _iid] select (_iid isEqualType 0)
+        }, ""]]
     ]
 };
 if (isNull _u || {!(_u isKindOf "CAManBase")}) exitWith { "" };

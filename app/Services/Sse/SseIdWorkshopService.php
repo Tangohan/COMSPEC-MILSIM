@@ -351,7 +351,7 @@ final class SseIdWorkshopService
                 'birth_place' => (string) ($identity['birth_place'] ?? ''),
                 'nationality' => (string) ($identity['nationality'] ?? ''),
                 'profession' => (string) ($identity['profession'] ?? ''),
-                'photo_url' => ($identity['photo_path'] ?? null) !== null ? (string) url((string) $identity['photo_path']) : null,
+                'photo_url' => \App\Services\Sse\SseIdMemberPhotoService::url($identity['photo_path'] ?? null),
                 'signature_url' => ($identity['signature_path'] ?? null) !== null ? (string) url((string) $identity['signature_path']) : null,
             ],
             'doc' => [

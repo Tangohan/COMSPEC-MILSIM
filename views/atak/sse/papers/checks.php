@@ -23,6 +23,9 @@ require __DIR__ . '/_subnav.php';
     <form class="toolbar" method="post" action="<?= $h(url('atak/sse/papiers/controles/reglages')) ?>">
         <input type="hidden" name="_csrf_token" value="<?= $h((string) ($csrfToken ?? '')) ?>">
         <label><input type="checkbox" name="auto_transmit" value="1" <?= !empty($autoTransmit) ? 'checked' : '' ?>> Envoyer automatiquement les contrôles depuis le jeu</label>
+        <input type="hidden" name="real_with_cover_form" value="1">
+        <label title="Exemple : Jake GYLENHALL est infiltré sous l’identité De-Aligeara OSCAR. Coché : il reçoit en jeu la carte d’OSCAR (présentée) et la sienne (cachée, trouvée à la fouille), et peut changer d’identité dans Ma couverture. Décoché : seulement la carte d’OSCAR."><input type="checkbox" name="real_with_cover" value="1" <?= !empty($realWithCover) ? 'checked' : '' ?>> Transmettre aussi l’identité réelle avec la couverture</label>
+        <span class="muted">Un infiltré porte ses deux identités : la couverture présentée, la réelle cachée (trouvée à la fouille). Ex. : Jake GYLENHALL infiltré sous De-Aligeara OSCAR reçoit les deux cartes.</span>
         <button type="submit" class="btn btn--ghost">Enregistrer</button>
     </form>
 <?php endif; ?>

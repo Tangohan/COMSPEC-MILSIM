@@ -94,6 +94,19 @@ switch (_op) do {
             private _at = _settings get "auto_transmit";
             missionNamespace setVariable ["comspec_sse_id_autoTransmitCommunity", _at isEqualTo true || {_at isEqualTo 1}, true];
         };
+        // Photos d'identité (portraits réduits 15 × 20, 16 niveaux de gris) : [[id d'identité, portrait]…], dans « settings »,
+        // seul bloc que la DLL publiée transmet sans le connaître. Une image téléchargée ne s'affiche pas en jeu sans
+        // -filePatching : la visionneuse redessine ce portrait case par case.
+        if ("photos" in _settings) then {
+            private _ph = createHashMap;
+            {
+                if (_x isEqualType [] && {(count _x) >= 2}) then {
+                    _x params ["_pid", "_pm"];
+                    if (_pm isEqualType "" && {(count _pm) isEqualTo 300}) then { _ph set [[str _pid, _pid] select (_pid isEqualType ""), _pm]; };
+                };
+            } forEach ((_settings get "photos") select { _x isEqualType [] });
+            _reg set ["athenaPhotos", _ph];
+        };
         // Profils d'IA et éléments gardés : dans « settings » (la DLL publiée le transmet sans connaître ces blocs).
         if ("ai_profiles" in _settings) then { ["ingest", [_settings get "ai_profiles", _settings getOrDefault ["ai_placements", []]]] call comspec_sse_fnc_idAiConfig; };
         private _nC = 0; private _nD = 0; private _nW = 0;
