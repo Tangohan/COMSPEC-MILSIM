@@ -59,6 +59,44 @@ EN : FIRES quick: pick the unit to call, and a readable CAS app
 - `fn_firesCff`, `fn_pageFires` : plus de couleur fixe, jetons de `fn_theme` ; cause de l'illisible : `onState` (encre sombre) utilisé comme texte des champs et boutons sombres, `accent` + encre 0,03 sur l'état actif, gris pâles. Actif : `accentSoftHi` + `onAccentSoft` (testés à 4,5 dans AtakThemeContrastTest) et crochets. Libellés réduits par `fn_textFit` (plancher 80 %).
 - Autotest : `fires_court_destinataires` (pilote.sqf), `cas_lisibilite_themes` (telephone.sqf), non exécutés.
 ## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)
+
+### Résumé joueur
+Type : correctif
+FR : ATAK 4.1.1 : photos réparées, radio ACRE2 reconnue, écran de verrouillage sobre et vrais symboles militaires
+- **Photos** : une ancienne photo effacée ne bloque plus l'envoi des nouvelles ; les photos envoyées sont gardées dans Documents\Arma 3 - COMSPEC\Captures et le dossier Screenshots du jeu ne se remplit plus.
+- **Radio** : l'app Wave Relay reconnaît votre radio ACRE2 (MPU-5), dit l'état de la voix par le réseau et explique le cadenas « EN CLAIR ».
+- **Écran de verrouillage et titres** : bouton « Déverrouiller » net aux proportions fixes, titres des apps jamais coupés en petit format.
+- **Carte** : nouveau choix d'icônes 2525D dans Réglages > Carte, avec les vrais symboles OTAN selon le camp, le type et le niveau de l'unité.
+EN : ATAK 4.1.1: photos fixed, ACRE2 radio recognised, cleaner lock screen and real military symbols
+- **Photos**: an old deleted picture no longer blocks new ones; sent photos are kept in Documents\Arma 3 - COMSPEC\Captures and the game's Screenshots folder no longer fills up.
+- **Radio**: the Wave Relay app recognises your ACRE2 radio (MPU-5), shows the state of voice over the network and explains the "CLEAR" padlock.
+- **Lock screen and titles**: a clean "Unlock" button with fixed proportions, app titles never cut off on a small phone.
+- **Map**: new 2525D unit icons in Settings > Map, with real NATO symbols by side, type and echelon.
+
+### Détail technique
+- `fn_captureReconImage` : la pause `COMSPEC_FeedSnapFailUntil` (5 min après un `file_not_found`, `ERR|feed_backoff`) ne vaut plus que pour les aperçus automatiques des flux (flux donné, pas de fiche). `fn_photoMode` / `fn_photoCam` (flux vide, fiche) n'y passent plus.
+- `fn_extensionCallback` (`PhotoUpload`) : `file_not_found` sur un nom qui n'est pas `COMSPEC_…` (Photo Library, BCE) → phase `warn`, pas de notification, dernier retour de la Galerie inchangé, pas de pause des flux ; liste `COMSPEC_Athena_PhotoDead` portée de 200 à 600 entrées (au-delà de ~70 photos disparues, les plus anciennes revenaient toutes les 30 s). `_fnc_shotMissing` lit `size=` : dossier ≥ 240 Mo → message « dossier des captures plein ».
+- COMSPEC Link : `IsStaleTimestampedShot` (nom `AAAA_MM_JJ_HH_MM_SS…` de plus d'une heure) → un seul essai, sans les 20 s d'attente ni les relances de 150 s qui occupaient le fil des photos ; `DescribeImageLookupFailure` ajoute `size=<Mo>` du dossier en service.
+- Dossier Captures : après envoi réussi, `FinishUploadedShot` garde la copie de `Documents\Arma 3 - COMSPEC\Captures` (200 fichiers, 1 Go au plus) et retire l'original `COMSPEC_*` de Screenshots si la copie est complète (jamais une image du joueur ni le dossier du réglage). Avant (depuis e22416deb, 3 octobre), la copie était effacée et l'original restait : ~20 Mo par photo jusqu'aux 250 Mo d'Arma. `EnsureScreenshotQuota` toutes les 5 min (seuil 150 Mo) et après un `file_not_found`, au lieu d'une fois par partie.
+- `Shots.Check` ajoute la taille du dossier et le dossier Captures ; `Shots.OpenCaptures` (explorateur) ; `fn_shotDir` « open », avertissement à 200 Mo (vérification 20 s après le chargement) ; boutons dans `fn_pageGallery` (ENVOIS) et `fn_pageSettings`.
+- Ticket Athena #938 (Z01, connect 1.6.34, Link 2.0.120). Notes `docs/bugs/2026-11-08-photos-telephone-bloquees-feed-backoff.md`, `2026-11-08-photos-screenshots-limite-250-mo.md`, `2026-11-08-photo-library-ancienne-photo-bloque-file.md`.
+- Cause (4.1.0) : avec la liaison réaliste (`comspec_atak_native_mpu_real`, cochée par défaut), `fn_mpu5 "source"` renvoie toujours `[]` ; la ligne « Radio » de `fn_pageWaveRelay` le lisait et affichait « téléphone seul · portée 3.0 km (sans MPU5) » (portée de repli `COMSPEC_ATAK_MeshRange`), alors que le facteur de débit de `fn_linkQuality` lisait `fn_mpuLink "status"` (MPU5 reliée par câble). L'`ACRE_MPU5_ID_n` était bien détectée.
+- `fn_mpu5 "isMpu"` : seule règle de reconnaissance (nom « MPU5 », `acre_baseClass`, `Iceman_WR_isMPU5`, réglage `mpu5_items`), utilisée par "has", "gear" et `fn_mpuLink`. `fn_mpu5 "detected"` : seule source de la ligne « Radio », de l'objet détecté et du nom du facteur de débit.
+- `fn_mpuVoice "summary"` : état de la voix par le réseau en clair (réglage admin, coupe-circuit, liaison réaliste, pont, maillage). Section ACRE2 sur MON NŒUD, en tête de l'onglet VOIX, bouton de pont (même geste que l'action ACE).
+- `fn_meshKeys "link"` : détails du cadenas réécrits (cause et remède) ; ligne d'explication « EN CLAIR » dans l'app.
+- Autotest : étape `acre_radio_detectee` (groupe `acre`) avec `ACRE_MPU5`, 152 et 343, captures MON NŒUD et VOIX ; `ingame_test.ps1` charge `ACRE_MPU5.pbo` seul (`-SansAcreMpu5` pour l'éviter).
+- Note : `docs/bugs/2026-11-08-atak-wave-relay-radio-acre-mpu5.md`.
+- Cause du bouton : texture `items/data/lock/pill.paa` étirée en style 48 sur un rectangle d'environ 15:1 (46 % de la rangée en paysage) : ses bouts arrondis devenaient une ellipse aplatie. Couleur : jeton `accent` plein, c'est-à-dire l'accent du profil (`COMSPEC_ATAK_Accent`, ici BLEU), seule grande surface vive de l'écran.
+- `fn_lockScreen` : rectangles (fond + filet d'un pixel) sans texture, largeur plafonnée (12 hauteurs de police pour le bouton, 8 pour les raccourcis), rangée centrée en paysage, deux rangées centrées en portrait. Bouton tonal : nouveaux jetons `accentSoft`, `accentSoftHi`, `onAccentSoft` (`fn_theme`), états survol, focus clavier et pressé. Rappel « sans code » : profil `COMSPEC_ATAK_LockPinTip`, marqué au premier déverrouillage. Comportement de déverrouillage et de code inchangé.
+- Cause des titres coupés : largeur du titre `_dw - 4 pas de bouton`, sans lien avec les boutons réellement affichés (le pas suit la police, pas l'écran) : 3 à 65 px en mini réduit ou texte agrandi ; `fn_textFit` s'arrêtait à 65 % (et à 85 % de 14 px) puis coupait. « ITINÉRAIRE » passait, « DISTANCES » non : seuls les titres les plus larges parmi ceux testés tombaient.
+- `fn_layoutApply` : le titre va jusqu'au premier bouton de droite affiché ; boutons resserrés quand la barre est étroite ; pastille « main + touche » prise en compte. Nouveau `fn_titleFit` : police jusqu'à 14 px, puis bouton de rotation masqué (sens dans Réglages > Emplacement), abréviation (attribut `short` de `COMSPEC_ATAK_Apps`, 25 apps), icône de l'app.
+- Tests : `AtakThemeContrastTest` (bouton tonal, 6 accents x 3 thèmes, AA 4,5), `AtakUiTruncationTest`. Autotest : étape `tel_verrouillage_themes` (3 thèmes, portrait et paysage).
+- `tools/gen_milstd.py` : 189 textures 128 px DXT5 (ImageToPAA, ancien PAA supprimé avant conversion, en-tête DXT5 vérifié) dans `items/data/milstd` (+4,5 Mo dans items.pbo, main.pbo inchangé). Couches blanches colorées par `drawIcon` (thèmes clair, sombre, nuit sans texture en plus).
+- `fn_milSym` (association, règle dans `docs/ATAK_SYMBOLES_MILSTD.md`, code 2525D pour le site), `fn_milDraw` (3 à 7 `drawIcon` par symbole, couches gardées par descripteur et thème). `fn_mapOnDraw` : mode `MILSTD`, formes `MS` / `MS:<pictogramme>` (moi) et `MILSTD` (alliés).
+- ORBAT du site (`/api/atak/community-orbat`) : `function` et `hq` par unité ; `fn_bftOrbat` garde échelon, fonction, QG, parent et le type de poste des titulaires.
+
+---
+
 ## À venir : importer sa couverture générée sur Athena (SSE et COMSPEC Link, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

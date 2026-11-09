@@ -412,6 +412,7 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
 ?>
 <body class="<?= htmlspecialchars($bodyClasses, ENT_QUOTES, 'UTF-8') ?>">
     <?php require base_path('views/partials/tenant_intervention_banner.php'); ?>
+    <?php require base_path('views/partials/plan_preview_banner.php'); ?>
     <?php if (empty($communityReelsPage) && empty($communityShowcasePage)): ?>
     <?php require base_path('views/partials/plan_end_banner.php'); ?>
     <?php endif; ?>

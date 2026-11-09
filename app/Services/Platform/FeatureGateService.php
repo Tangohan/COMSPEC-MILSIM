@@ -291,7 +291,7 @@ final class FeatureGateService
     public function effectivePlanSlug(array $tenant): string
     {
         // Formule offerte en cours > abonnement actif > essai fondateur Pro > formule de base (voir PlanGift).
-        return PlanGift::effectivePlanSlug($tenant);
+        return EffectivePlan::slugFor($tenant);
     }
 
     /**
@@ -302,6 +302,9 @@ final class FeatureGateService
      */
     private function graceAllows(array $tenant, string $feature): bool
     {
+        if (EffectivePlan::previewSlugFor((int) ($tenant['id'] ?? 0)) !== null) {
+            return false;
+        }
         $days = $this->graceDays ?? PlanEndWarningService::cachedGraceDays();
         $grace = PlanAccessWindow::grace($tenant, $days);
         if ($grace === null) {
@@ -319,6 +322,9 @@ final class FeatureGateService
     /** Paiement en retard : accès réduit, sauf si une formule offerte court. */
     private function isPastDueWithoutGift(array $tenant): bool
     {
+        if (EffectivePlan::previewSlugFor((int) ($tenant['id'] ?? 0)) !== null) {
+            return false;
+        }
         return ($tenant['subscription_status'] ?? '') === 'past_due'
             && PlanGift::activeFromSettings($tenant['settings'] ?? null) === null;
     }

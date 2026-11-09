@@ -46,6 +46,7 @@ $canAdjustTenantType = function_exists('can') && (can('admin.organization') || c
 </head>
 <body class="dashboard-shell dashboard-atak-shell antialiased">
 <?php require base_path('views/partials/tenant_intervention_banner.php'); ?>
+    <?php require base_path('views/partials/plan_preview_banner.php'); ?>
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/portal-alerts.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
 <?php if (is_file(base_path('public/assets/js/athena-header.js'))): ?>
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/athena-header.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
