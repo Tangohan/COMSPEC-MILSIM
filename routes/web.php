@@ -1386,6 +1386,9 @@ return function (Router $router) {
     $router->post('/admin/tenants/{id}/identity', [SystemTenantsController::class, 'updateIdentity'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/profil', [SystemTenantsController::class, 'updateType'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/plan', [SystemTenantsController::class, 'updatePlan'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/tenants/{id}/langue', [SystemTenantsController::class, 'updateLocale'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/tenants/{id}/contact', [SystemTenantsController::class, 'updateOwner'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/tenants/{id}/logo', [SystemTenantsController::class, 'removeLogo'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/tenants/{id}/retrait', [SystemTenantsController::class, 'removal'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/archiver', [SystemTenantsController::class, 'archive'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/restaurer', [SystemTenantsController::class, 'restore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
