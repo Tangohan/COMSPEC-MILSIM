@@ -103,7 +103,19 @@ final class SystemTenantsController
 
         $name = (string) ($tenant['name'] ?? 'Communauté');
 
+        // Membres : mêmes définitions que l'annuaire et la page des comptes (UserRepository::*PlatformAccount*).
+        $users = new \App\Repositories\UserRepository();
+        $memberCounts = [];
+        foreach (\App\Repositories\UserRepository::PLATFORM_ACCOUNT_FILTERS as $f) {
+            $memberCounts[$f] = $users->countPlatformAccounts($tenantId, $f, null);
+        }
+        $memberRows = $users->listPlatformAccounts($tenantId, 'all', null, 'login', 'desc', 8, 0);
+
         return Response::view('layout.main', [
+            'platformMemberCounts' => $memberCounts,
+            'platformMemberRows' => $memberRows,
+            'platformMemberLabels' => SystemTenantAccountsController::filterLabels(),
+            'platformMembersUrl' => url('admin/tenants/' . $tenantId . '/comptes'),
             'title' => 'Communauté — ' . $name,
             'content' => 'admin.system.tenants_plan_form',
             'platformTenant' => $tenant,
