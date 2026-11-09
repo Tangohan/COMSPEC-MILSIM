@@ -4892,7 +4892,20 @@ class AtakApiController
         }
         $brief = $this->sessionUserBrief() ?? ['displayName' => '', 'callsign' => '', 'userId' => 0];
         $aliases = array_values(array_filter([(string) $brief['callsign'], (string) $brief['displayName']], static fn (string $a): bool => trim($a) !== ''));
-        $canManage = function_exists('can') && (can('admin.access') || can('admin.organization') || can('atak.mission_cycle.manage'));
+        // can() lit la porte (Gate) que seul AuthMiddleware remplit : sur /api/… elle est vide, donc toujours fausse.
+        // Même règle que le parc ATAK du jeu : admin plateforme ou gestion de la communauté, relue en base.
+        $canManage = false;
+        if ((int) $brief['userId'] > 0) {
+            try {
+                $admin = new \App\Services\Atak\AtakGameAdminService();
+                $canManage = \App\Services\Atak\AtakMapClearService::managerFromRole(
+                    $admin->role($tenantId, (int) $brief['userId']),
+                    $admin->can($tenantId, (int) $brief['userId'], ['atak.mission_cycle.manage'])
+                );
+            } catch (\Throwable) {
+                $canManage = false;
+            }
+        }
 
         return [$tenantId, $mapId, ['userId' => (int) $brief['userId'], 'aliases' => $aliases, 'canManage' => $canManage], $body];
     }
