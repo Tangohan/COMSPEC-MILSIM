@@ -46,10 +46,10 @@ switch (_act) do {
         _rows append [
             [_rd, "Radio utilisée", _p + "radio_source", [0, 1, 2, 3], ["Détectée automatiquement", "ACRE2", "TFAR", "Aucune"]] call _n,
             [_rd, "Couper tout lien avec la radio", _p + "radio_cut"] call _b,
-            [_rd, "Voix relayée par le maillage", _p + "mpu_voice"] call _b,
             [_rd, "TFAR : rallonge à l'émission seulement", _p + "mesh_tfar_ptt"] call _b,
             [_rd, "Données par radio (ancien modèle)", _p + "radio_data"] call _b,
             [_ms, "Liaison téléphone-radio réaliste", _p + "mpu_real"] call _b,
+            [_ms, "Voix relayée par le maillage", _p + "mpu_voice"] call _b,
             [_ms, "Radio de données obligatoire", _p + "mpu_require"] call _b,
             [_ms, "Câble EUD obligatoire (notre MPU5)", _p + "mpu_cable"] call _b,
             [_ms, "Wi-Fi de la MPU5", _p + "mpu_wifi"] call _b,
@@ -150,12 +150,28 @@ switch (_act) do {
                 if (_i >= 0) then { (_names select _i) call _T } else { str _v }
             };
         };
+        // Valeur d'usine en clair (réglages modifiables seulement) : lue, jamais écrite.
+        private _dtx = "";
+        if (_kind in ["bool", "num"]) then {
+            private _dv = nil;
+            if (_cond isNotEqualTo "") then {
+                _dv = ((["defs"] call comspec_atak_native_fnc_netCond) select { (_x select 0) isEqualTo _cond } apply { _x select 4 }) param [0, nil];
+            } else {
+                if (!isNil "CBA_settings_fnc_get") then { _dv = [_var, "default"] call CBA_settings_fnc_get; };
+            };
+            if (!isNil "_dv") then {
+                _dtx = if (_dv isEqualType true) then { [("Coupé" call _T), ("Actif" call _T)] select _dv } else {
+                    private _di = _vals find _dv;
+                    if (_di >= 0) then { (_names select _di) call _T } else { str _dv }
+                };
+            };
+        };
         private _s = createHashMapFromArray [
             ["site", [format ["Imposé par %1" call _T, _tenant], "#E0B050"]], ["server", ["Appliqué en jeu" call _T, "#7ED38A"]], ["profile", ["Valeur du profil" call _T, "#7FB6E6"]],
             ["cba", ["Réglage du serveur" call _T, "#D8C98A"]], ["default", ["Valeur par défaut" call _T, "#9AA59C"]], ["choice", ["Votre choix" call _T, "#7ED38A"]], ["absent", ["Mod absent" call _T, "#9AA59C"]]
         ];
         (_s get _src) params ["_st", "_sc"];
-        [_v, _txt, _st, _sc, _src isEqualTo "site", ["", "Imposé sur Athena : à changer dans Contrôle serveur, sur le site." call _T] select (_src isEqualTo "site"), _src]
+        [_v, _txt, _st, _sc, _src isEqualTo "site", ["", "Imposé sur Athena : à changer dans Contrôle serveur, sur le site." call _T] select (_src isEqualTo "site"), _src, _dtx]
     };
     case "apply": {
         if (!isServer || {isNil "CBA_settings_fnc_set"}) exitWith { 0 };

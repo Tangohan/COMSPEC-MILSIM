@@ -38,27 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## À venir : app SMS dédiée (ATAK natif, version à attribuer)
+## À venir : réglages du serveur expliqués et onglet VOIX clarifié (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Une app SMS à part, avec l'interface de Messages
-- Nouvelle app « SMS » (catégorie Communication) : uniquement les conversations directes avec les joueurs de ton camp, sans les canaux du TOC.
-- Même présentation que Messages : liste avec dernier message et non-lus, bulles, saisie, accusés Envoi / Distribué / Lu, et choix du destinataire avec son numéro.
-- Les SMS suivent le réseau du téléphone : sans signal ils restent en attente et partent au retour du réseau. Une notification de SMS reçu ouvre l'app.
-- Un expéditeur qui spamme (plus de 8 SMS en 10 s) est ignoré, et un SMS ne dépasse jamais 400 caractères.
-EN : A separate SMS app, with the Messages interface
-- New "SMS" app (Communication category): direct conversations with players of your side only, without the TOC channels.
-- Same look as Messages: list with last message and unread badges, bubbles, input, Sending / Delivered / Read receipts, and a recipient picker showing their number.
-- SMS follow the phone network: with no signal they wait and leave when the network is back. A received-SMS notification opens the app.
-- A sender who spams (more than 8 SMS in 10 s) is ignored, and an SMS never exceeds 400 characters.
+Type : correctif
+FR : Chaque réglage du réalisme est expliqué, avec un exemple
+- Échap > Réalisme et réseau : sous chaque réglage, une phrase dit ce que ça change en jeu, un exemple chiffré l'illustre, et la valeur par défaut est rappelée. L'assistant de configuration reprend les mêmes explications.
+- La voix relayée par le maillage se règle maintenant depuis cette fenêtre (section Maillage), avec Appliquer au serveur. Elle reste désactivée par défaut.
+- App Wave Relay, onglet VOIX : un encadré explique à quoi il sert, l'état dit le prochain pas à faire (avec le chemin exact), chaque section est expliquée, et les boutons ÉCOUTER sont plus sobres : l'état s'affiche par une case cochée ou vide, pas seulement par la couleur.
+EN : Every realism setting is explained, with an example
+- Esc > Realism and network: under each setting, a sentence says what it changes in game, a worked example illustrates it, and the default value is shown. The setup assistant uses the same explanations.
+- Voice relayed by the mesh can now be set from this window (Mesh section), with Apply to server. It stays off by default.
+- Wave Relay app, VOICE tab: a box explains what it is for, the status tells you the next step (with the exact path), every section is explained, and the LISTEN buttons are calmer: state is shown by a ticked or empty box, not only by color.
 
 ### Détail technique
-- `fn_pageSms` (page `SMS`, classe `Sms`, ordre 31, `short="SMS"`, icône `app_chat.paa` réutilisée, aucun binaire) : repart de la liste à l'entrée, puis appelle `fn_pageChat`, qui reconnaît la page active `SMS` (`_smsApp`) : pas de canaux ni de `+ CANAL`, pas de relevé des canaux Athena, bandeau d'état limité au réseau du téléphone. Les rendus différés, la molette et `fn_formRender` acceptent `CHAT` ou `SMS`.
-- Envoi, file d'attente sans réseau, maillage MPU5 et accusés : inchangés (`fn_p2pSend`, `fn_p2pAck`, `fn_netSend`, `fn_meshGraph`). Aucune requête vers Athena. ACRE et TFAR non touchés (`fn_radioGuard` inchangé).
-- `fn_p2pReceive` : contrôles à l'arrivée pour Messages et SMS (expéditeur joueur et nom concordant, 8 SMS par 10 s par expéditeur, 400 caractères), notification vers la page `SMS` si l'app est visible. Le circuit reste CBA de téléphone à téléphone, sans relais serveur.
-- `fn_appBadge` (`SMS` : non-lus directs), `fn_statusUpdate`, `fn_iconTint`, `fn_offline`, `fn_avatarPath`, `fn_ramUsage`, `fn_appSpaces` (espace Messages). Retrait côté serveur par les réglages d'apps existants (classe `Sms`). Site : `AtakExperienceService::phoneApps` (règle des apps Athena).
-- i18n : 2 lignes `en.txt`. Wiki : `docs/steam/discussions/64_sms.txt` + index. Autotest : étape `sms` (`missions/COMSPEC_Autotest.Stratis/scripts/sms.sqf`), non exécutée.
+- Nouveau `fn_realismHelp` (77 réglages : explication et exemple FR, EN dans `i18n/en.txt` et `localisation/template/xx.txt`). `fn_netConfig` : ligne qui grandit avec le texte (`ctrlTextHeight`), valeur d'usine lue (`fn_realismCatalog` "state", CBA "default", ou défauts de `fn_netCond`). `fn_setupWizard` : mêmes textes.
+- `mpu_voice` déplacé de « Radio et voix » à « Maillage » dans le catalogue (même circuit serveur, `realismSet`). Défaut inchangé (désactivé). `fn_mpuVoice` "summary" cite Échap > Réalisme.
+- `fn_pageWaveRelay` (VOIX) et `fn_meshGroups` "rows" : encadré d'aide, prochain pas, états vides, boutons `[ ] / [x]`. `fn_radioGuard`, ACRE2 / TFAR et valeurs par défaut non touchés. Rien n'a tourné en jeu.
+- Test : `AtakReglagesExplicationsTest`.
 ## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)
 
 ## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)
