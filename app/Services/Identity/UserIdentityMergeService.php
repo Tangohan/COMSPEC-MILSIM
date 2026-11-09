@@ -413,6 +413,57 @@ final class UserIdentityMergeService
     }
 
     /**
+     * Rattache une fiche sans compte (adresse réservée) à un compte existant de la MÊME communauté : le dossier de la
+     * fiche (affectations, qualifications, historique…) passe au compte, la fiche devient une ligne « fusionnée ».
+     * Les identifiants de connexion du compte ne changent pas. Journalisé comme toute fusion d'identité.
+     *
+     * @return array{survivor_id: int, absorbed_id: int}
+     */
+    public function absorbFicheIntoAccount(int $tenantId, int $survivorId, int $ficheId): array
+    {
+        if ($tenantId < 1 || $survivorId < 1 || $ficheId < 1 || $survivorId === $ficheId) {
+            throw new InvalidArgumentException('Rattachement impossible.');
+        }
+        $this->ensureSchema();
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id IN (?, ?) AND tenant_id = ?');
+        $stmt->execute([$survivorId, $ficheId, $tenantId]);
+        $byId = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $byId[(int) $row['id']] = $row;
+        }
+        $survivor = $byId[$survivorId] ?? null;
+        $fiche = $byId[$ficheId] ?? null;
+        if ($survivor === null || $fiche === null) {
+            throw new InvalidArgumentException('Fiche ou compte introuvable dans cette communauté.');
+        }
+        if (!\App\Support\RosterOnlyMember::isRosterEmail((string) ($fiche['email'] ?? ''))) {
+            throw new InvalidArgumentException('Seule une fiche sans compte peut être rattachée.');
+        }
+        $survivorEmail = (string) ($survivor['email'] ?? '');
+        if (
+            \App\Support\RosterOnlyMember::isRosterEmail($survivorEmail)
+            || !UserIdentityMergeRules::isLiveHumanEmail($survivorEmail)
+            || UserIdentityMergeRules::isServiceAccount($survivor)
+            || strtolower((string) ($survivor['status'] ?? '')) === 'merged'
+        ) {
+            throw new InvalidArgumentException('Choisissez un compte réel et actif.');
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            $this->absorbRow($survivor, $fiche, [], false);
+            $this->pdo->commit();
+        } catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
+
+        return ['survivor_id' => $survivorId, 'absorbed_id' => $ficheId];
+    }
+
+    /**
      * @param array<string, mixed> $fields
      */
     private function applyIdentityFields(int $survivorId, array $fields): void

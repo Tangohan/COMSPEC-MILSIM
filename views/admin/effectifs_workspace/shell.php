@@ -23,6 +23,8 @@ $tabs = [
     ['roles', 'Accès', 'roles', 0, 'Organisation'],
     ['fonctions', 'Emplois', 'fonctions', 0, 'Organisation'],
     ['invitations', 'Invitations', 'invitations', 0, 'Suivi des dossiers'],
+    ['sans_comptes', 'Sans compte', 'sans-comptes', 0, 'Suivi des dossiers'],
+    ['tableaux', 'Tableaux de données', 'tableaux', 0, 'Registre'],
     ['rh_mobility', 'Mobilité', 'mobilite', (int) ($mobilityPendingCount ?? 0), 'Suivi des dossiers'],
     ['rh_succession', 'Vivier', 'vivier', 0, 'Suivi des dossiers'],
     ['rh_roleplay', 'Roleplay', 'roleplay', (int) ($roleplayDueCount ?? 0) + (int) ($phaseGateCount ?? 0), 'Suivi des dossiers'],
@@ -57,6 +59,8 @@ $lead = match ($active) {
     'affectations' => 'Qui tient quoi, dans quelle unité et avec quel rôle, avec le code de chaque unité.',
     'nouveau' => 'Créez la fiche, puis envoyez à la personne son lien pour compléter son profil.',
     'invitations' => 'Les liens envoyés pour compléter un profil : qui les a reçus, ouverts, et ce qu’il reste à faire.',
+    'sans_comptes' => 'Les personnes qui n’ont pas (encore) de compte : leur fiche, leur invitation, leur rattachement à un compte.',
+    'tableaux' => 'Choisissez une source, les colonnes, les filtres : votre tableau se construit comme dans Excel.',
     default => 'Dossiers des membres : tableur, accès, emplois et suivi.',
 };
 $showTools = empty($jobsReferenceWorkspace);

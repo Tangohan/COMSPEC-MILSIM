@@ -1490,6 +1490,17 @@ return function (Router $router) {
     // chaque compteur et chaque favori est vérifié contre ses droits dans la communauté de la session.
     $router->get('/back-office/menu/pastilles', [\App\Controllers\Admin\BackOfficeMenuController::class, 'badges'], [AuthMiddleware::class]);
     $router->post('/back-office/menu/favoris', [\App\Controllers\Admin\BackOfficeMenuController::class, 'favorite'], [AuthMiddleware::class]);
+    // Accueil personnalisable et tableaux : mêmes personnes que le tableau de bord de pilotage.
+    $router->post('/back-office/accueil/disposition', [\App\Controllers\Admin\BackOfficeHomeController::class, 'saveLayout'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/tableaux', [\App\Controllers\Admin\BackOfficeHomeController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/tableaux/{id}', [\App\Controllers\Admin\BackOfficeHomeController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/tableaux/{id}', [\App\Controllers\Admin\BackOfficeHomeController::class, 'saveAll'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/tableaux/{id}/cellule', [\App\Controllers\Admin\BackOfficeHomeController::class, 'cell'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/tableaux/{id}/structure', [\App\Controllers\Admin\BackOfficeHomeController::class, 'structure'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/tableaux/{id}/reglages', [\App\Controllers\Admin\BackOfficeHomeController::class, 'settings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/tableaux/{id}/import', [\App\Controllers\Admin\BackOfficeHomeController::class, 'import'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/tableaux/{id}/export.csv', [\App\Controllers\Admin\BackOfficeHomeController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/tableaux/{id}/supprimer', [\App\Controllers\Admin\BackOfficeHomeController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/carnet-de-vol', [PilotLogbookController::class, 'mine'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/carnet-de-vol/ajouter', [PilotLogbookController::class, 'add'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/carnet-de-vol/{entryId}/modifier', [PilotLogbookController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2092,6 +2103,17 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/nouveau', [UserAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/nouveau/verifier', [\App\Controllers\Admin\EffectifsInvitesController::class, 'checkNewMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/invitations', [EffectifsWorkspaceController::class, 'invitations'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Personnes sans compte (liste, création, correction, rattachement, import) et tableaux de données de tout.
+    $router->get('/back-office/ressources/effectifs/sans-comptes', [EffectifsWorkspaceController::class, 'sansComptes'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/sans-comptes/creer', [\App\Controllers\Admin\EffectifsSansComptesController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/sans-comptes/importer', [\App\Controllers\Admin\EffectifsSansComptesController::class, 'import'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/sans-comptes/{id}/modifier', [\App\Controllers\Admin\EffectifsSansComptesController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/sans-comptes/{id}/rattacher', [\App\Controllers\Admin\EffectifsSansComptesController::class, 'attach'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/tableaux', [EffectifsWorkspaceController::class, 'tableaux'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/tableaux/export.csv', [\App\Controllers\Admin\EffectifsTablesController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/tableaux/enregistrer', [\App\Controllers\Admin\EffectifsTablesController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/tableaux/tableur', [\App\Controllers\Admin\EffectifsTablesController::class, 'toSheet'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/tableaux/{id}/supprimer', [\App\Controllers\Admin\EffectifsTablesController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/invitations', [\App\Controllers\Admin\EffectifsInvitesController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/invitations/{inviteId}/{action}', [\App\Controllers\Admin\EffectifsInvitesController::class, 'act'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/export', [EffectifsWorkspaceController::class, 'exportCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
