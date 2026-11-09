@@ -42,6 +42,7 @@ $needsMap = in_array($mobileView ?? '', ['carte', 'cr', 'briefs'], true);
   <?php if (($mobileView ?? '') === 'carte'): ?>
   <script src="<?= $h(url('assets/js/atak-aerial.js')) ?>?v=<?= $h($ver) ?>"></script>
   <script src="<?= $h(url('assets/js/atak-m-tactique.js')) ?>?v=<?= $h($ver) ?>"></script>
+  <script src="<?= $h(url('assets/js/atak-map-clear.js')) ?>?v=<?= $h($ver) ?>"></script>
   <?php endif; ?>
 <?php endif; ?>
   <script src="<?= $h(url('assets/js/atak-m.js')) ?>?v=<?= $h($ver) ?>"></script>

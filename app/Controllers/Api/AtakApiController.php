@@ -4631,6 +4631,11 @@ class AtakApiController
         if (empty($decoded['source'])) {
             $decoded['source'] = 'web';
         }
+        // Auteur prouvé par la session : base de « seulement mes marqueurs » (effacer la carte).
+        unset($decoded['owner_user_id']);
+        if ((int) (Session::get('user_id') ?? 0) > 0) {
+            $decoded['owner_user_id'] = (int) Session::get('user_id');
+        }
         if (empty($decoded['type']) || $decoded['type'] === 'manual') {
             $decoded['type'] = 'mil_dot';
         }
@@ -4813,6 +4818,83 @@ class AtakApiController
         }
 
         return Response::json(['ok' => true]);
+    }
+
+    /**
+     * Effacer la carte (Overwatch) : POST {mapId, mode: preview|clear, scope: all|mine, types[], confirm}.
+     * Membre connecté de la communauté, jeton CSRF ; « all » exige la gestion de la carte.
+     */
+    public function mapClear(Request $request, array $params = []): Response
+    {
+        $guard = $this->mapClearGuard($request);
+        if ($guard instanceof Response) {
+            return $guard;
+        }
+        [$tenantId, $mapId, $actor, $body] = $guard;
+        $service = $this->mapClearService();
+        if (($body['mode'] ?? 'preview') !== 'clear') {
+            return Response::json(['ok' => true] + $service->preview($tenantId, $mapId, $actor));
+        }
+        $types = is_array($body['types'] ?? null) ? $body['types'] : [];
+        $result = $service->clear($tenantId, $mapId, $actor, (string) ($body['scope'] ?? ''), $types, (string) ($body['confirm'] ?? ''));
+        if (!$result['ok']) {
+            $err = (string) ($result['error'] ?? 'invalid');
+
+            return Response::json(['ok' => false, 'error' => $err], $err === 'forbidden' ? 403 : 422);
+        }
+
+        return Response::json($result);
+    }
+
+    public function mapClearUndo(Request $request, array $params = []): Response
+    {
+        $guard = $this->mapClearGuard($request);
+        if ($guard instanceof Response) {
+            return $guard;
+        }
+        [$tenantId, $mapId, $actor, $body] = $guard;
+        $result = $this->mapClearService()->undo($tenantId, $mapId, $actor, (string) ($body['batch'] ?? ''));
+        if (!$result['ok']) {
+            $err = (string) ($result['error'] ?? 'invalid');
+
+            return Response::json(['ok' => false, 'error' => $err], $err === 'forbidden' ? 403 : 410);
+        }
+
+        return Response::json($result);
+    }
+
+    private function mapClearService(): \App\Services\Atak\AtakMapClearService
+    {
+        return new \App\Services\Atak\AtakMapClearService($this->atak, $this->mapShapeRepo, $this->activityLog);
+    }
+
+    /** @return array{0:int, 1:int, 2:array{userId:int, aliases:list<string>, canManage:bool}, 3:array<string,mixed>}|Response */
+    private function mapClearGuard(Request $request): array|Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        if (ComspecApiKeyAuth::extractPresentedKey() !== '') {
+            return Response::json(['error' => 'web_session_required'], 403);
+        }
+        if ($resp = $this->requireReconOperatorSession($tenantId)) {
+            return $resp;
+        }
+        if (!\App\Core\Csrf::verify($request)) {
+            return Response::json(['ok' => false, 'error' => 'csrf'], 419);
+        }
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+        $brief = $this->sessionUserBrief() ?? ['displayName' => '', 'callsign' => '', 'userId' => 0];
+        $aliases = array_values(array_filter([(string) $brief['callsign'], (string) $brief['displayName']], static fn (string $a): bool => trim($a) !== ''));
+        $canManage = function_exists('can') && (can('admin.access') || can('admin.organization') || can('atak.mission_cycle.manage'));
+
+        return [$tenantId, $mapId, ['userId' => (int) $brief['userId'], 'aliases' => $aliases, 'canManage' => $canManage], $body];
     }
 
     public function markerUpsert(Request $request, array $params = []): Response
@@ -13895,6 +13977,12 @@ class AtakApiController
         $tenantId = $r;
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        if ((int) (Session::get('user_id') ?? 0) > 0) {
+            $meta = $body['meta'] ?? [];
+            $meta = is_string($meta) ? (json_decode($meta, true) ?: []) : (is_array($meta) ? $meta : []);
+            $meta['owner_user_id'] = (int) Session::get('user_id');
+            $body['meta'] = $meta;
+        }
         $row = $this->mapShapeRepo->create($tenantId, $mapId, $body);
         return Response::json($row, 201);
     }
