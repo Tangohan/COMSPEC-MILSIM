@@ -34,13 +34,13 @@
       '.mc-btn{min-height:44px;padding:8px 16px;border-radius:6px;border:1px solid rgba(244,244,240,.3);background:#18201d;color:#f4f4f0;font:inherit;font-weight:600;cursor:pointer}' +
       '.mc-btn[disabled]{opacity:.4;cursor:not-allowed}.mc-danger{background:#f87171;border-color:#f87171;color:#2a0a0a}' +
       '.mc-input{min-height:44px;width:100%;padding:8px 10px;border-radius:6px;border:1px solid rgba(244,244,240,.3);background:#050505;color:#f4f4f0;font:inherit;letter-spacing:.08em;text-transform:uppercase}' +
-      '.mc-warn{color:#fbbf24}.mc-undo{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:10001;max-width:440px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0b0f0e;color:#f4f4f0;border:1px solid #fbbf24;border-radius:8px;padding:8px 12px;font:15px system-ui,sans-serif}';
+      '.mc-box input[type=radio],.mc-box input[type=checkbox]{-webkit-appearance:auto;appearance:auto;accent-color:#34d399;flex:none;margin:0}.mc-box label,.mc-box span,.mc-box b{background:none;text-shadow:none;user-select:none;-webkit-user-select:none}.mc-row.is-off{opacity:.55}.mc-why{padding:8px 10px;border:1px solid #fbbf24;border-radius:6px;font-size:13px}.mc-warn{color:#fbbf24}.mc-undo{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:10001;max-width:440px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0b0f0e;color:#f4f4f0;border:1px solid #fbbf24;border-radius:8px;padding:8px 12px;font:15px system-ui,sans-serif}';
     document.head.appendChild(s);
   }
 
   function open(opts) {
     injectStyle();
-    var state = { counts: {}, mine: {}, canAll: false, scope: 'mine', types: { marker: true, form: true, route: true, zone: true } };
+    var state = { counts: {}, mine: {}, canAll: false, needs: [], scope: 'mine', types: { marker: true, form: true, route: true, zone: true } };
     var back = el('div', 'mc-back');
     back.setAttribute('role', 'dialog');
     back.setAttribute('aria-modal', 'true');
@@ -75,8 +75,8 @@
       box.appendChild(el('h2', '', 'Effacer la carte'));
       box.appendChild(el('p', 'mc-muted', 'Seuls les marqueurs, formes, routes et zones de cette carte sont concernés. Effectifs, comptes et documents ne sont jamais touchés.'));
       var scopeList = el('div', 'mc-list');
-      [['all', 'Tout ce qui est sur la carte'], ['mine', 'Seulement mes éléments']].forEach(function (s) {
-        var row = el('div', 'mc-row');
+      [['all', 'Tout ce qui est sur la carte', state.counts], ['mine', 'Seulement mes éléments', state.mine]].forEach(function (s) {
+        var row = el('div', 'mc-row' + (s[0] === 'all' && !state.canAll ? ' is-off' : ''));
         var lab = el('label');
         var r = el('input');
         r.type = 'radio';
@@ -87,10 +87,16 @@
         lab.appendChild(r);
         lab.appendChild(el('span', '', s[1]));
         row.appendChild(lab);
+        var n = 0;
+        KINDS.forEach(function (k) { n += Number(s[2][k[0]] || 0); });
+        row.appendChild(el('b', '', String(n)));
         scopeList.appendChild(row);
       });
       box.appendChild(scopeList);
-      if (!state.canAll) box.appendChild(el('p', 'mc-muted', 'Effacer les éléments des autres est réservé à la gestion de la carte.'));
+      if (!state.canAll) {
+        box.appendChild(el('p', 'mc-why', 'Effacer les éléments des autres est réservé aux administrateurs de la plateforme ou de la communauté, ou à la gestion du cycle de mission.'));
+        if (state.needs && state.needs.length) box.appendChild(el('p', 'mc-muted', 'Droits acceptés : ' + state.needs.join(', ')));
+      }
       var src = state.scope === 'all' ? state.counts : state.mine;
       var typeList = el('div', 'mc-list');
       KINDS.forEach(function (k) {
@@ -181,6 +187,7 @@
       state.counts = j.counts || {};
       state.mine = j.mine || {};
       state.canAll = !!j.canAll;
+      state.needs = j.needs || [];
       state.scope = state.canAll ? 'all' : 'mine';
       stepChoose();
     });

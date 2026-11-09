@@ -61505,4 +61505,6 @@ return [
     'Formes' => 'Shapes',
     'Zones' => 'Zones',
     ' éléments supprimés.' => ' items deleted.',
+    'Effacer les éléments des autres est réservé aux administrateurs de la plateforme ou de la communauté, ou à la gestion du cycle de mission.' => 'Clearing other people’s items is reserved for platform or community administrators, or mission cycle management.',
+    'Droits acceptés :' => 'Accepted rights:',
 ];
