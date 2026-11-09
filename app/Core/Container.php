@@ -644,6 +644,8 @@ class Container
             \App\Services\Cron\Jobs\PlanEndWarningCronJob::class => new \App\Services\Cron\Jobs\PlanEndWarningCronJob(),
             \App\Services\Cron\Jobs\LowMemberOrgRemindersCronJob::class => new \App\Services\Cron\Jobs\LowMemberOrgRemindersCronJob(),
             \App\Services\Cron\Jobs\YearReviewMailCronJob::class => new \App\Services\Cron\Jobs\YearReviewMailCronJob(),
+            \App\Services\Cron\Jobs\AcademyAutoValidationCronJob::class => new \App\Services\Cron\Jobs\AcademyAutoValidationCronJob(),
+            \App\Services\Cron\Jobs\AcademyAutoValidationCronJob::class => new \App\Services\Cron\Jobs\AcademyAutoValidationCronJob(),
             \App\Services\Cron\Jobs\DiscordLinkedRolesSyncCronJob::class => new \App\Services\Cron\Jobs\DiscordLinkedRolesSyncCronJob(),
             \App\Services\Email\MailBudgetGate::class => new \App\Services\Email\MailBudgetGate(
                 self::get(\App\Repositories\EmailDeliveryRepository::class)
@@ -726,6 +728,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\PlanEndWarningCronJob::class),
                     self::get(\App\Services\Cron\Jobs\LowMemberOrgRemindersCronJob::class),
                     self::get(\App\Services\Cron\Jobs\YearReviewMailCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\AcademyAutoValidationCronJob::class),
                     self::get(\App\Services\Cron\Jobs\DiscordLinkedRolesSyncCronJob::class),
                     self::get(\App\Services\Cron\Jobs\MailQueueCronJob::class),
                     self::get(\App\Services\Cron\Jobs\OpsMailDigestCronJob::class),

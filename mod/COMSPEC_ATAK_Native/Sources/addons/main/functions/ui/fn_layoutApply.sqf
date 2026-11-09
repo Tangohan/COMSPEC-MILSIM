@@ -109,6 +109,18 @@ if (isNull _lock || {(ctrlParent _lock) isNotEqualTo _d}) then {
 _lock ctrlSetPosition [_rx0, _iy, _ih / _ratio, _ih];
 _lock ctrlCommit 0;
 _rx0 = _rx0 + _ih / _ratio;
+// Icône de la radio MPU5 (fn_mpuLink "badge", mise à jour par fn_statusUpdate) : juste après le cadenas, avant son libellé et la mémoire vive.
+// Priorité quand la barre manque de place : cadenas > icône MPU > libellé du cadenas > RAM ; chaque élément ne s'affiche que s'il tient en entier.
+private _mpu = uiNamespace getVariable ["COMSPEC_ATAK_MpuCtrl", controlNull];
+if (isNull _mpu || {(ctrlParent _mpu) isNotEqualTo _d}) then {
+    _mpu = _d ctrlCreate ["COMSPEC_RscIcon", -1];
+    uiNamespace setVariable ["COMSPEC_ATAK_MpuCtrl", _mpu];
+};
+private _mpuFits = (_rx1 - _rx0) >= (_ih / _ratio);
+_mpu setVariable ["fit", _mpuFits];
+_mpu ctrlSetPosition [_rx0, _iy, _ih / _ratio, _ih];
+_mpu ctrlCommit 0;
+if (_mpuFits) then { _rx0 = _rx0 + _ih / _ratio; } else { _mpu ctrlShow false; };
 _lockTxt ctrlSetFontHeight (_fontS * 0.8);
 _lockTxt ctrlSetText (("COMPROMISE") call comspec_atak_native_fnc_tr);
 // Texte de mesure, le plus long : fn_statusUpdate réécrit le vrai libellé au prochain passage.

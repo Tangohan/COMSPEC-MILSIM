@@ -10,7 +10,13 @@ $qCan = (string) ($qi['can'] ?? 'ok');
 $qBulkData = $qBulk($qi, $qReturn);
 ?>
 <span class="q-actions">
-<?php if ($qi['type'] === 'chapter'): ?>
+<?php if ($qi['type'] === 'auto'): ?>
+<?php if ($qCan === 'ok' && !empty($qi['revocable'])): ?>
+<form method="post" action="<?= $h($link('action/revoke_auto')) ?>" onsubmit="return confirm(<?= $h(json_encode($t('auto_revoke_confirm'), JSON_UNESCAPED_UNICODE)) ?>)"><?= $qHidden(['course' => $qi['course_key'], 'learner' => (int) $qi['learner_id'], 'chapter' => (int) $qi['chapter']]) ?><button class="button small outline"><?= $h($t('auto_revoke')) ?></button></form>
+<?php elseif ($qCan === 'ok'): ?><small class="muted"><?= $h($t('auto_not_revocable')) ?></small>
+<?php endif ?>
+<a class="text-link" href="<?= $h($link('instructor') . '#eleve-' . (int) $qi['learner_id'] . '-' . rawurlencode($qi['course_key'])) ?>"><?= $h($t('q_open_learner')) ?></a>
+<?php elseif ($qi['type'] === 'chapter'): ?>
 <button type="button" class="button small<?= $qCan === 'ok' ? '' : ' outline' ?>" data-q-open="dlg-<?= $h($qi['id']) ?>"><?= $h($t($qCan === 'ok' ? 'ins_open_review' : 'q_read')) ?></button>
 <?php elseif (in_array($qi['type'], ['enrollment', 'proposal'], true) && $qBulkData !== null): ?>
 <form method="post" action="<?= $h($qBulkData['approve']['url']) ?>"><?= $qHidden($qBulkData['approve']['fields']) ?><button class="button small"><?= $h($t($qi['type'] === 'enrollment' ? 'q_accept' : 'q_approve')) ?> ✓</button></form>

@@ -118,6 +118,17 @@
 
     inputs.forEach(function (inp) {
       showFormula(inp);
+      /* Repères : la ligne et la colonne de la case active s'éclairent ; un nombre s'aligne à droite. */
+      function mark(on) {
+        var tr = inp.closest('tr');
+        var th = table.querySelector('thead th[data-col="' + inp.getAttribute('data-c') + '"]');
+        if (tr) tr.classList.toggle('is-active', on);
+        if (th) th.classList.toggle('is-active', on);
+      }
+      function align() { inp.closest('td').classList.toggle('is-num', num(inp.getAttribute('data-shown')) !== null); }
+      align();
+      inp.addEventListener('focus', function () { mark(true); });
+      inp.addEventListener('blur', function () { mark(false); align(); });
       inp.addEventListener('focus', function () {
         var raw = inp.getAttribute('data-raw') || '';
         if (raw.charAt(0) === '=') inp.value = raw;

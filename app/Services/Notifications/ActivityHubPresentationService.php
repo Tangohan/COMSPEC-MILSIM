@@ -9,6 +9,11 @@ namespace App\Services\Notifications;
  */
 final class ActivityHubPresentationService
 {
+    private static function fr(): bool
+    {
+        return !function_exists('locale') || locale() !== 'en';
+    }
+
     /**
      * @param array<string, mixed> $row
      * @return array{title: string, detail: string, href: string, unread: bool, at: string}
@@ -68,6 +73,42 @@ final class ActivityHubPresentationService
                         ? ' · ' . trim((string) $payload['title'])
                         : ''),
                 'href' => url('evenements'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
+            'academy_auto_validated' => [
+                'title' => self::fr() ? 'Chapitre validé automatiquement par Athena' : 'Chapter automatically validated by Athena',
+                'detail' => sprintf(
+                    !empty($payload['final'])
+                        ? (self::fr() ? '« %s », chapitre %d (dernier) : attestation et qualifications attribuées automatiquement par Athena après %d h sans réponse du formateur. Un formateur peut annuler cette attribution.'
+                            : '"%s", chapter %d (last): certificate and qualifications automatically granted by Athena after %d h without a trainer response. A trainer can cancel this grant.')
+                        : (self::fr() ? '« %s », chapitre %d : validé automatiquement par Athena après %d h sans réponse du formateur. Un formateur peut annuler cette validation.'
+                            : '"%s", chapter %d: automatically validated by Athena after %d h without a trainer response. A trainer can cancel this validation.'),
+                    trim((string) ($payload['course'] ?? '')),
+                    (int) ($payload['chapter'] ?? 0),
+                    (int) ($payload['hours'] ?? 72)
+                ),
+                'href' => url(ltrim((string) ($payload['href'] ?? 'academy'), '/')),
+                'unread' => $unread,
+                'at' => $at,
+            ],
+            'academy_auto_pending' => [
+                'title' => self::fr() ? 'Chapitre à valider : vérification automatique non concluante' : 'Chapter to validate: automatic check inconclusive',
+                'detail' => sprintf(
+                    self::fr() ? '« %s », chapitre %d : en attente depuis plus de %d h, Athena ne peut pas le valider seule. Merci de le traiter.'
+                        : '"%s", chapter %d: waiting for more than %d h, Athena cannot validate it on its own. Please review it.',
+                    trim((string) ($payload['course'] ?? '')),
+                    (int) ($payload['chapter'] ?? 0),
+                    (int) ($payload['hours'] ?? 72)
+                ),
+                'href' => url('academy/instructor') . '#file',
+                'unread' => $unread,
+                'at' => $at,
+            ],
+            'academy_auto_revoked' => [
+                'title' => self::fr() ? 'Validation automatique annulée par un formateur' : 'Automatic validation cancelled by a trainer',
+                'detail' => sprintf(self::fr() ? 'Le chapitre %d est de nouveau en attente de validation par un formateur.' : 'Chapter %d is again waiting for a trainer to validate it.', (int) ($payload['chapter'] ?? 0)),
+                'href' => url(ltrim((string) ($payload['href'] ?? 'academy'), '/')),
                 'unread' => $unread,
                 'at' => $at,
             ],
