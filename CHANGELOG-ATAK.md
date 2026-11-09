@@ -38,7 +38,33 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## À venir : API plus légères, moins de relectures (site et ATAK, version à attribuer)
+## À venir : moins de sondages et de relectures inutiles (ATAK natif et SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Ma couverture ne relit plus sa fiche sans raison
+- L'app Ma couverture garde votre fiche : la rouvrir ne la redemande plus au serveur, sauf si quelque chose a changé (tenue, arme, papiers, réponse à un contrôleur, paquet Athena rechargé) ou si elle date de plus de 10 minutes (1 minute pendant une infiltration).
+- Quand rien n'a changé, le serveur ne renvoie que la note de cohérence et l'état de l'infiltration, pas toute la fiche.
+- Actualiser et Demander la mise à jour relisent toujours la fiche, comme avant.
+- Téléphone rangé, les avis de l'administration Athena sont relevés une fois par minute au lieu de deux.
+EN : My cover no longer re-reads its sheet for nothing
+- The My cover app keeps your sheet: reopening it no longer asks the server again, unless something changed (clothes, weapon, papers, an answer to a controller, Athena pack reloaded) or it is more than 10 minutes old (1 minute while undercover).
+- When nothing changed, the server only sends back the coherence score and the undercover state, not the whole sheet.
+- Refresh and Request the update still always re-read the sheet, as before.
+- With the phone put away, Athena administration notices are checked once a minute instead of twice.
+
+### Détail technique
+- `fn_idCoverPage` (SSE, app Ma couverture) : avant, chaque rendu de la page (ouverture, repli d'une rubrique, réponse) redemandait la fiche au serveur dès que la dernière demande avait plus de 15 s (10 s fiche vide), soit un `remoteExecCall` + `fn_idLegend « sheet »` + `fn_idCover « score »` côté serveur et toute la fiche renvoyée. Après : cache client `comspec_sse_idCoverSheets` daté (`comspec_sse_idCoverAt`), redemandé seulement si vide (nouvel essai 10 s), périmé par évènement (`comspec_sse_idCoverDirty`) ou plus vieux que 600 s (60 s si l'état est « on »), au plus une demande par 5 s. Actualiser (`refresh`) et Demander la mise à jour (`pull`) forcent une relecture complète. Nouvelles actions `ask [unité, complète]` et `dirty`. Compteur `comspec_sse_idCoverAsks` (demandes envoyées, lu par l'autotest).
+- Évènements qui périment la fiche (drapeau seulement, aucune requête) : CBA player events `loadout`, `weapon`, `vehicle`, `unit` (identity `XEH_postInitClient`), réponse à une question (`answer`, `questionEnd` de `fn_idClient`), évènement global `comspec_sse_idCoverDirty` émis par le serveur 6 s après un paquet Athena appliqué (la page ouverte se relit alors tout de suite).
+- `fn_idServer « coverSheet »` : 3e argument facultatif, empreinte de la fiche en cache. Empreinte serveur `hashValue str` des champs stables triés (tout sauf `state`, `burnWhy`, `score`, `why`, `todo`), posée dans la fiche (`rev`). Même empreinte : réponse `coverSame [netId, empreinte, champs vivants]` (quelques octets) au lieu de la fiche complète ; `fn_idClient « coverSame »` fusionne dans une copie du cache, ou redemande la fiche complète si le cache a disparu. Poste ou serveur plus ancien : fiche complète, comme avant.
+- `fn_idAthenaPack « apply »` : empreinte du paquet (`packFp`, hors `generated_at` et `since`) ; paquet identique au dernier appliqué : ignoré (avant : toutes les tables reprises, kit remis et couvertures rouvertes chez tous les joueurs à chaque Demander la mise à jour, même sans changement). Rechargement « Éléments gardés » du Zeus (`aiCfg reload`) : empreinte effacée, paquet toujours réappliqué.
+- `fn_idCoverPage` : la date du dernier « Demander la mise à jour » (gardée dans `uiNamespace`, qui survit à la mission) ne bloque plus le bouton dans la partie suivante.
+- `fn_adminNotices « check »` (ATAK, `AdminControl.Poll`, requête HTTP par joueur relié) : 30 s → 55 s (un passage de 30 s sur deux) téléphone rangé et terminal non compromis ; 30 s téléphone ouvert ou terminal compromis ; 10 s avec le vrai téléphone ouvert, inchangé.
+- `fn_schedulerTick` : compteurs `fn_perfAcc` (onglet PERFS du Debug, `[PERF]` du RPT) autour de `fn_remoteSync`, `fn_athenaPulse` et `fn_importLegacyData`, jusque-là comptés seulement dans le passage de 0,2 s.
+- Autotest `sse_couverture_cache` (`scripts/sse.sqf`) : réouverture de Ma couverture dans la minute sans nouvelle demande, fiche inchangée servie en `coverSame`, Actualiser et Demander la mise à jour qui redemandent, fiche périmée relue à l'ouverture.
+- Laissé volontairement (temps réel ou déjà sous cache) : positions BFT (`fn_pli`, `fn_localDataRefresh` 0,25 s carte et BFT, `fn_remoteSync` à l'intervalle BFT), messages et alertes (`fn_pollChat`, `fn_pollOrders`), `fn_lockAction` 0,5 s, `fn_mpu5` 2 s (publie seulement sur changement), `fn_mpuVoice`, `fn_athenaPulse` 5 s et `fn_syncStats` (mémoire de la DLL, cache 2 s), `fn_markerWebSweep` 15 s (GetMarkers servi par le cache de la DLL, passage complet seulement après un changement de marqueur), `fn_tenantAction` (brief relu 5 min au plus), `fn_bftOrbat` (5 min), `fn_serverPresence` (10 min), `fn_idCover « tick »` 2 s (serveur, infiltrés seulement), `fn_photoWatch` 0,05 s (deux lectures de variable par passage).
+
+## À venir : un seul trait entre deux alliés et fond des noms sur la carte (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : correctif

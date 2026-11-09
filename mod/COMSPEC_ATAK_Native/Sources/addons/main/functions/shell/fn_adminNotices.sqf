@@ -5,7 +5,8 @@
     Chaque nouvel avis : alerte de la couleur du genre dans l'écran du téléphone (jamais sur l'écran de jeu), notification, et carte en tête de l'app Alertes
     jusqu'à ce que le joueur appuie sur COMPRIS (validé sur Athena par « AdminControl.Ack »).
     Params : [action, argument]
-      "check"        client : demande les avis à Athena (toutes les 30 s au plus). Sans téléphone sur le joueur, seule la
+      "check"        client : demande les avis à Athena (toutes les 30 s au plus, 60 s téléphone rangé et terminal non
+                     compromis, 10 s avec le vrai téléphone ouvert). Sans téléphone sur le joueur, seule la
                      demande de réparation est traitée : un joueur dont le jeu plante en prenant un téléphone n'en a pas
       "show" ligne   alerte, notification et vibration pour un avis
       "ack" id       COMPRIS : retire la carte et prévient Athena
@@ -44,6 +45,10 @@ switch (_act) do {
         if (!hasInterface) exitWith {};
         // Vrai téléphone ouvert depuis le jeu (« Sur mon téléphone », fn_mobileQr) : ses envois arrivent toutes les 10 s.
         private _every = [30, 10] select ((missionNamespace getVariable ["COMSPEC_ATAK_MobileUntil", -1]) > diag_tickTime);
+        // Téléphone rangé et terminal non compromis : une requête par minute suffit (l'avis s'affiche dans l'écran du
+        // téléphone, jamais sur l'écran de jeu). Avant : toutes les 30 s pour chaque joueur relié, téléphone rangé compris.
+        if (_every isEqualTo 30 && {isNull ([] call comspec_atak_native_fnc_display)}
+            && {(count (missionNamespace getVariable ["COMSPEC_ATAK_CompActive", createHashMap])) isEqualTo 0}) then { _every = 55; }; // passage de 30 s : un sur deux
         if (diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_AdminNoticesAt", -1e9]) < _every) exitWith {};
         if !([] call comspec_atak_native_fnc_bridge) exitWith {};
         if (isNull player) exitWith {};

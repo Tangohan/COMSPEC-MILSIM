@@ -5,7 +5,9 @@
                               GetAtakFeatures ; sinon sonde GetIdentityPackChunk « -1 », locale ; « ERR|unknown » = absente)
     ["fetch"]              -> texte du paquet ("" si échec) : GetIdentityPack [carte, opération, depuis] = OK|n|horodatage,
                               puis GetIdentityPackChunk [i] = OK|morceau i, recollés (contexte planifié : spawn)
-    ["apply", texte]       SERVEUR : paquet -> registre (pays, documents délivrés, identités, avis de recherche)
+    ["apply", texte]       SERVEUR : paquet -> registre (pays, documents délivrés, identités, avis de recherche) ; paquet
+                              identique au dernier appliqué (empreinte reg « packFp », date de génération exclue) : ignoré.
+                              Appliqué : évènement CBA global comspec_sse_idCoverDirty (fiches Ma couverture périmées)
     ["load"]               SERVEUR : charge le paquet au début de la mission (DLL du serveur, sinon celle d'un Zeus)
     ["merge", [N3, brut]]  JOUEUR : réponse QueryIdDocument = OK|[trouvé, verdict, réf, niveau, drapeaux, mis à jour]
                               ajoutée au résultat local du niveau N3
@@ -89,6 +91,16 @@ switch (_op) do {
         };
         private _top = [_root, ["version", "generated_at", "map", "op", "countries", "identities", "documents", "watch", "kits"]] call _rec;
         private _reg = ["init"] call comspec_sse_fnc_idRegistry;
+        // Paquet identique au dernier appliqué (hors date de génération et « since », qui changent à chaque lecture) :
+        // rien à refaire. Avant, chaque rechargement (Demander la mise à jour, fenêtre IA du Zeus) reprenait toutes les
+        // tables, remettait le kit et rouvrait les couvertures de tous les joueurs, même sans aucun changement sur Athena.
+        private _fpKeys = (keys _top) - ["generated_at", "since"];
+        _fpKeys sort true;
+        private _fp = hashValue str (_fpKeys apply { [_x, _top get _x] });
+        if (_fp isEqualTo (_reg getOrDefault ["packFp", ""])) exitWith {
+            diag_log text "[COMSPEC SSE] Identité : paquet Athena inchangé depuis le dernier chargement, rien à refaire.";
+        };
+        _reg set ["packFp", _fp];
         // Date du paquet, montrée au joueur dont le kit n'a pas de brief daté (app Ma couverture).
         _reg set ["packAt", _top getOrDefault ["generated_at", ""]];
         // Réglage de la communauté (Bureau SSE d'Athena) : l'emporte sur le réglage CBA, diffusé aux postes des contrôleurs.
@@ -261,6 +273,9 @@ switch (_op) do {
         } forEach (_top getOrDefault ["kits", []]);
         if ("kits" in _top) then { _reg set ["kits", _kits]; };
         diag_log text format ["[COMSPEC SSE] Identité : paquet Athena chargé (%1 pays, %2 documents, %3 avis, %4 kits, %5 briefs, %6 identités de population).", _nC, _nD, _nW, count _kits, count _briefs, count _pop];
+        // Fiches « Ma couverture » en cache sur les postes : périmées (liaison Athena, papiers, brief). Une page ouverte se
+        // relit après la remise du kit ; les autres attendent leur prochaine ouverture (aucune relecture en boucle).
+        [{ ["comspec_sse_idCoverDirty", []] call CBA_fnc_globalEvent; }, [], 6] call CBA_fnc_waitAndExecute;
         // Brief de couverture d'un joueur déjà là : son infiltration s'ouvre (après la remise du kit).
         if ((count _briefs) > 0) then {
             [{ { ["auto", [_x]] call comspec_sse_fnc_idCover; } forEach (allPlayers select { alive _x && {!(_x isKindOf "HeadlessClient_F")} }); }, [], 4] call CBA_fnc_waitAndExecute;

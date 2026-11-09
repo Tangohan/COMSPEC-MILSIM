@@ -26,6 +26,11 @@ comspec_sse_idPaperMovedLocal = {
 };
 ["CAManBase", "Take", { (["take"] + _this) call comspec_sse_idPaperMovedLocal; }] call CBA_fnc_addClassEventHandler;
 ["CAManBase", "Put", { (["put"] + _this) call comspec_sse_idPaperMovedLocal; }] call CBA_fnc_addClassEventHandler;
+// App Ma couverture : fiche gardée en cache, marquée périmée sur évènement au lieu d'être relue en boucle (fn_idCoverPage).
+// Équipement, arme en main, véhicule et unité changent la cohérence ou les papiers portés : drapeau seulement, la fiche
+// est relue à la prochaine ouverture de la page. Paquet Athena rechargé par le serveur : la page ouverte se relit.
+{ [_x, { missionNamespace setVariable ["comspec_sse_idCoverDirty", true]; }] call CBA_fnc_addPlayerEventHandler; } forEach ["loadout", "weapon", "vehicle", "unit"];
+["comspec_sse_idCoverDirty", { ["act", "dirty", "server"] call comspec_sse_fnc_idCoverPage; }] call CBA_fnc_addEventHandler;
 ["CAManBase", "Respawn", {
     params ["_new", "_old"];
     if (!local _new) exitWith {};

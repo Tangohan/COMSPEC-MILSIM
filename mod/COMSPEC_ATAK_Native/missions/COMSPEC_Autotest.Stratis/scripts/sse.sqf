@@ -194,3 +194,48 @@ AT_fnc_ia = {
     } forEach (["list"] call comspec_sse_fnc_paperSkin);
     call AT_fnc_done;
 }, 120] call AT_fnc_run;
+
+// App Ma couverture : fiche en cache. Réouverture dans la minute = aucune nouvelle demande au serveur ; Actualiser et
+// Demander la mise à jour en envoient une ; fiche inchangée = réponse courte (coverSame, le cache est gardé et complété).
+["sse_couverture_cache", {
+    if (["comspec_sse_fnc_idCoverPage", "comspec_sse_fnc_idClient"] call AT_fnc_nil) exitWith {};
+    private _n = { missionNamespace getVariable ["comspec_sse_idCoverAsks", 0] };
+    private _fiche = { (missionNamespace getVariable ["comspec_sse_idCoverSheets", createHashMap]) getOrDefault [netId player, createHashMap] };
+    private _at = { (missionNamespace getVariable ["comspec_sse_idCoverAt", createHashMap]) getOrDefault [netId player, -1] };
+    if !([["IDCOVER", 2] call AT_fnc_page, "app Ma couverture non ouverte"] call AT_fnc_check) exitWith { call AT_fnc_done; };
+    [[{ (count (call _fiche)) > 0 }, 10] call AT_fnc_wait, "fiche de couverture jamais reçue"] call AT_fnc_check;
+    [((call _fiche) getOrDefault ["rev", ""]) isNotEqualTo "", "fiche sans empreinte « rev » (serveur antérieur ?)"] call AT_fnc_check;
+    ["couverture_fiche"] call AT_fnc_shot;
+    // Réouverture : rien de changé (équipement compris, le drapeau d'évènement est remis à zéro pour isoler le cache).
+    missionNamespace setVariable ["comspec_sse_idCoverDirty", false];
+    private _n1 = call _n;
+    ["LAUNCHER", 1] call AT_fnc_page;
+    ["IDCOVER", 2] call AT_fnc_page;
+    [(call _n) isEqualTo _n1, format ["réouverture dans la minute : %1 demande(s) de fiche en plus (attendu 0)", (call _n) - _n1]] call AT_fnc_check;
+    // Fiche inchangée : une demande non forcée revient en coverSame, le cache (et ce qu'on y a posé) est gardé.
+    (call _fiche) set ["autotestMark", true];
+    private _t0 = call _at;
+    uiSleep 0.6;
+    ["act", "ask", [player, false]] call comspec_sse_fnc_idCoverPage;
+    [[{ (call _at) > _t0 }, 8] call AT_fnc_wait, "pas de réponse à la demande de fiche"] call AT_fnc_check;
+    [(call _fiche) getOrDefault ["autotestMark", false], "fiche inchangée renvoyée en entier (attendu : coverSame)"] call AT_fnc_check;
+    // Actualiser : relecture complète, toujours.
+    private _n2 = call _n;
+    uiSleep 0.6;
+    ["act", "refresh"] call comspec_sse_fnc_idCoverPage;
+    [(call _n) isEqualTo (_n2 + 1), "Actualiser n'a pas redemandé la fiche"] call AT_fnc_check;
+    [[{ !((call _fiche) getOrDefault ["autotestMark", false]) }, 8] call AT_fnc_wait, "Actualiser : fiche complète non reçue"] call AT_fnc_check;
+    // Demander la mise à jour : relecture aussi (le paquet Athena est rechargé à part, au plus toutes les 2 min).
+    private _n3 = call _n;
+    uiSleep 0.6;
+    ["act", "pull"] call comspec_sse_fnc_idCoverPage;
+    [(call _n) isEqualTo (_n3 + 1), "Demander la mise à jour n'a pas redemandé la fiche"] call AT_fnc_check;
+    // Évènement (équipement changé) : la fiche est relue à l'ouverture suivante.
+    uiSleep 5.5;
+    private _n4 = call _n;
+    missionNamespace setVariable ["comspec_sse_idCoverDirty", true];
+    ["LAUNCHER", 1] call AT_fnc_page;
+    ["IDCOVER", 2] call AT_fnc_page;
+    [(call _n) isEqualTo (_n4 + 1), "fiche périmée par un évènement non relue à l'ouverture"] call AT_fnc_check;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;
