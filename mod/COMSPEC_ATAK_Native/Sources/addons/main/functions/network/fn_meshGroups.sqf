@@ -121,8 +121,10 @@ switch (_act) do {
                 ["INFO", format ["%1 : aucun abonné joignable", _peer], 4, 20] call comspec_atak_native_fnc_notify;
                 continue
             };
-            // Clé du groupe (lot 6) : étiquette et époque, jamais un secret. "" : en clair.
-            private _kk = ["stamp", [_g]] call comspec_atak_native_fnc_meshKeys;
+            // Clé du groupe (lot 6) : étiquette et époque, jamais un secret. "" : en clair (aussi quand ma clé de ce groupe est périmée).
+            private _kk = ["stampTx", [_g]] call comspec_atak_native_fnc_meshKeys;
+            // Émettre, c'est se montrer : interception par un goniomètre ennemi (réglage mesh_intercept, coupé par défaut).
+            ["intercept", [_g, _kk, format ["%1 : %2", _cs, _text]]] call comspec_atak_native_fnc_meshKeys;
             [{
                 params ["_msg", "_targets"];
                 ["comspec_atak_native_meshGroupMsg", _msg, _targets] call CBA_fnc_targetEvent;

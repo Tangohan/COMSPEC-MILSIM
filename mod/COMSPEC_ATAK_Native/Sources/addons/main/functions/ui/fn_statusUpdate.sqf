@@ -72,10 +72,13 @@ if (!isNull _ramCtrl) then {
 };
 
 // Cadenas et libellé du chiffrement : état réel de ma liaison (fn_meshKeys "link"), ouvert tant qu'elle n'est pas chiffrée.
-(["link"] call comspec_atak_native_fnc_meshKeys) params ["_lockCode", "_lockShort", "_lockLong", "_lockWhy", "_lockImg", "_lockCol"];
+// États : EN CLAIR, CHIFFRÉ, RENOUVELER (clé bientôt périmée), PÉRIMÉE (époque changée ou période écoulée), COMPROMISE. Infobulle : état, raison, exemple.
+// Libellés courts au plus aussi larges que « COMPROMISE », la mesure de fn_layoutApply : le libellé garde sa place devant la RAM.
+(["link"] call comspec_atak_native_fnc_meshKeys) params ["_lockCode", "_lockShort", "_lockLong", "_lockWhy", "_lockImg", "_lockCol", "", ["_lockEx", ""]];
 private _lockCtrl = uiNamespace getVariable ["COMSPEC_ATAK_LockCtrl", controlNull];
 if (!isNull _lockCtrl) then {
     private _lockTt = (format ["%1 : %2", (_lockLong) call comspec_atak_native_fnc_tr, (_lockWhy) call comspec_atak_native_fnc_tr]);
+    if (_lockEx isNotEqualTo "") then { _lockTt = format ["%1. %2 %3", _lockTt, ("Ex." call comspec_atak_native_fnc_tr), (_lockEx) call comspec_atak_native_fnc_tr]; };
     [_lockCtrl, "cs_t", _lockImg] call _put;
     [_lockCtrl, "cs_c", _lockCol] call _put;
     [_lockCtrl, "cs_tt", _lockTt] call _put;

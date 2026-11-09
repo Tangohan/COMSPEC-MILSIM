@@ -1,7 +1,8 @@
 /*
     Calque Wave Relay sur la carte (appelé depuis mapOnDraw), réglage profil COMSPEC_ATAK_MeshOnMap :
     - couverture réseau calculée (fn_relayNet "coverage") : vert débit fort, jaune, orange, rouge faible, gris zone blanche ;
-    - liens du maillage entre téléphones, vert au-dessus de 60 %, orange au-dessus de 30 %, rouge en dessous.
+    - liens du maillage entre téléphones, vert au-dessus de 60 %, orange au-dessus de 30 %, rouge en dessous ; au plus un
+      trait par paire d'unités, tous systèmes confondus (liste de l'image : uiNamespace COMSPEC_ATAK_MeshDrawn).
     Calque « Relais » (réglage profil COMSPEC_ATAK_RelaysLayer, affiché par défaut, masquable dans CALQUES) : relais et
     passerelles de véhicule ou PC mobiles en pastille (anneau de couleur sur fond sombre, antenne), nom puis
     « portée · débit · places » en dessous ; vert : relais utilisé par mon téléphone (trait pointillé vers moi, portée
@@ -22,6 +23,23 @@ private _r = (_map ctrlMapScreenToWorld [0, 0]) distance2D (_map ctrlMapScreenTo
 // Ma position affichée (GPS simulé) : mes cercles et mes traits restent centrés sur mon point (fn_gpsPos).
 private _selfP = [] call comspec_atak_native_fnc_gpsPos;
 private _selfObjs = [player, vehicle player];
+// Traits entre deux unités déjà dessinés dans cette image (maillage, trait vers mon relais, répéteur vers son relais) :
+// une paire = un seul trait, quel que soit le sens ou le système qui le demande ; moi et mon véhicule comptent pour un.
+// Liste [objet A, objet B, source] exposée à chaque image (uiNamespace COMSPEC_ATAK_MeshDrawn), lue par l'autotest.
+private _pairs = createHashMap;
+private _pairList = [];
+private _pairAdd = {
+    params ["_oa", "_ob", "_src"];
+    if (_oa in _selfObjs) then { _oa = player; };
+    if (_ob in _selfObjs) then { _ob = player; };
+    if (_oa isEqualTo _ob) exitWith { false };
+    private _ka = str _oa;
+    private _kb = str _ob;
+    if ((_ka + "|" + _kb) in _pairs || {(_kb + "|" + _ka) in _pairs}) exitWith { false };
+    _pairs set [_ka + "|" + _kb, _src];
+    _pairList pushBack [_oa, _ob, _src];
+    true
+};
 if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
     private _cv = missionNamespace getVariable ["COMSPEC_ATAK_Coverage", []];
     if ((count _cv) >= 8) then {
@@ -67,10 +85,10 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
         }
     };
     // Moins de traits : un seul chemin (les meilleurs liens) dans chaque groupe, puis un seul entre groupes, au lieu d'un
-    // trait par paire à portée. Ossature entre groupes doublée ; traits internes, plus discrets, seulement pour mon
+    // trait par paire à portée. Ossature entre groupes : un seul trait par liaison (avant : un second trait décalé, vu comme « deux traits » entre deux alliés) ; traits internes, plus discrets, seulement pour mon
     // groupe et en zoom rapproché. Tri refait quand les liens changent (au plus toutes les 3 s, action « scan »).
     private _lnk = _mesh getOrDefault ["links", []];
-    private _drawn = missionNamespace getVariable ["COMSPEC_ATAK_MeshDrawn", [[], []]];
+    private _drawn = missionNamespace getVariable ["COMSPEC_ATAK_MeshKeep", [[], []]];
     if ((_drawn select 0) isNotEqualTo _lnk) then {
         private _parent = [];
         for "_i" from 0 to ((count _nodes) - 1) do { _parent pushBack _i; };
@@ -98,19 +116,20 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
             } forEach _best;
         } forEach [true, false];
         _drawn = [+_lnk, _keep];
-        missionNamespace setVariable ["COMSPEC_ATAK_MeshDrawn", _drawn];
+        missionNamespace setVariable ["COMSPEC_ATAK_MeshKeep", _drawn];
     };
     private _nearZoom = (ctrlMapScale _map) < 0.06;
     private _myG = group player;
-    private _off2 = _r * 0.3;
     {
         _x params ["_a", "_b", "_q", "_inner"];
         if ((count _pos) <= (_a max _b)) then { continue };
         if (_inner && {!_nearZoom} && {(group ((_nodes select _a) select 0)) isNotEqualTo _myG}) then { continue };
+        // Un seul trait par paire d'unités : deux nœuds du même porteur (moi et mon véhicule, radio portée) ou un lien
+        // reçu dans les deux sens (A-B puis B-A) ne redessinent pas un second trait, décalé de quelques mètres.
+        if !([(_nodes select _a) select 0, (_nodes select _b) select 0, "mesh"] call _pairAdd) then { continue };
         private _col = switch (true) do { case (_q >= 60): { [0.36, 0.85, 0.42] }; case (_q >= 30): { [1, 0.65, 0.2] }; default { [0.9, 0.25, 0.2] }; };
         _col pushBack ([0.95, 0.5] select _inner);
         _map drawLine [_pos select _a, _pos select _b, _col];
-        if (!_inner) then { _map drawLine [(_pos select _a) vectorAdd [_off2, _off2, 0], (_pos select _b) vectorAdd [_off2, _off2, 0], _col]; };
     } forEach (_drawn select 1);
     {
         _x params ["", "", "_name", "_kind"];
@@ -134,11 +153,18 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
         || {(behaviour player) isEqualTo "COMBAT"};
     // Ligne sous l'étiquette : même point décalé d'une hauteur de texte à l'écran.
     private _below = { params ["_p", "_k"]; _map ctrlMapScreenToWorld ((_map ctrlMapWorldToScreen _p) vectorAdd [0, 0.024 * _ts * _k]) };
+    private _pliR = ["pli"] call comspec_atak_native_fnc_netCond;
     {
         _x params ["_o", "_ap", "_name", "_kind", "_rng", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "", "_up", "_fq", "", "_loss", "", "_hl", "", "_co"];
         // Relais effacé pendant les 2 s de cache de la liste (Zeus, nettoyage) : position [0,0,0], dessiné à l'origine.
         if (isNull _o) then { continue };
         private _p = [getPosASLVisual _o, _selfP] select (_o in _selfObjs);
+        // Radio MPU5 portée par un allié : au point de son symbole (dernier point reçu), comme les traits du maillage ; avant,
+        // la vraie position, quelques mètres à côté : en zoom rapproché, deux traits vers le même allié.
+        if (_kind isEqualTo "mpu5" && {_pliR} && {!(_o in _selfObjs)}) then {
+            private _pl = _o getVariable ["COMSPEC_ATAK_Pli", []];
+            if (_pl isEqualType [] && {(count _pl) >= 3}) then { _p = _pl select 0; };
+        };
         private _use = _ok && {_o isEqualTo _mine};
         private _sat = _sl > 0 && {_u > _sl};
         private _col = switch (true) do {
@@ -155,7 +181,7 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
         if (_st in ["éteint", "batterie vide", "brouillé", "sans liaison"] && {_scale < 0.12}) then {
             _map drawEllipse [_p, _rng, _rng, 0, [0.5, 0.5, 0.5, 0.25], ""];
         };
-        if (_ok && {!isNull _up}) then {
+        if (_ok && {!isNull _up} && {[_o, _up, "relay"] call _pairAdd}) then {
             private _q = getPosASLVisual _up;
             if (_hudLite) then {
                 _map drawLine [_p, _q, [0.28, 0.70, 1, 0.55]];
@@ -170,8 +196,8 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
             };
         };
         // Relais utilisé : pointillé de mon téléphone à son antenne (trait plein en mode léger), bascule « Trait vers mon
-        // relais » (masqué par défaut, 2.9.38).
-        if (_use && {profileNamespace getVariable ["COMSPEC_ATAK_RelayLine", false]}) then {
+        // relais » (masqué par défaut, 2.9.38). Relais déjà relié à moi par le maillage (radio d'un allié) : pas de second trait.
+        if (_use && {profileNamespace getVariable ["COMSPEC_ATAK_RelayLine", false]} && {[player, _o, "relay"] call _pairAdd}) then {
             private _me = _selfP;
             if (_hudLite) then {
                 _map drawLine [_me, _p, [0.36, 0.85, 0.42, 0.65]];
@@ -204,7 +230,10 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
         if (!_txt) then { continue };
         // Étiquette : nom (gras), puis « portée · débit · places » ou la raison de la panne.
         private _lp = _p getPos [_r * 2.4, 90];
-        _map drawIcon [_none, [1, 1, 1, [0.75, 1] select _ok], _lp, 0, 0, 0, _name + (["", "  " + ("(utilisé)" call comspec_atak_native_fnc_tr)] select _use), 2, 0.026 * _ts, _fontB, "right"];
+        private _l1 = _name + (["", "  " + ("(utilisé)" call comspec_atak_native_fnc_tr)] select _use);
+        // Fond des noms (Réglages > Carte) sous le nom et sous la ligne de détail.
+        ["nameBgDraw", [_map, _lp, _l1, _fontB, 0.026 * _ts]] call comspec_atak_native_fnc_mapPrefs;
+        _map drawIcon [_none, [1, 1, 1, [0.75, 1] select _ok], _lp, 0, 0, 0, _l1, 2, 0.026 * _ts, _fontB, "right"];
         private _sub = if (_ok) then {
             private _e = format ["%1 km · %2 Mbit/s", (_rng / 1000) toFixed 1, _mb toFixed 1];
             if (_sl > 0) then { _e = _e + format [" · %1/%2", _u, _sl]; };
@@ -214,9 +243,12 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
             if (_hl in ["dégradé", "critique"]) then { _e = _e + " · " + (_hl call comspec_atak_native_fnc_tr); };
             _e
         } else { _st call comspec_atak_native_fnc_tr };
-        _map drawIcon [_none, [_col select 0, _col select 1, _col select 2, 0.95], [_lp, 1] call _below, 0, 0, 0, _sub, 2, 0.022 * _ts, _font, "right"];
+        private _lp2 = [_lp, 1] call _below;
+        ["nameBgDraw", [_map, _lp2, _sub, _font, 0.022 * _ts]] call comspec_atak_native_fnc_mapPrefs;
+        _map drawIcon [_none, [_col select 0, _col select 1, _col select 2, 0.95], _lp2, 0, 0, 0, _sub, 2, 0.022 * _ts, _font, "right"];
     } forEach (["list"] call comspec_atak_native_fnc_relayNet);
 };
+uiNamespace setVariable ["COMSPEC_ATAK_MeshDrawn", _pairList];
 private _now = [time, serverTime] select isMultiplayer;
 {
     _x params ["_name", "_est", "_rad", "_src", "_t"];
@@ -231,8 +263,12 @@ private _now = [time, serverTime] select isMultiplayer;
     if (_est isNotEqualTo []) then {
         _map drawEllipse [_est, _rad, _rad, 0, [1, 0.55, 0.1, 0.25 * _al], _fill];
         _map drawEllipse [_est, _rad, _rad, 0, [1, 0.55, 0.1, _al], ""];
-        _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa", [1, 0.55, 0.1, _al], _est, 20, 20, 0, format ["%1 ± %2 m", _name, _rad], 1, 0.028 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
+        private _tl = format ["%1 ± %2 m", _name, _rad];
+        ["nameBgDraw", [_map, _est, _tl, COMSPEC_ATAK_FontSet select 1, 0.028 * _ts, 20]] call comspec_atak_native_fnc_mapPrefs;
+        _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa", [1, 0.55, 0.1, _al], _est, 20, 20, 0, _tl, 1, 0.028 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
     } else {
-        _map drawIcon [_none, [1, 0.75, 0.2, _al], (_src select 0) select 0, 0, 0, 0, format [("%1 : cercle %2 m") call comspec_atak_native_fnc_tr, _name, round ((_src select 0) select 1)], 1, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
+        private _tl = format [("%1 : cercle %2 m") call comspec_atak_native_fnc_tr, _name, round ((_src select 0) select 1)];
+        ["nameBgDraw", [_map, (_src select 0) select 0, _tl, COMSPEC_ATAK_FontSet select 1, 0.026 * _ts]] call comspec_atak_native_fnc_mapPrefs;
+        _map drawIcon [_none, [1, 0.75, 0.2, _al], (_src select 0) select 0, 0, 0, 0, _tl, 1, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
     };
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Trilat", []]);

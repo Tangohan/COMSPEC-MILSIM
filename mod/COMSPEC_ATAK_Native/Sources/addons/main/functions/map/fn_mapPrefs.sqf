@@ -16,7 +16,13 @@
       "self"                -> [icône ("" : symbole d'unité), orientée, facteur de taille, cône, trace, indicatif, forme, forme des alliés]
       "selfSet" [clé, valeur]
       "trail"               relevé de la trace (toutes les 2 s, XEH_postInitClient) ; "trailPts" -> points [x, y, 0]
-      "rows" "band" | "self" -> lignes de fn_formRender pour le volet de l'app Carte
+      "rows" "band" | "self" -> lignes de fn_formRender pour le volet de l'app Carte ; "rows" "names" -> lignes « Fond des noms »
+                            (Réglages > Carte et volet CONFIGURATION > Étiquettes)
+      "nameBg" fond sombre ?  -> [] (pas de fond) ou [couleur RGBA, fond clair] ; préparé au changement de réglage
+      "nameBgSet" [clé ("alpha" 0-1 | "tone" DARK | LIGHT | AUTO), valeur]
+      "nameBgDraw" [carte, position, texte, police, taille, taille de l'icône px (0), alignement "right" | "left" | "center"] :
+                            rectangle derrière un texte de drawIcon, à sa taille exacte (largeur fn_mapTextW, gardée en cache),
+                            d'après uiNamespace COMSPEC_ATAK_NameBgNow posé par fn_mapOnDraw à chaque image ; rien sans fond
       "dist" m -> texte de distance ; "alt" m -> texte d'altitude ; "grid" position -> texte de la grille (bandeau)
 */
 params [["_op", ""], ["_arg", []]];
@@ -96,7 +102,7 @@ switch (_op) do {
         if !(_sz isEqualType 0) then { _sz = 1; };
         private _lbl = _prof getVariable ["COMSPEC_ATAK_SelfLabel", "AUTO"];
         if !(_lbl in ["AUTO", "ON", "OFF"]) then { _lbl = "AUTO"; };
-        _c = [_icon, _orient, (_sz max 0.6) min 2, _prof getVariable ["COMSPEC_ATAK_SelfCone", false], _prof getVariable ["COMSPEC_ATAK_SelfTrail", false], _lbl, _shape, _allyS];
+        _c = [_icon, _orient, (_sz max 0.5) min 2.5, _prof getVariable ["COMSPEC_ATAK_SelfCone", false], _prof getVariable ["COMSPEC_ATAK_SelfTrail", false], _lbl, _shape, _allyS];
         uiNamespace setVariable ["COMSPEC_ATAK_SelfDraw", _c];
         _c
     };
@@ -150,9 +156,60 @@ switch (_op) do {
         }
     };
     case "trailPts": { missionNamespace getVariable ["COMSPEC_ATAK_SelfTrailPts", []] };
+    // Fond des noms : défaut LÉGER sombre (lisible sur photo satellite). Fond clair : texte sombre (index 1).
+    case "nameBg": {
+        private _dk = _arg isEqualTo true;
+        private _c = uiNamespace getVariable ["COMSPEC_ATAK_NameBgCfg", []];
+        if ((count _c) isEqualTo 2 && {(_c select 0) isEqualTo _dk}) exitWith { _c select 1 };
+        private _a = _prof getVariable ["COMSPEC_ATAK_NameBgAlpha", 0.45];
+        if !(_a isEqualType 0) then { _a = 0.45; };
+        _a = (_a max 0) min 1;
+        private _tone = _prof getVariable ["COMSPEC_ATAK_NameBgTone", "DARK"];
+        if !(_tone in ["DARK", "LIGHT", "AUTO"]) then { _tone = "DARK"; };
+        private _light = _tone isEqualTo "LIGHT" || {_tone isEqualTo "AUTO" && {!_dk}};
+        private _v = if (_a < 0.02) then { [] } else { [[[0.03, 0.04, 0.045, _a], [0.95, 0.96, 0.94, _a]] select _light, _light] };
+        uiNamespace setVariable ["COMSPEC_ATAK_NameBgCfg", [_dk, _v]];
+        _v
+    };
+    case "nameBgSet": {
+        _arg params ["_k", "_v"];
+        private _var = createHashMapFromArray [["alpha", "COMSPEC_ATAK_NameBgAlpha"], ["tone", "COMSPEC_ATAK_NameBgTone"]];
+        if !(_k in _var) exitWith {};
+        _prof setVariable [_var get _k, _v];
+        uiNamespace setVariable ["COMSPEC_ATAK_NameBgCfg", []];
+        [] call comspec_atak_native_fnc_saveProfile;
+        private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""];
+        if (_pg in ["MAP", "SETTINGS"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _pg] call comspec_atak_native_fnc_nextFrame; };
+    };
+    case "nameBgDraw": {
+        private _nb = uiNamespace getVariable ["COMSPEC_ATAK_NameBgNow", []];
+        if ((count _nb) < 4) exitWith {};
+        _arg params ["_map", "_p", "_t", "_f", "_fs", ["_isz", 0], ["_al", "right"], ["_tw", ""]];
+        if (_t isEqualTo "") exitWith {};
+        _nb params ["_bc", "", "_mx", "_my"];
+        // Largeur mesurée à la taille de référence 0,02 puis mise à l'échelle (une mesure par texte, pas par taille) ; texte
+        // qui change à chaque image (distance au curseur) : mesuré chiffres remplacés par 0 (_tw), une mesure par longueur.
+        private _w = ([[_tw, _t] select (_tw isEqualTo ""), _f, 0.02] call comspec_atak_native_fnc_mapTextW) * _fs / 0.02;
+        // drawIcon écrit le texte au bord de l'icône (à droite, ou à gauche avec "left"), centré en hauteur sur le point.
+        private _off = _isz * 0.5 * pixelW;
+        private _dx = switch (_al) do { case "left": { -(_off + _w / 2) }; case "center": { 0 }; default { _off + _w / 2 }; };
+        _map drawRectangle [[(_p select 0) + _dx * _mx, _p select 1, 0], (_w / 2 + 4 * pixelW) * _mx, (_fs * 0.5 + 2 * pixelH) * _my, 0, _bc, "#(rgb,8,8,3)color(1,1,1,1)"];
+    };
     case "rows": {
         private _rows = [];
         private _seg = { params ["_op2", "_k", "_now", "_opts"]; _opts apply { _x params ["_t", "_v", ["_tip", ""]]; [_t, format ["[%1, [%2, %3]] call comspec_atak_native_fnc_mapPrefs;", str _op2, str _k, str _v], _v isEqualTo _now, _tip] } };
+        if (_arg isEqualTo "names") then {
+            // Fond des noms : niveau (NON, LÉGER par défaut, NORMAL, OPAQUE), couleur, opacité fine à la réglette.
+            private _a = _prof getVariable ["COMSPEC_ATAK_NameBgAlpha", 0.45];
+            if !(_a isEqualType 0) then { _a = 0.45; };
+            private _tone = _prof getVariable ["COMSPEC_ATAK_NameBgTone", "DARK"];
+            _rows pushBack ["segment", "Fond des noms", ["nameBgSet", "alpha", _a, [["NON", 0], ["LÉGER", 0.45], ["NORMAL", 0.7], ["OPAQUE", 0.92]]] call _seg,
+                "Rectangle derrière les indicatifs, les noms des repères et des lieux, les plaques et les distances. Exemple : LÉGER sur la photo satellite"];
+            _rows pushBack ["segment", "Couleur du fond des noms", ["nameBgSet", "tone", _tone, [["SOMBRE", "DARK"], ["CLAIR", "LIGHT", "Texte sombre sur fond clair"], ["AUTO", "AUTO", "Sombre sur les fonds sombres et satellite, clair sur les fonds clairs"]]] call _seg];
+            if (_a > 0) then {
+                _rows pushBack ["slider", "Opacité du fond des noms", round (100 * _a), { profileNamespace setVariable ["COMSPEC_ATAK_NameBgAlpha", (_this select 0) / 100]; uiNamespace setVariable ["COMSPEC_ATAK_NameBgCfg", []]; }, "Exemple : 30 % pour deviner la carte sous le nom, 90 % pour un nom toujours lisible", false, "", {}, "", [5, 100]];
+            };
+        } else {
         if (_arg isEqualTo "band") then {
             private _c = ["band"] call comspec_atak_native_fnc_mapPrefs;
             _rows pushBack ["segment", "Style", ["bandSet", "style", _c get "style", [
@@ -194,7 +251,7 @@ switch (_op) do {
             };
             _rows pushBack ["shapes", "Forme", [["self"] call comspec_atak_native_fnc_mapShape, "shape", _shape, _palS get "self"] call _cells];
             private _selfNow = profileNamespace getVariable ["COMSPEC_ATAK_SelfColor", "CYAN"];
-            _rows pushBack ["lineseg", "", "Couleur", [["CYAN", "CYAN"], ["BLEU", "BLUE"], ["VERT", "GREEN"], ["BLANC", "WHITE"], ["JAUNE", "YELLOW"], ["ORANGE", "ORANGE"], ["ROSE", "PINK"]] apply {
+            _rows pushBack ["lineseg", "", "Couleur", [["CYAN", "CYAN"], ["BLEU", "BLUE"], ["VERT", "GREEN"], ["BLANC", "WHITE"], ["JAUNE", "YELLOW"], ["ORANGE", "ORANGE"], ["ROSE", "PINK"], ["FUCHSIA", "FUCHSIA"], ["LIME", "LIME"], ["VIOLET", "VIOLET"], ["TURQUOISE", "TURQ"], ["JAUNE FLUO", "NEON"]] apply {
                 [_x select 0, format ["['selfSet', ['color', %1]] call comspec_atak_native_fnc_mapPrefs;", str (_x select 1)], (_x select 1) isEqualTo _selfNow, _palS getOrDefault [_x select 1, [1, 1, 1, 1]]]
             }];
             _rows pushBack ["shapes", "Forme des alliés", [["ally"] call comspec_atak_native_fnc_mapShape, "allyShape", _allyS, _palS get "friend"] call _cells, "Couleur : Réglages > Carte, « Couleur des alliés »"];
@@ -203,13 +260,18 @@ switch (_op) do {
             _rows pushBack ["shapes", "Forme de mes nouveaux repères", [["mil_dot", "POINT"], ["mil_triangle", "TRIANGLE"], ["mil_box", "CARRÉ"], ["mil_destroy", "CROIX"], ["mil_circle", "CERCLE"], ["mil_objective", "OBJECTIF"]] apply {
                 [_x select 1, format ["['selfSet', ['markerType', %1]] call comspec_atak_native_fnc_mapPrefs;", str (_x select 0)], (_x select 0) isEqualTo _mkNow, "", [[getText (configFile >> "CfgMarkers" >> (_x select 0) >> "icon"), [1, 0.82, 0.25, 1], 0.7]]]
             }, "Aussi sur la carte d'Arma et sur Athena ; modifiable sur chaque repère"];
-            _rows pushBack ["segment", "Taille", ["selfSet", "size", _sz, [["PETIT", 0.8], ["NORMAL", 1], ["GRAND", 1.3], ["TRÈS GRAND", 1.6]]] call _seg];
+            // Tailles à la réglette (50 à 250 %) : ma forme, la forme des alliés, celle des contacts ennemis, les étiquettes.
+            _rows pushBack ["slider", "Taille de ma forme", round (100 * _sz), { ["selfSet", ["size", (_this select 0) / 100]] call comspec_atak_native_fnc_mapPrefs; }, "Mon symbole sur la carte. Exemple : 150 % pour le voir de loin, 70 % pour une carte chargée", false, "", {}, "", [50, 250]];
+            _rows pushBack ["slider", "Taille des alliés", round (100 * ((profileNamespace getVariable ["COMSPEC_ATAK_AllyScale", 1]) max 0.5 min 2.5)), { profileNamespace setVariable ["COMSPEC_ATAK_AllyScale", (_this select 0) / 100]; }, "Les autres unités amies. Exemple : 120 % pour mieux les distinguer de moi", false, "", {}, "", [50, 250]];
+            _rows pushBack ["slider", "Taille des contacts", round (100 * ((profileNamespace getVariable ["COMSPEC_ATAK_ContactScale", 1]) max 0.5 min 2.5)), { profileNamespace setVariable ["COMSPEC_ATAK_ContactScale", (_this select 0) / 100]; }, "Ennemis, neutres et inconnus. Exemple : 140 % pour ne jamais rater un contact", false, "", {}, "", [50, 250]];
+            _rows pushBack ["slider", "Taille des étiquettes", round (100 * ((profileNamespace getVariable ["COMSPEC_ATAK_LabelScale", 1]) max 0.5 min 2.5)), { profileNamespace setVariable ["COMSPEC_ATAK_LabelScale", (_this select 0) / 100]; }, "Les cartouches d'indicatif au bord des symboles. Exemple : 80 % pour une carte moins encombrée", false, "", {}, "", [50, 250]];
             _rows pushBack ["segment", "Cône de cap", ["selfSet", "cone", _cone, [["NON", false], ["OUI", true, "Cône clair dans la direction où je regarde"]]] call _seg];
             _rows pushBack ["segment", "Trace", ["selfSet", "trail", _trail, [["NON", false], ["OUI", true, "Fil d'Ariane de mes positions"]]] call _seg];
             if (_trail) then {
                 _rows pushBack ["segment", "Durée de la trace", ["selfSet", "trailMin", profileNamespace getVariable ["COMSPEC_ATAK_SelfTrailMin", 10], [["2 MIN", 2], ["5 MIN", 5], ["10 MIN", 10], ["30 MIN", 30]]] call _seg];
             };
             _rows pushBack ["segment", "Mon indicatif", ["selfSet", "label", _lbl, [["AUTO", "AUTO", "Comme les autres unités (petite carte)"], ["TOUJOURS", "ON"], ["JAMAIS", "OFF"]]] call _seg];
+        };
         };
         _rows
     };

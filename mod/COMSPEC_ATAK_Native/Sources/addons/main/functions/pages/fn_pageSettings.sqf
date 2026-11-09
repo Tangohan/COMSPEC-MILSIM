@@ -320,7 +320,7 @@ private _map = [
     ["COMSPEC_ATAK_AllyFilter", "ALL", "Alliés affichés", [["TOUS", "ALL"], ["MON GROUPE", "GROUP"], ["MON ORBAT", "ORBAT"]], ["", format ["ORBAT : %1", missionNamespace getVariable ["comspec_profile_unit", ""]]] select ((missionNamespace getVariable ["comspec_profile_unit", ""]) isNotEqualTo "")] call _profSegment,
     ["COMSPEC_ATAK_HideAllyAi", false, "", "Masquer les IA alliées", "Seuls les joueurs alliés restent sur la carte et le BFT, pas les IA"] call _profSwitch,
     ["COMSPEC_ATAK_UnitSymbols", "NATO", "Icônes des unités", [["OTAN MIL-STD", "NATO"], ["2525D", "MILSTD"], ["POINTS", "DOTS"]], "OTAN : symboles du jeu (cadre et type d'unité, niveau des chefs). 2525D : symboles complets (affiliation, dimension, type d'après le rôle, le véhicule et l'ORBAT du site, échelon, QG, état, textes en vue rapprochée)"] call _profSegment,
-    ["COMSPEC_ATAK_AllyColor", "BLUE", "Couleur des alliés", [["BLEU", "BLUE"], ["VERT", "GREEN"], ["BLANC", "WHITE"], ["JAUNE", "YELLOW"], ["ROSE", "PINK"]]] call _profSegment,
+    ["COMSPEC_ATAK_AllyColor", "BLUE", "Couleur des alliés", [["BLEU", "BLUE"], ["VERT", "GREEN"], ["BLANC", "WHITE"], ["JAUNE", "YELLOW"], ["ROSE", "PINK"], ["FUCHSIA", "FUCHSIA"], ["LIME", "LIME"], ["VIOLET", "VIOLET"], ["TURQUOISE", "TURQ"], ["JAUNE FLUO", "NEON"]]] call _profSegment,
     ["COMSPEC_ATAK_SelfColor", "CYAN", "Ma couleur", [["CYAN", "CYAN"], ["BLEU", "BLUE"], ["VERT", "GREEN"], ["BLANC", "WHITE"], ["ORANGE", "ORANGE"]]] call _profSegment,
     ["COMSPEC_ATAK_SelfIcon", "", "Mon icône (vue par tous)", [["FLÈCHE", ""], ["INF", "b_inf"], ["RECO", "b_recon"], ["MÉDIC", "b_med"], ["PC", "b_hq"], ["SOUTIEN", "b_support"]]] call _profSegment,
     ["COMSPEC_ATAK_MapToolbarScale", 1, "Barre d'outils de la carte", [["PETITE", 0.75], ["NORMALE", 1], ["GRANDE", 1.3]], "Boutons à droite de la carte : centrer, suivre, zoom, marqueur, noms"] call _profSegment,
@@ -339,6 +339,9 @@ private _map = [
         if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_MapResetArm", -10]) < 5) then {
             uiNamespace setVariable ["COMSPEC_ATAK_MapResetArm", -10];
             { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Labels", "COMSPEC_ATAK_LabelStyle", "COMSPEC_ATAK_MarkerTags", "COMSPEC_ATAK_Compass", "COMSPEC_ATAK_CompassStyle", "COMSPEC_ATAK_AllyFilter", "COMSPEC_ATAK_HideAllyAi", "COMSPEC_ATAK_UnitSymbols", "COMSPEC_ATAK_AllyColor", "COMSPEC_ATAK_SelfColor", "COMSPEC_ATAK_MapToolbarScale", "COMSPEC_ATAK_GridDigits", "COMSPEC_ATAK_MapTextScale", "COMSPEC_ATAK_MapIconScale", "COMSPEC_ATAK_MapStyle", "COMSPEC_ATAK_MapDrawStyle", "COMSPEC_ATAK_LblEni", "COMSPEC_ATAK_LblGrid", "COMSPEC_ATAK_LblBgAlpha"];
+            // Fond des noms (fn_mapPrefs « nameBg ») : à part, la liste ci-dessus est vérifiée telle quelle par les tests.
+            { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_NameBgAlpha", "COMSPEC_ATAK_NameBgTone"];
+            uiNamespace setVariable ["COMSPEC_ATAK_NameBgCfg", []];
             [] call comspec_atak_native_fnc_saveProfile;
             ["Réglages de la carte rétablis", 2] call comspec_atak_native_fnc_toast;
         } else {
@@ -347,6 +350,8 @@ private _map = [
         [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     }, false, true, "Indicatifs, couleurs, boussole, coordonnées, tailles et fond de carte reviennent aux réglages d'origine"]]]
 ];
+// Fond des noms (niveau, couleur, opacité) juste sous les réglettes de taille des textes et des icônes.
+_map insert [(_map findIf { (_x param [1, ""]) isEqualTo "Icônes de la carte" }) + 1, ["rows", "names"] call comspec_atak_native_fnc_mapPrefs];
 // Cartes hors ligne : fond PHOTO de la carte en cours téléchargé depuis Athena (état, téléchargement, effacement).
 _map append (["rows"] call comspec_atak_native_fnc_photoMap);
 // Bandeaux coupés par type (profil COMSPEC_ATAK_NotifMuted, aussi réglable depuis le web) : gardés dans le centre seulement.
@@ -426,10 +431,18 @@ _real pushBack ["section", "Où les afficher", "Masquer un endroit retire toutes
 
 private _hp = [] call comspec_atak_native_fnc_deviceHealth;
 private _lq = [] call comspec_atak_native_fnc_linkQuality;
+// Notification MPU à l'écran pendant l'alternat (fn_mpuHud) : le même réglage CBA que dans les paramètres de l'addon (ATAK · Radio de données (MPU5)).
+private _mpuHudOn = (missionNamespace getVariable ["comspec_atak_native_mpu_hud", true]) isEqualTo true;
 private _hw = [
     ["section", "Connexions", "Mode avion et Bluetooth (aussi dans l'app Bluetooth et le centre de notifications)"],
     ["switch", "Mode avion", [] call comspec_atak_native_fnc_airplaneMode, { ["toggle"] call comspec_atak_native_fnc_airplaneMode; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, "Coupe tout le réseau : ni synchro, ni SMS, ni BFT (les envois attendent le retour du réseau)"],
     ["switch", "Bluetooth", (["state"] call comspec_atak_native_fnc_btAction) get "on", { ["toggle"] call comspec_atak_native_fnc_btAction; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, "Jumelage par code et partage de sons avec les téléphones proches (marche aussi en mode avion)"],
+    ["section", "Radio", "Ce que l'écran du jeu montre pendant que vous parlez à la radio"],
+    ["comspec_atak_native_mpu_hud", "", "Notification MPU à l'écran", [
+        "Coupée dans les paramètres de l'addon (même réglage : Échap > Options > Options des addons > COMSPEC > ATAK · Radio de données (MPU5)). Active, elle montre par exemple « MPU · voix par le maillage », « 2 sauts · 3 correspondants ».",
+        "Pendant l'alternat, un encadré juste au-dessus du cadre ACRE, en bas à droite, dit si votre voix passe par la MPU5. Exemple : « MPU · voix par le maillage », « 2 sauts · 3 correspondants » ; en réception : « DUPONT via MPU ». Même réglage que dans les paramètres de l'addon."
+    ] select _mpuHudOn, true] call _cbaSwitch,
+    ["comspec_atak_native_mpu_hud_why", "", "Dire pourquoi la MPU n'est pas utilisée", "Une ligne grise quand votre voix ne passe pas par la MPU5. Exemple : « MPU : non utilisée (aucun relais) »", false] call _cbaSwitch,
     ["section", "Matériel et réseau", "Simulations réglées par le serveur (options CBA)"],
     ["info", "Dégâts du téléphone", [ "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>simulation coupée</t>", format ["%1 · usure %2 %%", ["<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>intact</t>", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", _hp get "reason"]] select ((_hp get "state") isNotEqualTo "OK"), round ((_hp get "damage") * 100)]] select (missionNamespace getVariable ["comspec_atak_native_damage_sim", true])],
     ["buttons", [["NETTOYER L'ÉCRAN", { [{ ["start"] call comspec_atak_native_fnc_screenClean; }] call comspec_atak_native_fnc_nextFrame; }, false, ["can"] call comspec_atak_native_fnc_screenClean],

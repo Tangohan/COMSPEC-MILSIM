@@ -131,6 +131,10 @@ private _hit = { params ["_r"]; [_grid, _r] call comspec_atak_native_fnc_mapLblG
 // chaque taille remplissait le cache des largeurs pendant le zoom).
 private _tw = { params ["_t", "_f", "_s"]; ([_t, _f, 0.02] call comspec_atak_native_fnc_mapTextW) * _s / 0.02 };
 private _plateBg = _pal get "lblBg";
+// Fond des noms (Réglages > Carte, fn_mapPrefs « nameBg ») sous les styles sans plaque (CONTOUR, CLASSIQUE) ; les plaques
+// gardent leur fond (opacité du volet CONFIGURATION).
+private _nbg = uiNamespace getVariable ["COMSPEC_ATAK_NameBgNow", []];
+private _nbgLight = (count _nbg) >= 2 && {_nbg select 1};
 private _liftMap = _pal get "dark";
 private _distCache = uiNamespace getVariable "COMSPEC_ATAK_LblCache";
 if (isNil "_distCache" || {(count _distCache) > 2000}) then { _distCache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_LblCache", _distCache]; };
@@ -257,10 +261,12 @@ private _n = 0;
             if (_t2 isNotEqualTo "") then { _map drawIcon [_none, _pal get "lblDim", [_x0 + _pad * 1.5 + _w1, _cy] call _toW, 0, 0, 0, _t2, 0, _fs2, "EtelkaMonospacePro", "right"]; };
         };
         case "CLASSIC": {
+            if (_nbg isNotEqualTo []) then { [_x0 - _pad, _sy - _fsC / 2 - 2 * pixelH, _x1 + _pad, _sy + _fsC / 2 + 2 * pixelH, _nbg select 0] call _rect; };
             _map drawIcon [_none, [_c, _cL] select _liftMap, [_x0, _sy] call _toW, 0, 0, 0, _t1, 1, _fsC, _f1, "right"];
         };
         case "OUTLINE": {
-            _map drawIcon [_none, _tc, [_x0, _sy] call _toW, 0, 0, 0, _t1, 2, _fs, _f1, "right"];
+            if (_nbg isNotEqualTo []) then { [_x0 - _pad, _sy - _fs / 2 - 2 * pixelH, _x1 + _pad, _sy + _fs / 2 + 2 * pixelH, _nbg select 0] call _rect; };
+            _map drawIcon [_none, [_tc, [0.04, 0.05, 0.05, 1]] select (_nbgLight && {!_isLock}), [_x0, _sy] call _toW, 0, 0, 0, _t1, [2, 0] select _nbgLight, _fs, _f1, "right"];
         };
         case "PILL": {
             [_x0 + _radX, _y0, _x1 - _radX, _y1, _pillBg] call _rect;

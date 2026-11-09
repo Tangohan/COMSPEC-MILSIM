@@ -47,6 +47,9 @@ switch (_act) do {
         private _f = createHashMap;
         private _str = { params ["_v"]; [str _v, _v] select (_v isEqualType "") };
         _f set ["setOn", (missionNamespace getVariable ["comspec_atak_native_mpu_voice", false]) isEqualTo true];
+        // Relais en service pour mon camp (réglage « au moins un relais », fn_mpuVoice « _relayOk »).
+        _f set ["relayNeed", (missionNamespace getVariable ["comspec_atak_native_mpu_voice_needRelay", true]) isEqualTo true];
+        _f set ["relays", count ((["list", [side group player]] call comspec_atak_native_fnc_relayNet) select { (_x select 3) in ["relay", "gw", "cp"] && {(_x select 6) isNotEqualTo false} })];
         _f set ["realSet", (missionNamespace getVariable ["comspec_atak_native_mpu_real", false]) isEqualTo true];
         _f set ["arcade", (["profile"] call comspec_atak_native_fnc_netCond) isEqualTo 1];
         _f set ["linkOn", (["active"] call comspec_atak_native_fnc_mpuLink) isEqualTo true];
@@ -254,6 +257,15 @@ switch (_act) do {
         } else {
             ["setting", "KO", "Réglage du serveur", "La voix relayée est coupée par défaut : tant que ce réglage est décoché, votre radio garde sa portée normale, même avec une MPU5 (exemple : une AN/PRC-152 porte quelques kilomètres, pas plus).",
                 ["« Voix relayée par le maillage » (coché)"] call _askAdmin, "décoché", "settings"] call _add;
+        };
+        // 1 bis. Au moins un relais dans la mission.
+        if (["relayNeed", true] call _g) then {
+            if ((["relays", 0] call _g) > 0) then {
+                ["relay", "OK", "Relais de la mission", "La mission a au moins un relais en service pour votre camp : la voix peut passer par le maillage.", "", format ["%1 relais", ["relays", 0] call _g]] call _add;
+            } else {
+                ["relay", "KO", "Relais de la mission", "Aucun relais en service pour votre camp : sans relais, la voix ne passe pas par le maillage, même entre deux MPU5 voisines (exemple : carte sans pylône ni module « Poser un relais »).",
+                    "Posez un relais (module « Poser un relais », pylône, véhicule passerelle ou poste de commandement), ou demandez à l'admin de décocher « Voix par le maillage : au moins un relais ».", "aucun", "settings"] call _add;
+            };
         };
         // 2. Liaison réaliste.
         private _linkOn = ["linkOn", false] call _g;
@@ -724,7 +736,9 @@ switch (_act) do {
         // Faut-il un relais ? Trois cas (fn_meshGraph "view", fn_mpuVoice _linked) et le vôtre.
         private _maxH = _f getOrDefault ["maxHops", 6];
         _rows append [
-            ["section", "Faut-il un relais ?", "Pas toujours : ça dépend de qui doit vous entendre"],
+            ["section", "Faut-il un relais ?", "Oui : au moins un dans la mission (réglage par défaut)"],
+            ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.88' color='%2'>%3</t>", "0. Aucun relais dans la mission : la voix ne passe pas.", _hDi,
+                "Réglage « Voix par le maillage : au moins un relais » (coché par défaut) : sans pylône, module « Poser un relais », véhicule passerelle ni poste de commandement en service pour votre camp, la voix ne passe pas par les MPU5, même dans le groupe. Les trois cas suivants supposent qu'il y en a au moins un."]],
             ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.88' color='%2'>%3</t>", "1. Même groupe : non.", _hDi,
                 "Sans relais dans la mission, les MPU5 du groupe forment le maillage d'équipe autour de celle du chef de groupe (même canal, à portée en sauts). Exemple : 4 équipiers d'Alpha à 2 km les uns des autres s'entendent par la MPU5 du chef."]],
             ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.88' color='%2'>%3</t>", "2. Voisins directs : non.", _hDi,

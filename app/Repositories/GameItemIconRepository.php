@@ -186,6 +186,30 @@ final class GameItemIconRepository
         return $out;
     }
 
+    /**
+     * Empreinte de l'icône de chaque classe de la communauté (clé = classe en minuscules), en une requête : pour un
+     * catalogue de plusieurs milliers d'objets (configurateur), l'adresse est recomposée côté navigateur.
+     *
+     * @return array<string, string>
+     */
+    public function hashesForTenant(int $tenantId): array
+    {
+        if ($tenantId < 1 || !$this->schemaReady()) {
+            return [];
+        }
+        $st = $this->pdo()->prepare(
+            'SELECT class_name, icon_hash FROM game_item_icons
+             WHERE tenant_id = ? AND status = \'ok\' AND icon_hash IS NOT NULL LIMIT 30000'
+        );
+        $st->execute([$tenantId]);
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $out[strtolower((string) $row['class_name'])] = (string) $row['icon_hash'];
+        }
+
+        return $out;
+    }
+
     public static function urlForHash(string $hash): string
     {
         $path = 'equipment/icones/' . $hash . '.png';
