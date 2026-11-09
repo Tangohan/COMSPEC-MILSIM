@@ -2366,6 +2366,14 @@ class Container
                 self::get(\App\Services\BackOffice\Menu\BackOfficeMenuState::class)
             ),
             \App\Repositories\BoSheetRepository::class => new \App\Repositories\BoSheetRepository(),
+            \App\Services\BackOffice\Home\HomeBlocksStore::class => new \App\Services\BackOffice\Home\HomeBlocksStore(
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\BoSheetRepository::class)
+            ),
+            \App\Controllers\Admin\BackOfficeBlocksController::class => new \App\Controllers\Admin\BackOfficeBlocksController(
+                self::get(\App\Services\BackOffice\Home\HomeBlocksStore::class),
+                self::get(TenantRepository::class)
+            ),
             \App\Controllers\Admin\BackOfficeHomeController::class => new \App\Controllers\Admin\BackOfficeHomeController(
                 self::get(\App\Repositories\BoSheetRepository::class),
                 self::get(\App\Repositories\BackOfficeNavPrefsRepository::class)

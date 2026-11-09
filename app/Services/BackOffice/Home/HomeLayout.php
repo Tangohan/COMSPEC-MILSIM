@@ -41,6 +41,7 @@ final class HomeLayout
             'usage' => ['label' => 'Connexions', 'size' => 'wide', 'hint' => 'Site et téléphones ATAK sur 14 jours.'],
             'messages' => ['label' => 'Derniers messages', 'size' => 'normal', 'hint' => 'Votre messagerie.'],
             'gaps' => ['label' => 'Dossiers à compléter', 'size' => 'full', 'hint' => 'Fonctions, grades, rôles ou images manquants.'],
+            'custom' => ['label' => 'Bloc personnalisé', 'size' => 'full', 'hint' => 'Contenu libre de la communauté : bandeau, article, vidéo, tableau…'],
         ];
     }
 
@@ -48,10 +49,10 @@ final class HomeLayout
     public static function defaultOrder(string $role): array
     {
         if ($role === self::ROLE_SUPPORT) {
-            return ['tasks', 'shortcuts', 'kpis', 'agenda', 'feed', 'usage', 'messages'];
+            return ['tasks', 'shortcuts', 'kpis', 'agenda', 'feed', 'usage', 'messages', 'custom'];
         }
 
-        return ['operation', 'decisions', 'tasks', 'shortcuts', 'kpis', 'participation', 'units', 'pipeline', 'agenda', 'feed', 'usage', 'messages', 'gaps'];
+        return ['operation', 'decisions', 'tasks', 'shortcuts', 'kpis', 'participation', 'units', 'pipeline', 'agenda', 'feed', 'usage', 'messages', 'gaps', 'custom'];
     }
 
     /**
