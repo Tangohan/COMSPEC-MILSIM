@@ -127,7 +127,7 @@ return [
             ['label' => 'Accès', 'href' => 'back-office/ressources/effectifs/roles'],
             ['label' => 'Emplois', 'href' => 'back-office/ressources/effectifs/fonctions'],
         ]],
-        ['path' => 'back-office/organisation/types-entite', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Types d’entité', 'subtitle' => 'Créez les types propres à votre communauté et choisissez-les à la création d’une unité.', 'css' => ['back-office-catalog.css'], 'quick' => [
+        ['path' => 'back-office/organisation/types-entite', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Types d’entité', 'subtitle' => 'Créez les types propres à votre communauté et choisissez-les à la création d’une unité.', 'css' => ['back-office-organisation.css'], 'quick' => [
             ['label' => 'Catalogue', 'href' => 'back-office/organisation/catalogue'],
             ['label' => 'ORBAT', 'href' => 'orbat'],
         ]],
@@ -154,7 +154,7 @@ return [
         ['path' => 'back-office/organisation/indicatifs', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CARRIÈRE', 'title' => 'Indicatifs radio', 'subtitle' => 'Comment les indicatifs sont attribués : séries, numéros réservés et historique.'],
         ['path' => 'back-office/groups', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Groupes', 'subtitle' => 'Regroupez des membres en sous-unités ou en cellules.', 'css' => ['back-office-groups.css']],
         ['path' => 'back-office/teams', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Équipes', 'subtitle' => 'Des équipes formées pour une mission ou un créneau.', 'css' => ['back-office-groups.css']],
-        ['path' => 'back-office/organisation/noms', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CONFIGURATION', 'title' => 'Noms et trigrammes', 'subtitle' => 'Comment les noms des membres s’affichent sur le site, et le trigramme de chacun.', 'css' => ['back-office-member-numbers.css']],
+        ['path' => 'back-office/organisation/noms', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CONFIGURATION', 'title' => 'Noms et trigrammes', 'subtitle' => 'Comment les noms des membres s’affichent sur le site, et le trigramme de chacun.', 'css' => ['back-office-organisation.css']],
         ['path' => 'back-office/organisation/matricules', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CONFIGURATION', 'title' => 'Matricules d’organisation', 'subtitle' => 'Identifiant propre à la communauté, distinct de l’identifiant plateforme permanent.', 'css' => ['back-office-member-numbers.css']],
         ['path' => 'back-office/categories', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Catégories', 'subtitle' => 'Les catégories de la communauté et l’ordre dans lequel elles apparaissent.'],
         ['path' => 'back-office/referentiels/grades', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Grades', 'subtitle' => 'La liste des grades de votre communauté, dans l’ordre hiérarchique.'],

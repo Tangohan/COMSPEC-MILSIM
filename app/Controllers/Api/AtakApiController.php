@@ -8470,6 +8470,36 @@ class AtakApiController
         }
     }
 
+    /**
+     * Bilan de l'année pour l'app du téléphone : les écrans de la rétrospective du site (/retrospective), pour le
+     * membre relié à ce téléphone et sa communauté. Mêmes droits que le site (calendrier publié, bilan de l'unité
+     * selon la formule). Lecture seule.
+     */
+    public function yearReview(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $userId = ComspecApiKeyAuth::matchedUserId();
+        if ($userId === null) {
+            return Response::json(['error' => 'session_required'], 403);
+        }
+        try {
+            $tenantName = '';
+            try {
+                $tenantName = (string) ((new \App\Repositories\TenantRepository())->findById($r)['name'] ?? '');
+            } catch (\Throwable) {
+            }
+
+            return Response::json((new \App\Services\Atak\AtakYearReviewService())->forMember($r, $userId, $tenantName));
+        } catch (\Throwable $e) {
+            error_log('[atak-year-review] ' . $e->getMessage());
+
+            return Response::json(['error' => 'unavailable'], 503);
+        }
+    }
+
     public function experience(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);

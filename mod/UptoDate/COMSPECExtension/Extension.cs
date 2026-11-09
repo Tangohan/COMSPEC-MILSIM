@@ -4017,6 +4017,8 @@ public static partial class Extension
             return IdentityPackChunk(args);
         if (function == "GetCommunityOrbatChunk")
             return CommunityOrbatChunk(args);
+        if (function == "GetYearReviewChunk")
+            return YearReviewChunk(args);
         // Service Athéna sur « Non » (fn_uplinkHold) : plus d'authentification en mémoire, et UplinkCutHandler refuse toute
         // requête vers Athena. La file ne part plus (DrainQueue attend une authentification), elle reste sur disque pour un
         // retour à « Oui » : TrySetSqfBaseUrl, atteint seulement par les commandes admises par fn_uplinkHold, rouvre.
@@ -4493,6 +4495,11 @@ public static partial class Extension
             return "OK|" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(text))).ToLowerInvariant();
         }
 
+        // Import d'une couverture générée sur Athena (app Ma couverture) : lecture LOCALE du dossier Documents\Arma 3 - COMSPEC,
+        // aucune requête réseau, aucune autorisation d'Athena requise (Extension_CoverImport.cs).
+        if (function is "ReadCoverFile" or "ReadCoverFileChunk")
+            return CoverImportCommand(function, args);
+
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
@@ -4507,7 +4514,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,MedicalRoster,AthenaPatches,GetCommunityBrief,GetCommunityOrbat,GetCommunityOrbatChunk,MobileLink,GetIdentityPack,GetIdentityPackChunk,QueryIdDocument,SubmitIdCheck";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,Academy,LatestVersions,StartupCheck,HashText,ReadCoverFile,ReadCoverFileChunk,MedicalRoster,AthenaPatches,GetCommunityBrief,GetCommunityOrbat,GetCommunityOrbatChunk,GetYearReview,GetYearReviewChunk,MobileLink,GetIdentityPack,GetIdentityPackChunk,QueryIdDocument,SubmitIdCheck";
         }
 
         if (function == "GetCapabilities")
@@ -6353,6 +6360,9 @@ public static partial class Extension
             // ORBAT du site pour le BFT (Extension_CommunityOrbat.cs) : jamais sur le fil du jeu, une requête à la fois.
             if (function == "GetCommunityOrbat")
                 return CommunityOrbatCommand(token);
+            // Bilan de l'année du téléphone (Extension_YearReview.cs) : même règle.
+            if (function == "GetYearReview")
+                return YearReviewCommand(token);
             if (function == "JoinFireTeam" && args.Length >= 1)
             {
                 var teamId = (args[0] ?? "").Trim();

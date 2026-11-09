@@ -171,3 +171,30 @@
 .idm-cover__todo {
     margin: 0;
 }
+.idm-cover__steps {
+    margin: 0;
+    padding-left: 20px;
+}
+.idm-cover__form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    align-items: flex-end;
+}
+.idm-cover__form label {
+    display: grid;
+    gap: 4px;
+}
+.idm-cover__history {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+}
+.idm-cover__history li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    align-items: baseline;
+}

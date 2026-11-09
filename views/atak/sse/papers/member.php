@@ -28,6 +28,15 @@ require __DIR__ . '/_member_css.php';
     <div class="page-reference"><strong>Vue // Membre</strong> Réf. ATH-SSE-IDENT-MBR</div>
 </div>
 
+<?php if (!empty($coverPanel)): ?>
+    <?php
+    $coverSelf = false;
+    $coverPostUrl = url('atak/sse/papiers/membres/' . (int) $memberId . '/couverture');
+    $coverDownloadBase = $coverPostUrl;
+    $coverCsrf = $csrfToken;
+    require dirname(__DIR__, 3) . '/partials/sse_cover_export.php';
+    ?>
+<?php endif; ?>
 <?php require dirname(__DIR__, 3) . '/admin/effectifs_workspace/partials/member_papers.php'; ?>
 <?php
 $sseContent = ob_get_clean();

@@ -11,7 +11,7 @@
 */
 params [["_op", ""], ["_sheet", createHashMap]];
 if (!hasInterface || {_op isNotEqualTo "push"} || {(count _sheet) isEqualTo 0}) exitWith { false };
-if ((_sheet getOrDefault ["source", "local"]) isEqualTo "athena" || {!(_sheet getOrDefault ["prepared", false])}) exitWith { false };
+if ((_sheet getOrDefault ["source", "local"]) in ["athena", "import"] || {!(_sheet getOrDefault ["prepared", false])}) exitWith { false };
 private _st = missionNamespace getVariable ["comspec_sse_idCoverSync", createHashMap];
 missionNamespace setVariable ["comspec_sse_idCoverSync", _st];
 if ((_st getOrDefault ["state", ""]) isEqualTo "sending" && {(time - (_st getOrDefault ["tried", -100])) < 60}) exitWith { false };
