@@ -54,7 +54,7 @@ EN : Import the cover you generated on Athena, offline
 - Needs an update of COMSPEC Link (new command that reads the file).
 
 ### Détail technique
-- Site : PR feat/identite-couverture-export (fichier `comspec-couverture-CVR-XXXXXXXX.json`, format `comspec-cover` v1, migration 4220). Contrat de lecture : `docs/ATAK_COUVERTURE_IMPORT.md`.
+- Site : PR feat/identite-couverture-export (fichier `comspec-couverture-CVR-XXXXXXXX.json`, format `comspec-cover` v1, migration 4230). Contrat de lecture : `docs/ATAK_COUVERTURE_IMPORT.md`.
 - DLL (`Extension_CoverImport.cs`, aussi compilée par la DLL ATAK native) : `ReadCoverFile` / `ReadCoverFileChunk`, lecture locale seulement, aucune requête réseau ni autorisation d'Athena. Fichier de forme `comspec-couverture-CVR-XXXXXXXX.json` dans `Documents\Arma 3 - COMSPEC`, 256 Kio au plus, JSON UTF-8 de profondeur 6, clés connues et uniques, aucun caractère de contrôle, SHA-256 du texte de `cover`, date de fin, photo JPEG vérifiée mais non affichée. Annoncée dans `GetAtakFeatures`.
 - SSE : `fn_idCoverImport` (lecture, nettoyage une seconde fois, profil du joueur, envoi au serveur `coverImport` / `coverForget`), `fn_idLegend` (la couverture importée l'emporte champ par champ sur la légende, après le brief Athena et le texte de l'éditeur), `fn_idCoverSync` (une couverture importée ne repart pas vers Athena), `fn_idCoverPage` (zone Importer ma couverture, ligne Couverture de la liaison Athena). Ni `fn_radioGuard`, ni les profils d'identité du registre SSE, ni les papiers ne sont touchés ; la couverture importée n'ouvre pas l'infiltration.
 - Limite connue : la photo du fichier n'est pas affichée en jeu (Arma ne lit pas une image hors de ses dossiers) ; elle reste dans le fichier.
