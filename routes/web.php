@@ -1365,6 +1365,7 @@ return function (Router $router) {
     $router->post('/admin/system/updates/{id}/deploy', [\App\Controllers\Admin\System\SystemUpdatesController::class, 'deploy'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/updates/{id}/rollback', [\App\Controllers\Admin\System\SystemUpdatesController::class, 'rollback'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/tenants', [SystemTenantsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/tenants/{id}/comptes', [\App\Controllers\Admin\System\SystemTenantAccountsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/tenants/{id}/intervention', [SystemTenantInterventionController::class, 'show'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/tenants/{id}/intervention/enter', [SystemTenantInterventionController::class, 'enter'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/tenants/{id}/intervention/journal', [SystemTenantInterventionController::class, 'journal'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
