@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- COMSPEC SSE, addon ia_rp : textes du terminal, des réglages et de l'atelier IA (anglais, français). -->
+<Project name="COMSPEC_SSE">
+    <Package name="ia_rp">
+        <Key ID="STR_COMSPEC_IARP_Action">
+            <Original>Talk to…</Original>
+            <English>Talk to…</English>
+            <French>Parler à…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Anonymous">
+            <Original>Anonymous</Original>
+            <English>Anonymous</English>
+            <French>Anonyme</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Cat">
+            <Original>AI roleplay (free text)</Original>
+            <English>AI roleplay (free text)</English>
+            <French>IA RP (texte libre)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Close_D">
+            <Original>Close (Esc). Your draft is kept for this person.</Original>
+            <English>Close (Esc). Your draft is kept for this person.</English>
+            <French>Fermer (Échap). Votre brouillon est gardé pour cette personne.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Copy">
+            <Original>COPY THE LOG</Original>
+            <English>COPY THE LOG</English>
+            <French>COPIER LE JOURNAL</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Copy_D">
+            <Original>Copies the whole log to the clipboard (one line per message), for an after-action report. Example: paste it into a Discord channel.</Original>
+            <English>Copies the whole log to the clipboard (one line per message), for an after-action report. Example: paste it into a Discord channel.</English>
+            <French>Copie tout le journal dans le presse-papiers (une ligne par message), pour un compte rendu. Exemple : collez-le dans un salon Discord.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_EmptyHistory">
+            <Original>Nothing said yet. Example: « Hello, where are you from? »</Original>
+            <English>Nothing said yet. Example: « Hello, where are you from? »</English>
+            <French>Rien n'a encore été dit. Exemple : « Bonjour, d'où venez-vous ? »</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_EmptyLog">
+            <Original>No exchange logged yet.</Original>
+            <English>No exchange logged yet.</English>
+            <French>Aucun échange au journal.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Hint">
+            <Original>Enter: send · Shift+Enter: new line · ↑↓: sent messages · Esc: close (draft kept)</Original>
+            <English>Enter: send · Shift+Enter: new line · ↑↓: sent messages · Esc: close (draft kept)</English>
+            <French>Entrée : envoyer · Maj+Entrée : nouvelle ligne · ↑↓ : messages envoyés · Échap : fermer (brouillon gardé)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Input_D">
+            <Original>Write freely (no practical limit, automatic line wrap). Enter: send. Shift+Enter: new line. Up/Down arrows: messages already sent. Example: Where are you going at this hour?</Original>
+            <English>Write freely (no practical limit, automatic line wrap). Enter: send. Shift+Enter: new line. Up/Down arrows: messages already sent. Example: Where are you going at this hour?</English>
+            <French>Écrivez librement (pas de limite pratique, retour à la ligne automatique). Entrée : envoyer. Maj+Entrée : nouvelle ligne. Flèches haut / bas : messages déjà envoyés. Exemple : Où allez-vous à cette heure-ci ?</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Key_D">
+            <Original>Opens the free-text terminal on the AI you are looking at (5 m max, on foot). Example: aim at a civilian at the checkpoint and press Ctrl+T.</Original>
+            <English>Opens the free-text terminal on the AI you are looking at (5 m max, on foot). Example: aim at a civilian at the checkpoint and press Ctrl+T.</English>
+            <French>Ouvre le terminal de texte libre sur l'IA visée (5 m au plus, à pied). Exemple : visez un civil au checkpoint et appuyez sur Ctrl+T.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Key_T">
+            <Original>Talk to the AI in front of you</Original>
+            <English>Talk to the AI in front of you</English>
+            <French>Parler à l'IA en face</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_LogOnly">
+            <Original>EXCHANGE LOG</Original>
+            <English>EXCHANGE LOG</English>
+            <French>JOURNAL DES ÉCHANGES</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Me">
+            <Original>Me</Original>
+            <English>Me</English>
+            <French>Moi</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_N_Applied">
+            <Original>AI profile applied to %1 person(s).</Original>
+            <English>AI profile applied to %1 person(s).</English>
+            <French>Profil d'IA appliqué à %1 personne(s).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_N_BadProfile">
+            <Original>AI profile not recognised: nothing applied.</Original>
+            <English>AI profile not recognised: nothing applied.</English>
+            <French>Profil d'IA non reconnu : rien n'est appliqué.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_N_Closer">
+            <Original>Papers: move within 3 m, then ask again.</Original>
+            <English>Papers: move within 3 m, then ask again.</English>
+            <French>Papiers : approchez-vous à 3 m, puis redemandez.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_N_Copied">
+            <Original>Log copied to the clipboard (%1 lines).</Original>
+            <English>Log copied to the clipboard (%1 lines).</English>
+            <French>Journal copié dans le presse-papiers (%1 lignes).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_N_NoOne">
+            <Original>No AI in front of you within 5 m.</Original>
+            <English>No AI in front of you within 5 m.</English>
+            <French>Aucune IA en face de vous à moins de 5 m.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_N_TooFar">
+            <Original>Nobody to talk to within 5 m (on foot, living AI).</Original>
+            <English>Nobody to talk to within 5 m (on foot, living AI).</English>
+            <French>Personne à qui parler à moins de 5 m (à pied, IA vivante).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_PfxDo_D">
+            <Original>/do: a fact or detail of the scene. Example: /do The car smells of fuel. No game effect.</Original>
+            <English>/do: a fact or detail of the scene. Example: /do The car smells of fuel. No game effect.</English>
+            <French>/do : un fait ou un détail de la scène. Exemple : /do La voiture sent l'essence. Aucun effet de jeu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_PfxMe_D">
+            <Original>/me: an action you perform, in the third person. Example: /me raises his hands slowly. Raising your hands, aiming, holding out money or showing a badge is seen by the AI.</Original>
+            <English>/me: an action you perform, in the third person. Example: /me raises his hands slowly. Raising your hands, aiming, holding out money or showing a badge is seen by the AI.</English>
+            <French>/me : une action que vous faites, à la 3e personne. Exemple : /me lève lentement les mains. Lever les mains, braquer, tendre de l'argent ou montrer un badge est vu par l'IA.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_PfxTodo_D">
+            <Original>/todo: words and a gesture together. Example: /todo Nobody move * points at the door. No game effect.</Original>
+            <English>/todo: words and a gesture together. Example: /todo Nobody move * points at the door. No game effect.</English>
+            <French>/todo : une parole et un geste ensemble. Exemple : /todo Personne ne bouge * montre la porte. Aucun effet de jeu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_PfxTry_D">
+            <Original>/try: an attempt; the server rolls once, the same [SUCCESS] or [FAILURE] for everyone nearby. Example: /try reads the plate in the dark.</Original>
+            <English>/try: an attempt; the server rolls once, the same [SUCCESS] or [FAILURE] for everyone nearby. Example: /try reads the plate in the dark.</English>
+            <French>/try : une tentative ; le serveur tire une fois, le même [RÉUSSI] ou [ÉCHEC] pour tous les joueurs proches. Exemple : /try lit la plaque dans le noir.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Refresh">
+            <Original>REFRESH</Original>
+            <English>REFRESH</English>
+            <French>ACTUALISER</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Refresh_D">
+            <Original>Reloads the log from the server.</Original>
+            <English>Reloads the log from the server.</English>
+            <French>Recharge le journal depuis le serveur.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_ColAi_D">
+            <Original>Colour of AI answers in bubbles and the terminal. Example: sky blue.</Original>
+            <English>Colour of AI answers in bubbles and the terminal. Example: sky blue.</English>
+            <French>Couleur des réponses des IA dans les bulles et le terminal. Exemple : bleu ciel.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_ColAi_T">
+            <Original>Colour: AI answers</Original>
+            <English>Colour: AI answers</English>
+            <French>Couleur : réponses des IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_ColDo_D">
+            <Original>Colour of /do scene details. Example: light blue, « (The door is ajar.) ».</Original>
+            <English>Colour of /do scene details. Example: light blue, « (The door is ajar.) ».</English>
+            <French>Couleur des détails de scène /do. Exemple : bleu clair, « (La porte est entrouverte.) ».</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_ColDo_T">
+            <Original>Colour: /do</Original>
+            <English>Colour: /do</English>
+            <French>Couleur : /do</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_ColMe_D">
+            <Original>Colour of /me actions. Example: purple, « * Smith raises his hands ».</Original>
+            <English>Colour of /me actions. Example: purple, « * Smith raises his hands ».</English>
+            <French>Couleur des actions /me. Exemple : violet, « * Martin lève les mains ».</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_ColMe_T">
+            <Original>Colour: /me</Original>
+            <English>Colour: /me</English>
+            <French>Couleur : /me</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_ColSay_D">
+            <Original>Colour of plain speech in bubbles and the terminal (your own choice, on your screen only). Example: white.</Original>
+            <English>Colour of plain speech in bubbles and the terminal (your own choice, on your screen only). Example: white.</English>
+            <French>Couleur des paroles simples dans les bulles et le terminal (votre choix, sur votre écran seulement). Exemple : blanc.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_ColSay_T">
+            <Original>Colour: speech</Original>
+            <English>Colour: speech</English>
+            <French>Couleur : paroles</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_ColTodo_D">
+            <Original>Colour of /todo lines (words and gesture). Example: orange.</Original>
+            <English>Colour of /todo lines (words and gesture). Example: orange.</English>
+            <French>Couleur des lignes /todo (parole et geste). Exemple : orange.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_ColTodo_T">
+            <Original>Colour: /todo</Original>
+            <English>Colour: /todo</English>
+            <French>Couleur : /todo</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_ColTry_D">
+            <Original>Colour of the /try button and lines; the result itself is green [SUCCESS] or red [FAILURE]. Example: green.</Original>
+            <English>Colour of the /try button and lines; the result itself is green [SUCCESS] or red [FAILURE]. Example: green.</English>
+            <French>Couleur du bouton et des lignes /try ; le résultat lui-même est vert [RÉUSSI] ou rouge [ÉCHEC]. Exemple : vert.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_ColTry_T">
+            <Original>Colour: /try</Original>
+            <English>Colour: /try</English>
+            <French>Couleur : /try</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Enabled_D">
+            <Original>Talk to an AI within 5 m by typing freely (ACE menu: Talk to…, or Ctrl+T); it answers from its own cover story, in a bubble above its head. Unticked: the terminal does not open. Example: « Where are you from? » to a civilian at a checkpoint.</Original>
+            <English>Talk to an AI within 5 m by typing freely (ACE menu: Talk to…, or Ctrl+T); it answers from its own cover story, in a bubble above its head. Unticked: the terminal does not open. Example: « Where are you from? » to a civilian at a checkpoint.</English>
+            <French>Parler à une IA à moins de 5 m en écrivant librement (menu ACE : Parler à…, ou Ctrl+T) ; elle répond d'après sa propre couverture, dans une bulle au-dessus de sa tête. Décoché : le terminal ne s'ouvre pas. Exemple : « D'où venez-vous ? » à un civil au checkpoint.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Enabled_T">
+            <Original>Free text with AIs</Original>
+            <English>Free text with AIs</English>
+            <French>Texte libre avec les IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_LogMax_D">
+            <Original>Lines kept on the server; the oldest go first. Example: 500 for an evening of play.</Original>
+            <English>Lines kept on the server; the oldest go first. Example: 500 for an evening of play.</English>
+            <French>Lignes gardées sur le serveur ; les plus anciennes partent d'abord. Exemple : 500 pour une soirée de jeu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_LogMax_T">
+            <Original>Log size (lines)</Original>
+            <English>Log size (lines)</English>
+            <French>Taille du journal (lignes)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Log_D">
+            <Original>Each message (player to AI, AI to player) is kept in server memory: game and real time, RP name and Steam profile name, AI identity and netId, grid, distance, text, intent, outcome. Never sent to Athena. Example: read it again in the LOG tab for the debrief.</Original>
+            <English>Each message (player to AI, AI to player) is kept in server memory: game and real time, RP name and Steam profile name, AI identity and netId, grid, distance, text, intent, outcome. Never sent to Athena. Example: read it again in the LOG tab for the debrief.</English>
+            <French>Chaque message (joueur vers IA, IA vers joueur) est gardé en mémoire du serveur : heure de jeu et réelle, nom RP et nom de profil Steam, identité et netId de l'IA, carroyage, distance, texte, intention, issue. Jamais envoyé à Athena. Exemple : relisez-le dans l'onglet JOURNAL pour le débriefing.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Log_T">
+            <Original>Exchange log</Original>
+            <English>Exchange log</English>
+            <French>Journal des échanges</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_MaxLen_D">
+            <Original>Characters per message (accents count as one). The bubble shows 6 lines at most; the whole text stays in the terminal and the log. Example: 600 for a long description with /do.</Original>
+            <English>Characters per message (accents count as one). The bubble shows 6 lines at most; the whole text stays in the terminal and the log. Example: 600 for a long description with /do.</English>
+            <French>Caractères par message (une lettre accentuée compte pour un). La bulle montre 6 lignes au plus ; tout le texte reste dans le terminal et le journal. Exemple : 600 pour une longue description en /do.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_MaxLen_T">
+            <Original>Maximum message length</Original>
+            <English>Maximum message length</English>
+            <French>Longueur maximale d'un message</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Orders_D">
+            <Original>Hands up, stop, follow me, kneel, get out, open the trunk, move along: the AI obeys or refuses according to its personality, fear and the weapons aimed at it. Unticked: it only answers with words. Example: « Hands up! » to a frightened civilian: he surrenders (ACE).</Original>
+            <English>Hands up, stop, follow me, kneel, get out, open the trunk, move along: the AI obeys or refuses according to its personality, fear and the weapons aimed at it. Unticked: it only answers with words. Example: « Hands up! » to a frightened civilian: he surrenders (ACE).</English>
+            <French>Mains en l'air, stop, suivez-moi, à genoux, descendez, ouvrez le coffre, circulez : l'IA obéit ou refuse selon sa personnalité, sa peur et les armes pointées sur elle. Décoché : elle répond seulement par des mots. Exemple : « Mains en l'air ! » à un civil apeuré : il se rend (ACE).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Orders_T">
+            <Original>AIs obey simple orders</Original>
+            <English>AIs obey simple orders</English>
+            <French>Les IA suivent les ordres simples</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Range_D">
+            <Original>Distance at which players see the 3D speech bubbles (players and AIs) and the typing indicator. Nothing is shown beyond it or out of sight. Example: 20 m, players on the other side of the street still see the exchange.</Original>
+            <English>Distance at which players see the 3D speech bubbles (players and AIs) and the typing indicator. Nothing is shown beyond it or out of sight. Example: 20 m, players on the other side of the street still see the exchange.</English>
+            <French>Distance à laquelle les joueurs voient les bulles 3D (joueurs et IA) et l'indicateur d'écriture. Rien au-delà ni hors de vue. Exemple : 20 m, les joueurs de l'autre côté de la rue voient encore l'échange.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Range_T">
+            <Original>Bubble range (m)</Original>
+            <English>Bubble range (m)</English>
+            <French>Portée des bulles (m)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Try_D">
+            <Original>Chance of [SUCCESS] for a /try, rolled once by the server: everyone nearby sees the same result. Example: 50, one in two.</Original>
+            <English>Chance of [SUCCESS] for a /try, rolled once by the server: everyone nearby sees the same result. Example: 50, one in two.</English>
+            <French>Chance de [RÉUSSI] d'un /try, tirée une seule fois par le serveur : tous les joueurs proches voient le même résultat. Exemple : 50, une fois sur deux.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Try_T">
+            <Original>/try success chance (%)</Original>
+            <English>/try success chance (%)</English>
+            <French>Chance de réussite d'un /try (%)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Typing_D">
+            <Original>« … » above the head of someone typing (player) or about to answer (AI), for players nearby only. Example: untick it for stealth missions where nothing must be shown.</Original>
+            <English>« … » above the head of someone typing (player) or about to answer (AI), for players nearby only. Example: untick it for stealth missions where nothing must be shown.</English>
+            <French>« … » au-dessus de la tête de quelqu'un qui écrit (joueur) ou va répondre (IA), pour les joueurs proches seulement. Exemple : décochez-le pour une mission discrète où rien ne doit s'afficher.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Typing_T">
+            <Original>Typing indicator</Original>
+            <English>Typing indicator</English>
+            <French>Indicateur d'écriture</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Zeus_D">
+            <Original>Every new line is sent live to Zeus players (LOG tab, Zeus module « Exchange log »). Players only see their own exchanges. Example: the game master follows a checkpoint interrogation from afar.</Original>
+            <English>Every new line is sent live to Zeus players (LOG tab, Zeus module « Exchange log »). Players only see their own exchanges. Example: the game master follows a checkpoint interrogation from afar.</English>
+            <French>Chaque nouvelle ligne part en direct aux joueurs Zeus (onglet JOURNAL, module Zeus « Journal des échanges »). Les joueurs ne voient que leurs propres échanges. Exemple : le maître du jeu suit de loin un interrogatoire au checkpoint.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Zeus_T">
+            <Original>Log visible to Zeus</Original>
+            <English>Log visible to Zeus</English>
+            <French>Journal visible du Zeus</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Send">
+            <Original>SEND</Original>
+            <English>SEND</English>
+            <French>ENVOYER</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Send_D">
+            <Original>Send to this person (Enter). Players nearby see it above your head.</Original>
+            <English>Send to this person (Enter). Players nearby see it above your head.</English>
+            <French>Envoyer à cette personne (Entrée). Les joueurs proches le voient au-dessus de votre tête.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_StatusFar">
+            <Original>%1 m · out of range (5 m): move closer</Original>
+            <English>%1 m · out of range (5 m): move closer</English>
+            <French>%1 m · hors de portée (5 m) : approchez-vous</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_StatusNear">
+            <Original>%1 m · in range: type, Enter to send</Original>
+            <English>%1 m · in range: type, Enter to send</English>
+            <French>%1 m · à portée : écrivez, Entrée pour envoyer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_TabLog">
+            <Original>LOG</Original>
+            <English>LOG</English>
+            <French>JOURNAL</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_TabLog_D">
+            <Original>Exchange log: game time and real time, names, AI identity, position, distance, text, recognised intent, outcome. Zeus: every exchange.</Original>
+            <English>Exchange log: game time and real time, names, AI identity, position, distance, text, recognised intent, outcome. Zeus: every exchange.</English>
+            <French>Journal des échanges : heure de jeu et heure réelle, noms, identité de l'IA, position, distance, texte, intention reconnue, issue. Zeus : tous les échanges.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_TabTalk">
+            <Original>TALK</Original>
+            <English>TALK</English>
+            <French>DISCUSSION</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_TabTalk_D">
+            <Original>Conversation with this person: what you said and what they answered.</Original>
+            <English>Conversation with this person: what you said and what they answered.</English>
+            <French>Discussion avec cette personne : ce que vous avez dit et ce qu'elle a répondu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_TitleTalk">
+            <Original>TALK TO · %1</Original>
+            <English>TALK TO · %1</English>
+            <French>PARLER À · %1</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_TryKo">
+            <Original>[FAILURE]</Original>
+            <English>[FAILURE]</English>
+            <French>[ÉCHEC]</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_TryOk">
+            <Original>[SUCCESS]</Original>
+            <English>[SUCCESS]</English>
+            <French>[RÉUSSI]</French>
+        </Key>
+    </Package>
+</Project>

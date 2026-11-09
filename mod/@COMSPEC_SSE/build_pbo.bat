@@ -33,9 +33,9 @@ if exist "%ABTMP%" rd /s /q "%ABTMP%"
 REM Copies locales des en-tetes partages (pas d'#include entre PBO dans les config.cpp)
 where python >nul 2>&1 && python "%PROJECT_DIR%tools\sync_headers.py"
 
-set "COMPONENTS=main core generator evidence intel interaction zeus eden ui network digital biometrics identity editor analysis campaign guide compat_bii compat_ace compat_atak"
+set "COMPONENTS=main core generator evidence intel interaction zeus eden ui network digital biometrics identity ia_rp editor analysis campaign guide compat_bii compat_ace compat_atak"
 REM debug optionnel : build_pbo.bat debug
-if /I "%~1"=="debug" set "COMPONENTS=main debug core generator evidence intel interaction zeus eden ui network digital biometrics identity editor analysis campaign guide compat_bii compat_ace compat_atak"
+if /I "%~1"=="debug" set "COMPONENTS=main debug core generator evidence intel interaction zeus eden ui network digital biometrics identity ia_rp editor analysis campaign guide compat_bii compat_ace compat_atak"
 set "FAILED=0"
 
 for %%C in (%COMPONENTS%) do (
