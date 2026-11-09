@@ -14,7 +14,8 @@
                             lignes : ["p", clé, poste, "commander" | "deputy" | ""] personne, ["v", clé, poste, nombre] poste vacant
                             people : clé -> [libellé, nom, grade, indicatif, genre (0 personne, 1 anonymisée, 2 vacant), [[unité, poste]...]]
       "presence"          [instant, clé de personne -> joueur de mon camp, joueurs de mon camp absents de l'ORBAT] (relu toutes les 2 s)
-      "notice"            [texte, ton (ok | warn | alert | muted), réessayer] du bandeau de l'onglet
+      "notice"            [texte, ton (ok | info | warn | alert | muted), réessayer] du bandeau de l'onglet (info, warn, alert :
+                            au-dessus du tableau, en entier ; muted : une ligne du tableau)
       "sig"               signature pour fn_statusUpdate
 */
 params [["_act", ""], ["_arg", ""]];
@@ -198,7 +199,8 @@ switch (_act) do {
         switch (_store get "state") do {
             case "OK": {
                 switch (true) do {
-                    case (!_copy): { ["Votre communauté n'a pas d'ORBAT sur le site.", "muted", false] };
+                    // État normal (ORBAT pas encore saisi sur le site) : dire ce que l'on voit à la place.
+                    case (!_copy): { ["Votre communauté n'a pas d'ORBAT sur le site. Les unités s'affichent par groupe à la place (formation › groupe › équipe › membre).", "info", false] };
                     case ((_store get "truncated")): { [format ["ORBAT du site incomplet : trop d'unités ou de membres. Lu il y a %1 min", call _minutes], "warn", false] };
                     case ((call _minutes) >= 15): { [format ["ORBAT du site : %1", _old], "warn", true] };
                     default { [format ["ORBAT du site · lu il y a %1 min", call _minutes], "muted", false] };

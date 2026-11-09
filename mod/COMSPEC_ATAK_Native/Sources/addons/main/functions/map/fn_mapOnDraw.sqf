@@ -340,6 +340,9 @@ if (_selfCfg select 4) then {
         ((_pos select 0) + _ua) < _ux0 || {((_pos select 0) - _ua) > _ux1} || {((_pos select 1) + _ua) < _uy0} || {((_pos select 1) - _ua) > _uy1}
     }) then { continue };
     private _self = _entity getOrDefault ["self",false];
+    // Téléphone tracé (piste Athena « phone », fn_pollUnits) : toujours le symbole d'émetteur de fn_symbology, non orienté,
+    // jamais un cadre OTAN / MIL-STD ni un pion d'infanterie, quel que soit le style de la carte.
+    private _phone = _entity getOrDefault ["phone", false];
     // Symbole, couleur de base, icône perso et symbole OTAN gardés 1 s par unité (table à part, COMSPEC_ATAK_MapDrawCache) :
     // refaits à chaque image et pour chaque unité avant. Plus dans la piste : fn_localDataRefresh la refait 4 fois par seconde.
     private _dc = _dcAll getOrDefault [_x, []];
@@ -364,7 +367,7 @@ if (_selfCfg select 4) then {
         if (_self && {_msSelf}) then {
             _ms = [["self", _shapeSelf select [3]] call comspec_atak_native_fnc_milSym];
         } else {
-            if (!_self && {_milU || {_msAlly && {(_entity getOrDefault ["affiliation", ""]) isEqualTo "friend"}}}) then { _ms = [["unit", _entity] call comspec_atak_native_fnc_milSym]; };
+            if (!_self && {!_phone} && {_milU || {_msAlly && {(_entity getOrDefault ["affiliation", ""]) isEqualTo "friend"}}}) then { _ms = [["unit", _entity] call comspec_atak_native_fnc_milSym]; };
         };
         if ((count _ms) > 0) then {
             // Désignation (code d'unité de l'ORBAT, sinon groupe Arma) et unité supérieure (ORBAT) : données réelles seulement.
@@ -386,7 +389,7 @@ if (_selfCfg select 4) then {
     if (_self) then { _pos = _selfGps; };
     if (_ewBft && {!_self}) then { _color set [3, ((_color select 3) min 0.65) * 0.5]; };
     private _dir = _entity getOrDefault ["heading",0];
-    if ((_dc select 3) isNotEqualTo "") then { _icon = _dc select 3; _dir = 0; };
+    if ((_dc select 3) isNotEqualTo "" || {_phone}) then { _icon = [_dc select 3, _icon] select _phone; _dir = 0; };
     // Moi : forme, taille et cône de cap choisis (flèche du symbole d'unité par défaut).
     if (_self) then {
         _selfCfg params ["_sIcon", "_sOrient", "_sMul", "_sCone"];
@@ -406,7 +409,7 @@ if (_selfCfg select 4) then {
     // Réglages > Carte « Icônes des unités » OTAN : cadre + modificateur MIL-STD-2525 / APP-6 (moi : inchangé),
     // non orienté, un peu plus grand que le point ; échelon (points d'équipe / groupe) au-dessus pour les chefs.
     private _ech = "";
-    private _tacP = _tac && {!_self};
+    private _tacP = _tac && {!_self} && {!_phone};
     if (_nato && {!_self} && {!_tacP}) then {
         _icon = _dc select 4; _ech = _dc select 5; _dir = 0; _size = _size * 1.3;
     };

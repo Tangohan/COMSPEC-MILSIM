@@ -114,9 +114,11 @@ switch (_act) do {
     };
     // Toast d'Arma (CfgNotifications, config.cpp) : secours des bulles (fn_aiBubble) ; rien dans le centre de notifications du téléphone.
     case "toast": {
-        _arg params [["_t", ""], ["_type", "INFO"]];
+        // _who : titre de l'encadré = la personne qui parle (identité, ou « Anonyme » si elle n'en a pas) ; vide : « COMSPEC ».
+        _arg params [["_t", ""], ["_type", "INFO"], ["_who", ""]];
         if (!hasInterface || {_t isEqualTo ""}) exitWith {};
-        [["COMSPEC_ATAK_AiReply", "COMSPEC_ATAK_AiReplyWarn"] select (_type in ["WARNING", "ERROR"]), [((_t) call comspec_atak_native_fnc_tr) regexReplace ["[<>&]", " "]]] call BIS_fnc_showNotification;
+        if (_who isEqualTo "") then { _who = "COMSPEC"; };
+        [["COMSPEC_ATAK_AiReply", "COMSPEC_ATAK_AiReplyWarn"] select (_type in ["WARNING", "ERROR"]), [((_t) call comspec_atak_native_fnc_tr) regexReplace ["[<>&]", " "], _who regexReplace ["[<>&]", " "]]] call BIS_fnc_showNotification;
     };
     case "send": {
         _arg params [["_g", grpNull], ["_k", ""], ["_pos", []], ["_toc", false]];

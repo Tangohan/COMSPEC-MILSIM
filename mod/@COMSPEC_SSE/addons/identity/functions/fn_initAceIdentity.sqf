@@ -85,7 +85,7 @@ private _self = ["COMSPEC_ID_Self", "Mes papiers", _icon, {}, {
         (missionNamespace getVariable ["comspec_sse_idQuestion", []]) params [["_w", ""], ["_l", []], ["_end", 0], ["_done", createHashMap]];
         _end > time && {(_l findIf { !((_x select 0) in _done) }) >= 0}
     }, { ["answers", _this select 0, _this select 1] call comspec_sse_fnc_idActionChildren }],
-    ["COMSPEC_ID_Consult", "Consulter mes papiers", "", {}, { ([player, 0] call comspec_sse_fnc_idDocsOf) isNotEqualTo [] },
+    ["COMSPEC_ID_Consult", "Ouvrir mes papiers", "", {}, { ([player, 0] call comspec_sse_fnc_idDocsOf) isNotEqualTo [] },
         { ["consult", _this select 0, _this select 1] call comspec_sse_fnc_idActionChildren }]
 ];
 

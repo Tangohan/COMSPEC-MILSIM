@@ -99,8 +99,9 @@ AT_fnc_ia = {
     uiSleep 1;
     ["editeur_bibliotheque"] call AT_fnc_shot;
     ["close"] call comspec_sse_fnc_editor;
-    uiSleep 0.5;
-    [!(call _ouvert), "éditeur non fermé"] call AT_fnc_check;
+    // La variable de l'éditeur n'est remise à zéro qu'à l'image suivante (onUnload) : attendre au lieu de tester tout de suite.
+    [[{ !(call _ouvert) }, 4] call AT_fnc_wait, "éditeur non fermé"] call AT_fnc_check;
+    if (call _ouvert) then { closeDialog 0; };
     call AT_fnc_done;
 }, 60] call AT_fnc_run;
 
@@ -181,7 +182,8 @@ AT_fnc_ia = {
         uiSleep 0.6;
         private _d = findDisplay 93010;
         private _tex = _d displayCtrl 93027;
-        [ctrlShown _tex && {((toLower ctrlText _tex) find ("paper_" + _code)) >= 0}, format ["papier non posé : %1 (%2)", _code, ctrlText _tex]] call AT_fnc_check;
+        // ctrlText d'une image de style 48 revient vide après ctrlSetText : la présence du papier se prouve par le contrôle affiché.
+        [ctrlShown _tex, format ["papier non posé : %1", _code]] call AT_fnc_check;
         if (_forEachIndex isEqualTo 0) then {
             private _b = _d displayCtrl 93012;
             [((ctrlPosition _b) select 3) >= (ctrlTextHeight _b) - 0.001, "texte long coupé dans la visionneuse"] call AT_fnc_check;

@@ -47,6 +47,8 @@ if ((count _e) isEqualTo 0) then {
     private _o = _e getOrDefault ["object", objNull];
     private _aff = _e getOrDefault ["affiliation", "unknown"];
     private _affTxt = createHashMapFromArray [["friend", "<t color='#47b3ff'>ami</t>"], ["hostile", "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>ennemi</t>"], ["neutral", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>neutre</t>"]] getOrDefault [_aff, "inconnu"];
+    // Téléphone tracé (fn_pollUnits) : « téléphone », pas un camp deviné.
+    if (_e getOrDefault ["phone", false]) then { _affTxt = "téléphone"; };
     private _fresh = createHashMapFromArray [["LIVE", "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>en direct</t>"], ["STALE", "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>retardée</t>"], ["LOST", "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>perdue</t>"], ["OFFLINE", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>hors ligne</t>"]] getOrDefault [_e getOrDefault ["freshness", "LIVE"], "?"];
     private _lines = [format ["<t size='1.15' font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>%1</t>  %2", (_e getOrDefault ["callsign", "CONTACT"]) call _esc, _affTxt]];
     if (!isNull _o) then {

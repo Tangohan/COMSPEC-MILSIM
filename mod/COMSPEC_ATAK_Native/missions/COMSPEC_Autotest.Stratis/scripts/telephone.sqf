@@ -201,7 +201,7 @@ if !("telephone" call AT_fnc_groupe) exitWith {};
     [(["deviceStatus"] call comspec_atak_native_fnc_compromise) isNotEqualTo [], "aucun message au joueur"] call AT_fnc_check;
     ["identifiant : " + _uid + " -> " + _new] call AT_fnc_info;
     profileNamespace setVariable ["comspec_overwatch_terminal_uid", _uid];
-    profileNamespace setVariable ["comspec_overwatch_terminal_gen", _gen];
+    profileNamespace setVariable ["comspec_overwatch_terminal_gen", if (isNil "_gen") then { nil } else { _gen }];
     profileNamespace setVariable ["COMSPEC_ATAK_NewDevice", _kept];
     call AT_fnc_done;
 }, 30] call AT_fnc_run;
@@ -240,7 +240,7 @@ if !("telephone" call AT_fnc_groupe) exitWith {};
         ["https://www.youtube.com/watch?v=dQw4w9WgXc", ""], ["https://www.youtube.com/watch?v=dQw4w9WgXcQ%22", ""], ["https://www.youtube.com/watch?v=dQw4w9WgXc'", ""], ["", ""]
     ];
     [(["embed", _id] call comspec_atak_native_fnc_youtube) isEqualTo "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0&playsinline=1", "adresse du lecteur"] call AT_fnc_check;
-    [(["embed", "x\"><script>"] call comspec_atak_native_fnc_youtube) isEqualTo "", "identifiant invalide accepté pour le lecteur"] call AT_fnc_check;
+    [(["embed", "x""><script>"] call comspec_atak_native_fnc_youtube) isEqualTo "", "identifiant invalide accepté pour le lecteur"] call AT_fnc_check;
     [!(["enabled"] call comspec_atak_native_fnc_youtube), "lecture YouTube active par défaut (doit être coupée)"] call AT_fnc_check;
     [true] call comspec_atak_native_fnc_open;
     [[{ !isNull ([] call comspec_atak_native_fnc_display) }, 8] call AT_fnc_wait, "le téléphone ne s'ouvre pas"] call AT_fnc_check;
@@ -254,3 +254,119 @@ if !("telephone" call AT_fnc_groupe) exitWith {};
     ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
     call AT_fnc_done;
 }, 60] call AT_fnc_run;
+
+// Comptes rendus, onglet NOUVEAU (retour de jeu 4.1.1) : les lignes « person » (icône + titre + bouton RÉDIGER) n'avaient plus
+// de texte. Cause : COMSPEC_ATAK_Th (jetons du thème) n'était posé qu'au calcul du thème, mis en cache dans uiNamespace ;
+// à la deuxième mission de la session (menu principal puis partie), le cache servait et COMSPEC_ATAK_Th restait indéfini.
+// L'étape refait cet état (variable effacée, cache chaud, preInit rejoué) puis vérifie chaque texte structuré de la page.
+["tel_comptes_rendus_textes", {
+    if (["comspec_atak_native_fnc_theme", "comspec_atak_native_fnc_pageReports", "comspec_atak_native_fnc_reportTypes"] call AT_fnc_nil) exitWith {};
+    [] call comspec_atak_native_fnc_theme;
+    missionNamespace setVariable ["COMSPEC_ATAK_Th", nil];
+    [] call comspec_atak_native_fnc_theme; // ce que fait le preInit d'une deuxième mission (cache uiNamespace déjà rempli)
+    private _thOk = !isNil "COMSPEC_ATAK_Th" && {(COMSPEC_ATAK_Th getOrDefault ["hexTextMuted", ""]) isNotEqualTo ""};
+    [_thOk, "COMSPEC_ATAK_Th indéfini quand le cache du thème est déjà rempli (deuxième mission de la session)"] call AT_fnc_check;
+    private _ui = uiNamespace getVariable ["COMSPEC_ATAK_RepUi", createHashMap];
+    _ui set ["tab", "NEW"];
+    _ui set ["type", ""];
+    uiNamespace setVariable ["COMSPEC_ATAK_RepUi", _ui];
+    private _ok = ["REPORTS", 2] call AT_fnc_page;
+    [_ok, "app Comptes rendus non ouverte"] call AT_fnc_check;
+    private _d = [] call comspec_atak_native_fnc_display;
+    private _grp = controlNull;
+    {
+        _x params ["_n", "_c"];
+        if ((_n find "form|REPORTS|") isEqualTo 0 && {!isNull _c}) exitWith { _grp = _c; };
+    } forEach (uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []]);
+    [!isNull _grp, "liste des comptes rendus introuvable (groupe form|REPORTS)"] call AT_fnc_check;
+    // Tous les textes structurés de la liste (titres de section, lignes « person ») : affichés et non vides.
+    private _txts = if (isNull _d || {isNull _grp}) then { [] } else {
+        (allControls _d) select { (ctrlParentControlsGroup _x) isEqualTo _grp && {(ctrlType _x) isEqualTo 13} && {ctrlShown _x} }
+    };
+    private _vides = _txts select { (ctrlTextHeight _x) <= 0 };
+    private _nTypes = count (([] call comspec_atak_native_fnc_reportTypes) select { (_x select 3) isNotEqualTo "" });
+    (format ["%1 texte(s) structuré(s) dans la liste, %2 vide(s), %3 type(s) de C.R. à fiche", count _txts, count _vides, _nTypes]) call AT_fnc_info;
+    [(count _txts) >= _nTypes, format ["%1 texte(s) structuré(s) seulement pour %2 type(s) de C.R.", count _txts, _nTypes]] call AT_fnc_check;
+    [(count _vides) isEqualTo 0, format ["%1 ligne(s) de la liste sans texte (titre, étiquette et aide invisibles)", count _vides]] call AT_fnc_check;
+    ["reports_nouveau"] call AT_fnc_shot;
+    if (!isNull _grp) then { _grp ctrlSetScrollValues [1, -1]; };
+    uiSleep 0.5;
+    ["reports_nouveau_bas"] call AT_fnc_shot;
+    "Comptes rendus > NOUVEAU : chaque ligne a son titre (« Bilan des dégâts (BDA) »…), son étiquette colorée et son aide grisée" call AT_fnc_visuel;
+    // Build sans le correctif : thème recalculé pour que les étapes suivantes ne se heurtent pas au même défaut.
+    if (isNil "COMSPEC_ATAK_Th") then {
+        uiNamespace setVariable ["COMSPEC_ATAK_ThemeCache", ["", createHashMap]];
+        [] call comspec_atak_native_fnc_theme;
+    };
+    ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;
+
+// BFT, capture 4.2.0 : en vue ORBAT, le symbole MIL-STD de la ligne choisie recouvrait le début de l'indicatif (« VB1 »), la
+// fiche de droite restait vide (« < 1 min » non échappé cassait son texte structuré). Une image de cellule du tableau est
+// dessinée à la hauteur de ligne (0,040 × safeZoneH) : la case de chaque niveau (colonnes 0 à 2) doit finir avant la colonne
+// du texte (3). Aucun texte de la page (message, en-têtes, légende) ne doit chevaucher le tableau ; la fiche a du texte ;
+// les boutons d'action ne coupent pas leur libellé. Vue ORBAT dans les deux orientations, puis vue groupe (filtre GROUPE) et vue LISTE.
+["tel_bft_colonnes", {
+    if (["comspec_atak_native_fnc_pageBft", "comspec_atak_native_fnc_bftOrbat", "comspec_atak_native_fnc_orientationToggle"] call AT_fnc_nil) exitWith {};
+    private _view0 = profileNamespace getVariable ["COMSPEC_ATAK_BftView", "LIST"];
+    private _orient0 = profileNamespace getVariable ["COMSPEC_ATAK_Orientation", "PORTRAIT"];
+    private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+    private _filt0 = _st getOrDefault ["bftFilter", "ALL"];
+    private _verifie = {
+        params ["_nom"];
+        private _live = uiNamespace getVariable ["COMSPEC_ATAK_BftLive", createHashMap];
+        (_live getOrDefault ["ctrls", []]) params [["_head", controlNull], ["_list", controlNull], ["_det", controlNull]];
+        [!isNull _list, format ["%1 : tableau du BFT introuvable", _nom]] call AT_fnc_check;
+        if (isNull _list) exitWith {};
+        // Cases des images (chevron, symbole) avant la colonne du texte.
+        private _cols = lnbGetColumnsPosition _list;
+        (ctrlPosition _list) params ["_lx", "_ly", "_lw", "_lh"];
+        private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+        private _iconW = (0.040 * safeZoneH) * 1.04 / _ratio; // mesuré sur la capture : décalage 0,17 + largeur 0,87 hauteur de ligne
+        private _txtX = _lx + _lw * (_cols param [3, 0]);
+        {
+            private _fin = _lx + _lw * (_cols param [_x, 0]) + _iconW;
+            [_fin <= _txtX + pixelW, format ["%1 : l'image du niveau %2 finit à %3, le texte commence à %4 (chevauchement)", _nom, _x, _fin toFixed 4, _txtX toFixed 4]] call AT_fnc_check;
+        } forEach [0, 1, 2];
+        // Colonnes dans l'ordre et dans le tableau.
+        private _tri = +_cols;
+        _tri sort true;
+        [(_cols isEqualTo _tri) && {(_cols param [6, 2]) < 1}, format ["%1 : colonnes en désordre ou hors du tableau %2", _nom, _cols]] call AT_fnc_check;
+        // Textes de la page (message, en-têtes, légende) : aucun ne chevauche le tableau.
+        private _grp = ctrlParentControlsGroup _list;
+        private _d = [] call comspec_atak_native_fnc_display;
+        private _txts = (allControls _d) select { (ctrlParentControlsGroup _x) isEqualTo _grp && {ctrlShown _x} && {(ctrlType _x) in [0, 13]} && {_x isNotEqualTo _det} && {_x isNotEqualTo _head} };
+        {
+            (ctrlPosition _x) params ["_x2", "_y2", "_w2", "_h2"];
+            private _sur = _x2 < (_lx + _lw - pixelW) && {(_x2 + _w2) > (_lx + pixelW)} && {_y2 < (_ly + _lh - pixelH)} && {(_y2 + _h2) > (_ly + pixelH)};
+            [!_sur, format ["%1 : le texte « %2 » chevauche le tableau", _nom, (ctrlText _x) select [0, 40]]] call AT_fnc_check;
+        } forEach _txts;
+        // Fiche de la ligne choisie : jamais vide.
+        [!isNull _det && {(ctrlTextHeight _det) > 0}, format ["%1 : fiche de droite vide", _nom]] call AT_fnc_check;
+        // Boutons d'action : libellé entier.
+        { if (ctrlShown _x) then { [_x, format ["%1 : bouton", _nom]] call AT_fnc_tient; }; } forEach (((_live getOrDefault ["bar", createHashMap]) getOrDefault ["btns", []]) + [((_live getOrDefault ["bar", createHashMap]) getOrDefault ["more", controlNull])]);
+    };
+    {
+        _x params ["_view", "_filter", "_shot", ["_flip", false]];
+        if (_flip) then { [] call comspec_atak_native_fnc_orientationToggle; uiSleep 1; };
+        profileNamespace setVariable ["COMSPEC_ATAK_BftView", _view];
+        _st set ["bftFilter", _filter];
+        _st set ["bftFiltersOpen", false];
+        _st set ["bftBuzz", ""];
+        private _ok = ["BFT", 2] call AT_fnc_page;
+        [_ok, format ["app BFT non ouverte (%1)", _shot]] call AT_fnc_check;
+        if (_ok) then {
+            ["BFT"] call comspec_atak_native_fnc_pageRender;
+            uiSleep 0.8;
+            [_shot] call _verifie;
+            [_shot] call AT_fnc_shot;
+        };
+    } forEach [["ORBAT", "ALL", "bft_orbat"], ["ORBAT", "ALL", "bft_orbat_autre_orientation", true], ["ORBAT", "GROUP", "bft_equipe", true], ["LIST", "ALL", "bft_liste"]];
+    profileNamespace setVariable ["COMSPEC_ATAK_BftView", _view0];
+    _st set ["bftFilter", _filt0];
+    if ((toUpper (profileNamespace getVariable ["COMSPEC_ATAK_Orientation", "PORTRAIT"])) isNotEqualTo (toUpper _orient0)) then { [] call comspec_atak_native_fnc_orientationToggle; };
+    "BFT : symbole et indicatif côte à côte, chevrons gris, compteurs en toutes lettres (« 1 piste », « 1/1 aptes »), légende des états sous le tableau, fiche remplie à droite (ou dessous en portrait), bouton PLUS au lieu de « … »" call AT_fnc_visuel;
+    ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+    call AT_fnc_done;
+}, 90] call AT_fnc_run;

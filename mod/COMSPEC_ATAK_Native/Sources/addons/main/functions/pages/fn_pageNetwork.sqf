@@ -11,6 +11,7 @@
     pas de réseau de données.
     Voix ACRE2 / TFAR par le maillage (fn_mpuVoice, réglage comspec_atak_native_mpu_voice) : section « Voix radio par le
     maillage » (radio pontée, état, correspondants pontés joignables) avec les boutons pour relier ou débrancher une radio.
+    Elle reste affichée réglage décoché (raison en clair) ; son bouton DÉPANNAGE MPU ouvre l'assistant fn_mpuDiag à la place de la page.
     Lisibilité (2.9.34, retour de jeu : « le texte est trop petit, c'est illisible ») : le texte structuré a pour base le
     corps du téléphone (layoutGet "font", posé sur chaque contrôle, comme l'app Garmin) ; les tailles relatives restent
     entre 0,88 et 1,2 de ce corps (avant : multipliées en plus par fontSmall / (0.024 * safeZoneH), soit des légendes
@@ -33,6 +34,12 @@ private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW
 private _cw = _bw - 0.012;
 private _bridge = [] call comspec_atak_native_fnc_bridge;
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+// Volet « DÉPANNAGE MPU » (fn_mpuDiag, bouton de la section « Voix radio par le maillage ») : à la place de la page tant qu'il est ouvert.
+if ((_s getOrDefault ["netDiag", false]) isEqualTo true) exitWith {
+    [["rows"] call comspec_atak_native_fnc_mpuDiag, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+    ["arm"] call comspec_atak_native_fnc_mpuDiag;
+    true
+};
 ([] call comspec_atak_native_fnc_accent) params ["_acc", "_accHex"];
 private _link = toLower (missionNamespace getVariable ["COMSPEC_LinkState", ["offline", "linked"] select ((_s getOrDefault ["networkState", ""]) isEqualTo "CONNECTED")]);
 private _lat = missionNamespace getVariable ["COMSPEC_LastLatencyMs", -1];
@@ -524,6 +531,16 @@ if ((_mpuS get "active") && {missionNamespace getVariable ["comspec_atak_native_
         if (_vb isNotEqualTo []) then { _vbt pushBack ["DÉBRANCHER LA RADIO", { ["unbridge"] call comspec_atak_native_fnc_mpuVoice; }]; };
         if (!(_vv get "carried") && {_vb isEqualTo []}) then { ["Portez une MPU5 pour y relier votre radio."] call _para; };
         if (_vbt isNotEqualTo []) then { [_vbt] call _buttons; };
+        ["Personne ne vous entend ? DÉPANNAGE MPU vérifie chaque maillon (réglage, radio, TeamSpeak, MPU5, pont, maillage, camarade) et dit quoi faire."] call _para;
+        [[["DÉPANNAGE MPU", { ["open"] call comspec_atak_native_fnc_mpuDiag; }, _vb isNotEqualTo []]]] call _buttons;
+    };
+} else {
+    // Voix relayée indisponible (réglage décoché, liaison réaliste ou lien radio coupés) : la section reste, pour dire pourquoi et ouvrir le dépannage.
+    (["summary"] call comspec_atak_native_fnc_mpuVoice) params ["", ["_vs1", ""], ["_vs2", ""]];
+    if (["voice", "Voix radio par le maillage", format ["<t color='%1'>%2</t>", COMSPEC_ATAK_Th get "hexWarn", [_vs1] call _esc], "Radio ACRE2 / TFAR reliée à la MPU5 par câble audio : la voix passe par le maillage jusqu'aux radios reliées des équipiers, sur la même fréquence"] call _fold) then {
+        [[_vs2] call _esc] call _para;
+        ["Personne ne vous entend ? DÉPANNAGE MPU vérifie chaque maillon (réglage, radio, TeamSpeak, MPU5, pont, maillage, camarade) et dit quoi faire."] call _para;
+        [[["DÉPANNAGE MPU", { ["open"] call comspec_atak_native_fnc_mpuDiag; }, true]]] call _buttons;
     };
 };
 

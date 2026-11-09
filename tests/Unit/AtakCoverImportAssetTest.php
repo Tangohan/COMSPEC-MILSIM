@@ -106,11 +106,23 @@ final class AtakCoverImportAssetTest extends TestCase
 
     public function testChangelogAnnouncesItWithBothLanguages(): void
     {
-        $log = self::read('CHANGELOG-ATAK.md');
+        $log = str_replace("\r\n", "\n", self::read('CHANGELOG-ATAK.md'));
         $i = strpos($log, '## À venir : importer sa couverture générée sur Athena');
+        if ($i !== false) {
+            // Avant la sortie : entrée non versionnée.
+            $block = substr($log, $i, 3000);
+            self::assertStringContainsString("### À annoncer (devient « Résumé joueur » avec le numéro de version)\nType : nouveauté\nFR : ", $block);
+            self::assertStringContainsString("\nEN : ", $block);
+            return;
+        }
+        // Après la sortie : l'import de la couverture est annoncé dans le « Résumé joueur » du pack, en français et en anglais.
+        $i = strpos($log, '## Pack 4.2.0 Washington');
         self::assertNotFalse($i);
-        $block = substr($log, $i, 3000);
-        self::assertStringContainsString("### À annoncer (devient « Résumé joueur » avec le numéro de version)\nType : nouveauté\nFR : ", $block);
+        $end = strpos($log, "\n## ", $i + 1);
+        $block = substr($log, $i, $end === false ? null : $end - $i);
+        self::assertStringContainsString("### Résumé joueur\nType : nouveauté\nFR : ", $block);
         self::assertStringContainsString("\nEN : ", $block);
+        self::assertStringContainsString('couverture', $block);
+        self::assertStringContainsString('cover', $block);
     }
 }

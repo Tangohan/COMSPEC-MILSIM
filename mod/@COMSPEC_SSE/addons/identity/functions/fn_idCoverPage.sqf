@@ -218,12 +218,17 @@ private _sheetRows = {
     if ((_s getOrDefault ["title", ""]) isNotEqualTo "") then { _rows pushBack ["info", "Brief" call _tr, ([_s get "title"] call _esc) call _ink]; };
 
     private _fold = {
-        params ["_key", "_title", "_items", ["_def", false], ["_summary", ""]];
+        params ["_key", "_title", "_items", ["_def", false], ["_summary", ""], ["_help", ""]];
         if (_items isEqualTo []) exitWith {};
         private _isOpen = (_st getOrDefault ["folds", createHashMap]) getOrDefault [_key, _def];
         _rows pushBack ["fold", _title call _tr, [_summary, str (count _items)] select (_summary isEqualTo ""), _isOpen, ["fold", [_key, _def]] call _act];
-        if (_isOpen) then { { _rows pushBack ["text", format ["<t size='0.9' color='%2'>%1</t>", _x, _hText]]; } forEach _items; };
+        if (_isOpen) then {
+            // Ce que contient la rubrique, avec un exemple : sans cela, les titres seuls ne disent pas à quoi elles servent.
+            if (_help isNotEqualTo "") then { _rows pushBack ["text", format ["<t size='0.8' color='%1'>%2</t>", _hDim, [_help call _tr] call _esc]]; };
+            { _rows pushBack ["text", format ["<t size='0.9' color='%2'>%1</t>", _x, _hText]]; } forEach _items;
+        };
     };
+    _rows pushBack ["text", format ["<t size='0.85' color='%1'>%2</t>", _hDim, [("Votre couverture est l'identité fictive que vous jouez. Ouvrez chaque rubrique pour la relire avant un contrôle ; le chiffre à droite est le nombre d'éléments qu'elle contient." call _tr)] call _esc]];
 
     // Liaison Athena : seulement sur sa propre fiche (le Zeus n'a pas à voir le compte d'un autre).
     if (_mine) then {
@@ -300,14 +305,14 @@ private _sheetRows = {
         };
     };
 
-    ["contacts", "Contacts", (_s getOrDefault ["contacts", []]) apply { _x params [["_n", ""], ["_r", ""], ["_p", ""]]; [trim format ["%1%2%3", _n, ["", format [" (%1)", _r call _tr]] select (_r isNotEqualTo ""), ["", format [" · %1", _p]] select (_p isNotEqualTo "")]] call _esc }] call _fold;
-    ["extraDocs", "Documents complémentaires", (_s getOrDefault ["extraDocs", []]) apply { [_x call _tr] call _esc }] call _fold;
+    ["contacts", "Contacts", (_s getOrDefault ["contacts", []]) apply { _x params [["_n", ""], ["_r", ""], ["_p", ""]]; [trim format ["%1%2%3", _n, ["", format [" (%1)", _r call _tr]] select (_r isNotEqualTo ""), ["", format [" · %1", _p]] select (_p isNotEqualTo "")]] call _esc }, false, "", "Personnes qui peuvent confirmer votre histoire. Ex. : « Marc (collègue) · 06 12 34 56 78 »."] call _fold;
+    ["extraDocs", "Documents complémentaires", (_s getOrDefault ["extraDocs", []]) apply { [_x call _tr] call _esc }, false, "", "Papiers en plus de votre pièce d'identité. Ex. : permis, carte de presse, ordre de mission."] call _fold;
     private _story = [];
     { if (_x isNotEqualTo "") then { _story pushBack ([_x call _tr] call _esc); }; } forEach ([_s getOrDefault ["biography", ""], _s getOrDefault ["family", ""]] + (_s getOrDefault ["history", []]) + (_s getOrDefault ["languages", []]));
-    ["story", "Mon histoire", _story] call _fold;
-    ["phrases", "Phrases types", (_s getOrDefault ["phrases", []]) apply { format ["« %1 »", [_x call _tr] call _esc] }] call _fold;
-    ["sensitive", "Sujets sensibles", (_s getOrDefault ["sensitive", []]) apply { [_x call _tr] call _esc }] call _fold;
-    ["secrets", "Secrets", (_s getOrDefault ["secrets", []]) apply { [_x call _tr] call _esc }] call _fold;
+    ["story", "Mon histoire", _story, false, "", "Votre passé en bref, à relire pour ne pas vous contredire. Ex. : né à Lyon, ingénieur, parle anglais."] call _fold;
+    ["phrases", "Phrases types", (_s getOrDefault ["phrases", []]) apply { format ["« %1 »", [_x call _tr] call _esc] }, false, "", "Réponses toutes prêtes à dire à voix haute. Ex. : « Je livre du matériel médical pour mon employeur. »"] call _fold;
+    ["sensitive", "Sujets sensibles", (_s getOrDefault ["sensitive", []]) apply { [_x call _tr] call _esc }, false, "", "Questions à éviter ou qui vous mettent mal à l'aise. Ex. : votre ancien employeur."] call _fold;
+    ["secrets", "Secrets", (_s getOrDefault ["secrets", []]) apply { [_x call _tr] call _esc }, false, "", "Ce que vous cachez et ne devez jamais révéler, même sous pression. Ex. : votre vraie mission."] call _fold;
     ["orders", "Consignes", ([_s getOrDefault ["instructions", ""]] select { _x isNotEqualTo "" }) apply { [_x] call _esc }, true] call _fold;
 };
 

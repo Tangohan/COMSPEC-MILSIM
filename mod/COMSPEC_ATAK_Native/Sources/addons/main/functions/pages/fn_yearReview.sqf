@@ -17,8 +17,9 @@ if (isNil "_store") then {
     _store = createHashMapFromArray [["state", "IDLE"], ["year", 0], ["tenant", ""], ["partial", false], ["slides", []], ["okAt", -1e9]];
     uiNamespace setVariable ["COMSPEC_ATAK_YearReview", _store];
 };
+// "store" rend la table elle-même : la fonction finit par true, qui masquerait la valeur du switch.
+if (_act isEqualTo "store") exitWith { _store };
 switch (_act) do {
-    case "store": { _store };
     case "load": {
         if (!hasInterface) exitWith {};
         // Autre communauté : le bilan de la précédente n'est jamais montré.

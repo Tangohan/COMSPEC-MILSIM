@@ -1,3 +1,38 @@
+[h1]COMSPEC ATAK 4.2.0 Washington — carte tactique, SMS, bilan de l'année, dépannage MPU / tactical map, SMS, year in review, MPU troubleshooting[/h1]
+[quote]
+[b]Important / Important :[/b] ce pack contient COMSPEC Link 2.0.123 : mettez à jour, quittez Arma 3 complètement, puis relancez. / This pack contains COMSPEC Link 2.0.123: update, fully quit Arma 3, then restart.
+[/quote]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Correctif important[/b] : après un retour au menu puis une nouvelle partie, des textes et des couleurs disparaissaient dans les apps (lignes vides dans Comptes rendus, ligne distance / cap / altitude manquante sous la carte). Corrigé.
+[*] [b]Carte[/b] : style tactique par défaut (pions à anneau, plaques de nom, routes à flèche, zones hachurées, mesure avec distance). Contacts reconnaissables à leur forme : losange ennemi, carré neutre, cercle ami. Position ancienne estompée avec son âge. Fiche de contact refaite (MARQUER, PARTAGER, Y ALLER).
+[*] [b]Téléphones tracés[/b] : plus d'étiquette « infanterie amie » ; icône d'émetteur et mention « téléphone ».
+[*] [b]Équipe (BFT)[/b] : symboles qui ne recouvrent plus les indicatifs, légendes sous le tableau, fiche de droite qui ne disparaît plus.
+[*] [b]Messages[/b] : nouvelle app SMS de joueur à joueur ; sans réseau, le SMS part au retour du signal.
+[*] [b]Radio MPU[/b] : icône dans la barre du téléphone. Nouveau [b]DÉPANNAGE MPU[/b] (app Réseau) : l'assistant vérifie le réglage serveur, votre radio, TeamSpeak, la MPU5, le pont radio, le maillage et la fréquence d'un camarade, montre le maillon cassé et copie un rapport pour Discord.
+[*] [b]Bilan de l'année[/b] et [b]Vidéo YouTube[/b] (désactivée par défaut, activée par l'administrateur).
+[*] [b]Ma couverture[/b] : générez-la sur Athena, téléchargez le fichier, importez-la sans connexion. Raccourci QR « Sur mon téléphone » de retour dans la barre de la carte.
+[*] [b]FIRES court et CAS[/b] : choix de l'unité à appeler ; CAS lisible dans les trois thèmes.
+[*] [b]Réglages du serveur[/b] : chaque réglage de Échap > Réalisme est expliqué avec un exemple.
+[*] [b]Retiré[/b] : l'action ACE « Mesurer tension et SpO2 ».
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Important fix[/b]: after going back to the menu and starting a new game, texts and colours vanished in the apps (empty rows in Reports, missing distance / heading / altitude line under the map). Fixed.
+[*] [b]Map[/b]: tactical style by default (ring pawns, name plates, routes with an arrow, hatched zones, measure with distance). Contacts told apart by shape: diamond enemy, square neutral, circle friend. Old positions dimmed with their age. Contact card redone (MARK, SHARE, GO THERE).
+[*] [b]Traced phones[/b]: no more "friendly infantry" label; transmitter icon and "phone" label.
+[*] [b]Team (BFT)[/b]: symbols no longer cover callsigns, legends under the table, the right-hand card no longer disappears.
+[*] [b]Messages[/b]: new player-to-player SMS app; with no network, the SMS goes out when the signal returns.
+[*] [b]MPU radio[/b]: icon in the phone status bar. New [b]MPU TROUBLESHOOTING[/b] (Network app): the assistant checks the server setting, your radio, TeamSpeak, the MPU5, the radio bridge, the mesh and a teammate's frequency, shows the broken link and copies a report for Discord.
+[*] [b]Year in review[/b] and [b]YouTube video[/b] (off by default, turned on by the admin).
+[*] [b]My cover[/b]: generate it on Athena, download the file, import it offline. The "On my phone" QR shortcut is back in the map toolbar.
+[*] [b]Quick FIRES and CAS[/b]: pick the unit to call; CAS readable in all three themes.
+[*] [b]Server settings[/b]: every Esc > Realism setting is explained with an example.
+[*] [b]Removed[/b]: the ACE action "Measure blood pressure and SpO2".
+[/list]
+
 [h1]COMSPEC ATAK — Mise à jour 4.1.1.AG - Washington[/h1]
 [b]Publication : 09/11/2026[/b]
 [quote]

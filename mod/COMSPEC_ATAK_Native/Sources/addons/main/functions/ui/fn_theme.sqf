@@ -161,10 +161,13 @@ if (_ck isNotEqualTo _key) then {
     } forEach ["text", "textDim", "textMuted", "onAccent", "ok", "warn", "alert", "info", "off", "friend", "hostile", "neutral", "unknown", "civil"];
     _th set ["hexAccent", [_accInk] call _hex];
     uiNamespace setVariable ["COMSPEC_ATAK_ThemeCache", [_key, _th]];
-    // Jetons lisibles de partout (pages, codes compilés plus tard, boucles rangées en uiNamespace) : COMSPEC_ATAK_Th,
-    // refait à chaque changement de thème ou d'accent ; posé au preInit.
-    missionNamespace setVariable ["COMSPEC_ATAK_Th", _th];
 };
+// Jetons lisibles de partout (pages, codes compilés plus tard, boucles rangées en uiNamespace) : COMSPEC_ATAK_Th, posé au
+// preInit puis à chaque appel. Hors du calcul : le cache vit dans uiNamespace (gardé d'une mission à l'autre), alors que
+// missionNamespace repart à zéro. Posé seulement au calcul (3.1.0 à 4.1.1), il restait indéfini dès la deuxième mission de
+// la session (menu principal puis partie) : tous les textes bâtis sur COMSPEC_ATAK_Th get … devenaient vides, sans erreur
+// (lignes des Comptes rendus sans titre, deuxième ligne du bandeau de la carte, « Wrong color format any » au journal).
+missionNamespace setVariable ["COMSPEC_ATAK_Th", _th];
 switch (_act) do {
     case "state": {
         switch (toLower _arg) do {

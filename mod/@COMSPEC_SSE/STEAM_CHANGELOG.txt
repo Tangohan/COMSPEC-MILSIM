@@ -1,3 +1,22 @@
+[h1]COMSPEC SSE 1.6.0 — papiers plus clairs, couverture expliquée / clearer papers, explained cover (09/11/2026)[/h1]
+[b]Relance Arma complètement. Demande COMSPEC ATAK 4.2.0.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.2.0.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Papiers[/b] : « Ouvrir mes papiers » (menu ACE) ouvre directement le document, sans barre de progression ni message d'interruption. « Présenter » reste une action séparée.
+[*] [b]IA[/b] : leurs messages n'ont plus de bip et portent le nom de l'IA (« Anonyme » sans identité).
+[*] [b]Ma couverture[/b] : chaque rubrique (Contacts, Mon histoire, Phrases types, Secrets…) est expliquée avec un exemple.
+[*] [b]Papiers trouvés[/b] : quinze papiers variés (carreaux, carnet, ticket, formulaire, feuilles sales ou brûlées).
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Papers[/b]: "Open my papers" (ACE menu) opens the document straight away, with no progress bar or interruption message. "Present" stays a separate action.
+[*] [b]AI[/b]: their messages no longer beep and carry the AI's name ("Anonymous" without an identity).
+[*] [b]My cover[/b]: each section (Contacts, My story, Stock phrases, Secrets…) is explained with an example.
+[*] [b]Found papers[/b]: fifteen varied papers (squared, notebook, receipt, form, dirty or burnt sheets).
+[/list]
+
 ================================================================================
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
