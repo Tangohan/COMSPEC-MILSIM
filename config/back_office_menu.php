@@ -74,6 +74,13 @@ return [
             'tone' => 'notif',
             'title' => '%d étape(s) de mise à niveau à faire',
         ],
+        'messages_plateforme' => [
+            'path' => 'back-office/messages-plateforme',
+            'provider' => \App\Services\BackOffice\Menu\Badges\PlatformMessagesBadge::class,
+            'any_permissions' => ['admin.organization', 'admin.access'],
+            'tone' => 'notif',
+            'title' => '%d message(s) de la plateforme à lire',
+        ],
         'formule' => [
             'path' => 'back-office/configuration',
             'provider' => \App\Services\BackOffice\Menu\Badges\PlanEndBadge::class,
@@ -84,6 +91,7 @@ return [
     ],
 
     'new' => [
+        ['path' => 'back-office/messages-plateforme', 'since' => '2026-11-09'],
         ['path' => 'back-office/ressources/atak-consignes', 'since' => '2026-11-08'],
         ['path' => 'back-office/organisation/types-entite', 'since' => '2026-11-08'],
         ['path' => 'back-office/organisation/noms', 'since' => '2026-11-02'],
