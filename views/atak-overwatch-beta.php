@@ -14,6 +14,9 @@ $owStamp = (string) max(
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-gotak.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-aerial.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-tools.js'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-theme.css'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-replay.css'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-replay.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-ops.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-tracks.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-telemetry.js'),
@@ -57,6 +60,8 @@ $icon = static function (string $path): string {
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-commands.css?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-commands.css')) ?>">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-intel.css?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-intel.css')) ?>">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-refresh.css?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-refresh.css')) ?>">
+  <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-theme.css?v=<?= $h($owAsset) ?>">
+  <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-replay.css?v=<?= $h($owAsset) ?>">
   <style>.ow-map-tools{display:none!important}</style>
   <script>
     window.ATAK_OVERWATCH_BETA = true;
@@ -809,12 +814,15 @@ $icon = static function (string $path): string {
           <option value="1">1×</option>
           <option value="2">2×</option>
           <option value="4">4×</option>
+          <option value="8">8×</option>
         </select></span>
-        <span class="ow-select"><select id="ow-replay-source" aria-label="Source">
+        <button type="button" class="ow-replay-play ow-replay-change" id="ow-replay-change" data-ow-replay aria-haspopup="dialog" title="Choisir et charger un enregistrement">Choisir un replay…</button>
+        <span class="ow-replay-current" id="ow-replay-current" aria-live="polite">Session en cours</span>
+        <span class="ow-select owr-legacy"><select id="ow-replay-source" aria-label="Source">
           <option value="session">Session en cours</option>
           <option value="mission">Mission enregistrée</option>
         </select></span>
-        <span class="ow-select" id="ow-replay-session-wrap" hidden><select id="ow-replay-session" aria-label="Session jouée">
+        <span class="ow-select owr-legacy" id="ow-replay-session-wrap" hidden><select id="ow-replay-session" aria-label="Session jouée">
           <option value="">Toutes les sessions</option>
         </select></span>
         <span class="ow-green" id="ow-replay-live">Direct</span>
@@ -1194,6 +1202,7 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-beta.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-intel.js?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-intel.js')) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-orbat.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-overwatch-replay.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-support-auto.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-unit-dossier.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-motion-map.js?v=<?= $h($assetVer) ?>"></script>

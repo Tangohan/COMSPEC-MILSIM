@@ -1,0 +1,199 @@
+/*
+ * Overwatch — jetons de thème et contrôles natifs (nuit par défaut, jour en option).
+ * Chargé en dernier. Les règles génériques passent par :where() (spécificité nulle) : un contrôle déjà
+ * stylé par une classe garde son aspect, un contrôle nu (bouton sans classe, select d'un panneau JS…)
+ * ne retombe plus sur le gris/blanc du navigateur.
+ * Gardé par tests/Unit/OverwatchThemeContrastTest.php : aucune couleur claire en dur hors jour.
+ */
+:root{
+  color-scheme:dark;
+  --ow-field-bg:#0e1211;
+  --ow-field-fg:#e4e8e8;
+  --ow-field-line:#27302d;
+  --ow-field-hover:#131917;
+  --ow-field-ph:#8a9690;
+  --ow-field-off-bg:#0a0d0c;
+  --ow-field-off-fg:#6b7771;
+  --ow-btn-bg:#161b19;
+  --ow-btn-hover:#1d2421;
+  --ow-btn-fg:#e4e8e8;
+  --ow-btn-line:#2b3531;
+  --ow-menu-bg:#0d1110;
+  --ow-menu-sel:#12312a;
+  --ow-menu-sel-fg:#e4e8e8;
+  --ow-tip-bg:#0d1110;
+  --ow-tip-fg:#e4e8e8;
+  --ow-tip-line:#2b3531;
+  --ow-focus:#00d69a;
+  --ow-scroll-thumb:#2b3531;
+  --ow-scroll-track:#080a09;
+  --ow-overlay:rgba(0,0,0,.72);
+}
+body.ow-theme-day{
+  color-scheme:light;
+  --athena-line:#c3cdc8;
+  --athena-line-2:#aab8b1;
+  --athena-soft:#2a3833;
+  --ow-field-bg:#ffffff;
+  --ow-field-fg:#14201c;
+  --ow-field-line:#aab8b1;
+  --ow-field-hover:#f1f5f3;
+  --ow-field-ph:#5d6b65;
+  --ow-field-off-bg:#e7ece9;
+  --ow-field-off-fg:#7a8781;
+  --ow-btn-bg:#e9efec;
+  --ow-btn-hover:#dbe4df;
+  --ow-btn-fg:#14201c;
+  --ow-btn-line:#aab8b1;
+  --ow-menu-bg:#ffffff;
+  --ow-menu-sel:#cdeee2;
+  --ow-menu-sel-fg:#0b2a21;
+  --ow-tip-bg:#ffffff;
+  --ow-tip-fg:#14201c;
+  --ow-tip-line:#aab8b1;
+  --ow-focus:#00805c;
+  --ow-scroll-thumb:#9fb0a8;
+  --ow-scroll-track:#e3eae6;
+  --ow-overlay:rgba(20,32,28,.45);
+}
+
+/* Jour : les surfaces restées sombres (fonds en dur) redeviennent un îlot sombre lisible, jetons compris. */
+body.ow-theme-day .ow-statusbar,
+body.ow-theme-day .ow-mini,
+body.ow-theme-day .ow-sync-rate,
+body.ow-theme-day .ow-search,
+body.ow-theme-day .ow-set-sec,
+body.ow-theme-day .ow-set-all,
+body.ow-theme-day .ow-stat,
+body.ow-theme-day .ow-looks,
+body.ow-theme-day .ow-channel-list,
+body.ow-theme-day .ow-fil,
+body.ow-theme-day .ow-chat-compose,
+body.ow-theme-day .ow-drawer,
+body.ow-theme-day .ow-card,
+body.ow-theme-day .ow-tool-card,
+body.ow-theme-day .ow-tag,
+body.ow-theme-day .ow-secondary,
+body.ow-theme-day .ow-command,
+body.ow-theme-day .ow-rec-btn,
+body.ow-theme-day .atak-ops-btn,
+body.ow-theme-day .ow-help-btn,
+body.ow-theme-day .ow-north,
+body.ow-theme-day .ow-tabs,
+body.ow-theme-day .ow-timeline,
+body.ow-theme-day .ow-more-menu,
+body.ow-theme-day .ow-palette,
+body.ow-theme-day .ow-rail,
+body.ow-theme-day .ow-map-tools{
+  color-scheme:dark;
+  --athena-text:#e4e8e8;--athena-soft:#c5cbc8;--athena-muted:#9aa6a1;--athena-line:#1c2321;--athena-line-2:#27302d;
+  --athena-green:#00d69a;--athena-green-2:#00b884;
+  --ow-field-bg:#0e1211;--ow-field-fg:#e4e8e8;--ow-field-line:#27302d;--ow-field-hover:#131917;--ow-field-ph:#8a9690;
+  --ow-field-off-bg:#0a0d0c;--ow-field-off-fg:#6b7771;--ow-btn-bg:#161b19;--ow-btn-hover:#1d2421;--ow-btn-fg:#e4e8e8;
+  --ow-btn-line:#2b3531;--ow-menu-bg:#0d1110;--ow-menu-sel:#12312a;--ow-menu-sel-fg:#e4e8e8;--ow-focus:#00d69a;
+  color:var(--athena-text);
+}
+
+/* Champs : fond, texte, bordure, placeholder, états. */
+:where(select,textarea,input:not([type=checkbox],[type=radio],[type=range],[type=color],[type=file],[type=button],[type=submit],[type=reset],[type=image],[type=hidden])){
+  background-color:var(--ow-field-bg);
+  color:var(--ow-field-fg);
+  border:1px solid var(--ow-field-line);
+  border-radius:4px;
+  font:inherit;
+}
+:where(select,textarea,input):where(:hover:not(:disabled)){background-color:var(--ow-field-hover)}
+:where(select,textarea,input,button,summary,a,[tabindex]):where(:focus-visible){
+  outline:2px solid var(--ow-focus);outline-offset:1px;
+}
+:where(input,textarea)::placeholder{color:var(--ow-field-ph);opacity:1}
+:where(select,textarea,input):where(:disabled,[readonly]:not([type=range])){
+  background-color:var(--ow-field-off-bg);color:var(--ow-field-off-fg);cursor:not-allowed;
+}
+:where(input,textarea):where(:-webkit-autofill,:-webkit-autofill:hover,:-webkit-autofill:focus){
+  -webkit-text-fill-color:var(--ow-field-fg);
+  caret-color:var(--ow-field-fg);
+  box-shadow:0 0 0 1000px var(--ow-field-bg) inset;
+  transition:background-color 9999s ease-in-out 0s;
+}
+/* Liste déroulante native : fond hérité du jeton, jamais le blanc du système. */
+select option,select optgroup{background-color:var(--ow-menu-bg);color:var(--ow-field-fg)}
+select option:checked,select option:hover{background-color:var(--ow-menu-sel);color:var(--ow-menu-sel-fg)}
+select option:disabled,select optgroup:disabled{color:var(--ow-field-off-fg)}
+select:where([multiple],[size]:not([size="1"])){background-color:var(--ow-menu-bg)}
+:where(input[type=checkbox],input[type=radio],input[type=range],progress,meter){accent-color:var(--athena-green-2)}
+:where(input[type=color]){background:var(--ow-field-bg);border:1px solid var(--ow-field-line);border-radius:4px;padding:2px}
+:where(input[type=file])::file-selector-button{
+  background:var(--ow-btn-bg);color:var(--ow-btn-fg);border:1px solid var(--ow-btn-line);border-radius:4px;padding:4px 10px;margin-right:8px;
+}
+:where(input[type=date],input[type=time],input[type=datetime-local],input[type=month],input[type=week])::-webkit-calendar-picker-indicator{
+  filter:none;opacity:.8;cursor:pointer;
+}
+body:not(.ow-theme-day) :where(input[type=date],input[type=time],input[type=datetime-local])::-webkit-calendar-picker-indicator{filter:invert(.85)}
+
+/* Boutons nus (sans classe de style) : jamais le gris du navigateur. */
+:where(button:not([class]),button[class=""],.ow-ctx-danger,input[type=button],input[type=submit],input[type=reset]){
+  background:var(--ow-btn-bg);color:var(--ow-btn-fg);border:1px solid var(--ow-btn-line);border-radius:4px;
+  padding:6px 12px;font:inherit;font-weight:500;cursor:pointer;
+}
+:where(button:not([class]),.ow-ctx-danger,input[type=button],input[type=submit]):where(:hover:not(:disabled)){background:var(--ow-btn-hover)}
+:where(button:not([class]),.ow-ctx-danger):where(:active:not(:disabled)){transform:translateY(1px)}
+:where(button,input[type=button],input[type=submit]):where(:disabled,[aria-disabled=true]){opacity:.45;cursor:not-allowed}
+.ow-ctx-danger{border-color:#8a3a42;color:#ffb4b9;background:#1a0c0e}
+.ow-ctx-danger:hover:not(:disabled){background:#2a1014;color:#ffd0d3}
+
+/* Tableaux, listes, séparateurs. */
+:where(table){border-collapse:collapse;color:var(--athena-text)}
+:where(th){color:var(--athena-soft);font-weight:600;text-align:left}
+:where(th,td){border-bottom:1px solid var(--athena-line);padding:4px 8px}
+:where(hr){border:0;border-top:1px solid var(--athena-line)}
+:where(details>summary){cursor:pointer;color:var(--athena-text)}
+:where(dialog){background:var(--ow-menu-bg);color:var(--athena-text);border:1px solid var(--ow-field-line)}
+:where(dialog)::backdrop{background:var(--ow-overlay)}
+:where(::selection){background:var(--ow-menu-sel);color:var(--ow-menu-sel-fg)}
+
+/* Barres de défilement. */
+*{scrollbar-color:var(--ow-scroll-thumb) var(--ow-scroll-track);scrollbar-width:thin}
+
+/* Infobulles et contrôles Leaflet. */
+.leaflet-tooltip{background:var(--ow-tip-bg);color:var(--ow-tip-fg);border:1px solid var(--ow-tip-line);box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.leaflet-tooltip-top:before{border-top-color:var(--ow-tip-line)}
+.leaflet-tooltip-bottom:before{border-bottom-color:var(--ow-tip-line)}
+.leaflet-tooltip-left:before{border-left-color:var(--ow-tip-line)}
+.leaflet-tooltip-right:before{border-right-color:var(--ow-tip-line)}
+.leaflet-control-scale-line{background:var(--ow-tip-bg);color:var(--ow-tip-fg);border-color:var(--ow-field-line);text-shadow:none}
+.leaflet-bar a,.leaflet-bar a:hover{background-color:var(--ow-btn-bg);color:var(--ow-btn-fg);border-bottom-color:var(--ow-btn-line)}
+.leaflet-bar a:hover{background-color:var(--ow-btn-hover)}
+.leaflet-bar a.leaflet-disabled{background-color:var(--ow-field-off-bg);color:var(--ow-field-off-fg)}
+.leaflet-control-attribution{background:var(--ow-tip-bg)!important;color:var(--athena-muted)!important}
+.leaflet-control-attribution a{color:var(--athena-soft)!important}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--ow-menu-bg);color:var(--athena-text)}
+.leaflet-container a.leaflet-popup-close-button{color:var(--athena-muted)}
+
+/* Panneaux : champs de formulaire générés en JS (Calques, Renseignement, Radio, Identification, Pings, Outils). */
+.ow-drawer select,.ow-drawer input:not([type=checkbox],[type=radio],[type=range],[type=color]),.ow-drawer textarea,
+.ow-settings select,.ow-chat select,.ow-timeline select{
+  background-color:var(--ow-field-bg);color:var(--ow-field-fg);border-color:var(--ow-field-line);
+}
+.ow-drawer select:disabled,.ow-drawer input:disabled,.ow-drawer textarea:disabled{background-color:var(--ow-field-off-bg);color:var(--ow-field-off-fg)}
+.ow-drawer input::placeholder,.ow-drawer textarea::placeholder,.ow-search input::placeholder,.ow-chat-compose input::placeholder,.ow-palette input::placeholder{color:var(--ow-field-ph);opacity:1}
+.ow-select select:disabled{background-color:var(--ow-field-off-bg);color:var(--ow-field-off-fg)}
+.ow-select select:focus-visible,.ow-row select:focus-visible,.ow-form-grid select:focus-visible,.ow-drawer input:focus-visible,.ow-drawer textarea:focus-visible,.ow-drawer select:focus-visible{
+  outline:2px solid var(--ow-focus);outline-offset:1px;
+}
+.ow-select select:hover:not(:disabled),.ow-row select:hover:not(:disabled){border-color:var(--athena-muted)}
+
+/* Jour : onglet actif et survols de la barre claire (le blanc en dur disparaissait sur fond clair). */
+body.ow-theme-day .ow-nav button:hover,body.ow-theme-day .ow-nav button.is-active{color:#0b2a21;background:transparent}
+body.ow-theme-day .ow-nav button.is-active{border-bottom-color:var(--athena-green)}
+
+/* Boutons de liste générés en JS (événements, éléments cliquables) : jamais le gris du navigateur. */
+button.ow-event,button.ow-link-item{background:transparent;color:var(--athena-text);border:0;border-bottom:1px solid var(--athena-line);font:inherit;cursor:pointer}
+button.ow-event:hover,button.ow-link-item:hover{background:var(--ow-field-hover)}
+
+/* Select nu : rendu natif sombre/clair identique partout (le rendu système restait blanc sur certains postes). */
+select:not([multiple],[size],.ow-select select,.ow-row select,.ow-form-grid select,.ow-sync-rate select){
+  -webkit-appearance:none;appearance:none;padding-right:26px;
+  background-image:linear-gradient(45deg,transparent 50%,var(--athena-muted) 50%),linear-gradient(135deg,var(--athena-muted) 50%,transparent 50%);
+  background-position:calc(100% - 14px) 50%,calc(100% - 9px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+}
