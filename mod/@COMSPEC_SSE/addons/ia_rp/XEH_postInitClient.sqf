@@ -2,6 +2,7 @@
     IA RP, poste du joueur : « Parler à… » sur une IA vivante à moins de 5 m (à pied).
       ACE : menu d'interaction de la personne (ACE_MainActions), posé une fois par classe (aucune action par objet).
       Sans ACE : action à la molette sur l'IA visée.   Touche : CBA › Touches › COMSPEC SSE (Ctrl+T par défaut).
+    Zeus (ZEN) : modules « COMSPEC · IA RP » (fn_iarpZen).
 */
 if (!hasInterface) exitWith {};
 private _can = {
@@ -36,6 +37,9 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         player addEventHandler ["Respawn", { [_this select 0] call comspec_sse_iarpWheel; }];
     }] call CBA_fnc_waitUntilAndExecute;
 };
+
+// Modules Zeus (ZEN) : Atelier IA, Faire parler une IA, Journal des échanges.
+[{ !isNil "zen_custom_modules_fnc_register" }, { [] call comspec_sse_fnc_iarpZen; }] call CBA_fnc_waitUntilAndExecute;
 
 if (!isNil "CBA_fnc_addKeybind") then {
     ["COMSPEC SSE", "comspec_sse_iarp_key", [localize "STR_COMSPEC_IARP_Key_T", localize "STR_COMSPEC_IARP_Key_D"], {

@@ -2,6 +2,11 @@
 <!-- COMSPEC SSE, addon ia_rp : textes du terminal, des réglages et de l'atelier IA (anglais, français). -->
 <Project name="COMSPEC_SSE">
     <Package name="ia_rp">
+        <Key ID="STR_COMSPEC_IARP_A_Cat">
+            <Original>COMSPEC SSE · AI roleplay</Original>
+            <English>COMSPEC SSE · AI roleplay</English>
+            <French>COMSPEC SSE · IA RP</French>
+        </Key>
         <Key ID="STR_COMSPEC_IARP_Action">
             <Original>Talk to…</Original>
             <English>Talk to…</English>
@@ -16,6 +21,11 @@
             <Original>AI roleplay (free text)</Original>
             <English>AI roleplay (free text)</English>
             <French>IA RP (texte libre)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Cat_Modules">
+            <Original>COMSPEC · AI roleplay</Original>
+            <English>COMSPEC · AI roleplay</English>
+            <French>COMSPEC · IA RP</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_Close_D">
             <Original>Close (Esc). Your draft is kept for this person.</Original>
@@ -67,6 +77,36 @@
             <English>EXCHANGE LOG</English>
             <French>JOURNAL DES ÉCHANGES</French>
         </Key>
+        <Key ID="STR_COMSPEC_IARP_M_Desc">
+            <Original>Gives the synchronised AIs (and their groups) the personality and dialogue set in this module: how they talk, what they hide, what they know and how they react. Example: sync it to the three guards of a checkpoint, preset « Checkpoint guard », tick « One personality per AI ».</Original>
+            <English>Gives the synchronised AIs (and their groups) the personality and dialogue set in this module: how they talk, what they hide, what they know and how they react. Example: sync it to the three guards of a checkpoint, preset « Checkpoint guard », tick « One personality per AI ».</English>
+            <French>Donne aux IA synchronisées (et à leur groupe) la personnalité et le dialogue réglés dans ce module : leur façon de parler, ce qu'elles cachent, ce qu'elles savent, leurs réactions. Exemple : synchronisez-le aux trois gardes d'un checkpoint, profil « Garde de checkpoint », cochez « Une personnalité par IA ».</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_M_Each">
+            <Original>One personality per AI</Original>
+            <English>One personality per AI</English>
+            <French>Une personnalité par IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_M_Each_D">
+            <Original>Ticked: each AI gets its own random personality (like the Generate button), locked fields stay the same for all. Example: a crowd of civilians who do not all talk alike.</Original>
+            <English>Ticked: each AI gets its own random personality (like the Generate button), locked fields stay the same for all. Example: a crowd of civilians who do not all talk alike.</English>
+            <French>Coché : chaque IA reçoit sa propre personnalité tirée au hasard (comme le bouton Générer), les champs verrouillés restent les mêmes pour toutes. Exemple : une foule de civils qui ne parlent pas tous pareil.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_M_Name">
+            <Original>AI workshop</Original>
+            <English>AI workshop</English>
+            <French>Atelier IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_M_Profile">
+            <Original>AI profile</Original>
+            <English>AI profile</English>
+            <French>Profil IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_M_Profile_D">
+            <Original>Personality and dialogue applied to every synchronised AI. Open the workshop to edit it, test a sentence and see the answer. Example: preset « Corrupt informant », knowledge « The militia chief sleeps at the garage ».</Original>
+            <English>Personality and dialogue applied to every synchronised AI. Open the workshop to edit it, test a sentence and see the answer. Example: preset « Corrupt informant », knowledge « The militia chief sleeps at the garage ».</English>
+            <French>Personnalité et dialogue appliqués à chaque IA synchronisée. Ouvrez l'atelier pour le modifier, tester une phrase et voir la réponse. Exemple : profil « Informateur corrompu », savoir « Le chef de la milice dort au garage ».</French>
+        </Key>
         <Key ID="STR_COMSPEC_IARP_Me">
             <Original>Me</Original>
             <English>Me</English>
@@ -91,6 +131,11 @@
             <Original>Log copied to the clipboard (%1 lines).</Original>
             <English>Log copied to the clipboard (%1 lines).</English>
             <French>Journal copié dans le presse-papiers (%1 lignes).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_N_NoAi">
+            <Original>Place the module on a living AI (not a player), or select AIs first.</Original>
+            <English>Place the module on a living AI (not a player), or select AIs first.</English>
+            <French>Posez le module sur une IA vivante (pas un joueur), ou sélectionnez d'abord des IA.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_N_NoOne">
             <Original>No AI in front of you within 5 m.</Original>
@@ -336,6 +381,561 @@
             <Original>[SUCCESS]</Original>
             <English>[SUCCESS]</English>
             <French>[RÉUSSI]</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Aggro">
+            <Original>Aggressiveness</Original>
+            <English>Aggressiveness</English>
+            <French>Agressivité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Aggro_D">
+            <Original>0: polite. 100: dry, defiant, refuses orders more often. Example: 70 for a militiaman who hates checkpoints.</Original>
+            <English>0: polite. 100: dry, defiant, refuses orders more often. Example: 70 for a militiaman who hates checkpoints.</English>
+            <French>0 : poli. 100 : sec, provocateur, refuse plus souvent les ordres. Exemple : 70 pour un milicien qui déteste les contrôles.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Apply">
+            <Original>Apply</Original>
+            <English>Apply</English>
+            <French>Appliquer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_ApplyBtn">
+            <Original>APPLY</Original>
+            <English>APPLY</English>
+            <French>APPLIQUER</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_ApplyGen">
+            <Original>Generate for the selection</Original>
+            <English>Generate for the selection</English>
+            <French>Générer pour la sélection</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_ApplyGenBtn">
+            <Original>GENERATE FOR ALL</Original>
+            <English>GENERATE FOR ALL</English>
+            <French>GÉNÉRER POUR TOUTES</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_ApplyGen_D">
+            <Original>Zeus: one random personality per selected AI, locked fields identical for all. Example: lock the role « civilian », select ten villagers, then this button.</Original>
+            <English>Zeus: one random personality per selected AI, locked fields identical for all. Example: lock the role « civilian », select ten villagers, then this button.</English>
+            <French>Zeus : une personnalité tirée au hasard par IA sélectionnée, champs verrouillés identiques pour toutes. Exemple : verrouillez le profil « civil », sélectionnez dix villageois, puis ce bouton.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Apply_D">
+            <Original>Eden: saves the profile in the mission. Zeus: applies it now to the AI and the selected AIs (same profile for all). Example: Apply after loading « Checkpoint guard ».</Original>
+            <English>Eden: saves the profile in the mission. Zeus: applies it now to the AI and the selected AIs (same profile for all). Example: Apply after loading « Checkpoint guard ».</English>
+            <French>Eden : enregistre le profil dans la mission. Zeus : l'applique tout de suite à l'IA et aux IA sélectionnées (le même profil pour toutes). Exemple : Appliquer après avoir chargé « Garde de checkpoint ».</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Attr">
+            <Original>AI RP profile</Original>
+            <English>AI RP profile</English>
+            <French>Profil IA RP</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Attr_D">
+            <Original>Personality and dialogue of this AI for free-text talk: RP name, character sliders, language, cover story, typical lines, sensitive subjects, secrets, reactions, what it knows. Example: a nervous militiaman who denies carrying a weapon.</Original>
+            <English>Personality and dialogue of this AI for free-text talk: RP name, character sliders, language, cover story, typical lines, sensitive subjects, secrets, reactions, what it knows. Example: a nervous militiaman who denies carrying a weapon.</English>
+            <French>Personnalité et dialogue de cette IA pour le texte libre : nom RP, curseurs de caractère, langue, histoire de couverture, phrases types, sujets sensibles, secrets, réactions, ce qu'elle sait. Exemple : un milicien nerveux qui nie porter une arme.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Bribe">
+            <Original>Corruptibility</Original>
+            <English>Corruptibility</English>
+            <French>Corruptibilité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Bribe_D">
+            <Original>Chance of accepting money (« 50 dollars to forget it? », or /me holds out a banknote). Accepted: more trust, and it talks if the unlock is « Bribe ». Example: 90 for a corrupt guard.</Original>
+            <English>Chance of accepting money (« 50 dollars to forget it? », or /me holds out a banknote). Accepted: more trust, and it talks if the unlock is « Bribe ». Example: 90 for a corrupt guard.</English>
+            <French>Chance d'accepter de l'argent (« 50 dollars pour oublier ? », ou /me tend un billet). Accepté : plus de confiance, et elle parle si le déblocage est « Pot-de-vin ». Exemple : 90 pour un garde corrompu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_CloseBtn">
+            <Original>CLOSE</Original>
+            <English>CLOSE</English>
+            <French>FERMER</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_CloseBtn_D">
+            <Original>Close without applying.</Original>
+            <English>Close without applying.</English>
+            <French>Fermer sans appliquer.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_CountryALT">
+            <Original>Altis</Original>
+            <English>Altis</English>
+            <French>Altis</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_CountryAuto">
+            <Original>Papers' country</Original>
+            <English>Papers' country</English>
+            <French>Pays des papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_CountryLVN">
+            <Original>Livonia</Original>
+            <English>Livonia</English>
+            <French>Livonie</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_CountryMLD">
+            <Original>Malden</Original>
+            <English>Malden</English>
+            <French>Malden</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_CountryTNA">
+            <Original>Tanoa</Original>
+            <English>Tanoa</English>
+            <French>Tanoa</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Drunk">
+            <Original>Drunkenness</Original>
+            <English>Drunkenness</English>
+            <French>Ivresse</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Drunk_D">
+            <Original>Above 50: slurred words and staggering in its answers. Example: 70 for the fisherman leaving the bar.</Original>
+            <English>Above 50: slurred words and staggering in its answers. Example: 70 for the fisherman leaving the bar.</English>
+            <French>Au-dessus de 50 : mots hésitants et titubations dans ses réponses. Exemple : 70 pour le pêcheur qui sort du bar.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Eden">
+            <Original>EDEN</Original>
+            <English>EDEN</English>
+            <French>EDEN</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_EdenReady">
+            <Original>Saved in the mission with Apply.</Original>
+            <English>Saved in the mission with Apply.</English>
+            <French>Enregistré dans la mission par Appliquer.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Export">
+            <Original>EXPORT (COPY)</Original>
+            <English>EXPORT (COPY)</English>
+            <French>EXPORTER (COPIER)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Exported">
+            <Original>Profile copied to the clipboard.</Original>
+            <English>Profile copied to the clipboard.</English>
+            <French>Profil copié dans le presse-papiers.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Fear">
+            <Original>Fear of authority</Original>
+            <English>Fear of authority</English>
+            <French>Peur de l'autorité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Fear_D">
+            <Original>High: obeys orders, surrenders when threatened. Low: holds out. Example: 90 for a frightened shepherd.</Original>
+            <English>High: obeys orders, surrenders when threatened. Low: holds out. Example: 90 for a frightened shepherd.</English>
+            <French>Haute : obéit aux ordres, se rend sous la menace. Basse : tient tête. Exemple : 90 pour un berger apeuré.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Generate">
+            <Original>Generate</Original>
+            <English>Generate</English>
+            <French>Générer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_GenerateBtn">
+            <Original>GENERATE</Original>
+            <English>GENERATE</English>
+            <French>GÉNÉRER</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Generate_D">
+            <Original>Random draw of every unlocked field: name, role, sliders, typical lines, sensitive subjects, secrets, knowledge, story. Example: lock the role « insurgent », then generate until the character suits you.</Original>
+            <English>Random draw of every unlocked field: name, role, sliders, typical lines, sensitive subjects, secrets, knowledge, story. Example: lock the role « insurgent », then generate until the character suits you.</English>
+            <French>Tirage au hasard de chaque champ non verrouillé : nom, profil, curseurs, phrases types, sujets sensibles, secrets, savoir, histoire. Exemple : verrouillez le profil « insurgé », puis générez jusqu'à ce que le personnage vous plaise.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Generated">
+            <Original>Generated (locked fields kept).</Original>
+            <English>Generated (locked fields kept).</English>
+            <French>Généré (champs verrouillés gardés).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Honesty">
+            <Original>Honesty</Original>
+            <English>Honesty</English>
+            <French>Honnêteté</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Honesty_D">
+            <Original>Low: lies about its story and may contradict itself when asked again. 90 and above: never lies. Example: 20 for a smuggler with forged papers.</Original>
+            <English>Low: lies about its story and may contradict itself when asked again. 90 and above: never lies. Example: 20 for a smuggler with forged papers.</English>
+            <French>Bas : ment sur son histoire et peut se contredire si on le relance. 90 et plus : ne ment jamais. Exemple : 20 pour un contrebandier aux faux papiers.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Import">
+            <Original>IMPORT</Original>
+            <English>IMPORT</English>
+            <French>IMPORTER</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_ImportExport">
+            <Original>Import / export</Original>
+            <English>Import / export</English>
+            <French>Importer / exporter</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_ImportExport_D">
+            <Original>Export copies the profile as text to the clipboard (and shows it here); paste a profile here and Import to reuse it on another AI or mission. Nothing is sent to Athena. Example: share a well-tuned informant on Discord.</Original>
+            <English>Export copies the profile as text to the clipboard (and shows it here); paste a profile here and Import to reuse it on another AI or mission. Nothing is sent to Athena. Example: share a well-tuned informant on Discord.</English>
+            <French>Exporter copie le profil en texte dans le presse-papiers (et l'affiche ici) ; collez un profil ici puis Importer pour le reprendre sur une autre IA ou une autre mission. Rien n'est envoyé à Athena. Exemple : partager un informateur bien réglé sur Discord.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Imported">
+            <Original>Profile imported: check it, then Apply.</Original>
+            <English>Profile imported: check it, then Apply.</English>
+            <French>Profil importé : vérifiez-le, puis Appliquer.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Intro">
+            <Original>AI workshop</Original>
+            <English>AI workshop</English>
+            <French>Atelier IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Intro_D">
+            <Original>Set how this AI talks and reacts. Hover over a field to read its help and an example. Tick the box on the right of a field to lock it: Generate and presets leave it alone. Test a sentence on the right without starting the mission.</Original>
+            <English>Set how this AI talks and reacts. Hover over a field to read its help and an example. Tick the box on the right of a field to lock it: Generate and presets leave it alone. Test a sentence on the right without starting the mission.</English>
+            <French>Réglez la façon dont cette IA parle et réagit. Survolez un champ pour lire son aide et un exemple. Cochez la case à droite d'un champ pour le verrouiller : Générer et la bibliothèque n'y touchent plus. Testez une phrase à droite sans lancer la mission.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Know">
+            <Original>Knowledge</Original>
+            <English>Knowledge</English>
+            <French>Savoir</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Know_D">
+            <Original>Intelligence it can give if questioned well (« What do you know? », « Have you seen armed men? »), once unlocked. Empty: it knows nothing and says so. Example: A white pickup without plates went north last night.</Original>
+            <English>Intelligence it can give if questioned well (« What do you know? », « Have you seen armed men? »), once unlocked. Empty: it knows nothing and says so. Example: A white pickup without plates went north last night.</English>
+            <French>Renseignement qu'elle peut donner si on l'interroge bien (« Que savez-vous ? », « Avez-vous vu des hommes armés ? »), une fois débloqué. Vide : elle ne sait rien et le dit. Exemple : Un pick-up blanc sans plaques est parti vers le nord hier soir.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Lang">
+            <Original>Language</Original>
+            <English>Language</English>
+            <French>Langue</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_LangCommon">
+            <Original>Understood by all</Original>
+            <English>Understood by all</English>
+            <French>Comprise de tous</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_LangLocal">
+            <Original>Country language</Original>
+            <English>Country language</English>
+            <French>Langue du pays</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Lang_D">
+            <Original>Understood by all, or the country's language: a local expression with the translation in brackets for players who do not speak it (player variable comspec_sse_iarpSpeaks, e.g. ["ALT"]). Country: the papers' country if automatic. Example: Local + Altis gives « Málista… [Yes, from Kavala.] ».</Original>
+            <English>Understood by all, or the country's language: a local expression with the translation in brackets for players who do not speak it (player variable comspec_sse_iarpSpeaks, e.g. ["ALT"]). Country: the papers' country if automatic. Example: Local + Altis gives « Málista… [Yes, from Kavala.] ».</English>
+            <French>Comprise de tous, ou langue du pays : une expression locale avec la traduction entre crochets pour les joueurs qui ne la parlent pas (variable du joueur comspec_sse_iarpSpeaks, ex. ["ALT"]). Pays : celui des papiers en automatique. Exemple : Locale + Altis donne « Málista… [Oui, de Kavala.] ».</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Load">
+            <Original>LOAD</Original>
+            <English>LOAD</English>
+            <French>CHARGER</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Loaded">
+            <Original>Profile loaded.</Original>
+            <English>Profile loaded.</English>
+            <French>Profil chargé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Loading">
+            <Original>Reading the profile from the server…</Original>
+            <English>Reading the profile from the server…</English>
+            <French>Lecture du profil sur le serveur…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Lock">
+            <Original>Lock</Original>
+            <English>Lock</English>
+            <French>Verrou</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Lock_D">
+            <Original>Ticked: Generate and the library leave this field as it is. Example: lock the name and the story, then generate the character.</Original>
+            <English>Ticked: Generate and the library leave this field as it is. Example: lock the name and the story, then generate the character.</English>
+            <French>Coché : Générer et la bibliothèque laissent ce champ tel quel. Exemple : verrouillez le nom et l'histoire, puis générez le caractère.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_NUnits">
+            <Original>%1 AIs</Original>
+            <English>%1 AIs</English>
+            <French>%1 IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Name">
+            <Original>RP name</Original>
+            <English>RP name</English>
+            <French>Nom RP</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Name_D">
+            <Original>Name shown above its head and given when asked. Empty: the name printed on its papers. Example: Nikos KARRAS.</Original>
+            <English>Name shown above its head and given when asked. Empty: the name printed on its papers. Example: Nikos KARRAS.</English>
+            <French>Nom affiché au-dessus de sa tête et donné quand on le lui demande. Vide : le nom imprimé sur ses papiers. Exemple : Nikos KARRAS.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Nerve">
+            <Original>Nervousness</Original>
+            <English>Nervousness</English>
+            <French>Nervosité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Nerve_D">
+            <Original>0: unshakeable. 100: hesitates, stammers, looks away. Example: 80 for a courier who carries something.</Original>
+            <English>0: unshakeable. 100: hesitates, stammers, looks away. Example: 80 for a courier who carries something.</English>
+            <French>0 : imperturbable. 100 : hésite, bafouille, regarde ailleurs. Exemple : 80 pour un passeur qui transporte quelque chose.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_NoProfile">
+            <Original>No profile: default answers from the papers</Original>
+            <English>No profile: default answers from the papers</English>
+            <French>Aucun profil : réponses par défaut d'après les papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Open">
+            <Original>AI workshop…</Original>
+            <English>AI workshop…</English>
+            <French>Atelier IA…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Phrases">
+            <Original>Typical lines</Original>
+            <English>Typical lines</English>
+            <French>Phrases types</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Phrases_D">
+            <Original>Lines it slips in now and then, one per line. Example: I've done nothing wrong. / My wife is waiting for me.</Original>
+            <English>Lines it slips in now and then, one per line. Example: I've done nothing wrong. / My wife is waiting for me.</English>
+            <French>Phrases qu'elle glisse de temps en temps, une par ligne. Exemple : Je n'ai rien fait. / Ma femme m'attend.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Preset">
+            <Original>Library</Original>
+            <English>Library</English>
+            <French>Bibliothèque</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_PresetDone">
+            <Original>Preset loaded: %1 (locked fields kept).</Original>
+            <English>Preset loaded: %1 (locked fields kept).</English>
+            <French>Profil chargé : %1 (champs verrouillés gardés).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Preset_D">
+            <Original>Ready-made profiles: frightened civilian, chatty merchant, corrupt informant, nervous militiaman, village elder, checkpoint guard, undercover agent, harbour fisherman, high-value target. Load replaces the unlocked fields. Example: « Village elder », then lock the name.</Original>
+            <English>Ready-made profiles: frightened civilian, chatty merchant, corrupt informant, nervous militiaman, village elder, checkpoint guard, undercover agent, harbour fisherman, high-value target. Load replaces the unlocked fields. Example: « Village elder », then lock the name.</English>
+            <French>Profils prêts à l'emploi : civil apeuré, marchand bavard, informateur corrompu, milicien nerveux, chef de village, garde de checkpoint, agent infiltré, pêcheur du port, cible de valeur. Charger remplace les champs non verrouillés. Exemple : « Chef de village », puis verrouillez le nom.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_React">
+            <Original>Reactions</Original>
+            <English>Reactions</English>
+            <French>Réactions</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_ReactBribeR">
+            <Original>If offered money</Original>
+            <English>If offered money</English>
+            <French>Si pot-de-vin</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_ReactOrder">
+            <Original>If ordered</Original>
+            <English>If ordered</English>
+            <French>Si ordre</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_ReactSearch">
+            <Original>If searched</Original>
+            <English>If searched</English>
+            <French>Si fouillé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_ReactThreat">
+            <Original>If threatened</Original>
+            <English>If threatened</English>
+            <French>Si menacé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_React_D">
+            <Original>What it does when searched, threatened, offered money or given an order. Automatic: decided by its sliders, the weapons aimed at it and its state at the check. Example: Threatened → Surrenders for a terrified civilian.</Original>
+            <English>What it does when searched, threatened, offered money or given an order. Automatic: decided by its sliders, the weapons aimed at it and its state at the check. Example: Threatened → Surrenders for a terrified civilian.</English>
+            <French>Ce qu'elle fait quand on la fouille, la menace, lui offre de l'argent ou lui donne un ordre. Automatique : selon ses curseurs, les armes pointées sur elle et son état au contrôle. Exemple : Si menacé → Se rend pour un civil terrorisé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_React_agressif">
+            <Original>Turns aggressive</Original>
+            <English>Turns aggressive</English>
+            <French>Devient agressif</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_React_auto">
+            <Original>Automatic</Original>
+            <English>Automatic</English>
+            <French>Automatique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_React_coopere">
+            <Original>Cooperates</Original>
+            <English>Cooperates</English>
+            <French>Coopère</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_React_fuit">
+            <Original>Runs away</Original>
+            <English>Runs away</English>
+            <French>S'enfuit</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_React_refuse">
+            <Original>Refuses</Original>
+            <English>Refuses</English>
+            <French>Refuse</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_React_rendu">
+            <Original>Surrenders</Original>
+            <English>Surrenders</English>
+            <French>Se rend</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Role">
+            <Original>Role</Original>
+            <English>Role</English>
+            <French>Profil</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_RoleAgent">
+            <Original>Agent (cover)</Original>
+            <English>Agent (cover)</English>
+            <French>Agent (couverture)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_RoleAuto">
+            <Original>Automatic</Original>
+            <English>Automatic</English>
+            <French>Automatique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_RoleCivil">
+            <Original>Civilian</Original>
+            <English>Civilian</English>
+            <French>Civil</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_RoleHvt">
+            <Original>High-value target</Original>
+            <English>High-value target</English>
+            <French>Cible de valeur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_RoleInsurge">
+            <Original>Insurgent</Original>
+            <English>Insurgent</English>
+            <French>Insurgé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_RolePolice">
+            <Original>Police / guard</Original>
+            <English>Police / guard</English>
+            <French>Policier / garde</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Role_D">
+            <Original>Who this person really is, also used by realistic AIs at checks. Automatic: from its side and papers. Example: Agent for an undercover with a prepared cover.</Original>
+            <English>Who this person really is, also used by realistic AIs at checks. Automatic: from its side and papers. Example: Agent for an undercover with a prepared cover.</English>
+            <French>Qui est vraiment cette personne, repris aussi par les IA réalistes au contrôle. Automatique : selon son camp et ses papiers. Exemple : Agent pour un infiltré à la couverture préparée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Said">
+            <Original>Line spoken.</Original>
+            <English>Line spoken.</English>
+            <French>Réplique dite.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Say">
+            <Original>Say now</Original>
+            <English>Say now</English>
+            <French>Faire dire</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_SayGo">
+            <Original>SAY</Original>
+            <English>SAY</English>
+            <French>DIRE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Say_D">
+            <Original>Zeus: the AI says this line right now (3D bubble above its head, log). Example: Leave! You are not welcome here.</Original>
+            <English>Zeus: the AI says this line right now (3D bubble above its head, log). Example: Leave! You are not welcome here.</English>
+            <French>Zeus : l'IA dit cette réplique tout de suite (bulle 3D au-dessus de sa tête, journal). Exemple : Partez ! Vous n'êtes pas les bienvenus ici.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Secrets">
+            <Original>Secrets</Original>
+            <English>Secrets</English>
+            <French>Secrets</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Secrets_D">
+            <Original>What it hides: a memo for Zeus, never said by the AI. Example: He keeps a rifle under his pickup's seat.</Original>
+            <English>What it hides: a memo for Zeus, never said by the AI. Example: He keeps a rifle under his pickup's seat.</English>
+            <French>Ce qu'elle cache : aide-mémoire du Zeus, jamais dit par l'IA. Exemple : Il garde un fusil sous le siège de son pick-up.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Sensitive">
+            <Original>Sensitive subjects</Original>
+            <English>Sensitive subjects</English>
+            <French>Sujets sensibles</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Sensitive_D">
+            <Original>Words that make it tense and evasive, separated by « ; ». Example: weapons; the mosque; my brother.</Original>
+            <English>Words that make it tense and evasive, separated by « ; ». Example: weapons; the mosque; my brother.</English>
+            <French>Mots qui la crispent et la rendent évasive, séparés par « ; ». Exemple : armes; la mosquée; mon frère.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Sent">
+            <Original>Sent to the server.</Original>
+            <English>Sent to the server.</English>
+            <French>Envoyé au serveur.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Story">
+            <Original>Cover story</Original>
+            <English>Cover story</English>
+            <French>Histoire de couverture</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Story_D">
+            <Original>Its story. Lines « Key : value » become the facts it answers with (Origin, Employer, Job, Reason, Born in, Contact, Address, Family, Age, Name) and replace those of its papers; other lines are notes for Zeus. Example: Origin : Kavala / Job : Fisherman / Reason : Selling fish at the market.</Original>
+            <English>Its story. Lines « Key : value » become the facts it answers with (Origin, Employer, Job, Reason, Born in, Contact, Address, Family, Age, Name) and replace those of its papers; other lines are notes for Zeus. Example: Origin : Kavala / Job : Fisherman / Reason : Selling fish at the market.</English>
+            <French>Son histoire. Les lignes « Clé : valeur » deviennent les faits qu'elle répond (Origine, Employeur, Métier, Motif, Né à, Contact, Adresse, Famille, Âge, Nom) et remplacent ceux de ses papiers ; les autres lignes sont des notes pour le Zeus. Exemple : Origine : Kavala / Métier : Pêcheur / Motif : Vendre le poisson au marché.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Talk">
+            <Original>Talkativeness</Original>
+            <English>Talkativeness</English>
+            <French>Loquacité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Talk_D">
+            <Original>0: one-word answers. 100: chats, adds details and asides. Example: 90 for a market trader.</Original>
+            <English>0: one-word answers. 100: chats, adds details and asides. Example: 90 for a market trader.</English>
+            <French>0 : répond d'un mot. 100 : bavarde, ajoute des détails et des apartés. Exemple : 90 pour un marchand du souk.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Test">
+            <Original>Test</Original>
+            <English>Test</English>
+            <French>Tester</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_TestGo">
+            <Original>TEST</Original>
+            <English>TEST</English>
+            <French>TESTER</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_TestInfo">
+            <Original>intent %1 (score %2) · answer %3 · tone %4</Original>
+            <English>intent %1 (score %2) · answer %3 · tone %4</English>
+            <French>intention %1 (score %2) · réponse %3 · ton %4</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Test_D">
+            <Original>Type a sentence as a player would and see the recognised intent and the answer, with this profile, without starting the mission. Facts come from the cover story. Example: Where are you from?</Original>
+            <English>Type a sentence as a player would and see the recognised intent and the answer, with this profile, without starting the mission. Facts come from the cover story. Example: Where are you from?</English>
+            <French>Tapez une phrase comme un joueur et voyez l'intention reconnue et la réponse, avec ce profil, sans lancer la mission. Les faits viennent de l'histoire de couverture. Exemple : D'où venez-vous ?</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Title">
+            <Original>AI WORKSHOP · %1</Original>
+            <English>AI WORKSHOP · %1</English>
+            <French>ATELIER IA · %1</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Unlock">
+            <Original>Unlock</Original>
+            <English>Unlock</English>
+            <French>Déblocage</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_UnlockBribe">
+            <Original>Bribe</Original>
+            <English>Bribe</English>
+            <French>Pot-de-vin</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_UnlockNever">
+            <Original>Never</Original>
+            <English>Never</English>
+            <French>Jamais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_UnlockTrust">
+            <Original>Trust</Original>
+            <English>Trust</English>
+            <French>Confiance</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_UnlockWord">
+            <Original>Keyword</Original>
+            <English>Keyword</English>
+            <French>Mot-clé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Unlock_D">
+            <Original>What makes it talk. Trust: politeness and reassurance (greetings, « calm down »), not threats. Bribe: accepted money. Keyword: a word to say (right field). Never: it keeps quiet. Example: Keyword « falcon » for an informant waiting for a password.</Original>
+            <English>What makes it talk. Trust: politeness and reassurance (greetings, « calm down »), not threats. Bribe: accepted money. Keyword: a word to say (right field). Never: it keeps quiet. Example: Keyword « falcon » for an informant waiting for a password.</English>
+            <French>Ce qui la fait parler. Confiance : politesse et paroles rassurantes (salutations, « calmez-vous »), pas les menaces. Pot-de-vin : argent accepté. Mot-clé : un mot à prononcer (champ de droite). Jamais : elle se tait. Exemple : Mot-clé « faucon » pour un informateur qui attend un mot de passe.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Log">
+            <Original>Exchange log</Original>
+            <English>Exchange log</English>
+            <French>Journal des échanges</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Puppet">
+            <Original>Make an AI talk</Original>
+            <English>Make an AI talk</English>
+            <French>Faire parler une IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_PuppetLine">
+            <Original>Line</Original>
+            <English>Line</English>
+            <French>Réplique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_PuppetLine_D">
+            <Original>What the AI says, shown in a bubble above its head to nearby players and written to the log. Example: Who are you? Get out of my field!</Original>
+            <English>What the AI says, shown in a bubble above its head to nearby players and written to the log. Example: Who are you? Get out of my field!</English>
+            <French>Ce que dit l'IA, en bulle au-dessus de sa tête pour les joueurs proches, et au journal. Exemple : Qui êtes-vous ? Sortez de mon champ !</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Workshop">
+            <Original>AI workshop</Original>
+            <English>AI workshop</English>
+            <French>Atelier IA</French>
         </Key>
     </Package>
 </Project>

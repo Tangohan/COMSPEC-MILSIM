@@ -85,3 +85,40 @@ AT_fnc_iarpDire = {
     deleteVehicle _u;
     call AT_fnc_done;
 }, 120] call AT_fnc_run;
+
+// Atelier IA : profil de bibliothèque appliqué par script, texte du profil aller-retour, fenêtre du Zeus et sa zone
+// de test, réplique dite par le Zeus.
+["ia_rp_atelier", {
+    if (["comspec_sse_fnc_iarpWorkshop", "comspec_sse_fnc_iarpProfile"] call AT_fnc_nil) exitWith {};
+    private _p = ["preset", "milicien"] call comspec_sse_fnc_iarpProfile;
+    [(_p get "role") isEqualTo "insurge" && {(_p get "aggro") isEqualTo 65}, "profil « milicien » de la bibliothèque mal lu"] call AT_fnc_check;
+    private _raw = ["serialize", _p] call comspec_sse_fnc_iarpProfile;
+    private _back = ["parse", _raw] call comspec_sse_fnc_iarpProfile;
+    [(["serialize", _back] call comspec_sse_fnc_iarpProfile) isEqualTo _raw, "profil en texte : l'aller-retour change le profil"] call AT_fnc_check;
+    _p set ["name", "Yannis PETRAKIS"];
+    private _g = ["generate", [_p, ["name", "role"]]] call comspec_sse_fnc_iarpProfile;
+    [(_g get "name") isEqualTo "Yannis PETRAKIS" && {(_g get "role") isEqualTo "insurge"}, "Générer a changé un champ verrouillé"] call AT_fnc_check;
+    private _u = call AT_fnc_iarpIa;
+    uiSleep 1;
+    ["apply", [_u, _p]] call comspec_sse_fnc_iarpProfile;
+    [(_u getVariable ["COMSPEC_ID_Profile", ""]) isEqualTo "insurge" && {(_u getVariable ["comspec_sse_idName", ""]) isEqualTo "Yannis PETRAKIS"}, "profil non appliqué à l'IA"] call AT_fnc_check;
+    ["open", ["zeus", [_u]]] call comspec_sse_fnc_iarpWorkshop;
+    if !([[{ !isNull (uiNamespace getVariable ["comspec_sse_iarpWsDisplay", displayNull]) }, 5] call AT_fnc_wait, "atelier IA non ouvert"] call AT_fnc_check) exitWith { deleteVehicle _u; call AT_fnc_done; };
+    private _d = uiNamespace getVariable ["comspec_sse_iarpWsDisplay", displayNull];
+    [[{ (ctrlText ((uiNamespace getVariable ["comspec_sse_iarpWsDisplay", displayNull]) displayCtrl 94720)) isEqualTo "Yannis PETRAKIS" }, 5] call AT_fnc_wait, "profil de l'IA non chargé dans l'atelier"] call AT_fnc_check;
+    (_d displayCtrl 94740) ctrlSetText format ["Origine : Kavala%1Métier : Pêcheur", toString [10]];
+    (_d displayCtrl 94744) ctrlSetText "D'où venez-vous ?";
+    ["test"] call comspec_sse_fnc_iarpWorkshop;
+    private _t = missionNamespace getVariable ["comspec_sse_iarpWsLastTest", []];
+    [(_t param [0, ""]) isEqualTo "origin" && {((_t param [2, ""]) find "Kavala") >= 0 || {(_t param [1, ""]) isNotEqualTo "origin"}}, format ["zone de test : %1", _t]] call AT_fnc_check;
+    (format ["zone de test : %1", _t]) call AT_fnc_info;
+    ["ia_atelier_zeus"] call AT_fnc_shot;
+    (_d displayCtrl 94747) ctrlSetText "Sortez de mon champ !";
+    ["say"] call comspec_sse_fnc_iarpWorkshop;
+    uiSleep 1;
+    _d closeDisplay 2;
+    private _b = missionNamespace getVariable ["comspec_sse_iarpBubbles", []];
+    [(_b findIf { (_x select 0) isEqualTo _u }) >= 0, "réplique du Zeus sans bulle"] call AT_fnc_check;
+    deleteVehicle _u;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;

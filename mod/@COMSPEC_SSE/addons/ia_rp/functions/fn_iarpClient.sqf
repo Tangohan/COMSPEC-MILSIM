@@ -60,11 +60,11 @@ switch (_op) do {
             default { _text };
         };
         private _name = if (_kind isEqualTo "ai") then { [_tag] call _anon } else { _tag };
-        ["add", [_u, _show, _name, _kind]] call comspec_sse_fnc_iarpBubble;
-        // Mon /try : le résultat s'inscrit aussi dans le terminal.
-        if (_u isEqualTo player && {_kind in ["tryOk", "tryKo"]}) then {
-            [uiNamespace getVariable ["comspec_sse_iarpTarget", ""], _kind, localize "STR_COMSPEC_IARP_Me", _show] call _push;
+        // Mon /try : le résultat s'inscrit dans le terminal, pas de bulle au-dessus de ma propre tête.
+        if (_u isEqualTo player) exitWith {
+            if (_kind in ["tryOk", "tryKo"]) then { [uiNamespace getVariable ["comspec_sse_iarpTarget", ""], _kind, localize "STR_COMSPEC_IARP_Me", _show] call _push; };
         };
+        ["add", [_u, _show, _name, _kind]] call comspec_sse_fnc_iarpBubble;
     };
     case "typing": {
         _a params [["_u", objNull], ["_on", false]];
