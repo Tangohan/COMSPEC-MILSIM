@@ -233,6 +233,11 @@ $err = \App\Core\Session::getFlash('error');
                             <p class="pa-card__help">S’appliquent aux essais fondateurs et aux formules offertes. Les abonnements payants ne changent pas.</p>
 
                             <div class="pa-field">
+                                <label for="end_trial_days">Durée de l’essai des nouvelles communautés (jours)</label>
+                                <p class="pa-hint">Formule Pro offerte au fondateur à la création. Ne change pas les essais déjà en cours.</p>
+                                <input id="end_trial_days" name="trial_days" type="number" min="1" max="<?= \App\Support\PlanAccessWindow::MAX_DAYS ?>" value="<?= (int) ($endCfg['trial_days'] ?? \App\Support\PlanAccessWindow::DEFAULT_TRIAL_DAYS) ?>">
+                            </div>
+                            <div class="pa-field">
                                 <label for="end_warning_days">Prévenir combien de jours avant la fin</label>
                                 <p class="pa-hint">Bandeau sur le site pour le propriétaire, les fondateurs et les administrateurs de la communauté. 0 = pas d’avertissement.</p>
                                 <input id="end_warning_days" name="warning_days" type="number" min="0" max="<?= \App\Support\PlanAccessWindow::MAX_DAYS ?>" value="<?= (int) $endCfg['warning_days'] ?>">

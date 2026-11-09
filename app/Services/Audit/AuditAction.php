@@ -185,6 +185,8 @@ final class AuditAction
     /** Aperçu de la formule d'une communauté par un administrateur de la plateforme (lecture seule, session). */
     public const PLATFORM_PLAN_PREVIEW_STARTED = 'platform.plan_preview_started';
     public const PLATFORM_PLAN_PREVIEW_STOPPED = 'platform.plan_preview_stopped';
+    public const PLATFORM_VIEW_PREVIEW_STARTED = 'platform.view_preview_started';
+    public const PLATFORM_VIEW_PREVIEW_STOPPED = 'platform.view_preview_stopped';
     public const PLATFORM_CRON_INSTALLED = 'platform.cron_installed';
     public const PLATFORM_CRON_UNINSTALLED = 'platform.cron_uninstalled';
     public const PLATFORM_UPDATE_UPLOADED = 'platform.update_uploaded';

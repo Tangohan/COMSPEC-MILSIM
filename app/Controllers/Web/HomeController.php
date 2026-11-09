@@ -251,7 +251,7 @@ class HomeController
             if ($tenantRow) {
                 $dashboardTenantLabel = community_display_name($tenantRow);
                 $dashboardIsDefaultTenant = ($tenantRow['slug'] ?? '') === 'default';
-                $dashboardTenantType = \App\Services\Community\TenantTypeConfig::normalizeType(
+                $dashboardTenantType = \App\Services\Platform\EffectiveTenantType::resolve(
                     (string) ($tenantRow['tenant_type'] ?? 'full')
                 );
             }

@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : carte du téléphone au style tactique et contacts redessinés (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : La carte du téléphone prend le style tactique du site, et les contacts sont redessinés
+- Réglages > Carte > « Marqueurs et traits » : TACTIQUE (par défaut), CLASSIQUE ou AUTO. Le style tactique reprend celui de la carte du site sur téléphone : pions à anneau avec la lettre d'équipe, plaques de nom à chasse fixe, routes orange à flèche, zones hachurées, mesure en tirets avec sa distance.
+- Les contacts se reconnaissent à leur forme et pas seulement à leur couleur : losange pour un ennemi, carré pour un neutre, carré à bras pour un inconnu, triangle pour un civil, cercle pour un ami. Une position ancienne est estompée et porte son âge.
+- La fiche d'un contact ou d'un repère montre son affiliation, sa distance et son azimut depuis vous, son âge et son auteur, avec Y ALLER, PARTAGER, CENTRER ou MODIFIER, SUPPRIMER. Sur une piste ennemie, MARQUER pose un repère partagé à sa position.
+- Lisible dans les trois thèmes (sombre, jour, nuit JVN). Les symboles MIL-STD-2525D restent disponibles dans « Icônes des unités ».
+EN : The phone map gets the site's tactical style, and contacts are redrawn
+- Settings > Map > "Markers and lines": TACTICAL (default), CLASSIC or AUTO. The tactical style follows the site's phone map: ring pawns with the team letter, fixed-width name plates, orange routes with an arrow, hatched zones, dashed measuring line with its distance.
+- Contacts are told apart by shape, not only by colour: diamond for an enemy, square for a neutral, square with arms for an unknown, triangle for a civilian, circle for a friend. An old position is dimmed and shows its age.
+- A contact or marker card shows its affiliation, distance and bearing from you, its age and author, with GO THERE, SHARE, CENTRE or EDIT, DELETE. On an enemy track, MARK places a shared marker at its position.
+- Readable in all three themes (dark, day, NVG). MIL-STD-2525D symbols stay available in "Unit icons".
+
+### Détail technique
+- Le style tactique de la carte existait déjà dans le mod (`fn_mapColors` « tac », pions, plaques, routes, zones, mesure) ; cette PR le rend par défaut (`COMSPEC_ATAK_MapDrawStyle` TACTICAL, AUTO conservé, STANDARD affiché CLASSIQUE) et ajoute ce qui manquait par rapport au web (`atak-m-tactique.js`) : formes d'affiliation, âge, fiche.
+- `fn_contactStyle` (nouveau) : table des couches par affiliation (liseré + fond, textures de `data\` déjà livrées, aucun PAA nouveau), `aff`, `markerAff`, `rgb`, `ink`, `hex`, `label`, `age`, `ageShort`, `scaleK` (taille par paliers de 5 % selon le zoom), `mark`. `fn_mapOnDraw` : contacts non amis en forme d'affiliation (80 au plus par image, taille suivant le zoom, cap seulement s'il est connu, âge sous une piste périmée), `fn_mapGameMarkers` : forme sous les repères o_ n_ u_ b_ c_ en zoom rapproché (60 au plus, cache invalidé au changement de style), `fn_mapLabels` : âge dans la ligne 2 des contacts ENI.
+- `fn_contactCard` (nouveau, sorti de `fn_pageMap`) : fiche du marqueur sélectionné, jetons `mapCard`, `mapCardEdge`, `mapFriend`… de `fn_theme` (4,5 sur le fond de fiche dans les 3 thèmes, `AtakThemeContrastTest`). `fn_unitCard` : pastille à la forme de l'affiliation, MARQUER sur une piste non amie.
+- Non vérifié en jeu : rendu des formes (`map_shape_cross` en carré à bras), tailles, fiche dans les 6 combinaisons thème x orientation. Autotest `carte_style_contacts` (carte.sqf), non exécuté. Le côté web (carte Athena) n'est pas touché : la fiche et les formes demandent un travail propre côté `atak-overwatch-mapkit.js`.
+
 ## À venir : FIRES court (destinataires) et app CAS lisible (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -76,9 +97,7 @@ EN : Every realism setting is explained, with an example
 - `mpu_voice` déplacé de « Radio et voix » à « Maillage » dans le catalogue (même circuit serveur, `realismSet`). Défaut inchangé (désactivé). `fn_mpuVoice` "summary" cite Échap > Réalisme.
 - `fn_pageWaveRelay` (VOIX) et `fn_meshGroups` "rows" : encadré d'aide, prochain pas, états vides, boutons `[ ] / [x]`. `fn_radioGuard`, ACRE2 / TFAR et valeurs par défaut non touchés. Rien n'a tourné en jeu.
 - Test : `AtakReglagesExplicationsTest`.
-## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)
 
-## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)
 ## À venir : icône de la radio MPU dans la barre d'état (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -140,9 +159,9 @@ EN : Your year in review on the phone, and YouTube videos
 - Non vérifié sans Arma : le navigateur intégré charge-t-il une adresse externe et lit-il la vidéo, avec le son.
 - Tests : `AtakYearReviewTest`. Autotest : étape `tel_bilan_youtube`.
 
-## À venir : vrais symboles militaires MIL-STD-2525D / APP-6D et curseurs GPS (ATAK natif, version à attribuer)
+## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)
 
-### À annoncer
+### Résumé joueur
 Type : correctif
 FR : ATAK 4.1.1 : photos réparées, radio ACRE2 reconnue, écran de verrouillage sobre et vrais symboles militaires
 - **Photos** : une ancienne photo effacée ne bloque plus l'envoi des nouvelles ; les photos envoyées sont gardées dans Documents\Arma 3 - COMSPEC\Captures et le dossier Screenshots du jeu ne se remplit plus.

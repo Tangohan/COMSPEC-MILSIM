@@ -38,6 +38,7 @@ Portée : celle du partage (canal ou camp). Un élément privé reste privé, le
 - **Carte d'Arma** : un marqueur effacé à la main déclenche `MarkerDeleted`, et l'élément suit chez son auteur. S'il n'est pas là, le tracé reste dans son profil, en privé.
 - **Web** : un marqueur du jeu retiré sur le site est gardé en `suppressed`. `/api/atak/markers?world_name=` le renvoie 15 minutes en tête de liste (`source: game_del`), le relais du camp le retire en jeu, et l'élément suit.
 - **Retour** : pierres tombales par révision (`COMSPEC_ATAK_RteGone`, `COMSPEC_ATAK_ZnGone`), rejeu serveur retiré au `del`.
+- **Effacer la carte** (Overwatch, `/m/carte`) : `POST /api/atak/map/clear` et `/m/api/carte/effacer`. Même chemin que la suppression à l'unité : un marqueur du jeu est masqué (`suppressed`) et le relais le retire en jeu (au-delà de 20 par relevé, fenêtre glissante de 15 s), le reste est supprimé. Corbeille de 10 minutes (`storage/cache/atak-map-trash`), journal d'audit `atak.map_clear`. Le téléphone n'efface que ses propres éléments.
 
 Le téléphone ne redessine pas ces marqueurs : noms réservés `_USER_DEFINED #<client>/77000<n>/<canal>`, sautés par `fn_mapGameMarkers`, `fn_mapMarkerText`, `fn_mapOnDraw` et `fn_markerAt`.
 

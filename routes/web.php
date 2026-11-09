@@ -775,6 +775,8 @@ return function (Router $router) {
     $router->post('/m/api/marqueurs', [\App\Controllers\Web\AtakMobileAppsController::class, 'markerStore']);
     $router->post('/m/api/marqueurs/{id}', [\App\Controllers\Web\AtakMobileAppsController::class, 'markerUpdate']);
     $router->post('/m/api/marqueurs/{id}/supprimer', [\App\Controllers\Web\AtakMobileAppsController::class, 'markerDelete']);
+    $router->post('/m/api/carte/effacer', [\App\Controllers\Web\AtakMobileAppsController::class, 'mapClear']);
+    $router->post('/m/api/carte/effacer/annuler', [\App\Controllers\Web\AtakMobileAppsController::class, 'mapClearUndo']);
     $router->get('/m/api/briefs', [\App\Controllers\Web\AtakMobileAppsController::class, 'briefsData']);
     $router->post('/m/api/briefs/{id}/reponse', [\App\Controllers\Web\AtakMobileAppsController::class, 'briefRespond']);
     $router->get('/m/api/suivi/{id}', [\App\Controllers\Web\AtakMobileAppsController::class, 'noticeStatus']);
@@ -1371,11 +1373,13 @@ return function (Router $router) {
     $router->post('/admin/system/updates/{id}/deploy', [\App\Controllers\Admin\System\SystemUpdatesController::class, 'deploy'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/updates/{id}/rollback', [\App\Controllers\Admin\System\SystemUpdatesController::class, 'rollback'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/tenants', [SystemTenantsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/tenants/{id}/comptes', [\App\Controllers\Admin\System\SystemTenantAccountsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/tenants/{id}/intervention', [SystemTenantInterventionController::class, 'show'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/tenants/{id}/intervention/enter', [SystemTenantInterventionController::class, 'enter'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/tenants/{id}/intervention/journal', [SystemTenantInterventionController::class, 'journal'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/tenants/{id}/intervention/actions/{actionId}/rollback', [SystemTenantInterventionController::class, 'rollback'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/apercu-formule', [\App\Controllers\Admin\System\PlanPreviewController::class, 'start'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/apercu-formule/vue', [\App\Controllers\Admin\System\PlanPreviewController::class, 'startView'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/apercu-formule/quitter', [\App\Controllers\Admin\System\PlanPreviewController::class, 'stop'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/tenant-intervention/leave', [SystemTenantInterventionController::class, 'leave'], [AuthMiddleware::class]);
     $router->get('/admin/tenants/{id}/edit', [SystemTenantsController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -3056,6 +3060,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->patch('/api/markers/{id}', [AtakApiController::class, 'markersUpdate']);
     $router->post('/api/atak/markers/{id}/reached', [AtakApiController::class, 'markersPoReached']);
     $router->delete('/api/markers/{id}', [AtakApiController::class, 'markersDelete']);
+    $router->post('/api/atak/map/clear', [AtakApiController::class, 'mapClear']);
+    $router->post('/api/atak/map/clear/undo', [AtakApiController::class, 'mapClearUndo']);
     $router->get('/api/atak/markers', [AtakApiController::class, 'markersIndex']);
     $router->get('/api/atak/marker-detection-rules', [AtakApiController::class, 'markerDetectionRulesIndex']);
     $router->post('/api/atak/marker', [AtakApiController::class, 'markerUpsert']);

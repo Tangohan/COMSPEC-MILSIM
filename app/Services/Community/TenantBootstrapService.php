@@ -179,7 +179,7 @@ final class TenantBootstrapService
                 }
             }
             $merge = [
-                'founder_trial_ends_at' => date('c', strtotime('+30 days')),
+                'founder_trial_ends_at' => self::newTrialEndsAt(),
             ];
             if ($wizard !== null) {
                 $merge['grade_system_code'] = $gradeSystemCode;
@@ -590,5 +590,18 @@ final class TenantBootstrapService
         if ($tenantType === TenantTypeConfig::TYPE_EFFECTIFS) {
             TenantSeedHelper::ensurePersonnelPanelsAndMatricule($pdo, $tenantId);
         }
+    }
+
+    /** Fin de l'essai d'une NOUVELLE communauté : réglage plateforme, 7 jours par défaut. */
+    private static function newTrialEndsAt(): string
+    {
+        $days = \App\Support\PlanAccessWindow::DEFAULT_TRIAL_DAYS;
+        try {
+            $days = (new \App\Services\Platform\PlanEndWarningService())->config()['trial_days'];
+        } catch (\Throwable) {
+            // platform_settings absente : durée par défaut
+        }
+
+        return \App\Support\PlanAccessWindow::trialEndsAtFor($days);
     }
 }

@@ -667,6 +667,23 @@
         if (j.ok) { closeSheet(); if (mm) mm.refresh(); }
       }).catch(function () { toast(failText(null)); });
     });
+    // Effacer ma carte : mes marqueurs et mes tracés seulement (le serveur refuse le reste), annulable 10 minutes.
+    $('[data-map-clear]').addEventListener('click', function () {
+      if (!window.AtakMapClear) return;
+      window.AtakMapClear.open({
+        previewPath: '/m/api/carte/effacer',
+        undoPath: '/m/api/carte/effacer/annuler',
+        call: function (path, payload) {
+          var data = new URLSearchParams();
+          Object.keys(payload).forEach(function (k) {
+            if (Array.isArray(payload[k])) payload[k].forEach(function (v) { data.append(k + '[]', v); });
+            else data.set(k, payload[k]);
+          });
+          return post(path, data).catch(function () { return { ok: false, error: 'failed' }; });
+        },
+        onChange: function () { closeSheet(); if (mm) mm.refresh(); }
+      });
+    });
     $('[data-marker-delete]').addEventListener('click', function () {
       if (!editing || !window.confirm('Retirer ce marqueur de la carte de la partie ?')) return;
       post('/m/api/marqueurs/' + editing.id + '/supprimer').then(function (j) {

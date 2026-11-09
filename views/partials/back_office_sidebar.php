@@ -22,7 +22,7 @@ try {
         $tr = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
         if ($tr !== null) {
             $tenantLabel = trim((string) ($tr['name'] ?? ''));
-            $tenantType = \App\Services\Community\TenantTypeConfig::normalizeType(
+            $tenantType = \App\Services\Platform\EffectiveTenantType::resolve(
                 (string) ($tr['tenant_type'] ?? 'full')
             );
         }
