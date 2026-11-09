@@ -117,12 +117,11 @@ AT_fnc_ewPose = {
 // des modèles posés devant la caméra, hors personnage (le maillage complet est-il dessiné ?).
 ["eyewear_mesures", {
     private _modeles = [
-        "a3\characters_f\heads\glasses\g_sport_red.p3d",
+        "a3\characters_f_beta\heads\glasses\g_sport_red.p3d",
         "a3\weapons_f\binocular\nvg_proxy.p3d",
         "z\comspec_sse\addons\eyewear\data\models\ew_radar_white.p3d",
         "z\comspec_sse\addons\eyewear\data\models\ew_radar_white_nvg.p3d",
-        "z\comspec_sse\addons\eyewear\data\models\ew_radar_white_head.p3d",
-        "z\comspec_sse\addons\eyewear\data\models\ew_cal_noskin.p3d"
+        "z\comspec_sse\addons\eyewear\data\models\ew_radar_white_head.p3d"
     ];
     private _dir = getDir player;
     private _fwd = [sin _dir, cos _dir, 0];
@@ -132,7 +131,7 @@ AT_fnc_ewPose = {
     {
         // Les modèles du repère personnage ont les yeux à ~0,7 m au-dessus de leur origine ; le modèle « _head » à 0.
         private _dz = [-0.70, 0] select ((_x find "_head") >= 0);
-        private _pos = _centre vectorAdd (_right vectorMultiply ((_forEachIndex - 2.5) * 0.2)) vectorAdd [0, 0, _dz];
+        private _pos = _centre vectorAdd (_right vectorMultiply ((_forEachIndex - 2) * 0.2)) vectorAdd [0, 0, _dz];
         private _o = createSimpleObject [_x, _pos, true];
         if (isNull _o) then {
             (format ["bbox|%1|createSimpleObject a échoué", _x]) call AT_fnc_ewLog;
@@ -152,7 +151,7 @@ AT_fnc_ewPose = {
     [player, 30, -0.9, 0.12, _cible, 0.75] call AT_fnc_ewCamera;
     ["eyewear_objets_simples_34"] call AT_fnc_shot;
     call AT_fnc_ewCameraEnd;
-    "ordre de gauche à droite (vu du joueur) : g_sport_red, nvg_proxy, ew_radar_white, ew_radar_white_nvg, ew_radar_white_head, ew_cal_noskin ; maillage complet ?" call AT_fnc_visuel;
+    "ordre de gauche à droite (vu du joueur) : g_sport_red, nvg_proxy, ew_radar_white, ew_radar_white_nvg, ew_radar_white_head ; maillage complet ?" call AT_fnc_visuel;
     { deleteVehicle _x; } forEach _objs;
     call AT_fnc_done;
 }, 40] call AT_fnc_run;
@@ -179,13 +178,17 @@ AT_fnc_ewPose = {
     player switchCamera "EXTERNAL";
     call AT_fnc_ewPose;
     uiSleep 0.5;
-    // Recalage automatique de l'accroche (fn_eyewearRender, étape 3) : origine du modèle sur eyePos.
-    private _etat = { ((missionNamespace getVariable ["comspec_sse_eyewear_drawn", []]) select { (_x select 0) isEqualTo player }) param [0, []] };
-    [{ ((call _etat) param [3, 0]) isEqualTo 99 }, 5] call AT_fnc_wait;
-    if (!isNull _o) then {
-        private _ecart = (eyePos player) vectorDistance (_o modelToWorldVisualWorld [0, 0, 0]);
-        (format ["recalage : étape=%1 décalage=%2 point=%3 écart origine/yeux=%4 m", (call _etat) param [3, -1], (call _etat) param [4, []], (call _etat) param [5, ""], _ecart toFixed 4]) call AT_fnc_ewLog;
-        [_ecart < 0.02, format ["objet à %1 m des yeux après recalage", _ecart toFixed 3]] call AT_fnc_check;
+    // Suivi de la tête à chaque image (fn_eyewearFollow) : position contrôlée au moment même des captures.
+    AT_EwControle = {
+        params ["_o", "_quand"];
+        if (isNull _o) exitWith {};
+        private _orig = _o modelToWorldVisualWorld [0, 0, 0];
+        private _ecart = (eyePos player) vectorDistance _orig;
+        private _pilot = player modelToWorldVisualWorld (player selectionPosition ["pilot", "Memory"]);
+        (format ["%1 : origine modèle=%2 eyePos=%3 pilot (monde)=%4 écart origine/yeux=%5 m dir=%6 up=%7 entrée=%8", _quand, _orig, eyePos player, _pilot,
+            _ecart toFixed 4, vectorDirVisual _o, vectorUpVisual _o,
+            ((missionNamespace getVariable ["comspec_sse_eyewear_drawn", []]) select { (_x select 0) isEqualTo player }) param [0, []]]) call AT_fnc_ewLog;
+        [_ecart < 0.02, format ["%1 : objet à %2 m des yeux", _quand, _ecart toFixed 3]] call AT_fnc_check;
     };
     if (!isNull _o) then {
         [(attachedTo _o) isEqualTo player, "objet 3D non accroché au joueur"] call AT_fnc_check;
@@ -200,8 +203,10 @@ AT_fnc_ewPose = {
     // Gros plan sur le visage : l'objet n'est caché que si la caméra est aux yeux du porteur.
     [player, 0] call AT_fnc_ewCamera;
     if (!isNull _o) then { (format ["caméra de script : objet caché = %1", isObjectHidden _o]) call AT_fnc_ewLog; };
+    [_o, "capture face"] call AT_EwControle;
     ["eyewear_virtuel_face"] call AT_fnc_shot;
     [player, 45] call AT_fnc_ewCamera;
+    [_o, "capture profil"] call AT_EwControle;
     ["eyewear_virtuel_profil"] call AT_fnc_shot;
     // La caméra vise l'objet lui-même : il existe là où il est accroché.
     if (!isNull _o) then {
@@ -212,7 +217,7 @@ AT_fnc_ewPose = {
     call AT_fnc_ewCameraEnd;
     if (_hg0 isNotEqualTo "") then { player addHeadgear _hg0; };
     if (_hmd0 isNotEqualTo "") then { player linkItem _hmd0; };
-    "lunettes du slot virtuel posées sur les yeux (corriger comspec_sse_eyewearAttachOffset sinon)" call AT_fnc_visuel;
+    "lunettes du slot virtuel posées sur les yeux (réglage fin : comspec_sse_eyewearAttachOffset)" call AT_fnc_visuel;
     [(([player, true] call comspec_sse_fnc_eyewearRemove)) isEqualTo "radar_white", "eyewearRemove n'a rien retiré"] call AT_fnc_check;
     [(player getVariable ["comspec_sse_eyewear_worn", ""]) isEqualTo "", "variable comspec_sse_eyewear_worn restée posée"] call AT_fnc_check;
     [_item in (items player), "objet non rendu à l'inventaire"] call AT_fnc_check;
@@ -290,7 +295,8 @@ AT_fnc_ewPose = {
     ["eyewear_ref_vanilla_face"] call AT_fnc_shot;
     [player, 45] call AT_fnc_ewCamera;
     ["eyewear_ref_vanilla_profil"] call AT_fnc_shot;
-    // Calibration TEMPORAIRE : Radar blanche avancée de 3 à 12 cm, plus large (w), sans pondération (noskin).
+    // Calibration TEMPORAIRE : Radar blanche tournée d'un demi-tour autour d'un axe à 0, 7 et 12 cm derrière les yeux,
+    // et non tournée en MLOD non binarisé (le modèle retenu, ew_radar_white, est tourné autour d'un axe à 9,5 cm).
     {
         private _cls = "COMSPEC_SSE_G_Cal_" + toUpper _x;
         if (isClass (configFile >> "CfgGlasses" >> _cls)) then {
@@ -301,7 +307,7 @@ AT_fnc_ewPose = {
             [player, 45] call AT_fnc_ewCamera;
             [format ["eyewear_cal_%1_profil", _x]] call AT_fnc_shot;
         };
-    } forEach ["z03", "z06", "z09", "z12", "w", "noskin"];
+    } forEach ["p000", "p070", "p120", "mlod"];
     {
         private _e = _x call AT_fnc_ewCat;
         player addGoggles (_e get "glasses");

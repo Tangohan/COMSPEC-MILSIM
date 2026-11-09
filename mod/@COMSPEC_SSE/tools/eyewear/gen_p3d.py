@@ -143,6 +143,13 @@ class Mesh:
         m.grp, m._g, m.faces = list(self.grp), self._g, list(self.faces)
         return m
 
+    def rot180(self, zp):
+        """Demi-tour autour de l'axe vertical x = 0, z = zp (rotation : l'ordre des faces reste juste)."""
+        m = Mesh()
+        m.pts = [(-x, y, 2.0 * zp - z) for x, y, z in self.pts]
+        m.grp, m._g, m.faces = list(self.grp), self._g, list(self.faces)
+        return m
+
     def normals(self):
         acc = [(0.0, 0.0, 0.0)] * len(self.pts)
         for idx, _, _ in self.faces:
@@ -852,12 +859,18 @@ def model_cfg(names):
     return "\n".join(lines) + "\n"
 
 
-def write_variant(name, cid, vis, sh, geo, off, skinned, stats):
+def write_variant(name, cid, vis, sh, geo, off, skinned, stats, pivot_back=None, out_dir=None):
     mats = materials_for(cid)
     v, s_, g_ = vis.moved(off), sh.moved(off), geo.moved(off)
     sel_v, sel_s = (), ()
     if skinned:
         at = add(anchor_point(cid), off)
+        if pivot_back is None:
+            pivot_back = S.SKIN_PIVOT_BACK
+        if pivot_back is not False:
+            zp = off[2] - pivot_back
+            v, s_, g_ = v.rot180(zp), s_.rot180(zp), g_.rot180(zp)
+            at = (-at[0], at[1], 2.0 * zp - at[2])
         sel_v = skin_map(v, add_bone_anchors(v, ("frame", "lens"), at))
         sel_s = skin_map(s_, add_bone_anchors(s_, ("shadow",), at))
     lods = [
@@ -871,19 +884,19 @@ def write_variant(name, cid, vis, sh, geo, off, skinned, stats):
         print("%-28s visuel %5d faces %5d triangles %5d points | ombre %4d triangles" % (
             name, len(v.faces), v.tris(), len(v.pts), s_.tris()))
         return
-    size = write_p3d(os.path.join(OUT, name + ".p3d"), lods)
+    size = write_p3d(os.path.join(out_dir or OUT, name + ".p3d"), lods)
     print("écrit %s.p3d (%d Ko, %d triangles)" % (name, size // 1024, v.tris()))
 
 
-# Variantes de CALIBRATION (temporaires, test en jeu seulement) : Radar blanche décalée vers l'avant (Z) ou plus large.
-# (étiquette, décalage Z ajouté à HEAD_OFFSET, écart des branches xt ou None, pondérée sur « head »)
+# Variantes de CALIBRATION (temporaires, test en jeu seulement), Radar blanche : écart axe de demi-tour / yeux
+# (SKIN_PIVOT_BACK) de 0, 0,07 et 0,12 m autour de la valeur retenue, et le modèle d'origine (non tourné) laissé
+# en MLOD non binarisé (data/mlod, lu par le moteur au chargement) pour voir si le défaut vient de binarize.
+# (étiquette, écart ou False = non tourné, dossier MLOD ou None)
 CALIBRATION = [
-    ("z03", 0.03, None, True),
-    ("z06", 0.06, None, True),
-    ("z09", 0.09, None, True),
-    ("z12", 0.12, None, True),
-    ("w", 0.06, 0.082, True),
-    ("noskin", 0.0, None, False),
+    ("p000", 0.0, None),
+    ("p070", 0.07, None),
+    ("p120", 0.12, None),
+    ("mlod", False, "mlod"),
 ]
 
 
@@ -897,16 +910,21 @@ def main():
             name = "ew_" + cid + suffix
             names.append((name, skinned))
             write_variant(name, cid, vis, sh, geo, off, skinned, stats)
-    xt0 = S.SHAPES["radar"]["xt"]
-    for tag, dz, xt, skinned in CALIBRATION:
-        S.SHAPES["radar"]["xt"] = xt if xt is not None else xt0
-        _HINGES.clear()
-        vis, sh, geo = build_all("radar_white")
+    vis, sh, geo = build_all("radar_white")
+    mlod_names = []
+    for tag, pb, folder in CALIBRATION:
         name = "ew_cal_" + tag
-        names.append((name, skinned))
-        write_variant(name, "radar_white", vis, sh, geo, add(S.HEAD_OFFSET, (0.0, 0.0, dz)), skinned, stats)
-    S.SHAPES["radar"]["xt"] = xt0
-    _HINGES.clear()
+        out_dir = None
+        if folder:
+            out_dir = os.path.join(os.path.dirname(OUT), folder)
+            os.makedirs(out_dir, exist_ok=True)
+            mlod_names.append((name, True))
+        else:
+            names.append((name, True))
+        write_variant(name, "radar_white", vis, sh, geo, S.HEAD_OFFSET, True, stats, pivot_back=pb, out_dir=out_dir)
+    if mlod_names and not stats:
+        with open(os.path.join(os.path.dirname(OUT), "mlod", "model.cfg"), "w", encoding="utf-8", newline="\n") as f:
+            f.write(model_cfg(mlod_names))
     if not stats:
         with open(os.path.join(OUT, "model.cfg"), "w", encoding="utf-8", newline="\n") as f:
             f.write(model_cfg(names))

@@ -108,41 +108,29 @@ class CfgGlasses {
         comspec_sse_eyewear = "wind_orange";
     };
     // CALIBRATION TEMPORAIRE : variantes de position pour l'autotest (scope 1), à retirer une fois la position choisie.
-    class COMSPEC_SSE_G_Cal_Z03: COMSPEC_SSE_G_Eyewear_Base {
+    class COMSPEC_SSE_G_Cal_P000: COMSPEC_SSE_G_Eyewear_Base {
         scope = 1;
-        displayName = "Calibration lunettes Z +0,03 (test)";
+        displayName = "Calibration lunettes demi-tour à 0 (test)";
         picture = "\z\comspec_sse\addons\eyewear\data\icon_radar_white_ca.paa";
-        model = "\z\comspec_sse\addons\eyewear\data\models\ew_cal_z03.p3d";
+        model = "\z\comspec_sse\addons\eyewear\data\models\ew_cal_p000.p3d";
     };
-    class COMSPEC_SSE_G_Cal_Z06: COMSPEC_SSE_G_Eyewear_Base {
+    class COMSPEC_SSE_G_Cal_P070: COMSPEC_SSE_G_Eyewear_Base {
         scope = 1;
-        displayName = "Calibration lunettes Z +0,06 (test)";
+        displayName = "Calibration lunettes demi-tour à 0,07 (test)";
         picture = "\z\comspec_sse\addons\eyewear\data\icon_radar_white_ca.paa";
-        model = "\z\comspec_sse\addons\eyewear\data\models\ew_cal_z06.p3d";
+        model = "\z\comspec_sse\addons\eyewear\data\models\ew_cal_p070.p3d";
     };
-    class COMSPEC_SSE_G_Cal_Z09: COMSPEC_SSE_G_Eyewear_Base {
+    class COMSPEC_SSE_G_Cal_P120: COMSPEC_SSE_G_Eyewear_Base {
         scope = 1;
-        displayName = "Calibration lunettes Z +0,09 (test)";
+        displayName = "Calibration lunettes demi-tour à 0,12 (test)";
         picture = "\z\comspec_sse\addons\eyewear\data\icon_radar_white_ca.paa";
-        model = "\z\comspec_sse\addons\eyewear\data\models\ew_cal_z09.p3d";
+        model = "\z\comspec_sse\addons\eyewear\data\models\ew_cal_p120.p3d";
     };
-    class COMSPEC_SSE_G_Cal_Z12: COMSPEC_SSE_G_Eyewear_Base {
+    class COMSPEC_SSE_G_Cal_MLOD: COMSPEC_SSE_G_Eyewear_Base {
         scope = 1;
-        displayName = "Calibration lunettes Z +0,12 (test)";
+        displayName = "Calibration lunettes non tourné, MLOD (test)";
         picture = "\z\comspec_sse\addons\eyewear\data\icon_radar_white_ca.paa";
-        model = "\z\comspec_sse\addons\eyewear\data\models\ew_cal_z12.p3d";
-    };
-    class COMSPEC_SSE_G_Cal_W: COMSPEC_SSE_G_Eyewear_Base {
-        scope = 1;
-        displayName = "Calibration lunettes Z +0,06, branches 0,082 (test)";
-        picture = "\z\comspec_sse\addons\eyewear\data\icon_radar_white_ca.paa";
-        model = "\z\comspec_sse\addons\eyewear\data\models\ew_cal_w.p3d";
-    };
-    class COMSPEC_SSE_G_Cal_NOSKIN: COMSPEC_SSE_G_Eyewear_Base {
-        scope = 1;
-        displayName = "Calibration lunettes sans pondération (test)";
-        picture = "\z\comspec_sse\addons\eyewear\data\icon_radar_white_ca.paa";
-        model = "\z\comspec_sse\addons\eyewear\data\models\ew_cal_noskin.p3d";
+        model = "\z\comspec_sse\addons\eyewear\data\mlod\ew_cal_mlod.p3d";
     };
 };
 
@@ -307,7 +295,8 @@ class CfgVehicles {
     class NonStrategic;
     class Box_NATO_Support_F;
     // Objet 3D du slot virtuel : créé localement par chaque client (createVehicleLocal) et accroché à la tête du porteur.
-    // Point d'accroche et décalage (repère du point, mètres) : à corriger ici après l'essai en jeu.
+    // Suivi de la tête à chaque image (fn_eyewearFollow) : origine du modèle sur eyePos ; réglage fin ici (mètres,
+    // repère de la tête : x droite, y avant, z haut).
     class COMSPEC_SSE_EyewearHead_Base: NonStrategic {
         author = "COMSPEC";
         scope = 1;
@@ -315,7 +304,6 @@ class CfgVehicles {
         displayName = "$STR_COMSPEC_SSE_EYEWEAR_HEAD";
         destrType = "DestructNo";
         model = "\A3\Weapons_F\empty.p3d";
-        comspec_sse_eyewearAttachPoint = "pilot";
         comspec_sse_eyewearAttachOffset[] = {0, 0, 0};
     };
     class COMSPEC_SSE_EyewearHead_radar_white: COMSPEC_SSE_EyewearHead_Base {

@@ -21,17 +21,24 @@ HEAD_OFFSET = (0.0, 0.699, 0.008)
 NVG_OFFSET = (0.0, 0.0, 0.0)
 ATTACH_OFFSET = (0.0, 0.0, 0.0)
 
+# Modèles pondérés sur « head » (slots lunettes et JVN) : relevé en jeu (autotest, 3 passages), ils sont dessinés
+# tournés d'un demi-tour autour d'un axe vertical situé derrière les yeux (bouts des branches devant les oreilles,
+# verre dans l'arrière du crâne ; avancer le modèle en +Z le reculait). Le fichier est donc écrit pré-tourné de 180°
+# autour de cet axe (x -> -x, z -> 2 * zp - z, zp = HEAD_OFFSET.z - SKIN_PIVOT_BACK). Estimation de l'écart axe / yeux
+# d'après les captures : 0,095 m ; variantes temporaires de calibration dans gen_p3d.CALIBRATION.
+SKIN_PIVOT_BACK = 0.095
+
 PREFIX = "z\\comspec_sse\\addons\\eyewear\\data\\"
 
 # Formes. W : demi-largeur du verre mesurée le long de l'enroulement ; Rh : rayon d'enroulement horizontal ;
 # Rv : rayon de courbure verticale ; z0 : avant du verre au centre ; tilt : inclinaison pantoscopique (degrés) ;
 # th : épaisseur du verre ; xt : écart des branches derrière les tempes.
 SHAPES = {
-    "radar": dict(W=0.074, Rh=0.080, Rv=0.11, z0=0.020, tilt=8.0, th=0.0018, xt=0.0755, ext=0.010,
+    "radar": dict(W=0.074, Rh=0.080, Rv=0.11, z0=0.020, tilt=8.0, th=0.0018, xt=0.0800, ext=0.010,
                   t_lo=-0.034, t_hi=0.024),
-    "hurricane": dict(W=0.080, Rh=0.088, Rv=0.15, z0=0.021, tilt=6.0, th=0.0020, xt=0.0790, ext=0.006,
+    "hurricane": dict(W=0.080, Rh=0.088, Rv=0.15, z0=0.021, tilt=6.0, th=0.0020, xt=0.0800, ext=0.006,
                       t_lo=-0.034, t_hi=0.027),
-    "wind": dict(W=0.079, Rh=0.084, Rv=0.13, z0=0.020, tilt=7.0, th=0.0018, xt=0.0785, ext=0.009,
+    "wind": dict(W=0.079, Rh=0.084, Rv=0.13, z0=0.020, tilt=7.0, th=0.0018, xt=0.0800, ext=0.009,
                  t_lo=-0.036, t_hi=0.024),
 }
 

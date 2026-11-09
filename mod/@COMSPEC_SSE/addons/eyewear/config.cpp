@@ -48,6 +48,7 @@ class CfgFunctions {
             class eyewearWear {};
             class eyewearRemove {};
             class eyewearRender {};
+            class eyewearFollow {};
             class eyewearTint {};
             class eyewearActions {};
         };

@@ -96,13 +96,13 @@ def cfg():
               "    };"]
     # Calibration TEMPORAIRE (autotest seulement, scope 1) : Radar blanche décalée, voir gen_p3d.CALIBRATION.
     L.append("    // CALIBRATION TEMPORAIRE : variantes de position pour l'autotest (scope 1), à retirer une fois la position choisie.")
-    for tag, label in (("z03", "Z +0,03"), ("z06", "Z +0,06"), ("z09", "Z +0,09"), ("z12", "Z +0,12"),
-                       ("w", "Z +0,06, branches 0,082"), ("noskin", "sans pondération")):
+    for tag, label, folder in (("p000", "demi-tour à 0", "models"), ("p070", "demi-tour à 0,07", "models"),
+                               ("p120", "demi-tour à 0,12", "models"), ("mlod", "non tourné, MLOD", "mlod")):
         L += ["    class COMSPEC_SSE_G_Cal_%s: COMSPEC_SSE_G_Eyewear_Base {" % tag.upper(),
               "        scope = 1;",
               '        displayName = "Calibration lunettes %s (test)";' % label,
               '        picture = "%sicon_radar_white_ca.paa";' % D,
-              '        model = "%smodels\\ew_cal_%s.p3d";' % (D, tag),
+              '        model = "%s%s\\ew_cal_%s.p3d";' % (D, folder, tag),
               "    };"]
     L += ["};", ""]
     # b) et c) CfgWeapons
@@ -144,12 +144,12 @@ def cfg():
     # CfgVehicles : objets accrochés à la tête (slot virtuel) et caisse.
     L += ["class CfgVehicles {", "    class NonStrategic;", "    class Box_NATO_Support_F;",
           "    // Objet 3D du slot virtuel : créé localement par chaque client (createVehicleLocal) et accroché à la tête du porteur.",
-          "    // Point d'accroche et décalage (repère du point, mètres) : à corriger ici après l'essai en jeu.",
+          "    // Suivi de la tête à chaque image (fn_eyewearFollow) : origine du modèle sur eyePos ; réglage fin ici (mètres,",
+          "    // repère de la tête : x droite, y avant, z haut).",
           "    class COMSPEC_SSE_EyewearHead_Base: NonStrategic {",
           '        author = "COMSPEC";', "        scope = 1;", "        scopeCurator = 0;",
           '        displayName = "$STR_COMSPEC_SSE_EYEWEAR_HEAD";', '        destrType = "DestructNo";',
           '        model = "\\A3\\Weapons_F\\empty.p3d";',
-          '        comspec_sse_eyewearAttachPoint = "pilot";',
           "        comspec_sse_eyewearAttachOffset[] = {0, 0, 0};",
           "    };"]
     for cid in S.ORDER:
