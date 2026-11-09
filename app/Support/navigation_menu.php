@@ -181,7 +181,7 @@ function navigation_current_tenant_type(): string
     try {
         $tenant = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tenantId);
         if ($tenant) {
-            $cached = \App\Services\Community\TenantTypeConfig::normalizeType(
+            $cached = \App\Services\Platform\EffectiveTenantType::resolve(
                 (string) ($tenant['tenant_type'] ?? 'full')
             );
         }

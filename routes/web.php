@@ -1368,6 +1368,7 @@ return function (Router $router) {
     $router->get('/admin/system/tenants/{id}/intervention/journal', [SystemTenantInterventionController::class, 'journal'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/tenants/{id}/intervention/actions/{actionId}/rollback', [SystemTenantInterventionController::class, 'rollback'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/apercu-formule', [\App\Controllers\Admin\System\PlanPreviewController::class, 'start'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/apercu-formule/vue', [\App\Controllers\Admin\System\PlanPreviewController::class, 'startView'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/apercu-formule/quitter', [\App\Controllers\Admin\System\PlanPreviewController::class, 'stop'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/tenant-intervention/leave', [SystemTenantInterventionController::class, 'leave'], [AuthMiddleware::class]);
     $router->get('/admin/tenants/{id}/edit', [SystemTenantsController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

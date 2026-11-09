@@ -151,6 +151,15 @@ class MemberDepartureRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /** Départs enregistrés depuis une date. */
+    public function countSince(int $tenantId, string $since): int
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM member_departures WHERE tenant_id = ? AND departed_at >= ?');
+        $stmt->execute([$tenantId, $since]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     public function countForTenant(int $tenantId, ?string $reasonFilter): int
     {
         $where = 'tenant_id = ?';

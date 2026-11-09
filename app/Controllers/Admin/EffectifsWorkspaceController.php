@@ -4428,6 +4428,16 @@ class EffectifsWorkspaceController
                 $chainMissing = 0;
             }
         }
+        $kpi = ['no_account' => 0, 'arrivals' => 0, 'departures' => 0];
+        if (!$referenceOnly) {
+            $since = date('Y-m-d H:i:s', strtotime('-30 days'));
+            try {
+                $kpi['no_account'] = count((new \App\Services\Effectifs\NoAccountDirectory($this->userRepository))->list($tenantId));
+                $kpi['arrivals'] = $this->userRepository->countJoinedSince($tenantId, $since);
+                $kpi['departures'] = $this->memberDepartureRepository->countSince($tenantId, $since);
+            } catch (\Throwable) {
+            }
+        }
         $extras = $referenceOnly ? ['roleplayDueCount'=>0, 'integrationOpenCount'=>0, 'phaseGateCount'=>0, 'phaseAutoErrorCount'=>0]
             : \App\Support\EffectifsWorkspaceShellExtras::counts($tenantId);
 
@@ -4441,6 +4451,7 @@ class EffectifsWorkspaceController
             'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'back-office-effectifs-sanscompte.css', 'back-office-tableaux.css', 'effectifs-kit.css'],
             'showPortalFooter' => false,
             'rosterCounts' => $counts,
+            'effKpi' => $kpi,
             'elevationOpenCount' => $elevationOpen,
             'qualificationsExpiringCount' => $qualifExpiring,
             'personnelDuplicateScan' => $dupScan,
