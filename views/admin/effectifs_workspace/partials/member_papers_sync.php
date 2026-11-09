@@ -45,7 +45,7 @@ $fix = static function (array $f) use ($ph, $manage, $base, $csrfToken): void {
     }
     $href = match (true) {
         isset($f['edit']) && $manage => $base . '/documents/' . (int) $f['edit'] . '/modifier',
-        isset($f['new']) && $manage => $base . '/documents/nouveau?identity_id=' . (int) $f['new'],
+        isset($f['new']) && $manage => $base . '/documents/nouveau' . '?' . http_build_query(['identity_id' => (int) $f['new']]),
         (string) ($f['href'] ?? '') !== '' => (string) $f['href'],
         default => '',
     };
