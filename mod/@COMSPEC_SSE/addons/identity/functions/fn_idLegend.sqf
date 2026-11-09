@@ -195,6 +195,41 @@ private _build = {
         if (_free isNotEqualTo []) then { (_L get "history") insert [0, [_free joinString " "]]; };
         if (_kind isEqualTo "cover") then { _L set ["quality", (_L get "quality") max 95]; };
     };
+    // Couverture importée d'un fichier généré sur Athena (app Ma couverture › Importer, fn_idCoverImport) : elle l'emporte
+    // champ par champ, sans toucher aux papiers ni au registre des identités.
+    private _imp = if (_uid isEqualTo "") then { createHashMap } else { (_reg getOrDefault ["imports", createHashMap]) getOrDefault [_uid, createHashMap] };
+    if ((count _imp) > 0) then {
+        private _iv = { _imp getOrDefault [_this, ""] };
+        private _en = (_imp getOrDefault ["lang", "fr"]) isEqualTo "en";
+        private _set = { params ["_k", "_to"]; private _v = _k call _iv; if (_v isEqualType "" && {_v isNotEqualTo ""}) then { _L set [_to, _v]; }; };
+        { _x call _set } forEach [["last_name", "last"], ["first_name", "first"], ["dob", "dob"], ["pob", "pob"], ["address", "address"], ["city", "city"],
+            ["employer", "employer"], ["profession", "profession"], ["travel", "travel"], ["family", "family"]];
+        _L set ["name", format ["%1 %2", toUpper (_L get "last"), _L get "first"]];
+        if (("phone" call _iv) isNotEqualTo "") then { _phone set ["number", "phone" call _iv]; };
+        private _ct = (_imp getOrDefault ["contacts", []]) select { _x isEqualType [] && {(_x param [0, ""]) isNotEqualTo ""} };
+        if (_ct isNotEqualTo []) then { _contacts resize 0; { _contacts pushBack _x; } forEach _ct; };
+        private _kinds = if (_en) then { ["ID card", "Passport", "Driving licence", "Military ID"] } else { ["Carte d'identité", "Passeport", "Permis de conduire", "Carte militaire"] };
+        private _paper = (_imp getOrDefault ["docs", []]) apply {
+            _x params [["_t", ""], ["_c", ""], ["_n", ""], ["_i", ""], ["_e", ""]];
+            format [["%1 n° %2 (%3, valable jusqu'au %4)", "%1 no. %2 (%3, valid until %4)"] select _en, _kinds select ((["id_card", "passport", "driving_license", "military_id"] find _t) max 0), _n, _c, _e]
+        };
+        if (_paper isNotEqualTo []) then { _L set ["extraDocs", _paper]; };
+        private _hist = _imp getOrDefault ["history", []];
+        if (_hist isNotEqualTo []) then { _L set ["history", +_hist]; };
+        private _by = parseNumber ((_L get "dob") select [0, 4]);
+        private _age = [30, ((date select 0) - _by) max 18] select (_by > 1900);
+        _L set ["biography", format [["%1 %2, %3 ans, %4 à %5. %6", "%1 %2, %3 years old, %4 in %5. %6"] select _en, _L get "first", toUpper (_L get "last"), _age, toLower (_L get "profession"), _L get "city", _L get "family"]];
+        _L set ["phrases", [
+            ["Je ne fais que passer, je rentre chez moi.", "I'm only passing through, I'm on my way home."] select _en,
+            [format ["Vous pouvez appeler %1, il vous le confirmera.", ((_L get "contacts") param [0, ["?"]]) select 0], format ["You can call %1, they will confirm it.", ((_L get "contacts") param [0, ["?"]]) select 0]] select _en,
+            [format ["J'habite %1.", _L get "city"], format ["I live in %1.", _L get "city"]] select _en
+        ]];
+        _L set ["quality", (_L get "quality") max 95];
+        _L set ["prepared", true];
+        _L set ["imported", true];
+        _L set ["importedAt", "generated_at" call _iv];
+        _L set ["importedRef", "ref" call _iv];
+    };
     _L
 };
 
@@ -261,6 +296,8 @@ switch (_op) do {
         private _brief = if (_uid isEqualTo "") then { createHashMap } else { (_reg getOrDefault ["briefs", createHashMap]) getOrDefault [_uid, createHashMap] };
         private _kit = if (_uid isEqualTo "") then { [] } else { (_reg getOrDefault ["kits", createHashMap]) getOrDefault [_uid, []] };
         _L set ["source", ["local", "athena"] select ((count _brief) > 0 || {_kit isNotEqualTo []})];
+        // Couverture importée d'un fichier (et rien d'envoyé par Athena au serveur) : source « import ».
+        if ((_L getOrDefault ["imported", false]) && {(_L get "source") isEqualTo "local"}) then { _L set ["source", "import"]; };
         private _at = _brief getOrDefault ["updated_at", ""];
         if !(_at isEqualType "") then { _at = ""; };
         _L set ["athenaAt", [_at, _reg getOrDefault ["packAt", ""]] select (_at isEqualTo "")];
