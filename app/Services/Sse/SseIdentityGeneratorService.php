@@ -109,6 +109,18 @@ final class SseIdentityGeneratorService
         return $list[self::hash($seed, $salt) % count($list)];
     }
 
+    /**
+     * Lieux d'un pays (réservoir de sa région) : vide si la région n'a pas de réservoir de lieux.
+     *
+     * @return list<string>
+     */
+    public static function placesFor(string $region): array
+    {
+        $pool = self::COUNTRY_POOLS[$region] ?? \App\Support\SseIdRealCountryCatalog::POOLS[$region] ?? null;
+
+        return $pool !== null ? array_values($pool['places']) : [];
+    }
+
     public static function randomSeed(): int
     {
         return random_int(1, self::MAX_SEED);

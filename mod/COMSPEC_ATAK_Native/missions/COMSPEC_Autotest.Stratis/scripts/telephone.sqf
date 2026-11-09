@@ -205,3 +205,33 @@ if !("telephone" call AT_fnc_groupe) exitWith {};
     profileNamespace setVariable ["COMSPEC_ATAK_NewDevice", _kept];
     call AT_fnc_done;
 }, 30] call AT_fnc_run;
+
+// Bilan de l'année et Vidéo YouTube (4.2.0) : analyse des liens (fonction pure, aucune requête), puis les deux pages dessinées
+// sans réseau (mission en mode local : le bilan dit qu'Athena n'est pas relié, YouTube est coupé par défaut).
+["tel_bilan_youtube", {
+    if (["comspec_atak_native_fnc_youtube", "comspec_atak_native_fnc_yearReview", "comspec_atak_native_fnc_pageYearReview", "comspec_atak_native_fnc_pageYoutube"] call AT_fnc_nil) exitWith {};
+    private _id = "dQw4w9WgXcQ";
+    {
+        _x params ["_url", "_want"];
+        [(["id", _url] call comspec_atak_native_fnc_youtube) isEqualTo _want, format ["lien YouTube « %1 » : attendu « %2 »", _url, _want]] call AT_fnc_check;
+    } forEach [
+        ["https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=10s", _id], ["https://youtu.be/dQw4w9WgXcQ?si=abc", _id], ["https://www.youtube.com/embed/dQw4w9WgXcQ", _id],
+        ["https://youtube.com/shorts/dQw4w9WgXcQ", _id], ["m.youtube.com/watch?v=dQw4w9WgXcQ#t=5", _id], [_id, _id],
+        ["https://evil.com/watch?v=dQw4w9WgXcQ", ""], ["https://youtube.com.evil.com/watch?v=dQw4w9WgXcQ", ""], ["https://youtube.com@evil.com/watch?v=dQw4w9WgXcQ", ""],
+        ["https://www.youtube.com/watch?v=dQw4w9WgXc", ""], ["https://www.youtube.com/watch?v=dQw4w9WgXcQ%22", ""], ["https://www.youtube.com/watch?v=dQw4w9WgXc'", ""], ["", ""]
+    ];
+    [(["embed", _id] call comspec_atak_native_fnc_youtube) isEqualTo "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0&playsinline=1", "adresse du lecteur"] call AT_fnc_check;
+    [(["embed", "x\"><script>"] call comspec_atak_native_fnc_youtube) isEqualTo "", "identifiant invalide accepté pour le lecteur"] call AT_fnc_check;
+    [!(["enabled"] call comspec_atak_native_fnc_youtube), "lecture YouTube active par défaut (doit être coupée)"] call AT_fnc_check;
+    [true] call comspec_atak_native_fnc_open;
+    [[{ !isNull ([] call comspec_atak_native_fnc_display) }, 8] call AT_fnc_wait, "le téléphone ne s'ouvre pas"] call AT_fnc_check;
+    ["YEARREVIEW"] call comspec_atak_native_fnc_navigate;
+    uiSleep 1.5;
+    ["bilan_annee"] call AT_fnc_shot;
+    ["YOUTUBE"] call comspec_atak_native_fnc_navigate;
+    uiSleep 1;
+    ["video_youtube_coupee"] call AT_fnc_shot;
+    "Bilan de l'année : message d'état lisible, sans erreur ; Vidéo YouTube : message « désactivée sur ce serveur »" call AT_fnc_visuel;
+    ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;
