@@ -60,7 +60,7 @@ final class TenantTypeModuleAccessMiddleware
             return $next($request);
         }
 
-        $tenantType = TenantTypeConfig::normalizeType((string) ($tenant['tenant_type'] ?? 'full'));
+        $tenantType = \App\Services\Platform\EffectiveTenantType::resolveForGuard((string) ($tenant['tenant_type'] ?? 'full'));
         if ($tenantType === TenantTypeConfig::TYPE_FULL) {
             return $next($request);
         }

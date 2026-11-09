@@ -121,6 +121,8 @@ final class AuditActionLabel
         'platform.data_row_updated' => 'Ligne modifiée depuis l’explorateur de données (administration du site)',
         'platform.data_row_deleted' => 'Ligne supprimée depuis l’explorateur de données (administration du site)',
         'platform.plan_preview_started' => 'Aperçu d’une formule commencé (administration du site, lecture seule)',
+        'platform.view_preview_started' => 'Aperçu d’une vue (Complet, Bureau des effectifs, ATAK) commencé (administration du site, lecture seule)',
+        'platform.view_preview_stopped' => 'Aperçu d’une vue terminé (administration du site)',
         'platform.plan_preview_stopped' => 'Aperçu d’une formule terminé (administration du site)',
         'platform.cron_run' => 'Tâches automatiques lancées à la main (administration du site)',
         'platform.cron_installed' => 'Planificateur des tâches installé sur le serveur',

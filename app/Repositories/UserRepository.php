@@ -2649,6 +2649,16 @@ class UserRepository
         return (int) $stmt->fetchColumn();
     }
 
+    /** Fiches créées depuis une date (arrivées récentes), hors comptes de service. */
+    public function countJoinedSince(int $tenantId, string $since): int
+    {
+        [$whereSql, $params] = $this->buildUserListWhere($tenantId, null, null, null, true);
+        $stmt = $this->pdo()->prepare('SELECT COUNT(*) FROM users u LEFT JOIN roles r ON r.id = u.role_id WHERE ' . $whereSql . ' AND u.created_at >= ?');
+        $stmt->execute([...$params, $since]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     /**
      * @return array{0: string, 1: array<int, mixed>}
      */
