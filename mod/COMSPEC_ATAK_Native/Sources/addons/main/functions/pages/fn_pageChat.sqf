@@ -25,6 +25,9 @@ private _fs = _l get "fontSmall";
 private _rowH = _font * 1.6;
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
+// App SMS : même page que Messages, réduite aux SMS directs (pas de canaux, pas de création de canal). Page active "SMS" ou "CHAT".
+private _smsApp = ((_s getOrDefault ["activePage", ""]) isEqualTo "SMS");
+private _pg = ["CHAT", "SMS"] select _smsApp;
 private _peer = _s getOrDefault ["chatPeer", "ATHENA"];
 private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 private _dir = "\z\comspec_atak_native\addons\main\data\";
@@ -53,7 +56,7 @@ private _accDark = [(_acc select 0) * 0.30, (_acc select 1) * 0.30, (_acc select
 // Canaux web : COMSPEC Link ne les relit qu'à la création ou suppression, on les rafraîchit ici (toutes les 20 s, toutes
 // les 3 s tant que la liste d'Athena n'est pas arrivée ; le postInit client la demande déjà dès la liaison prête).
 private _chLoaded = (missionNamespace getVariable ["COMSPEC_Comms_Channels", []]) isNotEqualTo [];
-if (_bridge && {!isNil "comspec_overwatch_connect_fnc_pollChatChannels"} && {diag_tickTime - (_s getOrDefault ["chatChannelsPoll", -100]) > ([3, 20] select _chLoaded)}) then {
+if (_bridge && {!_smsApp} && {!isNil "comspec_overwatch_connect_fnc_pollChatChannels"} && {diag_tickTime - (_s getOrDefault ["chatChannelsPoll", -100]) > ([3, 20] select _chLoaded)}) then {
     _s set ["chatChannelsPoll", diag_tickTime];
     [] spawn {
         private _before = +(missionNamespace getVariable ["COMSPEC_Comms_Channels", []]);
@@ -65,7 +68,7 @@ if (_bridge && {!isNil "comspec_overwatch_connect_fnc_pollChatChannels"} && {dia
 };
 // Canaux Athena (fil COMSPEC Link quand il est chargé) puis messages directs ; non-lus par conversation (fn_chatUnread,
 // mêmes chiffres que la pastille de l'icône).
-private _channelRows = ["channels"] call comspec_atak_native_fnc_chatUnread; // [clé, libellé, personnalisé]
+private _channelRows = [["channels"] call comspec_atak_native_fnc_chatUnread, []] select _smsApp; // [clé, libellé, personnalisé]
 private _channels = _channelRows apply { [_x select 0, _x select 1] };
 private _unreadMap = ["counts"] call comspec_atak_native_fnc_chatUnread;
 private _peers = (allPlayers select { _x isNotEqualTo player && {side group _x isEqualTo side group player} }) apply { name _x };
@@ -83,14 +86,17 @@ _peers = (_keyedPeers apply { _x select 1 }) + _others;
 private _netQ = [] call comspec_atak_native_fnc_linkQuality;
 private _netBars = _netQ getOrDefault ["bars", 0];
 private _relay = if ((_netQ getOrDefault ["sim", false]) && {_netBars > 0}) then { (["best"] call comspec_atak_native_fnc_relayNet) param [1, ""] } else { "" };
-if !((_channels findIf { (_x select 0) isEqualTo _peer }) >= 0 || {_peer in _peers}) then { _peer = (_channels select 0) select 0; };
+if !((_channels findIf { (_x select 0) isEqualTo _peer }) >= 0 || {_peer in _peers}) then { _peer = [(_channels select 0) select 0, _peers param [0, ""]] select _smsApp; };
+// SMS sans aucun contact : liste seule (invitation à écrire), pas de conversation.
+private _smsEmpty = _smsApp && {_peer isEqualTo ""};
+if (_smsEmpty) then { _view = "LIST"; };
 private _isChannel = _peer isEqualTo "ATHENA" || {(_peer select [0, 3]) isEqualTo "CH:"};
-if (_threadOnly && {_split || {_view isNotEqualTo "CONV"} || {_s getOrDefault ["chatWiki", false]} || {isNull (uiNamespace getVariable ["COMSPEC_ATAK_ChatThread", controlNull])} || {(uiNamespace getVariable ["COMSPEC_ATAK_ChatThreadPeer", ""]) isNotEqualTo _peer} || {(_s getOrDefault ["pageDrawn", ""]) isNotEqualTo "CHAT"}}) exitWith {
-    ["CHAT"] call comspec_atak_native_fnc_pageRender;
+if (_threadOnly && {_split || {_view isNotEqualTo "CONV"} || {_s getOrDefault ["chatWiki", false]} || {isNull (uiNamespace getVariable ["COMSPEC_ATAK_ChatThread", controlNull])} || {(uiNamespace getVariable ["COMSPEC_ATAK_ChatThreadPeer", ""]) isNotEqualTo _peer} || {(_s getOrDefault ["pageDrawn", ""]) isNotEqualTo _pg}}) exitWith {
+    [_pg] call comspec_atak_native_fnc_pageRender;
 };
 _s set ["chatChannel", [_peer select [3], ""] select (_peer isEqualTo "ATHENA")];
 _s set ["chatPeer", _peer];
-private _manage = _bridge && {_interactive};
+private _manage = _bridge && {_interactive} && {!_smsApp};
 private _curKey = _peer select [3];
 private _custom = _isChannel && {(_channelRows findIf { (_x select 0) isEqualTo _peer && {_x select 2} }) >= 0};
 
@@ -198,7 +204,7 @@ private _avatar = {
     };
     [_rect, _iconPath, _tint, 0.62, _grp] call _icon
 };
-private _rr = "[{ ['CHAT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;";
+private _rr = format ["[{ ['%1'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _pg];
 // Brouillon par conversation : le texte en cours (gardé par fn_pageClear) appartient à la conversation affichée avant.
 private _drafts = uiNamespace getVariable ["COMSPEC_ATAK_ChatDrafts", createHashMap];
 private _dPeer = uiNamespace getVariable ["COMSPEC_ATAK_ChatDraftPeer", ""];
@@ -235,7 +241,7 @@ if ((_d getVariable ["COMSPEC_ATAK_WheelEh", -1]) < 0) then {
     _d setVariable ["COMSPEC_ATAK_WheelEh", _d displayAddEventHandler ["MouseZChanged", {
         params ["", "_z"];
         if (_z isEqualTo 0) exitWith { false };
-        if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "CHAT") exitWith { false };
+        if !(((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) in ["CHAT", "SMS"]) exitWith { false };
         private _disp = [] call comspec_atak_native_fnc_display;
         if (isNull _disp) exitWith { false };
         getMousePosition params ["_mx", "_my"];
@@ -287,6 +293,8 @@ private _drawList = {
         default { ["Athena connecté", _accHex] };
     };
     if (!_bridge && {_netBars isEqualTo 0}) then { _state = ["Hors réseau · SMS en attente du signal", (COMSPEC_ATAK_Th get "hexWarn")]; };
+    // App SMS : seul compte le réseau du téléphone (couverture, tours, MPU5), jamais Athena.
+    if (_smsApp) then { _state = [["Réseau mobile · SMS directs", _accHex], ["Hors réseau · SMS en attente du signal", (COMSPEC_ATAK_Th get "hexWarn")]] select (_netBars isEqualTo 0 && {_netQ getOrDefault ["sim", false]}); };
     if (_relay isNotEqualTo "") then { _state set [0, format ["%1 · via %2", _state select 0, _relay]]; };
     private _nbW = [0, (_font * 4.2 / _ratio) min (_lw * 0.36)] select _manage;
     private _st = ["COMSPEC_RscStructuredText", [_lx + _pad * 0.6, _sh * 0.18, _lw - _nbW - _pad * 1.6, _sh * 0.8]] call _mk;
@@ -389,7 +397,7 @@ private _drawList = {
         _y = _y + _rh;
     };
     // Canaux (masqués pendant le choix d'un destinataire de SMS)
-    if (!_pick) then { [["Canaux", "TOC"] select !_bridge, ["", "Athena"] select _bridge] call _section; };
+    if (!_pick && {!_smsApp}) then { [["Canaux", "TOC"] select !_bridge, ["", "Athena"] select _bridge] call _section; };
     {
         _x params ["_key", "_label"];
         private _ck = [_key select [3], ""] select (_key isEqualTo "ATHENA");
@@ -846,7 +854,7 @@ private _drawConv = {
 };
 
 // ---------------------------------------------------------------- Rendu
-if (_split) exitWith {
+if (_split && {!_smsEmpty}) exitWith {
     [0, _listW] call _drawList;
     [[_listW, 0, pixelW, _bh], _cLine] call _box;
     [_convX, _convW, false] call _drawConv;

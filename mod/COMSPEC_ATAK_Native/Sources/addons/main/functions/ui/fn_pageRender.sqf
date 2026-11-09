@@ -49,7 +49,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_ScrollGroups", []];
 _st set ["scrollGroups", _grpMem];
 // Accueil et Réglages : toujours rouverts à la position quittée (retour d'une app du bas de la liste, réglage qui
 // recrée l'écran).
-private _restore = (_drawn isEqualTo _page || {_st getOrDefault ["scrollRestore", false]} || {_page in ["LAUNCHER", "SETTINGS"]}) && {!(_page in ["MAP", "CHAT"])};
+private _restore = (_drawn isEqualTo _page || {_st getOrDefault ["scrollRestore", false]} || {_page in ["LAUNCHER", "SETTINGS"]}) && {!(_page in ["MAP", "CHAT", "SMS"])};
 _st set ["scrollRestore", false];
 _st set ["pageDrawn", _page];
 _st set ["pagePrev", _drawn]; // page dessinée juste avant (centre de notifications : « nouveau » à l'entrée seulement)
@@ -66,7 +66,7 @@ if (_drawn isEqualTo _page) then {
         { if (_y isEqualTo _fc) exitWith { _focusKey = _x; }; } forEach _form;
     };
 };
-[_drawn isEqualTo _page && {!(_page in ["MAP", "CHAT"])}] call comspec_atak_native_fnc_pageClear;
+[_drawn isEqualTo _page && {!(_page in ["MAP", "CHAT", "SMS"])}] call comspec_atak_native_fnc_pageClear;
 // Lignes à mise à jour sur place (fn_formSet) : celles de la page effacée sont oubliées.
 uiNamespace setVariable ["COMSPEC_ATAK_FormIds", createHashMap];
 // Calques hors zone de contenu : recréés plus bas, après la page.
@@ -116,6 +116,7 @@ switch (_page) do {
     case "SPACE": { ["page"] call comspec_atak_native_fnc_pageSpace; };
     case "MAP": { [] call comspec_atak_native_fnc_pageMap; };
     case "CHAT": { [] call comspec_atak_native_fnc_pageChat; };
+    case "SMS": { [] call comspec_atak_native_fnc_pageSms; };
     case "GROUP": { [] call comspec_atak_native_fnc_pageGroup; };
     case "BFT": { [] call comspec_atak_native_fnc_pageBft; };
     case "RECENTS": { [] call comspec_atak_native_fnc_pageRecents; };

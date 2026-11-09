@@ -15,7 +15,7 @@ _m set ["statusTime", _time];
 // SMS arrivé : archive sur le site de l'expéditeur (fn_p2pArchive), une fois.
 if (_state in ["HELD", "DELIVERED", "READ"]) then { ["send", _m] call comspec_atak_native_fnc_p2pArchive; };
 // Accusé : seul le fil ouvert est redessiné, jamais toute la page.
-if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then {
+if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) in ["CHAT", "SMS"]) then {
     [{
         params ["_thisPeer"];
         private _open = !isNull (uiNamespace getVariable ["COMSPEC_ATAK_ChatThread", controlNull]);

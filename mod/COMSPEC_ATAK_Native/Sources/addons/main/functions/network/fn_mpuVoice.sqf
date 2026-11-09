@@ -243,7 +243,7 @@ switch (_act) do {
         // Voix par le réseau, en clair, pour l'app Wave Relay (MON NŒUD, VOIX) : jamais un écran muet.
         // -> [code ("off" | "cut" | "noreal" | "nobridge" | "wait" | "on"), état court, aide]
         if !((missionNamespace getVariable ["comspec_atak_native_mpu_voice", false]) isEqualTo true) exitWith {
-            ["off", "désactivée (réglage admin)", "Pour l'activer, un admin coche « Voix ACRE/TFAR relayée par le maillage MPU5 » (Réglages d'addons > COMSPEC > ATAK · Radio de données (MPU5)). Ensuite, chaque joueur relie sa radio à sa MPU5 : onglet VOIX, ou menu ACE Téléphone ATAK > Radio de données."]
+            ["off", "désactivée (réglage admin)", "Pour l'activer, un admin ou un Zeus coche « Voix relayée par le maillage » dans Échap > Réalisme (section Maillage), puis Appliquer au serveur ; ou dans Réglages d'addons > COMSPEC > ATAK · Radio de données (MPU5). Ensuite, chaque joueur relie sa radio à sa MPU5 : onglet VOIX, ou menu ACE Téléphone ATAK > Radio de données."]
         };
         if !(["voice"] call comspec_atak_native_fnc_radioGuard) exitWith { ["cut", "coupée", ["text"] call comspec_atak_native_fnc_radioGuard] };
         if !(["active"] call comspec_atak_native_fnc_mpuLink) exitWith {

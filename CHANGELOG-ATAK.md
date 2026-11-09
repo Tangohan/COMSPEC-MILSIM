@@ -58,6 +58,24 @@ EN : FIRES quick: pick the unit to call, and a readable CAS app
 - `fn_firesQuick` : "cands", "dest", "destToggle", "destAll", "picker", "search" ; "recipients" renvoie les choisis encore en ligne, sinon tous ; "target" avec le sélecteur ouvert choisit l'unité à moins de 150 m du toucher. `fn_pageQuickMap` : bouton, panneau de sélection (aide, recherche, 5 lignes).
 - `fn_firesCff`, `fn_pageFires` : plus de couleur fixe, jetons de `fn_theme` ; cause de l'illisible : `onState` (encre sombre) utilisé comme texte des champs et boutons sombres, `accent` + encre 0,03 sur l'état actif, gris pâles. Actif : `accentSoftHi` + `onAccentSoft` (testés à 4,5 dans AtakThemeContrastTest) et crochets. Libellés réduits par `fn_textFit` (plancher 80 %).
 - Autotest : `fires_court_destinataires` (pilote.sqf), `cas_lisibilite_themes` (telephone.sqf), non exécutés.
+## À venir : réglages du serveur expliqués et onglet VOIX clarifié (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Chaque réglage du réalisme est expliqué, avec un exemple
+- Échap > Réalisme et réseau : sous chaque réglage, une phrase dit ce que ça change en jeu, un exemple chiffré l'illustre, et la valeur par défaut est rappelée. L'assistant de configuration reprend les mêmes explications.
+- La voix relayée par le maillage se règle maintenant depuis cette fenêtre (section Maillage), avec Appliquer au serveur. Elle reste désactivée par défaut.
+- App Wave Relay, onglet VOIX : un encadré explique à quoi il sert, l'état dit le prochain pas à faire (avec le chemin exact), chaque section est expliquée, et les boutons ÉCOUTER sont plus sobres : l'état s'affiche par une case cochée ou vide, pas seulement par la couleur.
+EN : Every realism setting is explained, with an example
+- Esc > Realism and network: under each setting, a sentence says what it changes in game, a worked example illustrates it, and the default value is shown. The setup assistant uses the same explanations.
+- Voice relayed by the mesh can now be set from this window (Mesh section), with Apply to server. It stays off by default.
+- Wave Relay app, VOICE tab: a box explains what it is for, the status tells you the next step (with the exact path), every section is explained, and the LISTEN buttons are calmer: state is shown by a ticked or empty box, not only by color.
+
+### Détail technique
+- Nouveau `fn_realismHelp` (77 réglages : explication et exemple FR, EN dans `i18n/en.txt` et `localisation/template/xx.txt`). `fn_netConfig` : ligne qui grandit avec le texte (`ctrlTextHeight`), valeur d'usine lue (`fn_realismCatalog` "state", CBA "default", ou défauts de `fn_netCond`). `fn_setupWizard` : mêmes textes.
+- `mpu_voice` déplacé de « Radio et voix » à « Maillage » dans le catalogue (même circuit serveur, `realismSet`). Défaut inchangé (désactivé). `fn_mpuVoice` "summary" cite Échap > Réalisme.
+- `fn_pageWaveRelay` (VOIX) et `fn_meshGroups` "rows" : encadré d'aide, prochain pas, états vides, boutons `[ ] / [x]`. `fn_radioGuard`, ACRE2 / TFAR et valeurs par défaut non touchés. Rien n'a tourné en jeu.
+- Test : `AtakReglagesExplicationsTest`.
 ## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)
 
 ## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)

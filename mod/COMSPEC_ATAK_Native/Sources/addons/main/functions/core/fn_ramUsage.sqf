@@ -28,7 +28,7 @@ private _weight = {
         case "EW"; case "DRONEDETECT": { 240 };
         case "BRIEFING": { 230 };
         case "ATHENA": { 210 };
-        case "CHAT"; case "FRS"; case "RECO"; case "SALUTE"; case "SSE": { 170 };
+        case "CHAT"; case "SMS"; case "FRS"; case "RECO"; case "SALUTE"; case "SSE": { 170 };
         case "MUSIC": { 140 };
         case "LAUNCHER"; case "RECENTS"; case "NOTIFS": { 60 };
         default { 120 };

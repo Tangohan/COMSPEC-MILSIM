@@ -179,7 +179,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
 
     <div class="home-grid">
     <?php foreach ($homeVisible as $homeItem): ?>
-    <?php $homeWid = (string) $homeItem['id']; if (\App\Services\BackOffice\Home\HomeLayout::isSheet($homeWid) && !isset($homeSheets[\App\Services\BackOffice\Home\HomeLayout::sheetId($homeWid)])) { continue; } if ($homeWid === 'pipeline' && $pilPipeline === null) { continue; } ?>
+    <?php $homeWid = (string) $homeItem['id']; if (\App\Services\BackOffice\Home\HomeLayout::isSheet($homeWid) && !isset($homeSheets[\App\Services\BackOffice\Home\HomeLayout::sheetId($homeWid)])) { continue; } if ($homeWid === 'pipeline' && $pilPipeline === null) { continue; } if ($homeWid === 'custom' && (!isset($home['custom']) || ($home['custom']['blocks'] === [] && empty($home['custom']['can_edit'])))) { continue; } ?>
     <div class="home-w home-w--<?= $pilH((string) $homeItem['size']) ?>" data-widget="<?= $pilH($homeWid) ?>">
     <?php if ($homeWid === 'operation'): ?>
         <?php if ($pilHero !== null): ?>
@@ -574,6 +574,8 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
             </ul>
             <?php endif; ?>
         </section>
+    <?php elseif ($homeWid === 'custom'): ?>
+        <?php require base_path('views/admin/organization/_home_custom.php'); ?>
     <?php elseif (\App\Services\BackOffice\Home\HomeLayout::isSheet($homeWid)): ?>
         <?php $homeSid = \App\Services\BackOffice\Home\HomeLayout::sheetId($homeWid); ?>
         <?php if (isset($homeSheets[$homeSid])): ?>

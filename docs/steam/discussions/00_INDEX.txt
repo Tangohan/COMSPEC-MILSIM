@@ -22,6 +22,7 @@ Chaque app a son sujet dédié : à quoi elle sert, comment l'ouvrir, ses foncti
 [h3]Communication[/h3]
 [list]
 [*][b]Messages[/b] (Chat) : canaux du TOC, SMS entre joueurs, commandes et @grille. Voir le sujet dédié.
+[*][b]SMS[/b] (Sms) : SMS directs de téléphone à téléphone, interface de Messages. Voir le sujet dédié.
 [*][b]Groupe[/b] (Group) : membres, équipes de feu, rôles, indicatif. Voir le sujet dédié.
 [*][b]Alertes[/b] (Alerts) : PANIQUE, contacts, téléphones compromis, journal. Voir le sujet dédié.
 [*][b]BFT[/b] (Bft) : suivi des forces amies, vue ORBAT, filtres. Voir le sujet dédié.
@@ -130,6 +131,7 @@ Every app has its own thread: what it is for, how to open it, its features, a wa
 [h3]Communication[/h3]
 [list]
 [*][b]Messages[/b] (Chat): TOC channels, player SMS, commands and @grid. See the dedicated thread.
+[*][b]SMS[/b] (Sms): direct phone-to-phone SMS, Messages interface. See the dedicated thread.
 [*][b]Squad[/b] (Group): members, fire teams, roles, callsign. See the dedicated thread.
 [*][b]Alerts[/b] (Alerts): PANIC, contacts, compromised phones, log. See the dedicated thread.
 [*][b]BFT[/b] (Bft): blue force tracking, ORBAT view, filters. See the dedicated thread.

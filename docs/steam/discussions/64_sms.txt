@@ -1,0 +1,96 @@
+[APP] SMS — messagerie directe de téléphone à téléphone, avec l'interface de Messages
+
+[i]Message 1/2[/i]
+[h1]SMS[/h1]
+[i]Catégorie : Communication · ATAK COMSPEC 2.9.34[/i]
+
+[h2]FRANÇAIS[/h2]
+[h3]À quoi ça sert[/h3]
+L'app dédiée aux SMS. Même interface que Messages (liste des conversations, bulles, saisie, accusés), mais uniquement les conversations directes avec les joueurs de votre camp : pas de canaux du TOC, pas d'Athena. Les SMS passent par le réseau du téléphone : couverture, tours relais et MPU5 quand la liaison réaliste est active.
+
+[h3]Comment l'ouvrir[/h3]
+Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). L'app est dans la catégorie [b]Communication[/b] (espace Messages), avec une pastille de SMS non lus. Une notification de SMS reçu l'ouvre.
+
+[h3]Fonctions[/h3]
+[list]
+[*][b]Liste des conversations[/b] : le dernier message, l'heure et la pastille de non-lus de chaque contact ; les plus récentes en tête. Le bandeau rappelle l'état du réseau (« Réseau mobile · SMS directs » ou « Hors réseau · SMS en attente du signal »).
+[*][b]+ NOUVEAU SMS[/b] : choisissez un joueur de votre camp ; son numéro de téléphone s'affiche. Hors ligne, il apparaît encore s'il a déjà une conversation.
+[*][b]Conversation[/b] : bulles regroupées par auteur, séparateurs de jour, repère des non-lus, saisie en bas (Entrée pour envoyer).
+[*][b]Accusés[/b] : Envoi…, Distribué, Lu (avec l'heure). Sans réseau, le SMS reste « en attente de réseau » et part au retour du signal ; un destinataire sans réseau le reçoit à son retour.
+[*][b]Commandes / et raccourcis[/b] : les mêmes que dans Messages (/urgent, /contact, @grille…).
+[*][b]Limites et protection[/b] : 400 caractères au plus par SMS, 200 SMS gardés sur le téléphone, 8 SMS par 10 s au plus par expéditeur à la réception.
+[/list]
+
+[h3]Pas-à-pas d'un usage typique[/h3]
+[olist]
+[*]Ouvrez SMS, touchez [b]+ NOUVEAU SMS[/b] et choisissez votre chef d'équipe.
+[*]Tapez votre message puis Entrée : il passe « Envoi… », « Distribué », puis « Lu ».
+[*]Dans une zone sans couverture, le message reste en attente et part tout seul au retour du réseau.
+[/olist]
+
+[h3]Réglages CBA liés[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Réseau réaliste[/b] (serveur) : décoché, réseau parfait partout ; coché, SMS retardés ou mis en attente selon le terrain.
+[*][b]Apps interdites[/b] / [b]Apps retirées[/b] (serveur) : permettent de retirer l'app SMS (nom de classe Sms).
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Messages[/b] : les deux apps partagent les mêmes conversations directes ; Messages garde en plus les canaux.
+[*][b]Numéros, Groupe, BFT[/b] : le numéro affiché vient de l'app Numéros.
+[/list]
+
+[h3]Limites connues / astuces[/h3]
+[list]
+[*]Les SMS ne vont qu'aux joueurs de votre camp. Un joueur déconnecté ne reçoit rien : renvoyez à son retour.
+[*]La radio (ACRE, TFAR) n'est jamais touchée par les SMS.
+[/list]
+
+[h3]Version d'introduction[/h3]
+Version à attribuer.
+===== RÉPONSE =====
+[i]Message 2/2 — English[/i]
+[h2]ENGLISH[/h2]
+[h3]What it is for[/h3]
+The dedicated SMS app. Same interface as Messages (conversation list, bubbles, input, receipts), but only direct conversations with players of your side: no TOC channels, no Athena. SMS travel over the phone network: coverage, relay towers and the MPU5 when the realistic link is on.
+
+[h3]How to open it[/h3]
+The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). The app is in the [b]Communication[/b] category (Messages space), with an unread SMS badge. A received-SMS notification opens it.
+
+[h3]Features[/h3]
+[list]
+[*][b]Conversation list[/b]: the last message, time and unread badge of each contact; most recent first. The banner shows the network state ("Mobile network · direct SMS" or "No signal · SMS waiting for signal").
+[*][b]+ NEW SMS[/b]: pick a player from your side; their phone number is shown. Offline players still appear if you already have a conversation.
+[*][b]Conversation[/b]: bubbles grouped by author, day separators, unread marker, input at the bottom (Enter to send).
+[*][b]Receipts[/b]: Sending…, Delivered, Read (with the time). Without network the SMS stays "waiting for network" and leaves when the signal is back; a recipient without network gets it on their return.
+[*][b]/ commands and shortcuts[/b]: the same as in Messages (/urgent, /contact, @grid...).
+[*][b]Limits and protection[/b]: 400 characters per SMS at most, 200 SMS kept on the phone, at most 8 SMS per 10 s per sender on reception.
+[/list]
+
+[h3]Typical walkthrough[/h3]
+[olist]
+[*]Open SMS, tap [b]+ NEW SMS[/b] and pick your team leader.
+[*]Type your message then Enter: it goes "Sending…", "Delivered", then "Read".
+[*]In an area with no coverage, the message waits and leaves by itself when the network is back.
+[/olist]
+
+[h3]Related CBA settings[/h3]
+[list]
+[*][b]COMSPEC › ATAK · Simulation › Simulated network throughput[/b] (server): unchecked, perfect network everywhere; checked, SMS are delayed or queued depending on the terrain.
+[*][b]Forbidden apps[/b] / [b]Removed apps[/b] (server): can remove the SMS app (class name Sms).
+[/list]
+
+[h3]Interactions[/h3]
+[list]
+[*][b]Messages[/b]: both apps share the same direct conversations; Messages also keeps the channels.
+[*][b]Numbers, Squad, BFT[/b]: the number shown comes from the Numbers app.
+[/list]
+
+[h3]Known limits / tips[/h3]
+[list]
+[*]SMS only reach players of your side. A disconnected player gets nothing: resend when they are back.
+[*]Radio (ACRE, TFAR) is never touched by SMS.
+[/list]
+
+[h3]Introduced in[/h3]
+Version to be assigned.
