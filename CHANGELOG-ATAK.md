@@ -60,6 +60,28 @@ EN : Talk to AIs in free text, and tune their personality in the AI workshop
 - Atelier IA : `fn_iarpWorkshop` (même dialog en Eden par `createDisplay` au-dessus des attributs, et en Zeus), `fn_iarpEden` (attribut `COMSPEC_SSE_IarpProfileAttr`, catégorie « COMSPEC SSE · IA RP » des unités), module Eden `COMSPEC_SSE_Module_IarpWorkshop` (`fn_iarpModule`, unités synchronisées, une personnalité par IA en option), modules ZEN `fn_iarpZen` (Atelier IA, Faire parler une IA, Journal des échanges). Profil appliqué sur le serveur seulement (`comspec_sse_iarpProfile`), `comspec_sse_idName` et `COMSPEC_ID_Profile` repris par l'identité.
 - Autotest `scripts\ia_rp.sqf` : `ia_rp_interprete` (`fn_iarpSelfTest` : 38 phrases, banque, redite, cohérence), `ia_rp_texte_libre` (captures `ia_texte_libre`, `ia_journal`, `ia_bulle`), `ia_rp_atelier` (capture `ia_atelier_zeus`), non exécutés. `hemtt check` de l'addon : aucune erreur.
 - À tester en jeu : terminal (Entrée, Maj+Entrée, flèches, Échap et brouillon), bulles et « … » à deux joueurs, /try commun, ordres sur une IA locale au serveur et à un HC, attribut et module en Eden (fenêtre par-dessus les attributs, valeur gardée à la sauvegarde), modules ZEN, journal du Zeus, textes en anglais.
+## À venir : sa propre carte d'identité en jeu, reliée à Athena (SSE et site, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Votre carte d'identité en jeu est celle d'Athena, et le site explique ce qui coince
+- Sans kit composé par vos responsables, vous recevez en jeu les papiers émis de votre identité principale d'Athena (ou ceux de votre couverture si une fiche de couverture vous l'attribue) : plus d'identité tirée au hasard.
+- Les objets s'appellent simplement « Carte d'identité », « Passeport », « Permis de conduire », « Carte militaire » : la mention SIMULATION reste imprimée sur le papier.
+- Votre carte peut être ramassée sur votre corps ou au sol : un contrôle montre toujours l'identité de la carte, pas celle de celui qui la porte.
+- Ma couverture dit pourquoi votre identité d'Athena n'a pas été utilisée (paquet non chargé, aucun papier pour votre compte Steam…). Sur la fiche membre, « Transmission en jeu » liste ce qui manque, et « Différence avec le jeu » se règle champ par champ, sans rien écraser.
+EN : Your in-game ID card is your Athena one, and the site explains what is wrong
+- Without a kit put together by your leaders, you receive in game the issued papers of your main Athena identity (or those of your cover if a cover sheet assigns it to you): no more randomly drawn identity.
+- The items are simply called "ID card", "Passport", "Driving licence", "Military ID": the SIMULATION mark stays printed on the paper.
+- Your card can be picked up from your body or from the ground: a check always shows the card's identity, not the identity of whoever carries it.
+- My cover tells you why your Athena identity was not used (pack not loaded, no paper for your Steam account…). On the member sheet, "Transmission to the game" lists what is missing, and "Difference with the game" is settled field by field, without overwriting anything.
+
+### Détail technique
+- Cause du décalage Athena / jeu : un papier émis ne partait en jeu que s'il était dans un kit composé (`sse_id_kits`) ; sans kit, le paquet ne contenait rien pour le Steam ID du joueur, `fn_idLegend` montrait alors l'identité générée par `fn_idGenerate` (clé biométrique : « PAPADOPOULOS Panagiotis, Telos ») sous « Identité prévue, sans papier ». Correctif : kit automatique `SseIdKitRepository::autoForPack` (portée « auto ») pour tout membre lié à Steam sans aucun kit composé : papiers émis, valables, non volés ni perdus, de l'identité principale ou de la couverture du brief. **Changement de comportement** : ces membres reçoivent désormais leurs papiers sans action d'un responsable.
+- Objets : `displayName` / `descriptionShort` des cartes et papiers sans « (simulation) » (stringtable FR/EN, nouvelle clé `STR_COMSPEC_SSE_CFG_ID_MILITARYCARD`).
+- API publique (serveur) : `comspec_sse_fnc_idPaperOf`, `idPaperOwner`, `idPaperLink`, `idPaperGive` ; suivi `idPaperTrack` (Take / Put du joueur relayés par `fn_idServer` « paperMoved », poste vérifié) ; évènements CBA globaux `comspec_sse_identity_paperPicked`, `paperDropped`, `paperLinked`. Liaison objet ↔ identité : classe d'exemplaire libre (`CfgWeapons_instances.hpp`) reliée au document par le registre du serveur (`athenaIdentity`, `ownerUid`, `holder`, `custody`). Guide : `mod/@COMSPEC_SSE/docs/guide/Controle_identite.md`.
+- Ma couverture : diagnostic `diag` (paquet non chargé, aucun papier pour ce compte, kit absent du paquet, papier signalé, identité générée), origine de l'identité et référence IDT. `fn_idCoverSync` remonte l'identité utilisée quelle que soit son origine (champs `last`, `first`, `sex`, `origin`, `identity_ref`), seulement si la transmission automatique est permise (réglage de la communauté prioritaire).
+- Site : `MemberIdentitySyncService` (états Prêt / Incomplet / Erroné / Bloqué par compte, identité et papier ; différence champ par champ ; reprise explicite ; « Garder les deux » ; restauration ; « Envoyer la version Athena vers le jeu »), bloc « Transmission en jeu » de la fiche membre, journal d'audit `id_member.sync_*`. Étape de migration 4250 (`sse_identity_history`, `sse_id_game_covers.reviewed_hash`).
+- Non vérifié : rendu en jeu, multijoueur (Take / Put d'un client distant, ramassage sur un corps), DLL. Autotest `sse_papier_lie` (sse.sqf), non exécuté.
 
 ## À venir : carte du téléphone au style tactique et contacts redessinés (ATAK natif, version à attribuer)
 

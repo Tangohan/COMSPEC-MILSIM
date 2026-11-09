@@ -1,6 +1,7 @@
 // Documents d'identité fictifs (inventaire ACE / Arsenal : CBA MiscItem). Inclus dans class CfgWeapons (config.cpp).
 // Classes du catalogue (scope = 2) : un objet pris à l'Arsenal ou au Zeus est un document vierge, sans titulaire ;
 // le registre du serveur ne connaît que les exemplaires (CfgWeapons_instances.hpp) qu'il a lui-même délivrés.
+// Noms d'objets sans la mention : SIMULATION est imprimé sur le papier lui-même (gabarits, visionneuse).
 class CBA_MiscItem;
 class CBA_MiscItem_ItemInfo;
 
@@ -23,7 +24,7 @@ class COMSPEC_ID_Card: COMSPEC_ID_Base {
 
 class COMSPEC_ID_MilitaryCard: COMSPEC_ID_Base {
     scope = 2;
-    displayName = "Carte militaire (SIMULATION)";
+    displayName = "$STR_COMSPEC_SSE_CFG_ID_MILITARYCARD";
     picture = "\z\comspec_sse\addons\identity\data\icon_military_ca.paa";
 };
 

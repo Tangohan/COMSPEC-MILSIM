@@ -97,6 +97,12 @@ class CfgFunctions {
             class idBio {};
             class idHvt {};
             class idAiConfig {};
+            // API publique des papiers en jeu (mods et scripts, serveur) : identité Athena liée, propriétaire, suivi.
+            class idPaperOf {};
+            class idPaperOwner {};
+            class idPaperLink {};
+            class idPaperGive {};
+            class idPaperTrack {};
         };
     };
 };

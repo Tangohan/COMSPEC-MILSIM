@@ -66,6 +66,26 @@ class SseIdCoverLinkRepository
         ));
     }
 
+    /** @return array<string, mixed>|null identité remontée du jeu, de ce membre et de cette communauté seulement */
+    public function findGameCoverById(int $tenantId, int $userId, int $id): ?array
+    {
+        return $this->db->fetchOne(
+            'SELECT * FROM sse_id_game_covers WHERE id = :id AND tenant_id = :t AND user_id = :u',
+            ['id' => $id, 't' => $tenantId, 'u' => $userId]
+        );
+    }
+
+    /**
+     * Différence avec le jeu examinée pour ce contenu : elle ne revient que si le jeu envoie autre chose (étape 4250).
+     */
+    public function markGameCoverReviewed(int $tenantId, int $userId, int $id, string $hash, string $now): bool
+    {
+        return $this->db->execute(
+            'UPDATE sse_id_game_covers SET reviewed_hash = :h, reviewed_at = :now WHERE id = :id AND tenant_id = :t AND user_id = :u',
+            ['h' => $hash, 'now' => $now, 'id' => $id, 't' => $tenantId, 'u' => $userId]
+        ) > 0;
+    }
+
     /** @return array<string, mixed>|null */
     public function findAssignment(int $tenantId, int $itemId, int $userId, string $scopeKey): ?array
     {

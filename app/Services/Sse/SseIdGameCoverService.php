@@ -25,7 +25,16 @@ final class SseIdGameCoverService
     private const TEXT_FIELDS = [
         'name' => 160, 'dob' => 32, 'pob' => 120, 'country' => 80, 'address' => 255, 'city' => 120,
         'profession' => 120, 'employer' => 190, 'phone' => 60, 'travel' => 255, 'family' => 190,
+        // Ajouts rétrocompatibles (mod SSE suivant) : champs séparés pour la comparaison avec l'identité d'Athena.
+        'last' => 120, 'first' => 120, 'sex' => 1, 'identity_ref' => 16,
     ];
+
+    /**
+     * Origine de l'identité utilisée en jeu : athena (papiers reçus du paquet), generated (tirée par le mod faute de
+     * papier Athena), game (donnée en jeu : Zeus, Eden), cover (couverture préparée en jeu), import (fichier d'Athena).
+     * Une remontée sans origine (mod antérieur) n'envoyait que des couvertures : « cover ».
+     */
+    public const ORIGINS = ['athena', 'generated', 'game', 'cover', 'import'];
 
     public function __construct(private ?SseIdCoverLinkRepository $covers = null)
     {
@@ -73,9 +82,14 @@ final class SseIdGameCoverService
             $cover = json_decode((string) $row['cover_json'], true);
             if (is_array($cover)) {
                 $out[] = $cover + [
+                    'origin' => 'cover',
                     'context_id' => ($row['context_id'] ?? null) !== null ? (int) $row['context_id'] : null,
                     'op_key' => ($row['op_key'] ?? null) !== null ? (string) $row['op_key'] : null,
                     'updated_at' => (string) $row['updated_at'],
+                    'id' => (int) $row['id'],
+                    'content_hash' => (string) $row['content_hash'],
+                    'reviewed' => ($row['reviewed_hash'] ?? null) !== null && (string) $row['reviewed_hash'] === (string) $row['content_hash'],
+                    'reviewed_at' => ($row['reviewed_at'] ?? null) !== null ? (string) $row['reviewed_at'] : null,
                 ];
             }
         }
@@ -134,6 +148,10 @@ final class SseIdGameCoverService
         if ($out['name'] === '') {
             return null;
         }
+        $origin = self::text($raw['origin'] ?? '', 12);
+        $out['origin'] = in_array($origin, self::ORIGINS, true) ? $origin : 'cover';
+        $out['carried'] = ($raw['carried'] ?? false) === true;
+        $out['sex'] = in_array(strtoupper($out['sex']), ['M', 'F'], true) ? strtoupper($out['sex']) : '';
         $out['contacts'] = [];
         foreach (array_slice(is_array($raw['contacts'] ?? null) ? array_values($raw['contacts']) : [], 0, self::MAX_CONTACTS) as $c) {
             if (is_array($c)) {
