@@ -700,7 +700,8 @@ class TenantRepository
      */
     public function listOverviewForPlatform(): array
     {
-        $humanUsers = UserRepository::sqlLiteralExcludeTechnicalInternalEmails('u');
+        // Même définition que la liste cliquée (UserRepository::listPlatformAccounts).
+        $humanUsers = UserRepository::sqlPlatformAccountFilter('u', 'all');
         $humanLogin = UserRepository::sqlLiteralExcludeTechnicalInternalEmails('u2');
         $typeSelect = $this->hasTenantTypeColumn() ? 't.tenant_type,' : "'full' AS tenant_type,";
         $lastLogin = $this->scalarIfTable('users', "SELECT MAX(u2.last_login_at) FROM users u2 WHERE u2.tenant_id = t.id AND {$humanLogin}", 'NULL');

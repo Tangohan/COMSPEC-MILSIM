@@ -310,7 +310,7 @@ $communityCount = count($sheet);
                                             <?php endif; ?>
                                         </td>
                                         <td data-sort-value="<?= $h($row['status_label']) ?>"><?= $h($row['status_label']) ?></td>
-                                        <td class="pa-sheet__num" data-sort-value="<?= (int) $row['user_count'] ?>"><?= (int) $row['user_count'] ?></td>
+                                        <td class="pa-sheet__num" data-sort-value="<?= (int) $row['user_count'] ?>"><?php if ($row['id'] > 1): ?><a class="pa-count-link" href="<?= $h(url('admin/tenants/' . (int) $row['id'] . '/comptes')) ?>" title="Voir les comptes de <?= $h($row['name']) ?>"><?= (int) $row['user_count'] ?></a><?php else: ?><?= (int) $row['user_count'] ?><?php endif; ?></td>
                                         <td data-sort-value="<?= $h($row['login_iso']) ?>"><?= $h($row['login_display']) ?></td>
                                         <td data-sort-value="<?= $h($row['game_iso']) ?>"><?= $h($row['game_display']) ?></td>
                                         <td data-sort-value="<?= (int) $row['idle_sort'] ?>"><span class="pa-pill pa-pill--<?= $row['idle_key'] === 'active' ? 'mint' : ($row['idle_key'] === 'idle' ? 'amber' : 'slate') ?>"><?= $h($row['idle_label']) ?></span></td>

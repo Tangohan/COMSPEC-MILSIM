@@ -614,6 +614,97 @@ class UserRepository
             . " NOT LIKE 'system.%@internal.local' COLLATE " . $c;
     }
 
+    /** Filtres de la liste des comptes d’une communauté (annuaire plateforme) : liste blanche. */
+    public const PLATFORM_ACCOUNT_FILTERS = ['all', 'active', 'pending', 'inactive', 'recent', 'dormant', 'never'];
+
+    /**
+     * Définition unique d’un « compte » d’une communauté pour l’annuaire plateforme (compteur ET liste) :
+     * compte rattaché au tenant, hors comptes techniques internes. Fragment littéral (aucun paramètre),
+     * le filtre est pris dans une liste blanche (inconnu = tous).
+     */
+    public static function sqlPlatformAccountFilter(string $alias, string $filter = 'all'): string
+    {
+        $a = preg_match('/^[a-z][a-z0-9_]*$/i', $alias) === 1 ? $alias : 'u';
+        $sql = self::sqlLiteralExcludeTechnicalInternalEmails($a);
+
+        return match ($filter) {
+            'active' => $sql . " AND {$a}.status = 'active'",
+            'pending' => $sql . " AND {$a}.status = 'pending_verification'",
+            'inactive' => $sql . " AND {$a}.status = 'inactive'",
+            'recent' => $sql . " AND {$a}.last_login_at >= (NOW() - INTERVAL 30 DAY)",
+            'dormant' => $sql . " AND {$a}.last_login_at < (NOW() - INTERVAL 30 DAY)",
+            'never' => $sql . " AND {$a}.last_login_at IS NULL",
+            default => $sql,
+        };
+    }
+
+    public static function normalizePlatformAccountFilter(mixed $raw): string
+    {
+        $v = is_string($raw) ? $raw : '';
+
+        return in_array($v, self::PLATFORM_ACCOUNT_FILTERS, true) ? $v : 'all';
+    }
+
+    /**
+     * @return array{0: string, 1: list<mixed>}
+     */
+    private function platformAccountsWhere(int $tenantId, string $filter, ?string $search): array
+    {
+        $where = 'u.tenant_id = ? AND ' . self::sqlPlatformAccountFilter('u', $filter);
+        $params = [$tenantId];
+        $search = $search !== null ? trim($search) : '';
+        if ($search !== '') {
+            $like = '%' . strtr(mb_substr($search, 0, 100), ['!' => '!!', '%' => '!%', '_' => '!_']) . '%';
+            $bits = ["u.display_name LIKE ? ESCAPE '!'", "u.callsign LIKE ? ESCAPE '!'", "u.email LIKE ? ESCAPE '!'"];
+            $params = array_merge($params, [$like, $like, $like]);
+            if ($this->hasTenantMemberNumberColumn()) {
+                $bits[] = "u.tenant_member_number LIKE ? ESCAPE '!'";
+                $params[] = $like;
+            }
+            $where .= ' AND (' . implode(' OR ', $bits) . ')';
+        }
+
+        return [$where, $params];
+    }
+
+    public function countPlatformAccounts(int $tenantId, string $filter = 'all', ?string $search = null): int
+    {
+        [$where, $params] = $this->platformAccountsWhere($tenantId, self::normalizePlatformAccountFilter($filter), $search);
+        $stmt = $this->pdo()->prepare('SELECT COUNT(*) FROM users u WHERE ' . $where);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listPlatformAccounts(int $tenantId, string $filter, ?string $search, string $sort, string $dir, int $limit, int $offset): array
+    {
+        [$where, $params] = $this->platformAccountsWhere($tenantId, self::normalizePlatformAccountFilter($filter), $search);
+        $cols = [
+            'name' => 'u.display_name',
+            'role' => 'r.name',
+            'status' => 'u.status',
+            'login' => 'u.last_login_at',
+            'created' => 'u.created_at',
+        ];
+        $orderCol = $cols[$sort] ?? $cols['name'];
+        $orderDir = strtolower($dir) === 'desc' ? 'DESC' : 'ASC';
+        $member = $this->hasTenantMemberNumberColumn() ? 'u.tenant_member_number' : 'NULL';
+        $sql = "SELECT u.id, u.display_name, u.callsign, u.email, u.status, u.last_login_at, u.created_at,
+                       {$member} AS member_number, r.name AS role_name
+                FROM users u
+                LEFT JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
+                WHERE {$where}
+                ORDER BY {$orderCol} {$orderDir}, u.id ASC
+                LIMIT " . max(1, min(1000, $limit)) . ' OFFSET ' . max(0, $offset);
+        $stmt = $this->pdo()->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     /**
      * Prédicat SQL + paramètres : comptes de service (si colonne) + courriels réservés du domaine interne.
      *
