@@ -1956,8 +1956,9 @@
       mapIntervals.forEach(function (id) { clearInterval(id); });
       mapIntervals = [];
       if (!isWorld) {
-        mapIntervals.push(setInterval(syncUnits, syncMs));
-        mapIntervals.push(setInterval(refreshSecondaryLayers, Math.max(syncMs, 12000)));
+        // Onglet caché : aucune requête (lecture reprise au tick suivant, une fois l'onglet revenu).
+        mapIntervals.push(setInterval(function () { if (!document.hidden) syncUnits(); }, syncMs));
+        mapIntervals.push(setInterval(function () { if (!document.hidden) refreshSecondaryLayers(); }, Math.max(syncMs, 12000)));
         syncUnits();
         refreshSecondaryLayers();
       } else {

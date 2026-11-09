@@ -75,17 +75,37 @@ window.ATAKViewshed = (function () {
         var fp = list.map(function (o) {
           return (o && o.id) + ':' + (o && o.updated_at);
         }).join('|');
-        if (fp === lastFp) return;
+        if (fp === lastFp) {
+          // Calques quasi statiques : rien de neuf, la prochaine lecture attend deux fois plus (60 s au plus).
+          delayMs = Math.min(MAX_DELAY_MS, delayMs * 2);
+          return;
+        }
         lastFp = fp;
+        delayMs = BASE_DELAY_MS;
         drawOverlays(list);
       })
-      .catch(function () { /* ignore */ });
+      .catch(function () { delayMs = Math.min(MAX_DELAY_MS, delayMs * 2); });
+  }
+
+  var BASE_DELAY_MS = 8000;
+  var MAX_DELAY_MS = 60000;
+  var delayMs = BASE_DELAY_MS;
+
+  function loop() {
+    // Onglet caché : aucune requête, une lecture au retour (visibilitychange).
+    if (!document.hidden) fetchOverlays();
+    timer = setTimeout(loop, delayMs);
   }
 
   function start() {
     if (timer) return;
     fetchOverlays();
-    timer = setInterval(fetchOverlays, 8000);
+    timer = setTimeout(loop, delayMs);
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) return;
+      delayMs = BASE_DELAY_MS;
+      fetchOverlays();
+    });
   }
 
   document.addEventListener('DOMContentLoaded', function () {

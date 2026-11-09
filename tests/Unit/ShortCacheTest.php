@@ -86,6 +86,21 @@ final class ShortCacheTest extends TestCase
         self::assertSame(2, ShortCache::remember('ttl:' . $this->ns, 1, $fn));
     }
 
+    /** Drapeau gardé entre les requêtes (canaux système du tchat déjà semés) ; rien en CLI par défaut. */
+    public function testGetAndPutKeepAFlag(): void
+    {
+        self::assertNull(ShortCache::get('flag:' . $this->ns));
+        ShortCache::put('flag:' . $this->ns, true, 60);
+        self::assertNull(ShortCache::get('flag:' . $this->ns), 'désactivé en CLI');
+
+        ShortCache::setEnabled(true);
+        self::assertNull(ShortCache::get('flag:' . $this->ns));
+        ShortCache::put('flag:' . $this->ns, true, 60);
+        self::assertTrue(ShortCache::get('flag:' . $this->ns));
+        ShortCache::put('null:' . $this->ns, null, 60);
+        self::assertNull(ShortCache::get('null:' . $this->ns));
+    }
+
     public function testExceptionIsNotCached(): void
     {
         ShortCache::setEnabled(true);

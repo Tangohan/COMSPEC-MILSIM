@@ -38,6 +38,30 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : API plus légères, moins de relectures (site et ATAK, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Athena répond plus vite pendant les parties
+- Les alertes médicales et tactiques, les repères et les canaux du tchat demandent beaucoup moins de travail au site : la carte et le téléphone restent fluides quand beaucoup de joueurs sont connectés.
+- Votre paquet d'identité (papiers, kits, fiches de couverture) n'est plus renvoyé en entier quand rien n'a changé depuis la dernière lecture.
+- Les pages ATAK et Overwatch laissées dans un onglet en arrière-plan ne sondent plus Athena : elles se remettent à jour dès que vous revenez sur l'onglet.
+EN : Athena answers faster during games
+- Medical and tactical alerts, markers and chat channels need far less work from the site: the map and the phone stay smooth when many players are connected.
+- Your identity pack (papers, kits, cover sheets) is no longer sent again in full when nothing has changed since the last read.
+- ATAK and Overwatch pages left in a background tab no longer poll Athena: they refresh as soon as you come back to the tab.
+
+### Détail technique
+- `GET /api/sse/identity/pack` : champ `revision` (empreinte du contenu sans `generated_at`) et `ETag` `W/"idp-…"` ; `since_rev` identique → `{"unchanged":true,…}` sans charge, `If-None-Match` identique → 304. Sans révision envoyée : paquet complet comme avant (+ `revision`). Contrat : `docs/technical/ICD-ATHENA-ATAK.md`, ICD-SSE-PACK-REV-001. COMSPEC Link publié profite déjà du 304 quand l'URL se répète ; le prochain pourra envoyer `since_rev`.
+- `SseIdentityPackCache` : paquet et révision 5 min dans `ShortCache`, clé par communauté, carte, opération, `since`, page ; vidé après toute écriture réussie du registre (hook dans `Application`, chemins `/atak/sse/`, `/api/sse/`, `/papiers`, `/couverture`, `/renseignement`, `identit`). `GameApiResponseCompactor` garde l'`ETag` posé par la route.
+- `RateLimitMiddleware` : 60 pages de paquet par minute et par appelant, 240 `documents/lookup` ; 429 + `Retry-After`.
+- `TenantAtakConfigRepository::getByTenantId` gardé le temps de la requête (jamais en CLI ni avec une PDO injectée, vidé à chaque écriture, `forgetMemo()` pour les écritures de `ReconPhotoHudService` et `AtakMarkerIconsService`) : 2 à 4 `SELECT *` de moins par sondage (effets roleplay, brouillage, vue renseignement).
+- `GET /api/atak/medical-alerts` : partie commune (chat, télémétrie, triage, unités, réconciliation) 3 s par communauté et carte, vidée au triage ; brouillage, droits et vue renseignement par appelant. `GET /api/atak/tactical-alerts` : lecture du chat 3 s.
+- `GET /api/atak/markers` : règles de détection 10 s, repères publiés d'Athena et marqueurs retirés 2 s (génération `markers:`, fenêtre de 15 s gardée).
+- `ensureSystemChatChannels` : drapeau partagé 1 h par communauté et carte (`ShortCache::get` / `put`), plus d'`INSERT IGNORE` à chaque sondage de `/api/chat/channels`.
+- Pages web : 19 sondages ne lisent plus rien quand l'onglet est caché (`document.hidden`) et relisent au retour (`visibilitychange`) ; calques de champ de vision : 8 s puis attente doublée jusqu'à 60 s tant que rien ne change.
+- Aucune migration. Tests : `SseIdentityPackRevisionTest`, `AtakHiddenTabPollingAssetTest`, ajouts à `GameApiResponseCompactorTest`, `RateLimitMiddlewareTest`, `ShortCacheTest`.
+
 ## À venir : parler aux IA en texte libre et atelier IA en Eden et en Zeus (COMSPEC SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

@@ -234,7 +234,9 @@ window.ATAKMedevac = (function () {
       if (e.target && e.target.id === 'atak-medevac-submit') submit();
     });
     fetchList();
-    setInterval(fetchList, 15000);
+    // Onglet caché : aucune requête, une lecture au retour.
+    setInterval(function () { if (!document.hidden) fetchList(); }, 15000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) fetchList(); });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);

@@ -185,7 +185,8 @@ window.ATAKFireTeams = (function () {
       renderComposition();
     });
     loadTeams();
-    setInterval(function () { loadTeams(); }, 30000);
+    // Onglet caché : aucune requête.
+    setInterval(function () { if (!document.hidden) loadTeams(); }, 30000);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);

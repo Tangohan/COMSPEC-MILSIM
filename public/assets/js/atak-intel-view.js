@@ -112,7 +112,9 @@
   function boot() {
     ensureBanner();
     poll();
-    setInterval(poll, POLL_MS);
+    // Onglet caché : aucune requête, une lecture au retour.
+    setInterval(function () { if (!document.hidden) poll(); }, POLL_MS);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) poll(); });
   }
 
   if (document.readyState === 'loading') {

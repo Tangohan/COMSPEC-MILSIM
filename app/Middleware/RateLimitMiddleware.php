@@ -23,6 +23,12 @@ final class RateLimitMiddleware
     /** GET /api/* par compte web et par minute : 25/s, de quoi garder trois onglets carte / Overwatch ouverts. */
     public const WEB_POLL_MAX_PER_MIN = 1500;
 
+    /** Pages du paquet d'identité par appelant et par minute (usage normal : 5 pages toutes les 2 min au plus). */
+    public const IDENTITY_PACK_MAX_PER_MIN = 60;
+
+    /** Contrôles N3 en ligne d'un papier par appelant et par minute (un par contrôle d'un joueur). */
+    public const IDENTITY_LOOKUP_MAX_PER_MIN = 240;
+
     public function __construct(
         private FileRateLimiter $limiter = new FileRateLimiter()
     ) {
@@ -75,6 +81,15 @@ final class RateLimitMiddleware
             '/api/atak/terrain/contours',
         ], true)) {
             return [30, 60, 'rl:atak_terrain_overlay:' . $path . ':ip:' . $ip];
+        }
+
+        // Registre d'identité, lectures chères : plafonds larges propres à chaque route, jamais atteints en partie
+        // normale (paquet chargé au début de la mission puis au plus toutes les 2 min, 5 pages au plus).
+        if ($method === 'GET' && $path === '/api/sse/identity/pack') {
+            return [self::IDENTITY_PACK_MAX_PER_MIN, 60, 'rl:sse_idpack:' . $this->gameActorKey($uid, $ip)];
+        }
+        if ($method === 'GET' && $path === '/api/sse/identity/documents/lookup') {
+            return [self::IDENTITY_LOOKUP_MAX_PER_MIN, 60, 'rl:sse_idlookup:' . $this->gameActorKey($uid, $ip)];
         }
 
         // Sondages GET de l'API pendant une partie : plafond large, seulement contre un client emballé (boucle sans
@@ -202,6 +217,26 @@ final class RateLimitMiddleware
         }
 
         return 'ip:' . $ip;
+    }
+
+    /**
+     * Appelant d'une lecture du jeu : compte du jeton de jeu, sinon communauté de la clé (serveur de jeu), sinon compte
+     * web, sinon IP. Une clé non reconnue retombe sur l'IP.
+     */
+    private function gameActorKey(int $uid, string $ip): string
+    {
+        if (ComspecApiKeyAuth::extractPresentedKey() !== '') {
+            $gameUser = (int) (ComspecApiKeyAuth::matchedUserId() ?? 0);
+            if ($gameUser > 0) {
+                return 'game:u' . $gameUser;
+            }
+            $tenant = (int) (ComspecApiKeyAuth::matchedTenantId() ?? 0);
+            if ($tenant > 0) {
+                return 'game:t' . $tenant . ':ip:' . $ip;
+            }
+        }
+
+        return $uid > 0 ? 'uid:' . $uid : 'ip:' . $ip;
     }
 
     /** Tuiles, fichiers et sondes de vie : une carte qui se déplace en charge des dizaines d'un coup. */
