@@ -42,6 +42,8 @@ return [
     'alertes_et_annonces' => 'Alerts and announcements',
     'alertes_etat' => 'Alerts & status',
     'alertes_plateforme' => 'Platform alerts',
+    'messages_aux_communautes' => 'Messages to communities',
+    'ecrire_aux_back_offices_des_communautes_invitation_discord_consigne_annonce' => 'Write to community back offices: Discord invitation, instruction, announcement',
     'analyses_candidatures' => 'Application analytics',
     'annonces' => 'Announcements',
     'annonces_de_cooperation' => 'Cooperation announcements',

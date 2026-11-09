@@ -738,6 +738,7 @@ if ($isOperatorBoNav) {
                     ? ['label' => 'Intégrations', 'href' => url('back-office/integrations'), 'icon' => 'plug', 'active' => $boNavInteg]
                     : null,
                 ['label' => 'Mises à jour', 'href' => url('back-office/mise-a-niveau'), 'icon' => 'rocket', 'active' => $navAt('back-office/mise-a-niveau')],
+                ['label' => 'Messages de la plateforme', 'href' => url('back-office/messages-plateforme'), 'icon' => 'radio', 'active' => $navAt('back-office/messages-plateforme')],
                 ['label' => 'Traçabilité du courrier', 'href' => url('back-office/courrier/traceabilite'), 'icon' => 'mail', 'active' => $navAt('back-office/courrier/traceabilite')],
                 ['label' => 'Export pour contrôle', 'href' => url('back-office/conformite/export-dossier'), 'icon' => 'audit', 'active' => $navAt('back-office/conformite')],
             ], static fn (?array $row): bool => is_array($row))),

@@ -10,6 +10,9 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\SubscriptionPlanRepository;
 use App\Repositories\TenantRepository;
+use App\Core\Gate;
+use App\Services\Admin\TenantAdminInsights;
+use App\Services\Admin\TenantEditRules;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Community\TenantArchiveState;
@@ -36,7 +39,9 @@ final class SystemTenantsController
         private ?AuditService $audit = null,
         private ?TenantTypeSwitchService $tenantTypeSwitch = null,
         private ?TenantRemovalService $removal = null,
+        private ?TenantAdminInsights $insights = null,
     ) {
+        $this->insights ??= new TenantAdminInsights();
         $this->subscriptionPlans ??= new SubscriptionPlanRepository();
         $this->audit ??= new AuditService();
         $this->tenantTypeSwitch ??= new TenantTypeSwitchService($this->tenants);
@@ -74,8 +79,23 @@ final class SystemTenantsController
         ]);
     }
 
+    /** Droit « administration du site » revérifié à chaque requête, en plus du middleware de la route. */
+    private function guard(): ?Response
+    {
+        if (!Session::get('user_id') || Gate::getInstance()->deny('admin.system')) {
+            Session::flash('error', 'Accès réservé à l’administration du site.');
+
+            return Response::redirect(url('dashboard'));
+        }
+
+        return null;
+    }
+
     public function edit(Request $request, array $params = []): Response
     {
+        if ($denied = $this->guard()) {
+            return $denied;
+        }
         $tenantId = (int) ($params['id'] ?? 0);
         $tenant = $tenantId > 1 ? $this->tenants->findById($tenantId) : null;
         if ($tenant === null) {
@@ -102,6 +122,7 @@ final class SystemTenantsController
             : '';
 
         $name = (string) ($tenant['name'] ?? 'Communauté');
+        $tab = TenantEditRules::tab($request->query('onglet'));
 
         // Membres : mêmes définitions que l'annuaire et la page des comptes (UserRepository::*PlatformAccount*).
         $users = new \App\Repositories\UserRepository();
@@ -109,9 +130,63 @@ final class SystemTenantsController
         foreach (\App\Repositories\UserRepository::PLATFORM_ACCOUNT_FILTERS as $f) {
             $memberCounts[$f] = $users->countPlatformAccounts($tenantId, $f, null);
         }
-        $memberRows = $users->listPlatformAccounts($tenantId, 'all', null, 'login', 'desc', 8, 0);
+        $memberRows = [];
+        $memberList = ['filter' => 'all', 'q' => '', 'sort' => 'name', 'dir' => 'asc', 'page' => 1, 'pages' => 1, 'total' => 0];
+        if ($tab === 'membres') {
+            $filter = \App\Repositories\UserRepository::normalizePlatformAccountFilter($request->query('filter'));
+            $q = mb_substr(trim((string) $request->query('q', '')), 0, 100);
+            $sort = (string) $request->query('sort', 'name');
+            $sort = in_array($sort, SystemTenantAccountsController::SORTS, true) ? $sort : 'name';
+            $dir = strtolower((string) $request->query('dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+            $total = $users->countPlatformAccounts($tenantId, $filter, $q);
+            $pages = max(1, (int) ceil($total / TenantEditRules::MEMBER_PER_PAGE));
+            $page = min($pages, max(1, (int) $request->query('page', 1)));
+            $memberRows = $users->listPlatformAccounts($tenantId, $filter, $q, $sort, $dir, TenantEditRules::MEMBER_PER_PAGE, ($page - 1) * TenantEditRules::MEMBER_PER_PAGE);
+            $memberList = compact('filter', 'q', 'sort', 'dir', 'page', 'pages', 'total');
+        }
+
+        $summary = $tab === 'resume' ? $this->insights->summary($tenant) : null;
+        $planRow = null;
+        $effSlug = \App\Services\Platform\EffectivePlan::slugFor($tenant);
+        if ($plans !== []) {
+            foreach ($plans as $p) {
+                if ((string) ($p['slug'] ?? '') === $effSlug) {
+                    $planRow = $p;
+                }
+            }
+        }
+        $limits = in_array($tab, ['edition', 'diagnostic'], true) ? TenantAdminInsights::planLimits($planRow, $memberCounts) : null;
+        $integrations = $tab === 'edition' ? $this->insights->integrations($tenant) : [];
+        $diag = $tab === 'diagnostic' ? $this->insights->diagnostic($tenant) : null;
+        $owners = $tab === 'edition' ? $this->insights->ownerCandidates($tenantId) : [];
+        $ownerName = '';
+        foreach ($owners as $o) {
+            if ($o['id'] === (int) ($tenant['owner_user_id'] ?? 0)) {
+                $ownerName = $o['name'];
+            }
+        }
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        $sessionTenant = (int) Session::get('tenant_id', 0);
+        $base = 'admin/tenants/' . $tenantId;
 
         return Response::view('layout.main', [
+            'platformTab' => $tab,
+            'platformSummary' => $summary,
+            'platformLimits' => $limits,
+            'platformDiagLimits' => $limits['limits'] ?? [],
+            'platformIntegrations' => $integrations,
+            'platformDiag' => $diag,
+            'platformOwners' => $owners,
+            'platformOwnerName' => $ownerName,
+            'platformLocale' => (string) (TenantEditRules::locale($community['default_locale'] ?? null) ?? 'fr'),
+            'platformTimezone' => array_key_exists('default_timezone', $tenant) ? (string) $tenant['default_timezone'] : null,
+            'platformPreviewPossible' => $sessionTenant === $tenantId,
+            'platformInterventionUrl' => url('admin/system/tenants/' . $tenantId . '/intervention'),
+            'platformLocaleAction' => url($base . '/langue'),
+            'platformOwnerAction' => url($base . '/contact'),
+            'platformLogoAction' => url($base . '/logo'),
+            'platformEditUrl' => url($base . '/edit'),
+            'platformMemberList' => $memberList,
             'platformMemberCounts' => $memberCounts,
             'platformMemberRows' => $memberRows,
             'platformMemberLabels' => SystemTenantAccountsController::filterLabels(),
@@ -136,8 +211,11 @@ final class SystemTenantsController
 
     public function updateIdentity(Request $request, array $params = []): Response
     {
+        if ($denied = $this->guard()) {
+            return $denied;
+        }
         $tenantId = (int) ($params['id'] ?? 0);
-        $editUrl = url('admin/tenants/' . $tenantId . '/edit');
+        $editUrl = url('admin/tenants/' . $tenantId . '/edit') . '?onglet=edition';
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
@@ -212,8 +290,11 @@ final class SystemTenantsController
 
     public function updateType(Request $request, array $params = []): Response
     {
+        if ($denied = $this->guard()) {
+            return $denied;
+        }
         $tenantId = (int) ($params['id'] ?? 0);
-        $editUrl = url('admin/tenants/' . $tenantId . '/edit') . '#profil';
+        $editUrl = url('admin/tenants/' . $tenantId . '/edit') . '?onglet=edition#profil';
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
@@ -281,8 +362,11 @@ final class SystemTenantsController
 
     public function updatePlan(Request $request, array $params = []): Response
     {
+        if ($denied = $this->guard()) {
+            return $denied;
+        }
         $tenantId = (int) ($params['id'] ?? 0);
-        $editUrl = url('admin/tenants/' . max(0, $tenantId) . '/edit') . '#formule';
+        $editUrl = url('admin/tenants/' . max(0, $tenantId) . '/edit') . '?onglet=edition#formule';
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
@@ -348,10 +432,136 @@ final class SystemTenantsController
     }
 
     /**
+     * Contrôles communs des écritures de la fiche : droit, CSRF, communauté valide (id de la route, jamais du corps).
+     *
+     * @return array{0: ?Response, 1: array<string, mixed>, 2: int, 3: string}
+     */
+    private function writeContext(Request $request, array $params, string $anchor): array
+    {
+        if ($denied = $this->guard()) {
+            return [$denied, [], 0, ''];
+        }
+        $tenantId = (int) ($params['id'] ?? 0);
+        $back = url('admin/tenants/' . max(0, $tenantId) . '/edit') . '?onglet=edition#' . $anchor;
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return [Response::redirect($tenantId > 1 ? $back : url('admin/tenants')), [], 0, $back];
+        }
+        $before = $tenantId > 1 ? $this->tenants->findById($tenantId) : null;
+        if ($before === null) {
+            Session::flash('error', 'Communauté introuvable.');
+
+            return [Response::redirect(url('admin/tenants')), [], 0, $back];
+        }
+
+        return [null, $before, $tenantId, $back];
+    }
+
+    /** POST /admin/tenants/{id}/langue : langue de référence et fuseau horaire (listes blanches). */
+    public function updateLocale(Request $request, array $params = []): Response
+    {
+        [$stop, $before, $tenantId, $back] = $this->writeContext($request, $params, 'langue');
+        if ($stop !== null) {
+            return $stop;
+        }
+        $locale = TenantEditRules::locale($request->input('default_locale'));
+        if ($locale === null) {
+            Session::flash('error', 'Langue non reconnue.');
+
+            return Response::redirect($back);
+        }
+        $hasTz = array_key_exists('default_timezone', $before);
+        $tz = $hasTz ? TenantEditRules::timezone($request->input('default_timezone')) : null;
+        if ($hasTz && $tz === null) {
+            Session::flash('error', 'Fuseau horaire non reconnu.');
+
+            return Response::redirect($back);
+        }
+        $settings = $this->tenants->getSettings($tenantId);
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        $oldLocale = (string) (TenantEditRules::locale($community['default_locale'] ?? null) ?? 'fr');
+        $oldTz = $hasTz ? (string) $before['default_timezone'] : null;
+
+        $this->tenants->updateSettings($tenantId, ['community' => ['default_locale' => $locale]]);
+        if ($hasTz && $tz !== null) {
+            $this->tenants->updateTimezone($tenantId, $tz);
+        }
+        $this->audit->logChange(
+            AuditAction::TENANT_LOCALE_UPDATED,
+            $tenantId,
+            $this->actorId(),
+            'tenant',
+            $tenantId,
+            ['default_locale' => $oldLocale] + ($hasTz ? ['default_timezone' => $oldTz] : []),
+            ['default_locale' => $locale] + ($hasTz ? ['default_timezone' => $tz] : []),
+        );
+        Session::flash('success', 'Langue et fuseau horaire enregistrés.');
+
+        return Response::redirect($back);
+    }
+
+    /** POST /admin/tenants/{id}/contact : propriétaire de la communauté (compte actif de CETTE communauté). */
+    public function updateOwner(Request $request, array $params = []): Response
+    {
+        [$stop, $before, $tenantId, $back] = $this->writeContext($request, $params, 'contact');
+        if ($stop !== null) {
+            return $stop;
+        }
+        $owner = TenantEditRules::positiveId($request->input('owner_user_id'));
+        if ($owner === null || !$this->insights->isActiveMember($tenantId, $owner)) {
+            Session::flash('error', 'Choisissez un compte actif de cette communauté.');
+
+            return Response::redirect($back);
+        }
+        $this->tenants->setOwner($tenantId, $owner);
+        $this->audit->logChange(
+            AuditAction::TENANT_OWNER_UPDATED,
+            $tenantId,
+            $this->actorId(),
+            'tenant',
+            $tenantId,
+            ['owner_user_id' => (int) ($before['owner_user_id'] ?? 0)],
+            ['owner_user_id' => $owner],
+        );
+        Session::flash('success', 'Propriétaire de la communauté mis à jour.');
+
+        return Response::redirect($back);
+    }
+
+    /** POST /admin/tenants/{id}/logo : retrait du logo (confirmation obligatoire). */
+    public function removeLogo(Request $request, array $params = []): Response
+    {
+        [$stop, $before, $tenantId, $back] = $this->writeContext($request, $params, 'identite');
+        if ($stop !== null) {
+            return $stop;
+        }
+        if ((string) $request->input('confirm_logo_removal', '') !== '1') {
+            Session::flash('error', 'Cochez la confirmation avant de retirer le logo.');
+
+            return Response::redirect($back);
+        }
+        $old = trim((string) ($before['logo_url'] ?? ''));
+        if ($old === '') {
+            Session::flash('error', 'Cette communauté n’a pas de logo.');
+
+            return Response::redirect($back);
+        }
+        $this->tenants->clearLogoUrl($tenantId);
+        $this->audit->logChange(AuditAction::TENANT_LOGO_REMOVED, $tenantId, $this->actorId(), 'tenant', $tenantId, ['logo' => 'défini'], ['logo' => 'retiré']);
+        Session::flash('success', 'Logo retiré.');
+
+        return Response::redirect($back);
+    }
+
+    /**
      * Archiver, restaurer ou supprimer définitivement : récapitulatif de ce qui part et de ce qui reste.
      */
     public function removal(Request $request, array $params = []): Response
     {
+        if ($denied = $this->guard()) {
+            return $denied;
+        }
         $tenantId = (int) ($params['id'] ?? 0);
         $preview = $tenantId > 1 ? $this->removal->preview($tenantId) : null;
         if ($preview === null) {
@@ -375,6 +585,9 @@ final class SystemTenantsController
 
     public function archive(Request $request, array $params = []): Response
     {
+        if ($denied = $this->guard()) {
+            return $denied;
+        }
         $tenantId = (int) ($params['id'] ?? 0);
         $back = url('admin/tenants/' . max(0, $tenantId) . '/retrait');
         if (!Csrf::validate($request->input('_csrf_token'))) {
@@ -429,6 +642,9 @@ final class SystemTenantsController
 
     public function restore(Request $request, array $params = []): Response
     {
+        if ($denied = $this->guard()) {
+            return $denied;
+        }
         $tenantId = (int) ($params['id'] ?? 0);
         $back = url('admin/tenants/' . max(0, $tenantId) . '/retrait');
         if (!Csrf::validate($request->input('_csrf_token'))) {
@@ -469,6 +685,9 @@ final class SystemTenantsController
 
     public function destroy(Request $request, array $params = []): Response
     {
+        if ($denied = $this->guard()) {
+            return $denied;
+        }
         $tenantId = (int) ($params['id'] ?? 0);
         $back = url('admin/tenants/' . max(0, $tenantId) . '/retrait');
         if (!Csrf::validate($request->input('_csrf_token'))) {
