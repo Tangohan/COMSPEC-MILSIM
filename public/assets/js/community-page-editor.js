@@ -8,11 +8,17 @@
 (function () {
   'use strict';
 
+  /* Même éditeur pour la vitrine publique et pour le bloc personnalisé de l’accueil du back-office
+     (cfg.root, cfg.mode = 'direct', extensions de types de blocs : voir window.pbeExt plus bas). */
   var cfgEl = document.getElementById('pb-editor-config');
-  var root = document.querySelector('.cl-vitrine[data-cl-editing]');
-  if (!cfgEl || !root) { return; }
+  if (!cfgEl) { return; }
   var cfg;
   try { cfg = JSON.parse(cfgEl.textContent || '{}'); } catch (e) { return; }
+  var root = document.querySelector(cfg.root || '.cl-vitrine[data-cl-editing]');
+  if (!root) { return; }
+  var direct = cfg.mode === 'direct';
+  cfg.sections = cfg.sections && !Array.isArray(cfg.sections) ? cfg.sections : {};
+  function siteBase() { return cfg.siteBase != null ? cfg.siteBase : cfg.base.replace(/\/c\/[^/]+$/, ''); }
 
   var state = {
     theme: cfg.layout.theme || 'light',
@@ -87,6 +93,8 @@
     cta: '<rect x="8" y="16" width="144" height="46" rx="5" fill="#0c1116" stroke="#24332e"/><rect x="18" y="28" width="62" height="7" rx="2" fill="#fff"/><rect x="18" y="40" width="44" height="4" rx="2" fill="#7d8a84"/><rect x="106" y="32" width="36" height="12" rx="2" fill="#12d18e"/>'
   };
 
+  /* Extensions : window.pbeExt = [function (api) { return { labels, art, panels }; }] (voir community-page-editor-home.js). */
+  var ext = { labels: {}, art: {}, panels: {} };
   var $ = function (sel, el) { return (el || document).querySelector(sel); };
   var $$ = function (sel, el) { return Array.prototype.slice.call((el || document).querySelectorAll(sel)); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
@@ -149,7 +157,7 @@
     setStatus('saving', 'Enregistrement…');
     saving = post(cfg.endpoints.draft, payload()).then(function (j) {
       var t = new Date();
-      setStatus(dirty ? 'dirty' : 'saved', dirty ? 'Modifications non enregistrées' : 'Brouillon enregistré à ' + String(t.getHours()).padStart(2, '0') + 'h' + String(t.getMinutes()).padStart(2, '0'));
+      setStatus(dirty ? 'dirty' : 'saved', dirty ? 'Modifications non enregistrées' : (direct ? 'Enregistré à ' : 'Brouillon enregistré à ') + String(t.getHours()).padStart(2, '0') + 'h' + String(t.getMinutes()).padStart(2, '0'));
       cfg.hasDraft = true;
       return j;
     }).catch(function (e) {
@@ -355,7 +363,7 @@
       markDirty();
       if (panelMode === 'page') { openPagePanel(); }
     } else if (what === 'delete') {
-      if (!window.confirm('Supprimer ce bloc ? Vous pourrez encore annuler en abandonnant le brouillon.')) { return; }
+      if (!window.confirm(direct ? 'Supprimer ce bloc ?' : 'Supprimer ce bloc ? Vous pourrez encore annuler en abandonnant le brouillon.')) { return; }
       state.blocks.splice(i, 1);
       var ins = el.nextSibling;
       if (ins && ins.classList && ins.classList.contains('pbe-insert')) { ins.remove(); }
@@ -592,7 +600,7 @@
     var prev = document.createElement('div');
     prev.className = 'pbe-image__preview';
     var setPrev = function (u) { prev.style.backgroundImage = u ? 'url("' + String(u).replace(/"/g, '%22') + '")' : ''; };
-    setPrev(current && /^https?:/.test(current) ? current : (current ? cfg.base.replace(/\/c\/[^/]+$/, '') + '/' + current.replace(/^\//, '') : ''));
+    setPrev(current && /^https?:/.test(current) ? current : (current ? siteBase() + '/' + current.replace(/^\//, '') : ''));
     var actions = document.createElement('div');
     actions.className = 'pbe-image__actions';
     var up = document.createElement('button');
@@ -709,7 +717,7 @@
   var GALLERY_MAX = 3;
   function imgSrc(v) {
     if (!v) { return ''; }
-    return /^https?:/.test(v) ? v : cfg.base.replace(/\/c\/[^/]+$/, '') + '/' + String(v).replace(/^\//, '');
+    return /^https?:/.test(v) ? v : siteBase() + '/' + String(v).replace(/^\//, '');
   }
   function renderGalleryPreview(el, gallery) {
     var g = el && el.querySelector('[data-cl-gallery]');
@@ -856,8 +864,15 @@
         }, lab[1]));
       });
     }
-    var gn = group('Menu de l’en-tête');
-    gn.appendChild(input('Libellé dans le menu', b.nav_label, function (v) { b.nav_label = v; markDirty(); }, { placeholder: custom ? 'Absent du menu' : 'Libellé par défaut', hint: 'Ajoute un lien vers ce bloc dans l’en-tête. Visible après enregistrement.' }));
+    if (custom && ext.panels[b.type]) {
+      /* Types propres à une extension (accueil du back-office) : panneau de contenu fourni par l’extension. */
+      ext.panels[b.type](b, el, focusImage);
+      return;
+    }
+    if (!direct) {
+      var gn = group('Menu de l’en-tête');
+      gn.appendChild(input('Libellé dans le menu', b.nav_label, function (v) { b.nav_label = v; markDirty(); }, { placeholder: custom ? 'Absent du menu' : 'Libellé par défaut', hint: 'Ajoute un lien vers ce bloc dans l’en-tête. Visible après enregistrement.' }));
+    }
     if (!custom && b.key === 'hero') {
       // Image du bandeau d’accueil : téléversée, prise dans la médiathèque ou collée en adresse.
       b.props = b.props || {};
@@ -868,7 +883,7 @@
         var media = el && el.querySelector('.cl-hero__media');
         if (!media) { return; }
         if (v) {
-          var src = /^https?:/.test(v) ? v : cfg.base.replace(/\/c\/[^/]+$/, '') + '/' + v.replace(/^\//, '');
+          var src = /^https?:/.test(v) ? v : siteBase() + '/' + v.replace(/^\//, '');
           media.innerHTML = '';
           var img = document.createElement('img');
           img.src = src;
@@ -947,7 +962,7 @@
             var th = document.createElement('div');
             th.className = 'pbe-item__thumb';
             th.title = 'Changer l’image';
-            var u = it.image ? (/^https?:/.test(it.image) ? it.image : cfg.base.replace(/\/c\/[^/]+$/, '') + '/' + it.image.replace(/^\//, '')) : '';
+            var u = it.image ? (/^https?:/.test(it.image) ? it.image : siteBase() + '/' + it.image.replace(/^\//, '')) : '';
             if (u) { th.style.backgroundImage = 'url("' + u.replace(/"/g, '%22') + '")'; }
             th.addEventListener('click', function () {
               var holder = row.nextSibling && row.nextSibling.classList && row.nextSibling.classList.contains('pbe-field') ? row.nextSibling : null;
@@ -1011,7 +1026,7 @@
       var c = document.createElement('button');
       c.type = 'button';
       c.className = 'pbe-card';
-      c.innerHTML = '<div class="pbe-card__art"><svg viewBox="0 0 160 78" preserveAspectRatio="xMidYMid slice">' + ART[t] + '</svg></div><strong></strong><span></span>';
+      c.innerHTML = '<div class="pbe-card__art"><svg viewBox="0 0 160 78" preserveAspectRatio="xMidYMid slice">' + (ART[t] || ext.art[t] || '') + '</svg></div><strong></strong><span></span>';
       c.querySelector('strong').textContent = cfg.types[t].label;
       c.querySelector('span').textContent = cfg.types[t].desc;
       c.addEventListener('click', function () { addBlock(t); });
@@ -1022,7 +1037,7 @@
     hint.className = 'pbe-field';
     hint.innerHTML = '<small></small>';
     var target = insertAfterId ? findBlock(insertAfterId) : null;
-    hint.querySelector('small').textContent = target ? 'Le bloc sera ajouté après « ' + blockLabel(target) + ' ».' : 'Le bloc sera ajouté avant le contact. Survolez la page et utilisez « Ajouter ici » pour choisir sa place.';
+    hint.querySelector('small').textContent = target ? 'Le bloc sera ajouté après « ' + blockLabel(target) + ' ».' : (direct ? 'Le bloc sera ajouté à la fin. Survolez le contenu et utilisez « Ajouter ici » pour choisir sa place.' : 'Le bloc sera ajouté avant le contact. Survolez la page et utilisez « Ajouter ici » pour choisir sa place.');
     g.appendChild(hint);
   }
   function addBlock(type) {
@@ -1084,6 +1099,15 @@
   });
 
   /* —— Démarrage —— */
+  (window.pbeExt || []).forEach(function (fn) {
+    var r = fn({
+      cfg: cfg, state: state, $: $, $$: $$, esc: esc, svg: svg, group: group, field: field, input: input, seg: seg, toggle: toggle,
+      imagePicker: imagePicker, imgSrc: imgSrc, markDirty: markDirty, scheduleRerender: scheduleRerender, toast: toast, post: post
+    }) || {};
+    Object.keys(r.labels || {}).forEach(function (k) { LABELS[k] = r.labels[k]; });
+    Object.keys(r.art || {}).forEach(function (k) { ext.art[k] = r.art[k]; });
+    Object.keys(r.panels || {}).forEach(function (k) { ext.panels[k] = r.panels[k]; });
+  });
   enableEditable(root);
   $$('.pb-block', root).forEach(decorate);
   refreshBars();

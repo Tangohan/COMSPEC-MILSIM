@@ -66,6 +66,9 @@ $hcN = count($hcItems);
                     <input type="checkbox" id="<?= $pilH($hcDom) ?>" name="visible[]" value="<?= $pilH($hcId) ?>"<?= empty($hcItem['hidden']) ? ' checked' : '' ?>>
                     <span><b><?= $pilH($hcLabel) ?></b><?php if ($hcHint !== ''): ?><small><?= $pilH($hcHint) ?></small><?php endif; ?></span>
                 </label>
+                <?php if ($hcId === 'custom' && !empty($home['can_share'])): ?>
+                <a class="pil-btn pil-btn--sm" href="<?= $pilH(url('back-office/accueil/bloc')) ?>">Modifier le contenu</a>
+                <?php endif; ?>
                 <label class="home-cust__size">
                     <span class="ath-sr-only"><?= $pilH('Largeur de ' . $hcLabel) ?></span>
                     <select name="size[<?= $pilH($hcId) ?>]">

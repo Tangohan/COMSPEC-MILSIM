@@ -321,7 +321,7 @@ final class PublicPageBuilder
     }
 
     /** @param array<string, mixed> $b */
-    private static function normalizeBlock(array $b): ?array
+    public static function normalizeBlock(array $b): ?array
     {
         $type = (string) ($b['type'] ?? '');
         $id = preg_match('/^[a-z]_[A-Za-z0-9_]{1,32}$/', (string) ($b['id'] ?? '')) ? (string) $b['id'] : self::newId();
@@ -553,7 +553,7 @@ final class PublicPageBuilder
         return 'b_' . bin2hex(random_bytes(5));
     }
 
-    private static function text(mixed $v, int $max, bool $multiline = true): string
+    public static function text(mixed $v, int $max, bool $multiline = true): string
     {
         if (!is_scalar($v)) {
             return '';

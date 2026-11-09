@@ -280,6 +280,8 @@ class OrganizationDashboardController
                 || portal_nav_href_permission_allowed($href),
         ]);
 
+        $home = $this->homeData($tenantId, $viewerId, $request->queryString('personnaliser') === '1');
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.dashboard',
             'title' => 'Tableau de bord',
@@ -290,8 +292,8 @@ class OrganizationDashboardController
             'boSkipPageHead' => true,
             'boPageAction' => 'Publier une annonce',
             'boPageActionUrl' => url('back-office/alerts/create'),
-            'backOfficePageCss' => ['back-office-dashboard.css', 'pilotage-dashboard.css', 'back-office-home.css'],
-            'home' => $this->homeData($tenantId, $viewerId, $request->queryString('personnaliser') === '1'),
+            'backOfficePageCss' => array_merge(['back-office-dashboard.css', 'pilotage-dashboard.css', 'back-office-home.css'], isset($home['custom']) ? ['community-page-builder.css', 'back-office-blocks.css'] : []),
+            'home' => $home,
             'adminKpiBlockError' => $metrics['blockError'],
             'pilotage' => $pilotage,
             'skipGlobalAlertBanners' => true,
@@ -340,6 +342,21 @@ class OrganizationDashboardController
             }
         } catch (\Throwable $e) {
             error_log('[bo-home] ' . $e->getMessage());
+        }
+        try {
+            foreach ($home['items'] as $item) {
+                if ($item['id'] === 'custom' && !$item['hidden']) {
+                    $store = Container::get(\App\Services\BackOffice\Home\HomeBlocksStore::class);
+                    $blocks = $store->load($tenantId);
+                    $home['custom'] = [
+                        'blocks' => array_values(array_filter($blocks['blocks'], static fn (array $b): bool => empty($b['hidden']))),
+                        'sheets' => $store->sheetsFor($blocks, $tenantId, $userId),
+                        'can_edit' => $home['can_share'],
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('[bo-home] bloc personnalisé : ' . $e->getMessage());
         }
         try {
             $gate = Gate::getInstance();

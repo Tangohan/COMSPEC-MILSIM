@@ -1493,6 +1493,10 @@ return function (Router $router) {
     $router->get('/back-office/menu/pastilles', [\App\Controllers\Admin\BackOfficeMenuController::class, 'badges'], [AuthMiddleware::class]);
     $router->post('/back-office/menu/favoris', [\App\Controllers\Admin\BackOfficeMenuController::class, 'favorite'], [AuthMiddleware::class]);
     // Accueil personnalisable et tableaux : mêmes personnes que le tableau de bord de pilotage.
+    $router->get('/back-office/accueil/bloc', [\App\Controllers\Admin\BackOfficeBlocksController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/accueil/bloc/enregistrer', [\App\Controllers\Admin\BackOfficeBlocksController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/accueil/bloc/rendu', [\App\Controllers\Admin\BackOfficeBlocksController::class, 'renderBlock'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/accueil/bloc/image', [\App\Controllers\Admin\BackOfficeBlocksController::class, 'uploadImage'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/accueil/disposition', [\App\Controllers\Admin\BackOfficeHomeController::class, 'saveLayout'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/tableaux', [\App\Controllers\Admin\BackOfficeHomeController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/tableaux/{id}', [\App\Controllers\Admin\BackOfficeHomeController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
