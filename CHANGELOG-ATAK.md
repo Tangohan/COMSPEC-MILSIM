@@ -38,6 +38,8 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+
+## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)
 ## À venir : icône de la radio MPU dans la barre d'état (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -59,9 +61,6 @@ EN : An icon for the MPU radio in the phone status bar
 - `tools/gen_mpu_status_icons.py` : 5 PAA 64 px (`mpu_idle`, `mpu_cable`, `mpu_wifi`, `mpu_tx`, `mpu_cut`) dans `main/data`, blancs sur transparent, ancien fichier supprimé avant conversion. Formes distinctes : la couleur n'est jamais seule.
 - Autotest : étape `tel_icone_mpu`. Chaînes anglaises dans `i18n/en.txt`.
 
-## À venir : vrais symboles militaires MIL-STD-2525D / APP-6D et curseurs GPS (ATAK natif, version à attribuer)
-
-## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)
 ## À venir : importer sa couverture générée sur Athena (SSE et COMSPEC Link, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
