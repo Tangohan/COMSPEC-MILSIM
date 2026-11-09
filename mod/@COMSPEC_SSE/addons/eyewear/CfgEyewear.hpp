@@ -271,8 +271,8 @@ class CfgVehicles {
     class Box_NATO_Support_F;
     // Objet 3D du slot virtuel : créé localement par chaque client (createVehicleLocal) et accroché à la tête du porteur.
     // Suivi de la tête à chaque image (fn_eyewearFollow) : origine du modèle = point « pilot » + ce décalage (mètres,
-    // repère du regard : x droite du personnage, y avant, z haut ; relevé en jeu : « pilot » ~5 cm au-dessus des
-    // yeux et ~2 cm sur la gauche ; 5 cm devant pour que le verre passe devant le nez).
+    // repère du regard : x droite du personnage, y avant, z haut ; relevé en jeu : « pilot » ~3,5 cm au-dessus des
+    // yeux et ~2 cm sur la gauche ; 4 cm devant pour que le verre passe devant le nez).
     class COMSPEC_SSE_EyewearHead_Base: NonStrategic {
         author = "COMSPEC";
         scope = 1;
@@ -280,7 +280,7 @@ class CfgVehicles {
         displayName = "$STR_COMSPEC_SSE_EYEWEAR_HEAD";
         destrType = "DestructNo";
         model = "\A3\Weapons_F\empty.p3d";
-        comspec_sse_eyewearAttachOffset[] = {0.02, 0.05, -0.055};
+        comspec_sse_eyewearAttachOffset[] = {0.02, 0.04, -0.035};
     };
     class COMSPEC_SSE_EyewearHead_radar_white: COMSPEC_SSE_EyewearHead_Base {
         model = "\z\comspec_sse\addons\eyewear\data\models\ew_radar_white_head.p3d";
