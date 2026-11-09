@@ -888,14 +888,6 @@ def write_variant(name, cid, vis, sh, geo, off, skinned, stats, pivot_back=None,
     print("écrit %s.p3d (%d Ko, %d triangles)" % (name, size // 1024, v.tris()))
 
 
-# Variantes de CALIBRATION (temporaires, test en jeu seulement), Radar blanche : écart axe de demi-tour / yeux
-# (SKIN_PIVOT_BACK) de part et d'autre de la valeur retenue. (étiquette, écart ou False = non tourné, dossier MLOD ou None)
-CALIBRATION = [
-    ("p056", 0.056, None),
-    ("p072", 0.072, None),
-]
-
-
 def main():
     stats = "--stats" in sys.argv
     os.makedirs(OUT, exist_ok=True)
@@ -906,21 +898,6 @@ def main():
             name = "ew_" + cid + suffix
             names.append((name, skinned))
             write_variant(name, cid, vis, sh, geo, off, skinned, stats)
-    vis, sh, geo = build_all("radar_white")
-    mlod_names = []
-    for tag, pb, folder in CALIBRATION:
-        name = "ew_cal_" + tag
-        out_dir = None
-        if folder:
-            out_dir = os.path.join(os.path.dirname(OUT), folder)
-            os.makedirs(out_dir, exist_ok=True)
-            mlod_names.append((name, True))
-        else:
-            names.append((name, True))
-        write_variant(name, "radar_white", vis, sh, geo, S.HEAD_OFFSET, True, stats, pivot_back=pb, out_dir=out_dir)
-    if mlod_names and not stats:
-        with open(os.path.join(os.path.dirname(OUT), "mlod", "model.cfg"), "w", encoding="utf-8", newline="\n") as f:
-            f.write(model_cfg(mlod_names))
     if not stats:
         with open(os.path.join(OUT, "model.cfg"), "w", encoding="utf-8", newline="\n") as f:
             f.write(model_cfg(names))

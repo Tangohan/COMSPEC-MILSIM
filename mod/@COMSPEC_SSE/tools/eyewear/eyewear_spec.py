@@ -25,8 +25,8 @@ ATTACH_OFFSET = (0.0, 0.0, 0.0)
 # tournés d'un demi-tour autour d'un axe vertical situé derrière les yeux (bouts des branches devant les oreilles,
 # verre dans l'arrière du crâne ; avancer le modèle en +Z le reculait). Le fichier est donc écrit pré-tourné de 180°
 # autour de cet axe (x -> -x, z -> 2 * zp - z, zp = HEAD_OFFSET.z - SKIN_PIVOT_BACK). Estimation de l'écart axe / yeux
-# d'après 4 passages d'autotest : 0,064 m (0,095 trop en avant, 0,070 un peu en avant) ; yeux abaissés de 8 mm
-# (Y 0,691) d'après la référence vanilla G_Sport_Red ; variantes temporaires dans gen_p3d.CALIBRATION.
+# d'après 5 passages d'autotest : 0,064 m (0,095 trop en avant, 0,070 un peu en avant) ; yeux abaissés de 8 mm
+# (Y 0,691) d'après la référence vanilla G_Sport_Red ; validé en jeu (autotest, test 5) pour les trois formes.
 SKIN_PIVOT_BACK = 0.064
 
 PREFIX = "z\\comspec_sse\\addons\\eyewear\\data\\"

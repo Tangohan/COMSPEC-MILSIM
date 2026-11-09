@@ -107,19 +107,6 @@ class CfgGlasses {
         model = "\z\comspec_sse\addons\eyewear\data\models\ew_wind_orange.p3d";
         comspec_sse_eyewear = "wind_orange";
     };
-    // CALIBRATION TEMPORAIRE : variantes de position pour l'autotest (scope 1), à retirer une fois la position choisie.
-    class COMSPEC_SSE_G_Cal_P056: COMSPEC_SSE_G_Eyewear_Base {
-        scope = 1;
-        displayName = "Calibration lunettes demi-tour à 0,056 (test)";
-        picture = "\z\comspec_sse\addons\eyewear\data\icon_radar_white_ca.paa";
-        model = "\z\comspec_sse\addons\eyewear\data\models\ew_cal_p056.p3d";
-    };
-    class COMSPEC_SSE_G_Cal_P072: COMSPEC_SSE_G_Eyewear_Base {
-        scope = 1;
-        displayName = "Calibration lunettes demi-tour à 0,072 (test)";
-        picture = "\z\comspec_sse\addons\eyewear\data\icon_radar_white_ca.paa";
-        model = "\z\comspec_sse\addons\eyewear\data\models\ew_cal_p072.p3d";
-    };
 };
 
 class CfgWeapons {
@@ -283,8 +270,8 @@ class CfgVehicles {
     class NonStrategic;
     class Box_NATO_Support_F;
     // Objet 3D du slot virtuel : créé localement par chaque client (createVehicleLocal) et accroché à la tête du porteur.
-    // Suivi de la tête à chaque image (fn_eyewearFollow) : origine du modèle sur le point « pilot » ; décalage ici (mètres,
-    // repère de la tête : x droite, y avant, z haut).
+    // Suivi de la tête à chaque image (fn_eyewearFollow) : origine du modèle = point « pilot » + ce décalage (mètres,
+    // repère du regard : x droite, y avant, z haut ; « pilot » est ~5 cm au-dessus des yeux, relevé en jeu).
     class COMSPEC_SSE_EyewearHead_Base: NonStrategic {
         author = "COMSPEC";
         scope = 1;
@@ -292,7 +279,7 @@ class CfgVehicles {
         displayName = "$STR_COMSPEC_SSE_EYEWEAR_HEAD";
         destrType = "DestructNo";
         model = "\A3\Weapons_F\empty.p3d";
-        comspec_sse_eyewearAttachOffset[] = {0, 0.02, 0};
+        comspec_sse_eyewearAttachOffset[] = {0, 0.01, -0.055};
     };
     class COMSPEC_SSE_EyewearHead_radar_white: COMSPEC_SSE_EyewearHead_Base {
         model = "\z\comspec_sse\addons\eyewear\data\models\ew_radar_white_head.p3d";

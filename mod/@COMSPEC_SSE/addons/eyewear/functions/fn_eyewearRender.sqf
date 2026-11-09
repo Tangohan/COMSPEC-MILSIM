@@ -9,7 +9,7 @@
     copie d'après la variable publique comspec_sse_eyewear_worn de l'unité) et accroché par attachTo à l'unité.
     attachTo sur le point « pilot » avec followBoneRotation a été essayé : position mesurée juste au recalage, puis
     décalée de 15 cm après un changement de posture (le repère du décalage n'est pas celui de l'os). D'où le suivi à
-    chaque image : position = point « pilot » (eyePos est 15 cm trop bas), orientation = os de la tête, écart mesuré retranché.
+    chaque image (fn_eyewearFollow) : position = point « pilot » + décalage de la config, orientation = regard (eyeDirection).
     Caché : pour le joueur en vue subjective (il verrait l'intérieur du modèle), dans un véhicule (un objet accroché à
     une unité embarquée ne suit pas le modèle dessiné dans le véhicule). Supprimé : mort, retrait, au-delà de 300 m.
 */

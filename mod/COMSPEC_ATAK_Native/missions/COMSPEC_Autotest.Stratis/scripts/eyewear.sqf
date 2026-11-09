@@ -300,19 +300,6 @@ AT_fnc_ewPose = {
     ["eyewear_ref_vanilla_face"] call AT_fnc_shot;
     [player, 45] call AT_fnc_ewCamera;
     ["eyewear_ref_vanilla_profil"] call AT_fnc_shot;
-    // Calibration TEMPORAIRE : Radar blanche tournée autour d'un axe à 5,6 et 7,2 cm derrière les yeux (le modèle
-    // retenu, ew_radar_white, autour d'un axe à 6,4 cm).
-    {
-        private _cls = "COMSPEC_SSE_G_Cal_" + toUpper _x;
-        if (isClass (configFile >> "CfgGlasses" >> _cls)) then {
-            player addGoggles _cls;
-            uiSleep 0.4;
-            [player, 0] call AT_fnc_ewCamera;
-            [format ["eyewear_cal_%1_face", _x]] call AT_fnc_shot;
-            [player, 45] call AT_fnc_ewCamera;
-            [format ["eyewear_cal_%1_profil", _x]] call AT_fnc_shot;
-        };
-    } forEach ["p056", "p072"];
     {
         private _e = _x call AT_fnc_ewCat;
         player addGoggles (_e get "glasses");
