@@ -733,8 +733,18 @@ def lod_bytes(m, res, materials, selections=(), props=(), mass=None, sharp_all=F
         out += _tagg("#Property#", key.encode().ljust(64, b"\0") + val.encode().ljust(64, b"\0"))
     if mass is not None:
         out += _tagg("#Mass#", b"".join(struct.pack("<f", mass / len(m.pts)) for _ in m.pts))
-    for sel in selections:
-        out += _tagg(sel, bytes([1]) * len(m.pts) + bytes([1]) * len(m.faces))
+    # Sélections : nom -> None (tous les points et toutes les faces, poids 100 %) ou liste d'indices de points.
+    # Poids MLOD d'un point : octet 0 = hors sélection, 1 = 100 % (2..255 : poids décroissants).
+    sel_map = dict(selections) if isinstance(selections, dict) else {n: None for n in selections}
+    for sel, ids in sel_map.items():
+        if ids is None:
+            out += _tagg(sel, bytes([1]) * len(m.pts) + bytes([1]) * len(m.faces))
+        else:
+            pts = bytearray(len(m.pts))
+            for i in ids:
+                pts[i] = 1
+            faces = bytes(1 if all(pts[i] for i in idx) else 0 for idx, _, _ in m.faces)
+            out += _tagg(sel, bytes(pts) + faces)
     out += b"\x01" + _asciiz("#EndOfFile#") + struct.pack("<I", 0)
     out += struct.pack("<f", res)
     return bytes(out)
@@ -760,6 +770,47 @@ VARIANTS = {
     "_nvg": (add(S.HEAD_OFFSET, S.NVG_OFFSET), True),
     "_head": (S.ATTACH_OFFSET, False),
 }
+
+
+# Os de la chaîne pelvis -> neck1 du squelette OFP2_ManSkeleton (indices 0 à 6 ; « head » est l'index 7).
+ANCHOR_BONES = ["pelvis", "spine", "spine1", "spine2", "spine3", "neck", "neck1"]
+
+
+def add_bone_anchors(m, kinds, at, size=0.00015):
+    """Ancres d'os : un tétraèdre fermé minuscule (0,15 mm, caché dans la barre) par os pelvis..neck1 et par matière.
+
+    Binarize (Arma 3 Tools 2025) construit le sous-squelette d'une section avec les seuls os utilisés puis y range
+    l'os par son index dans le squelette complet : une section pondérée uniquement sur « head » (index 7, sous-squelette
+    de 1 os) donne « Subskeleton index out of range » et, en jeu, un maillage déformé par un os quelconque (seuls les
+    bouts des branches restaient visibles). Avec un point sur chaque os 0..6, le sous-squelette de chaque section est
+    pelvis..head, l'index de « head » y est le même que dans le squelette : plus d'avertissement, pondération juste.
+    Renvoie {os: [indices des points]} ; tous les autres points vont sur « head »."""
+    bones = {}
+    for bone in ANCHOR_BONES:
+        ids = []
+        for kind in kinds:
+            g = m.group()
+            P = [m.pt(add(at, d), g) for d in ((0, 0, 0), (size, 0, 0), (0, size, 0), (0, 0, size))]
+            for f in ((0, 2, 1), (0, 1, 3), (0, 3, 2), (1, 2, 3)):
+                m.face([P[i] for i in f], [(0.5, 0.5)] * 3, kind)
+            ids += P
+        bones[bone] = ids
+    return bones
+
+
+def skin_map(m, bones):
+    """Sélections de pondération : ancres sur leur os, tout le reste sur « head »."""
+    taken = set(i for ids in bones.values() for i in ids)
+    sel = {"head": [i for i in range(len(m.pts)) if i not in taken]}
+    sel.update(bones)
+    return sel
+
+
+def anchor_point(cid):
+    """Point caché dans la monture (centre de la barre haute ou du cadre), repère local."""
+    L = Lens(S.COLOURS[cid]["shape"])
+    top = L.outline(0.0)[0]
+    return L.mid(0.0, top + 0.0012, 0.0006)
 
 
 def build_all(cid):
@@ -812,11 +863,16 @@ def main():
             name = "ew_" + cid + suffix
             names.append((name, skinned))
             v, s_, g_ = vis.moved(off), sh.moved(off), geo.moved(off)
-            sel = ("head",) if skinned else ()
+            sel_v, sel_s = (), ()
+            if skinned:
+                at = add(anchor_point(cid), off)
+                sel_v = skin_map(v, add_bone_anchors(v, ("frame", "lens"), at))
+                sel_s = skin_map(s_, add_bone_anchors(s_, ("shadow",), at))
             lods = [
-                lod_bytes(v, 1.0, mats, selections=sel, props=(("lodnoshadow", "1"),)),
-                lod_bytes(s_, 10000.0, {}, selections=sel, sharp_all=True, uvset=False),
-                lod_bytes(g_, 1e13, {}, selections=("component01",) + sel, props=(("autocenter", "0"),), mass=0.03,
+                lod_bytes(v, 1.0, mats, selections=sel_v, props=(("lodnoshadow", "1"),)),
+                lod_bytes(s_, 10000.0, {}, selections=sel_s, sharp_all=True, uvset=False),
+                # Géométrie : sans pondération (aucune collision utile, ne sert qu'à autocenter=0 et à la masse).
+                lod_bytes(g_, 1e13, {}, selections=("component01",), props=(("autocenter", "0"),), mass=0.03,
                           sharp_all=True, uvset=False),
             ]
             if stats:

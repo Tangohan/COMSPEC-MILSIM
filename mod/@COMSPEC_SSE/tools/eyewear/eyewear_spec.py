@@ -100,7 +100,7 @@ COLOURS = {
         lens=[(0.0, (0.48, 0.30, 0.62)), (0.35, (0.82, 0.22, 0.48)), (0.62, (0.97, 0.16, 0.30)),
               (0.82, (1.00, 0.45, 0.10)), (1.0, (1.00, 0.90, 0.08))],
         lens_alpha=0.78, lens_vgrad=(0.95, 1.05), spec=(1.0, 0.55, 0.45),
-        tint=[1.00, 1.08, [1.00, 0.55, 0.60, 0.10], 1.22]),
+        tint=[0.98, 1.10, [1.00, 0.45, 0.55, 0.16], 1.30]),
     "radar_black": dict(
         shape="radar", cls="COMSPEC_SSE_G_Oakley_RadarEV_Black",
         fr="Oakley Radar EV Path (Noir / Prizm Golf)", en="Oakley Radar EV Path (Polished Black / Prizm Golf)",
@@ -112,7 +112,7 @@ COLOURS = {
         lens=[(0.0, (0.42, 0.88, 0.66)), (0.40, (0.40, 0.82, 0.80)), (0.62, (0.38, 0.70, 0.98)),
               (0.85, (0.62, 0.52, 1.00)), (1.0, (0.70, 0.45, 1.00))],
         lens_alpha=0.74, lens_vgrad=(0.95, 1.05), spec=(0.55, 0.90, 0.75),
-        tint=[0.98, 1.10, [0.35, 0.85, 0.55, 0.10], 1.08]),
+        tint=[0.95, 1.12, [0.30, 0.85, 0.55, 0.16], 1.10]),
     "hurricane_black": dict(
         shape="hurricane", cls="COMSPEC_SSE_G_DFranklin_Hurricane_Black",
         fr="D.Franklin Hurricane (Noir)", en="D.Franklin Hurricane (Black)",
@@ -123,7 +123,7 @@ COLOURS = {
         logo="D.FRANKLIN", vents=None,
         lens=[(0.0, (0.13, 0.12, 0.12)), (1.0, (0.16, 0.15, 0.15))],
         lens_alpha=0.88, lens_vgrad=(1.0, 1.0), spec=(0.45, 0.45, 0.47),
-        tint=[0.80, 1.00, [0.50, 0.50, 0.50, 0.0], 0.95]),
+        tint=[0.72, 1.02, [0.50, 0.50, 0.50, 0.0], 0.92]),
     "wind_rainbow": dict(
         shape="wind", cls="COMSPEC_SSE_G_DFranklin_Wind_Rainbow",
         fr="D.Franklin Wind (Rainbow)", en="D.Franklin Wind (Rainbow)",
@@ -135,7 +135,7 @@ COLOURS = {
         lens=[(0.0, (0.58, 0.20, 0.98)), (0.55, (0.62, 0.24, 1.00)), (0.80, (0.85, 0.40, 0.85)),
               (0.92, (0.55, 0.85, 0.80)), (1.0, (0.40, 0.90, 0.95))],
         lens_alpha=0.80, lens_vgrad=(1.05, 0.95), spec=(0.75, 0.45, 1.0),
-        tint=[0.92, 1.03, [0.60, 0.40, 1.00, 0.12], 1.05]),
+        tint=[0.88, 1.04, [0.60, 0.35, 1.00, 0.18], 1.05]),
     "wind_orange": dict(
         shape="wind", cls="COMSPEC_SSE_G_DFranklin_Wind_Orange",
         fr="D.Franklin Wind (Orange)", en="D.Franklin Wind (Orange)",
@@ -147,7 +147,7 @@ COLOURS = {
         lens=[(0.0, (0.93, 0.18, 0.12)), (0.45, (0.92, 0.14, 0.08)), (0.78, (1.00, 0.42, 0.05)),
               (1.0, (1.00, 0.62, 0.05))],
         lens_alpha=0.80, lens_vgrad=(1.0, 1.05), spec=(1.0, 0.45, 0.20),
-        tint=[0.90, 1.05, [1.00, 0.60, 0.15, 0.14], 1.10]),
+        tint=[0.85, 1.06, [1.00, 0.55, 0.10, 0.22], 1.12]),
 }
 
 ORDER = ["radar_white", "radar_black", "hurricane_black", "wind_rainbow", "wind_orange"]

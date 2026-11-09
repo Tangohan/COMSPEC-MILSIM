@@ -10,7 +10,7 @@ class COMSPEC_SSE_Eyewear {
         head = "COMSPEC_SSE_EyewearHead_radar_white";
         picture = "\z\comspec_sse\addons\eyewear\data\icon_radar_white_ca.paa";
         // ColorCorrections du verre : luminosité, contraste, mélange [r, g, b, part], saturation.
-        tint[] = {1, 1.08, {1, 0.55, 0.6, 0.1}, 1.22};
+        tint[] = {0.98, 1.1, {1, 0.45, 0.55, 0.16}, 1.3};
     };
     class radar_black {
         displayName = "$STR_COMSPEC_SSE_EYEWEAR_RADAR_BLACK_NAME";
@@ -20,7 +20,7 @@ class COMSPEC_SSE_Eyewear {
         head = "COMSPEC_SSE_EyewearHead_radar_black";
         picture = "\z\comspec_sse\addons\eyewear\data\icon_radar_black_ca.paa";
         // ColorCorrections du verre : luminosité, contraste, mélange [r, g, b, part], saturation.
-        tint[] = {0.98, 1.1, {0.35, 0.85, 0.55, 0.1}, 1.08};
+        tint[] = {0.95, 1.12, {0.3, 0.85, 0.55, 0.16}, 1.1};
     };
     class hurricane_black {
         displayName = "$STR_COMSPEC_SSE_EYEWEAR_HURRICANE_BLACK_NAME";
@@ -30,7 +30,7 @@ class COMSPEC_SSE_Eyewear {
         head = "COMSPEC_SSE_EyewearHead_hurricane_black";
         picture = "\z\comspec_sse\addons\eyewear\data\icon_hurricane_black_ca.paa";
         // ColorCorrections du verre : luminosité, contraste, mélange [r, g, b, part], saturation.
-        tint[] = {0.8, 1, {0.5, 0.5, 0.5, 0}, 0.95};
+        tint[] = {0.72, 1.02, {0.5, 0.5, 0.5, 0}, 0.92};
     };
     class wind_rainbow {
         displayName = "$STR_COMSPEC_SSE_EYEWEAR_WIND_RAINBOW_NAME";
@@ -40,7 +40,7 @@ class COMSPEC_SSE_Eyewear {
         head = "COMSPEC_SSE_EyewearHead_wind_rainbow";
         picture = "\z\comspec_sse\addons\eyewear\data\icon_wind_rainbow_ca.paa";
         // ColorCorrections du verre : luminosité, contraste, mélange [r, g, b, part], saturation.
-        tint[] = {0.92, 1.03, {0.6, 0.4, 1, 0.12}, 1.05};
+        tint[] = {0.88, 1.04, {0.6, 0.35, 1, 0.18}, 1.05};
     };
     class wind_orange {
         displayName = "$STR_COMSPEC_SSE_EYEWEAR_WIND_ORANGE_NAME";
@@ -50,7 +50,7 @@ class COMSPEC_SSE_Eyewear {
         head = "COMSPEC_SSE_EyewearHead_wind_orange";
         picture = "\z\comspec_sse\addons\eyewear\data\icon_wind_orange_ca.paa";
         // ColorCorrections du verre : luminosité, contraste, mélange [r, g, b, part], saturation.
-        tint[] = {0.9, 1.05, {1, 0.6, 0.15, 0.14}, 1.1};
+        tint[] = {0.85, 1.06, {1, 0.55, 0.1, 0.22}, 1.12};
     };
 };
 

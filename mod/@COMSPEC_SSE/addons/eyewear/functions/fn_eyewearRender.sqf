@@ -42,8 +42,10 @@ private _drawn = _list apply { _x select 0 };
     };
 } forEach allUnits;
 
-// 3) Visibilité.
-private _firstPerson = (cameraView in ["INTERNAL", "GUNNER"]) && {isNull curatorCamera} && {cameraOn isEqualTo (vehicle player)};
+// 3) Visibilité. Vue subjective = vue INTERNAL du joueur ET caméra réellement aux yeux (une caméra de script ou
+// de spectateur garde cameraView à INTERNAL alors qu'elle filme ailleurs : l'objet doit alors rester visible).
+private _firstPerson = (cameraView in ["INTERNAL", "GUNNER"]) && {isNull curatorCamera} && {cameraOn isEqualTo (vehicle player)}
+    && {((AGLToASL (positionCameraToWorld [0, 0, 0])) vectorDistance (eyePos player)) < 0.3};
 {
     _x params ["_u", "_o"];
     _o hideObject ((!isNull objectParent _u) || {_firstPerson && {_u isEqualTo player}});

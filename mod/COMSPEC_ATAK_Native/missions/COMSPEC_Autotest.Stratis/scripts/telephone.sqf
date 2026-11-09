@@ -240,7 +240,7 @@ if !("telephone" call AT_fnc_groupe) exitWith {};
         ["https://www.youtube.com/watch?v=dQw4w9WgXc", ""], ["https://www.youtube.com/watch?v=dQw4w9WgXcQ%22", ""], ["https://www.youtube.com/watch?v=dQw4w9WgXc'", ""], ["", ""]
     ];
     [(["embed", _id] call comspec_atak_native_fnc_youtube) isEqualTo "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0&playsinline=1", "adresse du lecteur"] call AT_fnc_check;
-    [(["embed", "x\"><script>"] call comspec_atak_native_fnc_youtube) isEqualTo "", "identifiant invalide accepté pour le lecteur"] call AT_fnc_check;
+    [(["embed", "x""><script>"] call comspec_atak_native_fnc_youtube) isEqualTo "", "identifiant invalide accepté pour le lecteur"] call AT_fnc_check;
     [!(["enabled"] call comspec_atak_native_fnc_youtube), "lecture YouTube active par défaut (doit être coupée)"] call AT_fnc_check;
     [true] call comspec_atak_native_fnc_open;
     [[{ !isNull ([] call comspec_atak_native_fnc_display) }, 8] call AT_fnc_wait, "le téléphone ne s'ouvre pas"] call AT_fnc_check;

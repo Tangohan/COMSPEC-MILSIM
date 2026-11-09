@@ -5,12 +5,13 @@ if !(("eyewear" call AT_fnc_groupe) || {"sse" call AT_fnc_groupe}) exitWith {};
 AT_EwIds = ["radar_white", "radar_black", "hurricane_black", "wind_rainbow", "wind_orange"];
 AT_fnc_ewCat = { (([] call comspec_sse_fnc_eyewearCatalog) select 0) getOrDefault [_this, createHashMap] };
 
-// Caméra à 0,6 m du visage, un peu au-dessus, visant les yeux ; _az : 0 de face, 45 de trois quarts.
+// Caméra : par défaut à 0,6 m du visage, un peu au-dessus, visant les yeux ; _az : 0 de face, 45 de trois quarts,
+// 180 de dos. _cible : position ASL visée (défaut : les yeux) ; _dz : hauteur de la caméra par rapport à la cible.
 AT_fnc_ewCamera = {
-    params ["_u", "_az"];
-    private _eye = eyePos _u;
+    params ["_u", "_az", ["_dist", 0.6], ["_dz", 0.07], ["_cible", []], ["_fov", 0.30]];
+    private _tgt = if (_cible isEqualTo []) then { eyePos _u } else { _cible };
     private _d = (getDir _u) + _az;
-    private _pos = _eye vectorAdd [0.6 * sin _d, 0.6 * cos _d, 0.07];
+    private _pos = _tgt vectorAdd [_dist * sin _d, _dist * cos _d, _dz];
     private _cam = missionNamespace getVariable ["AT_EwCam", objNull];
     if (isNull _cam) then {
         _cam = "camera" camCreate (ASLToAGL _pos);
@@ -18,11 +19,27 @@ AT_fnc_ewCamera = {
         showCinemaBorder false;
         missionNamespace setVariable ["AT_EwCam", _cam];
     };
-    _cam camPrepareTarget (ASLToAGL _eye);
+    _cam camPrepareTarget (ASLToAGL _tgt);
     _cam camPreparePos (ASLToAGL _pos);
-    _cam camPrepareFov 0.30;
+    _cam camPrepareFov _fov;
     _cam camCommitPrepared 0;
     uiSleep 0.6;
+};
+// Plein corps de face et de dos (où tombe un maillage mal pondéré), caméra à 2,5 m à hauteur de poitrine.
+AT_fnc_ewCorps = {
+    params ["_tag"];
+    private _poitrine = (eyePos player) vectorAdd [0, 0, -0.45];
+    [player, 0, 2.5, 0, _poitrine, 0.55] call AT_fnc_ewCamera;
+    [format ["eyewear_%1_corps", _tag]] call AT_fnc_shot;
+    [player, 180, 2.5, 0, _poitrine, 0.55] call AT_fnc_ewCamera;
+    [format ["eyewear_%1_dos", _tag]] call AT_fnc_shot;
+};
+AT_fnc_ewLog = { diag_log format ["AUTOTEST|EYEWEAR|%1|%2", AT_Nom, _this]; };
+// Réglage CBA côté client (comme le menu des réglages), et la variable elle-même.
+AT_fnc_ewSet = {
+    params ["_nom", "_val"];
+    if (!isNil "CBA_settings_fnc_set") then { [_nom, _val, 0, "client"] call CBA_settings_fnc_set; };
+    missionNamespace setVariable [_nom, _val];
 };
 AT_fnc_ewCameraEnd = {
     private _cam = missionNamespace getVariable ["AT_EwCam", objNull];
@@ -80,10 +97,14 @@ AT_fnc_ewPose = {
         uiSleep 0.2;
         [(hmd player) isEqualTo (_e get "nvg"), format ["linkItem %1 : hmd = %2", _e get "nvg", hmd player]] call AT_fnc_check;
         [(([player] call comspec_sse_fnc_eyewearOf) select 1) isEqualTo "nvg", format ["eyewearOf ne voit pas %1 (slot JVN)", _x]] call AT_fnc_check;
-        // « Allumer » les JVN : la vision reste normale (visionMode « Normal » seul).
+        // « Allumer » les JVN : visionMode « Normal » seul, et l'addon les éteint aussitôt (XEH_postInitClient,
+        // événement visionMode) : ce ne sont pas des JVN, ni image verte ni effets de JVN d'ACE.
+        if (_forEachIndex isEqualTo 0) then { player switchCamera "INTERNAL"; uiSleep 0.3; };
         player action ["nvGoggles", player];
-        uiSleep 0.4;
-        [(currentVisionMode player) isEqualTo 0, format ["%1 : vision nocturne active (%2)", _e get "nvg", currentVisionMode player]] call AT_fnc_check;
+        uiSleep 0.05;
+        (format ["%1 : currentVisionMode juste après la touche JVN = %2", _e get "nvg", currentVisionMode player]) call AT_fnc_ewLog;
+        if (_forEachIndex isEqualTo 0) then { ["eyewear_jvn_nv_on"] call AT_fnc_shot; player switchCamera "EXTERNAL"; };
+        [[{ (currentVisionMode player) isEqualTo 0 }, 2] call AT_fnc_wait, format ["%1 : vision nocturne restée active (%2)", _e get "nvg", currentVisionMode player]] call AT_fnc_check;
         player action ["nvGogglesOff", player];
         player unlinkItem (_e get "nvg");
     } forEach AT_EwIds;
@@ -107,21 +128,35 @@ AT_fnc_ewPose = {
     };
     [[{ !isNull (call _obj) }, 3] call AT_fnc_wait, "objet 3D non créé"] call AT_fnc_check;
     private _o = call _obj;
+    private _hg0 = headgear player;
+    removeHeadgear player;
+    player switchCamera "EXTERNAL";
+    call AT_fnc_ewPose;
+    uiSleep 0.5;
     if (!isNull _o) then {
         [(attachedTo _o) isEqualTo player, "objet 3D non accroché au joueur"] call AT_fnc_check;
         [(typeOf _o) isEqualTo (_e get "head"), format ["objet 3D de classe %1", typeOf _o]] call AT_fnc_check;
-        (format ["objet à %1 m des yeux (eyePos), « pilot » %2, « head » %3",
+        (format ["objet %1 (%2) attachedTo=%3 attachedObjects=%4 cache=%5 posASL=%6 eyePos=%7 distance=%8 pilot=%9 head=%10 modele=%11",
+            _o, typeOf _o, attachedTo _o, attachedObjects player, isObjectHidden _o, getPosASL _o, eyePos player,
             ((getPosASL _o) vectorDistance (eyePos player)) toFixed 3,
-            player selectionPosition "pilot", player selectionPosition "head"]) call AT_fnc_info;
+            player selectionPosition "pilot", player selectionPosition "head", getModelInfo _o]) call AT_fnc_ewLog;
+    } else {
+        (format ["aucun objet ; attachedObjects=%1 ; liste=%2", attachedObjects player, missionNamespace getVariable ["comspec_sse_eyewear_drawn", []]]) call AT_fnc_ewLog;
     };
-    // Gros plan, vue extérieure (l'objet est caché en vue subjective pour le joueur).
-    player switchCamera "EXTERNAL";
-    call AT_fnc_ewPose;
+    // Gros plan sur le visage : l'objet n'est caché que si la caméra est aux yeux du porteur.
     [player, 0] call AT_fnc_ewCamera;
+    if (!isNull _o) then { (format ["caméra de script : objet caché = %1", isObjectHidden _o]) call AT_fnc_ewLog; };
     ["eyewear_virtuel_face"] call AT_fnc_shot;
     [player, 45] call AT_fnc_ewCamera;
     ["eyewear_virtuel_profil"] call AT_fnc_shot;
+    // La caméra vise l'objet lui-même : il existe là où il est accroché.
+    if (!isNull _o) then {
+        [player, 90, 0.5, 0.05, getPosASL _o, 0.35] call AT_fnc_ewCamera;
+        ["eyewear_virtuel_objet"] call AT_fnc_shot;
+    };
+    ["virtuel"] call AT_fnc_ewCorps;
     call AT_fnc_ewCameraEnd;
+    if (_hg0 isNotEqualTo "") then { player addHeadgear _hg0; };
     "lunettes du slot virtuel posées sur les yeux (corriger comspec_sse_eyewearAttachOffset sinon)" call AT_fnc_visuel;
     [(([player, true] call comspec_sse_fnc_eyewearRemove)) isEqualTo "radar_white", "eyewearRemove n'a rien retiré"] call AT_fnc_check;
     [(player getVariable ["comspec_sse_eyewear_worn", ""]) isEqualTo "", "variable comspec_sse_eyewear_worn restée posée"] call AT_fnc_check;
@@ -134,6 +169,7 @@ AT_fnc_ewPose = {
 ["eyewear_teinte", {
     if (["comspec_sse_fnc_eyewearTint"] call AT_fnc_nil) exitWith {};
     private _t0 = missionNamespace getVariable ["comspec_sse_eyewear_tint", false];
+    private _f0 = missionNamespace getVariable ["comspec_sse_eyewear_tint_force", 0.6];
     private _g0 = goggles player;
     private _h0 = hmd player;
     if (_h0 isNotEqualTo "") then { player unlinkItem _h0; };
@@ -141,15 +177,24 @@ AT_fnc_ewPose = {
     player addGoggles (_e get "glasses");
     player switchCamera "INTERNAL";
     uiSleep 0.5;
-    missionNamespace setVariable ["comspec_sse_eyewear_tint", false];
+    ["comspec_sse_eyewear_tint", false] call AT_fnc_ewSet;
     [([] call comspec_sse_fnc_eyewearTint) isEqualTo "", "teinte posée alors que le réglage est coupé"] call AT_fnc_check;
-    missionNamespace setVariable ["comspec_sse_eyewear_tint", true];
+    uiSleep 1;
+    ["eyewear_teinte_off"] call AT_fnc_shot;
+    // Force 1 pour une différence nette sur la capture.
+    ["comspec_sse_eyewear_tint_force", 1] call AT_fnc_ewSet;
+    ["comspec_sse_eyewear_tint", true] call AT_fnc_ewSet;
     [([] call comspec_sse_fnc_eyewearTint) isEqualTo "wind_orange", "teinte du verre wind_orange non posée"] call AT_fnc_check;
     private _pp = missionNamespace getVariable ["comspec_sse_eyewear_tintPP", -1];
     [_pp >= 0 && {ppEffectEnabled _pp}, "ppEffect ColorCorrections non actif"] call AT_fnc_check;
-    uiSleep 1;
+    (format ["ppEffect %1 actif=%2 reglage=%3 force=%4 vue=%5 params=%6", _pp, ppEffectEnabled _pp,
+        missionNamespace getVariable ["comspec_sse_eyewear_tint", false], missionNamespace getVariable ["comspec_sse_eyewear_tint_force", -1],
+        cameraView, missionNamespace getVariable ["comspec_sse_eyewear_tintParams", []]]) call AT_fnc_ewLog;
+    uiSleep 1.5;
+    (format ["avant capture : actif=%1 transition finie=%2 lunettes=%3", ppEffectEnabled _pp, ppEffectCommitted _pp, [player] call comspec_sse_fnc_eyewearOf]) call AT_fnc_ewLog;
     ["eyewear_teinte_on"] call AT_fnc_shot;
-    // JVN allumées : teinte coupée.
+    uiSleep 0.5;
+    // Vraies JVN allumées : teinte coupée.
     removeGoggles player;
     player linkItem "NVGoggles";
     player addGoggles (_e get "glasses");
@@ -158,18 +203,18 @@ AT_fnc_ewPose = {
     [([] call comspec_sse_fnc_eyewearTint) isEqualTo "", "teinte gardée avec les JVN allumées"] call AT_fnc_check;
     player action ["nvGogglesOff", player];
     player unlinkItem "NVGoggles";
-    missionNamespace setVariable ["comspec_sse_eyewear_tint", false];
+    ["comspec_sse_eyewear_tint", false] call AT_fnc_ewSet;
     [([] call comspec_sse_fnc_eyewearTint) isEqualTo "", "teinte gardée après coupure du réglage"] call AT_fnc_check;
     uiSleep 1;
     [!(ppEffectEnabled _pp), "ppEffect resté actif après coupure"] call AT_fnc_check;
-    ["eyewear_teinte_off"] call AT_fnc_shot;
-    missionNamespace setVariable ["comspec_sse_eyewear_tint", _t0];
+    ["comspec_sse_eyewear_tint", _t0] call AT_fnc_ewSet;
+    ["comspec_sse_eyewear_tint_force", _f0] call AT_fnc_ewSet;
     removeGoggles player;
     if (_g0 isNotEqualTo "") then { player addGoggles _g0; };
     if (_h0 isNotEqualTo "") then { player linkItem _h0; };
     player switchCamera "EXTERNAL";
     call AT_fnc_done;
-}, 40] call AT_fnc_run;
+}, 50] call AT_fnc_run;
 
 // Captures en gros plan : chaque coloris au slot lunettes, de face puis de profil à 45° ; un coloris au slot JVN.
 ["eyewear_captures", {
@@ -187,6 +232,7 @@ AT_fnc_ewPose = {
         private _e = _x call AT_fnc_ewCat;
         player addGoggles (_e get "glasses");
         uiSleep 0.4;
+        [_x] call AT_fnc_ewCorps;
         [player, 0] call AT_fnc_ewCamera;
         [format ["eyewear_%1_face", _x]] call AT_fnc_shot;
         [player, 45] call AT_fnc_ewCamera;
@@ -196,6 +242,7 @@ AT_fnc_ewPose = {
     private _e = "hurricane_black" call AT_fnc_ewCat;
     player linkItem (_e get "nvg");
     uiSleep 0.4;
+    ["jvn"] call AT_fnc_ewCorps;
     [player, 0] call AT_fnc_ewCamera;
     ["eyewear_jvn_face"] call AT_fnc_shot;
     [player, 45] call AT_fnc_ewCamera;
@@ -208,5 +255,5 @@ AT_fnc_ewPose = {
     if (_hg0 isNotEqualTo "") then { player addHeadgear _hg0; };
     setDate _date0;
     call AT_fnc_done;
-}, 150] call AT_fnc_run;
+}, 240] call AT_fnc_run;
 call AT_fnc_ewCameraEnd;

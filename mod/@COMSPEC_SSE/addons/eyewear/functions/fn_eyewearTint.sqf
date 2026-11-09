@@ -53,8 +53,7 @@ if (_pp < 0) exitWith { "" };
 private _e = (([] call comspec_sse_fnc_eyewearCatalog) select 0) getOrDefault [_want, createHashMap];
 (_e getOrDefault ["tint", []]) params [["_bright", 1], ["_contrast", 1], ["_mix", [0, 0, 0, 0]], ["_sat", 1]];
 _mix params [["_mr", 0], ["_mg", 0], ["_mb", 0], ["_ma", 0]];
-_pp ppEffectEnable true;
-_pp ppEffectAdjust [
+private _params = [
     1 + (_bright - 1) * _force,
     1 + (_contrast - 1) * _force,
     0,
@@ -62,5 +61,8 @@ _pp ppEffectAdjust [
     [1, 1, 1, 1 + (_sat - 1) * _force],
     [0.299, 0.587, 0.114, 0]
 ];
+_pp ppEffectEnable true;
+_pp ppEffectAdjust _params;
 _pp ppEffectCommit 0.5;
+missionNamespace setVariable ["comspec_sse_eyewear_tintParams", _params];
 _want
