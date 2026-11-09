@@ -1008,6 +1008,9 @@ return function (Router $router) {
     $router->post('/atak/sse/papiers/membres/{id}/documents/{docId}/action', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentAction'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/documents/{docId}', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentUpdate'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/kit', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'kitSave'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/synchro-jeu', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncResolve'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/historique/{hid}/restaurer', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncRestore'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/envoyer-jeu', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncSend'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/couverture', [\App\Controllers\Admin\MemberCoverExportController::class, 'generateFor'], $mwSsePortal);
     $router->get('/atak/sse/papiers/membres/{id}/couverture/{exportId}/telecharger', [\App\Controllers\Admin\MemberCoverExportController::class, 'downloadFor'], $mwSsePortal);
     // RENS › Identités & documents (COMSPEC IDENTITY, Lot 6) : atelier, kits types, préparation de mission, briefs, import/export.
@@ -2198,6 +2201,9 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/documents/{docId}/action', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentAction'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/documents/{docId}', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/kit', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'kitSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/synchro-jeu', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncResolve'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/historique/{hid}/restaurer', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncRestore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/envoyer-jeu', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'syncSend'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}/modifier', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/statut', [EffectifsWorkspaceController::class, 'quickStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

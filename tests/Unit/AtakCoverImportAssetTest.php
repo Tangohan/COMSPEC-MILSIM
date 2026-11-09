@@ -66,7 +66,11 @@ final class AtakCoverImportAssetTest extends TestCase
         self::assertStringContainsString('(_reg getOrDefault ["imports", createHashMap])', $legend);
         self::assertStringContainsString('_L set ["imported", true];', $legend);
 
-        self::assertStringContainsString('["athena", "import"]', self::read($dir . 'functions/fn_idCoverSync.sqf'));
+        // Identité utilisée en jeu remontée quelle que soit son origine (athena, import compris), seulement si la transmission
+        // automatique est permise : le site la compare sans l'écrire (MemberIdentitySyncService).
+        $sync = self::read($dir . 'functions/fn_idCoverSync.sqf');
+        self::assertStringContainsString('["origin", _origin]', $sync);
+        self::assertStringContainsString('comspec_sse_id_autoTransmitCommunity', $sync);
         self::assertStringContainsString('["resend"] call comspec_sse_fnc_idCoverImport;', self::read($dir . 'XEH_postInitClient.sqf'));
 
         $page = self::read($dir . 'functions/fn_idCoverPage.sqf');

@@ -1898,9 +1898,9 @@
             <French>Fragment (à croiser)</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_5D056C9123">
-            <Original>Driving licence (simulation)</Original>
-            <English>Driving licence (simulation)</English>
-            <French>Permis de conduire (simulation)</French>
+            <Original>Driving licence</Original>
+            <English>Driving licence</English>
+            <French>Permis de conduire</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_5D66D947AD">
             <Original>Customize the computer below</Original>
@@ -3698,9 +3698,9 @@
             <French>Cellule</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_B8E7E90D9A">
-            <Original>Identity card (simulation)</Original>
-            <English>Identity card (simulation)</English>
-            <French>Carte d'identité (simulation)</French>
+            <Original>Identity card</Original>
+            <English>Identity card</English>
+            <French>Carte d'identité</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_B8FDDCC5A5">
             <Original>Seized laptop</Original>
@@ -3798,9 +3798,9 @@
             <French>Téléphone mobile collecté.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_BBFD0B835C">
-            <Original>Passport (simulation)</Original>
-            <English>Passport (simulation)</English>
-            <French>Passeport (simulation)</French>
+            <Original>Passport</Original>
+            <English>Passport</English>
+            <French>Passeport</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_BC22D6CE0D">
             <Original>Established (0.9)</Original>
@@ -4883,9 +4883,9 @@
             <French>Accès distant scénarisé</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_F3E840A9AB">
-            <Original>Fictional document (SIMULATION). Check: ACE interaction on the person, or the ATAK ID Check app.</Original>
-            <English>Fictional document (SIMULATION). Check: ACE interaction on the person, or the ATAK ID Check app.</English>
-            <French>Document fictif (SIMULATION). Contrôle : interaction ACE sur la personne, ou app Contrôle ID de l'ATAK.</French>
+            <Original>Identity document (the paper itself is marked SIMULATION). Check: ACE interaction on the person, or the ATAK ID Check app.</Original>
+            <English>Identity document (the paper itself is marked SIMULATION). Check: ACE interaction on the person, or the ATAK ID Check app.</English>
+            <French>Pièce d'identité (le papier lui-même porte la mention SIMULATION). Contrôle : interaction ACE sur la personne, ou app Contrôle ID de l'ATAK.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_F3FEFB2906">
             <Original>Attempts allowed (0 = unlimited)</Original>
@@ -5296,6 +5296,11 @@
             <Original>List templates</Original>
             <English>List templates</English>
             <French>Lister les modèles</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_ID_MILITARYCARD">
+            <Original>Military ID</Original>
+            <English>Military ID</English>
+            <French>Carte militaire</French>
         </Key>
     </Package>
 </Project>

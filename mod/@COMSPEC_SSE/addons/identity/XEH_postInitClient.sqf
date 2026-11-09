@@ -16,6 +16,16 @@ if (!hasInterface) exitWith {};
     // Couverture importée d'un fichier (app Ma couverture) : le registre du serveur ne garde rien d'une mission à l'autre.
     ["resend"] call comspec_sse_fnc_idCoverImport;
 }, [], 300] call CBA_fnc_waitUntilAndExecute;
+// Papier pris ou posé par ce joueur (corps, sol, caisse) : le serveur tient le porteur et la chaîne de possession, puis
+// diffuse comspec_sse_identity_paperPicked / paperDropped (fn_idPaperTrack). Seulement les exemplaires (« …_007 »).
+comspec_sse_idPaperMovedLocal = {
+    params ["_how", "_u", "_box", "_item"];
+    if (_u isNotEqualTo player || {!(_item isEqualType "")} || {(_item select [0, 11]) isNotEqualTo "COMSPEC_ID_"}) exitWith {};
+    if !(((_item splitString "_") select -1) regexMatch "[0-9]+") exitWith {};
+    ["send", ["paperMoved", [player, _item, _box, _how]]] call comspec_sse_fnc_idClient;
+};
+["CAManBase", "Take", { (["take"] + _this) call comspec_sse_idPaperMovedLocal; }] call CBA_fnc_addClassEventHandler;
+["CAManBase", "Put", { (["put"] + _this) call comspec_sse_idPaperMovedLocal; }] call CBA_fnc_addClassEventHandler;
 ["CAManBase", "Respawn", {
     params ["_new", "_old"];
     if (!local _new) exitWith {};

@@ -20,6 +20,9 @@ if (_cls isEqualTo "") then {
 };
 if (_cls isEqualTo "") exitWith { "" };
 if (isNull _where) exitWith { _cls };
+// Porteur connu et chaîne de possession (API fn_idPaperOf).
+["hold", [_doc, _where]] call comspec_sse_fnc_idPaperTrack;
+["log", [_doc, "issued", [objNull, _where] select (_where isKindOf "CAManBase")]] call comspec_sse_fnc_idPaperTrack;
 if (_where isKindOf "CAManBase") then {
     // Corps supprimé (nettoyage) : ses exemplaires reviennent au stock, les documents redeviennent virtuels.
     if !(_where getVariable ["comspec_sse_idDelEH", false]) then {

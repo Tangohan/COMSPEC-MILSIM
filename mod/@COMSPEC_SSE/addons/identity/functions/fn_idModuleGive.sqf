@@ -2,7 +2,8 @@
     Module Zeus « Donner des papiers » (SERVEUR, appelé par fn_idServer « give » après contrôle du curateur).
     [_unit, _spec] call comspec_sse_fnc_idModuleGive -> docId
       _spec : comme fn_idIssue ; « athena » = numéro d'un document du paquet Athena (ses données sont reprises)
-    ["athenaSpec", clé "PAYS|type|numéro"] call comspec_sse_fnc_idModuleGive -> _spec d'un document Athena
+    ["athenaSpec", clé "PAYS|type|numéro"] call comspec_sse_fnc_idModuleGive -> _spec d'un document Athena (athenaId : id du
+      papier, athenaIdentity : id de l'identité Athena qui le porte)
     Les papiers donnés par le Zeus sont matérialisés tout de suite (objet dans l'inventaire de la personne).
 */
 params [["_u", objNull, [objNull, ""]], ["_spec", createHashMap, [createHashMap, ""]]];
@@ -29,7 +30,12 @@ if (_u isEqualType "") exitWith {
         ["expires", _d getOrDefault ["expires_on", ""]], ["chip", _d getOrDefault ["chip", ""]], ["kind", _kind], ["quality", _q],
         ["forgeryKind", ["", _fk] select (_kind isEqualTo "forged" && {(_d getOrDefault ["forgery_kind", ""]) isNotEqualTo ""})],
         ["report", _rep],
-        ["athenaId", str (_d getOrDefault ["id", ""])]
+        ["athenaId", str (_d getOrDefault ["id", ""])],
+        ["athenaIdentity", call {
+            private _iid = _d getOrDefault ["identity_id", ""];
+            if (_iid isEqualType 0) exitWith { ["", str _iid] select (_iid > 0) };
+            [_iid, ""] select !(_iid isEqualType "")
+        }]
     ]
 };
 if (isNull _u || {!(_u isKindOf "CAManBase")}) exitWith { "" };

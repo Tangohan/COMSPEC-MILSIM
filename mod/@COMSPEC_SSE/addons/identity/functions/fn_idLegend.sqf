@@ -313,6 +313,53 @@ switch (_op) do {
                 ((_x getOrDefault ["cls", ""]) isNotEqualTo "") && {(_x getOrDefault ["cls", ""]) in _onHim}
             ]
         }];
+        // Origine de l'identité montrée et pourquoi Athena n'a pas pu la fournir (diag : [niveau ok | warn | ko, titre, phrase]).
+        // Cause du décalage Athena / jeu : sans papier Athena remis, la fiche montre l'identité générée par le mod (clé
+        // biométrique), jamais celle d'Athena. Ce qui suit dit à quelle étape la chaîne s'est arrêtée.
+        private _main = ["doc", [_L getOrDefault ["docId", ""]]] call comspec_sse_fnc_idRegistry;
+        private _aIdent = _main getOrDefault ["athenaIdentity", ""];
+        private _origin = switch (true) do {
+            case ((_main getOrDefault ["athenaId", ""]) isNotEqualTo ""): { "athena" };
+            case (_L getOrDefault ["imported", false]): { "import" };
+            case ((count _main) isEqualTo 0 || {(_main getOrDefault ["kind", ""]) isEqualTo "generated"}): { "generated" };
+            // Couverture : le joueur la connaît. Faux ou alias : la nature reste cachée (« game »), comme kind plus bas.
+            case ((_main getOrDefault ["kind", ""]) isEqualTo "cover"): { "cover" };
+            default { "game" };
+        };
+        _L set ["origin", _origin];
+        _L set ["athenaRef", if (_aIdent isEqualTo "") then { "" } else { private _s = _aIdent; while { count _s < 6 } do { _s = "0" + _s; }; "IDT-" + _s }];
+        private _diag = [];
+        private _byIdK = _reg getOrDefault ["athenaById", createHashMap];
+        private _packAt = _reg getOrDefault ["packAt", ""];
+        switch (true) do {
+            case (_uid isEqualTo "" || {_uid isEqualTo "_SP_PLAYER_"}): {
+                _diag pushBack ["warn", "Partie solo ou éditeur", "Pas de Steam ID : Athena ne peut pas vous reconnaître ni vous remettre vos papiers."];
+            };
+            case (_packAt isEqualTo ""): {
+                _diag pushBack ["ko", "Paquet Athena non chargé", "Le serveur n'a pas reçu le paquet d'identité d'Athena (COMSPEC Link absent, liaison coupée ou aucun Zeus relié) : aucun papier Athena ne peut vous être remis. Demandez la mise à jour."];
+            };
+            case (_kit isEqualTo []): {
+                _diag pushBack ["ko", "Aucun papier Athena pour votre compte", "Le paquet ne contient rien pour votre Steam ID : compte Steam non lié sur Athena, aucun papier émis pour votre identité, ou papier réservé à une autre carte ou opération."];
+            };
+            case ((_kit findIf { (_byIdK getOrDefault [[str _x, _x] select (_x isEqualType ""), ""]) isNotEqualTo "" }) < 0): {
+                _diag pushBack ["ko", "Papiers du kit absents du paquet", "Les papiers prévus pour vous ne sont pas dans le paquet de cette carte (brouillon, révoqué ou réservé à une autre carte)."];
+            };
+            default {};
+        };
+        {
+            private _k = _byIdK getOrDefault [[str _x, _x] select (_x isEqualType ""), ""];
+            private _base = (_reg getOrDefault ["issued", createHashMap]) getOrDefault [_k, []];
+            if ((_base param [3, ""]) in ["revoque", "vole", "perdu"]) then {
+                _diag pushBack ["warn", "Papier signalé sur Athena", format ["Le papier n° %1 est déclaré %2 sur Athena : un contrôle le signalera.", (_k splitString "|") param [2, "?"], ["révoqué", "volé", "perdu"] select ((["revoque", "vole", "perdu"] find (_base select 3)) max 0)]];
+            };
+        } forEach _kit;
+        if (_origin isEqualTo "generated") then {
+            _diag pushBack ["warn", "Identité générée par le mod", "Faute de papier Athena remis, cette identité a été tirée par le mod : ce n'est pas votre identité Athena. Sur Athena : fiche membre › Identité & papiers › Transmission en jeu."];
+        };
+        if (_origin isEqualTo "athena") then {
+            _diag pushBack ["ok", "Identité reçue d'Athena", format ["Vos papiers viennent d'Athena%1.", ["", format [" (identité %1)", _L get "athenaRef"]] select ((_L get "athenaRef") isNotEqualTo "")]];
+        };
+        _L set ["diag", _diag];
         // Zeus : la vérité en plus (nature des papiers, vrai nom, cohérence). Joueur : sa propre fiche seulement, sans la nature.
         if (_x1 isNotEqualTo true) then { _L deleteAt "kind"; _L deleteAt "quality"; };
         if (_x1 isEqualTo true) then {
