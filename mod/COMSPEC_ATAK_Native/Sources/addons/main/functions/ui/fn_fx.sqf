@@ -60,15 +60,9 @@ switch (_act) do {
         };
         if (["tapFx"] call comspec_atak_native_fnc_fx) then {
             if !((profileNamespace getVariable ["COMSPEC_ATAK_Silent", false]) || {["mute", false] call comspec_atak_native_fnc_zeusFx}) then { playSound "ClickSoft"; };
-            // Vibration légère : la coque descend d'un pixel et revient (pas pendant la vibration d'un message).
-            if ((uiNamespace getVariable ["COMSPEC_ATAK_Vibrating", -1]) < 0) then {
-                private _ph = _d displayCtrl 88509;
-                (_l get "phone") params ["_px", "_py", "_pw", "_phh"];
-                _ph ctrlSetPosition [_px + pixelW, _py + pixelH * 1.5, _pw, _phh];
-                _ph ctrlCommit 0;
-                _ph ctrlSetPosition [_px, _py, _pw, _phh];
-                _ph ctrlCommit 0.06;
-            };
+            // Vibration légère : tout le téléphone (coque et écran d'un bloc, fn_phoneShake) descend d'un pixel 60 ms
+            // puis revient (pas pendant la vibration d'un message). Avant : la coque seule, l'écran restait en place.
+            [0.06, 1, 1.5, true] call comspec_atak_native_fnc_phoneShake;
         };
         true
     };
@@ -164,15 +158,17 @@ switch (_act) do {
                 };
             } forEach _this;
         };
-        (uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []]) call _kill;
-        (((uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []]) apply { _x param [1, controlNull] }) call _kill;
-        (((uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []]) apply { _x param [1, controlNull] }) call _kill;
-        (uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]) call _kill;
+        // Anciens calques supprimés après la création des nouveaux, dans la même image (fn_overlayRaise).
+        private _old = [uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []],
+            ((uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []]) apply { _x param [1, controlNull] },
+            ((uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []]) apply { _x param [1, controlNull] },
+            uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]];
         uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
         uiNamespace setVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]];
         uiNamespace setVariable ["COMSPEC_ATAK_ScreenFx", ["", []]];
         uiNamespace setVariable ["COMSPEC_ATAK_ZeusOv", []];
         [] call comspec_atak_native_fnc_deviceOverlay;
+        _old call _kill;
         true
     };
     case "raise": {

@@ -226,16 +226,16 @@ if (_ovKeep) then {
             };
         } forEach _this;
     };
-    (uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []]) call _killOv;
-    (_ovSurf apply { _x param [1, controlNull] }) call _killOv;
-    (_ovFx apply { _x param [1, controlNull] }) call _killOv;
-    (uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]) call _killOv;
+    // Anciens calques supprimés après la création des nouveaux, dans la même image (fn_overlayRaise).
+    private _ovOld = [uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []], _ovSurf apply { _x param [1, controlNull] },
+        _ovFx apply { _x param [1, controlNull] }, uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]];
     uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
     uiNamespace setVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]];
     uiNamespace setVariable ["COMSPEC_ATAK_ScreenFx", ["", []]];
     uiNamespace setVariable ["COMSPEC_ATAK_ZeusOv", []];
     uiNamespace setVariable ["COMSPEC_ATAK_OvStale", false];
     [] call comspec_atak_native_fnc_deviceOverlay;
+    _ovOld call _killOv;
     // Effets recréés après la page : déjà au-dessus de tout ce qu'elle vient de créer (fn_overlayRaise n'a rien à faire).
     uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
     uiNamespace setVariable ["COMSPEC_ATAK_OvSig", _ovSig];
