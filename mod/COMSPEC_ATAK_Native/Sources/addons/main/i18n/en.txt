@@ -1,4 +1,5 @@
 [
+["page messages (fil seul)", "messages page (thread only)"],
 ["Athena : sondage des unités", "Athena: units poll"],
 ["Athena : sondage des marqueurs", "Athena: markers poll"],
 ["Athena : sondage des ordres", "Athena: orders poll"],

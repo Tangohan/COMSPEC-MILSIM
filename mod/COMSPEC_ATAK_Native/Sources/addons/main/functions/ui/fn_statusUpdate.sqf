@@ -250,6 +250,10 @@ private _sigWait = _page in ["BFT", "GPS"] && {diag_tickTime - (_state getOrDefa
 private _fc = focusedCtrl _d;
 if (!isNull _fc && {(ctrlType _fc) isEqualTo 2}) then { _sigWait = true; };
 if ((_state getOrDefault ["pageSigPage", ""]) isEqualTo _page && {_pageSig isNotEqualTo (_state getOrDefault ["pageSig", []])}) then {
+    // Messages et SMS (4.2.1) : bulles ajoutées au fil affiché (fn_pageChat fil seul), sans toucher à la saisie en cours ;
+    // sinon (liste, vue côte à côte, aide) rendu complet comme avant, pas pendant la saisie.
+    private _ptc = diag_tickTime;
+    if (_page in ["CHAT", "SMS"] && {[true, true] call comspec_atak_native_fnc_pageChat}) exitWith { ["page messages (fil seul)", _ptc] call comspec_atak_native_fnc_perfAcc; };
     if (_sigWait) exitWith { _pageSig = _state getOrDefault ["pageSig", []]; };
     _state set ["sigRenderAt", diag_tickTime];
     // BFT : lignes, en-tête et fiche réécrites sur place quand c'est possible (aucun contrôle recréé, défilement gardé).
