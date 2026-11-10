@@ -568,12 +568,17 @@ Jeu vers site : `SubmitIdCheck` de COMSPEC Link (2.0.118 et plus, aucune nouvell
 |---|---|
 | `map`, `op` | portée (carte, code d'opération) |
 | `cover` | `name`, `dob`, `pob`, `country`, `address`, `city`, `profession`, `employer`, `phone`, `travel`, `family`, `contacts` `[[nom, lien, téléphone]…]`, `docs` `[[type, pays, numéro]…]` |
+| `cover` (livraison, facultatif) | `pack` étape (`ok`, `wait`, `server_fetch`, `relay_zeus`, `relay_self`, `relay_fail`, `no_relay`), `pack_code` (`unauthorized`, `no_tenant`, `uplink_off`, `not_ready`…), `pack_via` (`server`, `zeus`, `self`), `pack_at` (date du paquet reçu), `server` (nom du serveur de jeu). Hors de l'empreinte de l'identité : un changement de livraison ne rouvre pas une différence examinée. |
 
 Compte : celui du jeton de jeu (Bearer), jamais une donnée du corps ; communauté : celle du jeton. Une clé de communauté seule ne dit pas qui appelle : rien n'est écrit.
 
 Réponse `{"id": nombre, "ref": texte}` : `saved;AAAA-MM-JJ HH:MM`, `unchanged;AAAA-MM-JJ HH:MM` (même contenu, date du dernier changement, UTC), `unlinked` (`id` = 0, aucun compte relié). Erreurs : 422 `invalid_cover` (sans nom), 503 `unavailable`. Le corps n'a pas de `idempotency_key` : un site antérieur le refuse en 422 au lieu d'y voir un contrôle. Le mod garde alors la couverture sur le poste et réessaie plus tard.
 
 Confidentialité : ces lignes (`sse_id_game_covers`) ne rejoignent ni le registre des identités, ni les listes de surveillance, ni le paquet. Lecture : le joueur dans Mes papiers, l'habilitation Confidentiel sur la fiche du membre.
+
+## ICD-SSE-PACK-SELF-001 — Paquet d'un seul compte, relayé par le téléphone du joueur
+
+Serveur de jeu sans COMSPEC Link et sans Zeus relié : le serveur demande à chaque joueur (`packFetch self`) de lire ses propres papiers, une fois sa liaison Athena établie. `GetIdentityPack [carte, "~self" | "~self:OPÉRATION", ""]` (DLL inchangée : l'opération part dans `op`) → `GET /api/sse/identity/pack?op=~self…` → même forme que le paquet, réduite au compte du jeton de jeu : son kit, ses papiers (sans `forgery_kind` ni `forgery_quality`), les identités qu'ils portent, son brief, les pays ; `watch`, `wanted`, `population` vides ; jamais servi par le cache partagé. Clé de communauté seule : 403 `unlinked`. Le serveur de jeu refiltre : kit du Steam ID qu'il lit lui-même, pays inconnus seulement, rien d'autre.
 
 ## ICD-SSE-PACK-REV-001 — Révision du paquet d'identité (304 / unchanged)
 

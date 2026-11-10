@@ -9,7 +9,8 @@
                       Le site ne l'écrit jamais dans l'identité Athena : il la compare (fiche membre › Différence avec le jeu).
     Résultat (jamais diffusé) : comspec_sse_idCoverSync, HashMap
       state  sending | sent | unlinked | error | nolink   at  date Athena (UTC)   sig  contenu envoyé   tried  dernier essai
-    Les contacts et les papiers partent sans vérité de jeu : ni nature, ni vrai nom, ni cohérence.
+    Les contacts et les papiers partent sans vérité de jeu : ni nature, ni vrai nom, ni cohérence. S'y ajoutent l'état de
+    la livraison du paquet d'identité (étape, code d'erreur, relais, date) et le nom du serveur de jeu.
 */
 params [["_op", ""], ["_sheet", createHashMap]];
 if (!hasInterface || {_op isNotEqualTo "push"} || {(count _sheet) isEqualTo 0}) exitWith { false };
@@ -33,7 +34,12 @@ private _cover = createHashMapFromArray [
     // Champ par champ pour la comparaison du site (rétrocompatible : un site antérieur les ignore).
     ["last", _sheet getOrDefault ["last", ""]], ["first", _sheet getOrDefault ["first", ""]], ["sex", _sheet getOrDefault ["sex", ""]],
     ["origin", _origin], ["identity_ref", _sheet getOrDefault ["athenaRef", ""]],
-    ["carried", ((_sheet getOrDefault ["docs", []]) findIf { _x param [4, false] }) >= 0]
+    ["carried", ((_sheet getOrDefault ["docs", []]) findIf { _x param [4, false] }) >= 0],
+    // État de la chaîne du paquet d'identité vu par ce serveur (fiche membre › Transmission en jeu) : étape, code
+    // d'erreur, relais (server | zeus | self), date du paquet reçu, nom du serveur de jeu. Rien sur les autres joueurs.
+    ["pack", _sheet getOrDefault ["packStep", ""]], ["pack_code", _sheet getOrDefault ["packCode", ""]],
+    ["pack_via", _sheet getOrDefault ["packVia", ""]], ["pack_at", _sheet getOrDefault ["packAt", ""]],
+    ["server", serverName select [0, 80]]
 ];
 private _payload = createHashMapFromArray [
     ["kind", "cover_report"], ["map", str (missionNamespace getVariable ["COMSPEC_MapId", 1])],

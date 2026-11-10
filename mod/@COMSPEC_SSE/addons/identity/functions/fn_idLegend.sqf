@@ -36,6 +36,8 @@ private _build = {
     // Papier remis depuis l'éditeur avec son texte (le plus récent) : c'est lui, la légende voulue.
     { if ((_x getOrDefault ["legendText", ""]) isNotEqualTo "") then { _main = _x; }; } forEach _docs;
     if ((count _main) isEqualTo 0) then { { if ((_x getOrDefault ["kind", ""]) isEqualTo "cover") exitWith { _main = _x; }; } forEach _docs; };
+    // Pièce d'Athena (kit du compte) avant une pièce tirée par le mod : c'est l'identité Athena que la fiche montre.
+    if ((count _main) isEqualTo 0) then { { if ((_x getOrDefault ["type", ""]) in ["id_card", "passport"] && {(_x getOrDefault ["athenaId", ""]) isNotEqualTo ""}) exitWith { _main = _x; }; } forEach _docs; };
     if ((count _main) isEqualTo 0) then { { if ((_x getOrDefault ["type", ""]) in ["id_card", "passport"]) exitWith { _main = _x; }; } forEach _docs; };
     if ((count _main) isEqualTo 0 && {_docs isNotEqualTo []}) then { _main = _docs select 0; };
     private _country = _main getOrDefault ["country", ["default"] call comspec_sse_fnc_idCountries];
@@ -300,7 +302,9 @@ switch (_op) do {
         if ((_L getOrDefault ["imported", false]) && {(_L get "source") isEqualTo "local"}) then { _L set ["source", "import"]; };
         private _at = _brief getOrDefault ["updated_at", ""];
         if !(_at isEqualType "") then { _at = ""; };
-        _L set ["athenaAt", [_at, _reg getOrDefault ["packAt", ""]] select (_at isEqualTo "")];
+        private _packAtS = _reg getOrDefault ["packAt", ""];
+        if (_packAtS isEqualTo "") then { _packAtS = (_reg getOrDefault ["selfPacks", createHashMap]) getOrDefault [_uid, ""]; };
+        _L set ["athenaAt", [_at, _packAtS] select (_at isEqualTo "")];
         _L deleteAt "brief";
         // Papiers : ce qui est imprimé et s'ils sont sur lui, jamais la nature ni le vrai nom.
         private _countries = [] call comspec_sse_fnc_idCountries;
@@ -331,12 +335,47 @@ switch (_op) do {
         private _diag = [];
         private _byIdK = _reg getOrDefault ["athenaById", createHashMap];
         private _packAt = _reg getOrDefault ["packAt", ""];
+        // Paquet « self » : ses papiers relayés par son propre téléphone (serveur sans COMSPEC Link).
+        private _selfAt = (_reg getOrDefault ["selfPacks", createHashMap]) getOrDefault [_uid, ""];
+        private _pst = _reg getOrDefault ["packState", createHashMap];
+        // État de la chaîne, remonté à Athena avec la fiche (fn_idCoverSync) : où elle s'est arrêtée, par qui elle est passée.
+        _L set ["packAt", [_packAt, _selfAt] select (_packAt isEqualTo "")];
+        _L set ["packVia", if (_packAt isNotEqualTo "") then { _pst getOrDefault ["via", "server"] } else { ["", "self"] select (_selfAt isNotEqualTo "") }];
+        _L set ["packStep", if (_packAt isNotEqualTo "" || {_selfAt isNotEqualTo ""}) then { "ok" } else { _pst getOrDefault ["step", "wait"] }];
+        _L set ["packCode", _pst getOrDefault ["code", ""]];
         switch (true) do {
             case (_uid isEqualTo "" || {_uid isEqualTo "_SP_PLAYER_"}): {
                 _diag pushBack ["warn", "Partie solo ou éditeur", "Pas de Steam ID : Athena ne peut pas vous reconnaître ni vous remettre vos papiers."];
             };
-            case (_packAt isEqualTo ""): {
-                _diag pushBack ["ko", "Paquet Athena non chargé", "Le serveur n'a pas reçu le paquet d'identité d'Athena (COMSPEC Link absent, liaison coupée ou aucun Zeus relié) : aucun papier Athena ne peut vous être remis. Demandez la mise à jour."];
+            case (_packAt isEqualTo "" && {_selfAt isEqualTo ""}): {
+                // Étape exacte où la chaîne s'est arrêtée (fn_idAthenaPack « state »), puis quoi faire. Textes fixes (traduits).
+                private _step = _pst getOrDefault ["step", ""];
+                private _code = _pst getOrDefault ["code", ""];
+                private _mine = (_reg getOrDefault ["selfFails", createHashMap]) getOrDefault [_uid, ""];
+                if (_mine isNotEqualTo "") then { _step = "relay_fail"; _code = _mine; };
+                private _why = switch (_step) do {
+                    case "server_fetch": {
+                        switch (true) do {
+                            case (_code in ["unauthorized", "forbidden"]): { "Le serveur de jeu a COMSPEC Link, mais Athena refuse sa clé d'accès. Le responsable du serveur doit y renseigner la clé de communauté d'Athena. Nouvel essai automatique toutes les 5 minutes." };
+                            case (_code isEqualTo "no_tenant"): { "Le serveur de jeu a COMSPEC Link, mais Athena ne sait pas à quelle communauté il appartient (clé de communauté absente). Le responsable du serveur doit la renseigner. Nouvel essai automatique toutes les 5 minutes." };
+                            default { "Le serveur de jeu a COMSPEC Link, mais Athena n'a pas répondu (coupure, maintenance ou liaison du serveur pas encore prête). Nouvel essai automatique toutes les 5 minutes." };
+                        };
+                    };
+                    case "relay_zeus": { "Le serveur de jeu n'a pas COMSPEC Link : il a demandé le paquet au poste du Zeus, sans réponse pour l'instant. Nouvel essai automatique ; le Zeus doit être relié à Athena." };
+                    case "relay_self": { "Le serveur de jeu n'a pas COMSPEC Link : il a demandé vos papiers à votre téléphone, sans réponse pour l'instant. Restez relié à Athena (service Athena sur Oui) ; nouvel essai automatique." };
+                    case "relay_fail": {
+                        switch (true) do {
+                            case (_code isEqualTo "uplink_off"): { "Votre téléphone n'a pas pu lire vos papiers : la liaison Athena est coupée sur votre poste (service Athena sur Non). Remettez-la sur Oui, puis touchez Demander la mise à jour." };
+                            case (_code in ["unauthorized", "forbidden", "unlinked", "no_tenant"]): { "Votre téléphone n'a pas pu lire vos papiers : votre compte Athena n'est pas relié en jeu. Reliez-le, puis touchez Demander la mise à jour." };
+                            case (_code in ["not_ready", "no_link"]): { "Votre téléphone n'a pas pu lire vos papiers : pas encore connecté à Athena (licence, connexion en cours ou COMSPEC Link absent). Nouvel essai automatique ; vous pouvez toucher Demander la mise à jour." };
+                            default { "Votre téléphone n'a pas pu lire vos papiers sur Athena (pas de réponse). Nouvel essai automatique ; vous pouvez toucher Demander la mise à jour." };
+                        };
+                    };
+                    case "no_relay": { "Le serveur de jeu n'a pas COMSPEC Link et aucun poste relié à Athena n'est connecté pour lui relayer le paquet. Nouvel essai automatique toutes les 5 minutes." };
+                    default { "Le serveur n'a pas encore reçu le paquet d'identité d'Athena (chargement en cours, ou serveur sans COMSPEC Link en attente d'un poste relié). Nouvel essai automatique ; touchez Demander la mise à jour." };
+                };
+                _diag pushBack ["ko", "Paquet Athena non chargé", _why];
+                _diag pushBack ["warn", "En attendant", "Sur Athena : fiche membre › Identité & papiers › Télécharger ma couverture (identité Athena), puis ici Importer ma couverture. Aucune connexion n'est nécessaire en jeu."];
             };
             case (_kit isEqualTo []): {
                 _diag pushBack ["ko", "Aucun papier Athena pour votre compte", "Le paquet ne contient rien pour votre Steam ID : compte Steam non lié sur Athena, aucun papier émis pour votre identité, ou papier réservé à une autre carte ou opération."];

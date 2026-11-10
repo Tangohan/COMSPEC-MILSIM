@@ -80,8 +80,22 @@ $issues = static function (array $list) use ($ph, $stateChip, $stateLabels, $fix
         <h3>Transmission en jeu</h3>
         <span class="eff-fm-chip <?= $ph($stateChip[$diag['state']] ?? '') ?>"><?= $ph($stateLabels[$diag['state']] ?? '') ?></span>
     </div>
-    <p class="eff-fm-lead">Ce qui part réellement en jeu et ce qui l’en empêche. Sans papier d’Athena remis, le jeu tire au hasard une identité au joueur : c’est elle qu’il voit sur son téléphone (Ma couverture), pas celle d’Athena.</p>
-    <p class="eff-card__hint">Prêt : part tel quel · Incomplet : part, le jeu complète au hasard · Erroné : part avec une donnée fausse · Bloqué : ne part pas.<?= $diag['auto_kit'] ? ' Aucun kit composé : kit automatique (identité principale).' : '' ?></p>
+    <p class="eff-fm-lead">Ce qu’Athena prévoit d’envoyer en jeu, ce qui l’en empêche, et ce que le jeu a réellement reçu. Sans papier d’Athena remis, le jeu tire au hasard une identité au joueur : c’est elle qu’il voit sur son téléphone (Ma couverture), pas celle d’Athena.</p>
+    <p class="eff-card__hint">Prêt : prévu tel quel · Incomplet : prévu, le jeu complète au hasard · Erroné : prévu avec une donnée fausse · Bloqué : ne part pas.<?= $diag['auto_kit'] ? ' Aucun kit composé : kit automatique (identité principale).' : '' ?></p>
+    <?php $dl = $diag['delivery'] ?? null; ?>
+    <?php if (is_array($dl)): ?>
+        <div class="idm-sync__block" id="papiers-livraison">
+            <div class="idm-doc__head">
+                <b>Arrivée réelle en jeu</b>
+                <span class="eff-fm-chip <?= $ph(['received' => 'is-ok', 'not_received' => 'is-warn', 'other' => 'is-info'][$dl['state']] ?? '') ?>"><?= $ph($dl['title']) ?></span>
+                <?php if ($dl['at'] !== ''): ?>
+                    <span class="idm-doc__meta">Dernière remontée du jeu le <?= $ph($dl['at']) ?> UTC<?php if ($dl['server'] !== ''): ?> · serveur <span translate="no"><?= $ph($dl['server']) ?></span><?php endif; ?></span>
+                <?php endif; ?>
+            </div>
+            <p><?= $ph($dl['why']) ?></p>
+            <?php if ($dl['todo'] !== ''): ?><p class="eff-card__hint"><?= $ph($dl['todo']) ?><?php if ($dl['state'] === 'not_received' && is_array($pp['cover'] ?? null)): ?> <a class="link" href="#couverture">Télécharger la couverture</a><?php endif; ?></p><?php endif; ?>
+        </div>
+    <?php endif; ?>
     <?php $issues($diag['account']); ?>
     <?php foreach ($diag['identities'] as $iid => $st): ?>
         <?php $i = $identityById[(int) $iid] ?? null; if ($i === null) { continue; } ?>
@@ -167,16 +181,16 @@ $issues = static function (array $list) use ($ph, $stateChip, $stateLabels, $fix
         <details class="idm-doc__preview">
             <summary>Historique des valeurs écartées (<?= count($sync['history']) ?>)</summary>
             <ul class="eff-fm-list">
-                <?php foreach ($sync['history'] as $h): ?>
-                    <?php $label = \App\Services\Sse\MemberIdentitySyncService::FIELDS[$h['field']][0] ?? $h['field']; ?>
+                <?php foreach ($sync['history'] as $hr): ?>
+                    <?php $label = \App\Services\Sse\MemberIdentitySyncService::FIELDS[$hr['field']][0] ?? $hr['field']; ?>
                     <li>
-                        <span class="eff-fm-list__dt"><?= $ph(substr((string) $h['created_at'], 0, 16)) ?></span>
+                        <span class="eff-fm-list__dt"><?= $ph(substr((string) $hr['created_at'], 0, 16)) ?></span>
                         <div>
-                            <b><?= $ph($label) ?> : « <?= $ph($h['lost_value'] ?? '—') ?> » (<?= $ph($h['lost_side'] === 'game' ? 'version du jeu' : 'version d’Athena') ?>) écarté au profit de « <?= $ph($h['kept_value'] ?? '—') ?> »</b>
-                            <p><?= $ph(['game' => 'Repris du jeu', 'athena' => 'Athena gardée', 'both' => 'Les deux gardés', 'restore' => 'Restauration'][$h['decision']] ?? $h['decision']) ?><?= ($h['restored_at'] ?? null) !== null ? ' · restauré le ' . $ph(substr((string) $h['restored_at'], 0, 16)) : '' ?></p>
+                            <b><?= $ph($label) ?> : « <?= $ph($hr['lost_value'] ?? '—') ?> » (<?= $ph($hr['lost_side'] === 'game' ? 'version du jeu' : 'version d’Athena') ?>) écarté au profit de « <?= $ph($hr['kept_value'] ?? '—') ?> »</b>
+                            <p><?= $ph(['game' => 'Repris du jeu', 'athena' => 'Athena gardée', 'both' => 'Les deux gardés', 'restore' => 'Restauration'][$hr['decision']] ?? $hr['decision']) ?><?= ($hr['restored_at'] ?? null) !== null ? ' · restauré le ' . $ph(substr((string) $hr['restored_at'], 0, 16)) : '' ?></p>
                         </div>
-                        <?php if ($manage && ($h['restored_at'] ?? null) === null): ?>
-                            <form method="post" action="<?= $ph($base . '/historique/' . (int) $h['id'] . '/restaurer') ?>">
+                        <?php if ($manage && ($hr['restored_at'] ?? null) === null): ?>
+                            <form method="post" action="<?= $ph($base . '/historique/' . (int) $hr['id'] . '/restaurer') ?>">
                                 <input type="hidden" name="_csrf_token" value="<?= $ph($csrfToken) ?>">
                                 <button type="submit" class="eff-fm-btn is-sm">Restaurer</button>
                             </form>

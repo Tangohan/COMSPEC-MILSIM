@@ -16,7 +16,9 @@
       vehicle  [moi, véhicule]           contrôle des occupants        dismount [moi, véhicule]  faire descendre
       kit      [moi, ancien corps | objNull]   papiers du kit Athena (connexion, JIP, respawn ; Steam ID lu ici)
       paperMoved [moi, classe, conteneur, take | put]   j'ai pris / posé un papier (fn_idPaperTrack, sans anti-flood)
-      give / report / truth / pack       Zeus (curateur) : donner des papiers, signaler, vraie identité, paquet Athena
+      give / report / truth              Zeus (curateur) : donner des papiers, signaler, vraie identité
+      pack     [moi, texte, full | self] paquet Athena relayé (complet : Zeus ; sinon ses seuls papiers)
+      packFail [moi, full | self, code]  relais impossible (raison montrée dans Ma couverture)
       aiCfg    [moi, sous-op, args]      Zeus : fenêtre de configuration des IA (fn_idAiConfig, éditeur SSE › IA)
       fsmForce [moi, ia, état]           Zeus : impose un état à une IA (automate des IA réalistes, fn_idAiFsm)
       cpCreate [moi, position, réglages] · cpTrigger [moi, personne, réglages] · cpRemove [moi, position]
@@ -430,6 +432,8 @@ switch (_op) do {
     case "kit": {
         _args params ["", ["_old", objNull, [objNull]]];
         [_me, _old] call comspec_sse_fnc_idKit;
+        // Paquet Athena pas encore là pour ce joueur (serveur sans liaison, Zeus absent, mission déjà lancée) : relancé.
+        ["want", [_me]] call comspec_sse_fnc_idAthenaPack;
         // Kit d'infiltré (papier « couverture », brief de couverture d'Athena) : infiltration ouverte une fois les papiers remis.
         [{ ["auto", [_this]] call comspec_sse_fnc_idCover; }, _me, 3] call CBA_fnc_waitAndExecute;
     };
@@ -555,6 +559,17 @@ switch (_op) do {
     };
     case "coverForget": { ["serverForget", [_me]] call comspec_sse_fnc_idCoverImport; };
     case "coverPull": {
+        // Demander la mise à jour : sans paquet pour lui, son téléphone peut relayer ses papiers tout de suite (une fois
+        // par minute) ; le rechargement complet reste limité à une fois par 2 min, tous postes.
+        private _uid = getPlayerUID _me;
+        if ((_reg getOrDefault ["packAt", ""]) isEqualTo "" && {_uid isNotEqualTo ""} && {!(["has"] call comspec_sse_fnc_idAthenaPack)}
+            && {(time - ((_reg getOrDefault ["selfPullAt", createHashMap]) getOrDefault [_uid, -1000])) >= 60}) then {
+            private _sp = _reg getOrDefault ["selfPullAt", createHashMap];
+            _reg set ["selfPullAt", _sp];
+            _sp set [_uid, time];
+            (_reg getOrDefault ["selfPacks", createHashMap]) deleteAt _uid;
+            ["packFetch", [["self", "full"] select ([_me] call comspec_sse_fnc_isAuthority)]] remoteExecCall ["comspec_sse_fnc_idClient", owner _me];
+        };
         if ((time - (_reg getOrDefault ["packPullAt", -1000])) < 120) exitWith {};
         _reg set ["packPullAt", time];
         ["load"] call comspec_sse_fnc_idAthenaPack;
@@ -656,9 +671,25 @@ switch (_op) do {
         [_how, [_me, _cls, _box]] call comspec_sse_fnc_idPaperTrack;
     };
 
+    // Paquet relayé par un poste relié (serveur sans COMSPEC Link). Zeus, admin, hôte : paquet complet. Autre joueur :
+    // seulement ses propres papiers (fn_idAthenaPack « applySelf » refiltre tout, quoi que le poste envoie).
     case "pack": {
-        if !([_me] call comspec_sse_fnc_isAuthority) exitWith {};
-        _args params ["", ["_raw", ""]];
-        ["apply", _raw] call comspec_sse_fnc_idAthenaPack;
+        _args params ["", ["_raw", "", [""]], ["_mode", "full", [""]]];
+        if (_mode isEqualTo "full" && {[_me] call comspec_sse_fnc_isAuthority}) exitWith {
+            ["apply", _raw] call comspec_sse_fnc_idAthenaPack;
+            if ((_reg getOrDefault ["packAt", ""]) isNotEqualTo "") then { ["state", ["ok", "zeus", "", "zeus"]] call comspec_sse_fnc_idAthenaPack; };
+        };
+        ["applySelf", [_me, _raw]] call comspec_sse_fnc_idAthenaPack;
+    };
+    // Relais impossible : la raison est gardée pour la fiche Ma couverture du joueur (fn_idLegend « sheet »).
+    case "packFail": {
+        _args params ["", ["_mode", "full", [""]], ["_err", "", [""]]];
+        _err = _err select [0, 24];
+        if (_mode isEqualTo "self") then {
+            private _f = _reg getOrDefault ["selfFails", createHashMap];
+            _reg set ["selfFails", _f];
+            _f set [getPlayerUID _me, _err];
+        };
+        if ((_reg getOrDefault ["packAt", ""]) isEqualTo "") then { ["state", ["fail", "relay_fail", _err, ["zeus", "self"] select (_mode isEqualTo "self")]] call comspec_sse_fnc_idAthenaPack; };
     };
 };

@@ -38,6 +38,33 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : identité Athena qui arrive vraiment en jeu, synchro et couverture à télécharger (site, SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Votre identité Athena arrive vraiment en jeu
+- Serveur sans COMSPEC Link et sans Zeus connecté : votre téléphone relaie vos propres papiers d'Athena au serveur, plus d'identité tirée au hasard.
+- Le serveur réessaie tout seul pendant toute la mission (avant : 5 essais, puis plus rien) ; Ma couverture › Demander la mise à jour relance tout de suite.
+- Ma couverture dit à quelle étape ça bloque (clé du serveur refusée, Zeus sans réponse, compte non relié, liaison Athena sur Non…) et quoi faire.
+- Fiche membre › Identité & papiers : « Arrivée réelle en jeu » montre ce que le jeu a vraiment reçu (date, serveur), et plus « Utilisée en jeu » quand rien n'est arrivé.
+- Télécharger ma couverture depuis la fiche membre : un fichier avec votre identité Athena et ses papiers, à importer dans Ma couverture sans connexion.
+EN : Your Athena identity really reaches the game
+- Server without COMSPEC Link and no Zeus online: your phone relays your own Athena papers to the server, no more random identity.
+- The server retries on its own for the whole mission (before: 5 tries, then nothing); My cover › Request the update retries right away.
+- My cover says at which step it is stuck (server key rejected, Zeus not answering, account not linked, Athena link set to No…) and what to do.
+- Member file › Identity & papers: "Actual arrival in game" shows what the game really received (date, server), and no longer "Used in game" when nothing arrived.
+- Download my cover from the member file: a file with your Athena identity and its papers, to import into My cover with no connection.
+
+### Détail technique
+- Cause du « Paquet Athena non chargé » : serveur dédié sans COMSPEC Link ; `fn_idAthenaPack` « load » ne demandait le paquet qu'à un Zeus connecté, 5 fois à 1 min d'intervalle après le début de la mission, puis abandonnait (joueurs arrivés plus tard : jamais de paquet). Un échec de `GetIdentityPack` sur un serveur relié n'était jamais réessayé, et « has » gardait un « non » pris pendant une liaison coupée.
+- SSE `identity` : `fn_idAthenaPack` « load » (un seul à la fois, nouvel essai 1 à 5 min tant qu'il manque, Zeus puis relais « self » par joueur), « fetch » mode `self` (op `~self`, erreur dans `comspec_sse_idPackErr`), « applySelf » (serveur : kit du Steam ID lu par le serveur, ses papiers, son brief, pays inconnus seulement ; avis, recherchés, population, réglages ignorés), « state » (reg `packState`), « want » (relance à la demande de kit). `fn_idClient` « packFetch » attend `COMSPEC_AthenaReady` (2 min au plus), renvoie `pack` ou `packFail`. `fn_idServer` : `pack` [moi, texte, full | self], `packFail`, `coverPull` relaie tout de suite ses papiers (1/min). `fn_idLegend` « sheet » : diag par étape et code, pièce Athena préférée à une pièce tirée, `packStep` / `packCode` / `packVia` / `packAt`. `fn_idCoverSync` : ces champs et `serverName` partent avec la remontée `cover_report` (nouveau : état de livraison et nom du serveur de jeu, aucune donnée personnelle de plus).
+- Site : `GET /api/sse/identity/pack?op=~self[:OP]` → `SseIdentityPackService::buildSelf` (compte du jeton de jeu seulement, faux sans nature, sans cache partagé ; clé de communauté seule : 403 `unlinked`). `SseIdGameCoverService` garde `pack`, `pack_code`, `pack_via`, `pack_at`, `server` (hors empreinte : une différence examinée ne se rouvre pas). `MemberIdentitySyncService::delivery` / `withDelivery` : « Prévu pour le jeu » au lieu de « Part en jeu / Utilisée en jeu », remplacé par « Reçue en jeu le … » / « Remis en jeu le … » seulement d'après le jeu.
+- Fiche membre › Identité & papiers : bloc « Arrivée réelle en jeu », carte « Télécharger ma couverture » (routes `POST …/effectifs/membres/{id}/papiers/couverture`, `GET …/couverture/{exportId}/telecharger`, `MemberCoverExportController::generateForMember` / `downloadForMember` : le membre lui-même `LIMIT_SELF`, un responsable qui gère les papiers `LIMIT_MANAGER`). `SseCoverExportService::generateFromIdentity` : fichier `comspec-cover` v1 avec l'identité principale et ses papiers émis valables (contenu « Identité Athena » du formulaire, aussi dans Mes papiers et au bureau SSE).
+- Correctif : `member_papers_sync.php` écrasait `$h` de la fiche membre (boucle de l'historique) : page cassée après « Appliquer les choix » / « Garder les deux ».
+- Aucune nouvelle DLL, aucune migration. Traductions : `lang/en/site_auto.php`, `i18n/en.txt`, `localisation/template/xx.txt`, `tools/i18n_identity_en.tsv`.
+
+---
+
 ## À venir : configurateur d'équipement, favoris, tendances, pré-kits et poids (site, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
