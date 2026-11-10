@@ -6569,7 +6569,17 @@ class AtakApiController
 
         $http = 200;
         if (($result['accepted'] ?? 0) === 0 && ($result['rejected'] ?? 0) > 0) {
-            $http = 422;
+            // Position hors carte ou pas encore disponible (menu, spectateur, caméra Zeus, téléportation) :
+            // écartée sans erreur HTTP, sinon le jeu ouvre un ticket « ÉCHEC HTTP POST 422 » pour un point ignoré.
+            $benign = ['coords_out_of_bounds', 'invalid_coords'];
+            $onlyBenign = true;
+            foreach (is_array($result['results'] ?? null) ? $result['results'] : [] as $r) {
+                if (is_array($r) && empty($r['ok']) && !in_array((string) ($r['error'] ?? ''), $benign, true)) {
+                    $onlyBenign = false;
+                    break;
+                }
+            }
+            $http = $onlyBenign && is_array($result['results'] ?? null) && $result['results'] !== [] ? 200 : 422;
         }
         (new \App\Repositories\AtakIngestPlayerStatsRepository())->recordBatchOutcome(
             $tenantId,
