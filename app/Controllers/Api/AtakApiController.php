@@ -2668,6 +2668,9 @@ class AtakApiController
                 'mod_version' => $modVersion !== '' ? $modVersion : null,
                 'extension_version' => $extVersion !== '' ? $extVersion : null,
                 'arma_build' => $armaBuild !== '' ? $armaBuild : null,
+                // Preuve du module officiel (en-têtes X-Comspec-Client-* de la DLL), affichée dans le ticket Discord.
+                'client_attest' => \App\Support\OfficialClientAttestation::secretState() === 'off'
+                    ? 'off' : \App\Support\OfficialClientAttestation::presentedStatus(),
             ]);
         } catch (\InvalidArgumentException $e) {
             return Response::json([
