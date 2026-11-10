@@ -103,8 +103,7 @@ switch (_act) do {
         private _why = [] call comspec_atak_native_fnc_canUse;
         if (_why isNotEqualTo "") exitWith { [_why] call comspec_atak_native_fnc_deviceDenied; false };
         private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-        if (isNull ([] call comspec_atak_native_fnc_display) || {!(_s getOrDefault ["interactive", false])}) then { [true] call comspec_atak_native_fnc_open; };
-        [{ ["PILOT"] call comspec_atak_native_fnc_navigate; }, [], 0.1] call comspec_atak_native_fnc_waitAndExec;
+        ["PILOT"] call comspec_atak_native_fnc_openApp;
         true
     };
     case "hudNow": { if ((call _on) && {call _crew}) then { call _hud; }; };

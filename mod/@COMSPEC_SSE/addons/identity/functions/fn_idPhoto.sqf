@@ -43,10 +43,7 @@ if ((uiNamespace getVariable ["comspec_sse_idView", createHashMap]) getOrDefault
         uiSleep 0.4;
         closeDialog 2;
         uiSleep 0.1;
-        if (!isNil "comspec_atak_native_fnc_open" && {[player] call comspec_atak_native_fnc_hasDevice}) then {
-            [true] call comspec_atak_native_fnc_open;
-            [{ ["IDCHECK"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
-        };
+        ["IDCHECK"] call comspec_sse_fnc_openApp;
     };
 };
 true

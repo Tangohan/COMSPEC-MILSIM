@@ -9,8 +9,7 @@ params [["_what", "show"]];
 switch (_what) do {
     case "show": {
         if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
-        if (isNull ([] call comspec_atak_native_fnc_display)) then { [true] call comspec_atak_native_fnc_open; };
-        [{ ["SETTINGS"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
+        ["SETTINGS"] call comspec_atak_native_fnc_openApp;
     };
     case "notify": {
         if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};

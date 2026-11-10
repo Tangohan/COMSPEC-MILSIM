@@ -191,10 +191,10 @@ switch (_act) do {
         if (isNull player || {!alive player} || {!([player] call comspec_atak_native_fnc_hasDevice)}) exitWith {};
         // Le téléphone s'ouvre sur la fiche ; jamais pendant la conduite, le pilotage, l'inconscience ou un autre menu.
         private _busy = (player getVariable ["ACE_isUnconscious", false]) || {dialog} || {(vehicle player) isNotEqualTo player && {(driver (vehicle player)) isEqualTo player}};
-        if (isNull ([] call comspec_atak_native_fnc_display)) then {
-            if (!_busy) then { [true] call comspec_atak_native_fnc_open; };
-        };
-        [{ if !(isNull ([] call comspec_atak_native_fnc_display)) then { ["DEBRIEF"] call comspec_atak_native_fnc_navigate; }; }, [], 0.4] call comspec_atak_native_fnc_waitAndExec;
+        // Occupé : le téléphone déjà affiché passe sur la fiche, sans être pris en main. Sinon lien profond (fn_openApp).
+        if (_busy) then {
+            if !(isNull ([] call comspec_atak_native_fnc_display)) then { ["DEBRIEF"] call comspec_atak_native_fnc_navigate; };
+        } else { ["DEBRIEF"] call comspec_atak_native_fnc_openApp; };
     };
     case "tick": {
         if (!hasInterface) exitWith {};

@@ -45,7 +45,7 @@ if (_kind isEqualTo "SALUTE") exitWith {
     _dr set ["sE", format [("%1 · papiers : %2" call comspec_sse_fnc_tr), [(_arms joinString ", "), "aucune arme visible" call comspec_sse_fnc_tr] select (_arms isEqualTo []), _paper]];
     uiNamespace setVariable ["COMSPEC_ATAK_SaluteDraft", _dr];
     ["INFO", ("SALUTE pré-rempli avec le contrôle : relisez puis envoyez" call comspec_sse_fnc_tr), 3, 20, "SALUTE"] call comspec_atak_native_fnc_notify;
-    [{ ["SALUTE"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+    ["SALUTE"] call comspec_sse_fnc_openApp;
     true
 };
 
@@ -72,15 +72,12 @@ private _vals = createHashMapFromArray [
 // ATAK 3.0.2 et plus : entrée publique du SPOTREP pré-rempli, lue une fois à l'ouverture de l'app Comptes rendus.
 if ([3, 0, 2] call comspec_sse_fnc_idAtakAtLeast) exitWith {
     uiNamespace setVariable ["COMSPEC_ATAK_SpotrepDraft", _vals];
-    [{ ["REPORTS"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+    ["REPORTS"] call comspec_sse_fnc_openApp;
     true
 };
 // ATAK 3.0.1 : brouillon SPOTREP de l'app, puis fiche ouverte.
 private _drafts = missionNamespace getVariable ["COMSPEC_ATAK_RepDrafts", createHashMap];
 _drafts set ["SPOTREP", [_vals, [dayTime, "HH:MM"] call BIS_fnc_timeToString, createHashMap]];
 missionNamespace setVariable ["COMSPEC_ATAK_RepDrafts", _drafts];
-[{
-    ["REPORTS"] call comspec_atak_native_fnc_navigate;
-    [{ ["type", "SPOTREP"] call comspec_atak_native_fnc_reportAction; }] call CBA_fnc_execNextFrame;
-}] call CBA_fnc_execNextFrame;
+["REPORTS", createHashMap, {}, { [{ ["type", "SPOTREP"] call comspec_atak_native_fnc_reportAction; }] call CBA_fnc_execNextFrame; }] call comspec_sse_fnc_openApp;
 true

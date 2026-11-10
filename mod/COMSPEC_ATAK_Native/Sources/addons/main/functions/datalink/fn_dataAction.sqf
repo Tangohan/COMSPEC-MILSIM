@@ -63,10 +63,7 @@ switch (_act) do {
         playSound "ClickSoft";
         ["comspec_atak_native_dataSrv", ["connect", _o, player, []]] call CBA_fnc_serverEvent;
         // Téléphone en main sur l'app Extraction.
-        if (isNull ([] call comspec_atak_native_fnc_display) || {!((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false])}) then {
-            [true] call comspec_atak_native_fnc_open;
-        };
-        [{ ["DATALINK"] call comspec_atak_native_fnc_navigate; [] call comspec_atak_native_fnc_dataOverlay; }] call comspec_atak_native_fnc_nextFrame;
+        ["DATALINK", createHashMap, {}, { [] call comspec_atak_native_fnc_dataOverlay; }] call comspec_atak_native_fnc_openApp;
         true
     };
     case "disconnect": {
