@@ -54,7 +54,7 @@ if (_open isNotEqualTo "" && {(count _sel) > 0}) then {
     (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["WANTED", { ["open", ""] call comspec_atak_native_fnc_wantedAction; }]];
     _rows append [
         ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Mis à jour le %1. En cas de contact : contrôle d'identité dans l'app SSE, puis FRS au bureau SSE.</t>", [_upd] call _esc]],
-        ["buttons", [["RETOUR", { ["open", ""] call comspec_atak_native_fnc_wantedAction; }], ["CONTRÔLE SSE", { ["SSE"] call comspec_atak_native_fnc_navigate; }, true]]]
+        ["buttons", [["‹ RETOUR", { ["open", ""] call comspec_atak_native_fnc_wantedAction; }], ["CONTRÔLE SSE", { ["SSE"] call comspec_atak_native_fnc_navigate; }, true]]]
     ];
 } else {
     private _count = { params ["_k"]; { (_x select 0) isEqualTo _k } count _list };
