@@ -38,9 +38,9 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## À venir : IA qui répondent à beaucoup plus de questions, réponses écrites par le maître du jeu (SSE, version à attribuer)
+## SSE 1.8.0 : IA qui répondent à beaucoup plus de questions, réponses écrites par le maître du jeu (SSE 1.8.0)
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
+### Résumé joueur
 Type : nouveauté
 FR : Les IA comprennent trois fois plus de questions, et le maître du jeu peut écrire leurs réponses
 - **Parler aux IA** : demandez-leur depuis quand elles sont là, avec qui, où elles étaient hier soir, ce qu'elles transportent, si elles ont vu des véhicules, des étrangers ou des mines, comment va le village, s'il y a de l'eau ou un médecin. L'onglet GUIDE de la fenêtre « Parler à » montre toutes les questions par thème.
