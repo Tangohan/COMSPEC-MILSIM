@@ -38,22 +38,30 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## À venir : tâches triées, annulation, recherche et écrans vides qui guident (ATAK natif, version à attribuer)
+## Pack 4.2.1 Washington : téléphone plus fluide, apps plus claires, réseau relais qui explique ses coupures, coques plus nettes (ATAK natif 4.2.1.AG - Washington, COMSPEC Link 2.0.123)
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
+### Résumé joueur
 Type : nouveauté
-FR : Des apps plus claires : tâches triées, annulation, recherche
-- Tâches : les ordres à traiter et prioritaires sont en tête, les terminés en bas, avec un filtre À traiter / Terminés / Tous ; une consigne longue se déplie au lieu d'être coupée.
-- TOUT EFFACER dans Itinéraire et VIDER LE JOURNAL dans Alertes s'annulent pendant 8 secondes ; l'itinéraire effacé n'est envoyé au groupe qu'après ce délai.
-- Médical : les blessés graves non soignés sont en tête, chaque alerte dit le nom, l'état, la distance, le cap et depuis quand ; Recherchés et l'annuaire de Numéros se fouillent par nom.
-- La touche retour ferme l'écran ouvert (nouvel ordre, moniteur, Bluetooth) au lieu de quitter l'app ; Statut et Itinéraire se mettent à jour seuls ; un écran vide dit quoi faire.
-EN : Clearer apps: sorted tasks, undo, search
-- Tasks: orders to handle and priority orders come first, finished ones at the bottom, with a To do / Done / All filter; a long order expands instead of being cut off.
-- CLEAR ALL in Route and CLEAR LOG in Alerts can be cancelled for 8 seconds; a cleared route is only sent to the group after that delay.
-- Medical: untreated serious casualties come first, each alert shows the name, state, distance, heading and how long ago; Target Deck and the Numbers directory can be searched by name.
-- The back key closes the open screen (new order, monitor, Bluetooth) instead of leaving the app; Status and Route update on their own; an empty screen says what to do.
+FR : ATAK 4.2.1 : téléphone plus fluide, apps plus claires, réseau relais qui explique ses coupures, coques plus nettes
+- **Fluidité** : toucher une app, la touche Accueil ou Retour fait réagir l'écran tout de suite ; changer de page ne refait plus les fêlures ni la saleté de l'écran ; dans Messages et SMS, un message reçu s'ajoute au fil sans redessiner la page. Le téléphone monte en fondu quand vous le sortez (à couper dans Réglages > Animations et sons).
+- **Tâches** : les ordres à traiter sont en tête, les terminés en bas, avec un filtre À traiter / Terminés / Tous ; une consigne longue se déplie au lieu d'être coupée.
+- **Annulation** : TOUT EFFACER dans Itinéraire et VIDER LE JOURNAL dans Alertes s'annulent pendant 8 secondes.
+- **Médical, Recherchés, Numéros** : les blessés graves non soignés sont en tête, avec la distance et le cap ; Recherchés et l'annuaire de Numéros se fouillent par nom.
+- **Navigation** : la touche retour ferme l'écran ouvert au lieu de quitter l'app ; Statut et Itinéraire se mettent à jour seuls ; un écran vide dit quoi faire.
+- **Réseau relais** : hors maillage, le téléphone nomme le lien qui manque et sa cause (relief, distance, bâtiments) avec un conseil, et la carte le montre par un trait rouge en tirets. Les bâtiments comptent entre deux radios ; quand un relais tombe, le réseau se coupe environ 3 secondes avant de repasser par un autre. Tout se règle dans Échap > Réalisme.
+- **Coques** : iPhone 17 Pro sans liseré noir, V2 Enhanced totalement opaque, écran aux coins arrondis avec un léger reflet de vitre (Réglages > Thème et écran > Reflet du verre), touches de la coque à leur vraie place sur chaque téléphone.
+EN : ATAK 4.2.1: smoother phone, clearer apps, a relay network that explains its drops, cleaner phone cases
+- **Smoothness**: tapping an app, the Home or Back key makes the screen react at once; changing page no longer rebuilds the screen's cracks or dirt; in Messages and SMS, an incoming message is added to the thread without redrawing the page. The phone fades in when you take it out (turn it off in Settings > Animations and sounds).
+- **Tasks**: orders to handle come first, finished ones at the bottom, with a To do / Done / All filter; a long order expands instead of being cut off.
+- **Undo**: CLEAR ALL in Route and CLEAR LOG in Alerts can be cancelled for 8 seconds.
+- **Medical, Target Deck, Numbers**: untreated serious casualties come first, with distance and heading; Target Deck and the Numbers directory can be searched by name.
+- **Navigation**: the back key closes the open screen instead of leaving the app; Status and Route update on their own; an empty screen says what to do.
+- **Relay network**: out of the mesh, the phone names the missing link and its cause (terrain, distance, buildings) with advice, and the map shows it as a dashed red line. Buildings count between two radios; when a relay goes down, the network drops for about 3 seconds before switching to another. Everything is set in Esc > Realism.
+- **Phone cases**: iPhone 17 Pro without the black outline, V2 Enhanced fully opaque, screen with rounded corners and a light glass reflection (Settings > Theme and screen > Glass reflection), case keys at their real place on each phone.
 
 ### Détail technique
+
+**Tâches triées, annulation, recherche et écrans vides qui guident**
 - Tâches (`fn_pageTasks`) : ordres triés par [terminé, rang de priorité FLASH / URGENT / HIGH-PRIORITY-IMPORTANT / reste, `-stamp`, clé] au lieu de l'ordre de la HashMap de `fn_tasksAll` ; filtre « segment » À TRAITER / TERMINÉS / TOUS (état `taskFilter`, ordres et tâches de mission ; segment plutôt que « tabs » : ses libellés rétrécissent ou passent à la ligne en mini) ; consigne de plus de 220 caractères (200 pour une tâche de mission) coupée à la fin d'un mot avec « … » et une ligne « fold » TEXTE COMPLET (état `taskTxtOpen`) ; tâches de mission : suivie, en cours, terminées ; `backSub` replie « QUI ? ».
 - Annulation (`fn_undoSnack`) : `fn_wpAction « clear »` garde `COMSPEC_ATAK_WpUndo` = [n°, étapes, étape active, nav, auteur, à renvoyer] et n'appelle plus `_changed` : envoi groupé (`syncNow`) différé de 8 s, envoi en attente (`COMSPEC_ATAK_WpSyncPending`) retenu puis renvoyé à l'annulation ; `undoClear` ; toute modification (`_changed`) ou réception (`receive`) rend l'annulation caduque. `fn_alertsAction « clearLog »` / `undoClearLog` (`COMSPEC_ATAK_AlertLogUndo`, entrées reçues entre-temps gardées, 25 au plus).
 - Médical (`fn_pageMedical`) : alertes triées [triage à secourir / en cours / traité / KIA, gravité, ancienneté], ancienneté calculée de `created_at` (date Athena ou Unix) en minutes depuis 2020 (précision des flottants 32 bits) ; carte « notif » (titre, ancienneté, état · triage · distance et cap du patient en jeu · grille) au lieu d'un bouton ; `backSub` : alerte dépliée, moniteur (`medMon`, retour à DOSSIERS par `medMonFrom`).
@@ -62,28 +70,8 @@ EN : Clearer apps: sorted tasks, undo, search
 - Pages vivantes : `fn_pageWaypoints` et `fn_pageStatus` acceptent `["live"]` (textes réécrits sans redessiner) ; minuterie CBA d'une seconde propre à chaque page (`COMSPEC_ATAK_WpLive`, `COMSPEC_ATAK_StatusLive`), arrêtée hors de la page ou téléphone fermé. `fn_formRender` : ligne « info » avec id facultatif (4e élément) ; `fn_formSet « info »`.
 - États vides par le composant « empty » : Tâches, Alertes, Médical, Logistique, Recherchés (squelette pendant le chargement), Discord, Marquer tracking, Reco, SALUTE, Itinéraire, Sniper ; dans les pages dessinées à la main (Alertes, Reco, SALUTE), formulaire d'une ligne à la hauteur de son contenu. Alertes : journal au-delà de 12 (VOIR LA SUITE, `alertsLogN`) ; Logistique au-delà de 15 / 20 (`logiNMine`, `logiNIn`). Titres en double retirés dans Recherchés et Discord.
 - Autotest (`missions/COMSPEC_Autotest.Stratis/scripts/telephone.sqf`, groupe `telephone`) : `tel_taches_triees`, `tel_etats_vides`, `tel_recherche_nom`, `tel_annulation`, `tel_pages_vivantes` ; `AT_fnc_formTient` vérifie que boutons et textes des formulaires tiennent dans leur case.
-## À venir : réseau relais plus réaliste, cause de coupure visible (ATAK natif 4.2.1, version à attribuer)
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : amélioration
-FR : Le réseau relais dit pourquoi ça ne passe pas
-- Hors maillage, le téléphone nomme le lien qui manque et sa cause : « lien Ma radio › Relais Nord (1,2 km) coupé par le relief : il manque 8 dB », avec un conseil (monter sur la crête, poser un relais sur un toit, se rapprocher d'environ 400 m, changer de canal).
-- Sur la carte (calque Wave Relay), un trait rouge en tirets va de votre groupe au nœud qu'il faudrait joindre, avec la cause écrite au milieu.
-- L'app Wave Relay affiche la qualité du chemin (bonne, dégradée, à la limite, coupée), le maillon faible et ce qui le limite ; les voisins faibles disent « limité par les bâtiments », « limité par le relief »…
-- Les bâtiments comptent entre deux radios du maillage : en ville, un relais sur un toit porte bien plus loin qu'un relais dans la rue.
-- Quand un relais de votre route tombe (détruit, ramassé, batterie vide), le réseau se coupe environ 3 s, le temps de trouver un autre chemin, puis repasse par lui.
-- Le dépannage MPU nomme le relais en panne le plus proche (« Relais Nord à 800 m : batterie vide ») au lieu de dire seulement qu'il n'y a aucun relais.
-- Tout se règle dans Échap › Réalisme : Bâtiments dans le maillage (50 %), Reconvergence après la perte d'un relais (3 s), Lien manquant sur la carte (actif).
-EN : The relay network tells you why it does not get through
-- Out of the mesh, the phone names the missing link and its cause: "link My radio › North relay (1.2 km) blocked by terrain: 8 dB short", with advice (climb the ridge, set a relay on a rooftop, move about 400 m closer, change channel).
-- On the map (Wave Relay layer), a dashed red line runs from your group to the node you should reach, with the cause written in the middle.
-- The Wave Relay app shows the path quality (good, degraded, marginal, cut), the weak link and what limits it; weak neighbours say "limited by buildings", "limited by terrain"…
-- Buildings now count between two mesh radios: in town, a relay on a rooftop carries much further than a relay in the street.
-- When a relay on your route goes down (destroyed, picked up, flat battery), the network drops for about 3 s while it finds another path, then switches to it.
-- The MPU troubleshooter names the nearest broken relay ("North relay 800 m away: flat battery") instead of only saying there is no relay.
-- Everything is set in Esc › Realism: Buildings in the mesh (50 %), Reconvergence after losing a relay (3 s), Missing link on the map (on).
-
-### Détail technique
+**Réseau relais plus réaliste, cause de coupure visible**
 - `fn_meshGraph` « pass » (serveur par défaut, `mesh_server`) : `_marginOf` rend [marge, cause] ; cause = plus forte perte de `fn_radioLink` au-delà de 3 dB (« lossCode » : 2 relief et zone de Fresnel, 3 bâtiments, 4 météo, 8 feuillage), sinon 1 distance ; puis 4 météo forcée par Zeus, 6 posture ou masque du corps, 5 brouillage, 7 autre canal. Cache par paire `[heure, marge, cause]` (30 s), clé augmentée du réglage bâtiments.
 - Bâtiments (`mesh_buildings`, 0 à 100 %, 50 par défaut) : un `lineIntersectsSurfaces` par paire de moins de 3 km, dans le même cache que le bilan, compté dans la tranche ; mêmes pertes que `fn_radioLink` « full » (12 dB par bâtiment, x 0,6 en Réaliste, 30 dB au plus) multipliées par le réglage ; bâtiments à moins de 15 m d'une antenne ignorés ; sans effet en réalisme Simplifié.
 - Format diffusé de `COMSPEC_ATAK_MeshRef` : 5e élément par camp, causes des liens de marge < 9 dB (par 2 : paire, cause) ; 6e, liens manqués (par 3 : A + 64 x B, cause, marge arrondie à 2 dB), 3 par nœud au plus (trop loin jusqu'à 3 fois la portée, en espace libre seulement ; autre canal à portée ; bilan raté). Aucun bilan radio de plus. Lus seulement s'ils sont là, bornés (4 032 et 576 nombres) : un serveur plus ancien reste lisible.
@@ -91,22 +79,8 @@ EN : The relay network tells you why it does not get through
 - Reconvergence (`mesh_reconverge_s`, 0 à 15 s, 3 par défaut) : un nœud de ma route précédente absent du graphe ou mort, la vue passe hors service ce délai (débit 0, rallonge voix retirée, niveau 3), « every » relit le graphe dès la fin du délai. Client seulement, à partir du graphe partagé.
 - `fn_meshDraw` : trait rouge en tirets « miss » (une paire, dédoublonnée avec les autres traits), étiquette traduite, réglage `mesh_miss_map` (coché). `fn_pageWaveRelay` : Qualité du chemin, Cause, conseil, cause des voisins faibles. `fn_mpuDiag` : faits `meshCause`, `meshFix`, `meshReconv`, `relayDown` (relais du camp hors service le plus proche, liste locale de `fn_relayNet`) ; étapes « relay » et « mesh » enrichies, même nombre d'étapes.
 - Réglages rangés dans `fn_realismCatalog` (Maillage) et expliqués dans `fn_realismHelp` ; traductions `i18n/en.txt`, modèle `localisation/template/xx.txt`. Autotest `relais` (`scripts/relais.sqf`). Rien n'a tourné en jeu.
-## À venir : un téléphone plus fluide (ATAK natif 4.2.1, version à attribuer)
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : performance
-FR : Un téléphone plus fluide
-- Toucher une app, la touche Accueil ou Retour fait réagir l'écran tout de suite : le titre change et la transition démarre pendant que la page se prépare.
-- Changer de page ne refait plus les fêlures, la saleté ni le filtre de nuit de l'écran, et le téléphone calcule sa disposition une seule fois au lieu d'une dizaine.
-- Dans Messages et SMS, un message reçu s'ajoute au fil sans redessiner la page : ce que vous tapez ne bouge pas, et le fil reste en bas si vous y étiez.
-- Le téléphone en main monte en fondu quand vous le sortez et redescend quand vous le rangez ; à couper dans Réglages > Animations et sons ou dans les options CBA. Les petits à-coups toutes les quelques secondes (synchronisation avec Athena) sont étalés.
-EN : A smoother phone
-- Tapping an app, the Home or Back key makes the screen react at once: the title changes and the transition starts while the page is being prepared.
-- Changing page no longer rebuilds the screen's cracks, dirt or night filter, and the phone works out its layout once instead of about ten times.
-- In Messages and SMS, an incoming message is added to the thread without redrawing the page: what you are typing stays put, and the thread stays at the bottom if you were there.
-- The phone in hand fades in while rising when you take it out and slides down when you put it away; it can be turned off in Settings > Animations and sounds or in the CBA options. The small hitches every few seconds (Athena sync) are spread out.
-
-### Détail technique
+**Un téléphone plus fluide**
 - `fn_layoutGet` : résultat mémorisé par combinaison d'entrées (état du téléphone, réglages de mise en page du profil et du menu CBA, police, résolution, safeZone) ; équipement (modèle porté, terminal de bord, droit à l'appareil) relu au plus toutes les 0,5 s et tout de suite sur les évènements CBA `loadout`, `vehicle`, `unit`. Cache en enveloppe (appel interne `["#calcul"]`), corps inchangé ; `COMSPEC_ATAK_FontMin` et `FontBody` remis à chaque lecture. Mesures `disposition du téléphone (mémoire)` et `(calcul)`.
 - `fn_navigate` `[page, empiler, différé, mouvement]` : appui du joueur (tuiles du lanceur et du dock, touches Applications, Accueil, Apps récentes, Retour : `ui/displays.hpp`, `fn_tileCreate`, `fn_back [true]`) : titre (`fn_pageRender [page, true]`) et début du fondu (`fn_fx [..., ["press"]]`) dans l'image de l'appui, page dessinée à l'image suivante puis mouvement repris (`["resume", t0]`). Garde : jeton `COMSPEC_ATAK_NavTok`, écran fermé, page active changée. Les autres appels restent synchrones. Mesures `navigation : réponse à l'appui` et `navigation : appui jusqu'à la page dessinée`.
 - Calques d'écran gardés d'une page à l'autre (`fn_pageRender`, `fn_pageClear` ne les touche plus) ; recréés seulement si la place de l'écran change (cadre, orientation, modèle, format) ou si un calque est visible et qu'un contrôle hors groupe est plus récent qu'eux (tampon `cs_ov` posé sur tous les contrôles à chaque création des calques ; `cs_ovSkip` pour les contrôles en attente de suppression et éphémères). Dock et rail dans un groupe créé une fois (`COMSPEC_ATAK_DockGroup`), suivi au glisser. Calques restés sous un contrôle plus récent sans rien de visible : remontés au premier effet (`COMSPEC_ATAK_OvStale`, `fn_deviceOverlay` -> `fn_overlayRaise`). Mesures `page : calques d'écran gardés` et `recréés`.
@@ -116,22 +90,8 @@ EN : A smoother phone
 - Fermeture : écriture du profil déjà regroupée (`fn_saveProfile`, 60 s) ; retour de la miniature mesuré (`téléphone : fermeture (nettoyage)`, `téléphone : retour de la miniature`).
 - Laissé volontairement : fusion des deux gestionnaires `KeyDown` (ordre et double passage de `fn_keybinds` / `fn_keyBlock` à revoir en jeu), préférences de `fn_mapOnDraw` (lectures de profil de l'ordre de la microseconde, gain négligeable), miniature gardée sous le téléphone en main (un seul écran du téléphone dans tout le mod).
 - Rien de cela n'a tourné en jeu : relu, `hemtt check` (2 erreurs connues seulement) et tests de format.
-## À venir : coques plus propres, verre de l'écran et touches de chaque téléphone (ATAK natif, version à attribuer)
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Des coques plus nettes et un écran sous verre
-- iPhone 17 Pro : plus de liseré noir autour de la coque, bord lissé, et les fentes de dragonne laissent voir le décor.
-- V2 Enhanced : la coque est enfin totalement opaque, plus rien ne transparaît à travers.
-- L'écran épouse les coins arrondis de chaque coque et la vitre a un léger reflet, plus faible la nuit. Il se coupe dans Réglages > Thème et écran > Reflet du verre, ou dans les options CBA (ATAK · Affichage).
-- Les touches de la coque (retour, accueil, apps récentes, marche/arrêt) répondent là où elles sont dessinées sur chaque téléphone ; un modèle sans touche n'a plus de zone invisible au mauvais endroit.
-EN : Cleaner phone cases and a screen under glass
-- iPhone 17 Pro: no more black outline around the case, smooth edge, and the lanyard slots now show what is behind.
-- V2 Enhanced: the case is finally fully opaque, nothing shows through any more.
-- The screen follows the rounded corners of each case and the glass has a light reflection, weaker at night. Turn it off in Settings > Theme and screen > Glass reflection, or in the CBA options (ATAK · Display).
-- The case keys (back, home, recent apps, power) respond where they are drawn on each phone; a model without a key no longer has an invisible zone in the wrong place.
-
-### Détail technique
+**Coques plus propres, verre de l'écran et touches de chaque téléphone**
 - `tools/cut_ip17.py` : détourage anticrénelé. Sur le fond noir de la photo, un pixel du bord vaut C = alpha × F (F : couleur de la coque 2 px plus à l'intérieur, prolongée par `spread`) ; alpha = C / F sur 2 px de part et d'autre du contour et le bord prend la couleur F (avant : seuil de noir, pixels sombres du bord gardés opaques, liseré de 1 à 2 px). Support et câble (F presque noir) : contour flouté. Fentes de dragonne (`SLOT_ZONE`) : trous fermés rendus transparents. Ouverture de l'écran dessinée 4 fois plus grande puis réduite (coins arrondis anticrénelés).
 - `tools/frame_photos.py` : corps d'une photo pas tout à fait opaque (V2 Enhanced : alpha 253, de 240 à 255) remis à 255 dans `clean` (photos à corps opaque : inchangées) ; `frame_photos.py ip17 iphone` ne refait que ces modèles et garde les mesures des autres.
 - `tools/gen_assets.py` : `_bleed` prolonge la couleur du bord sous les pixels transparents des coques (alpha inchangé) : le filtrage et les mipmaps ne mêlent plus le noir des zones vides au bord. `SHELL_ALIAS` : la tablette à touches n'a plus de coques 2D propres.
@@ -141,6 +101,10 @@ EN : Cleaner phone cases and a screen under glass
 - Touches physiques (`fn_layoutApply`) : table par modèle (retour, accueil, apps récentes, marche/arrêt), mesurée par analyse d'image (icône ou bouton repéré dans le cadre, bouton latéral à la bosse de la silhouette), cible minimale 0,045 × 0,07 ou 0,06 × 0,03 ; `[]` masque la zone. Sonim : apps récentes en haut, retour en bas. Xiaomi X3D, tablette et iPhone 17 Pro : marche/arrêt seulement.
 - Place dans `main.pbo` : 7 829 984 octets de moins. `tools/paa_lzo.py` compresse en LZO les mipmaps des PAA écrits sans compression (blocs DXT gardés octet pour octet, relecture vérifiée ; `hemtt utils paa compress` réencode les blocs : écarts d'alpha jusqu'à 29) : 59 fichiers, 7 162 595 octets (`gw_frame*` 4 328 337, `fx_*`, `bloodc_*`, icônes). Coques `keys` (copies de `tablet`) et `dirt_case_keys_*` retirées : 1 355 551 octets ; `fn_layoutGet` et `fn_screenSurface` prennent celles de la tablette. Coques ip17 et V2 Enhanced régénérées, avec leur poussière : 673 677 octets de plus (encodeur HEMTT actuel, couleur prolongée au bord), verre 14 485.
 - Non vu en jeu : coins, reflet, zones des touches et coques régénérées sont vérifiés sur des compositions Pillow seulement.
+
+- Onglets (`fn_formRender`, composant « tabs ») : libellé réduit jusqu'à la taille plancher quand il dépasse l'onglet (la répartition comptait à la taille plancher, le dessin se faisait à la taille normale).
+- Dépannage MPU : le cas d'exemple de l'autotest porte `relayNeed` et `relays` ; `mpu_diag_etats` attend 12 étapes et couvre « aucun relais en service ».
+- Rien de ce lot n'a été vu en jeu avant la publication de ce bloc : autotest et essai en partie à faire.
 
 ## À venir : moins de sondages et de relectures inutiles (ATAK natif et SSE, version à attribuer)
 
