@@ -239,6 +239,52 @@ private _rows = [
         ["*", [["Oui, j'ai {weapon}. Pour me défendre.", "Yes, I have {weapon}. For self-defence."], ["J'ai {weapon}, oui.", "I have {weapon}, yes."], ["Juste {weapon}. Tout le monde en a une, ici.", "Just {weapon}. Everyone has one here."]]],
         ["agressif", [["Oui, et alors ?", "Yes, so what?"]]]
     ]],
+    // ------------------------------------------------------------------ confrontation (« vos papiers sont faux », « tu mens »)
+    // Aveu : {secret} (secret de l'atelier ou ligne libre de l'histoire), {truth} (la vérité sur un mensonge).
+    ["confess", [
+        ["*", [["(Il baisse les yeux.) D'accord… {secret}", "(He lowers his eyes.) Alright… {secret}"], ["Bon. Bon, c'est vrai… {secret}", "Fine. Fine, it's true… {secret}"],
+            ["(Il craque.) Je vais tout vous dire. {secret}", "(He breaks down.) I'll tell you everything. {secret}"], ["Vous avez gagné. {secret}", "You win. {secret}"],
+            ["(Long silence.) … {secret}", "(Long silence.) … {secret}"], ["Je n'en peux plus de mentir. {secret}", "I can't keep lying. {secret}"]]],
+        ["nerveux", [["D'accord, d'accord ! {secret} Ne me faites pas de mal…", "Okay, okay! {secret} Don't hurt me…"]]],
+        ["agressif", [["(Il crache par terre.) Très bien. {secret} Content ?", "(He spits on the ground.) Fine. {secret} Happy?"]]],
+        ["effraye", [["Pitié… {secret} C'est tout, je vous jure.", "Please… {secret} That's all, I swear."]]]
+    ]],
+    ["confessTruth", [
+        ["*", [["Bon… c'est vrai, j'ai menti : {truth}.", "Fine… it's true, I lied: {truth}."], ["(Il soupire.) En vrai, {truth}.", "(He sighs.) Actually, {truth}."],
+            ["D'accord. La vérité, c'est que {truth}.", "Okay. The truth is {truth}."], ["Je vous ai raconté n'importe quoi. {truth}, voilà.", "I told you nonsense. {truth}, there."],
+            ["(Il baisse la tête.) Pardon… {truth}.", "(He hangs his head.) Sorry… {truth}."], ["J'avais peur, c'est tout. {truth}.", "I was scared, that's all. {truth}."]]],
+        ["agressif", [["Bon, et alors ? {truth}. Ça change quoi ?", "So what? {truth}. What does it change?"]]]
+    ]],
+    ["confessVague", [
+        ["*", [["D'accord… mes papiers ne sont pas à moi.", "Okay… my papers aren't mine."], ["(Il baisse les yeux.) Ce n'est pas ce que vous croyez.", "(He lowers his eyes.) It's not what you think."],
+            ["Bon. Je ne suis pas qui je prétends.", "Fine. I'm not who I say I am."], ["Je ne peux pas tout vous dire… mais oui, j'ai menti.", "I can't tell you everything… but yes, I lied."],
+            ["(Il craque.) C'est vrai, c'est vrai…", "(He breaks down.) It's true, it's true…"], ["On m'a obligé, je vous jure.", "They forced me, I swear."]]]
+    ]],
+    ["confessed", [
+        ["*", [["Je vous ai déjà tout dit.", "I already told you everything."], ["Je n'ai rien d'autre à avouer.", "I have nothing else to confess."], ["C'est tout, je vous le jure.", "That's all, I swear."],
+            ["Qu'est-ce que vous voulez de plus ?", "What more do you want?"], ["J'ai déjà avoué, ça ne suffit pas ?", "I already confessed, isn't that enough?"], ["(Il secoue la tête.) Il n'y a rien d'autre.", "(He shakes his head.) There's nothing else."]]]
+    ]],
+    ["confrontDeny", [
+        ["*", [["Non, non, je dis la vérité.", "No, no, I'm telling the truth."], ["Vous vous trompez de personne.", "You've got the wrong person."], ["Mes papiers sont en règle, vérifiez.", "My papers are in order, check them."],
+            ["Je n'ai rien à voir avec ça.", "I have nothing to do with it."], ["Pourquoi je vous mentirais ?", "Why would I lie to you?"], ["Demandez à qui vous voulez, c'est la vérité.", "Ask anyone you like, it's the truth."]]],
+        ["nerveux", [["Non ! Non, je… je ne mens pas !", "No! No, I… I'm not lying!"], ["(Il transpire.) C'est la vérité, je vous jure…", "(He sweats.) It's the truth, I swear…"]]],
+        ["mefiant", [["Prouvez-le.", "Prove it."], ["Vous n'avez rien contre moi.", "You've got nothing on me."]]],
+        ["laconique", [["Faux.", "Wrong."], ["Non.", "No."]]]
+    ]],
+    ["confrontAngry", [
+        ["*", [["Vous me traitez de menteur ?", "You're calling me a liar?"], ["Ça suffit ! Je n'ai rien fait !", "That's enough! I haven't done anything!"], ["Retirez ce que vous avez dit.", "Take that back."],
+            ["Vous cherchez les ennuis ?", "Are you looking for trouble?"], ["(Il serre les poings.) Faites attention à ce que vous dites.", "(He clenches his fists.) Watch what you say."], ["Je ne répondrai plus à rien.", "I won't answer anything else."]]]
+    ]],
+    ["confrontInnocent", [
+        ["*", [["Quoi ? Mais non ! Je n'ai rien fait !", "What? No! I haven't done anything!"], ["Vous vous trompez, je vous assure.", "You're mistaken, I assure you."], ["Vérifiez, vous verrez que c'est vrai.", "Check, you'll see it's true."],
+            ["Pourquoi vous dites ça ?", "Why would you say that?"], ["Je suis un honnête homme, {sir}.", "I'm an honest man, {sir}."], ["Je ne comprends pas, tout est vrai.", "I don't understand, it's all true."]]],
+        ["agressif", [["Vous m'insultez, là.", "Now you're insulting me."], ["Allez accuser quelqu'un d'autre.", "Go accuse someone else."]]],
+        ["effraye", [["Non, non, s'il vous plaît, je n'ai rien fait…", "No, no, please, I didn't do anything…"]]]
+    ]],
+    ["confrontFlee", [
+        ["*", [["(Il recule d'un pas… puis se met à courir.)", "(He steps back… then breaks into a run.)"], ["Non ! (Il s'enfuit.)", "No! (He runs off.)"], ["(Il jette un regard affolé autour de lui et détale.)", "(He glances around in panic and bolts.)"],
+            ["Laissez-moi ! (Il part en courant.)", "Leave me alone! (He runs away.)"], ["(Il pâlit, recule, puis s'enfuit.)", "(He goes pale, backs off, then flees.)"], ["Je… non ! (Il prend la fuite.)", "I… no! (He takes flight.)"]]]
+    ]],
     // ------------------------------------------------------------------ conversation
     ["calm", [
         ["*", [["D'accord… merci.", "Okay… thank you."], ["(Il souffle un peu.)", "(He breathes out a little.)"], ["Bon. Bon, d'accord.", "Alright. Alright."], ["Je suis calme, je suis calme.", "I'm calm, I'm calm."]]],

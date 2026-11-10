@@ -35,7 +35,10 @@ private _info = [];
     // Négation simple : pot-de-vin et fouille annulés, ordres inchangés, une virgule arrête la négation.
     ["Je ne veux pas d'argent.", "unknown"], ["I don't want your money.", "unknown"], ["Je ne vais pas vous fouiller.", "unknown"],
     ["Pas besoin de vous fouiller.", "unknown"], ["We don't need to search you.", "unknown"], ["Prenez cet argent.", "bribe"],
-    ["Ne bougez pas !", "halt"], ["Si vous ne coopérez pas, je tire !", "threat"], ["Vous n'êtes pas armé ?", "weapons"]
+    ["Ne bougez pas !", "halt"], ["Si vous ne coopérez pas, je tire !", "threat"], ["Vous n'êtes pas armé ?", "weapons"],
+    // Confrontation (l'emporte sur « papiers »).
+    ["Vos papiers sont faux.", "confront"], ["Des faux papiers ?", "confront"], ["Tu mens !", "confront"], ["Je sais que c'est toi.", "confront"],
+    ["You're lying.", "confront"], ["Arrêtez de mentir, dites la vérité.", "confront"]
 ];
 // Deux demandes dans un message : dans l'ordre où elles sont écrites.
 {

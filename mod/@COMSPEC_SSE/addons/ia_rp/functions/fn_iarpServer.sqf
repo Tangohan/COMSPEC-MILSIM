@@ -221,7 +221,7 @@ switch (_op) do {
             params ["_cmdAi", ["_a", []]];
             if !(missionNamespace getVariable ["comspec_sse_iarp_orders", true]) exitWith {};
             // Un autre ordre met fin au suivi d'un « stop » (fn_iarpReact « halt »).
-            if (_cmdAi in ["follow", "free", "surrender", "out"]) then { _t setVariable ["comspec_sse_iarpHaltId", (_t getVariable ["comspec_sse_iarpHaltId", 0]) + 1]; };
+            if (_cmdAi in ["follow", "free", "surrender", "out", "flee"]) then { _t setVariable ["comspec_sse_iarpHaltId", (_t getVariable ["comspec_sse_iarpHaltId", 0]) + 1]; };
             ["comspec_sse_iarpAiDo", [_t, _cmdAi, _a], _t] call CBA_fnc_targetEvent;
             if (_cmdAi isEqualTo "stop") then { ["halt", [_t, _me]] call comspec_sse_fnc_iarpReact; };
         };
@@ -410,6 +410,67 @@ switch (_op) do {
                         };
                         if (_st isEqualTo "rendu" && {_ul isNotEqualTo "never"} && {(_pm get "trust") >= 40}) then { _open = true; };
                         if (_open && {(_p get "know") isNotEqualTo ""}) then { _gi = "intelYes"; _outcome = "renseignement donné"; _topic = "intel"; } else { _gi = "intelNo"; _outcome = ["ne sait rien", "se tait"] select ((_p get "know") isNotEqualTo ""); };
+                    };
+                    case "confront": {
+                        // « Vos papiers sont faux », « tu mens », « je sais que c'est toi » : ment-elle vraiment ? Mensonge
+                        // affirmé (couverture), faux papiers ou couverture d'agent, secret, rôle caché.
+                        private _said = _mem get "said";
+                        private _lies = (keys _said) select { !((_said get _x) select 1) };
+                        private _guilty = _lies isNotEqualTo [] || {_t getVariable ["comspec_sse_idLiar", false]} || {(_p get "secrets") isNotEqualTo []}
+                            || {(_p get "role") in ["insurge", "hvt", "agent"]} || {(count _L) > 0 && {(_L getOrDefault ["kind", "civil"]) isNotEqualTo "civil"}};
+                        _pm set ["pressed", (_pm getOrDefault ["pressed", 0]) + 1];
+                        if (!_guilty) exitWith {
+                            [-10] call _trust; [8] call _tense;
+                            _gi = "confrontInnocent"; _outcome = "accusé à tort";
+                            if ((_p get "aggro") >= 60) then { _tone = "agressif"; };
+                        };
+                        if (_mem get "confessed") exitWith { _gi = "confessed"; _outcome = "a déjà avoué"; };
+                        // Craque : peur, armes pointées, faux découvert, mensonges, insistance ; bon menteur, HVT, agent : moins.
+                        private _crack = 0.1 + 0.004 * (_p get "fear") + 0.15 * (_aimed min 2) - 0.003 * (_p get "aggro") + 0.002 * _honest
+                            + 0.08 * ((count _lies) min 2) + 0.08 * (((_pm get "pressed") - 1) min 3);
+                        if ((_t getVariable ["comspec_sse_idBust", 0]) > 0) then { _crack = _crack + 0.25; };
+                        if (_st isEqualTo "rendu") then { _crack = _crack + 0.2; };
+                        _crack = _crack - ((createHashMapFromArray [["hvt", 0.25], ["agent", 0.15]]) getOrDefault [_p get "role", 0]);
+                        _crack = (_crack max 0.03) min 0.9;
+                        if ((random 1) < _crack) exitWith {
+                            _mem set ["confessed", true];
+                            [-15] call _tense; [10] call _trust;
+                            // Aveu : un secret (atelier IA), sinon une ligne libre de l'histoire, sinon la vérité sur un mensonge.
+                            private _free = ((_p get "story") splitString (toString [10])) select { (trim _x) isNotEqualTo "" && {(_x find ":") < 0} };
+                            private _sec = ((_p get "secrets") + (_free apply { trim _x })) param [0, ""];
+                            _gi = "confessVague";
+                            if (_sec isNotEqualTo "") then { _gi = "confess"; _vars set ["secret", _sec]; } else {
+                                if (_lies isNotEqualTo []) then {
+                                    private _k = _lies select 0;
+                                    private _v = _facts getOrDefault [_k, ""];
+                                    private _how = (createHashMapFromArray [
+                                        ["city", ["je viens de %1", "I'm from %1"]], ["employer", ["je travaille pour %1", "I work for %1"]], ["job", ["je suis %1", "I'm a %1"]],
+                                        ["travel", ["%1", "%1"]], ["pob", ["je suis né à %1", "I was born in %1"]], ["contact", ["c'est %1 qui peut confirmer", "%1 is the one who can confirm"]]
+                                    ]) getOrDefault [_k, ["%1", "%1"]];
+                                    if (_v isNotEqualTo "") then { _gi = "confessTruth"; _vars set ["truth", [format [_how select 0, _v], format [_how select 1, _v]]]; };
+                                };
+                            };
+                            // Plus de mensonge : la vérité remplace ce qu'elle avait affirmé, pour tous les joueurs.
+                            { private _v = _facts getOrDefault [_x, ""]; if (_v isNotEqualTo "") then { _said set [_x, [_v, true]]; }; } forEach _lies;
+                            _outcome = "craque et avoue";
+                            // Celle qui cachait quelque chose de sérieux se rend (automate : reddition).
+                            if (((_p get "role") in ["insurge", "hvt", "agent"] || {_t getVariable ["comspec_sse_idLiar", false]}) && {_st in ["interpelle", "coopere", "ment", "nerveux", "refuse"]}) then {
+                                ["rendu"] call _want;
+                            };
+                        };
+                        // Elle ment vraiment et tient bon : l'automate le sait (faux découvert : la tension monte).
+                        if (_fsm) then { ["bust", [_t, _me]] call comspec_sse_fnc_idAiFsm; };
+                        private _onFoot = isNull objectParent _t && {!(_t getVariable ["ace_captives_isSurrendering", false])} && {!(_t getVariable ["ace_captives_isHandcuffed", false])};
+                        if ((_p get "fear") >= 60 && {(_p get "nerve") >= 50} && {_aimed isEqualTo 0} && {_onFoot} && {(random 1) < 0.5}) exitWith {
+                            _gi = "confrontFlee"; _outcome = "nie puis s'enfuit"; [20] call _tense;
+                            if (_fsm && {_st isNotEqualTo ""}) then { ["fuit"] call _want; } else { ["flee", [(getPosATL _t) getPos [150, _me getDir _t]]] call _do; };
+                        };
+                        if ((_p get "aggro") >= 60) exitWith {
+                            _gi = "confrontAngry"; _tone = "agressif"; _outcome = "nie et s'énerve"; [20] call _tense; [-10] call _trust;
+                            if (_st in ["interpelle", "coopere", "ment", "nerveux"]) then { ["refuse"] call _want; };
+                        };
+                        _gi = "confrontDeny"; _outcome = "nie"; [12] call _tense;
+                        if ((_p get "fear") >= 60) then { _tone = "nerveux"; };
                     };
                     case "weapons": {
                         private _armed = _wpn isNotEqualTo "";

@@ -188,6 +188,7 @@ switch (_op) do {
             case (_intent isEqualTo "intel"): { ["intelNo", "intelYes"] select ((_p get "know") isNotEqualTo "" && {(_p get "unlock") isNotEqualTo "never"}) };
             case (_intent isEqualTo "search"): { ["searchNo", "searchYes"] select ((((_p get "fear") + (_p get "honesty")) / 2) >= 50) };
             case (_intent isEqualTo "weapons"): { "weaponsNo" };
+            case (_intent isEqualTo "confront"): { ["confrontInnocent", "confrontDeny"] select ((_p get "secrets") isNotEqualTo [] || {(_p get "role") in ["insurge", "hvt", "agent"]}) };
             case (_intent isEqualTo "papers"): { "comply" };
             default { _intent };
         };
