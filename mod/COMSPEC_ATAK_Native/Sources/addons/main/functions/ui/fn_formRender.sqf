@@ -613,8 +613,23 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             private _stack = _acts isNotEqualTo [] && {(_pad + _w - _bx - _awAll) < (_w * 0.55)};
             private _tw = [((_pad + _w - _awAll) - _bx) max (_w * 0.3), _pad + _w - _bx] select _stack;
             private _t = ["COMSPEC_RscStructuredText", [_bx, _y, _tw, _hh]] call _mk;
-            _t ctrlSetStructuredText parseText ((format ["<t size='1.25' font='COMSPEC_BarlowBold' color='" + _hT + "'>%1</t>%2", _title,
-                ["", format ["<br/><t size='0.82' color='" + _hTD + "'>%1</t>", _sub]] select (_sub isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+            // Colonne étroite : titre réduit jusqu'à ce que son mot le plus long tienne (« troubleshooting » coupé en deux).
+            private _tsz = 1.25;
+            if (_stack) then {
+                // Taille de base des balises <t> : celle du contrôle, au moins celle de sa classe (0,024 × safeZoneH).
+                private _fh0 = (ctrlFontHeight _t) max (0.024 * safeZoneH);
+                private _mw = ["COMSPEC_RscText", [0, 0, _w, _hh]] call _mk;
+                _mw ctrlSetFont "COMSPEC_BarlowBold";
+                _mw ctrlSetFontHeight (_fh0 * 1.25);
+                _mw ctrlShow false;
+                private _lw = 0;
+                { _mw ctrlSetText _x; _lw = _lw max (ctrlTextWidth _mw); } forEach (((_title) call comspec_atak_native_fnc_tr) splitString " "); // i18n:brut
+                ctrlDelete _mw;
+                // Marge large : le texte structuré coupe un mot avant la largeur mesurée par ctrlTextWidth.
+                if (_lw > _tw * 0.8) then { _tsz = ((1.25 * _tw * 0.8 / _lw) max 0.7) min 1.25; };
+            };
+            _t ctrlSetStructuredText parseText ((format ["<t size='%3' font='COMSPEC_BarlowBold' color='" + _hT + "'>%1</t>%2", _title,
+                ["", format ["<br/><t size='0.82' color='" + _hTD + "'>%1</t>", _sub]] select (_sub isNotEqualTo ""), _tsz]) call comspec_atak_native_fnc_tr);
             private _h = (ctrlTextHeight _t) max _hh;
             _t ctrlSetPosition [_bx, _y + ((_hh - (ctrlTextHeight _t)) / 2) max 0, _tw, ctrlTextHeight _t];
             _t ctrlCommit 0;
