@@ -319,15 +319,18 @@ switch (_op) do {
         _args params ["", ["_h", ""], ["_lvl", 1, [0]]];
         _lvl = (round _lvl max 1) min 4;
         ([_h] call _resolve) params ["_d", "_holder", "_ok", "_subj"];
-        if (!_ok || {(count _d) isEqualTo 0}) exitWith { [_me, "Document introuvable ou plus présenté.", "WARNING"] call _tell; };
-        if !([format ["check%1", _lvl], _h] call _took) exitWith {};
+        // Échec d'un niveau : une seule source d'état, la fiche du contrôle (fn_idHistory « fail ») ; la notification du
+        // téléphone porte exactement le même texte que l'écran du contrôle.
+        private _fail = { params ["_code", "_text"]; ["checkFail", [_h, _lvl, _code, _text]] call _reply; };
+        if (!_ok || {(count _d) isEqualTo 0}) exitWith { ["gone", "Document introuvable ou plus présenté."] call _fail; };
+        if !([format ["check%1", _lvl], _h] call _took) exitWith { ["short", "Lecture interrompue : relancez l'analyse."] call _fail; };
         // Lecteur NFC : 1,5 m du document (sauf s'il est dans mes mains). MRZ et base : 3 m.
         if (!(_holder isEqualTo _me) && {!isNull _holder} && {!([_me, _holder, [4, 2] select (_lvl isEqualTo 2)] call _near)}) exitWith {
-            [_me, ["Approchez-vous du document.", "Lecteur NFC : approchez-vous à moins de 1,5 m du document."] select (_lvl isEqualTo 2), "WARNING"] call _tell;
+            ["far", ["Approchez-vous du document.", "Lecteur NFC : approchez-vous à moins de 1,5 m du document."] select (_lvl isEqualTo 2)] call _fail;
         };
-        if (_lvl isEqualTo 4 && {!(missionNamespace getVariable ["comspec_sse_id_bio", true])}) exitWith { [_me, "Comparaison biométrique désactivée sur cette mission.", "WARNING"] call _tell; };
-        if (_lvl isEqualTo 4 && {!([_me, "face"] call comspec_sse_fnc_hasEquipment)}) exitWith { [_me, "Comparaison du visage : téléphone ATAK ou terminal SEEK requis.", "WARNING"] call _tell; };
-        if (_lvl isEqualTo 4 && {isNull _subj || {!([_me, _subj, 4] call _near)}}) exitWith { [_me, "Comparaison du visage : la personne doit être devant vous (3 m).", "WARNING"] call _tell; };
+        if (_lvl isEqualTo 4 && {!(missionNamespace getVariable ["comspec_sse_id_bio", true])}) exitWith { ["off", "Comparaison biométrique désactivée sur cette mission."] call _fail; };
+        if (_lvl isEqualTo 4 && {!([_me, "face"] call comspec_sse_fnc_hasEquipment)}) exitWith { ["gear", "Comparaison du visage : téléphone ATAK ou terminal SEEK requis."] call _fail; };
+        if (_lvl isEqualTo 4 && {isNull _subj || {!([_me, _subj, 4] call _near)}}) exitWith { ["far", "Comparaison du visage : la personne doit être devant vous (3 m)."] call _fail; };
         private _res = if (_lvl isEqualTo 4) then { [_d, _me, _subj] call comspec_sse_fnc_idBio } else { [_d, _me, _lvl, _subj] call comspec_sse_fnc_idEvaluate };
         if (_lvl isEqualTo 3) then {
             // Requête Athena faite par le joueur (DLL du poste) : champs imprimés seulement.

@@ -103,6 +103,16 @@ class CfgFunctions {
             class idPaperLink {};
             class idPaperGive {};
             class idPaperTrack {};
+            // Passage aux fichiers (app Fichiers, SEEK II, relevés) et animation des analyses dans le téléphone.
+            class fileServer {};
+            class fileClient {};
+            class fileQuery {};
+            class fileMerge {};
+            class fileSubmit {};
+            class filePage {};
+            class fileAction {};
+            class controlRecord {};
+            class scanAnim {};
         };
     };
 };
@@ -112,12 +122,15 @@ class CfgRemoteExec {
     class Functions {
         class comspec_sse_fnc_idServer { allowedTargets = 2; };
         class comspec_sse_fnc_idClient { allowedTargets = 1; };
+        class comspec_sse_fnc_fileServer { allowedTargets = 2; };
+        class comspec_sse_fnc_fileClient { allowedTargets = 1; };
     };
 };
 
 // App « Contrôle ID » du téléphone ATAK, déclarée depuis le SSE (le main.pbo de l'ATAK n'est pas touché).
 class COMSPEC_ATAK_Apps {
     class IdCheck { name="Contrôle ID"; page="IDCHECK"; function="comspec_sse_fnc_idPage"; section="Renseignement"; order=120; dock=0; new=1; icon="\z\comspec_sse\addons\identity\data\app_id.paa"; };
+    class Fichiers { name="Fichiers"; page="FICHIERS"; function="comspec_sse_fnc_filePage"; section="Renseignement"; order=119; dock=0; new=1; icon="\z\comspec_atak_native\addons\main\data\app_intel.paa"; desc="Passage aux fichiers : personne, document, biométrie SEEK II, véhicule (HIT / NO HIT, mentions, contrôles subis)"; };
     class IdCover { name="Ma couverture"; page="IDCOVER"; function="comspec_sse_fnc_idCoverPage"; section="Renseignement"; order=121; dock=0; new=1; icon="\z\comspec_sse\addons\identity\data\icon_card_ca.paa"; desc="Votre identité de couverture : légende, contacts, cohérence, questions des contrôleurs"; };
 };
 
