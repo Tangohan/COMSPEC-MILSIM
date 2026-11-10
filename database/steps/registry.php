@@ -97,4 +97,5 @@ return [
     ['id' => 'platform_bo_messages', 'label' => 'Messages de la plateforme aux back-offices des communautés (ciblage, FR/EN, vu, fermé, cliqué, acquittement)', 'group' => 'schema', 'file' => '4240_platform_bo_messages.php', 'rerun' => true],
     ['id' => 'sse_identity_sync', 'label' => 'Identités : historique des valeurs écartées (restaurables) et différence avec le jeu déjà examinée (synchronisation Athena ↔ jeu sans écrasement)', 'group' => 'schema', 'file' => '4250_sse_identity_sync.php', 'rerun' => true],
     ['id' => 'equipment_configurator', 'label' => 'Configurateur d’équipement : configuration des objets importée du jeu (masse, charge, compatibilités), historique des versions des kits, kit attribué à un membre ou à une qualification', 'group' => 'schema', 'file' => '4270_equipment_configurator.php', 'rerun' => true],
+    ['id' => 'equipment_vanilla_catalog', 'label' => 'Configurateur d’équipement : catalogue de base d’Arma 3 chargé tout seul (origine des fiches, nom anglais, avancement du chargement par communauté)', 'group' => 'schema', 'file' => '4290_equipment_vanilla_catalog.php', 'rerun' => true],
 ];
