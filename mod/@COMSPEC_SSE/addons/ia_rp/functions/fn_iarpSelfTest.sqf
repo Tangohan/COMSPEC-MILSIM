@@ -3,6 +3,10 @@
     [] call comspec_sse_fnc_iarpSelfTest -> [échecs [textes…], infos [textes…]]
       interprète   phrases FR et EN (accents, ponctuation, majuscules, fautes de frappe, négation, faux positifs)
                    -> intention attendue ; deux demandes dans un message -> dans l'ordre ; coût mesuré (info)
+      banc d'essai data\iarp_corpus.sqf (300 phrases FR et 150 EN au moins) : taux de reconnaissance (95 % attendus),
+                   aucun pot-de-vin ni menace sorti d'une phrase qui ne les demande pas ; phrases de la capture 4.2.1
+      guide        chaque exemple du guide (lexique) compris comme son intention ; menu « Faire une action » : chaque
+                   geste FR et EN reconnu ; ton : un peureux sans menace répond calmement ; faits absents jamais cités
       banque       au moins 50 intentions, 6 phrases de base au moins chacune (FR et EN) ; variantes (base × décors)
       mémoire      fiche par joueur (fn_iarpMem), « déjà dit à votre collègue », mémoire d'avant reprise
       paliers      savoir d'une phrase (comme avant) et par paliers avec lieu, palier débloqué selon confiance et pression
@@ -31,7 +35,7 @@ private _info = [];
     ["Decsendez du vehicule !", "dismount"], ["Mettez-vous a genous !", "kneel"], ["Bonjuor", "greet"], ["STOOOOP !", "halt"],
     ["Vous travaillez pour qui ? Votre emploieur ?", "employer"], ["d'ou venez vous", "origin"],
     // Faux positifs : mots courants proches d'un mot du lexique, jamais corrigés.
-    ["J'ai une feuille de route.", "unknown"], ["Il fait beau sur la plage.", "unknown"], ["Votre ferme est loin ?", "unknown"],
+    ["J'ai une feuille de route.", "unknown"], ["Il y a du monde sur la plage.", "unknown"], ["Votre ferme est loin ?", "unknown"],
     ["Le truck est rouge.", "unknown"], ["Great job.", "unknown"],
     // Négation simple : pot-de-vin et fouille annulés, ordres inchangés, une virgule arrête la négation.
     ["Je ne veux pas d'argent.", "unknown"], ["I don't want your money.", "unknown"], ["Je ne vais pas vous fouiller.", "unknown"],
@@ -54,6 +58,94 @@ private _info = [];
     ["D'où venez-vous ? Et pour qui travaillez-vous ?", ["origin", "employer"]], ["Salut ! Tu viens d'où ?", ["greet", "origin"]],
     ["Vous avez vu quelque chose de suspect ? Merci.", ["intel", "thanks"]], ["Vos papiers, s'il vous plaît.", ["papers"]], ["Oui, vous pouvez partir.", ["yes", "leave"]]
 ];
+// Banc d'essai (data\iarp_corpus.sqf) : phrases réelles FR et EN, variantes, fautes, abréviations ; taux mesuré
+// (95 % attendus) et aucun faux positif dangereux (pot-de-vin, menace sortis d'une phrase qui ne les demande pas).
+private _corpus = ["corpus"] call comspec_sse_fnc_iarpData;
+private _okC = createHashMapFromArray [["fr", [0, 0]], ["en", [0, 0]]];
+private _danger = [];
+private _missC = [];
+private _tc = diag_tickTime;
+{
+    _x params [["_lg", "fr"], ["_txt", ""], ["_want", ""]];
+    private _got = ([_txt] call comspec_sse_fnc_iarpIntent) select 0;
+    private _e = _okC getOrDefault [_lg, [0, 0]];
+    _okC set [_lg, [(_e select 0) + ([0, 1] select (_got isEqualTo _want)), (_e select 1) + 1]];
+    if (_got isNotEqualTo _want) then { _missC pushBack format ["« %1 » : %2 au lieu de %3", _txt, _got, _want]; };
+    if (_got in ["bribe", "threat"] && {_got isNotEqualTo _want}) then { _danger pushBack format ["« %1 » -> %2", _txt, _got]; };
+} forEach _corpus;
+private _msC = round (((diag_tickTime - _tc) / ((count _corpus) max 1)) * 10000) / 10;
+private _rate = {
+    params ["_lg"];
+    (_okC getOrDefault [_lg, [0, 0]]) params ["_o", "_n"];
+    [round ((_o / (_n max 1)) * 1000) / 10, _n]
+};
+(["fr"] call _rate) params ["_rFr", "_nFr"];
+(["en"] call _rate) params ["_rEn", "_nEn"];
+_info pushBack format ["banc d'essai : %1 %% en français (%2 phrases), %3 %% en anglais (%4 phrases), %5 ms par phrase", _rFr, _nFr, _rEn, _nEn, _msC];
+if (_nFr < 300 || {_nEn < 150}) then { _ko pushBack format ["banc d'essai : %1 phrases FR et %2 EN (300 et 150 attendues)", _nFr, _nEn]; };
+if (_rFr < 95 || {_rEn < 95}) then { _ko pushBack format ["banc d'essai : %1 %% FR, %2 %% EN (95 %% attendus) ; %3", _rFr, _rEn, (_missC select [0, 8]) joinString " ; "]; };
+if (_danger isNotEqualTo []) then { _ko pushBack format ["faux positifs dangereux : %1", _danger joinString " ; "]; };
+{ _info pushBack ("banc d'essai, raté : " + _x); } forEach (_missC select [0, 5]);
+// Phrases de la capture du propriétaire (4.2.1) et small talk.
+{
+    _x params ["_txt", "_want"];
+    private _got = ([_txt] call comspec_sse_fnc_iarpIntent) select 0;
+    if (_got isNotEqualTo _want) then { _ko pushBack format ["intention « %1 » : %2 au lieu de %3", _txt, _got, _want]; };
+} forEach [["Donner vos papiers", "papers"], ["Ton prenom ?", "name"], ["Votre prénom c'est quoi ?", "name"], ["Tu vas bien ?", "howareyou"],
+    ["Comment tu t'appelles ?", "name"], ["Tu habites où ?", "origin"], ["Tu fais quoi ici ?", "travel"], ["Ça va ?", "howareyou"], ["What's your name?", "name"]];
+// Guide : chaque exemple affiché (lexique) est compris comme son intention, en français et en anglais.
+private _nEx = 0;
+{
+    _x params ["_th", "_entries"];
+    {
+        _x params ["_i", ["_ex", []]];
+        if ((_i select [0, 1]) isNotEqualTo "_") then {
+            {
+                {
+                    _nEx = _nEx + 1;
+                    private _got = ([_x] call comspec_sse_fnc_iarpIntent) select 0;
+                    if (_got isNotEqualTo _i) then { _ko pushBack format ["guide (%1) : « %2 » compris %3 au lieu de %4", _th, _x, _got, _i]; };
+                } forEach _x;
+            } forEach _ex;
+        };
+    } forEach _entries;
+} forEach (["guide"] call comspec_sse_fnc_iarpData);
+private _themes = (["guide"] call comspec_sse_fnc_iarpData) apply { _x select 0 };
+if !(["talk", "identity", "cover", "search", "orders", "pressure", "bribe", "confront", "intel", "answer", "rp"] isEqualTo (_themes select [0, 11])) then { _ko pushBack format ["guide : thèmes %1", _themes]; };
+_info pushBack format ["guide : %1 thèmes, %2 exemples vérifiés", count _themes, _nEx];
+// Menu « Faire une action » : chaque geste (FR et EN) est reconnu par les règles des /me (lexique « _gesture »).
+private _gest = [];
+private _acts = [];
+{ if ((_x select 0) isEqualTo "_gesture") then { _gest append (_x select 2); }; if ((_x select 0) isEqualTo "_actions") then { _acts append (_x select 2); }; } forEach (["lexicon"] call comspec_sse_fnc_iarpData);
+private _gestOf = {
+    params ["_txt"];
+    private _norm = _txt call comspec_sse_fnc_iarpNorm;
+    private _toks = _norm splitString " ";
+    private _g = "";
+    {
+        _x params ["_k", "_groups"];
+        if (_g isEqualTo "" && {(_groups findIf { private _grp = _x; (_grp findIf { if ((_x find " ") >= 0) then { (_norm find (" " + _x + " ")) >= 0 } else { _x in _toks } }) < 0 }) < 0}) then { _g = _k; };
+    } forEach _gest;
+    _g
+};
+private _wantG = createHashMapFromArray [["handsup", "calm"], ["lower", "calm"], ["aim", "threat"], ["badge", "badge"], ["money", "bribe"], ["search", "search"], ["cuff", "cuff"], ["take", "takePapers"], ["give", "givePapers"], ["photo", "photo"]];
+{
+    _x params ["_id", "", "", "_meFr", "_meEn"];
+    { private _g = [_x] call _gestOf; if (_g isNotEqualTo (_wantG getOrDefault [_id, "?"])) then { _ko pushBack format ["action « %1 » : « %2 » compris %3", _id, _x, _g]; }; } forEach [_meFr, _meEn];
+} forEach _acts;
+if ((count _acts) < 10) then { _ko pushBack format ["menu « Faire une action » : %1 actions (10 attendues)", count _acts]; };
+if ((["leve lentement les mains"] call _gestOf) isNotEqualTo "calm") then { _ko pushBack "/me « lève lentement les mains » non compris (capture 4.2.1)"; };
+// Ton : un peureux sans menace répond calmement (la peur est un trait, pas un état permanent).
+private _fearful = ["normalize", createHashMapFromArray [["fear", 95], ["nerve", 80], ["aggro", 0]]] call comspec_sse_fnc_iarpProfile;
+private _calmTone = (["howareyou", _fearful, createHashMapFromArray [["tension", 5], ["aimed", 0]], []] call comspec_sse_fnc_iarpGen) select 3;
+private _scaredTone = (["howareyou", _fearful, createHashMapFromArray [["tension", 70], ["aimed", 1]], []] call comspec_sse_fnc_iarpGen) select 3;
+if (_calmTone in ["effraye", "nerveux"]) then { _ko pushBack format ["peur : un peureux sans menace répond « %1 »", _calmTone]; };
+if !(_scaredTone in ["effraye", "nerveux"]) then { _ko pushBack format ["peur : un peureux braqué répond « %1 »", _scaredTone]; };
+// Faits absents : une phrase qui cite {job} n'est pas choisie sans métier.
+for "_i" from 1 to 12 do {
+    private _g = ["howareyou", ["defaults"] call comspec_sse_fnc_iarpProfile, createHashMap, [], createHashMapFromArray [["sir", ["monsieur", "sir"]]]] call comspec_sse_fnc_iarpGen;
+    if (((_g select 0) find "{job}") >= 0 || {((_g select 0) find "{city}") >= 0} || {((_g select 0) find "{employer}") >= 0}) exitWith { _ko pushBack format ["faits : phrase avec un fait absent : %1", _g select 0]; };
+};
 // Coût de l'interprète : 20 messages longs pleins de fautes (mesure indicative, la machine compte).
 private _t0 = diag_tickTime;
 for "_i" from 1 to 20 do { ["Bonjuor monsieur, vos papeirs svp, et ouvrez le cofre du vehicule, d'ou venez vous exactement ? Decsendez !"] call comspec_sse_fnc_iarpIntent; };

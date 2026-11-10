@@ -9,7 +9,16 @@
                commun), /me à règles (lever les mains, braquer, tendre de l'argent, montrer un badge).
                Plusieurs demandes dans un message (« bonjour, vos papiers ») : traitées dans l'ordre, une seule bulle de
                réponse ; papiers ou fouille : l'action ACE part après la réponse.
+               Une seule réponse par message : une bulle (la nouvelle remplace l'ancienne), la même ligne dans le fil du
+               terminal, au même nom (identité SSE de l'IA, sinon « Anonyme » : _nameOf). /me et /do : geste compris
+               (lexique « _gesture » : mains levées, arme braquée, argent tendu, badge, menottes, papiers pris ou rendus,
+               photo, fouille), sinon l'IA réagit à ce qu'elle voit. /todo : la parole avant « * » est comprise.
+               Rien de rapproché : une piste (« Vous voulez mes papiers ? », qui devient sa question) ; papiers ou
+               fouille : l'IA répond (« Une seconde… »), puis l'action ACE part.
       typing   [moi, vrai | faux]           indicateur « … » au-dessus de ma tête pour les joueurs proches
+      hello    [moi, ia]                    ouverture du terminal : nom de l'IA (identité SSE assurée) et humeur
+      mood     [moi, ia]                    humeur de l'IA (en-tête du terminal)
+      logFear  [joueur, ia, écart, raison]  (serveur seulement) variation de peur notée au journal avec sa raison
       log      [moi]                        journal : mes échanges ; Zeus et administrateur : tous
       profileGet [moi, ia] · profileSet [moi, [ia…], profil texte, "apply" | "generate"] · puppet [moi, ia, texte]
                                             Zeus (atelier IA) : lire, appliquer, générer, faire parler une IA
@@ -24,14 +33,18 @@ if (!isServer) exitWith {};
 if !(missionNamespace getVariable ["comspec_sse_iarp_enabled", true]) exitWith {};
 private _owner = [clientOwner, remoteExecutedOwner] select isRemoteExecuted;
 _args params [["_me", objNull, [objNull]]];
-if (isNull _me) exitWith {};
-if (isMultiplayer && {isRemoteExecuted} && {(owner _me) isNotEqualTo _owner}) exitWith {
+if (_op isEqualTo "logFear" && {isRemoteExecuted}) exitWith {};
+if (isNull _me && {_op isNotEqualTo "logFear"}) exitWith {};
+if (isMultiplayer && {isRemoteExecuted} && {!isNull _me} && {(owner _me) isNotEqualTo _owner}) exitWith {
     diag_log text format ["[COMSPEC SSE] IA RP : « %1 » refusé au poste %2 (unité d'un autre poste).", _op, _owner];
 };
 private _flood = missionNamespace getVariable ["comspec_sse_iarpFlood", createHashMap];
 missionNamespace setVariable ["comspec_sse_iarpFlood", _flood];
 private _fk = format ["%1|%2", _owner, _op];
-if (isRemoteExecuted && {(time - (_flood getOrDefault [_fk, -10])) < ([0.5, 0.8] select (_op isEqualTo "say"))}) exitWith {};
+if (isRemoteExecuted && {(time - (_flood getOrDefault [_fk, -10])) < ([0.5, 0.8] select (_op isEqualTo "say"))}) exitWith {
+    // Message refusé (trop rapproché) : le poste le sait, il ne reste pas une question sans réponse dans le fil.
+    if (_op isEqualTo "say") then { ["dropped", [_args param [1, objNull]]] remoteExecCall ["comspec_sse_fnc_iarpClient", _owner]; };
+};
 _flood set [_fk, time];
 
 private _range = missionNamespace getVariable ["comspec_sse_iarp_range", 20];
@@ -52,7 +65,46 @@ private _hearers = {
     _pl select { alive _x && {_x isNotEqualTo _skip} && {(_x distance _src) <= _range} }
 };
 private _tell = { params ["_list", "_cop", "_ca"]; { [_x, _cop, _ca] call _send; } forEach _list; };
+// Nom de l'IA, le même partout (terminal, bulles, journal, toasts) : nom imprimé sur ses papiers (identité SSE, décidée
+// ici au besoin), sinon celui de sa légende, sinon le nom RP de l'atelier ; diffusé (comspec_sse_idName). "" : Anonyme.
+private _nameOf = {
+    params ["_u"];
+    private _n = _u getVariable ["comspec_sse_idName", ""];
+    if (_n isEqualTo "" && {!isNull _u} && {!isPlayer _u} && {!isNil "comspec_sse_fnc_idRegistry"}) then {
+        ["ensure", [_u]] call comspec_sse_fnc_idRegistry;
+        private _d = ["doc", [(["unitDocs", [_u]] call comspec_sse_fnc_idRegistry) param [0, ""]]] call comspec_sse_fnc_idRegistry;
+        if (_d isEqualType createHashMap && {(count _d) > 0}) then { _n = trim format ["%1 %2", _d getOrDefault ["first", ""], _d getOrDefault ["last", ""]]; };
+        if (_n isEqualTo "" && {!isNil "comspec_sse_fnc_idLegend"}) then {
+            private _L = ["get", [_u]] call comspec_sse_fnc_idLegend;
+            if (_L isEqualType createHashMap) then { _n = trim format ["%1 %2", _L getOrDefault ["first", ""], _L getOrDefault ["last", ""]]; };
+        };
+        if (_n isNotEqualTo "") then { _u setVariable ["comspec_sse_idName", _n, true]; };
+    };
+    _n
+};
 private _nameAi = { params ["_u"]; _u getVariable ["comspec_sse_idName", ""] };
+// Humeur montrée dans l'en-tête du terminal : [clé, peur 0-100].
+private _moodOf = {
+    params ["_u"];
+    private _st = "";
+    if (!isNil "comspec_sse_fnc_idAiFsm") then { _st = ["state", [_u]] call comspec_sse_fnc_idAiFsm; };
+    if (isNil "_st" || {!(_st isEqualType "")}) then { _st = ""; };
+    private _ten = if (_st in ["", "calme"]) then { ["level", _u] call comspec_sse_fnc_iarpReact } else { _u getVariable ["comspec_sse_idTension", 0] };
+    if (isNil "_ten" || {!(_ten isEqualType 0)}) then { _ten = 0; };
+    private _k = call {
+        if (_u getVariable ["ace_captives_isHandcuffed", false]) exitWith { "cuffed" };
+        if ((_u getVariable ["ace_captives_isSurrendering", false]) || {_st isEqualTo "rendu"}) exitWith { "rendu" };
+        if (_st in ["fuit", "agressif", "renforts", "refuse", "nerveux"]) exitWith { _st };
+        if ((_u getVariable ["comspec_sse_iarpHaltId", 0]) > 0 && {!(_u checkAIFeature "PATH")}) exitWith { "halt" };
+        if (_ten >= 55) exitWith { "nerveux" };
+        if (_ten >= 30) exitWith { "tendu" };
+        // Menteur : coopératif en apparence (« trop sûr de lui » seulement en arcade).
+        if (_st isEqualTo "ment") exitWith { ["coopere", "ment"] select ((missionNamespace getVariable ["comspec_sse_id_difficulty", 1]) isEqualTo 0) };
+        if (_st in ["coopere", "interpelle"]) exitWith { ["coopere", "attentif"] select (_st isEqualTo "interpelle") };
+        "calme"
+    };
+    [_k, round _ten]
+};
 private _log = {
     params ["_dir", "_ai", "_cmd", "_text", "_intent", "_outcome", ["_steam", ""]];
     if !(missionNamespace getVariable ["comspec_sse_iarp_log", true]) exitWith {};
@@ -62,9 +114,10 @@ private _log = {
     private _st = systemTime;
     private _real = format ["%1-%2-%3 %4:%5:%6", _st select 0, [_st select 1, 2] call CBA_fnc_formatNumber, [_st select 2, 2] call CBA_fnc_formatNumber,
         [_st select 3, 2] call CBA_fnc_formatNumber, [_st select 4, 2] call CBA_fnc_formatNumber, [_st select 5, 2] call CBA_fnc_formatNumber];
-    private _row = [_seq, [daytime, "HH:MM"] call BIS_fnc_timeToString, _real, _dir, name _me, _steam,
-        [[_ai] call _nameAi, ""] select (isNull _ai), [netId _ai, ""] select (isNull _ai), mapGridPosition _me,
-        [round (_me distance _ai), -1] select (isNull _ai), _cmd, _text, _intent, _outcome, netId _me];
+    private _who = [_me, _ai] select (isNull _me);
+    private _row = [_seq, [daytime, "HH:MM"] call BIS_fnc_timeToString, _real, _dir, [name _me, ""] select (isNull _me), _steam,
+        [[_ai] call _nameAi, ""] select (isNull _ai), [netId _ai, ""] select (isNull _ai), mapGridPosition _who,
+        [round (_me distance _ai), -1] select (isNull _ai || {isNull _me}), _cmd, _text, _intent, _outcome, [netId _me, ""] select (isNull _me)];
     _list pushBack _row;
     private _max = round (missionNamespace getVariable ["comspec_sse_iarp_logMax", 500]);
     if ((count _list) > _max) then { _list deleteRange [0, (count _list) - _max]; };
@@ -97,6 +150,26 @@ switch (_op) do {
         ["log", [_mine select [((count _mine) - 300) max 0]]] call _reply;
     };
 
+    case "hello": {
+        _args params ["", ["_t", objNull, [objNull]]];
+        if (isNull _t || {isPlayer _t}) exitWith {};
+        ["who", [_t, [_t] call _nameOf, [_t] call _moodOf]] call _reply;
+    };
+
+    case "mood": {
+        _args params ["", ["_t", objNull, [objNull]]];
+        if (isNull _t || {isPlayer _t}) exitWith {};
+        ["mood", [_t, [_t] call _moodOf]] call _reply;
+    };
+
+    case "logFear": {
+        _args params ["", ["_t", objNull, [objNull]], ["_d", 0, [0]], ["_reason", "", [""]], ["_val", -1, [0]]];
+        if (isNull _t) exitWith {};
+        if (isNull _me) then { _me = _t getVariable ["comspec_sse_iarpTalkBy", objNull]; };
+        if (_val < 0) then { _val = ([_t] call _moodOf) select 1; };
+        ["PEUR", _t, "", format ["%1%2 → %3 : %4", ["", "+"] select (_d > 0), round _d, round _val, _reason], "fear", _reason] call _log;
+    };
+
     case "profileGet": {
         if !([_me] call comspec_sse_fnc_isAuthority) exitWith {};
         _args params ["", ["_t", objNull, [objNull]]];
@@ -127,7 +200,8 @@ switch (_op) do {
         _text = [_text] call _sanitize;
         if (isNull _t || {_text isEqualTo ""}) exitWith {};
         private _pay = [_text, _text, createHashMap, "", ""];
-        [[_t] call _hearers, "bubble", [_t, "ai", [_t] call _nameAi, _pay]] call _tell;
+        [[_t] call _hearers, "bubble", [_t, "ai", [_t] call _nameOf, _pay, true]] call _tell;
+        _t setVariable ["comspec_sse_iarpSaidAt", time];
         ["ZEUS>IA", _t, "", _text, "zeus", "réplique du Zeus"] call _log;
     };
 
@@ -142,6 +216,10 @@ switch (_op) do {
             ["notice", ["STR_COMSPEC_IARP_N_TooFar"]] call _reply;
         };
         private _steamName = (_steam select [0, 64]);
+        private _aiName = [_t] call _nameOf;
+        // En conversation (90 s) : l'automate des IA réalistes ne lui fait plus dire ses phrases d'état (fn_idAiSay).
+        _t setVariable ["comspec_sse_iarpTalkAt", time];
+        _t setVariable ["comspec_sse_iarpTalkBy", _me];
         // /try : tirage du serveur, le même résultat pour tous, émetteur compris.
         if (_cmd isEqualTo "try") exitWith {
             private _ok = (random 100) < (missionNamespace getVariable ["comspec_sse_iarp_tryChance", 50]);
@@ -157,51 +235,36 @@ switch (_op) do {
         // Demandes du message dans l'ordre (« bonjour, vos papiers » : salut puis papiers) ; _main : l'intention principale.
         private _list = [];
         private _main = "";
-        if (_cmd isEqualTo "me") then {
-            // /me : ambiance, sauf gestes que l'IA voit et comprend.
-            _main = call {
-                if ([[" leve les mains", " leve ses mains", " mains en l air", " raises his hands", " raises her hands", " hands up", " baisse son arme", " lowers his weapon", " lowers her weapon"]] call _has) exitWith { "calm" };
-                if ([[" braque", " pointe son arme", " pointe son fusil", " pointe son pistolet", " met en joue", " aims ", " points his weapon", " points her weapon", " points a gun"]] call _has) exitWith { "threat" };
-                if ([[" billet", " argent", " dollars", " euros", " liasse", " money", " cash", " banknote", " bribe"]] call _has) exitWith { "bribe" };
-                if ([[" badge", " carte de police", " insigne", " carte professionnelle", " shows his badge", " shows her badge", " his badge", " her badge"]] call _has) exitWith { "badge" };
-                ""
-            };
-            if (_main isNotEqualTo "") then { _list = [_main]; };
+        if (_cmd in ["me", "do"]) then {
+            // /me, /do : geste compris (lexique « _gesture » : un mot de chaque groupe), sinon elle réagit à ce qu'elle voit.
+            private _toks = _norm splitString " ";
+            private _gest = "";
+            {
+                if ((_x param [0, ""]) isEqualTo "_gesture") then {
+                    {
+                        _x params [["_g", ""], ["_groups", []]];
+                        if (_gest isEqualTo "" && {(_groups findIf { private _grp = _x; (_grp findIf { if ((_x find " ") >= 0) then { (_norm find (" " + _x + " ")) >= 0 } else { _x in _toks } }) < 0 }) < 0}) then { _gest = _g; };
+                    } forEach (_x param [2, []]);
+                };
+            } forEach (["lexicon"] call comspec_sse_fnc_iarpData);
+            _main = (createHashMapFromArray [["takePapers", "papers"], ["givePapers", "givePapers"]]) getOrDefault [_gest, _gest];
+            if (_main isEqualTo "") then { _main = "watchMe"; };
+            _list = [_main];
         } else {
-            if (_cmd isEqualTo "") then {
-                ([_text] call comspec_sse_fnc_iarpIntent) params ["_i", "", "", ["_l", []]];
-                if (_i isNotEqualTo "unknown") then { _main = _i; _list = _l apply { _x select 0 }; } else { _main = "unknown"; _list = ["unknown"]; };
-            };
+            // /todo : la parole (avant « * ») est comprise comme un message.
+            private _speech = if (_cmd isEqualTo "todo") then { (_text splitString "*") param [0, ""] } else { _text };
+            ([_speech] call comspec_sse_fnc_iarpIntent) params ["_i", "", "", ["_l", []]];
+            if (_i isNotEqualTo "unknown") then { _main = _i; _list = _l apply { _x select 0 }; } else { _main = "unknown"; _list = ["unknown"]; };
         };
         private _p = ["get", _t] call comspec_sse_fnc_iarpProfile;
         private _sens = ((_p get "sensitive") apply { trim (_x call comspec_sse_fnc_iarpNorm) }) select { _x isNotEqualTo "" };
         private _touchy = _cmd isEqualTo "" && {(_sens findIf { (_norm find (" " + _x)) >= 0 }) >= 0};
-        if (_main isEqualTo "" && {!_touchy}) exitWith {
-            ["P", _t, _cmd, _text, "", "ambiance", _steamName] call _log;
-            ["ack", [_t, "", "ambient"]] call _reply;
-        };
         if (_list isEqualTo []) then { _list = [""]; };
-        // Papiers : l'action ACE (2 s) est lancée par le poste ; la réponse vient du contrôle d'identité habituel.
-        // Fouille d'une personne rendue, menottée ou inconsciente : l'action ACE de fouille des papiers (6 s).
-        // Avec une autre demande (« bonjour, vos papiers ») : l'IA répond d'abord, puis l'action ACE part.
-        private _ace = "";
-        {
-            if (_ace isEqualTo "") then {
-                if (_x isEqualTo "papers" && {!isNil "comspec_sse_fnc_idClient"}) then { _ace = "papers"; };
-                if (_x isEqualTo "search" && {!isNil "comspec_sse_fnc_idCanSearch"} && {[_t] call comspec_sse_fnc_idCanSearch}) then { _ace = "search"; };
-            };
-        } forEach _list;
-        if (_ace isNotEqualTo "") then { _list = _list - [_ace]; };
-        if (_list isEqualTo []) exitWith {
-            ["P", _t, _cmd, _text, _ace, ["demande des papiers (action ACE)", "fouille des papiers (action ACE)"] select (_ace isEqualTo "search"), _steamName] call _log;
-            ["ack", [_t, _ace, "ace"]] call _reply;
-        };
 
         // ---------------------------------------------------------------- contexte et mémoire de l'IA
         private _fsm = !isNil "comspec_sse_fnc_idAiFsm" && {missionNamespace getVariable ["comspec_sse_id_aiFsm", true]};
         if (_fsm && {(_list - ["bye"]) isNotEqualTo []}) then { ["engage", [_t, _me]] call comspec_sse_fnc_idAiFsm; };
         // En conversation : les tirs proches la font réagir pendant 3 min (fn_iarpReact « watch », « fired »).
-        _t setVariable ["comspec_sse_iarpTalkAt", time];
         ["watch", [_t]] call comspec_sse_fnc_iarpReact;
         private _st = "";
         if (_fsm) then { _st = ["state", [_t]] call comspec_sse_fnc_idAiFsm; };
@@ -220,6 +283,12 @@ switch (_op) do {
         // Question de l'IA encore ouverte (moins de 60 s) : le oui / non qui suit y répond, même glissé dans une phrase.
         private _askOpen = ((_pm get "ask") isNotEqualTo []) && {(time - ((_pm get "ask") param [1, -100])) < 60};
         if (!_askOpen) then { _pm set ["ask", []]; };
+        // « Vous voulez mes papiers ? » (piste après un message incompris) « Oui. » : c'est une demande de papiers.
+        if (_askOpen && {((_pm get "ask") select 0) isEqualTo "askPapers"} && {(_list findIf { _x in ["yes", "no"] }) >= 0}) then {
+            if ("yes" in _list) then { _list = (_list - ["yes"]) + ["papers"]; } else { _list = (_list - ["no"]) + ["noPapers"]; };
+            _pm set ["ask", []];
+            _askOpen = false;
+        };
         // Oui / non glissé dans une autre demande (« d'accord, suivez-moi ») : la demande seule compte, sauf réponse à
         // une question de l'IA (« Je peux partir ? » « Oui, circulez. » : un seul « oui »).
         if ((count _list) > 1) then {
@@ -227,7 +296,22 @@ switch (_op) do {
                 if (((_pm get "ask") select 0) isEqualTo "askGo") then { _list = _list - ["leave"]; };
             } else { _list = _list - ["yes", "no"]; };
         };
-        private _tense = { params ["_d"]; _t setVariable ["comspec_sse_idTension", (((_t getVariable ["comspec_sse_idTension", 20]) + _d) max 0) min 100]; };
+        // Papiers : l'action ACE (2 s) est lancée par le poste après la réponse ; la vraie réponse (présente, refuse) vient
+        // du contrôle d'identité habituel. Fouille d'une personne rendue, menottée ou inconsciente : l'action ACE (6 s).
+        private _ace = "";
+        {
+            if (_ace isEqualTo "") then {
+                if (_x isEqualTo "papers" && {!isNil "comspec_sse_fnc_idClient"}) then { _ace = "papers"; };
+                if (_x isEqualTo "search" && {!isNil "comspec_sse_fnc_idCanSearch"} && {[_t] call comspec_sse_fnc_idCanSearch}) then { _ace = "search"; };
+            };
+        } forEach _list;
+        // Trop loin pour tendre ses papiers (3 m, comme l'action ACE) : elle le dit, rien ne part.
+        if (_ace isEqualTo "papers" && {(_me distance _t) > 3}) then { _ace = "closer"; };
+        if (_ace isNotEqualTo "") then { _list = (_list - ["papers", "search"]) + [["papersWait", "searchWait", "papersCloser"] select (["papers", "search", "closer"] find _ace)]; };
+        if (_ace isEqualTo "closer") then { _ace = ""; };
+
+        // Pression de la conversation (menace, refus, apaisement…) : retombe d'elle-même, notée au journal de la peur.
+        private _tense = { params ["_d", ["_why", ""]]; ["press", [_t, _d, _why, _me]] call comspec_sse_fnc_iarpReact; };
         private _want = { params ["_s"]; if (_fsm) then { _t setVariable ["comspec_sse_idWant", _s]; }; };
         private _do = {
             params ["_cmdAi", ["_a", []]];
@@ -259,6 +343,8 @@ switch (_op) do {
         };
         { _facts set [_x, _y]; } forEach (["facts", _p] call comspec_sse_fnc_iarpProfile);
         if ((_p get "name") isNotEqualTo "") then { _facts set ["name", _p get "name"]; };
+        // Nom dit = nom affiché partout (papiers) quand l'atelier n'en impose pas un autre.
+        if ((_facts getOrDefault ["name", ""]) isEqualTo "" && {_aiName isNotEqualTo ""}) then { _facts set ["name", _aiName]; };
         // Prénom : le mot qui n'est pas en capitales (« KARRAS Nikos » des papiers), sinon le premier.
         private _parts = (_facts getOrDefault ["name", ""]) splitString " ";
         private _fi = _parts findIf { (toUpper _x) isNotEqualTo _x };
@@ -314,12 +400,14 @@ switch (_op) do {
             [_v0, false]
         };
 
-        // Joueur : faction (manière de s'adresser à lui), armes pointées vers l'IA.
-        private _aimed = { alive _x && {(currentWeapon _x) isNotEqualTo ""} && {!(weaponLowered _x)} && {(_x distance _t) < 30}
-            && {((_x weaponDirection (currentWeapon _x)) vectorDotProduct (vectorNormalized ((aimPos _t) vectorDiff (eyePos _x)))) > 0.985} } count ((allPlayers + [_me]) arrayIntersect (allPlayers + [_me]));
+        // Armes braquées sur elle : arme levée, à 25 m au plus, canon vers son buste (fn_iarpReact « aimedAt ») ; une arme
+        // portée ou baissée ne compte pas.
+        private _aimed = (["aimedAt", [_t]] call comspec_sse_fnc_iarpReact) param [0, 0];
         private _civ = (side group _me) isEqualTo civilian;
+        // Peur : celle de l'automate s'il la suit, sinon pression, choc et arme braquée, sans valeur de départ cachée.
+        private _tenNow = if (_st in ["", "calme"]) then { ["level", _t] call comspec_sse_fnc_iarpReact } else { _t getVariable ["comspec_sse_idTension", 0] };
         private _ctx = createHashMapFromArray [
-            ["state", _st], ["tension", _t getVariable ["comspec_sse_idTension", 0]], ["aimed", _aimed],
+            ["state", _st], ["tension", _tenNow], ["aimed", _aimed],
             ["wounded", (damage _t) > 0.3 || {(_t getVariable ["ace_medical_woundBleeding", 0]) > 0.02}],
             ["tired", (getFatigue _t) > 0.6], ["vehicle", !isNull objectParent _t], ["night", sunOrMoon < 0.5],
             ["checkpoint", !isNil "comspec_sse_fnc_idCheckpoint" && {["inZone", [_t]] call comspec_sse_fnc_idCheckpoint}],
@@ -372,7 +460,7 @@ switch (_op) do {
                     _gi = _askQ + (["No", "Yes"] select _yes);
                     switch (_gi) do {
                         case "askArrestYes": {
-                            [15] call _tense;
+                            [15, "on lui annonce son arrestation"] call _tense;
                             _outcome = "craint d'être arrêté";
                             private _onFoot = isNull objectParent _t && {!(_t getVariable ["ace_captives_isSurrendering", false])} && {!(_t getVariable ["ace_captives_isHandcuffed", false])};
                             if ((_p get "fear") >= 60 && {(_p get "nerve") >= 60} && {_aimed isEqualTo 0} && {_onFoot} && {(random 1) < 0.35}) then {
@@ -380,20 +468,23 @@ switch (_op) do {
                                 if (_fsm && {_st isNotEqualTo ""}) then { ["fuit"] call _want; } else { ["flee", [(getPosATL _t) getPos [150, _me getDir _t]]] call _do; };
                             };
                         };
-                        case "askArrestNo": { [-15] call _tense; [5] call _trust; _outcome = "rassuré"; };
+                        case "askArrestNo": { [-15, "rassurée : pas d'arrestation"] call _tense; [5] call _trust; _outcome = "rassuré"; };
                         case "askGoYes": {
                             ["free"] call _do;
                             if (_fsm) then { ["release", [_t]] call comspec_sse_fnc_idAiFsm; };
                             _outcome = "laissé partir";
                         };
-                        case "askGoNo": { [5] call _tense; _outcome = "doit attendre"; };
+                        case "askGoNo": { [5, "doit attendre"] call _tense; _outcome = "doit attendre"; };
                         case "askMoneyNo": { [-5] call _trust; _outcome = "ne sera pas payé"; };
-                        case "askHelpYes": { [10] call _trust; [-8] call _tense; _outcome = "va être aidé"; };
-                        case "askHelpNo": { [-10] call _trust; [5] call _tense; _outcome = "pas aidé"; };
+                        case "askHelpYes": { [10] call _trust; [-8, "on va l'aider"] call _tense; _outcome = "va être aidé"; };
+                        case "askHelpNo": { [-10] call _trust; [5, "on refuse de l'aider"] call _tense; _outcome = "pas aidé"; };
                     };
                 };
-                if (_touchy && {!(_intent in ["threat", "bribe", "handsup", "halt", "kneel", "follow", "dismount", "trunk", "leave"])}) exitWith {
-                    [15] call _tense; _gi = "sensitive"; _outcome = "sujet sensible";
+                if (_touchy && {!(_intent in ["threat", "bribe", "handsup", "halt", "kneel", "follow", "dismount", "trunk", "leave", "papersWait", "searchWait", "papersCloser"])}) exitWith {
+                    [15, "sujet sensible abordé"] call _tense; _gi = "sensitive"; _outcome = "sujet sensible";
+                };
+                if (_intent in ["papersWait", "searchWait", "papersCloser"]) exitWith {
+                    _outcome = (createHashMapFromArray [["papersWait", "sort ses papiers"], ["searchWait", "se laisse fouiller"], ["papersCloser", "demande d'approcher"]]) get _intent;
                 };
                 if (_intent in ["handsup", "halt", "kneel", "follow", "leave", "dismount", "trunk"]) exitWith {
                     if (_intent isEqualTo "dismount" && {isNull objectParent _t}) exitWith { _gi = "dismountNone"; _outcome = "déjà à pied"; };
@@ -403,7 +494,7 @@ switch (_op) do {
                         _veh = _near param [0, objNull];
                     };
                     if (_intent isEqualTo "trunk" && {isNull _veh}) exitWith { _gi = "trunkNone"; _outcome = "aucun véhicule"; };
-                    if !(["order"] call _obeys) exitWith { _gi = "noComply"; _outcome = "refuse l'ordre"; [5] call _tense; };
+                    if !(["order"] call _obeys) exitWith { _gi = "noComply"; _outcome = "refuse l'ordre"; [5, "refuse un ordre"] call _tense; };
                     _gi = "comply";
                     _outcome = "obéit";
                     switch (_intent) do {
@@ -423,7 +514,7 @@ switch (_op) do {
                 switch (_intent) do {
                     case "threat": {
                         [-20] call _trust;
-                        [22] call _tense;
+                        [22, ["menace", "arme braquée (geste)"] select (_cmd in ["me", "do"])] call _tense;
                         private _x1 = _r getOrDefault ["threat", "auto"];
                         if (_x1 isEqualTo "auto") then {
                             _x1 = call {
@@ -445,19 +536,21 @@ switch (_op) do {
                             (random 100) < (_p get "bribe")
                         };
                         if (_yes) then { _pm set ["bribed", true]; _pm set ["bribes", (_pm get "bribes") + 1]; [40] call _trust; _gi = "bribeYes"; _tone = "corrompu"; _outcome = "pot-de-vin accepté"; }
-                        else { [-5] call _trust; [8] call _tense; _gi = "bribeNo"; _outcome = "pot-de-vin refusé"; };
+                        else { [-5] call _trust; [8, "pot-de-vin refusé"] call _tense; _gi = "bribeNo"; _outcome = "pot-de-vin refusé"; };
                     };
+                    case "photo";
                     case "intel": {
                         // Paliers (fn_iarpProfile « knowTiers ») : vague, précis, complet ; débloqués par la confiance, un
                         // pot-de-vin, le mot-clé, la pression ou un aveu (« intelLevel »). Savoir d'une seule phrase : palier
-                        // précis, débloqué comme avant. Le plus haut palier rempli et débloqué est dit.
+                        // précis, débloqué comme avant. Le plus haut palier rempli et débloqué est dit. Photo montrée : même
+                        // savoir, sinon « Je ne connais pas cette personne ».
                         (["knowTiers", _p get "know"] call comspec_sse_fnc_iarpProfile) params ["_tiers", "_kpos", "_klabel"];
                         private _lvl = ["intelLevel", [_p, _pm get "trust", _pm get "bribed", _pm get "bribes", _pm get "word", _mem get "confessed", _st, _aimed,
-                            _t getVariable ["comspec_sse_idTension", 0]]] call comspec_sse_fnc_iarpProfile;
+                            _tenNow]] call comspec_sse_fnc_iarpProfile;
                         private _give = 0;
                         for "_i" from _lvl to 1 step -1 do { if (_give isEqualTo 0 && {(_tiers select (_i - 1)) isNotEqualTo ""}) then { _give = _i; }; };
                         if (_give isEqualTo 0) exitWith {
-                            _gi = "intelNo";
+                            _gi = ["intelNo", "photoNo"] select (_intent isEqualTo "photo");
                             _outcome = ["ne sait rien", "se tait"] select ((_tiers findIf { _x isNotEqualTo "" }) >= 0);
                         };
                         _vars set ["know", _tiers select (_give - 1)];
@@ -469,7 +562,7 @@ switch (_op) do {
                         // Renseignement précis avec un lieu : marqueur sur la carte de ce joueur seulement, une fois.
                         if (_give >= 2 && {(count _kpos) >= 2} && {!(_pm get "marked")}) then {
                             _pm set ["marked", true];
-                            _mark = [_kpos, _klabel, _t getVariable ["comspec_sse_idName", ""]];
+                            _mark = [_kpos, _klabel, _aiName];
                             _outcome = _outcome + " · lieu sur la carte";
                         };
                     };
@@ -482,7 +575,7 @@ switch (_op) do {
                             || {(_p get "role") in ["insurge", "hvt", "agent"]} || {(count _L) > 0 && {(_L getOrDefault ["kind", "civil"]) isNotEqualTo "civil"}};
                         _pm set ["pressed", (_pm getOrDefault ["pressed", 0]) + 1];
                         if (!_guilty) exitWith {
-                            [-10] call _trust; [8] call _tense;
+                            [-10] call _trust; [8, "accusée à tort"] call _tense;
                             _gi = "confrontInnocent"; _outcome = "accusé à tort";
                             if ((_p get "aggro") >= 60) then { _tone = "agressif"; };
                         };
@@ -496,7 +589,7 @@ switch (_op) do {
                         _crack = (_crack max 0.03) min 0.9;
                         if ((random 1) < _crack) exitWith {
                             _mem set ["confessed", true];
-                            [-15] call _tense; [10] call _trust;
+                            [-15, "soulagée d'avoir avoué"] call _tense; [10] call _trust;
                             // Aveu : un secret (atelier IA), sinon une ligne libre de l'histoire, sinon la vérité sur un mensonge.
                             private _free = ((_p get "story") splitString (toString [10])) select { (trim _x) isNotEqualTo "" && {(_x find ":") < 0} };
                             private _sec = ((_p get "secrets") + (_free apply { trim _x })) param [0, ""];
@@ -524,14 +617,14 @@ switch (_op) do {
                         if (_fsm) then { ["bust", [_t, _me]] call comspec_sse_fnc_idAiFsm; };
                         private _onFoot = isNull objectParent _t && {!(_t getVariable ["ace_captives_isSurrendering", false])} && {!(_t getVariable ["ace_captives_isHandcuffed", false])};
                         if ((_p get "fear") >= 60 && {(_p get "nerve") >= 50} && {_aimed isEqualTo 0} && {_onFoot} && {(random 1) < 0.5}) exitWith {
-                            _gi = "confrontFlee"; _outcome = "nie puis s'enfuit"; [20] call _tense;
+                            _gi = "confrontFlee"; _outcome = "nie puis s'enfuit"; [20, "démasquée"] call _tense;
                             if (_fsm && {_st isNotEqualTo ""}) then { ["fuit"] call _want; } else { ["flee", [(getPosATL _t) getPos [150, _me getDir _t]]] call _do; };
                         };
                         if ((_p get "aggro") >= 60) exitWith {
-                            _gi = "confrontAngry"; _tone = "agressif"; _outcome = "nie et s'énerve"; [20] call _tense; [-10] call _trust;
+                            _gi = "confrontAngry"; _tone = "agressif"; _outcome = "nie et s'énerve"; [20, "accusée, s'énerve"] call _tense; [-10] call _trust;
                             if (_st in ["interpelle", "coopere", "ment", "nerveux"]) then { ["refuse"] call _want; };
                         };
-                        _gi = "confrontDeny"; _outcome = "nie"; [12] call _tense;
+                        _gi = "confrontDeny"; _outcome = "nie"; [12, "accusée de mentir"] call _tense;
                         if ((_p get "fear") >= 60) then { _tone = "nerveux"; };
                     };
                     case "weapons": {
@@ -549,14 +642,43 @@ switch (_op) do {
                         };
                         [-5] call _trust;
                         // Accord : il lève les bras (reddition ACE), la fouille ACE devient possible ; sinon il refuse.
-                        if (_yes) then { _gi = "searchYes"; _outcome = "accepte la fouille"; ["surrender"] call _do; } else { _gi = "searchNo"; _outcome = "refuse la fouille"; [6] call _tense; };
+                        if (_yes) then { _gi = "searchYes"; _outcome = "accepte la fouille"; ["surrender"] call _do; } else { _gi = "searchNo"; _outcome = "refuse la fouille"; [6, "refuse la fouille"] call _tense; };
                     };
-                    case "badge": { _pm set ["badge", time]; [10] call _trust; [5] call _tense; _outcome = "voit le badge"; };
-                    case "calm": { [8] call _trust; [-12] call _tense; _outcome = "rassuré"; };
+                    case "cuff": {
+                        // Menottes (geste, menu « Faire une action ») : rendue, menottée déjà, ou ordre obéi ; sinon elle se débat.
+                        if (_t getVariable ["ace_captives_isHandcuffed", false]) exitWith { _gi = "cuffYes"; _outcome = "déjà menottée"; };
+                        if ((_t getVariable ["ace_captives_isSurrendering", false]) || {_st isEqualTo "rendu"} || {["order"] call _obeys}) exitWith {
+                            if (isClass (configFile >> "CfgPatches" >> "ace_captives")) then { ["ace_captives_setHandcuffed", [_t, true], _t] call CBA_fnc_targetEvent; } else { ["surrender"] call _do; };
+                            ["rendu"] call _want;
+                            [10, "menottée"] call _tense;
+                            _gi = "cuffYes"; _outcome = "menottée";
+                        };
+                        [15, "se débat contre les menottes"] call _tense; [-10] call _trust;
+                        _gi = "cuffNo"; _outcome = "refuse les menottes";
+                    };
+                    case "givePapers": { [10] call _trust; [-8, "on lui rend ses papiers"] call _tense; _outcome = "papiers rendus"; };
+                    case "noPapers": { _gi = "yes"; _outcome = "pas de papiers demandés"; };
+                    case "watchMe": { _outcome = "regarde le geste"; };
+                    case "badge": { _pm set ["badge", time]; [10] call _trust; [5, "badge montré"] call _tense; _outcome = "voit le badge"; };
+                    case "calm": { [8] call _trust; [-12, ["apaisée par vos mots", "apaisée par votre geste"] select (_cmd in ["me", "do"])] call _tense; _outcome = "rassuré"; };
+                    case "greet": {
+                        // Deuxième « bonjour » de la même conversation : elle le relève.
+                        if (_pm getOrDefault ["greeted", false]) then { _gi = "greetAgain"; };
+                        _pm set ["greeted", true];
+                        [3] call _trust; _outcome = "conversation";
+                    };
+                    case "vehicle": {
+                        private _veh = objectParent _t;
+                        if (isNull _veh) then { _veh = ((nearestObjects [_t, ["LandVehicle"], 15]) select { alive _x }) param [0, objNull]; };
+                        if (isNull _veh) then { _gi = "trunkNone"; _outcome = "aucun véhicule"; } else { _outcome = "parle de son véhicule"; };
+                    };
                     case "help";
-                    case "greet";
                     case "thanks";
                     case "sorry";
+                    case "smalltalk";
+                    case "introduce";
+                    case "drugs";
+                    case "money";
                     case "howareyou": { [5] call _trust; _outcome = "conversation"; };
                     default {
                         if (_intent in ["origin", "employer", "job", "travel", "pob", "contact", "address", "name", "age", "family"]) then {
@@ -566,6 +688,8 @@ switch (_op) do {
                             if (_v isEqualTo "") exitWith { _gi = "dunno"; _outcome = "ne sait pas"; };
                             _vars set [_k, _v];
                             _topic = _k;
+                            // « Ton prénom ? » : le prénom seul, précisément.
+                            if (_intent isEqualTo "name" && {[[" prenom", " first name"]] call _has} && {(_vars getOrDefault ["first", ""]) isNotEqualTo ""}) then { _gi = "firstName"; };
                             if (!_ok) then {
                                 // Réponse qui ne colle pas : la tension monte (comme une question de légende du menu ACE).
                                 _t setVariable ["comspec_sse_idAsks", (_t getVariable ["comspec_sse_idAsks", 1]) + 1];
@@ -578,20 +702,22 @@ switch (_op) do {
                     };
                 };
             };
-            // /me sans geste compris : pas de réplique.
-            if (_cmd isNotEqualTo "me" || {_gi isNotEqualTo ""}) then { _parts pushBack [_gi, _tone, _outcome, _intent, [_topic] call _told]; };
+            _parts pushBack [_gi, _tone, _outcome, _intent, [_topic] call _told];
         } forEach _list;
+        // Incompris : sa piste (« Vous voulez voir mes papiers ? ») devient sa question ; le « oui » qui suit est une
+        // demande de papiers.
+        if ((_parts findIf { (_x select 0) isEqualTo "unknown" }) >= 0 && {!_quiet}) then { _pm set ["ask", ["askPapers", time]]; };
         // Initiative : l'IA pose parfois une question (une à la fois, 30 s au moins entre deux) ; le oui / non qui suit y
         // répond (ci-dessus). Arrestation après une menace, une fouille ou un aveu ; argent si elle est vénale et se tait ;
         // aide si elle est blessée ; partir après quelques questions si elle a confiance.
-        if (_parts isNotEqualTo [] && {!_quiet} && {!_askOpen} && {(time - (_pm getOrDefault ["askAt", -100])) > 30}) then {
+        if (_parts isNotEqualTo [] && {!_quiet} && {!_askOpen} && {(_pm get "ask") isEqualTo []} && {_ace isEqualTo ""} && {(time - (_pm getOrDefault ["askAt", -100])) > 30}) then {
             private _last = (_parts select -1) select 0;
             private _q = call {
                 if ((_ctx get "wounded") && {(random 1) < 0.35}) exitWith { "askHelp" };
                 if (_last in ["confess", "confessTruth", "confessVague"] && {(random 1) < 0.7}) exitWith { "askArrest" };
-                if ((_last in ["confrontDeny", "searchYes", "threat", "weaponsYes"] || {_st in ["nerveux", "rendu"]}) && {(random 1) < 0.4}) exitWith { "askArrest" };
-                if (_last isEqualTo "intelNo" && {(_p get "bribe") >= 60} && {!(_pm get "bribed")} && {(random 1) < 0.6}) exitWith { "askMoney" };
-                if (_last in ["origin", "employer", "job", "travel", "pob", "contact", "address", "name", "age", "family", "dunno"]
+                if ((_last in ["confrontDeny", "searchYes", "threat", "weaponsYes", "cuffYes"] || {_st in ["nerveux", "rendu"]}) && {(random 1) < 0.4}) exitWith { "askArrest" };
+                if (_last in ["intelNo", "photoNo"] && {(_p get "bribe") >= 60} && {!(_pm get "bribed")} && {(random 1) < 0.6}) exitWith { "askMoney" };
+                if (_last in ["origin", "employer", "job", "travel", "pob", "contact", "address", "name", "age", "family", "dunno", "firstName"]
                     && {(_pm get "turns") >= 4} && {(_pm get "trust") >= 40} && {_st in ["", "interpelle", "coopere", "ment"]} && {(random 1) < 0.25}) exitWith { "askGo" };
                 ""
             };
@@ -607,18 +733,19 @@ switch (_op) do {
         private _dd = [];
         { if (_dd isEqualTo [] || {((_dd select -1) select 0) isNotEqualTo (_x select 0)}) then { _dd pushBack _x; }; } forEach _parts;
         _parts = _dd;
-        private _outcome = (_parts apply { _x select 2 }) select { _x isNotEqualTo "" };
-        _outcome = _outcome joinString " · ";
+        private _outcome = ((_parts apply { _x select 2 }) select { _x isNotEqualTo "" }) joinString " · ";
         if (_ace isNotEqualTo "") then { _outcome = _outcome + ([" · ", ""] select (_outcome isEqualTo "")) + (["demande des papiers (action ACE)", "fouille des papiers (action ACE)"] select (_ace isEqualTo "search")); };
         private _logI = ((_list + ([[], [_ace]] select (_ace isNotEqualTo ""))) select { _x isNotEqualTo "" }) joinString "+";
         ["P", _t, _cmd, _text, _logI, _outcome, _steamName] call _log;
-        // Accusé : intention principale (comme avant) ; papiers ou fouille : l'action ACE part après la réponse.
-        ["ack", [_t, [_main, _ace] select (_ace isNotEqualTo ""), [_outcome, "ace"] select (_ace isNotEqualTo "")]] call _reply;
+        // Accusé : intention principale ; papiers ou fouille : l'action ACE part après la réponse (bloc différé).
+        ["ack", [_t, [_main, _ace] select (_ace isNotEqualTo ""), _outcome]] call _reply;
+        if ((_t getVariable ["ACE_isUnconscious", false]) || {(lifeState _t) isEqualTo "INCAPACITATED"}) exitWith {
+            if (_ace isNotEqualTo "") then { ["ack", [_t, _ace, "ace"]] call _reply; };
+        };
         if (_parts isEqualTo []) exitWith {};
-        if ((_t getVariable ["ACE_isUnconscious", false]) || {(lifeState _t) isEqualTo "INCAPACITATED"}) exitWith {};
 
         // Répliques : générateur local (ou point d'accroche réservé), sans redite, mises bout à bout dans une seule bulle ;
-        // seule la dernière (la vraie réponse) reçoit ouverture, hésitation et didascalie.
+        // seule la dernière (la vraie réponse) reçoit ouverture, hésitation et didascalie. Faits absents : phrase écartée.
         private _recent = _pm get "recent";
         private _frs = [];
         private _ens = [];
@@ -636,7 +763,7 @@ switch (_op) do {
             if (_forEachIndex isNotEqualTo _mainI) then { _c1 set ["plain", true]; };
             private _gen = [];
             if (_hook isEqualType {}) then { _gen = [_gi1, _p, _c1, _recent, _vars, _text] call _hook; };
-            if !(_gen isEqualType [] && {(count _gen) >= 2}) then { _gen = [_gi1, _p, _c1, _recent] call comspec_sse_fnc_iarpGen; };
+            if !(_gen isEqualType [] && {(count _gen) >= 2}) then { _gen = [_gi1, _p, _c1, _recent, _vars] call comspec_sse_fnc_iarpGen; };
             _gen params [["_fr1", ""], ["_en1", ""], ["_loc1", ""], ["_to1", ""], ["_core1", ""]];
             _frs pushBack _fr1;
             _ens pushBack _en1;
@@ -654,24 +781,27 @@ switch (_op) do {
             [[_t] call _hearers, "typing", [_t, true]] call _tell;
         };
         [{
-            params ["_t", "_me", "_pay", "_say", "_gi", "_outcome", "_owner", "_range", ["_mark", []]];
-            if (isNull _t || {!alive _t}) exitWith {};
+            params ["_t", "_me", "_pay", "_say", "_gi", "_outcome", "_owner", "_range", ["_mark", []], ["_ace", ""], ["_name", ""]];
+            private _toMe = { params ["_cop", "_ca"]; if (_owner isEqualTo clientOwner || {!isMultiplayer}) then { [_cop, _ca] call comspec_sse_fnc_iarpClient; } else { [_cop, _ca] remoteExecCall ["comspec_sse_fnc_iarpClient", _owner]; }; };
+            if (isNull _t || {!alive _t}) exitWith { if (_ace isNotEqualTo "") then { ["ack", [_t, _ace, "ace"]] call _toMe; }; };
+            _t setVariable ["comspec_sse_iarpSaidAt", time];
+            // Une seule réponse : à moi la réplique (bulle et fil, fn_iarpClient « reply ») ; aux autres joueurs proches la
+            // bulle, et leur fil s'ils parlent aussi à cette IA.
             private _pl = (allPlayers select { !(_x isKindOf "HeadlessClient_F") });
             if (hasInterface && {!isNull player}) then { _pl pushBackUnique player; };
-            private _args = [_t, "ai", _t getVariable ["comspec_sse_idName", ""], _pay];
+            private _args = [_t, "ai", _name, _pay, true];
             {
-                if (alive _x && {(_x distance _t) <= _range}) then {
+                if (alive _x && {_x isNotEqualTo _me} && {(_x distance _t) <= _range}) then {
                     if (local _x && {hasInterface}) then { ["bubble", _args] call comspec_sse_fnc_iarpClient; } else { ["bubble", _args] remoteExecCall ["comspec_sse_fnc_iarpClient", owner _x]; };
                 };
             } forEach _pl;
-            private _r = ["reply", [_t, _pay, _gi]];
-            if (_owner isEqualTo clientOwner || {!isMultiplayer}) then { _r call comspec_sse_fnc_iarpClient; } else { _r remoteExecCall ["comspec_sse_fnc_iarpClient", _owner]; };
+            ["reply", [_t, _pay, _gi, _name]] call _toMe;
             // Lieu d'un renseignement précis : sur la carte du joueur qui l'a obtenu, et de lui seul.
-            if (_mark isNotEqualTo []) then {
-                if (_owner isEqualTo clientOwner || {!isMultiplayer}) then { ["mark", _mark] call comspec_sse_fnc_iarpClient; } else { ["mark", _mark] remoteExecCall ["comspec_sse_fnc_iarpClient", _owner]; };
-            };
+            if (_mark isNotEqualTo []) then { ["mark", _mark] call _toMe; };
             ["logAi", [_me, _t, _say, _gi, _outcome]] call comspec_sse_fnc_iarpServer;
-        }, [_t, _me, _pay, _say, _gi, _outcome, _owner, _range, _mark], _delay] call CBA_fnc_waitAndExecute;
+            // Papiers, fouille : l'action ACE habituelle part maintenant, après sa réponse.
+            if (_ace isNotEqualTo "") then { ["ack", [_t, _ace, "ace"]] call _toMe; };
+        }, [_t, _me, _pay, _say, _gi, _outcome, _owner, _range, _mark, _ace, _aiName], _delay] call CBA_fnc_waitAndExecute;
     };
 
     // Ligne IA -> joueur du journal, posée par le serveur lui-même à la fin de la réplique (jamais par un poste).

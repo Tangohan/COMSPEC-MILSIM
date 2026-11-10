@@ -1,7 +1,7 @@
 // SSE › IA RP : interprète et générateur (contrôles purs), terminal « Parler à… », réponse cohérente avec la couverture,
 // pas de redite, journal, bulle 3D, /try, ordre simple ; atelier IA (profil par script, fenêtre du Zeus).
 // 4.2.1 : « stop » relâché seul, deux demandes, faute de frappe, renseignement par paliers avec marqueur local,
-// confrontation, tirs proches et témoins.
+// confrontation, tirs proches et témoins. À venir : une réponse et une bulle par message au nom SSE, guide, actions, peur.
 if !("sse" call AT_fnc_groupe) exitWith {};
 AT_fnc_iarpIa = {
     private _g = createGroup civilian;
@@ -60,10 +60,10 @@ AT_fnc_iarpDire = {
     };
     [_dup < 3, format ["redite : %1 phrases identiques sur 6", _dup]] call AT_fnc_check;
     // Journal : ma question et la réponse, avec l'intention.
-    uiNamespace setVariable ["comspec_sse_iarpLogRows", []];
+    missionNamespace setVariable ["comspec_sse_iarpLogRows", []];
     ["tab", ["log"]] call comspec_sse_fnc_iarpUi;
-    [{ (uiNamespace getVariable ["comspec_sse_iarpLogRows", []]) isNotEqualTo [] }, 5] call AT_fnc_wait;
-    private _rows = uiNamespace getVariable ["comspec_sse_iarpLogRows", []];
+    [{ (missionNamespace getVariable ["comspec_sse_iarpLogRows", []]) isNotEqualTo [] }, 5] call AT_fnc_wait;
+    private _rows = missionNamespace getVariable ["comspec_sse_iarpLogRows", []];
     [(_rows findIf { (_x select 11) isEqualTo "D'où venez-vous ?" && {(_x select 12) isEqualTo "origin"} && {(_x select 7) isEqualTo (netId _u)} }) >= 0, "question absente du journal"] call AT_fnc_check;
     [(_rows findIf { (_x select 3) isEqualTo "IA>P" && {(_x select 7) isEqualTo (netId _u)} }) >= 0, "réponse de l'IA absente du journal"] call AT_fnc_check;
     ["ia_journal"] call AT_fnc_shot;
@@ -216,3 +216,123 @@ AT_fnc_iarpDire = {
     { deleteVehicle _x; } forEach [_u, _w, _firer];
     call AT_fnc_done;
 }, 40] call AT_fnc_run;
+
+// À venir : une réponse, une bulle, un nom ; « Tu vas bien ? » compris ; journal sans doublon ; guide qui remplit la saisie.
+["ia_rp_une_reponse", {
+    if (["comspec_sse_fnc_iarpUi", "comspec_sse_fnc_idIssue"] call AT_fnc_nil) exitWith {};
+    private _u = call AT_fnc_iarpIa;
+    uiSleep 2;
+    [_u, createHashMapFromArray [["type", "id_card"], ["materialize", true]]] call comspec_sse_fnc_idIssue;
+    ["open", [_u]] call comspec_sse_fnc_iarpUi;
+    if !([[{ !isNull findDisplay 94600 }, 5] call AT_fnc_wait, "terminal « Parler à… » non ouvert"] call AT_fnc_check) exitWith { deleteVehicle _u; call AT_fnc_done; };
+    AT_iarpU = _u;
+    [[{ (AT_iarpU getVariable ["comspec_sse_idName", ""]) isNotEqualTo "" }, 5] call AT_fnc_wait, "IA avec papiers : nom SSE absent (comspec_sse_idName)"] call AT_fnc_check;
+    private _name = _u getVariable ["comspec_sse_idName", ""];
+    uiSleep 1;
+    [(ctrlText ((findDisplay 94600) displayCtrl 94601)) isEqualTo _name, format ["en-tête « %1 » au lieu de « %2 »", ctrlText ((findDisplay 94600) displayCtrl 94601), _name]] call AT_fnc_check;
+    private _net = netId _u;
+    private _before = count ((missionNamespace getVariable ["comspec_sse_iarpHist", createHashMap]) getOrDefault [_net, []]);
+    ([_u, "Tu vas bien ?"] call AT_fnc_iarpDire) params ["_ack", "_rep"];
+    [(_ack param [1, ""]) isEqualTo "howareyou", format ["« Tu vas bien ? » : %1", _ack param [1, "aucune"]]] call AT_fnc_check;
+    uiSleep 4;
+    private _l = ((missionNamespace getVariable ["comspec_sse_iarpHist", createHashMap]) getOrDefault [_net, []]) select [_before];
+    private _ai = _l select { (_x select 0) isEqualTo "ai" };
+    [(count _ai) isEqualTo 1, format ["%1 réponse(s) de l'IA dans le fil pour un message", count _ai]] call AT_fnc_check;
+    [((_ai param [0, []]) param [1, ""]) isEqualTo _name, format ["nom du fil « %1 », nom SSE « %2 »", (_ai param [0, []]) param [1, ""], _name]] call AT_fnc_check;
+    private _b = (missionNamespace getVariable ["comspec_sse_iarpBubbles", []]) select { (_x select 0) isEqualTo AT_iarpU };
+    [(count _b) isEqualTo 1 && {((_b select 0) select 2) isEqualTo (toUpper _name)}, format ["bulles au-dessus de l'IA : %1", _b apply { _x select 2 }]] call AT_fnc_check;
+    ["ia_une_reponse"] call AT_fnc_shot;
+    "fenêtre « Parler à » : en-tête (initiales, nom, état), bulles Moi à droite / IA à gauche, une seule bulle 3D" call AT_fnc_visuel;
+    // Journal : chaque ligne une fois.
+    ["tab", ["log"]] call comspec_sse_fnc_iarpUi;
+    uiSleep 2;
+    private _rows = missionNamespace getVariable ["comspec_sse_iarpLogRows", []];
+    private _ids = _rows apply { _x select 0 };
+    [(count _ids) isEqualTo (count (_ids arrayIntersect _ids)), "journal : lignes en double"] call AT_fnc_check;
+    ["ia_journal_lisible"] call AT_fnc_shot;
+    // Guide : thèmes, un exemple cliqué remplit le champ.
+    ["tab", ["guide"]] call comspec_sse_fnc_iarpUi;
+    uiSleep 0.5;
+    [(lbSize ((findDisplay 94600) displayCtrl 94660)) >= 10, "guide : moins de 10 thèmes"] call AT_fnc_check;
+    private _pair = ((((["guide"] call comspec_sse_fnc_iarpData) select 1) select 1) select 0) select 1;
+    private _s = [(_pair select 0) select 1, (_pair select 0) select 0] select (language isEqualTo "French");
+    ["example", [_s]] call comspec_sse_fnc_iarpUi;
+    [(ctrlText ((findDisplay 94600) displayCtrl 94620)) isEqualTo _s, "guide : l'exemple n'a pas rempli le champ de saisie"] call AT_fnc_check;
+    ["ia_guide"] call AT_fnc_shot;
+    closeDialog 0;
+    deleteVehicle _u;
+    call AT_fnc_done;
+}, 90] call AT_fnc_run;
+
+// À venir : chaque action du menu « Faire une action » laisse une ligne dans le fil et un effet mesurable sur l'IA.
+["ia_rp_actions", {
+    if (["comspec_sse_fnc_iarpUi", "comspec_sse_fnc_iarpReact"] call AT_fnc_nil) exitWith {};
+    private _u = call AT_fnc_iarpIa;
+    AT_iarpU = _u;
+    uiSleep 1;
+    ["apply", [_u, createHashMapFromArray [["react", [["order", "coopere"], ["bribe", "refuse"]]]]]] call comspec_sse_fnc_iarpProfile;
+    ["open", [_u]] call comspec_sse_fnc_iarpUi;
+    [[{ !isNull findDisplay 94600 }, 5] call AT_fnc_wait, "terminal non ouvert"] call AT_fnc_check;
+    AT_iarpPress = { (AT_iarpU getVariable ["comspec_sse_iarpPress", [0, 0]]) select 0 };
+    {
+        _x params ["_id", "_effect"];
+        if (isNull findDisplay 94600) then { ["open", [AT_iarpU]] call comspec_sse_fnc_iarpUi; uiSleep 1; };
+        private _n0 = count ((missionNamespace getVariable ["comspec_sse_iarpHist", createHashMap]) getOrDefault [netId AT_iarpU, []]);
+        AT_iarpP0 = call AT_iarpPress;
+        missionNamespace setVariable ["comspec_sse_iarpLastAck", nil];
+        ["action", [_id]] call comspec_sse_fnc_iarpUi;
+        [{ !isNil { missionNamespace getVariable "comspec_sse_iarpLastAck" } }, 6] call AT_fnc_wait;
+        uiSleep 2.5;
+        private _l = ((missionNamespace getVariable ["comspec_sse_iarpHist", createHashMap]) getOrDefault [netId AT_iarpU, []]) select [_n0];
+        [(_l findIf { (_x select 0) isEqualTo "act" }) >= 0, format ["action « %1 » : pas de ligne dans le fil", _id]] call AT_fnc_check;
+        [(_l findIf { (_x select 0) isEqualTo "ai" }) >= 0, format ["action « %1 » : l'IA ne réagit pas", _id]] call AT_fnc_check;
+        [call compile _effect, format ["action « %1 » : aucun effet (%2)", _id, _effect]] call AT_fnc_check;
+        uiSleep 1;
+    } forEach [
+        ["handsup", "(call AT_iarpPress) < AT_iarpP0 || {AT_iarpP0 <= -29}"], ["lower", "(call AT_iarpPress) < AT_iarpP0 || {AT_iarpP0 <= -29}"],
+        ["aim", "(call AT_iarpPress) > AT_iarpP0"], ["badge", "(call AT_iarpPress) > AT_iarpP0"], ["money", "(call AT_iarpPress) > AT_iarpP0"],
+        ["give", "(call AT_iarpPress) < AT_iarpP0 || {AT_iarpP0 <= -29}"],
+        ["photo", "((missionNamespace getVariable ['comspec_sse_iarpLastAck', []]) param [2, '']) isNotEqualTo ''"],
+        ["search", "(AT_iarpU getVariable ['ace_captives_isSurrendering', false]) || {(call AT_iarpPress) > AT_iarpP0} || {(((missionNamespace getVariable ['comspec_sse_iarpLastAck', []]) param [2, '']) find 'fouille') >= 0}"],
+        ["cuff", "(AT_iarpU getVariable ['ace_captives_isHandcuffed', false]) || {(call AT_iarpPress) > AT_iarpP0}"],
+        ["take", "((missionNamespace getVariable ['comspec_sse_iarpLastAck', []]) param [1, '']) isEqualTo 'papers'"]
+    ];
+    ["ia_actions"] call AT_fnc_shot;
+    closeDialog 0;
+    deleteVehicle _u;
+    call AT_fnc_done;
+}, 150] call AT_fnc_run;
+
+// À venir : un civil sans menace reste calme à côté d'un joueur armé (arme baissée) ; braqué à 3 m, sa peur monte ;
+// arme baissée 30 s, elle redescend (automate des IA réalistes, fn_idAiBrain), et le journal dit pourquoi.
+["ia_rp_peur", {
+    if (["comspec_sse_fnc_idAiFsm", "comspec_sse_fnc_iarpReact"] call AT_fnc_nil) exitWith {};
+    if ((primaryWeapon player) isEqualTo "") then { player addWeapon "arifle_MX_F"; player addMagazine "30Rnd_65x39_caseless_mag"; };
+    private _u = call AT_fnc_iarpIa;
+    AT_iarpU = _u;
+    _u setPosATL (player getPos [3, getDir player]);
+    _u setDir ((getDir player) + 180);
+    uiSleep 1;
+    ["engage", [_u, player]] call comspec_sse_fnc_idAiFsm;
+    if !(weaponLowered player) then { player action ["WeaponOnBack", player]; };
+    uiSleep 60;
+    private _t1 = _u getVariable ["comspec_sse_idTension", 0];
+    (format ["peur après 60 s, arme baissée : %1", round _t1]) call AT_fnc_info;
+    [_t1 < 30, format ["civil sans menace : peur %1 (moins de 30 attendu)", round _t1]] call AT_fnc_check;
+    player action ["WeaponInHand", player];
+    player setDir (player getDir _u);
+    uiSleep 6;
+    private _aim = (["aimedAt", [_u]] call comspec_sse_fnc_iarpReact) select 0;
+    private _t2 = _u getVariable ["comspec_sse_idTension", 0];
+    (format ["arme braquée à 3 m : %1 arme(s), peur %2", _aim, round _t2]) call AT_fnc_info;
+    [_aim > 0 && {_t2 > _t1 + 10}, format ["arme braquée à 3 m : peur %1 (avant %2), %3 arme(s) vue(s)", round _t2, round _t1, _aim]] call AT_fnc_check;
+    player action ["WeaponOnBack", player];
+    uiSleep 30;
+    private _t3 = _u getVariable ["comspec_sse_idTension", 0];
+    [_t3 < _t2 - 8, format ["arme baissée 30 s : peur %1 (pic %2)", round _t3, round _t2]] call AT_fnc_check;
+    private _rows = (missionNamespace getVariable ["comspec_sse_iarpLog", []]) select { (_x select 3) isEqualTo "PEUR" && {(_x select 7) isEqualTo (netId AT_iarpU)} };
+    [_rows isNotEqualTo [], "journal : aucune variation de peur notée avec sa raison"] call AT_fnc_check;
+    { ("journal de la peur : " + (_x select 11)) call AT_fnc_info; } forEach (_rows select [0, 4]);
+    deleteVehicle _u;
+    call AT_fnc_done;
+}, 150] call AT_fnc_run;

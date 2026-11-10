@@ -53,9 +53,9 @@
             <French>Aucun échange au journal.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_Hint">
-            <Original>Enter: send · Shift+Enter: new line · ↑↓: sent messages · Esc: close (draft kept)</Original>
-            <English>Enter: send · Shift+Enter: new line · ↑↓: sent messages · Esc: close (draft kept)</English>
-            <French>Entrée : envoyer · Maj+Entrée : nouvelle ligne · ↑↓ : messages envoyés · Échap : fermer (brouillon gardé)</French>
+            <Original>Enter: send · Shift+Enter: new line · ↑↓: sent messages · Esc: close (draft kept) · GUIDE: what to say</Original>
+            <English>Enter: send · Shift+Enter: new line · ↑↓: sent messages · Esc: close (draft kept) · GUIDE: what to say</English>
+            <French>Entrée : envoyer · Maj+Entrée : nouvelle ligne · ↑↓ : messages envoyés · Échap : fermer (brouillon gardé) · GUIDE : quoi dire</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_Input_D">
             <Original>Write freely (no practical limit, automatic line wrap). Enter: send. Shift+Enter: new line. Up/Down arrows: messages already sent. Example: Where are you going at this hour?</Original>
@@ -1011,6 +1011,281 @@
             <Original>AI workshop</Original>
             <English>AI workshop</English>
             <French>Atelier IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_TabGuide">
+            <Original>GUIDE</Original>
+            <English>GUIDE</English>
+            <French>GUIDE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_TabGuide_D">
+            <Original>What you can say to an AI, by theme, with examples: click one to put it in the input box.</Original>
+            <English>What you can say to an AI, by theme, with examples: click one to put it in the input box.</English>
+            <French>Tout ce qu'on peut dire à une IA, par thème, avec des exemples : un clic en met un dans le champ de saisie.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_ActionBtn">
+            <Original>TAKE AN ACTION…</Original>
+            <English>TAKE AN ACTION…</English>
+            <French>FAIRE UNE ACTION…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_ActionBtn_D">
+            <Original>Concrete actions in front of the AI (raise your hands, lower your weapon, show your badge, offer money, handcuff…). Each one has a real effect on it and shows in the thread.</Original>
+            <English>Concrete actions in front of the AI (raise your hands, lower your weapon, show your badge, offer money, handcuff…). Each one has a real effect on it and shows in the thread.</English>
+            <French>Gestes concrets face à l'IA (lever les mains, baisser son arme, montrer son badge, tendre de l'argent, menotter…). Chacun a un vrai effet sur elle et s'inscrit dans le fil.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_ActionFree">
+            <Original>Describe another action…</Original>
+            <English>Describe another action…</English>
+            <French>Décrire une autre action…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_HintGuide">
+            <Original>Not understood. Open the GUIDE tab for phrases the AI understands (e.g. "Papers, please.").</Original>
+            <English>Not understood. Open the GUIDE tab for phrases the AI understands (e.g. "Papers, please.").</English>
+            <French>Pas compris. L'onglet GUIDE donne des phrases que l'IA comprend (ex. « Vos papiers, s'il vous plaît. »).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Dropped">
+            <Original>Message not sent (too fast): send it again.</Original>
+            <English>Message not sent (too fast): send it again.</English>
+            <French>Message non envoyé (trop rapide) : renvoyez-le.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_PapersBar">
+            <Original>Papers, please…</Original>
+            <English>Papers, please…</English>
+            <French>Papiers, s'il vous plaît…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_SearchBar">
+            <Original>Searching for papers…</Original>
+            <English>Searching for papers…</English>
+            <French>Fouille des papiers…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Fear">
+            <Original>fear %1/100</Original>
+            <English>fear %1/100</English>
+            <French>peur %1/100</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Mood_calme">
+            <Original>Calm</Original>
+            <English>Calm</English>
+            <French>Calme</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Mood_attentif">
+            <Original>Attentive</Original>
+            <English>Attentive</English>
+            <French>Attentif</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Mood_coopere">
+            <Original>Cooperative</Original>
+            <English>Cooperative</English>
+            <French>Coopératif</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Mood_tendu">
+            <Original>Tense</Original>
+            <English>Tense</English>
+            <French>Tendu</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Mood_nerveux">
+            <Original>Nervous</Original>
+            <English>Nervous</English>
+            <French>Nerveux</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Mood_refuse">
+            <Original>Closed off</Original>
+            <English>Closed off</English>
+            <French>Fermé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Mood_fuit">
+            <Original>Fleeing</Original>
+            <English>Fleeing</English>
+            <French>En fuite</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Mood_agressif">
+            <Original>Hostile</Original>
+            <English>Hostile</English>
+            <French>Hostile</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Mood_renforts">
+            <Original>Calling for help</Original>
+            <English>Calling for help</English>
+            <French>Appelle à l'aide</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Mood_rendu">
+            <Original>Surrendered</Original>
+            <English>Surrendered</English>
+            <French>Rendu</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Mood_cuffed">
+            <Original>Handcuffed</Original>
+            <English>Handcuffed</English>
+            <French>Menotté</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Mood_halt">
+            <Original>Stopped (Stop)</Original>
+            <English>Stopped (Stop)</English>
+            <French>À l'arrêt (Stop)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Mood_ment">
+            <Original>Too sure of himself</Original>
+            <English>Too sure of himself</English>
+            <French>Trop sûr de lui</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_MeLine">
+            <Original>You: %1</Original>
+            <English>You: %1</English>
+            <French>Vous : %1</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Typing">
+            <Original>%1 is answering…</Original>
+            <English>%1 is answering…</English>
+            <French>%1 répond…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_GuideClick">
+            <Original>Click an example to put it in the input box, then Enter.</Original>
+            <English>Click an example to put it in the input box, then Enter.</English>
+            <French>Cliquez un exemple pour le mettre dans le champ de saisie, puis Entrée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_FilterAll">
+            <Original>SHOW: ALL</Original>
+            <English>SHOW: ALL</English>
+            <French>AFFICHER : TOUT</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_FilterOne">
+            <Original>SHOW: THIS AI</Original>
+            <English>SHOW: THIS AI</English>
+            <French>AFFICHER : CETTE IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Filter_D">
+            <Original>This AI only, or the whole log you received.</Original>
+            <English>This AI only, or the whole log you received.</English>
+            <French>Cette IA seulement, ou tout le journal reçu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_LogFear">
+            <Original>Fear</Original>
+            <English>Fear</English>
+            <French>Peur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_talk_T">
+            <Original>Greet and small talk</Original>
+            <English>Greet and small talk</English>
+            <French>Saluer et bavarder</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_talk_D">
+            <Original>Hello, how are you, the weather, thanks, goodbye. The AI answers with its own life (city, job, employer) and never says the same thing twice in a row.</Original>
+            <English>Hello, how are you, the weather, thanks, goodbye. The AI answers with its own life (city, job, employer) and never says the same thing twice in a row.</English>
+            <French>Bonjour, ça va, la météo, merci, au revoir. L'IA répond avec sa propre vie (ville, métier, employeur) et ne se répète pas d'une réplique à l'autre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_identity_T">
+            <Original>Identity and papers</Original>
+            <English>Identity and papers</English>
+            <French>Identité et papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_identity_D">
+            <Original>Name, first name, age, family, address: taken from her SSE identity. Papers: she answers, then the usual ACE identity check starts (3 m at most) and the document window opens if she presents them.</Original>
+            <English>Name, first name, age, family, address: taken from her SSE identity. Papers: she answers, then the usual ACE identity check starts (3 m at most) and the document window opens if she presents them.</English>
+            <French>Nom, prénom, âge, famille, adresse : tirés de son identité SSE. Papiers : elle répond, puis le contrôle d'identité ACE habituel part (3 m au plus) et la fenêtre du document s'ouvre si elle les présente.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_cover_T">
+            <Original>Cover questions</Original>
+            <English>Cover questions</English>
+            <French>Questions de couverture</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_cover_D">
+            <Original>Origin, employer, job, reason for the trip, place of birth, who can confirm. An honest person always tells the same story; a liar may contradict herself when pressed.</Original>
+            <English>Origin, employer, job, reason for the trip, place of birth, who can confirm. An honest person always tells the same story; a liar may contradict herself when pressed.</English>
+            <French>Origine, employeur, métier, motif du déplacement, lieu de naissance, qui peut confirmer. Une personne honnête raconte toujours la même chose ; une menteuse peut se contredire si on insiste.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_search_T">
+            <Original>Search, weapons, vehicle</Original>
+            <English>Search, weapons, vehicle</English>
+            <French>Fouille, armes, véhicule</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_search_D">
+            <Original>Search (she accepts or refuses; surrendered or handcuffed: the ACE search of papers), weapons, drugs, money she carries, her car, the trunk.</Original>
+            <English>Search (she accepts or refuses; surrendered or handcuffed: the ACE search of papers), weapons, drugs, money she carries, her car, the trunk.</English>
+            <French>Fouille (elle accepte ou refuse ; rendue ou menottée : la fouille ACE des papiers), armes, drogue, argent sur elle, sa voiture, le coffre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_orders_T">
+            <Original>Orders</Original>
+            <English>Orders</English>
+            <French>Ordres</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_orders_D">
+            <Original>Stop, hands up, on your knees, follow me, you can go, get out of the vehicle. She obeys or not depending on her fear, her trust and the weapons aimed at her.</Original>
+            <English>Stop, hands up, on your knees, follow me, you can go, get out of the vehicle. She obeys or not depending on her fear, her trust and the weapons aimed at her.</English>
+            <French>Stop, mains en l'air, à genoux, suivez-moi, circulez, descendez du véhicule. Elle obéit ou non selon sa peur, sa confiance et les armes braquées sur elle.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_pressure_T">
+            <Original>Threaten, reassure, help</Original>
+            <English>Threaten, reassure, help</English>
+            <French>Menacer, rassurer, aider</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_pressure_D">
+            <Original>A threat raises her fear (she may surrender, flee or get angry); calming words lower it; offering help builds trust. Fear always comes back down with time.</Original>
+            <English>A threat raises her fear (she may surrender, flee or get angry); calming words lower it; offering help builds trust. Fear always comes back down with time.</English>
+            <French>Une menace fait monter sa peur (elle peut se rendre, fuir ou s'énerver) ; des mots rassurants la font baisser ; proposer de l'aide donne confiance. La peur retombe toujours avec le temps.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_bribe_T">
+            <Original>Bribe</Original>
+            <English>Bribe</English>
+            <French>Pot-de-vin</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_bribe_D">
+            <Original>Only an actual offer counts ("Take this money"); "Do you have money on you?" is a question. Accepted or refused depending on how corruptible she is; accepted, it can unlock what she knows.</Original>
+            <English>Only an actual offer counts ("Take this money"); "Do you have money on you?" is a question. Accepted or refused depending on how corruptible she is; accepted, it can unlock what she knows.</English>
+            <French>Seule une vraie offre compte (« Prenez cet argent ») ; « Vous avez de l'argent sur vous ? » est une question. Acceptée ou refusée selon sa corruptibilité ; acceptée, elle peut débloquer ce qu'elle sait.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_confront_T">
+            <Original>Confront her</Original>
+            <English>Confront her</English>
+            <French>La confronter</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_confront_D">
+            <Original>"Your papers are fake", "you're lying": an innocent person protests; a liar denies, gets angry, runs, or breaks down and confesses (more likely if she is scared, if weapons are aimed at her or if you insist).</Original>
+            <English>"Your papers are fake", "you're lying": an innocent person protests; a liar denies, gets angry, runs, or breaks down and confesses (more likely if she is scared, if weapons are aimed at her or if you insist).</English>
+            <French>« Vos papiers sont faux », « tu mens » : une innocente proteste ; une menteuse nie, s'énerve, s'enfuit, ou craque et avoue (plus souvent si elle a peur, si on la braque ou si l'on insiste).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_intel_T">
+            <Original>Intelligence</Original>
+            <English>Intelligence</English>
+            <French>Renseignement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_intel_D">
+            <Original>What she has seen. Three levels: vague (under pressure or with some trust), precise (trust, bribe or keyword), complete (great trust, confession or two bribes). A precise piece with a place puts a marker on your map only.</Original>
+            <English>What she has seen. Three levels: vague (under pressure or with some trust), precise (trust, bribe or keyword), complete (great trust, confession or two bribes). A precise piece with a place puts a marker on your map only.</English>
+            <French>Ce qu'elle a vu. Trois paliers : vague (sous la pression ou avec un peu de confiance), précis (confiance, pot-de-vin ou mot-clé), complet (grande confiance, aveu ou deux pots-de-vin). Un renseignement précis avec un lieu pose un marqueur sur votre carte seulement.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_answer_T">
+            <Original>Answer her questions</Original>
+            <English>Answer her questions</English>
+            <French>Répondre à ses questions</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_answer_D">
+            <Original>She sometimes asks: "Are you going to arrest me?", "Can I go?", "Do you want my papers?". Yes or no, even inside a sentence, answers her.</Original>
+            <English>She sometimes asks: "Are you going to arrest me?", "Can I go?", "Do you want my papers?". Yes or no, even inside a sentence, answers her.</English>
+            <French>Elle demande parfois : « Vous allez m'arrêter ? », « Je peux partir ? », « Vous voulez mes papiers ? ». Un oui ou un non, même glissé dans une phrase, lui répond.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_rp_T">
+            <Original>Actions and RP commands</Original>
+            <English>Actions and RP commands</English>
+            <French>Actions et commandes RP</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_rp_D">
+            <Original>The TAKE AN ACTION button lists ready-made gestures. Typed by hand: /me a gesture the AI understands (raised hands calm her, an aimed weapon scares her); /do a fact everyone sees; /try a shared success roll (the server draws SUCCESS or FAIL, the same for all players nearby); /todo words and a gesture ("Your papers. *holds out his hand"): the words before * are understood.</Original>
+            <English>The TAKE AN ACTION button lists ready-made gestures. Typed by hand: /me a gesture the AI understands (raised hands calm her, an aimed weapon scares her); /do a fact everyone sees; /try a shared success roll (the server draws SUCCESS or FAIL, the same for all players nearby); /todo words and a gesture ("Your papers. *holds out his hand"): the words before * are understood.</English>
+            <French>Le bouton FAIRE UNE ACTION propose des gestes tout prêts. À la main : /me un geste que l'IA comprend (mains levées : elle se calme ; arme braquée : elle a peur) ; /do un fait que tout le monde voit ; /try un jet de réussite partagé (le serveur tire RÉUSSI ou ÉCHEC, le même pour tous les joueurs proches) ; /todo une parole et un geste (« Vos papiers. *tend la main ») : la parole avant * est comprise.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Man_T">
+            <Original>Talking to AIs</Original>
+            <English>Talking to AIs</English>
+            <French>Parler aux IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Man_D">
+            <Original>ACE interaction on a person › Talk to… (or Ctrl+T): type freely, in French or English, with typos.%1%2The AI answers from her SSE identity and cover, with the same name everywhere (window, bubble, log).%1%2GUIDE tab: everything you can say, by theme (greet, papers, cover, search, orders, threat and reassurance, bribe, confrontation, intelligence, answers), with clickable examples taken from the interpreter itself.%1%2TAKE AN ACTION: raise your hands, lower or aim your weapon, show your badge, offer money, search, handcuff, take or give back papers, show a photo.%1%2LOG tab: every exchange and every change in her fear, with its reason.</Original>
+            <English>ACE interaction on a person › Talk to… (or Ctrl+T): type freely, in French or English, with typos.%1%2The AI answers from her SSE identity and cover, with the same name everywhere (window, bubble, log).%1%2GUIDE tab: everything you can say, by theme (greet, papers, cover, search, orders, threat and reassurance, bribe, confrontation, intelligence, answers), with clickable examples taken from the interpreter itself.%1%2TAKE AN ACTION: raise your hands, lower or aim your weapon, show your badge, offer money, search, handcuff, take or give back papers, show a photo.%1%2LOG tab: every exchange and every change in her fear, with its reason.</English>
+            <French>Interaction ACE sur une personne › Parler à… (ou Ctrl+T) : écrivez librement, en français ou en anglais, fautes comprises.%1%2L'IA répond à partir de son identité SSE et de sa couverture, avec le même nom partout (fenêtre, bulle, journal).%1%2Onglet GUIDE : tout ce qu'on peut lui dire, par thème (saluer, papiers, couverture, fouille, ordres, menace et apaisement, pot-de-vin, confrontation, renseignement, réponses), avec des exemples cliquables tirés de l'interprète lui-même.%1%2FAIRE UNE ACTION : lever les mains, baisser ou braquer son arme, montrer son badge, tendre de l'argent, fouiller, menotter, prendre ou rendre les papiers, montrer une photo.%1%2Onglet JOURNAL : chaque échange et chaque variation de sa peur, avec sa raison.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Man_Tip">
+            <Original>A civilian with no reason is calm: only a raised weapon aimed at her, nearby shots or violence she sees scare her, and the fear comes back down.</Original>
+            <English>A civilian with no reason is calm: only a raised weapon aimed at her, nearby shots or violence she sees scare her, and the fear comes back down.</English>
+            <French>Un civil sans raison est calme : seuls une arme levée braquée sur lui, des tirs proches ou une violence vue lui font peur, et la peur redescend.</French>
         </Key>
     </Package>
 </Project>
