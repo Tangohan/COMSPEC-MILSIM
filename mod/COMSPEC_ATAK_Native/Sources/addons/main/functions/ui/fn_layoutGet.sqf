@@ -15,7 +15,7 @@
 // chaque lecture.
 if (isNil "_this" || {_this isNotEqualTo ["#calcul"]}) exitWith {
     private _t0 = diag_tickTime;
-    if (isNil "COMSPEC_ATAK_LayoutEh") then {
+    if (isNil "COMSPEC_ATAK_LayoutEh" && {!isNil "CBA_fnc_addPlayerEventHandler"}) then {
         COMSPEC_ATAK_LayoutEh = true;
         { [_x, { COMSPEC_ATAK_LayoutInv = []; }] call CBA_fnc_addPlayerEventHandler; } forEach ["loadout", "vehicle", "unit"];
     };

@@ -38,6 +38,32 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : un téléphone plus fluide (ATAK natif 4.2.1, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : performance
+FR : Un téléphone plus fluide
+- Toucher une app, la touche Accueil ou Retour fait réagir l'écran tout de suite : le titre change et la transition démarre pendant que la page se prépare.
+- Changer de page ne refait plus les fêlures, la saleté ni le filtre de nuit de l'écran, et le téléphone calcule sa disposition une seule fois au lieu d'une dizaine.
+- Dans Messages et SMS, un message reçu s'ajoute au fil sans redessiner la page : ce que vous tapez ne bouge pas, et le fil reste en bas si vous y étiez.
+- Le téléphone en main monte en fondu quand vous le sortez et redescend quand vous le rangez ; à couper dans Réglages > Animations et sons ou dans les options CBA. Les petits à-coups toutes les quelques secondes (synchronisation avec Athena) sont étalés.
+EN : A smoother phone
+- Tapping an app, the Home or Back key makes the screen react at once: the title changes and the transition starts while the page is being prepared.
+- Changing page no longer rebuilds the screen's cracks, dirt or night filter, and the phone works out its layout once instead of about ten times.
+- In Messages and SMS, an incoming message is added to the thread without redrawing the page: what you are typing stays put, and the thread stays at the bottom if you were there.
+- The phone in hand fades in while rising when you take it out and slides down when you put it away; it can be turned off in Settings > Animations and sounds or in the CBA options. The small hitches every few seconds (Athena sync) are spread out.
+
+### Détail technique
+- `fn_layoutGet` : résultat mémorisé par combinaison d'entrées (état du téléphone, réglages de mise en page du profil et du menu CBA, police, résolution, safeZone) ; équipement (modèle porté, terminal de bord, droit à l'appareil) relu au plus toutes les 0,5 s et tout de suite sur les évènements CBA `loadout`, `vehicle`, `unit`. Cache en enveloppe (appel interne `["#calcul"]`), corps inchangé ; `COMSPEC_ATAK_FontMin` et `FontBody` remis à chaque lecture. Mesures `disposition du téléphone (mémoire)` et `(calcul)`.
+- `fn_navigate` `[page, empiler, différé, mouvement]` : appui du joueur (tuiles du lanceur et du dock, touches Applications, Accueil, Apps récentes, Retour : `ui/displays.hpp`, `fn_tileCreate`, `fn_back [true]`) : titre (`fn_pageRender [page, true]`) et début du fondu (`fn_fx [..., ["press"]]`) dans l'image de l'appui, page dessinée à l'image suivante puis mouvement repris (`["resume", t0]`). Garde : jeton `COMSPEC_ATAK_NavTok`, écran fermé, page active changée. Les autres appels restent synchrones. Mesures `navigation : réponse à l'appui` et `navigation : appui jusqu'à la page dessinée`.
+- Calques d'écran gardés d'une page à l'autre (`fn_pageRender`, `fn_pageClear` ne les touche plus) ; recréés seulement si la place de l'écran change (cadre, orientation, modèle, format) ou si un calque est visible et qu'un contrôle hors groupe est plus récent qu'eux (tampon `cs_ov` posé sur tous les contrôles à chaque création des calques ; `cs_ovSkip` pour les contrôles en attente de suppression et éphémères). Dock et rail dans un groupe créé une fois (`COMSPEC_ATAK_DockGroup`), suivi au glisser. Calques restés sous un contrôle plus récent sans rien de visible : remontés au premier effet (`COMSPEC_ATAK_OvStale`, `fn_deviceOverlay` -> `fn_overlayRaise`). Mesures `page : calques d'écran gardés` et `recréés`.
+- `fn_schedulerTick` : une tâche lourde par passage de 0,2 s (barre d'état, sondages Athena, état de la liaison, COMSPEC Link) ; sondages des 3 s répartis sur quatre passages (`fn_remoteSync [étape]`, sans étape : les quatre d'un coup comme avant). `GetAuthState` partagé (`fn_extensionCall`, paramètre `_maxAge`) : app Athena 0,9 s, `fn_athenaStatus` 0,9 s / 3 s, rappel de connexion 5 s, étapes 1 à 3 des sondages 1,5 s ; l'étape 0 relit toujours la DLL avant de sonder. Mesures `Athena : sondage des unités / marqueurs / ordres / messages`, `DLL native GetAuthState`.
+- Messages et SMS : `fn_statusUpdate` passe par le fil seul de `fn_pageChat [true, true]` (repli sur le rendu complet, pas pendant la saisie) ; nouveaux messages en fin de fil ajoutés au fil affiché (`COMSPEC_ATAK_ChatAppend` : position, jour, auteur, repère NON LUS), défilement gardé, molette mise à jour ; rien de changé : rien refait. Fil refait dès qu'un message déjà affiché, la place, la taille de texte, le jour, le tri ou l'aide diffèrent. Mesure `page messages (fil seul)`.
+- Sortie et rangement animés du téléphone en main (`fn_fx « phoneIn » / « phoneOut »`, 0,2 s), réglage CBA `comspec_atak_native_phone_anim` (coché par défaut), aussi dans Réglages > Animations et sons. Seules les touches « prendre en main » et « porter » demandent le rangement animé (`fn_close [true]`) ; tout le reste ferme tout de suite, même pendant une descente. Rien d'animé entre miniature et en main en mode PETIT. Mesure `téléphone : animation de sortie`.
+- Fermeture : écriture du profil déjà regroupée (`fn_saveProfile`, 60 s) ; retour de la miniature mesuré (`téléphone : fermeture (nettoyage)`, `téléphone : retour de la miniature`).
+- Laissé volontairement : fusion des deux gestionnaires `KeyDown` (ordre et double passage de `fn_keybinds` / `fn_keyBlock` à revoir en jeu), préférences de `fn_mapOnDraw` (lectures de profil de l'ordre de la microseconde, gain négligeable), miniature gardée sous le téléphone en main (un seul écran du téléphone dans tout le mod).
+- Rien de cela n'a tourné en jeu : relu, `hemtt check` (2 erreurs connues seulement) et tests de format.
+
 ## À venir : moins de sondages et de relectures inutiles (ATAK natif et SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
