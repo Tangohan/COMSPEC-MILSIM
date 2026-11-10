@@ -1,4 +1,6 @@
 [
+["téléphone : retour de la miniature", "phone: miniature back"],
+["téléphone : fermeture (nettoyage)", "phone: close (cleanup)"],
 ["téléphone : animation de sortie", "phone: take-out animation"],
 ["Animation de sortie et de rangement", "Take-out and put-away animation"],
 ["Coché par défaut. Le téléphone en main monte en fondu quand vous le sortez et redescend en s'effaçant quand vous le rangez, en 0,2 s. Exemple : Ctrl+Maj+U depuis le jeu, le téléphone glisse de quelques centimètres vers le haut en apparaissant. Décochez pour qu'il apparaisse et disparaisse d'un coup. La miniature portée n'est jamais animée ; Échap, la mort, l'inconscience ou un changement de véhicule le rangent toujours tout de suite.", "Ticked by default. The phone in hand fades in while rising when you take it out, and slides down while fading out when you put it away, in 0.2 s. Example: Ctrl+Shift+U from the game, the phone slides up a few centimetres as it appears. Untick for it to appear and disappear at once. The worn miniature is never animated; Escape, death, unconsciousness or a vehicle change always put it away immediately."],
