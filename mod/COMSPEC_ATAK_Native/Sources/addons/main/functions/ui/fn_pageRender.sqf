@@ -189,27 +189,61 @@ switch (_page) do {
 };
 // Événement pour les modules : une app vient de s'afficher.
 ["comspec_atak_native_pageOpened", [_page]] call CBA_fnc_localEvent;
-// Dégâts de l'écran par-dessus la page. Surface du verre, effets d'écran et calque Zeus aussi recréés : fn_pageClear
-// vient de masquer et désactiver leurs contrôles (supprimés à l'image suivante) ; gardés tels quels (même signature),
-// saleté, brouillage et verrouillage Zeus disparaissaient jusqu'au prochain fn_statusUpdate.
-private _killOv = {
-    {
-        if (_x isEqualType controlNull) then { ctrlDelete _x; } else {
-            if (_x isEqualType []) then { _x call _killOv; };
-        };
-    } forEach _this;
+private _perfT2 = diag_tickTime;
+// Calques d'écran (dégâts, filtre de nuit et luminosité, surface du verre, effets d'écran, calque Zeus) par-dessus la page.
+// Arma dessine les contrôles dans leur ordre de création ; ceux d'un groupe à la place du groupe. La page se dessine dans
+// la zone de contenu (88531, créée avec l'écran) et le dock dans son groupe (fn_dockRender) : tous deux restent dessous.
+// 4.2.1 : calques gardés d'une page à l'autre (fn_pageClear ne les touche plus) et seulement remis à jour, sauf si
+//   - la place de l'écran a changé (cadre, orientation, modèle, format : leurs contrôles sont posés à l'ancienne place) ;
+//   - un calque est visible et un contrôle a été posé sur l'écran (hors groupe) depuis leur création : il passerait
+//     devant. Repéré sans hypothèse sur l'ordre : à chaque création des calques, tous les contrôles de l'écran reçoivent
+//     un tampon (cs_ov) ; un contrôle sans le tampon du jour est plus récent qu'eux.
+// Dans ces cas, recréés après la page comme avant (au moins 12 contrôles, jusqu'à 150 avec les fêlures).
+private _ovL = [] call comspec_atak_native_fnc_layoutGet;
+private _ovSig = str [_ovL get "device", _ovL get "landscape", _ovL get "model", _ovL get "mode", _ovL get "texture"];
+private _ovFx = (uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []];
+private _ovSurf = (uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []];
+private _ovVisible = (uiNamespace getVariable ["COMSPEC_ATAK_DevFront", false]) || {(count _ovSurf) > 0} || {(count _ovFx) > 0}
+    || {(["lock", ""] call comspec_atak_native_fnc_zeusFx) isNotEqualTo ""}
+    || {((uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]) findIf { _x isEqualType controlNull && {!isNull _x} && {ctrlShown _x} }) >= 0};
+private _ovStamp = uiNamespace getVariable ["COMSPEC_ATAK_OvStamp", 0];
+// Contrôles temporaires marqués cs_ovSkip (onde du toucher, icône d'ouverture : fn_fx) : sans effet sur la décision.
+private _ovCovered = ((allControls _d) findIf { isNull (ctrlParentControlsGroup _x) && {(_x getVariable ["cs_ov", -1]) isNotEqualTo _ovStamp} && {!(_x getVariable ["cs_ovSkip", false])} }) >= 0;
+private _ovKeep = (uiNamespace getVariable ["COMSPEC_ATAK_OvSig", ""]) isEqualTo _ovSig
+    && {!isNull ((uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []]) param [0, controlNull])}
+    && {!_ovVisible || {!_ovCovered}};
+if (_ovKeep) then {
+    // Rien de visible mais un contrôle est passé devant : noté, fn_deviceOverlay les remonte dès qu'un effet apparaît.
+    if (_ovCovered) then { uiNamespace setVariable ["COMSPEC_ATAK_OvStale", true]; };
+    [] call comspec_atak_native_fnc_deviceOverlay;
+    uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
+    ["page : calques d'écran gardés", _perfT2] call comspec_atak_native_fnc_perfAcc;
+} else {
+    private _killOv = {
+        {
+            if (_x isEqualType controlNull) then { ctrlDelete _x; } else {
+                if (_x isEqualType []) then { _x call _killOv; };
+            };
+        } forEach _this;
+    };
+    (uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []]) call _killOv;
+    (_ovSurf apply { _x param [1, controlNull] }) call _killOv;
+    (_ovFx apply { _x param [1, controlNull] }) call _killOv;
+    (uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]) call _killOv;
+    uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
+    uiNamespace setVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]];
+    uiNamespace setVariable ["COMSPEC_ATAK_ScreenFx", ["", []]];
+    uiNamespace setVariable ["COMSPEC_ATAK_ZeusOv", []];
+    uiNamespace setVariable ["COMSPEC_ATAK_OvStale", false];
+    [] call comspec_atak_native_fnc_deviceOverlay;
+    // Effets recréés après la page : déjà au-dessus de tout ce qu'elle vient de créer (fn_overlayRaise n'a rien à faire).
+    uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
+    uiNamespace setVariable ["COMSPEC_ATAK_OvSig", _ovSig];
+    _ovStamp = _ovStamp + 1;
+    uiNamespace setVariable ["COMSPEC_ATAK_OvStamp", _ovStamp];
+    { if (isNull (ctrlParentControlsGroup _x)) then { _x setVariable ["cs_ov", _ovStamp]; }; } forEach (allControls _d);
+    ["page : calques d'écran recréés", _perfT2] call comspec_atak_native_fnc_perfAcc;
 };
-(uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []]) call _killOv;
-(((uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []]) apply { _x param [1, controlNull] }) call _killOv;
-(((uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []]) apply { _x param [1, controlNull] }) call _killOv;
-(uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]) call _killOv;
-uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
-uiNamespace setVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]];
-uiNamespace setVariable ["COMSPEC_ATAK_ScreenFx", ["", []]];
-uiNamespace setVariable ["COMSPEC_ATAK_ZeusOv", []];
-[] call comspec_atak_native_fnc_deviceOverlay;
-// Effets recréés après la page : déjà au-dessus de tout ce qu'elle vient de créer (fn_overlayRaise n'a rien à faire).
-uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
 // Défilement retrouvé (et encore à l'image suivante, quand la hauteur du contenu est connue).
 private _sv = _scrollMem getOrDefault [_page, []];
 if (_restore && {_sv isEqualType []} && {(count _sv) isEqualTo 2} && {(_sv select 0) > 0}) then {

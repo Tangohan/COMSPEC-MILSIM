@@ -261,6 +261,8 @@ if (_dragging) then {
     private _sfx = (uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []];
     private _all = ([
         uiNamespace getVariable ["COMSPEC_ATAK_DockControls", []],
+        // Groupe du dock (4.2.1, fn_dockRender) : ses tuiles suivent avec lui.
+        [uiNamespace getVariable ["COMSPEC_ATAK_DockGroup", controlNull]],
         uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []],
         _surf apply { _x param [1, controlNull] },
         _sfx apply { _x param [1, controlNull] },

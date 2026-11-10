@@ -46,6 +46,8 @@ switch (_act) do {
             _c ctrlSetText (("\a3\ui_f\data\map\markers\military\dot_ca.paa") call comspec_atak_native_fnc_tr);
             _c ctrlSetTextColor _col;
             _c ctrlEnable false;
+            // Onde éphémère : ne compte pas pour l'ordre des calques d'écran (fn_pageRender).
+            _c setVariable ["cs_ovSkip", true];
             _c ctrlSetPosition [_mx - _r0, _my - _r0 * _ratio, _r0 * 2, _r0 * 2 * _ratio];
             _c ctrlCommit 0;
             _c ctrlSetPosition [_mx - _r1, _my - _r1 * _ratio, _r1 * 2, _r1 * 2 * _ratio];
@@ -134,7 +136,7 @@ switch (_act) do {
             private _gl = _d ctrlCreate ["COMSPEC_RscPicture", -1];
             _gl ctrlSetText (((_app get "icon")) call comspec_atak_native_fnc_tr);
             _gl ctrlSetTextColor [1, 1, 1, 1];
-            { _x ctrlEnable false; } forEach [_sq, _gl];
+            { _x ctrlEnable false; _x setVariable ["cs_ovSkip", true]; } forEach [_sq, _gl];
             [_sq, _m select 0, _m select 1, _s0, 1.25, 0.48] call _place;
             [_gl, _m select 0, _m select 1, _s0, 0.58, 0.5] call _place;
             _sq ctrlCommit 0;

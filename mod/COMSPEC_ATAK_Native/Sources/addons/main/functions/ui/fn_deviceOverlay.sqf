@@ -404,8 +404,16 @@ uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", [_crack, _black, _txt, _bloc
 // Variantes de dégâts (fuite d'encre, rétroéclairage, arc-en-ciel de pression) et parasites du brouillage (fn_screenFx).
 [_hp] call comspec_atak_native_fnc_screenFx;
 // Effets du Zeus (verrou, écran qui bugue, surchauffe) par-dessus tout ; écran éteint : rien à montrer.
-if (([] call comspec_atak_native_fnc_zeusOverlay) && {!_off}) then { [] call comspec_atak_native_fnc_overlayFront; };
+private _zOn = [] call comspec_atak_native_fnc_zeusOverlay;
+if (_zOn && {!_off}) then { [] call comspec_atak_native_fnc_overlayFront; };
 uiNamespace setVariable ["COMSPEC_ATAK_OvBuild", -1];
+// 4.2.1 : calques gardés sous des contrôles plus récents tant que rien n'était visible (fn_pageRender, fn_overlayRaise) :
+// le premier effet qui apparaît les fait remonter devant (recréés à l'image suivante, mêmes effets que fn_overlayRaise).
+if ((uiNamespace getVariable ["COMSPEC_ATAK_OvStale", false]) && {_front || {(count ((uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []])) > 0}
+    || {(count ((uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []])) > 0} || {_zLock}}) then {
+    uiNamespace setVariable ["COMSPEC_ATAK_OvStale", false];
+    [] call comspec_atak_native_fnc_overlayRaise;
+};
 // Redémarrage terminé : on redessine la page.
 private _wasOff = uiNamespace getVariable ["COMSPEC_ATAK_DevWasOff", false];
 uiNamespace setVariable ["COMSPEC_ATAK_DevWasOff", _off];

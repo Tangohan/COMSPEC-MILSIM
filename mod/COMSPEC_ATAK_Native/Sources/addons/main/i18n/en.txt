@@ -1,4 +1,6 @@
 [
+["page : calques d'écran gardés", "page: screen layers kept"],
+["page : calques d'écran recréés", "page: screen layers rebuilt"],
 ["navigation : réponse à l'appui", "navigation: response to the tap"],
 ["navigation : appui jusqu'à la page dessinée", "navigation: tap to page drawn"],
 ["disposition du téléphone (mémoire)", "phone layout (cached)"],
