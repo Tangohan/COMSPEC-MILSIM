@@ -9,6 +9,7 @@ if !("mpudiag" call AT_fnc_groupe) exitWith {};
     private _cas = [
         ["tout OK", [], "", "", "-"],
         ["réglage OFF", [["setOn", false]], "setting", "KO", "settings"],
+        ["aucun relais en service", [["relays", 0]], "relay", "KO", "settings"],
         ["profil Arcade", [["linkOn", false], ["arcade", true]], "real", "KO", "settings"],
         ["pas de radio", [["acre", "absent"], ["tfar", "absent"], ["radios", []], ["tsMod", ""]], "radio", "KO", "-"],
         ["aucune radio portée", [["radios", []]], "radio", "KO", "-"],
@@ -22,7 +23,7 @@ if !("mpudiag" call AT_fnc_groupe) exitWith {};
         private _f = +_base;
         { _f set [_x select 0, _x select 1]; } forEach _chg;
         private _steps = ["eval", [_f]] call comspec_atak_native_fnc_mpuDiag;
-        [(count _steps) isEqualTo 11, format ["%1 : %2 étapes au lieu de 11", _nom, count _steps]] call AT_fnc_check;
+        [(count _steps) isEqualTo 12, format ["%1 : %2 étapes au lieu de 12", _nom, count _steps]] call AT_fnc_check;
         [(_steps findIf { !((_x select 1) in ["OK", "KO", "ATTENTION", "INCONNU"]) || {(count _x) isNotEqualTo 7} }) < 0, format ["%1 : étape mal formée", _nom]] call AT_fnc_check;
         private _first = ["first", [_steps]] call comspec_atak_native_fnc_mpuDiag;
         if (_id isEqualTo "") then {

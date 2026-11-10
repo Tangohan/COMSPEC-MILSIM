@@ -448,9 +448,18 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 private _bt = _badge;
                 if (_bt isEqualType 0) then { _bt = [str _bt, ""] select (_bt <= 0); };
                 private _lbl = ["COMSPEC_RscStructuredText", [_tx, _ty, _tw - pixelW, _tabH]] call _mk;
-                _lbl ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' color='%1'>%2</t>%3",
+                // 4.2.1 : libellé réduit jusqu'à la taille plancher quand il dépasse l'onglet. La répartition ci-dessus
+                // compte à la taille plancher, le dessin se faisait à la taille normale : un libellé long passait sur
+                // deux lignes, coupé par la hauteur de l'onglet.
+                private _fh = ctrlFontHeight _lbl;
+                if (_fh <= 0) then { _fh = _font; };
+                private _chars = (count (((_text call comspec_atak_native_fnc_tr) splitString ""))) + ([0, 1 + 0.78 * (count (str _bt))] select (_bt isNotEqualTo ""));
+                private _drawW = _chars * _fh * 0.55 * pixelW / pixelH;
+                private _sz = 1;
+                if (_drawW > _tw * 0.9) then { _sz = ((_tw * 0.9) / _drawW) max (_minF / _fh) min 1; };
+                _lbl ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' size='%4' color='%1'>%2</t>%3",
                     [_hTD, _accHex] select _active, toUpper _text,
-                    ["", format [" <t size='0.78' color='%1'>%2</t>", [_hTM, _hWA] select _active, _bt]] select (_bt isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+                    ["", format [" <t size='%3' color='%1'>%2</t>", [_hTM, _hWA] select _active, _bt, 0.78 * _sz]] select (_bt isNotEqualTo ""), _sz]) call comspec_atak_native_fnc_tr);
                 private _lh = (ctrlTextHeight _lbl) min _tabH;
                 _lbl ctrlSetPosition [_tx, _ty + (_tabH - _lh) / 2 - pixelH, _tw - pixelW, _lh];
                 _lbl ctrlCommit 0;

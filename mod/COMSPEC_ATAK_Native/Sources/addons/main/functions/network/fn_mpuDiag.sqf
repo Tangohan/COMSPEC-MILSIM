@@ -253,6 +253,7 @@ switch (_act) do {
             ["peer", createHashMapFromArray [["id", "2:16"], ["ok", true], ["name", "Alpha 2"], ["sameSide", true], ["dist", 1200], ["node", true],
                 ["voice", ["acre", "ACRE_PRC152_ID_2", "", 0, "L2:15", 1, "AN/PRC-152"]], ["groups", true], ["direct", 2], ["hops", 2], ["api", "acre"],
                 ["freq", "152.000 MHz"], ["freqN", 152]]],
+            ["relayNeed", true], ["relays", 1],
             ["admin", false], ["athena", false], ["modVer", "4.2.0"], ["who", "Test"], ["side", "WEST"]
         ]
     };
