@@ -16968,5 +16968,9 @@
 ["OPAQUE", "", "OPAQUE"],
 ["Athena : unités, marqueurs, ordres, messages", "", "Athena: units, markers, orders, messages"],
 ["Athena : état de la liaison", "", "Athena: link status"],
-["COMSPEC Link : ordres, alertes, intel", "", "COMSPEC Link: orders, alerts, intel"]
+["COMSPEC Link : ordres, alertes, intel", "", "COMSPEC Link: orders, alerts, intel"],
+["Reflet du verre de l'écran", "", "Screen glass reflection"],
+["Léger reflet de la vitre sur l'écran du téléphone, plus faible la nuit ; il ne gêne ni la lecture ni la carte. Désactivé : écran sans reflet. Exemple : en plein jour, une bande claire très discrète traverse le haut gauche de l'écran. Aussi dans Réglages > Thème et écran.", "", "Light reflection of the glass on the phone screen, weaker at night; it never gets in the way of reading or of the map. Off: screen without reflection. Example: in broad daylight, a very faint light band crosses the top left of the screen. Also in Settings > Theme and screen."],
+["Reflet du verre", "", "Glass reflection"],
+["Léger reflet de la vitre, plus faible la nuit, jamais un voile sur la carte ni sur le texte. Exemple : de jour, une bande claire très discrète en haut à gauche de l'écran. Aussi dans les options CBA, ATAK · Affichage", "", "Light reflection of the glass, weaker at night, never a veil over the map or the text. Example: in daylight, a very faint light band at the top left of the screen. Also in the CBA options, ATAK · Display"]
 ]
