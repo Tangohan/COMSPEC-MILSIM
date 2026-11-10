@@ -45,6 +45,10 @@ ctrlMapAnimCommit _map;
     if (isNull _map || {_tries > 40} || {(_map getVariable ["comspec_centerToken", 0]) isNotEqualTo _token}) exitWith { [_pfh] call CBA_fnc_removePerFrameHandler; };
     _args set [3, _tries + 1];
     if !(ctrlMapAnimDone _map) exitWith {};
+    // Suivi image par image actif (fn_mapOnDraw « comspec_follow ») : lui seul recale la carte, sur la position du moment.
+    // Avant, ces corrections visaient encore la position de l'appel et tiraient la carte en arrière pendant le suivi
+    // (défilement qui clignote à l'arrêt en mini).
+    if (_map getVariable ["comspec_follow", false]) exitWith { [_pfh] call CBA_fnc_removePerFrameHandler; };
     (ctrlPosition _map) params ["_x", "_y", "_w", "_h"];
     private _c = [_x + _w / 2, _y + _h / 2];
     private _sp = _map ctrlMapWorldToScreen _pos;

@@ -30,7 +30,9 @@ private _az3 = { params ["_a"]; private _t = str ((round _a) mod 360); while {(c
 private _distTxt = { params ["_d"]; [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 2]] select (_d >= 1000) };
 // Bandeau choisi par le joueur (fn_mapPrefs « band ») : style NEW | CLASSIC | COMPACT | HIDDEN et éléments affichés.
 private _bc = ["band"] call comspec_atak_native_fnc_mapPrefs;
-private _bStyle = _bc get "style";
+// Style réellement posé par fn_pageMap (mini : COMPACT ou masqué, quel que soit le réglage).
+private _bStyle = _ov getOrDefault ["bandStyle", _bc get "style"];
+private _bMini = _ov getOrDefault ["bandMini", false];
 private _bShow = _bc get "show";
 // Case 2 du bandeau (NEW) : ligne 1 « CAP 317° NNO » (mon cap, étiqueté comme tel) ; ligne 2 mon indicatif à la couleur
 // de mon équipe de feu (celle de l'anneau autour de mon symbole) avec son nom, et ma grille en main (porté : déjà dans la
@@ -162,8 +164,9 @@ if (!isNull _cur && {!_tapeOnly}) then {
                 };
                 case (!_inter): {
                     private _pp = getPosASL (vehicle player);
-                    if ("GRID" call _on) then { _parts pushBack ((["MOI"] call _lbl) + _zoneTxt + ([[_pp, (profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6]) max 8] call _gT] call _val)); };
-                    if ("ALT" call _on) then { _parts pushBack ((["ALT"] call _key) + ([[_pp select 2] call _aT] call _val)); };
+                    // Mini : grille seule (sans zone MGRS ni altitude), le cap suit.
+                    if ("GRID" call _on) then { _parts pushBack ((["MOI"] call _lbl) + (["", _zoneTxt] select !_bMini) + ([[_pp, (profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6]) max 8] call _gT] call _val)); };
+                    if ("ALT" call _on && {!_bMini}) then { _parts pushBack ((["ALT"] call _key) + ([[_pp select 2] call _aT] call _val)); };
                 };
                 case ((count _p) < 2): { _parts pushBack ((["CURSEUR"] call _lbl) + format ["<t color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%1</t>", ("survolez la carte") call comspec_atak_native_fnc_tr]); };
                 default {
@@ -173,7 +176,8 @@ if (!isNull _cur && {!_tapeOnly}) then {
                     if (_net isNotEqualTo "") then { _parts pushBack _net; };
                 };
             };
-            if ("HDG" call _on) then { _parts pushBack ((["CAP"] call _key) + ([format ["%1°", [_h] call _az3]] call _val)); };
+            // Mini : la rose donne déjà le cap, la ligne reste courte (jamais sur deux lignes).
+            if ("HDG" call _on && {!_bMini}) then { _parts pushBack ((["CAP"] call _key) + ([format ["%1°", [_h] call _az3]] call _val)); };
             if (_zn isNotEqualTo "") then { _parts pushBack _zn; };
             [_cur, _parts joinString _sepDot] call _put;
         };
@@ -292,6 +296,31 @@ if (!isNull _cur && {!_tapeOnly}) then {
             };
             [_cur, _line1] call _put;
             [_cur2, _line2] call _put;
+            // Pastille à la hauteur du texte : lignes de détail vides retirées (fond noir vide sous « CURSEUR »). Contrôles
+            // déplacés seulement quand le nombre de lignes change.
+            private _fit = _ov getOrDefault ["bandFit", []];
+            if ((count _fit) >= 5) then {
+                _fit params ["_bH", "_detH", "_lH", "_top", "_txts"];
+                private _n2 = [[1, 2] select ((_line2 find _nl) >= 0), 0] select (_line2 isEqualTo "");
+                private _shrink = (_detH - _n2 * _lH) max 0;
+                if ((_ov getOrDefault ["bandShrink", 0]) isNotEqualTo _shrink) then {
+                    _ov set ["bandShrink", _shrink];
+                    private _dy = [_shrink, 0] select _top;
+                    {
+                        if (isNull _x) then { continue };
+                        if (isNil { _x getVariable "comspec_pos0" }) then { _x setVariable ["comspec_pos0", ctrlPosition _x]; };
+                        (_x getVariable "comspec_pos0") params ["_bx", "_by", "_bw", "_bh"];
+                        _x ctrlSetPosition [_bx, _by + _dy, _bw, (_bh - _shrink) max (pixelH * 2)];
+                        _x ctrlCommit 0;
+                    } forEach (_ov getOrDefault ["bandBox", []]);
+                    {
+                        _x params ["_c", "_p0"];
+                        if (isNull _c) then { continue };
+                        _c ctrlSetPosition [_p0 select 0, (_p0 select 1) + _dy, _p0 select 2, _p0 select 3];
+                        _c ctrlCommit 0;
+                    } forEach _txts;
+                };
+            };
         };
     };
     // Flèche du gisement (bandeau NEW) : tournée seulement quand le degré change.

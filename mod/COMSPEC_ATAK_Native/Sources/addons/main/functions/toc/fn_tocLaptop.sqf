@@ -804,7 +804,9 @@ switch (_mode) do {
         private _map = _a;
         private _feed = call _feedOf;
         _feed params [["_ft", -1], ["_nodes", []], ["_events", []]];
-        private _ts = 0.032 * (safeZoneH / 1.2);
+        // Taille des textes : celle d'un écran de PC, jamais sous le plancher en pixels réels des cartes du téléphone
+        // (Réglages > Carte, « Taille minimale des textes », fn_mapLbl).
+        private _ts = (0.032 * (safeZoneH / 1.2)) max (((profileNamespace getVariable ["COMSPEC_ATAK_MapTextMinPx", 14]) max 12) * 1.1 * pixelH);
         private _selG = _st getOrDefault ["selG", ""];
         // Poste TOC.
         private _o = _st getOrDefault ["obj", objNull];

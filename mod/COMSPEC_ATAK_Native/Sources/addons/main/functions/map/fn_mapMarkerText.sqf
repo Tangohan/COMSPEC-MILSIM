@@ -9,22 +9,19 @@
       CLASSIC  texte Arma d'avant : couleur du repère, sans fond ;
       TAC      petite plaque sombre en monospace sous le symbole : prend la place du style choisi en style tactique (fn_mapColors « tac »).
     Repère de cible accrochée (« LOCK 098 · MH-6M Little Bird (drone) ») : LOCK en rouge, nom de la cible à côté.
-    Désencombrement : rien en zoom très éloigné sauf les LOCK et le repère sélectionné ; une étiquette qui chevauche
-    une autre (ou un cartouche d'unité, mon symbole, le bandeau : fn_mapLblGrid) ou qui sortirait de la carte passe à
-    gauche du symbole, sinon n'est pas écrite ; 40 au plus ; noms coupés proprement au-delà de 24 caractères.
+    Taille, place et niveau de détail : fn_mapLbl (étiquettes demandées pendant l'image de calcul, rien aux autres images).
+    Vue lointaine : seulement les LOCK et le repère sélectionné ; vue moyenne : noms abrégés proprement (16 caractères,
+    mots entiers) ; vue rapprochée : noms complets (24) et seconde ligne. Place : à droite du symbole, sinon à gauche,
+    dessous, dessus (TAC : dessous d'abord ; CARD : coins), jamais sur une autre étiquette, un symbole ni le bandeau,
+    sinon pas écrite (LOCK et sélection toujours écrits) ; 40 au plus.
     Fond des plaques à l'opacité choisie (volet CONFIGURATION), liseré à la couleur du repère, éclairci s'il est noir.
-    Les rectangles posés sont gardés (COMSPEC_ATAK_LblRects) pour que les noms de lieux (fn_mapPlaceText) les évitent.
     Params : [carte, taille des textes, facteur écran, échelle de la carte, repères déjà titrés à ignorer,
               cartouches ENI actifs (fn_mapLabels)]
 */
 params ["_map", "_ts", "_kt", "_scale", ["_skip", []], ["_boxOn", false]];
-// Bandeau d'information de la carte compté comme déjà occupé : aucun nom ne passe dessous.
-// Cartouches des unités et contacts ENI de l'image précédente (fn_mapLabels) : plus prioritaires, jamais recouverts.
-private _rects = ([_map] call comspec_atak_native_fnc_mapHudRects) + (uiNamespace getVariable ["COMSPEC_ATAK_LblRectsU", []]);
-uiNamespace setVariable ["COMSPEC_ATAK_LblRects", _rects];
+private _LF = uiNamespace getVariable ["COMSPEC_ATAK_LblF", createHashMap];
+if !(_LF getOrDefault ["lay", false]) exitWith {};
 if !(missionNamespace getVariable ["comspec_atak_native_map_show_marker_text", true]) exitWith {};
-private _grid = createHashMap;
-{ [_grid, _x, 2] call comspec_atak_native_fnc_mapLblGrid; } forEach _rects;
 private _style = toUpper (missionNamespace getVariable ["comspec_atak_native_map_marker_style", "plate"]);
 private _now = diag_tickTime;
 private _pal = [] call comspec_atak_native_fnc_mapColors;
@@ -87,57 +84,46 @@ if (_now > (_cand select 0) && {(_cand param [2, -1]) isNotEqualTo _cRev || {_no
 if ((count (_cand select 1)) isEqualTo 0) exitWith {};
 
 (ctrlPosition _map) params ["_mx", "_my", "_mw", "_mh"];
-private _o0 = _map ctrlMapScreenToWorld [_mx, _my];
-private _mpx = (((_map ctrlMapScreenToWorld [_mx + 0.1, _my]) select 0) - (_o0 select 0)) / 0.1;
-private _mpy = ((_o0 select 1) - ((_map ctrlMapScreenToWorld [_mx, _my + 0.1]) select 1)) / 0.1;
-if (_mpx <= 0 || {_mpy <= 0}) exitWith {};
 // Vue en coordonnées du monde (+ marge : une cible suivie bouge entre deux relectures du magasin) : les repères hors vue
 // sont écartés sur leur position du magasin, avant les lectures en direct (getMarkerPos, markerAlpha) et la projection.
+private _o0 = _map ctrlMapScreenToWorld [_mx, _my];
 private _o1 = _map ctrlMapScreenToWorld [_mx + _mw, _my + _mh];
 private _mg = ((abs ((_o1 select 0) - (_o0 select 0))) * 0.25) max 50;
 private _vx0 = ((_o0 select 0) min (_o1 select 0)) - _mg; private _vx1 = ((_o0 select 0) max (_o1 select 0)) + _mg;
 private _vy0 = ((_o0 select 1) min (_o1 select 1)) - _mg; private _vy1 = ((_o0 select 1) max (_o1 select 1)) + _mg;
-private _far = _scale >= 0.3;
-private _close = _scale < 0.08;
+private _lod = _LF get "lod";
+private _far = _lod isEqualTo 0;
+private _close = _lod isEqualTo 2;
 private _sel = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""];
 private _fill = "#(rgb,8,8,3)color(1,1,1,1)";
-private _none = "#(argb,8,8,3)color(0,0,0,0)";
 private _fB = COMSPEC_ATAK_FontSet select 1;
 private _fR = COMSPEC_ATAK_FontSet select 0;
-// Taille relevée (0,021 -> 0,024) pour la petite carte du téléphone porté, puis ramenée à 0,020 en main : les plaques
-// (« Z ENT MÉDICALE ») écrasaient le bandeau d'information et les symboles. Le téléphone porté garde 0,024.
-private _worn = !((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false]);
-// 0,020 en main avant : illisible à mi-zoom.
-private _fs = ([0.023, 0.025] select _worn) * _ts * _kt * ([1, 0.92] select (_style isEqualTo "TAC"));
-private _fs2 = _fs * 0.88;
-private _h = _fs * 1.22;
+// Tailles en pixels réels (fn_mapLbl) : nom du repère, seconde ligne.
+private _fs = (_LF get "fs") get "m";
+private _fs2 = (_LF get "fs") get "m2";
+private _h = _fs * 1.12;
 private _px = pixelW;
 // Symboles des marqueurs à l'échelle de l'écran (fn_mapGameMarkers) : même facteur pour décoller le nom.
 private _mkS = uiNamespace getVariable ["COMSPEC_ATAK_MkScale", 1];
-private _gap = 4 * _px;
 private _bar = 3 * _px;
 private _pad = 4 * _px;
 private _padC = 6 * _px;
-private _fsC = 0.022 * safeZoneH * (_ts / 1.25) * _kt;
 private _rad = _h / 2;
 private _radX = _rad * _px / pixelH;
 private _pillBg = [0.085, 0.10, 0.115, 1];
 private _red = [0.91, 0.28, 0.23, 1];
 private _redTxt = [1, 0.50, 0.44, 1];
-private _toW = { params ["_sx", "_sy"]; private _w = _map ctrlMapScreenToWorld [_sx, _sy]; [_w select 0, _w select 1, 0] };
-private _rect = { params ["_x0", "_y0", "_x1", "_y1", "_c", ["_t", _fill]]; _map drawRectangle [[(_x0 + _x1) / 2, (_y0 + _y1) / 2] call _toW, ((_x1 - _x0) / 2) * _mpx, ((_y1 - _y0) / 2) * _mpy, 0, _c, _t]; };
-private _hit = { params ["_r"]; [_grid, _r] call comspec_atak_native_fnc_mapLblGrid };
-// Largeur d'un texte : mesurée à la taille de référence 0,02 puis mise à l'échelle (la taille suit le zoom : mesurer à
-// chaque taille remplissait le cache des largeurs pendant le zoom).
-private _tw = { params ["_t", "_f", "_s"]; ([_t, _f, 0.02] call comspec_atak_native_fnc_mapTextW) * _s / 0.02 };
+private _tw = { params ["_t", "_f", "_s"]; ["w", [_t, _f, _s]] call comspec_atak_native_fnc_mapLbl };
 private _plateBg = _pal get "lblBg";
 // Fond des noms (Réglages > Carte, fn_mapPrefs « nameBg ») sous les styles sans plaque (CONTOUR, CLASSIQUE) ; les plaques
 // gardent leur fond (opacité du volet CONFIGURATION).
-private _nbg = uiNamespace getVariable ["COMSPEC_ATAK_NameBgNow", []];
-private _nbgLight = (count _nbg) >= 2 && {_nbg select 1};
+private _nbg = _LF get "bg";
+private _nbgLight = _LF get "light";
 private _liftMap = _pal get "dark";
 private _distCache = uiNamespace getVariable "COMSPEC_ATAK_LblCache";
 if (isNil "_distCache" || {(count _distCache) > 2000}) then { _distCache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_LblCache", _distCache]; };
+private _slotsStd = [0, 1, 2, 3, 4, 5, 6, 7];
+private _slots = switch (_style) do { case "TAC": { [2, 0, 1, 3, 5, 7, 4, 6] }; case "CARD": { [4, 6, 5, 7] }; default { _slotsStd } };
 
 private _n = 0;
 {
@@ -161,18 +147,25 @@ private _n = 0;
     private _sp = _map ctrlMapWorldToScreen _pos;
     _sp params ["_sx", "_sy"];
     if (_sx < _mx || {_sx > (_mx + _mw)} || {_sy < _my} || {_sy > (_my + _mh)}) then { continue };
-    private _half = ((_sz * _mkS * 0.5 * _px) max (4 * _px)) min (40 * _px);
+    // Demi-taille du symbole en pixels : l'étiquette s'en décolle.
+    private _halfPx = ((_sz * _mkS * 0.5) max 4) min 40;
     private _force = _isLock || {_id isEqualTo _sel};
+    // Vue moyenne : nom abrégé proprement (mots entiers) ; vue rapprochée : nom complet.
+    if (!_close && {!_isLock}) then { _txt = ["cut", [_txt, 16]] call comspec_atak_native_fnc_mapLbl; };
 
-    // 1. Textes et taille de l'étiquette selon le style.
+    // 1. Textes, taille et primitives de l'étiquette (coordonnées depuis son coin haut gauche).
     private _t1 = ""; private _t2 = ""; private _f1 = _fB; private _w1 = 0; private _w2 = 0; private _bw = 0; private _bh = _h;
-    private _card = false;
+    private _tc = [[1, 1, 1, 1], _redTxt] select _isLock;
+    private _pr = [];
     switch (_style) do {
         case "CLASSIC": {
             _f1 = _fR;
             _t1 = _txt;
-            _w1 = [_t1, _f1, _fsC] call _tw;
-            _bw = _w1; _bh = _fsC;
+            _w1 = [_t1, _f1, _fs] call _tw;
+            private _pd = [0, _pad] select (_nbg isNotEqualTo []);
+            _bw = _w1 + _pd * 2; _bh = _fs * 1.05;
+            if (_nbg isNotEqualTo []) then { _pr pushBack ["R", 0, 0, _bw, _bh, _nbg, _fill]; };
+            _pr pushBack ["T", _pd, _bh / 2, _t1, [_c, _cL] select _liftMap, _fs, _f1, 1, "right"];
         };
         case "TAC": {
             _f1 = "EtelkaMonospaceProBold";
@@ -181,12 +174,20 @@ private _n = 0;
             _w1 = [_t1, _f1, _fs] call _tw;
             if (_t2 isNotEqualTo "") then { _w2 = [_t2, "EtelkaMonospacePro", _fs2] call _tw; };
             _bw = _pad + _w1 + _pad + ([0, _w2 + _pad] select (_t2 isNotEqualTo ""));
+            _pr pushBack ["R", 0, 0, _bw, _bh, _pal get "tacPlate", _fill];
+            if (_isLock) then { _pr pushBack ["R", 0, 0, _bw, _bh, [0.91, 0.28, 0.23, 0.75], ""]; };
+            if (_id isEqualTo _sel) then { _pr pushBack ["R", 0, 0, _bw, _bh, _pal get "sel", ""]; };
+            _pr pushBack ["T", _pad, _bh / 2, _t1, _tc, _fs, _f1, 0, "right"];
+            if (_t2 isNotEqualTo "") then { _pr pushBack ["T", _pad * 2 + _w1, _bh / 2, _t2, _pal get "lblDim", _fs2, "EtelkaMonospacePro", 0, "right"]; };
         };
         case "OUTLINE": {
             _t1 = toUpper ([_txt, format ["%1 · %2", _lock param [0, ""], _lock param [1, ""]]] select _isLock);
             if (_isLock && {_far}) then { _t1 = toUpper (_lock select 0); };
             _w1 = [_t1, _f1, _fs] call _tw;
-            _bw = _w1;
+            private _pd = [0, _pad] select (_nbg isNotEqualTo []);
+            _bw = _w1 + _pd * 2; _bh = _fs * 1.05;
+            if (_nbg isNotEqualTo []) then { _pr pushBack ["R", 0, 0, _bw, _bh, _nbg, _fill]; };
+            _pr pushBack ["T", _pd, _bh / 2, _t1, [_tc, [0.04, 0.05, 0.05, 1]] select (_nbgLight && {!_isLock}), _fs, _f1, [2, 0] select _nbgLight, "right"];
         };
         case "PILL": {
             _f1 = _fR;
@@ -194,11 +195,15 @@ private _n = 0;
             if (_isLock && {_far}) then { _t1 = _lock select 0; };
             _w1 = [_t1, _f1, _fs] call _tw;
             _bw = _radX * 3 + _w1;
+            _pr pushBack ["R", _radX, 0, _bw - _radX, _bh, _pillBg, _fill];
+            _pr pushBack ["E", _radX, _bh / 2, _rad, _pillBg];
+            _pr pushBack ["E", _bw - _radX, _bh / 2, _rad, _pillBg];
+            _pr pushBack ["E", _radX * 1.1, _bh / 2, _rad * 0.36, [_cL, _red] select _isLock];
+            _pr pushBack ["T", _radX * 2.1, _bh / 2, _t1, _tc, _fs, _f1, 0, "right"];
         };
         case "CARD": {
             _t1 = toUpper ([_txt, _lock param [0, ""]] select _isLock);
-            // Ligne distance · cap : mesurée chiffres remplacés par 0 (chasse fixe), sinon chaque mètre parcouru ajoutait
-            // une entrée au cache partagé des largeurs (vidé à 800), et tous les libellés étaient remesurés.
+            // Ligne distance · cap : mesurée chiffres remplacés par 0 (chasse fixe), une mesure par longueur.
             private _t2w = "";
             if (_isLock) then { _t2 = _lock select 1; _t2w = _t2; } else {
                 if (_close) then {
@@ -215,89 +220,35 @@ private _n = 0;
             _w1 = [_t1, _f1, _fs] call _tw;
             if (_t2 isNotEqualTo "") then { _w2 = [_t2w, _fR, _fs2] call _tw; };
             _bw = (_w1 max _w2) + _padC * 2;
-            _bh = _fs * 1.15 + ([0, _fs2 * 1.1] select (_t2 isNotEqualTo "")) + 5 * pixelH;
-            _card = true;
+            _bh = _fs * 1.1 + ([0, _fs2 * 1.05] select (_t2 isNotEqualTo "")) + 5 * pixelH;
+            _pr pushBack ["L", [[0.86, 0.89, 0.92, 0.7], _red] select _isLock];
+            _pr pushBack ["R", 0, 0, _bw, _bh, _plateBg, _fill];
+            _pr pushBack ["R", 0, 0, _bw, 2 * pixelH, [_cL, _red] select _isLock, _fill];
+            if (_id isEqualTo _sel) then { _pr pushBack ["R", 0, 0, _bw, _bh, _pal get "sel", ""]; };
+            private _ty = 3 * pixelH + _fs * 0.55;
+            _pr pushBack ["T", _padC, _ty, _t1, [[1, 1, 1, 1], _redTxt] select _isLock, _fs, _f1, 0, "right"];
+            if (_t2 isNotEqualTo "") then { _pr pushBack ["T", _padC, _ty + _fs * 0.55 + _fs2 * 0.55, _t2, _pal get "lblDim", _fs2, _fR, 0, "right"]; };
         };
         default {
+            // PLATE : plaque sombre, liseré de couleur à gauche, capitales grasses ; LOCK bordé de rouge.
             _t1 = toUpper ([_txt, _lock param [0, ""]] select _isLock);
             if (_isLock && {!_far}) then { _t2 = toUpper (_lock select 1); };
             _w1 = [_t1, _f1, _fs] call _tw;
             if (_t2 isNotEqualTo "") then { _w2 = [_t2, _fR, _fs2] call _tw; };
             _bw = _bar + _pad + _w1 + _pad + ([0, _w2 + _pad * 1.6] select (_t2 isNotEqualTo ""));
-        };
-    };
-
-    // 2. Place : à droite du symbole, sinon à gauche, sinon rien (LOCK et repère sélectionné toujours écrits).
-    private _off = [_half + _gap, _half + 12 * _px] select _card;
-    private _y0 = [_sy - _bh / 2, _sy - _bh - 6 * pixelH] select _card;
-    // Ni hors de la carte (à droite : passe à gauche ; en haut, en bas ou à gauche : pas écrite), sauf LOCK et sélection.
-    private _x0 = _sx + _off;
-    // Style tactique : plaque centrée sous le symbole quand elle y tient, sinon à droite puis à gauche comme les autres.
-    if (_style isEqualTo "TAC") then {
-        private _xB = _sx - _bw / 2;
-        private _yB = _sy + (_half / _px) * pixelH * 1.3;
-        if (_force || {_xB >= _mx && {(_xB + _bw) <= (_mx + _mw)} && {(_yB + _bh) <= (_my + _mh)} && {!([[_xB, _yB, _xB + _bw, _yB + _bh]] call _hit)}}) then { _x0 = _xB; _y0 = _yB; };
-    };
-    private _r = [_x0, _y0, _x0 + _bw, _y0 + _bh];
-    if (((_x0 + _bw) > (_mx + _mw)) || {!_force && {[_r] call _hit}}) then {
-        _x0 = _sx - _off - _bw;
-        _r = [_x0, _y0, _x0 + _bw, _y0 + _bh];
-    };
-    if (!_force && {_x0 < _mx || {_y0 < _my} || {(_y0 + _bh) > (_my + _mh)} || {[_r] call _hit}}) then { continue };
-    _rects pushBack _r;
-    [_grid, _r, 2] call comspec_atak_native_fnc_mapLblGrid;
-    private _x1 = _x0 + _bw;
-    private _y1 = _y0 + _bh;
-    private _tc = [[1, 1, 1, 1], _redTxt] select _isLock;
-
-    // 3. Dessin.
-    switch (_style) do {
-        case "TAC": {
-            [_x0, _y0, _x1, _y1, _pal get "tacPlate"] call _rect;
-            if (_isLock) then { [_x0, _y0, _x1, _y1, [0.91, 0.28, 0.23, 0.75], ""] call _rect; };
-            if (_id isEqualTo _sel) then { [_x0, _y0, _x1, _y1, _pal get "sel", ""] call _rect; };
-            private _cy = (_y0 + _y1) / 2;
-            _map drawIcon [_none, _tc, [_x0 + _pad, _cy] call _toW, 0, 0, 0, _t1, 0, _fs, _f1, "right"];
-            if (_t2 isNotEqualTo "") then { _map drawIcon [_none, _pal get "lblDim", [_x0 + _pad * 1.5 + _w1, _cy] call _toW, 0, 0, 0, _t2, 0, _fs2, "EtelkaMonospacePro", "right"]; };
-        };
-        case "CLASSIC": {
-            if (_nbg isNotEqualTo []) then { [_x0 - _pad, _sy - _fsC / 2 - 2 * pixelH, _x1 + _pad, _sy + _fsC / 2 + 2 * pixelH, _nbg select 0] call _rect; };
-            _map drawIcon [_none, [_c, _cL] select _liftMap, [_x0, _sy] call _toW, 0, 0, 0, _t1, 1, _fsC, _f1, "right"];
-        };
-        case "OUTLINE": {
-            if (_nbg isNotEqualTo []) then { [_x0 - _pad, _sy - _fs / 2 - 2 * pixelH, _x1 + _pad, _sy + _fs / 2 + 2 * pixelH, _nbg select 0] call _rect; };
-            _map drawIcon [_none, [_tc, [0.04, 0.05, 0.05, 1]] select (_nbgLight && {!_isLock}), [_x0, _sy] call _toW, 0, 0, 0, _t1, [2, 0] select _nbgLight, _fs, _f1, "right"];
-        };
-        case "PILL": {
-            [_x0 + _radX, _y0, _x1 - _radX, _y1, _pillBg] call _rect;
-            { _map drawEllipse [[_x, _sy] call _toW, _rad * _mpy, _rad * _mpy, 0, _pillBg, _fill]; } forEach [_x0 + _radX, _x1 - _radX];
-            _map drawEllipse [[_x0 + _radX * 1.1, _sy] call _toW, _rad * 0.36 * _mpy, _rad * 0.36 * _mpy, 0, [_cL, _red] select _isLock, _fill];
-            _map drawIcon [_none, _tc, [_x0 + _radX * 2.1, _sy] call _toW, 0, 0, 0, _t1, 0, _fs, _f1, "right"];
-        };
-        case "CARD": {
-            private _ax = [_x1, _x0] select (_x0 > _sx);
-            _map drawLine [[_pos select 0, _pos select 1, 0], [_ax, _y1] call _toW, [[0.86, 0.89, 0.92, 0.7], _red] select _isLock];
-            [_x0, _y0, _x1, _y1, _plateBg] call _rect;
-            [_x0, _y0, _x1, _y0 + 2 * pixelH, [_cL, _red] select _isLock] call _rect;
-            if (_id isEqualTo _sel) then { [_x0, _y0, _x1, _y1, _pal get "sel", ""] call _rect; };
-            private _ty = _y0 + 3 * pixelH + _fs * 0.58;
-            _map drawIcon [_none, [[1, 1, 1, 1], _redTxt] select _isLock, [_x0 + _padC, _ty] call _toW, 0, 0, 0, _t1, 0, _fs, _f1, "right"];
-            if (_t2 isNotEqualTo "") then { _map drawIcon [_none, _pal get "lblDim", [_x0 + _padC, _ty + _fs * 0.55 + _fs2 * 0.6] call _toW, 0, 0, 0, _t2, 0, _fs2, _fR, "right"]; };
-        };
-        default {
-            // PLATE : plaque sombre, liseré de couleur à gauche, capitales grasses ; LOCK bordé de rouge.
-            [_x0, _y0, _x1, _y1, _plateBg] call _rect;
-            [_x0, _y0, _x0 + _bar, _y1, [_cL, _red] select _isLock] call _rect;
-            if (_isLock) then { [_x0, _y0, _x1, _y1, [0.91, 0.28, 0.23, 0.75], ""] call _rect; };
-            if (_id isEqualTo _sel) then { [_x0, _y0, _x1, _y1, _pal get "sel", ""] call _rect; };
-            private _tx = _x0 + _bar + _pad;
-            _map drawIcon [_none, _tc, [_tx, _sy] call _toW, 0, 0, 0, _t1, 0, _fs, _f1, "right"];
+            _pr pushBack ["R", 0, 0, _bw, _bh, _plateBg, _fill];
+            _pr pushBack ["R", 0, 0, _bar, _bh, [_cL, _red] select _isLock, _fill];
+            if (_isLock) then { _pr pushBack ["R", 0, 0, _bw, _bh, [0.91, 0.28, 0.23, 0.75], ""]; };
+            if (_id isEqualTo _sel) then { _pr pushBack ["R", 0, 0, _bw, _bh, _pal get "sel", ""]; };
+            _pr pushBack ["T", _bar + _pad, _bh / 2, _t1, _tc, _fs, _f1, 0, "right"];
             if (_t2 isNotEqualTo "") then {
-                private _sx2 = _tx + _w1 + _pad * 0.8;
-                _map drawLine [[_sx2, _sy - _h * 0.28] call _toW, [_sx2, _sy + _h * 0.28] call _toW, [1, 1, 1, 0.3]];
-                _map drawIcon [_none, _pal get "lblDim", [_sx2 + _pad * 0.8, _sy] call _toW, 0, 0, 0, _t2, 0, _fs2, _fR, "right"];
+                private _sx2 = _bar + _pad + _w1 + _pad * 0.8;
+                _pr pushBack ["R", _sx2, _bh * 0.22, _sx2 + pixelW, _bh * 0.78, [1, 1, 1, 0.3], _fill];
+                _pr pushBack ["T", _sx2 + _pad * 0.8, _bh / 2, _t2, _pal get "lblDim", _fs2, _fR, 0, "right"];
             };
         };
     };
+    // 2. Demande : sélection 1, LOCK 2, autres repères 5 (après les unités et les contacts, avant les lieux).
+    ["add", [[[5, 2] select _isLock, 1] select (_id isEqualTo _sel), [_pos select 0, _pos select 1], "", _halfPx, _halfPx, [_bw, _bh, _pr], _force, _slots]] call comspec_atak_native_fnc_mapLbl;
     _n = _n + 1;
 } forEach (_cand select 1);

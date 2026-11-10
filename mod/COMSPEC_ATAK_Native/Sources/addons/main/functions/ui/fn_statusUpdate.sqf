@@ -193,7 +193,9 @@ if (_page isEqualTo "MAP") then {
         private _fl = uiNamespace getVariable ["COMSPEC_ATAK_FollowLast", [0, 0, 0]];
         private _fFar = ((count (_fMap getVariable ["comspec_lastAim", []])) isNotEqualTo 2)
             || {ctrlMapAnimDone _fMap && {diag_tickTime - (_fMap getVariable ["comspec_centerAt", -1]) > 2} && {(([] call comspec_atak_native_fnc_gpsPos) distance2D _fVis) > 30}};
-        if (_fFar || {(_fk select 2) isNotEqualTo (_fl select 2)}) then {
+        // Zoom changé : écart d'au moins 2 % (avant : la moindre différence de l'échelle relançait un centrage complet, qui
+        // coupait le suivi image par image et faisait sauter la carte).
+        if (_fFar || {(abs ((_fk select 2) - (_fl select 2))) > ((_fl select 2) * 0.02)}) then {
             uiNamespace setVariable ["COMSPEC_ATAK_FollowLast", _fk];
             [player] call comspec_atak_native_fnc_mapCenter;
         };

@@ -21257,5 +21257,11 @@
 ["Le serveur n'a pas encore reçu le paquet d'identité d'Athena (chargement en cours, ou serveur sans COMSPEC Link en attente d'un poste relié). Nouvel essai automatique ; touchez Demander la mise à jour.", "The server has not received the Athena identity pack yet (loading, or server without COMSPEC Link waiting for a linked computer). Automatic retry; tap Request the update."],
 ["En attendant", "Meanwhile"],
 ["Sur Athena : fiche membre › Identité & papiers › Télécharger ma couverture (identité Athena), puis ici Importer ma couverture. Aucune connexion n'est nécessaire en jeu.", "On Athena: member file › Identity & papers › Download my cover (Athena identity), then here Import my cover. No connection is needed in game."],
-["Athena ne prévoit aucun papier pour votre compte sur cette carte : rien à vous remettre.", "Athena plans no papers for your account on this map: nothing to hand over."]
+["Athena ne prévoit aucun papier pour votre compte sur cette carte : rien à vous remettre.", "Athena plans no papers for your account on this map: nothing to hand over."],
+["Taille minimale des textes", "Minimum text size"],
+["Hauteur plancher des indicatifs, noms des repères et des lieux, en pixels de l'écran, quels que soient le zoom, la taille du téléphone et l'échelle de l'interface. Exemple : 16 PX sur un écran 4K ou en mode mini", "Minimum height of callsigns, marker and place names, in screen pixels, whatever the zoom, the phone size and the interface scale. Example: 16 PX on a 4K screen or in mini mode"],
+["Densité des étiquettes", "Label density"],
+["Combien d'étiquettes selon le zoom : en vue lointaine, seulement moi, la sélection, les contacts et les chefs en indicatif court ; libellés complets en vue rapprochée. Exemple : LÉGÈRE pour une carte dégagée en mission chargée, DENSE pour tout lire plus tôt en dézoomant", "How many labels depending on the zoom: zoomed out, only me, the selection, contacts and leaders with a short callsign; full labels when zoomed in. Example: LIGHT for an uncluttered map in a busy mission, DENSE to read everything earlier while zooming out"],
+["LÉGÈRE", "LIGHT"],
+["DENSE", "DENSE"]
 ]

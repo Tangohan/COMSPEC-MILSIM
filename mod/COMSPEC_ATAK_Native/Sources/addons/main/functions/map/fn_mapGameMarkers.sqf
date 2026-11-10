@@ -178,6 +178,14 @@ private _clustOn = (ctrlMapScale _map) >= 0.12;
 private _cw = (((_view select 2) - (_view select 0)) / 16) max 1;
 private _clu = createHashMap;
 private _keyRing = "\z\comspec_atak_native\addons\main\data\map_keyring.paa";
+// Étiquettes (fn_mapLbl) : symboles relevés pendant son image de calcul.
+private _LF = uiNamespace getVariable ["COMSPEC_ATAK_LblF", createHashMap];
+private _lay = _LF getOrDefault ["lay", false];
+private _syms = _LF getOrDefault ["syms", []];
+(_LF getOrDefault ["s", [0, 0]]) params ["_lmx", "_lmy"];
+(_LF getOrDefault ["o", [0, 0]]) params ["_lox", "_loy"];
+private _lkx = _LF getOrDefault ["kx", 1];
+private _lky = _LF getOrDefault ["ky", 1];
 private _frN = 0;
 // Un pixel en mètres, une fois par image et seulement en style tactique (contour doublé des zones).
 private _wpx = if (_tac) then { (((_view select 2) - (_view select 0)) / (_mw + 2 * _mg)) * pixelW } else { 0 };
@@ -205,6 +213,8 @@ private _wpx = if (_tac) then { (((_view select 2) - (_view select 0)) / (_mw + 
             };
             _map drawIcon [_icon, [_c, _cIc] select (_framed && {(count _cIc) > 0}), _pos, _iw, _ih, _dir, "", _shadow];
             if (_tac && {!_clustOn} && {!_framed} && {(count _keyC) > 0}) then { private _kr = (_iw max _ih) * 2; _map drawIcon [_keyRing, _keyC, _pos, _kr, _kr, 0, "", 0]; };
+            // Symbole à ne pas recouvrir par une étiquette (fn_mapLbl, image de calcul seulement).
+            if (_lay) then { _syms pushBack [_lmx + ((_pos select 0) - _lox) / _lkx, _lmy + (_loy - (_pos select 1)) / _lky, (_iw max _ih) * 0.55 * pixelW, (_iw max _ih) * 0.55 * pixelH]; };
         };
         case 1: {
             _x params ["", "", "_pts", "_c", ["_bb", []]];
@@ -247,7 +257,7 @@ if (_now > (missionNamespace getVariable ["COMSPEC_ATAK_GmDiagAt", 0])) then {
 // Nombre de symboles regroupés dans chaque case de la vue éloignée.
 if (_clustOn) then {
     private _clr = "#(argb,8,8,3)color(0,0,0,0)";
-    private _cs = 0.026 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1.25]);
+    private _cs = ((_LF getOrDefault ["fs", createHashMap]) getOrDefault ["z", 0.026 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1.25])]) * (_LF getOrDefault ["tk", 1]);
     {
         if ((_y select 0) > 1) then { _map drawIcon [_clr, [1, 1, 1, 1], _y select 1, 8, 8, 0, format ["+%1", (_y select 0) - 1], 2, _cs, [COMSPEC_ATAK_FontSet select 1, "EtelkaMonospaceProBold"] select _tac, "right"]; };
     } forEach _clu;

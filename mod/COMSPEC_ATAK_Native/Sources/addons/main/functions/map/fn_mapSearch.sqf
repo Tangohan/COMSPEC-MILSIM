@@ -556,13 +556,15 @@ switch (_act) do {
         [{ [{ ctrlSetFocus ((uiNamespace getVariable ["COMSPEC_ATAK_MapSearchCtl", [controlNull]]) select 0); }] call comspec_atak_native_fnc_nextFrame; }] call comspec_atak_native_fnc_nextFrame;
     };
     case "card": {
-        if ((count _hit) isEqualTo 0) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_MapSearchCard", controlNull]; };
+        if ((count _hit) isEqualTo 0) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_MapSearchCard", controlNull]; uiNamespace setVariable ["COMSPEC_ATAK_MapSearchBg", controlNull]; };
         _arg params ["_px", "_py", "_pw", "_ph"];
         private _l = [] call comspec_atak_native_fnc_layoutGet;
         private _fs = _l get "fontSmall";
         private _pad = (_l get "pad") * 2;
         private _bg = ["COMSPEC_RscMapPanel", [_px, _py, _pw, _ph], "", false] call comspec_atak_native_fnc_pageCtrl;
         _bg ctrlSetBackgroundColor [0.025, 0.030, 0.027, 0.94];
+        // Place de la fiche : les étiquettes de la carte l'évitent (fn_mapLbl).
+        uiNamespace setVariable ["COMSPEC_ATAK_MapSearchBg", _bg];
         private _edge = ["COMSPEC_RscText", [_px, _py, _pw, pixelH * 2], "", false] call comspec_atak_native_fnc_pageCtrl;
         _edge ctrlSetBackgroundColor [0.91, 0.65, 0.23, 0.8];
         private _bh = _fs * 1.4;
@@ -596,11 +598,22 @@ switch (_act) do {
         _map drawEllipse [_p, _r, _r, 0, _rgb + [0.12], _fill];
         // Anneau pulsant (taille écran) : repère visible à toutes les échelles.
         private _ph = (diag_tickTime mod 1.4) / 1.4;
-        private _ts = uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1];
-        _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", _rgb + [(1 - _ph) * ([0.5, 0.95] select _ok)], _p, 18 + 46 * _ph, 18 + 46 * _ph, 0, "", 0];
-        _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", _rgb + [1], _p, 16, 16, 0,
-            format ["%1%2", [_hit get "owner", _hit get "q"] select ((_hit getOrDefault ["owner", ""]) isEqualTo ""), ["", format [" · %1", _hit get "hour"]] select ((_hit getOrDefault ["hour", ""]) isNotEqualTo "")],
-            1, 0.028 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
+        // Pulsation contenue (44 px au plus) : l'étiquette posée hors de l'anneau n'est plus traversée.
+        _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", _rgb + [(1 - _ph) * ([0.5, 0.95] select _ok)], _p, 18 + 26 * _ph, 18 + 26 * _ph, 0, "", 0];
+        _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", _rgb + [1], _p, 16, 16, 0, "", 0];
+        // Étiquette « YB1 · 20:15 » (fn_mapLbl) : hors du point et de son anneau de précision (côté libre), jamais sous la
+        // distance au curseur ni sur une autre étiquette ; fond à la taille du texte, liseré à la couleur de la cible.
+        private _LF = uiNamespace getVariable ["COMSPEC_ATAK_LblF", createHashMap];
+        if (_LF getOrDefault ["lay", false] && {(_LF getOrDefault ["map", controlNull]) isEqualTo _map}) then {
+            private _rpx = ((_r / ((_LF get "mpp") max 0.001)) max 14) min 160;
+            ["sym", [_p, _rpx, _rpx]] call comspec_atak_native_fnc_mapLbl;
+            private _lt = format ["%1%2", [_hit get "owner", _hit get "q"] select ((_hit getOrDefault ["owner", ""]) isEqualTo ""), ["", format [" · %1", _hit get "hour"]] select ((_hit getOrDefault ["hour", ""]) isNotEqualTo "")];
+            private _bg = _LF get "bg";
+            private _tc = [_rgb + [1], [[1, 1, 1, 1], [0.04, 0.05, 0.05, 1]] select (_LF get "light")] select ((count _bg) > 0);
+            private _pl = ["plate", [[[_lt, COMSPEC_ATAK_FontSet select 1, (_LF get "fs") get "u", _tc]], _bg, 3, [[], _rgb + [1]] select ((count _bg) > 0)]] call comspec_atak_native_fnc_mapLbl;
+            ["add", [2, [_p select 0, _p select 1], "", _rpx, _rpx, _pl, true, [0, 1, 4, 6, 3, 2, 5, 7]]] call comspec_atak_native_fnc_mapLbl;
+            uiNamespace setVariable ["COMSPEC_ATAK_LblTarget", [_p, _rpx]];
+        };
     };
 };
 _ret
