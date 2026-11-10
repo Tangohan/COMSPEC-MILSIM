@@ -8,6 +8,8 @@
 params [["_kind", "empreintes", [""]]];
 
 if (!hasInterface) exitWith {};
+// SEEK éteint (batterie vide) : aucun relevé. Chaque relevé coûte de la batterie.
+if !(["use", 0.8] call comspec_overwatch_connect_fnc_seekBattery) exitWith { ["render"] call comspec_overwatch_connect_fnc_seekBattery; };
 
 _kind = toLower _kind;
 if (!(_kind in ["empreintes", "iris", "adn"])) then { _kind = "empreintes"; };

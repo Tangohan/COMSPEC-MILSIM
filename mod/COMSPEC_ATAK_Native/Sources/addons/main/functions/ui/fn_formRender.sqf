@@ -141,9 +141,12 @@ private _click = {
         }, [_c, _c getVariable ["comspec_click", {}], [false]]] call comspec_atak_native_fnc_nextFrame;
     }];
 };
+// Contrôles créés par la ligne en cours de dessin : décalés ensuite vers leur colonne (mise en page en colonnes, plus bas).
+private _flMade = [];
 private _mk = {
     params ["_class", "_pos", ["_text", ""]];
     private _c = _d ctrlCreate [_class, -1, _grp];
+    _flMade pushBack _c;
     [_c, _class] call comspec_atak_native_fnc_fontApply;
     _c ctrlSetPosition _pos;
     if (_text isNotEqualTo "") then { _c ctrlSetText ((_text) call comspec_atak_native_fnc_tr); };
@@ -190,8 +193,9 @@ private _estH = {
 // paraissaient minuscules et empâtés à côté du texte de la page ; presque la taille du corps, rétrécis par _fit si trop longs.
 private _btnFs = _font * 0.92;
 private _lineIdx = 0; // lignes "line" : fond alterné
-{
-    private _row = _x;
+// Dessin d'une ligne à la place courante : de _pad à _pad + _w, à partir de _y (avancé de sa hauteur).
+private _renderRow = {
+    private _row = _this;
     switch (_row select 0) do {
         case "title": {
             private _t = ["COMSPEC_RscText", [_pad, _y, _w, _rowH], toUpper (_row select 1)] call _mk;
@@ -1524,7 +1528,117 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             } forEach _lines;
         };
     };
-} forEach _rows;
+};
+// 4.2.2 : mise en page « paysage d'abord ». Le téléphone est surtout tenu à l'horizontale ; avant, chaque app était
+// une seule colonne pleine largeur (lignes de 90 caractères, grands vides, réglages et fiches les uns sous les autres).
+// Quand la largeur tient deux colonnes lisibles (trois sur une tablette), d'après fn_layoutCols (le seul endroit des
+// seuils, en caractères du texte courant), le formulaire se dispose de lui-même :
+//   - les sections (« section » et ce qui la suit ; « fold » hors d'une section) se rangent en colonnes, chacune dans
+//     la plus courte ;
+//   - une suite d'au moins trois lignes de même genre (info, switch, toggle, row, person, notif, check, status,
+//     slider) se range en grille, dans l'ordre de lecture (gauche à droite, puis rangée suivante) ;
+//   - en-têtes, onglets, bandeaux, frises, états vides, barres de boutons groupés et gros boutons restent sur toute la
+//     largeur et ferment la rangée de colonnes en cours.
+// Portrait, petit téléphone, colonne étroite d'un volet : une colonne, comme avant (même dessin, mêmes hauteurs).
+// Lignes de pilotage (pas dessinées) : ["flow", false] n'importe où : pas de colonnes dans ce formulaire (fil de
+// messages, fiche à lire dans l'ordre) ; ["break"] : fin de la rangée de colonnes, la suite sur toute la largeur.
+private _flW0 = _w;
+// Carte : volets et menus déjà pensés pour le paysage (functions/map), laissés tels quels.
+private _flOn = (_rows findIf { (_x param [0, ""]) isEqualTo "flow" && {!(_x param [1, true])} }) < 0
+    && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "MAP"};
+private _flBarrier = ["header", "tabs", "strip", "banner", "steps", "squad", "empty", "skeleton", "image", "qr", "bar", "big", "title", "break", "hero"];
+private _flTiles = ["info", "switch", "toggle", "row", "person", "notif", "check", "status", "slider"];
+// Une ligne dessinée en (_flX, _flY), largeur _flW ; renvoie le bas de la ligne.
+private _flPut = {
+    params ["_flR", "_flX", "_flW", "_flY"];
+    _w = _flW;
+    _y = _flY;
+    _flMade = [];
+    _flR call _renderRow;
+    if (_flX isNotEqualTo 0) then {
+        { _x ctrlSetPositionX ((ctrlPosition _x select 0) + _flX); _x ctrlCommit 0; } forEach _flMade;
+    };
+    _y
+};
+// Suite de lignes dans une colonne : grilles des suites de lignes de même genre quand la colonne est assez large.
+private _flSeq = {
+    params ["_flList", "_flX", "_flW", "_flY"];
+    private _flI = 0;
+    private _flN = count _flList;
+    while { _flI < _flN } do {
+        private _flR = _flList select _flI;
+        private _flK = _flR select 0;
+        private _flJ = _flI + 1;
+        if (_flOn && {_flK in _flTiles}) then { while { _flJ < _flN && {((_flList select _flJ) select 0) isEqualTo _flK} } do { _flJ = _flJ + 1; }; };
+        private _flRun = _flJ - _flI;
+        private _flNc = if (_flRun >= 3) then { ([_flW, _flK] call comspec_atak_native_fnc_layoutCols) min _flRun } else { 1 };
+        if (_flNc >= 2) then {
+            private _flCw = (_flW - (_flNc - 1) * _pad) / _flNc;
+            private _flRowY = _flY;
+            private _flEnd = _flY;
+            for "_flQ" from 0 to (_flRun - 1) do {
+                if (_flQ > 0 && {(_flQ mod _flNc) isEqualTo 0}) then { _flRowY = _flEnd; };
+                _flEnd = _flEnd max ([_flList select (_flI + _flQ), _flX + (_flQ mod _flNc) * (_flCw + _pad), _flCw, _flRowY] call _flPut);
+            };
+            _flY = _flEnd;
+        } else {
+            for "_flQ" from 0 to (_flRun - 1) do { _flY = [_flList select (_flI + _flQ), _flX, _flW, _flY] call _flPut; };
+        };
+        _flI = _flJ;
+    };
+    _flY
+};
+if (!_flOn) then {
+    { if !((_x param [0, ""]) in ["flow", "break"]) then { _y = [_x, 0, _flW0, _y] call _flPut; }; } forEach _rows;
+} else {
+    // Rangées : lignes de tête (avant la première section), puis blocs (une section et ce qui la suit).
+    private _flLead = [];
+    private _flBlocks = [];
+    private _flCur = [];
+    private _flFlush = {
+        if ((count _flCur) > 0) then { _flBlocks pushBack _flCur; _flCur = []; };
+        private _flYY = [_flLead, 0, _flW0, _y] call _flSeq;
+        _flLead = [];
+        private _flNc = ([_flW0, "section"] call comspec_atak_native_fnc_layoutCols) min (count _flBlocks);
+        if (_flNc >= 2) then {
+            private _flCw = (_flW0 - (_flNc - 1) * _pad) / _flNc;
+            private _flCols = [];
+            for "_flQ" from 1 to _flNc do { _flCols pushBack _flYY; };
+            {
+                // Colonne la plus courte (la plus à gauche à égalité).
+                private _flC = 0;
+                { if (_x < (_flCols select _flC) - pixelH) then { _flC = _forEachIndex; }; } forEach _flCols;
+                _flCols set [_flC, [_x, _flC * (_flCw + _pad), _flCw, _flCols select _flC] call _flSeq];
+            } forEach _flBlocks;
+            { _flYY = _flYY max _x; } forEach _flCols;
+        } else {
+            { _flYY = [_x, 0, _flW0, _flYY] call _flSeq; } forEach _flBlocks;
+        };
+        _flBlocks = [];
+        _y = _flYY;
+    };
+    {
+        private _flK = _x param [0, ""];
+        switch (true) do {
+            case (_flK isEqualTo "flow"): {};
+            case (_flK in _flBarrier): {
+                call _flFlush;
+                if (_flK isNotEqualTo "break") then { _y = [_x, 0, _flW0, _y] call _flPut; };
+            };
+            // Section repliable : nouveau bloc seulement entre sections repliables (sous-menus des Réglages) ; dans une
+            // section ou une carte (« Texte complet » d'un ordre de l'app Tâches), elle reste avec ce qui la précède.
+            case (_flK isEqualTo "section" || {_flK isEqualTo "fold" && {(count _flCur) isEqualTo 0 || {((_flCur select 0) select 0) isEqualTo "fold"}}}): {
+                if ((count _flCur) > 0) then { _flBlocks pushBack _flCur; };
+                _flCur = [_x];
+            };
+            default {
+                if ((count _flCur) > 0) then { _flCur pushBack _x; } else { _flLead pushBack _x; };
+            };
+        };
+    } forEach _rows;
+    call _flFlush;
+};
+_w = _flW0;
 uiNamespace setVariable ["COMSPEC_ATAK_Form", _fields];
 uiNamespace setVariable ["COMSPEC_ATAK_FormH", _y + _pad];
 // Défilement gardé quand la même page se redessine (retour de jeu 2.9.27 : un clic sur un réglage ramenait la liste en

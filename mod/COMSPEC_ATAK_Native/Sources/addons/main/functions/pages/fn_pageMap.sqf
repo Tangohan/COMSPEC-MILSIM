@@ -111,7 +111,13 @@ private _stripW = 0;
 private _px0 = _bx + _pad;
 private _py0 = _by + _pad;
 private _hud = [];
+// Mini (téléphone porté petit) : bandeau compact d'une ligne, plus étroit (la case « MOI · ALT · TA1 » sur deux lignes prenait
+// près de la moitié de la largeur et recouvrait des étiquettes) ; masqué si la carte est trop étroite. Sa place est exclue
+// pour les étiquettes (fn_mapHudRects, fn_mapLbl).
+if (_mini && {_bStyle in ["NEW", "CLASSIC"]}) then { _bStyle = "COMPACT"; };
+if (_mini && {_bStyle isEqualTo "COMPACT"} && {_avail < (16 * _chW)}) then { _bStyle = "HIDDEN"; };
 _ov set ["bandStyle", _bStyle];
+_ov set ["bandMini", _mini];
 private _txtCtl = {
     params ["_x0", "_y0", "_w", "_h", "_fh"];
     private _t = ["COMSPEC_RscStructuredText", [_x0, _y0, _w, _h]] call _mk;
@@ -127,16 +133,18 @@ private _place = {
     _bg ctrlSetBackgroundColor [0.02, 0.025, 0.022, [_bc get "alpha", _defAlpha] select ((_bc get "alpha") < 0)];
     private _edge = ["COMSPEC_RscText", [_px0, _py0, pixelW * 3, _bandH]] call _mk;
     _edge ctrlSetBackgroundColor (((COMSPEC_ATAK_Th get "accent") select [0, 3]) + [0.9]);
+    private _sep = controlNull;
     if (_sepX > 0) then {
-        private _sep = ["COMSPEC_RscText", [_px0 + _sepX, _py0 + _panIn, pixelW, _bandH - _panIn * 2]] call _mk;
+        _sep = ["COMSPEC_RscText", [_px0 + _sepX, _py0 + _panIn, pixelW, _bandH - _panIn * 2]] call _mk;
         _sep ctrlSetBackgroundColor [0.55, 0.62, 0.58, 0.35];
     };
+    _ov set ["bandBox", [_bg, _edge, _sep]];
 };
 switch (_bStyle) do {
     case "HIDDEN": {};
     case "COMPACT": {
         // Une ligne : « 33T XE 1513 1736 · 94 m 317° NO · ALT 17 m · CAP 042° · B-04 ».
-        _stripW = _avail min ((([52, 40] select _mini) * _chW) + _cellIn * 2);
+        _stripW = _avail min ((([52, 26] select _mini) * _chW) + _cellIn * 2);
         _bandH = _panFs * 1.3 + _panIn;
         [0, 0.86] call _place;
         private _cur = [_px0 + pixelW * 3 + _cellIn, _py0 + _panIn / 2, _stripW - pixelW * 3 - _cellIn * 1.6, _panFs * 1.3, _panFs] call _txtCtl;
@@ -208,6 +216,10 @@ switch (_bStyle) do {
             _ov set ["me", [_cx2, _ly1, _cw2, _l1H, _panFs] call _txtCtl];
             _ov set ["me2", [_cx2, _ly2, _cw2, _l2H, _panFs * 0.9] call _txtCtl];
         };
+        // Hauteur ajustée au contenu par fn_mapOverlayUpdate (pas de fond vide sous « CURSEUR survolez la carte » ni sous
+        // une ligne 3 absente) : géométrie d'origine gardée, la pastille rétrécit vers le bord où elle est posée.
+        _ov set ["bandFit", [_bandH, _l2H * ([1, 2] select _curWrap), _l2H, _bTop, [_ov getOrDefault ["cursor", controlNull], _ov getOrDefault ["cursor2", controlNull], _ov getOrDefault ["cursorArrow", controlNull], _ov getOrDefault ["me", controlNull], _ov getOrDefault ["me2", controlNull]] apply { [_x, ctrlPosition _x] }]];
+        _ov set ["bandShrink", 0];
     };
 };
 // Hauteur prise en bas de la carte par le bandeau (boutons OUTILS / RECHERCHER, fiches et panneaux posés au-dessus).
@@ -224,6 +236,18 @@ if (!(_interactive && {(_s getOrDefault ["mapToolsOpen", false]) || {_searchOpen
     private _sqY = if (!isNull _hdC) then { (ctrlPosition _hdC) params ["", "_hy", "", "_hh"]; _hy + _hh + pixelH * 3 } else { _by + _pad + ([0, _fs * 1.6] select (!isNull (_ov getOrDefault ["compassTape", controlNull]))) };
     _sqRect = [_bx + _pad, _sqY, ((_mw - _toolCol - 2 * _pad) min (_mw * 0.6)) max (_font * 6 / _ratio), _fs * 1.2];
     if ((count units group player) > 1) then { _hud pushBack [(_sqRect select 0) - _bx, _sqY - _by, (_sqRect select 0) + (_sqRect select 2) - _bx, _sqY + (_sqRect select 3) - _by]; };
+};
+// Rose ou bandeau du cap, barre d'outils de droite, bouton des calques en haut à droite et RECHERCHER : les étiquettes
+// (fn_mapLbl) ne passent jamais dessous (avant, « TOUR DE CONTRÔLE » était coupé par la rose).
+{
+    private _c = _ov getOrDefault [_x, controlNull];
+    if (!isNull _c) then { (ctrlPosition _c) params ["_cx", "_cy", "_cw2", "_ch2"]; _hud pushBack [_cx - _bx, _cy - _by, _cx + _cw2 - _bx, _cy + _ch2 - _by]; };
+} forEach ["needle", "compassCard", "compassTape"];
+if (_interactive) then {
+    private _sth = _fs * 1.9;
+    _hud pushBack [_mw - _toolCol, 0, _mw, _mh];
+    _hud pushBack [_mw - _toolCol - _pad * 2 - _sth / _ratio, 0, _mw - _toolCol, _pad * 2 + _sth];
+    _hud pushBack [0, _mh - _panH - _pad * 3 - _sth, _pad * 2 + (((_sth / _ratio) + _fs * 5.8 / _ratio) min _panW), _mh - _panH - _pad];
 };
 uiNamespace setVariable ["COMSPEC_ATAK_SquadRect", _sqRect];
 uiNamespace setVariable ["COMSPEC_ATAK_SquadSig", [[], []]];

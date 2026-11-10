@@ -167,7 +167,7 @@ private _sseAction = [
     "Terminal SEEK — enregistrer une personne",
     "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa",
     {
-        [objNull] call comspec_overwatch_connect_fnc_sseOpenTerminal;
+        [objNull, -1] call comspec_overwatch_connect_fnc_sseOpenTerminal;
     },
     _condSse,
     _noChildren

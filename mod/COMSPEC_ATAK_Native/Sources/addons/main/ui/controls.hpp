@@ -89,7 +89,12 @@ class COMSPEC_RscMap: RscMapControl { colorBackground[]={0.045,0.055,0.048,1}; c
 // (taille minuscule) car redessinés par l'ATAK : fn_mapMarkerText et fn_mapPlaceText (style et calques au choix),
 // fn_mapOnDraw pour la grille. Marqueurs de la mission non dessinés (showMarkers=0) : Arma les dessine à taille fixe
 // en pixels, énormes sur le petit écran ; fn_mapGameMarkers les redessine à l'échelle de l'écran de l'ATAK.
-class COMSPEC_RscMapAtak: COMSPEC_RscMap { showMarkers=0; sizeExLabel="0.0005"; sizeExGrid="0.0005"; sizeExNames="0.0005"; sizeExInfo="0.021 * safeZoneH"; sizeEx="0.021 * safeZoneH"; };
+// Noms de lieux : une seule source, les nôtres (fn_mapPlaceText, taille en pixels et anti-chevauchement de fn_mapLbl). La taille
+// minuscule ne suffisait pas : le moteur écrivait encore certains noms à la taille de leur type de lieu (CfgLocationTypes),
+// à côté des nôtres (« GRAVIA » doublé de « Gravia », « Athira » seul en orange). Densité de noms nulle (ptsPerSquareTxt) et
+// couleur transparente, comme la carte de la montre.
+class COMSPEC_RscMapAtak: COMSPEC_RscMap { showMarkers=0; sizeExLabel="0.0005"; sizeExGrid="0.0005"; sizeExNames="0.0005"; sizeExInfo="0.021 * safeZoneH"; sizeEx="0.021 * safeZoneH";
+    ptsPerSquareTxt=100000; colorNames[]={0,0,0,0}; };
 // Carte de l'app JTAC (dessin à part, fn_jtacDraw) : textes Arma des repères et des lieux gardés.
 // Fonds SATELLITE et HYBRIDE du téléphone (fn_mapStyle, fn_mapCtrl) : la texture satellite du terrain à toutes les
 // échelles (maxSatelliteAlpha 1, jamais estompée), sans les aplats de forêt, rochers, courbes de niveau ni mer.
@@ -119,7 +124,7 @@ class COMSPEC_RscMapAtakSlate: COMSPEC_RscMapAtak {
     colorRoads[]={0.16,0.32,0.30,0.9}; colorRoadsFill[]={0.24,0.48,0.45,1};
     colorMainRoads[]={0.18,0.36,0.34,1}; colorMainRoadsFill[]={0.30,0.61,0.57,1};
     colorGrid[]={0.20,0.42,0.40,0.45}; colorGridMap[]={0.20,0.42,0.40,0.45};
-    colorTrails[]={0.20,0.38,0.36,0.3}; colorTrailsFill[]={0.20,0.38,0.36,0.5}; colorNames[]={0.72,0.88,0.84,0.9};
+    colorTrails[]={0.20,0.38,0.36,0.3}; colorTrailsFill[]={0.20,0.38,0.36,0.5}; colorNames[]={0,0,0,0};
     class Legend: Legend { colorBackground[]={0.035,0.05,0.055,0.8}; color[]={0.72,0.88,0.84,1}; };
     ATAK_SLATE_ICON(Bush,0.20,0.33,0.32,0.4); ATAK_SLATE_ICON(Tree,0.20,0.33,0.32,0.4); ATAK_SLATE_ICON(SmallTree,0.20,0.33,0.32,0.4); ATAK_SLATE_ICON(Rock,0.36,0.44,0.46,0.7);
     ATAK_SLATE_ICON(Cross,0.55,0.68,0.66,0.8); ATAK_SLATE_ICON(Chapel,0.55,0.68,0.66,0.8); ATAK_SLATE_ICON(Shipwreck,0.55,0.68,0.66,0.8); ATAK_SLATE_ICON(Bunker,0.55,0.68,0.66,0.8);
@@ -132,7 +137,8 @@ class COMSPEC_RscMapAtakSlate: COMSPEC_RscMapAtak {
 // dessinés par fn_watchMapDraw.
 class COMSPEC_RscMapWatch: COMSPEC_RscMapAtak { ptsPerSquareTxt=100000; colorNames[]={0,0,0,0}; colorLevels[]={0,0,0,0};
     sizeExUnits="0.0005"; sizeExInfo="0.0005"; sizeExLevel="0.0005"; sizeEx="0.0005"; };
-class COMSPEC_RscMapJtac: COMSPEC_RscMapAtak { showMarkers=1; sizeExLabel="0.022 * safeZoneH"; sizeExNames="0.030 * safeZoneH"; };
+// Carte JTAC : noms de lieux du moteur gardés (densité et couleur d'Arma remises, COMSPEC_RscMapAtak les retire).
+class COMSPEC_RscMapJtac: COMSPEC_RscMapAtak { showMarkers=1; sizeExLabel="0.022 * safeZoneH"; sizeExNames="0.030 * safeZoneH"; ptsPerSquareTxt=20; colorNames[]={0.1,0.1,0.1,0.9}; };
 // Carte du PC portable du poste TOC (fn_tocLaptop) : vraie carte d'Arma en grand, marqueurs de la mission compris,
 // textes à la taille d'un écran d'ordinateur (le PC n'est pas un téléphone).
 // PC du poste TOC : noms de lieux et textes des marqueurs plus petits (un gros libellé orange barrait la carte).

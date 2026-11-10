@@ -4,7 +4,12 @@
     ["level", [docId, niveau, résultat]]   résultat d'un niveau ; verdict recalculé ; alerte discrète si signalé
     ["current"] -> fiche en cours (HashMap vide sinon)        ["list"] -> fiches, la plus récente en dernier
     ["select", index]   rouvre une fiche de l'historique       ["verdict", fiche] -> verdict global
-    Fiche : docId, doc, subj, subjName, subjKey, levels (niveau -> résultat), verdict, clock, grid, case, sent, ref, idem.
+    ["fail", [docId, niveau, code, texte]]   niveau refusé (gone : document plus présenté, far, short, gear, off) : avis
+        gardé sur la fiche (clé « notice »), même texte à l'écran du contrôle et dans la notification du téléphone
+    ["busy", [docId, niveau | -1]]   analyse en cours (animation de l'app, clé « busy ») ; -1 : terminée
+    ["clearAlerts"]    bandeaux d'alerte du contrôle encore en file dans le téléphone retirés (nouveau contrôle, avis levé)
+    Fiche : docId, doc, subj, subjName, subjKey, levels (niveau -> résultat), verdict, clock, grid, case, sent, ref, idem,
+      notice [code, texte, heure] (dernier refus, effacé par le résultat suivant ou un nouveau contrôle), busy (niveau).
 */
 params [["_op", ""], ["_a", []]];
 private _hist = missionNamespace getVariable ["comspec_sse_idHist", []];
@@ -22,8 +27,45 @@ private _render = {
     [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "IDCHECK") then { ["IDCHECK"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
 };
 
+// Fiche d'un document : celle en cours, sinon la plus récente de l'historique.
+private _find = {
+    params ["_id"];
+    if ((_cur getOrDefault ["docId", ""]) isEqualTo _id) exitWith { _cur };
+    private _i = _hist findIf { (_x getOrDefault ["docId", ""]) isEqualTo _id };
+    _hist param [_i, createHashMap]
+};
+private _clearAlerts = {
+    private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+    private _q = _s getOrDefault ["notifications", []];
+    private _keep = _q select { !((_x getOrDefault ["app", ""]) isEqualTo "IDCHECK" && {(_x getOrDefault ["type", ""]) in ["WARNING", "ERROR"]}) };
+    if ((count _keep) isNotEqualTo (count _q)) then {
+        _s set ["notifications", _keep];
+        if (!isNil "comspec_atak_native_fnc_notificationsRender") then { [] call comspec_atak_native_fnc_notificationsRender; };
+    };
+};
+
 switch (_op) do {
     case "current": { _cur };
+    case "clearAlerts": { call _clearAlerts; true };
+    case "busy": {
+        _a params [["_id", ""], ["_lvl", -1]];
+        private _rec = [_id] call _find;
+        if ((count _rec) isEqualTo 0) exitWith { false };
+        if (_lvl < 0) then { _rec deleteAt "busy"; } else { _rec set ["busy", _lvl]; _rec deleteAt "notice"; };
+        call _render;
+        true
+    };
+    case "fail": {
+        _a params [["_id", ""], ["_lvl", 0], ["_code", ""], ["_text", ""]];
+        private _rec = [_id] call _find;
+        if ((count _rec) isEqualTo 0) exitWith { false };
+        _rec deleteAt "busy";
+        _rec set ["notice", [_code, _text, [dayTime, "HH:MM"] call BIS_fnc_timeToString, _lvl]];
+        call _clearAlerts;
+        [_text, "WARNING", "", "IDCHECK"] call comspec_sse_fnc_notify;
+        call _render;
+        true
+    };
     case "list": { _hist };
     case "verdict": { _a call _verdict };
     case "select": {
@@ -51,18 +93,22 @@ switch (_op) do {
         };
         if ((count _res) > 0) then { (_rec get "levels") set [0, _res]; };
         _rec set ["verdict", [_rec] call _verdict];
+        // Document (re)présenté : l'avis d'un refus précédent et ses bandeaux ne valent plus.
+        _rec deleteAt "notice";
+        _rec deleteAt "busy";
+        call _clearAlerts;
         missionNamespace setVariable ["comspec_sse_idCur", _rec];
         call _render;
         _rec
     };
     case "level": {
         _a params [["_id", ""], ["_lvl", 1], ["_res", createHashMap]];
-        private _rec = if ((_cur getOrDefault ["docId", ""]) isEqualTo _id) then { _cur } else {
-            private _i = _hist findIf { (_x getOrDefault ["docId", ""]) isEqualTo _id };
-            _hist param [_i, createHashMap]
-        };
+        private _rec = [_id] call _find;
         if ((count _rec) isEqualTo 0) exitWith {};
         (_rec get "levels") set [_lvl, _res];
+        _rec deleteAt "notice";
+        _rec deleteAt "busy";
+        call _clearAlerts;
         _rec set ["verdict", [_rec] call _verdict];
         _rec set ["sent", false];
         // Personne signalée, recherchée, HVT, document volé ou révoqué : le téléphone vibre (sans son en discrétion).

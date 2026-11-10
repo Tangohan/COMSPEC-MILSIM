@@ -68,6 +68,8 @@ private _rows = [
     ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", ((missionNamespace getVariable ["COMSPEC_ATAK_Ram", createHashMap]) getOrDefault ["parts", []]) apply { format ["%1 : %2 Mo", _x select 0, _x select 1] } joinString " · "]],
     ["info", "Version du mod", ["COMSPEC_ATAK_NativeBuild", "?"] call _str],
     ["info", "Extension", ["DLL native", "DLL COMSPEC Link embarquée"] select _bridge],
+    // Barre d'actions sur toute la largeur, sous les colonnes (4.2.2, fn_formRender « break »).
+    ["break"],
     ["buttons", [
         ["RESYNCH", { ["RESYNCH"] call comspec_atak_native_fnc_navigate; }, true],
         ["ATHENA", { ["ATHENA"] call comspec_atak_native_fnc_navigate; }],

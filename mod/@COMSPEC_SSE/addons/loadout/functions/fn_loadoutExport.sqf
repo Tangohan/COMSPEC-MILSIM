@@ -42,6 +42,7 @@ if (isMultiplayer) then {
     ["Ma tenue pour Athena", "Ctrl+A puis Ctrl+C, puis collez dans Athena › Équipement › Configurateur.", _txt] call comspec_sse_fnc_loadoutTextDialog;
 } else {
     private _msg = "Équipement : tenue copiée au presse-papiers. Collez-la dans Athena › Équipement › Configurateur.";
-    if !([_msg, "SUCCESS", "Équipement"] call comspec_sse_fnc_notify) then { hint _msg; };
+    // Notification du téléphone ; sans ATAK natif, RPT seul (jamais une alerte d'Arma).
+    if !([_msg, "SUCCESS", "Équipement"] call comspec_sse_fnc_notify) then { diag_log text format ["[COMSPEC SSE] %1", _msg]; };
 };
 _txt

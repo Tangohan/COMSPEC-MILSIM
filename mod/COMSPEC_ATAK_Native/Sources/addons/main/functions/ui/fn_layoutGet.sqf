@@ -188,10 +188,15 @@ COMSPEC_ATAK_FontMin = [_fontCaption, 0] select _texture; // texture : coordonn�
 // <t size='0.8'> (aides, sous-titres) reste au niveau des légendes. Texture (JPC) : taille de la classe, inchangée.
 COMSPEC_ATAK_FontBody = [_font * 1.15, 0] select _texture;
 private _statusH = _font * 1.45;
-private _appH = _font * 1.9;
 private _dock = !_land;
 // Carte en mode PETIT : ni dock ni rail (le bouton « apps » de la barre d'app y mène), la carte prend toute la largeur.
 private _slim = _mini && {!_texture} && {(_s getOrDefault ["activePage", ""]) isEqualTo "MAP"};
+// 4.2.2 : barre d'app à la hauteur de ce qu'elle montre. Téléphone porté en mode petit : pas de boutons, seulement le
+// titre, barre resserrée à la taille de la barre d'état. Carte en mode petit portée : ni titre (fn_titleFit) ni boutons,
+// la barre disparaît et la carte remonte jusqu'à la barre d'état (retour joueur : bande noire vide d'une fois et demie la
+// barre d'état). La pastille « main + touche » et les bandeaux de notification se posent alors sur le haut de la carte.
+private _appH = _font * ([1.9, 1.5] select (_mini && {!_interactive} && {!_texture}));
+if (_slim && {!_interactive}) then { _appH = 0; };
 private _dockH = [0, _font * 2.9] select (_dock && {!_slim});
 private _railW = [_font * 2.9 / _ratio, 0] select (_dock || _slim);
 // Panneau SITUATION repliable (réglage profil). Retour de jeu : à 24 % de l'écran, titres et valeurs se coupaient
@@ -231,6 +236,9 @@ createHashMapFromArray [
     ["listH", _font * 2.4],
     ["tap", _font * 1.9],
     ["sp1", _pad], ["sp2", _pad * 2], ["sp3", _pad * 3], ["sp4", _pad * 4],
+    // 4.2.2 : largeur moyenne d'un caractère du texte courant (fontSmall), en unités horizontales : base des seuils de
+    // colonnes de fn_layoutCols (mise en page paysage d'abord), qui suivent ainsi la taille réelle du texte.
+    ["colChar", _fontSmall * 0.55 / _ratio],
     ["cols", (([[6, 5] select _mini, 3] select (!_land)) + (profileNamespace getVariable ["COMSPEC_ATAK_IconDensity", 0])) max 2],
     ["pad", _pad]
 ]

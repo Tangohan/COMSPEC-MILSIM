@@ -81,7 +81,12 @@ if (_a isEqualType "" && {_a isEqualTo "parse"}) exitWith {
 // --- Écriture -------------------------------------------------------------------------------------------------
 private _doc = _a;
 private _type = _doc getOrDefault ["type", "id_card"];
-if !(_type in ["id_card", "passport", "driving_license", "military_id"]) exitWith { [] };
+if !(_type in ["id_card", "passport", "driving_license", "military_id"]) then {
+    // Type d'extension (CfgComspecDocuments) : gabarit TD1 (code « I< ») ou TD3 selon sa déclaration, sinon pas de MRZ.
+    private _m = (["get", _type] call comspec_sse_fnc_idDocTypes) getOrDefault ["mrz", ""];
+    _type = ["", "id_card", "passport"] select ((["", "td1", "td3"] find _m) max 0);
+};
+if (_type isEqualTo "") exitWith { [] };
 // Texte MRZ (même table que SseMrzService du site) : capitales sans accents, ß -> SS, Æ -> AE, Œ -> OE, tout autre
 // caractère -> « < ». Par points de code (toArray) : les expressions régulières d'Arma travaillent sur les octets
 // UTF-8 et cassaient les lettres accentuées.

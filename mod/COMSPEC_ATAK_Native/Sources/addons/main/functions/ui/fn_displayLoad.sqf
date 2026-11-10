@@ -134,6 +134,16 @@ if (_interactive) then {
     _display displayAddEventHandler ["MouseButtonDown", {
         params ["", "_button", "_mx", "_my"];
         if (_button isEqualTo 0) then { uiNamespace setVariable ["COMSPEC_ATAK_TapDown", [_mx, _my, diag_tickTime]]; };
+        // Le bouton enfoncé prend le focus, et sa zone de contenu passe devant les calques du verre (reflet, coins,
+        // fêlures) jusqu'au relâchement : focus rendu avant le dessin de l'image (fn_overlayFront, appui en cours), par
+        // un EachFrame à usage unique (la file de l'image suivante attendait une image de plus) ; essayé 3 images au plus.
+        if (uiNamespace getVariable ["COMSPEC_ATAK_DevFront", false]) then {
+            addMissionEventHandler ["EachFrame", {
+                if (([true] call comspec_atak_native_fnc_overlayFront) || {diag_frameNo > (_thisArgs select 0)}) then {
+                    removeMissionEventHandler ["EachFrame", _thisEventHandler];
+                };
+            }, [diag_frameNo + 3]];
+        };
         false
     }];
     _display displayAddEventHandler ["MouseButtonUp", {

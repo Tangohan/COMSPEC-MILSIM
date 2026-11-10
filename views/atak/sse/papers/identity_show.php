@@ -24,6 +24,7 @@ require __DIR__ . '/_subnav.php';
     <div class="page-reference">
         <strong><?= count($documents) ?> papier(s)</strong>
         <?php if ($showPerson): ?><div><a class="link" href="<?= $h(url('atak/sse/identites/' . (int) $person['id'])) ?>">Fiche personne</a></div><?php endif; ?>
+        <div><a class="link" href="<?= $h(\App\Controllers\Web\SseFileController::replayUrl('QW', ['last' => $identity['last_name'], 'first' => $identity['first_name'], 'dob' => $identity['birth_date'] ?? ''])) ?>">Passer aux fichiers</a></div>
     </div>
 </div>
 

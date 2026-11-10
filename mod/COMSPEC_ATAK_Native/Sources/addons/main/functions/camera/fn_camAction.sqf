@@ -228,16 +228,13 @@ switch (_mode) do {
     };
     case "rename": {
         if (isNull _a) exitWith { false };
-        if (isNull ([] call comspec_atak_native_fnc_display) || {!((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false])}) then {
-            [true] call comspec_atak_native_fnc_open;
-        };
-        [{
+        // Lien profond (fn_openApp) : app Caméras sur cette caméra, champ du nom ouvert, même téléphone verrouillé.
+        ["LIVECAM", createHashMapFromArray [["cam", netId _a]], {
             private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-            _s set ["livecamTarget", netId _this];
+            _s set ["livecamTarget", _this get "cam"];
             _s set ["livecamPan", 0];
             _s set ["livecamRename", true];
-            ["LIVECAM"] call comspec_atak_native_fnc_navigate;
-        }, _a] call comspec_atak_native_fnc_nextFrame;
+        }] call comspec_atak_native_fnc_openApp;
         true
     };
     case "aceInit": {

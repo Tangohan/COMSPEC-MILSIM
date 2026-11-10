@@ -43,7 +43,8 @@ switch (_op) do {
     case "msg": {
         if (!hasInterface || {!_fromServer}) exitWith {};
         _a params [["_txt", "", [""]], ["_type", "WARNING", [""]]];
-        if !([_txt, _type, "Équipement"] call comspec_sse_fnc_notify) then { systemChat _txt; };
+        // Notification du téléphone ; sans ATAK natif, RPT seul (jamais le chat ni une alerte d'Arma).
+        if !([_txt, _type, "Équipement"] call comspec_sse_fnc_notify) then { diag_log text format ["[COMSPEC SSE] Équipement : %1", _txt]; };
     };
     case "mine": {
         if (!hasInterface || {!_fromServer}) exitWith {};

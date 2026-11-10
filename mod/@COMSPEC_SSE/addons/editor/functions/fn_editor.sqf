@@ -39,7 +39,11 @@ private _deliveryLabels = [["À ramasser", "Sur un objet choisi dans le monde", 
 private _deliveryPapers = [["Au sol", "Posés à l'endroit choisi", "Les papiers sont posés au sol à l'endroit choisi, ou remis à la personne visée."], ["Sur quelqu'un", "Une personne ou un véhicule à cliquer", "Les papiers sont remis à la personne visée, ou dans le véhicule visé."], ["Annonce", "Message au téléphone, aucun papier", "Un message au téléphone annonce ces papiers : aucun objet n'est posé."]];
 private _kitSets = ["Carte et passeport", "Carte militaire et carte", "Carte et permis"];
 private _markings = ["NON PROTÉGÉ", "DIFFUSION RESTREINTE", "CONFIDENTIEL"];
-private _papers = [["id_card", "Carte d'identité"], ["passport", "Passeport"], ["driving_license", "Permis de conduire"], ["military_id", "Carte militaire"]];
+// Types de papiers du registre (CfgComspecDocuments, extensions actives comprises) : les quatre intégrés d'abord, dans
+// l'ordre historique (index 0..3 de « paper » dans les bibliothèques enregistrées), puis les autres clés servies.
+private _paperKeys = ["id_card", "passport", "driving_license", "military_id"];
+{ _paperKeys pushBackUnique _x; } forEach (["list", [""]] call comspec_sse_fnc_idDocTypes);
+private _papers = _paperKeys apply { [_x, ["label", _x] call comspec_sse_fnc_idDocTypes] };
 private _natures = [["civil", "Vraie"], ["cover", "Couverture"], ["forged", "Faux"]];
 // Papier d'un renseignement : automatique (nature, contexte, graine : fn_paperSkin), un des papiers, ou la feuille unie d'avant
 // (contenu enregistré avant les papiers, sans clé « skin »).
@@ -72,9 +76,11 @@ private _who = { if (isNull player) then { profileName } else { name player } };
 
 private _editorIdcs = [94063, 94010, 94011, 94020, 94021, 94022, 94030, 94031, 94032, 94040, 94041, 94042, 94043, 94046, 94047, 94048, 94050, 94051, 94052, 94053, 94054, 94055, 94060, 94061, 94062];
 { private _b = _x; for "_i" from 0 to 4 do { _editorIdcs pushBack (_b + _i); }; } forEach [94100, 94110, 94120, 94130, 94140, 94200, 94210, 94220];
-private _aiIdcs = [];
 _editorIdcs append [94056, 94057, 94058];
-for "_i" from 94500 to 94548 do { _aiIdcs pushBack _i; };
+// Page « IA de la zone » (dialogs/editor.hpp). 94543 est dans le groupe 94573 (position relative) : jamais déplacé seul.
+private _aiIdcs = [94500, 94502, 94503, 94504, 94505, 94506, 94507, 94508, 94509, 94510, 94511, 94512, 94513, 94514, 94515, 94516, 94517, 94518, 94519, 94520, 94521, 94522, 94523, 94524, 94525, 94526, 94527, 94528, 94529,
+    94530, 94532, 94533, 94534, 94535, 94536, 94538, 94540, 94541, 94542, 94544, 94545, 94546, 94548, 94549, 94550, 94551, 94552, 94553, 94554, 94555, 94556, 94557, 94558, 94559, 94560, 94561, 94562, 94563, 94564, 94565,
+    94566, 94567, 94568, 94569, 94571, 94572, 94573, 94574, 94575, 94576, 94577, 94578, 94579, 94580, 94581, 94582, 94583, 94584];
 private _libIdcs = [94300, 94320, 94321, 94322, 94323, 94330, 94331, 94332, 94333, 94334, 94335, 94336, 94337, 94338, 94339, 94340, 94310, 94311, 94312, 94313, 94314, 94315, 94316, 94317];
 
 // Valeurs du formulaire -> brouillon en cours.
@@ -92,7 +98,8 @@ private _preview = {
     private _text = [[[_it get "body"] call _esc, toString [13], ""] call CBA_fnc_replace, toString [10], "<br/>"] call CBA_fnc_replace;
     private _type = _it get "type";
     private _stampText = switch (_type) do {
-        case "paper": { toUpper ((_papers select (_it get "paper")) select 1) };
+        // Index enregistré au-delà de la liste (extension coupée depuis) : dernier type de la liste plutôt qu'une erreur.
+        case "paper": { toUpper ((_papers select (((_it get "paper") max 0) min ((count _papers) - 1))) select 1) };
         case "kit": { toUpper (_kitSets param [_it get "paper", _kitSets select 0]) };
         case "intel": { _markings select (_it get "marking") };
         default { "" };
@@ -183,7 +190,7 @@ private _form = {
         case "paper": {
             (_d displayCtrl 94042) ctrlSetText ("Type de papier" call comspec_sse_fnc_tr);
             { _main lbAdd ((_x select 1) call comspec_sse_fnc_tr); } forEach _papers;
-            _main lbSetCurSel (_it get "paper");
+            _main lbSetCurSel (((_it get "paper") max 0) min ((count _papers) - 1));
         };
         case "kit": {
             (_d displayCtrl 94042) ctrlSetText ("Lot de papiers" call comspec_sse_fnc_tr);

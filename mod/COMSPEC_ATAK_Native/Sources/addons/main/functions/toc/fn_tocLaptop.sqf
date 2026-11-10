@@ -804,7 +804,9 @@ switch (_mode) do {
         private _map = _a;
         private _feed = call _feedOf;
         _feed params [["_ft", -1], ["_nodes", []], ["_events", []]];
-        private _ts = 0.032 * (safeZoneH / 1.2);
+        // Taille des textes : celle d'un écran de PC, jamais sous le plancher en pixels réels des cartes du téléphone
+        // (Réglages > Carte, « Taille minimale des textes », fn_mapLbl).
+        private _ts = (0.032 * (safeZoneH / 1.2)) max (((profileNamespace getVariable ["COMSPEC_ATAK_MapTextMinPx", 14]) max 12) * 1.1 * pixelH);
         private _selG = _st getOrDefault ["selG", ""];
         // Poste TOC.
         private _o = _st getOrDefault ["obj", objNull];
@@ -869,6 +871,8 @@ switch (_mode) do {
         ["draw", [_map, _ts * 0.9, "RobotoCondensedBold"]] call comspec_atak_native_fnc_aiOrder;
         // Appui feu typé (fn_fireSupport) : missions de tir du camp, portées et distance de sécurité.
         ["draw", [_map, _ts * 0.9, "RobotoCondensedBold"]] call comspec_atak_native_fnc_fireSupport;
+        // UCAV commandés du camp (fn_ucav) : orbite, zone de Rechercher et tuer, frappe en cours.
+        ["draw", _map] call comspec_atak_native_fnc_ucav;
         // Objectif de l'ordre en cours de rédaction (clic droit).
         if ((count _op) >= 2) then {
             private _opP = [_op select 0, _op select 1, 0];

@@ -505,13 +505,53 @@ private _qTxt = if (_faceQ >= 0) then {
     _mode, _qTxt, ["", "   <t color='#ffd166'>ARMÉ</t>"] select _photo
 ]) call comspec_overwatch_connect_fnc_tr);
 
-// --- Barre de titre (9526) : batterie, heure ---
-// Batterie simulée : décroît avec la durée de mission, jamais sous 12 %.
-private _bat = (97 - floor (time / 420)) max 12;
-(_disp displayCtrl 9526) ctrlSetStructuredText parseText ((format [
-    "<t size='0.48' align='right' color='%1'>BAT %2%3</t><t size='0.48' align='right' color='#ffffff'>   %4</t>",
-    ["#ffd166", "#ffffff"] select (_bat > 25), _bat, "%", _clock
-]) call comspec_overwatch_connect_fnc_tr);
+// --- Barre de titre (9526) : batterie réelle (fn_seekBattery), heure, écran éteint à 0 % ---
+["render"] call comspec_overwatch_connect_fnc_seekBattery;
+private _bat = ceil (["get"] call comspec_overwatch_connect_fnc_seekBattery);
+
+// --- Étapes faites : coches des tuiles, onglets verts, bascule « inconnu », contexte prérempli ---
+private _steps = ["steps"] call comspec_overwatch_connect_fnc_seekState;
+private _page = uiNamespace getVariable ["COMSPEC_SsePerson_Page", 0];
+if (!(_page isEqualType 0)) then { _page = 0; };
+private _sentNow = _steps getOrDefault ["sent", false];
+private _doneTiles = [_steps get "subject", _steps get "context", (_steps get "fp") || {_steps get "iris"}, false, _steps get "face", _sentNow];
+{
+    private _c = _disp displayCtrl _x;
+    if (!isNull _c) then {
+        private _on = _doneTiles select _forEachIndex;
+        _c ctrlSetStructuredText parseText (["", "<t size='0.44' font='TahomaB' align='center' color='#ffffff'>OK</t>"] select _on);
+        _c ctrlSetBackgroundColor ([[0, 0, 0, 0], [0.10, 0.52, 0.20, 0.92]] select _on);
+    };
+} forEach [9670, 9671, 9672, 9673, 9674, 9675];
+// Onglets SUJET EMPR. IRIS VISAGE REVUE ENVOI : vert pâle quand l'étape est faite (l'onglet courant reste blanc).
+private _tabDone = [_steps get "subject", _steps get "fp", _steps get "iris", _steps get "face", _steps get "query", _sentNow];
+private _tabCur = [-1, 0, 0, 1, 0, 3, 5, -1, 2, 4, -1] param [_page, -1];
+{
+    private _c = _disp displayCtrl _x;
+    if (!isNull _c && {_forEachIndex isNotEqualTo _tabCur}) then {
+        if (_tabDone select _forEachIndex) then {
+            _c ctrlSetBackgroundColor [0.70, 0.86, 0.72, 1];
+            _c ctrlSetTextColor [0.05, 0.35, 0.12, 1];
+        } else {
+            _c ctrlSetBackgroundColor [0.74, 0.73, 0.70, 1];
+            _c ctrlSetTextColor [0.28, 0.30, 0.33, 1];
+        };
+    };
+} forEach [9650, 9651, 9652, 9653, 9654, 9655];
+private _unk = _disp displayCtrl 9558;
+if (!isNull _unk) then {
+    _unk ctrlSetText ((["INCONNU : NON", "INCONNU : OUI"] select (uiNamespace getVariable ["COMSPEC_SeekUnknown", false])) call comspec_overwatch_connect_fnc_tr);
+};
+// CONTEXTE : grille, heure et unité préremplies (elles partent avec la fiche).
+private _ctxLbl = _disp displayCtrl 9563;
+if (!isNull _ctxLbl) then {
+    private _where = if (isNull _bt) then { mapGridPosition player } else { mapGridPosition _bt };
+    _ctxLbl ctrlSetStructuredText parseText format [
+        "<t size='0.6' font='TahomaB' color='#33414c'>%1</t><t size='0.5' color='#5a6670'>   %2 %3 · %4 · %5</t>",
+        "SIGNES DISTINCTIFS" call comspec_overwatch_connect_fnc_tr, "Grille" call comspec_overwatch_connect_fnc_tr, _where, _clock, groupId (group player)
+    ];
+};
+if (_page isEqualTo 10) then { ["render"] call comspec_overwatch_connect_fnc_seekQuick; };
 
 // --- Barre d'état (9600) : liaison, synchro, dossier, compteur, file d'attente ---
 if (_online) then { missionNamespace setVariable ["COMSPEC_SseLastSync", _clock]; };
@@ -522,22 +562,33 @@ private _linkTxt = switch (_link) do {
     case "degraded": { format ["<t font='TahomaB' color='%1'>DÉGRADÉE</t><t color='%2'> · Local DB · last sync %3</t>", _cWarn, _cSub, _lastSync] };
     default { format ["<t font='TahomaB' color='%1'>HORS LIAISON</t><t color='%2'> · Local DB · last sync %3</t>", _cBad, _cSub, _lastSync] };
 };
-private _case = ["get"] call comspec_overwatch_connect_fnc_sseActiveCase;
-private _caseTxt = if (_case isEqualTo "") then {
-    format ["<t color='%1'>Sans dossier</t>", _cMute]
-} else {
-    format ["<t font='TahomaB' color='%1'>%2</t>", _cInk, _case]
+// Barre d'état explicite : l'étape en cours et ce qui manque, au lieu de compteurs.
+private _tr = { _this call comspec_overwatch_connect_fnc_tr };
+private _stepNames = ["Accueil", "Sujet", "Contexte", "Empreintes", "Constat", "Visage", "Envoi", "Terrain", "Iris", "Revue", "Contrôle"];
+private _q = uiNamespace getVariable ["COMSPEC_SeekQuick", createHashMap];
+private _qPhase = if (_q isEqualType createHashMap) then { _q getOrDefault ["phase", ""] } else { "" };
+private _stepTxt = switch (true) do {
+    case (_qPhase isEqualTo "capture"): { format ["<t font='TahomaB' color='%1'>%2</t>", _cBlue, "Contrôle : capture" call _tr] };
+    case (_queryPending || {_qPhase isEqualTo "query"}): { format ["<t font='TahomaB' color='%1'>QUERY…</t>", _cBlue] };
+    default { format ["<t font='TahomaB' color='%1'>%2</t>", _cInk, (_stepNames param [_page, "Accueil"]) call _tr] };
 };
-private _sent = missionNamespace getVariable ["COMSPEC_SsePerson_SentKinds", createHashMap];
-private _nRec = if (_sent isEqualType createHashMap) then { count _sent } else { 0 };
-private _recTxt = str (1000 + _nRec);
-_recTxt = _recTxt select [1, 3];
+private _snd = uiNamespace getVariable ["COMSPEC_SeekSend", createHashMap];
+if (!(_snd isEqualType createHashMap)) then { _snd = createHashMap; };
+private _needTxt = switch (true) do {
+    case (_sentNow): {
+        format ["<t font='TahomaB' color='%1'>%2 %3</t>", [_cWarn, _cOk] select ((_snd getOrDefault ["state", ""]) isEqualTo "sent"),
+            (["En file", "Envoyé"] select ((_snd getOrDefault ["state", ""]) isEqualTo "sent")) call _tr, _snd getOrDefault ["rec", ""]]
+    };
+    case (isNull _bt): { format ["<t color='%1'>%2</t>", _cWarn, "Aucun sujet : visez la personne (A1)" call _tr] };
+    case !(_steps get "minimum"): { format ["<t font='TahomaB' color='%1'>%2</t>", _cBad, format ["Manque : %1" call _tr, (_steps get "missing") joinString ", "]] };
+    case ((_steps get "advised") isNotEqualTo []): { format ["<t color='%1'>%2</t>", _cWarn, format ["Prêt à signer · manque : %1" call _tr, (_steps get "advised") joinString ", "]] };
+    default { format ["<t font='TahomaB' color='%1'>%2</t>", _cOk, "Prêt à signer (SIGN)" call _tr] };
+};
 private _outbox = ["get"] call comspec_overwatch_connect_fnc_outboxState;
 private _pending = _outbox getOrDefault ["count", 0];
-private _bits = [_linkTxt, _caseTxt, format ["<t color='%1'>REC %2</t>", _cSub, _recTxt], format ["<t color='%1'>Éch. %2</t>", _cSub, count _samples]];
-if (_queryPending) then { _bits pushBack format ["<t font='TahomaB' color='%1'>QUERY…</t>", _cBlue]; };
-if (_pending > 0) then { _bits pushBack format ["<t font='TahomaB' color='%1'>%2 en att.</t>", _cWarn, _pending]; };
-_bits pushBack (["<t color='#5a6670'>Non signé</t>", format ["<t color='%1'>Signé</t>", _cOk]] select _signed);
+private _bits = [_linkTxt, _stepTxt, _needTxt];
+if (_pending > 0) then { _bits pushBack format ["<t font='TahomaB' color='%1'>%2</t>", _cWarn, format ["%1 en file" call _tr, _pending]]; };
+if (_bat <= 12) then { _bits = [format ["<t font='TahomaB' color='%1'>%2</t>", _cBad, format ["BATTERIE FAIBLE %1%2" call _tr, _bat, "%"]]] + _bits; };
 (_disp displayCtrl 9600) ctrlSetStructuredText parseText ((format [
     "<t size='0.4' color='%1'>%2</t>",
     _cSub,

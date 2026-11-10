@@ -1,7 +1,7 @@
 // SSE › IA RP : interprète et générateur (contrôles purs), terminal « Parler à… », réponse cohérente avec la couverture,
 // pas de redite, journal, bulle 3D, /try, ordre simple ; atelier IA (profil par script, fenêtre du Zeus).
 // 4.2.1 : « stop » relâché seul, deux demandes, faute de frappe, renseignement par paliers avec marqueur local,
-// confrontation, tirs proches et témoins.
+// confrontation, tirs proches et témoins. À venir : une réponse et une bulle par message au nom SSE, guide, actions, peur.
 if !("sse" call AT_fnc_groupe) exitWith {};
 AT_fnc_iarpIa = {
     private _g = createGroup civilian;
@@ -60,10 +60,10 @@ AT_fnc_iarpDire = {
     };
     [_dup < 3, format ["redite : %1 phrases identiques sur 6", _dup]] call AT_fnc_check;
     // Journal : ma question et la réponse, avec l'intention.
-    uiNamespace setVariable ["comspec_sse_iarpLogRows", []];
+    missionNamespace setVariable ["comspec_sse_iarpLogRows", []];
     ["tab", ["log"]] call comspec_sse_fnc_iarpUi;
-    [{ (uiNamespace getVariable ["comspec_sse_iarpLogRows", []]) isNotEqualTo [] }, 5] call AT_fnc_wait;
-    private _rows = uiNamespace getVariable ["comspec_sse_iarpLogRows", []];
+    [{ (missionNamespace getVariable ["comspec_sse_iarpLogRows", []]) isNotEqualTo [] }, 5] call AT_fnc_wait;
+    private _rows = missionNamespace getVariable ["comspec_sse_iarpLogRows", []];
     [(_rows findIf { (_x select 11) isEqualTo "D'où venez-vous ?" && {(_x select 12) isEqualTo "origin"} && {(_x select 7) isEqualTo (netId _u)} }) >= 0, "question absente du journal"] call AT_fnc_check;
     [(_rows findIf { (_x select 3) isEqualTo "IA>P" && {(_x select 7) isEqualTo (netId _u)} }) >= 0, "réponse de l'IA absente du journal"] call AT_fnc_check;
     ["ia_journal"] call AT_fnc_shot;
@@ -216,3 +216,201 @@ AT_fnc_iarpDire = {
     { deleteVehicle _x; } forEach [_u, _w, _firer];
     call AT_fnc_done;
 }, 40] call AT_fnc_run;
+
+// 4.2.2 : actions du menu Zeus « SSE · Roleplay de l'IA » côté serveur (solo : isServer, le joueur est l'autorité) :
+// profil retouché, état de conversation, lot sur deux IA, mémoire, réactions, nom affiché (fn_iarpName).
+["ia_rp_zeus_actions", {
+    if (["comspec_sse_fnc_iarpServer", "comspec_sse_fnc_iarpProfile", "comspec_sse_fnc_iarpName"] call AT_fnc_nil) exitWith {};
+    private _u = call AT_fnc_iarpIa;
+    private _u2 = (group _u) createUnit ["C_man_1", _u getPos [3, 90], [], 0, "CAN_COLLIDE"];
+    _u2 allowDamage false;
+    { _x enableAI "PATH"; } forEach [_u, _u2];
+    uiSleep 1;
+    // Nom affiché : jamais le nom d'unité Arma ; le Zeus voit la vérité (nom de l'atelier différent de l'identité : ment).
+    _u setVariable ["comspec_sse_idName", nil];
+    [(["shown", _u] call comspec_sse_fnc_iarpName) isNotEqualTo (name _u), format ["nom d'unité Arma affiché : %1", name _u]] call AT_fnc_check;
+    // Profil retouché (menu « Rôle et caractère ») : rôle et peur changés, le reste gardé.
+    missionNamespace setVariable ["comspec_sse_iarpLastNotice", nil];
+    ["apply", [_u, createHashMapFromArray [["talk", 77]]]] call comspec_sse_fnc_iarpProfile;
+    ["profileTweak", [player, [_u], [["role", "insurge"], ["fear", 90], ["name", "Yannis PETRAKIS"], ["react", [["order", "coopere"]]]]]] call comspec_sse_fnc_iarpServer;
+    private _p = ["get", _u] call comspec_sse_fnc_iarpProfile;
+    [(_p get "role") isEqualTo "insurge" && {(_p get "fear") isEqualTo 90} && {(_p get "talk") isEqualTo 77} && {((_p get "react") get "order") isEqualTo "coopere"}, format ["profil retouché : %1", ["summary", _p] call comspec_sse_fnc_iarpProfile]] call AT_fnc_check;
+    [(_u getVariable ["COMSPEC_ID_Profile", ""]) isEqualTo "insurge", "rôle non transmis aux IA réalistes (COMSPEC_ID_Profile)"] call AT_fnc_check;
+    [!isNil { missionNamespace getVariable "comspec_sse_iarpLastNotice" }, "aucun retour au Zeus après la retouche du profil"] call AT_fnc_check;
+    (["truth", _u] call comspec_sse_fnc_iarpName) params [["_shown", ""], ["_true", ""], ["_nat", ""]];
+    (format ["nom pour le Zeus : %1 / %2 / %3 -> %4", _shown, _true, _nat, ["label", [_shown, _true, _nat]] call comspec_sse_fnc_iarpName]) call AT_fnc_info;
+    [_shown isEqualTo "Yannis PETRAKIS" && {_nat in ["true", "lies"]}, format ["vérité du nom : %1", [_shown, _true, _nat]]] call AT_fnc_check;
+    // État de conversation : « Stop » fige l'IA, « Relâcher » la libère (ordres de l'IA RP, serveur).
+    ["zenState", [player, [_u], "stop"]] call comspec_sse_fnc_iarpServer;
+    AT_iarpU = _u;
+    [[{ !(AT_iarpU checkAIFeature "PATH") }, 3] call AT_fnc_wait, "« Stop » du Zeus : l'IA n'est pas arrêtée"] call AT_fnc_check;
+    ["zenState", [player, [_u], "free"]] call comspec_sse_fnc_iarpServer;
+    [[{ AT_iarpU checkAIFeature "PATH" }, 3] call AT_fnc_wait, "« Relâcher » du Zeus : l'IA reste figée"] call AT_fnc_check;
+    // Lot : profil de bibliothèque sur deux IA, réactions coupées pour les deux.
+    private _raw = ["serialize", ["preset", "milicien"] call comspec_sse_fnc_iarpProfile] call comspec_sse_fnc_iarpProfile;
+    ["profileSet", [player, [_u, _u2], _raw, "apply"]] call comspec_sse_fnc_iarpServer;
+    [((["get", _u] call comspec_sse_fnc_iarpProfile) get "preset") isEqualTo "milicien" && {((["get", _u2] call comspec_sse_fnc_iarpProfile) get "preset") isEqualTo "milicien"}, "lot : profil non appliqué aux deux IA"] call AT_fnc_check;
+    ["reactSet", [player, [_u, _u2], false, true]] call comspec_sse_fnc_iarpServer;
+    [("shots" in (_u getVariable ["comspec_sse_iarpReactOff", []])) && {"shots" in (_u2 getVariable ["comspec_sse_iarpReactOff", []])} && {!("witness" in (_u2 getVariable ["comspec_sse_iarpReactOff", []]))}, "lot : réactions non réglées sur les deux IA"] call AT_fnc_check;
+    if (!(["comspec_sse_fnc_iarpReact"] call AT_fnc_nil)) then {
+        // Tirs coupés pour cette IA : suivie (« watch ») mais aucune réaction au tir proche.
+        _u setVariable ["comspec_sse_iarpTalkAt", time];
+        ["watch", [_u]] call comspec_sse_fnc_iarpReact;
+        ["fired", [_u, player, 10]] call comspec_sse_fnc_iarpReact;
+        [(_u getVariable ["comspec_sse_iarpShotAt", -1]) < 0, "réaction aux tirs malgré la coupure du Zeus"] call AT_fnc_check;
+    };
+    // Mémoire : lue (vide) puis effacée.
+    missionNamespace setVariable ["comspec_sse_iarpLastMem", nil];
+    ["memGet", [player, _u]] call comspec_sse_fnc_iarpServer;
+    private _m = missionNamespace getVariable ["comspec_sse_iarpLastMem", []];
+    [(_m param [0, objNull]) isEqualTo _u, "mémoire de l'IA non reçue par le Zeus"] call AT_fnc_check;
+    if (dialog) then { closeDialog 0; };
+    _u setVariable ["comspec_sse_iarpMem", createHashMapFromArray [["said", createHashMap]]];
+    ["memClear", [player, [_u], ""]] call comspec_sse_fnc_iarpServer;
+    [isNil { _u getVariable "comspec_sse_iarpMem" }, "mémoire de l'IA non effacée"] call AT_fnc_check;
+    { deleteVehicle _x; } forEach [_u, _u2];
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;
+
+// 4.2.2 : entrée ZEN « SSE · Roleplay de l'IA » posée, visible sur une IA, jamais sur un joueur seul (condition évaluée
+// avec les arguments de ZEN : [position, objets sélectionnés, groupes, points de passage, marqueurs, survol, argument]).
+["ia_rp_zeus_menu", {
+    if (["comspec_sse_fnc_iarpZen"] call AT_fnc_nil) exitWith {};
+    if (isNil "zen_context_menu_fnc_createAction" || {isNil "zen_context_menu_actions"}) exitWith { "ZEN absent de ce build" call AT_fnc_skip; };
+    [[{ !isNil "comspec_sse_iarpZenTargets" }, 10] call AT_fnc_wait, "menu ZEN de l'IA RP non enregistré (comspec_sse_iarpZenTargets)"] call AT_fnc_check;
+    private _node = (zen_context_menu_actions select { ((_x select 0) select 0) isEqualTo "comspec_sse_iarp" }) param [0, []];
+    if !([_node isNotEqualTo [], "entrée racine « comspec_sse_iarp » absente des actions ZEN"] call AT_fnc_check) exitWith { call AT_fnc_done; };
+    private _cond = (_node select 0) select 5;
+    private _kids = (_node select 1) apply { (_x select 0) select 0 };
+    (format ["sous-menus : %1", _kids]) call AT_fnc_info;
+    { [_x in _kids, format ["sous-menu %1 absent", _x]] call AT_fnc_check; } forEach ["comspec_sse_iarp_profile", "comspec_sse_iarp_state", "comspec_sse_iarp_mem", "comspec_sse_iarp_react"];
+    private _u = call AT_fnc_iarpIa;
+    private _pos = getPosASL _u;
+    [[_pos, [_u], [], [], [], _u, []] call _cond, "entrée invisible sur une IA survolée"] call AT_fnc_check;
+    [[_pos, [_u, player], [], [], [], objNull, []] call _cond, "entrée invisible sur une sélection IA + joueur"] call AT_fnc_check;
+    [!([_pos, [player], [], [], [], player, []] call _cond), "entrée visible sur un joueur seul"] call AT_fnc_check;
+    [!([_pos, [], [], [], [], objNull, []] call _cond), "entrée visible sans cible"] call AT_fnc_check;
+    [([_pos, [player, _u], [], [], [], player, []] call comspec_sse_iarpZenTargets) isEqualTo [_u], "cibles : le joueur n'est pas écarté"] call AT_fnc_check;
+    deleteVehicle _u;
+    call AT_fnc_done;
+}, 30] call AT_fnc_run;
+
+// À venir : une réponse, une bulle, un nom ; « Tu vas bien ? » compris ; journal sans doublon ; guide qui remplit la saisie.
+["ia_rp_une_reponse", {
+    if (["comspec_sse_fnc_iarpUi", "comspec_sse_fnc_idIssue"] call AT_fnc_nil) exitWith {};
+    private _u = call AT_fnc_iarpIa;
+    uiSleep 2;
+    [_u, createHashMapFromArray [["type", "id_card"], ["materialize", true]]] call comspec_sse_fnc_idIssue;
+    ["open", [_u]] call comspec_sse_fnc_iarpUi;
+    if !([[{ !isNull findDisplay 94600 }, 5] call AT_fnc_wait, "terminal « Parler à… » non ouvert"] call AT_fnc_check) exitWith { deleteVehicle _u; call AT_fnc_done; };
+    AT_iarpU = _u;
+    [[{ (AT_iarpU getVariable ["comspec_sse_idName", ""]) isNotEqualTo "" }, 5] call AT_fnc_wait, "IA avec papiers : nom SSE absent (comspec_sse_idName)"] call AT_fnc_check;
+    private _name = _u getVariable ["comspec_sse_idName", ""];
+    uiSleep 1;
+    [(ctrlText ((findDisplay 94600) displayCtrl 94601)) isEqualTo _name, format ["en-tête « %1 » au lieu de « %2 »", ctrlText ((findDisplay 94600) displayCtrl 94601), _name]] call AT_fnc_check;
+    private _net = netId _u;
+    private _before = count ((missionNamespace getVariable ["comspec_sse_iarpHist", createHashMap]) getOrDefault [_net, []]);
+    ([_u, "Tu vas bien ?"] call AT_fnc_iarpDire) params ["_ack", "_rep"];
+    [(_ack param [1, ""]) isEqualTo "howareyou", format ["« Tu vas bien ? » : %1", _ack param [1, "aucune"]]] call AT_fnc_check;
+    uiSleep 4;
+    private _l = ((missionNamespace getVariable ["comspec_sse_iarpHist", createHashMap]) getOrDefault [_net, []]) select [_before];
+    private _ai = _l select { (_x select 0) isEqualTo "ai" };
+    [(count _ai) isEqualTo 1, format ["%1 réponse(s) de l'IA dans le fil pour un message", count _ai]] call AT_fnc_check;
+    [((_ai param [0, []]) param [1, ""]) isEqualTo _name, format ["nom du fil « %1 », nom SSE « %2 »", (_ai param [0, []]) param [1, ""], _name]] call AT_fnc_check;
+    private _b = (missionNamespace getVariable ["comspec_sse_iarpBubbles", []]) select { (_x select 0) isEqualTo AT_iarpU };
+    [(count _b) isEqualTo 1 && {((_b select 0) select 2) isEqualTo (toUpper _name)}, format ["bulles au-dessus de l'IA : %1", _b apply { _x select 2 }]] call AT_fnc_check;
+    ["ia_une_reponse"] call AT_fnc_shot;
+    "fenêtre « Parler à » : en-tête (initiales, nom, état), bulles Moi à droite / IA à gauche, une seule bulle 3D" call AT_fnc_visuel;
+    // Journal : chaque ligne une fois.
+    ["tab", ["log"]] call comspec_sse_fnc_iarpUi;
+    uiSleep 2;
+    private _rows = missionNamespace getVariable ["comspec_sse_iarpLogRows", []];
+    private _ids = _rows apply { _x select 0 };
+    [(count _ids) isEqualTo (count (_ids arrayIntersect _ids)), "journal : lignes en double"] call AT_fnc_check;
+    ["ia_journal_lisible"] call AT_fnc_shot;
+    // Guide : thèmes, un exemple cliqué remplit le champ.
+    ["tab", ["guide"]] call comspec_sse_fnc_iarpUi;
+    uiSleep 0.5;
+    [(lbSize ((findDisplay 94600) displayCtrl 94660)) >= 10, "guide : moins de 10 thèmes"] call AT_fnc_check;
+    private _pair = ((((["guide"] call comspec_sse_fnc_iarpData) select 1) select 1) select 0) select 1;
+    private _s = [(_pair select 0) select 1, (_pair select 0) select 0] select (language isEqualTo "French");
+    ["example", [_s]] call comspec_sse_fnc_iarpUi;
+    [(ctrlText ((findDisplay 94600) displayCtrl 94620)) isEqualTo _s, "guide : l'exemple n'a pas rempli le champ de saisie"] call AT_fnc_check;
+    ["ia_guide"] call AT_fnc_shot;
+    closeDialog 0;
+    deleteVehicle _u;
+    call AT_fnc_done;
+}, 90] call AT_fnc_run;
+
+// À venir : chaque action du menu « Faire une action » laisse une ligne dans le fil et un effet mesurable sur l'IA.
+["ia_rp_actions", {
+    if (["comspec_sse_fnc_iarpUi", "comspec_sse_fnc_iarpReact"] call AT_fnc_nil) exitWith {};
+    private _u = call AT_fnc_iarpIa;
+    AT_iarpU = _u;
+    uiSleep 1;
+    ["apply", [_u, createHashMapFromArray [["react", [["order", "coopere"], ["bribe", "refuse"]]]]]] call comspec_sse_fnc_iarpProfile;
+    ["open", [_u]] call comspec_sse_fnc_iarpUi;
+    [[{ !isNull findDisplay 94600 }, 5] call AT_fnc_wait, "terminal non ouvert"] call AT_fnc_check;
+    AT_iarpPress = { (AT_iarpU getVariable ["comspec_sse_iarpPress", [0, 0]]) select 0 };
+    {
+        _x params ["_id", "_effect"];
+        if (isNull findDisplay 94600) then { ["open", [AT_iarpU]] call comspec_sse_fnc_iarpUi; uiSleep 1; };
+        private _n0 = count ((missionNamespace getVariable ["comspec_sse_iarpHist", createHashMap]) getOrDefault [netId AT_iarpU, []]);
+        AT_iarpP0 = call AT_iarpPress;
+        missionNamespace setVariable ["comspec_sse_iarpLastAck", nil];
+        ["action", [_id]] call comspec_sse_fnc_iarpUi;
+        [{ !isNil { missionNamespace getVariable "comspec_sse_iarpLastAck" } }, 6] call AT_fnc_wait;
+        uiSleep 2.5;
+        private _l = ((missionNamespace getVariable ["comspec_sse_iarpHist", createHashMap]) getOrDefault [netId AT_iarpU, []]) select [_n0];
+        [(_l findIf { (_x select 0) isEqualTo "act" }) >= 0, format ["action « %1 » : pas de ligne dans le fil", _id]] call AT_fnc_check;
+        [(_l findIf { (_x select 0) isEqualTo "ai" }) >= 0, format ["action « %1 » : l'IA ne réagit pas", _id]] call AT_fnc_check;
+        [call compile _effect, format ["action « %1 » : aucun effet (%2)", _id, _effect]] call AT_fnc_check;
+        uiSleep 1;
+    } forEach [
+        ["handsup", "(call AT_iarpPress) < AT_iarpP0 || {AT_iarpP0 <= -29}"], ["lower", "(call AT_iarpPress) < AT_iarpP0 || {AT_iarpP0 <= -29}"],
+        ["aim", "(call AT_iarpPress) > AT_iarpP0"], ["badge", "(call AT_iarpPress) > AT_iarpP0"], ["money", "(call AT_iarpPress) > AT_iarpP0"],
+        ["give", "(call AT_iarpPress) < AT_iarpP0 || {AT_iarpP0 <= -29}"],
+        ["photo", "((missionNamespace getVariable ['comspec_sse_iarpLastAck', []]) param [2, '']) isNotEqualTo ''"],
+        ["search", "(AT_iarpU getVariable ['ace_captives_isSurrendering', false]) || {(call AT_iarpPress) > AT_iarpP0} || {(((missionNamespace getVariable ['comspec_sse_iarpLastAck', []]) param [2, '']) find 'fouille') >= 0}"],
+        ["cuff", "(AT_iarpU getVariable ['ace_captives_isHandcuffed', false]) || {(call AT_iarpPress) > AT_iarpP0}"],
+        ["take", "((missionNamespace getVariable ['comspec_sse_iarpLastAck', []]) param [1, '']) isEqualTo 'papers'"]
+    ];
+    ["ia_actions"] call AT_fnc_shot;
+    closeDialog 0;
+    deleteVehicle _u;
+    call AT_fnc_done;
+}, 150] call AT_fnc_run;
+
+// À venir : un civil sans menace reste calme à côté d'un joueur armé (arme baissée) ; braqué à 3 m, sa peur monte ;
+// arme baissée 30 s, elle redescend (automate des IA réalistes, fn_idAiBrain), et le journal dit pourquoi.
+["ia_rp_peur", {
+    if (["comspec_sse_fnc_idAiFsm", "comspec_sse_fnc_iarpReact"] call AT_fnc_nil) exitWith {};
+    if ((primaryWeapon player) isEqualTo "") then { player addWeapon "arifle_MX_F"; player addMagazine "30Rnd_65x39_caseless_mag"; };
+    private _u = call AT_fnc_iarpIa;
+    AT_iarpU = _u;
+    _u setPosATL (player getPos [3, getDir player]);
+    _u setDir ((getDir player) + 180);
+    uiSleep 1;
+    ["engage", [_u, player]] call comspec_sse_fnc_idAiFsm;
+    if !(weaponLowered player) then { player action ["WeaponOnBack", player]; };
+    uiSleep 60;
+    private _t1 = _u getVariable ["comspec_sse_idTension", 0];
+    (format ["peur après 60 s, arme baissée : %1", round _t1]) call AT_fnc_info;
+    [_t1 < 30, format ["civil sans menace : peur %1 (moins de 30 attendu)", round _t1]] call AT_fnc_check;
+    player action ["WeaponInHand", player];
+    player setDir (player getDir _u);
+    uiSleep 6;
+    private _aim = (["aimedAt", [_u]] call comspec_sse_fnc_iarpReact) select 0;
+    private _t2 = _u getVariable ["comspec_sse_idTension", 0];
+    (format ["arme braquée à 3 m : %1 arme(s), peur %2", _aim, round _t2]) call AT_fnc_info;
+    [_aim > 0 && {_t2 > _t1 + 10}, format ["arme braquée à 3 m : peur %1 (avant %2), %3 arme(s) vue(s)", round _t2, round _t1, _aim]] call AT_fnc_check;
+    player action ["WeaponOnBack", player];
+    uiSleep 30;
+    private _t3 = _u getVariable ["comspec_sse_idTension", 0];
+    [_t3 < _t2 - 8, format ["arme baissée 30 s : peur %1 (pic %2)", round _t3, round _t2]] call AT_fnc_check;
+    private _rows = (missionNamespace getVariable ["comspec_sse_iarpLog", []]) select { (_x select 3) isEqualTo "PEUR" && {(_x select 7) isEqualTo (netId AT_iarpU)} };
+    [_rows isNotEqualTo [], "journal : aucune variation de peur notée avec sa raison"] call AT_fnc_check;
+    { ("journal de la peur : " + (_x select 11)) call AT_fnc_info; } forEach (_rows select [0, 4]);
+    deleteVehicle _u;
+    call AT_fnc_done;
+}, 150] call AT_fnc_run;

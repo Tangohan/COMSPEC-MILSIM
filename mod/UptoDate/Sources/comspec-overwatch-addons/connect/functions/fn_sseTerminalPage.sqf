@@ -10,7 +10,7 @@
 
             Pages : 0 accueil · 1 sujet · 2 contexte · 3 empreintes · 4 constat
             5 visage · 6 envoi (dossier) · 7 terrain (record / digital / site / preuves)
-            8 iris · 9 revue (watchlist, ADN, QUERY)
+            8 iris · 9 revue (watchlist, ADN, QUERY) · 10 contrôle rapide (verdict)
             Les numéros 0 à 7 sont appelés de l'extérieur : ne pas les décaler.
 
     << / >> suivent le flux d'enrôlement du SEEK (Demographics → Fingers →
@@ -24,11 +24,15 @@ private _disp = uiNamespace getVariable ["COMSPEC_SsePerson_Display", displayNul
 if (isNull _disp) then { _disp = findDisplay 9991; };
 if (isNull _disp) exitWith {};
 
+// Batterie vide : écran noir, plus de navigation.
+if !(["can"] call comspec_overwatch_connect_fnc_seekBattery) exitWith { ["render"] call comspec_overwatch_connect_fnc_seekBattery; };
+
 // Chaque libellé porte un IDC : sans cela il resterait affiché et se
 // superposerait au libellé de la page suivante, posé sur la même ligne.
 private _pages = [
-    ["ACCUEIL",   [9530, 9531, 9532, 9533, 9534, 9535, 9545, 9546, 9547, 9548, 9549, 9550]],
-    ["SUJET",     [9501, 9502, 9503, 9504, 9507, 9508, 9511,
+    ["ACCUEIL",   [9530, 9531, 9532, 9533, 9534, 9535, 9545, 9546, 9547, 9548, 9549, 9550,
+                   9670, 9671, 9672, 9673, 9674, 9675, 9676]],
+    ["SUJET",     [9501, 9502, 9503, 9504, 9507, 9508, 9511, 9558,
                    9551, 9552, 9553, 9554, 9555, 9556]],
     ["CONTEXTE",  [9505, 9506, 9509, 9510, 9560, 9561, 9562, 9563]],
     ["EMPREINTES", [9514, 9620, 9621, 9622,
@@ -39,13 +43,14 @@ private _pages = [
     ["TERRAIN",   [9580, 9581, 9582, 9590, 9591, 9592, 9593, 9594]],
     ["IRIS",      [9523, 9626, 9627, 9628, 9629, 9630, 9631, 9632, 9633, 9634, 9635,
                    9636, 9637, 9638, 9639]],
-    ["REVUE",     [9522, 9524, 9527, 9566, 9640, 9641, 9642]]
+    ["REVUE",     [9522, 9524, 9527, 9566, 9640, 9641, 9642]],
+    ["CONTRÔLE",  [9680, 9681, 9682, 9683, 9684, 9686, 9687, 9688, 9689]]
 ];
-// Ordre du flux pour << / >> (le terrain reste au bout, comme avant).
-private _flow = [0, 1, 2, 4, 3, 8, 5, 9, 6, 7];
+// Ordre du flux pour << / >> : contrôle rapide d'abord, puis l'enrôlement (le terrain reste au bout).
+private _flow = [0, 10, 1, 2, 4, 3, 8, 5, 9, 6, 7];
 // Onglet allumé par page : SUJET (1, 2, 4) · EMPR. · IRIS · VISAGE · REVUE · ENVOI.
 private _tabs = [9650, 9651, 9652, 9653, 9654, 9655];
-private _tabOf = [-1, 0, 0, 1, 0, 3, 5, -1, 2, 4];
+private _tabOf = [-1, 0, 0, 1, 0, 3, 5, -1, 2, 4, -1];
 private _count = count _pages;
 
 private _current = uiNamespace getVariable ["COMSPEC_SsePerson_Page", 0];
@@ -136,6 +141,9 @@ private _next = _disp displayCtrl 9542;
 private _flowPos = _flow find _target;
 if (!isNull _prev) then { _prev ctrlEnable (_flowPos > 0); };
 if (!isNull _next) then { _next ctrlEnable (_flowPos < ((count _flow) - 1)); };
+
+// Page CONTRÔLE : bandeau, étapes et verdict à jour.
+if (_target isEqualTo 10) then { ["render"] call comspec_overwatch_connect_fnc_seekQuick; };
 
 // Viseur du visage : actif seulement sur la page photo (une caméra de moins sinon).
 [["stop", "start"] select (_target isEqualTo 5)] call comspec_overwatch_connect_fnc_sseFaceViewfinder;

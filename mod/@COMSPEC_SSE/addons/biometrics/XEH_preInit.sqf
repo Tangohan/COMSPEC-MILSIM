@@ -1,6 +1,6 @@
 /*
     Enregistre les raccourcis CBA (Options > Contrôles > Configurer les addons > COMSPEC SSE) :
-      Ctrl+Shift+S  app SSE du téléphone ATAK, sinon BII-10 ou SEEK II ;
+      Ctrl+Shift+S  SEEK II sur la personne visée (contrôle rapide), sinon app SSE du téléphone ATAK ou BII-10 ;
       Ctrl+Shift+R  fiche de renseignement (RENS).
     Noms et aides écrits en français : l'ATAK natif les traduit dans la langue du téléphone (fn_keyRelang, dictionnaire
     i18n/en.txt) ; les traduire ici fausserait le texte de référence qu'il garde.
@@ -13,7 +13,7 @@ if (!isNil "cba_fnc_addKeybind") then {
     [
         "COMSPEC SSE",
         "comspec_sse_open_seek_ii",
-        ["Ouvrir l'outil SSE (ATAK / SEEK II)", "Ouvre l'app SSE du téléphone ATAK. Sans téléphone : BII-10 Identifi si le mod BII est chargé, sinon le terminal SEEK II sur la personne visée."],
+        ["Ouvrir l'outil SSE (ATAK / SEEK II)", "Ouvre le SEEK II sur la personne visée, prêt pour le contrôle rapide. Sans SEEK : app SSE du téléphone ATAK, sinon BII-10 Identifi."],
         {
             if (!hasInterface) exitWith { false };
             if (!isNil "comspec_sse_fnc_openSeekKeybind") then {

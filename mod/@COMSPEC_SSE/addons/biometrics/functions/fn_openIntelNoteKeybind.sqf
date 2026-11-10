@@ -19,11 +19,7 @@ if (!isNil "comspec_overwatch_connect_fnc_intelNoteShow") exitWith {
 };
 
 if (!isNil "comspec_atak_native_fnc_hasDevice" && {[player] call comspec_atak_native_fnc_hasDevice}) exitWith {
-    if (isNull ([] call comspec_atak_native_fnc_display) || {!((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false])}) then {
-        [true] call comspec_atak_native_fnc_open;
-    };
-    [{ ["FRS"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
-    true
+    ["FRS"] call comspec_sse_fnc_openApp
 };
 
 ["Aucun rédacteur de fiche RENS : emportez un téléphone ATAK.", "WARNING"] call comspec_sse_fnc_notify;

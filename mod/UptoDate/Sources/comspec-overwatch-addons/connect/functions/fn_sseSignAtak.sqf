@@ -1,22 +1,24 @@
 /*
-    Signature de la fiche par l’ATAK de l’opérateur.
-    Vaut « procès-verbal » roleplay : l’identité de l’appareil et son porteur sont
-    scellés dans la fiche. Aucune cryptographie — un identifiant d’appareil et un
-    horodatage, comme le reste de la liaison.
+    Signature de la fiche (bouton SIGNER de la page ENVOI) avec l'identité du joueur.
+    Vaut « procès-verbal » roleplay : l'opérateur et son appareil sont scellés dans la fiche.
+    Aucune saisie ni téléphone requis : l'ATAK, s'il est porté, donne son identifiant de terminal ;
+    sinon c'est le SEEK lui-même. Aucune cryptographie, un identifiant et un horodatage.
+    La touche SIGN de l'appareil signe ET envoie (fn_seekSend).
 */
 if (!hasInterface) exitWith {};
-
-if (!([player] call comspec_overwatch_connect_fnc_hasTerminal)) exitWith {
-    ["Aucun ATAK en votre possession — signature impossible.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
-};
+if !(["can"] call comspec_overwatch_connect_fnc_seekBattery) exitWith { ["render"] call comspec_overwatch_connect_fnc_seekBattery; };
 
 private _terminal = missionNamespace getVariable ["COMSPEC_TerminalUid", ""];
-if (!(_terminal isEqualType "") || {_terminal isEqualTo ""}) then {
+if ((!(_terminal isEqualType "") || {_terminal isEqualTo ""}) && {[player] call comspec_overwatch_connect_fnc_hasTerminal}) then {
     _terminal = [] call comspec_overwatch_connect_fnc_getTerminalUid;
+};
+if (!(_terminal isEqualType "") || {_terminal isEqualTo ""}) then {
+    private _uid = getPlayerUID player;
+    _terminal = format ["SEEK-%1", _uid select [((count _uid) - 6) max 0]];
 };
 
 private _callsign = [] call comspec_overwatch_connect_fnc_getCallsign;
-if (_callsign isEqualTo "") then { _callsign = groupId (group player); };
+if (!(_callsign isEqualType "") || {_callsign isEqualTo ""}) then { _callsign = groupId (group player); };
 
 private _atakId = missionNamespace getVariable ["COMSPEC_AtakId", ""];
 if (!(_atakId isEqualType "")) then { _atakId = ""; };
@@ -33,9 +35,3 @@ uiNamespace setVariable ["COMSPEC_SsePerson_Signature", [_callsign, _terminal, _
 if (!isNil "comspec_overwatch_connect_fnc_ssePersonRefreshPanels") then {
     [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;
 };
-
-[
-    format ["Fiche signée — %1 · terminal %2", _callsign, _terminal],
-    "tactical",
-    "info"
-] call comspec_overwatch_connect_fnc_announce;

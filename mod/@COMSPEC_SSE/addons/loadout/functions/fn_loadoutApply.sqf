@@ -16,7 +16,8 @@ private _lo = [_src] call comspec_sse_fnc_loadoutParse;
 private _say = {
     params ["_txt", "_type"];
     if (_quiet || {!hasInterface} || {_unit isNotEqualTo player}) exitWith {};
-    if !([_txt, _type, "Équipement"] call comspec_sse_fnc_notify) then { systemChat (_txt regexReplace ["\\n", " "]); };
+    // Notification du téléphone ; sans ATAK natif, RPT seul (jamais le chat ni une alerte d'Arma).
+    if !([_txt, _type, "Équipement"] call comspec_sse_fnc_notify) then { diag_log text format ["[COMSPEC SSE] Équipement : %1", _txt regexReplace ["\\n", " "]]; };
 };
 if (_lo isEqualTo []) exitWith {
     diag_log text format ["[COMSPEC SSE] Équipement : tenue illisible (%1).", _name];
