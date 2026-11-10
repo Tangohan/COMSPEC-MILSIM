@@ -38,6 +38,31 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : tâches triées, annulation, recherche et écrans vides qui guident (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Des apps plus claires : tâches triées, annulation, recherche
+- Tâches : les ordres à traiter et prioritaires sont en tête, les terminés en bas, avec un filtre À traiter / Terminés / Tous ; une consigne longue se déplie au lieu d'être coupée.
+- TOUT EFFACER dans Itinéraire et VIDER LE JOURNAL dans Alertes s'annulent pendant 8 secondes ; l'itinéraire effacé n'est envoyé au groupe qu'après ce délai.
+- Médical : les blessés graves non soignés sont en tête, chaque alerte dit le nom, l'état, la distance, le cap et depuis quand ; Recherchés et l'annuaire de Numéros se fouillent par nom.
+- La touche retour ferme l'écran ouvert (nouvel ordre, moniteur, Bluetooth) au lieu de quitter l'app ; Statut et Itinéraire se mettent à jour seuls ; un écran vide dit quoi faire.
+EN : Clearer apps: sorted tasks, undo, search
+- Tasks: orders to handle and priority orders come first, finished ones at the bottom, with a To do / Done / All filter; a long order expands instead of being cut off.
+- CLEAR ALL in Route and CLEAR LOG in Alerts can be cancelled for 8 seconds; a cleared route is only sent to the group after that delay.
+- Medical: untreated serious casualties come first, each alert shows the name, state, distance, heading and how long ago; Target Deck and the Numbers directory can be searched by name.
+- The back key closes the open screen (new order, monitor, Bluetooth) instead of leaving the app; Status and Route update on their own; an empty screen says what to do.
+
+### Détail technique
+- Tâches (`fn_pageTasks`) : ordres triés par [terminé, rang de priorité FLASH / URGENT / HIGH-PRIORITY-IMPORTANT / reste, `-stamp`, clé] au lieu de l'ordre de la HashMap de `fn_tasksAll` ; filtre « segment » À TRAITER / TERMINÉS / TOUS (état `taskFilter`, ordres et tâches de mission ; segment plutôt que « tabs » : ses libellés rétrécissent ou passent à la ligne en mini) ; consigne de plus de 220 caractères (200 pour une tâche de mission) coupée à la fin d'un mot avec « … » et une ligne « fold » TEXTE COMPLET (état `taskTxtOpen`) ; tâches de mission : suivie, en cours, terminées ; `backSub` replie « QUI ? ».
+- Annulation (`fn_undoSnack`) : `fn_wpAction « clear »` garde `COMSPEC_ATAK_WpUndo` = [n°, étapes, étape active, nav, auteur, à renvoyer] et n'appelle plus `_changed` : envoi groupé (`syncNow`) différé de 8 s, envoi en attente (`COMSPEC_ATAK_WpSyncPending`) retenu puis renvoyé à l'annulation ; `undoClear` ; toute modification (`_changed`) ou réception (`receive`) rend l'annulation caduque. `fn_alertsAction « clearLog »` / `undoClearLog` (`COMSPEC_ATAK_AlertLogUndo`, entrées reçues entre-temps gardées, 25 au plus).
+- Médical (`fn_pageMedical`) : alertes triées [triage à secourir / en cours / traité / KIA, gravité, ancienneté], ancienneté calculée de `created_at` (date Athena ou Unix) en minutes depuis 2020 (précision des flottants 32 bits) ; carte « notif » (titre, ancienneté, état · triage · distance et cap du patient en jeu · grille) au lieu d'un bouton ; `backSub` : alerte dépliée, moniteur (`medMon`, retour à DOSSIERS par `medMonFrom`).
+- Touche retour : `backSub` déclaré dans `fn_pageOrderCompose` (→ `orderAction cancel`) et `fn_pageBluetooth` (fiche CONTRÔLE ID, envoi à un appareil, élément reçu déplié) ; « ‹ RETOUR » dans Recherchés.
+- Recherche : `fn_wantedAction « search » / « clearQ »` (état `wantedQ` : nom, alias, référence), `fn_numbersAction « search » / « clearQ »` (état `numQ` : nom, groupe, numéros) ; ligne « field » avec OK, comme les autres recherches du mod.
+- Pages vivantes : `fn_pageWaypoints` et `fn_pageStatus` acceptent `["live"]` (textes réécrits sans redessiner) ; minuterie CBA d'une seconde propre à chaque page (`COMSPEC_ATAK_WpLive`, `COMSPEC_ATAK_StatusLive`), arrêtée hors de la page ou téléphone fermé. `fn_formRender` : ligne « info » avec id facultatif (4e élément) ; `fn_formSet « info »`.
+- États vides par le composant « empty » : Tâches, Alertes, Médical, Logistique, Recherchés (squelette pendant le chargement), Discord, Marquer tracking, Reco, SALUTE, Itinéraire, Sniper ; dans les pages dessinées à la main (Alertes, Reco, SALUTE), formulaire d'une ligne à la hauteur de son contenu. Alertes : journal au-delà de 12 (VOIR LA SUITE, `alertsLogN`) ; Logistique au-delà de 15 / 20 (`logiNMine`, `logiNIn`). Titres en double retirés dans Recherchés et Discord.
+- Autotest (`missions/COMSPEC_Autotest.Stratis/scripts/telephone.sqf`, groupe `telephone`) : `tel_taches_triees`, `tel_etats_vides`, `tel_recherche_nom`, `tel_annulation`, `tel_pages_vivantes` ; `AT_fnc_formTient` vérifie que boutons et textes des formulaires tiennent dans leur case.
+
 ## À venir : moins de sondages et de relectures inutiles (ATAK natif et SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
