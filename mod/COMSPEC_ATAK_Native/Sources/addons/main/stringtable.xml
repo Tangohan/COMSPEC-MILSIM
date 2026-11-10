@@ -1672,6 +1672,71 @@
             <English>Map and feed, map only (large map), feed only, or post PIP (the screen mirrors what the operator has in front of them on the post laptop). Can be changed in game (ACE or scroll wheel).</English>
             <French>Carte et flux, carte seule (carte en grand), flux seul, ou PIP du poste (l'écran recopie ce que l'opérateur a sous les yeux sur le PC du poste). Modifiable en jeu (ACE ou molette).</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_SAT">
+            <Original>Satellite view (friendly tracking)</Original>
+            <English>Satellite view (friendly tracking)</English>
+            <French>Vue satellite (suivi des alliés)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_CLOCK">
+            <Original>ZULU clock and timers</Original>
+            <English>ZULU clock and timers</English>
+            <French>Horloge ZULU et chronos</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_SQUAD">
+            <Original>Squad screen (one group)</Original>
+            <English>Squad screen (one group)</English>
+            <French>Écran d'escouade (un groupe)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_LOG">
+            <Original>Post duty log</Original>
+            <English>Post duty log</English>
+            <French>Main courante du poste</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_EXCHECK">
+            <Original>Execution checklist (EXCHECK)</Original>
+            <English>Execution checklist (EXCHECK)</English>
+            <French>Liste d'exécution (EXCHECK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_KILLS">
+            <Original>Casualties and results</Original>
+            <English>Casualties and results</English>
+            <French>Pertes et résultats</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_REQ">
+            <Original>Element requests</Original>
+            <English>Element requests</English>
+            <French>Demandes des éléments</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_SQ_NAME">
+            <Original>Squad shown</Original>
+            <English>Squad shown</English>
+            <French>Escouade montrée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_SQ_TIP">
+            <Original>Name of the group (its Arma callsign) shown by the Squad screen display: name plate, members and their ATAK status, map framed on it. Example: Alpha 1-1. Can be changed in game (ACE, post laptop, TOC post app).</Original>
+            <English>Name of the group (its Arma callsign) shown by the Squad screen display: name plate, members and their ATAK status, map framed on it. Example: Alpha 1-1. Can be changed in game (ACE, post laptop, TOC post app).</English>
+            <French>Nom du groupe (indicatif Arma du groupe) montré par l'affichage Écran d'escouade : plaque à son nom, membres et leur état ATAK, carte cadrée sur lui. Exemple : Alpha 1-1. Modifiable en jeu (ACE, PC du poste, app Poste TOC).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_SAT_NAME">
+            <Original>Satellite shown</Original>
+            <English>Satellite shown</English>
+            <French>Satellite montré</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_SAT_TIP">
+            <Original>Satellite shown by the Satellite view display (two per side, controlled from the post laptop or the TOC post app). Example: SAT 1 on the big centre screen, SAT 2 on the right one.</Original>
+            <English>Satellite shown by the Satellite view display (two per side, controlled from the post laptop or the TOC post app). Example: SAT 1 on the big centre screen, SAT 2 on the right one.</English>
+            <French>Satellite montré par l'affichage Vue satellite (deux par camp, pilotés depuis le PC du poste ou l'app Poste TOC). Exemple : SAT 1 sur le grand écran du centre, SAT 2 sur celui de droite.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_EX_NAME">
+            <Original>Prepared execution checklist</Original>
+            <English>Prepared execution checklist</English>
+            <French>Liste d'exécution préparée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_EX_TIP">
+            <Original>Operation steps for the EXCHECK tab of the post laptop, separated by | ; in each step: event ; code word ; element ; planned time. Example: LD crossed ; ROMEO ; ALPHA ; 22:30 | Objective seized ; TANGO ; BRAVO ; 23:10. Empty: nothing is prepared (the list kept from the previous session stays).</Original>
+            <English>Operation steps for the EXCHECK tab of the post laptop, separated by | ; in each step: event ; code word ; element ; planned time. Example: LD crossed ; ROMEO ; ALPHA ; 22:30 | Objective seized ; TANGO ; BRAVO ; 23:10. Empty: nothing is prepared (the list kept from the previous session stays).</English>
+            <French>Étapes de l'opération pour l'onglet EXCHECK du PC du poste, séparées par | ; dans chaque étape : événement ; mot de code ; élément ; heure prévue. Exemple : Franchissement LD ; ROMEO ; ALPHA ; 22:30 | Objectif pris ; TANGO ; BRAVO ; 23:10. Vide : rien n'est préparé (la liste gardée de la partie précédente reste).</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCSIDE">
             <Original>TOC post side</Original>
             <English>TOC post side</English>

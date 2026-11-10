@@ -16,17 +16,26 @@
     à l'autre sur le même serveur (fn_tocPersist, réglage « Garder les écrans TOC »).
 
     Variables publiques de l'objet :
-      COMSPEC_ATAK_TocScr [nom, camp ("" = celui de chaque joueur), index de texture, affichage ("SPLIT" | "MAP" | "FEED" | "NET" | "ORBAT" | "TOC"),
+      COMSPEC_ATAK_TocScr [nom, camp ("" = celui de chaque joueur), index de texture, affichage ("SPLIT" | "MAP" | "FEED" | "NET" | "ORBAT" | "TOC"
+                           | "CAM" | "SAT" | "CLOCK" | "SQUAD" | "LOG" | "EXCHECK" | "KILLS" | "REQ"),
                            demi-largeur de la carte en m (0 = cadrage automatique sur le réseau), centre ([] = auto),
-                           poste TOC (l'écran sert aussi de PC de TOC), à recréer à la partie suivante (posé en cours de partie)]
+                           poste TOC (l'écran sert aussi de PC de TOC), à recréer à la partie suivante (posé en cours de partie),
+                           satellite montré en affichage SAT (0 : SAT 1, 1 : SAT 2), groupe montré en affichage SQUAD (nom)]
       COMSPEC_ATAK_TocOwned   objet créé par le module ou la sauvegarde (supprimé avec l'écran)
     Registre : missionNamespace COMSPEC_ATAK_TocScreens (objets), tenu par le serveur.
+    Salle TOC (demande de TTRD, 11/11) : SAT (vue satellite et suivi des alliés, fn_tocSat), CLOCK (heures ZULU et
+    locale, chronos), SQUAD (un élément : plaque à son nom, membres et leur état ATAK, carte cadrée sur lui, dernier compte
+    rendu), LOG, EXCHECK, KILLS, REQ (tableaux du poste, fn_tocBoard). Tout écran posé en cours de partie (Zeus, ACE) est
+    gardé pour la partie suivante.
 
     Modes :
-      ["add", [objet, nom, camp, index, affichage, poste TOC, à recréer]]   (serveur ; ailleurs, demande au serveur)
+      ["add", [objet, nom, camp, index, affichage, poste TOC, à recréer, satellite (-1 : inchangé), groupe (nil : inchangé)]]
+                                           (serveur ; ailleurs, demande au serveur)
       ["remove", objet]                    retire l'écran (et supprime l'objet s'il a été créé par le module)
-      ["spawn", [position ATL, direction, classe, nom, camp, affichage, poste TOC]]   crée l'écran (serveur)
+      ["spawn", [position ATL, direction, classe, nom, camp, affichage, poste TOC, satellite, groupe]]   crée l'écran (serveur)
       ["view", [objet, clé, valeur]]       "mode" affichage | "zoom" demi-largeur | "center" position | "auto"
+                                           | "sat" 0 ou 1 | "squad" nom du groupe | "cam" netId de la caméra
+      ["squads", camp]                     groupes proposés pour l'affichage SQUAD (noms, camp du joueur si "")
       ["classes"]                          écrans du jeu proposés à la pose [[libellé, classe]...] (classes présentes)
       ["tick"]                             client, chaque seconde (XEH_postInitClient) : textures et rafraîchissement
       ["surface", [objet, dalle, active]]  client : prépare la dalle pour une image (matière d'écran, dalles superposées
@@ -55,7 +64,10 @@ private _fn = comspec_atak_native_fnc_tocScreen;
 private _texW = 1600;
 private _texH = 900;
 private _texSpec = "#(rgb,2048,1024,1)";
-// [nom, camp, index, affichage, demi-largeur, centre, poste TOC, posé en jeu]
+private _views = ["SPLIT", "MAP", "FEED", "NET", "ORBAT", "TOC", "CAM", "SAT", "CLOCK", "SQUAD", "LOG", "EXCHECK", "KILLS", "REQ"];
+// Affichages dessinés en tableau (fn_tocBoard) au lieu de la carte du poste.
+private _boards = ["SAT", "CLOCK", "LOG", "EXCHECK", "KILLS", "REQ"];
+// [nom, camp, index, affichage, demi-largeur, centre, poste TOC, posé en jeu, satellite, groupe]
 private _cfgOf = {
     params ["_o"];
     private _c = _o getVariable ["COMSPEC_ATAK_TocScr", []];
@@ -91,6 +103,7 @@ switch (_mode) do {
         if (!isServer) exitWith {};
         ["comspec_atak_native_tocScreen", { _this call comspec_atak_native_fnc_tocScreen; }] call CBA_fnc_addEventHandler;
         ["init"] call comspec_atak_native_fnc_tocFeed;
+        ["init"] call comspec_atak_native_fnc_tocRoom;
         // Écrans gardés de la partie précédente : remis une fois les modules Eden passés.
         [{ ["restore"] call comspec_atak_native_fnc_tocPersist; }, [], 3] call comspec_atak_native_fnc_waitAndExec;
         true
@@ -117,16 +130,32 @@ switch (_mode) do {
             ["Ordinateur portable", "Land_Laptop_unfolded_F"]
         ]) select { isClass (configFile >> "CfgVehicles" >> (_x select 1)) }
     };
+    case "squads": {
+        // Groupes du camp à montrer sur un écran d'escouade : ceux qui ont un joueur ou un nœud ATAK (jamais l'ennemi).
+        private _s = [_a, str side group player] select (!(_a isEqualType "") || {_a isEqualTo ""});
+        private _feed = missionNamespace getVariable [format ["COMSPEC_ATAK_TocFeed_%1", _s], []];
+        private _out = (_feed param [1, []]) apply { _x param [7, ""] };
+        { if ((str side _x) isEqualTo _s && {({isPlayer _x && {alive _x}} count (units _x)) > 0}) then { _out pushBack groupId _x; }; } forEach allGroups;
+        _out = (_out arrayIntersect _out) select { _x isNotEqualTo "" };
+        _out sort true;
+        _out
+    };
     case "add": {
-        _a params [["_o", objNull], ["_name", ""], ["_side", ""], ["_sel", 0], ["_view", "SPLIT"], ["_toc", true], ["_spawned", false]];
+        _a params [["_o", objNull], ["_name", ""], ["_side", ""], ["_sel", 0], ["_view", "SPLIT"], ["_toc", true], ["_spawned", false], ["_slot", -1], ["_squad", nil]];
         if (isNull _o) exitWith { false };
         if (!isServer) exitWith { ["comspec_atak_native_tocScreen", ["add", _a]] call CBA_fnc_serverEvent; true };
         if (_name isEqualTo "") then { _name = "TOC"; };
         private _old = [_o] call _cfgOf;
-        if !(_view in ["SPLIT", "MAP", "FEED", "NET", "ORBAT", "TOC", "CAM"]) then { _view = "SPLIT"; };
+        if !(_view in _views) then { _view = "SPLIT"; };
+        if !(_slot in [0, 1]) then { _slot = _old param [8, 0]; };
+        if (isNil "_squad" || {!(_squad isEqualType "")}) then { _squad = _old param [9, ""]; };
         // Index de dalle : celui demandé, sinon la sélection nommée écran (évite un TOC noir sur le châssis).
         private _faceSel = [_o, (round _sel) max 0] call _face;
-        _o setVariable ["COMSPEC_ATAK_TocScr", [_name select [0, 32], toUpper _side, _faceSel, _view, _old param [4, 0], _old param [5, []], _toc, _spawned || {_old param [7, false]}], true];
+        // Désigné en cours de partie (Zeus, ACE) : gardé et recréé à la partie suivante, comme un écran posé par le module.
+        // Un écran de la mission (Eden) est d'abord retrouvé à sa place par la sauvegarde : il n'est pas doublé.
+        private _late = time > 20;
+        _o setVariable ["COMSPEC_ATAK_TocScr", [_name select [0, 32], toUpper _side, _faceSel, _view, _old param [4, 0], _old param [5, []], _toc,
+            _spawned || {_late} || {_old param [7, false]}, _slot, _squad select [0, 40]], true];
         // Poste TOC : l'écran donne aussi l'ATAK du poste et l'app Poste TOC à qui s'en approche (fn_tocPost).
         _o setVariable ["COMSPEC_ATAK_Toc", _toc, true];
         _o setVariable ["COMSPEC_ATAK_TocSide", toUpper _side, true];
@@ -149,7 +178,7 @@ switch (_mode) do {
         true
     };
     case "spawn": {
-        _a params [["_pos", [0, 0, 0]], ["_dir", 0], ["_cls", ""], ["_name", ""], ["_side", ""], ["_view", "SPLIT"], ["_toc", true]];
+        _a params [["_pos", [0, 0, 0]], ["_dir", 0], ["_cls", ""], ["_name", ""], ["_side", ""], ["_view", "SPLIT"], ["_toc", true], ["_slot", 0], ["_squad", ""]];
         if (!isServer) exitWith { ["comspec_atak_native_tocScreen", ["spawn", _a]] call CBA_fnc_serverEvent; objNull };
         private _cands = (["classes"] call _fn) apply { _x select 1 };
         if !(_cls in _cands) then { _cls = _cands param [0, ""]; };
@@ -161,7 +190,7 @@ switch (_mode) do {
         _o setDir _dir;
         _o setPosATL _pos;
         _o setVariable ["COMSPEC_ATAK_TocOwned", true, true];
-        ["add", [_o, _name, _side, 0, _view, _toc, true]] call _fn;
+        ["add", [_o, _name, _side, 0, _view, _toc, true, _slot, _squad]] call _fn;
         // Zeus : l'écran créé se manipule comme un objet posé à la main.
         { _x addCuratorEditableObjects [[_o], false]; } forEach allCurators;
         _o
@@ -173,13 +202,16 @@ switch (_mode) do {
         private _c = +([_o] call _cfgOf);
         if ((count _c) < 8) exitWith { false };
         switch (_k) do {
-            case "mode": { if (_v in ["SPLIT", "MAP", "FEED", "NET", "ORBAT", "TOC", "CAM"]) then { _c set [3, _v]; }; };
+            case "mode": { if (_v in _views) then { _c set [3, _v]; }; };
             // Caméra en direct (fn_tocCam) : seule la source choisie circule (netId), chaque joueur fait son rendu.
-            case "cam": { if (_v isEqualType "" && {(count _v) < 40}) then { _o setVariable ["COMSPEC_ATAK_TocCam", _v, true]; }; };
+            case "cam": { if (_v isEqualType "" && {(count _v) < 40}) then { _o setVariable ["COMSPEC_ATAK_TocCam", _v, true]; _o setVariable ["COMSPEC_ATAK_TocCamWant", nil]; }; };
             case "zoom": { _c set [4, ((_v max 100) min (worldSize max 1000))]; };
             case "center": { if (_v isEqualType [] && {(count _v) >= 2}) then { _c set [5, [_v select 0, _v select 1]]; }; };
             case "auto": { _c set [4, 0]; _c set [5, []]; };
+            case "sat": { if (_v in [0, 1]) then { _c set [8, _v]; }; };
+            case "squad": { if (_v isEqualType "") then { _c set [9, _v select [0, 40]]; }; };
         };
+        if ((count _c) < 10) then { _c set [8, _c param [8, 0]]; _c set [9, _c param [9, ""]]; };
         _o setVariable ["COMSPEC_ATAK_TocScr", _c, true];
         ["save"] call comspec_atak_native_fnc_tocPersist;
         true
@@ -303,6 +335,8 @@ switch (_mode) do {
         private _cam = positionCameraToWorld [0, 0, 0];
         // Écrans en vue caméra rendus en direct par ce poste (proches, regardés, dans la limite) : pas de texture UI.
         private _live = ["tick", _reg] call comspec_atak_native_fnc_tocCam;
+        // Satellites à rendre sur ce poste (écrans SAT regardés de près), dans la limite restante des caméras.
+        ["tick", _reg] call comspec_atak_native_fnc_tocSat;
         {
             private _o = _x;
             private _cfg = [_o] call _cfgOf;
@@ -350,7 +384,8 @@ switch (_mode) do {
                 private _disp = _disps getOrDefault [_tex, displayNull];
                 if (!isNull _disp) then {
                     private _draws = _o getVariable ["COMSPEC_ATAK_TocDraws", 0];
-                    private _due = diag_tickTime - (_o getVariable ["COMSPEC_ATAK_TocAt", -10]) >= 2;
+                    // Horloge et satellite : chaque seconde (secondes de l'horloge, bandeau du satellite).
+                    private _due = diag_tickTime - (_o getVariable ["COMSPEC_ATAK_TocAt", -10]) >= ([1.9, 0.9] select ((_cfg select 3) in ["CLOCK", "SAT"]));
                     // Toujours les premières images (sinon noir tant qu'on ne l'a pas regardé), puis seulement vu et proche.
                     private _seen = (_cam distance _o) < 80 && {(worldToScreen (ASLToAGL getPosASL _o)) isNotEqualTo []};
                     if (_due && {_draws < 3 || {_seen}}) then {
@@ -384,6 +419,10 @@ switch (_mode) do {
         _cfg params ["_name", "_cside", "", "_view", "_half", "_center"];
         // Vue caméra sans rendu en direct sur ce poste (trop loin, pas regardée, limite atteinte) : carte et flux.
         if (_view isEqualTo "CAM") then { _view = "SPLIT"; };
+        // Satellite, horloge, tableaux du poste : dessinés par fn_tocBoard par-dessus la carte (non dessinée).
+        if (_view in _boards) exitWith { ["draw", [_o, _d, _view]] call comspec_atak_native_fnc_tocBoard };
+        ["hide", _d] call comspec_atak_native_fnc_tocBoard;
+        private _squad = ["", _cfg param [9, ""]] select (_view isEqualTo "SQUAD");
         private _side = [_cside, str side group player] select (_cside isEqualTo "");
         private _feed = missionNamespace getVariable [format ["COMSPEC_ATAK_TocFeed_%1", _side], []];
         _feed params [["_ft", -1], ["_nodes", []], ["_events", []], ["_stats", []]];
@@ -401,6 +440,9 @@ switch (_mode) do {
         private _ui = _d getVariable ["COMSPEC_ATAK_TocUi", createHashMap];
         // Contrôles créés une fois par display (réserves d'icônes et de textes réutilisées à chaque image).
         if ((count _ui) isEqualTo 0) then {
+            // Tableau (fn_tocBoard) créé avant la carte : supprimé, il sera recréé par-dessus elle.
+            private _brd = _d getVariable ["COMSPEC_ATAK_TocBoard", controlNull];
+            if (!isNull _brd) then { ctrlDelete _brd; _d setVariable ["COMSPEC_ATAK_TocBoard", controlNull]; _d setVariable ["COMSPEC_ATAK_TocBoardUi", createHashMap]; };
             private _mk = {
                 params ["_cls", ["_grp", controlNull]];
                 private _c = if (isNull _grp) then { _d ctrlCreate [_cls, -1] } else { _d ctrlCreate [_cls, -1, _grp] };
@@ -467,9 +509,18 @@ switch (_mode) do {
             (_ui get "title") ctrlSetStructuredText parseText (((format ["<t size='1.7' font='COMSPEC_BarlowBold'>TOC · %1</t>  <t size='1.2' color='#e0b040'>PIP du poste</t>",
                 [(_op param [5, _name]) select [0, 14]] call _esc])) call comspec_atak_native_fnc_tr);
         };
+        if (_squad isNotEqualTo "") then {
+            (_ui get "title") ctrlSetStructuredText parseText (((format ["<t size='1.7' font='COMSPEC_BarlowBold'>ESCOUADE · %1</t>", [_squad select [0, 24]] call _esc])) call comspec_atak_native_fnc_tr);
+        };
+        // FLASH du poste (fn_tocRoom) : en tête de l'écran, liseré rouge, 3 minutes.
+        private _fl = ["flash", _side] call comspec_atak_native_fnc_tocBoard;
+        if ((count _fl) > 0) then {
+            (_ui get "accent") ctrlSetBackgroundColor [0.9, 0.2, 0.15, 1];
+            (_ui get "title") ctrlSetStructuredText parseText (((format ["<t size='1.6' font='COMSPEC_BarlowBold' color='#ff5a4a'>FLASH</t> <t size='1.35'>· %1</t>", [(_fl select 0) select [0, 44]] call _esc])) call comspec_atak_native_fnc_tr);
+        };
         private _live = [["<t color='#e05a4a'>● HORS LIGNE</t>", "<t color='#e0b040'>● RETARD</t>"] select (_age >= 0), "<t color='#5cc76b'>● EN DIRECT</t>"] select (_age >= 0 && {_age < 12});
-        (_ui get "clock") ctrlSetStructuredText parseText (((format ["<t align='right' size='1.2'>%1  <t color='#8a9a93'>%2</t>  %3</t>",
-            [dayTime, "HH:MM"] call BIS_fnc_timeToString, [format ["il y a %1 s", _age], "aucune donnée"] select (_age < 0), _live])) call comspec_atak_native_fnc_tr);
+        (_ui get "clock") ctrlSetStructuredText parseText (((format ["<t align='right' size='1.2'>%1Z  %2  <t color='#8a9a93'>%3</t>  %4</t>",
+            (["zulu"] call comspec_atak_native_fnc_tocRoom) select [0, 5], [dayTime, "HH:MM"] call BIS_fnc_timeToString, [format ["il y a %1 s", _age], "aucune donnée"] select (_age < 0), _live])) call comspec_atak_native_fnc_tr);
 
         // Mise en page selon l'affichage : carte + flux, carte seule, flux seul.
         private _top = 0.08;
@@ -478,6 +529,14 @@ switch (_mode) do {
         private _panR = switch (true) do { case (_view isEqualTo "MAP"): { [0, 0, 0, 0] }; case _noMap: { [0.015, _top + 0.01, 0.97, 0.98 - _top] }; default { [0.648, _top + 0.008, 0.344, 0.984 - _top] }; };
         // PIP : cadrage de la carte imposé par le PC de l'opérateur.
         if ((count _op) >= 8) then { _center = _op select 1; _half = _op select 2; };
+        // Écran d'escouade : carte cadrée sur les seuls nœuds du groupe (400 m de demi-largeur au moins).
+        private _sqNodes = _nodes select { (_x param [7, ""]) isEqualTo _squad && {_squad isNotEqualTo ""} };
+        if ((count _sqNodes) > 0) then {
+            private _xs = _sqNodes apply { (_x select 2) select 0 };
+            private _ys = _sqNodes apply { (_x select 2) select 1 };
+            _center = [((selectMin _xs) + (selectMax _xs)) / 2, ((selectMin _ys) + (selectMax _ys)) / 2];
+            _half = ((((selectMax _xs) - (selectMin _xs)) max (((selectMax _ys) - (selectMin _ys)) * 16 / 9)) * 0.75) max 400;
+        };
         private _grp = _ui get "grp";
         _grp ctrlSetPosition _mapR; _grp ctrlCommit 0;
         _grp ctrlShow !_noMap;
@@ -700,7 +759,8 @@ switch (_mode) do {
                 _t ctrlSetText ((_lbl) call comspec_atak_native_fnc_tr);
                 // PIP : le groupe choisi par l'opérateur ressort en jaune.
                 private _pickG = _op param [4, ""];
-                private _picked = (count _op) >= 5 && {(_op param [3, ""]) isEqualTo "GROUPES"} && {_pickG isNotEqualTo ""} && {(_mem findIf { (_x param [7, ""]) isEqualTo _pickG }) >= 0};
+                private _picked = ((count _op) >= 5 && {(_op param [3, ""]) isEqualTo "GROUPES"} && {_pickG isNotEqualTo ""} && {(_mem findIf { (_x param [7, ""]) isEqualTo _pickG }) >= 0})
+                    || {_squad isNotEqualTo "" && {(_mem findIf { (_x param [7, ""]) isEqualTo _squad }) >= 0}};
                 _t ctrlSetTextColor ([[[1, 1, 1, 1], [0.8, 0.8, 0.8, 1]] select (_fr >= 2), [1, 0.85, 0.3, 1]] select _picked);
                 if (_picked) then { _c ctrlSetTextColor [1, 0.85, 0.3, 1]; };
                 if ((count _at) > 0) then { _t ctrlSetPosition [(_at select 0) / _texW, (_at select 1) / _texH, _lw / _texW, 26 / _texH]; _t ctrlCommit 0; };
@@ -856,14 +916,49 @@ switch (_mode) do {
             _pan2 ctrlSetPosition [_px + _pw * 0.505, _py, _pw * 0.495, _ph]; _pan2 ctrlCommit 0;
             [_pan2, (_page select [_perCol, _perCol]) joinString "<br/>"] call _setTxt;
         };
+        // Écran d'escouade : plaque au nom du groupe, membres et leur état ATAK, dernière position, dernier compte rendu.
+        if (_view isEqualTo "SQUAD") then {
+            _s = ["squadText", [_squad, _sqNodes, _events]] call _fn;
+            _pan ctrlSetPosition _panR; _pan ctrlCommit 0;
+        };
         if (_view isNotEqualTo "MAP") then { [_pan, _s] call _setTxt; };
         true
+    };
+    case "squadText": {
+        _a params ["_squad", "_sqNodes", "_events"];
+        private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
+        if (_squad isEqualTo "") exitWith { "<t size='1.3' color='#8a9a93'>Aucun groupe choisi : choisissez l'escouade au PC du poste, dans l'app Poste TOC ou au menu ACE de l'écran</t>" };
+        private _cnt = [0, 0, 0, 0];
+        { private _f = (_x select 4) min 3; _cnt set [_f, (_cnt select _f) + (_x param [8, 1])]; } forEach _sqNodes;
+        private _s = format ["<t size='3.4' font='COMSPEC_BarlowBold'>%1</t><br/><t size='1.1'><t color='#5cc76b'>%2 en direct</t> · <t color='#e0b040'>%3 anc.</t> · <t color='#9aa39f'>%4 perdus</t> · <t color='#6f7773'>%5 hors ligne</t></t><br/><br/>",
+            [toUpper (_squad select [0, 22])] call _esc, _cnt select 0, _cnt select 1, _cnt select 2, _cnt select 3];
+        if ((count _sqNodes) isEqualTo 0) then {
+            _s = _s + "<t size='1.2' color='#e0b040'>Aucun ATAK de ce groupe sur le réseau : le poste ne connaît ni ses membres ni sa position</t><br/>";
+        };
+        {
+            _x params ["", "_cs", "_p", "", "_fr", "_kind", "", "", ["_n", 1]];
+            private _col = ["#5cc76b", "#e0b040", "#9aa39f", "#6f7773"] select ((_fr min 3) max 0);
+            _s = _s + format ["<t size='1.3'><t color='%1'>●</t> <t font='COMSPEC_BarlowBold'>%2</t>%3 <t color='#8a9a93'>· %4 · %5</t></t><br/>", _col, [_cs] call _esc,
+                ["", format [" +%1", _n - 1]] select (_n > 1), ["en direct", "point ancien", "point perdu", "téléphone hors ligne"] select ((_fr min 3) max 0),
+                [[_p select 0, _p select 1, 0], 6] call comspec_atak_native_fnc_gridRef];
+        } forEach (_sqNodes select [0, 12]);
+        // Dernier compte rendu d'un membre du groupe (auteur reconnu à son indicatif).
+        private _names = _sqNodes apply { toLower (_x select 1) };
+        private _ev = _events select { (toLower (_x param [3, ""])) in _names };
+        if ((count _ev) > 0) then {
+            (_ev select ((count _ev) - 1)) params [["_time", ""], ["_kind", ""], ["_prio", ""], ["_who", ""], ["_grid", ""], ["_text", ""]];
+            _s = _s + format ["<br/><t size='1.25' font='COMSPEC_BarlowBold'>%1 %2</t> <t size='1.05' color='#8a9a93'>%3 · %4%5</t><br/><t size='1.1'>%6</t>",
+                [_kind] call _esc, [_prio] call _esc, _time, [_who] call _esc, ["", " · grille " + _grid] select (_grid isNotEqualTo ""), [_text select [0, 160]] call _esc];
+        } else {
+            _s = _s + "<br/><t size='1.05' color='#8a9a93'>Aucun compte rendu de ce groupe pour l'instant</t>";
+        };
+        _s
     };
     case "ensure": {
         // Désigne l'objet comme écran TOC (ou change seulement l'affichage) : ACE sur n'importe quel écran du jeu.
         _a params [["_o", objNull], ["_view", "SPLIT"]];
         if (isNull _o || {!alive _o}) exitWith { false };
-        if !(_view in ["SPLIT", "MAP", "FEED", "NET", "ORBAT", "TOC", "CAM"]) then { _view = "SPLIT"; };
+        if !(_view in _views) then { _view = "SPLIT"; };
         private _c = [_o] call _cfgOf;
         if ((count _c) >= 8) then {
             ["view", [_o, "mode", _view]] call _fn;
@@ -873,7 +968,8 @@ switch (_mode) do {
             ["add", [_o, _nm select [0, 32], "", 0, _view, true, false]] call _fn;
         };
         _o setVariable ["COMSPEC_ATAK_TocAt", -10];
-        private _lbl = (createHashMapFromArray [["SPLIT", "carte et flux"], ["MAP", "carte seule"], ["FEED", "flux seul"], ["NET", "réseau"], ["ORBAT", "ORBAT du site"], ["TOC", "PIP du poste"], ["CAM", "caméra en direct"]]) getOrDefault [_view, _view];
+        private _lbl = (createHashMapFromArray [["SPLIT", "carte et flux"], ["MAP", "carte seule"], ["FEED", "flux seul"], ["NET", "réseau"], ["ORBAT", "ORBAT du site"], ["TOC", "PIP du poste"], ["CAM", "caméra en direct"],
+            ["SAT", "vue satellite"], ["CLOCK", "horloge et chronos"], ["SQUAD", "écran d'escouade"], ["LOG", "main courante"], ["EXCHECK", "liste d'exécution"], ["KILLS", "pertes et résultats"], ["REQ", "demandes"]]) getOrDefault [_view, _view];
         ["INFO", format ["Écran TOC : %1", _lbl], 2, 20] call comspec_atak_native_fnc_notify;
         if (_view isEqualTo "TOC") then {
             private _side = str side group player;
@@ -903,7 +999,22 @@ switch (_mode) do {
         private _do = {
             params ["_o", "_k"];
             private _shown = _o getVariable ["COMSPEC_ATAK_TocShown", [getPosASL _o, 1500]];
+            // Salle TOC : satellite choisi, escouade choisie (« sq|nom du groupe »), puis l'affichage (demandes au serveur dans l'ordre).
+            private _pre = {
+                params ["_key", "_val", "_mode"];
+                if ((count (_o getVariable ["COMSPEC_ATAK_TocScr", []])) < 8) then { ["ensure", [_o, "SPLIT"]] call comspec_atak_native_fnc_tocScreen; };
+                ["view", [_o, _key, _val]] call comspec_atak_native_fnc_tocScreen;
+                ["ensure", [_o, _mode]] call comspec_atak_native_fnc_tocScreen;
+            };
+            if ((_k select [0, 3]) isEqualTo "sq|") exitWith { ["squad", _k select [3], "SQUAD"] call _pre; };
             switch (_k) do {
+                case "sat1": { ["sat", 0, "SAT"] call _pre; };
+                case "sat2": { ["sat", 1, "SAT"] call _pre; };
+                case "clock": { ["ensure", [_o, "CLOCK"]] call comspec_atak_native_fnc_tocScreen; };
+                case "log": { ["ensure", [_o, "LOG"]] call comspec_atak_native_fnc_tocScreen; };
+                case "excheck": { ["ensure", [_o, "EXCHECK"]] call comspec_atak_native_fnc_tocScreen; };
+                case "kills": { ["ensure", [_o, "KILLS"]] call comspec_atak_native_fnc_tocScreen; };
+                case "req": { ["ensure", [_o, "REQ"]] call comspec_atak_native_fnc_tocScreen; };
                 case "split": { ["ensure", [_o, "SPLIT"]] call comspec_atak_native_fnc_tocScreen; };
                 case "pip": { ["ensure", [_o, "TOC"]] call comspec_atak_native_fnc_tocScreen; };
                 case "map": { ["ensure", [_o, "MAP"]] call comspec_atak_native_fnc_tocScreen; };
@@ -1004,7 +1115,22 @@ switch (_mode) do {
                 if (_o getVariable ["COMSPEC_ATAK_Toc", false]) then { _aff pushBack (["Big", "Ouvrir le PC du poste", "big", { isNull objectParent _player }] call _mk); };
                 _aff pushBack (["Off", "Retirer l'affichage TOC", "remove"] call _mk);
             };
-            private _out = [["Diff", "Diffusion", _d + "app_briefing.paa", _diff] call _grp, ["Toc", "Affichage TOC", _d + "app_toc.paa", _aff] call _grp];
+            // Salle TOC : satellite, horloge, escouade (un groupe par écran), tableaux du poste.
+            private _sqs = [];
+            {
+                _sqs pushBack [["COMSPEC_ATAK_WallSq" + str _forEachIndex, _x, "", { [_target, "sq|" + (_this select 2)] call COMSPEC_ATAK_TocDo; }, { true }, {}, _x] call comspec_atak_native_fnc_aceAction, [], _o];
+            } forEach ((["squads", ((_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [1, ""])] call comspec_atak_native_fnc_tocScreen) select [0, 16]);
+            private _room = [
+                ["Sat1", "Vue satellite SAT 1", "sat1"] call _mk, ["Sat2", "Vue satellite SAT 2", "sat2"] call _mk,
+                ["Clock", "Horloge et chronos", "clock"] call _mk
+            ];
+            if (_sqs isNotEqualTo []) then { _room pushBack (["Sq", "Écran d'escouade", _d + "app_group.paa", _sqs] call _grp); };
+            _room append [
+                ["Log", "Main courante", "log"] call _mk, ["Ex", "Liste d'exécution", "excheck"] call _mk,
+                ["Kills", "Pertes et résultats", "kills"] call _mk, ["Req", "Demandes des éléments", "req"] call _mk
+            ];
+            private _out = [["Diff", "Diffusion", _d + "app_briefing.paa", _diff] call _grp, ["Toc", "Affichage TOC", _d + "app_toc.paa", _aff] call _grp,
+                ["Room", "Salle TOC", _d + "app_toc.paa", _room] call _grp];
             if (_has) then {
                 _out pushBack (["Map", "Carte", _d + "app_map.paa", [
                     ["In", "Zoomer", "in"] call _mk, ["Out", "Dézoomer", "out"] call _mk,

@@ -1,6 +1,6 @@
 [APP] Poste TOC — le poste de commandement dans le téléphone, à côté d'un PC de TOC
 
-[i]Message 1/2[/i]
+[i]Message 1/4[/i]
 [h1]Poste TOC[/h1]
 [i]Catégorie : Mission · ATAK COMSPEC 2.9.34[/i]
 
@@ -63,9 +63,69 @@ Un PC de TOC est l'objet « PC portable de TOC (ATAK) » d'Eden ou de Zeus, un o
 [/list]
 
 [h3]Version d'introduction[/h3]
-ATAK natif 2.4.0 (mode full local et PC portable de TOC). Caméras en direct sur les écrans TOC ajoutées en 2.9.24.
+ATAK natif 2.4.0 (mode full local et PC portable de TOC). Caméras en direct sur les écrans TOC ajoutées en 2.9.24. Salle TOC (satellite, horloge, escouades, sauvegarde continue) : version suivante de la 4.3.0.
 ===== RÉPONSE =====
-[i]Message 2/2 — English[/i]
+[i]Message 2/4 — La salle TOC[/i]
+[h2]La salle TOC : écrans, satellite, horloge, escouades[/h2]
+[h3]Poser les écrans[/h3]
+Une salle TOC, c'est un PC du poste et un mur d'écrans. Trois façons de poser un écran :
+[list]
+[*][b]Eden[/b] : module [b]ATAK · Écran TOC[/b], synchronisé avec une TV ou un écran du jeu, ou posé seul (il pose alors l'écran choisi, tourné comme lui). Attributs : nom, camp, affichage, satellite montré, escouade montrée, liste d'exécution préparée.
+[*][b]Zeus[/b] : le même module, lâché sur un objet (il le désigne) ou sur le sol (il pose un écran face à la caméra).
+[*][b]En jeu[/b] : menu ACE de n'importe quel écran du jeu, [b]Écran COMSPEC › Affichage TOC › Afficher le réseau TOC[/b].
+[/list]
+Chaque écran garde un affichage. Il se change au menu ACE de l'écran ([b]Salle TOC[/b] et [b]Affichage TOC[/b]), au PC du poste ou dans l'app Poste TOC.
+
+[h3]Les affichages[/h3]
+[list]
+[*][b]Carte et flux, carte seule, flux seul, réseau, ORBAT, PIP du poste, caméra en direct[/b] : comme avant.
+[*][b]Vue satellite (SAT 1 ou SAT 2)[/b] : une vue aérienne en direct, nord en haut, en jour, vision nocturne verte ou thermique. Chaque allié porteur d'un ATAK y est encadré, avec son symbole et son indicatif : en couleur s'il est en direct, en gris si son dernier point est ancien, perdu ou si son téléphone est éteint. Une unité sans ATAK n'est jamais encadrée, un ennemi non plus. Le bandeau du haut dit « Lecture seule », le satellite, l'image et qui le pilote.
+[*][b]Horloge et chronos[/b] : heure ZULU et heure locale de la mission en grand, puis le tableau des chronos du poste.
+[*][b]Écran d'escouade[/b] : un seul groupe. Son nom en grand, ses membres et leur état ATAK (en direct, point ancien, point perdu, téléphone hors ligne) avec leur grille, son dernier compte rendu, et la carte cadrée sur lui seul. Un écran par élément : c'est le mur de plaques nominatives d'une vraie salle.
+[/list]
+
+[h3]Piloter un satellite[/h3]
+Chaque camp a deux satellites, SAT 1 et SAT 2. Un seul opérateur pilote un satellite à la fois.
+[olist]
+[*]Au PC du poste, ouvrez l'onglet [b]SAT[/b] : l'image satellite prend la place de la carte. Choisissez SAT 1 ou SAT 2.
+[*]Touchez [b]PRENDRE LA MAIN[/b]. Si un autre opérateur a la main, le bandeau dit « Lecture seule » et son nom.
+[*]Déplacez la vue avec [b]▲ NORD[/b], [b]▼ SUD[/b], [b]◀ OUEST[/b], [b]EST ▶[/b], ou cliquez sur l'image : elle se centre sur ce point. [b]ZOOM +[/b] et [b]ZOOM −[/b] règlent la largeur de la vue (de 80 m à 5 km). [b]POSTE[/b] la ramène au-dessus du poste.
+[*]Choisissez l'image : [b]JOUR[/b], [b]NUIT[/b] (vision nocturne verte) ou [b]THERMIQUE[/b].
+[*]Pour suivre un groupe ou une unité, choisissez-le dans la liste puis [b]SUIVRE[/b] : le satellite suit sa position telle que le réseau ATAK la connaît.
+[*][b]AFFICHER CE SATELLITE SUR LES ÉCRANS DU POSTE[/b] met tous les écrans à moins de 30 m en vue satellite.
+[*][b]RENDRE LA MAIN[/b] quand vous partez. Fermer le PC la rend aussi.
+[/olist]
+L'app [b]Poste TOC[/b] du téléphone a les mêmes commandes (section « Satellites du poste »).
+
+[h3]Chronos[/h3]
+Onglet [b]CHRONOS[/b] du PC : nom, genre et valeur, puis [b]CRÉER[/b].
+[list]
+[*][b]Chrono[/b] : temps écoulé depuis LANCER.
+[*][b]Compte à rebours[/b] : durée en minutes:secondes (30:00) ; il passe au rouge une fois dépassé.
+[*][b]Heure H (ZULU)[/b] : heure ZULU HH:MM (22:30) ; il affiche H- jusqu'à l'heure, puis H+.
+[/list]
+LANCER, ARRÊTER, ZÉRO et SUPPRIMER agissent sur le chrono choisi. Les chronos sont communs à tous les PC du camp et s'affichent sur les écrans en horloge.
+
+[h3]Barre du haut du PC[/h3]
+Heure ZULU et heure locale, liaison radio (ACRE2 ou TFAR présent, nombre de radios), état du flux. [b]PRENDRE LE POSTE[/b] inscrit votre nom au poste ; [b]FLASH[/b] diffuse le texte tapé à côté en rouge sur tous les écrans et PC du poste du camp pendant 3 minutes.
+
+[h3]Ce qui est sauvegardé[/h3]
+Avec le réglage [b]Garder les écrans TOC[/b] (serveur, activé par défaut), le serveur garde la salle en continu, 3 secondes après chaque changement, et la remet seule à la partie suivante sur la même carte et la même mission :
+[list]
+[*]chaque écran : place et orientation (déplacé au Zeus compris), nom, camp, affichage, cadrage de la carte, satellite et escouade montrés, caméra en direct (reprise dès que sa source revient en jeu) ;
+[*]les écrans posés au Zeus ou désignés à l'ACE en cours de partie : recréés à leur place ;
+[*]par camp : chronos (repris à leur valeur), satellites (position, zoom, image, suivi), main courante, liste d'exécution, demandes, pertes et résultats, flux des comptes rendus.
+[/list]
+Personne n'a la main sur un satellite à la reprise, et le poste est libre.
+
+[h3]Limites connues[/h3]
+[list]
+[*]L'image satellite ne tourne que pour les joueurs proches qui regardent l'écran (même distance et même nombre que les caméras d'écran) ; plus loin, l'écran l'annonce « en attente ».
+[*]Image noire : activez « Image dans l'image » dans Options › Vidéo.
+[*]Les cadres suivent la position que le réseau connaît : une unité dont le point est ancien reste encadrée là où elle a été vue.
+[/list]
+===== RÉPONSE =====
+[i]Message 3/4 — English[/i]
 [h2]ENGLISH[/h2]
 [h3]What it is for[/h3]
 TOC post turns your phone into the command post console when you stand next to a TOC laptop placed in the mission. From the app you write to your whole side, give orders to groups, follow their replies, see where groups are and read the latest reports. Everything runs in game through the server: the app works with or without Athena. With Athena, Athena stays the main post and this laptop also talks to the side.
@@ -125,4 +185,64 @@ Do not mix it up: the [b]TOC post laptop[/b] action (ACE menu of the object, or 
 [/list]
 
 [h3]Introduced in[/h3]
-Native ATAK 2.4.0 (full local mode and TOC laptop). Live cameras on TOC screens added in 2.9.24.
+Native ATAK 2.4.0 (full local mode and TOC laptop). Live cameras on TOC screens added in 2.9.24. TOC room (satellite, clock, squads, continuous saving): the version after 4.3.0.
+===== RÉPONSE =====
+[i]Message 4/4 — The TOC room[/i]
+[h2]The TOC room: screens, satellite, clock, squads[/h2]
+[h3]Placing the screens[/h3]
+A TOC room is a post laptop and a wall of screens. Three ways to place a screen:
+[list]
+[*][b]Eden[/b]: the [b]ATAK · TOC screen[/b] module, synced with a game TV or screen, or placed alone (it then places the chosen screen, turned like the module). Attributes: name, side, display, satellite shown, squad shown, prepared execution checklist.
+[*][b]Zeus[/b]: the same module, dropped on an object (it designates it) or on the ground (it places a screen facing the camera).
+[*][b]In game[/b]: ACE menu of any game screen, [b]COMSPEC screen › TOC display › Show the TOC network[/b].
+[/list]
+Each screen keeps one display. Change it from the screen's ACE menu ([b]TOC room[/b] and [b]TOC display[/b]), from the post laptop or from the TOC post app.
+
+[h3]The displays[/h3]
+[list]
+[*][b]Map and feed, map only, feed only, network, ORBAT, post PIP, live camera[/b]: as before.
+[*][b]Satellite view (SAT 1 or SAT 2)[/b]: a live aerial view, north up, in day, green night vision or thermal. Every ally carrying an ATAK gets a frame, with their symbol and callsign: in colour when live, in grey when their last point is stale or lost or their phone is off. A unit without ATAK is never framed, nor is an enemy. The top strip says « Read only », the satellite, the image and who is in control.
+[*][b]Clock and timers[/b]: ZULU time and mission local time in large digits, then the post's timer board.
+[*][b]Squad screen[/b]: a single group. Its name in large letters, its members and their ATAK status (live, stale point, lost point, phone offline) with their grid, its last report, and the map framed on that group only. One screen per element: the name-plate wall of a real operations room.
+[/list]
+
+[h3]Controlling a satellite[/h3]
+Each side has two satellites, SAT 1 and SAT 2. Only one operator controls a satellite at a time.
+[olist]
+[*]On the post laptop, open the [b]SAT[/b] tab: the satellite image replaces the map. Choose SAT 1 or SAT 2.
+[*]Tap [b]TAKE CONTROL[/b]. If another operator has control, the strip says « Read only » and their name.
+[*]Move the view with [b]▲ NORTH[/b], [b]▼ SOUTH[/b], [b]◀ WEST[/b], [b]EAST ▶[/b], or click the image: it centres on that point. [b]ZOOM +[/b] and [b]ZOOM −[/b] set the view width (80 m to 5 km). [b]POST[/b] brings it back above the post.
+[*]Choose the image: [b]DAY[/b], [b]NIGHT[/b] (green night vision) or [b]THERMAL[/b].
+[*]To follow a group or a unit, pick it in the list then [b]FOLLOW[/b]: the satellite follows its position as the ATAK network knows it.
+[*][b]SHOW THIS SATELLITE ON THE POST SCREENS[/b] switches every screen within 30 m to the satellite view.
+[*][b]RELEASE CONTROL[/b] when you leave. Closing the laptop releases it too.
+[/olist]
+The phone's [b]TOC post[/b] app has the same controls (« Post satellites » section).
+
+[h3]Timers[/h3]
+[b]TIMERS[/b] tab of the laptop: name, kind and value, then [b]CREATE[/b].
+[list]
+[*][b]Timer[/b]: time elapsed since START.
+[*][b]Countdown[/b]: duration in minutes:seconds (30:00); it turns red once exceeded.
+[*][b]H-hour (ZULU)[/b]: ZULU time HH:MM (22:30); it shows H- until that time, then H+.
+[/list]
+START, STOP, RESET and REMOVE act on the selected timer. Timers are shared by every laptop of the side and appear on clock screens.
+
+[h3]Laptop top bar[/h3]
+ZULU and local time, radio link (ACRE2 or TFAR present, number of radios), feed status. [b]TAKE THE POST[/b] signs your name in at the post; [b]FLASH[/b] broadcasts the text typed next to it in red on every post screen and laptop of the side for 3 minutes.
+
+[h3]What is saved[/h3]
+With the [b]Keep TOC screens[/b] setting (server, on by default), the server saves the room continuously, 3 seconds after each change, and restores it by itself in the next session on the same map and mission:
+[list]
+[*]each screen: place and orientation (moved by Zeus included), name, side, display, map framing, satellite and squad shown, live camera (picked up again as soon as its source is back in game);
+[*]screens placed by Zeus or designated through ACE during the game: recreated in place;
+[*]per side: timers (resumed at their value), satellites (position, zoom, image, follow), duty log, execution checklist, requests, casualties and results, report feed.
+[/list]
+Nobody has control of a satellite when the room is restored, and the post is free.
+
+[h3]Known limits[/h3]
+[list]
+[*]The satellite image only runs for nearby players looking at the screen (same distance and count as screen cameras); further away the screen shows it as « pending ».
+[*]Black image: enable « Picture in picture » in Options › Video.
+[*]Frames follow the position known to the network: a unit with a stale point stays framed where it was last seen.
+[/list]

@@ -1,7 +1,9 @@
 /*
     Actions de l'app Poste TOC (fn_pageToc).
       "prio" niveau | "send" (message au camp) | "order" clé de groupe ("" : tous) | "sms" nom | "nav" page | "saveCs"
-      "screen" [netId, contenu]  contenu d'un écran du poste (fn_tocScreen "show")
+      "screen" [netId, contenu]  contenu d'un écran du poste (fn_tocScreen "show") ; "SAT1" | "SAT2" | "SQ|groupe" : salle TOC
+      "slot" 0 | 1               satellite piloté depuis l'app
+      "sat" [clé, valeur]        commande du satellite (fn_tocRoom) : take | release | home | pan | zoom | mode | follow
       "recv" [indicatif, texte, heure, priorité, camp, id, émetteur, destinataire (UID ; "" : tout le camp)]
              message du poste reçu (événement comspec_atak_native_tocMsg ; le PC du poste, fn_tocLaptop, écrit aussi à un chef)
 */
@@ -56,9 +58,33 @@ switch (_a) do {
         ["CHAT"] call comspec_atak_native_fnc_navigate;
     };
     case "nav": { [_v] call comspec_atak_native_fnc_navigate; };
+    case "slot": { _draft set ["satN", [0, 1] select (_v isEqualTo 1)]; call _redraw; };
+    case "sat": {
+        // Satellite du poste (fn_tocRoom) : une seule main par satellite, tenue par le serveur.
+        _v params [["_k", ""], ["_val", []]];
+        private _n = _draft getOrDefault ["satN", 0];
+        private _p = getPosASL player;
+        switch (_k) do {
+            case "take": { ["send", ["sat", [_n, "take", [_p select 0, _p select 1]]]] call comspec_atak_native_fnc_tocRoom; };
+            case "home": { ["send", ["sat", [_n, "center", [_p select 0, _p select 1]]]] call comspec_atak_native_fnc_tocRoom; };
+            case "follow": {
+                private _f = _val splitString "|";
+                if ((count _f) < 2) then { ["send", ["sat", [_n, "unfollow", []]]] call comspec_atak_native_fnc_tocRoom; } else {
+                    ["send", ["sat", [_n, "follow", [_f select 0, _f select 1]]]] call comspec_atak_native_fnc_tocRoom;
+                };
+            };
+            default { ["send", ["sat", [_n, _k, _val]]] call comspec_atak_native_fnc_tocRoom; };
+        };
+        [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "TOC") then { ["TOC"] call comspec_atak_native_fnc_pageRender; }; }, [], 0.6] call comspec_atak_native_fnc_waitAndExec;
+    };
     case "screen": {
         _v params [["_id", ""], ["_k", "SPLIT"]];
-        ["show", [objectFromNetId _id, _k]] call comspec_atak_native_fnc_tocScreen;
+        // Salle TOC : satellite, horloge, escouade passent par les actions de l'écran (choix puis affichage).
+        private _room = (createHashMapFromArray [["SAT1", "sat1"], ["SAT2", "sat2"]]) getOrDefault [_k, ""];
+        if ((_k select [0, 3]) isEqualTo "SQ|") then { _room = "sq|" + (_k select [3]); };
+        if (_room isNotEqualTo "" && {!isNil "COMSPEC_ATAK_TocDo"}) then { [objectFromNetId _id, _room] call COMSPEC_ATAK_TocDo; } else {
+            ["show", [objectFromNetId _id, _k]] call comspec_atak_native_fnc_tocScreen;
+        };
         [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "TOC") then { ["TOC"] call comspec_atak_native_fnc_pageRender; }; }, [], 0.6] call comspec_atak_native_fnc_waitAndExec;
     };
     case "saveCs": {

@@ -102,7 +102,7 @@ class CfgFunctions {
             class vehicleTerminal {}; class vehicleGateway {};
         };
         class toc { file="z\comspec_atak_native\addons\main\functions\toc";
-            class tocPost {}; class pageToc {}; class tocAction {}; class tocLaptop {}; class tocScreen {}; class tocCam {}; class projector {}; class tocFeed {}; class tocPersist {}; class moduleTocScreen {};
+            class tocPost {}; class pageToc {}; class tocAction {}; class tocLaptop {}; class tocScreen {}; class tocCam {}; class projector {}; class tocFeed {}; class tocPersist {}; class moduleTocScreen {}; class tocRoom {}; class tocSat {}; class tocBoard {};
         };
         class datalink { file="z\comspec_atak_native\addons\main\functions\datalink";
             class dataSetup {}; class dataParseFiles {}; class dataServer {}; class dataAction {}; class dataInit {}; class dataOverlay {}; class pageDataLink {}; class zeusForm {}; class moduleContext {}; class moduleDataNode {}; class moduleDataFile {}; class moduleDataReset {}; class moduleDating {};
@@ -780,7 +780,7 @@ class CfgVehicles {
     class COMSPEC_ATAK_EdScreenSide { displayName="$STR_COMSPEC_ATAK_CFG_05AE3C3891"; tooltip="$STR_COMSPEC_ATAK_CFG_27C3139B5E"; property="COMSPEC_ATAK_EdScreenSide"; control="Combo"; typeName="STRING"; defaultValue="''"; expression="_this setVariable ['COMSPEC_ATAK_EdScreenSide', _value];"; \
         class Values { class All { name="$STR_COMSPEC_ATAK_CFG_B97AE3B4F9"; value=""; }; class West { name="BLUFOR"; value="WEST"; }; class East { name="OPFOR"; value="EAST"; }; class Guer { name="$STR_COMSPEC_ATAK_CFG_DE8D4F953A"; value="GUER"; }; class Civ { name="$STR_COMSPEC_ATAK_CFG_496B2073F0"; value="CIV"; }; }; }; \
     class COMSPEC_ATAK_EdScreenView { displayName="$STR_COMSPEC_ATAK_CFG_F498CD766E"; tooltip="$STR_COMSPEC_ATAK_CFG_92A2324457"; property="COMSPEC_ATAK_EdScreenView"; control="Combo"; typeName="STRING"; defaultValue="'SPLIT'"; expression="_this setVariable ['COMSPEC_ATAK_EdScreenView', _value];"; \
-        class Values { class Split { name="$STR_COMSPEC_ATAK_CFG_4593B0D445"; value="SPLIT"; }; class Map { name="$STR_COMSPEC_ATAK_CFG_B90B587171"; value="MAP"; }; class Feed { name="$STR_COMSPEC_ATAK_CFG_7B35D19C6C"; value="FEED"; }; class Toc { name="$STR_COMSPEC_ATAK_CFG_5ADFA17BF2"; short="TOC"; value="TOC"; }; }; }; \
+        class Values { class Split { name="$STR_COMSPEC_ATAK_CFG_4593B0D445"; value="SPLIT"; }; class Map { name="$STR_COMSPEC_ATAK_CFG_B90B587171"; value="MAP"; }; class Feed { name="$STR_COMSPEC_ATAK_CFG_7B35D19C6C"; value="FEED"; }; class Toc { name="$STR_COMSPEC_ATAK_CFG_5ADFA17BF2"; short="TOC"; value="TOC"; }; class Sat { name="$STR_COMSPEC_ATAK_CFG_TOCSCR_V_SAT"; value="SAT"; }; class Clock { name="$STR_COMSPEC_ATAK_CFG_TOCSCR_V_CLOCK"; value="CLOCK"; }; }; }; \
 }
     // Écrans TOC, vidéoprojecteur et toiles COMSPEC : vrais modèles du jeu (objets Apex, Helicopters, Laws of War, que
     // chaque joueur possède), aperçus Eden du jeu. Écrans (comspec_screen=1) : image sur la dalle 0, dalles superposées

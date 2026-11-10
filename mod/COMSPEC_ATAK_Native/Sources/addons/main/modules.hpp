@@ -760,7 +760,46 @@ class COMSPEC_ATAK_Module_TocScreen: COMSPEC_ATAK_Module_DataBase {
                 class V1 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_MAP"; value = "MAP"; };
                 class V2 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_FEED"; value = "FEED"; };
                 class V3 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_PIP"; value = "TOC"; };
+                class V4 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_SAT"; value = "SAT"; };
+                class V5 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_CLOCK"; value = "CLOCK"; };
+                class V6 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_SQUAD"; value = "SQUAD"; };
+                class V7 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_LOG"; value = "LOG"; };
+                class V8 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_EXCHECK"; value = "EXCHECK"; };
+                class V9 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_KILLS"; value = "KILLS"; };
+                class V10 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_REQ"; value = "REQ"; };
             };
+        };
+        // Salle TOC : satellite et escouade montrés, liste d'exécution préparée.
+        class Sat {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_SAT_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_SAT_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_Sat";
+            control = "Combo";
+            expression = "_this setVariable ['Sat',_value,true];";
+            defaultValue = "0";
+            typeName = "NUMBER";
+            class values {
+                class S0 { name = "SAT 1"; value = 0; default = 1; };
+                class S1 { name = "SAT 2"; value = 1; };
+            };
+        };
+        class Squad {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_SQ_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_SQ_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_Squad";
+            control = "Edit";
+            expression = "_this setVariable ['Squad',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
+        class Excheck {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_EX_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_EX_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_Excheck";
+            control = "Edit";
+            expression = "_this setVariable ['Excheck',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
         };
         class Toc {
             displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_T_NAME";
