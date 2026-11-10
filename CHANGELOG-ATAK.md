@@ -38,6 +38,31 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : configurateur d'équipement, favoris, tendances, pré-kits et poids (site, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Configurateur d'équipement : favoris, pré-kits et poids en kg
+- Seuls les accessoires et chargeurs qui vont sur votre arme sont proposés ; changer d'arme garde ce qui est compatible et retire le reste, en le disant.
+- Une étoile sur n'importe quel objet : retrouvez vos favoris avec le filtre « Favoris ».
+- « Tendances 30 j » : les objets les plus portés en jeu, ajoutés aux tenues ou mis en favori dans votre communauté.
+- Pré-kits : un lot d'objets (ex. garrot, pansements, radio, carte) inséré en un clic dans l'uniforme, le gilet ou le sac, avec la place vérifiée.
+- Poids en kg de chaque objet, de chaque contenant (rempli / capacité) et de toute la tenue.
+- « Récupérer une tenue » : aperçu du contenu et du poids, filtres, et choix de ce que vous prenez (arme, uniforme, gilet, sac) : remplacer, fusionner ou ouvrir à côté.
+EN : Equipment configurator: favourites, pre-kits and weight in kg
+- Only the attachments and magazines that fit your weapon are offered; switching weapon keeps what fits and removes the rest, telling you so.
+- A star on any item: find your favourites with the "Favourites" filter.
+- "Trends 30 d": the items most worn in game, added to loadouts or starred in your community.
+- Pre-kits: a set of items (e.g. tourniquet, bandages, radio, map) inserted in one click into the uniform, vest or backpack, with the space checked.
+- Weight in kg of each item, each container (filled / capacity) and the whole loadout.
+- "Retrieve a loadout": preview of the content and weight, filters, and choice of what you take (weapon, uniform, vest, backpack): replace, merge or open alongside.
+
+### Détail technique
+- Migration `database/steps/4300_equipment_configurator_social.php` (étape `equipment_configurator_social`) : tables `game_item_favorites` (tenant, membre, classe) et `game_item_prekits` (contenu JSON contrôlé par `PrekitDocument`, `shared` réservé aux responsables des kits).
+- `EquipmentConfiguratorController` : `memberData` (GET `/equipment/configurateur/membre`), `favorite`, `savePrekit`, `deletePrekit` (POST, CSRF, formule, communauté en session, audit `equipment.prekit.*`). `sources` : favori, collection, rôle et camp (convention `U_B_`/`U_O_`/`U_I_`/`U_C_` des uniformes du jeu de base).
+- Tendances (`EquipmentTrends`, `EquipmentConfiguratorSocialRepository::trends`) : 30 jours, `game_item_usage` (joueurs distincts), tenues enregistrées ou modifiées, favoris ; seuil de 2 membres distincts, seulement des classes et des tenues visibles de la communauté, aucun propriétaire.
+- `LoadoutValidator::orphanMagazines` : avertissement pour un chargeur (balles, roquettes) rangé qui ne va dans aucune arme de la tenue (pas pour les grenades à main ni les explosifs, rien si une arme n'a pas de liste connue).
+
 ## À venir : moins de sondages et de relectures inutiles (ATAK natif et SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

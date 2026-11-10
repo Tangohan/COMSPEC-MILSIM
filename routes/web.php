@@ -902,6 +902,10 @@ return function (Router $router) {
     $router->get('/equipment/configurateur/kits/{id}/versions', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'versions'], [AuthMiddleware::class]);
     $router->get('/equipment/configurateur/kits/{id}/versions/{version}', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'version'], [AuthMiddleware::class]);
     $router->post('/equipment/configurateur/kits/{id}/versions/{version}/restaurer', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'restore'], [AuthMiddleware::class]);
+    $router->get('/equipment/configurateur/membre', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'memberData'], [AuthMiddleware::class]);
+    $router->post('/equipment/configurateur/favori', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'favorite'], [AuthMiddleware::class]);
+    $router->post('/equipment/configurateur/pre-kits', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'savePrekit'], [AuthMiddleware::class]);
+    $router->post('/equipment/configurateur/pre-kits/{id}/supprimer', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'deletePrekit'], [AuthMiddleware::class]);
     $router->get('/equipment/{slug}', [EquipmentController::class, 'show'], [AuthMiddleware::class]);
     // Modpacks retirés : les mods sont servis par le Steam Workshop, les anciennes adresses mènent au guide d'installation.
     foreach (['/modpacks', '/modpacks/images/{id}', '/modpacks/{id}/download', '/modpacks/{slug}'] as $legacyModpack) {
