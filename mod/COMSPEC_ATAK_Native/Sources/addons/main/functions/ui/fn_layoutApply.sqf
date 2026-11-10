@@ -193,15 +193,35 @@ uiNamespace setVariable ["COMSPEC_ATAK_TitleBox", [_tx, _ay, (_tEnd - _tx) max 0
 // Retour actif dans toute app (sans historique, il ramène à l'accueil) et sur un sous-écran (fn_back).
 (_d displayCtrl 88517) ctrlEnable ((count (_s getOrDefault ["history", []])) > 1 || {(_s getOrDefault ["activePage", "LAUNCHER"]) isNotEqualTo "LAUNCHER"});
 
-// Touches physiques de la coque (fractions mesurées sur tools/src/android_s7_ca.png, paysage ;
-// en portrait la texture est tournée d'un quart de tour horaire : (x, y) devient (1 - y, x)).
+// Touches physiques de la coque, propres à chaque modèle (4.2.1) : mesurées par analyse d'image sur sa texture
+// (tools/src/android_s7_ca.png, tools/render/phone_<modèle>_front.png) : icône ou bouton repéré dans le cadre, bouton
+// latéral repéré à la bosse de la silhouette ; zone agrandie à une cible tactile d'au moins 0,045 x 0,07 (touches de
+// navigation) ou 0,06 x 0,03 (bouton latéral). [centre x, centre y, largeur, hauteur] en fractions du paysage, dans
+// l'ordre retour, accueil, apps récentes, marche/arrêt ; [] : pas de touche sur ce modèle (zone masquée). Le Sonim a
+// ses touches dans l'ordre Android d'origine (apps récentes en haut, retour en bas). En portrait la texture est tournée
+// d'un quart de tour horaire : (x, y) devient (1 - y, x).
 (_l get "phone") params ["_px", "_py", "_pw", "_ph"];
+private _hwKeys = (createHashMapFromArray [
+    ["s7", [[0.783, 0.406, 0.045, 0.07], [0.785, 0.500, 0.045, 0.075], [0.783, 0.595, 0.045, 0.07], [0.400, 0.301, 0.085, 0.03]]],
+    ["iphone", [[0.786, 0.412, 0.045, 0.07], [0.787, 0.500, 0.045, 0.075], [0.786, 0.592, 0.045, 0.07], [0.394, 0.321, 0.069, 0.03]]],
+    ["s23", [[0.784, 0.398, 0.045, 0.07], [0.785, 0.500, 0.045, 0.075], [0.784, 0.599, 0.045, 0.07], [0.373, 0.305, 0.069, 0.03]]],
+    ["sonim", [[0.811, 0.587, 0.045, 0.07], [0.811, 0.499, 0.045, 0.07], [0.811, 0.410, 0.045, 0.07], [0.461, 0.300, 0.06, 0.03]]],
+    ["rugged", [[], [], [], [0.421, 0.368, 0.06, 0.03]]],
+    ["tablet", [[], [], [], [0.797, 0.433, 0.03, 0.06]]],
+    ["keys", [[], [], [], [0.797, 0.433, 0.03, 0.06]]],
+    ["ip17", [[], [], [], [0.385, 0.333, 0.06, 0.03]]]
+]) getOrDefault [_l getOrDefault ["model", "s7"], []];
+if (_hwKeys isEqualTo []) then { _hwKeys = [[0.783, 0.406, 0.045, 0.07], [0.785, 0.500, 0.045, 0.075], [0.783, 0.595, 0.045, 0.07], [0.400, 0.301, 0.085, 0.03]]; };
 {
-    _x params ["_idc", "_fx", "_fy", "_fw", "_fh"];
-    if !(_l get "landscape") then { private _t = _fx; _fx = 1 - _fy; _fy = _t; _t = _fw; _fw = _fh; _fh = _t; };
-    private _c = [_idc, [_px + _pw * (_fx - _fw / 2), _py + _ph * (_fy - _fh / 2), _pw * _fw, _ph * _fh]] call _set;
-    _c ctrlShow _interactive;
-} forEach [[88544, 0.782, 0.405, 0.045, 0.07], [88545, 0.783, 0.500, 0.045, 0.075], [88546, 0.782, 0.594, 0.045, 0.07], [88547, 0.396, 0.298, 0.06, 0.03]];
+    private _c = _d displayCtrl ([88544, 88545, 88546, 88547] select _forEachIndex);
+    if (_x isEqualTo []) then { _c ctrlShow false; } else {
+        _x params ["_fx", "_fy", "_fw", "_fh"];
+        if !(_l get "landscape") then { private _t = _fx; _fx = 1 - _fy; _fy = _t; _t = _fw; _fw = _fh; _fh = _t; };
+        _c ctrlSetPosition [_px + _pw * (_fx - _fw / 2), _py + _ph * (_fy - _fh / 2), _pw * _fw, _ph * _fh];
+        _c ctrlCommit 0;
+        _c ctrlShow _interactive;
+    };
+} forEach _hwKeys;
 
 [88516, _l get "dockRect"] call _set;
 [88520, _l get "rail"] call _set;
