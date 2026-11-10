@@ -95,6 +95,15 @@ private _sec = {
 private _redo = "[] call comspec_atak_native_fnc_recoDraftSave; %1 [{ ['RECO'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;";
 
 private _bg = [[0, 0, _bw, _bh], _cBg] call _box;
+// État vide partagé (composant « empty » de fn_formRender) posé dans la page dessinée à la main : formulaire d'une ligne
+// à la hauteur de son contenu. Renvoie le y sous l'état vide.
+private _emptyAt = {
+    params ["_y0", "_icon", "_title", "_sub"];
+    private _g = [[["empty", _icon, _title, _sub]], [0, _y0, _bw, _bh], true, _cBg] call comspec_atak_native_fnc_formRender;
+    private _h = uiNamespace getVariable ["COMSPEC_ATAK_FormH", _font * 8];
+    { if (!isNull _x) then { _x ctrlSetPositionH _h; _x ctrlCommit 0; }; } forEach [_g, _g getVariable ["bg", controlNull]];
+    _y0 + _h
+};
 
 // ---------- En-tête ----------
 private _hdrH = _font * 2.7;
@@ -255,8 +264,7 @@ private _log = missionNamespace getVariable ["COMSPEC_ReconNoteLog", []];
 if !(_log isEqualType []) then { _log = []; };
 _y = [_pad, (_yL max _yR) + _pad * 0.5, _bw - 2 * _pad, "Dernières notes", str (count _log)] call _sec;
 if ((count _log) isEqualTo 0) then {
-    ["COMSPEC_RscText", [_pad, _y, _bw - 2 * _pad, _fs * 1.4], "Aucune note pendant cette session.", _fs * 0.85, _cDim] call _lbl;
-    _y = _y + _fs * 1.4 + _pad;
+    _y = [_y, _dir + "app_reco.paa", "Aucune note pendant cette session", "Choisissez le type, écrivez la note puis ENVOYER LA NOTE : elle s'affiche ici et en repère d'équipe sur la carte."] call _emptyAt;
 };
 {
     _x params [["_lab", ""], ["_tx", ""], ["_g", ""]];

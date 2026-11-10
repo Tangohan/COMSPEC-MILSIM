@@ -19,7 +19,8 @@
       ["slider", libellé, valeur 0-100, code, aide, actif, icône, code de l'icône, aide de l'icône, [min, max], id]
           curseur 0-100 (ou [min, max], valeur affichée en %) au cran de 1 : code appelé avec [valeur] pendant le glissé (sans redessiner la page) ; icône
           (data\nom) cliquable à gauche, valeur à droite (0 = MUET) ; actif = liseré et icône en couleur d'accent
-      ["segment", libellé, [[texte, code, actif, aide]...], aide]   ["info", libellé, valeur]   ["image", chemin]
+      ["segment", libellé, [[texte, code, actif, aide]...], aide]   ["info", libellé, valeur, id]   ["image", chemin]
+          (id de « info », facultatif : valeur réécrite sur place par fn_formSet)
       ["line", numéro, libellé, valeur, genre, clé, aide]   ligne de formulaire type 9-LINE, hauteur fixe :
           numéro en pastille, libellé à gauche, valeur à droite. genre "auto" (valeur calculée, en couleur d'accent ;
           vide ou "-" : l'aide en gris), "warn" (valeur en rouge), "edit" (champ de saisie clé dans la colonne valeur,
@@ -806,11 +807,13 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _y = _y + _segRows * _rowH * 0.9 + (_segRows - 1) * _pad / 4 + _pad / 2;
         };
         case "info": {
-            _row params ["", "_label", "_value"];
+            // 4e élément (facultatif, 4.2.1) : id, pour réécrire la valeur sur place (fn_formSet « info » : distance, « il y a X s »).
+            _row params ["", "_label", "_value", ["_iid", ""]];
             private _a = ["COMSPEC_RscStructuredText", [_pad, _y, _w * 0.5, _fs * 1.3]] call _mk;
             _a ctrlSetStructuredText parseText ((format ["<t size='0.85' color='" + _hTD + "'>%1</t>", _label]) call comspec_atak_native_fnc_tr);
             private _b = ["COMSPEC_RscStructuredText", [_pad + _w * 0.4, _y, _w * 0.6, _fs * 1.3]] call _mk;
             _b ctrlSetStructuredText parseText ((format ["<t size='0.85' align='right'>%1</t>", _value]) call comspec_atak_native_fnc_tr);
+            if (_iid isEqualType "" && {_iid isNotEqualTo ""}) then { _ids set [_iid, createHashMapFromArray [["kind", "info"], ["value", _b]]]; };
             private _ih2 = ((ctrlTextHeight _a) max (ctrlTextHeight _b)) max (_fs * 1.45);
             if (_ih2 > _fs * 1.3) then {
                 _a ctrlSetPosition [_pad, _y, _w * 0.5, _ih2]; _a ctrlCommit 0;

@@ -27,7 +27,12 @@ _rows pushBack ["segment", "Afficher", [
 ]];
 private _shown = _locks select { _filter isEqualTo "ALL" || {((_x select 1) get "state") isEqualTo _filter} };
 if ((count _shown) isEqualTo 0) then {
-    _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", ["Aucune cible dans ce filtre.", "Aucune cible marquée. Visez une personne ou un véhicule avec la caméra du drone ou l'appareil photo, puis appuyez sur « Marquer la cible »."] select ((count _locks) isEqualTo 0)]];
+    _rows pushBack (if ((count _locks) isEqualTo 0) then {
+        ["empty", "\z\comspec_atak_native\addons\main\data\app_dronedetect.paa", "Aucune cible marquée", "Visez une personne ou un véhicule avec la caméra du drone ou l'appareil photo, puis appuyez sur « Marquer la cible »."]
+    } else {
+        ["empty", "\z\comspec_atak_native\addons\main\data\ui_filter.paa", "Aucune cible dans ce filtre", "Touchez TOUTES pour voir les autres cibles marquées.",
+            ["TOUT AFFICHER", compile format ["(uiNamespace getVariable 'COMSPEC_ATAK_State') set ['trkFilter', 'ALL']; %1", _re]]]
+    });
 };
 {
     _x params ["_k", "_e"];
