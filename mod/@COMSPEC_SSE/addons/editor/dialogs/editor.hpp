@@ -12,6 +12,8 @@
 #define ED_INK     {0.027,0.063,0.043,1}
 
 #define ED_POS(X,Y,W,H) x = SSE_Q(SSE_X(X)); y = SSE_Q(SSE_Y(Y)); w = SSE_Q(SSE_W(W)); h = SSE_Q(SSE_H(H))
+// Position relative (contrôle d'un ControlsGroup).
+#define ED_REL(X,Y,W,H) x = SSE_Q(SSE_W(X)); y = SSE_Q(SSE_H(Y)); w = SSE_Q(SSE_W(W)); h = SSE_Q(SSE_H(H))
 #define ED_TXT(N) sizeEx = SSE_Q(SSE_GH * N)
 
 class COMSPEC_SSE_EdText: RscText {
@@ -87,6 +89,32 @@ class COMSPEC_SSE_EdCombo: RscCombo {
     colorSelectBackground[] = {0.09,0.157,0.122,1};
     ED_TXT(0.85);
 };
+// Titre de section : taille de titre, même couleur que le texte, un filet dessous (jamais un petit libellé gris en capitales).
+class COMSPEC_SSE_EdHeading: COMSPEC_SSE_EdText { font = "PuristaSemibold"; ED_TXT(0.95); };
+class COMSPEC_SSE_EdRule: COMSPEC_SSE_EdText { colorBackground[] = ED_LINE; };
+// Phrase d'aide sous un réglage (chaque option expliquée avec un exemple).
+class COMSPEC_SSE_EdHelp: COMSPEC_SSE_EdText { style = 16; lineSpacing = 1; colorText[] = ED_MUTED; ED_TXT(0.52); };
+class COMSPEC_SSE_EdColHead: COMSPEC_SSE_EdText { colorText[] = ED_MUTED; ED_TXT(0.56); };
+class COMSPEC_SSE_EdList: RscListNBox {
+    idc = -1;
+    rowHeight = SSE_Q(SSE_GH * 1.0);
+    font = "RobotoCondensed";
+    shadow = 0;
+    drawSideArrows = 0;
+    colorText[] = ED_TEXT;
+    colorBackground[] = ED_FIELD;
+    colorSelect[] = ED_TEXT;
+    colorSelect2[] = ED_TEXT;
+    colorSelectBackground[] = {0.09,0.157,0.122,1};
+    colorSelectBackground2[] = {0.09,0.157,0.122,1};
+    colorPicture[] = {1, 1, 1, 1};
+    colorPictureSelected[] = {1, 1, 1, 1};
+    colorPictureDisabled[] = {1, 1, 1, 0.4};
+    ED_TXT(0.66);
+};
+#define ED_SECTION(NAME,IDC1,IDC2,X,Y,W,TEXT) \
+    class NAME##_Title: COMSPEC_SSE_EdHeading { idc = IDC1; text = TEXT; ED_POS(X,Y,W,0.85); }; \
+    class NAME##_Rule: COMSPEC_SSE_EdRule { idc = IDC2; ED_POS(X,(Y) + 0.82,W,0.05); }
 
 // PICK : argument de macro. Une virgule, même dans une chaîne, y est perdue au préprocesseur : ['type', 1] devenait
 // ['type' 1], erreur de script à chaque clic (RPT). D'où (['type'] + [1]) ; test : tests/Unit/SseDialogMacroCommaTest.php.
@@ -209,59 +237,108 @@ class COMSPEC_SSE_Editor {
         class LibLink: COMSPEC_SSE_EdEdit { idc = 94340; ED_POS(29.6,21.3,10,1.2); onKeyUp = "['libLink'] call comspec_sse_fnc_editor"; };
 
         // ------------------------------------------------------------ IA de la zone (fn_editorAi)
+        // Trois zones : la liste des IA (cases à cocher, recherche, filtres, colonnes), la fiche (sections à vrai titre),
+        // les papiers et l'aperçu ; barre d'actions fixe en bas. Textes : stringtable.xml de l'addon (STR_COMSPEC_SSE_ED_*).
+        // Largeurs : RobotoCondensed ~0.45 em par caractère, Purista ~0.5 em ; les aides sous les cases tiennent en deux
+        // lignes, l'explication complète (avec exemple) est en info-bulle et dans le manuel (« ? »).
         class AiFill: COMSPEC_SSE_EdFill { idc = 94500; ED_POS(0,1.8,40,23.2); };
-        class AiLabel: COMSPEC_SSE_EdMono { idc = 94501; text = "DÉTECTER"; ED_POS(0.4,2.1,3,0.9); };
-        class AiRadius: COMSPEC_SSE_EdCombo { idc = 94502; ED_POS(3.2,2.05,4,1.15); };
-        class AiScan: COMSPEC_SSE_EdButton { idc = 94503; text = "AUTOUR"; ED_POS(7.4,2.05,3.2,1.15); action = "['scan'] call comspec_sse_fnc_editorAi"; };
-        class AiSel: COMSPEC_SSE_EdButton { idc = 94504; text = "SÉLECTION ZEUS"; ED_POS(10.8,2.05,5.2,1.15); action = "['scanZeus'] call comspec_sse_fnc_editorAi"; };
-        class AiCount: COMSPEC_SSE_EdText { idc = 94505; colorText[] = ED_MUTED; ED_POS(16.2,2.1,6.3,1); };
-        class AiList: RscListNBox {
+        // --- zone A : liste (x 0.3 .. 19.7)
+        class AiRadius: COMSPEC_SSE_EdCombo { idc = 94502; tooltip = "$STR_COMSPEC_SSE_ED_Radius_D"; ED_POS(0.3,2.05,2.6,1.1); };
+        class AiScan: COMSPEC_SSE_EdButton { idc = 94503; text = "$STR_COMSPEC_SSE_ED_Around"; tooltip = "$STR_COMSPEC_SSE_ED_Around_D"; ED_POS(3.0,2.05,4.2,1.1); action = "['scan'] call comspec_sse_fnc_editorAi"; };
+        class AiSel: COMSPEC_SSE_EdButton { idc = 94504; text = "$STR_COMSPEC_SSE_ED_ZeusSel"; tooltip = "$STR_COMSPEC_SSE_ED_ZeusSel_D"; ED_POS(7.3,2.05,4.2,1.1); action = "['scanZeus'] call comspec_sse_fnc_editorAi"; };
+        class AiCount: COMSPEC_SSE_EdText { idc = 94505; style = 1; colorText[] = ED_MUTED; ED_POS(11.6,2.15,6.8,0.9); };
+        class AiHelp: COMSPEC_SSE_EdButton { idc = 94506; text = "$STR_COMSPEC_SSE_ED_Help"; tooltip = "$STR_COMSPEC_SSE_ED_Help_D"; font = "PuristaBold"; ED_POS(18.6,2.05,1.1,1.1); action = "['help'] call comspec_sse_fnc_editorAi"; };
+        class AiSearchLabel: COMSPEC_SSE_EdText { idc = 94576; text = "$STR_COMSPEC_SSE_ED_Search"; ED_POS(0.3,3.4,2.7,1.1); ED_TXT(0.72); };
+        class AiSearch: COMSPEC_SSE_EdEdit { idc = 94507; tooltip = "$STR_COMSPEC_SSE_ED_Search_D"; ED_POS(3.0,3.35,16.7,1.1); onKeyUp = "['filter'] call comspec_sse_fnc_editorAi"; };
+        class AiFSide: COMSPEC_SSE_EdCombo { idc = 94508; tooltip = "$STR_COMSPEC_SSE_ED_Filters_D"; ED_POS(0.3,4.65,6.2,1.1); onLBSelChanged = "['filter'] call comspec_sse_fnc_editorAi"; };
+        class AiFRole: COMSPEC_SSE_EdCombo { idc = 94509; tooltip = "$STR_COMSPEC_SSE_ED_Filters_D"; ED_POS(6.9,4.65,6.2,1.1); onLBSelChanged = "['filter'] call comspec_sse_fnc_editorAi"; };
+        class AiFState: COMSPEC_SSE_EdCombo { idc = 94522; tooltip = "$STR_COMSPEC_SSE_ED_Filters_D"; ED_POS(13.5,4.65,6.2,1.1); onLBSelChanged = "['filter'] call comspec_sse_fnc_editorAi"; };
+        // En-têtes des colonnes : mêmes positions que columns[] de la liste (fractions de 19.4 cases, depuis x 0.3).
+        class AiH1: COMSPEC_SSE_EdColHead { idc = 94577; text = "$STR_COMSPEC_SSE_ED_Col_Name"; ED_POS(0.88,5.95,4.2,0.65); };
+        class AiH2: COMSPEC_SSE_EdColHead { idc = 94578; text = "$STR_COMSPEC_SSE_ED_Col_True"; ED_POS(5.15,5.95,3.2,0.65); };
+        class AiH3: COMSPEC_SSE_EdColHead { idc = 94579; text = "$STR_COMSPEC_SSE_ED_Col_Truth"; ED_POS(8.45,5.95,1.9,0.65); };
+        class AiH4: COMSPEC_SSE_EdColHead { idc = 94580; text = "$STR_COMSPEC_SSE_ED_Col_Side"; ED_POS(10.39,5.95,1,0.65); };
+        class AiH5: COMSPEC_SSE_EdColHead { idc = 94581; text = "$STR_COMSPEC_SSE_ED_Col_Role"; ED_POS(11.46,5.95,1.6,0.65); };
+        class AiH6: COMSPEC_SSE_EdColHead { idc = 94582; text = "$STR_COMSPEC_SSE_ED_Col_Profile"; ED_POS(13.1,5.95,2.3,0.65); };
+        class AiH7: COMSPEC_SSE_EdColHead { idc = 94583; text = "$STR_COMSPEC_SSE_ED_Col_Docs"; ED_POS(15.43,5.95,1.2,0.65); };
+        class AiH8: COMSPEC_SSE_EdColHead { idc = 94584; text = "$STR_COMSPEC_SSE_ED_Col_Group"; ED_POS(16.69,5.95,3,0.65); };
+        class AiList: COMSPEC_SSE_EdList {
             idc = 94510;
-            ED_POS(0.4,3.4,22.1,12.2);
-            rowHeight = SSE_Q(SSE_GH * 1.2);
-            font = "RobotoCondensed";
-            shadow = 0;
-            drawSideArrows = 0;
-            columns[] = {0, 0.36, 0.48, 0.68, 0.84};
-            colorText[] = ED_TEXT;
-            colorBackground[] = ED_FIELD;
-            colorSelect[] = ED_TEXT;
-            colorSelect2[] = ED_TEXT;
-            colorSelectBackground[] = {0.09,0.157,0.122,1};
-            colorSelectBackground2[] = {0.09,0.157,0.122,1};
-            onLBSelChanged = "['select'] call comspec_sse_fnc_editorAi";
-            ED_TXT(0.74);
+            tooltip = "$STR_COMSPEC_SSE_ED_List_D";
+            ED_POS(0.3,6.65,19.4,10.2);
+            columns[] = {0, 0.03, 0.25, 0.42, 0.52, 0.575, 0.66, 0.78, 0.845};
+            onLBSelChanged = "['click'] call comspec_sse_fnc_editorAi";
+            ED_TXT(0.6);
         };
-        class AiDocsTitle: COMSPEC_SSE_EdMono { idc = 94511; text = "SES PAPIERS"; ED_POS(0.4,15.8,8,0.9); };
-        class AiDocs: COMSPEC_SSE_EdCombo { idc = 94512; ED_POS(0.4,16.7,22.1,1.15); };
-        class AiDocOpen: COMSPEC_SSE_EdButton { idc = 94513; text = "OUVRIR"; ED_POS(0.4,18,5.3,1.15); action = "['docOpen'] call comspec_sse_fnc_editorAi"; };
-        class AiDocTrue: COMSPEC_SSE_EdButton { idc = 94514; text = "MARQUER VRAI"; ED_POS(5.85,18,5.3,1.15); action = "['docMark'] call comspec_sse_fnc_editorAi"; };
-        class AiDocFalse: COMSPEC_SSE_EdButton { idc = 94515; text = "MARQUER FAUX"; ED_POS(11.3,18,5.3,1.15); action = "['docMarkFalse'] call comspec_sse_fnc_editorAi"; };
-        class AiDocType: COMSPEC_SSE_EdCombo { idc = 94516; ED_POS(0.4,19.3,10.7,1.15); };
-        class AiDocAdd: COMSPEC_SSE_EdButton { idc = 94517; text = "AJOUTER CE PAPIER"; ED_POS(11.3,19.3,5.3,1.15); action = "['docAdd'] call comspec_sse_fnc_editorAi"; };
-        class AiKeptTitle: COMSPEC_SSE_EdMono { idc = 94518; text = "GARDÉS POUR LES PROCHAINES PARTIES"; ED_POS(0.4,20.6,16,0.9); };
-        class AiKept: COMSPEC_SSE_EdCombo { idc = 94519; ED_POS(0.4,21.5,11,1.15); };
-        class AiForget: COMSPEC_SSE_EdButton { idc = 94520; text = "RETIRER"; ED_POS(11.6,21.5,2.6,1.15); action = "['forget'] call comspec_sse_fnc_editorAi"; };
-        class AiReload: COMSPEC_SSE_EdButton { idc = 94521; text = "RECHARGER"; ED_POS(14.4,21.5,3.6,1.15); action = "['reload'] call comspec_sse_fnc_editorAi"; };
-        class AiFormTitle: COMSPEC_SSE_EdMono { idc = 94530; text = "CONFIGURATION"; ED_POS(23,2.1,16,0.9); };
-        class AiL1: COMSPEC_SSE_EdText { idc = 94531; text = "Profil Athena"; ED_POS(23,3,16.6,0.8); ED_TXT(0.72); };
-        class AiProfile: COMSPEC_SSE_EdCombo { idc = 94532; ED_POS(23,3.75,16.6,1.15); onLBSelChanged = "['preview'] call comspec_sse_fnc_editorAi"; };
-        class AiL2: COMSPEC_SSE_EdText { idc = 94533; text = "Papiers"; ED_POS(23,5,8.2,0.8); ED_TXT(0.72); };
-        class AiPapers: COMSPEC_SSE_EdCombo { idc = 94534; ED_POS(23,5.75,8.2,1.15); onLBSelChanged = "['preview'] call comspec_sse_fnc_editorAi"; };
-        class AiL3: COMSPEC_SSE_EdText { idc = 94535; text = "Nature"; ED_POS(31.4,5,8.2,0.8); ED_TXT(0.72); };
-        class AiKind: COMSPEC_SSE_EdCombo { idc = 94536; ED_POS(31.4,5.75,8.2,1.15); onLBSelChanged = "['preview'] call comspec_sse_fnc_editorAi"; };
-        class AiL4: COMSPEC_SSE_EdText { idc = 94537; text = "Comportement au contrôle"; ED_POS(23,7,8.2,0.8); ED_TXT(0.72); };
-        class AiBehav: COMSPEC_SSE_EdCombo { idc = 94538; ED_POS(23,7.75,8.2,1.15); onLBSelChanged = "['preview'] call comspec_sse_fnc_editorAi"; };
-        class AiL5: COMSPEC_SSE_EdText { idc = 94539; text = "Camp"; ED_POS(31.4,7,8.2,0.8); ED_TXT(0.72); };
-        class AiSide: COMSPEC_SSE_EdCombo { idc = 94540; ED_POS(31.4,7.75,8.2,1.15); onLBSelChanged = "['preview'] call comspec_sse_fnc_editorAi"; };
-        class AiPrevTitle: COMSPEC_SSE_EdMono { idc = 94541; text = "CE QUE VERRA LE JOUEUR"; ED_POS(23,9.1,16,0.9); };
-        class AiPrevBg: COMSPEC_SSE_EdText { idc = 94542; colorBackground[] = {0.91,0.894,0.847,1}; ED_POS(23,10,16.6,8); };
-        class AiPrev: RscStructuredText { idc = 94543; colorBackground[] = {0, 0, 0, 0}; ED_POS(23.3,10.2,16,7.6); size = SSE_Q(SSE_GH * 0.78); };
-        class AiKeep: COMSPEC_SSE_EdButton { idc = 94544; text = "GARDER POUR LES PROCHAINES PARTIES : NON"; font = "RobotoCondensed"; ED_POS(23,18.3,16.6,1.15); action = "['keep'] call comspec_sse_fnc_editorAi"; };
-        class AiApply1: COMSPEC_SSE_EdPrimary { idc = 94545; text = "APPLIQUER"; ED_POS(23,19.7,5.4,1.25); action = "['applyOne'] call comspec_sse_fnc_editorAi"; };
-        class AiApply2: COMSPEC_SSE_EdButton { idc = 94546; text = "À SON GROUPE"; ED_POS(28.6,19.7,5.4,1.25); action = "['applyGroup'] call comspec_sse_fnc_editorAi"; };
-        class AiApply3: COMSPEC_SSE_EdButton { idc = 94547; text = "À TOUTE LA LISTE"; ED_POS(34.2,19.7,5.4,1.25); action = "['applyAll'] call comspec_sse_fnc_editorAi"; };
-        class AiNote: COMSPEC_SSE_EdText { idc = 94548; style = 16; lineSpacing = 1; colorText[] = ED_MUTED; ED_POS(23,21.1,16.6,1.7); ED_TXT(0.62); };
+        class AiEmpty: COMSPEC_SSE_EdText { idc = 94528; style = 16; lineSpacing = 1; colorText[] = ED_MUTED; ED_POS(1.5,10.5,17,2); ED_TXT(0.8); };
+        class AiCheckAll: COMSPEC_SSE_EdButton { idc = 94523; text = "$STR_COMSPEC_SSE_ED_CheckAll"; tooltip = "$STR_COMSPEC_SSE_ED_CheckAll_D"; ED_POS(0.3,17,3.8,1); action = "['checkAll'] call comspec_sse_fnc_editorAi"; };
+        class AiCheckNone: COMSPEC_SSE_EdButton { idc = 94524; text = "$STR_COMSPEC_SSE_ED_CheckNone"; ED_POS(4.3,17,3.8,1); action = "['checkNone'] call comspec_sse_fnc_editorAi"; };
+        class AiChecked: COMSPEC_SSE_EdText { idc = 94525; colorText[] = ED_GREEN; ED_POS(8.3,17.05,11.4,0.9); ED_TXT(0.68); };
+        ED_SECTION(AiKept,94518,94526,0.3,18.3,19.4,"$STR_COMSPEC_SSE_ED_Kept");
+        class AiKept: COMSPEC_SSE_EdCombo { idc = 94519; tooltip = "$STR_COMSPEC_SSE_ED_KeptNote_D"; ED_POS(0.3,19.3,19.4,1.1); onLBSelChanged = "['keptSel'] call comspec_sse_fnc_editorAi"; };
+        class AiReload: COMSPEC_SSE_EdButton { idc = 94521; text = "$STR_COMSPEC_SSE_ED_KeptReload"; tooltip = "$STR_COMSPEC_SSE_ED_KeptReload_D"; ED_POS(0.3,20.5,9.5,1.1); action = "['keptReload'] call comspec_sse_fnc_editorAi"; };
+        class AiForget: COMSPEC_SSE_EdButton { idc = 94520; text = "$STR_COMSPEC_SSE_ED_KeptForget"; tooltip = "$STR_COMSPEC_SSE_ED_KeptForget_D"; ED_POS(10.2,20.5,9.5,1.1); action = "['keptForget'] call comspec_sse_fnc_editorAi"; };
+        class AiKeptNote: COMSPEC_SSE_EdHelp { idc = 94527; text = "$STR_COMSPEC_SSE_ED_KeptNote"; tooltip = "$STR_COMSPEC_SSE_ED_KeptNote_D"; ED_POS(0.3,21.7,19.4,1.4); };
+        // --- zone B : fiche (x 20.0 .. 29.8)
+        class AiSheet: COMSPEC_SSE_EdText { idc = 94530; font = "PuristaBold"; ED_POS(20,2.05,9.8,1); ED_TXT(0.95); };
+        class AiSheetSub: COMSPEC_SSE_EdHelp { idc = 94549; ED_POS(20,3.0,9.8,1.7); };
+        ED_SECTION(AiProf,94550,94551,20,4.8,9.8,"$STR_COMSPEC_SSE_ED_Profile");
+        class AiProfStatus: COMSPEC_SSE_EdHelp { idc = 94552; tooltip = "$STR_COMSPEC_SSE_ED_ProfStatus_D"; ED_POS(20,5.75,9.8,1.2); };
+        class AiProfSearch: COMSPEC_SSE_EdEdit { idc = 94554; tooltip = "$STR_COMSPEC_SSE_ED_ProfSearch_D"; ED_POS(20,7.05,6.6,1.05); onKeyUp = "['profFilter'] call comspec_sse_fnc_editorAi"; };
+        class AiRefresh: COMSPEC_SSE_EdButton { idc = 94553; text = "$STR_COMSPEC_SSE_ED_Refresh"; tooltip = "$STR_COMSPEC_SSE_ED_Refresh_D"; ED_POS(26.8,7.05,3,1.05); ED_TXT(0.7); action = "['refresh'] call comspec_sse_fnc_editorAi"; };
+        class AiProfile: COMSPEC_SSE_EdCombo { idc = 94532; tooltip = "$STR_COMSPEC_SSE_ED_ProfHelp_D"; ED_POS(20,8.2,9.8,1.1); onLBSelChanged = "['preview'] call comspec_sse_fnc_editorAi"; };
+        class AiProfHelp: COMSPEC_SSE_EdHelp { idc = 94555; text = "$STR_COMSPEC_SSE_ED_ProfHelp"; tooltip = "$STR_COMSPEC_SSE_ED_ProfHelp_D"; ED_POS(20,9.35,9.8,1.2); };
+        ED_SECTION(AiId,94556,94557,20,10.7,9.8,"$STR_COMSPEC_SSE_ED_Identity");
+        class AiL2: COMSPEC_SSE_EdText { idc = 94533; text = "$STR_COMSPEC_SSE_ED_Carry"; ED_POS(20,11.65,4.75,0.7); ED_TXT(0.62); };
+        class AiPapers: COMSPEC_SSE_EdCombo { idc = 94534; tooltip = "$STR_COMSPEC_SSE_ED_IdentityHelp_D"; ED_POS(20,12.35,4.75,1.1); onLBSelChanged = "['preview'] call comspec_sse_fnc_editorAi"; };
+        class AiL3: COMSPEC_SSE_EdText { idc = 94535; text = "$STR_COMSPEC_SSE_ED_Kind"; ED_POS(25.05,11.65,4.75,0.7); ED_TXT(0.62); };
+        class AiKind: COMSPEC_SSE_EdCombo { idc = 94536; tooltip = "$STR_COMSPEC_SSE_ED_IdentityHelp_D"; ED_POS(25.05,12.35,4.75,1.1); onLBSelChanged = "['preview'] call comspec_sse_fnc_editorAi"; };
+        class AiIdHelp: COMSPEC_SSE_EdHelp { idc = 94558; text = "$STR_COMSPEC_SSE_ED_IdentityHelp"; tooltip = "$STR_COMSPEC_SSE_ED_IdentityHelp_D"; ED_POS(20,13.5,9.8,1.2); };
+        ED_SECTION(AiBeh,94559,94560,20,14.85,9.8,"$STR_COMSPEC_SSE_ED_Behaviour");
+        class AiBehav: COMSPEC_SSE_EdCombo { idc = 94538; tooltip = "$STR_COMSPEC_SSE_ED_BehHelp_D"; ED_POS(20,15.8,9.8,1.1); onLBSelChanged = "['preview'] call comspec_sse_fnc_editorAi"; };
+        class AiBehHelp: COMSPEC_SSE_EdHelp { idc = 94561; text = "$STR_COMSPEC_SSE_ED_BehHelp"; tooltip = "$STR_COMSPEC_SSE_ED_BehHelp_D"; ED_POS(20,16.95,9.8,1.2); };
+        ED_SECTION(AiSide,94562,94563,20,18.3,9.8,"$STR_COMSPEC_SSE_ED_SideTitle");
+        class AiSide: COMSPEC_SSE_EdCombo { idc = 94540; tooltip = "$STR_COMSPEC_SSE_ED_SideHelp_D"; ED_POS(20,19.25,9.8,1.1); onLBSelChanged = "['preview'] call comspec_sse_fnc_editorAi"; };
+        class AiSideHelp: COMSPEC_SSE_EdHelp { idc = 94564; text = "$STR_COMSPEC_SSE_ED_SideHelp"; tooltip = "$STR_COMSPEC_SSE_ED_SideHelp_D"; ED_POS(20,20.4,9.8,1.2); };
+        class AiNote: COMSPEC_SSE_EdText { idc = 94548; style = 16; lineSpacing = 1; colorText[] = ED_GREEN; ED_POS(20,21.7,9.8,1.4); ED_TXT(0.55); };
+        // --- zone C : papiers et aperçu (x 30.1 .. 39.7)
+        ED_SECTION(AiDocs,94511,94565,30.1,2.05,9.6,"$STR_COMSPEC_SSE_ED_Docs");
+        class AiDH1: COMSPEC_SSE_EdColHead { idc = 94566; text = "$STR_COMSPEC_SSE_ED_Col_Type"; ED_POS(30.2,3.0,2.8,0.65); };
+        class AiDH2: COMSPEC_SSE_EdColHead { idc = 94567; text = "$STR_COMSPEC_SSE_ED_Col_Country"; ED_POS(33.08,3.0,1.6,0.65); };
+        class AiDH3: COMSPEC_SSE_EdColHead { idc = 94568; text = "$STR_COMSPEC_SSE_ED_Col_Number"; ED_POS(34.8,3.0,2.8,0.65); };
+        class AiDH4: COMSPEC_SSE_EdColHead { idc = 94569; text = "$STR_COMSPEC_SSE_ED_Col_Truth"; ED_POS(37.68,3.0,1.9,0.65); };
+        class AiDocs: COMSPEC_SSE_EdList {
+            idc = 94512;
+            tooltip = "$STR_COMSPEC_SSE_ED_Docs_D";
+            ED_POS(30.1,3.65,9.6,3.3);
+            columns[] = {0.01, 0.31, 0.49, 0.79};
+            ED_TXT(0.6);
+            onLBSelChanged = "['docSel'] call comspec_sse_fnc_editorAi";
+            onLBDblClick = "['docOpen'] call comspec_sse_fnc_editorAi";
+        };
+        class AiDocsEmpty: COMSPEC_SSE_EdHelp { idc = 94529; text = "$STR_COMSPEC_SSE_ED_DocsNone"; ED_POS(30.4,4.2,9,1.8); ED_TXT(0.66); };
+        class AiDocOpen: COMSPEC_SSE_EdButton { idc = 94513; text = "$STR_COMSPEC_SSE_ED_DocOpen"; tooltip = "$STR_COMSPEC_SSE_ED_DocOpen_D"; ED_POS(30.1,7.05,9.6,1); action = "['docOpen'] call comspec_sse_fnc_editorAi"; };
+        class AiDocTrue: COMSPEC_SSE_EdButton { idc = 94514; text = "$STR_COMSPEC_SSE_ED_DocTrue"; tooltip = "$STR_COMSPEC_SSE_ED_DocTrue_D"; ED_POS(30.1,8.15,4.7,1); action = "['docTrue'] call comspec_sse_fnc_editorAi"; };
+        class AiDocFalse: COMSPEC_SSE_EdButton { idc = 94515; text = "$STR_COMSPEC_SSE_ED_DocFalse"; tooltip = "$STR_COMSPEC_SSE_ED_DocFalse_D"; ED_POS(35,8.15,4.7,1); action = "['docFalse'] call comspec_sse_fnc_editorAi"; };
+        class AiDocType: COMSPEC_SSE_EdCombo { idc = 94516; tooltip = "$STR_COMSPEC_SSE_ED_DocType_D"; ED_POS(30.1,9.25,9.6,1); };
+        class AiDocAdd: COMSPEC_SSE_EdButton { idc = 94517; text = "$STR_COMSPEC_SSE_ED_DocGive"; tooltip = "$STR_COMSPEC_SSE_ED_DocGive_D"; ED_POS(30.1,10.3,9.6,1); action = "['docGive'] call comspec_sse_fnc_editorAi"; };
+        class AiDocsHelp: COMSPEC_SSE_EdHelp { idc = 94571; text = "$STR_COMSPEC_SSE_ED_DocsHelp"; tooltip = "$STR_COMSPEC_SSE_ED_DocsHelp_D"; ED_POS(30.1,11.4,9.6,1.25); };
+        ED_SECTION(AiPrev,94541,94572,30.1,12.75,9.6,"$STR_COMSPEC_SSE_ED_Preview");
+        class AiPrevBg: COMSPEC_SSE_EdText { idc = 94542; colorBackground[] = {0.91,0.894,0.847,1}; ED_POS(30.1,13.7,9.6,9.3); };
+        // Aperçu entier : texte structuré dans un groupe qui défile quand il dépasse (hauteur posée par fn_editorAi « preview »).
+        class AiPrevGrp: COMSPEC_SSE_RscControlsGroup {
+            idc = 94573;
+            ED_POS(30.25,13.85,9.3,9);
+            class controls {
+                class AiPrev: RscStructuredText { idc = 94543; colorBackground[] = {0, 0, 0, 0}; ED_REL(0,0,8.8,9); size = SSE_Q(SSE_GH * 0.72); };
+            };
+        };
+        // --- barre d'actions fixe
+        class AiBar: COMSPEC_SSE_EdText { idc = 94574; ED_POS(0,23.2,40,1.8); colorBackground[] = ED_BAR; };
+        class AiBarNote: COMSPEC_SSE_EdHelp { idc = 94575; text = "$STR_COMSPEC_SSE_ED_BarNote"; ED_POS(0.3,23.4,10.4,1.45); };
+        class AiKeep: COMSPEC_SSE_EdButton { idc = 94544; text = "$STR_COMSPEC_SSE_ED_Keep"; tooltip = "$STR_COMSPEC_SSE_ED_Keep_D"; ED_POS(11,23.5,12,1.25); action = "['keepChecked'] call comspec_sse_fnc_editorAi"; };
+        class AiApply2: COMSPEC_SSE_EdButton { idc = 94546; text = "$STR_COMSPEC_SSE_ED_ApplyGroup"; tooltip = "$STR_COMSPEC_SSE_ED_ApplyGroup_D"; ED_POS(23.4,23.5,7.6,1.25); action = "['applyGroup'] call comspec_sse_fnc_editorAi"; };
+        class AiApply1: COMSPEC_SSE_EdPrimary { idc = 94545; text = "$STR_COMSPEC_SSE_ED_Apply"; tooltip = "$STR_COMSPEC_SSE_ED_Apply_D"; ED_POS(31.4,23.5,8.3,1.25); action = "['applyChecked'] call comspec_sse_fnc_editorAi"; };
 
         // ------------------------------------------------------------ guidage au premier lancement
         class GuideDim: COMSPEC_SSE_EdText { idc = 94400; ED_POS(0,0,40,25); colorBackground[] = {0, 0, 0, 0.72}; };

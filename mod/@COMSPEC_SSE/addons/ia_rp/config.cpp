@@ -45,6 +45,7 @@ class CfgFunctions {
             class iarpEden {};
             class iarpModule {};
             class iarpZen {};
+            class iarpName {};
         };
     };
 };
@@ -69,15 +70,8 @@ class Extended_PostInit_EventHandlers {
     };
 };
 
-// --- Atelier IA : catégorie des modules, module Eden, attribut « Profil IA RP » (unités et module).
-class CfgFactionClasses {
-    class COMSPEC_Cat_IaRp {
-        displayName = "$STR_COMSPEC_IARP_Cat_Modules";
-        priority = 2;
-        side = 7;
-    };
-};
-
+// --- Atelier IA : module Eden (catégorie « COMSPEC SSE » des modules de config, addon main), attribut « Profil IA RP »
+// (unités et module). Les modules et le menu ZEN du Zeus : fn_iarpZen.
 class CfgVehicles {
     class Logic;
     class Module_F: Logic {};
@@ -86,7 +80,7 @@ class CfgVehicles {
         scope = 2;
         scopeCurator = 1;
         displayName = "$STR_COMSPEC_IARP_M_Name";
-        category = "COMSPEC_Cat_IaRp";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_iarpModule";
         functionPriority = 1;
         isGlobal = 0;

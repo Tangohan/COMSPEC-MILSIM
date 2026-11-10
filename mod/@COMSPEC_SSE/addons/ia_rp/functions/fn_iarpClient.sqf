@@ -3,12 +3,15 @@
       send     [op, args]                        vers le serveur (appel direct sur l'hôte ou en solo)
       bubble   [unité, genre, nom, contenu]      bulle 3D (fn_iarpBubble) ; genre say | me | do | todo | tryOk | tryKo | ai
                contenu : texte du joueur, ou réplique d'IA [modèle fr, modèle en, variables, langue locale, pays]
+               nom d'une IA : nom affiché, ou [nom, vrai nom, nature] pour le Zeus (fn_iarpName « label »)
       typing   [unité, vrai | faux]              « … » au-dessus de la tête de quelqu'un qui écrit
-      reply    [ia, contenu, intention]          réplique de l'IA à qui je parle : historique du terminal
+      reply    [ia, contenu, intention, nom]     réplique de l'IA à qui je parle : historique du terminal
       ack      [ia, intention, issue]            mon message est traité ; papiers / fouille : action ACE habituelle
       notice   [clé de stringtable, valeurs…]    message court (toast)
       log      [lignes] · zeus [lignes]          journal (onglet JOURNAL ; Zeus : lignes en direct)
-      profile  [ia, profil texte]                profil lu pour l'atelier IA du Zeus
+      profile  [ia, profil texte, nom]           profil lu pour l'atelier IA du Zeus, ou pour une fenêtre du menu ZEN en
+                                                 attente (uiNamespace comspec_sse_iarpZenPending, fn_iarpZen)
+      mem      [ia, [avoué, affirmé, joueurs], nom]   mémoire de l'IA pour le Zeus (fenêtre ZEN, fn_iarpServer memGet)
       mark     [position, lieu, nom de l'IA]     renseignement précis avec un lieu : marqueur sur MA carte seulement
     Langue : celle du jeu (français, sinon anglais) ; faits de la couverture traduits par l'ATAK s'il est chargé.
 */
@@ -45,8 +48,6 @@ private _aiText = {
     };
     _s
 };
-private _anon = { params ["_n"]; [_n, localize "STR_COMSPEC_IARP_Anonymous"] select (_n isEqualTo "") };
-
 switch (_op) do {
     case "bubble": {
         _a params [["_u", objNull], ["_kind", "say"], ["_tag", ""], ["_pay", ""]];
@@ -60,7 +61,7 @@ switch (_op) do {
             case "tryKo": { format ["%1 %2", localize "STR_COMSPEC_IARP_TryKo", _text] };
             default { _text };
         };
-        private _name = if (_kind isEqualTo "ai") then { [_tag] call _anon } else { _tag };
+        private _name = if (_kind isEqualTo "ai") then { ["label", _tag] call comspec_sse_fnc_iarpName } else { _tag };
         // Mon /try : le résultat s'inscrit dans le terminal, pas de bulle au-dessus de ma propre tête.
         if (_u isEqualTo player) exitWith {
             if (_kind in ["tryOk", "tryKo"]) then { [uiNamespace getVariable ["comspec_sse_iarpTarget", ""], _kind, localize "STR_COMSPEC_IARP_Me", _show] call _push; };
@@ -70,15 +71,15 @@ switch (_op) do {
     case "typing": {
         _a params [["_u", objNull], ["_on", false]];
         if (isNull _u) exitWith {};
-        private _name = if (isPlayer _u) then { name _u } else { [_u getVariable ["comspec_sse_idName", ""]] call _anon };
-        ["typing", [_u, _on, _name]] call comspec_sse_fnc_iarpBubble;
+        ["typing", [_u, _on, ["shown", _u] call comspec_sse_fnc_iarpName]] call comspec_sse_fnc_iarpBubble;
     };
     case "reply": {
-        _a params [["_t", objNull], ["_pay", []], ["_intent", ""]];
+        _a params [["_t", objNull], ["_pay", []], ["_intent", ""], ["_who", ""]];
         if (isNull _t) exitWith {};
         private _s = [_pay] call _aiText;
         missionNamespace setVariable ["comspec_sse_iarpLastReply", [_t, _s, _intent, time]];
-        [netId _t, "ai", [_t getVariable ["comspec_sse_idName", ""]] call _anon, _s] call _push;
+        if (_who isEqualTo "") then { _who = ["shown", _t] call comspec_sse_fnc_iarpName; };
+        [netId _t, "ai", ["label", _who] call comspec_sse_fnc_iarpName, _s] call _push;
     };
     case "ack": {
         _a params [["_t", objNull], ["_intent", ""], ["_outcome", ""]];
@@ -131,7 +132,40 @@ switch (_op) do {
         ["notice", ["STR_COMSPEC_IARP_N_Marked", _what]] call comspec_sse_fnc_iarpClient;
     };
     case "profile": {
-        _a params [["_t", objNull], ["_raw", ""]];
-        if (!isNil "comspec_sse_fnc_iarpWorkshop") then { ["loaded", [_t, _raw]] call comspec_sse_fnc_iarpWorkshop; };
+        _a params [["_t", objNull], ["_raw", ""], ["_who", ""]];
+        if (!isNil "comspec_sse_fnc_iarpWorkshop") then { ["loaded", [_t, _raw, _who]] call comspec_sse_fnc_iarpWorkshop; };
+        // Fenêtre du menu ZEN en attente de ce profil (fn_iarpZen, 15 s au plus) : ouverte une fois, pré-remplie.
+        private _cb = uiNamespace getVariable ["comspec_sse_iarpZenPending", []];
+        _cb params [["_cu", objNull], ["_code", {}], ["_units", []], ["_at", -100]];
+        if (!isNull _t && {_cu isEqualTo _t} && {(diag_tickTime - _at) < 15}) then {
+            uiNamespace setVariable ["comspec_sse_iarpZenPending", []];
+            [_t, ["parse", _raw] call comspec_sse_fnc_iarpProfile, _who, _units] call _code;
+        };
+    };
+    case "mem": {
+        _a params [["_t", objNull], ["_m", []], ["_who", ""]];
+        _m params [["_conf", false], ["_said", []], ["_pl", []]];
+        private _yn = { localize (["STR_COMSPEC_IARP_Z_No", "STR_COMSPEC_IARP_Z_Yes"] select (_this isEqualTo true)) };
+        if (_who isEqualTo "") then { _who = ["shown", _t] call comspec_sse_fnc_iarpName; };
+        private _title = format [localize "STR_COMSPEC_IARP_Z_MemTitle", ["label", _who] call comspec_sse_fnc_iarpName];
+        private _lines = [];
+        if (_said isEqualTo [] && {_pl isEqualTo []}) then { _lines pushBack (localize "STR_COMSPEC_IARP_Z_MemEmpty"); } else {
+            _lines pushBack format ["%1 : %2", localize "STR_COMSPEC_IARP_Z_MemConfessed", _conf call _yn];
+            {
+                _x params [["_k", ""], ["_v", ""], ["_ok", true]];
+                _lines pushBack format ["%1 %2 : %3 (%4)", localize "STR_COMSPEC_IARP_Z_MemSaid", _k, _v, localize (["STR_COMSPEC_IARP_Z_MemFalse", "STR_COMSPEC_IARP_Z_MemTrue"] select _ok)];
+            } forEach _said;
+            {
+                _x params [["_n", ""], ["_trust", 0], ["_bribes", 0], ["_intel", 0], ["_word", false], ["_turns", 0]];
+                _lines pushBack format [localize "STR_COMSPEC_IARP_Z_MemRow", _n, _trust, _bribes, _intel, _word call _yn, _turns];
+            } forEach _pl;
+        };
+        private _txt = _lines joinString (toString [10]);
+        missionNamespace setVariable ["comspec_sse_iarpLastMem", [_t, _m, _txt]];
+        // Fenêtre ZEN (texte copiable) ; sans ZEN, retour au chef de mission.
+        if (!isNil "zen_dialog_fnc_create") exitWith {
+            [_title, [["EDIT:MULTI", [localize "STR_COMSPEC_IARP_Z_MemView", localize "STR_COMSPEC_IARP_Z_MemView_D"], [_txt, { _this }, 12]]], {}, {}, []] call zen_dialog_fnc_create;
+        };
+        if (!isNil "comspec_sse_fnc_zeusNotify") then { [_title + (toString [10]) + _txt, "info"] call comspec_sse_fnc_zeusNotify; } else { hintSilent (_title + (toString [10]) + _txt); };
     };
 };

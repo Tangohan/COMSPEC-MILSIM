@@ -3,7 +3,8 @@
     (dialog COMSPEC_SSE_IarpWorkshop, dialogs\iarp_workshop.hpp).
       open ["eden", groupe de l'attribut]   Eden : attribut « Profil IA RP » d'une unité ou du module « Atelier IA »
       open ["zeus", [unités]]               Zeus : module « Atelier IA » (unité visée + sélection du curateur)
-      onLoad · onUnload · loaded [ia, texte] (profil lu sur le serveur) · help [champ] · slider [idc, valeur]
+      onLoad · onUnload · loaded [ia, texte, nom] (profil lu sur le serveur ; nom : vérité pour le Zeus, fn_iarpName)
+      help [champ] · slider [idc, valeur]
       preset (charger le profil de bibliothèque) · generate (tirage local, champs verrouillés gardés) · test
       apply · applyGen (Zeus : un tirage par IA sélectionnée) · say (Zeus : faire dire une réplique) · import · export
     Rien n'est envoyé à Athena : import / export par copier-coller du texte du profil. Champs : fn_iarpProfile.
@@ -115,8 +116,9 @@ switch (_op) do {
         // Zeus seulement : générer pour la sélection, faire parler ; Eden : le profil part dans l'attribut.
         private _zeus = _mode isEqualTo "zeus";
         { (_x call _ctl) ctrlShow _zeus; } forEach [94747, 94748, 94754, 94791];
+        // Nom de l'IA : celui de ses papiers SSE, jamais le nom d'unité Arma (fn_iarpName) ; la vérité arrive avec le profil.
         (94701 call _ctl) ctrlSetText format [localize "STR_COMSPEC_IARP_W_Title", if (_zeus) then {
-            if ((count _units) isEqualTo 1) then { [(_units select 0) getVariable ["comspec_sse_idName", ""], name (_units select 0)] select (((_units select 0) getVariable ["comspec_sse_idName", ""]) isEqualTo "") } else { format [localize "STR_COMSPEC_IARP_W_NUnits", count _units] }
+            if ((count _units) isEqualTo 1) then { ["shown", _units select 0] call comspec_sse_fnc_iarpName } else { format [localize "STR_COMSPEC_IARP_W_NUnits", count _units] }
         } else { localize "STR_COMSPEC_IARP_W_Eden" }];
         uiNamespace setVariable ["comspec_sse_iarpWsRecent", []];
         if (_zeus) then {
@@ -132,9 +134,12 @@ switch (_op) do {
     };
     case "onUnload": { uiNamespace setVariable ["comspec_sse_iarpWsDisplay", displayNull]; };
     case "loaded": {
-        _a params [["_t", objNull], ["_raw", ""]];
-        if (isNull _d || {_t isNotEqualTo ((uiNamespace getVariable ["comspec_sse_iarpWsUnits", []]) param [0, objNull])}) exitWith {};
+        _a params [["_t", objNull], ["_raw", ""], ["_who", ""]];
+        private _units = uiNamespace getVariable ["comspec_sse_iarpWsUnits", []];
+        if (isNull _d || {_t isNotEqualTo (_units param [0, objNull])}) exitWith {};
         [["parse", _raw] call comspec_sse_fnc_iarpProfile] call _write;
+        // Une seule IA : le Zeus voit son vrai nom et la nature de son identité (fn_iarpName « label »).
+        if ((count _units) isEqualTo 1 && {_who isNotEqualTo ""}) then { (94701 call _ctl) ctrlSetText format [localize "STR_COMSPEC_IARP_W_Title", ["label", _who] call comspec_sse_fnc_iarpName]; };
         (localize "STR_COMSPEC_IARP_W_Loaded") call _status;
     };
     case "help": {

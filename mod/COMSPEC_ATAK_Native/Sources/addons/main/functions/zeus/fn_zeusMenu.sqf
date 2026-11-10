@@ -22,7 +22,7 @@ switch (_act) do {
             ["warn", "Punir", "Avertissement…", "Bandeau rouge en plein écran avec votre texte, bip d'alarme."],
             ["msg", "Punir", "Message du commandement…", "Bandeau bleu en plein écran et notification avec votre texte."],
             ["glitch", "Punir", "Écran qui bugue (30 s)", "Parasites et bandes de couleur sur l'écran du téléphone."],
-            ["noise", "Punir", "Alarme stridente (20 s)", "Le téléphone sonne fort : les joueurs à 60 m l'entendent."],
+            ["noise", "Punir", "Sirène d'alarme (20 s)", "Le téléphone hurle une sirène d'alarme : les joueurs à 60 m l'entendent."],
             ["buzz", "Punir", "Vibrations à répétition", "Le téléphone vibre une dizaine de fois."],
             ["jam30", "Brouiller", "Brouillage léger (30 %)", "Débit réduit, données qui traînent."],
             ["jam70", "Brouiller", "Brouillage fort (70 %)", "Presque plus de réseau, GPS qui dérive."],

@@ -135,6 +135,16 @@ class CfgHints {
             image = HINT_IMG;
             noImage = 0;
         };
+        // Fenêtre « IA de la zone » (éditeur SSE, centre Zeus) : bouton « ? » (fn_editorAi « help »).
+        class AiZone {
+            displayName = "$STR_COMSPEC_SSE_CFG_298A8F3D7C";
+            displayNameShort = "$STR_COMSPEC_SSE_CFG_2FF45B7DB3";
+            description = "$STR_COMSPEC_SSE_CFG_0D592035AB";
+            tip = "$STR_COMSPEC_SSE_CFG_27FC4B938B";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
         class Custom {
             displayName = "$STR_COMSPEC_SSE_CFG_385FD78DF8";
             displayNameShort = "$STR_COMSPEC_SSE_CFG_385FD78DF8";

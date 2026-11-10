@@ -14,6 +14,8 @@
                                rayon réglable) qui voient la scène sont choquées (tension de l'automate en hausse, qui retombe
                                de 30 par minute) ; hors automate, elles regardent la scène ou s'enfuient (peureuses)
       ["shock", ia] -> choc 0-80 (tirs, scène vue), lu par fn_idAiBrain
+    Par IA (menu ZEN « Réactions… », fn_iarpServer reactSet) : variable d'unité comspec_sse_iarpReactOff, liste parmi
+    "shots" (ne réagit plus aux tirs proches) et "witness" (n'est plus témoin), diffusée pour la fenêtre du Zeus.
     Coût : suivi d'un stop, une fonction CBA toutes les 2 s par IA arrêtée ; tirs, un gestionnaire par IA suivie,
     réaction bornée par le délai de 8 s ; témoins, une recherche de 8 IA au plus par menace (20 s par victime).
 */
@@ -33,6 +35,8 @@ private _shockOf = {
     (_v - (time - _at) * 0.5) max 0
 };
 private _addShock = { params ["_u", "_d"]; _u setVariable ["comspec_sse_idShock", [(([_u] call _shockOf) + _d) min 80, time]]; };
+// Réaction coupée pour cette IA par le Zeus ("shots" | "witness").
+private _off = { params ["_u", "_what"]; private _l = _u getVariable ["comspec_sse_iarpReactOff", []]; _l isEqualType [] && {_what in _l} };
 // Phrase spontanée (sans question du joueur) : bulle aux joueurs à portée, rien dans les terminaux.
 private _speak = {
     params ["_u", "_gi"];
@@ -42,9 +46,10 @@ private _speak = {
     private _range = missionNamespace getVariable ["comspec_sse_iarp_range", 20];
     private _pl = allPlayers select { !(_x isKindOf "HeadlessClient_F") };
     if (hasInterface && {!isNull player}) then { _pl pushBackUnique player; };
-    private _args = [_u, "ai", _u getVariable ["comspec_sse_idName", ""], _pay];
     {
         if (alive _x && {(_x distance _u) <= _range}) then {
+            // Nom de l'IA : le Zeus voit son vrai nom et la nature de son identité (fn_iarpName).
+            private _args = [_u, "ai", ["for", [_u, _x]] call comspec_sse_fnc_iarpName, _pay];
             if (local _x && {hasInterface}) then { ["bubble", _args] call comspec_sse_fnc_iarpClient; } else { ["bubble", _args] remoteExecCall ["comspec_sse_fnc_iarpClient", owner _x]; };
         };
     } forEach _pl;
@@ -107,6 +112,7 @@ switch (_op) do {
             if (_eh >= 0) then { _u removeEventHandler ["FiredNear", _eh]; _u setVariable ["comspec_sse_iarpFnEh", -1]; };
         };
         if !(missionNamespace getVariable ["comspec_sse_iarp_shots", true]) exitWith {};
+        if ([_u, "shots"] call _off) exitWith {};
         if (_firer isEqualTo _u || {(group _firer) isEqualTo (group _u)} || {_d > (missionNamespace getVariable ["comspec_sse_iarp_shotRange", 40])}) exitWith {};
         if (time < ((_u getVariable ["comspec_sse_iarpShotAt", -100]) + 8)) exitWith {};
         // Concernée : en conversation (3 min) ou engagée par l'automate ; déjà au combat, menottée, inconsciente : rien.
@@ -153,6 +159,7 @@ switch (_op) do {
         private _c = ((_v nearEntities ["CAManBase", _range]) select {
             alive _x && {!isPlayer _x} && {_x isNotEqualTo _v} && {_x isNotEqualTo _by} && {(side group _x) isEqualTo civilian}
                 && {!(_x getVariable ["ACE_isUnconscious", false])} && {!(_x getVariable ["ace_captives_isHandcuffed", false])}
+                && {!([_x, "witness"] call _off)}
         }) apply { [_x distance _v, _x] };
         _c sort true;
         private _n = 0;

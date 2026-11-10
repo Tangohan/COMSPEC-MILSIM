@@ -216,3 +216,81 @@ AT_fnc_iarpDire = {
     { deleteVehicle _x; } forEach [_u, _w, _firer];
     call AT_fnc_done;
 }, 40] call AT_fnc_run;
+
+// 4.2.2 : actions du menu Zeus « SSE · Roleplay de l'IA » côté serveur (solo : isServer, le joueur est l'autorité) :
+// profil retouché, état de conversation, lot sur deux IA, mémoire, réactions, nom affiché (fn_iarpName).
+["ia_rp_zeus_actions", {
+    if (["comspec_sse_fnc_iarpServer", "comspec_sse_fnc_iarpProfile", "comspec_sse_fnc_iarpName"] call AT_fnc_nil) exitWith {};
+    private _u = call AT_fnc_iarpIa;
+    private _u2 = (group _u) createUnit ["C_man_1", _u getPos [3, 90], [], 0, "CAN_COLLIDE"];
+    _u2 allowDamage false;
+    { _x enableAI "PATH"; } forEach [_u, _u2];
+    uiSleep 1;
+    // Nom affiché : jamais le nom d'unité Arma ; le Zeus voit la vérité (nom de l'atelier différent de l'identité : ment).
+    _u setVariable ["comspec_sse_idName", nil];
+    [(["shown", _u] call comspec_sse_fnc_iarpName) isNotEqualTo (name _u), format ["nom d'unité Arma affiché : %1", name _u]] call AT_fnc_check;
+    // Profil retouché (menu « Rôle et caractère ») : rôle et peur changés, le reste gardé.
+    missionNamespace setVariable ["comspec_sse_iarpLastNotice", nil];
+    ["apply", [_u, createHashMapFromArray [["talk", 77]]]] call comspec_sse_fnc_iarpProfile;
+    ["profileTweak", [player, [_u], [["role", "insurge"], ["fear", 90], ["name", "Yannis PETRAKIS"], ["react", [["order", "coopere"]]]]]] call comspec_sse_fnc_iarpServer;
+    private _p = ["get", _u] call comspec_sse_fnc_iarpProfile;
+    [(_p get "role") isEqualTo "insurge" && {(_p get "fear") isEqualTo 90} && {(_p get "talk") isEqualTo 77} && {((_p get "react") get "order") isEqualTo "coopere"}, format ["profil retouché : %1", ["summary", _p] call comspec_sse_fnc_iarpProfile]] call AT_fnc_check;
+    [(_u getVariable ["COMSPEC_ID_Profile", ""]) isEqualTo "insurge", "rôle non transmis aux IA réalistes (COMSPEC_ID_Profile)"] call AT_fnc_check;
+    [!isNil { missionNamespace getVariable "comspec_sse_iarpLastNotice" }, "aucun retour au Zeus après la retouche du profil"] call AT_fnc_check;
+    (["truth", _u] call comspec_sse_fnc_iarpName) params [["_shown", ""], ["_true", ""], ["_nat", ""]];
+    (format ["nom pour le Zeus : %1 / %2 / %3 -> %4", _shown, _true, _nat, ["label", [_shown, _true, _nat]] call comspec_sse_fnc_iarpName]) call AT_fnc_info;
+    [_shown isEqualTo "Yannis PETRAKIS" && {_nat in ["true", "lies"]}, format ["vérité du nom : %1", [_shown, _true, _nat]]] call AT_fnc_check;
+    // État de conversation : « Stop » fige l'IA, « Relâcher » la libère (ordres de l'IA RP, serveur).
+    ["zenState", [player, [_u], "stop"]] call comspec_sse_fnc_iarpServer;
+    AT_iarpU = _u;
+    [[{ !(AT_iarpU checkAIFeature "PATH") }, 3] call AT_fnc_wait, "« Stop » du Zeus : l'IA n'est pas arrêtée"] call AT_fnc_check;
+    ["zenState", [player, [_u], "free"]] call comspec_sse_fnc_iarpServer;
+    [[{ AT_iarpU checkAIFeature "PATH" }, 3] call AT_fnc_wait, "« Relâcher » du Zeus : l'IA reste figée"] call AT_fnc_check;
+    // Lot : profil de bibliothèque sur deux IA, réactions coupées pour les deux.
+    private _raw = ["serialize", ["preset", "milicien"] call comspec_sse_fnc_iarpProfile] call comspec_sse_fnc_iarpProfile;
+    ["profileSet", [player, [_u, _u2], _raw, "apply"]] call comspec_sse_fnc_iarpServer;
+    [((["get", _u] call comspec_sse_fnc_iarpProfile) get "preset") isEqualTo "milicien" && {((["get", _u2] call comspec_sse_fnc_iarpProfile) get "preset") isEqualTo "milicien"}, "lot : profil non appliqué aux deux IA"] call AT_fnc_check;
+    ["reactSet", [player, [_u, _u2], false, true]] call comspec_sse_fnc_iarpServer;
+    [("shots" in (_u getVariable ["comspec_sse_iarpReactOff", []])) && {"shots" in (_u2 getVariable ["comspec_sse_iarpReactOff", []])} && {!("witness" in (_u2 getVariable ["comspec_sse_iarpReactOff", []]))}, "lot : réactions non réglées sur les deux IA"] call AT_fnc_check;
+    if (!(["comspec_sse_fnc_iarpReact"] call AT_fnc_nil)) then {
+        // Tirs coupés pour cette IA : suivie (« watch ») mais aucune réaction au tir proche.
+        _u setVariable ["comspec_sse_iarpTalkAt", time];
+        ["watch", [_u]] call comspec_sse_fnc_iarpReact;
+        ["fired", [_u, player, 10]] call comspec_sse_fnc_iarpReact;
+        [(_u getVariable ["comspec_sse_iarpShotAt", -1]) < 0, "réaction aux tirs malgré la coupure du Zeus"] call AT_fnc_check;
+    };
+    // Mémoire : lue (vide) puis effacée.
+    missionNamespace setVariable ["comspec_sse_iarpLastMem", nil];
+    ["memGet", [player, _u]] call comspec_sse_fnc_iarpServer;
+    private _m = missionNamespace getVariable ["comspec_sse_iarpLastMem", []];
+    [(_m param [0, objNull]) isEqualTo _u, "mémoire de l'IA non reçue par le Zeus"] call AT_fnc_check;
+    if (dialog) then { closeDialog 0; };
+    _u setVariable ["comspec_sse_iarpMem", createHashMapFromArray [["said", createHashMap]]];
+    ["memClear", [player, [_u], ""]] call comspec_sse_fnc_iarpServer;
+    [isNil { _u getVariable "comspec_sse_iarpMem" }, "mémoire de l'IA non effacée"] call AT_fnc_check;
+    { deleteVehicle _x; } forEach [_u, _u2];
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;
+
+// 4.2.2 : entrée ZEN « SSE · Roleplay de l'IA » posée, visible sur une IA, jamais sur un joueur seul (condition évaluée
+// avec les arguments de ZEN : [position, objets sélectionnés, groupes, points de passage, marqueurs, survol, argument]).
+["ia_rp_zeus_menu", {
+    if (["comspec_sse_fnc_iarpZen"] call AT_fnc_nil) exitWith {};
+    if (isNil "zen_context_menu_fnc_createAction" || {isNil "zen_context_menu_actions"}) exitWith { "ZEN absent de ce build" call AT_fnc_skip; };
+    [[{ !isNil "comspec_sse_iarpZenTargets" }, 10] call AT_fnc_wait, "menu ZEN de l'IA RP non enregistré (comspec_sse_iarpZenTargets)"] call AT_fnc_check;
+    private _node = (zen_context_menu_actions select { ((_x select 0) select 0) isEqualTo "comspec_sse_iarp" }) param [0, []];
+    if !([_node isNotEqualTo [], "entrée racine « comspec_sse_iarp » absente des actions ZEN"] call AT_fnc_check) exitWith { call AT_fnc_done; };
+    private _cond = (_node select 0) select 5;
+    private _kids = (_node select 1) apply { (_x select 0) select 0 };
+    (format ["sous-menus : %1", _kids]) call AT_fnc_info;
+    { [_x in _kids, format ["sous-menu %1 absent", _x]] call AT_fnc_check; } forEach ["comspec_sse_iarp_profile", "comspec_sse_iarp_state", "comspec_sse_iarp_mem", "comspec_sse_iarp_react"];
+    private _u = call AT_fnc_iarpIa;
+    private _pos = getPosASL _u;
+    [[_pos, [_u], [], [], [], _u, []] call _cond, "entrée invisible sur une IA survolée"] call AT_fnc_check;
+    [[_pos, [_u, player], [], [], [], objNull, []] call _cond, "entrée invisible sur une sélection IA + joueur"] call AT_fnc_check;
+    [!([_pos, [player], [], [], [], player, []] call _cond), "entrée visible sur un joueur seul"] call AT_fnc_check;
+    [!([_pos, [], [], [], [], objNull, []] call _cond), "entrée visible sans cible"] call AT_fnc_check;
+    [([_pos, [player, _u], [], [], [], player, []] call comspec_sse_iarpZenTargets) isEqualTo [_u], "cibles : le joueur n'est pas écarté"] call AT_fnc_check;
+    deleteVehicle _u;
+    call AT_fnc_done;
+}, 30] call AT_fnc_run;

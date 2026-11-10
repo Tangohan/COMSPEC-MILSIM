@@ -254,6 +254,100 @@ AT_fnc_ia = {
     call AT_fnc_done;
 }, 120] call AT_fnc_run;
 
+// Fenêtre « IA de la zone » (centre Zeus de l'ATAK, fn_aiConfigOpen) : trois IA civiles, profils Athena simulés (ingérés comme le
+// paquet d'identité), une IA en fausse identité (vrai papier à un autre nom) : la liste donne le nom donné, le vrai nom et « Ment » ;
+// aucun bouton, titre ni en-tête coupé ; aperçu entier ; application d'un profil ; garder puis supprimer l'enregistrement ; capture.
+["sse_ia_zone", {
+    if (["comspec_sse_fnc_aiConfigOpen", "comspec_sse_fnc_editorAi", "comspec_sse_fnc_editorAiServer", "comspec_sse_fnc_aiWho", "comspec_sse_fnc_idAiConfig", "comspec_sse_fnc_idRegistry", "comspec_sse_fnc_idIssue"] call AT_fnc_nil) exitWith {};
+    if (!isServer) exitWith { "serveur distant : profils Athena non simulables depuis ce poste" call AT_fnc_skip; };
+    private _a = call AT_fnc_ia;
+    private _b = call AT_fnc_ia;
+    private _c = call AT_fnc_ia;
+    _b setPosATL (player getPos [3.5, (getDir player) + 35]);
+    _c setPosATL (player getPos [3.5, (getDir player) - 35]);
+    uiSleep 1;
+    private _menage = {
+        ["ingest", [[], []]] call comspec_sse_fnc_idAiConfig;
+        (["init"] call comspec_sse_fnc_idRegistry) set ["packAt", ""];
+        { deleteVehicle _x; } forEach [_a, _b, _c];
+    };
+    // Profils simulés : même forme que « settings.ai_profiles » du paquet (fn_idAthenaPack -> fn_idAiConfig « ingest »).
+    private _profils = [
+        [["id", 9001], ["ref", "PRF-9001"], ["label", "Vendeur du marché"], ["name", "Stavros Vlachos"], ["side", "civ"], ["category", "civilian"], ["papers", "identity"], ["behaviour", "coopere"], ["documents", []]],
+        [["id", 9002], ["ref", "PRF-9002"], ["label", "Chauffeur de taxi"], ["name", "Nikos Petrou"], ["side", "civ"], ["category", "suspect"], ["papers", "identity"], ["behaviour", "nerveux"], ["documents", []]],
+        [["id", 9003], ["ref", "PRF-9003"], ["label", "Sergent de la milice"], ["name", "Ilias Markou"], ["side", "guer"], ["category", "military"], ["papers", "identity"], ["behaviour", "auto"], ["documents", []]]
+    ];
+    ["ingest", [_profils, []]] call comspec_sse_fnc_idAiConfig;
+    (["init"] call comspec_sse_fnc_idRegistry) set ["packAt", "2026-11-10T20:30:00"];
+    // _b : vrai papier à un autre nom que le sien (fausse identité : il ment).
+    private _doc = [_b, createHashMapFromArray [["type", "id_card"], ["kind", "civil"], ["last", "Vlachos"], ["first", "Stavros"], ["materialize", true]]] call comspec_sse_fnc_idIssue;
+    [_doc isNotEqualTo "", "papier de l'IA non délivré (fn_idIssue)"] call AT_fnc_check;
+    private _qui = [_b] call comspec_sse_fnc_aiWho;
+    [(_qui getOrDefault ["truth", ""]) isEqualTo "lies", format ["vérité attendue « lies », reçue « %1 » (donné %2, vrai %3)", _qui getOrDefault ["truth", ""], _qui getOrDefault ["given", ""], _qui getOrDefault ["true", ""]]] call AT_fnc_check;
+    [[_a, _b, _c], getPosATL player] call comspec_sse_fnc_aiConfigOpen;
+    private _ouvert = { !isNull (uiNamespace getVariable ["comspec_sse_editorDisplay", displayNull]) };
+    if !([[_ouvert, 6] call AT_fnc_wait, "fenêtre IA de la zone non ouverte"] call AT_fnc_check) exitWith { call _menage; call AT_fnc_done; };
+    private _etat = { uiNamespace getVariable ["comspec_sse_editorAi", createHashMap] };
+    [[{ (count ((call _etat) getOrDefault ["rows", []])) isEqualTo 3 }, 8] call AT_fnc_wait, "liste des IA non reçue (3 attendues)"] call AT_fnc_check;
+    uiSleep 1;
+    private _d = uiNamespace getVariable ["comspec_sse_editorDisplay", displayNull];
+    // État des profils : « 3 profils reçus d'Athena (paquet du 10/11 20:30) » ; liste : Générer + 3 profils.
+    private _statut = ctrlText (_d displayCtrl 94552);
+    [(_statut find "3") >= 0 && {(_statut find "20:30") >= 0}, format ["état des profils : « %1 »", _statut]] call AT_fnc_check;
+    [(lbSize (_d displayCtrl 94532)) isEqualTo 4, format ["liste des profils : %1 entrées (4 attendues)", lbSize (_d displayCtrl 94532)]] call AT_fnc_check;
+    // Ligne de _b : nom donné (papiers), vrai nom différent, vérité « Ment ».
+    private _l = _d displayCtrl 94510;
+    private _rb = -1;
+    for "_i" from 0 to (((lnbSize _l) select 0) - 1) do { if ((_l lnbData [_i, 0]) isEqualTo (netId _b)) exitWith { _rb = _i; }; };
+    if ([_rb >= 0, "IA en fausse identité absente de la liste"] call AT_fnc_check) then {
+        private _donne = _l lnbText [_rb, 1];
+        private _vrai = _l lnbText [_rb, 2];
+        private _verite = _l lnbText [_rb, 3];
+        [((toLower _donne) find "vlachos") >= 0, format ["nom donné : « %1 » (attendu Stavros VLACHOS)", _donne]] call AT_fnc_check;
+        [_vrai isNotEqualTo "" && {(toLower _vrai) isNotEqualTo (toLower _donne)}, format ["vrai nom absent ou identique au nom donné : « %1 »", _vrai]] call AT_fnc_check;
+        [_verite isEqualTo (localize "STR_COMSPEC_SSE_ED_TruthS_lies"), format ["vérité : « %1 » (attendu « %2 »)", _verite, localize "STR_COMSPEC_SSE_ED_TruthS_lies"]] call AT_fnc_check;
+        [(_l lnbText [_rb, 1]) isNotEqualTo (name _b), "nom d'unité Arma présenté comme nom de l'IA"] call AT_fnc_check;
+    };
+    // Aucun bouton, titre de section, en-tête de colonne ni libellé coupé.
+    { [_d displayCtrl _x, format ["contrôle %1", _x]] call AT_fnc_tient; } forEach [94503, 94504, 94506, 94576, 94523, 94524, 94525, 94505, 94518, 94521, 94520, 94530, 94550, 94553, 94556, 94533, 94535, 94559, 94562, 94511, 94513, 94514, 94515, 94517, 94541, 94544, 94546, 94545, 94577, 94578, 94579, 94580, 94581, 94582, 94583, 94584, 94566, 94567, 94568, 94569];
+    // Fiche de _b (cochée seule) : papiers reçus, titre au nom donné, vrai nom dans la ligne du dessous, aperçu entier.
+    ["checkNone"] call comspec_sse_fnc_editorAi;
+    (call _etat) set ["checked", [netId _b]];
+    (call _etat) set ["cur", netId _b];
+    ["sheet"] call comspec_sse_fnc_editorAi;
+    [[{ (count ((call _etat) getOrDefault ["docs", []])) isEqualTo 1 }, 6] call AT_fnc_wait, "papiers de l'IA non reçus (1 attendu)"] call AT_fnc_check;
+    uiSleep 0.5;
+    [((toLower (ctrlText (_d displayCtrl 94530))) find "vlachos") >= 0, format ["titre de la fiche : « %1 »", ctrlText (_d displayCtrl 94530)]] call AT_fnc_check;
+    [((toLower (ctrlText (_d displayCtrl 94549))) find (toLower (_qui getOrDefault ["true", "?"]))) >= 0, format ["vrai nom absent de la fiche : « %1 »", ctrlText (_d displayCtrl 94549)]] call AT_fnc_check;
+    [_d displayCtrl 94530, "titre de la fiche"] call AT_fnc_tient;
+    [_d displayCtrl 94543, "aperçu « ce que verra le joueur »"] call AT_fnc_tient;
+    [((lnbSize (_d displayCtrl 94512)) select 0) isEqualTo 1, "liste des papiers vide"] call AT_fnc_check;
+    ["ia_zone_fiche"] call AT_fnc_shot;
+    // Profil Athena appliqué à _b : la ligne passe sur PRF-9001.
+    private _pc = _d displayCtrl 94532;
+    for "_i" from 0 to ((lbSize _pc) - 1) do { if ((_pc lbData _i) isEqualTo "9001") exitWith { _pc lbSetCurSel _i; }; };
+    [(_pc lbData (lbCurSel _pc)) isEqualTo "9001", "profil PRF-9001 non sélectionnable"] call AT_fnc_check;
+    ["applyChecked"] call comspec_sse_fnc_editorAi;
+    private _applique = { (((call _etat) getOrDefault ["rows", []]) findIf { (_x select 0) isEqualTo (netId _b) && {(_x select 6) isEqualTo "PRF-9001"} }) >= 0 };
+    [[_applique, 10] call AT_fnc_wait, "profil non appliqué (ligne sans PRF-9001 après Appliquer)"] call AT_fnc_check;
+    uiSleep 0.5;
+    // Garder pour les prochaines parties : enregistré sur ce serveur (liste des gardés), puis l'enregistrement est supprimé.
+    ["keepChecked"] call comspec_sse_fnc_editorAi;
+    private _kc = _d displayCtrl 94519;
+    private _garde = { (lbSize _kc) > 0 && {(_kc lbData 0) isNotEqualTo ""} };
+    if ([[_garde, 10] call AT_fnc_wait, "IA gardée absente de la liste des gardés"] call AT_fnc_check) then {
+        (format ["gardé : %1", _kc lbText 0]) call AT_fnc_info;
+        ["ia_zone_gardee"] call AT_fnc_shot;
+        ["unkeep", [player, _kc lbData 0]] call comspec_sse_fnc_editorAiServer;
+        uiSleep 1;
+        [(lbSize _kc) > 0 && {(_kc lbData 0) isEqualTo ""}, "enregistrement non supprimé"] call AT_fnc_check;
+    };
+    ["close"] call comspec_sse_fnc_editor;
+    [[{ !(call _ouvert) }, 4] call AT_fnc_wait, "fenêtre non fermée"] call AT_fnc_check;
+    call _menage;
+    call AT_fnc_done;
+}, 120] call AT_fnc_run;
+
 // App Ma couverture : fiche en cache. Réouverture dans la minute = aucune nouvelle demande au serveur ; Actualiser et
 // Demander la mise à jour en envoient une ; fiche inchangée = réponse courte (coverSame, le cache est gardé et complété).
 ["sse_couverture_cache", {
