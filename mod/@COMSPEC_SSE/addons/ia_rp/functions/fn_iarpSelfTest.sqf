@@ -1,7 +1,8 @@
 /*
     Contrôles de l'interprète et du générateur (pur, toute machine, Eden compris : console de débogage).
     [] call comspec_sse_fnc_iarpSelfTest -> [échecs [textes…], infos [textes…]]
-      interprète   phrases FR et EN (accents, ponctuation, majuscules) -> intention attendue
+      interprète   phrases FR et EN (accents, ponctuation, majuscules, fautes de frappe, négation, faux positifs)
+                   -> intention attendue ; deux demandes dans un message -> dans l'ordre ; coût mesuré (info)
       banque       au moins 25 intentions, 3 phrases de base au moins chacune ; variantes possibles (base × décors)
       redite       même question 10 fois à la même personne : moins de 3 répliques identiques
       cohérence    10 réponses « origine » d'une personne honnête : toutes citent la ville de sa couverture
@@ -22,8 +23,33 @@ private _info = [];
     ["Suivez-moi.", "follow"], ["Ne bougez plus !", "halt"], ["Circulez.", "leave"], ["À genoux !", "kneel"], ["Descendez du véhicule.", "dismount"],
     ["Ouvrez le coffre.", "trunk"], ["Je vais vous tuer.", "threat"], ["Combien pour oublier ça ? 50 dollars.", "bribe"], ["Avez-vous vu des hommes armés ?", "intel"],
     ["Vous êtes armé ?", "weapons"], ["Calmez-vous, on ne vous veut pas de mal.", "calm"], ["Bonjour !", "greet"], ["Merci beaucoup.", "thanks"],
-    ["Au revoir.", "bye"], ["Comment ça va ?", "howareyou"], ["Votre famille va bien ?", "family"], ["Blablabla xyz", "unknown"], ["", "unknown"]
+    ["Au revoir.", "bye"], ["Comment ça va ?", "howareyou"], ["Votre famille va bien ?", "family"], ["Blablabla xyz", "unknown"], ["", "unknown"],
+    // Fautes de frappe : lettres inversées, doublées, manquantes, accents absents, majuscules, lettres répétées.
+    ["Vos papeirs !", "papers"], ["Vos paapiers svp", "papers"], ["Je vais vous fouiler.", "search"], ["Ouvrez le cofre.", "trunk"],
+    ["Decsendez du vehicule !", "dismount"], ["Mettez-vous a genous !", "kneel"], ["Bonjuor", "greet"], ["STOOOOP !", "halt"],
+    ["Vous travaillez pour qui ? Votre emploieur ?", "employer"], ["d'ou venez vous", "origin"],
+    // Faux positifs : mots courants proches d'un mot du lexique, jamais corrigés.
+    ["J'ai une feuille de route.", "unknown"], ["Il fait beau sur la plage.", "unknown"], ["Votre ferme est loin ?", "unknown"],
+    ["Le truck est rouge.", "unknown"], ["Great job.", "unknown"],
+    // Négation simple : pot-de-vin et fouille annulés, ordres inchangés, une virgule arrête la négation.
+    ["Je ne veux pas d'argent.", "unknown"], ["I don't want your money.", "unknown"], ["Je ne vais pas vous fouiller.", "unknown"],
+    ["Pas besoin de vous fouiller.", "unknown"], ["We don't need to search you.", "unknown"], ["Prenez cet argent.", "bribe"],
+    ["Ne bougez pas !", "halt"], ["Si vous ne coopérez pas, je tire !", "threat"], ["Vous n'êtes pas armé ?", "weapons"]
 ];
+// Deux demandes dans un message : dans l'ordre où elles sont écrites.
+{
+    _x params ["_txt", "_want"];
+    private _got = (([_txt] call comspec_sse_fnc_iarpIntent) param [3, []]) apply { _x select 0 };
+    if (_got isNotEqualTo _want) then { _ko pushBack format ["demandes « %1 » : %2 au lieu de %3", _txt, _got, _want]; };
+} forEach [
+    ["Bonjour, vos papiers svp", ["greet", "papers"]], ["Bonjour vos papiers", ["greet", "papers"]], ["Merci. Vous pouvez partir.", ["thanks", "leave"]],
+    ["D'où venez-vous ? Et pour qui travaillez-vous ?", ["origin", "employer"]], ["Salut ! Tu viens d'où ?", ["greet", "origin"]],
+    ["Vous avez vu quelque chose de suspect ? Merci.", ["intel", "thanks"]], ["Vos papiers, s'il vous plaît.", ["papers"]]
+];
+// Coût de l'interprète : 20 messages longs pleins de fautes (mesure indicative, la machine compte).
+private _t0 = diag_tickTime;
+for "_i" from 1 to 20 do { ["Bonjuor monsieur, vos papeirs svp, et ouvrez le cofre du vehicule, d'ou venez vous exactement ? Decsendez !"] call comspec_sse_fnc_iarpIntent; };
+_info pushBack format ["interprète : %1 ms par message long avec fautes", round (((diag_tickTime - _t0) / 20) * 10000) / 10];
 
 private _bank = ["bank"] call comspec_sse_fnc_iarpData;
 private _intents = (keys _bank) select { (_x select [0, 1]) isNotEqualTo "_" };

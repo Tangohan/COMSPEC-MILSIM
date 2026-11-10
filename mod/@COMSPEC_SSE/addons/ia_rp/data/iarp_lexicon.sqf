@@ -6,8 +6,16 @@
     ci-dessous. Une mission peut ajouter des motifs (ou de nouvelles intentions) avec un fichier iarp_lexicon.sqf à sa
     racine, même format : les motifs d'une intention connue s'ajoutent aux siens.
     Exemple : [["recette", 1, [" la recette", " cuisine "]]] et des phrases « recette » dans iarp_bank.sqf.
+    Fautes de frappe (fn_iarpIntent) : un mot de 5 lettres et plus absent du lexique est rapproché d'un mot des motifs
+    (mêmes deux premières lettres, une lettre de différence, deux à partir de 8 lettres, lettres doublées ou manquantes).
+    « _keep » : mots courants jamais corrigés, parce qu'ils ressemblent trop à un mot du lexique (« ferme » / « femme »).
+    Une mission peut en ajouter de la même façon : [["_keep", 0, ["fermier"]]].
 */
 [
+    ["_keep", 0, ["ferme", "fermes", "plage", "plages", "mairie", "truck", "trucks", "great", "green", "parlez", "sauvez", "demandez",
+        "fautes", "faute", "conforme", "porte", "portes", "portee", "armee", "armees", "emploi", "bless",
+        "souffre", "offre", "chiffre", "cartes", "plaque", "plaques", "soldat", "soldats", "pompiers", "letter", "later", "better",
+        "fellow", "places", "lines", "treat", "sweet", "dormir", "rester", "venue", "ville", "vielle", "vieille", "visage", "voyage"]],
     // --- Questions de légende (réponses tirées de la couverture de l'IA)
     ["origin", 1, [" d ou venez", " d ou vous venez", " vous venez d ou", " venez d ou", " d ou etes vous", " vous etes d ou", " vous etes d ici", " originaire", " vous habitez ou", " ou habitez", " ou vivez", " where are you from", " where do you come from", " where you from", " where do you live", " are you from here", " d ou tu viens", " tu viens d ou", " t habites ou"]],
     ["employer", 1, [" pour qui travaillez", " pour qui vous travaillez", " qui vous emploie", " votre employeur", " votre patron", " pour qui tu bosses", " pour qui tu travailles", " who do you work for", " who is your employer", " your employer", " your boss", " qui est votre chef"]],
@@ -34,7 +42,7 @@
     ["threat", 1.1, [" je vais vous tuer", " je vais te tuer", " je vais tirer", " je tire", " vous allez le regretter", " sinon je", " ou je tire", " je vous arrete", " en prison", " vous allez payer", " je vais vous buter", " i will shoot", " i ll shoot", " i will kill you", " or else", " you ll regret", " you are under arrest", " i ll arrest you", " to jail", " last warning", " dernier avertissement"]],
     ["bribe", 1.1, [" argent", " billet", " dollars", " euros", " pot de vin", " un petit cadeau", " payer ", " je vous paie", " je te paie", " combien pour", " money", " cash", " bribe", " i ll pay", " i can pay", " how much for", " a little gift"]],
     ["intel", 1, [" que savez vous", " vous savez quelque chose", " avez vous vu", " vous avez vu", " des insurges", " des rebelles", " des combattants", " des hommes armes", " des etrangers", " quelque chose de suspect", " du nouveau", " des informations", " un renseignement", " what do you know", " have you seen", " did you see", " insurgents", " rebels", " armed men", " anything suspicious", " any information", " strangers"]],
-    ["weapons", 1.1, [" vous etes arme", " avez vous des armes", " vous avez une arme", " des armes sur vous", " une arme", " are you armed", " do you have a weapon", " any weapons", " carrying a weapon"]],
+    ["weapons", 1.1, [" vous etes arme", " etes pas arme", " pas d arme", " avez vous des armes", " vous avez une arme", " des armes sur vous", " une arme", " are you armed", " do you have a weapon", " any weapons", " carrying a weapon"]],
     ["calm", 1, [" calmez vous", " du calme", " on ne vous veut pas de mal", " pas de panique", " tout va bien", " n ayez pas peur", " rassurez vous", " detendez vous", " calm down", " relax", " we mean no harm", " don t be afraid", " take it easy", " it s okay", " it s ok "]],
     ["help", 1, [" besoin d aide", " vous avez besoin", " on peut vous aider", " je peux vous aider", " vous etes blesse", " ca va aller", " need help", " can we help", " can i help", " are you hurt", " are you injured"]],
     // --- Politesse et conversation

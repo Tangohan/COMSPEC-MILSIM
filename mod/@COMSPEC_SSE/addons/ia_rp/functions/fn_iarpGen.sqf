@@ -5,7 +5,8 @@
     [intention, profil, contexte, déjà dit] call comspec_sse_fnc_iarpGen -> [modèle fr, modèle en, langue locale, ton, phrase de base]
       profil    HashMap (fn_iarpProfile) : nerve, talk, aggro, honesty, bribe, fear, drunk (0-100), lang, country, phrases
       contexte  HashMap : state (automate des IA : nerveux, refuse, rendu…), tension (0-100), tone (ton imposé), aimed
-                (armes pointées), wounded, tired, vehicle, night, checkpoint (booléens), country (pays des papiers)
+                (armes pointées), wounded, tired, vehicle, night, checkpoint (booléens), country (pays des papiers),
+                plain (vrai : phrase de base seule, sans habillage ; réplique suivie d'une autre dans la même bulle)
       déjà dit  phrases de base déjà servies par cette personne : jamais redites tant qu'il en reste d'autres
     Les modèles gardent leurs variables ({city}…) : fn_iarpFill les remplace dans la langue de chaque joueur.
     Ton : imposé, sinon état de l'automate, sinon le trait de caractère le plus marqué.
@@ -66,8 +67,9 @@ private _pickTone = {
 private _pre = { params ["_e"]; if (_e isNotEqualTo []) then { _fr = [_e select 0] + _fr; _en = [_e param [1, _e select 0]] + _en; }; };
 private _post = { params ["_e"]; if (_e isNotEqualTo []) then { _fr pushBack (_e select 0); _en pushBack (_e param [1, _e select 0]); }; };
 
-// Habillage : jamais sur « je ne comprends pas » ni sur un silence ; à peine chez un laconique.
-private _deco = !(_intent in ["unknown", "silent"]) && {_tone isNotEqualTo "laconique"};
+// Habillage : jamais sur « je ne comprends pas » ni sur un silence ; à peine chez un laconique ; jamais sur une réplique
+// suivie d'une autre dans la même bulle (contexte « plain » : « Bonjour. » avant la vraie réponse).
+private _deco = !(_intent in ["unknown", "silent"]) && {_tone isNotEqualTo "laconique"} && {!(_ctx getOrDefault ["plain", false])};
 if (_deco) then {
     // Hésitation : nerveux, effrayé, ivre.
     if ((_tone in ["nerveux", "effraye"] || {_drunk >= 50}) && {(random 1) < 0.45}) then {
