@@ -280,17 +280,19 @@ final class AtakModReportDiscordTicketService
      *
      * @param array<string, mixed> $report rapport qui a ouvert le ticket
      * @param array{reports:int, hits:int, players:list<string>, last_seen:string} $stats
+     * @param array{atak:?string, link:?string, connect:?string, sse:?string}|null $latest dernières versions (tests) ; null : AtakReleaseInfo
      * @return array<string, mixed>
      */
-    public static function buildHeaderEmbed(array $report, string $status, array $stats, string $link = ''): array
+    public static function buildHeaderEmbed(array $report, string $status, array $stats, string $link = '', ?array $latest = null): array
     {
         $status = isset(self::STATUS_ICONS[$status]) ? $status : AtakModReportRepository::STATUS_NEW;
         $id = (int) ($report['id'] ?? 0);
         $player = self::playerLabel($report);
         $players = $stats['players'] !== [] ? $stats['players'] : [$player];
         $who = implode(', ', array_slice($players, 0, 4)) . (count($players) > 4 ? ' +' . (count($players) - 4) : '');
-        $versions = 'Mod ' . (trim((string) ($report['mod_version'] ?? '')) ?: '—')
-            . ' · Link ' . (trim((string) ($report['extension_version'] ?? '')) ?: '—');
+        // Versions par composant, comparées aux dernières publiées ; « mod_version » est la liaison Overwatch connect.
+        $versions = AtakModReportClientState::versionsField($report, $latest);
+        $badges = AtakModReportClientState::titleBadges($report, $latest);
         $kind = str_starts_with(strtolower((string) ($report['source'] ?? '')), 'player') ? 'Signalement joueur' : 'Détection automatique';
         $gravity = AtakModReportGravity::normalize(isset($report['gravity']) ? (string) $report['gravity'] : null);
         $rawDetail = trim((string) ($report['detail_text'] ?? ''));
@@ -304,18 +306,20 @@ final class AtakModReportDiscordTicketService
             ['name' => 'Joueur / Player', 'value' => $who, 'inline' => true],
             ['name' => 'Type', 'value' => $kind . ' · ' . AtakStartupCheckService::clean((string) ($report['channel'] ?? 'Core'), 40)
                 . ($gravity !== null ? ' · gravité ' . AtakModReportGravity::label($gravity) : ''), 'inline' => true],
-            ['name' => 'Versions', 'value' => $versions, 'inline' => true],
             ['name' => 'Occurrences', 'value' => '×' . max(1, $stats['hits'])
                 . ($stats['reports'] > 1 ? ' · ' . $stats['reports'] . ' rapports' : ''), 'inline' => true],
             ['name' => 'Premier envoi / First seen', 'value' => self::discordTime((string) ($report['created_at'] ?? '')), 'inline' => true],
             ['name' => 'Dernier envoi / Last seen', 'value' => self::discordTime($stats['last_seen']), 'inline' => true],
+            ['name' => 'Versions', 'value' => $versions !== '' ? $versions : '—', 'inline' => false],
+            ['name' => 'Intégrité / Integrity', 'value' => AtakModReportClientState::integrityField($report['client_attest'] ?? null), 'inline' => false],
         ];
         if ($link !== '') {
             $fields[] = ['name' => 'Athena', 'value' => '[Ouvrir le rapport #' . $id . '](' . $link . ')', 'inline' => false];
         }
 
         return [
-            'title' => mb_substr('Ticket #' . $id . ' · ' . AtakStartupCheckService::clean((string) ($report['message'] ?? ''), 200), 0, 256),
+            'title' => mb_substr('Ticket #' . $id . ($badges !== '' ? ' · ' . $badges : '') . ' · '
+                . AtakStartupCheckService::clean((string) ($report['message'] ?? ''), 200), 0, 256),
             'description' => mb_substr($description, 0, 4000),
             'color' => self::STATUS_COLORS[$status],
             'fields' => $fields,
@@ -622,8 +626,15 @@ final class AtakModReportDiscordTicketService
     /** @param array<string, mixed> $report */
     private static function occurrenceLine(array $report): string
     {
+        $versions = [];
+        foreach (AtakModReportClientState::components($report) as $c) {
+            if ($c['version'] !== null) {
+                $versions[] = $c['label'] . ' ' . $c['version'] . ($c['state'] === AtakModReportClientState::OUTDATED ? ' ⚠️' : '');
+            }
+        }
+
         return self::playerLabel($report) . ' · rapport #' . (int) ($report['id'] ?? 0)
-            . ' · Mod ' . (trim((string) ($report['mod_version'] ?? '')) ?: '—');
+            . ($versions !== [] ? ' · ' . AtakStartupCheckService::clean(implode(' · ', $versions), 200) : '');
     }
 
     private static function byLine(string $by): string
