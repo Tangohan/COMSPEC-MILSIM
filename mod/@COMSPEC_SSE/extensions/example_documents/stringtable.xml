@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Extension de documents d'exemple (COMSPEC SSE) : noms des objets d'inventaire (anglais, français). -->
+<Project name="COMSPEC_SSE_ExampleDocuments">
+    <Package name="example_documents">
+        <Key ID="STR_COMSPEC_EXTDOC_LaissezPasser">
+            <Original>Pass</Original>
+            <English>Pass</English>
+            <French>Laissez-passer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_EXTDOC_PressCard">
+            <Original>Press card</Original>
+            <English>Press card</English>
+            <French>Carte de presse</French>
+        </Key>
+    </Package>
+</Project>

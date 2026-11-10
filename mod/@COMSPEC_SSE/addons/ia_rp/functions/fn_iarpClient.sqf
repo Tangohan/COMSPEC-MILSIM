@@ -101,7 +101,7 @@ switch (_op) do {
         _a params [["_key", ""]];
         private _vals = _a select [1];
         private _txt = format ([localize _key] + _vals);
-        if (!isNil "comspec_sse_fnc_toast") then { [_txt, "INFO"] call comspec_sse_fnc_toast; } else { hintSilent _txt; };
+        if (!isNil "comspec_sse_fnc_toast") then { [_txt, "INFO"] call comspec_sse_fnc_toast; } else { diag_log text format ["[COMSPEC SSE] IA RP : %1", _txt]; };
         missionNamespace setVariable ["comspec_sse_iarpLastNotice", _txt];
     };
     case "log": {

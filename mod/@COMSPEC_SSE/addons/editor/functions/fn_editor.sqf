@@ -39,7 +39,11 @@ private _deliveryLabels = [["À ramasser", "Sur un objet choisi dans le monde", 
 private _deliveryPapers = [["Au sol", "Posés à l'endroit choisi", "Les papiers sont posés au sol à l'endroit choisi, ou remis à la personne visée."], ["Sur quelqu'un", "Une personne ou un véhicule à cliquer", "Les papiers sont remis à la personne visée, ou dans le véhicule visé."], ["Annonce", "Message au téléphone, aucun papier", "Un message au téléphone annonce ces papiers : aucun objet n'est posé."]];
 private _kitSets = ["Carte et passeport", "Carte militaire et carte", "Carte et permis"];
 private _markings = ["NON PROTÉGÉ", "DIFFUSION RESTREINTE", "CONFIDENTIEL"];
-private _papers = [["id_card", "Carte d'identité"], ["passport", "Passeport"], ["driving_license", "Permis de conduire"], ["military_id", "Carte militaire"]];
+// Types de papiers du registre (CfgComspecDocuments, extensions actives comprises) : les quatre intégrés d'abord, dans
+// l'ordre historique (index 0..3 de « paper » dans les bibliothèques enregistrées), puis les autres clés servies.
+private _paperKeys = ["id_card", "passport", "driving_license", "military_id"];
+{ _paperKeys pushBackUnique _x; } forEach (["list", [""]] call comspec_sse_fnc_idDocTypes);
+private _papers = _paperKeys apply { [_x, ["label", _x] call comspec_sse_fnc_idDocTypes] };
 private _natures = [["civil", "Vraie"], ["cover", "Couverture"], ["forged", "Faux"]];
 // Papier d'un renseignement : automatique (nature, contexte, graine : fn_paperSkin), un des papiers, ou la feuille unie d'avant
 // (contenu enregistré avant les papiers, sans clé « skin »).
@@ -92,7 +96,8 @@ private _preview = {
     private _text = [[[_it get "body"] call _esc, toString [13], ""] call CBA_fnc_replace, toString [10], "<br/>"] call CBA_fnc_replace;
     private _type = _it get "type";
     private _stampText = switch (_type) do {
-        case "paper": { toUpper ((_papers select (_it get "paper")) select 1) };
+        // Index enregistré au-delà de la liste (extension coupée depuis) : dernier type de la liste plutôt qu'une erreur.
+        case "paper": { toUpper ((_papers select (((_it get "paper") max 0) min ((count _papers) - 1))) select 1) };
         case "kit": { toUpper (_kitSets param [_it get "paper", _kitSets select 0]) };
         case "intel": { _markings select (_it get "marking") };
         default { "" };
@@ -183,7 +188,7 @@ private _form = {
         case "paper": {
             (_d displayCtrl 94042) ctrlSetText ("Type de papier" call comspec_sse_fnc_tr);
             { _main lbAdd ((_x select 1) call comspec_sse_fnc_tr); } forEach _papers;
-            _main lbSetCurSel (_it get "paper");
+            _main lbSetCurSel (((_it get "paper") max 0) min ((count _papers) - 1));
         };
         case "kit": {
             (_d displayCtrl 94042) ctrlSetText ("Lot de papiers" call comspec_sse_fnc_tr);

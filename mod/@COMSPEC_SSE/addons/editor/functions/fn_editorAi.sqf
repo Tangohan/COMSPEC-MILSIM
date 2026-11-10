@@ -15,11 +15,21 @@ private _st = uiNamespace getVariable ["comspec_sse_editorAi", createHashMap];
 uiNamespace setVariable ["comspec_sse_editorAi", _st];
 private _tr = { _this call comspec_sse_fnc_tr };
 private _send = { params ["_sub", ["_x1", []]]; ["send", ["aiCfg", [player, _sub, _x1]]] call comspec_sse_fnc_idClient; };
+// Papiers à porter : anciens alias (fn_idRegistry « kit »), puis chaque clé du registre (CfgComspecDocuments, extensions actives
+// comprises : « Carte de presse (Documents d'exemple) »). Même valeur que l'attribut Eden COMSPEC_ID_Carry.
 private _papers = [["auto", "Selon son camp"], ["none", "Aucun"], ["card", "Carte d'identité"], ["passport", "Passeport"], ["license", "Permis de conduire"], ["card_license", "Carte et permis"], ["card_passport", "Carte et passeport"], ["military", "Carte militaire"]];
+private _extNames = createHashMap;
+{ _extNames set [toLower (_x select 0), _x select 1]; } forEach (["extensions"] call comspec_sse_fnc_idDocTypes);
+{
+    private _ext = toLower ((["get", _x] call comspec_sse_fnc_idDocTypes) getOrDefault ["extension", ""]);
+    private _label = ["label", _x] call comspec_sse_fnc_idDocTypes;
+    _papers pushBack [_x, if (_ext isEqualTo "") then { format ["%1 [%2]", _label, _x] } else { format ["%1 (%2)", _label, _extNames getOrDefault [_ext, _ext]] }];
+} forEach (["list", [""]] call comspec_sse_fnc_idDocTypes);
 private _kinds = [["civil", "Vrais papiers"], ["cover", "Couverture"], ["forged", "Faux papiers"]];
 private _behav = [["auto", "Selon le contexte"], ["coopere", "Coopère"], ["nerveux", "Nerveux"], ["ment", "Ment avec aplomb"], ["refuse", "Refuse"], ["fuit", "S'enfuit"], ["agressif", "Devient agressif"], ["rendu", "Se rend"]];
 private _sides = [["auto", "Ne pas changer"], ["civ", "Civils"], ["west", "BLUFOR"], ["east", "OPFOR"], ["guer", "Indépendants"]];
-private _docTypes = [["id_card", "Carte d'identité"], ["passport", "Passeport"], ["driving_license", "Permis de conduire"], ["military_id", "Carte militaire"]];
+// Types de documents servis (registre, extensions actives) : liste « Ajouter un papier » et libellés des papiers d'une IA.
+private _docTypes = (["list", [""]] call comspec_sse_fnc_idDocTypes) apply { [_x, ["label", _x] call comspec_sse_fnc_idDocTypes] };
 private _fill = {
     params ["_idc", "_rows"];
     private _c = _d displayCtrl _idc;

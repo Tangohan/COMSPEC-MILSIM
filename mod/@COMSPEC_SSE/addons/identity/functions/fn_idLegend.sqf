@@ -211,7 +211,7 @@ private _build = {
         private _kinds = if (_en) then { ["ID card", "Passport", "Driving licence", "Military ID"] } else { ["Carte d'identité", "Passeport", "Permis de conduire", "Carte militaire"] };
         private _paper = (_imp getOrDefault ["docs", []]) apply {
             _x params [["_t", ""], ["_c", ""], ["_n", ""], ["_i", ""], ["_e", ""]];
-            format [["%1 n° %2 (%3, valable jusqu'au %4)", "%1 no. %2 (%3, valid until %4)"] select _en, _kinds select ((["id_card", "passport", "driving_license", "military_id"] find _t) max 0), _n, _c, _e]
+            format [["%1 n° %2 (%3, valable jusqu'au %4)", "%1 no. %2 (%3, valid until %4)"] select _en, (["label", _t] call comspec_sse_fnc_idDocTypes), _n, _c, _e]
         };
         if (_paper isNotEqualTo []) then { _L set ["extraDocs", _paper]; };
         private _hist = _imp getOrDefault ["history", []];
@@ -307,7 +307,7 @@ switch (_op) do {
         private _onHim = ([_u, 0] call comspec_sse_fnc_idDocsOf) apply { _x select 0 };
         _L set ["docs", ((["unitDocs", [_u]] call comspec_sse_fnc_idRegistry) apply { ["doc", [_x]] call comspec_sse_fnc_idRegistry }) apply {
             [
-                ["Carte d'identité", "Passeport", "Permis de conduire", "Carte militaire"] select ((["id_card", "passport", "driving_license", "military_id"] find (_x getOrDefault ["type", ""])) max 0),
+                ["label", _x getOrDefault ["type", ""]] call comspec_sse_fnc_idDocTypes,
                 (_countries getOrDefault [_x getOrDefault ["country", ""], createHashMap]) getOrDefault ["name", _x getOrDefault ["country", ""]],
                 _x getOrDefault ["number", ""], _x getOrDefault ["expires", ""],
                 ((_x getOrDefault ["cls", ""]) isNotEqualTo "") && {(_x getOrDefault ["cls", ""]) in _onHim}

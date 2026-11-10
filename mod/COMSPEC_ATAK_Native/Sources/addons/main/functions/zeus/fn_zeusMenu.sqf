@@ -62,8 +62,9 @@ switch (_act) do {
     };
     case "feedback": {
         private _t = (_args param [0, ""]) call comspec_atak_native_fnc_tr;
-        if (!isNil "zen_common_fnc_showMessage") exitWith { [_t] call zen_common_fnc_showMessage; };
-        [getAssignedCuratorLogic player, _t] call BIS_fnc_showCuratorFeedbackMessage;
+        // Bandeau ZEN (interface du mod ZEN) ; sans ZEN, centre de notifications du téléphone (jamais le message natif du curateur d'Arma).
+        if (!isNil "zen_common_fnc_showMessage") exitWith { [_t regexReplace ["%", "%%"]] call zen_common_fnc_showMessage; };
+        ["INFO", _args param [0, ""], 6, 20, "ZEUS"] call comspec_atak_native_fnc_notify;
     };
     case "apply": {
         _args params [["_id", ""], ["_units", []], ["_int", -1], ["_dur", 0], ["_msg", ""]];

@@ -128,13 +128,14 @@ switch (_act) do {
         if (unitIsUAV (vehicle leader _g)) exitWith { "Un drone se commande depuis l'app Drone" };
         ""
     };
-    // Toast d'Arma (CfgNotifications, config.cpp) : secours des bulles (fn_aiBubble) ; rien dans le centre de notifications du téléphone.
+    // Secours des bulles (fn_aiBubble) : notification du téléphone (centre de notifications, bandeau si le téléphone est
+    // affiché), page SSE au clic. Plus jamais la notification d'Arma (CfgNotifications COMSPEC_ATAK_AiReply : déclarée
+    // dans config.cpp, plus utilisée) : aucune alerte de l'interface du jeu.
     case "toast": {
-        // _who : titre de l'encadré = la personne qui parle (identité, ou « Anonyme » si elle n'en a pas) ; vide : « COMSPEC ».
+        // _who : la personne qui parle (identité, ou « Anonyme » si elle n'en a pas), en préfixe du texte ; vide : texte seul.
         _arg params [["_t", ""], ["_type", "INFO"], ["_who", ""]];
         if (!hasInterface || {_t isEqualTo ""}) exitWith {};
-        if (_who isEqualTo "") then { _who = "COMSPEC"; };
-        [["COMSPEC_ATAK_AiReply", "COMSPEC_ATAK_AiReplyWarn"] select (_type in ["WARNING", "ERROR"]), [((_t) call comspec_atak_native_fnc_tr) regexReplace ["[<>&]", " "], _who regexReplace ["[<>&]", " "]]] call BIS_fnc_showNotification;
+        [_type, [_t, format ["%1 : %2", _who, _t]] select (_who isNotEqualTo ""), 6, 20, "SSE"] call comspec_atak_native_fnc_notify;
     };
     case "send": {
         _arg params [["_g", grpNull], ["_k", ""], ["_pos", []], ["_toc", false]];

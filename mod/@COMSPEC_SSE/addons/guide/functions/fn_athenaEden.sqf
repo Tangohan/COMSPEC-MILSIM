@@ -78,7 +78,12 @@ private _dlg = uiNamespace getVariable ["comspec_sse_athenaEdenDisplay", display
 switch (_mode) do {
     case "restore": { [true] call _status; };
     case "open": {
-        if (!is3DEN && {isNull findDisplay 313}) exitWith { hintSilent (("Connexion Athena : disponible dans l'éditeur Eden (menu COMSPEC SSE).") call comspec_sse_fnc_tr); };
+        // Hors Eden : notification du téléphone + RPT, jamais une alerte d'Arma.
+        if (!is3DEN && {isNull findDisplay 313}) exitWith {
+            private _m = "Connexion Athena : disponible dans l'éditeur Eden (menu COMSPEC SSE).";
+            [_m, "INFO", "COMSPEC SSE", "SSE"] call comspec_sse_fnc_notify;
+            [_m, "WARN"] call comspec_sse_fnc_log;
+        };
         // Action d'un menu d'Eden : la liste déroulante est encore ouverte, la fenêtre est créée juste après.
         if (!canSuspend) exitWith { [_mode, _args] spawn { uiSleep 0.05; _this call comspec_sse_fnc_athenaEden; }; };
         ["track"] call comspec_sse_fnc_athenaEden;

@@ -19,6 +19,8 @@ param(
     [string]$AcreDir = '',
     # Liste complète des mods : remplace CBA, ACE, ACRE, ATAK, SSE.
     [string[]]$Mods = @(),
+    # Mods chargés en plus (dossiers @Mod) : extensions de documents du SSE, par exemple.
+    [string[]]$ModsEnPlus = @(),
     [switch]$SansAcre,
     [switch]$SansSse,
     # MPU-5 d'ACRE (ACRE_MPU5.pbo seul, tiré du pack 3026491672) pour l'étape acre_radio_detectee : retiré avec ce paramètre.
@@ -100,6 +102,8 @@ if ($Mods.Count -gt 0) {
         $listeMods += $SseDir
     }
 }
+$ModsEnPlus = @($ModsEnPlus | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
+foreach ($m in $ModsEnPlus) { $listeMods += $m }
 foreach ($m in $listeMods) { if (-not (Test-Path -LiteralPath $m)) { Sortir 4 "Mod introuvable : $m" } }
 
 # Build périmé : le test porterait sur d'anciens PBO. Un PBO refait en local (modifié pour Git) est à jour.

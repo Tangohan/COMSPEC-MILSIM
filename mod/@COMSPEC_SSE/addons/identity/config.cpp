@@ -61,6 +61,8 @@ class CfgFunctions {
             class idViewerOpen {};
             class idViewerOnLoad {};
             class idFace {};
+            class idDocTypes {};
+            class idDocPicker {};
             class idEvidence {};
             class idPage {};
             class idAction {};
@@ -153,9 +155,17 @@ class CfgVehicles {
     #include "modules_identity.hpp"
 };
 
+#include "CfgComspecDocuments.hpp"
+
 class RscText;
 class RscButton;
 class RscStructuredText;
 class RscPicture;
+class RscListBox;
+class RscEdit;
+class RscCombo;
+class RscXSliderH;
+class RscCheckBox;
 
 #include "dialogs\idViewer.hpp"
+#include "dialogs\docPicker.hpp"
