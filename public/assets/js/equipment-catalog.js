@@ -88,7 +88,7 @@
     if (state.openTenueId) params.set('tenue', String(state.openTenueId));
     else params.delete('tenue');
     if (root.getAttribute('data-eq-space') === 'materiel') {
-      if (state.tab === 'dotation') params.set('tab', state.tab);
+      if (state.tab === 'dotation' || state.tab === 'fiches') params.set('tab', state.tab);
       else params.delete('tab');
     }
     params.delete('edit_collection');
@@ -98,7 +98,8 @@
   }
 
   function setTab(tab) {
-    state.tab = tab === 'dotation' ? 'dotation' : 'fiches';
+    // Espace Matériel : catalogue des objets (par défaut), fiches matériel, dotation.
+    state.tab = tab === 'dotation' || tab === 'fiches' ? tab : 'catalogue';
     root.querySelectorAll('[data-eq-tab]').forEach(function (btn) {
       var on = btn.getAttribute('data-eq-tab') === state.tab;
       btn.classList.toggle('is-active', on);
@@ -1310,7 +1311,7 @@
   (function initFromUrl() {
     var params = new URLSearchParams(window.location.search);
     var tab = params.get('tab');
-    setTab(tab || 'fiches');
+    setTab(tab || (params.get('fiche') ? 'fiches' : (params.get('dotation') ? 'dotation' : 'catalogue')));
     // Ancienne adresse ?tab=fiches / ?tab=dotation : on amène la personne à la section du matériel.
     if (tab === 'fiches' || tab === 'dotation') {
       var materiel = document.getElementById('materiel');

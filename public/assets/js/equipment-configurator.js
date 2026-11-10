@@ -2643,6 +2643,25 @@
     }
     baseBox.querySelector('[data-cfg-base-retry]').addEventListener('click', function () { runBase(false); });
 
+    /** Objet envoyé depuis l'espace Matériel : seul en tête de la palette, dans la vue où il se pose (rien n'est posé d'office). */
+    function showItem(cls) {
+        var s = spec(cls);
+        if (!s) { toast('« ' + cls + ' » n’est pas dans le catalogue de la communauté.', 'warn'); return; }
+        var weapon = ['primary', 'handgun', 'secondary'].indexOf(s.k) >= 0;
+        S.mode = weapon ? 'bench' : 'outfit';
+        store('athena.cfg.mode', S.mode);
+        P.tab[S.mode] = weapon ? 'weapons' : 'all';
+        P.cat = '';
+        P.fav = false;
+        P.trend = false;
+        P.q = s.c;
+        $('[data-cfg-search]').value = s.c;
+        renderTabs();
+        filterPalette();
+        renderAll();
+        toast('« ' + nameOf(s.c) + ' » est en tête de la palette : ' + (weapon ? 'glissez-le sur l’établi ou cliquez sur ＋.' : 'glissez-le sur la tenue ou cliquez sur ＋.'));
+    }
+
     // ------------------------------------------------------------------ thème et démarrage
     var THEME_LABEL = { auto: 'Thème : auto', dark: 'Thème : sombre', light: 'Thème : clair' };
     function applyTheme(t) {
@@ -2684,6 +2703,7 @@
             } catch (err) { /* brouillon illisible : ignoré */ }
         }
         if (boot.pick) { openSources('a'); return; }
+        if (boot.item) { showItem(boot.item); return; }
         if (store(TOUR_KEY) !== '1' && !restored && !boot.open) { openTour(0); }
     });
 })();
