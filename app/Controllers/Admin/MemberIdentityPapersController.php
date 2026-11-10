@@ -273,6 +273,39 @@ final class MemberIdentityPapersController
         return Response::redirect($this->back($userId));
     }
 
+    /**
+     * Photo d'identité d'une identité du membre (principale ou d'emprunt) : imprimée sur ses papiers d'Athena.
+     * Même traitement que l'atelier des papiers (SseIdImageService : type vérifié, recadrée, métadonnées retirées).
+     */
+    public function identityPhoto(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guard($request, $params);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId, $rights] = $ctx;
+        $identity = $this->papers->ownedIdentity($tenantId, $userId, (int) ($params['identityId'] ?? 0), $rights['truth']);
+        if ($identity === null) {
+            Session::flash('error', 'Identité introuvable.');
+
+            return Response::redirect($this->back($userId));
+        }
+        $remove = $request->inputString('photo_remove') === '1';
+        $photo = (new \App\Services\Sse\SseIdImageService())->storeUpload($_FILES['photo'] ?? null, 'photo', $tenantId);
+        if (!$photo['ok'] && !(!empty($photo['none']) && $remove)) {
+            Session::flash('error', !empty($photo['none']) ? 'Choisissez une photo à envoyer.' : 'Photo : ' . ($photo['error'] ?? 'image refusée.'));
+
+            return Response::redirect($this->back($userId));
+        }
+        (new \App\Repositories\SseIdentityRepository())->setImages((int) $identity['id'], $tenantId, ['photo_path' => $photo['path'] ?? null]);
+        \App\Services\Sse\SseIdMassGeneratorService::audit($tenantId, $this->actorId(), 'id_member.photo', 'sse_identity', (int) $identity['id'], ['member_user_id' => $userId, 'removed' => !isset($photo['path'])]);
+        Session::flash('success', isset($photo['path'])
+            ? 'Photo d’identité enregistrée : elle apparaît sur les papiers de cette identité.'
+            : 'Photo d’identité retirée.');
+
+        return Response::redirect($this->back($userId));
+    }
+
     /** Formulaire de création (identity_id, country, doc_type, generer) ou de modification ({docId}). */
     public function documentForm(Request $request, array $params = []): Response
     {

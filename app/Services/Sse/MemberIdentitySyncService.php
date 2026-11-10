@@ -230,7 +230,7 @@ final class MemberIdentitySyncService
                 $issues[] = self::issue('sex_missing', 'incomplete', 'Sexe non précisé', 'Le jeu imprime M par défaut.', 'Ex. : M ou F.', ['label' => 'Modifier l’identité', 'href' => '#papiers-identite']);
             }
             if (($i['photo_path'] ?? null) === null) {
-                $issues[] = self::issue('photo_missing', 'incomplete', 'Photo absente', 'Le papier d’Athena n’a pas de photo ; en jeu, la photo est le visage du personnage.', 'Ex. : photo d’identité ajoutée dans l’atelier des papiers.', ['label' => 'Ajouter une photo', 'href' => '']);
+                $issues[] = self::issue('photo_missing', 'incomplete', 'Photo absente', 'Le papier d’Athena n’a pas de photo ; en jeu, la photo est le visage du personnage.', 'Ex. : portrait de face, tête et haut des épaules, fond neutre.', ['label' => 'Ajouter la photo d’identité', 'photo' => $id]);
             }
             $mine = $docsByIdentity[$id] ?? [];
             $issued = array_values(array_filter($mine, static fn (array $d): bool => ($d['workflow'] ?? '') === 'issued'));
@@ -621,7 +621,7 @@ final class MemberIdentitySyncService
         $this->log($tenantId, $actorId, 'id_member.sync_send_game', $identityId, $userId, ['documents' => array_values($byType)]);
 
         return ['ok' => $n > 0, 'message' => $n > 0
-            ? 'Version d’Athena envoyée vers le jeu (kit par défaut, ' . $n . ' papier(s)) : remise au prochain chargement du paquet, ou en jeu par Ma couverture › Demander la mise à jour.'
+            ? MemberIdentityPapersService::displayName($identity) . ' est désormais l’identité envoyée en jeu (kit par défaut recomposé : ' . $n . ' papier(s)). Remise au prochain chargement du paquet, ou en jeu par Ma couverture › Demander la mise à jour.'
             : 'Rien n’a pu être envoyé.'];
     }
 
@@ -682,7 +682,7 @@ final class MemberIdentitySyncService
 
     /**
      * @param array<string, mixed> $fix label, et l'un de : href (ancre / URL), do + doc (action sur un papier), edit (papier),
-     *                                  new (nouveau papier pour l'identité)
+     *                                  new (nouveau papier pour l'identité), photo (photo d'identité de l'identité)
      * @return array{code: string, level: string, title: string, why: string, example: string, fix: array<string, mixed>}
      */
     private static function issue(string $code, string $level, string $title, string $why, string $example, array $fix): array

@@ -684,7 +684,7 @@
 
 /* ——— Liens « compléter son profil » ——— */
 .eff-inv-card .eff-fm-lead {
-  max-width: 70ch;
+  max-width: none;
 }
 
 .eff-inv-status:empty {

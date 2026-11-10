@@ -100,9 +100,13 @@ final class SseIdentityPaperLinkWiringTest extends TestCase
         }
         self::assertStringContainsString("require __DIR__ . '/member_papers_sync.php';", self::read('views/admin/effectifs_workspace/partials/member_papers.php'));
         $partial = self::read('views/admin/effectifs_workspace/partials/member_papers_sync.php');
-        foreach (['id="papiers-synchro"', 'Transmission en jeu', 'Différence avec le jeu', 'Reprendre la version du jeu', 'Garder les deux', 'Envoyer la version Athena vers le jeu', 'name="_csrf_token"'] as $needle) {
+        foreach (['id="papiers-synchro"', 'Transmission en jeu', 'Différence avec le jeu', 'Reprendre la version du jeu', 'Garder les deux', 'Utiliser cette identité en jeu', 'data-idm-confirm', 'for="idm-photo-', 'name="_csrf_token"'] as $needle) {
             self::assertStringContainsString($needle, $partial);
         }
+        // Photo d'identité : envoi depuis la fiche membre et le bureau SSE (« Photo absente » mène au champ de la photo).
+        self::assertStringContainsString("post('/back-office/ressources/effectifs/membres/{id}/papiers/identites/{identityId}/photo', {$c}'identityPhoto'], [AuthMiddleware::class, OrganizationAdminMiddleware::class])", $routes);
+        self::assertStringContainsString("post('/atak/sse/papiers/membres/{id}/identites/{identityId}/photo', {$c}'identityPhoto'], \$mwSsePortal)", $routes);
+        self::assertStringContainsString('id="idm-photo-<?= $iid ?>"', self::read('views/admin/effectifs_workspace/partials/member_papers.php'));
         $registry = self::read('database/steps/registry.php');
         self::assertStringContainsString("'file' => '4250_sse_identity_sync.php', 'rerun' => true]", $registry);
         self::assertStringContainsString("/bootstrap/sse_identity_sync_migration.php'", self::read('database/steps/4250_sse_identity_sync.php'));
