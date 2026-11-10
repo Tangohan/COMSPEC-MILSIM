@@ -226,7 +226,11 @@ switch (_op) do {
             private _w = currentWeapon _x;
             if (alive _x && {_x isNotEqualTo _u} && {_w isNotEqualTo ""} && {_w isNotEqualTo (binocular _x)} && {!(weaponLowered _x)}) then {
                 private _d = _x distance _u;
-                if (_d <= 25 && {((_x weaponDirection _w) vectorDotProduct (vectorNormalized ((aimPos _u) vectorDiff (eyePos _x)))) > 0.99}) then { _n = _n + 1; _near = _near min _d; };
+                // Canon à 8° de son buste ou, de près, à moins de 0,6 m de lui : à 3 m, viser la tête sort du cône de 8°.
+                private _wd = _x weaponDirection _w;
+                private _to = (aimPos _u) vectorDiff (eyePos _x);
+                private _al = _to vectorDotProduct _wd;
+                if (_d <= 25 && {_al > 0} && {(_wd vectorDotProduct (vectorNormalized _to)) > 0.99 || {(vectorMagnitude (_to vectorDiff (_wd vectorMultiply _al))) < 0.6}}) then { _n = _n + 1; _near = _near min _d; };
             };
         } forEach (_u nearEntities ["CAManBase", 25]);
         [_n, _near]

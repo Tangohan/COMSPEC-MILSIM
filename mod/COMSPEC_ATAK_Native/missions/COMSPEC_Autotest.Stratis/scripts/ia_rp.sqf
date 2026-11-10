@@ -285,17 +285,26 @@ if (AT_iarpSeul) exitWith {};
     (format ["renseignement : %1 / %2", _a3 param [2, ""], _r3 param [1, ""]]) call AT_fnc_info;
     [[{ (allMapMarkers findIf { (_x find "comspec_sse_iarpIntel_") isEqualTo 0 }) >= 0 }, 5] call AT_fnc_wait, "pas de marqueur local après un renseignement précis avec lieu"] call AT_fnc_check;
     "marqueur « Renseignement : Ferme abandonnée (…) » sur la carte du joueur" call AT_fnc_visuel;
-    // Confrontation d'un insurgé peureux : il finit par craquer (4 essais au plus).
+    // Confrontation d'un insurgé peureux : il finit par craquer (4 essais au plus). Arme braquée sur lui : sans arme, une
+    // fois nié, le faux découvert (fn_idAiFsm « bust », +30) peut porter sa peur à 65 et l'automate le fait fuir
+    // (fn_idAiBrain), muet ensuite (« ne répond pas (fuit) ») ; braqué, il ne fuit pas : l'essai porte sur l'aveu.
+    if ((primaryWeapon player) isEqualTo "") then { player addWeapon "arifle_MX_F"; player addMagazine "30Rnd_65x39_caseless_mag"; };
+    player action ["WeaponInHand", player];
+    player setDir (player getDir _u);
+    uiSleep 2;
+    (format ["confrontation : %1 arme(s) braquée(s) sur l'IA", (["aimedAt", [_u]] call comspec_sse_fnc_iarpReact) select 0]) call AT_fnc_info;
     private _conf = false;
     for "_i" from 1 to 4 do {
         if (!_conf) then {
             private _a4 = ([_u, "Vos papiers sont faux, tu mens !"] call AT_fnc_iarpDire) select 0;
-            (format ["confrontation %1 : %2", _i, _a4 param [2, ""]]) call AT_fnc_info;
+            (format ["confrontation %1 : %2 (état %3, peur %4, distance %5 m)", _i, _a4 param [2, ""], ["state", [_u]] call comspec_sse_fnc_idAiFsm,
+                round (_u getVariable ["comspec_sse_idTension", 0]), round (player distance _u)]) call AT_fnc_info;
             if (((_a4 param [2, ""]) find "avoue") >= 0) then { _conf = true; };
         };
     };
     [_conf, "confrontation : aucun aveu en 4 essais (insurgé à 95 de peur)"] call AT_fnc_check;
     closeDialog 0;
+    player action ["WeaponOnBack", player];
     { if ((_x find "comspec_sse_iarpIntel_") isEqualTo 0) then { deleteMarkerLocal _x; }; } forEach allMapMarkers;
     deleteVehicle _u;
     call AT_fnc_done;
@@ -512,7 +521,9 @@ if (AT_iarpSeul) exitWith {};
     uiSleep 6;
     private _aim = (["aimedAt", [_u]] call comspec_sse_fnc_iarpReact) select 0;
     private _t2 = _u getVariable ["comspec_sse_idTension", 0];
-    (format ["arme braquée à 3 m : %1 arme(s), peur %2", _aim, round _t2]) call AT_fnc_info;
+    (format ["arme braquée à 3 m : %1 arme(s), peur %2 ; arme %3, baissée %4, visée %5, état %6", _aim, round _t2, currentWeapon player, weaponLowered player,
+        ((player weaponDirection (currentWeapon player)) vectorDotProduct (vectorNormalized ((aimPos _u) vectorDiff (eyePos player)))) toFixed 3,
+        ["state", [_u]] call comspec_sse_fnc_idAiFsm]) call AT_fnc_info;
     [_aim > 0 && {_t2 > _t1 + 10}, format ["arme braquée à 3 m : peur %1 (avant %2), %3 arme(s) vue(s)", round _t2, round _t1, _aim]] call AT_fnc_check;
     player action ["WeaponOnBack", player];
     uiSleep 30;
