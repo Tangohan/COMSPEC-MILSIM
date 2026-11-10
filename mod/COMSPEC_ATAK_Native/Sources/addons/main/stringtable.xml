@@ -1077,6 +1077,51 @@
             <English>TOC TV (COMSPEC)</English>
             <French>Téléviseur TOC (COMSPEC)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_W22">
+            <Original>Video wall 2x2, single image (COMSPEC)</Original>
+            <English>Video wall 2x2, single image (COMSPEC)</English>
+            <French>Mur d'images 2x2, image unique (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_W22Q">
+            <Original>Video wall 2x2, 4 panels (COMSPEC)</Original>
+            <English>Video wall 2x2, 4 panels (COMSPEC)</English>
+            <French>Mur d'images 2x2, 4 dalles (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_W32">
+            <Original>Large video wall 3x2, 6 panels (COMSPEC)</Original>
+            <English>Large video wall 3x2, 6 panels (COMSPEC)</English>
+            <French>Grand mur d'images 3x2, 6 dalles (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_W32M">
+            <Original>Large video wall 3x2, image and 2 panels (COMSPEC)</Original>
+            <English>Large video wall 3x2, image and 2 panels (COMSPEC)</English>
+            <French>Grand mur d'images 3x2, image et 2 dalles (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_98">
+            <Original>98-inch giant wall screen (COMSPEC)</Original>
+            <English>98-inch giant wall screen (COMSPEC)</English>
+            <French>Écran géant 98 pouces mural (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_98S">
+            <Original>98-inch giant screen on rolling stand (COMSPEC)</Original>
+            <English>98-inch giant screen on rolling stand (COMSPEC)</English>
+            <French>Écran géant 98 pouces sur pied roulant (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_65C">
+            <Original>65-inch ceiling-hung screen (COMSPEC)</Original>
+            <English>65-inch ceiling-hung screen (COMSPEC)</English>
+            <French>Écran 65 pouces suspendu (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_CLK">
+            <Original>LED clock strip (COMSPEC)</Original>
+            <English>LED clock strip (COMSPEC)</English>
+            <French>Bandeau horloge LED (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_PLT">
+            <Original>Element name plate (COMSPEC)</Original>
+            <English>Element name plate (COMSPEC)</English>
+            <French>Plaque de nom d'élément (COMSPEC)</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_C126739753">
             <Original>Antenna height (m)</Original>
             <English>Antenna height (m)</English>

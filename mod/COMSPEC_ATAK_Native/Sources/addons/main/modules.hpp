@@ -783,6 +783,13 @@ class COMSPEC_ATAK_Module_TocScreen: COMSPEC_ATAK_Module_DataBase {
                 class C0 { name = "$STR_COMSPEC_ATAK_CFG_8C3886D686"; value = "COMSPEC_ATAK_Screen_Tripod"; default = 1; };
                 class C1 { name = "$STR_COMSPEC_ATAK_CFG_477D05DF6A"; value = "COMSPEC_ATAK_Screen_Dual"; };
                 class C2 { name = "$STR_COMSPEC_ATAK_CFG_BFF6157B7C"; value = "COMSPEC_ATAK_Screen_Wall"; };
+                class C3 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_W22"; value = "COMSPEC_ATAK_Screen_Wall2x2"; };
+                class C4 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_W22Q"; value = "COMSPEC_ATAK_Screen_Wall2x2_Quad"; };
+                class C5 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_W32"; value = "COMSPEC_ATAK_Screen_Wall3x2"; };
+                class C6 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_W32M"; value = "COMSPEC_ATAK_Screen_Wall3x2_Mixed"; };
+                class C7 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_98"; value = "COMSPEC_ATAK_Screen_98"; };
+                class C8 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_98S"; value = "COMSPEC_ATAK_Screen_98_Stand"; };
+                class C9 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_65C"; value = "COMSPEC_ATAK_Screen_65_Ceiling"; };
                 class V0 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_LARGE"; value = "Land_TripodScreen_01_large_F"; };
                 class V1 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_LARGEB"; value = "Land_TripodScreen_01_large_black_F"; };
                 class V2 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_DUAL"; value = "Land_TripodScreen_01_dual_v1_F"; };
