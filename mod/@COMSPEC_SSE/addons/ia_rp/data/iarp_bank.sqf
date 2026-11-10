@@ -393,6 +393,22 @@ private _rows = [
         ["*", [["Vous allez me laisser comme ça ?", "You're going to leave me like this?"], ["(Il vous regarde, incrédule.)", "(He stares at you in disbelief.)"], ["Je vois…", "I see…"],
             ["Merci pour rien.", "Thanks for nothing."], ["Vous n'avez pas de cœur.", "You have no heart."], ["(Il serre les dents.)", "(He grits his teeth.)"]]]
     ]],
+    // ------------------------------------------------------------------ tirs proches (fn_iarpReact « fired »)
+    ["shotsDown", [
+        ["*", [["Ne tirez pas ! (Il se jette au sol.)", "Don't shoot! (He throws himself to the ground.)"], ["(Il se plaque au sol, les mains sur la tête.)", "(He hits the ground, hands over his head.)"],
+            ["À terre ! Ne tirez pas !", "Get down! Don't shoot!"], ["(Il s'aplatit par terre en criant.)", "(He flattens himself on the ground, shouting.)"],
+            ["Mon Dieu ! (Il se couche.)", "Oh God! (He lies down.)"], ["Arrêtez ! Arrêtez de tirer !", "Stop! Stop shooting!"]]]
+    ]],
+    ["shotsSurrender", [
+        ["*", [["Ne tirez pas ! Je me rends !", "Don't shoot! I surrender!"], ["(Il lève les mains en tremblant.) Pitié !", "(He raises his hands, shaking.) Mercy!"],
+            ["Je n'ai rien fait ! Ne tirez pas !", "I didn't do anything! Don't shoot!"], ["D'accord, d'accord ! Les mains en l'air !", "Okay, okay! Hands up!"],
+            ["(Il lève les bras bien haut.)", "(He raises his arms high.)"], ["Je me rends, je me rends !", "I give up, I give up!"]]]
+    ]],
+    ["shotsFlee", [
+        ["*", [["(Il part en courant, plié en deux.)", "(He runs off, bent double.)"], ["Au secours ! (Il s'enfuit.)", "Help! (He runs away.)"],
+            ["(Il détale sans se retourner.)", "(He bolts without looking back.)"], ["Ils tirent ! Ils tirent ! (Il s'enfuit.)", "They're shooting! They're shooting! (He flees.)"],
+            ["(Il court se mettre à l'abri.)", "(He runs for cover.)"], ["Non, non, non ! (Il prend la fuite.)", "No, no, no! (He takes flight.)"]]]
+    ]],
     // ------------------------------------------------------------------ décors
     ["_open", [
         ["*", [["Écoutez,", "Listen,"], ["Bon,", "Well,"], ["Alors,", "So,"], ["Vous savez,", "You know,"]]],

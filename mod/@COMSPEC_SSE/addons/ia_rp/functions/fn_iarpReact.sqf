@@ -5,7 +5,17 @@
       ["halt", [ia, joueur]]   « Stop » obéi : l'IA est relâchée seule (réglage « Durée d'un stop », joueur parti à plus
                                de « Distance de relâche », automate qui la reprend : fuite, hostilité, retour au calme).
                                Un autre ordre (suivez-moi, circulez, mains en l'air, descendez) annule le suivi.
-    Suivi d'un stop : une fonction CBA toutes les 2 s par IA arrêtée, retirée dès qu'elle est relâchée.
+      ["watch", [ia]]          suit les tirs proches de cette IA : gestionnaire FiredNear posé une fois (serveur, et là où
+                               elle est locale si c'est ailleurs : client sans tête, hôte), retiré après 5 min sans échange
+      ["fired", [ia, tireur, distance]]   tir proche (réglages « Réaction aux tirs », « Portée des tirs ») : l'IA se jette au
+                               sol (« Ne tirez pas ! »), se rend, fuit, ou se bat (insurgé armé et agressif) selon son profil ;
+                               8 s au moins entre deux réactions ; seulement en conversation (3 min) ou engagée par l'automate
+      ["witness", [victime, joueur]]      un civil menacé ou braqué : jusqu'à 5 IA civiles proches (réglage « Témoins »,
+                               rayon réglable) qui voient la scène sont choquées (tension de l'automate en hausse, qui retombe
+                               de 30 par minute) ; hors automate, elles regardent la scène ou s'enfuient (peureuses)
+      ["shock", ia] -> choc 0-80 (tirs, scène vue), lu par fn_idAiBrain
+    Coût : suivi d'un stop, une fonction CBA toutes les 2 s par IA arrêtée ; tirs, un gestionnaire par IA suivie,
+    réaction bornée par le délai de 8 s ; témoins, une recherche de 8 IA au plus par menace (20 s par victime).
 */
 params [["_op", "", [""]], ["_a", []]];
 if (!isServer) exitWith {};
@@ -16,6 +26,30 @@ private _fsmState = {
     private _s = ["state", [_u]] call comspec_sse_fnc_idAiFsm;
     if (isNil "_s" || {!(_s isEqualType "")}) then { "" } else { _s }
 };
+// Choc (tirs, scène vue) : [valeur, heure], -30 par minute.
+private _shockOf = {
+    params ["_u"];
+    (_u getVariable ["comspec_sse_idShock", [0, 0]]) params [["_v", 0], ["_at", 0]];
+    (_v - (time - _at) * 0.5) max 0
+};
+private _addShock = { params ["_u", "_d"]; _u setVariable ["comspec_sse_idShock", [(([_u] call _shockOf) + _d) min 80, time]]; };
+// Phrase spontanée (sans question du joueur) : bulle aux joueurs à portée, rien dans les terminaux.
+private _speak = {
+    params ["_u", "_gi"];
+    private _p = ["get", _u] call comspec_sse_fnc_iarpProfile;
+    private _g = [_gi, _p, createHashMapFromArray [["state", [_u] call _fsmState], ["tension", _u getVariable ["comspec_sse_idTension", 0]]], []] call comspec_sse_fnc_iarpGen;
+    private _pay = [_g select 0, _g select 1, createHashMapFromArray [["sir", ["monsieur", "sir"]]], _g select 2, ""];
+    private _range = missionNamespace getVariable ["comspec_sse_iarp_range", 20];
+    private _pl = allPlayers select { !(_x isKindOf "HeadlessClient_F") };
+    if (hasInterface && {!isNull player}) then { _pl pushBackUnique player; };
+    private _args = [_u, "ai", _u getVariable ["comspec_sse_idName", ""], _pay];
+    {
+        if (alive _x && {(_x distance _u) <= _range}) then {
+            if (local _x && {hasInterface}) then { ["bubble", _args] call comspec_sse_fnc_iarpClient; } else { ["bubble", _args] remoteExecCall ["comspec_sse_fnc_iarpClient", owner _x]; };
+        };
+    } forEach _pl;
+};
+private _do = { params ["_u", "_cmd", ["_args", []]]; ["comspec_sse_iarpAiDo", [_u, _cmd, _args], _u] call CBA_fnc_targetEvent; };
 
 switch (_op) do {
     case "halt": {
@@ -47,4 +81,100 @@ switch (_op) do {
             };
         }, 2, [_t, _by, _id, _end, _fsmState]] call CBA_fnc_addPerFrameHandler;
     };
+
+    case "watch": {
+        _a params [["_u", objNull, [objNull]]];
+        if (isNull _u || {!alive _u} || {isPlayer _u}) exitWith {};
+        _u setVariable ["comspec_sse_iarpWatchAt", time];
+        if !(missionNamespace getVariable ["comspec_sse_iarp_shots", true]) exitWith {};
+        if ((_u getVariable ["comspec_sse_iarpFnEh", -1]) >= 0) exitWith {};
+        private _eh = _u addEventHandler ["FiredNear", {
+            params ["_u", "_firer", ["_d", 0]];
+            ["fired", [_u, _firer, _d]] call comspec_sse_fnc_iarpReact;
+        }];
+        _u setVariable ["comspec_sse_iarpFnEh", _eh];
+        // IA locale ailleurs (client sans tête, hôte) : le même gestionnaire là-bas, qui prévient le serveur.
+        if (!local _u) then { ["comspec_sse_iarpWatchLocal", [_u], _u] call CBA_fnc_targetEvent; };
+    };
+
+    case "fired": {
+        _a params [["_u", objNull], ["_firer", objNull], ["_d", 0]];
+        if (isNull _u || {!alive _u} || {isPlayer _u} || {isNull _firer}) exitWith {};
+        private _fsm = [_u] call _fsmState;
+        // Plus d'échange depuis 5 min et hors automate : le gestionnaire est retiré (il sera reposé au prochain échange).
+        if (_fsm in ["", "calme"] && {(time - (_u getVariable ["comspec_sse_iarpWatchAt", -1000])) > 300}) exitWith {
+            private _eh = _u getVariable ["comspec_sse_iarpFnEh", -1];
+            if (_eh >= 0) then { _u removeEventHandler ["FiredNear", _eh]; _u setVariable ["comspec_sse_iarpFnEh", -1]; };
+        };
+        if !(missionNamespace getVariable ["comspec_sse_iarp_shots", true]) exitWith {};
+        if (_firer isEqualTo _u || {(group _firer) isEqualTo (group _u)} || {_d > (missionNamespace getVariable ["comspec_sse_iarp_shotRange", 40])}) exitWith {};
+        if (time < ((_u getVariable ["comspec_sse_iarpShotAt", -100]) + 8)) exitWith {};
+        // Concernée : en conversation (3 min) ou engagée par l'automate ; déjà au combat, menottée, inconsciente : rien.
+        if (_fsm in ["", "calme"] && {(time - (_u getVariable ["comspec_sse_iarpTalkAt", -1000])) > 180}) exitWith {};
+        if (_fsm in ["agressif", "renforts"]) exitWith {};
+        if ((_u getVariable ["ace_captives_isHandcuffed", false]) || {_u getVariable ["ACE_isUnconscious", false]} || {(lifeState _u) isEqualTo "INCAPACITATED"}) exitWith {};
+        _u setVariable ["comspec_sse_iarpShotAt", time];
+        [_u, 35] call _addShock;
+        _u setVariable ["comspec_sse_idTension", ((_u getVariable ["comspec_sse_idTension", 20]) + 30) min 100];
+        private _p = ["get", _u] call comspec_sse_fnc_iarpProfile;
+        private _inFsm = !(_fsm in ["", "calme"]);
+        private _armed = (primaryWeapon _u) isNotEqualTo "" || {(handgunWeapon _u) isNotEqualTo ""};
+        private _choice = call {
+            if (_inFsm && {_armed} && {(_p get "role") in ["insurge", "hvt"]} && {(_p get "aggro") >= 60} && {(random 1) < 0.5}) exitWith { "fight" };
+            if (_u getVariable ["ace_captives_isSurrendering", false]) exitWith { "down" };
+            if ((_p get "fear") >= 70 || {_d < 12 && {(random 1) < 0.5}}) exitWith { "surrender" };
+            if ((_p get "nerve") >= 60 && {(_p get "aggro") < 60} && {isNull objectParent _u} && {(random 1) < 0.6}) exitWith { "flee" };
+            "down"
+        };
+        switch (_choice) do {
+            case "fight": { _u setVariable ["comspec_sse_idWant", "agressif"]; };
+            case "surrender": {
+                if (_inFsm) then { _u setVariable ["comspec_sse_idWant", "rendu"]; } else { [_u, "surrender"] call _do; };
+                [_u, "shotsSurrender"] call _speak;
+            };
+            case "flee": {
+                if (_inFsm) then { _u setVariable ["comspec_sse_idWant", "fuit"]; } else {
+                    _u setVariable ["comspec_sse_iarpHaltId", (_u getVariable ["comspec_sse_iarpHaltId", 0]) + 1];
+                    [_u, "flee", [(getPosATL _u) getPos [150 + random 100, (_firer getDir _u) + (random 40) - 20]]] call _do;
+                };
+                [_u, "shotsFlee"] call _speak;
+            };
+            default { [_u, "prone"] call _do; [_u, "shotsDown"] call _speak; };
+        };
+    };
+
+    case "witness": {
+        _a params [["_v", objNull, [objNull]], ["_by", objNull, [objNull]]];
+        if (isNull _v || {!(missionNamespace getVariable ["comspec_sse_iarp_witness", true])}) exitWith {};
+        if (time < ((_v getVariable ["comspec_sse_iarpWitAt", -100]) + 20)) exitWith {};
+        _v setVariable ["comspec_sse_iarpWitAt", time];
+        private _range = missionNamespace getVariable ["comspec_sse_iarp_witnessRange", 30];
+        // Les 8 civils les plus proches au plus, puis ceux qui voient la scène (5 au plus).
+        private _c = ((_v nearEntities ["CAManBase", _range]) select {
+            alive _x && {!isPlayer _x} && {_x isNotEqualTo _v} && {_x isNotEqualTo _by} && {(side group _x) isEqualTo civilian}
+                && {!(_x getVariable ["ACE_isUnconscious", false])} && {!(_x getVariable ["ace_captives_isHandcuffed", false])}
+        }) apply { [_x distance _v, _x] };
+        _c sort true;
+        private _n = 0;
+        {
+            if (_n >= 5) exitWith {};
+            private _w = _x select 1;
+            if (([_w, "VIEW", _v] checkVisibility [eyePos _w, aimPos _v]) > 0.3) then {
+                _n = _n + 1;
+                [_w, 25] call _addShock;
+                if (([_w] call _fsmState) in ["", "calme"]) then {
+                    // Hors automate : elle regarde la scène, ou s'enfuit si elle est peureuse et déjà secouée.
+                    private _fear = (["get", _w] call comspec_sse_fnc_iarpProfile) get "fear";
+                    if (([_w] call _shockOf) >= 40 && {_fear >= 60} && {isNull objectParent _w} && {(random 1) < 0.5}) then {
+                        [_w, "flee", [(getPosATL _w) getPos [120 + random 80, (_v getDir _w) + (random 60) - 30]]] call _do;
+                    } else {
+                        [_w, "look", [_v]] call _do;
+                    };
+                };
+            };
+        } forEach (_c select [0, 8]);
+        _n
+    };
+
+    case "shock": { [_a] call _shockOf };
 };

@@ -2,7 +2,7 @@
     Réglages CBA de l'IA RP (COMSPEC SSE › IA RP), posés au preInit sur toutes les machines. Textes : stringtable.xml
     de l'addon (français, anglais), chacun avec son explication et un exemple.
     Globaux (le serveur décide) : texte libre, portée, indicateur, journal, longueur, ordres (durée et distance de relâche
-    d'un « Stop »), /try, Zeus.
+    d'un « Stop »), réaction aux tirs proches, témoins, /try, Zeus.
     Par joueur : couleurs des commandes. Touche d'ouverture : CBA › Touches (XEH_postInitClient).
 */
 if (isNil "CBA_fnc_addSetting") exitWith { false };
@@ -18,6 +18,10 @@ private _add = {
 ["comspec_sse_iarp_orders", "CHECKBOX", "STR_COMSPEC_IARP_S_Orders", true] call _add;
 ["comspec_sse_iarp_haltTime", "SLIDER", "STR_COMSPEC_IARP_S_HaltTime", [15, 600, 120, 0]] call _add;
 ["comspec_sse_iarp_haltDist", "SLIDER", "STR_COMSPEC_IARP_S_HaltDist", [5, 100, 25, 0]] call _add;
+["comspec_sse_iarp_shots", "CHECKBOX", "STR_COMSPEC_IARP_S_Shots", true] call _add;
+["comspec_sse_iarp_shotRange", "SLIDER", "STR_COMSPEC_IARP_S_ShotRange", [10, 69, 40, 0]] call _add;
+["comspec_sse_iarp_witness", "CHECKBOX", "STR_COMSPEC_IARP_S_Witness", true] call _add;
+["comspec_sse_iarp_witnessRange", "SLIDER", "STR_COMSPEC_IARP_S_WitnessRange", [5, 60, 30, 0]] call _add;
 ["comspec_sse_iarp_tryChance", "SLIDER", "STR_COMSPEC_IARP_S_Try", [5, 95, 50, 0]] call _add;
 ["comspec_sse_iarp_log", "CHECKBOX", "STR_COMSPEC_IARP_S_Log", true] call _add;
 ["comspec_sse_iarp_logMax", "SLIDER", "STR_COMSPEC_IARP_S_LogMax", [50, 2000, 500, 0]] call _add;

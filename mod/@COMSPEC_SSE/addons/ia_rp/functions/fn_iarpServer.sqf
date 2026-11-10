@@ -200,6 +200,9 @@ switch (_op) do {
         // ---------------------------------------------------------------- contexte et mémoire de l'IA
         private _fsm = !isNil "comspec_sse_fnc_idAiFsm" && {missionNamespace getVariable ["comspec_sse_id_aiFsm", true]};
         if (_fsm && {(_list - ["bye"]) isNotEqualTo []}) then { ["engage", [_t, _me]] call comspec_sse_fnc_idAiFsm; };
+        // En conversation : les tirs proches la font réagir pendant 3 min (fn_iarpReact « watch », « fired »).
+        _t setVariable ["comspec_sse_iarpTalkAt", time];
+        ["watch", [_t]] call comspec_sse_fnc_iarpReact;
         private _st = "";
         if (_fsm) then { _st = ["state", [_t]] call comspec_sse_fnc_idAiFsm; };
         if (isNil "_st" || {!(_st isEqualType "")}) then { _st = ""; };
@@ -598,6 +601,8 @@ switch (_op) do {
                 _pm set ["askAt", time];
             };
         };
+        // Civil menacé ou braqué : les IA proches qui voient la scène sont choquées (fn_iarpReact « witness »).
+        if ((side group _t) isEqualTo civilian && {(_list findIf { _x isEqualTo "threat" }) >= 0 || {_aimed > 0}}) then { ["witness", [_t, _me]] call comspec_sse_fnc_iarpReact; };
         // Deux fois la même réplique de suite (silence, refus) : une seule.
         private _dd = [];
         { if (_dd isEqualTo [] || {((_dd select -1) select 0) isNotEqualTo (_x select 0)}) then { _dd pushBack _x; }; } forEach _parts;

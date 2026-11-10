@@ -332,6 +332,26 @@
             <English>Bubble range (m)</English>
             <French>Portée des bulles (m)</French>
         </Key>
+        <Key ID="STR_COMSPEC_IARP_S_ShotRange_D">
+            <Original>A shot fired further than this from the AI is ignored (the game reports shots up to about 69 m). Example: 40 m, a shot on the other side of the square still makes the person you are questioning jump.</Original>
+            <English>A shot fired further than this from the AI is ignored (the game reports shots up to about 69 m). Example: 40 m, a shot on the other side of the square still makes the person you are questioning jump.</English>
+            <French>Un tir plus loin que cette distance de l'IA est ignoré (le jeu signale les tirs jusqu'à 69 m environ). Exemple : 40 m, un coup de feu de l'autre côté de la place fait encore sursauter la personne interrogée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_ShotRange_T">
+            <Original>Range of nearby shots (m)</Original>
+            <English>Range of nearby shots (m)</English>
+            <French>Portée des tirs proches (m)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Shots_D">
+            <Original>An AI you are talking to (for 3 minutes) or that is being checked reacts when someone fires nearby: it drops to the ground (« Don't shoot! »), surrenders, runs away or, if it is an armed and aggressive insurgent, fights, according to its personality. Only those AIs are watched, nothing runs for the others. Example: a shot fired 15 m from a frightened civilian you are questioning: he raises his hands.</Original>
+            <English>An AI you are talking to (for 3 minutes) or that is being checked reacts when someone fires nearby: it drops to the ground (« Don't shoot! »), surrenders, runs away or, if it is an armed and aggressive insurgent, fights, according to its personality. Only those AIs are watched, nothing runs for the others. Example: a shot fired 15 m from a frightened civilian you are questioning: he raises his hands.</English>
+            <French>Une IA à qui l'on parle (pendant 3 minutes) ou qu'on contrôle réagit quand quelqu'un tire près d'elle : elle se jette au sol (« Ne tirez pas ! »), se rend, s'enfuit ou, si c'est un insurgé armé et agressif, se bat, selon sa personnalité. Seules ces IA sont suivies, rien ne tourne pour les autres. Exemple : un coup de feu à 15 m d'un civil apeuré que vous interrogez : il lève les mains.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Shots_T">
+            <Original>AIs react to nearby shots</Original>
+            <English>AIs react to nearby shots</English>
+            <French>Les IA réagissent aux tirs proches</French>
+        </Key>
         <Key ID="STR_COMSPEC_IARP_S_Try_D">
             <Original>Chance of [SUCCESS] for a /try, rolled once by the server: everyone nearby sees the same result. Example: 50, one in two.</Original>
             <English>Chance of [SUCCESS] for a /try, rolled once by the server: everyone nearby sees the same result. Example: 50, one in two.</English>
@@ -351,6 +371,26 @@
             <Original>Typing indicator</Original>
             <English>Typing indicator</English>
             <French>Indicateur d'écriture</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_WitnessRange_D">
+            <Original>Civilians further than this from the threatened person do not count as witnesses. Example: 30 m, the people on the same street.</Original>
+            <English>Civilians further than this from the threatened person do not count as witnesses. Example: 30 m, the people on the same street.</English>
+            <French>Les civils plus loin que cette distance de la personne menacée ne comptent pas comme témoins. Exemple : 30 m, les gens de la même rue.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_WitnessRange_T">
+            <Original>Witness range (m)</Original>
+            <English>Witness range (m)</English>
+            <French>Portée des témoins (m)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Witness_D">
+            <Original>Threatening a civilian or aiming at him worries the civilians nearby who see the scene (5 at most): those being checked become more tense (they may flee or refuse), the others turn to look or, if fearful, walk away quickly. The shock fades by itself within a few minutes. Example: you aim at the shopkeeper: the two passers-by watching move away.</Original>
+            <English>Threatening a civilian or aiming at him worries the civilians nearby who see the scene (5 at most): those being checked become more tense (they may flee or refuse), the others turn to look or, if fearful, walk away quickly. The shock fades by itself within a few minutes. Example: you aim at the shopkeeper: the two passers-by watching move away.</English>
+            <French>Menacer un civil ou le braquer inquiète les civils proches qui voient la scène (5 au plus) : ceux qu'on contrôle deviennent plus tendus (ils peuvent fuir ou refuser), les autres se retournent pour regarder ou, s'ils sont peureux, s'éloignent vite. Le choc retombe seul en quelques minutes. Exemple : vous braquez le marchand : les deux passants qui regardent s'éloignent.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Witness_T">
+            <Original>Witnesses of a threat</Original>
+            <English>Witnesses of a threat</English>
+            <French>Témoins d'une menace</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_S_Zeus_D">
             <Original>Every new line is sent live to Zeus players (LOG tab, Zeus module « Exchange log »). Players only see their own exchanges. Example: the game master follows a checkpoint interrogation from afar.</Original>
