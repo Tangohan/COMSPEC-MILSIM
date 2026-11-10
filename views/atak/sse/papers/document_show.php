@@ -42,6 +42,7 @@ require __DIR__ . '/_subnav.php';
     <div class="page-reference">
         <strong><?= $h($doc['workflow_label']) ?></strong>
         <div class="muted"><?= $doc['workflow'] === 'issued' ? 'Chargé par le serveur de jeu' : 'Pas encore en jeu' ?></div>
+        <div><a class="link" href="<?= $h(\App\Controllers\Web\SseFileController::replayUrl('QA', ['number' => $doc['doc_number'], 'country' => $doc['country_code'], 'doc_type' => $doc['doc_type']])) ?>">Passer aux fichiers</a></div>
     </div>
 </div>
 

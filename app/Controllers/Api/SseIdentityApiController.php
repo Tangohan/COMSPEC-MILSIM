@@ -12,6 +12,7 @@ use App\Repositories\TenantAtakConfigRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseEditorLibraryService;
+use App\Services\Sse\SseFileQueryService;
 use App\Services\Sse\SseIdCheckService;
 use App\Services\Sse\SseIdDocumentLookupService;
 use App\Services\Sse\SseIdentityPackService;
@@ -30,7 +31,8 @@ use App\Support\SseIdentityPackCache;
  * - POST /api/sse/identity/checks             → contrôle remonté du terrain (idempotent) ; avec kind = bolo | hvt :
  *                                                 avis né en jeu (BOLO, HVT désignée), créé ou mis à jour (lots 4 et 5) ;
  *                                                 avec kind = editor_… : bibliothèque de l'éditeur SSE (SseEditorLibraryService) ;
- *                                                 avec kind = cover_report : couverture née en jeu (SseIdGameCoverService)
+ *                                                 avec kind = cover_report : couverture née en jeu (SseIdGameCoverService) ;
+ *                                                 avec kind = file_query | seek_record | id_record : passage aux fichiers (SseFileQueryService)
  *
  * Accès : clé de jeu valable (communauté ou plateforme) — le serveur de jeu garde la vérité pour lui —, ou session du
  * portail avec l'habilitation SSE voulue (Confidentiel pour le pack, Encadrement pour le reste). Sans clé ni session :
@@ -54,6 +56,7 @@ final class SseIdentityApiController
         private ?SseIdWatchFromGameService $gameWatch = null,
         private ?SseEditorLibraryService $editorLibrary = null,
         private ?SseIdGameCoverService $gameCovers = null,
+        private ?SseFileQueryService $files = null,
     ) {
         $this->gameWatch ??= new SseIdWatchFromGameService();
         $this->pack ??= new SseIdentityPackService();
@@ -122,14 +125,25 @@ final class SseIdentityApiController
             return $tenantId;
         }
 
-        return Response::json($this->lookup->lookup($tenantId, [
+        $q = [
             'country' => self::queryText($request, 'country'),
             'type' => self::queryText($request, 'type'),
             'number' => self::queryText($request, 'number'),
             'last' => self::queryText($request, 'last'),
             'first' => self::queryText($request, 'first'),
             'dob' => self::queryText($request, 'dob'),
-        ]));
+        ];
+        // Passage aux fichiers (QW, QV, QA, QB), journalisé ; même forme de réponse que le contrôle N3.
+        try {
+            $source = ComspecApiKeyAuth::extractPresentedKey() === '' && (int) (Session::get('user_id') ?? 0) > 0 ? 'web' : 'game';
+            $userId = ComspecApiKeyAuth::matchedUserId() ?? ($source === 'web' ? (int) Session::get('user_id') : null);
+
+            return Response::json(($this->files ??= new SseFileQueryService(null, $this->lookup))->gameLookup($tenantId, $q, $userId, $source));
+        } catch (\Throwable $e) {
+            error_log('Passage aux fichiers indisponible, contrôle N3 seul : ' . $e->getMessage());
+        }
+
+        return Response::json($this->lookup->lookup($tenantId, $q));
     }
 
     /** POST /api/sse/identity/checks */
@@ -151,6 +165,11 @@ final class SseIdentityApiController
         }
         if (in_array($body['kind'] ?? null, \App\Services\Sse\SseAiProfileService::KINDS, true)) {
             return $this->aiProfileResponse($tenantId, $mapId, $body);
+        }
+
+        // Passage aux fichiers : consultation faite hors liaison, fiche biométrique SEEK II (réponse id + ref).
+        if (in_array($body['kind'] ?? null, SseFileQueryService::KINDS, true)) {
+            return $this->fileResponse($tenantId, $mapId, $body);
         }
 
         if (($body['kind'] ?? null) === SseIdGameCoverService::KIND) {
@@ -250,6 +269,34 @@ final class SseIdentityApiController
         }
 
         return Response::json($result);
+    }
+
+    /**
+     * Passage aux fichiers : kind file_query (journal, idempotent), seek_record (fiche SEEK II et contrôle N4) ou id_record
+     * (relevé d'un papier : contrôle N0 et ligne de journal QA).
+     *
+     * @param array<string, mixed> $body
+     */
+    private function fileResponse(int $tenantId, int $mapId, array $body): Response
+    {
+        try {
+            $files = $this->files ??= new SseFileQueryService(null, $this->lookup);
+            $result = match ($body['kind'] ?? '') {
+                SseFileQueryService::KIND_SEEK => $files->storeSeek($tenantId, $mapId, $body),
+                SseFileQueryService::KIND_RECORD => $files->storeRecord($tenantId, $mapId, $body, ComspecApiKeyAuth::matchedUserId()),
+                default => $files->storeDeferred($tenantId, $body, ComspecApiKeyAuth::matchedUserId()),
+            };
+        } catch (\PDOException $e) {
+            // Étape de migration 4330 pas encore passée, base indisponible : le mod garde l'envoi sur le poste.
+            error_log('Passage aux fichiers : envoi du jeu non enregistré : ' . $e->getMessage());
+
+            return Response::json(['error' => 'unavailable', 'message' => 'Envoi non enregistré pour le moment.'], 503);
+        }
+        if (isset($result['error'])) {
+            return Response::json(['error' => $result['error'], 'message' => 'Clé d’envoi manquante ou invalide : rien n’a été enregistré.'], 422);
+        }
+
+        return Response::json($result, $result['duplicate'] ? 200 : 201);
     }
 
     /**
