@@ -82,6 +82,31 @@ EN : The phone glass no longer flickers when you touch it
 - Autotest (`telephone.sqf`) : `tel_reflet_toucher` (vrais clics de souris envoyés par `tools/ingame_test.ps1`, ligne `AUTOTEST|CLICK|nom|x|y|ms`, capture pendant l'appui ; surveillance `EachFrame` du reflet, des calques et du focus), `tel_vibration_bloc` (écart coque / écran / reflet constant à chaque image, retour exact, réglage coupé, appui sur une page défilée), `tel_mini_defilement` (miniature, carte qui suit une marche simulée puis l'arrêt : pas de saut, écart qui ne remonte pas, calques présents à chaque image, capture en fin de défilement).
 - Défilement en miniature (« clignotement à la fin du défilement ») : aucun défilement animé du contenu trouvé dans le code (ni `ctrlSetScrollValues` animé, ni `ctrlCommit` avec durée sur un groupe) ; le seul défilement automatique en miniature est le suivi de la carte image par image (`fn_mapOnDraw`, recentrage de secours `fn_statusUpdate` / `fn_mapCenter`). Non modifié faute de preuve : `tel_mini_defilement` le mesure (sauts, écart qui remonte, calques recréés) à la prochaine passe en jeu.
 - Non vu en jeu : aucune passe de l'autotest n'a tourné pour ce lot.
+## À venir : apps pensées pour le téléphone tenu à l'horizontale (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Les apps du téléphone profitent enfin de l'écran à l'horizontale
+- Téléphone en main à l'horizontale : les apps se rangent en deux colonnes (trois sur la tablette) au lieu d'une longue colonne : Statut, Réglages, Profil, Médical, Logistique, Comptes rendus, Tâches, Numéros, Recherchés, Réseau et le dépannage MPU.
+- Les fiches courtes (valeurs, interrupteurs, listes de personnes, notifications) se rangent en grille quand la place le permet.
+- Comptes rendus, onglets ENVOYÉS et REÇUS : le compte rendu ouvert se lit à droite de la liste au lieu de s'y insérer.
+- Alertes : PANIQUE et les alertes rapides à gauche, le journal à droite.
+- Mode petit porté sur la carte : plus de bande noire vide sous la barre d'état, la carte remonte jusqu'à elle ; sur les autres apps, la barre de titre est plus fine.
+- En vertical et sur un petit téléphone, rien ne change : une colonne, rien de coupé ni de superposé.
+EN : Phone apps finally make use of the landscape screen
+- Phone in hand and held sideways: apps arrange themselves in two columns (three on the tablet) instead of one long column: Status, Settings, Profile, Medical, Logistics, Reports, Tasks, Numbers, Wanted, Network and the MPU troubleshooting.
+- Short items (values, switches, lists of people, notifications) are laid out in a grid when there is room.
+- Reports, SENT and RECEIVED tabs: the open report is read to the right of the list instead of being inserted into it.
+- Alerts: PANIC and the quick alerts on the left, the log on the right.
+- Small mode worn on the map: no more empty black band under the status bar, the map goes right up to it; on the other apps, the title bar is thinner.
+- Upright and on a small phone nothing changes: one column, nothing cut off or overlapping.
+
+### Détail technique
+- `fn_layoutCols` (nouveau) : le seul endroit des règles de colonnes. Seuils en caractères du texte courant (`layoutGet` « colChar », largeur moyenne d'un caractère de `fontSmall`, qui suit la police, la taille du texte et le plancher de 15 px), pas en orientation : sections 34 caractères par colonne, info 26, interrupteurs 36, lignes de liste 32, personnes 44, notifications et cartes d'état 40 ; 1 à 3 colonnes. « split » : maître-détail (liste 38 %, au moins 30 caractères, fiche au moins 40 caractères), `[]` si trop étroit. Plein écran paysage du téléphone : environ 98 caractères, deux colonnes ; tablette : trois ; mode petit paysage : environ 54 caractères, une colonne (grilles info en deux) ; portrait : une colonne.
+- `fn_formRender` : le dessin d'une ligne devient `_renderRow` (inchangé) et la disposition passe par un placement en colonnes. Les sections (`section`, et `fold` hors d'une section) et ce qui les suit forment des blocs rangés dans la colonne la plus courte ; une suite d'au moins trois lignes de même genre (`info`, `switch`, `toggle`, `row`, `person`, `notif`, `check`, `status`, `slider`) se range en grille dans l'ordre de lecture ; `header`, `tabs`, `strip`, `banner`, `steps`, `squad`, `empty`, `skeleton`, `image`, `qr`, `bar`, `big`, `title`, `hero` restent sur toute la largeur et ferment la rangée de colonnes. Chaque ligne est dessinée à x = 0 dans la largeur de sa colonne, puis ses contrôles sont décalés (`_flMade`, relevé dans `_mk`). Lignes de pilotage : `["flow", false]` (pas de colonnes) et `["break"]` (fin de rangée). Une seule colonne : même dessin qu'avant.
+- `fn_pageReports` : maître-détail dans ENVOYÉS / REÇUS. `fn_pageStatus` : barre RESYNCH / ATHENA / DEBUG sur toute la largeur (`break`). `fn_pageAlerts` (dessinée à la main) : deux colonnes quand `fn_layoutCols` en donne deux (actions à gauche, journal à droite, x d'origine `_jx`). Carte : pas de colonnes automatiques dans ses formulaires (page MAP exclue).
+- `fn_layoutGet` : barre d'app de `1,5 × font` en mode petit porté (titre seul), 0 sur la carte en mode petit porté (ni titre ni bouton) ; la clé du cache couvre déjà le mode, l'état en main et la page carte. `fn_layoutApply` et `fn_notificationsRender` : pastille « main + touche » et bandeau de notification posés sur le haut de la carte quand la barre est à 0.
+- Autotest `tel_paysage_apps` (groupe telephone, écrit mais pas encore lancé en jeu) : les apps prioritaires en plein écran, en mode petit paysage et portrait aux tailles 0,7 et 1,3, textes coupés (`AT_fnc_formTient`), éléments superposés ou hors cadre (`AT_fnc_formChevauche`), captures ; mode petit porté sur la carte : écart barre d'état / contenu au plus 3 px.
 
 ## À venir : configurateur d'équipement, favoris, tendances, pré-kits et poids (site, version à attribuer)
 

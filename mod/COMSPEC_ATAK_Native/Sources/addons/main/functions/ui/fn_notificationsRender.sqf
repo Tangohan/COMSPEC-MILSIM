@@ -53,6 +53,9 @@ if ((count _show) isEqualTo 0) exitWith {};
 // Place : la barre d'app, sans couvrir le bouton retour ni les boutons de droite quand on a la souris.
 private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 (_l get "appbar") params ["_ax", "_ay", "_aw", "_ah"];
+// Barre d'app absente (carte en mode petit portée, 4.2.2, fn_layoutGet) : bandeau à la hauteur d'une barre normale,
+// posé sur le haut de la carte.
+if (_ah <= 0) then { _ah = (_l get "font") * 1.9; };
 private _pad = _l get "pad";
 private _fs = _l get "fontSmall";
 private _bw = _ah * 0.62 / _ratio;
