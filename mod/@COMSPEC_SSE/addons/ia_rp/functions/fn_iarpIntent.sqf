@@ -8,11 +8,14 @@
                   thanks, sorry, howareyou, yes, no, confront (+ celles d'une mission) ; rien de reconnu : "unknown".
       4e élément : les demandes du message dans l'ordre où elles sont écrites (3 au plus : une formule de politesse ou
                   un oui / non, deux demandes), découpées sur la ponctuation ; vide si rien n'est reconnu.
+    Mots-clés (entrée « _kw » du lexique) : mots entiers ou débuts de mot, seuls ou à plusieurs (« ou+viens »), comptés en
+    plus des motifs pour les tournures que les motifs n'ont pas prévues (« Tu taffes où ? »).
     Tolérance :
       fautes de frappe  mot de 5 lettres et plus inconnu, rapproché d'un mot du lexique (fn_iarpData « dict ») : lettres
                         doublées ou manquantes (« paapiers », « fouiler »), sinon une lettre de différence ou deux
                         lettres inversées (« papeirs »), deux à partir de 8 lettres ; mêmes deux premières lettres,
                         une seule correction possible, 12 mots rapprochés au plus par message ; « _keep » jamais corrigé.
+                        Deux premières lettres inversées (« aprpiers ») : cherché aussi dans ce sens.
       négation simple   « ne / pas / jamais / sans / not / don't… » dans les 3 mots avant le motif : pot-de-vin et
                         fouille annulés (« je ne veux pas d'argent »), menace changée en apaisement (« je ne vais pas
                         tirer »). Les ordres ne sont pas concernés (« ne bougez pas » reste un ordre).
@@ -25,11 +28,33 @@ private _dict = ["dict"] call comspec_sse_fnc_iarpData;
 private _words = _dict getOrDefault ["words", createHashMap];
 private _skel = _dict getOrDefault ["skel", createHashMap];
 private _idx = _dict getOrDefault ["idx", createHashMap];
-private _lex = (["lexicon"] call comspec_sse_fnc_iarpData) select { ((_x param [0, "_"]) select [0, 1]) isNotEqualTo "_" };
+private _lexAll = ["lexicon"] call comspec_sse_fnc_iarpData;
+private _lex = _lexAll select { ((_x param [0, "_"]) select [0, 1]) isNotEqualTo "_" };
+// Mots-clés par intention (entrée « _kw » du lexique) : [[parties…], longueur comptée]…, préparés une fois.
+private _kw = missionNamespace getVariable ["comspec_sse_iarpData_kw", 0];
+if !(_kw isEqualType createHashMap) then {
+    _kw = createHashMap;
+    {
+        if ((_x param [0, ""]) isEqualTo "_kw") then {
+            {
+                _x params [["_i", ""], ["_items", []]];
+                private _l = _kw getOrDefault [_i, []];
+                {
+                    private _parts = _x splitString "+";
+                    private _len = 0;
+                    { _len = _len + count ([_x, "*", ""] call CBA_fnc_replace); } forEach _parts;
+                    if (_parts isNotEqualTo []) then { _l pushBack [_parts, _len * 0.8]; };
+                } forEach _items;
+                _kw set [_i, _l];
+            } forEach (_x param [2, []]);
+        };
+    } forEach _lexAll;
+    missionNamespace setVariable ["comspec_sse_iarpData_kw", _kw];
+};
 private _polite = ["greet", "thanks", "sorry", "bye", "yes", "no"];
 // Intentions qu'une négation annule (ou change) : le reste garde son sens (« ne bougez pas »).
 private _negTo = createHashMapFromArray [["bribe", ""], ["search", ""], ["threat", "calm"]];
-private _negs = ["ne", "n", "pas", "jamais", "sans", "aucun", "aucune", "not", "never", "no", "without", "don", "didn", "doesn", "won", "isn", "aren", "wouldn"];
+private _negs = ["ne", "n", "pas", "jamais", "sans", "aucun", "aucune", "not", "never", "no", "without", "don", "didn", "doesn", "won", "isn", "aren", "wouldn", "nobody", "personne"];
 
 // Distance d'édition (Damerau restreinte : deux lettres inversées comptent pour une), arrêtée dès qu'elle dépasse _max.
 private _osa = {
@@ -97,7 +122,7 @@ private _fix = {
                         private _k = _dd * 10 + (abs ((count _x) - _len));
                         if (_k < _bk) then { _bk = _k; _best = _x; _ties = 0; } else { if (_k isEqualTo _bk) then { _ties = _ties + 1; }; };
                     };
-                } forEach (_idx getOrDefault [format ["%1%2", _w select [0, 2], _l], []]);
+                } forEach ((_idx getOrDefault [format ["%1%2", _w select [0, 2], _l], []]) + (_idx getOrDefault [format ["%1%2%3", _w select [1, 1], _w select [0, 1], _l], []]));
             };
             [_w, _best] select (_best isNotEqualTo "" && {_ties isEqualTo 0})
         }
@@ -116,6 +141,7 @@ private _scoreOf = {
     params ["_s"];
     private _res = [];
     private _shift = createHashMap;
+    private _toks = _s splitString " ";
     {
         _x params ["_intent", ["_w", 1], ["_pats", []]];
         private _sc = 0;
@@ -135,6 +161,30 @@ private _scoreOf = {
                 };
             };
         } forEach _pats;
+        // Mots-clés : mot entier, « * » début de mot, « a+b » tous présents dans ce morceau de phrase.
+        {
+            _x params ["_parts", "_len"];
+            private _hit = (_parts findIf {
+                private _p = _x;
+                if ((_p select [(count _p) - 1]) isEqualTo "*") then {
+                    private _pre = _p select [0, (count _p) - 1];
+                    private _n = count _pre;
+                    (_toks findIf { (_x select [0, _n]) isEqualTo _pre }) < 0
+                } else { !(_p in _toks) }
+            }) < 0;
+            if (_hit) then {
+                private _first = _parts select 0;
+                private _at = _s find (" " + ([_first, "*", ""] call CBA_fnc_replace));
+                if (_canNeg && {[_s, _at] call _negated}) then {
+                    private _to = _negTo get _intent;
+                    if (_to isNotEqualTo "") then { _shift set [_to, (_shift getOrDefault [_to, 0]) + _len]; };
+                } else {
+                    _sc = _sc + _len;
+                    _m pushBack (_parts joinString "+");
+                    _pos = _pos min _at;
+                };
+            };
+        } forEach (_kw getOrDefault [_intent, []]);
         private _add = _shift getOrDefault [_intent, 0];
         if (_sc > 0 || {_add > 0}) then { _res pushBack [(_sc + _add) * _w, _intent, _pos, _m]; };
     } forEach _lex;

@@ -134,6 +134,12 @@ private _rows = [
         ["bavard", [["{name} ! Mais tout le monde m'appelle {first}, même ma mère.", "{name}! But everyone calls me {first}, even my mother."]]],
         ["agressif", [["{name}. Notez-le bien.", "{name}. Write it down."]]]
     ]],
+    // « Ton prénom ? » : le prénom seul, précisément.
+    ["firstName", [
+        ["*", [["Mon prénom ? {first}.", "My first name? {first}."], ["{first}.", "{first}."], ["C'est {first}, {sir}.", "It's {first}, {sir}."], ["{first}. {name} en entier.", "{first}. {name} in full."],
+            ["On m'appelle {first}.", "People call me {first}."], ["{first}, comme mon grand-père.", "{first}, like my grandfather."]]],
+        ["mefiant", [["{first}. Pourquoi ?", "{first}. Why?"]]]
+    ]],
     ["age", [
         ["*", [["J'aurai {age} ans cette année.", "I'll be {age} this year."], ["{age}, pourquoi ?", "{age}, why?"], ["J'ai {age} ans.", "I'm {age}."], ["{age} ans.", "{age} years old."], ["{age} ans, {sir}.", "{age}, {sir}."], ["{age}. Je ne les fais pas, hein ?", "{age}. I don't look it, eh?"]]],
         ["laconique", [["{age}.", "{age}."]]],
@@ -332,8 +338,12 @@ private _rows = [
     ["sorry", [
         ["*", [["Ne vous inquiétez pas.", "Don't worry."], ["Ce n'est pas grave, {sir}.", "It's not a problem, {sir}."], ["Ça arrive.", "It happens."], ["Ce n'est rien.", "It's nothing."], ["Ça va, ça va.", "It's fine, it's fine."], ["Pas grave.", "No harm done."]]]
     ]],
+    // Une phrase avec {job}, {city}, {employer}… n'est choisie que si la couverture de l'IA a ce fait (fn_iarpGen).
     ["howareyou", [
-        ["*", [["Ça va, merci.", "I'm fine, thanks."], ["On fait aller.", "Getting by."], ["Comme on peut, avec tout ça.", "As well as can be, with all this."], ["Ça allait mieux avant le contrôle.", "Better before the checkpoint."]]],
+        ["*", [["Ça va, merci.", "I'm fine, thanks."], ["On fait aller.", "Getting by."], ["Comme on peut, avec tout ça.", "As well as can be, with all this."],
+            ["Ça va. La journée a été longue chez {employer}.", "Fine. It's been a long day at {employer}."], ["Pas mal. Je rentre à {city} ce soir.", "Not bad. I'm heading back to {city} tonight."],
+            ["Fatigué. Le métier de {job}, vous savez…", "Tired. Being a {job}, you know…"], ["Bien, merci. Et vous, {sir} ?", "Good, thanks. And you, {sir}?"],
+            ["Ça va, ça va. Rien de spécial.", "Fine, fine. Nothing special."]]],
         ["bavard", [["Oh, ça va, mais les prix ont encore augmenté au marché, vous imaginez ?", "Oh, I'm fine, but prices went up again at the market, can you imagine?"]]],
         ["nerveux", [["Ça va… oui, ça va.", "Fine… yes, fine."]]]
     ]],
@@ -343,8 +353,84 @@ private _rows = [
     ["no", [
         ["*", [["Bon, d'accord.", "Alright then."], ["Si vous le dites.", "If you say so."], ["Hm.", "Hm."], ["Ah bon.", "Oh, okay."], ["Comme vous voulez.", "As you like."], ["Bien.", "Fine."]]]
     ]],
+    // Rien de rapproché : jamais un simple « Pardon ? » ; une piste (papiers, d'où il vient), qui devient sa question.
     ["unknown", [
-        ["*", [["Pardon, je n'ai pas compris.", "Sorry, I didn't understand."], ["Vous pouvez répéter ?", "Can you say that again?"], ["Je ne vois pas ce que vous voulez dire.", "I don't see what you mean."], ["(Il vous regarde sans comprendre.)", "(He looks at you blankly.)"], ["Comment ça ?", "What do you mean?"], ["Je ne suis pas sûr de comprendre, {sir}.", "I'm not sure I understand, {sir}."], ["Je ne comprends pas.", "I don't understand."], ["Pardon ?", "Sorry?"], ["Je ne comprends pas ce que vous voulez.", "I don't understand what you want."]]]
+        ["*", [["Pardon, je n'ai pas compris. Vous voulez voir mes papiers ?", "Sorry, I didn't understand. Do you want to see my papers?"],
+            ["Je ne comprends pas… c'est pour mes papiers ?", "I don't understand… is this about my papers?"],
+            ["(Il vous regarde sans comprendre.) Mes papiers ?", "(He looks at you blankly.) My papers?"],
+            ["Je ne suis pas sûr de comprendre, {sir}. Vous voulez mes papiers ?", "I'm not sure I understand, {sir}. You want my papers?"],
+            ["Comment ça ? Vous voulez voir mes papiers ?", "What do you mean? You want to see my papers?"],
+            ["Pardon ? Si c'est un contrôle, j'ai mes papiers.", "Sorry? If this is a check, I have my papers."]]]
+    ]],
+    ["smalltalk", [
+        ["*", [["Oui, il fait bon aujourd'hui.", "Yes, it's nice today."], ["Pas trop, avec tout ce qui se passe.", "Not much, with everything going on."], ["La même chose que d'habitude.", "Same as usual."],
+            ["Ici, rien ne change jamais.", "Nothing ever changes around here."], ["À {city}, ça va, c'est calme.", "In {city}, it's fine, it's quiet."], ["On fait avec, {sir}.", "We make do, {sir}."]]],
+        ["bavard", [["Oh, vous savez, le marché, les voisins, la famille… comme toujours !", "Oh, you know, the market, the neighbours, the family… as always!"]]],
+        ["mefiant", [["…Vous n'êtes pas là pour parler de la pluie et du beau temps.", "…You're not here to talk about the weather."]]],
+        ["laconique", [["Hm.", "Hm."]]]
+    ]],
+    ["introduce", [
+        ["*", [["Enchanté, {player}.", "Nice to meet you, {player}."], ["Bonjour, {player}. Moi, c'est {first}.", "Hello, {player}. I'm {first}."], ["Enchanté. {name}.", "Nice to meet you. {name}."],
+            ["D'accord, {player}. Que puis-je pour vous ?", "Alright, {player}. What can I do for you?"], ["Ravi. On m'appelle {first}.", "Pleased. People call me {first}."], ["{player}… d'accord. Moi c'est {first}.", "{player}… alright. I'm {first}."]]],
+        ["mefiant", [["Et qu'est-ce que vous me voulez, {player} ?", "And what do you want from me, {player}?"]]]
+    ]],
+    // Salut redit dans la même conversation : pas un deuxième « Bonjour » comme si de rien n'était.
+    ["greetAgain", [
+        ["*", [["On s'est déjà dit bonjour, {sir}.", "We've already said hello, {sir}."], ["Oui, oui, bonjour. Encore.", "Yes, yes, hello. Again."], ["Bonjour encore. Je peux vous aider ?", "Hello again. Can I help you?"],
+            ["(Il hoche la tête.) Oui ?", "(He nods.) Yes?"], ["Vous vouliez autre chose ?", "Did you want something else?"], ["Toujours là, {sir}.", "Still here, {sir}."]]]
+    ]],
+    ["drugs", [
+        ["*", [["De la drogue ? Non, jamais.", "Drugs? No, never."], ["Je ne touche pas à ça.", "I don't touch that stuff."], ["Non, rien de tout ça.", "No, nothing like that."],
+            ["Fouillez si vous voulez, je n'ai rien.", "Search me if you want, I have nothing."], ["Moi ? Je suis {job}, pas trafiquant.", "Me? I'm a {job}, not a dealer."], ["Non, {sir}.", "No, {sir}."]]],
+        ["nerveux", [["Non ! Non, pas de drogue, je vous jure.", "No! No drugs, I swear."]]],
+        ["agressif", [["Vous me prenez pour un dealer ?", "You take me for a dealer?"]]]
+    ]],
+    ["money", [
+        ["*", [["Un peu, pour les courses.", "A little, for groceries."], ["Ma paie de la semaine.", "My week's pay."], ["Quelques billets, pas plus.", "A few notes, no more."],
+            ["C'est mon argent, je l'ai gagné chez {employer}.", "It's my money, I earned it at {employer}."], ["Juste de quoi rentrer à {city}.", "Just enough to get back to {city}."], ["Pas grand-chose, {sir}.", "Not much, {sir}."]]],
+        ["mefiant", [["Pourquoi, vous voulez me le prendre ?", "Why, are you going to take it?"]]],
+        ["nerveux", [["C'est… c'est pour ma famille.", "It's… it's for my family."]]]
+    ]],
+    ["vehicle", [
+        ["*", [["Oui, c'est ma voiture.", "Yes, it's my car."], ["C'est la voiture de mon cousin.", "It's my cousin's car."], ["Je l'utilise pour le travail.", "I use it for work."],
+            ["Je n'ai pas de voiture ici.", "I don't have a car here."], ["C'est celle de {employer}.", "It belongs to {employer}."], ["Oui, {sir}. Les papiers sont dedans.", "Yes, {sir}. The papers are inside."]]],
+        ["mefiant", [["Pourquoi ? Elle vous plaît ?", "Why? You like it?"]]]
+    ]],
+    // Papiers et fouille par la conversation : il répond tout de suite, puis l'action ACE (contrôle d'identité) suit.
+    ["papersWait", [
+        ["*", [["Mes papiers ? Une seconde…", "My papers? One second…"], ["(Il fouille dans ses poches.)", "(He goes through his pockets.)"], ["Oui, oui, je les ai… attendez.", "Yes, yes, I have them… wait."],
+            ["D'accord, je les sors.", "Okay, I'm getting them out."], ["Un instant, {sir}.", "One moment, {sir}."], ["(Il cherche dans sa veste.)", "(He searches his jacket.)"]]],
+        ["nerveux", [["Mes… mes papiers ? Oui… oui, bien sûr.", "My… my papers? Yes… yes, of course."]]],
+        ["mefiant", [["Encore ? … Bon.", "Again? … Fine."]]]
+    ]],
+    ["papersCloser", [
+        ["*", [["Approchez, je vous les montre.", "Come closer, I'll show you."], ["Venez, je ne vais pas vous les lancer.", "Come here, I'm not going to throw them at you."], ["Je les ai, approchez-vous.", "I have them, come closer."],
+            ["Si vous voulez les voir, venez.", "If you want to see them, come over."], ["(Il vous fait signe d'approcher.)", "(He waves you closer.)"], ["Plus près, {sir}.", "Closer, {sir}."]]]
+    ]],
+    ["searchWait", [
+        ["*", [["(Il se laisse faire.)", "(He lets you.)"], ["Allez-y…", "Go ahead…"], ["Faites vite.", "Make it quick."], ["(Il ne bouge pas.)", "(He doesn't move.)"], ["Je n'ai rien, vous verrez.", "I have nothing, you'll see."], ["D'accord, d'accord.", "Okay, okay."]]]
+    ]],
+    // Gestes du menu « Faire une action » (et /me compris) : menottes, papiers rendus, photo, geste sans effet.
+    ["cuffYes", [
+        ["*", [["(Il tend les poignets sans résister.)", "(He holds out his wrists without resisting.)"], ["Pourquoi ? Je n'ai rien fait…", "Why? I haven't done anything…"], ["D'accord… doucement.", "Okay… gently."],
+            ["(Il baisse la tête.)", "(He lowers his head.)"], ["Vous faites une erreur, {sir}.", "You're making a mistake, {sir}."], ["Ça serre…", "That's tight…"]]]
+    ]],
+    ["cuffNo", [
+        ["*", [["Non ! Vous n'avez pas le droit !", "No! You have no right!"], ["(Il recule et se débat.)", "(He backs away and struggles.)"], ["Pas question !", "No way!"],
+            ["Ne me touchez pas !", "Don't touch me!"], ["(Il retire ses mains d'un coup.)", "(He yanks his hands away.)"], ["Lâchez-moi !", "Let go of me!"]]]
+    ]],
+    ["givePapers", [
+        ["*", [["Merci.", "Thank you."], ["(Il range ses papiers.)", "(He puts his papers away.)"], ["Tout est en ordre, alors ?", "Everything's in order, then?"], ["Merci, {sir}.", "Thank you, {sir}."],
+            ["Je peux y aller ?", "Can I go?"], ["(Il reprend ses papiers, soulagé.)", "(He takes his papers back, relieved.)"]]]
+    ]],
+    ["photoNo", [
+        ["*", [["Je ne connais pas cette personne.", "I don't know this person."], ["(Il regarde la photo.) Non, jamais vu.", "(He looks at the photo.) No, never seen him."], ["Ça ne me dit rien.", "Doesn't ring a bell."],
+            ["Non, désolé.", "No, sorry."], ["Il y a beaucoup de monde qui passe ici…", "Lots of people pass through here…"], ["(Il secoue la tête.)", "(He shakes his head.)"]]],
+        ["nerveux", [["Non… non, je ne le connais pas.", "No… no, I don't know him."]]]
+    ]],
+    ["watchMe", [
+        ["*", [["(Il vous regarde faire.)", "(He watches you.)"], ["(Il hausse un sourcil.)", "(He raises an eyebrow.)"], ["Qu'est-ce que vous faites ?", "What are you doing?"],
+            ["(Il attend sans rien dire.)", "(He waits without a word.)"], ["(Il suit vos gestes des yeux.)", "(His eyes follow your movements.)"], ["Euh… d'accord.", "Uh… okay."]]]
     ]],
     // ------------------------------------------------------------------ questions de l'IA (initiative) et suite d'un oui / non
     ["askArrest", [

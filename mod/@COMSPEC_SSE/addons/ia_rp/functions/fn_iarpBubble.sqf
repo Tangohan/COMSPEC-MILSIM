@@ -1,6 +1,8 @@
 /*
     Bulles 3D du texte libre (client), propres au SSE : rien ne dépend de l'ATAK.
-      "add"     [unité, texte, nom, genre]   genre say | me | do | todo | tryOk | tryKo | ai (couleur du réglage)
+      "add"     [unité, texte, nom, genre] -> vrai si la bulle est vue tout de suite (portée et ligne de vue)
+                                             genre say | me | do | todo | tryOk | tryKo | ai (couleur du réglage) ;
+                                             une seule bulle par personne : la nouvelle remplace l'ancienne
       "typing"  [unité, vrai | faux, nom]    « … » animé tant que la personne écrit (8 s au plus sans nouvelle)
       "draw"    à chaque image (Draw3D), tant qu'il reste une bulle      "clear"  tout retirer
     Coût : aucun Draw3D sans bulle ; 8 bulles au plus, une par personne ; distance et ligne de vue recalculées 4 fois
@@ -82,8 +84,9 @@ switch (_act) do {
         if ((count _lines) > 6) then { _lines resize 6; _lines set [5, (_lines select 5) + "…"]; };
         private _dur = ((3.5 + ((count _all) / 14)) max 4) min 15;
         private _tagCp = ((toArray _tag) select { _x >= 32 }) select [0, 32];
-        [[_u, _lines, toUpper (toString _tagCp), [_kind] call _color, time, time + _dur, [_u, _cam] call _sees, 0, false]] call _put;
-        true
+        private _vis = [_u, _cam] call _sees;
+        [[_u, _lines, toUpper (toString _tagCp), [_kind] call _color, time, time + _dur, _vis, 0, false]] call _put;
+        _vis
     };
     case "typing": {
         _arg params [["_u", objNull, [objNull]], ["_on", false], ["_tag", ""]];

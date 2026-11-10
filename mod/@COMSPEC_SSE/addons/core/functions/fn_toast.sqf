@@ -3,7 +3,8 @@
     [_text, _type, _unit, _hint, _bubbleOnly] call comspec_sse_fnc_toast -> true si la bulle au-dessus de la tête est vue
       _text  phrase en français, traduite ici (vide : seul l'indice part en toast)
       _type  INFO | SUCCESS | WARNING | ERROR
-      _unit  personne qui parle : bulle de l'ATAK (fn_aiBubble) si elle est à portée et en vue, réglage coché
+      _unit  personne qui parle : bulle de l'IA RP du SSE (fn_iarpClient « aiLine ») si l'addon est chargé, sinon bulle
+             de l'ATAK (fn_aiBubble) si elle est à portée et en vue, réglage coché
              objNull : toast seul
       _hint  ce que le joueur peut faire ensuite : toujours dans le toast, jamais dans la bulle
     Repli : notification du jeu de l'ATAK (CfgNotifications), sinon hintSilent si l'ATAK est absent.
@@ -19,6 +20,18 @@ private _showToast = {
     if (_t isEqualTo "") exitWith {};
     if (!isNil "comspec_atak_native_fnc_aiOrder") exitWith { ["toast", [_t, _k, _who]] call comspec_atak_native_fnc_aiOrder; };
     hintSilent _t;
+};
+// IA RP chargée : une IA parle dans LA bulle du SSE (fn_iarpBubble, une seule par personne, la nouvelle remplace l'ancienne)
+// et dans le fil de « Parler à » si on lui parle ; même nom partout (identité SSE, sinon « Anonyme »). Avant, l'ATAK
+// dessinait une seconde bulle au-dessus de la même tête, sous un autre nom (celui d'Arma).
+if (!isNull _unit && {_line isNotEqualTo ""} && {!isPlayer _unit} && {!isNil "comspec_sse_fnc_iarpClient"} && {missionNamespace getVariable ["comspec_sse_iarp_enabled", true]}) exitWith {
+    private _seen = ["aiLine", [_unit, _line, _type]] call comspec_sse_fnc_iarpClient;
+    if (!_seen && {_bubbleOnly}) exitWith { false };
+    private _who = ["name", [_unit]] call comspec_sse_fnc_iarpClient;
+    private _parts = if (_seen) then { [_tip] } else { [format ["%1 : %2", _who, _line], _tip] };
+    private _msg = (_parts select { _x isNotEqualTo "" }) joinString " · ";
+    if (_msg isNotEqualTo "") then { [_msg, _type, _who] call _showToast; };
+    _seen
 };
 if (isNull _unit || {_line isEqualTo ""} || {isNil "comspec_atak_native_fnc_aiBubble"}) exitWith {
     [(([_line, _tip] select { _x isNotEqualTo "" }) joinString " · "), _type, [([_unit getVariable ["comspec_sse_idName", ""], "Anonyme" call _tr] select ((_unit getVariable ["comspec_sse_idName", ""]) isEqualTo "")), ""] select (isNull _unit)] call _showToast;

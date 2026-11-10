@@ -2,7 +2,11 @@
     Nom d'une personne tel qu'il s'affiche (bulles, fenêtre « Parler à… », atelier IA, menus du Zeus). Pour une IA :
     jamais le nom d'unité Arma (« Khrushchev »), mais le nom que portent son identité et ses papiers SSE
     (comspec_sse_idName, posé par l'identité SSE et par l'atelier IA), sinon « Anonyme ». Pour un joueur : son nom.
-      ["shown", unité]                (toute machine) -> nom affiché aux joueurs
+    Une seule règle pour le nom affiché d'une IA : nom de ses papiers SSE, sinon de sa légende SSE, sinon « Anonyme ».
+      ["ensure", unité]               (SERVEUR) -> nom affiché brut, "" si aucun ; s'il manque : nom imprimé sur ses
+                                      papiers (identité SSE, décidée ici au besoin), sinon celui de sa légende ; diffusé
+                                      (comspec_sse_idName). Ailleurs qu'au serveur : comme « shown » sans « Anonyme ».
+      ["shown", unité]                (toute machine) -> nom affiché aux joueurs (serveur : « ensure » d'abord)
       ["truth", unité]                (SERVEUR) -> [nom affiché brut, vrai nom, nature] ; nature : true (identité vraie),
                                       lies (le nom affiché n'est pas celui de son identité : elle ment), forged (faux
                                       papiers), cover (couverture). Vrai nom : identité réelle (trueFirst / trueLast de ses
@@ -28,8 +32,24 @@ private _rawOf = {
 private _same = { params ["_x1", "_x2"]; (toUpper (trim _x1)) isEqualTo (toUpper (trim _x2)) };
 
 switch (_op) do {
+    case "ensure": {
+        private _n = [_a] call _rawOf;
+        if (_n isNotEqualTo "" || {!isServer} || {!(_a isEqualType objNull)} || {isNull _a} || {isPlayer _a}) exitWith { _n };
+        if (!isNil "comspec_sse_fnc_idRegistry") then {
+            ["ensure", [_a]] call comspec_sse_fnc_idRegistry;
+            private _d = ["doc", [(["unitDocs", [_a]] call comspec_sse_fnc_idRegistry) param [0, ""]]] call comspec_sse_fnc_idRegistry;
+            if (_d isEqualType createHashMap && {(count _d) > 0}) then { _n = trim format ["%1 %2", _d getOrDefault ["first", ""], _d getOrDefault ["last", ""]]; };
+        };
+        if (_n isEqualTo "" && {!isNil "comspec_sse_fnc_idLegend"}) then {
+            private _L = ["get", [_a]] call comspec_sse_fnc_idLegend;
+            if (_L isEqualType createHashMap) then { _n = trim format ["%1 %2", _L getOrDefault ["first", ""], _L getOrDefault ["last", ""]]; };
+        };
+        if (_n isNotEqualTo "") then { _a setVariable ["comspec_sse_idName", _n, true]; };
+        _n
+    };
     case "shown": {
         private _n = [_a] call _rawOf;
+        if (_n isEqualTo "" && {isServer}) then { _n = ["ensure", _a] call comspec_sse_fnc_iarpName; };
         [_n, call _anon] select (_n isEqualTo "")
     };
     case "truth": {
@@ -66,6 +86,7 @@ switch (_op) do {
     case "for": {
         _a params [["_u", objNull], ["_to", objNull]];
         if (!isServer) exitWith { [_u] call _rawOf };
+        if (_u isEqualType objNull && {!isNull _u} && {!isPlayer _u}) then { ["ensure", _u] call comspec_sse_fnc_iarpName; };
         if (!isNull _to && {_u isEqualType objNull} && {!isNull _u} && {!isPlayer _u} && {[_to] call comspec_sse_fnc_isAuthority}) exitWith {
             ["truth", _u] call comspec_sse_fnc_iarpName
         };

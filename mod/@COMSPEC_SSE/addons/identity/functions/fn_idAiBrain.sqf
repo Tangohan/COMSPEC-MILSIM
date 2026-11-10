@@ -6,11 +6,15 @@
       ["profile", [ia, contrôleur]] -> civil | insurge | hvt | agent | policier
     Profil : attribut Eden COMSPEC_ID_Profile, sinon biométrie (watchlist 1 = HVT, 2 = recherché), nature des papiers
     (faux = insurgé, couverture = agent), camp (civil ; ami du contrôleur = policier ; autre = insurgé).
-    Contexte : menotté / rendu, inconscient, blessé, armé, mobile (à pied ou conducteur), soldats armés à 20 m, armes
-    pointées vers lui (40 m, ±10°), zone de checkpoint, couvre-feu (civils), contrôleur parti, faux découvert.
-    Tension 0-100 : profil, nerfs propres à la personne, armes pointées, soldats, couvre-feu, arme sur lui, zone,
-    questions répétées, faux découvert, choc (tirs proches, civil menacé sous ses yeux : IA RP, fn_iarpReact) ;
-    × agressivité (réglage) ; lissée d'une seconde à l'autre.
+    Contexte : menotté / rendu, inconscient, blessé, armé, mobile (à pied ou conducteur), soldats à 20 m arme levée, armes
+    braquées sur lui (arme levée, 25 m au plus, ±8°), zone de checkpoint, couvre-feu (civils), contrôleur parti, faux découvert.
+    Une arme portée ou baissée ne fait pas peur : seule une arme levée compte, braquée sur lui surtout, et d'autant plus
+    près (10, 18, 26 à 25, 12, 5 m).
+    Tension 0-100 : profil, nerfs propres à la personne, armes braquées, soldats, couvre-feu, arme sur lui, zone,
+    questions répétées, faux découvert (retombe en une minute), choc et pression de la conversation (IA RP,
+    fn_iarpReact) ; menaces × nerfs de l'atelier IA (0,6 à 1,4) ; × agressivité (réglage). Monte vite, redescend lentement
+    (8 % de l'écart par seconde) : la peur se voit retomber. Chaque variation nette (8 points) est notée avec sa raison au
+    journal de l'IA RP (onglet JOURNAL de « Parler à »).
 */
 params [["_p0", objNull], ["_p1", ""]];
 if (!isServer) exitWith { "" };
@@ -45,6 +49,7 @@ private _context = {
     private _cs = [side group _c, sideUnknown] select (isNull _c);
     private _soldiers = 0;
     private _aimed = 0;
+    private _aimNear = 1e6;
     private _nearest = 1e6;
     {
         if (alive _x && {_x isNotEqualTo _u} && {(_x isEqualTo _c) || {(side group _x) isEqualTo _cs} || {isPlayer _x && {(side group _x) isNotEqualTo civilian}}}
@@ -52,10 +57,10 @@ private _context = {
             private _d = _x distance _u;
             _nearest = _nearest min _d;
             private _w = currentWeapon _x;
-            if (_w isNotEqualTo "" && {_w isNotEqualTo (binocular _x)}) then {
+            if (_w isNotEqualTo "" && {_w isNotEqualTo (binocular _x)} && {!(weaponLowered _x)}) then {
                 if (_d < 20) then { _soldiers = _soldiers + 1; };
-                // Arme pointée sur lui : canon dans un cône de 10° vers sa tête, arme non baissée.
-                if (!(weaponLowered _x) && {((_x weaponDirection _w) vectorDotProduct (vectorNormalized ((aimPos _u) vectorDiff (eyePos _x)))) > 0.985}) then { _aimed = _aimed + 1; };
+                // Arme braquée sur lui : arme levée, canon à 8° de son buste, 25 m au plus.
+                if (_d <= 25 && {((_x weaponDirection _w) vectorDotProduct (vectorNormalized ((aimPos _u) vectorDiff (eyePos _x)))) > 0.99}) then { _aimed = _aimed + 1; _aimNear = _aimNear min _d; };
             };
         };
     } forEach (_u nearEntities ["CAManBase", 40]);
@@ -65,7 +70,7 @@ private _context = {
     private _cd = [_u distance _c, 1e6] select (isNull _c);
     if (_cd <= 30) then { _u setVariable ["comspec_sse_idSeen", time]; };
     createHashMapFromArray [
-        ["ctrl", _c], ["ctrlDist", _cd], ["soldiers", _soldiers], ["aimed", _aimed], ["nearest", _nearest],
+        ["ctrl", _c], ["ctrlDist", _cd], ["soldiers", _soldiers], ["aimed", _aimed], ["aimNear", _aimNear], ["nearest", _nearest],
         ["restr", (_u getVariable ["ace_captives_isHandcuffed", false]) || {_u getVariable ["ace_captives_isSurrendering", false]}],
         ["uncon", (_u getVariable ["ACE_isUnconscious", false]) || {(lifeState _u) isEqualTo "INCAPACITATED"}],
         ["wounded", (damage _u) > 0.4 || {(_u getHitPointDamage "HitLegs") > 0.5} || {(_u getVariable ["ace_medical_woundBleeding", 0]) > 0.02}],
@@ -79,23 +84,53 @@ private _context = {
 private _tension = {
     params ["_u", "_cx", "_prof"];
     private _key = [_u] call comspec_sse_fnc_bioPersonKey;
+    private _aimed = _cx get "aimed";
+    private _near = _cx getOrDefault ["aimNear", 1e6];
+    private _aimW = if (_aimed > 0) then { ([10, 18, 26] select ((parseNumber (_near <= 12)) + (parseNumber (_near <= 5)))) + 8 * ((_aimed - 1) min 2) } else { 0 };
+    // Choc (tirs proches, violence vue) et pression de la conversation (IA RP), qui retombent de 30 par minute.
+    private _shock = if (isNil "comspec_sse_fnc_iarpReact") then { 0 } else { ["shock", _u] call comspec_sse_fnc_iarpReact };
+    // Nerfs (atelier IA, 50 par défaut) : les menaces comptent de 0,6 à 1,4 fois.
+    private _k = 1;
+    if (!isNil "comspec_sse_fnc_iarpProfile") then { _k = 0.6 + 0.8 * (((["get", _u] call comspec_sse_fnc_iarpProfile) getOrDefault ["nerve", 50]) / 100); };
+    private _bust = _u getVariable ["comspec_sse_idBust", 0];
+    private _sold = (((_cx get "soldiers") - 1) max 0) min 4;
     private _t = ((createHashMapFromArray [["civil", 10], ["policier", 0], ["agent", 20], ["insurge", 35], ["hvt", 45]]) getOrDefault [_prof, 10])
         + (([_key, "idnerve"] call comspec_sse_fnc_bioRand) * 20 - 10)
-        + 9 * ((_cx get "aimed") min 3)
-        + 3 * ((((_cx get "soldiers") - 1) max 0) min 4)
-        + (_u getVariable ["comspec_sse_idBust", 0])
-        // Choc (IA RP : tirs proches, civil menacé sous ses yeux), qui retombe de 30 par minute.
-        + (if (isNil "comspec_sse_fnc_iarpReact") then { 0 } else { ["shock", _u] call comspec_sse_fnc_iarpReact });
+        + _k * (_aimW + _shock)
+        + 2 * _sold
+        + _bust;
     if (_cx get "curfew") then { _t = _t + 12; };
     if ((_cx get "armed") && {_prof in ["insurge", "hvt"]}) then { _t = _t + 12; };
     if (_cx get "inCp") then { _t = _t + ([8, -6] select (_prof isEqualTo "civil")); };
     if (_prof in ["insurge", "hvt", "agent"]) then { _t = _t + 4 * ((((_u getVariable ["comspec_sse_idAsks", 1]) - 1) max 0) min 3); };
     if (_prof isEqualTo "policier") then { _t = 0; };
     _t = _t * (0.6 + 0.8 * ((missionNamespace getVariable ["comspec_sse_id_aiAggro", 50]) / 100));
+    _t = (_t max 0) min 100;
     private _old = _u getVariable ["comspec_sse_idTension", _t];
-    _t = ((_old * 0.5) + (_t * 0.5)) max 0 min 100;
-    _u setVariable ["comspec_sse_idTension", _t];
-    _t
+    // Monte vite (moitié de l'écart), redescend lentement (8 % de l'écart, 0,5 au moins) : la peur se voit retomber.
+    private _new = if (_t >= _old) then { (_old * 0.5) + (_t * 0.5) } else { (_old - (((_old - _t) * 0.08) max 0.5)) max _t };
+    _new = (_new max 0) min 100;
+    _u setVariable ["comspec_sse_idTension", _new];
+    // Faux découvert : retombe en une minute.
+    if (_bust > 0) then { _u setVariable ["comspec_sse_idBust", (_bust - 0.5) max 0]; };
+    // Journal de la peur (IA RP) : variation nette depuis la dernière ligne, avec ce qui la cause.
+    if (!isNil "comspec_sse_fnc_iarpServer") then {
+        private _last = _u getVariable ["comspec_sse_idFearLogged", -1];
+        if (_last < 0) then { _u setVariable ["comspec_sse_idFearLogged", _new]; _last = _new; };
+        if ((abs (_new - _last)) >= 8) then {
+            _u setVariable ["comspec_sse_idFearLogged", _new];
+            private _r = [];
+            if (_aimed > 0) then { _r pushBack format ["%1 arme(s) braquée(s) sur elle, à %2 m", _aimed, round _near]; };
+            if (_shock >= 5) then { _r pushBack format ["choc ou pression de la conversation (%1)", round _shock]; };
+            if (_shock <= -5) then { _r pushBack "apaisée par la conversation"; };
+            if (_sold > 0) then { _r pushBack format ["%1 soldats arme levée autour", _sold + 1]; };
+            if (_bust > 0) then { _r pushBack "faux découvert"; };
+            if (_cx get "curfew") then { _r pushBack "couvre-feu"; };
+            if (_r isEqualTo []) then { _r pushBack "plus aucune menace : la peur redescend"; };
+            ["logFear", [_cx get "ctrl", _u, round (_new - _last), _r joinString ", ", round _new]] call comspec_sse_fnc_iarpServer;
+        };
+    };
+    _new
 };
 
 private _decide = {
