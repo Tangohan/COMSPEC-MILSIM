@@ -107,6 +107,16 @@
             <English>Personality and dialogue applied to every synchronised AI. Open the workshop to edit it, test a sentence and see the answer. Example: preset « Corrupt informant », knowledge « The militia chief sleeps at the garage ».</English>
             <French>Personnalité et dialogue appliqués à chaque IA synchronisée. Ouvrez l'atelier pour le modifier, tester une phrase et voir la réponse. Exemple : profil « Informateur corrompu », savoir « Le chef de la milice dort au garage ».</French>
         </Key>
+        <Key ID="STR_COMSPEC_IARP_MarkIntel">
+            <Original>Intel: %1</Original>
+            <English>Intel: %1</English>
+            <French>Renseignement : %1</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_MarkPlace">
+            <Original>Reported place</Original>
+            <English>Reported place</English>
+            <French>Lieu signalé</French>
+        </Key>
         <Key ID="STR_COMSPEC_IARP_Me">
             <Original>Me</Original>
             <English>Me</English>
@@ -131,6 +141,11 @@
             <Original>Log copied to the clipboard (%1 lines).</Original>
             <English>Log copied to the clipboard (%1 lines).</English>
             <French>Journal copié dans le presse-papiers (%1 lignes).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_N_Marked">
+            <Original>Position noted on your map: %1</Original>
+            <English>Position noted on your map: %1</English>
+            <French>Position notée sur votre carte : %1</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_N_NoAi">
             <Original>Place the module on a living AI (not a player), or select AIs first.</Original>
@@ -603,9 +618,9 @@
             <French>Savoir</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Know_D">
-            <Original>Intelligence it can give if questioned well (« What do you know? », « Have you seen armed men? »), once unlocked. Empty: it knows nothing and says so. Example: A white pickup without plates went north last night.</Original>
-            <English>Intelligence it can give if questioned well (« What do you know? », « Have you seen armed men? »), once unlocked. Empty: it knows nothing and says so. Example: A white pickup without plates went north last night.</English>
-            <French>Renseignement qu'elle peut donner si on l'interroge bien (« Que savez-vous ? », « Avez-vous vu des hommes armés ? »), une fois débloqué. Vide : elle ne sait rien et le dit. Exemple : Un pick-up blanc sans plaques est parti vers le nord hier soir.</French>
+            <Original>Intelligence it can give if questioned well (« What do you know? », « Have you seen armed men? »), once unlocked. Empty: it knows nothing and says so. One sentence: given once it trusts you, is bribed or hears the keyword. By levels, one per line: « Vague: » (pressure or some trust), « Precise: » (unlocked), « Complete: » (great trust, confession or two bribes), and « Place: » followed by a grid, coordinates or a mission marker name, then the place name: the precise level puts it on the map of the player who got it, for him only. Example: Vague: Armed men gather at night. / Precise: At the abandoned farm, after evening prayer. / Complete: Six of them, weapons under the barn. / Place: 045 078 Abandoned farm</Original>
+            <English>Intelligence it can give if questioned well (« What do you know? », « Have you seen armed men? »), once unlocked. Empty: it knows nothing and says so. One sentence: given once it trusts you, is bribed or hears the keyword. By levels, one per line: « Vague: » (pressure or some trust), « Precise: » (unlocked), « Complete: » (great trust, confession or two bribes), and « Place: » followed by a grid, coordinates or a mission marker name, then the place name: the precise level puts it on the map of the player who got it, for him only. Example: Vague: Armed men gather at night. / Precise: At the abandoned farm, after evening prayer. / Complete: Six of them, weapons under the barn. / Place: 045 078 Abandoned farm</English>
+            <French>Renseignement qu'elle peut donner si on l'interroge bien (« Que savez-vous ? », « Avez-vous vu des hommes armés ? »), une fois débloqué. Vide : elle ne sait rien et le dit. Une phrase : donnée quand elle a confiance, est payée ou entend le mot-clé. Par paliers, un par ligne : « Vague : » (pression ou un peu de confiance), « Précis : » (débloqué), « Complet : » (grande confiance, aveu ou deux pots-de-vin), et « Lieu : » suivi d'un carroyage, de coordonnées ou du nom d'un marqueur de la mission, puis du nom du lieu : le palier précis le pose sur la carte du joueur qui l'obtient, pour lui seul. Exemple : Vague : Des hommes armés se retrouvent la nuit. / Précis : À la ferme abandonnée, après la prière du soir. / Complet : Ils sont six, les armes sous la grange. / Lieu : 045 078 Ferme abandonnée</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Lang">
             <Original>Language</Original>
@@ -838,9 +853,9 @@
             <French>Secrets</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Secrets_D">
-            <Original>What it hides: a memo for Zeus, never said by the AI. Example: He keeps a rifle under his pickup's seat.</Original>
-            <English>What it hides: a memo for Zeus, never said by the AI. Example: He keeps a rifle under his pickup's seat.</English>
-            <French>Ce qu'elle cache : aide-mémoire du Zeus, jamais dit par l'IA. Exemple : Il garde un fusil sous le siège de son pick-up.</French>
+            <Original>What it hides: a memo for Zeus. The AI only says it if it breaks down when confronted (« Your papers are fake », « You're lying »). Example: He keeps a rifle under his pickup's seat.</Original>
+            <English>What it hides: a memo for Zeus. The AI only says it if it breaks down when confronted (« Your papers are fake », « You're lying »). Example: He keeps a rifle under his pickup's seat.</English>
+            <French>Ce qu'elle cache : aide-mémoire du Zeus. L'IA ne le dit que si elle craque quand on la confronte (« Vos papiers sont faux », « Tu mens »). Exemple : Il garde un fusil sous le siège de son pick-up.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Sensitive">
             <Original>Sensitive subjects</Original>

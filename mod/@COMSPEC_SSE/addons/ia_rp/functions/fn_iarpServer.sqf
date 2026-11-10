@@ -336,8 +336,9 @@ switch (_op) do {
             (random 1) < _c
         };
         private _quiet = _st in ["fuit", "agressif", "renforts"];
-        // Une réaction par demande, dans l'ordre : [réplique, ton, issue, intention].
+        // Une réaction par demande, dans l'ordre : [réplique, ton, issue, intention, déjà dit à un autre].
         private _parts = [];
+        private _mark = [];
         {
             private _intent = _x;
             private _gi = _intent;
@@ -401,15 +402,30 @@ switch (_op) do {
                         else { [-5] call _trust; [8] call _tense; _gi = "bribeNo"; _outcome = "pot-de-vin refusé"; };
                     };
                     case "intel": {
-                        private _ul = _p get "unlock";
-                        private _open = switch (_ul) do {
-                            case "bribe": { _pm get "bribed" };
-                            case "keyword": { _pm get "word" };
-                            case "never": { false };
-                            default { (_pm get "trust") >= 60 || {_pm get "bribed"} };
+                        // Paliers (fn_iarpProfile « knowTiers ») : vague, précis, complet ; débloqués par la confiance, un
+                        // pot-de-vin, le mot-clé, la pression ou un aveu (« intelLevel »). Savoir d'une seule phrase : palier
+                        // précis, débloqué comme avant. Le plus haut palier rempli et débloqué est dit.
+                        (["knowTiers", _p get "know"] call comspec_sse_fnc_iarpProfile) params ["_tiers", "_kpos", "_klabel"];
+                        private _lvl = ["intelLevel", [_p, _pm get "trust", _pm get "bribed", _pm get "bribes", _pm get "word", _mem get "confessed", _st, _aimed,
+                            _t getVariable ["comspec_sse_idTension", 0]]] call comspec_sse_fnc_iarpProfile;
+                        private _give = 0;
+                        for "_i" from _lvl to 1 step -1 do { if (_give isEqualTo 0 && {(_tiers select (_i - 1)) isNotEqualTo ""}) then { _give = _i; }; };
+                        if (_give isEqualTo 0) exitWith {
+                            _gi = "intelNo";
+                            _outcome = ["ne sait rien", "se tait"] select ((_tiers findIf { _x isNotEqualTo "" }) >= 0);
                         };
-                        if (_st isEqualTo "rendu" && {_ul isNotEqualTo "never"} && {(_pm get "trust") >= 40}) then { _open = true; };
-                        if (_open && {(_p get "know") isNotEqualTo ""}) then { _gi = "intelYes"; _outcome = "renseignement donné"; _topic = "intel"; } else { _gi = "intelNo"; _outcome = ["ne sait rien", "se tait"] select ((_p get "know") isNotEqualTo ""); };
+                        _vars set ["know", _tiers select (_give - 1)];
+                        // Déjà dit à ce joueur (même palier ou plus) : « Je vous l'ai déjà dit ».
+                        _gi = [["intelVague", "intelYes", "intelFull"] select (_give - 1), "intelAgain"] select (_give <= (_pm get "intel"));
+                        _pm set ["intel", (_pm get "intel") max _give];
+                        _outcome = format ["renseignement donné (%1)", ["vague", "précis", "complet"] select (_give - 1)];
+                        _topic = format ["intel%1", _give];
+                        // Renseignement précis avec un lieu : marqueur sur la carte de ce joueur seulement, une fois.
+                        if (_give >= 2 && {(count _kpos) >= 2} && {!(_pm get "marked")}) then {
+                            _pm set ["marked", true];
+                            _mark = [_kpos, _klabel, _t getVariable ["comspec_sse_idName", ""]];
+                            _outcome = _outcome + " · lieu sur la carte";
+                        };
                     };
                     case "confront": {
                         // « Vos papiers sont faux », « tu mens », « je sais que c'est toi » : ment-elle vraiment ? Mensonge
@@ -568,7 +584,7 @@ switch (_op) do {
             [[_t] call _hearers, "typing", [_t, true]] call _tell;
         };
         [{
-            params ["_t", "_me", "_pay", "_say", "_gi", "_outcome", "_owner", "_range"];
+            params ["_t", "_me", "_pay", "_say", "_gi", "_outcome", "_owner", "_range", ["_mark", []]];
             if (isNull _t || {!alive _t}) exitWith {};
             private _pl = (allPlayers select { !(_x isKindOf "HeadlessClient_F") });
             if (hasInterface && {!isNull player}) then { _pl pushBackUnique player; };
@@ -580,8 +596,12 @@ switch (_op) do {
             } forEach _pl;
             private _r = ["reply", [_t, _pay, _gi]];
             if (_owner isEqualTo clientOwner || {!isMultiplayer}) then { _r call comspec_sse_fnc_iarpClient; } else { _r remoteExecCall ["comspec_sse_fnc_iarpClient", _owner]; };
+            // Lieu d'un renseignement précis : sur la carte du joueur qui l'a obtenu, et de lui seul.
+            if (_mark isNotEqualTo []) then {
+                if (_owner isEqualTo clientOwner || {!isMultiplayer}) then { ["mark", _mark] call comspec_sse_fnc_iarpClient; } else { ["mark", _mark] remoteExecCall ["comspec_sse_fnc_iarpClient", _owner]; };
+            };
             ["logAi", [_me, _t, _say, _gi, _outcome]] call comspec_sse_fnc_iarpServer;
-        }, [_t, _me, _pay, _say, _gi, _outcome, _owner, _range], _delay] call CBA_fnc_waitAndExecute;
+        }, [_t, _me, _pay, _say, _gi, _outcome, _owner, _range, _mark], _delay] call CBA_fnc_waitAndExecute;
     };
 
     // Ligne IA -> joueur du journal, posée par le serveur lui-même à la fin de la réplique (jamais par un poste).

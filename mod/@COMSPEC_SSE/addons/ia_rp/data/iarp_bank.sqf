@@ -219,6 +219,23 @@ private _rows = [
         ["nerveux", [["Si on apprend que c'est moi… {know}", "If they find out it was me… {know}"]]],
         ["bavard", [["Ah, ça ! Tout le monde en parle au village : {know}", "Oh, that! Everyone in the village talks about it: {know}"]]]
     ]],
+    // Paliers (savoir « Vague : / Précis : / Complet : ») : vague (pression, confiance moyenne), complet (confiance, aveu).
+    ["intelVague", [
+        ["*", [["J'ai entendu dire que… {know}", "I've heard that… {know}"], ["Je ne sais pas grand-chose. {know}", "I don't know much. {know}"],
+            ["On raconte des choses… {know}", "People say things… {know}"], ["(Il hésite.) Peut-être… {know}", "(He hesitates.) Maybe… {know}"],
+            ["Je ne suis sûr de rien, mais… {know}", "I'm not sure of anything, but… {know}"], ["Tout ce que je sais : {know}", "All I know is: {know}"]]],
+        ["nerveux", [["Je… je ne veux pas d'ennuis. {know} C'est tout.", "I… I don't want trouble. {know} That's all."]]]
+    ]],
+    ["intelFull", [
+        ["*", [["Bon. Je vais tout vous dire : {know}", "Fine. I'll tell you everything: {know}"], ["(Il baisse la voix.) Écoutez bien : {know}", "(He lowers his voice.) Listen carefully: {know}"],
+            ["Vous m'avez rendu service, alors voilà : {know}", "You did right by me, so here: {know}"], ["Il y a autre chose. {know}", "There's something else. {know}"],
+            ["Ce que personne ne vous dira : {know}", "What nobody else will tell you: {know}"], ["(Il regarde autour de lui.) {know} Mais vous ne tenez pas ça de moi.", "(He looks around.) {know} But you didn't hear it from me."]]]
+    ]],
+    ["intelAgain", [
+        ["*", [["Je vous l'ai déjà dit : {know}", "I already told you: {know}"], ["Comme je vous disais : {know}", "Like I was saying: {know}"],
+            ["Encore ? {know}", "Again? {know}"], ["Je n'en sais pas plus. {know}", "I don't know more than that. {know}"],
+            ["Je me répète : {know}", "I'll say it again: {know}"], ["(Il soupire.) {know} C'est tout ce que je sais.", "(He sighs.) {know} That's all I know."]]]
+    ]],
     ["intelNo", [
         ["*", [["Je ne sais rien.", "I don't know anything."], ["Je n'ai rien vu.", "I didn't see anything."], ["Je ne me mêle pas de ça.", "I stay out of that."], ["Demandez à quelqu'un d'autre.", "Ask someone else."], ["Rien à signaler, {sir}.", "Nothing to report, {sir}."]]],
         ["nerveux", [["Rien ! Je ne sais rien, je vous jure.", "Nothing! I don't know anything, I swear."]]],
