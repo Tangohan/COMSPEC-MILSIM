@@ -42,7 +42,8 @@ class COMSPEC_RscDisplayATAK {
         class Mode: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_MODE; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_expand.paa"; action="[] call comspec_atak_native_fnc_modeToggle"; tooltip="Mini / plein écran"; };
         class Home: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_HOME; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_apps.paa"; action="['LAUNCHER', true, true] call comspec_atak_native_fnc_navigate"; tooltip="Applications"; };
         class HudHint: COMSPEC_RscLabel { idc=COMSPEC_ATAK_IDC_HUDHINT; style=2; ATAK_POS; text=""; };
-        // Touches physiques de la coque S7 (dessinées sur la texture) : retour, accueil, apps récentes, marche/arrêt.
+        // Touches physiques de la coque (dessinées sur la texture) : retour, accueil, apps récentes, marche/arrêt.
+        // Zones propres à chaque modèle, masquées s'il n'a pas la touche (fn_layoutApply).
         class HwBack: COMSPEC_RscButtonInvisible { idc=COMSPEC_ATAK_IDC_HW_BACK; ATAK_POS; tooltip="Retour"; action="[true] call comspec_atak_native_fnc_back; playSound 'ClickSoft'"; };
         class HwHome: COMSPEC_RscButtonInvisible { idc=COMSPEC_ATAK_IDC_HW_HOME; ATAK_POS; tooltip="Accueil"; action="['LAUNCHER', true, true] call comspec_atak_native_fnc_navigate; playSound 'ClickSoft'"; };
         class HwApps: COMSPEC_RscButtonInvisible { idc=COMSPEC_ATAK_IDC_HW_APPS; ATAK_POS; tooltip="Apps récentes"; action="['RECENTS', true, true] call comspec_atak_native_fnc_navigate; playSound 'ClickSoft'"; };

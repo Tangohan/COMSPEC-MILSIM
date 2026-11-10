@@ -106,6 +106,11 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["Taille du téléphone en main", "Taille du téléphone quand vous l'avez en main (plein écran). 100 % = taille normale ; en dessous, il rétrécit en restant centré, texte et boutons compris."],
     ["COMSPEC", "ATAK · Affichage"], [0.6, 1, 1, 0, true], 0,
     { if !(isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; }; }] call comspec_atak_native_fnc_addSetting;
+// Reflet du verre de l'écran (4.2.1, fn_screenSurface) : par joueur, activé par défaut ; aussi dans Réglages > Thème et écran.
+["comspec_atak_native_glass_glare", "CHECKBOX",
+    ["Reflet du verre de l'écran", "Léger reflet de la vitre sur l'écran du téléphone, plus faible la nuit ; il ne gêne ni la lecture ni la carte. Désactivé : écran sans reflet. Exemple : en plein jour, une bande claire très discrète traverse le haut gauche de l'écran. Aussi dans Réglages > Thème et écran."],
+    ["COMSPEC", "ATAK · Affichage"], true, 0,
+    { if !(isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_deviceOverlay; }; }] call comspec_atak_native_fnc_addSetting;
 
 // Animation de sortie et de rangement du téléphone en main (par joueur, 4.2.1, fn_fx « phoneIn » / « phoneOut »).
 // Aussi dans Réglages > Animations et sons du téléphone.

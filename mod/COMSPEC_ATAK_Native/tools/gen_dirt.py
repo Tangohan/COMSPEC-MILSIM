@@ -328,7 +328,9 @@ CASE_SRC = {
 
 def case_assets(tmp, only=None):
     for i, (m, src) in enumerate(CASE_SRC.items()):
-        if (only and m not in only) or not os.path.exists(src):
+        # Tablette à touches : mêmes coques que la tablette, sa poussière aussi (fn_screenSurface, 4.2.1). Gardée dans
+        # la liste pour ne pas décaler la graine des modèles suivants.
+        if (only and m not in only) or not os.path.exists(src) or m == "keys":
             continue
         land = case_dust(src, 51 + i)
         convert(land, f"dirt_case_{m}_land", tmp)
