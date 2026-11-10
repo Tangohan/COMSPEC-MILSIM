@@ -58,13 +58,13 @@ if !("mpudiag" call AT_fnc_groupe) exitWith {};
     // Rapport : version, radio, une ligne par étape.
     private _rep = ["report", [["eval", [_off]] call comspec_atak_native_fnc_mpuDiag, _off]] call comspec_atak_native_fnc_mpuDiag;
     [(_rep find "COMSPEC ATAK") >= 0 && {(count (_rep splitString endl)) >= 13}, "rapport incomplet"] call AT_fnc_check;
-    // Lecture réelle : aucune erreur, 11 étapes, moins de 5 ms.
+    // Lecture réelle : aucune erreur, 12 étapes, moins de 5 ms.
     uiNamespace setVariable ["COMSPEC_ATAK_MpuDiagSim", nil];
     private _ms = [];
     for "_i" from 1 to 5 do {
         uiNamespace setVariable ["COMSPEC_ATAK_MpuDiagC", []];
         (["run", [""]] call comspec_atak_native_fnc_mpuDiag) params ["_st", "_fa"];
-        [(count _st) isEqualTo 11, format ["lecture réelle : %1 étapes", count _st]] call AT_fnc_check;
+        [(count _st) isEqualTo 12, format ["lecture réelle : %1 étapes au lieu de 12", count _st]] call AT_fnc_check;
         _ms pushBack (_fa getOrDefault ["ms", 99]);
     };
     _ms sort true;
@@ -73,6 +73,9 @@ if !("mpudiag" call AT_fnc_groupe) exitWith {};
     call AT_fnc_done;
 }, 60] call AT_fnc_run;
 
+// Contrôles affichés de l'écran du téléphone, enfants des groupes compris : le volet est dessiné par fn_formRender dans un
+// groupe de contrôles, ses boutons et textes ne sont pas dans COMSPEC_ATAK_PageControls (qui ne tient que le groupe).
+AT_fnc_ctlsPage = { (allControls ([] call comspec_atak_native_fnc_display)) select { ctrlShown _x } };
 ["mpu_diag_volet", {
     if (["comspec_atak_native_fnc_mpuDiag", "comspec_atak_native_fnc_formRender"] call AT_fnc_nil) exitWith {};
     if !([] call AT_fnc_tel) exitWith { "téléphone absent" call AT_fnc_skip; };
@@ -90,8 +93,8 @@ if !("mpudiag" call AT_fnc_groupe) exitWith {};
     [((call AT_fnc_etat) getOrDefault ["netDiag", false]) isEqualTo true, "volet non ouvert"] call AT_fnc_check;
     [diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_MpuDiagDrawn", -100]) < 5, "volet non dessiné"] call AT_fnc_check;
     // Aucun texte coupé : textes structurés à leur hauteur, boutons à leur largeur.
-    { if ((ctrlType _x) in [1, 13]) then { [_x, "volet DÉPANNAGE MPU"] call AT_fnc_tient; }; } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_PageControls", []]) select { !isNull _x });
-    "volet DÉPANNAGE MPU, tout OK : chaîne verte, carte « Tout est prêt », 11 étapes cochées, liste des camarades, « Faut-il un relais ? » (3 cas + votre cas), boutons COPIER LE RAPPORT et réglages ; rien de coupé ni de superposé en portrait" call AT_fnc_visuel;
+    { if ((ctrlType _x) in [1, 13]) then { [_x, "volet DÉPANNAGE MPU"] call AT_fnc_tient; }; } forEach (call AT_fnc_ctlsPage);
+    "volet DÉPANNAGE MPU, tout OK : chaîne verte, carte « Tout est prêt », 12 étapes cochées, liste des camarades, « Faut-il un relais ? » (3 cas + votre cas), boutons COPIER LE RAPPORT et réglages ; rien de coupé ni de superposé en portrait" call AT_fnc_visuel;
     ["mpu_depannage"] call AT_fnc_shot;
     // Radio non pontée : première étape en échec en tête, avec son bouton ACTIVER LE PONT RADIO.
     private _ko = +_base;
@@ -101,9 +104,9 @@ if !("mpudiag" call AT_fnc_groupe) exitWith {};
     uiNamespace setVariable ["COMSPEC_ATAK_MpuDiagC", []];
     ["NETWORK"] call comspec_atak_native_fnc_pageRender;
     uiSleep 1;
-    private _fixB = (uiNamespace getVariable ["COMSPEC_ATAK_PageControls", []]) select { !isNull _x && {(ctrlText _x) isEqualTo ("ACTIVER LE PONT RADIO" call comspec_atak_native_fnc_tr)} };
+    private _fixB = (call AT_fnc_ctlsPage) select { (ctrlText _x) isEqualTo ("ACTIVER LE PONT RADIO" call comspec_atak_native_fnc_tr) };
     [_fixB isNotEqualTo [], "bouton ACTIVER LE PONT RADIO absent"] call AT_fnc_check;
-    { if ((ctrlType _x) in [1, 13]) then { [_x, "volet DÉPANNAGE MPU (KO)"] call AT_fnc_tient; }; } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_PageControls", []]) select { !isNull _x });
+    { if ((ctrlType _x) in [1, 13]) then { [_x, "volet DÉPANNAGE MPU (KO)"] call AT_fnc_tient; }; } forEach (call AT_fnc_ctlsPage);
     "volet DÉPANNAGE MPU, radio non pontée : case PONT rouge « (cassé ici) », carte « À corriger d'abord : Pont radio » avec l'action, bouton ACTIVER LE PONT RADIO ; étape 6 en rouge" call AT_fnc_visuel;
     ["mpu_depannage_ko"] call AT_fnc_shot;
     // Fermeture : retour à l'app Réseau.
