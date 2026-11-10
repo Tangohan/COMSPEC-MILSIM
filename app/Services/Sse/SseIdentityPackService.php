@@ -33,6 +33,8 @@ final class SseIdentityPackService
     public const VERSION = 1;
     public const DEFAULT_LIMIT = 200;
     public const MAX_WATCH = 300;
+    /** Paramètre op du paquet d'un seul compte (buildSelf), suivi au besoin de « :OPÉRATION ». */
+    public const SELF_OP = '~self';
 
     public function __construct(
         private ?SseIdDocumentRepository $documents = null,
@@ -169,6 +171,53 @@ final class SseIdentityPackService
         }
 
         return $pack;
+    }
+
+    /**
+     * Paquet « self » d'un seul compte (op « ~self ») : relayé par le téléphone du joueur quand le serveur de jeu n'a pas
+     * COMSPEC Link. Même forme que build(), réduite à ce compte : son kit, ses papiers, les identités qu'ils portent et son
+     * brief ; pays de la communauté (impression des papiers). Ni avis, ni recherchés, ni population, ni papiers des
+     * autres, ni la nature d'un faux (forgery_kind / forgery_quality vides). Le serveur de jeu refiltre de son côté.
+     *
+     * @return array<string, mixed>
+     */
+    public function buildSelf(int $tenantId, int $mapId, int $userId, ?string $opKey = null): array
+    {
+        $full = $this->build($tenantId, $mapId, $opKey, null, 0, SseIdDocumentRepository::PACK_MAX_PER_MAP);
+        $kits = array_values(array_filter($full['kits'], static fn (array $k): bool => (int) ($k['user_id'] ?? 0) === $userId));
+        $wanted = [];
+        foreach ($kits as $k) {
+            foreach ($k['documents'] ?? [] as $d) {
+                $wanted[(int) $d] = true;
+            }
+        }
+        $documents = [];
+        $identityIds = [];
+        foreach ($full['documents'] as $d) {
+            if (isset($wanted[(int) $d['id']])) {
+                $d['forgery_kind'] = null;
+                $d['forgery_quality'] = null;
+                $documents[] = $d;
+                $identityIds[(int) $d['identity_id']] = true;
+            }
+        }
+
+        return [
+            'version' => self::VERSION,
+            'generated_at' => $full['generated_at'],
+            'map' => $mapId,
+            'op' => self::SELF_OP,
+            'countries' => $full['countries'],
+            'identities' => array_values(array_filter($full['identities'], static fn (array $i): bool => isset($identityIds[(int) $i['id']]))),
+            'documents' => $documents,
+            'watch' => [],
+            'kits' => $kits,
+            'population' => [],
+            'wanted' => [],
+            'briefs' => array_values(array_filter($full['briefs'], static fn (array $b): bool => (int) ($b['user_id'] ?? 0) === $userId)),
+            'settings' => ['auto_transmit' => $full['settings']['auto_transmit'] ?? true],
+            'paging' => ['offset' => 0, 'limit' => count($documents), 'total' => count($documents), 'next_offset' => null],
+        ];
     }
 
     /**

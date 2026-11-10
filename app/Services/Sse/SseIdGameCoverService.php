@@ -27,7 +27,15 @@ final class SseIdGameCoverService
         'profession' => 120, 'employer' => 190, 'phone' => 60, 'travel' => 255, 'family' => 190,
         // Ajouts rétrocompatibles (mod SSE suivant) : champs séparés pour la comparaison avec l'identité d'Athena.
         'last' => 120, 'first' => 120, 'sex' => 1, 'identity_ref' => 16,
+        // Livraison du paquet d'identité vue par le serveur de jeu (SSE suivant) : étape, code, relais, date, serveur.
+        'pack' => 16, 'pack_code' => 24, 'pack_via' => 8, 'pack_at' => 32, 'server' => 80,
     ];
+
+    /** Champs de livraison du paquet : hors de l'empreinte de l'identité (différence examinée). */
+    public const PACK_KEYS = ['pack', 'pack_code', 'pack_via', 'pack_at', 'server'];
+
+    /** Étapes de la livraison du paquet remontées par le jeu (fn_idLegend « sheet », packStep). */
+    public const PACK_STEPS = ['ok', 'wait', 'server_fetch', 'relay_zeus', 'relay_self', 'relay_fail', 'no_relay'];
 
     /**
      * Origine de l'identité utilisée en jeu : athena (papiers reçus du paquet), generated (tirée par le mod faute de
@@ -58,10 +66,13 @@ final class SseIdGameCoverService
         $op = self::text($body['op'] ?? '', 64);
         $op = $op !== '' ? $op : null;
         $json = (string) json_encode($cover, JSON_UNESCAPED_UNICODE);
-        $hash = sha1($json);
+        // Empreinte de l'identité seule : un changement d'état de livraison du paquet ne rouvre pas une différence examinée.
+        $hash = sha1((string) json_encode(array_diff_key($cover, array_flip(self::PACK_KEYS)), JSON_UNESCAPED_UNICODE));
         $existing = $this->covers->findGameCover($tenantId, $userId, SseIdCoverLinkRepository::scopeKey($map, $op));
+        $samePack = $existing !== null && array_intersect_key((array) json_decode((string) ($existing['cover_json'] ?? ''), true), array_flip(self::PACK_KEYS))
+            == array_intersect_key($cover, array_flip(self::PACK_KEYS));
         // Même contenu : pas d'écriture, la date reste celle du dernier changement.
-        if ($existing !== null && (string) $existing['content_hash'] === $hash) {
+        if ($existing !== null && (string) $existing['content_hash'] === $hash && $samePack) {
             return ['id' => (int) $existing['id'], 'ref' => 'unchanged;' . substr((string) $existing['updated_at'], 0, 16)];
         }
         $now = gmdate('Y-m-d H:i:s');
@@ -151,6 +162,15 @@ final class SseIdGameCoverService
         $origin = self::text($raw['origin'] ?? '', 12);
         $out['origin'] = in_array($origin, self::ORIGINS, true) ? $origin : 'cover';
         $out['carried'] = ($raw['carried'] ?? false) === true;
+        $out['pack'] = in_array($out['pack'], self::PACK_STEPS, true) ? $out['pack'] : '';
+        $out['pack_via'] = in_array($out['pack_via'], ['server', 'zeus', 'self'], true) ? $out['pack_via'] : '';
+        $out['pack_code'] = (string) preg_replace('/[^a-z0-9_]/', '', strtolower($out['pack_code']));
+        // Mod antérieur (champs absents) : rien d'ajouté, l'empreinte d'une remontée déjà examinée ne change pas.
+        foreach (['pack', 'pack_code', 'pack_via', 'pack_at', 'server'] as $k) {
+            if ($out[$k] === '') {
+                unset($out[$k]);
+            }
+        }
         $out['sex'] = in_array(strtoupper($out['sex']), ['M', 'F'], true) ? strtoupper($out['sex']) : '';
         $out['contacts'] = [];
         foreach (array_slice(is_array($raw['contacts'] ?? null) ? array_values($raw['contacts']) : [], 0, self::MAX_CONTACTS) as $c) {

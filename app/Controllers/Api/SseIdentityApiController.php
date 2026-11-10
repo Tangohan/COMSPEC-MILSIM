@@ -78,6 +78,21 @@ final class SseIdentityApiController
         $op = self::queryText($request, 'op');
         $since = self::queryText($request, 'since');
 
+        // Paquet « self » (op « ~self » ou « ~self:OPÉRATION ») : relayé par le téléphone d'un joueur pour un serveur de jeu
+        // sans COMSPEC Link. Seuls les papiers, l'identité et le brief du compte relié (jeton de jeu) partent ; une clé de
+        // communauté seule ne dit pas qui appelle : rien.
+        if (str_starts_with($op, SseIdentityPackService::SELF_OP)) {
+            $gameUser = ComspecApiKeyAuth::matchedUserId();
+            if ($gameUser === null || $gameUser < 1) {
+                return Response::json(['error' => 'unlinked', 'message' => 'Compte Athena non relié en jeu : vos papiers ne peuvent pas être lus.'], 403);
+            }
+            $selfOp = substr($op, strlen(SseIdentityPackService::SELF_OP));
+            $selfOp = str_starts_with($selfOp, ':') ? substr($selfOp, 1) : '';
+
+            return Response::json($this->pack->buildSelf($tenantId, $mapId, $gameUser, $selfOp !== '' ? $selfOp : null))
+                ->header('Cache-Control', 'private, no-store');
+        }
+
         // Paquet et révision gardés quelques minutes par communauté (invalidés à chaque écriture du registre).
         $entry = ShortCache::remember(
             SseIdentityPackCache::key($tenantId, $mapId, $op, $since, $offset, $limit),

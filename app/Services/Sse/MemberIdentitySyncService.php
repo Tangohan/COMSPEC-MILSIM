@@ -180,7 +180,8 @@ final class MemberIdentitySyncService
                         'Un kit est composé pour ce membre et ce papier n’y est pas : il ne part pas en jeu.', 'Ex. : kit de l’opération sans la carte d’identité.',
                         ['label' => 'Composer le kit', 'href' => '#papiers-kit']);
             }
-            $docOut[$id] = self::summarize($issues, $sent($d) ? ($autoKit ? 'Part en jeu (kit automatique).' : 'Part en jeu (kit de mission).') : 'Ne part pas en jeu.');
+            // « Prévu » : dans le paquet d'Athena. Remis réellement en jeu : seulement d'après ce que le jeu remonte (delivery).
+            $docOut[$id] = self::summarize($issues, $sent($d) ? ($autoKit ? 'Prévu pour le jeu (kit automatique).' : 'Prévu pour le jeu (kit de mission).') : 'Ne part pas en jeu.');
         }
 
         $identityOut = [];
@@ -247,7 +248,7 @@ final class MemberIdentitySyncService
                 $issues[] = self::issue('identity_not_sent', 'blocked', 'Identité non transmise', $autoKit ? 'Sans kit composé, seule l’identité principale part en jeu.' : 'Aucun de ses papiers n’est dans le kit de mission.', 'Ex. : couverture prévue mais pas dans le kit.',
                     ['label' => 'Composer un kit', 'href' => '#papiers-kit']);
             }
-            $identityOut[$id] = self::summarize($issues, $isSent ? 'Utilisée en jeu.' : 'Pas utilisée en jeu.');
+            $identityOut[$id] = self::summarize($issues, $isSent ? 'Prévue pour le jeu.' : 'Pas utilisée en jeu.');
         }
 
         $worst = 'ready';
@@ -266,6 +267,101 @@ final class MemberIdentitySyncService
         }
 
         return ['state' => $worst, 'account' => $account, 'identities' => $identityOut, 'documents' => $docOut, 'sent_identity_id' => $sentIdentity, 'auto_kit' => $autoKit];
+    }
+
+    /**
+     * Ce qui est réellement arrivé en jeu, d'après la dernière remontée du téléphone du joueur (cover_report : origine,
+     * étape de livraison du paquet, relais, serveur). Sans remontée : rien n'est affirmé.
+     * state : received (papiers d'Athena remis) | not_received (étape où la chaîne s'est arrêtée) | other (autre identité
+     * en jeu, habilitation Confidentiel seulement) | unknown.
+     *
+     * @param list<array<string, mixed>> $gameCovers SseIdGameCoverService::forUser(), le plus récent d'abord
+     * @return array{state: string, title: string, why: string, todo: string, at: string, server: string, identity_ref: string, docs: list<string>}
+     */
+    public static function delivery(array $gameCovers, bool $truth): array
+    {
+        $g = $gameCovers[0] ?? null;
+        $out = ['state' => 'unknown', 'title' => 'Pas encore confirmé par le jeu', 'at' => '', 'server' => '', 'identity_ref' => '', 'docs' => [],
+            'why' => 'Aucun téléphone n’a encore remonté ce qu’il a reçu en mission. « Prévu » veut dire : dans le paquet d’Athena, pas forcément arrivé.',
+            'todo' => 'En jeu, le joueur ouvre Ma couverture sur son téléphone : l’état réel apparaît ici (réglage « Transmission automatique à Athena » de la communauté).'];
+        if ($g === null) {
+            return $out;
+        }
+        $origin = (string) ($g['origin'] ?? 'cover');
+        $out['at'] = substr((string) ($g['updated_at'] ?? ''), 0, 16);
+        $out['server'] = (string) ($g['server'] ?? '');
+        $out['identity_ref'] = (string) ($g['identity_ref'] ?? '');
+        $out['docs'] = array_values(array_filter(array_map(static fn (mixed $d): string => is_array($d) ? strtoupper(trim((string) ($d[2] ?? ''))) : '', $g['docs'] ?? [])));
+        $step = (string) ($g['pack'] ?? '');
+        $code = (string) ($g['pack_code'] ?? '');
+        if ($origin === 'athena') {
+            $why = [
+                'server' => 'Le téléphone du joueur a confirmé ses papiers d’Athena (paquet lu par le serveur de jeu).',
+                'zeus' => 'Le téléphone du joueur a confirmé ses papiers d’Athena (paquet relayé par le poste du Zeus).',
+                'self' => 'Le téléphone du joueur a confirmé ses papiers d’Athena (papiers relayés par son propre téléphone).',
+            ][(string) ($g['pack_via'] ?? '')] ?? 'Le téléphone du joueur a confirmé ses papiers d’Athena.';
+
+            return ['state' => 'received', 'title' => 'Reçue en jeu', 'why' => $why, 'todo' => ''] + $out;
+        }
+        if ($origin !== 'generated') {
+            return $truth
+                ? ['state' => 'other', 'title' => 'Autre identité en jeu', 'why' => 'En jeu, le joueur utilise une couverture ou des papiers donnés en jeu, pas son identité Athena.', 'todo' => 'Voir « Différence avec le jeu » ci-dessous.'] + $out
+                : $out;
+        }
+        $why = match (true) {
+            $step === 'ok' => 'Le serveur de jeu a bien reçu le paquet d’Athena, mais aucun papier n’a été remis au joueur.',
+            $step === 'server_fetch' && in_array($code, ['unauthorized', 'forbidden'], true) => 'Le serveur de jeu a COMSPEC Link, mais Athena refuse sa clé d’accès.',
+            $step === 'server_fetch' && $code === 'no_tenant' => 'Le serveur de jeu a COMSPEC Link, mais sa clé ne désigne aucune communauté.',
+            $step === 'server_fetch' => 'Le serveur de jeu a COMSPEC Link, mais Athena ne lui a pas répondu.',
+            $step === 'relay_zeus' => 'Le serveur de jeu n’a pas COMSPEC Link : il a demandé le paquet au poste du Zeus, sans réponse.',
+            $step === 'relay_self' => 'Le serveur de jeu n’a pas COMSPEC Link : il a demandé les papiers au téléphone du joueur, sans réponse.',
+            $step === 'relay_fail' && $code === 'uplink_off' => 'Le serveur de jeu n’a pas COMSPEC Link et la liaison Athena est coupée sur le poste du joueur (service Athena sur Non).',
+            $step === 'relay_fail' && in_array($code, ['unauthorized', 'forbidden', 'unlinked', 'no_tenant'], true) => 'Le serveur de jeu n’a pas COMSPEC Link et le compte Athena du joueur n’est pas relié en jeu.',
+            $step === 'relay_fail' => 'Le serveur de jeu n’a pas COMSPEC Link et le poste qui devait relayer le paquet n’a pas pu le lire sur Athena.',
+            $step === 'no_relay' => 'Le serveur de jeu n’a pas COMSPEC Link et aucun poste relié à Athena n’était connecté pour lui relayer le paquet.',
+            $step === 'wait' => 'Le paquet d’Athena n’était pas encore arrivé sur le serveur de jeu quand le joueur a ouvert Ma couverture.',
+            default => 'Le serveur de jeu n’avait pas reçu le paquet d’identité d’Athena : le mod a tiré une identité au hasard.',
+        };
+        $todo = match (true) {
+            $step === 'ok' => 'Vérifiez ci-dessus : compte Steam lié, papier émis et dans le kit de cette carte.',
+            $step === 'server_fetch' && in_array($code, ['unauthorized', 'forbidden', 'no_tenant'], true) => 'Le responsable du serveur renseigne la clé de communauté d’Athena dans COMSPEC Link du serveur.',
+            in_array($code, ['unauthorized', 'forbidden', 'unlinked', 'no_tenant'], true) => 'Le joueur relie son compte Athena en jeu, puis touche Ma couverture › Demander la mise à jour.',
+            $code === 'uplink_off' => 'Le joueur remet le service Athena sur Oui, puis touche Ma couverture › Demander la mise à jour.',
+            default => 'Le mod réessaie seul ; en jeu, Ma couverture › Demander la mise à jour relance tout de suite. En attendant : Télécharger ma couverture ci-dessous, puis Importer ma couverture en jeu.',
+        };
+
+        return ['state' => 'not_received', 'title' => 'Pas reçue en jeu', 'why' => $why, 'todo' => $todo] + $out;
+    }
+
+    /**
+     * Notes « Prévu » de diagnose() remplacées par ce que le jeu confirme (delivery()).
+     *
+     * @param array<string, mixed> $diag diagnose()
+     * @param array<string, mixed> $delivery delivery()
+     * @param list<array<string, mixed>> $documents papiers visibles (doc_number)
+     * @return array<string, mixed>
+     */
+    public static function withDelivery(array $diag, array $delivery, array $documents): array
+    {
+        $diag['delivery'] = $delivery;
+        $sent = (int) ($diag['sent_identity_id'] ?? 0);
+        if ($delivery['state'] === 'received') {
+            $refId = (int) preg_replace('/\D/', '', $delivery['identity_ref']);
+            $target = $refId > 0 ? $refId : $sent;
+            if (isset($diag['identities'][$target])) {
+                $diag['identities'][$target]['note'] = 'Reçue en jeu le ' . $delivery['at'] . ' UTC.';
+            }
+            foreach ($documents as $d) {
+                $id = (int) $d['id'];
+                if (isset($diag['documents'][$id]) && in_array(strtoupper((string) ($d['doc_number'] ?? '')), $delivery['docs'], true)) {
+                    $diag['documents'][$id]['note'] = 'Remis en jeu le ' . $delivery['at'] . ' UTC.';
+                }
+            }
+        } elseif ($delivery['state'] === 'not_received' && isset($diag['identities'][$sent])) {
+            $diag['identities'][$sent]['note'] = 'Prévue pour le jeu, mais pas reçue en jeu le ' . $delivery['at'] . ' UTC.';
+        }
+
+        return $diag;
     }
 
     /** Lettres (accents compris), espaces, tirets, apostrophes ; 40 caractères au plus (bande MRZ). */

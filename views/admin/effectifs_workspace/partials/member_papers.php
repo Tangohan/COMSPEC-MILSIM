@@ -83,6 +83,21 @@ $identityFields = static function (array $v, bool $withKind) use ($ph, $countrie
 
     <?php require __DIR__ . '/member_papers_sync.php'; ?>
 
+    <?php if (is_array($pp['cover'] ?? null)): ?>
+        <article class="eff-fm-card eff-fm-card--wide" id="papiers-couverture">
+            <?php
+            $coverPanel = $pp['cover']['panel'];
+            $coverPostUrl = (string) $pp['cover']['post'];
+            $coverDownloadBase = (string) $pp['cover']['download'];
+            $coverCsrf = $csrfToken;
+            $coverSelf = (bool) $pp['cover']['self'];
+            $coverHasPrimary = (bool) $pp['cover']['has_primary'];
+            $coverHeadingTag = 'h3';
+            require dirname(__DIR__, 3) . '/partials/sse_cover_export.php';
+            ?>
+        </article>
+    <?php endif; ?>
+
     <article class="eff-fm-card" id="papiers-identite">
         <div class="eff-fm-card__head">
             <h3>Identité principale</h3>

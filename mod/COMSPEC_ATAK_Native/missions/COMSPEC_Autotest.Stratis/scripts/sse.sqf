@@ -168,6 +168,65 @@ AT_fnc_ia = {
     call AT_fnc_done;
 }, 45] call AT_fnc_run;
 
+// Paquet Athena relayé par le téléphone du joueur (serveur sans COMSPEC Link, sans Zeus) : message d'échec précis avant,
+// puis seuls ses papiers repris (kit d'un autre Steam ID ignoré), papier Athena remis et fiche « Identité reçue d'Athena ».
+["sse_paquet_relais", {
+    if (["comspec_sse_fnc_idAthenaPack", "comspec_sse_fnc_idLegend", "comspec_sse_fnc_idDocsOf"] call AT_fnc_nil) exitWith {};
+    if (!isServer) exitWith { "poste non serveur : étape sautée" call AT_fnc_info; call AT_fnc_done; };
+    private _uid = getPlayerUID player;
+    if (_uid isEqualTo "") exitWith { "pas de Steam ID : étape sautée" call AT_fnc_info; call AT_fnc_done; };
+    private _reg = ["init"] call comspec_sse_fnc_idRegistry;
+    private _keep = createHashMap;
+    { _keep set [_x, +(_reg getOrDefault [_x, createHashMap])]; } forEach ["packState", "selfPacks", "selfFails", "kits", "briefs"];
+    private _packAt = _reg getOrDefault ["packAt", ""];
+    _reg set ["packAt", ""];
+    _reg set ["selfPacks", createHashMap];
+    // 1. Échec du relais (liaison Athena coupée sur le poste) : la fiche dit l'étape et quoi faire.
+    ["send", ["packFail", [player, "self", "uplink_off"]]] call comspec_sse_fnc_idClient;
+    uiSleep 0.6;
+    if (_uid isNotEqualTo "_SP_PLAYER_") then {
+        private _d = (["sheet", [player, false]] call comspec_sse_fnc_idLegend) getOrDefault ["diag", []];
+        private _ko = _d select { (_x select 1) isEqualTo "Paquet Athena non chargé" };
+        [_ko isNotEqualTo [] && {((_ko select 0) select 2) find "service Athena sur Non" >= 0}, format ["raison du relais manquante : %1", _ko]] call AT_fnc_check;
+        [(_d findIf { (_x select 1) isEqualTo "En attendant" }) >= 0, "conseil « Télécharger ma couverture » absent"] call AT_fnc_check;
+    } else { "partie solo : diagnostic du relais non vérifié" call AT_fnc_info; };
+    // 2. Paquet « self » : le kit d'un autre Steam ID, un avis et un pays déjà connu ne doivent pas être repris.
+    private _cc = ["default"] call comspec_sse_fnc_idCountries;
+    private _cName = (([] call comspec_sse_fnc_idCountries) getOrDefault [_cc, createHashMap]) getOrDefault ["name", ""];
+    private _num = format ["%1990101", _cc];
+    private _raw = str [
+        ["version", 1], ["generated_at", "2026-11-10T19:00:00Z"], ["map", 1], ["op", "~self"],
+        ["countries", [[["code", _cc], ["name", "PAYS REMPLACÉ"], ["mrz_code", _cc], ["number_format", ""], ["fictional", true]]]],
+        ["identities", [[["id", 990001], ["person_id", ""], ["kind", "primary"], ["last_name", "AUTOTEST"], ["first_name", "Relais"], ["sex", "M"], ["birth_date", "1990-01-01"], ["birth_place", "Agia Marina"], ["nationality", _cc], ["arma_key", ""], ["profession", "Testeur"]]]],
+        ["documents", [
+            [["id", 990101], ["identity_id", 990001], ["type", "id_card"], ["country", _cc], ["number", _num], ["issued_on", "2025-01-01"], ["expires_on", "2035-01-01"], ["origin", "official"], ["validity", "valid"], ["report", ""]],
+            [["id", 990102], ["identity_id", 990001], ["type", "passport"], ["country", _cc], ["number", _num + "9"], ["issued_on", "2025-01-01"], ["expires_on", "2035-01-01"], ["origin", "official"], ["validity", "valid"], ["report", ""]]
+        ]],
+        ["kits", [[["uid", _uid], ["user_id", 1], ["scope", "default"], ["documents", [990101]]], [["uid", "AUTOTEST-AUTRE"], ["user_id", 2], ["scope", "default"], ["documents", [990102]]]]],
+        ["briefs", []], ["watch", [[["ref", "WL-AUTOTEST"], ["last_name", "NEPASREPRENDRE"]]]]
+    ];
+    ["applySelf", [player, _raw]] call comspec_sse_fnc_idAthenaPack;
+    [((_reg get "kits") getOrDefault [_uid, []]) isEqualTo ["990101"], format ["kit relayé : %1", (_reg get "kits") getOrDefault [_uid, []]]] call AT_fnc_check;
+    [!("AUTOTEST-AUTRE" in (_reg get "kits")), "kit d'un autre Steam ID repris depuis un paquet « self »"] call AT_fnc_check;
+    [((_reg get "watch") findIf { (_x param [4, ""]) isEqualTo "WL-AUTOTEST" }) < 0, "avis de recherche repris depuis un paquet « self »"] call AT_fnc_check;
+    [((([] call comspec_sse_fnc_idCountries) getOrDefault [_cc, createHashMap]) getOrDefault ["name", ""]) isEqualTo _cName, "pays connu remplacé par un paquet « self »"] call AT_fnc_check;
+    [_uid in (_reg getOrDefault ["selfPacks", createHashMap]), "paquet « self » non noté"] call AT_fnc_check;
+    private _mine = (["unitDocs", [player]] call comspec_sse_fnc_idRegistry) select { ((["doc", [_x]] call comspec_sse_fnc_idRegistry) getOrDefault ["athenaId", ""]) isEqualTo "990101" };
+    [_mine isNotEqualTo [], "papier Athena du kit non remis au joueur"] call AT_fnc_check;
+    if (_uid isNotEqualTo "_SP_PLAYER_") then {
+        private _s = ["sheet", [player, false]] call comspec_sse_fnc_idLegend;
+        [(_s getOrDefault ["origin", ""]) isEqualTo "athena", format ["fiche : origine %1 au lieu d'athena", _s getOrDefault ["origin", ""]]] call AT_fnc_check;
+        [(_s getOrDefault ["packStep", ""]) isEqualTo "ok" && {(_s getOrDefault ["packVia", ""]) isEqualTo "self"}, format ["état remonté à Athena : %1 / %2", _s getOrDefault ["packStep", ""], _s getOrDefault ["packVia", ""]]] call AT_fnc_check;
+    };
+    (format ["paquet relayé : %1 papier(s) remis, %2", count _mine, _num]) call AT_fnc_info;
+    // Nettoyage : papiers retirés, registre remis comme avant.
+    { private _c = (["doc", [_x]] call comspec_sse_fnc_idRegistry) getOrDefault ["cls", ""]; if (_c isNotEqualTo "") then { player removeItem _c; }; } forEach _mine;
+    { _reg set [_x, _keep get _x]; } forEach (keys _keep);
+    _reg set ["packAt", _packAt];
+    ["reset", [player]] call comspec_sse_fnc_idLegend;
+    call AT_fnc_done;
+}, 45] call AT_fnc_run;
+
 // Papiers de la visionneuse : une pièce par papier (jour), capture de chacune ; textures de nuit présentes ; long texte non coupé.
 ["sse_papiers", {
     if (["comspec_sse_fnc_paperSkin", "comspec_sse_fnc_showResult"] call AT_fnc_nil) exitWith {};

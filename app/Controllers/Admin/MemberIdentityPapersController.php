@@ -117,6 +117,24 @@ final class MemberIdentityPapersController
                 }
             }
             $data['sync'] = self::syncFor($tenantId, $userId, $data, $rights['truth']);
+            // Télécharger la couverture (fichier importé hors ligne par Ma couverture) : le membre lui-même, ou un
+            // responsable qui gère les papiers. Le bureau SSE (« Papiers des membres ») a déjà son propre panneau.
+            $data['cover'] = null;
+            $viewer = (int) Session::get('user_id');
+            if (!$sse && ($viewer === $userId || $rights['manage'])) {
+                try {
+                    $self = $viewer === $userId;
+                    $data['cover'] = [
+                        'panel' => (new \App\Services\Sse\SseCoverExportService())->panel($tenantId, $userId, !$self, $self),
+                        'post' => effectifs_workspace_url('membres/' . $userId . '/papiers/couverture'),
+                        'download' => effectifs_workspace_url('membres/' . $userId . '/papiers/couverture'),
+                        'self' => $self,
+                        'has_primary' => array_filter($data['identities'] ?? [], static fn (array $i): bool => !empty($i['is_primary'])) !== [],
+                    ];
+                } catch (\Throwable $e) {
+                    error_log('Fiche membre : couvertures générées indisponibles : ' . $e->getMessage());
+                }
+            }
 
             return $data;
         } catch (\Throwable $e) {
@@ -138,6 +156,17 @@ final class MemberIdentityPapersController
         $diag = MemberIdentitySyncService::diagnose($section, (new SseIdCountryRepository())->listForTenant($tenantId, false));
         $reports = [];
         $history = [];
+        try {
+            // État réel : ce que le téléphone du joueur a remonté de sa dernière mission (origine, livraison du paquet).
+            $diag = MemberIdentitySyncService::withDelivery(
+                $diag,
+                MemberIdentitySyncService::delivery((new \App\Services\Sse\SseIdGameCoverService())->forUser($tenantId, $userId), $truth),
+                $section['documents'] ?? []
+            );
+        } catch (\Throwable $e) {
+            error_log('Fiche membre : état réel en jeu indisponible : ' . $e->getMessage());
+            $diag['delivery'] = MemberIdentitySyncService::delivery([], $truth);
+        }
         try {
             $sync = new MemberIdentitySyncService();
             $reports = $sync->gameReports($tenantId, $userId, $section['identities'], $truth);

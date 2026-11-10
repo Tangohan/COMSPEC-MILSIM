@@ -4,7 +4,7 @@
     Réponses : request [contrôleur] · token [porteur, docId, libellé, fin] · answer [cible, réponse, texte]
       docs [cible, [[poignée, classe, libellé]…]] · doc [document imprimé, N0, sujet, mien, clé] · blank [poignée]
       result [docId, niveau, résultat] · seized / returned [cible, classe…] · vehicle [véhicule, op, occupants]
-      notify [texte, type] · zeus [texte, genre] · packFetch []
+      notify [texte, type] · zeus [texte, genre] · packFetch [full | self] (relais du paquet Athena, fn_idAthenaPack)
       say [nom, phrase, type, indice]   phrase courte d'une IA contrôlée (IA réalistes), traduite ici
     Lot 4 et 5 : question [demandeur, [[qid, question, réponses]…], délai] · questionEnd [qid, juste, évasif]
       coverSheet [netId, fiche] · coverSame [netId, empreinte, état et cohérence] (fiche en cache inchangée)
@@ -239,9 +239,29 @@ switch (_op) do {
         [format ["HVT : %1 (chasse HVT de l'ATAK : FIX).", _text], "SUCCESS", "", "DATING"] call comspec_sse_fnc_notify;
     };
     case "packFetch": {
-        [] spawn {
-            private _raw = ["fetch"] call comspec_sse_fnc_idAthenaPack;
-            if (_raw isNotEqualTo "") then { ["send", ["pack", [player, _raw]]] call comspec_sse_fnc_idClient; };
+        // Relais du paquet pour un serveur sans COMSPEC Link : « full » (Zeus, tout le paquet) ou « self » (ses papiers).
+        // Rien ne part vers Athena avant que la liaison de ce poste soit établie (licence, poignée de main) : 2 min au plus.
+        // Échec : le serveur reçoit la raison (packFail) pour l'afficher au joueur, puis réessaie de lui-même.
+        _a params [["_mode", "full", [""]]];
+        if (missionNamespace getVariable ["comspec_sse_idPackFetching", false]) exitWith {};
+        missionNamespace setVariable ["comspec_sse_idPackFetching", true];
+        [_mode] spawn {
+            params ["_mode"];
+            private _t0 = diag_tickTime;
+            waitUntil { sleep 2; (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) || {(diag_tickTime - _t0) > 120} };
+            private _raw = "";
+            private _err = "not_ready";
+            if (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) then {
+                _raw = ["fetch", ["", "self"] select (_mode isEqualTo "self")] call comspec_sse_fnc_idAthenaPack;
+                _err = missionNamespace getVariable ["comspec_sse_idPackErr", ""];
+            };
+            if (!isNil "comspec_overwatch_connect_fnc_uplinkOff" && {[] call comspec_overwatch_connect_fnc_uplinkOff}) then { _err = "uplink_off"; };
+            if (_raw isNotEqualTo "") then {
+                ["send", ["pack", [player, _raw, _mode]]] call comspec_sse_fnc_idClient;
+            } else {
+                ["send", ["packFail", [player, _mode, _err]]] call comspec_sse_fnc_idClient;
+            };
+            missionNamespace setVariable ["comspec_sse_idPackFetching", false];
         };
     };
 };
