@@ -148,7 +148,7 @@ switch (_op) do {
                     if (((_wl call _U) isEqualTo _l && {_f isEqualTo "" || {(_wf call _U) in [_f, ""]}}) || {(_wa call _U) in [trim format ["%1 %2", _f, _l], _l]}) then {
                         private _code = switch (_lvl) do { case "hvt": { "hvt" }; case "prioritaire"; case "recherche": { "wanted" }; default { "flagged" }; };
                         _recs pushBack createHashMapFromArray [["kind", "person"], ["ref", _ref], ["last", _wl], ["first", _wf], ["dob", ""], ["codes", [_code]],
-                            ["lines", [format ["Avis %1 (réf. %2)%3", ["de surveillance", "de recherche", "HVT"] select ((["flagged", "wanted", "hvt"] find _code) max 0), _ref, ["", format [" · alias %1", _wa]] select (_wa isNotEqualTo "")]]], ["checks", []]];
+                            ["lines", [format [["Avis de surveillance (réf. %1)%2", "Avis de recherche (réf. %1)%2", "Avis HVT (réf. %1)%2"] select ((["flagged", "wanted", "hvt"] find _code) max 0), _ref, ["", format [" · alias %1", _wa]] select (_wa isNotEqualTo "")]]], ["checks", []]];
                     };
                 } forEach (_reg getOrDefault ["watch", []]);
                 {

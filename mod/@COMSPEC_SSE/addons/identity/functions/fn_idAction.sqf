@@ -36,7 +36,9 @@ switch (_act) do {
             if (isNull _subj) exitWith { ["fail", [_h, 4, "far", "Comparaison du visage : la personne doit être devant vous (3 m)."]] call comspec_sse_fnc_idHistory; };
             if !([player, "seek"] call comspec_sse_fnc_hasEquipment) exitWith { ["fail", [_h, 4, "gear", "Vérification biométrique : terminal SEEK II requis."]] call comspec_sse_fnc_idHistory; };
             _rec set ["seekWait", true];
-            [_subj] call comspec_sse_fnc_openSeek;
+            // Le SEEK II est un écran à part : le téléphone est rangé pour lui laisser la souris (comme l'app SSE).
+            [] call comspec_atak_native_fnc_close;
+            [{ [_this] call comspec_sse_fnc_openSeek; }, _subj, 0.1] call CBA_fnc_waitAndExecute;
         };
         // Analyse animée dans l'app (étapes du lecteur), sans barre ACE ni blocage ; la base dépend du signal réseau.
         private _bars = if (isNil "comspec_atak_native_fnc_linkQuality") then { 4 } else { ([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 4] };
