@@ -198,7 +198,14 @@ switch (_op) do {
         private _trust = { params ["_d"]; _mem set ["trust", (((_mem get "trust") + _d) max 0) min 100]; };
         private _tense = { params ["_d"]; _t setVariable ["comspec_sse_idTension", (((_t getVariable ["comspec_sse_idTension", 20]) + _d) max 0) min 100]; };
         private _want = { params ["_s"]; if (_fsm) then { _t setVariable ["comspec_sse_idWant", _s]; }; };
-        private _do = { params ["_cmdAi", ["_a", []]]; if (missionNamespace getVariable ["comspec_sse_iarp_orders", true]) then { ["comspec_sse_iarpAiDo", [_t, _cmdAi, _a], _t] call CBA_fnc_targetEvent; }; };
+        private _do = {
+            params ["_cmdAi", ["_a", []]];
+            if !(missionNamespace getVariable ["comspec_sse_iarp_orders", true]) exitWith {};
+            // Un autre ordre met fin au suivi d'un « stop » (fn_iarpReact « halt »).
+            if (_cmdAi in ["follow", "free", "surrender", "out"]) then { _t setVariable ["comspec_sse_iarpHaltId", (_t getVariable ["comspec_sse_iarpHaltId", 0]) + 1]; };
+            ["comspec_sse_iarpAiDo", [_t, _cmdAi, _a], _t] call CBA_fnc_targetEvent;
+            if (_cmdAi isEqualTo "stop") then { ["halt", [_t, _me]] call comspec_sse_fnc_iarpReact; };
+        };
         private _w = _p get "unlockWord";
         if (_w isNotEqualTo "" && {(_norm find (" " + trim (_w call comspec_sse_fnc_iarpNorm))) >= 0}) then { _mem set ["word", true]; };
 

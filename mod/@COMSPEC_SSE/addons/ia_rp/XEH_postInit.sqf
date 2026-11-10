@@ -3,6 +3,7 @@
       surrender  reddition (ACE, sinon geste du jeu)       stop  s'arrête et attend       free  repart (circulez)
       pos [UP | MIDDLE | DOWN]  à genoux, couché           follow [joueur]  suit le joueur (4 min, 80 m au plus)
       out  descend du véhicule                             unlock  (véhicule) déverrouillé pour la fouille
+      unhalt  fin d'un stop (temporisation, joueur parti : fn_iarpReact « halt ») : elle reprend sa route
 */
 ["comspec_sse_iarpAiDo", {
     params [["_u", objNull], ["_cmd", ""], ["_a", []]];
@@ -15,6 +16,11 @@
         };
         case "stop": { doStop _u; _u disableAI "PATH"; };
         case "free": { _u enableAI "PATH"; _u setUnitPos "AUTO"; _u doFollow (leader group _u); };
+        case "unhalt": {
+            // Menotté ou rendu (ACE) : il reste où il est.
+            if ((_u getVariable ["ace_captives_isHandcuffed", false]) || {_u getVariable ["ace_captives_isSurrendering", false]}) exitWith {};
+            _u enableAI "PATH"; _u doWatch objNull; _u setUnitPos "AUTO"; _u doFollow (leader group _u);
+        };
         case "pos": { _u setUnitPos (_a param [0, "MIDDLE"]); };
         case "out": { [_u] allowGetIn false; unassignVehicle _u; moveOut _u; };
         case "follow": {

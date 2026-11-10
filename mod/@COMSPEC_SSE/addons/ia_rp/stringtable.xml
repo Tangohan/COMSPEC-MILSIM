@@ -247,6 +247,26 @@
             <English>Free text with AIs</English>
             <French>Texte libre avec les IA</French>
         </Key>
+        <Key ID="STR_COMSPEC_IARP_S_HaltDist_D">
+            <Original>A stopped AI goes on its way as soon as the player who stopped it is further away than this. Example: 25 m, the AI leaves once the patrol has walked off.</Original>
+            <English>A stopped AI goes on its way as soon as the player who stopped it is further away than this. Example: 25 m, the AI leaves once the patrol has walked off.</English>
+            <French>Une IA arrêtée reprend sa route dès que le joueur qui l'a arrêtée est plus loin que cette distance. Exemple : 25 m, l'IA repart une fois la patrouille éloignée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_HaltDist_T">
+            <Original>Release distance after a « Stop » (m)</Original>
+            <English>Release distance after a « Stop » (m)</English>
+            <French>Distance de relâche après un « Stop » (m)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_HaltTime_D">
+            <Original>An AI told « Stop! » waits this long, then goes back to what it was doing (it never stays frozen). It also leaves earlier if the player who stopped it walks away, or if its behaviour changes (it flees, turns hostile, is let go). Example: 120 s, enough time to check papers and ask a few questions.</Original>
+            <English>An AI told « Stop! » waits this long, then goes back to what it was doing (it never stays frozen). It also leaves earlier if the player who stopped it walks away, or if its behaviour changes (it flees, turns hostile, is let go). Example: 120 s, enough time to check papers and ask a few questions.</English>
+            <French>Une IA à qui l'on a dit « Stop ! » attend ce temps, puis reprend ce qu'elle faisait (elle ne reste jamais figée). Elle repart aussi plus tôt si le joueur qui l'a arrêtée s'éloigne, ou si son comportement change (elle fuit, devient hostile, est laissée partir). Exemple : 120 s, le temps de contrôler les papiers et de poser quelques questions.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_HaltTime_T">
+            <Original>Length of a « Stop » (s)</Original>
+            <English>Length of a « Stop » (s)</English>
+            <French>Durée d'un « Stop » (s)</French>
+        </Key>
         <Key ID="STR_COMSPEC_IARP_S_LogMax_D">
             <Original>Lines kept on the server; the oldest go first. Example: 500 for an evening of play.</Original>
             <English>Lines kept on the server; the oldest go first. Example: 500 for an evening of play.</English>
