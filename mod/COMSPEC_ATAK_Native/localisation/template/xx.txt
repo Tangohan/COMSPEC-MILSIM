@@ -1,4 +1,7 @@
 [
+["Animation de sortie et de rangement", "", "Take-out and put-away animation"],
+["Coché par défaut. Le téléphone en main monte en fondu quand vous le sortez et redescend en s'effaçant quand vous le rangez, en 0,2 s. Exemple : Ctrl+Maj+U depuis le jeu, le téléphone glisse de quelques centimètres vers le haut en apparaissant. Décochez pour qu'il apparaisse et disparaisse d'un coup. La miniature portée n'est jamais animée ; Échap, la mort, l'inconscience ou un changement de véhicule le rangent toujours tout de suite.", "", "Ticked by default. The phone in hand fades in while rising when you take it out, and slides down while fading out when you put it away, in 0.2 s. Example: Ctrl+Shift+U from the game, the phone slides up a few centimetres as it appears. Untick for it to appear and disappear at once. The worn miniature is never animated; Escape, death, unconsciousness or a vehicle change always put it away immediately."],
+["En main, le téléphone monte en fondu à la sortie et redescend au rangement (0,2 s). Désactivé : il apparaît et disparaît d'un coup. La miniature portée ne bouge pas (aussi dans les options CBA, ATAK · Affichage)", "", "In hand, the phone fades in while rising when taken out and slides down when put away (0.2 s). Off: it appears and disappears at once. The worn miniature does not move (also in the CBA options, ATAK · Display)"],
 ["%1 %% de pertes, %2 envois", "", "%1 %% loss, %2 sent"],
 ["%1 %% inchangé", "", "%1 %% unchanged"],
 ["%1 %% par minute", "", "%1 %% per minute"],

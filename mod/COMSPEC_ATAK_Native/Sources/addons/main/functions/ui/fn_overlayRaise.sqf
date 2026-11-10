@@ -22,6 +22,8 @@ uiNamespace setVariable ["COMSPEC_ATAK_RaiseQueued", true];
     if !((uiNamespace getVariable ["COMSPEC_ATAK_DevFront", false]) || {(count _surf) > 0} || {(count _fx) > 0}
         || {(["lock", ""] call comspec_atak_native_fnc_zeusFx) isNotEqualTo ""}) exitWith {
         uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
+        // 4.2.1 : rien de visible, rien remonté : fn_deviceOverlay les remontera si un effet apparaît.
+        uiNamespace setVariable ["COMSPEC_ATAK_OvStale", true];
     };
     private _kill = {
         {
@@ -38,7 +40,13 @@ uiNamespace setVariable ["COMSPEC_ATAK_RaiseQueued", true];
     uiNamespace setVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]];
     uiNamespace setVariable ["COMSPEC_ATAK_ScreenFx", ["", []]];
     uiNamespace setVariable ["COMSPEC_ATAK_ZeusOv", []];
+    uiNamespace setVariable ["COMSPEC_ATAK_OvStale", false];
     [] call comspec_atak_native_fnc_deviceOverlay;
     uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
+    // Tampon des calques (fn_pageRender) : tout ce qui existe maintenant est sous eux.
+    private _dO = [] call comspec_atak_native_fnc_display;
+    private _stp = (uiNamespace getVariable ["COMSPEC_ATAK_OvStamp", 0]) + 1;
+    uiNamespace setVariable ["COMSPEC_ATAK_OvStamp", _stp];
+    { if (isNull (ctrlParentControlsGroup _x)) then { _x setVariable ["cs_ov", _stp]; }; } forEach (allControls _dO);
 }] call comspec_atak_native_fnc_nextFrame;
 true

@@ -27,7 +27,8 @@ private _detail = ["COMSPEC_LinkDetail"] call _v;
 private _ready = missionNamespace getVariable ["COMSPEC_AthenaReady", false];
 private _linked = missionNamespace getVariable ["COMSPEC_OperatorLinked", false];
 if !(_bridge) then {
-    private _cells = (["GetAuthState", []] call comspec_atak_native_fnc_extensionCall) splitString (toString [9]);
+    // État partagé (fn_extensionCall, 4.2.1) : 0,9 s sur l'app Athena, 3 s ailleurs.
+    private _cells = (["GetAuthState", [], [3, 0.9] select (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ATHENA")] call comspec_atak_native_fnc_extensionCall) splitString (toString [9]);
     _state = _cells param [1, ""];
     _sigState = _cells param [1, "—"];
     _err = _cells param [4, ""];
