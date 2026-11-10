@@ -15,17 +15,14 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 require __DIR__ . '/_subnav.php';
 require __DIR__ . '/_member_css.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers')) ?>">Identités &amp; documents</a> / <a class="link" href="<?= $h(url('atak/sse/papiers/membres')) ?>">Papiers des membres</a> / <strong><?= $h($memberName) ?></strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Registre // Papiers d’un membre</div>
         <h1><?= $h($memberName) ?></h1>
         <?php if (!empty($memberFileUrl)): ?>
             <p><a class="link" href="<?= $h($memberFileUrl) ?>">Ouvrir la fiche membre</a></p>
         <?php endif; ?>
     </div>
-    <div class="page-reference"><strong>Vue // Membre</strong> Réf. ATH-SSE-IDENT-MBR</div>
 </div>
 
 <?php if (!empty($coverPanel)): ?>

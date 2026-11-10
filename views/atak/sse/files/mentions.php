@@ -11,14 +11,12 @@ require __DIR__ . '/_nav.php';
 $allQuery = '?' . http_build_query(['etat' => 'toutes']);
 $back = 'atak/sse/fichiers/mentions' . ($onlyActive ? '' : $allQuery);
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/fichiers')) ?>">Passage aux fichiers</a> / <strong>Mentions</strong></div>
 
 <div class="page-heading">
     <div>
         <h1>Mentions aux fichiers</h1>
         <p>Mandats, avis de recherche, signalements, personnes disparues, « armé et dangereux » et consignes de prudence, posés sur une identité, un papier ou une fiche SEEK II. Les papiers volés ou perdus se déclarent sur le papier lui-même.</p>
     </div>
-    <div class="page-reference"><strong>SIMULATION</strong> Données fictives</div>
 </div>
 
 <?php if ($canManage): ?>

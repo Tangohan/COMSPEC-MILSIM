@@ -26,16 +26,9 @@ $listPreview = static function (mixed $list, int $max = 6) use ($h): string {
     return $out;
 };
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/dev')) ?>">Atelier</a> /
-    <a class="link" href="<?= $h(url('atak/sse/dev/modeles')) ?>">Modèles</a> /
-    <strong><?= $h($model['name'] ?? '') ?></strong>
-</div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Atelier // Fiche</div>
         <h1><?= $h($model['name'] ?? 'Modèle') ?></h1>
         <p>
             <?= $h($model['profile_label'] ?? '') ?> · <?= $h($model['region_label'] ?? '') ?> ·

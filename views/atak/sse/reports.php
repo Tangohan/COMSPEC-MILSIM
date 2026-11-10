@@ -14,7 +14,6 @@ $draftDocs = array_slice($draftDocs, 0, 8);
 ?>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Exploitation // Rapports</div>
         <h1>Rapports</h1>
         <p>
             Comptes rendus, versions expurgées et exports PDF — produits depuis les dossiers

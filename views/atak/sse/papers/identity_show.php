@@ -13,11 +13,9 @@ $secret = in_array($identity['kind'], ['cover', 'forged'], true);
 $showPerson = is_array($person ?? null) && ($canSeeTruth || !$secret);
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers/identites')) ?>">Identités</a> / <strong><?= $h($identity['ref']) ?></strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline"><?= $h($identity['ref']) ?> // <?= $canSeeTruth ? $h($identity['kind_label']) : 'Nature réservée' ?></div>
         <h1><?= $h($identity['display_name']) ?></h1>
         <p><?= $h(C::label(C::SEXES, $identity['sex'])) ?> · <?= $h(\App\Support\SseIdentityCatalog::birthDateLabel($identity['birth_date'] ?? null)) ?> · <?= $h($identity['birth_place'] ?? '—') ?> · <?= $h($identity['nationality'] ?? '—') ?></p>
     </div>

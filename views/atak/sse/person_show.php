@@ -17,11 +17,6 @@ $photo = is_array($person['primary_photo'] ?? null) ? $person['primary_photo'] :
 $photoUrl = $photo ? (string) ($photo['url'] ?? '') : '';
 $pid = (int) ($person['id'] ?? 0);
 ?>
-<div class="breadcrumb">
-    Athena / SSE / Objets /
-    <a class="link" href="<?= $h(url('atak/sse/identites')) ?>">Identités</a> /
-    <strong><?= $h($idn) ?></strong>
-</div>
 
 <div class="iw-object-head">
     <?php if ($photoUrl !== ''): ?>

@@ -19,16 +19,10 @@ $reliabilityOptions = [
     'E — non fiable' => 'E — non fiable',
 ];
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/interet')) ?>">Dossiers d’intérêt</a> /
-    <strong>Ouverture</strong>
-</div>
 
 <section class="sse-desk-hero sse-desk-hero--compact" aria-labelledby="sse-di-form-title">
     <div class="sse-desk-hero__main">
         <div class="sse-desk-hero__kicker">
-            <span class="interest-hero__ref">ATH-SSE-DI</span>
             <span class="badge badge--amber">Signalement</span>
             <span class="badge badge--gray">Validation humaine</span>
         </div>

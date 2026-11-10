@@ -10,17 +10,12 @@ $recentSites = is_array($recentSites ?? null) ? $recentSites : [];
 ?>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Exploitation // Collecte</div>
         <h1>Collecte terrain</h1>
         <p>
             Entrées issues des terminaux et de la liaison Athena : identités, sites,
             photos et relevés. Chaque acquisition doit être rattachée à un dossier
             ou une investigation avant validation.
         </p>
-    </div>
-    <div class="page-reference">
-        <strong>Vue // Collecte</strong>
-        Réf. ATH-SSE-COLLECTE
     </div>
 </div>
 

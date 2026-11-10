@@ -18,15 +18,12 @@ $flags = [
     ['name' => 'has_battery', 'label' => 'Batterie présente', 'checked' => true],
 ];
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/exploitation-numerique/supports')) ?>">Supports</a> / <strong>Nouveau</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Laboratoire // Saisie</div>
         <h1>Enregistrer un support</h1>
         <p>Identification, état technique et traçabilité de la saisie — un support à la fois, clairement documenté.</p>
     </div>
-    <div class="page-reference"><strong>Formulaire</strong> Réf. ATH-SSE-LABNUM-NEW</div>
 </div>
 
 <form method="post" action="<?= $h(url('atak/sse/exploitation-numerique/supports')) ?>" class="panel lab-device-form">

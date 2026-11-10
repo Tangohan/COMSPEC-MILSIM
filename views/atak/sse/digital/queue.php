@@ -10,10 +10,8 @@ $filters = is_array($filters ?? null) ? $filters : [];
 $statuses = is_array($statuses ?? null) ? $statuses : [];
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/exploitation-numerique')) ?>">Exploitation numérique</a> / <strong>À exploiter</strong></div>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Laboratoire // File d’exploitation</div>
         <h1>Renseignement à exploiter</h1>
         <p>
             Voici les contenus scénarisés remontés depuis un support de mission, ou ajoutés par le chef de mission.
@@ -21,7 +19,6 @@ require __DIR__ . '/_subnav.php';
             avant d’entrer dans un dossier.
         </p>
     </div>
-    <div class="page-reference"><strong>File</strong> ATH-SSE-LABNUM-DOMEX</div>
 </div>
 <form class="toolbar" method="get">
     <div class="toolbar-field">

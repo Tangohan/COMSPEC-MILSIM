@@ -25,11 +25,9 @@ $describe = static function (mixed $res) use (&$describe): string {
 };
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers/controles')) ?>">Contrôles reçus</a> / <strong><?= $h($check['ref']) ?></strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Contrôle d’identité // <?= $h($check['created_at']) ?></div>
         <h1><?= $h($check['ref']) ?></h1>
         <p>Verdict sur place : <span class="badge idp-verdict--<?= $h($check['verdict'] !== '' ? $check['verdict'] : 'none') ?>"><?= $h($check['verdict_label']) ?></span></p>
     </div>

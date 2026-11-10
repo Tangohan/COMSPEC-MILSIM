@@ -18,14 +18,12 @@ $types = [
     'QB' => 'Clé biométrique ou numéro d’enregistrement SEEK II (REC-…).',
 ];
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers')) ?>">Identités &amp; documents</a> / <strong>Passage aux fichiers</strong></div>
 
 <div class="page-heading">
     <div>
         <h1>Passage aux fichiers</h1>
         <p>Interrogez les fichiers de la communauté comme depuis un terminal de patrouille : personne, véhicule, document ou biométrie. Chaque consultation est inscrite au journal, et ce que vous changez ici se voit en jeu à la consultation suivante.</p>
     </div>
-    <div class="page-reference"><strong>SIMULATION</strong> Données fictives</div>
 </div>
 
 <section class="panel">

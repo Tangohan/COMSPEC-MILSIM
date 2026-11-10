@@ -8,15 +8,12 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var array{view:bool,manage:bool,truth:bool} $rights */
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers')) ?>">Identités &amp; documents</a> / <strong>Import et export</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Registre // Import et export</div>
         <h1>Import et export des identités et papiers</h1>
         <p>Exportez le registre en CSV (tableur) ou en JSON, ou importez des identités et des papiers préparés ailleurs. Tout papier importé arrive en brouillon : rien ne part en jeu sans validation.</p>
     </div>
-    <div class="page-reference"><strong>CSV · JSON</strong> Réf. ATH-SSE-IDENT-ECH</div>
 </div>
 
 <section class="panel">

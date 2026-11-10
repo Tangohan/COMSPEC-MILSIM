@@ -10,15 +10,12 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 $canSeeTruth = !empty($canSeeTruth);
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers')) ?>">Identités &amp; documents</a> / <strong>Identités</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Référentiel // Identités</div>
-        <h1>Identités</h1>
+        <h1>Identités fictives</h1>
         <p>Les personnes telles que leurs papiers les présentent : identité civile, alias, couverture préparée, identité falsifiée ou tirée au sort pour la partie.</p>
     </div>
-    <div class="page-reference"><strong>Vue // Registre</strong> Réf. ATH-SSE-IDENT-IDT</div>
 </div>
 
 <form class="toolbar" method="get" action="<?= $h(url('atak/sse/papiers/identites')) ?>">

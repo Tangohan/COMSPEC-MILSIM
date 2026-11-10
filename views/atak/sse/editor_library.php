@@ -36,15 +36,13 @@ $sseExtraScripts = '<script src="' . $h(asset_url('assets/js/sse-case-modals.js'
 .el-assign__note { margin: 0 0 .6rem; color: #94a3b8; font-size: .85rem; }
 .el-pages { display: flex; align-items: center; justify-content: flex-end; gap: .6rem; margin-top: .8rem; }
 </style>
-<div class="breadcrumb">Athena / SSE / <strong>Bibliothèque de l’éditeur</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Préparation // Éditeur SSE</div>
         <h1>Bibliothèque de l’éditeur</h1>
         <p>Les contenus enregistrés par la communauté depuis l’éditeur SSE du jeu. Ils se créent et se modifient dans le jeu ; une identité, un papier ou un kit peut être attribué ici à un joueur.</p>
     </div>
-    <div class="page-reference"><strong><?= (int) $editorTotal ?> contenu(s)</strong> Réf. ATH-SSE-EDIT-BIB</div>
+    <div class="page-reference"><strong><?= (int) $editorTotal ?> contenu(s)</strong></div>
 </div>
 
 <form class="toolbar" method="get" action="<?= $h(url('atak/sse/editeur')) ?>">

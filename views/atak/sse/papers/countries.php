@@ -12,15 +12,12 @@ $canManage = !empty($canManage);
 require __DIR__ . '/_subnav.php';
 $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/back-office-member-papers.css')) . '">';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers')) ?>">Identités &amp; documents</a> / <strong>Pays émetteurs</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Référentiel // Pays émetteurs</div>
         <h1>Pays émetteurs</h1>
         <p>Les pays qui délivrent les papiers de jeu : nom, code, format des numéros, langues, univers. Par défaut, des pays imaginaires ; une communauté qui joue un univers réaliste peut ajouter des pays réels stylisés. Un pays qui a déjà émis des papiers s’archive au lieu d’être supprimé.</p>
     </div>
-    <div class="page-reference"><strong>Vue // Registre</strong> Réf. ATH-SSE-IDENT-PAYS</div>
 </div>
 
 <form class="toolbar" method="get" action="<?= $h(url('atak/sse/papiers/pays')) ?>">

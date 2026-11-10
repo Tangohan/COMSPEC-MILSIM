@@ -977,6 +977,7 @@ return function (Router $router) {
     $router->post('/back-office/renseignement/acces/{id}/revoquer', [\App\Controllers\Admin\AdminSseAccessController::class, 'revoke'], [AuthMiddleware::class]);
     $router->get('/back-office/renseignement/codes', [SsePortalController::class, 'staffEnter'], [AuthMiddleware::class]);
     $router->get('/back-office/renseignement', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/renseignement/acces')), [AuthMiddleware::class]);
+    $router->get('/atak/sse/accueil', [SsePortalController::class, 'home'], $mwSsePortal);
     $router->get('/atak/sse/operations', [SsePortalController::class, 'operations'], $mwSsePortal);
     $router->get('/atak/sse/workspace', [SseIntelligenceWorkspaceController::class, 'show'], $mwSsePortal);
     $router->post('/atak/sse/workspace/inbox/decide', [SseIntelligenceWorkspaceController::class, 'inboxDecide'], $mwSsePortal);

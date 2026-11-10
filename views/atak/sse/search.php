@@ -15,7 +15,6 @@ foreach ($results as $r) {
 <section class="sse-desk-hero sse-desk-hero--compact" aria-labelledby="sse-search-title">
     <div class="sse-desk-hero__main">
         <div class="sse-desk-hero__kicker">
-            <span class="interest-hero__ref">Recherche</span>
             <span class="badge"><?= count($results) ?> résultat<?= count($results) === 1 ? '' : 's' ?></span>
         </div>
         <h1 id="sse-search-title"><?= $q !== '' ? 'Résultats pour « ' . $h($q) . ' »' : 'Recherche globale' ?></h1>

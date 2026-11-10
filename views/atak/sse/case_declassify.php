@@ -56,16 +56,9 @@ $isRedactedValue = static function (mixed $v): bool {
     return $s === '' || $s === '—' || $s === '00' || preg_match('/^█+$/u', $s) === 1 || preg_match('/^■+$/u', $s) === 1;
 };
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/dossiers')) ?>">Dossiers</a> /
-    <a class="link" href="<?= $h($caseUrl) ?>"><?= $h($case['reference_code'] ?? '') ?></a> /
-    <strong>Version expurgée</strong>
-</div>
 
 <section class="sse-decl-hero" aria-labelledby="sse-decl-title">
     <div class="sse-decl-hero__main">
-        <p class="sse-decl-hero__kicker">Diffusion // Version expurgée</p>
         <h1 id="sse-decl-title">Déclassification et caviardage</h1>
         <p class="sse-decl-hero__lead">
             Choisissez le niveau de diffusion : tout ce qui est au-dessus part au noir avant affichage.

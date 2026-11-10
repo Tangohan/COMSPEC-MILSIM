@@ -48,7 +48,8 @@ final class SseFilesWiringAssetTest extends TestCase
 
     public function testRegistryLinksToTheFiles(): void
     {
-        self::assertStringContainsString("'/atak/sse/fichiers', 'Passage aux fichiers'", self::read('views/atak/sse/papers/_subnav.php'));
+        // Section « Fichiers et contrôles » de la navigation du bureau (plus de lien caché dans le registre).
+        self::assertStringContainsString("'path' => 'atak/sse/fichiers'", self::read('app/Support/SsePortalNav.php'));
         self::assertStringContainsString("SseFileController::replayUrl('QW'", self::read('views/atak/sse/papers/identity_show.php'));
         self::assertStringContainsString("SseFileController::replayUrl('QA'", self::read('views/atak/sse/papers/document_show.php'));
     }

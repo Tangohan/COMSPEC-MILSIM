@@ -7,7 +7,6 @@ $queue = is_array($tower['operator_queue'] ?? null) ? $tower['operator_queue'] :
 ?>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Exploitation // Validation</div>
         <h1>Files de validation</h1>
         <p>
             Rapprochements, consolidations, contradictions et dossiers d’intérêt —

@@ -12,15 +12,12 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 require __DIR__ . '/_subnav.php';
 $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-id-real-countries.css')) . '">';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers/pays')) ?>">Pays émetteurs</a> / <strong>Pays réels (simulation)</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Référentiel // Univers réaliste-simulation</div>
         <h1>Ajouter des pays réels (simulation)</h1>
         <p>Pour une communauté qui joue un univers réaliste : des pays réels stylisés, proposés et jamais imposés. Leurs papiers restent des documents de jeu.</p>
     </div>
-    <div class="page-reference"><strong>Import</strong> Réf. ATH-SSE-IDENT-PAYS-SIM</div>
 </div>
 
 <section class="panel idr-rules" role="note">

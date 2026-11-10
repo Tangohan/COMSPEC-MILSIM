@@ -7,15 +7,9 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var int $seedCaseId */
 $seedCaseId = (int) ($seedCaseId ?? 0);
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/toiles')) ?>">Investigations</a> /
-    <strong>Nouvelle</strong>
-</div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Création // Investigation</div>
         <h1>Ouvrir une investigation</h1>
         <p>Nommez l’investigation, rattachez éventuellement un dossier, puis peupler le graphe d’entités et de liens.</p>
     </div>

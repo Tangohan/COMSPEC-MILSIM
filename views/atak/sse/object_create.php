@@ -28,15 +28,9 @@ $typeIcons = [
     'custom' => 'EL',
 ];
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/operations')) ?>">Opérations</a> /
-    <strong>Nouvel objet</strong>
-</div>
 
 <header class="sse-obj-create__hero">
     <div>
-        <p class="sse-obj-create__kicker">Registre // Création</p>
         <h1>Nouvel objet</h1>
         <p class="sse-obj-create__lead">
             Décrivez un élément réutilisable : identité, site, véhicule, pièce… Il pourra ensuite

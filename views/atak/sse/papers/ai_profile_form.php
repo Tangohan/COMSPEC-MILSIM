@@ -29,11 +29,9 @@ $select = static function (string $name, string $label, array $choices, string $
 };
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers/profils-ia')) ?>">Profils IA</a> / <strong><?= $id > 0 ? $h($p['ref']) : 'Nouveau' ?></strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Profil IA // <?= $id > 0 ? $h($p['ref']) : 'Nouveau' ?></div>
         <h1><?= $id > 0 ? $h($p['label']) : 'Nouveau profil IA' ?></h1>
         <p>En jeu : éditeur SSE › IA (Zeus), ou attribut « Profil Athena » (Eden). Le nom et les papiers viennent de l’identité ; les changer sur sa fiche les change sur le profil.</p>
     </div>

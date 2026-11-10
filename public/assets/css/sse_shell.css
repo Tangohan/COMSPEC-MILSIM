@@ -1,6 +1,7 @@
 /*
- * Bureau SSE — coque : barre du haut, bandeau d'habilitation, navigation rangée par cycle,
- * palette Ctrl+K, tiroir mobile, rideaux de transition, texte brouillé, galerie 3D.
+ * Bureau SSE — coque : barre du haut, bandeau d'habilitation, navigation rangée par usage,
+ * fil d'Ariane, onglets de section (téléphone), en-têtes de page communs, accueil du bureau,
+ * palette Ctrl+K, tiroir mobile, galerie 3D. Aucune animation au chargement d'une page.
  * Chargé après sse_portal.css et sse_workspace.css.
  */
 body.sse-iw {
@@ -45,9 +46,11 @@ body.sse-iw {
 .sx-topbar .sx-actions { margin-left: auto; }
 .sx-burger {
     display: none;
-    place-items: center;
-    width: 38px;
+    align-items: center;
+    gap: 6px;
     height: 38px;
+    padding: 0 10px;
+    font: 700 .74rem var(--sans);
     border: 1px solid var(--sx-line-2);
     border-radius: .6rem;
     background: transparent;
@@ -131,7 +134,6 @@ body.sse-iw kbd {
 /* —— Bandeau d'habilitation : couleur selon le plafond réel de la session —— */
 .iw-classbar.sx-classbar { position: sticky; top: 56px; z-index: 55; font-family: var(--sans); }
 .sx-classbar strong { display: inline-flex; gap: .5rem; align-items: baseline; font-family: var(--sx-mono); letter-spacing: .12em; }
-.sx-classbar__k { opacity: .7; font-weight: 600; }
 .sx-classbar--internal { background: #334155; }
 .sx-classbar--command { background: #b45309; }
 .sx-classbar--confidential { background: #b91c1c; }
@@ -146,18 +148,19 @@ body.sse-iw kbd {
     height: calc(100vh - 84px);
     padding: 10px 0 18px;
 }
-.sx-nav__group { margin: 0 0 2px; }
+.sx-nav__group { margin: 0 0 4px; }
 .sx-nav__head {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin: 0 !important;
-    padding: .55rem 16px .4rem;
+    gap: 8px;
+    margin: 0;
+    padding: .6rem 16px .35rem;
     cursor: pointer;
     list-style: none;
     user-select: none;
-    color: var(--sx-faint) !important;
-    transition: color .15s ease;
+    color: var(--sx-dim);
+    font: 700 .7rem/1.2 var(--sans);
+    letter-spacing: .02em;
 }
 .sx-nav__head::-webkit-details-marker { display: none; }
 .sx-nav__head::after {
@@ -168,16 +171,10 @@ body.sse-iw kbd {
     border-right: 1.5px solid currentColor;
     border-bottom: 1.5px solid currentColor;
     transform: rotate(-45deg);
-    transition: transform .2s ease;
 }
 .sx-nav__group[open] > .sx-nav__head::after { transform: rotate(45deg); }
-.sx-nav__head:hover { color: var(--sx-ink) !important; }
-.sx-nav__count {
-    margin: 0 10px 0 6px;
-    font: 600 .55rem var(--sx-mono);
-    letter-spacing: 0;
-    color: var(--sx-faint);
-}
+.sx-nav__head:hover { color: var(--sx-ink); }
+.sx-nav__head:focus-visible { outline: 2px solid var(--sx-acc); outline-offset: -2px; border-radius: .4rem; }
 .sx-nav__list { margin: 0 0 6px; padding: 0; list-style: none; }
 .iw-nav .sx-nav__link {
     display: flex;
@@ -187,10 +184,13 @@ body.sse-iw kbd {
     margin: 0 8px 1px;
     padding: .4rem .65rem;
     border-radius: .5rem;
-    font-size: .78rem;
+    font-size: .8rem;
     font-weight: 600;
+    color: rgba(238, 242, 240, 0.72);
+    transition: none;
 }
 .iw-nav .sx-nav__link .iw-nav-ico { margin: 0; }
+.iw-nav .sx-nav__link.is-active { color: #fff; font-weight: 700; }
 .sx-nav__label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sx-nav__ext { color: var(--sx-faint); font-size: .72rem; }
 .sx-nav__foot { gap: 6px; }
@@ -198,10 +198,26 @@ body.sse-iw kbd {
 .sx-main:focus { outline: none; }
 
 /* —— Tiroir mobile —— */
+.sx-nav__close { display: none; }
+@media (max-width: 980px) {
+    .sx-nav__close {
+        display: block;
+        width: calc(100% - 16px);
+        margin: 0 8px 10px;
+        padding: .6rem .8rem;
+        border: 1px solid var(--sx-line-2);
+        border-radius: .6rem;
+        background: transparent;
+        color: var(--sx-ink);
+        font: 700 .8rem var(--sans);
+        text-align: left;
+        cursor: pointer;
+    }
+}
 .sx-scrim[hidden] { display: none; }
 @media (max-width: 980px) {
     .iw-topbar.sx-topbar { flex-wrap: wrap; row-gap: 8px; }
-    .sx-burger { display: inline-grid; }
+    .sx-burger { display: inline-flex; }
     .sx-topbar .sx-search { order: 5; flex: 1 1 100%; max-width: none; }
     .sx-cmd, .sx-session { display: none; }
     .sx-actions .iw-btn--solid { display: none; }
@@ -286,54 +302,6 @@ body.sse-iw kbd {
     font-weight: 800;
 }
 .sse-gate-hub__btn--enter::after { content: "→"; margin-left: .5rem; }
-
-/* —— Texte brouillé : caractères en cours de déchiffrement —— */
-.sx-scramble-char { color: var(--sx-acc); opacity: .85; }
-
-/* —— Rideaux de transition entre pages —— */
-.sx-curtains {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 1fr;
-    pointer-events: none;
-}
-.sx-curtains.is-active { pointer-events: auto; }
-.sx-curtain {
-    background: #06090b;
-    border-right: 1px solid rgba(52, 211, 153, 0.06);
-    transform: scaleY(0);
-    transform-origin: top;
-}
-.sx-curtains.is-cover .sx-curtain {
-    transform: scaleY(1);
-    transition: transform .34s cubic-bezier(.7, 0, .3, 1);
-    transition-delay: calc(var(--i) * 32ms);
-}
-.sx-curtains.is-reveal .sx-curtain {
-    transform: scaleY(0);
-    transform-origin: bottom;
-    transition: transform .42s cubic-bezier(.7, 0, .3, 1);
-    transition-delay: calc(var(--i) * 32ms);
-}
-.sx-curtains.is-held .sx-curtain { transform: scaleY(1); transition: none; }
-.sx-curtains__label {
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    z-index: 1001;
-    transform: translate(-50%, -50%);
-    font: 700 .72rem var(--sx-mono);
-    letter-spacing: .32em;
-    color: var(--sx-acc);
-    opacity: 0;
-    transition: opacity .2s ease;
-    pointer-events: none;
-}
-.sx-curtains.is-cover + .sx-curtains__label,
-.sx-curtains.is-held + .sx-curtains__label { opacity: 1; transition-delay: .25s; }
 
 /* —— Galerie 3D des pièces —— */
 .sx-gal-open {
@@ -474,8 +442,11 @@ body.sse-iw kbd {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .sx-curtains { display: none !important; }
-    .sx-gal__item, .iw-nav.sx-nav, .sx-gal { transition: none !important; }
+    body.sse-iw *, body.sse-iw *::before, body.sse-iw *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 /* —— Fiche de transmission : clé / valeur lisibles, identité liée et images —— */
@@ -562,3 +533,140 @@ body.sse-iw .table-wrap tr > th[scope="row"] + td:last-child {
     font-size: .86rem;
 }
 body.sse-iw .table-wrap tr > th[scope="row"] { width: 14rem; }
+
+/* —— Pas d'effet au chargement : ni fondu, ni défilement animé, ni saut de mise en page —— */
+html:has(body.sse-iw) { scroll-behavior: auto; scrollbar-gutter: stable; }
+.iw-nav.sx-nav { scrollbar-width: thin; overscroll-behavior: contain; }
+
+/* —— Fil d'Ariane (navigation, pas un sur-titre : même taille que le texte courant) —— */
+.sx-crumbs { margin: 0 0 14px; font-size: .8rem; }
+.sx-crumbs ol { display: flex; flex-wrap: wrap; gap: 2px 0; margin: 0; padding: 0; list-style: none; }
+.sx-crumbs li { display: inline-flex; align-items: center; min-width: 0; color: var(--sx-dim); }
+.sx-crumbs li + li::before { content: "›"; margin: 0 .5rem; color: var(--sx-faint); }
+.sx-crumbs a { color: var(--sx-dim); text-decoration: none; }
+.sx-crumbs a:hover, .sx-crumbs a:focus-visible { color: var(--sx-ink); text-decoration: underline; }
+.sx-crumbs [aria-current] { color: var(--sx-ink); font-weight: 600; overflow-wrap: anywhere; }
+
+/* —— Onglets de la section courante : sur téléphone, les pages voisines à un geste —— */
+.sx-tabs { display: none; }
+@media (max-width: 980px) {
+    .sx-tabs {
+        display: flex;
+        gap: 6px;
+        margin: 0 0 16px;
+        padding: 0 0 4px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .sx-tabs::-webkit-scrollbar { display: none; }
+    .sx-tabs a {
+        flex: none;
+        padding: .5rem .8rem;
+        border: 1px solid var(--sx-line-2);
+        border-radius: 999px;
+        color: var(--sx-dim);
+        font: 600 .78rem var(--sans);
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .sx-tabs a.is-active { border-color: rgba(52, 211, 153, 0.55); background: rgba(5, 150, 105, 0.16); color: #fff; }
+}
+
+/* —— En-têtes de page communs à tout le portail (alignés sur le back-office) —— */
+body.sse-iw .sx-main h1 {
+    margin: 0;
+    color: #fff;
+    font-family: var(--sans);
+    font-size: clamp(1.45rem, 2.4vw, 1.85rem);
+    font-weight: 800;
+    letter-spacing: -.015em;
+    line-height: 1.15;
+    text-transform: none;
+}
+body.sse-iw .sx-main .page-heading { align-items: flex-start; gap: 16px; margin-bottom: 20px; }
+body.sse-iw .sx-main .page-heading p,
+body.sse-iw .sx-main .sse-desk-hero__lead,
+body.sse-iw .sx-main .interest-hero__lead,
+body.sse-iw .sx-main .iw-tower-hero p {
+    max-width: 72ch;
+    margin-top: 8px;
+    color: rgba(238, 242, 240, 0.72);
+    font-size: .9rem;
+    line-height: 1.55;
+}
+body.sse-iw .sx-main .page-reference { font-size: .78rem; color: var(--sx-dim); }
+/* Références et badges d'un dossier : sous le titre, jamais au-dessus. */
+body.sse-iw .sx-main .sse-desk-hero__main,
+body.sse-iw .sx-main .interest-hero__main { display: flex; flex-direction: column; }
+body.sse-iw .sx-main .sse-desk-hero__kicker,
+body.sse-iw .sx-main .interest-hero__kicker { order: 1; margin: 8px 0 0; }
+body.sse-iw .sx-main .sse-desk-hero__main > :not(h1):not(.sse-desk-hero__kicker),
+body.sse-iw .sx-main .interest-hero__main > :not(h1):not(.interest-hero__kicker) { order: 2; }
+/* Numérotation décorative des panneaux (« 00.00 », « R.01 ») : du bruit, pas de l'information. */
+body.sse-iw .sx-main .panel-index { display: none; }
+/* États vides : lisibles et contrastés. */
+body.sse-iw .sx-main .empty-state p { color: rgba(238, 242, 240, 0.7); }
+
+.sx-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px 24px;
+    margin: 0 0 22px;
+}
+.sx-head__copy { min-width: 0; max-width: 72ch; }
+.sx-head__copy p { margin: 8px 0 0; color: rgba(238, 242, 240, 0.72); font-size: .9rem; line-height: 1.55; }
+.sx-head__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.sx-head__actions .iw-btn { min-height: 38px; font-size: .78rem; }
+
+/* —— Accueil du bureau —— */
+.sx-home { columns: 3 320px; column-gap: 14px; }
+.sx-home__space {
+    display: inline-block;
+    width: 100%;
+    margin: 0 0 14px;
+    break-inside: avoid;
+    padding: 16px 16px 10px;
+    border: 1px solid var(--sx-line-2);
+    border-radius: .8rem;
+    background: var(--sx-panel);
+    scroll-margin-top: 100px;
+}
+.sx-home__space:target { border-color: rgba(52, 211, 153, 0.55); }
+.sx-home__space h2 { margin: 0; color: #fff; font: 800 1.02rem/1.25 var(--sans); letter-spacing: -.005em; text-transform: none; }
+.sx-home__lead { margin: 4px 0 10px; color: rgba(238, 242, 240, 0.68); font-size: .84rem; line-height: 1.5; }
+.sx-home__pages { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.sx-home__pages a {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: .5rem .55rem;
+    border-radius: .55rem;
+    color: inherit;
+    text-decoration: none;
+}
+.sx-home__pages a:hover, .sx-home__pages a:focus-visible { background: rgba(52, 211, 153, 0.1); outline: none; }
+.sx-home__pages .iw-nav-ico { margin-top: 2px; color: var(--sx-acc); opacity: .9; }
+.sx-home__page { display: grid; gap: 2px; min-width: 0; }
+.sx-home__page strong { color: var(--sx-ink); font-size: .86rem; font-weight: 700; }
+.sx-home__page > span { color: rgba(238, 242, 240, 0.6); font-size: .76rem; line-height: 1.4; }
+.sx-home__missing {
+    margin: 18px 0 0;
+    padding: 14px 16px;
+    border: 1px dashed var(--sx-line-2);
+    border-radius: .8rem;
+}
+.sx-home__missing h2 { margin: 0; color: var(--sx-ink); font: 700 .95rem var(--sans); letter-spacing: 0; text-transform: none; }
+.sx-home__missing p { margin: 4px 0 8px; color: rgba(238, 242, 240, 0.68); font-size: .84rem; }
+.sx-home__missing ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: .82rem; }
+.sx-home__missing strong { color: var(--sx-ink); }
+.sx-home__missing li span { color: rgba(238, 242, 240, 0.62); }
+@media (max-width: 640px) {
+    .sx-brand span { display: none; }
+    .sx-actions .iw-btn { padding: 0 .7rem; }
+    body.sse-iw .sx-main .metrics-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    body.sse-iw .sx-main .metrics-grid .metric { min-width: 0; padding: 10px 12px; }
+    .sx-head__actions { width: 100%; }
+    .sx-head__actions .iw-btn { flex: 1; }
+}

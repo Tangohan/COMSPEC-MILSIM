@@ -42,6 +42,9 @@
 .fq-form input,
 .fq-form select { width: 100%; }
 .fq-form .fq-form__submit { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Le formulaire générique du portail (une colonne de 42rem) ne s'applique pas à la requête : champs en ligne. */
+body.sse-iw .panel-body form.fq-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items: end; gap: 12px; max-width: none; }
+body.sse-iw .panel-body form.fq-form .btn { margin-top: 0; }
 .fq-hint { margin: 0.6rem 0 0; font-size: 0.82rem; color: var(--muted, inherit); }
 
 .fq-terminal {

@@ -14,11 +14,6 @@ $statusClass = match ($status) {
     default => 'badge--gray',
 };
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/documents')) ?>">Rédaction</a> /
-    <strong><?= $h($document['reference_code'] ?? '') ?></strong>
-</div>
 
 <section class="sse-desk-hero" aria-labelledby="sse-doc-show-title">
     <div class="sse-desk-hero__main">

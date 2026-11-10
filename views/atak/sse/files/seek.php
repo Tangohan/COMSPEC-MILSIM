@@ -11,14 +11,12 @@ $filesTab = 'seek';
 require __DIR__ . '/_nav.php';
 $yes = static fn (bool $b): string => $b ? '✓' : '·';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/fichiers')) ?>">Passage aux fichiers</a> / <strong>Fiches SEEK II</strong></div>
 
 <div class="page-heading">
     <div>
         <h1>Fiches SEEK II</h1>
         <p>Enregistrements biométriques (doigts, iris, visage) faits en jeu avec le SEEK II, rattachés au registre quand la clé biométrique ou le papier présenté correspond. Chaque fiche ajoute un contrôle N4 aux contrôles subis de la personne.</p>
     </div>
-    <div class="page-reference"><strong>SIMULATION</strong> Données fictives</div>
 </div>
 
 <form class="toolbar" method="get" action="<?= $h(url('atak/sse/fichiers/seek')) ?>">

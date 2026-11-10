@@ -24,17 +24,12 @@ $tone = static fn (string $code): string => \App\Support\SseFieldNoteCatalog::th
 ?>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Pilotage // Fiches</div>
         <h1>Fiches de renseignement</h1>
         <p>
             Notes libres remontées du terrain ou rédigées au bureau : ce que l’on a vu,
             où, quand, avec les photos et documents qui vont avec. Une fiche n’engage
             rien : elle est là pour ne rien perdre, et l’analyste décide de la suite.
         </p>
-    </div>
-    <div class="page-reference">
-        <strong>Vue // Fiches</strong>
-        Réf. ATH-SSE-FICHES
     </div>
 </div>
 
