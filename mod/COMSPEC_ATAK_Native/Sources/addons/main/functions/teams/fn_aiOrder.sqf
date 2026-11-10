@@ -23,6 +23,17 @@
       "recv"   [netId, paires, camp] (client) état reçu : carte, PC du poste, notification au donneur
       "draw"   [carte, taille du texte, police] ordres en cours sur la carte (téléphone et PC du poste)
     États : NEW (transmis), EXEC (en cours), DONE (terminé), FAIL (impossible), CANCEL (annulé).
+    Ajouts 4.2.1 (les 20 ordres d'avant sont inchangés) :
+      THEN_MOVE, THEN_PATROL, THEN_HOLD, THEN_WITHDRAW   « Ensuite… » : file d'ordres (5 au plus) exécutée quand l'ordre en
+                                        cours est terminé ; groupe sans ordre en cours, en patrouille ou en suivi : tout de suite.
+                                        Un ordre ordinaire vide la file (il remplace tout, comme avant).
+      GARRISON                          occupe le bâtiment le plus proche du point (60 m) : une position par IA, qui s'y arrête
+      ROE_FREE, ROE_RETURN, ROE_HOLD    règle de tir (tir libre, riposte seulement, halte au feu), appliquée tout de suite et
+                                        gardée par les déplacements suivants ; Attaquer et Supprimer la remplacent
+      "contact" [groupe, cible] (machine du groupe) : groupe IA commandé qui repère un ennemi (gestionnaire de groupe
+                                        EnemyDetected, posé à la 1re exécution) -> compte rendu « Contact nord à 250 m, 3 ennemis
+                                        repérés, 1 blessés » au camp (bulle au-dessus du chef, notification au donneur), une fois
+                                        par minute au plus ; réglage « Compte rendu de contact des groupes IA ».
 */
 params [["_act", ""], ["_arg", []]];
 // Carte (à chaque image) : traité avant de construire les tables ci-dessous.
@@ -56,11 +67,16 @@ private _kinds = [
     ["FOLLOW", "Me suivre", false], ["BOARD", "Embarquer", false], ["DISMOUNT", "Débarquer", false], ["CANCEL", "Annuler l'ordre", false],
     ["AWARE", "Posture prudente", false], ["COMBAT", "Posture de combat", false], ["STEALTH", "Posture furtive", false],
     ["LIMITED", "Vitesse lente", false], ["NORMAL", "Vitesse normale", false], ["FULL", "Vitesse rapide", false],
-    ["COLUMN", "Formation en colonne", false], ["WEDGE", "Formation en coin", false], ["LINE", "Formation en ligne", false], ["FILE", "Formation en file", false]
+    ["COLUMN", "Formation en colonne", false], ["WEDGE", "Formation en coin", false], ["LINE", "Formation en ligne", false], ["FILE", "Formation en file", false],
+    ["THEN_MOVE", "Ensuite : aller au point", true], ["THEN_PATROL", "Ensuite : patrouiller la zone", true], ["THEN_HOLD", "Ensuite : tenir le point", true],
+    ["THEN_WITHDRAW", "Ensuite : se replier au point", true], ["GARRISON", "Occuper le bâtiment", true],
+    ["ROE_FREE", "Tir libre", false], ["ROE_RETURN", "Riposte seulement", false], ["ROE_HOLD", "Halte au feu", false]
 ];
 // Posture, vitesse, formation : appliquées tout de suite, sans remplacer le déplacement en cours.
 private _post = createHashMapFromArray [["AWARE", "beh"], ["COMBAT", "beh"], ["STEALTH", "beh"], ["LIMITED", "spd"], ["NORMAL", "spd"], ["FULL", "spd"],
-    ["COLUMN", "frm"], ["WEDGE", "frm"], ["LINE", "frm"], ["FILE", "frm"]];
+    ["COLUMN", "frm"], ["WEDGE", "frm"], ["LINE", "frm"], ["FILE", "frm"], ["ROE_FREE", "roe"], ["ROE_RETURN", "roe"], ["ROE_HOLD", "roe"]];
+// Règle de tir -> mode de combat du groupe (riposte seulement : GREEN, « tenir le feu, se défendre »).
+private _roeMode = createHashMapFromArray [["ROE_FREE", "YELLOW"], ["ROE_RETURN", "GREEN"], ["ROE_HOLD", "BLUE"]];
 private _kLabel = { params ["_k"]; (_kinds param [(_kinds findIf { (_x select 0) isEqualTo _k }) max 0]) select 1 };
 // Suivi d'un ordre de bout en bout dans le RPT (réglage CBA « Niveau de journal » d'Overwatch sur Détaillé), sinon muet.
 private _dbg = { if ((missionNamespace getVariable ["comspec_overwatch_log_level", 3]) >= 4) then { ["DEBUG", "AIORDER", _this] call comspec_atak_native_fnc_log; }; };
@@ -190,7 +206,7 @@ switch (_act) do {
         if ((_kinds findIf { (_x select 0) isEqualTo _k }) < 0) exitWith { ["Ordre inconnu du serveur : versions du mod différentes"] call _no; };
         if !(_pos isEqualTypeArray [0, 0]) then { _pos = []; };
         _by = (_by regexReplace ["[<>&]", ""]) select [0, 40];
-        if !(_k in _post) then {
+        if (!(_k in _post) && {(_k select [0, 5]) isNotEqualTo "THEN_"}) then {
             ["report", [_nid, _sd, [["id", _id], ["kind", _k], ["state", "NEW"], ["text", "transmis"], ["pos", _pos], ["by", _by], ["uid", getPlayerUID _u], ["grp", groupId _g], ["at", serverTime]]]] call comspec_atak_native_fnc_aiOrder;
         };
         format ["%1 accepté, exécuté %2", _id, ["sur le serveur", format ["sur la machine %1 (client headless ou joueur)", groupOwner _g]] select !(local _g)] call _dbg;
@@ -201,7 +217,7 @@ switch (_act) do {
         ["comspec_atak_native_sideEvent", ["comspec_atak_native_aiOrdState", [_nid, _pairs, _sd], _sd]] call CBA_fnc_serverEvent;
     };
     case "exec": {
-        _arg params [["_nid", ""], ["_k", ""], ["_pos", []], ["_id", ""], ["_by", objNull]];
+        _arg params [["_nid", ""], ["_k", ""], ["_pos", []], ["_id", ""], ["_by", objNull], ["_fromQ", false]];
         private _g = _nid call _gOf;
         // Groupe disparu, ou passé sur une autre machine entre la demande et l'exécution : le donneur le sait.
         if (isNull _g || {!local _g}) exitWith {
@@ -220,13 +236,45 @@ switch (_act) do {
             switch (_f) do {
                 case "beh": { _g setBehaviour _k; };
                 case "spd": { _g setSpeedMode _k; };
+                // Règle de tir : gardée pour les déplacements suivants (COMSPEC_ATAK_AiRoe).
+                case "roe": { _g setCombatMode (_roeMode get _k); _g setVariable ["COMSPEC_ATAK_AiRoe", _k]; };
                 default { _g setFormation _k; };
             };
             ["report", [_nid, _sd, [[_f, _k], ["ack", [_k] call _kLabel], ["ackUid", getPlayerUID _by], ["pid", _id]]]] call comspec_atak_native_fnc_aiOrder;
         };
+        // Compte rendu de contact : gestionnaire de groupe posé une fois, là où le groupe est local (mode « contact »).
+        if (isNil { _g getVariable "COMSPEC_ATAK_AiContactEh" }) then {
+            _g setVariable ["COMSPEC_ATAK_AiContactEh", _g addEventHandler ["EnemyDetected", { params ["_g", "_tgt"]; ["contact", [_g, _tgt]] call comspec_atak_native_fnc_aiOrder; }]];
+        };
+        // Nouvel ordre au point du NEW du serveur (sauté pour « Ensuite ») : état du groupe remis à jour sur les cartes du camp.
+        private _newRep = {
+            params ["_kk", "_pp", "_ii"];
+            ["report", [_nid, _sd, [["id", _ii], ["kind", _kk], ["state", "NEW"], ["text", "transmis"], ["pos", _pp], ["by", [name _by, ""] select (isNull _by)],
+                ["uid", [getPlayerUID _by, ""] select (isNull _by)], ["grp", groupId _g], ["at", serverTime]]]] call comspec_atak_native_fnc_aiOrder;
+        };
+        // « Ensuite… » : en file derrière l'ordre en cours ; rien en cours (ou patrouille, suivi : sans fin) : tout de suite.
+        if ((_k select [0, 5]) isEqualTo "THEN_") exitWith {
+            private _base = _k select [5];
+            private _busy = (_g getVariable ["COMSPEC_ATAK_AiOrdBusy", ""]) isNotEqualTo "" && {!((_g getVariable ["COMSPEC_ATAK_AiOrdKind", ""]) in ["PATROL", "FOLLOW"])};
+            if (!_busy) exitWith {
+                [_base, _pos, _id] call _newRep;
+                ["exec", [_nid, _base, _pos, _id, _by, true]] call comspec_atak_native_fnc_aiOrder;
+            };
+            private _q = _g getVariable ["COMSPEC_ATAK_AiOrdQueue", []];
+            // Réponse au seul donneur (texte fixe, traduit chez lui) : l'état affiché du groupe reste celui de l'ordre en cours.
+            private _tellBy = { params ["_tx"]; if (!isNull _by) then { ["comspec_atak_native_aiOrdState", ["", [["text", _tx], ["id", _id]], _sd], _by] call CBA_fnc_targetEvent; }; };
+            if ((count _q) >= 5) exitWith { ["File d'ordres pleine : 5 ordres au plus en attente"] call _tellBy; };
+            _q pushBack [_base, _pos, _id, _by];
+            _g setVariable ["COMSPEC_ATAK_AiOrdQueue", _q];
+            format ["%1 en file derrière l'ordre en cours (%2 en attente)", _id, count _q] call _dbg;
+            ["Ordre mis en file : il partira quand l'ordre en cours sera terminé"] call _tellBy;
+        };
+        // Ordre ordinaire : il remplace tout, file comprise (comme avant) ; un ordre tiré de la file garde la suite.
+        if (!_fromQ) then { _g setVariable ["COMSPEC_ATAK_AiOrdQueue", []]; };
+        _g setVariable ["COMSPEC_ATAK_AiOrdBusy", ""];
         // Groupe figé par la mission ou par Eden : simulation dynamique (gelé loin des joueurs) et IA sans déplacement
         // (« PATH » / « MOVE » coupés, garnisons). Un ordre de déplacement les libère, sinon le groupe restait sur place.
-        if (_k in ["MOVE", "PATROL", "ATTACK", "WITHDRAW", "HOLD", "FOLLOW", "BOARD"]) then {
+        if (_k in ["MOVE", "PATROL", "ATTACK", "WITHDRAW", "HOLD", "FOLLOW", "BOARD", "GARRISON"]) then {
             if (dynamicSimulationEnabled _g) then {
                 if (isServer) then { _g enableDynamicSimulation false; } else { [_g, false] remoteExecCall ["enableDynamicSimulation", 2]; };
                 format ["%1 : simulation dynamique coupée pour le groupe", _id] call _dbg;
@@ -235,6 +283,7 @@ switch (_act) do {
         };
         // Ordre précédent abandonné : points de passage effacés (du dernier au premier), arrêts et tirs levés.
         private _clear = {
+            { _x setVariable ["COMSPEC_ATAK_AiGarPos", nil]; _x setVariable ["COMSPEC_ATAK_AiGarIn", nil]; } forEach _units;
             for "_i" from ((count (waypoints _g)) - 1) to 0 step -1 do { deleteWaypoint [_g, _i]; };
             _units doFollow _ld;
             { _x doWatch objNull; } forEach _units;
@@ -303,7 +352,24 @@ switch (_act) do {
                 { unassignVehicle _x; } forEach _units;
                 _units orderGetIn false;
             };
+            case "GARRISON": {
+                // Bâtiment le plus proche du point (60 m) avec au moins deux positions : une par IA, mélangées.
+                private _bs = (nearestObjects [_p3, ["House", "Building"], 60]) select { alive _x && {(count (_x buildingPos -1)) >= 2} };
+                if (_bs isEqualTo []) exitWith { _fail = "aucun bâtiment à moins de 60 m du point"; };
+                private _bp = ((_bs select 0) buildingPos -1) call BIS_fnc_arrayShuffle;
+                {
+                    private _pp = _bp select (_forEachIndex mod (count _bp));
+                    _x setVariable ["COMSPEC_ATAK_AiGarPos", _pp];
+                    _x doMove _pp;
+                } forEach _units;
+            };
             case "CANCEL": {};
+        };
+        // Règle de tir gardée (Tir libre, Riposte seulement, Halte au feu) : les déplacements la conservent, une attaque ou
+        // une suppression la remplace.
+        if (_k in ["ATTACK", "SUPPRESS"]) then { _g setVariable ["COMSPEC_ATAK_AiRoe", nil]; } else {
+            private _roe = _g getVariable ["COMSPEC_ATAK_AiRoe", ""];
+            if (_roe in _roeMode) then { _g setCombatMode (_roeMode get _roe); };
         };
         if (_wp isNotEqualTo []) then { _g setCurrentWaypoint _wp; };
         _g setVariable ["COMSPEC_ATAK_AiOrdId", _id];
@@ -313,6 +379,10 @@ switch (_act) do {
         // Suivi toutes les 3 s sur la machine du groupe (un script par ordre en cours, rien par image).
         [_g, _id, _k, _pos, _by, _wp, _veh, _rep, _nid, _sd] spawn {
             params ["_g", "_id", "_k", "_pos", "_by", "_wp", "_veh", "_rep", "_nid", "_sd"];
+            // Ordre en cours (file d'ordres « Ensuite ») : effacé à la fin de ce suivi s'il est toujours le dernier.
+            _g setVariable ["COMSPEC_ATAK_AiOrdBusy", _id];
+            _g setVariable ["COMSPEC_ATAK_AiOrdKind", _k];
+            private _ended = "";
             private _t0 = time;
             private _last = getPosATL leader _g;
             private _stillAt = time;
@@ -340,6 +410,18 @@ switch (_act) do {
                         }
                     };
                     case "DISMOUNT": { [["", "débarqué en partie"] select (time - _t0 > 60), "groupe à pied"] select (({ (vehicle _x) isNotEqualTo _x } count _units) isEqualTo 0) };
+                    case "GARRISON": {
+                        // Arrivée à sa position : elle s'y arrête et y reste jusqu'au prochain ordre.
+                        private _in = 0;
+                        {
+                            private _pp = _x getVariable ["COMSPEC_ATAK_AiGarPos", []];
+                            if (_pp isNotEqualTo [] && {(_x distance _pp) < 2.5}) then {
+                                _in = _in + 1;
+                                if !(_x getVariable ["COMSPEC_ATAK_AiGarIn", false]) then { _x setVariable ["COMSPEC_ATAK_AiGarIn", true]; doStop _x; };
+                            };
+                        } forEach _units;
+                        [["", "bâtiment occupé en partie"] select (time - _t0 > 120), "en position dans le bâtiment"] select (_in >= (count _units))
+                    };
                     case "FOLLOW": {
                         if (isNull _by || {!alive _by}) then { "!donneur d'ordre perdu" } else {
                             // Point de ralliement remis à jour quand le donneur s'est éloigné.
@@ -355,14 +437,42 @@ switch (_act) do {
                     default { "" };
                 };
                 if ((_out select [0, 1]) isEqualTo "!") exitWith { ["FAIL", _out select [1]] call _rep; };
-                if (_out isNotEqualTo "") exitWith { ["DONE", _out] call _rep; };
+                if (_out isNotEqualTo "") exitWith { _ended = "DONE"; ["DONE", _out] call _rep; };
                 // Bloqué : moins de 5 m en 2 min alors qu'il doit se déplacer (hors combat : un groupe au contact s'arrête).
                 if ((_ld distance2D _last) > 5) then { _last = getPosATL _ld; _stillAt = time; };
                 if (_k in ["MOVE", "WITHDRAW", "HOLD", "BOARD"] && {time - _stillAt > 120} && {(behaviour _ld) isNotEqualTo "COMBAT"}) exitWith {
                     ["FAIL", "bloqué, point inaccessible"] call _rep;
                 };
             };
+            // Fin du suivi : le groupe n'a plus d'ordre en cours ; ordre terminé : le suivant de la file part (« Ensuite… »).
+            // Ordre impossible ou remplacé : la file attend un ordre ordinaire qui la videra, ou part au prochain « Ensuite ».
+            if (isNull _g || {!local _g} || {(_g getVariable ["COMSPEC_ATAK_AiOrdId", ""]) isNotEqualTo _id}) exitWith {};
+            _g setVariable ["COMSPEC_ATAK_AiOrdBusy", ""];
+            { _x setVariable ["COMSPEC_ATAK_AiGarIn", nil]; } forEach (units _g);
+            private _q = _g getVariable ["COMSPEC_ATAK_AiOrdQueue", []];
+            if (_ended isEqualTo "DONE" && {_q isNotEqualTo []}) then {
+                (_q deleteAt 0) params ["_qk", "_qp", "_qi", "_qb"];
+                _g setVariable ["COMSPEC_ATAK_AiOrdQueue", _q];
+                ["report", [_nid, _sd, [["id", _qi], ["kind", _qk], ["state", "NEW"], ["text", "transmis"], ["pos", _qp], ["by", [name _qb, ""] select (isNull _qb)],
+                    ["uid", [getPlayerUID _qb, ""] select (isNull _qb)], ["grp", groupId _g], ["at", serverTime], ["queue", count _q]]]] call comspec_atak_native_fnc_aiOrder;
+                ["exec", [_nid, _qk, _qp, _qi, _qb, true]] call comspec_atak_native_fnc_aiOrder;
+            };
         };
+    };
+    case "contact": {
+        _arg params [["_g", grpNull], ["_tgt", objNull]];
+        if (isNull _g || {!local _g} || {isNull _tgt} || {!(missionNamespace getVariable ["comspec_atak_native_ai_contact", true])}) exitWith {};
+        // Seulement un groupe IA commandé par l'ATAK, sans joueur ; une fois par minute au plus.
+        if ((_g getVariable ["COMSPEC_ATAK_AiOrdId", ""]) isEqualTo "" || {({isPlayer _x} count (units _g)) > 0}) exitWith {};
+        if (time < ((_g getVariable ["COMSPEC_ATAK_AiContactAt", -1e9]) + 60)) exitWith {};
+        _g setVariable ["COMSPEC_ATAK_AiContactAt", time];
+        private _ld = leader _g;
+        private _card = ["nord", "nord-est", "est", "sud-est", "sud", "sud-ouest", "ouest", "nord-ouest"] select ((round ((_ld getDir _tgt) / 45)) mod 8);
+        private _d = (round ((_ld distance2D _tgt) / 50)) * 50;
+        private _n = { ((_x select 4) isNotEqualTo objNull) && {[side _g, _x select 2] call BIS_fnc_sideIsEnemy} } count (_ld nearTargets 1000);
+        private _hurt = { alive _x && {(damage _x) > 0.25 || {_x getVariable ["ACE_isUnconscious", false]} || {(_x getVariable ["ace_medical_woundBleeding", 0]) > 0}} } count (units _g);
+        format ["contact %1 : %2, %3 m, %4 ennemis, %5 blessés", groupId _g, _card, _d, _n, _hurt] call _dbg;
+        ["report", [_g call _gid, str side _g, [["contact", [_card, _d max 50, _n, _hurt]], ["ctAt", serverTime]]]] call comspec_atak_native_fnc_aiOrder;
     };
     case "keep": {
         if (!isServer) exitWith {};
@@ -427,6 +537,21 @@ switch (_act) do {
             if ((_e getOrDefault ["uid", ""]) isEqualTo getPlayerUID player) then {
                 if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) then { ["status", _full] call comspec_atak_native_fnc_tocLaptop; };
                 if !(_seen) then { ["toast", [_full, _type]] call comspec_atak_native_fnc_aiOrder; };
+            };
+        };
+        // Compte rendu de contact du groupe (mode « contact ») : bulle au-dessus du chef pour le camp à portée,
+        // notification au donneur d'ordre (ligne d'état du PC du poste ; toast si la bulle n'est pas vue).
+        private _ct = _in getOrDefault ["contact", []];
+        if (!_replay && {_ct isEqualType []} && {(count _ct) >= 4} && {!isNull _g}) then {
+            _ct params ["_card", "_cd", "_cn", "_ch"];
+            private _said = format [("Contact %1 à %2 m") call comspec_atak_native_fnc_tr, (_card) call comspec_atak_native_fnc_tr, _cd];
+            if (_cn > 0) then { _said = _said + format [(", %1 ennemis repérés") call comspec_atak_native_fnc_tr, _cn]; };
+            if (_ch > 0) then { _said = _said + format [(", %1 blessés") call comspec_atak_native_fnc_tr, _ch]; };
+            private _full = format [("%1 : %2") call comspec_atak_native_fnc_tr, _gn, _said];
+            private _seen = ["say", [leader _g, _said, _gn, "WARNING"]] call comspec_atak_native_fnc_aiBubble;
+            if ((_e getOrDefault ["uid", ""]) isEqualTo getPlayerUID player) then {
+                if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) then { ["status", _full] call comspec_atak_native_fnc_tocLaptop; };
+                if !(_seen) then { ["toast", [_full, "WARNING"]] call comspec_atak_native_fnc_aiOrder; };
             };
         };
 
