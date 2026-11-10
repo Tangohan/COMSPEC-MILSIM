@@ -289,6 +289,17 @@ switch (_tab) do {
             _rows pushBack ["info", "Autonomie estimée · trafic relayé", format ["%1 min · %2 nœud(s)", _mv get "left", (uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap]) getOrDefault ["relayed", 0]]];
             _rows pushBack ["info", "Radio de données", format ["%1 · <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>réglages : app Réseau</t>",
                 [format ["<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>%1</t>", [_ms get "why"] call _esc], format ["<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>%1 saut(s) jusqu'à %2</t>", (_ms get "hops") max 0, [_ms get "gw"] call _esc]] select (_ms get "ok")]];
+            // Qualité du chemin et cause (4.2.1, fn_meshGraph "view") : ce qui coupe ou limite, et quoi faire.
+            private _mm = uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap];
+            private _lvl = ((_mm getOrDefault ["level", 3]) max 0) min 3;
+            _rows pushBack ["info", "Qualité du chemin", format ["<t color='%1'>%2</t>", COMSPEC_ATAK_Th get (["hexOk", "hexWarn", "hexWarn", "hexAlert"] select _lvl),
+                (["bonne", "dégradée", "à la limite", "coupée"] select _lvl) call comspec_atak_native_fnc_tr]];
+            private _cz = _mm getOrDefault ["cause", ""];
+            if (_cz isNotEqualTo "") then {
+                _rows pushBack ["info", "Cause", format ["<t color='%1'>%2</t>", COMSPEC_ATAK_Th get (["hexWarn", "hexAlert"] select (_lvl >= 3)), [_cz call comspec_atak_native_fnc_tr] call _esc]];
+                private _fx = _mm getOrDefault ["fix", ""];
+                if (_fx isNotEqualTo "") then { _rows pushBack ["text", ([_fx call comspec_atak_native_fnc_tr] call _esc) call _muted]; };
+            };
         };
         // Téléphone branché sur une radio ACRE2 / TFAR : elle relaie les données comme une MPU5 (réglages du serveur).
         // Pas en liaison réaliste : seule une MPU5 y relie le téléphone.
@@ -309,19 +320,21 @@ switch (_tab) do {
         // Voisins directs : liens partant de mon nœud (index 0), les meilleurs d'abord.
         private _nb = [];
         {
-            _x params ["_a", "_b", "_lq"];
-            if (_a isEqualTo 0) then { _nb pushBack [_lq, _b]; };
-            if (_b isEqualTo 0) then { _nb pushBack [_lq, _a]; };
+            _x params ["_a", "_b", "_lq", ["_lc", 0]];
+            if (_a isEqualTo 0) then { _nb pushBack [_lq, _b, _lc]; };
+            if (_b isEqualTo 0) then { _nb pushBack [_lq, _a, _lc]; };
         } forEach _links;
         _nb sort false;
         _rows pushBack ["section", format ["Voisins directs (%1)", count _nb], "Téléphones et radios joints sans intermédiaire"];
         {
-            _x params ["_lq", "_i"];
+            _x params ["_lq", "_i", ["_lc", 0]];
             (_nodes select _i) params ["_o", "_p", "_name", "_kind"];
             private _h = _hops select _i;
-            _rows pushBack ["text", format ["<t color='%1'>●</t> <t font='COMSPEC_BarlowBold'>%2</t>  <t color='%1'>%3 %%</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4 %5 (%6°) · %7</t>",
+            // Lien faible (4.2.1) : ce qui le limite (relief, bâtiments, distance…), écrit à côté de son pourcentage.
+            private _lcTxt = if (_lq < 45 && {_lc > 0}) then { " · " + format ["limité par %1", ["causeTxt", [_lc]] call comspec_atak_native_fnc_meshGraph] } else { "" };
+            _rows pushBack ["text", format ["<t color='%1'>●</t> <t font='COMSPEC_BarlowBold'>%2</t>  <t color='%1'>%3 %%</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4 %5 (%6°) · %7%8</t>",
                 [_lq] call _qCol, [_name] call _esc, _lq, [player distance2D _p] call _dist, [player getDir _p] call _card, round (player getDir _p),
-                switch (true) do { case (_kind isEqualTo "gw" || {_i isEqualTo _gw}): { "passerelle" }; case (_h < 0): { "isolé" }; default { format ["%1 saut(s) de la passerelle", _h] }; }]];
+                switch (true) do { case (_kind isEqualTo "gw" || {_i isEqualTo _gw}): { "passerelle" }; case (_h < 0): { "isolé" }; default { format ["%1 saut(s) de la passerelle", _h] }; }, _lcTxt]];
         } forEach _nb;
         if ((count _nb) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Personne à portée : montez sur un point haut ou rapprochez-vous d'un équipier.</t>"]; };
     };

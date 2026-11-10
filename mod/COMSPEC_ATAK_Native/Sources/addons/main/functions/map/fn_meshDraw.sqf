@@ -2,7 +2,8 @@
     Calque Wave Relay sur la carte (appelé depuis mapOnDraw), réglage profil COMSPEC_ATAK_MeshOnMap :
     - couverture réseau calculée (fn_relayNet "coverage") : vert débit fort, jaune, orange, rouge faible, gris zone blanche ;
     - liens du maillage entre téléphones, vert au-dessus de 60 %, orange au-dessus de 30 %, rouge en dessous ; au plus un
-      trait par paire d'unités, tous systèmes confondus (liste de l'image : uiNamespace COMSPEC_ATAK_MeshDrawn).
+      trait par paire d'unités, tous systèmes confondus (liste de l'image : uiNamespace COMSPEC_ATAK_MeshDrawn) ;
+    - hors maillage (réglage mesh_miss_map) : un trait rouge en tirets vers le nœud qui manque, avec la cause (source "miss").
     Calque « Relais » (réglage profil COMSPEC_ATAK_RelaysLayer, affiché par défaut, masquable dans CALQUES) : relais et
     passerelles de véhicule ou PC mobiles en pastille (anneau de couleur sur fond sombre, antenne), nom puis
     « portée · débit · places » en dessous ; vert : relais utilisé par mon téléphone (trait pointillé vers moi, portée
@@ -64,6 +65,26 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
             };
             _map drawRectangle [_p, _a, _a, 0, _col, _fill];
         } forEach _cells;
+    };
+    // Lien manquant (4.2.1, réglage mesh_miss_map) : hors maillage, un seul trait rouge en tirets entre mon îlot et le nœud le plus proche à
+    // joindre, avec sa cause au milieu (fn_meshGraph "view" -> "miss"). Aucun calcul ici : lecture de la dernière vue du maillage.
+    if ((missionNamespace getVariable ["comspec_atak_native_mesh_miss_map", true]) isEqualTo true) then {
+        private _mm = uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap];
+        (_mm getOrDefault ["miss", []]) params [["_oa", objNull], ["_ob", objNull], ["_lbl", ""]];
+        if (!isNull _oa && {!isNull _ob} && {diag_tickTime - (_mm getOrDefault ["at", -100]) < 20} && {[_oa, _ob, "miss"] call _pairAdd}) then {
+            private _pa = if (_oa in _selfObjs) then { _selfP } else { getPosWorld _oa };
+            private _pb = getPosWorld _ob;
+            private _len = _pa distance2D _pb;
+            private _dir = _pa getDir _pb;
+            private _dl = (_r * 2) max (_len / 160);
+            for "_k" from 0 to (floor (_len / _dl)) step 2 do {
+                _map drawLine [_pa getPos [_k * _dl, _dir], _pa getPos [((_k + 1) * _dl) min _len, _dir], [0.9, 0.25, 0.2, 0.9]];
+            };
+            private _mid = _pa getPos [_len / 2, _dir];
+            private _t = _lbl call comspec_atak_native_fnc_tr;
+            ["nameBgDraw", [_map, _mid, _t, COMSPEC_ATAK_FontSet select 0, 0.024 * _ts]] call comspec_atak_native_fnc_mapPrefs;
+            _map drawIcon [_none, [1, 0.45, 0.35, 1], _mid, 0, 0, 0, _t, 2, 0.024 * _ts, COMSPEC_ATAK_FontSet select 0, "right"];
+        };
     };
     // Traits entre alliés et cercles des téléphones : bascule « Traits entre alliés » (masqués par défaut, 2.9.38) ;
     // masqués, rien n'est calculé ni dessiné.

@@ -761,6 +761,16 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mesh_traffic_power", "CHECKBOX",
     ["Batterie selon le trafic relayé", "Un nœud qui relaie beaucoup se vide plus vite, jusqu'à deux fois."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+// Réseau relais plus réaliste (4.2.1, fn_meshGraph) : bâtiments entre deux radios, reconvergence après la perte d'un relais, lien manquant sur la carte.
+["comspec_atak_native_mesh_buildings", "SLIDER",
+    ["Bâtiments dans le maillage (%)", "Liaison réaliste : chaque bâtiment traversé entre deux radios du maillage coûte du signal (relief seul avant). 0 : comportement d'avant. À 50 %, quatre maisons entre deux équipiers à 300 m dégradent le lien sans le couper ; à 100 %, il faut un relais sur un toit."],
+    _mpuCat, [0, 100, 50, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_reconverge_s", "SLIDER",
+    ["Reconvergence après la perte d'un relais (s)", "Liaison réaliste : quand un relais de votre route tombe (détruit, ramassé, batterie vide), le réseau se coupe ce temps-là avant de repasser par un autre chemin. 0 : bascule immédiate, comme avant."],
+    _mpuCat, [0, 15, 3, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_miss_map", "CHECKBOX",
+    ["Lien manquant sur la carte", "Liaison réaliste, hors maillage : un trait rouge en tirets relie votre groupe au nœud le plus proche à joindre, avec la cause (relief, distance, bâtiments, canal). Calque Wave Relay de la carte."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_mesh_stale_s", "SLIDER",
     ["Position périmée : gris après (s)", "Liaison réaliste : un ami sans nouvelle position passe en gris. 0 : comportement d'avant."],
     _mpuCat, [0, 600, 30, 0], 1] call comspec_atak_native_fnc_addSetting;
