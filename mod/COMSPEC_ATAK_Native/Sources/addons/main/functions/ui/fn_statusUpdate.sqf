@@ -141,7 +141,8 @@ if (_page isEqualTo "ATHENA") then {
     private _sig = if ([] call comspec_atak_native_fnc_bridge) then {
         [["comspec_overwatch_auth_state", "—"] call _str, toLower (["COMSPEC_LinkState", "offline"] call _str), missionNamespace getVariable ["COMSPEC_AthenaReady", false]]
     } else {
-        private _cells = (["GetAuthState", []] call comspec_atak_native_fnc_extensionCall) splitString (toString [9]);
+        // État partagé (fn_extensionCall, 4.2.1) : relu au plus une fois par seconde sur cette page.
+        private _cells = (["GetAuthState", [], 0.9] call comspec_atak_native_fnc_extensionCall) splitString (toString [9]);
         private _st = _cells param [1, "—"];
         [_st, ["offline", "linked"] select (_st isEqualTo "READY"), _st isEqualTo "READY"]
     };
@@ -161,7 +162,8 @@ if (_page isNotEqualTo "ATHENA" && {diag_tickTime >= (missionNamespace getVariab
         private _a = missionNamespace getVariable ["comspec_overwatch_auth_state", ""];
         if (_a isEqualType "") then { _a } else { str _a }
     } else {
-        ((["GetAuthState", []] call comspec_atak_native_fnc_extensionCall) splitString (toString [9])) param [1, ""]
+        // Hors de l'app Athena : la dernière lecture de moins de 5 s suffit (celle des sondages, toutes les 3 s).
+        ((["GetAuthState", [], 5] call comspec_atak_native_fnc_extensionCall) splitString (toString [9])) param [1, ""]
     };
     if (_auth isEqualTo "READY") exitWith { missionNamespace setVariable ["COMSPEC_ATAK_LoginSince", -1]; };
     private _since = missionNamespace getVariable ["COMSPEC_ATAK_LoginSince", -1];
@@ -248,6 +250,10 @@ private _sigWait = _page in ["BFT", "GPS"] && {diag_tickTime - (_state getOrDefa
 private _fc = focusedCtrl _d;
 if (!isNull _fc && {(ctrlType _fc) isEqualTo 2}) then { _sigWait = true; };
 if ((_state getOrDefault ["pageSigPage", ""]) isEqualTo _page && {_pageSig isNotEqualTo (_state getOrDefault ["pageSig", []])}) then {
+    // Messages et SMS (4.2.1) : bulles ajoutées au fil affiché (fn_pageChat fil seul), sans toucher à la saisie en cours ;
+    // sinon (liste, vue côte à côte, aide) rendu complet comme avant, pas pendant la saisie.
+    private _ptc = diag_tickTime;
+    if (_page in ["CHAT", "SMS"] && {[true, true] call comspec_atak_native_fnc_pageChat}) exitWith { ["page messages (fil seul)", _ptc] call comspec_atak_native_fnc_perfAcc; };
     if (_sigWait) exitWith { _pageSig = _state getOrDefault ["pageSig", []]; };
     _state set ["sigRenderAt", diag_tickTime];
     // BFT : lignes, en-tête et fiche réécrites sur place quand c'est possible (aucun contrôle recréé, défilement gardé).

@@ -36,16 +36,17 @@ class COMSPEC_RscDisplayATAK {
         class NotifBtn: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_NOTIF; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_bell.paa"; tooltip="Centre de notifications"; action="[] call comspec_atak_native_fnc_notifCenter"; };
         class LinkLogo: COMSPEC_RscIcon { idc=COMSPEC_ATAK_IDC_LINKLOGO; ATAK_POS; colorText[]={0.36,0.78,0.42,1}; text="\z\comspec_atak_native\addons\main\data\ui_comspec_link.paa"; tooltip="COMSPEC Link connecté"; };
         class Signal: COMSPEC_RscIcon { idc=COMSPEC_ATAK_IDC_SIGNAL; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\sig_0.paa"; };
-        class Back: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_BACK; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_back.paa"; action="[] call comspec_atak_native_fnc_back"; tooltip="Retour"; };
+        class Back: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_BACK; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_back.paa"; action="[true] call comspec_atak_native_fnc_back"; tooltip="Retour"; };
         class Title: COMSPEC_RscText { idc=COMSPEC_ATAK_IDC_TITLE; font="COMSPEC_BarlowBold"; text="APPLICATIONS"; ATAK_POS; };
         class Rotate: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_ROTATE; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_rotate.paa"; action="[] call comspec_atak_native_fnc_orientationToggle"; tooltip="Téléphone vertical / horizontal"; };
         class Mode: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_MODE; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_expand.paa"; action="[] call comspec_atak_native_fnc_modeToggle"; tooltip="Mini / plein écran"; };
-        class Home: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_HOME; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_apps.paa"; action="['LAUNCHER'] call comspec_atak_native_fnc_navigate"; tooltip="Applications"; };
+        class Home: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_HOME; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_apps.paa"; action="['LAUNCHER', true, true] call comspec_atak_native_fnc_navigate"; tooltip="Applications"; };
         class HudHint: COMSPEC_RscLabel { idc=COMSPEC_ATAK_IDC_HUDHINT; style=2; ATAK_POS; text=""; };
-        // Touches physiques de la coque S7 (dessinées sur la texture) : retour, accueil, apps récentes, marche/arrêt.
-        class HwBack: COMSPEC_RscButtonInvisible { idc=COMSPEC_ATAK_IDC_HW_BACK; ATAK_POS; tooltip="Retour"; action="[] call comspec_atak_native_fnc_back; playSound 'ClickSoft'"; };
-        class HwHome: COMSPEC_RscButtonInvisible { idc=COMSPEC_ATAK_IDC_HW_HOME; ATAK_POS; tooltip="Accueil"; action="['LAUNCHER'] call comspec_atak_native_fnc_navigate; playSound 'ClickSoft'"; };
-        class HwApps: COMSPEC_RscButtonInvisible { idc=COMSPEC_ATAK_IDC_HW_APPS; ATAK_POS; tooltip="Apps récentes"; action="['RECENTS'] call comspec_atak_native_fnc_navigate; playSound 'ClickSoft'"; };
+        // Touches physiques de la coque (dessinées sur la texture) : retour, accueil, apps récentes, marche/arrêt.
+        // Zones propres à chaque modèle, masquées s'il n'a pas la touche (fn_layoutApply).
+        class HwBack: COMSPEC_RscButtonInvisible { idc=COMSPEC_ATAK_IDC_HW_BACK; ATAK_POS; tooltip="Retour"; action="[true] call comspec_atak_native_fnc_back; playSound 'ClickSoft'"; };
+        class HwHome: COMSPEC_RscButtonInvisible { idc=COMSPEC_ATAK_IDC_HW_HOME; ATAK_POS; tooltip="Accueil"; action="['LAUNCHER', true, true] call comspec_atak_native_fnc_navigate; playSound 'ClickSoft'"; };
+        class HwApps: COMSPEC_RscButtonInvisible { idc=COMSPEC_ATAK_IDC_HW_APPS; ATAK_POS; tooltip="Apps récentes"; action="['RECENTS', true, true] call comspec_atak_native_fnc_navigate; playSound 'ClickSoft'"; };
         class HwPower: COMSPEC_RscButtonInvisible { idc=COMSPEC_ATAK_IDC_HW_POWER; ATAK_POS; tooltip="Réduire en miniature"; action="[] call comspec_atak_native_fnc_interactToggle"; };
         // Reprend le focus après un clic carte : la carte focalisée passe devant les panneaux et les outils.
         class FocusSink: COMSPEC_RscButtonOverlay { idc=COMSPEC_ATAK_IDC_FOCUS; x="safeZoneX - 0.1"; y="safeZoneY - 0.1"; w=0.01; h=0.01; };

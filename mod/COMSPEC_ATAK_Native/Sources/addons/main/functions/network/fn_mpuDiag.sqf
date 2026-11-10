@@ -13,7 +13,8 @@
                TFAR n'étant pas installé sur la machine d'étude : À CONFIRMER EN JEU. Fonction absente : INCONNU, sans erreur.
       mpu      radio de données portée (fn_mpu5 "has"), allumée, batterie, nœud publié, objet obligatoire (fn_netRequire)
       bridge   pont radio (COMSPEC_ATAK_VoiceBridge)
-      mesh     maillage (COMSPEC_ATAK_MpuMesh, fn_meshGraph "view") : voisins, relais joints, chef de groupe, sauts, plus proche, gravité
+      mesh     maillage (COMSPEC_ATAK_MpuMesh, fn_meshGraph "view") : voisins, relais joints, chef de groupe, sauts, plus proche, gravité ;
+               4.2.1 : cause lue dans le graphe partagé (lien manqué, maillon faible), reconvergence, relais hors service le plus proche
       peer     camarade choisi : MPU5 allumée, pontée, même camp, groupes communs, même maillage (même règle que fn_mpuVoice _linked)
       freq     même fréquence (ACRE2 : MHz de la radio pontée, fn_mpu5 "freq" et "voiceNet" ; TFAR : fréquence publiée)
       tfar     TFAR reconnu ou non
@@ -131,6 +132,20 @@ switch (_act) do {
         _f set ["meshHops", _m getOrDefault ["hops", -1]];
         _f set ["meshGw", [_m getOrDefault ["gw", ""]] call _str];
         _f set ["meshLevel", _m getOrDefault ["level", 3]];
+        // Cause lue dans le graphe partagé (4.2.1, fn_meshGraph "view") : relief, distance, bâtiments, canal, brouillage, reconvergence.
+        _f set ["meshCause", [_m getOrDefault ["cause", ""]] call _str];
+        _f set ["meshFix", [_m getOrDefault ["fix", ""]] call _str];
+        _f set ["meshReconv", (_m getOrDefault ["reconv", 0]) isEqualType 0 && {(_m getOrDefault ["reconv", 0]) > 0}];
+        // Relais du camp hors service le plus proche (liste locale de fn_relayNet, en cache 2 s) : souvent la vraie raison d'une coupure.
+        private _down = "";
+        private _downD = 1e9;
+        {
+            _x params ["_ro", "_ra", "_rn", "_rk", "_rr", "", "_rOk", "_rSt"];
+            if (_rOk isEqualTo true || {!(_rk in ["relay", "gw", "cp"])} || {!(_ra isEqualType [])}) then { continue };
+            private _d = player distance2D _ra;
+            if (_d < _downD && {_d < 3 * (_rr max 500)}) then { _downD = _d; _down = format ["%1 à %2 : %3", _rn, [_d] call _distTxt, _rSt]; };
+        } forEach (["list"] call comspec_atak_native_fnc_relayNet);
+        _f set ["relayDown", [_down] call _str];
         private _nl = _m getOrDefault ["nodes", []];
         if !(_nl isEqualType []) then { _nl = []; };
         private _near = -1;
@@ -238,7 +253,8 @@ switch (_act) do {
             ["peer", createHashMapFromArray [["id", "2:16"], ["ok", true], ["name", "Alpha 2"], ["sameSide", true], ["dist", 1200], ["node", true],
                 ["voice", ["acre", "ACRE_PRC152_ID_2", "", 0, "L2:15", 1, "AN/PRC-152"]], ["groups", true], ["direct", 2], ["hops", 2], ["api", "acre"],
                 ["freq", "152.000 MHz"], ["freqN", 152]]],
-            ["admin", false], ["athena", false], ["modVer", "4.2.0"], ["who", "Test"], ["side", "WEST"]
+            ["relayNeed", true], ["relays", 1],
+            ["admin", false], ["athena", false], ["modVer", "4.2.1"], ["who", "Test"], ["side", "WEST"]
         ]
     };
     case "eval": {
@@ -263,8 +279,15 @@ switch (_act) do {
             if ((["relays", 0] call _g) > 0) then {
                 ["relay", "OK", "Relais de la mission", "La mission a au moins un relais en service pour votre camp : la voix peut passer par le maillage.", "", format ["%1 relais", ["relays", 0] call _g]] call _add;
             } else {
-                ["relay", "KO", "Relais de la mission", "Aucun relais en service pour votre camp : sans relais, la voix ne passe pas par le maillage, même entre deux MPU5 voisines (exemple : carte sans pylône ni module « Poser un relais »).",
-                    "Posez un relais (module « Poser un relais », pylône, véhicule passerelle ou poste de commandement), ou demandez à l'admin de décocher « Voix par le maillage : au moins un relais ».", "aucun", "settings"] call _add;
+                // Relais présent mais hors service (4.2.1) : la vraie raison est dite, avec ce qui l'a mis hors service.
+                private _rd = ["relayDown", ""] call _g;
+                if (_rd isNotEqualTo "") then {
+                    ["relay", "KO", "Relais de la mission", format ["Aucun relais en service pour votre camp. Le plus proche est hors service (%1) : sans relais, la voix ne passe pas par le maillage, même entre deux MPU5 voisines.", _rd],
+                        "Remettez ce relais en service (batterie, interrupteur, réparation) ou posez-en un autre (module « Poser un relais », antenne transportable).", "hors service", "wave"] call _add;
+                } else {
+                    ["relay", "KO", "Relais de la mission", "Aucun relais en service pour votre camp : sans relais, la voix ne passe pas par le maillage, même entre deux MPU5 voisines (exemple : carte sans pylône ni module « Poser un relais »).",
+                        "Posez un relais (module « Poser un relais », pylône, véhicule passerelle ou poste de commandement), ou demandez à l'admin de décocher « Voix par le maillage : au moins un relais ».", "aucun", "settings"] call _add;
+                };
             };
         };
         // 2. Liaison réaliste.
@@ -408,9 +431,20 @@ switch (_act) do {
             case !(["meshFresh", false] call _g): {
                 ["mesh", "ATTENTION", _mT, "Lecture du maillage en cours : le graphe est relu toutes les 4 s tant que cet écran est ouvert.", "Patientez quelques secondes, puis ACTUALISER.", "lecture en cours"] call _add;
             };
+            case (["meshReconv", false] call _g): {
+                ["mesh", "ATTENTION", _mT, format ["Réseau en reconvergence (%1). Comme un vrai réseau maillé, les radios recalculent leurs routes pendant quelques secondes (réglage « Reconvergence après la perte d'un relais »).", ["meshWhy", ""] call _g],
+                    "Patientez quelques secondes, puis ACTUALISER : s'il reste un autre chemin, le réseau repasse par lui.", "reconvergence", "wave"] call _add;
+            };
             case (!_mOk): {
-                ["mesh", "KO", _mT, format ["Hors maillage (%1). Exemple : derrière une crête, à 7 km de l'équipe, plus aucun saut.", ["meshWhy", ""] call _g],
-                    "Rapprochez-vous d'un équipier ou d'un relais, montez sur un point haut, ou mettez la MPU5 sur le canal de l'équipe.", "hors maillage", "wave"] call _add;
+                // Cause lue dans le graphe (4.2.1) : le lien qui manque et ce qui le coupe ; sinon l'exemple général d'avant.
+                private _cz = ["meshCause", ""] call _g;
+                private _fx = ["meshFix", ""] call _g;
+                private _rd = ["relayDown", ""] call _g;
+                private _ex = [format ["Hors maillage (%1). Exemple : derrière une crête, à 7 km de l'équipe, plus aucun saut.", ["meshWhy", ""] call _g],
+                    format ["Hors maillage : %1.", _cz]] select (_cz isNotEqualTo "");
+                if (_rd isNotEqualTo "") then { _ex = _ex + "<br/>" + format ["Relais hors service à proximité : %1.", _rd]; };
+                ["mesh", "KO", _mT, _ex,
+                    ["Rapprochez-vous d'un équipier ou d'un relais, montez sur un point haut, ou mettez la MPU5 sur le canal de l'équipe.", _fx] select (_fx isNotEqualTo ""), "hors maillage", "wave"] call _add;
             };
             case (_mLvl >= 3): {
                 ["mesh", "KO", _mT, format ["Le maillon le plus faible du chemin est trop faible : la voix ne reçoit aucune rallonge (gravité de coupure).<br/>%1", _detail],
@@ -433,8 +467,12 @@ switch (_act) do {
                     case "lead": { format ["Votre MPU5 joint celle du chef de groupe %1 en %2 saut(s) : maillage d'équipe, sans relais.", _mGw, _mHops] };
                     default { ["Maillage local : seules les MPU5 que vous joignez en sauts (même canal) vous entendent.", "Vous êtes chef de groupe : votre MPU5 est le cœur du maillage d'équipe, sans relais."] select (["isLead", false] call _g) };
                 };
+                // Chemin fragile (4.2.1) : le maillon faible et sa cause, et le conseil qui va avec.
+                private _cz = ["meshCause", ""] call _g;
+                private _fx = ["meshFix", ""] call _g;
+                if (_cz isNotEqualTo "" && {_mLvl >= 1}) then { _detail = _detail + "<br/>" + format ["Limite : %1.", _cz]; };
                 ["mesh", ["OK", "ATTENTION"] select (_mLvl >= 2), _mT, format ["%1<br/>%2", _why, _detail],
-                    ["", "Lien faible : rapprochez-vous du maillon faible ou montez sur un point haut."] select (_mLvl >= 2), _mVal, ["", "wave"] select (_mLvl >= 2)] call _add;
+                    ["", ["Lien faible : rapprochez-vous du maillon faible ou montez sur un point haut.", _fx] select (_fx isNotEqualTo "")] select (_mLvl >= 2), _mVal, ["", "wave"] select (_mLvl >= 2)] call _add;
             };
         };
         // 8. Camarade choisi.

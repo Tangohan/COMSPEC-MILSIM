@@ -34,7 +34,11 @@ private _esc = { params ["_t"]; { _t = [_t, _x select 0, _x select 1] call CBA_f
 private _act = { params ["_a", ["_v", ""]]; compile format ["[%1, %2] call comspec_atak_native_fnc_btAction;", str _a, str _v] };
 // Vue dédiée d'une fiche CONTRÔLE ID (reçue ou à partager).
 private _idcKey = _ui getOrDefault ["idcView", ""];
+// Touche retour (fn_back) : referme le sous-écran ouvert (fiche CONTRÔLE ID, envoi à un appareil, élément reçu déplié)
+// au lieu de quitter l'app.
+private _st0 = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 if (_idcKey isNotEqualTo "") exitWith {
+    _st0 set ["backSub", [_page, ["idcClose"] call _act]];
     private _rows = ["idcRows", _idcKey] call comspec_atak_native_fnc_btItems;
     private _have = (count (["idcGet", _idcKey] call comspec_atak_native_fnc_btItems)) > 0;
     _rows pushBack ["buttons", [["‹ RETOUR", ["idcClose"] call _act], ["CARTE", ["idcMap", _idcKey] call _act, false, _have], ["JOINDRE À UNE FRM", ["idcFrm", _idcKey] call _act, true, _have]]];
@@ -147,6 +151,8 @@ if ((count _paired) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + _
 
 // Envoi à l'appareil choisi : un onglet par sorte d'élément.
 if (_target isNotEqualTo "") then {
+    // « target » sur l'appareil déjà choisi : referme l'envoi (même effet que FERMER).
+    _st0 set ["backSub", [_page, ["target", _target] call _act]];
     private _tab = _ui getOrDefault ["tab", "snd"];
     if !(_tab in ["snd", "mus", "pho", "data", "sheet"]) then { _tab = "snd"; };
     private _q = toLower (_ui getOrDefault ["q", ""]);
@@ -250,6 +256,8 @@ if ((count _inbox) > 0) then {
             [_title] call _esc, _kindName getOrDefault [_kind, "élément"], [_from] call _esc, _hh, ["", format [" · %1", _where]] select (_where isNotEqualTo "")],
             [[["VOIR", "FERMER"] select (_view isEqualTo _id), _open, false, _canView]], [COMSPEC_ATAK_Th get "textDim", _acc] select (_view isEqualTo _id)];
         if (_view isEqualTo _id && {_canView} && {_kind isNotEqualTo "idc"}) then {
+            // Élément reçu déplié : retour le replie (prioritaire sur l'envoi, dessiné plus haut).
+            _st0 set ["backSub", [_page, ["view", _id] call _act]];
             private _lines = ["sheetLines", [_kind, _data]] call comspec_atak_native_fnc_btItems;
             _rows pushBack ["text", (_lines apply { format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>  <t size='0.85'>%2</t>", [_x select 0] call _esc, [_x select 1] call _esc] }) joinString "<br/>"];
         };

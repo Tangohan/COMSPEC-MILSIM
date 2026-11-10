@@ -10,6 +10,9 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _d = uiNamespace getVariable ["COMSPEC_ATAK_OrderDraft", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_OrderDraft", _d];
 private _kind = _d getOrDefault ["kind", "MOVE"];
+// Touche retour (fn_back) : ferme le rédacteur et revient à la liste des ordres, comme ANNULER, au lieu de quitter
+// l'app Tâches.
+(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["TASK", { ['cancel'] call comspec_atak_native_fnc_orderAction; }]];
 private _seg = {
     // Défaut explicite : le type est réparti sur plusieurs lignes, sans quoi chaque ligne allumait sa première case.
     params ["_key", "_opts", ["_def", ""]];

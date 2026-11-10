@@ -87,6 +87,8 @@ private _engage = {
     params ["_c"];
     _u setVariable ["comspec_sse_idDone", false];
     if (!isNull _c) then { _u setVariable ["comspec_sse_idCtrl", _c]; _u setVariable ["comspec_sse_idSeen", time]; };
+    // Tirs proches : l'IA engagée réagit (IA RP, fn_iarpReact « watch », sur évènement FiredNear).
+    if (!isNil "comspec_sse_fnc_iarpReact") then { ["watch", [_u]] call comspec_sse_fnc_iarpReact; };
     if !(_u in comspec_sse_idFsmList) then {
         comspec_sse_idFsmList pushBack _u;
         _u setVariable ["comspec_sse_idTension", nil];

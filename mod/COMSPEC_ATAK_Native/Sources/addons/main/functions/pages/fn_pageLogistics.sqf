@@ -46,9 +46,15 @@ private _card = {
         ["", format ["<br/><t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", [_r get "note"] call _esc]] select ((_r getOrDefault ["note", ""]) isNotEqualTo "")]
 };
 
+// Listes longues : 15 (mes demandes) et 20 (reçues) d'abord, « VOIR LA SUITE » en ajoute autant (états logiNMine, logiNIn).
+private _moreBtn = {
+    params ["_key", "_step", "_left"];
+    ["buttons", [[format ["VOIR LA SUITE (%1)", _left], compile format ["private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['%1', (_s getOrDefault ['%1', %2]) + %2]; [{ ['LOGI'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _key, _step], false, true, "Demandes plus anciennes"]]]
+};
 switch (_tab) do {
     case "MINE": {
         _rows pushBack ["section", "Mes demandes", "Suivi en direct, notification à chaque changement"];
+        private _nMine = (_s getOrDefault ["logiNMine", 15]) max 15;
         {
             private _id = _x get "id";
             private _st = _x get "status";
@@ -57,12 +63,17 @@ switch (_tab) do {
             if (_st in ["DEMANDEE", "VALIDEE"]) then { _b pushBack ["ANNULER", compile format ["['cancel', '%1'] call comspec_atak_native_fnc_logisticsAction;", _id]]; };
             if ((_x getOrDefault ["by", ""]) isNotEqualTo "") then { _rows pushBack ["text", format ["<t size='0.75' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Traité par %1 à %2</t>", [_x get "by"] call _esc, _x getOrDefault ["hourUpd", ""]]]; };
             _rows pushBack ["buttons", _b];
-        } forEach (_myReqs select [0, 15]);
-        if ((count _myReqs) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucune demande envoyée.</t>"]; };
+        } forEach (_myReqs select [0, _nMine]);
+        if ((count _myReqs) > _nMine) then { _rows pushBack (["logiNMine", 15, (count _myReqs) - _nMine] call _moreBtn); };
+        if ((count _myReqs) isEqualTo 0) then {
+            _rows pushBack ["empty", _icon, "Aucune demande envoyée", "Onglet NOUVELLE : choisissez le besoin, la quantité et le point de livraison, puis ENVOYER LA DEMANDE. Son suivi s'affiche ici.",
+                ["NOUVELLE DEMANDE", { (uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['logiTab', 'NEW']; [{ ['LOGI'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }]];
+        };
     };
     case "INBOX": {
         _rows pushBack ["section", "Demandes reçues", "Demandes du camp, les ouvertes en premier"];
         private _sorted = (_inbox select _open) + (_inbox select { !(call _open) });
+        private _nIn2 = (_s getOrDefault ["logiNIn", 20]) max 20;
         {
             private _id = _x get "id";
             private _st = _x get "status";
@@ -77,8 +88,11 @@ switch (_tab) do {
                 case "EN_ROUTE": { if ((_x get "mode") isNotEqualTo "AIRDROP") then { _b pushBack (["LIVRÉE", "deliver", true] call _cmd); }; };
             };
             _rows pushBack ["buttons", _b];
-        } forEach (_sorted select [0, 20]);
-        if ((count _inbox) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucune demande reçue depuis votre arrivée.</t>"]; };
+        } forEach (_sorted select [0, _nIn2]);
+        if ((count _sorted) > _nIn2) then { _rows pushBack (["logiNIn", 20, (count _sorted) - _nIn2] call _moreBtn); };
+        if ((count _inbox) isEqualTo 0) then {
+            _rows pushBack ["empty", _icon, "Aucune demande reçue depuis votre arrivée", "Les demandes de ravitaillement du camp arrivent ici avec une notification : vous pourrez les valider, les refuser et suivre leur livraison."];
+        };
     };
     default {
         private _cur = { params ["_k", "_d"]; _f getOrDefault [_k, _d] };

@@ -2,6 +2,8 @@ params ["_display", ["_exitCode", 0]];
 private _state = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 // Un autre display du terminal a déjà pris la place (bascule HUD / en main) : rien à nettoyer.
 if ((uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull]) isNotEqualTo _display) exitWith {};
+// Fermeture chronométrée (4.2.1) : nettoyage de l'écran, puis retour de la miniature à l'image suivante.
+private _pt = diag_tickTime;
 // Défilement de la page affichée gardé : un réglage qui recrée l'écran (taille, police…) la rouvre au même endroit.
 private _drawnPage = _state getOrDefault ["pageDrawn", ""];
 if (_drawnPage isNotEqualTo "") then {
@@ -39,6 +41,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_PageControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_DockControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_ToastControls", []];
 // Profil réécrit sur disque seulement si la dernière page a changé (chaque bascule HUD / en main ferme un display).
+// Écriture regroupée (fn_saveProfile : au plus une toutes les 60 s, jamais dans l'image de la fermeture).
 private _lastPage = _state getOrDefault ["activePage", "MAP"];
 if ((profileNamespace getVariable ["COMSPEC_ATAK_LastPage", "MAP"]) isNotEqualTo _lastPage) then {
     profileNamespace setVariable ["COMSPEC_ATAK_LastPage", _lastPage];
@@ -55,5 +58,11 @@ if ((missionNamespace getVariable ["COMSPEC_ATAK_PhoneActive", ""]) isNotEqualTo
 };
 // Téléphone reposé (Échap ou Ctrl+Maj+U) : il revient en HUD s'il était sorti.
 if (_wasInteractive && {uiNamespace getVariable ["COMSPEC_ATAK_HudWanted", false]} && {!(_state getOrDefault ["suppressHudRestore", false])}) then {
-    [{ if (isNull ([] call comspec_atak_native_fnc_display)) then { [false] call comspec_atak_native_fnc_open; }; }] call comspec_atak_native_fnc_nextFrame;
+    [{
+        if !(isNull ([] call comspec_atak_native_fnc_display)) exitWith {};
+        private _po = diag_tickTime;
+        [false] call comspec_atak_native_fnc_open;
+        ["téléphone : retour de la miniature", _po] call comspec_atak_native_fnc_perfAcc;
+    }] call comspec_atak_native_fnc_nextFrame;
 };
+["téléphone : fermeture (nettoyage)", _pt] call comspec_atak_native_fnc_perfAcc;

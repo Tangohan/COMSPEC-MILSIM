@@ -7,13 +7,16 @@
       story       histoire de couverture ; lignes « Clé : valeur » reprises comme faits (Origine, Employeur, Métier,
                   Motif, Né à, Contact, Adresse, Famille, Âge, Nom), le reste est du contexte pour le Zeus
       phrases     phrases types glissées de temps en temps      sensitive  sujets sensibles (mots qui la crispent)
-      secrets     ce qu'elle cache (aide-mémoire du Zeus, jamais dit)      know  renseignement qu'elle peut donner
+      secrets     ce qu'elle cache (aide-mémoire du Zeus) : dit seulement en aveu (confrontation, fn_iarpServer)
+      know        renseignement qu'elle peut donner ; une phrase (comme avant), ou par paliers « Vague : » / « Précis : » /
+                  « Complet : » et « Lieu : » (position posée sur la carte du joueur qui l'obtient) : voir « knowTiers »
       unlock      trust (confiance gagnée) | bribe (pot-de-vin accepté) | keyword (mot-clé) | never     unlockWord  mot-clé
       react       HashMap search / threat / bribe / order -> auto | coopere | refuse | fuit | agressif | rendu
       locks       champs verrouillés (le bouton Générer n'y touche pas)      preset  profil de bibliothèque d'origine
     Opérations (toute machine sauf mention) :
       ["defaults"] · ["normalize", profil] · ["serialize", profil] -> texte · ["parse", texte] -> profil (vide si invalide)
       ["facts", profil] -> HashMap des faits de l'histoire · ["summary", profil] -> résumé d'une ligne
+      ["knowTiers", savoir] -> [[vague, précis, complet], position, lieu] · ["intelLevel", [...]] -> palier débloqué
       ["presets"] -> [[id, libellé]…] · ["preset", id] -> profil · ["generate", [base, verrous]] -> profil tiré au hasard
       SERVEUR : ["get", unité] -> profil (enregistré, sinon défauts) · ["apply", [unité, profil]] · ["applyRaw", [unité, texte]]
     Vérité côté serveur : le profil (secrets, renseignement) reste une variable d'unité non diffusée ; seuls le nom RP
@@ -126,6 +129,81 @@ switch (_op) do {
         } forEach ((_p get "story") splitString _nl);
         _f
     };
+    // Savoir par paliers : lignes « Vague : … », « Précis : … », « Complet : … », « Lieu : … » ; une ligne sans ces clés
+    // va au palier précis (un savoir d'une seule phrase se comporte comme avant). Lieu : carroyage (« 045 078 Ferme
+    // abandonnée »), coordonnées (« [4512, 7820] Ferme »), ou nom d'un marqueur de la mission (« mrk_ferme Ferme »), suivi
+    // du nom lisible du lieu. -> [[vague, précis, complet], position [x, y] ou [], nom du lieu]
+    case "knowTiers": {
+        private _tiers = ["", "", ""];
+        private _plain = [];
+        private _pos = [];
+        private _label = "";
+        {
+            private _l = trim _x;
+            private _i = _l find ":";
+            private _k = if (_i > 0) then { trim ((_l select [0, _i]) call comspec_sse_fnc_iarpNorm) } else { "" };
+            private _v = trim (_l select [_i + 1]);
+            private _lvl = call {
+                if (_k in ["vague", "flou", "rumeur", "hint", "vague hint", "rumour", "rumor"]) exitWith { 1 };
+                if (_k in ["precis", "precise", "detail", "details", "detailed"]) exitWith { 2 };
+                if (_k in ["complet", "complete", "full", "tout"]) exitWith { 3 };
+                if (_k in ["lieu", "position", "place", "location", "pos", "endroit"]) exitWith { 9 };
+                0
+            };
+            switch (_lvl) do {
+                case 0: { if (_l isNotEqualTo "") then { _plain pushBack _l; }; };
+                case 9: {
+                    // Chiffres (et crochets, virgules) en tête : position ; le reste : nom du lieu.
+                    private _cut = (toArray _v) findIf { (_x >= 65 && {_x <= 90}) || {_x >= 97 && {_x <= 122}} || {_x >= 192} || {_x isEqualTo 95} };
+                    private _head = _v;
+                    _label = "";
+                    if (_cut >= 0) then { _head = _v select [0, _cut]; _label = trim (_v select [_cut]); };
+                    _head = trim _head;
+                    _head = toString ((toArray _head) select { !(_x in [91, 93]) });
+                    if (_head isNotEqualTo "") then {
+                        if ((_head find ",") >= 0) then {
+                            private _n = (_head splitString ", ") apply { parseNumber _x };
+                            if ((count _n) >= 2) then { _pos = [_n select 0, _n select 1]; };
+                        } else {
+                            private _g = toString ((toArray _head) select { _x >= 48 && {_x <= 57} });
+                            if ((count _g) in [4, 6, 8, 10]) then {
+                                ([_g] call BIS_fnc_gridToPos) params [["_gp", []], ["_gs", [0, 0]]];
+                                if (_gp isEqualType [] && {(count _gp) >= 2}) then { _pos = [(_gp select 0) + (_gs param [0, 0]) / 2, (_gp select 1) + (_gs param [1, 0]) / 2]; };
+                            };
+                        };
+                    } else {
+                        private _mk = (_label splitString " ") param [0, ""];
+                        if (_mk isNotEqualTo "" && {(markerType _mk) isNotEqualTo ""}) then {
+                            _pos = (markerPos _mk) select [0, 2];
+                            _label = trim (_label select [count _mk]);
+                            if (_label isEqualTo "") then { _label = markerText _mk; };
+                        };
+                    };
+                };
+                default { _tiers set [_lvl - 1, _v]; };
+            };
+        } forEach ((["", _a] select (!isNil "_a" && {_a isEqualType ""})) splitString _nl);
+        if (_plain isNotEqualTo []) then { _tiers set [1, trim ((_tiers select 1) + " " + (_plain joinString " "))]; };
+        [_tiers, _pos, _label]
+    };
+    // Palier de renseignement débloqué (0 : rien ; 1 vague ; 2 précis ; 3 complet) :
+    // ["intelLevel", [profil, confiance, pot-de-vin accepté, pots-de-vin, mot-clé, aveu, état, armes pointées, tension]]
+    //   débloqué (réglage « unlock » : confiance 60, pot-de-vin, mot-clé ; rendu avec confiance 40) -> précis ;
+    //   sinon pression (confiance 35, rendu, arme pointée, tension 60) -> vague ; débloqué et confiance 80, aveu ou deux
+    //   pots-de-vin -> complet. « never » : rien.
+    case "intelLevel": {
+        _a params [["_p", createHashMap], ["_trust", 0], ["_bribed", false], ["_bribes", 0], ["_word", false], ["_conf", false], ["_st", ""], ["_aimed", 0], ["_tension", 0]];
+        private _ul = _p getOrDefault ["unlock", "trust"];
+        if (_ul isEqualTo "never") exitWith { 0 };
+        private _open = switch (_ul) do {
+            case "bribe": { _bribed };
+            case "keyword": { _word };
+            default { _trust >= 60 || {_bribed} };
+        };
+        if (_st isEqualTo "rendu" && {_trust >= 40}) then { _open = true; };
+        if (!_open) exitWith { parseNumber (_trust >= 35 || {_st isEqualTo "rendu"} || {_aimed > 0} || {_tension >= 60}) };
+        2 + (parseNumber (_trust >= 80 || {_conf} || {_bribes >= 2}))
+    };
     case "summary": {
         private _p = [_a] call _normalize;
         format ["%1 · %2 · N%3 L%4 A%5 H%6 C%7 P%8%9",
@@ -199,8 +277,13 @@ switch (_op) do {
         _a params [["_u", objNull, [objNull]], ["_in", createHashMap]];
         if (isNull _u || {isPlayer _u}) exitWith { false };
         private _p = [_in] call _normalize;
+        // Mémoire de l'échange (fn_iarpMem) gardée quand le Zeus retouche la même personne (curseurs, réactions, savoir) ;
+        // effacée si c'est une autre personne (nom, histoire ou rôle changés) : ce qu'elle a affirmé ne vaut plus.
+        private _old = _u getVariable ["comspec_sse_iarpProfile", createHashMap];
+        if ((count _old) isEqualTo 0 || {[_old get "name", _old get "story", _old get "role"] isNotEqualTo [_p get "name", _p get "story", _p get "role"]}) then {
+            _u setVariable ["comspec_sse_iarpMem", nil];
+        };
         _u setVariable ["comspec_sse_iarpProfile", _p];
-        _u setVariable ["comspec_sse_iarpMem", nil];
         if ((_p get "name") isNotEqualTo "") then { _u setVariable ["comspec_sse_idName", _p get "name", true]; };
         // Profil au contrôle des IA réalistes (identité SSE) : repris par fn_idAiBrain, recalculé au prochain contrôle.
         if ((_p get "role") isNotEqualTo "auto") then { _u setVariable ["COMSPEC_ID_Profile", _p get "role"]; _u setVariable ["comspec_sse_idProfile", nil]; };
