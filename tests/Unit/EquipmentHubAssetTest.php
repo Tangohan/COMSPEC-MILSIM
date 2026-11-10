@@ -57,8 +57,9 @@ final class EquipmentHubAssetTest extends TestCase
         self::assertStringContainsString('name="type"', $hub);
         self::assertStringContainsString('eq-hub__picker-grid', $hub);
         self::assertStringContainsString('Aperçu rapide', $hub);
-        self::assertStringContainsString('data-eq-tab="fiches"', $hub);
-        self::assertStringContainsString('data-eq-tab="dotation"', $hub);
+        // Espace Matériel : onglets Catalogue des objets, Fiches matériel, Dotation (EquipmentMateriel::TABS).
+        self::assertStringContainsString('data-eq-tab="<?= $h($tabKey) ?>"', $hub);
+        self::assertSame(['catalogue', 'fiches', 'dotation'], array_keys(\App\Support\EquipmentMateriel::TABS));
         self::assertStringContainsString('name="gallery[]"', $hub);
         self::assertStringContainsString('name="description"', $hub);
         self::assertStringContainsString('eq-collection-edit', $hub);
