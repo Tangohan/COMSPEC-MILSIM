@@ -157,6 +157,10 @@ final class LoadoutValidator
             }
         }
 
+        foreach (self::orphanMagazines($lo, $catalog) as $class) {
+            $warnings[] = '« ' . $name($class) . ' » ne va dans aucune arme de la tenue (munitions pour un autre joueur ?).';
+        }
+
         return [
             'ok' => $errors === [],
             'errors' => array_values(array_unique($errors)),
@@ -165,6 +169,58 @@ final class LoadoutValidator
             'loads' => $loads,
             'mass' => $totalKnown ? round($total, 3) : null,
         ];
+    }
+
+    /**
+     * Chargeurs (balles, roquettes) rangés dans la tenue qui ne vont dans aucune de ses armes. Rien n'est signalé si
+     * une arme de la tenue n'a pas de liste de chargeurs connue (on ne peut pas savoir) ni pour les grenades à main,
+     * fumigènes et explosifs (lancés ou posés sans arme).
+     *
+     * @param list<mixed> $lo
+     * @param array<string, array<string, mixed>> $catalog
+     * @return list<string> classes
+     */
+    public static function orphanMagazines(array $lo, array $catalog): array
+    {
+        $weapons = [];
+        foreach ([0, 1, 2] as $i) {
+            if (is_array($lo[$i] ?? null) && $lo[$i] !== []) {
+                $weapons[] = (string) $lo[$i][0];
+            }
+        }
+        $stored = [];
+        foreach (LoadoutDocument::CONTAINER_SLOTS as $i) {
+            $c = is_array($lo[$i] ?? null) ? $lo[$i] : [];
+            foreach ($c[1] ?? [] as $e) {
+                if (is_array($e[0])) {
+                    $weapons[] = (string) $e[0][0];
+                } elseif (count($e) === 3) {
+                    $stored[strtolower((string) $e[0])] = (string) $e[0];
+                }
+            }
+        }
+        if ($weapons === [] || $stored === []) {
+            return [];
+        }
+        $accepted = [];
+        foreach ($weapons as $w) {
+            $mags = $catalog[strtolower($w)]['mags'] ?? null;
+            if (!is_array($mags)) {
+                return [];
+            }
+            foreach ($mags as $m) {
+                $accepted[strtolower((string) $m)] = true;
+            }
+        }
+        $out = [];
+        foreach ($stored as $key => $class) {
+            $cat = (string) ($catalog[$key]['cat'] ?? '');
+            if (!isset($accepted[$key]) && in_array($cat, ['balles', 'roquettes'], true)) {
+                $out[] = $class;
+            }
+        }
+
+        return $out;
     }
 
     /**

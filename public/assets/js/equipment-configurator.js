@@ -362,6 +362,67 @@
         if (!list) { return { ok: true, unchecked: true }; }
         return list[cls.toLowerCase()] ? { ok: true } : { ok: false, reason: '« ' + nameOf(cls) + ' » ne se monte pas sur « ' + nameOf(weaponCls) + ' » (emplacement ' + slotLabel(att).toLowerCase() + ').' };
     }
+    /**
+     * Arme remplacée par une autre classe : les accessoires et chargeurs compatibles avec la nouvelle arme sont gardés,
+     * les autres retirés (et annoncés). Compatibilités inconnues : gardés, l'alerte « non vérifiées » le dit.
+     */
+    function transferWeapon(prev, cls) {
+        var w = { cls: cls, muzzle: '', pointer: '', optic: '', bipod: '', mag: null, mag2: null };
+        var kept = [];
+        var removed = [];
+        if (!prev) { return { w: w, kept: kept, removed: removed }; }
+        ['muzzle', 'optic', 'pointer', 'bipod'].forEach(function (a) {
+            if (!prev[a]) { return; }
+            if (attachFits(cls, a, prev[a]).ok) { w[a] = prev[a]; kept.push(nameOf(prev[a])); } else { removed.push(nameOf(prev[a])); }
+        });
+        ['mag', 'mag2'].forEach(function (a) {
+            if (!prev[a]) { return; }
+            if (attachFits(cls, a, prev[a].cls).ok) { w[a] = clone(prev[a]); kept.push(nameOf(prev[a].cls)); } else { removed.push(nameOf(prev[a].cls)); }
+        });
+        return { w: w, kept: kept, removed: removed };
+    }
+    function transferNote(tr) {
+        return (tr.kept.length ? ' Gardé : ' + tr.kept.join(', ') + '.' : '') + (tr.removed.length ? ' Retiré car incompatible : ' + tr.removed.join(', ') + '.' : '');
+    }
+    /** Chargeurs (balles, roquettes) rangés qui ne vont dans aucune arme de la tenue (même règle que LoadoutValidator). */
+    function orphanMags(o) {
+        var weapons = WEAPON_SLOTS.map(function (s) { return o[s[0]]; }).filter(Boolean);
+        var stored = {};
+        CONTAINERS.forEach(function (c) {
+            var ct = o[c[0]];
+            if (!ct) { return; }
+            ct.items.forEach(function (e) {
+                if (e.t === 'weapon') { weapons.push(e.w); } else if (e.t === 'mag') { stored[e.cls.toLowerCase()] = e.cls; }
+            });
+        });
+        if (!weapons.length) { return []; }
+        var ok = {};
+        for (var i = 0; i < weapons.length; i++) {
+            var mags = compat(weapons[i].cls, 'mg');
+            if (!mags) { return []; }
+            Object.keys(mags).forEach(function (k) { ok[k] = true; });
+        }
+        return Object.keys(stored).filter(function (k) {
+            var s = spec(k);
+            return !ok[k] && s && (s.g === 'balles' || s.g === 'roquettes');
+        }).map(function (k) { return stored[k]; });
+    }
+    /**
+     * Armes de la tenue (posées et rangées) : objets compatibles pour un emplacement (« mg » chargeurs, « mu », « op »,
+     * « po », « bi »), réunis. null si la tenue n'a pas d'arme ou si une de ses armes n'a pas de liste connue.
+     */
+    function outfitCompat(o, short) {
+        var weapons = WEAPON_SLOTS.map(function (s) { return o[s[0]]; }).filter(Boolean);
+        CONTAINERS.forEach(function (c) { if (o[c[0]]) { o[c[0]].items.forEach(function (e) { if (e.t === 'weapon') { weapons.push(e.w); } }); } });
+        if (!weapons.length) { return null; }
+        var out = {};
+        for (var i = 0; i < weapons.length; i++) {
+            var set = compat(weapons[i].cls, short);
+            if (!set) { return null; }
+            Object.keys(set).forEach(function (k) { out[k] = true; });
+        }
+        return out;
+    }
     /** Le conteneur accepte-t-il cet objet, et y a-t-il la place ? */
     function containerFits(o, slot, entry, sameRef) {
         var c = o[slot];
@@ -421,6 +482,7 @@
             if (l.max != null && l.known && l.load > l.max + 0.0001) { errors.push(c[1] + ' déborde : ' + fmtMass(l.load) + ' / ' + l.max + '.'); }
             if (ct.items.length && (l.max == null || !l.known)) { warns.push('Charge non vérifiée : ' + c[1] + ' (masse ou capacité inconnue).'); }
         });
+        orphanMags(o).forEach(function (cls) { warns.push('« ' + nameOf(cls) + ' » ne va dans aucune arme de la tenue (munitions pour un autre joueur ?).'); });
         return { errors: errors.filter(uniq), warns: warns.filter(uniq) };
     }
     function uniq(v, i, a) { return a.indexOf(v) === i; }
@@ -442,6 +504,8 @@
         return true;
     }
     function afterChange(label) {
+        // Munitions et accessoires filtrés sur les armes de la tenue : la liste suit les armes posées.
+        if (CAT.ready && outfitFiltered(currentTab())) { var keepTop = vlist.scrollTop; filterPalette(); vlist.scrollTop = keepTop; renderRows(); }
         renderAll();
         saveDraft();
         if (label) { announce(label); }
@@ -527,8 +591,60 @@
         S.bench = 'a:primary:-';
     }
 
+    // ------------------------------------------------------------------ données du membre : favoris, pré-kits, tendances
+    var M = { ready: false, readyFav: false, readyPre: false, fav: {}, prekits: [], trends: { items: {}, wardrobes: [], days: 30, min: 2 } };
+    function isFav(cls) { return !!M.fav[String(cls || '').toLowerCase()]; }
+    function trendOf(cls) { return M.trends.items[String(cls || '').toLowerCase()] || null; }
+    function trendScore(t) { return t ? (t.w || 0) * 3 + (t.t || 0) * 2 + (t.f || 0) : 0; }
+    function trendLabel(t) {
+        if (!t) { return ''; }
+        var parts = [];
+        if (t.w) { parts.push('porté en jeu par ' + t.w); }
+        if (t.t) { parts.push('dans les tenues de ' + t.t); }
+        if (t.f) { parts.push('favori de ' + t.f); }
+        return parts.join(', ') + ' (' + M.trends.days + ' j)';
+    }
+    function favCount() { return Object.keys(M.fav).length; }
+    function loadMember() {
+        if (!urls.social) { return Promise.resolve(); }
+        return request(urls.social).then(function (j) {
+            if (!j.ok) { return; }
+            M.ready = true;
+            M.readyFav = !!(j.ready && j.ready.favorites);
+            M.readyPre = !!(j.ready && j.ready.prekits);
+            M.fav = {};
+            (j.favorites || []).forEach(function (c) { M.fav[String(c).toLowerCase()] = true; });
+            M.prekits = j.prekits || [];
+            M.trends = j.trends || M.trends;
+            M.trends.items = M.trends.items && !Array.isArray(M.trends.items) ? M.trends.items : {};
+            var fc = $('[data-cfg-fav-count]');
+            if (fc) { fc.textContent = String(favCount()); }
+            filterPalette();
+        });
+    }
+    function toggleFav(cls) {
+        if (!M.readyFav) { toast('Favoris pas encore disponibles : la mise à jour de la base doit être appliquée par un responsable.', 'warn'); return; }
+        var key = String(cls).toLowerCase();
+        var on = !M.fav[key];
+        if (on) { M.fav[key] = true; } else { delete M.fav[key]; }
+        $('[data-cfg-fav-count]').textContent = String(favCount());
+        if (P.fav) { filterPalette(); } else { renderRows(); }
+        var fd = new FormData();
+        fd.append('class', cls);
+        fd.append('on', on ? '1' : '0');
+        request(urls.favorite, { form: fd }).then(function (j) {
+            if (j.ok) { announce(on ? nameOf(cls) + ' ajouté aux favoris.' : nameOf(cls) + ' retiré des favoris.'); return; }
+            if (on) { delete M.fav[key]; } else { M.fav[key] = true; }
+            $('[data-cfg-fav-count]').textContent = String(favCount());
+            filterPalette();
+            toast(j.error || 'Favori non enregistré.', 'err');
+        });
+    }
+
     // ------------------------------------------------------------------ palette virtualisée
-    var P = { list: [], tab: { bench: 'weapons', outfit: 'all' }, cat: '', q: '', rowH: 58, showAll: false };
+    var P = { list: [], tab: { bench: 'weapons', outfit: 'all' }, cat: '', q: '', rowH: 58, showAll: false, fav: false, trend: false, forWeapons: true };
+    /** Onglet de la vue « Tenue » filtré sur les armes de la tenue A (munitions, accessoires). */
+    function outfitFiltered(t) { return S.mode === 'outfit' && (t.id === 'ammo' || t.id === 'acc'); }
     var vlist = $('[data-cfg-vlist]');
     var vspacer = $('[data-cfg-vspacer]');
     function currentTab() {
@@ -556,10 +672,14 @@
                 : esc('Choisissez d’abord une arme (onglet Armes) : les accessoires compatibles apparaîtront ici.');
         } else if (S.mode === 'bench') {
             help.innerHTML = esc('Glissez une arme sur l’établi, ou cliquez sur ＋. Exemple : tapez') + ' <em>MX</em>.';
+        } else if (outfitFiltered(cur)) {
+            help.innerHTML = esc(P.forWeapons ? 'Seuls les chargeurs et accessoires qui vont sur les armes de la tenue A sont proposés (grenades et explosifs : toujours).' : 'Tous les chargeurs et accessoires du catalogue sont proposés.');
         } else {
             help.innerHTML = esc('Glissez un objet sur un emplacement ou dans un conteneur, ou cliquez sur ＋. Exemple :') + ' <em>carryall</em>.';
         }
         $('[data-cfg-showall-wrap]').hidden = !(S.mode === 'bench' && cur.att && w);
+        $('[data-cfg-forweapons-wrap]').hidden = !outfitFiltered(cur);
+        $$('[data-cfg-pfilter]').forEach(function (b) { b.setAttribute('aria-pressed', String(!!P[b.getAttribute('data-cfg-pfilter')])); b.classList.toggle('is-on', !!P[b.getAttribute('data-cfg-pfilter')]); });
     }
     function renderCats() {
         var box = $('[data-cfg-cats]');
@@ -582,6 +702,14 @@
     /** Dans l'établi, un accessoire de l'onglet va-t-il sur l'arme ? null hors établi. */
     function palFit(it) {
         var t = currentTab();
+        if (outfitFiltered(t)) {
+            if (!P.forWeapons || it.g === 'grenades' || it.g === 'explosifs') { return null; }
+            var short = it.k === 'magazine' ? 'mg' : ATT_SHORT[it.k];
+            if (!short) { return null; }
+            var set = outfitCompat(S.outfits.a, short);
+            if (!set) { return null; }
+            return set[it.c.toLowerCase()] ? { ok: true } : { ok: false, reason: 'Ne va sur aucune arme de la tenue A.' };
+        }
         var w = benchWeapon();
         if (S.mode !== 'bench' || !t.att || !w) { return null; }
         return attachFits(w.cls, t.att, it.c);
@@ -590,14 +718,19 @@
         var t = currentTab();
         var words = fold(P.q).split(/\s+/).filter(Boolean);
         var list = [];
+        var strictOff = S.mode === 'bench' && P.showAll;
         CAT.items.forEach(function (it) {
             if (t.kinds && t.kinds.indexOf(it.k) < 0) { return; }
             if (P.cat && (t.subs ? (subKinds(t, P.cat) || []).indexOf(it.k) < 0 : it.g !== P.cat)) { return; }
             for (var i = 0; i < words.length; i++) { if (it._f.indexOf(words[i]) < 0) { return; } }
+            if (P.fav && !isFav(it.c)) { return; }
+            var tr = trendOf(it.c);
+            if (P.trend && !tr) { return; }
             var fit = palFit(it);
-            if (fit && !fit.ok && !P.showAll) { return; }
-            list.push({ it: it, fit: fit });
+            if (fit && !fit.ok && !strictOff) { return; }
+            list.push({ it: it, fit: fit, tr: tr });
         });
+        if (P.trend) { list.sort(function (a, b) { return trendScore(b.tr) - trendScore(a.tr); }); }
         if (S.mode === 'bench' && t.att) { list.sort(function (a, b) { return (b.fit && b.fit.ok ? 1 : 0) - (a.fit && a.fit.ok ? 1 : 0); }); }
         P.list = list;
         var count = $('[data-cfg-count]');
@@ -615,15 +748,27 @@
         } else if (!list.length) {
             count.textContent = 'Aucun résultat.';
             empty.hidden = false;
-            empty.innerHTML = S.mode === 'bench' && t.att && !P.showAll && benchWeapon()
-                ? '<p>' + esc('Aucun objet compatible ne correspond.') + '</p><button type="button" class="cfg-btn cfg-btn--sm" data-cfg-showall-on>' + esc('Montrer aussi les incompatibles') + '</button>'
-                : '<p>' + esc('Rien ne correspond. Essayez une partie du nom (ex. « MX », « carryall ») ou la classe Arma.') + '</p>';
+            if (P.fav) {
+                empty.innerHTML = '<p>' + esc('Aucun favori dans cet onglet. Cliquez sur l’étoile ☆ d’un objet pour le retrouver ici, d’une session à l’autre.') + '</p>';
+            } else if (P.trend) {
+                empty.innerHTML = '<p>' + esc('Pas encore de tendance dans cet onglet : il faut qu’au moins ' + M.trends.min + ' membres portent, ajoutent ou mettent en favori un même objet en ' + M.trends.days + ' jours.') + '</p>';
+            } else if (outfitFiltered(t) && P.forWeapons) {
+                empty.innerHTML = '<p>' + esc('Rien ne va sur les armes de la tenue A.') + '</p><button type="button" class="cfg-btn cfg-btn--sm" data-cfg-forweapons-off>' + esc('Montrer tout le catalogue') + '</button>';
+            } else {
+                empty.innerHTML = S.mode === 'bench' && t.att && !P.showAll && benchWeapon()
+                    ? '<p>' + esc('Aucun objet compatible ne correspond.') + '</p><button type="button" class="cfg-btn cfg-btn--sm" data-cfg-showall-on>' + esc('Montrer aussi les incompatibles') + '</button>'
+                    : '<p>' + esc('Rien ne correspond. Essayez une partie du nom (ex. « MX », « carryall ») ou la classe Arma.') + '</p>';
+            }
         } else {
             empty.hidden = true;
             var ok = list.filter(function (r) { return !r.fit || r.fit.ok; }).length;
+            var unchecked = list.some(function (r) { return r.fit && r.fit.unchecked; });
             count.textContent = S.mode === 'bench' && t.att && benchWeapon()
-                ? plural(ok, 'objet compatible', 'objets compatibles') + ' avec ' + nameOf(benchWeapon().cls)
-                : plural(list.length, 'objet', 'objets');
+                ? (unchecked ? plural(list.length, 'objet', 'objets') + ' : compatibilités de ' + nameOf(benchWeapon().cls) + ' inconnues, liste non filtrée'
+                    : plural(ok, 'objet compatible', 'objets compatibles') + ' avec ' + nameOf(benchWeapon().cls))
+                : (outfitFiltered(t) && P.forWeapons && outfitCompat(S.outfits.a, 'mg')
+                    ? plural(list.length, 'objet', 'objets') + ' pour les armes de la tenue A'
+                    : plural(list.length, 'objet', 'objets'));
         }
         vspacer.style.height = (list.length * P.rowH) + 'px';
         vlist.scrollTop = 0;
@@ -643,13 +788,18 @@
             var off = r.fit && !r.fit.ok;
             var meta = [KIND_LABEL[it.k] || ''];
             if (it.m != null) { meta.push(kg(it.m)); }
-            if (it.l) { meta.push('charge ' + it.l); }
+            if (it.l) { meta.push('contient ' + kg(it.l)); }
             if (it.a) { meta.push(rounds(it.a)); }
+            if (r.fit && r.fit.unchecked) { meta.push('compatibilité non vérifiée'); }
+            if (r.tr) { meta.push(trendLabel(r.tr)); }
             if (it.o) { meta.push(it.o); }
-            html += '<div class="cfg-row' + (off ? ' is-off' : '') + '" role="option" tabindex="-1" style="top:' + (i * P.rowH) + 'px"' + (off ? '' : ' data-dnd="pal:' + it._i + '"') + ' data-pal-index="' + i + '" data-pal-item="' + it._i + '" aria-label="' + esc((it.n || it.c) + ' — ' + (KIND_LABEL[it.k] || '') + (off ? ' — incompatible' : '')) + '">'
+            var fav = isFav(it.c);
+            var starLabel = (fav ? 'Retirer des favoris : ' : 'Mettre en favori : ') + (it.n || it.c);
+            html += '<div class="cfg-row' + (off ? ' is-off' : '') + (r.tr ? ' is-trend' : '') + '" role="option" tabindex="-1" style="top:' + (i * P.rowH) + 'px"' + (off ? '' : ' data-dnd="pal:' + it._i + '"') + ' data-pal-index="' + i + '" data-pal-item="' + it._i + '" aria-label="' + esc((it.n || it.c) + ' — ' + (KIND_LABEL[it.k] || '') + (off ? ' — incompatible' : '')) + '">'
                 + (off ? '<span class="cfg-grip" aria-hidden="true"></span>' : '<span class="cfg-grip" data-grip aria-hidden="true">⋮⋮</span>') + iconHtml(it.c)
                 + '<span class="cfg-row__txt"><span class="cfg-row__name" translate="no">' + esc(it.n || it.c) + '</span>'
                 + (off ? '<span class="cfg-row__why">' + esc(r.fit.reason) + '</span>' : '<span class="cfg-row__meta"><span translate="no">' + esc(it.c) + '</span> · ' + esc(meta.join(' · ')) + '</span>') + '</span>'
+                + '<button type="button" class="cfg-row__star' + (fav ? ' is-on' : '') + '" data-cfg-star="' + it._i + '" aria-pressed="' + fav + '" aria-label="' + esc(starLabel) + '" title="' + esc(starLabel) + '">' + (fav ? '★' : '☆') + '</button>'
                 + (off ? '' : '<button type="button" class="cfg-row__add" data-cfg-quick="' + it._i + '" aria-label="' + esc(quickLabel(it)) + '" title="' + esc(quickLabel(it)) + '">＋</button>') + '</div>';
         }
         $$('.cfg-row', vlist).forEach(function (row) { row.remove(); });
@@ -682,7 +832,15 @@
         var c = e.target.closest('[data-cat]');
         if (c) { P.cat = c.getAttribute('data-cat'); renderCats(); filterPalette(); return; }
         if (e.target.closest('[data-cfg-showall-on]')) { P.showAll = true; $('[data-cfg-showall]').checked = true; filterPalette(); }
+        if (e.target.closest('[data-cfg-forweapons-off]')) { P.forWeapons = false; $('[data-cfg-forweapons]').checked = false; renderTabs(); filterPalette(); }
+        var pf = e.target.closest('[data-cfg-pfilter]');
+        if (pf) { var k = pf.getAttribute('data-cfg-pfilter'); P[k] = !P[k]; renderTabs(); filterPalette(); return; }
+        var star = e.target.closest('[data-cfg-star]');
+        if (star) { var si = CAT.items[parseInt(star.getAttribute('data-cfg-star'), 10)]; if (si) { toggleFav(si.c); } }
+        var starCls = e.target.closest('[data-cfg-star-cls]');
+        if (starCls) { toggleFav(starCls.getAttribute('data-cfg-star-cls')); renderStage(); }
     });
+    $('[data-cfg-forweapons]').addEventListener('change', function (e) { P.forWeapons = e.target.checked; renderTabs(); filterPalette(); });
     // Clavier dans la liste : flèches pour parcourir, Entrée pour le menu d'actions.
     vlist.addEventListener('keydown', function (e) {
         if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') { return; }
@@ -757,7 +915,7 @@
         if (v) {
             inner += '<div class="cfg-piece" data-dnd="' + drop + '" tabindex="0" aria-label="' + esc(label + ' : ' + nameOf(v)) + '"><span class="cfg-grip" data-grip aria-hidden="true">⋮⋮</span>' + iconHtml(v, att === 'mag' || att === 'mag2' ? 'magazine' : att)
                 + '<span class="cfg-piece__txt"><span class="cfg-piece__name" translate="no">' + esc(nameOf(v)) + '</span>'
-                + (att === 'mag' || att === 'mag2' ? '<span class="cfg-piece__meta">' + rounds(w[att].ammo) + '</span>' : '') + '</span>'
+                + '<span class="cfg-piece__meta">' + esc([att === 'mag' || att === 'mag2' ? rounds(w[att].ammo) : '', massOf(v) != null ? kg(massOf(v)) : 'poids ?'].filter(Boolean).join(' · ')) + '</span></span>'
                 + '<button type="button" class="cfg-piece__x" data-bench-remove="' + att + '" aria-label="' + esc('Retirer : ' + nameOf(v)) + '">×</button></div>';
         } else {
             inner += '<span class="cfg-bslot__hint">' + esc(ATT_HINT[att] + ' : glissez-le ici') + '</span>';
@@ -792,7 +950,9 @@
             + '<span class="cfg-board__name" translate="no">' + esc(w.cls) + '</span></div>'
             + benchSlot(w, 'mag2', '2e chargeur / grenade') + benchSlot(w, 'mag', 'Chargeur') + benchSlot(w, 'bipod', 'Bipied / poignée')
             + '</div>';
-        var meta = '<p class="cfg-bench__meta"><span><strong translate="no">' + esc(nameOf(w.cls)) + '</strong></span>'
+        var wFav = isFav(w.cls);
+        var meta = '<p class="cfg-bench__meta"><span><strong translate="no">' + esc(nameOf(w.cls)) + '</strong>'
+            + ' <button type="button" class="cfg-row__star' + (wFav ? ' is-on' : '') + '" data-cfg-star-cls="' + esc(w.cls) + '" aria-pressed="' + wFav + '" aria-label="' + esc(wFav ? 'Retirer l’arme des favoris' : 'Mettre l’arme en favori') + '" title="' + esc(wFav ? 'Retirer l’arme des favoris' : 'Mettre l’arme en favori') + '">' + (wFav ? '★' : '☆') + '</button></span>'
             + (catLabel ? '<span>' + esc(catLabel) + '</span>' : '')
             + '<span>' + esc('Masse montée : ') + '<strong>' + (m == null ? esc('inconnue') : esc(kg(m))) + '</strong></span>'
             + '<span>' + esc(ref[2] === '-' ? OUTFIT_NAME[ref[0]] + ' · ' + slotLabel(ref[1]) : OUTFIT_NAME[ref[0]] + ' · rangée dans ' + slotLabel(ref[1]).toLowerCase()) + '</span></p>';
@@ -840,14 +1000,15 @@
     }
     function loadBar(l, compact) {
         if (l.max == null) {
-            return '<div class="cfg-load cfg-load--unk"><span class="cfg-load__bar"></span><span class="cfg-load__txt">' + (l.known ? fmtMass(l.load) : '?') + ' · ' + esc('capacité inconnue') + '</span></div>';
+            return '<div class="cfg-load cfg-load--unk"><span class="cfg-load__bar"></span><span class="cfg-load__txt">' + esc(l.known ? kg(l.load) + ' rangés' : 'poids ?') + ' · ' + esc('capacité inconnue') + '</span></div>';
         }
         var pct = l.known ? Math.min(100, Math.round(l.load / l.max * 100)) : 0;
         var tone = !l.known ? 'unk' : (l.load > l.max + 0.0001 ? 'over' : (pct >= 90 ? 'high' : (pct >= 65 ? 'mid' : 'low')));
         var left = l.known ? Math.max(0, l.max - l.load) : null;
-        return '<div class="cfg-load cfg-load--' + tone + '" role="meter" aria-valuemin="0" aria-valuemax="' + l.max + '" aria-valuenow="' + (l.known ? Math.round(l.load) : 0) + '" aria-label="' + esc('Charge') + '">'
+        // Rempli / capacité en kg (la capacité maximumLoad d'Arma est dans la même unité que la masse des objets).
+        return '<div class="cfg-load cfg-load--' + tone + '" role="meter" aria-valuemin="0" aria-valuemax="' + l.max + '" aria-valuenow="' + (l.known ? Math.round(l.load) : 0) + '" aria-label="' + esc('Charge : ' + (l.known ? kg(l.load) : '?') + ' sur ' + kg(l.max)) + '">'
             + '<span class="cfg-load__bar"><i style="width:' + pct + '%"></i></span>'
-            + '<span class="cfg-load__txt"><strong>' + (l.known ? pct + ' %' : '?') + '</strong>' + (compact ? '' : ' · ' + (l.known ? fmtMass(l.load) : '?') + ' / ' + l.max + (left != null ? ' · ' + esc('reste') + ' ' + fmtMass(left) : '')) + '</span></div>';
+            + '<span class="cfg-load__txt"><strong>' + (l.known ? pct + ' %' : '?') + '</strong>' + (compact ? '' : ' · ' + esc((l.known ? kg(l.load) : '?') + ' / ' + kg(l.max) + (left != null ? ' · reste ' + kg(left) : ''))) + '</span></div>';
     }
     var openContainers = { a: { uniform: true, vest: true, backpack: true }, b: { uniform: true, vest: true, backpack: true } };
     function containerCard(o, slot, label) {
@@ -880,6 +1041,8 @@
             + '<div class="cfg-piece" data-dnd="' + head + '" tabindex="0" aria-label="' + esc(label + ' : ' + nameOf(c.cls)) + '">'
             + '<span class="cfg-grip" data-grip aria-hidden="true">⋮⋮</span>' + iconHtml(c.cls, slot)
             + '<span class="cfg-piece__txt"><span class="cfg-wline__label">' + esc(label) + '</span><span class="cfg-piece__name" translate="no">' + esc(nameOf(c.cls)) + '</span></span></div>'
+            + '<span class="cfg-box__mass" title="' + esc('Poids du contenant vide') + '">' + esc(massOf(c.cls) != null ? kg(massOf(c.cls)) : '') + '</span>'
+            + '<button type="button" class="cfg-btn cfg-btn--sm" data-cfg-open="prekits" data-cfg-target="' + o + ':' + slot + '" title="' + esc('Insérer un pré-kit dans ' + label.toLowerCase()) + '">' + esc('Pré-kit') + '</button>'
             + '<button type="button" class="cfg-box__toggle" data-cfg-toggle="' + o + ':' + slot + '" aria-expanded="' + open + '">' + esc((open ? 'Replier' : 'Ouvrir') + ' (' + c.items.length + ')') + '</button>'
             + '<button type="button" class="cfg-box__menu" data-cfg-menu-for="' + head + '" aria-label="' + esc('Actions : ' + nameOf(c.cls)) + '">⋯</button></div>'
             + loadBar(l, false)
@@ -889,10 +1052,12 @@
     function outfitHtml(o) {
         var out = S.outfits[o];
         var source = out.ref ? ({ w: 'Tenue', k: 'Kit de départ', p: 'Porté en jeu', m: 'Porté en jeu' }[out.ref.charAt(0)] || '') : '';
+        var total = outfitMass(out);
         var head = '<header class="cfg-outfit__head">'
             + '<span class="cfg-outfit__tag">' + esc(OUTFIT_NAME[o]) + '</span>'
             + '<label class="cfg-outfit__name"><span class="cfg-sr">' + esc('Nom de la tenue') + '</span><input type="text" maxlength="90" value="' + esc(out.name) + '" placeholder="' + esc('Tenue sans nom') + '" data-cfg-name="' + o + '" translate="no"></label>'
             + (source ? '<span class="cfg-pill">' + esc(source) + '</span>' : '')
+            + '<span class="cfg-pill cfg-pill--mass" title="' + esc('Poids total porté') + '">' + esc(total == null ? 'poids incomplet' : kg(total)) + '</span>'
             + '<span class="cfg-outfit__acts">'
             + (o === 'b' ? '<button type="button" class="cfg-btn cfg-btn--sm" data-cfg-act="swap">' + esc('Échanger A ↔ B') + '</button><button type="button" class="cfg-btn cfg-btn--sm cfg-btn--quiet" data-cfg-act="close-b">' + esc('Fermer B') + '</button>' : '')
             + (o === 'a' && /^k:\d+$/.test(out.ref) && can.kits ? '<button type="button" class="cfg-btn cfg-btn--sm" data-cfg-open="versions">' + esc('Historique') + '</button>' : '')
@@ -931,7 +1096,8 @@
             var l = containerLoad(ct);
             var pct = l.max && l.known ? Math.min(100, Math.round(l.load / l.max * 100)) : null;
             var tone = pct == null ? 'unk' : (l.load > l.max + 0.0001 ? 'over' : (pct >= 90 ? 'high' : (pct >= 65 ? 'mid' : 'low')));
-            return '<div class="cfg-sum__gauge cfg-load--' + tone + '"><span>' + esc(c[1]) + '</span><span class="cfg-load__bar"><i style="width:' + (pct || 0) + '%"></i></span><span class="cfg-load__txt">' + (pct == null ? '?' : pct + ' %') + '</span></div>';
+            var detail = (l.known ? kg(l.load) : '?') + (l.max ? ' / ' + kg(l.max) : '');
+            return '<div class="cfg-sum__gauge cfg-load--' + tone + '" title="' + esc(c[1] + ' : ' + detail) + '"><span>' + esc(c[1]) + '</span><span class="cfg-load__bar"><i style="width:' + (pct || 0) + '%"></i></span><span class="cfg-load__txt">' + esc(pct == null ? '?' : pct + ' %') + '<small>' + esc(detail) + '</small></span></div>';
         }).join('');
         return '<div><h3 class="cfg-section-title">' + esc('Charge') + '</h3><div class="cfg-sum__gauges">' + rows + '</div></div>';
     }
@@ -1187,9 +1353,10 @@
             var bs = benchSlotFor(pl);
             var prev = S.outfits.a[bs];
             if (move) { removeSource(pl.src); }
-            S.outfits.a[bs] = newWeapon(pl);
+            var trB = pl.k === 'cls' && prev ? transferWeapon(prev, pl.cls) : null;
+            S.outfits.a[bs] = trB ? trB.w : newWeapon(pl);
             S.bench = 'a:' + bs + ':-';
-            return (prev ? '« ' + nameOf(prev.cls) + ' » remplacé par « ' + payloadName(pl) + ' »' : payloadName(pl) + ' sur l’établi (' + slotLabel(bs).toLowerCase() + ')') + '. Ajoutez maintenant une optique ou un chargeur.';
+            return (prev ? '« ' + nameOf(prev.cls) + ' » remplacé par « ' + payloadName(pl) + ' ».' + (trB ? transferNote(trB) : '') : payloadName(pl) + ' sur l’établi (' + slotLabel(bs).toLowerCase() + '). Ajoutez maintenant une optique ou un chargeur.');
         }
         var out = S.outfits[t[1]];
         // Cible résolue avant de retirer la source : un index de conteneur peut bouger.
@@ -1199,8 +1366,9 @@
         if (move) { removeSource(pl.src, mountOne ? 1 : 0); }
         if (t[0] === 'w') {
             var prevW = out[t[2]];
-            out[t[2]] = newWeapon(pl);
-            msg = (prevW ? '« ' + nameOf(prevW.cls) + ' » remplacé par « ' + payloadName(pl) + ' »' : payloadName(pl) + ' posé : ' + slotLabel(t[2])) + '.';
+            var trW = pl.k === 'cls' && prevW && t[2] !== 'binocular' ? transferWeapon(prevW, pl.cls) : null;
+            out[t[2]] = trW ? trW.w : newWeapon(pl);
+            msg = (prevW ? '« ' + nameOf(prevW.cls) + ' » remplacé par « ' + payloadName(pl) + ' »' : payloadName(pl) + ' posé : ' + slotLabel(t[2])) + '.' + (trW ? transferNote(trW) : '');
         } else if (t[0] === 'g') {
             var prevG = out[t[2]];
             out[t[2]] = pl.cls;
@@ -1243,7 +1411,7 @@
         }
         var msg = '';
         commit('', function () { msg = applyDrop(pl, target, copy); });
-        if (msg) { toast(msg, chk.unchecked ? 'warn' : ''); }
+        if (msg) { toast(msg, chk.unchecked || msg.indexOf('Retiré car incompatible') >= 0 ? 'warn' : ''); }
         return true;
     }
 
@@ -1666,7 +1834,10 @@
     function dlg(id) { return document.getElementById(id); }
     function openDialog(name, target) {
         closeMenu(false);
+        // Une seule fenêtre à la fois (ex. « Coller une tenue » depuis « Récupérer une tenue »).
+        $$('dialog.cfg-dialog[open]', document).forEach(function (d) { d.close(); });
         if (name === 'sources') { openSources(target || 'a'); return; }
+        if (name === 'prekits') { openPrekits(target || ''); return; }
         if (name === 'import') { dlg('cfg-import').showModal(); dlg('cfg-import').querySelector('textarea').focus(); return; }
         if (name === 'export') { renderExport(); dlg('cfg-export').showModal(); return; }
         if (name === 'save') { prepareSave(); dlg('cfg-save').showModal(); return; }
@@ -1681,50 +1852,260 @@
         d.addEventListener('click', function (e) { if (e.target === d) { d.close(); } });
     });
 
-    // Récupérer une tenue
+    // ------------------------------------------------------------------ ranger plusieurs objets d'un coup (pré-kits, fusion)
+    var CONTAINER_WORD = { uniform: 'l’uniforme', vest: 'le gilet', backpack: 'le sac' };
+    /**
+     * Range des lignes dans un contenant de la tenue, unité par unité tant qu'il y a la place (mêmes règles que
+     * containerFits ; même plan que PrekitDocument::plan côté serveur). dry = true : aperçu, la tenue ne bouge pas.
+     * Retour : {added: unités rangées, skipped: [{cls, n, reason}], unchecked, error}.
+     */
+    function insertEntries(o, slot, entries, dry) {
+        var target = dry ? clone(o) : o;
+        var res = { added: 0, skipped: [], unchecked: false, error: '' };
+        if (!target[slot]) { res.error = 'Posez d’abord ' + ({ uniform: 'un uniforme', vest: 'un gilet', backpack: 'un sac' }[slot]) + ' pour y ranger des objets.'; return res; }
+        entries.forEach(function (e0) {
+            var want = Math.max(1, e0.n || 1);
+            var unit = clone(e0);
+            unit.n = 1;
+            var put = 0;
+            var reason = '';
+            for (var k = 0; k < want; k++) {
+                var chk = containerFits(target, slot, unit, false);
+                if (!chk.ok) { reason = chk.reason; break; }
+                if (chk.unchecked) { res.unchecked = true; }
+                addEntry(target[slot], clone(unit));
+                put++;
+            }
+            res.added += put;
+            if (put < want) {
+                var cls = e0.t === 'weapon' ? e0.w.cls : e0.cls;
+                res.skipped.push({ cls: cls, n: want - put, reason: reason || ('Plus de place dans ' + CONTAINER_WORD[slot] + '.') });
+            }
+        });
+        return res;
+    }
+    function skippedText(list) {
+        return list.map(function (s) { return nameOf(s.cls) + (s.n > 1 ? ' × ' + s.n : ''); }).join(', ');
+    }
+
+    // ------------------------------------------------------------------ Récupérer une tenue
     var sourcesCache = null;
     var sourcesTarget = 'a';
-    var GROUPS = [['mine', 'Mes tenues'], ['kits', 'Kits de départ'], ['models', 'Modèles de la communauté'], ['community', 'Tenues de la communauté'], ['game', 'Porté en jeu']];
+    var SRC = { tab: 'all', sel: '', sides: {}, cache: {}, parts: null, how: 'replace' };
+    var SRC_TABS = [['all', 'Tout'], ['mine', 'Mes tenues'], ['fav', 'Favoris'], ['kits', 'Kits de départ'], ['models', 'Modèles'], ['community', 'Communauté'], ['game', 'Porté en jeu'], ['trend', 'Tendances']];
+    var GROUP_LABEL = { mine: 'Ma tenue', kits: 'Kit de départ', models: 'Modèle de la communauté', community: 'Tenue de la communauté', game: 'Porté en jeu' };
+    var PARTS = [
+        ['weapons', 'Armes et accessoires', ['primary', 'handgun', 'secondary']],
+        ['uniform', 'Uniforme et son contenu', ['uniform']],
+        ['vest', 'Gilet et son contenu', ['vest']],
+        ['backpack', 'Sac et son contenu', ['backpack']],
+        ['head', 'Casque et lunettes', ['headgear', 'goggles']],
+        ['items', 'Jumelles, carte, radio, GPS, boussole, montre, JVN', ['binocular', 'map', 'gps', 'radio', 'compass', 'watch', 'nvg']]
+    ];
+    function srcDlg() { return dlg('cfg-sources'); }
     function openSources(target) {
-        sourcesTarget = target;
-        var d = dlg('cfg-sources');
+        sourcesTarget = target === 'b' ? 'b' : 'a';
+        SRC.how = sourcesTarget === 'b' ? 'b' : 'replace';
+        var d = srcDlg();
         d.showModal();
         var q = d.querySelector('[data-cfg-sources-q]');
         q.value = '';
         q.focus();
-        if (sourcesCache) { renderSources(); return; }
+        if (sourcesCache) { renderSources(); renderSourcePreview(); return; }
+        d.querySelector('[data-cfg-sources-list]').innerHTML = '<p class="cfg-muted">' + esc('Chargement…') + '</p>';
         request(urls.sources).then(function (j) {
-            sourcesCache = j.ok ? (j.sources || []) : [];
             if (!j.ok) { d.querySelector('[data-cfg-sources-list]').innerHTML = '<p class="cfg-flash cfg-flash--err">' + esc(j.error || 'Liste indisponible.') + '</p>'; return; }
+            sourcesCache = j.sources || [];
+            SRC.sides = j.sides || {};
+            var trendRefs = {};
+            (M.trends.wardrobes || []).forEach(function (t) { trendRefs[t.ref] = t.members; });
+            sourcesCache.forEach(function (s) { if (trendRefs[s.ref]) { s.trend = trendRefs[s.ref]; } });
+            fillSourceFilters();
             renderSources();
+            renderSourcePreview();
         });
+    }
+    function sourceGroupKey(s) { return s.collection || s.role || ''; }
+    function fillSourceFilters() {
+        var d = srcDlg();
+        var sides = {};
+        var groups = {};
+        sourcesCache.forEach(function (s) { if (s.side) { sides[s.side] = true; } if (sourceGroupKey(s)) { groups[sourceGroupKey(s)] = true; } });
+        var sideSel = d.querySelector('[data-cfg-sources-side]');
+        sideSel.innerHTML = '<option value="">' + esc('Tous les camps') + '</option>' + Object.keys(SRC.sides).filter(function (k) { return sides[k]; }).map(function (k) {
+            return '<option value="' + esc(k) + '">' + esc(SRC.sides[k]) + '</option>';
+        }).join('');
+        sideSel.closest('label').hidden = !Object.keys(sides).length;
+        var grpSel = d.querySelector('[data-cfg-sources-group]');
+        grpSel.innerHTML = '<option value="">' + esc('Tous') + '</option>' + Object.keys(groups).sort().map(function (g) { return '<option value="' + esc(g) + '" translate="no">' + esc(g) + '</option>'; }).join('');
+        grpSel.closest('label').hidden = !Object.keys(groups).length;
+    }
+    function sourceMatches(s, tab) {
+        if (tab === 'all') { return true; }
+        if (tab === 'fav') { return !!s.fav; }
+        if (tab === 'trend') { return !!s.trend; }
+        return s.group === tab;
     }
     function renderSources() {
-        var d = dlg('cfg-sources');
+        var d = srcDlg();
         var words = fold(d.querySelector('[data-cfg-sources-q]').value).split(/\s+/).filter(Boolean);
-        var list = sourcesCache.filter(function (s) {
-            var hay = fold(s.name + ' ' + (s.owner || ''));
-            return words.every(function (w) { return hay.indexOf(w) >= 0; });
+        var side = d.querySelector('[data-cfg-sources-side]').value;
+        var grp = d.querySelector('[data-cfg-sources-group]').value;
+        var base = sourcesCache.filter(function (s) {
+            var hay = fold(s.name + ' ' + (s.owner || '') + ' ' + (s.role || '') + ' ' + (s.collection || ''));
+            return words.every(function (w) { return hay.indexOf(w) >= 0; }) && (!side || s.side === side) && (!grp || sourceGroupKey(s) === grp);
         });
-        var html = '';
-        GROUPS.forEach(function (g) {
-            var rows = list.filter(function (s) { return s.group === g[0]; });
-            if (!rows.length) { return; }
-            html += '<section class="cfg-sources__group"><h3>' + esc(g[1]) + ' <span>' + rows.length + '</span></h3><ul>' + rows.slice(0, 200).map(function (s) {
-                return '<li><span class="cfg-sources__txt"><strong translate="no">' + esc(s.name) + '</strong>' + (s.owner ? '<em translate="no">' + esc(s.owner) + '</em>' : '') + '</span>'
-                    + '<button type="button" class="cfg-btn cfg-btn--sm' + (sourcesTarget === 'a' ? ' cfg-btn--primary' : '') + '" data-src-open="' + esc(s.ref) + '" data-src-to="a">' + esc('Ouvrir en A') + '</button>'
-                    + '<button type="button" class="cfg-btn cfg-btn--sm' + (sourcesTarget === 'b' ? ' cfg-btn--primary' : '') + '" data-src-open="' + esc(s.ref) + '" data-src-to="b">' + esc('En B') + '</button></li>';
-            }).join('') + '</ul></section>';
-        });
-        d.querySelector('[data-cfg-sources-list]').innerHTML = html || (sourcesCache.length
-            ? '<p class="cfg-muted">' + esc('Aucune tenue ne correspond au filtre.') + '</p>'
+        d.querySelector('[data-cfg-sources-tabs]').innerHTML = SRC_TABS.filter(function (t) {
+            return t[0] === 'all' || t[0] === SRC.tab || sourcesCache.some(function (s) { return sourceMatches(s, t[0]); });
+        }).map(function (t) {
+            var n = base.filter(function (s) { return sourceMatches(s, t[0]); }).length;
+            return '<button type="button" class="cfg-tab" role="tab" aria-selected="' + (SRC.tab === t[0]) + '" data-src-tab="' + t[0] + '">' + esc(t[1]) + ' <span>' + n + '</span></button>';
+        }).join('');
+        var list = base.filter(function (s) { return sourceMatches(s, SRC.tab); });
+        if (SRC.tab === 'trend') { list.sort(function (a, b) { return (b.trend || 0) - (a.trend || 0); }); }
+        var html = list.slice(0, 250).map(function (s) {
+            var meta = [GROUP_LABEL[s.group] || '', s.owner, s.collection && s.collection !== s.owner ? s.collection : '', s.side && SRC.sides[s.side] ? SRC.sides[s.side] : ''].filter(Boolean);
+            var star = /^w:/.test(s.ref)
+                ? '<button type="button" class="cfg-row__star' + (s.fav ? ' is-on' : '') + '" data-src-fav="' + esc(s.ref) + '" aria-pressed="' + !!s.fav + '" aria-label="' + esc((s.fav ? 'Retirer des favoris : ' : 'Mettre en favori : ') + s.name) + '">' + (s.fav ? '★' : '☆') + '</button>'
+                : '';
+            return '<li class="cfg-src' + (SRC.sel === s.ref ? ' is-selected' : '') + '"><button type="button" class="cfg-src__pick" data-src-pick="' + esc(s.ref) + '" aria-pressed="' + (SRC.sel === s.ref) + '">'
+                + '<strong translate="no">' + esc(s.name) + '</strong><em translate="no">' + esc(meta.join(' · ')) + '</em>'
+                + (s.trend ? '<small>' + esc('Favori de ' + s.trend + ' membres (' + M.trends.days + ' j)') + '</small>' : '') + '</button>' + star + '</li>';
+        }).join('');
+        d.querySelector('[data-cfg-sources-list]').innerHTML = html ? '<ul class="cfg-src-list">' + html + '</ul>' : (sourcesCache.length
+            ? '<p class="cfg-muted">' + esc(SRC.tab === 'fav' ? 'Aucune tenue favorite : cliquez sur l’étoile ☆ d’une tenue.' : 'Aucune tenue ne correspond à la recherche.') + '</p>'
             : '<div class="cfg-empty"><p><strong>' + esc('Aucune tenue à récupérer pour l’instant.') + '</strong></p><p>' + esc('Enregistrez une tenue depuis l’arsenal en jeu (COMSPEC Link), avec ce configurateur, ou copiez un kit de départ.') + '</p></div>');
     }
-    dlg('cfg-sources').addEventListener('input', function (e) { if (e.target.hasAttribute('data-cfg-sources-q') && sourcesCache) { renderSources(); } });
-    dlg('cfg-sources').addEventListener('click', function (e) {
-        var b = e.target.closest('[data-src-open]');
-        if (!b) { return; }
-        loadSource(b.getAttribute('data-src-open'), b.getAttribute('data-src-to'), function () { dlg('cfg-sources').close(); });
+    function previewWeapon(w, label) {
+        if (!w) { return ''; }
+        var atts = [w.optic, w.muzzle, w.pointer, w.bipod].filter(Boolean).map(nameOf);
+        var mags = [w.mag, w.mag2].filter(Boolean).map(function (m) { return nameOf(m.cls); });
+        var m = weaponMass(w);
+        return '<li class="cfg-pv__weapon">' + iconHtml(w.cls) + '<span><small>' + esc(label + (m != null ? ' · ' + kg(m) : '')) + '</small><strong translate="no">' + esc(nameOf(w.cls)) + '</strong>'
+            + '<em translate="no">' + esc(atts.concat(mags).join(' · ') || 'sans accessoire') + '</em></span></li>';
+    }
+    function previewContainer(o, slot, label) {
+        var c = o[slot];
+        if (!c) { return '<div class="cfg-pv__box is-empty"><small>' + esc(label) + '</small><span class="cfg-muted">' + esc('aucun') + '</span></div>'; }
+        var cells = c.items.slice(0, 24).map(function (e) {
+            var cls = e.t === 'weapon' ? e.w.cls : e.cls;
+            return '<li title="' + esc(nameOf(cls)) + '">' + iconHtml(cls) + '<span translate="no">' + esc(nameOf(cls)) + '</span>' + (e.n > 1 ? '<b>×' + e.n + '</b>' : '') + '</li>';
+        }).join('');
+        return '<div class="cfg-pv__box"><small>' + esc(label) + '</small><strong translate="no">' + esc(nameOf(c.cls)) + '</strong>' + loadBar(containerLoad(c), false)
+            + (cells ? '<ul class="cfg-pv__cells">' + cells + '</ul>' + (c.items.length > 24 ? '<p class="cfg-muted">' + esc('… et ' + (c.items.length - 24) + ' autres lignes') + '</p>' : '') : '<p class="cfg-muted">' + esc('Vide') + '</p>') + '</div>';
+    }
+    function renderSourcePreview() {
+        var box = srcDlg().querySelector('[data-cfg-sources-preview]');
+        var j = SRC.sel ? SRC.cache[SRC.sel] : null;
+        if (!SRC.sel) { return; }
+        if (!j) { box.innerHTML = '<p class="cfg-muted">' + esc('Chargement de la tenue…') + '</p>'; return; }
+        if (!j.ok) { box.innerHTML = '<p class="cfg-flash cfg-flash--err">' + esc(j.error || 'Tenue indisponible.') + '</p>'; return; }
+        var o = outfitFrom(j.loadout, j.name, SRC.sel, j.meta || {});
+        var m = outfitMass(o);
+        var unk = j.report && j.report.unknown ? j.report.unknown.length : 0;
+        var items = ['headgear', 'goggles', 'nvg', 'map', 'gps', 'radio', 'compass', 'watch'].filter(function (k) { return o[k]; }).map(function (k) { return nameOf(o[k]); });
+        if (o.binocular) { items.unshift(nameOf(o.binocular.cls)); }
+        if (!SRC.parts) { SRC.parts = {}; PARTS.forEach(function (p) { SRC.parts[p[0]] = true; }); }
+        var hasPart = function (p) { return p[2].some(function (k) { return !!o[k]; }); };
+        var opts = PARTS.map(function (p) {
+            var on = hasPart(p);
+            return '<label class="cfg-check"><input type="checkbox" data-src-part="' + p[0] + '"' + (on && SRC.parts[p[0]] ? ' checked' : '') + (on ? '' : ' disabled') + '> <span>' + esc(p[1]) + (on ? '' : ' (absent)') + '</span></label>';
+        }).join('');
+        var how = [
+            ['replace', 'Remplacer dans la tenue A', 'Les parties cochées remplacent celles de la tenue A ; le reste de A ne bouge pas.'],
+            ['merge', 'Fusionner avec la tenue A', 'Remplit les emplacements vides de A et ajoute le contenu des sacs dans la limite de la place.'],
+            ['b', 'Ouvrir en tenue B', 'À côté de la tenue A, pour copier à la main par glisser-déposer.']
+        ].map(function (h) {
+            return '<label class="cfg-target"><input type="radio" name="cfg-src-how" value="' + h[0] + '"' + (SRC.how === h[0] ? ' checked' : '') + ' data-src-how> <span><strong>' + esc(h[1]) + '</strong> ' + esc(h[2]) + '</span></label>';
+        }).join('');
+        box.innerHTML = '<div class="cfg-pv">'
+            + '<div class="cfg-pv__head"><h3 translate="no">' + esc(j.name) + '</h3><span class="cfg-pill cfg-pill--mass">' + esc(m == null ? 'poids incomplet' : kg(m)) + '</span></div>'
+            + (unk ? '<p class="cfg-flash cfg-flash--warn">' + esc(plural(unk, 'objet absent', 'objets absents') + ' du catalogue : à remplacer avant d’enregistrer.') + '</p>' : '')
+            + (j.meta && j.meta.description ? '<p class="cfg-muted" translate="no">' + esc(j.meta.description) + '</p>' : '')
+            + '<ul class="cfg-pv__weapons">' + (WEAPON_SLOTS.map(function (s) { return previewWeapon(o[s[0]], s[1]); }).join('') || '<li class="cfg-muted">' + esc('Aucune arme') + '</li>') + '</ul>'
+            + '<div class="cfg-pv__boxes">' + CONTAINERS.map(function (c) { return previewContainer(o, c[0], c[1]); }).join('') + '</div>'
+            + (items.length ? '<p class="cfg-pv__items"><small>' + esc('Porté') + '</small> <span translate="no">' + esc(items.join(' · ')) + '</span></p>' : '')
+            + '<fieldset class="cfg-pv__opts"><legend>' + esc('Ce que vous prenez') + '</legend><div class="cfg-pv__parts">' + opts + '</div></fieldset>'
+            + '<fieldset class="cfg-targets"><legend>' + esc('Comment') + '</legend>' + how + '</fieldset>'
+            + '<footer class="cfg-dialog__foot"><button type="button" class="cfg-btn" data-cfg-close>' + esc('Annuler') + '</button><button type="button" class="cfg-btn cfg-btn--primary" data-src-apply>' + esc('Récupérer') + '</button></footer>'
+            + '</div>';
+    }
+    function selectSource(ref) {
+        SRC.sel = ref;
+        renderSources();
+        if (SRC.cache[ref]) { renderSourcePreview(); return; }
+        renderSourcePreview();
+        request(urls.source + '?ref=' + encodeURIComponent(ref)).then(function (j) {
+            SRC.cache[ref] = j;
+            if (SRC.sel === ref) { renderSourcePreview(); }
+        });
+    }
+    /** Copie les parties choisies d'une tenue récupérée dans la tenue visée (remplacer, fusionner, ou tenue B). */
+    function applySource() {
+        var j = SRC.cache[SRC.sel];
+        if (!j || !j.ok) { return; }
+        var src = outfitFrom(j.loadout, j.name, SRC.sel, j.meta || {});
+        var parts = PARTS.filter(function (p) { return SRC.parts[p[0]] && p[2].some(function (k) { return !!src[k]; }); });
+        if (!parts.length) { toast('Cochez au moins une partie à récupérer.', 'warn'); return; }
+        var all = parts.length === PARTS.filter(function (p) { return p[2].some(function (k) { return !!src[k]; }); }).length;
+        var how = SRC.how;
+        var notes = [];
+        commit('Tenue récupérée.', function () {
+            if (how === 'b' || (how === 'replace' && all)) {
+                var to = how === 'b' ? 'b' : 'a';
+                var dest = all ? src : blankOutfit();
+                if (!all) { parts.forEach(function (p) { p[2].forEach(function (k) { dest[k] = clone(src[k]); }); }); dest.name = src.name; }
+                S.outfits[to] = dest;
+                return;
+            }
+            var a = S.outfits.a;
+            parts.forEach(function (p) {
+                p[2].forEach(function (k) {
+                    var v = src[k];
+                    if (!v) { return; }
+                    if (how === 'replace' || !a[k]) { a[k] = clone(v); return; }
+                    if (CONTAINER_CODE[k]) {
+                        var r = insertEntries(a, k, clone(v.items), false);
+                        if (r.skipped.length) { notes.push('Pas de place dans ' + CONTAINER_WORD[k] + ' pour : ' + skippedText(r.skipped) + '.'); }
+                        return;
+                    }
+                    notes.push(slotLabel(k) + ' déjà pris : gardé.');
+                });
+            });
+        });
+        if (how === 'b' && S.mode !== 'outfit') { setMode('outfit'); }
+        srcDlg().close();
+        var unk = j.report && j.report.unknown ? j.report.unknown.length : 0;
+        var msg = '« ' + j.name + ' » ' + (how === 'b' ? 'ouverte en tenue B.' : (how === 'merge' ? 'fusionnée avec la tenue A.' : 'récupérée dans la tenue A.'))
+            + (notes.length ? ' ' + notes.join(' ') : '') + (unk ? ' ' + unk + ' objet(s) absent(s) du catalogue : à remplacer avant d’enregistrer.' : '');
+        toast(msg, notes.length || unk ? 'warn' : '');
+    }
+    function toggleWardrobeFav(ref) {
+        var s = sourcesCache.filter(function (x) { return x.ref === ref; })[0];
+        if (!s || !urls.wardrobeFavorite) { return; }
+        var on = !s.fav;
+        s.fav = on;
+        renderSources();
+        var fd = new FormData();
+        fd.append('on', on ? '1' : '0');
+        request(urls.wardrobeFavorite + ref.slice(2) + '/favori', { form: fd }).then(function (j) {
+            if (!j.ok) { s.fav = !on; renderSources(); toast('Favori non enregistré.', 'err'); }
+        });
+    }
+    srcDlg().addEventListener('input', function (e) { if (e.target.hasAttribute('data-cfg-sources-q') && sourcesCache) { renderSources(); } });
+    srcDlg().addEventListener('change', function (e) {
+        if ((e.target.hasAttribute('data-cfg-sources-side') || e.target.hasAttribute('data-cfg-sources-group')) && sourcesCache) { renderSources(); }
+        if (e.target.hasAttribute('data-src-part')) { SRC.parts[e.target.getAttribute('data-src-part')] = e.target.checked; }
+        if (e.target.hasAttribute('data-src-how')) { SRC.how = e.target.value; }
+    });
+    srcDlg().addEventListener('click', function (e) {
+        var t = e.target.closest('[data-src-tab]');
+        if (t) { SRC.tab = t.getAttribute('data-src-tab'); renderSources(); return; }
+        var p = e.target.closest('[data-src-pick]');
+        if (p) { selectSource(p.getAttribute('data-src-pick')); return; }
+        var f = e.target.closest('[data-src-fav]');
+        if (f) { toggleWardrobeFav(f.getAttribute('data-src-fav')); return; }
+        if (e.target.closest('[data-src-apply]')) { applySource(); }
     });
     function loadSource(ref, to, done) {
         request(urls.source + '?ref=' + encodeURIComponent(ref)).then(function (j) {
@@ -1736,6 +2117,252 @@
             if (done) { done(); }
         });
     }
+
+    // ------------------------------------------------------------------ Pré-kits
+    var preDlg = dlg('cfg-prekits');
+    var preForm = preDlg.querySelector('[data-cfg-prekit-form]');
+    var PK = { target: 'a:vest', edit: null, lines: [], pending: null };
+    var PREKIT_REFUSED = ['primary', 'secondary', 'handgun', 'backpack', 'uniform', 'vest'];
+    // Exemple « Équipement obligatoire » : premières classes présentes dans le catalogue (ACE, radios des mods, jeu de base).
+    var PREKIT_EXAMPLE = [
+        [['ACE_tourniquet'], 2],
+        [['ACE_fieldDressing', 'ACE_packingBandage', 'ACE_elasticBandage', 'FirstAidKit'], 4],
+        [['ACE_morphine', 'ACE_epinephrine'], 1],
+        [['ACRE_PRC343', 'TFAR_anprc152', 'TFAR_rf7800str', 'ItemRadio'], 1],
+        [['ACE_MapTools'], 1],
+        [['ItemMap'], 1],
+        [['ACE_EarPlugs'], 1]
+    ];
+    function prekitEntries(items) { return items.map(function (l) { return entryFor({ k: 'cls', cls: (spec(l[0]) || { c: l[0] }).c, n: l[1] }); }); }
+    function prekitMass(items) {
+        var t = 0;
+        for (var i = 0; i < items.length; i++) { var m = massOf(items[i][0]); if (m == null) { return null; } t += m * items[i][1]; }
+        return t;
+    }
+    function targetParts(v) { var p = String(v || '').split(':'); return S.outfits[p[0]] && CONTAINER_CODE[p[1]] ? p : null; }
+    function fillPrekitTargets() {
+        var sel = preDlg.querySelector('[data-cfg-prekit-target]');
+        var opts = [];
+        ['a', 'b'].forEach(function (o) {
+            if (!S.outfits[o]) { return; }
+            CONTAINERS.forEach(function (c) {
+                var ct = S.outfits[o][c[0]];
+                opts.push('<option value="' + o + ':' + c[0] + '"' + (ct ? '' : ' disabled') + (PK.target === o + ':' + c[0] ? ' selected' : '') + '>' + esc(OUTFIT_NAME[o] + ' · ' + c[1] + (ct ? ' (' + (containerLoad(ct).max ? 'reste ' + kg(Math.max(0, containerLoad(ct).max - containerLoad(ct).load)) : 'capacité inconnue') + ')' : ' : aucun')) + '</option>');
+            });
+        });
+        sel.innerHTML = opts.join('');
+        if (!targetParts(sel.value) || !S.outfits[sel.value.split(':')[0]][sel.value.split(':')[1]]) {
+            var first = Array.prototype.slice.call(sel.options).filter(function (op) { return !op.disabled; })[0];
+            if (first) { sel.value = first.value; }
+        }
+        PK.target = sel.value;
+    }
+    function openPrekits(target) {
+        if (target && targetParts(target)) { PK.target = target; }
+        PK.pending = null;
+        showPrekitForm(false);
+        fillPrekitTargets();
+        renderPrekits();
+        preDlg.showModal();
+        if (!M.ready) { loadMember().then(renderPrekits); }
+    }
+    function renderPrekits() {
+        var box = preDlg.querySelector('[data-cfg-prekits-list]');
+        var planBox = preDlg.querySelector('[data-cfg-prekit-plan]');
+        planBox.hidden = !PK.pending;
+        if (!M.ready) { box.innerHTML = '<p class="cfg-muted">' + esc('Chargement…') + '</p>'; return; }
+        if (!M.readyPre) {
+            box.innerHTML = '<div class="cfg-empty"><p><strong>' + esc('Pré-kits pas encore disponibles.') + '</strong></p><p>' + esc('Un responsable doit appliquer la mise à jour de la base (étape « Configurateur : favoris d’objets et pré-kits »).') + '</p></div>';
+            preDlg.querySelector('[data-cfg-prekit-new]').disabled = true;
+            return;
+        }
+        preDlg.querySelector('[data-cfg-prekit-new]').disabled = false;
+        if (!M.prekits.length) {
+            box.innerHTML = '<div class="cfg-empty"><p><strong>' + esc('Aucun pré-kit pour l’instant.') + '</strong></p><p>' + esc('Créez-en un : « Nouveau pré-kit », puis l’exemple « Équipement obligatoire » ou le contenu de votre gilet.') + '</p></div>';
+            return;
+        }
+        var tp = targetParts(PK.target);
+        box.innerHTML = '<ul class="cfg-prekit-list">' + M.prekits.map(function (p) {
+            var m = prekitMass(p.items);
+            var plan = tp ? insertEntries(S.outfits[tp[0]], tp[1], prekitEntries(p.items), true) : null;
+            var fit = !plan ? 'Posez un uniforme, un gilet ou un sac dans la tenue pour y insérer un pré-kit.' : (plan.error ? plan.error : (plan.skipped.length ? 'Ne tient pas en entier : ' + skippedText(plan.skipped) : (plan.unchecked ? 'Place non vérifiée (capacité ou poids inconnu)' : 'Tient en entier')));
+            var tone = !plan || plan.error ? 'err' : (plan.skipped.length ? 'warn' : (plan.unchecked ? 'warn' : 'ok'));
+            var list = p.items.slice(0, 8).map(function (l) { return nameOf(l[0]) + (l[1] > 1 ? ' × ' + l[1] : ''); }).join(' · ') + (p.items.length > 8 ? ' …' : '');
+            return '<li class="cfg-prekit">'
+                + '<div class="cfg-prekit__head"><strong translate="no">' + esc(p.name) + '</strong><span class="cfg-pill">' + esc(p.shared ? 'Communauté' : 'Personnel') + '</span><span class="cfg-pill cfg-pill--mass">' + esc(m == null ? 'poids ?' : kg(m)) + '</span></div>'
+                + (p.description ? '<p class="cfg-muted" translate="no">' + esc(p.description) + '</p>' : '')
+                + '<p class="cfg-prekit__items" translate="no">' + esc(list) + '</p>'
+                + '<p class="cfg-prekit__fit cfg-prekit__fit--' + tone + '">' + esc(fit) + '</p>'
+                + '<div class="cfg-row-actions"><button type="button" class="cfg-btn cfg-btn--sm cfg-btn--primary" data-pk-insert="' + p.id + '"' + (plan && !plan.error && plan.added ? '' : ' disabled') + '>' + esc('Insérer') + '</button>'
+                + (p.editable ? '<button type="button" class="cfg-btn cfg-btn--sm" data-pk-edit="' + p.id + '">' + esc('Modifier') + '</button><button type="button" class="cfg-btn cfg-btn--sm cfg-btn--quiet" data-pk-del="' + p.id + '">' + esc('Supprimer') + '</button>' : '')
+                + '</div></li>';
+        }).join('') + '</ul>';
+    }
+    function prekitById(id) { return M.prekits.filter(function (p) { return String(p.id) === String(id); })[0] || null; }
+    function insertPrekit(p, partialOk) {
+        var tp = targetParts(PK.target);
+        if (!tp) { return; }
+        var entries = prekitEntries(p.items);
+        var plan = insertEntries(S.outfits[tp[0]], tp[1], entries, true);
+        if (plan.error) { toast(plan.error, 'err'); return; }
+        if (!plan.added) { toast('Refusé : rien du pré-kit ne tient dans ' + CONTAINER_WORD[tp[1]] + '. ' + skippedText(plan.skipped) + '.', 'err'); return; }
+        if (plan.skipped.length && !partialOk) {
+            PK.pending = p.id;
+            var box = preDlg.querySelector('[data-cfg-prekit-plan]');
+            box.hidden = false;
+            var title = '« ' + p.name + ' » ne tient pas en entier dans ' + CONTAINER_WORD[tp[1]] + ' (' + OUTFIT_NAME[tp[0]] + ').';
+            var why = plan.skipped.map(function (s) { return '<li>' + esc(nameOf(s.cls) + (s.n > 1 ? ' × ' + s.n : '') + ' : ' + s.reason) + '</li>'; }).join('');
+            box.innerHTML = '<p class="cfg-report__title">' + esc(title) + '</p><ul>' + why + '</ul>'
+                + '<div class="cfg-row-actions"><button type="button" class="cfg-btn cfg-btn--sm cfg-btn--primary" data-pk-partial="' + p.id + '">' + esc('Insérer ce qui tient (' + plural(plan.added, 'objet', 'objets') + ')') + '</button>'
+                + '<button type="button" class="cfg-btn cfg-btn--sm" data-pk-cancel>' + esc('Annuler') + '</button></div>';
+            return;
+        }
+        var res = null;
+        commit('Pré-kit inséré.', function () { res = insertEntries(S.outfits[tp[0]], tp[1], entries, false); });
+        PK.pending = null;
+        preDlg.close();
+        if (tp[0] === 'a' && S.mode !== 'outfit') { setMode('outfit'); }
+        toast('« ' + p.name + ' » inséré dans ' + CONTAINER_WORD[tp[1]] + ' : ' + plural(res.added, 'objet', 'objets') + '.'
+            + (res.skipped.length ? ' Pas inséré, faute de place : ' + skippedText(res.skipped) + '.' : '') + (res.unchecked ? ' Place non vérifiée pour une partie (poids ou capacité inconnus).' : ''), res.skipped.length || res.unchecked ? 'warn' : 'ok');
+    }
+    function showPrekitForm(on, p) {
+        preForm.hidden = !on;
+        preDlg.querySelector('[data-cfg-prekits-browse]').hidden = on;
+        if (!on) { return; }
+        PK.edit = p ? p.id : null;
+        PK.lines = p ? p.items.map(function (l) { return [l[0], l[1]]; }) : [];
+        preForm.querySelector('[data-cfg-prekit-form-title]').textContent = p ? 'Modifier le pré-kit' : 'Nouveau pré-kit';
+        preForm.querySelector('input[name="name"]').value = p ? p.name : '';
+        preForm.querySelector('input[name="description"]').value = p ? p.description : '';
+        var sh = preForm.querySelector('input[name="shared"]');
+        if (sh) { sh.checked = !!(p && p.shared); }
+        preForm.querySelector('[data-cfg-prekit-q]').value = '';
+        preForm.querySelector('[data-cfg-prekit-hits]').hidden = true;
+        preForm.querySelector('[data-cfg-prekit-report]').hidden = true;
+        renderPrekitLines();
+        preForm.querySelector('input[name="name"]').focus();
+    }
+    function renderPrekitLines() {
+        var ul = preForm.querySelector('[data-cfg-prekit-lines]');
+        ul.innerHTML = PK.lines.length ? PK.lines.map(function (l, i) {
+            var m = massOf(l[0]);
+            return '<li>' + iconHtml(l[0]) + '<span class="cfg-prekit-lines__name"><strong translate="no">' + esc(nameOf(l[0])) + '</strong><small>' + esc(m == null ? 'poids ?' : kg(m) + ' l’unité') + '</small></span>'
+                + '<label><span class="cfg-sr">' + esc('Nombre') + '</span><input type="number" min="1" max="99" value="' + l[1] + '" data-pk-qty="' + i + '"></label>'
+                + '<button type="button" class="cfg-piece__x" data-pk-line-del="' + i + '" aria-label="' + esc('Retirer : ' + nameOf(l[0])) + '">×</button></li>';
+        }).join('') : '<li class="cfg-muted">' + esc('Pré-kit vide : cherchez un objet ci-dessus, ou reprenez le contenu d’un contenant.') + '</li>';
+        var m = prekitMass(PK.lines);
+        preForm.querySelector('[data-cfg-prekit-mass]').textContent = PK.lines.length ? 'Poids du pré-kit : ' + (m == null ? 'incomplet (objets sans poids connu)' : kg(m)) : '';
+    }
+    function addPrekitLine(cls, n) {
+        var s = spec(cls);
+        if (!s) { return false; }
+        if (PREKIT_REFUSED.indexOf(s.k) >= 0) { toast('« ' + nameOf(cls) + ' » ne va pas dans un pré-kit : seulement des objets à ranger.', 'warn'); return false; }
+        for (var i = 0; i < PK.lines.length; i++) {
+            if (PK.lines[i][0].toLowerCase() === s.c.toLowerCase()) { PK.lines[i][1] = Math.min(99, PK.lines[i][1] + n); return true; }
+        }
+        if (PK.lines.length >= 40) { toast('40 objets différents au plus dans un pré-kit.', 'warn'); return false; }
+        PK.lines.push([s.c, Math.min(99, n)]);
+        return true;
+    }
+    preDlg.addEventListener('change', function (e) {
+        if (e.target.hasAttribute('data-cfg-prekit-target')) { PK.target = e.target.value; PK.pending = null; renderPrekits(); }
+        if (e.target.hasAttribute('data-pk-qty')) {
+            var i = parseInt(e.target.getAttribute('data-pk-qty'), 10);
+            var n = Math.max(1, Math.min(99, parseInt(e.target.value, 10) || 1));
+            if (PK.lines[i]) { PK.lines[i][1] = n; }
+            renderPrekitLines();
+        }
+        if (e.target.hasAttribute('data-cfg-prekit-from') && e.target.value) {
+            var ct = S.outfits.a[e.target.value];
+            if (!ct) { toast('La tenue A n’a pas de ' + ({ uniform: 'uniforme', vest: 'gilet', backpack: 'sac' }[e.target.value]) + '.', 'warn'); } else {
+                ct.items.forEach(function (it) { if (it.t !== 'weapon') { addPrekitLine(it.cls, it.n); } });
+                renderPrekitLines();
+            }
+            e.target.value = '';
+        }
+    });
+    preDlg.addEventListener('input', function (e) {
+        if (!e.target.hasAttribute('data-cfg-prekit-q')) { return; }
+        var words = fold(e.target.value).split(/\s+/).filter(Boolean);
+        var hits = preForm.querySelector('[data-cfg-prekit-hits]');
+        if (!words.length) { hits.hidden = true; return; }
+        var found = [];
+        for (var i = 0; i < CAT.items.length && found.length < 8; i++) {
+            var it = CAT.items[i];
+            if (PREKIT_REFUSED.indexOf(it.k) >= 0) { continue; }
+            if (words.every(function (w) { return it._f.indexOf(w) >= 0; })) { found.push(it); }
+        }
+        hits.hidden = false;
+        hits.innerHTML = found.length ? found.map(function (it) {
+            return '<li><button type="button" data-pk-add="' + it._i + '">' + iconHtml(it.c) + '<span><strong translate="no">' + esc(it.n || it.c) + '</strong><small>' + esc((KIND_LABEL[it.k] || '') + (it.m != null ? ' · ' + kg(it.m) : '')) + '</small></span></button></li>';
+        }).join('') : '<li class="cfg-muted">' + esc('Aucun objet trouvé.') + '</li>';
+    });
+    preDlg.addEventListener('click', function (e) {
+        var b = e.target.closest('button');
+        if (!b) { return; }
+        if (b.hasAttribute('data-cfg-prekit-new')) { showPrekitForm(true, null); return; }
+        if (b.hasAttribute('data-cfg-prekit-cancel')) { showPrekitForm(false); renderPrekits(); return; }
+        if (b.hasAttribute('data-pk-cancel')) { PK.pending = null; renderPrekits(); return; }
+        if (b.hasAttribute('data-pk-insert')) { var p1 = prekitById(b.getAttribute('data-pk-insert')); if (p1) { insertPrekit(p1, false); } return; }
+        if (b.hasAttribute('data-pk-partial')) { var p2 = prekitById(b.getAttribute('data-pk-partial')); if (p2) { insertPrekit(p2, true); } return; }
+        if (b.hasAttribute('data-pk-edit')) { var p3 = prekitById(b.getAttribute('data-pk-edit')); if (p3) { showPrekitForm(true, p3); } return; }
+        if (b.hasAttribute('data-pk-del')) {
+            var p4 = prekitById(b.getAttribute('data-pk-del'));
+            if (!p4 || !window.confirm('Supprimer le pré-kit « ' + p4.name + ' » ?' + (p4.shared ? ' Il disparaît pour toute la communauté.' : ''))) { return; }
+            request(urls.prekits + '/' + p4.id + '/supprimer', { form: new FormData() }).then(function (j) {
+                if (!j.ok) { toast(j.error || 'Suppression impossible.', 'err'); return; }
+                M.prekits = M.prekits.filter(function (x) { return x.id !== p4.id; });
+                renderPrekits();
+                toast(j.message, 'ok');
+            });
+            return;
+        }
+        if (b.hasAttribute('data-pk-add')) {
+            var it = CAT.items[parseInt(b.getAttribute('data-pk-add'), 10)];
+            if (it && addPrekitLine(it.c, 1)) { renderPrekitLines(); }
+            preForm.querySelector('[data-cfg-prekit-hits]').hidden = true;
+            var q = preForm.querySelector('[data-cfg-prekit-q]');
+            q.value = '';
+            q.focus();
+            return;
+        }
+        if (b.hasAttribute('data-pk-line-del')) { PK.lines.splice(parseInt(b.getAttribute('data-pk-line-del'), 10), 1); renderPrekitLines(); return; }
+        if (b.hasAttribute('data-cfg-prekit-example')) {
+            var added = 0;
+            PREKIT_EXAMPLE.forEach(function (ex) {
+                for (var i = 0; i < ex[0].length; i++) { if (spec(ex[0][i])) { if (addPrekitLine(ex[0][i], ex[1])) { added++; } return; } }
+            });
+            var nm = preForm.querySelector('input[name="name"]');
+            if (!nm.value) { nm.value = 'Équipement obligatoire'; }
+            renderPrekitLines();
+            toast(added ? 'Exemple ajouté : ajustez les nombres puis enregistrez.' : 'Aucun objet de l’exemple dans le catalogue de la communauté.', added ? '' : 'warn');
+        }
+    });
+    preForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var rep = preForm.querySelector('[data-cfg-prekit-report]');
+        if (!PK.lines.length) { rep.hidden = false; rep.innerHTML = '<p class="cfg-flash cfg-flash--err">' + esc('Ajoutez au moins un objet.') + '</p>'; return; }
+        var fd = new FormData();
+        fd.append('name', preForm.querySelector('input[name="name"]').value);
+        fd.append('description', preForm.querySelector('input[name="description"]').value);
+        var sh = preForm.querySelector('input[name="shared"]');
+        fd.append('shared', sh && sh.checked ? '1' : '0');
+        fd.append('items', JSON.stringify(PK.lines));
+        if (PK.edit) { fd.append('id', String(PK.edit)); }
+        var btn = preForm.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        request(urls.prekits, { form: fd }).then(function (j) {
+            btn.disabled = false;
+            if (!j.ok) {
+                rep.hidden = false;
+                rep.innerHTML = '<p class="cfg-flash cfg-flash--err">' + esc(j.error || 'Enregistrement impossible.') + '</p>'
+                    + (j.problems && j.problems.length ? '<ul>' + j.problems.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '');
+                return;
+            }
+            toast(j.message, 'ok');
+            loadMember().then(function () { showPrekitForm(false); renderPrekits(); });
+        });
+    });
 
     // Importer
     var imported = null;
@@ -1890,6 +2517,7 @@
             a.ref = j.ref || a.ref;
             a.meta = { kind: target === 'kit' ? 'kit' : (target === 'modele' ? 'model' : 'wardrobe'), mine: true, editable: true, audience: fd.get('audience') || 'all', description: String(fd.get('description') || '') };
             sourcesCache = null;
+            SRC.cache = {};
             saveDlg.close();
             renderAll();
             saveDraft();
@@ -2036,6 +2664,8 @@
     renderAll();
     if (boot.base && boot.base.available && boot.base.needed) { runBase(false); }
     loadCatalog().then(function () {
+        // Favoris, pré-kits et tendances : après le catalogue (noms, poids), sans bloquer la page.
+        loadMember().then(function () { if (dlg('cfg-prekits').open) { renderPrekits(); } });
         var restored = false;
         if (boot.open) {
             loadSource(boot.open, 'a');

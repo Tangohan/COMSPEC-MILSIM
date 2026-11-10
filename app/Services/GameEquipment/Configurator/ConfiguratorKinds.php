@@ -182,6 +182,22 @@ final class ConfiguratorKinds
         return self::LABELS[$kind] ?? self::LABELS['item'];
     }
 
+    /** Camps lisibles dans la classe d'un uniforme du jeu de base (U_B_…, U_O_…, U_I_…, U_C_…). */
+    public const SIDES = ['blufor' => 'BLUFOR', 'opfor' => 'OPFOR', 'indep' => 'Indépendants', 'civil' => 'Civils'];
+
+    /**
+     * Camp d'après la convention de nommage des uniformes d'Arma 3 ; '' si la classe ne la suit pas (mods) : rien
+     * n'est deviné au-delà de cette convention.
+     */
+    public static function sideFromUniform(string $class): string
+    {
+        if (preg_match('/^U_([BOIC])_/i', $class, $m) !== 1) {
+            return '';
+        }
+
+        return ['B' => 'blufor', 'O' => 'opfor', 'I' => 'indep', 'C' => 'civil'][strtoupper($m[1])];
+    }
+
     /**
      * Familles acceptées par un emplacement de la tenue. Un objet seulement vu en jeu sous « item » (carte, GPS,
      * montre…) est accepté dans les emplacements d'objets assignés : le jeu ne les distingue pas.

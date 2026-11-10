@@ -21,7 +21,8 @@ final class EquipmentAudit
     public static function log(string $action, int $tenantId, int $userId, int $entityId, array $details): void
     {
         $entity = str_starts_with($action, 'equipment.kit') ? 'game_role_kit'
-            : (str_starts_with($action, 'equipment.catalog') ? 'game_item_specs' : 'arsenal_wardrobe');
+            : (str_starts_with($action, 'equipment.catalog') ? 'game_item_specs'
+                : (str_starts_with($action, 'equipment.prekit') ? 'game_item_prekit' : 'arsenal_wardrobe'));
         if (self::$sink !== null) {
             (self::$sink)($action, $tenantId, $userId, $entity, $entityId, $details);
 

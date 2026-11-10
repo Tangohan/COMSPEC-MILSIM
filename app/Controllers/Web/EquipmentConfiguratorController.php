@@ -10,9 +10,13 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\ArsenalWardrobeRepository;
+use App\Repositories\EquipmentConfiguratorSocialRepository;
 use App\Repositories\GameItemSpecRepository;
 use App\Services\GameEquipment\Configurator\ConfiguratorCatalog;
+use App\Services\GameEquipment\Configurator\ConfiguratorKinds;
 use App\Services\GameEquipment\Configurator\EquipmentAudit;
+use App\Services\GameEquipment\Configurator\EquipmentTrends;
+use App\Services\GameEquipment\Configurator\PrekitDocument;
 use App\Services\GameEquipment\Configurator\ItemCatalogImport;
 use App\Services\GameEquipment\Configurator\LoadoutDocument;
 use App\Services\GameEquipment\Configurator\LoadoutValidator;
@@ -49,11 +53,13 @@ final class EquipmentConfiguratorController
         private ?ConfiguratorCatalog $catalog = null,
         private ?GameItemSpecRepository $specs = null,
         private ?VanillaCatalogLoader $vanilla = null,
+        private ?EquipmentConfiguratorSocialRepository $social = null,
     ) {
         $this->wardrobes ??= new ArsenalWardrobeRepository();
         $this->catalog ??= new ConfiguratorCatalog();
         $this->specs ??= new GameItemSpecRepository();
         $this->vanilla ??= new VanillaCatalogLoader($this->specs);
+        $this->social ??= new EquipmentConfiguratorSocialRepository();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -86,6 +92,10 @@ final class EquipmentConfiguratorController
                     'script' => url('equipment/configurateur/script-export.sqf'),
                     'icons' => url('equipment/icones/'),
                     'hub' => url('equipment'),
+                    'social' => url('equipment/configurateur/membre'),
+                    'favorite' => url('equipment/configurateur/favori'),
+                    'prekits' => url('equipment/configurateur/pre-kits'),
+                    'wardrobeFavorite' => url('equipment/tenues/'),
                 ],
                 'csrf' => Csrf::token(),
                 // Guide déjà vu : mémorisé par membre (clé du navigateur suffixée par le compte).
@@ -96,6 +106,8 @@ final class EquipmentConfiguratorController
                     'kits' => $canKits,
                     'catalog' => $this->canManageCatalog(),
                     'members' => $canKits,
+                    // Pré-kit partagé à la communauté : responsables des kits (un pré-kit personnel : tout membre).
+                    'sharePrekits' => $this->canManageKits(),
                 ],
                 'kitsAllowed' => $kitsAllowed,
                 'specs' => $summary,
@@ -140,18 +152,23 @@ final class EquipmentConfiguratorController
         [$tenantId, $userId] = $gate;
         $out = [];
         if ($this->wardrobes->tablesReady()) {
+            $favIds = array_flip($this->wardrobes->favoriteIds($tenantId, $userId));
             foreach ($this->wardrobes->listAccessibleWardrobes($tenantId, $userId) as $w) {
                 $source = (string) ($w['source'] ?? '');
                 if ($source === 'role_kit') {
                     continue;
                 }
                 $group = $source === 'template' ? 'models' : (!empty($w['mine']) ? 'mine' : 'community');
+                $id = (int) $w['id'];
                 $out[] = [
-                    'ref' => 'w:' . (int) $w['id'],
+                    'ref' => 'w:' . $id,
                     'group' => $group,
                     'name' => (string) ($w['display_name'] ?? $w['name'] ?? ''),
                     'owner' => (string) ($w['owner_label'] ?? ''),
                     'mine' => !empty($w['mine']),
+                    'fav' => !empty($w['mine']) ? !empty($w['is_favorite']) : isset($favIds[$id]),
+                    'collection' => (string) ($w['collection_name'] ?? ''),
+                    'side' => self::sideOf((string) ($w['payload_text'] ?? '')),
                     'updated' => (string) ($w['updated_at'] ?? ''),
                 ];
             }
@@ -168,6 +185,8 @@ final class EquipmentConfiguratorController
                         'owner' => (string) ($k['member_name'] ?? $k['qualification_name'] ?? $k['role_name'] ?? $k['unit_name'] ?? ''),
                         'audience' => RoleKitService::audienceValue($k),
                         'description' => (string) ($k['description'] ?? ''),
+                        'role' => (string) ($k['role_name'] ?? $k['qualification_name'] ?? $k['unit_name'] ?? ''),
+                        'side' => self::sideOf((string) ($k['payload_text'] ?? '')),
                         'mine' => false,
                         'updated' => (string) ($k['updated_at'] ?? ''),
                     ];
@@ -196,7 +215,191 @@ final class EquipmentConfiguratorController
             }
         }
 
-        return Response::json(['ok' => true, 'sources' => $out]);
+        return Response::json(['ok' => true, 'sources' => $out, 'sides' => ConfiguratorKinds::SIDES]);
+    }
+
+    /**
+     * Données du membre pour le configurateur : objets favoris, pré-kits visibles (les siens et ceux de la
+     * communauté), tendances de la communauté sur 30 jours (nombres de membres seulement).
+     */
+    public function memberData(Request $request, array $params = []): Response
+    {
+        $gate = $this->gate(true);
+        if ($gate instanceof Response) {
+            return $gate;
+        }
+        [$tenantId, $userId] = $gate;
+        $manager = $this->canManageKits();
+        $prekits = [];
+        foreach ($this->social->prekits($tenantId, $userId) as $p) {
+            $doc = PrekitDocument::normalize($p['items_json']);
+            if (!$doc['ok']) {
+                continue;
+            }
+            $mine = $p['user_id'] === $userId;
+            $prekits[] = [
+                'id' => $p['id'],
+                'name' => $p['name'],
+                'description' => $p['description'],
+                'items' => $doc['items'],
+                'shared' => $p['shared'],
+                'mine' => $mine,
+                'editable' => $mine || ($p['shared'] && $manager),
+                'updated' => $p['updated_at'],
+            ];
+        }
+        try {
+            $trends = $this->social->trends($tenantId);
+        } catch (\Throwable $e) {
+            error_log('[equipment-configurator] trends failed: ' . $e->getMessage());
+            $trends = ['days' => EquipmentTrends::DAYS, 'worn' => [], 'added' => [], 'favored' => [], 'wardrobes' => []];
+        }
+
+        return Response::json([
+            'ok' => true,
+            'ready' => ['favorites' => $this->social->favoritesReady(), 'prekits' => $this->social->prekitsReady()],
+            'favorites' => $this->social->favoriteClasses($tenantId, $userId),
+            'prekits' => $prekits,
+            'trends' => [
+                'days' => $trends['days'],
+                'min' => EquipmentTrends::MIN_MEMBERS,
+                'items' => EquipmentTrends::byClass($trends['worn'], $trends['added'], $trends['favored']),
+                'wardrobes' => $trends['wardrobes'],
+            ],
+        ]);
+    }
+
+    /** Met un objet du catalogue en favori, ou l'en retire (par membre et par communauté). */
+    public function favorite(Request $request, array $params = []): Response
+    {
+        $gate = $this->gate(true);
+        if ($gate instanceof Response) {
+            return $gate;
+        }
+        [$tenantId, $userId] = $gate;
+        if (!Csrf::validate($request->inputString('_csrf_token'))) {
+            return Response::json(['ok' => false, 'error' => 'Session expirée : rechargez la page.'], 419);
+        }
+        if (!$this->social->favoritesReady()) {
+            return Response::json(['ok' => false, 'error' => 'Favoris pas encore disponibles : la mise à jour de la base doit être appliquée.'], 503);
+        }
+        $class = trim($request->inputString('class'));
+        if (preg_match(ItemCatalogImport::CLASS_RE, $class) !== 1 || $this->catalog->lookup($tenantId, [$class]) === []) {
+            return Response::json(['ok' => false, 'error' => 'Objet absent du catalogue de la communauté.'], 422);
+        }
+        $on = $request->inputString('on', '1') === '1';
+        $state = $this->social->setFavorite($tenantId, $userId, $class, $on);
+        if ($state === null) {
+            return Response::json(['ok' => false, 'error' => 'Trop de favoris (' . EquipmentConfiguratorSocialRepository::MAX_FAVORITES . ' au plus) : retirez-en avant d’en ajouter.'], 422);
+        }
+
+        return Response::json(['ok' => true, 'class' => $class, 'favorite' => $state]);
+    }
+
+    /**
+     * Crée ou met à jour un pré-kit. Personnel pour tout membre ; partagé à la communauté seulement par un
+     * responsable des kits. Un pré-kit partagé se modifie par son auteur ou un responsable des kits.
+     */
+    public function savePrekit(Request $request, array $params = []): Response
+    {
+        $gate = $this->gate(true);
+        if ($gate instanceof Response) {
+            return $gate;
+        }
+        [$tenantId, $userId] = $gate;
+        if (!Csrf::validate($request->inputString('_csrf_token'))) {
+            return Response::json(['ok' => false, 'error' => 'Session expirée : rechargez la page.'], 419);
+        }
+        if (!$this->social->prekitsReady()) {
+            return Response::json(['ok' => false, 'error' => 'Pré-kits pas encore disponibles : la mise à jour de la base doit être appliquée.'], 503);
+        }
+        $name = trim((string) preg_replace('/\s+/u', ' ', $request->inputString('name')));
+        if ($name === '' || mb_strlen($name) > PrekitDocument::NAME_MAX) {
+            return Response::json(['ok' => false, 'error' => 'Donnez un nom au pré-kit (' . PrekitDocument::NAME_MAX . ' caractères au plus).'], 422);
+        }
+        $description = trim($request->inputString('description'));
+        if (mb_strlen($description) > PrekitDocument::DESCRIPTION_MAX) {
+            return Response::json(['ok' => false, 'error' => 'Description trop longue (' . PrekitDocument::DESCRIPTION_MAX . ' caractères au plus).'], 422);
+        }
+        $doc = PrekitDocument::normalize($request->inputString('items'));
+        if (!$doc['ok']) {
+            return Response::json(['ok' => false, 'error' => (string) $doc['error']], 422);
+        }
+        $catalog = $this->catalog->lookup($tenantId, array_map(static fn (array $i): string => $i[0], $doc['items']));
+        $problems = PrekitDocument::problems($doc['items'], $catalog);
+        if ($problems !== []) {
+            return Response::json(['ok' => false, 'error' => 'Le pré-kit contient des objets refusés.', 'problems' => $problems], 422);
+        }
+        $manager = $this->canManageKits();
+        $shared = $request->inputString('shared') === '1';
+        if ($shared && !$manager) {
+            return Response::json(['ok' => false, 'error' => 'Seul un responsable des kits partage un pré-kit avec la communauté. Enregistrez-le en personnel.'], 403);
+        }
+        $id = null;
+        if (preg_match('/^\d{1,18}$/', $request->inputString('id')) === 1) {
+            $existing = $this->social->findPrekit($tenantId, (int) $request->inputString('id'));
+            if ($existing === null) {
+                return Response::json(['ok' => false, 'error' => 'Ce pré-kit n’existe plus.'], 404);
+            }
+            if ($existing['user_id'] !== $userId && !($existing['shared'] && $manager)) {
+                return Response::json(['ok' => false, 'error' => 'Vous ne pouvez modifier que vos pré-kits.'], 403);
+            }
+            $id = $existing['id'];
+        } elseif ($this->social->countOwnPrekits($tenantId, $userId) >= EquipmentConfiguratorSocialRepository::MAX_PREKITS_PER_MEMBER) {
+            return Response::json(['ok' => false, 'error' => 'Trop de pré-kits (' . EquipmentConfiguratorSocialRepository::MAX_PREKITS_PER_MEMBER . ' au plus) : supprimez-en un.'], 422);
+        }
+        try {
+            $saved = $this->social->savePrekit($tenantId, $userId, $id, $name, $description, $doc['items'], $shared);
+        } catch (\Throwable $e) {
+            error_log('[equipment-configurator] prekit save failed: ' . $e->getMessage());
+
+            return Response::json(['ok' => false, 'error' => 'Enregistrement impossible.'], 500);
+        }
+        EquipmentAudit::log('equipment.prekit.save', $tenantId, $userId, $saved, ['name' => $name, 'lines' => count($doc['items']), 'shared' => $shared, 'update' => $id !== null]);
+        $mass = PrekitDocument::mass($doc['items'], $catalog);
+
+        return Response::json([
+            'ok' => true,
+            'id' => $saved,
+            'items' => $doc['items'],
+            'mass' => $mass,
+            'message' => $shared ? 'Pré-kit enregistré et partagé : toute la communauté peut l’insérer.' : 'Pré-kit enregistré dans vos pré-kits.',
+        ]);
+    }
+
+    public function deletePrekit(Request $request, array $params = []): Response
+    {
+        $gate = $this->gate(true);
+        if ($gate instanceof Response) {
+            return $gate;
+        }
+        [$tenantId, $userId] = $gate;
+        if (!Csrf::validate($request->inputString('_csrf_token'))) {
+            return Response::json(['ok' => false, 'error' => 'Session expirée : rechargez la page.'], 419);
+        }
+        $existing = $this->social->findPrekit($tenantId, (int) ($params['id'] ?? 0));
+        if ($existing === null) {
+            return Response::json(['ok' => false, 'error' => 'Ce pré-kit n’existe plus.'], 404);
+        }
+        if ($existing['user_id'] !== $userId && !($existing['shared'] && $this->canManageKits())) {
+            return Response::json(['ok' => false, 'error' => 'Vous ne pouvez supprimer que vos pré-kits.'], 403);
+        }
+        $this->social->deletePrekit($tenantId, $existing['id']);
+        EquipmentAudit::log('equipment.prekit.delete', $tenantId, $userId, $existing['id'], ['shared' => $existing['shared']]);
+
+        return Response::json(['ok' => true, 'message' => 'Pré-kit supprimé.']);
+    }
+
+    /** Camp de la tenue d'après son uniforme (ConfiguratorKinds::sideFromUniform), '' si inconnu. */
+    private static function sideOf(string $payload): string
+    {
+        if ($payload === '') {
+            return '';
+        }
+        $doc = LoadoutDocument::fromText($payload);
+        $uniform = $doc['ok'] && is_array($doc['loadout'][3] ?? null) && $doc['loadout'][3] !== [] ? (string) $doc['loadout'][3][0] : '';
+
+        return ConfiguratorKinds::sideFromUniform($uniform);
     }
 
     /** Une tenue récupérée (normalisée), avec le compte rendu de validation contre le catalogue. */

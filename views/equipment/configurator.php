@@ -76,6 +76,7 @@ $icon = static fn (string $d): string => '<svg viewBox="0 0 24 24" aria-hidden="
                 <button type="button" class="cfg-btn cfg-btn--icon" data-cfg-act="undo" aria-label="Annuler (Ctrl+Z)" title="Annuler (Ctrl+Z)" disabled><?= $icon('M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3') ?></button>
                 <button type="button" class="cfg-btn cfg-btn--icon" data-cfg-act="redo" aria-label="Rétablir (Ctrl+Y)" title="Rétablir (Ctrl+Y)" disabled><?= $icon('m15 14 5-5-5-5M20 9H10a6 6 0 0 0 0 12h3') ?></button>
                 <button type="button" class="cfg-btn" data-cfg-open="sources"><?= $icon('M4 4h16v16H4zM4 9h16M9 20V9') ?> Récupérer une tenue</button>
+                <button type="button" class="cfg-btn" data-cfg-open="prekits" title="Lots d’objets à insérer en un clic dans l’uniforme, le gilet ou le sac"><?= $icon('M4 7h16v13H4zM9 7V4h6v3M4 12h16') ?> Pré-kits</button>
                 <details class="cfg-more" data-cfg-more>
                     <summary class="cfg-btn" aria-label="Plus d’outils">Plus <?= $icon('m6 9 6 6 6-6') ?></summary>
                     <div class="cfg-more__list" role="menu">
@@ -108,7 +109,12 @@ $icon = static fn (string $d): string => '<svg viewBox="0 0 24 24" aria-hidden="
                     </label>
                     <div class="cfg-tabs" data-cfg-families role="tablist" aria-label="Type d’objet"></div>
                     <div class="cfg-chips" data-cfg-cats role="group" aria-label="Catégories" hidden></div>
+                    <div class="cfg-pfilters" role="group" aria-label="Filtres de la palette">
+                        <button type="button" class="cfg-chip cfg-chip--fav" data-cfg-pfilter="fav" aria-pressed="false" title="Seulement vos objets favoris (étoile à droite d’un objet)"><span aria-hidden="true">★</span> Favoris <b data-cfg-fav-count>0</b></button>
+                        <button type="button" class="cfg-chip" data-cfg-pfilter="trend" aria-pressed="false" title="Objets les plus portés en jeu, ajoutés aux tenues ou mis en favori dans la communauté ces 30 derniers jours">Tendances 30 j</button>
+                    </div>
                     <label class="cfg-toggle" data-cfg-showall-wrap hidden><input type="checkbox" data-cfg-showall> <span>Montrer aussi les incompatibles (avec la raison)</span></label>
+                    <label class="cfg-toggle" data-cfg-forweapons-wrap hidden><input type="checkbox" checked data-cfg-forweapons> <span>Seulement ce qui va sur les armes de la tenue A</span></label>
                     <p class="cfg-palette__count" data-cfg-count aria-live="polite">Chargement du catalogue…</p>
                 </div>
                 <div class="cfg-vlist" data-cfg-vlist role="listbox" aria-label="Objets du catalogue" tabindex="0">
@@ -216,15 +222,67 @@ $icon = static fn (string $d): string => '<svg viewBox="0 0 24 24" aria-hidden="
         </div>
     </dialog>
 
-    <dialog class="cfg-dialog" id="cfg-sources" aria-labelledby="cfg-sources-title">
+    <dialog class="cfg-dialog cfg-dialog--wide" id="cfg-sources" aria-labelledby="cfg-sources-title">
         <div class="cfg-dialog__shell">
             <header class="cfg-dialog__head">
                 <h2 id="cfg-sources-title">Récupérer une tenue</h2>
                 <button type="button" class="cfg-dialog__close" data-cfg-close aria-label="Fermer">×</button>
             </header>
-            <p class="cfg-muted">Ouvrez une tenue existante dans la tenue A pour la modifier, ou dans la tenue B pour en copier une partie. L’original n’est jamais modifié tant que vous n’enregistrez pas. Exemple : un kit « Fusilier » en B, puis glissez son gilet sur A.</p>
-            <label class="cfg-search"><span class="cfg-sr">Filtrer les tenues</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14zM20 20l-4-4"/></svg><input type="search" placeholder="Filtrer : nom, membre, rôle" data-cfg-sources-q></label>
-            <div class="cfg-sources" data-cfg-sources-list><p class="cfg-muted">Chargement…</p></div>
+            <p class="cfg-muted">Choisissez une tenue à gauche pour voir son contenu, puis ce que vous en prenez. L’original n’est jamais modifié.</p>
+            <div class="cfg-pick-src">
+                <div class="cfg-pick-src__list">
+                    <div class="cfg-tabs" role="tablist" aria-label="D’où vient la tenue" data-cfg-sources-tabs></div>
+                    <label class="cfg-search"><span class="cfg-sr">Chercher une tenue</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14zM20 20l-4-4"/></svg><input type="search" placeholder="Nom, membre, rôle, collection" data-cfg-sources-q></label>
+                    <div class="cfg-pick-src__filters">
+                        <label class="cfg-field cfg-field--sm"><span>Camp</span><select data-cfg-sources-side><option value="">Tous les camps</option></select></label>
+                        <label class="cfg-field cfg-field--sm"><span>Rôle ou collection</span><select data-cfg-sources-group><option value="">Tous</option></select></label>
+                    </div>
+                    <div class="cfg-sources" data-cfg-sources-list><p class="cfg-muted">Chargement…</p></div>
+                    <button type="button" class="cfg-btn cfg-btn--sm cfg-btn--quiet" data-cfg-open="import">Coller une tenue copiée (arsenal ACE, jeu)…</button>
+                </div>
+                <div class="cfg-pick-src__preview" data-cfg-sources-preview aria-live="polite">
+                    <div class="cfg-empty"><p><strong>Aucune tenue choisie.</strong></p><p>Cliquez sur une tenue de la liste : son arme, ses accessoires, le contenu de l’uniforme, du gilet et du sac et son poids s’affichent ici.</p></div>
+                </div>
+            </div>
+        </div>
+    </dialog>
+
+    <dialog class="cfg-dialog cfg-dialog--wide" id="cfg-prekits" aria-labelledby="cfg-prekits-title">
+        <div class="cfg-dialog__shell">
+            <header class="cfg-dialog__head">
+                <h2 id="cfg-prekits-title">Pré-kits</h2>
+                <button type="button" class="cfg-dialog__close" data-cfg-close aria-label="Fermer">×</button>
+            </header>
+            <p class="cfg-muted">Un pré-kit est un lot d’objets que vous mettez souvent (ex. « Équipement obligatoire » : garrot, pansements, radio, carte). Insérez-le en un clic dans l’uniforme, le gilet ou le sac : la place restante est vérifiée.</p>
+            <div data-cfg-prekits-browse>
+                <div class="cfg-pick-src__filters">
+                    <label class="cfg-field cfg-field--sm"><span>Insérer dans</span><select data-cfg-prekit-target></select></label>
+                    <button type="button" class="cfg-btn cfg-btn--primary" data-cfg-prekit-new>Nouveau pré-kit</button>
+                </div>
+                <div class="cfg-report" data-cfg-prekit-plan hidden></div>
+                <div class="cfg-prekits" data-cfg-prekits-list><p class="cfg-muted">Chargement…</p></div>
+            </div>
+            <form class="cfg-prekit-edit" data-cfg-prekit-form hidden>
+                <h3 class="cfg-section-title" data-cfg-prekit-form-title>Nouveau pré-kit</h3>
+                <label class="cfg-field"><span>Nom</span><input type="text" name="name" maxlength="90" required placeholder="Ex. Équipement obligatoire"></label>
+                <label class="cfg-field"><span>Description (facultatif)</span><input type="text" name="description" maxlength="300" placeholder="Ex. À porter par tous en opération"></label>
+                <?php if (!empty($can['sharePrekits'])): ?>
+                <label class="cfg-check"><input type="checkbox" name="shared" value="1"> <span>Partager avec la communauté (tout le monde peut l’insérer, seuls vous et les responsables des kits le modifient)</span></label>
+                <?php endif; ?>
+                <div class="cfg-row-actions">
+                    <label class="cfg-field cfg-field--sm"><span>Reprendre le contenu de</span><select data-cfg-prekit-from><option value="">Choisir…</option><option value="uniform">l’uniforme de la tenue A</option><option value="vest">le gilet de la tenue A</option><option value="backpack">le sac de la tenue A</option></select></label>
+                    <button type="button" class="cfg-btn cfg-btn--sm" data-cfg-prekit-example>Exemple : équipement obligatoire</button>
+                </div>
+                <label class="cfg-search"><span class="cfg-sr">Ajouter un objet</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14zM20 20l-4-4"/></svg><input type="search" placeholder="Ajouter un objet : garrot, bandage, radio…" autocomplete="off" data-cfg-prekit-q></label>
+                <ul class="cfg-prekit-hits" data-cfg-prekit-hits hidden></ul>
+                <ul class="cfg-prekit-lines" data-cfg-prekit-lines></ul>
+                <p class="cfg-muted" data-cfg-prekit-mass></p>
+                <div class="cfg-report" data-cfg-prekit-report hidden></div>
+                <footer class="cfg-dialog__foot">
+                    <button type="button" class="cfg-btn" data-cfg-prekit-cancel>Annuler</button>
+                    <button type="submit" class="cfg-btn cfg-btn--primary">Enregistrer le pré-kit</button>
+                </footer>
+            </form>
         </div>
     </dialog>
 
