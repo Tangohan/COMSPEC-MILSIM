@@ -9,7 +9,7 @@ AT_Nom = "";
 
 // Une vérification ratée : l'étape continue, elle finira en KO.
 AT_fnc_check = {
-    params ["_ok", "_motif"];
+    params [["_ok", false], ["_motif", "?"]];
     if !(_ok isEqualTo true) then { AT_Echecs pushBack _motif; };
     _ok isEqualTo true
 };
@@ -104,7 +104,7 @@ AT_fnc_page = {
 };
 // Texte qui tient dans son contrôle : largeur pour une ligne (titres, boutons), hauteur pour un texte structuré.
 AT_fnc_tient = {
-    params ["_c", "_nom"];
+    params [["_c", controlNull, [controlNull]], ["_nom", ""]];
     if (isNull _c || {!ctrlShown _c}) exitWith { true };
     (ctrlPosition _c) params ["", "", "_w", "_h"];
     private _ok = if ((ctrlType _c) isEqualTo 13) then { (ctrlTextHeight _c) <= _h * 1.05 } else { (ctrlTextWidth _c) <= _w * 1.02 };

@@ -202,7 +202,7 @@ if !("telephone" call AT_fnc_groupe) exitWith {};
     ["identifiant : " + _uid + " -> " + _new] call AT_fnc_info;
     profileNamespace setVariable ["comspec_overwatch_terminal_uid", _uid];
     profileNamespace setVariable ["comspec_overwatch_terminal_gen", if (isNil "_gen") then { nil } else { _gen }];
-    profileNamespace setVariable ["COMSPEC_ATAK_NewDevice", _kept];
+    profileNamespace setVariable ["COMSPEC_ATAK_NewDevice", if (isNil "_kept") then { nil } else { _kept }];
     call AT_fnc_done;
 }, 30] call AT_fnc_run;
 

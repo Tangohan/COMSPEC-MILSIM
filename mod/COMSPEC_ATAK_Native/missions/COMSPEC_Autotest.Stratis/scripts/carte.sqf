@@ -179,7 +179,7 @@ if !("carte" call AT_fnc_groupe) exitWith {};
 // trois thèmes, en portrait (mini) et en paysage (plein écran). Contacts ENI : losange ; neutre : carré ; inconnu : carré à bras.
 ["carte_style_contacts", {
     if (["comspec_atak_native_fnc_contactStyle", "comspec_atak_native_fnc_contactCard", "comspec_atak_native_fnc_mapColors", "comspec_atak_native_fnc_theme"] call AT_fnc_nil) exitWith {};
-    ["aff", ["o_inf", "n_inf", "u_unknown", "b_inf", "mil_dot"] apply { ["markerAff", _x] call comspec_atak_native_fnc_contactStyle }] call AT_fnc_info;
+    ["aff", ["o_inf", "n_inf", "u_installation", "b_inf", "mil_dot"] apply { ["markerAff", _x] call comspec_atak_native_fnc_contactStyle }] call AT_fnc_info;
     [(["markerAff", "o_inf"] call comspec_atak_native_fnc_contactStyle) isEqualTo "hostile", "o_inf n'est pas ennemi"] call AT_fnc_check;
     [(["markerAff", "mil_dot"] call comspec_atak_native_fnc_contactStyle) isEqualTo "", "mil_dot ne doit pas avoir d'affiliation"] call AT_fnc_check;
     private _mode0 = profileNamespace getVariable ["COMSPEC_ATAK_Mode", "MINI"];
@@ -194,7 +194,7 @@ if !("carte" call AT_fnc_groupe) exitWith {};
         _m setMarkerColorLocal "Default";
         _m setMarkerTextLocal _txt;
         _mks pushBack _m;
-    } forEach [["eni", "o_inf", 35, 30, "AT ENI"], ["neu", "n_inf", -35, 30, "AT NEUTRE"], ["inc", "u_unknown", 0, 55, "AT INCONNU"], ["ami", "b_inf", 0, -40, "AT AMI"]];
+    } forEach [["eni", "o_inf", 35, 30, "AT ENI"], ["neu", "n_inf", -35, 30, "AT NEUTRE"], ["inc", "u_installation", 0, 55, "AT INCONNU"], ["ami", "b_inf", 0, -40, "AT AMI"]];
     uiSleep 1;
     private _s = call AT_fnc_etat;
     {
@@ -339,7 +339,7 @@ if !("carte" call AT_fnc_groupe) exitWith {};
     private _tient = {
         params ["_nom"];
         private _c = call _fiche;
-        { [_x, format ["%1 : texte", _nom]] call AT_fnc_tient; } forEach ([_c get "title", _c get "role", _c get "head"] + (_c getOrDefault ["pills", []]) + ((_c getOrDefault ["tiles", []]) apply { _x select 1 }));
+        { [_x, format ["%1 : texte", _nom]] call AT_fnc_tient; } forEach ([_c getOrDefault ["title", controlNull], _c getOrDefault ["role", controlNull], _c getOrDefault ["head", controlNull]] + (_c getOrDefault ["pills", []]) + ((_c getOrDefault ["tiles", []]) apply { _x select 1 }));
         private _geo = uiNamespace getVariable ["COMSPEC_ATAK_UnitCardGeom", []];
         private _bg = (_c getOrDefault ["ctrls", []]) param [1, controlNull];
         if ((count _geo) >= 4 && {!isNull _bg}) then {
