@@ -76,7 +76,29 @@ switch (_action) do {
             ["recv", [[_this select 0, _this select 1, 0], "ALERTE", player]] call comspec_atak_native_fnc_mapPing;
         }, [(_e select 2) select 0, (_e select 2) select 1], 0.15] call comspec_atak_native_fnc_waitAndExec;
     };
-    case "clearLog": { missionNamespace setVariable ["COMSPEC_ATAK_AlertLog", []]; call _render; };
+    // VIDER LE JOURNAL : bandeau « Journal vidé · ANNULER » pendant 8 s (fn_undoSnack). Journal propre au téléphone : rien à
+    // défaire ailleurs. Copie gardée : COMSPEC_ATAK_AlertLogUndo = [n°, entrées].
+    case "clearLog": {
+        private _old = +(missionNamespace getVariable ["COMSPEC_ATAK_AlertLog", []]);
+        if ((count _old) isEqualTo 0) exitWith {};
+        private _n = (missionNamespace getVariable ["COMSPEC_ATAK_AlertLogUndoSeq", 0]) + 1;
+        missionNamespace setVariable ["COMSPEC_ATAK_AlertLogUndoSeq", _n];
+        missionNamespace setVariable ["COMSPEC_ATAK_AlertLogUndo", [_n, _old]];
+        missionNamespace setVariable ["COMSPEC_ATAK_AlertLog", []];
+        call _render;
+        ["Journal vidé", compile format ["['undoClearLog', %1] call comspec_atak_native_fnc_alertsAction;", _n]] call comspec_atak_native_fnc_undoSnack;
+        [{ if (((missionNamespace getVariable ["COMSPEC_ATAK_AlertLogUndo", []]) param [0, -1]) isEqualTo _this) then { missionNamespace setVariable ["COMSPEC_ATAK_AlertLogUndo", nil]; }; }, _n, 9] call comspec_atak_native_fnc_waitAndExec;
+    };
+    case "undoClearLog": {
+        private _u = missionNamespace getVariable ["COMSPEC_ATAK_AlertLogUndo", []];
+        if ((_u param [0, -1]) isNotEqualTo _arg) exitWith {};
+        missionNamespace setVariable ["COMSPEC_ATAK_AlertLogUndo", nil];
+        // Alertes arrivées pendant les 8 s : gardées, après les anciennes ; 25 au plus, comme fn_alertsLog.
+        private _log = (_u select 1) + (missionNamespace getVariable ["COMSPEC_ATAK_AlertLog", []]);
+        _log = _log select [((count _log) - 25) max 0];
+        missionNamespace setVariable ["COMSPEC_ATAK_AlertLog", _log];
+        call _render;
+    };
     case "saluteClear": {
         uiNamespace setVariable ["COMSPEC_ATAK_SaluteDraft", createHashMap];
         { (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) deleteAt _x; } forEach ["sS", "sA", "sL", "sU", "sT", "sE"];

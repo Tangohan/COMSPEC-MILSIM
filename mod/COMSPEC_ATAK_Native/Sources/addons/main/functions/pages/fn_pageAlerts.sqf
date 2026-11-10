@@ -290,7 +290,7 @@ if ((count _log) > 0) then {
     private _vw = (_font * 6) min (_w * 0.4);
     [[_pad + _w - _vw, _y, _vw, _font * 1.4], _cTile] call _box;
     ["COMSPEC_RscTextCenter", [_pad + _w - _vw, _y, _vw, _font * 1.4], "VIDER LE JOURNAL", _fs * 0.8, _cDim, true] call _lbl;
-    [[_pad + _w - _vw, _y, _vw, _font * 1.4], { ["clearLog"] call comspec_atak_native_fnc_alertsAction; }] call _hit;
+    [[_pad + _w - _vw, _y, _vw, _font * 1.4], { ["clearLog"] call comspec_atak_native_fnc_alertsAction; }, "Efface le journal ; ANNULER le rend pendant 8 s"] call _hit;
     _y = _y + _font * 1.4 + _pad;
 };
 _y = _y + _pad;

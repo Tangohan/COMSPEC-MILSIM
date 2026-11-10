@@ -63,7 +63,7 @@ if ((count _pts) > 0) then {
             ],
             [_tRow select 3, [0.55, 0.60, 0.57, 0.6]] select _done];
     } forEach _pts;
-    _rows pushBack ["buttons", [["INVERSER", { ["reverse"] call comspec_atak_native_fnc_wpAction; }, false, (count _pts) > 1, "Parcourir l'itinéraire dans l'autre sens"], ["TOUT EFFACER", { ["clear"] call comspec_atak_native_fnc_wpAction; }]]];
+    _rows pushBack ["buttons", [["INVERSER", { ["reverse"] call comspec_atak_native_fnc_wpAction; }, false, (count _pts) > 1, "Parcourir l'itinéraire dans l'autre sens"], ["TOUT EFFACER", { ["clear"] call comspec_atak_native_fnc_wpAction; }, "danger", true, "Efface toutes les étapes ; ANNULER les rend pendant 8 s, avant tout envoi au groupe"]]];
     // App Routes : l'itinéraire copié en route nommée (type de tracé, style, étapes typées, partage, guidage).
     _rows pushBack ["buttons", [["COPIER DANS L'APP ROUTES", { ["ROUTE"] call comspec_atak_native_fnc_navigate; ["#ui", ["import"]] call comspec_atak_native_fnc_pageRoute; }, false, true, "Crée une route nommée avec ces étapes : type de tracé, style, consignes, heure prévue, partage"]]];
 };

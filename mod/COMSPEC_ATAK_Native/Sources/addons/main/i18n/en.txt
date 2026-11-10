@@ -21073,5 +21073,10 @@
 ["replier", "collapse"],
 ["Rien à faire ici : les tâches posées par la mission ou par le Zeus s'ajoutent toutes seules, avec leur distance.", "Nothing to do here: tasks set by the mission or by the Zeus are added on their own, with their distance."],
 ["Aucune tâche terminée pour l'instant.", "No finished task yet."],
-["Toutes les tâches de la mission sont terminées. Onglet TERMINÉS pour les revoir.", "All mission tasks are finished. DONE tab to see them again."]
+["Toutes les tâches de la mission sont terminées. Onglet TERMINÉS pour les revoir.", "All mission tasks are finished. DONE tab to see them again."],
+["Étapes effacées", "Waypoints cleared"],
+["Journal vidé", "Log cleared"],
+["Trop tard : l'itinéraire a changé depuis l'effacement", "Too late: the route has changed since it was cleared"],
+["Efface toutes les étapes ; ANNULER les rend pendant 8 s, avant tout envoi au groupe", "Clears all waypoints; CANCEL brings them back for 8 s, before anything is sent to the group"],
+["Efface le journal ; ANNULER le rend pendant 8 s", "Clears the log; CANCEL brings it back for 8 s"]
 ]

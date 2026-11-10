@@ -14,7 +14,7 @@
       "place" (VALIDER : pose au point choisi) | "add" pos (pose tout de suite, clic gauche) | "new" (fiche d'une
       nouvelle étape) | "close"
       "rename" [index, nom] | "retype" [index, clé] | "move" index (au point choisi) | "up" / "down" index | "reverse"
-      "del" index | "clear" | "nav" (démarre / arrête) | "next" | "prev" | "goto" index | "gps" (itinéraire routier)
+      "del" index | "clear" (ANNULER pendant 8 s, voir plus bas) | "undoClear" n | "nav" (démarre / arrête) | "next" | "prev" | "goto" index | "gps" (itinéraire routier)
       "setType" clé | "setShare" n | "series" (bascule la pose à la suite) | "shareName" n -> libellé du partage
       "sync" (envoi groupé de la version courante, une seconde après la dernière modification) | "syncNow"
       "push" (envoie et lance la navigation chez tous) | "receive" [pts, auteur, lancer, en direct] (événement) | "tick"
@@ -25,8 +25,9 @@ if ((count _w) isEqualTo 0) then { _w = createHashMapFromArray [["pts", []], ["i
 private _pts = _w get "pts";
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _rerender = { [{ private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_p in ["WAYPOINTS", "MAP"]) then { [_p] call comspec_atak_native_fnc_pageRender; }; }] call comspec_atak_native_fnc_nextFrame; };
-// Modification de l'itinéraire : redessin, puis envoi en direct si l'itinéraire est partagé.
-private _changed = { call _rerender; if ((profileNamespace getVariable ["COMSPEC_ATAK_WpShare", 1]) > 0) then { ["sync"] call comspec_atak_native_fnc_wpAction; }; };
+// Modification de l'itinéraire : redessin, puis envoi en direct si l'itinéraire est partagé. Un « TOUT EFFACER » encore
+// annulable ne l'est plus : la nouvelle version part au groupe, l'ancienne ne doit pas revenir par-dessus.
+private _changed = { missionNamespace setVariable ["COMSPEC_ATAK_WpUndo", nil]; call _rerender; if ((profileNamespace getVariable ["COMSPEC_ATAK_WpShare", 1]) > 0) then { ["sync"] call comspec_atak_native_fnc_wpAction; }; };
 private _types = [
     ["WP", "Étape", "mil_flag", [0.95, 0.75, 0.18, 1], "WP"],
     ["SP", "Départ", "mil_start", [0.36, 0.85, 0.42, 1], "SP"],
@@ -227,10 +228,49 @@ switch (_act) do {
         true
     };
     case "clear": {
+        if ((count _pts) isEqualTo 0) exitWith { false };
+        // Bandeau « Étapes effacées · ANNULER » pendant 8 s (fn_undoSnack). L'effacement n'est envoyé au groupe qu'à la
+        // fin des 8 s : annulé avant, personne d'autre n'a rien vu (pas d'itinéraire effacé puis rétabli chez tous, ni de
+        // navigation coupée chez les équipiers). Copie gardée dans COMSPEC_ATAK_WpUndo = [n°, étapes, étape active, nav, auteur, envoyé].
+        private _n = (missionNamespace getVariable ["COMSPEC_ATAK_WpUndoSeq", 0]) + 1;
+        missionNamespace setVariable ["COMSPEC_ATAK_WpUndoSeq", _n];
+        // Envoi groupé encore en attente (étape changée juste avant) : annulé, sinon il partirait dans la seconde avec
+        // l'itinéraire vide ; noté pour que l'annulation renvoie la dernière version.
+        private _pending = missionNamespace getVariable ["COMSPEC_ATAK_WpSyncPending", false];
+        missionNamespace setVariable ["COMSPEC_ATAK_WpSyncTok", (missionNamespace getVariable ["COMSPEC_ATAK_WpSyncTok", 0]) + 1];
+        missionNamespace setVariable ["COMSPEC_ATAK_WpSyncPending", false];
+        private _undo = [_n, +_pts, _w get "idx", _w get "nav", _w get "from", _pending];
         _w set ["pts", []]; _w set ["idx", 0]; _w set ["nav", false]; _w set ["from", ""];
         _s set ["wpSel", -1];
         _s set ["wpName", ""];
-        call _changed;
+        missionNamespace setVariable ["COMSPEC_ATAK_WpUndo", _undo];
+        call _rerender;
+        ["Étapes effacées", compile format ["['undoClear', %1] call comspec_atak_native_fnc_wpAction;", _n]] call comspec_atak_native_fnc_undoSnack;
+        if ((profileNamespace getVariable ["COMSPEC_ATAK_WpShare", 1]) > 0) then {
+            [{
+                private _u = missionNamespace getVariable ["COMSPEC_ATAK_WpUndo", []];
+                // Itinéraire modifié ou reçu entre-temps : cette version est déjà partie (ou remplacée), rien à envoyer.
+                if ((_u param [0, -1]) isNotEqualTo _this) exitWith {};
+                _u set [5, true];
+                ["syncNow"] call comspec_atak_native_fnc_wpAction;
+                // ANNULER touché à la dernière image (clic différé) : la copie reste encore 2 s, l'annulation renverra l'itinéraire.
+                [{ if (((missionNamespace getVariable ["COMSPEC_ATAK_WpUndo", []]) param [0, -1]) isEqualTo _this) then { missionNamespace setVariable ["COMSPEC_ATAK_WpUndo", nil]; }; }, _this, 2] call comspec_atak_native_fnc_waitAndExec;
+            }, _n, 8] call comspec_atak_native_fnc_waitAndExec;
+        };
+        true
+    };
+    case "undoClear": {
+        private _u = missionNamespace getVariable ["COMSPEC_ATAK_WpUndo", []];
+        if ((_u param [0, -1]) isNotEqualTo _arg) exitWith {
+            ["INFO", "Trop tard : l'itinéraire a changé depuis l'effacement", 3, 10] call comspec_atak_native_fnc_notify;
+            false
+        };
+        _u params ["", "_old", "_oi", "_on", "_of", "_sent"];
+        missionNamespace setVariable ["COMSPEC_ATAK_WpUndo", nil];
+        _w set ["pts", _old]; _w set ["idx", _oi]; _w set ["nav", _on]; _w set ["from", _of];
+        call _rerender;
+        // Effacement déjà parti au groupe (fin des 8 s) : l'itinéraire rétabli y repart.
+        if (_sent && {(profileNamespace getVariable ["COMSPEC_ATAK_WpShare", 1]) > 0}) then { ["syncNow"] call comspec_atak_native_fnc_wpAction; };
         true
     };
     case "nav": {
@@ -257,6 +297,7 @@ switch (_act) do {
         // Plusieurs étapes posées d'affilée partent en un seul envoi.
         private _tok = (missionNamespace getVariable ["COMSPEC_ATAK_WpSyncTok", 0]) + 1;
         missionNamespace setVariable ["COMSPEC_ATAK_WpSyncTok", _tok];
+        missionNamespace setVariable ["COMSPEC_ATAK_WpSyncPending", true];
         [{ if (_this isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_WpSyncTok", 0])) then { ["syncNow"] call comspec_atak_native_fnc_wpAction; }; }, _tok, 1] call comspec_atak_native_fnc_waitAndExec;
     };
     // Carte d'Arma et Athena : tracé et étapes de MON itinéraire partagé (pas celui reçu d'un autre, ni « moi seul »).
@@ -289,6 +330,7 @@ switch (_act) do {
     case "syncNow";
     case "push": {
         private _push = _act isEqualTo "push";
+        missionNamespace setVariable ["COMSPEC_ATAK_WpSyncPending", false];
         ["wpMk"] call comspec_atak_native_fnc_wpAction;
         private _share = profileNamespace getVariable ["COMSPEC_ATAK_WpShare", 1];
         if (_push && {(count _pts) isEqualTo 0}) exitWith {};
@@ -314,6 +356,8 @@ switch (_act) do {
     case "receive": {
         _arg params ["_in", "_who", ["_start", true], ["_live", false]];
         if !(_in isEqualType []) exitWith {};
+        // Itinéraire reçu pendant qu'un effacement est encore annulable : l'annulation ne doit pas écraser celui-ci.
+        missionNamespace setVariable ["COMSPEC_ATAK_WpUndo", nil];
         private _hadPts = (count _pts) > 0;
         _w set ["pts", _in]; _w set ["from", _who];
         if (_live) then {
