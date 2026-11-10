@@ -102,6 +102,8 @@ final class EquipmentConfiguratorController
                 'user' => $userId,
                 'pick' => $request->queryString('recuperer') === '1',
                 'open' => preg_match('/^(w|k|p):[A-Za-z0-9]{1,32}$|^me$/', $request->queryString('ouvrir')) === 1 ? $request->queryString('ouvrir') : '',
+                // Objet envoyé depuis l'espace Matériel (?objet=CLASSE) : montré en tête de la palette, rien n'est posé d'office.
+                'item' => preg_match(ItemCatalogImport::CLASS_RE, $request->queryString('objet')) === 1 ? $request->queryString('objet') : '',
                 'can' => [
                     'kits' => $canKits,
                     'catalog' => $this->canManageCatalog(),

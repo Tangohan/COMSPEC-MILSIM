@@ -24,7 +24,7 @@ final class PrekitDocument
     public const DESCRIPTION_MAX = 300;
 
     /** Familles refusées dans un pré-kit : armes (montées à l'établi) et sacs (Arma ne range pas un sac porté). */
-    private const REFUSED_KINDS = ['primary', 'secondary', 'handgun', 'backpack', 'uniform', 'vest'];
+    public const REFUSED_KINDS = ['primary', 'secondary', 'handgun', 'backpack', 'uniform', 'vest'];
 
     private const CONTAINER_WORDS = ['uniform' => 'l’uniforme', 'vest' => 'le gilet', 'backpack' => 'le sac'];
 

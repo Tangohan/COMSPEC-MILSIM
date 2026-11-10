@@ -107,6 +107,11 @@ function run_atak_mod_reports_migration(PDO $pdo): void
                 }
             }
         }
+        // Intégrité : preuve du module officiel (OfficialClientAttestation) vue à la réception du rapport
+        // (valid, absent, invalid, off). Rapports déjà reçus : NULL, affichés « non vérifié ».
+        if ($hasTable('atak_mod_reports') && !$hasCol('atak_mod_reports', 'client_attest')) {
+            $pdo->exec('ALTER TABLE atak_mod_reports ADD COLUMN client_attest VARCHAR(12) NULL DEFAULT NULL AFTER arma_build');
+        }
         // E-mails automatiques au joueur (accès refusé par Athena…) : un seul par joueur, problème et jour.
         if (!$hasTable('atak_player_auto_notices')) {
             $pdo->exec(

@@ -139,7 +139,8 @@ class ArsenalWardrobeController
                 'collections' => count($collections),
                 'communaute' => count($community),
                 'kits' => $kitsAllowed ? $kitCount : null,
-                'materiel' => count($classes) + count($dotation),
+                // Matériel : le catalogue des objets se compte dans l'espace (chargé par le navigateur), pas de compteur partiel ici.
+                'materiel' => null,
             ],
             'detail' => $this->detailFor($request, $tenantId, $userId),
             'creer' => (string) $request->query('creer', '') === 'kit',
@@ -1573,9 +1574,11 @@ class ArsenalWardrobeController
             'myGameKit' => $myGameKit,
             // Catalogue de base d'Arma 3 : état du chargement (la vue d'ensemble le lance au premier accès).
             'eqBase' => $migrationMissing ? null : $this->vanillaStatus(),
-            'eqNav' => $nav + ['espace' => 'mes-tenues', 'collection' => 0, 'tab' => 'fiches', 'q' => '', 'type' => '', 'sort' => 'name', 'paged' => null, 'collection_row' => null, 'counts' => [], 'detail' => null, 'creer' => false],
+            'eqNav' => $nav + ['espace' => 'mes-tenues', 'collection' => 0, 'tab' => 'catalogue', 'q' => '', 'type' => '', 'sort' => 'name', 'paged' => null, 'collection_row' => null, 'counts' => [], 'detail' => null, 'creer' => false],
             'canManageCatalog' => $this->canManageCatalog(),
             'canManageDotation' => $this->canManageDotation(),
+            // Pré-kit partagé à la communauté : mêmes droits que le configurateur (EquipmentConfiguratorController::savePrekit).
+            'canSharePrekits' => $this->canManageKits(),
             'equipmentKindLabels' => ArsenalLoadoutItems::kindLabels(),
             'csrfToken' => Csrf::token(),
             'flash_success' => Session::getFlash('success'),

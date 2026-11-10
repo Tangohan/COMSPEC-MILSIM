@@ -46,7 +46,7 @@ final class EquipmentSpaces
     {
         $space = self::normalize($query['espace'] ?? '');
         $collection = (int) ($query['collection'] ?? 0);
-        $tab = (($query['tab'] ?? '') === 'dotation' || (int) ($query['dotation'] ?? 0) > 0) ? 'dotation' : 'fiches';
+        $tab = self::materielTab($query);
         if (!isset($query['espace'])) {
             if ($collection > 0) {
                 $space = 'collections';
@@ -56,6 +56,25 @@ final class EquipmentSpaces
         }
 
         return ['espace' => $space, 'collection' => $collection > 0 ? $collection : 0, 'tab' => $tab];
+    }
+
+    /**
+     * Onglet de l'espace Matériel : catalogue des objets du jeu (par défaut), fiches de la communauté ou dotation.
+     * ?fiche=ID et ?dotation=ID ouvrent l'onglet qui porte la fenêtre ; ?objet=CLASSE reste sur le catalogue.
+     *
+     * @param array<string, mixed> $query
+     */
+    public static function materielTab(array $query): string
+    {
+        $tab = is_string($query['tab'] ?? null) ? $query['tab'] : '';
+        if ($tab === 'dotation' || (int) ($query['dotation'] ?? 0) > 0) {
+            return 'dotation';
+        }
+        if ($tab === 'fiches' || (int) ($query['fiche'] ?? 0) > 0) {
+            return 'fiches';
+        }
+
+        return 'catalogue';
     }
 
     /** Minuscules sans accents : « Médecin » se trouve en tapant « medecin ». */
@@ -162,6 +181,9 @@ final class EquipmentSpaces
                 continue;
             }
             if ($key === 'espace' && $v === 'mes-tenues') {
+                continue;
+            }
+            if ($key === 'tab' && $v === 'catalogue') {
                 continue;
             }
             if ($key === 'tri' && $v === 'name') {

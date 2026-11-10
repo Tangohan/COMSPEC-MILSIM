@@ -88,7 +88,7 @@ final class PlatformIntegrationSettingsTest extends TestCase
             'extension_version' => '2.0.88',
         ]);
         self::assertStringContainsString('Viper 1-1', $text);
-        self::assertStringContainsString('ATAK 2.1.0', $text);
+        self::assertStringContainsString('Overwatch connect 2.1.0', $text);
         self::assertStringContainsString('Link 2.0.88', $text);
         self::assertStringNotContainsString('https://', $text);
         self::assertStringNotContainsString('192.168.1.20', $text);

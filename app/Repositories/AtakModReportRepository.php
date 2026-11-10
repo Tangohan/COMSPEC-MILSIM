@@ -64,8 +64,10 @@ final class AtakModReportRepository
      *   client_ip?:?string,
      *   mod_version?:?string,
      *   extension_version?:?string,
-     *   arma_build?:?string
+     *   arma_build?:?string,
+     *   client_attest?:?string
      * } $data
+     *   client_attest : preuve du module officiel vue à la réception (valid, absent, invalid, off)
      * @return array{id:int, created:bool, hit_count:int, gravity:string}
      */
     public function upsert(array $data): array
@@ -123,7 +125,8 @@ final class AtakModReportRepository
                     mod_version = COALESCE(?, mod_version),
                     extension_version = COALESCE(?, extension_version),
                     arma_build = COALESCE(?, arma_build),
-                    client_ip = COALESCE(?, client_ip)
+                    client_ip = COALESCE(?, client_ip),
+                    client_attest = COALESCE(?, client_attest)
                  WHERE id = ?'
             );
             $upd->execute([
@@ -135,6 +138,7 @@ final class AtakModReportRepository
                 $this->nullableClip($data['extension_version'] ?? null, 32),
                 $this->nullableClip($data['arma_build'] ?? null, 64),
                 $this->nullableClip($data['client_ip'] ?? null, 45),
+                $this->nullableClip($data['client_attest'] ?? null, 12),
                 $id,
             ]);
             $hits = (int) $existing['hit_count'] + 1;
@@ -146,8 +150,8 @@ final class AtakModReportRepository
             'INSERT INTO atak_mod_reports (
                 severity, gravity, channel, message, detail_text, context_json, fingerprint, source,
                 steam_uid, player_uid, player_name, callsign, client_ip,
-                mod_version, extension_version, arma_build
-             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+                mod_version, extension_version, arma_build, client_attest
+             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
         );
         $ins->execute([
             $severity,
@@ -166,6 +170,7 @@ final class AtakModReportRepository
             $this->nullableClip($data['mod_version'] ?? null, 32),
             $this->nullableClip($data['extension_version'] ?? null, 32),
             $this->nullableClip($data['arma_build'] ?? null, 64),
+            $this->nullableClip($data['client_attest'] ?? null, 12),
         ]);
 
         return ['id' => (int) $this->pdo->lastInsertId(), 'created' => true, 'hit_count' => 1, 'gravity' => $gravity];
