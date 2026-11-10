@@ -137,10 +137,11 @@ final class SseCoverExportService
      *
      * @return array{history: list<array<string, mixed>>, remaining: int, limit: int, countries: list<array<string, mixed>>}
      */
-    public function panel(int $tenantId, int $subjectId, bool $manager, bool $self): array
+    public function panel(int $tenantId, int $subjectId, bool $manager, bool $self, ?\DateTimeImmutable $now = null): array
     {
         $limit = $manager && !$self ? self::LIMIT_MANAGER : self::LIMIT_SELF;
-        $used = $this->exports->countSince($tenantId, $subjectId, gmdate('Y-m-d H:i:s', time() - 86400));
+        $now ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $used = $this->exports->countSince($tenantId, $subjectId, $now->modify('-24 hours')->format('Y-m-d H:i:s'));
 
         return [
             'history' => $this->exports->listForUser($tenantId, $subjectId, 10),

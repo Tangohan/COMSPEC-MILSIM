@@ -153,7 +153,9 @@ AT_fnc_iarpDire = {
     uiSleep 2;
     [_u, createHashMapFromArray [["type", "id_card"], ["materialize", true]]] call comspec_sse_fnc_idIssue;
     private _nl = toString [10];
-    ["apply", [_u, createHashMapFromArray [["role", "insurge"], ["honesty", 95], ["fear", 95], ["aggro", 0], ["bribe", 100], ["unlock", "bribe"],
+    // Nerfs solides (20) : un peureux nerveux peut aussi nier puis s'enfuir (fn_iarpServer « confrontFlee », une chance sur
+    // deux), hors de portée du terminal ; l'essai porte sur l'aveu, pas sur la fuite.
+    ["apply", [_u, createHashMapFromArray [["role", "insurge"], ["honesty", 95], ["fear", 95], ["nerve", 20], ["aggro", 0], ["bribe", 100], ["unlock", "bribe"],
         ["secrets", ["Il garde un fusil sous le siège de son pick-up."]],
         ["know", format ["Vague : Des hommes armés se retrouvent la nuit.%1Précis : À la ferme abandonnée, après la prière.%1Lieu : [%2, %3] Ferme abandonnée", _nl, round ((getPosATL player) select 0) + 50, round ((getPosATL player) select 1)]],
         ["react", [["bribe", "coopere"]]]]]] call comspec_sse_fnc_iarpProfile;

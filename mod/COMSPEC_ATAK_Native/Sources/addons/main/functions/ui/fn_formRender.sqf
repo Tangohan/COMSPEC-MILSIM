@@ -598,31 +598,56 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 _bx = _pad + _bw0 + _pad * 0.6;
             };
             // Actions à droite : largeur au texte, de droite à gauche.
-            private _ax = _pad + _w;
             private _m = ["COMSPEC_RscTextCenter", [0, 0, _w, _hh]] call _mk;
             _m ctrlSetFontHeight (_fs * 0.9);
             _m ctrlShow false;
+            private _aws = _acts apply {
+                _m ctrlSetText ((_x select 0) call comspec_atak_native_fnc_tr); // i18n:brut (déjà traduit)
+                ((ctrlTextWidth _m) + _pad * 1.6) max (_font * 1.7 * _ratioG)
+            };
+            ctrlDelete _m;
+            private _awAll = 0;
+            { _awAll = _awAll + _x + _pad * 0.4; } forEach _aws;
+            // 4.2.1 : colonne étroite (petit téléphone en portrait) : le titre garde toute la largeur et les actions passent
+            // dessous, à droite ; avant, le titre se serrait entre le retour et les actions, un mot (ou une syllabe) par ligne.
+            private _stack = _acts isNotEqualTo [] && {(_pad + _w - _bx - _awAll) < (_w * 0.55)};
+            private _tw = [((_pad + _w - _awAll) - _bx) max (_w * 0.3), _pad + _w - _bx] select _stack;
+            private _t = ["COMSPEC_RscStructuredText", [_bx, _y, _tw, _hh]] call _mk;
+            // Colonne étroite : titre réduit jusqu'à ce que son mot le plus long tienne (« troubleshooting » coupé en deux).
+            private _tsz = 1.25;
+            if (_stack) then {
+                // Taille de base des balises <t> : celle du contrôle, au moins celle de sa classe (0,024 × safeZoneH).
+                private _fh0 = (ctrlFontHeight _t) max (0.024 * safeZoneH);
+                private _mw = ["COMSPEC_RscText", [0, 0, _w, _hh]] call _mk;
+                _mw ctrlSetFont "COMSPEC_BarlowBold";
+                _mw ctrlSetFontHeight (_fh0 * 1.25);
+                _mw ctrlShow false;
+                private _lw = 0;
+                { _mw ctrlSetText _x; _lw = _lw max (ctrlTextWidth _mw); } forEach (((_title) call comspec_atak_native_fnc_tr) splitString " "); // i18n:brut
+                ctrlDelete _mw;
+                // Marge large : le texte structuré coupe un mot avant la largeur mesurée par ctrlTextWidth.
+                if (_lw > _tw * 0.8) then { _tsz = ((1.25 * _tw * 0.8 / _lw) max 0.7) min 1.25; };
+            };
+            _t ctrlSetStructuredText parseText ((format ["<t size='%3' font='COMSPEC_BarlowBold' color='" + _hT + "'>%1</t>%2", _title,
+                ["", format ["<br/><t size='0.82' color='" + _hTD + "'>%1</t>", _sub]] select (_sub isNotEqualTo ""), _tsz]) call comspec_atak_native_fnc_tr);
+            private _h = (ctrlTextHeight _t) max _hh;
+            _t ctrlSetPosition [_bx, _y + ((_hh - (ctrlTextHeight _t)) / 2) max 0, _tw, ctrlTextHeight _t];
+            _t ctrlCommit 0;
+            private _ay = [_y + (_hh - _font * 1.7) / 2, _y + _h + _pad * 0.3] select _stack;
+            if (_stack) then { _h = _h + _font * 1.7 + _pad * 0.3; };
+            private _ax = _pad + _w;
             {
                 _x params ["_label", "_code", ["_pri", false]];
                 private _tr = (_label) call comspec_atak_native_fnc_tr;
-                _m ctrlSetText _tr; // i18n:brut (déjà traduit)
-                private _aw = ((ctrlTextWidth _m) + _pad * 1.6) max (_font * 1.7 * _ratioG);
+                private _aw = _aws select _forEachIndex;
                 _ax = _ax - _aw;
-                private _ab = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _pri, [_ax, _y + (_hh - _font * 1.7) / 2, _aw, _font * 1.7]] call _mk;
+                private _ab = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _pri, [_ax, _ay, _aw, _font * 1.7]] call _mk;
                 _ab ctrlSetText _tr; // i18n:brut (déjà traduit)
                 _ab ctrlSetFontHeight (_fs * 0.9);
                 if (!_pri) then { _ab ctrlSetBackgroundColor (_th get "surface2"); _ab ctrlSetTextColor (_th get "text"); };
                 [_ab, _code] call _click;
                 _ax = _ax - _pad * 0.4;
             } forEach _acts;
-            ctrlDelete _m;
-            private _tw = (_ax - _bx - _pad * 0.4) max (_w * 0.3);
-            private _t = ["COMSPEC_RscStructuredText", [_bx, _y, _tw, _hh]] call _mk;
-            _t ctrlSetStructuredText parseText ((format ["<t size='1.25' font='COMSPEC_BarlowBold' color='" + _hT + "'>%1</t>%2", _title,
-                ["", format ["<br/><t size='0.82' color='" + _hTD + "'>%1</t>", _sub]] select (_sub isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
-            private _h = (ctrlTextHeight _t) max _hh;
-            _t ctrlSetPosition [_bx, _y + ((_hh - (ctrlTextHeight _t)) / 2) max 0, _tw, ctrlTextHeight _t];
-            _t ctrlCommit 0;
             private _ln = ["COMSPEC_RscText", [_pad, _y + _h + _pad * 0.3, _w, pixelH]] call _mk;
             _ln ctrlSetBackgroundColor (_th get "border");
             _y = _y + _h + _pad * 0.8;
