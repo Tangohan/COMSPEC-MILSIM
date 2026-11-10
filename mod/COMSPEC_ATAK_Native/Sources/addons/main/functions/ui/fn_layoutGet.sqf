@@ -5,6 +5,63 @@
     La coque est la texture carrée du S7 (tools/src) ou d'un autre modèle (coques des rendus tools/render_phones.py,
     photos tools/frame_photos.py) ; l'écran occupe la zone transparente de chacune.
 */
+// 4.2.1 : disposition mémorisée. Un rendu de page l'appelait une dizaine de fois, chaque appel relisant l'inventaire
+// et recalculant toutes les zones. Elle est maintenant gardée pour une même combinaison d'entrées : état du téléphone
+// (en main, page carte, vue pilote, texture du JPC), réglages de mise en page du profil et du menu CBA, police,
+// résolution et safeZone, et ce qui dépend de l'équipement (modèle porté, terminal de bord, droit à l'appareil),
+// relu au plus toutes les 0,5 s, et tout de suite quand l'équipement, le véhicule ou le téléphone affiché changent.
+// Le calcul lui-même (corps ci-dessous, inchangé) tourne par l'appel interne ["#calcul"], sans passer par ce cache.
+// Effets de bord gardés : police (fn_fontSet) appliquée dans le calcul, COMSPEC_ATAK_FontMin et FontBody remis à
+// chaque lecture.
+if (isNil "_this" || {_this isNotEqualTo ["#calcul"]}) exitWith {
+    private _t0 = diag_tickTime;
+    if (isNil "COMSPEC_ATAK_LayoutEh") then {
+        COMSPEC_ATAK_LayoutEh = true;
+        { [_x, { COMSPEC_ATAK_LayoutInv = []; }] call CBA_fnc_addPlayerEventHandler; } forEach ["loadout", "vehicle", "unit"];
+    };
+    private _s0 = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+    // Équipement : relu au plus toutes les 0,5 s (positions du poste de commandement et du PC de TOC comprises).
+    private _invSig = [player, objectParent player, player getVariable ["COMSPEC_ATAK_PhoneForeign", 0], missionNamespace getVariable ["COMSPEC_ATAK_PhoneActive", ""]];
+    private _inv = missionNamespace getVariable ["COMSPEC_ATAK_LayoutInv", []];
+    if ((count _inv) < 3 || {_t0 - (_inv select 0) > 0.5} || {(_inv select 1) isNotEqualTo _invSig}) then {
+        private _term0 = [player] call comspec_atak_native_fnc_vehicleTerminal;
+        private _car0 = [player] call comspec_atak_native_fnc_phoneCarried;
+        private _ok0 = if ((_car0 select 2) isEqualTo "" && {(_car0 select 0) isNotEqualTo "s7"}) then { [_car0 select 0, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]) } else { true };
+        private _dev0 = if (_term0 in ["vehicle", "cp", "toc"]) then { [player, true] call comspec_atak_native_fnc_hasDevice } else { true };
+        _inv = [_t0, _invSig, [_term0, _car0, _ok0, _dev0]];
+        missionNamespace setVariable ["COMSPEC_ATAK_LayoutInv", _inv];
+    };
+    private _shellPref = profileNamespace getVariable ["COMSPEC_ATAK_Shell", "auto"];
+    private _key = [
+        _inv select 2,
+        _s0 getOrDefault ["interactive", false], _s0 getOrDefault ["quickView", ""], (_s0 getOrDefault ["activePage", ""]) isEqualTo "MAP", _s0 getOrDefault ["texture", false],
+        profileNamespace getVariable ["COMSPEC_ATAK_Mode", "MINI"], profileNamespace getVariable ["COMSPEC_ATAK_Orientation", "PORTRAIT"],
+        profileNamespace getVariable ["COMSPEC_ATAK_VehTablet", true], profileNamespace getVariable ["COMSPEC_ATAK_MiniScale", 1],
+        profileNamespace getVariable ["COMSPEC_ATAK_MiniAnchor", "BR"], profileNamespace getVariable ["COMSPEC_ATAK_TextScale", 1],
+        profileNamespace getVariable ["COMSPEC_ATAK_IconDensity", 0], _shellPref, _shellPref isEqualTo "auto" && {sunOrMoon < 0.5},
+        profileNamespace getVariable ["COMSPEC_ATAK_Offset_MINI_PORTRAIT", [0, 0]], profileNamespace getVariable ["COMSPEC_ATAK_Offset_MINI_LANDSCAPE", [0, 0]],
+        profileNamespace getVariable ["COMSPEC_ATAK_Offset_FULL_LANDSCAPE", [0, 0]], profileNamespace getVariable ["COMSPEC_ATAK_Offset_FULL_PORTRAIT", [0, 0]],
+        missionNamespace getVariable ["COMSPEC_ATAK_JpcTexH", 576], missionNamespace getVariable ["comspec_atak_native_full_scale", 1],
+        missionNamespace getVariable ["comspec_atak_native_font", "roboto"], missionNamespace getVariable ["COMSPEC_ATAK_FontFam", ""],
+        missionNamespace getVariable ["COMSPEC_ATAK_InspFull", false], missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false],
+        pixelW, pixelH, safeZoneX, safeZoneY, safeZoneW, safeZoneH
+    ];
+    private _memo = missionNamespace getVariable ["COMSPEC_ATAK_LayoutMemo", createHashMap];
+    private _hit = _memo getOrDefault [_key, []];
+    if ((count _hit) isEqualTo 3) exitWith {
+        COMSPEC_ATAK_FontMin = _hit select 1;
+        COMSPEC_ATAK_FontBody = _hit select 2;
+        ["disposition du téléphone (mémoire)", _t0] call comspec_atak_native_fnc_perfAcc;
+        +(_hit select 0)
+    };
+    private _res = ["#calcul"] call comspec_atak_native_fnc_layoutGet;
+    // Peu de combinaisons à la fois (porté, en main, carte, JPC) ; vidé au-delà de 16 (glisser de la coque, réglages).
+    if ((count _memo) >= 16) then { _memo = createHashMap; };
+    _memo set [_key, [+_res, COMSPEC_ATAK_FontMin, COMSPEC_ATAK_FontBody]];
+    missionNamespace setVariable ["COMSPEC_ATAK_LayoutMemo", _memo];
+    ["disposition du téléphone (calcul)", _t0] call comspec_atak_native_fnc_perfAcc;
+    _res
+};
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _interactive = _s getOrDefault ["interactive", false];
 private _mode = toUpper (profileNamespace getVariable ["COMSPEC_ATAK_Mode", "MINI"]);

@@ -1,4 +1,6 @@
 [
+["disposition du téléphone (mémoire)", "phone layout (cached)"],
+["disposition du téléphone (calcul)", "phone layout (computed)"],
 ["Uni propre", "Plain clean"],
 ["Petits carreaux", "Small squares"],
 ["Grands carreaux", "Large squares"],
