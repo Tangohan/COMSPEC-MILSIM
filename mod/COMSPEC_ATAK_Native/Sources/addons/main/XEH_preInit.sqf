@@ -107,6 +107,12 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["COMSPEC", "ATAK · Affichage"], [0.6, 1, 1, 0, true], 0,
     { if !(isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; }; }] call comspec_atak_native_fnc_addSetting;
 
+// Animation de sortie et de rangement du téléphone en main (par joueur, 4.2.1, fn_fx « phoneIn » / « phoneOut »).
+// Aussi dans Réglages > Animations et sons du téléphone.
+["comspec_atak_native_phone_anim", "CHECKBOX",
+    ["Animation de sortie et de rangement", "Coché par défaut. Le téléphone en main monte en fondu quand vous le sortez et redescend en s'effaçant quand vous le rangez, en 0,2 s. Exemple : Ctrl+Maj+U depuis le jeu, le téléphone glisse de quelques centimètres vers le haut en apparaissant. Décochez pour qu'il apparaisse et disparaisse d'un coup. La miniature portée n'est jamais animée ; Échap, la mort, l'inconscience ou un changement de véhicule le rangent toujours tout de suite."],
+    ["COMSPEC", "ATAK · Affichage"], true, 0] call comspec_atak_native_fnc_addSetting;
+
 // HUD des autres mods (boussole F-PANO / ECOTI, température, heure...) masqué sous le téléphone (par joueur, fn_foreignHud).
 // Heure des alertes (fn_clockFmt) : heure de la mission, du PC, UTC, ou PC et UTC. Par joueur.
 ["comspec_atak_native_alert_clock", "LIST",

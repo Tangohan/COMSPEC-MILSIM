@@ -12,6 +12,10 @@ private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 // miniature en cours (fn_miniInteract) continue, fn_displayUnload ne doit pas la terminer.
 private _keepMini = [uiNamespace getVariable ["COMSPEC_ATAK_MiniPrevMode", ""], ""] select !(_interactive && {!isNull ([] call comspec_atak_native_fnc_display)} && {_s getOrDefault ["interactive", false]});
 private _keepMode = profileNamespace getVariable ["COMSPEC_ATAK_Mode", "MINI"];
+// Animation de sortie (4.2.1) : seulement depuis rien d'affiché, ou depuis la miniature vers le grand. Miniature -> en main
+// en mode PETIT (même place) ou téléphone déjà en main : pas d'animation, rien ne doit clignoter.
+private _wasShown = !isNull ([] call comspec_atak_native_fnc_display);
+private _wasHand = _wasShown && {_s getOrDefault ["interactive", false]};
 _s set ["suppressHudRestore", true];
 [] call comspec_atak_native_fnc_close;
 _s set ["suppressHudRestore", false];
@@ -36,6 +40,11 @@ if (_interactive) exitWith {
     // Téléphone en main : les raccourcis CBA ne passent plus. Principal, orientation et position relus ici
     // (porter, prendre en main et zoom : fn_displayLoad).
     if (!isNull _disp) then {
+        if (!_wasHand && {!(_wasShown && {([] call comspec_atak_native_fnc_layoutGet) getOrDefault ["mini", true]})}) then {
+            private _ta = diag_tickTime;
+            ["phoneIn"] call comspec_atak_native_fnc_fx;
+            ["téléphone : animation de sortie", _ta] call comspec_atak_native_fnc_perfAcc;
+        };
         _disp displayAddEventHandler ["KeyDown", {
             params ["", "_key", "_shift", "_ctrl", "_alt"];
             // Touche prise pour un raccourci en cours de réglage (fn_keybinds) : rien d'autre ne part.

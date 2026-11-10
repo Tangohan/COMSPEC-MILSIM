@@ -215,6 +215,10 @@ private _perso = [["section", "Téléphone", "L'objet porté, l'antenne"]] + [
     ["COMSPEC_ATAK_PageFx", true, "", "Transitions entre les pages", "Les pages arrivent en fondu (sans flash sombre). Désactivé : changement de page immédiat, et les deux réglages suivants sont sans effet"] call _profSwitch,
     ["COMSPEC_ATAK_OpenSplash", true, "", "Ouverture depuis l'icône", "L'icône de l'app grandit vers le centre de l'écran à l'ouverture (icônes réalistes)"] call _profSwitch,
     ["COMSPEC_ATAK_TitleSlide", true, "", "Titre qui glisse", "Le titre de l'app arrive de la droite à l'ouverture et de la gauche au retour"] call _profSwitch,
+    // Sortie et rangement animés (4.2.1) : réglage CBA par joueur (comspec_atak_native_phone_anim), le même que dans le menu CBA.
+    ["switch", "Animation de sortie et de rangement", (missionNamespace getVariable ["comspec_atak_native_phone_anim", true]) isEqualTo true,
+        { ["comspec_atak_native_phone_anim"] call (uiNamespace getVariable "COMSPEC_ATAK_CbaToggle"); },
+        "En main, le téléphone monte en fondu à la sortie et redescend au rangement (0,2 s). Désactivé : il apparaît et disparaît d'un coup. La miniature portée ne bouge pas (aussi dans les options CBA, ATAK · Affichage)"],
     ["COMSPEC_ATAK_CrackFx", true, "", "Fêlures détaillées", "Écran abîmé : motifs de fêlures, de bris et de dalle (lignes, encre, pixels morts), selon la cause, différents à chaque choc. Désactivé : seules les textures simples restent"] call _profSwitch,
     ["COMSPEC_ATAK_PressFx", true, "", "Icône qui s'enfonce à l'appui", "L'icône d'une app s'enfonce légèrement sous le doigt"] call _profSwitch,
     ["COMSPEC_ATAK_TapFeedback", true, "", "Clic et vibration des appuis", "Petit clic et légère vibration à chaque appui (sans son en mode discrétion)"] call _profSwitch,

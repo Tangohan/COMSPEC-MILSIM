@@ -8,7 +8,7 @@
     _defer (4.2.1) : appui du joueur (flèche de la barre d'app, touche de la coque) : la page précédente est dessinée à
     l'image suivante, le glissé démarre tout de suite (fn_navigate).
 */
-params [["_defer", false]];
+params [["_defer", false, [false]]];
 if (uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]) exitWith { false };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _prev = _s getOrDefault ["activePage", ""];
