@@ -1571,6 +1571,8 @@ class ArsenalWardrobeController
             'catalogCount' => $catalogCount,
             'upgradeUrl' => url('platform/upgrade') . '?from=equipment_kits&feature=equipment_kits',
             'myGameKit' => $myGameKit,
+            // Catalogue de base d'Arma 3 : état du chargement (la vue d'ensemble le lance au premier accès).
+            'eqBase' => $migrationMissing ? null : $this->vanillaStatus(),
             'eqNav' => $nav + ['espace' => 'mes-tenues', 'collection' => 0, 'tab' => 'fiches', 'q' => '', 'type' => '', 'sort' => 'name', 'paged' => null, 'collection_row' => null, 'counts' => [], 'detail' => null, 'creer' => false],
             'canManageCatalog' => $this->canManageCatalog(),
             'canManageDotation' => $this->canManageDotation(),
@@ -1580,6 +1582,18 @@ class ArsenalWardrobeController
             'flash_error' => Session::getFlash('error'),
             'coverHint' => EquipmentCoverStorage::hintText(),
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function vanillaStatus(): ?array
+    {
+        try {
+            return (new \App\Services\GameEquipment\Configurator\VanillaCatalogLoader())->status((int) Session::get('tenant_id'));
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /** Responsables des kits de départ : organisation, accès, ou gestion de l'équipement (droit déjà utilisé par les fiches). */

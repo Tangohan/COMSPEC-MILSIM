@@ -101,13 +101,17 @@ final class EquipmentMaquetteTest extends TestCase
         $landing = $this->hub();
         self::assertStringContainsString('Votre kit.', $landing);
         self::assertStringContainsString('Prêt en jeu.', $landing);
-        self::assertStringContainsString('eqx-how', $landing);
+        // Vue d'ensemble (4 sections avec appel à l'action) seulement à l'arrivée.
+        self::assertStringContainsString('Par où commencer', $landing);
+        foreach (['Mes tenues', 'Kits de la communauté', 'Modèles', 'Configurateur'] as $section) {
+            self::assertStringContainsString('<h3>' . $section . '</h3>', $landing, $section);
+        }
         self::assertStringNotContainsString('eqx-hero--short', $landing);
 
         foreach ([['espace' => 'favoris'], ['q' => 'radio'], ['type' => 'vest'], ['sort' => 'date']] as $nav) {
             $other = $this->hub([], $nav);
             self::assertStringContainsString('eqx-hero--short', $other);
-            self::assertStringNotContainsString('eqx-how', $other);
+            self::assertStringNotContainsString('Par où commencer', $other);
             self::assertSame(1, substr_count($other, 'aria-current="page"'), 'un seul espace à la fois');
         }
     }

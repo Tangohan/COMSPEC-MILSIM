@@ -893,6 +893,7 @@ return function (Router $router) {
     $router->get('/equipment/configurateur', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/equipment/configurateur/catalogue', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'catalogue'], [AuthMiddleware::class]);
     $router->post('/equipment/configurateur/catalogue/import', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'importCatalog'], [AuthMiddleware::class]);
+    $router->post('/equipment/configurateur/catalogue/base', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'baseCatalog'], [AuthMiddleware::class]);
     $router->get('/equipment/configurateur/script-export.sqf', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'exportScript'], [AuthMiddleware::class]);
     $router->get('/equipment/configurateur/sources', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'sources'], [AuthMiddleware::class]);
     $router->get('/equipment/configurateur/source', [\App\Controllers\Web\EquipmentConfiguratorController::class, 'source'], [AuthMiddleware::class]);

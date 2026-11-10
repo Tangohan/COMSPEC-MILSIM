@@ -52,7 +52,7 @@ final class ConfiguratorCatalog
             $observed = [];
         }
 
-        return self::merge($specRows, $observed);
+        return self::merge($specRows, $observed, self::locale());
     }
 
     /**
@@ -78,15 +78,21 @@ final class ConfiguratorCatalog
             $hashes = [];
         }
 
-        return self::compact(self::merge($specRows, $observed), $hashes);
+        return self::compact(self::merge($specRows, $observed, self::locale()), $hashes);
+    }
+
+    private static function locale(): string
+    {
+        return function_exists('locale') && locale() === 'en' ? 'en' : 'fr';
     }
 
     /**
      * @param list<array<string, mixed>> $specRows lignes de game_item_specs
      * @param list<array<string, mixed>> $observedRows lignes de GameEquipmentRepository::catalogue / catalogueFor
+     * @param string $locale langue du site (fr|en) : nom des fiches du catalogue de base
      * @return array<string, array<string, mixed>>
      */
-    public static function merge(array $specRows, array $observedRows): array
+    public static function merge(array $specRows, array $observedRows, string $locale = 'fr'): array
     {
         $out = [];
         foreach ($observedRows as $o) {
@@ -141,7 +147,13 @@ final class ConfiguratorCatalog
                 }
             }
             $prev = $out[$key] ?? [];
+            $base = ($r['source'] ?? '') === 'vanilla';
             $name = trim((string) ($r['name'] ?? ''));
+            if ($base) {
+                // Catalogue de base : le nom vu en jeu passe d'abord, puis le nom de la langue du site.
+                $localized = $locale === 'en' && trim((string) ($r['name_en'] ?? '')) !== '' ? trim((string) $r['name_en']) : $name;
+                $name = trim((string) ($prev['name'] ?? '')) !== '' ? (string) $prev['name'] : $localized;
+            }
             $out[$key] = [
                 'class' => $class,
                 'name' => $name !== '' ? $name : (string) ($prev['name'] ?? ''),
@@ -157,6 +169,7 @@ final class ConfiguratorCatalog
                 'mod' => trim((string) ($r['mod_name'] ?? '')) !== '' ? (string) $r['mod_name'] : (string) ($prev['mod'] ?? ''),
                 'players' => (int) ($prev['players'] ?? 0),
                 'spec' => true,
+                'base' => $base,
             ];
         }
 
@@ -188,6 +201,7 @@ final class ConfiguratorCatalog
         };
         $items = [];
         $withSpecs = 0;
+        $base = 0;
         foreach ($lookup as $key => $it) {
             $row = ['c' => $it['class'], 'n' => $it['name'], 'k' => $it['kind']];
             if ($it['cat'] !== '') {
@@ -230,9 +244,13 @@ final class ConfiguratorCatalog
                 $row['v'] = 1;
                 $withSpecs++;
             }
+            if (!empty($it['base'])) {
+                $row['b'] = 1;
+                $base++;
+            }
             $items[] = $row;
         }
 
-        return ['items' => $items, 'groups' => $groups, 'stats' => ['items' => count($items), 'with_specs' => $withSpecs, 'groups' => count($groups)]];
+        return ['items' => $items, 'groups' => $groups, 'stats' => ['items' => count($items), 'with_specs' => $withSpecs, 'base' => $base, 'groups' => count($groups)]];
     }
 }

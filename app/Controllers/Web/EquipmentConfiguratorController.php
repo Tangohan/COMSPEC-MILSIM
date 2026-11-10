@@ -16,6 +16,7 @@ use App\Services\GameEquipment\Configurator\EquipmentAudit;
 use App\Services\GameEquipment\Configurator\ItemCatalogImport;
 use App\Services\GameEquipment\Configurator\LoadoutDocument;
 use App\Services\GameEquipment\Configurator\LoadoutValidator;
+use App\Services\GameEquipment\Configurator\VanillaCatalogLoader;
 use App\Services\GameEquipment\KitsAccess;
 use App\Services\GameEquipment\PlayerKitService;
 use App\Services\GameEquipment\RoleKitLoadout;
@@ -47,10 +48,12 @@ final class EquipmentConfiguratorController
         private ?ArsenalWardrobeRepository $wardrobes = null,
         private ?ConfiguratorCatalog $catalog = null,
         private ?GameItemSpecRepository $specs = null,
+        private ?VanillaCatalogLoader $vanilla = null,
     ) {
         $this->wardrobes ??= new ArsenalWardrobeRepository();
         $this->catalog ??= new ConfiguratorCatalog();
         $this->specs ??= new GameItemSpecRepository();
+        $this->vanilla ??= new VanillaCatalogLoader($this->specs);
     }
 
     public function index(Request $request, array $params = []): Response
@@ -79,11 +82,15 @@ final class EquipmentConfiguratorController
                     'save' => url('equipment/configurateur/enregistrer'),
                     'versions' => url('equipment/configurateur/kits/'),
                     'import' => url('equipment/configurateur/catalogue/import'),
+                    'base' => url('equipment/configurateur/catalogue/base'),
                     'script' => url('equipment/configurateur/script-export.sqf'),
                     'icons' => url('equipment/icones/'),
                     'hub' => url('equipment'),
                 ],
                 'csrf' => Csrf::token(),
+                // Guide déjà vu : mémorisé par membre (clé du navigateur suffixée par le compte).
+                'user' => $userId,
+                'pick' => $request->queryString('recuperer') === '1',
                 'open' => preg_match('/^(w|k|p):[A-Za-z0-9]{1,32}$|^me$/', $request->queryString('ouvrir')) === 1 ? $request->queryString('ouvrir') : '',
                 'can' => [
                     'kits' => $canKits,
@@ -92,6 +99,7 @@ final class EquipmentConfiguratorController
                 ],
                 'kitsAllowed' => $kitsAllowed,
                 'specs' => $summary,
+                'base' => $this->vanillaStatus($tenantId),
                 'audiences' => $service !== null ? $this->audienceChoices($tenantId, $service) : [],
             ],
             'flash_success' => Session::getFlash('success'),
@@ -475,6 +483,54 @@ final class EquipmentConfiguratorController
             'skipped' => $parsed['skipped'],
             'message' => $written . ' objets importés' . ($parsed['skipped'] > 0 ? ', ' . $parsed['skipped'] . ' lignes écartées (illisibles)' : '') . '.',
         ]);
+    }
+
+    /**
+     * Catalogue de base d'Arma 3 : un lot par appel (le navigateur enchaîne et montre l'avancement). Tout membre de
+     * la communauté déclenche le premier chargement (données livrées avec le site, idempotent, jamais par-dessus une
+     * fiche importée) ; tout recharger depuis le début demande la gestion du catalogue.
+     */
+    public function baseCatalog(Request $request, array $params = []): Response
+    {
+        $gate = $this->gate(true);
+        if ($gate instanceof Response) {
+            return $gate;
+        }
+        [$tenantId, $userId] = $gate;
+        if (!Csrf::validate($request->inputString('_csrf_token'))) {
+            return Response::json(['ok' => false, 'error' => 'Session expirée : rechargez la page.'], 419);
+        }
+        $restart = $request->inputString('restart') === '1';
+        if ($restart && !$this->canManageCatalog()) {
+            return Response::json(['ok' => false, 'error' => 'Droits insuffisants pour recharger le catalogue de base.'], 403);
+        }
+        try {
+            $result = $this->vanilla->step($tenantId, $restart);
+        } catch (\Throwable $e) {
+            error_log('[equipment-configurator] base catalog failed: ' . $e->getMessage());
+
+            return Response::json(['ok' => false, 'error' => 'Chargement du catalogue de base impossible : réessayez plus tard.'], 500);
+        }
+        if (!$result['ok']) {
+            return Response::json($result, 503);
+        }
+        if ($restart || $result['finished']) {
+            EquipmentAudit::log('equipment.catalog.base', $tenantId, $userId, 0, ['restart' => $restart, 'done' => $result['done'], 'total' => $result['total'], 'version' => $result['version']]);
+        }
+
+        return Response::json($result);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function vanillaStatus(int $tenantId): array
+    {
+        try {
+            return $this->vanilla->status($tenantId);
+        } catch (\Throwable) {
+            return ['available' => false, 'needed' => false, 'version' => '', 'total' => 0, 'done' => 0, 'finished' => false, 'families' => []];
+        }
     }
 
     /** Script d'export autonome à coller dans la console de débogage d'Arma (texte brut, téléchargé). */
