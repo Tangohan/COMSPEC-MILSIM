@@ -38,6 +38,30 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : frappes d'UCAV depuis le téléphone, orbite et mode Rechercher et tuer (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Drones armés (UCAV) commandés depuis le téléphone : orbite, Rechercher et tuer, frappes sur cible marquée
+- Dans l'app Drone, UCAV ARMÉS liste les drones armés de votre camp (Greyhawk, Fenghuang, Ababil, Sentinel, drones armés des mods) : PRENDRE LA MAIN, sans terminal ni poste du servant et sans être à côté.
+- Mettez-le en orbite au-dessus d'un point (altitude et rayon au choix), depuis l'app ou par un clic droit sur la carte : « UCAV : orbite ici ».
+- Marquez une cible (cible suivie, contact ou marqueur de la carte, laser de votre groupe, grille), choisissez l'arme et appuyez deux fois sur FRAPPER : l'UCAV approche, tire lui-même son missile ou sa bombe guidée sous vos yeux dans l'image de sa caméra, puis revient en orbite et vous prépare le compte rendu BDA.
+- « Rechercher et tuer » : l'UCAV patrouille une zone et vous propose chaque cible détectée, ou, si le serveur l'autorise, frappe seul les ennemis identifiés, jamais près d'un allié ou d'un civil.
+EN : Armed drones (UCAV) commanded from the phone: orbit, Hunter-killer, strikes on a marked target
+- In the Drone app, ARMED UCAVS lists your side's armed drones (Greyhawk, Fenghuang, Ababil, Sentinel, mods' armed drones): TAKE CONTROL, without a terminal or the gunner seat and without being next to it.
+- Put it in orbit above a point (altitude and radius of your choice), from the app or with a right-click on the map: "UCAV: orbit here".
+- Mark a target (tracked target, map contact or marker, your group's laser, grid), pick the weapon and press STRIKE twice: the UCAV closes in, fires its own guided missile or bomb while you watch through its camera, then returns to its orbit and prepares the BDA report for you.
+- "Hunter-killer": the UCAV patrols an area and proposes each detected target to you, or, if the server allows it, strikes identified enemies on its own, never near a friendly or a civilian.
+
+### Détail technique
+- `functions/drone/fn_ucav.sqf` (nouveau) : reconnaissance des UCAV (`unitIsUAV`, avion ou hélicoptère, au moins une munition guidée air-sol d'après `CfgAmmo` : `laserLock`, `irLock`, `manualControl`, `autoSeekTarget`, `SensorsManagerComponent`, missiles air-air exclus ; bombe si `thrust`/`thrustTime` nuls ou `BombCore` ; forçage mission `COMSPEC_ATAK_Ucav`), liste des armes par `magazinesAllTurrets` (+ `pylonWeapon` / `compatibleMagazines`), droits (`can`), liaison (`comspec_atak_native_ucav_range`, relief, relais par `fn_videoLink`, TOC et Zeus toujours en liaison), contrôle serveur (`srv` : réglage, camp, droits, contrôleur unique, opérateur au terminal, cible amie ou civile refusée, allié à moins de 40 m du point refusé, engagement libre interdit forcé en « Proposer »), actions du téléphone (deux appuis pour frapper, annuler et rendre), lignes et actions du clic droit, dessin de la carte, retours (`evt`), surveillance (`tick`, 1 s).
+- `functions/drone/fn_ucavCmd.sqf` (nouveau) : exécution là où l'UCAV est local. Orbite par point de passage `LOITER` (`CIRCLE_L`, `flyInHeight`), équipage `CARELESS` / `BLUE`, `setAutonomous false`, `AUTOTARGET` coupé. File de frappes (script unique) : approche par `doMove` jusqu'à l'enveloppe (missile : `missileLockMinDistance`..`missileLockMaxDistance`, nez à moins de 40°, vue dégagée ; bombe : point de largage calculé sur hauteur et vitesse, nez à moins de 20°, dégagement à 3 km si mal aligné), puis `reveal`, `reportRemoteTarget`, `confirmSensorTarget`, `doWatch`/`doTarget`, `selectWeaponTurret`, tir `fireAtTarget` → `BIS_fnc_fire` → `forceWeaponFire` (2 s chacun), munition capturée par `Fired` et accrochée à la cible (`setMissileTarget` objet, `setMissileTargetPos` point, cible laser posée sur un point sans objet). Suivi jusqu'à l'impact, BDA proposé (détruit, endommagé, neutralisé, sans effet). Rechercher et tuer : `nearTargets` + `getSensorTargets` dans la zone toutes les 3 s, identification par le camp perçu ; « Engager librement » seulement ennemi identifié sans allié ni civil dans la distance de sécurité de l'appui aérien (`fn_fireSupport` `type CAS` → `dc`), deux frappes automatiques au plus, sinon proposition.
+- `functions/drone/fn_pageUcav.sqf` (nouveau) : vue UCAV de l'app Drone (paysage : onglets à gauche, image et état à droite). Image de la nacelle par la caméra de Vidéo Live (`fn_livecamUav`, hôte du flux = contrôleur par `COMSPEC_DroneOwner`), onglets MISSION, CIBLES, FILE, JOURNAL, compte rendu BDA pré-rempli (`fn_reportAction` `prefill BDA`).
+- Fichiers partagés, lignes ajoutées seulement : `fn_mapCtxMenu.sqf` (2 lignes : lignes UCAV du menu principal, action `UCAV_…`), `fn_tocLaptop.sqf` (1 ligne : dessin des UCAV), `XEH_preInit.sqf` (5 réglages CBA serveur ATAK · UCAV et 3 événements `comspec_atak_native_ucavSrv`, `ucavExec`, `ucavEvt`, `COMSPEC_ATAK_SrvUcavV`), `config.cpp` (3 fonctions). Dans `functions/drone/` : vue UCAV et entrées UCAV ARMÉS de `fn_pageDrone`, point choisi sur la carte et zones UCAV de l'outil DRONE (`fn_droneAction`), dessin (`fn_droneDraw`), ordres de petit drone ignorés sur un UCAV commandé et terminal UAV du contrôleur (`fn_droneCmd` « manual » / « release »).
+- Réglages : `comspec_atak_native_ucav` (activé), `_ucav_who` (chefs, JTAC, opérateurs de drone, TOC et Zeus / tout le camp / TOC et Zeus), `_ucav_free` (engagement libre autorisé), `_ucav_terminal` (terminal UAV requis, non), `_ucav_range` (15 000 m).
+- Mission d'autotest : `scripts/ucav.sqf`, groupe `ucav` (Greyhawk armé en orbite, Ifrit ennemi marqué puis frappé, tir et impact vérifiés ; Rechercher et tuer en « Proposer », aucune frappe sans validation). Non jouée : tests en jeu sautés.
+- Traductions : `i18n/en.txt` et `localisation/template/xx.txt` (240 phrases).
+
 ## À venir : configurateur d'équipement, favoris, tendances, pré-kits et poids (site, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
