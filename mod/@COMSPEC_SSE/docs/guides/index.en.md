@@ -10,6 +10,7 @@ One complete guide per tool: what it is for, where to find it (Zeus, Eden, ACE, 
 | « SSE ROLEPLAY · Extensions » menu | Zeus, administrator | [menu_extensions.en.md](menu_extensions.en.md) |
 | Identity check (ACE, viewer, levels N0 to N4, ID Check app, checkpoints) | Player, Zeus | [controle_identite.en.md](controle_identite.en.md) |
 | Area AI (AI workshop) | Zeus | [ia_de_la_zone.en.md](ia_de_la_zone.en.md) |
+| Talking to AIs: understood questions, answers written by the game master, what an AI may bring up | Player, Zeus, mission lead | [reponses_ia.en.md](reponses_ia.en.md) |
 | Covers and « Ma couverture » (My cover) | Infiltrated player, Zeus | [ma_couverture.en.md](ma_couverture.en.md) |
 | Link board | Player, Zeus | [tableau_des_liens.en.md](tableau_des_liens.en.md) |
 | Zeus and Eden modules | Zeus, mission maker | [modules_zeus_eden.en.md](modules_zeus_eden.en.md) |
