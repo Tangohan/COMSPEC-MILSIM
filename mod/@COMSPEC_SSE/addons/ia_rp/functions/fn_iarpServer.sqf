@@ -192,8 +192,6 @@ switch (_op) do {
             };
         } forEach _list;
         if (_ace isNotEqualTo "") then { _list = _list - [_ace]; };
-        // Oui / non glissé dans une autre demande (« d'accord, suivez-moi ») : la demande seule compte.
-        if ((count _list) > 1) then { _list = _list - ["yes", "no"]; };
         if (_list isEqualTo []) exitWith {
             ["P", _t, _cmd, _text, _ace, ["demande des papiers (action ACE)", "fouille des papiers (action ACE)"] select (_ace isEqualTo "search"), _steamName] call _log;
             ["ack", [_t, _ace, "ace"]] call _reply;
@@ -215,6 +213,17 @@ switch (_op) do {
         private _trust = { params ["_d"]; _pm set ["trust", (((_pm get "trust") + _d) max 0) min 100]; };
         // Sujet déjà raconté à un autre joueur : « Je l'ai déjà dit à votre collègue. » (une fois par sujet et par joueur).
         private _told = { params ["_topic"]; ["told", [_mem, _uid, side group _me, _topic, random 1]] call comspec_sse_fnc_iarpMem };
+        _pm set ["turns", (_pm getOrDefault ["turns", 0]) + 1];
+        // Question de l'IA encore ouverte (moins de 60 s) : le oui / non qui suit y répond, même glissé dans une phrase.
+        private _askOpen = ((_pm get "ask") isNotEqualTo []) && {(time - ((_pm get "ask") param [1, -100])) < 60};
+        if (!_askOpen) then { _pm set ["ask", []]; };
+        // Oui / non glissé dans une autre demande (« d'accord, suivez-moi ») : la demande seule compte, sauf réponse à
+        // une question de l'IA (« Je peux partir ? » « Oui, circulez. » : un seul « oui »).
+        if ((count _list) > 1) then {
+            if (_askOpen && {(_list findIf { _x in ["yes", "no"] }) >= 0}) then {
+                if (((_pm get "ask") select 0) isEqualTo "askGo") then { _list = _list - ["leave"]; };
+            } else { _list = _list - ["yes", "no"]; };
+        };
         private _tense = { params ["_d"]; _t setVariable ["comspec_sse_idTension", (((_t getVariable ["comspec_sse_idTension", 20]) + _d) max 0) min 100]; };
         private _want = { params ["_s"]; if (_fsm) then { _t setVariable ["comspec_sse_idWant", _s]; }; };
         private _do = {
@@ -345,7 +354,41 @@ switch (_op) do {
             private _tone = "";
             private _outcome = "";
             private _topic = "";
+            // Réponse à la question de l'IA : « Vous allez m'arrêter ? » « Non. » -> suite de cette question.
+            private _askQ = "";
+            if (_intent in ["yes", "no"] && {_askOpen} && {((_pm get "ask") param [0, ""]) isNotEqualTo ""}) then {
+                _askQ = (_pm get "ask") select 0;
+                _pm set ["ask", []];
+                _askOpen = false;
+                // « Ça vaut bien un petit quelque chose ? » « Oui. » : comme tendre de l'argent.
+                if (_askQ isEqualTo "askMoney" && {_intent isEqualTo "yes"}) then { _intent = "bribe"; _gi = "bribe"; _askQ = ""; };
+            };
             call {
+                if (_askQ isNotEqualTo "") exitWith {
+                    private _yes = _intent isEqualTo "yes";
+                    _gi = _askQ + (["No", "Yes"] select _yes);
+                    switch (_gi) do {
+                        case "askArrestYes": {
+                            [15] call _tense;
+                            _outcome = "craint d'être arrêté";
+                            private _onFoot = isNull objectParent _t && {!(_t getVariable ["ace_captives_isSurrendering", false])} && {!(_t getVariable ["ace_captives_isHandcuffed", false])};
+                            if ((_p get "fear") >= 60 && {(_p get "nerve") >= 60} && {_aimed isEqualTo 0} && {_onFoot} && {(random 1) < 0.35}) then {
+                                _gi = "confrontFlee"; _outcome = "s'enfuit plutôt que d'être arrêté";
+                                if (_fsm && {_st isNotEqualTo ""}) then { ["fuit"] call _want; } else { ["flee", [(getPosATL _t) getPos [150, _me getDir _t]]] call _do; };
+                            };
+                        };
+                        case "askArrestNo": { [-15] call _tense; [5] call _trust; _outcome = "rassuré"; };
+                        case "askGoYes": {
+                            ["free"] call _do;
+                            if (_fsm) then { ["release", [_t]] call comspec_sse_fnc_idAiFsm; };
+                            _outcome = "laissé partir";
+                        };
+                        case "askGoNo": { [5] call _tense; _outcome = "doit attendre"; };
+                        case "askMoneyNo": { [-5] call _trust; _outcome = "ne sera pas payé"; };
+                        case "askHelpYes": { [10] call _trust; [-8] call _tense; _outcome = "va être aidé"; };
+                        case "askHelpNo": { [-10] call _trust; [5] call _tense; _outcome = "pas aidé"; };
+                    };
+                };
                 if (_touchy && {!(_intent in ["threat", "bribe", "handsup", "halt", "kneel", "follow", "dismount", "trunk", "leave"])}) exitWith {
                     [15] call _tense; _gi = "sensitive"; _outcome = "sujet sensible";
                 };
@@ -535,6 +578,26 @@ switch (_op) do {
             // /me sans geste compris : pas de réplique.
             if (_cmd isNotEqualTo "me" || {_gi isNotEqualTo ""}) then { _parts pushBack [_gi, _tone, _outcome, _intent, [_topic] call _told]; };
         } forEach _list;
+        // Initiative : l'IA pose parfois une question (une à la fois, 30 s au moins entre deux) ; le oui / non qui suit y
+        // répond (ci-dessus). Arrestation après une menace, une fouille ou un aveu ; argent si elle est vénale et se tait ;
+        // aide si elle est blessée ; partir après quelques questions si elle a confiance.
+        if (_parts isNotEqualTo [] && {!_quiet} && {!_askOpen} && {(time - (_pm getOrDefault ["askAt", -100])) > 30}) then {
+            private _last = (_parts select -1) select 0;
+            private _q = call {
+                if ((_ctx get "wounded") && {(random 1) < 0.35}) exitWith { "askHelp" };
+                if (_last in ["confess", "confessTruth", "confessVague"] && {(random 1) < 0.7}) exitWith { "askArrest" };
+                if ((_last in ["confrontDeny", "searchYes", "threat", "weaponsYes"] || {_st in ["nerveux", "rendu"]}) && {(random 1) < 0.4}) exitWith { "askArrest" };
+                if (_last isEqualTo "intelNo" && {(_p get "bribe") >= 60} && {!(_pm get "bribed")} && {(random 1) < 0.6}) exitWith { "askMoney" };
+                if (_last in ["origin", "employer", "job", "travel", "pob", "contact", "address", "name", "age", "family", "dunno"]
+                    && {(_pm get "turns") >= 4} && {(_pm get "trust") >= 40} && {_st in ["", "interpelle", "coopere", "ment"]} && {(random 1) < 0.25}) exitWith { "askGo" };
+                ""
+            };
+            if (_q isNotEqualTo "") then {
+                _parts pushBack [_q, "", "pose une question", "ask", ""];
+                _pm set ["ask", [_q, time]];
+                _pm set ["askAt", time];
+            };
+        };
         // Deux fois la même réplique de suite (silence, refus) : une seule.
         private _dd = [];
         { if (_dd isEqualTo [] || {((_dd select -1) select 0) isNotEqualTo (_x select 0)}) then { _dd pushBack _x; }; } forEach _parts;
@@ -556,14 +619,16 @@ switch (_op) do {
         private _ens = [];
         private _local = "";
         private _toneOut = "";
-        private _gi = (_parts select -1) select 0;
+        private _mainI = (count _parts) - 1;
+        if (((_parts select -1) param [3, ""]) isEqualTo "ask" && {(count _parts) > 1}) then { _mainI = (count _parts) - 2; };
+        private _gi = (_parts select _mainI) select 0;
         private _hook = missionNamespace getVariable ["comspec_sse_iarpGenHook", 0];
         {
             _x params ["_gi1", "_tone1", "", "", ["_told1", ""]];
             private _c1 = +_ctx;
             if (_tone1 isNotEqualTo "") then { _c1 set ["tone", _tone1]; };
             if (_told1 isNotEqualTo "") then { _c1 set ["told", _told1]; };
-            if (_forEachIndex < ((count _parts) - 1)) then { _c1 set ["plain", true]; };
+            if (_forEachIndex isNotEqualTo _mainI) then { _c1 set ["plain", true]; };
             private _gen = [];
             if (_hook isEqualType {}) then { _gen = [_gi1, _p, _c1, _recent, _vars, _text] call _hook; };
             if !(_gen isEqualType [] && {(count _gen) >= 2}) then { _gen = [_gi1, _p, _c1, _recent] call comspec_sse_fnc_iarpGen; };

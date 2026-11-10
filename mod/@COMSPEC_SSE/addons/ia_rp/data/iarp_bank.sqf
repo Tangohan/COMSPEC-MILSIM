@@ -110,7 +110,7 @@ private _rows = [
         ["mefiant", [["Pourquoi, vous ne me croyez pas ? … {contact}.", "Why, you don't believe me? … {contact}."]]]
     ]],
     ["address", [
-        ["*", [
+        ["*", [["L'adresse est sur ma carte, {sir}.", "The address is on my card, {sir}."], ["{address}, vous pouvez vérifier.", "{address}, you can check."], 
             ["J'habite {address}.", "I live at {address}."],
             ["{address}.", "{address}."],
             ["Mon adresse ? {address}.", "My address? {address}."],
@@ -135,19 +135,19 @@ private _rows = [
         ["agressif", [["{name}. Notez-le bien.", "{name}. Write it down."]]]
     ]],
     ["age", [
-        ["*", [["J'ai {age} ans.", "I'm {age}."], ["{age} ans.", "{age} years old."], ["{age} ans, {sir}.", "{age}, {sir}."], ["{age}. Je ne les fais pas, hein ?", "{age}. I don't look it, eh?"]]],
+        ["*", [["J'aurai {age} ans cette année.", "I'll be {age} this year."], ["{age}, pourquoi ?", "{age}, why?"], ["J'ai {age} ans.", "I'm {age}."], ["{age} ans.", "{age} years old."], ["{age} ans, {sir}.", "{age}, {sir}."], ["{age}. Je ne les fais pas, hein ?", "{age}. I don't look it, eh?"]]],
         ["laconique", [["{age}.", "{age}."]]],
         ["mefiant", [["{age}. Pourquoi ?", "{age}. Why?"]]]
     ]],
     ["family", [
-        ["*", [["{family}.", "{family}."], ["Ma famille ? {family}.", "My family? {family}."], ["{family}. Ils m'attendent.", "{family}. They're waiting for me."], ["{family}, {sir}.", "{family}, {sir}."]]],
+        ["*", [["{family}, c'est tout ce que j'ai.", "{family}, that's all I have."], ["Ça va, merci. {family}.", "They're fine, thanks. {family}."], ["{family}.", "{family}."], ["Ma famille ? {family}.", "My family? {family}."], ["{family}. Ils m'attendent.", "{family}. They're waiting for me."], ["{family}, {sir}.", "{family}, {sir}."]]],
         ["effraye", [["{family}… s'il vous plaît, laissez-les en dehors de ça.", "{family}… please, leave them out of this."]]],
         ["mefiant", [["Laissez ma famille tranquille. … {family}.", "Leave my family alone. … {family}."]]],
         ["laconique", [["{family}.", "{family}."]]]
     ]],
     // Fait absent de la couverture : la personne ne sait pas, elle n'invente rien.
     ["dunno", [
-        ["*", [["Je ne sais pas.", "I don't know."], ["Aucune idée.", "No idea."], ["Je ne saurais pas vous dire.", "I couldn't tell you."], ["Ça, je ne sais pas, {sir}.", "That I don't know, {sir}."], ["Je préfère ne pas répondre.", "I'd rather not answer."]]],
+        ["*", [["Je n'en ai aucune idée, {sir}.", "I have no idea, {sir}."], ["Je ne sais pas.", "I don't know."], ["Aucune idée.", "No idea."], ["Je ne saurais pas vous dire.", "I couldn't tell you."], ["Ça, je ne sais pas, {sir}.", "That I don't know, {sir}."], ["Je préfère ne pas répondre.", "I'd rather not answer."]]],
         ["laconique", [["Sais pas.", "Dunno."]]],
         ["nerveux", [["Je… je ne sais pas, vraiment.", "I… I really don't know."]]]
     ]],
@@ -158,7 +158,7 @@ private _rows = [
     ]],
     // Fuite, agressivité, renforts : pas de réponse, seulement ce qu'on voit.
     ["silent", [
-        ["*", [["(Il ne vous répond pas.)", "(He doesn't answer.)"], ["(Il vous ignore.)", "(He ignores you.)"], ["(Il ne vous écoute plus.)", "(He's not listening anymore.)"], ["(Aucune réponse.)", "(No answer.)"]]]
+        ["*", [["(Il fait comme s'il n'avait rien entendu.)", "(He acts as if he hadn't heard.)"], ["(Il regarde ailleurs.)", "(He looks elsewhere.)"], ["(Il ne vous répond pas.)", "(He doesn't answer.)"], ["(Il vous ignore.)", "(He ignores you.)"], ["(Il ne vous écoute plus.)", "(He's not listening anymore.)"], ["(Aucune réponse.)", "(No answer.)"]]]
     ]],
     // ------------------------------------------------------------------ ordres
     ["comply", [
@@ -176,14 +176,14 @@ private _rows = [
         ["effraye", [["(Il est paralysé par la peur.)", "(He's frozen with fear.)"]]]
     ]],
     ["trunkNone", [
-        ["*", [["Quel coffre ? Je n'ai pas de voiture ici.", "What trunk? I don't have a car here."], ["Je suis à pied, {sir}.", "I'm on foot, {sir}."], ["Ce n'est pas mon véhicule.", "That's not my vehicle."]]]
+        ["*", [["Il n'y a pas de voiture, {sir}.", "There's no car, {sir}."], ["Quel véhicule ? Je suis venu à pied.", "What vehicle? I came on foot."], ["Je n'ai rien à ouvrir.", "I have nothing to open."], ["Quel coffre ? Je n'ai pas de voiture ici.", "What trunk? I don't have a car here."], ["Je suis à pied, {sir}.", "I'm on foot, {sir}."], ["Ce n'est pas mon véhicule.", "That's not my vehicle."]]]
     ]],
     ["dismountNone", [
-        ["*", [["Je suis déjà à pied.", "I'm already on foot."], ["Descendre de quoi ?", "Get out of what?"]]]
+        ["*", [["Je suis à pied, vous voyez bien.", "I'm on foot, you can see that."], ["Je ne suis pas en voiture.", "I'm not in a car."], ["(Il montre ses pieds.) Déjà à pied.", "(He points at his feet.) Already on foot."], ["Il n'y a rien dont descendre.", "There's nothing to get out of."], ["Je suis déjà à pied.", "I'm already on foot."], ["Descendre de quoi ?", "Get out of what?"]]]
     ]],
     // ------------------------------------------------------------------ fouille
     ["searchYes", [
-        ["*", [["Allez-y, je n'ai rien à cacher.", "Go ahead, I have nothing to hide."], ["Fouillez, si vous voulez.", "Search me if you want."], ["Faites vite, s'il vous plaît.", "Make it quick, please."], ["(Il écarte les bras.)", "(He spreads his arms.)"]]],
+        ["*", [["Je n'ai rien sur moi, vous verrez.", "I have nothing on me, you'll see."], ["Allez-y, je n'ai rien à cacher.", "Go ahead, I have nothing to hide."], ["Fouillez, si vous voulez.", "Search me if you want."], ["Faites vite, s'il vous plaît.", "Make it quick, please."], ["(Il écarte les bras.)", "(He spreads his arms.)"]]],
         ["nerveux", [["Euh… oui, bien sûr… allez-y.", "Uh… yes, of course… go ahead."]]]
     ]],
     ["searchNo", [
@@ -209,13 +209,13 @@ private _rows = [
         ["effraye", [["Non, non, si on me voit prendre ça…", "No, no, if they see me take that…"]]]
     ]],
     ["badge", [
-        ["*", [["Bien, {sir}. Que voulez-vous savoir ?", "Alright, {sir}. What do you want to know?"], ["D'accord, je comprends.", "Okay, I understand."], ["(Il se redresse, plus attentif.)", "(He straightens up, more attentive.)"]]],
+        ["*", [["Ah. Très bien, {sir}.", "Ah. Very well, {sir}."], ["(Il regarde le badge un long moment.)", "(He looks at the badge for a long time.)"], ["Bien, {sir}. Que voulez-vous savoir ?", "Alright, {sir}. What do you want to know?"], ["D'accord, je comprends.", "Okay, I understand."], ["(Il se redresse, plus attentif.)", "(He straightens up, more attentive.)"]]],
         ["mefiant", [["Un badge, ça s'imprime.", "A badge can be printed."]]],
         ["agressif", [["Et alors ? Ça ne vous donne pas tous les droits.", "So what? That doesn't give you every right."]]]
     ]],
     // ------------------------------------------------------------------ renseignement
     ["intelYes", [
-        ["*", [["Bon… {know}", "Well… {know}"], ["Je vais vous dire ce que je sais : {know}", "I'll tell you what I know: {know}"], ["Entre nous ? {know}", "Between us? {know}"], ["(Il baisse la voix.) {know}", "(He lowers his voice.) {know}"]]],
+        ["*", [["Puisque vous demandez… {know}", "Since you ask… {know}"], ["Bon… {know}", "Well… {know}"], ["Je vais vous dire ce que je sais : {know}", "I'll tell you what I know: {know}"], ["Entre nous ? {know}", "Between us? {know}"], ["(Il baisse la voix.) {know}", "(He lowers his voice.) {know}"]]],
         ["nerveux", [["Si on apprend que c'est moi… {know}", "If they find out it was me… {know}"]]],
         ["bavard", [["Ah, ça ! Tout le monde en parle au village : {know}", "Oh, that! Everyone in the village talks about it: {know}"]]]
     ]],
@@ -249,11 +249,11 @@ private _rows = [
         ["agressif", [["Ne parlez pas de ça.", "Don't talk about that."]]]
     ]],
     ["weaponsNo", [
-        ["*", [["Non, je ne suis pas armé.", "No, I'm not armed."], ["Pas d'arme, {sir}.", "No weapon, {sir}."], ["Moi ? Jamais.", "Me? Never."]]],
+        ["*", [["Je n'ai jamais touché une arme.", "I've never touched a weapon."], ["Rien, fouillez-moi si vous voulez.", "Nothing, search me if you want."], ["Une arme ? Pour quoi faire ?", "A weapon? What for?"], ["Non, je ne suis pas armé.", "No, I'm not armed."], ["Pas d'arme, {sir}.", "No weapon, {sir}."], ["Moi ? Jamais.", "Me? Never."]]],
         ["nerveux", [["Non ! Non, aucune arme.", "No! No weapon at all."]]]
     ]],
     ["weaponsYes", [
-        ["*", [["Oui, j'ai {weapon}. Pour me défendre.", "Yes, I have {weapon}. For self-defence."], ["J'ai {weapon}, oui.", "I have {weapon}, yes."], ["Juste {weapon}. Tout le monde en a une, ici.", "Just {weapon}. Everyone has one here."]]],
+        ["*", [["Oui… {weapon}. Je l'ai sur moi.", "Yes… {weapon}. I have it on me."], ["{weapon}. J'ai le droit, non ?", "{weapon}. I'm allowed, aren't I?"], ["Juste {weapon}, pour la route.", "Just {weapon}, for the road."], ["Oui, j'ai {weapon}. Pour me défendre.", "Yes, I have {weapon}. For self-defence."], ["J'ai {weapon}, oui.", "I have {weapon}, yes."], ["Juste {weapon}. Tout le monde en a une, ici.", "Just {weapon}. Everyone has one here."]]],
         ["agressif", [["Oui, et alors ?", "Yes, so what?"]]]
     ]],
     // ------------------------------------------------------------------ confrontation (« vos papiers sont faux », « tu mens »)
@@ -309,7 +309,7 @@ private _rows = [
         ["agressif", [["Je suis très calme.", "I'm perfectly calm."]]]
     ]],
     ["help", [
-        ["*", [["Non, ça va, merci.", "No, I'm fine, thanks."], ["Ça ira, merci.", "I'll manage, thanks."], ["Vous êtes gentil.", "That's kind of you."]]],
+        ["*", [["Je n'ai besoin de rien, {sir}.", "I don't need anything, {sir}."], ["Merci, mais tout va bien.", "Thanks, but everything's fine."], ["Non, ça va, merci.", "No, I'm fine, thanks."], ["Ça ira, merci.", "I'll manage, thanks."], ["Vous êtes gentil.", "That's kind of you."]]],
         ["effraye", [["Oui… aidez-moi, s'il vous plaît.", "Yes… help me, please."]]],
         ["mefiant", [["Je n'ai besoin de rien de vous.", "I don't need anything from you."]]]
     ]],
@@ -322,15 +322,15 @@ private _rows = [
         ["laconique", [["(Signe de tête.)", "(A nod.)"]]]
     ]],
     ["bye", [
-        ["*", [["Au revoir.", "Goodbye."], ["Bonne journée, {sir}.", "Have a good day, {sir}."], ["Au revoir… enfin.", "Goodbye… finally."], ["Faites attention à vous.", "Take care."]]],
+        ["*", [["À la prochaine.", "See you."], ["Que Dieu vous garde.", "God keep you."], ["Au revoir.", "Goodbye."], ["Bonne journée, {sir}.", "Have a good day, {sir}."], ["Au revoir… enfin.", "Goodbye… finally."], ["Faites attention à vous.", "Take care."]]],
         ["laconique", [["(Il hoche la tête.)", "(He nods.)"]]]
     ]],
     ["thanks", [
-        ["*", [["De rien.", "You're welcome."], ["Je vous en prie.", "Don't mention it."], ["Pas de quoi.", "No problem."]]],
+        ["*", [["C'est normal.", "It's nothing."], ["Avec plaisir, {sir}.", "My pleasure, {sir}."], ["Ce n'est rien.", "It's nothing."], ["De rien.", "You're welcome."], ["Je vous en prie.", "Don't mention it."], ["Pas de quoi.", "No problem."]]],
         ["mefiant", [["Hm.", "Hm."]]]
     ]],
     ["sorry", [
-        ["*", [["Ce n'est rien.", "It's nothing."], ["Ça va, ça va.", "It's fine, it's fine."], ["Pas grave.", "No harm done."]]]
+        ["*", [["Ne vous inquiétez pas.", "Don't worry."], ["Ce n'est pas grave, {sir}.", "It's not a problem, {sir}."], ["Ça arrive.", "It happens."], ["Ce n'est rien.", "It's nothing."], ["Ça va, ça va.", "It's fine, it's fine."], ["Pas grave.", "No harm done."]]]
     ]],
     ["howareyou", [
         ["*", [["Ça va, merci.", "I'm fine, thanks."], ["On fait aller.", "Getting by."], ["Comme on peut, avec tout ça.", "As well as can be, with all this."], ["Ça allait mieux avant le contrôle.", "Better before the checkpoint."]]],
@@ -338,13 +338,60 @@ private _rows = [
         ["nerveux", [["Ça va… oui, ça va.", "Fine… yes, fine."]]]
     ]],
     ["yes", [
-        ["*", [["D'accord.", "Okay."], ["Bien.", "Good."], ["Si vous le dites.", "If you say so."]]]
+        ["*", [["Bon.", "Fine."], ["Très bien.", "Very well."], ["Comme vous dites.", "As you say."], ["D'accord.", "Okay."], ["Bien.", "Good."], ["Si vous le dites.", "If you say so."]]]
     ]],
     ["no", [
-        ["*", [["Ah bon.", "Oh, okay."], ["Comme vous voulez.", "As you like."], ["Bien.", "Fine."]]]
+        ["*", [["Bon, d'accord.", "Alright then."], ["Si vous le dites.", "If you say so."], ["Hm.", "Hm."], ["Ah bon.", "Oh, okay."], ["Comme vous voulez.", "As you like."], ["Bien.", "Fine."]]]
     ]],
     ["unknown", [
-        ["*", [["Je ne comprends pas.", "I don't understand."], ["Pardon ?", "Sorry?"], ["Je ne comprends pas ce que vous voulez.", "I don't understand what you want."]]]
+        ["*", [["Pardon, je n'ai pas compris.", "Sorry, I didn't understand."], ["Vous pouvez répéter ?", "Can you say that again?"], ["Je ne vois pas ce que vous voulez dire.", "I don't see what you mean."], ["(Il vous regarde sans comprendre.)", "(He looks at you blankly.)"], ["Comment ça ?", "What do you mean?"], ["Je ne suis pas sûr de comprendre, {sir}.", "I'm not sure I understand, {sir}."], ["Je ne comprends pas.", "I don't understand."], ["Pardon ?", "Sorry?"], ["Je ne comprends pas ce que vous voulez.", "I don't understand what you want."]]]
+    ]],
+    // ------------------------------------------------------------------ questions de l'IA (initiative) et suite d'un oui / non
+    ["askArrest", [
+        ["*", [["Vous allez m'arrêter ?", "Are you going to arrest me?"], ["Je vais avoir des ennuis ?", "Am I going to be in trouble?"], ["Vous m'emmenez ?", "Are you taking me away?"],
+            ["Je vais finir en prison ?", "Am I going to jail?"], ["C'est grave ? Vous allez m'arrêter ?", "Is it serious? Are you going to arrest me?"], ["(Inquiet.) Vous allez m'embarquer ?", "(Worried.) Are you going to take me in?"]]]
+    ]],
+    ["askGo", [
+        ["*", [["Je peux partir, maintenant ?", "Can I go now?"], ["On a fini ? Je peux y aller ?", "Are we done? Can I go?"], ["Je peux reprendre ma route ?", "Can I be on my way?"],
+            ["Vous avez encore besoin de moi ?", "Do you still need me?"], ["Je suis attendu… je peux y aller ?", "People are waiting for me… can I go?"], ["C'est bon pour moi ?", "Am I good to go?"]]]
+    ]],
+    ["askMoney", [
+        ["*", [["Ça vaut bien un petit quelque chose, non ?", "That's worth a little something, isn't it?"], ["Vous avez de quoi me remercier ?", "Do you have something to thank me with?"],
+            ["Pour quelques billets, je pourrais me souvenir…", "For a few notes, I might remember…"], ["Qu'est-ce que j'y gagne, moi ?", "What's in it for me?"],
+            ["Un petit geste, et on discute ?", "A small gesture, and we talk?"], ["Tout se paie, ici. Vous payez ?", "Everything has a price here. Are you paying?"]]]
+    ]],
+    ["askHelp", [
+        ["*", [["Vous pouvez m'aider ? J'ai mal…", "Can you help me? It hurts…"], ["Il me faut un médecin… vous pouvez faire quelque chose ?", "I need a doctor… can you do something?"],
+            ["S'il vous plaît, aidez-moi.", "Please, help me."], ["Vous avez de quoi me soigner ?", "Do you have anything to treat me?"],
+            ["Je saigne… vous allez m'aider ?", "I'm bleeding… will you help me?"], ["(Il grimace.) Vous m'aidez ?", "(He winces.) Will you help me?"]]]
+    ]],
+    ["askArrestYes", [
+        ["*", [["Non… s'il vous plaît…", "No… please…"], ["Je n'ai rien fait, je vous le jure !", "I didn't do anything, I swear!"], ["(Il blêmit.)", "(He goes pale.)"],
+            ["Ma famille… qui va s'occuper de ma famille ?", "My family… who'll look after my family?"], ["Pitié, laissez-moi une chance.", "Please, give me a chance."], ["(Il baisse la tête, résigné.)", "(He hangs his head, resigned.)"]]]
+    ]],
+    ["askArrestNo", [
+        ["*", [["Merci… merci.", "Thank you… thank you."], ["(Il souffle, soulagé.)", "(He breathes out, relieved.)"], ["Ah, tant mieux.", "Oh, good."],
+            ["Merci, {sir}. Vraiment.", "Thank you, {sir}. Really."], ["Je vous crois.", "I believe you."], ["D'accord… d'accord, merci.", "Okay… okay, thanks."]]]
+    ]],
+    ["askGoYes", [
+        ["*", [["Merci, bonne journée.", "Thanks, have a good day."], ["Merci, {sir}.", "Thank you, {sir}."], ["Au revoir.", "Goodbye."],
+            ["(Il s'éloigne sans demander son reste.)", "(He leaves without waiting.)"], ["Enfin. Merci.", "Finally. Thanks."], ["Bonne journée à vous.", "Good day to you."]]]
+    ]],
+    ["askGoNo", [
+        ["*", [["D'accord… j'attends.", "Okay… I'll wait."], ["Encore ? Bon…", "Still? Fine…"], ["(Il soupire et attend.)", "(He sighs and waits.)"],
+            ["Comme vous voulez.", "As you wish."], ["Je n'ai pas toute la journée, vous savez.", "I don't have all day, you know."], ["Bien, {sir}.", "Very well, {sir}."]]]
+    ]],
+    ["askMoneyNo", [
+        ["*", [["Tant pis pour vous.", "Too bad for you."], ["Alors je ne sais rien.", "Then I know nothing."], ["Dommage.", "Pity."],
+            ["Comme vous voulez. Moi, j'ai oublié.", "As you like. Me, I've forgotten."], ["Rien n'est gratuit, ici.", "Nothing's free here."], ["(Il hausse les épaules.)", "(He shrugs.)"]]]
+    ]],
+    ["askHelpYes", [
+        ["*", [["Merci… merci beaucoup.", "Thank you… thank you so much."], ["Que Dieu vous bénisse.", "God bless you."], ["Vous êtes quelqu'un de bien.", "You're a good person."],
+            ["(Il se laisse faire.)", "(He lets you help.)"], ["Merci, {sir}.", "Thank you, {sir}."], ["Je n'oublierai pas.", "I won't forget."]]]
+    ]],
+    ["askHelpNo", [
+        ["*", [["Vous allez me laisser comme ça ?", "You're going to leave me like this?"], ["(Il vous regarde, incrédule.)", "(He stares at you in disbelief.)"], ["Je vois…", "I see…"],
+            ["Merci pour rien.", "Thanks for nothing."], ["Vous n'avez pas de cœur.", "You have no heart."], ["(Il serre les dents.)", "(He grits his teeth.)"]]]
     ]],
     // ------------------------------------------------------------------ décors
     ["_open", [

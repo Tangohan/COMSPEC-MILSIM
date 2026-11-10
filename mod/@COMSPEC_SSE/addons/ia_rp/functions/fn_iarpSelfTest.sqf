@@ -3,7 +3,7 @@
     [] call comspec_sse_fnc_iarpSelfTest -> [échecs [textes…], infos [textes…]]
       interprète   phrases FR et EN (accents, ponctuation, majuscules, fautes de frappe, négation, faux positifs)
                    -> intention attendue ; deux demandes dans un message -> dans l'ordre ; coût mesuré (info)
-      banque       au moins 25 intentions, 3 phrases de base au moins chacune ; variantes possibles (base × décors)
+      banque       au moins 50 intentions, 6 phrases de base au moins chacune (FR et EN) ; variantes (base × décors)
       mémoire      fiche par joueur (fn_iarpMem), « déjà dit à votre collègue », mémoire d'avant reprise
       paliers      savoir d'une phrase (comme avant) et par paliers avec lieu, palier débloqué selon confiance et pression
       redite       même question 10 fois à la même personne : moins de 3 répliques identiques
@@ -39,7 +39,10 @@ private _info = [];
     ["Ne bougez pas !", "halt"], ["Si vous ne coopérez pas, je tire !", "threat"], ["Vous n'êtes pas armé ?", "weapons"],
     // Confrontation (l'emporte sur « papiers »).
     ["Vos papiers sont faux.", "confront"], ["Des faux papiers ?", "confront"], ["Tu mens !", "confront"], ["Je sais que c'est toi.", "confront"],
-    ["You're lying.", "confront"], ["Arrêtez de mentir, dites la vérité.", "confront"]
+    ["You're lying.", "confront"], ["Arrêtez de mentir, dites la vérité.", "confront"],
+    // Tournures familières (moins de « Je ne comprends pas »).
+    ["T'es d'où, toi ?", "origin"], ["Tu t'appelles comment ?", "name"], ["Qu'est-ce que tu fais ici ?", "travel"], ["T'as vu quelque chose d'anormal ?", "intel"],
+    ["Ouais.", "yes"], ["Nan, pas question.", "no"]
 ];
 // Deux demandes dans un message : dans l'ordre où elles sont écrites.
 {
@@ -49,7 +52,7 @@ private _info = [];
 } forEach [
     ["Bonjour, vos papiers svp", ["greet", "papers"]], ["Bonjour vos papiers", ["greet", "papers"]], ["Merci. Vous pouvez partir.", ["thanks", "leave"]],
     ["D'où venez-vous ? Et pour qui travaillez-vous ?", ["origin", "employer"]], ["Salut ! Tu viens d'où ?", ["greet", "origin"]],
-    ["Vous avez vu quelque chose de suspect ? Merci.", ["intel", "thanks"]], ["Vos papiers, s'il vous plaît.", ["papers"]]
+    ["Vous avez vu quelque chose de suspect ? Merci.", ["intel", "thanks"]], ["Vos papiers, s'il vous plaît.", ["papers"]], ["Oui, vous pouvez partir.", ["yes", "leave"]]
 ];
 // Coût de l'interprète : 20 messages longs pleins de fautes (mesure indicative, la machine compte).
 private _t0 = diag_tickTime;
@@ -92,7 +95,7 @@ if ((count (_k3 select 1)) < 2 || {(_k3 select 2) isNotEqualTo "Ferme"}) then { 
 
 private _bank = ["bank"] call comspec_sse_fnc_iarpData;
 private _intents = (keys _bank) select { (_x select [0, 1]) isNotEqualTo "_" };
-if ((count _intents) < 25) then { _ko pushBack format ["banque : %1 intentions (25 attendues)", count _intents]; };
+if ((count _intents) < 50) then { _ko pushBack format ["banque : %1 intentions (50 attendues)", count _intents]; };
 private _deco = 1;
 { private _n = 0; { _n = _n + count _y; } forEach (_bank getOrDefault [_x, createHashMap]); _deco = _deco + _n; } forEach ["_open", "_hes", "_close", "_stage"];
 private _poor = [];
@@ -101,9 +104,9 @@ private _total = 0;
     private _n = 0;
     { _n = _n + count _y; } forEach (_bank get _x);
     _total = _total + _n;
-    if (_n < 3) then { _poor pushBack _x; };
+    if (_n < 6) then { _poor pushBack _x; };
 } forEach _intents;
-if (_poor isNotEqualTo []) then { _ko pushBack format ["banque : moins de 3 phrases pour %1", _poor joinString ", "]; };
+if (_poor isNotEqualTo []) then { _ko pushBack format ["banque : moins de 6 phrases pour %1", _poor joinString ", "]; };
 _info pushBack format ["banque : %1 intentions, %2 phrases de base, %3 décors (≈ %4 variantes par intention)", count _intents, _total, _deco - 1, round ((_total / ((count _intents) max 1)) * _deco)];
 
 // Redite et cohérence : même personne, mémoire courte comme sur le serveur (fn_iarpServer).
