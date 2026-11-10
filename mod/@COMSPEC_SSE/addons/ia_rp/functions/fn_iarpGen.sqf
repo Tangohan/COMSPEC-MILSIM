@@ -6,7 +6,8 @@
       profil    HashMap (fn_iarpProfile) : nerve, talk, aggro, honesty, bribe, fear, drunk (0-100), lang, country, phrases
       contexte  HashMap : state (automate des IA : nerveux, refuse, rendu…), tension (0-100), tone (ton imposé), aimed
                 (armes pointées), wounded, tired, vehicle, night, checkpoint (booléens), country (pays des papiers),
-                plain (vrai : phrase de base seule, sans habillage ; réplique suivie d'une autre dans la même bulle)
+                plain (vrai : phrase de base seule, sans habillage ; réplique suivie d'une autre dans la même bulle),
+                told (colleague | other : sujet déjà raconté à un autre joueur, « Je l'ai déjà dit à votre collègue. »)
       déjà dit  phrases de base déjà servies par cette personne : jamais redites tant qu'il en reste d'autres
     Les modèles gardent leurs variables ({city}…) : fn_iarpFill les remplace dans la langue de chaque joueur.
     Ton : imposé, sinon état de l'automate, sinon le trait de caractère le plus marqué.
@@ -99,6 +100,10 @@ if (_deco) then {
         if ((random 1) < (0.08 + _talk / 250)) then { ["_close" call _pickTone] call _post; };
     };
 };
+
+// Déjà dit à un autre joueur (fn_iarpMem « told ») : « Je l'ai déjà dit à votre collègue. » en tête, même sans habillage.
+private _toldTo = _ctx getOrDefault ["told", ""];
+if (_toldTo isNotEqualTo "") then { [["_told", _toldTo] call _pickIn] call _pre; };
 
 // Langue du pays : une expression locale, la phrase traduite entre crochets (fn_iarpClient, si le joueur ne la parle pas).
 private _local = "";

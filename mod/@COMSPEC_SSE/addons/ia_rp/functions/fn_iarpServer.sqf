@@ -205,12 +205,16 @@ switch (_op) do {
         private _st = "";
         if (_fsm) then { _st = ["state", [_t]] call comspec_sse_fnc_idAiFsm; };
         if (isNil "_st" || {!(_st isEqualType "")}) then { _st = ""; };
-        private _mem = _t getVariable ["comspec_sse_iarpMem", createHashMap];
-        if ((count _mem) isEqualTo 0) then {
-            _mem = createHashMapFromArray [["said", createHashMap], ["recent", []], ["trust", 25 + round ((_p get "honesty") / 4)], ["bribed", false], ["word", false], ["badge", -100]];
-            _t setVariable ["comspec_sse_iarpMem", _mem];
-        };
-        private _trust = { params ["_d"]; _mem set ["trust", (((_mem get "trust") + _d) max 0) min 100]; };
+        // Mémoire de l'IA (serveur seulement, fn_iarpMem) : sa couverture affirmée (la même pour tous), à qui elle a dit quoi
+        // en premier, et une fiche par joueur (identifiant Steam) : confiance, déjà-dit, pot-de-vin, mot-clé, badge…
+        private _mem = ["upgrade", _t getVariable ["comspec_sse_iarpMem", createHashMap]] call comspec_sse_fnc_iarpMem;
+        _t setVariable ["comspec_sse_iarpMem", _mem];
+        private _uid = getPlayerUID _me;
+        if (_uid isEqualTo "") then { _uid = "N:" + name _me; };
+        private _pm = ["player", [_mem, _uid, name _me, side group _me, _p get "honesty", time]] call comspec_sse_fnc_iarpMem;
+        private _trust = { params ["_d"]; _pm set ["trust", (((_pm get "trust") + _d) max 0) min 100]; };
+        // Sujet déjà raconté à un autre joueur : « Je l'ai déjà dit à votre collègue. » (une fois par sujet et par joueur).
+        private _told = { params ["_topic"]; ["told", [_mem, _uid, side group _me, _topic, random 1]] call comspec_sse_fnc_iarpMem };
         private _tense = { params ["_d"]; _t setVariable ["comspec_sse_idTension", (((_t getVariable ["comspec_sse_idTension", 20]) + _d) max 0) min 100]; };
         private _want = { params ["_s"]; if (_fsm) then { _t setVariable ["comspec_sse_idWant", _s]; }; };
         private _do = {
@@ -222,7 +226,7 @@ switch (_op) do {
             if (_cmdAi isEqualTo "stop") then { ["halt", [_t, _me]] call comspec_sse_fnc_iarpReact; };
         };
         private _w = _p get "unlockWord";
-        if (_w isNotEqualTo "" && {(_norm find (" " + trim (_w call comspec_sse_fnc_iarpNorm))) >= 0}) then { _mem set ["word", true]; };
+        if (_w isNotEqualTo "" && {(_norm find (" " + trim (_w call comspec_sse_fnc_iarpNorm))) >= 0}) then { _pm set ["word", true]; };
 
         // Légende (identité SSE) puis faits de l'atelier IA, qui l'emportent.
         private _L = createHashMap;
@@ -324,8 +328,8 @@ switch (_op) do {
             if (_x1 in ["coopere", "rendu"]) exitWith { true };
             if (_x1 in ["refuse", "fuit", "agressif"]) exitWith { false };
             if (_st isEqualTo "rendu") exitWith { true };
-            private _c = 0.45 + 0.004 * (_p get "fear") - 0.004 * (_p get "aggro") + 0.2 * (_aimed min 2) + 0.003 * ((_mem get "trust") - 30);
-            if ((time - (_mem get "badge")) < 90) then { _c = _c + 0.15; };
+            private _c = 0.45 + 0.004 * (_p get "fear") - 0.004 * (_p get "aggro") + 0.2 * (_aimed min 2) + 0.003 * ((_pm get "trust") - 30);
+            if ((time - (_pm get "badge")) < 90) then { _c = _c + 0.15; };
             if (_st isEqualTo "refuse") then { _c = _c - 0.3; };
             if (_st in ["fuit", "agressif", "renforts"]) then { _c = _c - 0.35; };
             if ((_p get "role") in ["insurge", "hvt"]) then { _c = _c - 0.15; };
@@ -339,6 +343,7 @@ switch (_op) do {
             private _gi = _intent;
             private _tone = "";
             private _outcome = "";
+            private _topic = "";
             call {
                 if (_touchy && {!(_intent in ["threat", "bribe", "handsup", "halt", "kneel", "follow", "dismount", "trunk", "leave"])}) exitWith {
                     [15] call _tense; _gi = "sensitive"; _outcome = "sujet sensible";
@@ -392,19 +397,19 @@ switch (_op) do {
                             if (_st isEqualTo "refuse") exitWith { false };
                             (random 100) < (_p get "bribe")
                         };
-                        if (_yes) then { _mem set ["bribed", true]; [40] call _trust; _gi = "bribeYes"; _tone = "corrompu"; _outcome = "pot-de-vin accepté"; }
+                        if (_yes) then { _pm set ["bribed", true]; _pm set ["bribes", (_pm get "bribes") + 1]; [40] call _trust; _gi = "bribeYes"; _tone = "corrompu"; _outcome = "pot-de-vin accepté"; }
                         else { [-5] call _trust; [8] call _tense; _gi = "bribeNo"; _outcome = "pot-de-vin refusé"; };
                     };
                     case "intel": {
                         private _ul = _p get "unlock";
                         private _open = switch (_ul) do {
-                            case "bribe": { _mem get "bribed" };
-                            case "keyword": { _mem get "word" };
+                            case "bribe": { _pm get "bribed" };
+                            case "keyword": { _pm get "word" };
                             case "never": { false };
-                            default { (_mem get "trust") >= 60 || {_mem get "bribed"} };
+                            default { (_pm get "trust") >= 60 || {_pm get "bribed"} };
                         };
-                        if (_st isEqualTo "rendu" && {_ul isNotEqualTo "never"} && {(_mem get "trust") >= 40}) then { _open = true; };
-                        if (_open && {(_p get "know") isNotEqualTo ""}) then { _gi = "intelYes"; _outcome = "renseignement donné"; } else { _gi = "intelNo"; _outcome = ["ne sait rien", "se tait"] select ((_p get "know") isNotEqualTo ""); };
+                        if (_st isEqualTo "rendu" && {_ul isNotEqualTo "never"} && {(_pm get "trust") >= 40}) then { _open = true; };
+                        if (_open && {(_p get "know") isNotEqualTo ""}) then { _gi = "intelYes"; _outcome = "renseignement donné"; _topic = "intel"; } else { _gi = "intelNo"; _outcome = ["ne sait rien", "se tait"] select ((_p get "know") isNotEqualTo ""); };
                     };
                     case "weapons": {
                         private _armed = _wpn isNotEqualTo "";
@@ -423,7 +428,7 @@ switch (_op) do {
                         // Accord : il lève les bras (reddition ACE), la fouille ACE devient possible ; sinon il refuse.
                         if (_yes) then { _gi = "searchYes"; _outcome = "accepte la fouille"; ["surrender"] call _do; } else { _gi = "searchNo"; _outcome = "refuse la fouille"; [6] call _tense; };
                     };
-                    case "badge": { _mem set ["badge", time]; [10] call _trust; [5] call _tense; _outcome = "voit le badge"; };
+                    case "badge": { _pm set ["badge", time]; [10] call _trust; [5] call _tense; _outcome = "voit le badge"; };
                     case "calm": { [8] call _trust; [-12] call _tense; _outcome = "rassuré"; };
                     case "help";
                     case "greet";
@@ -437,6 +442,7 @@ switch (_op) do {
                             ([_k] call _fact) params ["_v", "_ok"];
                             if (_v isEqualTo "") exitWith { _gi = "dunno"; _outcome = "ne sait pas"; };
                             _vars set [_k, _v];
+                            _topic = _k;
                             if (!_ok) then {
                                 // Réponse qui ne colle pas : la tension monte (comme une question de légende du menu ACE).
                                 _t setVariable ["comspec_sse_idAsks", (_t getVariable ["comspec_sse_idAsks", 1]) + 1];
@@ -450,7 +456,7 @@ switch (_op) do {
                 };
             };
             // /me sans geste compris : pas de réplique.
-            if (_cmd isNotEqualTo "me" || {_gi isNotEqualTo ""}) then { _parts pushBack [_gi, _tone, _outcome, _intent]; };
+            if (_cmd isNotEqualTo "me" || {_gi isNotEqualTo ""}) then { _parts pushBack [_gi, _tone, _outcome, _intent, [_topic] call _told]; };
         } forEach _list;
         // Deux fois la même réplique de suite (silence, refus) : une seule.
         private _dd = [];
@@ -468,7 +474,7 @@ switch (_op) do {
 
         // Répliques : générateur local (ou point d'accroche réservé), sans redite, mises bout à bout dans une seule bulle ;
         // seule la dernière (la vraie réponse) reçoit ouverture, hésitation et didascalie.
-        private _recent = _mem get "recent";
+        private _recent = _pm get "recent";
         private _frs = [];
         private _ens = [];
         private _local = "";
@@ -476,9 +482,10 @@ switch (_op) do {
         private _gi = (_parts select -1) select 0;
         private _hook = missionNamespace getVariable ["comspec_sse_iarpGenHook", 0];
         {
-            _x params ["_gi1", "_tone1"];
+            _x params ["_gi1", "_tone1", "", "", ["_told1", ""]];
             private _c1 = +_ctx;
             if (_tone1 isNotEqualTo "") then { _c1 set ["tone", _tone1]; };
+            if (_told1 isNotEqualTo "") then { _c1 set ["told", _told1]; };
             if (_forEachIndex < ((count _parts) - 1)) then { _c1 set ["plain", true]; };
             private _gen = [];
             if (_hook isEqualType {}) then { _gen = [_gi1, _p, _c1, _recent, _vars, _text] call _hook; };

@@ -5,7 +5,7 @@
     {first} {age} {family} {know} {sir} {player} {weapon}. Une phrase n'utilise que des faits de la couverture de l'IA :
     sans le fait, le serveur choisit « dunno » (jamais d'invention).
     Décors : _open (début), _hes (hésitation), _close (fin), _stage (didascalie selon le contexte), _local (langue du
-    pays, traduite entre crochets pour qui ne la parle pas).
+    pays, traduite entre crochets pour qui ne la parle pas), _told (déjà raconté à un autre joueur).
     Une mission peut ajouter des phrases avec un fichier iarp_bank.sqf à sa racine, même format : elles s'ajoutent.
     Exemple : createHashMapFromArray [["greet", createHashMapFromArray [["*", [["Kalimera !", "Kalimera!"]]]]]]
 */
@@ -312,6 +312,13 @@ private _rows = [
         ["vehicle", [["(Il garde les mains sur le volant.)", "(He keeps his hands on the wheel.)"], ["(Il baisse la vitre.)", "(He rolls down the window.)"]]],
         ["night", [["À cette heure-ci ?", "At this hour?"], ["(Il plisse les yeux dans le noir.)", "(He squints in the dark.)"]]],
         ["checkpoint", [["Encore un contrôle…", "Another checkpoint…"], ["(Il jette un œil à la barrière.)", "(He glances at the barrier.)"]]]
+    ]],
+    // Sujet déjà raconté à un autre joueur (fn_iarpMem « told ») : même camp (colleague) ou non (other).
+    ["_told", [
+        ["colleague", [["Je l'ai déjà dit à votre collègue.", "I already told your colleague."], ["Votre collègue m'a déjà demandé ça.", "Your colleague already asked me that."],
+            ["Encore ? Je l'ai dit à l'autre, tout à l'heure.", "Again? I told the other one earlier."], ["Vous ne vous parlez pas entre vous ?", "Don't you people talk to each other?"]]],
+        ["other", [["Je l'ai déjà dit à quelqu'un d'autre.", "I already told someone else."], ["On me l'a déjà demandé aujourd'hui.", "Someone already asked me that today."],
+            ["Comme je l'ai dit à l'autre…", "Like I told the other one…"]]]
     ]],
     // Langue du pays (pays fictifs de l'identité SSE), traduite entre crochets pour qui ne la parle pas.
     ["_local", [

@@ -4,6 +4,7 @@
       interprète   phrases FR et EN (accents, ponctuation, majuscules, fautes de frappe, négation, faux positifs)
                    -> intention attendue ; deux demandes dans un message -> dans l'ordre ; coût mesuré (info)
       banque       au moins 25 intentions, 3 phrases de base au moins chacune ; variantes possibles (base × décors)
+      mémoire      fiche par joueur (fn_iarpMem), « déjà dit à votre collègue », mémoire d'avant reprise
       redite       même question 10 fois à la même personne : moins de 3 répliques identiques
       cohérence    10 réponses « origine » d'une personne honnête : toutes citent la ville de sa couverture
     Repris par l'autotest (scripts\ia_rp.sqf) ; rien n'est envoyé ni enregistré.
@@ -50,6 +51,20 @@ private _info = [];
 private _t0 = diag_tickTime;
 for "_i" from 1 to 20 do { ["Bonjuor monsieur, vos papeirs svp, et ouvrez le cofre du vehicule, d'ou venez vous exactement ? Decsendez !"] call comspec_sse_fnc_iarpIntent; };
 _info pushBack format ["interprète : %1 ms par message long avec fautes", round (((diag_tickTime - _t0) / 20) * 10000) / 10];
+
+// Mémoire par joueur (fn_iarpMem) : confiance propre à chaque joueur, « déjà dit à votre collègue » une fois, mémoire
+// d'avant reprise, 24 fiches au plus.
+private _m = ["new"] call comspec_sse_fnc_iarpMem;
+(["player", [_m, "A", "Alpha", west, 60, 1]] call comspec_sse_fnc_iarpMem) set ["trust", 90];
+private _pb = ["player", [_m, "B", "Bravo", west, 60, 2]] call comspec_sse_fnc_iarpMem;
+["player", [_m, "C", "Charlie", east, 60, 3]] call comspec_sse_fnc_iarpMem;
+if ((_pb get "trust") isEqualTo 90) then { _ko pushBack "mémoire : la confiance d'un joueur est partagée avec un autre"; };
+private _tl = [["A", west], ["B", west], ["B", west], ["C", east], ["A", west]] apply { ["told", [_m, _x select 0, _x select 1, "city", 0]] call comspec_sse_fnc_iarpMem };
+if (_tl isNotEqualTo ["", "colleague", "", "other", ""]) then { _ko pushBack format ["mémoire : « déjà dit » %1 au lieu de [, colleague, , other, ]", _tl]; };
+private _up = ["upgrade", createHashMapFromArray [["said", createHashMapFromArray [["city", ["Kavala", false]]]], ["trust", 50], ["recent", []]]] call comspec_sse_fnc_iarpMem;
+if (((_up get "said") getOrDefault ["city", []]) isNotEqualTo ["Kavala", false] || {!("players" in _up)}) then { _ko pushBack "mémoire : la couverture affirmée d'avant est perdue"; };
+for "_i" from 1 to 30 do { ["player", [_m, format ["P%1", _i], "x", west, 60, 10 + _i]] call comspec_sse_fnc_iarpMem; };
+if ((count (_m get "players")) > 24) then { _ko pushBack format ["mémoire : %1 fiches de joueur (24 au plus)", count (_m get "players")]; };
 
 private _bank = ["bank"] call comspec_sse_fnc_iarpData;
 private _intents = (keys _bank) select { (_x select [0, 1]) isNotEqualTo "_" };

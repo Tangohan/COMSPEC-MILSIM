@@ -199,8 +199,13 @@ switch (_op) do {
         _a params [["_u", objNull, [objNull]], ["_in", createHashMap]];
         if (isNull _u || {isPlayer _u}) exitWith { false };
         private _p = [_in] call _normalize;
+        // Mémoire de l'échange (fn_iarpMem) gardée quand le Zeus retouche la même personne (curseurs, réactions, savoir) ;
+        // effacée si c'est une autre personne (nom, histoire ou rôle changés) : ce qu'elle a affirmé ne vaut plus.
+        private _old = _u getVariable ["comspec_sse_iarpProfile", createHashMap];
+        if ((count _old) isEqualTo 0 || {[_old get "name", _old get "story", _old get "role"] isNotEqualTo [_p get "name", _p get "story", _p get "role"]}) then {
+            _u setVariable ["comspec_sse_iarpMem", nil];
+        };
         _u setVariable ["comspec_sse_iarpProfile", _p];
-        _u setVariable ["comspec_sse_iarpMem", nil];
         if ((_p get "name") isNotEqualTo "") then { _u setVariable ["comspec_sse_idName", _p get "name", true]; };
         // Profil au contrôle des IA réalistes (identité SSE) : repris par fn_idAiBrain, recalculé au prochain contrôle.
         if ((_p get "role") isNotEqualTo "auto") then { _u setVariable ["COMSPEC_ID_Profile", _p get "role"]; _u setVariable ["comspec_sse_idProfile", nil]; };
