@@ -38,6 +38,32 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : coques plus propres, verre de l'écran et touches de chaque téléphone (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Des coques plus nettes et un écran sous verre
+- iPhone 17 Pro : plus de liseré noir autour de la coque, bord lissé, et les fentes de dragonne laissent voir le décor.
+- V2 Enhanced : la coque est enfin totalement opaque, plus rien ne transparaît à travers.
+- L'écran épouse les coins arrondis de chaque coque et la vitre a un léger reflet, plus faible la nuit. Il se coupe dans Réglages > Thème et écran > Reflet du verre, ou dans les options CBA (ATAK · Affichage).
+- Les touches de la coque (retour, accueil, apps récentes, marche/arrêt) répondent là où elles sont dessinées sur chaque téléphone ; un modèle sans touche n'a plus de zone invisible au mauvais endroit.
+EN : Cleaner phone cases and a screen under glass
+- iPhone 17 Pro: no more black outline around the case, smooth edge, and the lanyard slots now show what is behind.
+- V2 Enhanced: the case is finally fully opaque, nothing shows through any more.
+- The screen follows the rounded corners of each case and the glass has a light reflection, weaker at night. Turn it off in Settings > Theme and screen > Glass reflection, or in the CBA options (ATAK · Display).
+- The case keys (back, home, recent apps, power) respond where they are drawn on each phone; a model without a key no longer has an invisible zone in the wrong place.
+
+### Détail technique
+- `tools/cut_ip17.py` : détourage anticrénelé. Sur le fond noir de la photo, un pixel du bord vaut C = alpha × F (F : couleur de la coque 2 px plus à l'intérieur, prolongée par `spread`) ; alpha = C / F sur 2 px de part et d'autre du contour et le bord prend la couleur F (avant : seuil de noir, pixels sombres du bord gardés opaques, liseré de 1 à 2 px). Support et câble (F presque noir) : contour flouté. Fentes de dragonne (`SLOT_ZONE`) : trous fermés rendus transparents. Ouverture de l'écran dessinée 4 fois plus grande puis réduite (coins arrondis anticrénelés).
+- `tools/frame_photos.py` : corps d'une photo pas tout à fait opaque (V2 Enhanced : alpha 253, de 240 à 255) remis à 255 dans `clean` (photos à corps opaque : inchangées) ; `frame_photos.py ip17 iphone` ne refait que ces modèles et garde les mesures des autres.
+- `tools/gen_assets.py` : `_bleed` prolonge la couleur du bord sous les pixels transparents des coques (alpha inchangé) : le filtrage et les mipmaps ne mêlent plus le noir des zones vides au bord. `SHELL_ALIAS` : la tablette à touches n'a plus de coques 2D propres.
+- Régénérés : `phone_<landscape|portrait>_ip17[_night]`, `phone_back_ip17`, `phone_<landscape|portrait>_iphone[_night]`, `phone_back_iphone`, `dirt_case_ip17_*`, `dirt_case_iphone_*`. `fn_layoutGet` : écran et boîte visible de l'ip17 remesurés (`[0.2219, 0.3805, 0.7551, 0.6204]`, `[0.1177, 0.3169, 0.8745, 0.7866]`, écart de 1 à 2 px).
+- Verre (`fn_screenSurface`) : calque `glass` (`screen_glass.paa`, 128 px, blanc, l'alpha dessine une bande en biais en haut à gauche ; opacité 0,22 × (0,45 + 0,55 × sunOrMoon)) et quatre coins `corner` (`screen_corner_<tl|tr|br|bl>.paa`, quart de disque évidé, teint au gris du cadre). Rayon et gris de jour / nuit par modèle et par coin, mesurés sur les PAA (S7 : coins droits, rien posé). Le coin part du bord débordant de l'écran (0.003) : arrondi décalé d'autant, comme les bords droits. Créés après la saleté, donc devant ; signature du calque complétée par le réglage et la texture de la coque (jour / nuit, orientation). Écran 3D du JPC : rien. Textures générées par `tools/gen_glass.py` (14 485 octets en tout). Comme tout calque de surface, ils mettent `COMSPEC_ATAK_DevFront` : le focus revient au bouton hors écran chaque seconde (sauf saisie et liste déroulante), désormais en permanence (reflet activé, ou coque à coins arrondis : tous les modèles sauf le S7) ; et `fn_overlayRaise` les recrée quand une app ajoute des contrôles hors de la zone de contenu.
+- Réglage CBA `comspec_atak_native_glass_glare` (case à cocher, par joueur, activé par défaut, ATAK · Affichage), aussi dans Réglages > Thème et écran (`_cbaSwitch`).
+- Touches physiques (`fn_layoutApply`) : table par modèle (retour, accueil, apps récentes, marche/arrêt), mesurée par analyse d'image (icône ou bouton repéré dans le cadre, bouton latéral à la bosse de la silhouette), cible minimale 0,045 × 0,07 ou 0,06 × 0,03 ; `[]` masque la zone. Sonim : apps récentes en haut, retour en bas. Xiaomi X3D, tablette et iPhone 17 Pro : marche/arrêt seulement.
+- Place dans `main.pbo` : 7 829 984 octets de moins. `tools/paa_lzo.py` compresse en LZO les mipmaps des PAA écrits sans compression (blocs DXT gardés octet pour octet, relecture vérifiée ; `hemtt utils paa compress` réencode les blocs : écarts d'alpha jusqu'à 29) : 59 fichiers, 7 162 595 octets (`gw_frame*` 4 328 337, `fx_*`, `bloodc_*`, icônes). Coques `keys` (copies de `tablet`) et `dirt_case_keys_*` retirées : 1 355 551 octets ; `fn_layoutGet` et `fn_screenSurface` prennent celles de la tablette. Coques ip17 et V2 Enhanced régénérées, avec leur poussière : 673 677 octets de plus (encodeur HEMTT actuel, couleur prolongée au bord), verre 14 485.
+- Non vu en jeu : coins, reflet, zones des touches et coques régénérées sont vérifiés sur des compositions Pillow seulement.
+
 ## À venir : moins de sondages et de relectures inutiles (ATAK natif et SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
