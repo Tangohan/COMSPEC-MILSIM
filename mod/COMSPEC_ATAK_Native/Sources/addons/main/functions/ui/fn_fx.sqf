@@ -78,28 +78,36 @@ switch (_act) do {
         if (isNull _d) exitWith { false };
         private _l = [] call comspec_atak_native_fnc_layoutGet;
         (_l get "body") params ["_bx", "_by", "_bw", "_bh"];
+        // Appui différé (4.2.1, fn_navigate) : ["press"] dans l'image de l'appui, avant le dessin de la page ;
+        // ["resume", t0] juste après le dessin (sa mise en page a figé les contrôles à leur place) : le mouvement
+        // repart du point où il en serait depuis l'appui, sans recréer l'icône. Sans argument : comme avant.
+        private _fxMode = _arg param [0, ""];
+        private _el = if (_fxMode isEqualTo "resume") then { (diag_tickTime - (_arg param [1, diag_tickTime])) max 0 } else { 0 };
         // Zone de contenu (défilante) ou carte : seul le fondu est animé, la déplacer remettrait le défilement en haut.
+        private _cDur = [0.26, 0.16] select (_act isEqualTo "back");
+        private _cK = (1 - _el / _cDur) max 0;
         {
             if (!isNull _x && {ctrlShown _x}) then {
-                _x ctrlSetFade ([0.85, 0.55] select (_act isEqualTo "back"));
+                _x ctrlSetFade (([0.85, 0.55] select (_act isEqualTo "back")) * _cK);
                 _x ctrlCommit 0;
                 _x ctrlSetFade 0;
-                _x ctrlCommit ([0.26, 0.16] select (_act isEqualTo "back"));
+                _x ctrlCommit ((_cDur - _el) max 0);
             };
         } forEach [_d displayCtrl 88531, [_d] call comspec_atak_native_fnc_mapCtrl];
         // Titre de la barre d'app : arrive de la droite (ouverture) ou de la gauche (retour). Réglage à part.
         if (_act isNotEqualTo "home" && {profileNamespace getVariable ["COMSPEC_ATAK_TitleSlide", true]}) then {
+            private _tK = (1 - _el / 0.2) max 0;
             private _t = _d displayCtrl 88518;
             private _tp = ctrlPosition _t;
-            _t ctrlSetPosition [(_tp select 0) + _bw * ([0.06, -0.06] select (_act isEqualTo "back")), _tp select 1, _tp select 2, _tp select 3];
-            _t ctrlSetFade 1;
+            _t ctrlSetPosition [(_tp select 0) + _bw * ([0.06, -0.06] select (_act isEqualTo "back")) * _tK, _tp select 1, _tp select 2, _tp select 3];
+            _t ctrlSetFade _tK;
             _t ctrlCommit 0;
             _t ctrlSetPosition _tp;
             _t ctrlSetFade 0;
-            _t ctrlCommit 0.2;
+            _t ctrlCommit ((0.2 - _el) max 0);
         };
         // Icône qui grandit : réglage à part (Réglages > Animations et sons > Ouverture depuis l'icône).
-        if (_act isEqualTo "open" && {["on"] call comspec_atak_native_fnc_iconTint} && {profileNamespace getVariable ["COMSPEC_ATAK_OpenSplash", true]}) then {
+        if (_fxMode isNotEqualTo "resume" && {_act isEqualTo "open"} && {["on"] call comspec_atak_native_fnc_iconTint} && {profileNamespace getVariable ["COMSPEC_ATAK_OpenSplash", true]}) then {
             private _page = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""];
             private _app = (([] call comspec_atak_native_fnc_appList) select { (_x get "page") isEqualTo _page }) param [0, createHashMap];
             if ((count _app) isEqualTo 0) exitWith {};

@@ -1,4 +1,4 @@
-params [["_page", "LAUNCHER"]];
+params [["_page", "LAUNCHER"], ["_titleOnly", false]];
 private _perfT = diag_tickTime;
 disableSerialization;
 private _d = ([] call comspec_atak_native_fnc_display);
@@ -11,6 +11,49 @@ if (_act isNotEqualTo "" && {_act isNotEqualTo _page}) exitWith {
     diag_log format ["[COMSPEC ATAK][UI] rendu périmé de %1 abandonné (page active : %2)", _page, _act];
     false
 };
+// Titre de la barre d'app (texte complet, abréviation, icône : fn_titleFit). 4.2.1 : aussi seul ([page, true]),
+// par fn_navigate dans l'image de l'appui, avant le dessin de la page à l'image suivante.
+private _titleDo = {
+    private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+    private _title = "APPLICATIONS";
+    // Abréviation et icône : utilisées seulement quand le titre complet ne tient pas à 14 px (fn_titleFit).
+    private _short = "APPS";
+    private _tIcon = "";
+    if (_page isNotEqualTo "LAUNCHER") then {
+        private _app = ([] call comspec_atak_native_fnc_appList) select { (_x get "page") isEqualTo _page };
+        _title = if ((count _app) > 0) then { toUpper ((_app select 0) get "name") } else { _page };
+        _short = if ((count _app) > 0) then { toUpper ((_app select 0) getOrDefault ["short", ""]) } else { "" };
+        _tIcon = if ((count _app) > 0) then { (_app select 0) get "icon" } else { "" };
+    };
+    if (_page isEqualTo "RECENTS") then { _title = "APPS RÉCENTES"; _short = "RÉCENTES"; };
+    if (_page isEqualTo "NOTIFS") then { _title = "NOTIFICATIONS"; _short = "NOTIFS"; };
+    if (_page isEqualTo "PATCHES") then { _title = "PATCH AU DOS"; _short = "PATCH"; };
+    if (_page isEqualTo "MOBILEQR") then { _title = "SUR MON TÉLÉPHONE"; _short = "MOBILE"; };
+    if (_page isEqualTo "MAP") then {
+        private _qv = _st getOrDefault ["quickView", ""];
+        if (_qv isNotEqualTo "") then { _title = ["FIRES COURT", "MODE PILOTE"] select (_qv isEqualTo "PILOT"); };
+    };
+    if (_page isEqualTo "SPACE") then {
+        private _id = uiNamespace getVariable ["COMSPEC_ATAK_SpaceId", ""];
+        _title = toUpper ((((["spaces"] call comspec_atak_native_fnc_appSpaces) select { (_x select 0) isEqualTo _id }) param [0, ["", "Applications"]]) select 1);
+    };
+    if (_page isEqualTo "FOLDER") then {
+        private _f = ["get", uiNamespace getVariable ["COMSPEC_ATAK_FolderId", ""]] call comspec_atak_native_fnc_appFolders;
+        _title = toUpper ([_f param [1, "Groupe"], "GROUPE"] select ((count _f) isEqualTo 0));
+    };
+    // Carte ouverte depuis BFT ou Groupe : le titre dit où ramène le retour (« ‹ BFT · CARTE »).
+    private _titleTxt = (_title) call comspec_atak_native_fnc_tr;
+    if (_page isEqualTo "MAP") then {
+        private _hist = _st getOrDefault ["history", []];
+        private _from = _hist param [(count _hist) - 2, ""];
+        if (_from in ["BFT", "GROUP"]) then { _titleTxt = format ["‹ %1 · %2", (["BFT", "GROUPE"] select (_from isEqualTo "GROUP")) call comspec_atak_native_fnc_tr, _titleTxt]; };
+    };
+    if (_titleTxt isNotEqualTo ((_title) call comspec_atak_native_fnc_tr)) then { _short = ""; }; // « ‹ BFT · CARTE » : pas d'abréviation
+    // Titre plus long que sa place (traduction, petit format, texte agrandi) : police réduite jusqu'à 14 px, puis bouton de
+    // rotation masqué, abréviation, icône de l'app (fn_titleFit). Jamais coupé (« SHORT FI », « DISTANCES » en 4.1.0).
+    [([] call comspec_atak_native_fnc_layoutGet) get "font", _titleTxt, [(_short) call comspec_atak_native_fnc_tr, ""] select (_short isEqualTo ""), _tIcon] call comspec_atak_native_fnc_titleFit;
+};
+if (_titleOnly) exitWith { call _titleDo; true };
 // Rendus comptés : fn_layoutApply (mise en page seule) ne redessine pas la page si un rendu a suivi.
 uiNamespace setVariable ["COMSPEC_ATAK_RenderSeq", (uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]) + 1];
 // Rendus par page sur la fenêtre de 30 s (onglet PERFS du Debug, remis à zéro par fn_perfAcc « report »).
@@ -72,43 +115,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_FormIds", createHashMap];
 // Calques hors zone de contenu : recréés plus bas, après la page.
 [createHashMap, false] call comspec_atak_native_fnc_layoutApply;
 
-private _title = "APPLICATIONS";
-// Abréviation et icône : utilisées seulement quand le titre complet ne tient pas à 14 px (fn_titleFit).
-private _short = "APPS";
-private _tIcon = "";
-if (_page isNotEqualTo "LAUNCHER") then {
-    private _app = ([] call comspec_atak_native_fnc_appList) select { (_x get "page") isEqualTo _page };
-    _title = if ((count _app) > 0) then { toUpper ((_app select 0) get "name") } else { _page };
-    _short = if ((count _app) > 0) then { toUpper ((_app select 0) getOrDefault ["short", ""]) } else { "" };
-    _tIcon = if ((count _app) > 0) then { (_app select 0) get "icon" } else { "" };
-};
-if (_page isEqualTo "RECENTS") then { _title = "APPS RÉCENTES"; _short = "RÉCENTES"; };
-if (_page isEqualTo "NOTIFS") then { _title = "NOTIFICATIONS"; _short = "NOTIFS"; };
-if (_page isEqualTo "PATCHES") then { _title = "PATCH AU DOS"; _short = "PATCH"; };
-if (_page isEqualTo "MOBILEQR") then { _title = "SUR MON TÉLÉPHONE"; _short = "MOBILE"; };
-if (_page isEqualTo "MAP") then {
-    private _qv = _st getOrDefault ["quickView", ""];
-    if (_qv isNotEqualTo "") then { _title = ["FIRES COURT", "MODE PILOTE"] select (_qv isEqualTo "PILOT"); };
-};
-if (_page isEqualTo "SPACE") then {
-    private _id = uiNamespace getVariable ["COMSPEC_ATAK_SpaceId", ""];
-    _title = toUpper ((((["spaces"] call comspec_atak_native_fnc_appSpaces) select { (_x select 0) isEqualTo _id }) param [0, ["", "Applications"]]) select 1);
-};
-if (_page isEqualTo "FOLDER") then {
-    private _f = ["get", uiNamespace getVariable ["COMSPEC_ATAK_FolderId", ""]] call comspec_atak_native_fnc_appFolders;
-    _title = toUpper ([_f param [1, "Groupe"], "GROUPE"] select ((count _f) isEqualTo 0));
-};
-// Carte ouverte depuis BFT ou Groupe : le titre dit où ramène le retour (« ‹ BFT · CARTE »).
-private _titleTxt = (_title) call comspec_atak_native_fnc_tr;
-if (_page isEqualTo "MAP") then {
-    private _hist = _st getOrDefault ["history", []];
-    private _from = _hist param [(count _hist) - 2, ""];
-    if (_from in ["BFT", "GROUP"]) then { _titleTxt = format ["‹ %1 · %2", (["BFT", "GROUPE"] select (_from isEqualTo "GROUP")) call comspec_atak_native_fnc_tr, _titleTxt]; };
-};
-if (_titleTxt isNotEqualTo ((_title) call comspec_atak_native_fnc_tr)) then { _short = ""; }; // « ‹ BFT · CARTE » : pas d'abréviation
-// Titre plus long que sa place (traduction, petit format, texte agrandi) : police réduite jusqu'à 14 px, puis bouton de
-// rotation masqué, abréviation, icône de l'app (fn_titleFit). Jamais coupé (« SHORT FI », « DISTANCES » en 4.1.0).
-[([] call comspec_atak_native_fnc_layoutGet) get "font", _titleTxt, [(_short) call comspec_atak_native_fnc_tr, ""] select (_short isEqualTo ""), _tIcon] call comspec_atak_native_fnc_titleFit;
+call _titleDo;
 
 switch (_page) do {
     case "LAUNCHER": { [] call comspec_atak_native_fnc_launcherRender; };

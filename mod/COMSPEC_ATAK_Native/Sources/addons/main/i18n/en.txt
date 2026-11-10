@@ -1,4 +1,6 @@
 [
+["navigation : réponse à l'appui", "navigation: response to the tap"],
+["navigation : appui jusqu'à la page dessinée", "navigation: tap to page drawn"],
 ["disposition du téléphone (mémoire)", "phone layout (cached)"],
 ["disposition du téléphone (calcul)", "phone layout (computed)"],
 ["Uni propre", "Plain clean"],
