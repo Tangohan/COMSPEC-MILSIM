@@ -16968,5 +16968,20 @@
 ["OPAQUE", "", "OPAQUE"],
 ["Athena : unités, marqueurs, ordres, messages", "", "Athena: units, markers, orders, messages"],
 ["Athena : état de la liaison", "", "Athena: link status"],
-["COMSPEC Link : ordres, alertes, intel", "", "COMSPEC Link: orders, alerts, intel"]
+["COMSPEC Link : ordres, alertes, intel", "", "COMSPEC Link: orders, alerts, intel"],
+["Bâtiments dans le maillage (%)", "", "Buildings in the mesh (%)"],
+["Liaison réaliste : chaque bâtiment traversé entre deux radios du maillage coûte du signal (relief seul avant). 0 : comportement d'avant. À 50 %, quatre maisons entre deux équipiers à 300 m dégradent le lien sans le couper ; à 100 %, il faut un relais sur un toit.", "", "Realistic link: every building crossed between two mesh radios costs signal (terrain only before). 0: previous behaviour. At 50 %, four houses between two teammates 300 m apart degrade the link without cutting it; at 100 %, you need a relay on a rooftop."],
+["Reconvergence après la perte d'un relais (s)", "", "Reconvergence after losing a relay (s)"],
+["Liaison réaliste : quand un relais de votre route tombe (détruit, ramassé, batterie vide), le réseau se coupe ce temps-là avant de repasser par un autre chemin. 0 : bascule immédiate, comme avant.", "", "Realistic link: when a relay on your route goes down (destroyed, picked up, flat battery), the network drops for this long before switching to another path. 0: immediate switch, as before."],
+["Lien manquant sur la carte", "", "Missing link on the map"],
+["Liaison réaliste, hors maillage : un trait rouge en tirets relie votre groupe au nœud le plus proche à joindre, avec la cause (relief, distance, bâtiments, canal). Calque Wave Relay de la carte.", "", "Realistic link, out of the mesh: a dashed red line joins your group to the nearest node to reach, with the cause (terrain, distance, buildings, channel). Wave Relay map layer."],
+["Bâtiments dans le maillage", "", "Buildings in the mesh"],
+["Reconvergence après la perte d'un relais", "", "Reconvergence after losing a relay"],
+["Immédiate", "", "Immediate"],
+["Les bâtiments entre deux radios du maillage affaiblissent le lien, comme le relief - un relais sur un toit voit par-dessus.", "", "Buildings between two mesh radios weaken the link, like terrain - a relay on a rooftop sees over them."],
+["À 50 %, quatre maisons entre deux équipiers à 300 m dégradent le lien sans le couper ; à 100 %, le lien tombe et il faut un relais sur un toit ; Aucun effet = seul le relief compte, comme avant.", "", "At 50 %, four houses between two teammates 300 m apart degrade the link without cutting it; at 100 %, the link drops and you need a relay on a rooftop; No effect = only terrain counts, as before."],
+["Quand un relais de votre route tombe, le réseau met quelques secondes à trouver un autre chemin.", "", "When a relay on your route goes down, the network takes a few seconds to find another path."],
+["3 s = le relais de la colline est détruit : 3 s sans données ni voix relayée, puis le réseau repasse par le relais de la vallée s'il le voit ; Immédiate = aucune coupure, comme avant.", "", "3 s = the hilltop relay is destroyed: 3 s without data or relayed voice, then the network switches to the valley relay if it can see it; Immediate = no drop, as before."],
+["Hors maillage, la carte montre le lien qui manque et pourquoi.", "", "Out of the mesh, the map shows the missing link and why."],
+["Actif, un trait rouge en tirets va de votre groupe au relais le plus proche avec « lien coupé (le relief) » ; il suffit souvent de monter sur la crête. Coupé, la cause reste écrite dans les apps Wave Relay et Réseau.", "", "On, a dashed red line runs from your group to the nearest relay with ""link cut (terrain)""; climbing the ridge is often enough. Off, the cause is still written in the Wave Relay and Network apps."]
 ]

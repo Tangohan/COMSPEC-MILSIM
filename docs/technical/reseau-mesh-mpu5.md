@@ -433,3 +433,18 @@ Coupe-circuit : SQF n'a pas de `try` pour une erreur de script. Chaque chemin ra
 Versions connues : ACRE2 2.14 (code lu), TFAR 1.x (dépôt lu, jamais joué). TFAR 0.9 est traité comme inconnu : couche voix coupée.
 
 Portée de données : ACRE2 n'a pas de portée fixe. Longue portée `radio_lr_range` x racine (puissance / 20 W), portative `radio_sw_range` x racine (puissance / 5 W), 300 m au moins. TFAR : `tf_range` de la config, 20 km au plus.
+
+## 13. Réseau relais plus réaliste (4.2.1)
+
+Rien n'a tourné en jeu. Détail dans `CHANGELOG-ATAK.md`, bloc « réseau relais plus réaliste ».
+
+| Ajout | Où | Réglage (défaut) | Autorité |
+|---|---|---|---|
+| Bâtiments entre deux radios du maillage (un rayon par paire de moins de 3 km, en cache 30 s avec le bilan) | `fn_meshGraph` « pass », `_marginOf` | `mesh_buildings` (50 %) | serveur |
+| Cause des liens faibles et liens manqués (3 par nœud), publiés avec le graphe | `fn_meshGraph` « pass », « graph » | toujours (explication) | serveur |
+| Cause, conseil, lien manqué choisi dans mon îlot, maillon faible | `fn_meshGraph` « view » | aucun | client, à partir du graphe partagé |
+| Trait du lien manquant sur la carte | `fn_meshDraw` | `mesh_miss_map` (coché) | client |
+| Reconvergence après la perte d'un nœud de ma route | `fn_meshGraph` « view », « every » | `mesh_reconverge_s` (3 s) | client, à partir du graphe partagé |
+| Relais hors service le plus proche, cause dans les étapes « relay » et « mesh » | `fn_mpuDiag` | aucun | client |
+
+Coût estimé (40 radios et 6 relais, un camp) : 46 nœuds, 1 035 paires, élaguées par distance et canal ; au pire environ 1 000 bilans « coarse » et autant de rayons de bâtiments à la première passe, puis seulement les paires qui ont bougé de plus de 15 m ou vieilles de 30 s. Tranches de 150 bilans (le rayon compte pour un), donc environ 14 tranches réparties sur autant d'images au pire, une passe toutes les 4 s (8 s au-delà de 40 nœuds). Liens manqués et causes : aucune opération radio, quelques comparaisons par paire. Taille diffusée : au plus 576 + 4 032 nombres de plus, en pratique quelques centaines.
