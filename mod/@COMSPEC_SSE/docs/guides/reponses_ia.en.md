@@ -4,7 +4,7 @@ French version: [reponses_ia.md](reponses_ia.md). Guides index: [index.en.md](in
 
 ## What it is for
 
-Players talk to AIs in free text (ACE interaction › **Talk to…**, or Ctrl+T). The AI understands about **120 kinds of questions**, in French and English, typos and slang included, and answers from its character, cover and knowledge. The game master can, question by question, keep this **automatic answer** or write a **custom answer**, and set **what the AI may bring up**.
+Players talk to AIs in free text (ACE interaction › **Talk to…**, or Ctrl+T). The AI understands about **120 kinds of questions**, in French and English, typos and slang included, and answers from its character, cover and knowledge. The game master can, question by question, keep this **automatic answer** or write **their own** ("My answer"), and set **what the AI may bring up**.
 
 Golden rule: **an AI only talks about what it knows**. A passer-by with no knowledge never talks about weapons, armed groups, pickups, mines or caches: "No, I haven't seen anything like that.", "I don't know, I just got here."
 
@@ -39,28 +39,31 @@ An AI remembers: asked "Do you have a phone?" twice, it says the same thing; "Sa
 
 ## The "AI answers" window
 
-### Top: the frame
+It opens in **simple mode**: only what you need to write an answer. Everything else is under **Advanced options**, bottom right, folded by default.
 
-- **What she may bring up**: **Auto** ("Nothing sensitive" for a civilian with no knowledge or secret, otherwise "What she knows"), **Nothing sensitive** (neutral answers, never a hint), **What she knows** (her knowledge, secrets and your texts; automatic answers mention no scenario theme), **Free** (automatic answers may bring up themes, except forbidden ones).
-- **Forbidden themes**: Weapons (and armed groups), Explosives (and mines), Military sites (bases, checkpoints), Wanted (where is he, photo, description), Drugs, Politics (and police, army). On a question of a ticked theme: neutral answer ("I don't know anything about that."), **even with a custom answer**.
+### Simple mode
 
-### Left: the questions
+1. **At the top**, one line: **What this AI may bring up**: **Nothing sensitive** (never weapons, mines or hints), **What she knows** (only her knowledge, her secrets and your answers) or **Free** (anything, except forbidden themes). Until you pick one, the window shows the level that follows from her profile ("Nothing sensitive" for a civilian with no knowledge or secret, otherwise "What she knows") and the profile keeps it automatic.
+2. **On the left**, the questions by theme, the same as the players' GUIDE tab, with **Search** ("name", "armed", "password"). Right of a question: **My answer** if you wrote one, **Forbidden** if its theme is forbidden.
+3. **On the right**, the chosen question (and other ways to ask it), then **Automatic answer** or **My answer**.
+4. With **My answer**: write **what she says, one answer per line** (several lines: she says one). **Insert a variable** opens the list of words replaced in game (her first name, her town, the player's name…) with a sample value; a click inserts it at the cursor.
+5. **The AI will say** shows the answer with variables replaced; an unknown variable, a custom question with no trigger word or a forbidden theme is flagged there.
+6. **Save** (Zeus: at once; Eden: into each unit's attribute; workshop: taken by its Apply button). **Whole group** (Zeus, Zone AIs) also saves on every AI of her group. The status line next to it says whether it is saved.
 
-The same as the players' GUIDE tab, by theme, with **Search** ("name", "armed", "password"). Right of each: **Auto**, **Custom (2)** (number of texts) or **Forbidden**. On top: your **custom questions**, and **Add a custom question**.
+### Advanced options
 
-### Right: the answer
+The button tells how many advanced settings are in use ("Advanced options (2 settings in use)"). Open, it shows one help sentence for the setting under the mouse.
 
 | Setting | Role | Example |
 |---|---|---|
-| **Answer** | Automatic or Custom | Custom for "Who are you?" |
-| **Order** | At random (never the same twice in a row) or In order (per player, the last text repeats) | a witness who tells more each time |
-| **Question**, **Triggers** | Custom questions only: its name (for you) and the words that trigger it, separated by ";"; "a+b": both words in the message | "password; mot de passe" |
-| **Situation** | Always, If calm, If afraid, If threatened (or weapon aimed), If accused of lying, The first time, If asked again, If he agrees, If he refuses; the most specific one with a text wins | "If afraid": "I… I'm Nikos! Don't shoot!" |
-| **Answers** | One per line, 300 characters at most, 8 per situation | see variables |
-| **Unlocks** | Nothing, vague, precise or complete level of its knowledge, for this player | precise |
-| **Place** | Like a "Lieu:" line of the knowledge: grid, coordinates or marker, then the name; put once on this player's map | 045 078 Abandoned farm |
+| **Forbidden themes** | Weapons (and armed groups), Explosives (and mines), Military sites, Wanted, Drugs, Politics: on these themes she says she knows nothing, **even with your answer** | Explosives |
+| **Situation** | Always, If calm, If afraid, If threatened (or weapon aimed), If accused of lying, The first time, If asked again, If he agrees, If he refuses; the most specific one with an answer wins | "If afraid": "I… I'm {first}! Don't shoot!" |
+| **Order** | At random (never the same twice in a row) or In order (per player, the last one repeats) | a witness who tells more each time |
+| **Then reveals** | Nothing more, A vague hint, Precise intel or All she knows, for this player | Precise intel |
+| **Map marker** | Like a "Lieu:" line of the knowledge: grid, coordinates or marker, then the name; put once on this player's map | 045 078 Abandoned farm |
+| **Add my own question** | A question the game does not know: **Question name** (for you), **Words that trigger it** separated by ";" ("a+b": both words in the message), then the answer; **Delete** removes it | "password; mot de passe" → "The falcon flies low." |
 
-**Preview**: the answer with variables replaced by sample values; an unknown variable is flagged. **Back to automatic** clears the custom answer (or deletes the custom question). **Whole group** (Zeus) also applies to each AI's group. **Apply** (Zeus: at once; Eden: into each unit's attribute) or **Confirm** (workshop).
+Folding the advanced options does not erase them: they stay saved, and the button counts them.
 
 ### Variables
 
@@ -82,17 +85,18 @@ Missing fact: "…" (the preview flags it).
 ## Step by step: the baker and the lookout
 
 1. Eden, the baker's attributes › **AI workshop…**: Name "Nikos KARRAS", story "Job: baker".
-2. **Answers and limits…** › "Who are you?" › **Custom**: "I'm {first}, the baker. Everyone knows me here."; Situation **If afraid**: "I… I'm {first}! I bake bread, that's all!"
-3. "Have you seen armed men?" › Custom, Situation **If he agrees**: "Last night, three pickups heading north."; Unlocks **Precise level**; Place "045 078 Abandoned farm"; Situation **If he refuses**: "I don't want trouble."
-4. **Add a custom question**: Question "Password", Triggers "password; mot de passe", Answer "The falcon flies low."
-5. **Confirm**, then **Apply** in the workshop. In game: "Who are you?" → "I'm Nikos, the baker. Everyone knows me here."
+2. **Answers and limits…** › "Who are you?" › **My answer**: "I'm {first}, the baker. Everyone knows me here." (the first name through **Insert a variable**).
+3. **Advanced options** › Situation **If afraid**: "I… I'm {first}! I bake bread, that's all!"
+4. "Have you seen armed men?" › **My answer**, Situation **If he agrees**: "Last night, three pickups heading north."; Then reveals **Precise intel**; Map marker "045 078 Abandoned farm"; Situation **If he refuses**: "I don't want trouble."
+5. **Add my own question**: name "Password", words that trigger it "password; mot de passe", answer "The falcon flies low."
+6. **Save**, then **Apply** in the workshop. In game: "Who are you?" → "I'm Nikos, the baker. Everyone knows me here."
 
-The other market civilians, with no knowledge, stay on **Auto**: to "Any insurgents here?", "No. I'm just going to the market."
+The other market civilians, with no knowledge, stay on **Automatic answer**: to "Any insurgents here?", "No. I'm just going to the market."
 
 ## Common pitfalls
 
-- A custom answer **only replaces the line**: a refused order stays refused, a liar can still be caught, papers still go through the ACE check. For an order, a search or a bribe, "Always" applies when he obeys; if he refuses only "If he refuses" is said.
-- A custom question replaces the conversation of the message; an order or a threat in the same message is still handled ("Stop! The password.").
+- Your answer **only replaces the line**: a refused order stays refused, a liar can still be caught, papers still go through the ACE check. For an order, a search or a bribe, "Always" applies when he obeys; if he refuses only "If he refuses" is said.
+- Your own question replaces the conversation of the message; an order or a threat in the same message is still handled ("Stop! The password.").
 - A forbidden theme beats your texts.
 - Answers stay on the server (never sent to players), are saved in the mission (Eden) and go along with the AI through **Keep for next games**.
 - `<` `>` `&` are shown as they are; a line break separates two answers.

@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : fenêtre des réponses de l'IA plus simple (SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : La fenêtre « Réponses de l'IA » devient simple à prendre en main
+- Elle s'ouvre en mode simple : choisissez une question à gauche, cliquez sur « Ma réponse », écrivez ce que l'IA répond (une réponse par ligne) et regardez ce qu'elle dira juste en dessous, puis « Enregistrer ».
+- « Insérer une variable » ajoute son prénom, sa ville ou le nom du joueur là où est le curseur, avec un exemple de ce qui sera dit.
+- En haut, une seule ligne règle ce que cette IA peut évoquer : Rien de sensible, Ce qu'elle sait ou Libre.
+- Les réglages plus fins (réponse selon la situation, ordre, renseignement révélé, repère sur la carte, thèmes interdits, vos propres questions) sont rangés dans « Options avancées », qui indique combien sont utilisés.
+EN : The "AI answers" window is now easy to pick up
+- It opens in simple mode: pick a question on the left, click "My answer", write what the AI says (one answer per line) and see right below what she will say, then "Save".
+- "Insert a variable" adds her first name, her town or the player's name at the cursor, with a sample of what will be said.
+- At the top, one line sets what this AI may bring up: Nothing sensitive, What she knows or Free.
+- Finer settings (answer per situation, order, intel revealed, map marker, forbidden themes, your own questions) are under "Advanced options", which shows how many are in use.
+
+### Détail technique
+- `ia_rp/dialogs/iarp_answers.hpp` (IDD 94800) refait : mode simple par défaut, choix « Réponse automatique / Ma réponse » en `RscToolbox` (IDC 94831), bouton « Insérer une variable » (94847) et liste des variables (94880, 94881), ligne d'exemple (94848), bouton « Options avancées » (94870) ; thèmes interdits, situation, ordre, palier, lieu et « Ajouter ma propre question » n'apparaissent qu'avec les options avancées (état gardé dans `uiNamespace` `comspec_sse_iarpAnsAdv`).
+- `fn_iarpAnswersUi` : opération `layout` (positions calculées sur la grille SSE selon le mode, la question perso et la réponse ; libellés mesurés par `ctrlTextWidth`), `mode`, `advanced`, `vars`, `varPick` (insertion au curseur via `ctrlTextSelection`, en caractères), aperçu « L'IA dira : » qui retire des répliques plutôt que de couper le texte, lignes de la liste raccourcies avec « … » et info-bulle quand l'état (« Ma réponse », « Interdit ») les recouvrirait, titre sans la vérité du nom, info-bulle retirée du champ de texte (elle cachait la saisie). « Ce que cette IA peut évoquer » montre le niveau résolu d'un profil « auto » et n'écrit un niveau que si le maître du jeu le change.
+- Format des réponses (`answers`, `evoke`, `banned` du profil) et interprète inchangés. Chaînes `STR_COMSPEC_IARP_A_*` réécrites (aides d'une phrase avec exemple), manuel en jeu (`STR_COMSPEC_IARP_ManA_D`) et guides `reponses_ia.md` / `.en.md` à jour.
+- Autotest : étape `ia_rp_reponses_fenetre` (groupe `ia_rp`, ou `ia_rp_reponses` seule) qui ouvre la fenêtre sur une IA, déroule mode simple, ma réponse, variables, options avancées et question perso, vérifie qu'aucun texte n'est coupé ni superposé, puis l'enregistrement sur l'IA.
+
+---
+
 ## SSE 1.8.0 : IA qui répondent à beaucoup plus de questions, réponses écrites par le maître du jeu (SSE 1.8.0)
 
 ### Résumé joueur

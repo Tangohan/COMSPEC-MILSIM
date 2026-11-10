@@ -3,7 +3,9 @@
 // 4.2.1 : « stop » relâché seul, deux demandes, faute de frappe, renseignement par paliers avec marqueur local,
 // confrontation, tirs proches et témoins. 4.3.0 : une réponse et une bulle par message au nom SSE, guide, actions, peur.
 // À venir : réponses écrites par le maître du jeu (attribut, Zeus, question perso, palier débloqué), cadre d'un civil sans savoir.
-if !("sse" call AT_fnc_groupe) exitWith {};
+// Groupes : « sse » ou « ia_rp » (tout ce fichier), « ia_rp_reponses » (la fenêtre « Réponses de l'IA » seule).
+if !("sse" call AT_fnc_groupe || {"ia_rp" call AT_fnc_groupe} || {"ia_rp_reponses" call AT_fnc_groupe}) exitWith {};
+AT_iarpSeul = !("sse" call AT_fnc_groupe) && {!("ia_rp" call AT_fnc_groupe)};
 AT_fnc_iarpIa = {
     private _g = createGroup civilian;
     private _u = _g createUnit ["C_man_1", player getPos [2.5, getDir player], [], 0, "CAN_COLLIDE"];
@@ -25,6 +27,113 @@ AT_fnc_iarpDire = {
     uiSleep 1; // anti-flood du serveur (0,8 s par poste)
     [missionNamespace getVariable ["comspec_sse_iarpLastAck", []], missionNamespace getVariable ["comspec_sse_iarpLastReply", []]]
 };
+
+// Fenêtre « Réponses de l'IA » ouverte : aucun texte coupé, aucun contrôle visible sur un autre (même groupe de contrôles).
+AT_fnc_iarpAnsVerif = {
+    params ["_etat"];
+    private _d = findDisplay 94800;
+    if (isNull _d) exitWith { [false, format ["%1 : fenêtre fermée", _etat]] call AT_fnc_check };
+    private _fond = ["Back", "Head", "Line", "Split", "SplitV", "PrevBack", "VarBack", "VarList", "Probe"];
+    private _vis = (allControls _d) select {
+        private _g = ctrlParentControlsGroup _x;
+        ctrlShown _x && {!((ctrlClassName _x) in _fond)} && {isNull _g || {ctrlShown _g}} && {((ctrlPosition _x) select 2) > 0}
+    };
+    { if ((ctrlType _x) in [0, 1, 13, 16]) then { [_x, format ["%1 : %2", _etat, ctrlClassName _x]] call AT_fnc_tient; }; } forEach _vis;
+    private _n = count _vis;
+    for "_i" from 0 to (_n - 2) do {
+        private _a = _vis select _i;
+        (ctrlPosition _a) params ["_ax", "_ay", "_aw", "_ah"];
+        for "_j" from (_i + 1) to (_n - 1) do {
+            private _b = _vis select _j;
+            if ((ctrlParentControlsGroup _a) isEqualTo (ctrlParentControlsGroup _b) && {(ctrlType _a) != 15} && {(ctrlType _b) != 15}) then {
+                (ctrlPosition _b) params ["_bx", "_by", "_bw", "_bh"];
+                private _ix = ((_ax + _aw) min (_bx + _bw)) - (_ax max _bx);
+                private _iy = ((_ay + _ah) min (_by + _bh)) - (_ay max _by);
+                [_ix < 0.002 || {_iy < 0.002}, format ["%1 : %2 sur %3", _etat, ctrlClassName _a, ctrlClassName _b]] call AT_fnc_check;
+            };
+        };
+    };
+};
+
+// Fenêtre « Réponses de l'IA » du maître du jeu (Zeus, une IA) : états à contrôler sur les captures.
+["ia_rp_reponses_fenetre", {
+    if (["comspec_sse_fnc_iarpAnswersUi", "comspec_sse_fnc_iarpProfile"] call AT_fnc_nil) exitWith {};
+    (format ["résolution %1", getResolution]) call AT_fnc_info;
+    private _u = call AT_fnc_iarpIa;
+    uiSleep 1;
+    ["apply", [_u, ["normalize", createHashMapFromArray [["name", "Nikos KARRAS"], ["role", "civil"], ["know", "Précis : Ils dorment à la ferme du vieux Petros."]]] call comspec_sse_fnc_iarpProfile]] call comspec_sse_fnc_iarpProfile;
+    uiNamespace setVariable ["comspec_sse_iarpAnsAdv", false];
+    ["open", ["units", [_u]]] call comspec_sse_fnc_iarpAnswersUi;
+    if !([[{ !isNull findDisplay 94800 }, 5] call AT_fnc_wait, "fenêtre « Réponses de l'IA » non ouverte"] call AT_fnc_check) exitWith { deleteVehicle _u; call AT_fnc_done; };
+    [{ (lbSize ((findDisplay 94800) displayCtrl 94821)) > 100 }, 6] call AT_fnc_wait;
+    uiSleep 1;
+    private _d = findDisplay 94800;
+    private _lb = _d displayCtrl 94821;
+    ["1 initial"] call AT_fnc_iarpAnsVerif;
+    ["reponses_1_initial"] call AT_fnc_shot;
+    // Une question choisie (« Avez-vous vu des hommes armés ? »).
+    private _row = -1;
+    for "_i" from 0 to ((lbSize _lb) - 1) do { if ((_lb lbData _i) isEqualTo "seenArmed") exitWith { _row = _i; }; };
+    [_row >= 0, "question « seenArmed » absente de la liste"] call AT_fnc_check;
+    _lb lbSetCurSel _row;
+    uiSleep 0.5;
+    ["2 question"] call AT_fnc_iarpAnsVerif;
+    ["reponses_2_question"] call AT_fnc_shot;
+    // Ma réponse en cours d'écriture, deux textes et une variable : aperçu.
+    (_d displayCtrl 94831) lbSetCurSel 1;
+    ["mode"] call comspec_sse_fnc_iarpAnswersUi;
+    uiSleep 0.3;
+    (_d displayCtrl 94836) ctrlSetText format ["Hier soir, trois pick-up vers le nord, {monsieur}.%1Je ne sais rien, moi. Je suis {prenom}, je vends du pain à {lieu}.%1", toString [10]];
+    ["store"] call comspec_sse_fnc_iarpAnswersUi;
+    uiSleep 0.5;
+    private _prev = ctrlText (_d displayCtrl 94839);
+    (format ["aperçu : %1", _prev]) call AT_fnc_info;
+    [(_prev find "Nikos") >= 0 && {(_prev find "{") < 0}, format ["aperçu sans variable remplacée : %1", _prev]] call AT_fnc_check;
+    ["3 ma reponse"] call AT_fnc_iarpAnsVerif;
+    ["reponses_3_ma_reponse"] call AT_fnc_shot;
+    // « Insérer une variable » : liste ouverte, puis {nom} ajouté à la fin du texte.
+    (_d displayCtrl 94836) ctrlSetTextSelection [count (toArray (ctrlText (_d displayCtrl 94836))), 0];
+    ["vars"] call comspec_sse_fnc_iarpAnswersUi;
+    uiSleep 0.5;
+    [ctrlShown (_d displayCtrl 94881) && {(lbSize (_d displayCtrl 94881)) >= 10}, "liste des variables non ouverte"] call AT_fnc_check;
+    ["3b variables"] call AT_fnc_iarpAnsVerif;
+    ["reponses_3b_variables"] call AT_fnc_shot;
+    (_d displayCtrl 94881) lbSetCurSel 0;
+    uiSleep 0.5;
+    private _txt = ctrlText (_d displayCtrl 94836);
+    [!ctrlShown (_d displayCtrl 94881) && {(_txt find "{nom}") >= 0 || {(_txt find "{name}") >= 0}}, format ["variable non insérée : %1", _txt]] call AT_fnc_check;
+    // Options avancées : ce qu'elle peut évoquer (Libre), deux thèmes interdits, situation « S'il a peur ».
+    ["advanced", [true]] call comspec_sse_fnc_iarpAnswersUi;
+    uiSleep 0.3;
+    (_d displayCtrl 94810) lbSetCurSel 2;
+    { (_d displayCtrl _x) cbSetChecked true; } forEach [94811, 94812];
+    ["frame"] call comspec_sse_fnc_iarpAnswersUi;
+    ["help", ["Sit"]] call comspec_sse_fnc_iarpAnswersUi;
+    uiSleep 0.5;
+    ["4 options avancees"] call AT_fnc_iarpAnsVerif;
+    ["reponses_4_avancees"] call AT_fnc_shot;
+    // Ma propre question (exemple prérempli : mot de passe).
+    ["add"] call comspec_sse_fnc_iarpAnswersUi;
+    uiSleep 0.5;
+    ["5 question perso"] call AT_fnc_iarpAnsVerif;
+    ["reponses_5_question_perso"] call AT_fnc_shot;
+    // Options avancées refermées : mode simple sur la question perso.
+    ["advanced", [false]] call comspec_sse_fnc_iarpAnswersUi;
+    uiSleep 0.3;
+    ["6 simple question perso"] call AT_fnc_iarpAnsVerif;
+    ["reponses_6_simple_perso"] call AT_fnc_shot;
+    // Enregistrer : la réponse perso arrive sur l'IA (serveur), format inchangé.
+    ["apply"] call comspec_sse_fnc_iarpAnswersUi;
+    uiSleep 1.5;
+    private _ans = (["get", _u] call comspec_sse_fnc_iarpProfile) getOrDefault ["answers", []];
+    (format ["réponses de l'IA : %1", _ans]) call AT_fnc_info;
+    [(_ans findIf { (_x select 0) isEqualTo "seenArmed" && {(count (((_x select 4) select 0) select 1)) isEqualTo 3} && {((((_x select 4) select 0) select 1) select 0) find "trois pick-up" >= 0} }) >= 0, "réponse perso non enregistrée sur l'IA"] call AT_fnc_check;
+    [(_ans findIf { (_x select 0) isEqualTo "c1" }) >= 0, "question perso non enregistrée"] call AT_fnc_check;
+    (findDisplay 94800) closeDisplay 2;
+    deleteVehicle _u;
+    call AT_fnc_done;
+}, 90] call AT_fnc_run;
+if (AT_iarpSeul) exitWith {};
 
 ["ia_rp_interprete", {
     if (["comspec_sse_fnc_iarpSelfTest"] call AT_fnc_nil) exitWith {};
