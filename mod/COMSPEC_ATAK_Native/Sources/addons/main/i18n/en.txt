@@ -21064,7 +21064,7 @@
 ["Le TOC en envoie depuis la carte web d'Athena : ils arrivent ici avec une alerte.", "The TOC sends them from the Athena web map: they arrive here with an alert."],
 ["Le TOC en envoie depuis la carte web d'Athena. Pour en émettre un vous-même : NOUVEL ORDRE, en haut.", "The TOC sends them from the Athena web map. To issue one yourself: NEW ORDER, at the top."],
 ["Aucun ordre terminé", "No finished order"],
-["Un ordre passe ici quand vous répondez TERMINÉ ou IMPOSSIBLE, ou quand le TOC l'annule.", "An order moves here when you answer DONE or IMPOSSIBLE, or when the TOC cancels it."],
+["Un ordre passe ici quand vous répondez TERMINÉ ou IMPOSSIBLE, ou quand le TOC l'annule.", "An order moves here when you answer COMPLETE or UNABLE, or when the TOC cancels it."],
 ["Rien à traiter", "Nothing to do"],
 ["Tous les ordres reçus sont terminés. Onglet TERMINÉS pour les revoir.", "All received orders are finished. DONE tab to see them again."],
 ["Texte complet", "Full text"],
@@ -21078,5 +21078,18 @@
 ["Journal vidé", "Log cleared"],
 ["Trop tard : l'itinéraire a changé depuis l'effacement", "Too late: the route has changed since it was cleared"],
 ["Efface toutes les étapes ; ANNULER les rend pendant 8 s, avant tout envoi au groupe", "Clears all waypoints; CANCEL brings them back for 8 s, before anything is sent to the group"],
-["Efface le journal ; ANNULER le rend pendant 8 s", "Clears the log; CANCEL brings it back for 8 s"]
+["Efface le journal ; ANNULER le rend pendant 8 s", "Clears the log; CANCEL brings it back for 8 s"],
+["Alertes médicales masquées", "Medical alerts hidden"],
+["Réglages > Réalisme pour les afficher. Les blessés restent suivis dans l'onglet TROUPES.", "Settings > Realism to show them. The wounded are still tracked in the TROOPS tab."],
+["Aucune alerte médicale", "No medical alert"],
+["Rien à secourir. Une alerte arrive ici quand un allié tombe inconscient ou en arrêt cardiaque.", "Nobody to rescue. An alert arrives here when an ally falls unconscious or into cardiac arrest."],
+["Alertes reçues par Athena", "Alerts come through Athena"],
+["Sans liaison COMSPEC Link, suivez l'état des blessés dans l'onglet TROUPES.", "Without the COMSPEC Link connection, follow the wounded in the TROOPS tab."],
+["%1 m · cap %2°", "%1 m · heading %2°"],
+["cap %1°", "heading %1°"],
+["%1 m", "%1 m"],
+["Touchez pour voir le patient et le trier", "Tap to see the patient and triage them"],
+["Touchez pour replier", "Tap to collapse"],
+["Aucune demande MEDEVAC", "No MEDEVAC request"],
+["Remplissez le 9-line ci-dessus puis DEMANDER LE MEDEVAC : son suivi, étape par étape, s'affiche ici.", "Fill in the 9-line above, then REQUEST MEDEVAC: its progress, step by step, shows here."]
 ]
