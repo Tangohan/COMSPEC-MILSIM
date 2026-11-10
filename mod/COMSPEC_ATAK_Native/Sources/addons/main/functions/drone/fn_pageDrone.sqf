@@ -41,6 +41,9 @@ uiNamespace setVariable ["COMSPEC_ATAK_DroneMenusShown", false];
 // Fiche d'un cliché ouverte : fenêtre de transmission sur tout l'écran (fn_dronePhoto "modal"), rien d'autre dessous.
 private _phEd = _s getOrDefault ["dronePhEdit", -1];
 if (_phEd >= 0 && {_phEd < count (["list"] call comspec_atak_native_fnc_dronePhoto)}) exitWith { ["modal", [_bw, _bh]] call comspec_atak_native_fnc_dronePhoto; true };
+// Vue UCAV (drone armé du camp pris en main depuis le téléphone, sans appairage : fn_ucav, fn_pageUcav).
+if (_s getOrDefault ["droneUcav", false]) exitWith { [] call comspec_atak_native_fnc_pageUcav; true };
+private _ucavs = ["list"] call comspec_atak_native_fnc_ucav;
 
 // Liste des drones à gauche, comme l'app Vidéo Live (retour de TTRD, 14/10 : « refais le menu drone comme l'app Live
 // avec un select à gauche ») : drones de la flotte (choisir = le piloter), puis drones posés à moins de 15 m (choisir =
@@ -82,6 +85,17 @@ if ((_l get "landscape") && {!_mini}) then {
         _list lbSetTooltip (([_i, (["Choisir pour appairer ce drone au téléphone (il devient le drone piloté)", "Flotte complète (4 drones) : libérez-en un d'abord"] select ((count _fleet) >= 4)) call comspec_atak_native_fnc_tr]) call comspec_atak_native_fnc_tr);
     } forEach _near;
     if ((count _near) isEqualTo 0) then { private _i = _list lbAdd (("Aucun drone libre posé près de vous") call comspec_atak_native_fnc_tr); _list lbSetColor [_i, [0.54, 0.6, 0.58, 1]]; };
+    // UCAV armés du camp (fn_ucav) : choisir = ouvrir la vue UCAV, sans appairage.
+    if ((count _ucavs) > 0) then {
+        private _hdr3 = _list lbAdd (("UCAV ARMÉS") call comspec_atak_native_fnc_tr);
+        _list lbSetColor [_hdr3, [0.36, 0.78, 0.42, 1]];
+        {
+            private _i = _list lbAdd (format ["%1 · %2 km", getText (configOf _x >> "displayName"), ((player distance _x) / 1000) toFixed 1]); // i18n:brut (nom du modèle)
+            _list lbSetData [_i, "UCAV:" + netId _x];
+            _list lbSetPicture [_i, "\z\comspec_atak_native\addons\main\data\app_drone.paa"];
+            _list lbSetColor [_i, [0.30, 0.85, 0.95, 1]];
+        } forEach _ucavs;
+    };
     _list ctrlAddEventHandler ["LBSelChanged", {
         params ["_c", "_i"];
         // Données : "FLY:<netId>" (drone de la flotte), "PAIR:<netId>" (drone à appairer), "" (titre, ligne vide).
@@ -91,6 +105,7 @@ if ((_l get "landscape") && {!_mini}) then {
         private _k = _id select [0, _p];
         private _o = objectFromNetId (_id select [_p + 1]);
         if (isNull _o) exitWith {};
+        if (_k isEqualTo "UCAV") exitWith { [{ ["view", _this] call comspec_atak_native_fnc_ucav; }, netId _o] call comspec_atak_native_fnc_nextFrame; };
         if (_k isEqualTo "FLY") exitWith {
             if (_o isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])) exitWith {};
             [{ ["switch", _this] call comspec_atak_native_fnc_droneFleet; }, _o] call comspec_atak_native_fnc_nextFrame;
@@ -123,6 +138,9 @@ if (isNull _d) exitWith {
             [["APPAIRER", compile format ["['pair', objectFromNetId %1] call comspec_atak_native_fnc_droneAction;", str netId _x], true]]];
     } forEach _near;
     _rows pushBack ["buttons", [["ACTUALISER", { [{ ["DRONE"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }]]];
+    if ((count _ucavs) > 0 || {!isNull (missionNamespace getVariable ["COMSPEC_ATAK_Ucav", objNull])}) then {
+        _rows pushBack ["buttons", [[format ["UCAV ARMÉS (%1)", count _ucavs], { ["view", ""] call comspec_atak_native_fnc_ucav; }, true, true, "Drones armés du camp : prise en main depuis le téléphone, orbite, Rechercher et tuer, frappes"]]];
+    };
     private _lg = missionNamespace getVariable ["COMSPEC_ATAK_DroneLog", []];
     if ((count _lg) > 0) then {
         _rows pushBack ["section", "Journal du dernier vol", format ["%1 événements", count _lg]];
@@ -640,6 +658,7 @@ _rows pushBack ["text", format ["<t size='0.78' color='#8a9a93'>%1%2</t>", (crea
 if (!_camOn && {!_leftMenus} && {_tab isNotEqualTo "LOG"}) then {
     _rows pushBack ["buttons", [["OUVRIR LA CAMÉRA", ["cam"] call _act, true]]];
 };
+if (!_leftMenus && {(count _ucavs) > 0}) then { _rows pushBack ["buttons", [[format ["UCAV ARMÉS (%1)", count _ucavs], { ["view", ""] call comspec_atak_native_fnc_ucav; }]]]; };
 
 // Alliés à moins de 2 km du drone (suivi et escorte) : joueurs du même camp ou d'un camp ami, puis les équipiers IA
 // du groupe (seul en test, ou groupe mixte). Le pilote lui-même a son bouton ME SUIVRE.

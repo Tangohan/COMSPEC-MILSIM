@@ -871,6 +871,8 @@ switch (_mode) do {
         ["draw", [_map, _ts * 0.9, "RobotoCondensedBold"]] call comspec_atak_native_fnc_aiOrder;
         // Appui feu typé (fn_fireSupport) : missions de tir du camp, portées et distance de sécurité.
         ["draw", [_map, _ts * 0.9, "RobotoCondensedBold"]] call comspec_atak_native_fnc_fireSupport;
+        // UCAV commandés du camp (fn_ucav) : orbite, zone de Rechercher et tuer, frappe en cours.
+        ["draw", _map] call comspec_atak_native_fnc_ucav;
         // Objectif de l'ordre en cours de rédaction (clic droit).
         if ((count _op) >= 2) then {
             private _opP = [_op select 0, _op select 1, 0];

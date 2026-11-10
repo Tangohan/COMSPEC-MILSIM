@@ -1144,6 +1144,29 @@ private _fs = ["COMSPEC", "ATAK · Appui feu"];
 ["comspec_atak_native_fs_rings", "CHECKBOX",
     ["Cercles de portée et zone dangereuse", "Réglage personnel : sur la carte du téléphone et du poste TOC, portées min et max de la pièce choisie et distance de sécurité (danger close) autour de la cible. Les missions de tir en cours restent affichées."],
     _fs, true, 0] call comspec_atak_native_fnc_addSetting;
+// UCAV commandés depuis le téléphone (fn_ucav, fn_ucavCmd, vue UCAV de l'app Drone) : réglages serveur, puis événements.
+private _ucavCat = ["COMSPEC", "ATAK · UCAV"];
+["comspec_atak_native_ucav", "CHECKBOX",
+    ["Frappes d'UCAV depuis le téléphone", "Coché : un drone armé du camp (Greyhawk, Fenghuang, Ababil, Sentinel, drones armés des mods) se prend en main depuis l'app Drone, sans terminal ni poste du servant : orbite, Rechercher et tuer, frappes sur des cibles marquées avec ses propres armes guidées. Ex. : le JTAC met le Greyhawk en orbite à 1 000 m au-dessus du village, marque un blindé, l'UCAV tire seul son missile. Décoché : rien de tout cela, le terminal UAV reste le seul moyen."],
+    _ucavCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_ucav_who", "LIST",
+    ["Qui peut commander un UCAV", "Vérifié par le serveur à chaque ordre. Ex. : « Chefs, JTAC, opérateurs de drone, TOC et Zeus » laisse un chef de groupe ou un joueur au rôle JTAC prendre le Greyhawk, mais pas un fusilier ; « Tout le camp » le permet à tous ; « Poste TOC et Zeus » le réserve au poste de commandement."],
+    _ucavCat, [[0, 1, 2], ["Chefs, JTAC, opérateurs de drone, TOC et Zeus", "Tout le camp", "Poste TOC et Zeus"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_ucav_free", "CHECKBOX",
+    ["Rechercher et tuer : engagement libre autorisé", "Coché : le contrôleur peut choisir « Engager librement » ; l'UCAV frappe alors seul les ennemis identifiés de la zone, jamais une cible à moins de la distance de sécurité de l'appui aérien (1 000 m par défaut) d'un allié ou d'un civil : celle-là lui est proposée. Ex. : un blindé ennemi seul dans la vallée est frappé sans attendre ; une patrouille ennemie à 300 m d'un groupe allié attend la validation. Décoché : toute cible est proposée au téléphone."],
+    _ucavCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_ucav_terminal", "CHECKBOX",
+    ["UCAV : terminal UAV requis", "Coché : il faut un terminal UAV dans l'inventaire (en plus du téléphone) pour prendre la main sur un UCAV ; le poste TOC et Zeus en sont dispensés. Ex. : le JTAC qui a laissé son terminal dans le véhicule ne peut plus commander le Greyhawk avant de l'avoir repris. Décoché : le téléphone suffit."],
+    _ucavCat, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_ucav_range", "SLIDER",
+    ["Portée de la liaison UCAV (m)", "Distance maximale entre le téléphone et l'UCAV, divisée par deux si le relief les sépare ; les relais de la mission l'allongent comme pour les petits drones. Hors liaison, l'UCAV poursuit seul son orbite ou sa recherche, mais aucun ordre ne part. Ex. : à 15 000 m, un JTAC à 12 km de l'orbite commande encore l'UCAV ; derrière une crête, plus au-delà de 7,5 km. Le poste TOC et Zeus sont toujours en liaison."],
+    _ucavCat, [2000, 40000, 15000, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_ucavExec", { _this call comspec_atak_native_fnc_ucavCmd; }] call CBA_fnc_addEventHandler;
+if (isServer) then {
+    ["comspec_atak_native_ucavSrv", { ["srv", _this] call comspec_atak_native_fnc_ucav; }] call CBA_fnc_addEventHandler;
+    missionNamespace setVariable ["COMSPEC_ATAK_SrvUcavV", 1, true];
+};
+if (hasInterface) then { ["comspec_atak_native_ucavEvt", { ["evt", _this] call comspec_atak_native_fnc_ucav; }] call CBA_fnc_addEventHandler; };
 private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 // Rôle affiché (fn_displayRole) : le joueur le choisit dans l'app Profil, sauf si le serveur impose la fonction Athena.
 ["comspec_atak_native_role_force_community", "CHECKBOX",

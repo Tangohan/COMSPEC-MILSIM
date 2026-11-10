@@ -38,12 +38,13 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## Pack 4.3.0 Washington : apps à l'horizontale, carte lisible, centre Zeus, IA qui répondent juste, vrais papiers et passage aux fichiers (ATAK natif 4.3.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.7.0)
+## Pack 4.3.0 Washington : apps à l'horizontale, carte lisible, drones armés, centre Zeus, IA qui répondent juste, vrais papiers et passage aux fichiers (ATAK natif 4.3.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.7.0)
 
 ### Résumé joueur
 Type : nouveauté
-FR : ATAK 4.3.0 : apps à l'horizontale, carte lisible, IA qui répondent juste, vrais papiers et app Fichiers
+FR : ATAK 4.3.0 : drones armés, apps à l'horizontale, carte lisible, IA qui répondent juste, vrais papiers et app Fichiers
 - **Carte** : les noms des unités, des repères et des villes restent lisibles à tous les zooms et ne se chevauchent plus. Réglez-les dans Réglages > Carte.
+- **Drones armés** : prenez la main d'un drone armé depuis l'app Drone, mettez-le en orbite, marquez une cible et il tire seul sous vos yeux. Le mode Rechercher et tuer vous propose les cibles qu'il repère.
 - **Horizontale** : téléphone en main à l'horizontale, les apps s'affichent sur deux colonnes au lieu d'une longue liste.
 - **Parler aux IA** : une IA ne répond plus qu'une fois, sous le nom écrit sur ses papiers. L'onglet GUIDE de la fenêtre « Parler à » donne des phrases à essayer.
 - **Fichiers** : nouvelle app Fichiers pour vérifier une personne, un document ou une plaque. Le bouton SCANNER d'un document y mène avec le numéro déjà rempli.
@@ -53,10 +54,10 @@ FR : ATAK 4.3.0 : apps à l'horizontale, carte lisible, IA qui répondent juste,
 - **Zeus** : le centre Zeus ne cache plus la liste de droite. Son onglet SERVEUR montre l'état de la partie, et des étiquettes au-dessus des joueurs signalent ce qui ne va pas.
 - **IA en Zeus** : clic droit sur une ou plusieurs IA, puis « SSE · Roleplay de l'IA », pour changer leur caractère, leurs papiers ou leur attitude.
 - **Véhicules** : sur la carte, une unité à bord d'un hélicoptère ou d'un véhicule apparaît avec la silhouette de son engin, et l'équipage n'est compté qu'une fois.
-- **Écran** : le reflet de la vitre ne clignote plus quand vous touchez l'écran, et le téléphone tremble d'un seul bloc quand il vibre.
 - **Identité Athena** : votre identité Athena arrive en jeu même sans Zeus connecté. Les messages des mods ne s'affichent plus par-dessus le jeu : ils arrivent dans le téléphone.
-EN : ATAK 4.3.0: landscape apps, a readable map, AIs that answer right, real papers and a Records app
+EN : ATAK 4.3.0: armed drones, landscape apps, a readable map, AIs that answer right, real papers and a Records app
 - **Map**: unit, marker and town names stay readable at every zoom and no longer overlap. Adjust them in Settings > Map.
+- **Armed drones**: take control of an armed drone from the Drone app, put it in orbit, mark a target and it fires on its own while you watch. Hunter-killer mode proposes the targets it spots.
 - **Landscape**: with the phone in hand and held sideways, apps show two columns instead of one long list.
 - **Talking to AIs**: an AI answers only once, under the name on its papers. The GUIDE tab of the "Talk to" window gives phrases to try.
 - **Records**: a new Records app to check a person, a document or a plate. A document's SCANNER button leads there with the number already filled in.
@@ -66,7 +67,6 @@ EN : ATAK 4.3.0: landscape apps, a readable map, AIs that answer right, real pap
 - **Zeus**: the Zeus centre no longer hides the right-hand list. Its SERVER tab shows the state of the game, and labels above players flag what is wrong.
 - **AI in Zeus**: right-click one or more AIs, then "SSE · AI roleplay", to change their character, papers or attitude.
 - **Vehicles**: on the map, a unit aboard a helicopter or a vehicle shows with its vehicle's silhouette, and the crew is counted only once.
-- **Screen**: the glass glare no longer flickers when you touch the screen, and the phone shakes as one piece when it vibrates.
 - **Athena identity**: your Athena identity reaches the game even with no Zeus online. Mod messages no longer pop up over the game: they arrive in the phone.
 
 ### Détail technique
@@ -146,6 +146,15 @@ EN : ATAK 4.3.0: landscape apps, a readable map, AIs that answer right, real pap
 - Fiche membre › Identité & papiers : bloc « Arrivée réelle en jeu », carte « Télécharger ma couverture » (routes `POST …/effectifs/membres/{id}/papiers/couverture`, `GET …/couverture/{exportId}/telecharger`, `MemberCoverExportController::generateForMember` / `downloadForMember` : le membre lui-même `LIMIT_SELF`, un responsable qui gère les papiers `LIMIT_MANAGER`). `SseCoverExportService::generateFromIdentity` : fichier `comspec-cover` v1 avec l'identité principale et ses papiers émis valables (contenu « Identité Athena » du formulaire, aussi dans Mes papiers et au bureau SSE).
 - Correctif : `member_papers_sync.php` écrasait `$h` de la fiche membre (boucle de l'historique) : page cassée après « Appliquer les choix » / « Garder les deux ».
 - Aucune nouvelle DLL, aucune migration. Traductions : `lang/en/site_auto.php`, `i18n/en.txt`, `localisation/template/xx.txt`, `tools/i18n_identity_en.tsv`.
+
+**Drones armés (UCAV) commandés depuis le téléphone : orbite, Rechercher et tuer, frappes sur cible marquée (ATAK natif)**
+- `functions/drone/fn_ucav.sqf` (nouveau) : reconnaissance des UCAV (`unitIsUAV`, avion ou hélicoptère, au moins une munition guidée air-sol d'après `CfgAmmo` : `laserLock`, `irLock`, `manualControl`, `autoSeekTarget`, `SensorsManagerComponent`, missiles air-air exclus ; bombe si `thrust`/`thrustTime` nuls ou `BombCore` ; forçage mission `COMSPEC_ATAK_Ucav`), liste des armes par `magazinesAllTurrets` (+ `pylonWeapon` / `compatibleMagazines`), droits (`can`), liaison (`comspec_atak_native_ucav_range`, relief, relais par `fn_videoLink`, TOC et Zeus toujours en liaison), contrôle serveur (`srv` : réglage, camp, droits, contrôleur unique, opérateur au terminal, cible amie ou civile refusée, allié à moins de 40 m du point refusé, engagement libre interdit forcé en « Proposer »), actions du téléphone (deux appuis pour frapper, annuler et rendre), lignes et actions du clic droit, dessin de la carte, retours (`evt`), surveillance (`tick`, 1 s).
+- `functions/drone/fn_ucavCmd.sqf` (nouveau) : exécution là où l'UCAV est local. Orbite par point de passage `LOITER` (`CIRCLE_L`, `flyInHeight`), équipage `CARELESS` / `BLUE`, `setAutonomous false`, `AUTOTARGET` coupé. File de frappes (script unique) : approche par `doMove` jusqu'à l'enveloppe (missile : `missileLockMinDistance`..`missileLockMaxDistance`, nez à moins de 40°, vue dégagée ; bombe : point de largage calculé sur hauteur et vitesse, nez à moins de 20°, dégagement à 3 km si mal aligné), puis `reveal`, `reportRemoteTarget`, `confirmSensorTarget`, `doWatch`/`doTarget`, `selectWeaponTurret`, tir `fireAtTarget` → `BIS_fnc_fire` → `forceWeaponFire` (2 s chacun), munition capturée par `Fired` et accrochée à la cible (`setMissileTarget` objet, `setMissileTargetPos` point, cible laser posée sur un point sans objet). Suivi jusqu'à l'impact, BDA proposé (détruit, endommagé, neutralisé, sans effet). Rechercher et tuer : `nearTargets` + `getSensorTargets` dans la zone toutes les 3 s, identification par le camp perçu ; « Engager librement » seulement ennemi identifié sans allié ni civil dans la distance de sécurité de l'appui aérien (`fn_fireSupport` `type CAS` → `dc`), deux frappes automatiques au plus, sinon proposition.
+- `functions/drone/fn_pageUcav.sqf` (nouveau) : vue UCAV de l'app Drone (paysage : onglets à gauche, image et état à droite). Image de la nacelle par la caméra de Vidéo Live (`fn_livecamUav`, hôte du flux = contrôleur par `COMSPEC_DroneOwner`), onglets MISSION, CIBLES, FILE, JOURNAL, compte rendu BDA pré-rempli (`fn_reportAction` `prefill BDA`).
+- Fichiers partagés, lignes ajoutées seulement : `fn_mapCtxMenu.sqf` (2 lignes : lignes UCAV du menu principal, action `UCAV_…`), `fn_tocLaptop.sqf` (1 ligne : dessin des UCAV), `XEH_preInit.sqf` (5 réglages CBA serveur ATAK · UCAV et 3 événements `comspec_atak_native_ucavSrv`, `ucavExec`, `ucavEvt`, `COMSPEC_ATAK_SrvUcavV`), `config.cpp` (3 fonctions). Dans `functions/drone/` : vue UCAV et entrées UCAV ARMÉS de `fn_pageDrone`, point choisi sur la carte et zones UCAV de l'outil DRONE (`fn_droneAction`), dessin (`fn_droneDraw`), ordres de petit drone ignorés sur un UCAV commandé et terminal UAV du contrôleur (`fn_droneCmd` « manual » / « release »).
+- Réglages : `comspec_atak_native_ucav` (activé), `_ucav_who` (chefs, JTAC, opérateurs de drone, TOC et Zeus / tout le camp / TOC et Zeus), `_ucav_free` (engagement libre autorisé), `_ucav_terminal` (terminal UAV requis, non), `_ucav_range` (15 000 m).
+- Mission d'autotest : `scripts/ucav.sqf`, groupe `ucav` (Greyhawk armé en orbite, Ifrit ennemi marqué puis frappé, tir et impact vérifiés ; Rechercher et tuer en « Proposer », aucune frappe sans validation). Non jouée : tests en jeu sautés.
+- Traductions : `i18n/en.txt` et `localisation/template/xx.txt` (240 phrases).
 
 **Intégration du pack (fusion des chantiers)**
 - Une seule règle pour le nom affiché d'une IA (bulles, fil, journal, toasts, fenêtre « Parler à ») : `fn_iarpName` « ensure » (serveur : nom des papiers SSE, décidés par `fn_idRegistry` « ensure » au besoin, sinon de la légende, diffusé dans `comspec_sse_idName`), « shown » (sinon « Anonyme »), « for » / « label » (le Zeus voit le vrai nom et la nature). `_nameOf` de `fn_iarpServer` et `fn_iarpClient` « name » y délèguent ; réplique « reply » : bulle et fil au nom de `fn_iarpName` « label », bulles aux autres joueurs sans l'émetteur.

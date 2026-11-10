@@ -264,6 +264,8 @@ switch (_mode) do {
             uiNamespace setVariable ["COMSPEC_ATAK_AiPick", _g];
             ["send", [_g, _arg select [3], [_pos select 0, _pos select 1]]] call comspec_atak_native_fnc_aiOrder;
         };
+        // UCAV commandé depuis le téléphone (fn_ucav "ctx") : orbite, Rechercher et tuer, frappe sur la cible pointée.
+        if ((_arg select [0, 5]) isEqualTo "UCAV_") exitWith { [{ ["ctx", _this] call comspec_atak_native_fnc_ucav; }, [_arg select [5], +_pos, _c getOrDefault ["ucavT", []]]] call comspec_atak_native_fnc_nextFrame; };
         // Nommer les axes autour avec un thème (préférence du joueur gardée, aussi dans le nouveau plan).
         if ((_arg select [0, 3]) isEqualTo "ZX_") exitWith {
             ["nameTheme", ["", _arg select [3]]] call comspec_atak_native_fnc_zoneAction;
@@ -530,6 +532,8 @@ switch (_mode) do {
                 ["BACK", "Retour", "", _dir + "ui_close.paa", (COMSPEC_ATAK_Th get "mapText")]
             ];
         };
+        // UCAV (fn_ucav "rows") : orbite, Rechercher et tuer, Frapper avec… sur la cible pointée ; menu principal seulement.
+        _rows = (["rows", [_c, _map]] call comspec_atak_native_fnc_ucav) + _rows;
         // Ordres aux IA (fn_aiOrder) : une ligne, puis les sous-menus ordres, « Ensuite… » (file d'ordres) et posture (avec la règle de tir).
         private _aiG = _c getOrDefault ["aiG", grpNull];
         private _aiCol = [1, 0.8, 0.25, 1];
