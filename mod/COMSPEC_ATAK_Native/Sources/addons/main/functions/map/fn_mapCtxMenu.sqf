@@ -236,7 +236,7 @@ switch (_mode) do {
             playSound "ClickSoft";
             [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call comspec_atak_native_fnc_nextFrame;
         };
-        if (_arg in ["DRONE", "BACK", "AI", "AIPOST", "AINEXT"]) exitWith {
+        if (_arg in ["DRONE", "BACK", "AI", "AIPOST", "AITHEN", "AINEXT"]) exitWith {
             // Groupe IA suivant (du plus proche au plus loin du point cliqué).
             if (_arg isEqualTo "AINEXT") then {
                 private _gs = ["groups", [str side group player, _c get "pos"]] call comspec_atak_native_fnc_aiOrder;
@@ -247,7 +247,8 @@ switch (_mode) do {
                 case "AI";
                 case "AINEXT": { "AI" };
                 case "AIPOST": { "AIPOST" };
-                default { ["", "AI"] select ((_c getOrDefault ["sub", ""]) isEqualTo "AIPOST") };
+                case "AITHEN": { "AITHEN" };
+                default { ["", "AI"] select ((_c getOrDefault ["sub", ""]) in ["AIPOST", "AITHEN"]) };
             }];
             _c set ["at", diag_tickTime];
             playSound "ClickSoft";
@@ -529,7 +530,7 @@ switch (_mode) do {
                 ["BACK", "Retour", "", _dir + "ui_close.paa", (COMSPEC_ATAK_Th get "mapText")]
             ];
         };
-        // Ordres aux IA (fn_aiOrder) : une ligne, puis les sous-menus ordres et posture.
+        // Ordres aux IA (fn_aiOrder) : une ligne, puis les sous-menus ordres, « Ensuite… » (file d'ordres) et posture (avec la règle de tir).
         private _aiG = _c getOrDefault ["aiG", grpNull];
         private _aiCol = [1, 0.8, 0.25, 1];
         private _aiSub = _c getOrDefault ["sub", ""];
@@ -537,13 +538,19 @@ switch (_mode) do {
         if (_aiSub isEqualTo "" && {!_card} && {_aiWhy isNotEqualTo "" || {!isNull _aiG && {({alive _x} count (units _aiG)) > 0}}}) then {
             _rows insert [0, [["AI", "Ordre aux IA", [groupId _aiG, "indisponible"] select (_aiWhy isNotEqualTo ""), _dir + "app_toc.paa", [_aiCol, [0.55, 0.6, 0.57, 1]] select (_aiWhy isNotEqualTo "")]]];
         };
-        if (!isNull _aiG && {_aiWhy isEqualTo ""} && {_aiSub in ["AI", "AIPOST"]}) then {
+        if (!isNull _aiG && {_aiWhy isEqualTo ""} && {_aiSub in ["AI", "AIPOST", "AITHEN"]}) then {
             private _e = (missionNamespace getVariable ["COMSPEC_ATAK_AiOrds", createHashMap]) getOrDefault [["netId", _aiG] call comspec_atak_native_fnc_aiOrder, createHashMap];
             private _cur = ["aucun ordre", _e getOrDefault ["lbl", ""]] select ((_e getOrDefault ["lbl", ""]) isNotEqualTo "");
             private _gs = ["groups", [str side group player, _pos]] call comspec_atak_native_fnc_aiOrder;
             private _head = [["AINEXT", ["label", _aiG] call comspec_atak_native_fnc_aiOrder, format ["groupe %1/%2", (_gs find _aiG) + 1, count _gs], _dir + "app_toc.paa", _aiCol]];
             private _ti = "\A3\ui_f\data\igui\cfg\simpletasks\types\";
-            _rows = if (_aiSub isEqualTo "AI") then { _head + [
+            _rows = if (_aiSub isEqualTo "AITHEN") then { _head + [
+                ["AI_THEN_MOVE", "Aller ici", "après l'ordre en cours", _dir + "map_route.paa", _aiCol],
+                ["AI_THEN_PATROL", "Patrouiller ici", "après l'ordre en cours", _ti + "walk_ca.paa", _aiCol],
+                ["AI_THEN_HOLD", "Tenir ici", "après l'ordre en cours", _ti + "defend_ca.paa", _aiCol],
+                ["AI_THEN_WITHDRAW", "Se replier ici", "après l'ordre en cours", _ti + "run_ca.paa", _aiCol],
+                ["BACK", "Retour", "ordres", _dir + "ui_close.paa", (COMSPEC_ATAK_Th get "mapText")]
+            ] } else { if (_aiSub isEqualTo "AI") then { _head + [
                 ["AI_MOVE", "Aller ici", _cur, _dir + "map_route.paa", _aiCol],
                 ["AI_PATROL", "Patrouiller ici", "4 points, 120 m", _ti + "walk_ca.paa", _aiCol],
                 ["AI_ATTACK", "Attaquer la zone", "fouille et détruit", _ti + "attack_ca.paa", [0.95, 0.35, 0.3, 1]],
@@ -553,19 +560,22 @@ switch (_mode) do {
                 ["AI_FOLLOW", "Me suivre", "rejoint et suit", _ti + "meet_ca.paa", _aiCol],
                 ["AI_BOARD", "Embarquer", "véhicule le plus proche", _ti + "getin_ca.paa", _aiCol],
                 ["AI_DISMOUNT", "Débarquer", "", _ti + "getout_ca.paa", _aiCol],
-                ["AIPOST", "Posture", "vitesse, formation", _ti + "scout_ca.paa", _aiCol],
+                ["AI_GARRISON", "Occuper le bâtiment", "le plus proche, 60 m", _ti + "defend_ca.paa", _aiCol],
+                ["AITHEN", "Ensuite…", "après l'ordre en cours", _ti + "walk_ca.paa", _aiCol],
+                ["AIPOST", "Posture", "vitesse, formation, tir", _ti + "scout_ca.paa", _aiCol],
                 ["AI_CANCEL", "Annuler l'ordre", "", _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]],
                 ["BACK", "Retour", "", _dir + "ui_close.paa", (COMSPEC_ATAK_Th get "mapText")]
             ] } else { _head + ([
                 ["AWARE", "Prudent"], ["COMBAT", "Combat"], ["STEALTH", "Furtif"],
                 ["LIMITED", "Vitesse lente"], ["NORMAL", "Vitesse normale"], ["FULL", "Vitesse rapide"],
-                ["COLUMN", "Colonne"], ["WEDGE", "En coin"], ["LINE", "En ligne"], ["FILE", "En file"]
+                ["COLUMN", "Colonne"], ["WEDGE", "En coin"], ["LINE", "En ligne"], ["FILE", "En file"],
+                ["ROE_FREE", "Tir libre"], ["ROE_RETURN", "Riposte seulement"], ["ROE_HOLD", "Halte au feu"]
             ] apply {
-                private _on = (_x select 0) in [_e getOrDefault ["beh", ""], _e getOrDefault ["spd", ""], _e getOrDefault ["frm", ""]];
+                private _on = (_x select 0) in [_e getOrDefault ["beh", ""], _e getOrDefault ["spd", ""], _e getOrDefault ["frm", ""], _e getOrDefault ["roe", ""]];
                 ["AI_" + (_x select 0), _x select 1, ["", "actuel"] select _on, _ti + "scout_ca.paa", _aiCol]
             }) + [
                 ["BACK", "Retour", "ordres", _dir + "ui_close.paa", (COMSPEC_ATAK_Th get "mapText")]
-            ] };
+            ] } };
         };
         // Supprimer ce qui est sous le clic : une ligne (un élément) ou un sous-menu (plusieurs) ; CONFIRMER au second clic.
         private _dels = _c getOrDefault ["dels", []];
@@ -683,6 +693,8 @@ switch (_mode) do {
             _headH = _font * (1.35 + 0.98 * (count _stats)) + pixelH * 6;
             _w = ((_font * 19) / _ratio) min (_bw * 0.95);
         };
+        // Menu long (ordres aux IA, posture) : lignes resserrées pour tenir dans la carte, jamais sous la hauteur du texte.
+        _rowH = _rowH min ((((_bh - pixelH * 16 - _headH) / ((count _rows) max 1))) max (_font * 1.05));
         private _h = _headH + _rowH * (count _rows) + pixelH * 8;
         private _sp = _map ctrlMapWorldToScreen _pos;
         // Ouvert à droite et sous le curseur, recalé dans la carte s'il déborde (à gauche / au-dessus du point).

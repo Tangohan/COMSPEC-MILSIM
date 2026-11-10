@@ -1,3 +1,24 @@
+[h1]COMSPEC SSE 1.6.1 — IA qui comprennent mieux, avouent, réagissent aux tirs / AIs that understand better, confess, react to gunfire (10/11/2026)[/h1]
+[b]Relance Arma complètement. Demande COMSPEC ATAK 4.2.1.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.2.1.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Parler aux IA[/b] : fautes de frappe, accents oubliés et négations (« je ne veux pas d'argent ») compris ; deux demandes dans un message (« Bonjour, vos papiers ») reçoivent une seule réponse dans l'ordre. Une IA arrêtée par « Stop ! » repart seule au bout de deux minutes ou quand vous vous éloignez.
+[*] [b]Confrontation[/b] : « Vos papiers sont faux », « Tu mens » : une IA qui ment vraiment peut avouer son secret, nier, s'énerver ou s'enfuir.
+[*] [b]Mémoire[/b] : l'IA se souvient de chaque joueur (« Je l'ai déjà dit à votre collègue. »), pose ses propres questions (« Vous allez m'arrêter ? ») et comprend votre oui ou votre non.
+[*] [b]Renseignement par étapes[/b] : une rumeur, puis le détail, puis tout ; un renseignement précis peut placer le lieu sur votre carte, à vous seul.
+[*] [b]Tirs et témoins[/b] : une IA interrogée se jette au sol, se rend ou fuit quand on tire près d'elle ; les civils qui vous voient braquer quelqu'un s'inquiètent. Réglages dans les options du mod.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Talking to AIs[/b]: typos, missing accents and negations ("I don't want your money") are understood; two requests in one message ("Hello, your papers") get a single answer in order. An AI stopped with "Stop!" moves on by itself after two minutes or when you walk away.
+[*] [b]Confrontation[/b]: "Your papers are fake", "You're lying": an AI that really lies may confess its secret, deny, get angry or run away.
+[*] [b]Memory[/b]: the AI remembers each player ("I already told your colleague."), asks its own questions ("Are you going to arrest me?") and understands your yes or no.
+[*] [b]Intelligence in steps[/b]: a rumour, then the details, then everything; precise intel can put the place on your map, for you only.
+[*] [b]Gunfire and witnesses[/b]: an AI you are questioning drops to the ground, surrenders or runs when someone fires nearby; civilians who see you aim at someone get worried. Settings in the mod options.
+[/list]
+
 [h1]COMSPEC SSE 1.6.0 — papiers plus clairs, couverture expliquée / clearer papers, explained cover (09/11/2026)[/h1]
 [b]Relance Arma complètement. Demande COMSPEC ATAK 4.2.0.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.2.0.[/b]
 

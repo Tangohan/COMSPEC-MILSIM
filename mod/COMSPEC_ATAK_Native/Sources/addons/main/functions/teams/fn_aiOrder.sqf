@@ -32,7 +32,7 @@
                                         gardée par les déplacements suivants ; Attaquer et Supprimer la remplacent
       "contact" [groupe, cible] (machine du groupe) : groupe IA commandé qui repère un ennemi (gestionnaire de groupe
                                         EnemyDetected, posé à la 1re exécution) -> compte rendu « Contact nord à 250 m, 3 ennemis
-                                        repérés, 1 blessés » au camp (bulle au-dessus du chef, notification au donneur), une fois
+                                        repérés, 1 blessé » au camp (bulle au-dessus du chef, notification au donneur), une fois
                                         par minute au plus ; réglage « Compte rendu de contact des groupes IA ».
 */
 params [["_act", ""], ["_arg", []]];
@@ -545,8 +545,8 @@ switch (_act) do {
         if (!_replay && {_ct isEqualType []} && {(count _ct) >= 4} && {!isNull _g}) then {
             _ct params ["_card", "_cd", "_cn", "_ch"];
             private _said = format [("Contact %1 à %2 m") call comspec_atak_native_fnc_tr, (_card) call comspec_atak_native_fnc_tr, _cd];
-            if (_cn > 0) then { _said = _said + format [(", %1 ennemis repérés") call comspec_atak_native_fnc_tr, _cn]; };
-            if (_ch > 0) then { _said = _said + format [(", %1 blessés") call comspec_atak_native_fnc_tr, _ch]; };
+            if (_cn > 0) then { _said = _said + format [([", %1 ennemi repéré", ", %1 ennemis repérés"] select (_cn > 1)) call comspec_atak_native_fnc_tr, _cn]; };
+            if (_ch > 0) then { _said = _said + format [([", %1 blessé", ", %1 blessés"] select (_ch > 1)) call comspec_atak_native_fnc_tr, _ch]; };
             private _full = format [("%1 : %2") call comspec_atak_native_fnc_tr, _gn, _said];
             private _seen = ["say", [leader _g, _said, _gn, "WARNING"]] call comspec_atak_native_fnc_aiBubble;
             if ((_e getOrDefault ["uid", ""]) isEqualTo getPlayerUID player) then {
