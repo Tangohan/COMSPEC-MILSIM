@@ -190,7 +190,7 @@ final class SseCoverExportTest extends TestCase
         self::assertTrue($svc->generate(1, 12, 12, 'MLD', null, 'fr', null, false, $this->now)['ok']);
         // Vingt-quatre heures plus tard, c'est de nouveau possible.
         self::assertTrue($svc->generate(1, 10, 10, 'MLD', null, 'fr', null, false, $this->now->modify('+25 hours'))['ok']);
-        self::assertSame(0, $svc->panel(1, 12, false, true)['remaining'] - 2, 'panneau : 2 restantes pour un membre qui en a utilisé une');
+        self::assertSame(0, $svc->panel(1, 12, false, true, $this->now)['remaining'] - 2, 'panneau : 2 restantes pour un membre qui en a utilisé une');
     }
 
     public function testDownloadIsolation(): void
