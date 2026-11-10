@@ -21105,5 +21105,7 @@
 ["Rechercher un nom, un groupe ou un numéro", "Search a name, a group or a number"],
 ["%1 sur %2 joueur(s)", "%1 of %2 player(s)"],
 ["Les numéros des autres joueurs s'afficheront ici dès qu'ils rejoignent votre camp. Votre carnet reste dans l'onglet CARNET.", "Other players' numbers will show here as soon as they join your side. Your contacts stay in the CONTACTS tab."],
-["Vérifiez l'orthographe, ou cherchez par groupe ou par numéro.", "Check the spelling, or search by group or by number."]
+["Vérifiez l'orthographe, ou cherchez par groupe ou par numéro.", "Check the spelling, or search by group or by number."],
+["Aucune étape", "No waypoint"],
+["Touchez POSER LES ÉTAPES SUR LA CARTE, en bas, ou faites un clic droit sur la carte > Point de passage. Un itinéraire partagé par le groupe arrive aussi ici.", "Tap PLACE WAYPOINTS ON THE MAP, at the bottom, or right-click the map > Waypoint. A route shared by the group also arrives here."]
 ]
