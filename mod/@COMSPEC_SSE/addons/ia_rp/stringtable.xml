@@ -2167,6 +2167,11 @@
             <English>Unknown variable: %1 (replaced by « … »)</English>
             <French>Variable inconnue : %1 (remplacée par « … »)</French>
         </Key>
+        <Key ID="STR_COMSPEC_IARP_A_PrevNoTrig">
+            <Original>Add at least one trigger: without one, nobody can ask this question.</Original>
+            <English>Add at least one trigger: without one, nobody can ask this question.</English>
+            <French>Ajoutez au moins un déclencheur : sans lui, personne ne peut poser cette question.</French>
+        </Key>
         <Key ID="STR_COMSPEC_IARP_A_PrevMore">
             <Original>… and %1 more</Original>
             <English>… and %1 more</English>

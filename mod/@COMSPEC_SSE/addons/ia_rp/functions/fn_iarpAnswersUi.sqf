@@ -110,6 +110,8 @@ private _preview = {
     private _out = [];
     if (!_perso) then { _out pushBack format ["<t color='#9EAFA6'>%1</t>", "PrevAuto" call _L]; } else {
         if (_txt isEqualTo []) then { _out pushBack format ["<t color='#F2B847'>%1</t>", "PrevEmpty" call _L]; };
+        private _ek = _st getOrDefault ["entry", [""]];
+        if ([_ek param [0, ""]] call _isCustom && {(_ek param [2, []]) isEqualTo []}) then { _out pushBack format ["<t color='#F2B847'>%1</t>", "PrevNoTrig" call _L]; };
         {
             ([_x] call _render) params ["_s", "_unk"];
             _out pushBack format ["<t color='#9EE6FF'>« %1 »</t>", _s call _esc];
@@ -121,8 +123,25 @@ private _preview = {
     if (_top isNotEqualTo "" && {_top in (_st getOrDefault ["banned", []])}) then { _out pushBack format ["<t color='#F2B847' size='0.85'>%1</t>", "PrevBanned" call _L]; };
     (94839 call _ctl) ctrlSetStructuredText parseText format ["<t size='0.8' color='#7F8A84'>%1</t><br/>%2", "Preview" call _L, _out joinString "<br/>"];
 };
-// Entrée -> contrôles.
+// État d'une ligne de la liste (« Perso (2) ») après une modification, sans redessiner toute la liste.
+private _rowState = {
+    private _lb = 94821 call _ctl;
+    private _k = (_st getOrDefault ["entry", [""]]) param [0, ""];
+    private _e = ["get", [call _list, _k]] call comspec_sse_fnc_iarpAnswers;
+    private _n = ["count", _e] call comspec_sse_fnc_iarpAnswers;
+    private _ban = ((_st getOrDefault ["topics", createHashMap]) getOrDefault [_k, ""]) in (_st getOrDefault ["banned", []]);
+    for "_i" from 0 to ((lbSize _lb) - 1) do {
+        if ((_lb lbData _i) isEqualTo _k) exitWith {
+            _lb lbSetTextRight [_i, if (_ban) then { "BannedTag" call _L } else { if (_n > 0) then { format ["PersoN" call _L, _n] } else { "Auto" call _L } }];
+            _lb lbSetColorRight [_i, [[0.62, 0.68, 0.64, 1], [0.45, 0.8, 0.5, 1], [0.95, 0.72, 0.28, 1]] select ([parseNumber (_n > 0), 2] select _ban)];
+            if ([_k] call _isCustom) then { _lb lbSetText [_i, "   " + ([_e param [1, ""], "CustomNew" call _L] select ((_e param [1, ""]) isEqualTo ""))]; };
+        };
+    };
+};
+// Entrée -> contrôles. Pendant ce temps (« hold ») les évènements des contrôles ne réécrivent rien : un lbSetCurSel ou un
+// ctrlSetText déclenche leur gestionnaire tout de suite.
 private _load = {
+    _st set ["hold", true];
     private _e = _st getOrDefault ["entry", []];
     private _k = _e param [0, ""];
     private _custom = [_k] call _isCustom;
@@ -154,6 +173,7 @@ private _load = {
     };
     (94830 call _ctl) ctrlSetStructuredText parseText _head;
     (94845 call _ctl) ctrlSetStructuredText parseText format ["<t color='#9EAFA6'>%1</t>", "AutoNote" call _L];
+    _st set ["hold", false];
     call _preview;
 };
 private _frameHelp = {
@@ -228,8 +248,10 @@ switch (_op) do {
         _st set ["profile", _p];
         _st set ["answers", +(_p get "answers")];
         _st set ["banned", +(_p get "banned")];
+        _st set ["hold", true];
         (94810 call _ctl) lbSetCurSel ((_evokes find (_p get "evoke")) max 0);
         { (_x call _ctl) cbSetChecked ((_themesBan select _forEachIndex) in (_p get "banned")); } forEach [94811, 94812, 94813, 94814, 94815, 94816];
+        _st set ["hold", false];
         call _frameHelp;
         ["list"] call comspec_sse_fnc_iarpAnswersUi;
         private _lb = 94821 call _ctl;
@@ -278,7 +300,7 @@ switch (_op) do {
         _st set ["busy", false];
     };
     case "pick": {
-        if (isNull _d || {_st getOrDefault ["busy", false]}) exitWith {};
+        if (isNull _d || {_st getOrDefault ["busy", false]} || {_st getOrDefault ["hold", false]}) exitWith {};
         private _lb = 94821 call _ctl;
         private _k = _lb lbData (lbCurSel _lb);
         if (_k isEqualTo "") exitWith {};
@@ -293,7 +315,7 @@ switch (_op) do {
         call _load;
     };
     case "sit": {
-        if (isNull _d) exitWith {};
+        if (isNull _d || {_st getOrDefault ["hold", false]}) exitWith {};
         private _e = _st getOrDefault ["entry", []];
         if (_e isEqualTo []) exitWith {};
         private _s = _sits select ((lbCurSel (94835 call _ctl)) max 0);
@@ -304,16 +326,18 @@ switch (_op) do {
         call _preview;
     };
     case "store": {
-        if (isNull _d || {(_st getOrDefault ["entry", []]) isEqualTo []}) exitWith {};
+        if (isNull _d || {(_st getOrDefault ["entry", []]) isEqualTo []} || {_st getOrDefault ["hold", false]}) exitWith {};
         call _store;
+        // Compte des textes par situation, puis l'état de la ligne (« Perso (2) ») : jamais la saisie en cours réécrite.
+        _st set ["hold", true];
         call _sitLabels;
-        // Numéro de la ligne gardé : la liste est redessinée pour son état (« Perso (2) »).
-        ["list"] call comspec_sse_fnc_iarpAnswersUi;
+        _st set ["hold", false];
+        call _rowState;
         call _preview;
         ["Dirty" call _L, "warn"] call _status;
     };
     case "frame": {
-        if (isNull _d) exitWith {};
+        if (isNull _d || {_st getOrDefault ["hold", false]}) exitWith {};
         private _b = [];
         { if (cbChecked ((94811 + _forEachIndex) call _ctl)) then { _b pushBack _x; }; } forEach _themesBan;
         _st set ["banned", _b];
