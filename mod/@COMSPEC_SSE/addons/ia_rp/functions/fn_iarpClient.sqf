@@ -9,6 +9,7 @@
       notice   [clé de stringtable, valeurs…]    message court (toast)
       log      [lignes] · zeus [lignes]          journal (onglet JOURNAL ; Zeus : lignes en direct)
       profile  [ia, profil texte]                profil lu pour l'atelier IA du Zeus
+      mark     [position, lieu, nom de l'IA]     renseignement précis avec un lieu : marqueur sur MA carte seulement
     Langue : celle du jeu (français, sinon anglais) ; faits de la couverture traduits par l'ATAK s'il est chargé.
 */
 params [["_op", "", [""]], ["_a", []]];
@@ -115,6 +116,19 @@ switch (_op) do {
         if ((count _rows) > 500) then { _rows deleteAt 0; };
         uiNamespace setVariable ["comspec_sse_iarpLogRows", _rows];
         ["refreshLog"] call comspec_sse_fnc_iarpUi;
+    };
+    case "mark": {
+        _a params [["_pos", []], ["_label", ""], ["_who", ""]];
+        if !(_pos isEqualType [] && {(count _pos) >= 2}) exitWith {};
+        // Marqueur local (createMarkerLocal) : personne d'autre ne le voit ; texte simple, jamais interprété.
+        private _n = format ["comspec_sse_iarpIntel_%1_%2", round (diag_tickTime * 1000), floor random 1000];
+        private _m = createMarkerLocal [_n, [_pos select 0, _pos select 1]];
+        _m setMarkerTypeLocal "hd_unknown";
+        _m setMarkerColorLocal "ColorOrange";
+        private _what = [_label, localize "STR_COMSPEC_IARP_MarkPlace"] select (_label isEqualTo "");
+        if (_who isNotEqualTo "") then { _what = format ["%1 (%2)", _what, _who]; };
+        _m setMarkerTextLocal format [localize "STR_COMSPEC_IARP_MarkIntel", _what];
+        ["notice", ["STR_COMSPEC_IARP_N_Marked", _what]] call comspec_sse_fnc_iarpClient;
     };
     case "profile": {
         _a params [["_t", objNull], ["_raw", ""]];

@@ -107,6 +107,16 @@
             <English>Personality and dialogue applied to every synchronised AI. Open the workshop to edit it, test a sentence and see the answer. Example: preset « Corrupt informant », knowledge « The militia chief sleeps at the garage ».</English>
             <French>Personnalité et dialogue appliqués à chaque IA synchronisée. Ouvrez l'atelier pour le modifier, tester une phrase et voir la réponse. Exemple : profil « Informateur corrompu », savoir « Le chef de la milice dort au garage ».</French>
         </Key>
+        <Key ID="STR_COMSPEC_IARP_MarkIntel">
+            <Original>Intel: %1</Original>
+            <English>Intel: %1</English>
+            <French>Renseignement : %1</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_MarkPlace">
+            <Original>Reported place</Original>
+            <English>Reported place</English>
+            <French>Lieu signalé</French>
+        </Key>
         <Key ID="STR_COMSPEC_IARP_Me">
             <Original>Me</Original>
             <English>Me</English>
@@ -131,6 +141,11 @@
             <Original>Log copied to the clipboard (%1 lines).</Original>
             <English>Log copied to the clipboard (%1 lines).</English>
             <French>Journal copié dans le presse-papiers (%1 lignes).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_N_Marked">
+            <Original>Position noted on your map: %1</Original>
+            <English>Position noted on your map: %1</English>
+            <French>Position notée sur votre carte : %1</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_N_NoAi">
             <Original>Place the module on a living AI (not a player), or select AIs first.</Original>
@@ -247,6 +262,26 @@
             <English>Free text with AIs</English>
             <French>Texte libre avec les IA</French>
         </Key>
+        <Key ID="STR_COMSPEC_IARP_S_HaltDist_D">
+            <Original>A stopped AI goes on its way as soon as the player who stopped it is further away than this. Example: 25 m, the AI leaves once the patrol has walked off.</Original>
+            <English>A stopped AI goes on its way as soon as the player who stopped it is further away than this. Example: 25 m, the AI leaves once the patrol has walked off.</English>
+            <French>Une IA arrêtée reprend sa route dès que le joueur qui l'a arrêtée est plus loin que cette distance. Exemple : 25 m, l'IA repart une fois la patrouille éloignée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_HaltDist_T">
+            <Original>Release distance after a « Stop » (m)</Original>
+            <English>Release distance after a « Stop » (m)</English>
+            <French>Distance de relâche après un « Stop » (m)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_HaltTime_D">
+            <Original>An AI told « Stop! » waits this long, then goes back to what it was doing (it never stays frozen). It also leaves earlier if the player who stopped it walks away, or if its behaviour changes (it flees, turns hostile, is let go). Example: 120 s, enough time to check papers and ask a few questions.</Original>
+            <English>An AI told « Stop! » waits this long, then goes back to what it was doing (it never stays frozen). It also leaves earlier if the player who stopped it walks away, or if its behaviour changes (it flees, turns hostile, is let go). Example: 120 s, enough time to check papers and ask a few questions.</English>
+            <French>Une IA à qui l'on a dit « Stop ! » attend ce temps, puis reprend ce qu'elle faisait (elle ne reste jamais figée). Elle repart aussi plus tôt si le joueur qui l'a arrêtée s'éloigne, ou si son comportement change (elle fuit, devient hostile, est laissée partir). Exemple : 120 s, le temps de contrôler les papiers et de poser quelques questions.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_HaltTime_T">
+            <Original>Length of a « Stop » (s)</Original>
+            <English>Length of a « Stop » (s)</English>
+            <French>Durée d'un « Stop » (s)</French>
+        </Key>
         <Key ID="STR_COMSPEC_IARP_S_LogMax_D">
             <Original>Lines kept on the server; the oldest go first. Example: 500 for an evening of play.</Original>
             <English>Lines kept on the server; the oldest go first. Example: 500 for an evening of play.</English>
@@ -297,6 +332,26 @@
             <English>Bubble range (m)</English>
             <French>Portée des bulles (m)</French>
         </Key>
+        <Key ID="STR_COMSPEC_IARP_S_ShotRange_D">
+            <Original>A shot fired further than this from the AI is ignored (the game reports shots up to about 69 m). Example: 40 m, a shot on the other side of the square still makes the person you are questioning jump.</Original>
+            <English>A shot fired further than this from the AI is ignored (the game reports shots up to about 69 m). Example: 40 m, a shot on the other side of the square still makes the person you are questioning jump.</English>
+            <French>Un tir plus loin que cette distance de l'IA est ignoré (le jeu signale les tirs jusqu'à 69 m environ). Exemple : 40 m, un coup de feu de l'autre côté de la place fait encore sursauter la personne interrogée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_ShotRange_T">
+            <Original>Range of nearby shots (m)</Original>
+            <English>Range of nearby shots (m)</English>
+            <French>Portée des tirs proches (m)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Shots_D">
+            <Original>An AI you are talking to (for 3 minutes) or that is being checked reacts when someone fires nearby: it drops to the ground (« Don't shoot! »), surrenders, runs away or, if it is an armed and aggressive insurgent, fights, according to its personality. Only those AIs are watched, nothing runs for the others. Example: a shot fired 15 m from a frightened civilian you are questioning: he raises his hands.</Original>
+            <English>An AI you are talking to (for 3 minutes) or that is being checked reacts when someone fires nearby: it drops to the ground (« Don't shoot! »), surrenders, runs away or, if it is an armed and aggressive insurgent, fights, according to its personality. Only those AIs are watched, nothing runs for the others. Example: a shot fired 15 m from a frightened civilian you are questioning: he raises his hands.</English>
+            <French>Une IA à qui l'on parle (pendant 3 minutes) ou qu'on contrôle réagit quand quelqu'un tire près d'elle : elle se jette au sol (« Ne tirez pas ! »), se rend, s'enfuit ou, si c'est un insurgé armé et agressif, se bat, selon sa personnalité. Seules ces IA sont suivies, rien ne tourne pour les autres. Exemple : un coup de feu à 15 m d'un civil apeuré que vous interrogez : il lève les mains.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Shots_T">
+            <Original>AIs react to nearby shots</Original>
+            <English>AIs react to nearby shots</English>
+            <French>Les IA réagissent aux tirs proches</French>
+        </Key>
         <Key ID="STR_COMSPEC_IARP_S_Try_D">
             <Original>Chance of [SUCCESS] for a /try, rolled once by the server: everyone nearby sees the same result. Example: 50, one in two.</Original>
             <English>Chance of [SUCCESS] for a /try, rolled once by the server: everyone nearby sees the same result. Example: 50, one in two.</English>
@@ -316,6 +371,26 @@
             <Original>Typing indicator</Original>
             <English>Typing indicator</English>
             <French>Indicateur d'écriture</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_WitnessRange_D">
+            <Original>Civilians further than this from the threatened person do not count as witnesses. Example: 30 m, the people on the same street.</Original>
+            <English>Civilians further than this from the threatened person do not count as witnesses. Example: 30 m, the people on the same street.</English>
+            <French>Les civils plus loin que cette distance de la personne menacée ne comptent pas comme témoins. Exemple : 30 m, les gens de la même rue.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_WitnessRange_T">
+            <Original>Witness range (m)</Original>
+            <English>Witness range (m)</English>
+            <French>Portée des témoins (m)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Witness_D">
+            <Original>Threatening a civilian or aiming at him worries the civilians nearby who see the scene (5 at most): those being checked become more tense (they may flee or refuse), the others turn to look or, if fearful, walk away quickly. The shock fades by itself within a few minutes. Example: you aim at the shopkeeper: the two passers-by watching move away.</Original>
+            <English>Threatening a civilian or aiming at him worries the civilians nearby who see the scene (5 at most): those being checked become more tense (they may flee or refuse), the others turn to look or, if fearful, walk away quickly. The shock fades by itself within a few minutes. Example: you aim at the shopkeeper: the two passers-by watching move away.</English>
+            <French>Menacer un civil ou le braquer inquiète les civils proches qui voient la scène (5 au plus) : ceux qu'on contrôle deviennent plus tendus (ils peuvent fuir ou refuser), les autres se retournent pour regarder ou, s'ils sont peureux, s'éloignent vite. Le choc retombe seul en quelques minutes. Exemple : vous braquez le marchand : les deux passants qui regardent s'éloignent.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Witness_T">
+            <Original>Witnesses of a threat</Original>
+            <English>Witnesses of a threat</English>
+            <French>Témoins d'une menace</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_S_Zeus_D">
             <Original>Every new line is sent live to Zeus players (LOG tab, Zeus module « Exchange log »). Players only see their own exchanges. Example: the game master follows a checkpoint interrogation from afar.</Original>
@@ -583,9 +658,9 @@
             <French>Savoir</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Know_D">
-            <Original>Intelligence it can give if questioned well (« What do you know? », « Have you seen armed men? »), once unlocked. Empty: it knows nothing and says so. Example: A white pickup without plates went north last night.</Original>
-            <English>Intelligence it can give if questioned well (« What do you know? », « Have you seen armed men? »), once unlocked. Empty: it knows nothing and says so. Example: A white pickup without plates went north last night.</English>
-            <French>Renseignement qu'elle peut donner si on l'interroge bien (« Que savez-vous ? », « Avez-vous vu des hommes armés ? »), une fois débloqué. Vide : elle ne sait rien et le dit. Exemple : Un pick-up blanc sans plaques est parti vers le nord hier soir.</French>
+            <Original>Intelligence it can give if questioned well (« What do you know? », « Have you seen armed men? »), once unlocked. Empty: it knows nothing and says so. One sentence: given once it trusts you, is bribed or hears the keyword. By levels, one per line: « Vague: » (pressure or some trust), « Precise: » (unlocked), « Complete: » (great trust, confession or two bribes), and « Place: » followed by a grid, coordinates or a mission marker name, then the place name: the precise level puts it on the map of the player who got it, for him only. Example: Vague: Armed men gather at night. / Precise: At the abandoned farm, after evening prayer. / Complete: Six of them, weapons under the barn. / Place: 045 078 Abandoned farm</Original>
+            <English>Intelligence it can give if questioned well (« What do you know? », « Have you seen armed men? »), once unlocked. Empty: it knows nothing and says so. One sentence: given once it trusts you, is bribed or hears the keyword. By levels, one per line: « Vague: » (pressure or some trust), « Precise: » (unlocked), « Complete: » (great trust, confession or two bribes), and « Place: » followed by a grid, coordinates or a mission marker name, then the place name: the precise level puts it on the map of the player who got it, for him only. Example: Vague: Armed men gather at night. / Precise: At the abandoned farm, after evening prayer. / Complete: Six of them, weapons under the barn. / Place: 045 078 Abandoned farm</English>
+            <French>Renseignement qu'elle peut donner si on l'interroge bien (« Que savez-vous ? », « Avez-vous vu des hommes armés ? »), une fois débloqué. Vide : elle ne sait rien et le dit. Une phrase : donnée quand elle a confiance, est payée ou entend le mot-clé. Par paliers, un par ligne : « Vague : » (pression ou un peu de confiance), « Précis : » (débloqué), « Complet : » (grande confiance, aveu ou deux pots-de-vin), et « Lieu : » suivi d'un carroyage, de coordonnées ou du nom d'un marqueur de la mission, puis du nom du lieu : le palier précis le pose sur la carte du joueur qui l'obtient, pour lui seul. Exemple : Vague : Des hommes armés se retrouvent la nuit. / Précis : À la ferme abandonnée, après la prière du soir. / Complet : Ils sont six, les armes sous la grange. / Lieu : 045 078 Ferme abandonnée</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Lang">
             <Original>Language</Original>
@@ -818,9 +893,9 @@
             <French>Secrets</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Secrets_D">
-            <Original>What it hides: a memo for Zeus, never said by the AI. Example: He keeps a rifle under his pickup's seat.</Original>
-            <English>What it hides: a memo for Zeus, never said by the AI. Example: He keeps a rifle under his pickup's seat.</English>
-            <French>Ce qu'elle cache : aide-mémoire du Zeus, jamais dit par l'IA. Exemple : Il garde un fusil sous le siège de son pick-up.</French>
+            <Original>What it hides: a memo for Zeus. The AI only says it if it breaks down when confronted (« Your papers are fake », « You're lying »). Example: He keeps a rifle under his pickup's seat.</Original>
+            <English>What it hides: a memo for Zeus. The AI only says it if it breaks down when confronted (« Your papers are fake », « You're lying »). Example: He keeps a rifle under his pickup's seat.</English>
+            <French>Ce qu'elle cache : aide-mémoire du Zeus. L'IA ne le dit que si elle craque quand on la confronte (« Vos papiers sont faux », « Tu mens »). Exemple : Il garde un fusil sous le siège de son pick-up.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Sensitive">
             <Original>Sensitive subjects</Original>

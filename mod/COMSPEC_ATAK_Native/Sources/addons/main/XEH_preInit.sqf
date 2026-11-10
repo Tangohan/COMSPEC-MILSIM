@@ -1116,6 +1116,10 @@ private _ai = ["COMSPEC", "ATAK · IA"];
 ["comspec_atak_native_ai_atak_item", "EDITBOX",
     ["Objet donné aux IA", "Classe de l'objet ATAK mis dans l'inventaire des IA équipées (COMSPEC_ATAK_Phone par défaut)."],
     _ai, "COMSPEC_ATAK_Phone", 1] call comspec_atak_native_fnc_addSetting;
+// Ordres aux IA (fn_aiOrder « contact ») : compte rendu de contact d'un groupe IA commandé, une fois par minute au plus.
+["comspec_atak_native_ai_contact", "CHECKBOX",
+    ["Compte rendu de contact des groupes IA", "Un groupe IA à qui l'on a donné un ordre (téléphone, PC du poste TOC) signale lui-même ses contacts : direction, distance, ennemis repérés et blessés du groupe, au plus une fois par minute, dans une bulle au-dessus de son chef et une notification au donneur d'ordre. Décoché : il se tait. Exemple : « Alpha 1-2 : Contact nord-est à 250 m, 3 ennemis repérés, 1 blessés »."],
+    _ai, true, 1] call comspec_atak_native_fnc_addSetting;
 // Appui feu typé (fn_fireSupport) : complète l'app CAS (APPEL DE FEU), la carte, Tâches, le poste TOC et l'app JTAC.
 // Réglages serveur (forçables par la mission), sauf l'affichage des cercles (réglage personnel).
 private _fs = ["COMSPEC", "ATAK · Appui feu"];

@@ -176,7 +176,9 @@ switch (_op) do {
         if ((_p get "name") isNotEqualTo "") then { _facts set ["name", _p get "name"]; };
         private _vars = +_facts;
         _vars set ["first", ((_facts getOrDefault ["name", ""]) splitString " ") param [0, ""]];
-        _vars set ["know", _p get "know"];
+        // Savoir par paliers : l'aperçu montre le palier précis (sinon le premier rempli).
+        private _tiers = (["knowTiers", _p get "know"] call comspec_sse_fnc_iarpProfile) select 0;
+        _vars set ["know", (([_tiers select 1] + _tiers) select { _x isNotEqualTo "" }) param [0, ""]];
         _vars set ["sir", ["monsieur", "sir"]];
         _vars set ["weapon", ""];
         // Aperçu : même table que le serveur, sans hasard sur la décision (le contexte du jeu manque ici).
@@ -185,9 +187,10 @@ switch (_op) do {
             case (_intent in ["origin", "employer", "job", "travel", "pob", "contact", "address", "name", "age", "family"]): { ["dunno", _intent] select ((_facts getOrDefault [_key, ""]) isNotEqualTo "") };
             case (_intent in ["handsup", "halt", "kneel", "follow", "leave", "dismount", "trunk"]): { ["noComply", "comply"] select ((_p get "fear") >= (_p get "aggro")) };
             case (_intent isEqualTo "bribe"): { ["bribeNo", "bribeYes"] select ((_p get "bribe") >= 50) };
-            case (_intent isEqualTo "intel"): { ["intelNo", "intelYes"] select ((_p get "know") isNotEqualTo "" && {(_p get "unlock") isNotEqualTo "never"}) };
+            case (_intent isEqualTo "intel"): { ["intelNo", "intelYes"] select ((_vars get "know") isNotEqualTo "" && {(_p get "unlock") isNotEqualTo "never"}) };
             case (_intent isEqualTo "search"): { ["searchNo", "searchYes"] select ((((_p get "fear") + (_p get "honesty")) / 2) >= 50) };
             case (_intent isEqualTo "weapons"): { "weaponsNo" };
+            case (_intent isEqualTo "confront"): { ["confrontInnocent", "confrontDeny"] select ((_p get "secrets") isNotEqualTo [] || {(_p get "role") in ["insurge", "hvt", "agent"]}) };
             case (_intent isEqualTo "papers"): { "comply" };
             default { _intent };
         };
