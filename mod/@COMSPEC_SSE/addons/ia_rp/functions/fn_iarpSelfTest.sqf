@@ -3,8 +3,15 @@
     [] call comspec_sse_fnc_iarpSelfTest -> [échecs [textes…], infos [textes…]]
       interprète   phrases FR et EN (accents, ponctuation, majuscules, fautes de frappe, négation, faux positifs)
                    -> intention attendue ; deux demandes dans un message -> dans l'ordre ; coût mesuré (info)
-      banc d'essai data\iarp_corpus.sqf (300 phrases FR et 150 EN au moins) : taux de reconnaissance (95 % attendus),
-                   aucun pot-de-vin ni menace sorti d'une phrase qui ne les demande pas ; phrases de la capture 4.2.1
+      banc d'essai data\iarp_corpus.sqf (1 000 phrases FR et 500 EN au moins) : taux de reconnaissance (95 % attendus),
+                   aucun pot-de-vin, menace ni aveu sorti d'une phrase qui ne les demande pas ; phrases de la capture 4.2.1
+      jamais vues  data\iarp_unseen.sqf (200 FR et 100 EN au moins, jamais utilisées pour régler le lexique) : taux honnête
+                   (85 % attendus), aucun faux positif dangereux
+      cadre        civil sans savoir : 100 questions de renseignement au moins, aucune réplique candidate ne contient un terme
+                   de scénario (arme, armés, pick-up, mine, explosif, insurgé, cache…) ; le même civil avec « Précis : » et
+                   « Lieu : » donne son savoir et le lieu quand il a confiance ; thèmes interdits et niveaux
+      réponses     réponses perso (fn_iarpAnswers) : validation, variables {prenom} -> {first}, situation la plus précise,
+                   ordre, question perso « mot de passe », échappement ; profil sérialisé et relu avec ses réponses
       guide        chaque exemple du guide (lexique) compris comme son intention ; menu « Faire une action » : chaque
                    geste FR et EN reconnu ; ton : un peureux sans menace répond calmement ; faits absents jamais cités
       banque       au moins 50 intentions, 6 phrases de base au moins chacune (FR et EN) ; variantes (base × décors)
@@ -27,7 +34,7 @@ private _info = [];
     ["Comment vous appelez-vous ?", "name"], ["What's your name?", "name"], ["Quel âge avez-vous ?", "age"], ["Vos papiers, s'il vous plaît.", "papers"],
     ["Show me your ID", "papers"], ["Je vais vous fouiller.", "search"], ["Mains en l'air !", "handsup"], ["Hands up!", "handsup"],
     ["Suivez-moi.", "follow"], ["Ne bougez plus !", "halt"], ["Circulez.", "leave"], ["À genoux !", "kneel"], ["Descendez du véhicule.", "dismount"],
-    ["Ouvrez le coffre.", "trunk"], ["Je vais vous tuer.", "threat"], ["Combien pour oublier ça ? 50 dollars.", "bribe"], ["Avez-vous vu des hommes armés ?", "intel"],
+    ["Ouvrez le coffre.", "trunk"], ["Je vais vous tuer.", "threat"], ["Combien pour oublier ça ? 50 dollars.", "bribe"], ["Avez-vous vu des hommes armés ?", "seenArmed"],
     ["Vous êtes armé ?", "weapons"], ["Calmez-vous, on ne vous veut pas de mal.", "calm"], ["Bonjour !", "greet"], ["Merci beaucoup.", "thanks"],
     ["Au revoir.", "bye"], ["Comment ça va ?", "howareyou"], ["Votre famille va bien ?", "family"], ["Blablabla xyz", "unknown"], ["", "unknown"],
     // Fautes de frappe : lettres inversées, doublées, manquantes, accents absents, majuscules, lettres répétées.
@@ -71,7 +78,7 @@ private _tc = diag_tickTime;
     private _e = _okC getOrDefault [_lg, [0, 0]];
     _okC set [_lg, [(_e select 0) + ([0, 1] select (_got isEqualTo _want)), (_e select 1) + 1]];
     if (_got isNotEqualTo _want) then { _missC pushBack format ["« %1 » : %2 au lieu de %3", _txt, _got, _want]; };
-    if (_got in ["bribe", "threat"] && {_got isNotEqualTo _want}) then { _danger pushBack format ["« %1 » -> %2", _txt, _got]; };
+    if (_got in ["bribe", "threat", "confront"] && {_got isNotEqualTo _want}) then { _danger pushBack format ["« %1 » -> %2", _txt, _got]; };
 } forEach _corpus;
 private _msC = round (((diag_tickTime - _tc) / ((count _corpus) max 1)) * 10000) / 10;
 private _rate = {
@@ -82,10 +89,29 @@ private _rate = {
 (["fr"] call _rate) params ["_rFr", "_nFr"];
 (["en"] call _rate) params ["_rEn", "_nEn"];
 _info pushBack format ["banc d'essai : %1 %% en français (%2 phrases), %3 %% en anglais (%4 phrases), %5 ms par phrase", _rFr, _nFr, _rEn, _nEn, _msC];
-if (_nFr < 300 || {_nEn < 150}) then { _ko pushBack format ["banc d'essai : %1 phrases FR et %2 EN (300 et 150 attendues)", _nFr, _nEn]; };
+if (_nFr < 1000 || {_nEn < 500}) then { _ko pushBack format ["banc d'essai : %1 phrases FR et %2 EN (1 000 et 500 attendues)", _nFr, _nEn]; };
 if (_rFr < 95 || {_rEn < 95}) then { _ko pushBack format ["banc d'essai : %1 %% FR, %2 %% EN (95 %% attendus) ; %3", _rFr, _rEn, (_missC select [0, 8]) joinString " ; "]; };
 if (_danger isNotEqualTo []) then { _ko pushBack format ["faux positifs dangereux : %1", _danger joinString " ; "]; };
 { _info pushBack ("banc d'essai, raté : " + _x); } forEach (_missC select [0, 5]);
+// Phrases jamais vues (data\iarp_unseen.sqf) : taux honnête, séparé du banc d'essai qui sert à régler le lexique.
+private _unseen = ["unseen"] call comspec_sse_fnc_iarpData;
+private _okU = createHashMapFromArray [["fr", [0, 0]], ["en", [0, 0]]];
+private _missU = [];
+{
+    _x params [["_lg", "fr"], ["_txt", ""], ["_want", ""]];
+    private _got = ([_txt] call comspec_sse_fnc_iarpIntent) select 0;
+    private _e = _okU getOrDefault [_lg, [0, 0]];
+    _okU set [_lg, [(_e select 0) + (parseNumber (_got isEqualTo _want)), (_e select 1) + 1]];
+    if (_got isNotEqualTo _want) then { _missU pushBack format ["« %1 » : %2 au lieu de %3", _txt, _got, _want]; };
+    if (_got in ["bribe", "threat", "confront"] && {_got isNotEqualTo _want}) then { _danger pushBack format ["(jamais vue) « %1 » -> %2", _txt, _got]; };
+} forEach _unseen;
+private _rateU = { params ["_lg"]; (_okU getOrDefault [_lg, [0, 0]]) params ["_o", "_n"]; [round ((_o / (_n max 1)) * 1000) / 10, _n] };
+(["fr"] call _rateU) params ["_uFr", "_unFr"];
+(["en"] call _rateU) params ["_uEn", "_unEn"];
+_info pushBack format ["phrases jamais vues : %1 %% en français (%2 phrases), %3 %% en anglais (%4 phrases)", _uFr, _unFr, _uEn, _unEn];
+if (_unFr < 200 || {_unEn < 100}) then { _ko pushBack format ["phrases jamais vues : %1 FR et %2 EN (200 et 100 attendues)", _unFr, _unEn]; };
+if (_uFr < 85 || {_uEn < 85}) then { _ko pushBack format ["phrases jamais vues : %1 %% FR, %2 %% EN (85 %% attendus) ; %3", _uFr, _uEn, (_missU select [0, 6]) joinString " ; "]; };
+if ((_danger select { (_x find "(jamais vue)") >= 0 }) isNotEqualTo []) then { _ko pushBack format ["faux positifs dangereux (jamais vues) : %1", (_danger select { (_x find "(jamais vue)") >= 0 }) joinString " ; "]; };
 // Phrases de la capture du propriétaire (4.2.1) et small talk.
 {
     _x params ["_txt", "_want"];
@@ -111,7 +137,10 @@ private _nEx = 0;
     } forEach _entries;
 } forEach (["guide"] call comspec_sse_fnc_iarpData);
 private _themes = (["guide"] call comspec_sse_fnc_iarpData) apply { _x select 0 };
-if !(["talk", "identity", "cover", "search", "orders", "pressure", "bribe", "confront", "intel", "answer", "rp"] isEqualTo (_themes select [0, 11])) then { _ko pushBack format ["guide : thèmes %1", _themes]; };
+if !(["talk", "identity", "cover", "presence", "search", "orders", "pressure", "bribe", "confront", "intel", "local", "relations", "personal", "rules", "offtopic", "answer", "rp"] isEqualTo (_themes select [0, 17])) then { _ko pushBack format ["guide : thèmes %1", _themes]; };
+private _nI = count ((["lexicon"] call comspec_sse_fnc_iarpData) select { ((_x select 0) select [0, 1]) isNotEqualTo "_" });
+if (_nI < 114) then { _ko pushBack format ["lexique : %1 intentions (114 attendues, trois fois celles de la 4.3.0)", _nI]; };
+_info pushBack format ["lexique : %1 intentions", _nI];
 _info pushBack format ["guide : %1 thèmes, %2 exemples vérifiés", count _themes, _nEx];
 // Menu « Faire une action » : chaque geste (FR et EN) est reconnu par les règles des /me (lexique « _gesture »).
 private _gest = [];
@@ -187,7 +216,7 @@ if ((count (_k3 select 1)) < 2 || {(_k3 select 2) isNotEqualTo "Ferme"}) then { 
 
 private _bank = ["bank"] call comspec_sse_fnc_iarpData;
 private _intents = (keys _bank) select { (_x select [0, 1]) isNotEqualTo "_" };
-if ((count _intents) < 50) then { _ko pushBack format ["banque : %1 intentions (50 attendues)", count _intents]; };
+if ((count _intents) < 150) then { _ko pushBack format ["banque : %1 répliques (150 attendues)", count _intents]; };
 private _deco = 1;
 { private _n = 0; { _n = _n + count _y; } forEach (_bank getOrDefault [_x, createHashMap]); _deco = _deco + _n; } forEach ["_open", "_hes", "_close", "_stage"];
 private _poor = [];
@@ -220,4 +249,110 @@ for "_i" from 1 to 10 do {
 if (_dup >= 3) then { _ko pushBack format ["redite : %1 doublons sur 10", _dup]; };
 if (_miss > 0) then { _ko pushBack format ["cohérence : %1 réponse(s) sur 10 sans la ville de la couverture", _miss]; };
 _info pushBack format ["redite : %1 doublon(s) sur 10 ; cohérence : %2 / 10", _dup, 10 - _miss];
+
+// ---------------------------------------------------------------- cadre : une IA ne parle que de ce qu'elle sait
+// Civil sans savoir (« Rien de sensible » par défaut) : pour chaque question de renseignement du banc d'essai et des phrases
+// jamais vues, la réplique que le serveur choisirait (intelNo, variante de la question, thème interdit : offLimits) ; AUCUNE
+// des phrases candidates (pas seulement celle tirée) ne contient un terme de scénario.
+private _intelSubs = ["seenArmed", "seenVehicles", "strangers", "explosives", "mines", "whereIs", "leader", "howMany", "whenPassed", "happened",
+    "heard", "whereWent", "describe", "cache", "base", "checkpoints", "safety", "problems", "roadSafe", "knowPerson", "threatened"];
+private _watch = ["arme", "armes", "armee", "armees", "pick", "pickup", "pickups", "mine", "mines", "minee", "minees", "explosif", "explosifs", "explosive",
+    "explosives", "bombe", "bombes", "bomb", "bombs", "insurge", "insurges", "insurgent", "insurgents", "rebelle", "rebelles", "rebel", "rebels", "combattant",
+    "combattants", "fighters", "milice", "militia", "cache", "caches", "stash", "technique", "technical", "embuscade", "ambush", "attentat", "ied",
+    "detonateur", "detonator", "grenade", "grenades", "weapon", "weapons", "gun", "guns", "armed", "rifle", "fusil", "terroriste", "terroristes", "terrorist"];
+private _civ = ["normalize", createHashMapFromArray [["role", "civil"]]] call comspec_sse_fnc_iarpProfile;
+(["frame", _civ] call comspec_sse_fnc_iarpAnswers) params ["_lvlC", "_forbidC"];
+if (_lvlC isNotEqualTo "none") then { _ko pushBack format ["cadre : civil sans savoir au niveau %1 (« none » attendu)", _lvlC]; };
+private _ctxC = createHashMapFromArray [["forbid", _forbidC], ["tension", 0], ["aimed", 0]];
+private _varsC = createHashMapFromArray [["sir", ["monsieur", "sir"]], ["player", "Martin"]];
+private _qs = (_corpus + _unseen) select { (_x select 2) in (_intelSubs + ["intel"]) };
+private _bad = [];
+private _seenKeys = createHashMap;
+{
+    private _got = ([_x select 1] call comspec_sse_fnc_iarpIntent) select 0;
+    private _gi = [_got, "intelNo"] select (_got in (_intelSubs + ["intel"]));
+    private _gk = format ["%1.%2", _gi, _got];
+    if (_gk in _bank) then { _gi = _gk; };
+    if !(_gi in _seenKeys) then {
+        private _pool = [_gi, _civ, _ctxC, [], _varsC, "pool"] call comspec_sse_fnc_iarpGen;
+        private _hits = [];
+        {
+            private _l = _x;
+            { private _toks = (_x call comspec_sse_fnc_iarpNorm) splitString " "; { if (_x in _toks) then { _hits pushBackUnique _x; }; } forEach _watch; } forEach [_l select 0, _l param [1, ""]];
+        } forEach _pool;
+        _seenKeys set [_gi, _hits];
+    };
+    private _h = _seenKeys get _gi;
+    if (_h isNotEqualTo []) then { _bad pushBack format ["« %1 » (%2) : %3", _x select 1, _gi, _h joinString ", "]; };
+} forEach _qs;
+if ((count _qs) < 100) then { _ko pushBack format ["cadre : %1 questions de renseignement (100 attendues)", count _qs]; };
+if (_bad isNotEqualTo []) then { _ko pushBack format ["cadre : civil sans savoir, terme de scénario dans %1 réponse(s) : %2", count _bad, (_bad select [0, 4]) joinString " ; "]; };
+_info pushBack format ["cadre : civil sans savoir, %1 questions de renseignement, %2 réplique(s) avec un terme de scénario", count _qs, count _bad];
+// Phrases étiquetées (« hint », thèmes) : jamais chez « Rien de sensible » ; « Libre » les garde.
+private _intelNoC = ["intelNo", _civ, _ctxC, [], _varsC, "pool"] call comspec_sse_fnc_iarpGen;
+if ((_intelNoC findIf { (_x param [2, []]) isNotEqualTo [] }) >= 0) then { _ko pushBack "cadre : phrase étiquetée chez un civil sans savoir"; };
+private _free = ["normalize", createHashMapFromArray [["role", "civil"], ["evoke", "free"]]] call comspec_sse_fnc_iarpProfile;
+(["frame", _free] call comspec_sse_fnc_iarpAnswers) params ["", "_forbidF"];
+private _intelNoF = ["intelNo", _free, createHashMapFromArray [["forbid", _forbidF]], [], _varsC, "pool"] call comspec_sse_fnc_iarpGen;
+if ((_intelNoF findIf { "armed" in (_x param [2, []]) }) < 0) then { _ko pushBack "cadre : « Libre » écarte encore les phrases étiquetées"; };
+// Thème interdit : « Explosifs » coché même en « Libre ».
+private _banP = ["normalize", createHashMapFromArray [["role", "insurge"], ["evoke", "free"], ["banned", ["explosives", "inconnu"]]]] call comspec_sse_fnc_iarpProfile;
+(["frame", _banP] call comspec_sse_fnc_iarpAnswers) params ["_lvlB", "_forbidB", "_bannedB"];
+if (_bannedB isNotEqualTo ["explosives"] || {!("explosives" in _forbidB)} || {_lvlB isNotEqualTo "free"}) then { _ko pushBack format ["cadre : thèmes interdits %1 / %2", _bannedB, _forbidB]; };
+if (((["topics"] call comspec_sse_fnc_iarpData) getOrDefault ["mines", ""]) isNotEqualTo "explosives") then { _ko pushBack "cadre : « mines » n'a pas le thème explosives"; };
+// Le même civil avec un savoir et un lieu : il le donne quand il a confiance (palier précis), avec la position.
+private _knowP = ["normalize", createHashMapFromArray [["role", "civil"], ["know", format ["Précis : Trois hommes dorment à la ferme.%1Lieu : [4512, 7820] Ferme abandonnée", _nl]]]] call comspec_sse_fnc_iarpProfile;
+(["frame", _knowP] call comspec_sse_fnc_iarpAnswers) params ["_lvlK", "", "", "_knowsK"];
+(["knowTiers", _knowP get "know"] call comspec_sse_fnc_iarpProfile) params ["_tK", "_posK", "_labK"];
+private _lvK = ["intelLevel", [_knowP, 70, false, 0, false, false, "", 0, 0]] call comspec_sse_fnc_iarpProfile;
+if (_lvlK isNotEqualTo "known" || {!_knowsK} || {_lvK < 2} || {(_tK select 1) isEqualTo ""} || {_posK isNotEqualTo [4512, 7820]} || {_labK isNotEqualTo "Ferme abandonnée"}) then {
+    _ko pushBack format ["cadre : civil avec savoir %1 %2 palier %3 lieu %4 %5", _lvlK, _knowsK, _lvK, _posK, _labK];
+};
+private _lvK0 = ["intelLevel", [_knowP, 20, false, 0, false, false, "", 0, 0]] call comspec_sse_fnc_iarpProfile;
+if (_lvK0 >= 2) then { _ko pushBack "cadre : civil avec savoir le donne sans confiance"; };
+
+// ---------------------------------------------------------------- réponses écrites par le maître du jeu (fn_iarpAnswers)
+private _ansIn = [
+    ["name", "", [], "random", [["*", ["Je suis {Prénom}, le boulanger. Tout le monde me connaît ici."]], ["fear", ["Je… je suis {prenom} !"]], ["bidon", ["x"]]], 0, ""],
+    ["seenArmed", "", [], "seq", [["*", ["Hier soir, trois pick-up vers le nord.", "Ils étaient six."]]], 2, "[4512, 7820] Ferme"],
+    ["c1", "Mot de passe", ["mot de passe", "password"], "random", [["*", ["Le faucon vole bas."]]], 0, ""],
+    ["c2", "Sans déclencheur", [], "random", [["*", ["x"]]], 0, ""],
+    ["papers", "", [], "random", [], 0, ""],
+    ["job", "", [], "random", [["*", [format ["Ligne%1coupée <b>&", toString [10]]]]], 9, ""]
+];
+private _ans = ["normalize", _ansIn] call comspec_sse_fnc_iarpAnswers;
+if (((_ans apply { _x select 0 }) isNotEqualTo ["name", "seenArmed", "c1", "job"])) then { _ko pushBack format ["réponses : validation %1", _ans apply { _x select 0 }]; };
+private _eName = ["get", [_ans, "name"]] call comspec_sse_fnc_iarpAnswers;
+if (((_eName select 4) apply { _x select 0 }) isNotEqualTo ["*", "fear"]) then { _ko pushBack "réponses : situation inconnue gardée"; };
+if (((["get", [_ans, "job"]] call comspec_sse_fnc_iarpAnswers) param [5, -1]) isNotEqualTo 3) then { _ko pushBack "réponses : palier non borné"; };
+if ((((((["get", [_ans, "job"]] call comspec_sse_fnc_iarpAnswers) select 4) select 0) select 1) select 0) find (toString [10]) >= 0) then { _ko pushBack "réponses : retour à la ligne gardé"; };
+private _tpl = ["vars", "Je suis {Prénom}, de {ville}. {joueur}, il est {heure}. {inconnue}"] call comspec_sse_fnc_iarpAnswers;
+if (_tpl isNotEqualTo "Je suis {first}, de {city}. {player}, il est {time}. {inconnue}") then { _ko pushBack format ["réponses : variables %1", _tpl]; };
+if ((["unknownVars", "{prenom} {inconnue}"] call comspec_sse_fnc_iarpAnswers) isNotEqualTo ["inconnue"]) then { _ko pushBack "réponses : variable inconnue non signalée"; };
+private _filled = [_tpl, createHashMapFromArray [["first", "Nikos"], ["city", "Kavala"], ["player", "Martin"], ["time", "18:05"]], "fr"] call comspec_sse_fnc_iarpFill;
+if (_filled isNotEqualTo "Je suis Nikos, de Kavala. Martin, il est 18:05. …") then { _ko pushBack format ["réponses : rendu %1", _filled]; };
+private _pk1 = ["pick", [_eName, ["calm", "first"], [0, ""]]] call comspec_sse_fnc_iarpAnswers;
+private _pk2 = ["pick", [_eName, ["fear", "threat", "again"], [0, ""]]] call comspec_sse_fnc_iarpAnswers;
+if ((_pk1 param [1, ""]) isNotEqualTo "*" || {(_pk2 param [1, ""]) isNotEqualTo "fear"}) then { _ko pushBack format ["réponses : situation %1 / %2", _pk1, _pk2]; };
+private _eArm = ["get", [_ans, "seenArmed"]] call comspec_sse_fnc_iarpAnswers;
+private _s1 = ["pick", [_eArm, [], [0, ""]]] call comspec_sse_fnc_iarpAnswers;
+private _s2 = ["pick", [_eArm, [], [_s1 select 2, ""]]] call comspec_sse_fnc_iarpAnswers;
+private _s3 = ["pick", [_eArm, [], [_s2 select 2, ""]]] call comspec_sse_fnc_iarpAnswers;
+if ([_s1 select 0, _s2 select 0, _s3 select 0] isNotEqualTo ["Hier soir, trois pick-up vers le nord.", "Ils étaient six.", "Ils étaient six."]) then { _ko pushBack "réponses : ordre « dans l'ordre »"; };
+{
+    _x params ["_txt", "_want"];
+    private _got = ["match", [_ans, _txt call comspec_sse_fnc_iarpNorm]] call comspec_sse_fnc_iarpAnswers;
+    if (_got isNotEqualTo _want) then { _ko pushBack format ["réponses : question perso « %1 » -> « %2 »", _txt, _got]; };
+} forEach [["Quel est le mot de passe ?", "c1"], ["Le MOT DE PASSE, vite.", "c1"], ["What's the password?", "c1"], ["Passe-moi le mot.", ""], ["Vos papiers.", ""]];
+if ((["esc", "<t>&"] call comspec_sse_fnc_iarpAnswers) isNotEqualTo "&lt;t&gt;&amp;") then { _ko pushBack "réponses : échappement"; };
+if ((["newKey", _ans] call comspec_sse_fnc_iarpAnswers) isNotEqualTo "c2") then { _ko pushBack "réponses : clé libre"; };
+// Profil : réponses, cadre et thèmes gardés après sérialisation (attribut Eden, import / export).
+private _pA = ["normalize", createHashMapFromArray [["name", "Nikos KARRAS"], ["answers", _ansIn], ["evoke", "known"], ["banned", ["drugs"]]]] call comspec_sse_fnc_iarpProfile;
+private _pB = ["parse", ["serialize", _pA] call comspec_sse_fnc_iarpProfile] call comspec_sse_fnc_iarpProfile;
+if ((_pB get "answers") isNotEqualTo (_pA get "answers") || {(_pB get "evoke") isNotEqualTo "known"} || {(_pB get "banned") isNotEqualTo ["drugs"]}) then { _ko pushBack "réponses : perdues à la sérialisation du profil"; };
+_info pushBack format ["réponses : %1 entrée(s) valides sur %2, « %3 »", count _ans, count _ansIn, _filled];
+// Coût : message long, fautes, plusieurs demandes (index des motifs : quelques dizaines cherchés par morceau).
+private _t1 = diag_tickTime;
+for "_i" from 1 to 20 do { ["Bonjour, vous avez vu des hommes armés ou des pick-up cette nuit ? Où sont-ils partis ? Combien étaient-ils, et qui commande ici ?"] call comspec_sse_fnc_iarpIntent; };
+_info pushBack format ["interprète : %1 ms par message de quatre questions", round (((diag_tickTime - _t1) / 20) * 10000) / 10];
 [_ko, _info]

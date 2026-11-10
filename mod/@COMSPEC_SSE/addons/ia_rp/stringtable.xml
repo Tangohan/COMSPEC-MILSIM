@@ -1683,14 +1683,714 @@
             <French>Parler aux IA</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_Man_D">
-            <Original>ACE interaction on a person › Talk to… (or Ctrl+T): type freely, in French or English, with typos.%1%2The AI answers from her SSE identity and cover, with the same name everywhere (window, bubble, log).%1%2GUIDE tab: everything you can say, by theme (greet, papers, cover, search, orders, threat and reassurance, bribe, confrontation, intelligence, answers), with clickable examples taken from the interpreter itself.%1%2TAKE AN ACTION: raise your hands, lower or aim your weapon, show your badge, offer money, search, handcuff, take or give back papers, show a photo.%1%2LOG tab: every exchange and every change in her fear, with its reason.</Original>
-            <English>ACE interaction on a person › Talk to… (or Ctrl+T): type freely, in French or English, with typos.%1%2The AI answers from her SSE identity and cover, with the same name everywhere (window, bubble, log).%1%2GUIDE tab: everything you can say, by theme (greet, papers, cover, search, orders, threat and reassurance, bribe, confrontation, intelligence, answers), with clickable examples taken from the interpreter itself.%1%2TAKE AN ACTION: raise your hands, lower or aim your weapon, show your badge, offer money, search, handcuff, take or give back papers, show a photo.%1%2LOG tab: every exchange and every change in her fear, with its reason.</English>
-            <French>Interaction ACE sur une personne › Parler à… (ou Ctrl+T) : écrivez librement, en français ou en anglais, fautes comprises.%1%2L'IA répond à partir de son identité SSE et de sa couverture, avec le même nom partout (fenêtre, bulle, journal).%1%2Onglet GUIDE : tout ce qu'on peut lui dire, par thème (saluer, papiers, couverture, fouille, ordres, menace et apaisement, pot-de-vin, confrontation, renseignement, réponses), avec des exemples cliquables tirés de l'interprète lui-même.%1%2FAIRE UNE ACTION : lever les mains, baisser ou braquer son arme, montrer son badge, tendre de l'argent, fouiller, menotter, prendre ou rendre les papiers, montrer une photo.%1%2Onglet JOURNAL : chaque échange et chaque variation de sa peur, avec sa raison.</French>
+            <Original>ACE interaction on a person › Talk to… (or Ctrl+T): type freely, in French or English, with typos.%1%2The AI answers from her SSE identity and cover, with the same name everywhere (window, bubble, log).%1%2GUIDE tab: everything you can say, by theme (greet, papers, cover, presence, search, orders, threat and reassurance, bribe, confrontation, intelligence, local situation, relations, personal, roleplay rules, off topic, answers), with clickable examples taken from the interpreter itself.%1%2TAKE AN ACTION: raise your hands, lower or aim your weapon, show your badge, offer money, search, handcuff, take or give back papers, show a photo.%1%2LOG tab: every exchange and every change in her fear, with its reason.</Original>
+            <English>ACE interaction on a person › Talk to… (or Ctrl+T): type freely, in French or English, with typos.%1%2The AI answers from her SSE identity and cover, with the same name everywhere (window, bubble, log).%1%2GUIDE tab: everything you can say, by theme (greet, papers, cover, presence, search, orders, threat and reassurance, bribe, confrontation, intelligence, local situation, relations, personal, roleplay rules, off topic, answers), with clickable examples taken from the interpreter itself.%1%2TAKE AN ACTION: raise your hands, lower or aim your weapon, show your badge, offer money, search, handcuff, take or give back papers, show a photo.%1%2LOG tab: every exchange and every change in her fear, with its reason.</English>
+            <French>Interaction ACE sur une personne › Parler à… (ou Ctrl+T) : écrivez librement, en français ou en anglais, fautes comprises.%1%2L'IA répond à partir de son identité SSE et de sa couverture, avec le même nom partout (fenêtre, bulle, journal).%1%2Onglet GUIDE : tout ce qu'on peut lui dire, par thème (saluer, papiers, couverture, présence, fouille, ordres, menace et apaisement, pot-de-vin, confrontation, renseignement, situation locale, relations, personnel, règles du jeu de rôle, hors sujet, réponses), avec des exemples cliquables tirés de l'interprète lui-même.%1%2FAIRE UNE ACTION : lever les mains, baisser ou braquer son arme, montrer son badge, tendre de l'argent, fouiller, menotter, prendre ou rendre les papiers, montrer une photo.%1%2Onglet JOURNAL : chaque échange et chaque variation de sa peur, avec sa raison.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_Man_Tip">
             <Original>A civilian with no reason is calm: only a raised weapon aimed at her, nearby shots or violence she sees scare her, and the fear comes back down.</Original>
             <English>A civilian with no reason is calm: only a raised weapon aimed at her, nearby shots or violence she sees scare her, and the fear comes back down.</English>
             <French>Un civil sans raison est calme : seuls une arme levée braquée sur lui, des tirs proches ou une violence vue lui font peur, et la peur redescend.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_presence_T">
+            <Original>Presence</Original>
+            <English>Presence</English>
+            <French>Présence</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_presence_D">
+            <Original>Why she is here: since when, with whom, at this hour, last night, her habits, what she carries. With nothing in her story she answers simply, then says the same thing again later.</Original>
+            <English>Why she is here: since when, with whom, at this hour, last night, her habits, what she carries. With nothing in her story she answers simply, then says the same thing again later.</English>
+            <French>Pourquoi elle est là : depuis quand, avec qui, à cette heure, hier soir, ses habitudes, ce qu'elle transporte. Sans réponse dans son histoire, elle répond simplement, puis redit la même chose ensuite.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_local_T">
+            <Original>Local situation</Original>
+            <English>Local situation</English>
+            <French>Situation locale</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_local_D">
+            <Original>The village, the mood, problems, the road, water, food, care, needs, directions, the name of the place. An AI that knows nothing talks about everyday life, without inventing events.</Original>
+            <English>The village, the mood, problems, the road, water, food, care, needs, directions, the name of the place. An AI that knows nothing talks about everyday life, without inventing events.</English>
+            <French>Le village, l'ambiance, les problèmes, la route, l'eau, la nourriture, les soins, les besoins, le chemin, le nom du lieu. Une IA qui ne sait rien répond par la vie de tous les jours, sans inventer d'évènement.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_relations_T">
+            <Original>Relations</Original>
+            <English>Relations</English>
+            <French>Relations</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_relations_D">
+            <Original>A person, her neighbours, the village elder, the police, the army, what she thinks of armed groups, whether she trusts you, whether she is threatened.</Original>
+            <English>A person, her neighbours, the village elder, the police, the army, what she thinks of armed groups, whether she trusts you, whether she is threatened.</English>
+            <French>Une personne, ses voisins, le chef du village, la police, l'armée, ce qu'elle pense des groupes armés, sa confiance en vous, si on la menace.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_personal_T">
+            <Original>Personal</Original>
+            <English>Personal</English>
+            <French>Personnel</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_personal_D">
+            <Original>Her fear, injuries, hunger, tiredness; offering water or a cigarette. She answers from what she really goes through (weapon aimed, wound).</Original>
+            <English>Her fear, injuries, hunger, tiredness; offering water or a cigarette. She answers from what she really goes through (weapon aimed, wound).</English>
+            <French>Sa peur, ses blessures, la faim, la fatigue ; lui offrir de l'eau ou une cigarette. Elle répond selon ce qu'elle vit vraiment (arme braquée, blessure).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_rules_T">
+            <Original>Roleplay rules</Original>
+            <English>Roleplay rules</English>
+            <French>Règles du jeu de rôle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_rules_D">
+            <Original>Lawyer, interpreter, cooperation, rights, waiting, promises, protection, reward, why you are here.</Original>
+            <English>Lawyer, interpreter, cooperation, rights, waiting, promises, protection, reward, why you are here.</English>
+            <French>Avocat, interprète, coopération, droits, attente, promesse, protection, récompense, pourquoi vous êtes là.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_offtopic_T">
+            <Original>Off topic</Original>
+            <English>Off topic</English>
+            <French>Hors sujet</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_G_offtopic_D">
+            <Original>Insults, taunts, jokes, absurd questions, hobbies, the time, politics: she answers in character, never breaking the game. An insult lowers her trust.</Original>
+            <English>Insults, taunts, jokes, absurd questions, hobbies, the time, politics: she answers in character, never breaking the game. An insult lowers her trust.</English>
+            <French>Insultes, provocations, blagues, questions absurdes, loisirs, l'heure, la politique : elle répond en personnage, sans sortir du jeu. Une insulte fait baisser sa confiance.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Title">
+            <Original>AI answers — %1</Original>
+            <English>AI answers — %1</English>
+            <French>Réponses de l'IA — %1</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Workshop">
+            <Original>workshop profile</Original>
+            <English>workshop profile</English>
+            <French>profil de l'atelier</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Loading">
+            <Original>Reading the profile…</Original>
+            <English>Reading the profile…</English>
+            <French>Lecture du profil…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Loaded">
+            <Original>%1 custom answer(s)</Original>
+            <English>%1 custom answer(s)</English>
+            <French>%1 réponse(s) perso</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Dirty">
+            <Original>Changed: not applied yet</Original>
+            <English>Changed: not applied yet</English>
+            <French>Modifié : pas encore appliqué</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Sent">
+            <Original>Applied to %1 AI</Original>
+            <English>Applied to %1 AI</English>
+            <French>Appliqué à %1 IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_AppliedEden">
+            <Original>Written to the profile of %1 unit(s) (mission)</Original>
+            <English>Written to the profile of %1 unit(s) (mission)</English>
+            <French>Écrit dans le profil de %1 unité(s) (mission)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_NoUnits">
+            <Original>No AI</Original>
+            <English>No AI</English>
+            <French>Aucune IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_CustomMax">
+            <Original>20 custom questions at most</Original>
+            <English>20 custom questions at most</English>
+            <French>20 questions perso au plus</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Apply">
+            <Original>Apply</Original>
+            <English>Apply</English>
+            <French>Appliquer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Validate">
+            <Original>Confirm</Original>
+            <English>Confirm</English>
+            <French>Valider</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Apply_D">
+            <Original>Zeus: applied at once to the AIs (and their group if ticked). Eden: written to each unit's « AI RP profile » attribute. Workshop: taken by its Apply button.</Original>
+            <English>Zeus: applied at once to the AIs (and their group if ticked). Eden: written to each unit's « AI RP profile » attribute. Workshop: taken by its Apply button.</English>
+            <French>Zeus : appliqué tout de suite aux IA (et à leur groupe si coché). Eden : écrit dans l'attribut « Profil IA RP » de chaque unité. Atelier : repris par son bouton Appliquer.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Close_D">
+            <Original>Close without applying what changed.</Original>
+            <English>Close without applying what changed.</English>
+            <French>Fermer sans appliquer ce qui a changé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Evoke">
+            <Original>What she may bring up</Original>
+            <English>What she may bring up</English>
+            <French>Ce qu'elle peut évoquer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Evoke_D">
+            <Original>Limits what her automatic answers may hint at. Example: a passer-by on « Nothing sensitive » never talks about weapons or armed groups unless he knows something.</Original>
+            <English>Limits what her automatic answers may hint at. Example: a passer-by on « Nothing sensitive » never talks about weapons or armed groups unless he knows something.</English>
+            <French>Limite ce que ses réponses automatiques peuvent laisser entendre. Exemple : un passant sur « Rien de sensible » ne parlera jamais d'armes ni de groupes armés s'il n'en sait rien.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Evoke_auto">
+            <Original>Auto</Original>
+            <English>Auto</English>
+            <French>Auto</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Evoke_none">
+            <Original>Nothing sensitive</Original>
+            <English>Nothing sensitive</English>
+            <French>Rien de sensible</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Evoke_known">
+            <Original>What she knows</Original>
+            <English>What she knows</English>
+            <French>Ce qu'elle sait</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Evoke_free">
+            <Original>Free</Original>
+            <English>Free</English>
+            <French>Libre</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Evoke_auto_D">
+            <Original>Auto: « Nothing sensitive » for a civilian with no knowledge or secret, otherwise « What she knows ».</Original>
+            <English>Auto: « Nothing sensitive » for a civilian with no knowledge or secret, otherwise « What she knows ».</English>
+            <French>Auto : « Rien de sensible » pour un civil sans savoir ni secret, sinon « Ce qu'elle sait ».</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Evoke_none_D">
+            <Original>Nothing sensitive: neutral answers (« No, I didn't see anything. »), never a hint. Your custom answers are still said.</Original>
+            <English>Nothing sensitive: neutral answers (« No, I didn't see anything. »), never a hint. Your custom answers are still said.</English>
+            <French>Rien de sensible : réponses neutres (« Non, je n'ai rien vu. »), jamais de sous-entendu. Vos réponses perso restent dites.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Evoke_known_D">
+            <Original>What she knows: her knowledge, her secrets and your custom answers; automatic answers mention no scenario theme.</Original>
+            <English>What she knows: her knowledge, her secrets and your custom answers; automatic answers mention no scenario theme.</English>
+            <French>Ce qu'elle sait : son savoir, ses secrets et vos réponses perso ; les réponses auto ne parlent d'aucun thème de scénario.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Evoke_free_D">
+            <Original>Free: automatic answers may bring up scenario themes, except the ones you forbid.</Original>
+            <English>Free: automatic answers may bring up scenario themes, except the ones you forbid.</English>
+            <French>Libre : les réponses auto peuvent évoquer des thèmes de scénario, sauf ceux que vous interdisez.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Banned">
+            <Original>Forbidden themes</Original>
+            <English>Forbidden themes</English>
+            <French>Thèmes interdits</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Banned_D">
+            <Original>On a question of this theme she answers neutrally or says she knows nothing, even with a custom answer. Example: tick Explosives so no civilian talks about mines.</Original>
+            <English>On a question of this theme she answers neutrally or says she knows nothing, even with a custom answer. Example: tick Explosives so no civilian talks about mines.</English>
+            <French>Sur une question de ce thème, elle répond de façon neutre ou dit ne rien savoir, même avec une réponse perso. Exemple : cochez Explosifs pour qu'aucun civil ne parle de mines.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Ban1">
+            <Original>Weapons</Original>
+            <English>Weapons</English>
+            <French>Armes</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Ban1_D">
+            <Original>Weapons and armed groups: armed men, leaders, caches, what she thinks of insurgents.</Original>
+            <English>Weapons and armed groups: armed men, leaders, caches, what she thinks of insurgents.</English>
+            <French>Armes et groupes armés : hommes armés, chefs, caches, ce qu'elle pense des insurgés.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Ban2">
+            <Original>Explosives</Original>
+            <English>Explosives</English>
+            <French>Explosifs</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Ban2_D">
+            <Original>Explosives and mines.</Original>
+            <English>Explosives and mines.</English>
+            <French>Explosifs et mines.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Ban3">
+            <Original>Military sites</Original>
+            <English>Military sites</English>
+            <French>Lieux militaires</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Ban3_D">
+            <Original>Bases, camps, checkpoints and roadblocks.</Original>
+            <English>Bases, camps, checkpoints and roadblocks.</English>
+            <French>Bases, camps, checkpoints et barrages.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Ban4">
+            <Original>Wanted</Original>
+            <English>Wanted</English>
+            <French>Recherchés</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Ban4_D">
+            <Original>Wanted people: where is he, do you know him, what he looks like, photo.</Original>
+            <English>Wanted people: where is he, do you know him, what he looks like, photo.</English>
+            <French>Personnes recherchées : où est-il, le connaissez-vous, à quoi il ressemble, photo.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Ban5">
+            <Original>Drugs</Original>
+            <English>Drugs</English>
+            <French>Drogue</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Ban5_D">
+            <Original>Drugs.</Original>
+            <English>Drugs.</English>
+            <French>Drogue.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Ban6">
+            <Original>Politics</Original>
+            <English>Politics</English>
+            <French>Politique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Ban6_D">
+            <Original>Politics, government, police and army.</Original>
+            <English>Politics, government, police and army.</English>
+            <French>Politique, gouvernement, police et armée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Search">
+            <Original>Search</Original>
+            <English>Search</English>
+            <French>Chercher</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Search_D">
+            <Original>A word from the question (« name », « armed », « password »).</Original>
+            <English>A word from the question (« name », « armed », « password »).</English>
+            <French>Un mot de la question (« nom », « armés », « mot de passe »).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Add">
+            <Original>Add a custom question</Original>
+            <English>Add a custom question</English>
+            <French>Ajouter une question perso</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Add_D">
+            <Original>A question the game does not know: you give the words that trigger it and the answer. Example: « password » → « The falcon flies low. »</Original>
+            <English>A question the game does not know: you give the words that trigger it and the answer. Example: « password » → « The falcon flies low. »</English>
+            <French>Une question que le jeu ne connaît pas : vous donnez les mots qui la déclenchent et la réponse. Exemple : « mot de passe » → « Le faucon vole bas. »</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Mode">
+            <Original>Answer</Original>
+            <English>Answer</English>
+            <French>Réponse</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Mode_D">
+            <Original>Automatic: the AI answers on its own. Custom: your texts.</Original>
+            <English>Automatic: the AI answers on its own. Custom: your texts.</English>
+            <French>Réponse auto : l'IA répond seule. Réponse perso : vos textes.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Mode_auto">
+            <Original>Automatic</Original>
+            <English>Automatic</English>
+            <French>Réponse auto</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Mode_perso">
+            <Original>Custom</Original>
+            <English>Custom</English>
+            <French>Réponse perso</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Order">
+            <Original>Order</Original>
+            <English>Order</English>
+            <French>Ordre</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Order_D">
+            <Original>At random (never the same twice in a row) or in order (the last one repeats).</Original>
+            <English>At random (never the same twice in a row) or in order (the last one repeats).</English>
+            <French>Au hasard (jamais deux fois de suite la même) ou dans l'ordre (la dernière se répète).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Order_random">
+            <Original>At random</Original>
+            <English>At random</English>
+            <French>Au hasard</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Order_seq">
+            <Original>In order</Original>
+            <English>In order</English>
+            <French>Dans l'ordre</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Label">
+            <Original>Question</Original>
+            <English>Question</English>
+            <French>Question</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Label_D">
+            <Original>The question's name in the list (for you only). Example: Password.</Original>
+            <English>The question's name in the list (for you only). Example: Password.</English>
+            <French>Le nom de la question dans la liste (seulement pour vous). Exemple : Mot de passe.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Trig">
+            <Original>Triggers</Original>
+            <English>Triggers</English>
+            <French>Déclencheurs</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Trig_D">
+            <Original>Words or phrases that trigger it, separated by « ; ». « a+b »: both in the message. Example: password; mot de passe; code+entry</Original>
+            <English>Words or phrases that trigger it, separated by « ; ». « a+b »: both in the message. Example: password; mot de passe; code+entry</English>
+            <French>Mots ou phrases qui la déclenchent, séparés par « ; ». « a+b » : les deux dans le message. Exemple : mot de passe; password; code+entrée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Sit">
+            <Original>Situation</Original>
+            <English>Situation</English>
+            <French>Situation</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Sit_D">
+            <Original>A different answer depending on the situation. The most specific one with a text wins.</Original>
+            <English>A different answer depending on the situation. The most specific one with a text wins.</English>
+            <French>Une réponse différente selon la situation. La plus précise qui a un texte l'emporte.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Sit_all">
+            <Original>Always</Original>
+            <English>Always</English>
+            <French>Toujours</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Sit_calm">
+            <Original>If calm</Original>
+            <English>If calm</English>
+            <French>S'il est calme</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Sit_fear">
+            <Original>If afraid</Original>
+            <English>If afraid</English>
+            <French>S'il a peur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Sit_threat">
+            <Original>If threatened</Original>
+            <English>If threatened</English>
+            <French>Si on le menace</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Sit_confront">
+            <Original>If accused of lying</Original>
+            <English>If accused of lying</English>
+            <French>S'il est accusé de mentir</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Sit_first">
+            <Original>The first time</Original>
+            <English>The first time</English>
+            <French>La 1re fois</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Sit_again">
+            <Original>If asked again</Original>
+            <English>If asked again</English>
+            <French>Si on lui redemande</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Sit_accept">
+            <Original>If he agrees</Original>
+            <English>If he agrees</English>
+            <French>S'il accepte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Sit_refuse">
+            <Original>If he refuses</Original>
+            <English>If he refuses</English>
+            <French>S'il refuse</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Texts">
+            <Original>Answers</Original>
+            <English>Answers</English>
+            <French>Réponses</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Texts_D">
+            <Original>One answer per line. Example: I'm {prenom}, the baker. Everyone knows me here.</Original>
+            <English>One answer per line. Example: I'm {prenom}, the baker. Everyone knows me here.</English>
+            <French>Une réponse par ligne. Exemple : Je suis {prenom}, le boulanger. Tout le monde me connaît ici.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Tier">
+            <Original>Unlocks</Original>
+            <English>Unlocks</English>
+            <French>Débloque</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Tier_D">
+            <Original>After this answer, this player has access to that level of her knowledge (Vague, Precise, Complete), as if he had won her trust.</Original>
+            <English>After this answer, this player has access to that level of her knowledge (Vague, Precise, Complete), as if he had won her trust.</English>
+            <French>Après cette réponse, ce joueur a accès à ce palier de son savoir (Vague, Précis, Complet), comme s'il avait gagné sa confiance.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Tier_0">
+            <Original>Nothing</Original>
+            <English>Nothing</English>
+            <French>Rien</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Tier_1">
+            <Original>Vague level</Original>
+            <English>Vague level</English>
+            <French>Palier vague</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Tier_2">
+            <Original>Precise level</Original>
+            <English>Precise level</English>
+            <French>Palier précis</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Tier_3">
+            <Original>Complete level</Original>
+            <English>Complete level</English>
+            <French>Palier complet</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Place">
+            <Original>Place</Original>
+            <English>Place</English>
+            <French>Lieu</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Place_D">
+            <Original>Like a « Place: » line of the knowledge: grid, coordinates or a marker name, then the place name. Put once on this player's map. Example: 045 078 Abandoned farm</Original>
+            <English>Like a « Place: » line of the knowledge: grid, coordinates or a marker name, then the place name. Put once on this player's map. Example: 045 078 Abandoned farm</English>
+            <French>Comme une ligne « Lieu : » du savoir : carroyage, coordonnées ou nom d'un marqueur, puis le nom du lieu. Posé une fois sur la carte de ce joueur. Exemple : 045 078 Ferme abandonnée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Remove">
+            <Original>Back to automatic</Original>
+            <English>Back to automatic</English>
+            <French>Revenir en auto</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_RemoveCustom">
+            <Original>Delete the question</Original>
+            <English>Delete the question</English>
+            <French>Supprimer la question</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Remove_D">
+            <Original>Clears this question's custom answer (it goes back to automatic), or deletes the custom question.</Original>
+            <English>Clears this question's custom answer (it goes back to automatic), or deletes the custom question.</English>
+            <French>Efface la réponse perso de cette question (elle repasse en réponse auto), ou supprime la question perso.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Group">
+            <Original>Whole group</Original>
+            <English>Whole group</English>
+            <French>Tout son groupe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Group_D">
+            <Original>Also apply to every AI in each targeted AI's group.</Original>
+            <English>Also apply to every AI in each targeted AI's group.</English>
+            <French>Appliquer aussi à toutes les IA du groupe de chaque IA visée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Preview">
+            <Original>PREVIEW</Original>
+            <English>PREVIEW</English>
+            <French>APERÇU</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_PrevAuto">
+            <Original>Automatic: the AI answers from her character, her cover and what she knows.</Original>
+            <English>Automatic: the AI answers from her character, her cover and what she knows.</English>
+            <French>Réponse auto : l'IA répond selon son caractère, sa couverture et ce qu'elle sait.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_PrevEmpty">
+            <Original>Write at least one answer (one per line).</Original>
+            <English>Write at least one answer (one per line).</English>
+            <French>Écrivez au moins une réponse (une par ligne).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_PrevUnknown">
+            <Original>Unknown variable: %1 (replaced by « … »)</Original>
+            <English>Unknown variable: %1 (replaced by « … »)</English>
+            <French>Variable inconnue : %1 (remplacée par « … »)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_PrevMore">
+            <Original>… and %1 more</Original>
+            <English>… and %1 more</English>
+            <French>… et %1 autre(s)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_PrevBanned">
+            <Original>Forbidden theme: she will answer neutrally, even with these texts.</Original>
+            <English>Forbidden theme: she will answer neutrally, even with these texts.</English>
+            <French>Thème interdit : elle répondra de façon neutre, même avec ces textes.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Custom">
+            <Original>Custom questions</Original>
+            <English>Custom questions</English>
+            <French>Questions perso</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_CustomNew">
+            <Original>New question</Original>
+            <English>New question</English>
+            <French>Nouvelle question</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_CustomHead">
+            <Original>Custom question: triggered by its words, it comes before the game's answer.</Original>
+            <English>Custom question: triggered by its words, it comes before the game's answer.</English>
+            <French>Question perso : déclenchée par ses mots, elle passe avant la réponse du jeu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Examples">
+            <Original>Also: %1</Original>
+            <English>Also: %1</English>
+            <French>Aussi : %1</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_AutoNote">
+            <Original>Players ask it in many ways: the AI recognises it as in the GUIDE tab. Your text only replaces her answer; orders, lies, fear and papers still follow the rules.</Original>
+            <English>Players ask it in many ways: the AI recognises it as in the GUIDE tab. Your text only replaces her answer; orders, lies, fear and papers still follow the rules.</English>
+            <French>Les joueurs la posent de mille façons : l'IA la reconnaît comme dans l'onglet GUIDE. Votre texte ne remplace que sa réponse ; ordres, mensonge, peur et papiers suivent toujours les règles.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_Auto">
+            <Original>Auto</Original>
+            <English>Auto</English>
+            <French>Auto</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_PersoN">
+            <Original>Custom (%1)</Original>
+            <English>Custom (%1)</English>
+            <French>Perso (%1)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_BannedTag">
+            <Original>Forbidden</Original>
+            <English>Forbidden</English>
+            <French>Interdit</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Intro">
+            <Original>AI answers</Original>
+            <English>AI answers</English>
+            <French>Réponses de l'IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Intro_D">
+            <Original>Pick a question on the left, then « Custom » and write one answer per line. Variables: {nom} {prenom} {ville} {metier} {employeur} {age} {famille} {adresse} {motif} {joueur} {heure} {lieu} {monsieur} (or {name} {first} {city} {job} {player} {time} {here}). Example for « Who are you? »: I'm {first}, the baker. Everyone knows me here.</Original>
+            <English>Pick a question on the left, then « Custom » and write one answer per line. Variables: {nom} {prenom} {ville} {metier} {employeur} {age} {famille} {adresse} {motif} {joueur} {heure} {lieu} {monsieur} (or {name} {first} {city} {job} {player} {time} {here}). Example for « Who are you? »: I'm {first}, the baker. Everyone knows me here.</English>
+            <French>Choisissez une question à gauche, puis « Réponse perso » et écrivez une réponse par ligne. Variables : {nom} {prenom} {ville} {metier} {employeur} {age} {famille} {adresse} {motif} {joueur} {heure} {lieu} {monsieur}. Exemple pour « Qui es-tu ? » : Je suis {prenom}, le boulanger. Tout le monde me connaît ici.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Evoke">
+            <Original>What she may bring up</Original>
+            <English>What she may bring up</English>
+            <French>Ce qu'elle peut évoquer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Evoke_D">
+            <Original>An AI only talks about what she knows. Nothing sensitive: never a weapon, armed group, mine or hint. What she knows: her knowledge and your texts. Free: automatic answers may bring up themes, except forbidden ones.</Original>
+            <English>An AI only talks about what she knows. Nothing sensitive: never a weapon, armed group, mine or hint. What she knows: her knowledge and your texts. Free: automatic answers may bring up themes, except forbidden ones.</English>
+            <French>Une IA ne parle que de ce qu'elle sait. Rien de sensible : jamais d'arme, de groupe armé, de mine ni de sous-entendu. Ce qu'elle sait : son savoir et vos textes. Libre : les réponses auto peuvent évoquer des thèmes, sauf interdits.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Ban">
+            <Original>Forbidden themes</Original>
+            <English>Forbidden themes</English>
+            <French>Thèmes interdits</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Ban_D">
+            <Original>Tick a theme: every question of that theme gets a neutral answer (« I don't know anything about that. »), custom answer included. Example: Wanted, so no AI talks about the target before phase 2.</Original>
+            <English>Tick a theme: every question of that theme gets a neutral answer (« I don't know anything about that. »), custom answer included. Example: Wanted, so no AI talks about the target before phase 2.</English>
+            <French>Cochez un thème : toute question de ce thème reçoit une réponse neutre (« Je ne sais rien là-dessus. »), réponse perso comprise. Exemple : Recherchés, pour qu'aucune IA ne parle de la cible avant la phase 2.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Custom">
+            <Original>Custom question</Original>
+            <English>Custom question</English>
+            <French>Question perso</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Custom_D">
+            <Original>A name for you, triggers, an answer. Example: triggers « password; mot de passe », answer « The falcon flies low. » Orders, threats and papers in the same message are still handled.</Original>
+            <English>A name for you, triggers, an answer. Example: triggers « password; mot de passe », answer « The falcon flies low. » Orders, threats and papers in the same message are still handled.</English>
+            <French>Un nom pour vous, des déclencheurs, une réponse. Exemple : déclencheurs « mot de passe; password », réponse « Le faucon vole bas. » Les ordres, menaces et papiers du même message restent traités.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Mode">
+            <Original>Automatic or custom</Original>
+            <English>Automatic or custom</English>
+            <French>Auto ou perso</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Mode_D">
+            <Original>Automatic: the AI answers from her character, cover and knowledge. Custom: one of your texts, instead of her line.</Original>
+            <English>Automatic: the AI answers from her character, cover and knowledge. Custom: one of your texts, instead of her line.</English>
+            <French>Auto : l'IA répond selon son caractère, sa couverture et ce qu'elle sait. Perso : un de vos textes, à la place de sa réplique.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Order">
+            <Original>Order of the answers</Original>
+            <English>Order of the answers</English>
+            <French>Ordre des réponses</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Order_D">
+            <Original>At random: one text drawn each time. In order: the 1st, then the 2nd… for each player; the last one repeats. Example: a witness who tells a bit more each time.</Original>
+            <English>At random: one text drawn each time. In order: the 1st, then the 2nd… for each player; the last one repeats. Example: a witness who tells a bit more each time.</English>
+            <French>Au hasard : un texte tiré à chaque fois. Dans l'ordre : le 1er, puis le 2e… pour chaque joueur ; le dernier se répète. Exemple : un témoin qui en dit un peu plus à chaque fois.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Trig">
+            <Original>Triggers</Original>
+            <English>Triggers</English>
+            <French>Déclencheurs</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Trig_D">
+            <Original>Separated by « ; ». A whole word or phrase, accents and capitals optional. « code+door »: both words in the message.</Original>
+            <English>Separated by « ; ». A whole word or phrase, accents and capitals optional. « code+door »: both words in the message.</English>
+            <French>Séparés par « ; ». Mot ou phrase entière, sans accents ni majuscules obligatoires. « code+porte » : les deux mots dans le message.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Sit">
+            <Original>Situations</Original>
+            <English>Situations</English>
+            <French>Situations</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Sit_D">
+            <Original>Always, calm, afraid, threatened (or weapon aimed), accused of lying, first time, asked again, agrees, refuses. The most specific one with a text wins. For an order, a search or a bribe, « Always » applies when he obeys; if he refuses only « If he refuses » is said.</Original>
+            <English>Always, calm, afraid, threatened (or weapon aimed), accused of lying, first time, asked again, agrees, refuses. The most specific one with a text wins. For an order, a search or a bribe, « Always » applies when he obeys; if he refuses only « If he refuses » is said.</English>
+            <French>Toujours, calme, peur, menace (ou arme braquée), accusé de mentir, 1re fois, redemandé, accepte, refuse. La plus précise qui a un texte l'emporte. Pour un ordre, une fouille ou un pot-de-vin, « Toujours » vaut quand il obéit ; s'il refuse, seul « S'il refuse » est dit.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Texts">
+            <Original>Texts</Original>
+            <English>Texts</English>
+            <French>Textes</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Texts_D">
+            <Original>One answer per line, 300 characters at most, 8 per situation. The preview shows the answer with variables replaced.</Original>
+            <English>One answer per line, 300 characters at most, 8 per situation. The preview shows the answer with variables replaced.</English>
+            <French>Une réponse par ligne, 300 caractères au plus, 8 par situation. L'aperçu montre la réponse avec les variables remplacées.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Tier">
+            <Original>Unlocked level</Original>
+            <English>Unlocked level</English>
+            <French>Palier débloqué</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Tier_D">
+            <Original>Example: to « Have you seen armed men? », « Last night, three pickups heading north. » unlocking the precise level: then « What do you know? » gives the rest of her knowledge.</Original>
+            <English>Example: to « Have you seen armed men? », « Last night, three pickups heading north. » unlocking the precise level: then « What do you know? » gives the rest of her knowledge.</English>
+            <French>Exemple : à « As-tu vu des hommes armés ? », « Hier soir, trois pick-up vers le nord. » qui débloque le palier précis : ensuite « Que savez-vous ? » donne la suite de son savoir.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Place">
+            <Original>Place</Original>
+            <English>Place</English>
+            <French>Lieu</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Place_D">
+            <Original>Example: 045 078 Abandoned farm. The marker only appears on the map of the player who got the answer, once.</Original>
+            <English>Example: 045 078 Abandoned farm. The marker only appears on the map of the player who got the answer, once.</English>
+            <French>Exemple : 045 078 Ferme abandonnée. Le marqueur n'apparaît que sur la carte du joueur qui a eu la réponse, une fois.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Group">
+            <Original>Whole group</Original>
+            <English>Whole group</English>
+            <French>Tout son groupe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Group_D">
+            <Original>Handy for a village: set one AI, tick, apply to the whole group.</Original>
+            <English>Handy for a village: set one AI, tick, apply to the whole group.</English>
+            <French>Pratique pour un village : réglez une IA, cochez, appliquez à tout le groupe.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Apply">
+            <Original>Apply</Original>
+            <English>Apply</English>
+            <French>Appliquer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_A_H_Apply_D">
+            <Original>Answers live on the server (never sent to players). Eden: saved in the mission. « Keep for next games » (Zone AIs) takes them along too.</Original>
+            <English>Answers live on the server (never sent to players). Eden: saved in the mission. « Keep for next games » (Zone AIs) takes them along too.</English>
+            <French>Les réponses vivent sur le serveur (jamais envoyées aux joueurs). Eden : enregistrées dans la mission. « Garder pour les prochaines parties » (IA de la zone) les emporte aussi.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Answers">
+            <Original>Answers and limits…</Original>
+            <English>Answers and limits…</English>
+            <French>Réponses et limites…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_AnswersN">
+            <Original>Answers and limits… (%1 custom)</Original>
+            <English>Answers and limits… (%1 custom)</English>
+            <French>Réponses et limites… (%1 perso)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Answers_D">
+            <Original>What she answers, question by question (automatic or your texts), what she may bring up and forbidden themes. Example: « Who are you? » → « I'm {first}, the baker. »</Original>
+            <English>What she answers, question by question (automatic or your texts), what she may bring up and forbidden themes. Example: « Who are you? » → « I'm {first}, the baker. »</English>
+            <French>Ce qu'elle répond, question par question (auto ou vos textes), ce qu'elle peut évoquer et les thèmes interdits. Exemple : « Qui es-tu ? » → « Je suis {prenom}, le boulanger. »</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_AnswersSet">
+            <Original>Answers taken: Apply to keep them</Original>
+            <English>Answers taken: Apply to keep them</English>
+            <French>Réponses prises : Appliquer pour les garder</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Answers">
+            <Original>AI answers…</Original>
+            <English>AI answers…</English>
+            <French>Réponses de l'IA…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Frame">
+            <Original>What she may bring up…</Original>
+            <English>What she may bring up…</English>
+            <French>Ce qu'elle peut évoquer…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_ManA_T">
+            <Original>Answers written by the game master</Original>
+            <English>Answers written by the game master</English>
+            <French>Réponses écrites par le maître du jeu</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_ManA_D">
+            <Original>AI workshop › Answers and limits… (Eden: unit attribute; Zeus: workshop, SSE · AI roleplay menu › AI profile › AI answers…, Zone AIs window › Answers…).%1%2Each guide question: Automatic or Custom, one or more texts (at random or in order), by situation (calm, afraid, threatened, accused, first time, asked again, agrees, refuses), with variables: {nom} {prenom} {ville} {metier} {joueur} {heure} {lieu}.%1%2An answer can unlock a level of her knowledge and put a place on the player's map.%1%2Custom question: trigger words (« password ») and the answer (« The falcon flies low. »).%1%2What she may bring up: Nothing sensitive, What she knows, Free; forbidden themes (weapons, explosives, military sites, wanted, drugs, politics): neutral answer.</Original>
+            <English>AI workshop › Answers and limits… (Eden: unit attribute; Zeus: workshop, SSE · AI roleplay menu › AI profile › AI answers…, Zone AIs window › Answers…).%1%2Each guide question: Automatic or Custom, one or more texts (at random or in order), by situation (calm, afraid, threatened, accused, first time, asked again, agrees, refuses), with variables: {nom} {prenom} {ville} {metier} {joueur} {heure} {lieu}.%1%2An answer can unlock a level of her knowledge and put a place on the player's map.%1%2Custom question: trigger words (« password ») and the answer (« The falcon flies low. »).%1%2What she may bring up: Nothing sensitive, What she knows, Free; forbidden themes (weapons, explosives, military sites, wanted, drugs, politics): neutral answer.</English>
+            <French>Atelier IA › Réponses et limites… (Eden : attribut de l'unité ; Zeus : atelier, menu SSE · Roleplay de l'IA › Profil d'IA › Réponses de l'IA…, fenêtre IA de la zone › Réponses…).%1%2Chaque question du guide : Réponse auto ou Réponse perso, un ou plusieurs textes (au hasard ou dans l'ordre), selon la situation (calme, peur, menace, accusé, 1re fois, redemandé, accepte, refuse), avec des variables : {nom} {prenom} {ville} {metier} {joueur} {heure} {lieu}.%1%2Une réponse peut débloquer un palier de son savoir et poser un lieu sur la carte du joueur.%1%2Question perso : des mots déclencheurs (« mot de passe ») et la réponse (« Le faucon vole bas. »).%1%2Ce qu'elle peut évoquer : Rien de sensible, Ce qu'elle sait, Libre ; thèmes interdits (armes, explosifs, lieux militaires, recherchés, drogue, politique) : réponse neutre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_ManA_Tip">
+            <Original>An AI only talks about what she knows: a civilian with no knowledge never talks about weapons or armed groups. Your texts only replace her line: orders, lies, fear and papers follow the rules.</Original>
+            <English>An AI only talks about what she knows: a civilian with no knowledge never talks about weapons or armed groups. Your texts only replace her line: orders, lies, fear and papers follow the rules.</English>
+            <French>Une IA ne parle que de ce qu'elle sait : un civil sans savoir ne parle jamais d'armes ni de groupes armés. Vos textes ne remplacent que sa réplique : ordres, mensonge, peur et papiers suivent les règles.</French>
         </Key>
     </Package>
 </Project>

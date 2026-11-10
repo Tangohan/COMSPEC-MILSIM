@@ -9,6 +9,9 @@
       ["guide"]    -> [[thème, [[intention, [[exemple fr, exemple en]…]]…]]…] guide de conversation de la fenêtre « Parler à »,
                       tiré du lexique (exemples et thème de chaque intention, entrée « _cmd ») : il suit le lexique, missions comprises
       ["corpus"]   -> [[langue, texte, intention]…] banc d'essai de l'interprète (data\iarp_corpus.sqf, fn_iarpSelfTest)
+      ["unseen"]   -> même format : phrases jamais vues pendant la mise au point (data\iarp_unseen.sqf), taux honnête
+      ["topics"]   -> HashMap intention -> thème de scénario que le maître du jeu peut interdire (6e élément du lexique :
+                      armed, explosives, military, wanted, drugs, politics)
       ["reset"]    oublie les données lues (fichier de mission modifié pendant les essais)
     Extension sans toucher au mod : fichier de même nom à la racine de la mission (iarp_bank.sqf, iarp_lexicon.sqf,
     iarp_presets.sqf), ou variable missionNamespace comspec_sse_iarpExtra_bank / _lexicon / _presets posée par un script
@@ -16,7 +19,7 @@
 */
 params [["_what", "bank", [""]]];
 if (_what isEqualTo "reset") exitWith {
-    { missionNamespace setVariable ["comspec_sse_iarpData_" + _x, nil]; } forEach ["bank", "lexicon", "presets", "dict", "kw", "guide", "corpus"];
+    { missionNamespace setVariable ["comspec_sse_iarpData_" + _x, nil]; } forEach ["bank", "lexicon", "presets", "dict", "kw", "pidx", "guide", "corpus", "unseen", "topics"];
     true
 };
 private _key = "comspec_sse_iarpData_" + _what;
@@ -25,8 +28,15 @@ if !(_have isEqualType 0) exitWith { _have };
 // Dictionnaire de l'interprète : mots des motifs du lexique (5 lettres et plus) ; « _keep » : mots courants proches d'un
 // mot du lexique, gardés tels quels (« ferme » n'est pas « femme », « plage » n'est pas « place »).
 // Guide : thèmes dans l'ordre, intentions du lexique rangées sous leur thème, avec leurs exemples.
+if (_what isEqualTo "topics") exitWith {
+    private _out = createHashMap;
+    { if ((_x param [5, ""]) isEqualType "" && {(_x param [5, ""]) isNotEqualTo ""}) then { _out set [_x select 0, _x select 5]; }; } forEach (["lexicon"] call comspec_sse_fnc_iarpData);
+    missionNamespace setVariable [_key, _out];
+    _out
+};
 if (_what isEqualTo "guide") exitWith {
-    private _order = ["talk", "identity", "cover", "search", "orders", "pressure", "bribe", "confront", "intel", "answer", "rp"];
+    private _order = ["talk", "identity", "cover", "presence", "search", "orders", "pressure", "bribe", "confront", "intel", "local", "relations",
+        "personal", "rules", "offtopic", "answer", "rp"];
     private _by = createHashMap;
     {
         _x params [["_i", ""], "", ["_pats", []], ["_ex", []], ["_th", ""]];
@@ -94,21 +104,23 @@ private _out = switch (_what) do {
         {
             if (_x isEqualType []) then {
                 {
-                    _x params [["_i", "", [""]], ["_w", 1, [0]], ["_pats", [], [[]]], ["_ex", [], [[]]], ["_th", "", [""]]];
+                    _x params [["_i", "", [""]], ["_w", 1, [0]], ["_pats", [], [[]]], ["_ex", [], [[]]], ["_th", "", [""]], ["_top", "", [""]]];
                     private _at = _l findIf { (_x select 0) isEqualTo _i };
-                    if (_at < 0) then { _l pushBack [_i, _w, _pats, _ex, _th]; } else {
+                    if (_at < 0) then { _l pushBack [_i, _w, _pats, _ex, _th, _top]; } else {
                         private _e = _l select _at;
                         (_e select 2) append _pats;
                         if ((count _e) < 4) then { _e set [3, []]; };
                         (_e select 3) append _ex;
                         if ((count _e) < 5 || {(_e select 4) isEqualTo ""}) then { _e set [4, _th]; };
+                        if (_top isNotEqualTo "" && {(_e param [5, ""]) isEqualTo ""}) then { _e set [5, _top]; };
                     };
                 } forEach _x;
             };
         } forEach _extra;
         _l
     };
-    case "corpus": { [[], +_base] select (_base isEqualType []) };
+    case "corpus";
+    case "unseen": { [[], +_base] select (_base isEqualType []) };
     case "bank": {
         private _b = [createHashMap, +_base] select (_base isEqualType createHashMap);
         {

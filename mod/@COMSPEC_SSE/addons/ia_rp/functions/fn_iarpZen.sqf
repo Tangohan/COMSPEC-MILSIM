@@ -7,7 +7,9 @@
       Journal des échanges  tous les échanges joueurs / IA, en direct (onglet JOURNAL du terminal)
     Menu contextuel (clic droit ZEN) « SSE · Roleplay de l'IA » : visible seulement quand la cible (IA survolée, sélection
     du curateur) compte au moins une IA vivante, jamais sur un joueur seul ; chaque action vaut pour toutes les IA visées.
-      Profil d'IA           Atelier IA… · Appliquer un profil… · Rôle et caractère… · Savoir, secret et couverture…
+      Profil d'IA           Atelier IA… · Appliquer un profil… · Rôle et caractère… · Savoir, secret et couverture… ·
+                            Réponses de l'IA… (fn_iarpAnswersUi : réponse auto ou perso par question, questions perso) ·
+                            Ce qu'elle peut évoquer… (cadre : rien de sensible, ce qu'elle sait, libre ; thèmes interdits)
                             (fenêtres ZEN pré-remplies avec le profil de la première IA, lu sur le serveur :
                             fn_iarpServer profileGet / profileSet / profileTweak)
       Identité et papiers   (addon identity) Voir ses vrais papiers · Donner des papiers… · Retirer ses papiers ·
@@ -166,6 +168,28 @@ private _ip = "\z\comspec_sse\addons\zeus\data\";
         }, {}, [_units]] call zen_dialog_fnc_create;
     }] call comspec_sse_iarpZenWithProfile;
 }, _has, [_root, _root + "_profile"], 86] call _mk;
+
+["_answers", "STR_COMSPEC_IARP_Z_Answers", _ip + "mod_doc.paa", {
+    ["open", ["units", _this call comspec_sse_iarpZenTargets]] call comspec_sse_fnc_iarpAnswersUi;
+}, _has, [_root, _root + "_profile"], 85] call _mk;
+["_frame", "STR_COMSPEC_IARP_Z_Frame", _ip + "mod_flag.paa", {
+    [_this call comspec_sse_iarpZenTargets, {
+        params ["_t", "_p", "_who", "_units"];
+        private _ev = ["auto", "none", "known", "free"];
+        private _th = ["themes"] call comspec_sse_fnc_iarpAnswers;
+        private _ban = _p getOrDefault ["banned", []];
+        private _rows = [["LIST", [localize "STR_COMSPEC_IARP_A_Evoke", localize "STR_COMSPEC_IARP_A_Evoke_D"],
+            [_ev, _ev apply { localize ("STR_COMSPEC_IARP_A_Evoke_" + _x) }, (_ev find (_p getOrDefault ["evoke", "auto"])) max 0]]];
+        { _rows pushBack ["CHECKBOX", [localize format ["STR_COMSPEC_IARP_A_Ban%1", _forEachIndex + 1], localize format ["STR_COMSPEC_IARP_A_Ban%1_D", _forEachIndex + 1]], _x in _ban]; } forEach _th;
+        [["STR_COMSPEC_IARP_Z_Frame", _units, _who] call comspec_sse_iarpZenTitle, _rows, {
+            params ["_v", "_args"];
+            private _th = ["themes"] call comspec_sse_fnc_iarpAnswers;
+            private _b = [];
+            { if ((_v select (_forEachIndex + 1)) isEqualTo true) then { _b pushBack _x; }; } forEach _th;
+            ["profileTweak", [[["evoke", _v select 0], ["banned", _b]]], _args select 0] call comspec_sse_iarpZenSend;
+        }, {}, [_units]] call zen_dialog_fnc_create;
+    }] call comspec_sse_iarpZenWithProfile;
+}, _has, [_root, _root + "_profile"], 84] call _mk;
 
 // --- Identité et papiers (addon identity : mêmes opérations serveur que ses modules « Donner des papiers », « Voir les
 // vrais papiers » et que la page « IA de la zone » de l'éditeur SSE) --------------------------------------------------

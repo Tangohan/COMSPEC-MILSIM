@@ -211,6 +211,8 @@ switch (_op) do {
     case "profile": {
         _a params [["_t", objNull], ["_raw", ""], ["_who", ""]];
         if (!isNil "comspec_sse_fnc_iarpWorkshop") then { ["loaded", [_t, _raw, _who]] call comspec_sse_fnc_iarpWorkshop; };
+        // Fenêtre « Réponses de l'IA » ouverte sur cette IA (menu ZEN, IA de la zone).
+        if (!isNil "comspec_sse_fnc_iarpAnswersUi") then { ["loaded", [_t, _raw, _who]] call comspec_sse_fnc_iarpAnswersUi; };
         // Fenêtre du menu ZEN en attente de ce profil (fn_iarpZen, 15 s au plus) : ouverte une fois, pré-remplie.
         private _cb = uiNamespace getVariable ["comspec_sse_iarpZenPending", []];
         _cb params [["_cu", objNull], ["_code", {}], ["_units", []], ["_at", -100]];

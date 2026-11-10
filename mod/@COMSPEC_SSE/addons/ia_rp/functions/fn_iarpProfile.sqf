@@ -13,25 +13,33 @@
       unlock      trust (confiance gagnée) | bribe (pot-de-vin accepté) | keyword (mot-clé) | never     unlockWord  mot-clé
       react       HashMap search / threat / bribe / order -> auto | coopere | refuse | fuit | agressif | rendu
       locks       champs verrouillés (le bouton Générer n'y touche pas)      preset  profil de bibliothèque d'origine
+      answers     réponses écrites par le maître du jeu, par question (fn_iarpAnswers : texte, situation, palier, lieu)
+      evoke       ce qu'elle peut évoquer : auto | none (rien de sensible) | known (ce qu'elle sait) | free (libre)
+      banned      thèmes interdits : armed, explosives, military, wanted, drugs, politics (fn_iarpAnswers « frame »)
+      Faits de l'histoire (en plus) : Téléphone, Nationalité, Langues, Depuis, Avec, Hier soir (alibi), Transporte,
+      Attend, Habitudes : repris par les questions de présence ({phone} {nation} {langs} {since} {with} {alibi}
+      {cargo} {waiting} {often})
     Opérations (toute machine sauf mention) :
       ["defaults"] · ["normalize", profil] · ["serialize", profil] -> texte · ["parse", texte] -> profil (vide si invalide)
       ["facts", profil] -> HashMap des faits de l'histoire · ["summary", profil] -> résumé d'une ligne
       ["knowTiers", savoir] -> [[vague, précis, complet], position, lieu] · ["intelLevel", [...]] -> palier débloqué
       ["presets"] -> [[id, libellé]…] · ["preset", id] -> profil · ["generate", [base, verrous]] -> profil tiré au hasard
       SERVEUR : ["get", unité] -> profil (enregistré, sinon défauts) · ["apply", [unité, profil]] · ["applyRaw", [unité, texte]]
+               ["keepOf", unité] -> texte des réponses du maître du jeu et du cadre (« [réponses, evoke, banned] »), "" sans rien
+               ["keepApply", [unité, texte]] : remet ce texte dans son profil (« Garder pour les prochaines parties »)
     Vérité côté serveur : le profil (secrets, renseignement) reste une variable d'unité non diffusée ; seuls le nom RP
     (comspec_sse_idName) et le profil au contrôle (COMSPEC_ID_Profile, IA réalistes) en sortent.
 */
 params [["_op", "", [""]], ["_a", nil]];
 private _keys = ["name", "role", "nerve", "talk", "aggro", "honesty", "bribe", "fear", "drunk", "lang", "country", "story",
-    "phrases", "sensitive", "secrets", "know", "unlock", "unlockWord", "react", "locks", "preset"];
+    "phrases", "sensitive", "secrets", "know", "unlock", "unlockWord", "react", "locks", "preset", "answers", "evoke", "banned"];
 private _defaults = {
     createHashMapFromArray [
         ["name", ""], ["role", "auto"], ["nerve", 50], ["talk", 50], ["aggro", 30], ["honesty", 60], ["bribe", 30], ["fear", 50],
         ["drunk", 0], ["lang", "common"], ["country", "auto"], ["story", ""], ["phrases", []], ["sensitive", []], ["secrets", []],
         ["know", ""], ["unlock", "trust"], ["unlockWord", ""],
         ["react", createHashMapFromArray [["search", "auto"], ["threat", "auto"], ["bribe", "auto"], ["order", "auto"]]],
-        ["locks", []], ["preset", ""]
+        ["locks", []], ["preset", ""], ["answers", []], ["evoke", "auto"], ["banned", []]
     ]
 };
 private _nl = toString [10];
@@ -44,6 +52,8 @@ private _normalize = {
             private _v = _in get _x;
             private _d = _p get _x;
             call {
+                // Réponses du maître du jeu : validées entrée par entrée (fn_iarpAnswers).
+                if (_x isEqualTo "answers") exitWith { if (_v isEqualType []) then { _p set [_x, ["normalize", _v] call comspec_sse_fnc_iarpAnswers]; }; };
                 if (_d isEqualType 0) exitWith { if (_v isEqualType 0) then { _p set [_x, round ((_v max 0) min 100)]; }; };
                 if (_d isEqualType "") exitWith { if (_v isEqualType "") then { _p set [_x, _v]; }; };
                 if (_d isEqualType []) exitWith {
@@ -63,6 +73,8 @@ private _normalize = {
     if !((_p get "lang") in ["common", "local"]) then { _p set ["lang", "common"]; };
     if !((_p get "country") in ["auto", "ALT", "TNA", "LVN", "MLD"]) then { _p set ["country", "auto"]; };
     if !((_p get "unlock") in ["trust", "bribe", "keyword", "never"]) then { _p set ["unlock", "trust"]; };
+    if !((_p get "evoke") in ["auto", "none", "known", "free"]) then { _p set ["evoke", "auto"]; };
+    _p set ["banned", (_p get "banned") select { _x in ["armed", "explosives", "military", "wanted", "drugs", "politics"] }];
     _p set ["locks", (_p get "locks") select { _x in _keys }];
     _p
 };
@@ -112,7 +124,10 @@ switch (_op) do {
             [["ne a", "nee a", "naissance", "born", "birthplace", "pob"], "pob"], [["employeur", "employer", "travaille pour", "patron"], "employer"],
             [["motif", "raison", "deplacement", "travel", "reason"], "travel"], [["origine", "origin", "ville", "city", "habite", "vient de"], "city"],
             [["metier", "profession", "job", "travail"], "job"], [["contact", "temoin", "garant", "witness"], "contact"],
-            [["adresse", "address"], "address"], [["famille", "family"], "family"], [["age"], "age"], [["nom", "name"], "name"]
+            [["adresse", "address"], "address"], [["famille", "family"], "family"], [["telephone", "phone", "numero"], "phone"],
+            [["nationalite", "nationality"], "nation"], [["langue", "language"], "langs"], [["depuis", "since"], "since"], [["avec", "with"], "with"],
+            [["hier soir", "alibi", "last night", "cette nuit"], "alibi"], [["transporte", "chargement", "cargaison", "cargo"], "cargo"],
+            [["attend", "waiting"], "waiting"], [["habitude", "souvent", "often"], "often"], [["age"], "age"], [["nom", "name"], "name"]
         ];
         {
             private _i = _x find ":";
@@ -288,6 +303,23 @@ switch (_op) do {
         // Profil au contrôle des IA réalistes (identité SSE) : repris par fn_idAiBrain, recalculé au prochain contrôle.
         if ((_p get "role") isNotEqualTo "auto") then { _u setVariable ["COMSPEC_ID_Profile", _p get "role"]; _u setVariable ["comspec_sse_idProfile", nil]; };
         true
+    };
+    case "keepOf": {
+        if (!isServer || {!(_a isEqualType objNull)} || {isNull _a}) exitWith { "" };
+        private _p = ["normalize", _a getVariable ["comspec_sse_iarpProfile", createHashMap]] call comspec_sse_fnc_iarpProfile;
+        if ((_p get "answers") isEqualTo [] && {(_p get "evoke") isEqualTo "auto"} && {(_p get "banned") isEqualTo []}) exitWith { "" };
+        str [_p get "answers", _p get "evoke", _p get "banned"]
+    };
+    case "keepApply": {
+        _a params [["_u", objNull, [objNull]], ["_raw", "", [""]]];
+        if (!isServer || {isNull _u} || {_raw isEqualTo ""}) exitWith { false };
+        private _v = parseSimpleArray _raw;
+        if !(_v isEqualType [] && {(count _v) >= 3}) exitWith { false };
+        private _p = ["normalize", _u getVariable ["comspec_sse_iarpProfile", createHashMap]] call comspec_sse_fnc_iarpProfile;
+        _p set ["answers", _v select 0];
+        _p set ["evoke", _v select 1];
+        _p set ["banned", _v select 2];
+        ["apply", [_u, _p]] call comspec_sse_fnc_iarpProfile
     };
     case "applyRaw": {
         _a params [["_u", objNull, [objNull]], ["_raw", "", [""]]];

@@ -6,6 +6,8 @@
       flee [position]  s'enfuit vers ce point (confrontation, tirs, témoin)
       unhalt  fin d'un stop (temporisation, joueur parti : fn_iarpReact « halt ») : elle reprend sa route
       prone  se jette au sol (tirs proches), se relève 25 s après     look [cible]  regarde la scène 8 s (témoin)
+      back [position] · come [position]  recule, s'approche (« Reculez », « Approchez »)     turn [direction]  se retourne
+      drop  pose son arme au sol (« Lâchez votre arme »), dans un conteneur au sol que tout le monde peut ramasser
     Tirs proches (fn_iarpReact « watch ») : IA locale ailleurs que sur le serveur (client sans tête, hôte) : FiredNear posé
     là où elle est locale, qui prévient le serveur (comspec_sse_iarpFired).
 */
@@ -43,6 +45,20 @@
             [{ params ["_u"]; if (alive _u) then { _u doWatch objNull; }; }, [_u], 8] call CBA_fnc_waitAndExecute;
         };
         case "out": { [_u] allowGetIn false; unassignVehicle _u; moveOut _u; };
+        case "back";
+        case "come": {
+            if (_u getVariable ["ace_captives_isHandcuffed", false]) exitWith {};
+            _u enableAI "PATH"; _u forceSpeed 1.5;
+            _u doMove (_a param [0, getPosATL _u]);
+        };
+        case "turn": { _u doWatch objNull; _u setFormDir (_a param [0, getDir _u]); _u setDir (_a param [0, getDir _u]); };
+        case "drop": {
+            private _w = primaryWeapon _u;
+            if (_w isEqualTo "") then { _w = handgunWeapon _u; };
+            if (_w isEqualTo "") exitWith {};
+            private _h = createVehicle ["GroundWeaponHolder", getPosATL _u, [], 0.5, "CAN_COLLIDE"];
+            _u action ["DropWeapon", _h, _w];
+        };
         case "follow": {
             private _l = _a param [0, objNull];
             if (isNull _l) exitWith {};
