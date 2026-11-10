@@ -8,7 +8,9 @@ class CfgPatches {
 };
 // Langues du mod en plus du français (fn_langList). Un mod de traduction communautaire ajoute sa propre classe
 // (localisation/README.md) : elle apparaît dans le réglage « Langue / Language » sans toucher à ce mod.
-// Toasts d'Arma des réponses des groupes IA (fn_aiOrder « toast ») : %1 = texte de la réponse.
+// Anciens toasts d'Arma des réponses des groupes IA : %1 = texte de la réponse. Déclarés mais PLUS UTILISÉS : plus aucune
+// alerte de l'interface d'Arma, fn_aiOrder « toast » passe par la notification du téléphone (fn_notify). Classes gardées
+// pour les missions ou scripts qui les citeraient encore.
 class CfgNotifications {
     class COMSPEC_ATAK_AiReply {
         title = "%2";

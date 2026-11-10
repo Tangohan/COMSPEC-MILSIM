@@ -90,7 +90,7 @@ if (_tab isEqualTo "history") then {
     };
     private _d = _cur get "doc";
     private _lv = _cur get "levels";
-    private _typeTxt = (["Carte d'identité", "Passeport", "Permis de conduire", "Carte militaire"] select ((["id_card", "passport", "driving_license", "military_id"] find (_d getOrDefault ["type", ""])) max 0)) call _tr;
+    private _typeTxt = ["label", _d getOrDefault ["type", ""]] call comspec_sse_fnc_idDocTypes;
     ((_cur get "verdict") call _verdictInfo) params ["_vt", "_vc", "_vbg"];
     // --- Parcours : verdict et état de chaque niveau d'abord, une seule action principale, le reste replié. -----------------
     private _bio = missionNamespace getVariable ["comspec_sse_id_bio", true];

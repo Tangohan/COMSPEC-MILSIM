@@ -130,7 +130,7 @@ class COMSPEC_SSE_Editor {
     idd = 94000;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; ['load', _this select 0] call comspec_sse_fnc_editor";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; ['load', _this select 0] call comspec_sse_fnc_editor; if (!isNil 'comspec_sse_fnc_guideButton') then { [_this select 0, 'Editor'] call comspec_sse_fnc_guideButton; };";
     onUnload = "['unload'] call comspec_sse_fnc_editor";
 
     class controlsBackground {

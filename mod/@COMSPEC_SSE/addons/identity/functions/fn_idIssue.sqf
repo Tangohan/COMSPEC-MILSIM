@@ -2,7 +2,9 @@
     Délivre un document (SERVEUR) : il entre au registre, virtuel tant qu'il n'est pas matérialisé (fn_idMaterialize).
     [_unit, _spec] call comspec_sse_fnc_idIssue -> docId ("" si refusé)
     _spec (HashMap, tout facultatif) :
-      type          id_card (défaut) | passport | driving_license | military_id
+      type          clé de CfgComspecDocuments : id_card (défaut), passport, driving_license, military_id, ou un type
+                    d'extension active (ex. press_card) ; ses champs « input » (ex. media) sont lus dans _spec
+      groundPos     [x, y] : sans personne, le document est posé au sol à cet endroit (sélecteur Zeus)
       rank, force   carte militaire : grade et force imprimés (défaut : ceux de l'unité)
       country       code du pays (défaut : pays de la mission)
       kind          civil (défaut) | cover (couverture préparée, passe tous les contrôles sauf la biométrie)
@@ -21,7 +23,9 @@ private _reg = ["init"] call comspec_sse_fnc_idRegistry;
 private _key = if (isNull _u) then { _spec getOrDefault ["holderKey", ""] } else { [_u] call comspec_sse_fnc_bioPersonKey };
 if (_key isEqualTo "") then { _key = format ["X%1", floor random 999999]; };
 private _type = _spec getOrDefault ["type", "id_card"];
-if !(_type in ["id_card", "passport", "driving_license", "military_id"]) then { _type = "id_card"; };
+// Types du registre (CfgComspecDocuments : papiers intégrés et extensions actives) ; inconnu ou extension coupée : carte.
+private _tdef = ["get", _type] call comspec_sse_fnc_idDocTypes;
+if ((count _tdef) isEqualTo 0 || {!(["enabled", _tdef get "extension"] call comspec_sse_fnc_idDocTypes)}) then { _type = "id_card"; _tdef = ["get", "id_card"] call comspec_sse_fnc_idDocTypes; };
 private _country = _spec getOrDefault ["country", ""];
 if (_country isEqualTo "" || {_country isEqualTo "auto"}) then { _country = ["default"] call comspec_sse_fnc_idCountries; };
 private _countries = [] call comspec_sse_fnc_idCountries;
@@ -94,12 +98,14 @@ private _addr = format ["%1 %2, %3", 1 + floor (("no" call _r) * 120), _streets 
 private _number = _spec getOrDefault ["number", ""];
 if (_number isEqualTo "") then { _number = [_country, _type, format ["%1|%2", _key, _kind]] call comspec_sse_fnc_idDocNumber; };
 
+// Puce : documents intégrés à puce, ou champ « chip = 1 » du type (extensions).
+private _chipType = _type in ["id_card", "passport", "military_id"] || {(_tdef getOrDefault ["chip", false]) isEqualTo true};
 private _doc = createHashMapFromArray [
     ["id", _id], ["cls", ""], ["type", _type], ["country", _country], ["mrzIssuer", _c getOrDefault ["mrz", _country]], ["number", _number],
     ["last", _printed get "last"], ["first", _printed get "first"], ["sex", _printed get "sex"], ["dob", _printed get "dob"],
     ["pob", _printed get "pob"], ["nat", _c getOrDefault ["mrz", _country]], ["profession", _printed getOrDefault ["profession", ""]],
     ["issued", _issued], ["expires", _expires], ["authority", [_c getOrDefault ["authority", ""], format ["Préfecture de %1", _city]] select ((_c getOrDefault ["authority", ""]) isEqualTo "")], ["address", _addr],
-    ["chip", ["absent", "ok"] select (_type in ["id_card", "passport", "military_id"])], ["chipExpected", _type in ["id_card", "passport", "military_id"]],
+    ["chip", ["absent", "ok"] select _chipType], ["chipExpected", _chipType],
     ["kind", _kind], ["quality", _q], ["forgeryKind", ""], ["flaws", []], ["report", _spec getOrDefault ["report", ""]],
     ["holderKey", _key], ["trueLast", _trueLast], ["trueFirst", _trueFirst], ["athenaId", _spec getOrDefault ["athenaId", ""]],
     ["chipNote", ""], ["issuedAt", time],
@@ -124,6 +130,14 @@ if (_type isEqualTo "military_id") then {
     _doc set ["cardSide", if (isNull _u) then { "" } else { ["east", "west", "guer", "civ"] select (([east, west, independent, civilian] find (side group _u)) max 0) }];
     if ((_doc get "profession") isEqualTo "") then { _doc set ["profession", "Militaire"]; };
 };
+
+// Champs propres au type (input = 1 : saisis par le Zeus, sinon valeur par défaut du type) : imprimés tels quels.
+{
+    _x params ["_ik", "", "_idef"];
+    private _iv = _spec getOrDefault [_ik, ""];
+    if !(_iv isEqualType "") then { _iv = str _iv; };
+    _doc set [_ik, [trim _iv, _idef] select ((trim _iv) isEqualTo "")];
+} forEach (_tdef getOrDefault ["inputs", []]);
 
 // --- Faux : défauts selon le procédé et la qualité ------------------------------------------------------------
 private _flaws = _doc get "flaws";
@@ -183,4 +197,11 @@ if (_inBase) then {
     (_reg get "issued") set [format ["%1|%2|%3", _country, _type, _number], [_id, _baseName select 0, _baseName select 1, _baseReport]];
 };
 if (!isNull _u && {_spec getOrDefault ["materialize", false]}) then { [_id, _u] call comspec_sse_fnc_idMaterialize; };
+// Document posé au sol (sélecteur Zeus « Poser au sol ») : porte-objets à l'endroit choisi.
+private _ground = _spec getOrDefault ["groundPos", []];
+if (isNull _u && {_ground isEqualType []} && {(count _ground) >= 2}) then {
+    private _h = createVehicle ["GroundWeaponHolder", [_ground select 0, _ground select 1, 0], [], 0, "CAN_COLLIDE"];
+    _h setPosATL [_ground select 0, _ground select 1, 0];
+    [_id, _h] call comspec_sse_fnc_idMaterialize;
+};
 _id

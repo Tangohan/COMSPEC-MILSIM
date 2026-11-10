@@ -14,9 +14,10 @@ uiNamespace setVariable ["COMSPEC_ATAK_Secret_dlPass", ""];
 
 ["comspec_atak_native_dataNote", {
     params [["_msg", ""]];
-    // Rendu dans le téléphone (centre de notifications), jamais par-dessus l'écran du jeu.
+    // Rendu dans le téléphone (centre de notifications), jamais par-dessus l'écran du jeu ; interface Zeus ouverte avec
+    // Zeus Enhanced : bandeau ZEN en plus (jamais le message natif du curateur d'Arma).
     ["INFO", _msg, 5, 30] call comspec_atak_native_fnc_notify;
-    if (!isNull (findDisplay 312)) then { [_msg] call BIS_fnc_showCuratorFeedbackMessage; };
+    if (!isNull (findDisplay 312) && {!isNil "zen_common_fnc_showMessage"}) then { [(_msg call comspec_atak_native_fnc_tr) regexReplace ["%", "%%"]] call zen_common_fnc_showMessage; };
 }] call CBA_fnc_addEventHandler;
 
 ["comspec_atak_native_dataShare", {

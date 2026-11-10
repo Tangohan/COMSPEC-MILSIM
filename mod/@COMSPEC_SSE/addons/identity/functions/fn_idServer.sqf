@@ -88,7 +88,7 @@ private _grant = {
 private _label = {
     params ["_d"];
     if ((count _d) isEqualTo 0) exitWith { "Document vierge" };
-    format ["%1 %2 · %3 %4", ["Carte d'identité", "Passeport", "Permis", "Carte militaire"] select ((["id_card", "passport", "driving_license", "military_id"] find (_d get "type")) max 0),
+    format ["%1 %2 · %3 %4", ["label", _d get "type"] call comspec_sse_fnc_idDocTypes,
         _d get "country", toUpper (_d get "last"), _d get "first"]
 };
 // Document imprimé (ce que voit celui qui le tient) : jamais la vérité.
@@ -97,6 +97,8 @@ private _pub = {
     private _c = ([] call comspec_sse_fnc_idCountries) getOrDefault [_d get "country", createHashMap];
     private _p = createHashMap;
     { _p set [_x, _d getOrDefault [_x, ""]]; } forEach ["id", "type", "country", "number", "last", "first", "sex", "dob", "pob", "nat", "profession", "issued", "expires", "authority", "address", "rank", "force"];
+    // Champs propres au type (extensions : média, zone autorisée…), imprimés tels quels.
+    { _p set [_x select 0, _d getOrDefault [_x select 0, ""]]; } forEach ((["get", _d getOrDefault ["type", ""]] call comspec_sse_fnc_idDocTypes) getOrDefault ["inputs", []]);
     _p set ["countryName", _c getOrDefault ["name", _d get "country"]];
     _p set ["countryNameEn", _c getOrDefault ["nameEn", ""]];
     // Pays réel stylisé : gabarit générique de sa zone (europe | americas | other), jamais un vrai modèle.
@@ -444,7 +446,15 @@ switch (_op) do {
         if !([_me] call comspec_sse_fnc_isAuthority) exitWith {
             diag_log text format ["[COMSPEC SSE] Identité : « %1 » réservé au Zeus, refusé au poste %2.", _op, _owner];
         };
-        _args params ["", ["_u", objNull, [objNull]], ["_x1", createHashMap]];
+        _args params ["", ["_u", objNull, [objNull, []]], ["_x1", createHashMap]];
+        // « Poser au sol » (sélecteur) : la cible est une position [x, y].
+        if (_u isEqualType [] && {_op isEqualTo "give"} && {(count _u) >= 2}) exitWith {
+            _x1 set ["groundPos", _u select [0, 2]];
+            _x1 set ["materialize", true];
+            private _id = [objNull, _x1] call comspec_sse_fnc_idIssue;
+            ["zeus", [[format ["Document posé au sol en %1 : %2.", mapGridPosition (_u select [0, 2]), [["doc", [_id]] call comspec_sse_fnc_idRegistry] call _label], "Échec : document non délivré."] select (_id isEqualTo ""), ["info", "warn"] select (_id isEqualTo "")]] call _reply;
+        };
+        if !(_u isEqualType objNull) exitWith {};
         if (isNull _u) exitWith {};
         switch (_op) do {
             case "give": {

@@ -95,7 +95,7 @@ switch (_op) do {
     case "doc": {
         _a params [["_pub", createHashMap], ["_res", createHashMap], ["_subj", objNull], ["_own", false], ["_key", ""]];
         if (!_own) then { ["start", [_pub, _subj, _key, _res]] call comspec_sse_fnc_idHistory; };
-        [_pub, _own] call comspec_sse_fnc_idViewerOpen;
+        [_pub, _own, false, _subj] call comspec_sse_fnc_idViewerOpen;
     };
     case "result": {
         _a params [["_id", ""], ["_lvl", 1], ["_res", createHashMap]];

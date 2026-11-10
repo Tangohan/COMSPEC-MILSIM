@@ -177,7 +177,7 @@ switch (_op) do {
         _a params [["_key", ""]];
         private _vals = _a select [1];
         private _txt = format ([localize _key] + _vals);
-        if (!isNil "comspec_sse_fnc_toast") then { [_txt, "INFO"] call comspec_sse_fnc_toast; } else { hintSilent _txt; };
+        if (!isNil "comspec_sse_fnc_toast") then { [_txt, "INFO"] call comspec_sse_fnc_toast; } else { diag_log text format ["[COMSPEC SSE] IA RP : %1", _txt]; };
         missionNamespace setVariable ["comspec_sse_iarpLastNotice", _txt];
     };
     case "log": {
@@ -243,6 +243,6 @@ switch (_op) do {
         if (!isNil "zen_dialog_fnc_create") exitWith {
             [_title, [["EDIT:MULTI", [localize "STR_COMSPEC_IARP_Z_MemView", localize "STR_COMSPEC_IARP_Z_MemView_D"], [_txt, { _this }, 12]]], {}, {}, []] call zen_dialog_fnc_create;
         };
-        if (!isNil "comspec_sse_fnc_zeusNotify") then { [_title + (toString [10]) + _txt, "info"] call comspec_sse_fnc_zeusNotify; } else { hintSilent (_title + (toString [10]) + _txt); };
+        if (!isNil "comspec_sse_fnc_zeusNotify") then { [_title + (toString [10]) + _txt, "info"] call comspec_sse_fnc_zeusNotify; } else { diag_log text format ["[COMSPEC SSE] IA RP : %1 %2", _title, _txt]; };
     };
 };

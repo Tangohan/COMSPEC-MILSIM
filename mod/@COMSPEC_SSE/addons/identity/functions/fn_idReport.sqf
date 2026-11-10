@@ -20,7 +20,7 @@ private _pos = if (isNull _subj) then { _rec getOrDefault ["pos", getPosASL play
 private _grid = [_pos, 8] call comspec_atak_native_fnc_gridRef;
 private _cfgName = { params ["_cls", ["_root", "CfgWeapons"]]; if (_cls isEqualTo "") exitWith { "" }; getText (configFile >> _root >> _cls >> "displayName") };
 private _who = format ["%1 %2", toUpper (_d getOrDefault ["last", ""]), _d getOrDefault ["first", ""]];
-private _type = (["Carte d'identité", "Passeport", "Permis de conduire", "Carte militaire"] select ((["id_card", "passport", "driving_license", "military_id"] find (_d getOrDefault ["type", ""])) max 0)) call comspec_sse_fnc_tr;
+private _type = ["label", _d getOrDefault ["type", ""]] call comspec_sse_fnc_idDocTypes;
 private _paper = format ["%1 %2 n° %3", _type, _d getOrDefault ["country", ""], _d getOrDefault ["number", ""]];
 private _verdict = toUpper (_rec getOrDefault ["verdict", "ras"]);
 // Tenue et armes vues sur la personne (rien d'autre que ce qu'on voit).

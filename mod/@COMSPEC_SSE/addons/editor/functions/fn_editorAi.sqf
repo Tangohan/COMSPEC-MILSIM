@@ -42,11 +42,25 @@ private _send = {
 };
 // Voie de l'addon identity (papier imprimé, rechargement du paquet).
 private _sendId = { params ["_sub", ["_x1", []]]; ["send", ["aiCfg", [player, _sub, _x1]]] call comspec_sse_fnc_idClient; };
+// Papiers à porter : anciens alias (fn_idRegistry « kit »), puis chaque clé du registre (CfgComspecDocuments, extensions actives
+// comprises : « Carte de presse (Documents d'exemple) »). Même valeur que l'attribut Eden COMSPEC_ID_Carry.
 private _papers = ["auto", "none", "card", "passport", "license", "card_license", "card_passport", "military"];
+private _extNames = createHashMap;
+{ _extNames set [toLower (_x select 0), _x select 1]; } forEach (["extensions"] call comspec_sse_fnc_idDocTypes);
+{
+    private _ext = toLower ((["get", _x] call comspec_sse_fnc_idDocTypes) getOrDefault ["extension", ""]);
+    private _label = ["label", _x] call comspec_sse_fnc_idDocTypes;
+    _papers pushBack [_x, if (_ext isEqualTo "") then { format ["%1 [%2]", _label, _x] } else { format ["%1 (%2)", _label, _extNames getOrDefault [_ext, _ext]] }];
+} forEach (["list", [""]] call comspec_sse_fnc_idDocTypes);
 private _kinds = ["civil", "cover", "forged"];
 private _behav = ["auto", "coopere", "nerveux", "ment", "refuse", "fuit", "agressif", "rendu"];
 private _sides = ["auto", "civ", "west", "east", "guer"];
-private _docTypes = ["id_card", "passport", "driving_license", "military_id"];
+// Libellé d'un choix de papiers à porter : alias de l'éditeur, sinon type du registre.
+private _papersLabel = { params ["_k"]; if (isLocalized ("STR_COMSPEC_SSE_ED_Papers_" + _k)) exitWith { ("Papers_" + _k) call _L }; private _r = (_papers select { _x isEqualType [] && {(_x select 0) isEqualTo _k} }) param [0, [_k, _k]]; _r select 1 };
+// Types de documents servis (registre, extensions actives) : liste « Ajouter un papier » et libellés des papiers d'une IA.
+private _docTypes = (["list", [""]] call comspec_sse_fnc_idDocTypes) apply { [_x, ["label", _x] call comspec_sse_fnc_idDocTypes] };
+// Libellé d'un type de document : celui du registre (extensions comprises), sinon la clé de l'éditeur.
+private _docLabel = { params ["_k"]; private _n = ["label", _k] call comspec_sse_fnc_idDocTypes; if (_n isEqualType "" && {_n isNotEqualTo ""}) then { _n } else { ("Doc_" + _k) call _L } };
 private _roles = ["civilian", "military", "suspect", "hvt"];
 private _states = ["athena", "generated", "pending", "kept"];
 private _picOff = "\a3\ui_f\data\GUI\RscCommon\RscCheckBox\CheckBox_unchecked_ca.paa";
@@ -55,12 +69,13 @@ private _colOn = [0.361, 0.780, 0.420, 1];
 private _colOff = [0.914, 0.941, 0.925, 1];
 private _ctrl = { _d displayCtrl _this };
 private _fill = {
-    // [idc, codes, préfixe de clé, [[donnée, texte]…] en tête]
+    // [idc, codes (ou [code, libellé]), préfixe de clé, [[donnée, texte]…] en tête]
     params ["_idc", "_codes", "_prefix", ["_head", []]];
     private _c = _idc call _ctrl;
     lbClear _c;
     { private _i = _c lbAdd (_x select 1); _c lbSetData [_i, _x select 0]; } forEach _head;
-    { private _i = _c lbAdd ((_prefix + _x) call _L); _c lbSetData [_i, _x]; } forEach _codes;
+    // Code seul : libellé de l'éditeur (préfixe de clé) ; [code, libellé] : libellé donné (types du registre).
+    { if (_x isEqualType []) then { private _i = _c lbAdd (_x select 1); _c lbSetData [_i, _x select 0]; } else { private _i = _c lbAdd ((_prefix + _x) call _L); _c lbSetData [_i, _x]; }; } forEach _codes;
     _c lbSetCurSel 0;
 };
 private _data = { private _c = _this call _ctrl; private _i = lbCurSel _c; if (_i < 0) exitWith { "" }; _c lbData _i };
@@ -352,10 +367,10 @@ switch (_op) do {
         private _nameLine = if (_who isEqualTo "") then { format ["PrevNamePending" call _L, [_true] call _esc] } else { format ["PrevName" call _L, [_who] call _esc] };
         private _carry = 94534 call _data;
         private _kind = 94536 call _data;
-        private _docLine = if (_pid isNotEqualTo "") then { "PrevPapersProfile" call _L } else { format ["%1 · %2", ("Papers_" + _carry) call _L, ("Kind_" + _kind) call _L] };
+        private _docLine = if (_pid isNotEqualTo "") then { "PrevPapersProfile" call _L } else { format ["%1 · %2", ([_carry] call _papersLabel), ("Kind_" + _kind) call _L] };
         private _bh = ("Beh_" + (94538 call _data)) call _L;
-        private _seen = _docs apply { _x params ["", "_type", "_num", "", "", "", ["_country", ""]]; format ["• %1 %2%3", ("Doc_" + _type) call _L, [_num] call _esc, ["", " · " + ([_country] call _esc)] select (_country isNotEqualTo "")] };
-        private _truthDocs = _docs apply { _x params ["", "_type", "_num", "", "", "_k"]; format ["• %1 %2 : %3", ("Doc_" + _type) call _L, [_num] call _esc, ("DocK_" + _k) call _L] };
+        private _seen = _docs apply { _x params ["", "_type", "_num", "", "", "", ["_country", ""]]; format ["• %1 %2%3", [_type] call _docLabel, [_num] call _esc, ["", " · " + ([_country] call _esc)] select (_country isNotEqualTo "")] };
+        private _truthDocs = _docs apply { _x params ["", "_type", "_num", "", "", "_k"]; format ["• %1 %2 : %3", [_type] call _docLabel, [_num] call _esc, ("DocK_" + _k) call _L] };
         private _truthLine = if (_truth isEqualTo "true") then { "PrevSame" call _L } else { format ["PrevTrue" call _L, [_true] call _esc, ("Truth_" + _truth) call _L] };
         // Réglages différents de ce que l'IA porte : ce qui changera à « Appliquer ».
         private _after = if (_pid isNotEqualTo _rowPid || {_pid isEqualTo "" && {_carry isNotEqualTo _rowCarry || {_kind isNotEqualTo _rowKind}}}) then { "<br/>" + format ["PrevAfterApply" call _L, _docLine, _bh] } else { "" };
