@@ -85,6 +85,7 @@ switch (_action) do {
         missionNamespace setVariable ["COMSPEC_ATAK_AlertLogUndoSeq", _n];
         missionNamespace setVariable ["COMSPEC_ATAK_AlertLogUndo", [_n, _old]];
         missionNamespace setVariable ["COMSPEC_ATAK_AlertLog", []];
+        _s set ["alertsLogN", 12];
         call _render;
         ["Journal vidé", compile format ["['undoClearLog', %1] call comspec_atak_native_fnc_alertsAction;", _n]] call comspec_atak_native_fnc_undoSnack;
         [{ if (((missionNamespace getVariable ["COMSPEC_ATAK_AlertLogUndo", []]) param [0, -1]) isEqualTo _this) then { missionNamespace setVariable ["COMSPEC_ATAK_AlertLogUndo", nil]; }; }, _n, 9] call comspec_atak_native_fnc_waitAndExec;
@@ -99,6 +100,8 @@ switch (_action) do {
         missionNamespace setVariable ["COMSPEC_ATAK_AlertLog", _log];
         call _render;
     };
+    // Journal : 12 alertes affichées, « VOIR LA SUITE » en montre 12 de plus (état « alertsLogN »).
+    case "logMore": { _s set ["alertsLogN", ((_s getOrDefault ["alertsLogN", 12]) max 12) + 12]; call _render; };
     case "saluteClear": {
         uiNamespace setVariable ["COMSPEC_ATAK_SaluteDraft", createHashMap];
         { (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) deleteAt _x; } forEach ["sS", "sA", "sL", "sU", "sT", "sE"];

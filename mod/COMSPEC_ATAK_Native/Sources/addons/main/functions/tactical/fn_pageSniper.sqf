@@ -15,8 +15,7 @@ private _mag = currentMagazine player;
 if (_mag isEqualTo "" && {_wpn isNotEqualTo ""}) then { _mag = (getArray (configFile >> "CfgWeapons" >> _wpn >> "magazines")) param [0, ""]; };
 private _rows = [];
 if (_wpn isEqualTo "" || {_mag isEqualTo ""}) exitWith {
-    _rows pushBack ["section", "Tireur d'élite", "Aucune arme"];
-    _rows pushBack ["text", format ["<t color='%1'>Prenez une arme chargée : la munition est détectée automatiquement.</t>", _grey]];
+    _rows pushBack ["empty", "\z\comspec_atak_native\addons\main\data\app_sniper.paa", "Aucune arme en main", "Prenez une arme chargée : la munition, sa vitesse et le zérotage sont détectés tout seuls, puis la table de tir s'affiche."];
     [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
     true
 };
