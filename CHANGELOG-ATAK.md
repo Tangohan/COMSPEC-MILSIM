@@ -38,6 +38,39 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : centre Zeus plus clair, avec l'état du serveur (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Centre Zeus : plus lisible, état du serveur et étiquettes complètes
+- Le panneau CENTRE ZEUS ne recouvre plus la liste de droite de Zeus : il s'adosse à son bord, sur fond opaque, avec sa hauteur adaptée au nombre de joueurs et l'emblème Athena en tête. Aucun bouton ni onglet n'a plus de texte coupé.
+- Quatre onglets : JOUEURS (recherche, filtres, liste, fiche, actions), SERVEUR (FPS, joueurs et IA, versions des mods chargés, liaison Athena du serveur, paquet d'identité SSE, maillage, ordres aux IA, dernières erreurs), ÉTIQUETTES (mode compact ou détaillé, champs au choix) et OUTILS.
+- Fiche du joueur : âge du relevé, version du mod « à jour » ou « pas à jour » par rapport au serveur, compte Athena relié ; un relevé jamais reçu n'est plus confondu avec « hors liaison ».
+- Actions sur le joueur choisi, sur la sélection Zeus ou sur tous les joueurs affichés ; CAMÉRA place la caméra Zeus sur le joueur (double-clic dans la liste).
+- Les fenêtres ouvertes depuis le centre (tableau des liens, éditeur SSE, IA de la zone, manuel, fiche admin) passent devant : le centre se replie et revient à leur fermeture.
+- Étiquettes 3D au-dessus des joueurs : indicatif et nom, téléphone, batterie, signal et nœud du maillage, liaison et compte Athena, version du mod, haut-parleur ou radio, alertes ; en mode compact, seulement ce qui cloche.
+- L'action Zeus « Sirène d'alarme (20 s) » joue une vraie sirène d'alarme du jeu, sans superposition, à la place du bip strident.
+- SSE, Zeus : clic droit sur une IA (ou une sélection d'IA) → « SSE · Roleplay de l'IA » : profil et caractère, savoir et secrets, papiers (voir, donner, retirer), état (stop, relâcher, reddition, fuite, agressif, calme…), mémoire par joueur, réactions aux tirs et aux scènes, faire parler, journal ; tout s'applique d'un coup à toutes les IA sélectionnées, jamais à un joueur.
+- SSE : les IA portent toujours le nom de leurs papiers (plus jamais le nom d'unité Arma) ; le Zeus voit en plus le vrai nom et si la personne ment, porte de faux papiers ou une couverture. Les modules IA RP du Zeus sont rangés dans la catégorie « COMSPEC SSE ».
+EN : Zeus Centre: clearer, with the server status and full labels
+- The ZEUS CENTRE panel no longer covers the Zeus right-hand list: it docks to its edge, on an opaque background, with its height adapted to the number of players and the Athena emblem at the top. No button or tab has cut text any more.
+- Four tabs: PLAYERS (search, filters, list, card, actions), SERVER (FPS, players and AI, loaded mod versions, server Athena link, SSE identity pack, mesh, AI orders, latest errors), LABELS (compact or detailed mode, fields of your choice) and TOOLS.
+- Player card: age of the report, mod version "up to date" or "outdated" compared with the server, linked Athena account; a report never received is no longer confused with "no link".
+- Actions on the chosen player, on the Zeus selection or on all displayed players; CAMERA puts the Zeus camera on the player (double-click in the list).
+- Windows opened from the centre (link chart, SSE editor, AI of the area, manual, admin card) come to the front: the centre folds away and comes back when they close.
+- 3D labels above the players: callsign and name, phone, battery, signal and mesh node, Athena link and account, mod version, speaker or radio, alerts; in compact mode, only what is wrong.
+- The Zeus action "Alarm siren (20 s)" plays a real alarm siren from the game, without overlap, instead of the shrill beep.
+- SSE, Zeus: right-click an AI (or a selection of AIs) → "SSE · AI roleplay": profile and character, knowledge and secrets, papers (see, give, take away), state (stop, release, surrender, flee, aggressive, calm…), memory per player, reactions to shots and scenes, make it talk, log; everything applies at once to all selected AIs, never to a player.
+- SSE: AIs always show the name on their papers (never the Arma unit name); the Zeus also sees the real name and whether the person is lying, carrying forged papers or a cover. The Zeus AI roleplay modules now live in the "COMSPEC SSE" category.
+
+### Détail technique
+- SSE `ia_rp` : `fn_iarpZen` (menu contextuel ZEN `comspec_sse_iarp`, cibles `comspec_sse_iarpZenTargets`, lot), `fn_iarpName` (« shown » / « truth » / « for » / « label » : nom des papiers, vrai nom et nature true | lies | forged | cover pour le Zeus), opérations serveur `profileTweak`, `papersOff`, `zenState`, `memGet`, `memClear`, `reactSet` dans `fn_iarpServer` (droits `comspec_sse_fnc_isAuthority`) ; module `COMSPEC_SSE_Module_IarpWorkshop` en `COMSPEC_Cat_Sse`, classe `COMSPEC_Cat_IaRp` retirée (test `testOnlyFourCategoriesAndNoLeftover` de nouveau au vert). Autotest `sse` : `ia_rp_zeus_actions`, `ia_rp_zeus_menu` (SKIP sans ZEN).
+- `fn_zeusCentre` : panneau adossé au bord gauche de la liste de droite de Zeus (« edge » : arbres et listes affichés dans le tiers droit, groupes compris ; défaut 0,30 h × kw), fond opaque, hauteur = contenu avec liste de 3 à 10 lignes, plafond 0,81 h (au-dessus des panneaux ZEN du bas). Onglets JOUEURS / SERVEUR / ÉTIQUETTES / OUTILS ; « fit » mesure chaque bouton (`ctrlTextWidth`, police réduite jusqu'à 0,0145 h, puis libellé court et infobulle longue). Cible des actions : joueur choisi, sélection Zeus (`curatorSelected`) ou joueurs affichés (filtre et recherche). « tool » : replie le centre, exécute, guette un nouvel affichage (`allDisplays`) jusqu'à 2 s et revient à son Unload. « camera » : `curatorCamera setPosASL` + `setVectorDirAndUp`.
+- `fn_zeusState` : fiche à 14 éléments (compte Athena relié, 13 accepté encore) ; demande « full » quand une fiche a plus de 45 s (au plus toutes les 30 s) ; fraîcheur 90 s ; état du serveur `srvScan` (événement `comspec_atak_native_zeusSrv`, droits `fn_adminAllowed`, une lecture toutes les 3 s par Zeus, réponse `comspec_atak_native_zeusSrvData` au seul demandeur) : FPS, joueurs, IA, versions (`CfgPatches`, `COMSPEC_ATAK_LinkExpected`, DLL du serveur), variables d'Overwatch connect (`comspec_overwatch_auth_state`, `COMSPEC_LinkState`, `COMSPEC_AthenaReady`, `COMSPEC_LastHealthOk`, `COMSPEC_ServerQueue`), registre d'identité (`comspec_sse_idReg` : packAt, documents, pays, population, avis), `COMSPEC_ATAK_MeshRef`, `COMSPEC_ATAK_SrvAiOrd`, journal `COMSPEC_ATAK_Log` (12 dernières alertes, suites de 17 chiffres masquées). Aucun jeton, adresse ni UID.
+- Étiquettes 3D : réglages dans le profil (`COMSPEC_ATAK_ZeusLabelCfg`), lignes empilées le long du vecteur haut de la caméra (pas de l'écran constant), fond sombre, 40 étiquettes au plus, point seul au-delà de 400 m.
+- `fn_zeusClient` « noise » : `A3\Sounds_F\sfx\alarmCar.wss` (2,0 s) relancé toutes les 2,0 s, coupé à la mort, sans téléphone ou téléphone inutilisable (`fn_canUse`).
+- Autotest `zeus` : position du panneau, textes des boutons, onglet SERVEUR rempli, fenêtres ouvertes devant le centre replié, étiquettes 3D, caméra.
+
 ## À venir : configurateur d'équipement, favoris, tendances, pré-kits et poids (site, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

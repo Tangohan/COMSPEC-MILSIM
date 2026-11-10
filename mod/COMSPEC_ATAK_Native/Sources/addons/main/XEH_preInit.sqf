@@ -19,8 +19,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_LinkExpected", LINK_VERSION_STR];
 // Version complète pour les humains (Réglages, Debug, journal, support) : « 2.0.1.AB - Denver · 2026.10.18 a1b2c3d ».
 // Les comparaisons de versions n'utilisent que COMSPEC_ATAK_NativeVersion (MAJEUR.MINEUR.CORRECTIF).
 missionNamespace setVariable ["COMSPEC_ATAK_NativeName", VERSION_NAME];
-missionNamespace setVariable ["COMSPEC_ATAK_NativeBuild", VERSION_NAME + " · " + ([BUILD_STAMP, "dev"] select (BUILD_STAMP isEqualTo ""))];
-diag_log format ["[COMSPEC ATAK NATIVE][INFO][BOOT] COMSPEC ATAK %1 (COMSPEC Link attendu %2)", missionNamespace getVariable "COMSPEC_ATAK_NativeBuild", LINK_VERSION_STR];
+missionNamespace setVariable ["COMSPEC_ATAK_NativeBuild", VERSION_NAME + " · " + ([BUILD_STAMP, "dev"] select (BUILD_STAMP isEqualTo ""))];diag_log format ["[COMSPEC ATAK NATIVE][INFO][BOOT] COMSPEC ATAK %1 (COMSPEC Link attendu %2)", missionNamespace getVariable "COMSPEC_ATAK_NativeBuild", LINK_VERSION_STR];
 diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;
@@ -1054,6 +1053,8 @@ if (hasInterface) then {
     ["comspec_atak_native_zeusStateData", { ["data", _this select 0] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;
     ["comspec_atak_native_zeusObjectOpen", { ["open", _this] call comspec_atak_native_fnc_zeusObject; }] call CBA_fnc_addEventHandler;
     ["comspec_atak_native_zeusStateDenied", { ["denied"] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;
+    // État du serveur (onglet SERVEUR du Centre Zeus) : réponse du serveur au seul Zeus demandeur.
+    ["comspec_atak_native_zeusSrvData", { ["srvData", _this select 0] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;
 };
 // App Admin : un admin demande l'état de la partie, chaque joueur lui répond directement (fn_adminClient).
 if (hasInterface) then {
