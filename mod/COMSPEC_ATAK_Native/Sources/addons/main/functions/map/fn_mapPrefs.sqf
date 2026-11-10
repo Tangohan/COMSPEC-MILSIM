@@ -19,7 +19,8 @@
       "rows" "band" | "self" -> lignes de fn_formRender pour le volet de l'app Carte ; "rows" "names" -> lignes « Fond des noms »
                             (Réglages > Carte et volet CONFIGURATION > Étiquettes)
       "nameBg" fond sombre ?  -> [] (pas de fond) ou [couleur RGBA, fond clair] ; préparé au changement de réglage
-      "nameBgSet" [clé ("alpha" 0-1 | "tone" DARK | LIGHT | AUTO), valeur]
+      "nameBgSet" [clé ("alpha" 0-1 | "tone" DARK | LIGHT | AUTO | "minPx" taille minimale des textes en pixels, 12 à 18 |
+                            "dens" densité des étiquettes 0 légère, 1 normale, 2 dense : fn_mapLbl), valeur]
       "nameBgDraw" [carte, position, texte, police, taille, taille de l'icône px (0), alignement "right" | "left" | "center"] :
                             rectangle derrière un texte de drawIcon, à sa taille exacte (largeur fn_mapTextW, gardée en cache),
                             d'après uiNamespace COMSPEC_ATAK_NameBgNow posé par fn_mapOnDraw à chaque image ; rien sans fond
@@ -173,7 +174,7 @@ switch (_op) do {
     };
     case "nameBgSet": {
         _arg params ["_k", "_v"];
-        private _var = createHashMapFromArray [["alpha", "COMSPEC_ATAK_NameBgAlpha"], ["tone", "COMSPEC_ATAK_NameBgTone"]];
+        private _var = createHashMapFromArray [["alpha", "COMSPEC_ATAK_NameBgAlpha"], ["tone", "COMSPEC_ATAK_NameBgTone"], ["minPx", "COMSPEC_ATAK_MapTextMinPx"], ["dens", "COMSPEC_ATAK_LblDensity"]];
         if !(_k in _var) exitWith {};
         _prof setVariable [_var get _k, _v];
         uiNamespace setVariable ["COMSPEC_ATAK_NameBgCfg", []];
@@ -206,6 +207,11 @@ switch (_op) do {
             _rows pushBack ["segment", "Fond des noms", ["nameBgSet", "alpha", _a, [["NON", 0], ["LÉGER", 0.45], ["NORMAL", 0.7], ["OPAQUE", 0.92]]] call _seg,
                 "Rectangle derrière les indicatifs, les noms des repères et des lieux, les plaques et les distances. Exemple : LÉGER sur la photo satellite"];
             _rows pushBack ["segment", "Couleur du fond des noms", ["nameBgSet", "tone", _tone, [["SOMBRE", "DARK"], ["CLAIR", "LIGHT", "Texte sombre sur fond clair"], ["AUTO", "AUTO", "Sombre sur les fonds sombres et satellite, clair sur les fonds clairs"]]] call _seg];
+            // Étiquettes (fn_mapLbl) : plancher de taille en pixels de l'écran et densité selon le zoom.
+            _rows pushBack ["segment", "Taille minimale des textes", ["nameBgSet", "minPx", _prof getVariable ["COMSPEC_ATAK_MapTextMinPx", 14], [["12 PX", 12], ["14 PX", 14], ["16 PX", 16], ["18 PX", 18]]] call _seg,
+                "Hauteur plancher des indicatifs, noms des repères et des lieux, en pixels de l'écran, quels que soient le zoom, la taille du téléphone et l'échelle de l'interface. Exemple : 16 PX sur un écran 4K ou en mode mini"];
+            _rows pushBack ["segment", "Densité des étiquettes", ["nameBgSet", "dens", _prof getVariable ["COMSPEC_ATAK_LblDensity", 1], [["LÉGÈRE", 0], ["NORMALE", 1], ["DENSE", 2]]] call _seg,
+                "Combien d'étiquettes selon le zoom : en vue lointaine, seulement moi, la sélection, les contacts et les chefs en indicatif court ; libellés complets en vue rapprochée. Exemple : LÉGÈRE pour une carte dégagée en mission chargée, DENSE pour tout lire plus tôt en dézoomant"];
             if (_a > 0) then {
                 _rows pushBack ["slider", "Opacité du fond des noms", round (100 * _a), { profileNamespace setVariable ["COMSPEC_ATAK_NameBgAlpha", (_this select 0) / 100]; uiNamespace setVariable ["COMSPEC_ATAK_NameBgCfg", []]; }, "Exemple : 30 % pour deviner la carte sous le nom, 90 % pour un nom toujours lisible", false, "", {}, "", [5, 100]];
             };

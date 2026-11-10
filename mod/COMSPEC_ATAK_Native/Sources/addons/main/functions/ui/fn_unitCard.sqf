@@ -419,17 +419,9 @@ switch (_mode) do {
         if ((profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) in ["NATO", "MILSTD"]) then { _icon = ([_e] call comspec_atak_native_fnc_natoSymbol) select 0; };
         if (_aboard) then {
             // Silhouette de l'engin (CfgVehicleIcons : avion, hélicoptère, véhicule, navire).
-            // Silhouette générique du genre d'engin (la même pour tous les avions…), plus lisible en petit que l'icône du modèle.
-            private _vi = call {
-                if (_veh isKindOf "Plane") exitWith { "iconPlane" };
-                if (_veh isKindOf "Helicopter") exitWith { "iconHelicopter" };
-                if (_veh isKindOf "Ship") exitWith { "iconShip" };
-                if (_veh isKindOf "Tank") exitWith { "iconTank" };
-                if (_veh isKindOf "StaticWeapon") exitWith { "iconStaticCannon" };
-                "iconCar"
-            };
-            _icon = getText (configFile >> "CfgVehicleIcons" >> _vi);
-            if (_icon isEqualTo "") then { _icon = format ["\A3\ui_f\data\map\vehicleicons\%1_ca.paa", toLower _vi]; };
+            // Silhouette générique du genre d'engin (la même pour tous les avions…), plus lisible en petit que l'icône du modèle ;
+            // la même que celle de la carte (fn_vehIcon).
+            _icon = ([_veh] call comspec_atak_native_fnc_vehIcon) select 1;
         };
         if (!isNull _o && {(_e getOrDefault ["affiliation", ""]) isEqualTo "friend"}) then {
             private _ft = [_o] call comspec_atak_native_fnc_ftInfo;

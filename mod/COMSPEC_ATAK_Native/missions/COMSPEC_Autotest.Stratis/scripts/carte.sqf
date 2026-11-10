@@ -1,5 +1,218 @@
 // Carte : fonds, marqueurs, positions du joueur et de ses cercles, appui long, route, zone, plan, suppression.
 if !("carte" call AT_fnc_groupe) exitWith {};
+// Étiquettes lisibles à tous les zooms (fn_mapLbl) : ~25 étiquettes rapprochées (repères de la mission, alliés de deux
+// groupes, équipage d'un hélicoptère, cible suivie avec la distance au curseur dessus) en paysage plein écran à trois
+// zooms, puis en mini porté. Vérifie : texte d'au moins 12 px réels, aucun fond qui en chevauche un autre ni le bandeau,
+// rien hors de la carte, fond à la taille du texte, pas de nom de lieu en double (noms du moteur retirés), équipage
+// dessiné une fois avec la silhouette de l'hélicoptère et « +1 », cible suivie : étiquette hors du point et de son
+// anneau, distance au curseur sans chevaucher l'étiquette ni l'anneau. Coût par image relevé (onglet PERFS).
+["carte_etiquettes", {
+    private _lbl = !(["comspec_atak_native_fnc_mapLbl", "comspec_atak_native_fnc_vehIcon"] call AT_fnc_nil);
+    if (!_lbl) then { AT_Fin = ""; "build sans fn_mapLbl : scène et coût seulement (référence)" call AT_fnc_info; };
+    private _mode0 = profileNamespace getVariable ["COMSPEC_ATAK_Mode", "MINI"];
+    private _orient0 = profileNamespace getVariable ["COMSPEC_ATAK_Orientation", "PORTRAIT"];
+    private _bg0 = [] call comspec_atak_native_fnc_mapStyle;
+    private _s = call AT_fnc_etat;
+    // Scène : repères serrés autour de moi (noms de la capture du propriétaire), deux groupes d'alliés, un hélicoptère.
+    private _p0 = getPosATL player;
+    private _mks = [];
+    {
+        _x params ["_t", "_type", "_dx", "_dy"];
+        private _m = createMarkerLocal [format ["at_lbl_%1", _forEachIndex], _p0 vectorAdd [_dx, _dy, 0]];
+        _m setMarkerTypeLocal _type;
+        _m setMarkerColorLocal "ColorWEST";
+        _m setMarkerTextLocal _t;
+        _mks pushBack _m;
+    } forEach [["UAV GCS", "b_uav", 40, 25], ["HANGAR DU 160TH", "mil_flag", 55, 10], ["2 ENT CQB (1)", "mil_dot", 30, -20], ["PARCOURS BLEU", "mil_dot", 70, 35],
+        ["TOUR DE CONTRÔLE", "b_hq", -40, 40], ["1 - PO 1", "mil_triangle", -25, 15], ["ARMURERIE", "mil_box", -55, -10], ["DZ NORD", "mil_end", 15, 60],
+        ["PC ALPHA", "b_hq", -10, -45], ["POSTE MÉDICAL", "b_med", 45, -45], ["CHECKPOINT 3", "mil_destroy", -70, 30], ["RAVITAILLEMENT", "b_support", 80, -15]];
+    private _made = [];
+    private _gA = createGroup [west, true];
+    _gA setGroupIdGlobal ["Shadow 2-4"];
+    private _gB = createGroup [west, true];
+    _gB setGroupIdGlobal ["Bravo 2-1"];
+    {
+        _x params ["_g", "_dx", "_dy"];
+        private _u = _g createUnit [typeOf player, _p0 vectorAdd [_dx, _dy, 0], [], 0, "CAN_COLLIDE"];
+        _u setVariable ["COMSPEC_ATAK_AiAtak", true, true];
+        _u disableAI "PATH";
+        _made pushBack _u;
+    } forEach [[_gA, 35, 20], [_gA, 38, 24], [_gB, 60, 30], [_gB, 62, 28], [group player, 25, -10], [group player, 20, 30], [_gB, -30, -30]];
+    // Hélicoptère posé à 90 m, pilote et copilote de mon groupe : un seul symbole (silhouette) et « +1 ».
+    private _hp = _p0 vectorAdd [-90, -60, 0];
+    private _heli = createVehicle ["B_Heli_Light_01_F", _hp, [], 0, "CAN_COLLIDE"];
+    _heli allowDamage false;
+    _heli setDir 45;
+    private _pil = (group player) createUnit ["B_Pilot_F", _hp vectorAdd [5, 0, 0], [], 0, "CAN_COLLIDE"];
+    private _cop = (group player) createUnit ["B_Pilot_F", _hp vectorAdd [6, 0, 0], [], 0, "CAN_COLLIDE"];
+    { _x setVariable ["COMSPEC_ATAK_AiAtak", true, true]; _x allowDamage false; } forEach [_pil, _cop];
+    _pil moveInDriver _heli;
+    _cop moveInTurret [_heli, [0]];
+    _made append [_pil, _cop];
+    uiSleep 2;
+    [(objectParent _pil) isEqualTo _heli && {(objectParent _cop) isEqualTo _heli}, "équipage pas à bord de l'hélicoptère"] call AT_fnc_check;
+    // Cible suivie (RECHERCHER) à 70 m, anneau de précision de 10 m ; le curseur posé dessus (distance au curseur).
+    private _tp = _p0 vectorAdd [-35, 55, 0];
+    private _st = uiNamespace getVariable ["COMSPEC_ATAK_MapSearch", createHashMap];
+    uiNamespace setVariable ["COMSPEC_ATAK_MapSearch", _st];
+    // Mesures de la scène, une fois la carte posée.
+    private _mesure = {
+        params ["_nom"];
+        uiSleep 1.5;
+        if (!_lbl) exitWith {};
+        private _F = uiNamespace getVariable ["COMSPEC_ATAK_LblF", createHashMap];
+        private _out = uiNamespace getVariable ["COMSPEC_ATAK_LblOut", []];
+        if ((count _out) < 5) exitWith { [false, format ["%1 : aucune étiquette calculée", _nom]] call AT_fnc_check; };
+        private _map = _F get "map";
+        (ctrlPosition _map) params ["_mx", "_my", "_mw", "_mh"];
+        private _items = _out select 2;
+        private _rects = _out select 4;
+        (format ["%1 : niveau %2, %3 m/px, %4 demandes, %5 posées, tailles px %6", _nom, _F get "lod", (_F get "mpp") toFixed 2, _out param [5, -1], count _rects,
+            ((_F get "fs") toArray false) apply { [_x select 0, round ((_x select 1) / pixelH)] }]) call AT_fnc_info;
+        // Taille des textes en pixels réels : jamais sous 12 px (plancher 14 px, secondes lignes à 86 %).
+        private _small = [];
+        private _texts = [];
+        {
+            {
+                if ((_x select 0) isEqualTo "T") then {
+                    _texts pushBack (_x select 3);
+                    if (((_x select 5) / pixelH) < 11.5) then { _small pushBack [_x select 3, round ((_x select 5) / pixelH)]; };
+                };
+            } forEach (_x select 5);
+        } forEach _items;
+        [(count _small) isEqualTo 0, format ["%1 : textes trop petits %2", _nom, _small]] call AT_fnc_check;
+        // Aucun fond posé sur un autre, ni sur le bandeau ; rien hors de la carte.
+        private _hud = [_map] call comspec_atak_native_fnc_mapHudRects;
+        private _over = [];
+        {
+            private _a = _x;
+            private _i = _forEachIndex;
+            if ((_a select 0) < _mx - 0.001 || {(_a select 2) > (_mx + _mw + 0.001)} || {(_a select 1) < _my - 0.001} || {(_a select 3) > (_my + _mh + 0.001)}) then { _over pushBack ["hors carte", _i]; };
+            {
+                if (_forEachIndex > _i && {(_a select 0) < (_x select 2) - 0.0005} && {(_a select 2) > (_x select 0) + 0.0005} && {(_a select 1) < (_x select 3) - 0.0005} && {(_a select 3) > (_x select 1) + 0.0005}) then { _over pushBack [_i, _forEachIndex]; };
+            } forEach _rects;
+            { if ((_a select 0) < (_x select 2) && {(_a select 2) > (_x select 0)} && {(_a select 1) < (_x select 3)} && {(_a select 3) > (_x select 1)}) then { _over pushBack ["bandeau", _i]; }; } forEach _hud;
+        } forEach _rects;
+        [(count _over) isEqualTo 0, format ["%1 : étiquettes qui se chevauchent ou sortent %2", _nom, _over select [0, 8]]] call AT_fnc_check;
+        // Fond à la taille du texte : plaque d'une ligne au plus 14 px plus large que son texte mesuré.
+        private _wide = [];
+        {
+            private _pr = _x select 5;
+            private _ts = _pr select { (_x select 0) isEqualTo "T" };
+            private _bgs = _pr select { (_x select 0) isEqualTo "R" && {(_x select 1) isEqualTo 0} && {(_x select 2) isEqualTo 0} && {(_x param [6, ""]) isNotEqualTo ""} };
+            if ((count _ts) isEqualTo 1 && {(count _bgs) > 0}) then {
+                private _t = _ts select 0;
+                private _tw = ["w", [_t select 3, _t select 6, _t select 5]] call comspec_atak_native_fnc_mapLbl;
+                private _bw = ((_bgs select 0) select 3) - ((_bgs select 0) select 1);
+                if ((_bw - _tw) > 16 * pixelW || {(_bw - _tw) < 0}) then { _wide pushBack [_t select 3, round (_bw / pixelW), round (_tw / pixelW)]; };
+            };
+        } forEach _items;
+        [(count _wide) isEqualTo 0, format ["%1 : fonds pas à la taille du texte %2", _nom, _wide select [0, 6]]] call AT_fnc_check;
+        // Noms de lieux (priorité 6) : jamais deux fois le même (le moteur n'en écrit plus).
+        private _up = [];
+        { if ((_x param [8, -1]) isEqualTo 6) then { { if ((_x select 0) isEqualTo "T") then { _up pushBack toUpper (_x select 3); }; } forEach (_x select 5); }; } forEach _items;
+        private _dup = _up select { private _t = _x; ({ _x isEqualTo _t } count _up) > 1 };
+        [(count _dup) isEqualTo 0, format ["%1 : textes en double %2", _nom, _dup arrayIntersect _dup]] call AT_fnc_check;
+        _texts
+    };
+
+    // 1) Paysage plein écran, trois zooms.
+    profileNamespace setVariable ["COMSPEC_ATAK_Mode", "FULL"];
+    profileNamespace setVariable ["COMSPEC_ATAK_Orientation", "LANDSCAPE"];
+    [true] call comspec_atak_native_fnc_open;
+    [[{ !isNull ([] call comspec_atak_native_fnc_display) }, 8] call AT_fnc_wait, "téléphone non ouvert"] call AT_fnc_check;
+    ["MAP", 2] call AT_fnc_page;
+    [] call comspec_atak_native_fnc_localDataRefresh;
+    if (_lbl) then {
+        private _units = (uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["units", createHashMap];
+        private _crew = (values _units) select { (_x getOrDefault ["object", objNull]) in [_pil, _cop] };
+        private _rep = _crew select { (_x getOrDefault ["crewN", 0]) >= 1 };
+        private _mem = _crew select { (_x getOrDefault ["crewOf", ""]) isNotEqualTo "" };
+        [(count _rep) isEqualTo 1 && {(count _mem) isEqualTo 1}, format ["équipage : %1 représentant(s), %2 regroupé(s)", count _rep, count _mem]] call AT_fnc_check;
+        private _vi = [_heli] call comspec_atak_native_fnc_vehIcon;
+        [(_vi select 0) isEqualTo "heli" && {((toLower (_vi select 1)) find "helicopter") >= 0}, format ["silhouette de l'hélicoptère : %1", _vi]] call AT_fnc_check;
+    };
+    _st set ["hit", createHashMapFromArray [["pos", [_tp select 0, _tp select 1, 0]], ["status", "OK"], ["kind", "CS"], ["rad", 10], ["owner", "YB1"], ["q", "YB1"], ["hour", "20:15"]]];
+    {
+        _x params ["_nom", "_sc"];
+        [_sc] call AT_fnc_centre;
+        _s set ["cursorPos", [_tp select 0, _tp select 1, 0]];
+        private _txt = [_nom] call _mesure;
+        if (isNil "_txt") then { _txt = []; };
+        if (_lbl && {_nom isEqualTo "paysage_moyen"}) then {
+            // Équipage : un seul indicatif avec « +1 » ; silhouette dessinée à la place du point (relevé de l'image de calcul).
+            private _vd = uiNamespace getVariable ["COMSPEC_ATAK_LblVeh", []];
+            [(_vd findIf { ((toLower (_x select 1)) find "helicopter") >= 0 }) >= 0, format ["silhouette d'hélicoptère non dessinée : %1", _vd]] call AT_fnc_check;
+            [(_txt findIf { (_x find "+1") >= 0 }) >= 0, format ["indicatif d'équipage « +1 » absent : %1", _txt]] call AT_fnc_check;
+            // Cible suivie : étiquette hors du point et de l'anneau ; distance au curseur sans chevaucher ni l'un ni l'autre.
+            private _F = uiNamespace getVariable ["COMSPEC_ATAK_LblF", createHashMap];
+            private _map = _F get "map";
+            private _sp = _map ctrlMapWorldToScreen _tp;
+            (uiNamespace getVariable ["COMSPEC_ATAK_LblTarget", [[], 14]]) params ["", "_rpx"];
+            private _ring = [(_sp select 0) - _rpx * pixelW, (_sp select 1) - _rpx * pixelH, (_sp select 0) + _rpx * pixelW, (_sp select 1) + _rpx * pixelH];
+            private _ti = ((uiNamespace getVariable ["COMSPEC_ATAK_LblOut", []]) param [2, []]) findIf { ((_x select 5) findIf { (_x select 0) isEqualTo "T" && {((_x select 3) find "YB1") >= 0} }) >= 0 };
+            [_ti >= 0, "étiquette de la cible suivie absente"] call AT_fnc_check;
+            private _hitR = { params ["_a", "_b"]; (_a select 0) < (_b select 2) && {(_a select 2) > (_b select 0)} && {(_a select 1) < (_b select 3)} && {(_a select 3) > (_b select 1)} };
+            if (_ti >= 0) then {
+                private _it = ((uiNamespace getVariable ["COMSPEC_ATAK_LblOut", []]) select 2) select _ti;
+                private _tr = [(_sp select 0) + (_it select 3), (_sp select 1) + (_it select 4), (_sp select 0) + (_it select 3) + (_it select 6), (_sp select 1) + (_it select 4) + (_it select 7)];
+                [!([_tr, _ring] call _hitR), format ["étiquette de la cible sur son anneau : %1 / %2", _tr, _ring]] call AT_fnc_check;
+                private _now = uiNamespace getVariable ["COMSPEC_ATAK_LblNow", []];
+                [(count _now) > 0, "distance au curseur non dessinée"] call AT_fnc_check;
+                { [!([_x, _tr] call _hitR) && {!([_x, _ring] call _hitR)}, format ["distance au curseur sur la cible : %1", _x]] call AT_fnc_check; } forEach _now;
+            };
+        };
+        [format ["etiquettes_%1", _nom]] call AT_fnc_shot;
+    } forEach [["paysage_proche", 0.03], ["paysage_moyen", 0.12], ["paysage_loin", 0.8]];
+    // Coût par image (compteurs de l'onglet PERFS) sur 4 s au zoom moyen.
+    [0.12] call AT_fnc_centre;
+    private _acc = missionNamespace getVariable ["COMSPEC_ATAK_PerfAcc", createHashMap];
+    { _acc deleteAt _x; } forEach ["carte (image)", "carte étiquettes (image)", "carte étiquettes placement"];
+    uiSleep 4;
+    _acc = missionNamespace getVariable ["COMSPEC_ATAK_PerfAcc", createHashMap];
+    (format ["coût : %1", ["carte (image)", "carte étiquettes (image)", "carte étiquettes placement"] apply {
+        private _c = _acc getOrDefault [_x, [0, 0, 0]];
+        format ["%1 %2× moy %3 ms max %4 ms", _x, _c select 0, ((_c select 1) / ((_c select 0) max 1) * 1000) toFixed 2, ((_c select 2) * 1000) toFixed 1]
+    }]) call AT_fnc_info;
+    // 2) Mini porté (HUD) : bandeau compact, étiquettes moins nombreuses mais lisibles, jamais sous le bandeau.
+    _s set ["cursorPos", []];
+    profileNamespace setVariable ["COMSPEC_ATAK_Mode", "MINI"];
+    profileNamespace setVariable ["COMSPEC_ATAK_Orientation", "PORTRAIT"];
+    [] call comspec_atak_native_fnc_close;
+    uiSleep 1;
+    [false] call comspec_atak_native_fnc_open;
+    uiSleep 1.5;
+    ["MAP"] call comspec_atak_native_fnc_navigate;
+    uiSleep 1.5;
+    {
+        _x params ["_nom", "_sc"];
+        [_sc] call AT_fnc_centre;
+        [_nom] call _mesure;
+        [format ["etiquettes_%1", _nom]] call AT_fnc_shot;
+    } forEach [["mini_moyen", 0.12], ["mini_loin", 0.5]];
+    // 3) Mini en main, portrait (petit écran).
+    [] call comspec_atak_native_fnc_close;
+    uiSleep 1;
+    [true] call comspec_atak_native_fnc_open;
+    ["MAP", 2] call AT_fnc_page;
+    [0.12] call AT_fnc_centre;
+    ["mini_main"] call _mesure;
+    ["etiquettes_mini_main"] call AT_fnc_shot;
+    "étiquettes lisibles (au moins 12 px réels) à chaque zoom et taille de téléphone, fonds à la taille du texte, aucune étiquette sur une autre ni sur un symbole, noms de lieux une seule fois, hélicoptère dessiné en silhouette avec « +1 », YB1 hors de son anneau et distance au curseur à côté, bandeau compact en mini" call AT_fnc_visuel;
+    // Remise en état.
+    _st set ["hit", createHashMap];
+    { deleteMarkerLocal _x; } forEach _mks;
+    { deleteVehicle _x; } forEach _made;
+    deleteVehicle _heli;
+    _s set ["cursorPos", []];
+    [_bg0] call comspec_atak_native_fnc_mapStyle;
+    profileNamespace setVariable ["COMSPEC_ATAK_Mode", _mode0];
+    profileNamespace setVariable ["COMSPEC_ATAK_Orientation", _orient0];
+    [true] call comspec_atak_native_fnc_open;
+    uiSleep 1;
+    call AT_fnc_done;
+}, 200] call AT_fnc_run;
+
 ["carte_fonds", {
     if (["comspec_atak_native_fnc_mapStyle", "comspec_atak_native_fnc_mapCtrl", "comspec_atak_native_fnc_mapCenter"] call AT_fnc_nil) exitWith {};
     [["MAP", 2] call AT_fnc_page, "page MAP non ouverte"] call AT_fnc_check;
