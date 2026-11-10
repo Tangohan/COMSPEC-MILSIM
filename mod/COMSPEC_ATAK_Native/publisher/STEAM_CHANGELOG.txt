@@ -1,3 +1,27 @@
+[h1]COMSPEC ATAK 4.3.0 Washington — apps à l'horizontale, carte lisible, centre Zeus, app Fichiers / landscape apps, readable map, Zeus centre, Records app[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Carte[/b] : les noms des unités, des repères et des villes restent lisibles à tous les zooms et ne se chevauchent plus. Réglez-les dans Réglages > Carte.
+[*] [b]Horizontale[/b] : téléphone en main à l'horizontale, les apps s'affichent sur deux colonnes au lieu d'une longue liste.
+[*] [b]Véhicules[/b] : une unité à bord d'un hélicoptère ou d'un véhicule apparaît avec la silhouette de son engin, et l'équipage n'est compté qu'une fois.
+[*] [b]Fichiers[/b] : nouvelle app pour vérifier une personne, un document ou une plaque ; le bouton SCANNER d'un document y mène avec le numéro déjà rempli.
+[*] [b]Écran[/b] : le reflet de la vitre ne clignote plus quand vous touchez l'écran, et le téléphone tremble d'un seul bloc quand il vibre.
+[*] [b]Zeus[/b] : le centre Zeus ne cache plus la liste de droite ; son onglet SERVEUR montre l'état de la partie, et des étiquettes au-dessus des joueurs signalent ce qui ne va pas.
+[*] [b]Messages[/b] : plus rien ne s'affiche par-dessus le jeu, tout arrive dans les notifications du téléphone.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Map[/b]: unit, marker and town names stay readable at every zoom and no longer overlap. Adjust them in Settings > Map.
+[*] [b]Landscape[/b]: with the phone in hand and held sideways, apps show two columns instead of one long list.
+[*] [b]Vehicles[/b]: a unit aboard a helicopter or a vehicle shows with its vehicle's silhouette, and the crew is counted only once.
+[*] [b]Records[/b]: a new app to check a person, a document or a plate; a document's SCANNER button leads there with the number already filled in.
+[*] [b]Screen[/b]: the glass glare no longer flickers when you touch the screen, and the phone shakes as one piece when it vibrates.
+[*] [b]Zeus[/b]: the Zeus centre no longer hides the right-hand list; its SERVER tab shows the state of the game, and labels above players flag what is wrong.
+[*] [b]Messages[/b]: nothing pops up over the game any more, everything arrives in the phone notifications.
+[/list]
+
 [h1]COMSPEC ATAK 4.2.1 Washington — téléphone plus fluide, apps plus claires, réseau relais expliqué, ordres aux IA / smoother phone, clearer apps, explained relay network, AI orders[/h1]
 
 [h2]Français[/h2]
