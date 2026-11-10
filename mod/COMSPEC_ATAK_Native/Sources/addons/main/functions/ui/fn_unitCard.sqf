@@ -234,25 +234,43 @@ switch (_mode) do {
         private _id = ([_t] call _resolve) getOrDefault ["id", ""];
         // Nombre de boutons par rangée : 3 en portrait mini, 5 ailleurs, moins si le plus long libellé ne tiendrait pas.
         private _per = (call _perRow) min (count _cat);
+        // 4.2.1 : largeur des libellés mesurée (bouton caché, même police), plus estimée au nombre de lettres : « GO THERE »
+        // ou « Y ALLER » débordaient en paysage et dans la petite fiche de la carte.
+        private _mz = ["COMSPEC_RscButton", [0, 0, _w, _h], "", _inGroup] call comspec_atak_native_fnc_pageCtrl;
+        _mz ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
+        _mz ctrlSetFontHeight _fh;
+        _mz ctrlShow false;
+        private _lw = _cat apply { _mz ctrlSetText ((_x select 1) call comspec_atak_native_fnc_tr); ctrlTextWidth _mz }; // i18n:brut
+        ctrlDelete _mz;
         private _fits = {
             params ["_n"];
             private _cells = _n + ([0, 1] select ((count _cat) > _n));
             private _lon = 0;
-            { _lon = _lon max (count (((_x select 1) call comspec_atak_native_fnc_tr) splitString "")); } forEach (_cat select [0, _n]);
-            (_lon * _fh * 0.58 / _ratio) <= ((_w - (_cells - 1) * _gap) / (_cells max 1))
+            { _lon = _lon max _x; } forEach (_lw select [0, _n]);
+            (_lon / 0.88) <= ((_w - (_cells - 1) * _gap) / (_cells max 1))
         };
-        while { _per > 2 && {!([_per] call _fits)} } do { _per = _per - 1; };
+        while { _per > 1 && {!([_per] call _fits)} } do { _per = _per - 1; };
         private _more = (count _cat) > _per;
         private _cells = _per + ([0, 1] select _more);
         private _cw = (_w - (_cells - 1) * _gap) / (_cells max 1);
         private _isMap = _ctx isEqualTo "map";
         private _th = COMSPEC_ATAK_Th;
+        // 4.2.1 : libellé mesuré une fois dessiné et réduit jusqu'à la taille plancher s'il dépasse le bouton (la répartition
+        // ci-dessus n'est qu'une estimation : « GO THERE » débordait en paysage).
+        private _fitB = {
+            params ["_b", "_f"];
+            _b ctrlSetFontHeight _f;
+            private _bw = ((ctrlPosition _b) select 2) * 0.9;
+            private _tw = ctrlTextWidth _b;
+            if (_tw > _bw && {_tw > 0}) then { _b ctrlSetFontHeight ((_f * _bw / _tw) max COMSPEC_ATAK_FontMin); };
+        };
         private _make = {
             params ["_row", "_px", "_py", "_pw"];
             _row params ["_key", "_label", "_on", "_tip", "_style"];
             private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_style isEqualTo "main"), [_px, _py, _pw, _h], _label, _inGroup] call comspec_atak_native_fnc_pageCtrl;
             _b ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
-            _b ctrlSetFontHeight _fh;
+            [_b, _fh] call _fitB;
+            _b setVariable ["ucFh", _fh];
             _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
             // Encres du thème : sur la carte les panneaux restent sombres ; ailleurs le thème jour a des boutons clairs.
             if (_style isNotEqualTo "main") then {
@@ -280,6 +298,10 @@ switch (_mode) do {
         if (_more) then {
             private _rest = _cat select [_per];
             private _pp = (call _perRow) min 3 max 2;
+            // Panneau du surplus : moins de colonnes si le plus long libellé n'y tiendrait pas.
+            private _lonR = 0;
+            { _lonR = _lonR max _x; } forEach (_lw select [_per]);
+            while { _pp > 1 && {(_lonR / 0.88) > ((_w - (_pp + 1) * _gap) / _pp)} } do { _pp = _pp - 1; };
             private _rr = ceil ((count _rest) / _pp);
             private _ph = _rr * (_h + _gap) + _gap;
             private _py = _y0 - _ph;
@@ -319,7 +341,16 @@ switch (_mode) do {
             private _b = (_bar get "btns") param [_forEachIndex, controlNull];
             _x params ["", "_label", "_on"];
             if (!isNull _b) then {
-                _b ctrlSetText ((_label) call comspec_atak_native_fnc_tr);
+                private _lt = (_label) call comspec_atak_native_fnc_tr;
+                if ((ctrlText _b) isNotEqualTo _lt) then {
+                    _b ctrlSetText _lt; // i18n:brut (déjà traduit)
+                    // Libellé changé (HORS LIGNE, SUIVRE / NE PLUS SUIVRE…) : remesuré, réduit s'il dépasse le bouton.
+                    private _f = _b getVariable ["ucFh", ctrlFontHeight _b];
+                    _b ctrlSetFontHeight _f;
+                    private _bw = ((ctrlPosition _b) select 2) * 0.9;
+                    private _tw = ctrlTextWidth _b;
+                    if (_tw > _bw && {_tw > 0}) then { _b ctrlSetFontHeight ((_f * _bw / _tw) max COMSPEC_ATAK_FontMin); };
+                };
                 _b ctrlEnable _on;
                 _b setVariable ["ucId", _id];
                 if ((_b getVariable ["ucStyle", ""]) isEqualTo "") then {
@@ -356,14 +387,50 @@ switch (_mode) do {
         private _lineH = _fs * 1.15;
         private _pw = (((_mw * 0.55) max (_font * 14 / _ratio)) min (_mw - _toolCol - 2 * _pad)) max (_font * 8 / _ratio);
         private _px = ((_bx + (_mw - _pw) / 2) min (_bx + _mw - _toolCol - _pad - _pw)) max (_bx + _pad);
-        private _ph = _in + _tap + ([_lineH * 2 + _in * 0.4, 0] select _mini) + _in * 0.6 + _tap + _in;
-        // Au-dessus du bandeau et de RECHERCHER.
-        private _py = _by + _mh - _panH - _pad * 2 - _fs * 1.9 - _pad - _ph;
+        private _o = _e getOrDefault ["object", objNull];
+        // À bord d'un engin (4.2.1) : silhouette de l'engin, bloc ENGIN (nom et genre) et tuiles de l'engin.
+        private _veh = [objNull, vehicle _o] select (!isNull _o && {(vehicle _o) isNotEqualTo _o});
+        private _aboard = !isNull _veh;
+        private _air = _aboard && {_veh isKindOf "Air"};
+        // Par ordre d'importance : les dernières sautent si la carte est trop basse.
+        private _keys = [["GRILLE", "DERNIER SIGNAL", "DISTANCE", "AZIMUT"],
+            ([["PLACE", "VITESSE", "CAP"], ["PLACE", "ALT. SOL", "VITESSE", "CAP"]] select _air) + ["GRILLE", "DERNIER SIGNAL", "DISTANCE", "AZIMUT", "CARBURANT", "À BORD"]] select _aboard;
+        // Tuiles : autant par rangée que la largeur le permet (2 à 4), rangées en trop retirées pour rester dans la carte.
+        private _cw = _pw - pixelW * 4 - 2 * _in / _ratio * 0.6;
+        private _per = ((floor (_cw / (_font * 4.2 / _ratio))) max 2) min 4;
+        private _tileH = _lineH * 1.85;
+        private _pillH = _lineH * 1.1;
+        private _fixedH = _in + _tap + _in * 0.3 + _pillH + _in * 0.3 + _lineH * 1.1 + _in * 0.3 + _in * 0.6 + _tap + _in;
+        // Au-dessus du bandeau et de RECHERCHER. Carte trop basse (petit téléphone en portrait) pour l'essentiel (à bord :
+        // place, altitude, vitesse, cap) : la fiche descend sur le bandeau et RECHERCHER, qui reviennent à sa fermeture.
+        private _bottom = _by + _mh - _panH - _pad * 2 - _fs * 1.9 - _pad;
+        private _need = ceil (([2, 4] select _aboard) / _per);
+        if ((_fixedH + _need * _tileH) > (_bottom - _by - _pad)) then { _bottom = _by + _mh - _pad; };
+        private _room = _bottom - _by - _pad;
+        private _rows = ceil ((count _keys) / _per);
+        while { _rows > 1 && {(_fixedH + _rows * _tileH) > _room} } do { _rows = _rows - 1; };
+        _keys = _keys select [0, _rows * _per];
+        private _ph = _fixedH + _rows * _tileH;
+        // Jamais au-dessus du haut de la carte.
+        private _py = (_bottom - _ph) max (_by + _pad);
         private _made = [];
         private _mk = { params ["_class", "_pos", ["_text", ""]]; private _c = [_class, _pos, _text, false] call comspec_atak_native_fnc_pageCtrl; _made pushBack _c; _c };
         ([_e] call comspec_atak_native_fnc_symbology) params ["_icon", "_color"];
         if ((profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) in ["NATO", "MILSTD"]) then { _icon = ([_e] call comspec_atak_native_fnc_natoSymbol) select 0; };
-        private _o = _e getOrDefault ["object", objNull];
+        if (_aboard) then {
+            // Silhouette de l'engin (CfgVehicleIcons : avion, hélicoptère, véhicule, navire).
+            // Silhouette générique du genre d'engin (la même pour tous les avions…), plus lisible en petit que l'icône du modèle.
+            private _vi = call {
+                if (_veh isKindOf "Plane") exitWith { "iconPlane" };
+                if (_veh isKindOf "Helicopter") exitWith { "iconHelicopter" };
+                if (_veh isKindOf "Ship") exitWith { "iconShip" };
+                if (_veh isKindOf "Tank") exitWith { "iconTank" };
+                if (_veh isKindOf "StaticWeapon") exitWith { "iconStaticCannon" };
+                "iconCar"
+            };
+            _icon = getText (configFile >> "CfgVehicleIcons" >> _vi);
+            if (_icon isEqualTo "") then { _icon = format ["\A3\ui_f\data\map\vehicleicons\%1_ca.paa", toLower _vi]; };
+        };
         if (!isNull _o && {(_e getOrDefault ["affiliation", ""]) isEqualTo "friend"}) then {
             private _ft = [_o] call comspec_atak_native_fnc_ftInfo;
             if ((_ft get "id") isNotEqualTo "") then { _color = _ft get "rgba"; };
@@ -379,9 +446,11 @@ switch (_mode) do {
         _cbg ctrlSetBackgroundColor (_th get "mapCard");
         private _edge = ["COMSPEC_RscText", [_px, _py, pixelW * 4, _ph]] call _mk;
         _edge ctrlSetBackgroundColor _rgb;
-        // Pastille : le symbole de l'unité dans sa couleur ; pour un contact, la forme de son affiliation avec le symbole dedans.
+        // Pastille : le symbole de l'unité dans sa couleur (à bord : la silhouette de l'engin) ; pour un contact, la forme de
+        // son affiliation avec le symbole dedans.
         private _x0 = _px + pixelW * 4 + _in / _ratio * 0.6;
         private _chipW = _tap / _ratio;
+        private _tipIc = ("Symbole de l'unité à pied. À bord d'un engin : sa silhouette (avion, hélicoptère, véhicule, navire)") call comspec_atak_native_fnc_tr;
         if (_contact) then {
             {
                 _x params ["_ctex", "_crole", "_csc"];
@@ -391,11 +460,13 @@ switch (_mode) do {
             } forEach (["layers", _cAff] call comspec_atak_native_fnc_contactStyle);
             private _ic = ["COMSPEC_RscIcon", [_x0 + _chipW * 0.25, _py + _in + _tap * 0.25, _chipW * 0.5, _tap * 0.5], _icon] call _mk;
             _ic ctrlSetTextColor _rgb;
+            _ic ctrlSetTooltip _tipIc;
         } else {
             private _chip = ["COMSPEC_RscText", [_x0, _py + _in, _chipW, _tap]] call _mk;
             _chip ctrlSetBackgroundColor [_rgb select 0, _rgb select 1, _rgb select 2, 0.16];
             private _ic = ["COMSPEC_RscIcon", [_x0 + _chipW * 0.15, _py + _in + _tap * 0.15, _chipW * 0.7, _tap * 0.7], _icon] call _mk;
             _ic ctrlSetTextColor _rgb;
+            _ic ctrlSetTooltip _tipIc;
         };
         // Passer en revue : précédent, n/m, suivant ; puis fermer. Cibles de la hauteur tactile.
         private _peers = call _peerList;
@@ -410,7 +481,9 @@ switch (_mode) do {
             [{ ["mapCard"] call comspec_atak_native_fnc_unitCard; [] call comspec_atak_native_fnc_inspectorUpdate; }] call comspec_atak_native_fnc_nextFrame;
         }];
         private _xT = _xR - _bW;
-        if ((count _peers) > 0) then {
+        // Petite fiche : sans PRÉCÉDENT / SUIVANT plutôt qu'un indicatif illisible (la revue reste au clic sur la carte).
+        private _tx0 = _x0 + _chipW + _in / _ratio * 0.6;
+        if ((count _peers) > 0 && {(_xT - _bW * 2 - _tx0) >= (_font * 5 / _ratio)}) then {
             private _cntW = _fs * 2.6 / _ratio;
             private _showCnt = _pw > (_chipW + _bW * 3 + _cntW + _font * 5 / _ratio);
             private _nx = ["COMSPEC_RscIconButton", [_xT - _bW, _py + _in, _bW, _tap], _dir + "ui_chevron_right.paa"] call _mk;
@@ -423,6 +496,7 @@ switch (_mode) do {
                 _cnt ctrlSetFont "EtelkaMonospacePro";
                 _cnt ctrlSetFontHeight (((_fs * 0.85) max COMSPEC_ATAK_FontMin));
                 _cnt ctrlSetTextColor (_th get "mapDim");
+                _cnt ctrlSetTooltip (("Rang dans la revue : mon groupe, puis les alliés à moins d'un kilomètre. Exemple : 2/5") call comspec_atak_native_fnc_tr);
                 _xT = _xT - _cntW;
             };
             private _pv = ["COMSPEC_RscIconButton", [_xT - _bW, _py + _in, _bW, _tap], _dir + "ui_back.paa"] call _mk;
@@ -431,17 +505,81 @@ switch (_mode) do {
             _pv ctrlAddEventHandler ["ButtonClick", { [{ ["step", -1] call comspec_atak_native_fnc_unitCard; }] call comspec_atak_native_fnc_nextFrame; }];
             _xT = _xT - _bW;
         };
-        private _tx0 = _x0 + _chipW + _in / _ratio * 0.6;
-        private _title = ["COMSPEC_RscStructuredText", [_tx0, _py + _in + (_tap - _fs * 1.35) / 2, (_xT - _tx0 - pixelW * 2) max (_chipW), _fs * 1.35]] call _mk;
-        _title ctrlSetFontHeight _fs;
-        private _detail = controlNull;
-        if (!_mini) then {
-            _detail = ["COMSPEC_RscStructuredText", [_x0, _py + _in + _tap + _in * 0.2, _pw - (_x0 - _px) - _in / _ratio * 0.6, _lineH * 2 + _in * 0.2]] call _mk;
-            _detail ctrlSetFontHeight _fs;
+        // Indicatif sur une ligne (texte simple : réduit puis raccourci « … » s'il ne tient pas, jamais sur deux lignes).
+        private _title = ["COMSPEC_RscText", [_tx0, _py + _in, ((_xT - _tx0 - pixelW * 2) max _chipW), _tap]] call _mk;
+        _title ctrlSetFont "COMSPEC_BarlowBold";
+        _title ctrlSetTextColor (_th get "mapText");
+        private _cy = _py + _in + _tap + _in * 0.3;
+        // Pastilles : état médical (APTE…) puis état de l'engin (EN VOL…), à pied ou l'affiliation d'un contact.
+        private _pills = [];
+        {
+            private _p = ["COMSPEC_RscTextCenter", [_x0, _cy, _cw / 2 - pixelW * 4, _pillH]] call _mk;
+            _p ctrlSetFont "COMSPEC_BarlowBold";
+            _p ctrlSetBackgroundColor (_th get "surface2");
+            _p ctrlSetTooltip (_x call comspec_atak_native_fnc_tr);
+            _pills pushBack _p;
+        } forEach [
+            "État médical. APTE : valide ; BLESSÉ : touché mais conscient ; INCONSCIENT ; MORT ; HORS LIGNE : sa balise ne transmet plus ; « — » : état masqué par la mission. Exemple : APTE",
+            "État de l'engin. Aéronef : EN VOL, AU SOL, EN APPROCHE (descend sous 250 m), DÉCOLLAGE (monte sous 250 m), STATIONNAIRE (hélicoptère presque immobile). Véhicule ou navire : EN ROUTE ou À L'ARRÊT. NON REÇU : balise coupée. Exemple : EN VOL"
+        ];
+        _cy = _cy + _pillH + _in * 0.3;
+        // Ligne sous les pastilles. À pied : nom, fonction et joueur (allié), piste ancienne (contact). À bord : bloc ENGIN,
+        // silhouette, nom et genre de l'engin (sa place, son altitude… sont dans les tuiles).
+        private _rh = _lineH * 1.1;
+        private _head = controlNull;
+        private _role = controlNull;
+        if (_aboard) then {
+            private _hi = ["COMSPEC_RscIcon", [_x0, _cy + _rh * 0.1, _rh * 0.8 / _ratio, _rh * 0.8], _icon] call _mk;
+            _hi ctrlSetTextColor (_th get "mapText");
+            _hi ctrlSetTooltip _tipIc;
+            _head = ["COMSPEC_RscText", [_x0 + _rh / _ratio, _cy, _cw - _rh / _ratio, _rh]] call _mk;
+            _head ctrlSetFont "COMSPEC_BarlowBold";
+            _head ctrlSetTextColor (_th get "mapText");
+            _role = _head;
+        } else {
+            _role = ["COMSPEC_RscText", [_x0, _cy, _cw, _rh]] call _mk;
+            _role ctrlSetTextColor (_th get "mapDim");
         };
+        _cy = _cy + _rh + _in * 0.3;
+        // Tuiles : libellé en petit, valeur dessous ; l'aide de chaque tuile en bulle.
+        private _tips = createHashMapFromArray [
+            ["PLACE", "Sa place à bord : pilote, copilote, tireur, chef de bord, conducteur ou passager. Exemple : Pilote"],
+            ["ALT. SOL", "Hauteur au-dessus du sol ou de la mer (pas l'altitude GPS). Exemple : 450 m"],
+            ["VITESSE", "Vitesse de l'engin. Exemple : 520 km/h (en nœuds, kt, si la carte est réglée en unités impériales)"],
+            ["CAP", "Direction suivie par l'engin, en degrés et point cardinal. Exemple : 210° SSO (sud-sud-ouest)"],
+            ["CARBURANT", "Carburant restant dans l'engin. Exemple : 64 %"],
+            ["À BORD", "Personnes à bord, équipage et passagers compris. Exemple : 2 pers. (pilote et copilote)"],
+            ["GRILLE", "Position sur la grille de la carte (8 chiffres). Exemple : 1467 1638"],
+            ["DISTANCE", "Distance à vol d'oiseau depuis vous. Exemple : 1,1 km"],
+            ["AZIMUT", "Direction à prendre depuis vous pour le rejoindre, en degrés et point cardinal. Exemple : 210° SSO (sud-sud-ouest)"],
+            ["DERNIER SIGNAL", "Âge de la dernière position reçue. Exemple : il y a 11 s (« en direct » sous 2 s). Au-delà d'une minute, il a pu bouger."]
+        ];
+        private _tw = (_cw - (_per - 1) * pixelW * 6) / _per;
+        private _tiles = [];
+        {
+            private _tx = _x0 + (_forEachIndex mod _per) * (_tw + pixelW * 6);
+            private _ty = _cy + (floor (_forEachIndex / _per)) * _tileH;
+            private _tip = (_tips getOrDefault [_x, ""]) call comspec_atak_native_fnc_tr;
+            private _lb = ["COMSPEC_RscText", [_tx, _ty, _tw, _lineH * 0.9], _x] call _mk;
+            _lb ctrlSetFontHeight ((_fs * 0.78) max COMSPEC_ATAK_FontMin);
+            // Libellé réduit, puis abrégé « … », s'il dépasse la tuile (« DERNIER SIGNAL » dans une tuile étroite).
+            private _lt = ctrlText _lb;
+            private _lwM = _tw * 0.96;
+            if ((ctrlTextWidth _lb) > _lwM) then { _lb ctrlSetFontHeight ((((_fs * 0.78) * _lwM / (ctrlTextWidth _lb)) max COMSPEC_ATAK_FontMin)); };
+            private _ln = count _lt;
+            while { _ln > 1 && {(ctrlTextWidth _lb) > _lwM} } do { _ln = _ln - 1; _lb ctrlSetText ((_lt select [0, _ln]) + "…"); }; // i18n:brut
+            _lb ctrlSetTextColor (_th get "mapDim");
+            _lb ctrlSetTooltip _tip;
+            private _vl = ["COMSPEC_RscText", [_tx, _ty + _lineH * 0.8, _tw, _lineH]] call _mk;
+            _vl ctrlSetFont "EtelkaMonospacePro";
+            _vl ctrlSetTextColor (_th get "mapText");
+            _vl ctrlSetTooltip _tip;
+            _tiles pushBack [_x, _vl];
+        } forEach _keys;
         private _bar = ["bar", [_e, "map", _x0, _py + _ph - _in - _tap, _pw - (_x0 - _px) - _in / _ratio * 0.6, false]] call comspec_atak_native_fnc_unitCard;
         _made append (_bar get "all");
-        private _card = createHashMapFromArray [["ctrls", _made], ["title", _title], ["detail", _detail], ["bar", _bar], ["id", _e getOrDefault ["id", ""]], ["texts", ["", ""]]];
+        private _card = createHashMapFromArray [["ctrls", _made], ["title", _title], ["role", _role], ["head", _head], ["pills", _pills], ["tiles", _tiles],
+            ["aboard", _aboard], ["veh", _veh], ["pillMax", _cw / 2 - pixelW * 4], ["icon", _icon], ["bar", _bar], ["id", _e getOrDefault ["id", ""]], ["texts", []]];
         uiNamespace setVariable ["COMSPEC_ATAK_UnitCard", _card];
         ["tick"] call comspec_atak_native_fnc_unitCard;
         _ph + _fs * 1.9 + _pad
@@ -457,42 +595,118 @@ switch (_mode) do {
             ["mapCard"] call comspec_atak_native_fnc_unitCard;
             false
         };
-        private _sz = ((COMSPEC_ATAK_FontMin / ((([] call comspec_atak_native_fnc_layoutGet) get "fontSmall") max 0.001)) max 0.85) toFixed 2;
-        private _esc = { [[(_this regexReplace ["&", "&amp;"]), "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
+        private _o = _e getOrDefault ["object", objNull];
+        private _veh = [objNull, vehicle _o] select (!isNull _o && {(vehicle _o) isNotEqualTo _o});
+        // Monté ou descendu d'un engin, ou changé d'engin : la fiche change de forme, elle est refaite.
+        if (_veh isNotEqualTo (_card get "veh")) exitWith { ["mapCard"] call comspec_atak_native_fnc_unitCard; false };
+        private _tr = { _this call comspec_atak_native_fnc_tr };
+        private _fs = ([] call comspec_atak_native_fnc_layoutGet) get "fontSmall";
         private _th = COMSPEC_ATAK_Th;
         private _st = ["state", [_e, true]] call comspec_atak_native_fnc_unitCard;
-        private _o = _e getOrDefault ["object", objNull];
         private _friend = (_e getOrDefault ["affiliation", ""]) isEqualTo "friend";
-        private _t1 = format ["<t font='COMSPEC_BarlowBold' size='1.15' color='%1'>%2</t>  <t size='%3' color='%4'>● %5</t>", _th get "hexMapText", (_e getOrDefault ["callsign", "CONTACT"]) call _esc, _sz, _st select 2, toUpper ((_st select 1) call comspec_atak_native_fnc_tr)];
-        private _t2 = "";
-        if (!isNull (_card get "detail")) then {
-            private _parts = [];
-            if (_friend && {!isNull _o}) then {
-                private _ft = [_o] call comspec_atak_native_fnc_ftInfo;
-                if ((_ft get "name") isNotEqualTo "") then { _parts pushBack ((_ft get "name") call _esc); };
-                if ((_ft get "roleShort") isNotEqualTo "") then { _parts pushBack ((_ft get "roleShort") call _esc); };
-                if (isPlayer _o) then { _parts pushBack ((name _o) call _esc); };
-            };
-            if (!_friend) then {
-                // Affiliation en toutes lettres à sa couleur (jetons de fn_theme), puis « position ancienne » si la piste est figée.
-                private _cAff = ["aff", _e] call comspec_atak_native_fnc_contactStyle;
-                // Téléphone tracé (fn_pollUnits) : « TÉLÉPHONE », jamais un camp deviné.
-                _parts pushBack format ["<t color='%1'>%2</t>", ["hex", _cAff] call comspec_atak_native_fnc_contactStyle, [["label", _cAff] call comspec_atak_native_fnc_contactStyle, ("TÉLÉPHONE") call comspec_atak_native_fnc_tr] select (_e getOrDefault ["phone", false])];
-                if ((_e getOrDefault ["freshness", "LIVE"]) in ["STALE", "LOST", "OFFLINE"]) then { _parts pushBack format ["<t color='%1'>%2</t>", _th get "hexMapWarn", ("POSITION ANCIENNE") call comspec_atak_native_fnc_tr]; };
-            };
-            if (!isNull _o && {(vehicle _o) isNotEqualTo _o}) then { _parts pushBack format [("à bord %1") call comspec_atak_native_fnc_tr, (getText (configOf vehicle _o >> "displayName")) call _esc]; };
-            private _p = _e getOrDefault ["position", [0, 0, 0]];
-            private _dd = player distance2D _p;
-            private _age = round (diag_tickTime - (_e getOrDefault ["updated", diag_tickTime]));
-            _t2 = format ["<t size='%1' color='%2'>%3</t><br/><t font='EtelkaMonospacePro' size='%1' color='%2'>%4 · %5 · %6° · %7</t>", _sz, _th get "hexMapDim", _parts joinString " · ",
-                [_p, 8] call comspec_atak_native_fnc_gridRef, [format ["%1 m", round _dd], format ["%1 km", (_dd / 1000) toFixed 1]] select (_dd >= 1000),
-                [(round (player getDir _p)) mod 360, 3] call CBA_fnc_formatNumber, [format ["%1 s", _age], format ["%1 min", floor (_age / 60)]] select (_age >= 60)];
+        private _p = _e getOrDefault ["position", [0, 0, 0]];
+        private _dd = player distance2D _p;
+        private _age = round (diag_tickTime - (_e getOrDefault ["updated", diag_tickTime]));
+        private _deg = { params ["_a"]; format ["%1° %2", [(round _a) mod 360, 3] call CBA_fnc_formatNumber, [_a] call comspec_atak_native_fnc_cardinal] };
+        // Rôle.
+        private _parts = [];
+        if (_friend && {!isNull _o}) then {
+            private _ft = [_o] call comspec_atak_native_fnc_ftInfo;
+            if ((_ft get "name") isNotEqualTo "") then { _parts pushBack (_ft get "name"); };
+            if ((_ft get "roleShort") isNotEqualTo "") then { _parts pushBack (_ft get "roleShort"); };
+            if (isPlayer _o) then { _parts pushBack (name _o); };
         };
-        private _texts = [_t1, _t2];
+        private _cAff = ["aff", _e] call comspec_atak_native_fnc_contactStyle;
+        if (!_friend) then {
+            // Téléphone tracé (fn_pollUnits) : « TÉLÉPHONE », jamais un camp deviné ; « position ancienne » si la piste est figée.
+            if ((_e getOrDefault ["freshness", "LIVE"]) in ["STALE", "LOST", "OFFLINE"]) then { _parts pushBack (("POSITION ANCIENNE") call _tr); };
+        };
+        // Pastille d'engin : état du vol (aéronef) ou de la route ; à pied : À PIED, ou l'affiliation d'un contact.
+        private _vehTxt = "";
+        private _pill2 = [("À PIED") call _tr, toUpper ([["label", _cAff] call comspec_atak_native_fnc_contactStyle, ("TÉLÉPHONE") call _tr] select (_e getOrDefault ["phone", false]))] select !_friend;
+        private _pill2Col = [_th get "mapDim", ["ink", _cAff] call comspec_atak_native_fnc_contactStyle] select !_friend;
+        private _vals = createHashMapFromArray [
+            ["GRILLE", [_p, 8] call comspec_atak_native_fnc_gridRef],
+            ["DISTANCE", [format ["%1 m", round _dd], format ["%1 km", (_dd / 1000) toFixed 1]] select (_dd >= 1000)],
+            ["AZIMUT", [player getDir _p] call _deg],
+            ["DERNIER SIGNAL", call {
+                if (_age < 2) exitWith { ("en direct") call _tr };
+                if (_age < 60) exitWith { format [("il y a %1 s") call _tr, _age] };
+                format [("il y a %1") call _tr, format ["%1 min", floor (_age / 60)]]
+            }]
+        ];
+        if (!isNull _veh) then {
+            private _agl = (getPos _veh) select 2;
+            private _spd = speed _veh;
+            private _vz = (velocity _veh) select 2;
+            private _kind = call {
+                if (_veh isKindOf "Plane") exitWith { "AVION" };
+                if (_veh isKindOf "Helicopter") exitWith { "HÉLICOPTÈRE" };
+                if (_veh isKindOf "Air") exitWith { "AÉRONEF" };
+                if (_veh isKindOf "Ship") exitWith { "NAVIRE" };
+                if (_veh isKindOf "StaticWeapon") exitWith { "ARME FIXE" };
+                "VÉHICULE"
+            };
+            _vehTxt = format ["%1 · %2", getText (configOf _veh >> "displayName"), _kind call _tr];
+            _pill2 = toUpper ((call {
+                if !(_veh isKindOf "Air") exitWith { ["À l'arrêt", "En route"] select (_spd > 3) };
+                if (isTouchingGround _veh || {_agl < 2}) exitWith { "Au sol" };
+                if (_veh isKindOf "Helicopter" && {_spd < 10} && {(abs _vz) < 2}) exitWith { "Stationnaire" };
+                if (_agl < 250 && {_vz < -2}) exitWith { "EN APPROCHE" };
+                if (_agl < 250 && {_vz > 2}) exitWith { "Décollage" };
+                "En vol"
+            }) call _tr);
+            _pill2Col = [_th get "mapText", _th get "mapOk"] select (_veh isKindOf "Air" && {!(isTouchingGround _veh)});
+            private _seat = call {
+                if ((driver _veh) isEqualTo _o) exitWith { [["Conducteur", "Barreur"] select (_veh isKindOf "Ship"), "Pilote"] select (_veh isKindOf "Air") };
+                if ((_veh isKindOf "Air") && {(_veh turretUnit [0]) isEqualTo _o}) exitWith { "Copilote" };
+                if ((commander _veh) isEqualTo _o) exitWith { "Chef de bord" };
+                if ((gunner _veh) isEqualTo _o) exitWith { "Tireur" };
+                if (((assignedVehicleRole _o) param [0, ""]) isEqualTo "cargo") exitWith { "Passager" };
+                "Équipage"
+            };
+            _vals set ["PLACE", _seat call _tr];
+            _vals set ["ALT. SOL", format ["%1 m", round _agl]];
+            _vals set ["VITESSE", format ["%1 km/h", round _spd]];
+            _vals set ["CAP", [getDir _veh] call _deg];
+            _vals set ["CARBURANT", format ["%1 %%", round ((fuel _veh) * 100)]];
+            _vals set ["À BORD", format [("%1 pers.") call _tr, count (crew _veh)]];
+        };
+        private _title = _e getOrDefault ["callsign", "CONTACT"];
+        private _pill1 = format ["● %1", toUpper ((_st select 1) call _tr)];
+        private _tileTxt = (_card get "tiles") apply { _vals getOrDefault [_x select 0, "—"] };
+        private _texts = [_title, _pill1, _pill2, _parts joinString " · ", _vehTxt] + _tileTxt;
         if (_texts isNotEqualTo (_card get "texts")) then {
             _card set ["texts", _texts];
-            (_card get "title") ctrlSetStructuredText parseText _t1; // i18n:brut
-            if (!isNull (_card get "detail")) then { (_card get "detail") ctrlSetStructuredText parseText _t2; }; // i18n:brut
+            // Texte sur une ligne : réduit jusqu'à la taille minimale, puis raccourci « … », jamais coupé ni sur deux lignes.
+            private _fit = {
+                params ["_c", "_t", "_fh"];
+                if (isNull _c) exitWith {};
+                private _w = ((ctrlPosition _c) select 2) * 0.96;
+                _c ctrlSetFontHeight _fh;
+                _c ctrlSetText _t; // i18n:brut (déjà traduit)
+                private _tw = ctrlTextWidth _c;
+                if (_tw > _w) then { _c ctrlSetFontHeight ((_fh * _w / _tw) max COMSPEC_ATAK_FontMin); };
+                private _n = count _t;
+                while { _n > 1 && {(ctrlTextWidth _c) > _w} } do { _n = _n - 1; _c ctrlSetText ((_t select [0, _n]) + "…"); }; // i18n:brut
+            };
+            [_card get "title", _title, _fs * 1.15] call _fit;
+            (_card get "pills") params ["_p1", "_p2"];
+            [_p1, _pill1, _fs * 0.85] call _fit;
+            _p1 ctrlSetTextColor (_st select 3);
+            [_p2, _pill2, _fs * 0.85] call _fit;
+            _p2 ctrlSetTextColor _pill2Col;
+            // Pastilles à la largeur de leur texte, côte à côte.
+            private _x1 = (ctrlPosition _p1) select 0;
+            {
+                (ctrlPosition _x) params ["", "_yy", "", "_hh"];
+                private _ww = ((ctrlTextWidth _x) + pixelW * 16) min ((_card getOrDefault ["pillMax", 0.1]));
+                _x ctrlSetPosition [_x1, _yy, _ww, _hh];
+                _x ctrlCommit 0;
+                _x1 = _x1 + _ww + pixelW * 6;
+            } forEach [_p1, _p2];
+            if (isNull (_card get "head")) then { [_card get "role", _parts joinString " · ", _fs * 0.9] call _fit; } else { [_card get "head", _vehTxt, _fs * 0.95] call _fit; };
+            { [(_x select 1), _tileTxt select _forEachIndex, _fs * 0.95] call _fit; } forEach (_card get "tiles");
         };
         if !(["barUpdate", [_card get "bar", _e, "map"]] call comspec_atak_native_fnc_unitCard) then { ["mapCard"] call comspec_atak_native_fnc_unitCard; };
         true

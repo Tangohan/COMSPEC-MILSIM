@@ -10,6 +10,7 @@
 [*] [b]Réseau relais[/b] : hors maillage, le téléphone nomme le lien qui manque et sa cause (relief, distance, bâtiments) avec un conseil ; la carte le montre par un trait rouge en tirets. Les bâtiments comptent entre deux radios ; quand un relais tombe, le réseau se coupe environ 3 secondes avant de repasser par un autre. Tout se règle dans Échap > Réalisme.
 [*] [b]Coques[/b] : iPhone 17 Pro sans liseré noir, V2 Enhanced totalement opaque, écran aux coins arrondis avec un léger reflet de vitre (Réglages > Thème et écran > Reflet du verre), touches de la coque à leur vraie place.
 [*] [b]Ordres aux IA[/b] : « Ensuite… » met un ordre en file derrière l'ordre en cours, règle de tir (tir libre, riposte seulement, halte au feu), occuper un bâtiment, depuis la carte du téléphone et le PC du poste TOC ; le groupe signale lui-même ses contacts.
+[*] [b]Fiche d'une unité[/b] (carte) : à bord d'un engin, sa silhouette, son nom et ses tuiles place, altitude sol, vitesse, cap, carburant, à bord ; à pied, grille, distance, azimut, dernier signal ; pastilles APTE / EN VOL ; plus rien de coupé.
 [/list]
 
 [h2]English[/h2]
@@ -22,6 +23,7 @@
 [*] [b]Relay network[/b]: out of the mesh, the phone names the missing link and its cause (terrain, distance, buildings) with advice; the map shows it as a dashed red line. Buildings count between two radios; when a relay goes down, the network drops for about 3 seconds before switching to another. Everything is set in Esc > Realism.
 [*] [b]Phone cases[/b]: iPhone 17 Pro without the black outline, V2 Enhanced fully opaque, screen with rounded corners and a light glass reflection (Settings > Theme and screen > Glass reflection), case keys at their real place.
 [*] [b]AI orders[/b]: "Then…" queues an order behind the current one, rules of engagement (weapons free, return fire only, hold fire), garrison a building, from the phone map and the TOC station PC; the group reports its own contacts.
+[*] [b]Unit card[/b] (map): aboard a vehicle, its silhouette, its name and seat, altitude above ground, speed, heading, fuel, on-board tiles; on foot, grid, distance, bearing, last signal; FIT / AIRBORNE pills; nothing cut off any more.
 [/list]
 
 [h1]COMSPEC ATAK 4.2.0 Washington — carte tactique, SMS, bilan de l'année, dépannage MPU / tactical map, SMS, year in review, MPU troubleshooting[/h1]
