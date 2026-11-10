@@ -577,3 +577,122 @@ AT_fnc_formTient = {
     missionNamespace setVariable ["COMSPEC_ATAK_Waypoints", _wp0];
     call AT_fnc_done;
 }, 40] call AT_fnc_run;
+
+// ATAK 4.2.2, apps pensées pour le téléphone tenu à l'horizontale : textes et boutons d'un formulaire ni l'un sur
+// l'autre ni hors du cadre (colonnes de fn_formRender, fn_layoutCols). Paires voisines seulement (triées par hauteur).
+AT_fnc_formChevauche = {
+    params ["_nom"];
+    private _d = [] call comspec_atak_native_fnc_display;
+    if (isNull _d) exitWith {};
+    private _grps = (uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []]) apply { _x select 1 };
+    private _nKo = 0;
+    {
+        private _g = _x;
+        private _gw = (ctrlPosition _g) select 2;
+        private _els = [];
+        {
+            if ((ctrlParentControlsGroup _x) isEqualTo _g && {ctrlShown _x} && {(ctrlType _x) in [1, 13]}
+                && {!((ctrlClassName _x) in ["COMSPEC_RscButtonOverlay", "COMSPEC_RscButtonInvisible"])}) then {
+                (ctrlPosition _x) params ["_x0", "_y0", "_w0", "_h0"];
+                if (_w0 > pixelW * 2 && {_h0 > pixelH * 2}) then { _els pushBack [_y0, _x0, _w0, _h0, _x]; };
+            };
+        } forEach (allControls _d);
+        _els sort true;
+        {
+            _x params ["_y0", "_x0", "_w0", "_h0"];
+            if (_x0 + _w0 > _gw + pixelW * 3 && {_nKo < 6}) then {
+                _nKo = _nKo + 1;
+                [false, format ["%1 : hors du cadre à droite (x %2 + %3 > %4)", _nom, _x0, _w0, _gw]] call AT_fnc_check;
+            };
+            for "_j" from (_forEachIndex + 1) to ((count _els) - 1) do {
+                (_els select _j) params ["_y1", "_x1", "_w1", "_h1", "_c1"];
+                if (_y1 >= _y0 + _h0) exitWith {};
+                private _iw = ((_x0 + _w0) min (_x1 + _w1)) - (_x0 max _x1);
+                private _ih = ((_y0 + _h0) min (_y1 + _h1)) - (_y0 max _y1);
+                if (_iw > pixelW * 3 && {_ih > pixelH * 3} && {(_iw * _ih) > 0.3 * ((_w0 * _h0) min (_w1 * _h1))} && {_nKo < 6}) then {
+                    _nKo = _nKo + 1;
+                    [false, format ["%1 : deux éléments l'un sur l'autre (%2 / %3, y %4)", _nom, ctrlClassName (_x select 4), ctrlClassName _c1, _y0]] call AT_fnc_check;
+                };
+            };
+        } forEach _els;
+    } forEach _grps;
+};
+
+["tel_paysage_apps", {
+    if (["comspec_atak_native_fnc_layoutCols"] call AT_fnc_nil) exitWith {};
+    private _mode0 = profileNamespace getVariable ["COMSPEC_ATAK_Mode", "MINI"];
+    private _orient0 = profileNamespace getVariable ["COMSPEC_ATAK_Orientation", "PORTRAIT"];
+    private _scale0 = profileNamespace getVariable ["COMSPEC_ATAK_MiniScale", 1];
+    private _apps = ["CHAT", "BFT", "TASK", "ALERTS", "MEDICAL", "REPORTS", "NETWORK", "STATUS", "WAYPOINTS", "SETTINGS", "PROFILE", "WANTED", "NUMBERS", "LOGI"];
+    private _st = call AT_fnc_etat;
+    {
+        _x params ["_mode", "_orient", "_scale", "_nom"];
+        profileNamespace setVariable ["COMSPEC_ATAK_Mode", _mode];
+        profileNamespace setVariable ["COMSPEC_ATAK_Orientation", _orient];
+        profileNamespace setVariable ["COMSPEC_ATAK_MiniScale", _scale];
+        [true] call comspec_atak_native_fnc_open;
+        [[{ !isNull ([] call comspec_atak_native_fnc_display) }, 8] call AT_fnc_wait, format ["téléphone non ouvert (%1)", _nom]] call AT_fnc_check;
+        uiSleep 1.2;
+        private _l = [] call comspec_atak_native_fnc_layoutGet;
+        private _bw = ((_l get "body") select 2);
+        format ["%1 : corps %2 px de large, %3 caractère(s), colonnes section %4, info %5, maître-détail %6", _nom, round (_bw / pixelW), round (_bw / (_l get "colChar")),
+            [_bw, "section"] call comspec_atak_native_fnc_layoutCols, [_bw, "info"] call comspec_atak_native_fnc_layoutCols, ([_bw, "split"] call comspec_atak_native_fnc_layoutCols) isNotEqualTo []] call AT_fnc_info;
+        {
+            private _pg = _x;
+            _st set ["netDiag", false];
+            private _ok = [_pg, 1.2] call AT_fnc_page;
+            [_ok, format ["app %1 non ouverte (%2)", _pg, _nom]] call AT_fnc_check;
+            if (_ok) then {
+                [_pg] call comspec_atak_native_fnc_pageRender;
+                uiSleep 0.5;
+                private _n = format ["paysage_%1_%2", toLower _pg, _nom];
+                [_n] call AT_fnc_formTient;
+                [_n] call AT_fnc_formChevauche;
+                [_n] call AT_fnc_shot;
+            };
+        } forEach _apps;
+        // Dépannage MPU (volet de l'app Réseau).
+        _st set ["netDiag", true];
+        ["NETWORK"] call comspec_atak_native_fnc_pageRender;
+        uiSleep 0.6;
+        [format ["paysage_mpudiag_%1", _nom]] call AT_fnc_formTient;
+        [format ["paysage_mpudiag_%1", _nom]] call AT_fnc_formChevauche;
+        [format ["paysage_mpudiag_%1", _nom]] call AT_fnc_shot;
+        _st set ["netDiag", false];
+    } forEach [
+        ["FULL", "LANDSCAPE", 1, "plein"],
+        ["MINI", "LANDSCAPE", 1.3, "mini_paysage_grand"],
+        ["MINI", "LANDSCAPE", 0.7, "mini_paysage_petit"],
+        ["MINI", "PORTRAIT", 1.3, "mini_portrait_grand"],
+        ["MINI", "PORTRAIT", 0.7, "mini_portrait_petit"]
+    ];
+    // Mode petit porté (pas en main) : barre d'app sans titre ni bouton sur la carte, la carte touche la barre d'état.
+    {
+        _x params ["_orient", "_scale"];
+        profileNamespace setVariable ["COMSPEC_ATAK_Mode", "MINI"];
+        profileNamespace setVariable ["COMSPEC_ATAK_Orientation", _orient];
+        profileNamespace setVariable ["COMSPEC_ATAK_MiniScale", _scale];
+        [true] call comspec_atak_native_fnc_open;
+        uiSleep 0.8;
+        ["MAP"] call comspec_atak_native_fnc_navigate;
+        uiSleep 0.8;
+        [false] call comspec_atak_native_fnc_open;
+        [[{ !isNull ([] call comspec_atak_native_fnc_display) }, 8] call AT_fnc_wait, "téléphone porté non affiché"] call AT_fnc_check;
+        uiSleep 1.5;
+        private _l = [] call comspec_atak_native_fnc_layoutGet;
+        private _gap = ((_l get "body") select 1) - (((_l get "status") select 1) + ((_l get "status") select 3));
+        format ["mini porté %1 %2 : page %3, écart barre d'état / contenu %4 px", _orient, _scale, (call AT_fnc_etat) getOrDefault ["activePage", ""], round (_gap / pixelH)] call AT_fnc_info;
+        if (((call AT_fnc_etat) getOrDefault ["activePage", ""]) isEqualTo "MAP") then {
+            [_gap <= pixelH * 3, format ["mini porté %1 : bande vide de %2 px entre la barre d'état et la carte", _orient, round (_gap / pixelH)]] call AT_fnc_check;
+        };
+        [format ["paysage_mini_porte_carte_%1_%2", toLower _orient, _scale]] call AT_fnc_shot;
+        [] call comspec_atak_native_fnc_close;
+        uiSleep 0.5;
+    } forEach [["LANDSCAPE", 1], ["LANDSCAPE", 0.7], ["PORTRAIT", 1]];
+    "apps en paysage : sections et tuiles en deux colonnes (plein écran), une colonne en portrait et sur le petit téléphone, rien de coupé ni superposé ; mode petit porté sur la carte : pas de bande noire sous la barre d'état" call AT_fnc_visuel;
+    profileNamespace setVariable ["COMSPEC_ATAK_Mode", _mode0];
+    profileNamespace setVariable ["COMSPEC_ATAK_Orientation", _orient0];
+    profileNamespace setVariable ["COMSPEC_ATAK_MiniScale", _scale0];
+    ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+    call AT_fnc_done;
+}, 900] call AT_fnc_run;

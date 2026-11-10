@@ -173,12 +173,13 @@ _hKey ctrlSetText ((["name", _hBind] call comspec_atak_native_fnc_keybinds) call
 if (isNil "cba_keybinding_actions") then { _hKey ctrlSetText (("Ctrl+Maj+U") call comspec_atak_native_fnc_tr); };
 private _hShow = !_interactive && {profileNamespace getVariable ["COMSPEC_ATAK_HandHint", true]};
 _hKey ctrlSetFontHeight ((_fontS * 0.8) max COMSPEC_ATAK_FontMin);
-private _hh = _ah * 0.58;
+// Barre d'app absente (carte en mode petit portée, 4.2.2) : pastille à la taille d'une barre normale, sur le haut de la carte.
+private _hh = ([_ah, _font * 1.9] select (_ah <= 0)) * 0.58;
 private _hIcH = _hh * 0.78;
 private _hKw = (ctrlTextWidth _hKey) + _pad * 2;
 private _hW = _pad * 3 + _hIcH / _ratio + _hKw;
 private _hX = _dx + _dw - _pad * 2 - _hW;
-private _hY = _ay + (_ah - _hh) / 2;
+private _hY = [_ay + (_ah - _hh) / 2, _ay + _pad] select (_ah <= 0);
 _hBg ctrlSetPosition [_hX, _hY, _hW, _hh];
 _hIc ctrlSetPosition [_hX + _pad, _hY + (_hh - _hIcH) / 2, _hIcH / _ratio, _hIcH];
 _hKey ctrlSetPosition [_hX + _pad * 2 + _hIcH / _ratio, _hY + _hh * 0.14, _hKw, _hh * 0.72];
