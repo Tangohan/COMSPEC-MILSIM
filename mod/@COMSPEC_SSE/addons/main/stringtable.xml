@@ -5302,5 +5302,25 @@
             <English>Military ID</English>
             <French>Carte militaire</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_298A8F3D7C">
+            <Original>AI of the area (Zeus window)</Original>
+            <English>AI of the area (Zeus window)</English>
+            <French>IA de la zone (fenêtre du Zeus)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2FF45B7DB3">
+            <Original>AI of the area</Original>
+            <English>AI of the area</English>
+            <French>IA de la zone</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0D592035AB">
+            <Original>Window opened from the ATAK Zeus centre, or by the SSE Editor module placed on an AI.%1%1%2List: a click checks or unchecks an AI; search and filters by side, role and state. Given name: what its papers say. True name: who it really is (only you see it). Truth: true identity, false identity (it lies), forged papers, cover.%1%2Sheet: Athena profile (Refresh reloads the identity pack), papers it carries and their nature, behaviour at a check, side. Each setting is explained under its box.%1%2Its papers: view the paper, make it genuine or forged, give a paper now.%1%2Apply: to the checked AI. Apply to the group: to the whole group of each checked AI. Keep for next games: saved on the server and on Athena, put back at the start of the next game on this map.</Original>
+            <English>Window opened from the ATAK Zeus centre, or by the SSE Editor module placed on an AI.%1%1%2List: a click checks or unchecks an AI; search and filters by side, role and state. Given name: what its papers say. True name: who it really is (only you see it). Truth: true identity, false identity (it lies), forged papers, cover.%1%2Sheet: Athena profile (Refresh reloads the identity pack), papers it carries and their nature, behaviour at a check, side. Each setting is explained under its box.%1%2Its papers: view the paper, make it genuine or forged, give a paper now.%1%2Apply: to the checked AI. Apply to the group: to the whole group of each checked AI. Keep for next games: saved on the server and on Athena, put back at the start of the next game on this map.</English>
+            <French>Fenêtre ouverte depuis le centre Zeus de l'ATAK, ou par le module Éditeur SSE posé sur une IA.%1%1%2Liste : un clic coche ou décoche une IA ; recherche et filtres par camp, rôle et état. Nom donné : ce que disent ses papiers. Vrai nom : qui elle est vraiment (vous seul le voyez). Vérité : identité vraie, fausse identité (elle ment), faux papiers, couverture.%1%2Fiche : profil Athena (Actualiser recharge le paquet d'identité), papiers qu'elle porte et leur nature, comportement au contrôle, camp. Chaque réglage est expliqué sous sa case.%1%2Ses papiers : voir le papier, le rendre vrai ou faux, donner un papier maintenant.%1%2Appliquer : aux IA cochées. Appliquer au groupe : à tout le groupe de chaque IA cochée. Garder pour les prochaines parties : enregistré sur le serveur et sur Athena, remis en place au début de la partie suivante sur cette carte.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_27FC4B938B">
+            <Original>E.g. an insurgent with forged papers: check it, Nature "Forged papers", Behaviour "Lies with confidence", then Apply.</Original>
+            <English>E.g. an insurgent with forged papers: check it, Nature "Forged papers", Behaviour "Lies with confidence", then Apply.</English>
+            <French>Ex. : un insurgé en faux papiers : cochez-le, Nature « Faux papiers », Comportement « Ment avec aplomb », puis Appliquer.</French>
+        </Key>
     </Package>
 </Project>
