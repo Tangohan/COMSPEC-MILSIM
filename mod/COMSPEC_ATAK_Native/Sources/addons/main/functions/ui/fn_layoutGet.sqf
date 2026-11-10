@@ -35,7 +35,7 @@ if (_term in ["vehicle", "cp", "toc"] && {profileNamespace getVariable ["COMSPEC
 private _visLand = (createHashMapFromArray [
     ["s7", [0.1025, 0.2798, 0.9263, 0.8535]], ["rugged", [0.1802, 0.3521, 0.8013, 0.7329]], ["iphone", [0.1035, 0.3071, 0.9580, 0.8042]], ["tablet", [0.1655, 0.3237, 0.8105, 0.6772]],
     ["keys", [0.1655, 0.3237, 0.8105, 0.6772]], ["sonim", [0.1089, 0.2456, 0.8613, 0.7031]],
-    ["s23", [0.1392, 0.2983, 0.8330, 0.7036]], ["ip17", [0.1167, 0.3154, 0.8755, 0.7866]]
+    ["s23", [0.1392, 0.2983, 0.8330, 0.7036]], ["ip17", [0.1177, 0.3169, 0.8745, 0.7866]]
 ]) getOrDefault [_model, []];
 if (_visLand isEqualTo []) then { _model = "s7"; _visLand = [0.1025, 0.2798, 0.9263, 0.8535]; };
 // Vertical : texture tournée d'un quart de tour horaire.
@@ -46,7 +46,7 @@ private _scrLand = (createHashMapFromArray [
     ["keys", [0.2217, 0.3666, 0.7549, 0.6336]], ["tablet", [0.2217, 0.3666, 0.7549, 0.6336]], ["sonim", [0.2220, 0.3477, 0.7552, 0.6528]],
     ["s23", [0.2221, 0.3449, 0.7553, 0.6553]],
     // iPhone 17 Pro : l'écran commence après la Dynamic Island (zone sûre d'iOS en paysage), l'île reste sur la coque.
-    ["ip17", [0.2221, 0.3801, 0.7553, 0.6201]]
+    ["ip17", [0.2219, 0.3805, 0.7551, 0.6204]]
 ]) getOrDefault [_model, [0.2222, 0.3496, 0.7549, 0.6509]];
 _scrLand params ["_sx0", "_sy0", "_sx1", "_sy1"];
 private _scr = [[1 - _sy1, _sx0, 1 - _sy0, _sx1], _scrLand] select _land;
@@ -151,7 +151,8 @@ private _shellSfx = if (_night) then { "_night" } else { ["", "_" + _tint] selec
 createHashMapFromArray [
     ["mode", _mode], ["offsetKey", _offKey], ["visible", [_dx + _dw * _vx0, _dy + _dh * _vy0, _dw * (_vx1 - _vx0), _dh * (_vy1 - _vy0)]], ["mini", _mini], ["orientation", _orient], ["landscape", _land], ["interactive", _interactive], ["dock", _dock],
     ["phone", [_dx, _dy, _dw, _dh]], ["texture", _texture], ["phoneTexture", if (_texture) then { "" } else { if (_model isEqualTo "s7") then { format ["\z\comspec_atak_native\addons\main\data\phone_%1%2.paa", ["portrait", "landscape"] select _land, _shellSfx] } else {
-        format ["\z\comspec_atak_native\addons\main\data\phone_%1_%2%3.paa", ["portrait", "landscape"] select _land, _model, ["", "_night"] select _night] } }],
+        // Tablette à touches : les coques de la tablette (identiques octet pour octet, copies retirées en 4.2.1).
+        format ["\z\comspec_atak_native\addons\main\data\phone_%1_%2%3.paa", ["portrait", "landscape"] select _land, [_model, "tablet"] select (_model isEqualTo "keys"), ["", "_night"] select _night] } }],
     ["model", _model], ["terminal", _term],
     ["device", [_sx, _sy, _sw, _sh]],
     ["status", [_sx, _sy, _sw, _statusH]],

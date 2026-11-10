@@ -19,6 +19,7 @@ y 716..1333 : centre 1000,5 ; 1024,5) dans la toile 2048 x 2048. Le script affic
 fn_layoutGet (SCREEN, écran paysage par modèle) et les écrit dans render/frame_screens.json.
 
     python3 frame_photos.py            # écrit render/phone_<modèle>_front.png et _back.png
+    python3 frame_photos.py ip17       # seulement ces modèles
     python3 gen_assets.py <hemtt> models    # puis les PAA (paysage, portrait, nuit, dos)
     python3 gen_dirt.py <hemtt> case iphone rugged sonim keys tablet s23 ip17
 
@@ -27,6 +28,7 @@ polymère sombre avec le module photo ; les marquages de la coque (OPENA, BUNKER
 """
 import json
 import os
+import sys
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
@@ -74,8 +76,14 @@ def compose(photo, model):
 
 
 def clean(img):
-    """Détourage : les franges presque transparentes (jaune, rouge) laissées par le fond retiré disparaissent."""
-    a = img.getchannel("A").point(lambda v: 0 if v < 12 else v)
+    """Détourage : les franges presque transparentes (jaune, rouge) laissées par le fond retiré disparaissent.
+    Corps de la photo pas tout à fait opaque (V2 Enhanced : alpha 253, de 240 à 255) : remis à 255, le bord suit."""
+    hist = img.getchannel("A").histogram()
+    body = 200 + max(range(56), key=lambda i: hist[200 + i])
+    if body == 255:
+        a = img.getchannel("A").point(lambda v: 0 if v < 12 else v)
+    else:
+        a = img.getchannel("A").point(lambda v: 0 if v < 12 else (255 if v >= body - 12 else min(255, round(v * 255 / body))))
     img.putalpha(a)
     return img
 
@@ -173,8 +181,15 @@ def save(model, front, back, scr, vis, ox, oy, hx0, hy0, hx1, hy1, s):
 
 
 def main():
-    res = {m: build(m) for m in FRAMES}
-    with open(os.path.join(OUT, "frame_screens.json"), "w") as fh:
+    # « frame_photos.py ip17 iphone » : seulement ces modèles, les mesures des autres sont gardées.
+    only = [m for m in sys.argv[1:] if m in FRAMES]
+    res = {}
+    f = os.path.join(OUT, "frame_screens.json")
+    if only and os.path.exists(f):
+        with open(f) as fh:
+            res = json.load(fh)
+    res.update({m: build(m) for m in (only or FRAMES)})
+    with open(f, "w") as fh:
         json.dump(res, fh, indent=1)
     for m, r in res.items():
         print(m, "screen", r["screen"], "visible", r["visible"], "hole_px", r["hole_px"])
