@@ -202,7 +202,7 @@ if !("telephone" call AT_fnc_groupe) exitWith {};
     ["identifiant : " + _uid + " -> " + _new] call AT_fnc_info;
     profileNamespace setVariable ["comspec_overwatch_terminal_uid", _uid];
     profileNamespace setVariable ["comspec_overwatch_terminal_gen", if (isNil "_gen") then { nil } else { _gen }];
-    profileNamespace setVariable ["COMSPEC_ATAK_NewDevice", _kept];
+    profileNamespace setVariable ["COMSPEC_ATAK_NewDevice", if (isNil "_kept") then { nil } else { _kept }];
     call AT_fnc_done;
 }, 30] call AT_fnc_run;
 
@@ -370,3 +370,210 @@ if !("telephone" call AT_fnc_groupe) exitWith {};
     ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
     call AT_fnc_done;
 }, 90] call AT_fnc_run;
+
+// ATAK 4.2.1, apps : contrôles d'une page en formulaire (fn_formRender) qui doivent tenir dans leur case : boutons
+// (largeur du libellé) et textes structurés (hauteur du texte). Groupes relevés dans COMSPEC_ATAK_ScrollGroups.
+AT_fnc_formTient = {
+    params ["_nom"];
+    private _d = [] call comspec_atak_native_fnc_display;
+    if (isNull _d) exitWith {};
+    private _grps = (uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []]) apply { _x select 1 };
+    { if ((ctrlParentControlsGroup _x) in _grps && {(ctrlType _x) in [1, 13]}) then { [_x, _nom] call AT_fnc_tient; }; } forEach (allControls _d);
+};
+
+// Tâches 4.2.1 : ordres triés (à traiter et prioritaires en tête, terminés en bas), filtre À TRAITER / TERMINÉS / TOUS,
+// consigne longue coupée avec « … » et section TEXTE COMPLET. Trois ordres locaux injectés, rendus aux trois filtres.
+["tel_taches_triees", {
+    if (["comspec_atak_native_fnc_pageTasks", "comspec_atak_native_fnc_tasksAll"] call AT_fnc_nil) exitWith {};
+    private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
+    uiNamespace setVariable ["COMSPEC_ATAK_Data", _data];
+    private _old = _data getOrDefault ["localTasks", createHashMap];
+    private _mk = {
+        params ["_id", "_lbl", "_prio", "_stat", "_stamp", ["_pay", ""]];
+        createHashMapFromArray [["id", _id], ["type", "MOVE"], ["typeLabel", _lbl], ["priority", _prio], ["status", _stat], ["issuer", "AUTOTEST"],
+            ["target", ""], ["targetType", "all"], ["payload", _pay], ["stamp", _stamp], ["source", "local"]]
+    };
+    private _long = "";
+    for "_i" from 1 to 14 do { _long = _long + format ["Phrase %1 de la consigne longue de l'autotest. ", _i]; };
+    _data set ["localTasks", createHashMapFromArray [
+        ["AT-1", ["AT-1", "AT ROUTINE", "ROUTINE", "NEW", 10] call _mk],
+        ["AT-2", ["AT-2", "AT TERMINE", "FLASH", "DONE", 30] call _mk],
+        ["AT-3", ["AT-3", "AT URGENT", "URGENT", "NEW", 5, _long] call _mk]
+    ]];
+    private _st = call AT_fnc_etat;
+    private _f0 = _st getOrDefault ["taskFilter", "OPEN"];
+    _st set ["orderCompose", false];
+    _st set ["taskTxtOpen", []];
+    {
+        _x params ["_filt", "_open", "_shot"];
+        _st set ["taskFilter", _filt];
+        _st set ["taskTxtOpen", _open];
+        private _ok = ["TASK", 1.5] call AT_fnc_page;
+        [_ok, format ["app Tâches non ouverte (%1)", _shot]] call AT_fnc_check;
+        if (_ok) then {
+            ["TASK"] call comspec_atak_native_fnc_pageRender;
+            uiSleep 0.6;
+            [_shot] call AT_fnc_formTient;
+            [_shot] call AT_fnc_shot;
+        };
+    } forEach [["ALL", [], "taches_tous"], ["ALL", ["AT-3"], "taches_texte_deplie"], ["OPEN", [], "taches_a_traiter"], ["DONE", [], "taches_terminees"]];
+    "Tâches > TOUS : AT URGENT (PRIORITAIRE) en tête, puis AT ROUTINE, AT TERMINE en bas ; consigne d'AT URGENT coupée par « … » avec une section TEXTE COMPLET (dépliée : texte entier, REPLIER). À TRAITER : sans AT TERMINE. TERMINÉS : AT TERMINE seul" call AT_fnc_visuel;
+    _data set ["localTasks", _old];
+    _st set ["taskFilter", _f0];
+    _st set ["taskTxtOpen", []];
+    ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;
+
+// États vides 4.2.1 : composant « empty » (icône, titre, quoi faire) sur les apps sans données, en portrait puis dans
+// l'autre orientation ; aucun libellé ni texte coupé.
+["tel_etats_vides", {
+    if (["comspec_atak_native_fnc_pageWaypoints", "comspec_atak_native_fnc_orientationToggle"] call AT_fnc_nil) exitWith {};
+    private _st = call AT_fnc_etat;
+    private _log0 = +(missionNamespace getVariable ["COMSPEC_ATAK_AlertLog", []]);
+    private _wp0 = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
+    private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
+    private _loc0 = _data getOrDefault ["localTasks", createHashMap];
+    missionNamespace setVariable ["COMSPEC_ATAK_AlertLog", []];
+    missionNamespace setVariable ["COMSPEC_ATAK_Waypoints", createHashMapFromArray [["pts", []], ["idx", 0], ["nav", false], ["from", ""]]];
+    _data set ["localTasks", createHashMap];
+    _st set ["taskFilter", "OPEN"];
+    _st set ["logiTab", "MINE"];
+    _st set ["trkFilter", "ALL"];
+    private _apps = ([] call comspec_atak_native_fnc_appList) apply { _x get "page" };
+    {
+        private _flip = _x;
+        if (_flip) then { [] call comspec_atak_native_fnc_orientationToggle; uiSleep 1; };
+        {
+            if !(_x in _apps) then { (format ["%1 absente de ce téléphone", _x]) call AT_fnc_info; continue };
+            private _ok = [_x, 1.5] call AT_fnc_page;
+            [_ok, format ["app %1 non ouverte", _x]] call AT_fnc_check;
+            if (_ok) then {
+                private _nom = format ["vide_%1%2", toLower _x, ["", "_autre_orientation"] select _flip];
+                [_nom] call AT_fnc_formTient;
+                [_nom] call AT_fnc_shot;
+            };
+        } forEach ["TASK", "WAYPOINTS", "ALERTS", "RECO", "SALUTE", "LOGI", "TRACKING", "DISCORD", "MEDICAL"];
+    } forEach [false, true];
+    [] call comspec_atak_native_fnc_orientationToggle;
+    "États vides : chaque app montre une grande icône pâle, un titre et une phrase qui dit quoi faire (Tâches « Aucun ordre reçu », Itinéraire « Aucune étape », Alertes et SALUTE en bas de page, Logistique avec NOUVELLE DEMANDE…), rien de coupé dans les deux orientations" call AT_fnc_visuel;
+    missionNamespace setVariable ["COMSPEC_ATAK_AlertLog", _log0];
+    missionNamespace setVariable ["COMSPEC_ATAK_Waypoints", _wp0];
+    _data set ["localTasks", _loc0];
+    ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+    call AT_fnc_done;
+}, 150] call AT_fnc_run;
+
+// Recherche par nom 4.2.1 (Numéros > ANNUAIRE, Recherchés) : appliquée sur OK, effaçable, état vide « Aucun résultat pour … ».
+["tel_recherche_nom", {
+    if (["comspec_atak_native_fnc_pageNumbers", "comspec_atak_native_fnc_numbersAction"] call AT_fnc_nil) exitWith {};
+    private _st = call AT_fnc_etat;
+    _st set ["numTab", "DIR"];
+    _st set ["numQ", ""];
+    private _ok = ["NUMBERS", 1.5] call AT_fnc_page;
+    [_ok, "app Numéros non ouverte"] call AT_fnc_check;
+    if (_ok) then {
+        private _e = (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault ["numQ", controlNull];
+        if (isNull _e) then {
+            "annuaire vide (partie seule) : pas de champ de recherche, seulement l'état vide" call AT_fnc_info;
+        } else {
+            // Saisie puis OK : la recherche vient du champ, pas de la frappe.
+            _e ctrlSetText "zzzz-autotest";
+            ["search"] call comspec_atak_native_fnc_numbersAction;
+            uiSleep 0.8;
+            [(_st getOrDefault ["numQ", ""]) isEqualTo "zzzz-autotest", format ["recherche non prise du champ : « %1 »", _st getOrDefault ["numQ", ""]]] call AT_fnc_check;
+            ["recherche_annuaire"] call AT_fnc_formTient;
+            ["recherche_annuaire_aucun"] call AT_fnc_shot;
+            ["clearQ"] call comspec_atak_native_fnc_numbersAction;
+            uiSleep 0.8;
+            [(_st getOrDefault ["numQ", "x"]) isEqualTo "", "EFFACER LA RECHERCHE n'efface pas le filtre"] call AT_fnc_check;
+        };
+        ["recherche_annuaire"] call AT_fnc_shot;
+    };
+    if (!isNil "comspec_atak_native_fnc_wantedAction" && {[] call comspec_atak_native_fnc_bridge}) then {
+        _st set ["wantedOpen", ""];
+        _st set ["wantedQ", "zzzz-autotest"];
+        if (["WANTED", 1.5] call AT_fnc_page) then {
+            ["WANTED"] call comspec_atak_native_fnc_pageRender;
+            uiSleep 0.6;
+            ["recherche_recherches"] call AT_fnc_formTient;
+            ["recherche_recherches_aucun"] call AT_fnc_shot;
+        };
+        ["clearQ"] call comspec_atak_native_fnc_wantedAction;
+        uiSleep 0.6;
+        [(_st getOrDefault ["wantedQ", "x"]) isEqualTo "", "Recherchés : filtre non effacé"] call AT_fnc_check;
+    } else { "Recherchés : sans COMSPEC Overwatch, pas de liste à filtrer" call AT_fnc_info; };
+    "Recherche : champ « Rechercher un nom… » avec OK, bouton EFFACER LA RECHERCHE, état vide « Aucun résultat pour « zzzz-autotest » » avec TOUT AFFICHER" call AT_fnc_visuel;
+    _st set ["numTab", "MINE"];
+    ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;
+
+// Annulation 4.2.1 : TOUT EFFACER (Itinéraire) et VIDER LE JOURNAL (Alertes) laissent 8 s pour ANNULER ; l'effacement de
+// l'itinéraire n'est envoyé au groupe qu'à la fin des 8 s (copie marquée « envoyée » ensuite).
+["tel_annulation", {
+    if (["comspec_atak_native_fnc_wpAction", "comspec_atak_native_fnc_alertsAction", "comspec_atak_native_fnc_undoSnack"] call AT_fnc_nil) exitWith {};
+    private _wp0 = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
+    private _share0 = profileNamespace getVariable ["COMSPEC_ATAK_WpShare", 1];
+    profileNamespace setVariable ["COMSPEC_ATAK_WpShare", 1];
+    private _p = getPosATL player;
+    private _pts = [[[(_p select 0) + 300, (_p select 1), 0], "AT 1", "CP"], [[(_p select 0) + 600, (_p select 1) + 200, 0], "AT 2", "OBJ"]];
+    missionNamespace setVariable ["COMSPEC_ATAK_Waypoints", createHashMapFromArray [["pts", +_pts], ["idx", 1], ["nav", true], ["from", ""]]];
+    [["WAYPOINTS", 1.5] call AT_fnc_page, "app Itinéraire non ouverte"] call AT_fnc_check;
+    ["clear"] call comspec_atak_native_fnc_wpAction;
+    uiSleep 0.5;
+    private _w = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
+    private _u = missionNamespace getVariable ["COMSPEC_ATAK_WpUndo", []];
+    [(count (_w getOrDefault ["pts", [0]])) isEqualTo 0, "TOUT EFFACER : étapes encore là"] call AT_fnc_check;
+    [(count _u) >= 6 && {!(_u select 5)}, format ["copie d'annulation absente ou déjà envoyée au groupe : %1", _u]] call AT_fnc_check;
+    [(count (uiNamespace getVariable ["COMSPEC_ATAK_UndoSnack", []])) > 0, "bandeau « Étapes effacées · ANNULER » absent"] call AT_fnc_check;
+    ["annulation_itineraire_bandeau"] call AT_fnc_shot;
+    ["undoClear", _u param [0, -1]] call comspec_atak_native_fnc_wpAction;
+    uiSleep 0.5;
+    _w = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
+    [(count (_w getOrDefault ["pts", []])) isEqualTo 2 && {(_w getOrDefault ["idx", 0]) isEqualTo 1} && {_w getOrDefault ["nav", false]}, "ANNULER : itinéraire, étape active ou navigation non rendus"] call AT_fnc_check;
+    ["annulation_itineraire_rendu"] call AT_fnc_shot;
+    // Sans annulation : l'effacement part au groupe au bout de 8 s, la copie est marquée envoyée puis oubliée.
+    ["clear"] call comspec_atak_native_fnc_wpAction;
+    uiSleep 9;
+    _u = missionNamespace getVariable ["COMSPEC_ATAK_WpUndo", []];
+    [(count _u) isEqualTo 0 || {_u select 5}, "fin des 8 s : effacement pas envoyé au groupe"] call AT_fnc_check;
+    [(count (uiNamespace getVariable ["COMSPEC_ATAK_UndoSnack", []])) isEqualTo 0, "bandeau encore affiché après 8 s"] call AT_fnc_check;
+    // Journal des alertes.
+    private _log0 = +(missionNamespace getVariable ["COMSPEC_ATAK_AlertLog", []]);
+    missionNamespace setVariable ["COMSPEC_ATAK_AlertLog", [["TIC", "AT", getPosASL player, "000000", "autotest 1", "12:00"], ["TIC_CLEAR", "AT", getPosASL player, "000000", "autotest 2", "12:05"]]];
+    [["ALERTS", 1.5] call AT_fnc_page, "app Alertes non ouverte"] call AT_fnc_check;
+    ["clearLog"] call comspec_atak_native_fnc_alertsAction;
+    uiSleep 0.5;
+    [(count (missionNamespace getVariable ["COMSPEC_ATAK_AlertLog", [0]])) isEqualTo 0, "VIDER LE JOURNAL : journal pas vidé"] call AT_fnc_check;
+    ["annulation_journal_bandeau"] call AT_fnc_shot;
+    ["undoClearLog", (missionNamespace getVariable ["COMSPEC_ATAK_AlertLogUndo", []]) param [0, -1]] call comspec_atak_native_fnc_alertsAction;
+    uiSleep 0.5;
+    [(count (missionNamespace getVariable ["COMSPEC_ATAK_AlertLog", []])) isEqualTo 2, "ANNULER : journal non rendu"] call AT_fnc_check;
+    "Bandeau ambre « Étapes effacées » puis « Journal vidé » avec ANNULER en haut de l'écran, disparu au bout de 8 s ; après ANNULER l'itinéraire et le journal sont revenus" call AT_fnc_visuel;
+    missionNamespace setVariable ["COMSPEC_ATAK_AlertLog", _log0];
+    missionNamespace setVariable ["COMSPEC_ATAK_Waypoints", _wp0];
+    profileNamespace setVariable ["COMSPEC_ATAK_WpShare", _share0];
+    ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;
+
+// Statut et Itinéraire vivants 4.2.1 : minuterie de la page en route sur la page, arrêtée en la quittant.
+["tel_pages_vivantes", {
+    if (["comspec_atak_native_fnc_pageStatus", "comspec_atak_native_fnc_pageWaypoints"] call AT_fnc_nil) exitWith {};
+    private _wp0 = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
+    private _p = getPosATL player;
+    missionNamespace setVariable ["COMSPEC_ATAK_Waypoints", createHashMapFromArray [["pts", [[[(_p select 0) + 400, (_p select 1) + 400, 0], "AT 1", "CP"]]], ["idx", 0], ["nav", true], ["from", ""]]];
+    {
+        _x params ["_page", "_var"];
+        [[_page, 2.5] call AT_fnc_page, format ["app %1 non ouverte", _page]] call AT_fnc_check;
+        [!isNil { uiNamespace getVariable _var }, format ["%1 : minuterie de mise à jour absente", _page]] call AT_fnc_check;
+        [format ["vivant_%1", toLower _page]] call AT_fnc_shot;
+        ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+        uiSleep 2.5;
+        [isNil { uiNamespace getVariable _var }, format ["%1 : minuterie encore active hors de la page", _page]] call AT_fnc_check;
+    } forEach [["WAYPOINTS", "COMSPEC_ATAK_WpLive"], ["STATUS", "COMSPEC_ATAK_StatusLive"]];
+    "Itinéraire et Statut : distance, cap, « il y a X s » et signal changent seuls sur la page (à vérifier en marchant), sans clignotement de la page" call AT_fnc_visuel;
+    missionNamespace setVariable ["COMSPEC_ATAK_Waypoints", _wp0];
+    call AT_fnc_done;
+}, 40] call AT_fnc_run;

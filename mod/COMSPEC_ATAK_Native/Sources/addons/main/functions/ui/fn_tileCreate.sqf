@@ -167,10 +167,12 @@ _btn ctrlAddEventHandler ["MouseButtonDown", {
         { _x params ["_k", "_p"]; if (!isNull _k) then { _k ctrlSetPosition _p; _k ctrlCommit 0.12; }; } forEach (_c getVariable ["press", []]);
     }];
 } forEach ["MouseButtonUp", "MouseExit"];
-// La navigation supprime cette tuile : on la diffère d'une image pour ne pas détruire le bouton dans son propre handler.
+// La navigation supprime cette tuile : le dessin de la page est différé d'une image (fn_navigate « appui »), pour ne pas
+// détruire le bouton dans son propre handler. 4.2.1 : titre et fondu partent dans l'image de l'appui (avant : toute la
+// navigation attendait l'image suivante, puis le dessin passait avant le premier mouvement).
 _btn ctrlAddEventHandler ["ButtonClick", {
     params ["_c"];
     if (_c getVariable ["wip", false]) exitWith { ["Application en chantier (W.I.P), bientôt disponible", 2] call comspec_atak_native_fnc_toast; };
-    [{ [_this] call comspec_atak_native_fnc_navigate; }, _c getVariable ["page", "LAUNCHER"]] call comspec_atak_native_fnc_nextFrame;
+    [_c getVariable ["page", "LAUNCHER"], true, true] call comspec_atak_native_fnc_navigate;
 }];
 _made

@@ -184,6 +184,8 @@ private _perso = [["section", "Téléphone", "L'objet porté, l'antenne"]] + [
     ["COMSPEC_ATAK_IconStyle", "real", "Style des icônes", [["RÉALISTES", "real"], ["PLATES", "flat"]], "RÉALISTES : icônes colorées aux coins arrondis posées sur le fond d'écran, comme un vrai téléphone. PLATES : tuiles d'avant"] call _profSegment,
     ["COMSPEC_ATAK_Brightness", 1, "Luminosité", [["30 %", 0.3], ["50 %", 0.5], ["75 %", 0.75], ["100 %", 1]], "Aussi dans le volet rapide (clic sur l'heure). Moins lumineux : moins visible de nuit et la batterie tient plus"] call _profSegment,
     ["COMSPEC_ATAK_NightMode", "OFF", "Mode nuit", [["NORMAL", "OFF"], ["ROUGE", "RED"], ["SOMBRE", "DIM"]], "Filtre rouge ou écran assombri, économise la batterie. Touche à assigner dans les contrôles COMSPEC ATAK"] call _profSegment,
+    // Reflet du verre (4.2.1, fn_screenSurface) : réglage CBA par joueur, le même que dans le menu CBA.
+    ["comspec_atak_native_glass_glare", "", "Reflet du verre", "Léger reflet de la vitre, plus faible la nuit, jamais un voile sur la carte ni sur le texte. Exemple : de jour, une bande claire très discrète en haut à gauche de l'écran. Aussi dans les options CBA, ATAK · Affichage", true] call _cbaSwitch,
     ["section", "Verrouillage et sécurité", "Si vous êtes capturé, l'ennemi peut brancher un câble DL-7 sur votre téléphone. Le code le protège : 3 essais, puis tout est effacé (un code peut être cassé en 2 min). Ce code est une mécanique de jeu : n'y mettez jamais un vrai code. Il protège aussi la lecture de votre téléphone par celui qui le ramasse."],
     ["COMSPEC_ATAK_LockScreen", true, "", "Écran de verrouillage", "Heure, date et dernières notifications, quand vous sortez le téléphone la première fois, après une minute rangé ou après un redémarrage"] call _profSwitch,
     ["COMSPEC_ATAK_LockClockStyle", "light", "Heure de l'écran de verrouillage", [["FINE", "light"], ["GRASSE", "bold"], ["MILITAIRE", "mil"]], "MILITAIRE : chiffres façon afficheur, dans la couleur d'accent"] call _profSegment,
@@ -215,6 +217,10 @@ private _perso = [["section", "Téléphone", "L'objet porté, l'antenne"]] + [
     ["COMSPEC_ATAK_PageFx", true, "", "Transitions entre les pages", "Les pages arrivent en fondu (sans flash sombre). Désactivé : changement de page immédiat, et les deux réglages suivants sont sans effet"] call _profSwitch,
     ["COMSPEC_ATAK_OpenSplash", true, "", "Ouverture depuis l'icône", "L'icône de l'app grandit vers le centre de l'écran à l'ouverture (icônes réalistes)"] call _profSwitch,
     ["COMSPEC_ATAK_TitleSlide", true, "", "Titre qui glisse", "Le titre de l'app arrive de la droite à l'ouverture et de la gauche au retour"] call _profSwitch,
+    // Sortie et rangement animés (4.2.1) : réglage CBA par joueur (comspec_atak_native_phone_anim), le même que dans le menu CBA.
+    ["switch", "Animation de sortie et de rangement", (missionNamespace getVariable ["comspec_atak_native_phone_anim", true]) isEqualTo true,
+        { ["comspec_atak_native_phone_anim"] call (uiNamespace getVariable "COMSPEC_ATAK_CbaToggle"); },
+        "En main, le téléphone monte en fondu à la sortie et redescend au rangement (0,2 s). Désactivé : il apparaît et disparaît d'un coup. La miniature portée ne bouge pas (aussi dans les options CBA, ATAK · Affichage)"],
     ["COMSPEC_ATAK_CrackFx", true, "", "Fêlures détaillées", "Écran abîmé : motifs de fêlures, de bris et de dalle (lignes, encre, pixels morts), selon la cause, différents à chaque choc. Désactivé : seules les textures simples restent"] call _profSwitch,
     ["COMSPEC_ATAK_PressFx", true, "", "Icône qui s'enfonce à l'appui", "L'icône d'une app s'enfonce légèrement sous le doigt"] call _profSwitch,
     ["COMSPEC_ATAK_TapFeedback", true, "", "Clic et vibration des appuis", "Petit clic et légère vibration à chaque appui (sans son en mode discrétion)"] call _profSwitch,

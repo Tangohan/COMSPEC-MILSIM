@@ -106,6 +106,17 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["Taille du téléphone en main", "Taille du téléphone quand vous l'avez en main (plein écran). 100 % = taille normale ; en dessous, il rétrécit en restant centré, texte et boutons compris."],
     ["COMSPEC", "ATAK · Affichage"], [0.6, 1, 1, 0, true], 0,
     { if !(isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; }; }] call comspec_atak_native_fnc_addSetting;
+// Reflet du verre de l'écran (4.2.1, fn_screenSurface) : par joueur, activé par défaut ; aussi dans Réglages > Thème et écran.
+["comspec_atak_native_glass_glare", "CHECKBOX",
+    ["Reflet du verre de l'écran", "Léger reflet de la vitre sur l'écran du téléphone, plus faible la nuit ; il ne gêne ni la lecture ni la carte. Désactivé : écran sans reflet. Exemple : en plein jour, une bande claire très discrète traverse le haut gauche de l'écran. Aussi dans Réglages > Thème et écran."],
+    ["COMSPEC", "ATAK · Affichage"], true, 0,
+    { if !(isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_deviceOverlay; }; }] call comspec_atak_native_fnc_addSetting;
+
+// Animation de sortie et de rangement du téléphone en main (par joueur, 4.2.1, fn_fx « phoneIn » / « phoneOut »).
+// Aussi dans Réglages > Animations et sons du téléphone.
+["comspec_atak_native_phone_anim", "CHECKBOX",
+    ["Animation de sortie et de rangement", "Coché par défaut. Le téléphone en main monte en fondu quand vous le sortez et redescend en s'effaçant quand vous le rangez, en 0,2 s. Exemple : Ctrl+Maj+U depuis le jeu, le téléphone glisse de quelques centimètres vers le haut en apparaissant. Décochez pour qu'il apparaisse et disparaisse d'un coup. La miniature portée n'est jamais animée ; Échap, la mort, l'inconscience ou un changement de véhicule le rangent toujours tout de suite."],
+    ["COMSPEC", "ATAK · Affichage"], true, 0] call comspec_atak_native_fnc_addSetting;
 
 // HUD des autres mods (boussole F-PANO / ECOTI, température, heure...) masqué sous le téléphone (par joueur, fn_foreignHud).
 // Heure des alertes (fn_clockFmt) : heure de la mission, du PC, UTC, ou PC et UTC. Par joueur.
@@ -761,6 +772,16 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mesh_traffic_power", "CHECKBOX",
     ["Batterie selon le trafic relayé", "Un nœud qui relaie beaucoup se vide plus vite, jusqu'à deux fois."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+// Réseau relais plus réaliste (4.2.1, fn_meshGraph) : bâtiments entre deux radios, reconvergence après la perte d'un relais, lien manquant sur la carte.
+["comspec_atak_native_mesh_buildings", "SLIDER",
+    ["Bâtiments dans le maillage (%)", "Liaison réaliste : chaque bâtiment traversé entre deux radios du maillage coûte du signal (relief seul avant). 0 : comportement d'avant. À 50 %, quatre maisons entre deux équipiers à 300 m dégradent le lien sans le couper ; à 100 %, il faut un relais sur un toit."],
+    _mpuCat, [0, 100, 50, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_reconverge_s", "SLIDER",
+    ["Reconvergence après la perte d'un relais (s)", "Liaison réaliste : quand un relais de votre route tombe (détruit, ramassé, batterie vide), le réseau se coupe ce temps-là avant de repasser par un autre chemin. 0 : bascule immédiate, comme avant."],
+    _mpuCat, [0, 15, 3, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_miss_map", "CHECKBOX",
+    ["Lien manquant sur la carte", "Liaison réaliste, hors maillage : un trait rouge en tirets relie votre groupe au nœud le plus proche à joindre, avec la cause (relief, distance, bâtiments, canal). Calque Wave Relay de la carte."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_mesh_stale_s", "SLIDER",
     ["Position périmée : gris après (s)", "Liaison réaliste : un ami sans nouvelle position passe en gris. 0 : comportement d'avant."],
     _mpuCat, [0, 600, 30, 0], 1] call comspec_atak_native_fnc_addSetting;
@@ -1095,6 +1116,10 @@ private _ai = ["COMSPEC", "ATAK · IA"];
 ["comspec_atak_native_ai_atak_item", "EDITBOX",
     ["Objet donné aux IA", "Classe de l'objet ATAK mis dans l'inventaire des IA équipées (COMSPEC_ATAK_Phone par défaut)."],
     _ai, "COMSPEC_ATAK_Phone", 1] call comspec_atak_native_fnc_addSetting;
+// Ordres aux IA (fn_aiOrder « contact ») : compte rendu de contact d'un groupe IA commandé, une fois par minute au plus.
+["comspec_atak_native_ai_contact", "CHECKBOX",
+    ["Compte rendu de contact des groupes IA", "Un groupe IA à qui l'on a donné un ordre (téléphone, PC du poste TOC) signale lui-même ses contacts : direction, distance, ennemis repérés et blessés du groupe, au plus une fois par minute, dans une bulle au-dessus de son chef et une notification au donneur d'ordre. Décoché : il se tait. Exemple : « Alpha 1-2 : Contact nord-est à 250 m, 3 ennemis repérés, 1 blessés »."],
+    _ai, true, 1] call comspec_atak_native_fnc_addSetting;
 // Appui feu typé (fn_fireSupport) : complète l'app CAS (APPEL DE FEU), la carte, Tâches, le poste TOC et l'app JTAC.
 // Réglages serveur (forçables par la mission), sauf l'affichage des cercles (réglage personnel).
 private _fs = ["COMSPEC", "ATAK · Appui feu"];

@@ -1,3 +1,29 @@
+[h1]COMSPEC ATAK 4.2.1 Washington — téléphone plus fluide, apps plus claires, réseau relais expliqué, ordres aux IA / smoother phone, clearer apps, explained relay network, AI orders[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Fluidité[/b] : toucher une app, Accueil ou Retour fait réagir l'écran tout de suite ; changer de page ne refait plus les fêlures ni la saleté ; dans Messages et SMS, un message reçu s'ajoute au fil sans redessiner la page. Le téléphone monte en fondu quand vous le sortez (Réglages > Animations et sons).
+[*] [b]Tâches[/b] : ordres à traiter en tête, terminés en bas, filtre À traiter / Terminés / Tous ; une consigne longue se déplie.
+[*] [b]Annulation[/b] : TOUT EFFACER (Itinéraire) et VIDER LE JOURNAL (Alertes) s'annulent pendant 8 secondes.
+[*] [b]Médical, Recherchés, Numéros[/b] : blessés graves non soignés en tête, avec distance et cap ; recherche par nom dans Recherchés et dans l'annuaire.
+[*] [b]Navigation[/b] : la touche retour ferme l'écran ouvert au lieu de quitter l'app ; Statut et Itinéraire se mettent à jour seuls ; un écran vide dit quoi faire.
+[*] [b]Réseau relais[/b] : hors maillage, le téléphone nomme le lien qui manque et sa cause (relief, distance, bâtiments) avec un conseil ; la carte le montre par un trait rouge en tirets. Les bâtiments comptent entre deux radios ; quand un relais tombe, le réseau se coupe environ 3 secondes avant de repasser par un autre. Tout se règle dans Échap > Réalisme.
+[*] [b]Coques[/b] : iPhone 17 Pro sans liseré noir, V2 Enhanced totalement opaque, écran aux coins arrondis avec un léger reflet de vitre (Réglages > Thème et écran > Reflet du verre), touches de la coque à leur vraie place.
+[*] [b]Ordres aux IA[/b] : « Ensuite… » met un ordre en file derrière l'ordre en cours, règle de tir (tir libre, riposte seulement, halte au feu), occuper un bâtiment, depuis la carte du téléphone et le PC du poste TOC ; le groupe signale lui-même ses contacts.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Smoothness[/b]: tapping an app, Home or Back makes the screen react at once; changing page no longer rebuilds the cracks or the dirt; in Messages and SMS, an incoming message is added to the thread without redrawing the page. The phone fades in when you take it out (Settings > Animations and sounds).
+[*] [b]Tasks[/b]: orders to handle first, finished ones at the bottom, To do / Done / All filter; a long order expands.
+[*] [b]Undo[/b]: CLEAR ALL (Route) and CLEAR LOG (Alerts) can be cancelled for 8 seconds.
+[*] [b]Medical, Target Deck, Numbers[/b]: untreated serious casualties first, with distance and heading; search by name in Target Deck and in the directory.
+[*] [b]Navigation[/b]: the back key closes the open screen instead of leaving the app; Status and Route update on their own; an empty screen says what to do.
+[*] [b]Relay network[/b]: out of the mesh, the phone names the missing link and its cause (terrain, distance, buildings) with advice; the map shows it as a dashed red line. Buildings count between two radios; when a relay goes down, the network drops for about 3 seconds before switching to another. Everything is set in Esc > Realism.
+[*] [b]Phone cases[/b]: iPhone 17 Pro without the black outline, V2 Enhanced fully opaque, screen with rounded corners and a light glass reflection (Settings > Theme and screen > Glass reflection), case keys at their real place.
+[*] [b]AI orders[/b]: "Then…" queues an order behind the current one, rules of engagement (weapons free, return fire only, hold fire), garrison a building, from the phone map and the TOC station PC; the group reports its own contacts.
+[/list]
+
 [h1]COMSPEC ATAK 4.2.0 Washington — carte tactique, SMS, bilan de l'année, dépannage MPU / tactical map, SMS, year in review, MPU troubleshooting[/h1]
 [quote]
 [b]Important / Important :[/b] ce pack contient COMSPEC Link 2.0.123 : mettez à jour, quittez Arma 3 complètement, puis relancez. / This pack contains COMSPEC Link 2.0.123: update, fully quit Arma 3, then restart.

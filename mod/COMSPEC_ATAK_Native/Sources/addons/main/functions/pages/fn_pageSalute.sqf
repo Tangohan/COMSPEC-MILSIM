@@ -79,6 +79,15 @@ private _val = { params ["_k", "_def"]; _d getOrDefault [_k, _def] };
 private _filled = { (trim ([_x select 0, _x select 4] call _val)) isNotEqualTo "" } count _fields;
 
 private _bg = [[0, 0, _bw, _bh], _cBg] call _box;
+// État vide partagé (composant « empty » de fn_formRender) posé dans la page dessinée à la main : formulaire d'une ligne
+// à la hauteur de son contenu. Renvoie le y sous l'état vide.
+private _emptyAt = {
+    params ["_y0", "_icon", "_title", "_sub"];
+    private _g = [[["empty", _icon, _title, _sub]], [0, _y0, _bw, _bh], true, _cBg] call comspec_atak_native_fnc_formRender;
+    private _h = uiNamespace getVariable ["COMSPEC_ATAK_FormH", _font * 8];
+    { if (!isNull _x) then { _x ctrlSetPositionH _h; _x ctrlCommit 0; }; } forEach [_g, _g getVariable ["bg", controlNull]];
+    _y0 + _h
+};
 
 // ---------- En-tête ----------
 private _hdrH = _font * 2.7;
@@ -211,8 +220,7 @@ _y = _y + ((ctrlTextHeight _h) max (_fs * 1.2)) + _pad;
 private _log = (missionNamespace getVariable ["COMSPEC_ATAK_AlertLog", []]) select { (_x select 0) isEqualTo "SALUTE" };
 _y = [_pad, _y, _w, "Derniers SALUTE", str (count _log)] call _sec;
 if ((count _log) isEqualTo 0) then {
-    ["COMSPEC_RscText", [_pad, _y, _w, _fs * 1.4], "Aucun compte rendu pendant cette mission.", _fs * 0.85, _cDim] call _lbl;
-    _y = _y + _fs * 1.4 + _pad;
+    _y = [_y, _dir + "app_salute.paa", "Aucun compte rendu pendant cette mission", "Remplissez au moins deux lettres ci-dessus, dont la taille ou l'activité, puis ENVOYER LE SALUTE. Ceux du camp arrivent aussi ici."] call _emptyAt;
 };
 private _ch = _fs * 2.9;
 for "_i" from ((count _log) - 1) to (((count _log) - 8) max 0) step -1 do {

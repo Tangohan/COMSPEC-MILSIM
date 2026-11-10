@@ -13,6 +13,11 @@ uiNamespace setVariable ["COMSPEC_ATAK_ToggleFrame", diag_frameNo];
 ["heal"] call comspec_atak_native_fnc_vehicleKeys;
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _d = [] call comspec_atak_native_fnc_display;
+// Téléphone en train de redescendre (4.2.1, fn_close animé) : rangé tout de suite, l'appui le ressort.
+if (!isNull _d && {(uiNamespace getVariable ["COMSPEC_ATAK_Closing", displayNull]) isEqualTo _d}) then {
+    [] call comspec_atak_native_fnc_close;
+    _d = [] call comspec_atak_native_fnc_display;
+};
 // En main mais caché sous une fenêtre de cockpit ou d'un autre mod (2.9.41) : remis au premier plan au lieu d'être rangé.
 if (!isNull _d && {_s getOrDefault ["interactive", false]} && {["covered", _d] call comspec_atak_native_fnc_vehicleKeys}) exitWith {
     ["INFO", "ATAK", "Téléphone en main caché sous une autre fenêtre : rouvert au premier plan"] call comspec_atak_native_fnc_log;
@@ -22,7 +27,7 @@ if (!isNull _d && {_s getOrDefault ["interactive", false]} && {["covered", _d] c
 if (!isNull _d && {_s getOrDefault ["interactive", false]}) exitWith {
     ["INFO", "ATAK", "Prendre en main : en main -> miniature"] call comspec_atak_native_fnc_log;
     uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", (missionNamespace getVariable ["COMSPEC_ATAK_PhoneActive", ""]) isEqualTo ""];
-    [] call comspec_atak_native_fnc_close;
+    [true] call comspec_atak_native_fnc_close;
     false
 };
 // Téléphone d'un autre sur moi (fn_phoneOwn) : choix du téléphone, ou le sien si je n'ai que lui.

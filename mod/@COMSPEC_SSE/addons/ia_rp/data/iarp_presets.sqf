@@ -7,6 +7,7 @@
     iarp_presets.sqf à sa racine (même format, seule la liste « presets » est lue).
 */
 private _m = { createHashMapFromArray _this };
+private _nl = toString [10];
 [
     ["presets", [
         ["civil_apeure", "Civil apeuré", "Frightened civilian", [
@@ -23,7 +24,10 @@ private _m = { createHashMapFromArray _this };
         ["informateur", "Informateur corrompu", "Corrupt informant", [
             ["role", "civil"], ["nerve", 55], ["talk", 60], ["aggro", 15], ["honesty", 35], ["bribe", 90], ["fear", 60],
             ["sensitive", ["la milice", "le garage"]],
-            ["know", "Le chef de la milice dort au garage près de la mosquée, deux gardes la nuit."], ["unlock", "bribe"],
+            // Savoir par paliers : vague sous la pression, précis payé, complet après deux pots-de-vin ou un aveu.
+            ["know", "Vague : La milice a un chef, il ne dort jamais deux nuits au même endroit." + _nl
+                + "Précis : Le chef de la milice dort au garage près de la mosquée, deux gardes la nuit." + _nl
+                + "Complet : Il part chaque matin à cinq heures dans un pick-up gris, par la route du nord, sans escorte."], ["unlock", "bribe"],
             ["react", [["search", "coopere"], ["threat", "auto"], ["bribe", "coopere"], ["order", "coopere"]]]
         ]],
         ["milicien", "Milicien nerveux", "Nervous militiaman", [

@@ -19,7 +19,8 @@
       ["slider", libellé, valeur 0-100, code, aide, actif, icône, code de l'icône, aide de l'icône, [min, max], id]
           curseur 0-100 (ou [min, max], valeur affichée en %) au cran de 1 : code appelé avec [valeur] pendant le glissé (sans redessiner la page) ; icône
           (data\nom) cliquable à gauche, valeur à droite (0 = MUET) ; actif = liseré et icône en couleur d'accent
-      ["segment", libellé, [[texte, code, actif, aide]...], aide]   ["info", libellé, valeur]   ["image", chemin]
+      ["segment", libellé, [[texte, code, actif, aide]...], aide]   ["info", libellé, valeur, id]   ["image", chemin]
+          (id de « info », facultatif : valeur réécrite sur place par fn_formSet)
       ["line", numéro, libellé, valeur, genre, clé, aide]   ligne de formulaire type 9-LINE, hauteur fixe :
           numéro en pastille, libellé à gauche, valeur à droite. genre "auto" (valeur calculée, en couleur d'accent ;
           vide ou "-" : l'aide en gris), "warn" (valeur en rouge), "edit" (champ de saisie clé dans la colonne valeur,
@@ -447,9 +448,18 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 private _bt = _badge;
                 if (_bt isEqualType 0) then { _bt = [str _bt, ""] select (_bt <= 0); };
                 private _lbl = ["COMSPEC_RscStructuredText", [_tx, _ty, _tw - pixelW, _tabH]] call _mk;
-                _lbl ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' color='%1'>%2</t>%3",
+                // 4.2.1 : libellé réduit jusqu'à la taille plancher quand il dépasse l'onglet. La répartition ci-dessus
+                // compte à la taille plancher, le dessin se faisait à la taille normale : un libellé long passait sur
+                // deux lignes, coupé par la hauteur de l'onglet.
+                private _fh = ctrlFontHeight _lbl;
+                if (_fh <= 0) then { _fh = _font; };
+                private _chars = (count (((_text call comspec_atak_native_fnc_tr) splitString ""))) + ([0, 1 + 0.78 * (count (str _bt))] select (_bt isNotEqualTo ""));
+                private _drawW = _chars * _fh * 0.55 * pixelW / pixelH;
+                private _sz = 1;
+                if (_drawW > _tw * 0.9) then { _sz = ((_tw * 0.9) / _drawW) max (_minF / _fh) min 1; };
+                _lbl ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' size='%4' color='%1'>%2</t>%3",
                     [_hTD, _accHex] select _active, toUpper _text,
-                    ["", format [" <t size='0.78' color='%1'>%2</t>", [_hTM, _hWA] select _active, _bt]] select (_bt isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+                    ["", format [" <t size='%3' color='%1'>%2</t>", [_hTM, _hWA] select _active, _bt, 0.78 * _sz]] select (_bt isNotEqualTo ""), _sz]) call comspec_atak_native_fnc_tr);
                 private _lh = (ctrlTextHeight _lbl) min _tabH;
                 _lbl ctrlSetPosition [_tx, _ty + (_tabH - _lh) / 2 - pixelH, _tw - pixelW, _lh];
                 _lbl ctrlCommit 0;
@@ -806,11 +816,13 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _y = _y + _segRows * _rowH * 0.9 + (_segRows - 1) * _pad / 4 + _pad / 2;
         };
         case "info": {
-            _row params ["", "_label", "_value"];
+            // 4e élément (facultatif, 4.2.1) : id, pour réécrire la valeur sur place (fn_formSet « info » : distance, « il y a X s »).
+            _row params ["", "_label", "_value", ["_iid", ""]];
             private _a = ["COMSPEC_RscStructuredText", [_pad, _y, _w * 0.5, _fs * 1.3]] call _mk;
             _a ctrlSetStructuredText parseText ((format ["<t size='0.85' color='" + _hTD + "'>%1</t>", _label]) call comspec_atak_native_fnc_tr);
             private _b = ["COMSPEC_RscStructuredText", [_pad + _w * 0.4, _y, _w * 0.6, _fs * 1.3]] call _mk;
             _b ctrlSetStructuredText parseText ((format ["<t size='0.85' align='right'>%1</t>", _value]) call comspec_atak_native_fnc_tr);
+            if (_iid isEqualType "" && {_iid isNotEqualTo ""}) then { _ids set [_iid, createHashMapFromArray [["kind", "info"], ["value", _b]]]; };
             private _ih2 = ((ctrlTextHeight _a) max (ctrlTextHeight _b)) max (_fs * 1.45);
             if (_ih2 > _fs * 1.3) then {
                 _a ctrlSetPosition [_pad, _y, _w * 0.5, _ih2]; _a ctrlCommit 0;

@@ -2,7 +2,8 @@
     App Avis de recherche : données et actions.
       ["load"]          relit les avis d'Athena (DLL GetWantedNotices) puis télécharge les photos ;
       ["filter", f]     ALL | person | watchlist | interest ;
-      ["open", clé]     ouvre un avis (clé = "type:id"), "" pour revenir à la liste.
+      ["open", clé]     ouvre un avis (clé = "type:id"), "" pour revenir à la liste ;
+      ["search"]        filtre la liste par nom, alias ou référence (champ wantedQ) ; ["clearQ"] efface le filtre.
     État : uiNamespace COMSPEC_ATAK_Wanted = [avis, heure, erreur] ; avis = [type, id, réf, nom, alias, niveau, détails, url photo, maj, origine]
            uiNamespace COMSPEC_ATAK_WantedImg = HashMap clé → chemin local de la photo ("" : PNG ; nombre : heure d'un échec, nouvel essai après 60 s).
 */
@@ -13,6 +14,9 @@ private _res = { params ["_r"]; if (!isNil "comspec_overwatch_connect_fnc_extRes
 switch (_act) do {
     case "filter": { _s set ["wantedFilter", _arg]; _s set ["wantedOpen", ""]; call _render; };
     case "open": { _s set ["wantedOpen", _arg]; call _render; };
+    // Recherche par nom (champ wantedQ, appliquée sur OK ou Entrée) ; « clearQ » l'efface.
+    case "search": { _s set ["wantedQ", trim (["wantedQ"] call comspec_atak_native_fnc_formValue)]; call _render; };
+    case "clearQ": { _s set ["wantedQ", ""]; call _render; };
     case "load": {
         // Hors contexte suspendable (comspec_atak_native_fnc_nextFrame, clic de formulaire) fn_extAwait appelait la DLL en direct
         // et figeait le jeu le temps de la requête Athena : relancé dans un spawn pour passer par « Async ».

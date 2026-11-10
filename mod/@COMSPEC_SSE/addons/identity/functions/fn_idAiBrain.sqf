@@ -9,7 +9,8 @@
     Contexte : menotté / rendu, inconscient, blessé, armé, mobile (à pied ou conducteur), soldats armés à 20 m, armes
     pointées vers lui (40 m, ±10°), zone de checkpoint, couvre-feu (civils), contrôleur parti, faux découvert.
     Tension 0-100 : profil, nerfs propres à la personne, armes pointées, soldats, couvre-feu, arme sur lui, zone,
-    questions répétées, faux découvert ; × agressivité (réglage) ; lissée d'une seconde à l'autre.
+    questions répétées, faux découvert, choc (tirs proches, civil menacé sous ses yeux : IA RP, fn_iarpReact) ;
+    × agressivité (réglage) ; lissée d'une seconde à l'autre.
 */
 params [["_p0", objNull], ["_p1", ""]];
 if (!isServer) exitWith { "" };
@@ -82,7 +83,9 @@ private _tension = {
         + (([_key, "idnerve"] call comspec_sse_fnc_bioRand) * 20 - 10)
         + 9 * ((_cx get "aimed") min 3)
         + 3 * ((((_cx get "soldiers") - 1) max 0) min 4)
-        + (_u getVariable ["comspec_sse_idBust", 0]);
+        + (_u getVariable ["comspec_sse_idBust", 0])
+        // Choc (IA RP : tirs proches, civil menacé sous ses yeux), qui retombe de 30 par minute.
+        + (if (isNil "comspec_sse_fnc_iarpReact") then { 0 } else { ["shock", _u] call comspec_sse_fnc_iarpReact });
     if (_cx get "curfew") then { _t = _t + 12; };
     if ((_cx get "armed") && {_prof in ["insurge", "hvt"]}) then { _t = _t + 12; };
     if (_cx get "inCp") then { _t = _t + ([8, -6] select (_prof isEqualTo "civil")); };

@@ -2,7 +2,8 @@
     Surface de l'écran, par-dessus l'app et les fêlures (appelé à la fin de fn_deviceOverlay, chaque seconde) :
       - dégâts : rayures (fines lignes claires), pixels morts (points fixes), lignes verticales colorées ;
       - saleté (fn_screenDirt, réglage serveur comspec_atak_native_dirt_sim et réglage Réalisme du joueur) :
-        voile de poussière, traces de doigts, traînées et gouttes de sang sur l'écran, sang sur la coque, gouttes de pluie.
+        voile de poussière, traces de doigts, traînées et gouttes de sang sur l'écran, sang sur la coque, gouttes de pluie ;
+      - verre (4.2.1) : reflet discret de la vitre (désactivable) et coins arrondis de l'écran, propres à chaque coque.
     Disposition tirée d'une graine propre à l'appareil (COMSPEC_ATAK_Device dirtSeed) : même dessin d'une seconde à l'autre,
     les contrôles ne sont recréés que si le nombre de taches change ; sinon seule l'opacité suit l'état. Chaque genre et
     chaque tache a sa propre suite de tirages : une trace de doigt de plus ne déplace plus les autres.
@@ -34,8 +35,26 @@ private _counts = [
     ceil (_prints * 6), count _stains, ceil (_frame * 4), 0,
     ceil (_scratch * 8), ceil (_pix * 14), [0, 1 + floor ((_pix - 0.5) * 4)] select (_pix >= 0.5)
 ];
+// Verre (4.2.1) : reflet de la vitre (réglage CBA comspec_atak_native_glass_glare, aussi dans Réglages > Thème et écran)
+// et coins arrondis de l'écran. Écran de la tablette du JPC (texture) : le modèle 3D a son propre verre.
+private _tex3d = _l getOrDefault ["texture", false];
+private _glare = !_tex3d && {(missionNamespace getVariable ["comspec_atak_native_glass_glare", true]) isEqualTo true};
+// Coins de l'ouverture de chaque coque, mesurés sur ses textures (tools/gen_glass.py) : rayon par coin en part du côté
+// de la texture [haut gauche, haut droit, bas droit, bas gauche] du paysage, gris du cadre qui borde le coin, de jour
+// puis de nuit (0 à 255). S7 (et ses teintes) : ouverture à coins droits, rien à poser. Tablette à touches = tablette.
+private _corner = if (_tex3d) then { [] } else {
+    (createHashMapFromArray [
+        ["rugged", [[0.015, 0.015, 0.015, 0.015], [4, 8, 36, 27], [0, 2, 10, 8]]],
+        ["iphone", [[0.0067, 0.0067, 0.005, 0.0067], [45, 35, 57, 60], [11, 8, 16, 16]]],
+        ["tablet", [[0.0133, 0.0117, 0.01, 0.01], [21, 21, 24, 24], [5, 5, 6, 7]]],
+        ["keys", [[0.0133, 0.0117, 0.01, 0.01], [21, 21, 24, 24], [5, 5, 6, 7]]],
+        ["sonim", [[0.02, 0.0184, 0.02, 0.0117], [21, 18, 19, 27], [5, 5, 5, 7]]],
+        ["s23", [[0.0067, 0.0083, 0.0083, 0.0067], [35, 27, 33, 51], [8, 7, 8, 14]]],
+        ["ip17", [[0, 0.0167, 0.0167, 0], [5, 29, 71, 5], [1, 8, 19, 0]]]
+    ]) getOrDefault [_l getOrDefault ["model", "s7"], []]
+};
 private _seed = _n getOrDefault ["dirtSeed", 1];
-private _sig = format ["%1|%2|%3|%4|%5|%6", _counts, _seed, _rect, _phone, _l get "model", _stains apply { [_x select 0, _x select 1, round ((_x select 2) * 200), round ((_x select 3) * 200)] }];
+private _sig = format ["%1|%2|%3|%4|%5|%6|%7|%8", _counts, _seed, _rect, _phone, _l get "model", _stains apply { [_x select 0, _x select 1, round ((_x select 2) * 200), round ((_x select 3) * 200)] }, _glare, _l get "phoneTexture"];
 (uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) params ["_oldSig", "_ctrls"];
 if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}) then {
     { ctrlDelete (_x select 1); } forEach _ctrls;
@@ -102,7 +121,10 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
     if (_cDust > 0) then {
         ["dust", format ["dirt_dust_%1", _seed mod 2] call _tex, _rx, _ry, _rw, _rh] call _pic;
         // Coque aussi : poussière plus dense contre les arêtes, même cadre que la texture du modèle.
-        ["caseDust", format ["dirt_case_%1_%2", _l getOrDefault ["model", "s7"], ["port", "land"] select (_l getOrDefault ["landscape", true])] call _tex, _px, _py, _pw, _ph] call _pic;
+        // Tablette à touches : mêmes coques que la tablette, donc même poussière (4.2.1, textures en double retirées).
+        private _dm = _l getOrDefault ["model", "s7"];
+        if (_dm isEqualTo "keys") then { _dm = "tablet"; };
+        ["caseDust", format ["dirt_case_%1_%2", _dm, ["port", "land"] select (_l getOrDefault ["landscape", true])] call _tex, _px, _py, _pw, _ph] call _pic;
     };
     for "_i" from 1 to _cPrints do {
         [5, _i] call _from;
@@ -152,6 +174,34 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
         private _s = _rh * (0.012 + 0.022 * call _rnd);
         ["drops", "dirt_drop" call _tex, _rx + (_rw - _s / _ratio) * (call _rnd), _ry + (_rh - _s) * (call _rnd), _s / _ratio, _s] call _pic;
     };
+    // Reflet de la vitre : blanc, l'alpha de la texture dessine une bande douce en biais en haut à gauche ; opacité
+    // faible, suivie plus bas (jour / nuit). Par-dessus la saleté, sous les coins.
+    if (_glare) then {
+        ["glass", "screen_glass" call _tex, _rx, _ry, _rw, _rh] call _pic;
+    };
+    // Coins arrondis : l'écran est un rectangle posé par-dessus la coque, ses coins carrés cachaient l'arrondi de
+    // l'ouverture. Un quart de disque évidé, teint au gris du cadre, refait l'arrondi à chaque coin (en dernier :
+    // devant la saleté et le reflet). L'écran déborde de 0.003 (fn_layoutGet) : le coin part du bord débordant,
+    // rayon + débord, et l'arrondi suit l'ouverture décalée d'autant, comme les bords droits.
+    if (_corner isNotEqualTo []) then {
+        _corner params ["_radii", "_grayDay", "_grayNight"];
+        private _gray = [_grayDay, _grayNight] select (((_l getOrDefault ["phoneTexture", ""]) find "_night") >= 0);
+        private _land = _l getOrDefault ["landscape", true];
+        {
+            // Portrait : texture tournée d'un quart de tour horaire, le coin haut gauche affiché est le bas gauche du paysage.
+            private _i = [(_forEachIndex + 3) mod 4, _forEachIndex] select _land;
+            private _r = _radii select _i;
+            if (_r > 0.004) then {
+                private _w = _pw * (_r + 0.003);
+                private _h = _ph * (_r + 0.003);
+                private _cx = [_rx, _rx + _rw - _w] select (_x in ["tr", "br"]);
+                private _cy = [_ry, _ry + _rh - _h] select (_x in ["br", "bl"]);
+                private _v = (_gray select _i) / 255;
+                ["corner", format ["screen_corner_%1", _x] call _tex, _cx, _cy, _w, _h] call _pic;
+                ((_ctrls select ((count _ctrls) - 1)) select 1) ctrlSetTextColor [_v, _v, _v, 1];
+            };
+        } forEach ["tl", "tr", "br", "bl"];
+    };
 };
 // Opacité selon l'état (chaque seconde, sans recréer).
 private _off = (_hp getOrDefault ["state", "OK"]) isEqualTo "OFF";
@@ -168,6 +218,9 @@ private _style = (missionNamespace getVariable ["comspec_atak_native_blood_style
         case "prints": { _c ctrlSetTextColor [0.82, 0.82, 0.76, 0.06 + 0.18 * _prints]; };
         case "frame": { _c ctrlSetTextColor [0.8, 0.7, 0.68, 0.55 + 0.4 * _frame]; };
         case "drops": { _c ctrlSetTextColor [0.85, 0.92, 1, 0.35 + 0.3 * _drops]; };
+        // Reflet : discret, plus faible la nuit (moins de lumière à refléter) ; jamais un voile sur la carte ou le texte.
+        case "glass": { _c ctrlSetTextColor [1, 1, 1, 0.22 * (0.45 + 0.55 * sunOrMoon)]; };
+        case "corner": {};
         default {
             // Tache de sang : opacité propre (elle pâlit au nettoyage, à la pluie) ; style discret plus léger.
             // Le sang sèche : rouge vif les premières minutes, puis plus sombre et brun (10 min environ), plus mat.
