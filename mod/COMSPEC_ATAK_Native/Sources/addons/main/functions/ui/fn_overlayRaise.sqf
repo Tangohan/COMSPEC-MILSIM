@@ -32,16 +32,17 @@ uiNamespace setVariable ["COMSPEC_ATAK_RaiseQueued", true];
             };
         } forEach _this;
     };
-    (uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []]) call _kill;
-    (_surf apply { _x param [1, controlNull] }) call _kill;
-    (_fx apply { _x param [1, controlNull] }) call _kill;
-    (uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]) call _kill;
+    // Anciens calques supprimés seulement après la création des nouveaux, dans la même image : jamais une image sans
+    // reflet ni fêlures, et leurs textures restent chargées (un PAA libéré puis rechargé restait vide une image ou deux).
+    private _old = [uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []], _surf apply { _x param [1, controlNull] },
+        _fx apply { _x param [1, controlNull] }, uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]];
     uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
     uiNamespace setVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]];
     uiNamespace setVariable ["COMSPEC_ATAK_ScreenFx", ["", []]];
     uiNamespace setVariable ["COMSPEC_ATAK_ZeusOv", []];
     uiNamespace setVariable ["COMSPEC_ATAK_OvStale", false];
     [] call comspec_atak_native_fnc_deviceOverlay;
+    _old call _kill;
     uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
     // Tampon des calques (fn_pageRender) : tout ce qui existe maintenant est sous eux.
     private _dO = [] call comspec_atak_native_fnc_display;

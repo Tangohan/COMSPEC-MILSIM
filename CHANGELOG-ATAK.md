@@ -64,6 +64,24 @@ EN : Your Athena identity really reaches the game
 - Aucune nouvelle DLL, aucune migration. Traductions : `lang/en/site_auto.php`, `i18n/en.txt`, `localisation/template/xx.txt`, `tools/i18n_identity_en.tsv`.
 
 ---
+## À venir : reflet et vibration de l'écran sans clignotement (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Le verre du téléphone ne clignote plus quand on le touche
+- Le reflet de la vitre, les coins arrondis, la poussière et les fêlures restent affichés pendant un appui, un appui long ou en changeant d'app, au lieu de disparaître le temps du clic.
+- Quand le téléphone vibre, tout le téléphone tremble d'un bloc : l'écran ne se décolle plus de la coque.
+EN : The phone glass no longer flickers when you touch it
+- The glass glare, rounded corners, dust and cracks stay visible during a tap, a long press or when switching apps, instead of vanishing for the length of the click.
+- When the phone vibrates, the whole phone shakes as one: the screen no longer slides off the case.
+
+### Détail technique
+- Cause du clignotement au clic : le moteur donne le focus au bouton dès l'enfoncement, et dessine le contrôle focalisé (et la zone de contenu 88531 qui le contient) devant tous les autres ; `fn_overlayFront` ne rendait le focus au puits 88543 qu'à l'image qui suit le relâchement (`MouseButtonUp` de `fn_displayLoad`). Pendant tout l'appui, la page passait devant le reflet (`fn_screenSurface`, calque `glass` posé sur tout l'écran depuis la 4.2.1), d'où un reflet qui disparaît puis revient à chaque clic. Désormais `MouseButtonDown` pose un `EachFrame` à usage unique qui appelle `[true] call fn_overlayFront` (3 images au plus) : focus rendu avant le dessin, seulement pris aux contrôles qui se cliquent sans se glisser (types 0, 1, 6, 7, 11, 13, 16, 41, 77) ; carte, listes, curseurs, groupes et champs de saisie le gardent jusqu'au relâchement comme avant.
+- Calques recréés (`fn_overlayRaise`, `fn_pageRender` hors « gardés », `fn_fx` « front », changement de signature de `fn_screenSurface`) : les nouveaux contrôles sont créés avant la suppression des anciens, dans la même image (avant : suppression puis création, texture libérée puis rechargée).
+- Vibration (`fn_vibrate`) et sursaut d'un appui (`fn_fx` « tap ») : nouvelle `fn_phoneShake`, même décalage posé à chaque pas sur tous les contrôles de premier niveau affichés qui touchent la coque (coque 88509, écran, page, barre d'état, dock, calques, touches physiques, carte), sans recréer de contrôle ; repos gardé par contrôle (`cs_vibBase`), contrôle déplacé par la mise en page pendant la secousse repris à sa nouvelle place, contrôle en cours d'animation (`ctrlCommitted` faux) laissé tranquille, défilement des groupes remis après chaque déplacement, retour exact à la fin. Avant : seule la coque bougeait. Réglage Vibration toujours respecté (`fn_vibrate` sort avant).
+- Autotest (`telephone.sqf`) : `tel_reflet_toucher` (vrais clics de souris envoyés par `tools/ingame_test.ps1`, ligne `AUTOTEST|CLICK|nom|x|y|ms`, capture pendant l'appui ; surveillance `EachFrame` du reflet, des calques et du focus), `tel_vibration_bloc` (écart coque / écran / reflet constant à chaque image, retour exact, réglage coupé, appui sur une page défilée), `tel_mini_defilement` (miniature, carte qui suit une marche simulée puis l'arrêt : pas de saut, écart qui ne remonte pas, calques présents à chaque image, capture en fin de défilement).
+- Défilement en miniature (« clignotement à la fin du défilement ») : aucun défilement animé du contenu trouvé dans le code (ni `ctrlSetScrollValues` animé, ni `ctrlCommit` avec durée sur un groupe) ; le seul défilement automatique en miniature est le suivi de la carte image par image (`fn_mapOnDraw`, recentrage de secours `fn_statusUpdate` / `fn_mapCenter`). Non modifié faute de preuve : `tel_mini_defilement` le mesure (sauts, écart qui remonte, calques recréés) à la prochaine passe en jeu.
+- Non vu en jeu : aucune passe de l'autotest n'a tourné pour ce lot.
 
 ## À venir : configurateur d'équipement, favoris, tendances, pré-kits et poids (site, version à attribuer)
 
