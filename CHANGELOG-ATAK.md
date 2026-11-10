@@ -38,6 +38,36 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : réseau relais plus réaliste, cause de coupure visible (ATAK natif 4.2.1, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : amélioration
+FR : Le réseau relais dit pourquoi ça ne passe pas
+- Hors maillage, le téléphone nomme le lien qui manque et sa cause : « lien Ma radio › Relais Nord (1,2 km) coupé par le relief : il manque 8 dB », avec un conseil (monter sur la crête, poser un relais sur un toit, se rapprocher d'environ 400 m, changer de canal).
+- Sur la carte (calque Wave Relay), un trait rouge en tirets va de votre groupe au nœud qu'il faudrait joindre, avec la cause écrite au milieu.
+- L'app Wave Relay affiche la qualité du chemin (bonne, dégradée, à la limite, coupée), le maillon faible et ce qui le limite ; les voisins faibles disent « limité par les bâtiments », « limité par le relief »…
+- Les bâtiments comptent entre deux radios du maillage : en ville, un relais sur un toit porte bien plus loin qu'un relais dans la rue.
+- Quand un relais de votre route tombe (détruit, ramassé, batterie vide), le réseau se coupe environ 3 s, le temps de trouver un autre chemin, puis repasse par lui.
+- Le dépannage MPU nomme le relais en panne le plus proche (« Relais Nord à 800 m : batterie vide ») au lieu de dire seulement qu'il n'y a aucun relais.
+- Tout se règle dans Échap › Réalisme : Bâtiments dans le maillage (50 %), Reconvergence après la perte d'un relais (3 s), Lien manquant sur la carte (actif).
+EN : The relay network tells you why it does not get through
+- Out of the mesh, the phone names the missing link and its cause: "link My radio › North relay (1.2 km) blocked by terrain: 8 dB short", with advice (climb the ridge, set a relay on a rooftop, move about 400 m closer, change channel).
+- On the map (Wave Relay layer), a dashed red line runs from your group to the node you should reach, with the cause written in the middle.
+- The Wave Relay app shows the path quality (good, degraded, marginal, cut), the weak link and what limits it; weak neighbours say "limited by buildings", "limited by terrain"…
+- Buildings now count between two mesh radios: in town, a relay on a rooftop carries much further than a relay in the street.
+- When a relay on your route goes down (destroyed, picked up, flat battery), the network drops for about 3 s while it finds another path, then switches to it.
+- The MPU troubleshooter names the nearest broken relay ("North relay 800 m away: flat battery") instead of only saying there is no relay.
+- Everything is set in Esc › Realism: Buildings in the mesh (50 %), Reconvergence after losing a relay (3 s), Missing link on the map (on).
+
+### Détail technique
+- `fn_meshGraph` « pass » (serveur par défaut, `mesh_server`) : `_marginOf` rend [marge, cause] ; cause = plus forte perte de `fn_radioLink` au-delà de 3 dB (« lossCode » : 2 relief et zone de Fresnel, 3 bâtiments, 4 météo, 8 feuillage), sinon 1 distance ; puis 4 météo forcée par Zeus, 6 posture ou masque du corps, 5 brouillage, 7 autre canal. Cache par paire `[heure, marge, cause]` (30 s), clé augmentée du réglage bâtiments.
+- Bâtiments (`mesh_buildings`, 0 à 100 %, 50 par défaut) : un `lineIntersectsSurfaces` par paire de moins de 3 km, dans le même cache que le bilan, compté dans la tranche ; mêmes pertes que `fn_radioLink` « full » (12 dB par bâtiment, x 0,6 en Réaliste, 30 dB au plus) multipliées par le réglage ; bâtiments à moins de 15 m d'une antenne ignorés ; sans effet en réalisme Simplifié.
+- Format diffusé de `COMSPEC_ATAK_MeshRef` : 5e élément par camp, causes des liens de marge < 9 dB (par 2 : paire, cause) ; 6e, liens manqués (par 3 : A + 64 x B, cause, marge arrondie à 2 dB), 3 par nœud au plus (trop loin jusqu'à 3 fois la portée, en espace libre seulement ; autre canal à portée ; bilan raté). Aucun bilan radio de plus. Lus seulement s'ils sont là, bornés (4 032 et 576 nombres) : un serveur plus ancien reste lisible.
+- « view » (client, sans bilan radio) : clés `cause`, `fix`, `miss` [antenne A, antenne B, étiquette, cause], `reconv` ; lien manqué choisi dans tout mon îlot, vers un nœud relié à la passerelle d'abord ; `why` enrichi (toasts, app Réseau, `fn_linkQuality`) ; maillon faible du chemin vers la passerelle avec sa cause. Liens de l'écran : 4e élément, la cause.
+- Reconvergence (`mesh_reconverge_s`, 0 à 15 s, 3 par défaut) : un nœud de ma route précédente absent du graphe ou mort, la vue passe hors service ce délai (débit 0, rallonge voix retirée, niveau 3), « every » relit le graphe dès la fin du délai. Client seulement, à partir du graphe partagé.
+- `fn_meshDraw` : trait rouge en tirets « miss » (une paire, dédoublonnée avec les autres traits), étiquette traduite, réglage `mesh_miss_map` (coché). `fn_pageWaveRelay` : Qualité du chemin, Cause, conseil, cause des voisins faibles. `fn_mpuDiag` : faits `meshCause`, `meshFix`, `meshReconv`, `relayDown` (relais du camp hors service le plus proche, liste locale de `fn_relayNet`) ; étapes « relay » et « mesh » enrichies, même nombre d'étapes.
+- Réglages rangés dans `fn_realismCatalog` (Maillage) et expliqués dans `fn_realismHelp` ; traductions `i18n/en.txt`, modèle `localisation/template/xx.txt`. Autotest `relais` (`scripts/relais.sqf`). Rien n'a tourné en jeu.
+
 ## À venir : moins de sondages et de relectures inutiles (ATAK natif et SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
