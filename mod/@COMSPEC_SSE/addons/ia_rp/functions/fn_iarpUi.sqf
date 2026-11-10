@@ -78,7 +78,8 @@ switch (_op) do {
         uiNamespace setVariable ["comspec_sse_iarpDisplay", _disp];
         _d = _disp;
         private _t = call _targetObj;
-        private _name = if (isNull _t) then { localize "STR_COMSPEC_IARP_LogOnly" } else { [_t getVariable ["comspec_sse_idName", ""], localize "STR_COMSPEC_IARP_Anonymous"] select ((_t getVariable ["comspec_sse_idName", ""]) isEqualTo "") };
+        // Nom de l'IA : celui de ses papiers SSE, jamais le nom d'unité Arma (fn_iarpName).
+        private _name = if (isNull _t) then { localize "STR_COMSPEC_IARP_LogOnly" } else { ["shown", _t] call comspec_sse_fnc_iarpName };
         (_d displayCtrl 94601) ctrlSetText format [localize "STR_COMSPEC_IARP_TitleTalk", toUpper _name];
         { (_d displayCtrl (_x select 0)) ctrlSetTextColor ([_x select 1] call _rgbOf); } forEach [[94621, "me"], [94622, "do"], [94623, "try"], [94624, "todo"]];
         private _e = _d displayCtrl 94620;

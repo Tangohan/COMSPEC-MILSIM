@@ -13,6 +13,14 @@
       log      [moi]                        journal : mes échanges ; Zeus et administrateur : tous
       profileGet [moi, ia] · profileSet [moi, [ia…], profil texte, "apply" | "generate"] · puppet [moi, ia, texte]
                                             Zeus (atelier IA) : lire, appliquer, générer, faire parler une IA
+      Menu ZEN « SSE · Roleplay de l'IA » (fn_iarpZen), Zeus ou administrateur, en lot sur les IA données :
+      profileTweak [moi, [ia…], [[champ, valeur]…]]   champs du profil changés, le reste gardé (« react » : fusionné)
+      zenState [moi, [ia…], stop | free | surrender | flee | aggressive | calm | fsm:<état>]   automate des IA réalistes
+                                            (fn_idAiFsm « force ») quand identity est chargé, sinon ordres simples
+      memGet [moi, ia] · memClear [moi, [ia…], identifiant joueur | ""]   mémoire de l'IA (fn_iarpMem), lue ou effacée
+      reactSet [moi, [ia…], tirs, témoin]   réactions de ces IA (fn_iarpReact : comspec_sse_iarpReactOff)
+      papersOff [moi, [ia…]]                retire ses papiers (fn_idAiConfig « apply », papiers : aucun)
+    Noms : le Zeus voit le vrai nom et la nature de l'identité d'une IA (fn_iarpName « for »), les joueurs le nom affiché.
     Papiers et fouille : l'action ACE habituelle (barre de progression, distance) part du poste (fn_iarpUi) ; ici, rien
     n'est contourné (aucune demande de papiers, aucune fouille sans l'action, rien vers Athena).
     Évènement CBA serveur : comspec_sse_iarpExchange [ligne du journal].
@@ -38,6 +46,8 @@ private _range = missionNamespace getVariable ["comspec_sse_iarp_range", 20];
 private _send = {
     params ["_unit", "_cop", "_ca"];
     if (isNull _unit) exitWith {};
+    // Bulle d'une IA : le Zeus (ou l'administrateur) voit son vrai nom et la nature de son identité (fn_iarpName).
+    if (_cop isEqualTo "bubble" && {(_ca param [1, ""]) isEqualTo "ai"}) then { _ca = +_ca; _ca set [2, ["for", [_ca select 0, _unit]] call comspec_sse_fnc_iarpName]; };
     if (local _unit && {hasInterface}) then { [_cop, _ca] call comspec_sse_fnc_iarpClient; } else { [_cop, _ca] remoteExecCall ["comspec_sse_fnc_iarpClient", owner _unit]; };
 };
 private _reply = {
@@ -83,6 +93,8 @@ private _sanitize = {
     private _cp = (toArray _t) apply { [_x, 32] select (_x < 32 || {_x isEqualTo 127}) };
     trim (toString (_cp select [0, _max]))
 };
+// Une IA sur laquelle le Zeus peut agir (menu ZEN) : personne vivante, jamais un joueur.
+private _isAi = { params ["_u"]; _u isEqualType objNull && {!isNull _u} && {alive _u} && {_u isKindOf "CAManBase"} && {!isPlayer _u} };
 
 switch (_op) do {
     case "typing": {
@@ -101,7 +113,7 @@ switch (_op) do {
         if !([_me] call comspec_sse_fnc_isAuthority) exitWith {};
         _args params ["", ["_t", objNull, [objNull]]];
         if (isNull _t) exitWith {};
-        ["profile", [_t, ["serialize", ["get", _t] call comspec_sse_fnc_iarpProfile] call comspec_sse_fnc_iarpProfile]] call _reply;
+        ["profile", [_t, ["serialize", ["get", _t] call comspec_sse_fnc_iarpProfile] call comspec_sse_fnc_iarpProfile, ["truth", _t] call comspec_sse_fnc_iarpName]] call _reply;
     };
 
     case "profileSet": {
@@ -129,6 +141,164 @@ switch (_op) do {
         private _pay = [_text, _text, createHashMap, "", ""];
         [[_t] call _hearers, "bubble", [_t, "ai", [_t] call _nameAi, _pay]] call _tell;
         ["ZEUS>IA", _t, "", _text, "zeus", "réplique du Zeus"] call _log;
+    };
+
+    // ---------------------------------------------------------------- menu ZEN « SSE · Roleplay de l'IA » (fn_iarpZen)
+    case "profileTweak": {
+        if !([_me] call comspec_sse_fnc_isAuthority) exitWith {};
+        _args params ["", ["_units", [], [[]]], ["_rows", [], [[]]]];
+        private _n = 0;
+        {
+            private _u = _x;
+            if ([_u] call _isAi) then {
+                // Copie neuve (« normalize ») : « apply » compare l'ancien profil au nouveau pour garder ou effacer la mémoire.
+                private _p = ["normalize", ["get", _u] call comspec_sse_fnc_iarpProfile] call comspec_sse_fnc_iarpProfile;
+                {
+                    _x params [["_k", "", [""]], ["_v", ""]];
+                    if (_k isEqualTo "react" && {_v isEqualType []}) then {
+                        private _r = _p get "react";
+                        { if (_x isEqualType [] && {(count _x) isEqualTo 2}) then { _r set [_x select 0, _x select 1]; }; } forEach _v;
+                    } else {
+                        if (_k isNotEqualTo "") then { _p set [_k, _v]; };
+                    };
+                } forEach _rows;
+                if (["apply", [_u, _p]] call comspec_sse_fnc_iarpProfile) then { _n = _n + 1; };
+            };
+        } forEach _units;
+        ["notice", ["STR_COMSPEC_IARP_N_Applied", _n]] call _reply;
+    };
+
+    case "zenState": {
+        if !([_me] call comspec_sse_fnc_isAuthority) exitWith {};
+        _args params ["", ["_units", [], [[]]], ["_act", "", [""]]];
+        private _fsm = !isNil "comspec_sse_fnc_idAiFsm" && {missionNamespace getVariable ["comspec_sse_id_aiFsm", true]};
+        private _states = if (_fsm) then { ["states"] call comspec_sse_fnc_idAiFsm } else { [] };
+        if !(_states isEqualType []) then { _states = []; };
+        private _n = 0;
+        private _noFsm = false;
+        {
+            private _t = _x;
+            if ([_t] call _isAi) then {
+                // Un ordre du Zeus met fin au suivi d'un « stop » (fn_iarpReact « halt »).
+                _t setVariable ["comspec_sse_iarpHaltId", (_t getVariable ["comspec_sse_iarpHaltId", 0]) + 1];
+                private _do = { ["comspec_sse_iarpAiDo", [_t, _this select 0, _this param [1, []]], _t] call CBA_fnc_targetEvent; };
+                private _force = { if (_fsm && {_this in _states}) then { ["force", [_t, _this]] call comspec_sse_fnc_idAiFsm; true } else { false } };
+                private _unSurrender = {
+                    if ((_t getVariable ["ace_captives_isSurrendering", false]) && {!(_t getVariable ["ace_captives_isHandcuffed", false])}) then {
+                        ["ace_captives_setSurrendered", [_t, false], _t] call CBA_fnc_targetEvent;
+                    };
+                };
+                private _ok = switch (_act) do {
+                    case "stop": { ["stop"] call _do; true };
+                    case "free": {
+                        if (_fsm) then { ["release", [_t]] call comspec_sse_fnc_idAiFsm; };
+                        call _unSurrender;
+                        ["free"] call _do;
+                        true
+                    };
+                    case "surrender": { if !("rendu" call _force) then { ["surrender"] call _do; }; true };
+                    case "flee": {
+                        if !("fuit" call _force) then {
+                            // Loin du joueur le plus proche (sinon du Zeus).
+                            private _from = (allPlayers + [_me]) select { alive _x } apply { [_x distance _t, _x] };
+                            _from sort true;
+                            private _p = (_from param [0, [0, _me]]) select 1;
+                            ["flee", [(getPosATL _t) getPos [150 + random 100, _p getDir _t]]] call _do;
+                        };
+                        true
+                    };
+                    case "aggressive": { private _r = "agressif" call _force; if (!_r) then { _noFsm = true; }; _r };
+                    case "calm": {
+                        _t setVariable ["comspec_sse_idTension", 0];
+                        _t setVariable ["comspec_sse_idShock", [0, time]];
+                        _t setVariable ["comspec_sse_idWant", ""];
+                        if (_fsm) then { ["force", [_t, "calme"]] call comspec_sse_fnc_idAiFsm; };
+                        call _unSurrender;
+                        ["free"] call _do;
+                        true
+                    };
+                    default {
+                        // « fsm:<état> » : un état de l'automate des IA réalistes, comme le module « Forcer un état IA ».
+                        private _r = false;
+                        if ((_act select [0, 4]) isEqualTo "fsm:") then { _r = (_act select [4]) call _force; };
+                        if (!_r) then { _noFsm = true; };
+                        _r
+                    };
+                };
+                if (_ok) then { _n = _n + 1; };
+            };
+        } forEach _units;
+        if (_n isEqualTo 0 && {_noFsm}) exitWith { ["notice", ["STR_COMSPEC_IARP_Z_N_NoFsm"]] call _reply; };
+        ["notice", ["STR_COMSPEC_IARP_Z_N_State", _n]] call _reply;
+    };
+
+    case "memGet": {
+        if !([_me] call comspec_sse_fnc_isAuthority) exitWith {};
+        _args params ["", ["_t", objNull, [objNull]]];
+        if (isNull _t) exitWith {};
+        private _mem = _t getVariable ["comspec_sse_iarpMem", createHashMap];
+        if !(_mem isEqualType createHashMap) then { _mem = createHashMap; };
+        private _said = _mem getOrDefault ["said", createHashMap];
+        private _rowsSaid = (keys _said) apply { private _v = _said get _x; [_x, _v param [0, ""], (_v param [1, true]) isEqualTo true] };
+        private _pms = _mem getOrDefault ["players", createHashMap];
+        private _rowsP = (keys _pms) apply {
+            private _pm = _pms get _x;
+            [_pm getOrDefault ["name", _x], round (_pm getOrDefault ["trust", 0]), _pm getOrDefault ["bribes", 0], _pm getOrDefault ["intel", 0],
+                _pm getOrDefault ["word", false], _pm getOrDefault ["turns", 0], _x]
+        };
+        ["mem", [_t, [_mem getOrDefault ["confessed", false], _rowsSaid, _rowsP], ["truth", _t] call comspec_sse_fnc_iarpName]] call _reply;
+    };
+
+    case "memClear": {
+        if !([_me] call comspec_sse_fnc_isAuthority) exitWith {};
+        _args params ["", ["_units", [], [[]]], ["_uid", "", [""]]];
+        private _n = 0;
+        {
+            private _u = _x;
+            if ([_u] call _isAi) then {
+                if (_uid isEqualTo "") then { _u setVariable ["comspec_sse_iarpMem", nil]; } else {
+                    private _m = _u getVariable ["comspec_sse_iarpMem", createHashMap];
+                    if (_m isEqualType createHashMap) then {
+                        (_m getOrDefault ["players", createHashMap]) deleteAt _uid;
+                        // Sujets dits en premier à ce joueur : oubliés (sinon « je l'ai déjà dit à votre collègue »).
+                        private _tl = _m getOrDefault ["told", createHashMap];
+                        { if (((_tl get _x) param [0, ""]) isEqualTo _uid) then { _tl deleteAt _x; }; } forEach (keys _tl);
+                    };
+                };
+                _n = _n + 1;
+            };
+        } forEach _units;
+        ["notice", ["STR_COMSPEC_IARP_Z_N_MemCleared", _n]] call _reply;
+    };
+
+    case "reactSet": {
+        if !([_me] call comspec_sse_fnc_isAuthority) exitWith {};
+        _args params ["", ["_units", [], [[]]], ["_shots", true, [true]], ["_witness", true, [true]]];
+        private _off = [];
+        if (!_shots) then { _off pushBack "shots"; };
+        if (!_witness) then { _off pushBack "witness"; };
+        private _n = 0;
+        { if ([_x] call _isAi) then { _x setVariable ["comspec_sse_iarpReactOff", _off, true]; _n = _n + 1; }; } forEach _units;
+        ["notice", ["STR_COMSPEC_IARP_Z_N_ReactSet", _n]] call _reply;
+    };
+
+    case "papersOff": {
+        if !([_me] call comspec_sse_fnc_isAuthority) exitWith {};
+        if (isNil "comspec_sse_fnc_idAiConfig") exitWith { ["notice", ["STR_COMSPEC_IARP_Z_N_NoId"]] call _reply; };
+        _args params ["", ["_units", [], [[]]]];
+        private _n = 0;
+        {
+            private _u = _x;
+            if ([_u] call _isAi) then {
+                // Même chemin que la page « IA de la zone » (papiers : aucun) ; profil, nature et comportement gardés.
+                private _spec = createHashMapFromArray [["papers", "none"], ["kind", _u getVariable ["COMSPEC_ID_Kind", "civil"]],
+                    ["behaviour", _u getVariable ["COMSPEC_ID_Behaviour", "auto"]], ["profile", _u getVariable ["COMSPEC_ID_AiProfile", ""]]];
+                private _r = ["apply", [[_u], _spec]] call comspec_sse_fnc_idAiConfig;
+                if (_r isEqualType 0) then { _n = _n + _r; };
+                if (!isNil "comspec_sse_fnc_idLegend") then { ["reset", [_u]] call comspec_sse_fnc_idLegend; };
+            };
+        } forEach _units;
+        ["notice", ["STR_COMSPEC_IARP_Z_N_PapersOff", _n]] call _reply;
     };
 
     case "say": {
@@ -658,13 +828,14 @@ switch (_op) do {
             if (isNull _t || {!alive _t}) exitWith {};
             private _pl = (allPlayers select { !(_x isKindOf "HeadlessClient_F") });
             if (hasInterface && {!isNull player}) then { _pl pushBackUnique player; };
-            private _args = [_t, "ai", _t getVariable ["comspec_sse_idName", ""], _pay];
+            // Nom de l'IA : le Zeus voit son vrai nom et la nature de son identité (fn_iarpName), les autres le nom affiché.
             {
                 if (alive _x && {(_x distance _t) <= _range}) then {
+                    private _args = [_t, "ai", ["for", [_t, _x]] call comspec_sse_fnc_iarpName, _pay];
                     if (local _x && {hasInterface}) then { ["bubble", _args] call comspec_sse_fnc_iarpClient; } else { ["bubble", _args] remoteExecCall ["comspec_sse_fnc_iarpClient", owner _x]; };
                 };
             } forEach _pl;
-            private _r = ["reply", [_t, _pay, _gi]];
+            private _r = ["reply", [_t, _pay, _gi, ["for", [_t, _me]] call comspec_sse_fnc_iarpName]];
             if (_owner isEqualTo clientOwner || {!isMultiplayer}) then { _r call comspec_sse_fnc_iarpClient; } else { _r remoteExecCall ["comspec_sse_fnc_iarpClient", _owner]; };
             // Lieu d'un renseignement précis : sur la carte du joueur qui l'a obtenu, et de lui seul.
             if (_mark isNotEqualTo []) then {

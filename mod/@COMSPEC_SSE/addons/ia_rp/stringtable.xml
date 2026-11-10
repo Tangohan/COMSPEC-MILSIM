@@ -22,11 +22,6 @@
             <English>AI roleplay (free text)</English>
             <French>IA RP (texte libre)</French>
         </Key>
-        <Key ID="STR_COMSPEC_IARP_Cat_Modules">
-            <Original>COMSPEC · AI roleplay</Original>
-            <English>COMSPEC · AI roleplay</English>
-            <French>COMSPEC · IA RP</French>
-        </Key>
         <Key ID="STR_COMSPEC_IARP_Close_D">
             <Original>Close (Esc). Your draft is kept for this person.</Original>
             <English>Close (Esc). Your draft is kept for this person.</English>
@@ -987,10 +982,310 @@
             <English>What makes it talk. Trust: politeness and reassurance (greetings, « calm down »), not threats. Bribe: accepted money. Keyword: a word to say (right field). Never: it keeps quiet. Example: Keyword « falcon » for an informant waiting for a password.</English>
             <French>Ce qui la fait parler. Confiance : politesse et paroles rassurantes (salutations, « calmez-vous »), pas les menaces. Pot-de-vin : argent accepté. Mot-clé : un mot à prononcer (champ de droite). Jamais : elle se tait. Exemple : Mot-clé « faucon » pour un informateur qui attend un mot de passe.</French>
         </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Aggro">
+            <Original>Turns aggressive</Original>
+            <English>Turns aggressive</English>
+            <French>Devient agressive</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Calm">
+            <Original>Calm down (let go)</Original>
+            <English>Calm down (let go)</English>
+            <French>Calmer (laisser partir)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_DocId">
+            <Original>ID card</Original>
+            <English>ID card</English>
+            <French>Carte d'identité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_DocLicense">
+            <Original>Driving licence</Original>
+            <English>Driving licence</English>
+            <French>Permis de conduire</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_DocMil">
+            <Original>Military ID</Original>
+            <English>Military ID</English>
+            <French>Carte militaire</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_DocPassport">
+            <Original>Passport</Original>
+            <English>Passport</English>
+            <French>Passeport</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Editor">
+            <Original>SSE editor sheet (AIs of the area)…</Original>
+            <English>SSE editor sheet (AIs of the area)…</English>
+            <French>Fiche dans l'éditeur SSE (IA de la zone)…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Flee">
+            <Original>Runs away</Original>
+            <English>Runs away</English>
+            <French>S'enfuit</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Free">
+            <Original>Release (move along)</Original>
+            <English>Release (move along)</English>
+            <French>Relâcher (circulez)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Fsm">
+            <Original>Other state…</Original>
+            <English>Other state…</English>
+            <French>Autre état…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_FsmState">
+            <Original>State</Original>
+            <English>State</English>
+            <French>État</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_FsmState_D">
+            <Original>Realistic-AI state imposed on every targeted AI, with its real orders (stop, flight, ACE surrender, hostility, reinforcements). It decides again for itself 30 s later.</Original>
+            <English>Realistic-AI state imposed on every targeted AI, with its real orders (stop, flight, ACE surrender, hostility, reinforcements). It decides again for itself 30 s later.</English>
+            <French>État des IA réalistes imposé à chaque IA visée, avec ses ordres réels (arrêt, fuite, reddition ACE, hostilité, renforts). Elle décide de nouveau d'elle-même 30 s plus tard.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Give">
+            <Original>Give papers…</Original>
+            <English>Give papers…</English>
+            <French>Donner des papiers…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_GiveFirst">
+            <Original>Printed first name</Original>
+            <English>Printed first name</English>
+            <French>Prénom imprimé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_GiveKind">
+            <Original>Nature</Original>
+            <English>Nature</English>
+            <French>Nature</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_GiveKind_D">
+            <Original>Real papers: genuine. Prepared cover: an identity that passes every check except biometrics. Forged: flaws according to the quality.</Original>
+            <English>Real papers: genuine. Prepared cover: an identity that passes every check except biometrics. Forged: flaws according to the quality.</English>
+            <French>Vrais papiers : authentiques. Couverture préparée : identité qui passe tous les contrôles sauf la biométrie. Faux : défauts selon la qualité.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_GiveLast">
+            <Original>Printed last name</Original>
+            <English>Printed last name</English>
+            <French>Nom imprimé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_GiveName_D">
+            <Original>Empty: the person's own name, or a generated one. Only used for a single AI; a batch keeps each AI's own name.</Original>
+            <English>Empty: the person's own name, or a generated one. Only used for a single AI; a batch keeps each AI's own name.</English>
+            <French>Vide : le nom de la personne, ou généré. Pris en compte pour une seule IA ; en lot, chaque IA garde le sien.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_GiveQuality">
+            <Original>Forgery quality</Original>
+            <English>Forgery quality</English>
+            <French>Qualité du faux</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_GiveQuality_D">
+            <Original>Forged papers only. 0: crude, spotted at first glance. 100: excellent, only the database or biometrics give it away.</Original>
+            <English>Forged papers only. 0: crude, spotted at first glance. 100: excellent, only the database or biometrics give it away.</English>
+            <French>Faux papiers seulement. 0 : grossier, vu au premier coup d'œil. 100 : excellent, seule la base ou la biométrie le trahit.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_GiveType">
+            <Original>Document</Original>
+            <English>Document</English>
+            <French>Document</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_GiveType_D">
+            <Original>Document issued to each targeted AI (item in its inventory), same as the « Give papers » Zeus module.</Original>
+            <English>Document issued to each targeted AI (item in its inventory), same as the « Give papers » Zeus module.</English>
+            <French>Pièce délivrée à chaque IA visée (objet dans son inventaire), comme le module Zeus « Donner des papiers ».</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_KindCivil">
+            <Original>Real papers</Original>
+            <English>Real papers</English>
+            <French>Vrais papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_KindCover">
+            <Original>Prepared cover</Original>
+            <English>Prepared cover</English>
+            <French>Couverture préparée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_KindForged">
+            <Original>Forged papers</Original>
+            <English>Forged papers</English>
+            <French>Faux papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Know">
+            <Original>Knowledge, secret and cover…</Original>
+            <English>Knowledge, secret and cover…</English>
+            <French>Savoir, secret et couverture…</French>
+        </Key>
         <Key ID="STR_COMSPEC_IARP_Z_Log">
             <Original>Exchange log</Original>
             <English>Exchange log</English>
             <French>Journal des échanges</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_MId">
+            <Original>Identity and papers</Original>
+            <English>Identity and papers</English>
+            <French>Identité et papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_MMem">
+            <Original>Memory per player</Original>
+            <English>Memory per player</English>
+            <French>Mémoire par joueur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_MProfile">
+            <Original>AI profile</Original>
+            <English>AI profile</English>
+            <French>Profil d'IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_MState">
+            <Original>State and behaviour</Original>
+            <English>State and behaviour</English>
+            <French>État et comportement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_MemClear">
+            <Original>Clear its memory</Original>
+            <English>Clear its memory</English>
+            <French>Effacer sa mémoire</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_MemClearPlayer">
+            <Original>Forget one player…</Original>
+            <English>Forget one player…</English>
+            <French>Oublier un joueur…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_MemConfessed">
+            <Original>Confessed</Original>
+            <English>Confessed</English>
+            <French>A avoué</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_MemEmpty">
+            <Original>No memory yet: nobody has talked to this AI.</Original>
+            <English>No memory yet: nobody has talked to this AI.</English>
+            <French>Aucune mémoire : personne n'a encore parlé à cette IA.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_MemFalse">
+            <Original>false</Original>
+            <English>false</English>
+            <French>faux</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_MemPlayer">
+            <Original>Player</Original>
+            <English>Player</English>
+            <French>Joueur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_MemPlayer_D">
+            <Original>The AI forgets this player: trust, bribes, keyword, intel already given. Other players are kept.</Original>
+            <English>The AI forgets this player: trust, bribes, keyword, intel already given. Other players are kept.</English>
+            <French>L'IA oublie ce joueur : confiance, pots-de-vin, mot-clé, renseignement déjà donné. Les autres joueurs sont gardés.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_MemRow">
+            <Original>%1: trust %2 · bribes %3 · intel tier %4 · keyword %5 · %6 turns</Original>
+            <English>%1: trust %2 · bribes %3 · intel tier %4 · keyword %5 · %6 turns</English>
+            <French>%1 : confiance %2 · pots-de-vin %3 · renseignement palier %4 · mot-clé %5 · %6 tours</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_MemSaid">
+            <Original>Claimed</Original>
+            <English>Claimed</English>
+            <French>A affirmé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_MemTitle">
+            <Original>Memory — %1</Original>
+            <English>Memory — %1</English>
+            <French>Mémoire — %1</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_MemTrue">
+            <Original>true</Original>
+            <English>true</English>
+            <French>vrai</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_MemView">
+            <Original>See its memory</Original>
+            <English>See its memory</English>
+            <French>Voir sa mémoire</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_MemView_D">
+            <Original>What the AI claimed about its cover (same for everyone) and what it remembers of each player. Read-only.</Original>
+            <English>What the AI claimed about its cover (same for everyone) and what it remembers of each player. Read-only.</English>
+            <French>Ce que l'IA a affirmé de sa couverture (la même pour tous) et ce qu'elle retient de chaque joueur. Lecture seule.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_N_MemCleared">
+            <Original>Memory cleared for %1 AI(s).</Original>
+            <English>Memory cleared for %1 AI(s).</English>
+            <French>Mémoire effacée pour %1 IA.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_N_NoFsm">
+            <Original>This state needs the realistic AIs (Identity addon): nothing applied.</Original>
+            <English>This state needs the realistic AIs (Identity addon): nothing applied.</English>
+            <French>Cet état demande les IA réalistes (addon Identité) : rien n'est appliqué.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_N_NoId">
+            <Original>Identity addon missing: no papers to handle.</Original>
+            <English>Identity addon missing: no papers to handle.</English>
+            <French>Addon Identité absent : aucun papier à gérer.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_N_NoPreset">
+            <Original>No preset in the AI library.</Original>
+            <English>No preset in the AI library.</English>
+            <French>Aucun profil dans la bibliothèque IA.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_N_PapersOff">
+            <Original>Papers taken away from %1 AI(s).</Original>
+            <English>Papers taken away from %1 AI(s).</English>
+            <French>Papiers retirés à %1 IA.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_N_ReactSet">
+            <Original>Reactions set for %1 AI(s).</Original>
+            <English>Reactions set for %1 AI(s).</English>
+            <French>Réactions réglées pour %1 IA.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_N_State">
+            <Original>Behaviour applied to %1 AI(s).</Original>
+            <English>Behaviour applied to %1 AI(s).</English>
+            <French>Comportement appliqué à %1 IA.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_NatCover">
+            <Original>Cover</Original>
+            <English>Cover</English>
+            <French>Couverture</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_NatForged">
+            <Original>Forged papers</Original>
+            <English>Forged papers</English>
+            <French>Faux papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_NatLies">
+            <Original>False identity (lying)</Original>
+            <English>False identity (lying)</English>
+            <French>Fausse identité (ment)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_NatTrue">
+            <Original>Real identity</Original>
+            <English>Real identity</English>
+            <French>Identité vraie</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_No">
+            <Original>no</Original>
+            <English>no</English>
+            <French>non</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Preset">
+            <Original>Apply a library profile…</Original>
+            <English>Apply a library profile…</English>
+            <French>Appliquer un profil de bibliothèque…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_PresetGen">
+            <Original>One draw per AI</Original>
+            <English>One draw per AI</English>
+            <French>Un tirage par IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_PresetGen_D">
+            <Original>Each targeted AI gets its own random personality drawn from this profile (name, sliders, cover story). Unchecked: the profile is applied as is to all.</Original>
+            <English>Each targeted AI gets its own random personality drawn from this profile (name, sliders, cover story). Unchecked: the profile is applied as is to all.</English>
+            <French>Chaque IA visée reçoit sa propre personnalité tirée au hasard à partir de ce profil (nom, curseurs, histoire). Décoché : le profil est appliqué tel quel à toutes.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_PresetPick">
+            <Original>Library profile</Original>
+            <English>Library profile</English>
+            <French>Profil de bibliothèque</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_PresetPick_D">
+            <Original>Ready-made personality (AI workshop library: villager, militiaman, informant…). Applied on the server to every targeted AI.</Original>
+            <English>Ready-made personality (AI workshop library: villager, militiaman, informant…). Applied on the server to every targeted AI.</English>
+            <French>Personnalité prête à l'emploi (bibliothèque de l'atelier IA : villageois, milicien, informateur…). Appliquée sur le serveur à chaque IA visée.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_Z_Puppet">
             <Original>Make an AI talk</Original>
@@ -1007,10 +1302,120 @@
             <English>What the AI says, shown in a bubble above its head to nearby players and written to the log. Example: Who are you? Get out of my field!</English>
             <French>Ce que dit l'IA, en bulle au-dessus de sa tête pour les joueurs proches, et au journal. Exemple : Qui êtes-vous ? Sortez de mon champ !</French>
         </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_React">
+            <Original>Reactions of this AI…</Original>
+            <English>Reactions of this AI…</English>
+            <French>Réactions de cette IA…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_ReactShots">
+            <Original>Reacts to nearby shots</Original>
+            <English>Reacts to nearby shots</English>
+            <French>Réagit aux tirs proches</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_ReactShots_D">
+            <Original>Shots fired nearby while it talks or is under control: it drops to the ground, surrenders, flees or fights according to its profile. Off: this AI ignores them (the mission setting still applies to the others).</Original>
+            <English>Shots fired nearby while it talks or is under control: it drops to the ground, surrenders, flees or fights according to its profile. Off: this AI ignores them (the mission setting still applies to the others).</English>
+            <French>Tirs proches pendant un échange ou un contrôle : elle se jette au sol, se rend, fuit ou se bat selon son profil. Décoché : cette IA les ignore (le réglage de mission vaut toujours pour les autres).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_ReactWitness">
+            <Original>Witness of a threatened civilian</Original>
+            <English>Witness of a threatened civilian</English>
+            <French>Témoin d'un civil menacé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_ReactWitness_D">
+            <Original>A civilian threatened or held at gunpoint nearby shocks this AI (it watches the scene or flees). Off: this AI is never a witness.</Original>
+            <English>A civilian threatened or held at gunpoint nearby shocks this AI (it watches the scene or flees). Off: this AI is never a witness.</English>
+            <French>Un civil menacé ou braqué à côté choque cette IA (elle regarde la scène ou s'enfuit). Décoché : cette IA n'est jamais témoin.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Root">
+            <Original>SSE · AI roleplay</Original>
+            <English>SSE · AI roleplay</English>
+            <French>SSE · Roleplay de l'IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_St_agressif">
+            <Original>Aggressive</Original>
+            <English>Aggressive</English>
+            <French>Agressif</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_St_calme">
+            <Original>Calm (let go)</Original>
+            <English>Calm (let go)</English>
+            <French>Calme (laisser partir)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_St_coopere">
+            <Original>Cooperates</Original>
+            <English>Cooperates</English>
+            <French>Coopère</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_St_fuit">
+            <Original>Flees</Original>
+            <English>Flees</English>
+            <French>Fuit</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_St_interpelle">
+            <Original>Stopped for a check</Original>
+            <English>Stopped for a check</English>
+            <French>Interpellé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_St_ment">
+            <Original>Lies (tells its cover story)</Original>
+            <English>Lies (tells its cover story)</English>
+            <French>Ment (présente sa couverture)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_St_nerveux">
+            <Original>Nervous</Original>
+            <English>Nervous</English>
+            <French>Nerveux</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_St_refuse">
+            <Original>Refuses</Original>
+            <English>Refuses</English>
+            <French>Refuse</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_St_rendu">
+            <Original>Surrenders</Original>
+            <English>Surrenders</English>
+            <French>Se rend</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_St_renforts">
+            <Original>Calls for reinforcements</Original>
+            <English>Calls for reinforcements</English>
+            <French>Appelle des renforts</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Stop">
+            <Original>Stop (stands still)</Original>
+            <English>Stop (stands still)</English>
+            <French>Stop (s'arrête)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Strip">
+            <Original>Take its papers away</Original>
+            <English>Take its papers away</English>
+            <French>Retirer ses papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Surrender">
+            <Original>Surrenders</Original>
+            <English>Surrenders</English>
+            <French>Se rend</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Traits">
+            <Original>Role and character…</Original>
+            <English>Role and character…</English>
+            <French>Rôle et caractère…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Truth">
+            <Original>See its real papers</Original>
+            <English>See its real papers</English>
+            <French>Voir ses vrais papiers</French>
+        </Key>
         <Key ID="STR_COMSPEC_IARP_Z_Workshop">
             <Original>AI workshop</Original>
             <English>AI workshop</English>
             <French>Atelier IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Yes">
+            <Original>yes</Original>
+            <English>yes</English>
+            <French>oui</French>
         </Key>
     </Package>
 </Project>
