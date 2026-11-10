@@ -1,4 +1,9 @@
 [
+["Athena : sondage des unités", "Athena: units poll"],
+["Athena : sondage des marqueurs", "Athena: markers poll"],
+["Athena : sondage des ordres", "Athena: orders poll"],
+["Athena : sondage des messages", "Athena: messages poll"],
+["DLL native GetAuthState", "native DLL GetAuthState"],
 ["page : calques d'écran gardés", "page: screen layers kept"],
 ["page : calques d'écran recréés", "page: screen layers rebuilt"],
 ["navigation : réponse à l'appui", "navigation: response to the tap"],
