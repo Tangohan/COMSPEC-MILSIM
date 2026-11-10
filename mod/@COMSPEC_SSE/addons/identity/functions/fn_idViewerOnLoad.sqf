@@ -2,7 +2,7 @@
     Visionneuse de document (dialogs/idViewer.hpp) : gabarit PAA étiré au format réel, champs en texte structuré
     superposés aux coordonnées du type (CfgComspecDocuments, lu par fn_idDocTypes : papiers intégrés et extensions),
     MRZ en police à chasse fixe. Mêmes coordonnées que tools/gen_id_assets.py (étiquettes peintes sur le gabarit).
-    ["load", display] · ["side"] recto / verso · ["zoom"] · ["scan"] app Contrôle ID de l'ATAK · ["render"] · ["buttons"]
+    ["load", display] · ["side"] recto / verso · ["zoom"] · ["scan"] passage aux fichiers (app Fichiers de l'ATAK) · ["render"] · ["buttons"]
     ["status", texte, couleur] : ligne d'état sous le document (retours de la fenêtre : jamais une alerte Arma).
     Bouton « Relever » (fn_idPhoto) : champs du document notés au relevé de contrôle ; ouvert depuis l'app pour un relevé,
     il part tout seul une demi-seconde après l'affichage. Bouton explicite quand le relevé est impossible.
@@ -69,12 +69,13 @@ switch (_op) do {
         if (isNil "comspec_atak_native_fnc_hasDevice" || {!([player] call comspec_atak_native_fnc_hasDevice)}) exitWith {
             ["Pas de téléphone ATAK sur vous : impossible de scanner le document.", "WARNING", "", "IDCHECK"] call comspec_sse_fnc_notify;
         };
+        // Vérifier les papiers : passage aux fichiers sur ce document (numéro, pays, nom déjà saisis, recherche lancée) ;
+        // la touche retour ramène au contrôle (app Contrôle ID) ou à l'écran d'avant.
         [{
-            if (isNull ([] call comspec_atak_native_fnc_display) || {!((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false])}) then {
-                [true] call comspec_atak_native_fnc_open;
-            };
-            [{ ["IDCHECK"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
-        }] call CBA_fnc_execNextFrame;
+            ["FICHIERS", createHashMapFromArray [["type", "QA"], ["number", _this getOrDefault ["number", ""]], ["country", _this getOrDefault ["country", ""]],
+                ["docType", _this getOrDefault ["type", ""]], ["last", _this getOrDefault ["last", ""]], ["first", _this getOrDefault ["first", ""]],
+                ["dob", _this getOrDefault ["dob", ""]], ["source", "idcheck"], ["run", true]]] call comspec_sse_fnc_openApp;
+        }, _doc] call CBA_fnc_execNextFrame;
     };
 };
 if (_op in ["scan"]) exitWith {};

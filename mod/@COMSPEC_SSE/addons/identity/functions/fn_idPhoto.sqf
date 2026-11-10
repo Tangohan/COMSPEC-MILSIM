@@ -130,10 +130,7 @@ if (_st getOrDefault ["auto", false]) then {
         uiSleep 0.8;
         closeDialog 2;
         uiSleep 0.1;
-        if (!isNil "comspec_atak_native_fnc_open" && {[player] call comspec_atak_native_fnc_hasDevice}) then {
-            [true] call comspec_atak_native_fnc_open;
-            [{ ["IDCHECK"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
-        };
+        ["IDCHECK"] call comspec_sse_fnc_openApp;
     };
 };
 true

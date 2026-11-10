@@ -226,6 +226,28 @@ EN : Believable ID papers, and a real choice of which document to hand out
 - Addon `extensions` : réglages CBA « SSE ROLEPLAY › Extensions », fenêtre des extensions (Zeus, Eden, menu Échap), liste coupée `comspec_sse_docExtOff` (serveur, diffusée). Extension d'exemple `mod/@COMSPEC_SSE/extensions/example_documents/` (carte de presse, laissez-passer, README).
 - Guide : pages `CfgHints › COMSPEC_SSE` par outil, fenêtre du manuel avec sommaire et recherche (`fn_openGuide`), bouton « ? » (`fn_guideButton`), guides Markdown `mod/@COMSPEC_SSE/docs/guides/` (FR + EN).
 - Autotest (`missions/COMSPEC_Autotest.Stratis/scripts/sse.sqf`) : `sse_documents_types` (chaque type, jour et nuit, recto/verso/zoom, aucune BIS_fnc_showNotification), `sse_relever`, `sse_selecteur_document` (personne et au sol), `sse_extension_exemple` ; `ingame_test.ps1 -ModsEnPlus`.
+## À venir : passage aux fichiers, SEEK II et liens directs vers les apps (site, ATAK natif, SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Passage aux fichiers, SEEK II utile et le téléphone qui s'ouvre sur la bonne app
+- Tout ce qui ouvre le téléphone l'ouvre directement sur la bonne app, même verrouillé : « SCANNER (ATAK) » d'un document lance la recherche aux fichiers avec le numéro déjà saisi, et la touche retour ramène à l'écran d'avant.
+- Nouvelle app Fichiers : recherche d'une personne, d'un document, d'un identifiant SEEK II ou d'une plaque, réponse HIT / NO HIT avec mandats, avis de recherche, documents volés, « armé et dangereux » et contrôles subis, en jeu même sans Athena.
+- Le SEEK II vérifie la personne : contrôle rapide (empreintes, iris, visage) avec verdict CONCORDANT / DISCORDANT / INCONNU / SIGNALÉ, enregistrement d'un inconnu prérempli, « Signer et envoyer » en une touche, batterie qui se vide vraiment.
+- Contrôle ID : chaque lecture (MRZ, puce, base) s'anime dans le téléphone, l'écran et l'alerte disent la même chose, et un document qui n'est plus présenté propose de le redemander. Sur Athena, « Passage aux fichiers » montre chaque consultation du terrain et les responsables y posent mandats et signalements.
+EN : Records checks, a useful SEEK II and the phone opening on the right app
+- Everything that opens the phone now opens it straight on the right app, even when locked: a document's "SCANNER (ATAK)" starts the records search with the number already typed, and the back key returns to the previous screen.
+- New Records app: search for a person, a document, a SEEK II identifier or a plate, with a HIT / NO HIT answer showing warrants, wanted notices, stolen documents, "armed and dangerous" and past checks, in game even without Athena.
+- The SEEK II verifies the person: quick check (fingerprints, irises, face) with a MATCH / MISMATCH / UNKNOWN / FLAGGED verdict, pre-filled enrolment of an unknown person, "Sign and send" in one key, and a battery that really drains.
+- ID check: each reading (MRZ, chip, database) is animated in the phone, the screen and the alert say the same thing, and a document no longer shown offers to ask for it again. On Athena, "Records check" lists every check made in the field and leaders set warrants and flags there.
+
+### Détail technique
+- ATAK natif : `comspec_atak_native_fnc_openApp` [page, contexte, préparation, après] (lien profond commun, ouverture reportée au déverrouillage par `COMSPEC_ATAK_LockAfter`, `["take", page]` pour lire le contexte) ; repris par caméra (renommer), extraction DL-7, drone, compte rendu, liaison Athena, choix Athena, mode pilote, photo de l'app SSE. Le centre Zeus n'est pas touché.
+- SSE core : `comspec_sse_fnc_openApp` (repli pour un ATAK plus ancien). Identity : app FICHIERS (`fn_filePage`, `fn_fileAction`), fichier de la mission côté serveur (`fn_fileServer` : query QW/QA/QB/QV, seekStore, record, contrôles subis notés par `comspec_sse_idChecked`), `fn_fileClient` (complément Athena par QueryIdDocument, journal hors ligne `file_query`), `fn_fileMerge`, `fn_fileQuery`, `fn_fileSubmit` (SubmitIdCheck, file hors ligne, licence respectée), `fn_controlRecord` (point d'entrée des relevés, `id_record`), `fn_scanAnim` (animation des analyses, mise à jour ciblée d'une ligne `text`).
+- Contrôle ID : refus du serveur renvoyés en `checkFail` et portés par la fiche (`notice`), bandeaux IDCHECK périmés retirés, bandeau « N0 seulement » / « RAS aux niveaux lus », N1 à N3 animés sans barre ACE, N4 au SEEK II (`comspec_sse_seekVerdict`), « Voir aux fichiers » après N3.
+- SEEK II (Overwatch connect embarqué) : `fn_seekQuick`, `fn_seekVerdict`, `fn_seekState`, `fn_seekEnroll`, `fn_seekSend`, `fn_seekBattery` ; page CONTRÔLE ; touches A1/QUERY/SIGN/flèches ; `comspec_sse_fnc_openSeek` ouvre sur la cible.
+- Site : `SseFileController`, `SseFileQueryService`, `SseFileRepository`, `SseFileCatalog`, vues `views/atak/sse/files/`, migration 4330 (`sse_file_queries`, `sse_file_mentions`, `sse_seek_records`), `lookup` étendu (type QW/QB/QV, flags `qrn:`, `doc:`, `dob:`, `checks:`, `seek:`, mentions), kinds `file_query`, `seek_record`, `id_record`. Aucune nouvelle commande de DLL.
+- Autotest : `missions/COMSPEC_Autotest.Stratis/scripts/fichiers.sqf` (groupe sse).
 
 ## À venir : configurateur d'équipement, favoris, tendances, pré-kits et poids (site, version à attribuer)
 

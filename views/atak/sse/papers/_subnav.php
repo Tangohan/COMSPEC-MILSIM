@@ -9,6 +9,8 @@ $papersTabs = [
     'controles' => ['controles', 'Contrôles reçus'],
     'tableau' => ['tableau', 'Tableau de bord'],
     'pays' => ['pays', 'Pays émetteurs'],
+    // Chemin commençant par « / » : hors du registre (passage aux fichiers, /atak/sse/fichiers).
+    'fichiers' => ['/atak/sse/fichiers', 'Passage aux fichiers'],
 ];
 if (!empty($canMemberPapers)) {
     $papersTabs['membres'] = ['membres', 'Papiers des membres'];
@@ -35,7 +37,7 @@ $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h
             <?php foreach ($papersTabs as $key => [$path, $label]): ?>
                 <?php $active = $papersTab === $key; ?>
                 <a role="listitem" class="lab-subnav__link<?= $active ? ' is-active' : '' ?>"
-                   href="<?= $h(url('atak/sse/papiers' . ($path !== '' ? '/' . $path : ''))) ?>"
+                   href="<?= $h(str_starts_with($path, '/') ? url(ltrim($path, '/')) : url('atak/sse/papiers' . ($path !== '' ? '/' . $path : ''))) ?>"
                    <?= $active ? 'aria-current="page"' : '' ?>><?= $h($label) ?></a>
             <?php endforeach; ?>
         </div>

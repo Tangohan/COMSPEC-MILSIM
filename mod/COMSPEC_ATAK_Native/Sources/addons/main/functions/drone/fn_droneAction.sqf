@@ -1456,8 +1456,7 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneDirectCam", objNull];
         missionNamespace setVariable ["COMSPEC_ATAK_DroneShotCam", objNull];
         if (_arg isEqualTo true && {alive player} && {isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])}) then {
-            [true] call comspec_atak_native_fnc_open;
-            [{ ["DRONE"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
+            ["DRONE"] call comspec_atak_native_fnc_openApp;
         };
     };
     // Marquage au viseur de la caméra du drone (appui sur MARQUER ou touche « Marquer la cible »).

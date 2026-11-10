@@ -53,7 +53,7 @@ switch (_act) do {
         // App Photo de l'ATAK quand elle peut envoyer (Athena) ; sinon cliché gardé sur le téléphone.
         if ([] call comspec_atak_native_fnc_bridge && {missionNamespace getVariable ["COMSPEC_AthenaReady", false]}) exitWith {
             ["INFO", "Cadrez la pièce et déclenchez : elle est inscrite au dossier"] call _say;
-            [{ ["PHOTOS"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+            ["PHOTOS"] call comspec_sse_fnc_openApp;
         };
         [[[_t, player distance _t]], 1] call comspec_sse_fnc_evidencePhoto;
         call _render;
@@ -68,9 +68,10 @@ switch (_act) do {
             [_t] call comspec_sse_fnc_domexBoost;
             ["INFO", "Valise DOMEX à proximité : extraction accélérée"] call _say;
         };
+        // « connect » ouvre lui-même l'app Extraction (lien profond de l'ATAK, fn_openApp).
         [{
             ["connect", _this] call comspec_atak_native_fnc_dataAction;
-            [{ ["DATALINK"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+            if (isNil "comspec_atak_native_fnc_openApp") then { [{ ["DATALINK"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; };
         }, _t, 0.4] call CBA_fnc_waitAndExecute;
     };
     case "transmit": {

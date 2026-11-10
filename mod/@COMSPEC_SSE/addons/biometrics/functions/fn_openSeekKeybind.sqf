@@ -1,17 +1,28 @@
 /*
     Raccourci Ctrl+Shift+S — ouvrir l'outil SSE (biométrie, fiche du sujet).
 
+    Le SEEK II est l'outil de vérification terrain : s'il est porté, c'est lui qui s'ouvre.
     Priorité :
-      1. téléphone ATAK porté : téléphone en main sur l'app SSE (même schéma que Overwatch connect fn_openNativePage) ;
-      2. BII-10 Identifi en inventaire, si la fenêtre s'ouvre vraiment ;
-      3. terminal SEEK sur la personne visée (6 m au plus, comme l'app SSE de l'ATAK).
-    La fiche de renseignement (RENS) a son propre raccourci (Ctrl+Shift+R, comspec_sse_fnc_openIntelNoteKeybind) :
-    elle passait avant tout le reste, et Ctrl+Shift+S n'ouvrait jamais le SEEK dès qu'Overwatch était chargé.
-    Jamais de sortie silencieuse.
+      1. SEEK II porté (ou accès sans objet, comspec_sse_require_item = false) : SEEK sur la personne
+         visée (6 m au plus), directement sur le CONTRÔLE RAPIDE ; personne visée : accueil ;
+      2. téléphone ATAK porté (sans SEEK) : app SSE du téléphone (consultation des fichiers) ;
+      3. BII-10 Identifi en inventaire, si la fenêtre s'ouvre vraiment.
+    La fiche de renseignement (RENS) a son propre raccourci (Ctrl+Shift+R, comspec_sse_fnc_openIntelNoteKeybind).
+    Échec : RPT seulement (pas d'alerte de l'interface).
 */
 if (!hasInterface) exitWith { false };
 
-// 1. App SSE du téléphone ATAK natif : « SSE terrain » du pack (compat_atak, page SSEFIELD), sinon l'app SSE de l'ATAK.
+private _target = cursorObject;
+if (isNull _target) then { _target = cursorTarget; };
+if (isNull _target || {!(_target isKindOf "CAManBase")} || {(player distance _target) > 6} || {_target isEqualTo player}) then { _target = objNull; };
+
+// 1. SEEK II.
+private _all = (items player) + (assignedItems player);
+private _hasSeek = ("COMSPEC_Item_SeekTerminal" in _all) || {"COMSPEC_SSE_SEEKII" in _all}
+    || {!(missionNamespace getVariable ["comspec_sse_require_item", true])};
+if (_hasSeek && {!isNil "comspec_sse_fnc_openSeek"} && {[_target] call comspec_sse_fnc_openSeek}) exitWith { true };
+
+// 2. App SSE du téléphone ATAK natif : « SSE terrain » du pack (compat_atak, page SSEFIELD), sinon l'app SSE de l'ATAK.
 if (!isNil "comspec_atak_native_fnc_hasDevice" && {[player] call comspec_atak_native_fnc_hasDevice}) exitWith {
     if (isNull ([] call comspec_atak_native_fnc_display) || {!((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false])}) then {
         [true] call comspec_atak_native_fnc_open;
@@ -21,9 +32,8 @@ if (!isNil "comspec_atak_native_fnc_hasDevice" && {[player] call comspec_atak_na
     true
 };
 
+// 3. BII-10 Identifi.
 private _opened = false;
-
-// 2. BII-10 Identifi.
 if (
     missionNamespace getVariable ["comspec_sse_biiBridgeEnabled", true]
     && {!isNil "comspec_sse_fnc_biiIsPresent"}
@@ -37,25 +47,12 @@ if (
     if (isNull _disp) then { _disp = findDisplay 861010; };
     _opened = _ok && {!isNull _disp};
 };
-
 if (_opened) exitWith { true };
 
-// 3. SEEK : la personne visée à portée de main, jamais un homme à 300 m ni le dernier sujet contrôlé.
-private _target = cursorObject;
-if (isNull _target) then { _target = cursorTarget; };
-if (isNull _target || {!(_target isKindOf "CAManBase")} || {(player distance _target) > 6}) then { _target = objNull; };
-
-if (!isNil "comspec_overwatch_connect_fnc_ssePersonDialogShow") then {
-    _opened = [_target] call comspec_overwatch_connect_fnc_ssePersonDialogShow;
+// Dernier recours : terminal Overwatch (il vérifie lui-même la possession de l'appareil).
+if (!isNil "comspec_overwatch_connect_fnc_sseOpenTerminal") exitWith {
+    [_target, -1] call comspec_overwatch_connect_fnc_sseOpenTerminal
 };
-if (_opened) exitWith { true };
 
-if (isNull _target) then { _target = player; };
-
-if (!isNil "comspec_sse_fnc_openSeek") then {
-    _opened = [_target] call comspec_sse_fnc_openSeek;
-};
-if (_opened) exitWith { true };
-
-["Aucun terminal SSE n'a pu s'ouvrir. Emportez un téléphone ATAK, un SEEK ou un BII-10.", "WARNING"] call comspec_sse_fnc_notify;
+diag_log text "[COMSPEC SSE] Ctrl+Shift+S : aucun SEEK II, téléphone ATAK ou BII-10 en inventaire.";
 false

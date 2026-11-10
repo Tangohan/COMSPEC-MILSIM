@@ -3,7 +3,7 @@
     ["send", [op, args]]                        demande au serveur (fn_idServer ; appel direct en solo / hôte)
     Réponses : request [contrôleur] · token [porteur, docId, libellé, fin] · answer [cible, réponse, texte]
       docs [cible, [[poignée, classe, libellé]…]] · doc [document imprimé, N0, sujet, mien, clé] · blank [poignée]
-      result [docId, niveau, résultat] · seized / returned [cible, classe…] · vehicle [véhicule, op, occupants]
+      result [docId, niveau, résultat] · checkFail [docId, niveau, code, texte] · seized / returned [cible, classe…] · vehicle [véhicule, op, occupants]
       notify [texte, type] · zeus [texte, genre] · packFetch [full | self] (relais du paquet Athena, fn_idAthenaPack)
       say [nom, phrase, type, indice]   phrase courte d'une IA contrôlée (IA réalistes), traduite ici
     Lot 4 et 5 : question [demandeur, [[qid, question, réponses]…], délai] · questionEnd [qid, juste, évasif]
@@ -110,6 +110,8 @@ switch (_op) do {
         };
         ["level", [_id, _lvl, _res]] call comspec_sse_fnc_idHistory;
     };
+    // Niveau refusé par le serveur (document plus présenté, trop loin…) : état porté par la fiche du contrôle.
+    case "checkFail": { ["fail", _a] call comspec_sse_fnc_idHistory; };
     case "seized": {
         _a params [["_t", objNull], ["_cls", ""]];
         private _s = missionNamespace getVariable ["comspec_sse_idSeized", createHashMap];

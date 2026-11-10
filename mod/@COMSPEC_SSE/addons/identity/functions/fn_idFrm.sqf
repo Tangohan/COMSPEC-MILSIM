@@ -86,5 +86,5 @@ private _ui = uiNamespace getVariable ["COMSPEC_ATAK_FrsUi", createHashMap];
 _ui set ["view", ""];
 uiNamespace setVariable ["COMSPEC_ATAK_FrsUi", _ui];
 ["INFO", ("Fiche FRM pré-remplie avec le contrôle" call comspec_sse_fnc_tr), 3, 20, "FRS"] call comspec_atak_native_fnc_notify;
-[{ ["FRS"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+["FRS"] call comspec_sse_fnc_openApp;
 true
