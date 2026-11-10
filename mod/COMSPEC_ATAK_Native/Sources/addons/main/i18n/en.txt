@@ -21091,5 +21091,19 @@
 ["Touchez pour voir le patient et le trier", "Tap to see the patient and triage them"],
 ["Touchez pour replier", "Tap to collapse"],
 ["Aucune demande MEDEVAC", "No MEDEVAC request"],
-["Remplissez le 9-line ci-dessus puis DEMANDER LE MEDEVAC : son suivi, étape par étape, s'affiche ici.", "Fill in the 9-line above, then REQUEST MEDEVAC: its progress, step by step, shows here."]
+["Remplissez le 9-line ci-dessus puis DEMANDER LE MEDEVAC : son suivi, étape par étape, s'affiche ici.", "Fill in the 9-line above, then REQUEST MEDEVAC: its progress, step by step, shows here."],
+["Avis indisponibles sur ce serveur", "Notices unavailable on this server"],
+["Les avis viennent d'Athena par COMSPEC Overwatch, qui n'est pas chargé ici. Demandez à l'administrateur du serveur de l'ajouter.", "Notices come from Athena through COMSPEC Overwatch, which is not loaded here. Ask the server administrator to add it."],
+["Rechercher un nom, un alias ou une référence", "Search a name, an alias or a reference"],
+["Aucun résultat pour « %1 »", "No result for “%1”"],
+["Vérifiez l'orthographe, ou cherchez un alias ou une référence de dossier.", "Check the spelling, or search an alias or a file reference."],
+["TOUT AFFICHER", "SHOW ALL"],
+["Rien dans cette catégorie", "Nothing in this category"],
+["Touchez TOUS pour voir les autres avis.", "Tap ALL to see the other notices."],
+["Aucun avis de recherche en cours", "No active wanted notice"],
+["Rien à rechercher pour l'instant. ACTUALISER, en bas, relit les avis d'Athena.", "Nothing to look for right now. REFRESH, at the bottom, reloads the notices from Athena."],
+["Rechercher un nom, un groupe ou un numéro", "Search a name, a group or a number"],
+["%1 sur %2 joueur(s)", "%1 of %2 player(s)"],
+["Les numéros des autres joueurs s'afficheront ici dès qu'ils rejoignent votre camp. Votre carnet reste dans l'onglet CARNET.", "Other players' numbers will show here as soon as they join your side. Your contacts stay in the CONTACTS tab."],
+["Vérifiez l'orthographe, ou cherchez par groupe ou par numéro.", "Check the spelling, or search by group or by number."]
 ]

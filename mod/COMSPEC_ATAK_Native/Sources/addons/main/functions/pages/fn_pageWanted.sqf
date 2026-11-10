@@ -9,7 +9,9 @@ disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 if !([] call comspec_atak_native_fnc_bridge) exitWith {
-    [[["title", "Avis de recherche"], ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Les avis viennent d'Athena par COMSPEC Overwatch, qui n'est pas chargé sur ce serveur.</t>"]], [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+    // Pas de titre : la barre d'app dit déjà « RECHERCHÉS ».
+    [[["empty", "\z\comspec_atak_native\addons\main\data\app_wanted.paa", "Avis indisponibles sur ce serveur",
+        "Les avis viennent d'Athena par COMSPEC Overwatch, qui n'est pas chargé ici. Demandez à l'administrateur du serveur de l'ajouter."]], [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
     true
 };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -41,7 +43,6 @@ if (_open isNotEqualTo "" && {(count _sel) > 0}) then {
     private _img = _imgs getOrDefault [_open, ""];
     if !(_img isEqualType "") then { _img = ""; };
     _rows append [
-        ["title", "AVIS DE RECHERCHE"],
         ["text", format ["<t size='1.3' font='COMSPEC_BarlowBold'>%1</t>%2<br/><t color='%3' font='COMSPEC_BarlowBold'>%4</t>  <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "' size='0.85'>%5</t>",
             [_name] call _esc, ["", format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>dit « %1 »</t>", [_alias] call _esc]] select (_alias isNotEqualTo ""),
             _kindColor getOrDefault [_kind, (COMSPEC_ATAK_Th get "hexTextDim")], [toUpper _level] call _esc, [_ref] call _esc]]
@@ -58,8 +59,11 @@ if (_open isNotEqualTo "" && {(count _sel) > 0}) then {
     ];
 } else {
     private _count = { params ["_k"]; { (_x select 0) isEqualTo _k } count _list };
+    // Recherche par nom, alias ou référence : appliquée sur OK (ou Entrée), comme les autres champs de recherche du mod
+    // (chaque rendu reconstruit la page : pas de filtrage à la frappe). État « wantedQ ».
+    private _q = _s getOrDefault ["wantedQ", ""];
+    private _qLow = toLower _q;
     _rows append [
-        ["title", "Avis de recherche"],
         ["segment", "", [
             [format ["TOUS (%1)", count _list], { ["filter", "ALL"] call comspec_atak_native_fnc_wantedAction; }, _filter isEqualTo "ALL"],
             [format ["PERSONNES (%1)", ["person"] call _count], { ["filter", "person"] call comspec_atak_native_fnc_wantedAction; }, _filter isEqualTo "person"],
@@ -67,10 +71,30 @@ if (_open isNotEqualTo "" && {(count _sel) > 0}) then {
             [format ["DOSSIERS (%1)", ["interest"] call _count], { ["filter", "interest"] call comspec_atak_native_fnc_wantedAction; }, _filter isEqualTo "interest"]
         ]]
     ];
-    if (_err isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#e0a040'>%1</t>", _err]]; };
-    if (_at isEqualTo "" && {_err isEqualTo ""}) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Récupération des avis…</t>"]; };
-    private _shown = _list select { _filter isEqualTo "ALL" || {(_x select 0) isEqualTo _filter} };
-    if (_at isNotEqualTo "" && {(count _shown) isEqualTo 0} && {_err isEqualTo ""}) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun avis de recherche en cours.</t>"]; };
+    if ((count _list) > 0 || {_q isNotEqualTo ""}) then {
+        _rows pushBack ["field", "wantedQ", "Rechercher un nom, un alias ou une référence", _q, "OK", { ["search"] call comspec_atak_native_fnc_wantedAction; }];
+        if (_q isNotEqualTo "") then { _rows pushBack ["buttons", [["EFFACER LA RECHERCHE", { ["clearQ"] call comspec_atak_native_fnc_wantedAction; }]]]; };
+    };
+    if (_err isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", [_err] call _esc]]; };
+    if (_at isEqualTo "" && {_err isEqualTo ""}) then { _rows pushBack ["skeleton", 3, "Récupération des avis…"]; };
+    private _shown = _list select {
+        (_filter isEqualTo "ALL" || {(_x select 0) isEqualTo _filter})
+        && {_qLow isEqualTo "" || {((toLower format ["%1 %2 %3", _x select 3, _x select 4, _x select 2]) find _qLow) >= 0}}
+    };
+    if (_at isNotEqualTo "" && {(count _shown) isEqualTo 0} && {_err isEqualTo ""}) then {
+        _rows pushBack (switch (true) do {
+            case (_q isNotEqualTo ""): {
+                ["empty", "\z\comspec_atak_native\addons\main\data\ui_search.paa", format ["Aucun résultat pour « %1 »", [_q] call _esc],
+                    "Vérifiez l'orthographe, ou cherchez un alias ou une référence de dossier.", ["TOUT AFFICHER", { ["clearQ"] call comspec_atak_native_fnc_wantedAction; }]]
+            };
+            case (_filter isNotEqualTo "ALL" && {(count _list) > 0}): {
+                ["empty", _dir + "app_wanted.paa", "Rien dans cette catégorie", "Touchez TOUS pour voir les autres avis.", ["TOUT AFFICHER", { ["filter", "ALL"] call comspec_atak_native_fnc_wantedAction; }]]
+            };
+            default {
+                ["empty", _dir + "app_wanted.paa", "Aucun avis de recherche en cours", "Rien à rechercher pour l'instant. ACTUALISER, en bas, relit les avis d'Athena."]
+            };
+        });
+    };
     {
         _x params ["_kind", "_id", "_ref", "_name", "_alias", "_level", "", "", "", ["_orig", ""]];
         private _key = format ["%1:%2", _kind, _id];
