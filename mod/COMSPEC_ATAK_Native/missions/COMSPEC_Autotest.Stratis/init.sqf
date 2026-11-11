@@ -27,7 +27,7 @@ if (!hasInterface) exitWith {};
     uiSleep 8; // boucles du mod lancées
     {
         call compile preprocessFileLineNumbers format ["scripts\%1.sqf", _x];
-    } forEach ["fonctions", "telephone", "sms", "carte", "pilote", "terrain", "sse", "fichiers", "equipement", "ia_rp", "zeus", "radio", "reseau", "mpudiag", "mpuhud", "chiffrement", "relais", "ucav"];
+    } forEach ["fonctions", "telephone", "sms", "carte", "pilote", "terrain", "sse", "fichiers", "equipement", "ia_rp", "zeus", "radio", "reseau", "mpudiag", "mpuhud", "chiffrement", "relais", "ucav", "sang"];
     diag_log format ["AUTOTEST|FIN|ok=%1|ko=%2|skip=%3", AT_NOk, AT_NKo, AT_NSkip];
     uiSleep 3;
     if (AT_Quitter) then { endMission "END1"; };
