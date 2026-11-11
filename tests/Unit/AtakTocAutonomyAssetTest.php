@@ -584,7 +584,8 @@ final class AtakTocAutonomyAssetTest extends TestCase
         self::assertStringContainsString('FR : ATAK 4.11.0 : le TOC fonctionne sans téléphone', $log);
         self::assertStringContainsString('EN : ATAK 4.11.0: the TOC works without a phone', $log);
         self::assertStringContainsString('[h1]COMSPEC ATAK 4.11.0 Washington', self::read('mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt'));
-        self::assertStringContainsString('#define VERSION_STR "4.11.0"', self::read(self::MAIN . 'script_component.hpp'));
+        // Le numéro du mod monte avec les versions suivantes (4.12.0 : postes, droits, journal et API du TOC).
+        self::assertMatchesRegularExpression('/#define VERSION_STR "4\.(1[1-9]|[2-9]\d)\.\d+"/', self::read(self::MAIN . 'script_component.hpp'));
     }
 
     // ---------------------------------------------------------------- qui est qui : nom affiché, effectif
