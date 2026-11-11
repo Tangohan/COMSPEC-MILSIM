@@ -14,7 +14,7 @@
       "unit" entité (HashMap de la carte)          -> descripteur (gardé 2 s par unité)
       "manual" [affiliation, pictogramme, échelon, prévu, QG] -> descripteur d'un choix de l'utilisateur
       "self" pictogramme ("" : déduit)              -> mon descripteur (ami, échelon d'après les données)
-      "orbat"                                       -> joueur -> [échelon, fonction, QG, code, unité supérieure] (ORBAT du site)
+      "orbat"                                       -> hashValue du joueur -> [échelon, fonction, QG, code, unité supérieure] (ORBAT du site)
       "sidc" descripteur                            -> code 2525D à 20 chiffres (site : Tacmap, /m/carte, milsymbol)
       "pictos" | "echelons" | "affs"                -> listes [[clé, libellé court, aide]...] du sélecteur
 */
@@ -95,7 +95,7 @@ switch (_op) do {
             };
             // ORBAT du site d'abord (titulaire d'un poste de chef : échelon, fonction et QG de son unité), sinon chef de
             // groupe Arma : échelon d'après l'effectif (même règle que les symboles OTAN, fn_natoSymbol).
-            private _orb = (["orbat"] call comspec_atak_native_fnc_milSym) getOrDefault [_o, []];
+            private _orb = (["orbat"] call comspec_atak_native_fnc_milSym) getOrDefault [hashValue _o, []];
             if ((count _orb) > 0) then {
                 _orb params ["_oe", "_of", "_oh"];
                 if (_oe isNotEqualTo "") then { _ech = _oe; };
@@ -159,9 +159,9 @@ switch (_op) do {
                     if (isNull _o) then { continue };
                     private _chief = (_x param [3, ""]) in ["commander", "deputy"];
                     // Un poste de chef l'emporte sur une simple appartenance (unité la plus haute d'abord : parent avant enfants).
-                    private _prev = _out getOrDefault [_o, []];
+                    private _prev = _out getOrDefault [hashValue _o, []];
                     if ((count _prev) > 0 && {(_prev select 5) || {!_chief}}) then { continue };
-                    _out set [_o, [["", _ech getOrDefault [_uEch, ""]] select _chief, _f, _chief && {_uHq}, _code, _names getOrDefault [_uPar, ""], _chief]];
+                    _out set [hashValue _o, [["", _ech getOrDefault [_uEch, ""]] select _chief, _f, _chief && {_uHq}, _code, _names getOrDefault [_uPar, ""], _chief]];
                 };
             } forEach _rows;
         } forEach (_store get "units");

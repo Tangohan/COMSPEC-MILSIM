@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : les réglages d'icônes marchent sur le petit téléphone (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Les réglages d'icônes s'appliquent aussi au petit téléphone
+- Les réglages d'icônes s'appliquent aussi au petit téléphone : forme, taille de ma forme, taille des alliés et des contacts, réglette « Icônes de la carte ». Avant, ils ne se voyaient que téléphone en main, en grand.
+- Sur la miniature, les symboles gardent une taille lisible (à peu près celle du téléphone en main) et le pion garde sa lettre d'équipe.
+- Les repères des outils de la carte (mesure, ligne de vue, zone de pose, point de pose d'un marqueur) suivent eux aussi la réglette « Icônes de la carte ».
+- Les symboles 2525D ne provoquent plus d'erreur et affichent de nouveau l'échelon et le poste de commandement tirés de l'ORBAT du site.
+EN : Icon settings now apply to the small phone too
+- Icon settings now apply to the small phone too: shape, size of my shape, size of allies and contacts, and the "Map symbols" slider. Before, they only showed with the phone in hand, in large.
+- On the miniature, symbols keep a readable size (about the same as the phone in hand) and the pawn keeps its team letter.
+- The markers of the map tools (measure, line of sight, landing zone, marker drop point) also follow the "Map symbols" slider.
+- 2525D symbols no longer raise an error and show the echelon and command post from the site ORBAT again.
+
+### Détail technique
+- Cause : `fn_mapOnDraw` multipliait chaque taille de symbole par la hauteur de la carte avec un plancher à 0,35 (0,54 en miniature verticale, 0,35 en horizontale, contre 0,65 en main) : symboles de 9 px, lettre du pion masquée sous 14 px, réglages sans effet visible. Une douzaine de repères d'outil gardaient une taille fixe, hors réglette.
+- `fn_mapIconScale` : seule source des tailles (facteur de vue borné de 0,6 à 1,35, réglette de 0,8 à 2,2, tailles des alliés et des contacts de 0,5 à 2,5), lue une fois par image par `fn_mapOnDraw` et par `fn_planDraw` ; auto-contrôle `["check"]`. Rien ne change téléphone en main au réglage par défaut.
+- `fn_milSym` : la table de l'ORBAT avait des objets pour clés (interdit dans une HashMap, erreur de script à chaque symbole 2525D et dans l'aperçu « Mon point GPS ») ; clés `hashValue`.
+- Tests : `AtakMapIconScaleTest` (table réglage × taille de la vue, bornes, chemins de dessin sans taille fixe ni lecture directe du réglage).
+
+---
+
 ## À venir : poste TOC web et plans d'opération sur Athena (site Athena, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
