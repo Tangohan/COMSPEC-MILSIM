@@ -5514,5 +5514,81 @@
             <English>SSE ROLEPLAY · Extensions (document extensions)</English>
             <French>SSE ROLEPLAY · Extensions (extensions de documents)</French>
         </Key>
+        <!-- Pays réels des papiers (registre CfgComspecCountries) -->
+        <Key ID="STR_COMSPEC_SSE_CFG_ID_RESIDENCEPERMIT">
+            <Original>Residence permit</Original>
+            <English>Residence permit</English>
+            <French>Titre de séjour</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_ID_VEHICLEREG">
+            <Original>Vehicle registration</Original>
+            <English>Vehicle registration</English>
+            <French>Certificat d'immatriculation</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ID_SetCountry">
+            <Original>Country of the papers</Original>
+            <English>Country of the papers</English>
+            <French>Pays des papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ID_SetCountryTip">
+            <Original>Country of the papers issued to AIs and by the modules: names, numbers, addresses and MRZ of that country. Auto: by map (Altis and Stratis → Altis, Tanoa → Tanoa, Livonia → Livonia, Malden → Malden, Weferlingen → Germany, Takistan → Afghanistan…). Example: France: civilians carry a French national identity card.</Original>
+            <English>Country of the papers issued to AIs and by the modules: names, numbers, addresses and MRZ of that country. Auto: by map (Altis and Stratis → Altis, Tanoa → Tanoa, Livonia → Livonia, Malden → Malden, Weferlingen → Germany, Takistan → Afghanistan…). Example: France: civilians carry a French national identity card.</English>
+            <French>Pays des papiers délivrés aux IA et par les modules : noms, numéros, adresses et MRZ de ce pays. Auto : selon la carte (Altis et Stratis → Altis, Tanoa → Tanoa, Livonia → Livonie, Malden → Malden, Weferlingen → Allemagne, Takistan → Afghanistan…). Exemple : France : les civils portent une carte nationale d'identité française.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ID_CountryAuto">
+            <Original>Auto (by map)</Original>
+            <English>Auto (by map)</English>
+            <French>Auto (selon la carte)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ID_SetFallback">
+            <Original>Default country of the papers</Original>
+            <English>Default country of the papers</English>
+            <French>Pays par défaut des papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ID_SetFallbackTip">
+            <Original>Country used by « Auto » on a map the mod does not know (VR, community map). Example: France: civilians carry French papers. Altis by default, as before.</Original>
+            <English>Country used by « Auto » on a map the mod does not know (VR, community map). Example: France: civilians carry French papers. Altis by default, as before.</English>
+            <French>Pays pris par « Auto » sur une carte que le mod ne connaît pas (VR, carte de la communauté). Exemple : France : les civils portent des papiers français. Altis par défaut, comme avant.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ID_FictionalTag">
+            <Original>%1 (fictional Arma country)</Original>
+            <English>%1 (fictional Arma country)</English>
+            <French>%1 (pays fictif d'Arma)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ID_FictionalSep">
+            <Original>— Fictional countries (Arma maps) —</Original>
+            <English>— Fictional countries (Arma maps) —</English>
+            <French>— Pays fictifs (cartes Arma) —</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ID_CountryUnknown">
+            <Original>%1 (not listed)</Original>
+            <English>%1 (not listed)</English>
+            <French>%1 (hors liste)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ID_UnitCountryTip">
+            <Original>Country of this person's papers: name, numbers, address and MRZ of that country. Auto: country of the mission (setting, otherwise by map). Example: Germany: a German Personalausweis.</Original>
+            <English>Country of this person's papers: name, numbers, address and MRZ of that country. Auto: country of the mission (setting, otherwise by map). Example: Germany: a German Personalausweis.</English>
+            <French>Pays des papiers de cette personne : nom, numéros, adresse et MRZ de ce pays. Auto : pays de la mission (réglage, sinon selon la carte). Exemple : Allemagne : un Personalausweis allemand.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ID_GroupCountryTip">
+            <Original>Country of the papers of every unit in the group. Example: United States: each one carries a driver licence from their state.</Original>
+            <English>Country of the papers of every unit in the group. Example: United States: each one carries a driver licence from their state.</English>
+            <French>Pays des papiers de chaque unité du groupe. Exemple : États-Unis : chacun a un permis de conduire de son État.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_GUIDE_COUNTRIES_TITLE">
+            <Original>Country of the papers</Original>
+            <English>Country of the papers</English>
+            <French>Pays des papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_GUIDE_COUNTRIES_DESC">
+            <Original>&lt;t color='#7fd08a'&gt;What it is for&lt;/t&gt;&lt;br/&gt;Papers come from a country: names, towns, address, numbers with check keys, MRZ (ICAO code), dates in the country's format, title and labels in the country's language. Real countries first: France, Germany, United States, United Kingdom, Belgium, Austria, Switzerland, Netherlands, Italy, Spain, Poland (full), then 34 other countries (generic), then the fictional Arma countries (Altis, Tanoa, Livonia, Malden).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Where to find it&lt;/t&gt;&lt;br/&gt;CBA settings COMSPEC SSE › Identité: Country of the papers (Auto: by map) and Default country of the papers (unknown map). Eden: unit or group attribute « Country of the papers ». AI workshop (Eden, Zeus): « Country of the papers » list. Zeus: Give papers.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Example&lt;/t&gt;&lt;br/&gt;Setting Country of the papers: France. Civilians carry a French national identity card (MRZ « IDFRA »), drivers a French licence; a Zeus picks Germany in the AI workshop: the AI gets a Personalausweis.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Game papers&lt;/t&gt;&lt;br/&gt;Original drawings, flags as simple bands, SPECIMEN · SIMULATION band. Fictional numbers.</Original>
+            <English>&lt;t color='#7fd08a'&gt;What it is for&lt;/t&gt;&lt;br/&gt;Papers come from a country: names, towns, address, numbers with check keys, MRZ (ICAO code), dates in the country's format, title and labels in the country's language. Real countries first: France, Germany, United States, United Kingdom, Belgium, Austria, Switzerland, Netherlands, Italy, Spain, Poland (full), then 34 other countries (generic), then the fictional Arma countries (Altis, Tanoa, Livonia, Malden).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Where to find it&lt;/t&gt;&lt;br/&gt;CBA settings COMSPEC SSE › Identité: Country of the papers (Auto: by map) and Default country of the papers (unknown map). Eden: unit or group attribute « Country of the papers ». AI workshop (Eden, Zeus): « Country of the papers » list. Zeus: Give papers.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Example&lt;/t&gt;&lt;br/&gt;Setting Country of the papers: France. Civilians carry a French national identity card (MRZ « IDFRA »), drivers a French licence; a Zeus picks Germany in the AI workshop: the AI gets a Personalausweis.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Game papers&lt;/t&gt;&lt;br/&gt;Original drawings, flags as simple bands, SPECIMEN · SIMULATION band. Fictional numbers.</English>
+            <French>&lt;t color='#7fd08a'&gt;À quoi ça sert&lt;/t&gt;&lt;br/&gt;Les papiers viennent d'un pays : noms, villes, adresse, numéros à clé, MRZ (code OACI), dates au format du pays, titre et étiquettes dans la langue du pays. Pays réels d'abord : France, Allemagne, États-Unis, Royaume-Uni, Belgique, Autriche, Suisse, Pays-Bas, Italie, Espagne, Pologne (complets), puis 34 autres pays (génériques), puis les pays fictifs d'Arma (Altis, Tanoa, Livonie, Malden).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Où le trouver&lt;/t&gt;&lt;br/&gt;Réglages CBA COMSPEC SSE › Identité : Pays des papiers (Auto : selon la carte) et Pays par défaut des papiers (carte inconnue). Eden : attribut de l'unité ou du groupe « Pays des papiers ». Atelier IA (Eden, Zeus) : liste « Pays des papiers ». Zeus : Donner des papiers.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Exemple&lt;/t&gt;&lt;br/&gt;Réglage Pays des papiers : France. Les civils portent une carte nationale d'identité française (MRZ « IDFRA »), les conducteurs un permis français ; un Zeus choisit Allemagne dans l'atelier IA : l'IA reçoit un Personalausweis.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Papiers de jeu&lt;/t&gt;&lt;br/&gt;Dessins originaux, drapeau en simples bandes, bandeau SPÉCIMEN · SIMULATION. Numéros fictifs.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_GUIDE_COUNTRIES_TIP">
+            <Original>Full guide: docs/guides/pays_des_papiers.en.md</Original>
+            <English>Full guide: docs/guides/pays_des_papiers.en.md</English>
+            <French>Guide complet : docs/guides/pays_des_papiers.md</French>
+        </Key>
     </Package>
 </Project>

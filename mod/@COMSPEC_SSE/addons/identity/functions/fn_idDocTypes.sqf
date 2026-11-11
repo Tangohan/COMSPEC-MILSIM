@@ -4,10 +4,10 @@
     ["get", clé]                                          -> HashMap du type (vide si inconnu)
     ["list", [pays, avecCoupés]]                          -> clés servies : extensions actives, pays servi ; dans l'ordre
                                                              des catégories (identity, travel, permit, professional, pass, other)
-    ["label", clé]  -> nom affiché (langue du téléphone)   ["item", clé] -> classe de l'objet vierge
+    ["label", clé | [clé, pays]]  -> nom affiché (langue du téléphone ; avec le pays : nom du papier de ce pays)   ["item", clé] -> classe de l'objet vierge
     ["ofItem", classe]  -> clé du type d'un objet (vierge ou exemplaire <item>_NNN ; "" sinon)
     ["stock", clé]      -> nombre d'exemplaires déclarés (<item>_001…)
-    ["texture", [clé, côté, codePays, zone]]  -> chemin PAA (repli zone eu/am/ot, puis alt, puis sans %1)
+    ["texture", [clé, côté, codePays, zone]]  -> chemin PAA (repli : gabarit « bare » des pays réels, ou zone eu/am/ot, puis alt)
     ["side", [clé, côté]]  -> HashMap de mise en page : texture, photo [x,y,w,h] ou [], holo [x,y,w] ou [], fields [...]
     ["extensions"]      -> [[classe, nom, auteur, version, description, [clés…], aperçu, active, intégrée, coupée par défaut]…]
     ["enabled", classe d'extension]  -> Boolean (liste des extensions coupées : comspec_sse_docExtOff, serveur, diffusée)
@@ -86,9 +86,19 @@ private _enabledExt = {
 switch (_op) do {
     case "get": { _all getOrDefault [toLower _a, createHashMap] };
     case "label": {
-        private _t = _all getOrDefault [toLower _a, createHashMap];
-        if ((count _t) isEqualTo 0) exitWith { _a };
+        // ["label", clé] ou ["label", [clé, pays]] : nom du papier de ce pays (« Personalausweis » -> « Carte d'identité
+        // allemande » n'est pas inventé : registre docNames [langue du pays, français, anglais]).
+        private _key = _a;
+        private _cc = "";
+        if (_a isEqualType []) then { _key = _a param [0, ""]; _cc = toUpper (_a param [1, ""]); };
+        private _t = _all getOrDefault [toLower _key, createHashMap];
+        if ((count _t) isEqualTo 0) exitWith { _key };
         private _en = (missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]) isNotEqualTo "fr";
+        private _dn = [];
+        if (_cc isNotEqualTo "" && {!isNil "comspec_sse_fnc_idCountries"}) then {
+            _dn = ((([] call comspec_sse_fnc_idCountries) getOrDefault [_cc, createHashMap]) getOrDefault ["docNames", createHashMap]) getOrDefault [toLower _key, []];
+        };
+        if ((count _dn) isEqualTo 3) exitWith { _dn select ([1, 2] select _en) };
         [_t get "name", _t get "nameEn"] select _en
     };
     case "item": { (_all getOrDefault [toLower _a, createHashMap]) getOrDefault ["item", ""] };
@@ -113,11 +123,18 @@ switch (_op) do {
     case "defaultOff": { ("getNumber (_x >> 'defaultOff') isEqualTo 1" configClasses (configFile >> "CfgComspecDocumentExtensions")) apply { toLower (configName _x) } };
     case "list": {
         _a params [["_country", "", [""]], ["_withOff", false, [false]]];
+        private _docTypes = [];
+        if (_country isNotEqualTo "" && {!isNil "comspec_sse_fnc_idCountries"}) then {
+            _docTypes = (([] call comspec_sse_fnc_idCountries) getOrDefault [toUpper _country, createHashMap]) getOrDefault ["docTypes", []];
+        };
+        if (_docTypes isEqualTo []) then { _docTypes = keys _all; };
         private _keys = keys _all;
         _keys = _keys select {
             private _t = _all get _x;
             (_withOff || {[_t get "extension"] call _enabledExt})
             && {_country isEqualTo "" || {(_t get "countries") isEqualTo []} || {(toUpper _country) in (_t get "countries")}}
+            // Papier intégré : seulement ceux que le pays délivre (registre docTypes ; Royaume-Uni : pas de carte nationale).
+            && {_country isEqualTo "" || {(_t get "extension") isNotEqualTo ""} || {_x in _docTypes}}
         };
         // Intégrés avant les extensions, puis par catégorie, puis par nom.
         _keys = [_keys, [], { private _t = _all get _x; format ["%1|%2|%3", ["0", "1"] select ((_t get "extension") isNotEqualTo ""), [_cats find (_t get "category"), 1] call CBA_fnc_formatNumber, toLower (_t get "name")] }, "ASCEND"] call BIS_fnc_sortBy;
@@ -130,7 +147,10 @@ switch (_op) do {
         if (_tex isEqualTo "" && {(toLower _side) isEqualTo "verso"}) then { _tex = (_t getOrDefault ["recto", createHashMap]) getOrDefault ["texture", ""]; };
         if ((_tex find "%1") < 0) exitWith { _tex };
         private _codes = [toLower _country];
-        if (_zone isNotEqualTo "") then { _codes pushBack (["ot", "eu", "am"] select ((["other", "europe", "americas"] find (toLower _zone)) max 0)); };
+        // « bare » : pays réel du registre, gabarit sans texte (titre, étiquettes, bandeau posés en jeu) ; sinon zone de style.
+        if (_zone isEqualTo "bare") then { _codes pushBack "bare"; } else {
+            if (_zone isNotEqualTo "") then { _codes pushBack (["ot", "eu", "am"] select ((["other", "europe", "americas"] find (toLower _zone)) max 0)); };
+        };
         _codes pushBackUnique "alt";
         private _found = "";
         {

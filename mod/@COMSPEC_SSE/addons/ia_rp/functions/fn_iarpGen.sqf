@@ -159,6 +159,11 @@ if ((_p getOrDefault ["lang", "common"]) isEqualTo "local") then {
     private _c = _p getOrDefault ["country", "auto"];
     if (_c isEqualTo "auto") then { _c = _ctx getOrDefault ["country", "*"]; };
     private _e = ["_local", _c] call _pickIn;
+    // Pays réel du registre : expressions de sa langue (registre « speech »), sinon la phrase générique.
+    if (_e isEqualTo [] && {!isNil "comspec_sse_fnc_idCountries"}) then {
+        private _sp = (([] call comspec_sse_fnc_idCountries) getOrDefault [_c, createHashMap]) getOrDefault ["speech", []];
+        if (_sp isNotEqualTo []) then { _e = [selectRandom _sp]; };
+    };
     if (_e isEqualTo []) then { _e = ["_local", "*"] call _pickIn; };
     if (_e isNotEqualTo []) then { _local = _e select 0; };
 };

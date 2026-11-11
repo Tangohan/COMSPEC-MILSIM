@@ -173,6 +173,11 @@ switch (_op) do {
         missionNamespace setVariable ["comspec_sse_iarpWho", _w];
         if ((netId _t) isEqualTo _target) then { ["head"] call comspec_sse_fnc_iarpUi; };
     };
+    // Ligne d'état de l'atelier IA (jamais une alerte) : papiers refaits dans le pays choisi.
+    case "wsStatus": {
+        _a params [["_key", ""]];
+        if (!isNil "comspec_sse_fnc_iarpWorkshop") then { ["status", [format ([localize _key] + (_a select [1]))]] call comspec_sse_fnc_iarpWorkshop; };
+    };
     case "notice": {
         _a params [["_key", ""]];
         private _vals = _a select [1];

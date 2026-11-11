@@ -6,6 +6,7 @@ Un guide complet par outil : à quoi il sert, où le trouver (Zeus, Eden, ACE, t
 |---|---|---|
 | Éditeur SSE (renseignement, identité, papier, dossier, kit, bibliothèque, livraison) | Zeus, chef de mission | [editeur_sse.md](editeur_sse.md) |
 | Documents d'identité et types (« Choisir un document », nature, qualité, photo) | Zeus, chef de mission | [documents_et_types.md](documents_et_types.md) |
+| Pays des papiers (France, Allemagne, États-Unis… : formats, MRZ, numéros ; ajouter un pays) | Zeus, chef de mission, développeur | [pays_des_papiers.md](pays_des_papiers.md) |
 | Extensions de documents (créer ses types : `CfgComspecDocuments`) | Développeur d'addon | [extensions_documents.md](extensions_documents.md) |
 | Menu « SSE ROLEPLAY · Extensions » | Zeus, administrateur | [menu_extensions.md](menu_extensions.md) |
 | Contrôle d'identité (ACE, visionneuse, niveaux N0 à N4, app Contrôle ID, checkpoints) | Joueur, Zeus | [controle_identite.md](controle_identite.md) |

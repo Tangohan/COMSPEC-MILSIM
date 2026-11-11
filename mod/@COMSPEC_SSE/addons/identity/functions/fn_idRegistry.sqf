@@ -84,7 +84,7 @@ switch (_op) do {
         if (isNull _u || {!alive _u} || {!(missionNamespace getVariable ["comspec_sse_id_enabled", true])}) exitWith { false };
         if ((_u getVariable ["COMSPEC_ID_Carry", "auto"]) isNotEqualTo "auto") then { ["ensure", [_u]] call comspec_sse_fnc_idRegistry; };
         // Attribut Eden de groupe : le groupe porte le réglage, chaque unité le reprend à son apparition.
-        { _x params ["_gv", "_uv"]; private _gval = (group _u) getVariable [_gv, ""]; if (_gval isNotEqualTo "" && {(_u getVariable [_uv, ""]) in ["", "auto"]}) then { _u setVariable [_uv, _gval]; }; } forEach [["COMSPEC_ID_GroupProfile", "COMSPEC_ID_AiProfile"], ["COMSPEC_ID_GroupBehaviour", "COMSPEC_ID_Behaviour"], ["COMSPEC_ID_GroupCarry", "COMSPEC_ID_Carry"]];
+        { _x params ["_gv", "_uv"]; private _gval = (group _u) getVariable [_gv, ""]; if (_gval isNotEqualTo "" && {(_u getVariable [_uv, ""]) in ["", "auto"]}) then { _u setVariable [_uv, _gval]; }; } forEach [["COMSPEC_ID_GroupProfile", "COMSPEC_ID_AiProfile"], ["COMSPEC_ID_GroupBehaviour", "COMSPEC_ID_Behaviour"], ["COMSPEC_ID_GroupCarry", "COMSPEC_ID_Carry"], ["COMSPEC_ID_GroupCountry", "COMSPEC_ID_Country"]];
         // Attribut Eden « Infiltré (couverture) » : infiltration ouverte une fois les papiers posés.
         if (_u getVariable ["COMSPEC_ID_Undercover", false]) then { [{ ["start", [_this, createHashMap]] call comspec_sse_fnc_idCover; }, _u, 2] call CBA_fnc_waitAndExecute; };
         {

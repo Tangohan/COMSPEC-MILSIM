@@ -57,6 +57,8 @@ private _build = {
     // Adresse imprimée (« 12 RUE DU PORT, Kavala ») : la ville est la dernière partie.
     private _addr = _printed getOrDefault ["address", ""];
     private _city = trim (((_addr splitString ",") param [1, ""]));
+    // Pays réel : la ville est gardée à part sur le papier (adresse au format du pays, code postal compris).
+    if ((_printed getOrDefault ["city", ""]) isNotEqualTo "") then { _city = _printed get "city"; };
     if (_city isEqualTo "") then { _city = [_cities, "city"] call _pick; };
     if (_addr isEqualTo "") then {
         _addr = format ["%1 %2, %3", 1 + (("no" call _h) mod 120), ["RUE DU PORT", "AV. CENTRALE", "RUE HAUTE", "PL. DU MARCHÉ", "CH. DES OLIVIERS"] select (("st" call _h) mod 5), _city];
@@ -78,6 +80,11 @@ private _build = {
     // Téléphone simulé (même générateur que les téléphones fouillés par le SSE) : indicatif fictif du pays.
     private _prefix = (createHashMapFromArray [["ALT", "+031"], ["TNA", "+067"], ["LVN", "+037"], ["MLD", "+035"]]) getOrDefault [_country, "+099"];
     private _num = { format ["%1 %2 %3", _prefix, [_seed, _this + "a", 4] call comspec_sse_fnc_idToken, [_seed, _this + "b", 4] call comspec_sse_fnc_idToken] };
+    // Pays réel : numéro au format du pays, dans une plage réservée à la fiction quand elle existe (registre « phone »).
+    if ((_c getOrDefault ["phone", ""]) isNotEqualTo "") then {
+        private _area = (["region", [_country, _printed getOrDefault ["region", ""]]] call comspec_sse_fnc_idCountries) getOrDefault ["area", "555"];
+        _num = { ["make", [_c get "phone", _seed, "tel" + _this, createHashMapFromArray [["region", _printed getOrDefault ["region", ""]], ["area", _area]]]] call comspec_sse_fnc_idNumbers };
+    };
     private _myNum = "me" call _num;
     private _rel = ["Frère", "Cousine", "Employeur", "Voisin", "Ami d'enfance", "Mère", "Collègue"];
     private _contacts = [];

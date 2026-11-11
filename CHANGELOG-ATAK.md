@@ -225,6 +225,26 @@ EN : In Zeus, an AI's papers finally show as a real card, with their analysis
 
 ---
 
+## À venir : papiers de vrais pays (COMSPEC SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Des papiers de vrais pays : France, Allemagne, États-Unis, Belgique, Autriche…
+- Les IA et les joueurs peuvent porter les papiers de 45 pays réels : carte d'identité, passeport, permis de conduire, titre de séjour et carte grise, avec les noms, les villes, les adresses et les numéros de ces pays. Le pays se choisit dans l'atelier IA, dans Eden, dans les réglages de mission, ou se règle tout seul selon la carte.
+- France, Allemagne, États-Unis, Royaume-Uni, Belgique, Autriche, Suisse, Pays-Bas, Italie, Espagne et Pologne ont leurs propres papiers : titres et cases dans la langue du pays, dates au format du pays, bande de lecture et numéros qui se vérifient comme les vrais.
+- Ce sont des papiers de jeu : chacun porte la mention SPÉCIMEN · SIMULATION. Altis, Tanoa, Livonie et Malden restent disponibles : vos anciennes missions ne changent pas.
+EN : Papers from real countries: France, Germany, United States, Belgium, Austria…
+- AIs and players can carry papers from 45 real countries: identity card, passport, driving licence, residence permit and vehicle registration, with that country's names, towns, addresses and numbers. Choose the country in the AI workshop, in Eden, in the mission settings, or let the map decide.
+- France, Germany, United States, United Kingdom, Belgium, Austria, Switzerland, Netherlands, Italy, Spain and Poland have their own papers: titles and boxes in the country's language, dates in the country's format, reading strip and numbers that check out like the real ones.
+- These are game papers: each one carries the mark SPECIMEN · SIMULATION. Altis, Tanoa, Livonia and Malden are still there: your old missions do not change.
+
+### Détail technique
+- Registre `CfgComspecCountries` (`addons/identity/CfgComspecCountries.hpp`, généré par `tools/countries/gen_countries.py` depuis `tools/countries/countries.json`) : 49 pays, codes ISO 3166 alpha-3 / alpha-2 stables (repris par le site et `feat/sse-synchro-web`), 11 pays complets, 34 génériques, 4 fictifs. `fn_idCountries` lit le registre (modes `ordered`, `label`, `resolve`, `auto`, `region`) ; les pays réels ne demandent plus `comspec_sse_id_realSim` (réglage retiré) ; nouveau réglage `comspec_sse_id_countryFallback`.
+- `fn_idNumbers` : motifs et numéros à clé (NIR, registre national belge, BSN, AVS, SVNR, codice fiscale, DNI, NIE, PESEL, dowód, permis britannique, SSN 9xx), VIN. `fn_idMrz` : code document du pays (« IDD<< », « IR », « AR »), numéro long en débordement OACI, données facultatives (Belgique, Espagne). `fn_idIssue` : type remplacé par la pièce courante du pays (Royaume-Uni, États-Unis), adresse, autorité, taille, numéro personnel, titre de séjour, certificat d'immatriculation.
+- Nouveaux types `residence_permit` et `vehicle_registration` (objets `COMSPEC_ID_ResidencePermit`, `COMSPEC_ID_VehicleRegistration`, 128 exemplaires chacun). `fn_idCountryChrome` pose bandeau, drapeau, titre et étiquettes dans la langue du pays sur les gabarits sans texte (`tools/countries/gen_country_assets.py`, ImageToPAA : 22 gabarits de pays, 6 gabarits neutres, 2 icônes, environ +3,5 Mo).
+- Atelier IA : liste dynamique, séparateur des pays fictifs, `recountry` (papiers déjà délivrés refaits dans le pays choisi, papiers d'Athena gardés, ligne d'état de la fenêtre). Eden : `COMSPEC_SSE_CountryCombo` (unité et groupe).
+- Essais : `tools/countries/test_countries.py`, `tests/Unit/SseCountryRegistryTest.php`, `fn_idCountrySelfTest` (autotest `sse_pays_reels`). Non testé en jeu.
+
 ## SSE 1.9.0 : fenêtre « Réponses de l'IA » simple, peur d'une arme braquée de près, champs des documents (SSE 1.9.0)
 
 ### Résumé joueur

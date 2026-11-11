@@ -102,8 +102,14 @@ private _pub = {
     { _p set [_x select 0, _d getOrDefault [_x select 0, ""]]; } forEach ((["get", _d getOrDefault ["type", ""]] call comspec_sse_fnc_idDocTypes) getOrDefault ["inputs", []]);
     _p set ["countryName", _c getOrDefault ["name", _d get "country"]];
     _p set ["countryNameEn", _c getOrDefault ["nameEn", ""]];
-    // Pays réel stylisé : gabarit générique de sa zone (europe | americas | other), jamais un vrai modèle.
+    // Pays réel stylisé d'un paquet Athena : gabarit générique de sa zone (europe | americas | other), jamais un vrai
+    // modèle. Pays réel du registre : « bare » (gabarit du pays ou gabarit neutre, titre et étiquettes posés en jeu).
     _p set ["zone", [_c getOrDefault ["zone", ""], ""] select !(_c getOrDefault ["realSim", false])];
+    if ((_c getOrDefault ["tier", ""]) in ["full", "generic"]) then {
+        _p set ["zone", "bare"];
+        { _p set [_x, _d getOrDefault [_x, ""]]; } forEach ["natText", "height", "state", "permit", "plate", "vehicle", "vin", "holder", "firstReg", "city", "postal", "region"];
+        _p set ["personal", ["", _d getOrDefault ["personal", ""]] select (_d getOrDefault ["personalPrint", false])];
+    };
     _p set ["chipLogo", _d getOrDefault ["chipExpected", false]];
     _p set ["mrz", [_d] call comspec_sse_fnc_idMrz];
     // Défauts physiques : visibles par qui regarde bien (le constat N0, lui, dépend du tirage).

@@ -195,6 +195,11 @@ switch (_op) do {
             };
         } forEach _units;
         ["notice", ["STR_COMSPEC_IARP_N_Applied", _n]] call _reply;
+        // Pays des papiers changé : papiers refaits, ou gardés (papiers d'Athena) : dit dans la fenêtre de l'atelier.
+        private _done = _units select { _x isEqualType objNull && {!isNull _x} };
+        private _redone = { (_x getVariable ["comspec_sse_iarpPapersRedone", 0]) > 0 } count _done;
+        private _kept = { (_x getVariable ["comspec_sse_iarpPapersRedone", 0]) < 0 } count _done;
+        if (_redone > 0 || {_kept > 0}) then { ["wsStatus", ["STR_COMSPEC_IARP_W_PapersRedone", _redone, _kept]] call _reply; };
     };
 
     case "puppet": {

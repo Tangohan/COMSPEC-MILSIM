@@ -3,7 +3,9 @@
       name        nom RP affiché (vide : nom des papiers)          role  auto | civil | insurge | hvt | agent | policier
       nerve talk aggro honesty bribe fear drunk   curseurs 0-100 : nervosité, loquacité, agressivité, honnêteté,
                   corruptibilité, peur de l'autorité, ivresse
-      lang        common (comprise de tous) | local (langue du pays, traduite entre crochets)   country  auto | ALT | TNA | LVN | MLD
+      lang        common (comprise de tous) | local (langue du pays, traduite entre crochets)
+      country     auto (selon la carte) | code du registre des pays (FRA, DEU, USA… ; ALT, TNA, LVN, MLD) : pays de ses papiers
+                  (« apply » : papiers déjà délivrés refaits dans ce pays, sauf papiers d'Athena) et de sa langue
       story       histoire de couverture ; lignes « Clé : valeur » reprises comme faits (Origine, Employeur, Métier,
                   Motif, Né à, Contact, Adresse, Famille, Âge, Nom), le reste est du contexte pour le Zeus
       phrases     phrases types glissées de temps en temps      sensitive  sujets sensibles (mots qui la crispent)
@@ -71,7 +73,12 @@ private _normalize = {
     } forEach _keys;
     if !((_p get "role") in ["auto", "civil", "insurge", "hvt", "agent", "policier"]) then { _p set ["role", "auto"]; };
     if !((_p get "lang") in ["common", "local"]) then { _p set ["lang", "common"]; };
-    if !((_p get "country") in ["auto", "ALT", "TNA", "LVN", "MLD"]) then { _p set ["country", "auto"]; };
+    // Pays : « auto » ou un code du registre (identité SSE chargée) ; sans elle, un code de trois lettres est gardé.
+    private _cc = toUpper (_p get "country");
+    if (_cc isNotEqualTo "AUTO") then {
+        private _ok = if (isNil "comspec_sse_fnc_idCountries") then { (count _cc) isEqualTo 3 } else { _cc in ([] call comspec_sse_fnc_idCountries) };
+        _p set ["country", ["auto", _cc] select _ok];
+    } else { _p set ["country", "auto"]; };
     if !((_p get "unlock") in ["trust", "bribe", "keyword", "never"]) then { _p set ["unlock", "trust"]; };
     if !((_p get "evoke") in ["auto", "none", "known", "free"]) then { _p set ["evoke", "auto"]; };
     _p set ["banned", (_p get "banned") select { _x in ["armed", "explosives", "military", "wanted", "drugs", "politics"] }];
@@ -265,7 +272,10 @@ switch (_op) do {
         private _lasts = ["Karras", "Petrakis", "Galanis", "Stavrou", "Markou", "Doukas"];
         // Identité SSE chargée : villes et noms du pays des papiers de la mission.
         if (!isNil "comspec_sse_fnc_idCountries") then {
-            private _c = ([] call comspec_sse_fnc_idCountries) getOrDefault [["default"] call comspec_sse_fnc_idCountries, createHashMap];
+            // Pays du profil s'il est choisi, sinon celui de la mission.
+            private _pc = _b get "country";
+            if (_pc isEqualTo "auto") then { _pc = ["default"] call comspec_sse_fnc_idCountries; };
+            private _c = ([] call comspec_sse_fnc_idCountries) getOrDefault [_pc, createHashMap];
             if (_c isEqualType createHashMap) then {
                 if ((_c getOrDefault ["cities", []]) isNotEqualTo []) then { _cities = _c get "cities"; };
                 if ((_c getOrDefault ["first", []]) isNotEqualTo []) then { _firsts = _c get "first"; };
@@ -302,6 +312,12 @@ switch (_op) do {
         if ((_p get "name") isNotEqualTo "") then { _u setVariable ["comspec_sse_idName", _p get "name", true]; };
         // Profil au contrôle des IA réalistes (identité SSE) : repris par fn_idAiBrain, recalculé au prochain contrôle.
         if ((_p get "role") isNotEqualTo "auto") then { _u setVariable ["COMSPEC_ID_Profile", _p get "role"]; _u setVariable ["comspec_sse_idProfile", nil]; };
+        // Pays choisi : ses papiers suivent (identité SSE) ; déjà délivrés dans un autre pays : refaits dans celui-ci (nombre),
+        // papiers d'Athena gardés (-1). Lu par fn_iarpServer « profileSet » pour la ligne d'état de l'atelier.
+        _u setVariable ["comspec_sse_iarpPapersRedone", 0];
+        if ((_p get "country") isNotEqualTo "auto" && {!isNil "comspec_sse_fnc_idAiConfig"}) then {
+            _u setVariable ["comspec_sse_iarpPapersRedone", ["recountry", [_u, _p get "country"]] call comspec_sse_fnc_idAiConfig];
+        };
         true
     };
     case "keepOf": {

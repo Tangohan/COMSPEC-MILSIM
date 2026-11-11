@@ -33,7 +33,7 @@ class COMSPEC_SSE_IarpWorkshop {
         class LockRole: COMSPEC_SSE_RscCheckBox { idc = 94761; tooltip = "$STR_COMSPEC_IARP_W_Lock_D"; onMouseEnter = "['help', ['Lock']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(18.4,4.75,0.9,0.9); };
         class LLang: COMSPEC_SSE_RscLabel { text = "$STR_COMSPEC_IARP_W_Lang"; WS_POS(1.3,5.95,6,0.9); };
         class Lang: COMSPEC_SSE_RscCombo { idc = 94722; tooltip = "$STR_COMSPEC_IARP_W_Lang_D"; onMouseEnter = "['help', ['Lang']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(7.4,5.9,5.3,1); };
-        class Country: COMSPEC_SSE_RscCombo { idc = 94723; tooltip = "$STR_COMSPEC_IARP_W_Lang_D"; onMouseEnter = "['help', ['Lang']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(12.9,5.9,5.3,1); };
+        class Country: COMSPEC_SSE_RscCombo { idc = 94723; tooltip = "$STR_COMSPEC_IARP_W_Country_D"; onMouseEnter = "['help', ['Country']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(12.9,5.9,5.3,1); };
         class LockLang: COMSPEC_SSE_RscCheckBox { idc = 94762; tooltip = "$STR_COMSPEC_IARP_W_Lock_D"; onMouseEnter = "['help', ['Lock']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(18.4,5.95,0.9,0.9); };
         class LNerve: COMSPEC_SSE_RscLabel { text = "$STR_COMSPEC_IARP_W_Nerve"; WS_POS(1.3,7.2,6,0.9); };
         class SNerve: COMSPEC_SSE_RscSlider { idc = 94724; tooltip = "$STR_COMSPEC_IARP_W_Nerve_D"; onMouseEnter = "['help', ['Nerve']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(7.4,7.2,9.4,0.9); onSliderPosChanged = "['slider', [ctrlIDC (_this select 0), _this select 1]] call comspec_sse_fnc_iarpWorkshop"; };

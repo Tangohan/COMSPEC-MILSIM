@@ -183,7 +183,7 @@ switch (_op) do {
         lbClear _cb;
         {
             _x params ["_id", "_pub", "_an", "_more"];
-            private _lbl = ["label", _pub getOrDefault ["type", ""]] call comspec_sse_fnc_idDocTypes;
+            private _lbl = ["label", [_pub getOrDefault ["type", ""], _pub getOrDefault ["country", ""]]] call comspec_sse_fnc_idDocTypes;
             if ((count _lbl) > 20) then { _lbl = (_lbl select [0, 19]) + "…"; };
             private _row = format ["DocItem" call _L, _lbl, _pub getOrDefault ["number", ""]];
             if (_more getOrDefault ["foreign", false]) then { _row = _row + " · " + ("Foreign" call _L); };
@@ -245,7 +245,7 @@ switch (_op) do {
             private _kindTxt = localize (_an getOrDefault ["kindKey", _p + "Kind_civil"]);
             if ((_an getOrDefault ["forgeryKey", ""]) isNotEqualTo "") then { _kindTxt = _kindTxt + " · " + localize (_an get "forgeryKey"); };
             _txt = _txt + (["Kind", _kindTxt, ["ok", "warn"] select ((_an getOrDefault ["kind", "civil"]) in ["forged", "cover", "alias"])] call _row);
-            _txt = _txt + (["Type", format ["%1 · %2 · %3", ["label", _pub getOrDefault ["type", ""]] call comspec_sse_fnc_idDocTypes, _pub getOrDefault ["number", ""], _pub getOrDefault ["countryName", _pub getOrDefault ["country", ""]]]] call _row);
+            _txt = _txt + (["Type", format ["%1 · %2 · %3", ["label", [_pub getOrDefault ["type", ""], _pub getOrDefault ["country", ""]]] call comspec_sse_fnc_idDocTypes, _pub getOrDefault ["number", ""], _pub getOrDefault ["countryName", _pub getOrDefault ["country", ""]]]] call _row);
             _txt = _txt + (["Born", format ["%1 · %2", (_pub getOrDefault ["dob", ""]) call _dmy, _pub getOrDefault ["pob", ""]]] call _row);
             _txt = _txt + (["Issued", (_an getOrDefault ["issued", ""]) call _dmy] call _row);
             _txt = _txt + (["Expires", format ["%1%2", (_an getOrDefault ["expires", ""]) call _dmy, ["", " (" + ("Expired" call _L) + ")"] select (_an getOrDefault ["expired", false])], ["text", "warn"] select (_an getOrDefault ["expired", false])] call _row);

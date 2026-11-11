@@ -172,6 +172,26 @@ switch (_op) do {
         if (_n > 0) then { ["reset", [_u]] call comspec_sse_fnc_idLegend; [_u] call _shownName; };
         _n
     };
+    case "recountry": {
+        // Pays des papiers choisi pour l'IA (atelier IA, Eden, Zeus ; « Tout son groupe » : appelé pour chaque unité).
+        // Papiers pas encore décidés : ils suivront au premier contrôle. Déjà délivrés dans un autre pays : refaits dans
+        // celui-ci (mêmes types et même nature, nom et numéros du nouveau pays) -> nombre ; papiers d'Athena : gardés -> -1.
+        _a params [["_u", objNull], ["_code", "auto"]];
+        if (isNull _u || {isPlayer _u}) exitWith { 0 };
+        _u setVariable ["COMSPEC_ID_Country", _code];
+        private _key = [_u] call comspec_sse_fnc_bioPersonKey;
+        if !((_reg get "decided") getOrDefault [_key, false]) exitWith { 0 };
+        private _want = ["resolve", _code] call comspec_sse_fnc_idCountries;
+        private _docs = (((_reg get "units") getOrDefault [_key, []]) apply { (_reg get "docs") getOrDefault [_x, createHashMap] }) select { (count _x) > 0 };
+        if (_docs isEqualTo [] || {(_docs findIf { (_x getOrDefault ["country", ""]) isNotEqualTo _want }) < 0}) exitWith { 0 };
+        if ((_docs findIf { (_x getOrDefault ["athenaId", ""]) isNotEqualTo "" }) >= 0) exitWith { -1 };
+        private _specs = _docs apply { createHashMapFromArray [["type", _x get "type"], ["kind", _x getOrDefault ["kind", "civil"]], ["quality", _x getOrDefault ["quality", 60]], ["country", _want]] };
+        [_u] call _clearDocs;
+        (_reg get "decided") set [_key, true];
+        { _x set ["materialize", false]; [_u, _x] call comspec_sse_fnc_idIssue; } forEach _specs;
+        [_u] call _shownName;
+        count _specs
+    };
     case "docs": {
         _a params [["_u", objNull]];
         (((_reg get "units") getOrDefault [[_u] call comspec_sse_fnc_bioPersonKey, []]) apply { (_reg get "docs") getOrDefault [_x, createHashMap] }) select { (count _x) > 0 } apply {
@@ -183,7 +203,7 @@ switch (_op) do {
         ["ensure", [_u]] call comspec_sse_fnc_idRegistry;
         private _first = (["docs", [_u]] call comspec_sse_fnc_idAiConfig) param [0, []];
         // Mêmes nom et prénom que les papiers déjà portés.
-        private _spec = createHashMapFromArray [["type", _type], ["kind", _first param [5, "civil"]]];
+        private _spec = createHashMapFromArray [["type", _type], ["kind", _first param [5, "civil"]], ["country", _u getVariable ["COMSPEC_ID_Country", "auto"]]];
         if (_first isNotEqualTo []) then { _spec set ["last", _first select 3]; _spec set ["first", _first select 4]; };
         [_u, _spec] call comspec_sse_fnc_idIssue
     };
