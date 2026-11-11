@@ -22716,5 +22716,22 @@
 ["Resynchroniser un relais", "", "Resync a relay"],
 ["Ouvrir le tableau des relais", "", "Open the relay board"],
 ["Poser un relais à mât (ancien)", "", "Place a mast relay (legacy)"],
-["Poser un brouilleur fixe", "", "Place a fixed jammer"]
+["Poser un brouilleur fixe", "", "Place a fixed jammer"],
+["Aucun ORBAT défini sur Athena pour votre unité. Les unités s'affichent par groupe de jeu à la place.", "", "No ORBAT defined on Athena for your unit. Units are shown by game group instead."],
+["Liaison Athena pas encore autorisée (compte non relié ou licence en attente). L'ORBAT du site sera lu dès qu'elle le sera ; en attendant, les unités s'affichent par groupe de jeu.", "", "Athena link not authorised yet (account not linked or licence pending). The site ORBAT will be read as soon as it is; meanwhile, units are shown by game group."],
+["ORBAT du site indisponible : %1", "", "Site ORBAT unavailable: %1"],
+["ORBAT du site indisponible : %1 · dernier reçu il y a %2 min", "", "Site ORBAT unavailable: %1 · last received %2 min ago"],
+["ORBAT du site indisponible", "", "Site ORBAT unavailable"],
+["dernier reçu il y a %1 min", "", "last received %1 min ago"],
+["pas de réponse en 15 s", "", "no answer within 15 s"],
+["réseau injoignable", "", "network unreachable"],
+["trop de demandes", "", "too many requests"],
+["réponse illisible", "", "unreadable answer"],
+["ORBAT trop volumineux", "", "ORBAT too large"],
+["site momentanément indisponible", "", "site temporarily unavailable"],
+["lecture incomplète", "", "incomplete read"],
+["site injoignable", "", "site unreachable"],
+["Mise à jour de l'ORBAT du site…", "", "Updating the site ORBAT…"],
+["Groupes de jeu, en attendant l'ORBAT du site", "", "Game groups, until the site ORBAT is read"],
+["Arbre fait des groupes de jeu : l'ORBAT du site n'est pas encore lu.", "", "Tree built from game groups: the site ORBAT has not been read yet."]
 ]

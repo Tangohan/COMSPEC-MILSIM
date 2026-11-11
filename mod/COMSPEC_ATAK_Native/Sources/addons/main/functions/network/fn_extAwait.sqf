@@ -27,13 +27,21 @@ if (!canSuspend && {!(_ext in _noAsync)} && {!isNil {missionNamespace getVariabl
 // Sans gestionnaire de rappel (menu principal, avant le postInit) la réponse ne reviendrait jamais : appel direct.
 private _pt = diag_tickTime;
 if (!canSuspend || {_ext in _noAsync} || {isNil {missionNamespace getVariable "COMSPEC_ATAK_ExtensionEH"}}) exitWith { private _r = _ext callExtension [_cmd, _args]; if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["DLL " + _cmd, _pt] call comspec_atak_native_fnc_perfAcc; }; _r };
-private _n = (missionNamespace getVariable ["COMSPEC_ATAK_ExtTicketN", 0]) + 1;
-missionNamespace setVariable ["COMSPEC_ATAK_ExtTicketN", _n];
-private _ticket = format ["%1_%2", round diag_tickTime, _n];
-// Ticket en attente : false ; le rappel y range [résultat] (un résultat arrivé après l'abandon est ignoré).
-private _pending = missionNamespace getVariable ["COMSPEC_ATAK_ExtPending", createHashMap];
-missionNamespace setVariable ["COMSPEC_ATAK_ExtPending", _pending];
-_pending set [_ticket, false];
+// Bloc non ordonnancé (isNil {}), comme dans fn_extAwait de connect : deux scripts interrompus entre la lecture et
+// l'écriture du compteur obtenaient le même ticket (l'un recevait la réponse de l'autre, l'autre attendait jusqu'au délai),
+// et deux tables d'attente créées en même temps en perdaient une (son rappel n'arrivait jamais).
+private _n = 0;
+private _pending = createHashMap;
+private _ticket = "";
+isNil {
+    _n = (missionNamespace getVariable ["COMSPEC_ATAK_ExtTicketN", 0]) + 1;
+    missionNamespace setVariable ["COMSPEC_ATAK_ExtTicketN", _n];
+    _pending = missionNamespace getVariable ["COMSPEC_ATAK_ExtPending", _pending];
+    missionNamespace setVariable ["COMSPEC_ATAK_ExtPending", _pending];
+    _ticket = format ["%1_%2", round diag_tickTime, _n];
+    // Ticket en attente : false ; le rappel y range [résultat] (un résultat arrivé après l'abandon est ignoré).
+    _pending set [_ticket, false];
+};
 private _r = _ext callExtension ["Async", [_ticket, _cmd] + _args];
 if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["DLL Async " + _cmd, _pt] call comspec_atak_native_fnc_perfAcc; };
 private _q = if (_r isEqualType []) then { _r param [0, ""] } else { _r };
