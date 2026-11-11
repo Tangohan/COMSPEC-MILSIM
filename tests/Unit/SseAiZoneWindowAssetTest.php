@@ -18,6 +18,13 @@ use PHPUnit\Framework\TestCase;
  *  - la visite guidée est ancrée (pas de voile), notée une fois par profil, rouverte par « ? » ;
  *  - aucune alerte Arma (toast, hint, systemChat…) dans la fenêtre.
  * En jeu : étapes sse_ia_zone et sse_ia_zone_etats de la mission d'autotest (mêmes règles, mesurées par le moteur).
+ *
+ * « Bug » (SSE 1.9.0, capture du 11 novembre, 13 h 44) : tous les volets ouverts en même temps, par-dessus la liste et les
+ * onglets, textes des quatre onglets empilés. RPT : « "Filters" call _L » sur un contrôle (fn_editorAi, _render : un
+ * « private _l » local écrasait l'aide de traduction _L, la casse ne compte pas en SQF) et « forEach _idcs » sur un booléen
+ * (_layout : « private _empty » écrasait la liste _EMPTY). La construction s'arrêtait avant de cacher quoi que ce soit.
+ * Depuis : registre des contrôles (_OWN, un propriétaire par contrôle, _showOnly), volets fermés au départ et un seul à la
+ * fois, et vérification statique : aucun nom local ne reprend (casse ignorée) un nom du premier niveau du fichier.
  */
 final class SseAiZoneWindowAssetTest extends TestCase
 {
@@ -32,10 +39,14 @@ final class SseAiZoneWindowAssetTest extends TestCase
         'COMSPEC_SSE_AzCombo' => [0.85, false], 'COMSPEC_SSE_AzEdit' => [0.85, false], 'COMSPEC_SSE_AzEditClear' => [0.85, false],
         'COMSPEC_SSE_AzList' => [0.8, false], 'COMSPEC_SSE_AzPopup' => [0.85, false], 'COMSPEC_SSE_AzAccent' => [0.85, false],
         'COMSPEC_SSE_EdPicture' => [0.85, false], 'COMSPEC_SSE_RscControlsGroup' => [0.85, false], 'RscStructuredText' => [0.85, false],
+        'COMSPEC_SSE_AzScrim' => [0.85, false],
     ];
 
-    /** Posés par-dessus d'autres à dessein (fonds, invites sous un champ, icônes d'en-tête, repère d'onglet, groupes). */
-    private const UNDER = [95000, 95007, 95008, 95013, 95015, 95018, 95019, 95020, 95021, 95022, 95036, 95037, 95113, 95114, 95209, 95502, 95503, 95504, 95507, 95600, 95700, 95701, 95800, 95801];
+    /** Posés par-dessus d'autres à dessein (fonds, invites sous un champ, icônes d'en-tête, repère d'onglet, groupes, voile). */
+    private const UNDER = [95000, 95007, 95008, 95013, 95015, 95018, 95036, 95037, 95113, 95114, 95115, 95116, 95209, 95502, 95503, 95504, 95507, 95600, 95700, 95701, 95800, 95801, 95850];
+
+    /** Fonctions de la fenêtre vérifiées pour les noms de variables (casse ignorée en SQF). */
+    private const SQF = ['/functions/fn_editorAi.sqf', '/functions/fn_editor.sqf', '/functions/fn_editorAiCard.sqf', '/functions/fn_editorCoach.sqf'];
 
     private static function root(): string
     {
@@ -167,7 +178,8 @@ final class SseAiZoneWindowAssetTest extends TestCase
         $missing = [];
         foreach (['/dialogs/aizone.hpp', '/dialogs/coach.hpp'] as $f) {
             foreach (self::controls($f) as $c) {
-                $interactive = (bool) preg_match('/\b(action|onLBSelChanged|onKeyUp) =/', $c['body']);
+                // Le voile sous un volet n'a ni texte ni info-bulle (elle s'afficherait partout autour du volet).
+                $interactive = (bool) preg_match('/\b(action|onLBSelChanged|onKeyUp) =/', $c['body']) && $c['base'] !== 'COMSPEC_SSE_AzScrim';
                 $keys = [];
                 preg_match_all('/"\$(STR_COMSPEC_SSE_\w+)"/', $c['body'], $mk);
                 $keys = $mk[1];
@@ -183,7 +195,8 @@ final class SseAiZoneWindowAssetTest extends TestCase
         }
         // Textes posés par le contrôleur : clé AZ, sinon l'ancienne clé ED (gardée pour les autres appelants).
         $sqf = self::read('/functions/fn_editorAi.sqf');
-        preg_match_all('/"(\w+)" call _L/', $sqf, $ml);
+        preg_match_all('/"(\w+)" call _loc\b/', $sqf, $ml);
+        self::assertGreaterThan(50, count(array_unique($ml[1])), 'aide de traduction _loc introuvable');
         foreach (array_unique($ml[1]) as $k) {
             $az = $str['STR_COMSPEC_SSE_AZ_' . $k] ?? null;
             $ed = $str['STR_COMSPEC_SSE_ED_' . $k] ?? null;
@@ -257,7 +270,8 @@ final class SseAiZoneWindowAssetTest extends TestCase
             [95604, 'Apply', '', '● ', ' (60)'], [95501, 'PvCaptionNone', ''], [95504, 'PvNoAi', ''], [95504, 'PvNoDoc', ''], [95504, 'PvLoading', ''],
             [95209, 'DocsNone', ''], [95102, 'SrcM_random', ''], [95102, 'SrcM_profile', 'PRF-0012'], [95110, 'ProfNone', ''], [95110, 'ProfStatus', '60', '', '', '10/11 20:30'],
             [95908, 'CoNext', ''], [95908, 'CoDone', ''], [95601, 'Dirty', ''], [95601, 'Applied', '60'], [95601, 'KeptAthenaKo', ''], [95601, 'NeedCheck', ''],
-            [95601, 'NoZeusSel', ''], [95601, 'Refused', ''], [95601, 'PickDoc', ''],
+            [95601, 'NoZeusSel', ''], [95601, 'Refused', ''], [95601, 'PickDoc', ''], [95601, 'Refreshing', ''], [95601, 'RefreshDone', '60'],
+            [95601, 'RefreshLate', ''],
         ];
         foreach (['KindM_civil', 'KindM_cover', 'KindM_forged'] as $k) {
             $dyn[] = [95105, $k, ''];
@@ -334,10 +348,6 @@ final class SseAiZoneWindowAssetTest extends TestCase
     public function testNoVisibleRectanglesOverlapAndAllStayInTheGrid(): void
     {
         $all = self::controls('/dialogs/aizone.hpp');
-        $tabs = [
-            'id' => [95100, 95199], 'docs' => [95200, 95299], 'beh' => [95300, 95399], 'side' => [95400, 95499],
-        ];
-        $base = array_values(array_filter($all, static fn (array $c): bool => $c['pos'] !== null && $c['idc'] >= 95000 && ($c['idc'] < 95100 || ($c['idc'] >= 95500 && $c['idc'] < 95700))));
         $bad = [];
         foreach ($all as $c) {
             if ($c['pos'] === null) {
@@ -348,28 +358,271 @@ final class SseAiZoneWindowAssetTest extends TestCase
                 $bad[] = $c['name'] . ' hors de la grille 40 x 25';
             }
         }
-        $sets = [];
-        foreach ($tabs as $tab => [$lo, $hi]) {
-            $sets['page + onglet ' . $tab] = array_merge($base, array_values(array_filter($all, static fn (array $c): bool => $c['pos'] !== null && $c['idc'] >= $lo && $c['idc'] <= $hi)));
+        // Chaque état affichable (registre de fn_editorAi) : la page (un onglet, liste remplie ou vide), puis chaque volet à
+        // part (couche posée au-dessus, sur son voile).
+        $byIdc = [];
+        foreach ($all as $c) {
+            $byIdc[$c['idc']] = $c;
         }
-        $sets['volet Filtres'] = array_values(array_filter($all, static fn (array $c): bool => $c['idc'] >= 95700 && $c['idc'] < 95800));
-        $sets['volet Mémoire'] = array_values(array_filter($all, static fn (array $c): bool => $c['idc'] >= 95800 && $c['idc'] < 95900));
-        $sets['état vide'] = array_values(array_filter($all, static fn (array $c): bool => in_array($c['idc'], [95019, 95020, 95021, 95022], true)));
-        foreach ($sets as $label => $set) {
-            $set = array_values(array_filter($set, static fn (array $c): bool => !in_array($c['idc'], self::UNDER, true) || str_starts_with($label, 'état')));
-            $n = count($set);
-            for ($i = 0; $i < $n; $i++) {
-                for ($j = $i + 1; $j < $n; $j++) {
-                    [$x1, $y1, $w1, $h1] = $set[$i]['pos'];
-                    [$x2, $y2, $w2, $h2] = $set[$j]['pos'];
-                    $e = 0.02;
-                    if ($x1 + $w1 - $e > $x2 && $x2 + $w2 - $e > $x1 && $y1 + $h1 - $e > $y2 && $y2 + $h2 - $e > $y1) {
-                        $bad[] = sprintf('%s : %s chevauche %s', $label, $set[$i]['name'], $set[$j]['name']);
+        $own = self::owners();
+        foreach (self::states() as $label => $layers) {
+            foreach ($layers as $layer => $owners) {
+                $set = [];
+                foreach ($owners as $o) {
+                    foreach ($own[$o] ?? [] as $idc) {
+                        if (isset($byIdc[$idc]) && $byIdc[$idc]['pos'] !== null && !in_array($idc, self::UNDER, true)) {
+                            $set[] = $byIdc[$idc];
+                        }
                     }
+                }
+                foreach (self::overlaps($set) as [$a, $b]) {
+                    $bad[] = sprintf('%s (%s) : %s chevauche %s', $label, $layer, $a, $b);
                 }
             }
         }
         self::assertSame([], $bad, implode("\n", $bad));
+    }
+
+    /** @return array<string, list<int>> registre _OWN de fn_editorAi (propriétaire => idc). */
+    private static function owners(): array
+    {
+        $sqf = self::read('/functions/fn_editorAi.sqf');
+        self::assertSame(1, preg_match('/^private _OWN = createHashMapFromArray \[\n(.*?)\n\];/ms', $sqf, $m), 'registre _OWN introuvable');
+        preg_match_all('/\["(\w+)", \[([\d, ]+)\]\]/', $m[1], $mm, PREG_SET_ORDER);
+        $out = [];
+        foreach ($mm as $row) {
+            self::assertArrayNotHasKey($row[1], $out, 'propriétaire en double : ' . $row[1]);
+            $out[$row[1]] = array_map('intval', array_map('trim', explode(',', $row[2])));
+        }
+        return $out;
+    }
+
+    /** @return array<string, array<string, list<string>>> états affichables : couche page et couche volet. */
+    private static function states(): array
+    {
+        $out = [];
+        foreach (['id', 'docs', 'beh', 'side'] as $tab) {
+            foreach (['listRows' => 'liste remplie', 'listEmpty' => 'liste vide'] as $list => $what) {
+                $page = ['frame', 'list', $list, 'mid', 'tab_' . $tab, 'pv', 'foot'];
+                foreach (['' => 'aucun volet', 'ath' => 'volet Athena', 'filt' => 'volet Filtres', 'mem' => 'volet Mémoire'] as $v => $vl) {
+                    $layers = ['page' => $page];
+                    if ($v !== '') {
+                        $layers['volet'] = ['scrim', 'volet_' . $v];
+                    }
+                    $out[sprintf('onglet %s, %s, %s', $tab, $what, $vl)] = $layers;
+                }
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * @param list<array{name: string, pos: array{float, float, float, float}|null}> $set
+     * @return list<array{string, string}>
+     */
+    private static function overlaps(array $set): array
+    {
+        $out = [];
+        $n = count($set);
+        for ($i = 0; $i < $n; $i++) {
+            for ($j = $i + 1; $j < $n; $j++) {
+                [$x1, $y1, $w1, $h1] = $set[$i]['pos'];
+                [$x2, $y2, $w2, $h2] = $set[$j]['pos'];
+                $e = 0.02;
+                if ($x1 + $w1 - $e > $x2 && $x2 + $w2 - $e > $x1 && $y1 + $h1 - $e > $y2 && $y2 + $h2 - $e > $y1) {
+                    $out[] = [$set[$i]['name'], $set[$j]['name']];
+                }
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Noms de variables d'un fichier SQF : en SQF la casse ne compte pas (_l et _L, _empty et _EMPTY sont la même variable).
+     * Un nom déclaré au premier niveau du fichier (aide, constante, registre) ne doit être ni redéclaré à ce niveau, ni repris
+     * par un « private », un « params [...] » ou un « for "_i" » plus bas (dans une aide, une boucle, un cas du switch) :
+     * sinon l'aide est écrasée pour tout ce qui est appelé depuis là (« Bug » de la 1.9.0).
+     * @return list<string>
+     */
+    private static function shadowedNames(string $src): array
+    {
+        $decl = [];
+        $inComment = false;
+        foreach (explode("\n", $src) as $n => $line) {
+            $code = $line;
+            if ($inComment) {
+                $end = strpos($code, '*/');
+                if ($end === false) {
+                    continue;
+                }
+                $code = substr($code, $end + 2);
+                $inComment = false;
+            }
+            if (($p = strpos($code, '/*')) !== false && strpos($code, '*/', $p) === false) {
+                $inComment = true;
+                $code = substr($code, 0, $p);
+            }
+            $code = (string) preg_replace('~//.*$~', '', $code);
+            $names = [];
+            preg_match_all('/\bprivate\s+(_\w+)/', $code, $m);
+            $names = array_merge($names, $m[1]);
+            preg_match_all('/\bprivate\s*\[([^\]]*)\]/', $code, $m);
+            foreach ($m[1] as $list) {
+                preg_match_all('/"(_\w+)"/', $list, $mm);
+                $names = array_merge($names, $mm[1]);
+            }
+            preg_match_all('/\bfor\s+"(_\w+)"/', $code, $m);
+            $names = array_merge($names, $m[1]);
+            // params [...] : éléments directs ou premier élément d'un sous-tableau (crochets équilibrés).
+            $off = 0;
+            while (preg_match('/\bparams\s*\[/', $code, $mp, PREG_OFFSET_CAPTURE, $off)) {
+                $b = $mp[0][1] + strlen($mp[0][0]) - 1;
+                $depth = 0;
+                $len = strlen($code);
+                for ($j = $b; $j < $len; $j++) {
+                    if ($code[$j] === '[') {
+                        $depth++;
+                    } elseif ($code[$j] === ']' && --$depth === 0) {
+                        break;
+                    }
+                }
+                preg_match_all('/(?:^|,|\[)\s*"(_\w+)"/', substr($code, $b + 1, $j - $b - 1), $mm);
+                $names = array_merge($names, $mm[1]);
+                $off = $j;
+            }
+            foreach ($names as $name) {
+                $top = (bool) preg_match('/^(private\s+' . preg_quote($name, '/') . '\b|params\b)/', $code);
+                $decl[] = [$n + 1, $name, $top];
+            }
+        }
+        $top = [];
+        $bad = [];
+        foreach ($decl as [$ln, $name, $isTop]) {
+            $k = strtolower($name);
+            if ($isTop && isset($top[$k])) {
+                $bad[] = sprintf('ligne %d : %s déjà déclaré au premier niveau (ligne %d, %s)', $ln, $name, $top[$k][0], $top[$k][1]);
+            } elseif ($isTop) {
+                $top[$k] = [$ln, $name];
+            }
+        }
+        foreach ($decl as [$ln, $name, $isTop]) {
+            $k = strtolower($name);
+            if (!$isTop && isset($top[$k])) {
+                $bad[] = sprintf('ligne %d : %s reprend %s (ligne %d, casse ignorée en SQF)', $ln, $name, $top[$k][1], $top[$k][0]);
+            }
+        }
+        return $bad;
+    }
+
+    public function testNoHelperNameIsRedeclaredOrShadowedCaseInsensitively(): void
+    {
+        $bad = [];
+        foreach (self::SQF as $f) {
+            foreach (self::shadowedNames(self::read($f)) as $b) {
+                $bad[] = $f . ' ' . $b;
+            }
+        }
+        self::assertSame([], $bad, implode("\n", $bad));
+        // La vérification attrape bien les deux causes du « Bug » (cas d'école).
+        $old = "private _EMPTY = [1];\nprivate _L = { localize _this };\nprivate _render = {\n    private _l = 1 call _ctrl;\n    private _empty = true;\n};\n";
+        self::assertCount(2, self::shadowedNames($old));
+        self::assertCount(1, self::shadowedNames("params [[\"_t\", \"\"]];\nprivate _f = { { _x params [\"_T\"]; } forEach [] };\n"));
+    }
+
+    public function testEveryControlHasExactlyOneOwnerAndVoletsStartClosed(): void
+    {
+        $own = self::owners();
+        $hpp = self::controls('/dialogs/aizone.hpp');
+        $seen = [];
+        $bad = [];
+        foreach ($own as $o => $idcs) {
+            foreach ($idcs as $idc) {
+                if (isset($seen[$idc])) {
+                    $bad[] = sprintf('%d appartient à %s et à %s', $idc, $seen[$idc], $o);
+                }
+                $seen[$idc] = $o;
+            }
+        }
+        $order = [];
+        foreach ($hpp as $i => $c) {
+            $order[$c['idc']] = $i;
+            // 95508 est dans le groupe 95507 : il suit son groupe.
+            if ($c['idc'] !== 95508 && !isset($seen[$c['idc']])) {
+                $bad[] = sprintf('%s (%d) sans propriétaire dans _OWN', $c['name'], $c['idc']);
+            }
+        }
+        foreach (array_keys($seen) as $idc) {
+            if (!isset($order[$idc])) {
+                $bad[] = sprintf('%d dans _OWN mais absent de aizone.hpp', $idc);
+            }
+        }
+        // Un contrôle n'apparaît qu'une fois (plus de seconde copie de « Détecter autour » / « Sélection Zeus »).
+        $actions = [];
+        foreach ($hpp as $c) {
+            if (preg_match('/action = "(.*?)";/', $c['body'], $ma)) {
+                $actions[$ma[1]][] = $c['name'];
+            }
+        }
+        foreach ($actions as $a => $names) {
+            if (count($names) > 1 && !str_contains($a, "'filters'") && !str_contains($a, "'memory'")) {
+                $bad[] = 'même action pour ' . implode(', ', $names) . ' : ' . $a;
+            }
+        }
+        // Couches : le voile au-dessus de toute la page, chaque volet au-dessus du voile.
+        $page = array_merge(...array_values(array_intersect_key($own, array_flip(['frame', 'list', 'listRows', 'listEmpty', 'mid', 'tab_id', 'tab_docs', 'tab_beh', 'tab_side', 'pv', 'foot']))));
+        foreach ($page as $idc) {
+            if (($order[$idc] ?? PHP_INT_MAX) > $order[95850]) {
+                $bad[] = $idc . ' déclaré après le voile (dessiné par-dessus)';
+            }
+        }
+        foreach (['volet_ath', 'volet_filt', 'volet_mem'] as $v) {
+            foreach ($own[$v] as $idc) {
+                if ($order[$idc] < $order[95850]) {
+                    $bad[] = $idc . ' (' . $v . ') déclaré avant le voile (caché dessous)';
+                }
+            }
+        }
+        // Les contrôles posés dessous à dessein sont les mêmes dans l'audit en jeu et ici.
+        $sqf = self::read('/functions/fn_editorAi.sqf');
+        self::assertSame(1, preg_match('/^private _UNDER = \[([\d, ]+)\];/m', $sqf, $mu));
+        $under = array_map('intval', array_map('trim', explode(',', $mu[1])));
+        self::assertEqualsCanonicalizing(self::UNDER, $under, '_UNDER de fn_editorAi et UNDER du test');
+        self::assertSame([], $bad, implode("\n", $bad));
+
+        // État initial : aucun volet ouvert, le registre appliqué tout de suite puis en fin de construction.
+        self::assertSame(1, preg_match('/case "load": \{(.*?)\n    \};/s', $sqf, $ml));
+        $load = $ml[1];
+        $closed = strpos($load, '_st set ["volet", ""];');
+        $first = strpos($load, 'call _layout;');
+        self::assertNotFalse($closed, 'load : volet fermé au départ');
+        self::assertNotFalse($first);
+        self::assertLessThan($first, $closed, 'load : volet fermé avant le premier affichage');
+        self::assertGreaterThan(1, substr_count($load, 'call _layout;'), 'load : registre repassé en fin de construction');
+        // Un seul volet : une seule clé d'état, plus les anciens drapeaux qui pouvaient être vrais ensemble.
+        foreach (['filtersOpen', 'memOpen', 'foldOpen'] as $old) {
+            self::assertStringNotContainsString($old, $sqf);
+        }
+        // _layout passe d'abord par _showOnly, qui cache tout propriétaire non visible.
+        self::assertSame(1, preg_match('/^private _layout = \{\n(.*?)\n\};/ms', $sqf, $mlay));
+        self::assertStringStartsWith("    if (isNull _d) exitWith {};\n    [call _visibleOwners] call _showOnly;", $mlay[1]);
+        self::assertStringContainsString('{ if !(_x in _owners) then { [_OWN get _x, false] call _vis; }; } forEach (keys _OWN);', $sqf);
+        // Fermeture : Échap, clic sur le voile, autre volet ; la page quittée ferme le volet.
+        self::assertStringContainsString('displayAddEventHandler ["KeyDown"', $sqf);
+        self::assertStringContainsString('(_key isEqualTo 1) && {["escape"] call comspec_sse_fnc_editorAi}', $sqf);
+        self::assertStringContainsString("action = \"['voletClose'] call comspec_sse_fnc_editorAi\"", self::read('/dialogs/aizone.hpp'));
+        // Contrôles sous condition : jamais hors de leur propriétaire.
+        self::assertDoesNotMatchRegularExpression('/\(950(08|09)\d? call _ctrl\) ctrlShow|\((95114|95209|95504) call _ctrl\) ctrlShow/', $sqf);
+        // Audit en jeu, et la visite guidée ne s'ouvre pas sur une fenêtre cassée.
+        self::assertStringContainsString('if (_op isEqualTo "audit") exitWith', $sqf);
+        foreach (['"orphans"', '"overlaps"', '"clipped"', '"volets"'] as $k) {
+            self::assertStringContainsString($k, $sqf);
+        }
+        self::assertSame(1, preg_match('/case "coach": \{(.*?)\n    \};/s', $sqf, $mc));
+        self::assertLessThan(strpos($mc[1], '["start"'), strpos($mc[1], 'call _audit'));
+        // Ligne d'état : « Actualisation demandée… » se termine toujours (liste relue, ou Athena muette au bout de 25 s).
+        self::assertStringContainsString('"RefreshDone" call _loc', $sqf);
+        self::assertStringContainsString('"RefreshLate" call _loc', $sqf);
+        self::assertStringContainsString('["refreshLate"] call comspec_sse_fnc_editorAi', $sqf);
     }
 
     public function testOnboardingIsAnchoredAndStoredOncePerProfile(): void
