@@ -353,7 +353,7 @@ final class AtakTocRadioAssetTest extends TestCase
         self::assertStringContainsString('if (_y in [_side, "*"]) then { ["comspec_atak_native_tocRadioMsg", [_side, _list], _x] call CBA_fnc_ownerEvent; };', $src);
         self::assertStringContainsString('private _wide = _scope isEqualTo "*" && {!isNull (getAssignedCuratorLogic _u) || {(admin _owner) > 0} || {_owner <= 2}};', $src);
         // Seules trois demandes viennent des joueurs ; une émission sans fin est close d'office.
-        self::assertStringContainsString('if (_m in ["srvTx", "srvSub", "srvNets"]) then {', $src);
+        self::assertStringContainsString('if (_m in ["srvTx", "srvSub"]) then {', $src);
         self::assertStringContainsString('addMissionEventHandler ["PlayerDisconnected", {', $src);
         self::assertStringContainsString('[_side, _e select 0, _e select 9], 180] call comspec_atak_native_fnc_waitAndExec;', $src);
         // Démarrage : un appel côté serveur, deux côté joueur, aucun dans une boucle.
@@ -534,6 +534,38 @@ final class AtakTocRadioAssetTest extends TestCase
             self::assertSame(1, preg_match('/<Key ID="' . $k . '">\s*<Original>[^<]+<\/Original>\s*<English>[^<]+<\/English>\s*<French>[^<]+<\/French>/', $st), $k);
         }
         self::assertStringContainsString('Exemple : CMD NET=31.000*, AIR=40.500, 152.250.', $st);
+    }
+
+    public function testNamesAtakFilterRightsAndConsoleDock(): void
+    {
+        $src = self::read(self::TOC . 'fn_tocRadio.sqf');
+        // Qui est qui : résolveur commun du TOC, jamais le pseudo du joueur.
+        self::assertStringContainsString('[player] call comspec_atak_native_fnc_tocDisplayName]]', $src);
+        self::assertStringContainsString('if (_cs isEqualTo "") then { _cs = [_u] call comspec_atak_native_fnc_tocDisplayName; };', $src);
+        self::assertDoesNotMatchRegularExpression('/\bname\s+(_u|player)\b|profileName/', $src);
+        // Réglage « Afficher seulement les entités équipées d'un ATAK » : filtre commun, s'il est chargé.
+        self::assertStringContainsString('if !(["keep", _u] call (missionNamespace getVariable ["comspec_atak_native_fnc_tocHasAtak", { true }])) exitWith { false };', $src);
+        // Liste de veille : appel distant (l'émetteur fait foi), droit « régler la salle » contrôlé et journalisé par fn_tocAccess.
+        self::assertStringContainsString('["srvNets", [_side, _tbl, player]] remoteExecCall ["comspec_atak_native_fnc_tocRadio", 2];', $src);
+        self::assertStringContainsString('if !(["check", [_u, "rooms", "", "radio.nets", format ["%1 · %2", _side, _clean call _toText], _side]] call comspec_atak_native_fnc_tocAccess) exitWith { false };', $src);
+        self::assertStringContainsString('if (isRemoteExecuted && {isMultiplayer} && {_mode isNotEqualTo "srvNets"}) exitWith { false };', $src);
+        $nets = self::between($src, 'case "srvNets": {', '// ================= CLIENT');
+        self::assertLessThan(strpos($nets, 'missionNamespace setVariable'), strpos($nets, 'comspec_atak_native_fnc_tocAccess'), 'le droit est contrôlé avant d\'écrire la liste');
+        $acc = self::read(self::TOC . 'fn_tocAccess.sqf');
+        self::assertStringContainsString('["rooms", "Régler la salle, ses écrans liés et ses scènes", 2, 1, 3, true]', $acc);
+        $ui = self::read(self::TOC . 'fn_tocRadioUi.sqf');
+        self::assertSame(2, substr_count($ui, 'if !(["canEdit", _side] call _rad) exitWith {'));
+        self::assertStringContainsString('{ (_pan get _x) ctrlEnable _can; } forEach ["bAdd", "bDel"];', $ui);
+        // Console du poste : panneau monté sur l'onglet RADIO à la place de la carte, masqué ailleurs, sans boucle quand il est masqué.
+        $lap = self::read(self::TOC . 'fn_tocLaptop.sqf');
+        self::assertStringContainsString('case (_tab isEqualTo "RADIO" && {!isNil "comspec_atak_native_fnc_tocRadioUi"}): { "L:RADIO" };', $lap);
+        self::assertStringContainsString('["dock", [ctrlParent (_ui get "screen"), _st get "rLeft", _tab isEqualTo "RADIO"]] call comspec_atak_native_fnc_tocRadioUi;', $lap);
+        self::assertSame(2, substr_count($lap, 'comspec_atak_native_fnc_tocRadioUi;') + substr_count($lap, 'comspec_atak_native_fnc_tocRadioUi"}'));
+        self::assertStringContainsString('case "dock": {', $ui);
+        self::assertStringContainsString('["mount", [_d, [_pad, _pad, (_rect select 2) - 2 * _pad, (_rect select 3) - 2 * _pad], str side group player, false, _g]] call comspec_atak_native_fnc_tocRadioUi;', $ui);
+        self::assertStringContainsString('if (!isNull _dockGrp && {!ctrlShown _dockGrp}) exitWith {};', $ui);
+        // Le tableau des écrans propose RADIO sans liste à part : il lit les affichages de fn_tocScreen.
+        self::assertStringContainsString('forEach ((["views"] call _ts) select { _x in _ok });', self::read(self::TOC . 'fn_tocManager.sqf'));
     }
 
     private static function between(string $src, string $from, string $to): string

@@ -39,7 +39,8 @@
       ["silence", [dernière fin, maintenant, seuil en min, début de veille]] -> minutes ou -1
       ["push", [liste, ligne, taille]] ; ["occupancy", [historique, émissions, clé, maintenant, fenêtre en s]] -> %
       ["apply", [état, message, taille]] -> état, ou [] s'il manque un message ; ["dur", s] -> « 1:05 » ; ["ago", s]
-    Client : ["initClient"] ; ["sub", "" | "*"] abonnement (camp du joueur, tous les camps) ; ["state", camp]
+    Liste de veille : changée par qui a le droit « régler la salle » (fn_tocAccess : chef de poste, administrateur Zeus).
+    Client : ["initClient"] ; ["canEdit", camp] ; ["sub", "" | "*"] abonnement (camp du joueur, tous les camps) ; ["state", camp]
       ["nets", camp] liste de veille ; ["setNets", [camp, liste]] ; ["seeAll"] ; ["tuned"] réseaux de mes radios
       ["model", [camp, tout voir, filtre de l'historique (clé), mes réseaux seulement]] -> table pour l'affichage
     Serveur : ["initServer"] ; ["srvInject", [camp, indicatif, réseau, secondes, libellé]] station de la mission.
@@ -47,6 +48,8 @@
 */
 params [["_mode", "state"], ["_a", []]];
 private _sides = ["WEST", "EAST", "GUER", "CIV"];
+// Appel distant : seule la liste de veille arrive ainsi (l'émetteur fait foi, fn_tocAccess) ; le reste vient des événements.
+if (isRemoteExecuted && {isMultiplayer} && {_mode isNotEqualTo "srvNets"}) exitWith { false };
 private _max = 50;
 private _rg = { ["api", _this] call comspec_atak_native_fnc_radioGuard };
 private _blank = { [0, [], [], []] };
@@ -294,7 +297,7 @@ switch (_mode) do {
         missionNamespace setVariable ["COMSPEC_ATAK_TocRadioInit", true];
         ["comspec_atak_native_tocRadio", {
             params [["_m", ""], ["_arg", []]];
-            if (_m in ["srvTx", "srvSub", "srvNets"]) then { [_m, _arg] call comspec_atak_native_fnc_tocRadio; };
+            if (_m in ["srvTx", "srvSub"]) then { [_m, _arg] call comspec_atak_native_fnc_tocRadio; };
         }] call CBA_fnc_addEventHandler;
         // Joueur parti en pleine émission : elle se ferme, et son abonnement tombe.
         addMissionEventHandler ["PlayerDisconnected", {
@@ -358,7 +361,10 @@ switch (_mode) do {
         if (_k isEqualTo "" || {!(_side in _sides)}) exitWith { false };
         if !(_lbl isEqualType "") then { _lbl = ""; };
         if !(_cs isEqualType "") then { _cs = ""; };
-        if (_cs isEqualTo "") then { _cs = name _u; };
+        // Nom montré : résolveur commun du TOC (indicatif Athena, sinon groupe et rang), jamais le pseudo.
+        if (_cs isEqualTo "") then { _cs = [_u] call comspec_atak_native_fnc_tocDisplayName; };
+        // Réglage « Afficher seulement les entités équipées d'un ATAK » (fn_tocHasAtak, s'il est chargé) : les autres ne sont pas montrées.
+        if !(["keep", _u] call (missionNamespace getVariable ["comspec_atak_native_fnc_tocHasAtak", { true }])) exitWith { false };
         if !(_kind in ["SW", "LR", "VEH", "VON"]) then { _kind = "SW"; };
         if !(_lvl isEqualType 0) then { _lvl = -1; };
         // Déjà en émission (changement de radio sans relâcher) : la précédente se ferme d'abord.
@@ -366,7 +372,7 @@ switch (_mode) do {
         private _own = missionNamespace getVariable ["COMSPEC_ATAK_TocRadioOwn", createHashMap];
         missionNamespace setVariable ["COMSPEC_ATAK_TocRadioOwn", _own];
         _own set [_id, owner _u];
-        [_side, [_id, [_cs, 24] call _cut, [name _u, 24] call _cut, [groupId group _u, 24] call _cut, _k, [_lbl, 24] call _cut, _kind, _mesh isEqualTo true, (_lvl min 1) max -1, serverTime, call _zulu]] call _srvBegin;
+        [_side, [_id, [_cs, 40] call _cut, "", [groupId group _u, 24] call _cut, _k, [_lbl, 24] call _cut, _kind, _mesh isEqualTo true, (_lvl min 1) max -1, serverTime, call _zulu]] call _srvBegin;
         true
     };
     case "srvCap": {
@@ -405,12 +411,13 @@ switch (_mode) do {
     case "srvNets": {
         // Liste de veille d'un camp : posée par un joueur de ce camp (console du poste), le Zeus ou l'administrateur.
         if (!isServer) exitWith { false };
-        _a params [["_side", ""], ["_tbl", []], ["_u", objNull], ["_owner", -1]];
-        if (!(_side in _sides) || {!(_u isEqualType objNull)} || {isNull _u} || {!(_owner isEqualType 0)}) exitWith { false };
-        if ((str side group _u) isNotEqualTo _side && {isNull (getAssignedCuratorLogic _u)} && {(admin _owner) <= 0} && {_owner > 2}) exitWith { false };
-        if !(_tbl isEqualType []) exitWith { false };
+        _a params [["_side", ""], ["_tbl", []], ["_u", objNull]];
+        if (!(_side in _sides) || {!(_tbl isEqualType [])}) exitWith { false };
         // Repassée par le texte : mêmes règles que la saisie (clés refaites, doublons retirés, 24 réseaux au plus).
         private _clean = [(_tbl select { _x isEqualType [] }) call _toText] call _parse;
+        // Droit « régler la salle » (fn_tocAccess : chef de poste ou administrateur Zeus selon le réglage) ; l'auteur est
+        // l'émetteur de l'appel, jamais l'unité annoncée ; la demande et son refus vont au journal du TOC.
+        if !(["check", [_u, "rooms", "", "radio.nets", format ["%1 · %2", _side, _clean call _toText], _side]] call comspec_atak_native_fnc_tocAccess) exitWith { false };
         missionNamespace setVariable [format ["COMSPEC_ATAK_TocRadioNets_%1", _side], _clean, true];
         true
     };
@@ -514,7 +521,7 @@ switch (_mode) do {
         if ((missionNamespace getVariable ["COMSPEC_ATAK_TocRadioOn", -1]) < 0 || {!(call _enabled)}) exitWith { false };
         if (!_on) exitWith { ["comspec_atak_native_tocRadio", ["srvTx", [player, false]]] call CBA_fnc_serverEvent; true };
         private _mesh = ((missionNamespace getVariable ["COMSPEC_ATAK_VoiceMe", []]) param [0, []]) isNotEqualTo [];
-        ["comspec_atak_native_tocRadio", ["srvTx", [player, true, _k, _lbl, _kind, _lvl, _mesh, [player, false] call comspec_atak_native_fnc_unitCallsign]]] call CBA_fnc_serverEvent;
+        ["comspec_atak_native_tocRadio", ["srvTx", [player, true, _k, _lbl, _kind, _lvl, _mesh, [player] call comspec_atak_native_fnc_tocDisplayName]]] call CBA_fnc_serverEvent;
         true
     };
     case "sub": {
@@ -553,8 +560,13 @@ switch (_mode) do {
     case "setNets": {
         _a params [["_side", ""], ["_tbl", []]];
         if (!hasInterface || {isNull player}) exitWith { false };
-        ["comspec_atak_native_tocRadio", ["srvNets", [_side, _tbl, player, clientOwner]]] call CBA_fnc_serverEvent;
+        ["srvNets", [_side, _tbl, player]] remoteExecCall ["comspec_atak_native_fnc_tocRadio", 2];
         true
+    };
+    case "canEdit": {
+        // Estimation pour l'affichage (le serveur fait foi) : droit « régler la salle » sur le camp montré.
+        if (!hasInterface || {isNull player}) exitWith { false };
+        (["level", [player, "", false, _a]] call comspec_atak_native_fnc_tocAccess) >= (["need", ["rooms", ["mode"] call comspec_atak_native_fnc_tocAccess]] call comspec_atak_native_fnc_tocAccess)
     };
     case "tuned": {
         // Réseaux de mes radios (encadré à l'écran : je ne vois que ce que je peux entendre). Gardé 5 s.

@@ -59,6 +59,9 @@ switch (_mode) do {
         if (isNull _a) exitWith { false };
         if !(["required"] call _fn) exitWith { true };
         if (_a isEqualTo _v) exitWith { true };
+        // Caméra d'infrastructure (posée dans Eden / Zeus, fn_camProp) : pas de poseur, donc personne pour la partager.
+        // Elle appartient au camp : tout le camp la voit (le camp est déjà filtré par fn_camAction « listAll »).
+        if ([_a] call _isCam && {_a getVariable ["COMSPEC_ATAK_CamPublic", false]}) exitWith { true };
         if ([_a] call _isCam && {
             private _ou = _a getVariable ["COMSPEC_ATAK_CamOwnerUid", ""];
             [(_a getVariable ["COMSPEC_ATAK_CamOwner", ""]) isEqualTo name _v, _ou isEqualTo ([_v] call _uidOf)] select (_ou isNotEqualTo "")

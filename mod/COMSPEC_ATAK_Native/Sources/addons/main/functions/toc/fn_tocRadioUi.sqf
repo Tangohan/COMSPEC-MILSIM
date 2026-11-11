@@ -18,6 +18,7 @@
       ["open", [camp, tout voir]] / ["close"]            fenêtre « Activité radio »
       ["mount", [display, [x, y, l, h], camp, tout voir, groupe parent]] -> table des contrôles (panneau à monter)
       ["refresh", vrai : listes aussi] / ["tick"] / ["act", action] / ["say", texte]   panneau monté
+      ["dock", [display, [x, y, l, h], montré]]   panneau dans la console du poste (fn_tocLaptop, onglet RADIO)
       ["initClient"] / ["changed", camp] / ["hudWant"] / ["hudSync"] / ["hudDraw"] / ["hudHide"]   encadré
 */
 params [["_mode", ""], ["_a", []]];
@@ -144,6 +145,8 @@ switch (_mode) do {
         _a params [["_d", displayNull], ["_rect", [0, 0, 1, 1]], ["_side", "WEST"], ["_all", false], ["_grp", controlNull]];
         if (isNull _d) exitWith { createHashMap };
         _rect params ["_x0", "_y0", "_w", "_h"];
+        // Dans un groupe (console du poste) : fond plein, le panneau couvre ce qui est dessous.
+        if (!isNull _grp) then { private _under = _d ctrlCreate ["ctrlStatic", -1, _grp]; _under ctrlSetPosition [0, 0, _w + _x0 * 2, _h + _y0 * 2]; _under ctrlSetBackgroundColor (["bg0"] call _rCol); _under ctrlCommit 0; };
         private _u = safeZoneH * 0.006;
         private _mk = {
             params ["_cls", "_pos"];
@@ -232,7 +235,7 @@ switch (_mode) do {
         private _hist = ["ctrlListNBox", [_rx, _fy + 10.4 * _u, _rw, _y0 + _h - 7 * _u - (_fy + 10.4 * _u)]] call _mk;
         _hist lnbSetColumnsPos [0, 0.2, 0.52, 0.86];
         private _status = ["ctrlStructuredText", [_x0, _y0 + _h - 6 * _u, _w, 5.6 * _u]] call _mk;
-        _pan = createHashMapFromArray [["d", _d], ["side", _side], ["all", _all], ["rows", _rows], ["lanes", _lanes], ["mon", _mon], ["name", _eName], ["freq", _eFreq], ["chk", _cChk],
+        _pan = createHashMapFromArray [["d", _d], ["grp", _grp], ["bAdd", _bAdd], ["bDel", _bDel], ["side", _side], ["all", _all], ["rows", _rows], ["lanes", _lanes], ["mon", _mon], ["name", _eName], ["freq", _eFreq], ["chk", _cChk],
             ["cAll", _cAll], ["cSide", _cSide], ["fil", _cFil], ["hist", _hist], ["status", _status], ["only", ""], ["sig", []], ["at", -10], ["filSig", []], ["monSig", []], ["u", _u]];
         uiNamespace setVariable ["COMSPEC_ATAK_TocRadioPanel", _pan];
         ["sub", ["", "*"] select _all] call _rad;
@@ -257,6 +260,9 @@ switch (_mode) do {
             missionNamespace setVariable ["COMSPEC_ATAK_TocRadioPfh", -1];
             uiNamespace setVariable ["COMSPEC_ATAK_TocRadioPanel", createHashMap];
         };
+        // Panneau de la console du poste sur un autre onglet : rien à redessiner.
+        private _dockGrp = _pan getOrDefault ["grp", controlNull];
+        if (!isNull _dockGrp && {!ctrlShown _dockGrp}) exitWith {};
         ["refresh", diag_tickTime - (_pan getOrDefault ["at", -10]) > 5] call comspec_atak_native_fnc_tocRadioUi;
     };
     case "refresh": {
@@ -299,6 +305,9 @@ switch (_mode) do {
         if (_a isNotEqualTo true && {_sig isEqualTo (_pan get "sig")}) exitWith { true };
         _pan set ["sig", _sig];
         _pan set ["at", diag_tickTime];
+        // Liste de veille : boutons actifs pour qui a le droit de régler la salle (fn_tocAccess ; le serveur fait foi).
+        private _can = ["canEdit", _side] call _rad;
+        { (_pan get _x) ctrlEnable _can; } forEach ["bAdd", "bDel"];
         private _lb = _pan get "lanes";
         lnbClear _lb;
         {
@@ -358,6 +367,7 @@ switch (_mode) do {
                 (_pan get "chk") cbSetChecked (_row select 2);
             };
             case "netAdd": {
+                if !(["canEdit", _side] call _rad) exitWith { ("Liste de veille réservée au chef de poste et à l'administrateur Zeus (réglage « Droits de la salle TOC »)") call _say; };
                 private _k = ["key", ctrlText (_pan get "freq")] call _rad;
                 if (_k isEqualTo "") exitWith { ("Écrivez une fréquence en MHz. Exemple : 31.000") call _say; };
                 private _name = trim (ctrlText (_pan get "name"));
@@ -368,6 +378,7 @@ switch (_mode) do {
                 (format [("Réseau %1 ajouté à la veille du camp %2") call _rTr, [_name, _k] select (_name isEqualTo ""), _side call _sideName]) call _say;
             };
             case "netDel": {
+                if !(["canEdit", _side] call _rad) exitWith { ("Liste de veille réservée au chef de poste et à l'administrateur Zeus (réglage « Droits de la salle TOC »)") call _say; };
                 private _ml = _pan get "mon";
                 private _k = _ml lnbData [lnbCurSelRow _ml, 0];
                 if (_k isEqualTo "") exitWith { ("Choisissez d'abord un réseau dans la liste de veille") call _say; };
@@ -393,6 +404,28 @@ switch (_mode) do {
                 _pan set ["only", _c lbData (lbCurSel _c)];
             };
         };
+        ["refresh", true] call comspec_atak_native_fnc_tocRadioUi;
+        true
+    };
+    case "dock": {
+        // Console du poste (fn_tocLaptop « layout ») : le panneau prend la place de la carte sur l'onglet RADIO, dans un
+        // groupe créé une fois par ouverture de la console, masqué sur les autres onglets.
+        _a params [["_d", displayNull], ["_rect", [0, 0, 1, 1]], ["_show", false]];
+        if (isNull _d) exitWith { false };
+        private _g = _d getVariable ["COMSPEC_ATAK_TocRadioDock", controlNull];
+        if (!_show) exitWith { if (!isNull _g) then { _g ctrlShow false; }; true };
+        if (isNull _g || {(_pan getOrDefault ["grp", controlNull]) isNotEqualTo _g}) then {
+            if (!isNull _g) then { ctrlDelete _g; };
+            _g = _d ctrlCreate ["RscControlsGroupNoScrollbars", -1];
+            _d setVariable ["COMSPEC_ATAK_TocRadioDock", _g];
+            _g ctrlSetPosition _rect;
+            _g ctrlCommit 0;
+            private _pad = safeZoneH * 0.006;
+            ["mount", [_d, [_pad, _pad, (_rect select 2) - 2 * _pad, (_rect select 3) - 2 * _pad], str side group player, false, _g]] call comspec_atak_native_fnc_tocRadioUi;
+        };
+        _g ctrlSetPosition _rect;
+        _g ctrlCommit 0;
+        _g ctrlShow true;
         ["refresh", true] call comspec_atak_native_fnc_tocRadioUi;
         true
     };

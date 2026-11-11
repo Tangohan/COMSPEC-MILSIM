@@ -1207,6 +1207,26 @@ private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_toc_cam_range", "SLIDER",
     ["Distance d'activation des caméras d'écran (m)", "Un écran TOC en affichage caméra ne montre l'image en direct qu'aux joueurs plus proches que cette distance et qui le regardent. Plus loin, il montre la carte et le flux du poste."],
     _loc, [10, 150, 40, 0], 1] call comspec_atak_native_fnc_addSetting;
+// Le TOC sans téléphone (4.11.0, fn_tocTracks, fn_tocCam) : réglages du serveur.
+["comspec_atak_native_toc_source", "LIST",
+    ["Source des positions du TOC", "D'où viennent les unités montrées sur les écrans TOC et le PC du poste. Mixte : toute unité du camp est vue à sa vraie position, et un porteur d'ATAK garde en plus l'état de sa liaison ; exemple : une section sans téléphone apparaît sur le mur à côté d'une section équipée. Jeu : toute unité du camp est vue, les téléphones ne sont pas lus ; exemple : un téléphone éteint ne change rien au mur. Réseau ATAK : seuls les porteurs d'ATAK sont vus, à leur dernier point ; exemple : un groupe qui perd ses téléphones disparaît du mur."],
+    _loc, [["mix", "game", "atak"], ["Mixte (jeu et réseau ATAK)", "Jeu (toute unité du camp)", "Réseau ATAK (porteurs seulement)"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_tracks_ai", "LIST",
+    ["IA suivies par le TOC", "Quelles IA du camp deviennent des pistes quand la source des positions lit le jeu. Les joueurs, les IA de leurs groupes, les véhicules et aéronefs avec équipage et les unités désignées par la mission sont toujours suivis. Exemple : « Chefs de groupe » montre un point par groupe d'IA au lieu de huit."],
+    _loc, [["leaders", "all", "none"], ["Chefs de groupe et véhicules", "Toutes les IA", "Aucune IA hors groupe de joueurs"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_tracks_max", "SLIDER",
+    ["Pistes du TOC par camp (plafond)", "Nombre le plus haut d'unités montrées par camp sur les écrans TOC et le PC du poste. Au-delà, les joueurs passent d'abord, puis leurs groupes, les véhicules, enfin les IA ; le nombre écarté est dit à l'écran. Plus il y a de pistes, plus le serveur espace ses relevés (3 s jusqu'à 50 pistes, 12 s au-delà de 200)."],
+    _loc, [20, 400, 150, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_headcam", "CHECKBOX",
+    ["Caméra de casque sans téléphone", "Coché : la caméra de casque de tout joueur du camp peut être affichée sur un écran TOC ou en mosaïque, même s'il n'a pas de téléphone ATAK. Décoché : seuls les porteurs d'un ATAK qui partagent leur caméra sont proposés. Exemple : coché, le poste suit l'entrée d'une équipe sans téléphone dans un bâtiment."],
+    _loc, true, 1] call comspec_atak_native_fnc_addSetting;
+// Qui est qui dans le TOC (fn_tocDisplayName, fn_tocRoster) : réglages du serveur.
+["comspec_atak_native_toc_show_steam", "CHECKBOX",
+    ["Afficher le pseudo Steam", "Décoché : les écrans TOC et le PC du poste montrent l'indicatif Athena du joueur, sinon son groupe et son rang, jamais son pseudo. Coché : le pseudo est ajouté entre parenthèses. Exemple : décoché « VIPER 2 », coché « VIPER 2 (Tetar) » ; un joueur sans compte relié apparaît comme « Alpha 1-1 · 2 (non lié) »."],
+    _loc, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_roster_names", "LIST",
+    ["Afficher nom et prénom sur les écrans du TOC", "Nom et prénom du personnage (identité SSE du joueur) dans le tableau EFFECTIF. PC du poste seulement : les écrans du mur montrent indicatif et rôle, l'opérateur voit aussi nom et prénom ; exemple : un visiteur dans la salle ne lit pas les identités au mur. Nulle part : jamais affichés. Partout : aussi sur les écrans du mur ; exemple : un appel en début de mission devant le mur."],
+    _loc, [["console", "off", "all"], ["PC du poste seulement", "Nulle part", "Partout (écrans du mur compris)"], 0], 1] call comspec_atak_native_fnc_addSetting;
 // Vue satellite des écrans TOC et du PC du poste (fn_tocSat) : réglage de chaque joueur.
 ["comspec_atak_native_toc_sat_quality", "LIST",
     ["Qualité de la vue satellite", "Coût de la vue satellite des écrans TOC et du PC du poste sur votre PC. Basse (par défaut) : petite image, 2 images par seconde sur un écran du mur, 5 sur l'écran que vous regardez de près. Moyenne : image plus fine de près. Haute : image fine partout, plus fluide. Désactivée : aucune image satellite, l'écran l'indique. Exemple : passez en Basse ou Désactivée si le jeu saccade dans la salle TOC."],
@@ -1215,6 +1235,26 @@ private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_toc_view_range", "SLIDER",
     ["Distance d'affichage des écrans TOC (m)", "Un écran TOC n'est dessiné et rafraîchi que si vous êtes plus près que cette distance, à peu près face à lui et sans mur entre vous. Un peu plus loin, il garde sa dernière image ; au-delà, il se met en veille : ni calcul ni caméra. Les caméras d'écran suivent aussi cette distance. Exemple : 25 m pour une salle d'opérations, 60 m pour un grand écran dehors."],
     _loc, [10, 100, 25, 0], 0] call comspec_atak_native_fnc_addSetting;
+// Salle TOC tenue (4.12.0) : droits, chef de poste, journal des actions, thème de nuit (fn_tocAccess, fn_tocStation, fn_tocJournal, fn_tocTheme).
+private _tocHeld = ["COMSPEC", "ATAK · Salle TOC : postes, droits et journal"];
+["comspec_atak_native_toc_access_mode", "LIST",
+    ["Droits de la salle TOC", "Qui peut changer les écrans et régler la salle. Rôles : seuls le chef de poste (le joueur qui tient le poste « chef de quart » de la salle) et l'administrateur Zeus les changent ; les autres joueurs du camp lisent, tiennent un poste et écrivent dans les registres. Ouvert : tout joueur du camp change tout, comme avant la 4.12.0. Administrateurs : seuls le Zeus et les administrateurs du serveur. Exemple : en « Rôles », un joueur de passage ouvre le PC et lit la carte, mais son changement d'affichage est refusé et écrit au journal."],
+    _tocHeld, [["roles", "open", "admin"], ["Rôles (chef de poste et Zeus)", "Ouvert (tout le camp)", "Administrateurs seulement"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_chief_rank", "LIST",
+    ["Grade minimal du chef de quart", "Grade du jeu à partir duquel un joueur peut prendre le poste « chef de quart » d'une salle (action ACE sur soi, Poste TOC) et devenir ainsi chef de poste. Exemple : avec « Sergent », un caporal peut tenir le poste Opérations, pas celui de chef de quart."],
+    _tocHeld, [[0, 1, 2, 3, 4, 5, 6], ["Soldat (tout le monde)", "Caporal", "Sergent", "Lieutenant", "Capitaine", "Commandant", "Colonel"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_chief_uids", "EDITBOX",
+    ["Chefs de poste désignés", "Identifiants Steam (17 chiffres) séparés par des virgules : ces joueurs sont chefs de poste dans toutes les salles de leur camp, sans avoir à tenir un poste. Exemple : 76561198000000001, 76561198000000002."],
+    _tocHeld, "", 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_journal_max", "SLIDER",
+    ["Lignes gardées au journal du TOC", "Nombre de lignes du journal des actions gardées pour chaque camp ; les plus anciennes sortent. Les 200 dernières sont gardées d'une partie à l'autre avec la salle. Exemple : 500 lignes couvrent une soirée d'opération."],
+    _tocHeld, [50, 2000, 500, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_journal_log", "CHECKBOX",
+    ["Journal du TOC dans le journal COMSPEC", "Chaque action de la salle (écran changé, salle verrouillée, poste pris, relève, refus) est aussi écrite une fois dans le journal COMSPEC du serveur. Exemple : « Journal du TOC n° 12 · 21:04:10Z WEST Dupont (chief) Salle verrouillée »."],
+    _tocHeld, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_theme", "LIST",
+    ["Thème des écrans TOC", "Couleurs du TOC pour vous seul. Nuit : fonds plus noirs et textes assombris, pour ne pas être ébloui dans une salle sombre. S'applique aujourd'hui aux fenêtres du journal, du diagnostic et des relèves ; les écrans muraux et la console du poste l'adopteront dans une prochaine version. Exemple : « Automatique » passe en nuit quand le soleil de la mission est couché."],
+    _tocHeld, [["auto", "jour", "nuit"], ["Automatique (nuit quand le soleil est couché)", "Jour", "Nuit"], 0], 0] call comspec_atak_native_fnc_addSetting;
 // Activité radio au poste TOC (fn_tocRadio, fn_tocRadioUi) : qui parle, sur quelle fréquence.
 ["comspec_atak_native_toc_radio_enabled", "CHECKBOX",
     ["Activité radio au poste TOC", "Coché : le poste TOC voit qui parle à la radio, sur quel réseau et quelle fréquence (console radio, écran mural RADIO, encadré « Qui parle »). ACRE2, TFAR ou, sans mod radio, les canaux du jeu. Rien ne circule tant que personne ne regarde. Décoché : aucune émission n'est signalée. Exemple : décochez pour une mission où le poste ne doit rien savoir des radios."],

@@ -43,6 +43,8 @@ if (!hasInterface) then { ["init"] call comspec_atak_native_fnc_radioGuard; };
 ["initServer"] call comspec_atak_native_fnc_screenCast;
 // Écrans TOC : registre, données du réseau calculées ici pour tous (fn_tocFeed), écrans gardés d'une partie à l'autre.
 ["initServer"] call comspec_atak_native_fnc_tocScreen;
+// Salle TOC tenue (4.12.0) : droits, verrou, journal des actions, postes nommés, relève (fn_tocAccess).
+["init"] call comspec_atak_native_fnc_tocAccess;
 // Activité radio du camp (fn_tocRadio) : événements seulement, collecte éteinte tant que personne ne regarde.
 ["initServer"] call comspec_atak_native_fnc_tocRadio;
 // IA et ATAK : IA équipées par le réglage ou la mission, leurs points PLI envoyés par le serveur (fn_aiAtak).

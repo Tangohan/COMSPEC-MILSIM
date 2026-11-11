@@ -545,6 +545,8 @@ if (["on"] call comspec_atak_native_fnc_fireSupport) then { ["scan"] call comspe
 // Salle TOC : réponse du poste à une demande (téléphone du demandeur, fn_tocRoom).
 ["initClient"] call comspec_atak_native_fnc_tocRoom;
 ["initClient"] call comspec_atak_native_fnc_tocHall;
+// Salle TOC tenue (4.12.0) : retours des demandes, actions ACE « Poste TOC », diagnostic (fn_tocAccess).
+["initClient"] call comspec_atak_native_fnc_tocAccess;
 // Activité radio (fn_tocRadio, fn_tocRadioUi) : mon alternat signalé au poste, encadré « Qui parle ». Événements seulement.
 ["initClient"] call comspec_atak_native_fnc_tocRadio;
 ["initClient"] call comspec_atak_native_fnc_tocRadioUi;

@@ -278,7 +278,8 @@ private _lbl = {
 switch (_mode) do {
     case "initServer": {
         if (!isServer) exitWith {};
-        ["comspec_atak_native_tocScreen", { _this call comspec_atak_native_fnc_tocScreen; }] call CBA_fnc_addEventHandler;
+        // « view » et « remove » venus de l'ancien événement : droits d'un simple opérateur (fn_tocAccess « legacy »).
+        ["comspec_atak_native_tocScreen", { if (["legacy", ["screen", _this]] call comspec_atak_native_fnc_tocAccess) then { _this call comspec_atak_native_fnc_tocScreen; }; }] call CBA_fnc_addEventHandler;
         ["init"] call comspec_atak_native_fnc_tocFeed;
         ["init"] call comspec_atak_native_fnc_tocRoom;
         ["init"] call comspec_atak_native_fnc_tocHall;
@@ -494,7 +495,7 @@ switch (_mode) do {
     };
     case "remove": {
         if (isNull _a) exitWith { false };
-        if (!isServer && {!(["local", _a] call comspec_atak_native_fnc_tocConfig)}) exitWith { ["comspec_atak_native_tocScreen", ["remove", _a]] call CBA_fnc_serverEvent; true };
+        if (!isServer && {!(["local", _a] call comspec_atak_native_fnc_tocConfig)}) exitWith { ["send", ["screen", ["remove", _a]]] call comspec_atak_native_fnc_tocAccess; true };
         private _owned = _a getVariable ["COMSPEC_ATAK_TocOwned", false];
         // Mur à plusieurs dalles : ses relais partent avec lui.
         { if (!isNull _x) then { ["remove", _x] call _fn; }; } forEach (_a getVariable ["COMSPEC_ATAK_TocPanels", []]);
@@ -544,7 +545,7 @@ switch (_mode) do {
     case "view": {
         _a params [["_o", objNull], ["_k", ""], ["_v", 0]];
         if (isNull _o) exitWith { false };
-        if (!isServer && {!(["local", _o] call comspec_atak_native_fnc_tocConfig)}) exitWith { ["comspec_atak_native_tocScreen", ["view", _a]] call CBA_fnc_serverEvent; true };
+        if (!isServer && {!(["local", _o] call comspec_atak_native_fnc_tocConfig)}) exitWith { ["send", ["screen", ["view", _a]]] call comspec_atak_native_fnc_tocAccess; true };
         private _c = +([_o] call _cfgOf);
         if ((count _c) < 8) exitWith { false };
         switch (_k) do {

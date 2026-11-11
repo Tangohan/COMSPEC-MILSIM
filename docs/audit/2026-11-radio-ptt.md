@@ -92,15 +92,19 @@ Ajouts seulement, aucune ligne existante réécrite hors des listes d'affichages
 Le tableau des écrans (`fn_tocManager`) propose RADIO sans y toucher : il lit la liste des affichages. Il n'a pas de
 catégorie de sources ; dans le menu ACE, RADIO est rangé avec les tableaux du poste.
 
-`fn_tocLaptop.sqf` n'est pas modifié (refonte de la console en cours, PR #1559). Le panneau radio se monte en un appel :
+Depuis la fusion de main (4.12.0) : la console du poste (`fn_tocLaptop.sqf`, onglet RADIO de la rubrique SALLE) monte le
+panneau à la place de la carte par `["dock", …]` (deux ajouts dans « layout ») ; les indicatifs viennent de
+`fn_tocDisplayName` (jamais le pseudo) ; la liste de veille ne se change qu'avec le droit « régler la salle » de
+`fn_tocAccess` (chef de poste, administrateur Zeus ; demande et refus au journal du TOC) ; le filtre « seulement les
+entités équipées d'un ATAK » (`fn_tocHasAtak`) est appliqué dès qu'il est chargé. Montage dans une autre fenêtre :
 
 ```sqf
 // display de la console, rectangle [x, y, l, h], camp, tout voir, groupe parent (ou controlNull)
 private _ui = ["mount", [_display, [_x, _y, _w, _h], "WEST", false, _groupe]] call comspec_atak_native_fnc_tocRadioUi;
 ```
 
-Il se rafraîchit seul tant que son display existe. En attendant, la même console s'ouvre en fenêtre par le menu ACE
-d'un écran TOC et par le module Zeus.
+Il se rafraîchit seul tant que son display existe. La même console s'ouvre aussi en fenêtre par le menu ACE d'un écran
+TOC et par le module Zeus.
 
 ## Ce qui n'a pas été vu en jeu
 
@@ -113,6 +117,5 @@ d'un écran TOC et par le module Zeus.
 
 ## Suite possible
 
-- Monter le panneau dans la section RADIO de la nouvelle console (PR #1559).
 - Garder la liste de veille d'une partie à l'autre (`fn_tocPersist`).
 - Tri côté serveur par abonné si la discrétion entre équipes d'un même camp devient un enjeu.

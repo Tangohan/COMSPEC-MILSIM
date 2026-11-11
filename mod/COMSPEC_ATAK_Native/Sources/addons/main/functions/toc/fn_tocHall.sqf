@@ -98,7 +98,8 @@ switch (_mode) do {
     case "init": {
         if (!isServer || {missionNamespace getVariable ["COMSPEC_ATAK_TocHallInit", false]}) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_TocHallInit", true];
-        ["comspec_atak_native_tocHall", { ["do", _this] call comspec_atak_native_fnc_tocHall; }] call CBA_fnc_addEventHandler;
+        // Ancien événement (joueur dont le mod est d'avant la 4.12.0) : émetteur inconnu, droits d'un simple opérateur (fn_tocAccess « legacy »).
+        ["comspec_atak_native_tocHall", { if (["legacy", ["hall", _this]] call comspec_atak_native_fnc_tocAccess) then { ["do", _this] call comspec_atak_native_fnc_tocHall; }; }] call CBA_fnc_addEventHandler;
         // Postes PC fixes (fn_tocPc) : désignés comme écrans TOC à leur création.
         ["initServer"] call comspec_atak_native_fnc_tocPc;
     };
@@ -136,7 +137,8 @@ switch (_mode) do {
     };
     case "do": {
         _a params [["_act", ""], ["_args", []]];
-        if (!isServer) exitWith { ["comspec_atak_native_tocHall", _a] call CBA_fnc_serverEvent; true };
+        // Par la porte du serveur (fn_tocAccess « gate ») : l'émetteur, son camp et ses droits y sont vérifiés, l'action est écrite au journal.
+        if (!isServer) exitWith { ["send", ["hall", _a]] call comspec_atak_native_fnc_tocAccess; true };
         private _l = +(call _all);
         private _find = { params ["_id"]; _l findIf { (_x select 0) isEqualTo _id } };
         switch (_act) do {
