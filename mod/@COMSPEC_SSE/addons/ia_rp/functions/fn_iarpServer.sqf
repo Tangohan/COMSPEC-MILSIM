@@ -10,7 +10,7 @@
                Plusieurs demandes dans un message (« bonjour, vos papiers ») : traitées dans l'ordre, une seule bulle de
                réponse ; papiers ou fouille : l'action ACE part après la réponse.
                Une seule réponse par message : une bulle (la nouvelle remplace l'ancienne), la même ligne dans le fil du
-               terminal, au même nom (identité SSE de l'IA, sinon « Anonyme » : _nameOf). /me et /do : geste compris
+               terminal, au même nom (identité unique de l'IA une fois apprise, sinon « Inconnu » : _nameOf, fn_iarpName). /me et /do : geste compris
                (lexique « _gesture » : mains levées, arme braquée, argent tendu, badge, menottes, papiers pris ou rendus,
                photo, fouille), sinon l'IA réagit à ce qu'elle voit. /todo : la parole avant « * » est comprise.
                Rien de rapproché : une piste (« Vous voulez mes papiers ? », qui devient sa question) ; papiers ou
@@ -80,8 +80,9 @@ private _hearers = {
     _pl select { alive _x && {_x isNotEqualTo _skip} && {(_x distance _src) <= _range} }
 };
 private _tell = { params ["_list", "_cop", "_ca"]; { [_x, _cop, _ca] call _send; } forEach _list; };
-// Nom de l'IA, le même partout (terminal, bulles, journal, toasts) : une seule règle, fn_iarpName « ensure » (nom de
-// ses papiers SSE, sinon de sa légende, sinon nom RP de l'atelier ; diffusé comspec_sse_idName). "" : Anonyme.
+// Nom de l'IA, le même partout (terminal, bulles, journal, toasts) : une seule règle, fn_iarpName « ensure » (identité
+// unique fn_idIdentityOf : nom donné, sinon tiré et gardé ; faux papiers : nom imprimé ; diffusé comspec_sse_idName).
+// Montré à un joueur une fois appris seulement (« for », « shown ») ; sinon « Inconnu ».
 private _nameOf = { params ["_u"]; ["ensure", _u] call comspec_sse_fnc_iarpName };
 private _nameAi = { params ["_u"]; _u getVariable ["comspec_sse_idName", ""] };
 // Humeur montrée dans l'en-tête du terminal : [clé, peur 0-100].
@@ -149,14 +150,24 @@ switch (_op) do {
 
     case "log": {
         private _all = missionNamespace getVariable ["comspec_sse_iarpLog", []];
-        private _mine = if ([_me] call comspec_sse_fnc_isAuthority) then { _all } else { private _n = netId _me; _all select { (_x select 14) isEqualTo _n } };
+        private _mine = if ([_me] call comspec_sse_fnc_isAuthority) then { _all } else {
+            private _n = netId _me;
+            // Nom d'une IA que ce joueur n'a pas encore appris : « Inconnu » dans son journal aussi (fn_iarpName).
+            (_all select { (_x select 14) isEqualTo _n }) apply {
+                private _r = +_x;
+                if !(["known", [objectFromNetId (_r select 7), _me]] call comspec_sse_fnc_iarpName) then { _r set [6, ""]; };
+                _r
+            }
+        };
         ["log", [_mine select [((count _mine) - 300) max 0]]] call _reply;
     };
 
     case "hello": {
         _args params ["", ["_t", objNull, [objNull]]];
         if (isNull _t || {isPlayer _t}) exitWith {};
-        ["who", [_t, [_t] call _nameOf, [_t] call _moodOf]] call _reply;
+        // Nom présenté décidé et diffusé ici (comspec_sse_idName) ; au poste, seulement s'il l'a appris.
+        private _nm = [_t] call _nameOf;
+        ["who", [_t, [_nm, ""] select !(["known", [_t, _me]] call comspec_sse_fnc_iarpName), [_t] call _moodOf]] call _reply;
     };
 
     case "mood": {
@@ -177,7 +188,10 @@ switch (_op) do {
         if !([_me] call comspec_sse_fnc_isAuthority) exitWith {};
         _args params ["", ["_t", objNull, [objNull]]];
         if (isNull _t) exitWith {};
-        ["profile", [_t, ["serialize", ["get", _t] call comspec_sse_fnc_iarpProfile] call comspec_sse_fnc_iarpProfile, ["truth", _t] call comspec_sse_fnc_iarpName]] call _reply;
+        // Champ « Nom » : son identité unique actuelle (renommée ailleurs, le prochain « Appliquer » ne remet pas l'ancien nom).
+        private _pp = +(["get", _t] call comspec_sse_fnc_iarpProfile);
+        if (!isNil "comspec_sse_fnc_idIdentityOf" && {!isPlayer _t}) then { _pp set ["name", ["full", [_t]] call comspec_sse_fnc_idIdentityOf]; };
+        ["profile", [_t, ["serialize", _pp] call comspec_sse_fnc_iarpProfile, ["truth", _t] call comspec_sse_fnc_iarpName]] call _reply;
     };
 
     case "profileSet": {
@@ -188,13 +202,32 @@ switch (_op) do {
         private _p = ["parse", _raw] call comspec_sse_fnc_iarpProfile;
         if ((count _p) isEqualTo 0) exitWith { ["notice", ["STR_COMSPEC_IARP_N_BadProfile"]] call _reply; };
         private _n = 0;
+        private _notes = [];
+        // Plusieurs IA : le champ « Nom » montre l'identité de la première ; inchangé, chacune garde la sienne (sinon toutes
+        // prendraient ce nom). « Générer » ne renomme pas non plus (sauf nom verrouillé).
+        if (!isNil "comspec_sse_fnc_idIdentityOf" && {
+            (_mode isEqualTo "generate" && {!("name" in (_p get "locks"))})
+            || {(count _units) > 1 && {(toUpper (trim (_p get "name"))) isEqualTo (toUpper (["full", [_units param [0, objNull]]] call comspec_sse_fnc_idIdentityOf))}}
+        }) then { _p set ["name", ""]; };
         {
             if (_x isEqualType objNull && {!isNull _x} && {_x isKindOf "CAManBase"} && {!isPlayer _x}) then {
                 private _q = if (_mode isEqualTo "generate") then { ["generate", [_p, _p get "locks"]] call comspec_sse_fnc_iarpProfile } else { +_p };
+                _x setVariable ["comspec_sse_identityLastSet", nil];
                 if (["apply", [_x, _q]] call comspec_sse_fnc_iarpProfile) then { _n = _n + 1; };
+                // Nom donné : identité unique et papiers (fn_idIdentityOf « set ») ; ce qui reste à savoir va dans la fenêtre.
+                private _r = _x getVariable ["comspec_sse_identityLastSet", createHashMap];
+                if ((count _r) > 0 && {(count _units) isEqualTo 1}) then {
+                    _notes pushBack ["STR_COMSPEC_IARP_W_IdDone", ["full", [_x]] call comspec_sse_fnc_idIdentityOf];
+                    if ((_r getOrDefault ["held", 0]) > 0) then { _notes pushBack ["STR_COMSPEC_IARP_W_IdHeld", _r get "held"]; };
+                    if ((_r getOrDefault ["stale", 0]) > 0) then { _notes pushBack ["STR_COMSPEC_IARP_W_IdStale"]; };
+                    if ((_r getOrDefault ["suggest", ""]) isNotEqualTo "") then {
+                        _notes pushBack ["STR_COMSPEC_IARP_W_IdSuggest", ((([] call comspec_sse_fnc_idCountries) getOrDefault [_r get "suggest", createHashMap]) getOrDefault ["name", _r get "suggest"])];
+                    };
+                };
             };
         } forEach _units;
         ["notice", ["STR_COMSPEC_IARP_N_Applied", _n]] call _reply;
+        if (_notes isNotEqualTo []) then { ["wsNote", [_notes]] call _reply; };
     };
 
     case "puppet": {
@@ -519,9 +552,8 @@ switch (_op) do {
             if (_yr isNotEqualTo "") then { _facts set ["age", str (((date select 0) - (parseNumber _yr)) max 16)]; };
         };
         { _facts set [_x, _y]; } forEach (["facts", _p] call comspec_sse_fnc_iarpProfile);
-        if ((_p get "name") isNotEqualTo "") then { _facts set ["name", _p get "name"]; };
-        // Nom dit = nom affiché partout (papiers) quand l'atelier n'en impose pas un autre.
-        if ((_facts getOrDefault ["name", ""]) isEqualTo "" && {_aiName isNotEqualTo ""}) then { _facts set ["name", _aiName]; };
+        // Nom dit = nom présenté partout (identité unique, papiers ; nom de l'atelier IA compris, qui la pose).
+        if (_aiName isNotEqualTo "") then { _facts set ["name", _aiName]; } else { if ((_p get "name") isNotEqualTo "") then { _facts set ["name", _p get "name"]; }; };
         // Prénom : le mot qui n'est pas en capitales (« KARRAS Nikos » des papiers), sinon le premier.
         private _parts = (_facts getOrDefault ["name", ""]) splitString " ";
         private _fi = _parts findIf { (toUpper _x) isNotEqualTo _x };
@@ -934,6 +966,8 @@ switch (_op) do {
                             if (_v isEqualTo "") exitWith { _gi = "dunno"; _outcome = "ne sait pas"; };
                             _vars set [_k, _v];
                             _topic = _k;
+                            // Elle a dit son nom : ce joueur et ceux qui l'entendent le connaissent (en-tête et bulles).
+                            if (_intent isEqualTo "name") then { ["learn", [_t, [_me] + ([_t] call _hearers)]] call comspec_sse_fnc_iarpName; };
                             // « Ton prénom ? » : le prénom seul, précisément.
                             if (_intent isEqualTo "name" && {[[" prenom", " first name"]] call _has} && {(_vars getOrDefault ["first", ""]) isNotEqualTo ""}) then { _gi = "firstName"; };
                             if (!_ok) then {

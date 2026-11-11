@@ -1,7 +1,7 @@
 /*
     Texte libre avec les IA : côté poste du joueur (réponses du serveur fn_iarpServer, envois).
       send     [op, args]                        vers le serveur (appel direct sur l'hôte ou en solo)
-      name     [unité] -> nom affiché            le même partout : fn_iarpName « shown » (papiers, légende, « Anonyme »)
+      name     [unité] -> nom affiché            le même partout : fn_iarpName « shown » (identité unique une fois apprise, sinon « Inconnu »)
       bubble   [unité, genre, nom, contenu, fil] bulle 3D (fn_iarpBubble) ; genre say | me | do | todo | tryOk | tryKo | ai
                contenu : texte du joueur, ou réplique d'IA [modèle fr, modèle en, variables, langue locale, pays]
                nom d'une IA : nom affiché, ou [nom, vrai nom, nature] pour le Zeus (fn_iarpName « label »)
@@ -20,6 +20,8 @@
       log      [lignes] · zeus [lignes]          journal (onglet JOURNAL ; Zeus : lignes en direct, sans doublon)
       profile  [ia, profil texte, nom]           profil lu pour l'atelier IA du Zeus, ou pour une fenêtre du menu ZEN en
                                                  attente (uiNamespace comspec_sse_iarpZenPending, fn_iarpZen)
+      wsNote   [[[clé, valeurs…]…]]               nom donné à une IA : identité, papiers déjà remis, pays suggéré (ligne
+                                                 d'état de l'atelier IA)
       mem      [ia, [avoué, affirmé, joueurs], nom]   mémoire de l'IA pour le Zeus (fenêtre ZEN, fn_iarpServer memGet)
       mark     [position, lieu, nom de l'IA]     renseignement précis avec un lieu : marqueur sur MA carte seulement
     Fils, brouillons et journal vivent dans missionNamespace : une autre mission (mêmes netId) repart à zéro.
@@ -31,7 +33,7 @@ if (_op isEqualTo "send") exitWith {
     if (isServer) then { [_sop, _sa] call comspec_sse_fnc_iarpServer; } else { [_sop, _sa] remoteExecCall ["comspec_sse_fnc_iarpServer", 2]; };
     true
 };
-// Nom affiché : une seule règle, fn_iarpName « shown » (papiers SSE, sinon légende SSE, sinon « Anonyme »).
+// Nom affiché : une seule règle, fn_iarpName « shown » (identité unique une fois apprise, sinon « Inconnu »).
 if (_op isEqualTo "name") exitWith {
     _a params [["_u", objNull]];
     ["shown", _u] call comspec_sse_fnc_iarpName
@@ -207,6 +209,13 @@ switch (_op) do {
         if (_who isNotEqualTo "") then { _what = format ["%1 (%2)", _what, _who]; };
         _m setMarkerTextLocal format [localize "STR_COMSPEC_IARP_MarkIntel", _what];
         ["notice", ["STR_COMSPEC_IARP_N_Marked", _what]] call comspec_sse_fnc_iarpClient;
+    };
+    case "wsNote": {
+        // Retour du serveur après un nom donné (identité, papiers déjà remis, pays suggéré) : ligne d'état de l'atelier IA.
+        _a params [["_notes", []]];
+        private _txt = (_notes apply { format ([localize (_x param [0, ""])] + (_x select [1])) }) joinString " ";
+        if (!isNil "comspec_sse_fnc_iarpWorkshop") then { ["note", [_txt]] call comspec_sse_fnc_iarpWorkshop; };
+        diag_log text format ["[COMSPEC SSE] IA RP : %1", _txt];
     };
     case "profile": {
         _a params [["_t", objNull], ["_raw", ""], ["_who", ""]];

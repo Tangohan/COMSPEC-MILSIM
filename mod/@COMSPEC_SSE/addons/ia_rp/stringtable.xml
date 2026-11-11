@@ -13,9 +13,9 @@
             <French>Parler à…</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_Anonymous">
-            <Original>Anonymous</Original>
-            <English>Anonymous</English>
-            <French>Anonyme</French>
+            <Original>Unknown</Original>
+            <English>Unknown</English>
+            <French>Inconnu</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_Cat">
             <Original>AI roleplay (free text)</Original>
@@ -708,14 +708,14 @@
             <French>%1 IA</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Name">
-            <Original>RP name</Original>
-            <English>RP name</English>
-            <French>Nom RP</French>
+            <Original>Name (identity)</Original>
+            <English>Name (identity)</English>
+            <French>Nom (identité)</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Name_D">
-            <Original>Name shown above its head and given when asked. Empty: the name printed on its papers. Example: Nikos KARRAS.</Original>
-            <English>Name shown above its head and given when asked. Empty: the name printed on its papers. Example: Nikos KARRAS.</English>
-            <French>Nom affiché au-dessus de sa tête et donné quand on le lui demande. Vide : le nom imprimé sur ses papiers. Exemple : Nikos KARRAS.</French>
+            <Original>Its identity: the name it gives when asked and the one printed on its papers (shown to players once they have learned it). Empty: its current identity is kept. Example: Nikos KARRAS.</Original>
+            <English>Its identity: the name it gives when asked and the one printed on its papers (shown to players once they have learned it). Empty: its current identity is kept. Example: Nikos KARRAS.</English>
+            <French>Son identité : le nom qu'elle donne quand on le lui demande et celui imprimé sur ses papiers (affiché aux joueurs une fois qu'ils l'ont appris). Vide : son identité actuelle est gardée. Exemple : Nikos KARRAS.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Nerve">
             <Original>Nervousness</Original>
@@ -2311,6 +2311,26 @@
             <Original>An AI only talks about what she knows: a civilian with no knowledge never talks about weapons or armed groups. Your texts only replace her line: orders, lies, fear and papers follow the rules.</Original>
             <English>An AI only talks about what she knows: a civilian with no knowledge never talks about weapons or armed groups. Your texts only replace her line: orders, lies, fear and papers follow the rules.</English>
             <French>Une IA ne parle que de ce qu'elle sait : un civil sans savoir ne parle jamais d'armes ni de groupes armés. Vos textes ne remplacent que sa réplique : ordres, mensonge, peur et papiers suivent les règles.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_IdDone">
+            <Original>Identity: %1. Its papers carry this name.</Original>
+            <English>Identity: %1. Its papers carry this name.</English>
+            <French>Identité : %1. Ses papiers portent ce nom.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_IdHeld">
+            <Original>%1 paper(s) already handed to a player keep the old name.</Original>
+            <English>%1 paper(s) already handed to a player keep the old name.</English>
+            <French>%1 papier(s) déjà remis à un joueur gardent l'ancien nom.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_IdStale">
+            <Original>Papers not updated (setting unticked): they keep the old name.</Original>
+            <English>Papers not updated (setting unticked): they keep the old name.</English>
+            <French>Papiers non mis à jour (réglage décoché) : ils gardent l'ancien nom.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_IdSuggest">
+            <Original>No country set: this name is common in %1. Pick it under Country if it is its country.</Original>
+            <English>No country set: this name is common in %1. Pick it under Country if it is its country.</English>
+            <French>Pays non précisé : ce nom est courant en %1. Choisissez-le dans Pays si c'est le sien.</French>
         </Key>
     </Package>
 </Project>

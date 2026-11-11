@@ -145,6 +145,8 @@ switch (_op) do {
         ["help", ["Intro"]] call comspec_sse_fnc_iarpWorkshop;
     };
     case "onUnload": { uiNamespace setVariable ["comspec_sse_iarpWsDisplay", displayNull]; };
+    // Ligne d'état : identité appliquée, papiers déjà remis à un joueur, pays suggéré (fn_iarpClient « wsNote »).
+    case "note": { _a params [["_txt", ""]]; if (!isNull _d && {_txt isNotEqualTo ""}) then { _txt call _status; }; };
     case "answers": { if (!isNull _d) then { ["open", ["workshop"]] call comspec_sse_fnc_iarpAnswersUi; }; };
     case "current": { if (isNull _d) exitWith { createHashMap }; call _read };
     case "extra": {

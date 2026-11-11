@@ -1,6 +1,6 @@
 /*
     Personnalité et dialogue d'une IA (atelier IA, Eden et Zeus). Champs d'un profil (HashMap) :
-      name        nom RP affiché (vide : nom des papiers)          role  auto | civil | insurge | hvt | agent | policier
+      name        son identité (« Prénom NOM » : papiers, bulles, SEEK ; vide : identité actuelle)          role  auto | civil | insurge | hvt | agent | policier
       nerve talk aggro honesty bribe fear drunk   curseurs 0-100 : nervosité, loquacité, agressivité, honnêteté,
                   corruptibilité, peur de l'autorité, ivresse
       lang        common (comprise de tous) | local (langue du pays, traduite entre crochets)   country  auto | ALT | TNA | LVN | MLD
@@ -27,8 +27,9 @@
       SERVEUR : ["get", unité] -> profil (enregistré, sinon défauts) · ["apply", [unité, profil]] · ["applyRaw", [unité, texte]]
                ["keepOf", unité] -> texte des réponses du maître du jeu et du cadre (« [réponses, evoke, banned] »), "" sans rien
                ["keepApply", [unité, texte]] : remet ce texte dans son profil (« Garder pour les prochaines parties »)
-    Vérité côté serveur : le profil (secrets, renseignement) reste une variable d'unité non diffusée ; seuls le nom RP
-    (comspec_sse_idName) et le profil au contrôle (COMSPEC_ID_Profile, IA réalistes) en sortent.
+    Vérité côté serveur : le profil (secrets, renseignement) reste une variable d'unité non diffusée ; seuls le nom (identité
+    unique, fn_idIdentityOf « set » : COMSPEC_SSE_FirstName / LastName, comspec_sse_idName) et le profil au contrôle
+    (COMSPEC_ID_Profile, IA réalistes) en sortent.
 */
 params [["_op", "", [""]], ["_a", nil]];
 private _keys = ["name", "role", "nerve", "talk", "aggro", "honesty", "bribe", "fear", "drunk", "lang", "country", "story",
@@ -261,18 +262,14 @@ switch (_op) do {
         _g set ["unlock", selectRandom (["trust", "trust", "bribe", "keyword"] + ([[], ["never"]] select (_role in ["insurge", "hvt"])))];
         _g set ["unlockWord", selectRandom (_pl getOrDefault ["unlockWord", ["faucon"]])];
         private _cities = _pl getOrDefault ["cities", ["Kavala"]];
-        private _firsts = ["Nikos", "Yannis", "Eleni", "Dimitri", "Sofia", "Andreas"];
-        private _lasts = ["Karras", "Petrakis", "Galanis", "Stavrou", "Markou", "Doukas"];
-        // Identité SSE chargée : villes et noms du pays des papiers de la mission.
+        // Identité SSE chargée : villes du pays des papiers de la mission.
         if (!isNil "comspec_sse_fnc_idCountries") then {
             private _c = ([] call comspec_sse_fnc_idCountries) getOrDefault [["default"] call comspec_sse_fnc_idCountries, createHashMap];
-            if (_c isEqualType createHashMap) then {
-                if ((_c getOrDefault ["cities", []]) isNotEqualTo []) then { _cities = _c get "cities"; };
-                if ((_c getOrDefault ["first", []]) isNotEqualTo []) then { _firsts = _c get "first"; };
-                if ((_c getOrDefault ["last", []]) isNotEqualTo []) then { _lasts = _c get "last"; };
-            };
+            if (_c isEqualType createHashMap && {(_c getOrDefault ["cities", []]) isNotEqualTo []}) then { _cities = _c get "cities"; };
         };
-        _g set ["name", format ["%1 %2", selectRandom _firsts, toUpper (selectRandom _lasts)]];
+        // Pas de nom tiré ici : le nom (son identité unique, fn_idIdentityOf, celle de ses papiers) reste celui de la fiche.
+        // Un second tirage de nom donnait à l'IA un nom dans la discussion et un autre sur ses papiers.
+        _g set ["name", _b get "name"];
         _g set ["story", format ["Origine : %1%5Métier : %2%5Employeur : %3%5Motif : %4", selectRandom _cities, selectRandom (_pl getOrDefault ["job", ["Chauffeur"]]),
             selectRandom (_pl getOrDefault ["employer", ["Garage du port"]]), selectRandom (_pl getOrDefault ["travel", ["Rendre visite à ma famille"]]), _nl]];
         // Champs verrouillés : repris tels quels du profil de départ.
@@ -295,11 +292,22 @@ switch (_op) do {
         // Mémoire de l'échange (fn_iarpMem) gardée quand le Zeus retouche la même personne (curseurs, réactions, savoir) ;
         // effacée si c'est une autre personne (nom, histoire ou rôle changés) : ce qu'elle a affirmé ne vaut plus.
         private _old = _u getVariable ["comspec_sse_iarpProfile", createHashMap];
+        // Nom laissé vide : son identité actuelle est gardée (même personne, même mémoire).
+        if ((_p get "name") isEqualTo "" && {!isNil "comspec_sse_fnc_idIdentityOf"}) then { _p set ["name", ["full", [_u]] call comspec_sse_fnc_idIdentityOf]; };
         if ((count _old) isEqualTo 0 || {[_old get "name", _old get "story", _old get "role"] isNotEqualTo [_p get "name", _p get "story", _p get "role"]}) then {
             _u setVariable ["comspec_sse_iarpMem", nil];
         };
         _u setVariable ["comspec_sse_iarpProfile", _p];
-        if ((_p get "name") isNotEqualTo "") then { _u setVariable ["comspec_sse_idName", _p get "name", true]; };
+        // Nom donné ici = son identité unique (addon identity, fn_idIdentityOf) : ses papiers, ses bulles, SEEK, les
+        // fichiers portent ce nom. Même nom que l'identité actuelle : rien ne change (pas de nom « donné » par mégarde).
+        if ((_p get "name") isNotEqualTo "") then {
+            if (isNil "comspec_sse_fnc_idIdentityOf") exitWith { _u setVariable ["comspec_sse_idName", _p get "name", true]; };
+            if ((toUpper (trim (_p get "name"))) isNotEqualTo (toUpper (["full", [_u]] call comspec_sse_fnc_idIdentityOf))) then {
+                private _in = createHashMapFromArray [["name", _p get "name"]];
+                if ((_p get "country") isNotEqualTo "auto") then { _in set ["country", _p get "country"]; };
+                ["set", [_u, _in, "workshop"]] call comspec_sse_fnc_idIdentityOf;
+            };
+        };
         // Profil au contrôle des IA réalistes (identité SSE) : repris par fn_idAiBrain, recalculé au prochain contrôle.
         if ((_p get "role") isNotEqualTo "auto") then { _u setVariable ["COMSPEC_ID_Profile", _p get "role"]; _u setVariable ["comspec_sse_idProfile", nil]; };
         true

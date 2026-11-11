@@ -2,9 +2,10 @@
     Nom unique d'une IA (SERVEUR) : ce qu'elle donne (ses papiers, sinon son profil Athena) et qui elle est vraiment.
     Le nom d'unité Arma (« Khrushchev ») n'est jamais présenté comme le nom de l'IA : il est rendu à part (unitName).
     [_unit] call comspec_sse_fnc_aiWho -> HashMap (vide hors serveur ou unité nulle)
-      given      nom donné : « Prénom NOM » imprimé sur sa pièce principale ; sans papier : nom du profil Athena, sinon ""
-      true       vrai nom : vraie identité de la pièce (trueFirst / trueLast) ; sans papier : son identité propre
-                 (fn_idGenerate, tirage reproductible : celle qu'auront ses vrais papiers)
+      given      nom donné : « Prénom NOM » imprimé sur sa pièce principale ; sans papier : son identité unique
+                 (fn_idIdentityOf), sinon le nom du profil Athena qui la deviendra
+      true       vrai nom : vraie identité de la pièce (trueFirst / trueLast) ; sans papier : son identité unique
+                 (fn_idIdentityOf : nom donné par la mission, sinon tirée une fois et gardée ; celle de ses futurs papiers)
       truth      true (identité vraie) · lies (papier vrai d'un autre nom : fausse identité, il ment) · forged (faux
                  papiers) · cover (couverture) · pending (papiers décidés à la première demande) · none (sans papier)
       label      libellé lisible de truth (stringtable de l'éditeur)
@@ -42,12 +43,15 @@ if (_docs isNotEqualTo []) then {
         default { ["true", "lies"] select ((toLower _given) isNotEqualTo (toLower _true)) };
     };
 } else {
-    private _own = [_u] call comspec_sse_fnc_idGenerate;
+    // Sans papier : son identité unique (nom donné, sinon tirée une fois et gardée), celle que porteront ses papiers.
+    private _own = ["get", [_u]] call comspec_sse_fnc_idIdentityOf;
     _true = [_own getOrDefault ["first", ""], _own getOrDefault ["last", ""]] call _full;
+    _given = _true;
     private _pn = _prof getOrDefault ["name", ""];
-    if (_pn isEqualType "" && {_pn isNotEqualTo ""}) then {
+    if (_pn isEqualType "" && {_pn isNotEqualTo ""} && {!(_u getVariable ["COMSPEC_SSE_NameAuthored", false])}) then {
         private _p = _pn splitString " ";
         _given = [_p param [0, ""], (_p select [1, 9]) joinString " "] call _full;
+        _true = _given;
     };
     if (_decided) then { _truth = "none"; };
 };
