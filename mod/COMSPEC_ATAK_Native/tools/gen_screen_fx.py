@@ -92,7 +92,12 @@ def cracks(w, h, seed, cell):
     rng = np.random.default_rng(seed)
     sw, sh = max(8, w // 2), max(8, h // 2)
     n = max(6, int(sw * sh / (cell / 2) ** 2))
+    # Cellules de tailles très inégales (retour : motif de craquelures répété d'une tache à l'autre) : la moitié des
+    # germes au hasard, l'autre moitié serrée autour de quelques foyers ; chaque tache a donc son propre dessin.
     pts = rng.random((n, 2)) * [sw, sh]
+    foyers = rng.random((rng.integers(3, 7), 2)) * [sw, sh]
+    half = n // 2
+    pts[:half] = foyers[rng.integers(0, len(foyers), half)] + rng.normal(0, 0.09 * min(sw, sh), (half, 2))
     yy, xx = np.mgrid[0:sh, 0:sw].astype(np.float32)
     d = np.sqrt((xx[..., None] - pts[:, 0]) ** 2 + (yy[..., None] - pts[:, 1]) ** 2)
     idx = np.argsort(d, axis=2)[..., :2]
@@ -134,32 +139,30 @@ def colorize_blood(mask_img, seed, film=0.55, dry=False, margin=0.03):
     if dry:
         return _dry_rgba(t, cov, thick, seed, film, px)
     clot = gen_dirt.blood_noise(w, h, seed + 3, 5, 1.6)
-    thin_c = np.array([214, 34, 26], np.float32)
-    thick_c = np.array([104, 6, 9], np.float32)
-    rim_c = np.array([72, 10, 7], np.float32)
-    clot_c = np.array([44, 3, 4], np.float32)
-    k = np.clip(thick * 2.0, 0, 1)[..., None]
+    # Retours sur le rendu 4.4 : le bord rouge clair faisait « dessiné » et les reflets ronds et blancs ressemblaient
+    # à des bulles. Le film mince est maintenant un rouge profond qui s'éclaircit seulement par transparence (on voit
+    # l'écran au travers), sans liseré ; le cœur est presque noir.
+    thin_c = np.array([150, 14, 16], np.float32)
+    thick_c = np.array([70, 3, 7], np.float32)
+    rim_c = np.array([58, 6, 6], np.float32)
+    clot_c = np.array([30, 2, 3], np.float32)
+    k = np.clip(thick * 2.2, 0, 1)[..., None] ** 0.8
     col = thin_c * (1 - k) + thick_c * k
-    r = np.clip(ring * 1.3, 0, 1)[..., None]
+    r = np.clip(ring * 0.5, 0, 1)[..., None]
     col = col * (1 - r) + rim_c * r
     cm = smooth(np.clip((clot - 0.68) * 3, 0, 1), 1.2) * np.clip(thick * 1.5, 0, 1)
     col = col * (1 - cm[..., None] * 0.45) + clot_c * (cm[..., None] * 0.45)
     # Reflets humides : pente de l'épaisseur éclairée d'en haut à gauche, à l'intérieur du sang épais seulement.
     core = np.clip((thick - 0.45) * 3, 0, 1)
     gy, gx = np.gradient(smooth(thick, max(2.0, w / 64)))
-    light = np.clip(-(gx * 0.7 + gy * 0.7) * (w / 5), 0, 1) ** 3 * core * 0.4
-    spec = np.zeros_like(t)
-    yy, xx = np.mgrid[0:h, 0:w]
-    # Reflets : plus nombreux sur une grande nappe (un ou deux par zone de 256 px).
-    for _ in range(int(rnd.randint(1, 3) * max(1.0, (w * h / 65536) ** 0.5))):
-        x, y = rnd.uniform(0.1, 0.9) * w, rnd.uniform(0.1, 0.9) * h
-        rr = rnd.uniform(0.006, 0.014) * min(w, h) * (1 + 0.6 * rnd.random())
-        spec += np.exp(-(((xx - x) ** 2 + (yy - y) ** 2) / (2 * rr * rr))) * core
-    gloss = np.clip(light * 0.3 + spec * 0.55, 0, 1)[..., None]
-    col = col * (1 - gloss) + np.array([238, 176, 166], np.float32) * gloss
+    light = np.clip(-(gx * 0.7 + gy * 0.7) * (w / 5), 0, 1) ** 2.2 * core
+    # Reflet du ménisque : fin liseré rosé (jamais blanc) le long du bord bombé tourné vers la lumière, cassé par un
+    # bruit pour ne pas faire un trait continu. Plus aucun reflet rond.
+    gloss = np.clip(light * 0.9 * np.clip((fbm(w, h, seed + 41, 3, 9) - 0.3) * 2.2, 0, 1), 0, 0.42)[..., None]
+    col = col * (1 - gloss) + np.array([226, 128, 118], np.float32) * gloss
     # Opacité : film mince translucide, cœur presque opaque, anneau du bord bien visible.
-    alpha = cov * np.clip(film * 0.8 + (1 - film * 0.8) * np.clip(thick * 1.5, 0, 1) + ring * 0.3, 0, 1)
-    alpha = np.maximum(alpha, gloss[..., 0] * cov)
+    # Bords minces et translucides : l'opacité monte avec l'épaisseur, sans marche au bord.
+    alpha = cov * np.clip(film * 0.5 + (1 - film * 0.5) * np.clip(thick * 1.7, 0, 1) ** 0.85 + ring * 0.08, 0, 1)
     rgba = np.dstack([np.clip(col, 0, 255), alpha * 255]).astype(np.uint8)
     return Image.fromarray(rgba, "RGBA")
 
@@ -169,7 +172,7 @@ def _dry_rgba(t, cov, thick, seed, film, px):
     craquelures et écailles dans les parties épaisses."""
     h, w = t.shape
     ring = np.clip(cov - erode(cov, 2 * px), 0, 1)
-    edge, flake = cracks(w, h, seed + 29, 11 * px)
+    edge, flake = cracks(w, h, seed + 29, (8 + (seed * 7) % 9) * px)
     # Craquelures seulement là où le sang était épais, irrégulières (masquées par un bruit).
     deep = np.clip((thick - 0.55) * 3, 0, 1) * np.clip((fbm(w, h, seed + 31, 3, 4) - 0.35) * 3, 0, 1)
     thin_c = np.array([96, 30, 20], np.float32)
@@ -454,6 +457,10 @@ def blood():
     for kind, fn, n, film in gens:
         for i in range(n):
             m = p2(fn(i))
+            # Grandes taches : masque agrandi deux fois puis remis en couleur à cette taille (le seuil de
+            # colorize_blood redonne un bord net) : nettes en 1440p et 4K, où 256 px s'étalaient sur 800.
+            if kind in ("splat", "hand", "pool", "drag", "arterial", "smear", "spatter") and max(m.size) <= 512:
+                m = m.resize((m.size[0] * 2, m.size[1] * 2), Image.BICUBIC)
             seed = 300 + i * 7 + len(kind)
             save(colorize_blood(m, seed, film), f"bloodc_{kind}_{i}")
             save(colorize_blood(m, seed, film, dry=True), f"bloodd_{kind}_{i}")
