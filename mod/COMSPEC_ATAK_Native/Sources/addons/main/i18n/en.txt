@@ -22570,5 +22570,17 @@
 ["Athena est occupé : réessayez dans une minute.", "Athena is busy: try again in a minute."],
 ["Liaison Athena coupée : rien n'est envoyé.", "Athena link off: nothing is sent."],
 ["Athena ne répond pas : réessayez plus tard.", "Athena is not answering: try again later."],
-["Synchronisation refusée par Athena (%1).", "Sync refused by Athena (%1)."]
+["Synchronisation refusée par Athena (%1).", "Sync refused by Athena (%1)."],
+["+ %1 autres chronos au PC du poste", "+ %1 more timers on the post PC"],
+["AUCUN GROUPE", "NO GROUP"],
+["(sans groupe)", "(no group)"],
+["NŒUDS", "NODES"],
+["anciens", "stale"],
+["perdus", "lost"],
+["demandes des éléments", "requests from elements"],
+["quadrillage %1", "grid %1"],
+["%1 brouilleurs", "%1 jammers"],
+["onglet %1", "tab %1"],
+["Distance d'affichage des écrans TOC (m)", "TOC screen display distance (m)"],
+["Un écran TOC n'est dessiné et rafraîchi que si vous êtes plus près que cette distance, à peu près face à lui et sans mur entre vous. Un peu plus loin, il garde sa dernière image ; au-delà, il se met en veille : ni calcul ni caméra. Les caméras d'écran suivent aussi cette distance. Exemple : 25 m pour une salle d'opérations, 60 m pour un grand écran dehors.", "A TOC screen is drawn and refreshed only when you are closer than this distance, roughly facing it and with no wall in between. A little further away it keeps its last image; beyond that it goes to standby: no computing, no camera. Screen cameras follow this distance too. Example: 25 m for an operations room, 60 m for a big outdoor screen."]
 ]

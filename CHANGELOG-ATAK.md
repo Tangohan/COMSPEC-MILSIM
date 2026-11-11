@@ -38,6 +38,41 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : écrans TOC lisibles, tous les affichages qui marchent, rien de calculé de loin (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Les écrans TOC s'affichent tous, se lisent de loin et ne coûtent rien quand vous n'êtes pas devant
+- Horloge, satellite, escouade, mosaïque de caméras, main courante, liste d'exécution, pertes, demandes, murs d'images et bandeaux s'affichent comme la carte et le flux, sur chaque écran, même à plusieurs dans la salle.
+- Textes plus grands et jamais coupés, carte plus nette cadrée sur votre réseau, avec l'échelle, les villes et des noms qui ne se chevauchent plus. Un écran n'est dessiné que si vous êtes à moins de 25 m et face à lui (réglage « Distance d'affichage des écrans TOC »).
+EN : All TOC screens now show up, read well from a distance and cost nothing when you are not in front of them
+- Clock, satellite, squad, camera mosaic, duty log, execution checklist, casualties, requests, video walls and strips now show up like the map and feed, on every screen, even with several in the same room.
+- Bigger text that is never cut off, a clearer map framed on your network, with a scale bar, towns and labels that no longer overlap. A screen is only drawn when you are within 25 m and facing it ("TOC screen display distance" setting).
+
+### Détail technique
+**Pourquoi seuls certains écrans s'affichaient (4.4.0)**
+- `fn_tocScreen` « load » : le display d'une texture UI allait à l'écran « en attente », pas à celui dont la texture venait de se charger ; une texture ancienne vue après coup donnait son display au mauvais écran (deux écrans sur une image, l'autre noir). Désormais `displayUniqueName` → écran (`COMSPEC_ATAK_TocTexObj`), texture abandonnée ignorée.
+- `fn_tocScreen` « tick » : une seule texture en attente à la fois ; un écran jamais dessiné par le jeu (derrière soi, dalle d'un mur, bandeau) la reprenait toutes les 4 s et bloquait tous les autres. Désormais une texture par écran allumé, demandées ensemble ; échec au bout de 6 s : trace une fois, nouvel essai 4 s plus tard sans bloquer personne.
+- « Écran vu » testé sur l'origine du modèle (`worldToScreen getPosASL`) : au sol pour le trépied, les murs d'images et le 98 pouces, au plafond pour le 65 pouces suspendu ; devant l'image, ce point est hors champ : plus aucun redessin après les 3 premières images (changement d'affichage jamais visible), caméras et satellite jamais lancés. Désormais centre de la boîte du modèle (op « center », aussi pour `fn_tocCam`, et `COMSPEC_ATAK_TocSatSeen` posé par le tick pour `fn_tocSat`).
+- Texte des écrans à la taille d'interface du joueur (`COMSPEC_RscStructuredText` : `0.024 * safeZoneH`) dans des cases de hauteur fixe : RÉSEAU sur trois lignes qui passait sous le tableau, échelle coupée. Nouvelles classes `COMSPEC_RscTocText` / `COMSPEC_RscTocLabel*` à taille fixe (0,0311 = 28 px sur 900).
+
+**Distance d'affichage et coût**
+- Réglage joueur `comspec_atak_native_toc_view_range` (10 à 100 m, 25 par défaut). Allumé : plus près que la distance, à 100° au plus de l'axe de la caméra, pas derrière un mur (`checkVisibility` toutes les 3 s, point à 15 cm devant la dalle, jamais à moins de 5 m) → texture UI, dessin toutes les 1 à 2 s, caméras. Figé (pas regardé, ou jusqu'à distance + 50 %, 10 m au moins) : dernière image gardée, aucun dessin. Veille au-delà : texture d'origine, display abandonné. Retour devant l'écran : image tout de suite (`TocAt` remis, dessin à l'image suivante du chargement).
+- Tick O(écrans proches) : index par cases de 100 m (`COMSPEC_ATAK_TocGrid`), refait quand le nombre d'écrans change ou toutes les 10 s ; seuls les écrans des cases voisines et ceux qui gardent une texture sont parcourus.
+- Caméras d'écran (`fn_tocCam`), satellites (`fn_tocSat`) : seulement les écrans allumés (dans la distance d'affichage et dans `toc_cam_range`, au plus `toc_cam_max`) ; boucle par image des tableaux vivants (`fn_tocBoard` « live ») arrêtée dès que l'écran est figé (`COMSPEC_ATAK_TocOn`).
+
+**Mise en page (pixels virtuels 1600 x 900, texte courant 28 px, ligne 38 à 40 px ; largeur estimée 0,46 x police par caractère, 0,52 en gras)**
+- En-tête : titre 24 → 1084 (44 px, 40 caractères au plus : 40 x 0,5 x 44 = 880), heure 1100 → 1576 (« 12:35Z  01:27  ● RETARD 999 s » : 29 x 0,46 x 32 = 427 px sur 476).
+- CARTE ET FLUX : carte 0 → 1000 x 84 → 900 ; panneau 1012 → 1592. RÉSEAU 92 → 138, quatre compteurs 142 → 226 ((556 - 24) / 4 = 133 px, « hors ligne » 10 x 0,46 x 28 = 129), GROUPES 236 → 278, en-têtes 280 → 314, lignes de 40 px de 318 à 598 (7 lignes, 6 avec le PIP), FLUX 640 → 892 (titre 648, 5 lignes de 38 px de 692 à 882). Colonnes : élément 322 px (23 caractères en 30 px), nœuds 66, grille 156 (6 chiffres : 83 px).
+- FLUX seul : RÉSEAU puis FLUX 240 → 884 (15 lignes, 118 caractères). RÉSEAU seul : 14 lignes de 318 à 878. ORBAT : 2 colonnes de 20 lignes de 34 px (680 sur 744). ESCOUADE : nom 2,2 x 28 = 62 px (17 caractères), compteurs, 12 membres x 34 = 408 + compte rendu 139 = 547 sur 616 ; avec la caméra du chef (556 → 882) : 7 membres (238 sur 280).
+- Carte : symboles 40 px, regroupés par cases de 64 px (110 px au-delà de 3,5 km de demi-largeur) ; plaques posées après les symboles et les puces fixes (échelle, nord, numéros du quadrillage), huit places autour du point, jamais hors du cadre ; en vue d'ensemble ni plaques de marqueurs ni villages. Cadrage automatique : centre médian du réseau, 85 % des nœuds, entre 700 m et 4 km de demi-largeur. Fond : photo `@COMSPEC_ATAK_Photo`, sinon carte d'ensemble assombrie (teinte 0,74 et voile 22 %). Échelle : barre de 80 à 200 px (1, 2 ou 5 x 10ⁿ m) et « 500 m · quadrillage 1 km ». Villes (et villages de près) par `nearestLocations`, gardées tant que le cadrage ne bouge pas.
+- Tableaux (`fn_tocBoard`) : HORLOGE ZULU 168 px, LOCAL 95 px, chronos 60 px (7 sous l'heure, « + n autres » au-delà) ; MAIN COURANTE 20 lignes d'une colonne coupées à 118 caractères ; EXÉCUTION 18 lignes ; PERTES 15 éléments ; DEMANDES 2 x 8 ; bandeau 4:1 (ZULU 8, LOCAL 6, chrono 3,6 / 5 : environ 1 700 px sur 2 048) ; vignettes de mosaïque à 28 px (502 px sur 517 en 3x3).
+
+**Contrôles**
+- Op `["audit"]` (console, joueur ou Zeus) : chaque affichage dessiné dans un display d'essai, chacun dans son propre script ; résultat OK / ERREUR / VIDE / SANS TITRE au journal et dans `uiNamespace` `COMSPEC_ATAK_TocAudit`.
+- Op `["title", affichage]` : titres et libellés communs (en-têtes, menus, notifications du téléphone).
+- Tests : `AtakTocScreenDisplaysAssetTest` (chaque affichage des menus Eden / Zeus / ACE a sa branche de dessin et un titre FR + EN ; distance, index, caméras ; texture rendue à son écran ; tailles fixes), `AtakTocPostTest` mis à jour. Non vérifié en jeu (aucun lancement d'Arma) : rendu réel des tailles, `ctrlTextWidth` dans une texture UI, `displayUniqueName` au chargement.
+
 ## SSE 1.9.0 : IA qui réagissent naturellement, émotions réglables, papiers de 45 pays, une seule identité par IA, outils Zeus refaits (SSE 1.9.0)
 
 ### Résumé joueur
