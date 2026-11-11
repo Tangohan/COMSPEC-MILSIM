@@ -78,6 +78,12 @@ class CfgAmmo {
         comspec_fb_bangs = 9;
         comspec_fb_device = "COMSPEC_FB_Device_9";
     };
+    // GANG BANG BF : 50 détonations (réglage « Autoriser les grenades à plus de 9 flashs »).
+    class COMSPEC_FB_Ammo_50: COMSPEC_FB_Ammo_Base {
+        model = QPATHTOF(data\fb_50_spent.p3d);
+        comspec_fb_bangs = 50;
+        comspec_fb_device = "COMSPEC_FB_Device_50";
+    };
     class COMSPEC_FB_Ammo_Drill: COMSPEC_FB_Ammo_Base {
         model = QPATHTOF(data\fb_drill_spent.p3d);
         comspec_fb_bangs = 1;
@@ -105,5 +111,19 @@ class CfgAmmo {
     FB_AMMO_DELAYS(7,7);
     FB_AMMO_DELAYS(8,8);
     FB_AMMO_DELAYS(9,9);
+    FB_AMMO_DELAYS(50,50);
     FB_AMMO_DELAYS(Drill,drill);
+
+    // Variantes « R » (rafale hyper rapide, ~0,065 s entre les flashs) : COMSPEC_FB_Ammo_<N>_R, N = 2 à 9 et 50.
+#define FB_AMMO_FAST(V) class COMSPEC_FB_Ammo_##V##_R: COMSPEC_FB_Ammo_##V { comspec_fb_rate = 2; }
+    FB_AMMO_FAST(2);
+    FB_AMMO_FAST(3);
+    FB_AMMO_FAST(4);
+    FB_AMMO_FAST(5);
+    FB_AMMO_FAST(6);
+    FB_AMMO_FAST(7);
+    FB_AMMO_FAST(8);
+    FB_AMMO_FAST(9);
+    FB_AMMO_FAST(50);
+
 };

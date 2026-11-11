@@ -19,7 +19,7 @@ if (isServer) then {
 ["comspec_fb_cancel", { _this call comspec_fb_fnc_cancel }] call CBA_fnc_addEventHandler;
 ["comspec_fb_aiRestore", { _this call comspec_fb_fnc_aiRestore }] call CBA_fnc_addEventHandler;
 
-private _cat = "COMSPEC Flashbang";
+private _cat = "COMSPEC Flashbang -BetterFlash-";
 private _add = {
     params ["_name", "_type", "_key", "_sub", "_values", ["_global", 1]];
     [
@@ -58,10 +58,15 @@ private _add = {
 ["comspec_fb_friendly", "CHECKBOX", "Friendly", "Ai", true] call _add;
 // 5. Mèche et détonations
 ["comspec_fb_fuse", "SLIDER", "Fuse", "Timing", [0.5, 4, 1.5, 1]] call _add;
-["comspec_fb_interval", "SLIDER", "Interval", "Timing", [0.2, 1.5, 0.5, 2]] call _add;
+["comspec_fb_interval", "SLIDER", "Interval", "Timing", [0.03, 1.5, 0.5, 2]] call _add;
+["comspec_fb_rateMode", "LIST", "RateMode", "Timing", [[0, 1, 2, 3], [
+    localize "STR_COMSPEC_FB_Rate_Normal", localize "STR_COMSPEC_FB_Rate_Fast", localize "STR_COMSPEC_FB_Rate_Hyper", localize "STR_COMSPEC_FB_Rate_Random"
+], 0]] call _add;
 ["comspec_fb_jitter", "SLIDER", "Jitter", "Timing", [0, 0.3, 0.12, 2]] call _add;
+["comspec_fb_variation", "SLIDER", "Variation", "Timing", [0, 1, 0.6, 0, true]] call _add;
 // 6. Entraînement
 ["comspec_fb_drillPops", "SLIDER", "DrillPops", "Drill", [1, 9, 1, 0]] call _add;
+["comspec_fb_allowBig", "CHECKBOX", "AllowBig", "Timing", true] call _add;
 ["comspec_fb_drillFlash", "CHECKBOX", "DrillFlash", "Drill", false] call _add;
 // Son de la DRILL : valeurs = clés de la table CfgSons.hpp (drillChoix[]), libellés STR_COMSPEC_FB_DrillSound_<clé>.
 private _drillKeys = getArray (configFile >> "COMSPEC_FB_Sons" >> "drillChoix");
@@ -69,11 +74,14 @@ private _drillKeys = getArray (configFile >> "COMSPEC_FB_Sons" >> "drillChoix");
     _drillKeys apply { localize format ["STR_COMSPEC_FB_DrillSound_%1", _x] }, 0]] call _add;
 ["comspec_fb_drillVolume", "SLIDER", "DrillVolume", "Drill", [0.2, 1.5, 1, 0, true]] call _add;
 // 7. Client (propre à chaque joueur)
+["comspec_fb_flames", "LIST", "Flames", "Client", [[0, 1, 2], [
+    localize "STR_COMSPEC_FB_Flames_None", localize "STR_COMSPEC_FB_Flames_Light", localize "STR_COMSPEC_FB_Flames_Strong"
+], 1], 0] call _add;
 ["comspec_fb_quality", "LIST", "Quality", "Client", [[0, 1, 2], [
     localize "STR_COMSPEC_FB_Quality_Low", localize "STR_COMSPEC_FB_Quality_Med", localize "STR_COMSPEC_FB_Quality_High"
 ], 1], 0] call _add;
-["comspec_fb_bangVolume", "SLIDER", "BangVolume", "Client", [0.5, 3, 2, 0, true], 0] call _add;
-["comspec_fb_tinnitusVolume", "SLIDER", "TinnitusVolume", "Client", [0.5, 3, 1.5, 0, true], 0] call _add;
+["comspec_fb_bangVolume", "SLIDER", "BangVolume", "Client", [0.5, 10, 5, 0, true], 0] call _add;
+["comspec_fb_tinnitusVolume", "SLIDER", "TinnitusVolume", "Client", [0.5, 10, 2.5, 0, true], 0] call _add;
 ["comspec_fb_tinnitusSound", "LIST", "TinnitusSound", "Client", [[0, 1], [
     localize "STR_COMSPEC_FB_TinnitusSound_Rec", localize "STR_COMSPEC_FB_TinnitusSound_Synth"
 ], 0], 0] call _add;

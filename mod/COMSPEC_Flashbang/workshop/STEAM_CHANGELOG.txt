@@ -1,29 +1,39 @@
-[h1]COMSPEC Flashbang 1.0.0 — première version : grenades de 1 à 9 flashs, Drill et versions à délai / first release: 1 to 9 flash grenades, Drill and delayed versions[/h1]
+[h1]COMSPEC Flashbang -BetterFlash- 1.0.0 — première version / first release[/h1]
 
 [h2]Français[/h2]
 [list]
-[*] [b]Grenades[/b] : Flash ×1 à Flash ×9, de 1 à 9 flashs à la suite, exactement autant de bangs chez tous les joueurs.
+[*] [b]Grenades[/b] : 1-BANG BF à 9-BANG BF, de 1 à 9 flashs à la suite, exactement autant de bangs chez tous les joueurs.
 [*] [b]Drill[/b] : grenade d'entraînement bleue, un pop et un peu de fumée, aucun effet ; son au choix parmi 8.
-[*] [b]Grenades à délai[/b] : Flash ×N · 3 s / · 8 s et Drill · 3 s / 8 s, et la « Caisse délais ».
+[*] [b]Grenades à délai[/b] : N-BANG BF · 3 s / · 8 s et DRILL BF · 3 s / 8 s, et la « Caisse délais BF ».
 [*] [b]Sons[/b] : bangs forts et réalistes, entendus jusqu'à 250 m (réglable) ; volumes des bangs et de l'acouphène réglables.
 [*] [b]Effets[/b] : écran blanc, tache rémanente, sons étouffés et sifflement qui s'éteint, visée instable ; JVN et lunettes renforcent l'effet.
 [*] [b]Intérieur / extérieur[/b] : plus fort en pièce fermée, bang sourd derrière un mur, aucun éblouissement sans ligne de vue.
 [*] [b]IA[/b] : elle vise mal, hésite et se couvre, puis se reprend.
-[*] [b]Réglages[/b] : 33 réglages CBA, préréglages Réaliste, Arcade et Léger ; journal de diagnostic actif par défaut (lignes [COMSPEC FB] dans le RPT, rien à l'écran).
+[*] [b]GANG BANG BF[/b] : 50 flashs en 15 à 20 s, rafales et pauses, très éprouvant : à utiliser avec parcimonie (réglage « Autoriser les grenades à plus de 9 flashs »).
+[*] [b]Rafales R[/b] : « 2-BANG BF R » … « 9-BANG BF R » et « GANG BANG BF R », flashs hyper rapides (effet stroboscopique) ; réglage « Cadence des flashs » (Normal, Rapide, Hyper rapide, Aléatoire).
+[*] [b]Variation aléatoire[/b] : chaque détonation et chaque victime est un peu différente (lumière, son, blanc, flou, IA), moyenne inchangée.
+[*] [b]Son beaucoup plus fort[/b] : volume 500 % par défaut (jusqu'à 1000 %), couche proche, un seul acouphène continu ; baissez votre casque avant de tester.
+[*] [b]Flammes légères[/b] aux évents (réglable), sans feu ni dégât.
+[*] [b]Réglages[/b] : 37 réglages CBA, préréglages Réaliste, Arcade et Léger ; journal de diagnostic actif par défaut (lignes [COMSPEC FB] dans le RPT, rien à l'écran).
 [*] [b]Serveur[/b] : mod obligatoire chez les joueurs ; sur le serveur, recommandé (Zeus, module Eden, IA du serveur) mais pas obligatoire pour lancer des grenades.
 [*] [b]Missions[/b] : caisse, Arsenal, module Eden, modules Zeus avec ZEN, avec « Délai de mèche » (aucun, 3 s, 8 s, personnalisé). Seul CBA_A3 est requis.
 [/list]
 
 [h2]English[/h2]
 [list]
-[*] [b]Grenades[/b]: Flash ×1 to Flash ×9, 1 to 9 flashes in a row, exactly as many bangs for every player.
+[*] [b]Grenades[/b]: 1-BANG BF to 9-BANG BF, 1 to 9 flashes in a row, exactly as many bangs for every player.
 [*] [b]Drill[/b]: blue training grenade, a pop and a puff of smoke, no effect; choice of 8 sounds.
-[*] [b]Delayed grenades[/b]: Flash ×N · 3 s / · 8 s and Drill · 3 s / 8 s, and the "Delay crate".
+[*] [b]Delayed grenades[/b]: N-BANG BF · 3 s / · 8 s and DRILL BF · 3 s / 8 s, and the "BF delay crate".
 [*] [b]Sounds[/b]: loud, realistic bangs, heard up to 250 m (adjustable); bang and tinnitus volume settings.
 [*] [b]Effects[/b]: white screen, afterimage, muffled sound and fading ringing, unsteady aim; NVG and scopes make it stronger.
 [*] [b]Indoor / outdoor[/b]: stronger in a closed room, dull bang behind a wall, no dazzle without line of sight.
 [*] [b]AI[/b]: it aims badly, hesitates and takes cover, then recovers.
-[*] [b]Settings[/b]: 33 CBA settings, Realistic, Arcade and Light presets; diagnostic log on by default ([COMSPEC FB] lines in the RPT, nothing on screen).
+[*] [b]GANG BANG BF[/b]: 50 flashes over 15 to 20 s, bursts and pauses, very harsh: use sparingly (« Allow grenades with more than 9 flashes » setting).
+[*] [b]R bursts[/b]: « 2-BANG BF R » … « 9-BANG BF R » and « GANG BANG BF R », hyper fast flashes (strobe effect); « Flash rate » setting (Normal, Fast, Hyper fast, Random).
+[*] [b]Random variation[/b]: every detonation and every victim is a little different (light, sound, white-out, blur, AI), same average.
+[*] [b]Much louder sound[/b]: 500 % volume by default (up to 1000 %), close layer, one continuous tinnitus; turn your headset down before testing.
+[*] [b]Light flames[/b] from the vents (adjustable), no fire or damage.
+[*] [b]Settings[/b]: 37 CBA settings, Realistic, Arcade and Light presets; diagnostic log on by default ([COMSPEC FB] lines in the RPT, nothing on screen).
 [*] [b]Server[/b]: the mod is required on players' games; on the server it is recommended (Zeus, Eden module, server AI) but not required for thrown grenades.
 [*] [b]Missions[/b]: crate, Arsenal, Eden module, Zeus modules with ZEN, with "Fuse delay" (none, 3 s, 8 s, custom). Only CBA_A3 is required.
 [/list]

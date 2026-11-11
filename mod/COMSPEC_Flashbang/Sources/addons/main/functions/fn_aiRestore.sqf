@@ -9,6 +9,9 @@ if (count _orig == 6) then {
         _unit setSkill [_x, _orig select _forEachIndex];
     } forEach ["aimingAccuracy", "aimingShake", "aimingSpeed", "spotDistance", "spotTime", "courage"];
 };
+private _pos = _unit getVariable ["comspec_fb_aiPos", ""];
+if (_pos isNotEqualTo "") then { _unit setUnitPos ([_pos, "AUTO"] select (_pos == "Auto")) };
+_unit setVariable ["comspec_fb_aiPos", nil];
 _unit setVariable ["comspec_fb_aiSkills", nil];
 _unit setVariable ["comspec_fb_aiPeak", nil];
 _unit setVariable ["comspec_fb_aiEnd", nil];

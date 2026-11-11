@@ -26,6 +26,9 @@
     class COMSPEC_FB_Device_9: COMSPEC_FB_Device_Base {
         model = QPATHTOF(data\fb_9_spent.p3d);
     };
+    class COMSPEC_FB_Device_50: COMSPEC_FB_Device_Base {
+        model = QPATHTOF(data\fb_50_spent.p3d);
+    };
     class COMSPEC_FB_Device_Drill: COMSPEC_FB_Device_Base {
         model = QPATHTOF(data\fb_drill_spent.p3d);
     };
@@ -43,4 +46,5 @@
     FB_DEVICE_DELAYS(7,7);
     FB_DEVICE_DELAYS(8,8);
     FB_DEVICE_DELAYS(9,9);
+    FB_DEVICE_DELAYS(50,50);
     FB_DEVICE_DELAYS(Drill,drill);

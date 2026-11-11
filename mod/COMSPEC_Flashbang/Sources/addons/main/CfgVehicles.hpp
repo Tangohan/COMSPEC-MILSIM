@@ -1,13 +1,13 @@
 class CfgFactionClasses {
     class COMSPEC_FB {
-        displayName = "COMSPEC Flashbang";
+        displayName = "BetterFlash (COMSPEC)";
         priority = 2;
         side = 7;
     };
 };
 class CfgEditorSubcategories {
     class COMSPEC_FB_Sub {
-        displayName = "COMSPEC Flashbang";
+        displayName = "BetterFlash";
     };
 };
 
@@ -72,7 +72,9 @@ class CfgVehicles {
         category = "COMSPEC_FB";
         function = "comspec_fb_fnc_moduleEden";
         functionPriority = 1;
-        isGlobal = 0;
+        // isGlobal 1 + filtre « logique locale » dans la fonction : en Eden la logique est locale au serveur, posée
+        // en Zeus elle est locale au poste du Zeus : le module s'exécute une seule fois, même sans le mod sur le serveur.
+        isGlobal = 1;
         isTriggerActivated = 1;
         isDisposable = 1;
         is3DEN = 0;
@@ -116,6 +118,20 @@ class CfgVehicles {
                     class D3 { name = "$STR_COMSPEC_FB_Fuse_3"; value = "3"; };
                     class D8 { name = "$STR_COMSPEC_FB_Fuse_8"; value = "8"; };
                     class Custom { name = "$STR_COMSPEC_FB_Fuse_Custom"; value = "custom"; };
+                };
+            };
+            class Rate: Combo {
+                property = "COMSPEC_FB_Module_Rate";
+                displayName = "$STR_COMSPEC_FB_Module_Rate";
+                tooltip = "$STR_COMSPEC_FB_Set_RateMode_Tip";
+                typeName = "NUMBER";
+                defaultValue = "-1";
+                class Values {
+                    class Setting { name = "$STR_COMSPEC_FB_DrillSound_Setting"; value = -1; };
+                    class Normal { name = "$STR_COMSPEC_FB_Rate_Normal"; value = 0; };
+                    class Fast { name = "$STR_COMSPEC_FB_Rate_Fast"; value = 1; };
+                    class Hyper { name = "$STR_COMSPEC_FB_Rate_Hyper"; value = 2; };
+                    class Random { name = "$STR_COMSPEC_FB_Rate_Random"; value = 3; };
                 };
             };
             class FuseCustom: Edit {

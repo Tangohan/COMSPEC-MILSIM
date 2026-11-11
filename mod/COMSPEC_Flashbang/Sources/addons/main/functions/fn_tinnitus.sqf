@@ -1,43 +1,38 @@
 /*
-    comspec_fb_fnc_tinnitus : acouphène du joueur local, UNE seule lecture à la fois.
+    comspec_fb_fnc_tinnitus : acouphène du joueur local, UN seul acouphène continu par train de flashs.
 
-    Le fichier (60 s, table COMSPEC_FB_Sons >> Acouphene) contient déjà la décroissance réaliste :
-    a(t) = 0,6 e^(-t/2,5) + 0,4 e^(-t/20) (aigu fort qui retombe vite, puis traîne lentement). On le joue avec
-    playSoundUI et un « offset » : plus l'exposition est forte, plus on démarre tôt dans le fichier. Un nouveau flash
-    plus fort relance la lecture plus tôt (le bang masque la reprise) ; un flash plus faible ne change rien.
-    Son d'interface (non atténué par l'ouïe étouffée), volume lié à l'intensité. Durée audible bornée par le réglage.
+    Un planificateur par joueur (fn_tinnitusTick, toutes les 0,02 s) enchaîne des segments sonores :
+      attaque (0,5 s, une seule fois au premier flash) -> boucle de 3 s (fichier sans clic, fondus de 30 ms aux bouts,
+      la suivante part 30 ms avant la fin de la précédente : fondu croisé) tant que l'heure de fin n'est pas atteinte
+      -> fin (décroissance de 6 s, une seule fois).
+    Un flash suivant ne relance JAMAIS l'attaque : il reporte l'heure de fin et remonte le niveau cible. Le volume d'un
+    son en cours ne pouvant pas changer, le niveau change à la frontière du segment suivant (volume de la boucle suivante).
+    Niveau : monte au niveau du flash le plus fort, puis retombe (vite les premières secondes, puis lentement) ; durée
+    audible = réglage « Durée max de l'acouphène » x audition^0,6, comptée depuis le DERNIER flash.
     [_audition] call comspec_fb_fnc_tinnitus
 */
 params [["_a", 0, [0]]];
 if (!(missionNamespace getVariable ["comspec_fb_tinnitus", true]) || {_a < 0.05}) exitWith {};
 private _st = comspec_fb_state;
-private _entry = ["Acouphene", "AcoupheneSynth"] select ((missionNamespace getVariable ["comspec_fb_tinnitusSound", 0]) == 1);
-private _cfg = configFile >> "COMSPEC_FB_Sons" >> _entry;
-(getArray (_cfg >> "courbe")) params [["_a1", 0.6], ["_t1", 2.5], ["_a2", 0.4], ["_t2", 20]];
-private _amp = { _a1 * exp (-_this / _t1) + _a2 * exp (-_this / _t2) };
-
-// Niveau actuel (position dans le fichier) et niveau visé.
 private _now = CBA_missionTime;
-(_st getOrDefault ["tinn", [-1, 50, 0, 0]]) params ["_id", "_o0", "_tStart", "_g0"];
-private _p = _o0 + (_now - _tStart);
-private _cur = if (_p >= 48) then { 0 } else { (_p call _amp) * _g0 };
-private _target = (((_cur max _a) + 0.2 * (_cur min _a)) min 1);
-if (_target < _cur + 0.05) exitWith {};
+private _t = _st getOrDefault ["tinn2", createHashMap];
+private _dur = (((missionNamespace getVariable ["comspec_fb_tinnitusMax", 45]) min 58) max 10) * ((_a min 1) ^ 0.6);
+private _end = _now + (_dur max 4);
 
-// Offset tel que a(offset) = niveau visé (dichotomie), borné par la durée maximale réglée.
-private _durMax = ((missionNamespace getVariable ["comspec_fb_tinnitusMax", 45]) min 58) max 10;
-private _lo = 0;
-private _hi = 47;
-for "_k" from 1 to 18 do {
-    private _mid = (_lo + _hi) / 2;
-    if ((_mid call _amp) > _target) then { _lo = _mid } else { _hi = _mid };
+if (count _t == 0 || {_t getOrDefault ["state", ""] == "fini"}) exitWith {
+    _t = createHashMapFromArray [["state", "attaque"], ["peak", _a min 1], ["hit", _now], ["end", _end], ["segEnd", 0],
+        ["ids", []], ["lastLog", _now]];
+    _st set ["tinn2", _t];
+    _t set ["pfh", [comspec_fb_fnc_tinnitusTick, 0.02, []] call CBA_fnc_addPerFrameHandler];
+    ["acouphène", format ["démarrage niveau=%1 fin prévue à t=%2", (_a min 1) toFixed 2, _end toFixed 1]] call comspec_fb_fnc_log;
 };
-private _off = (_lo max (50 - _durMax)) min 47;
-// Gain : compense un départ plus tardif dans le fichier (le fichier part à -6 dBFS crête) ; réglage « Volume de
-// l'acouphène » (150 % par défaut).
-private _gain = (_target / ((_off call _amp) max 0.01)) min 2.5;
-if (_id >= 0) then { stopSound _id };
-private _vol = (_gain * (missionNamespace getVariable ["comspec_fb_tinnitusVolume", 1.5])) min 5;
-private _newId = playSoundUI [getText (_cfg >> "cfgSound"), _vol, 1, false, _off];
-_st set ["tinn", [_newId, _off, _now, _gain]];
-["acouphène", format ["niveau %1 -> %2, offset %3 s, gain %4, volume %5", _cur toFixed 2, _target toFixed 2, _off toFixed 1, _gain toFixed 2, _vol toFixed 2]] call comspec_fb_fnc_log;
+// Train en cours : on prolonge et on remonte le niveau, sans rien relancer.
+private _cur = [_t, _now] call comspec_fb_fnc_tinnitusLevel;
+_t set ["peak", (((_cur max _a) + 0.15 * (_cur min _a)) min 1)];
+_t set ["hit", _now];
+_t set ["end", (_t get "end") max _end];
+if (_t get "state" == "fin") then { _t set ["state", "boucle"] };
+if (_now - (_t getOrDefault ["lastLog", 0]) > 1) then {
+    _t set ["lastLog", _now];
+    ["acouphène", format ["prolongé jusqu'à t=%1 niveau=%2", (_t get "end") toFixed 1, (_t get "peak") toFixed 2]] call comspec_fb_fnc_log;
+};

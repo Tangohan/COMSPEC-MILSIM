@@ -16,5 +16,7 @@
             class _xx_COMSPEC_FB_Flash_8_D8 { magazine = "COMSPEC_FB_Flash_8_D8"; count = 5; };
             class _xx_COMSPEC_FB_Flash_9_D3 { magazine = "COMSPEC_FB_Flash_9_D3"; count = 5; };
             class _xx_COMSPEC_FB_Flash_9_D8 { magazine = "COMSPEC_FB_Flash_9_D8"; count = 5; };
+            class _xx_COMSPEC_FB_Flash_50_D3 { magazine = "COMSPEC_FB_Flash_50_D3"; count = 2; };
+            class _xx_COMSPEC_FB_Flash_50_D8 { magazine = "COMSPEC_FB_Flash_50_D8"; count = 2; };
             class _xx_COMSPEC_FB_Drill_D3 { magazine = "COMSPEC_FB_Drill_D3"; count = 5; };
             class _xx_COMSPEC_FB_Drill_D8 { magazine = "COMSPEC_FB_Drill_D8"; count = 5; };

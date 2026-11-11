@@ -23,6 +23,13 @@ if ((_st getOrDefault ["unit", objNull]) != _unit) then {
     _st set ["unit", _unit];
 };
 private _now = CBA_missionTime;
+// Rafale (flashs à moins de 0,25 s) : effet stroboscopique du blanc pendant le train de flashs.
+private _prevHit = _st getOrDefault ["lastHit", -10];
+if (_now - _prevHit < 0.25) then { _st set ["strobeUntil", _now + 0.3] };
+_st set ["lastHit", _now];
+// Instants pour le journal (premier flash d'un train) : prévu (horloge commune), reçu ici ; l'application à l'écran est
+// notée à l'image suivante.
+if (_now - _prevHit > 1) then { _st set ["hitAt", [_info getOrDefault ["tPlan", -1], call comspec_fb_fnc_clock, diag_tickTime]] };
 private _pd = _info getOrDefault ["durMult", 1];
 private _cap = (missionNamespace getVariable ["comspec_fb_maxStack", 15]) * (_pd max 1);
 
@@ -37,9 +44,22 @@ private _bump = {
     _st set [_ch, [_np, _now + _delay, _nd max 0.3, _hold, _exp, _cur]];
 };
 
+// Hasard de cette détonation (« Variation aléatoire », 60 % : durée du blanc +/-25 %, flou +/-18 % et courbe de
+// retour variable, début de la surdité +/-20 %, teinte du voile) : jamais deux expositions identiques.
+private _rnd = {
+    params ["_a"];
+    1 + ([_a] call comspec_fb_fnc_rand)
+};
+private _kW = [0.42] call _rnd;
+private _kB = [0.3] call _rnd;
+private _kH = [0.33] call _rnd;
+_st set ["blurExp", 1.5 * ([0.3] call _rnd)];
+_st set ["tint", selectRandom [[1, 1, 1], [0.94, 0.97, 1], [1, 0.97, 0.9]]];
+_st set ["phase", [random 6.28, random 6.28, random 6.28, random 6.28]];
+
 // ------------------------------------------------------------------ vision
 if (missionNamespace getVariable ["comspec_fb_flash", true]) then {
-    ["white", _vis, 12 * _pd, 0.12, _cap, 1.3] call _bump;
+    ["white", _vis, 12 * _pd * _kW, 0.12, _cap, 1.3] call _bump;
     if (_info getOrDefault ["optic", false]) then { ["flare", _vis, 3, 0.1, 6, 2] call _bump };
     if (_info getOrDefault ["nvg", false]) then { _st set ["nvgUntil", _now + (8 * _pd * ((_vis min 1.5) ^ 0.6))] };
     // Image rémanente : seulement si le flash était dans le champ de vision et visible directement.
@@ -49,40 +69,53 @@ if (missionNamespace getVariable ["comspec_fb_flash", true]) then {
             && {(_scr select 1) > safeZoneY} && {(_scr select 1) < (safeZoneY + safeZoneH)}) then {
             private _spots = _st getOrDefault ["spots", []];
             private _peak = _vis min 1;
-            private _dur = ((25 * _pd * ((_vis min 1.5) ^ 0.6)) min 45) max 6;
+            private _dur = (((25 * _pd * ((_vis min 1.5) ^ 0.6)) min 45) max 6) * ([0.3] call _rnd);
+            // Dérive lente de la tache dans une direction tirée au hasard, taille variable.
+            private _a = random 360;
+            private _drift = [0.004 * sin _a, 0.004 * cos _a] apply { _x * (missionNamespace getVariable ["comspec_fb_variation", 0.6]) / 0.6 };
             private _i = _spots findIf { ((_x select [0, 2]) distanceSqr _scr) < 0.004 };
             if (_i >= 0) then {
                 private _old = _spots select _i;
                 private _cur = [[_old select 2, _old select 3, _old select 4, 0.03, 1.5], _now] call comspec_fb_fnc_chanValue;
                 _spots set [_i, [_scr select 0, _scr select 1, ((_cur max _peak) + 0.15 * (_cur min _peak)) min 1, _now,
-                    (_dur max (((_old select 3) + (_old select 4)) - _now)) min 45]];
+                    (_dur max (((_old select 3) + (_old select 4)) - _now)) min 45, _drift, [0.3] call _rnd]];
             } else {
                 if (count _spots >= 3) then { _spots deleteAt 0 };
-                _spots pushBack [_scr select 0, _scr select 1, _peak, _now, _dur];
+                _spots pushBack [_scr select 0, _scr select 1, _peak, _now, _dur, _drift, [0.3] call _rnd];
+                // 1 à 3 taches : satellites plus petits et plus faibles autour du point du flash.
+                if (_peak > 0.5 && {count _spots < 3} && {random 1 < 0.6 * (missionNamespace getVariable ["comspec_fb_variation", 0.6])}) then {
+                    private _b = random 360;
+                    _spots pushBack [(_scr select 0) + 0.05 * sin _b, (_scr select 1) + 0.05 * cos _b, _peak * 0.5, _now, _dur * 0.6, _drift, 0.55];
+                };
             };
             _st set ["spots", _spots];
         };
     };
 };
 if (missionNamespace getVariable ["comspec_fb_blur", true]) then {
-    ["blur", _vis * 0.9, 12 * _pd, 0.15, _cap + 5, 1.5] call _bump;
+    ["blur", (_vis * 0.9 * _kB) min 1.2, 12 * _pd * _kW, 0.15, _cap + 5, _st getOrDefault ["blurExp", 1.5]] call _bump;
 };
-["aim", (_vis * 0.9) max (_aud * 0.7), 10 * _pd, 0.3, _cap, 1.5] call _bump;
+["aim", (_vis * 0.9) max (_aud * 0.7), 10 * _pd * ([0.3] call _rnd), 0.3, _cap, 1.5] call _bump;
 
 // ------------------------------------------------------------------ audition
 if (missionNamespace getVariable ["comspec_fb_muffle", true]) then {
-    ["hear", _aud, 35 * _pd, 0.15, 60, 1.6, 0.3] call _bump;
+    // L'ouïe ne s'étouffe qu'après le pic du bang (0,3 s +/-20 %) : le bang lui-même reste entier.
+    ["hear", _aud, 35 * _pd * _kH, 0.15, 60, 1.6, 0.3 * _kH] call _bump;
 };
 [_aud] call comspec_fb_fnc_tinnitus;
 // Souffle de l'onde de pression : secousse brève de la caméra, proportionnelle au bruit reçu.
-if (_aud > 0.1) then { addCamShake [_aud * 4, 0.4 + 0.6 * (_aud min 1), 18] };
+if (_aud > 0.1) then { addCamShake [_aud * 4 * ([0.5] call _rnd), (0.4 + 0.6 * (_aud min 1)) * ([0.4] call _rnd), 14 + random 8] };
 // Désorientation : oscillation lente et décroissante de la vue (vertige), d'autant plus forte que l'exposition l'est.
 private _dis = (_vis max _aud) min 1.2;
-if (_dis > 0.25) then { addCamShake [1.2 + 2.3 * _dis, 4 + 5 * _dis, 1.6] };
+if (_dis > 0.25) then { addCamShake [(1.2 + 2.3 * _dis) * ([0.5] call _rnd), (4 + 5 * _dis) * ([0.3] call _rnd), 1.2 + random 0.8] };
 
-["joueur", format ["vision=%1 audition=%2 dist=%3 angle=%4 nvg=%5 optique=%6 mur=%7", _vis toFixed 2, _aud toFixed 2,
-    (_info get "dist") toFixed 1, (_info getOrDefault ["angle", -1]) toFixed 0, _info getOrDefault ["nvg", false],
-    _info getOrDefault ["optic", false], _info getOrDefault ["blocked", false]]] call comspec_fb_fnc_log;
+// Journal : premier flash d'un train (une ligne, pas une par flash).
+if (_now - _prevHit > 1) then {
+    ["joueur", format ["vision=%1 audition=%2 dist=%3 angle=%4 nvg=%5 optique=%6 mur=%7 tirages : blanc x%8 flou x%9 ouïe x%10 sensibilité x%11", _vis toFixed 2, _aud toFixed 2,
+        (_info get "dist") toFixed 1, (_info getOrDefault ["angle", -1]) toFixed 0, _info getOrDefault ["nvg", false],
+        _info getOrDefault ["optic", false], _info getOrDefault ["blocked", false], _kW toFixed 2, _kB toFixed 2, _kH toFixed 2,
+        (missionNamespace getVariable ["comspec_fb_sens", 1]) toFixed 2]] call comspec_fb_fnc_log;
+};
 
 // ------------------------------------------------------------------ boucle d'effet (une seule)
 if ((_st getOrDefault ["pfh", -1]) < 0) then {

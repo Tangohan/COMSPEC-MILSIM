@@ -10,7 +10,7 @@ Rien dans ce dossier ne publie tout seul. Chaque envoi vers Steam se lance à la
 | Fichier | Rôle |
 |---|---|
 | `STEAM_ITEM_ID` | identifiant de l'objet Workshop, lu par `workshop-pack.ps1` |
-| `STEAM_DESCRIPTION.txt` | description BBCode, FR puis EN (6 132 octets UTF-8, limite Steam 8 000) |
+| `STEAM_DESCRIPTION.txt` | description BBCode, FR puis EN (moins de 8 000 caractères, limite Steam 8 000) |
 | `STEAM_CHANGELOG.txt` | historique ; le premier bloc `[h1]` est la note de version envoyée |
 | `preview.jpg` | image d'aperçu de l'objet, 1280 x 720, sans texte à traduire |
 | `gallery/{fr,en}/fb-NN-*.jpg` | galerie 1920 x 1080 (rendus 3D et schémas, aucune capture du jeu) |
@@ -82,7 +82,7 @@ tools\model_flashbang.py`, puis relancer le script de galerie.
 
 ## Avant la première publication publique
 
-- Noms courts des grenades (« Flash ×1 » … « Flash ×9 », « Drill ») : la description et la note de version les
+- Noms courts des grenades (« 1-BANG BF » … « 9-BANG BF », « GANG BANG BF », « DRILL BF ») : la description et la note de version les
   utilisent. Ils arrivent par la branche `feat/flashbang-delai` ; publier un pack construit avec ces noms, ou
   revenir aux noms longs dans les deux textes.
 - Licence : la ligne « © 2026 COMSPEC, licence COMSPEC : usage personnel depuis ce Workshop ; copie, modification et

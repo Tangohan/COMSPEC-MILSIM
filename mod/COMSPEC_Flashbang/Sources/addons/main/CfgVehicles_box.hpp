@@ -7,4 +7,14 @@
             class _xx_COMSPEC_FB_Flash_7 { magazine = "COMSPEC_FB_Flash_7"; count = 10; };
             class _xx_COMSPEC_FB_Flash_8 { magazine = "COMSPEC_FB_Flash_8"; count = 10; };
             class _xx_COMSPEC_FB_Flash_9 { magazine = "COMSPEC_FB_Flash_9"; count = 10; };
+            class _xx_COMSPEC_FB_Flash_50 { magazine = "COMSPEC_FB_Flash_50"; count = 2; };
             class _xx_COMSPEC_FB_Drill { magazine = "COMSPEC_FB_Drill"; count = 10; };
+            class _xx_COMSPEC_FB_Flash_2_R { magazine = "COMSPEC_FB_Flash_2_R"; count = 2; };
+            class _xx_COMSPEC_FB_Flash_3_R { magazine = "COMSPEC_FB_Flash_3_R"; count = 2; };
+            class _xx_COMSPEC_FB_Flash_4_R { magazine = "COMSPEC_FB_Flash_4_R"; count = 2; };
+            class _xx_COMSPEC_FB_Flash_5_R { magazine = "COMSPEC_FB_Flash_5_R"; count = 2; };
+            class _xx_COMSPEC_FB_Flash_6_R { magazine = "COMSPEC_FB_Flash_6_R"; count = 2; };
+            class _xx_COMSPEC_FB_Flash_7_R { magazine = "COMSPEC_FB_Flash_7_R"; count = 2; };
+            class _xx_COMSPEC_FB_Flash_8_R { magazine = "COMSPEC_FB_Flash_8_R"; count = 2; };
+            class _xx_COMSPEC_FB_Flash_9_R { magazine = "COMSPEC_FB_Flash_9_R"; count = 2; };
+            class _xx_COMSPEC_FB_Flash_50_R { magazine = "COMSPEC_FB_Flash_50_R"; count = 2; };

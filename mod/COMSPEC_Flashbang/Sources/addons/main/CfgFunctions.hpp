@@ -9,6 +9,9 @@ class CfgFunctions {
             class serverDetonate {};
             class serverArea {};
             class serverHasMod {};
+            class plan {};
+            class clock {};
+            class rand {};
             class targets {};
         };
         class detonations {
@@ -29,6 +32,8 @@ class CfgFunctions {
             class playerLoop {};
             class playerReset {};
             class tinnitus {};
+            class tinnitusLevel {};
+            class tinnitusTick {};
             class hearing {};
             class glare {};
             class aiHit {};

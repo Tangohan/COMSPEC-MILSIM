@@ -115,6 +115,17 @@ class CfgMagazines {
         model = QPATHTOF(data\fb_9.p3d);
         ammo = "COMSPEC_FB_Ammo_9";
     };
+    class COMSPEC_FB_Flash_50: COMSPEC_FB_Flash_Base {
+        scope = 2;
+        scopeArsenal = 2;
+        scopeCurator = 2;
+        displayName = "$STR_COMSPEC_FB_Flash_50_Name";
+        displayNameShort = "$STR_COMSPEC_FB_Flash_50_Short";
+        descriptionShort = "$STR_COMSPEC_FB_Flash_50_Desc";
+        picture = QPATHTOF(ui\fb_icon_50_ca.paa);
+        model = QPATHTOF(data\fb_50.p3d);
+        ammo = "COMSPEC_FB_Ammo_50";
+    };
     class COMSPEC_FB_Drill: COMSPEC_FB_Flash_Base {
         scope = 2;
         scopeArsenal = 2;
@@ -147,5 +158,25 @@ class CfgMagazines {
     FB_MAG_DELAYS(Flash_7,7,7);
     FB_MAG_DELAYS(Flash_8,8,8);
     FB_MAG_DELAYS(Flash_9,9,9);
+    FB_MAG_DELAYS(Flash_50,50,50);
     FB_MAG_DELAYS(Drill,Drill,drill);
+
+    // Variantes « R » (rafale hyper rapide) : COMSPEC_FB_Flash_<N>_R, même modèle, icône marquée R.
+#define FB_MAG_FAST(C,A,F) class COMSPEC_FB_##C##_R: COMSPEC_FB_##C { \
+        displayName = QUOTE($STR_COMSPEC_FB_##C##_R_Name); \
+        displayNameShort = QUOTE($STR_COMSPEC_FB_##C##_R_Short); \
+        descriptionShort = QUOTE($STR_COMSPEC_FB_##C##_R_Desc); \
+        picture = QPATHTOF(ui\fb_icon_##F##_r_ca.paa); \
+        ammo = QUOTE(COMSPEC_FB_Ammo_##A##_R); \
+    }
+    FB_MAG_FAST(Flash_2,2,2);
+    FB_MAG_FAST(Flash_3,3,3);
+    FB_MAG_FAST(Flash_4,4,4);
+    FB_MAG_FAST(Flash_5,5,5);
+    FB_MAG_FAST(Flash_6,6,6);
+    FB_MAG_FAST(Flash_7,7,7);
+    FB_MAG_FAST(Flash_8,8,8);
+    FB_MAG_FAST(Flash_9,9,9);
+    FB_MAG_FAST(Flash_50,50,50);
+
 };

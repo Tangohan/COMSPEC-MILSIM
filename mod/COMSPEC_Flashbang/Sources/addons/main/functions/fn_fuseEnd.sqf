@@ -2,7 +2,7 @@
     comspec_fb_fnc_fuseEnd : fin de la mèche (0,25 s avant la 1re détonation), sur la machine du lanceur.
     La grenade a disparu entre-temps (entrée dans un véhicule, supprimée par Zeus, ramassée par un script) :
     rien ne se passe, aucune détonation fantôme. Sinon position, orientation, vitesse et heure prévue de la 1re
-    détonation (CBA_missionTime) partent vers fn_serverDetonate : serveur avec le mod (engin synchronisé), ou ce client
+    détonation (horloge commune comspec_fb_fnc_clock) partent vers fn_serverDetonate : serveur avec le mod (engin synchronisé), ou ce client
     lui-même si le serveur n'a pas le mod. Transport : événements CBA (pas de remoteExec).
 */
 params ["_projectile", "_ammo", "_unit", "_side", ["_tDet", -1]];
