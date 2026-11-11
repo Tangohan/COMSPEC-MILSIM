@@ -109,6 +109,18 @@ LANCER, ARRÊTER, ZÉRO et SUPPRIMER agissent sur le chrono choisi. Les chronos 
 [h3]Barre du haut du PC[/h3]
 Heure ZULU et heure locale, liaison radio (ACRE2 ou TFAR présent, nombre de radios), état du flux. [b]PRENDRE LE POSTE[/b] inscrit votre nom au poste ; [b]FLASH[/b] diffuse le texte tapé à côté en rouge sur tous les écrans et PC du poste du camp pendant 3 minutes.
 
+[h3]La console du PC du poste[/h3]
+Le PC du poste a trois rangées d'onglets. La carte (COP) reste à gauche, sauf en SAT.
+[list]
+[*][b]RADIO[/b] : vos radios ACRE2, une par bloc (canal, fréquences, alternat), voyant RX quand un équipier émet sur sa fréquence, voyant TX quand vous émettez. Avec TFAR : vos radios actives. Le PC ne presse pas l'alternat à votre place : parlez avec votre touche habituelle.
+[*][b]DIFFUSER[/b] : tous les écrans TOC du camp et ce que chacun montre. Choisissez un écran, un contenu (carte, satellite, horloge, escouade, caméra, main courante, diapositives…) puis AFFICHER ; RENOMMER change son nom.
+[*][b]MAIN COURANTE[/b] : le journal du poste en heure ZULU. S'y inscrivent seuls les comptes rendus et alertes reçus, les demandes, les prises de poste, les FLASH, les chronos et les lignes d'exécution passées ; INSCRIRE ajoute une entrée à la main.
+[*][b]EXCHECK[/b] : la liste d'exécution (n°, événement, mot de code, élément, heure prévue, heure réelle). PASSÉ inscrit l'heure ZULU et une entrée à la main courante. La liste se prépare aussi dans le module Écran TOC (Eden ou Zeus) : « Franchissement LD ; ROMEO ; ALPHA ; 22:30 | Objectif pris ; TANGO ; BRAVO ; 23:10 ».
+[*][b]PERTES[/b] : par élément, les amis blessés (homme à terre signalé par le réseau) et tués (porteur d'ATAK tombé), les ennemis neutralisés déclarés par BDA. Rien d'autre n'est compté ; +1 et −1 corrigent à la main.
+[*][b]DEMANDES[/b] : MEDEVAC, appels de feu et ravitaillements envoyés par les téléphones du camp. Choisissez une demande, écrivez une réponse si besoin, puis PRISE EN COMPTE, REFUSÉE ou TERMINÉE : le statut et la réponse arrivent dans le téléphone du demandeur.
+[/list]
+Main courante, liste d'exécution, pertes et demandes ont chacune un affichage d'écran mural (bouton … SUR LES ÉCRANS, ou DIFFUSER).
+
 [h3]Ce qui est sauvegardé[/h3]
 Avec le réglage [b]Garder les écrans TOC[/b] (serveur, activé par défaut), le serveur garde la salle en continu, 3 secondes après chaque changement, et la remet seule à la partie suivante sur la même carte et la même mission :
 [list]
@@ -230,6 +242,18 @@ START, STOP, RESET and REMOVE act on the selected timer. Timers are shared by ev
 
 [h3]Laptop top bar[/h3]
 ZULU and local time, radio link (ACRE2 or TFAR present, number of radios), feed status. [b]TAKE THE POST[/b] signs your name in at the post; [b]FLASH[/b] broadcasts the text typed next to it in red on every post screen and laptop of the side for 3 minutes.
+
+[h3]The post laptop console[/h3]
+The post laptop has three rows of tabs. The map (COP) stays on the left, except in SAT.
+[list]
+[*][b]RADIO[/b]: your ACRE2 radios, one block each (channel, frequencies, PTT), RX light when a teammate transmits on its frequency, TX light when you transmit. With TFAR: your active radios. The laptop does not press push-to-talk for you: talk with your usual key.
+[*][b]CAST[/b]: every TOC screen of the side and what each one shows. Choose a screen, a content (map, satellite, clock, squad, camera, duty log, slides…) then SHOW; RENAME changes its name.
+[*][b]DUTY LOG[/b]: the post log in ZULU time. Reports and alerts received, requests, post sign-ins, FLASH, timers and execution lines passed are entered automatically; ENTER adds a manual entry.
+[*][b]EXCHECK[/b]: the execution checklist (no., event, code word, element, planned time, actual time). PASSED writes the ZULU time and a duty log entry. The list can also be prepared in the TOC screen module (Eden or Zeus): « LD crossed ; ROMEO ; ALPHA ; 22:30 | Objective seized ; TANGO ; BRAVO ; 23:10 ».
+[*][b]CASUALTIES[/b]: per element, friendly wounded (man down reported by the network) and killed (ATAK carrier down), enemies neutralised declared by BDA. Nothing else is counted; +1 and −1 correct by hand.
+[*][b]REQUESTS[/b]: MEDEVAC, calls for fire and resupply sent by the side's phones. Choose a request, type an answer if needed, then ACKNOWLEDGED, REFUSED or COMPLETED: the status and the answer reach the requester's phone.
+[/list]
+Duty log, execution checklist, casualties and requests each have a wall screen display (… ON THE SCREENS button, or CAST).
 
 [h3]What is saved[/h3]
 With the [b]Keep TOC screens[/b] setting (server, on by default), the server saves the room continuously, 3 seconds after each change, and restores it by itself in the next session on the same map and mission:

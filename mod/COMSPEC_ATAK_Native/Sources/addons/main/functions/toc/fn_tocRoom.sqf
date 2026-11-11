@@ -18,7 +18,10 @@
       8 pertes       [[élément, blessés amis, tués amis, ennemis déclarés neutralisés, ennemis déclarés blessés ou capturés]...]
     ]
     Modes :
-      ["init"]                            serveur (fn_tocScreen initServer)
+      ["init"]                            serveur (fn_tocScreen initServer) : aussi les entrées automatiques (comptes rendus,
+                                          alertes, BDA en main courante ; MEDEVAC, appels de feu, ravitaillements en demandes ;
+                                          homme à terre, porteur d'ATAK tué, ennemis neutralisés déclarés par BDA en pertes)
+      ["initClient"]                      client : réponse du poste à une demande, dans le téléphone du demandeur
       ["state", camp]                     partout : état publié (vide si rien)
       ["send", [action, args]]            client : demande au serveur pour son camp (libellé et UID joints)
       ["do", [camp, action, args, libellé, UID]]   serveur
@@ -96,6 +99,73 @@ switch (_mode) do {
         if (missionNamespace getVariable ["COMSPEC_ATAK_TocRoomInit", false]) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_TocRoomInit", true];
         ["comspec_atak_native_tocRoom", { _this call comspec_atak_native_fnc_tocRoom; }] call CBA_fnc_addEventHandler;
+        // Ce que le réseau ATAK apporte au poste (événements de camp relayés par le serveur, rejoués ici) :
+        // main courante, demandes des éléments, pertes et résultats. Rien d'autre n'y entre que ce qui est rapporté.
+        private _elOf = {
+            // Élément (groupe) d'un auteur : joueur par UID, sinon unité du camp par indicatif ou nom ; sinon l'auteur.
+            params ["_side", ["_uid", ""], ["_who", ""]];
+            private _u = objNull;
+            if (_uid isNotEqualTo "") then { _u = (allPlayers select { (getPlayerUID _x) isEqualTo _uid }) param [0, objNull]; };
+            if (isNull _u && {_who isNotEqualTo ""}) then {
+                _u = (allUnits select { (str side group _x) isEqualTo _side && {(name _x) isEqualTo _who || {([_x, true] call comspec_atak_native_fnc_unitCallsign) isEqualTo _who}} }) param [0, objNull];
+            };
+            [groupId group _u, _who] select (isNull _u)
+        };
+        missionNamespace setVariable ["COMSPEC_ATAK_TocElOf", _elOf];
+        ["comspec_atak_native_report", {
+            params [["_r", createHashMap], ["_side", ""]];
+            if !(_r isEqualType createHashMap) exitWith {};
+            ["do", [_side, "log", ["CR", format ["%1 de %2%3", _r getOrDefault ["label", "C.R."], _r getOrDefault ["by", ""], ["", " · grille " + (_r getOrDefault ["grid", ""])] select ((_r getOrDefault ["grid", ""]) isNotEqualTo "")]], "Réseau ATAK", ""]] call comspec_atak_native_fnc_tocRoom;
+        }] call CBA_fnc_addEventHandler;
+        ["comspec_atak_native_alert", {
+            params [["_kind", ""], ["_who", ""], ["_pos", []], ["_grid", ""], ["_txt", ""], ["_side", ""]];
+            if !(_who isEqualType "") then { _who = str _who; };
+            ["do", [_side, "log", ["ALERTE", format ["%1 de %2%3", _kind, _who, ["", " · grille " + _grid] select (_grid isNotEqualTo "")]], "Réseau ATAK", ""]] call comspec_atak_native_fnc_tocRoom;
+            // Blessé signalé par le réseau (homme à terre) : compté à son élément.
+            if (_kind isEqualTo "MAN DOWN") then {
+                ["do", [_side, "kill", [[_side, "", _who] call COMSPEC_ATAK_TocElOf, "wia", 1], "Réseau ATAK", ""]] call comspec_atak_native_fnc_tocRoom;
+            };
+        }] call CBA_fnc_addEventHandler;
+        ["comspec_atak_native_medevac", {
+            params [["_r", createHashMap], ["_side", ""]];
+            if !(_r isEqualType createHashMap) exitWith {};
+            private _n = { private _v = _r getOrDefault [_this, "0"]; if (_v isEqualType "") then { parseNumber _v } else { _v } };
+            ["do", [_side, "reqAdd", ["MEDEVAC", _r getOrDefault ["from", ""], _r getOrDefault ["uid", ""], _r getOrDefault ["grid", ""],
+                format ["Blessés : urgents %1, prioritaires %2, différés %3%4", "t1" call _n, "t2" call _n, "t3" call _n, ["", " · " + (_r getOrDefault ["rem", ""])] select ((_r getOrDefault ["rem", ""]) isNotEqualTo "")],
+                _r getOrDefault ["pos", []]], "Réseau ATAK", ""]] call comspec_atak_native_fnc_tocRoom;
+        }] call CBA_fnc_addEventHandler;
+        ["comspec_atak_native_fsState", {
+            params [["_id", ""], ["_pairs", []], ["_side", ""]];
+            private _m = createHashMapFromArray (_pairs select { _x isEqualType [] && {(count _x) >= 2} });
+            if ((_m getOrDefault ["state", ""]) isNotEqualTo "NEW") exitWith {};
+            ["do", [_side, "reqAdd", ["APPUI FEU", _m getOrDefault ["by", ""], _m getOrDefault ["uid", ""], _m getOrDefault ["grid", ""],
+                format ["Mission de tir : %1 x%2", _m getOrDefault ["ammo", "HE"], _m getOrDefault ["rounds", 1]], _m getOrDefault ["tgt", []]], "Réseau ATAK", ""]] call comspec_atak_native_fnc_tocRoom;
+        }] call CBA_fnc_addEventHandler;
+        ["comspec_atak_native_logi", {
+            params [["_k", ""], ["_side", ""], ["_pairs", []]];
+            if (_k isNotEqualTo "NEW" || {!(_pairs isEqualType [])}) exitWith {};
+            private _m = createHashMapFromArray (_pairs select { _x isEqualType [] && {(count _x) >= 2} });
+            ["do", [_side, "reqAdd", ["RAVITAILLEMENT", _m getOrDefault ["cs", ""], _m getOrDefault ["uid", ""], _m getOrDefault ["grid", ""],
+                format ["%1 x%2%3", _m getOrDefault ["label", ""], _m getOrDefault ["qty", "1"], ["", " · " + (_m getOrDefault ["note", ""])] select ((_m getOrDefault ["note", ""]) isNotEqualTo "")],
+                _m getOrDefault ["pos", []]], "Réseau ATAK", ""]] call comspec_atak_native_fnc_tocRoom;
+        }] call CBA_fnc_addEventHandler;
+        ["comspec_atak_native_bda", {
+            params [["_r", createHashMap], ["_side", ""]];
+            if !(_r isEqualType createHashMap) exitWith {};
+            private _by = _r getOrDefault ["by", ""];
+            private _e = parseNumber (_r getOrDefault ["ekia", "0"]);
+            ["do", [_side, "log", ["BDA", format ["BDA de %1%2", _by, ["", format [" · %1 ennemi(s) neutralisé(s)", _e]] select (_e > 0)]], "Réseau ATAK", ""]] call comspec_atak_native_fnc_tocRoom;
+            // Ennemis déclarés neutralisés par compte rendu (BDA) : comptés à l'élément de l'auteur.
+            if (_e > 0) then { ["do", [_side, "kill", [[_side, "", _by] call COMSPEC_ATAK_TocElOf, "ekia", _e], "Réseau ATAK", ""]] call comspec_atak_native_fnc_tocRoom; };
+        }] call CBA_fnc_addEventHandler;
+        // Porteur d'ATAK tué : son téléphone le signale au réseau (balise perdue avec l'homme) ; compté à son élément.
+        addMissionEventHandler ["EntityKilled", {
+            params ["_u"];
+            if (!(_u isKindOf "CAManBase") || {!([_u] call comspec_atak_native_fnc_hasDevice)}) exitWith {};
+            private _side = str side group _u;
+            if !(_side in ["WEST", "EAST", "GUER", "CIV"]) exitWith {};
+            ["do", [_side, "kill", [groupId group _u, "kia", 1], "Réseau ATAK", ""]] call comspec_atak_native_fnc_tocRoom;
+        }];
         // Opérateur parti : ses satellites et son poste sont libérés.
         addMissionEventHandler ["HandleDisconnect", {
             params ["", "", "_uid"];

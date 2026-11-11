@@ -43,15 +43,15 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : nouveauté
 FR : Une vraie salle d'opérations en jeu
-- **Vue satellite** : un écran TOC peut montrer une vue aérienne en direct (jour, vision nocturne verte ou thermique). Chaque allié équipé d'un ATAK y est encadré avec son indicatif, en gris si sa position n'est plus fraîche.
-- **Pilotage** : au PC du poste (onglet SAT) ou dans l'app Poste TOC, prenez la main sur SAT 1 ou SAT 2, déplacez la vue, zoomez ou suivez un groupe. Les autres écrans affichent « Lecture seule » et le nom de qui pilote.
-- **Horloge et escouades** : un écran affiche l'heure ZULU, l'heure locale et vos chronos (heure H, comptes à rebours). Un autre montre un seul groupe : son nom en grand, ses membres, sa position et son dernier compte rendu.
-- **Plus rien à remonter** : écrans, affichages, satellites et chronos sont gardés en continu. À la partie suivante sur le même serveur, la salle est déjà prête.
+- **Vue satellite** : un écran TOC montre une vue aérienne en direct (jour, vision nocturne ou thermique), chaque allié équipé d'un ATAK encadré avec son indicatif. Pilotez SAT 1 ou SAT 2 depuis l'onglet SAT du PC du poste ou l'app Poste TOC ; les autres écrans affichent « Lecture seule ».
+- **Console du PC du poste** : nouveaux onglets main courante, liste d'exécution, pertes et résultats, demandes des éléments (votre réponse part sur le téléphone du demandeur), chronos, radio et diffusion sur le mur d'écrans. Le bouton FLASH affiche un message en rouge sur tous les écrans du poste.
+- **Écrans du mur** : horloge ZULU et locale avec les chronos, écran d'escouade (un groupe, son nom en grand, ses membres et son dernier compte rendu), main courante, liste d'exécution, pertes et demandes.
+- **Plus rien à remonter** : la salle entière est gardée en continu. À la partie suivante sur le même serveur, elle est déjà prête.
 EN : A real operations room in game
-- **Satellite view**: a TOC screen can show a live aerial view (day, green night vision or thermal). Every ally carrying an ATAK gets a frame with their callsign, in grey when their position is no longer fresh.
-- **Control**: on the post laptop (SAT tab) or in the TOC post app, take control of SAT 1 or SAT 2, move the view, zoom or follow a group. The other screens show « Read only » and who is in control.
-- **Clock and squads**: one screen shows ZULU time, local time and your timers (H-hour, countdowns). Another shows a single group: its name in large letters, its members, its position and its last report.
-- **Nothing to set up again**: screens, displays, satellites and timers are saved continuously. In the next session on the same server, the room is already ready.
+- **Satellite view**: a TOC screen shows a live aerial view (day, night vision or thermal), every ally carrying an ATAK framed with their callsign. Steer SAT 1 or SAT 2 from the SAT tab of the post laptop or the TOC post app; the other screens show « Read only ».
+- **Post laptop console**: new duty log, execution checklist, casualties and results, element requests (your answer goes to the requester's phone), timers, radio and screen wall tabs. The FLASH button shows a message in red on every post screen.
+- **Wall screens**: ZULU and local clock with the timers, squad screen (one group, its name in large letters, its members and its last report), duty log, execution checklist, casualties and requests.
+- **Nothing to set up again**: the whole room is saved continuously. In the next session on the same server, it is already ready.
 
 ### Détail technique
 - `fn_tocRoom` (nouveau) : état du poste par camp tenu par le serveur, variable publique `COMSPEC_ATAK_TocRoom_<camp>` (chronos, satellites, main courante, liste d'exécution, demandes, FLASH, postes, pertes) ; événement `comspec_atak_native_tocRoom`, libération des satellites et du poste à la déconnexion.
@@ -59,6 +59,7 @@ EN : A real operations room in game
 - `fn_tocBoard` (nouveau) : affichages SAT, CLOCK, LOG, EXCHECK, KILLS, REQ dans la texture UI des écrans ; image r2t dans la texture UI, cadres de suivi redessinés 5 fois par seconde. Affichage SQUAD dans `fn_tocScreen` (carte cadrée sur le groupe, panneau du groupe).
 - `fn_tocScreen` : `COMSPEC_ATAK_TocScr` passe à 10 champs (satellite, escouade), écran désigné en cours de partie marqué à recréer, menu ACE « Salle TOC », FLASH en tête des écrans. `fn_tocLaptop` : onglets SAT et CHRONOS, heures ZULU et locale, liaison radio, FLASH, prise du poste. `fn_pageToc` / `fn_tocAction` : satellites et contenu des écrans depuis le téléphone.
 - `fn_tocPersist` : format 2 (écrans avec satellite, escouade, source caméra décrite ; état du poste par camp), écriture 3 s après chaque changement au lieu de 10 s, relevé des positions toutes les 15 s (écran déplacé au Zeus), caméra reprise dès que sa source revient. Module Écran TOC : affichages, satellite, escouade, liste d'exécution préparée (Eden et Zeus).
+- Console du PC (lot « Je veux tout ») : onglets RADIO (radios ACRE2 de l'opérateur par `fn_mpu5`, voyants RX / TX, alternat affiché ; pas de bouton PTT, aucune API publique d'ACRE2 ni de TFAR), DIFFUSER (tous les écrans du camp, contenu et nom), MAIN COURANTE, EXCHECK, PERTES, DEMANDES. Entrées automatiques côté serveur : comptes rendus, alertes et BDA en main courante ; MEDEVAC, appels de feu (`fsState` NEW) et ravitaillements (`logi` NEW) en demandes ; homme à terre (alerte MAN DOWN), porteur d'ATAK tué et ennemis neutralisés déclarés par BDA en pertes. Réponse à une demande : événement `comspec_atak_native_tocReqAnswer` vers le seul demandeur, notification du téléphone.
 - À tester en jeu : image satellite dans la texture UI des écrans, alignement des cadres sur les unités, prise de main à deux PC, reprise de la salle après redémarrage du serveur.
 
 ## Pack 4.3.0 Washington : apps à l'horizontale, carte lisible, drones armés, centre Zeus, IA qui répondent juste, vrais papiers et passage aux fichiers (ATAK natif 4.3.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.7.0)
