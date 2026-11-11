@@ -100,7 +100,8 @@ final class AtakTocScreensPlacementAssetTest extends TestCase
         self::assertNotFalse($at);
         $cls = strpos($mod, 'property = "COMSPEC_ATAK_Module_TocScreen_Class"', $at);
         self::assertNotFalse($cls);
-        $end = strpos($mod, 'class Index', $cls);
+        // Fin de l'attribut « Écran posé » : l'attribut suivant (les attributs sont rangés du plus courant au plus rare).
+        $end = strpos($mod, 'property = "COMSPEC_ATAK_Module_TocScreen_', $cls + 10);
         preg_match_all('/value = "([^"]+)"/', substr($mod, $cls, $end - $cls), $m);
 
         return $m[1];

@@ -87,7 +87,11 @@ EN : ATAK 4.8.0: one table to set up every TOC screen, a broadcast mode with a t
 - **Charge** : voir `docs/TOC-PERF.md` (ce qui tourne selon la distance, retenues ajoutées, ce qui n'est pas fait).
 - Tests : `AtakTocManagerBroadcastAssetTest`, `AtakTocLayoutAssetTest`, `AtakTocAceMenuAssetTest`, `AtakTocTextAspectTest`, `AtakTocTextModuleAssetTest`, `AtakScreenCastSlideValidAssetTest`.
 - Non vérifié en jeu : tout ce qui précède. En particulier la fin du clignotement et du retour à la première personne au Zeus, la fenêtre du tableau (mise en page, Eden), la recopie d'un écran, le rendu des caractères en images.
-- Non fait : aperçus en direct et glisser-déposer dans le tableau, vue de suivi 3D, zoom et calques propres à chaque dalle d'une disposition, blocs blancs sur la carte du PC du poste (`fn_tocLaptop.sqf`, en cours dans une autre branche), paliers de qualité par distance et audit de charge du reste du mod.
+- Contient la 4.7.2 (PC du poste qui s'affiche de nouveau) : `origin/main` fusionnée, version gardée à 4.8.0.
+- Diffusion d'un écran satellite : la dalle qui recopie demande le même rendu satellite que sa source (`fn_tocSat.sqf` « tick ») ; image rafraîchie une fois par seconde quand la source elle-même n'est pas regardée. Une source en vue caméra est recopiée en carte et flux, pas en vidéo.
+- Module Écran TOC : attributs rangés du plus courant au plus rare (écran posé, nom, camp, affichage, poste, puis les réglages propres à un affichage).
+- Non fait : aperçus en direct et glisser-déposer dans le tableau, vue de suivi 3D, zoom et calques propres à chaque dalle d'une disposition, vidéo d'une caméra recopiée par une diffusion, blocs blancs sur la carte du PC du poste (`fn_tocLaptop.sqf`, tenu par la branche de l'app du poste), rectangle clair en haut à gauche de la vue satellite (cause non trouvée : les contrôles du HUD sont seulement créés hors cadre et sans couleur), paliers de qualité par distance et audit de charge du reste du mod.
+
 ## Pack 4.7.2 Washington : le poste TOC sur le PC s'affiche de nouveau (ATAK natif 4.7.2.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 
 ### Résumé joueur

@@ -663,6 +663,11 @@ switch (_mode) do {
         {
             private _o = _x;
             private _c = _o getVariable ["COMSPEC_ATAK_TocScr", []];
+            // Diffusion (fn_tocBroadcast) d'un écran satellite : la dalle qui le recopie demande le même rendu que lui.
+            if ((_c param [3, ""]) isEqualTo "BROADCAST") then {
+                private _bs = ["source", _o] call comspec_atak_native_fnc_tocBroadcast;
+                if (!isNull _bs) then { _c = _bs getVariable ["COMSPEC_ATAK_TocScr", []]; };
+            };
             if ((count _c) >= 8 && {(_c select 3) isEqualTo "SAT"} && {alive _o} && {!(_o getVariable ["COMSPEC_ATAK_TocOff", false])} && {(_eye distance _o) < _range}
                 && {(_c select 1) in ["", _me]}
                 && {(getNumber (configOf _o >> "comspec_projBoard")) < 1 || {_o getVariable ["COMSPEC_ATAK_ProjLit", false]}}
