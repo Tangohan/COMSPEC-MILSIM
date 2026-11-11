@@ -158,7 +158,7 @@ EN : ATAK 4.4.1: TOC screens that show up, a readable laptop and a faithful CLAS
 **Fusion du lot (release/atak-4.4.1)**
 
 - Branches fusionnées : `fix/atak-carte-classique-reglages`, `fix/toc-ecrans-visibles`, `fix/toc-ecrans-rendu`, `fix/toc-pc-ui`, `fix/atak-licence-ouvrir-version`, `fix/atak-mpu5-ui`, `fix/sse-extensions-tuto-vide`, `fix/sse-ia-zone-volets`, `fix/sqf-variables-casse`. Correctifs seuls : CORRECTIF +1 (ATAK natif 4.4.0 → 4.4.1, SSE 1.9.0 → 1.9.1). Link inchangé (2.0.123) : aucune DLL modifiée.
-- `fn_editorAi.sqf` et `fn_tocDraw.sqf` : versions de `fix/sse-ia-zone-volets` et `fix/toc-pc-ui` gardées (les doublons de casse y étaient déjà retirés). Détecteur `tools/sqf_case_shadow_check.py --all` relancé après fusion : `_r` (valeur) écrasait l'aide `_R` dans `fn_tocBoard` (texte gauche / droite, renommés `_txtL` / `_txtR`) et dans `fn_tocScreen` `_place2` (`_rect`) ; 0 BREAKS. Exception temporaire `fn_docExtWindow.sqf` retirée de `tools/sqf_case_shadow_allowlist.txt`.
+- `fn_editorAi.sqf` et `fn_tocDraw.sqf` : versions de `fix/sse-ia-zone-volets` et `fix/toc-pc-ui` gardées (les doublons de casse y étaient déjà retirés). Détecteur `tools/sqf_case_shadow_check.py --all` relancé après fusion : `_r` (valeur) écrasait l'aide `_R` dans `fn_tocBoard` (texte gauche / droite, renommés `_txtL` / `_txtR`) et dans `fn_tocScreen` `_place2` (`_rect`) ; 0 BREAKS. Pour la règle du test `SqfCaseInsensitiveShadowAssetTest` (fichier entier), les autres valeurs `_r` de ces deux fichiers sont devenues `_rv`. Exception temporaire `fn_docExtWindow.sqf` retirée de `tools/sqf_case_shadow_allowlist.txt`.
 
 ## SSE 1.9.0 : IA qui réagissent naturellement, émotions réglables, papiers de 45 pays, une seule identité par IA, outils Zeus refaits (SSE 1.9.0)
 
