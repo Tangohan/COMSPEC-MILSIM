@@ -182,7 +182,7 @@ final class AtakTocSatIsrTest extends TestCase
         self::assertStringContainsString('if (diag_tickTime - (_d getVariable ["COMSPEC_ATAK_HudAt", -1]) < 0.24) exitWith { true };', $board);
         // Résolution : PC 2048 x 1024, écran proche 1024 x 512, plus loin 512 x 256 ; une caméra par satellite et par poste.
         self::assertStringContainsString('[["H", [2048, 1024]], ["M", [1024, 512]], ["L", [512, 256]]]', $sat);
-        self::assertStringContainsString('case ((_e param [7, 0]) > diag_tickTime): { "H" };', $sat);
+        self::assertStringContainsString('private _q = [(_e param [7, 0]) > diag_tickTime, _d, _cur] call _resFor;', $sat);
         self::assertStringContainsString('_max = ((round _max) - count (missionNamespace getVariable ["COMSPEC_ATAK_TocCams", []])) max 0;', $sat);
         // Réalisme : les pistes viennent du réseau ATAK du camp seulement.
         self::assertStringContainsString('} forEach (["targets", _side] call _fn);', $sat);

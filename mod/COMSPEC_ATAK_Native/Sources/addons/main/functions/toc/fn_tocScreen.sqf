@@ -87,7 +87,7 @@ private _fn = comspec_atak_native_fnc_tocScreen;
 private _texW = 1600;
 private _texH = 900;
 private _texSpec = "#(rgb,2048,1024,1)";
-private _views = ["SPLIT", "MAP", "FEED", "NET", "ORBAT", "TOC", "CAM", "SAT", "CLOCK", "SQUAD", "LOG", "EXCHECK", "KILLS", "REQ", "STRIP", "PLATE", "MOSAIC", "TEXT", "BROADCAST", "COLA", "COLB", "COLC", "COLD", "COLE", "COLF"];
+private _views = ["SPLIT", "MAP", "FEED", "NET", "ORBAT", "TOC", "CAM", "SAT", "CLOCK", "SQUAD", "LOG", "EXCHECK", "KILLS", "REQ", "RADIO", "STRIP", "PLATE", "MOSAIC", "TEXT", "BROADCAST", "COLA", "COLB", "COLC", "COLD", "COLE", "COLF"];
 // Formats d'image selon le rapport largeur / hauteur de la dalle (comspec_screenRatio, comspec_screenPanelRatio par dalle,
 // 16:9 sans indication). Une texture procédurale n'est acceptée qu'en puissances de 2 : la texture la plus proche du
 // format est prise (pixels carrés pour 4:1, 8:1 et 16:1 ; 16:9 sur 2:1 et colonne 8:9 sur 1:1, même léger tassement).
@@ -104,7 +104,7 @@ private _formats = [
 // Affichages dessinés en tableau (fn_tocBoard) au lieu de la carte du poste ; STRIP et PLATE : faces 4:1 seulement.
 // Thème TOC (fn_tocTheme, docs/TOC-THEME.md) : seule source des couleurs. _tcol : RGBA d'un jeton ("bg0", "friend"…).
 private _tcol = { params ["_k", ["_al", 1]]; ["rgba", [_k, _al]] call comspec_atak_native_fnc_tocTheme };
-private _boards = ["SAT", "CLOCK", "LOG", "EXCHECK", "KILLS", "REQ", "STRIP", "PLATE", "MOSAIC", "FEED", "NET", "ORBAT", "COLA", "COLB", "COLC", "COLD", "COLE", "COLF"];
+private _boards = ["SAT", "CLOCK", "LOG", "EXCHECK", "KILLS", "REQ", "RADIO", "STRIP", "PLATE", "MOSAIC", "FEED", "NET", "ORBAT", "COLA", "COLB", "COLC", "COLD", "COLE", "COLF"];
 // Dalle d'un mur multi-écrans : objet relais (fn_tocScreen « panels ») qui porte son propre affichage ; l'image va
 // sur la dalle de l'écran hôte (COMSPEC_ATAK_TocHost), à l'index de la dalle.
 private _hostOf = { params ["_o"]; private _h = _o getVariable ["COMSPEC_ATAK_TocHost", objNull]; [_o, _h] select (!isNull _h) };
@@ -896,7 +896,7 @@ switch (_mode) do {
                         // Budget des grands murs : huit images redessinées par tour au plus (les autres au tour suivant) ; la
                         // première image d'un écran passe toujours.
                         private _last = _o getVariable ["COMSPEC_ATAK_TocAt", -10];
-                        private _due = _now - _last >= ([1.9, 0.9] select ((_cfg select 3) in ["CLOCK", "SAT", "STRIP", "MOSAIC", "TEXT", "BROADCAST", "COLA", "COLC", "COLE"]));
+                        private _due = _now - _last >= ([1.9, 0.9] select ((_cfg select 3) in ["CLOCK", "SAT", "STRIP", "MOSAIC", "TEXT", "BROADCAST", "RADIO", "COLA", "COLC", "COLE"]));
                         if (_due && {_drawn < 8 || {_last < 0}}) then {
                             _drawn = _drawn + 1;
                             // Matière jour / nuit suivie (rien ne change tant que le soleil ne passe pas l'horizon).
@@ -1566,7 +1566,7 @@ switch (_mode) do {
             ["NET", ["RÉSEAU", "réseau"]], ["ORBAT", ["ORBAT", "ORBAT du site"]], ["TOC", ["TOC", "PIP du poste"]],
             ["CAM", ["CAMÉRA", "caméra en direct"]], ["SAT", ["SATELLITE", "vue satellite"]], ["CLOCK", ["HORLOGE", "horloge et chronos"]],
             ["SQUAD", ["ESCOUADE", "écran d'escouade"]], ["LOG", ["MAIN COURANTE", "main courante"]], ["EXCHECK", ["EXÉCUTION", "liste d'exécution"]],
-            ["KILLS", ["PERTES ET RÉSULTATS", "pertes et résultats"]], ["REQ", ["DEMANDES", "demandes des éléments"]],
+            ["KILLS", ["PERTES ET RÉSULTATS", "pertes et résultats"]], ["REQ", ["DEMANDES", "demandes des éléments"]], ["RADIO", ["RADIO", "activité radio"]],
             ["STRIP", ["BANDEAU", "bandeau horloge"]], ["PLATE", ["PLAQUE", "plaque de nom"]], ["MOSAIC", ["CAMÉRAS", "mosaïque de caméras"]],
             ["TEXT", ["TEXTE", "texte à LED"]], ["BROADCAST", ["DIFFUSION", "diffusion et mire (BROADCAST)"]], ["COLA", ["HORLOGE", "colonne horloge et chronos"]], ["COLB", ["FLUX", "colonne réseau et flux"]],
             ["COLC", ["CAMÉRAS", "colonne caméras"]], ["COLD", ["MAIN COURANTE", "colonne main courante"]], ["COLE", ["EXÉCUTION", "colonne exécution"]], ["COLF", ["DEMANDES", "colonne demandes et pertes"]]

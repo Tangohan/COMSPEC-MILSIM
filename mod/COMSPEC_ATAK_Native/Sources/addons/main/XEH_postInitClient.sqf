@@ -549,6 +549,9 @@ if (["on"] call comspec_atak_native_fnc_fireSupport) then { ["scan"] call comspe
 ["initClient"] call comspec_atak_native_fnc_tocHall;
 // Salle TOC tenue (4.12.0) : retours des demandes, actions ACE « Poste TOC », diagnostic (fn_tocAccess).
 ["initClient"] call comspec_atak_native_fnc_tocAccess;
+// Activité radio (fn_tocRadio, fn_tocRadioUi) : mon alternat signalé au poste, encadré « Qui parle ». Événements seulement.
+["initClient"] call comspec_atak_native_fnc_tocRadio;
+["initClient"] call comspec_atak_native_fnc_tocRadioUi;
 // Écrans TOC : version du mod du serveur contre celle de ce poste, une ligne au journal à la connexion (fn_tocConfig).
 ["initClient"] call comspec_atak_native_fnc_tocConfig;
 // Écran ou poste PC posé : il se règle tout seul (fn_tocAuto). Le serveur le fait ; serveur plus ancien ou sans le mod : ce poste.

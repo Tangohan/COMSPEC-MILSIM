@@ -75,6 +75,7 @@ if ((count _thm) isEqualTo 0) then {
 ["KILLS", [["kpi", 24, 90, 1552, 72], ["head", 24, 178, 700, 40], ["sub", 724, 182, 852, 36], ["rule", 24, 222, 1552, 1], ["groups", 24, 230, 1552, 36], ["cols", 24, 266, 1552, 36], ["area", 24, 306, 1552, 520]]],
 ["REQ", [["kpi", 24, 90, 1552, 72], ["head", 24, 178, 700, 40], ["sub", 724, 182, 852, 36], ["rule", 24, 222, 1552, 1], ["cols", 24, 230, 1552, 36], ["area", 24, 268, 1552, 560]]],
 ["MOSAIC", [["area", 24, 90, 1552, 746]]],
+["RADIO", [["kpi", 24, 90, 1552, 72], ["live", 24, 174, 1552, 144], ["head", 24, 330, 700, 40], ["sub", 724, 334, 852, 36], ["rule", 24, 374, 1552, 1], ["cols", 24, 382, 1552, 36], ["area", 24, 420, 1552, 400]]],
 ["STRIP", [["zLbl", 48, 40, 640, 48], ["zDig", 48, 100, 660, 160], ["zSub", 48, 284, 640, 48], ["div1", 720, 48, 2, 304], ["lLbl", 760, 40, 350, 48], ["lDig", 760, 112, 360, 136], ["lSub", 760, 284, 350, 48], ["div2", 1140, 48, 2, 304], ["cLbl", 1176, 40, 400, 48], ["cDig", 1176, 120, 400, 100], ["cSub", 1176, 284, 400, 48]]],
 ["PLATE", [["bar", 0, 0, 20, 400], ["name", 72, 40, 1480, 220], ["sub", 72, 280, 1480, 72]]],
 ["COLA", [["zLbl", 24, 24, 752, 36], ["zDig", 24, 64, 752, 150], ["dtg", 24, 222, 752, 36], ["lRule", 24, 274, 752, 1], ["lLbl", 24, 290, 752, 36], ["lDig", 24, 330, 752, 84], ["lDate", 24, 422, 752, 36], ["tHead", 24, 490, 300, 40], ["tSub", 324, 494, 452, 36], ["tRule", 24, 534, 752, 1], ["tArea", 24, 546, 752, 330]]],
@@ -91,7 +92,7 @@ if ((count _thm) isEqualTo 0) then {
 ["SPLIT", ["flux"], ["map", "divider", "grpArea"]], ["TOC", ["flux"], ["map", "divider", "grpArea"]], ["MAP", [], ["map"]],
 ["SQUAD", ["cr", "cam"], ["map", "divider", "memArea", "memAreaCam"]], ["FEED", [], ["area"]], ["NET", [], ["area", "area2"]],
 ["ORBAT", [], ["col1", "col2", "col3"]], ["CLOCK", [], ["divider", "tArea"]], ["LOG", [], ["area"]], ["EXCHECK", [], ["area"]],
-["KILLS", [], ["area"]], ["REQ", [], ["area"]], ["MOSAIC", [], ["area"]]
+["KILLS", [], ["area"]], ["REQ", [], ["area"]], ["MOSAIC", [], ["area"]], ["RADIO", [], ["area"]]
 ];
     // ---- FIN
     // ---- TABLE _cols (JSON) : colonnes [clé, en-tête, x dans le tableau, largeur, L | R | C | P (pastille), style].
@@ -107,6 +108,7 @@ if ((count _thm) isEqualTo 0) then {
 ["KILLS", [["el", "ÉLÉMENT", 0, 600, "L", "bodyBold"], ["wia", "BLESSÉS", 620, 200, "R", "dataBold"], ["kia", "TUÉS", 832, 200, "R", "dataBold"], ["ekia", "NEUTRALISÉS", 1044, 240, "R", "dataBold"], ["ewia", "BLESSÉS / CAPTURÉS", 1296, 256, "R", "dataBold"]]],
 ["KILLS_G", [["f", "AMIS", 620, 412, "R", "caption"], ["e", "ENNEMIS", 1044, 508, "R", "caption"]]],
 ["REQ", [["time", "HEURE", 0, 100, "L", "data"], ["kind", "TYPE", 112, 200, "L", "bodyBold"], ["by", "DEMANDEUR", 324, 230, "L", "body"], ["grid", "GRILLE", 566, 140, "R", "data"], ["text", "DÉTAIL", 724, 640, "L", "body"], ["st", "STATUT", 1376, 176, "P", "body"]]],
+["RADIO", [["dot", "", 0, 16, "C", "body"], ["net", "RÉSEAU", 28, 330, "L", "bodyBold"], ["freq", "FRÉQUENCE", 366, 170, "R", "data"], ["st", "ÉTAT", 556, 200, "P", "body"], ["who", "DERNIER ÉMETTEUR", 776, 330, "L", "body"], ["last", "ENTENDU", 1114, 150, "R", "data"], ["n", "ÉMISSIONS", 1272, 130, "R", "data"], ["occ", "OCCUPATION", 1410, 142, "R", "data"]]],
 ["TIMER", [["name", "", 0, 360, "L", "heading"], ["sub", "", 0, 360, "L", "caption"], ["val", "", 368, 256, "R", "num"]]],
 ["LOG_C", [["time", "", 0, 120, "L", "data"], ["kind", "", 132, 170, "P", "body"], ["who", "", 314, 438, "R", "body"]]],
 ["EXCHECK_C", [["n", "N°", 0, 56, "R", "data"], ["cw", "MOT DE CODE", 72, 268, "L", "bodyBold"], ["at", "PRÉVU", 352, 120, "R", "data"], ["st", "ÉTAT", 488, 264, "P", "body"]]],

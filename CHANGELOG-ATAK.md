@@ -81,6 +81,29 @@ EN : Icon settings now apply to the small phone too
 - Tests : `AtakMapIconScaleTest` (table réglage × taille de la vue, bornes, chemins de dessin sans taille fixe ni lecture directe du réglage).
 
 ---
+## À venir : le TOC voit qui parle sur quelle fréquence (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Le TOC voit qui parle à la radio, et sur quelle fréquence
+- Nouvel affichage « Activité radio » pour les écrans du TOC : l'indicatif de celui qui parle et sa fréquence en grand, puis chaque réseau avec son dernier émetteur, depuis quand il est silencieux et son occupation.
+- Nouvelle console radio (menu d'un écran TOC › Activité radio, ou module Zeus « Activité radio ») : qui émet en ce moment, liste des réseaux à surveiller que vous nommez vous-même (par exemple CMD NET sur 31.000), historique des 50 dernières émissions.
+- Le TOC est prévenu quand deux personnes parlent en même temps sur le même réseau, et quand un réseau de commandement reste muet trop longtemps.
+- Fonctionne avec ACRE2, avec TFAR, et sans mod radio (canaux du jeu). Aucun téléphone ni Athena requis.
+- En option dans les réglages du mod : un petit encadré « Qui parle » à l'écran, pour vos propres réseaux ; les Zeus l'ont d'office.
+EN : The TOC sees who is talking on the radio, and on which frequency
+- New "Radio activity" display for the TOC screens: the callsign of whoever is talking and their frequency in large type, then each net with its last talker, how long it has been silent and how busy it is.
+- New radio console (menu of a TOC screen › Radio activity, or the "Radio activity" Zeus module): who is transmitting right now, a list of nets to watch that you name yourself (for example CMD NET on 31.000), history of the last 50 transmissions.
+- The TOC is told when two people talk at the same time on the same net, and when a command net stays quiet for too long.
+- Works with ACRE2, with TFAR, and without a radio mod (game channels). No phone and no Athena needed.
+- Optional in the mod settings: a small "Who is talking" box on screen, for your own nets; Zeus players get it by default.
+
+### Détail technique
+- Audit : `docs/audit/2026-11-radio-ptt.md`. Modèle `fn_tocRadio` (événements seulement, collecte éteinte tant que personne ne regarde, envois regroupés, état complet à l'abonnement), affichages `fn_tocRadioUi` (affichage `RADIO` des écrans, panneau « mount » pour la console du poste, calque `COMSPEC_RscTitleTocRadioHud`), module `COMSPEC_ATAK_Module_TocRadio`.
+- ACRE2 et TFAR lus par `fn_radioGuard` seulement, aucune dépendance ajoutée. Six réglages CBA (« ATAK · Mode local et poste TOC »).
+- Tests : `tests/Unit/AtakTocRadioAssetTest.php` (calculs rejoués sur la table `_vectors`, branchements, traductions).
+- Non vu en jeu : voir la fin de l'audit.
+
 ## À venir : les caméras IP apparaissent dans Vidéo live et dans le TOC (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -256,6 +279,7 @@ EN : ATAK 4.8.0: one table to set up every TOC screen, a broadcast mode with a t
 
 ### Détail technique
 - **Clignotement** (lecture du code, non reproduit en jeu). Trois bascules sans retenue, toutes dans la boucle des écrans : (1) `fn_tocSat.sqf` « tick » : la caméra du satellite était libérée 3 s après le dernier regard, et « vu » se mesurait sur l'origine du modèle (au sol ou au plafond), d'où « rendu sur ce poste » / « rendu arrêté » en boucle au journal et l'image qui passait par « en attente » au centre ; bail porté à 12 s, mesuré sur le centre de l'image (10 s pour `fn_tocCam`, 8 s pour `fn_tocMosaic`). (2) `fn_tocScreen.sqf` « tick » : un seul contrôle de visibilité raté éteignait l'écran ; il en faut deux de suite. (3) Image jamais chargée : nouvel essai toutes les 10 s sans fin, maintenant 4, 8, 16, 32, 60 s. En plus : une dalle ne peut plus être dessinée par deux inscriptions (`_claimed`), relais en double retirés (« panels »), contrôles du HUD satellite créés hors cadre et sans couleur (`hudMake`).
+- **Vue satellite qui fait saccader le jeu** (lecture du code, non mesuré en jeu) : `fn_tocSat.sqf`, boucle par image du rendu (« make ») : à chaque image du jeu et pour chaque satellite, la visée était recalculée en parcourant tous les nœuds du camp (`aim` puis `targets`, avec une lecture de config par véhicule) ; la scène était rendue une seconde fois en 1024 x 512 (2048 x 1024 pour le PC) ; et `fn_tocBoard.sqf` (« live ») refaisait la texture 2048 x 1024 de chaque écran satellite 6 à 7 fois par seconde avec tout son HUD. Avant la 4.8.0 s'y ajoutait la caméra détruite et recréée à chaque regard. Maintenant : réglage du joueur « Qualité de la vue satellite » (Désactivée, Basse par défaut, Moyenne, Haute ; table `_budget`), image 512 x 256 en Basse, texture de l'écran refaite 2 fois par seconde (5 pour l'écran regardé de près), visée relue 5 fois par seconde, cibles gardées 0,3 s, et une soupape qui double l'intervalle (4 fois au plus, 30 s) quand une image dépasse 4 ms. Le rendu de la caméra elle-même reste fait par le moteur à chaque image : seule sa résolution baisse.
 - **Carte AUCUN SIGNAL** (`fn_tocBroadcast` « signal », « nosig ») : tant que le serveur n'a publié aucun flux pour le camp, carte fixe à la place du contenu ; bascule après 2 images avec flux, 3 sans.
 - **Module réutilisé** : `fn_moduleTocScreen.sqf` prenait pour objet visé l'objet le plus proche à moins de 3 m (`fn_moduleContext` « near »), donc l'écran posé juste avant, et ouvrait la fenêtre sur « Retirer » (`["add", "remove"] select …`). L'objet visé est maintenant celui sous le module seulement, l'action proposée est toujours « désigner ou régler », « Retirer » se choisit, et une action pose un nouvel écran à côté. Noms rendus uniques (`fn_tocManager` « uniqueName », « uniqueHall »).
 - **Tableau des écrans** (`fn_tocManager`, module `COMSPEC_ATAK_Module_TocManager`, menu Eden COMSPEC ATAK > TBE) : même fenêtre sur les displays 313, 312 et 46 ; une ligne par dalle ; plan du mur cliquable ; sources par format de dalle ; portée d'application (dalle, lignes cochées, salle, tout) ; génération de salle et de flux ; dispositions (`fn_tocLayout`, 12 dispositions, colonnes COLC à COLF pour l'écran incurvé) ; préréglages dans le profil. Dans Eden, il écrit les attributs des objets.

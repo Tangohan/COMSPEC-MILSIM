@@ -1807,6 +1807,51 @@
             <English>Broadcast and test card (BROADCAST)</English>
             <French>Diffusion et mire (BROADCAST)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_RADIO">
+            <Original>Radio activity (who talks, on which frequency)</Original>
+            <English>Radio activity (who talks, on which frequency)</English>
+            <French>Activité radio (qui parle, sur quelle fréquence)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCRADIO_NAME">
+            <Original>ATAK · Radio activity</Original>
+            <English>ATAK · Radio activity</English>
+            <French>ATAK · Activité radio</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCRADIO_DESC">
+            <Original>Zeus: opens the radio activity board, which shows who is transmitting, on which net and which frequency, for every side. It places nothing and can be used as often as needed. Eden: sets the watch list of one side at mission start. Example: CMD NET=31.000*, AIR=40.500.</Original>
+            <English>Zeus: opens the radio activity board, which shows who is transmitting, on which net and which frequency, for every side. It places nothing and can be used as often as needed. Eden: sets the watch list of one side at mission start. Example: CMD NET=31.000*, AIR=40.500.</English>
+            <French>Zeus : ouvre le tableau de l&apos;activité radio, qui montre qui émet, sur quel réseau et quelle fréquence, pour tous les camps. Il ne pose rien et se réutilise autant de fois qu&apos;on veut. Eden : pose la liste de veille d&apos;un camp au lancement de la mission. Exemple : CMD NET=31.000*, AIR=40.500.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCRADIO_S_NAME">
+            <Original>Side</Original>
+            <English>Side</English>
+            <French>Camp</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCRADIO_S_TIP">
+            <Original>Side whose TOC gets this watch list. Example: BLUFOR.</Original>
+            <English>Side whose TOC gets this watch list. Example: BLUFOR.</English>
+            <French>Camp dont le poste reçoit cette liste de veille. Exemple : BLUFOR.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCRADIO_S_GUER">
+            <Original>Independent</Original>
+            <English>Independent</English>
+            <French>Indépendants</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCRADIO_S_CIV">
+            <Original>Civilian</Original>
+            <English>Civilian</English>
+            <French>Civils</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCRADIO_N_NAME">
+            <Original>Watched nets</Original>
+            <English>Watched nets</English>
+            <French>Réseaux surveillés</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCRADIO_N_TIP">
+            <Original>Nets the TOC of this side watches, separated by commas: name=frequency in MHz, or the frequency alone. A star at the end asks for regular radio checks (silence alert). Example: CMD NET=31.000*, AIR=40.500, 152.250. Empty: the server setting applies.</Original>
+            <English>Nets the TOC of this side watches, separated by commas: name=frequency in MHz, or the frequency alone. A star at the end asks for regular radio checks (silence alert). Example: CMD NET=31.000*, AIR=40.500, 152.250. Empty: the server setting applies.</English>
+            <French>Réseaux que veille le poste de ce camp, séparés par des virgules : nom=fréquence en MHz, ou la fréquence seule. Une étoile à la fin demande un contrôle radio régulier (alerte de silence). Exemple : CMD NET=31.000*, AIR=40.500, 152.250. Vide : le réglage du serveur s&apos;applique.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCTXT_NAME">
             <Original>ATAK · Show a text</Original>
             <English>ATAK · Show a text</English>

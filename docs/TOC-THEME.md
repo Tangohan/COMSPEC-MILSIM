@@ -92,6 +92,9 @@ dalle ; 16:9 sans indication). Table `_formats` de `fn_tocScreen.sqf` (`["format
 | au-delà (16:1) | `LED` | 4096 x 256 (2048 x 128 si elle n'est pas chargée) | `TEXT` |
 
 Une texture procédurale n'est acceptée qu'en puissances de 2 : un bandeau de 12:1 serait tassé ou étiré, d'où le 16:1.
+Affichage `RADIO` (activité radio, `fn_tocRadioUi` « wall ») : régions `kpi`, `live` (émission en cours, indicatif et
+fréquence en grand), `head`, `sub`, `rule`, `cols`, `area` dans `_walls` ; colonnes `RADIO` dans `_cols`. Audit :
+`docs/audit/2026-11-radio-ptt.md`.
 Colonnes `COLA` à `COLF` : 800 x 900 pixels virtuels, régions dans `_walls`, ni en-tête ni pied.
 
 | Colonne | Contenu | Régions (`_walls`) | Colonnes (`_cols`) |

@@ -79,8 +79,18 @@ switch (_mode) do {
                 missionNamespace setVariable ["COMSPEC_ATAK_TocBoardPfh", nil];
             };
             {
-                // Satellite : cadres repris, redessin seulement si l'image est rendue ici ; vidéo : redessin simple.
-                if (((((_x select 0) getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isNotEqualTo "SAT") || {["overlay", _x] call comspec_atak_native_fnc_tocBoard}) then { displayUpdate (_x select 1); };
+                // Vidéo (mosaïque, caméra du chef) : redessin simple. Satellite : à la cadence de la qualité choisie
+                // (fn_tocSat « interval » : 2 images par seconde en qualité basse, 5 pour l'écran regardé de près),
+                // cadres repris et redessin seulement si l'image est rendue ici ; le coût de l'image est mesuré (« cost »).
+                _x params ["_lo", "_ld"];
+                if (((_lo getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isNotEqualTo "SAT") then { displayUpdate _ld; } else {
+                    if (diag_tickTime - (_ld getVariable ["COMSPEC_ATAK_SatAt", -1e9]) >= (["interval", _lo] call comspec_atak_native_fnc_tocSat)) then {
+                        _ld setVariable ["COMSPEC_ATAK_SatAt", diag_tickTime];
+                        private _lt0 = diag_tickTime;
+                        if (["overlay", _x] call comspec_atak_native_fnc_tocBoard) then { displayUpdate _ld; };
+                        ["cost", diag_tickTime - _lt0] call comspec_atak_native_fnc_tocSat;
+                    };
+                };
             } forEach _l;
         }, 0.15] call CBA_fnc_addPerFrameHandler];
     };
@@ -429,7 +439,10 @@ switch (_mode) do {
                 (_ui get "strip") ctrlSetStructuredText parseText ((format ["<t size='1.15'>  <t color='@amber'>Lecture seule</t><t color='@text2'> · %1</t></t><t size='1.15' align='right' color='@muted'>%2  </t>", [[["label", [_side, _n]] call comspec_atak_native_fnc_tocSat, 70] call _cut] call _esc, [[_label, 16] call _cut] call _esc] call comspec_atak_native_fnc_tr) call _ink);
                 (_ui get "wait") ctrlShow (_tex isEqualTo "");
                 if (_tex isEqualTo "") then {
-                    (_ui get "wait") ctrlSetStructuredText parseText (("<t align='center' size='1.6' color='@text'>Image satellite en attente</t><br/><t align='center' size='1' color='@muted'>Approchez-vous de l'écran : l'image n'est rendue qu'aux joueurs proches qui le regardent</t>" call comspec_atak_native_fnc_tr) call _ink);
+                    // Vue satellite désactivée par le réglage du joueur : l'écran le dit, sans rien rendre.
+                    private _waitTxt = ["<t align='center' size='1.6' color='@text'>Image satellite en attente</t><br/><t align='center' size='1' color='@muted'>Approchez-vous de l'écran : l'image n'est rendue qu'aux joueurs proches qui le regardent</t>",
+                        "<t align='center' size='1.6' color='@text'>Vue satellite désactivée</t><br/><t align='center' size='1' color='@muted'>Réglage du joueur : Qualité de la vue satellite</t>"] select ((["quality"] call comspec_atak_native_fnc_tocSat) isEqualTo 0);
+                    (_ui get "wait") ctrlSetStructuredText parseText ((_waitTxt call comspec_atak_native_fnc_tr) call _ink);
                 };
                 ["overlay", [_o, _d]] call _fn;
                 if (_tex isNotEqualTo "") then { ["live", [_o, _d]] call _fn; };
@@ -538,6 +551,10 @@ switch (_mode) do {
                 private _per = floor ((("area" call _rg) select 3) / 40);
                 ["NET", "cols" call _rg, "area" call _rg, _rows select [0, _per], ""] call _table;
                 ["NET", "cols2" call _rg, "area2" call _rg, _rows select [_per], "+ %1 autres"] call _table;
+            };
+            case "RADIO": {
+                // Activité radio (fn_tocRadioUi « wall ») : qui parle, sur quel réseau, quelle fréquence ; dessiné avec les outils d'ici.
+                ["wall", [_side, createHashMapFromArray [["text", _text], ["box", _box], ["tiles", _tiles], ["section", _sectionW], ["table", _table], ["rg", _rg]]]] call comspec_atak_native_fnc_tocRadioUi;
             };
             case "ORBAT": {
                 // ORBAT du site sur trois colonnes, par pages (10 s), chaque membre avec son état.
