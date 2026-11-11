@@ -8,6 +8,9 @@
 // (panel1 en haut à gauche) ; chaque index reçoit sa propre image (fn_tocScreen « paint » / « surface » par dalle).
 // Bandeau horloge et plaque de nom : face 4:1 (comspec_screenRatio), sélection « screen », hors liste des écrans TOC
 // (une carte 16:9 y serait écrasée), contenu posé par d'autres affichages.
+// Point du menu ACE : centre de la boîte du modèle (fn_tocConfig « acePos »), jamais une position écrite à la main
+// (pas de point mémoire dans ces modèles ; origine au sol ou au plafond). Toute classe héritée de la base l'a donc,
+// bandeau et plaque compris, avec les attributs Eden (COMSPEC_SCREEN_ATTRIBUTES).
 #define COMSPEC_TOC3D_MAT "\z\comspec_atak_native\addons\main\data\toc\toc_glass_off.rvmat"
 #define COMSPEC_TOC3D_OFF "#(argb,8,8,3)color(0,0,0,1,co)"
 // side=3 obligatoire : Static hérite de All (side=4, camp « inconnu ») et Eden comme Zeus ne listent que les objets
@@ -23,7 +26,7 @@ class COMSPEC_ATAK_Screen_Base3D: Static {
     hiddenSelections[]={"screen"};
     hiddenSelectionsTextures[]={COMSPEC_TOC3D_OFF};
     hiddenSelectionsMaterials[]={COMSPEC_TOC3D_MAT};
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="[0, 0.2, 1.6]"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_Wall2x2: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -72,7 +75,6 @@ class COMSPEC_ATAK_Screen_98_Stand: COMSPEC_ATAK_Screen_98 {
     model="\z\comspec_atak_native\addons\main\data\toc\toc_98_stand.p3d";
     editorPreview="\z\comspec_atak_native\addons\main\data\toc\toc_98_stand_preview.jpg";
     ace_dragging_canDrag=1; ace_dragging_dragPosition[]={0,1.6,0}; ace_dragging_dragDirection=0;
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="[0, 0.2, 1.4]"; }; };
 };
 class COMSPEC_ATAK_Screen_65_Ceiling: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -80,7 +82,6 @@ class COMSPEC_ATAK_Screen_65_Ceiling: COMSPEC_ATAK_Screen_Base3D {
     displayName="$STR_COMSPEC_ATAK_CFG_TOC3D_65C";
     model="\z\comspec_atak_native\addons\main\data\toc\toc_65_ceiling.p3d";
     editorPreview="\z\comspec_atak_native\addons\main\data\toc\toc_65_ceiling_preview.jpg";
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="[0, 0.1, -1.1]"; }; };
 };
 class COMSPEC_ATAK_Screen_ClockStrip: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -88,7 +89,7 @@ class COMSPEC_ATAK_Screen_ClockStrip: COMSPEC_ATAK_Screen_Base3D {
     model="\z\comspec_atak_native\addons\main\data\toc\toc_clock_strip.p3d";
     editorPreview="\z\comspec_atak_native\addons\main\data\toc\toc_clock_strip_preview.jpg";
     comspec_screenRatio=4;
-    class ACE_Actions {};
+    COMSPEC_SCREEN_ATTRIBUTES;
 };
 class COMSPEC_ATAK_Screen_NamePlate: COMSPEC_ATAK_Screen_ClockStrip {
     displayName="$STR_COMSPEC_ATAK_CFG_TOC3D_PLT";

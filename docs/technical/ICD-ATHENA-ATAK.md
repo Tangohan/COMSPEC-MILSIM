@@ -724,3 +724,9 @@ Lecture par clé de jeu (`requireTenant`), limitée au tenant de la clé. Le con
 - Écriture par la gestion de la communauté ; texte brut, sans HTML. Plafonds côté site et côté jeu : 40 notes, titre de 60 et texte de 600 caractères, 40 lignes de kit.
 - Côté jeu : commande `GetCommunityBrief` de COMSPEC Link, appelée par `fn_tenantAction` « briefLoad » avec `extAwait`, 5 min au plus entre deux lectures. Réponse : `OK|` puis une ligne par entrée, `N\tgenre\ttitre\ttexte` ou `K\tclasses,séparées\tnombre\tlibellé`.
 - Priorité du kit : mission (`COMSPEC_ATAK_RequiredKit`), puis Athena, puis le réglage `comspec_atak_native_kit_required`.
+
+## Poste TOC web : salle du camp et plans (`POST /api/atak/briefing-plan`, canal `toc_room` ; commandes web genre `toc`)
+
+- Jeu vers site : le mod (`fn_tocWeb`) envoie l'instantané de la salle TOC d'un camp par la commande COMSPEC Link existante `BriefingPlan.Push`, avec `"channel": "toc_room"`, `side`, `mapId`, `mission_key`, `world`, `rev`, `wc` (ids des commandes web appliquées) et `room` (chronos, main courante, EXCHECK, demandes, FLASH, postes, pertes, satellites, écrans, heure locale). Sans UID de joueur. Une révision plus ancienne de la même mission est ignorée.
+- Site vers jeu : file `atak_web_commands`, genre `toc`, cible `*`, argument `s` = camp ; commandes `timeradd`, `timerstart`, `timerstop`, `timerreset`, `timerdel`, `log`, `flash`, `flashclear`, `exadd`, `exdone`, `exundo`, `exdel`, `reqset`, `kill`, `plnclr`, `plnadd`. Fil ASCII de 480 caractères au plus.
+- Détail, règle d'autorité et correspondance des types de plan : `docs/TOC-WEB.md`.

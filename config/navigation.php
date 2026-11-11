@@ -139,6 +139,8 @@ return [
                     'links' => [
                         ['label' => 'Tous mes outils', 'path' => 'operateur', 'active_match' => 'exact', 'description' => 'La page des outils opérateur : identité, papiers, couverture, fichiers, matériel'],
                         ['label' => 'Situation tactique (ATAK web)', 'path' => 'atak', 'active_match' => 'exact', 'description' => 'Carte, positions et comptes rendus de la mission, comme sur le téléphone'],
+                        ['label' => 'Poste TOC', 'path' => 'atak/toc', 'active_match' => 'exact', 'any_permissions' => ['atak.toc.use', 'atak.toc.manage', 'admin.organization'], 'description' => 'La console du poste de commandement, comme le PC du poste en jeu'],
+                        ['label' => 'Plans d’opération', 'path' => 'atak/toc/plans', 'any_permissions' => ['atak.toc.use', 'atak.toc.manage', 'admin.organization'], 'description' => 'Préparer un plan sur la carte, le briefer par phases, l’envoyer en jeu'],
                         ['label' => 'Lier mon ATAK', 'path' => 'lier', 'description' => 'Relier le téléphone du jeu à votre compte Athena'],
                         ['label' => 'Mon matériel', 'path' => 'equipment?espace=materiel', 'description' => 'Vos tenues, kits et fiches matériel'],
                     ],

@@ -62,6 +62,10 @@
       ["show", [objet, contenu]]           contenu choisi depuis le téléphone ou le PC : affichage, ou "SLIDES" (diapositives)
       ["center", objet]                    centre de l'image (ASL), pour savoir si l'écran est vu (fn_tocCam aussi)
       ["title", affichage]                 [mot d'en-tête, libellé des menus] ; "" : table de tous les affichages
+      ["views"]                            liste ordonnée des affichages (fenêtre Zeus et attributs Eden : fn_tocConfig)
+    Serveur plus ancien que le joueur, ou sans le mod (fn_tocConfig « local ») : « add », « panels », « remove »,
+    « spawn » et « view » se font sur le poste du joueur, par les mêmes variables publiques ; rien n'est alors gardé
+    par le serveur. COMSPEC_ATAK_TocOpt [luminosité, distance d'affichage] : réglages de l'écran lus par « tick ».
       ["audit"]                            contrôle de chaque affichage dans un display d'essai (journal, COMSPEC_ATAK_TocAudit)
       ["build", display] / ["draw", [objet, display]]   contrôles de la carte du poste / dessin d'une image
     Rendu (1 à 2 s, écran allumé) : mise en page en pixels virtuels 1600 x 900, polices fixes (28 px pour le texte courant,
@@ -217,6 +221,7 @@ switch (_mode) do {
         ["init"] call comspec_atak_native_fnc_tocFeed;
         ["init"] call comspec_atak_native_fnc_tocRoom;
         ["init"] call comspec_atak_native_fnc_tocHall;
+        ["initServer"] call comspec_atak_native_fnc_tocConfig;
         // Écrans gardés de la partie précédente : remis une fois les modules Eden passés.
         [{ ["restore"] call comspec_atak_native_fnc_tocPersist; }, [], 3] call comspec_atak_native_fnc_waitAndExec;
         true
@@ -278,8 +283,18 @@ switch (_mode) do {
     };
     case "add": {
         _a params [["_o", objNull], ["_name", ""], ["_side", ""], ["_sel", 0], ["_view", "SPLIT"], ["_toc", true], ["_spawned", false], ["_slot", -1], ["_squad", nil]];
-        if (isNull _o) exitWith { false };
-        if (!isServer) exitWith { ["comspec_atak_native_tocScreen", ["add", _a]] call CBA_fnc_serverEvent; true };
+        // Objet inconnu de ce serveur (classe absente d'un mod plus ancien) : dit au journal, plus jamais muet.
+        if (isNull _o) exitWith {
+            if (isDedicated) then { ["WARNING", "TOC", "Écran TOC : désignation demandée pour un objet inconnu de ce serveur (mod du serveur plus ancien que celui du joueur ?)"] call comspec_atak_native_fnc_log; };
+            false
+        };
+        // Serveur à jour : il désigne, et le joueur vérifie 3 s plus tard que c'est fait (« ack »). Serveur ancien ou
+        // sans le mod : le joueur désigne lui-même (fn_tocConfig « local »), avec la raison au téléphone.
+        if (!isServer && {!(["local", _o] call comspec_atak_native_fnc_tocConfig)}) exitWith {
+            ["comspec_atak_native_tocScreen", ["add", _a]] call CBA_fnc_serverEvent;
+            ["ack", [_o, "toc", _a]] call comspec_atak_native_fnc_tocConfig;
+            true
+        };
         if (_name isEqualTo "") then { _name = "TOC"; };
         private _old = [_o] call _cfgOf;
         if !(_view in _views) then {
@@ -319,7 +334,7 @@ switch (_mode) do {
         // écran ordinaire). Réglage des dalles : COMSPEC_ATAK_TocPanelCfg [[affichage, satellite, escouade, caméra]...]
         // (module, sauvegarde) ; sinon carte et flux.
         private _h = _a;
-        if (!isServer || {isNull _h}) exitWith { [] };
+        if (isNull _h || {!isServer && {!(["local", _h] call comspec_atak_native_fnc_tocConfig)}}) exitWith { [] };
         private _n = getNumber (configOf _h >> "comspec_screenPanels");
         private _px = (_h getVariable ["COMSPEC_ATAK_TocPanels", []]) select { !isNull _x };
         private _hc = [_h] call _cfgOf;
@@ -351,6 +366,8 @@ switch (_mode) do {
             switch (true) do {
                 case (_u isEqualTo "SAT1"): { ["SAT", 0, ""] };
                 case (_u isEqualTo "SAT2"): { ["SAT", 1, ""] };
+                // Dalle éteinte (veille) : carte et flux gardés dessous.
+                case (_u isEqualTo "OFF"): { ["SPLIT", 0, "", [], [], true] };
                 case ((_u select [0, 3]) isEqualTo "SQ:"): { ["SQUAD", 0, trim (_t select [3])] };
                 case (_u in ["MOS2", "MOS3"]): { ["MOSAIC", 0, "", [], [[2, 3] select (_u isEqualTo "MOS3"), "AUTO", "", [], 10]] };
                 case (_u in _views): { [_u, 0, ""] };
@@ -384,7 +401,7 @@ switch (_mode) do {
     };
     case "remove": {
         if (isNull _a) exitWith { false };
-        if (!isServer) exitWith { ["comspec_atak_native_tocScreen", ["remove", _a]] call CBA_fnc_serverEvent; true };
+        if (!isServer && {!(["local", _a] call comspec_atak_native_fnc_tocConfig)}) exitWith { ["comspec_atak_native_tocScreen", ["remove", _a]] call CBA_fnc_serverEvent; true };
         private _owned = _a getVariable ["COMSPEC_ATAK_TocOwned", false];
         // Mur à plusieurs dalles : ses relais partent avec lui.
         { if (!isNull _x) then { ["remove", _x] call _fn; }; } forEach (_a getVariable ["COMSPEC_ATAK_TocPanels", []]);
@@ -400,7 +417,7 @@ switch (_mode) do {
     };
     case "spawn": {
         _a params [["_pos", [0, 0, 0]], ["_dir", 0], ["_cls", ""], ["_name", ""], ["_side", ""], ["_view", "SPLIT"], ["_toc", true], ["_slot", 0], ["_squad", ""], ["_pans", ""]];
-        if (!isServer) exitWith { ["comspec_atak_native_tocScreen", ["spawn", _a]] call CBA_fnc_serverEvent; objNull };
+        if (!isServer && {!(["local", objNull] call comspec_atak_native_fnc_tocConfig)}) exitWith { ["comspec_atak_native_tocScreen", ["spawn", _a]] call CBA_fnc_serverEvent; objNull };
         // La classe choisie (module Eden, fenêtre Zeus, salle complète) passe telle quelle jusqu'à createVehicle : écran de
         // la liste, écran COMSPEC ou écran déclaré dans CfgComspecTocScreens. Classe inconnue de ce serveur (mod du serveur
         // plus ancien que celui du Zeus) : premier écran de la liste, et le journal le dit. Avant, ce repli était muet et
@@ -431,7 +448,7 @@ switch (_mode) do {
     case "view": {
         _a params [["_o", objNull], ["_k", ""], ["_v", 0]];
         if (isNull _o) exitWith { false };
-        if (!isServer) exitWith { ["comspec_atak_native_tocScreen", ["view", _a]] call CBA_fnc_serverEvent; true };
+        if (!isServer && {!(["local", _o] call comspec_atak_native_fnc_tocConfig)}) exitWith { ["comspec_atak_native_tocScreen", ["view", _a]] call CBA_fnc_serverEvent; true };
         private _c = +([_o] call _cfgOf);
         if ((count _c) < 8) exitWith { false };
         switch (_k) do {
@@ -582,6 +599,7 @@ switch (_mode) do {
             if (isNull _o || {isNull _d} || {!(_o getVariable ["COMSPEC_ATAK_TocOn", false])}) exitWith {};
             _o setVariable ["COMSPEC_ATAK_TocAt", diag_tickTime];
             ["draw", [_o, _d]] call comspec_atak_native_fnc_tocScreen;
+            ["dim", [_o, _d]] call comspec_atak_native_fnc_tocConfig;
             displayUpdate _d;
         }, [_o, _nm]] call comspec_atak_native_fnc_nextFrame;
     };
@@ -631,7 +649,8 @@ switch (_mode) do {
         private _dir = vectorNormalized ((AGLToASL (positionCameraToWorld [0, 0, 1])) vectorDiff _eye);
         private _gx = floor ((_eye select 0) / 100);
         private _gy = floor ((_eye select 1) / 100);
-        private _span = ceil (_hold / 100);
+        // Écran à distance d'affichage propre (COMSPEC_ATAK_TocOpt, 150 m au plus) : cases voisines assez larges pour lui.
+        private _span = ceil ((_hold max 225) / 100);
         private _near = [];
         for "_i" from (_gx - _span) to (_gx + _span) do {
             for "_j" from (_gy - _span) to (_gy + _span) do { _near append ((_grid select 2) getOrDefault [[_i, _j], []]); };
@@ -646,7 +665,10 @@ switch (_mode) do {
             private _ctr = [_o] call _centerOf;
             private _dist = _eye distance _ctr;
             private _seen = false;
-            if (_ok && {_dist < _range}) then {
+            // Distance d'affichage de cet écran (fenêtre Zeus, attribut Eden) ; 0 : réglage du joueur.
+            private _own = (([_o] call _hostOf) getVariable ["COMSPEC_ATAK_TocOpt", []]) param [1, 0];
+            private _rg = [_range, _own] select (_own isEqualType 0 && {_own > 0});
+            if (_ok && {_dist < _rg}) then {
                 _seen = _dist < 3 || {((vectorNormalized (_ctr vectorDiff _eye)) vectorDotProduct _dir) > -0.17};
                 // Derrière un mur : point visé à 15 cm devant la dalle, l'écran lui-même ignoré ; jamais tout près.
                 if (_seen && {_dist > 5}) then {
@@ -659,7 +681,7 @@ switch (_mode) do {
                     _seen = _vis select 1;
                 };
             };
-            _rows pushBack [_o, _cfg, _ok, _dist, _seen];
+            _rows pushBack [_o, _cfg, _ok, _dist, _seen, _rg + (10 max (_rg * 0.5))];
         } forEach (_near + (_local - _near));
         private _act = (_rows select { (_x select 2) && {_x select 4} }) apply { _x select 0 };
         // Image vraiment à l'écran (centre de la dalle) : caméras en direct et satellite seulement pour celles-là.
@@ -685,7 +707,7 @@ switch (_mode) do {
             _local = _local - [_o];
         };
         {
-            _x params ["_o", "_cfg", "_ok", "_dist", "_seen"];
+            _x params ["_o", "_cfg", "_ok", "_dist", "_seen", ["_holdO", _hold]];
             private _tex = _o getVariable ["COMSPEC_ATAK_TocTex", ""];
             private _on = _ok && {_seen};
             _o setVariable ["COMSPEC_ATAK_TocOn", _on];
@@ -743,12 +765,14 @@ switch (_mode) do {
                             _o setVariable ["COMSPEC_ATAK_TocAt", _now];
                             _o setVariable ["COMSPEC_ATAK_TocDraws", (_o getVariable ["COMSPEC_ATAK_TocDraws", 0]) + 1];
                             ["draw", [_o, _disp]] call _fn;
+                            // Luminosité de l'écran (voile au-dessus de l'image).
+                            ["dim", [_o, _disp]] call comspec_atak_native_fnc_tocConfig;
                             displayUpdate _disp;
                         };
                     };
                 };
                 // Figé : proche mais pas regardé, ou juste au-delà de la distance d'affichage. Dernière image gardée.
-                case (_ok && {_dist < _hold} && {_tex isNotEqualTo ""}): {
+                case (_ok && {_dist < _holdO} && {_tex isNotEqualTo ""}): {
                     _o setVariable ["COMSPEC_ATAK_TocWasOn", false];
                 };
                 // Veille : loin, éteint, retiré ou détruit. Texture d'origine remise, display abandonné.
@@ -1395,6 +1419,7 @@ switch (_mode) do {
         if (_a isEqualTo "") exitWith { _t };
         _t getOrDefault [_a, [_a, toLower _a]]
     };
+    case "views": { +_views };
     case "audit": {
         // Contrôle du code des affichages, sans écran posé (console de débogage, joueur ou Zeus) : chaque affichage est
         // dessiné dans un display d'essai (visible quelques images à l'écran), chacun dans son propre script (une erreur
@@ -1531,7 +1556,7 @@ switch (_mode) do {
                     _o setVariable ["COMSPEC_ATAK_TocAt", -10];
                 };
                 case "auto": { ["view", [_o, "auto"]] call comspec_atak_native_fnc_tocScreen; _o setVariable ["COMSPEC_ATAK_TocAt", -10]; };
-                case "big": { ["open", _o] call comspec_atak_native_fnc_tocPost; };
+                case "big": { ["openPc", _o] call comspec_atak_native_fnc_tocConfig; };
                 case "slides": { ["castOn", _o] call comspec_atak_native_fnc_screenCast; };
                 case "slidesStop": { ["stop", _o] call comspec_atak_native_fnc_screenCast; };
                 case "slidesNext": { ["step", [_o, 1]] call comspec_atak_native_fnc_screenCast; };
@@ -1591,6 +1616,11 @@ switch (_mode) do {
             };
             _diff pushBack (["Pip", "Montrer ce que voit le PC du poste (PIP)", "pip"] call _mk);
             private _out = [];
+            // « Ouvrir le PC du poste » en tête du menu, sur tout écran qui sert de poste (demande de TTRD, 11/11 : l'action
+            // manquait tant que le serveur n'avait pas désigné l'écran). Écran COMSPEC pas encore désigné : il le devient.
+            if (!_ratio4 && {[_has && {_o getVariable ["COMSPEC_ATAK_Toc", false]}, (getNumber (configOf _o >> "comspec_screen")) > 0] select !_has}) then {
+                _out pushBack (["Big", "Ouvrir le PC du poste", "big", { isNull objectParent _player }] call _mk);
+            };
             if (!_has) then {
                 // Écran du jeu ou d'un autre mod (CfgComspecTocScreens) : il devient un écran TOC, image sur sa surface connue.
                 _out pushBack (["Split", "Utiliser comme écran TOC", "split"] call _mk);
@@ -1663,7 +1693,6 @@ switch (_mode) do {
             if (_cur isNotEqualTo "") then {
                 _man pushBack [["COMSPEC_ATAK_WallUnlink", format ["Délier de la salle %1", (["get", _cur] call comspec_atak_native_fnc_tocHall) param [1, "?"]], "", { ["do", ["unlink", _target]] call comspec_atak_native_fnc_tocHall; }, { true }] call comspec_atak_native_fnc_aceAction, [], _o];
             };
-            if (_has && {_o getVariable ["COMSPEC_ATAK_Toc", false]}) then { _man pushBack (["Big", "Ouvrir le PC du poste", "big", { isNull objectParent _player }] call _mk); };
             if (_has) then { _man pushBack (["Off", "Retirer l'affichage TOC", "remove"] call _mk); };
             if (_man isNotEqualTo []) then { _out pushBack (["Manage", "Gérer l'écran", _d + "app_toc.paa", _man] call _grp); };
             _out

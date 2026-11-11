@@ -99,6 +99,11 @@ $icon = static function (string $path): string {
       <button type="button" class="ow-nav-secondary" data-view="iff" title="Identification ami / ennemi des contacts">Identification</button>
       <button type="button" class="ow-nav-secondary" data-view="pings" title="Les signalements rapides posés sur la carte">Pings</button>
       <button type="button" data-view="tools" title="Mesure, visée, relief et autres outils de carte">Outils</button>
+      <?php $owCanToc = function_exists('can') && (can('atak.toc.use') || can('atak.toc.manage') || can('admin.organization')); ?>
+      <?php if ($owCanToc): ?>
+      <a class="ow-nav-link" href="<?= $h(url('atak/toc')) ?>" title="Poste TOC web : la console du poste de commandement, comme le PC du poste en jeu">TOC</a>
+      <a class="ow-nav-link" href="<?= $h(url('atak/toc/plans')) ?>" title="Plans d’opération : préparer sur la carte, briefer par phases, envoyer en jeu">Plans</a>
+      <?php endif; ?>
     </nav>
     <div class="ow-more">
       <button type="button" data-ow-more aria-haspopup="true" aria-expanded="false" aria-controls="ow-more-menu">Plus</button>
@@ -109,6 +114,7 @@ $icon = static function (string $path): string {
         <button type="button" class="ow-more-secondary" data-view="radio">Radio</button>
         <button type="button" class="ow-more-secondary" data-view="iff">Identification</button>
         <button type="button" class="ow-more-secondary" data-view="pings">Pings</button>
+        <?php if (!empty($owCanToc)): ?><a class="ow-more-link" href="<?= $h(url('atak/toc')) ?>">Poste TOC</a><a class="ow-more-link" href="<?= $h(url('atak/toc/plans')) ?>">Plans d’opération</a><?php endif; ?>
         <button type="button" data-ow-replay>Rejouer la mission</button>
         <button type="button" data-ow-debrief>Exporter le bilan</button>
         <button type="button" data-ow-notes>Bloc-notes</button>

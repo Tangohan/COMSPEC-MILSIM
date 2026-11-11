@@ -26,7 +26,7 @@ final class AtakPerfLogAssetTest extends TestCase
     {
         $src = $this->read('functions/map/fn_photoMap.sqf');
         // Tuiles déjà chargées retenues, deux neuves au plus par image (une si l'image précédente a ramé).
-        self::assertStringContainsString('COMSPEC_ATAK_PhotoSeen', $src);
+        self::assertStringContainsString('COMSPEC_ATAK_PhotoTileSeen', $src);
         self::assertStringContainsString('_pre = _queue select [0, [2, 1] select (diag_deltaTime > 0.1)];', $src);
         // Tuiles en chargement invisibles ; un seul niveau affiché.
         self::assertStringContainsString('{ (_x + [0.01]) call _draw; } forEach _pre;', $src);

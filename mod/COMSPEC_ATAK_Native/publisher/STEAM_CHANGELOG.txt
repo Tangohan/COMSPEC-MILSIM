@@ -1,3 +1,23 @@
+[h1]COMSPEC ATAK 4.6.0 Washington — écrans TOC réglables dans Eden et Zeus, allumés avec un serveur plus ancien / TOC screens set up in Eden and Zeus, lit with an older server[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Réglage des écrans[/b] : chaque écran du TOC se règle dans Eden (attributs de l'objet) et dans Zeus (double-clic, fenêtre « Configurer l'écran ») : nom, camp, affichage, dalles d'un mur, luminosité, salle, distance d'affichage, test de l'image et copie vers d'autres écrans.
+[*] [b]Serveur plus ancien[/b] : les écrans TOC s'allument même si le serveur a une version plus ancienne du mod. Le téléphone explique pourquoi, avec la version du serveur et la vôtre, et prévient que l'écran n'est pas sauvegardé par le serveur.
+[*] [b]Ouvrir le PC du poste[/b] : l'action est toujours là, en tête du menu ACE de l'écran, à la molette, dans l'app Poste TOC du téléphone et au clic droit du Zeus.
+[*] [b]Carte photo[/b] : la carte en photo satellite ne saccade plus.
+[*] [b]Zoom de la carte mini[/b] : zoomer ou dézoomer le téléphone en petit (ou avec « Suivre ma position ») garde la carte centrée sur vous, même en véhicule.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Screen settings[/b]: every TOC screen is set up in Eden (object attributes) and in Zeus (double-click, "Configure the screen" window): name, side, display, wall panels, brightness, room, display distance, picture test and copy to other screens.
+[*] [b]Older server[/b]: TOC screens light up even when the server runs an older version of the mod. The phone explains why, with the server's version and yours, and warns that the screen is not saved by the server.
+[*] [b]Open the post PC[/b]: the action is always there, at the top of the screen's ACE menu, on the scroll wheel, in the phone's TOC Post app and in the Zeus right-click menu.
+[*] [b]Photo map[/b]: the satellite photo map no longer stutters.
+[*] [b]Mini map zoom[/b]: zooming the phone in its small view (or with "Follow my position") in or out keeps the map centred on you, even in a vehicle.
+[/list]
+
 [h1]COMSPEC ATAK 4.5.0 Washington — TOC au look professionnel, satellite devenu console ISR / Professional-looking TOC, satellite becomes an ISR console[/h1]
 
 [h2]Français[/h2]

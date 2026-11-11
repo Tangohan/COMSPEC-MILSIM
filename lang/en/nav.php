@@ -803,4 +803,11 @@ return [
     'identite_papiers_couverture_fichiers' => 'Identity, papers, cover, records',
     'tous_mes_outils' => 'All my tools',
     'la_page_des_outils_operateur_identite_papiers_couverture_fichiers_materiel' => 'The operator tools page: identity, papers, cover, records, equipment',
+    'toc' => 'TOC',
+    'poste_toc' => 'TOC console',
+    'plans_d_operation' => 'Operation plans',
+    'la_console_du_poste_de_commandement_comme_le_pc_du_poste_en_jeu' => 'The command post console, like the in-game TOC laptop',
+    'preparer_un_plan_sur_la_carte_le_briefer_par_phases_l_envoyer_en_jeu' => 'Prepare a plan on the map, brief it phase by phase, send it into the game',
+    'console_du_poste_de_commandement' => 'Command post console',
+    'preparer_et_envoyer_en_jeu' => 'Prepare and send into the game',
 ];
