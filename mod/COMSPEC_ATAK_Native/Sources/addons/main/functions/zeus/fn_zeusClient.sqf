@@ -89,6 +89,17 @@ switch (_act) do {
                 ["broken"] call comspec_atak_native_fnc_powerFx;
                 call _redraw;
             };
+            // Bris d'écran, pannes de dalle et bugs au choix (fn_screenDamage) : [genre, gravité 1-3] ; « clear » : tout retirer.
+            case "sfault": {
+                _a params [["_fid", ""], ["_fsev", 2]];
+                if (_fid isEqualTo "clear") then {
+                    ["repair", ["all"]] call comspec_atak_native_fnc_screenDamage;
+                    ["stop"] call comspec_atak_native_fnc_screenGlitch;
+                } else {
+                    ["add", [_fid, _fsev]] call comspec_atak_native_fnc_screenDamage;
+                };
+                call _redraw;
+            };
             case "destroy": { [1, "Défaillance totale", 0, createHashMapFromArray [["destroy", true]]] call comspec_atak_native_fnc_deviceDamage; };
             case "repair": {
                 uiNamespace setVariable ["COMSPEC_ATAK_ZeusGlitch", 0];
@@ -101,7 +112,8 @@ switch (_act) do {
             case "clean": {
                 // Nettoyage forcé, même si le joueur a coupé la saleté de son côté (fn_screenDirt ne l'aurait pas fait).
                 private _n = missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap];
-                { _n set [_x, 0]; } forEach ["dust", "drops", "prints", "frameBlood", "blood"];
+                { _n set [_x, 0]; } forEach ["dust", "drops", "prints", "frameBlood", "blood", "mud"];
+                ["repair", ["film"]] call comspec_atak_native_fnc_screenDamage;
                 _n set ["stains", []];
                 missionNamespace setVariable ["COMSPEC_ATAK_Device", _n];
                 missionNamespace setVariable ["COMSPEC_ATAK_HandsBlood", 0];

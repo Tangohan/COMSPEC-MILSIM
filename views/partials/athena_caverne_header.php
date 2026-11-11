@@ -189,6 +189,9 @@ $espaceLinks = [
     ['abbr' => 'OPS', 'label' => 'Manœuvres', 'desc' => 'Calendrier opérationnel', 'href' => url('evenements'), 'path' => 'evenements'],
     ['abbr' => 'ORB', 'label' => 'ORBAT', 'desc' => 'Structure et effectifs', 'href' => url('orbat'), 'path' => 'orbat'],
     ['abbr' => 'ATK', 'label' => 'ATAK', 'desc' => 'Carte tactique', 'href' => url('atak'), 'path' => 'atak'],
+    // Outils de chaque membre (identité, papiers, couverture, fichiers, matériel) : tuile bleue pour la distinguer des
+    // espaces ; seulement pour un membre connecté d'une communauté.
+    ...\App\Services\Operator\OperatorHubCatalog::spaceTiles((int) (\App\Core\Session::get('user_id') ?? 0) > 0 && (int) (\App\Core\Session::get('tenant_id') ?? 0) > 0),
     ['abbr' => 'FRM', 'label' => 'Formations', 'desc' => 'Catalogue et parcours', 'href' => url('academy/catalogue'), 'path' => 'academy/formations'],
     // Accès direct à son parcours dans l'Academy, filtré comme le reste (module formation).
     ['abbr' => 'MES', 'label' => 'Mes formations', 'desc' => 'Mon parcours et mes inscriptions', 'href' => url('academy/courses'), 'path' => 'academy/formations'],
@@ -560,7 +563,8 @@ if (function_exists('i18n_phrase')) {
                     </div>
                     <div class="athena-header__espaces-grid">
                         <?php foreach ($espaceLinks as $link): ?>
-                            <a href="<?= $h((string) $link['href']) ?>" class="athena-header__espace-item">
+                            <?php $espaceTone = (string) ($link['tone'] ?? ''); $espaceOn = $espaceTone !== '' && ($currentPath === $link['path'] || str_starts_with($currentPath, $link['path'] . '/')); ?>
+                            <a href="<?= $h((string) $link['href']) ?>" class="athena-header__espace-item<?= $espaceTone !== '' ? ' athena-header__espace-item--' . $h($espaceTone) : '' ?><?= $espaceOn ? ' is-active' : '' ?>"<?= $espaceOn ? ' aria-current="page"' : '' ?>>
                                 <span class="athena-header__espace-abbr"><?= $h((string) $link['abbr']) ?></span>
                                 <span class="athena-header__espace-meta">
                                     <strong><?= $h((string) $link['label']) ?></strong>
@@ -786,7 +790,8 @@ if (function_exists('i18n_phrase')) {
                         <p class="athena-header__kicker athena-header__drawer-kicker"><?= $n('Espaces') ?></p>
                         <div class="athena-header__espaces-grid">
                             <?php foreach ($espaceLinks as $link): ?>
-                                <a href="<?= $h((string) $link['href']) ?>" class="athena-header__espace-item">
+                                <?php $espaceTone = (string) ($link['tone'] ?? ''); $espaceOn = $espaceTone !== '' && ($currentPath === $link['path'] || str_starts_with($currentPath, $link['path'] . '/')); ?>
+                            <a href="<?= $h((string) $link['href']) ?>" class="athena-header__espace-item<?= $espaceTone !== '' ? ' athena-header__espace-item--' . $h($espaceTone) : '' ?><?= $espaceOn ? ' is-active' : '' ?>"<?= $espaceOn ? ' aria-current="page"' : '' ?>>
                                     <span class="athena-header__espace-abbr"><?= $h((string) $link['abbr']) ?></span>
                                     <span class="athena-header__espace-meta">
                                         <strong><?= $h((string) $link['label']) ?></strong>

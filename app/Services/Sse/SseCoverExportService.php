@@ -218,6 +218,10 @@ final class SseCoverExportService
         if ($row === null || (!$manager && (int) $row['user_id'] !== $viewerId) || ($onlyUser !== null && (int) $row['user_id'] !== $onlyUser)) {
             return null;
         }
+        // Couverture révoquée par le membre (Outils opérateur) : plus servie, ni au site ni au téléphone.
+        if (isset(\App\Repositories\OperatorHubRepository::revokedCoverIds($tenantId, (int) $row['user_id'])[$exportId])) {
+            return null;
+        }
         $this->exports->markDownloaded($tenantId, $exportId, ($now ?? new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s'));
         ($this->audit)([
             'tenant_id' => $tenantId, 'actor_user_id' => $viewerId, 'actor_label' => 'Ma couverture', 'action' => 'id_cover.export_download',

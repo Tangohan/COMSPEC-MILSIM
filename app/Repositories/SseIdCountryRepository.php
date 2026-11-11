@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\SseDocumentTypes;
 use App\Support\SseIdRealCountryCatalog;
 use App\Support\SseIdentityCatalog;
 
@@ -264,7 +265,11 @@ final class SseIdCountryRepository
         $years = max(1, (int) ($row['validity_years'] ?? 10));
         $types = array_values(array_filter(explode(',', (string) ($row['doc_types'] ?? '')), static fn (string $t): bool => isset(SseIdentityCatalog::DOC_TYPES[$t])));
         if ($types === []) {
-            $types = array_keys(SseIdentityCatalog::DOC_TYPES);
+            // Liste vide : les papiers que le mod délivre pour ce pays s'il est à son registre, sinon tous.
+            $types = SseDocumentTypes::servedBy((string) ($row['code'] ?? ''));
+            if ($types === []) {
+                $types = array_keys(SseIdentityCatalog::DOC_TYPES);
+            }
         }
         $json = json_decode((string) ($row['validity_json'] ?? ''), true);
         $validity = [];

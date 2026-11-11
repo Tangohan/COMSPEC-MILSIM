@@ -803,6 +803,80 @@ def plate(cv):
     cv.text(x + 44, y, w - 44, h, "4 nœud(s) ATAK · 3 en direct", "plateSub", "text2")
 
 
+# ------------------------------------------------------------------------------------------------- texte à LED
+def led_panel(w, h, kind, lines, tok="accent", border=True, scroll_x=None, gap_chars=6):
+    """Affichage TEXTE (fn_tocText.sqf, mêmes nombres que « _render ») : panneau noir, caractères à chasse fixe gras,
+    bordure fine de la couleur du message. Longueurs en hauteurs de panneau. lines : une ou deux lignes fixes ;
+    scroll_x : texte défilant (une ligne), x du premier texte en largeurs de caractère (deux textes séparés du blanc)."""
+    ins, bth, pad_x = (0.07, 0.02, 0.16) if kind == "LED" else (0.03, 0.006, 0.05)
+    f1 = {"LED": 0.6, "STD": 0.26, "COL": 0.15}[kind]
+    f2 = {"LED": 0.0, "STD": 0.19, "COL": 0.12}[kind]
+    char_k = 0.6
+    img = Image.new("RGBA", (w, h), rgb("bg0"))
+    d = ImageDraw.Draw(img)
+    if border:
+        col = rgb(tok, 0.55)
+        i, t = ins * h, max(1, bth * h)
+        for box in ((i, i, w - i, i + t), (i, h - i - t, w - i, h - i), (i, i, i + t, h - i), (w - i - t, i, w - i, h - i)):
+            d.rectangle([round(v) for v in box], fill=col)
+    x0, x1 = (ins + bth + pad_x) * h, w - (ins + bth + pad_x) * h
+    y0, y1 = (ins + bth) * h, h - (ins + bth) * h
+    clip = Image.new("RGBA", (round(x1 - x0), round(y1 - y0)), (0, 0, 0, 0))
+    cd = ImageDraw.Draw(clip)
+
+    def put(txt, f, x, cy):
+        fnt = font("EtelkaMonospaceProBold", f * h / 0.86 * 0.98)
+        cw = char_k * f * h
+        asc, desc = fnt.getmetrics()
+        for k, ch in enumerate(txt):
+            gw = fnt.getlength(ch)
+            cd.text((x + k * cw + (cw - gw) / 2, cy - (asc + desc) / 2), ch, font=fnt, fill=rgb(tok))
+        return len(txt) * cw
+
+    cw_, ch_ = clip.size
+    if scroll_x is not None:
+        cw = char_k * f1 * h
+        txt = lines[0]
+        loop = max((len(txt) + gap_chars) * cw, cw_)
+        put(txt, f1, scroll_x * cw, ch_ / 2)
+        put(txt, f1, scroll_x * cw + loop, ch_ / 2)
+    elif len(lines) == 1:
+        tw = len(lines[0]) * char_k * f1 * h
+        put(lines[0], f1, (cw_ - tw) / 2, ch_ / 2)
+    else:
+        lh = f2 * 1.3 * h
+        for k, ln in enumerate(lines):
+            tw = len(ln) * char_k * f2 * h
+            put(ln, f2, (cw_ - tw) / 2, (ch_ - 2 * lh) / 2 + (k + 0.5) * lh)
+    img.alpha_composite(clip, (round(x0), round(y0)))
+    return img
+
+
+def stack(images, pad=28, bg=(22, 24, 27, 255)):
+    """Plusieurs panneaux l'un sous l'autre sur un fond neutre (planche de maquette)."""
+    w = max(i.size[0] for i in images) + 2 * pad
+    h = sum(i.size[1] for i in images) + pad * (len(images) + 1)
+    out = Image.new("RGBA", (w, h), bg)
+    y = pad
+    for i in images:
+        out.alpha_composite(i, ((w - i.size[0]) // 2, y))
+        y += i.size[1] + pad
+    return out
+
+
+def text_mockups():
+    # Bandeau 4:1 (bandeau horloge existant) et bandeau LED 8:1 : texte qui tient, fixe et centré.
+    save(stack([led_panel(2048, 512, "LED", ["TOC BRAVO"]),
+                led_panel(2048, 256, "LED", ["BRIEFING 14:30Z"], "amber"),
+                led_panel(2048, 256, "LED", ["FLASH · CONTACT NORD"], "red")]), "bandeau_texte")
+    # Bandeau LED 16:1 : texte plus large que le panneau, en plein défilement (deux passages séparés d'un blanc).
+    long_txt = "OPÉRATION HORIZON · H-00:42:10 · COUVRE-FEU RADIO À 21:00Z · MÉTÉO : VENT 270/15 KT, VISI 8 KM"
+    save(stack([led_panel(4096, 256, "LED", [long_txt], scroll_x=-31.0),
+                led_panel(4096, 256, "LED", ["ZONE CONTRÔLÉE · BADGE OBLIGATOIRE · 12:35Z"], "text")]), "bandeau_texte_long")
+    # Écran 16:9 : deux lignes fixes (taille automatique).
+    save(led_panel(1600, 900, "STD", ["RELÈVE DES", "POSTES 18:00Z"]), "mur_texte")
+
+
 # ------------------------------------------------------------------------------------------------------------- PC
 GRID = {k: v for k, v in re.findall(r'\["(\w+)", ([0-9.]+)\]', re.search(r"private _grid = createHashMapFromArray \[(.*?)\n\];", LAP_SRC, re.S).group(1))}
 GRID = {k: float(v) for k, v in GRID.items()}
@@ -1121,6 +1195,192 @@ def contact_sheet():
     sheet.save(OUT / "_planche.png", optimize=True)
 
 
+# ------------------------------------------------------------------------------------------------- planche des tailles
+def tailles_ecrans():
+    """Planche « tailles_ecrans » : silhouettes de face de tous les écrans TOC (tools/model_toc_screens.py), à l'échelle,
+    avec un soldat de 1,80 m. Zones d'image numérotées par index (0 = écran lui-même). Dimensions : celles des modèles."""
+    S = 100                      # pixels par mètre
+    T55 = (1.2166, 0.6874)       # pas d'une dalle 55" (jointure comprise)
+    CEIL = 3.40                  # plafond dessiné pour les écrans suspendus
+    W, ROW = 3960, 520
+    img = Image.new("RGB", (W, 150 + 5 * ROW + 30), rgb("bg0")[:3])
+    d = ImageDraw.Draw(img)
+    fT, fN, fS, fI = font(FONTS["sansBold"], 64), font(FONTS["sansBold"], 34), font(FONTS["sans"], 30), font(FONTS["monoBold"], 30)
+    col = lambda k: rgb(k)[:3]
+    d.text((50, 30), "Tailles des écrans TOC", font=fT, fill=col("text"))
+    d.text((50, 102), "Vues de face à l'échelle (1 m = %d px) · soldat de 1,80 m · chiffres dans l'image : index des zones (0 = écran principal)" % S,
+           font=fS, fill=col("text2"))
+
+    def soldier(x, floor):
+        """Silhouette de 1,80 m, pieds en (x, floor)."""
+        m = lambda a, b: (x + a * S, floor - b * S)
+        c = col("lineStrong")
+        d.polygon([m(-0.20, 0), m(-0.03, 0), m(-0.02, 0.86), m(0.02, 0.86), m(0.03, 0), m(0.20, 0), m(0.17, 0.92), m(0.19, 1.02),
+                   m(0.23, 1.46), m(0.36, 1.02), m(0.33, 0.80), m(0.26, 0.82), m(0.27, 1.0), m(0.21, 1.5), m(0.08, 1.56), m(-0.08, 1.56),
+                   m(-0.21, 1.5), m(-0.27, 1.0), m(-0.26, 0.82), m(-0.33, 0.80), m(-0.36, 1.02), m(-0.23, 1.46), m(-0.19, 1.02), m(-0.17, 0.92)], fill=c)
+        d.ellipse([x - 0.105 * S, floor - 1.80 * S, x + 0.105 * S, floor - 1.575 * S], fill=c)             # tête
+        d.pieslice([x - 0.125 * S, floor - 1.815 * S, x + 0.125 * S, floor - 1.60 * S], 180, 360, fill=col("muted"))   # casque
+        d.line([x + 0.48 * S, floor, x + 0.48 * S, floor - 1.80 * S], fill=col("muted"), width=2)
+        for yy in (0, 1.80):
+            d.line([x + 0.42 * S, floor - yy * S, x + 0.54 * S, floor - yy * S], fill=col("muted"), width=2)
+        d.text((x + 0.58 * S, floor - 1.0 * S), "1,80 m", font=fS, fill=col("muted"))
+
+    def screen(x, floor, w, z0, h, zones=None, grid=None, strip=False):
+        """Face de l'écran : coin bas gauche à (x, z0 au-dessus du sol). zones : [(fx, fy, fw, fh, index)] en fractions.
+        grid : (colonnes, rangées) de dalles (jointures)."""
+        x0, y1 = x, floor - z0 * S
+        x1, y0 = x + w * S, y1 - h * S
+        d.rectangle([x0 - 3, y0 - 3, x1 + 3, y1 + 3], fill=col("lineStrong"))
+        d.rectangle([x0, y0, x1, y1], fill=(6, 16, 12) if strip else col("bg2"))
+        if grid:
+            for c in range(1, grid[0]):
+                d.line([x0 + (x1 - x0) * c / grid[0], y0, x0 + (x1 - x0) * c / grid[0], y1], fill=col("bg0"), width=2)
+            for r in range(1, grid[1]):
+                d.line([x0, y0 + (y1 - y0) * r / grid[1], x1, y0 + (y1 - y0) * r / grid[1]], fill=col("bg0"), width=2)
+        for fx, fy, fw, fh, i in (zones or []):
+            zx0, zy0 = x0 + fx * (x1 - x0), y0 + fy * (y1 - y0)
+            zx1, zy1 = zx0 + fw * (x1 - x0), zy0 + fh * (y1 - y0)
+            d.rectangle([zx0 + 2, zy0 + 2, zx1 - 2, zy1 - 2], outline=col("accent"), width=3)
+            if i is not None:
+                t = str(i)
+                tw = fI.getlength(t)
+                d.text(((zx0 + zx1 - tw) / 2, (zy0 + zy1) / 2 - 17), t, font=fI, fill=col("accent"))
+        if strip:
+            t = "TEXTE DÉFILANT" if w > 2 else "12:35"
+            f = font(FONTS["monoBold"], h * S * 0.8)
+            d.text((x0 + (x1 - x0 - f.getlength(t)) / 2, (y0 + y1) / 2 - h * S * 0.36), t, font=f, fill=col("accent"))
+        return x0, y0, x1, y1
+
+    def label(x, floor, name, dims):
+        d.text((x, floor + 12), name, font=fN, fill=col("text"))
+        d.text((x, floor + 52), dims, font=fS, fill=col("text2"))
+        return max(fN.getlength(name), fS.getlength(dims))
+
+    def poles(xs, floor, top, bottom):
+        for px in xs:
+            d.rectangle([px - 3, floor - top * S, px + 3, floor - bottom * S], fill=col("lineStrong"))
+            d.rectangle([px - 12, floor - top * S, px + 12, floor - top * S + 4], fill=col("lineStrong"))
+
+    def feet(xs, floor, top):
+        for px in xs:
+            d.rectangle([px - 4, floor - top * S, px + 4, floor], fill=col("lineStrong"))
+            d.rectangle([px - 22, floor - 6, px + 22, floor], fill=col("lineStrong"))
+
+    def row(i, title):
+        floor = 150 + i * ROW + 400
+        d.line([40, floor, W - 40, floor], fill=col("line"), width=3)
+        soldier(110, floor)
+        return floor, 330
+
+    # ---- Rangée 1 : écrans suspendus (plafond à 3,40 m) ----
+    floor, x = row(0, "")
+    d.line([300, floor - CEIL * S, W - 300, floor - CEIL * S], fill=col("lineStrong"), width=3)
+    d.text((W - 285, floor - CEIL * S - 18), "plafond à 3,40 m", font=fS, fill=col("muted"))
+    top65 = CEIL - 0.72
+    for name, n, wtot, dims in (("65\" suspendu", 1, 1.459, "1,44 x 0,81 m"), ("Double 65\" suspendu", 2, 2.926, "2 x 65\" · 2,93 m"),
+                                ("Triple 65\" suspendu", 3, 4.389, "3 x 65\" · 4,39 m (aussi en arc, 15°)")):
+        for k in range(n):
+            screen(x + k * 1.463 * S + 1, floor, 1.439, top65 - 0.81, 0.81, zones=[(0, 0, 1, 1, k)] if n > 1 else None)
+        poles([x + wtot * S * 0.3, x + wtot * S * 0.7], floor, CEIL, top65)
+        if n > 1:
+            d.rectangle([x, floor - (top65 + 0.09) * S, x + wtot * S, floor - (top65 + 0.03) * S], fill=col("lineStrong"))
+        x += max(wtot * S, label(x, floor, name, dims)) + 90
+    screen(x, floor, 2.1695, CEIL - 0.72 - 1.22, 1.22)
+    poles([x + 0.6 * S, x + 1.57 * S], floor, CEIL, CEIL - 0.72)
+    label(x, floor, "98\" suspendu", "2,17 x 1,22 m")
+    x += 2.17 * S + 90
+    for name, w in (("Bandeau LED texte 2,4 m suspendu", 2.40), ("Bandeau LED texte 4,8 m suspendu", 4.80)):
+        screen(x, floor, w, CEIL - 0.47 - 0.30, 0.30, strip=True)
+        poles([x + w * S * 0.14, x + w * S * 0.86], floor, CEIL, CEIL - 0.47)
+        x += max(w * S, label(x, floor, name, "%s x 0,30 m (%d:1)" % (("%.2f" % w).replace(".", ","), round(w / 0.3)))) + 90
+
+    # ---- Rangée 2 : écrans géants ----
+    floor, x = row(1, "")
+    for name, w, h, z0, dims, kind in (("98\" mural", 2.1695, 1.2203, 0.95, "2,17 x 1,22 m", ""), ("98\" sur pied roulant", 2.1695, 1.2203, 0.86, "2,17 x 1,22 m", "feet2"),
+                                       ("136\" mural", 3.011, 1.6937, 0.75, "3,01 x 1,69 m", ""), ("136\" sur pied lourd", 3.011, 1.6937, 0.70, "3,01 x 1,69 m", "feet2"),
+                                       ("Mur LED 220\" mural", 4.8704, 2.7396, 0.40, "4,87 x 2,74 m", ""), ("Mur LED 220\" sur treillis", 4.8704, 2.7396, 0.50, "4,87 x 2,74 m", "feet3")):
+        if kind == "feet2":
+            feet([x + w * S * 0.2, x + w * S * 0.8], floor, z0 + 0.3)
+        if kind == "feet3":
+            feet([x + w * S * 0.125, x + w * S * 0.5, x + w * S * 0.875], floor, z0 + 0.3)
+        screen(x, floor, w, z0, h)
+        x += max(w * S, label(x, floor, name, dims)) + 90
+
+    # ---- Rangée 3 : murs d'images de dalles 55" ----
+    floor, x = row(2, "")
+    walls = [("Mur 2x2", 2, 2, 0.90, [(0, 0, 1, 1, 0)], "2,43 x 1,37 m · 1 image ou 4 dalles"),
+             ("Mur 3x2", 3, 2, 0.90, [(0, 0, 2 / 3, 1, 0), (2 / 3, 0, 1 / 3, 0.5, 1), (2 / 3, 0.5, 1 / 3, 0.5, 2)], "3,65 x 1,37 m · bloc 2x2 + 2, ou 6 dalles"),
+             ("Mur 4x3", 4, 3, 0.90, [(0, 0, 0.75, 1, 0)] + [(0.75, r / 3, 0.25, 1 / 3, 1 + r) for r in range(3)], "4,87 x 2,06 m · bloc 3x3 + 3, ou 12 dalles"),
+             ("Mur 5x3", 5, 3, 0.90, [(0.2, 0, 0.6, 1, 0)] + [(0, r / 3, 0.2, 1 / 3, 1 + r) for r in range(3)] + [(0.8, r / 3, 0.2, 1 / 3, 4 + r) for r in range(3)],
+              "6,08 x 2,06 m · bloc 3x3 + 6, ou 15 dalles"),
+             ("Mur 6x4", 6, 4, 0.60, [(1 / 6, 0, 4 / 6, 1, 0)] + [(0, r / 4, 1 / 6, 0.25, 1 + r) for r in range(4)] + [(5 / 6, r / 4, 1 / 6, 0.25, 5 + r) for r in range(4)],
+              "7,30 x 2,75 m · bloc 4x4 + 8, ou 6 zones 2x2")]
+    for name, c, r, z0, zones, dims in walls:
+        screen(x, floor, c * T55[0], z0, r * T55[1], zones=zones, grid=(c, r))
+        x += max(c * T55[0] * S, label(x, floor, name, dims)) + 80
+
+    # ---- Rangée 4 : bandeaux muraux, grand écran incurvé (déroulé, puis vu de dessus) ----
+    floor, x = row(3, "")
+    for name, w, h, dims in (("Plaque de nom", 0.86, 0.215, "0,86 x 0,22 m"), ("Bandeau horloge", 1.12, 0.28, "1,12 x 0,28 m (4:1)"),
+                             ("Bandeau LED texte 2,4 m", 2.40, 0.30, "2,40 x 0,30 m (8:1)"), ("Bandeau LED texte 4,8 m", 4.80, 0.30, "4,80 x 0,30 m (16:1)")):
+        screen(x, floor, w, 2.55 - h / 2, h, strip=name != "Plaque de nom")
+        x += max(w * S, label(x, floor, name, dims)) + 70
+    feet([x + 7.2 * S * k / 12 for k in (1, 3, 5, 7, 9, 11)], floor, 1.0)
+    screen(x, floor, 7.20, 0.75, 2.025, zones=[(0.25, 0, 0.5, 1, 0), (0, 0, 0.25, 1, 1), (0.75, 0, 0.25, 1, 2)])
+    label(x, floor, "Grand écran incurvé (déroulé)", "arc 7,20 x 2,03 m (32:9) · carte + 2 colonnes, ou 2 images 16:9")
+    x += 7.2 * S + 130
+    # Vue de dessus : arc de rayon 7 m, soldat à 4 m.
+    cx, top = x + 3.6 * S, floor - 3.55 * S
+    R, T = 7.0, 7.2 / 7.0 / 2
+    pts = [(cx + R * S * math.sin(-T + 2 * T * k / 40), top + (R - R * math.cos(-T + 2 * T * k / 40)) * S) for k in range(41)]
+    d.line(pts, fill=col("accent"), width=9, joint="curve")
+    d.line([(pts[0][0], pts[0][1] + 28), (pts[-1][0], pts[-1][1] + 28)], fill=col("muted"), width=2)
+    d.text((cx - fS.getlength("corde 6,92 m") / 2, pts[0][1] + 34), "corde 6,92 m", font=fS, fill=col("muted"))
+    d.line([(cx, top - 6), (cx, pts[0][1])], fill=col("muted"), width=2)
+    d.text((cx + 12, top + 28), "flèche 0,91 m", font=fS, fill=col("muted"))
+    sy = top + 2.7 * S
+    d.ellipse([cx - 26, sy - 14, cx + 26, sy + 14], fill=col("lineStrong"))
+    d.ellipse([cx - 11, sy - 11, cx + 11, sy + 11], fill=col("muted"))
+    d.text((cx + 40, sy - 18), "soldat à 2,70 m du fond", font=fS, fill=col("muted"))
+    label(x, floor, "Grand écran incurvé (vu de dessus)", "rayon 7 m · 59° · sur pieds ou mural")
+
+    # ---- Rangée 5 : bureau (plateau à 0,80 m), postes PC, trépieds, téléviseurs, toiles de projection ----
+    floor, x = row(4, "")
+
+    def desk(x0, w):
+        d.rectangle([x0 - 0.15 * S, floor - 0.80 * S, x0 + (w + 0.15) * S, floor - 0.76 * S], fill=col("lineStrong"))
+        feet([x0 - 0.05 * S, x0 + (w + 0.05) * S], floor, 0.76)
+
+    M27 = (0.598, 0.336)
+    for name, n, dims in (("Moniteur 27\" / poste PC 1 écran", 1, "0,60 x 0,34 m"), ("Double 27\" / poste PC 2 écrans", 2, "2 x 27\" · 1,23 m"),
+                          ("Triple 27\" / poste PC 3 écrans", 3, "3 x 27\" en arc · 1,77 m")):
+        wtot = n * (M27[0] + 0.015)
+        desk(x, wtot)
+        for k in range(n):
+            screen(x + k * (M27[0] + 0.015) * S, floor, M27[0], 0.80 + 0.13, M27[1], zones=[(0, 0, 1, 1, k)] if n > 1 else None)
+        x += max(wtot * S, label(x, floor, name, dims)) + 70
+    desk(x, 1.196)
+    screen(x, floor, 1.196, 0.93, 0.336, zones=[(0, 0, 0.5, 1, 0), (0.5, 0, 0.5, 1, 1)])
+    x += max(1.196 * S, label(x, floor, "Poste PC écran incurvé 49\"", "1,20 x 0,34 m (32:9) · 2 images 16:9")) + 70
+    feet([x + 0.72 * S], floor, 1.13)
+    screen(x, floor, 1.439, 1.13, 0.809)
+    x += max(1.439 * S, label(x, floor, "65\" sur trépied", "1,44 x 0,81 m")) + 70
+    feet([x + 0.98 * S], floor, 1.34)
+    for k in range(2):
+        screen(x + k * 0.98 * S, floor, 0.952, 1.34, 0.536)
+    x += max(1.96 * S, label(x, floor, "Double 43\" sur trépied", "2 x 0,95 x 0,54 m")) + 70
+    for name, w, h, dims in (("Téléviseur 55\" mural", 1.210, 0.680, "1,21 x 0,68 m"), ("Téléviseur 75\" mural", 1.660, 0.934, "1,66 x 0,93 m")):
+        screen(x, floor, w, 1.20, h)
+        x += max(w * S, label(x, floor, name, dims)) + 70
+    feet([x + 0.885 * S], floor, 1.10)
+    screen(x, floor, 1.771, 1.10, 0.996)
+    x += max(1.771 * S, label(x, floor, "Toile 80\" sur trépied", "1,77 x 1,00 m · projection")) + 70
+    screen(x, floor, 2.214, 1.00, 1.245)
+    label(x, floor, "Toile 100\" murale", "2,21 x 1,25 m · projection")
+    save(img, "tailles_ecrans")
+    return img
+
+
 def main():
     wall("mur_split", "TOC · BRAVO", "carte et flux", draw_split)
     wall("mur_split_flash", "TOC · BRAVO", "carte et flux", lambda cv: draw_split(cv, dy=52), flash="CONTACT NORD, TOUS AUX ABRIS · Cne Martin · 12:35Z")
@@ -1147,6 +1407,7 @@ def main():
     cv = Canvas(2048, 512, 2048 / 1600, 512 / 400)
     plate(cv)
     save(cv.img, "plaque_nom")
+    text_mockups()
     for tab, n in [("GROUPES", "pc_groupes"), ("ORBAT", "pc_orbat"), ("FLUX", "pc_flux"), ("ORDRES", "pc_ordres"), ("CAMP", "pc_camp"), ("RÉSEAU", "pc_reseau"),
                    ("RADIO", "pc_radio"), ("SALLE", "pc_salle"), ("CHRONOS", "pc_chronos"), ("MAIN COURANTE", "pc_main_courante"), ("EXCHECK", "pc_excheck"),
                    ("PERTES", "pc_pertes"), ("DEMANDES", "pc_demandes")]:
@@ -1155,6 +1416,7 @@ def main():
     pc("GROUPES", "pc_carte_dessin", tool="LINE")
     pc("GROUPES", "pc_groupes_4x3", aspect=4 / 3, H=1080)
     pc("GROUPES", "pc_groupes_21x9", aspect=21 / 9, H=1080)
+    tailles_ecrans()
     contact_sheet()
     print("\n".join(str(p) for p in SAVED))
 

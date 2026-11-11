@@ -1,3 +1,55 @@
+[h1]COMSPEC ATAK 4.7.0 Washington — relais refaits en 3D, salle TOC posée en entier, écrans géants, bris d'écran réalistes / relays rebuilt in 3D, TOC room placed in full, giant screens, realistic screen damage[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Pylônes et mâts[/b] : les relais sont redessinés comme de vrais sites (treillis, échelle, plates-formes, câbles, clôture, feux rouges la nuit), avec de nouveaux modèles : monopôle 30 m, pylône haubané 60 m, pylône de toit, mât sur trépied et mât sur remorque. Peinture au choix.
+[*] [b]Relais déguisés en arbre[/b] : un faux pin (28 m et 15 m) et un faux palmier (22 m) : un arbre de loin, des antennes entre les branches de près.
+[*] [b]Antennes murales[/b] : des antennes à fixer sur un mur, un poteau ou un toit ; ce sont de vrais relais.
+[*] [b]Caméras IP[/b] : une famille de caméras à poser (dôme, tube infrarouge, thermique, mini-dôme…).
+[*] [b]Salle serveur[/b] : baies, coffrets, chemins de câbles et climatiseur à poser dans l'éditeur et en Zeus.
+[*] [b]Voyants et destruction[/b] : un voyant montre l'état de chaque relais (en service, dégradé, brouillé, éteint) ; un pylône détruit se plie et tombe.
+[*] [b]Relais plus légers[/b] : les modèles des relais pèsent environ 33 Mo de moins, et la carte de couverture se recalcule bien plus vite.
+[*] [b]Changement : brouilleur GPS[/b] : un brouilleur GPS seul ne crée plus de zone blanche sur la couverture du réseau.
+[*] [b]Changement : relais M12 et M20[/b] : ce sont maintenant des mâts tactiques verts ; les missions existantes les gardent à leur place.
+[*] [b]Salle TOC complète[/b] : le module pose enfin toute la salle sur le sol, dans Eden comme dans Zeus : mur d'images, grands écrans, bandeaux, plaques de nom, bureaux, chaises et PC, tous liés à la même salle.
+[*] [b]Dedans ou dehors[/b] : contre un mur et sous un plafond, la salle utilise les écrans muraux et suspendus ; en extérieur, des écrans sur pied les remplacent.
+[*] [b]Taille annoncée[/b] : la place que prend chaque salle (petite, moyenne, grande) est écrite dans le module, et le Zeus lit le résultat de la pose dans sa ligne de retour.
+[*] [b]Texte sur les écrans[/b] : nouvel affichage « Texte » dans le style du bandeau horloge. Vous écrivez vos messages (couleur, durée, clignotement), ils passent à tour de rôle et défilent s'ils sont trop longs.
+[*] [b]Écrans géants[/b] : bandeaux LED de 2,4 m et 4,8 m, écran 136 pouces, mur LED 220 pouces, murs vidéo 4x3, 5x3 et 6x4, écrans suspendus doubles et triples, grand écran incurvé de 7 m.
+[*] [b]Postes PC[/b] : postes fixes complets (1, 2, 3 écrans ou écran incurvé) qui servent de PC du poste, et un module « Poste opérateur » qui pose bureau, chaise et poste d'un coup.
+[*] [b]Anciens écrans refaits[/b] : téléviseur, écrans sur trépied, moniteur, toiles de projection, vidéoprojecteur et PC portable ont de nouveaux modèles ; les missions existantes les gardent.
+[*] [b]Bris d'écran du téléphone[/b] : treize façons de casser le verre (fêlure fine, toile, coin écrasé, impact de balle, eau sous le verre…), posées là où le téléphone a été touché.
+[*] [b]Pannes et bugs d'affichage[/b] : pixels morts, lignes de couleur, tache d'encre qui grandit, zone tactile morte, et de courts bugs après un choc. Tout se règle ou se coupe dans les options.
+[*] [b]Sang plus crédible[/b] : plus sombre, il se dilue sous la pluie, s'accumule en bas de l'écran et reste dans les fêlures après un coup de chiffon.
+[*] [b]Poste TOC et Athena[/b] : chronos, main courante, liste d'exécution, pertes, demandes et FLASH du poste en jeu se voient en direct sur le poste TOC web d'Athena, et ce que fait l'opérateur web arrive en jeu.
+[*] [b]Plans d'opération[/b] : un plan préparé sur Athena s'envoie en jeu et apparaît dans l'app Plan des téléphones, sur le PC du poste et sur les écrans de la salle.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Towers and masts[/b]: relays are redrawn as real sites (lattice, ladder, platforms, cables, fence, red lights at night), with new models: 30 m monopole, 60 m guyed mast, rooftop tower, tripod mast and trailer mast. Pick the paint.
+[*] [b]Tree-disguised relays[/b]: a fake pine (28 m and 15 m) and a fake palm (22 m): a tree from afar, antennas among the branches up close.
+[*] [b]Wall antennas[/b]: antennas to fix on a wall, a pole or a roof; they are real relays.
+[*] [b]IP cameras[/b]: a family of cameras to place (dome, infrared bullet, thermal, mini dome…).
+[*] [b]Server room[/b]: racks, cabinets, cable trays and an AC unit to place in the editor and in Zeus.
+[*] [b]Status lights and destruction[/b]: a light shows the state of each relay (running, degraded, jammed, off); a destroyed tower bends and falls.
+[*] [b]Lighter relays[/b]: the relay models are about 33 MB lighter, and the coverage map recomputes much faster.
+[*] [b]Change: GPS jammer[/b]: a GPS jammer alone no longer creates a dead zone in the network coverage.
+[*] [b]Change: M12 and M20 relays[/b]: they are now green tactical masts; existing missions keep them in place.
+[*] [b]Complete TOC room[/b]: the module finally places the whole room on the ground, in Eden and in Zeus: video wall, big screens, strips, name plates, desks, chairs and computers, all linked to the same room.
+[*] [b]Indoors or outdoors[/b]: against a wall and under a ceiling, the room uses the wall and hanging screens; outdoors, screens on stands replace them.
+[*] [b]Stated size[/b]: the space each room takes (small, medium, large) is written in the module, and the Zeus reads the result of the placement in the feedback line.
+[*] [b]Text on screens[/b]: a new "Text" display in the look of the clock strip. You write your messages (colour, duration, blinking), they are shown in turn and scroll when they are too long.
+[*] [b]Giant screens[/b]: 2.4 m and 4.8 m LED strips, a 136-inch screen, a 220-inch LED wall, 4x3, 5x3 and 6x4 video walls, double and triple hanging screens, a 7 m curved screen.
+[*] [b]PC stations[/b]: complete desktop stations (1, 2, 3 screens or a curved screen) that work as the post PC, and an "Operator station" module that places desk, chair and station in one go.
+[*] [b]Older screens remade[/b]: the TV, tripod screens, monitor, projection screens, projector and laptop have new models; existing missions keep them.
+[*] [b]Phone screen damage[/b]: thirteen ways to break the glass (hairline crack, spider web, crushed corner, bullet impact, water under the glass…), placed where the phone was hit.
+[*] [b]Display faults and glitches[/b]: dead pixels, coloured lines, a growing ink blot, a dead touch zone, and short glitches after a shock. Everything can be tuned or turned off in the options.
+[*] [b]More believable blood[/b]: darker, it thins out in the rain, pools at the bottom of the screen and stays in the cracks after a wipe.
+[*] [b]TOC and Athena[/b]: the in-game post's timers, duty log, execution checklist, casualties, requests and FLASH show live on Athena's web TOC, and what the web operator does reaches the game.
+[*] [b]Operation plans[/b]: a plan prepared on Athena can be sent into the game and appears in the phones' Plan app, on the post PC and on the room screens.
+[/list]
+
 [h1]COMSPEC ATAK 4.6.0 Washington — écrans TOC réglables dans Eden et Zeus, allumés avec un serveur plus ancien / TOC screens set up in Eden and Zeus, lit with an older server[/h1]
 
 [h2]Français[/h2]

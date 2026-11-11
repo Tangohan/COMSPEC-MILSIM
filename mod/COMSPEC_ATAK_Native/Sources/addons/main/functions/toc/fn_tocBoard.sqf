@@ -10,6 +10,9 @@
       KILLS    pertes et résultats par élément (totaux)   REQ  demandes reçues des éléments (statut en pastille)
       MOSAIC   mosaïque de caméras (coins de visée, bandeau indicatif, barres de liaison, PAS DE SIGNAL)
       STRIP    bandeau horloge 4:1             PLATE    plaque de nom 4:1
+      COLA     colonne horloge et chronos      COLB     colonne réseau, groupes et flux (colonnes 8:9 d'un écran
+               incurvé : 800 x 900 virtuels, de part et d'autre de la zone centrale 16:9)
+    L'affichage TEXTE (panneau à LED, texte défilant) est dessiné par fn_tocText.
     Refonte du 11/11 (« un rendu pro et propre ») : tout vient du thème (fn_tocTheme : couleurs, tailles, polices,
     régions, colonnes, règles sous FLASH ; maquettes tools/toc_mockups.py avec les mêmes nombres, docs/TOC-THEME.md).
     Dessin « immédiat » : à chaque image, chaque élément prend un contrôle dans une réserve par calque (fonds, filets et
@@ -107,6 +110,9 @@ switch (_mode) do {
         private _side = [_cside, str side group player] select (_cside isEqualTo "");
         private _wide = _view in ["STRIP", "PLATE"];
         if (_wide) then { _texH = 400; };
+        // Colonne 8:9 d'un écran incurvé : 800 x 900 virtuels, ni en-tête ni pied (ceux de la zone centrale suffisent).
+        private _col = _view in ["COLA", "COLB"];
+        if (_col) then { _texW = 800; };
         private _g = _d getVariable ["COMSPEC_ATAK_TocBoard", controlNull];
         private _ui = _d getVariable ["COMSPEC_ATAK_TocBoardUi", createHashMap];
         if (isNull _g) then {
@@ -207,7 +213,7 @@ switch (_mode) do {
         };
         // ---- Mise en page : régions du thème, descendues sous un FLASH (_flRule) ----
         private _fl = ["flash", _side] call _fn;
-        private _isFl = (count _fl) > 0 && {!_wide};
+        private _isFl = (count _fl) > 0 && {!_wide} && {!_col};
         private _lv = [_view, "SPLIT"] select (_view isEqualTo "TOC");
         private _rg = { ["region", [_lv, _this, _isFl]] call comspec_atak_native_fnc_tocTheme };
         private _section = {
@@ -364,7 +370,7 @@ switch (_mode) do {
             [[0, 0, 8, 52], "red", 1, "b2"] call _box;
             [[24, 6, 1552, 40], format ["FLASH · %1 · %2 · %3Z", _fl select 0, _fl select 1, _fl select 2], "heading", "text", "L", true] call _text;
         };
-        if (!_wide && {!_isSat}) then {
+        if (!_wide && {!_isSat} && {!_col}) then {
             if (!_mapView) then { [[0, 0, 1600, 900], "bg0"] call _box; };
             private _frm = ["lay", "FRAME"] call comspec_atak_native_fnc_tocTheme;
             [_frm get "header", "bg1"] call _box;
@@ -710,6 +716,61 @@ switch (_mode) do {
                     private _tex = ["", ["tex", _id] call comspec_atak_native_fnc_tocMosaic] select (_id in _liveIds && {_res > 0});
                     if (_tex isNotEqualTo "") then { _anyLive = true; };
                     [_r, _tex, [_cs, _lbl] select (_cs isEqualTo ""), _lk, [["wait", "nosig"] select (_res <= 0), "live"] select (_tex isNotEqualTo "")] call _camTile;
+                };
+            };
+            case "COLA": {
+                // Colonne horloge : ZULU en grand, groupe date-heure, heure locale de la mission, chronos du poste.
+                [[0, 0, 800, 900], "bg0"] call _box;
+                systemTimeUTC params ["_yy", "_mo", "_dd", "_hh", "_mi"];
+                private _two = { private _v = floor _this; [str _v, "0" + str _v] select (_v < 10) };
+                private _mon = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+                ["zLbl" call _rg, "ZULU", "heading", "accent"] call _text;
+                ["zDig" call _rg, _zulu, "display", "text", "L", true] call _text;
+                ["dtg" call _rg, format ["DTG %1%2%3Z %4 %5", _dd call _two, _hh call _two, _mi call _two, _mon select ((_mo - 1) max 0), (_yy mod 100) call _two], "data", "text2", "L", true] call _text;
+                ["lRule" call _rg, "line", 1, "b1"] call _box;
+                ["lLbl" call _rg, "LOCAL (MISSION)", "heading", "muted"] call _text;
+                ["lDig" call _rg, _local, "hero", "text2", "L", true] call _text;
+                date params ["_my", "_mm", "_md"];
+                ["lDate" call _rg, format ["date de la mission · %1 %2 %3", _md call _two, _mon select ((_mm - 1) max 0), _my], "body", "text2", "L", true] call _text;
+                private _tm = _room select 1;
+                ["", "CHRONOS", format ["%1 chronos du poste", count _tm], "t"] call _section;
+                ("tArea" call _rg) params ["_ax", "_ay", "_aw", "_ah"];
+                if ((count _tm) isEqualTo 0) exitWith { [[_ax, _ay, _aw, 40], "Aucun chrono : créez-en un au PC du poste (onglet CHRONOS)", "body", "muted"] call _text; };
+                private _maxT = floor (_ah / 76);
+                private _shown = [_maxT, _maxT - 1] select ((count _tm) > _maxT);
+                private _tc = (_thm get "cols") get "TIMER";
+                {
+                    (["timerText", _x] call comspec_atak_native_fnc_tocRoom) params ["_txt", "", "_state"];
+                    _x params ["", "_tn", ["_kind", "UP"]];
+                    private _tok = switch (true) do { case (_state isEqualTo "OVER"): { "red" }; case (_state isNotEqualTo "RUN"): { "muted" }; case (_kind isEqualTo "AT"): { "amber" }; default { "accent" }; };
+                    private _ry = _ay + _forEachIndex * 76;
+                    [[_ax + ((_tc select 0) select 2), _ry + 16, (_tc select 0) select 3, 40], _tn, "heading", "text", "L", true] call _text;
+                    [[_ax + _aw - ((_tc select 2) select 3), _ry + 10, (_tc select 2) select 3, 56], _txt, "num", _tok, "R", true] call _text;
+                    [[_ax, _ry + 75, _aw, 1], "line", 0.7, "b1"] call _box;
+                } forEach (_tm select [0, _shown]);
+                if ((count _tm) > _shown) then { [[_ax, _ay + _shown * 76, _aw, 40], "+ %1 autres chronos au PC du poste", "caption", "muted"] call _text; };
+            };
+            case "COLB": {
+                // Colonne flux : RÉSEAU (4 cases), GROUPES (tableau), FLUX (dernières lignes).
+                [[0, 0, 800, 900], "bg0"] call _box;
+                ["", "RÉSEAU", _netSub, "net"] call _section;
+                ["tiles" call _rg, _netTiles] call _tiles;
+                private _gs = [_nodes] call _groupsOf;
+                ["", "GROUPES", format ["%1 éléments", count _gs], "grp"] call _section;
+                ["GRP_S", "grpCols" call _rg, "grpArea" call _rg, _gs apply {
+                    _x params ["_gn", "_n", "_best", "_p"];
+                    [[_gn, ["text", "amber", "red", "muted"] select _best], [str _n, "text2"], [[_p] call _gridOf, "text2"]]
+                }] call _table;
+                ["", "FLUX", format ["%1 sur 20 min", { serverTime - (_x param [7, -1e9]) < 1200 } count _events], "flux"] call _section;
+                private _ev = _events select [0 max ((count _events) - 6)];
+                reverse _ev;
+                if ((count _events) isEqualTo 0) then {
+                    ["fluxArea" call _rg, "Aucun compte rendu ni message pour l'instant", "body", "muted"] call _text;
+                } else {
+                    ["FLUX_S", [], "fluxArea" call _rg, _ev apply {
+                        _x params [["_time", ""], ["_kind", ""], ["_prio", ""], ["_who", ""]];
+                        [[_time select [0, 5], "muted"], [_kind, [[_prio] call _prioTok, "text"] select ((toUpper _prio) in ["", "ROUTINE"])], [_who, "text2"]]
+                    }, ""] call _table;
                 };
             };
             case "STRIP": {

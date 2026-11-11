@@ -21,7 +21,9 @@
     id_card: 'CARTE D’IDENTITÉ · IDENTITY CARD',
     passport: 'PASSEPORT · PASSPORT',
     driving_license: 'PERMIS DE CONDUIRE · DRIVING LICENCE',
-    military_id: 'CARTE MILITAIRE · MILITARY ID'
+    military_id: 'CARTE MILITAIRE · MILITARY ID',
+    residence_permit: 'TITRE DE SÉJOUR · RESIDENCE PERMIT',
+    vehicle_registration: 'CERTIFICAT D’IMMATRICULATION · VEHICLE REGISTRATION'
   };
 
   function field(name) {

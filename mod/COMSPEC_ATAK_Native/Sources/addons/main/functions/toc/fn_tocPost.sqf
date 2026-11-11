@@ -3,7 +3,7 @@
     L'action « PC du poste TOC » ouvre l'écran du PC lui-même (fn_tocLaptop), sans téléphone : carte en grand, nœuds
     ATAK, groupes, flux, ordres et messages au camp. Un joueur à pied à moins de 2,5 m d'un PC de TOC garde aussi, s'il
     a un ATAK, l'app Poste TOC dans son téléphone (fn_vehicleTerminal "toc", fn_pageToc).
-    PC de TOC : objet COMSPEC_ATAK_TocLaptop (Eden, Zeus), tout objet avec this setVariable ["COMSPEC_ATAK_Toc", true, true],
+    PC de TOC : objet COMSPEC_ATAK_TocLaptop (Eden, Zeus), poste PC fixe (config comspec_tocPost=1, fn_tocPc), tout objet avec this setVariable ["COMSPEC_ATAK_Toc", true, true],
     ou n'importe quel ordinateur portable posé (réglage « Tous les ordinateurs portables servent de PC de TOC »).
     Camp réservé (attribut Eden ou variable COMSPEC_ATAK_TocSide "WEST" | "EAST" | "GUER" | "CIV") : vide = tous les camps.
     Params : [action, argument]
@@ -24,7 +24,7 @@ private _laptops = ["Land_Laptop_unfolded_F", "Land_Laptop_device_F", "Land_Lapt
 private _isToc = {
     params ["_o"];
     if (isNull _o || {!alive _o}) exitWith { false };
-    private _ok = _o isKindOf "COMSPEC_ATAK_TocLaptop" || {_o getVariable ["COMSPEC_ATAK_Toc", false]}
+    private _ok = _o isKindOf "COMSPEC_ATAK_TocLaptop" || {(getNumber (configOf _o >> "comspec_tocPost")) > 0} || {_o getVariable ["COMSPEC_ATAK_Toc", false]}
         || {(missionNamespace getVariable ["comspec_atak_native_toc_anylaptop", false]) && {(typeOf _o) in _laptops}};
     if !(_ok) exitWith { false };
     private _side = toUpper trim (_o getVariable ["COMSPEC_ATAK_TocSide", ""]);
@@ -96,8 +96,11 @@ switch (_act) do {
             ["COMSPEC_ATAK_TocLaptop", 0, ["ACE_MainActions"], _a] call ace_interact_menu_fnc_addActionToClass;
             // Ordinateurs portables du jeu (réglage) et objets désignés par la mission : même action.
             { [_x, 0, ["ACE_MainActions"], _a] call ace_interact_menu_fnc_addActionToClass; } forEach _laptops;
+            // Postes PC fixes (config comspec_tocPost=1) : même action, classe par classe.
+            { [_x, 0, ["ACE_MainActions"], _a] call ace_interact_menu_fnc_addActionToClass; } forEach (["classes"] call comspec_atak_native_fnc_tocPc);
         };
-        missionNamespace setVariable ["COMSPEC_ATAK_TocLaptops", _laptops];
+        // Classes qui portent l'action ACE : l'action de la molette ne les double pas quand ACE est là.
+        missionNamespace setVariable ["COMSPEC_ATAK_TocLaptops", _laptops + (["classes"] call comspec_atak_native_fnc_tocPc)];
         // Sans ACE (ou objet désigné par la mission, sans menu ACE) : action de la molette, remise à chaque réapparition.
         ["action"] call comspec_atak_native_fnc_tocPost;
         player addEventHandler ["Respawn", { [{ ["action"] call comspec_atak_native_fnc_tocPost; }, [], 1] call comspec_atak_native_fnc_waitAndExec; }];

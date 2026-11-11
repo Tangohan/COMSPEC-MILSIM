@@ -34,8 +34,13 @@
       "coverage" : calcule en tâche de fond une grille 41 x 41 autour du centre donné (ou de moi), rayon rcRadius
                    (2, 5 ou 10 km) : meilleur débit reçu à 1,7 m du sol, brouilleurs compris.
                    Résultat : missionNamespace COMSPEC_ATAK_Coverage = [centre, case, [[pos, Mbit/s, perte %, relais]...],
-                   rayon, % couvert, heure, nb relais, débit moyen].
+                   rayon, % couvert, heure, nb relais, débit moyen, accélérateur ("covAccel" : côté, index des cases, bandes à
+                   dessiner), signature ("covSig"), cases reprises du calcul précédent].
+                   Incrémental : même signature, rien n'est recalculé ; seuls des relais ont changé ("covDirty"), seules les
+                   cases à leur portée (avant ou après) repassent par le bilan radio, les autres sont reprises.
       "at"       : [position] -> [Mbit/s, perte %, nom du relais] d'après la dernière couverture, ou [] hors grille.
+                   Lecture directe par l'index (9 cases au plus), plus de parcours de la grille.
+      "covBand", "covAccel", "covSig", "covDirty" : fonctions sans effet de la couverture, testées par fn_devMeshTest.
       "clear"    : efface la couverture.
       "locate"   : [objet visé] triangule l'appareil : chaque relais ou téléphone du maillage qui l'entend donne une distance
                    estimée (puissance reçue, bruitée selon la qualité du lien) ; position par moindres carrés.
@@ -75,13 +80,13 @@ switch (_act) do {
             _m
         };
         private _jf = [];
+        // Dégâts : débit puis portée baissent petit à petit (réglage comspec_atak_native_relay_damage, perte à 100 % de dégâts).
+        private _dmgK = (missionNamespace getVariable ["comspec_atak_native_relay_damage", 70]) / 100;
         {
             if (isNull _x || {!(_x getVariable ["COMSPEC_AtakRelay", false])}) then { continue };
             // Relais réservé à un camp (module « Poser un relais ») : invisible pour les autres.
             private _rs = _x getVariable ["COMSPEC_AtakRelaySide", ""];
             if (_rs isEqualType "" && {_rs isNotEqualTo ""} && {_rs isNotEqualTo _side}) then { continue };
-            // Dégâts : débit puis portée baissent petit à petit (réglage comspec_atak_native_relay_damage, perte à 100 % de dégâts).
-            private _dmgK = (missionNamespace getVariable ["comspec_atak_native_relay_damage", 70]) / 100;
             private _r = ([_x getVariable ["COMSPEC_AtakRelayRange", _defR], _defR] call _num) * (1 - 0.5 * _dmgK * damage _x);
             private _mb = [_x getVariable ["COMSPEC_AtakRelayThroughput", 12], 12] call _num;
             private _n = _x getVariable ["COMSPEC_AtakRelayName", "Relais ATAK"];
@@ -129,6 +134,11 @@ switch (_act) do {
         // Répéteurs : sans liaison propre (satellite, fibre), un relais doit voir un relais raccordé, de proche en proche.
         // Débit du répéteur = le plus faible de la chaîne, réduit par la qualité de chaque bond.
         private _real = (["realism"] call comspec_atak_native_fnc_netCond);
+        // Bilan d'un bond entre deux relais gardé 15 s (antennes à 5 m près, portée, niveau de réalisme) : des relais fixes ne
+        // relancent plus un profil de terrain par paire toutes les 2 s, sur chaque client et sur le serveur.
+        private _hopCache = missionNamespace getVariable "COMSPEC_ATAK_RelayHopCache";
+        if (isNil "_hopCache" || {(count _hopCache) > 2048}) then { _hopCache = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_RelayHopCache", _hopCache]; };
+        private _hopKey = _out apply { str ((_x select 1) apply { round (_x / 5) }) };
         private _feed = _out apply { [-1, _x select 5] select ((_x select 6) && {_x select 11}) };
         private _hop = _feed apply { [-1, 0] select (_x >= 0) };
         private _queue = [];
@@ -148,7 +158,13 @@ switch (_act) do {
                     if (terrainIntersectASL [_a select 1, _x select 1]) then { _reach = _reach * 0.35; };
                     if (_d <= _reach) then { _q = 1 - (_d / _reach) ^ 2; };
                 } else {
-                    private _mg = ([_a select 1, _x select 1, _reach] call comspec_atak_native_fnc_radioLink) select 0;
+                    private _hk = format ["%1|%2|%3|%4", _hopKey select _i, _hopKey select _forEachIndex, round _reach, _real];
+                    private _hit = _hopCache getOrDefault [_hk, []];
+                    private _mg = if ((count _hit) isEqualTo 2 && {diag_tickTime - (_hit select 0) < 15}) then { _hit select 1 } else {
+                        private _m0 = ([_a select 1, _x select 1, _reach] call comspec_atak_native_fnc_radioLink) select 0;
+                        _hopCache set [_hk, [diag_tickTime, _m0]];
+                        _m0
+                    };
                     if (_mg >= 0) then { _q = (_mg / 20) min 1; };
                 };
                 if (_q < 0) then { continue };
@@ -411,29 +427,115 @@ switch (_act) do {
         private _mcs = ({ _mg >= _x } count [0, 2, 4, 6, 9, 12, 16, 20]) - 1;
         [(_mg / 20) min 1, _mb * ([0.06, 0.12, 0.25, 0.4, 0.55, 0.7, 0.85, 1] select _mcs), round (40 * exp (-_mg / 5)), _mg, _ls, _mcs]
     };
+    case "covBand": {
+        // Palier de couleur d'une case de couverture (fn_meshDraw) : 0 fort, 1 bon, 2 moyen, 3 faible, 4 zone blanche.
+        private _mb = _arg param [0, 0];
+        switch (true) do { case (_mb >= 4): { 0 }; case (_mb >= 1.5): { 1 }; case (_mb >= 0.5): { 2 }; case (_mb > 0): { 3 }; default { 4 }; }
+    };
+    case "covAccel": {
+        // Sans effet (testé par fn_devMeshTest) : [cases, centre, pas, côté de la grille] -> [côté, index, bandes].
+        //   index  : colonne x côté + ligne -> rang de la case ("at" sans parcourir la grille) ;
+        //   bandes : cases voisines d'une même colonne et d'un même palier fondues en un rectangle [centre, demi-largeur, demi-hauteur,
+        //            palier] : la carte dessine quelques centaines de rectangles au lieu d'un par case, même image.
+        _arg params [["_cells", []], ["_center", [0, 0]], ["_cell", 1], ["_n", 41]];
+        private _half = floor (_n / 2);
+        private _idx = createHashMap;
+        private _runs = [];
+        // Bande en cours : [colonne, ligne de début, ligne de fin, palier, x, y de début, y de fin].
+        private _cur = [];
+        private _flush = {
+            if (_cur isNotEqualTo []) then {
+                _cur params ["", "_j0", "_j1", "_b", "_x0", "_ya", "_yb"];
+                _runs pushBack [[_x0, (_ya + _yb) / 2, 0], _cell / 2, (_j1 - _j0 + 1) * _cell / 2, _b];
+            };
+        };
+        {
+            (_x select 0) params ["_px", "_py"];
+            private _i = (round ((_px - (_center select 0)) / _cell)) + _half;
+            private _j = (round ((_py - (_center select 1)) / _cell)) + _half;
+            _idx set [_i * _n + _j, _forEachIndex];
+            private _b = ["covBand", [_x select 1]] call comspec_atak_native_fnc_relayNet;
+            if (_cur isNotEqualTo [] && {(_cur select 0) isEqualTo _i} && {(_cur select 2) isEqualTo (_j - 1)} && {(_cur select 3) isEqualTo _b}) then {
+                _cur set [2, _j];
+                _cur set [6, _py];
+            } else {
+                call _flush;
+                _cur = [_i, _j, _j, _b, _px, _py, _py];
+            };
+        } forEach _cells;
+        call _flush;
+        [_n, _idx, _runs]
+    };
+    case "covSig": {
+        // Sans effet (testé par fn_devMeshTest) : signature de ce dont dépend une couverture. [relais en service, centre, rayon]
+        // -> [centre, rayon, réalisme, météo (pluie, vent, orage par paliers), brouilleurs, [[antenne au mètre, portée, débit au dixième, nom]...]].
+        _arg params [["_relays", []], ["_center", [0, 0]], ["_radius", 5000]];
+        private _side = str side group player;
+        private _jam = ((missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) select { ((_x param [4, 1e9]) >= _now) && {(_x param [7, 0]) isEqualTo 0} && {(_x param [8, ""]) isNotEqualTo "gps"} && {!((_x param [5, false]) && {(_x param [3, ""]) isEqualTo _side})} }) apply {
+            private _jp = _x param [0, [0, 0, 0]];
+            if (_jp isEqualType objNull) then { _jp = getPosATL _jp; };
+            [round (_jp param [0, 0]), round (_jp param [1, 0]), _x param [1, 500], _x param [6, 1]]
+        };
+        [[round (_center select 0), round (_center select 1)], _radius, ["realism"] call comspec_atak_native_fnc_netCond,
+            [round (10 * rain), round (vectorMagnitude wind), round (10 * lightnings), overcast > 0.6, ["weatherK"] call comspec_atak_native_fnc_netCond], _jam,
+            _relays apply { [(_x select 1) apply { round _x }, round (_x select 4), (round (10 * (_x select 5))) / 10, _x select 2] }]
+    };
+    case "covDirty": {
+        // Sans effet (testé par fn_devMeshTest) : [ancienne signature, nouvelle] -> [reprise possible, [[antenne, portée]...]].
+        // Reprise possible : même centre, rayon, réalisme, météo et brouilleurs ; seuls des relais diffèrent. Disques à recalculer :
+        // les relais apparus, disparus ou modifiés (déplacé, portée, débit, nom), à leur ancienne et à leur nouvelle place.
+        _arg params [["_was", []], ["_is", []]];
+        if ((count _was) isNotEqualTo 6 || {(count _is) isNotEqualTo 6} || {(_was select [0, 5]) isNotEqualTo (_is select [0, 5])}) exitWith { [false, []] };
+        private _dirty = [];
+        private _a = _was select 5;
+        private _b = _is select 5;
+        { if !(_x in _b) then { _dirty pushBack [_x select 0, _x select 1]; }; } forEach _a;
+        { if !(_x in _a) then { _dirty pushBack [_x select 0, _x select 1]; }; } forEach _b;
+        [true, _dirty]
+    };
     case "coverage": {
         if (missionNamespace getVariable ["COMSPEC_ATAK_CoverageBusy", false]) exitWith { ["INFO", "Calcul de couverture déjà en cours", 3, 20] call comspec_atak_native_fnc_notify; };
         private _relays = (["list"] call comspec_atak_native_fnc_relayNet) select { _x select 6 };
         if (_relays isEqualTo []) exitWith { ["WARNING", "Aucun relais intact ni passerelle de véhicule dans votre camp", 4, 20] call comspec_atak_native_fnc_notify; };
         private _radius = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["rcRadius", 5000];
         private _c = if (_arg isEqualType [] && {(count _arg) >= 2}) then { _arg } else { getPosASL player };
+        // Couverture incrémentale : la signature dit ce qui a changé depuis le dernier calcul. Rien : la grille est gardée telle quelle.
+        // Seuls des relais ont changé (déplacé, coupé, détruit, débit) : seules les cases à leur portée, avant ou après, sont recalculées.
+        private _sig = ["covSig", [_relays, _c, _radius]] call comspec_atak_native_fnc_relayNet;
+        private _old = missionNamespace getVariable ["COMSPEC_ATAK_Coverage", []];
+        if (_sig isEqualTo (_old param [9, []])) exitWith { ["INFO", "Couverture déjà à jour : aucun relais n'a changé", 3, 20] call comspec_atak_native_fnc_notify; };
+        (["covDirty", [_old param [9, []], _sig]] call comspec_atak_native_fnc_relayNet) params ["_reuse", "_dirty"];
+        if ((count (_old param [8, []])) isNotEqualTo 3) then { _reuse = false; };
         missionNamespace setVariable ["COMSPEC_ATAK_CoverageBusy", true];
         missionNamespace setVariable ["COMSPEC_ATAK_CoverageProgress", 0];
-        [_relays, _radius, [_c select 0, _c select 1]] spawn {
-            params ["_relays", "_radius", "_center"];
+        [_relays, _radius, [_c select 0, _c select 1], _sig, _reuse, _dirty, _old] spawn {
+            params ["_relays", "_radius", "_center", "_sig", "_reuse", "_dirty", "_old"];
             private _n = 41;
             private _half = floor (_n / 2);
             private _cell = (2 * _radius) / (_n - 1);
-            private _jam = (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) select { ((_x param [4, 1e9]) >= ([time, serverTime] select isMultiplayer)) && {!((_x param [5, false]) && {(_x param [3, ""]) isEqualTo str side group player})} };
+            // Mêmes brouilleurs que la liste des relais et fn_linkQuality : ni brouillage GPS seul, ni brouillage d'un canal du maillage
+            // (avant : ils creusaient une zone blanche sur la carte de couverture sans toucher au réseau).
+            private _jam = (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) select { ((_x param [4, 1e9]) >= ([time, serverTime] select isMultiplayer)) && {(_x param [7, 0]) isEqualTo 0} && {(_x param [8, ""]) isNotEqualTo "gps"} && {!((_x param [5, false]) && {(_x param [3, ""]) isEqualTo str side group player})} };
+            private _oldCells = _old param [2, []];
+            private _oldIdx = (_old param [8, []]) param [1, createHashMap];
             private _cells = [];
             private _cov = 0;
             private _sum = 0;
+            private _kept = 0;
             for "_i" from 0 to (_n - 1) do {
                 for "_j" from 0 to (_n - 1) do {
                     private _dx = (_i - _half) * _cell;
                     private _dy = (_j - _half) * _cell;
                     if (sqrt (_dx * _dx + _dy * _dy) > _radius + _cell / 2) then { continue };
                     private _p2 = [(_center select 0) + _dx, (_center select 1) + _dy];
+                    // Case hors de portée de tout relais modifié : résultat du calcul précédent, aucun bilan radio.
+                    private _prev = if (_reuse && {(_dirty findIf { ((_x select 0) distance2D _p2) <= (_x select 1) + 2 }) < 0}) then { private _oi = _oldIdx getOrDefault [_i * _n + _j, -1]; if (_oi >= 0) then { _oldCells param [_oi, []] } else { [] } } else { [] };
+                    if ((count _prev) isEqualTo 4) then {
+                        _kept = _kept + 1;
+                        if ((_prev select 1) > 0) then { _cov = _cov + 1; _sum = _sum + (_prev select 1); };
+                        _cells pushBack _prev;
+                        continue
+                    };
                     private _p = [_p2 select 0, _p2 select 1, ((getTerrainHeightASL _p2) max 0) + 1.7];
                     private _best = [0, 0, 100];
                     private _src = "";
@@ -459,7 +561,9 @@ switch (_act) do {
                 missionNamespace setVariable ["COMSPEC_ATAK_CoverageProgress", (_i + 1) / _n];
             };
             private _pct = round (100 * _cov / ((count _cells) max 1));
-            missionNamespace setVariable ["COMSPEC_ATAK_Coverage", [_center, _cell, _cells, _radius, _pct, dayTime, count _relays, [0, _sum / (_cov max 1)] select (_cov > 0)]];
+            // 9e élément : accélérateur de lecture et de dessin ("covAccel") ; 10e : signature ("covSig") ; 11e : cases reprises du calcul précédent.
+            missionNamespace setVariable ["COMSPEC_ATAK_Coverage", [_center, _cell, _cells, _radius, _pct, dayTime, count _relays, [0, _sum / (_cov max 1)] select (_cov > 0),
+                ["covAccel", [_cells, _center, _cell, _n]] call comspec_atak_native_fnc_relayNet, _sig, _kept]];
             missionNamespace setVariable ["COMSPEC_ATAK_CoverageBusy", false];
             profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", true];
             ["SUCCESS", format ["Couverture calculée : %1 %% du terrain reçoit le réseau sur %2 km", _pct, round (_radius / 1000)], 4, 30] call comspec_atak_native_fnc_notify;
@@ -474,11 +578,33 @@ switch (_act) do {
         // Coins hors cercle sautés au calcul : on cherche la case la plus proche.
         private _best = [];
         private _bd = 1e9;
-        {
-            private _d = (_x select 0) distance2D _arg;
-            if (_d < _bd) then { _bd = _d; _best = _x; };
-            if (_d < _cell / 2) exitWith {};
-        } forEach _cells;
+        (_cv param [8, []]) params [["_n", 0], ["_idx", 0]];
+        if (_n > 0 && {_idx isEqualType createHashMap}) then {
+            // Lecture directe : la case visée et ses 8 voisines (appelée à chaque image sous le curseur de la carte ; avant : la grille
+            // entière, 1 300 cases, était parcourue).
+            private _half = floor (_n / 2);
+            private _i0 = (round (((_arg select 0) - (_center select 0)) / _cell)) + _half;
+            private _j0 = (round (((_arg select 1) - (_center select 1)) / _cell)) + _half;
+            for "_di" from -1 to 1 do {
+                for "_dj" from -1 to 1 do {
+                    private _i = _i0 + _di;
+                    private _j = _j0 + _dj;
+                    if (_i < 0 || {_j < 0} || {_i >= _n} || {_j >= _n}) then { continue };
+                    private _ci = _idx getOrDefault [_i * _n + _j, -1];
+                    if (_ci < 0) then { continue };
+                    private _c = _cells param [_ci, []];
+                    if (_c isEqualTo []) then { continue };
+                    private _d = (_c select 0) distance2D _arg;
+                    if (_d < _bd) then { _bd = _d; _best = _c; };
+                };
+            };
+        } else {
+            {
+                private _d = (_x select 0) distance2D _arg;
+                if (_d < _bd) then { _bd = _d; _best = _x; };
+                if (_d < _cell / 2) exitWith {};
+            } forEach _cells;
+        };
         if (_best isEqualTo [] || {_bd > _cell}) exitWith { [] };
         [_best select 1, _best select 2, _best select 3]
     };

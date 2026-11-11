@@ -32,7 +32,9 @@ private _seed = _look getOrDefault ["seed", -1];
 // Tirages reproductibles de la graine des fêlures (les deux premiers donnent leur point d'impact, fn_deviceOverlay).
 private _n = 0;
 private _rnd = { _n = _n + 1; private _v = (sin (_seed * 0.917 + _n * 113.37)) * 4375.85; _v - floor _v };
-private _hasLook = _seed >= 0 && {!_dead};
+// Impacts du modèle fn_screenDamage affichés : l'encre et l'arc-en-ciel de l'ancienne toile (posés à son impact, qui
+// n'est plus dessiné) ne sont plus ajoutés ; les impacts portent leur propre encre.
+private _hasLook = _seed >= 0 && {!_dead} && {_lvl >= 3 || {((["list"] call comspec_atak_native_fnc_screenDamage) findIf { (_x select 0) in ["hair", "web", "bull", "corner", "chip", "diag", "press", "bullet", "crush"] }) < 0}};
 private _bleed = _hasLook && {_lvl >= 2};
 private _mura = _hasLook && {_lvl >= 1} && {(_seed mod 2) isEqualTo 0};
 private _back = _hasLook && {_dmg >= 0.5} && {(floor (_seed / 2) mod 2) isEqualTo 0};

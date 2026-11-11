@@ -5332,6 +5332,10 @@ class AtakApiController
             $rows = $this->applyIntelScramble($request, $tenantId, $mapId, 'unit', $rows);
         } catch (\Throwable) {
         }
+        // Poste TOC web (opt-in) : une ligne par joueur ou nœud, genre du symbole et âge (après le brouillage).
+        if ($request->query('toc') === '1') {
+            $rows = \App\Services\AtakToc\TocTracks::units(array_values(array_filter($rows, 'is_array')));
+        }
 
         return Response::json($rows);
     }
@@ -14212,6 +14216,10 @@ class AtakApiController
             $out = $this->motionService()->attachToAir($tenantId, $mapId, $out);
         } catch (\Throwable) {
         }
+        if ($request->query('toc') === '1') {
+            $out = \App\Services\AtakToc\TocTracks::air(array_values(array_filter($out, 'is_array')));
+        }
+
         return Response::json($out);
     }
 
@@ -15512,6 +15520,9 @@ class AtakApiController
             $vehicles = $repo->listActive($tenantId, $mapId, array_filter($filters, fn($v) => $v !== null));
         } catch (\Throwable) {
             $vehicles = [];
+        }
+        if ($request->get('toc') === '1') {
+            $vehicles = \App\Services\AtakToc\TocTracks::vehicles(array_values(array_filter($vehicles, 'is_array')));
         }
 
         return Response::json([

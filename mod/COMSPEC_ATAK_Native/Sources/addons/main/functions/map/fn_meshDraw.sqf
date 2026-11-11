@@ -53,18 +53,23 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
         private _x1 = ((_tl select 0) max (_br select 0)) + _cell;
         private _y0 = ((_tl select 1) min (_br select 1)) - _cell;
         private _y1 = ((_tl select 1) max (_br select 1)) + _cell;
-        {
-            _x params ["_p", "_mb"];
-            if ((_p select 0) < _x0 || {(_p select 0) > _x1} || {(_p select 1) < _y0} || {(_p select 1) > _y1}) then { continue };
-            private _col = switch (true) do {
-                case (_mb >= 4): { [0.2, 0.85, 0.3, 0.28] };
-                case (_mb >= 1.5): { [0.75, 0.85, 0.2, 0.28] };
-                case (_mb >= 0.5): { [1, 0.6, 0.15, 0.28] };
-                case (_mb > 0): { [0.9, 0.2, 0.15, 0.3] };
-                default { [0.15, 0.15, 0.15, 0.3] };
-            };
-            _map drawRectangle [_p, _a, _a, 0, _col, _fill];
-        } forEach _cells;
+        // Bandes préparées au calcul (fn_relayNet "covAccel") : les cases voisines d'un même palier ne font qu'un rectangle, même image
+        // pour 3 à 6 fois moins de tracés par image. Couverture sans bandes (ancien format) : une case, un rectangle.
+        private _cols = [[0.2, 0.85, 0.3, 0.28], [0.75, 0.85, 0.2, 0.28], [1, 0.6, 0.15, 0.28], [0.9, 0.2, 0.15, 0.3], [0.15, 0.15, 0.15, 0.3]];
+        private _runs = (_cv param [8, []]) param [2, []];
+        if (_runs isNotEqualTo []) then {
+            {
+                _x params ["_p", "_ra", "_rb", "_band"];
+                if ((_p select 0) < _x0 || {(_p select 0) > _x1} || {((_p select 1) + _rb) < _y0} || {((_p select 1) - _rb) > _y1}) then { continue };
+                _map drawRectangle [_p, _ra, _rb, 0, _cols select _band, _fill];
+            } forEach _runs;
+        } else {
+            {
+                _x params ["_p", "_mb"];
+                if ((_p select 0) < _x0 || {(_p select 0) > _x1} || {(_p select 1) < _y0} || {(_p select 1) > _y1}) then { continue };
+                _map drawRectangle [_p, _a, _a, 0, _cols select (["covBand", [_mb]] call comspec_atak_native_fnc_relayNet), _fill];
+            } forEach _cells;
+        };
     };
     // Lien manquant (4.2.1, réglage mesh_miss_map) : hors maillage, un seul trait rouge en tirets entre mon îlot et le nœud le plus proche à
     // joindre, avec sa cause au milieu (fn_meshGraph "view" -> "miss"). Aucun calcul ici : lecture de la dernière vue du maillage.
