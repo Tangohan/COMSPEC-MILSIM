@@ -83,6 +83,33 @@ final class AtakCoverImportAssetTest extends TestCase
         self::assertStringContainsString('["pull"] call _act, false, !_wait', $page);
     }
 
+    public function testSyncWindowFollowsTheCoverActiveOnTheSite(): void
+    {
+        $dir = 'mod/@COMSPEC_SSE/addons/identity/';
+        $sqf = self::read($dir . 'functions/fn_idCoverAthena.sqf');
+        // Champ « active » de la liste du site (SseCoverSyncService::listFor) : marque, présélection, priorité à l'import.
+        self::assertStringContainsString('(_x getOrDefault ["active", false]) isEqualTo true', $sqf);
+        self::assertStringContainsString('private _first = if (_onSite in _here) then { _onSite } else { _here param [0, ""] };', $sqf);
+        // Site ancien (champ absent) : ni retrait des copies du poste, ni présélection.
+        self::assertStringContainsString('private _knows = (_covers findIf { "active" in _x }) >= 0;', $sqf);
+        // Couverture révoquée : copie retirée du poste, jamais la couverture en cours ; hors de la liste, plus d'activation.
+        self::assertStringContainsString('(keys _lib) select { !(_x in _refs) && {_x isNotEqualTo _current} }', $sqf);
+        self::assertStringContainsString('if (((_ui getOrDefault ["covers", []]) findIf { (_x get "ref") isEqualTo _arg }) < 0) exitWith {};', $sqf);
+        self::assertStringNotContainsString('["forget"] call comspec_sse_fnc_idCoverImport', $sqf);
+        // Aucune alerte Arma, aucune nouvelle requête : seules « ~covers » et « ~cover: » partent, derrière la garde.
+        foreach (['hint ', 'hintSilent', 'systemChat', 'BIS_fnc_showNotification', 'cutText', 'comspec_sse_fnc_radioGuard', 'callExtension'] as $forbidden) {
+            self::assertStringNotContainsString($forbidden, $sqf, $forbidden);
+        }
+        self::assertSame(2, substr_count($sqf, 'private _g = call _gate;'));
+        self::assertSame(1, substr_count($sqf, '["pull", "~covers"] call comspec_sse_fnc_idCoverAthena'));
+        // Textes des ajouts : stringtable de l'addon, anglais et français.
+        $st = self::read($dir . 'stringtable.xml');
+        foreach (['STR_COMSPEC_SSE_ID_CoverSiteActive', 'STR_COMSPEC_SSE_ID_CoverSiteActiveHint', 'STR_COMSPEC_SSE_ID_CoverGoneHint'] as $key) {
+            self::assertStringContainsString('localize "' . $key . '"', $sqf, $key);
+            self::assertMatchesRegularExpression('/<Key ID="' . $key . '">\s*<Original>[^<]+<\/Original>\s*<English>[^<]+<\/English>\s*<French>[^<]+<\/French>/', $st, $key);
+        }
+    }
+
     public function testEveryNewTextIsTranslated(): void
     {
         $en = self::read('mod/COMSPEC_ATAK_Native/Sources/addons/main/i18n/en.txt');

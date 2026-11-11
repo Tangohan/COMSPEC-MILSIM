@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- COMSPEC SSE, addon identity : fenêtre « Papiers de l'IA » du Zeus (anglais, français). Clés STR_COMSPEC_SSE_ZP_*, écrites à la main. -->
+<!-- COMSPEC SSE, addon identity : fenêtre « Papiers de l'IA » du Zeus (anglais, français). Clés STR_COMSPEC_SSE_ZP_*, écrites à la main. Fenêtre « Mes couvertures sur Athena » du téléphone : STR_COMSPEC_SSE_ID_Cover* (couverture active sur le site). -->
 <Project name="COMSPEC_SSE">
     <Package name="identity">
         <Key ID="STR_COMSPEC_SSE_ZP_Title">
@@ -621,6 +621,21 @@
             <Original>Papers removed.</Original>
             <English>Papers removed.</English>
             <French>Papiers retirés.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ID_CoverSiteActive">
+            <Original>Active on Athena</Original>
+            <English>Active on Athena</English>
+            <French>Active sur Athena</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ID_CoverSiteActiveHint">
+            <Original>The cover marked "Active on Athena" is the one you chose on the site: once imported, it becomes your active cover and replaces the previous one. The others stay on this computer, ready to activate here.</Original>
+            <English>The cover marked "Active on Athena" is the one you chose on the site: once imported, it becomes your active cover and replaces the previous one. The others stay on this computer, ready to activate here.</English>
+            <French>La couverture marquée « Active sur Athena » est celle que vous avez choisie sur le site : importée, elle devient votre couverture active et remplace celle d'avant. Les autres restent sur ce poste, prêtes à activer ici.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ID_CoverGoneHint">
+            <Original>Your current cover is no longer on Athena (revoked or removed). It stays active on this computer until you pick another one.</Original>
+            <English>Your current cover is no longer on Athena (revoked or removed). It stays active on this computer until you pick another one.</English>
+            <French>Votre couverture en cours n'est plus sur Athena (révoquée ou retirée). Elle reste active sur ce poste tant que vous n'en choisissez pas une autre.</French>
         </Key>
     </Package>
 </Project>
