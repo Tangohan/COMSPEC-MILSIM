@@ -23,8 +23,15 @@ if (!isNil "_pfh" && {(missionNamespace getVariable ["COMSPEC_ATAK_LivecamKind",
 };
 detach _cam;
 // Juste devant l'objectif, panoramique relatif à l'orientation de la caméra (suit un véhicule porteur).
-_cam attachTo [_obj, [0, 0.12, 0.03]];
-_cam setVectorDirAndUp [[sin _pan, cos _pan, 0], [0, 0, 1]];
+// Oeil et plongée propres au modèle (comspec_camEye, comspec_camTilt : cfg_cameras.hpp) ; caméra d'origine : inchangé.
+private _cfg = configOf _obj;
+private _eye = getArray (_cfg >> "comspec_camEye");
+if ((count _eye) isNotEqualTo 3) then { _eye = [0, 0.12, 0.03]; };
+private _tilt = getNumber (_cfg >> "comspec_camTilt");
+_cam attachTo [_obj, _eye];
+_cam setVectorDirAndUp [[(sin _pan) * cos _tilt, (cos _pan) * cos _tilt, -(sin _tilt)], [(sin _pan) * sin _tilt, (cos _pan) * sin _tilt, cos _tilt]];
+// Dôme PTZ : la tête suit le panoramique du flux (animation globale, model.cfg « pan »).
+if ((getNumber (_cfg >> "comspec_camPtz")) > 0) then { _obj animateSource ["pan", (((_pan + 540) mod 360) - 180) / 360]; };
 missionNamespace setVariable ["COMSPEC_ATAK_LivecamKind", "fixed"];
 private _mm = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["livecamFocal", 35];
 if !(_mm isEqualType 0) then { _mm = 35; };
