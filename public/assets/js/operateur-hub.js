@@ -143,6 +143,12 @@
         o.disabled = !ok;
         if (ok && first === null) { first = o.value; }
       });
+      // Catégorie sans aucun type délivré par ce pays : son titre disparaît aussi.
+      Array.prototype.forEach.call(type.querySelectorAll('optgroup'), function (g) {
+        var any = Array.prototype.some.call(g.children, function (o) { return !o.disabled; });
+        g.hidden = !any;
+        g.disabled = !any;
+      });
       if (type.selectedOptions[0] && type.selectedOptions[0].disabled && first !== null) { type.value = first; }
     };
     if (country && type) {

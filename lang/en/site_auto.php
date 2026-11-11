@@ -63892,4 +63892,10 @@ return [
     'Trop d’éléments (1 500 au plus).' => 'Too many elements (1,500 at most).',
     'modèle(s)' => 'template(s)',
     '» ? Une version reste gardée pour l’encadrement.' => '”? A version is kept for leadership.',
+    'Titre de séjour' => 'Residence permit',
+    'Certificat d’immatriculation' => 'Vehicle registration',
+    'Voyage' => 'Travel',
+    'Permis et véhicule' => 'Licence and vehicle',
+    'Professionnel' => 'Professional',
+    'Laissez-passer' => 'Pass',
 ];

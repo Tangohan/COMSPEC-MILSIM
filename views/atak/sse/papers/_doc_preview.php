@@ -54,6 +54,8 @@ $pvTypeLine = match ($pvType) {
     'passport' => 'PASSEPORT · PASSPORT',
     'driving_license' => 'PERMIS DE CONDUIRE · DRIVING LICENCE',
     'military_id' => 'CARTE MILITAIRE · MILITARY ID',
+    'residence_permit' => 'TITRE DE SÉJOUR · RESIDENCE PERMIT',
+    'vehicle_registration' => 'CERTIFICAT D’IMMATRICULATION · VEHICLE REGISTRATION',
     default => 'CARTE D’IDENTITÉ · IDENTITY CARD',
 };
 $pvMrz = '<div class="idw-mrz" data-f="mrz" translate="no">' . $h(implode("\n", $pv['mrz'])) . '</div>';

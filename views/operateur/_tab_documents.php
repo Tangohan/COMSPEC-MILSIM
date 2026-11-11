@@ -62,10 +62,11 @@ foreach ($idCountries as $c) {
                 <ul class="opx-docs">
                     <?php foreach ($docs as $doc): ?>
                         <?php $photoUrl = !empty($doc['photo_path']) ? url((string) $doc['photo_path']) : null; ?>
+                        <?php $twoSides = \App\Support\SseDocumentTypes::sides((string) $doc['doc_type']) === 2; ?>
                         <li class="opx-doc" id="papier-<?= (int) $doc['id'] ?>" data-opx-doc>
                             <div class="opx-doc__preview" data-opx-doc-faces>
                                 <div class="opx-doc__face" data-opx-face="recto"><?= $opxDocSvg($doc, 'recto', $photoUrl) ?></div>
-                                <div class="opx-doc__face" data-opx-face="verso" hidden><?= $opxDocSvg($doc, 'verso', $photoUrl) ?></div>
+                                <?php if ($twoSides): ?><div class="opx-doc__face" data-opx-face="verso" hidden><?= $opxDocSvg($doc, 'verso', $photoUrl) ?></div><?php endif; ?>
                             </div>
                             <div class="opx-doc__info">
                                 <div class="opx-doc__head">
@@ -87,7 +88,7 @@ foreach ($idCountries as $c) {
                                     <p class="opx-note">Signalé aux contrôles et au passage aux fichiers. Présenté en jeu, ce papier déclenche une alerte.</p>
                                 <?php endif; ?>
                                 <div class="opx-doc__acts">
-                                    <button type="button" class="opx-btn opx-btn--line" data-opx-flip aria-pressed="false">Voir le verso</button>
+                                    <?php if ($twoSides): ?><button type="button" class="opx-btn opx-btn--line" data-opx-flip aria-pressed="false">Voir le verso</button><?php endif; ?>
                                     <a class="opx-btn opx-btn--line" href="<?= $h(url('operateur/identite/documents/' . (int) $doc['id'] . '/specimen')) ?>" target="_blank" rel="noopener">Télécharger le spécimen</a>
                                     <?php foreach ($doc['actions'] as $action): ?>
                                         <?php [$label, $confirm] = $actionLabels[$action] ?? [$action, '']; ?>
@@ -130,8 +131,12 @@ foreach ($idCountries as $c) {
                     </label>
                     <label for="req-type">Type de papier
                         <select id="req-type" name="doc_type" required data-opx-req-type>
-                            <?php foreach ($idDocTypes as $k => $label): ?>
-                                <option value="<?= $h($k) ?>"><?= $h($label) ?></option>
+                            <?php foreach ($idDocTypeGroups as $group): ?>
+                                <optgroup label="<?= $h(function_exists('locale') && locale() === 'en' ? \App\Support\HtmlTranslator::translateText($group['label']) : $group['label']) ?>">
+                                    <?php foreach ($group['types'] as $k => $label): ?>
+                                        <option value="<?= $h($k) ?>"><?= $h($label) ?></option>
+                                    <?php endforeach; ?>
+                                </optgroup>
                             <?php endforeach; ?>
                         </select>
                     </label>

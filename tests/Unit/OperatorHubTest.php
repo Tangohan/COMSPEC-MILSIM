@@ -429,6 +429,74 @@ final class OperatorHubTest extends TestCase
         self::assertNotFalse(simplexml_load_string($verso), 'SVG bien formé (verso)');
     }
 
+    public function testDocumentPreviewFollowsTheLayoutOfTheType(): void
+    {
+        $opxDocSvg = null;
+        require dirname(__DIR__, 2) . '/views/operateur/_document_svg.php';
+        $base = ['id' => 8, 'ref' => 'DOC-000008', 'country_name' => 'France', 'country_code' => 'FRA', 'last_name' => 'Gyllen', 'first_name' => 'Jake', 'sex' => 'M',
+            'birth_date' => '1990-04-02', 'birth_place' => 'Lyon', 'nationality' => 'FRA', 'doc_number' => 'AB1234567', 'issued_on' => '2026-01-01', 'expires_on' => '2036-01-01',
+            'authority' => 'Préfecture', 'holder_name' => 'Jake GYLLEN'];
+
+        // Passeport : une face, bande de lecture au bas du recto.
+        $passport = $opxDocSvg($base + ['doc_type' => 'passport', 'doc_type_label' => 'Passeport', 'mrz' => ['P<FRAGYLLEN<<JAKE', 'AB1234567<2FRA']], 'recto', null);
+        self::assertStringContainsString('P&lt;FRAGYLLEN&lt;&lt;JAKE', $passport);
+        self::assertStringContainsString('AB1234567&lt;2FRA', $passport);
+        self::assertStringContainsString('<circle', $passport, 'silhouette : le passeport porte une photo');
+
+        // Carte : la bande reste au verso.
+        $card = ['doc_type' => 'residence_permit', 'doc_type_label' => 'Titre de séjour', 'mrz' => ['IRFRAAB1234567', 'LIGNE2', 'LIGNE3']];
+        self::assertStringNotContainsString('IRFRAAB1234567', $opxDocSvg($base + $card, 'recto', null));
+        self::assertStringContainsString('IRFRAAB1234567', $opxDocSvg($base + $card, 'verso', null));
+
+        // Certificat d'immatriculation : ni photo ni bande, champs depuis le bord gauche.
+        $plain = $opxDocSvg($base + ['doc_type' => 'vehicle_registration', 'doc_type_label' => 'Certificat d’immatriculation', 'mrz' => []], 'recto', '/photo.png');
+        self::assertStringNotContainsString('<circle', $plain);
+        self::assertStringNotContainsString('<image', $plain);
+        self::assertStringNotContainsString('monospace', $plain);
+        self::assertStringContainsString('<text x="36" y="146"', $plain);
+        self::assertStringContainsString('CERTIFICAT D’IMMATRICULATION', $plain);
+        self::assertStringContainsString('SPÉCIMEN · SIMULATION', $plain);
+
+        // Type inconnu du miroir : mise en page d'une carte (photo, bande au verso).
+        $unknown = ['doc_type' => 'inconnu', 'doc_type_label' => 'Papier', 'mrz' => ['LIGNE1']];
+        self::assertStringContainsString('<image', $opxDocSvg($base + $unknown, 'recto', '/photo.png'));
+        self::assertStringContainsString('LIGNE1', $opxDocSvg($base + $unknown, 'verso', null));
+
+        foreach ([$passport, $plain, $opxDocSvg($base + $card, 'verso', null)] as $svg) {
+            self::assertNotFalse(simplexml_load_string($svg), 'SVG bien formé');
+        }
+    }
+
+    public function testSingleSidedPaperHasNoVersoAndTypesAreGroupedByCategory(): void
+    {
+        $this->db();
+        $c = $this->controller(10);
+        $c->identitySave($this->post(['last_name' => 'Gyllen', 'first_name' => 'Jake', 'sex' => 'M', 'birth_date' => '1990-04-02', 'nationality' => 'ALT']));
+        $identityId = (int) $this->pdo->query('SELECT id FROM sse_identities')->fetchColumn();
+        $c->documentRequest($this->post(['identity_id' => (string) $identityId, 'doc_type' => 'passport', 'country_code' => 'ALT']));
+        // Un pays fictif ne délivre pas de titre de séjour : la demande est refusée.
+        $c->documentRequest($this->post(['identity_id' => (string) $identityId, 'doc_type' => 'residence_permit', 'country_code' => 'ALT']));
+        self::assertSame(1, (int) $this->pdo->query('SELECT COUNT(*) FROM sse_id_documents')->fetchColumn());
+
+        $c->documents(new Request());
+        $html = $this->view('identite', ['csrfToken' => 'jeton', 'success' => null, 'error' => null] + $this->rendered);
+        self::assertStringContainsString('Passeport', $html);
+        self::assertStringNotContainsString('Voir le verso', $html);
+        self::assertStringNotContainsString('data-opx-face="verso"', $html);
+        foreach (['<optgroup label="Identité">', '<optgroup label="Voyage">', '<optgroup label="Permis et véhicule">', '<option value="residence_permit">Titre de séjour</option>',
+            '<option value="vehicle_registration">Certificat d’immatriculation</option>'] as $needle) {
+            self::assertStringContainsString($needle, $html, $needle);
+        }
+        self::assertStringNotContainsString('press_card', $html, 'les types d’une extension ne sont pas proposés');
+        self::assertMatchesRegularExpression('/data-opx-types="[^"]*&quot;ALT&quot;:\[&quot;id_card&quot;,&quot;passport&quot;,&quot;driving_license&quot;,&quot;military_id&quot;\]/', $html);
+
+        $docId = (int) $this->pdo->query('SELECT id FROM sse_id_documents')->fetchColumn();
+        $specimen = $c->documentSpecimen(new Request(), ['id' => (string) $docId])->body();
+        self::assertSame(1, substr_count($specimen, 'SPÉCIMEN · SIMULATION'));
+        self::assertStringNotContainsString('data-opx-png="verso"', $specimen);
+        self::assertStringContainsString('data-opx-png="recto"', $specimen);
+    }
+
     public function testPhotoDataUriNeverLeavesThePublicFolder(): void
     {
         $dir = sys_get_temp_dir() . '/opx-public-' . bin2hex(random_bytes(4));
