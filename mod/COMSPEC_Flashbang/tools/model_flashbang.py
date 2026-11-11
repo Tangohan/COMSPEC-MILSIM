@@ -18,7 +18,8 @@ ombre 0 (enveloppe convexe fermée) ; géométrie (enveloppe convexe, 0,56 kg, a
 (même enveloppe : l'engin au sol est un ThingX) ; géométrie de tir. Sélection retexturable « camo » (corps).
 
     python gen_fb_textures.py
-    blender -b -P model_flashbang.py            (ONLY=nom ; NO_EXPORT=1 ; NO_RENDER=1 ; RENDER_SAMPLES=n)
+    blender -b -P model_flashbang.py            (ONLY=nom ; NO_EXPORT=1 ; NO_RENDER=1 ; RENDER_SAMPLES=n ;
+                                                 WORKSHOP=1 : seulement les rendus de la page Workshop)
 Extension Blender « Arma 3 Object Builder » requise (comme mod/COMSPEC_ATAK_Native/tools/model_items.py).
 Les rendus (icônes, logo, aperçu Steam) sont écrits dans tools/render/ ; conversion PAA : voir README du mod.
 """
@@ -538,11 +539,42 @@ def render_lineup():
     render(os.path.join(RENDER, "steam_raw.png"))
 
 
+def render_workshop():
+    """Rendus de la page Workshop (WORKSHOP=1) : rang des dix variantes en 1920 x 1080 sur fond sombre
+    (ws_lineup_dark.png) et en 2400 x 760 sur fond transparent avec ombres (ws_lineup_alpha.png). Compressés ensuite
+    par make_workshop_gallery.py en render/workshop_lineup_dark.jpg et render/workshop_lineup_alpha.webp."""
+    for name, transparent, res, cam, look in (
+            ("ws_lineup_dark", False, (1920, 1080), (0.0, -0.86, 0.26), (0, 0, 0.035)),
+            ("ws_lineup_alpha", True, (2400, 760), (0.0, -0.80, 0.16), (0, 0, 0.045))):
+        bpy.ops.wm.read_homefile(use_empty=True)
+        sc = bpy.context.scene
+        if transparent:
+            studio(sc, True, key=1.2)
+        else:
+            studio(sc, False, (0.035, 0.036, 0.034, 1), key=1.4)
+            sc.world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.05
+        for i, v in enumerate(VARIANTS):
+            ob = make_mesh(f"g{v}", build(1, False), preview_materials(v), groups=False)
+            place(ob, ((i - 4.5) * 0.052, 0.012 * (i % 2), 0), True, math.radians(-90 + (i % 3 - 1) * 8))
+        cd = bpy.data.cameras.new("cam")
+        cd.lens = 50
+        co = bpy.data.objects.new("cam", cd)
+        sc.collection.objects.link(co)
+        co.location = cam
+        co.rotation_euler = (Vector(look) - Vector(cam)).to_track_quat("-Z", "Y").to_euler()
+        sc.camera = co
+        sc.render.resolution_x, sc.render.resolution_y = res
+        render(os.path.join(RENDER, name + ".png"))
+
+
 def main():
     d = bpy.utils.user_resource("SCRIPTS", path="addons", create=True)
     sys.path.insert(0, d)
     if not addon_utils.enable("Arma3ObjectBuilder", default_set=True):
         raise SystemExit("Extension Arma 3 Object Builder introuvable dans " + d)
+    if os.environ.get("WORKSHOP") == "1":
+        render_workshop()
+        return
     only = os.environ.get("ONLY")
     todo = [v for v in VARIANTS if not only or only == v]
     if os.environ.get("NO_EXPORT") != "1":

@@ -1,0 +1,104 @@
+[img]https://athena-comspec.eu/assets/workshop/flashbang/fr/banniere.png[/img]
+
+[h1]FRANÇAIS[/h1]
+[b]COMSPEC Flashbang[/b] : des grenades assourdissantes réalistes pour Arma 3, de 1 à 9 flashs. Mod indépendant : il ne demande ni COMSPEC ATAK, ni Athena, seulement CBA_A3.
+
+[h2]Les grenades[/h2]
+[list]
+[*][b]Flash ×1 à Flash ×9[/b] : 1 à 9 flashs à la suite, environ toutes les demi-secondes. La Flash ×7 fait exactement 7 bangs, chez tous les joueurs.
+[*][b]Drill[/b] : grenade d'entraînement bleue, un petit pop et un peu de fumée, aucun effet.
+[*]Caisse de 10 grenades de chaque modèle, et toutes les grenades dans l'Arsenal.
+[*]Se lancent comme une grenade normale (G, Ctrl+G pour changer).
+[/list]
+
+[h2]Ce que vous ressentez[/h2]
+[list]
+[*]Écran blanc d'un coup, puis la vue revient doucement.
+[*]Une tache reste là où était le flash et suit votre regard.
+[*]Sons, voix et radio étouffés, puis un sifflement qui s'éteint peu à peu.
+[*]Visée instable quelques secondes ; pas de chute, pas de dégâts.
+[*]JVN allumées : l'image sature. Lunette pointée sur le flash : halo et effet plus fort.
+[*]En pièce fermée, le flash remplit la pièce, même de dos. Derrière un mur : bang sourd, pas d'éblouissement.
+[*]La distance, la ligne de vue et le fait de détourner les yeux changent tout.
+[*]Chaque flash relance l'effet, avec un plafond.
+[*]L'IA est touchée aussi : elle vise mal, hésite et se couvre, puis se reprend.
+[/list]
+
+[h2]Réalisme[/h2]
+Une flashbang désoriente, elle ne tue pas. Durées et distances suivent des fiches techniques publiques. Pas de flou psychédélique ni de joueur figé. Trois préréglages : [b]Réaliste[/b] (défaut), [b]Arcade[/b] (plus fort, plus long), [b]Léger[/b].
+
+[h2]Réglages[/h2]
+28 réglages CBA (Options › Options des addons › COMSPEC Flashbang), chacun avec un exemple. Par exemple :
+[list]
+[*]Rayon maximal : 25 m par défaut, 15 m pour un effet plus local.
+[*]Effet sur son camp : désactivé pour un entraînement entre amis.
+[*]Durée max de l'acouphène : 45 s par défaut, 20 s pour une partie plus nerveuse.
+[/list]
+
+[h2]Compatibilité[/h2]
+[list]
+[*][b]Obligatoire :[/b] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=450814997]CBA_A3[/url].
+[*][b]Optionnels, détectés seuls :[/b] ACE3 (les bouchons protègent), ACRE2 ou TFAR (radio étouffée), ZEN (modules Zeus).
+[/list]
+
+[h2]Créateurs de missions[/h2]
+Module Eden « Flashbang (COMSPEC) » : grenade posée, effet sur une zone ou Drill, au départ ou par déclencheur. Avec ZEN : « Lancer un flashbang » et « Effet de flashbang sur une zone ».
+
+[h2]Installation[/h2]
+Abonnez-vous à CBA_A3 et à ce mod. Chargez-les sur le serveur ET chez tous les joueurs, et ajoutez la clé [b]keys\comspec_flashbang.bikey[/b] au dossier keys du serveur. En multijoueur, chacun voit et entend les mêmes flashs ; les effets ne touchent que les joueurs exposés.
+
+[h2]Support et licence[/h2]
+Bug ou idée : [url=https://discord.gg/CCpJA6Nks]Discord COMSPEC[/url]. © 2026 COMSPEC, licence COMSPEC : usage personnel depuis ce Workshop ; copie, modification et redistribution interdites. Sons enregistrés : licence acquise par COMSPEC ; autres sons synthétisés.
+
+[hr][/hr]
+[img]https://athena-comspec.eu/assets/workshop/flashbang/en/banniere.png[/img]
+
+[h1]ENGLISH[/h1]
+[b]COMSPEC Flashbang[/b]: realistic stun grenades for Arma 3, from 1 to 9 flashes. Standalone mod: it needs neither COMSPEC ATAK nor Athena, only CBA_A3.
+
+[h2]The grenades[/h2]
+[list]
+[*][b]Flash ×1 to Flash ×9[/b]: 1 to 9 flashes in a row, about every half second. The Flash ×7 makes exactly 7 bangs, for every player.
+[*][b]Drill[/b]: blue training grenade, a small pop and a puff of smoke, no effect.
+[*]Crate with 10 grenades of each model, and every grenade in the Arsenal.
+[*]Thrown like a normal grenade (G, Ctrl+G to switch).
+[/list]
+
+[h2]What you feel[/h2]
+[list]
+[*]Sudden white screen, then your sight slowly comes back.
+[*]A spot stays where the flash was and follows your gaze.
+[*]Sounds, voices and radio muffled, then a ringing that slowly fades.
+[*]Unsteady aim for a few seconds; no falling, no damage.
+[*]NVG on: the image saturates. Scope aimed at the flash: halo and a stronger effect.
+[*]In a closed room the flash fills the room, even with your back turned. Behind a wall: a dull bang, no dazzle.
+[*]Distance, line of sight and looking away change everything.
+[*]Each flash renews the effect, up to a cap.
+[*]AI is affected too: it aims badly, hesitates and takes cover, then recovers.
+[/list]
+
+[h2]Realism[/h2]
+A flashbang disorients, it does not kill. Durations and distances follow public data sheets. No psychedelic blur, no frozen player. Three presets: [b]Realistic[/b] (default), [b]Arcade[/b] (stronger, longer), [b]Light[/b].
+
+[h2]Settings[/h2]
+28 CBA settings (Options › Addon Options › COMSPEC Flashbang), each with an example. For instance:
+[list]
+[*]Maximum radius: 25 m by default, 15 m for a more local effect.
+[*]Effect on own side: off for a friendly training session.
+[*]Max tinnitus duration: 45 s by default, 20 s for a faster-paced game.
+[/list]
+
+[h2]Compatibility[/h2]
+[list]
+[*][b]Required:[/b] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=450814997]CBA_A3[/url].
+[*][b]Optional, auto-detected:[/b] ACE3 (earplugs protect you), ACRE2 or TFAR (muffled radio), ZEN (Zeus modules).
+[/list]
+
+[h2]Mission makers[/h2]
+Eden module "Flashbang (COMSPEC)": placed grenade, area effect or Drill, at start or from a trigger. With ZEN: "Throw a flashbang" and "Flashbang area effect".
+
+[h2]Installation[/h2]
+Subscribe to CBA_A3 and this mod. Load them on the server AND on every player's game, and add the [b]keys\comspec_flashbang.bikey[/b] key to the server keys folder. In multiplayer everyone sees and hears the same flashes; the effects only hit exposed players.
+
+[h2]Support and license[/h2]
+Bug or idea: [url=https://discord.gg/CCpJA6Nks]COMSPEC Discord[/url]. © 2026 COMSPEC, COMSPEC license: personal use from this Workshop page; copying, modifying and redistributing are forbidden. Recorded sounds: licensed by COMSPEC; other sounds synthesised.
