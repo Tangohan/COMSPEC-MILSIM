@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : tracer un numéro de téléphone depuis l'ATAK, IA comprises (ATAK natif et SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Tracez un numéro de téléphone depuis l'ATAK
+- Un numéro trouvé sur un papier, dans un téléphone fouillé ou en interrogatoire : app GE, onglet TRAÇAGE, puis « Tracer le numéro ». Après quelques secondes, un cercle apparaît sur la carte, petit en ville, large en campagne.
+- Ça marche aussi sur les téléphones des IA. Un téléphone éteint, brouillé ou hors couverture ne donne que sa dernière position connue, et le cercle grandit avec le temps.
+- Suivez un numéro en continu, partagez la position à votre groupe ou au TOC, ou mettez-la dans une fiche SSE. Les numéros lus dans un fichier récupéré ont leur bouton « Tracer » juste dessous.
+EN : Trace a phone number from the ATAK
+- A number found on a paper, in a searched phone or during questioning: EW app, TRACE tab, then "Trace the number". After a few seconds a circle shows on the map, small in town, wide in the countryside.
+- It also works on AI phones. A phone that is off, jammed or out of coverage only gives its last known position, and the circle grows over time.
+- Follow a number continuously, share the position with your group or the TOC, or put it in an SSE sheet. Numbers read in a recovered file get their own "Trace" button right below.
+
+### Détail technique
+- Onglet GÉOLOC de l'app GE devenu TRAÇAGE (`fn_pageEw` clé `GEO` gardée) : nouveau dossier `functions/trace` : `fn_traceCalc` (calculs purs : normalisation du numéro, rayon selon les antennes, cercle qui grandit avec l'âge, état par priorité, attente, extraction des numéros d'un texte, `selfTest`), `fn_traceServer` (serveur seul : index des numéros, couverture, état du téléphone, dernière position connue, limites, réponse au seul demandeur par `comspec_atak_native_traceRes`), `fn_traceAction` (téléphone : requête `remoteExecCall`, onglet, journal, suivi, partage en marqueur, fiche SSE FRO, lien profond `open`, boutons `numRows`, menu ZEN).
+- Avant : la GÉOLOC calculait la position sur le client, seulement pour les unités qui portaient un ATAK, à précision fixe. Après : le serveur répond après la requête opérateur (réglage, ±20 %), position décalée dans un rayon tiré des antennes qui captent le téléphone (relais ATAK du camp ou sans camp, relief compris, puis antennes civiles des localités si le réseau mobile civil est actif), aucune position d'unité non tracée ne quitte le serveur.
+- Numéros connus du réseau : téléphones ATAK (numéro, IMEI, MAC), profils SSE (identité, appareils, champs Eden `comspec_sse_personPhone` / `comspec_sse_phoneNumber`, registre `comspec_sse_logicalEntities`), attribut Eden ATAK `COMSPEC_ATAK_PhoneNumber`, IA réglée « Téléphone » sans numéro : numéro de `fn_phoneIdent` (déterministe). Numéro inconnu, ligne jetable ou camp fermé : « Numéro inconnu du réseau ».
+- Contre-mesures : brouilleur (`COMSPEC_ATAK_Jammers`, filtrage ami respecté), téléphone éteint, mode avion, hors couverture : dernière position connue gardée sur le serveur (`COMSPEC_ATAK_TraceLast`, jamais publique). Attribut Eden et menu ZEN « Téléphone traçable » (`COMSPEC_ATAK_PhoneTrace` : on / off / burner). Zeus : suspendre le traçage (`COMSPEC_ATAK_TraceOff`), mandat (`COMSPEC_ATAK_TraceWarrant`), réseau mobile civil (`COMSPEC_ATAK_TraceCivNet`).
+- Réglages CBA « ATAK · Géolocalisation » : `trace_delay`, `trace_cooldown`, `trace_max`, `trace_rad_multi`, `trace_rad_single`, `trace_grow`, `trace_civnet`, `trace_link` (selon le profil : Milsim et Standard oui, Arcade non), `trace_warrant`. Les réglages GÉOLOC existants (camps traçables, propre camp, IA, suivi, prévenir la cible, secours SIM) s'appliquent toujours.
+- Entrées : app Extraction (fichier texte ouvert : un bouton « TRACER » par numéro), app SSE terrain (résultat Approfondir et Chronologie). Manuel de terrain : page « Tracer un numéro ». Guide web : `docs/steam/discussions/24_ge-guerre-electronique.txt`.
+- Tests : `tests/Unit/AtakTraceNumeroTest.php` (lecture du code : aucun canal d'alerte Arma, appelant vérifié au serveur, réponse ciblée, réglages avec exemple, cas de `selfTest`). Rien de ce lot n'a été vu en jeu.
+
 ## SSE 1.9.0 : fenêtre « Réponses de l'IA » simple, peur d'une arme braquée de près, champs des documents (SSE 1.9.0)
 
 ### Résumé joueur

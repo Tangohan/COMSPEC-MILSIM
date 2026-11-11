@@ -262,7 +262,7 @@ if ((count _caps) > 0) then {
         } forEach _btns;
         _y = _y + _ch2 + _pad * 0.4;
     } forEach (_caps select [0, 5]);
-    ["COMSPEC_RscText", [_pad, _y, _w, _fs * 1.2], "Retrouver un ATAK volé : app GE > GÉOLOC, avec son IMEI ou son numéro.", _fs * 0.75, _cDim] call _lbl;
+    ["COMSPEC_RscText", [_pad, _y, _w, _fs * 1.2], "Retrouver un ATAK volé : app GE > TRAÇAGE, avec son IMEI ou son numéro.", _fs * 0.75, _cDim] call _lbl;
     _y = _y + _fs * 1.2 + _pad;
 };
 

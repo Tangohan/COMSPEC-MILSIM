@@ -438,7 +438,7 @@ missionNamespace setVariable ["COMSPEC_ZeusAtakPlayerActionsRegistered", true];
 { missionNamespace setVariable [_x, true]; } forEach ["COMSPEC_ZenAtakPlayerModulesRegistered", "COMSPEC_AceAtakPlayerModulesRegistered", "COMSPEC_AceTrackActionsRegistered", "COMSPEC_AceTheaterSurveyRegistered"];
 private _geo = ["COMSPEC", "ATAK · Géolocalisation"];
 ["comspec_atak_native_geoloc_enabled", "CHECKBOX",
-    ["Géolocalisation des téléphones", "App GE (guerre électronique), onglet GÉOLOC : localiser un téléphone avec son numéro, son IMEI ou son adresse MAC (roleplay)."],
+    ["Géolocalisation des téléphones", "App GE (guerre électronique), onglet TRAÇAGE : tracer un téléphone, de joueur ou d'IA, avec son numéro, son IMEI ou son adresse MAC (roleplay). Ex. : numéro lu sur un papier saisi, position approchée sur la carte."],
     _geo, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_geoloc_ew_only", "CHECKBOX",
     ["Réservé aux opérateurs GE", "Coché : seuls les joueurs qui ont accès à la guerre électronique (voir ATAK · Simulation) peuvent géolocaliser."],
@@ -463,6 +463,34 @@ private _geo = ["COMSPEC", "ATAK · Géolocalisation"];
     _geo, [10, 300, 30, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_geoloc_warn", "CHECKBOX",
     ["Prévenir la cible", "Le joueur géolocalisé reçoit une alerte discrète « activité réseau anormale »."],
+    _geo, false, 1] call comspec_atak_native_fnc_addSetting;
+// Traçage d'un numéro (onglet TRAÇAGE de l'app GE, fn_traceServer) : délai, attente, suivi, précision, réseau civil, droits.
+["comspec_atak_native_trace_delay", "SLIDER",
+    ["Traçage : durée de la requête (s)", "Temps entre TRACER et la réponse de l'opérateur (±20 %). Le suivi continu répond deux fois plus vite. Ex. : 8 s, la position arrive 6 à 10 s après la demande."],
+    _geo, [1, 60, 8, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_cooldown", "SLIDER",
+    ["Traçage : attente entre deux requêtes (s)", "Temps minimum entre deux traçages lancés à la main par un même joueur. Ex. : 20 s, un opérateur ne trace pas plus de trois numéros par minute."],
+    _geo, [0, 300, 20, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_max", "SLIDER",
+    ["Traçage : numéros suivis en même temps", "Nombre de numéros qu'un joueur peut suivre en continu à la fois. Ex. : 3, un quatrième suivi est refusé tant qu'un autre n'est pas arrêté."],
+    _geo, [1, 10, 3, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_rad_multi", "SLIDER",
+    ["Traçage : précision avec plusieurs antennes (m)", "Rayon du cercle quand trois antennes ou plus captent le téléphone (le double avec deux), à ±25 %. Ex. : 100 m, cercle de 75 à 125 m en ville."],
+    _geo, [10, 500, 100, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_rad_single", "SLIDER",
+    ["Traçage : précision avec une seule antenne (m)", "Rayon du cercle quand une seule antenne capte le téléphone, plus grand loin de l'antenne (0,4 à 1,9 fois). Ex. : 800 m, cercle de 300 à 1 500 m en campagne."],
+    _geo, [50, 3000, 800, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_grow", "SLIDER",
+    ["Traçage : dernière position, croissance du cercle (m/s)", "Un téléphone éteint, brouillé ou hors couverture ne donne que sa dernière position : son cercle grandit avec le temps, la cible a pu bouger. Ex. : 1,5 m/s, +90 m par minute (une marche)."],
+    _geo, [0, 10, 1.5, 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_civnet", "CHECKBOX",
+    ["Traçage : réseau mobile civil", "Coché : les villes et villages ont des antennes civiles (ville : précis, campagne : large, plus de 6 km de toute localité : hors couverture), en plus des relais ATAK. Décoché : seuls les relais captent les téléphones. Ex. : désert sans relais décoché, personne n'est traçable."],
+    _geo, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_link", "LIST",
+    ["Traçage : liaison ATAK exigée", "Le téléphone qui trace doit avoir du réseau (hors brouillage) pour joindre l'opérateur. Selon le profil : oui en Milsim et Standard, non en Arcade. Ex. : sans réseau, « Pas de liaison avec l'opérateur »."],
+    _geo, [[0, 1, 2], ["Selon le profil de réalisme", "Toujours", "Jamais"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_warrant", "CHECKBOX",
+    ["Traçage : mandat du Zeus exigé", "Coché : l'opérateur refuse toute requête tant que le Zeus n'a pas accordé le mandat (clic droit > ATAK · Traçage des numéros). Ex. : enquête où le traçage s'obtient en cours de mission."],
     _geo, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_sim_sos", "CHECKBOX",
     ["Carte SIM localisable téléphone éteint", "Quand la batterie est vide, le téléphone s'éteint mais sa carte SIM continue d'être captée par les relais. On peut alors le retrouver par son numéro ou son IMEI (onglet GÉOLOC de l'app GE, RECHERCHER sur la carte), plus ou moins précisément selon le nombre de relais qui le captent."],
