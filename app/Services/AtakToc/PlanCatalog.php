@@ -46,6 +46,12 @@ final class PlanCatalog
         'signal' => ['Transmissions', 'UUS---'],
         'antitank' => ['Antichar', 'UCAA--'],
         'airdefense' => ['Défense sol-air', 'UCD---'],
+        'airborne' => ['Infanterie aéroportée', 'UCIA--'],
+        'airassault' => ['Infanterie héliportée', 'UCIS--'],
+        'mountain' => ['Infanterie de montagne', 'UCIO--'],
+        'light' => ['Infanterie légère', 'UCIL--'],
+        'uav' => ['Drones', 'UCVU--'],
+        'fixedwing' => ['Aviation (voilure fixe)', 'UCVF--'],
         'unknown' => ['Sans fonction', '------'],
     ];
 
@@ -54,7 +60,7 @@ final class PlanCatalog
 
     /**
      * Types : clé => [libellé, géométries permises, type du jeu, couleur par défaut, famille, options].
-     * Famille : unit | point | line | area | free | text. Type du jeu « * » : décidé à l'envoi (unité selon affiliation).
+     * Famille : unit | point | line | area | free | text | fire. Type du jeu « * » : décidé à l'envoi (unité selon affiliation).
      *
      * @return array<string, array{label:string, geoms:list<string>, game:string, color:string, family:string, dash?:string, arrow?:string, fill?:float, text?:string}>
      */
@@ -100,6 +106,27 @@ final class PlanCatalog
             'rect' => ['label' => 'Rectangle', 'geoms' => ['rect'], 'game' => 'ZONE', 'color' => '#f2f2f2', 'family' => 'free', 'fill' => 0.1],
             'ellipse' => ['label' => 'Ellipse', 'geoms' => ['ellipse'], 'game' => 'ZONE', 'color' => '#f2f2f2', 'family' => 'free', 'fill' => 0.1],
             'circle' => ['label' => 'Cercle', 'geoms' => ['circle'], 'game' => 'ZONE', 'color' => '#f2f2f2', 'family' => 'free', 'fill' => 0.1],
+            // Éditeur v2 : points de soutien, feux, lignes de coordination, zones et texte avec renvoi.
+            'medevac' => ['label' => 'Point MEDEVAC', 'geoms' => ['point'], 'game' => 'NOTE', 'color' => '#f24d47', 'family' => 'point', 'text' => 'MEDEVAC'],
+            'ccp' => ['label' => 'Nid de blessés (CCP)', 'geoms' => ['point'], 'game' => 'NOTE', 'color' => '#f24d47', 'family' => 'point', 'text' => 'CCP'],
+            'supply' => ['label' => 'Point de ravitaillement', 'geoms' => ['point'], 'game' => 'NOTE', 'color' => '#fae04d', 'family' => 'point', 'text' => 'RAV'],
+            'op' => ['label' => 'Poste d’observation (OP)', 'geoms' => ['point'], 'game' => 'NOTE', 'color' => '#5999ff', 'family' => 'point', 'text' => 'OP'],
+            'target' => ['label' => 'Cible', 'geoms' => ['point'], 'game' => 'TRP', 'color' => '#f24d47', 'family' => 'point', 'text' => 'TGT'],
+            'decon' => ['label' => 'Point de décontamination', 'geoms' => ['point'], 'game' => 'NOTE', 'color' => '#fae04d', 'family' => 'point', 'text' => 'DECON'],
+            'fan' => ['label' => 'Éventail de portée', 'geoms' => ['point'], 'game' => 'NOTE', 'color' => '#ff9433', 'family' => 'fire'],
+            'fscl' => ['label' => 'Ligne de coordination des feux (FSCL)', 'geoms' => ['line'], 'game' => 'PL', 'color' => '#f2f2f2', 'family' => 'line', 'text' => 'FSCL'],
+            'cfl' => ['label' => 'Ligne de coordination des tirs (CFL)', 'geoms' => ['line'], 'game' => 'PL', 'color' => '#f2f2f2', 'family' => 'line', 'dash' => 'dash', 'text' => 'CFL'],
+            'rfl' => ['label' => 'Ligne de tir restreint (RFL)', 'geoms' => ['line'], 'game' => 'PL', 'color' => '#f24d47', 'family' => 'line', 'text' => 'RFL'],
+            'flot' => ['label' => 'Ligne avant des troupes amies (FLOT)', 'geoms' => ['line'], 'game' => 'PL', 'color' => '#5999ff', 'family' => 'line', 'text' => 'FLOT'],
+            'obstacle' => ['label' => 'Ligne d’obstacles', 'geoms' => ['line'], 'game' => 'FREE', 'color' => '#73d973', 'family' => 'line'],
+            'textbox' => ['label' => 'Texte avec renvoi', 'geoms' => ['line'], 'game' => 'NOTE', 'color' => '#f2f2f2', 'family' => 'text'],
+            'bp' => ['label' => 'Position de combat (BP)', 'geoms' => ['area', 'circle'], 'game' => 'ZONE', 'color' => '#5999ff', 'family' => 'area', 'fill' => 0.08, 'text' => 'BP'],
+            'tai' => ['label' => 'Zone d’intérêt ciblée (TAI)', 'geoms' => ['area', 'circle'], 'game' => 'NAI', 'color' => '#ff9433', 'family' => 'area', 'fill' => 0.08, 'text' => 'TAI'],
+            'pz' => ['label' => 'Zone d’enlèvement (PZ)', 'geoms' => ['circle', 'area'], 'game' => 'HLZ', 'color' => '#73d973', 'family' => 'area', 'fill' => 0.1, 'text' => 'PZ'],
+            'dz' => ['label' => 'Zone de largage (DZ)', 'geoms' => ['circle', 'area'], 'game' => 'ZONE', 'color' => '#4dccf2', 'family' => 'area', 'fill' => 0.1, 'text' => 'DZ'],
+            'cbrn' => ['label' => 'Zone contaminée (NRBC)', 'geoms' => ['area', 'circle'], 'game' => 'ZONE', 'color' => '#fae04d', 'family' => 'area', 'fill' => 0.15, 'dash' => 'dash', 'text' => 'NRBC'],
+            'obstacle_belt' => ['label' => 'Ceinture d’obstacles', 'geoms' => ['area', 'rect'], 'game' => 'ZONE', 'color' => '#73d973', 'family' => 'area', 'fill' => 0.08, 'dash' => 'dash', 'text' => 'OBST'],
+            'ring' => ['label' => 'Cercle de portée', 'geoms' => ['circle'], 'game' => 'ZONE', 'color' => '#ff9433', 'family' => 'fire', 'fill' => 0.0],
         ];
     }
 

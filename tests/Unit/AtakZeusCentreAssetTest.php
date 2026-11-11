@@ -153,7 +153,9 @@ final class AtakZeusCentreAssetTest extends TestCase
         }
         $cfg = $this->read(self::MAIN . 'config.cpp');
         self::assertStringContainsString('#define COMSPEC_SCREEN_ATTRIBUTES', $cfg);
-        self::assertSame(7, substr_count($cfg, 'COMSPEC_SCREEN_ATTRIBUTES'));
+        // Écrans refaits avec les modèles du mod : leurs classes sont dans toc_screens_legacy.hpp et toc_screens3d.hpp.
+        self::assertGreaterThanOrEqual(3, substr_count($this->read(self::MAIN . 'toc_screens_legacy.hpp'), 'COMSPEC_SCREEN_ATTRIBUTES;'));
+        self::assertGreaterThanOrEqual(20, substr_count($this->read(self::MAIN . 'toc_screens3d.hpp'), 'COMSPEC_SCREEN_ATTRIBUTES;'));
     }
 
     public function testEveryIconExists(): void

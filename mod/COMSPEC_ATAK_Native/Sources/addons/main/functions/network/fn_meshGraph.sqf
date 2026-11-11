@@ -431,10 +431,10 @@ switch (_act) do {
         private _bldEnv = [0.6, 1] select (_realLvl >= 2);
         // Marge d'une paire et cause de la plus forte perte : bilan radio en cache 30 s par paire de positions arrondies (15 m).
         private _marginOf = {
-            params ["_pa", "_pb", "_r", "_cache", "_c"];
-            private _ka = [round ((_pa select 0) / 15), round ((_pa select 1) / 15), round (_pa select 2)];
-            private _kb = [round ((_pb select 0) / 15), round ((_pb select 1) / 15), round (_pb select 2)];
-            private _k = str ([[_kb, _ka, round _r, round (_bldK * 100)], [_ka, _kb, round _r, round (_bldK * 100)]] select ((_ka select 0) < (_kb select 0) || {(_ka select 0) isEqualTo (_kb select 0) && {(_ka select 1) <= (_kb select 1)}}));
+            // _ka, _kb : clés de position des deux nœuds ([x / 15, y / 15, z, texte]), calculées une fois par nœud et par passe
+            // ("_posKey") ; avant, six arrondis, deux tableaux et un str imbriqué par paire, 2 016 fois par passe à 64 nœuds.
+            params ["_pa", "_pb", "_r", "_cache", "_c", "_ka", "_kb"];
+            private _k = (if ((_ka select 0) < (_kb select 0) || {(_ka select 0) isEqualTo (_kb select 0) && {(_ka select 1) <= (_kb select 1)}}) then { (_ka select 3) + (_kb select 3) } else { (_kb select 3) + (_ka select 3) }) + _kTail + str (round _r);
             private _hit = _cache getOrDefault [_k, []];
             if ((count _hit) >= 2 && {diag_tickTime - (_hit select 0) < 30}) exitWith {
                 _c set [1, (_c select 1) + 1];
@@ -465,6 +465,14 @@ switch (_act) do {
             if (_code isEqualTo 0) then { _code = 1; };
             _cache set [_k, [diag_tickTime, _m, _code]];
             [_m, _code]
+        };
+        private _kTail = format ["b%1r", round (_bldK * 100)];
+        private _posKey = {
+            params ["_p"];
+            private _kx = round ((_p select 0) / 15);
+            private _ky = round ((_p select 1) / 15);
+            private _kz = round (_p select 2);
+            [_kx, _ky, _kz, format ["%1,%2,%3;", _kx, _ky, _kz]]
         };
         private _cache = missionNamespace getVariable ["COMSPEC_ATAK_MeshLos", createHashMap];
         // 64 nœuds font 2 016 paires : la remise à zéro ne doit jamais tomber au milieu d'une passe normale.
@@ -498,6 +506,7 @@ switch (_act) do {
             _nodeN = _nodeN + _n;
             private _jams = (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) select { ((_x param [4, 1e9]) >= _tNow) && {!((_x param [5, false]) && {(_x param [3, ""]) isEqualTo _side})} };
             private _jf = _nodes apply { [_x select 6, _jams, _x select 3] call _jamAt };
+            private _pk = _nodes apply { [_x select 6] call _posKey };
             // Hystérésis : état de la passe précédente, retrouvé par objet (les index changent d'une passe à l'autre).
             (_hystAll getOrDefault [_side, [[], createHashMap]]) params ["_oldObjs", "_oldState"];
             private _oldIdx = _nodes apply { _oldObjs find (_x select 0) };
@@ -536,7 +545,7 @@ switch (_act) do {
                         // Trop loin : marge en espace libre seulement (aucun calcul de relief), jusqu'à 3 fois la portée.
                         if (_dAB < 3 * _r) then { [_i, _j, 20 * log ((_r max 1) / _dAB), 1] call _missAdd; };
                     } else {
-                        ([_a select 6, _b select 6, _r, _cache, _ct] call _marginOf) params ["_m0", "_c0"];
+                        ([_a select 6, _b select 6, _r, _cache, _ct, _pk select _i, _pk select _j] call _marginOf) params ["_m0", "_c0"];
                         _code = _c0;
                         // Météo radio forcée par Zeus (fn_meshTools).
                         _m = _m0 - _wxForce;

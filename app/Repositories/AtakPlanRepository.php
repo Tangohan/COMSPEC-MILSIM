@@ -261,11 +261,38 @@ class AtakPlanRepository
             'UPDATE atak_plan_elements SET kind = ?, geom = ?, pts_json = ?, props_json = ?, phases_json = ?, layer_uid = ?, group_uid = ?, z = ?, locked = ?,
                 deleted = 0, updated_at_ms = ?, updated_by = ? WHERE id = ?'
         );
+        // Horloge du plan strictement croissante : un client qui relève « depuis » la dernière valeur vue ne rate rien.
+        $now = max(self::nowMs(), $this->lastChangeMs($planId) + 1);
+        // Un seul enregistrement sur disque pour tout le lot (déplacer 400 éléments ne fait pas 400 écritures).
+        $own = !$this->pdo()->inTransaction() && $elements !== [];
+        if ($own) {
+            $this->pdo()->beginTransaction();
+        }
+        try {
+            [$saved, $over, $refused] = $this->upsertEach($find, $ins, $upd, $tenantId, $planId, $elements, $userId, $baseMs, $canUnlock, $now);
+            if ($own) {
+                $this->pdo()->commit();
+            }
+        } catch (\Throwable $e) {
+            if ($own && $this->pdo()->inTransaction()) {
+                $this->pdo()->rollBack();
+            }
+            throw $e;
+        }
+
+        return ['saved' => $saved, 'overwritten' => $over, 'refused' => $refused];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $elements
+     * @param array<string, int> $baseMs
+     * @return array{0: array<string, int>, 1: list<string>, 2: list<string>}
+     */
+    private function upsertEach(\PDOStatement $find, \PDOStatement $ins, \PDOStatement $upd, int $tenantId, int $planId, array $elements, ?int $userId, array $baseMs, bool $canUnlock, int $now): array
+    {
         $saved = [];
         $over = [];
         $refused = [];
-        // Horloge du plan strictement croissante : un client qui relève « depuis » la dernière valeur vue ne rate rien.
-        $now = max(self::nowMs(), $this->lastChangeMs($planId) + 1);
         foreach ($elements as $el) {
             $find->execute([$planId, $el['uid']]);
             $prev = $find->fetch(PDO::FETCH_ASSOC);
@@ -296,7 +323,7 @@ class AtakPlanRepository
             $now = $ms + 1;
         }
 
-        return ['saved' => $saved, 'overwritten' => $over, 'refused' => $refused];
+        return [$saved, $over, $refused];
     }
 
     /**

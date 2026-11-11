@@ -1,3 +1,133 @@
+[h1]COMSPEC ATAK 4.8.0 Washington — tableau des écrans du TOC, diffusion et mire, écrans qui ne clignotent plus / TOC screens table, broadcast and test card, screens that no longer flicker[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Tableau des écrans[/b] : une fenêtre liste tous les écrans du TOC, dalle par dalle, dans l'éditeur, au Zeus et en jeu.
+[*] [b]Choisir la source[/b] : pour chaque dalle, vous choisissez ce qu'elle montre : carte, satellite, caméras, escouade, horloge, texte, mire.
+[*] [b]Tout générer d'un coup[/b] : un bouton pose une salle complète, un autre donne un flux standard à chaque écran de la salle.
+[*] [b]Dispositions[/b] : les murs d'images et l'écran incurvé ont douze dispositions prêtes (carte et caméras, quatre vues, surveillance…).
+[*] [b]Diffusion[/b] : un écran peut être recopié sur toute la salle en même temps, avec un témoin EN DIRECT.
+[*] [b]Mire[/b] : un écran sans source affiche une mire de barres de couleur avec son titre et l'heure.
+[*] [b]Aucun signal[/b] : un écran sans données affiche une carte fixe AUCUN SIGNAL au lieu d'un contenu à moitié vide.
+[*] [b]Écrans qui ne clignotent plus[/b] : la vue satellite, les caméras et les écrans à moitié cachés ne s'éteignent plus et ne se rallument plus sans arrêt.
+[*] [b]Zeus[/b] : poser un module TOC en Zeus ne vous ramène plus à la vue de votre personnage.
+[*] [b]Module Écran TOC[/b] : chaque usage pose un nouvel écran ; « Retirer » est un choix à part, jamais proposé d'office.
+[*] [b]Textes des bandeaux[/b] : les lettres ne sont plus étirées ni coupées ; un texte court reste centré, un texte long défile.
+[*] [b]Écrire un texte[/b] : vous pouvez enfin écrire le texte des bandeaux et écrans, avec le nouveau module « Afficher un texte » et des messages tout prêts.
+[*] [b]Connecté, pas « perdu »[/b] : un joueur connecté et immobile n'est plus marqué « perdu » sur les écrans.
+[*] [b]En-tête des écrans[/b] : l'écran affiche ce qu'il montre (Satellite, Horloge…), plus le nom anglais du modèle.
+[*] [b]Diapositives[/b] : une diapositive du Briefing ne laisse plus l'écran noir.
+[*] [b]Menu des écrans[/b] : le menu ACE est rangé par thèmes (Afficher, Disposition, Source, Écran, Salle) et montre l'état en cours.
+[*] [b]Écrans éloignés[/b] : les écrans éloignés ou cachés ne consomment plus de ressources à s'allumer et s'éteindre.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Screens table[/b]: one window lists every TOC screen, panel by panel, in the editor, in Zeus and in game.
+[*] [b]Choose the source[/b]: for each panel, choose what it shows: map, satellite, cameras, squad, clock, text, test card.
+[*] [b]Generate everything at once[/b]: one button places a complete room, another gives every screen of the room a standard feed.
+[*] [b]Layouts[/b]: video walls and the curved screen have twelve ready layouts (map and cameras, four views, surveillance…).
+[*] [b]Broadcast[/b]: one screen can be copied to the whole room at the same time, with a LIVE tally.
+[*] [b]Test card[/b]: a screen without a source shows a colour-bar test card with its title and the time.
+[*] [b]No signal[/b]: a screen without data shows a steady NO SIGNAL card instead of half-empty content.
+[*] [b]Screens no longer flicker[/b]: the satellite view, cameras and half-hidden screens no longer switch off and on endlessly.
+[*] [b]Zeus[/b]: placing a TOC module in Zeus no longer throws you back to your character's view.
+[*] [b]TOC Screen module[/b]: every use places a new screen; "Remove" is a separate choice, never offered by default.
+[*] [b]Strip texts[/b]: letters are no longer stretched or cut; a short text stays centred, a long text scrolls.
+[*] [b]Write a text[/b]: you can finally write the text of strips and screens, with the new "Show a text" module and ready-made messages.
+[*] [b]Connected, not "lost"[/b]: a connected player standing still is no longer shown as "lost" on the screens.
+[*] [b]Screen header[/b]: the screen displays what it shows (Satellite, Clock…), no longer the English name of the model.
+[*] [b]Slides[/b]: a Briefing slide no longer leaves the screen black.
+[*] [b]Screen menu[/b]: the ACE menu is sorted by theme (Show, Layout, Source, Screen, Room) and shows the current state.
+[*] [b]Distant screens[/b]: distant or hidden screens no longer use resources switching on and off.
+[/list]
+
+[h1]COMSPEC ATAK 4.7.2 Washington — le poste TOC sur le PC s'affiche de nouveau / the TOC post shows on the PC again[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]PC du poste TOC[/b] : il s'ouvre de nouveau avec ses onglets, ses boutons et sa barre de dessin.
+[*] [b]Carte du PC[/b] : elle montre de nouveau le poste et les groupes du camp, sans message d'erreur à l'écran.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]TOC post PC[/b]: it opens again with its tabs, its buttons and its drawing bar.
+[*] [b]PC map[/b]: it shows the post and the side's groups again, with no error message on screen.
+[/list]
+
+[h1]COMSPEC ATAK 4.7.1 Washington — menu ACE des écrans du TOC réparé, écran qui se règle tout seul / ACE menu of TOC screens fixed, screens set themselves up[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Menu ACE des écrans[/b] : l'interaction ACE revient sur tous les écrans et postes PC du TOC. Elle avait disparu en 4.7.0.
+[*] [b]Écran posé, écran prêt[/b] : un écran posé s'allume et se configure tout seul, que vous le posiez dans l'éditeur, en Zeus, par un module ou par un script.
+[*] [b]Bon affichage d'office[/b] : carte et flux sur un écran, horloges sur le bandeau horloge, texte sur le bandeau LED, nom d'escouade sur la plaque, console sur un poste PC.
+[*] [b]Salle trouvée toute seule[/b] : l'écran se relie à la salle la plus proche ; s'il n'y en a pas, une salle « TOC 1 » est créée.
+[*] [b]Salle TOC complète[/b] : le module pose de nouveau toute la salle, y compris quand le serveur n'a pas le mod à jour.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Screen ACE menu[/b]: ACE interaction is back on every TOC screen and PC station. It had disappeared in 4.7.0.
+[*] [b]Placed screen, ready screen[/b]: a placed screen lights up and configures itself, whether you place it in the editor, in Zeus, with a module or with a script.
+[*] [b]Right display by default[/b]: map and feed on a screen, clocks on the clock strip, text on the LED strip, squad name on the name plate, console on a PC station.
+[*] [b]Room found by itself[/b]: the screen links to the nearest room; if there is none, a "TOC 1" room is created.
+[*] [b]Complete TOC room[/b]: the module places the whole room again, including when the server does not run the up-to-date mod.
+[/list]
+
+[h1]COMSPEC ATAK 4.7.0 Washington — relais refaits en 3D, salle TOC posée en entier, écrans géants, bris d'écran réalistes / relays rebuilt in 3D, TOC room placed in full, giant screens, realistic screen damage[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Pylônes et mâts[/b] : les relais sont redessinés comme de vrais sites (treillis, échelle, plates-formes, câbles, clôture, feux rouges la nuit), avec de nouveaux modèles : monopôle 30 m, pylône haubané 60 m, pylône de toit, mât sur trépied et mât sur remorque. Peinture au choix.
+[*] [b]Relais déguisés en arbre[/b] : un faux pin (28 m et 15 m) et un faux palmier (22 m) : un arbre de loin, des antennes entre les branches de près.
+[*] [b]Antennes murales[/b] : des antennes à fixer sur un mur, un poteau ou un toit ; ce sont de vrais relais.
+[*] [b]Caméras IP[/b] : une famille de caméras à poser (dôme, tube infrarouge, thermique, mini-dôme…).
+[*] [b]Salle serveur[/b] : baies, coffrets, chemins de câbles et climatiseur à poser dans l'éditeur et en Zeus.
+[*] [b]Voyants et destruction[/b] : un voyant montre l'état de chaque relais (en service, dégradé, brouillé, éteint) ; un pylône détruit se plie et tombe.
+[*] [b]Relais plus légers[/b] : les modèles des relais pèsent environ 33 Mo de moins, et la carte de couverture se recalcule bien plus vite.
+[*] [b]Changement : brouilleur GPS[/b] : un brouilleur GPS seul ne crée plus de zone blanche sur la couverture du réseau.
+[*] [b]Changement : relais M12 et M20[/b] : ce sont maintenant des mâts tactiques verts ; les missions existantes les gardent à leur place.
+[*] [b]Salle TOC complète[/b] : le module pose enfin toute la salle sur le sol, dans Eden comme dans Zeus : mur d'images, grands écrans, bandeaux, plaques de nom, bureaux, chaises et PC, tous liés à la même salle.
+[*] [b]Dedans ou dehors[/b] : contre un mur et sous un plafond, la salle utilise les écrans muraux et suspendus ; en extérieur, des écrans sur pied les remplacent.
+[*] [b]Taille annoncée[/b] : la place que prend chaque salle (petite, moyenne, grande) est écrite dans le module, et le Zeus lit le résultat de la pose dans sa ligne de retour.
+[*] [b]Texte sur les écrans[/b] : nouvel affichage « Texte » dans le style du bandeau horloge. Vous écrivez vos messages (couleur, durée, clignotement), ils passent à tour de rôle et défilent s'ils sont trop longs.
+[*] [b]Écrans géants[/b] : bandeaux LED de 2,4 m et 4,8 m, écran 136 pouces, mur LED 220 pouces, murs vidéo 4x3, 5x3 et 6x4, écrans suspendus doubles et triples, grand écran incurvé de 7 m.
+[*] [b]Postes PC[/b] : postes fixes complets (1, 2, 3 écrans ou écran incurvé) qui servent de PC du poste, et un module « Poste opérateur » qui pose bureau, chaise et poste d'un coup.
+[*] [b]Anciens écrans refaits[/b] : téléviseur, écrans sur trépied, moniteur, toiles de projection, vidéoprojecteur et PC portable ont de nouveaux modèles ; les missions existantes les gardent.
+[*] [b]Bris d'écran du téléphone[/b] : treize façons de casser le verre (fêlure fine, toile, coin écrasé, impact de balle, eau sous le verre…), posées là où le téléphone a été touché.
+[*] [b]Pannes et bugs d'affichage[/b] : pixels morts, lignes de couleur, tache d'encre qui grandit, zone tactile morte, et de courts bugs après un choc. Tout se règle ou se coupe dans les options.
+[*] [b]Sang plus crédible[/b] : plus sombre, il se dilue sous la pluie, s'accumule en bas de l'écran et reste dans les fêlures après un coup de chiffon.
+[*] [b]Poste TOC et Athena[/b] : chronos, main courante, liste d'exécution, pertes, demandes et FLASH du poste en jeu se voient en direct sur le poste TOC web d'Athena, et ce que fait l'opérateur web arrive en jeu.
+[*] [b]Plans d'opération[/b] : un plan préparé sur Athena s'envoie en jeu et apparaît dans l'app Plan des téléphones, sur le PC du poste et sur les écrans de la salle.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Towers and masts[/b]: relays are redrawn as real sites (lattice, ladder, platforms, cables, fence, red lights at night), with new models: 30 m monopole, 60 m guyed mast, rooftop tower, tripod mast and trailer mast. Pick the paint.
+[*] [b]Tree-disguised relays[/b]: a fake pine (28 m and 15 m) and a fake palm (22 m): a tree from afar, antennas among the branches up close.
+[*] [b]Wall antennas[/b]: antennas to fix on a wall, a pole or a roof; they are real relays.
+[*] [b]IP cameras[/b]: a family of cameras to place (dome, infrared bullet, thermal, mini dome…).
+[*] [b]Server room[/b]: racks, cabinets, cable trays and an AC unit to place in the editor and in Zeus.
+[*] [b]Status lights and destruction[/b]: a light shows the state of each relay (running, degraded, jammed, off); a destroyed tower bends and falls.
+[*] [b]Lighter relays[/b]: the relay models are about 33 MB lighter, and the coverage map recomputes much faster.
+[*] [b]Change: GPS jammer[/b]: a GPS jammer alone no longer creates a dead zone in the network coverage.
+[*] [b]Change: M12 and M20 relays[/b]: they are now green tactical masts; existing missions keep them in place.
+[*] [b]Complete TOC room[/b]: the module finally places the whole room on the ground, in Eden and in Zeus: video wall, big screens, strips, name plates, desks, chairs and computers, all linked to the same room.
+[*] [b]Indoors or outdoors[/b]: against a wall and under a ceiling, the room uses the wall and hanging screens; outdoors, screens on stands replace them.
+[*] [b]Stated size[/b]: the space each room takes (small, medium, large) is written in the module, and the Zeus reads the result of the placement in the feedback line.
+[*] [b]Text on screens[/b]: a new "Text" display in the look of the clock strip. You write your messages (colour, duration, blinking), they are shown in turn and scroll when they are too long.
+[*] [b]Giant screens[/b]: 2.4 m and 4.8 m LED strips, a 136-inch screen, a 220-inch LED wall, 4x3, 5x3 and 6x4 video walls, double and triple hanging screens, a 7 m curved screen.
+[*] [b]PC stations[/b]: complete desktop stations (1, 2, 3 screens or a curved screen) that work as the post PC, and an "Operator station" module that places desk, chair and station in one go.
+[*] [b]Older screens remade[/b]: the TV, tripod screens, monitor, projection screens, projector and laptop have new models; existing missions keep them.
+[*] [b]Phone screen damage[/b]: thirteen ways to break the glass (hairline crack, spider web, crushed corner, bullet impact, water under the glass…), placed where the phone was hit.
+[*] [b]Display faults and glitches[/b]: dead pixels, coloured lines, a growing ink blot, a dead touch zone, and short glitches after a shock. Everything can be tuned or turned off in the options.
+[*] [b]More believable blood[/b]: darker, it thins out in the rain, pools at the bottom of the screen and stays in the cracks after a wipe.
+[*] [b]TOC and Athena[/b]: the in-game post's timers, duty log, execution checklist, casualties, requests and FLASH show live on Athena's web TOC, and what the web operator does reaches the game.
+[*] [b]Operation plans[/b]: a plan prepared on Athena can be sent into the game and appears in the phones' Plan app, on the post PC and on the room screens.
+[/list]
+
 [h1]COMSPEC ATAK 4.6.0 Washington — écrans TOC réglables dans Eden et Zeus, allumés avec un serveur plus ancien / TOC screens set up in Eden and Zeus, lit with an older server[/h1]
 
 [h2]Français[/h2]

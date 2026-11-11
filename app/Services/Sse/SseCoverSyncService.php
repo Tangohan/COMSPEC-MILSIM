@@ -19,6 +19,12 @@ use App\Repositories\SseCoverExportRepository;
  *                 peut pas l'afficher et elle pèse jusqu'à 150 000 caractères. Chaque fichier servi est marqué téléchargé
  *                 et journalisé comme un téléchargement depuis le site.
  * Version du protocole : API_VERSION (le mod envoie la sienne ; un mod plus ancien n'appelle jamais ces routes).
+ *
+ * Points d'accès hérités, en lecture seule. Une fois l'étape 4450 passée (couvertures fondues dans les identités, table
+ * sse_cover_export_merges présente), la liste et les fichiers viennent des identités du membre, dans le même contrat
+ * (SseIdentityCoverFeedService) ; s'y ajoutent les seuls fichiers générés depuis par un responsable et pas encore
+ * fondus (absents de sse_cover_export_merges), servis comme avant. Tant que l'étape n'est pas passée, le comportement
+ * d'avant est gardé tel quel.
  */
 final class SseCoverSyncService
 {
@@ -33,9 +39,26 @@ final class SseCoverSyncService
     public function __construct(
         private ?SseCoverExportRepository $exports = null,
         private ?SseCoverExportService $service = null,
+        private ?SseIdentityCoverFeedService $feed = null,
+        private ?\App\Repositories\SseIdentityStoryRepository $stories = null,
     ) {
         $this->exports ??= new SseCoverExportRepository();
         $this->service ??= new SseCoverExportService($this->exports);
+    }
+
+    /** Les identités remplacent-elles les couvertures exportées (étape 4450 passée) ? Lecture impossible : non. */
+    private function fromIdentities(): bool
+    {
+        try {
+            return ($this->stories ??= new \App\Repositories\SseIdentityStoryRepository())->merged();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function feed(): SseIdentityCoverFeedService
+    {
+        return $this->feed ??= new SseIdentityCoverFeedService($this->service, null, null, null, null, $this->stories);
     }
 
     /**
@@ -46,6 +69,8 @@ final class SseCoverSyncService
     public function listFor(int $tenantId, int $userId, ?\DateTimeImmutable $now = null): array
     {
         $now ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        // null : étape 4450 pas passée, tout vient des fichiers générés ; sinon, identifiants des fichiers déjà fondus.
+        $merged = $this->fromIdentities() ? $this->stories->mergedExportIds($tenantId, $userId) : null;
         $nowIso = $now->format('Y-m-d\TH:i:s\Z');
         $out = [];
         // Couvertures révoquées par le membre (Outils opérateur) : absentes de la liste du téléphone.
@@ -53,7 +78,7 @@ final class SseCoverSyncService
         // Couverture marquée active par le membre : « active » à vrai sur elle seule (champ ajouté, ignoré d'un mod ancien).
         $activeId = \App\Repositories\OperatorHubRepository::activeCoverId($tenantId, $userId);
         foreach ($this->exports->listFilesForUser($tenantId, $userId, self::LIST_LIMIT) as $row) {
-            if (isset($revoked[(int) $row['id']])) {
+            if (isset($revoked[(int) $row['id']]) || isset($merged[(int) $row['id']])) {
                 continue;
             }
             $json = (string) ($row['payload_json'] ?? '');
@@ -79,8 +104,12 @@ final class SseCoverSyncService
                 'sha' => (string) $row['content_sha'],
                 'by_manager' => $row['created_by_user_id'] !== null && (int) $row['created_by_user_id'] !== $userId,
                 'downloaded' => !empty($row['downloaded_at']),
-                'active' => $activeId > 0 && (int) $row['id'] === $activeId,
+                'active' => $merged === null && $activeId > 0 && (int) $row['id'] === $activeId,
             ];
+        }
+        if ($merged !== null) {
+            // Les identités d'abord (l'active en tête), puis les fichiers pas encore fondus.
+            return array_merge($this->feed()->listFor($tenantId, $userId, $now), $out);
         }
         // Tri stable (PHP 8) : l'active passe en tête, le reste garde l'ordre du plus récent au plus ancien.
         usort($out, static fn (array $a, array $b): int => (int) $b['active'] <=> (int) $a['active']);
@@ -120,8 +149,19 @@ final class SseCoverSyncService
         $now ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $files = [];
         $errors = [];
+        $merged = null;
+        if ($this->fromIdentities()) {
+            $merged = $this->stories->mergedExportIds($tenantId, $userId);
+            $fromIdentities = $this->feed()->filesFor($tenantId, $userId, $refs, $now);
+            $files = $fromIdentities['files'];
+            // Référence qui n'est pas celle d'une identité : peut-être un fichier généré depuis, pas encore fondu.
+            $refs = array_column($fromIdentities['errors'], 'ref');
+        }
         foreach ($refs as $ref) {
             $row = $this->exports->findForUserByRef($tenantId, $userId, $ref);
+            if ($row !== null && isset($merged[(int) $row['id']])) {
+                $row = null;
+            }
             if ($row === null) {
                 $errors[] = ['ref' => $ref, 'error' => 'not_found'];
                 continue;

@@ -18,8 +18,8 @@ use App\Support\SseFileSubjectCatalog;
 use App\Support\SseIdentityCatalog;
 
 /**
- * Outils opérateur : page d'accueil (/operateur) et « Mon identité » (/operateur/identite : identités, papiers,
- * couvertures) de chaque membre.
+ * Outils opérateur : page d'accueil (/operateur) et « Mes identités » (/operateur/identite : identités et papiers) de
+ * chaque membre. Les anciennes adresses des couvertures (/operateur/identite/couverture…) renvoient aux identités.
  *
  * Toutes les routes : membre connecté (AuthMiddleware) d'une communauté ; il n'agit que sur son propre compte (aucun
  * identifiant de membre n'est lu dans la requête). Écritures : POST + jeton CSRF + limite de fréquence par membre.
@@ -27,7 +27,7 @@ use App\Support\SseIdentityCatalog;
  */
 final class OperatorHubController
 {
-    public const TABS = ['identites' => 'Identités', 'documents' => 'Papiers', 'couverture' => 'Couvertures'];
+    public const TABS = ['identites' => 'Identités', 'documents' => 'Papiers'];
     private const WRITES_PER_10_MIN = 40;
     private const UPLOADS_PER_HOUR = 12;
     private const ACCESS_REQUESTS_PER_HOUR = 6;
@@ -311,12 +311,13 @@ final class OperatorHubController
             'tone' => $attention > 0 ? 'bad' : ($valid > 0 ? 'ok' : 'warn'),
             'href' => 'operateur/identite/documents',
         ];
+        $activeName = (string) ($summary['active_name'] ?? '');
         $out[] = [
-            'label' => 'Couverture',
-            'value' => $summary['cover_active'] !== null ? 'Active' : ((int) $summary['covers'] > 0 ? 'Aucune active' : 'Aucune'),
-            'hint' => $summary['cover_active'] !== null ? (string) $summary['cover_active'] : 'Facultatif',
-            'tone' => $summary['cover_active'] !== null ? 'ok' : 'idle',
-            'href' => 'operateur/identite/couverture',
+            'label' => 'Active en jeu',
+            'value' => $activeName !== '' ? $activeName : 'Aucune',
+            'hint' => $activeName !== '' ? 'Identité jouée en mission' : 'Choisissez une identité',
+            'tone' => $activeName !== '' ? 'ok' : 'idle',
+            'href' => 'operateur/identite',
         ];
 
         return $out;
@@ -344,9 +345,6 @@ final class OperatorHubController
             $out['documents'] = ['label' => (int) $summary['papers_pending'] . ' en attente', 'tone' => 'wait'];
         } elseif ((int) $summary['papers_valid'] > 0) {
             $out['documents'] = ['label' => 'À jour', 'tone' => 'ok'];
-        }
-        if ($summary['cover_active'] !== null) {
-            $out['couverture'] = ['label' => 'Active', 'tone' => 'ok'];
         }
 
         return $out;
@@ -395,9 +393,20 @@ final class OperatorHubController
         return $this->area('documents', $request);
     }
 
-    public function covers(Request $request, array $params = []): Response
+    /**
+     * Anciennes adresses des couvertures (onglet, création, action, téléchargement) : il n'y a plus que des identités.
+     * Tout renvoie à « Mes identités » ; rien n'est écrit.
+     */
+    public function legacyCovers(Request $request, array $params = []): Response
     {
-        return $this->area('couverture', $request);
+        if (($this->context)() === null) {
+            return Response::redirect(url('dashboard'));
+        }
+        if ($request->method() !== 'GET' || isset($params['id'])) {
+            ($this->flash)('success', 'Cette page a été réunie avec vos identités : tout se gère ici, identité par identité.');
+        }
+
+        return Response::redirect(url('operateur/identite'));
     }
 
     private function area(string $tab, Request $request): Response
@@ -408,7 +417,7 @@ final class OperatorHubController
         }
 
         return ($this->render)([
-            'title' => 'Mon identité',
+            'title' => 'Mes identités',
             'content' => 'operateur.identite',
             'athena_header_section' => 'Outils opérateur',
             'csrfToken' => Csrf::token(),
@@ -431,42 +440,51 @@ final class OperatorHubController
             'idTabs' => self::TABS,
             'idIdentities' => [],
             'idDocuments' => [],
-            'idCovers' => [],
             'idCountries' => [],
             'idHistory' => [],
             'idSync' => null,
-            'idCoverQuota' => 0,
             'idEditId' => $editId,
+            // Champ « Histoire » : seulement une fois l'étape 4450 passée (sinon rien ne s'affiche, rien ne s'écrit).
+            'idStoryAvailable' => false,
+            // Papiers habituels que chaque identité n'a pas encore, par identifiant d'identité.
+            'idMissingPapers' => [],
             'idUnavailable' => false,
             'idProposal' => [],
             'idSteamLinked' => preg_replace('/\D/', '', (string) ($ctx['row']['steam_id'] ?? '')) !== '',
             'idHair' => SseFileSubjectCatalog::HAIR,
             'idEyes' => SseFileSubjectCatalog::EYES,
             'idDocTypes' => SseIdentityCatalog::DOC_TYPES,
+            // Liste de choix rangée par catégorie, comme le sélecteur du mod (identité, voyage, permis et véhicule).
+            'idDocTypeGroups' => \App\Support\SseDocumentTypes::grouped(),
             // Responsables : lien vers la gestion des papiers des membres (Bureau SSE), selon leurs droits habituels.
             'idManagerUrl' => (($this->can)('atak.sse.case.manage') || ($this->can)('atak.sse.grant') || ($this->can)('admin.organization')) && ($this->allowsPath)('atak/sse/papiers/membres')
                 ? url('atak/sse/papiers/membres') : null,
         ];
         try {
             $data['idIdentities'] = $svc->identities($tenantId, $userId);
+            $data['idStoryAvailable'] = $svc->storyAvailable();
             // Pays réels d'abord (France, Allemagne, États-Unis…), puis les pays fictifs de la communauté.
             $countries = $svc->countries($tenantId);
             usort($countries, static fn (array $a, array $b): int => [empty($a['real_sim']), 0] <=> [empty($b['real_sim']), 0]);
             $data['idCountries'] = $countries;
             $data['idProposal'] = MemberIdentityPapersService::primaryProposal($ctx['row'], $ctx['row'], $countries);
-            if ($tab !== 'couverture') {
-                $data['idDocuments'] = $svc->documents($tenantId, $userId);
+            // Les papiers appartiennent à l'identité : la carte de chaque identité les montre, l'onglet Papiers les détaille.
+            $data['idDocuments'] = $svc->documents($tenantId, $userId);
+            $byCode = [];
+            foreach ($countries as $c) {
+                $byCode[(string) $c['code']] = $c;
             }
-            if ($tab !== 'couverture') {
-                $data['idSync'] = self::syncSummary($tenantId, $userId, (string) ($ctx['row']['steam_id'] ?? ''));
+            $docsOf = [];
+            foreach ($data['idDocuments'] as $d) {
+                $docsOf[(int) $d['identity_id']][] = $d;
             }
-            if ($tab === 'couverture') {
-                $data['idCovers'] = $svc->covers($tenantId, $userId);
-                $data['idCoverQuota'] = $svc->coverQuota($tenantId, $userId);
+            foreach ($data['idIdentities'] as $i) {
+                $data['idMissingPapers'][(int) $i['id']] = $i['archived'] ? [] : OperatorIdentityService::missingPapers($i, $docsOf[(int) $i['id']] ?? [], $byCode);
             }
+            $data['idSync'] = self::syncSummary($tenantId, $userId, (string) ($ctx['row']['steam_id'] ?? ''));
             $data['idHistory'] = $svc->history($tenantId, $userId, 12);
         } catch (\Throwable $e) {
-            error_log('Mon identité indisponible : ' . $e->getMessage());
+            error_log('Mes identités indisponibles : ' . $e->getMessage());
             $data['idUnavailable'] = true;
         }
 
@@ -515,10 +533,26 @@ final class OperatorHubController
         foreach (['last_name', 'first_name', 'alias', 'sex', 'birth_date', 'birth_place', 'nationality', 'profession', 'height_cm', 'weight_kg', 'hair', 'eyes', 'marks'] as $k) {
             $data[$k] = trim($request->inputString($k));
         }
+        // Histoire du personnage : seulement si le formulaire la porte (champ absent tant que l'étape 4450 n'est pas passée).
+        if ($request->input('story') !== null) {
+            $data['story'] = trim($request->inputString('story'));
+        }
         $res = $this->identity()->saveIdentity($ctx['tenant'], $ctx['user'], $id > 0 ? $id : null, $data);
+        $asked = 0;
+        if ($res['ok'] && $id < 1 && $data['nationality'] !== '') {
+            // Création guidée : papiers cochés à l'étape « Papiers », demandés pour la nouvelle identité (un refus,
+            // limite de demandes par exemple, n'annule pas la création).
+            $types = is_array($request->input('request_papers')) ? array_slice($request->input('request_papers'), 0, 5) : [];
+            foreach ($types as $type) {
+                if (is_string($type) && in_array($type, OperatorIdentityService::TYPICAL_PAPERS, true)) {
+                    $asked += $this->identity()->requestDocument($ctx['tenant'], $ctx['user'], (int) $res['id'], $type, strtoupper($data['nationality']))['ok'] ? 1 : 0;
+                }
+            }
+        }
+        $created = $asked === 0 ? 'Identité créée.' : ($asked === 1 ? 'Identité créée, 1 papier demandé : un responsable le valide et l’émet.' : 'Identité créée, ' . $asked . ' papiers demandés : un responsable les valide et les émet.');
 
         return $res['ok']
-            ? $this->back('operateur/identite#identite-' . (int) $res['id'], 'success', $id > 0 ? 'Identité enregistrée.' : 'Identité créée.')
+            ? $this->back('operateur/identite#identite-' . (int) $res['id'], 'success', $id > 0 ? 'Identité enregistrée.' : $created)
             : $this->back('operateur/identite' . ($id > 0 ? '?modifier=' . $id . '#identite-' . $id : '#nouvelle-identite'), 'error', (string) $res['error']);
     }
 
@@ -594,11 +628,16 @@ final class OperatorHubController
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        $res = $this->identity()->requestDocument(
-            $ctx['tenant'], $ctx['user'], (int) $request->inputString('identity_id'), $request->inputString('doc_type'), strtoupper(trim($request->inputString('country_code')))
-        );
+        [$identityId, $type, $country] = [(int) $request->inputString('identity_id'), $request->inputString('doc_type'), strtoupper(trim($request->inputString('country_code')))];
+        // Bouton « Demander ce papier » de la carte d'une identité : « identité:type:pays » dans une seule valeur.
+        if (preg_match('/^(\d{1,10}):([a-z_]{1,40}):([A-Za-z0-9]{1,16})$/', $request->inputString('demande'), $m) === 1) {
+            [$identityId, $type, $country] = [(int) $m[1], $m[2], strtoupper($m[3])];
+        }
+        $res = $this->identity()->requestDocument($ctx['tenant'], $ctx['user'], $identityId, $type, $country);
+        // Demande faite depuis la carte d'une identité : retour à cette carte.
+        $back = $request->inputString('retour') === 'identites' ? 'operateur/identite' . ($identityId > 0 ? '#identite-' . $identityId : '') : 'operateur/identite/documents';
 
-        return $this->back('operateur/identite/documents', $res['ok'] ? 'success' : 'error', $res['ok']
+        return $this->back($back, $res['ok'] ? 'success' : 'error', $res['ok']
             ? 'Demande envoyée : un responsable valide et émet le papier, il apparaîtra ici.'
             : (string) ($res['error'] ?? 'Demande refusée.'));
     }
@@ -655,106 +694,6 @@ final class OperatorHubController
         $mime = \App\Services\Sse\SseIdImageService::sniff($bytes);
 
         return in_array($mime, ['image/png', 'image/jpeg', 'image/webp'], true) ? 'data:' . $mime . ';base64,' . base64_encode($bytes) : null;
-    }
-
-    // ---- Écritures : couvertures
-
-    public function coverGenerate(Request $request, array $params = []): Response
-    {
-        $ctx = $this->guardWrite($request, 'operateur/identite/couverture');
-        if ($ctx instanceof Response) {
-            return $ctx;
-        }
-        $back = 'operateur/identite/couverture';
-        $bytes = null;
-        $file = $_FILES['photo'] ?? null;
-        if (is_array($file) && ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
-            $tmp = (string) ($file['tmp_name'] ?? '');
-            if (($file['error'] ?? 1) !== UPLOAD_ERR_OK || $tmp === '' || !is_uploaded_file($tmp) || filesize($tmp) > 4 * 1024 * 1024) {
-                return $this->back($back, 'error', 'Photo : envoi impossible (4 Mo au plus, PNG, JPG ou WebP).');
-            }
-            $bytes = (string) @file_get_contents($tmp);
-        }
-        $source = $request->inputString('source') === 'athena' ? 'athena' : 'random';
-        $res = $this->identity()->generateCover(
-            $ctx['tenant'], $ctx['user'], $source, strtoupper(trim($request->inputString('country'))),
-            strtoupper($request->inputString('sex')) ?: null, $request->inputString('lang', 'fr'), $bytes
-        );
-        if ($res['ok']) {
-            return $this->back($back . '?modifier=' . (int) $res['id'] . '#couverture-' . (int) $res['id'], 'success', 'Couverture créée : ' . $res['name'] . '. Relisez la légende et ajustez-la.');
-        }
-
-        return $this->back($back, 'error', match ($res['error']) {
-            'limit' => 'Limite de générations atteinte pour aujourd’hui. Réessayez dans 24 heures.',
-            'country' => 'Pays inconnu ou archivé pour cette communauté.',
-            'photo' => 'Photo refusée : PNG, JPG ou WebP lisible, 40 pixels au moins.',
-            'no_identity' => 'Pas d’identité principale complète (nom et prénom) : créez-la d’abord.',
-            'no_paper' => 'Aucun papier émis et valable pour l’identité principale : demandez-en un d’abord.',
-            default => 'Aucune couverture libre n’a pu être tirée. Réessayez.',
-        });
-    }
-
-    public function coverAction(Request $request, array $params = []): Response
-    {
-        $ctx = $this->guardWrite($request, 'operateur/identite/couverture');
-        if ($ctx instanceof Response) {
-            return $ctx;
-        }
-        $id = (int) ($params['id'] ?? 0);
-        $back = 'operateur/identite/couverture';
-        $svc = $this->identity();
-        $action = $request->inputString('action');
-        [$res, $ok, $anchor] = match ($action) {
-            'edit' => [$svc->editCover($ctx['tenant'], $ctx['user'], $id, array_intersect_key($this->coverInput($request), array_flip(array_merge(array_keys(OperatorIdentityService::COVER_EDITABLE), ['history'])))),
-                'Légende enregistrée. En jeu : téléphone › Ma couverture › Synchroniser avec Athena pour la mettre à jour.', '#couverture-' . $id],
-            'duplicate' => [$svc->duplicateCover($ctx['tenant'], $ctx['user'], $id), 'Couverture dupliquée.', ''],
-            'revoke' => [$svc->revokeCover($ctx['tenant'], $ctx['user'], $id), 'Couverture révoquée : elle n’est plus téléchargeable ni proposée au téléphone.', ''],
-            'activate' => [$svc->activateCover($ctx['tenant'], $ctx['user'], $id), 'Couverture active choisie.', '#couverture-' . $id],
-            default => [['ok' => false, 'error' => 'Action inconnue.'], '', ''],
-        };
-
-        return $res['ok']
-            ? $this->back($back . $anchor, 'success', $ok)
-            : $this->back($back . ($action === 'edit' ? '?modifier=' . $id . '#couverture-' . $id : ''), 'error', (string) ($res['error'] ?? 'Action refusée.'));
-    }
-
-    /** @return array<string, string> */
-    private function coverInput(Request $request): array
-    {
-        $out = ['history' => $request->inputString('history')];
-        foreach (array_keys(OperatorIdentityService::COVER_EDITABLE) as $k) {
-            $out[$k] = $request->inputString($k);
-        }
-
-        return $out;
-    }
-
-    public function coverDownload(Request $request, array $params = []): Response
-    {
-        $ctx = ($this->context)();
-        if ($ctx === null) {
-            return Response::redirect(url('dashboard'));
-        }
-        if ($this->throttled('dl', $ctx['user'], 30, 600)) {
-            return $this->back('operateur/identite/couverture', 'error', 'Trop de téléchargements en peu de temps. Réessayez dans quelques minutes.');
-        }
-        $res = null;
-        try {
-            $res = $this->identity()->downloadCover($ctx['tenant'], $ctx['user'], (int) ($params['id'] ?? 0));
-        } catch (\Throwable $e) {
-            error_log('Téléchargement de couverture impossible : ' . $e->getMessage());
-        }
-        if ($res === null) {
-            return $this->back('operateur/identite/couverture', 'error', 'Fichier de couverture introuvable.');
-        }
-        $name = 'comspec-couverture-' . preg_replace('/[^A-Za-z0-9-]/', '', (string) $res['row']['ref']) . '.json';
-
-        return (new Response())
-            ->header('Content-Type', 'application/json; charset=utf-8')
-            ->header('Content-Disposition', 'attachment; filename="' . $name . '"')
-            ->header('X-Content-Type-Options', 'nosniff')
-            ->header('Cache-Control', 'no-store')
-            ->setBody($res['json']);
     }
 
     // ------------------------------------------------------------------ Outils

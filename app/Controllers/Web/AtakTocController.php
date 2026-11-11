@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakPlanRepository;
 use App\Services\AtakToc\PlanCatalog;
+use App\Services\AtakToc\PlanInterop;
 use App\Services\AtakToc\PlanPdfExporter;
 use App\Services\AtakToc\PlanService;
 use App\Services\AtakToc\TocAccess;
@@ -21,6 +22,8 @@ use App\Services\AtakToc\TocAccess;
  *   GET  /atak/toc/plans/{id}              éditeur de plan (lecture seule sur téléphone ou sans droit d'édition)
  *   GET  /atak/toc/plans/lien/{jeton}      plan en lecture seule pour un membre de la communauté
  *   GET  /atak/toc/plans/{id}/export.json  fichier d'échange
+ *   GET  /atak/toc/plans/{id}/export.geojson  plan en GeoJSON (mètres Arma, réimportable sans perte)
+ *   GET  /atak/toc/plans/{id}/export.kml   plan en KML 2.2 (mètres Arma, réimportable sans perte)
  *   POST /atak/toc/plans/{id}/export.pdf   fiche de briefing (image de la carte jointe par l'éditeur)
  */
 final class AtakTocController
@@ -121,6 +124,21 @@ final class AtakTocController
         return Response::view('atak.toc.plans', $this->pageData('Plans d’opération'));
     }
 
+    /** Guide écrit de l'éditeur de plans (docs/TOC-PLANS-TUTORIEL.md), lié depuis l'aide de l'éditeur. */
+    public function planHelp(Request $request, array $params = []): Response
+    {
+        if (!$this->access->canUse()) {
+            return $this->denied();
+        }
+        $file = base_path('docs/TOC-PLANS-TUTORIEL.md');
+        $md = is_file($file) ? (string) file_get_contents($file) : '';
+        $html = $md === ''
+            ? '<p>Le guide n’est pas disponible pour le moment.</p>'
+            : (function_exists('markdown_to_html') ? markdown_to_html($md) : '<pre>' . htmlspecialchars($md, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</pre>');
+
+        return Response::view('atak.toc.plan_help', ['title' => 'Éditeur de plans : guide', 'tocHelpHtml' => $html]);
+    }
+
     public function editor(Request $request, array $params = []): Response
     {
         if (!$this->access->canUse()) {
@@ -184,6 +202,38 @@ final class AtakTocController
             ->header('Content-Disposition', 'attachment; filename="' . self::fileName($plan['title'], 'json') . '"')
             ->header('Cache-Control', 'private, no-store')
             ->setBody(json_encode($doc, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?: '{}');
+    }
+
+    /** Plan en GeoJSON : éléments montrés, coordonnées en mètres Arma (PlanInterop::toGeoJson). */
+    public function exportGeoJson(Request $request, array $params = []): Response
+    {
+        [$plan, $err] = $this->readable($params);
+        if ($plan === null) {
+            return $err ?? Response::json(['ok' => false], 404);
+        }
+        $r = new Response();
+
+        return $r->setStatusCode(200)
+            ->header('Content-Type', 'application/geo+json; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="' . self::fileName($plan['title'], 'geojson') . '"')
+            ->header('Cache-Control', 'private, no-store')
+            ->setBody(json_encode(PlanInterop::toGeoJson($this->plans->document($plan)), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}');
+    }
+
+    /** Plan en KML 2.2 : éléments montrés, coordonnées en mètres Arma (PlanInterop::toKml). */
+    public function exportKml(Request $request, array $params = []): Response
+    {
+        [$plan, $err] = $this->readable($params);
+        if ($plan === null) {
+            return $err ?? Response::json(['ok' => false], 404);
+        }
+        $r = new Response();
+
+        return $r->setStatusCode(200)
+            ->header('Content-Type', 'application/vnd.google-earth.kml+xml; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="' . self::fileName($plan['title'], 'kml') . '"')
+            ->header('Cache-Control', 'private, no-store')
+            ->setBody(PlanInterop::toKml($this->plans->document($plan)));
     }
 
     public function exportPdf(Request $request, array $params = []): Response

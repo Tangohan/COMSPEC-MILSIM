@@ -235,6 +235,17 @@ final class SseIdRealCountryCatalog
             return [];
         }
 
+        // Papiers délivrés : ceux du registre du mod pour ce pays (titre de séjour, carte grise… selon le pays).
+        $types = SseDocumentTypes::servedBy($c['code']);
+        if ($types === []) {
+            $types = array_merge(array_keys($c['validity']), ['military_id']);
+        }
+        $validity = $c['validity'];
+        // Titre de séjour : même durée que la carte d'identité (ou le passeport, pour un pays sans carte).
+        if (in_array('residence_permit', $types, true)) {
+            $validity += ['residence_permit' => $validity['id_card'] ?? $validity['passport'] ?? 10];
+        }
+
         return [
             'code' => $c['code'],
             'name' => $c['name'],
@@ -245,8 +256,8 @@ final class SseIdRealCountryCatalog
             'region' => $c['region'],
             'theme' => self::UNIVERSE,
             'languages' => $c['languages'],
-            'doc_types' => array_merge(array_keys($c['validity']), ['military_id']),
-            'validity' => $c['validity'],
+            'doc_types' => $types,
+            'validity' => $validity,
             'color_primary' => strtoupper($c['colors'][0]),
             'color_secondary' => strtoupper($c['colors'][1]),
             'flag_path' => null,

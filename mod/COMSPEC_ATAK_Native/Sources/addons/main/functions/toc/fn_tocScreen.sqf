@@ -20,7 +20,9 @@
 
     Variables publiques de l'objet :
       COMSPEC_ATAK_TocScr [nom, camp ("" = celui de chaque joueur), index de texture, affichage ("SPLIT" | "MAP" | "FEED" | "NET" | "ORBAT" | "TOC"
-                           | "CAM" | "SAT" | "CLOCK" | "SQUAD" | "LOG" | "EXCHECK" | "KILLS" | "REQ"),
+                           | "CAM" | "SAT" | "CLOCK" | "SQUAD" | "LOG" | "EXCHECK" | "KILLS" | "REQ" | "TEXT" (texte à LED,
+                           fn_tocText) | "COLA" | "COLB" | "COLC" | "COLD" | "COLE" | "COLF" (colonnes d'un écran incurvé ;
+                           dispositions d'un écran à plusieurs dalles : fn_tocLayout)),
                            demi-largeur de la carte en m (0 = cadrage automatique sur le réseau), centre ([] = auto),
                            poste TOC (l'écran sert aussi de PC de TOC), à recréer à la partie suivante (posé en cours de partie),
                            satellite montré en affichage SAT (0 : SAT 1, 1 : SAT 2), groupe montré en affichage SQUAD (nom)]
@@ -38,6 +40,7 @@
       ["spawn", [position ATL, direction, classe, nom, camp, affichage, poste TOC, satellite, groupe]]   crée l'écran (serveur)
       ["view", [objet, clé, valeur]]       "mode" affichage | "zoom" demi-largeur | "center" position | "auto"
                                            | "sat" 0 ou 1 | "squad" nom du groupe | "cam" netId de la caméra
+                                           | "text" réglage de l'affichage TEXTE (fn_tocText)
       ["squads", camp]                     groupes proposés pour l'affichage SQUAD (noms, camp du joueur si "")
       ["classes"]                          écrans proposés à la pose [[nom, classe, aperçu]...] (classes présentes) :
                                            écrans COMSPEC puis CfgComspecTocScreens (jeu et autres mods)
@@ -62,6 +65,8 @@
       ["show", [objet, contenu]]           contenu choisi depuis le téléphone ou le PC : affichage, ou "SLIDES" (diapositives)
       ["center", objet]                    centre de l'image (ASL), pour savoir si l'écran est vu (fn_tocCam aussi)
       ["title", affichage]                 [mot d'en-tête, libellé des menus] ; "" : table de tous les affichages
+      ["format", objet]                    format de la dalle : [rapport, texture, l / h de la texture, format, affichages permis, défaut]
+      ["params", affichage]                paramètres propres à l'affichage [[clé, libellé, type, défaut, choix]...] (TEXT)
       ["views"]                            liste ordonnée des affichages (fenêtre Zeus et attributs Eden : fn_tocConfig)
     Serveur plus ancien que le joueur, ou sans le mod (fn_tocConfig « local ») : « add », « panels », « remove »,
     « spawn » et « view » se font sur le poste du joueur, par les mêmes variables publiques ; rien n'est alors gardé
@@ -82,11 +87,24 @@ private _fn = comspec_atak_native_fnc_tocScreen;
 private _texW = 1600;
 private _texH = 900;
 private _texSpec = "#(rgb,2048,1024,1)";
-private _views = ["SPLIT", "MAP", "FEED", "NET", "ORBAT", "TOC", "CAM", "SAT", "CLOCK", "SQUAD", "LOG", "EXCHECK", "KILLS", "REQ", "STRIP", "PLATE", "MOSAIC"];
+private _views = ["SPLIT", "MAP", "FEED", "NET", "ORBAT", "TOC", "CAM", "SAT", "CLOCK", "SQUAD", "LOG", "EXCHECK", "KILLS", "REQ", "STRIP", "PLATE", "MOSAIC", "TEXT", "BROADCAST", "COLA", "COLB", "COLC", "COLD", "COLE", "COLF"];
+// Formats d'image selon le rapport largeur / hauteur de la dalle (comspec_screenRatio, comspec_screenPanelRatio par dalle,
+// 16:9 sans indication). Une texture procédurale n'est acceptée qu'en puissances de 2 : la texture la plus proche du
+// format est prise (pixels carrés pour 4:1, 8:1 et 16:1 ; 16:9 sur 2:1 et colonne 8:9 sur 1:1, même léger tassement).
+// ---- TABLE _formats (JSON) : [rapport maximal (exclu), format, texture, largeur / hauteur de la texture, affichages
+// permis ([] : tous ceux d'un écran 16:9), affichage par défaut].
+private _formats = [
+[1.3, "COL", "#(rgb,1024,1024,1)", 1, ["COLA", "COLB", "COLC", "COLD", "COLE", "COLF", "TEXT"], "COLA"],
+[3, "STD", "#(rgb,2048,1024,1)", 2, [], "SPLIT"],
+[6, "STRIP", "#(rgb,2048,512,1)", 4, ["STRIP", "PLATE", "TEXT"], "STRIP"],
+[12, "LED", "#(rgb,2048,256,1)", 8, ["TEXT"], "TEXT"],
+[999, "LED", "#(rgb,4096,256,1)", 16, ["TEXT"], "TEXT"]
+];
+// ---- FIN
 // Affichages dessinés en tableau (fn_tocBoard) au lieu de la carte du poste ; STRIP et PLATE : faces 4:1 seulement.
 // Thème TOC (fn_tocTheme, docs/TOC-THEME.md) : seule source des couleurs. _tcol : RGBA d'un jeton ("bg0", "friend"…).
 private _tcol = { params ["_k", ["_al", 1]]; ["rgba", [_k, _al]] call comspec_atak_native_fnc_tocTheme };
-private _boards = ["SAT", "CLOCK", "LOG", "EXCHECK", "KILLS", "REQ", "STRIP", "PLATE", "MOSAIC", "FEED", "NET", "ORBAT"];
+private _boards = ["SAT", "CLOCK", "LOG", "EXCHECK", "KILLS", "REQ", "STRIP", "PLATE", "MOSAIC", "FEED", "NET", "ORBAT", "COLA", "COLB", "COLC", "COLD", "COLE", "COLF"];
 // Dalle d'un mur multi-écrans : objet relais (fn_tocScreen « panels ») qui porte son propre affichage ; l'image va
 // sur la dalle de l'écran hôte (COMSPEC_ATAK_TocHost), à l'index de la dalle.
 private _hostOf = { params ["_o"]; private _h = _o getVariable ["COMSPEC_ATAK_TocHost", objNull]; [_o, _h] select (!isNull _h) };
@@ -94,7 +112,10 @@ private _hostOf = { params ["_o"]; private _h = _o getVariable ["COMSPEC_ATAK_To
 // la classe parente la plus proche (variantes d'Eden Expansion, etc.) ; configNull sinon. Objet ou nom de classe.
 private _entryOf = {
     params ["_o"];
-    private _c = [configOf _o, configFile >> "CfgVehicles" >> _o] select (_o isEqualType "");
+    // Jamais les deux lectures dans un même tableau : les deux y sont évaluées, et « config >> objet » (comme « configOf
+    // texte ») est une erreur qui arrête tout le script appelant (menu ACE de l'écran vide, pose d'une salle arrêtée au
+    // premier écran : journal de TTRD, 4.7.0, « Type Objet, Chaîne attendu »).
+    private _c = if (_o isEqualType "") then { configFile >> "CfgVehicles" >> _o } else { configOf _o };
     private _e = configNull;
     for "_i" from 0 to 8 do {
         if (isNull _c || {!isNull _e}) exitWith {};
@@ -110,7 +131,45 @@ private _selIdx = { params ["_o", "_n"]; (getArray (configOf _o >> "hiddenSelect
 private _ratioOf = {
     params ["_o"];
     private _h = [_o] call _hostOf;
+    // Mur dont les dalles n'ont pas toutes le même format (écran incurvé : zone centrale 16:9, colonnes 8:9).
+    private _pr = getArray (configOf _h >> "comspec_screenPanelRatio");
+    if (_pr isNotEqualTo []) exitWith { _pr param [[0, _o getVariable ["COMSPEC_ATAK_TocPanel", 0]] select (_o isNotEqualTo _h), 1.778] };
     (getNumber (configOf _h >> "comspec_screenRatio")) max ((_h getVariable ["COMSPEC_ATAK_TocSurf", []]) param [1, 0]) max (getNumber (([_h] call _entryOf) >> "ratio"))
+};
+// Format de la dalle d'un écran : [rapport, texture, largeur / hauteur de la texture, format, affichages permis, défaut].
+private _fmtOf = {
+    params ["_o"];
+    private _rat = [_o] call _ratioOf;
+    if (_rat <= 0) then { _rat = 1.778; };
+    (_formats select ((_formats findIf { _rat < (_x select 0) }) max 0)) params ["", "_kind", "_spec", "_pxA", "_ok", "_def"];
+    private _h = [_o] call _hostOf;
+    if (_kind isEqualTo "STD") then {
+        _ok = _views - ["STRIP", "PLATE", "COLA", "COLB", "COLC", "COLD", "COLE", "COLF"];
+        // Budget de rendu des grands murs : dalle 55" d'un mur de 7 zones ou plus en 1024 x 512 (même finesse au mètre
+        // qu'un mur 2x2 en 2048 x 1024) ; le bloc central d'un mur à zones garde la grande texture.
+        private _np = getNumber (configOf _h >> "comspec_screenPanels");
+        if (_np >= 7 && {_o isNotEqualTo _h || {_np >= 12}}) then { _spec = "#(rgb,1024,512,1)"; };
+    };
+    if (_kind isEqualTo "STRIP" && {((typeOf _h) find "NamePlate") >= 0}) then { _ok = ["PLATE"]; _def = "PLATE"; };
+    // Colonne : affichage par défaut de la dalle donné par la config (colonne horloge à gauche, colonne flux à droite).
+    if (_kind isEqualTo "COL") then {
+        private _pv = (getArray (configOf _h >> "comspec_screenPanelViews")) param [[0, _o getVariable ["COMSPEC_ATAK_TocPanel", 0]] select (_o isNotEqualTo _h), ""];
+        if (_pv in _ok) then { _def = _pv; };
+    };
+    // Texture 4096 refusée sur ce poste (jamais chargée) : même format en 2048.
+    if (_o getVariable ["COMSPEC_ATAK_TocTexLow", false] && {(_spec find "4096") >= 0}) then { _spec = "#(rgb,2048,128,1)"; };
+    [_rat, _spec, _pxA, _kind, _ok, _def]
+};
+// Affichage demandé ramené à un affichage permis par le format de la dalle (une carte 16:9 serait écrasée sur un bandeau).
+private _fitView = {
+    params ["_o", "_v"];
+    ([_o] call _fmtOf) params ["", "", "", "_kind", "_ok", "_def"];
+    if (_v in _ok) exitWith { _v };
+    // Affichage jumeau du format (fn_tocLayout « twin » : horloge <-> colonne horloge, mosaïque <-> colonne caméras…).
+    private _tw = ["twin", [_v, _kind]] call comspec_atak_native_fnc_tocLayout;
+    if (_tw in _ok) exitWith { _tw };
+    if (_kind isNotEqualTo "STD") exitWith { _def };
+    ["SPLIT", "CLOCK"] select (_v in ["STRIP", "PLATE", "COLA"])
 };
 // Dalles qui recopient l'image : config de l'écran COMSPEC (index), sinon entrée CfgComspecTocScreens (noms).
 private _mirrorOf = {
@@ -208,8 +267,10 @@ private _lbl = {
         private _m = (ctrlTextWidth _c) * _texW;
         forceUnicode 0;
         private _n = count _s;
-        if (_m <= 0.5 * _n * _cw || {_m >= 2 * _n * _cw} || {_m <= _room} || {_n <= 3}) exitWith {};
-        _s = [_s, _n - 2] call _cut;
+        // Mesure du jeu crue dès qu'elle existe (avant : ignorée au-delà de 2 x l'estimation, et le texte débordait de
+        // sa case, coupé au bord sans « … », quand la police sortait plus large que prévu sur le poste du joueur).
+        if (_m <= 0 || {_m <= _room} || {_n <= 2}) exitWith {};
+        _s = [_s, (floor (_n * _room / _m)) min (_n - 1)] call _cut;
         _c ctrlSetText _s; // i18n:brut (déjà traduit)
     };
 };
@@ -222,11 +283,14 @@ switch (_mode) do {
         ["init"] call comspec_atak_native_fnc_tocRoom;
         ["init"] call comspec_atak_native_fnc_tocHall;
         ["initServer"] call comspec_atak_native_fnc_tocConfig;
+        // Écrans et postes PC réglés tout seuls à la pose (fn_tocAuto), sans attendre un joueur.
+        ["init"] call comspec_atak_native_fnc_tocAuto;
         // Écrans gardés de la partie précédente : remis une fois les modules Eden passés.
         [{ ["restore"] call comspec_atak_native_fnc_tocPersist; }, [], 3] call comspec_atak_native_fnc_waitAndExec;
         true
     };
     case "classes": {
+        // Ordre de la liste : bureau, postes PC, trépied, mur, suspendus, murs vidéo, géants, incurvé, bandeaux LED et plaque.
         // Écrans COMSPEC en tête (modèles réglés pour l'image, fiables jour et nuit), puis les écrans du jeu et des mods
         // déclarés dans CfgComspecTocScreens (toc_screens_tiers.hpp et ceux des autres mods), seulement les classes
         // présentes. [nom de l'objet (langue du joueur), classe, aperçu Eden ("" sans)] : la classe passe telle quelle
@@ -241,9 +305,19 @@ switch (_mode) do {
         };
         {
             [_x] call _add;
-        } forEach ["COMSPEC_ATAK_Screen_Wall2x2", "COMSPEC_ATAK_Screen_Wall2x2_Quad", "COMSPEC_ATAK_Screen_Wall3x2", "COMSPEC_ATAK_Screen_Wall3x2_Mixed",
-            "COMSPEC_ATAK_Screen_98", "COMSPEC_ATAK_Screen_98_Stand", "COMSPEC_ATAK_Screen_65_Ceiling", "COMSPEC_ATAK_Screen_ClockStrip",
-            "COMSPEC_ATAK_Screen_NamePlate", "COMSPEC_ATAK_Screen_Tripod", "COMSPEC_ATAK_Screen_Dual", "COMSPEC_ATAK_Screen_Wall", "COMSPEC_ATAK_Screen_Desk"];
+        } forEach [
+            "COMSPEC_ATAK_Screen_Desk", "COMSPEC_ATAK_Screen_Desk2", "COMSPEC_ATAK_Screen_Desk3", "COMSPEC_ATAK_TocPC_1",
+            "COMSPEC_ATAK_TocPC_2", "COMSPEC_ATAK_TocPC_3", "COMSPEC_ATAK_TocPC_Curved", "COMSPEC_ATAK_Screen_Tripod",
+            "COMSPEC_ATAK_Screen_Dual", "COMSPEC_ATAK_Screen_Wall", "COMSPEC_ATAK_Screen_Wall75", "COMSPEC_ATAK_Screen_98",
+            "COMSPEC_ATAK_Screen_98_Stand", "COMSPEC_ATAK_Screen_65_Ceiling", "COMSPEC_ATAK_Screen_65_Ceiling2", "COMSPEC_ATAK_Screen_65_Ceiling3",
+            "COMSPEC_ATAK_Screen_65_Ceiling3_Arc", "COMSPEC_ATAK_Screen_98_Ceiling", "COMSPEC_ATAK_Screen_Wall2x2", "COMSPEC_ATAK_Screen_Wall2x2_Quad",
+            "COMSPEC_ATAK_Screen_Wall3x2", "COMSPEC_ATAK_Screen_Wall3x2_Mixed", "COMSPEC_ATAK_Screen_Wall4x3", "COMSPEC_ATAK_Screen_Wall4x3_Panels",
+            "COMSPEC_ATAK_Screen_Wall5x3", "COMSPEC_ATAK_Screen_Wall5x3_Panels", "COMSPEC_ATAK_Screen_Wall6x4", "COMSPEC_ATAK_Screen_Wall6x4_Zones",
+            "COMSPEC_ATAK_Screen_136", "COMSPEC_ATAK_Screen_136_Stand", "COMSPEC_ATAK_Screen_Led220", "COMSPEC_ATAK_Screen_Led220_Truss",
+            "COMSPEC_ATAK_Screen_Curved", "COMSPEC_ATAK_Screen_Curved_Duo", "COMSPEC_ATAK_Screen_Curved_Wall", "COMSPEC_ATAK_Screen_Curved_Wall_Duo",
+            "COMSPEC_ATAK_Screen_ClockStrip", "COMSPEC_ATAK_Screen_LedText8", "COMSPEC_ATAK_Screen_LedText16", "COMSPEC_ATAK_Screen_LedText8_Ceiling",
+            "COMSPEC_ATAK_Screen_LedText16_Ceiling", "COMSPEC_ATAK_Screen_NamePlate"
+        ];
         { [configName _x] call _add; } forEach ("true" configClasses (configFile >> "CfgComspecTocScreens"));
         _out
     };
@@ -301,12 +375,9 @@ switch (_mode) do {
             ["WARNING", "TOC", format ["Écran TOC %1 : affichage « %2 » inconnu de ce serveur, carte et flux à la place", typeOf _o, _view]] call comspec_atak_native_fnc_log;
             _view = "SPLIT";
         };
-        // Face 4:1 : bandeau horloge ou plaque de nom seulement ; un écran 16:9 ne prend pas ces deux affichages.
-        if (([_o] call _ratioOf) >= 4) then {
-            if !(_view in ["STRIP", "PLATE"]) then { _view = ["STRIP", "PLATE"] select (((typeOf _o) find "NamePlate") >= 0); };
-        } else {
-            if (_view in ["STRIP", "PLATE"]) then { _view = "CLOCK"; };
-        };
+        // Affichage permis par le format de la dalle : bandeau 4:1 (horloge, plaque, texte), bandeau LED (texte),
+        // colonne (colonne horloge, colonne flux, texte) ; un écran 16:9 ne prend ni bandeau, ni plaque, ni colonne.
+        _view = [_o, _view] call _fitView;
         if !(_slot in [0, 1]) then { _slot = _old param [8, 0]; };
         if (isNil "_squad" || {!(_squad isEqualType "")}) then { _squad = _old param [9, ""]; };
         // Index de dalle : celui demandé, sinon la sélection nommée écran (évite un TOC noir sur le châssis).
@@ -337,6 +408,12 @@ switch (_mode) do {
         if (isNull _h || {!isServer && {!(["local", _h] call comspec_atak_native_fnc_tocConfig)}}) exitWith { [] };
         private _n = getNumber (configOf _h >> "comspec_screenPanels");
         private _px = (_h getVariable ["COMSPEC_ATAK_TocPanels", []]) select { !isNull _x };
+        // Deux relais pour la même dalle (mur réglé par deux machines à la fois) : le premier reste, l'autre est retiré.
+        private _seenK = [];
+        {
+            private _pk = _x getVariable ["COMSPEC_ATAK_TocPanel", 0];
+            if (_pk in _seenK) then { _px = _px - [_x]; ["remove", _x] call _fn; } else { _seenK pushBack _pk; };
+        } forEach +_px;
         private _hc = [_h] call _cfgOf;
         private _pc = _h getVariable ["COMSPEC_ATAK_TocPanelCfg", []];
         for "_k" from 1 to (_n - 1) do {
@@ -346,7 +423,11 @@ switch (_mode) do {
                 _rv setVariable ["COMSPEC_ATAK_TocHost", _h, true];
                 _rv setVariable ["COMSPEC_ATAK_TocPanel", _k, true];
                 _rv setVariable ["COMSPEC_ATAK_TocOwned", true, true];
-                (_pc param [_k - 1, []]) params [["_v", "SPLIT"], ["_sl", 0], ["_sq", ""], ["_cam", []], ["_mos", []], ["_off", false]];
+                // Sans réglage : affichage par défaut de la dalle (comspec_screenPanelViews), sinon carte et flux.
+                private _dv = (getArray (configOf _h >> "comspec_screenPanelViews")) param [_k, ""];
+                (_pc param [_k - 1, []]) params [["_v", [_dv, "SPLIT"] select (_dv isEqualTo "")], ["_sl", 0], ["_sq", ""], ["_cam", []], ["_mos", []], ["_off", false], ["_txt", []], ["_bc", []]];
+                if (_bc isEqualType [] && {(count _bc) >= 4}) then { _rv setVariable ["COMSPEC_ATAK_TocBc", ["sanitize", _bc] call comspec_atak_native_fnc_tocBroadcast, true]; };
+                if (_txt isEqualType [] && {(count _txt) >= 5}) then { _rv setVariable ["COMSPEC_ATAK_TocText", ["sanitize", _txt] call comspec_atak_native_fnc_tocText, true]; };
                 if (_mos isEqualType [] && {(count _mos) >= 5}) then { _rv setVariable ["COMSPEC_ATAK_TocMosaic", _mos, true]; };
                 if (_off isEqualTo true) then { _rv setVariable ["COMSPEC_ATAK_TocOff", true, true]; };
                 ["add", [_rv, format ["%1 · %2", (_hc param [0, "TOC"]) select [0, 22], _k + 1], _hc param [1, ""], _k, _v, false, false, _sl, _sq]] call _fn;
@@ -358,7 +439,7 @@ switch (_mode) do {
         _px
     };
     case "panelSpec": {
-        // Contenu des dalles 2 et suivantes écrit à la main (module) : « SAT1, CLOCK, SQ:Alpha 1-1, LOG ».
+        // Contenu des dalles 2 et suivantes écrit à la main (module) : « SAT1, CLOCK, SQ:Alpha 1-1, LOG, TXT:Bienvenue ».
         if !(_a isEqualType "") exitWith { [] };
         (_a splitString ",") apply {
             private _t = trim _x;
@@ -369,11 +450,23 @@ switch (_mode) do {
                 // Dalle éteinte (veille) : carte et flux gardés dessous.
                 case (_u isEqualTo "OFF"): { ["SPLIT", 0, "", [], [], true] };
                 case ((_u select [0, 3]) isEqualTo "SQ:"): { ["SQUAD", 0, trim (_t select [3])] };
+                // « TXT:message » : affichage TEXTE avec ce message (réglages par défaut).
+                case ((_u select [0, 4]) isEqualTo "TXT:"): { ["TEXT", 0, "", [], [], false, ["parse", [_t select [4]]] call comspec_atak_native_fnc_tocText] };
                 case (_u in ["MOS2", "MOS3"]): { ["MOSAIC", 0, "", [], [[2, 3] select (_u isEqualTo "MOS3"), "AUTO", "", [], 10]] };
                 case (_u in _views): { [_u, 0, ""] };
                 default { ["SPLIT", 0, ""] };
             }
         }
+    };
+    case "format": {
+        // Format de la dalle d'un écran (ou d'une dalle de mur) : [rapport, texture, largeur / hauteur de la texture,
+        // "STD" | "STRIP" | "LED" | "COL", affichages permis, affichage par défaut]. Sans objet : celui d'un écran 16:9.
+        if (_a isEqualType objNull && {!isNull _a}) then { [_a] call _fmtOf } else { [1.778, _texSpec, 2, "STD", _views - ["STRIP", "PLATE", "COLA", "COLB", "COLC", "COLD", "COLE", "COLF"], "SPLIT"] }
+    };
+    case "params": {
+        // Paramètres propres à un affichage, pour les fenêtres de réglage (module, Zeus, PC) : [[clé, libellé, type,
+        // défaut, choix]...] ; [] : aucun. Seul l'affichage TEXTE en a (fn_tocText « schema »).
+        [[], ["schema"] call comspec_atak_native_fnc_tocText] select (_a isEqualTo "TEXT")
     };
     case "panelOf": {
         // Objet qui porte l'affichage de la dalle k d'un écran (0 : l'écran lui-même).
@@ -409,6 +502,7 @@ switch (_mode) do {
         _a setVariable ["COMSPEC_ATAK_TocScr", nil, true];
         _a setVariable ["COMSPEC_ATAK_Toc", nil, true];
         _a setVariable ["COMSPEC_ATAK_TocSurf", nil, true];
+        _a setVariable ["COMSPEC_ATAK_TocBc", nil, true];
         missionNamespace setVariable ["COMSPEC_ATAK_TocScreens", (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x && {_x isNotEqualTo _a} }, true];
         // Écran créé par le module (ou recréé par la sauvegarde) : l'objet part avec lui.
         if (_owned) then { deleteVehicle _a; };
@@ -416,7 +510,7 @@ switch (_mode) do {
         true
     };
     case "spawn": {
-        _a params [["_pos", [0, 0, 0]], ["_dir", 0], ["_cls", ""], ["_name", ""], ["_side", ""], ["_view", "SPLIT"], ["_toc", true], ["_slot", 0], ["_squad", ""], ["_pans", ""]];
+        _a params [["_pos", [0, 0, 0]], ["_dir", 0], ["_cls", ""], ["_name", ""], ["_side", ""], ["_view", "SPLIT"], ["_toc", true], ["_slot", 0], ["_squad", ""], ["_pans", ""], ["_extra", []]];
         if (!isServer && {!(["local", objNull] call comspec_atak_native_fnc_tocConfig)}) exitWith { ["comspec_atak_native_tocScreen", ["spawn", _a]] call CBA_fnc_serverEvent; objNull };
         // La classe choisie (module Eden, fenêtre Zeus, salle complète) passe telle quelle jusqu'à createVehicle : écran de
         // la liste, écran COMSPEC ou écran déclaré dans CfgComspecTocScreens. Classe inconnue de ce serveur (mod du serveur
@@ -439,6 +533,8 @@ switch (_mode) do {
         _o setVariable ["COMSPEC_ATAK_TocOwned", true, true];
         if (_pans isNotEqualTo "") then { _o setVariable ["COMSPEC_ATAK_TocPanelCfg", ["panelSpec", _pans] call _fn]; };
         ["add", [_o, _name, _side, 0, _view, _toc, true, _slot, _squad]] call _fn;
+        // Réglages propres à un affichage, donnés à la pose : [[clé de « view », valeur]...] (« text » : affichage TEXTE).
+        { if (_x isEqualType [] && {(count _x) >= 2}) then { ["view", [_o, _x select 0, _x select 1]] call _fn; }; } forEach _extra;
         // Trace de la pose : la classe réellement créée et l'affichage demandé (vérifiable dans le journal du serveur).
         ["INFO", "TOC", format ["Écran TOC posé : %1 (%2), affichage %3, nom « %4 »", _cls, getText (configOf _o >> "displayName"), _view, [_name, "TOC"] select (_name isEqualTo "")]] call comspec_atak_native_fnc_log;
         // Zeus : l'écran créé se manipule comme un objet posé à la main.
@@ -452,8 +548,10 @@ switch (_mode) do {
         private _c = +([_o] call _cfgOf);
         if ((count _c) < 8) exitWith { false };
         switch (_k) do {
-            // Face 4:1 : seulement bandeau horloge ou plaque de nom (une carte 16:9 y serait écrasée).
-            case "mode": { if (_v in _views && {(([_o] call _ratioOf) < 4) || {_v in ["STRIP", "PLATE"]}}) then { _c set [3, _v]; }; };
+            // Seulement un affichage permis par le format de la dalle (une carte 16:9 serait écrasée sur un bandeau).
+            case "mode": { if (_v in _views && {_v in (([_o] call _fmtOf) select 4)}) then { _c set [3, _v]; }; };
+            // Affichage TEXTE (fn_tocText) : réglage nettoyé par le serveur avant d'être publié.
+            case "text": { _o setVariable ["COMSPEC_ATAK_TocText", ["sanitize", _v] call comspec_atak_native_fnc_tocText, true]; };
             // Caméra en direct (fn_tocCam) : seule la source choisie circule (netId), chaque joueur fait son rendu.
             case "cam": { if (_v isEqualType "" && {(count _v) < 40}) then { _o setVariable ["COMSPEC_ATAK_TocCam", _v, true]; _o setVariable ["COMSPEC_ATAK_TocCamWant", nil]; }; };
             case "zoom": { _c set [4, ((_v max 100) min (worldSize max 1000))]; };
@@ -463,6 +561,14 @@ switch (_mode) do {
             case "squad": { if (_v isEqualType "") then { _c set [9, _v select [0, 40]]; }; };
             // Mosaïque de caméras (fn_tocMosaic) : [grille, choix, groupe, cases, rotation].
             case "mosaic": { if (_v isEqualType [] && {(count _v) >= 5}) then { _o setVariable ["COMSPEC_ATAK_TocMosaic", _v, true]; }; };
+            // Diffusion (fn_tocBroadcast) : source, titre, témoin, mire, groupe ; nettoyé par le serveur avant d'être publié.
+            case "bc": { _o setVariable ["COMSPEC_ATAK_TocBc", ["sanitize", _v] call comspec_atak_native_fnc_tocBroadcast, true]; };
+            // Luminosité (25 à 100) et distance d'affichage (0 : réglage de chaque joueur), sur l'écran hôte.
+            case "opt": {
+                if (_v isEqualType [] && {(count _v) >= 2} && {(_v select 0) isEqualType 0} && {(_v select 1) isEqualType 0}) then {
+                    ([_o] call _hostOf) setVariable ["COMSPEC_ATAK_TocOpt", [(round (_v select 0)) max 25 min 100, [0, (round (_v select 1)) max 5 min 150] select ((_v select 1) > 0)], true];
+                };
+            };
         };
         if ((count _c) < 10) then { _c set [8, _c param [8, 0]]; _c set [9, _c param [9, ""]]; };
         _o setVariable ["COMSPEC_ATAK_TocScr", _c, true];
@@ -589,6 +695,7 @@ switch (_mode) do {
         _texObj deleteAt _nm;
         // Première image tout de suite (sinon noir jusqu'au tour suivant).
         _o setVariable ["COMSPEC_ATAK_TocDraws", 0];
+        _o setVariable ["COMSPEC_ATAK_TocFails", 0];
         _o setVariable ["COMSPEC_ATAK_TocAt", -10];
         if (((uiNamespace getVariable ["COMSPEC_ATAK_TocPending", []]) param [2, ""]) isEqualTo _nm) then { uiNamespace setVariable ["COMSPEC_ATAK_TocPending", []]; };
         ["INFO", "SCREEN", format ["Écran TOC %1 : texture UI %2 chargée, image dessinée", typeOf _o, _nm]] call comspec_atak_native_fnc_log;
@@ -672,10 +779,14 @@ switch (_mode) do {
                 _seen = _dist < 3 || {((vectorNormalized (_ctr vectorDiff _eye)) vectorDotProduct _dir) > -0.17};
                 // Derrière un mur : point visé à 15 cm devant la dalle, l'écran lui-même ignoré ; jamais tout près.
                 if (_seen && {_dist > 5}) then {
-                    private _vis = _o getVariable ["COMSPEC_ATAK_TocVis", [-1e9, true]];
+                    private _vis = _o getVariable ["COMSPEC_ATAK_TocVis", [-1e9, true, 0]];
                     if (_now - (_vis select 0) > 3) then {
                         private _to = _ctr vectorAdd ((vectorNormalized (_eye vectorDiff _ctr)) vectorMultiply 0.15);
-                        _vis = [_now, ([vehicle player, "VIEW", [_o] call _hostOf] checkVisibility [_eye, _to]) > 0.02];
+                        // Retenue : « caché » seulement après deux contrôles ratés de suite (6 s). Un seul contrôle raté
+                        // (joueur qui passe, pied d'écran, chaise) éteignait l'écran puis le rallumait 3 s plus tard.
+                        private _hit = ([vehicle player, "VIEW", [_o] call _hostOf] checkVisibility [_eye, _to]) > 0.02;
+                        private _miss = [(_vis param [2, 0]) + 1, 0] select _hit;
+                        _vis = [_now, _hit || {_miss < 2}, _miss];
                         _o setVariable ["COMSPEC_ATAK_TocVis", _vis];
                     };
                     _seen = _vis select 1;
@@ -695,6 +806,8 @@ switch (_mode) do {
         private _live = ["tick", _act] call comspec_atak_native_fnc_tocCam;
         ["tick", _act] call comspec_atak_native_fnc_tocSat;
         ["tick"] call comspec_atak_native_fnc_tocMosaic;
+        private _drawn = 0;
+        private _claimed = [];
         private _release = {
             params ["_o", "_tex"];
             if (!(_o in _live) && {(_o getVariable ["COMSPEC_ATAK_ScreenCur", ""]) isEqualTo ""}) then {
@@ -710,6 +823,21 @@ switch (_mode) do {
             _x params ["_o", "_cfg", "_ok", "_dist", "_seen", ["_holdO", _hold]];
             private _tex = _o getVariable ["COMSPEC_ATAK_TocTex", ""];
             private _on = _ok && {_seen};
+            // Une dalle, une seule image : deux inscriptions au registre qui visent la même dalle du même écran (relais
+            // d'un mur créé deux fois, écran désigné par deux machines) se la disputaient, une image sur deux chacune.
+            // La première inscrite garde la dalle, l'autre ne dessine rien et ne remet pas la texture d'origine.
+            private _slot = [[_o] call _hostOf, _o getVariable ["COMSPEC_ATAK_TocSel", [_o, _cfg param [2, 0]] call _face]];
+            private _dup = _ok && {_slot in _claimed};
+            if (_ok && {!_dup}) then { _claimed pushBack _slot; };
+            if (_dup) then {
+                _o setVariable ["COMSPEC_ATAK_TocOn", false];
+                if (_tex isNotEqualTo "") then { _o setVariable ["COMSPEC_ATAK_TocTex", ""]; _disps deleteAt _tex; _texObj deleteAt _tex; _local = _local - [_o]; };
+                if !(_o getVariable ["COMSPEC_ATAK_TocDupLog", false]) then {
+                    _o setVariable ["COMSPEC_ATAK_TocDupLog", true];
+                    ["WARNING", "TOC", format ["Écran TOC %1 : dalle %2 déjà tenue par une autre inscription, celle-ci ne dessine pas", typeOf (_slot select 0), _slot select 1]] call comspec_atak_native_fnc_log;
+                };
+                continue
+            };
             _o setVariable ["COMSPEC_ATAK_TocOn", _on];
             if (_on && {!(_o getVariable ["COMSPEC_ATAK_TocAct", false])}) then {
                 _o setVariable ["COMSPEC_ATAK_TocAct", true];
@@ -739,7 +867,7 @@ switch (_mode) do {
                             _o setVariable ["COMSPEC_ATAK_TocReqLog", true];
                             ["INFO", "SCREEN", format ["Écran TOC %1 (%2) : affichage %3, texture UI %4 demandée sur la dalle %5 (%6), à %7 m", typeOf _o, _cfg select 0, _cfg select 3, _tex, _sel, (getArray (configOf ([_o] call _hostOf) >> "hiddenSelections")) param [_sel, "?"], round _dist]] call comspec_atak_native_fnc_log;
                         };
-                        ["paint", [_o, _sel, format ["%1ui(""COMSPEC_RscTocScreenTexture"",""%2"")", [_texSpec, "#(rgb,2048,512,1)"] select (([_o] call _ratioOf) >= 4), _tex]]] call _fn;
+                        ["paint", [_o, _sel, format ["%1ui(""COMSPEC_RscTocScreenTexture"",""%2"")", ([_o] call _fmtOf) select 1, _tex]]] call _fn;
                         ["surface", [_o, _sel, true]] call _fn;
                         _local pushBackUnique _o;
                     };
@@ -754,12 +882,22 @@ switch (_mode) do {
                             };
                             _o setVariable ["COMSPEC_ATAK_TocTex", ""];
                             _texObj deleteAt _tex;
-                            _o setVariable ["COMSPEC_ATAK_TocRetry", _now + 4];
+                            // Nouvel essai de plus en plus espacé (4, 8, 16… 60 s) : une image qui ne se charge pas ne
+                            // fait plus repasser la dalle par le noir toutes les 10 s, sans fin.
+                            private _fails = (_o getVariable ["COMSPEC_ATAK_TocFails", 0]) + 1;
+                            _o setVariable ["COMSPEC_ATAK_TocFails", _fails];
+                            _o setVariable ["COMSPEC_ATAK_TocRetry", _now + ((4 * (2 ^ ((_fails - 1) min 4))) min 60)];
+                            // Très large texture (bandeau 16:1) jamais chargée : nouvel essai en 2048.
+                            _o setVariable ["COMSPEC_ATAK_TocTexLow", true];
                         };
                     } else {
-                        // Horloge, satellite, bandeau, mosaïque : chaque seconde ; le reste toutes les 2 s.
-                        private _due = _now - (_o getVariable ["COMSPEC_ATAK_TocAt", -10]) >= ([1.9, 0.9] select ((_cfg select 3) in ["CLOCK", "SAT", "STRIP", "MOSAIC"]));
-                        if (_due) then {
+                        // Horloge, satellite, bandeau, mosaïque, texte, colonne horloge : chaque seconde ; le reste toutes les 2 s.
+                        // Budget des grands murs : huit images redessinées par tour au plus (les autres au tour suivant) ; la
+                        // première image d'un écran passe toujours.
+                        private _last = _o getVariable ["COMSPEC_ATAK_TocAt", -10];
+                        private _due = _now - _last >= ([1.9, 0.9] select ((_cfg select 3) in ["CLOCK", "SAT", "STRIP", "MOSAIC", "TEXT", "BROADCAST", "COLA", "COLC", "COLE"]));
+                        if (_due && {_drawn < 8 || {_last < 0}}) then {
+                            _drawn = _drawn + 1;
                             // Matière jour / nuit suivie (rien ne change tant que le soleil ne passe pas l'horizon).
                             ["surface", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], true]] call _fn;
                             _o setVariable ["COMSPEC_ATAK_TocAt", _now];
@@ -849,8 +987,21 @@ switch (_mode) do {
         disableSerialization;
         private _cfg = [_o] call _cfgOf;
         _cfg params [["_name", "TOC"], ["_cside", ""], "", ["_view", "SPLIT"], ["_half", 0], ["_center", []]];
+        // Aucun flux du serveur pour le camp de l'écran : carte fixe « AUCUN SIGNAL » (fn_tocBroadcast, bascule avec
+        // retenue) au lieu d'un contenu à moitié vide qui changeait d'état d'une image à l'autre.
+        if !(["signal", [_o, _d, _view]] call comspec_atak_native_fnc_tocBroadcast) exitWith { ["nosig", [_o, _d]] call comspec_atak_native_fnc_tocBroadcast };
+        // Diffusion : image d'un autre écran recopiée, mire, ou AUCUN SIGNAL (fn_tocBroadcast « draw »).
+        if (_view isEqualTo "BROADCAST") exitWith { ["draw", [_o, _d]] call comspec_atak_native_fnc_tocBroadcast };
+        ["hide", _d] call comspec_atak_native_fnc_tocBroadcast;
         // Vue caméra sans rendu en direct sur ce poste (trop loin, pas regardée, limite atteinte) : carte et flux.
         if (_view isEqualTo "CAM") then { _view = "SPLIT"; };
+        // Affichage TEXTE (fn_tocText) : panneau à LED seul, ni carte ni tableau ; son calque est masqué sous tout autre affichage.
+        private _txg = (_d getVariable ["COMSPEC_ATAK_TxtUi", createHashMap]) getOrDefault ["g", controlNull];
+        if (!isNull _txg && {_view isNotEqualTo "TEXT"}) then { _txg ctrlShow false; _d setVariable ["COMSPEC_ATAK_TxtUiAnim", []]; };
+        if (_view isEqualTo "TEXT") exitWith {
+            { if (!isNull _x) then { _x ctrlShow false; }; } forEach [(_d getVariable ["COMSPEC_ATAK_TocUi", createHashMap]) getOrDefault ["grp", controlNull], _d getVariable ["COMSPEC_ATAK_TocBoard", controlNull]];
+            ["draw", [_o, _d, [_o] call _fmtOf]] call comspec_atak_native_fnc_tocText
+        };
         // Satellite, horloge, tableaux du poste : dessinés par fn_tocBoard (la carte n'est pas dessinée).
         if (_view in _boards) exitWith {
             private _mg = (_d getVariable ["COMSPEC_ATAK_TocUi", createHashMap]) getOrDefault ["grp", controlNull];
@@ -859,7 +1010,8 @@ switch (_mode) do {
         };
         private _squad = ["", _cfg param [9, ""]] select (_view isEqualTo "SQUAD");
         private _side = [_cside, str side group player] select (_cside isEqualTo "");
-        private _feed = missionNamespace getVariable [format ["COMSPEC_ATAK_TocFeed_%1", _side], []];
+        // Flux du camp, état du nœud de ce joueur corrigé sur ce poste (fn_tocStatus « feed »).
+        private _feed = ["feed", _side] call comspec_atak_native_fnc_tocStatus;
         _feed params [["_ft", -1], ["_nodes", []], ["_events", []], ["_stats", []]];
         // PIP du poste : ce que l'opérateur du PC regarde (fn_tocLaptop). L'opérateur du poste de même nom passe devant.
         private _op = [];
@@ -1018,7 +1170,7 @@ switch (_mode) do {
             private _step = 100;
             { if ((2 * _hw / _step) > 10) then { _step = _x; }; } forEach [200, 500, 1000, 2000, 5000, 10000];
             private _sTxt = [format ["%1 m", _nice], format ["%1 km", _nice / 1000]] select (_nice >= 1000);
-            private _sTw = ((count _sTxt) * 0.5 * 28) + 24;
+            private _sTw = ((count _sTxt) * 0.8 * 28) + 32;
             (_ui get "scale") params ["_scBg", "_scBar", "_scT0", "_scT1", "_scTxt"];
             private _sy = _mhPx - 58;
             [_scBg, [16, _sy, 28 + _barPx + 14 + _sTw, 46]] call _place2;
@@ -1068,8 +1220,8 @@ switch (_mode) do {
                     if (_px > 40 && {_px < (_mwPx - 120)}) then {
                         private _t = _gLbls select _gi;
                         _t ctrlSetText ((_gx call _g3) call comspec_atak_native_fnc_tr);
-                        [_t, [_px - 32, 8, 64, 34]] call _place2;
-                        _taken pushBack [_px - 32, 8, 64, 34];
+                        [_t, [_px - 44, 8, 88, 34]] call _place2;
+                        _taken pushBack [_px - 44, 8, 88, 34];
                         _gi = _gi + 1;
                     };
                 };
@@ -1082,8 +1234,8 @@ switch (_mode) do {
                     if (_py > 44 && {_py < (_mhPx - 80)}) then {
                         private _t = _gLbls select _gi;
                         _t ctrlSetText ((_gy call _g3) call comspec_atak_native_fnc_tr);
-                        [_t, [8, _py - 17, 64, 34]] call _place2;
-                        _taken pushBack [8, _py - 17, 64, 34];
+                        [_t, [8, _py - 17, 88, 34]] call _place2;
+                        _taken pushBack [8, _py - 17, 88, 34];
                         _gi = _gi + 1;
                     };
                 };
@@ -1414,7 +1566,9 @@ switch (_mode) do {
             ["CAM", ["CAMÉRA", "caméra en direct"]], ["SAT", ["SATELLITE", "vue satellite"]], ["CLOCK", ["HORLOGE", "horloge et chronos"]],
             ["SQUAD", ["ESCOUADE", "écran d'escouade"]], ["LOG", ["MAIN COURANTE", "main courante"]], ["EXCHECK", ["EXÉCUTION", "liste d'exécution"]],
             ["KILLS", ["PERTES ET RÉSULTATS", "pertes et résultats"]], ["REQ", ["DEMANDES", "demandes des éléments"]],
-            ["STRIP", ["BANDEAU", "bandeau horloge"]], ["PLATE", ["PLAQUE", "plaque de nom"]], ["MOSAIC", ["CAMÉRAS", "mosaïque de caméras"]]
+            ["STRIP", ["BANDEAU", "bandeau horloge"]], ["PLATE", ["PLAQUE", "plaque de nom"]], ["MOSAIC", ["CAMÉRAS", "mosaïque de caméras"]],
+            ["TEXT", ["TEXTE", "texte à LED"]], ["BROADCAST", ["DIFFUSION", "diffusion et mire (BROADCAST)"]], ["COLA", ["HORLOGE", "colonne horloge et chronos"]], ["COLB", ["FLUX", "colonne réseau et flux"]],
+            ["COLC", ["CAMÉRAS", "colonne caméras"]], ["COLD", ["MAIN COURANTE", "colonne main courante"]], ["COLE", ["EXÉCUTION", "colonne exécution"]], ["COLF", ["DEMANDES", "colonne demandes et pertes"]]
         ];
         if (_a isEqualTo "") exitWith { _t };
         _t getOrDefault [_a, [_a, toLower _a]]
@@ -1524,6 +1678,10 @@ switch (_mode) do {
                 case "sat2": { ["sat", 1, "SAT"] call _pre; };
                 case "clock": { ["ensure", [_o, "CLOCK"]] call comspec_atak_native_fnc_tocScreen; };
                 case "strip": { ["ensure", [_o, "STRIP"]] call comspec_atak_native_fnc_tocScreen; };
+                case "cola": { ["ensure", [_o, "COLA"]] call comspec_atak_native_fnc_tocScreen; };
+                case "colb": { ["ensure", [_o, "COLB"]] call comspec_atak_native_fnc_tocScreen; };
+                // « Afficher un texte… » : fenêtre de saisie (fn_tocText), à l'image suivante (le menu ACE se referme d'abord).
+                case "text": { [{ ["edit", _this] call comspec_atak_native_fnc_tocText; }, _o] call comspec_atak_native_fnc_nextFrame; };
                 case "log": { ["ensure", [_o, "LOG"]] call comspec_atak_native_fnc_tocScreen; };
                 case "excheck": { ["ensure", [_o, "EXCHECK"]] call comspec_atak_native_fnc_tocScreen; };
                 case "kills": { ["ensure", [_o, "KILLS"]] call comspec_atak_native_fnc_tocScreen; };
@@ -1574,129 +1732,22 @@ switch (_mode) do {
                     ["remove", _o] call comspec_atak_native_fnc_tocScreen;
                     ["INFO", "Écran TOC retiré", 2, 20] call comspec_atak_native_fnc_notify;
                 };
+                // Clés du menu revu (luminosité, salle, diagnostic, disposition, diffusion, tableau, dalles) : fn_tocMenu « do ».
+                default { ["do", [_o, _k]] call comspec_atak_native_fnc_tocMenu; };
             };
         };
         missionNamespace setVariable ["COMSPEC_ATAK_TocDo", _do];
         // Sans ACE : seules les actions de secours (« actions ») s'en servent ; avant, COMSPEC_ATAK_TocDo restait vide
         // et aucune action d'écran (dont Ouvrir le PC du poste) ne faisait rien.
         if (isNil "ace_interact_menu_fnc_createAction") exitWith { false };
-        // Un seul arbre ACE par écran (retour de jeu 2.9.24 : tout en double, listes superposées) :
-        //   Écran COMSPEC > Diffusion (diapositives / leçon Academy, caméra en direct, PIP du poste)
-        //                 > Affichage TOC (réseau, carte seule, flux seul, PC du poste, retirer)
-        //                 > Carte (zoom, centrer, cadrer ; écran TOC désigné)
+        // Un seul arbre ACE par écran (retour de jeu 2.9.24 : tout en double, listes superposées), revu en 4.8.0 (« sois
+        // plus clair dans les actions ACE ») : l'arbre est décrit dans fn_tocMenu (« tree »), le même pour ACE, pour la
+        // molette sans ACE (« actions ») et pour le tableau des écrans.
+        //   Écran COMSPEC > Ouvrir le PC du poste · Afficher… · Disposition… · Source / caméra… · Écran… · Salle : nom
+        //                 · Gérer les écrans (tableau)…
         // Racine posée une fois : sur la classe exacte des écrans du jeu (jamais par héritage : une variante « noire » ou
         // « sable » héritant d'une classe listée recevait les deux racines), sinon sur l'objet (« aceObj »), une fois.
-        private _kids = {
-            private _o = _target;
-            private _has = (count (_o getVariable ["COMSPEC_ATAK_TocScr", []])) >= 8;
-            private _c = _o getVariable ["COMSPEC_ATAK_ScreenCast", []];
-            private _d = "\z\comspec_atak_native\addons\main\data\";
-            // Action simple : clé passée en paramètre (pas de code compilé à chaque ouverture du menu).
-            private _mk = {
-                params ["_id", "_txt", "_key", ["_cond", { true }]];
-                [["COMSPEC_ATAK_Wall" + _id, _txt, "", { [_target, _this select 2] call COMSPEC_ATAK_TocDo; }, _cond, {}, _key] call comspec_atak_native_fnc_aceAction, [], _o]
-            };
-            private _grp = {
-                params ["_id", "_txt", "_icon", "_list"];
-                [["COMSPEC_ATAK_Wall" + _id, _txt, _icon, {}, { true }] call comspec_atak_native_fnc_aceAction, _list, _o]
-            };
-            // Menu de l'écran, revu le 11/11 (« les actions ACE..? ») : groupes nommés par ce qu'on fait, contenus rangés par
-            // famille, trois niveaux au plus. Afficher sur l'écran · Régler les dalles (mur) · Diffuser · Régler la carte · Gérer l'écran.
-            private _sideS = ((_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [1, ""]) call { [_this, str side group player] select (_this isEqualTo "") };
-            private _sqList = ["squads", _sideS] call comspec_atak_native_fnc_tocScreen;
-            private _ratio4 = (getNumber (configOf _o >> "comspec_screenRatio")) >= 4;
-            private _diff = [];
-            if ((count _c) >= 5) then {
-                private _acad = (_c select 2) isEqualTo "ACADEMY";
-                _diff pushBack (["Next", ["Diapositive suivante", "Page suivante"] select _acad, "slidesNext"] call _mk);
-                _diff pushBack (["Prev", ["Diapositive précédente", "Page précédente"] select _acad, "slidesPrev"] call _mk);
-                _diff pushBack (["Stop", "Arrêter la diffusion", "slidesStop"] call _mk);
-            } else {
-                _diff pushBack (["Slides", "Diffuser mes diapositives", "slides", { [_player] call comspec_atak_native_fnc_hasDevice }] call _mk);
-            };
-            _diff pushBack (["Pip", "Montrer ce que voit le PC du poste (PIP)", "pip"] call _mk);
-            private _out = [];
-            // « Ouvrir le PC du poste » en tête du menu, sur tout écran qui sert de poste (demande de TTRD, 11/11 : l'action
-            // manquait tant que le serveur n'avait pas désigné l'écran). Écran COMSPEC pas encore désigné : il le devient.
-            if (!_ratio4 && {[_has && {_o getVariable ["COMSPEC_ATAK_Toc", false]}, (getNumber (configOf _o >> "comspec_screen")) > 0] select !_has}) then {
-                _out pushBack (["Big", "Ouvrir le PC du poste", "big", { isNull objectParent _player }] call _mk);
-            };
-            if (!_has) then {
-                // Écran du jeu ou d'un autre mod (CfgComspecTocScreens) : il devient un écran TOC, image sur sa surface connue.
-                _out pushBack (["Split", "Utiliser comme écran TOC", "split"] call _mk);
-            } else {
-                private _show = [];
-                if (_ratio4) then {
-                    // Face 4:1 : bandeau horloge ou plaque au nom d'un groupe.
-                    _show pushBack (["Strip", "Bandeau horloge ZULU / LOCAL", "strip"] call _mk);
-                    { _show pushBack (["PlateG" + str _forEachIndex, format ["Plaque · %1", _x], "sq|" + _x] call _mk); } forEach (_sqList select [0, 12]);
-                } else {
-                    _show pushBack (["MapGrp", "Carte et réseau", _d + "app_map.paa", [
-                        ["SplitOn", "Carte et flux", "split"] call _mk, ["MapOnly", "Carte seule", "map"] call _mk, ["FeedOnly", "Flux seul", "feed"] call _mk,
-                        ["NetOnly", "Réseau", "net"] call _mk, ["OrbatOnly", "ORBAT du site", "orbat"] call _mk
-                    ]] call _grp);
-                    _show pushBack (["SatGrp", "Satellite", _d + "app_map.paa", [["Sat1", "SAT 1", "sat1"] call _mk, ["Sat2", "SAT 2", "sat2"] call _mk]] call _grp);
-                    _show pushBack (["Clock", "Horloge et chronos", "clock"] call _mk);
-                    _show pushBack (["BoardGrp", "Tableau du poste", _d + "app_toc.paa", [
-                        ["Log", "Main courante", "log"] call _mk, ["Ex", "Liste d'exécution", "excheck"] call _mk,
-                        ["Kills", "Pertes et résultats", "kills"] call _mk, ["Req", "Demandes des éléments", "req"] call _mk
-                    ]] call _grp);
-                    private _sqs = [];
-                    { _sqs pushBack (["SqG" + str _forEachIndex, _x, "sq|" + _x] call _mk); } forEach (_sqList select [0, 12]);
-                    if (_sqs isNotEqualTo []) then { _show pushBack (["SqGrp", "Escouade", _d + "app_group.paa", _sqs] call _grp); };
-                    // Caméras : mosaïques et caméra en direct d'une source du camp.
-                    private _cams = [["Mos2", "Mosaïque 2x2 · tout le camp", "MOS|2|AUTO"] call _mk, ["Mos3", "Mosaïque 3x3 · tout le camp", "MOS|3|AUTO"] call _mk];
-                    { _cams pushBack (["MosG" + str _forEachIndex, format ["Mosaïque 2x2 · groupe %1", _x], "MOS|2|G|" + _x] call _mk); } forEach (_sqList select [0, 4]);
-                    {
-                        _x params ["_lbl", "_id"];
-                        _cams pushBack [["COMSPEC_ATAK_WallCam" + str _forEachIndex, _lbl, "", { ["set", [_target, _this select 2]] call comspec_atak_native_fnc_tocCam; }, { true }, {}, _id] call comspec_atak_native_fnc_aceAction, [], _o];
-                    } forEach ((["sources"] call comspec_atak_native_fnc_tocCam) select [0, 8]);
-                    _show pushBack (["CamGrp", "Caméras", _d + "app_livecam.paa", _cams] call _grp);
-                };
-                _out pushBack (["Show", "Afficher sur l'écran", _d + "app_toc.paa", _show] call _grp);
-                // Mur à plusieurs dalles : un contenu par dalle (dalle 1 en haut à gauche, ordre de lecture).
-                private _np = getNumber (configOf _o >> "comspec_screenPanels");
-                if (_np > 1) then {
-                    private _opts = [["Carte et flux", "SPLIT"], ["SAT 1", "SAT1"], ["SAT 2", "SAT2"], ["Horloge et chronos", "CLOCK"], ["Mosaïque 2x2", "MOS|2|AUTO"],
-                        ["Main courante", "LOG"], ["Liste d'exécution", "EXCHECK"], ["Pertes et résultats", "KILLS"], ["Demandes des éléments", "REQ"]];
-                    { _opts pushBack [format ["Escouade %1", _x], "SQ|" + _x]; } forEach (_sqList select [0, 6]);
-                    private _pans = [];
-                    for "_k" from 0 to (_np - 1) do {
-                        private _items = _opts apply {
-                            [["COMSPEC_ATAK_WallPn" + str _k + (_x select 1), _x select 0, "", {
-                                (_this select 2) params ["_k", "_key"];
-                                ["apply", [["panelOf", [_target, _k]] call comspec_atak_native_fnc_tocScreen, _key]] call comspec_atak_native_fnc_tocScreen;
-                            }, { true }, {}, [_k, _x select 1]] call comspec_atak_native_fnc_aceAction, [], _o]
-                        };
-                        _pans pushBack (["Pn" + str _k, format ["Dalle %1", _k + 1], "", _items] call _grp);
-                    };
-                    _out pushBack (["Pans", "Régler les dalles du mur", _d + "app_toc.paa", _pans] call _grp);
-                };
-            };
-            _out pushBack (["Diff", "Diffuser", _d + "app_briefing.paa", _diff] call _grp);
-            if (_has && {!_ratio4}) then {
-                _out pushBack (["Map", "Régler la carte", _d + "app_map.paa", [
-                    ["In", "Zoomer", "in"] call _mk, ["Out", "Dézoomer", "out"] call _mk,
-                    ["Me", "Centrer sur ma position", "me"] call _mk, ["Auto", "Cadrer tout le réseau", "auto"] call _mk
-                ]] call _grp);
-            };
-            // Gérer l'écran : salle TOC (lier, délier), PC du poste, retirer.
-            private _halls = ["halls", _sideS] call comspec_atak_native_fnc_tocHall;
-            private _cur = ["of", _o] call comspec_atak_native_fnc_tocHall;
-            private _man = [];
-            {
-                _x params ["_hid", "_hn"];
-                if (_hid isNotEqualTo _cur) then {
-                    _man pushBack [["COMSPEC_ATAK_WallHall" + str _forEachIndex, format ["Lier à la salle %1", _hn], "", { ["do", ["link", [_this select 2, _target]]] call comspec_atak_native_fnc_tocHall; }, { true }, {}, _hid] call comspec_atak_native_fnc_aceAction, [], _o];
-                };
-            } forEach (_halls select [0, 6]);
-            if (_cur isNotEqualTo "") then {
-                _man pushBack [["COMSPEC_ATAK_WallUnlink", format ["Délier de la salle %1", (["get", _cur] call comspec_atak_native_fnc_tocHall) param [1, "?"]], "", { ["do", ["unlink", _target]] call comspec_atak_native_fnc_tocHall; }, { true }] call comspec_atak_native_fnc_aceAction, [], _o];
-            };
-            if (_has) then { _man pushBack (["Off", "Retirer l'affichage TOC", "remove"] call _mk); };
-            if (_man isNotEqualTo []) then { _out pushBack (["Manage", "Gérer l'écran", _d + "app_toc.paa", _man] call _grp); };
-            _out
-        };
+        private _kids = { ["ace", _target] call comspec_atak_native_fnc_tocMenu };
         missionNamespace setVariable ["COMSPEC_ATAK_WallKids", _kids];
         // Camp de l'écran TOC et camp de l'écran COMSPEC : la racine n'apparaît qu'au camp autorisé.
         private _root = ["COMSPEC_ATAK_Wall", "Écran COMSPEC", "\z\comspec_atak_native\addons\main\data\app_toc.paa", {}, {
@@ -1730,21 +1781,11 @@ switch (_mode) do {
         private _o = _a;
         ["aceInit"] call _fn;
         if (!isNil "ace_interact_menu_fnc_createAction") exitWith { ["aceObj", _o] call _fn };
-        // Sans ACE : actions de la molette, une fois par objet.
+        // Sans ACE : actions de la molette, une fois par objet. Même arbre que le menu ACE (fn_tocMenu), un niveau à
+        // la fois : « Écran TOC · Afficher · Carte et flux ».
         if (_o getVariable ["COMSPEC_ATAK_TocWheel", false]) exitWith { false };
         _o setVariable ["COMSPEC_ATAK_TocWheel", true];
-        private _cond = "private _o = _target; private _c = _o getVariable ['COMSPEC_ATAK_TocScr', []]; (count _c) >= 8 && {(_c select 1) isEqualTo '' || {(_c select 1) isEqualTo str side group player}}";
-        {
-            _x params ["_lbl", "_k", "_prio"];
-            _o addAction [format ["<t color='#7fd0b0'>%1</t>", _lbl call comspec_atak_native_fnc_tr], { [_this select 0, _this select 3] call COMSPEC_ATAK_TocDo; }, _k, _prio, false, true, "",
-                _cond + ([" ", " && {_o getVariable ['COMSPEC_ATAK_Toc', false]}"] select (_k isEqualTo "big")), 5];
-        } forEach [
-            ["Écran TOC : PIP du poste", "pip", 1.46], ["Écran TOC : changer d'affichage", "cycle", 1.45],
-            ["Écran TOC : zoomer", "in", 1.44], ["Écran TOC : dézoomer", "out", 1.43],
-            ["Écran TOC : cadrer tout le réseau", "auto", 1.42], ["Écran TOC : ouvrir le PC du poste", "big", 1.41],
-            ["Écran TOC : diffuser mes diapositives", "slides", 1.40], ["Écran TOC : caméra suivante du camp", "camNext", 1.39]
-        ];
-        true
+        ["wheel", [_o, []]] call comspec_atak_native_fnc_tocMenu
     };
     default { false };
 };

@@ -23,7 +23,7 @@ final class OperatorHubCatalog
 
     public const GROUPS = [
         'operation' => ['label' => 'En opération', 'desc' => 'Ce qui sert pendant la mission.'],
-        'identite' => ['label' => 'Mon identité', 'desc' => 'Qui vous êtes en jeu : identités, papiers et couvertures.'],
+        'identite' => ['label' => 'Mon identité', 'desc' => 'Qui vous êtes en jeu : vos identités et leurs papiers.'],
         'materiel' => ['label' => 'Mon matériel', 'desc' => 'Ce que vous portez.'],
         'preparation' => ['label' => 'Préparation', 'desc' => 'Avant de partir.'],
         'comptes_rendus' => ['label' => 'Comptes rendus', 'desc' => 'Ce que vous rapportez du terrain.'],
@@ -41,9 +41,8 @@ final class OperatorHubCatalog
         ['key' => 'appareils', 'group' => 'operation', 'label' => 'Appareils ATAK', 'desc' => 'Vos téléphones du jeu reliés et vos codes de sécurité.', 'path' => 'account/security/devices', 'icon' => 'lock', 'keywords' => 'codes sécurité terminal appareil'],
         ['key' => 'terrain', 'group' => 'operation', 'label' => 'Mode terrain', 'desc' => 'Page allégée pour le téléphone : liens de la mission, sans menus.', 'path' => 'operateur/terrain', 'icon' => 'smartphone', 'keywords' => 'mobile'],
 
-        ['key' => 'identites', 'group' => 'identite', 'label' => 'Mes identités', 'desc' => 'Identité principale, alias, photo et signalement.', 'path' => 'operateur/identite', 'icon' => 'user', 'keywords' => 'nom photo nationalité alias'],
+        ['key' => 'identites', 'group' => 'identite', 'label' => 'Mes identités', 'desc' => 'Votre personnage et vos identités d’emprunt : état civil, photo, signalement, histoire, identité active en jeu.', 'path' => 'operateur/identite', 'icon' => 'user', 'keywords' => 'nom photo nationalité alias emprunt personnage histoire'],
         ['key' => 'documents', 'group' => 'identite', 'label' => 'Mes papiers', 'desc' => 'Carte, passeport, permis : aperçu, demande, perte ou vol.', 'path' => 'operateur/identite/documents', 'icon' => 'id', 'keywords' => 'documents passeport carte permis'],
-        ['key' => 'couverture', 'group' => 'identite', 'label' => 'Mes couvertures', 'desc' => 'Légendes à jouer : créer, modifier, télécharger pour le jeu.', 'path' => 'operateur/identite/couverture', 'icon' => 'mask', 'keywords' => 'légende cover infiltration'],
 
         ['key' => 'materiel', 'group' => 'materiel', 'label' => 'Mon matériel', 'desc' => 'Vos fiches matériel et ce qui vous est attribué.', 'path' => 'equipment?espace=materiel', 'icon' => 'box', 'keywords' => 'équipement arsenal'],
         ['key' => 'kits', 'group' => 'materiel', 'label' => 'Tenues et kits', 'desc' => 'Composer et retrouver vos tenues.', 'path' => 'equipment?espace=kits', 'icon' => 'shirt', 'keywords' => 'tenue kit loadout'],
@@ -211,7 +210,7 @@ final class OperatorHubCatalog
         return [[
             'abbr' => 'OPR',
             'label' => 'Outils opérateur',
-            'desc' => 'Identité, papiers, couverture, fichiers',
+            'desc' => 'Identités, papiers, fichiers',
             'href' => function_exists('url') ? url('operateur') : '/operateur',
             'path' => 'operateur',
             'tone' => 'blue',

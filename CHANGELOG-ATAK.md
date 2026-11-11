@@ -55,6 +55,147 @@ EN : A TOC console and operation plans on Athena
 - Pages `/atak/toc` et `/atak/toc/plans`, droits `atak.toc.use` et `atak.toc.manage`, étapes 4370 et 4380. Détail : `docs/TOC-WEB.md`.
 - Lien avec le jeu par les canaux existants (BriefingPlan.Push canal `toc_room`, commandes web genre `toc`) : branche du mod `feat/atak-toc-web-sync`, sans changement de COMSPEC Link.
 
+## Pack 4.8.0 Washington : tableau des écrans TOC (Eden, Zeus, en jeu), mode BROADCAST et mire, écrans qui ne clignotent plus, textes des bandeaux lisibles, menu des écrans refait (ATAK natif 4.8.0.AG - Washington, COMSPEC Link 2.0.123)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.8.0 : un tableau pour régler tous les écrans du TOC, un mode diffusion avec mire, et des écrans qui ne clignotent plus
+- **Tableau des écrans** : une seule fenêtre, dans l'éditeur, au Zeus et en jeu, liste chaque dalle de chaque écran. Vous y choisissez ce que chacune montre, vous posez, dupliquez, générez une salle et tous ses flux d'un coup.
+- **Diffusion (BROADCAST)** : un écran peut être recopié sur toute la salle en même temps, avec un témoin EN DIRECT, et une mire de barres de couleur quand il n'y a pas de source.
+- **Écrans stables et lisibles** : les écrans ne clignotent plus, les textes des bandeaux ne sont plus étirés ni coupés, un joueur connecté n'est plus marqué « perdu », et vous pouvez écrire le texte des bandeaux avec le module « Afficher un texte ».
+- **Zeus et menus** : poser un module TOC en Zeus ne vous ramène plus à la vue de votre personnage, le module Écran TOC pose un nouvel écran à chaque usage, et le menu des écrans est rangé par thèmes avec l'état en clair.
+EN : ATAK 4.8.0: one table to set up every TOC screen, a broadcast mode with a test card, and screens that no longer flicker
+- **Screens table**: a single window, in the editor, in Zeus and in game, lists every panel of every screen. Choose what each one shows, place, duplicate, generate a room and all its feeds in one go.
+- **Broadcast**: one screen can be copied to the whole room at the same time, with a LIVE tally, and a colour-bar test card when there is no source.
+- **Stable, readable screens**: screens no longer flicker, strip texts are no longer stretched or cut, a connected player is no longer shown as "lost", and you can write the strip text with the "Show a text" module.
+- **Zeus and menus**: placing a TOC module in Zeus no longer throws you back to your character's view, the TOC Screen module places a new screen on every use, and the screen menu is sorted by theme with the current state in plain words.
+
+### Détail technique
+- **Clignotement** (lecture du code, non reproduit en jeu). Trois bascules sans retenue, toutes dans la boucle des écrans : (1) `fn_tocSat.sqf` « tick » : la caméra du satellite était libérée 3 s après le dernier regard, et « vu » se mesurait sur l'origine du modèle (au sol ou au plafond), d'où « rendu sur ce poste » / « rendu arrêté » en boucle au journal et l'image qui passait par « en attente » au centre ; bail porté à 12 s, mesuré sur le centre de l'image (10 s pour `fn_tocCam`, 8 s pour `fn_tocMosaic`). (2) `fn_tocScreen.sqf` « tick » : un seul contrôle de visibilité raté éteignait l'écran ; il en faut deux de suite. (3) Image jamais chargée : nouvel essai toutes les 10 s sans fin, maintenant 4, 8, 16, 32, 60 s. En plus : une dalle ne peut plus être dessinée par deux inscriptions (`_claimed`), relais en double retirés (« panels »), contrôles du HUD satellite créés hors cadre et sans couleur (`hudMake`).
+- **Carte AUCUN SIGNAL** (`fn_tocBroadcast` « signal », « nosig ») : tant que le serveur n'a publié aucun flux pour le camp, carte fixe à la place du contenu ; bascule après 2 images avec flux, 3 sans.
+- **Module réutilisé** : `fn_moduleTocScreen.sqf` prenait pour objet visé l'objet le plus proche à moins de 3 m (`fn_moduleContext` « near »), donc l'écran posé juste avant, et ouvrait la fenêtre sur « Retirer » (`["add", "remove"] select …`). L'objet visé est maintenant celui sous le module seulement, l'action proposée est toujours « désigner ou régler », « Retirer » se choisit, et une action pose un nouvel écran à côté. Noms rendus uniques (`fn_tocManager` « uniqueName », « uniqueHall »).
+- **Tableau des écrans** (`fn_tocManager`, module `COMSPEC_ATAK_Module_TocManager`, menu Eden COMSPEC ATAK > TBE) : même fenêtre sur les displays 313, 312 et 46 ; une ligne par dalle ; plan du mur cliquable ; sources par format de dalle ; portée d'application (dalle, lignes cochées, salle, tout) ; génération de salle et de flux ; dispositions (`fn_tocLayout`, 12 dispositions, colonnes COLC à COLF pour l'écran incurvé) ; préréglages dans le profil. Dans Eden, il écrit les attributs des objets.
+- **BROADCAST** (`fn_tocBroadcast`, vue « BROADCAST », variable `COMSPEC_ATAK_TocBc`) : mire dessinée contrôle par contrôle (table `_smpte`), recopie d'un écran source par son identifiant, témoin fixe, mire ou AUCUN SIGNAL si la source est perdue ; `start` / `stop` par salle ou par groupe ; gardé par `fn_tocPersist` (champ ajouté en fin de tableau).
+- **Zeus ramené à la première personne** : `fn_tocSat.sqf`, `fn_tocCam.sqf` et `fn_tocMosaic.sqf` lançaient `cameraEffect ["Internal", "Back", cible]` puis `"Terminate"` pendant que la caméra du Zeus tenait la vue, à chaque création et libération de caméra d'écran. Tout passe par `fn_tocRtt`, qui rend la vue principale à la caméra du Zeus si son interface est ouverte. Cause déduite du code, non vérifiée en jeu.
+- **« Perdu » alors que connecté** : `fn_tocFeed.sqf` déclarait perdu tout point de plus de 4 intervalles + 10 s, alors que `fn_pli.sqf` espace les points jusqu'à 6 intervalles à l'arrêt, et comparait l'heure du joueur à celle du serveur. Règle unique dans `fn_tocStatus` (âge à la réception par le serveur, silence normal compté, joueur local toujours en direct, « source inconnue » en neutre).
+- **Textes étirés** : dans une texture d'interface, le moteur dessine le texte comme pour un écran 4:3 ; sur un bandeau 8:1 il sortait 6 fois trop large. `fn_tocText.sqf` dessine maintenant une image par caractère (`data/toc/led/`), à la taille de la dalle réelle : centré s'il tient, réduit, puis défilant. Plaques et bandeau horloge de même. Sur les écrans 16:9 (étirés 1,33 fois) les largeurs estimées sont corrigées et la mesure du jeu fait foi : plus de texte coupé sans « … ».
+- **Liste des membres vide** sur l'écran d'escouade : `fn_tocBoard.sqf` passait un tableau au lieu d'un nom de région.
+- **En-tête et pied** : le nom du modèle (« 98-inch giant… ») n'est plus écrit sur l'image ; l'en-tête dit ce que l'écran montre, puis le nom donné par quelqu'un s'il y en a un. Horloge de l'en-tête masquée sur l'affichage Horloge.
+- **Diapositive noire** : `fn_screenCast.sqf` posait sur l'objet le fichier du cache du téléphone, que le jeu lit pour l'interface mais rend noir sur un objet. Un fichier n'est posé que s'il est vérifié et hors du cache ; sinon la diapositive reste montrée par le navigateur intégré, ou une carte « Diapositive indisponible » en donne la raison. Confiance de 75 % environ, non vérifié en jeu.
+- **Texte des bandeaux** : module « Afficher un texte » (`fn_moduleTocText`, `fn_tocTextTool`), modèles de messages, envoi à un écran, une salle ou un rayon.
+- **Menu des écrans** (`fn_tocMenu`) : un seul arbre pour ACE et la molette, 7 entrées au plus par niveau, état dans le libellé.
+- **Charge** : voir `docs/TOC-PERF.md` (ce qui tourne selon la distance, retenues ajoutées, ce qui n'est pas fait).
+- Tests : `AtakTocManagerBroadcastAssetTest`, `AtakTocLayoutAssetTest`, `AtakTocAceMenuAssetTest`, `AtakTocTextAspectTest`, `AtakTocTextModuleAssetTest`, `AtakScreenCastSlideValidAssetTest`.
+- Non vérifié en jeu : tout ce qui précède. En particulier la fin du clignotement et du retour à la première personne au Zeus, la fenêtre du tableau (mise en page, Eden), la recopie d'un écran, le rendu des caractères en images.
+- Contient la 4.7.2 (PC du poste qui s'affiche de nouveau) : `origin/main` fusionnée, version gardée à 4.8.0.
+- Diffusion d'un écran satellite : la dalle qui recopie demande le même rendu satellite que sa source (`fn_tocSat.sqf` « tick ») ; image rafraîchie une fois par seconde quand la source elle-même n'est pas regardée. Une source en vue caméra est recopiée en carte et flux, pas en vidéo.
+- Module Écran TOC : attributs rangés du plus courant au plus rare (écran posé, nom, camp, affichage, poste, puis les réglages propres à un affichage).
+- Non fait : aperçus en direct et glisser-déposer dans le tableau, vue de suivi 3D, zoom et calques propres à chaque dalle d'une disposition, vidéo d'une caméra recopiée par une diffusion, blocs blancs sur la carte du PC du poste (`fn_tocLaptop.sqf`, tenu par la branche de l'app du poste), rectangle clair en haut à gauche de la vue satellite (cause non trouvée : les contrôles du HUD sont seulement créés hors cadre et sans couleur), paliers de qualité par distance et audit de charge du reste du mod.
+
+## Pack 4.7.2 Washington : le poste TOC sur le PC s'affiche de nouveau (ATAK natif 4.7.2.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : correctif
+FR : ATAK 4.7.2 : le poste TOC sur le PC s'affiche de nouveau
+- Le PC du poste TOC s'ouvre de nouveau avec ses onglets, ses boutons et sa barre de dessin.
+- La carte du PC montre de nouveau le poste et les groupes du camp, sans message d'erreur à l'écran.
+EN : ATAK 4.7.2: the TOC post shows on the PC again
+- The TOC post PC opens again with its tabs, its buttons and its drawing bar.
+- The PC map shows the post and the side's groups again, with no error message on screen.
+
+### Détail technique
+- Journal de TTRD (4.7.1) : 216 fois « 0 éléments fournis, 4 attendus » à `fn_tocLaptop.sqf` ligne 1942, et à chaque ouverture du PC « setVariable : Type Booléen » ligne 166, sans la ligne « PC du poste … ouvert ».
+- Carte : `_sideRgb` lue aux lignes 1942, 1961 et 1962 du mode `draw` sans être définie. Sa définition, en tête du fichier, avait été retirée par la refonte du thème (4.5.0, `bfc4ca42c`) ; elle est remise dans `draw`, tirée du jeton `friend` du thème comme dans `fn_tocSat`.
+- Ouverture : le fichier finit par `true`, donc le mode `mk` rendait `true` au lieu du contrôle créé ; `fn_tocDraw` (ligne 38) le passait à `tip`, l'erreur arrêtait l'ouverture du PC. `mk` et `audit` rendent maintenant leur valeur (`_ret`), et `tip` ignore ce qui n'est pas un contrôle.
+- `tools/sqf_undefined_local_check.py` (nouveau) : variables locales lues sans définition dans leur fichier, casse ignorée, variables du moteur exclues. Sur les 2 134 fichiers des mods : un seul cas, celui-ci. Test `SqfUndefinedLocalAssetTest` (même règle en PHP).
+- Non vérifié en jeu.
+
+## Pack 4.7.1 Washington : menu ACE des écrans du TOC réparé, écran qui se règle tout seul à la pose, salle TOC posée en entier (ATAK natif 4.7.1.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : correctif
+FR : ATAK 4.7.1 : le menu ACE des écrans du TOC est de retour, et un écran posé se règle tout seul
+- **Menu ACE des écrans** : l'interaction ACE revient sur tous les écrans et postes PC du TOC (elle avait disparu en 4.7.0).
+- **Écran posé, écran prêt** : un écran posé s'allume et se configure tout seul, quel que soit le moyen (éditeur, Zeus, module, script) : bon affichage selon l'écran, relié à la salle la plus proche, ou à une nouvelle salle « TOC 1 ».
+- **Salle TOC complète** : le module pose de nouveau toute la salle, y compris quand le serveur n'a pas le mod à jour.
+EN : ATAK 4.7.1: the ACE menu of TOC screens is back, and a placed screen sets itself up
+- **Screen ACE menu**: ACE interaction is back on every TOC screen and PC station (it had disappeared in 4.7.0).
+- **Placed screen, ready screen**: a placed screen lights up and configures itself, whatever the way it was placed (editor, Zeus, module, script): the right display for the screen, linked to the nearest room, or to a new "TOC 1" room.
+- **Complete TOC room**: the module places the whole room again, including when the server does not run the up-to-date mod.
+
+### Détail technique
+- Cause prouvée (journal de TTRD, 4.7.0, 45 fois « Type Objet, Chaîne attendu », `fn_tocScreen.sqf` ligne 114) : `_entryOf` écrivait `[configOf _o, configFile >> "CfgVehicles" >> _o] select (_o isEqualType "")`. Les deux éléments du tableau sont évalués : l'un des deux est toujours une erreur de type, qui arrête le script appelant. Depuis la 4.7.0, les enfants du menu ACE de l'écran lisent le format de la dalle (`["format", _o]`, donc `_ratioOf` puis `_entryOf`) : menu vide, donc aucune interaction. La même erreur arrêtait la désignation (« add ») et donc la pose d'une salle après le premier écran ; la ligne existe depuis la 4.4.1, ce qui explique très probablement le retour « un seul écran » de la 4.6.0. Corrigé par un `if` / `else`.
+- Ce n'est pas le chemin sans serveur qui cassait : l'erreur est la même sur le serveur. Dans la session de TTRD (serveur sans les fonctions TOC), la salle s'est arrêtée au premier écran pour cette raison.
+- `fn_tocHallBuild` : un rappel par objet (`step`, file `fn_waitAndExec`) puis un bilan (`finish`) ; une erreur dans un pas n'arrête plus que ce pas (une boucle ne suffisait pas : la première erreur arrêtait tout). Lignes `[COMSPEC TOC] salle | …` écrites aussi dans le journal COMSPEC. Seul le bureau reste figé : plus aucun écran ni PC sans simulation.
+- `fn_tocAuto` (nouveau) : événement de création sur `COMSPEC_ATAK_Screen_Base3D` (écrans, murs, bandeaux, postes PC) et `COMSPEC_ATAK_TocLaptop`, sur chaque machine, objets déjà présents compris, plus un passage toutes les 30 s. Réglage une seule fois par objet, 2 s après la pose (9 s au lancement) : désignation si personne ne l'a faite, affichage par défaut du format (16:9 carte et flux, bandeau horloge, plaque, texte à LED, colonne, poste PC en console), salle la plus proche à 30 m ou nouvelle salle « TOC n » (`fn_tocHall` « auto »). Le serveur règle ; serveur plus ancien ou sans le mod : le poste où l'objet est local, sinon le premier joueur. Une ligne par écran : `[COMSPEC TOC] écran | classe=… salle=… vue=… ok`.
+- Tests : `AtakTocScreenSelfSetupAssetTest` (aucun tableau qui mêle les deux lectures de config, action ACE principale et menu sur chaque classe posable, aucun objet simple, lignée du réglage automatique), `AtakTocHallRoomAssetTest` mis à jour.
+- Non vérifié en jeu : menu ACE revenu sur chaque modèle, réglage automatique (Eden, Zeus, serveur dédié, serveur sans le mod, joueur arrivé en cours de partie), salle complète posée objet par objet.
+
+## Pack 4.7.0 Washington : relais, antennes et caméras refaits en 3D, salle TOC complète posée en entier, texte à LED et écrans géants, bris d'écran réalistes, poste TOC relié à Athena (ATAK natif 4.7.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.7.0 : des relais refaits en 3D, une salle TOC qui se pose en entier, un téléphone qui casse comme un vrai
+- **Relais, antennes, caméras** : pylônes et mâts redessinés comme de vrais sites, nouveaux modèles dont des relais déguisés en arbre (faux pin, faux palmier), antennes murales, caméras IP et objets de salle serveur à poser dans l'éditeur et en Zeus.
+- **Salle et écrans du TOC** : le module « Salle TOC complète » pose enfin toute la salle sur le sol, dans Eden comme dans Zeus. Nouvel affichage « Texte » qui défile, écrans géants, incurvés et suspendus, postes PC complets.
+- **Écran du téléphone** : le verre casse de treize façons, la dalle peut tomber en panne et le sang est plus crédible ; tout se règle ou se coupe dans les options.
+- **Poste TOC et Athena** : ce que fait le poste en jeu se voit en direct sur le poste TOC web d'Athena, et un plan préparé sur le site s'envoie en jeu.
+EN : ATAK 4.7.0: relays rebuilt in 3D, a TOC room placed in full, a phone that breaks like a real one
+- **Relays, antennas, cameras**: towers and masts redrawn as real sites, new models including tree-disguised relays (fake pine, fake palm), wall antennas, IP cameras and server-room objects to place in the editor and in Zeus.
+- **TOC room and screens**: the "Complete TOC room" module finally places the whole room on the ground, in Eden and in Zeus. New scrolling "Text" display, giant, curved and hanging screens, complete PC stations.
+- **Phone screen**: the glass breaks in thirteen ways, the panel can fail and blood looks more believable; everything can be tuned or turned off in the options.
+- **TOC and Athena**: what the in-game post does shows live on Athena's web TOC, and a plan prepared on the site can be sent into the game.
+
+### Détail technique
+
+COMSPEC Link inchangé (2.0.123) : aucune source de la DLL n'a changé depuis la 4.6.0. PBO construits (octets) : main 125 616 679 (95 535 630 en 4.6.0 : écrans TOC et bris d'écran), towers 56 197 915 (89 380 262), items 29 649 104 (22 254 547), comspec_overwatch_connect 48 463 549, comspec_overwatch_main 178 077 ; le pack pèse environ 4 Mo de plus qu'en 4.6.0, les relais seuls 33 Mo de moins.
+
+**Bris d'écran réalistes, pannes de dalle, bugs d'affichage et sang plus crédible**
+
+- Modèle unique par appareil dans `COMSPEC_ATAK_Device` (`scr`, `scrSeed`, `scrN`) : `fn_screenDamage` (catalogue de 13 bris de verre, 13 pannes de dalle, 11 bugs ; causes balle, éclat, chute, accident, souffle, choc encaissé, eau, chaleur, IEM, brouillage, usure, froid, batterie faible, pression ; tirages reproductibles par appareil ; export / import ; diagnostic en clair dans le rapport de l'appareil ; `selftest`).
+- Rendu : `fn_screenFaults` (repère du verre en portrait, quart de tour en paysage, gabarits point / coin / bande / libre, jamais d'étirement, seconde passe décalée qui suit la lumière et le reflet, 90 contrôles au plus), appelé par `fn_screenSurface` dans l'ordre dalle, verre, saleté, sang, pluie, reflet, coins. `fn_screenGlitch` : un bug à la fois, 4 contrôles au plus, un seul gestionnaire `EachFrame` posé pendant le bug.
+- L'ancienne toile plein écran et ses traits ne restent que pour l'écran en morceaux ou sans impact enregistré ; réglage « Bris d'écran : réalisme » sur Désactivé = ancien rendu.
+- Réparation : kit (verre et dalle), nettoyage complet ou kit de nettoyage (film décollé, boue), redémarrage (bugs, un pixel bloqué sur deux), l'eau sous le verre sèche seule. Zeus : une entrée par bris, panne et bug, et « Retirer tous les bris et pannes ».
+- Réglages CBA (ATAK · Simulation) : `screen_fx_level`, `panel_faults`, `screen_glitch`, `screen_impact`, `screen_fault_rate`, `screen_glitch_rate` ; aussi dans le panneau de réalisme.
+- Sang : `gen_screen_fx.py` (film rouge profond sans liseré clair, ménisque rosé au lieu des reflets ronds, craquelures aux cellules inégales, grandes taches en 512 px), genres `seep` et `puddle`, voile rosé sous la pluie (`wetUntil`), boue (`mud`), gouttes de pluie refaites. Textures : `gen_screen_damage.py` (dessins d'origine) ; maquettes : `gen_screen_mockups.py`. Données de l'addon : +7,5 Mo.
+- Pas d'attribut Eden (il n'existe pas d'attribut d'appareil ; les textes d'Eden passent par les stringtables). Tests : `AtakScreenDamageAssetTest`.
+
+**La salle TOC complète se pose en entier, au sol, dans Eden comme dans Zeus**
+
+- Retour d'un testeur (4.6.0) : « pas de salle, dans Eden comme dans Zeus, seulement un grand écran qui flotte en l'air ». Ancienne pose (`fn_tocHall` « spawnRoom ») : écrans muraux (mur d'images, 98 pouces, bandeau, plaques, origine au sol et dos au mur) et écran suspendu (à 3,2 m) posés à la hauteur du module, sans mur, sans plafond, sans recherche du sol ; salle sautée en entier dès qu'une salle du même nom figurait dans la sauvegarde de la carte (`saved`, clé carte + mission, la même pour toute mission d'essai non enregistrée) ; module Zeus sans le garde-fou du module Écran TOC ; rien n'est dessiné dans l'éditeur (seule l'icône du module, un écran, y apparaît).
+- `fn_tocHallBuild` (nouveau), seul constructeur pour Eden, Zeus et le repli : tables `_rooms` (S, M, L), `_dims`, `_furniture` ; sol sous le module puis sous chaque objet (`lineIntersectsSurfaces`), mur devant (à 1,5 m et 2,4 m du sol) et plafond (3 à 4,5 m) seulement sur un bâtiment ; sinon remplaçant sur pied de la table, ou objet non posé et dit au journal. Un pas par objet (`[COMSPEC TOC] salle | objet k/N classe=… ok | échec raison`), résumé final, résultat rendu au Zeus (`comspec_atak_native_tocHallDone`).
+- Petite : mur 2x2, bandeau horloge, 2 plaques, 2 postes. Moyenne : mur 3x2, deux 98 pouces, bandeaux horloge et texte à LED, 4 plaques, écran double suspendu, 3 postes. Grande : mur 4x3, deux 98 pouces, deux 136 pouces sur pied, bandeaux, 4 plaques, écran triple suspendu, 4 postes. Sans mur : 136 pouces sur pied (petite) ou mur LED 220 pouces sur portique, 98 pouces sur pied, horloge sur un écran sur trépied.
+- Reprise : la salle d'un module Eden est reconnue à ses écrans en place (même nom, à moins de 40 m, même carte), plus à son nom dans la sauvegarde ; reprise incomplète : retirée puis reposée. Attribut « Supprimer la salle avec le module ». Serveur plus ancien ou muet 8 s : le poste du Zeus pose la salle, non gardée.
+- Tests : `tests/Unit/AtakTocHallRoomAssetTest.php` ; en jeu : `["selfTest"] call comspec_atak_native_fnc_tocHallBuild`. Non vérifié en jeu : pose réelle dans Eden et Zeus, détection du mur et du plafond selon les bâtiments, hauteur des plateaux de bureau, serveur dédié, repli.
+
+**Le poste TOC du jeu relié au poste TOC web d'Athena, plans envoyés du site**
+
+- `fn_tocWeb` (nouveau) : instantané de la salle vers Athena par la commande COMSPEC Link existante `BriefingPlan.Push` (canal `toc_room`, sans UID de joueur), au plus toutes les 3 s quand la salle change, 60 s sinon ; un seul joueur du camp envoie (celui qui tient le poste, sinon le plus petit UID ; relais après 90 s). Rien ne part avant la licence acceptée ni en mode local.
+- Commandes du site : genre `toc` du fil WC1 (`fn_webCmdDispatch`, poll des charges existant) ; chaque client du camp les remet au serveur (`comspec_atak_native_tocWeb`), qui ne les applique qu'une fois (id de commande) par `fn_tocRoom` « do » et les cite dans l'instantané suivant (`wc`). Lignes nées sur le web (id W…) reliées à leur id du jeu.
+- `fn_planServer` : opération serveur `webPatch` [camp, ids à retirer, éléments] pour les plans envoyés du site (droits vérifiés par Athena, éléments gardant leur id W<plan>_n, remplacés à chaque nouvel envoi).
+- Aucune nouvelle commande dans la DLL : COMSPEC Link inchangé.
+- À tester en jeu : poste web et PC du poste ouverts ensemble (chrono lancé d'un côté, vu de l'autre en moins de 10 s), réponse à une demande reçue sur le téléphone du demandeur, plan envoyé du site visible dans l'app Plan et sur la carte du PC, deux joueurs du camp reliés (une seule application de chaque commande), serveur sans joueur du camp (commande en attente puis expirée).
+
+**Texte à LED défilant, écrans géants, écran incurvé, postes PC et anciens écrans refaits**
+
+- `fn_tocText.sqf` : affichage `TEXT` (table `_schema` des paramètres, nettoyage serveur, défilement tiré de `serverTime`, une seule boucle à 30 images par seconde au plus pour les écrans allumés, éditeur avec aperçu). Réglage `COMSPEC_ATAK_TocText`, gardé par `fn_tocPersist`.
+- `fn_tocScreen.sqf` : table `_formats` (rapports 8:9, 16:9, 4:1, 8:1, 16:1), modes `format` et `params`, `comspec_screenPanelRatio[]` et `comspec_screenPanelViews[]` par dalle, budget de huit redessins par tour, dalles 55" des grands murs en 1024 x 512, affichages `COLA` / `COLB` (colonnes de l'écran incurvé, `fn_tocBoard.sqf`).
+- Modèles : `tools/model_toc_screens.py` (géants, murs, suspendus, incurvé, bandeaux LED), `tools/model_toc_legacy.py` (anciens écrans, mêmes noms de classes), `tools/model_toc_pc.py` (postes PC, `comspec_tocPost=1`). Zones des grands murs et dimensions : `mod/docs/MODELS.md`.
+- Non vérifié en jeu : rendu des textures 2048 x 256 et 4096 x 256, mesure `ctrlTextWidth` dans une texture UI, hauteur et orientation des anciens écrans refaits par rapport aux objets déjà posés (le téléviseur est maintenant mural, sans pied).
+
+**Relais, antennes, caméras et baies réseau refaits en 3D**
+
+- Audit complet : `docs/audit/2026-11-relais.md` (mesures avant / après, logique, limites, suite proposée).
+- Pipeline en pur Python, sans Blender : `tools/relay3d.py` (maillage, LOD, MLOD, atlas), `relay_tex.py`, `relay_parts.py`, `model_relay_towers.py` (8 pylônes et ruines), `model_relay_kits.py` (3 kits, 7 antennes murales ou de toit), `model_ip_cameras.py` (14 caméras), `model_net_infra.py` (14 objets), `gen_relay_config.py` (classes, `units[]`, stringtable de l'addon). Rendus de contrôle facultatifs : `render_relay_blender.py`, `render_relay_proofs.py`. Retirés : `gen_tower_textures.py`, `strip_tower_cables.py`.
+- `towers.pbo` : 89,4 Mo → 48,5 Mo avec 26 modèles au lieu de 10 (les cinq pylônes d'origine et leurs ruines : 76,4 → 27,0 Mo). Trois atlas (4,9 Mo) au lieu de dix matières (12 Mo) ; 3 à 5 passes de rendu par pylône au lieu de 10 à 12 ; cinq LOD, la dernière de 89 à 787 triangles ; ombres en prismes fermés (2 100 triangles au plus, 15 216 avant) ; collision de 8 à 39 pièces (jusqu'à 338 avant).
+- Classes historiques inchangées (`COMSPEC_ATAK_RelayTower_M12 / M20 / 30 / 40 / 50`, leurs `_ruins`, `COMSPEC_ATAK_DeployedAntenna_Sat / Mini / Omni`, `COMSPEC_ATAK_CameraObj`), mêmes chemins de modèle. Nouvelles : `RelayTower_Mono30`, `_Guyed60`, `_Roof8`, variantes `_RW`, `_Olive`, `_Sand`, `_Galva`, `_Light`, `_Bare`, `COMSPEC_ATAK_RelayAntenna_*`, `COMSPEC_ATAK_Cam_*`, `COMSPEC_ATAK_Infra_*`.
+- Relais déguisés en arbre : `COMSPEC_ATAK_RelayTower_Pine28`, `_Pine15`, `_Palm22` (faux pin 28 m et 15 m, faux palmier 22 m).
+- Sélections `camo` (peinture par `hiddenSelections`, attribut Eden « Peinture »), `led` (voyant d'état, `fn_relayLed`, client, relais à moins de 250 m, 3 s), `eq1` / `eq2` (équipement nu, léger, complet : animations `hide`, attribut Eden « Équipement »), destruction `fn_relayFx`.
+- Logique : couverture incrémentale par signature, recherche sous le curseur par index (9 cases au lieu de 1 313), bandes de dessin fusionnées, chaîne des répéteurs en cache 15 s, liste des relais diffusée une fois au lancement ; correction : les brouilleurs GPS seuls ne creusent plus de zone blanche. `fn_relayTower` : hauteur d'antenne minimale 1 m (4 m avant ; aucune classe existante n'est sous 8 m), nom par défaut selon la classe (`comspec_atak_relayNoun`).
+- Caméras : `fn_camAction` accepte les classes dérivées, `fn_camView` lit l'œil du flux dans la config. Infrastructure : `fn_infra`, réglage CBA « Le TOC dépend d'un serveur » décoché par défaut.
+- Tests : `AtakRelayModels3dAssetTest`, `AtakRelayCoverageCacheTest`, cas « couverture » de `fn_devMeshTest`.
+- Non vérifié en jeu (voir le chapitre 3 de l'audit) : `model.cfg` sur modèles non binarisés (sections, animations), alpha test, distances de LOD, particules.
+
 ## Pack 4.6.0 Washington : écrans TOC réglables dans Eden et Zeus, écrans allumés avec un serveur plus ancien, carte photo fluide, zoom de la carte mini centré (ATAK natif 4.6.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 
 ### Résumé joueur

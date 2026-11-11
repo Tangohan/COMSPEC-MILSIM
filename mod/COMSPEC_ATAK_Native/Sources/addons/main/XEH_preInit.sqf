@@ -441,6 +441,26 @@ private _sim = ["COMSPEC", "ATAK · Simulation"];
 ["comspec_atak_native_blood_max", "LIST",
     ["Sang sur l'écran : quantité maximale", "Jusqu'où le sang peut couvrir l'écran du téléphone dans les pires moments. Léger : quelques gouttes et traces de doigts. Normal : traînées et projections en plus. Fort : grandes nappes, paumes et coulures sur une bonne partie de l'écran. Extrême : écran presque entièrement rouge, on lit à peine entre les taches. Selon le profil : Extrême en Milsim, Fort sinon. Exemple : blessé grave qui saigne, téléphone en main ; réglé sur Extrême, l'écran est couvert en une vingtaine de secondes ; réglé sur Normal, il garde quelques traînées."],
     _sim, [[0, 1, 2, 3, 4], ["Selon le profil", "Léger", "Normal", "Fort", "Extrême"], 0], 1] call comspec_atak_native_fnc_addSetting;
+// Bris d'écran réalistes (fn_screenDamage, fn_screenFaults, fn_screenGlitch) : impacts posés sur le verre, pannes de dalle
+// sans verre cassé, bugs d'affichage passagers. « Désactivé » rend l'ancien rendu (toile plein écran).
+["comspec_atak_native_screen_fx_level", "LIST",
+    ["Bris d'écran : réalisme", "Rendu des dégâts de l'écran du téléphone. Désactivé : ancien rendu, une toile de fêlures sur tout l'écran. Discret : impacts posés là où le téléphone a été touché, jamais au pire niveau, bugs rares. Normal : tous les bris (fêlure fine, toile, coin écrasé, balle, dalle écrasée…) et les pannes de dalle. Réaliste : en plus, usure lente de l'écran et bugs plus fréquents. Exemple : une chute sur un coin ; en Normal, un éventail de fêlures part de ce coin et reste au même endroit du verre quand vous tournez le téléphone. Suit le réglage « Dégâts du téléphone » : coupé, il n'y a aucun dégât d'écran."],
+    _sim, [[0, 1, 2, 3], ["Désactivé", "Discret", "Normal", "Réaliste"], 2], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_panel_faults", "CHECKBOX",
+    ["Bris d'écran : pannes de dalle", "La dalle peut tomber en panne sans que le verre soit cassé : pixels morts ou bloqués, ligne de couleur, tache d'encre qui grandit, image fantôme, zone sombre, zone tactile morte. Exemple : un choc encaissé par le gilet ne fêle rien, mais laisse trois pixels verts allumés en permanence. Décoché : seul le verre s'abîme."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_screen_glitch", "CHECKBOX",
+    ["Bris d'écran : bugs d'affichage", "Bugs passagers de moins de trois secondes : image déchirée, neige, couleurs décalées, écran noir puis logo. Ils viennent des chocs, de l'eau, d'une batterie presque vide, du froid et du brouillage. Exemple : une explosion proche, l'image se déchire un quart de seconde puis revient. Décoché : aucun bug."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_screen_impact", "LIST",
+    ["Bris d'écran : gêne en jeu", "Ce que les dégâts d'écran changent pour le joueur. Visuel seulement : rien ne bloque jamais un appui. Gêne légère : une zone tactile morte n'accepte plus les appuis, une image figée les ignore une demi-seconde. Milsim : pareil, et la zone morte n'est plus signalée par un léger voile. Exemple : en Visuel seulement, un bouton placé sous une zone morte marche toujours ; en Gêne légère, il faut tourner le téléphone pour l'atteindre. Les appuis fantômes ne déclenchent jamais rien, dans aucun mode."],
+    _sim, [[0, 1, 2], ["Visuel seulement", "Gêne légère", "Milsim"], 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_screen_fault_rate", "SLIDER",
+    ["Bris d'écran : fréquence des pannes", "Multiplie la chance qu'un choc laisse une panne de dalle ou une rayure. 1 = normal, 0 = jamais, 3 = trois fois plus souvent. Exemple : à 2, un choc encaissé sur deux environ laisse un pixel mort ; à 1, un sur quatre."],
+    _sim, [0, 3, 1, 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_screen_glitch_rate", "SLIDER",
+    ["Bris d'écran : fréquence des bugs", "Multiplie la fréquence des bugs d'affichage de fond. 1 = normal, 0 = seulement juste après un choc, 3 = trois fois plus souvent. Exemple : écran fêlé, à 1 l'image saute environ une fois par minute ; à 3, toutes les vingt secondes."],
+    _sim, [0, 3, 1, 1], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_clean_items", "EDITBOX",
     ["Kits de nettoyage (optionnel)", "On peut toujours nettoyer l'écran sans rien. Avec un de ces items sur soi (noms de classe exacts, séparés par des virgules), c'est deux fois plus rapide et tout part, sang compris. L'item n'est pas consommé. Vide : aucun kit."],
     _sim, "ACE_fieldDressing,ACE_elasticBandage,ACE_packingBandage,ACE_quikclot", 1] call comspec_atak_native_fnc_addSetting;

@@ -10,7 +10,6 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\OperatorHubRepository;
 use App\Repositories\PlatformAlertRepository;
-use App\Repositories\SseCoverExportRepository;
 use App\Repositories\TenantAlertRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserAlertDismissalRepository;
@@ -18,7 +17,6 @@ use App\Services\Alerts\AlertPresentationService;
 use App\Services\Operator\OperatorHubCatalog;
 use App\Services\Operator\OperatorIdentityService;
 use App\Services\Security\FileRateLimiter;
-use App\Services\Sse\SseCoverExportService;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\SseIdentitySqlite;
@@ -67,14 +65,12 @@ final class OperatorHubTest extends TestCase
      */
     private function controller(?int $user = 10, array $permissions = [], bool $csrf = true, int $tenant = 1): OperatorHubController
     {
-        $exports = new SseCoverExportRepository();
         $limiter = $this->createMock(FileRateLimiter::class);
         $limiter->method('tooManyAttempts')->willReturn(false);
 
         return new OperatorHubController(
             new OperatorHubRepository(),
-            new OperatorIdentityService(null, null, null, null, null, null, $exports, new SseCoverExportService($exports, null, null, static function (): void {
-            }, 'test-key'), static function (): void {
+            new OperatorIdentityService(null, null, null, null, null, null, static function (): void {
             }),
             static fn (): ?array => $user === null ? null : ['tenant' => $tenant, 'user' => $user, 'row' => ['callsign' => 'Viper 1-1', 'display_name' => 'Jake', 'steam_id' => '76561198000000010']],
             static fn (string $p): bool => in_array($p, $permissions, true),
@@ -112,7 +108,7 @@ final class OperatorHubTest extends TestCase
         $noRoute = static fn (string $r): bool => false;
 
         $member = array_column(OperatorHubCatalog::visible($none, $path, $noRoute), 'key');
-        foreach (['atak', 'lier', 'terrain', 'identites', 'documents', 'couverture', 'materiel', 'kits', 'manoeuvres', 'guides', 'academy'] as $k) {
+        foreach (['atak', 'lier', 'terrain', 'identites', 'documents', 'materiel', 'kits', 'manoeuvres', 'guides', 'academy'] as $k) {
             self::assertContains($k, $member, $k);
         }
         // Sans droit du Bureau SSE ni du poste TOC : ni fichiers, ni SEEK, ni fiches, ni TOC.
@@ -162,15 +158,16 @@ final class OperatorHubTest extends TestCase
         self::assertSame($keys, array_unique($keys), 'clés uniques (favoris)');
         self::assertTrue(OperatorHubCatalog::routeDeclared('operateur/identite'));
         self::assertFalse(OperatorHubCatalog::routeDeclared('operateur/inconnu'));
-        self::assertTrue(OperatorHubCatalog::isKnown('couverture'));
+        self::assertTrue(OperatorHubCatalog::isKnown('identites'));
+        self::assertFalse(OperatorHubCatalog::isKnown('couverture'), 'plus de tuile « Mes couvertures » : une seule tuile « Mes identités »');
         self::assertFalse(OperatorHubCatalog::isKnown('admin'));
     }
 
     public function testLayoutPinsFavouritesFirstAndDropsEmptyGroups(): void
     {
         $tools = OperatorHubCatalog::visible(static fn (string $p): bool => false, static fn (string $p): bool => true, static fn (string $r): bool => false);
-        $layout = OperatorHubCatalog::layout($tools, ['couverture', 'fichiers', 'atak'], ['lier' => ['label' => 'À relier', 'tone' => 'warn']]);
-        self::assertSame(['couverture', 'atak'], array_column($layout['favorites'], 'key'), 'ordre d’épinglage ; un favori devenu inaccessible est ignoré');
+        $layout = OperatorHubCatalog::layout($tools, ['couverture', 'documents', 'fichiers', 'atak'], ['lier' => ['label' => 'À relier', 'tone' => 'warn']]);
+        self::assertSame(['documents', 'atak'], array_column($layout['favorites'], 'key'), 'ordre d’épinglage ; un favori devenu inaccessible, ou épinglé sur la tuile retirée « couverture », est ignoré');
         self::assertNotContains('comptes_rendus', array_column($layout['groups'], 'key'), 'groupe sans outil : non rendu');
         self::assertSame(['operation', 'identite', 'materiel', 'preparation'], array_column($layout['groups'], 'key'));
         $operation = array_column($layout['groups'][0]['tools'], null, 'key');
@@ -213,9 +210,14 @@ final class OperatorHubTest extends TestCase
         preg_match_all('#\$router->(get|post)\(\'(/operateur[^\']*)\', \[(\$opHub|OperateurTerrainController::class), \'(\w+)\'\], \[AuthMiddleware::class\]\);#', $routes, $m, PREG_SET_ORDER);
         self::assertCount(20, $m, 'toutes les routes /operateur passent par AuthMiddleware');
         self::assertSame(20, preg_match_all('#\$router->\w+\(\'/operateur#', $routes));
-        $writes = ['favorite', 'accessRequest', 'accessCancel', 'identitySave', 'identityPhoto', 'identityArchive', 'identityActivate', 'identityPrimary', 'documentRequest', 'documentAction', 'coverGenerate', 'coverAction'];
+        $writes = ['favorite', 'accessRequest', 'accessCancel', 'identitySave', 'identityPhoto', 'identityArchive', 'identityActivate', 'identityPrimary', 'documentRequest', 'documentAction'];
+        // Anciennes adresses des couvertures : gardées (GET et POST), elles renvoient toutes aux identités.
+        self::assertSame(4, preg_match_all('#\'/operateur/identite/couverture[^\']*\', \[\$opHub, \'legacyCovers\'\]#', $routes));
         foreach ($m as [, $verb, $path, , $action]) {
             self::assertTrue(method_exists(OperatorHubController::class, $action) || $action === 'index', $action);
+            if ($action === 'legacyCovers') {
+                continue;
+            }
             self::assertSame(in_array($action, $writes, true) ? 'post' : 'get', $verb, $path);
         }
         // Les routes à paramètre viennent après les routes fixes de même préfixe (sinon « photo » serait lu comme un id).
@@ -227,14 +229,14 @@ final class OperatorHubTest extends TestCase
     {
         $this->db();
         $anonymous = $this->controller(null);
-        foreach (['identitySave', 'documentRequest', 'coverGenerate', 'identityActivate'] as $action) {
+        foreach (['identitySave', 'documentRequest', 'identityActivate'] as $action) {
             $res = $anonymous->$action($this->post(['last_name' => 'X', 'first_name' => 'Y']), ['id' => '1']);
             self::assertSame(302, $res->statusCode(), $action);
             self::assertStringEndsWith('/login', (string) $res->headerValue('Location'));
         }
         self::assertSame(302, $anonymous->index(new Request())->statusCode());
         self::assertSame(302, $anonymous->identities(new Request())->statusCode());
-        self::assertSame(302, $anonymous->coverDownload(new Request(), ['id' => '1'])->statusCode());
+        self::assertSame(302, $anonymous->legacyCovers(new Request(), ['id' => '1'])->statusCode());
 
         $noToken = $this->controller(10, [], false);
         $res = $noToken->identitySave($this->post(['last_name' => 'Gyllen', 'first_name' => 'Jake']));
@@ -244,7 +246,7 @@ final class OperatorHubTest extends TestCase
         self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM sse_identities')->fetchColumn(), 'sans jeton : rien n’est écrit');
     }
 
-    public function testAMemberManagesOnlyTheirOwnIdentityPapersAndCovers(): void
+    public function testAMemberManagesOnlyTheirOwnIdentitiesAndPapers(): void
     {
         $this->db();
         $jake = $this->controller(10);
@@ -258,10 +260,6 @@ final class OperatorHubTest extends TestCase
         $docId = (int) $this->pdo->query('SELECT id FROM sse_id_documents')->fetchColumn();
         self::assertSame('draft', (string) $this->pdo->query('SELECT workflow FROM sse_id_documents')->fetchColumn(), 'une demande : jamais un papier émis');
 
-        $jake->coverGenerate($this->post(['source' => 'random', 'country' => 'ALT', 'sex' => 'F', 'lang' => 'fr']));
-        self::assertSame('success', end($this->flashes)[0], end($this->flashes)[1]);
-        $coverId = (int) $this->pdo->query('SELECT id FROM sse_cover_exports')->fetchColumn();
-
         // Un autre membre vise les identifiants de Jake : tout est refusé, rien ne change.
         $other = $this->controller(11);
         $before = count($this->flashes);
@@ -271,33 +269,63 @@ final class OperatorHubTest extends TestCase
         $other->identityPhoto($this->post(['photo_remove' => '1']), ['id' => (string) $identityId]);
         $other->documentRequest($this->post(['identity_id' => (string) $identityId, 'doc_type' => 'id_card', 'country_code' => 'ALT']));
         $other->documentAction($this->post(['action' => 'cancel']), ['id' => (string) $docId]);
-        foreach (['edit', 'duplicate', 'revoke', 'activate'] as $action) {
-            $other->coverAction($this->post(['action' => $action, 'profession' => 'Espion']), ['id' => (string) $coverId]);
-        }
-        $other->coverDownload(new Request(), ['id' => (string) $coverId]);
         $other->documentSpecimen(new Request(), ['id' => (string) $docId]);
         foreach (array_slice($this->flashes, $before) as [$type, $message]) {
             self::assertSame('error', $type, $message);
         }
-        self::assertCount(12, array_slice($this->flashes, $before));
+        self::assertCount(7, array_slice($this->flashes, $before));
         self::assertSame('Gyllen', (string) $this->pdo->query('SELECT last_name FROM sse_identities WHERE id = ' . $identityId)->fetchColumn());
         self::assertSame(1, (int) $this->pdo->query('SELECT COUNT(*) FROM sse_id_documents')->fetchColumn());
-        self::assertSame(1, (int) $this->pdo->query('SELECT COUNT(*) FROM sse_cover_exports')->fetchColumn());
         self::assertSame(0, (int) $this->pdo->query("SELECT COUNT(*) FROM operator_identity_states WHERE revoked_at IS NOT NULL OR archived_at IS NOT NULL")->fetchColumn());
         // Même identifiant de membre dans une autre communauté : rien non plus.
         $elsewhere = $this->controller(10, [], true, 2);
-        $elsewhere->coverDownload(new Request(), ['id' => (string) $coverId]);
+        $elsewhere->identityArchive($this->post(), ['id' => (string) $identityId]);
         self::assertSame('error', end($this->flashes)[0]);
+        $elsewhere->documentSpecimen(new Request(), ['id' => (string) $docId]);
+        self::assertSame('error', end($this->flashes)[0]);
+    }
 
-        // Jake télécharge son fichier.
-        $dl = $jake->coverDownload(new Request(), ['id' => (string) $coverId]);
-        self::assertSame(200, $dl->statusCode());
-        self::assertStringContainsString('attachment; filename="comspec-couverture-CVR-', (string) $dl->headerValue('Content-Disposition'));
-        self::assertSame('no-store', $dl->headerValue('Cache-Control'));
-        self::assertTrue(SseCoverExportService::parse($dl->body())['ok']);
-        // Action inconnue : refusée.
-        $jake->coverAction($this->post(['action' => 'delete_everything']), ['id' => (string) $coverId]);
-        self::assertSame('error', end($this->flashes)[0]);
+    public function testGuidedCreationRequestsTheCheckedPapersAndSavesTheStory(): void
+    {
+        $this->db();
+        (require dirname(__DIR__, 2) . '/bootstrap/sse_identities_unified_migration.php')($this->pdo);
+        $jake = $this->controller(10);
+        $_POST = ['last_name' => 'Gyllen', 'first_name' => 'Jake', 'sex' => 'M', 'birth_date' => '1990-04-02', 'nationality' => 'ALT',
+            'story' => 'Né à Kavala.', 'request_papers' => ['passport', 'id_card', 'faux_type']];
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $jake->identitySave(new Request());
+        self::assertSame('success', end($this->flashes)[0], end($this->flashes)[1]);
+        self::assertStringContainsString('2 papiers demandés', end($this->flashes)[1]);
+        $identityId = (int) $this->pdo->query('SELECT id FROM sse_identities WHERE user_id = 10')->fetchColumn();
+        self::assertSame(2, (int) $this->pdo->query("SELECT COUNT(*) FROM sse_id_documents WHERE workflow = 'draft' AND identity_id = " . $identityId)->fetchColumn(), 'des demandes, jamais des papiers émis');
+        self::assertSame('Né à Kavala.', (string) $this->pdo->query('SELECT story FROM sse_identity_stories WHERE identity_id = ' . $identityId)->fetchColumn());
+        // « Demander ce papier » depuis la carte d'une identité : retour à cette carte.
+        $res = $jake->documentRequest($this->post(['demande' => $identityId . ':driving_license:ALT', 'retour' => 'identites']));
+        self::assertStringEndsWith('/operateur/identite#identite-' . $identityId, (string) $res->headerValue('Location'));
+    }
+
+    public function testOldCoverAddressesRedirectToIdentitiesAndWriteNothing(): void
+    {
+        $this->db();
+        $jake = $this->controller(10);
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $res = $jake->legacyCovers(new Request());
+        self::assertSame(302, $res->statusCode());
+        self::assertStringEndsWith('/operateur/identite', (string) $res->headerValue('Location'));
+        self::assertSame([], $this->flashes, 'ancien onglet : simple redirection');
+        // Ancien lien de téléchargement, ancienne création, ancienne action : même page, avec une explication.
+        foreach ([[new Request(), ['id' => '7']], [$this->post(['source' => 'random', 'country' => 'ALT']), []], [$this->post(['action' => 'revoke']), ['id' => '7']]] as [$request, $params]) {
+            $res = $jake->legacyCovers($request, $params);
+            self::assertSame(302, $res->statusCode());
+            self::assertStringEndsWith('/operateur/identite', (string) $res->headerValue('Location'));
+            self::assertStringContainsString('réunie avec vos identités', end($this->flashes)[1]);
+            $_SERVER['REQUEST_METHOD'] = 'GET';
+        }
+        self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM sse_cover_exports')->fetchColumn(), 'rien n’est généré ni modifié');
+        self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM operator_identity_states')->fetchColumn());
+        foreach (['coverGenerate', 'coverAction', 'coverDownload', 'covers'] as $gone) {
+            self::assertFalse(method_exists(OperatorHubController::class, $gone), $gone);
+        }
     }
 
     public function testFavouritesArePerMemberLimitedToVisibleTools(): void
@@ -305,7 +333,7 @@ final class OperatorHubTest extends TestCase
         $this->db();
         $_SERVER['HTTP_ACCEPT'] = 'application/json';
         $jake = $this->controller(10);
-        $res = $jake->favorite($this->post(['tool' => 'couverture']));
+        $res = $jake->favorite($this->post(['tool' => 'documents']));
         self::assertSame(['ok' => true, 'favorite' => true], json_decode($res->body(), true));
         self::assertSame(404, $jake->favorite($this->post(['tool' => 'fichiers']))->statusCode(), 'outil non accessible : ne s’épingle pas');
         self::assertSame(404, $jake->favorite($this->post(['tool' => '../admin']))->statusCode());
@@ -313,10 +341,10 @@ final class OperatorHubTest extends TestCase
         self::assertSame(401, $this->controller(null)->favorite($this->post(['tool' => 'atak']))->statusCode());
 
         $repo = new OperatorHubRepository();
-        self::assertSame(['couverture'], $repo->favorites(1, 10));
+        self::assertSame(['documents'], $repo->favorites(1, 10));
         self::assertSame([], $repo->favorites(1, 11), 'les épingles d’un membre ne sont pas celles d’un autre');
         self::assertSame([], $repo->favorites(2, 10));
-        self::assertSame(['ok' => true, 'favorite' => false], json_decode($jake->favorite($this->post(['tool' => 'couverture']))->body(), true));
+        self::assertSame(['ok' => true, 'favorite' => false], json_decode($jake->favorite($this->post(['tool' => 'documents']))->body(), true));
         self::assertSame([], $repo->favorites(1, 10));
         for ($n = 0; $n < OperatorHubRepository::MAX_FAVORITES; $n++) {
             self::assertTrue($repo->toggleFavorite(1, 10, 'outil' . $n));
@@ -337,7 +365,8 @@ final class OperatorHubTest extends TestCase
         $data = $this->rendered;
         self::assertSame('operateur.hub', $data['content']);
         self::assertSame('Viper 1-1', $data['hubCallsign']);
-        self::assertSame(['ATAK', 'Identité', 'Papiers', 'Couverture'], array_column($data['hubFigures'], 'label'));
+        self::assertSame(['ATAK', 'Identité', 'Papiers', 'Active en jeu'], array_column($data['hubFigures'], 'label'));
+        self::assertSame('Jake GYLLEN', $data['hubFigures'][3]['value']);
         self::assertSame('Relié', $data['hubFigures'][0]['value']);
         self::assertStringContainsString('09/11/2026', $data['hubFigures'][0]['hint'], 'dernière session : le terminal révoqué ne compte pas');
         self::assertSame('8 à compléter', $data['hubFigures'][1]['value']);
@@ -368,20 +397,20 @@ final class OperatorHubTest extends TestCase
         self::assertStringContainsString('À créer', $html);
     }
 
-    public function testIdentityAreaRendersItsThreeTabs(): void
+    public function testIdentityAreaRendersItsTwoTabs(): void
     {
         $this->db();
         $c = $this->controller(10);
         $c->identitySave($this->post(['last_name' => 'Gyllen', 'first_name' => 'Jake', 'sex' => 'M', 'birth_date' => '1990-04-02', 'nationality' => 'ALT']));
         $identityId = (int) $this->pdo->query('SELECT id FROM sse_identities')->fetchColumn();
         $c->documentRequest($this->post(['identity_id' => (string) $identityId, 'doc_type' => 'id_card', 'country_code' => 'ALT']));
-        $c->coverGenerate($this->post(['source' => 'random', 'country' => 'ALT', 'sex' => 'M', 'lang' => 'fr']));
         $base = ['csrfToken' => 'jeton', 'success' => 'Enregistré.', 'error' => null];
 
         $c->identities(new Request());
         self::assertSame('operateur.identite', $this->rendered['content']);
         $html = $this->view('identite', $base + $this->rendered);
-        foreach (['Mon identité<span class="dash-hero__title-dot"', 'Simulation fictive', 'Jake GYLLEN', 'Identité principale', 'Active en jeu', 'Il manque 5 champs', 'Photo d’identité', 'Identité d’emprunt',
+        foreach (['Mes identités<span class="dash-hero__title-dot"', 'Simulation fictive', 'Jake GYLLEN', '>Personnage</span>', 'Active en jeu', 'Il manque 5 champs', 'Photo d’identité', 'Nouvelle identité', 'D’emprunt',
+            'data-opx-wizard', 'Le récapitulatif', 'name="request_papers[]"', 'Demander ce papier', 'Demande en attente', '>Jeu</h4>', '>Identité</h4>', '>1 papier</h4>',
             'data-opx-open="dlg-photo-' . $identityId . '"', 'Ajouter une photo', 'Enregistré.', 'aria-current="page"', 'operateur/identite/identites/' . $identityId . '/photo',
             'class="cc-card opx-card', 'cc-btn cc-btn-primary', 'cc-progress', '<dialog class="opx-dialog" id="dlg-identite-' . $identityId . '"'] as $needle) {
             self::assertStringContainsString($needle, $html, $needle);
@@ -390,7 +419,9 @@ final class OperatorHubTest extends TestCase
         self::assertSame(1, substr_count($html, 'Active en jeu</span>'), 'une seule identité active en jeu');
         self::assertStringNotContainsString('<details', $html, 'de vrais boutons et des fenêtres, pas de triangles');
         self::assertStringNotContainsString('(s)', $html, 'singulier et pluriel écrits en entier');
-        foreach (['Alias', 'Identité de couverture', 'falsifi', 'Identité civile'] as $secret) {
+        self::assertSame(['identites' => 'Identités', 'documents' => 'Papiers'], OperatorHubController::TABS);
+        self::assertSame(2, substr_count($html, '<a class="opx-tab'), 'deux onglets, plus d’onglet Couvertures');
+        foreach (['Alias', 'ouverture', 'falsifi', 'Identité civile', 'Légende', 'CVR-'] as $secret) {
             self::assertStringNotContainsString($secret, $html, 'jamais la nature d’une identité : ' . $secret);
         }
 
@@ -401,12 +432,6 @@ final class OperatorHubTest extends TestCase
         }
         foreach (['Origine', 'Falsifi', 'st_origin'] as $secret) {
             self::assertStringNotContainsString($secret, $html, $secret);
-        }
-
-        $c->covers(new Request());
-        $html = $this->view('identite', $base + $this->rendered);
-        foreach (['Créer une couverture', 'Mes couvertures', 'Active', 'Jamais récupérée en jeu', 'Télécharger', 'Dupliquer', 'Révoquer', 'Ajuster la légende', 'Synchroniser avec Athena', 'Vous et les responsables habilités', 'CVR-'] as $needle) {
-            self::assertStringContainsString($needle, $html, $needle);
         }
 
         // Spécimen : page seule, mention sur les deux faces, jamais mise en cache.
@@ -501,7 +526,7 @@ final class OperatorHubTest extends TestCase
         $this->controller(11)->identities(new Request());
         self::assertArrayHasKey('last_name', $this->rendered['idProposal']);
         $html = $this->view('identite', ['csrfToken' => 'jeton', 'success' => null, 'error' => null] + $this->rendered);
-        self::assertStringContainsString('Définir mon identité principale', $html);
+        self::assertStringContainsString('Créer mon personnage', $html);
     }
 
     /**
@@ -517,14 +542,13 @@ final class OperatorHubTest extends TestCase
         $_SERVER['HTTP_HOST'] = 'localhost';
         Session::set('user_id', 10);
         Session::set('tenant_id', 1);
-        $exports = new SseCoverExportRepository();
         $limiter = $this->createMock(FileRateLimiter::class);
         $limiter->method('tooManyAttempts')->willReturn(false);
         $noop = static function (): void {
         };
         $make = static fn (bool $owner): OperatorHubController => new OperatorHubController(
             new OperatorHubRepository(),
-            new OperatorIdentityService(null, null, null, null, null, null, $exports, new SseCoverExportService($exports, null, null, $noop, 'test-key'), $noop),
+            new OperatorIdentityService(null, null, null, null, null, null, $noop),
             // Profil vide : ni indicatif, ni Steam, ni unité.
             static fn (): ?array => ['tenant' => 1, 'user' => 10, 'row' => ['id' => 10, 'display_name' => '', 'steam_id' => null]],
             static fn (string $p): bool => $owner,
@@ -546,7 +570,7 @@ final class OperatorHubTest extends TestCase
         try {
             foreach ([false, true] as $owner) {
                 $c = $make($owner);
-                foreach (['index' => 'Outils opérateur', 'identities' => 'Mon identité', 'documents' => 'Mon identité', 'covers' => 'Mes couvertures'] as $method => $needle) {
+                foreach (['index' => 'Outils opérateur', 'identities' => 'Mes identités', 'documents' => 'Mes identités'] as $method => $needle) {
                     $_SERVER['REQUEST_URI'] = '/operateur';
                     $res = $c->$method(new Request());
                     self::assertSame(200, $res->statusCode(), $method);
@@ -568,6 +592,31 @@ final class OperatorHubTest extends TestCase
         }
     }
 
+    public function testPhotoGuideReusesTheSingleSourcePromptOnIdentityAndPapersTabs(): void
+    {
+        $this->db();
+        $c = $this->controller(10);
+        $c->identitySave($this->post(['last_name' => 'Gyllen', 'first_name' => 'Jake']));
+        $base = ['csrfToken' => 'jeton', 'success' => null, 'error' => null];
+        $prompt = htmlspecialchars(\App\Support\SseIdPhotoGuide::prompt('fr'), ENT_QUOTES, 'UTF-8');
+        foreach (['identities', 'documents'] as $tab) {
+            $c->$tab(new Request());
+            $html = $this->view('identite', $base + $this->rendered);
+            foreach (['id="dlg-photo-guide"', 'Comment faire ma photo ?', 'data-opx-open="dlg-photo-guide"', 'data-opx-copy-prompt="fr"', 'Copier le prompt', 'translate="no"',
+                'Uniquement des personnages du jeu', 'ChatGPT', '35 × 45', 'Accepté.', 'À refaire.', $prompt] as $needle) {
+                self::assertStringContainsString($needle, $html, $tab . ' : ' . mb_substr($needle, 0, 40));
+            }
+            self::assertSame(1, substr_count($html, 'id="dlg-photo-guide"'), 'une seule fenêtre d’aide par page');
+        }
+        // Source unique : le prompt n'est écrit ni dans la vue ni dans le JavaScript, il vient de SseIdPhotoGuide.
+        $root = dirname(__DIR__, 2);
+        $view = (string) file_get_contents($root . '/views/operateur/_photo_guide.php');
+        self::assertStringContainsString('SseIdPhotoGuide::prompt(', $view);
+        self::assertStringContainsString('SseIdPhotoGuide::VARIANTS', $view);
+        self::assertStringNotContainsString(mb_substr(\App\Support\SseIdPhotoGuide::prompt('fr'), 0, 60), $view);
+        self::assertStringContainsString('data-opx-copy-prompt', (string) file_get_contents($root . '/public/assets/js/operateur-hub.js'));
+    }
+
     public function testDocumentPreviewEscapesTextAndOnlyAcceptsHexColours(): void
     {
         $opxDocSvg = null;
@@ -587,6 +636,74 @@ final class OperatorHubTest extends TestCase
         self::assertStringContainsString('182 cm', $verso);
         self::assertNotFalse(simplexml_load_string($recto), 'SVG bien formé (recto)');
         self::assertNotFalse(simplexml_load_string($verso), 'SVG bien formé (verso)');
+    }
+
+    public function testDocumentPreviewFollowsTheLayoutOfTheType(): void
+    {
+        $opxDocSvg = null;
+        require dirname(__DIR__, 2) . '/views/operateur/_document_svg.php';
+        $base = ['id' => 8, 'ref' => 'DOC-000008', 'country_name' => 'France', 'country_code' => 'FRA', 'last_name' => 'Gyllen', 'first_name' => 'Jake', 'sex' => 'M',
+            'birth_date' => '1990-04-02', 'birth_place' => 'Lyon', 'nationality' => 'FRA', 'doc_number' => 'AB1234567', 'issued_on' => '2026-01-01', 'expires_on' => '2036-01-01',
+            'authority' => 'Préfecture', 'holder_name' => 'Jake GYLLEN'];
+
+        // Passeport : une face, bande de lecture au bas du recto.
+        $passport = $opxDocSvg($base + ['doc_type' => 'passport', 'doc_type_label' => 'Passeport', 'mrz' => ['P<FRAGYLLEN<<JAKE', 'AB1234567<2FRA']], 'recto', null);
+        self::assertStringContainsString('P&lt;FRAGYLLEN&lt;&lt;JAKE', $passport);
+        self::assertStringContainsString('AB1234567&lt;2FRA', $passport);
+        self::assertStringContainsString('<circle', $passport, 'silhouette : le passeport porte une photo');
+
+        // Carte : la bande reste au verso.
+        $card = ['doc_type' => 'residence_permit', 'doc_type_label' => 'Titre de séjour', 'mrz' => ['IRFRAAB1234567', 'LIGNE2', 'LIGNE3']];
+        self::assertStringNotContainsString('IRFRAAB1234567', $opxDocSvg($base + $card, 'recto', null));
+        self::assertStringContainsString('IRFRAAB1234567', $opxDocSvg($base + $card, 'verso', null));
+
+        // Certificat d'immatriculation : ni photo ni bande, champs depuis le bord gauche.
+        $plain = $opxDocSvg($base + ['doc_type' => 'vehicle_registration', 'doc_type_label' => 'Certificat d’immatriculation', 'mrz' => []], 'recto', '/photo.png');
+        self::assertStringNotContainsString('<circle', $plain);
+        self::assertStringNotContainsString('<image', $plain);
+        self::assertStringNotContainsString('monospace', $plain);
+        self::assertStringContainsString('<text x="36" y="146"', $plain);
+        self::assertStringContainsString('CERTIFICAT D’IMMATRICULATION', $plain);
+        self::assertStringContainsString('SPÉCIMEN · SIMULATION', $plain);
+
+        // Type inconnu du miroir : mise en page d'une carte (photo, bande au verso).
+        $unknown = ['doc_type' => 'inconnu', 'doc_type_label' => 'Papier', 'mrz' => ['LIGNE1']];
+        self::assertStringContainsString('<image', $opxDocSvg($base + $unknown, 'recto', '/photo.png'));
+        self::assertStringContainsString('LIGNE1', $opxDocSvg($base + $unknown, 'verso', null));
+
+        foreach ([$passport, $plain, $opxDocSvg($base + $card, 'verso', null)] as $svg) {
+            self::assertNotFalse(simplexml_load_string($svg), 'SVG bien formé');
+        }
+    }
+
+    public function testSingleSidedPaperHasNoVersoAndTypesAreGroupedByCategory(): void
+    {
+        $this->db();
+        $c = $this->controller(10);
+        $c->identitySave($this->post(['last_name' => 'Gyllen', 'first_name' => 'Jake', 'sex' => 'M', 'birth_date' => '1990-04-02', 'nationality' => 'ALT']));
+        $identityId = (int) $this->pdo->query('SELECT id FROM sse_identities')->fetchColumn();
+        $c->documentRequest($this->post(['identity_id' => (string) $identityId, 'doc_type' => 'passport', 'country_code' => 'ALT']));
+        // Un pays fictif ne délivre pas de titre de séjour : la demande est refusée.
+        $c->documentRequest($this->post(['identity_id' => (string) $identityId, 'doc_type' => 'residence_permit', 'country_code' => 'ALT']));
+        self::assertSame(1, (int) $this->pdo->query('SELECT COUNT(*) FROM sse_id_documents')->fetchColumn());
+
+        $c->documents(new Request());
+        $html = $this->view('identite', ['csrfToken' => 'jeton', 'success' => null, 'error' => null] + $this->rendered);
+        self::assertStringContainsString('Passeport', $html);
+        self::assertStringNotContainsString('Voir le verso', $html);
+        self::assertStringNotContainsString('data-opx-face="verso"', $html);
+        foreach (['<optgroup label="Identité">', '<optgroup label="Voyage">', '<optgroup label="Permis et véhicule">', '<option value="residence_permit">Titre de séjour</option>',
+            '<option value="vehicle_registration">Certificat d’immatriculation</option>'] as $needle) {
+            self::assertStringContainsString($needle, $html, $needle);
+        }
+        self::assertStringNotContainsString('press_card', $html, 'les types d’une extension ne sont pas proposés');
+        self::assertMatchesRegularExpression('/data-opx-types="[^"]*&quot;ALT&quot;:\[&quot;id_card&quot;,&quot;passport&quot;,&quot;driving_license&quot;,&quot;military_id&quot;\]/', $html);
+
+        $docId = (int) $this->pdo->query('SELECT id FROM sse_id_documents')->fetchColumn();
+        $specimen = $c->documentSpecimen(new Request(), ['id' => (string) $docId])->body();
+        self::assertSame(1, substr_count($specimen, 'SPÉCIMEN · SIMULATION'));
+        self::assertStringNotContainsString('data-opx-png="verso"', $specimen);
+        self::assertStringContainsString('data-opx-png="recto"', $specimen);
     }
 
     public function testPhotoDataUriNeverLeavesThePublicFolder(): void
@@ -666,9 +783,10 @@ final class OperatorHubTest extends TestCase
         self::assertSame($now->format('Y-m-d H:i:s'), $row['starts_at']);
         self::assertSame($now->modify('+14 days')->format('Y-m-d H:i:s'), $row['ends_at']);
         self::assertSame(['guest' => false, 'authenticated' => true, 'free' => true, 'paid' => true], json_decode((string) $row['audience_json'], true));
-        foreach (['Espaces', 'Outils opérateur', 'identités', 'papiers', 'couvertures', 'fichiers', 'matériel'] as $word) {
+        foreach (['Espaces', 'Outils opérateur', 'identités', 'papiers', 'fichiers', 'matériel'] as $word) {
             self::assertStringContainsStringIgnoringCase($word, $row['title'] . ' ' . $row['body'], $word);
         }
+        self::assertStringNotContainsStringIgnoringCase('couverture', $row['title'] . ' ' . $row['body'], 'le mot a disparu des annonces à venir');
 
         // Membre connecté : affichée (elle compte aussi dans la cloche, même source). Visiteur : jamais.
         Session::set('user_id', 10);
@@ -704,13 +822,15 @@ final class OperatorHubTest extends TestCase
     public function testAnnouncementAndHubTextsHaveAnEnglishVersion(): void
     {
         $en = require dirname(__DIR__, 2) . '/lang/en/site_auto.php';
-        foreach (['Nouveau : vos outils opérateur', 'Ouvrir mes outils', 'Outils opérateur', 'Mon identité', 'Simulation fictive', 'Créer une couverture', 'Demander un papier',
+        foreach (['Nouveau : vos outils opérateur', 'Ouvrir mes outils', 'Outils opérateur', 'Mon identité', 'Mes identités', 'Simulation fictive', 'Nouvelle identité', 'Demander un papier', 'Personnage', 'D’emprunt', 'Active en jeu',
+            'Vos identités, papiers, fichiers et matériel sont réunis sur une seule page. Ouvrez le menu Espaces, puis la tuile bleue « Outils opérateur ».',
+            // Une annonce déjà publiée garde son ancien texte en base : sa traduction reste.
             'Vos identités, papiers, couvertures, fichiers et matériel sont réunis sur une seule page. Ouvrez le menu Espaces, puis la tuile bleue « Outils opérateur ».'] as $fr) {
             self::assertArrayHasKey($fr, $en, $fr);
             self::assertNotSame($fr, $en[$fr]);
         }
         $nav = require dirname(__DIR__, 2) . '/lang/en/nav.php';
-        foreach (['Outils opérateur', 'Identité, papiers, couverture, fichiers', 'Tous mes outils'] as $fr) {
+        foreach (['Outils opérateur', 'Identités, papiers, fichiers', 'Tous mes outils'] as $fr) {
             self::assertArrayHasKey(i18n_slug($fr), $nav, $fr);
         }
         // Annonce traduite à l'affichage pour un lecteur anglophone (les bandeaux sont posés en JavaScript).

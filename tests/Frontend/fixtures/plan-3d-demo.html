@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plan 3D : chargement</title>
+<!--
+  Page de démonstration et de vérification de la vue 3D des plans (public/assets/js/toc/plan/plan-3d.js).
+  À servir depuis la racine du dépôt : php -S 127.0.0.1:8791 -t <racine>
+  Paramètres d'URL : x, y, mpp, pitch, bearing, sun (heure solaire), exag, world, cell,
+    aoi=x0,y0,x1,y1, flat=1 (pas de relief), base=1 (fond fourni par getBaseCanvas), selftest=1.
+-->
+<style>
+  :root { --toc-bg1: #0d1318; --toc-text: #e8eef2; --toc-accent: #34d399; --toc-lineStrong: #3a4a57; }
+  html, body { margin: 0; height: 100%; background: #070a0d; color: #e8eef2; font: 13px/1.4 system-ui, "Segoe UI", sans-serif; overflow: hidden; }
+  #view { position: absolute; inset: 0; }
+  #status { position: absolute; left: 12px; bottom: 12px; padding: 4px 10px; border-radius: 4px; background: rgba(13, 19, 24, .88);
+    border: 1px solid #3a4a57; font: 12px/1.5 ui-monospace, Consolas, monospace; z-index: 5; white-space: pre-wrap; max-width: 70vw; }
+  #status.err { border-color: #f24d47; color: #ffb4b0; }
+  #tests { position: absolute; left: 12px; top: 12px; padding: 8px 12px; border-radius: 4px; background: rgba(13, 19, 24, .92);
+    border: 1px solid #3a4a57; font: 11px/1.32 ui-monospace, Consolas, monospace; z-index: 5; display: none; max-height: 97vh; overflow: hidden; }
+  #tests .ok { color: #34d399; }
+  #tests .ko { color: #f24d47; font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="view"></div>
+<div id="tests"></div>
+<div id="status">chargement</div>
+
+<script src="../../../public/assets/vendor/milsymbol/milsymbol.js"></script>
+<script src="plan-dem-fixture.js"></script>
+<script>
+  // Toute erreur doit être visible sur la capture d'écran.
+  window.__fail = function (msg) {
+    var s = document.getElementById('status');
+    s.className = 'err';
+    s.textContent = 'ERREUR ' + msg;
+    document.title = 'ERREUR ' + msg;
+  };
+  window.addEventListener('error', function (e) { window.__fail(e.message + ' (' + (e.filename || '').split('/').pop() + ':' + e.lineno + ')'); });
+  window.addEventListener('unhandledrejection', function (e) { window.__fail(String(e.reason && e.reason.stack || e.reason)); });
+</script>
+<script type="module">
+import { createPlan3D, isWebGLAvailable, __plan3dInternals as M } from '../../../public/assets/js/toc/plan/plan-3d.js';
+
+const q = new URLSearchParams(location.search);
+const num = (k, d) => (q.has(k) && isFinite(Number(q.get(k))) ? Number(q.get(k)) : d);
+const world = num('world', 8192);
+const cell = num('cell', 32);
+const dem = q.get('flat') === '1' ? null : window.PlanDemFixture.make(world, cell);
+const plan = window.PlanDemFixture.samplePlan(world);
+const statusEl = document.getElementById('status');
+const viewEl = document.getElementById('view');
+
+/* ---------- Calque à plat dessiné par « l'éditeur » ---------- */
+function drawOverlay(ctx, b, size) {
+  const k = size / (b.x1 - b.x0);
+  const X = (x) => (x - b.x0) * k;
+  const Y = (y) => (b.y1 - y) * k;
+  const path = (pts) => { ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1])))); };
+  const label = (text, x, y, color) => {
+    ctx.font = '700 ' + Math.round(13 * size / 1024) + 'px system-ui, "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = 4 * size / 1024;
+    ctx.strokeStyle = 'rgba(7,10,13,.9)';
+    ctx.strokeText(text, X(x), Y(y));
+    ctx.fillStyle = color;
+    ctx.fillText(text, X(x), Y(y));
+  };
+  const lw = size / 1024;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  // Teinte de vue dégagée : secteur vert translucide.
+  const vs = plan.viewshed;
+  ctx.beginPath();
+  ctx.moveTo(X(vs.center[0]), Y(vs.center[1]));
+  const a0 = (vs.bearing - vs.arc / 2 - 90) * Math.PI / 180, a1 = (vs.bearing + vs.arc / 2 - 90) * Math.PI / 180;
+  ctx.arc(X(vs.center[0]), Y(vs.center[1]), vs.radius * k, a0, a1);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(52,211,153,.20)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(52,211,153,.75)';
+  ctx.lineWidth = 1.5 * lw;
+  ctx.stroke();
+
+  // Cercle de portée, en tirets.
+  const rg = plan.ring;
+  ctx.beginPath();
+  ctx.arc(X(rg.center[0]), Y(rg.center[1]), rg.radius * k, 0, Math.PI * 2);
+  ctx.setLineDash([10 * lw, 7 * lw]);
+  ctx.strokeStyle = rg.color;
+  ctx.lineWidth = 2.5 * lw;
+  ctx.stroke();
+  ctx.setLineDash([]);
+  label(rg.label, rg.center[0], rg.center[1] - rg.radius - 60, rg.color);
+
+  // Objectif : zone translucide.
+  const ob = plan.objective;
+  ctx.beginPath();
+  ctx.arc(X(ob.center[0]), Y(ob.center[1]), ob.radius * k, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(242,77,71,.22)';
+  ctx.fill();
+  ctx.strokeStyle = ob.color;
+  ctx.lineWidth = 3 * lw;
+  ctx.stroke();
+  label(ob.label, ob.center[0], ob.center[1] - ob.radius * 0.55, '#ffd9d6');
+
+  // Ligne de phase.
+  const pl = plan.phaseLine;
+  path(pl.pts);
+  ctx.strokeStyle = 'rgba(7,10,13,.85)';
+  ctx.lineWidth = 6 * lw;
+  ctx.stroke();
+  path(pl.pts);
+  ctx.strokeStyle = pl.color;
+  ctx.lineWidth = 3 * lw;
+  ctx.stroke();
+  label(pl.label, pl.pts[0][0] + 150, pl.pts[0][1] + 110, pl.color);
+
+  // Axe d'effort : flèche à corps large.
+  const ax = plan.axis;
+  const pts = ax.pts, n = pts.length;
+  const half = ax.width / 2;
+  const left = [], right = [];
+  for (let i = 0; i < n - 1; i++) {
+    const p = pts[i], r = pts[Math.min(i + 1, n - 1)], o = pts[Math.max(i - 1, 0)];
+    const dx = r[0] - o[0], dy = r[1] - o[1], l = Math.hypot(dx, dy) || 1;
+    left.push([p[0] - dy / l * half, p[1] + dx / l * half]);
+    right.push([p[0] + dy / l * half, p[1] - dx / l * half]);
+  }
+  const tip = pts[n - 1], pre = pts[n - 2];
+  let dx = tip[0] - pre[0], dy = tip[1] - pre[1];
+  const l = Math.hypot(dx, dy) || 1;
+  dx /= l; dy /= l;
+  const neck = [tip[0] - dx * half * 3, tip[1] - dy * half * 3];
+  const shape = left.concat([
+    [neck[0] - dy * half, neck[1] + dx * half], [neck[0] - dy * half * 2.1, neck[1] + dx * half * 2.1], tip,
+    [neck[0] + dy * half * 2.1, neck[1] - dx * half * 2.1], [neck[0] + dy * half, neck[1] - dx * half],
+  ], right.reverse());
+  path(shape);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(89,153,255,.20)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(7,10,13,.85)';
+  ctx.lineWidth = 6 * lw;
+  ctx.stroke();
+  ctx.strokeStyle = ax.color;
+  ctx.lineWidth = 3 * lw;
+  ctx.stroke();
+  label(ax.label, pts[1][0], pts[1][1], '#dbe8ff');
+}
+
+/* ---------- Fond fourni (pour vérifier l'orientation et le calage) ---------- */
+async function getBaseCanvas(b, size) {
+  const c = document.createElement('canvas');
+  c.width = c.height = Math.min(size, 2048);
+  const ctx = c.getContext('2d');
+  const k = c.width / (b.x1 - b.x0);
+  ctx.fillStyle = '#6f7f5f';
+  ctx.fillRect(0, 0, c.width, c.height);
+  // Damier kilométrique : un carreau sur deux plus clair.
+  for (let gx = Math.floor(b.x0 / 1000); gx * 1000 < b.x1; gx++) {
+    for (let gy = Math.floor(b.y0 / 1000); gy * 1000 < b.y1; gy++) {
+      if ((gx + gy) & 1) continue;
+      ctx.fillStyle = '#8c9a72';
+      ctx.fillRect((gx * 1000 - b.x0) * k, (b.y1 - (gy + 1) * 1000) * k, 1000 * k, 1000 * k);
+    }
+  }
+  ctx.fillStyle = '#10161b';
+  ctx.font = '700 ' + Math.round(c.width / 28) + 'px system-ui, sans-serif';
+  ctx.textBaseline = 'top';
+  ctx.fillText('NO ' + Math.round(b.x0) + ' / ' + Math.round(b.y1), c.width * 0.03, c.width * 0.03);
+  ctx.textBaseline = 'bottom';
+  ctx.textAlign = 'right';
+  ctx.fillText('SE ' + Math.round(b.x1) + ' / ' + Math.round(b.y0), c.width * 0.97, c.width * 0.97);
+  return c;
+}
+
+/* ---------- Symboles ---------- */
+function makeSprite(u) {
+  let sym = null, sw = 34, sh = 24, cx = 17;
+  try {
+    const s = new window.ms.Symbol(u.sidc, { size: 28 });
+    sym = s.asCanvas();
+    sw = sym.width; sh = sym.height; cx = s.getAnchor().x;
+  } catch (e) { sym = null; }
+  const probe = document.createElement('canvas').getContext('2d');
+  probe.font = '600 12px system-ui, "Segoe UI", sans-serif';
+  const tw = Math.ceil(probe.measureText(u.label).width);
+  const c = document.createElement('canvas');
+  c.width = sw + 6 + tw + 10;
+  c.height = Math.max(sh, 20);
+  const ctx = c.getContext('2d');
+  if (sym) ctx.drawImage(sym, 0, c.height - sh);
+  else {
+    ctx.fillStyle = '#80e0ff';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.fillRect(1, c.height - 23, 32, 22);
+    ctx.strokeRect(1, c.height - 23, 32, 22);
+  }
+  // Étiquette à droite du symbole, sur une pastille sombre.
+  const ty = c.height - 19;
+  ctx.fillStyle = 'rgba(13,19,24,.88)';
+  ctx.fillRect(sw + 3, ty, tw + 10, 17);
+  ctx.font = '600 12px system-ui, "Segoe UI", sans-serif';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#e8eef2';
+  ctx.fillText(u.label, sw + 8, ty + 9);
+  return { uid: u.uid, x: u.pos[0], y: u.pos[1], canvas: c, anchorX: Math.round(cx), anchorY: c.height, selected: !!u.selected, ghost: !!u.ghost };
+}
+const spriteData = plan.units.map(makeSprite);
+
+/* ---------- Création ---------- */
+if (!isWebGLAvailable()) window.__fail('webgl_unavailable');
+
+let aoi = { x0: world * 0.10, y0: world * 0.08, x1: world * 0.92, y1: world * 0.90 };
+if (q.has('aoi')) {
+  const a = q.get('aoi').split(',').map(Number);
+  if (a.length === 4 && a.every(isFinite)) aoi = { x0: a[0], y0: a[1], x1: a[2], y1: a[3] };
+}
+const hooks = {};
+const p3d = createPlan3D(viewEl, {
+  dem, worldSize: world, aoi,
+  getBaseCanvas: q.get('base') === '1' ? getBaseCanvas : null,
+  drawOverlay,
+  sprites: () => spriteData,
+  view: { x: num('x', world * 0.50), y: num('y', world * 0.44), mpp: num('mpp', 5.2), pitch: num('pitch', 38), bearing: num('bearing', 18) },
+  exaggeration: num('exag', 1.5),
+  sunHour: num('sun', 10),
+  // Les essais remplacent ces réactions par les leurs (objet hooks).
+  onPick: (i) => {
+    if (hooks.onPick) return hooks.onPick(i);
+    spriteData.forEach((d) => { d.selected = d.uid === i.uid; });
+    p3d.refreshSprites();
+  },
+  onDragStart: (i) => (hooks.onDragStart ? hooks.onDragStart(i) : !!i.uid),
+  onDrag: (i) => {
+    if (hooks.onDrag) return hooks.onDrag(i);
+    const s = spriteData.find((d) => d.uid === i.uid);
+    if (s && i.world) { s.x = i.world[0]; s.y = i.world[1]; p3d.refreshSprites(); }
+  },
+  onDragEnd: (i) => { if (hooks.onDragEnd) hooks.onDragEnd(i); },
+  onContext: (i) => { if (hooks.onContext) hooks.onContext(i); },
+  onCursor: () => {},
+  onView: () => {},
+});
+window.__plan3d = p3d;
+
+// Ligne de visée : verte jusqu'au masque, rouge en tirets au-delà.
+{
+  const los = plan.los;
+  const zA = p3d.heightAt(los.from[0], los.from[1]) + los.eye;
+  const zB = p3d.heightAt(los.mid[0], los.mid[1]) + 2;
+  const zC = zB + (zB - zA) * (Math.hypot(los.to[0] - los.mid[0], los.to[1] - los.mid[1]) / Math.hypot(los.mid[0] - los.from[0], los.mid[1] - los.from[1]));
+  p3d.setAirLines([
+    { pts: [[los.from[0], los.from[1], zA], [los.mid[0], los.mid[1], zB]], color: '#34d399', dashed: false, width: 3 },
+    { pts: [[los.mid[0], los.mid[1], zB], [los.to[0], los.to[1], zC]], color: '#f24d47', dashed: true, width: 3 },
+  ]);
+  p3d.setBuildings(plan.buildings);
+}
+
+/* ---------- Essais des calculs purs ---------- */
+function selfTest() {
+  const out = [];
+  const ok = (name, cond, detail) => out.push([!!cond, name + (detail !== undefined ? ' : ' + detail : '')]);
+  const near = (a, b, tol) => Math.abs(a - b) <= tol;
+
+  // Repères monde <-> scène.
+  const o = { x: 4096, y: 4096 };
+  const s = M.worldToScene(5000, 1000, 120, o);
+  const w = M.sceneToWorld(s.x, s.y, s.z, o);
+  ok('monde -> scène (x est, z = -nord)', s.x === 904 && s.y === 120 && s.z === 3096, JSON.stringify(s));
+  ok('scène -> monde (aller-retour)', w.x === 5000 && w.y === 1000 && w.h === 120);
+
+  // Bilinéaire sur un petit DEM connu (r = 0 au sud), avec une cellule manquante.
+  const small = { cols: 3, rows: 3, cell: 10, ox: 100, oy: 200, missing: -32768,
+    heights: new Int16Array([0, 10, 20, 30, 40, 50, 60, -32768, 80]) };
+  const sm = M.makeDemSampler(small);
+  ok('heightAt aux nœuds', sm.heightAt(100, 200) === 0 && sm.heightAt(120, 200) === 20 && sm.heightAt(110, 210) === 40);
+  ok('heightAt au centre d\'une cellule', near(sm.heightAt(105, 205), 20, 1e-9), sm.heightAt(105, 205));
+  ok('heightAt interpolé en y (nord = lignes croissantes)', near(sm.heightAt(100, 215), 45, 1e-9), sm.heightAt(100, 215));
+  ok('cellule manquante lue comme 0, sans pointe', sm.heightAt(110, 220) === 0 && near(sm.heightAt(110, 215), 20, 1e-9));
+  ok('hors emprise = 0', sm.heightAt(99, 205) === 0 && sm.heightAt(105, 221) === 0);
+  ok('DEM absent = terrain plat', M.makeDemSampler(null).heightAt(5, 5) === 0);
+
+  // Plan incliné : la surface affichée doit le reproduire, et le rayon aussi.
+  const pw = 2000, pc = 20, pn = pw / pc + 1;
+  const ph = new Int16Array(pn * pn);
+  for (let r = 0; r < pn; r++) for (let c = 0; c < pn; c++) ph[r * pn + c] = 100 + c * 2 + r * 1;   // z = 100 + 0.1x + 0.05y
+  const pd = { cols: pn, rows: pn, cell: pc, ox: 0, oy: 0, heights: ph, missing: -32768, minZ: 100, maxZ: 400, worldSize: pw };
+  const ps = M.makeDemSampler(pd);
+  const coarse = M.buildCoarseGrid(ps, pw);
+  const sq = M.squareAoi({ x0: 500, y0: 500, x1: 1300, y1: 1100 }, ps, pw);
+  const fine = M.buildFineGrid(ps, coarse, sq);
+  const surf = M.makeSurface(coarse, fine);
+  const plane = (x, y) => 100 + 0.1 * x + 0.05 * y;
+  let worst = 0;
+  for (let i = 0; i < 400; i++) {
+    const x = (i * 97.31) % pw, y = (i * 53.77) % pw;
+    worst = Math.max(worst, Math.abs(surf.z(x, y) - plane(x, y)));
+  }
+  ok('surface affichée = plan (grossier + fin)', worst < 0.02, 'écart max ' + worst.toFixed(4) + ' m');
+  ok('zone d\'intérêt rendue carrée et calée sur les cellules', near(sq.x1 - sq.x0, sq.y1 - sq.y0, 1e-9) && sq.x0 % pc === 0 && sq.x0 <= 500 && sq.x1 >= 1300, JSON.stringify([sq.x0, sq.y0, sq.x1, sq.y1, sq.n]));
+
+  const ex = 2;
+  const v = M.raycastSurface(surf, [800, 900, 5000], [0, 0, -1], ex, 1e5);
+  ok('rayon vertical', v && near(v.x, 800, 1e-6) && near(v.y, 900, 1e-6) && near(v.z, plane(800, 900), 0.02), v && v.z.toFixed(3));
+  // Rayon oblique : solution analytique de o + t d sur le plan exagéré.
+  const ro = [200, 300, 1500], rd = [0.6, 0.5, -0.62];
+  const tt = (ro[2] - ex * plane(ro[0], ro[1])) / (ex * (0.1 * rd[0] + 0.05 * rd[1]) - rd[2]);
+  const hx = ro[0] + rd[0] * tt, hy = ro[1] + rd[1] * tt;
+  const r2 = M.raycastSurface(surf, ro, rd, ex, 1e5);
+  ok('rayon oblique (exagération 2)', r2 && near(r2.x, hx, 0.3) && near(r2.y, hy, 0.3), r2 && (r2.x.toFixed(2) + ',' + r2.y.toFixed(2) + ' attendu ' + hx.toFixed(2) + ',' + hy.toFixed(2)));
+  ok('rayon vers le ciel = aucun point', M.raycastSurface(surf, [800, 900, 5000], [0.2, 0.1, 0.5], ex, 1e5) === null);
+  ok('rayon partant sous le sol = aucun point', M.raycastSurface(surf, [800, 900, 10], [0, 0, -1], ex, 1e5) === null);
+
+  // Raccord sans fissure : sur le bord de la zone fine, même altitude que le maillage grossier.
+  const fd = window.PlanDemFixture.make(8192, 32);
+  const fs = M.makeDemSampler(fd);
+  const fc = M.buildCoarseGrid(fs, 8192);
+  const fq = M.squareAoi({ x0: 1500, y0: 1200, x1: 6900, y1: 6400 }, fs, 8192);
+  const ff = M.buildFineGrid(fs, fc, fq);
+  let gap = 0;
+  for (let i = 0; i <= ff.n; i++) {
+    const t = fq.x0 + i * ff.step, u = fq.y0 + i * ff.step;
+    gap = Math.max(gap, Math.abs(ff.z(t, fq.y0) - fc.z(t, fq.y0)), Math.abs(ff.z(t, fq.y1) - fc.z(t, fq.y1)),
+      Math.abs(ff.z(fq.x0, u) - fc.z(fq.x0, u)), Math.abs(ff.z(fq.x1, u) - fc.z(fq.x1, u)));
+  }
+  ok('bord fin raccordé au grossier', gap < 0.01, 'écart max ' + gap.toFixed(5) + ' m, ' + ff.n + ' segments fins, ' + fc.n + ' grossiers');
+  let neg = 0;
+  for (let i = 0; i < ff.disp.length; i++) if (ff.disp[i] < 0) neg++;
+  ok('mer aplatie à 0 (aucune altitude affichée négative)', neg === 0 && fd.minZ < 0, 'minZ du DEM ' + fd.minZ);
+
+  // Soleil.
+  const s12 = M.sunDirection(12), s6 = M.sunDirection(7), s18 = M.sunDirection(17), s0 = M.sunDirection(0);
+  ok('soleil à midi : haut et au sud', s12.y > 0.8 && s12.z > 0 && Math.abs(s12.x) < 1e-9, s12.elevation.toFixed(1) + '°');
+  ok('soleil le matin à l\'est, le soir à l\'ouest', s6.x > 0.5 && s18.x < -0.5);
+  ok('soleil sous l\'horizon à minuit', s0.y < 0, s0.elevation.toFixed(1) + '°');
+
+  // Caméra.
+  ok('mpp <-> distance', near(M.distToMpp(M.mppToDist(4.2, 900), 900), 4.2, 1e-9));
+  const cp = M.cameraPosition({ x: 1000, y: 1000, dist: 500, bearing: 0, pitch: 30 }, 50);
+  ok('cap 0 : caméra au sud du point visé, au-dessus', near(cp[0], 1000, 1e-9) && cp[1] < 1000 && near(cp[2], 50 + 250, 1e-6));
+  const cp90 = M.cameraPosition({ x: 1000, y: 1000, dist: 500, bearing: 90, pitch: 30 }, 50);
+  ok('cap 90 : caméra à l\'ouest (elle regarde vers l\'est)', cp90[0] < 1000 && near(cp90[1], 1000, 1e-6));
+
+  // Instance réelle.
+  const gv = p3d.getView();
+  p3d.setView({ x: 4000, y: 3600, mpp: 3, bearing: 40, pitch: 45 });
+  const v2 = p3d.getView();
+  ok('setView / getView', near(v2.x, 4000, 1e-6) && near(v2.y, 3600, 1e-6) && near(v2.mpp, 3, 1e-6) && near(v2.bearing, 40, 1e-6) && v2.pitch === 45);
+  p3d.renderNow();
+  const rect = viewEl.getBoundingClientRect();
+  const pk = p3d.pickWorld(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  ok('pickWorld au centre de l\'écran = point visé', pk && near(pk[0], 4000, 2) && near(pk[1], 3600, 2), pk && pk.map((n) => n.toFixed(2)).join(','));
+  // Un point 200 px sous le centre doit être plus près de la caméra (vers l'arrière du cap 40).
+  const pk2 = p3d.pickWorld(rect.left + rect.width / 2, rect.top + rect.height / 2 + 200);
+  const fwd = pk2 ? (pk2[0] - 4000) * Math.sin(40 * Math.PI / 180) + (pk2[1] - 3600) * Math.cos(40 * Math.PI / 180) : 0;
+  ok('pickWorld sous le centre = en arrière du cap', pk2 && fwd < -300, pk2 && fwd.toFixed(1) + ' m le long du cap');
+  if (dem) {
+    const x = 5161.3, y = 2377.9, c = Math.floor(x / cell), r = Math.floor(y / cell), tx = x / cell - c, ty = y / cell - r;
+    const H = (cc, rr) => dem.heights[rr * dem.cols + cc];
+    const exp = (H(c, r) * (1 - tx) + H(c + 1, r) * tx) * (1 - ty) + (H(c, r + 1) * (1 - tx) + H(c + 1, r + 1) * tx) * ty;
+    ok('Plan3D.heightAt = bilinéaire du DEM', near(p3d.heightAt(x, y), exp, 1e-6), p3d.heightAt(x, y).toFixed(3));
+  } else {
+    ok('Plan3D.heightAt = 0 sans relief', p3d.heightAt(4000, 4000) === 0);
+  }
+  // Interactions simulées par des événements synthétiques (mêmes chemins de code qu'à la souris).
+  {
+    const cv = viewEl.querySelector('canvas');
+    const log = [];
+    hooks.onPick = (i) => log.push(['pick', i.uid, i.world]);
+    hooks.onContext = (i) => log.push(['context', i.uid, i.world]);
+    hooks.onDragStart = (i) => { log.push(['start', i.uid, i.world]); return !!i.uid; };
+    hooks.onDrag = (i) => log.push(['drag', i.uid, i.world]);
+    hooks.onDragEnd = (i) => log.push(['end', i.uid, i.world]);
+    const pe = (type, x, y, button, extra) => cv.dispatchEvent(new PointerEvent(type, Object.assign({
+      pointerId: 7, pointerType: 'mouse', button, buttons: type === 'pointerup' ? 0 : (button === 2 ? 2 : 1),
+      clientX: x, clientY: y, bubbles: true, cancelable: true }, extra || {})));
+    const key = (k) => viewEl.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+    const settle = () => { p3d.setView(p3d.getView()); p3d.renderNow(); };
+    const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+    p3d.setView({ x: 4000, y: 3600, mpp: 3, bearing: 40, pitch: 45 });
+    p3d.renderNow();
+    const cxm = rect.left + rect.width / 2, cym = rect.top + rect.height / 2;
+
+    // Clic sur le terrain.
+    pe('pointerdown', cxm + 150, cym + 90, 0); pe('pointerup', cxm + 150, cym + 90, 0);
+    const expect = p3d.pickWorld(cxm + 150, cym + 90);
+    let e = log.pop();
+    ok('clic sur le terrain => onPick(world, uid nul)', e && e[0] === 'pick' && e[1] === null && e[2] && dist(e[2], expect) < 0.01);
+
+    // Clic sur un symbole (sommet de la tige : 38 px au-dessus du point au sol).
+    const u = spriteData[0];
+    const sc = p3d.worldToClient(u.x, u.y);
+    const back = sc && p3d.pickWorld(sc[0], sc[1]);
+    ok('worldToClient puis pickWorld (aller-retour)', back && dist(back, [u.x, u.y]) < 1.5, back && ('écart ' + dist(back, [u.x, u.y]).toFixed(3) + ' m'));
+    const sx = sc[0] + 3, sy = sc[1] - 38 - 10;
+    pe('pointerdown', sx, sy, 0); pe('pointerup', sx, sy, 0);
+    e = log.pop();
+    ok('clic sur un symbole => onPick(uid)', e && e[0] === 'pick' && e[1] === u.uid, e && String(e[1]));
+
+    // Glisser un symbole : réclamé par l'éditeur, la caméra ne bouge pas.
+    const before = JSON.stringify(p3d.getView());
+    log.length = 0;
+    pe('pointerdown', sx, sy, 0); pe('pointermove', sx + 30, sy + 10, 0); pe('pointermove', sx + 80, sy + 40, 0); pe('pointerup', sx + 80, sy + 40, 0);
+    const kinds = log.map((l) => l[0]).join(' ');
+    const tgt = p3d.pickWorld(sx + 80, sy + 40);
+    ok('glisser un symbole => start, drag, drag, end avec le point du terrain', kinds === 'start drag drag end' && log[0][1] === u.uid
+      && dist(log[2][2], tgt) < 0.01 && dist(log[3][2], tgt) < 0.01, kinds);
+    ok('glisser réclamé : caméra immobile', JSON.stringify(p3d.getView()) === before);
+
+    // Glisser le terrain : le point saisi reste sous le pointeur.
+    const grab = p3d.pickWorld(cxm - 200, cym + 120);
+    log.length = 0;
+    pe('pointerdown', cxm - 200, cym + 120, 0); pe('pointermove', cxm - 120, cym + 60, 0); pe('pointermove', cxm + 60, cym - 40, 0); pe('pointerup', cxm + 60, cym - 40, 0);
+    settle();
+    const after = p3d.pickWorld(cxm + 60, cym - 40);
+    ok('glisser le terrain => la carte suit le pointeur', log.length === 1 && log[0][0] === 'start' && after && dist(after, grab) < 4,
+      after && ('écart ' + dist(after, grab).toFixed(2) + ' m'));
+
+    // Molette : zoom vers le curseur.
+    const wp = p3d.pickWorld(cxm + 300, cym + 150), m0 = p3d.getView().mpp;
+    cv.dispatchEvent(new WheelEvent('wheel', { deltaY: -300, clientX: cxm + 300, clientY: cym + 150, bubbles: true, cancelable: true }));
+    settle();
+    const wq = p3d.pickWorld(cxm + 300, cym + 150);
+    ok('molette => zoom avant, point sous le curseur conservé', p3d.getView().mpp < m0 * 0.7 && wq && dist(wq, wp) < 6,
+      'mpp ' + m0.toFixed(2) + ' -> ' + p3d.getView().mpp.toFixed(2) + ', écart ' + (wq ? dist(wq, wp).toFixed(2) : '?') + ' m');
+
+    // Clic droit glissé : rotation et inclinaison ; clic droit simple : menu contextuel.
+    const v0 = p3d.getView();
+    log.length = 0;
+    pe('pointerdown', cxm, cym, 2); pe('pointermove', cxm + 100, cym - 50, 2); pe('pointerup', cxm + 100, cym - 50, 2);
+    settle();
+    const v1 = p3d.getView();
+    ok('clic droit glissé => cap et inclinaison changent, pas la position', log.length === 0 && Math.abs(v1.bearing - v0.bearing) > 10 && v1.pitch < v0.pitch - 5 && near(v1.x, v0.x, 1e-6),
+      'cap ' + v0.bearing.toFixed(1) + ' -> ' + v1.bearing.toFixed(1) + ', pitch ' + v0.pitch.toFixed(1) + ' -> ' + v1.pitch.toFixed(1));
+    pe('pointerdown', cxm, cym, 2); pe('pointerup', cxm, cym, 2);
+    e = log.pop();
+    ok('clic droit simple => onContext', e && e[0] === 'context' && !!e[2]);
+    pe('pointerdown', cxm, cym, 0, { ctrlKey: true }); pe('pointermove', cxm - 60, cym, 0, { ctrlKey: true }); pe('pointerup', cxm - 60, cym, 0, { ctrlKey: true });
+    settle();
+    ok('Ctrl + glisser => rotation, sans onDragStart', Math.abs(p3d.getView().bearing - v1.bearing) > 5 && log.length === 0);
+
+    // Deux doigts : pincement (zoom) et torsion (rotation).
+    const t0 = p3d.getView();
+    const te = (type, id, x, y) => cv.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: 'touch', button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: x, clientY: y, bubbles: true, cancelable: true }));
+    te('pointerdown', 21, cxm - 100, cym); te('pointerdown', 22, cxm + 100, cym);
+    te('pointermove', 21, cxm - 150, cym - 30); te('pointermove', 22, cxm + 150, cym + 30);
+    te('pointerup', 21, cxm - 150, cym - 30); te('pointerup', 22, cxm + 150, cym + 30);
+    settle();
+    const t1 = p3d.getView();
+    ok('deux doigts : écarter => zoom avant, tordre => rotation', t1.mpp < t0.mpp * 0.8 && Math.abs(t1.bearing - t0.bearing) > 3 && log.length === 0,
+      'mpp ' + t0.mpp.toFixed(2) + ' -> ' + t1.mpp.toFixed(2) + ', cap ' + t0.bearing.toFixed(1) + ' -> ' + t1.bearing.toFixed(1));
+
+    // Clavier et boussole.
+    key('n');
+    settle();
+    ok('touche N => nord en haut', near(p3d.getView().bearing % 360, 0, 1e-6), p3d.getView().bearing);
+    const k0 = p3d.getView();
+    key('ArrowUp'); key('e'); key('+'); key('f');
+    settle();
+    const k1 = p3d.getView();
+    ok('flèche haut, E, +, F', k1.y > k0.y + 10 && near(k1.x, k0.x, 1e-6) && near(k1.bearing, 15, 1e-6) && k1.mpp < k0.mpp && k1.pitch < k0.pitch);
+    viewEl.querySelector('button').click();
+    settle();
+    ok('clic sur la boussole => nord en haut', near(p3d.getView().bearing % 360, 0, 1e-6), p3d.getView().bearing);
+    p3d.setPitch(2); settle();
+    const lowP = p3d.getView().pitch;
+    p3d.setPitch(120); settle();
+    ok('inclinaison bornée', lowP === 8 && p3d.getView().pitch === 88, lowP + ' .. ' + p3d.getView().pitch);
+    Object.keys(hooks).forEach((k) => delete hooks[k]);
+  }
+
+  // Cycle de vie : seconde instance, tous les mutateurs, puis libération.
+  {
+    const box = document.createElement('div');
+    box.style.cssText = 'position:absolute;left:0;top:0;width:320px;height:200px;visibility:hidden';
+    document.body.appendChild(box);
+    let err = '';
+    let drawn = 0;
+    try {
+      const b = createPlan3D(box, { dem: null, worldSize: 4000, aoi: { x0: 500, y0: 500, x1: 1500, y1: 900 }, drawOverlay: () => { drawn++; }, sprites: () => [] });
+      b.renderNow();
+      const flatPick = b.pickWorld(160, 100);
+      b.setDem(window.PlanDemFixture.make(4000, 40));
+      b.setAoi({ x0: 1000, y0: 1000, x1: 3000, y1: 2600 });
+      b.setExaggeration(3); b.setSunHour(21); b.setBase(); b.invalidateOverlay();
+      b.setAirLines([{ pts: [[1000, 1000, 50], [2000, 2000, 200]], color: '#ff0000', dashed: true, width: 2 }]);
+      b.setBuildings([{ poly: [[1500, 1500], [1540, 1500], [1540, 1530], [1500, 1530]], height: 10 }]);
+      b.setAirLines([]); b.setBuildings([]);
+      b.resize(); b.resetNorth(); b.refreshSprites({ redraw: true });
+      b.renderNow();
+      const bb = b.getAoiBounds();
+      if (!flatPick) err = 'pickWorld nul sur terrain plat';
+      else if (drawn < 2) err = 'drawOverlay appelé ' + drawn + ' fois';
+      else if (bb.x1 - bb.x0 !== bb.y1 - bb.y0 || bb.x0 > 1000 || bb.x1 < 3000) err = 'bornes ' + JSON.stringify(bb);
+      else if (!(b.surfaceAt(2000, 2600) >= 0)) err = 'surfaceAt';
+      b.dispose();
+      b.dispose();
+      if (!err && box.children.length) err = 'conteneur non vidé';
+      if (!err && b.pickWorld(10, 10) !== null) err = 'pickWorld après dispose';
+    } catch (ex) { err = String(ex && ex.stack || ex); }
+    box.remove();
+    ok('seconde instance : setDem, setAoi, mutateurs, dispose', !err, err || undefined);
+    let thrown = '';
+    try { createPlan3D(null, {}); } catch (ex) { thrown = ex.message; }
+    ok('conteneur absent => erreur webgl_unavailable', thrown === 'webgl_unavailable', thrown);
+  }
+
+  const st = p3d.stats();
+  ok('stats()', st.triangles > 1000 && st.drawCalls > 3, st.triangles + ' triangles, ' + st.drawCalls + ' appels');
+  p3d.setView(gv);
+
+  const el = document.getElementById('tests');
+  el.style.display = 'block';
+  const fails = out.filter((r) => !r[0]).length;
+  el.innerHTML = out.map((r) => '<div class="' + (r[0] ? 'ok' : 'ko') + '">' + (r[0] ? 'PASS' : 'FAIL') + '  ' + r[1].replace(/</g, '&lt;') + '</div>').join('')
+    + '<div class="' + (fails ? 'ko' : 'ok') + '">' + (out.length - fails) + ' / ' + out.length + '</div>';
+  return fails;
+}
+
+/* ---------- Bilan visible ---------- */
+let fails = -1;
+let frames = 0;
+function tick() {
+  frames++;
+  if (frames === 3 && q.get('selftest') === '1') fails = selfTest();
+  if (frames < 6) { p3d.renderNow(); requestAnimationFrame(tick); return; }
+  if (statusEl.className === 'err') return;
+  const st = p3d.stats();
+  const v = p3d.getView();
+  const txt = 'OK fps=' + st.fps + ' tris=' + st.triangles + ' calls=' + st.drawCalls
+    + (fails >= 0 ? ' selftest=' + (fails ? fails + ' FAIL' : 'PASS') : '');
+  document.title = txt;
+  statusEl.textContent = txt + '  |  mpp=' + v.mpp.toFixed(2) + ' cap=' + v.bearing.toFixed(0) + ' pitch=' + v.pitch.toFixed(0)
+    + (dem ? '  |  dem ' + dem.cols + 'x' + dem.rows + ' @' + dem.cell + ' m' : '  |  sans relief');
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

@@ -7,13 +7,16 @@ namespace App\Controllers\Api;
 use App\Core\Request;
 use App\Core\Response;
 use App\Repositories\AtakPlanRepository;
+use App\Services\AtakToc\PlanInterop;
 use App\Services\AtakToc\PlanService;
 use App\Services\AtakToc\PlanValidator;
 use App\Services\AtakToc\TocAccess;
 
 /**
  * Plans d'opération (/atak/toc/api/plans…) : liste, création, lecture synchronisée (since + ETag), éléments, phases,
- * réglages, versions, duplication, partage, commentaires, présence, envoi en jeu, import depuis le jeu et JSON.
+ * réglages, versions, duplication, partage, commentaires, présence, envoi en jeu, import depuis le jeu et JSON,
+ * import d'un fichier (GeoJSON, KML, export Athena) en aperçu, ORBAT de la communauté (/atak/toc/api/orbat) et
+ * relief du terrain en binaire (/atak/toc/api/terrain/{mapId}/dem).
  * Toute lecture vérifie la communauté et le partage du plan ; toute écriture le jeton CSRF et la limite de débit.
  */
 final class AtakPlanApiController extends AtakTocBaseController
@@ -23,14 +26,58 @@ final class AtakPlanApiController extends AtakTocBaseController
     /** @var callable(int, int): list<array<string, mixed>> */
     private $gamePlans;
 
+    /** Unités renvoyées au plus par /atak/toc/api/orbat. */
+    public const ORBAT_MAX_UNITS = 500;
+
+    /** Relief : cellules relevées au minimum pour servir la grille. */
+    public const DEM_MIN_CELLS = 9;
+
+    /** Échelon de l'ORBAT du site (UnitMilitarySymbol::ECHELONS) => échelon d'un plan (PlanCatalog::ECHELONS). */
+    private const ORBAT_ECHELONS = [
+        'equipe' => 'team', 'groupe' => 'squad', 'section_otan' => 'section', 'section' => 'platoon', 'peloton' => 'platoon',
+        'compagnie' => 'company', 'escadron' => 'company', 'batterie' => 'company', 'bataillon' => 'battalion',
+        'regiment' => 'regiment', 'brigade' => 'brigade',
+    ];
+
+    /** Fonction de l'ORBAT du site (UnitMilitarySymbol::FUNCTIONS) => fonction d'unité d'un plan (PlanCatalog::UNIT_TYPES). */
+    private const ORBAT_UNIT_TYPES = [
+        'infantry' => 'infantry', 'infantry_light' => 'light', 'infantry_motorized' => 'motorized', 'infantry_mechanized' => 'mech',
+        'infantry_airborne' => 'airborne', 'infantry_air_assault' => 'airassault', 'infantry_mountain' => 'mountain',
+        'armor' => 'armor', 'recon' => 'recon', 'artillery' => 'artillery', 'mortar' => 'mortar', 'anti_armor' => 'antitank',
+        'air_defense' => 'airdefense', 'engineer' => 'engineer', 'aviation' => 'aviation', 'aviation_rotary' => 'aviation',
+        'aviation_fixed' => 'fixedwing', 'uav' => 'uav', 'signal' => 'signal', 'medical' => 'medical', 'supply' => 'supply',
+        'sof' => 'sof', 'special_forces' => 'sof', 'ranger' => 'sof',
+    ];
+
+    /** @var callable(int, int): (array<string, mixed>|null) */
+    private $orbat;
+
+    /** @var callable(int, int): (array<string, mixed>|null) */
+    private $terrain;
+
     /**
      * @param callable(int, int): list<array<string, mixed>>|null $gamePlans plans du camp remontés par le jeu (tenant, carte)
+     * @param callable(int, int): (array<string, mixed>|null)|null $orbat arbre de l'ORBAT vu par un membre (tenant, membre), null s'il n'y a pas accès
+     * @param callable(int, int): (array<string, mixed>|null)|null $terrain grille du relief (tenant, carte), comme AtakTerrainRepository::getGrid
      */
-    public function __construct(?TocAccess $access = null, ?PlanService $plans = null, ?callable $gamePlans = null)
+    public function __construct(?TocAccess $access = null, ?PlanService $plans = null, ?callable $gamePlans = null, ?callable $orbat = null, ?callable $terrain = null)
     {
         parent::__construct($access);
         $this->plans = $plans ?? new PlanService(new AtakPlanRepository());
         $this->gamePlans = $gamePlans ?? static fn (int $tenantId, int $mapId): array => (new \App\Repositories\AtakBriefingPlanRepository())->recent($tenantId, $mapId);
+        // Même source et mêmes règles que la page /orbat : droit de voir l'organigramme, unités masquées retirées
+        // selon le lecteur, unités archivées écartées (OrbatRosterPayload).
+        $this->orbat = $orbat ?? static function (int $tenantId, int $userId): ?array {
+            $gate = \App\Core\Gate::getInstance();
+            foreach (['organization.orbat.view', 'organization.orbat.manage', 'admin.organization', 'admin.access', 'site.support'] as $slug) {
+                if ($gate->allows($slug)) {
+                    return \App\Support\OrbatRosterPayload::buildForTenant(new \App\Repositories\UnitRepository(), $tenantId, $userId);
+                }
+            }
+
+            return null;
+        };
+        $this->terrain = $terrain ?? static fn (int $tenantId, int $mapId): ?array => (new \App\Repositories\AtakTerrainRepository())->getGrid($tenantId, $mapId, true);
     }
 
     private function repo(): AtakPlanRepository
@@ -508,5 +555,178 @@ final class AtakPlanApiController extends AtakTocBaseController
             'updated_at' => $updated,
             'elements' => PlanService::elementsFromGamePlans($gamePlans, $side, (int) $plan['id']),
         ]);
+    }
+
+    /**
+     * Import d'un fichier dans un plan : GeoJSON, KML ou export JSON d'Athena. Aperçu seulement : les éléments
+     * validés (nouveaux identifiants) sont rendus à l'éditeur, qui les enregistre lui-même (l'import s'annule donc
+     * comme toute autre action). Rien n'est écrit ici.
+     */
+    public function importFile(Request $request, array $params = []): Response
+    {
+        if (($deny = $this->guard()) !== null) {
+            return $deny;
+        }
+        [$plan, $err] = $this->load($params, true);
+        if ($plan === null) {
+            return $err ?? Response::json(['ok' => false], 404);
+        }
+        if (($deny = $this->guardWrite($request, 'plan-elements', 240)) !== null) {
+            return $deny;
+        }
+        $b = $this->body();
+        $format = is_string($b['format'] ?? null) ? strtolower($b['format']) : '';
+        $content = $b['content'] ?? null;
+        if (!in_array($format, ['geojson', 'kml', 'athena'], true) || !is_string($content) || trim($content) === '') {
+            return Response::json(['ok' => false, 'error' => 'import_format'], 422);
+        }
+        $phaseUids = array_values(array_map('strval', array_column($this->repo()->phases((int) $plan['id']), 'uid')));
+        $fit = is_array($b['fit'] ?? null) ? $b['fit'] : $this->worldBox((int) $plan['map_id']);
+        [$elements, $rejected, $why] = match ($format) {
+            'geojson' => PlanInterop::fromGeoJson($content, $fit, $phaseUids),
+            'kml' => PlanInterop::fromKml($content, $fit, $phaseUids),
+            default => PlanInterop::fromAthena($content, $phaseUids),
+        };
+        if ($why !== '') {
+            return Response::json(['ok' => false, 'error' => $why], 422);
+        }
+        $this->audit('atak_toc.plan.import_file', (int) $plan['id'], ['format' => $format, 'elements' => count($elements), 'rejected' => $rejected]);
+
+        return Response::json(['ok' => true, 'elements' => $elements, 'rejected' => $rejected]);
+    }
+
+    /**
+     * Cadre du terrain entier [0, 0, taille, taille] d'une carte, pour y ramener un fichier en degrés ; null si la
+     * taille n'est pas connue (PlanInterop prend alors son cadre par défaut).
+     *
+     * @return array{0: float, 1: float, 2: float, 3: float}|null
+     */
+    private function worldBox(int $mapId): ?array
+    {
+        try {
+            $map = $mapId > 0 ? (new \App\Repositories\AtakMapRepository())->getById($mapId) : null;
+            $size = is_array($map) ? (float) (\App\Support\AtakOverwatchMapConfig::fromMap($map)['worldSize'] ?? 0) : 0.0;
+        } catch (\Throwable) {
+            $size = 0.0;
+        }
+
+        return $size >= 1000.0 ? [0.0, 0.0, min($size, PlanValidator::COORD_MAX), min($size, PlanValidator::COORD_MAX)] : null;
+    }
+
+    /**
+     * ORBAT de la communauté, à plat, pour poser ses unités dans un plan : seulement ce que le membre voit déjà sur
+     * la page /orbat (unités masquées et archivées retirées), et rien de personnel (ni membres, ni chefs).
+     */
+    public function orbat(Request $request, array $params = []): Response
+    {
+        if (($deny = $this->guard()) !== null) {
+            return $deny;
+        }
+        try {
+            $root = ($this->orbat)($this->tenantId(), $this->userId());
+        } catch (\Throwable) {
+            $root = null;
+        }
+        $units = [];
+        if (is_array($root)) {
+            $this->flattenOrbat($root, null, $units);
+        }
+
+        return Response::json(['ok' => true, 'available' => is_array($root), 'units' => $units]);
+    }
+
+    /**
+     * @param array<string, mixed> $node nœud de OrbatRosterPayload
+     * @param list<array<string, mixed>> $units
+     */
+    private function flattenOrbat(array $node, ?int $parentId, array &$units): void
+    {
+        $id = (int) ($node['unitId'] ?? 0);
+        // Racine synthétique et branches masquées (unitId 0) : pas une unité, leurs enfants remontent d'un cran.
+        if ($id > 0 && empty($node['isOrbatPlaceholder'])) {
+            if (count($units) >= self::ORBAT_MAX_UNITS) {
+                return;
+            }
+            $unit = [
+                'id' => $id,
+                'parent_id' => $parentId,
+                'name' => PlanValidator::text($node['label'] ?? '', 120),
+                'short' => PlanValidator::text($node['unitCode'] ?? '', 40),
+                'type' => PlanValidator::text($node['structType'] ?? '', 40),
+            ];
+            $sidc = strtoupper((string) ($node['symbolSidc'] ?? ''));
+            if (preg_match('/^[A-Z0-9*-]{10,30}$/', $sidc) === 1) {
+                $unit['sidc'] = $sidc;
+            }
+            $echelon = self::ORBAT_ECHELONS[(string) ($node['echelon'] ?? '')] ?? null;
+            if ($echelon !== null) {
+                $unit['echelon'] = $echelon;
+            }
+            $unitType = self::ORBAT_UNIT_TYPES[(string) ($node['symbolFunction'] ?? '')] ?? null;
+            if ($unitType !== null) {
+                $unit['unitType'] = $unitType;
+            }
+            $units[] = $unit;
+            $parentId = $id;
+        }
+        foreach (is_array($node['children'] ?? null) ? $node['children'] : [] as $child) {
+            if (is_array($child)) {
+                $this->flattenOrbat($child, $parentId, $units);
+            }
+        }
+    }
+
+    /**
+     * Relief d'un terrain en binaire (contrat plans3d §4) : altitudes int16 little-endian, cols × rows, rangée 0 au
+     * sud (index = r * cols + c, comme la grille enregistrée et AtakTerrainMath::heightAt), -32768 = pas de relevé.
+     */
+    public function dem(Request $request, array $params = []): Response
+    {
+        if (($deny = $this->guard()) !== null) {
+            return $deny;
+        }
+        $raw = (string) ($params['mapId'] ?? '');
+        if (preg_match('/^[1-9]\d{0,8}$/', $raw) !== 1) {
+            return Response::json(['ok' => false, 'error' => 'map_invalid'], 404);
+        }
+        try {
+            $grid = ($this->terrain)($this->tenantId(), (int) $raw);
+        } catch (\Throwable) {
+            $grid = null;
+        }
+        $cols = (int) ($grid['cols'] ?? 0);
+        $rows = (int) ($grid['rows'] ?? $grid['grid_rows'] ?? 0);
+        $blob = is_array($grid) && is_string($grid['heights'] ?? null) ? $grid['heights'] : '';
+        $filled = (int) ($grid['filled_cells'] ?? 0);
+        if ($cols < 2 || $rows < 2 || $filled < self::DEM_MIN_CELLS || strlen($blob) < 2) {
+            return Response::json(['ok' => false, 'error' => 'relief_unavailable'], 404);
+        }
+        $bytes = $cols * $rows * 2;
+        if (strlen($blob) !== $bytes) {
+            // Grille incomplète en base : complétée par « pas de relevé », jamais plus longue que cols × rows.
+            $blob = substr($blob, 0, $bytes) . \App\Services\Tactical\AtakTerrainMath::emptyBlob((int) max(0, ($bytes - strlen($blob)) / 2));
+        }
+        $cell = (float) ($grid['cell_m'] ?? 50);
+        $etag = '"dem-' . substr(sha1(implode('|', [(int) ($grid['id'] ?? 0), $raw, $cols, $rows, $filled, (string) ($grid['updated_at'] ?? ''), crc32($blob)])), 0, 20) . '"';
+        $r = new Response();
+        $r->header('ETag', $etag)->header('Cache-Control', 'private, max-age=300');
+        if (trim((string) ($_SERVER['HTTP_IF_NONE_MATCH'] ?? '')) === $etag) {
+            return $r->setStatusCode(304);
+        }
+        $num = static fn (float $v): string => rtrim(rtrim(sprintf('%.2F', $v), '0'), '.');
+        $world = (float) ($grid['world_size'] ?? 0);
+
+        return $r->setStatusCode(200)
+            ->header('Content-Type', 'application/octet-stream')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('X-Dem-Cols', (string) $cols)
+            ->header('X-Dem-Rows', (string) $rows)
+            ->header('X-Dem-Cell', $num($cell))
+            ->header('X-Dem-Origin', $num((float) ($grid['origin_x'] ?? 0)) . ',' . $num((float) ($grid['origin_y'] ?? 0)))
+            ->header('X-Dem-Min', (string) (int) ($grid['min_z'] ?? 0))
+            ->header('X-Dem-Max', (string) (int) ($grid['max_z'] ?? 0))
+            ->header('X-Dem-World', $num($world > 0 ? $world : ($cols - 1) * $cell))
+            ->header('X-Dem-Coverage', (string) max(0, min(100, (int) round(100 * $filled / ($cols * $rows)))))
+            ->setBody($blob);
     }
 }

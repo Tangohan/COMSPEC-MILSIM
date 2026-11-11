@@ -54,7 +54,8 @@ final class MemberIdentityPapersWiringTest extends TestCase
         self::assertStringContainsString('SIMULATION', $partial);
         self::assertStringContainsString('name="_csrf_token"', $partial);
         self::assertStringContainsString("url('back-office/ma-situation/mes-papiers')", self::read('views/partials/ath_sidebar_nav.php'));
-        self::assertStringContainsString("'pays' => ['pays', 'Pays émetteurs']", self::read('views/atak/sse/papers/_subnav.php'));
+        // Les pages du registre sont dans la navigation du bureau (le sous-menu de la section n'en liste plus aucune).
+        self::assertStringContainsString("'label' => 'Pays émetteurs', 'hint' => 'Pays imaginaires (ou réels stylisés) qui émettent les papiers.', 'path' => 'atak/sse/papiers/pays'", self::read('app/Support/SsePortalNav.php'));
         self::assertStringContainsString('enctype="multipart/form-data"', self::read('views/atak/sse/papers/country_form.php'));
     }
 

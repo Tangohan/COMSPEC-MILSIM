@@ -16,10 +16,12 @@
       ["of", objet]                              id de la salle d'un PC ou d'un écran (relais : celle de son hôte)
       ["screens", id]                            écrans hôtes liés à la salle
       ["uid", écran]                             identifiant stable (posé par le serveur)
+      ["auto", [objet, camp]]                    salle d'un objet qui se règle seul : la plus proche, sinon « TOC n » créée (fn_tocAuto)
       ["do", [action, args]]                     client -> serveur ; serveur : actions
         create [nom, camp, PC, id imposé]  link [id, écran]  unlink écran  linkNear [id, [x, y, z], rayon]
         rename [id, nom]  power [écran, allumé]  powerAll [id, allumé]  blink écran
-        sceneSave [id, nom]  sceneApply [id, nom]  sceneDel [id, nom]  spawn [posATL, dir, taille, nom, camp]
+        sceneSave [id, nom]  sceneApply [id, nom]  sceneDel [id, nom]
+        spawn [posATL, dir, taille, nom, camp, id, classe des postes, demandeur, aligner]  roomRemove id (fn_tocHallBuild)
       ["dump"] / ["load", données] / ["saved", id] serveur (fn_tocPersist, module « Salle TOC complète »)
 */
 params [["_mode", "halls"], ["_a", []]];
@@ -41,8 +43,36 @@ switch (_mode) do {
             !isNull _x && {isNull (_x getVariable ["COMSPEC_ATAK_TocHost", objNull])} && {(_x getVariable ["COMSPEC_ATAK_TocHall", ""]) isEqualTo _a}
         }
     };
+    case "auto": {
+        // Salle d'un écran ou d'un poste qui se règle tout seul (fn_tocAuto) : la sienne s'il en a une, sinon celle de
+        // l'écran ou du poste lié le plus proche (30 m), sinon une nouvelle salle « TOC n ». Fait sur ce poste : le
+        // serveur, ou un joueur quand le serveur est plus ancien ou sans le mod (même variable publique, non gardée).
+        _a params [["_o", objNull], ["_sd", ""]];
+        if (isNull _o) exitWith { "" };
+        private _l = +(call _all);
+        private _known = _l apply { _x select 0 };
+        private _cur = _o getVariable ["COMSPEC_ATAK_TocHall", ""];
+        if (_cur isNotEqualTo "" && {_cur in _known}) exitWith { _cur };
+        private _near = (((missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) + (nearestObjects [_o, ["COMSPEC_ATAK_TocLaptop"], 30])) select {
+            !isNull _x && {_x isNotEqualTo _o} && {(_x distance _o) < 30} && {(_x getVariable ["COMSPEC_ATAK_TocHall", ""]) in _known}
+        });
+        _near = [_near, [], { _x distance _o }, "ASCEND"] call BIS_fnc_sortBy;
+        private _id = if (_near isEqualTo []) then { "" } else { (_near select 0) getVariable ["COMSPEC_ATAK_TocHall", ""] };
+        if (_id isEqualTo "") then {
+            private _n = 1;
+            while { (_l findIf { (_x select 1) isEqualTo (format ["TOC %1", _n]) }) >= 0 && {_n < 99} } do { _n = _n + 1; };
+            _id = format ["A%1-%2", _n, floor random 100000];
+            _l pushBack ([_id, format ["TOC %1", _n], toUpper _sd, [], []] + ([[], ["LOCAL"]] select (!isServer)));
+            missionNamespace setVariable ["COMSPEC_ATAK_TocHalls", _l, true];
+        };
+        _o setVariable ["COMSPEC_ATAK_TocHall", _id, true];
+        ["save"] call comspec_atak_native_fnc_tocPersist;
+        _id
+    };
     case "initClient": {
         if (!hasInterface) exitWith {};
+        // Salle complète posée par le serveur à la demande de ce Zeus : résultat dans sa ligne de retour.
+        ["comspec_atak_native_tocHallDone", { ["done", _this] call comspec_atak_native_fnc_tocHallBuild; }] call CBA_fnc_addEventHandler;
         // Identifier un écran : il clignote en ambre 2 s chez tous les joueurs proches, puis reprend son image.
         ["comspec_atak_native_tocBlink", {
             params [["_o", objNull]];
@@ -69,6 +99,8 @@ switch (_mode) do {
         if (!isServer || {missionNamespace getVariable ["COMSPEC_ATAK_TocHallInit", false]}) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_TocHallInit", true];
         ["comspec_atak_native_tocHall", { ["do", _this] call comspec_atak_native_fnc_tocHall; }] call CBA_fnc_addEventHandler;
+        // Postes PC fixes (fn_tocPc) : désignés comme écrans TOC à leur création.
+        ["initServer"] call comspec_atak_native_fnc_tocPc;
     };
     case "dump": { +(call _all) };
     case "saved": {
@@ -210,91 +242,22 @@ switch (_mode) do {
                 } forEach (_sc param [1, []]);
             };
             case "spawn": {
-                _args params [["_pos", [0, 0, 0]], ["_dir", 0], ["_size", "M"], ["_nm", "SALLE TOC"], ["_sd", "WEST"], ["_id", ""]];
-                ["spawnRoom", [_pos, _dir, _size, _nm, _sd, _id]] call _fn
+                // Demande du Zeus (fn_tocHallBuild « zeus ») : même constructeur que le module Eden. _by : joueur à qui
+                // le résultat est rendu (ligne de retour du Zeus) ; _snap : alignement sur les murs du bâtiment.
+                _args params [["_pos", [0, 0, 0]], ["_dir", 0], ["_size", "M"], ["_nm", "SALLE TOC"], ["_sd", "WEST"], ["_id", ""], ["_post", ""], ["_by", objNull], ["_snap", false]];
+                // Le bilan part au demandeur une fois tous les objets posés (fn_tocHallBuild « finish », comspec_atak_native_tocHallDone).
+                ["build", [_pos, _dir, _size, _nm, _sd, _id, _post, _snap, false, _by]] call comspec_atak_native_fnc_tocHallBuild;
             };
+            // Salle complète retirée (module supprimé, fn_tocHallBuild « remove ») : écrans, mobilier et PC posés par elle.
+            case "roomRemove": { ["remove", _args] call comspec_atak_native_fnc_tocHallBuild; };
         };
         true
     };
     case "spawnRoom": {
-        // Salle complète posée d'un coup (module « Salle TOC complète ») : mur d'images, grands écrans, écrans suspendus,
-        // bandeau horloge, plaques de nom, bureaux, chaises et PC du jeu de base ; tout lié à la salle. Repère : le module,
-        // le mur devant lui (+Y), écrans tournés vers lui.
-        _a params ["_pos", "_dir", "_size", "_nm", "_sd", ["_id", ""]];
-        if (!isServer) exitWith { "" };
-        if (_id isEqualTo "") then { _id = format ["H%1%2", floor (serverTime * 10), floor random 10000]; };
-        ["do", ["create", [_nm, _sd, objNull, _id]]] call _fn;
-        private _pick = { params ["_cands"]; (_cands select { isClass (configFile >> "CfgVehicles" >> _x) }) param [0, ""] };
-        private _desk = [["Land_TableDesk_F", "Land_CampingTable_F", "Land_WoodenTable_large_F"]] call _pick;
-        private _chair = [["Land_OfficeChair_01_F", "Land_CampingChair_V2_F", "Land_ChairWood_F"]] call _pick;
-        private _at = {
-            // Point du repère de la salle (x à droite, y vers le mur, z en hauteur) vers le monde.
-            params ["_x0", "_y0", ["_z0", 0]];
-            private _p = _pos getPos [sqrt (_x0 ^ 2 + _y0 ^ 2), _dir + (_x0 atan2 _y0)];
-            [_p select 0, _p select 1, (_pos select 2) + _z0]
-        };
-        private _sqs = ["squads", _sd] call comspec_atak_native_fnc_tocScreen;
-        private _scr = [];
-        private _props = [];
-        private _put = {
-            params ["_cls", "_x0", "_y0", "_z0", "_view", ["_sq", ""], ["_pans", ""], ["_name", ""]];
-            if !(isClass (configFile >> "CfgVehicles" >> _cls)) exitWith { objNull };
-            private _o = ["spawn", [[_x0, _y0, _z0] call _at, _dir + 180, _cls, [_name, _nm] select (_name isEqualTo ""), _sd, _view, false, 0, _sq, _pans]] call comspec_atak_native_fnc_tocScreen;
-            if (!isNull _o) then { _o setPosATL ([_x0, _y0, _z0] call _at); _o setVariable ["COMSPEC_ATAK_TocHall", _id, true]; _scr pushBack _o; };
-            _o
-        };
-        private _prop = {
-            params ["_cls", "_x0", "_y0", "_z0", "_d", ["_pc", false]];
-            if (_cls isEqualTo "" || {!isClass (configFile >> "CfgVehicles" >> _cls)}) exitWith { objNull };
-            private _o = createVehicle [_cls, [_x0, _y0, _z0] call _at, [], 0, "CAN_COLLIDE"];
-            _o setDir (_dir + _d);
-            _o setPosATL ([_x0, _y0, _z0] call _at);
-            if (_pc) then { _o setVariable ["COMSPEC_ATAK_TocHall", _id, true]; _o setVariable ["COMSPEC_ATAK_TocSide", _sd, true]; };
-            { _x addCuratorEditableObjects [[_o], false]; } forEach allCurators;
-            _props pushBack [_cls, getPosASL _o, vectorDir _o, vectorUp _o, _pc];
-            _o
-        };
-        private _big = _size isNotEqualTo "S";
-        // Mur central : 3x2 (6 dalles) en moyenne et grande taille, 2x2 (4 dalles) en petite.
-        if (_big) then {
-            ["COMSPEC_ATAK_Screen_Wall3x2", 0, 7, 0, "SPLIT", "", "SAT1, SAT2, CLOCK, LOG, REQ", "MUR"] call _put;
-            ["COMSPEC_ATAK_Screen_98", -3.0, 6.9, 0, "MOSAIC", "", "", "CAMÉRAS"] call _put;
-            ["COMSPEC_ATAK_Screen_98", 3.0, 6.9, 0, "SQUAD", _sqs param [0, ""], "", _sqs param [0, "ESCOUADE"]] call _put;
-            ["COMSPEC_ATAK_Screen_ClockStrip", 0, 6.95, 0.05, "STRIP", "", "", "HORLOGE"] call _put;
-        } else {
-            ["COMSPEC_ATAK_Screen_Wall2x2_Quad", 0, 6, 0, "SPLIT", "", "SAT1, CLOCK, LOG", "MUR"] call _put;
-            ["COMSPEC_ATAK_Screen_ClockStrip", 0, 5.95, 0.05, "STRIP", "", "", "HORLOGE"] call _put;
-        };
-        // Plaques de nom des éléments, au-dessus des places des opérateurs.
-        private _nPl = [2, 4] select _big;
-        for "_i" from 0 to (_nPl - 1) do {
-            ["COMSPEC_ATAK_Screen_NamePlate", -((_nPl - 1) * 1.6) / 2 + _i * 1.6, 4.2, 0, "PLATE", _sqs param [_i, ""], "", format ["ÉLÉMENT %1", _i + 1]] call _put;
-        };
-        if (_size isEqualTo "L") then {
-            ["COMSPEC_ATAK_Screen_65_Ceiling", -2.4, 4.6, 3.2, "EXCHECK", "", "", "EXÉCUTION"] call _put;
-            ["COMSPEC_ATAK_Screen_65_Ceiling", 2.4, 4.6, 3.2, "KILLS", "", "", "PERTES"] call _put;
-            ["COMSPEC_ATAK_Screen_98_Stand", -5.6, 5.2, 0, "SAT", "", "", "SAT 2"] call _put;
-            ["COMSPEC_ATAK_Screen_98_Stand", 5.6, 5.2, 0, "REQ", "", "", "DEMANDES"] call _put;
-        };
-        if (_size isEqualTo "M") then {
-            ["COMSPEC_ATAK_Screen_65_Ceiling", 0, 4.6, 3.2, "EXCHECK", "", "", "EXÉCUTION"] call _put;
-        };
-        // Postes : un bureau, une chaise, un PC de TOC par place ; rangée face au mur.
-        private _nPc = (createHashMapFromArray [["S", 2], ["M", 3], ["L", 4]]) getOrDefault [_size, 3];
-        for "_i" from 0 to (_nPc - 1) do {
-            private _x0 = -((_nPc - 1) * 1.7) / 2 + _i * 1.7;
-            [_desk, _x0, 2.6, 0, 0] call _prop;
-            [_chair, _x0, 1.8, 0, 180] call _prop;
-            ["COMSPEC_ATAK_TocLaptop", _x0, 2.55, 0.8, 180, true] call _prop;
-        };
-        private _i = (call _all) findIf { (_x select 0) isEqualTo _id };
-        if (_i >= 0) then {
-            private _l = +(call _all);
-            (_l select _i) set [4, _props];
-            [_l] call _publish;
-        };
-        ["INFO", "TOC", format ["Salle TOC complète « %1 » posée (%2) : %3 écran(s), %4 objet(s)", _nm, _size, count _scr, count _props]] call comspec_atak_native_fnc_log;
-        _id
+        // Salle complète posée d'un coup : table des objets, sol, mur et plafond cherchés, un pas par objet
+        // (fn_tocHallBuild « build », seul constructeur pour Eden, Zeus et le repli). Rend l'identifiant de la salle.
+        _a params ["_pos", "_dir", "_size", "_nm", "_sd", ["_id", ""], ["_post", ""]];
+        (["build", [_pos, _dir, _size, _nm, _sd, _id, _post, false, false]] call comspec_atak_native_fnc_tocHallBuild) param [0, ""]
     };
     default { false };
 };

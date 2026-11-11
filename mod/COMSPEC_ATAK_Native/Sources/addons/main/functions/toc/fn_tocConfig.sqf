@@ -150,14 +150,13 @@ switch (_op) do {
     case "viewList": {
         // Liste de fn_tocScreen (« views ») : un affichage ajouté là-bas apparaît ici sans rien changer.
         private _o = _a;
-        private _r4 = false;
-        if (_o isEqualType objNull && {!isNull _o}) then {
-            private _h = [_o] call _hostOf;
-            _r4 = ((getNumber (configOf _h >> "comspec_screenRatio")) max ((_h getVariable ["COMSPEC_ATAK_TocSurf", []]) param [1, 0])) >= 4;
-        };
+        // Affichages permis par le format de la dalle (fn_tocScreen « format ») : 16:9, bandeau 4:1, bandeau LED 8:1 et
+        // 16:1 (texte seulement), colonne d'un écran incurvé. Sans objet : ceux d'un écran 16:9.
+        if !(_o isEqualType objNull) then { _o = objNull; };
+        private _okViews = (["format", _o] call _ts) param [4, []];
         private _out = [];
         {
-            if ((_x in ["STRIP", "PLATE"]) isEqualTo _r4) then {
+            if (_x in _okViews) then {
                 private _l = ((["title", _x] call _ts) param [1, toLower _x]) call comspec_atak_native_fnc_tr;
                 private _n = (toArray _l) param [0, 0];
                 if (_n >= 97 && {_n <= 122}) then { _l = (toUpper (_l select [0, 1])) + (_l select [1]); };
@@ -331,7 +330,14 @@ switch (_op) do {
         private _c = ["make", [["Name", ""] call _g, ["Side", ""] call _g, ["View", "SPLIT"] call _g, ["Toc", true] call _g, ["Sat", 0] call _g, ["Squad", ""] call _g,
             ["Cam", ""] call _g, [["MosGrid", 2] call _g, ["MosSrc", ""] call _g], false, ["Bright", 100] call _g, ["Range", 0] call _g, ["Hall", ""] call _g, ["Panels", ""] call _g]] call _fn;
         ["INFO", "TOC", format ["Écran TOC %1 : attributs Eden appliqués (%2)", typeOf _o, _c]] call comspec_atak_native_fnc_log;
-        ["apply", [_o, _c]] call _fn
+        private _done = ["apply", [_o, _c]] call _fn;
+        // Affichage « Texte à LED » : texte, couleur, vitesse et défilement des attributs (mêmes champs que le module
+        // Écran TOC). Posés après la désignation ; sans texte, le réglage par défaut de l'affichage reste.
+        private _edTxt = ["Text", ""] call _g;
+        if ((_c select 2) isEqualTo "TEXT" && {_edTxt isEqualType ""} && {(trim _edTxt) isNotEqualTo ""}) then {
+            ["view", [_o, "text", ["fromFields", [_edTxt, ["TextColor", "G"] call _g, ["TextSpeed", 1] call _g, ["TextScroll", 0] call _g]] call comspec_atak_native_fnc_tocText]] call _ts;
+        };
+        _done
     };
     case "form": {
         // Fenêtre du Zeus : ZEN s'il est chargé, sinon le formulaire du mod (fn_zeusForm). Mêmes champs, même code.
@@ -569,7 +575,7 @@ switch (_op) do {
         ["textes d'Eden convertis", _edn isEqualTo ["TOC Bravo", "WEST", "SPLIT", true, 1, "Alpha 1-1", "CAM:Entrée nord", [3, ""], true, 40, 150, "Salle A", "SAT1, CLOCK"]] call _t;
         ["réglage stable (make de make)", (["make", _edn] call _fn) isEqualTo _edn] call _t;
         private _vl = (["viewList", objNull] call _fn) apply { _x select 1 };
-        ["tous les affichages 16:9 proposés", ((["views"] call _ts) - ["STRIP", "PLATE"]) isEqualTo _vl] call _t;
+        ["tous les affichages 16:9 proposés", ((["views"] call _ts) - ["STRIP", "PLATE", "COLA", "COLB", "COLC", "COLD", "COLE", "COLF"]) isEqualTo _vl && {"TEXT" in _vl}] call _t;
         private _sp = ["panelSpec", "SAT2, OFF, SQ:Alpha 1-1"] call _ts;
         ["dalles lues", (count _sp) isEqualTo 3 && {((_sp select 0) select [0, 2]) isEqualTo ["SAT", 1]} && {((_sp select 1) param [5, false]) isEqualTo true} && {((_sp select 2) select 2) isEqualTo "Alpha 1-1"}] call _t;
         private _keep = [missionNamespace getVariable "COMSPEC_ATAK_ServerVersion", missionNamespace getVariable "COMSPEC_ATAK_TocForceFallback"];

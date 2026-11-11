@@ -5,15 +5,23 @@
 params [["_how", "repair"]];
 private _n = missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap];
 switch (_how) do {
-    case "reboot": { _n set ["offUntil", time + 8]; _n set ["offFrom", time]; _n set ["offReason", "Redémarrage manuel"]; };
+    case "reboot": {
+        _n set ["offUntil", time + 8]; _n set ["offFrom", time]; _n set ["offReason", "Redémarrage manuel"];
+        // Bugs d'affichage arrêtés, un pixel bloqué sur deux se débloque (fn_screenDamage).
+        ["repair", ["reboot"]] call comspec_atak_native_fnc_screenDamage;
+    };
     default {
         _n set ["damage", 0];
         _n set ["offUntil", time + ([6, 8] select (_how isEqualTo "swap"))]; _n set ["offFrom", time];
         _n set ["offReason", ["Écran remplacé", "Nouvel appareil"] select (_how isEqualTo "swap")];
         _n deleteAt "brokenReason";
         // Composants remis à neuf (écran neuf : propre ; nouvel appareil : tout, y compris le sang sur la coque et l'historique).
-        { _n deleteAt _x; } forEach ["scratch", "pixels", "battery", "audio", "gps", "antenna", "dust", "blood", "stains", "prints", "drops", "wet"];
-        if (_how isEqualTo "swap") then { { _n deleteAt _x; } forEach ["frameBlood", "log", "dirtSeed"]; };
+        { _n deleteAt _x; } forEach ["scratch", "pixels", "battery", "audio", "gps", "antenna", "dust", "blood", "stains", "prints", "drops", "wet", "mud", "wetUntil"];
+        // Écran remplacé : verre et dalle neufs (bris, pannes et bugs du modèle fn_screenDamage) ; nouvel appareil :
+        // nouvelle suite de tirages.
+        ["stop"] call comspec_atak_native_fnc_screenGlitch;
+        { _n deleteAt _x; } forEach ["scr", "scrN"];
+        if (_how isEqualTo "swap") then { { _n deleteAt _x; } forEach ["frameBlood", "log", "dirtSeed", "scrSeed"]; };
         // Nouvel appareil : nouvel IMEI et nouvelle adresse MAC (le numéro suit la carte SIM).
         if (_how isEqualTo "swap") then { player setVariable ["COMSPEC_ATAK_PhoneGen", (player getVariable ["COMSPEC_ATAK_PhoneGen", 0]) + 1, true]; };
     };

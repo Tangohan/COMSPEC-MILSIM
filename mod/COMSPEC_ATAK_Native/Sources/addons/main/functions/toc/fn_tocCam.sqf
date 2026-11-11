@@ -63,7 +63,7 @@ switch (_mode) do {
         private _i = _act findIf { (_x select 0) isEqualTo _a };
         if (_i < 0) exitWith { false };
         (_act select _i) params ["_o", "_cam", "_rt"];
-        if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", _rt]; camDestroy _cam; };
+        if (!isNull _cam) then { ["close", [_cam, _rt]] call comspec_atak_native_fnc_tocRtt; };
         // Diapositives lancées sur l'écran : fn_screenCast pose déjà son image, ne pas la recouvrir par l'origine.
         if (!isNull _o && {(count (_o getVariable ["COMSPEC_ATAK_ScreenCast", []])) < 5}) then {
             private _sel = ((_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [2, 0]);
@@ -96,7 +96,7 @@ switch (_mode) do {
                 // Centre de l'image, pas l'origine du modèle (au sol ou au plafond : hors champ devant un écran mural).
                 && {call {
                     if ((worldToScreen (ASLToAGL (["center", _o] call comspec_atak_native_fnc_tocScreen))) isNotEqualTo []) then { _o setVariable ["COMSPEC_ATAK_TocCamSeen", diag_tickTime]; };
-                    diag_tickTime - (_o getVariable ["COMSPEC_ATAK_TocCamSeen", -1e9]) < 3
+                    diag_tickTime - (_o getVariable ["COMSPEC_ATAK_TocCamSeen", -1e9]) < 10
                 }}
         };
         private _on = ([_cands, [], { _eye distance _x }, "ASCEND"] call BIS_fnc_sortBy) select [0, (round _max) max 0];
@@ -131,7 +131,7 @@ switch (_mode) do {
                     };
                     default { _cam attachTo [_src, [0, 0.12, 0.03]]; _cam setVectorDirAndUp [[0, 1, 0], [0, 0, 1]]; };
                 };
-                _cam cameraEffect ["Internal", "Back", _rt];
+                ["open", [_cam, _rt]] call comspec_atak_native_fnc_tocRtt;
                 _rt setPiPEffect [parseNumber (sunOrMoon < 0.3)];
                 _act pushBack [_o, _cam, _rt, _id, _kind, _src, -1e9, -1];
                 _i = (count _act) - 1;

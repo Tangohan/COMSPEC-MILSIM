@@ -92,7 +92,6 @@ final class OperatorAccessRequestTest extends TestCase
     /** @param list<string> $permissions */
     private function controller(int $user = 10, array $permissions = [], bool $csrf = true, int $tenant = 1, bool $throttled = false, ?\Closure $render = null): OperatorHubController
     {
-        $exports = new SseCoverExportRepository();
         $limiter = $this->createMock(FileRateLimiter::class);
         $limiter->method('tooManyAttempts')->willReturnCallback(static fn (string $key): bool => $throttled && str_contains($key, ':access:'));
         $noop = static function (): void {
@@ -100,7 +99,7 @@ final class OperatorAccessRequestTest extends TestCase
 
         return new OperatorHubController(
             new OperatorHubRepository(),
-            new OperatorIdentityService(null, null, null, null, null, null, $exports, new SseCoverExportService($exports, null, null, $noop, 'test-key'), $noop),
+            new OperatorIdentityService(null, null, null, null, null, null, $noop),
             static fn (): ?array => ['tenant' => $tenant, 'user' => $user, 'row' => ['id' => $user, 'callsign' => 'Viper 1-1', 'display_name' => 'Jake', 'steam_id' => null]],
             static fn (string $p): bool => in_array($p, $permissions, true),
             static fn (string $path): bool => true,

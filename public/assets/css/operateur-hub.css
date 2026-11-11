@@ -159,7 +159,7 @@
 .opx-acts form { margin: 0; }
 .opx-acts .opx-acts__end { margin-left: auto; }
 
-/* ---- Fiche (identité, couverture) : carte du tableau de bord, photo à gauche ---- */
+/* ---- Fiche d'une identité : carte du tableau de bord, photo à gauche ---- */
 .opx-cards { display: grid; gap: 1rem; margin: 0; padding: 0; list-style: none; }
 .opx-card { display: grid; grid-template-columns: minmax(0, 1fr); }
 .opx-card.is-off { background: #f8fafc; }
@@ -319,7 +319,26 @@ button.opx-photo:focus-visible { outline: 2px solid #059669; outline-offset: 2px
 .opx-dialog:not([open]):not(.is-js) { display: block; position: static; width: auto; max-height: none; margin: 1rem 0 0; box-shadow: none; }
 .opx-dialog:not([open]):not(.is-js) .opx-dialog__close { display: none; }
 
-/* ---- Légende d'une couverture, historique ---- */
+/* ---- Aide « Comment faire ma photo ? » ---- */
+.opx-guide__list { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.3rem; font-size: 0.9rem; line-height: 1.5; color: #334155; }
+.opx-guide__variants { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; }
+.opx-guide__check { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; font-weight: 600; color: #0f172a; cursor: pointer; }
+.opx-fields .opx-guide__check { display: inline-flex; font-size: 0.9rem; font-weight: 600; letter-spacing: 0; text-transform: none; color: #0f172a; }
+.opx-fields .opx-guide__check > input { display: inline-block; width: 1rem; height: 1rem; min-height: 0; margin: 0; padding: 0; accent-color: #059669; }
+.opx-guide__list { list-style: disc; }
+.opx-guide__compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.opx-guide__compare figure { margin: 0; display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); gap: 0.75rem; align-items: start; }
+.opx-guide__compare svg { width: 100%; height: auto; border-radius: 6px; border: 1px solid #e2e8f0; }
+.opx-guide__compare figcaption { font-size: 0.85rem; line-height: 1.45; color: #475569; }
+.opx-guide__compare figure:first-child strong { color: #065f46; }
+.opx-guide__compare figure:last-child strong { color: #9f1239; }
+.opx-fields textarea[readonly] { font-family: ui-monospace, 'JetBrains Mono', Consolas, monospace; font-size: 0.82rem; line-height: 1.5; background: #f8fafc; }
+.opx-linkbtn { padding: 0; border: 0; background: none; color: #047857; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.opx-linkbtn:focus-visible { outline: 2px solid #059669; outline-offset: 2px; }
+.opx-dialog__foot .opx-acts__start { margin-right: auto; }
+@media (max-width: 520px) { .opx-guide__compare { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---- Récapitulatif de la création guidée, historique ---- */
 .opx-legend { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.8rem 1.5rem; margin: 0; }
 .opx-legend dt { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #6b7280; }
 .opx-legend dd { margin: 0.15rem 0 0; font-size: 0.92rem; color: #0f172a; overflow-wrap: anywhere; }
@@ -332,6 +351,42 @@ button.opx-photo:focus-visible { outline: 2px solid #059669; outline-offset: 2px
 .opx-history li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.2rem 1rem; padding: 0.6rem 1rem; border-top: 1px solid #f1f5f9; font-size: 0.875rem; }
 .opx-history li:first-child { border-top: 0; }
 .opx-history time { color: #666; font-variant-numeric: tabular-nums; }
+
+/* ---- Carte d'une identité : sections Identité · Papiers · Histoire · Jeu, papiers en vignettes, filtres ---- */
+.opx-sections { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.9rem; }
+.opx-section { min-width: 0; display: grid; gap: 0.6rem; align-content: start; padding: 0.9rem 1rem; border: 1px solid #e2e8f0; border-radius: 0.55rem; background: #f8fafc; }
+.opx-section form { margin: 0; }
+.opx-built__title { margin: 0; font-size: 0.95rem; font-weight: 900; letter-spacing: -0.01em; color: #0b1a14; }
+.opx-story { margin: 0; font-size: 0.9rem; line-height: 1.55; color: #334155; overflow-wrap: anywhere; }
+.opx-filters { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.opx-filters[hidden] { display: none; }
+.opx-filter { display: inline-flex; align-items: center; gap: 0.45rem; min-height: 2.5rem; padding: 0.35rem 0.85rem; border: 1px solid #cbd5e1; border-radius: 999px; background: #fff; font: inherit; font-size: 0.875rem; font-weight: 700; color: #334155; cursor: pointer; }
+.opx-filter span { font-weight: 800; color: #64748b; font-variant-numeric: tabular-nums; }
+.opx-filter:hover { border-color: #059669; }
+.opx-filter:focus-visible { outline: 2px solid #059669; outline-offset: 2px; }
+.opx-filter.is-on { border-color: #0b1f17; background: #0b1f17; color: #fff; }
+.opx-filter.is-on span { color: #6ee7b7; }
+.opx-papers { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.75rem; margin: 0; padding: 0; list-style: none; }
+.opx-paper { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 0.75rem; align-items: center; min-width: 0; }
+.opx-paper.is-waiting .opx-paper__view { opacity: 0.55; }
+.opx-paper__view { display: block; }
+.opx-paper__view:focus-visible { outline: 2px solid #059669; outline-offset: 2px; }
+.opx-paper .opx-doc-svg { border-radius: 6px; box-shadow: 0 4px 10px -6px rgba(15, 23, 42, 0.45); }
+.opx-paper__text { min-width: 0; display: grid; gap: 0.15rem; justify-items: start; font-size: 0.85rem; color: #475569; overflow-wrap: anywhere; }
+.opx-paper__text strong { font-size: 0.92rem; color: #0f172a; }
+.opx-paper__text .cc-badge { margin-top: 0.2rem; }
+.opx-paper__note { font-size: 0.8rem; font-weight: 700; color: #92400e; }
+.opx-pick__who { margin: 0; font-size: 0.92rem; font-weight: 800; color: #0f172a; }
+.opx-ask { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; font-size: 0.875rem; font-weight: 600; color: #334155; }
+.opx-uses { margin: 0; font-size: 0.875rem; line-height: 1.5; color: #475569; }
+.opx-uses a { color: #047857; font-weight: 700; }
+@media (min-width: 640px) {
+  .opx-papers { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1000px) {
+  .opx-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .opx-section { padding: 1rem 1.25rem; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .opx-pin__btn { transition: none; }

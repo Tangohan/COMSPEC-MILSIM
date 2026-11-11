@@ -1,0 +1,691 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Généré par tools/gen_relay_config.py : relais 3D, caméras IP, infrastructure réseau. -->
+<Project name="COMSPEC ATAK Native">
+    <Package name="Towers">
+        <Key ID="STR_COMSPEC_ATAK_REL_SUB_VARIANTS">
+            <Original>ATAK relays (variants)</Original>
+            <English>ATAK relays (variants)</English>
+            <French>Relais ATAK (variantes)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_SUB_ANTENNAS">
+            <Original>Wall and roof antennas</Original>
+            <English>Wall and roof antennas</English>
+            <French>Antennes murales et de toit</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_SUB_CAMERAS">
+            <Original>IP cameras</Original>
+            <English>IP cameras</English>
+            <French>Caméras IP</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_SUB_INFRA">
+            <Original>Network infrastructure</Original>
+            <English>Network infrastructure</English>
+            <French>Infrastructure réseau</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_PAINT">
+            <Original>Paint</Original>
+            <English>Paint</English>
+            <French>Peinture</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_PAINT_TIP">
+            <Original>Structure colour. Default: the colour of the class.</Original>
+            <English>Structure colour. Default: the colour of the class.</English>
+            <French>Couleur de la structure. Par défaut : celle de la classe.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_PAINT_DEF">
+            <Original>Default</Original>
+            <English>Default</English>
+            <French>Par défaut</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_PAINT_GALVA">
+            <Original>Galvanised</Original>
+            <English>Galvanised</English>
+            <French>Galvanisé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_PAINT_RW">
+            <Original>Red-white (aviation)</Original>
+            <English>Red-white (aviation)</English>
+            <French>Rouge-blanc (balisage)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_PAINT_OLIVE">
+            <Original>NATO green</Original>
+            <English>NATO green</English>
+            <French>Vert OTAN</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_PAINT_SAND">
+            <Original>Sand</Original>
+            <English>Sand</English>
+            <French>Sable</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_EQUIP">
+            <Original>Equipment</Original>
+            <English>Equipment</English>
+            <French>Équipement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_EQUIP_TIP">
+            <Original>Antennas fitted to the structure. Changes the look only, not the range.</Original>
+            <English>Antennas fitted to the structure. Changes the look only, not the range.</English>
+            <French>Antennes montées sur la structure. N'agit que sur l'aspect, pas sur la portée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_EQUIP_FULL">
+            <Original>Full</Original>
+            <English>Full</English>
+            <French>Complet</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_EQUIP_LIGHT">
+            <Original>Light</Original>
+            <English>Light</English>
+            <French>Léger</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_EQUIP_BARE">
+            <Original>Bare</Original>
+            <English>Bare</English>
+            <French>Nu</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_KIT_SAT">
+            <Original>Field satellite terminal</Original>
+            <English>Field satellite terminal</English>
+            <French>Terminal satellite de campagne</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_KIT_MINI">
+            <Original>Building mini antenna</Original>
+            <English>Building mini antenna</English>
+            <French>Mini-antenne de bâtiment</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_KIT_FIELD">
+            <Original>Portable field relay</Original>
+            <English>Portable field relay</English>
+            <French>Relais de terrain portable</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_SUBCAT">
+            <Original>IP cameras</Original>
+            <English>IP cameras</English>
+            <French>Caméras IP</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_PTZ_WALL">
+            <Original>PTZ dome camera (wall)</Original>
+            <English>PTZ dome camera (wall)</English>
+            <French>Caméra dôme PTZ (mur)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_PTZ_WALL_DARK">
+            <Original>PTZ dome camera, black (wall)</Original>
+            <English>PTZ dome camera, black (wall)</English>
+            <French>Caméra dôme PTZ noire (mur)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_PTZ_POLE">
+            <Original>PTZ dome camera (pole)</Original>
+            <English>PTZ dome camera (pole)</English>
+            <French>Caméra dôme PTZ (poteau)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_BULLET_WALL">
+            <Original>IR bullet camera (wall)</Original>
+            <English>IR bullet camera (wall)</English>
+            <French>Caméra tube IR (mur)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_BULLET_WALL_DARK">
+            <Original>IR bullet camera, black (wall)</Original>
+            <English>IR bullet camera, black (wall)</English>
+            <French>Caméra tube IR noire (mur)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_BULLET_CEIL">
+            <Original>IR bullet camera (ceiling)</Original>
+            <English>IR bullet camera (ceiling)</English>
+            <French>Caméra tube IR (plafond)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_BULLET_POLE">
+            <Original>IR bullet camera (pole)</Original>
+            <English>IR bullet camera (pole)</English>
+            <French>Caméra tube IR (poteau)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_BULLET_CORNER">
+            <Original>IR bullet camera (corner)</Original>
+            <English>IR bullet camera (corner)</English>
+            <French>Caméra tube IR (angle)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_THERMAL_WALL">
+            <Original>Dual-spectrum thermal camera (wall)</Original>
+            <English>Dual-spectrum thermal camera (wall)</English>
+            <French>Caméra thermique bi-spectre (mur)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_THERMAL_WALL_DARK">
+            <Original>Thermal camera, black (wall)</Original>
+            <English>Thermal camera, black (wall)</English>
+            <French>Caméra thermique noire (mur)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_THERMAL_POLE">
+            <Original>Dual-spectrum thermal camera (pole)</Original>
+            <English>Dual-spectrum thermal camera (pole)</English>
+            <French>Caméra thermique bi-spectre (poteau)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_MINIDOME">
+            <Original>Mini dome camera (ceiling)</Original>
+            <English>Mini dome camera (ceiling)</English>
+            <French>Mini-dôme (plafond)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_MINIDOME_WALL">
+            <Original>Mini dome camera (wall)</Original>
+            <English>Mini dome camera (wall)</English>
+            <French>Mini-dôme (mur)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_FISHEYE">
+            <Original>360° fisheye camera (ceiling)</Original>
+            <English>360° fisheye camera (ceiling)</English>
+            <French>Caméra 360° (plafond)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_TACTICAL">
+            <Original>Tactical tripod camera</Original>
+            <English>Tactical tripod camera</English>
+            <French>Caméra tactique sur trépied</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_COVERT">
+            <Original>Covert camera</Original>
+            <English>Covert camera</English>
+            <French>Caméra dissimulée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_ATTR_NAME">
+            <Original>Camera name</Original>
+            <English>Camera name</English>
+            <French>Nom de la caméra</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_ATTR_NAME_TIP">
+            <Original>Name shown in the Live video app (16 characters, empty: CAM-1, CAM-2…)</Original>
+            <English>Name shown in the Live video app (16 characters, empty: CAM-1, CAM-2…)</English>
+            <French>Nom affiché dans l'app Vidéo live (16 caractères, vide : CAM-1, CAM-2…)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_ATTR_SIDE">
+            <Original>Side</Original>
+            <English>Side</English>
+            <French>Camp</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CAM_ATTR_SIDE_TIP">
+            <Original>Side that sees this camera on its phone</Original>
+            <English>Side that sees this camera on its phone</English>
+            <French>Camp qui voit cette caméra dans son téléphone</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_SUBCAT">
+            <Original>Network infrastructure</Original>
+            <English>Network infrastructure</English>
+            <French>Infrastructure réseau</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_ACE">
+            <Original>Network infrastructure</Original>
+            <English>Network infrastructure</English>
+            <French>Infrastructure réseau</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_RACK_PATCH">
+            <Original>Patch rack 42U</Original>
+            <English>Patch rack 42U</English>
+            <French>Baie de brassage 42U</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_RACK_SERVER">
+            <Original>Server rack 42U</Original>
+            <English>Server rack 42U</English>
+            <French>Baie serveur 42U</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_WALL_9U">
+            <Original>Wall cabinet 9U</Original>
+            <English>Wall cabinet 9U</English>
+            <French>Coffret mural 9U</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_WALL_12U">
+            <Original>Wall cabinet 12U</Original>
+            <English>Wall cabinet 12U</English>
+            <French>Coffret mural 12U</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_SERVER_TOWER">
+            <Original>Tower server</Original>
+            <English>Tower server</English>
+            <French>Serveur tour</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_UPS">
+            <Original>UPS</Original>
+            <English>UPS</English>
+            <French>Onduleur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_SWITCH_DESK">
+            <Original>Desktop switch</Original>
+            <English>Desktop switch</English>
+            <French>Switch de table</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_CRAC">
+            <Original>Server room AC unit</Original>
+            <English>Server room AC unit</English>
+            <French>Climatiseur de salle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_ELEC">
+            <Original>Electrical cabinet</Original>
+            <English>Electrical cabinet</English>
+            <French>Armoire électrique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_TRAY_STRAIGHT">
+            <Original>Cable tray 2 m</Original>
+            <English>Cable tray 2 m</English>
+            <French>Chemin de câbles 2 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_TRAY_CORNER">
+            <Original>Cable tray, corner</Original>
+            <English>Cable tray, corner</English>
+            <French>Chemin de câbles, angle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_TRAY_TEE">
+            <Original>Cable tray, tee</Original>
+            <English>Cable tray, tee</English>
+            <French>Chemin de câbles, té</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_TRUNK_STRAIGHT">
+            <Original>Cable trunking 2 m</Original>
+            <English>Cable trunking 2 m</English>
+            <French>Goulotte 2 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_TRUNK_CORNER">
+            <Original>Cable trunking, corner</Original>
+            <English>Cable trunking, corner</English>
+            <French>Goulotte, angle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_ATTR_NAME">
+            <Original>Name</Original>
+            <English>Name</English>
+            <French>Nom</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_ATTR_NAME_TIP">
+            <Original>Name shown in the equipment status.</Original>
+            <English>Name shown in the equipment status.</English>
+            <French>Nom affiché dans l'état de l'équipement.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_ATTR_ON">
+            <Original>Powered on at start</Original>
+            <English>Powered on at start</English>
+            <French>Allumé au départ</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_INFRA_ATTR_ON_TIP">
+            <Original>Unchecked: the equipment starts powered off (LEDs off).</Original>
+            <English>Unchecked: the equipment starts powered off (LEDs off).</English>
+            <French>Décoché : l'équipement démarre éteint (voyants éteints).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERM12">
+            <Original>Tactical relay mast 12 m</Original>
+            <English>Tactical relay mast 12 m</English>
+            <French>Mât tactique relais 12 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERM12_RUIN">
+            <Original>Tactical relay mast 12 m (ruin)</Original>
+            <English>Tactical relay mast 12 m (ruin)</English>
+            <French>Mât tactique relais 12 m (ruine)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERM12GALVA">
+            <Original>Tactical relay mast 12 m (galvanised)</Original>
+            <English>Tactical relay mast 12 m (galvanised)</English>
+            <French>Mât tactique relais 12 m (galvanisé)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERM12RW">
+            <Original>Tactical relay mast 12 m (red-white)</Original>
+            <English>Tactical relay mast 12 m (red-white)</English>
+            <French>Mât tactique relais 12 m (rouge-blanc)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERM12SAND">
+            <Original>Tactical relay mast 12 m (sand)</Original>
+            <English>Tactical relay mast 12 m (sand)</English>
+            <French>Mât tactique relais 12 m (sable)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERM20">
+            <Original>Trailer relay mast 20 m</Original>
+            <English>Trailer relay mast 20 m</English>
+            <French>Mât relais sur remorque 20 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERM20_RUIN">
+            <Original>Trailer relay mast 20 m (ruin)</Original>
+            <English>Trailer relay mast 20 m (ruin)</English>
+            <French>Mât relais sur remorque 20 m (ruine)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERM20GALVA">
+            <Original>Trailer relay mast 20 m (galvanised)</Original>
+            <English>Trailer relay mast 20 m (galvanised)</English>
+            <French>Mât relais sur remorque 20 m (galvanisé)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERM20RW">
+            <Original>Trailer relay mast 20 m (red-white)</Original>
+            <English>Trailer relay mast 20 m (red-white)</English>
+            <French>Mât relais sur remorque 20 m (rouge-blanc)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERM20SAND">
+            <Original>Trailer relay mast 20 m (sand)</Original>
+            <English>Trailer relay mast 20 m (sand)</English>
+            <French>Mât relais sur remorque 20 m (sable)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER30">
+            <Original>Lattice relay tower 30 m</Original>
+            <English>Lattice relay tower 30 m</English>
+            <French>Pylône relais treillis 30 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER30_RUIN">
+            <Original>Lattice relay tower 30 m (ruin)</Original>
+            <English>Lattice relay tower 30 m (ruin)</English>
+            <French>Pylône relais treillis 30 m (ruine)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER30RW">
+            <Original>Lattice relay tower 30 m (red-white)</Original>
+            <English>Lattice relay tower 30 m (red-white)</English>
+            <French>Pylône relais treillis 30 m (rouge-blanc)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER30OLIVE">
+            <Original>Lattice relay tower 30 m (NATO green)</Original>
+            <English>Lattice relay tower 30 m (NATO green)</English>
+            <French>Pylône relais treillis 30 m (vert OTAN)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER30SAND">
+            <Original>Lattice relay tower 30 m (sand)</Original>
+            <English>Lattice relay tower 30 m (sand)</English>
+            <French>Pylône relais treillis 30 m (sable)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER30LIGHT">
+            <Original>Lattice relay tower 30 m (light equipment)</Original>
+            <English>Lattice relay tower 30 m (light equipment)</English>
+            <French>Pylône relais treillis 30 m (équipement léger)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER30BARE">
+            <Original>Lattice relay tower 30 m (bare)</Original>
+            <English>Lattice relay tower 30 m (bare)</English>
+            <French>Pylône relais treillis 30 m (nu)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER40">
+            <Original>Triangular relay tower 40 m</Original>
+            <English>Triangular relay tower 40 m</English>
+            <French>Pylône relais triangulaire 40 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER40_RUIN">
+            <Original>Triangular relay tower 40 m (ruin)</Original>
+            <English>Triangular relay tower 40 m (ruin)</English>
+            <French>Pylône relais triangulaire 40 m (ruine)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER40RW">
+            <Original>Triangular relay tower 40 m (red-white)</Original>
+            <English>Triangular relay tower 40 m (red-white)</English>
+            <French>Pylône relais triangulaire 40 m (rouge-blanc)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER40OLIVE">
+            <Original>Triangular relay tower 40 m (NATO green)</Original>
+            <English>Triangular relay tower 40 m (NATO green)</English>
+            <French>Pylône relais triangulaire 40 m (vert OTAN)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER40SAND">
+            <Original>Triangular relay tower 40 m (sand)</Original>
+            <English>Triangular relay tower 40 m (sand)</English>
+            <French>Pylône relais triangulaire 40 m (sable)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER40LIGHT">
+            <Original>Triangular relay tower 40 m (light equipment)</Original>
+            <English>Triangular relay tower 40 m (light equipment)</English>
+            <French>Pylône relais triangulaire 40 m (équipement léger)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER40BARE">
+            <Original>Triangular relay tower 40 m (bare)</Original>
+            <English>Triangular relay tower 40 m (bare)</English>
+            <French>Pylône relais triangulaire 40 m (nu)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER50">
+            <Original>Heavy relay tower 50 m</Original>
+            <English>Heavy relay tower 50 m</English>
+            <French>Pylône relais lourd 50 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER50_RUIN">
+            <Original>Heavy relay tower 50 m (ruin)</Original>
+            <English>Heavy relay tower 50 m (ruin)</English>
+            <French>Pylône relais lourd 50 m (ruine)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER50RW">
+            <Original>Heavy relay tower 50 m (red-white)</Original>
+            <English>Heavy relay tower 50 m (red-white)</English>
+            <French>Pylône relais lourd 50 m (rouge-blanc)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER50OLIVE">
+            <Original>Heavy relay tower 50 m (NATO green)</Original>
+            <English>Heavy relay tower 50 m (NATO green)</English>
+            <French>Pylône relais lourd 50 m (vert OTAN)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER50SAND">
+            <Original>Heavy relay tower 50 m (sand)</Original>
+            <English>Heavy relay tower 50 m (sand)</English>
+            <French>Pylône relais lourd 50 m (sable)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER50LIGHT">
+            <Original>Heavy relay tower 50 m (light equipment)</Original>
+            <English>Heavy relay tower 50 m (light equipment)</English>
+            <French>Pylône relais lourd 50 m (équipement léger)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWER50BARE">
+            <Original>Heavy relay tower 50 m (bare)</Original>
+            <English>Heavy relay tower 50 m (bare)</English>
+            <French>Pylône relais lourd 50 m (nu)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERMONO30">
+            <Original>Relay monopole 30 m</Original>
+            <English>Relay monopole 30 m</English>
+            <French>Monopôle relais 30 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERMONO30_RUIN">
+            <Original>Relay monopole 30 m (ruin)</Original>
+            <English>Relay monopole 30 m (ruin)</English>
+            <French>Monopôle relais 30 m (ruine)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERMONO30RW">
+            <Original>Relay monopole 30 m (red-white)</Original>
+            <English>Relay monopole 30 m (red-white)</English>
+            <French>Monopôle relais 30 m (rouge-blanc)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERMONO30OLIVE">
+            <Original>Relay monopole 30 m (NATO green)</Original>
+            <English>Relay monopole 30 m (NATO green)</English>
+            <French>Monopôle relais 30 m (vert OTAN)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERMONO30SAND">
+            <Original>Relay monopole 30 m (sand)</Original>
+            <English>Relay monopole 30 m (sand)</English>
+            <French>Monopôle relais 30 m (sable)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERMONO30LIGHT">
+            <Original>Relay monopole 30 m (light equipment)</Original>
+            <English>Relay monopole 30 m (light equipment)</English>
+            <French>Monopôle relais 30 m (équipement léger)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERMONO30BARE">
+            <Original>Relay monopole 30 m (bare)</Original>
+            <English>Relay monopole 30 m (bare)</English>
+            <French>Monopôle relais 30 m (nu)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERGUYED60">
+            <Original>Guyed relay mast 60 m</Original>
+            <English>Guyed relay mast 60 m</English>
+            <French>Pylône relais haubané 60 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERGUYED60_RUIN">
+            <Original>Guyed relay mast 60 m (ruin)</Original>
+            <English>Guyed relay mast 60 m (ruin)</English>
+            <French>Pylône relais haubané 60 m (ruine)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERGUYED60RW">
+            <Original>Guyed relay mast 60 m (red-white)</Original>
+            <English>Guyed relay mast 60 m (red-white)</English>
+            <French>Pylône relais haubané 60 m (rouge-blanc)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERGUYED60OLIVE">
+            <Original>Guyed relay mast 60 m (NATO green)</Original>
+            <English>Guyed relay mast 60 m (NATO green)</English>
+            <French>Pylône relais haubané 60 m (vert OTAN)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERGUYED60SAND">
+            <Original>Guyed relay mast 60 m (sand)</Original>
+            <English>Guyed relay mast 60 m (sand)</English>
+            <French>Pylône relais haubané 60 m (sable)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERGUYED60LIGHT">
+            <Original>Guyed relay mast 60 m (light equipment)</Original>
+            <English>Guyed relay mast 60 m (light equipment)</English>
+            <French>Pylône relais haubané 60 m (équipement léger)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERGUYED60BARE">
+            <Original>Guyed relay mast 60 m (bare)</Original>
+            <English>Guyed relay mast 60 m (bare)</English>
+            <French>Pylône relais haubané 60 m (nu)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERPINE28">
+            <Original>Pine tree relay 28 m</Original>
+            <English>Pine tree relay 28 m</English>
+            <French>Relais faux pin 28 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERPINE28_RUIN">
+            <Original>Pine tree relay 28 m (ruin)</Original>
+            <English>Pine tree relay 28 m (ruin)</English>
+            <French>Relais faux pin 28 m (ruine)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERPINE15">
+            <Original>Pine tree relay 15 m</Original>
+            <English>Pine tree relay 15 m</English>
+            <French>Relais faux pin 15 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERPINE15_RUIN">
+            <Original>Pine tree relay 15 m (ruin)</Original>
+            <English>Pine tree relay 15 m (ruin)</English>
+            <French>Relais faux pin 15 m (ruine)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERPALM22">
+            <Original>Palm tree relay 22 m</Original>
+            <English>Palm tree relay 22 m</English>
+            <French>Relais faux palmier 22 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERPALM22_RUIN">
+            <Original>Palm tree relay 22 m (ruin)</Original>
+            <English>Palm tree relay 22 m (ruin)</English>
+            <French>Relais faux palmier 22 m (ruine)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERROOF8">
+            <Original>Rooftop relay tower 8 m</Original>
+            <English>Rooftop relay tower 8 m</English>
+            <French>Pylône relais de toit 8 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERROOF8_RUIN">
+            <Original>Rooftop relay tower 8 m (ruin)</Original>
+            <English>Rooftop relay tower 8 m (ruin)</English>
+            <French>Pylône relais de toit 8 m (ruine)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERROOF8RW">
+            <Original>Rooftop relay tower 8 m (red-white)</Original>
+            <English>Rooftop relay tower 8 m (red-white)</English>
+            <French>Pylône relais de toit 8 m (rouge-blanc)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERROOF8OLIVE">
+            <Original>Rooftop relay tower 8 m (NATO green)</Original>
+            <English>Rooftop relay tower 8 m (NATO green)</English>
+            <French>Pylône relais de toit 8 m (vert OTAN)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERROOF8SAND">
+            <Original>Rooftop relay tower 8 m (sand)</Original>
+            <English>Rooftop relay tower 8 m (sand)</English>
+            <French>Pylône relais de toit 8 m (sable)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAWALLSECTOR">
+            <Original>Wall sector antenna</Original>
+            <English>Wall sector antenna</English>
+            <French>Antenne murale de secteur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAWALLSECTOROLIVE">
+            <Original>Wall sector antenna (NATO green)</Original>
+            <English>Wall sector antenna (NATO green)</English>
+            <French>Antenne murale de secteur (vert OTAN)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAWALLSECTORSAND">
+            <Original>Wall sector antenna (sand)</Original>
+            <English>Wall sector antenna (sand)</English>
+            <French>Antenne murale de secteur (sable)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAWALLOMNI">
+            <Original>Wall whip antenna</Original>
+            <English>Wall whip antenna</English>
+            <French>Antenne murale fouet</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAWALLOMNIOLIVE">
+            <Original>Wall whip antenna (NATO green)</Original>
+            <English>Wall whip antenna (NATO green)</English>
+            <French>Antenne murale fouet (vert OTAN)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAWALLOMNISAND">
+            <Original>Wall whip antenna (sand)</Original>
+            <English>Wall whip antenna (sand)</English>
+            <French>Antenne murale fouet (sable)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAWALLDISH">
+            <Original>Wall microwave dish</Original>
+            <English>Wall microwave dish</English>
+            <French>Parabole murale</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAWALLDISHOLIVE">
+            <Original>Wall microwave dish (NATO green)</Original>
+            <English>Wall microwave dish (NATO green)</English>
+            <French>Parabole murale (vert OTAN)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAWALLDISHSAND">
+            <Original>Wall microwave dish (sand)</Original>
+            <English>Wall microwave dish (sand)</English>
+            <French>Parabole murale (sable)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAWALLYAGI">
+            <Original>Wall Yagi antenna</Original>
+            <English>Wall Yagi antenna</English>
+            <French>Antenne murale Yagi</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAWALLYAGIOLIVE">
+            <Original>Wall Yagi antenna (NATO green)</Original>
+            <English>Wall Yagi antenna (NATO green)</English>
+            <French>Antenne murale Yagi (vert OTAN)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAWALLYAGISAND">
+            <Original>Wall Yagi antenna (sand)</Original>
+            <English>Wall Yagi antenna (sand)</English>
+            <French>Antenne murale Yagi (sable)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAWALLRADIO">
+            <Original>Wall radio unit</Original>
+            <English>Wall radio unit</English>
+            <French>Boîtier radio mural</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAWALLRADIOOLIVE">
+            <Original>Wall radio unit (NATO green)</Original>
+            <English>Wall radio unit (NATO green)</English>
+            <French>Boîtier radio mural (vert OTAN)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAWALLRADIOSAND">
+            <Original>Wall radio unit (sand)</Original>
+            <English>Wall radio unit (sand)</English>
+            <French>Boîtier radio mural (sable)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAPOLE">
+            <Original>Pole-mounted radio node</Original>
+            <English>Pole-mounted radio node</English>
+            <French>Nœud radio sur poteau</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAPOLEOLIVE">
+            <Original>Pole-mounted radio node (NATO green)</Original>
+            <English>Pole-mounted radio node (NATO green)</English>
+            <French>Nœud radio sur poteau (vert OTAN)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAPOLESAND">
+            <Original>Pole-mounted radio node (sand)</Original>
+            <English>Pole-mounted radio node (sand)</English>
+            <French>Nœud radio sur poteau (sable)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAROOFMAST">
+            <Original>Ballasted roof mast</Original>
+            <English>Ballasted roof mast</English>
+            <French>Mât de toit lesté</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAROOFMASTOLIVE">
+            <Original>Ballasted roof mast (NATO green)</Original>
+            <English>Ballasted roof mast (NATO green)</English>
+            <French>Mât de toit lesté (vert OTAN)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_ANTENNAROOFMASTSAND">
+            <Original>Ballasted roof mast (sand)</Original>
+            <English>Ballasted roof mast (sand)</English>
+            <French>Mât de toit lesté (sable)</French>
+        </Key>
+    </Package>
+</Project>

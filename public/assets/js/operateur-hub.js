@@ -3,7 +3,7 @@
  *
  * Page d'accueil : recherche d'un outil (touche « / »), épingles sans rechargement (repli : envoi du formulaire).
  * Mon identité : fenêtres (élément dialog), confirmation des actions définitives, recto/verso d'un papier, types de
- * papier selon le pays, étapes de création d'une couverture. Spécimen : impression et image PNG.
+ * papier selon le pays, création guidée d'une identité, filtres des identités. Spécimen : impression et image PNG.
  * Sans JavaScript, tout reste utilisable : les fenêtres sont alors des blocs dans la page.
  */
 (function () {
@@ -55,6 +55,31 @@
     var auto = document.querySelector('dialog.opx-dialog[data-opx-autoopen]');
     if (auto && typeof auto.showModal === 'function') { auto.showModal(); }
   }
+
+  // ---- Aide « Comment faire ma photo ? » : copie du prompt (langue du bouton), variantes cochées ajoutées à la fin
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-opx-copy-prompt]');
+    if (!btn) { return; }
+    var lang = btn.getAttribute('data-opx-copy-prompt');
+    var scope = btn.closest('dialog') || document;
+    var source = scope.querySelector('[data-opx-prompt-text="' + lang + '"]');
+    if (!source) { return; }
+    var text = source.value;
+    scope.querySelectorAll('[data-opx-variant-' + lang + ']:checked').forEach(function (box) {
+      text += ' ' + box.getAttribute('data-opx-variant-' + lang);
+    });
+    var ok = scope.querySelector('[data-opx-copy-ok]');
+    var fail = scope.querySelector('[data-opx-copy-fail]');
+    var done = function (success) {
+      if (ok) { ok.hidden = !success; }
+      if (fail) { fail.hidden = success; }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+    } else {
+      done(false);
+    }
+  });
 
   // ---- Recherche d'un outil
   var hub = document.querySelector('[data-opx-hub]');
@@ -185,16 +210,63 @@
     }
   }
 
-  // ---- Création d'une couverture : le pays et le portrait ne servent que pour une personne fictive
-  var coverForm = document.querySelector('[data-opx-cover-form]');
-  if (coverForm) {
-    var randomStep = coverForm.querySelector('[data-opx-cover-random]');
-    var syncSource = function () {
-      var checked = coverForm.querySelector('[data-opx-cover-source]:checked');
-      if (randomStep) { randomStep.hidden = !!checked && checked.value === 'athena'; }
+  // ---- Création guidée d'une identité : papiers délivrés par le pays choisi, récapitulatif
+  document.querySelectorAll('[data-opx-wizard]').forEach(function (form) {
+    var types = {};
+    try { types = JSON.parse(form.getAttribute('data-opx-types') || '{}'); } catch (err) { types = {}; }
+    var field = function (name) { return form.querySelector('[name="' + name + '"]'); };
+    var put = function (key, text) {
+      var el = form.querySelector('[data-opx-recap="' + key + '"]');
+      if (el) { el.textContent = text; }
     };
-    coverForm.addEventListener('change', syncSource);
-    syncSource();
+    var syncWizard = function () {
+      var nat = field('nationality');
+      var allowed = nat && nat.value ? (types[nat.value] || []) : null;
+      var labels = [];
+      form.querySelectorAll('[data-opx-wizard-paper]').forEach(function (box) {
+        var ok = allowed !== null && allowed.indexOf(box.value) !== -1;
+        box.disabled = !ok;
+        if (!ok) { box.checked = false; }
+        var choice = box.closest('.opx-choice');
+        if (choice) { choice.classList.toggle('is-disabled', !ok); }
+        if (box.checked) { labels.push(box.getAttribute('data-opx-label') || ''); }
+      });
+      var name = [field('first_name') ? field('first_name').value.trim() : '', field('last_name') ? field('last_name').value.trim().toUpperCase() : ''].join(' ').trim();
+      var dob = field('birth_date') ? field('birth_date').value : '';
+      var place = field('birth_place') ? field('birth_place').value.trim() : '';
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dob);
+      put('name', name || '—');
+      put('birth', [m ? m[3] + '/' + m[2] + '/' + m[1] : '', place].filter(Boolean).join(' · ') || '—');
+      put('nationality', nat && nat.value && nat.selectedOptions[0] ? nat.selectedOptions[0].textContent : '—');
+      put('papers', labels.length ? labels.join(' · ') : (form.getAttribute('data-opx-none') || 'Aucun'));
+    };
+    form.addEventListener('input', syncWizard);
+    form.addEventListener('change', syncWizard);
+    syncWizard();
+  });
+
+  // ---- Filtres de la liste des identités (sans JavaScript : toutes les cartes restent affichées)
+  var filters = document.querySelector('[data-opx-filters]');
+  if (filters) {
+    filters.hidden = false;
+    var empty = document.querySelector('[data-opx-filter-empty]');
+    filters.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-opx-filter]');
+      if (!btn) { return; }
+      var want = btn.getAttribute('data-opx-filter');
+      var shown = 0;
+      filters.querySelectorAll('[data-opx-filter]').forEach(function (b) {
+        b.classList.toggle('is-on', b === btn);
+        b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+      });
+      document.querySelectorAll('[data-opx-identity-card]').forEach(function (card) {
+        var tags = (card.getAttribute('data-opx-identity-card') || '').split(' ');
+        var on = want === '' || tags.indexOf(want) !== -1;
+        card.hidden = !on;
+        shown += on ? 1 : 0;
+      });
+      if (empty) { empty.hidden = shown > 0; }
+    });
   }
 
   // ---- Spécimen : impression et image PNG

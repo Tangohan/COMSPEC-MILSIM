@@ -1,5 +1,6 @@
 """
-Écrans de salle d'opérations (TOC / JOC) : murs d'images, écrans géants, écran suspendu, bandeau horloge, plaque de nom.
+Écrans de salle d'opérations (TOC / JOC) : murs d'images, écrans géants, écrans suspendus, bandeau horloge, plaque de
+nom, bandeaux LED texte, mur LED 220", grand écran incurvé.
 Modèles MLOD écrits en pur Python (même format que model_projsurface.py, sans Blender), textures et matières du cadre,
 aperçus Eden rendus par un petit moteur logiciel (numpy), dans Sources/addons/main/data/toc/.
 
@@ -26,9 +27,29 @@ Modèles (origine : sol, plan du mur en Y = 0, milieu en X ; écran suspendu : d
   toc_65_ceiling      65" (1,4390 x 0,8094 m) sous un tube de plafond, incliné de 10° vers le bas
   toc_clock_strip     bandeau horloge LED, face 1,12 x 0,28 m (4:1), boîtier 1,16 x 0,32 m, milieu à 2,55 m
   toc_name_plate      plaque de nom d'élément, face 0,86 x 0,215 m (4:1), plaque 0,90 x 0,25 m, milieu à 2,55 m
+  toc_led_text_8 / _16            bandeaux LED texte muraux, faces 2,40 x 0,30 m (8:1) et 4,80 x 0,30 m (16:1), milieu à 2,55 m
+  toc_led_text_8_ceiling / _16_ceiling   les mêmes sous deux tiges de plafond (origine : dessus des platines)
+  toc_136_wall / toc_136_stand    136" LED tout-en-un (3,0110 x 1,6937 m), mural ou sur pied de sol lourd (semelles, lest)
+  toc_led_220_wall / _truss       mur LED 220" à vue directe (4,8704 x 2,7396 m, une image, dos en 8 x 4 caissons),
+                                  mural ou autoportant sur trois échelles en treillis lestées
+  toc_wall_4x3        12 dalles 55" : panel1 = bloc 3x3 de gauche (16:9), panel2 à 4 = colonne de droite (haut -> bas)
+  toc_wall_4x3_panels 12 dalles indépendantes (ordre de lecture)
+  toc_wall_5x3        15 dalles : panel1 = bloc 3x3 central (16:9), panel2 à 4 = colonne gauche, panel5 à 7 = colonne droite
+  toc_wall_5x3_panels 15 dalles indépendantes
+  toc_wall_6x4        24 dalles (bas de l'image à 0,60 m) : panel1 = bloc 4x4 central (16:9), panel2 à 5 = colonne gauche,
+                      panel6 à 9 = colonne droite
+  toc_wall_6x4_zones  24 dalles en six blocs 2x2 (16:9), ordre de lecture panel1 à 6
+  toc_65_ceiling_2 / _3 / _3_arc  deux ou trois 65" sur une barre sous deux tubes de plafond, inclinés de 10° (panel1 à
+                      gauche) ; _arc : dalles latérales tournées de 15° vers le centre
+  toc_98_ceiling      98" suspendu (sélection « screen »)
+  toc_curved_floor / _floor_duo / _wall / _wall_duo   grand écran LED incurvé 32:9 : arc 7,20 m x 2,025 m, rayon 7 m,
+                      bas de l'image à 0,75 m, surface continue (48 segments lissés). Trio : panel1 = zone centrale 16:9,
+                      panel2 = colonne gauche 8:9, panel3 = colonne droite 8:9 ; duo : panel1 / panel2 = deux moitiés 16:9.
+                      Sur pieds (face au milieu à Y = 0,90 m, pieds en Y >= 0) ou mural (face à 0,27 m, entretoises).
 
     python model_toc_screens.py           # modèles, textures (hemtt utils paa convert), rvmat, aperçus
-    (NO_TEX=1 : sans textures ; NO_PREVIEW=1 : sans aperçus ; RENDER_DIR=dossier : grands rendus de contrôle)
+    (NO_TEX=1 : sans textures ; NO_PREVIEW=1 : sans aperçus ; RENDER_DIR=dossier : grands rendus de contrôle ;
+     ONLY=toc_curved,toc_136 : seulement les modèles dont le nom commence ainsi)
 """
 import math
 import os
@@ -115,12 +136,15 @@ class Mesh:
         self.faces = []      # (indices, uvs, normale, matière, sélections)
         self.sel_pts = {}    # sélection -> indices de points
         self.mass = None
+        self.vn = {}         # indice de face -> normales par coin (surfaces courbes lissées)
+        self.shared = {}     # (clé de partage, point arrondi) -> indice (sommets partagés des surfaces lissées)
 
     def point(self, p):
         self.pts.append(tuple(float(c) for c in p))
         return len(self.pts) - 1
 
-    def poly(self, pts, mat, sels=(), uvs=None, hint=None):
+    def poly(self, pts, mat, sels=(), uvs=None, hint=None, vn=None, share=None):
+        """vn : normales par coin (surface lissée) ; share : clé de partage des sommets (mêmes points réutilisés)."""
         n = newell(pts)
         if vdot(n, n) < 1e-14:
             return  # face dégénérée (biseau nul)
@@ -128,19 +152,33 @@ class Mesh:
             pts = list(reversed(pts))
             if uvs is not None:
                 uvs = list(reversed(uvs))
+            if vn is not None:
+                vn = list(reversed(vn))
             n = (-n[0], -n[1], -n[2])
         n = vnorm(n)
         if uvs is None:
             uvs = project_uv(pts, n, MATS.get(mat, (None, None, 1.0))[2])
         if len(pts) > 4:
             raise ValueError("polygone > 4")
-        idx = [self.point(p) for p in pts]
+        if share is None:
+            idx = [self.point(p) for p in pts]
+        else:
+            idx = []
+            for p in pts:
+                k = (share, round(p[0], 5), round(p[1], 5), round(p[2], 5))
+                if k not in self.shared:
+                    self.shared[k] = self.point(p)
+                idx.append(self.shared[k])
+        if vn is not None:
+            self.vn[len(self.faces)] = [vnorm(v) for v in vn]
         self.faces.append((idx, list(uvs), n, mat, tuple(sels)))
         for s in sels:
             self.sel_pts.setdefault(s, set()).update(idx)
 
     def merge(self, other):
         off = len(self.pts)
+        for fi, v in other.vn.items():
+            self.vn[fi + len(self.faces)] = v
         self.pts += other.pts
         for idx, uvs, n, mat, sels in other.faces:
             self.faces.append(([i + off for i in idx], uvs, n, mat, sels))
@@ -318,14 +356,14 @@ def wall_plate(m, cx, cz, w, h, y1, detail):
                 cylinder(m, (x, 0.008, z), (x, 0.013, z), 0.007, "frame", n=8)
 
 
-def video_wall(m, cols, rows, detail, sels):
-    """Mur d'images de cols x rows dalles 55". sels : fonction (col, ligne) -> (sélection, uv)."""
+def video_wall(m, cols, rows, detail, sels, zimg=None):
+    """Mur d'images de cols x rows dalles 55". sels : fonction (col, ligne) -> (sélection, uv). zimg : bas de l'image."""
     aw, ah = T55
     pw, ph = aw + 2 * T55_BZ, ah + 2 * T55_BZ
     W, H = cols * pw, rows * ph
     yb0, yb1 = 0.085, 0.150   # corps des dalles
     yf = yb1
-    z0 = WALL_Z0 - T55_BZ
+    z0 = (WALL_Z0 if zimg is None else zimg) - T55_BZ
     for row in range(rows):
         for col in range(cols):
             cx = W / 2 - pw * (col + 0.5)      # colonne 0 à gauche vue de face (+X)
@@ -506,8 +544,602 @@ def make_plate(detail):
     return m
 
 
+# --------------------------------------------------------------------------------------------------------------------
+# Écrans géants, bandeaux LED texte, suspendus multiples, grand écran incurvé (11/11)
+# --------------------------------------------------------------------------------------------------------------------
+P136 = (3.0110, 1.6937)       # 136" LED tout-en-un
+P220 = (4.8704, 2.7396)       # 220" mur LED à vue directe
+LED8 = (2.40, 0.30)           # bandeau LED texte 8:1
+LED16 = (4.80, 0.30)          # bandeau LED texte 16:1 (texture 4096 x 256 : pixels carrés)
+WALL4_Z0 = 0.60               # bas de l'image des murs à 4 rangées
+CURVE_R = 7.0                 # rayon de la face du grand écran incurvé
+CURVE_ARC = 7.20              # longueur d'arc de l'image
+CURVE_H = 2.025               # hauteur de l'image (32:9)
+CURVE_Z0 = 0.75               # bas de l'image
+CURVE_Y_FLOOR = 0.90          # recul de la face au milieu de l'arc, version sur pieds (les pieds restent en Y >= 0)
+CURVE_Y_WALL = 0.27           # idem, version murale (entretoises vers le mur en Y = 0)
+CURVE_D = 0.23                # profondeur dalle + caissons + montants
+BOXES = {}                    # nom du modèle -> fonction des boîtes des LOD fermées
+
+
+def xform(sub, fp, fv):
+    """Transforme un maillage (points par fp, normales par fv)."""
+    sub.pts = [fp(p) for p in sub.pts]
+    sub.faces = [(idx, uvs, fv(n), mat, sels) for idx, uvs, n, mat, sels in sub.faces]
+    sub.vn = {k: [fv(v) for v in vs] for k, vs in sub.vn.items()}
+    return sub
+
+
+def rot_z(p, a, pivot):
+    x, y = p[0] - pivot[0], p[1] - pivot[1]
+    c, s = math.cos(a), math.sin(a)
+    return (pivot[0] + x * c - y * s, pivot[1] + x * s + y * c, p[2])
+
+
+# ---- Murs d'images par blocs --------------------------------------------------------------------------------------
+def wall_blocks(kind):
+    """(colonnes, rangées, blocs dans l'ordre des index : (colonne, rangée, largeur, hauteur) en dalles, bas de l'image)."""
+    col = lambda c, rows: [(c, r, 1, 1) for r in range(rows)]
+    if kind == "4x3":
+        return 4, 3, [(0, 0, 3, 3)] + col(3, 3), WALL_Z0
+    if kind == "4x3_panels":
+        return 4, 3, [(c, r, 1, 1) for r in range(3) for c in range(4)], WALL_Z0
+    if kind == "5x3":
+        return 5, 3, [(1, 0, 3, 3)] + col(0, 3) + col(4, 3), WALL_Z0
+    if kind == "5x3_panels":
+        return 5, 3, [(c, r, 1, 1) for r in range(3) for c in range(5)], WALL_Z0
+    if kind == "6x4":
+        return 6, 4, [(1, 0, 4, 4)] + col(0, 4) + col(5, 4), WALL4_Z0
+    if kind == "6x4_zones":
+        return 6, 4, [(2 * c, 2 * r, 2, 2) for r in range(2) for c in range(3)], WALL4_Z0
+    raise KeyError(kind)
+
+
+def make_wall_blocks(kind, detail):
+    cols, rows, blocks, zimg = wall_blocks(kind)
+    m = Mesh()
+    aw, ah = T55
+    pw, ph = aw + 2 * T55_BZ, ah + 2 * T55_BZ
+
+    def sels(col, row):
+        for i, (c0, r0, nc, nr) in enumerate(blocks):
+            if c0 <= col < c0 + nc and r0 <= row < r0 + nr:
+                if nc == 1 and nr == 1:
+                    return "panel%d" % (i + 1), (0.0, 0.0, 1.0, 1.0)
+                # Bloc : une image, UV proportionnelles à la position (l'image passe derrière les jointures).
+                x0 = (col - c0) * pw + T55_BZ
+                y0 = (row - r0) * ph + T55_BZ
+                return "panel%d" % (i + 1), (x0 / (nc * pw), y0 / (nr * ph), (x0 + aw) / (nc * pw), (y0 + ah) / (nr * ph))
+        raise ValueError("dalle sans bloc")
+
+    video_wall(m, cols, rows, detail, sels, zimg)
+    return m
+
+
+def wall_boxes(kind):
+    cols, rows, _, zimg = wall_blocks(kind)
+    pw, ph = T55[0] + 2 * T55_BZ, T55[1] + 2 * T55_BZ
+    W, H = cols * pw + 2 * TRIM, rows * ph + 2 * TRIM
+    z0 = zimg - T55_BZ - TRIM
+    return [(-W / 2, W / 2, 0.0, 0.154, z0, z0 + H)]
+
+
+# ---- Bandeaux LED texte -------------------------------------------------------------------------------------------
+def make_led_text(size, ceiling, detail):
+    """Bandeau LED texte : boîtier plastique du bandeau horloge. Mural : milieu à HIGH_Z, pattes au mur. Suspendu :
+    origine sur le dessus des platines de plafond, deux tiges, face verticale vers +Y."""
+    m = Mesh()
+    aw, ah = size
+    bz = (0.02,) * 4
+    cb = 0.002 if detail == 0 else 0
+    if not ceiling:
+        cz = HIGH_Z
+        panel(m, 0.0, cz, aw, ah, bz, 0.03, 0.085, detail, "screen", bevel=0.006, body="plastic", ring="plastic")
+        if detail < 2:
+            n = max(2, int(round(aw / 0.8)))
+            for i in range(n):
+                x = -aw / 2 + aw * (i + 0.5) / n
+                box(m, x - 0.02, x + 0.02, 0.0, 0.03, cz - 0.09, cz + 0.09, "steel", b=cb)
+        if detail == 0:
+            power_led(m, aw / 2 + 0.008, cz - ah / 2 - 0.01, 0.085)
+        return m
+    drop = 0.45
+    cz = -drop - 0.02 - ah / 2
+    panel(m, 0.0, cz, aw, ah, bz, -0.0275, 0.0275, detail, "screen", bevel=0.006, body="plastic", ring="plastic")
+    for sx in (-1, 1):
+        x = sx * aw * 0.36
+        box(m, x - 0.07, x + 0.07, -0.07, 0.07, -0.010, 0.0, "steel", b=cb)             # platine de plafond
+        box(m, x - 0.0125, x + 0.0125, -0.0125, 0.0125, -drop - 0.012, -0.010, "steel")  # tige
+        if detail < 2:
+            box(m, x - 0.04, x + 0.04, -0.02, 0.02, -drop - 0.012, -drop + 0.012, "steel", b=cb)   # chape sur le boîtier
+        if detail == 0:
+            for dx in (-0.05, 0.05):
+                for dy in (-0.05, 0.05):
+                    cylinder(m, (x + dx, dy, -0.010), (x + dx, dy, -0.014), 0.006, "frame", n=8)
+    if detail == 0:
+        power_led(m, aw / 2 + 0.008, cz - ah / 2 - 0.01, 0.0275)
+    return m
+
+
+def led_text_boxes(size, ceiling):
+    aw, ah = size
+    if not ceiling:
+        return [(-aw / 2 - 0.02, aw / 2 + 0.02, 0.0, 0.085, HIGH_Z - ah / 2 - 0.02, HIGH_Z + ah / 2 + 0.02)]
+    cz = -0.45 - 0.02 - ah / 2
+    out = [(-aw / 2 - 0.02, aw / 2 + 0.02, -0.0275, 0.0275, cz - ah / 2 - 0.02, cz + ah / 2 + 0.02)]
+    for sx in (-1, 1):
+        x = sx * aw * 0.36
+        out.append((x - 0.03, x + 0.03, -0.03, 0.03, -0.45, 0.0))
+    return out
+
+
+# ---- 136 pouces ---------------------------------------------------------------------------------------------------
+BZ136 = (0.008, 0.008, 0.012, 0.008)
+Z136_WALL = 0.75
+Z136_STAND = 0.70
+
+
+def make_136_wall(detail):
+    m = Mesh()
+    aw, ah = P136
+    cz = Z136_WALL + ah / 2
+    panel(m, 0.0, cz, aw, ah, BZ136, 0.07, 0.125, detail, "screen", bevel=0.002)
+    # Deux coques arrière (alimentation, réception) et deux platines murales.
+    for sx in (-1, 1):
+        back_casing(m, sx * 0.76, cz, 1.25, 1.05, 0.04, 0.07, detail)
+        wall_plate(m, sx * 0.76, cz, 0.8, 0.6, 0.04, detail)
+    if detail == 0:
+        power_led(m, aw / 2 - 0.06, cz - ah / 2 - 0.006, 0.125)
+    return m
+
+
+def make_136_stand(detail):
+    """Pied de sol lourd : deux colonnes sur semelles d'acier (vérins de calage, pas de roulettes), traverses, lest."""
+    m = Mesh()
+    aw, ah = P136
+    cz = Z136_STAND + ah / 2
+    panel(m, 0.0, cz, aw, ah, BZ136, 0.07, 0.125, detail, "screen", bevel=0.002)
+    for sx in (-1, 1):
+        back_casing(m, sx * 0.76, cz, 1.25, 1.05, 0.04, 0.07, detail)
+    if detail == 0:
+        power_led(m, aw / 2 - 0.06, cz - ah / 2 - 0.006, 0.125)
+    cb = 0.004 if detail == 0 else 0
+    col_top = cz + 0.62
+    for sx in (-1, 1):
+        x = sx * 0.95
+        box(m, x - 0.05, x + 0.05, -0.05, 0.02, 0.05, col_top, "steel", b=cb)                 # colonne 100 x 70
+        box(m, x - 0.09, x + 0.09, -0.62, 0.70, 0.022, 0.062, "steel", b=cb)                  # semelle
+        box(m, x - 0.06, x + 0.06, -0.20, 0.14, 0.062, 0.26, "steel", b=cb)                   # gousset
+        if detail < 2:
+            for y in (-0.56, 0.64):
+                cylinder(m, (x, y, 0.0), (x, y, 0.022), 0.04, "rubber", n=12 if detail == 0 else 8)   # vérin de calage
+            box(m, x - 0.052, x + 0.052, -0.052, 0.022, col_top, col_top + 0.012, "plastic", b=0.002 if detail == 0 else 0)
+            # Jambe de force arrière.
+            cylinder(m, (x, -0.56, 0.062), (x, -0.05, 1.05), 0.022, "steel", n=10 if detail == 0 else 6, caps=False)
+        for zz in (cz - 0.5, cz, cz + 0.5):
+            box(m, x - 0.035, x + 0.035, 0.02, 0.04, zz - 0.035, zz + 0.035, "steel", b=cb)   # platine vers le dos
+    for zz in (cz - 0.5, cz + 0.5):
+        box(m, -1.10, 1.10, 0.02, 0.04, zz - 0.04, zz + 0.04, "steel", b=cb)                  # rails VESA
+    box(m, -0.90, 0.90, -0.04, 0.01, 0.30, 0.38, "steel", b=cb)                               # traverse basse
+    # Lest : caisson entre les colonnes, sur la traverse.
+    box(m, -0.55, 0.55, -0.30, 0.10, 0.38, 0.395, "steel", b=cb)
+    if detail == 0:
+        box(m, -0.40, 0.10, -0.24, 0.04, 0.395, 0.50, "plastic", b=0.006)
+        cylinder(m, (0.10, -0.10, 0.47), (0.90, -0.06, 0.62), 0.009, "rubber", n=6, caps=False)
+        cylinder(m, (0.90, -0.06, 0.62), (0.90, -0.06, cz - ah / 2), 0.009, "rubber", n=6, caps=False)
+    return m
+
+
+def boxes_136(stand):
+    aw, ah = P136
+    z0 = (Z136_STAND if stand else Z136_WALL)
+    if not stand:
+        return [(-aw / 2 - 0.008, aw / 2 + 0.008, 0.0, 0.125, z0 - 0.012, z0 + ah + 0.008)]
+    out = [(-aw / 2 - 0.008, aw / 2 + 0.008, 0.02, 0.125, z0 - 0.012, z0 + ah + 0.008)]
+    for sx in (-1, 1):
+        x = sx * 0.95
+        out.append((x - 0.09, x + 0.09, -0.62, 0.70, 0.0, 0.062))
+        out.append((x - 0.05, x + 0.05, -0.05, 0.02, 0.062, z0 - 0.012))
+    out.append((-0.55, 0.55, -0.30, 0.10, 0.30, 0.50))
+    return out
+
+
+# ---- Mur LED 220 pouces -------------------------------------------------------------------------------------------
+Z220_WALL = 0.40
+Z220_TRUSS = 0.50
+
+
+def led_wall(m, cz, y0, detail):
+    """Mur LED à vue directe : face en une image (cadre de 4 mm), dos en 8 x 4 caissons modulaires (y0 -> y0 + 0,07),
+    dalle LED (y0 + 0,07 -> y0 + 0,095)."""
+    aw, ah = P220
+    panel(m, 0.0, cz, aw, ah, (0.004,) * 4, y0 + 0.07, y0 + 0.095, detail, "screen", bevel=0.0012)
+    nc, nr = 8, 4
+    cw, ch = aw / nc, ah / nr
+    if detail >= 2:
+        box(m, -aw / 2, aw / 2, y0, y0 + 0.07, cz - ah / 2, cz + ah / 2, "plastic", skip=("+y",))
+        return
+    for r in range(nr):
+        for c in range(nc):
+            cx = -aw / 2 + cw * (c + 0.5)
+            zc = cz - ah / 2 + ch * (r + 0.5)
+            box(m, cx - cw / 2 + 0.003, cx + cw / 2 - 0.003, y0, y0 + 0.07, zc - ch / 2 + 0.003, zc + ch / 2 - 0.003, "plastic",
+                b=0.006 if detail == 0 else 0, skip=("+y",))
+            if detail == 0:
+                # Ouïe et poignée de chaque caisson.
+                vw, vh = cw * 0.5, 0.10
+                pts = [(cx + vw / 2, y0 - 0.0005, zc + 0.08), (cx - vw / 2, y0 - 0.0005, zc + 0.08),
+                       (cx - vw / 2, y0 - 0.0005, zc + 0.08 + vh), (cx + vw / 2, y0 - 0.0005, zc + 0.08 + vh)]
+                uvs = [(0, vh / 0.08), (vw / 0.08, vh / 0.08), (vw / 0.08, 0), (0, 0)]
+                m.poly(pts, "vent", uvs=uvs, hint=(0, -1, 0))
+                box(m, cx - 0.07, cx + 0.07, y0 - 0.018, y0, zc - 0.16, zc - 0.135, "steel", b=0.003)
+
+
+def make_led220_wall(detail):
+    m = Mesh()
+    aw, ah = P220
+    cz = Z220_WALL + ah / 2
+    led_wall(m, cz, 0.03, detail)
+    # Rails verticaux au mur.
+    for i in range(6):
+        x = -aw / 2 + aw * (i + 0.5) / 6
+        box(m, x - 0.03, x + 0.03, 0.0, 0.03, cz - ah / 2 + 0.05, cz + ah / 2 - 0.05, "steel", b=0.003 if detail == 0 else 0)
+    if detail == 0:
+        power_led(m, aw / 2 - 0.06, cz - ah / 2 - 0.002, 0.125)
+    return m
+
+
+TRUSS_X = (-1.83, 0.0, 1.83)
+
+
+def make_led220_truss(detail):
+    """Autoportant : trois échelles en treillis derrière le mur LED, semelles lestées, jambes de force."""
+    m = Mesh()
+    aw, ah = P220
+    cz = Z220_TRUSS + ah / 2
+    led_wall(m, cz, 0.0, detail)
+    top = cz + ah / 2 - 0.08
+    cb = 0.004 if detail == 0 else 0
+    nt = 10 if detail == 0 else 6
+    for x in TRUSS_X:
+        # Semelle (platine + poutre), lest.
+        box(m, x - 0.22, x + 0.22, -1.00, 0.55, 0.0, 0.03, "steel", b=cb)
+        box(m, x - 0.045, x + 0.045, -1.00, 0.55, 0.03, 0.11, "steel", b=cb)
+        if detail < 2:
+            box(m, x - 0.20, x + 0.20, -0.95, -0.55, 0.11, 0.21, "rubber", b=0.01 if detail == 0 else 0)    # lest
+        # Échelle : deux membrures (y = -0,04 et -0,34), barreaux droits et diagonales.
+        for y in (-0.04, -0.34):
+            cylinder(m, (x, y, 0.11), (x, y, top), 0.025, "steel", n=nt)
+        if detail < 2:
+            k = 0
+            z = 0.36
+            while z < top - 0.1:
+                cylinder(m, (x, -0.04, z), (x, -0.34, z), 0.012, "steel", n=6, caps=False)
+                if z + 0.5 < top - 0.1:
+                    a, b_ = ((-0.04, -0.34) if k % 2 == 0 else (-0.34, -0.04))
+                    cylinder(m, (x, a, z), (x, b_, z + 0.5), 0.012, "steel", n=6, caps=False)
+                z += 0.5
+                k += 1
+            cylinder(m, (x, -0.92, 0.11), (x, -0.34, 1.75), 0.022, "steel", n=nt, caps=False)   # jambe de force
+        # Pattes de l'échelle vers les caissons.
+        for zz in (cz - 0.9, cz, cz + 0.9):
+            box(m, x - 0.04, x + 0.04, -0.04, 0.0, zz - 0.04, zz + 0.04, "steel", b=cb)
+    # Deux lisses horizontales reliant les échelles.
+    for zz in (cz - 0.9, cz + 0.9):
+        box(m, -aw / 2 + 0.15, aw / 2 - 0.15, -0.035, -0.002, zz - 0.03, zz + 0.03, "steel", b=cb)
+    if detail == 0:
+        power_led(m, aw / 2 - 0.06, cz - ah / 2 - 0.002, 0.095)
+    return m
+
+
+def boxes_220(truss):
+    aw, ah = P220
+    if not truss:
+        return [(-aw / 2 - 0.004, aw / 2 + 0.004, 0.0, 0.125, Z220_WALL - 0.004, Z220_WALL + ah + 0.004)]
+    out = [(-aw / 2 - 0.004, aw / 2 + 0.004, 0.0, 0.095, Z220_TRUSS - 0.004, Z220_TRUSS + ah + 0.004)]
+    for x in TRUSS_X:
+        out.append((x - 0.22, x + 0.22, -1.00, 0.55, 0.0, 0.11))
+        out.append((x - 0.04, x + 0.04, -0.37, 0.0, 0.11, Z220_TRUSS + ah - 0.08))
+    return out
+
+
+# ---- Écrans suspendus (une à trois dalles sur une barre) ----------------------------------------------------------
+CEIL_TOP = -0.66
+CEIL_PIVOT = (0.0, 0.0, -0.63)
+CEIL_TILT = math.radians(-10)
+
+
+def ceiling_layout(n, size, arc):
+    """Unités (décalage en X, lacet, charnière) et abscisses des tubes de plafond. Unité 0 à gauche vue de face (+X)."""
+    aw = size[0]
+    pitch = aw + 0.020 + 0.004
+    units = []
+    for i in range(n):
+        x = pitch * ((n - 1) / 2 - i)
+        yaw, hinge = 0.0, (0.0, 0.0)
+        if arc and n == 3 and i != 1:
+            sx = 1 if x > 0 else -1
+            yaw = sx * math.radians(arc)
+            hinge = (sx * pitch / 2, 0.10)      # arête avant, entre la dalle centrale et la dalle latérale
+        units.append((x, yaw, hinge))
+    if n == 1:
+        poles = (-0.5, 0.5)
+    elif n == 2:
+        poles = (-pitch / 2, pitch / 2)
+    else:
+        poles = (-0.48, 0.48) if arc else (-pitch, pitch)
+    return pitch, units, poles
+
+
+def ceiling_tf(unit):
+    x, yaw, hinge = unit
+
+    def fp(p):
+        q = (p[0] + x, p[1], p[2])
+        if yaw:
+            q = rot_z(q, yaw, hinge)
+        return rot_x(q, CEIL_TILT, CEIL_PIVOT)
+
+    def fv(v):
+        q = rot_z(v, yaw, (0.0, 0.0)) if yaw else v
+        return rot_x(q, CEIL_TILT, (0.0, 0.0, 0.0))
+
+    return fp, fv
+
+
+def make_ceiling(n, size, arc, detail):
+    """Dalles suspendues sous une barre portée par deux tubes de plafond, inclinées de 10° vers le bas. arc : lacet (°)
+    des deux dalles latérales vers le centre (triple seulement), autour de leur arête avant commune."""
+    m = Mesh()
+    aw, ah = size
+    big = aw > 2.0
+    bz = (0.010, 0.010, 0.016, 0.010)
+    cb = 0.002 if detail == 0 else 0
+    pitch, units, poles = ceiling_layout(n, size, arc)
+    cz = CEIL_TOP - 0.06 - ah / 2
+    for i, unit in enumerate(units):
+        sub = Mesh()
+        sel = "screen" if n == 1 else "panel%d" % (i + 1)
+        panel(sub, 0.0, cz, aw, ah, bz, 0.05, 0.10, detail, sel)
+        back_casing(sub, 0.0, cz, aw * 0.62, ah * 0.68, 0.025, 0.05, detail)
+        arms = (-0.45, 0.45) if big else (0.0,)
+        for ax in arms:
+            box(sub, ax - 0.25, ax + 0.25, 0.0, 0.025, cz - 0.15, cz + 0.15, "steel", b=cb)        # platine VESA
+            box(sub, ax - 0.03, ax + 0.03, -0.02, 0.025, cz + 0.12, CEIL_TOP, "steel", b=cb)       # bras vers la barre
+        # Tronçon de barre de l'unité (section réduite sur les unités tournées : pas de faces confondues au coude).
+        side = unit[1] != 0.0
+        hs = 0.026 if side else 0.03
+        ext = 0.05 if side else 0.0      # rallonge vers le coude seulement (côté de la dalle centrale)
+        box(sub, -pitch / 2 - (ext if unit[0] > 0 else 0.0), pitch / 2 + (ext if unit[0] < 0 else 0.0), -hs, hs, -0.63 - hs, -0.63 + hs, "steel", b=cb)
+        if detail == 0:
+            power_led(sub, aw / 2 - 0.04, cz - ah / 2 - 0.008, 0.10)
+        fp, fv = ceiling_tf(unit)
+        m.merge(xform(sub, fp, fv))
+    for px in poles:
+        box(m, px - 0.12, px + 0.12, -0.12, 0.12, -0.012, 0.0, "steel", b=cb)
+        box(m, px - 0.03, px + 0.03, -0.03, 0.03, -0.60, -0.012, "steel", b=cb)
+        if detail < 2:
+            cylinder(m, (px - 0.06, 0.0, -0.63), (px + 0.06, 0.0, -0.63), 0.048, "steel", n=12 if detail == 0 else 8)   # collier
+        if detail == 0:
+            for sx in (-1, 1):
+                for sy in (-1, 1):
+                    cylinder(m, (px + sx * 0.09, sy * 0.09, -0.012), (px + sx * 0.09, sy * 0.09, -0.017), 0.008, "frame", n=8)
+    if arc and n == 3 and detail < 2:
+        # Genouillère au coude de la barre.
+        for sx in (-1, 1):
+            p0 = rot_x((sx * pitch / 2, 0.0, -0.675), CEIL_TILT, CEIL_PIVOT)
+            p1 = rot_x((sx * pitch / 2, 0.0, -0.585), CEIL_TILT, CEIL_PIVOT)
+            cylinder(m, p0, p1, 0.05, "steel", n=12 if detail == 0 else 8)
+    return m
+
+
+def ceiling_boxes(n, size, arc):
+    aw, ah = size
+    pitch, units, poles = ceiling_layout(n, size, arc)
+    cz = CEIL_TOP - 0.06 - ah / 2
+    out = []
+    for px in poles:
+        out.append((px - 0.12, px + 0.12, -0.12, 0.12, -0.60, 0.0))
+    for unit in units:
+        fp, _ = ceiling_tf(unit)
+        pts = [fp((x, y, z)) for x in (-aw / 2 - 0.01, aw / 2 + 0.01) for y in (0.0, 0.10)
+               for z in (cz - ah / 2 - 0.016, cz + ah / 2 + 0.01)]
+        out.append(("pts", pts))
+    return out
+
+
+# ---- Grand écran incurvé ------------------------------------------------------------------------------------------
+CURVE_T = CURVE_ARC / CURVE_R / 2     # demi-angle de l'image (rad)
+
+
+def curve_pt(t, d, z, y0):
+    """Point à l'angle t (positif vers +X), à d m derrière la face, hauteur z ; face au milieu de l'arc en Y = y0."""
+    r = CURVE_R + d
+    return (r * math.sin(t), y0 + CURVE_R - r * math.cos(t), z)
+
+
+def curve_frame(t, y0):
+    """Repère local à l'angle t : fonction (lx le long de la tangente, ly vers le spectateur, z) -> monde, et vecteurs."""
+    base = curve_pt(t, 0.0, 0.0, y0)
+    tx, ty = math.cos(t), math.sin(t)
+    nx, ny = -math.sin(t), math.cos(t)
+    fp = lambda p: (base[0] + p[0] * tx + p[1] * nx, base[1] + p[0] * ty + p[1] * ny, p[2])
+    fv = lambda v: (v[0] * tx + v[1] * nx, v[0] * ty + v[1] * ny, v[2])
+    return fp, fv
+
+
+def curve_zones(layout):
+    """(sélection, u0 global, u1 global) de gauche à droite de l'image."""
+    if layout == "duo":
+        return [("panel1", 0.0, 0.5), ("panel2", 0.5, 1.0)]
+    return [("panel2", 0.0, 0.25), ("panel1", 0.25, 0.75), ("panel3", 0.75, 1.0)]
+
+
+def make_curved(layout, wall, detail):
+    """Mur LED concave 32:9 (arc 7,20 m x 2,025 m, rayon 7 m). Surface d'image continue (aucun joint entre les zones),
+    sommets partagés et normales lissées le long de l'arc ; cadre de 8 mm ; dos en 12 x 3 caissons ; six montants, deux
+    lisses cintrées ; sur pieds (semelles radiales, jambes de force) ou mural (entretoises vers le mur en Y = 0)."""
+    m = Mesh()
+    y0 = CURVE_Y_WALL if wall else CURVE_Y_FLOOR
+    N = (48, 24, 12)[detail]
+    z0, z1 = CURVE_Z0, CURVE_Z0 + CURVE_H
+    bz = 0.008
+    Z0, Z1 = z0 - bz, z1 + bz
+    lip = 0.003
+    dB = 0.07                        # dos de la dalle LED
+    tb = bz / CURVE_R
+    inward = lambda t: (-math.sin(t), math.cos(t), 0.0)
+    tang = lambda t: (math.cos(t), math.sin(t), 0.0)
+    ts = [CURVE_T - 2 * CURVE_T * k / N for k in range(N + 1)]      # de la gauche de l'image (+X) à la droite
+    # Image : une sélection par zone, UV 0..1 dans la zone, sommets partagés dans la zone.
+    for sel, u0, u1 in curve_zones(layout):
+        for k in range(N):
+            ua, ub = k / N, (k + 1) / N
+            if ua < u0 - 1e-9 or ub > u1 + 1e-9:
+                continue
+            ta, tb_ = ts[k], ts[k + 1]
+            la, lb = (ua - u0) / (u1 - u0), (ub - u0) / (u1 - u0)
+            pts = [curve_pt(ta, 0, z0, y0), curve_pt(tb_, 0, z0, y0), curve_pt(tb_, 0, z1, y0), curve_pt(ta, 0, z1, y0)]
+            m.poly(pts, "screen", (sel,), uvs=[(la, 1.0), (lb, 1.0), (lb, 0.0), (la, 0.0)], hint=inward((ta + tb_) / 2),
+                   vn=[inward(ta), inward(tb_), inward(tb_), inward(ta)], share=sel)
+    # Corps balayé : profil (d, z) -> faces le long de l'arc, lissées le long de l'arc, vives entre deux pans du profil.
+    ext = [CURVE_T + tb] + ts + [-CURVE_T - tb]
+
+    def sweep(a, b_, nrm, mat, angles, key):
+        nd, nz = nrm
+        vec = lambda t: (nd * math.sin(t), -nd * math.cos(t), nz)
+        for ta, tb_ in zip(angles, angles[1:]):
+            pts = [curve_pt(ta, a[0], a[1], y0), curve_pt(tb_, a[0], a[1], y0), curve_pt(tb_, b_[0], b_[1], y0), curve_pt(ta, b_[0], b_[1], y0)]
+            m.poly(pts, mat, hint=vec((ta + tb_) / 2), vn=[vec(ta), vec(tb_), vec(tb_), vec(ta)], share=key)
+
+    sweep((-lip, Z0), (-lip, z0), (-1, 0), "frame", ext, "fb")          # cadre bas (face)
+    sweep((-lip, z1), (-lip, Z1), (-1, 0), "frame", ext, "ft")          # cadre haut (face)
+    if detail < 2:
+        sweep((-lip, z0), (0.0, z0), (0, 1), "frame", ts, "lb")          # retours du cadre vers l'image
+        sweep((0.0, z1), (-lip, z1), (0, -1), "frame", ts, "lt")
+    sweep((-lip, Z1), (dB, Z1), (0, 1), "frame", ext, "top")
+    sweep((dB, Z1), (dB, Z0), (1, 0), "plastic", ext, "back")
+    sweep((dB, Z0), (-lip, Z0), (0, -1), "frame", ext, "bot")
+    for sg in (1, -1):
+        te, ti = sg * (CURVE_T + tb), sg * CURVE_T
+        out = tuple(sg * c for c in tang(te))
+        # Montant latéral du cadre (face), son retour vers l'image, flanc.
+        m.poly([curve_pt(te, -lip, z0, y0), curve_pt(ti, -lip, z0, y0), curve_pt(ti, -lip, z1, y0), curve_pt(te, -lip, z1, y0)],
+               "frame", hint=inward(ti))
+        if detail < 2:
+            m.poly([curve_pt(ti, -lip, z0, y0), curve_pt(ti, 0, z0, y0), curve_pt(ti, 0, z1, y0), curve_pt(ti, -lip, z1, y0)],
+                   "frame", hint=tuple(-c for c in out))
+        m.poly([curve_pt(te, -lip, Z0, y0), curve_pt(te, dB, Z0, y0), curve_pt(te, dB, Z1, y0), curve_pt(te, -lip, Z1, y0)],
+               "frame", hint=out)
+    # Caissons modulaires au dos (12 x 3), cordes plates.
+    nc, nr = 12, 3
+    ch = CURVE_H / nr
+    if detail < 2:
+        for c in range(nc):
+            tc = CURVE_T - 2 * CURVE_T * (c + 0.5) / nc
+            fp, fv = curve_frame(tc, y0)
+            for r in range(nr):
+                zc = z0 + ch * (r + 0.5)
+                sub = Mesh()
+                box(sub, -0.292, 0.292, -0.15, -dB + 0.002, zc - ch / 2 + 0.006, zc + ch / 2 - 0.006, "plastic",
+                    b=0.006 if detail == 0 else 0, skip=("+y",))
+                if detail == 0:
+                    vw, vh = 0.30, 0.10
+                    pts = [(vw / 2, -0.1505, zc + 0.10), (-vw / 2, -0.1505, zc + 0.10), (-vw / 2, -0.1505, zc + 0.10 + vh), (vw / 2, -0.1505, zc + 0.10 + vh)]
+                    sub.poly(pts, "vent", uvs=[(0, vh / 0.08), (vw / 0.08, vh / 0.08), (vw / 0.08, 0), (0, 0)], hint=(0, -1, 0))
+                    box(sub, -0.07, 0.07, -0.168, -0.15, zc - 0.17, zc - 0.145, "steel", b=0.003)
+                m.merge(xform(sub, fp, fv))
+    else:
+        sweep((dB, Z1 - 0.01), (0.15, Z1 - 0.01), (0, 1), "plastic", ts, "cb1")
+        sweep((0.15, Z1 - 0.01), (0.15, Z0 + 0.01), (1, 0), "plastic", ts, "cb2")
+        sweep((0.15, Z0 + 0.01), (dB, Z0 + 0.01), (0, -1), "plastic", ts, "cb3")
+    # Lisses cintrées (12 cordes) reliant les montants.
+    rail_ts = [CURVE_T * (1 - 2 * k / 12) * 0.97 for k in range(13)]
+    for zr in (z0 + 0.42, z1 - 0.42):
+        sweep((0.15, zr + 0.03), (0.19, zr + 0.03), (0, 1), "steel", rail_ts, "r%.2f" % zr)
+        sweep((0.19, zr + 0.03), (0.19, zr - 0.03), (1, 0), "steel", rail_ts, "s%.2f" % zr)
+        sweep((0.19, zr - 0.03), (0.15, zr - 0.03), (0, -1), "steel", rail_ts, "q%.2f" % zr)
+    # Montants (aux joints de caissons) et leur appui : pieds ou entretoises murales.
+    cb = 0.004 if detail == 0 else 0
+    for k in (-5, -3, -1, 1, 3, 5):
+        tp = CURVE_T * k / 6
+        fp, fv = curve_frame(tp, y0)
+        sub = Mesh()
+        if wall:
+            box(sub, -0.04, 0.04, -CURVE_D, -0.15, Z0 - 0.04, Z1 + 0.02, "steel", b=cb)
+        else:
+            box(sub, -0.04, 0.04, -CURVE_D, -0.15, 0.07, Z1 + 0.02, "steel", b=cb)
+            box(sub, -0.06, 0.06, -0.86, 0.32, 0.0, 0.07, "steel", b=cb)                        # semelle radiale
+            if detail < 2:
+                box(sub, -0.16, 0.16, -0.84, -0.50, 0.07, 0.15, "rubber", b=0.01 if detail == 0 else 0)   # lest
+                cylinder(sub, (0.0, -0.80, 0.07), (0.0, -CURVE_D + 0.02, 1.55), 0.022, "steel", n=10 if detail == 0 else 6, caps=False)
+                box(sub, -0.05, 0.05, -CURVE_D - 0.10, -0.12, 0.07, 0.30, "steel", b=cb)       # gousset
+        m.merge(xform(sub, fp, fv))
+        if wall:
+            # Entretoises horizontales du montant vers le mur plat (Y = 0), platine murale.
+            back = fp((0.0, -CURVE_D + 0.01, 0.0))
+            for zz in (z0 + 0.25, z1 - 0.25):
+                box(m, back[0] - 0.03, back[0] + 0.03, 0.008, back[1], zz - 0.03, zz + 0.03, "steel", b=cb)
+                box(m, back[0] - 0.09, back[0] + 0.09, 0.0, 0.008, zz - 0.09, zz + 0.09, "steel", b=0.002 if detail == 0 else 0)
+                if detail == 0:
+                    for sx in (-1, 1):
+                        for sz in (-1, 1):
+                            cylinder(m, (back[0] + sx * 0.065, 0.008, zz + sz * 0.065), (back[0] + sx * 0.065, 0.013, zz + sz * 0.065), 0.007, "frame", n=8)
+    if detail == 0:
+        p = curve_pt(-CURVE_T + 0.01, -lip, Z0 + 0.004, y0)
+        fp, fv = curve_frame(-CURVE_T + 0.01, y0)
+        sub = Mesh()
+        box(sub, -0.003, 0.003, lip, lip + 0.0015, Z0 + 0.0025, Z0 + 0.0055, "led")
+        m.merge(xform(sub, fp, fv))
+    return m
+
+
+def curved_boxes(wall):
+    y0 = CURVE_Y_WALL if wall else CURVE_Y_FLOOR
+    zb, zt = CURVE_Z0 - 0.008, CURVE_Z0 + CURVE_H + 0.008
+    out = []
+    n = 8
+    for k in range(n):
+        ta = CURVE_T * (1 - 2 * k / n) + (0.002 if k == 0 else 0)
+        tb = CURVE_T * (1 - 2 * (k + 1) / n) - (0.002 if k == n - 1 else 0)
+        # Boîte convexe : corde avant (rentrée de la flèche de la corde), dos à CURVE_D.
+        sag = CURVE_R * (1 - math.cos((ta - tb) / 2))
+        pts = [curve_pt(t, d, z, y0) for t in (ta, tb) for d in (sag, CURVE_D) for z in (zb, zt)]
+        out.append(("pts", pts))
+    if not wall:
+        for k in (-5, -3, -1, 1, 3, 5):
+            fp, _ = curve_frame(CURVE_T * k / 6, y0)
+            out.append(("pts", [fp((x, y, z)) for x in (-0.06, 0.06) for y in (-0.86, 0.32) for z in (0.0, 0.07)]))
+            out.append(("pts", [fp((x, y, z)) for x in (-0.04, 0.04) for y in (-CURVE_D, -0.15) for z in (0.07, zb)]))
+    return out
+
+
+for _k in ("4x3", "4x3_panels", "5x3", "5x3_panels", "6x4", "6x4_zones"):
+    BOXES["toc_wall_" + _k] = (lambda k=_k: wall_boxes(k))
+BOXES.update({
+    "toc_led_text_8": lambda: led_text_boxes(LED8, False),
+    "toc_led_text_16": lambda: led_text_boxes(LED16, False),
+    "toc_led_text_8_ceiling": lambda: led_text_boxes(LED8, True),
+    "toc_led_text_16_ceiling": lambda: led_text_boxes(LED16, True),
+    "toc_136_wall": lambda: boxes_136(False),
+    "toc_136_stand": lambda: boxes_136(True),
+    "toc_led_220_wall": lambda: boxes_220(False),
+    "toc_led_220_truss": lambda: boxes_220(True),
+    "toc_65_ceiling_2": lambda: ceiling_boxes(2, P65, 0),
+    "toc_65_ceiling_3": lambda: ceiling_boxes(3, P65, 0),
+    "toc_65_ceiling_3_arc": lambda: ceiling_boxes(3, P65, 15),
+    "toc_98_ceiling": lambda: ceiling_boxes(1, P98, 0),
+    "toc_curved_floor": lambda: curved_boxes(False),
+    "toc_curved_floor_duo": lambda: curved_boxes(False),
+    "toc_curved_wall": lambda: curved_boxes(True),
+    "toc_curved_wall_duo": lambda: curved_boxes(True),
+})
+
+
 # Boîtes des LOD fermées : (x0, x1, y0, y1, z0, z1)
 def closed_boxes(name):
+    if name in BOXES:
+        return BOXES[name]()
     aw, ah = T55
     pw, ph = aw + 2 * T55_BZ, ah + 2 * T55_BZ
     if name.startswith("toc_wall_"):
@@ -582,13 +1214,18 @@ def lod_bytes(pts, faces, sels, resolution, props=(), mass=None):
     normals = []
     out_faces = b""
     uvset = b""
-    for idx, uvs, n, tex, mat, _ in faces:
+    for face in faces:
+        idx, uvs, n, tex, mat = face[:5]
+        vn = face[6] if len(face) > 6 else None
         ni = len(normals)
-        normals.append(n)
+        if vn:
+            normals.extend(vn)
+        else:
+            normals.append(n)
         rec = struct.pack("<I", len(idx))
         for k in range(4):
             if k < len(idx):
-                rec += struct.pack("<IIff", idx[k], ni, uvs[k][0], uvs[k][1])
+                rec += struct.pack("<IIff", idx[k], ni + k if vn else ni, uvs[k][0], uvs[k][1])
                 uvset += struct.pack("<ff", uvs[k][0], uvs[k][1])
             else:
                 rec += struct.pack("<IIff", 0, 0, 0.0, 0.0)
@@ -616,7 +1253,7 @@ def visual_lod(m, resolution):
     sels = {}
     for fi, (idx, uvs, n, mat, fsels) in enumerate(m.faces):
         tex, rv = tex_path(mat), TEX + MATS[mat][1]
-        faces.append((idx, uvs, n, tex, rv, fsels))
+        faces.append((idx, uvs, n, tex, rv, fsels, m.vn.get(fi)))
         for s in fsels:
             sels.setdefault(s, (set(), set()))[1].add(fi)
     for s, pset in m.sel_pts.items():
@@ -651,6 +1288,28 @@ MODELS = {
     "toc_65_ceiling": (make_65_ceiling, 45.0),
     "toc_clock_strip": (make_clock, 9.0),
     "toc_name_plate": (make_plate, 3.0),
+    "toc_led_text_8": (lambda d: make_led_text(LED8, False, d), 14.0),
+    "toc_led_text_16": (lambda d: make_led_text(LED16, False, d), 27.0),
+    "toc_led_text_8_ceiling": (lambda d: make_led_text(LED8, True, d), 16.0),
+    "toc_led_text_16_ceiling": (lambda d: make_led_text(LED16, True, d), 30.0),
+    "toc_136_wall": (make_136_wall, 150.0),
+    "toc_136_stand": (make_136_stand, 290.0),
+    "toc_led_220_wall": (make_led220_wall, 330.0),
+    "toc_led_220_truss": (make_led220_truss, 560.0),
+    "toc_wall_4x3": (lambda d: make_wall_blocks("4x3", d), 440.0),
+    "toc_wall_4x3_panels": (lambda d: make_wall_blocks("4x3_panels", d), 440.0),
+    "toc_wall_5x3": (lambda d: make_wall_blocks("5x3", d), 550.0),
+    "toc_wall_5x3_panels": (lambda d: make_wall_blocks("5x3_panels", d), 550.0),
+    "toc_wall_6x4": (lambda d: make_wall_blocks("6x4", d), 880.0),
+    "toc_wall_6x4_zones": (lambda d: make_wall_blocks("6x4_zones", d), 880.0),
+    "toc_65_ceiling_2": (lambda d: make_ceiling(2, P65, 0, d), 85.0),
+    "toc_65_ceiling_3": (lambda d: make_ceiling(3, P65, 0, d), 125.0),
+    "toc_65_ceiling_3_arc": (lambda d: make_ceiling(3, P65, 15, d), 125.0),
+    "toc_98_ceiling": (lambda d: make_ceiling(1, P98, 0, d), 110.0),
+    "toc_curved_floor": (lambda d: make_curved("trio", False, d), 720.0),
+    "toc_curved_floor_duo": (lambda d: make_curved("duo", False, d), 720.0),
+    "toc_curved_wall": (lambda d: make_curved("trio", True, d), 520.0),
+    "toc_curved_wall_duo": (lambda d: make_curved("duo", True, d), 520.0),
 }
 
 
@@ -791,7 +1450,7 @@ def to_paa(tmp, names):
 # --------------------------------------------------------------------------------------------------------------------
 # Aperçus Eden : petit moteur logiciel (z-buffer, Lambert, textures, écrans allumés)
 # --------------------------------------------------------------------------------------------------------------------
-def demo_content(w=640, h=360, seed=0):
+def demo_content(w=640, h=360, seed=0, column=True):
     """Image de démonstration de l'aperçu (carte tactique factice, bandeau, colonne) : aucun logo."""
     r = np.random.default_rng(seed)
     yy, xx = np.mgrid[0:h, 0:w]
@@ -803,10 +1462,12 @@ def demo_content(w=640, h=360, seed=0):
     grid = ((xx % 48) < 1) | ((yy % 48) < 1)
     img[grid] *= 0.6
     for _ in range(14):
-        cx, cy = r.integers(40, int(w * 0.66)), r.integers(50, h - 20)
+        cx, cy = r.integers(40, int(w * (0.66 if column else 0.95))), r.integers(50, h - 20)
         img[cy - 4:cy + 4, cx - 4:cx + 4] = [0.3, 0.6, 1.0]
     img[: int(h * 0.075)] = [0.06, 0.08, 0.07]
     img[int(h * 0.072): int(h * 0.078)] = [0.28, 0.62, 1.0]
+    if not column:
+        return img
     img[int(h * 0.08):, int(w * 0.66):] = [0.05, 0.065, 0.058]
     for k in range(10):
         y = int(h * 0.12) + k * int(h * 0.075)
@@ -948,13 +1609,58 @@ def plate_content(w=640, h=160):
     return img
 
 
+def led_content(ratio, h=96):
+    """Bandeau LED texte de démonstration : message en points lumineux verts (matrice de LED)."""
+    from PIL import ImageDraw, ImageFont
+    w = h * ratio
+    msg = "COMSPEC TOC  ·  BRIEFING 0630Z" if ratio > 8 else "BRIEFING 0630Z"
+    small = Image.new("L", (w // 4, h // 4), 0)
+    d = ImageDraw.Draw(small)
+    try:
+        f = ImageFont.truetype("consolab.ttf", int(h / 4 * 0.78))
+    except OSError:
+        f = ImageFont.load_default()
+    bb = d.textbbox((0, 0), msg, font=f)
+    d.text(((w // 4 - (bb[2] - bb[0])) // 2 - bb[0], (h // 4 - (bb[3] - bb[1])) // 2 - bb[1]), msg, fill=255, font=f)
+    on = np.kron(np.asarray(small, float) / 255, np.ones((4, 4)))
+    yy, xx = np.mgrid[0:h, 0:w]
+    dot = ((xx % 4) < 3) & ((yy % 4) < 3)
+    img = np.zeros((h, w, 3))
+    img[:] = [0.012, 0.016, 0.014]
+    img[dot] = [0.02, 0.05, 0.035]
+    lit = dot & (on > 0.4)
+    img[lit] = [0.15, 1.0, 0.55]
+    return img
+
+
+def column_content(w=320, h=360, seed=0):
+    """Colonne latérale de démonstration (grand écran incurvé) : titre, gros chiffres, lignes."""
+    r = np.random.default_rng(seed)
+    img = np.zeros((h, w, 3))
+    img[:] = [0.045, 0.055, 0.05]
+    img[:26] = [0.06, 0.08, 0.07]
+    img[25:27] = [0.2, 0.75, 0.5]
+    img[44:84, 20:230] = [0.85, 0.9, 0.88]
+    img[96:108, 20:150] = [0.45, 0.5, 0.48]
+    for k in range(9):
+        y = 132 + k * 24
+        img[y:y + 8, 20:20 + r.integers(120, 280)] = [0.6, 0.66, 0.63]
+        img[y + 15:y + 16, 20:300] = [0.12, 0.15, 0.14]
+    return img
+
+
 def previews(models, render_dir=""):
     for name, m in models.items():
-        eye, tgt = frame_view(m, below=name == "toc_65_ceiling")
+        eye, tgt = frame_view(m, below="ceiling" in name)
         sels = sorted({s for f in m.faces for s in f[4]})
         cont = {}
         for i, s in enumerate(sels):
-            cont[s] = clock_content() if name == "toc_clock_strip" else plate_content() if name == "toc_name_plate" else demo_content(seed=i)
+            if name.startswith("toc_led_text_"):
+                cont[s] = led_content(16 if "16" in name else 8)
+            elif name.startswith("toc_curved_") and "duo" not in name:
+                cont[s] = demo_content(seed=3, column=False) if s == "panel1" else column_content(seed=i)
+            else:
+                cont[s] = clock_content() if name == "toc_clock_strip" else plate_content() if name == "toc_name_plate" else demo_content(seed=i)
         img = downsample(render(m, eye, tgt, content=cont))
         Image.fromarray((img * 255 + 0.5).astype(np.uint8)).save(os.path.join(DATA, name + "_preview.jpg"), quality=88)
         if render_dir:
@@ -981,7 +1687,8 @@ def main():
         else:
             textures(tmp)
         rvmats()
-        models = {name: write_model(name) for name in MODELS}
+        only = [x for x in os.environ.get("ONLY", "").split(",") if x]
+        models = {name: write_model(name) for name in MODELS if not only or any(name.startswith(x) for x in only)}
         if not os.environ.get("NO_PREVIEW"):
             previews(models, os.environ.get("RENDER_DIR", ""))
     finally:

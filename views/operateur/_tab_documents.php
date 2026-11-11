@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Mon identité › Papiers. Variables de views/operateur/identite.php.
+ * Mes identités › Papiers. Chaque papier appartient à une identité : la page les range identité par identité. Variables de views/operateur/identite.php.
  *
  * Aperçu recto/verso de chaque papier, état, actions du membre (perte, vol, renouvellement, annulation de sa demande),
  * demande d'un nouveau papier, et état de la remise en jeu.
@@ -34,6 +34,7 @@ foreach ($idCountries as $c) {
                     <h3 id="opx-sync-title">Remise en jeu</h3>
                     <p><strong><?= $h($idSync['title'] !== '' ? $idSync['title'] : $idSync['state_label']) ?></strong><?php if ($idSync['at'] !== ''): ?> · le <?= $h($dateFr($idSync['at'])) ?><?php endif; ?></p>
                     <?php if ($idSync['why'] !== ''): ?><p><?= $h($idSync['why']) ?></p><?php endif; ?>
+                    <p>La photo imprimée sur vos papiers est celle de l’identité. <button type="button" class="opx-linkbtn" data-opx-open="dlg-photo-guide">Comment faire ma photo ?</button></p>
                     <?php if (!$idSteamLinked): ?>
                         <p>Votre compte n’est pas lié à Steam : le serveur de jeu ne peut pas vous remettre vos papiers. <a class="opx-link" href="<?= $h(url('account/steam/connect')) ?>">Lier mon compte Steam</a></p>
                     <?php endif; ?>
@@ -48,8 +49,8 @@ foreach ($idCountries as $c) {
     <section class="dash-zone dash-zone--actions">
         <div class="dash-zone__inner">
             <div class="cc-empty">
-                <p><strong>Pas encore d’identité.</strong> Un papier se rattache à une identité : définissez d’abord votre identité principale.</p>
-                <a class="cc-btn cc-btn-primary" href="<?= $h(url('operateur/identite')) ?>">Définir mon identité</a>
+                <p><strong>Pas encore d’identité.</strong> Un papier appartient à une identité : créez d’abord votre personnage.</p>
+                <a class="cc-btn cc-btn-primary" href="<?= $h(url('operateur/identite')) ?>">Créer mon personnage</a>
             </div>
         </div>
     </section>
@@ -61,7 +62,7 @@ foreach ($idCountries as $c) {
             <div class="dash-zone__inner">
                 <header class="dash-zone__head">
                     <h2 id="papiers-titre-<?= (int) $identity['id'] ?>" class="dash-zone__title" translate="no"><?= $h($identity['display_name']) ?></h2>
-                    <p class="dash-zone__lead"><?= $identity['is_primary'] ? 'Identité principale' : 'Identité d’emprunt' ?><?= $identity['active'] ? ' · active en jeu' : '' ?><?= $identity['archived'] ? ' · archivée' : '' ?></p>
+                    <p class="dash-zone__lead"><?= $identity['is_primary'] ? 'Personnage' : 'Identité d’emprunt' ?><?= $identity['active'] ? ' · active en jeu' : '' ?><?= $identity['archived'] ? ' · archivée' : '' ?> · <a class="opx-link" href="<?= $h(url('operateur/identite') . '#identite-' . (int) $identity['id']) ?>">voir l’identité</a></p>
                 </header>
                 <?php if ($docs === []): ?>
                     <div class="cc-empty">
@@ -72,11 +73,12 @@ foreach ($idCountries as $c) {
                     <ul class="opx-cards">
                         <?php foreach ($docs as $doc): ?>
                             <?php $photoUrl = !empty($doc['photo_path']) ? url((string) $doc['photo_path']) : null; ?>
+                            <?php $twoSides = \App\Support\SseDocumentTypes::sides((string) $doc['doc_type']) === 2; ?>
                             <li>
                                 <article class="cc-card opx-doc" id="papier-<?= (int) $doc['id'] ?>" data-opx-doc>
                                     <div data-opx-doc-faces>
                                         <div data-opx-face="recto"><?= $opxDocSvg($doc, 'recto', $photoUrl) ?></div>
-                                        <div data-opx-face="verso" hidden><?= $opxDocSvg($doc, 'verso', $photoUrl) ?></div>
+                                        <?php if ($twoSides): ?><div data-opx-face="verso" hidden><?= $opxDocSvg($doc, 'verso', $photoUrl) ?></div><?php endif; ?>
                                     </div>
                                     <div class="opx-doc__info">
                                         <div>
@@ -99,7 +101,7 @@ foreach ($idCountries as $c) {
                                             <p class="opx-note">Signalé aux contrôles et au passage aux fichiers. Présenté en jeu, ce papier déclenche une alerte.</p>
                                         <?php endif; ?>
                                         <div class="opx-acts">
-                                            <button type="button" class="cc-btn cc-btn-ghost" data-opx-flip aria-pressed="false">Voir le verso</button>
+                                            <?php if ($twoSides): ?><button type="button" class="cc-btn cc-btn-ghost" data-opx-flip aria-pressed="false">Voir le verso</button><?php endif; ?>
                                             <a class="cc-btn cc-btn-ghost" href="<?= $h(url('operateur/identite/documents/' . (int) $doc['id'] . '/specimen')) ?>" target="_blank" rel="noopener">Télécharger le spécimen</a>
                                             <?php foreach ($doc['actions'] as $action): ?>
                                                 <?php [$label, $confirm] = $actionLabels[$action] ?? [$action, '']; ?>
@@ -138,7 +140,7 @@ foreach ($idCountries as $c) {
                             <label class="opx-fields__wide" for="req-identity">Identité
                                 <select id="req-identity" name="identity_id" required>
                                     <?php foreach ($activeIdentities as $identity): ?>
-                                        <option value="<?= (int) $identity['id'] ?>"><?= $h($identity['display_name']) ?><?= $identity['is_primary'] ? ' (principale)' : '' ?></option>
+                                        <option value="<?= (int) $identity['id'] ?>"><?= $h($identity['display_name']) ?><?= $identity['is_primary'] ? ' (personnage)' : '' ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </label>
@@ -151,8 +153,12 @@ foreach ($idCountries as $c) {
                             </label>
                             <label for="req-type">Type de papier
                                 <select id="req-type" name="doc_type" required data-opx-req-type>
-                                    <?php foreach ($idDocTypes as $k => $label): ?>
-                                        <option value="<?= $h($k) ?>"><?= $h($label) ?></option>
+                                    <?php foreach (($idDocTypeGroups ?? []) as $group): ?>
+                                        <optgroup label="<?= $h(function_exists('locale') && locale() === 'en' ? \App\Support\HtmlTranslator::translateText($group['label']) : $group['label']) ?>">
+                                            <?php foreach ($group['types'] as $k => $label): ?>
+                                                <option value="<?= $h($k) ?>"><?= $h($label) ?></option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
                                     <?php endforeach; ?>
                                 </select>
                             </label>

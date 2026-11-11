@@ -527,10 +527,11 @@ return function (Router $router) {
     $router->post('/operateur/identite/documents', [$opHub, 'documentRequest'], [AuthMiddleware::class]);
     $router->get('/operateur/identite/documents/{id}/specimen', [$opHub, 'documentSpecimen'], [AuthMiddleware::class]);
     $router->post('/operateur/identite/documents/{id}/action', [$opHub, 'documentAction'], [AuthMiddleware::class]);
-    $router->get('/operateur/identite/couverture', [$opHub, 'covers'], [AuthMiddleware::class]);
-    $router->post('/operateur/identite/couverture', [$opHub, 'coverGenerate'], [AuthMiddleware::class]);
-    $router->get('/operateur/identite/couverture/{id}/telecharger', [$opHub, 'coverDownload'], [AuthMiddleware::class]);
-    $router->post('/operateur/identite/couverture/{id}', [$opHub, 'coverAction'], [AuthMiddleware::class]);
+    // Anciennes adresses des couvertures : il n'y a plus que des identités, tout renvoie à /operateur/identite.
+    $router->get('/operateur/identite/couverture', [$opHub, 'legacyCovers'], [AuthMiddleware::class]);
+    $router->post('/operateur/identite/couverture', [$opHub, 'legacyCovers'], [AuthMiddleware::class]);
+    $router->get('/operateur/identite/couverture/{id}/telecharger', [$opHub, 'legacyCovers'], [AuthMiddleware::class]);
+    $router->post('/operateur/identite/couverture/{id}', [$opHub, 'legacyCovers'], [AuthMiddleware::class]);
     $mwOperationalBoardEdit = [AuthMiddleware::class, OperationalBoardEditMiddleware::class];
     $router->get('/tableau-operationnel/p/{token}', [OperationalBoardController::class, 'publicWall']);
     $router->get('/tableau-operationnel', [OperationalBoardController::class, 'portalIndex'], [AuthMiddleware::class, OperationalBoardViewMiddleware::class]);
@@ -634,8 +635,11 @@ return function (Router $router) {
     $planApi = \App\Controllers\Api\AtakPlanApiController::class;
     $router->get('/atak/toc', [$tocWeb, 'console'], $mwAtakMemberOnly);
     $router->get('/atak/toc/plans', [$tocWeb, 'plans'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/plans/aide', [$tocWeb, 'planHelp'], $mwAtakMemberOnly);
     $router->get('/atak/toc/plans/lien/{token}', [$tocWeb, 'sharedLink'], $mwAtakMemberOnly);
     $router->get('/atak/toc/plans/{id}/export.json', [$tocWeb, 'exportJson'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/plans/{id}/export.geojson', [$tocWeb, 'exportGeoJson'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/plans/{id}/export.kml', [$tocWeb, 'exportKml'], $mwAtakMemberOnly);
     $router->post('/atak/toc/plans/{id}/export.pdf', [$tocWeb, 'exportPdf'], $mwAtakMemberOnly);
     $router->get('/atak/toc/plans/{id}', [$tocWeb, 'editor'], $mwAtakMemberOnly);
     $router->get('/atak/toc/api/state', [$tocApi, 'state'], $mwAtakMemberOnly);
@@ -658,6 +662,9 @@ return function (Router $router) {
     $router->post('/atak/toc/api/plans/{id}/comments', [$planApi, 'comments'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/plans/{id}/publish', [$planApi, 'publish'], $mwAtakMemberOnly);
     $router->get('/atak/toc/api/plans/{id}/game-import', [$planApi, 'gameImport'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/plans/{id}/import', [$planApi, 'importFile'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/orbat', [$planApi, 'orbat'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/terrain/{mapId}/dem', [$planApi, 'dem'], $mwAtakMemberOnly);
     $router->get('/atak/passerelle', [AtakMapGatewayController::class, 'index'], $mwAtakMemberOnly);
     $router->post('/atak/passerelle/creer', [AtakMapGatewayController::class, 'create'], $mwAtakMemberOnly);
     $router->post('/atak/passerelle/rejoindre', [AtakMapGatewayController::class, 'redeem'], $mwAtakMemberOnly);
