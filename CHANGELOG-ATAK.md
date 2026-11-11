@@ -188,6 +188,25 @@ EN : ATAK 4.3.0: armed drones, landscape apps, a readable map, AIs that answer r
 
 Aucune nouvelle DLL (COMSPEC Link 2.0.123 inchangé). Migration 4330 (passage aux fichiers). Non vu en jeu : aucune passe de l'autotest n'a tourné pour ce pack.
 
+## À venir : vrais grands écrans pour la salle d'opérations (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : De vrais grands écrans pour votre salle d'opérations
+- Murs d'images de 4 et 6 écrans, écran géant de 98 pouces (au mur ou sur pied roulant), écran de 65 pouces suspendu au plafond : de vrais modèles 3D à taille réelle, bords fins, lisibles même dans une salle sombre.
+- Un mur affiche une grande image sur tous ses écrans, ou une image différente par écran (carte, caméra, tableau d'escouades).
+- Bandeau horloge LED et plaque de nom d'élément à accrocher au-dessus des écrans. Tout se pose dans Eden et en Zeus (catégorie Écrans), et deux murs posés côte à côte se touchent sans jour.
+EN : Real big screens for your operations room
+- Video walls of 4 and 6 screens, a 98-inch giant screen (on the wall or on a rolling stand), a 65-inch screen hung from the ceiling: real full-size 3D models with thin bezels, readable even in a dark room.
+- A wall shows one big picture across all its screens, or a different picture on each screen (map, camera, squad board).
+- LED clock strip and element name plate to hang above the screens. Everything can be placed in Eden and in Zeus (Screens category), and two walls placed side by side meet without a gap.
+
+### Détail technique
+- `tools/model_toc_screens.py` (pur Python, sans Blender) : 9 modèles MLOD dans `addons/main/data/toc/` (LOD 0 / 2 / 6, ombre, géométrie avec masse et `autocenter=0`, géométrie de tir et de vue), textures PAA du cadre (alu brossé, plastique, acier, ouïes), rvmat Super, verre éteint brillant, aperçus Eden rendus par le script. Passés par Binarize (hemtt build) sans avertissement.
+- Classes `COMSPEC_ATAK_Screen_Wall2x2`, `_Wall2x2_Quad`, `_Wall3x2`, `_Wall3x2_Mixed`, `_98`, `_98_Stand`, `_65_Ceiling`, `_ClockStrip`, `_NamePlate` (`toc_screens3d.hpp`), dans la liste des écrans TOC (`fn_tocScreen` « classes ») et du module (sauf horloge et plaque, en 4:1, `comspec_screenRatio=4`).
+- Murs à plusieurs dalles (`comspec_screenPanels`) : sélections `panel1`… en ordre de lecture vu de face, index = numéro - 1 ; `fn_tocScreen` « surface » garde une préparation par dalle (variable `COMSPEC_ATAK_SurfPrep<index>`), chaque dalle garde sa matière d'écran. Mur 3x2 « image et 2 dalles » : `panel1` = bloc 2x2 de gauche (16:9), `panel2` / `panel3` = colonne de droite (une image unique 3x2 serait en 8:3).
+- Largeurs hors tout pour accoler : 2x2 2,4572 m, 3x2 3,6738 m, 98" 2,1935 m (origine au sol, dos au mur). Test en jeu : groupe `ecrans3d` de la mission d'autotest.
+
 ## À venir : configurateur d'équipement, favoris, tendances, pré-kits et poids (site, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

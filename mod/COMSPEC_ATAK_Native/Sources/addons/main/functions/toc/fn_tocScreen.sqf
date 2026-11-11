@@ -111,6 +111,13 @@ switch (_mode) do {
     case "classes": {
         // Écrans COMSPEC en tête (modèles du jeu réglés pour l'image, fiables jour et nuit), puis les écrans du jeu.
         ([
+            ["Mur d'images 2x2, image unique (COMSPEC)", "COMSPEC_ATAK_Screen_Wall2x2"],
+            ["Mur d'images 2x2, 4 dalles (COMSPEC)", "COMSPEC_ATAK_Screen_Wall2x2_Quad"],
+            ["Grand mur d'images 3x2, 6 dalles (COMSPEC)", "COMSPEC_ATAK_Screen_Wall3x2"],
+            ["Grand mur d'images 3x2, image et 2 dalles (COMSPEC)", "COMSPEC_ATAK_Screen_Wall3x2_Mixed"],
+            ["Écran géant 98 pouces mural (COMSPEC)", "COMSPEC_ATAK_Screen_98"],
+            ["Écran géant 98 pouces sur pied roulant (COMSPEC)", "COMSPEC_ATAK_Screen_98_Stand"],
+            ["Écran 65 pouces suspendu (COMSPEC)", "COMSPEC_ATAK_Screen_65_Ceiling"],
             ["Grand écran TOC sur trépied (COMSPEC)", "COMSPEC_ATAK_Screen_Tripod"],
             ["Double écran TOC sur trépied (COMSPEC)", "COMSPEC_ATAK_Screen_Dual"],
             ["Téléviseur TOC (COMSPEC)", "COMSPEC_ATAK_Screen_Wall"],
@@ -227,7 +234,9 @@ switch (_mode) do {
         // Tableau-toile : la surface de projection posée devant lui reçoit la matière.
         if ((getNumber (configOf _o >> "comspec_projBoard")) > 0) then { _o = _o getVariable ["COMSPEC_ATAK_ProjPlane", objNull]; _sel = 0; };
         if (isNull _o) exitWith { false };
-        private _prep = _o getVariable ["COMSPEC_ATAK_SurfPrep", []];
+        // Mur à plusieurs dalles (comspec_screenPanels) : une préparation par dalle, chacune garde son image allumée.
+        private _pv = ["COMSPEC_ATAK_SurfPrep", format ["COMSPEC_ATAK_SurfPrep%1", _sel]] select ((getNumber (configOf _o >> "comspec_screenPanels")) > 1);
+        private _prep = _o getVariable [_pv, []];
         if (!_on) exitWith {
             if (_prep isEqualTo []) exitWith { false };
             _prep params ["_ps", "_mat", "_sibs"];
@@ -236,7 +245,7 @@ switch (_mode) do {
             // Dalles recopiées (double écran) : matière de la config remise.
             private _mats = getArray (configOf _o >> "hiddenSelectionsMaterials");
             { _o setObjectMaterial [_x, _mats param [_x, ""]]; } forEach (getArray (configOf _o >> "comspec_screenMirror"));
-            _o setVariable ["COMSPEC_ATAK_SurfPrep", nil];
+            _o setVariable [_pv, nil];
             true
         };
         if (_prep isNotEqualTo [] && {(_prep select 0) isNotEqualTo _sel}) then { ["surface", [_o, 0, false]] call _fn; _prep = []; };
@@ -244,7 +253,7 @@ switch (_mode) do {
         private _own = getArray (configOf _o >> "comspec_screenMat");
         if (_prep isEqualTo [] && {(count _own) >= 2}) then {
             _prep = [_sel, (getArray (configOf _o >> "hiddenSelectionsMaterials")) param [_sel, ""], [], ""];
-            _o setVariable ["COMSPEC_ATAK_SurfPrep", _prep];
+            _o setVariable [_pv, _prep];
         };
         if (_prep isEqualTo []) then {
             private _names = (getArray (configOf _o >> "hiddenSelections")) apply { toLower _x };
@@ -257,7 +266,7 @@ switch (_mode) do {
                 { if (_x isNotEqualTo _sel) then { _sibs pushBack [_x, _texs param [_x, ""]]; _o setObjectTexture [_x, ""]; }; } forEach _panes;
             };
             _prep = [_sel, (getObjectMaterials _o) param [_sel, ""], _sibs, ""];
-            _o setVariable ["COMSPEC_ATAK_SurfPrep", _prep];
+            _o setVariable [_pv, _prep];
             ["INFO", "TOC", format ["Écran %1 : image sur la dalle %2 (%3), matière d'origine %4, %5 dalle(s) masquée(s)",
                 typeOf _o, _sel, _names param [_sel, "?"], [_prep select 1, "aucune"] select ((_prep select 1) isEqualTo ""), count _sibs]] call comspec_atak_native_fnc_log;
         };
