@@ -113,6 +113,16 @@ class CfgHints {
             image = HINT_IMG;
             noImage = 0;
         };
+        // Lore de session Athena (module Identité › Synchroniser les IA avec Athena, fn_loreServer).
+        class Lore {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_LORE_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_LORE_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_LORE_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_LORE_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
         class Cover {
             displayName = "$STR_COMSPEC_SSE_GUIDE_COVER_TITLE";
             displayNameShort = "$STR_COMSPEC_SSE_GUIDE_COVER_TITLE";

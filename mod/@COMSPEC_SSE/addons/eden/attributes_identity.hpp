@@ -9,6 +9,7 @@
       COMSPEC_ID_Country  auto | ALT | TNA | LVN | MLD          COMSPEC_ID_Kind  civil | cover | forged
       COMSPEC_ID_Quality  0-100 (faux)          COMSPEC_ID_Profile  auto | civil | insurge | hvt | agent | policier (IA réalistes)
       COMSPEC_ID_Undercover  vrai : infiltré dès le début (couverture, fn_idCover)
+      COMSPEC_ID_AiUid    identifiant Athena du lore de session (fn_loreUid), vide : règle automatique
     Automatique : les joueurs n'ont rien, les IA ont des papiers selon leur camp (réglages COMSPEC SSE › Identité).
 */
 class COMSPEC_SSE_Papiers {
@@ -34,6 +35,18 @@ class COMSPEC_SSE_Papiers {
             property = "COMSPEC_ID_AiProfile";
             control = "COMSPEC_SSE_AiProfileCombo";
             expression = "if (isServer && {_value isNotEqualTo ''}) then { _this setVariable ['COMSPEC_ID_AiProfile', _value]; };";
+            defaultValue = "''";
+            typeName = "STRING";
+            condition = "objectBrain";
+        };
+        // Lore de session Athena : identifiant stable de la personne (fn_loreUid ; vide : règle automatique), publié par le
+        // serveur sous comspec_sse_aiUid.
+        class COMSPEC_ID_AiUid {
+            displayName = "$STR_COMSPEC_SSE_LORE_AiUid";
+            tooltip = "$STR_COMSPEC_SSE_LORE_AiUidTip";
+            property = "COMSPEC_ID_AiUid";
+            control = "Edit";
+            expression = "if (isServer && {(trim _value) isNotEqualTo ''}) then { _this setVariable ['COMSPEC_ID_AiUid', trim _value]; };";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain";

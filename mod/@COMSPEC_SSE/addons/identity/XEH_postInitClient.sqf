@@ -15,6 +15,8 @@ if (!hasInterface) exitWith {};
     ["send", ["kit", [player, objNull]]] call comspec_sse_fnc_idClient;
     // Couverture importée d'un fichier (app Ma couverture) : le registre du serveur ne garde rien d'une mission à l'autre.
     ["resend"] call comspec_sse_fnc_idCoverImport;
+    // Lore de session Athena : licence acceptée sur ce poste, signalée au serveur dédié (qui n'a pas d'écran pour l'accepter).
+    ["licence"] call comspec_sse_fnc_loreClient;
 }, [], 300] call CBA_fnc_waitUntilAndExecute;
 // Papier pris ou posé par ce joueur (corps, sol, caisse) : le serveur tient le porteur et la chaîne de possession, puis
 // diffuse comspec_sse_identity_paperPicked / paperDropped (fn_idPaperTrack). Seulement les exemplaires (« …_007 »).

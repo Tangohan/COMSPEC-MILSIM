@@ -2,7 +2,8 @@
     Fichiers de la mission (SERVEUR) : consultation type fichier (personne, document, biométrie, véhicule), fiches du
     SEEK II et relevés de documents. Données SSE locales au serveur de mission, sans Athena : documents délivrés (base des
     pays, paquet Athena déjà chargé), avis de recherche et BOLO, dossiers biométriques (ABIS de la mission), fiches SEEK II,
-    contrôles subis en jeu. Jamais la vérité de jeu : une couverture est en règle, un faux est inconnu des fichiers.
+    contrôles subis en jeu, lore de session Athena (fn_loreFile, données connues seulement). Jamais la vérité de jeu :
+    une couverture est en règle, un faux est inconnu des fichiers.
     Appel du poste : remoteExecCall ["comspec_sse_fnc_fileServer", 2] (comspec_sse_fnc_fileClient « send »).
       query     [moi, type, critères, source, étiquette]   type QW | QA | QB | QV ; réponse « result » [étiquette, résultat]
       seekStore [moi, fiche SEEK II]                      fiche enregistrée au fichier (QB et QW la retrouvent)
@@ -185,6 +186,9 @@ switch (_op) do {
                 // Aucun fichier des véhicules dans les données SSE : réponse NO HIT claire.
             };
         };
+        // Lore de session Athena (fn_loreFile) : fiches personne d'après les données CONNUES des fichiers seulement
+        // (alias, signalement, mentions), par nom, alias, clé biométrique (SEEK II) ou plaque.
+        if (!isNil "comspec_sse_fnc_loreFile") then { _recs append ([_type, _q] call comspec_sse_fnc_loreFile); };
         private _codes = [];
         { _codes append (_x getOrDefault ["codes", []]); } forEach _recs;
         _codes = _codes call _sortCodes;
