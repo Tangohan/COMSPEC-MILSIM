@@ -14,6 +14,9 @@
 params [["_type","INFO"],["_message",""],["_duration",5],["_priority",10],["_app",""],["_mode",""]];
 private _discreet = (toLower _mode) in ["vibrate", "vibreur", "silent"];
 if (_message isEqualTo "" || {missionNamespace getVariable ["COMSPEC_ATAK_Replaying", false]}) exitWith {false};
+// TOC sans téléphone (4.9.0) : téléphone rangé ou absent, le bandeau ne sera pas dessiné. Le retour va là où le joueur
+// regarde : ligne d'état du PC du poste, ligne du Zeus, boîte du TOC (fn_tocInbox « feedback »). Jamais d'alerte du jeu.
+if (hasInterface && {!_discreet} && {isNull ([] call comspec_atak_native_fnc_display)}) then { ["feedback", [_type, _message, _app]] call comspec_atak_native_fnc_tocInbox; };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _hist = _s getOrDefault ["notifHistory", []];
 private _hid = (_s getOrDefault ["notifHistSeq", 0]) + 1;

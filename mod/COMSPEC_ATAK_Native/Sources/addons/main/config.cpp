@@ -103,6 +103,8 @@ class CfgFunctions {
         };
         class toc { file="z\comspec_atak_native\addons\main\functions\toc";
             class tocPost {}; class pageToc {}; class tocAction {}; class tocLaptop {}; class tocScreen {}; class tocCam {}; class projector {}; class tocFeed {}; class tocPersist {}; class moduleTocScreen {}; class tocRoom {}; class tocSat {}; class tocBoard {}; class tocMosaic {}; class tocHall {}; class tocHallBuild {}; class tocAuto {}; class moduleTocHall {}; class tocHallUi {}; class tocDraw {}; class tocTheme {}; class tocConfig {}; class tocPc {}; class moduleTocPc {}; class tocText {}; class tocWeb {};
+            // 4.9.0, le TOC sans téléphone : pistes du jeu, état d'une piste, saisies du poste, boîte de réception, registre des panneaux (docs/TOC-DATA-API.md).
+            class tocTracks {}; class tocNodeStatus {}; class tocEntry {}; class tocInbox {}; class tocPanels {};
         };
         class datalink { file="z\comspec_atak_native\addons\main\functions\datalink";
             class dataSetup {}; class dataParseFiles {}; class dataServer {}; class dataAction {}; class dataInit {}; class dataOverlay {}; class pageDataLink {}; class zeusForm {}; class moduleContext {}; class moduleDataNode {}; class moduleDataFile {}; class moduleDataReset {}; class moduleDating {};
