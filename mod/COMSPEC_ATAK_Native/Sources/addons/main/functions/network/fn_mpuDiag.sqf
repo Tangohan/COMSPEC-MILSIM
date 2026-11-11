@@ -254,7 +254,7 @@ switch (_act) do {
                 ["voice", ["acre", "ACRE_PRC152_ID_2", "", 0, "L2:15", 1, "AN/PRC-152"]], ["groups", true], ["direct", 2], ["hops", 2], ["api", "acre"],
                 ["freq", "152.000 MHz"], ["freqN", 152]]],
             ["relayNeed", true], ["relays", 1],
-            ["admin", false], ["athena", false], ["modVer", "4.7.1"], ["who", "Test"], ["side", "WEST"]
+            ["admin", false], ["athena", false], ["modVer", "4.7.2"], ["who", "Test"], ["side", "WEST"]
         ]
     };
     case "eval": {
