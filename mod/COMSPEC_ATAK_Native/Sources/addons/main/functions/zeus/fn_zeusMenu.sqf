@@ -50,6 +50,12 @@ switch (_act) do {
             ["dbf_lift", "Fin d'opération", "Lever le CR", "Retire des téléphones le compte rendu de fin d'opération imposé."],
             ["reset", "Tout", "Tout rétablir", "Retire tous les effets Zeus et répare le téléphone."]
         ]
+        // Bris d'écran réalistes : une entrée par bris de verre, panne de dalle et bug (fn_screenDamage « catalog »),
+        // l'aide décrit ce que le joueur verra ; intensité = gravité (1 à 33 légère, 34 à 66 moyenne, au-delà grave).
+        + ((["catalog"] call comspec_atak_native_fnc_screenDamage) apply {
+            [format ["sf_%1", _x select 0], createHashMapFromArray [["glass", "Écran : bris de verre"], ["panel", "Écran : pannes de dalle"], ["glitch", "Écran : bugs d'affichage"]] get (_x select 1), _x select 2, _x select 3]
+        })
+        + [["sf_clear", "Écran : bris de verre", "Retirer tous les bris et pannes", "Verre et dalle remis à neuf, bugs arrêtés ; la saleté et le sang restent (voir « Nettoyer l'écran »)."]]
     };
     case "players": {
         private _out = [];
@@ -113,6 +119,7 @@ switch (_act) do {
         private _send = { params ["_a", "_x"]; ["comspec_atak_native_zeus", [player, _a, _x]] call CBA_fnc_serverEvent; };
         private _set = { params ["_k", "_v"]; ["set", [_units, _k, _v, _dur]] call _send; };
         private _once = { params ["_k", ["_v", []]]; ["once", [_units, _k, _v]] call _send; };
+        if ((_id select [0, 3]) isEqualTo "sf_") then { ["sfault", [_id select [3], [2, (ceil (_int / 34)) max 1 min 3] select (_int > 0)]] call _once; };
         switch (_id) do {
             case "off_on": { ["off", true] call _set; };
             case "off_off": { ["off", false] call _set; };

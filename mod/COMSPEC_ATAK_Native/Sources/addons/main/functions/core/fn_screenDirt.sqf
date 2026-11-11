@@ -37,6 +37,10 @@
     épaisse, segments bout à bout vers le bas de l'écran), arterial (jet), drag (main qui a glissé), wipe (traînée
     d'essuyage), cover et veil (plein écran). « blood » : part couverte (union approchée des taches).
     Style (réglage serveur comspec_atak_native_blood_style) : 0 discret (au plus le niveau 2), 1 réaliste, 2 gore.
+    Suite (bris d'écran réalistes) : « mud » (boue 0-1 : couché ou en véhicule ouvert sous la pluie), « wetUntil » (heure
+    jusqu'à laquelle le sang est dilué en voile rosé : pluie, sortie de l'eau), genres « seep » (sang resté dans les
+    fêlures après un coup de chiffon : il ne part qu'au kit) et « puddle » (flaque contre le bord du bas, là où les
+    coulures arrivent ; elle suit l'orientation du téléphone au moment où le sang coule).
     Rendu : fn_screenSurface. Rien n'est envoyé sur le réseau.
 */
 params [["_mode", "tick"], ["_v", 0]];
@@ -77,7 +81,7 @@ private _area = {
 };
 private _covOf = { private _p = 1; { _p = _p * (1 - (([_x select 0, _x select 4] call _area) * (_x select 6)) min 1); } forEach _stains; 1 - _p };
 // Nouvelle tache, posée une fois pour toutes. x / y négatifs : au hasard (zones touchées : bords, bas, milieu).
-private _vars = createHashMapFromArray [["print", 4], ["smear", 3], ["splat", 4], ["hand", 4], ["drip", 2], ["spatter", 3], ["pool", 4], ["run", 3], ["arterial", 2], ["drag", 2], ["wipe", 3], ["cover", 2], ["veil", 1]];
+private _vars = createHashMapFromArray [["print", 4], ["smear", 3], ["splat", 4], ["hand", 4], ["drip", 2], ["spatter", 3], ["pool", 4], ["run", 3], ["arterial", 2], ["drag", 2], ["wipe", 3], ["cover", 2], ["veil", 1], ["seep", 2], ["puddle", 1]];
 private _stain = {
     params ["_kind", ["_sx", -1], ["_sy", -1], ["_size", 0.1], ["_alpha", 0.8], ["_ang", -1], ["_flow", 0]];
     if (_sx < 0) then { _sx = selectRandomWeighted [0.08, 3, 0.5, 2, 0.9, 3, random 1, 2]; _sx = (_sx + (random 0.16) - 0.08) max 0.02 min 0.98; };
@@ -232,7 +236,9 @@ switch (_mode) do {
         // Pluie : gouttes sur l'écran sorti, qui sèchent ensuite ; la pluie rince un peu la poussière, étale le sang
         // et le garde humide.
         if (!_roof && {_veh isEqualTo player || _openVeh} && {rain > 0.1}) then {
-            if (_open) then { ["drops", 0.25 * rain] call _add; };
+            if (_open) then { ["drops", 0.25 * rain] call _add; _n set ["wetUntil", time + 45]; };
+            // Boue : couché dehors ou en véhicule ouvert sous la pluie, l'écran sorti prend des éclaboussures.
+            if (_open && {(stance player) isEqualTo "PRONE" || _openVeh} && {random 1 < 0.25 * rain}) then { ["mud", 0.12] call _add; };
             ["dust", -0.004 * rain] call _add;
             if (_stains isNotEqualTo [] && {_open}) then { { _x set [6, (_x select 6) * (1 - 0.015 * rain)]; _x set [7, (_x select 7) max (time - 90)]; } forEach _stains; ["prints", 0.003 * rain] call _add; };
         } else {
@@ -300,6 +306,18 @@ switch (_mode) do {
                 private _ny = _ey + (_len / 2) * _fy * 0.92;
                 if (_ey < 0.94 && {_ex > 0.01} && {_ex < 0.99}) then {
                     ["run", _ex, _ny, _len, (_alpha * 0.95) max 0.5, -1, _flow - 1] call _stain;
+                } else {
+                    // La coulure a atteint le bord du bas : le sang s'y accumule en flaque (une seule, qui s'épaissit).
+                    if (_ey >= 0.94) then {
+                        private _pi = _stains findIf { (_x select 0) isEqualTo "puddle" };
+                        if (_pi < 0) then {
+                            ["puddle", [0.5, _ex max 0.3 min 0.7] select _land, 1 - 0.11 * _fy, 0.22, 0.7, 0] call _stain;
+                        } else {
+                            private _pu = _stains select _pi;
+                            _pu set [6, ((_pu select 6) + 0.1) min 1];
+                            _pu set [7, time];
+                        };
+                    };
                 };
             };
         } forEach (_stains select { (_x select 0) isEqualTo "run" && {(_x param [9, 0]) > 0} });
@@ -313,6 +331,8 @@ switch (_mode) do {
     case "water": {
         _n set ["dust", (_n getOrDefault ["dust", 0]) * 0.5];
         _n set ["drops", 1];
+        _n set ["mud", 0];
+        _n set ["wetUntil", time + 60];
         // Le sang redevient humide (il part ensuite au chiffon) et s'étale.
         if (_stains isNotEqualTo []) then { { _x set [6, (_x select 6) * 0.6]; _x set [7, (_x select 7) max (time - 60)]; } forEach _stains; ["prints", 0.1] call _add; };
         _hands = _hands * 0.3;
@@ -333,15 +353,32 @@ switch (_mode) do {
         private _kit = _v isEqualTo "kit";
         // Kit de nettoyage : tout part, coque comprise, quel que soit l'état des mains.
         if (_kit) exitWith {
-            { _n set [_x, 0]; } forEach ["dust", "drops", "prints", "frameBlood"];
+            { _n set [_x, 0]; } forEach ["dust", "drops", "prints", "frameBlood", "mud"];
+            ["repair", ["film"]] call comspec_atak_native_fnc_screenDamage;
             _stains = [];
             _hands = _hands * 0.5;
         };
         // Nettoyage complet sans kit : tout le sang frais part ; le sang séché laisse un voile qu'il faut repasser.
+        // Fêlures : le sang qu'on essuie y entre et y reste (il ne part qu'au kit). Une trace par impact, au plus trois.
+        private _seepIn = {
+            if ((call _covOf) < 0.04) exitWith {};
+            private _glass = (["list"] call comspec_atak_native_fnc_screenDamage) select { (_x select 0) in ["web", "bull", "bullet", "crush", "hair", "corner", "chip"] };
+            {
+                if (({ (_x select 0) isEqualTo "seep" } count _stains) >= 3) exitWith {};
+                _x params ["", "", "_gx", "_gy", "_sev"];
+                private _sx = [_gx, _gy] select _land;
+                private _sy = [_gy, 1 - _gx] select _land;
+                if ((_stains findIf { (_x select 0) isEqualTo "seep" && {abs ((_x select 2) - _sx) < 0.08} && {abs ((_x select 3) - _sy) < 0.08} }) < 0) then {
+                    ["seep", _sx, _sy, 0.3 + 0.1 * _sev, 0.9] call _stain;
+                };
+            } forEach _glass;
+        };
         if (_v isEqualTo true) exitWith {
-            { _n set [_x, 0]; } forEach ["dust", "drops", "prints", "frameBlood"];
-            _stains = _stains select { !((_x select 0) isEqualTo "wipe") && {(_x call _dryOf) >= 0.6} };
-            { _x set [6, (_x select 6) * 0.3]; } forEach _stains;
+            call _seepIn;
+            { _n set [_x, 0]; } forEach ["dust", "drops", "prints", "frameBlood", "mud"];
+            ["repair", ["film"]] call comspec_atak_native_fnc_screenDamage;
+            _stains = _stains select { (_x select 0) isEqualTo "seep" || {!((_x select 0) isEqualTo "wipe") && {(_x call _dryOf) >= 0.6}} };
+            { if ((_x select 0) isNotEqualTo "seep") then { _x set [6, (_x select 6) * 0.3]; }; } forEach _stains;
             _stains = _stains select { (_x select 6) >= 0.08 };
             _hands = _hands * 0.5;
         };
@@ -349,6 +386,9 @@ switch (_mode) do {
         // traces partent. Sang frais : il pâlit mais s'étale en traînées (beaucoup de sang : plusieurs passages) ;
         // sang séché : il tient (plusieurs passages ou un nettoyage complet) ; mains en sang : on étale autant qu'on essuie.
         private _dirty = _hands > 0.3;
+        call _seepIn;
+        _n set ["mud", (_n getOrDefault ["mud", 0]) * 0.4];
+        if ((_n getOrDefault ["mud", 0]) < 0.1) then { _n set ["mud", 0]; };
         _n set ["dust", [0, (_n getOrDefault ["dust", 0]) * 0.3] select _dirty];
         _n set ["drops", 0];
         _n set ["prints", [0, (_n getOrDefault ["prints", 0]) * 0.6] select _dirty];
@@ -360,6 +400,7 @@ switch (_mode) do {
             private _a = _x select 6;
             private _d = _x call _dryOf;
             switch (true) do {
+                case (_k isEqualTo "seep"): {};
                 case (_k isEqualTo "wipe"): { _x set [6, _a * ([0.4, 0.65] select _dirty)]; };
                 case (_d >= 0.6): { _x set [6, _a * 0.72]; };
                 default {

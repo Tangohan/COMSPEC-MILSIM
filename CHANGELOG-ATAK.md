@@ -38,65 +38,6 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## À venir : la salle TOC complète se pose en entier, au sol, dans Eden comme dans Zeus (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : La salle TOC complète se pose enfin en entier
-- Le module « Salle TOC complète » pose toute la salle sur le sol, dans Eden comme dans Zeus : mur d'images, grands écrans, bandeaux horloge et texte, plaques de nom, bureaux, chaises et PC, tous liés à la même salle. Plus d'écran seul qui flotte en l'air.
-- En extérieur ou sans mur, la salle se monte avec des écrans sur pied ; contre un mur et sous un plafond, elle utilise les écrans muraux et suspendus. Le Zeus lit le résultat dans sa ligne de retour, et la taille de chaque salle est écrite dans le module.
-EN : The complete TOC room is finally placed in full
-- The "Complete TOC room" module places the whole room on the ground, in Eden and in Zeus: video wall, big screens, clock and text strips, name plates, desks, chairs and computers, all linked to the same room. No more single screen floating in the air.
-- Outdoors or without a wall, the room is built with screens on stands; against a wall and under a ceiling, it uses the wall and hanging screens. The Zeus reads the result in the feedback line, and the size of each room is written in the module.
-
-### Détail technique
-- Retour d'un testeur (4.6.0) : « pas de salle, dans Eden comme dans Zeus, seulement un grand écran qui flotte en l'air ». Ancienne pose (`fn_tocHall` « spawnRoom ») : écrans muraux (mur d'images, 98 pouces, bandeau, plaques, origine au sol et dos au mur) et écran suspendu (à 3,2 m) posés à la hauteur du module, sans mur, sans plafond, sans recherche du sol ; salle sautée en entier dès qu'une salle du même nom figurait dans la sauvegarde de la carte (`saved`, clé carte + mission, la même pour toute mission d'essai non enregistrée) ; module Zeus sans le garde-fou du module Écran TOC ; rien n'est dessiné dans l'éditeur (seule l'icône du module, un écran, y apparaît).
-- `fn_tocHallBuild` (nouveau), seul constructeur pour Eden, Zeus et le repli : tables `_rooms` (S, M, L), `_dims`, `_furniture` ; sol sous le module puis sous chaque objet (`lineIntersectsSurfaces`), mur devant (à 1,5 m et 2,4 m du sol) et plafond (3 à 4,5 m) seulement sur un bâtiment ; sinon remplaçant sur pied de la table, ou objet non posé et dit au journal. Un pas par objet (`[COMSPEC TOC] salle | objet k/N classe=… ok | échec raison`), résumé final, résultat rendu au Zeus (`comspec_atak_native_tocHallDone`).
-- Petite : mur 2x2, bandeau horloge, 2 plaques, 2 postes. Moyenne : mur 3x2, deux 98 pouces, bandeaux horloge et texte à LED, 4 plaques, écran double suspendu, 3 postes. Grande : mur 4x3, deux 98 pouces, deux 136 pouces sur pied, bandeaux, 4 plaques, écran triple suspendu, 4 postes. Sans mur : 136 pouces sur pied (petite) ou mur LED 220 pouces sur portique, 98 pouces sur pied, horloge sur un écran sur trépied.
-- Reprise : la salle d'un module Eden est reconnue à ses écrans en place (même nom, à moins de 40 m, même carte), plus à son nom dans la sauvegarde ; reprise incomplète : retirée puis reposée. Attribut « Supprimer la salle avec le module ». Serveur plus ancien ou muet 8 s : le poste du Zeus pose la salle, non gardée.
-- Tests : `tests/Unit/AtakTocHallRoomAssetTest.php` ; en jeu : `["selfTest"] call comspec_atak_native_fnc_tocHallBuild`. Non vérifié en jeu : pose réelle dans Eden et Zeus, détection du mur et du plafond selon les bâtiments, hauteur des plateaux de bureau, serveur dédié, repli.
-
-## À venir : le poste TOC du jeu relié au poste TOC web d'Athena, plans envoyés du site (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Le poste TOC se tient aussi depuis Athena
-- Chronos, main courante, liste d'exécution, pertes, demandes et FLASH du poste en jeu s'affichent en direct sur le poste TOC web d'Athena, et ce que l'opérateur web y fait arrive au poste en jeu.
-- Une demande (MEDEVAC, appui feu, ravitaillement) à laquelle le poste web répond renvoie la réponse sur le téléphone du demandeur, comme depuis le PC du poste.
-- Un plan d'opération préparé sur Athena s'envoie en jeu : il apparaît dans le plan du camp (app Plan des téléphones, carte du PC du poste et écrans de la salle).
-EN : The TOC can now also be run from Athena
-- The in-game post timers, duty log, execution checklist, casualties, requests and FLASH show live on Athena's web TOC, and what the web operator does there reaches the in-game post.
-- A request (MEDEVAC, fire support, resupply) answered from the web TOC sends the answer to the requester's phone, as from the post laptop.
-- An operation plan prepared on Athena can be sent into the game: it appears in the side's plan (phones' Plan app, post laptop map and room screens).
-
-### Détail technique
-- `fn_tocWeb` (nouveau) : instantané de la salle vers Athena par la commande COMSPEC Link existante `BriefingPlan.Push` (canal `toc_room`, sans UID de joueur), au plus toutes les 3 s quand la salle change, 60 s sinon ; un seul joueur du camp envoie (celui qui tient le poste, sinon le plus petit UID ; relais après 90 s). Rien ne part avant la licence acceptée ni en mode local.
-- Commandes du site : genre `toc` du fil WC1 (`fn_webCmdDispatch`, poll des charges existant) ; chaque client du camp les remet au serveur (`comspec_atak_native_tocWeb`), qui ne les applique qu'une fois (id de commande) par `fn_tocRoom` « do » et les cite dans l'instantané suivant (`wc`). Lignes nées sur le web (id W…) reliées à leur id du jeu.
-- `fn_planServer` : opération serveur `webPatch` [camp, ids à retirer, éléments] pour les plans envoyés du site (droits vérifiés par Athena, éléments gardant leur id W<plan>_n, remplacés à chaque nouvel envoi).
-- Aucune nouvelle commande dans la DLL : COMSPEC Link inchangé.
-- À tester en jeu : poste web et PC du poste ouverts ensemble (chrono lancé d'un côté, vu de l'autre en moins de 10 s), réponse à une demande reçue sur le téléphone du demandeur, plan envoyé du site visible dans l'app Plan et sur la carte du PC, deux joueurs du camp reliés (une seule application de chaque commande), serveur sans joueur du camp (commande en attente puis expirée).
-
-## À venir : texte à LED défilant, écrans géants, écran incurvé, postes PC et anciens écrans refaits (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Écris ce que tu veux sur les écrans du TOC, et pose des écrans vraiment géants
-- Nouvel affichage « Texte » dans le style du bandeau horloge : tu écris tes messages (couleur, durée, clignotement), ils passent à tour de rôle et défilent quand ils sont trop longs. Il se règle au menu ACE de l'écran (« Afficher un texte… »), au PC du poste (onglet SALLE), dans l'app Poste TOC et dans le module Zeus.
-- Nouveaux écrans : bandeaux LED de 2,4 m et 4,8 m, écran géant 136 pouces, mur LED 220 pouces, murs vidéo 4x3, 5x3 et 6x4, écrans suspendus doubles et triples, et un grand écran incurvé de 7 m.
-- Postes PC fixes complets (1, 2, 3 écrans ou écran incurvé) qui servent de PC du poste, et un module « Poste opérateur » qui pose bureau, chaise et poste d'un coup.
-- Les anciens écrans (téléviseur, écrans sur trépied, moniteur, toiles de projection, vidéoprojecteur, PC portable) ont de nouveaux modèles ; les missions existantes les gardent.
-EN: Write anything on the TOC screens, and place truly giant screens
-- New "Text" display in the look of the clock strip: you write your messages (colour, duration, blinking), they are shown in turn and scroll when they are too long. Set it from the screen's ACE menu ("Show a text…"), the post PC (ROOM tab), the TOC Post app and the Zeus module.
-- New screens: 2.4 m and 4.8 m LED strips, 136-inch giant screen, 220-inch LED wall, 4x3, 5x3 and 6x4 video walls, double and triple hanging screens, and a 7 m curved screen.
-- Complete desktop PC stations (1, 2, 3 screens or a curved screen) that work as the post PC, and an "Operator station" module that places desk, chair and station at once.
-- The older screens (TV, tripod screens, monitor, projection screens, projector, laptop) have new models; existing missions keep them.
-
-### Détail technique
-- `fn_tocText.sqf` : affichage `TEXT` (table `_schema` des paramètres, nettoyage serveur, défilement tiré de `serverTime`, une seule boucle à 30 images par seconde au plus pour les écrans allumés, éditeur avec aperçu). Réglage `COMSPEC_ATAK_TocText`, gardé par `fn_tocPersist`.
-- `fn_tocScreen.sqf` : table `_formats` (rapports 8:9, 16:9, 4:1, 8:1, 16:1), modes `format` et `params`, `comspec_screenPanelRatio[]` et `comspec_screenPanelViews[]` par dalle, budget de huit redessins par tour, dalles 55" des grands murs en 1024 x 512, affichages `COLA` / `COLB` (colonnes de l'écran incurvé, `fn_tocBoard.sqf`).
-- Modèles : `tools/model_toc_screens.py` (géants, murs, suspendus, incurvé, bandeaux LED), `tools/model_toc_legacy.py` (anciens écrans, mêmes noms de classes), `tools/model_toc_pc.py` (postes PC, `comspec_tocPost=1`). Zones des grands murs et dimensions : `mod/docs/MODELS.md`.
-- Non vérifié en jeu : rendu des textures 2048 x 256 et 4096 x 256, mesure `ctrlTextWidth` dans une texture UI, hauteur et orientation des anciens écrans refaits par rapport aux objets déjà posés (le téléviseur est maintenant mural, sans pied).
-
 ## À venir : poste TOC web et plans d'opération sur Athena (site Athena, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -113,6 +54,58 @@ EN : A TOC console and operation plans on Athena
 ### Détail technique
 - Pages `/atak/toc` et `/atak/toc/plans`, droits `atak.toc.use` et `atak.toc.manage`, étapes 4370 et 4380. Détail : `docs/TOC-WEB.md`.
 - Lien avec le jeu par les canaux existants (BriefingPlan.Push canal `toc_room`, commandes web genre `toc`) : branche du mod `feat/atak-toc-web-sync`, sans changement de COMSPEC Link.
+
+## Pack 4.7.0 Washington : salle TOC complète posée en entier, texte à LED et écrans géants, bris d'écran réalistes, poste TOC relié à Athena (ATAK natif 4.7.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.7.0 : la salle TOC se pose en entier, des écrans géants, un téléphone qui casse comme un vrai
+- **Salle TOC complète** : le module pose enfin toute la salle sur le sol, dans Eden comme dans Zeus. En extérieur, elle se monte avec des écrans sur pied.
+- **Écrans du TOC** : un affichage « Texte » où tu écris tes messages, qui défilent s'ils sont trop longs, et de nouveaux écrans géants, incurvés et suspendus, avec des postes PC complets.
+- **Écran du téléphone** : le verre casse de treize façons, la dalle peut tomber en panne et le sang est plus crédible ; tout se règle ou se coupe dans les options.
+- **Poste TOC et Athena** : ce que fait le poste en jeu se voit en direct sur le poste TOC web d'Athena, et un plan préparé sur le site s'envoie en jeu.
+EN : ATAK 4.7.0: the TOC room is placed in full, giant screens, a phone that breaks like a real one
+- **Complete TOC room**: the module finally places the whole room on the ground, in Eden and in Zeus. Outdoors, it is built with screens on stands.
+- **TOC screens**: a "Text" display where you write your messages, which scroll when they are too long, and new giant, curved and hanging screens, with complete PC stations.
+- **Phone screen**: the glass breaks in thirteen ways, the panel can fail and blood looks more believable; everything can be tuned or turned off in the options.
+- **TOC and Athena**: what the in-game post does shows live on Athena's web TOC, and a plan prepared on the site can be sent into the game.
+
+### Détail technique
+
+COMSPEC Link inchangé (2.0.123) : aucune source de la DLL n'a changé depuis la 4.6.0.
+
+**Bris d'écran réalistes, pannes de dalle, bugs d'affichage et sang plus crédible**
+
+- Modèle unique par appareil dans `COMSPEC_ATAK_Device` (`scr`, `scrSeed`, `scrN`) : `fn_screenDamage` (catalogue de 13 bris de verre, 13 pannes de dalle, 11 bugs ; causes balle, éclat, chute, accident, souffle, choc encaissé, eau, chaleur, IEM, brouillage, usure, froid, batterie faible, pression ; tirages reproductibles par appareil ; export / import ; diagnostic en clair dans le rapport de l'appareil ; `selftest`).
+- Rendu : `fn_screenFaults` (repère du verre en portrait, quart de tour en paysage, gabarits point / coin / bande / libre, jamais d'étirement, seconde passe décalée qui suit la lumière et le reflet, 90 contrôles au plus), appelé par `fn_screenSurface` dans l'ordre dalle, verre, saleté, sang, pluie, reflet, coins. `fn_screenGlitch` : un bug à la fois, 4 contrôles au plus, un seul gestionnaire `EachFrame` posé pendant le bug.
+- L'ancienne toile plein écran et ses traits ne restent que pour l'écran en morceaux ou sans impact enregistré ; réglage « Bris d'écran : réalisme » sur Désactivé = ancien rendu.
+- Réparation : kit (verre et dalle), nettoyage complet ou kit de nettoyage (film décollé, boue), redémarrage (bugs, un pixel bloqué sur deux), l'eau sous le verre sèche seule. Zeus : une entrée par bris, panne et bug, et « Retirer tous les bris et pannes ».
+- Réglages CBA (ATAK · Simulation) : `screen_fx_level`, `panel_faults`, `screen_glitch`, `screen_impact`, `screen_fault_rate`, `screen_glitch_rate` ; aussi dans le panneau de réalisme.
+- Sang : `gen_screen_fx.py` (film rouge profond sans liseré clair, ménisque rosé au lieu des reflets ronds, craquelures aux cellules inégales, grandes taches en 512 px), genres `seep` et `puddle`, voile rosé sous la pluie (`wetUntil`), boue (`mud`), gouttes de pluie refaites. Textures : `gen_screen_damage.py` (dessins d'origine) ; maquettes : `gen_screen_mockups.py`. Données de l'addon : +7,5 Mo.
+- Pas d'attribut Eden (il n'existe pas d'attribut d'appareil ; les textes d'Eden passent par les stringtables). Tests : `AtakScreenDamageAssetTest`.
+
+**La salle TOC complète se pose en entier, au sol, dans Eden comme dans Zeus**
+
+- Retour d'un testeur (4.6.0) : « pas de salle, dans Eden comme dans Zeus, seulement un grand écran qui flotte en l'air ». Ancienne pose (`fn_tocHall` « spawnRoom ») : écrans muraux (mur d'images, 98 pouces, bandeau, plaques, origine au sol et dos au mur) et écran suspendu (à 3,2 m) posés à la hauteur du module, sans mur, sans plafond, sans recherche du sol ; salle sautée en entier dès qu'une salle du même nom figurait dans la sauvegarde de la carte (`saved`, clé carte + mission, la même pour toute mission d'essai non enregistrée) ; module Zeus sans le garde-fou du module Écran TOC ; rien n'est dessiné dans l'éditeur (seule l'icône du module, un écran, y apparaît).
+- `fn_tocHallBuild` (nouveau), seul constructeur pour Eden, Zeus et le repli : tables `_rooms` (S, M, L), `_dims`, `_furniture` ; sol sous le module puis sous chaque objet (`lineIntersectsSurfaces`), mur devant (à 1,5 m et 2,4 m du sol) et plafond (3 à 4,5 m) seulement sur un bâtiment ; sinon remplaçant sur pied de la table, ou objet non posé et dit au journal. Un pas par objet (`[COMSPEC TOC] salle | objet k/N classe=… ok | échec raison`), résumé final, résultat rendu au Zeus (`comspec_atak_native_tocHallDone`).
+- Petite : mur 2x2, bandeau horloge, 2 plaques, 2 postes. Moyenne : mur 3x2, deux 98 pouces, bandeaux horloge et texte à LED, 4 plaques, écran double suspendu, 3 postes. Grande : mur 4x3, deux 98 pouces, deux 136 pouces sur pied, bandeaux, 4 plaques, écran triple suspendu, 4 postes. Sans mur : 136 pouces sur pied (petite) ou mur LED 220 pouces sur portique, 98 pouces sur pied, horloge sur un écran sur trépied.
+- Reprise : la salle d'un module Eden est reconnue à ses écrans en place (même nom, à moins de 40 m, même carte), plus à son nom dans la sauvegarde ; reprise incomplète : retirée puis reposée. Attribut « Supprimer la salle avec le module ». Serveur plus ancien ou muet 8 s : le poste du Zeus pose la salle, non gardée.
+- Tests : `tests/Unit/AtakTocHallRoomAssetTest.php` ; en jeu : `["selfTest"] call comspec_atak_native_fnc_tocHallBuild`. Non vérifié en jeu : pose réelle dans Eden et Zeus, détection du mur et du plafond selon les bâtiments, hauteur des plateaux de bureau, serveur dédié, repli.
+
+**Le poste TOC du jeu relié au poste TOC web d'Athena, plans envoyés du site**
+
+- `fn_tocWeb` (nouveau) : instantané de la salle vers Athena par la commande COMSPEC Link existante `BriefingPlan.Push` (canal `toc_room`, sans UID de joueur), au plus toutes les 3 s quand la salle change, 60 s sinon ; un seul joueur du camp envoie (celui qui tient le poste, sinon le plus petit UID ; relais après 90 s). Rien ne part avant la licence acceptée ni en mode local.
+- Commandes du site : genre `toc` du fil WC1 (`fn_webCmdDispatch`, poll des charges existant) ; chaque client du camp les remet au serveur (`comspec_atak_native_tocWeb`), qui ne les applique qu'une fois (id de commande) par `fn_tocRoom` « do » et les cite dans l'instantané suivant (`wc`). Lignes nées sur le web (id W…) reliées à leur id du jeu.
+- `fn_planServer` : opération serveur `webPatch` [camp, ids à retirer, éléments] pour les plans envoyés du site (droits vérifiés par Athena, éléments gardant leur id W<plan>_n, remplacés à chaque nouvel envoi).
+- Aucune nouvelle commande dans la DLL : COMSPEC Link inchangé.
+- À tester en jeu : poste web et PC du poste ouverts ensemble (chrono lancé d'un côté, vu de l'autre en moins de 10 s), réponse à une demande reçue sur le téléphone du demandeur, plan envoyé du site visible dans l'app Plan et sur la carte du PC, deux joueurs du camp reliés (une seule application de chaque commande), serveur sans joueur du camp (commande en attente puis expirée).
+
+**Texte à LED défilant, écrans géants, écran incurvé, postes PC et anciens écrans refaits**
+
+- `fn_tocText.sqf` : affichage `TEXT` (table `_schema` des paramètres, nettoyage serveur, défilement tiré de `serverTime`, une seule boucle à 30 images par seconde au plus pour les écrans allumés, éditeur avec aperçu). Réglage `COMSPEC_ATAK_TocText`, gardé par `fn_tocPersist`.
+- `fn_tocScreen.sqf` : table `_formats` (rapports 8:9, 16:9, 4:1, 8:1, 16:1), modes `format` et `params`, `comspec_screenPanelRatio[]` et `comspec_screenPanelViews[]` par dalle, budget de huit redessins par tour, dalles 55" des grands murs en 1024 x 512, affichages `COLA` / `COLB` (colonnes de l'écran incurvé, `fn_tocBoard.sqf`).
+- Modèles : `tools/model_toc_screens.py` (géants, murs, suspendus, incurvé, bandeaux LED), `tools/model_toc_legacy.py` (anciens écrans, mêmes noms de classes), `tools/model_toc_pc.py` (postes PC, `comspec_tocPost=1`). Zones des grands murs et dimensions : `mod/docs/MODELS.md`.
+- Non vérifié en jeu : rendu des textures 2048 x 256 et 4096 x 256, mesure `ctrlTextWidth` dans une texture UI, hauteur et orientation des anciens écrans refaits par rapport aux objets déjà posés (le téléviseur est maintenant mural, sans pied).
 
 ## Pack 4.6.0 Washington : écrans TOC réglables dans Eden et Zeus, écrans allumés avec un serveur plus ancien, carte photo fluide, zoom de la carte mini centré (ATAK natif 4.6.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 
