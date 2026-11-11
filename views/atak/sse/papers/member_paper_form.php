@@ -7,7 +7,6 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 require __DIR__ . '/_subnav.php';
 require __DIR__ . '/_member_css.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers/membres')) ?>">Papiers des membres</a> / <strong><?= $h($boPageTitle ?? '') ?></strong></div>
 <?php require dirname(__DIR__, 3) . '/admin/effectifs_workspace/member_paper_form.php'; ?>
 <?php
 $sseContent = ob_get_clean();

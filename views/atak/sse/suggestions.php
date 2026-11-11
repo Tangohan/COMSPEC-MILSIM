@@ -26,7 +26,6 @@ $fmtWhen = static function (mixed $raw): string {
 ?>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Analyse // Moteur</div>
         <h1>Rapprochements moteur</h1>
         <p>
             Propositions seulement — possible, probable, candidat à confirmation.

@@ -14,23 +14,14 @@ foreach ($sites as $s) {
     }
 }
 ?>
-<div class="breadcrumb">
-    Athena / SSE / Renseignement /
-    <strong>Sites exploités</strong>
-</div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Exploitation // Sites sensibles</div>
         <h1>Sites exploités</h1>
         <p>
             Dossiers d’exploitation ouverts sur le terrain : checklist de fouille,
             saisies versées et compte rendu de clôture.
         </p>
-    </div>
-    <div class="page-reference">
-        <strong>Vue // Index des sites</strong>
-        Réf. ATH-SSE-SITES
     </div>
 </div>
 

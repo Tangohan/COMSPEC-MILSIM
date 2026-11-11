@@ -9,16 +9,9 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var bool $partial */
 /** @var string $clearanceOrigin */
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/dossiers')) ?>">Dossiers</a> /
-    <a class="link" href="<?= $h(url('atak/sse/dossiers/' . (int) ($case['id'] ?? 0))) ?>"><?= $h($case['reference_code'] ?? '') ?></a> /
-    <strong>Compte rendu</strong>
-</div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Produit de renseignement // Exploitation</div>
         <h1>Compte rendu d’exploitation</h1>
         <p>
             Généré à la lecture depuis les événements enregistrés : personnes rattachées,

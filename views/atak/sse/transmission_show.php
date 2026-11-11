@@ -15,10 +15,8 @@ $payloadSections = is_array($payloadSections ?? null) ? $payloadSections : [];
 $clientLabel = trim((string) ($clientLabel ?? ''));
 $sectionIndex = 2;
 ?>
-<div class="breadcrumb">Athena / SSE / <a href="<?= $h(url('atak/sse/transmissions')) ?>">Transmissions terrain</a> / <strong>Fiche</strong></div>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Pilotage // Transmission</div>
         <h1><?= $h($event['event_type_label'] ?? 'Transmission') ?></h1>
         <p><?= $h($event['summary'] ?? 'Sans résumé') ?></p>
         <?php if ($clientLabel !== ''): ?>

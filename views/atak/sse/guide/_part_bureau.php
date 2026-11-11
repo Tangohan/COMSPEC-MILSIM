@@ -2,49 +2,37 @@
 <section id="bureau" class="site-docs__section">
     <h2>Le bureau SSE</h2>
     <p class="site-docs__lead">
-        Interface plein écran « Bureau SSE » : barre supérieure, bandeau de classification, navigation latérale numérotée, zone de travail.
+        Interface plein écran « Bureau SSE » : barre supérieure, bandeau d’habilitation, navigation latérale rangée par usage, fil d’Ariane et zone de travail.
     </p>
 
     <h3>Barre supérieure</h3>
     <ul>
         <li><strong>Recherche globale</strong> — identités, sites, matériels, véhicules, documents, événements.</li>
-        <li><strong>État de liaison</strong> — Athena, clients Arma, heure Zulu.</li>
-        <li><strong>Durée de session</strong> — temps restant avant expiration de l’habilitation.</li>
-        <li><strong>Actions</strong> — créer un objet, ouvrir une investigation, quitter le bureau.</li>
+        <li><strong>Aller à une page</strong> (<kbd>Ctrl</kbd> <kbd>K</kbd>) — ouvre n’importe quelle page du bureau par son nom.</li>
+        <li><strong>Heure Zulu et durée de session</strong> — temps restant avant expiration de l’habilitation.</li>
+        <li><strong>Actions</strong> — rédiger une fiche, créer un objet ou un dossier, quitter le bureau.</li>
     </ul>
 
-    <h3>Navigation (Centre SSE)</h3>
+    <h3>Navigation</h3>
+    <p>
+        L’<strong>accueil du bureau</strong> présente chaque espace en une phrase, avec ses pages. La barre latérale
+        (le bouton <strong>Menu</strong> sur téléphone) suit le même rangement. Une page que votre session ne peut pas
+        ouvrir n’y figure pas ; l’accueil dit lesquelles et pourquoi.
+    </p>
     <table>
         <thead>
             <tr>
-                <th>Bloc</th>
-                <th>Rubriques</th>
+                <th>Espace</th>
+                <th>Pages</th>
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>Pilotage</td>
-                <td>
-                    <strong>Vue opérationnelle</strong> — tableau de bord du jour ;
-                    <strong>Investigations</strong> — toiles relationnelles ;
-                    <strong>Dossiers d’intérêt</strong> — signalements à qualifier ;
-                    <strong>Dossiers validés</strong> — affaires structurées ;
-                    <strong>Transmissions terrain</strong> — journal des envois depuis Arma ;
-                    <strong>Fiches de renseignement</strong> — notes libres remontées du terrain
-                </td>
-            </tr>
-            <tr>
-                <td>Objets</td>
-                <td>Identités, organisations, sites, véhicules, matériels, pièces documentaires</td>
-            </tr>
-            <tr>
-                <td>Analyse</td>
-                <td>Graphe, chronologie, carte ATAK, croisements, anomalies</td>
-            </tr>
-            <tr>
-                <td>Exploitation</td>
-                <td>Exploitation numérique, collecte terrain, files de validation, rapports, rédaction, administration</td>
-            </tr>
+            <?php foreach (\App\Support\SsePortalNav::sections(true, true, false, true, true) as $guideSection): ?>
+                <tr>
+                    <td><?= htmlspecialchars($guideSection['label'], ENT_QUOTES, 'UTF-8') ?></td>
+                    <td><?= implode(', ', array_map(static fn (array $i): string => '<span>' . htmlspecialchars($i['label'], ENT_QUOTES, 'UTF-8') . '</span>', $guideSection['items'])) ?></td>
+                </tr>
+            <?php endforeach; ?>
         </tbody>
     </table>
 

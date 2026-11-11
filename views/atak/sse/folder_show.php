@@ -15,15 +15,9 @@ $classBadge = static function (string $key): string {
     };
 };
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/dossiers')) ?>">Dossiers</a> /
-    <strong><?= $h($case['reference_code'] ?? '') ?></strong>
-</div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Dossier // Conteneur</div>
         <h1><?= $h($case['title'] ?? '') ?></h1>
         <p>Sous-dossiers et affaires rattachés à ce dossier.</p>
     </div>

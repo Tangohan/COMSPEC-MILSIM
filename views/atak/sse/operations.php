@@ -69,7 +69,6 @@ $kpis = [
 <div class="iw-tower" data-tower>
     <header class="iw-tower-hero">
         <div>
-            <div class="page-heading-overline">Pilotage // Situation</div>
             <h1>Vue opérationnelle</h1>
             <p>
                 Synthèse du centre SSE : dossiers, objets, signaux analytiques et file opérateur.
@@ -90,12 +89,12 @@ $kpis = [
 
     <div class="iw-tower-kpis">
         <?php foreach ($kpis as $i => $card): ?>
-            <div class="iw-kpi iw-kpi--<?= $h($card['tone']) ?> iw-anim" style="--d:<?= $i * 60 ?>ms">
+            <div class="iw-kpi iw-kpi--<?= $h($card['tone']) ?>">
                 <span><?= $h($card['label']) ?></span>
                 <?php if (isset($card['text'])): ?>
                     <strong><?= $h($card['text']) ?></strong>
                 <?php else: ?>
-                    <strong data-count="<?= (int) ($kpi[$card['key']] ?? 0) ?>">0</strong>
+                    <strong><?= (int) ($kpi[$card['key']] ?? 0) ?></strong>
                 <?php endif; ?>
                 <em><?= $h($card['hint']) ?></em>
             </div>
@@ -103,7 +102,7 @@ $kpis = [
     </div>
 
     <div class="iw-tower-charts">
-        <section class="panel iw-anim" style="--d:120ms">
+        <section class="panel">
             <div class="panel-header">
                 <div class="panel-title"><span class="panel-index">00.00</span> Activité 24 h</div>
                 <div class="panel-meta">Créneaux 3 h · Zulu</div>
@@ -120,7 +119,7 @@ $kpis = [
                         ?>
                         <div class="iw-bars__col">
                             <div class="iw-bars__track">
-                                <i style="--h:<?= $pct ?>%" data-bar></i>
+                                <i style="--h:<?= $pct ?>%" class="is-on"></i>
                             </div>
                             <b><?= $val ?></b>
                             <span><?= $h((string) $lab) ?></span>
@@ -130,7 +129,7 @@ $kpis = [
             </div>
         </section>
 
-        <section class="panel iw-anim" style="--d:180ms">
+        <section class="panel">
             <div class="panel-header">
                 <div class="panel-title"><span class="panel-index">00.00b</span> Charge de travail</div>
                 <div class="panel-meta">Répartition courante</div>
@@ -149,7 +148,7 @@ $kpis = [
                                 <b><?= $val ?></b>
                             </div>
                             <div class="iw-workmix__bar" aria-hidden="true">
-                                <i style="--w:<?= $pct ?>%; --c:<?= $h($color) ?>" data-bar></i>
+                                <i style="--w:<?= $pct ?>%; --c:<?= $h($color) ?>" class="is-on"></i>
                             </div>
                         </li>
                     <?php endforeach; ?>
@@ -159,7 +158,7 @@ $kpis = [
     </div>
 
     <div class="iw-tower-grid">
-        <section class="panel iw-anim" style="--d:220ms">
+        <section class="panel">
             <div class="panel-header">
                 <div class="panel-title"><span class="panel-index">00.01</span> Activité récente</div>
                 <div class="panel-meta">Heure Zulu</div>
@@ -193,7 +192,7 @@ $kpis = [
             </div>
         </section>
 
-        <section class="panel iw-anim" style="--d:280ms">
+        <section class="panel">
             <div class="panel-header">
                 <div class="panel-title"><span class="panel-index">00.02</span> Alertes &amp; signaux</div>
                 <div class="panel-meta"><?= $h(sprintf(count($alerts) > 1 ? '%d actives' : '%d active', count($alerts))) ?></div>
@@ -217,7 +216,7 @@ $kpis = [
             </div>
         </section>
 
-        <section class="panel iw-anim" style="--d:340ms">
+        <section class="panel">
             <div class="panel-header">
                 <div class="panel-title"><span class="panel-index">00.03</span> File opérateur</div>
             </div>
@@ -233,8 +232,8 @@ $kpis = [
                         ?>
                         <a class="iw-queue__row is-<?= $h($tone) ?>" href="<?= $h((string) ($q['href'] ?? '#')) ?>">
                             <span><?= $h((string) ($q['label'] ?? '')) ?></span>
-                            <span class="badge <?= $tone === 'warn' ? 'badge--amber' : ($tone === 'danger' ? 'badge--red' : '') ?>" data-count="<?= $count ?>">0</span>
-                            <i class="iw-queue__meter" aria-hidden="true"><i style="--w:<?= $pct ?>%" data-bar></i></i>
+                            <span class="badge <?= $tone === 'warn' ? 'badge--amber' : ($tone === 'danger' ? 'badge--red' : '') ?>"><?= $count ?></span>
+                            <i class="iw-queue__meter" aria-hidden="true"><i style="--w:<?= $pct ?>%" class="is-on"></i></i>
                         </a>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -242,7 +241,7 @@ $kpis = [
         </section>
     </div>
 
-    <section class="panel iw-anim" style="margin-top:14px;--d:400ms">
+    <section class="panel" style="margin-top:14px">
         <div class="panel-header">
             <div class="panel-title"><span class="panel-index">00.04</span> Objets récemment détectés</div>
             <div class="panel-meta"><?= count($recent) ?> entrées</div>
@@ -288,30 +287,6 @@ $kpis = [
   }
   tickZulu();
   setInterval(tickZulu, 1000);
-
-  function animateCount(el) {
-    var target = parseInt(el.getAttribute('data-count') || '0', 10);
-    if (!target) { el.textContent = '0'; return; }
-    var start = performance.now();
-    var dur = 700;
-    function frame(t) {
-      var p = Math.min(1, (t - start) / dur);
-      var eased = 1 - Math.pow(1 - p, 3);
-      el.textContent = String(Math.round(target * eased));
-      if (p < 1) requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
-  }
-  document.querySelectorAll('[data-count]').forEach(animateCount);
-
-  requestAnimationFrame(function () {
-    document.querySelectorAll('[data-bar]').forEach(function (bar) {
-      bar.classList.add('is-on');
-    });
-    document.querySelectorAll('.iw-anim').forEach(function (el) {
-      el.classList.add('is-in');
-    });
-  });
 })();
 </script>
 <?php

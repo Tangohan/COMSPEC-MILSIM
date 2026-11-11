@@ -22,14 +22,9 @@ $mergeCandidates = is_array($mergeCandidates ?? null) ? $mergeCandidates : [];
 $searchQuery = trim((string) ($filters['q'] ?? ''));
 $statusFilter = (string) ($filters['status'] ?? '');
 ?>
-<div class="breadcrumb">
-    Athena / SSE / Analyse /
-    <strong>Investigations</strong>
-</div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Analyse // Graphe relationnel</div>
         <h1>Investigations</h1>
         <p>
             Chaque investigation est une toile d’hypothèses : identités, sites, matériels et liens.
@@ -37,8 +32,6 @@ $statusFilter = (string) ($filters['status'] ?? '');
         </p>
     </div>
     <div class="page-reference">
-        <strong>Vue // Investigations</strong>
-        Réf. ATH-SSE-MESH
         <?php if ($canManage): ?>
             <div style="margin-top:.5rem">
                 <a class="btn" href="<?= $h(url('atak/sse/toiles/nouveau')) ?>">Ouvrir une investigation</a>

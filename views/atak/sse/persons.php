@@ -5,23 +5,14 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var list<array<string,mixed>> $persons */
 $total = count($persons);
 ?>
-<div class="breadcrumb">
-    Athena / SSE / Renseignement /
-    <strong>Personnes</strong>
-</div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Objets // Identités</div>
-        <h1>Identités</h1>
+        <h1>Personnes</h1>
         <p>
             Chaque fiche est un objet réutilisable : dossiers, toiles, chronologie et carte
             s’appuient sur le même registre — pas un formulaire isolé.
         </p>
-    </div>
-    <div class="page-reference">
-        <strong>Vue // Index personnes</strong>
-        Réf. ATH-SSE-PERSONNES
     </div>
 </div>
 

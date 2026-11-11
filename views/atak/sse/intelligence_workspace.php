@@ -41,7 +41,6 @@ $toneClass = static function (string $tone): string {
      data-csrf="<?= $h($csrfToken) ?>">
     <header class="iw-intel-hero">
         <div>
-            <div class="page-heading-overline">Exploitation // Workspace</div>
             <h1>Intelligence Workspace</h1>
             <p>
                 Inbox, chemise dossier, chronologie et graphe — une seule surface d’exploitation.

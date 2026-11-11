@@ -7,10 +7,8 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var list<array<string,mixed>> $artifacts */
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/exploitation-numerique/acquisitions')) ?>">Acquisitions</a> / <strong><?= $h($acquisition['reference_code'] ?? '') ?></strong></div>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline"><?= $h($acquisition['method_label'] ?? '') ?> // <?= $h($acquisition['status_label'] ?? '') ?></div>
         <h1><?= $h($acquisition['reference_code'] ?? '') ?></h1>
         <p>Support <?= $h($acquisition['device_reference'] ?? '') ?> · <?= $h($acquisition['partial_label'] ?? '') ?></p>
     </div>

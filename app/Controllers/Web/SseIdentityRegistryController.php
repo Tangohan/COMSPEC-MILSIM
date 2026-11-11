@@ -77,7 +77,7 @@ final class SseIdentityRegistryController
         ];
 
         return $this->view('atak.sse.papers.documents', [
-            'title' => 'Identités & documents',
+            'title' => 'Papiers d’identité',
             'documents' => $this->documents->list($tenantId, $filters),
             'filters' => $filters,
             'counts' => $this->documents->counts($tenantId),
@@ -672,7 +672,7 @@ final class SseIdentityRegistryController
         ];
 
         return $this->view('atak.sse.papers.identities', [
-            'title' => 'Identités',
+            'title' => 'Identités fictives',
             'identities' => $this->identities->list($tenantId, $filters),
             'filters' => $filters,
             'countries' => $this->countries->listForTenant($tenantId),

@@ -29,16 +29,9 @@ $checked = static function (string $key, bool $default = false) use ($form): boo
 };
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/dev')) ?>">Atelier</a> /
-    <a class="link" href="<?= $h(url('atak/sse/dev/modeles')) ?>">Modèles</a> /
-    <strong><?= $isEdit ? 'Modifier' : 'Nouveau' ?></strong>
-</div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Atelier // Saisie</div>
         <h1><?= $isEdit ? 'Modifier le modèle' : 'Nouveau modèle de mission' ?></h1>
         <p>
             Définissez le profil, le décor narratif et les listes utiles (alias, messages, documents).
@@ -48,7 +41,6 @@ require __DIR__ . '/_subnav.php';
             <?php endif; ?>
         </p>
     </div>
-    <div class="page-reference"><strong>Formulaire</strong> Réf. ATH-SSE-DEV-MDL-EDIT</div>
 </div>
 
 <form method="post" action="<?= $h($action) ?>" class="panel lab-device-form">

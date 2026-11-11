@@ -10,14 +10,12 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 $filesTab = 'journal';
 require __DIR__ . '/_nav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/fichiers')) ?>">Passage aux fichiers</a> / <strong>Journal</strong></div>
 
 <div class="page-heading">
     <div>
         <h1>Journal des consultations</h1>
         <p>Toutes les consultations des fichiers, faites sur le site ou en jeu. Une consultation faite hors liaison apparaît quand le terminal la remonte (différée).</p>
     </div>
-    <div class="page-reference"><strong>SIMULATION</strong> Données fictives</div>
 </div>
 
 <form class="toolbar" method="get" action="<?= $h(url('atak/sse/fichiers/journal')) ?>">

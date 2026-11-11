@@ -51,15 +51,9 @@ $frDate = static function (mixed $raw): string {
     return $stamp ? date('d/m/Y \à H\hi', $stamp) : '';
 };
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/dossiers')) ?>">Dossiers</a> /
-    <strong><?= $h($case['reference_code']) ?></strong>
-</div>
 
 <div class="page-heading sse-case-head">
     <div>
-        <div class="page-heading-overline">Dossier // <?= $h($case['reference_code']) ?></div>
         <h1><?= $h($case['title']) ?></h1>
         <p>
             <span class="<?= $h($classBadge) ?>"><?= $h($case['classification_label']) ?></span>

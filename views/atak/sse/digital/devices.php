@@ -7,15 +7,12 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var array<string,string> $types */
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/exploitation-numerique')) ?>">Exploitation numérique</a> / <strong>Supports</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Laboratoire // Supports</div>
         <h1>Supports numériques</h1>
         <p>Fiches des matériels saisis : identification, état technique et traçabilité.</p>
     </div>
-    <div class="page-reference"><strong>Vue // Registre</strong> Réf. ATH-SSE-LABNUM-SUP</div>
 </div>
 
 <form class="toolbar" method="get" action="<?= $h(url('atak/sse/exploitation-numerique/supports')) ?>">

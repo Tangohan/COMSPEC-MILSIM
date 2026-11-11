@@ -74,7 +74,6 @@ $tocGroups = [
 
 <div class="site-docs__shell">
     <header class="site-docs__hero">
-        <p class="sse-docs__eyebrow">Athena · Bureau SSE · Manuel opérateur</p>
         <h1>Manuel du renseignement interpersonnel</h1>
         <?php if ($sseGuideRevisionLabel !== ''): ?>
         <p class="site-docs__revision" role="note">

@@ -6,10 +6,8 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 require __DIR__ . '/_subnav.php';
 $id = (int) ($device['id'] ?? 0);
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/exploitation-numerique/supports/' . $id)) ?>"><?= $h($device['reference_code'] ?? '') ?></a> / <strong>Extraction mobile</strong></div>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Téléphone // Extraction</div>
         <h1><?= $h($device['reference_code'] ?? '') ?></h1>
         <p>Vue structurée de type extraction mobile (simulation / import).</p>
     </div>

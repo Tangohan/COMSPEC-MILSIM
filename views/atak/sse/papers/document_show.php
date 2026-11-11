@@ -31,11 +31,9 @@ $statusFields = [
 ];
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers')) ?>">Identités &amp; documents</a> / <strong><?= $h($doc['ref']) ?></strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline"><?= $h($doc['doc_type_label']) ?> // <?= $h($doc['workflow_label']) ?></div>
         <h1><?= $h($doc['ref']) ?> — <?= $h($doc['doc_number']) ?></h1>
         <p><?= $h($country['name'] ?? $doc['country_code']) ?> · titulaire <a class="link" href="<?= $h(url('atak/sse/papiers/identites/' . (int) $doc['identity_id'])) ?>"><?= $h($identity['display_name'] ?? '') ?></a></p>
     </div>

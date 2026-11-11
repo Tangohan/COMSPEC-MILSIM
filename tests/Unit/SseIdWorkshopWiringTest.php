@@ -107,7 +107,7 @@ final class SseIdWorkshopWiringTest extends TestCase
         $js = self::read('public/assets/js/sse-id-workshop.js');
         self::assertStringContainsString("canvas.toDataURL('image/png')", $js);
         self::assertStringContainsString('data-mrz-url', $js);
-        self::assertStringContainsString("'atelier' => ['atelier', 'Atelier de documents']", self::read('views/atak/sse/papers/_subnav.php'));
+        self::assertStringContainsString("'path' => 'atak/sse/papiers/atelier'", self::read('app/Support/SsePortalNav.php'));
         self::assertStringContainsString('Mes briefs de couverture', self::read('views/admin/member_situation/mes_papiers.php'));
         self::assertStringContainsString("'briefs' => \$briefs,", self::read('app/Controllers/Admin/MemberIdentityPapersController.php'));
         self::assertStringContainsString('id="idw-checks-map"', self::read('views/atak/sse/papers/dashboard.php'));

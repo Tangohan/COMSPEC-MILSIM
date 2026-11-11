@@ -11,15 +11,12 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 $canSeeTruth = !empty($canSeeTruth);
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / Référentiel / <strong>Identités &amp; documents</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Référentiel // Papiers d’identité</div>
-        <h1>Identités &amp; documents</h1>
+        <h1>Papiers d’identité</h1>
         <p>Cartes d’identité, passeports et permis des pays fictifs. Seuls les papiers émis sont chargés par le serveur de jeu et reconnus lors des contrôles.</p>
     </div>
-    <div class="page-reference"><strong>Vue // Registre</strong> Réf. ATH-SSE-IDENT</div>
 </div>
 
 <div class="metrics-grid">
