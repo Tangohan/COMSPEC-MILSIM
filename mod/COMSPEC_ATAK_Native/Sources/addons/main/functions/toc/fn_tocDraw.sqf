@@ -31,8 +31,8 @@ private _cols = [["Rouge", "ColorRed"], ["Orange", "ColorOrange"], ["Jaune", "Co
 switch (_mode) do {
     case "build": {
         _a params ["_d", "_x0", "_y0", "_w"];
-        private _H = safeZoneH; private _W = safeZoneW;
-        private _h = _H * 0.03; private _g = _W * 0.003;
+        private _szH = safeZoneH; private _szW = safeZoneW;
+        private _h = _szH * 0.03; private _g = _szW * 0.003;
         private _mk = {
             params ["_cls", "_pos", ["_key", ""]];
             private _c = _d ctrlCreate [_cls, -1];
@@ -44,7 +44,7 @@ switch (_mode) do {
             params ["_key", "_x1", "_w1", "_txt", "_tip", ["_row", 0]];
             private _c = ["COMSPEC_RscButton", [_x1, _y0 + _row * (_h + _g), _w1, _h], _key] call _mk;
             _c ctrlSetText ((_txt) call comspec_atak_native_fnc_tr);
-            _c ctrlSetFontHeight (_H * 0.016);
+            _c ctrlSetFontHeight (_szH * 0.016);
             _c ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
             _c ctrlAddEventHandler ["ButtonClick", compile format ["['act', %1] call comspec_atak_native_fnc_tocDraw;", str _key]];
             _c
@@ -52,7 +52,7 @@ switch (_mode) do {
         private _bg = ["COMSPEC_RscText", [_x0 - _g, _y0 - _g, _w + 2 * _g, 2 * _h + 3 * _g], "dBg"] call _mk;
         _bg ctrlSetBackgroundColor [0.02, 0.025, 0.022, 0.85];
         // Rangée 1 : outils de dessin (un seul actif, avec MESURE et MARQUEUR de la barre du haut).
-        private _bw = _W * 0.052;
+        private _bw = _szW * 0.052;
         {
             _x params ["_k", "_t", "_tip"];
             [_k, _x0 + _forEachIndex * (_bw + _g), _bw, _t, _tip] call _btn;
@@ -65,7 +65,7 @@ switch (_mode) do {
         ];
         // Rangée 1, suite : réglages de l'outil choisi (montrés selon l'outil).
         private _sx = _x0 + 5 * (_bw + _g) + _g * 3;
-        private _cw = _W * 0.07;
+        private _cw = _szW * 0.07;
         private _c1 = ["COMSPEC_RscCombo", [_sx, _y0, _cw, _h], "dColor"] call _mk;
         { private _i = _c1 lbAdd ((_x select 0) call comspec_atak_native_fnc_tr); _c1 lbSetData [_i, _x select 1]; } forEach _cols;
         _c1 lbSetCurSel ((_cols findIf { (_x select 1) isEqualTo (profileNamespace getVariable ["COMSPEC_ATAK_DrawColor", "ColorRed"]) }) max 0);

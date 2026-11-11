@@ -216,7 +216,7 @@ private _ctxPos = {
     if (!isNull curatorCamera) exitWith { screenToWorld [0.5, 0.5] };
     getPosATL player
 };
-private _setRowMark = { params ["_l", "_r", "_on"]; _l lnbSetPicture [[_r, 0], [_picOff, _picOn] select _on]; _l lnbSetColor [[_r, 1], [_cText, _cGreen] select _on]; };
+private _setRowMark = { params ["_lnb", "_r", "_on"]; _lnb lnbSetPicture [[_r, 0], [_picOff, _picOn] select _on]; _lnb lnbSetColor [[_r, 1], [_cText, _cGreen] select _on]; };
 private _counts = {
     private _n = count (_st getOrDefault ["checked", []]);
     [95025 call _ctrl, format ["Checked" call _L, _n]] call _setFit;
@@ -229,9 +229,9 @@ private _counts = {
 private _stateOf = { params ["_row"]; if ((_row select 7) isNotEqualTo "") then { "athena" } else { ["generated", "pending"] select ((_row select 3) isEqualTo "pending") } };
 private _truthRank = createHashMapFromArray [["forged", 0], ["lies", 1], ["cover", 2], ["true", 3], ["pending", 4], ["none", 5]];
 private _render = {
-    private _l = 95017 call _ctrl;
+    private _lnb = 95017 call _ctrl;
     _st set ["busy", true];
-    lnbClear _l;
+    lnbClear _lnb;
     private _q = toLower (trim (ctrlText (95009 call _ctrl)));
     (95008 call _ctrl) ctrlShow (_q isEqualTo "" && {(_st getOrDefault ["page", false])});
     private _fs = 95703 call _data;
@@ -263,17 +263,17 @@ private _render = {
     {
         _x params ["_net", "_given", "_true", "_truth", "", "_role", "_pref", "_pid", "_nd", "", "_grp"];
         private _shown = [_given, format ["(%1)", "Truth_pending" call _L]] select (_given isEqualTo "");
-        private _r = _l lnbAddRow ["", [_shown, 6.6] call _cell, [("Role_" + _role) call _L, 3.6] call _cell, [str _nd, "-"] select (_nd isEqualTo 0), ""];
-        _l lnbSetData [[_r, 0], _net];
-        [_l, _r, _net in _checked] call _setRowMark;
-        _l lnbSetPicture [[_r, 3], _icoPaper];
-        _l lnbSetPictureColor [[_r, 3], _truthColor getOrDefault [_truth, _cMuted]];
-        _l lnbSetColor [[_r, 3], _truthColor getOrDefault [_truth, _cMuted]];
-        if (_pid isNotEqualTo "") then { _l lnbSetPicture [[_r, 4], _icoProf]; _l lnbSetPictureColor [[_r, 4], _cGreen]; };
+        private _r = _lnb lnbAddRow ["", [_shown, 6.6] call _cell, [("Role_" + _role) call _L, 3.6] call _cell, [str _nd, "-"] select (_nd isEqualTo 0), ""];
+        _lnb lnbSetData [[_r, 0], _net];
+        [_lnb, _r, _net in _checked] call _setRowMark;
+        _lnb lnbSetPicture [[_r, 3], _icoPaper];
+        _lnb lnbSetPictureColor [[_r, 3], _truthColor getOrDefault [_truth, _cMuted]];
+        _lnb lnbSetColor [[_r, 3], _truthColor getOrDefault [_truth, _cMuted]];
+        if (_pid isNotEqualTo "") then { _lnb lnbSetPicture [[_r, 4], _icoProf]; _lnb lnbSetPictureColor [[_r, 4], _cGreen]; };
         // Vrai nom : pour le Zeus seulement, au survol du nom.
-        _l lnbSetTooltip [[_r, 1], format ["%1 · %2 · %3", ("Truth_" + _truth) call _L, format ["TrueName" call _L, [_true, "?"] select (_true isEqualTo "")], _grp]];
+        _lnb lnbSetTooltip [[_r, 1], format ["%1 · %2 · %3", ("Truth_" + _truth) call _L, format ["TrueName" call _L, [_true, "?"] select (_true isEqualTo "")], _grp]];
     } forEach _rows;
-    _l lnbSetCurSelRow -1;
+    _lnb lnbSetCurSelRow -1;
     _st set ["busy", false];
     // En-têtes : flèche sur la colonne triée.
     {
@@ -283,9 +283,9 @@ private _render = {
     private _all = _st getOrDefault ["rows", []];
     [95002 call _ctrl, format ["Count" call _L, count _all]] call _setFit;
     // État vide : avant la réponse du serveur, liste vide, ou filtres trop serrés.
-    private _empty = _rows isEqualTo [];
-    _st set ["empty", _empty];
-    if (_empty) then {
+    private _isEmpty = _rows isEqualTo [];
+    _st set ["empty", _isEmpty];
+    if (_isEmpty) then {
         private _scanned = _st getOrDefault ["scanned", false];
         private _filtered = _all isNotEqualTo [];
         (95019 call _ctrl) ctrlSetText ([[("EmptyTitle" call _L), ("EmptyFilterTitle" call _L)] select _filtered, "Waiting" call _L] select !_scanned);
@@ -299,9 +299,9 @@ private _render = {
 private _layout = {
     if (isNull _d || {!(_st getOrDefault ["page", false])}) exitWith {};
     private _tab = _st getOrDefault ["tab", "id"];
-    private _empty = _st getOrDefault ["empty", true];
-    [_EMPTY, _empty] call _vis;
-    [[95021, 95022], _empty && {_st getOrDefault ["emptyButtons", false]}] call _vis;
+    private _isEmpty = _st getOrDefault ["empty", true];
+    [_EMPTY, _isEmpty] call _vis;
+    [[95021, 95022], _isEmpty && {_st getOrDefault ["emptyButtons", false]}] call _vis;
     { [_TABS get _x, _x isEqualTo _tab] call _vis; } forEach ["id", "docs", "beh", "side"];
     [_ATH, _tab isEqualTo "id" && {_st getOrDefault ["foldOpen", false]}] call _vis;
     [_FILT, _st getOrDefault ["filtersOpen", false]] call _vis;
@@ -534,10 +534,10 @@ switch (_op) do {
     };
     case "click": {
         if (_st getOrDefault ["busy", false]) exitWith {};
-        private _l = 95017 call _ctrl;
-        private _r = lnbCurSelRow _l;
+        private _lnb = 95017 call _ctrl;
+        private _r = lnbCurSelRow _lnb;
         if (_r < 0) exitWith {};
-        private _net = _l lnbData [_r, 0];
+        private _net = _lnb lnbData [_r, 0];
         private _checked = _st getOrDefault ["checked", []];
         private _on = !(_net in _checked);
         if (_on) then { _checked pushBack _net; } else { _checked = _checked - [_net]; };
@@ -545,17 +545,17 @@ switch (_op) do {
         _st set ["cur", _net];
         // Ligne relâchée tout de suite : un second clic sur la même ligne doit aussi déclencher l'évènement.
         _st set ["busy", true];
-        [_l, _r, _on] call _setRowMark;
-        _l lnbSetCurSelRow -1;
+        [_lnb, _r, _on] call _setRowMark;
+        _lnb lnbSetCurSelRow -1;
         _st set ["busy", false];
         call _counts;
         if ((count _checked) <= 1) then { [_net] call _loadRow; };
         ["sheet"] call comspec_sse_fnc_editorAi;
     };
     case "checkAll": {
-        private _l = 95017 call _ctrl;
+        private _lnb = 95017 call _ctrl;
         private _nets = [];
-        for "_i" from 0 to (((lnbSize _l) select 0) - 1) do { _nets pushBack (_l lnbData [_i, 0]); };
+        for "_i" from 0 to (((lnbSize _lnb) select 0) - 1) do { _nets pushBack (_lnb lnbData [_i, 0]); };
         _st set ["checked", _nets];
         if !((_st getOrDefault ["cur", ""]) in _nets) then { _st set ["cur", _nets param [0, ""]]; };
         call _render;
