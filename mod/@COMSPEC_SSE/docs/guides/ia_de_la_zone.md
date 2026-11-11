@@ -1,72 +1,88 @@
-# IA de la zone (atelier IA)
+# IA de la zone
 
 Version anglaise : [ia_de_la_zone.en.md](ia_de_la_zone.en.md). Sommaire : [index.md](index.md).
 
 ## À quoi ça sert
 
-La page **IA DE LA ZONE** de l'éditeur SSE règle, pour les IA proches ou sélectionnées, **qui elles sont au contrôle d'identité** : leur profil Athena, les papiers qu'elles portent, la nature de ces papiers (vrais, couverture, faux), leur comportement quand on les contrôle, leur camp. Elle sert aussi à inspecter et corriger les papiers d'une IA, et à **garder** une configuration pour les prochaines parties sur la même carte.
+La fenêtre **IA de la zone** de l'éditeur SSE règle, pour les IA proches ou sélectionnées, **qui elles sont au contrôle d'identité** : profil Athena, papiers qu'elles portent et leur nature (vrais, couverture, faux), comportement quand on les contrôle, camp. Elle sert aussi à voir et corriger les papiers d'une IA, à écrire **ce qu'elle répond** quand on lui parle (bouton **Réponses…**) et à **garder** une IA pour les prochaines parties sur la même carte.
 
-Sans elle, les IA reçoivent des papiers « selon leur camp » (réglages CBA Identité : civils qui présentent leurs papiers, insurgés porteurs de faux, IA sans papiers) et réagissent selon le contexte.
+Sans elle, les IA reçoivent des papiers « selon leur camp » (réglages CBA Identité) et répondent seules, selon leur caractère et leur couverture.
 
 ## Où la trouver
 
 | Contexte | Chemin |
 |---|---|
-| Zeus avec ZEN | **COMSPEC · SSE › Configurer une IA** (sur une IA ou avec une sélection) |
-| Zeus sans ZEN | Module **Éditeur SSE** posé sur une IA vivante, ou avec des IA sélectionnées |
-| Depuis l'éditeur | Bouton **IA DE LA ZONE** en haut de la fenêtre |
-| Automatique | Réglage CBA **Configurer une IA à sa pose (Zeus)** (COMSPEC SSE › Identité, non par défaut) : la page s'ouvre dès qu'un Zeus pose une IA |
+| Zeus (centre Zeus de l'ATAK) | **IA de la zone** sur une IA ou une sélection |
+| Zeus avec ZEN | Clic droit sur une ou plusieurs IA › **SSE · Roleplay de l'IA › Identité et papiers › Fiche dans l'éditeur SSE (IA de la zone)…** |
+| Zeus sans ZEN | Module **Éditeur SSE** posé sur une IA (tout son groupe est listé) |
 | Script | `[unité ou liste, position] call comspec_sse_fnc_aiConfigOpen` |
 
-Pas de page IA dans Eden (le bouton est masqué) : réglez les IA d'Eden par leurs attributs **COMSPEC SSE — Papiers** et **Profil au contrôle**.
+Dans Eden, réglez les IA par leurs attributs (**COMSPEC SSE › Papiers**, **Profil au contrôle**, **Profil IA RP** et son bouton **Atelier IA… › Réponses et limites…**) : tout est enregistré dans la mission.
 
 ## La fenêtre
 
-### Colonne gauche
+### En haut à gauche : trouver les IA
 
-- **DÉTECTER** : rayon **25 / 50 / 100 / 250 / 500 m** (50 m par défaut), boutons **AUTOUR** (IA autour de la position du module) et **SÉLECTION ZEUS** (IA sélectionnées dans Zeus), compteur « N IA ». Au plus **60 IA** par balayage.
-- **Liste des IA** : nom, camp, profil (« généré » ou la référence Athena), papiers (« à la demande », « aucun » ou leur nombre), groupe. Cliquez une ligne pour la régler.
-- **SES PAPIERS** : les papiers de l'IA choisie, au format « Type · n° X · Prénom NOM · Vrai/Faux ». Boutons **OUVRIR** (visionneuse), **MARQUER VRAI**, **MARQUER FAUX** (même nom, qualité 50), puis une liste de type (Carte d'identité, Passeport, Permis de conduire, Carte militaire et les types des extensions) avec **AJOUTER CE PAPIER**.
-- **GARDÉS POUR LES PROCHAINES PARTIES** : les configurations gardées sur Athena pour cette carte ; **RETIRER**, **RECHARGER**.
+- **Rayon** (25, 50, 100, 250, 500 m), **Détecter autour** (autour du module, de la caméra Zeus ou de vous) et **Sélection Zeus** (les IA sélectionnées avant d'ouvrir). Compteur « N IA », 60 au plus.
+- **Rechercher** (nom donné, vrai nom, unité, groupe, profil ; ex. « Vlachos », « Alpha ») et trois filtres : camp, rôle, état (profil Athena, identité générée, papiers à la 1re demande, gardée).
 
-### Colonne droite « CONFIGURATION »
+### La liste
 
-| Champ | Valeurs | Exemple |
+Une ligne par IA : case cochée, **Nom donné** (ce que disent ses papiers), **Vrai nom** (vous seul le voyez), **Vérité** (identité vraie, fausse identité, faux papiers, couverture, décidée à la 1re demande), camp, rôle, profil, nombre de papiers, groupe.
+
+Un clic coche ou décoche une IA et montre sa fiche. **Tout cocher**, **Décocher**, « N IA cochée(s) ». Les réglages et boutons portent sur **les IA cochées**.
+
+**Réponses…** (à droite du compteur) ouvre la fenêtre **Réponses de l'IA** sur les IA cochées : voir [reponses_ia.md](reponses_ia.md).
+
+### Gardés pour les prochaines parties
+
+La liste des IA enregistrées pour cette carte (serveur, Athena ou les deux), avec **Recharger l'IA enregistrée** et **Supprimer l'enregistrement**.
+
+### La fiche
+
+| Réglage | Valeurs | Exemple |
 |---|---|---|
-| **Profil Athena** | **Générer une identité**, puis les profils du Bureau SSE (« réf · libellé (nom) ») | « P-014 · Passeur (Yannis Petrakis) » : l'IA prend ce nom, cette légende et ces papiers ; un contrôle N3 la reconnaît sur Athena |
-| **Papiers** | Selon son camp · Aucun · Carte d'identité · Passeport · Permis de conduire · Carte et permis · Carte et passeport · Carte militaire | « Carte et permis » pour un chauffeur |
-| **Nature** | Vrais papiers · Couverture · Faux papiers | « Faux papiers » pour un insurgé qui se fait passer pour un civil |
-| **Comportement au contrôle** | Selon le contexte · Coopère · Nerveux · Ment avec aplomb · Refuse · S'enfuit · Devient agressif · Se rend | « Ment avec aplomb » pour un agent entraîné ; « S'enfuit » pour un guetteur |
-| **Camp** | Ne pas changer · Civils · BLUFOR · OPFOR · Indépendants | Un changement de camp crée un nouveau groupe |
+| **Profil Athena** | **Générer une identité**, puis les profils du Bureau SSE (recherche, **Actualiser**) | « PRF-0012 · Vendeur (Yannis Petrakis) » : l'IA prend ce nom, cette légende et ces papiers ; un contrôle N3 la reconnaît sur Athena |
+| **Papiers qu'il porte** | Selon son camp, Aucun, Carte d'identité, Passeport, Permis, Carte et permis, Carte et passeport, Carte militaire, types des extensions | « Carte et permis » pour un chauffeur |
+| **Nature** | Vrais papiers, Couverture, Faux papiers | « Faux papiers » pour un insurgé qui se fait passer pour un civil |
+| **Comportement au contrôle** | Selon le contexte, Coopère, Nerveux, Ment avec aplomb, Refuse, S'enfuit, Devient agressif, Se rend | « Nerveux » : il hésite, répond à côté |
+| **Camp** | Ne pas changer, Civils, BLUFOR, OPFOR, Indépendants | un civil passé OPFOR devient hostile |
 
-**CE QUE VERRA LE JOUEUR** : aperçu du nom, des papiers et de la réaction « Au contrôle ». Rappel : « Il répond au-dessus de sa tête. Un contrôle N3 le reconnaît sur Athena si ses papiers viennent du profil. »
+Chaque réglage est expliqué sous sa case.
 
-Bouton **GARDER POUR LES PROCHAINES PARTIES : NON/OUI**, puis **APPLIQUER** (l'IA choisie), **À SON GROUPE**, **À TOUTE LA LISTE**.
+### Ses papiers
 
-## Pas à pas : un marché avec un insurgé caché
+Type, pays, numéro, nature. **Voir le papier** (tel que le verra un joueur), **Le rendre vrai**, **Le rendre faux**, et un type à **Donner ce papier maintenant**.
 
-Situation : dix civils sur un marché, dont un guetteur insurgé avec de faux papiers ; l'équipe doit le trouver par les contrôles.
+### Ce que verra le joueur
 
-1. Zeus › **Configurer une IA** sur un civil du marché ; DÉTECTER 50 m › **AUTOUR** : « 10 IA ».
-2. Sans rien sélectionner de particulier : Papiers **Carte d'identité**, Nature **Vrais papiers**, Comportement **Selon le contexte** › **À TOUTE LA LISTE**.
-3. Cliquez le guetteur dans la liste : Nature **Faux papiers**, Comportement **Nerveux**, Camp **Ne pas changer** › **APPLIQUER**.
-4. Dans **SES PAPIERS**, **OUVRIR** sa carte pour voir le nom imprimé ; **MARQUER FAUX** si besoin de refaire le faux.
-5. Pour rejouer la scène la semaine prochaine : **GARDER POUR LES PROCHAINES PARTIES : OUI** avant APPLIQUER (IA nommées dans Eden de préférence).
+Au contrôle : le nom sous lequel il se présente, ses papiers, sa réaction. Pour vous seulement : son vrai nom et sa vérité, et ce qui changera après **Appliquer**.
 
-Au contrôle, le guetteur hésite, regarde autour de lui ; l'examen visuel (N0) ou la MRZ (N1) révèle le faux selon sa qualité.
+### En bas
+
+**Garder pour les prochaines parties** (applique, puis enregistre), **Appliquer au groupe** (tout le groupe de chaque IA cochée), **Appliquer** (les IA cochées ; leurs papiers sont refaits).
+
+## Pas à pas : un marché avec un guetteur
+
+Dix civils sur un marché, dont un guetteur avec de faux papiers, et un vendeur qui connaît le mot de passe du réseau.
+
+1. Zeus › **IA de la zone** sur un civil du marché ; rayon 50 m › **Détecter autour** : « 10 IA ».
+2. **Tout cocher** ; Papiers **Carte d'identité**, Nature **Vrais papiers**, Comportement **Selon le contexte** › **Appliquer**.
+3. **Décocher**, cochez le guetteur : Nature **Faux papiers**, Comportement **Nerveux** › **Appliquer**.
+4. Cochez le vendeur seul › **Réponses…** : à « Qui es-tu ? », **Réponse perso** « Je suis {prenom}, je vends des fruits ici depuis vingt ans. » ; **Ajouter une question perso** : déclencheurs « mot de passe », réponse « Le faucon vole bas. » › **Appliquer**.
+5. Pour rejouer la scène : cochez les deux et **Garder pour les prochaines parties** (IA nommées dans Eden de préférence). Les réponses écrites au point 4 sont gardées avec le vendeur.
 
 ## Pièges fréquents
 
-- **SÉLECTION ZEUS** : il faut fermer la fenêtre, sélectionner les IA dans Zeus, puis rouvrir.
-- Les papiers d'une IA ne sont **fabriqués qu'à la première demande** (fouille, demande, mort) : la colonne « papiers » affiche « à la demande » tant que personne ne l'a contrôlée.
-- **APPLIQUER efface les anciens papiers** de l'IA et pose les nouveaux.
-- **Garder** exige la liaison Athena et l'habilitation Confidentiel ; sinon « Enregistrement sur Athena impossible … rien n'est gardé. » Les IA posées au Zeus sans nom de variable ne sont pas retrouvées à la partie suivante (retrouvées par nom de variable Eden, sinon par la même classe à moins de 20 m) : « Éléments gardés non retrouvés : … ».
-- « Aucun profil Athena reçu sur ce serveur : créez-en dans le Bureau SSE (Profils IA), ou générez. »
-- Tout passe par le serveur (`fn_idAiConfig`) : un client seul ne peut rien changer.
-- Il n'y a **aucun curseur** sur cette page : les pourcentages (IA sans papiers, civils qui présentent, insurgés porteurs de faux) sont des réglages CBA.
+- **Sélection Zeus** lit la sélection faite avant d'ouvrir la fenêtre.
+- Les papiers d'une IA ne sont **fabriqués qu'à la première demande** : « à la demande » tant que personne ne l'a contrôlée.
+- **Appliquer refait les papiers** des IA cochées.
+- **Réponses…** applique tout de suite, sans passer par Appliquer ; **Garder** emporte ensuite ces réponses avec l'IA.
+- **Garder** enregistre sur ce serveur, et sur Athena si la liaison et l'habilitation Confidentiel le permettent. Une IA sans nom de variable est retrouvée par sa classe à moins de 20 m, sinon : « IA enregistrée introuvable ».
+- Tout passe par le serveur (Zeus ou administrateur seulement).
 
 ## Athena
 
-- Les **profils IA** (Bureau SSE › Profils IA) se choisissent dans « Profil Athena » ; une IA reliée à un profil est reconnue au contrôle N3 avec sa fiche Athena.
-- **Garder pour les prochaines parties** enregistre la configuration (communauté + carte) sur Athena ; le serveur la réapplique au démarrage de la mission.
-- Les identités préparées sur Athena pour les IA (camp, catégorie, zone) sont remises à leur premier contrôle (voir [controle_identite.md](controle_identite.md)).
+- Les **profils IA** (Bureau SSE › Profils IA) se choisissent dans « Profil Athena » ; une IA reliée à un profil est reconnue au contrôle N3.
+- **Garder** copie la configuration sur Athena (communauté + carte), réponses du maître du jeu comprises ; le serveur la remet au démarrage.
+- Les réponses écrites ne font pas partie des profils IA du site : elles vivent dans la mission (Eden) ou dans l'IA gardée.

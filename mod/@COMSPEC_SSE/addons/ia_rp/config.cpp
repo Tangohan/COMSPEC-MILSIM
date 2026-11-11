@@ -46,6 +46,8 @@ class CfgFunctions {
             class iarpModule {};
             class iarpZen {};
             class iarpName {};
+            class iarpAnswers {};
+            class iarpAnswersUi {};
         };
     };
 };
@@ -79,6 +81,16 @@ class CfgHints {
             displayNameShort = "$STR_COMSPEC_IARP_Man_T";
             description = "$STR_COMSPEC_IARP_Man_D";
             tip = "$STR_COMSPEC_IARP_Man_Tip";
+            arguments[] = {};
+            image = "\a3\ui_f\data\igui\cfg\simpleTasks\types\talk_ca.paa";
+            noImage = 0;
+        };
+        // Pour le maître du jeu : réponses écrites par lui, ce qu'une IA peut évoquer, thèmes interdits.
+        class IaRpAnswers {
+            displayName = "$STR_COMSPEC_IARP_ManA_T";
+            displayNameShort = "$STR_COMSPEC_IARP_ManA_T";
+            description = "$STR_COMSPEC_IARP_ManA_D";
+            tip = "$STR_COMSPEC_IARP_ManA_Tip";
             arguments[] = {};
             image = "\a3\ui_f\data\igui\cfg\simpleTasks\types\talk_ca.paa";
             noImage = 0;
@@ -210,3 +222,4 @@ class COMSPEC_SSE_RscListBox;
 
 #include "dialogs\iarp_terminal.hpp"
 #include "dialogs\iarp_workshop.hpp"
+#include "dialogs\iarp_answers.hpp"

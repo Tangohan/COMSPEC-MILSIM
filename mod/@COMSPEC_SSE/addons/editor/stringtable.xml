@@ -937,5 +937,15 @@
             <English>Refused by the server: Zeus or admin only.</English>
             <French>Refusé par le serveur : Zeus ou administrateur seulement.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Answers">
+            <Original>Answers…</Original>
+            <English>Answers…</English>
+            <French>Réponses…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Answers_D">
+            <Original>Answers written by the game master for the checked AIs, question by question, and what they may bring up. Example: « Who are you? » → « I'm {first}, the baker. »</Original>
+            <English>Answers written by the game master for the checked AIs, question by question, and what they may bring up. Example: « Who are you? » → « I'm {first}, the baker. »</English>
+            <French>Réponses écrites par le maître du jeu pour les IA cochées, question par question, et ce qu'elles peuvent évoquer. Exemple : « Qui es-tu ? » → « Je suis {prenom}, le boulanger. »</French>
+        </Key>
     </Package>
 </Project>

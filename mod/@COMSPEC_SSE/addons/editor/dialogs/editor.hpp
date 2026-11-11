@@ -273,7 +273,9 @@ class COMSPEC_SSE_Editor {
         class AiEmpty: COMSPEC_SSE_EdText { idc = 94528; style = 16; lineSpacing = 1; colorText[] = ED_MUTED; ED_POS(1.5,10.5,17,2); ED_TXT(0.8); };
         class AiCheckAll: COMSPEC_SSE_EdButton { idc = 94523; text = "$STR_COMSPEC_SSE_ED_CheckAll"; tooltip = "$STR_COMSPEC_SSE_ED_CheckAll_D"; ED_POS(0.3,17,3.8,1); action = "['checkAll'] call comspec_sse_fnc_editorAi"; };
         class AiCheckNone: COMSPEC_SSE_EdButton { idc = 94524; text = "$STR_COMSPEC_SSE_ED_CheckNone"; ED_POS(4.3,17,3.8,1); action = "['checkNone'] call comspec_sse_fnc_editorAi"; };
-        class AiChecked: COMSPEC_SSE_EdText { idc = 94525; colorText[] = ED_GREEN; ED_POS(8.3,17.05,11.4,0.9); ED_TXT(0.68); };
+        class AiChecked: COMSPEC_SSE_EdText { idc = 94525; colorText[] = ED_GREEN; ED_POS(8.3,17.05,5.6,0.9); ED_TXT(0.68); };
+        // Réponses écrites par le maître du jeu et ce que ces IA peuvent évoquer (ia_rp, fn_iarpAnswersUi) : IA cochées.
+        class AiAnswers: COMSPEC_SSE_EdButton { idc = 94586; text = "$STR_COMSPEC_SSE_ED_Answers"; tooltip = "$STR_COMSPEC_SSE_ED_Answers_D"; ED_POS(14.1,17,5.6,1); action = "['answers'] call comspec_sse_fnc_editorAi"; };
         ED_SECTION(AiKept,94518,94526,0.3,18.3,19.4,"$STR_COMSPEC_SSE_ED_Kept");
         class AiKept: COMSPEC_SSE_EdCombo { idc = 94519; tooltip = "$STR_COMSPEC_SSE_ED_KeptNote_D"; ED_POS(0.3,19.3,19.4,1.1); onLBSelChanged = "['keptSel'] call comspec_sse_fnc_editorAi"; };
         class AiReload: COMSPEC_SSE_EdButton { idc = 94521; text = "$STR_COMSPEC_SSE_ED_KeptReload"; tooltip = "$STR_COMSPEC_SSE_ED_KeptReload_D"; ED_POS(0.3,20.5,9.5,1.1); action = "['keptReload'] call comspec_sse_fnc_editorAi"; };

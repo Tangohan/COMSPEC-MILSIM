@@ -9,6 +9,8 @@
     Profils Athena : liste reçue du serveur (paquet d'identité, « settings.ai_profiles ») ; « Actualiser » fait recharger le
     paquet par le serveur (fn_idServer « aiCfg reload »), puis relit la liste.
     Aide (« ? ») : chapitre CfgHints COMSPEC_SSE › AiZone, posé sur cette fenêtre (fn_openGuide sinon).
+    « Réponses… » (« answers ») : fenêtre « Réponses de l'IA » de l'addon ia_rp sur les IA cochées (réponses écrites par le
+    maître du jeu, ce qu'elles peuvent évoquer) ; elle applique elle-même, et « Garder » emporte ces réponses.
 */
 params [["_op", ""], ["_arg", []]];
 if (!hasInterface) exitWith { false };
@@ -97,7 +99,7 @@ private _fit = {
 };
 private _fitAll = {
     { [_x call _ctrl] call _fit; } forEach [94503, 94504, 94506, 94576, 94523, 94524, 94525, 94505, 94518, 94521, 94520, 94530, 94550, 94553, 94556, 94533, 94535, 94559, 94562, 94511, 94513, 94514, 94515, 94517, 94541, 94544, 94546, 94545,
-        94577, 94578, 94579, 94580, 94581, 94582, 94583, 94584, 94566, 94567, 94568, 94569];
+        94577, 94578, 94579, 94580, 94581, 94582, 94583, 94584, 94566, 94567, 94568, 94569, 94586];
 };
 private _rowOf = { params ["_net"]; private _rows = _st getOrDefault ["rows", []]; private _i = _rows findIf { (_x select 0) isEqualTo _net }; if (_i < 0) then { [] } else { _rows select _i } };
 private _checkedUnits = { ((_st getOrDefault ["checked", []]) apply { objectFromNetId _x }) select { !isNull _x && {alive _x} } };
@@ -388,6 +390,12 @@ switch (_op) do {
         _t ctrlCommit 0;
     };
     case "applyChecked": { [false, false] call _apply; };
+    case "answers": {
+        private _units = call _checkedUnits;
+        if (_units isEqualTo []) exitWith { ["NeedCheck" call _L, "WARNING"] call _note; };
+        if (isNil "comspec_sse_fnc_iarpAnswersUi") exitWith {};
+        ["open", ["units", _units, _d]] call comspec_sse_fnc_iarpAnswersUi;
+    };
     case "applyGroup": { [true, false] call _apply; };
     case "keepChecked": { [false, true] call _apply; };
     case "docOpen": {

@@ -129,6 +129,9 @@ switch (_op) do {
             _u setVariable ["comspec_sse_idProfile", nil];
             ["ensure", [_u]] call comspec_sse_fnc_idRegistry;
             [_u] call _shownName;
+            // Réponses du maître du jeu et cadre de l'IA gardés avec elle (« Garder pour les prochaines parties », addon ia_rp).
+            private _ia = _spec getOrDefault ["iarp_answers", ""];
+            if (_ia isEqualType "" && {_ia isNotEqualTo ""} && {!isNil "comspec_sse_fnc_iarpProfile"}) then { ["keepApply", [_u, _ia]] call comspec_sse_fnc_iarpProfile; };
         } forEach _units;
         // Camp : un groupe neuf pour les unités qui en changent, ensemble.
         if (_sideNew isNotEqualTo sideUnknown) then {

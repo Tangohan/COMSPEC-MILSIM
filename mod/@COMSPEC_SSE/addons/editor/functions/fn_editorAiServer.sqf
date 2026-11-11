@@ -249,6 +249,12 @@ switch (_op) do {
                 private _cfg = [];
                 { _cfg pushBack [_x, (_spec get _x) call _str]; } forEach (keys _spec);
                 _cfg pushBack ["local_id", _id];
+                // Réponses écrites par le maître du jeu et ce que l'IA peut évoquer (ia_rp) : gardées avec elle, remises par
+                // fn_idAiConfig « apply » (ici et depuis le paquet Athena, champ libre de la configuration).
+                if (!isNil "comspec_sse_fnc_iarpProfile") then {
+                    private _ia = ["keepOf", _u] call comspec_sse_fnc_iarpProfile;
+                    if (_ia isNotEqualTo "") then { _cfg pushBack ["iarp_answers", _ia]; };
+                };
                 private _var = vehicleVarName _u;
                 private _who = [_u] call comspec_sse_fnc_aiWho;
                 private _shown = _who getOrDefault ["given", ""];

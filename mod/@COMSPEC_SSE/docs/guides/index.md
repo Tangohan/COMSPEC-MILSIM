@@ -10,6 +10,7 @@ Un guide complet par outil : à quoi il sert, où le trouver (Zeus, Eden, ACE, t
 | Menu « SSE ROLEPLAY · Extensions » | Zeus, administrateur | [menu_extensions.md](menu_extensions.md) |
 | Contrôle d'identité (ACE, visionneuse, niveaux N0 à N4, app Contrôle ID, checkpoints) | Joueur, Zeus | [controle_identite.md](controle_identite.md) |
 | IA de la zone (atelier IA) | Zeus | [ia_de_la_zone.md](ia_de_la_zone.md) |
+| Parler aux IA : questions comprises, réponses écrites par le maître du jeu, ce qu'une IA peut évoquer | Joueur, Zeus, chef de mission | [reponses_ia.md](reponses_ia.md) |
 | Couvertures et « Ma couverture » | Joueur infiltré, Zeus | [ma_couverture.md](ma_couverture.md) |
 | Tableau des liens | Joueur, Zeus | [tableau_des_liens.md](tableau_des_liens.md) |
 | Modules Zeus et Eden | Zeus, chef de mission | [modules_zeus_eden.md](modules_zeus_eden.md) |

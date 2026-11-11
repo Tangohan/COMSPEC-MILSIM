@@ -1,7 +1,8 @@
 // SSE › IA RP : interprète et générateur (contrôles purs), terminal « Parler à… », réponse cohérente avec la couverture,
 // pas de redite, journal, bulle 3D, /try, ordre simple ; atelier IA (profil par script, fenêtre du Zeus).
 // 4.2.1 : « stop » relâché seul, deux demandes, faute de frappe, renseignement par paliers avec marqueur local,
-// confrontation, tirs proches et témoins. À venir : une réponse et une bulle par message au nom SSE, guide, actions, peur.
+// confrontation, tirs proches et témoins. 4.3.0 : une réponse et une bulle par message au nom SSE, guide, actions, peur.
+// À venir : réponses écrites par le maître du jeu (attribut, Zeus, question perso, palier débloqué), cadre d'un civil sans savoir.
 if !("sse" call AT_fnc_groupe) exitWith {};
 AT_fnc_iarpIa = {
     private _g = createGroup civilian;
@@ -414,3 +415,102 @@ AT_fnc_iarpDire = {
     deleteVehicle _u;
     call AT_fnc_done;
 }, 150] call AT_fnc_run;
+
+// ---------------------------------------------------------------- 4.3.x : réponses écrites par le maître du jeu, cadre
+// Réponse perso posée par l'attribut Eden (même expression : « applyRaw » sur le serveur), variables remplacées.
+["ia_rp_reponse_perso_attribut", {
+    if (["comspec_sse_fnc_iarpUi", "comspec_sse_fnc_iarpAnswers"] call AT_fnc_nil) exitWith {};
+    private _u = call AT_fnc_iarpIa;
+    uiSleep 1;
+    private _p = ["normalize", createHashMapFromArray [["name", "Nikos KARRAS"], ["honesty", 95], ["answers", [
+        ["name", "", [], "random", [["*", ["Je suis {prenom}, le boulanger. Tout le monde me connaît ici."]]], 0, ""]
+    ]]]] call comspec_sse_fnc_iarpProfile;
+    ["applyRaw", [_u, ["serialize", _p] call comspec_sse_fnc_iarpProfile]] call comspec_sse_fnc_iarpProfile;
+    ["open", [_u]] call comspec_sse_fnc_iarpUi;
+    if !([[{ !isNull findDisplay 94600 }, 5] call AT_fnc_wait, "terminal « Parler à… » non ouvert"] call AT_fnc_check) exitWith { deleteVehicle _u; call AT_fnc_done; };
+    ([_u, "Qui es-tu ?"] call AT_fnc_iarpDire) params ["_ack", "_rep"];
+    private _txt = _rep param [1, ""];
+    (format ["réponse perso : %1", _txt]) call AT_fnc_info;
+    [(_txt find "Je suis Nikos, le boulanger.") >= 0, format ["réponse perso de l'attribut non dite : %1", _txt]] call AT_fnc_check;
+    [(_txt find "{") < 0, format ["variable non remplacée : %1", _txt]] call AT_fnc_check;
+    // Une autre question garde la réponse auto (l'intention et les règles ne changent pas).
+    ([_u, "Vous êtes d'où ?"] call AT_fnc_iarpDire) params ["_ack2", "_rep2"];
+    [(_ack2 param [1, ""]) isEqualTo "origin" && {((_rep2 param [1, ""]) find "boulanger") < 0}, format ["question sans réponse perso : %1 / %2", _ack2 param [1, ""], _rep2 param [1, ""]]] call AT_fnc_check;
+    closeDialog 0;
+    deleteVehicle _u;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;
+
+// Réponse perso posée par le Zeus (menu ZEN « Réponses de l'IA… » : profileTweak) : palier précis débloqué, lieu sur la carte.
+["ia_rp_reponse_perso_zeus", {
+    if (["comspec_sse_fnc_iarpUi", "comspec_sse_fnc_iarpAnswersUi"] call AT_fnc_nil) exitWith {};
+    private _u = call AT_fnc_iarpIa;
+    uiSleep 1;
+    ["apply", [_u, ["normalize", createHashMapFromArray [["role", "civil"], ["unlock", "never"], ["know", "Précis : Ils dorment à la ferme du vieux Petros."]]] call comspec_sse_fnc_iarpProfile]] call comspec_sse_fnc_iarpProfile;
+    // La fenêtre du Zeus s'ouvre sur cette IA et lit son profil sur le serveur.
+    ["open", ["units", [_u]]] call comspec_sse_fnc_iarpAnswersUi;
+    [[{ !isNull findDisplay 94800 }, 5] call AT_fnc_wait, "fenêtre « Réponses de l'IA » non ouverte"] call AT_fnc_check;
+    uiSleep 1;
+    [(lbSize ((findDisplay 94800) displayCtrl 94821)) > 100, format ["fenêtre : %1 lignes de questions (plus de 100 attendues)", lbSize ((findDisplay 94800) displayCtrl 94821)]] call AT_fnc_check;
+    ["ia_reponses_zeus"] call AT_fnc_shot;
+    "fenêtre « Réponses de l'IA » : cadre en haut, questions par thème à gauche (Auto / Perso), réponse, aperçu et aide à droite" call AT_fnc_visuel;
+    (findDisplay 94800) closeDisplay 2;
+    private _ans = [["seenArmed", "", [], "random", [["*", ["Hier soir, trois pick-up vers le nord."]]], 2, format ["[%1, %2] Ferme du vieux Petros", round (((getPosATL _u) select 0) + 300), round ((getPosATL _u) select 1)]]];
+    ["send", ["profileTweak", [player, [_u], [["answers", _ans]]]]] call comspec_sse_fnc_iarpClient;
+    uiSleep 1.5;
+    private _nMk = count (allMapMarkers select { (_x find "comspec_sse_iarpIntel_") isEqualTo 0 });
+    ["open", [_u]] call comspec_sse_fnc_iarpUi;
+    if !([[{ !isNull findDisplay 94600 }, 5] call AT_fnc_wait, "terminal « Parler à… » non ouvert"] call AT_fnc_check) exitWith { deleteVehicle _u; call AT_fnc_done; };
+    ([_u, "Avez-vous vu des hommes armés ?"] call AT_fnc_iarpDire) params ["_ack", "_rep"];
+    [(_ack param [1, ""]) isEqualTo "seenArmed", format ["intention %1 (seenArmed attendue)", _ack param [1, ""]]] call AT_fnc_check;
+    [((_rep param [1, ""]) find "trois pick-up") >= 0, format ["réponse perso du Zeus non dite : %1", _rep param [1, ""]]] call AT_fnc_check;
+    uiSleep 1;
+    [(count (allMapMarkers select { (_x find "comspec_sse_iarpIntel_") isEqualTo 0 })) > _nMk, "lieu de la réponse perso absent de la carte"] call AT_fnc_check;
+    // Palier précis débloqué par la réponse (savoir « never » d'habitude fermé) : « Que savez-vous ? » le donne.
+    ([_u, "Que savez-vous ?"] call AT_fnc_iarpDire) params ["", "_rep2"];
+    [((_rep2 param [1, ""]) find "ferme du vieux Petros") >= 0, format ["palier débloqué non donné : %1", _rep2 param [1, ""]]] call AT_fnc_check;
+    closeDialog 0;
+    deleteVehicle _u;
+    call AT_fnc_done;
+}, 90] call AT_fnc_run;
+
+// Question perso du maître du jeu (déclencheurs) : « mot de passe » -> « Le faucon vole bas. », ordre du même message gardé.
+["ia_rp_question_perso", {
+    if (["comspec_sse_fnc_iarpUi", "comspec_sse_fnc_iarpAnswers"] call AT_fnc_nil) exitWith {};
+    private _u = call AT_fnc_iarpIa;
+    uiSleep 1;
+    ["apply", [_u, ["normalize", createHashMapFromArray [["answers", [["c1", "Mot de passe", ["mot de passe", "password"], "random", [["*", ["Le faucon vole bas."]]], 0, ""]]]]] call comspec_sse_fnc_iarpProfile]] call comspec_sse_fnc_iarpProfile;
+    ["open", [_u]] call comspec_sse_fnc_iarpUi;
+    if !([[{ !isNull findDisplay 94600 }, 5] call AT_fnc_wait, "terminal « Parler à… » non ouvert"] call AT_fnc_check) exitWith { deleteVehicle _u; call AT_fnc_done; };
+    ([_u, "Quel est le mot de passe ?"] call AT_fnc_iarpDire) params ["", "_rep"];
+    [((_rep param [1, ""]) find "Le faucon vole bas.") >= 0, format ["question perso : %1", _rep param [1, ""]]] call AT_fnc_check;
+    ([_u, "What's the password?"] call AT_fnc_iarpDire) params ["", "_rep2"];
+    [((_rep2 param [1, ""]) find "Le faucon vole bas.") >= 0, format ["question perso (anglais) : %1", _rep2 param [1, ""]]] call AT_fnc_check;
+    ([_u, "Stop ! Le mot de passe."] call AT_fnc_iarpDire) params ["_ack3", ""];
+    [((_ack3 param [2, ""]) find "obéit") >= 0 || {((_ack3 param [2, ""]) find "refuse") >= 0}, format ["ordre du même message perdu : %1", _ack3 param [2, ""]]] call AT_fnc_check;
+    closeDialog 0;
+    deleteVehicle _u;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;
+
+// Cadre : un civil sans savoir ne parle jamais d'armes, d'insurgés, de mines ni de caches (vraies répliques du serveur).
+["ia_rp_cadre_civil", {
+    if (["comspec_sse_fnc_iarpUi", "comspec_sse_fnc_iarpAnswers"] call AT_fnc_nil) exitWith {};
+    private _u = call AT_fnc_iarpIa;
+    uiSleep 1;
+    ["apply", [_u, ["normalize", createHashMapFromArray [["role", "civil"], ["talk", 80], ["fear", 90], ["bribe", 90]]] call comspec_sse_fnc_iarpProfile]] call comspec_sse_fnc_iarpProfile;
+    ["open", [_u]] call comspec_sse_fnc_iarpUi;
+    if !([[{ !isNull findDisplay 94600 }, 5] call AT_fnc_wait, "terminal « Parler à… » non ouvert"] call AT_fnc_check) exitWith { deleteVehicle _u; call AT_fnc_done; };
+    private _watch = ["arme", "armes", "armee", "pick", "pickup", "mine", "mines", "minee", "explosif", "explosifs", "bombe", "insurge", "insurges", "rebelle", "rebelles",
+        "cache", "caches", "technique", "milice", "combattants", "embuscade", "attentat"];
+    {
+        private _r = (([_u, _x] call AT_fnc_iarpDire) select 1) param [1, ""];
+        private _toks = (_r call comspec_sse_fnc_iarpNorm) splitString " ";
+        private _hit = _watch select { _x in _toks };
+        [_hit isEqualTo [], format ["« %1 » -> « %2 » (%3)", _x, _r, _hit joinString ", "]] call AT_fnc_check;
+    } forEach ["Avez-vous vu des hommes armés ?", "Il y a des mines sur la route ?", "Des insurgés dans le coin ?", "Une cache d'armes au village ?",
+        "Vous avez vu un pick-up ?", "Qui commande ici ?", "Il s'est passé quoi hier ?", "C'est dangereux par ici ?"];
+    closeDialog 0;
+    deleteVehicle _u;
+    call AT_fnc_done;
+}, 120] call AT_fnc_run;

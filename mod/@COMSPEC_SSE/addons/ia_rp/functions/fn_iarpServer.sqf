@@ -32,6 +32,11 @@
     Noms : le Zeus voit le vrai nom et la nature de l'identité d'une IA (fn_iarpName « for »), les joueurs le nom affiché.
     Papiers et fouille : l'action ACE habituelle (barre de progression, distance) part du poste (fn_iarpUi) ; ici, rien
     n'est contourné (aucune demande de papiers, aucune fouille sans l'action, rien vers Athena).
+    Réponses écrites par le maître du jeu (profil « answers », fn_iarpAnswers) : elles remplacent la réplique d'une question
+    (situation : calme, peur, menace, accusé, 1re fois, redemandé, accepte, refuse), jamais la décision ; une question perso
+    (déclencheurs) remplace les intentions de conversation du message, ordres et menaces restent traités. Palier débloqué
+    et lieu posé sur la carte de ce joueur. Cadre (« evoke », « banned ») : aucune réplique auto n'apporte un élément de
+    scénario que l'IA ignore ; thème interdit : réponse neutre.
     Évènement CBA serveur : comspec_sse_iarpExchange [ligne du journal].
     Point d'accroche réservé (désactivé) : missionNamespace comspec_sse_iarpGenHook (code serveur) peut remplacer le
     générateur local ; rien ne le pose dans ce mod, aucune requête réseau n'en part.
@@ -452,6 +457,22 @@ switch (_op) do {
                 if (((_pm get "ask") select 0) isEqualTo "askGo") then { _list = _list - ["leave"]; };
             } else { _list = _list - ["yes", "no"]; };
         };
+        // Question perso du maître du jeu (déclencheurs, fn_iarpAnswers « match ») : elle remplace les intentions de conversation
+        // du message ; les demandes à règles (ordres, menace, pot-de-vin, aveu, papiers, fouille) et la politesse restent.
+        private _orders = ["handsup", "halt", "kneel", "follow", "leave", "dismount", "trunk", "dropWeapon", "stepBack", "comeHere", "turnAround", "sit", "quiet",
+            "hurry", "handsDown", "bag"];
+        private _cKey = "";
+        if (_cmd in ["", "todo"] && {(_p get "answers") isNotEqualTo []}) then {
+            _cKey = ["match", [_p get "answers", _norm]] call comspec_sse_fnc_iarpAnswers;
+            if (_cKey isNotEqualTo "") then {
+                _list = (_list select { _x in (_orders + ["threat", "bribe", "confront", "papers", "search", "greet", "thanks", "sorry", "bye"]) }) + [_cKey];
+                if !(_main in (_orders + ["threat", "bribe", "confront", "papers", "search"])) then { _main = _cKey; };
+            };
+        };
+        // Combien de fois ce joueur a posé chaque question (réponses perso « 1re fois » / « déjà demandé »).
+        private _asked = _pm getOrDefault ["asked", createHashMap];
+        _pm set ["asked", _asked];
+        { _asked set [_x, (_asked getOrDefault [_x, 0]) + 1]; } forEach (_list arrayIntersect _list);
         // Papiers : l'action ACE (2 s) est lancée par le poste après la réponse ; la vraie réponse (présente, refuse) vient
         // du contrôle d'identité habituel. Fouille d'une personne rendue, menottée ou inconsciente : l'action ACE (6 s).
         private _ace = "";
@@ -571,6 +592,7 @@ switch (_op) do {
         ];
         private _vars = +_facts;
         _vars set ["player", name _me];
+        _vars set ["time", [daytime, "HH:MM"] call BIS_fnc_timeToString];
         _vars set ["know", _p get "know"];
         _vars set ["sir", selectRandom ([[["monsieur", "sir"], ["chef", "boss"]], [["monsieur", "sir"]]] select _civ)];
         private _wpn = [primaryWeapon _t, handgunWeapon _t] select ((primaryWeapon _t) isEqualTo "");
@@ -592,6 +614,49 @@ switch (_op) do {
             (random 1) < _c
         };
         private _quiet = _st in ["fuit", "agressif", "renforts"];
+        // Cadre fixé par le maître du jeu (fn_iarpAnswers « frame ») : ce qu'elle peut évoquer, thèmes interdits. Les
+        // répliques auto n'apportent aucun élément de scénario absent de ses données (fn_iarpGen « forbid »).
+        (["frame", _p] call comspec_sse_fnc_iarpAnswers) params ["_evoke", "_forbid", "_banned", "_knows"];
+        _ctx set ["forbid", _forbid];
+        private _topics = ["topics"] call comspec_sse_fnc_iarpData;
+        private _ans = _p get "answers";
+        // Questions précises de renseignement : mêmes paliers que « intel » (savoir, confiance, pression), neutres sans savoir.
+        private _intelSubs = ["seenArmed", "seenVehicles", "strangers", "explosives", "mines", "whereIs", "leader", "howMany", "whenPassed", "happened",
+            "heard", "whereWent", "describe", "cache", "base", "checkpoints", "safety", "problems", "roadSafe", "knowPerson", "threatened"];
+        // Renseignement (intel, photo, questions précises) : pose _gi, _outcome, _topic et _mark.
+        private _doIntel = {
+            // Photo montrée alors que « Recherchés » est interdit : elle ne reconnaît personne.
+            if (_intent isEqualTo "photo" && {"wanted" in _banned}) exitWith { _gi = "photoNo"; _noCust = true; _outcome = "thème interdit (wanted)"; };
+            // Tirs réellement entendus en jeu (fn_iarpReact) : la seule chose qu'une IA sans savoir peut raconter.
+            if (_intent isEqualTo "heard" && {(time - (_t getVariable ["comspec_sse_iarpShotAt", -1e6])) < 600}) exitWith {
+                _gi = "heardShots"; _outcome = "a entendu les tirs (vu en jeu)";
+            };
+            // Paliers (fn_iarpProfile « knowTiers ») : vague, précis, complet ; débloqués par la confiance, un pot-de-vin, le
+            // mot-clé, la pression, un aveu (« intelLevel ») ou une réponse perso du maître du jeu (palier débloqué). Savoir
+            // d'une seule phrase : palier précis. Photo montrée : même savoir, sinon « Je ne connais pas cette personne ».
+            (["knowTiers", _p get "know"] call comspec_sse_fnc_iarpProfile) params ["_tiers", "_kpos", "_klabel"];
+            private _lvl = ["intelLevel", [_p, _pm get "trust", _pm get "bribed", _pm get "bribes", _pm get "word", _mem get "confessed", _st, _aimed,
+                _tenNow]] call comspec_sse_fnc_iarpProfile;
+            _lvl = _lvl max (_pm getOrDefault ["unlock", 0]);
+            private _give = 0;
+            for "_i" from _lvl to 1 step -1 do { if (_give isEqualTo 0 && {(_tiers select (_i - 1)) isNotEqualTo ""}) then { _give = _i; }; };
+            if (_give isEqualTo 0) exitWith {
+                _gi = ["intelNo", "photoNo"] select (_intent isEqualTo "photo");
+                _outcome = ["ne sait rien", "se tait"] select ((_tiers findIf { _x isNotEqualTo "" }) >= 0);
+            };
+            _vars set ["know", _tiers select (_give - 1)];
+            // Déjà dit à ce joueur (même palier ou plus) : « Je vous l'ai déjà dit ».
+            _gi = [["intelVague", "intelYes", "intelFull"] select (_give - 1), "intelAgain"] select (_give <= (_pm get "intel"));
+            _pm set ["intel", (_pm get "intel") max _give];
+            _outcome = format ["renseignement donné (%1)", ["vague", "précis", "complet"] select (_give - 1)];
+            _topic = format ["intel%1", _give];
+            // Renseignement précis avec un lieu : marqueur sur la carte de ce joueur seulement, une fois.
+            if (_give >= 2 && {(count _kpos) >= 2} && {!(_pm get "marked")}) then {
+                _pm set ["marked", true];
+                _mark = [_kpos, _klabel, _aiName];
+                _outcome = _outcome + " · lieu sur la carte";
+            };
+        };
         // Une réaction par demande, dans l'ordre : [réplique, ton, issue, intention, déjà dit à un autre].
         private _parts = [];
         private _mark = [];
@@ -601,6 +666,7 @@ switch (_op) do {
             private _tone = "";
             private _outcome = "";
             private _topic = "";
+            private _noCust = false;
             // Réponse à la question de l'IA : « Vous allez m'arrêter ? » « Non. » -> suite de cette question.
             private _askQ = "";
             if (_intent in ["yes", "no"] && {_askOpen} && {((_pm get "ask") param [0, ""]) isNotEqualTo ""}) then {
@@ -636,14 +702,16 @@ switch (_op) do {
                         case "askHelpNo": { [-10] call _trust; [5, "on refuse de l'aider"] call _tense; _outcome = "pas aidé"; };
                     };
                 };
-                if (_touchy && {!(_intent in ["threat", "bribe", "handsup", "halt", "kneel", "follow", "dismount", "trunk", "leave", "papersWait", "searchWait", "papersCloser"])}) exitWith {
+                if (_touchy && {_intent isNotEqualTo _cKey} && {!(_intent in (_orders + ["threat", "bribe", "papersWait", "searchWait", "papersCloser"]))}) exitWith {
                     [15, "sujet sensible abordé"] call _tense; _gi = "sensitive"; _outcome = "sujet sensible";
                 };
                 if (_intent in ["papersWait", "searchWait", "papersCloser"]) exitWith {
                     _outcome = (createHashMapFromArray [["papersWait", "sort ses papiers"], ["searchWait", "se laisse fouiller"], ["papersCloser", "demande d'approcher"]]) get _intent;
                 };
-                if (_intent in ["handsup", "halt", "kneel", "follow", "leave", "dismount", "trunk"]) exitWith {
+                if (_intent in _orders) exitWith {
                     if (_intent isEqualTo "dismount" && {isNull objectParent _t}) exitWith { _gi = "dismountNone"; _outcome = "déjà à pied"; };
+                    if (_intent isEqualTo "dropWeapon" && {_wpn isEqualTo ""}) exitWith { _gi = "dropNone"; _outcome = "n'a pas d'arme"; };
+                    if (_intent isEqualTo "bag" && {(backpack _t) isEqualTo ""}) exitWith { _gi = "bagNone"; _outcome = "n'a pas de sac"; };
                     private _veh = objectParent _t;
                     if (_intent isEqualTo "trunk" && {isNull _veh}) then {
                         private _near = (nearestObjects [_t, ["LandVehicle"], 8]) select { alive _x };
@@ -660,6 +728,18 @@ switch (_op) do {
                         case "follow": { ["follow", [_me]] call _do; };
                         case "leave": { ["free"] call _do; if (_fsm) then { ["release", [_t]] call comspec_sse_fnc_idAiFsm; }; };
                         case "dismount": { ["out"] call _do; };
+                        case "dropWeapon": { ["drop"] call _do; _outcome = "lâche son arme"; };
+                        case "stepBack": { ["back", [(getPosATL _t) getPos [5, _me getDir _t]]] call _do; _outcome = "recule"; };
+                        case "comeHere": { ["come", [(getPosATL _me) getPos [1.8, _me getDir _t]]] call _do; _outcome = "s'approche"; };
+                        case "turnAround": { ["turn", [_me getDir _t]] call _do; _outcome = "se retourne"; };
+                        case "sit": { ["pos", ["MIDDLE"]] call _do; _outcome = "s'assoit"; };
+                        case "handsDown": {
+                            if ((_t getVariable ["ace_captives_isSurrendering", false]) && {!(_t getVariable ["ace_captives_isHandcuffed", false])}) then {
+                                ["ace_captives_setSurrendered", [_t, false], _t] call CBA_fnc_targetEvent;
+                            };
+                            [-6, "peut baisser les mains"] call _tense;
+                            _outcome = "baisse les mains";
+                        };
                         case "trunk": {
                             if (missionNamespace getVariable ["comspec_sse_iarp_orders", true]) then { ["comspec_sse_iarpAiDo", [_veh, "unlock", []], _veh] call CBA_fnc_targetEvent; };
                             _outcome = "ouvre le véhicule";
@@ -667,6 +747,12 @@ switch (_op) do {
                     };
                 };
                 if (_quiet) exitWith { _gi = "silent"; _outcome = "ne répond pas (" + _st + ")"; };
+                // Thème interdit par le maître du jeu : réponse neutre, réponse perso comprise.
+                private _top = _topics getOrDefault [_intent, ""];
+                if (_top in _banned) exitWith { _gi = ["offLimits", "intelNo"] select (_intent in _intelSubs); _noCust = true; _outcome = format ["thème interdit (%1)", _top]; };
+                // Question perso du maître du jeu : sa réponse est choisie à la mise en mots (plus bas).
+                if (_intent isEqualTo _cKey && {_cKey isNotEqualTo ""}) exitWith { _gi = "custom"; _outcome = "question du maître du jeu"; };
+                if (_intent in _intelSubs) exitWith { call _doIntel; };
                 switch (_intent) do {
                     case "threat": {
                         [-20] call _trust;
@@ -695,33 +781,7 @@ switch (_op) do {
                         else { [-5] call _trust; [8, "pot-de-vin refusé"] call _tense; _gi = "bribeNo"; _outcome = "pot-de-vin refusé"; };
                     };
                     case "photo";
-                    case "intel": {
-                        // Paliers (fn_iarpProfile « knowTiers ») : vague, précis, complet ; débloqués par la confiance, un
-                        // pot-de-vin, le mot-clé, la pression ou un aveu (« intelLevel »). Savoir d'une seule phrase : palier
-                        // précis, débloqué comme avant. Le plus haut palier rempli et débloqué est dit. Photo montrée : même
-                        // savoir, sinon « Je ne connais pas cette personne ».
-                        (["knowTiers", _p get "know"] call comspec_sse_fnc_iarpProfile) params ["_tiers", "_kpos", "_klabel"];
-                        private _lvl = ["intelLevel", [_p, _pm get "trust", _pm get "bribed", _pm get "bribes", _pm get "word", _mem get "confessed", _st, _aimed,
-                            _tenNow]] call comspec_sse_fnc_iarpProfile;
-                        private _give = 0;
-                        for "_i" from _lvl to 1 step -1 do { if (_give isEqualTo 0 && {(_tiers select (_i - 1)) isNotEqualTo ""}) then { _give = _i; }; };
-                        if (_give isEqualTo 0) exitWith {
-                            _gi = ["intelNo", "photoNo"] select (_intent isEqualTo "photo");
-                            _outcome = ["ne sait rien", "se tait"] select ((_tiers findIf { _x isNotEqualTo "" }) >= 0);
-                        };
-                        _vars set ["know", _tiers select (_give - 1)];
-                        // Déjà dit à ce joueur (même palier ou plus) : « Je vous l'ai déjà dit ».
-                        _gi = [["intelVague", "intelYes", "intelFull"] select (_give - 1), "intelAgain"] select (_give <= (_pm get "intel"));
-                        _pm set ["intel", (_pm get "intel") max _give];
-                        _outcome = format ["renseignement donné (%1)", ["vague", "précis", "complet"] select (_give - 1)];
-                        _topic = format ["intel%1", _give];
-                        // Renseignement précis avec un lieu : marqueur sur la carte de ce joueur seulement, une fois.
-                        if (_give >= 2 && {(count _kpos) >= 2} && {!(_pm get "marked")}) then {
-                            _pm set ["marked", true];
-                            _mark = [_kpos, _klabel, _aiName];
-                            _outcome = _outcome + " · lieu sur la carte";
-                        };
-                    };
+                    case "intel": { call _doIntel; };
                     case "confront": {
                         // « Vos papiers sont faux », « tu mens », « je sais que c'est toi » : ment-elle vraiment ? Mensonge
                         // affirmé (couverture), faux papiers ou couverture d'agent, secret, rôle caché.
@@ -828,6 +888,36 @@ switch (_op) do {
                         if (isNull _veh) then { _veh = ((nearestObjects [_t, ["LandVehicle"], 15]) select { alive _x }) param [0, objNull]; };
                         if (isNull _veh) then { _gi = "trunkNone"; _outcome = "aucun véhicule"; } else { _outcome = "parle de son véhicule"; };
                     };
+                    case "afraid": {
+                        _gi = ["afraidNo", "afraidYes"] select (_tenNow >= 40 || {_aimed > 0} || {_st in ["nerveux", "rendu", "fuit"]});
+                        [2] call _trust; _outcome = ["dit ne pas avoir peur", "avoue avoir peur"] select (_gi isEqualTo "afraidYes");
+                    };
+                    case "hurt": { _gi = ["hurtNo", "hurtYes"] select (_ctx get "wounded"); [3] call _trust; _outcome = ["pas blessé", "blessé"] select (_ctx get "wounded"); };
+                    case "tired": { _gi = ["tiredNo", "tiredYes"] select (_ctx get "tired"); _outcome = "conversation"; };
+                    case "offer": {
+                        private _yes = (random 100) < (35 + 0.5 * (_pm get "trust") - 0.3 * (_p get "aggro"));
+                        if (_yes) then { [6] call _trust; [-4, "on lui offre quelque chose"] call _tense; };
+                        _gi = ["offerNo", "offerYes"] select _yes; _outcome = ["refuse ce qu'on lui offre", "accepte ce qu'on lui offre"] select _yes;
+                    };
+                    case "cooperate": {
+                        private _yes = ["order"] call _obeys;
+                        [[-3, 4] select _yes] call _trust;
+                        _gi = ["cooperateNo", "cooperateYes"] select _yes; _outcome = ["refuse de coopérer", "dit qu'il coopère"] select _yes;
+                    };
+                    case "insult": { [-10] call _trust; [6, "insultée"] call _tense; if ((_p get "aggro") >= 60) then { _tone = "agressif"; }; _outcome = "insultée"; };
+                    case "mock": { [-5] call _trust; [3, "provoquée"] call _tense; _outcome = "provoquée"; };
+                    case "promise";
+                    case "protect": { [6] call _trust; [-6, "rassurée par une promesse"] call _tense; _outcome = "rassuré"; };
+                    case "reward": { if ((_p get "bribe") >= 75 && {_knows}) then { _tone = "corrompu"; }; _outcome = "récompense évoquée"; };
+                    // « Répète » : sa dernière réplique à ce joueur, redite.
+                    case "repeat": { if ((_pm getOrDefault ["last", []]) isNotEqualTo []) then { _gi = "repeatLast"; }; _outcome = "répète"; };
+                    case "phone"; case "nation"; case "speak"; case "since"; case "with"; case "lateHour"; case "alibi"; case "often"; case "stayLong";
+                    case "waitingFor"; case "house"; case "cargo"; case "declare"; case "village"; case "water"; case "food"; case "medical"; case "needs";
+                    case "directions"; case "whereHere"; case "neighbors"; case "chief"; case "police"; case "army"; case "rebelsView"; case "trustUs";
+                    case "hungry"; case "cigarette"; case "lawyer"; case "interpreter"; case "rights"; case "wait"; case "whyUs"; case "understand";
+                    case "joke"; case "laugh"; case "bot"; case "absurd"; case "hobbies"; case "flirt"; case "compliment"; case "time"; case "politics": {
+                        [2] call _trust; _outcome = "conversation";
+                    };
                     case "help";
                     case "thanks";
                     case "sorry";
@@ -858,7 +948,7 @@ switch (_op) do {
                     };
                 };
             };
-            _parts pushBack [_gi, _tone, _outcome, _intent, [_topic] call _told];
+            _parts pushBack [_gi, _tone, _outcome, _intent, [_topic] call _told, _noCust];
         } forEach _list;
         // Incompris : sa piste (« Vous voulez voir mes papiers ? ») devient sa question ; le « oui » qui suit est une
         // demande de papiers.
@@ -872,7 +962,7 @@ switch (_op) do {
                 if ((_ctx get "wounded") && {(random 1) < 0.35}) exitWith { "askHelp" };
                 if (_last in ["confess", "confessTruth", "confessVague"] && {(random 1) < 0.7}) exitWith { "askArrest" };
                 if ((_last in ["confrontDeny", "searchYes", "threat", "weaponsYes", "cuffYes"] || {_st in ["nerveux", "rendu"]}) && {(random 1) < 0.4}) exitWith { "askArrest" };
-                if (_last in ["intelNo", "photoNo"] && {(_p get "bribe") >= 60} && {!(_pm get "bribed")} && {(random 1) < 0.6}) exitWith { "askMoney" };
+                if (_last in ["intelNo", "photoNo"] && {_knows} && {(_p get "bribe") >= 60} && {!(_pm get "bribed")} && {(random 1) < 0.6}) exitWith { "askMoney" };
                 if (_last in ["origin", "employer", "job", "travel", "pob", "contact", "address", "name", "age", "family", "dunno", "firstName"]
                     && {(_pm get "turns") >= 4} && {(_pm get "trust") >= 40} && {_st in ["", "interpelle", "coopere", "ment"]} && {(random 1) < 0.25}) exitWith { "askGo" };
                 ""
@@ -911,16 +1001,105 @@ switch (_op) do {
         if (((_parts select -1) param [3, ""]) isEqualTo "ask" && {(count _parts) > 1}) then { _mainI = (count _parts) - 2; };
         private _gi = (_parts select _mainI) select 0;
         private _hook = missionNamespace getVariable ["comspec_sse_iarpGenHook", 0];
+        private _bank = ["bank"] call comspec_sse_fnc_iarpData;
+        // Réponses perso : situations reconnues (fn_iarpAnswers « pick ») ; refus et accord selon la réplique choisie par les règles.
+        private _refuseGi = ["noComply", "searchNo", "bribeNo", "cooperateNo", "offerNo", "refuse", "intelNo", "photoNo", "confrontDeny", "confrontAngry", "cuffNo", "dunno"];
+        private _acceptGi = ["comply", "searchYes", "bribeYes", "cooperateYes", "offerYes", "intelVague", "intelYes", "intelFull", "intelAgain", "confess", "confessTruth",
+            "confessVague", "cuffYes", "papersWait", "searchWait", "heardShots"];
+        private _fearNow = _tenNow >= 55 || {_aimed > 0} || {_st in ["nerveux", "rendu", "fuit"]};
+        private _onBase = [];
+        if (("threat" in _list) || {_aimed > 0}) then { _onBase pushBack "threat"; };
+        if (("confront" in _list) || {(_pm getOrDefault ["pressed", 0]) > 0}) then { _onBase pushBack "confront"; };
+        if (_fearNow) then { _onBase pushBack "fear"; } else { if !("threat" in _onBase) then { _onBase pushBack "calm"; }; };
+        // Faits facultatifs de la couverture (Téléphone, Depuis, Avec…) : la phrase qui les cite passe d'abord. Réponses sans fait
+        // de ces questions : la même ensuite (mémoire de l'IA, « gen »), pour tous les joueurs.
+        private _factI = ["phone", "nation", "speak", "since", "with", "alibi", "often", "waitingFor", "cargo", "declare", "house"];
+        private _stable = ["phone", "nation", "speak", "since", "with", "lateHour", "alibi", "often", "stayLong", "waitingFor", "house", "cargo", "declare", "hungry",
+            "hobbies", "cigarette", "neighbors", "police", "army", "politics", "rebelsView"];
+        private _custNote = [];
         {
-            _x params ["_gi1", "_tone1", "", "", ["_told1", ""]];
+            _x params ["_gi1", "_tone1", "", ["_int1", ""], ["_told1", ""], ["_noC1", false]];
             private _c1 = +_ctx;
             if (_tone1 isNotEqualTo "") then { _c1 set ["tone", _tone1]; };
             if (_told1 isNotEqualTo "") then { _c1 set ["told", _told1]; };
             if (_forEachIndex isNotEqualTo _mainI) then { _c1 set ["plain", true]; };
+            if (_int1 in _factI) then { _c1 set ["preferFact", true]; };
+            // Variante propre à la question quand la banque en a une (« intelNo.seenArmed », « comply.stepBack »).
+            private _giGen = [_gi1, "repeat"] select (_gi1 isEqualTo "repeatLast");
+            // Question perso sans texte pour cette situation : « Je ne sais pas » (jamais une invention).
+            if (_giGen isEqualTo "custom") then { _giGen = "dunno"; };
+            private _gk = format ["%1.%2", _giGen, _int1];
+            if (_gk in _bank) then { _giGen = _gk; };
             private _gen = [];
-            if (_hook isEqualType {}) then { _gen = [_gi1, _p, _c1, _recent, _vars, _text] call _hook; };
-            if !(_gen isEqualType [] && {(count _gen) >= 2}) then { _gen = [_gi1, _p, _c1, _recent, _vars] call comspec_sse_fnc_iarpGen; };
+            if (_hook isEqualType {}) then { _gen = [_giGen, _p, _c1, _recent, _vars, _text] call _hook; };
+            if !(_gen isEqualType [] && {(count _gen) >= 2}) then { _gen = [_giGen, _p, _c1, _recent, _vars] call comspec_sse_fnc_iarpGen; };
+            _gen = +_gen;
+            _gen resize 6;
+            if (isNil {_gen select 5}) then { _gen set [5, _gen param [4, ""]]; };
+            // Réponse perso du maître du jeu : elle remplace la réplique, pas la décision (ordre obéi ou non, palier, mensonge).
+            private _cust = false;
+            private _ck = (createHashMapFromArray [["papersWait", "papers"], ["papersCloser", "papers"], ["searchWait", "search"]]) getOrDefault [_int1, _int1];
+            if (!_noC1 && {_gi1 isNotEqualTo "silent"} && {_ans isNotEqualTo []}) then {
+                private _e = ["get", [_ans, _ck]] call comspec_sse_fnc_iarpAnswers;
+                if (_e isNotEqualTo []) then {
+                    private _ref = _gi1 in _refuseGi;
+                    private _on = +_onBase;
+                    if (_ref) then { _on pushBack "refuse"; } else { if (_gi1 in _acceptGi) then { _on pushBack "accept"; }; };
+                    _on pushBack (["first", "again"] select ((_asked getOrDefault [_ck, 1]) > 1));
+                    // Ordre, fouille, pot-de-vin ou papiers refusés : « Toujours » ne vaut pas (seulement « S'il refuse »).
+                    if (_ref && {_ck in (_orders + ["search", "bribe", "papers", "cuff", "cooperate", "offer"])}) then {
+                        _e = +_e;
+                        _e set [4, (_e select 4) select { (_x select 0) isNotEqualTo "*" }];
+                    };
+                    private _seq = _pm getOrDefault ["cseq", createHashMap];
+                    _pm set ["cseq", _seq];
+                    private _pk = ["pick", [_e, _on, [_seq getOrDefault [_ck, 0], _pm getOrDefault ["clast", ""]]]] call comspec_sse_fnc_iarpAnswers;
+                    if (_pk isNotEqualTo []) then {
+                        _pk params ["_ct", "_csit", "_cnext"];
+                        _seq set [_ck, _cnext];
+                        _pm set ["clast", _ct];
+                        private _tpl = ["vars", _ct] call comspec_sse_fnc_iarpAnswers;
+                        { _gen set [_x, _tpl]; } forEach [0, 1, 4, 5];
+                        _cust = true;
+                        // Palier de renseignement débloqué pour ce joueur ; lieu posé une fois sur sa carte.
+                        private _tier = _e param [5, 0];
+                        if (_tier > 0) then { _pm set ["unlock", (_pm getOrDefault ["unlock", 0]) max _tier]; };
+                        private _pl = _e param [6, ""];
+                        private _cm = _pm getOrDefault ["cmarks", []];
+                        if (_pl isNotEqualTo "" && {_mark isEqualTo []} && {!(_ck in _cm)}) then {
+                            (["knowTiers", "Lieu : " + _pl] call comspec_sse_fnc_iarpProfile) params ["", ["_cpos", []], ["_clab", ""]];
+                            if ((count _cpos) >= 2) then {
+                                _cm pushBack _ck;
+                                _pm set ["cmarks", _cm];
+                                _mark = [_cpos, [_clab, _pl] select (_clab isEqualTo ""), _aiName];
+                            };
+                        };
+                        _custNote pushBack format ["réponse du maître du jeu (%1%2)", _csit, ["", format [", palier %1", _tier]] select (_tier > 0)];
+                    };
+                };
+            };
+            // Question de présence sans fait : la même réponse ensuite, à tous (« Je vous l'ai dit : … » pour qui redemande).
+            if (!_cust && {_int1 in _stable} && {_gi1 isEqualTo _int1}) then {
+                private _gm = _mem getOrDefault ["gen", createHashMap];
+                _mem set ["gen", _gm];
+                private _prev = _gm getOrDefault [_int1, []];
+                if (_prev isEqualTo []) then { _gm set [_int1, [_gen select 4, _gen select 5]]; } else {
+                    private _again = ((_bank getOrDefault ["_again", createHashMap]) getOrDefault ["*", []]) param [floor random 4, ["", ""]];
+                    private _rep = (_asked getOrDefault [_int1, 1]) > 1;
+                    _gen set [0, [_prev select 0, format ["%1 %2", _again select 0, _prev select 0]] select _rep];
+                    _gen set [1, [_prev select 1, format ["%1 %2", _again param [1, ""], _prev select 1]] select _rep];
+                };
+            };
+            // « Répète » : sa dernière réplique à ce joueur.
+            if (_gi1 isEqualTo "repeatLast") then {
+                private _l = _pm getOrDefault ["last", ["", ""]];
+                private _rp = ((_bank getOrDefault ["_repeat", createHashMap]) getOrDefault ["*", []]) param [floor random 3, ["", ""]];
+                _gen set [0, format ["%1 %2", _rp select 0, _l select 0]];
+                _gen set [1, format ["%1 %2", _rp param [1, ""], _l param [1, ""]]];
+            };
             _gen params [["_fr1", ""], ["_en1", ""], ["_loc1", ""], ["_to1", ""], ["_core1", ""]];
+            if (isNil "_fr1") then { _fr1 = ""; };
+            if (isNil "_en1") then { _en1 = _fr1; };
             _frs pushBack _fr1;
             _ens pushBack _en1;
             if (_local isEqualTo "") then { _local = _loc1; };
@@ -930,6 +1109,14 @@ switch (_op) do {
         } forEach _parts;
         private _fr = _frs joinString " ";
         private _en = _ens joinString " ";
+        // Lieu le plus proche ({here}, « Où sommes-nous ? », réponses perso {lieu}) : cherché seulement s'il est cité.
+        if ((_fr find "{here}") >= 0 || {(_en find "{here}") >= 0}) then {
+            private _loc = (nearestLocations [getPosATL _t, ["NameCityCapital", "NameCity", "NameVillage", "NameLocal"], 3000]) param [0, locationNull];
+            _vars set ["here", [text _loc, worldName] select (isNull _loc || {(text _loc) isEqualTo ""})];
+        };
+        // Pour « Répète » : la réplique de ce message (modèles, langue de chaque joueur).
+        if (_gi isNotEqualTo "repeatLast") then { _pm set ["last", [_fr, _en]]; };
+        if (_custNote isNotEqualTo []) then { _outcome = _outcome + " · " + (_custNote joinString " · "); };
         private _say = [_fr, _vars, "fr"] call comspec_sse_fnc_iarpFill;
         private _pay = [_fr, _en, _vars, _local, _L getOrDefault ["country", ""]];
         private _delay = (0.5 + random 1) + ([0, 0.7] select (_toneOut in ["nerveux", "effraye"]));

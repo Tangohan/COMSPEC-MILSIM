@@ -7,6 +7,8 @@
       help [champ] · slider [idc, valeur]
       preset (charger le profil de bibliothèque) · generate (tirage local, champs verrouillés gardés) · test
       apply · applyGen (Zeus : un tirage par IA sélectionnée) · say (Zeus : faire dire une réplique) · import · export
+      answers (fenêtre « Réponses de l'IA », fn_iarpAnswersUi) · current -> profil de la fenêtre · extra [réponses, evoke,
+      banned] (repris de la fenêtre « Réponses de l'IA », appliqués avec le reste du profil)
     Rien n'est envoyé à Athena : import / export par copier-coller du texte du profil. Champs : fn_iarpProfile.
     Zone de test : interprète et générateur locaux, sans lancer la mission (faits tirés de l'histoire de couverture).
 */
@@ -47,6 +49,9 @@ private _read = {
     _p set ["react", _r];
     _p set ["locks", (_locks select { cbChecked ((_x select 1) call _ctl) }) apply { _x select 0 }];
     _p set ["preset", uiNamespace getVariable ["comspec_sse_iarpWsPreset", ""]];
+    // Réponses du maître du jeu et cadre (fenêtre « Réponses de l'IA ») : pas de case ici, gardés à côté.
+    (uiNamespace getVariable ["comspec_sse_iarpWsExtra", [[], "auto", []]]) params [["_ea", []], ["_ee", "auto"], ["_eb", []]];
+    _p set ["answers", _ea]; _p set ["evoke", _ee]; _p set ["banned", _eb];
     ["normalize", _p] call comspec_sse_fnc_iarpProfile
 };
 // Profil -> fenêtre.
@@ -65,8 +70,15 @@ private _write = {
     { _x params ["_idc", "_k"]; (_idc call _ctl) lbSetCurSel ((_reactVals find ((_p get "react") getOrDefault [_k, "auto"])) max 0); } forEach _reacts;
     { _x params ["_k", "_idc"]; (_idc call _ctl) cbSetChecked (_k in (_p get "locks")); } forEach _locks;
     uiNamespace setVariable ["comspec_sse_iarpWsPreset", _p get "preset"];
+    uiNamespace setVariable ["comspec_sse_iarpWsExtra", [_p get "answers", _p get "evoke", _p get "banned"]];
+    call _answersNote;
 };
 private _status = { (94702 call _ctl) ctrlSetText _this; };
+// Bouton « Réponses et limites… » : nombre de réponses écrites par le maître du jeu.
+private _answersNote = {
+    private _n = count ((uiNamespace getVariable ["comspec_sse_iarpWsExtra", [[]]]) param [0, []]);
+    (94756 call _ctl) ctrlSetText ([localize "STR_COMSPEC_IARP_W_Answers", format [localize "STR_COMSPEC_IARP_W_AnswersN", _n]] select (_n > 0));
+};
 
 switch (_op) do {
     case "open": {
@@ -133,6 +145,15 @@ switch (_op) do {
         ["help", ["Intro"]] call comspec_sse_fnc_iarpWorkshop;
     };
     case "onUnload": { uiNamespace setVariable ["comspec_sse_iarpWsDisplay", displayNull]; };
+    case "answers": { if (!isNull _d) then { ["open", ["workshop"]] call comspec_sse_fnc_iarpAnswersUi; }; };
+    case "current": { if (isNull _d) exitWith { createHashMap }; call _read };
+    case "extra": {
+        _a params [["_ans", []], ["_ev", "auto"], ["_ban", []]];
+        uiNamespace setVariable ["comspec_sse_iarpWsExtra", [_ans, _ev, _ban]];
+        if (isNull _d) exitWith {};
+        call _answersNote;
+        (localize "STR_COMSPEC_IARP_W_AnswersSet") call _status;
+    };
     case "loaded": {
         _a params [["_t", objNull], ["_raw", ""], ["_who", ""]];
         private _units = uiNamespace getVariable ["comspec_sse_iarpWsUnits", []];
