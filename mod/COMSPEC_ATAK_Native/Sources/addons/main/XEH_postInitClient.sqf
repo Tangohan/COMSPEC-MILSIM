@@ -996,6 +996,8 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 [{ [] call comspec_atak_native_fnc_squadSync; }, 30] call COMSPEC_ATAK_PfhSpread;
 // Plan de briefing partagé vers la carte du site (auteur de la modification, sinon un autre téléphone relié).
 [{ ["tick"] call comspec_atak_native_fnc_planWeb; }, 5] call COMSPEC_ATAK_PfhSpread;
+// Salle TOC du camp vers le poste TOC web d'Athena (fn_tocWeb) : un seul joueur du camp envoie.
+[{ ["tick"] call comspec_atak_native_fnc_tocWeb; }, 3] call COMSPEC_ATAK_PfhSpread;
 // Temps d'écran et temps par rôle (envoi à Athena toutes les 5 min et en fin de mission).
 [{ ["tick"] call comspec_atak_native_fnc_screenTime; }, 5] call COMSPEC_ATAK_PfhSpread;
 // Montre Garmin : pas, fréquence cardiaque, stress, Body Battery, sommeil et activités, gardés dans le profil du joueur.

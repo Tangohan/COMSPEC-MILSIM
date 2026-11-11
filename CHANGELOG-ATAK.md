@@ -38,6 +38,26 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : le poste TOC du jeu relié au poste TOC web d'Athena, plans envoyés du site (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Le poste TOC se tient aussi depuis Athena
+- Chronos, main courante, liste d'exécution, pertes, demandes et FLASH du poste en jeu s'affichent en direct sur le poste TOC web d'Athena, et ce que l'opérateur web y fait arrive au poste en jeu.
+- Une demande (MEDEVAC, appui feu, ravitaillement) à laquelle le poste web répond renvoie la réponse sur le téléphone du demandeur, comme depuis le PC du poste.
+- Un plan d'opération préparé sur Athena s'envoie en jeu : il apparaît dans le plan du camp (app Plan des téléphones, carte du PC du poste et écrans de la salle).
+EN : The TOC can now also be run from Athena
+- The in-game post timers, duty log, execution checklist, casualties, requests and FLASH show live on Athena's web TOC, and what the web operator does there reaches the in-game post.
+- A request (MEDEVAC, fire support, resupply) answered from the web TOC sends the answer to the requester's phone, as from the post laptop.
+- An operation plan prepared on Athena can be sent into the game: it appears in the side's plan (phones' Plan app, post laptop map and room screens).
+
+### Détail technique
+- `fn_tocWeb` (nouveau) : instantané de la salle vers Athena par la commande COMSPEC Link existante `BriefingPlan.Push` (canal `toc_room`, sans UID de joueur), au plus toutes les 3 s quand la salle change, 60 s sinon ; un seul joueur du camp envoie (celui qui tient le poste, sinon le plus petit UID ; relais après 90 s). Rien ne part avant la licence acceptée ni en mode local.
+- Commandes du site : genre `toc` du fil WC1 (`fn_webCmdDispatch`, poll des charges existant) ; chaque client du camp les remet au serveur (`comspec_atak_native_tocWeb`), qui ne les applique qu'une fois (id de commande) par `fn_tocRoom` « do » et les cite dans l'instantané suivant (`wc`). Lignes nées sur le web (id W…) reliées à leur id du jeu.
+- `fn_planServer` : opération serveur `webPatch` [camp, ids à retirer, éléments] pour les plans envoyés du site (droits vérifiés par Athena, éléments gardant leur id W<plan>_n, remplacés à chaque nouvel envoi).
+- Aucune nouvelle commande dans la DLL : COMSPEC Link inchangé.
+- À tester en jeu : poste web et PC du poste ouverts ensemble (chrono lancé d'un côté, vu de l'autre en moins de 10 s), réponse à une demande reçue sur le téléphone du demandeur, plan envoyé du site visible dans l'app Plan et sur la carte du PC, deux joueurs du camp reliés (une seule application de chaque commande), serveur sans joueur du camp (commande en attente puis expirée).
+
 ## À venir : texte à LED défilant, écrans géants, écran incurvé, postes PC et anciens écrans refaits (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

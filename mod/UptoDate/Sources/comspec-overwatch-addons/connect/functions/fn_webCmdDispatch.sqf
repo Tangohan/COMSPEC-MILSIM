@@ -5,6 +5,7 @@
         kind "uav"   : drone appairé au téléphone du pilote (réf = netId du drone) → fn_webCmdUav
         kind "explo" : charges ACE suivies, cible "*" = le téléphone du propriétaire (réf = ids séparés par ,) → fn_webCmdExplo
         kind "notif" : téléphone du joueur (préférences de notifications, tout marquer lu) → fn_webCmdNotif
+        kind "toc"   : poste TOC web (salle du camp, plans envoyés en jeu), cible "*", arg s = camp → fn_tocWeb de l'ATAK natif
     Chaque commande n'est traitée qu'une fois par client (le poll renvoie la même ligne tant que le
     compte rendu n'est pas arrivé au serveur). Retour : true si la commande est pour ce client.
 */
@@ -34,6 +35,7 @@ private _mine = switch (_kind) do {
     case "uav": { [_id, _cmd, _ref, _args] call comspec_overwatch_connect_fnc_webCmdUav };
     case "explo": { [_id, _cmd, _ref, _args] call comspec_overwatch_connect_fnc_webCmdExplo };
     case "notif": { [_id, _cmd, _ref, _args] call comspec_overwatch_connect_fnc_webCmdNotif };
+    case "toc": { if (isNil "comspec_atak_native_fnc_tocWeb") then { false } else { ["cmd", [_id, _cmd, _ref, _args]] call comspec_atak_native_fnc_tocWeb } };
     default { false };
 };
 _seen set [_id, true];
