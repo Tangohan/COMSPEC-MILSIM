@@ -2,9 +2,9 @@
  * Outils opérateur (/operateur) et Mon identité (/operateur/identite).
  *
  * Page d'accueil : recherche d'un outil (touche « / »), épingles sans rechargement (repli : envoi du formulaire).
- * Mon identité : confirmation des actions définitives, recto/verso d'un papier, aperçu de la photo choisie, types de
+ * Mon identité : fenêtres (élément dialog), confirmation des actions définitives, recto/verso d'un papier, types de
  * papier selon le pays, étapes de création d'une couverture. Spécimen : impression et image PNG.
- * Sans JavaScript, tout reste utilisable (liens et formulaires classiques).
+ * Sans JavaScript, tout reste utilisable : les fenêtres sont alors des blocs dans la page.
  */
 (function () {
   'use strict';
@@ -13,13 +13,54 @@
     return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   }
 
+  // ---- Fenêtres
+  var canDialog = typeof HTMLDialogElement !== 'undefined';
+  if (canDialog) {
+    document.querySelectorAll('dialog.opx-dialog').forEach(function (d) { d.classList.add('is-js'); });
+    document.addEventListener('click', function (e) {
+      var opener = e.target.closest('[data-opx-open]');
+      if (opener) {
+        var dialog = document.getElementById(opener.getAttribute('data-opx-open'));
+        if (!dialog || typeof dialog.showModal !== 'function') { return; }
+        e.preventDefault();
+        // « champ:valeur » : présélection dans la fenêtre (ex. l'identité pour laquelle on demande un papier).
+        var set = opener.getAttribute('data-opx-set');
+        if (set && set.indexOf(':') !== -1) {
+          var field = document.getElementById(set.split(':')[0]);
+          if (field) { field.value = set.split(':')[1]; }
+        }
+        if (!dialog.open) { dialog.showModal(); }
+        var href = opener.getAttribute('href');
+        var target = href && href.charAt(0) === '#' ? document.getElementById(href.slice(1)) : null;
+        if (target && dialog.contains(target) && typeof target.focus === 'function') { target.focus(); }
+        return;
+      }
+      var closer = e.target.closest('[data-opx-close]');
+      if (closer) {
+        var host = closer.closest('dialog');
+        if (host && host.open) { host.close(); }
+        return;
+      }
+      // Clic sur le fond de la fenêtre : fermeture.
+      if (e.target instanceof HTMLDialogElement && e.target.classList.contains('opx-dialog') && e.target.open) {
+        var r = e.target.getBoundingClientRect();
+        if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) { e.target.close(); }
+      }
+    });
+    var auto = document.querySelector('dialog.opx-dialog[data-opx-autoopen]');
+    if (auto && typeof auto.showModal === 'function') { auto.showModal(); }
+  }
+
   // ---- Recherche d'un outil
   var hub = document.querySelector('[data-opx-hub]');
   if (hub) {
     var input = hub.querySelector('[data-opx-search-input]');
     var noResult = hub.querySelector('[data-opx-noresult]');
+    var favSection = hub.querySelector('[data-opx-favsection]');
+    var favList = hub.querySelector('[data-opx-favlist]');
+    var favEmpty = hub.querySelector('[data-opx-favempty]');
     var filter = function () {
-      var q = norm(input.value).trim();
+      var q = input ? norm(input.value).trim() : '';
       var any = false;
       hub.querySelectorAll('[data-opx-section]').forEach(function (section) {
         var shown = 0;
@@ -28,9 +69,7 @@
           card.hidden = !ok;
           if (ok) { shown++; }
         });
-        // La section des épinglés reste visible sans recherche (elle porte l'aide « Rien d'épinglé »).
-        var isFav = !!section.querySelector('[data-opx-favlist]');
-        section.hidden = q !== '' ? shown === 0 : (!isFav && shown === 0);
+        section.hidden = shown === 0;
         if (shown > 0) { any = true; }
       });
       if (noResult) { noResult.hidden = q === '' || any; }
@@ -52,10 +91,8 @@
     }
 
     // ---- Épingles
-    var favList = hub.querySelector('[data-opx-favlist]');
-    var favEmpty = hub.querySelector('[data-opx-favempty]');
     var setStar = function (key, on) {
-      hub.querySelectorAll('[data-opx-tool="' + key + '"] .opx-fav').forEach(function (btn) {
+      hub.querySelectorAll('[data-opx-tool="' + key + '"] .opx-pin__btn').forEach(function (btn) {
         btn.classList.toggle('is-on', on);
         btn.setAttribute('aria-pressed', on ? 'true' : 'false');
         btn.title = on ? 'Retirer des épinglés' : 'Épingler en haut de la page';
@@ -65,8 +102,7 @@
       var form = e.target.closest('[data-opx-fav]');
       if (!form || !window.fetch) { return; }
       e.preventDefault();
-      var card = form.closest('[data-opx-tool]');
-      var key = card.getAttribute('data-opx-tool');
+      var key = form.closest('[data-opx-tool]').getAttribute('data-opx-tool');
       fetch(form.action, { method: 'POST', body: new FormData(form), credentials: 'same-origin', headers: { Accept: 'application/json' } })
         .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
         .then(function (res) {
@@ -81,13 +117,14 @@
           if (on && !pinned) {
             var source = hub.querySelector('[data-opx-tool="' + key + '"]');
             var copy = source.cloneNode(true);
-            copy.classList.add('opx-card--pinned');
             copy.hidden = false;
             favList.appendChild(copy);
           } else if (!on && pinned) {
             pinned.remove();
           }
-          if (favEmpty) { favEmpty.hidden = favList.children.length > 0; }
+          var has = favList.children.length > 0;
+          if (favSection) { favSection.hidden = !has; }
+          if (favEmpty) { favEmpty.hidden = has; }
         })
         .catch(function () { form.submit(); });
     });
@@ -115,18 +152,6 @@
     btn.textContent = showVerso ? 'Voir le recto' : 'Voir le verso';
   });
 
-  // ---- Aperçu de la photo choisie (avant l'envoi ; le serveur recadre et réenregistre l'image)
-  document.querySelectorAll('[data-opx-photo-input]').forEach(function (inputEl) {
-    inputEl.addEventListener('change', function () {
-      var preview = inputEl.closest('form').querySelector('[data-opx-photo-preview]');
-      var file = inputEl.files && inputEl.files[0];
-      if (!preview || !file || !/^image\/(png|jpeg|webp)$/.test(file.type)) { return; }
-      var url = URL.createObjectURL(file);
-      preview.style.backgroundImage = 'url("' + url + '")';
-      preview.classList.add('has-image');
-    });
-  });
-
   // ---- Demande de papier : seuls les types délivrés par le pays choisi
   var req = document.querySelector('[data-opx-doc-request]');
   if (req) {
@@ -137,17 +162,15 @@
     var syncTypes = function () {
       var allowed = types[country.value] || null;
       var first = null;
-      Array.prototype.forEach.call(type.options, function (o) {
+      type.querySelectorAll('option').forEach(function (o) {
         var ok = !allowed || allowed.indexOf(o.value) !== -1;
         o.hidden = !ok;
         o.disabled = !ok;
         if (ok && first === null) { first = o.value; }
       });
-      // Catégorie sans aucun type délivré par ce pays : son titre disparaît aussi.
-      Array.prototype.forEach.call(type.querySelectorAll('optgroup'), function (g) {
-        var any = Array.prototype.some.call(g.children, function (o) { return !o.disabled; });
-        g.hidden = !any;
-        g.disabled = !any;
+      // Un groupe sans type délivré disparaît aussi.
+      type.querySelectorAll('optgroup').forEach(function (g) {
+        g.hidden = !g.querySelector('option:not([disabled])');
       });
       if (type.selectedOptions[0] && type.selectedOptions[0].disabled && first !== null) { type.value = first; }
     };
@@ -168,22 +191,6 @@
     coverForm.addEventListener('change', syncSource);
     syncSource();
   }
-
-  // ---- Ouvrir le bloc visé par l'ancre (champ à compléter dans un formulaire replié)
-  var openTarget = function () {
-    if (!location.hash) { return; }
-    var target;
-    try { target = document.querySelector(location.hash); } catch (err) { return; }
-    if (!target) { return; }
-    var details = target.closest('details');
-    if (details && !details.open) { details.open = true; }
-    if (typeof target.focus === 'function' && /^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName)) {
-      target.focus({ preventScroll: true });
-    }
-    target.scrollIntoView({ block: 'center' });
-  };
-  window.addEventListener('hashchange', openTarget);
-  openTarget();
 
   // ---- Spécimen : impression et image PNG
   var specimen = document.querySelector('[data-opx-specimen]');

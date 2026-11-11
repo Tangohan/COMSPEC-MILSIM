@@ -100,6 +100,48 @@ final class SseCoverSyncTest extends TestCase
         self::assertSame('expired', $later[0]['status']);
     }
 
+    public function testActiveCoverIsFlaggedAndListedFirst(): void
+    {
+        $this->db();
+        $old = $this->generate(1, 10);
+        $mid = $this->generate(1, 10);
+        $new = $this->generate(1, 10);
+        $other = $this->generate(1, 11);
+
+        // Table des états absente (site sans les outils opérateur) : champ présent, toujours faux, ordre inchangé.
+        $list = $this->sync()->listFor(1, 10, $this->now);
+        self::assertSame([$new['ref'], $mid['ref'], $old['ref']], array_column($list, 'ref'));
+        self::assertSame([false, false, false], array_column($list, 'active'));
+
+        (require dirname(__DIR__, 2) . '/bootstrap/operator_hub_migration.php')(\App\Core\Database::getPdo());
+        $hub = new \App\Repositories\OperatorHubRepository();
+        // Aucune active : tout à faux.
+        self::assertSame([false, false, false], array_column($this->sync()->listFor(1, 10, $this->now), 'active'));
+
+        // L'active d'un autre membre ou d'une autre communauté ne compte pas.
+        $hub->setOnlyActive(1, 11, 'cover', $other['id'], 11);
+        $hub->setOnlyActive(2, 10, 'cover', $old['id'], 10);
+        self::assertSame([false, false, false], array_column($this->sync()->listFor(1, 10, $this->now), 'active'));
+
+        // La plus ancienne marquée active : en tête, seule à vrai, le reste du plus récent au plus ancien.
+        $hub->setOnlyActive(1, 10, 'cover', $old['id'], 10);
+        $list = $this->sync()->listFor(1, 10, $this->now);
+        self::assertSame([$old['ref'], $new['ref'], $mid['ref']], array_column($list, 'ref'));
+        self::assertSame([true, false, false], array_column($list, 'active'));
+        self::assertSame([true], array_column($this->sync()->listFor(1, 11, $this->now), 'active'));
+
+        // Relais COMSPEC Link : même champ dans « settings.covers ».
+        $pack = json_decode($this->controller(1, 10)->packResponse(SseCoverSyncService::OP_LIST, 'v=1', 1)->body(), true);
+        self::assertTrue($pack['settings']['covers'][0]['active']);
+        self::assertFalse($pack['settings']['covers'][1]['active']);
+
+        // Active puis révoquée : retirée de la liste, plus aucune active.
+        $hub->setState(1, 10, 'cover', $old['id'], ['revoked_at' => '2026-11-09 12:00:00'], 10);
+        $list = $this->sync()->listFor(1, 10, $this->now);
+        self::assertSame([$new['ref'], $mid['ref']], array_column($list, 'ref'));
+        self::assertSame([false, false], array_column($list, 'active'));
+    }
+
     public function testDownloadOnlyForTheOwnerAndSameFileAsTheSite(): void
     {
         $this->db();

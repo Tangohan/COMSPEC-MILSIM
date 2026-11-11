@@ -34,6 +34,9 @@ $opxIcon = static function (string $name, string $class = 'opx-ico'): string {
         'alert' => '<path d="M12 4 2.500 20h19z"/><path d="M12 10v4"/><path d="M12 17.500v.010"/>',
         'refresh' => '<path d="M20 11a8 8 0 0 0-14.500-4L4 8.500"/><path d="M4 4v4.500h4.500"/><path d="M4 13a8 8 0 0 0 14.500 4l1.500-1.500"/><path d="M20 20v-4.500h-4.500"/>',
         'plus' => '<path d="M12 5v14"/><path d="M5 12h14"/>',
+        'lock' => '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+        'close' => '<path d="M6 6l12 12"/><path d="M18 6 6 18"/>',
+        'edit' => '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
     ];
 
     return '<svg class="' . htmlspecialchars($class, ENT_QUOTES, 'UTF-8') . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'

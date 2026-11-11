@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Repositories\OperatorHubRepository;
 use App\Services\Operator\OperatorHubCatalog;
 use App\Services\Operator\OperatorIdentityService;
+use App\Services\Sse\MemberIdentityPapersService;
 use App\Services\Security\FileRateLimiter;
 use App\Support\SseFileSubjectCatalog;
 use App\Support\SseIdentityCatalog;
@@ -50,7 +51,8 @@ final class OperatorHubController
     ) {
         $this->can ??= static fn (string $p): bool => function_exists('can') && can($p);
         $this->allowsPath ??= static fn (string $path): bool => !function_exists('portal_nav_href_permission_allowed') || portal_nav_href_permission_allowed(url($path));
-        $this->render ??= static fn (array $data): Response => Response::view('layout.main', $data);
+        // Même gabarit que le tableau de bord (views/operateur/page.php) : en-tête Athena, rail, zones, pied de page.
+        $this->render ??= static fn (array $data): Response => Response::view('operateur.page', $data);
         $this->csrf ??= static fn (Request $r): bool => Csrf::validate((string) $r->input('_csrf_token', '')) || Csrf::verify($r);
         $this->flash ??= static function (string $type, string $message): void {
             Session::flash($type, $message);
@@ -100,7 +102,8 @@ final class OperatorHubController
     public function hubData(array $ctx): array
     {
         [$tenantId, $userId] = [$ctx['tenant'], $ctx['user']];
-        $tools = OperatorHubCatalog::visible($this->can, $this->allowsPath);
+        // Tous les outils de la communauté : ceux qu'il manque un droit pour ouvrir sont rendus grisés.
+        $tools = OperatorHubCatalog::withAccess($this->can, $this->allowsPath);
         $favorites = [];
         try {
             $favorites = $this->hub()->favorites($tenantId, $userId);
@@ -132,6 +135,7 @@ final class OperatorHubController
             'hubUnit' => $unit,
             'hubFigures' => self::figures($summary, $atak),
             'hubToolCount' => count($tools),
+            'hubLockedCount' => count(array_filter($tools, static fn (array $t): bool => !empty($t['locked']))),
         ];
     }
 
@@ -324,6 +328,7 @@ final class OperatorHubController
             'idCoverQuota' => 0,
             'idEditId' => $editId,
             'idUnavailable' => false,
+            'idProposal' => [],
             'idSteamLinked' => preg_replace('/\D/', '', (string) ($ctx['row']['steam_id'] ?? '')) !== '',
             'idHair' => SseFileSubjectCatalog::HAIR,
             'idEyes' => SseFileSubjectCatalog::EYES,
@@ -336,11 +341,15 @@ final class OperatorHubController
         ];
         try {
             $data['idIdentities'] = $svc->identities($tenantId, $userId);
-            $data['idCountries'] = $svc->countries($tenantId);
+            // Pays réels d'abord (France, Allemagne, États-Unis…), puis les pays fictifs de la communauté.
+            $countries = $svc->countries($tenantId);
+            usort($countries, static fn (array $a, array $b): int => [empty($a['real_sim']), 0] <=> [empty($b['real_sim']), 0]);
+            $data['idCountries'] = $countries;
+            $data['idProposal'] = MemberIdentityPapersService::primaryProposal($ctx['row'], $ctx['row'], $countries);
             if ($tab !== 'couverture') {
                 $data['idDocuments'] = $svc->documents($tenantId, $userId);
             }
-            if ($tab === 'documents') {
+            if ($tab !== 'couverture') {
                 $data['idSync'] = self::syncSummary($tenantId, $userId, (string) ($ctx['row']['steam_id'] ?? ''));
             }
             if ($tab === 'couverture') {
@@ -444,6 +453,18 @@ final class OperatorHubController
         $res = $this->identity()->archiveIdentity($ctx['tenant'], $ctx['user'], (int) ($params['id'] ?? 0), $archive);
 
         return $this->back('operateur/identite', $res['ok'] ? 'success' : 'error', $res['ok'] ? ($archive ? 'Identité archivée.' : 'Identité restaurée.') : (string) $res['error']);
+    }
+
+    /** Fait de cette identité l'identité principale du membre (celle de son personnage). */
+    public function identityPrimary(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guardWrite($request, 'operateur/identite');
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $res = $this->identity()->setPrimary($ctx['tenant'], $ctx['user'], (int) ($params['id'] ?? 0));
+
+        return $this->back('operateur/identite', $res['ok'] ? 'success' : 'error', $res['ok'] ? 'Identité principale changée.' : (string) ($res['error'] ?? 'Action refusée.'));
     }
 
     public function identityActivate(Request $request, array $params = []): Response
