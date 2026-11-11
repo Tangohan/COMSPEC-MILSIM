@@ -113,7 +113,16 @@ private _ctrls = [];
 private _cfgSize = configFile >> "RscStructuredText" >> "size";
 private _base = if (isNumber _cfgSize) then { getNumber _cfgSize } else { call compile (getText _cfgSize) };
 if (isNil "_base" || {!(_base isEqualType 0)} || {_base <= 0}) then { _base = 0.04; };
-private _dmy = { private _p = _this splitString "-"; if ((count _p) < 3) exitWith { _this }; format ["%1.%2.%3", _p select 2, _p select 1, _p select 0] };
+// Dates AAAA-MM-JJ imprimées au format du pays (registre : JJ.MM.AAAA, MM/JJ/AAAA aux États-Unis…), sinon JJ.MM.AAAA.
+private _cinfo = ([] call comspec_sse_fnc_idCountries) getOrDefault [toUpper _lc, createHashMap];
+private _dfmt = _cinfo getOrDefault ["dateFormat", "dd.mm.yyyy"];
+private _dmy = {
+    private _p = _this splitString "-";
+    if ((count _p) < 3) exitWith { _this };
+    private _o = _dfmt;
+    { _o = [_o, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["dd", _p select 2], ["mm", _p select 1], ["yyyy", _p select 0]];
+    _o
+};
 // Texte posé en fraction du document : [x, y, largeur, hauteur de ligne, texte, police, couleur].
 private _put = {
     params ["_fx", "_fy", "_fw", "_fh", "_txt", ["_font", "RobotoCondensed"], ["_color", "#15181d"]];
@@ -145,6 +154,8 @@ private _value = {
         _v = switch (_k) do {
             case "country": { _doc getOrDefault ["country", ""] };
             case "countryname": { _doc getOrDefault ["countryName", ""] };
+            // Nationalité imprimée en clair (« DEUTSCH », « FRANÇAISE ») ; la MRZ garde le code (« D », « FRA »).
+            case "nat": { [_doc getOrDefault ["nat", ""], _doc get "natText"] select ((_doc getOrDefault ["natText", ""]) isNotEqualTo "") };
             default { _doc getOrDefault [_f get "key", _doc getOrDefault [_k, ""]] };
         };
         if (_v isEqualTo "" && {(_f get "default") isNotEqualTo ""}) then { _v = _f get "default"; };
@@ -176,6 +187,8 @@ if (_holo isNotEqualTo [] && {_doc getOrDefault ["holo", true]}) then {
     _holo params ["_fx", "_fy", "_fw"];
     [_fx, _fy, _fw, _fw * _ratio, _dir + "hologram_ca.paa"] call _pic;
 };
+// Pays réel du registre (gabarit sans texte) : bandeau, drapeau, nom du pays, titre et étiquettes dans la langue du pays.
+_ctrls append ([_d, [_cx, _cy, _cw, _ch], _doc, _type, _side, _layout, _tpl] call comspec_sse_fnc_idCountryChrome);
 // Champs.
 {
     private _f = _x;
@@ -209,14 +222,14 @@ uiNamespace setVariable ["comspec_sse_idViewerCtrls", _ctrls];
 // --- Bandeau, constat N0, ligne d'état, boutons -------------------------------------------------------------------
 private _sub = ["", "Votre document"] select (_st get "own");
 // Mention discrète seulement pour un pays réel stylisé (_zoned) ; un pays du jeu n'en porte aucune.
-if (_zoned) then { _sub = [_sub, "Document de jeu"] select (_sub isEqualTo ""); };
+if (_zoned || {_zone isEqualTo "bare"}) then { _sub = [_sub, "Document de jeu"] select (_sub isEqualTo ""); };
 private _extName = "";
 if ((_t getOrDefault ["extension", ""]) isNotEqualTo "") then {
     private _e = (["extensions"] call comspec_sse_fnc_idDocTypes) select { (_x select 0) isEqualTo (_t get "extension") };
     if (_e isNotEqualTo []) then { _extName = (_e select 0) select 1; };
 };
 private _title = format ["<t align='center' size='1.1' font='PuristaSemibold'>%1</t><br/><t align='center' size='0.85' color='#b8c2cc'>%2%3%4</t>",
-    (["label", _type] call comspec_sse_fnc_idDocTypes) call _esc,
+    (["label", [_type, _doc getOrDefault ["country", ""]]] call comspec_sse_fnc_idDocTypes) call _esc,
     ([_doc getOrDefault ["countryName", ""], _doc getOrDefault ["countryNameEn", ""]] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]) isNotEqualTo "fr" && {(_doc getOrDefault ["countryNameEn", ""]) isNotEqualTo ""})) call _esc,
     ["", " · " + (_sub call comspec_sse_fnc_tr)] select (_sub isNotEqualTo ""),
     ["", " · " + (_extName call _esc)] select (_extName isNotEqualTo "")];

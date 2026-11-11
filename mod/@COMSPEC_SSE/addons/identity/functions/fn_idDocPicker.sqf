@@ -45,6 +45,7 @@ private _preview = {
     private _zone = "";
     private _cinfo = ([] call comspec_sse_fnc_idCountries) getOrDefault [toUpper _lc, createHashMap];
     if (_cinfo getOrDefault ["realSim", false]) then { _zone = _cinfo getOrDefault ["zone", ""]; };
+    if ((_cinfo getOrDefault ["tier", ""]) in ["full", "generic"]) then { _zone = "bare"; };
     private _tex = ["texture", [_type, "recto", _lc, _zone]] call comspec_sse_fnc_idDocTypes;
     // Document au format réel, centré dans le cadre de l'aperçu (1 x = 4/3 d'un y).
     private _ratio = _t get "ratio";
@@ -78,7 +79,12 @@ private _preview = {
     private _sample = createHashMapFromArray [["last", [_last, "NOM"] select (_last isEqualTo "")], ["first", [_first, "Prénom"] select (_first isEqualTo "")],
         ["sex", "M"], ["nat", toUpper _lc], ["dob", "01.01.1990"], ["pob", _cinfo getOrDefault ["cities", ["-"]] select 0], ["number", "SPÉCIMEN"], ["expires", "31.12.2035"],
         ["issued", "01.01.2025"], ["authority", _cinfo getOrDefault ["authority", ""]], ["address", "1 RUE DU PORT"], ["profession", "—"], ["rank", "Sergent"], ["force", "Forces armées"],
-        ["country", toUpper _lc], ["countryName", _cinfo getOrDefault ["name", ""]]];
+        ["country", toUpper _lc], ["countryName", _cinfo getOrDefault ["name", ""]], ["natText", _cinfo getOrDefault ["natText", ""]],
+        ["height", ["", "178 cm"] select (_zone isEqualTo "bare")], ["permit", "Résident · Resident"], ["plate", "AB-123-CD"], ["vehicle", "—"],
+        ["vin", "SSE00000000000000"], ["holder", "NOM Prénom"], ["firstReg", "01.01.2020"]];
+    if ((_sample get "natText") isNotEqualTo "") then { _sample set ["nat", _sample get "natText"]; };
+    // Pays réel : bandeau, titre et étiquettes dans la langue du pays, comme sur le papier délivré.
+    _ctrls append ([_d, [_cx, _cy, _cw, _ch], _sample, _type, "recto", _layout, _tex] call comspec_sse_fnc_idCountryChrome);
     {
         private _f = _x;
         private _v = _f get "text";
@@ -142,7 +148,7 @@ private _fillTypes = {
             _l lbSetColor [_i, [0.55, 0.6, 0.65, 1]];
             _lastCat = _cat;
         };
-        private _name = ["label", _x] call comspec_sse_fnc_idDocTypes;
+        private _name = ["label", [_x, [_country, ""] select (_country isEqualTo "auto")]] call comspec_sse_fnc_idDocTypes;
         if ((_t get "extension") isNotEqualTo "") then {
             private _e = (["extensions"] call comspec_sse_fnc_idDocTypes) select { (_x select 0) isEqualTo (_t get "extension") };
             if (_e isNotEqualTo []) then { _name = format ["%1 (%2)", _name, (_e select 0) select 1]; };
@@ -167,15 +173,28 @@ if (_op isEqualTo "load") exitWith {
     (93802 call _c) ctrlSetText _target;
     // Pays : ceux du jeu (réglage, paquet), pays de la mission en premier.
     private _lc = 93810 call _c;
+    // Pays réels d'abord (registre, dans l'ordre), puis un séparateur et les pays fictifs d'Arma, puis ceux du paquet Athena.
     private _all = [] call comspec_sse_fnc_idCountries;
-    private _codes = ["ALT", "TNA", "LVN", "MLD"] select { _x in _all };
-    _codes = _codes + (((keys _all) - _codes) select { (_all get _x) getOrDefault ["active", true] });
+    private _ordered = ["ordered"] call comspec_sse_fnc_idCountries;
+    private _realC = _ordered select { !((_all get _x) getOrDefault ["fictional", true]) && {(_all get _x) getOrDefault ["active", true]} };
+    private _fictC = (_ordered - _realC) select { (_all get _x) getOrDefault ["active", true] };
+    _fictC = _fictC + (((keys _all) - _ordered) select { (_all get _x) getOrDefault ["active", true] });
+    private _fr = (missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]) isEqualTo "fr";
     private _i = _lc lbAdd ("Pays de la mission" call _tr);
     _lc lbSetData [_i, "auto"];
     {
-        private _i = _lc lbAdd ((_all get _x) getOrDefault ["name", _x]);
+        private _i = _lc lbAdd (["label", [_x, ["en", "fr"] select _fr]] call comspec_sse_fnc_idCountries);
         _lc lbSetData [_i, _x];
-    } forEach _codes;
+    } forEach _realC;
+    if (_fictC isNotEqualTo []) then {
+        private _i = _lc lbAdd ("— Pays fictifs (cartes Arma) —" call _tr);
+        _lc lbSetData [_i, ""];
+        _lc lbSetColor [_i, [0.55, 0.6, 0.65, 1]];
+    };
+    {
+        private _i = _lc lbAdd (["label", [_x, ["en", "fr"] select _fr]] call comspec_sse_fnc_idCountries);
+        _lc lbSetData [_i, _x];
+    } forEach _fictC;
     _lc lbSetCurSel 0;
     _lc ctrlAddEventHandler ["LBSelChanged", { ["select", "country"] call comspec_sse_fnc_idDocPicker; }];
     (93811 call _c) ctrlAddEventHandler ["LBSelChanged", { ["select", "type"] call comspec_sse_fnc_idDocPicker; }];
@@ -208,7 +227,12 @@ if (_op isEqualTo "load") exitWith {
 
 if (_op isEqualTo "select") exitWith {
     switch (_a) do {
-        case "country": { _st set ["country", 93810 call _lbData]; call _fillTypes; };
+        case "country": {
+            // Séparateur des pays fictifs : on prend le pays qui suit.
+            if ((93810 call _lbData) isEqualTo "") then { private _l = 93810 call _c; private _n = (lbCurSel _l) + 1; if (_n < lbSize _l) then { _l lbSetCurSel _n; }; };
+            _st set ["country", [93810 call _lbData, "auto"] select ((93810 call _lbData) isEqualTo "")];
+            call _fillTypes;
+        };
         case "type": { _st set ["type", 93811 call _lbData]; };
     };
     if ((_st get "type") isEqualTo "") then {
