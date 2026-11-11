@@ -91,8 +91,11 @@ if (isNull _disp) then {
 if (!isNull _disp) then {
     (_st getOrDefault ["tint", [1, 1, 1]]) params ["_tr", "_tg", "_tb"];
     private _wa = (((_W - 0.82) / 0.18) max 0) min 1;
-    // Stroboscope pendant une rafale : le blanc clignote (12 Hz) au lieu de rester fixe.
-    if (_now < (_st getOrDefault ["strobeUntil", 0])) then { _wa = (_wa max 0.6) * ([1, 0.2] select ((floor (_now * 24)) mod 2 == 1)) };
+    // Stroboscope pendant une rafale : un éclat blanc par détonation reçue (plein blanc au coup, puis chute en
+    // 60 ms jusqu'au coup suivant), au lieu d'un blanc fixe : N coups = N éclats.
+    if (_now < (_st getOrDefault ["strobeUntil", 0])) then {
+        _wa = (_wa max 0.6) * (linearConversion [0, 0.06, _now - (_st getOrDefault ["lastHit", -10]), 1, 0.15, true]);
+    };
     (_disp displayCtrl 101) ctrlSetTextColor [_tr, _tg, _tb, _wa];
     // Taches : positives (claires) pendant 0,8 s, puis négatives sombres dont la teinte dérive lentement
     // (« fuite des couleurs » de l'image rémanente), avec un très léger tremblement (micro-saccades).

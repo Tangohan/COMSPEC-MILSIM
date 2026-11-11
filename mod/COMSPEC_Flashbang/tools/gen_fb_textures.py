@@ -8,6 +8,8 @@ Textures du mod COMSPEC Flashbang (Pillow + numpy), sources PNG dans tools/rende
   fb_metal_nohq.png / fb_metal_smdi.png
   fb_afterimage_ca.png  tache d'image rémanente (blanc sur transparent, teintée en jeu)
   fb_flare_ca.png       halo d'éblouissement doux (optique)
+  fb_halo_<1..8>_ca.png halos des détonations (8 modèles : étoiles, anneau, éclats, traînées, couronne) + fb_halo_core_ca.png
+                        (python gen_fb_textures.py --halos : seulement ceux-là)
   fb_module_ca.png      icône de module Zeus / Eden (silhouette de grenade + éclair, blanc sur transparent)
 
 Disposition de fb_body_<V>_co (UV posées par model_flashbang.py) :
@@ -385,6 +387,93 @@ def flare():
     Image.fromarray((rgba * 255).astype(np.uint8)).save(os.path.join(RENDER, "fb_flare_ca.png"))
 
 
+def halos():
+    """Halos des détonations (fn_halo) : 8 couronnes originales + 1 cœur, blanc sur transparent (alpha = lumière),
+    teintées, tournées et étirées en jeu. 256 x 256, bord toujours transparent.
+
+      1 étoile à 4 branches (+ 4 courtes en diagonale)    5 éclat asymétrique (lobes inégaux)
+      2 étoile à 6 branches                               6 halo doux + rayons fins nombreux
+      3 étoile à 8 branches inégales                      7 éclat à traînées anamorphiques (horizontales)
+      4 anneau diffus                                     8 couronne déchirée (anneau troué, mèches)
+    """
+    S = 256
+    hr = np.random.default_rng(2026)          # générateur propre : les autres textures restent identiques
+    ys, xs = np.mgrid[0:S, 0:S].astype(float) - S / 2 + 0.5
+    r = np.sqrt(xs * xs + ys * ys) / (S / 2)
+    ang = np.arctan2(ys, xs)
+    edge = np.clip((1 - r) / 0.14, 0, 1)
+
+    def ray(t, width, length, power=1.6):
+        da = np.abs(np.angle(np.exp(1j * (ang - t))))
+        return np.exp(-(da * np.maximum(r, 0.02) / width) ** 2) * np.clip(1 - r / length, 0, 1) ** power * (da < 1.2)
+
+    def ang_noise(n_harm, seed_amp=1.0):
+        out = np.zeros_like(r)
+        for k in range(1, n_harm + 1):
+            out += seed_amp * hr.normal(0, 1.0 / k ** 0.7) * np.cos(k * ang + hr.uniform(0, 2 * np.pi))
+        return out
+
+    glow = lambda w: np.exp(-(r / w) ** 2)
+    out = {}
+    # 1 : étoile à 4 branches
+    a = 0.55 * glow(0.30) + 0.25 * glow(0.55)
+    for k in range(4):
+        a += 0.9 * ray(k * np.pi / 2, 0.012, 1.0)
+        a += 0.45 * ray(k * np.pi / 2 + np.pi / 4, 0.010, 0.55)
+    out[1] = a
+    # 2 : étoile à 6 branches
+    a = 0.5 * glow(0.28) + 0.25 * glow(0.6)
+    for k in range(6):
+        a += 0.8 * ray(k * np.pi / 3, 0.011, 0.95)
+    out[2] = a
+    # 3 : étoile à 8 branches inégales
+    a = 0.5 * glow(0.26) + 0.2 * glow(0.5)
+    for k in range(8):
+        a += hr.uniform(0.5, 0.95) * ray(k * np.pi / 4 + hr.normal(0, 0.03), hr.uniform(0.008, 0.016), hr.uniform(0.55, 1.0))
+    out[3] = a
+    # 4 : anneau diffus
+    a = 0.6 * glow(0.24) + 0.3 * glow(0.5) + 0.5 * np.exp(-((r - 0.6) / 0.05) ** 2) + 0.28 * np.exp(-((r - 0.6) / 0.2) ** 2)
+    out[4] = a
+    # 5 : éclat asymétrique (lobes inégaux)
+    lobe = np.clip(0.75 + 0.3 * ang_noise(5), 0.3, 1.5)
+    a = 0.8 * np.exp(-(r / (0.5 * lobe)) ** 2) + 0.45 * glow(0.22) + 0.15 * glow(0.6)
+    for _ in range(7):
+        a += hr.uniform(0.3, 0.7) * ray(hr.uniform(0, 2 * np.pi), hr.uniform(0.008, 0.02), hr.uniform(0.6, 1.0))
+    out[5] = a
+    # 6 : halo doux + rayons fins nombreux
+    a = 0.55 * glow(0.34) + 0.2 * glow(0.62)
+    for _ in range(44):
+        a += hr.uniform(0.12, 0.42) * ray(hr.uniform(0, 2 * np.pi), hr.uniform(0.004, 0.008), hr.uniform(0.45, 1.0), 1.2)
+    out[6] = a
+    # 7 : traînées anamorphiques horizontales
+    a = 0.5 * glow(0.24) + 0.18 * glow(0.5)
+    xr, yr = xs / (S / 2), ys / (S / 2)
+    a += 0.95 * np.exp(-(yr / 0.022) ** 2) * np.clip(1 - np.abs(xr), 0, 1) ** 1.3
+    a += 0.35 * np.exp(-((yr - 0.07) / 0.012) ** 2) * np.clip(1 - np.abs(xr) / 0.6, 0, 1) ** 1.5
+    a += 0.3 * np.exp(-((yr + 0.05) / 0.010) ** 2) * np.clip(1 - np.abs(xr) / 0.75, 0, 1) ** 1.5
+    a += 0.4 * ray(np.pi / 2, 0.01, 0.4) + 0.4 * ray(-np.pi / 2, 0.01, 0.4)
+    out[7] = a
+    # 8 : couronne déchirée
+    tear = np.clip(0.5 + 0.28 * ang_noise(22), 0.05, 1.0)
+    rad = 0.55 + 0.05 * ang_noise(6)
+    a = 0.55 * glow(0.24) + 0.2 * glow(0.5) + 0.6 * tear * np.exp(-((r - rad) / 0.045) ** 2) + 0.3 * tear * np.exp(-((r - rad) / 0.2) ** 2)
+    for _ in range(16):
+        a += hr.uniform(0.15, 0.4) * ray(hr.uniform(0, 2 * np.pi), hr.uniform(0.004, 0.009), hr.uniform(0.7, 1.0), 0.9) * np.clip((r - 0.35) / 0.15, 0, 1)
+    out[8] = a
+    for k, a in out.items():
+        a = np.clip(a * edge, 0, 1) ** 0.9
+        rgba = np.zeros((S, S, 4))
+        rgba[..., :3] = 1
+        rgba[..., 3] = a
+        Image.fromarray((rgba * 255).astype(np.uint8)).save(os.path.join(RENDER, f"fb_halo_{k}_ca.png"))
+    # Cœur : disque blanc saturé à bord doux.
+    core = np.clip(1.6 * np.exp(-(r / 0.42) ** 2) * edge, 0, 1)
+    rgba = np.zeros((S, S, 4))
+    rgba[..., :3] = 1
+    rgba[..., 3] = core
+    Image.fromarray((rgba * 255).astype(np.uint8)).save(os.path.join(RENDER, "fb_halo_core_ca.png"))
+
+
 def module_icon():
     """Icône de module 128 x 128 : grenade à levier + éclair, blanc sur transparent (dessinée en 512 puis réduite)."""
     S = 512
@@ -543,6 +632,10 @@ def themes():
 
 def main():
     os.makedirs(RENDER, exist_ok=True)
+    if "--halos" in sys.argv:
+        halos()
+        print("halos écrits dans", RENDER)
+        return
     if "--themes" in sys.argv:
         themes()
         print("textures des BANG spéciaux écrites dans", RENDER)
@@ -557,6 +650,7 @@ def main():
     afterimage()
     flare()
     module_icon()
+    halos()
     # Puis les variantes à délai des modèles d'origine, et enfin le 50 (GANG BANG BF) : les textures déjà livrées
     # restent identiques.
     for v in [f"{b}_d{d}" for b in ORIGINAL for d in DELAYS] + ["50", "50_d3", "50_d8"]:

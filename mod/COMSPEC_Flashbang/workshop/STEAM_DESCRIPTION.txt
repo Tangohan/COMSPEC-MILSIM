@@ -7,7 +7,7 @@
 [list]
 [*][b][AT.NA] 1-BANG BF à 9-BANG BF[/b] : 1 à 9 flashs à la suite, toutes les demi-secondes environ.
 [*][b]Drill[/b] : grenade d'entraînement bleue, un pop et un peu de fumée, aucun effet. Son au choix parmi 8.
-[*][b]Nouveau[/b] : GANG BANG BF de 50 flashs (très éprouvant : avec parcimonie), rafales hyper rapides « R », cadence et variation aléatoire réglables, son bien plus fort, flammes légères.
+[*][b]Nouveau[/b] : GANG BANG BF de 50 flashs (avec parcimonie), rafales hyper rapides « R » (un bang et un éclat par coup), cadence et hasard réglables, halos et teintes qui varient à chaque flash.
 [*][b]Grenades à délai[/b] : « [AT.NA] N-BANG 3s » / « 8s », « DRILL 3s » / « 8s » : mèche marquée sur l'engin.
 [*][b]BANG spéciaux[/b] multicolores, chacun avec son propre son : JAPAN, WOMEN, SUPRISE et GERMAN BANG.
 [*]« Caisse BF », « Caisse délais BF », « Caisse BANG spéciaux » ; Arsenal : toutes les grenades sous le préfixe [AT.NA].
@@ -22,7 +22,7 @@
 [*]Visée instable quelques secondes ; pas de chute, pas de dégâts.
 [*]JVN allumées : l'image sature. Lunette pointée sur le flash : halo et effet plus fort.
 [*]En pièce fermée, le flash remplit la pièce, même de dos. Derrière un mur : bang sourd, pas d'éblouissement.
-[*]La distance, la ligne de vue et le fait de détourner les yeux changent tout.
+[*]Distance, ligne de vue et regard détourné changent tout. Dehors de jour, l'effet est plus faible.
 [*]Chaque flash relance l'effet, avec un plafond.
 [*]L'IA est touchée aussi : elle vise mal, hésite et se couvre, puis se reprend.
 [/list]
@@ -31,14 +31,13 @@
 Une flashbang désoriente, elle ne tue pas. Durées et distances suivent des fiches techniques publiques. Pas de flou psychédélique ni de joueur figé. Trois préréglages : [b]Réaliste[/b] (défaut), [b]Arcade[/b] (plus fort, plus long), [b]Léger[/b].
 
 [h2]Réglages[/h2]
-37 réglages CBA (Options › Options des addons › COMSPEC Flashbang), chacun avec un exemple :
+45 réglages CBA (Options › Options des addons › COMSPEC Flashbang), chacun avec un exemple :
 [list]
 [*]Volume des flashbangs et de l'acouphène sur votre poste (sons forts par défaut : baissez le casque avant de tester).
-[*]Portée du son : 250 m par défaut, moins pour un petit terrain.
+[*]Portée du son : 250 m, moins pour un petit terrain.
 [*]Son et volume de la Drill pour tous.
-[*]Rayon maximal : 25 m par défaut, 15 m pour un effet plus local.
-[*]Effet sur son camp : désactivé pour un entraînement entre amis.
-[*]Durée max de l'acouphène : 45 s par défaut, 20 s pour une partie plus nerveuse.
+[*]Rayon maximal : 25 m, 15 m pour un effet plus local.
+[*]Effet par camp (BLUFOR, OPFOR…) : Normal, Réduit, Aucun effet visuel ou Immunisé ; vos propres grenades aussi.
 [/list]
 
 [h2]Compatibilité[/h2]
@@ -66,7 +65,7 @@ Bug ou idée : [url=https://discord.gg/CCpJA6Nks]Discord COMSPEC[/url]. © 2026 
 [list]
 [*][b][AT.NA] 1-BANG BF to 9-BANG BF[/b]: 1 to 9 flashes in a row, about every half second.
 [*][b]Drill[/b]: blue training grenade, a pop and a puff of smoke, no effect. Choice of 8 sounds.
-[*][b]New[/b]: 50-flash GANG BANG BF (very harsh: use sparingly), hyper fast « R » bursts, adjustable rate and random variation, much louder sound, light flames.
+[*][b]New[/b]: 50-flash GANG BANG BF (use sparingly), hyper fast « R » bursts (one bang and one flash per shot), adjustable rate and randomness, halos and tints that vary with every flash.
 [*][b]Delayed grenades[/b]: "[AT.NA] N-BANG 3s" / "8s", "DRILL 3s" / "8s": fuse stamped on the device.
 [*][b]Special BANGs[/b], multicoloured, each with its own sound: JAPAN, WOMEN, SUPRISE and GERMAN BANG.
 [*]"BF crate", "BF delay crate", "Special BANG crate"; Arsenal: every grenade under the [AT.NA] prefix.
@@ -81,7 +80,7 @@ Bug ou idée : [url=https://discord.gg/CCpJA6Nks]Discord COMSPEC[/url]. © 2026 
 [*]Unsteady aim for a few seconds; no falling, no damage.
 [*]NVG on: the image saturates. Scope aimed at the flash: halo and a stronger effect.
 [*]In a closed room the flash fills the room, even with your back turned. Behind a wall: a dull bang, no dazzle.
-[*]Distance, line of sight and looking away change everything.
+[*]Distance, line of sight and looking away change everything. Outdoors by day the effect is weaker.
 [*]Each flash renews the effect, up to a cap.
 [*]AI is affected too: it aims badly, hesitates and takes cover, then recovers.
 [/list]
@@ -90,14 +89,13 @@ Bug ou idée : [url=https://discord.gg/CCpJA6Nks]Discord COMSPEC[/url]. © 2026 
 A flashbang disorients, it does not kill. Durations and distances follow public data sheets. No psychedelic blur, no frozen player. Three presets: [b]Realistic[/b] (default), [b]Arcade[/b] (stronger, longer), [b]Light[/b].
 
 [h2]Settings[/h2]
-37 CBA settings (Options › Addon Options › COMSPEC Flashbang), each with an example:
+45 CBA settings (Options › Addon Options › COMSPEC Flashbang), each with an example:
 [list]
 [*]Flashbang and tinnitus volume on your computer (loud by default: turn your headset down before testing).
-[*]Sound range: 250 m by default, less for a small area.
+[*]Sound range: 250 m, less for a small area.
 [*]Drill sound and volume for everyone.
-[*]Maximum radius: 25 m by default, 15 m for a more local effect.
-[*]Effect on own side: off for a friendly training session.
-[*]Max tinnitus duration: 45 s by default, 20 s for a faster-paced game.
+[*]Maximum radius: 25 m, 15 m for a more local effect.
+[*]Per-side effect (BLUFOR, OPFOR…): Normal, Reduced, No visual effect or Immune; your own grenades too.
 [/list]
 
 [h2]Compatibility[/h2]

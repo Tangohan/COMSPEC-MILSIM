@@ -5,6 +5,7 @@
 
     Effet            | Fichier(s)                                   | Origine        | Durée   | Usage
     BangUnique       | bang_unique_a/b/c_enreg.ogg                  | enregistrement | 2,4/2,4/1,2 s | 1 lecture par flash (N fois), tirage sans répétition, pitch ±8 %, volume ±2 dB (à 60 % de variation), lectures superposées
+    BangCourt        | bang_court_a/b/c_enreg.ogg                   | enreg. raccourci | 0,30 s | rafales : bang suivi d'un autre à moins de 0,25 s (attaque + 250 ms de queue : coups articulés), même niveau que BangUnique
     BangGrave        | bang_grave_enreg.ogg                         | enregistrement | 1,0 s   | couche grave jouée en même temps que le 1er flash seulement
     BangEtouffe      | bang_interieur_etouffe_enreg.ogg             | enreg. traité  | 2,8 s   | à la place du bang quand un mur sépare l'auditeur du flash
     BangLointain     | bang_lointain_enreg.ogg                      | enreg. traité  | 3,8 s   | à la place du bang dehors au-delà de 150 m (retard 343 m/s)
@@ -43,10 +44,19 @@ class COMSPEC_FB_Sons {
         ui[] = {"COMSPEC_FB_UI_BangA", "COMSPEC_FB_UI_BangB", "COMSPEC_FB_UI_BangC"};
         volume = 2.5; distance = 900; pitchVar = 0.08; volumeVarDb = 2;
     };
+    // Rafales (détonation suivie d'une autre à moins de 0,25 s) : les 0,30 premières secondes des trois bangs
+    // (tools/gen_fb_sounds.py --court), même attaque et même niveau ; duree = durée utile comptée par le budget.
+    class BangCourt {
+        fichiers[] = {"bang_court_a_enreg.ogg", "bang_court_b_enreg.ogg", "bang_court_c_enreg.ogg"};
+        ui[] = {"COMSPEC_FB_UI_CourtA", "COMSPEC_FB_UI_CourtB", "COMSPEC_FB_UI_CourtC"};
+        volume = 2.5; distance = 900; pitchVar = 0.1; volumeVarDb = 2;
+        duree = 0.35;
+    };
     class BangGrave {
         fichiers[] = {"bang_grave_enreg.ogg"};
         ui[] = {"COMSPEC_FB_UI_Grave"};
         volume = 2.2; distance = 400; pitchVar = 0.03; volumeVarDb = 1;
+        duree = 1;
     };
     class BangEtouffe {
         fichiers[] = {"bang_interieur_etouffe_enreg.ogg"};
@@ -154,6 +164,9 @@ class CfgSounds {
     FB_UI_SOUND(COMSPEC_FB_UI_BangB,bang_unique_b_enreg.ogg);
     FB_UI_SOUND(COMSPEC_FB_UI_BangC,bang_unique_c_enreg.ogg);
     FB_UI_SOUND(COMSPEC_FB_UI_Grave,bang_grave_enreg.ogg);
+    FB_UI_SOUND(COMSPEC_FB_UI_CourtA,bang_court_a_enreg.ogg);
+    FB_UI_SOUND(COMSPEC_FB_UI_CourtB,bang_court_b_enreg.ogg);
+    FB_UI_SOUND(COMSPEC_FB_UI_CourtC,bang_court_c_enreg.ogg);
     FB_UI_SOUND(COMSPEC_FB_UI_Rafale,bang_rafale_enreg.ogg);
     // BANG spéciaux : version stéréo quand la source l'est (SUPRISE est mono).
     FB_UI_SOUND(COMSPEC_FB_UI_Japan,bang_japan_stereo_enreg.ogg);

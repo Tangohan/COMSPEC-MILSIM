@@ -45,7 +45,10 @@ private _add = {
 // 2. Vision
 ["comspec_fb_flash", "CHECKBOX", "Flash", "Vision", true] call _add;
 ["comspec_fb_blur", "CHECKBOX", "Blur", "Vision", true] call _add;
-["comspec_fb_nightMult", "SLIDER", "NightMult", "Vision", [1, 2, 1.3, 2]] call _add;
+["comspec_fb_nightMult", "SLIDER", "NightMult", "Vision", [1, 2, 1, 2]] call _add;
+// Extérieur dégagé : table à chute rapide (fn_visionTable), ajustable en portée et en intensité.
+["comspec_fb_outdoorRange", "SLIDER", "OutdoorRange", "Vision", [0.5, 1.5, 1, 0, true]] call _add;
+["comspec_fb_outdoorIntensity", "SLIDER", "OutdoorIntensity", "Vision", [0.2, 1.5, 1, 0, true]] call _add;
 ["comspec_fb_nvgMult", "SLIDER", "NvgMult", "Vision", [1, 4, 2, 1]] call _add;
 // 3. Audition
 ["comspec_fb_tinnitus", "CHECKBOX", "Tinnitus", "Hearing", true] call _add;
@@ -55,7 +58,18 @@ private _add = {
 ["comspec_fb_earProtectionDb", "SLIDER", "EarProtection", "Hearing", [0, 40, 25, 0]] call _add;
 // 4. IA et équipe
 ["comspec_fb_aiAffected", "CHECKBOX", "AiAffected", "Ai", true] call _add;
-["comspec_fb_friendly", "CHECKBOX", "Friendly", "Ai", true] call _add;
+// Effet par camp (fn_sideRule, relu à chaque détonation ; le plus protecteur gagne) : 0 normal, 1 réduit,
+// 2 aucun effet visuel, 3 immunisé. Réglages « serveur / mission » : un Zeus ou un administrateur les change en cours
+// de partie. (L'ancien réglage comspec_fb_friendly = false, forcé par une mission, reste lu : camp du lanceur immunisé.)
+private _sideLabels = [localize "STR_COMSPEC_FB_Side_Normal", localize "STR_COMSPEC_FB_Side_Reduced",
+    localize "STR_COMSPEC_FB_Side_NoVisual", localize "STR_COMSPEC_FB_Side_Immune"];
+{
+    [format ["comspec_fb_side%1", _x], "LIST", format ["Side%1", _x], "Ai", [[0, 1, 2, 3], _sideLabels, 0]] call _add;
+} forEach ["West", "East", "Indep", "Civ"];
+["comspec_fb_reducedCoef", "SLIDER", "ReducedCoef", "Ai", [0.05, 0.9, 0.35, 0, true]] call _add;
+private _ynLabels = [localize "STR_COMSPEC_FB_Affect_Yes", localize "STR_COMSPEC_FB_Affect_Reduced", localize "STR_COMSPEC_FB_Affect_No"];
+["comspec_fb_ownGrenade", "LIST", "OwnGrenade", "Ai", [[0, 1, 2], _ynLabels, 0]] call _add;
+["comspec_fb_sideGrenade", "LIST", "SideGrenade", "Ai", [[0, 1, 2], _ynLabels, 0]] call _add;
 // 5. Mèche et détonations
 ["comspec_fb_fuse", "SLIDER", "Fuse", "Timing", [0.5, 4, 1.5, 1]] call _add;
 ["comspec_fb_interval", "SLIDER", "Interval", "Timing", [0.03, 1.5, 0.5, 2]] call _add;

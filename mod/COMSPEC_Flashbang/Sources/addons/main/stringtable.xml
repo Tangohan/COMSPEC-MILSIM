@@ -2,6 +2,21 @@
 <Project name="COMSPEC Flashbang">
     <Package name="main">
         <Container name="main">
+            <Key ID="STR_COMSPEC_FB_Affect_No">
+                <Original>Non</Original>
+                <English>No</English>
+                <French>Non</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Affect_Reduced">
+                <Original>Réduit</Original>
+                <English>Reduced</English>
+                <French>Réduit</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Affect_Yes">
+                <Original>Oui</Original>
+                <English>Yes</English>
+                <French>Oui</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Box">
                 <Original>Caisse BF</Original>
                 <English>BF crate</English>
@@ -1223,9 +1238,9 @@
                 <French>Multiplicateur nuit</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_NightMult_Tip">
-                <Original>Force de l'éblouissement la nuit ou dans le noir (pupille ouverte). En plein jour : 0,65.  Exemple : 1.3.</Original>
-                <English>Dazzle strength at night or in the dark (open pupil). In full daylight: 0.65.  Example: 1.3.</English>
-                <French>Force de l'éblouissement la nuit ou dans le noir (pupille ouverte). En plein jour : 0,65.  Exemple : 1.3.</French>
+                <Original>Force de l'éblouissement la nuit ou dans un local sombre (pupille ouverte). De jour dehors, la pupille se ferme : x0,45 en plein soleil, x0,7 à l'aube, au crépuscule ou sous un ciel très couvert (pas de réduction à moins de 2 m).  Exemple : 1.3 pour des nuits plus dures.</Original>
+                <English>Dazzle strength at night or in a dark room (open pupil). Outdoors by day the pupil closes: x0.45 in full sun, x0.7 at dawn, dusk or under a heavy overcast (no reduction within 2 m).  Example: 1.3 for harsher nights.</English>
+                <French>Force de l'éblouissement la nuit ou dans un local sombre (pupille ouverte). De jour dehors, la pupille se ferme : x0,45 en plein soleil, x0,7 à l'aube, au crépuscule ou sous un ciel très couvert (pas de réduction à moins de 2 m).  Exemple : 1.3 pour des nuits plus dures.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_NvgMult">
                 <Original>Multiplicateur JVN</Original>
@@ -1236,6 +1251,36 @@
                 <Original>Force de l'éblouissement avec les jumelles de vision nocturne allumées (tube saturé, grain).  Exemple : 2.</Original>
                 <English>Dazzle strength with night vision goggles on (saturated tube, grain).  Example: 2.</English>
                 <French>Force de l'éblouissement avec les jumelles de vision nocturne allumées (tube saturé, grain).  Exemple : 2.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_OutdoorIntensity">
+                <Original>Intensité des effets en extérieur</Original>
+                <English>Outdoor effect intensity</English>
+                <French>Intensité des effets en extérieur</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_OutdoorIntensity_Tip">
+                <Original>Multiplie l'éblouissement des grenades qui éclatent dehors (20 à 150 %), en plus de la réduction de jour (plein soleil x0,45). Le son n'est pas concerné.  Exemple : 60 % pour des flashs discrets en terrain ouvert.</Original>
+                <English>Multiplies the dazzle of grenades going off outdoors (20 to 150%), on top of the daylight reduction (full sun x0.45). Sound is not affected.  Example: 60% for discreet flashes in open ground.</English>
+                <French>Multiplie l'éblouissement des grenades qui éclatent dehors (20 à 150 %), en plus de la réduction de jour (plein soleil x0,45). Le son n'est pas concerné.  Exemple : 60 % pour des flashs discrets en terrain ouvert.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_OutdoorRange">
+                <Original>Portée de l'éblouissement en extérieur</Original>
+                <English>Outdoor dazzle range</English>
+                <French>Portée de l'éblouissement en extérieur</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_OutdoorRange_Tip">
+                <Original>Étire les distances de la table d'éblouissement en extérieur dégagé (100 % : plein effet jusqu'à 2 m, 0,60 à 5 m, 0,25 à 10 m, 0,08 à 15 m, rien au-delà de 19 m). N'agit pas dans un local fermé.  Exemple : 70 % si les flashs portent encore trop loin dehors.</Original>
+                <English>Stretches the distances of the dazzle table in open ground (100%: full effect up to 2 m, 0.60 at 5 m, 0.25 at 10 m, 0.08 at 15 m, nothing beyond 19 m). Has no effect in a closed room.  Example: 70% if flashes still reach too far outdoors.</English>
+                <French>Étire les distances de la table d'éblouissement en extérieur dégagé (100 % : plein effet jusqu'à 2 m, 0,60 à 5 m, 0,25 à 10 m, 0,08 à 15 m, rien au-delà de 19 m). N'agit pas dans un local fermé.  Exemple : 70 % si les flashs portent encore trop loin dehors.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_OwnGrenade">
+                <Original>Mes propres grenades m'affectent</Original>
+                <English>My own grenades affect me</English>
+                <French>Mes propres grenades m'affectent</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_OwnGrenade_Tip">
+                <Original>Effet d'une grenade sur celui qui l'a lancée. Oui : normal. Réduit : coefficient du mode Réduit. Non : immunisé. Avec le réglage du camp, le plus protecteur gagne.  Exemple : « Réduit » pour entrer juste derrière sa grenade.</Original>
+                <English>Effect of a grenade on the unit that threw it. Yes: normal. Reduced: Reduced mode coefficient. No: immune. Combined with the side setting, the most protective rule wins.  Example: "Reduced" to enter right behind your own grenade.</English>
+                <French>Effet d'une grenade sur celui qui l'a lancée. Oui : normal. Réduit : coefficient du mode Réduit. Non : immunisé. Avec le réglage du camp, le plus protecteur gagne.  Exemple : « Réduit » pour entrer juste derrière sa grenade.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_Preset">
                 <Original>Préréglage</Original>
@@ -1297,6 +1342,66 @@
                 <English>Rhythm of a multi-bang grenade. Normal: about 0.5 s, irregular; Fast: about 0.15 s; Hyper fast: 0.045 to 0.09 s, strobe effect; Random: fast bursts mixed with pauses. « R » grenades are always hyper fast; modules can force a rate.  Example: Hyper fast: the 9 bangs go off in under half a second.</English>
                 <French>Rythme des flashs d'une grenade multi-coups. Normal : environ 0,5 s, irrégulier ; Rapide : environ 0,15 s ; Hyper rapide : 0,045 à 0,09 s, effet stroboscopique ; Aléatoire : rafales rapides et pauses mélangées. Les grenades « R » sont toujours hyper rapides ; les modules peuvent imposer une cadence.  Ex. : Hyper rapide : les 9 bangs partent en moins d'une demi-seconde.</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Set_ReducedCoef">
+                <Original>Coefficient du mode Réduit</Original>
+                <English>Reduced mode coefficient</English>
+                <French>Coefficient du mode Réduit</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_ReducedCoef_Tip">
+                <Original>Force et durée de l'éblouissement en mode « Réduit » (camps et grenades amies), de 5 à 90 %.  Exemple : 35 % = environ un tiers de l'effet normal.</Original>
+                <English>Dazzle strength and duration in "Reduced" mode (sides and friendly grenades), 5 to 90%.  Example: 35% = about a third of the normal effect.</English>
+                <French>Force et durée de l'éblouissement en mode « Réduit » (camps et grenades amies), de 5 à 90 %.  Exemple : 35 % = environ un tiers de l'effet normal.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_SideCiv">
+                <Original>Effet sur Civils</Original>
+                <English>Effect on Civilians</English>
+                <French>Effet sur Civils</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_SideCiv_Tip">
+                <Original>Effet des flashbangs sur les joueurs ET les IA de ce camp, relu à chaque détonation (camp du moment). Normal : tout s'applique. Réduit : éblouissement et durées x le coefficient du mode Réduit. Aucun effet visuel : ni voile, ni tache, ni flou ; le bang assourdit encore, à moitié. Immunisé : aucun effet ; seuls la lumière et le son de la grenade restent. Avec les deux réglages « grenades », le plus protecteur gagne.  Exemple : Civils sur « Immunisé » : les otages ne sont pas touchés.</Original>
+                <English>Flashbang effect on the players AND the AI of this side, read again at every detonation (current side). Normal: everything applies. Reduced: dazzle and durations x the Reduced mode coefficient. No visual effect: no white-out, no afterimage, no blur; the bang still deafens, at half strength. Immune: no effect at all; only the grenade's light and sound remain. Combined with the two "grenades" settings, the most protective rule wins.  Example: Civilians on "Immune": hostages are not affected.</English>
+                <French>Effet des flashbangs sur les joueurs ET les IA de ce camp, relu à chaque détonation (camp du moment). Normal : tout s'applique. Réduit : éblouissement et durées x le coefficient du mode Réduit. Aucun effet visuel : ni voile, ni tache, ni flou ; le bang assourdit encore, à moitié. Immunisé : aucun effet ; seuls la lumière et le son de la grenade restent. Avec les deux réglages « grenades », le plus protecteur gagne.  Exemple : Civils sur « Immunisé » : les otages ne sont pas touchés.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_SideEast">
+                <Original>Effet sur OPFOR</Original>
+                <English>Effect on OPFOR</English>
+                <French>Effet sur OPFOR</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_SideEast_Tip">
+                <Original>Effet des flashbangs sur les joueurs ET les IA de ce camp, relu à chaque détonation (camp du moment). Normal : tout s'applique. Réduit : éblouissement et durées x le coefficient du mode Réduit. Aucun effet visuel : ni voile, ni tache, ni flou ; le bang assourdit encore, à moitié. Immunisé : aucun effet ; seuls la lumière et le son de la grenade restent. Avec les deux réglages « grenades », le plus protecteur gagne.  Exemple : OPFOR sur « Normal » : les défenseurs subissent tout.</Original>
+                <English>Flashbang effect on the players AND the AI of this side, read again at every detonation (current side). Normal: everything applies. Reduced: dazzle and durations x the Reduced mode coefficient. No visual effect: no white-out, no afterimage, no blur; the bang still deafens, at half strength. Immune: no effect at all; only the grenade's light and sound remain. Combined with the two "grenades" settings, the most protective rule wins.  Example: OPFOR on "Normal": the defenders take the full effect.</English>
+                <French>Effet des flashbangs sur les joueurs ET les IA de ce camp, relu à chaque détonation (camp du moment). Normal : tout s'applique. Réduit : éblouissement et durées x le coefficient du mode Réduit. Aucun effet visuel : ni voile, ni tache, ni flou ; le bang assourdit encore, à moitié. Immunisé : aucun effet ; seuls la lumière et le son de la grenade restent. Avec les deux réglages « grenades », le plus protecteur gagne.  Exemple : OPFOR sur « Normal » : les défenseurs subissent tout.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_SideGrenade">
+                <Original>Les grenades de mon camp m'affectent</Original>
+                <English>My side's grenades affect me</English>
+                <French>Les grenades de mon camp m'affectent</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_SideGrenade_Tip">
+                <Original>Effet d'une grenade sur les unités du camp du lanceur (lui excepté : voir « Mes propres grenades m'affectent »). Oui : normal (réaliste). Réduit : coefficient du mode Réduit. Non : immunisées. Le plus protecteur gagne.  Exemple : « Non » pour un entraînement entre amis.</Original>
+                <English>Effect of a grenade on units of the thrower's side (the thrower excepted: see "My own grenades affect me"). Yes: normal (realistic). Reduced: Reduced mode coefficient. No: immune. The most protective rule wins.  Example: "No" for a friendly training session.</English>
+                <French>Effet d'une grenade sur les unités du camp du lanceur (lui excepté : voir « Mes propres grenades m'affectent »). Oui : normal (réaliste). Réduit : coefficient du mode Réduit. Non : immunisées. Le plus protecteur gagne.  Exemple : « Non » pour un entraînement entre amis.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_SideIndep">
+                <Original>Effet sur Indépendants</Original>
+                <English>Effect on Independent</English>
+                <French>Effet sur Indépendants</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_SideIndep_Tip">
+                <Original>Effet des flashbangs sur les joueurs ET les IA de ce camp, relu à chaque détonation (camp du moment). Normal : tout s'applique. Réduit : éblouissement et durées x le coefficient du mode Réduit. Aucun effet visuel : ni voile, ni tache, ni flou ; le bang assourdit encore, à moitié. Immunisé : aucun effet ; seuls la lumière et le son de la grenade restent. Avec les deux réglages « grenades », le plus protecteur gagne.  Exemple : Indépendants sur « Réduit » : une milice moins touchée.</Original>
+                <English>Flashbang effect on the players AND the AI of this side, read again at every detonation (current side). Normal: everything applies. Reduced: dazzle and durations x the Reduced mode coefficient. No visual effect: no white-out, no afterimage, no blur; the bang still deafens, at half strength. Immune: no effect at all; only the grenade's light and sound remain. Combined with the two "grenades" settings, the most protective rule wins.  Example: Independent on "Reduced": a militia that is less affected.</English>
+                <French>Effet des flashbangs sur les joueurs ET les IA de ce camp, relu à chaque détonation (camp du moment). Normal : tout s'applique. Réduit : éblouissement et durées x le coefficient du mode Réduit. Aucun effet visuel : ni voile, ni tache, ni flou ; le bang assourdit encore, à moitié. Immunisé : aucun effet ; seuls la lumière et le son de la grenade restent. Avec les deux réglages « grenades », le plus protecteur gagne.  Exemple : Indépendants sur « Réduit » : une milice moins touchée.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_SideWest">
+                <Original>Effet sur BLUFOR</Original>
+                <English>Effect on BLUFOR</English>
+                <French>Effet sur BLUFOR</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_SideWest_Tip">
+                <Original>Effet des flashbangs sur les joueurs ET les IA de ce camp, relu à chaque détonation (camp du moment). Normal : tout s'applique. Réduit : éblouissement et durées x le coefficient du mode Réduit. Aucun effet visuel : ni voile, ni tache, ni flou ; le bang assourdit encore, à moitié. Immunisé : aucun effet ; seuls la lumière et le son de la grenade restent. Avec les deux réglages « grenades », le plus protecteur gagne.  Exemple : BLUFOR sur « Aucun effet visuel » : votre équipe d'assaut n'est pas éblouie par ses propres grenades.</Original>
+                <English>Flashbang effect on the players AND the AI of this side, read again at every detonation (current side). Normal: everything applies. Reduced: dazzle and durations x the Reduced mode coefficient. No visual effect: no white-out, no afterimage, no blur; the bang still deafens, at half strength. Immune: no effect at all; only the grenade's light and sound remain. Combined with the two "grenades" settings, the most protective rule wins.  Example: BLUFOR on "No visual effect": your assault team is not dazzled by its own grenades.</English>
+                <French>Effet des flashbangs sur les joueurs ET les IA de ce camp, relu à chaque détonation (camp du moment). Normal : tout s'applique. Réduit : éblouissement et durées x le coefficient du mode Réduit. Aucun effet visuel : ni voile, ni tache, ni flou ; le bang assourdit encore, à moitié. Immunisé : aucun effet ; seuls la lumière et le son de la grenade restent. Avec les deux réglages « grenades », le plus protecteur gagne.  Exemple : BLUFOR sur « Aucun effet visuel » : votre équipe d'assaut n'est pas éblouie par ses propres grenades.</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Set_SoundRange">
                 <Original>Portée du son (m)</Original>
                 <English>Sound range (m)</English>
@@ -1356,6 +1461,26 @@
                 <Original>Hasard de chaque détonation et de chaque victime : intervalles irréguliers (quelques flashs quasi simultanés), force du flash 60 à 140 %, teinte, particules, son (hauteur ±8 %, volume ±2 dB), 1er bang le plus fort et les suivants qui « roulent », éblouissement ±10 %, sensibilité propre à chaque joueur, réaction et durée propres à chaque IA. La moyenne reste celle de la table de calibration. 0 % : tout est régulier.  Ex. : 60 % (défaut) ; 20 % pour un entraînement reproductible.</Original>
                 <English>Randomness of each detonation and each victim: irregular intervals (a few almost simultaneous flashes), flash strength 60 to 140 %, tint, particles, sound (pitch ±8 %, volume ±2 dB), the first bang strongest and the next ones « rolling », dazzle ±10 %, per-player sensitivity, per-AI reaction and duration. The average stays on the calibration table. 0 %: everything regular.  Example: 60 % (default); 20 % for repeatable training.</English>
                 <French>Hasard de chaque détonation et de chaque victime : intervalles irréguliers (quelques flashs quasi simultanés), force du flash 60 à 140 %, teinte, particules, son (hauteur ±8 %, volume ±2 dB), 1er bang le plus fort et les suivants qui « roulent », éblouissement ±10 %, sensibilité propre à chaque joueur, réaction et durée propres à chaque IA. La moyenne reste celle de la table de calibration. 0 % : tout est régulier.  Ex. : 60 % (défaut) ; 20 % pour un entraînement reproductible.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Side_Immune">
+                <Original>Immunisé</Original>
+                <English>Immune</English>
+                <French>Immunisé</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Side_NoVisual">
+                <Original>Aucun effet visuel</Original>
+                <English>No visual effect</English>
+                <French>Aucun effet visuel</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Side_Normal">
+                <Original>Normal</Original>
+                <English>Normal</English>
+                <French>Normal</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Side_Reduced">
+                <Original>Réduit</Original>
+                <English>Reduced</English>
+                <French>Réduit</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Surprise_Desc">
                 <Original>BF -BetterFlash- · BANG spécial : 5 flashs répartis sur 6 s environ ; le son « SUPRISE BANG » est joué une seule fois, dès le premier flash, à la place des bangs. Flashs multicolores, corps arc-en-ciel à « ? ». Mêmes effets qu'une grenade assourdissante, mèche standard.</Original>

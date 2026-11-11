@@ -181,11 +181,18 @@ Ce que ça change :
 - **Porte ou fenêtre ouverte** : la ligne de vue passe. Un joueur dehors face à la fenêtre est ébloui, de dos il l'est
   peu.
 - **Extérieur** :
-  - le bang est sec et l'effet chute plus vite avec la distance ;
+  - le bang est sec et l'éblouissement chute bien plus vite avec la distance (table « extérieur dégagé » : plein
+    effet jusqu'à 2 m, 0,60 à 5 m, 0,25 à 10 m, 0,08 à 15 m, rien au-delà de 19 m) ;
+  - de jour la pupille est fermée : x0,45 en plein soleil, x0,7 à l'aube, au crépuscule ou sous un ciel très
+    couvert (sans réduction à moins de 2 m) ; la lumière de la scène et le halo sont eux aussi réduits de jour
+    (lumière x0,35, portée 35 m au lieu de 60, reflet deux fois plus petit, encore réduit au-delà de 30 m et invisible
+    au-delà de 350 m : pas de « soleil » à 200 m en plein jour) ;
+  - réglages « Portée de l'éblouissement en extérieur » et « Intensité des effets en extérieur » pour ajuster ;
   - le bang est très fort sous 25 m, net jusqu'à 100 m, puis lointain avec écho ; on ne l'entend plus au-delà de la
     « Portée du son » (250 m ; moitié à travers un mur ou depuis un local fermé) ;
   - le son arrive avec le retard dû à la distance (343 m/s) ;
-  - la nuit l'éblouissement est plus fort (multiplicateur nuit).
+  - la nuit l'éblouissement garde toute sa force (pupille ouverte, multiplicateur nuit) ;
+  - la couche sonore proche (2D) ne joue qu'à moins de 25 m : au-delà, seul le son 3D reste.
 - La portée du son ne change pas les effets : éblouissement et désorientation restent limités au rayon maximal
   (25 m).
 
@@ -193,9 +200,25 @@ Ce que ça change :
 
 - **Cadence des flashs** (réglage, ou par grenade : classes `_R` ; ou par module) : Normal (~0,5 s, irrégulier),
   Rapide (~0,15 s), Hyper rapide (0,045 à 0,09 s : les 9 bangs partent en moins d'une demi-seconde, effet
-  stroboscopique), Aléatoire (rafales et pauses). Intervalle réglable de 0,03 à 1,5 s. En rafale, une détonation à
-  moins de 0,08 s de la précédente relance la lumière en cours (scintillement) au lieu d'en créer une, sans flammes ;
-  la planification suit l'horloge commune (aucune détonation perdue à 20 images/s, N exact, dans l'ordre).
+  stroboscopique), Aléatoire (rafales et pauses). Intervalle réglable de 0,03 à 1,5 s.
+- **Rafales : N coups = N bangs et N éclats.** Chaque détonation garde son propre son : un bang suivi d'un autre à
+  moins de 0,25 s joue un échantillon court (`BangCourt`, 0,30 s : attaque + 250 ms de queue), le premier joue le bang
+  entier + la couche grave, le dernier le bang entier avec sa longue queue : la rafale s'entend « tatatatat » au lieu
+  d'un seul souffle. Côté lumière, une détonation à moins de 0,12 s de la précédente relance la lumière en cours avec
+  une nouvelle teinte, et la lumière retombe en ~20 ms entre deux coups (stroboscope visible) ; le voile blanc du
+  joueur touché pulse à chaque coup. Un seul fil par grenade exécute, à chaque image, toutes les détonations dues,
+  dans l'ordre : aucune perte à 20 images/s. À très basse cadence d'images, deux coups tombés dans la même image
+  partent ensemble (le moteur ne peut pas décaler un son à l'intérieur d'une image).
+- **Budget sonore** : chaque bang reste audible ; au-delà de 12 lectures en cours un bang n'a plus que 2 lectures
+  superposées, au-delà de 20 une seule ; il n'est fusionné qu'à partir de 28 (plusieurs GANG BANG à la fois). Les
+  bangs d'une rafale ont 2 lectures au plus (niveau égal d'un coup à l'autre), limiteur -3 dB au plus.
+- **Halos et couleurs** : à chaque détonation, un halo à l'écran tiré parmi 8 modèles (étoiles à 4, 6 et 8 branches,
+  anneau diffus, éclat asymétrique, halo doux à rayons fins, traînées anamorphiques, couronne déchirée), jamais deux
+  fois de suite le même, avec rotation libre, taille ±30 %, durée ±25 %, étirement léger ; cœur blanc saturé,
+  couronne colorée. Température de couleur tirée à chaque coup autour du blanc (blanc pur, bleuté, chaud, doré à bord
+  bleuté, pointe verte ou magenta en fin de flash, comme une charge magnésium / aluminium) ; la lumière et les
+  étincelles suivent. BANG spéciaux : palette du thème, nuancée. « Variation aléatoire » à 0 % : blanc pur. En rafale
+  la grenade garde son halo et en change la forme et la teinte à chaque coup (4 halos au plus à la fois).
 - **Variation aléatoire** (60 % par défaut, 0 % = tout régulier) : intervalles irréguliers (quelques flashs quasi
   simultanés), 1er bang le plus fort puis bangs qui « roulent » (0,65 à 1), lumière 60 à 140 %, teinte blanc / blanc
   bleuté / blanc chaud, particules et éclats, son (fichier différent, hauteur ±8 %, volume ±2 dB, micro-retard) ; par
@@ -213,8 +236,8 @@ Ce que ça change :
   fois) ; les flashs suivants prolongent et remontent le niveau, sans jamais relancer l'attaque.
 - **Flammes (visuel)** (client) : Aucune / Légère (défaut) / Marquée : courtes langues de gaz incandescents par les
   évents, lueur chaude très atténuée ; aucun feu, aucun dégât.
-- **Instants** : toutes les heures échangées sont sur `serverTime` en multijoueur ; un message en retard saute les
-  détonations déjà passées (jamais rejouées en rafale) ; le journal note pour chaque détonation l'instant prévu et
+- **Instants** : toutes les heures échangées sont sur `serverTime` en multijoueur ; un message en retard rattrape
+  les détonations passées (seules celles vieilles de plus de 1,5 s sont abandonnées) ; le journal note pour chaque détonation l'instant prévu et
   l'instant exécuté, et pour le joueur l'instant où l'effet s'affiche (avertissement au-delà de 0,3 s).
 
 ## Réglages
@@ -235,7 +258,9 @@ Les réglages « client » sont propres à chaque poste ; tous les autres sont i
 | Blessure à bout portant | non | Petite blessure à moins de 1 m (jamais avec ACE Médical) | oui |
 | Éblouissement | oui | Voile, image rémanente, halo | non pour ne garder que le son |
 | Perte d'acuité (flou) | oui | Flou fort qui se dissipe | non |
-| Multiplicateur nuit | 1.3 | Force la nuit / dans le noir (jour : 1) | 1.5 |
+| Multiplicateur nuit | 1.0 | Force la nuit / dans un local sombre ; de jour dehors : x0,45 en plein soleil, x0,7 à l'aube / au crépuscule | 1.3 pour des nuits plus dures |
+| Portée de l'éblouissement en extérieur | 100 % | Étire les distances de la table extérieure (50 à 150 %) | 70 % si les flashs portent trop loin dehors |
+| Intensité des effets en extérieur | 100 % | Multiplie l'éblouissement des grenades qui éclatent dehors (20 à 150 %) | 60 % pour des flashs discrets en terrain ouvert |
 | Multiplicateur JVN | 2 | Force avec JVN allumées | 3 |
 | Acouphène | oui | Sifflement qui décroît | non |
 | Durée max de l'acouphène (s) | 45 | Durée audible maximale | 20 |
@@ -243,7 +268,10 @@ Les réglages « client » sont propres à chaque poste ; tous les autres sont i
 | Radio étouffée | oui | Sans ACE : radio vanilla, ACRE2, TFAR baissent aussi | non |
 | Protection auditive (dB) | 25 | Réduction pour bouchons ou casque ACE | 30 |
 | IA affectée | oui | IA éblouie : vise et repère mal, hésite | non |
-| Effet sur son camp | oui | Non : le camp du lanceur n'est pas affecté | non pour un entraînement |
+| Effet sur BLUFOR / OPFOR / Indépendants / Civils | Normal | Par camp, joueurs et IA : Normal, Réduit, Aucun effet visuel, Immunisé | BLUFOR sur « Aucun effet visuel » : votre équipe d'assaut n'est pas éblouie par ses propres grenades |
+| Coefficient du mode Réduit | 35 % | Force et durée de l'éblouissement en mode Réduit (5 à 90 %) | 20 % |
+| Mes propres grenades m'affectent | Oui | Oui, Réduit, Non : effet sur le lanceur | Réduit pour entrer derrière sa grenade |
+| Les grenades de mon camp m'affectent | Oui | Oui, Réduit, Non : effet sur le camp du lanceur (lui excepté) | Non pour un entraînement |
 | Mèche (s) | 1.5 | Délai avant la première détonation des grenades standard (pas des grenades 3 s / 8 s) | 2.3 (M84 lent) |
 | Intervalle entre détonations (s) | 0.5 | Temps moyen entre deux bangs en cadence Normale (0,03 à 1,5) | 0.3 |
 | Cadence des flashs | Normal | Normal, Rapide, Hyper rapide, Aléatoire | Hyper rapide : les 9 bangs en moins d'une demi-seconde |
@@ -261,6 +289,22 @@ Les réglages « client » sont propres à chaque poste ; tous les autres sont i
 | Acouphène : son (client) | Enregistrement | Son enregistré (sous licence, acquis par COMSPEC) ou synthèse | Synthèse |
 | Journal de diagnostic (RPT) (client) | oui | Une dizaine de lignes `[COMSPEC FB]` par grenade dans le RPT de ce poste, rien à l'écran ; désactivable | laissez-le coché, lancez une grenade, puis envoyez votre RPT |
 | Journal détaillé (client) | non | Ajoute son, lumière, chaque unité, intérieur / extérieur, IA | coché le temps d'un test |
+
+**Effet par camp** (règle relue à chaque détonation, d'après le camp du moment ; changeable en cours de partie par
+le Zeus ou l'administrateur dans les réglages « serveur / mission ») :
+
+| Niveau | Vision | Durées | Audition, visée |
+|---|---|---|---|
+| Normal | entière | entières | entières |
+| Réduit | x coefficient (0,35) | x coefficient | entières |
+| Aucun effet visuel | aucune (ni voile, ni tache, ni flou, ni éclat de spectateur) | - | bang et acouphène à moitié |
+| Immunisé | aucune | - | aucun effet |
+
+Trois sources donnent un niveau : le camp de l'unité, « Mes propres grenades m'affectent » (pour le lanceur) et « Les
+grenades de mon camp m'affectent » (pour son camp, lui excepté ; Réduit = niveau Réduit, Non = Immunisé).
+**Le plus protecteur gagne.** La lumière et le son de la grenade dans le monde restent toujours. L'ancien réglage
+`comspec_fb_friendly = false` forcé par une mission reste lu (camp du lanceur immunisé). Journal détaillé :
+`[COMSPEC FB] unité | … camp=WEST règle=réduit`.
 
 **Sans CBA** : le mod ne se charge pas, car CBA est requis. CBA fournit les réglages, les événements des grenades
 et l'horloge commune des détonations. Il n'existe pas de réglage par `description.ext`. En mission, on peut forcer
@@ -324,7 +368,7 @@ signalés.
 | Ouïe étouffée | jusqu'à 25 % du volume, retour en ~35 s | décalage temporaire du seuil d'audition après un bruit impulsionnel | pas de vraie courbe audiométrique |
 | Lumière | flash bref et très intense | 4 à 8 millions de candelas (M84 6-8 Mcd ; Primetake 8 Mcd ; Rheinmetall 4 Mcd) | lumière de jeu, pic ~2 images puis décroissance en 0,3 s |
 | Éblouissement | plein blanc ~1,5 s à 3 m, vision très dégradée 6-8 s, récupération ~12 s, image rémanente jusqu'à 25 s | récupération de 5 s à 2 min selon l'intensité et la tâche ([HFES 2023, Flash Blindness Recovery for Pilots in the Modern Cockpit](https://katalog.lib.cas.cz/KNAV/EdsRecord/edo,ejs64963113)) | durées fixes x exposition^0,6 |
-| Adaptation | jour 1, nuit 1,3 | la récupération dépend de la taille de la pupille et de l'adaptation (rapports DTIC, ex. [AD0627332](https://apps.dtic.mil/sti/pdfs/AD0627332.pdf)) | `sunOrMoon` et toit au-dessus de la tête au lieu d'une vraie luminance |
+| Adaptation | plein soleil 0,45, aube / crépuscule 0,7, nuit et local sombre 1,0 (sans réduction sous 2 m) | la récupération dépend de la taille de la pupille et de l'adaptation (rapports DTIC, ex. [AD0627332](https://apps.dtic.mil/sti/pdfs/AD0627332.pdf)) | luminosité = `sunOrMoon` x (1 - 0,3 x couverture nuageuse), bornée à 0,25 sous un toit, au lieu d'une vraie luminance |
 | Distance et regard | table ci-dessous | à quelques mètres, plusieurs millions de candelas saturent toute la rétine, y compris en vision périphérique, et la pupille n'a pas le temps de se fermer ; de dos, la scène entière s'illumine | interpolation linéaire par morceaux |
 | Mèche | 1,5 s | M84 : 1 à 2,3 s ; Rheinmetall : 1,0 s ; NonLethal Technologies MP-FB-2 : 1,5 s | réglable 0,5-4 s ; variantes fixes 3 s et 8 s (choix de jeu, pour les entrées synchronisées) |
 | Multi-coups | 0,5 s ± 0,12 s, 1 à 9 coups | MP-FB-2 : 2e coup 0,5 s après le 1er ; Combined Systems 7290 : familles 2 à 9 coups | irrégularité aléatoire uniforme |
@@ -334,8 +378,10 @@ signalés.
 | Désorientation | visée très instable, pas plus lents (0,8), oscillation de la caméra ~10 s, secousse brève | désorientation, perte d'équilibre possible (Primetake), pas d'incapacité | pas de chute ni de ragdoll |
 | Dégâts | aucun par défaut | non létale par conception ; brûlures possibles au contact | réglage « Blessure à bout portant » |
 
-**Table de calibration de l'éblouissement** (vision 0 à 1, extérieur, de jour, réglages par défaut ; distance
-œil-grenade, 3,5 m = grenade au sol à 3 m ; intérieur : x multiplicateur intérieur ; nuit et JVN : plus fort) :
+**Table de calibration de l'éblouissement** (vision 0 à 1, pupille ouverte : nuit ou local sombre ; réglages par
+défaut ; distance œil-grenade ; JVN : plus fort). Deux tables, choisies d'après l'endroit où la grenade éclate.
+
+Local fermé (la lumière est renvoyée par les murs ; puis x multiplicateur intérieur) :
 
 | Distance | 0-3,5 m | 5 m | 10 m | 15 m | 25 m |
 |---|---|---|---|---|---|
@@ -343,9 +389,23 @@ signalés.
 | De côté (90°) | 0,92 | 0,50 | 0,25 | 0,10 | 0 |
 | De dos (180°) | 0,35 | 0,20 | 0,08 | 0,03 | 0 |
 
-Mesure en jeu (autotest, joueur debout, grenade au sol, midi) : 2 m 1,00 / 0,98 (60°) / 0,90 (90°) ; 3 m 0,97 /
-0,96 / 0,82-0,84 ; 5 m 0,84 / 0,83 / 0,48 ; 10 m 0,50 / 0,50 / 0,25 ; 15 m 0,30 / 0,30 / 0,10 ; 25 m 0,04 / 0 / 0.
-De dos, l'angle réel dépend de l'inclinaison de la tête (125 à 160°) : 0,47 à 0,70 à 2-3 m.
+Extérieur dégagé (la lumière se perd : chute rapide) :
+
+| Distance | 0-2 m | 5 m | 10 m | 15 m | 19 m et plus |
+|---|---|---|---|---|---|
+| Regard ≤ 65° du flash | 1,00 | 0,60 | 0,25 | 0,08 | 0 |
+| De côté (90°) | 0,90 | 0,35 | 0,12 | 0,03 | 0 |
+| De dos (180°) | 0,30 | 0,12 | 0,04 | 0 | 0 |
+
+Adaptation de l'œil, multipliée ensuite (sans réduction à moins de 2 m, installée progressivement jusqu'à 6 m) :
+
+| Luminosité ambiante | Nuit, local sombre | Aube, crépuscule, ciel très couvert | Plein soleil |
+|---|---|---|---|
+| Facteur | 1,0 (multiplicateur nuit) | 0,70 | 0,45 |
+
+Résultat dehors en plein soleil, de face : 2 m 1,00 ; 5 m 0,35 ; 10 m 0,11 ; 15 m 0,04 ; rien au-delà de 19 m
+(avant : 0,85 / 0,50 / 0,30 et encore 0,04 à 25 m). Dehors de nuit : 1,00 / 0,60 / 0,25 / 0,08. Ces valeurs sont
+calculées (tests de calibration), pas encore mesurées en jeu.
 
 **Retiré parce que non réaliste** :
 - flou radial ;
@@ -367,8 +427,9 @@ De dos, l'angle réel dépend de l'inclinaison de la tête (125 à 160°) : 0,47
   3. Sinon, 0,25 s avant l'heure prévue, le serveur pose un engin synchronisé (ThingX, poussé par les explosions,
      supprimable par Zeus). Il tire une fois les instants des N détonations à partir de l'heure prévue, puis envoie
      UN seul message aux machines concernées : serveur, headless, joueurs à moins de 2,5 km, morts et Zeus.
-  4. Chaque machine programme exactement N exécutions sur `CBA_missionTime`. Un message en retard rattrape les
-     détonations passées sans en sauter. La 1re détonation tombe donc à lancer + 3 s (ou 8 s) sur toutes les machines,
+  4. Chaque machine lance UN fil par grenade (`fn_timelineRun`) qui, à chaque réveil, exécute dans l'ordre toutes les
+     détonations dues (`fn_schedule`, fonction pure testée à 60 et 20 images/s). Un message en retard rattrape les
+     détonations passées sans en sauter (abandon seulement au-delà de 1,5 s de retard). La 1re détonation tombe donc à lancer + 3 s (ou 8 s) sur toutes les machines,
      sans dérive due au réseau.
   5. Si l'engin disparaît, les détonations restantes sont annulées partout, sans détonation fantôme.
 - **Pas de détonation à l'impact, grenade qui vit assez longtemps** (vérifié dans la référence CfgAmmo du wiki
@@ -409,6 +470,12 @@ De dos, l'angle réel dépend de l'inclinaison de la tête (125 à 160°) : 0,47
   `[COMSPEC FB]` par grenade (lancer et chemin vanilla / ACE / secours, mèche, serveur ou client qui fait autorité,
   programmation, une ligne par détonation, effet sur le joueur). Réglage « Journal détaillé » (décoché) : en plus son et
   lumière, chaque unité (distance, angle, vue, intérieur / extérieur, intensités, effets appliqués ou raison du refus).
+- Rafales : une ligne `[COMSPEC FB] rafale | <id> : prévues N, exécutées N, abandonnées 0 ; sons lancés N (lectures …),
+  fusionnés par le budget 0 ; lumières créées 1, relancées N-1 ; halos …` à la fin de chaque grenade qui comporte des
+  détonations à moins de 0,12 s. Journal détaillé : `fx | halo=<modèle> teinte=<nom> lumière=nouvelle/relancée`.
+- Auto-vérification pure (aucune grenade, rien à l'écran) : `[] call comspec_fb_fnc_selfCheck;` rejoue le
+  planificateur et le budget sonore pour 6, 9 et 50 détonations hyper rapides à 60 et 20 images/s (lignes
+  `[COMSPEC FB] autotest | …` dans le RPT, retour `"OK"`).
 - Test intégré, depuis la console de débogage (n'importe quelle mission, Eden compris) :
   `[3] call comspec_fb_fnc_debugTest;` ([AT.NA] 3-BANG BF), `[5, "D8"] call comspec_fb_fnc_debugTest;` ([AT.NA] 5-BANG 8s),
   `[1, "", true] call comspec_fb_fnc_debugTest;` (DRILL). La grenade est posée à 4 m devant le joueur et passe par la
@@ -574,8 +641,25 @@ hangar (under 0.1 ms per grenade).
 - Outdoors: very loud under 25 m, clear up to 100 m, distant echo beyond, inaudible beyond the « Sound range » (250 m,
   half through a wall); sound is delayed at 343 m/s. The sound range does not change the effects (25 m max).
 
-**Calibration**: dazzle 1.0 within 3.5 m eye distance when looking within 65°, 0.92 at 90°, 0.35 from behind; 5 m
-0.85/0.5; 10 m 0.5/0.25; 15 m 0.3/0.1; 25 m negligible. Full white screen ~1.5 s at 3 m, heavy blur (DynamicBlur ~45),
+**Calibration**: two dazzle tables (open pupil). Closed room: 1.0 within 3.5 m eye distance when looking within 65°,
+0.92 at 90°, 0.35 from behind; 5 m 0.85/0.5; 10 m 0.5/0.25; 15 m 0.3/0.1; 25 m negligible. Open ground: 1.0 within
+2 m, 0.60 at 5 m, 0.25 at 10 m, 0.08 at 15 m, nothing beyond 19 m. Eye adaptation on top: x0.45 in full sun, x0.7 at
+dawn/dusk, x1.0 at night or in a dark room (no reduction within 2 m). By day the world light and the halo are also
+smaller and shorter-ranged. Settings « Outdoor dazzle range » and « Outdoor effect intensity ».
+
+**Per-side effect**: « Effect on BLUFOR / OPFOR / Independent / Civilians » (Normal, Reduced, No visual effect,
+Immune), « Reduced mode coefficient » (35 %), « My own grenades affect me » and « My side's grenades affect me » (Yes,
+Reduced, No). Applies to players and AI, read at every detonation from the unit's current side, changeable mid-game by
+Zeus/admin; the most protective rule wins. Example: BLUFOR on « No visual effect » so your assault team is not
+dazzled by its own grenades.
+
+**Bursts**: N flashes = N bangs and N visible flashes. Close detonations (< 0.25 s) play a short bang sample so the
+burst is articulated; the shared light drops between shots (strobe); one runner per grenade executes every due
+detonation of a frame in order (nothing lost at 20 FPS; only detonations more than 1.5 s late are dropped).
+
+**Halos and colours**: each detonation draws one of 8 halo sprites (never the same twice in a row; random rotation,
+size ±30 %, duration ±25 %, slight stretch) with a white core and a coloured corona; colour temperature varies around
+white (pure, bluish, warm, golden with a bluish edge, faint green or magenta tail); themed BANGs keep their palette. Full white screen ~1.5 s at 3 m, heavy blur (DynamicBlur ~45),
 recovery ~12 s, unsteady aim, slower steps (0.8) and slow camera sway for ~10 s. Bang files peak at -1 dBFS (soft
 limiter), tinnitus at -6 dBFS; « Flashbang volume » 500 % and « Tinnitus volume » 250 % by default.
 
@@ -606,7 +690,8 @@ block the mod.
 
 **Diagnostics**: one `[COMSPEC FB] chargé …` RPT line at load and one `[COMSPEC FB] SERVEUR : …` line on MP clients;
 « Diagnostic log (RPT) » setting, on by default (about ten `[COMSPEC FB]` lines per grenade; « Detailed log » for more); console test `[3] call comspec_fb_fnc_debugTest;` (report to RPT and clipboard); automatic in-game
-test `tools/ingame_test.ps1`.
+test `tools/ingame_test.ps1`; pure self-check `[] call comspec_fb_fnc_selfCheck;`; one `[COMSPEC FB] rafale | …`
+summary line per fast burst (planned / executed / sounds / lights).
 
 **Sounds**: the single effect → file table is in `CfgSons.hpp`.
 - `_enreg`: licensed recordings acquired by COMSPEC.

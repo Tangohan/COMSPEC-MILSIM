@@ -43,4 +43,37 @@ class RscTitles {
             };
         };
     };
+    // Halos des détonations (fn_halo) : 4 emplacements, chacun une couronne colorée (201-204, modèle tiré parmi
+    // ui\fb_halo_1..8_ca.paa) et un cœur blanc (211-214). Aucun texte, invisible hors détonation.
+    class COMSPEC_FB_Halo {
+        idd = -1;
+        movingEnable = 0;
+        enableSimulation = 1;
+        fadeIn = 0;
+        fadeOut = 0;
+        duration = 1e+011;
+        onLoad = "uiNamespace setVariable ['comspec_fb_haloDisp', _this select 0]";
+        onUnload = "uiNamespace setVariable ['comspec_fb_haloDisp', displayNull]";
+        class controls {
+            class Corona1: RscPicture {
+                idc = 201;
+                text = QPATHTOF(ui\fb_halo_1_ca.paa);
+                x = 0;
+                y = 0;
+                w = 0;
+                h = 0;
+                colorText[] = {1, 1, 1, 0};
+            };
+            class Corona2: Corona1 { idc = 202; };
+            class Corona3: Corona1 { idc = 203; };
+            class Corona4: Corona1 { idc = 204; };
+            class Core1: Corona1 {
+                idc = 211;
+                text = QPATHTOF(ui\fb_halo_core_ca.paa);
+            };
+            class Core2: Core1 { idc = 212; };
+            class Core3: Core1 { idc = 213; };
+            class Core4: Core1 { idc = 214; };
+        };
+    };
 };

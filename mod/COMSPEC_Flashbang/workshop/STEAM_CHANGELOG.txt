@@ -16,7 +16,10 @@
 [*] [b]Variation aléatoire[/b] : chaque détonation et chaque victime est un peu différente (lumière, son, blanc, flou, IA), moyenne inchangée.
 [*] [b]Son beaucoup plus fort[/b] : volume 500 % par défaut (jusqu'à 1000 %), couche proche, un seul acouphène continu ; baissez votre casque avant de tester.
 [*] [b]Flammes légères[/b] aux évents (réglable), sans feu ni dégât.
-[*] [b]Réglages[/b] : 37 réglages CBA, préréglages Réaliste, Arcade et Léger ; journal de diagnostic actif par défaut (lignes [COMSPEC FB] dans le RPT, rien à l'écran).
+[*] [b]Rafales R[/b] : un bang et un éclat par coup (« tatatatat »), même à 20 images/s ; halos et teintes qui varient à chaque flash (8 modèles).
+[*] [b]Effet par camp[/b] : BLUFOR, OPFOR, Indépendants, Civils sur Normal, Réduit, Aucun effet visuel ou Immunisé ; « Mes propres grenades m'affectent » et « Les grenades de mon camp m'affectent ».
+[*] [b]Extérieur[/b] : éblouissement plus court dehors (rien au-delà de 19 m) et réduit de jour (plein soleil x0,45) ; lumière et halo plus discrets de jour.
+[*] [b]Réglages[/b] : 45 réglages CBA, préréglages Réaliste, Arcade et Léger ; journal de diagnostic actif par défaut (lignes [COMSPEC FB] dans le RPT, rien à l'écran).
 [*] [b]Serveur[/b] : mod obligatoire chez les joueurs ; sur le serveur, recommandé (Zeus, module Eden, IA du serveur) mais pas obligatoire pour lancer des grenades.
 [*] [b]Missions[/b] : caisse, Arsenal, module Eden, modules Zeus avec ZEN, avec « Délai de mèche » (aucun, 3 s, 8 s, personnalisé). Seul CBA_A3 est requis.
 [/list]
@@ -37,7 +40,10 @@
 [*] [b]Random variation[/b]: every detonation and every victim is a little different (light, sound, white-out, blur, AI), same average.
 [*] [b]Much louder sound[/b]: 500 % volume by default (up to 1000 %), close layer, one continuous tinnitus; turn your headset down before testing.
 [*] [b]Light flames[/b] from the vents (adjustable), no fire or damage.
-[*] [b]Settings[/b]: 37 CBA settings, Realistic, Arcade and Light presets; diagnostic log on by default ([COMSPEC FB] lines in the RPT, nothing on screen).
+[*] [b]R bursts[/b]: one bang and one flash per shot, even at 20 FPS; halos and tints vary with every flash (8 sprites).
+[*] [b]Per-side effect[/b]: BLUFOR, OPFOR, Independent, Civilians on Normal, Reduced, No visual effect or Immune; "My own grenades affect me" and "My side's grenades affect me".
+[*] [b]Outdoors[/b]: shorter dazzle range in open ground (nothing beyond 19 m), reduced by day (full sun x0.45); world light and halo more discreet by day.
+[*] [b]Settings[/b]: 45 CBA settings, Realistic, Arcade and Light presets; diagnostic log on by default ([COMSPEC FB] lines in the RPT, nothing on screen).
 [*] [b]Server[/b]: the mod is required on players' games; on the server it is recommended (Zeus, Eden module, server AI) but not required for thrown grenades.
 [*] [b]Missions[/b]: crate, Arsenal, Eden module, Zeus modules with ZEN, with "Fuse delay" (none, 3 s, 8 s, custom). Only CBA_A3 is required.
 [/list]

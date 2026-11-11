@@ -77,16 +77,22 @@ if (_tExec - _tPlan > 0.3) then {
         (_tExec - _tPlan) toFixed 2]] call comspec_fb_fnc_log;
 };
 
+// Détonation rapprochée (rafale) : moins de 0,25 s avant la suivante ou après la précédente.
+private _offs = _ctx getOrDefault ["offsets", []];
+private _gapNext = if (_index < _nTot - 1) then { (_offs param [_index + 1, 1e6]) - (_offs param [_index, 0]) } else { 1e6 };
+private _gapPrev = if (_index > 0) then { (_offs param [_index, 0]) - (_offs param [_index - 1, 0]) } else { 1e6 };
+private _close = (_gapNext min _gapPrev) < 0.25;
+
 // ------------------------------------------------------------------ lumière, particules, son (caméra locale)
 if (hasInterface && _showFx) then {
-    [_ctx, _pos, _env, _g] call comspec_fb_fnc_fx;
+    [_ctx, _pos, _env, _g, (_gapNext min _gapPrev) < 0.12] call comspec_fb_fnc_fx;
     private _cam = AGLToASL (positionCameraToWorld [0, 0, 0]);
     private _dc = _cam vectorDistance _pos;
     // Retard de propagation (343 m/s) + micro-décalage aléatoire (jusqu'à 30 ms à 100 % de variation).
     private _delay = _dc / 343 + random (0.05 * (missionNamespace getVariable ["comspec_fb_variation", 0.6]));
     // Volume des flashbangs (client, 500 % par défaut) ; limiteur : -1 dB par bang au-delà du 4e, au plus -8 dB (une
-    // série ne sature pas, le premier bang garde tout son impact).
-    private _gain = (missionNamespace getVariable ["comspec_fb_bangVolume", 5]) * (10 ^ (-(((_index - 3) max 0) min 8) / 20)) * _g;
+    // série ne sature pas, le premier bang garde tout son impact) ; en rafale au plus -3 dB : chaque coup reste net.
+    private _gain = (missionNamespace getVariable ["comspec_fb_bangVolume", 5]) * (10 ^ (-(((_index - 3) max 0) min ([8, 3] select _close)) / 20)) * _g;
     // Très fort de près : x1,6 jusqu'à 30 m, puis retour à x1 vers 100 m (l'atténuation du moteur est rapide).
     _gain = _gain * linearConversion [30, 100, _dc, 1.6, 1, true];
     // Le bang n'est pas étouffé par l'ouïe déjà étouffée des flashs précédents : compensation de l'atténuation en cours.
@@ -102,26 +108,41 @@ if (hasInterface && _showFx) then {
     private _themeMute = _theme != "" && {_ctx getOrDefault ["themePlayed", false]}
         && {getNumber (configFile >> "COMSPEC_FB_Sons" >> ("Theme_" + _theme) >> "unique") == 1};
     if (_theme != "") then { _ctx set ["themePlayed", true] };
+    // Rafale : chaque détonation garde SON bang (jamais fusionné avec les voisins). Un bang suivi d'un autre à moins
+    // de 0,25 s joue l'échantillon court (attaque + 250 ms de queue : coups articulés, « tatatatat ») ; le premier
+    // joue le bang entier + la couche grave, le dernier le bang entier avec sa longue queue. Au plus 2 lectures
+    // superposées par bang rapproché (niveau égal d'un coup à l'autre, budget tenu même à 50 coups).
+    private _maxCopies = [4, 2] select _close;
+    private _short = _index > 0 && {_gapNext < 0.25};
+    private _voices = 0;
     if (_dc <= _range) then {
         if (_kind == "drill") then {
             // Son choisi pour la DRILL (réglage d'addon ou module), décidé par le serveur : une lecture par pop.
             _extra params [["_snd", "Pop", [""]], ["_vol", 1, [0]]];
             if (_snd != "Aucun") then {
-                [format ["Drill_%1", _snd], _pos, _delay, _wall, _gain * _vol, _range, _dc] call comspec_fb_fnc_playBang;
+                _voices = [format ["Drill_%1", _snd], _pos, _delay, _wall, _gain * _vol, _range, _dc, _maxCopies] call comspec_fb_fnc_playBang;
             };
         } else {
             // Très fort sous 25 m, net jusqu'à ~100 m, au-delà bang lointain avec échos (retard 343 m/s).
             switch (true) do {
                 case (_theme != ""): {
-                    if (!_themeMute) then { ["Theme_" + _theme, _pos, _delay, _wall, _gain, _range, _dc] call comspec_fb_fnc_playBang };
+                    if (!_themeMute) then { _voices = ["Theme_" + _theme, _pos, _delay, _wall, _gain, _range, _dc, _maxCopies] call comspec_fb_fnc_playBang } else { _voices = -1 };
                 };
-                case (_dc > 100 && {!_wall}): { ["BangLointain", _pos, _delay, false, _gain, _range] call comspec_fb_fnc_playBang };
-                case (_wall): { ["BangEtouffe", _pos, _delay, true, _gain, _range] call comspec_fb_fnc_playBang };
+                case (_dc > 100 && {!_wall}): { _voices = ["BangLointain", _pos, _delay, false, _gain, _range, -1, _maxCopies] call comspec_fb_fnc_playBang };
+                case (_wall): { _voices = [["BangEtouffe", "BangCourt"] select _short, _pos, _delay, true, _gain, _range, -1, _maxCopies] call comspec_fb_fnc_playBang };
                 default {
-                    ["BangUnique", _pos, _delay, false, _gain, _range, _dc] call comspec_fb_fnc_playBang;
-                    if (_index == 0) then { ["BangGrave", _pos, _delay, false, _gain, _range, _dc] call comspec_fb_fnc_playBang };
+                    _voices = [["BangUnique", "BangCourt"] select _short, _pos, _delay, false, _gain, _range, _dc, _maxCopies] call comspec_fb_fnc_playBang;
+                    if (_index == 0) then { ["BangGrave", _pos, _delay, false, _gain, _range, _dc, _maxCopies] call comspec_fb_fnc_playBang };
                 };
             };
+        };
+        // Compte pour la ligne « rafale » du journal : un son lancé par détonation (-1 : son long du thème déjà en cours).
+        if (_voices > 0) then {
+            _ctx set ["sounds", (_ctx getOrDefault ["sounds", 0]) + 1];
+            _ctx set ["voices", (_ctx getOrDefault ["voices", 0]) + _voices];
+        };
+        if (_voices == 0 && {_kind != "drill" || {(_extra param [0, "Pop"]) != "Aucun"}}) then {
+            _ctx set ["soundsFused", (_ctx getOrDefault ["soundsFused", 0]) + 1];
         };
     };
     ["fx", format ["%1 : lumière et particules créées, son à %2 m (retard %3 s, %4, portée du son %5 m%6)", _id, round _dc, _delay toFixed 2,
@@ -146,8 +167,10 @@ private _center = ASLToAGL _pos;
 private _units = _center nearEntities [["CAManBase"], _radius];
 { _units append (crew _x) } forEach (_center nearEntities [["LandVehicle", "Air", "Ship", "StaticWeapon"], _radius min 40]);
 _units = _units arrayIntersect _units;
-private _friendly = missionNamespace getVariable ["comspec_fb_friendly", true];
 private _side = _ctx get "side";
+private _thrower = _ctx getOrDefault ["thrower", objNull];
+// Joueur local protégé par la règle de son camp (aucun effet visuel ou immunisé) : pas d'éblouissement de spectateur.
+private _meShielded = false;
 private _aiOn = missionNamespace getVariable ["comspec_fb_aiAffected", true];
 private _meHit = false;
 private _dbg = [true] call comspec_fb_fnc_logOn;
@@ -164,13 +187,20 @@ if (_dbg) then {
 {
     private _u = _x;
     private _isMe = _meInGame && {_u == _me};
-    private _concerned = local _u && {alive _u}
-        && {_friendly || {_side isEqualTo sideUnknown} || {side group _u != _side}}
-        && {_isMe || {!isPlayer _u && _aiOn}};
-    if (_dbg && {local _u} && {!_concerned}) then {
+    private _concerned = local _u && {alive _u} && {_isMe || {!isPlayer _u && _aiOn}};
+    // Règle du camp (fn_sideRule), relue à chaque détonation : camp courant de l'unité, lanceur, camp du lanceur.
+    private _rule = if (_concerned) then { [side group _u, _side, !isNull _thrower && {_u == _thrower}] call comspec_fb_fnc_sideRule } else { [0, 1, 1, 1, "normal"] };
+    _rule params ["_ruleLevel", "_kVis", "_kDur", "_kAud", "_ruleName"];
+    if (_concerned && {_ruleLevel == 3}) then {
+        _concerned = false;
+        if (_isMe) then { _meShielded = true };
+        if (_dbg) then {
+            ["unité", format ["%1 %2 m : aucun effet, camp=%3 règle=immunisé", _u, round (_u distance _center), side group _u]] call comspec_fb_fnc_log;
+        };
+    };
+    if (_dbg && {local _u} && {!_concerned} && {_ruleLevel != 3}) then {
         ["unité", format ["%1 %2 m : ignorée (%3)", _u, round (_u distance _center), switch (true) do {
             case (!alive _u): { "morte" };
-            case (!_friendly && {side group _u == _side}): { "même camp que le lanceur, réglage « Effet sur son camp » coupé" };
             case (isPlayer _u && {!_isMe}): { "joueur en Zeus ou spectateur" };
             case (!_aiOn): { "réglage « IA affectée » coupé" };
             default { "?" };
@@ -192,16 +222,19 @@ if (_dbg) then {
             _rv = _rv * comspec_fb_sens;
             _ra = _ra * comspec_fb_sens;
         };
-        _vis = _vis * _rv;
-        _aud = _aud * _ra;
+        _vis = _vis * _rv * _kVis;
+        _aud = _aud * _ra * _kAud;
         _info set ["tirage", [_rv, _ra]];
+        // Mode Réduit : durées x coefficient (en plus de l'intensité).
+        _info set ["durMult", (_info getOrDefault ["durMult", 1]) * _kDur];
+        if (_isMe && {_ruleLevel == 2}) then { _meShielded = true };
         if (_dbg) then {
-            ["unité", format ["%1 %2 : %3 m, angle %4°, vue %5, %6, vision %7, audition %8 (tirage x%10 / x%11) -> %9", _u, ["IA", "JOUEUR"] select _isMe,
+            ["unité", format ["%1 %2 : %3 m, angle %4°, vue %5, %6, vision %7, audition %8 (tirage x%10 / x%11) camp=%12 règle=%13 -> %9", _u, ["IA", "JOUEUR"] select _isMe,
                 (_info getOrDefault ["dist", 0]) toFixed 1, round (_info getOrDefault ["angle", -1]),
                 ["directe", "bloquée"] select (_info getOrDefault ["blocked", false]), _env getOrDefault ["class", "?"],
                 _vis toFixed 2, _aud toFixed 2,
                 ["aucun effet (trop faible : distance, mur ou dos tourné)", "effets appliqués"] select (_vis > 0.02 || {_aud > 0.02}),
-                _rv toFixed 2, _ra toFixed 2]] call comspec_fb_fnc_log;
+                _rv toFixed 2, _ra toFixed 2, side group _u, _ruleName]] call comspec_fb_fnc_log;
         };
         if (_vis > 0.02 || {_aud > 0.02}) then {
             if (_isMe) then {
@@ -225,6 +258,6 @@ if (_nTot > 9 && {_index mod 10 == 9 || {_index == _nTot - 1}}) then {
 };
 
 // Observateurs : spectateur, Zeus, mort, ou joueur hors de la zone qui voit le flash.
-if (hasInterface && _showFx && {!_meHit}) then {
+if (hasInterface && _showFx && {!_meHit} && {!_meShielded}) then {
     [_pos, 1, _device] call comspec_fb_fnc_glare;
 };

@@ -8,7 +8,7 @@
       Zone E       hangar (atelier industriel) : IA à 5, 12 et 20 m
       Zone F       délais : caisse des grenades 3 s / 8 s sur la ligne de lancer, pièce fermée à 15 m avec 2 IA
                    (comparer 1,5 s / 3 s / 8 s : la grenade roule jusqu'à la pièce et détone à l'heure)
-    Les IA sont du camp du joueur (réglage « Effet sur son camp » actif par défaut), immobiles et invulnérables.
+    Les IA sont du camp du joueur (réglage « Les grenades de mon camp m'affectent » sur Oui par défaut), immobiles et invulnérables.
 */
 private _p0 = [1650.5, 5467.7, 0];
 private _fwd = [sin 15, cos 15, 0];

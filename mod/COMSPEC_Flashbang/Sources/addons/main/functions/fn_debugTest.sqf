@@ -41,11 +41,11 @@ _head pushBack format ["[COMSPEC FB] config : magasin %1, munition %2 (simulatio
 private _xeh = _unit getVariable ["cba_xeh_fired", []];
 _head pushBack format ["[COMSPEC FB] XEH : %1 gestionnaire(s) « fired » sur %2 (%3), dont celui du mod : %4",
     count _xeh, typeOf _unit, _unit, ({ "comspec_fb_fnc_fired" in str _x } count _xeh) > 0];
-_head pushBack format ["[COMSPEC FB] réglages : préréglage %1, intensité %2, mèche %3 s, intervalle %4 s, irrégularité %5 s, IA affectée %6, effet sur son camp %7, éblouissement %8, acouphène %9, son DRILL %10 (volume %11)",
+_head pushBack format ["[COMSPEC FB] réglages : préréglage %1, intensité %2, mèche %3 s, intervalle %4 s, irrégularité %5 s, IA affectée %6, mes grenades / celles de mon camp %7, éblouissement %8, acouphène %9, son DRILL %10 (volume %11)",
     missionNamespace getVariable ["comspec_fb_preset", "nil"], missionNamespace getVariable ["comspec_fb_intensity", "nil"],
     missionNamespace getVariable ["comspec_fb_fuse", "nil"], missionNamespace getVariable ["comspec_fb_interval", "nil"],
     missionNamespace getVariable ["comspec_fb_jitter", "nil"], missionNamespace getVariable ["comspec_fb_aiAffected", "nil"],
-    missionNamespace getVariable ["comspec_fb_friendly", "nil"], missionNamespace getVariable ["comspec_fb_flash", "nil"],
+    [missionNamespace getVariable ["comspec_fb_ownGrenade", "nil"], missionNamespace getVariable ["comspec_fb_sideGrenade", "nil"]], missionNamespace getVariable ["comspec_fb_flash", "nil"],
     missionNamespace getVariable ["comspec_fb_tinnitus", "nil"], missionNamespace getVariable ["comspec_fb_drillSound", "nil"],
     missionNamespace getVariable ["comspec_fb_drillVolume", "nil"]];
 { diag_log text _x } forEach _head;

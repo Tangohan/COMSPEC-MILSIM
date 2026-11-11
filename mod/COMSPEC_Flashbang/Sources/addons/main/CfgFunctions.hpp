@@ -17,6 +17,11 @@ class CfgFunctions {
         class detonations {
             file = "\z\comspec_flashbang\addons\main\functions";
             class timeline {};
+            class timelineRun {};
+            class schedule {};
+            class sndBudget {};
+            class tint {};
+            class halo {};
             class cancel {};
             class burst {};
             class envProbe {};
@@ -27,6 +32,9 @@ class CfgFunctions {
         class effets {
             file = "\z\comspec_flashbang\addons\main\functions";
             class exposure {};
+            class visionTable {};
+            class pupil {};
+            class sideRule {};
             class chanValue {};
             class playerHit {};
             class playerLoop {};
@@ -46,6 +54,7 @@ class CfgFunctions {
             class log {};
             class logOn {};
             class debugTest {};
+            class selfCheck {};
         };
     };
 };

@@ -8,18 +8,19 @@
           - protection auditive (bouchons ACE, casque ACE ; réglage, 25 dB par défaut)
       audition = ((L - 140) / 30) ^ 0,7, bornée 0..1 : 140 dB = valeur limite d'exposition crête de la directive
       2003/10/CE (en dessous : pas d'acouphène), 170 dB = effet maximal.
-    Vision (table de calibration, extérieur, de jour, réglages par défaut ; interpolation linéaire) :
-        distance (m)        0-3,5  5     10    15    25
-        dans le champ ≤65°  1,00   0,85  0,50  0,30  0,04
-        de côté 90°         0,92   0,50  0,25  0,10  0
-        de dos 180°         0,35   0,20  0,08  0,03  0
-      (distance œil-grenade : 3,5 m = grenade au sol à 3 m ; le flash de plusieurs millions de candelas sature toute la rétine, la pupille n'a pas le temps de se fermer :
-      à 3 m il aveugle même de côté ; de dos, la scène entière s'illumine). Entre 65° et 90°, puis 90° et 180° :
-      interpolation. Les réglages « Rayon plein effet » (3 m) et « Rayon maximal » (25 m) étirent l'axe des distances.
+    Vision : table de calibration de fn_visionTable (pupille ouverte), DEUX tables :
+        local fermé (grenade sous un toit)   0-3,5 m 1,00 | 5 m 0,85 | 10 m 0,50 | 15 m 0,30 | 25 m 0,04
+        extérieur dégagé                     0-2 m   1,00 | 5 m 0,60 | 10 m 0,25 | 15 m 0,08 | 19 m 0
+      (dans le champ ; de côté et de dos : voir fn_visionTable). Dehors la lumière se perd : chute plus rapide ;
+      réglages « Portée de l'éblouissement en extérieur » (50 à 150 %, étire l'axe des distances de la table
+      extérieure) et « Intensité des effets en extérieur » (multiplie le résultat dehors).
+      Les réglages « Rayon plein effet » (3 m) et « Rayon maximal » (25 m) étirent l'axe des distances des deux tables.
+      adaptation de l'œil (fn_pupil, luminosité réelle = soleil x ciel) : plein soleil x0,45, aube / crépuscule x0,7,
+        nuit ou local sombre x multiplicateur nuit (1,0) ; sous un toit, luminosité bornée à 0,25 ; sous 2 m le flash
+        sature de toute façon (pas de réduction), elle s'installe jusqu'à 6 m ;
       ligne de vue : 2 rayons (centre et 35 cm au-dessus) ; murs, portes fermées, coques arrêtent le flash ;
         même local fermé sans vue directe : lumière réfléchie par les murs = 25 % ;
       local fermé : au moins 30 % de l'effet en face, puis x multiplicateur intérieur ;
-      adaptation : jour 1, nuit = multiplicateur nuit (sunOrMoon) ; à l'intérieur, au moins mi-pénombre ;
       JVN allumées : x multiplicateur JVN ; optique / jumelles pointées sur le flash : x1,5 (halo) ;
       lunettes teintées (ACE_TintAmount) : x0,75 ; véhicule fermé : la coque bloque la ligne de vue.
     Préréglage (Réaliste / Arcade / Léger) et intensité globale s'appliquent aux deux.
@@ -68,19 +69,11 @@ private _rMax = (missionNamespace getVariable ["comspec_fb_radiusMax", 25]) max 
 private _mult = _env getOrDefault ["mult", 1];
 if (_enclosed) then { _rFull = _rFull * _mult; _rMax = _rMax * _mult };
 private _dn = if (_d <= _rFull) then { 3 * _d / _rFull } else { 3 + 22 * (_d - _rFull) / (_rMax - _rFull) };
-private _lerp = {
-    params ["_tab", "_x"];
-    private _out = (_tab select -1) select 1;
-    for "_i" from 0 to (count _tab - 2) do {
-        (_tab select _i) params ["_x0", "_y0"];
-        (_tab select (_i + 1)) params ["_x1", "_y1"];
-        if (_x <= _x1) exitWith { _out = linearConversion [_x0, _x1, _x max _x0, _y0, _y1, true] };
-    };
-    _out
-};
-private _fIn = [[[0, 1], [3.5, 1], [5, 0.85], [10, 0.5], [15, 0.3], [25, 0.04], [30, 0]], _dn] call _lerp;
-private _fSide = [[[0, 0.92], [3.5, 0.92], [5, 0.5], [10, 0.25], [15, 0.1], [25, 0]], _dn] call _lerp;
-private _fBack = [[[0, 0.35], [3.5, 0.35], [5, 0.2], [10, 0.08], [15, 0.03], [25, 0]], _dn] call _lerp;
+// Extérieur dégagé (grenade sans toit) : table à chute rapide, axe étiré par « Portée de l'éblouissement en extérieur ».
+private _outdoor = !_enclosed;
+if (_outdoor) then { _dn = _dn / (((missionNamespace getVariable ["comspec_fb_outdoorRange", 1]) max 0.5) min 1.5) };
+_info set ["exterieur", _outdoor];
+private _fIn = ([_dn, 0, _outdoor] call comspec_fb_fnc_visionTable) select 1;
 
 private _vis = 0;
 if (_fIn > 0) then {
@@ -91,11 +84,7 @@ if (_fIn > 0) then {
         eyeDirection _unit
     };
     private _ang = acos (((vectorNormalized _look) vectorDotProduct (_eye vectorFromTo _pos)) max -1 min 1);
-    private _fd = switch (true) do {
-        case (_ang <= 65): { _fIn };
-        case (_ang <= 90): { linearConversion [65, 90, _ang, _fIn, _fSide, true] };
-        default { linearConversion [90, 180, _ang, _fSide, _fBack, true] };
-    };
+    private _fd = ([_dn, _ang, _outdoor] call comspec_fb_fnc_visionTable) select 0;
     _info set ["angle", _ang];
     if (_blocked) then {
         _vis = if (_sameRoom) then { 0.25 * _fIn } else { 0 };
@@ -105,10 +94,15 @@ if (_fIn > 0) then {
         if (_enclosed) then { _vis = _vis * _mult };
     };
     if (_vis > 0) then {
-        // Adaptation à la lumière : pupille fermée en plein jour, grande ouverte la nuit ou dans une pièce sombre.
-        private _dark = 1 - sunOrMoon;
-        if (_indoorUnit) then { _dark = _dark max 0.5 };
-        _vis = _vis * linearConversion [0, 1, _dark, 1, missionNamespace getVariable ["comspec_fb_nightMult", 1.3], true];
+        // Adaptation à la lumière (fn_pupil) : pupille fermée en plein soleil (x0,45), aube / crépuscule ou ciel très
+        // couvert (x0,7), grande ouverte la nuit ou dans un local sombre (x multiplicateur nuit). Luminosité réelle :
+        // soleil ou lune levés x ciel dégagé ; sous un toit, au plus 0,25.
+        private _lum = sunOrMoon * (1 - 0.3 * overcast);
+        if (_indoorUnit) then { _lum = _lum min 0.25 };
+        private _pupil = [_lum, _d, missionNamespace getVariable ["comspec_fb_nightMult", 1]] call comspec_fb_fnc_pupil;
+        _vis = _vis * _pupil;
+        _info set ["pupille", _pupil];
+        if (_outdoor) then { _vis = _vis * (missionNamespace getVariable ["comspec_fb_outdoorIntensity", 1]) };
         if (currentVisionMode _unit == 1) then {
             _vis = _vis * (missionNamespace getVariable ["comspec_fb_nvgMult", 2]);
             _info set ["nvg", true];

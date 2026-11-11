@@ -2,9 +2,10 @@
     comspec_fb_fnc_timeline : reçu UNE fois par machine (serveur, headless, clients proches) pour une grenade.
     Programme exactement une exécution de fn_burst par instant reçu, alignée sur l'horloge commune
     comspec_fb_fnc_clock (serverTime en multijoueur : même instant sur toutes les machines, quel que soit le réseau).
-    Message arrivé en retard : les détonations passées depuis plus de 0,3 s sont sautées (jamais rejouées en rafale),
-    les suivantes partent à leur heure. Plusieurs détonations dues pendant une image lente partent dans la même image
-    (aucune perte : CBA exécute toutes les tâches échues).
+    Un seul fil par grenade (fn_timelineRun + fn_schedule) : à chaque réveil, TOUTES les détonations dues partent
+    dans l'ordre (aucune perte à 20 images/s, même en cadence hyper rapide : 45 à 90 ms entre deux flashs pour des
+    images de 50 ms). Message arrivé en retard : les détonations en retard sont rattrapées ensemble ; seules celles
+    vieilles de plus de 1,5 s sont abandonnées (cas réseau extrême), les suivantes partent à leur heure.
     Lance aussi, si activée, l'analyse intérieur / extérieur du point d'explosion, étalée sur quelques images.
 
     [_id, _kind, _device, _netId, _posASL, _offsets, _t0, _side, _thrower, _extra, _localDev, _gains] call comspec_fb_fnc_timeline
@@ -45,27 +46,24 @@ private _ctx = createHashMapFromArray [
     ["id", _id], ["kind", _kind], ["device", _device], ["netId", _netId], ["resolved", !isNull _device],
     ["pos", _posASL], ["side", _side], ["thrower", _thrower], ["extra", _extra], ["n", count _offsets],
     ["done", 0], ["cancelled", false], ["env", createHashMap], ["lastBang", -1], ["gains", _gains],
-    ["t0", _t0], ["offsets", _offsets], ["lastLight", -1]
+    ["t0", _t0], ["offsets", _offsets], ["lastLight", -1], ["rapid", false]
 ];
+// Rafale : au moins deux détonations à moins de 0,12 s l'une de l'autre (ligne « rafale » du journal à la fin).
+for "_i" from 1 to (count _offsets - 1) do {
+    if ((_offsets select _i) - (_offsets select (_i - 1)) < 0.12) exitWith { _ctx set ["rapid", true] };
+};
 comspec_fb_events set [_id, _ctx];
 
 if (_kind != "area" && {missionNamespace getVariable ["comspec_fb_indoorDetection", true]}) then {
     [_ctx] call comspec_fb_fnc_envProbe;
 };
 
-private _skipped = 0;
-{
-    private _wait = _t0 + _x - _now;
-    if (_wait < -0.3) then {
-        _skipped = _skipped + 1;
-    } else {
-        [comspec_fb_fnc_burst, [_id, _forEachIndex], _wait max 0] call CBA_fnc_waitAndExecute;
-    };
-} forEach _offsets;
-if (_skipped > 0) then {
-    ["timeline", format ["%1 : message reçu %2 s après la 1re détonation, %3 détonation(s) déjà passée(s) sautée(s)", _id,
-        (_now - _t0) toFixed 2, _skipped]] call comspec_fb_fnc_log;
+// Un seul fil : fn_timelineRun exécute toutes les détonations dues à chaque réveil, dans l'ordre.
+if (_now > _t0 + 0.05) then {
+    ["timeline", format ["%1 : message reçu %2 s après la 1re détonation : rattrapage groupé (abandon au-delà de 1,5 s de retard)", _id,
+        (_now - _t0) toFixed 2]] call comspec_fb_fnc_log;
 };
+[comspec_fb_fnc_timelineRun, [_id, 0], (_t0 - _now) max 0] call CBA_fnc_waitAndExecute;
 
 // Contexte oublié 3 s après la dernière détonation.
 [{ comspec_fb_events deleteAt _this }, _id, ((_t0 + selectMax _offsets - _now) max 0) + 3] call CBA_fnc_waitAndExecute;

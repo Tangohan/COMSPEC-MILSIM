@@ -237,12 +237,12 @@ final class FlashbangModAssetTest extends TestCase
         self::assertStringContainsString('comspec_fb_theme = QUOTE(V);', $ammo);
         // Le son du thème remplace le bang ; un son long n'est lu qu'une fois ; l'acouphène reste celui du mod.
         $burst = self::read(self::MAIN . 'functions/fn_burst.sqf');
-        self::assertStringContainsString('if (!_themeMute) then { ["Theme_" + _theme, _pos, _delay, _wall, _gain, _range, _dc] call comspec_fb_fnc_playBang };', $burst);
+        self::assertStringContainsString('if (!_themeMute) then { _voices = ["Theme_" + _theme, _pos, _delay, _wall, _gain, _range, _dc, _maxCopies] call comspec_fb_fnc_playBang }', $burst);
         self::assertStringContainsString('>> "unique") == 1', $burst);
         $server = self::read(self::MAIN . 'functions/fn_serverDetonate.sqf');
         self::assertStringContainsString('getArray (_tcfg >> "instants")', $server);
         self::assertStringContainsString('if (_theme != "") then { _extra = [_theme] };', $server);
-        self::assertStringContainsString('selectRandom _palette', self::read(self::MAIN . 'functions/fn_fx.sqf'));
+        self::assertStringContainsString('selectRandom _palette', self::read(self::MAIN . 'functions/fn_tint.sqf'));
         self::assertStringNotContainsString('Theme_', self::read(self::MAIN . 'functions/fn_tinnitus.sqf'));
     }
 
@@ -430,5 +430,431 @@ final class FlashbangModAssetTest extends TestCase
             self::assertGreaterThanOrEqual(1, $ext, "{$flashes} flashs : au moins une prolongation.");
             self::assertSame(1, $ends, "{$flashes} flashs : une seule fin.");
         }
+    }
+
+    /** Réplique PHP de fn_schedule (mêmes règles) : [dues, abandonnées, suivante, attente]. @return array{list<int>, list<int>, int, float} */
+    private static function schedule(array $offsets, float $t0, float $now, int $next, float $lateMax = 1.5): array
+    {
+        $due = [];
+        $dropped = [];
+        $n = count($offsets);
+        while ($next < $n && ($t0 + $offsets[$next]) <= $now + 0.01) {
+            if ($now - ($t0 + $offsets[$next]) > $lateMax) {
+                $dropped[] = $next;
+            } else {
+                $due[] = $next;
+            }
+            $next++;
+        }
+
+        return [$due, $dropped, $next, $next < $n ? max(0.0, $t0 + $offsets[$next] - $now) : -1.0];
+    }
+
+    /** Réplique PHP de fn_sndBudget : lectures 3D superposées accordées (0 = bang fusionné). */
+    private static function sndBudget(int $busy, int $wanted, int $maxCopies = 4): int
+    {
+        if ($busy >= 28) {
+            return 0;
+        }
+        $c = min(max($wanted, 1), $maxCopies, 4);
+        if ($busy >= 12) {
+            $c = min($c, 2);
+        }
+        if ($busy >= 20) {
+            $c = 1;
+        }
+
+        return $c;
+    }
+
+    /**
+     * Rafale simulée image par image (fn_timelineRun + fn_burst + fn_playBang) : plan hyper rapide, planificateur,
+     * budget sonore. @return array{done: list<int>, dropped: int, sounds: int, fused: int, lightsNew: int, lightsRelit: int, maxBusy: int}
+     */
+    private static function simulateBurst(int $n, int $fps, float $late = 0.0, float $centre = 0.065): array
+    {
+        $v = 0.6;
+        $offsets = [];
+        $t = 0.0;
+        for ($i = 0; $i < $n; $i++) {
+            $offsets[] = $t;
+            $t += min(max($centre * (1 + self::rand(0.45, $v)), 0.03), 1.2);
+        }
+        $t0 = 100.0;
+        $now = $t0 - 0.2 + $late + (mt_rand() / mt_getrandmax()) / $fps;
+        $next = 0;
+        $out = ['done' => [], 'dropped' => 0, 'sounds' => 0, 'fused' => 0, 'lightsNew' => 0, 'lightsRelit' => 0, 'maxBusy' => 0];
+        $ends = [];
+        $lastLight = -1.0;
+        $guard = 0;
+        while ($next < $n && $guard++ < 100000) {
+            [$due, $dropped, $next] = self::schedule($offsets, $t0, $now, $next);
+            $out['dropped'] += count($dropped);
+            foreach ($due as $idx) {
+                $out['done'][] = $idx;
+                // Lumière (fn_fx) : relancée si la précédente a moins de 0,12 s, sinon créée.
+                if ($now - $lastLight < 0.12) {
+                    $out['lightsRelit']++;
+                } else {
+                    $out['lightsNew']++;
+                }
+                $lastLight = $now;
+                // Son (fn_burst) : bang court si un autre suit à moins de 0,25 s, entier pour le 1er et le dernier ;
+                // 2 lectures au plus en rafale + couche proche 2D ; couche grave au 1er.
+                $gapNext = $idx < $n - 1 ? $offsets[$idx + 1] - $offsets[$idx] : 1e6;
+                $short = $idx > 0 && $gapNext < 0.25;
+                $entries = [[$short ? 0.35 : 1.2]];
+                if ($idx === 0) {
+                    $entries[] = [1.0];
+                }
+                foreach ($entries as $k => [$dur]) {
+                    $ends = array_values(array_filter($ends, static fn (float $e): bool => $e > $now));
+                    $busy = count($ends);
+                    $out['maxBusy'] = max($out['maxBusy'], $busy);
+                    $copies = self::sndBudget($busy, 4, 2);
+                    if ($k === 0) {
+                        $copies === 0 ? $out['fused']++ : $out['sounds']++;
+                    }
+                    for ($c = 0; $c < ($copies === 0 ? 0 : $copies + 1); $c++) {
+                        $ends[] = $now + $dur;
+                    }
+                }
+            }
+            $now += 1.0 / $fps;
+        }
+
+        return $out;
+    }
+
+    public function testRafaleNDetonationsNSonsA60Et20ImagesParSeconde(): void
+    {
+        $sched = self::read(self::MAIN . 'functions/fn_schedule.sqf');
+        foreach (['(_t0 + (_offsets select _next)) <= _now + 0.01', '> _lateMax) then { _dropped pushBack _next } else { _due pushBack _next }',
+            '["_lateMax", 1.5, [0]]'] as $needle) {
+            self::assertStringContainsString($needle, $sched);
+        }
+        $run = self::read(self::MAIN . 'functions/fn_timelineRun.sqf');
+        self::assertStringContainsString('{ [_id, _x] call comspec_fb_fnc_burst } forEach _due;', $run, 'Toutes les détonations dues, dans l\'ordre.');
+        self::assertStringContainsString('["rafale", format ["%1 : prévues %2, exécutées %3, abandonnées %4 ; sons lancés %5', $run, 'Ligne de synthèse.');
+        $timeline = self::read(self::MAIN . 'functions/fn_timeline.sqf');
+        self::assertStringContainsString('[comspec_fb_fnc_timelineRun, [_id, 0], (_t0 - _now) max 0] call CBA_fnc_waitAndExecute;', $timeline);
+        self::assertStringNotContainsString('_wait < -0.3', $timeline, 'Plus de saut des détonations « en retard » de 0,3 s.');
+        $budget = self::read(self::MAIN . 'functions/fn_sndBudget.sqf');
+        foreach (['if (_busy >= 28) exitWith { 0 };', 'if (_busy >= 12) then { _c = _c min 2 };', 'if (_busy >= 20) then { _c = 1 };'] as $needle) {
+            self::assertStringContainsString($needle, $budget);
+        }
+        $play = self::read(self::MAIN . 'functions/fn_playBang.sqf');
+        self::assertStringNotContainsString('_busy >= 16', $play, 'Ancienne cause : bang supprimé dès 16 lectures (4e bang d\'une rafale).');
+        self::assertStringContainsString('[_busy, ceil (_vol / 5), _maxCopies] call comspec_fb_fnc_sndBudget', $play);
+        $burst = self::read(self::MAIN . 'functions/fn_burst.sqf');
+        self::assertStringContainsString('private _short = _index > 0 && {_gapNext < 0.25};', $burst);
+        self::assertStringContainsString('[["BangUnique", "BangCourt"] select _short, _pos, _delay, false, _gain, _range, _dc, _maxCopies] call comspec_fb_fnc_playBang', $burst);
+        self::assertStringContainsString('min ([8, 3] select _close)', $burst, 'Limiteur : -3 dB au plus en rafale.');
+        $sons = self::read(self::MAIN . 'CfgSons.hpp');
+        self::assertSame(1, preg_match('/class BangCourt \{\s*fichiers\[\] = \{([^}]*)\};/', $sons, $f));
+        foreach (explode(',', $f[1]) as $file) {
+            self::assertFileExists(self::path(self::MAIN . 'sounds/' . trim($file, " \"")));
+        }
+        foreach (['A', 'B', 'C'] as $x) {
+            self::assertStringContainsString('FB_UI_SOUND(COMSPEC_FB_UI_Court' . $x . ',bang_court_' . strtolower($x) . '_enreg.ogg);', $sons);
+        }
+        self::assertStringContainsString('class selfCheck {};', self::read(self::MAIN . 'CfgFunctions.hpp'));
+
+        mt_srand(11);
+        foreach ([6, 9, 50] as $n) {
+            foreach ([60, 20] as $fps) {
+                for ($g = 0; $g < 150; $g++) {
+                    $r = self::simulateBurst($n, $fps);
+                    self::assertSame(range(0, $n - 1), $r['done'], "N={$n} à {$fps} images/s : toutes exécutées, dans l'ordre.");
+                    self::assertSame(0, $r['dropped'], "N={$n} à {$fps} images/s : aucune abandonnée pour retard.");
+                    self::assertSame($n, $r['sounds'] + $r['fused']);
+                    self::assertSame($n, $r['lightsNew'] + $r['lightsRelit'], 'Un éclat par détonation (lumière créée ou relancée).');
+                    self::assertLessThan(28, $r['maxBusy'], "N={$n} : budget jamais saturé par une seule grenade.");
+                    self::assertSame($n, $r['sounds'], "N={$n} à {$fps} images/s : un son par détonation, aucun fusionné.");
+                }
+            }
+        }
+        // Cadence « Rapide » (~0,15 s) choisie par le réglage ou un module : même garantie.
+        for ($g = 0; $g < 100; $g++) {
+            $r = self::simulateBurst(9, 20, 0.0, 0.15);
+            self::assertSame(range(0, 8), $r['done']);
+            self::assertSame(9, $r['sounds']);
+        }
+        // Message arrivé 0,6 s en retard (toute la rafale de 6 est déjà passée) : rattrapage groupé, rien d'abandonné.
+        $r = self::simulateBurst(6, 20, 0.6);
+        self::assertSame(range(0, 5), $r['done']);
+        self::assertSame(0, $r['dropped']);
+        // Retard extrême (2,2 s) : seules les détonations vieilles de plus de 1,5 s sont abandonnées, les autres jouent.
+        [$due, $dropped, $next] = self::schedule([0.0, 0.1, 0.2, 0.9, 1.4], 100.0, 101.75, 0);
+        self::assertSame([0, 1, 2], $dropped);
+        self::assertSame([3, 4], $due);
+        self::assertSame(5, $next);
+        // Budget : jamais 0 sous 28 lectures ; deux GANG BANG simultanés finissent par fusionner (documenté).
+        self::assertSame(2, self::sndBudget(0, 4, 2));
+        self::assertSame(4, self::sndBudget(0, 4));
+        self::assertSame(2, self::sndBudget(12, 4));
+        self::assertSame(1, self::sndBudget(27, 4));
+        self::assertSame(0, self::sndBudget(28, 4));
+    }
+
+    /** Réplique PHP de fn_visionTable : [facteur selon l'angle, facteur dans le champ]. */
+    private static function vision(float $dn, float $ang, bool $outdoor): array
+    {
+        $tabs = $outdoor
+            ? [[[0, 1], [2, 1], [5, 0.6], [10, 0.25], [15, 0.08], [19, 0]],
+                [[0, 0.9], [2, 0.9], [5, 0.35], [10, 0.12], [15, 0.03], [19, 0]],
+                [[0, 0.3], [2, 0.3], [5, 0.12], [10, 0.04], [15, 0], [19, 0]]]
+            : [[[0, 1], [3.5, 1], [5, 0.85], [10, 0.5], [15, 0.3], [25, 0.04], [30, 0]],
+                [[0, 0.92], [3.5, 0.92], [5, 0.5], [10, 0.25], [15, 0.1], [25, 0]],
+                [[0, 0.35], [3.5, 0.35], [5, 0.2], [10, 0.08], [15, 0.03], [25, 0]]];
+        $lerp = static function (array $tab, float $x): float {
+            $out = (float) $tab[count($tab) - 1][1];
+            for ($i = 0; $i < count($tab) - 1; $i++) {
+                [$x0, $y0] = $tab[$i];
+                [$x1, $y1] = $tab[$i + 1];
+                if ($x <= $x1) {
+                    return $y0 + ($y1 - $y0) * (max($x, $x0) - $x0) / ($x1 - $x0);
+                }
+            }
+
+            return $out;
+        };
+        [$in, $side, $back] = [$lerp($tabs[0], $dn), $lerp($tabs[1], $dn), $lerp($tabs[2], $dn)];
+        $fd = $ang <= 65 ? $in : ($ang <= 90 ? $in + ($side - $in) * ($ang - 65) / 25 : $side + ($back - $side) * ($ang - 90) / 90);
+
+        return [$fd, $in];
+    }
+
+    /** Réplique PHP de fn_pupil. */
+    private static function pupil(float $lum, float $d, float $night = 1.0): float
+    {
+        $lum = min(max($lum, 0.0), 1.0);
+        $p = $lum <= 0.5 ? $night + (0.7 - $night) * $lum / 0.5 : 0.7 + (0.45 - 0.7) * ($lum - 0.5) / 0.5;
+        if ($p < 1) {
+            $p = 1 + ($p - 1) * min(max(($d - 2) / 4, 0.0), 1.0);
+        }
+
+        return $p;
+    }
+
+    public function testCalibrationInterieurExterieurJourNuit(): void
+    {
+        $tab = self::read(self::MAIN . 'functions/fn_visionTable.sqf');
+        foreach (['[[[0, 1], [2, 1], [5, 0.6], [10, 0.25], [15, 0.08], [19, 0]],', '[[[0, 1], [3.5, 1], [5, 0.85], [10, 0.5], [15, 0.3], [25, 0.04], [30, 0]],',
+            '[[0, 0.9], [2, 0.9], [5, 0.35], [10, 0.12], [15, 0.03], [19, 0]],', '[[0, 0.3], [2, 0.3], [5, 0.12], [10, 0.04], [15, 0], [19, 0]]]'] as $needle) {
+            self::assertStringContainsString($needle, $tab);
+        }
+        $pupil = self::read(self::MAIN . 'functions/fn_pupil.sqf');
+        self::assertStringContainsString('linearConversion [0, 0.5, _lum, _night, 0.7, true] } else { linearConversion [0.5, 1, _lum, 0.7, 0.45, true] }', $pupil);
+        self::assertStringContainsString('if (_p < 1) then { _p = linearConversion [2, 6, _d, 1, _p, true] };', $pupil);
+        $exp = self::read(self::MAIN . 'functions/fn_exposure.sqf');
+        self::assertStringContainsString('private _outdoor = !_enclosed;', $exp);
+        self::assertStringContainsString('private _lum = sunOrMoon * (1 - 0.3 * overcast);', $exp, 'Luminosité réelle : soleil x ciel.');
+        self::assertStringContainsString('if (_indoorUnit) then { _lum = _lum min 0.25 };', $exp);
+        self::assertStringContainsString('comspec_fb_outdoorRange', $exp);
+        self::assertStringContainsString('comspec_fb_outdoorIntensity', $exp);
+        $pre = self::read(self::MAIN . 'XEH_preInit.sqf');
+        self::assertStringContainsString('["comspec_fb_nightMult", "SLIDER", "NightMult", "Vision", [1, 2, 1, 2]]', $pre, 'Nuit : x1,0 par défaut.');
+        self::assertStringContainsString('["comspec_fb_outdoorRange", "SLIDER", "OutdoorRange", "Vision", [0.5, 1.5, 1, 0, true]]', $pre);
+        self::assertStringContainsString('["comspec_fb_outdoorIntensity", "SLIDER", "OutdoorIntensity", "Vision", [0.2, 1.5, 1, 0, true]]', $pre);
+
+        // Table extérieure (pupille ouverte) : plein effet <= 2 m, 0,6 / 0,25 / 0,08 à 5 / 10 / 15 m, rien au-delà de 19 m.
+        foreach ([[1.0, 1.0], [2.0, 1.0], [5.0, 0.6], [10.0, 0.25], [15.0, 0.08], [19.0, 0.0], [25.0, 0.0]] as [$d, $want]) {
+            self::assertEqualsWithDelta($want, self::vision($d, 0, true)[0], 1e-9, "Extérieur, de face, {$d} m.");
+        }
+        // Local fermé : table d'origine inchangée, toujours au moins aussi forte que dehors.
+        foreach ([[3.5, 1.0], [5.0, 0.85], [10.0, 0.5], [15.0, 0.3], [25.0, 0.04]] as [$d, $want]) {
+            self::assertEqualsWithDelta($want, self::vision($d, 0, false)[0], 1e-9, "Local fermé, de face, {$d} m.");
+        }
+        for ($d = 0.5; $d <= 30; $d += 0.5) {
+            foreach ([0, 65, 90, 140, 180] as $ang) {
+                $in = self::vision($d, $ang, false)[0];
+                $out = self::vision($d, $ang, true)[0];
+                self::assertGreaterThanOrEqual($out - 1e-9, $in, "Intérieur >= extérieur à {$d} m, {$ang}°.");
+                self::assertGreaterThanOrEqual(self::vision($d + 0.5, $ang, true)[0] - 1e-9, $out, 'Décroissance avec la distance.');
+            }
+            self::assertGreaterThanOrEqual(self::vision($d, 90, true)[0], self::vision($d, 0, true)[0]);
+            self::assertGreaterThanOrEqual(self::vision($d, 180, true)[0], self::vision($d, 90, true)[0]);
+        }
+        self::assertEqualsWithDelta(0.35, self::vision(5, 90, true)[0], 1e-9);
+        self::assertEqualsWithDelta(0.12, self::vision(5, 180, true)[0], 1e-9);
+        // Adaptation : plein soleil 0,45, aube / crépuscule 0,7, nuit 1,0 ; pas de réduction sous 2 m.
+        self::assertEqualsWithDelta(0.45, self::pupil(1.0, 10), 1e-9);
+        self::assertEqualsWithDelta(0.70, self::pupil(0.5, 10), 1e-9);
+        self::assertEqualsWithDelta(1.00, self::pupil(0.0, 10), 1e-9);
+        self::assertEqualsWithDelta(1.00, self::pupil(1.0, 2.0), 1e-9);
+        self::assertEqualsWithDelta(0.725, self::pupil(1.0, 4.0), 1e-9);
+        self::assertEqualsWithDelta(1.30, self::pupil(0.0, 10, 1.3), 1e-9, 'Multiplicateur nuit réglé à 1,3.');
+        // Sous un toit (luminosité bornée à 0,25) : entre la nuit et le crépuscule.
+        self::assertEqualsWithDelta(0.85, self::pupil(0.25, 10), 1e-9);
+        // Résultat dehors en plein soleil, de face (README) : nettement plus faible et plus court qu'avant (0,85 / 0,50 / 0,30).
+        $day = static fn (float $d): float => self::vision($d, 0, true)[0] * self::pupil(1.0, $d);
+        self::assertEqualsWithDelta(1.0, $day(2.0), 1e-9);
+        self::assertEqualsWithDelta(0.3525, $day(5.0), 1e-9);
+        self::assertEqualsWithDelta(0.1125, $day(10.0), 1e-9);
+        self::assertEqualsWithDelta(0.036, $day(15.0), 1e-9);
+        self::assertSame(0.0, $day(20.0));
+        // Jour < crépuscule < nuit à toute distance utile ; extérieur de nuit < local fermé de nuit.
+        foreach ([5.0, 10.0, 15.0] as $d) {
+            $night = self::vision($d, 0, true)[0] * self::pupil(0.0, $d);
+            $dusk = self::vision($d, 0, true)[0] * self::pupil(0.5, $d);
+            self::assertLessThan($dusk, $day($d));
+            self::assertLessThan($night, $dusk);
+            self::assertLessThan(self::vision($d, 0, false)[0] * self::pupil(0.0, $d), $night);
+        }
+        // « Portée de l'éblouissement en extérieur » à 50 % : la table est parcourue deux fois plus vite.
+        self::assertEqualsWithDelta(self::vision(10, 0, true)[0], self::vision(5 / 0.5, 0, true)[0], 1e-9);
+        // Lumière du monde et halo réduits de jour ; couche sonore 2D jamais au-delà de 25 m.
+        $fx = self::read(self::MAIN . 'functions/fn_fx.sqf');
+        self::assertStringContainsString('private _dayK = linearConversion [0, 1, _sun, 1, 0.35, true];', $fx);
+        self::assertStringContainsString('setLightFlareMaxDistance (linearConversion [0, 1, _sun, 2500, 350, true])', $fx);
+        self::assertStringContainsString('linearConversion [30, 200, _dist, 1, 0.4, true]', $fx);
+        self::assertStringContainsString('{_dc < 25}', self::read(self::MAIN . 'functions/fn_playBang.sqf'));
+        self::assertStringContainsString('linearConversion [8, 25, _dc, 1, 0, true]', self::read(self::MAIN . 'functions/fn_playBang.sqf'));
+        $readme = self::read('mod/COMSPEC_Flashbang/README.md');
+        self::assertStringContainsString('| Regard ≤ 65° du flash | 1,00 | 0,60 | 0,25 | 0,08 | 0 |', $readme);
+        self::assertStringContainsString('| Facteur | 1,0 (multiplicateur nuit) | 0,70 | 0,45 |', $readme);
+    }
+
+    /** Réplique PHP de fn_sideRule : [niveau, kVision, kDurée, kAudition]. */
+    private static function sideRule(string $unitSide, string $throwSide, bool $isThrower, array $set): array
+    {
+        $level = $set['side'][$unitSide] ?? 0;
+        $same = $throwSide !== '' && $unitSide === $throwSide;
+        $map = [0, 1, 3];
+        if ($isThrower) {
+            $level = max($level, $map[$set['own'] ?? 0]);
+        }
+        if ($same && !$isThrower) {
+            $level = max($level, $map[$set['sideGrenade'] ?? 0]);
+        }
+        if ($same && !($set['friendly'] ?? true)) {
+            $level = 3;
+        }
+        $k = $set['coef'] ?? 0.35;
+
+        return array_merge([$level], [[1, 1, 1], [$k, $k, 1], [0, 1, 0.5], [0, 0, 0]][$level]);
+    }
+
+    public function testEffetParCampLePlusProtecteurGagne(): void
+    {
+        $rule = self::read(self::MAIN . 'functions/fn_sideRule.sqf');
+        foreach (['["comspec_fb_sideWest", "comspec_fb_sideEast", "comspec_fb_sideIndep", "comspec_fb_sideCiv"] select _i',
+            '[west, east, independent, civilian] find _unitSide', '[[1, 1, 1], [_k, _k, 1], [0, 1, 0.5], [0, 0, 0]] select _level',
+            '_level max ([0, 1, 3] select', '["normal", "réduit", "aucun effet visuel", "immunisé"] select _level',
+            'missionNamespace getVariable ["comspec_fb_reducedCoef", 0.35]'] as $needle) {
+            self::assertStringContainsString($needle, $rule);
+        }
+        $pre = self::read(self::MAIN . 'XEH_preInit.sqf');
+        self::assertStringContainsString('[format ["comspec_fb_side%1", _x], "LIST", format ["Side%1", _x], "Ai", [[0, 1, 2, 3], _sideLabels, 0]] call _add;', $pre, 'Défaut : Normal.');
+        self::assertStringContainsString('} forEach ["West", "East", "Indep", "Civ"];', $pre);
+        self::assertStringContainsString('["comspec_fb_reducedCoef", "SLIDER", "ReducedCoef", "Ai", [0.05, 0.9, 0.35, 0, true]] call _add;', $pre);
+        self::assertStringContainsString('["comspec_fb_ownGrenade", "LIST", "OwnGrenade", "Ai", [[0, 1, 2], _ynLabels, 0]] call _add;', $pre);
+        self::assertStringContainsString('["comspec_fb_sideGrenade", "LIST", "SideGrenade", "Ai", [[0, 1, 2], _ynLabels, 0]] call _add;', $pre);
+        self::assertStringNotContainsString('"comspec_fb_friendly", "CHECKBOX"', $pre, 'Remplacé par « Les grenades de mon camp m\'affectent ».');
+        $burst = self::read(self::MAIN . 'functions/fn_burst.sqf');
+        self::assertStringContainsString('[side group _u, _side, !isNull _thrower && {_u == _thrower}] call comspec_fb_fnc_sideRule', $burst, 'Camp courant, à chaque détonation, joueurs et IA.');
+        self::assertStringContainsString('camp=%12 règle=%13', $burst);
+        self::assertStringContainsString('camp=%3 règle=immunisé', $burst);
+        self::assertStringContainsString('{!_meHit} && {!_meShielded}', $burst, 'Pas d\'éclat de spectateur pour un joueur protégé.');
+        self::assertStringContainsString('_vis = _vis * _rv * _kVis;', $burst);
+        self::assertStringContainsString('_aud = _aud * _ra * _kAud;', $burst);
+        $s = self::strings();
+        foreach (['SideWest', 'SideEast', 'SideIndep', 'SideCiv', 'ReducedCoef', 'OwnGrenade', 'SideGrenade', 'OutdoorRange', 'OutdoorIntensity'] as $k) {
+            foreach (['fr' => 'Exemple', 'en' => 'Example'] as $lang => $ex) {
+                self::assertNotSame('', $s["STR_COMSPEC_FB_Set_{$k}"][$lang]);
+                self::assertStringContainsString($ex, $s["STR_COMSPEC_FB_Set_{$k}_Tip"][$lang], "Exemple manquant : {$k} ({$lang})");
+            }
+        }
+        self::assertStringContainsString('BLUFOR sur « Aucun effet visuel » : votre équipe d\'assaut n\'est pas éblouie par ses propres grenades', $s['STR_COMSPEC_FB_Set_SideWest_Tip']['fr']);
+        foreach (['Side_Normal', 'Side_Reduced', 'Side_NoVisual', 'Side_Immune', 'Affect_Yes', 'Affect_Reduced', 'Affect_No'] as $k) {
+            self::assertNotSame('', $s["STR_COMSPEC_FB_{$k}"]['fr']);
+            self::assertNotSame('', $s["STR_COMSPEC_FB_{$k}"]['en']);
+        }
+
+        // Défaut : tout le monde « normal ».
+        self::assertSame([0, 1, 1, 1], self::sideRule('WEST', 'WEST', true, []));
+        // Coefficients par camp.
+        self::assertSame([1, 0.35, 0.35, 1], self::sideRule('WEST', 'EAST', false, ['side' => ['WEST' => 1]]));
+        self::assertSame([1, 0.2, 0.2, 1], self::sideRule('WEST', 'EAST', false, ['side' => ['WEST' => 1], 'coef' => 0.2]));
+        self::assertSame([2, 0, 1, 0.5], self::sideRule('WEST', 'WEST', false, ['side' => ['WEST' => 2]]), 'Aucun effet visuel : son et acouphène à moitié.');
+        self::assertSame([3, 0, 0, 0], self::sideRule('CIV', 'WEST', false, ['side' => ['CIV' => 3]]));
+        self::assertSame([0, 1, 1, 1], self::sideRule('EAST', 'WEST', false, ['side' => ['WEST' => 2]]), 'Le réglage de BLUFOR ne protège pas OPFOR.');
+        // Lanceur et camp du lanceur.
+        self::assertSame(1, self::sideRule('WEST', 'WEST', true, ['own' => 1])[0]);
+        self::assertSame(3, self::sideRule('WEST', 'WEST', true, ['own' => 2])[0]);
+        self::assertSame(0, self::sideRule('WEST', 'WEST', false, ['own' => 2])[0], '« Mes propres grenades » ne concerne que le lanceur.');
+        self::assertSame(3, self::sideRule('WEST', 'WEST', false, ['sideGrenade' => 2])[0]);
+        self::assertSame(0, self::sideRule('WEST', 'WEST', true, ['sideGrenade' => 2])[0], 'Le lanceur suit « Mes propres grenades ».');
+        self::assertSame(0, self::sideRule('EAST', 'WEST', false, ['sideGrenade' => 2])[0]);
+        // Le plus protecteur gagne.
+        self::assertSame(2, self::sideRule('WEST', 'WEST', true, ['side' => ['WEST' => 2], 'own' => 1])[0]);
+        self::assertSame(3, self::sideRule('WEST', 'WEST', false, ['side' => ['WEST' => 1], 'sideGrenade' => 2])[0]);
+        self::assertSame(1, self::sideRule('WEST', 'WEST', false, ['side' => ['WEST' => 0], 'sideGrenade' => 1])[0]);
+        // Ancien réglage de mission comspec_fb_friendly = false : camp du lanceur immunisé, lanceur compris.
+        self::assertSame(3, self::sideRule('WEST', 'WEST', true, ['friendly' => false])[0]);
+        self::assertSame(0, self::sideRule('EAST', 'WEST', false, ['friendly' => false])[0]);
+        // Niveaux ordonnés : chaque niveau protège au moins autant que le précédent, sur chaque canal.
+        $levels = [[1, 1, 1], [0.35, 0.35, 1], [0, 1, 0.5], [0, 0, 0]];
+        for ($i = 1; $i < 4; $i++) {
+            self::assertLessThanOrEqual($levels[$i - 1][0], $levels[$i][0]);
+            self::assertLessThanOrEqual($levels[$i - 1][2], $levels[$i][2]);
+        }
+    }
+
+    public function testHalosVariesTeintesEtDescriptionSteam(): void
+    {
+        for ($i = 1; $i <= 8; $i++) {
+            self::assertFileExists(self::path(self::MAIN . "ui/fb_halo_{$i}_ca.paa"));
+            self::assertFileExists(self::path("mod/COMSPEC_Flashbang/tools/render/fb_halo_{$i}_ca.png"));
+        }
+        self::assertFileExists(self::path(self::MAIN . 'ui/fb_halo_core_ca.paa'));
+        $rsc = self::read(self::MAIN . 'RscTitles.hpp');
+        self::assertStringContainsString('class COMSPEC_FB_Halo {', $rsc);
+        foreach ([201, 202, 203, 204, 211, 212, 213, 214] as $idc) {
+            self::assertStringContainsString("idc = {$idc};", $rsc);
+        }
+        $halo = self::read(self::MAIN . 'functions/fn_halo.sqf');
+        self::assertStringContainsString('private _model = 1 + floor random 8;', $halo);
+        self::assertStringContainsString('if (_model == _last) then { _model = 1 + ((_model + floor random 7) mod 8) };', $halo, 'Jamais deux fois de suite le même modèle.');
+        self::assertStringContainsString('ctrlSetAngle [random 360, 0.5, 0.5, true]', $halo);
+        self::assertStringContainsString('fb_halo_%1_ca.paa', $halo);
+        // Tirage sans répétition : la formule ne retombe jamais sur le modèle précédent et reste dans 1..8.
+        for ($last = 1; $last <= 8; $last++) {
+            for ($r = 0; $r < 7; $r++) {
+                $m = 1 + (($last + $r) % 8);
+                self::assertNotSame($last, $m);
+                self::assertGreaterThanOrEqual(1, $m);
+                self::assertLessThanOrEqual(8, $m);
+            }
+        }
+        $tint = self::read(self::MAIN . 'functions/fn_tint.sqf');
+        foreach (['"blanc pur"', '"blanc bleuté"', '"blanc chaud"', '"doré, bord bleuté"', '"pointe verte"', '"pointe magenta"', 'selectRandom _palette',
+            'if (_v <= 0) exitWith { ["blanc pur"'] as $needle) {
+            self::assertStringContainsString($needle, $tint);
+        }
+        // Poids du tirage : somme 1 ; teintes réalistes : aucun canal sous 0,38 (pas d'arc-en-ciel hors thème).
+        self::assertSame(6, preg_match_all('/\]\], (0\.\d+)/', $tint, $w), 'Six teintes pondérées.');
+        self::assertEqualsWithDelta(1.0, array_sum(array_map('floatval', $w[1])), 1e-9);
+        preg_match_all('/\[(1|0\.\d+), (1|0\.\d+), (1|0\.\d+)\]/', substr($tint, (int) strpos($tint, 'selectRandomWeighted')), $c);
+        self::assertGreaterThanOrEqual(18, count($c[0]));
+        foreach (array_merge($c[1], $c[2], $c[3]) as $ch) {
+            self::assertGreaterThanOrEqual(0.38, (float) $ch);
+        }
+        $fx = self::read(self::MAIN . 'functions/fn_fx.sqf');
+        self::assertStringContainsString('[_palette] call comspec_fb_fnc_tint', $fx);
+        self::assertStringContainsString('[_ctx, _pos, _k, _tintInfo, _fast] call comspec_fb_fnc_halo', $fx);
+        self::assertStringContainsString('["fx", format ["halo=%1 teinte=%2', $fx);
+        self::assertStringContainsString('(_lightArgs select 0) setLightColor _tint;', $fx, 'Rafale : la lumière partagée change de teinte à chaque coup.');
+        self::assertStringContainsString('private _tau = [0.07, 0.022] select _fast;', $fx, 'Rafale : la lumière retombe entre deux coups (stroboscope).');
+        // Stroboscope : à 65 ms d'écart, la lumière redescend sous 15 % avant le coup suivant (pic 18 ms, constante 22 ms).
+        self::assertLessThan(0.15, exp(-(0.065 - 0.018) / 0.022));
+        self::assertGreaterThan(0.5, exp(-(0.065 - 0.035) / 0.07), 'Ancienne décroissance : lumière encore à 65 %, éclats confondus.');
+        self::assertStringContainsString('linearConversion [0, 0.06, _now - (_st getOrDefault ["lastHit", -10]), 1, 0.15, true]', self::read(self::MAIN . 'functions/fn_playerLoop.sqf'));
+        $desc = (string) file_get_contents(self::path('mod/COMSPEC_Flashbang/workshop/STEAM_DESCRIPTION.txt'));
+        self::assertLessThanOrEqual(7900, strlen($desc), 'Description Steam : 7 900 octets au plus.');
+        self::assertSame(45, substr_count(self::read(self::MAIN . 'XEH_preInit.sqf'), 'call _add;') + 3, '45 réglages (4 camps par une seule ligne).');
+        self::assertStringContainsString('45 réglages CBA', $desc);
+        self::assertStringContainsString('45 CBA settings', $desc);
     }
 }

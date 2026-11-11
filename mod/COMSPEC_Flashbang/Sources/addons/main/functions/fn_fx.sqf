@@ -12,20 +12,30 @@
     de CfgSons.hpp : JAPAN blanc / rouge, GERMAN doré, WOMEN rose / violet / turquoise, SUPRISE arc-en-ciel).
     Flammes (réglage « Flammes (visuel) », client : Aucune / Légère / Marquée) : courtes langues de gaz incandescents
     orange-blanc par les évents (0,15 - 0,3 s), lueur chaude très atténuée mêlée au flash ; aucun feu, aucun dégât.
-    Budget et rafales : au plus 8 lumières à la fois sur ce poste ; une détonation à moins de 0,08 s de la précédente
-    de la même grenade ne crée pas de nouvelle lumière ni de flammes : elle relance la lumière en cours (scintillement).
-    [_ctx, _posASL, _env, _g] call comspec_fb_fnc_fx
+    Budget et rafales : au plus 8 lumières à la fois sur ce poste ; une détonation à moins de 0,12 s de la précédente
+    de la même grenade ne crée pas de nouvelle lumière ni de flammes : elle relance la lumière en cours à son pic, avec
+    une nouvelle teinte. En rafale (_fast) la lumière retombe très vite entre deux coups (pic 18 ms, constante 22 ms :
+    à 65 ms d'écart elle redescend sous 15 % avant le coup suivant) : N coups = N éclats visibles (stroboscope).
+    Couleur (fn_tint) : température tirée à chaque détonation autour du blanc ; la lumière, les étincelles et le halo
+    suivent. Halo à l'écran (fn_halo) : 8 modèles, rotation, taille, durée et étirement tirés au hasard.
+    De jour et dehors (soleil x ciel dégagé) : lumière x0,35, portée 35 m au lieu de 60, reflet du moteur deux fois
+    plus petit, encore réduit au-delà de 30 m et invisible au-delà de 350 m (2500 m la nuit).
+    [_ctx, _posASL, _env, _g, _fast] call comspec_fb_fnc_fx
 */
-params ["_ctx", "_pos", "_env", ["_g", 1]];
+params ["_ctx", "_pos", "_env", ["_g", 1], ["_fast", false]];
 private _k = (_g * (1 + ([0.67] call comspec_fb_fnc_rand))) max 0.3;      // 0,6 à 1,4 à 60 %
 private _sz = 1 + ([0.45] call comspec_fb_fnc_rand);                       // taille des particules
-private _tint = [[0.93, 0.96, 1], [0.88, 0.93, 1], [1, 0.95, 0.85]] select (floor random 3);
-// Étincelles : blanc chaud -> orange (couleurs puis émission) ; BANG spécial : couleur du thème.
-private _spark = [[[1, 0.95, 0.85, 1], [1, 0.8, 0.5, 0.8], [1, 0.6, 0.3, 0]], [[40, 35, 25, 1], [8, 5, 2, 0]]];
-private _spark2 = [[[1, 0.9, 0.7, 1], [1, 0.7, 0.4, 0.8], [1, 0.5, 0.2, 0]], [[30, 25, 15, 1], [6, 4, 1, 0]]];
+// Couleur de cette détonation (fn_tint) : cœur (lumière), couronne (halo, étincelles), fin de flash.
 private _palette = _ctx getOrDefault ["teintes", []];
+private _tintInfo = [_palette] call comspec_fb_fnc_tint;
+_tintInfo params ["_tintName", "_tint", "_corona", "_late"];
+_tint = +_tint;
+// Étincelles : cœur -> couronne -> orange (couleurs puis émission) ; BANG spécial : couleur du thème.
+private _spark = [[_tint + [1], [(_corona select 0), (_corona select 1) * 0.86, (_corona select 2) * 0.6, 0.8], [1, 0.6, 0.3, 0]],
+    [[40 * (_tint select 0), 36 * (_tint select 1), 28 * (_tint select 2), 1], [8, 5, 2, 0]]];
+private _spark2 = [[[(_late select 0), (_late select 1) * 0.92, (_late select 2) * 0.75, 1], [1, 0.7, 0.4, 0.8], [1, 0.5, 0.2, 0]],
+    [[30 * (_late select 0), 26 * (_late select 1), 17 * (_late select 2), 1], [6, 4, 1, 0]]];
 if (_palette isNotEqualTo []) then {
-    _tint = +(selectRandom _palette);
     _spark = [[_tint + [1], _tint + [0.8], (_tint vectorMultiply 0.7) + [0]], [(_tint vectorMultiply 40) + [1], (_tint vectorMultiply 8) + [0]]];
     _spark2 = _spark;
 };
@@ -38,7 +48,13 @@ private _enclosed = _env getOrDefault ["enclosed", false];
 private _drill = _kind == "drill";
 private _drillFlash = _drill && {missionNamespace getVariable ["comspec_fb_drillFlash", false]};
 private _t = diag_tickTime;
-private _fused = (_t - (_ctx getOrDefault ["lastLight", -1])) < 0.08;
+private _fused = (_t - (_ctx getOrDefault ["lastLight", -1])) < 0.12;
+// Jour dehors : pupille et scène déjà claires, la lumière porte moins et le reflet est plus petit.
+private _sun = [sunOrMoon * (1 - 0.3 * overcast), 0] select _enclosed;
+private _dayK = linearConversion [0, 1, _sun, 1, 0.35, true];
+// Décroissance : pic tenu puis exponentielle ; très courte en rafale pour que chaque coup se voie.
+private _tau = [0.07, 0.022] select _fast;
+private _hold = [0.035, 0.018] select _fast;
 _ctx set ["lastLight", _t];
 if (isNil "comspec_fb_lights") then { comspec_fb_lights = [] };
 comspec_fb_lights = comspec_fb_lights select { !isNull (_x select 0) };
@@ -47,9 +63,16 @@ private _flames = [0, missionNamespace getVariable ["comspec_fb_flames", 1]] sel
 // ------------------------------------------------------------------ lumière
 private _lightArgs = _ctx getOrDefault ["lightArgs", []];
 if ((!_drill || _drillFlash) && {_fused || {count comspec_fb_lights >= 8}} && {_lightArgs isNotEqualTo []} && {!isNull (_lightArgs select 0)}) then {
-    // Rafale (ou budget atteint) : la lumière en cours repart à son pic (scintillement), pas de nouvelle source.
-    _lightArgs set [1, ((_lightArgs select 1) max (([60000, 1500] select _drill) * _k))];
+    // Rafale (ou budget atteint) : la lumière en cours repart à son pic avec la teinte de ce coup, pas de nouvelle
+    // source ; entre deux coups elle retombe (_tau court) : stroboscope.
+    _lightArgs set [1, ([60000, 1500] select _drill) * _k * _dayK * ([1, 0.8 + random 0.4] select _fast)];
     _lightArgs set [2, _t];
+    _lightArgs set [3, _tau];
+    _lightArgs set [4, _hold];
+    (_lightArgs select 0) setLightColor _tint;
+    (_lightArgs select 0) setLightAmbient _tint;
+    (_lightArgs select 0) setPosASL (_pos vectorAdd [0, 0, 0.35]);
+    _ctx set ["lightsRelit", (_ctx getOrDefault ["lightsRelit", 0]) + 1];
 } else {
 if ((!_drill || _drillFlash) && {count comspec_fb_lights < 8}) then {
     private _light = "#lightpoint" createVehicleLocal [0, 0, 0];
@@ -60,27 +83,37 @@ if ((!_drill || _drillFlash) && {count comspec_fb_lights < 8}) then {
     _light setLightAmbient _tint;
     _light setLightDayLight true;
     _light setLightUseFlare true;
-    _light setLightFlareSize ([4, 0.6] select _drill);
-    _light setLightFlareMaxDistance 2500;
-    private _hard = if (_enclosed) then { (_env getOrDefault ["radius", 5]) + 4 } else { 60 };
+    // Reflet du moteur : 4 la nuit, 2 en plein jour, puis réduit au-delà de 30 m (x0,4 à 200 m) ; visible à 2500 m
+    // la nuit, 350 m en plein jour.
+    _light setLightFlareSize (([4, 0.6] select _drill) * (linearConversion [0, 1, _sun, 1, 0.5, true]) * (linearConversion [30, 200, _dist, 1, 0.4, true]));
+    _light setLightFlareMaxDistance (linearConversion [0, 1, _sun, 2500, 350, true]);
+    private _hard = if (_enclosed) then { (_env getOrDefault ["radius", 5]) + 4 } else { linearConversion [0, 1, _sun, 60, 35, true] };
     _light setLightAttenuation [0.5, 0, 0, 1, _hard * 0.7, _hard];
-    private _i0 = ([60000, 1500] select _drill) * _k;
+    private _i0 = ([60000, 1500] select _drill) * _k * _dayK;
     _light setLightIntensity _i0;
-    private _args = [_light, _i0, _t];
+    private _args = [_light, _i0, _t, _tau, _hold];
     _ctx set ["lightArgs", _args];
+    _ctx set ["lightsNew", (_ctx getOrDefault ["lightsNew", 0]) + 1];
     comspec_fb_lights pushBack _args;
     [{
         params ["_args", "_handle"];
-        _args params ["_light", "_i0", "_tStart"];
+        _args params ["_light", "_i0", "_tStart", "_tau", "_hold"];
         private _age = diag_tickTime - _tStart;
         if (isNull _light || {_age > 0.4}) exitWith {
             [_handle] call CBA_fnc_removePerFrameHandler;
             if (!isNull _light) then { deleteVehicle _light };
         };
-        // Pic tenu ~0,035 s (2 images), puis décroissance exponentielle (constante 0,07 s).
-        _light setLightIntensity (_i0 * (if (_age < 0.035) then { 1 } else { exp (-(_age - 0.035) / 0.07) }));
+        // Pic tenu (~2 images), puis décroissance exponentielle (0,07 s ; 0,022 s en rafale).
+        _light setLightIntensity (_i0 * (if (_age < _hold) then { 1 } else { exp (-(_age - _hold) / _tau) }));
     }, 0, _args] call CBA_fnc_addPerFrameHandler;
 };
+};
+
+// ------------------------------------------------------------------ halo à l'écran (8 modèles, teinte du coup)
+if (!_drill && {_dist < 400}) then {
+    private _halo = [_ctx, _pos, _k, _tintInfo, _fast] call comspec_fb_fnc_halo;
+    ["fx", format ["halo=%1 teinte=%2 lumière=%3 (jour x%4)%5", [_halo, "aucun (hors écran, caché ou budget)"] select (_halo == 0), _tintName,
+        ["nouvelle", "relancée"] select _fused, _dayK toFixed 2, ["", " rafale"] select _fast]] call comspec_fb_fnc_log;
 };
 
 if (_dist > 1500) exitWith {};

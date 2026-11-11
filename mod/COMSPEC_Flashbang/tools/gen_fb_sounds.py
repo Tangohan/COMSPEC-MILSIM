@@ -20,6 +20,8 @@ découpé, réverbéré) ; _synth = synthétisé ici (numpy), original.
 
     python gen_fb_sounds.py [dossier_sources] [--drill] [--ecoute H:\\StreamLabs\\ogg]
       --drill   n'écrit que les sons au choix de la DRILL (pop sourd, bang léger, sifflet, cloche)
+      --court   n'écrit que les bangs courts des rafales (bang_court_a/b/c_enreg.ogg), tirés des bang_unique_*
+                déjà présents dans le mod (aucune source nécessaire) : 0,30 s = attaque + 250 ms de queue
       --ecoute  copie les fichiers écrits dans le dossier d'écoute et refait son LISEZ-MOI ; les morceaux de
                 sources_decoupees\\ déjà présents ne sont jamais réécrits
 
@@ -316,9 +318,39 @@ def loop_from_recording(x8):
     return loop
 
 
+def short_bangs():
+    """Bangs courts des rafales (fn_burst : détonation suivie d'une autre à moins de 0,25 s) : les 0,30 premières
+    secondes de chaque bang_unique_*_enreg.ogg du mod (attaque intacte + 250 ms de queue, fondu de sortie de 0,14 s).
+    Même attaque, même crête, même niveau que le bang entier : la sonie visée (-10 LUFS sur le bang entier) n'est pas
+    recalculée, le coup est seulement raccourci pour que la rafale soit articulée au lieu d'être un souffle continu."""
+    out = {}
+    for v in "abc":
+        x = decode(os.path.join(OUT, f"bang_unique_{v}_enreg.ogg"))[:, 0].astype(np.float64)
+        pk = np.abs(x).max()
+        start = max(0, int(np.argmax(np.abs(x) > 0.05 * pk)) - int(0.002 * SR))     # début de l'attaque
+        y = fade(x[start:start + int(0.30 * SR)], 0.001, 0.14)
+        out[f"bang_court_{v}_enreg"] = y
+        print(f"bang_court_{v}_enreg : attaque à {start / SR * 1000:.0f} ms, crête {20 * np.log10(np.abs(y).max() + 1e-12):.1f} dBFS "
+              f"(bang entier {20 * np.log10(pk + 1e-12):.1f} dBFS)")
+    return out
+
+
 def main():
     global SRC
     args = sys.argv[1:]
+    if "--court" in args:
+        for name, x in short_bangs().items():
+            write_ogg(os.path.join(OUT, name + ".ogg"), x)
+            # Crête réelle après encodage ramenée sous -0,5 dBFS (comme les autres bangs).
+            for _ in range(3):
+                pk = 20 * np.log10(np.abs(decode(os.path.join(OUT, name + ".ogg"))).max() + 1e-12)
+                if pk <= -0.5:
+                    break
+                x = x * 10 ** ((-0.7 - pk) / 20)
+                write_ogg(os.path.join(OUT, name + ".ogg"), x)
+            d = decode(os.path.join(OUT, name + ".ogg"))
+            print(f"{name:32s} {len(d) / SR:6.2f} s  mono    crête {20 * np.log10(np.abs(d).max() + 1e-12):6.1f} dBFS")
+        return
     ecoute = None
     if "--ecoute" in args:
         i = args.index("--ecoute")

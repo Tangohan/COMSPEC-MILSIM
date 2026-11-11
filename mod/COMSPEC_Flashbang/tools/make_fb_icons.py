@@ -38,6 +38,7 @@ DELAY_TEXT = {3: (15, 15, 15, 255), 8: (245, 245, 240, 255)}
 TEXTURES = {f"fb_body_{v}_co": f"data/fb_body_{v}_co" for v in VARIANTS}
 TEXTURES.update({k: "data/" + k for k in ("fb_body_nohq", "fb_body_smdi", "fb_metal_co", "fb_metal_nohq", "fb_metal_smdi")})
 TEXTURES.update({k: "ui/" + k for k in ("fb_afterimage_ca", "fb_flare_ca", "fb_module_ca", "fb_logo_ca")})
+TEXTURES.update({k: "ui/" + k for k in [f"fb_halo_{i}_ca" for i in range(1, 9)] + ["fb_halo_core_ca"]})
 TEXTURES.update({f"fb_icon_{v}_ca": f"ui/fb_icon_{v}_ca" for v in VARIANTS})
 TEXTURES.update({f"fb_icon_{n}_r_ca": f"ui/fb_icon_{n}_r_ca" for n in FAST})
 
