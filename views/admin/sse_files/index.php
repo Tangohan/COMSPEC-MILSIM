@@ -40,7 +40,7 @@ $td = 'px-4 py-2 align-top text-sm text-slate-800 dark:text-slate-200';
         <?php $subjects = $subjects ?? ['rows' => [], 'total' => 0]; ?>
         <section class="<?= $card ?> overflow-hidden">
             <form method="get" action="<?= $h($base) ?>" class="flex flex-wrap items-end gap-3 border-b border-slate-100 p-4 dark:border-slate-800">
-                <label class="min-w-[220px] flex-1 text-xs font-bold <?= $muted ?>">Chercher une fiche
+                <label class="flex-1 text-xs font-bold <?= $muted ?>">Chercher une fiche
                     <input class="<?= $input ?> mt-1" name="q" value="<?= $h($q) ?>" placeholder="Nom, prénom, alias, identifiant d’IA">
                 </label>
                 <button class="<?= $btn ?>" type="submit">Chercher</button>
@@ -87,7 +87,7 @@ $td = 'px-4 py-2 align-top text-sm text-slate-800 dark:text-slate-200';
                     </li>
                 <?php endforeach; ?>
             </ul>
-            <form method="post" action="<?= $h($base . '/fusion') ?>" class="mt-4 grid gap-3 sm:grid-cols-3"><?= \App\Core\Csrf::field() ?>
+            <form method="post" action="<?= $h($base . '/fusion') ?>" class="mt-4 grid gap-3" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))"><?= \App\Core\Csrf::field() ?>
                 <label class="text-xs font-bold <?= $muted ?>">Fiche à fusionner<input class="<?= $input ?> mt-1 font-mono" name="from" required placeholder="IDT-42"></label>
                 <label class="text-xs font-bold <?= $muted ?>">Dans la fiche gardée<input class="<?= $input ?> mt-1 font-mono" name="into" required placeholder="IDT-17"></label>
                 <div class="flex items-end"><button class="<?= $pri ?>" type="submit">Fusionner</button></div>
@@ -97,7 +97,7 @@ $td = 'px-4 py-2 align-top text-sm text-slate-800 dark:text-slate-200';
         <?php $ex = $extractions ?? ['rows' => [], 'total' => 0]; ?>
         <section class="<?= $card ?> overflow-hidden">
             <form method="get" action="<?= $h($base . '/extractions') ?>" class="flex flex-wrap items-end gap-3 border-b border-slate-100 p-4 dark:border-slate-800">
-                <label class="min-w-[200px] flex-1 text-xs font-bold <?= $muted ?>">Chercher<input class="<?= $input ?> mt-1" name="q" value="<?= $h($q) ?>" placeholder="EXT-…, appareil, propriétaire"></label>
+                <label class="flex-1 text-xs font-bold <?= $muted ?>">Chercher<input class="<?= $input ?> mt-1" name="q" value="<?= $h($q) ?>" placeholder="EXT-…, appareil, propriétaire"></label>
                 <label class="text-xs font-bold <?= $muted ?>">État<select class="<?= $input ?> mt-1" name="etat"><option value="">Tous</option><option value="visible"<?= ($status ?? '') === 'visible' ? ' selected' : '' ?>>Visibles</option><option value="review"<?= ($status ?? '') === 'review' ? ' selected' : '' ?>>À valider</option><option value="hidden"<?= ($status ?? '') === 'hidden' ? ' selected' : '' ?>>Masquées</option></select></label>
                 <button class="<?= $btn ?>" type="submit">Filtrer</button>
                 <span class="text-sm <?= $muted ?>"><?= (int) $ex['total'] ?> extraction(s)</span>
@@ -132,7 +132,7 @@ $td = 'px-4 py-2 align-top text-sm text-slate-800 dark:text-slate-200';
     <?php elseif ($tab === 'journal'): ?>
         <section class="<?= $card ?> overflow-hidden">
             <form method="get" action="<?= $h($base . '/journal') ?>" class="flex flex-wrap items-end gap-3 border-b border-slate-100 p-4 dark:border-slate-800">
-                <label class="min-w-[200px] flex-1 text-xs font-bold <?= $muted ?>">Chercher<input class="<?= $input ?> mt-1" name="q" value="<?= $h($q) ?>" placeholder="QRN, nom, numéro, opérateur"></label>
+                <label class="flex-1 text-xs font-bold <?= $muted ?>">Chercher<input class="<?= $input ?> mt-1" name="q" value="<?= $h($q) ?>" placeholder="QRN, nom, numéro, opérateur"></label>
                 <button class="<?= $btn ?>" type="submit">Chercher</button>
             </form>
             <div class="overflow-x-auto"><table class="min-w-full">
@@ -161,7 +161,7 @@ $td = 'px-4 py-2 align-top text-sm text-slate-800 dark:text-slate-200';
                 <select id="fx-country" class="<?= $input ?> mt-1 max-w-sm" name="default_country"><?php foreach (($countries ?? []) as $code): ?><option value="<?= $h($code) ?>"<?= ($st['default_country'] ?? '') === $code ? ' selected' : '' ?>><?= $h(Packs::label($code)) ?></option><?php endforeach; ?></select>
                 <p class="mt-1 text-xs <?= $muted ?>">Vocabulaire du terminal et formats par défaut. Ex. États-Unis : système NCIC, réponse « NO RECORD », dates 03/14/1991 ; France : FPR, « NÉANT », 14/03/1991. Le pays de chaque sujet règle ensuite l’affichage de sa fiche.</p>
             </div>
-            <div class="grid gap-4 sm:grid-cols-2">
+            <div class="grid gap-4" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
                 <div><label class="block text-sm font-bold text-slate-900 dark:text-white" for="fx-qr">Conservation du journal (jours)</label><input id="fx-qr" class="<?= $input ?> mt-1" type="number" min="0" max="3650" name="query_retention_days" value="<?= (int) ($st['query_retention_days'] ?? 0) ?>"><p class="mt-1 text-xs <?= $muted ?>">0 : garder tout. Ex. 365 efface les consultations de plus d’un an à l’enregistrement des réglages.</p></div>
                 <div><label class="block text-sm font-bold text-slate-900 dark:text-white" for="fx-er">Conservation des extractions (jours)</label><input id="fx-er" class="<?= $input ?> mt-1" type="number" min="0" max="3650" name="extraction_retention_days" value="<?= (int) ($st['extraction_retention_days'] ?? 0) ?>"><p class="mt-1 text-xs <?= $muted ?>">0 : garder tout. Ex. 90 pour ne garder que la campagne en cours.</p></div>
             </div>

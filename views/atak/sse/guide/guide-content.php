@@ -7,6 +7,7 @@ require __DIR__ . '/_part_bureau.php';
 require __DIR__ . '/_part_interet.php';
 require __DIR__ . '/_part_dossiers.php';
 require __DIR__ . '/_part_identites.php';
+require __DIR__ . '/_part_fichiers.php';
 require __DIR__ . '/_part_investigations.php';
 require __DIR__ . '/_part_collecte.php';
 require __DIR__ . '/_part_labnum.php';
