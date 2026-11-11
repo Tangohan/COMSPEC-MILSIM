@@ -74,10 +74,11 @@ final class AtakCoverImportAssetTest extends TestCase
         self::assertStringContainsString('["resend"] call comspec_sse_fnc_idCoverImport;', self::read($dir . 'XEH_postInitClient.sqf'));
 
         $page = self::read($dir . 'functions/fn_idCoverPage.sqf');
-        self::assertStringContainsString('"IMPORTER MA COUVERTURE" call _tr', $page);
-        self::assertStringContainsString('1. Sur Athena > Ma couverture, cliquez Générer puis Télécharger.', $page);
-        self::assertStringContainsString('2. Déposez le fichier dans Documents\Arma 3 - COMSPEC.', $page);
-        self::assertStringContainsString('3. Ici, cliquez Importer.', $page);
+        // Depuis feat/atak-couvertures-sync (4.4.0) : import d'abord depuis Athena (fenêtre Mes couvertures sur Athena),
+        // le fichier reste possible (IMPORTER UN FICHIER) avec une seule ligne d'aide.
+        self::assertStringContainsString('"IMPORTER UN FICHIER" call _tr', $page);
+        self::assertStringContainsString('Sans connexion : sur Athena › Ma couverture, téléchargez le fichier, déposez-le dans Documents\Arma 3 - COMSPEC, puis touchez Importer un fichier.', $page);
+        self::assertStringContainsString('fn_idCoverAthena', $page);
         // Le bouton « Demander la mise à jour » existant ne change pas.
         self::assertStringContainsString('["pull"] call _act, false, !_wait', $page);
     }
