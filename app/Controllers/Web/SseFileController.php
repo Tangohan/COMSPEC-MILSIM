@@ -86,7 +86,10 @@ final class SseFileController
             'qa', 'qb' => trim($data['criteria']['number']) !== '',
             default => false,
         };
-        if ($wantsSearch && $purpose === '' && $data['purposeRequired']) {
+        $throttled = $wantsSearch && (new \App\Services\Security\FileRateLimiter())->tooManyAttempts('sse_files_search|' . $tenantId . '|' . (int) $uid . '|' . session_id(), 120, 60);
+        if ($throttled) {
+            Session::flash('error', 'Trop de requêtes en une minute : patientez un instant avant d’interroger de nouveau les fichiers.');
+        } elseif ($wantsSearch && $purpose === '' && $data['purposeRequired']) {
             $data['needPurpose'] = true;
         } elseif ($wantsSearch) {
             try {
