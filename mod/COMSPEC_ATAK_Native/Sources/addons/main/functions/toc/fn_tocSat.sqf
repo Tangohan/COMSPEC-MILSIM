@@ -407,8 +407,9 @@ switch (_mode) do {
             _c ctrlSetFont "EtelkaMonospacePro";
             _c ctrlSetFontHeight _f;
             _c setVariable ["COMSPEC_ATAK_F", _f];
-            _c ctrlSetBackgroundColor [0, 0, 0, 0.5];
-            _c ctrlSetTextColor [0.93, 0.95, 0.93, 1];
+            // Thème TOC (fn_tocTheme) : plaque BG0, texte du thème.
+            _c ctrlSetBackgroundColor (["rgba", ["bg0", 0.55]] call comspec_atak_native_fnc_tocTheme);
+            _c ctrlSetTextColor (["rgba", ["text"]] call comspec_atak_native_fnc_tocTheme);
             _c
         };
         private _seg = { private _c = ["RscPicture"] call _mkc; _c ctrlSetText "#(argb,8,8,3)color(1,1,1,1)"; _c };
@@ -459,8 +460,10 @@ switch (_mode) do {
         private _mode0 = _st param [3, "AUTO"];
         private _sens = ["effect", _mode0] call _fn;
         // Encre des traits : sombre sur image claire (blanc chaud), claire sur image sombre.
-        private _ink = [[0.95, 0.96, 0.94, 0.9], [0.05, 0.06, 0.06, 0.88]] select (_sens in ["WHOT", "FUSW"]);
-        private _sideRgb = (createHashMapFromArray [["WEST", [0.2, 0.55, 1]], ["EAST", [1, 0.32, 0.26]], ["GUER", [0.3, 0.88, 0.4]], ["CIV", [0.78, 0.5, 1]]]) getOrDefault [_side, [0.2, 0.55, 1]];
+        // Encre du HUD : texte du thème sur image sombre, fond BG0 sur image « blanc chaud » ; pistes amies en couleur OTAN
+        // du thème (fn_tocTheme, mêmes jetons que les écrans du mur et le PC).
+        private _ink = [["rgba", ["text", 0.9]] call comspec_atak_native_fnc_tocTheme, ["rgba", ["bg0", 0.88]] call comspec_atak_native_fnc_tocTheme] select (_sens in ["WHOT", "FUSW"]);
+        private _sideRgb = (["rgba", ["friend"]] call comspec_atak_native_fnc_tocTheme) select [0, 3];
         private _gz0 = getTerrainHeightASL [_cc select 0, _cc select 1];
         private _alt = (_cc select 2) - _gz0;
         private _hwG = (_alt max 1) * _fov;
@@ -616,7 +619,7 @@ switch (_mode) do {
                 if !(_sp call _inV) then { continue };
                 _sp params ["_gx", "_gy"];
                 (_sl select _su) params ["_l1", "_l2", "_l3", "_l4", "_ic", "_lb", "_sub"];
-                private _col = switch (_fr) do { case 0: { _sideRgb + [1] }; case 1: { (_sideRgb apply { _x * 0.75 }) + [0.9] }; default { [0.62, 0.64, 0.63, 0.85] }; };
+                private _col = switch (_fr) do { case 0: { _sideRgb + [1] }; case 1: { (_sideRgb apply { _x * 0.75 }) + [0.9] }; default { ["rgba", ["lost", 0.85]] call comspec_atak_native_fnc_tocTheme }; };
                 private _bpx = (((_size / ((2 * _hwG) max 1)) * _iw) / _ux) max 14;
                 private _bw = _bpx * _ux; private _bh = _bpx * _uy;
                 if (_boxOn) then {
