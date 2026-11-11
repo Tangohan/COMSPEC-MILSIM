@@ -86,6 +86,8 @@ switch (_act) do {
         private _ai = [];
         if (!isPlayer _from && {(_key select [0, 3]) isEqualTo "AI_"}) then {
             private _aiUid = _from getVariable ["comspec_sse_aiUid", ""];
+            // Règle du SSE quand il est chargé (comspec_sse_fnc_loreUid « assign » : Eden, biométrie, variable, nom, position).
+            if (!(_aiUid isEqualType "" && {_aiUid isNotEqualTo ""}) && {!isNil "comspec_sse_fnc_loreUid"}) then { _aiUid = ["assign", _from] call comspec_sse_fnc_loreUid; };
             if !(_aiUid isEqualType "" && {_aiUid isNotEqualTo ""}) then {
                 private _vn = vehicleVarName _from;
                 private _n = (missionNamespace getVariable ["COMSPEC_ATAK_AiUidSeq", 0]) + 1;
