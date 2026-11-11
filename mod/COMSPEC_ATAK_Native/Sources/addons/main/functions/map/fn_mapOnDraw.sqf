@@ -40,7 +40,9 @@ if (_fwId isNotEqualTo "") then {
 // l'écart retombe sous un dixième de pixel et plus rien n'est relancé.
 private _fwOn = !(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]} || {_fwId isNotEqualTo ""};
 _map setVariable ["comspec_follow", _fwOn];
-if (_fwOn) then {
+// Zoom progressif en cours (fn_mapZoom, comspec_zoomUntil) : lui seul tient la vue, centrée sur la position du moment ;
+// le suivi lançait sinon son propre ctrlMapAnimAdd à l'ancienne échelle et tirait la carte vers un autre point.
+if (_fwOn && {diag_tickTime >= (_map getVariable ["comspec_zoomUntil", -1])}) then {
     private _fwLast = _map getVariable ["comspec_lastAim", []];
     if ((count _fwLast) isEqualTo 2 && {ctrlMapAnimDone _map} && {diag_tickTime - (_map getVariable ["comspec_centerAt", -1]) > 0.15}) then {
         (ctrlPosition _map) params ["_fwX", "_fwY", "_fwW", "_fwH"];

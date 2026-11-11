@@ -181,7 +181,9 @@ if (_page isEqualTo "MAP") then {
     ["tick"] call comspec_atak_native_fnc_unitCard;
     ["mapTick"] call comspec_atak_native_fnc_squadBar;
     // Porté (HUD) ou suivi activé : la carte reste centrée sur le joueur.
-    if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]}) then {
+    // Pas pendant un zoom progressif (fn_mapZoom, comspec_zoomUntil) : l'échelle qui bouge relançait un fn_mapCenter au
+    // milieu de l'animation, avec l'ancien décalage (la carte filait vers un autre point puis revenait sur moi).
+    if ((!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]}) && {diag_tickTime >= (([] call comspec_atak_native_fnc_mapCtrl) getVariable ["comspec_zoomUntil", -1])}) then {
         // Le suivi image par image (fn_mapOnDraw) prend le relais dès le premier centrage : ici, seulement au besoin
         // (premier affichage, zoom changé) ou en secours s'il a décroché (centre visible à plus de 30 m de mon point).
         // Avant : recentrage complet tous les 30 m parcourus, même quand le suivi tenait ; chaque recentrage coupe le
