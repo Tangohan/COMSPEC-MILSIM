@@ -15,10 +15,13 @@
       - CAMP : message à tout le camp ou à un chef de groupe (arrive dans Messages), indicatif du poste ;
       - ORBAT : ORBAT du site (fn_bftOrbat), membres en ligne ou non ; mêmes droits que le téléphone (lu avec le compte du joueur) ;
       - RÉSEAU : état du réseau, météo, contenu des écrans du poste (carte, réseau, ORBAT, diapositive) ;
-      - SAT (salle TOC, 11/11) : vue satellite en direct à la place de la carte (fn_tocSat), suivi des alliés du réseau,
-        SAT 1 / SAT 2, prise de main (une main par satellite ; toute commande d'un satellite libre la donne), image AUTO
-        (jour le jour, vision nocturne la nuit) / jour (éclairci la nuit) / nuit / thermique, déplacement, zoom (boutons ou
-        molette sur l'image), glisser pour déplacer, clic sur l'image pour centrer, suivi d'un groupe ou d'une unité ;
+      - SAT (salle TOC, 11/11 ; console ISR, retour de TTRD « faut vraiment ce rendu TOC SAT ») : vue satellite en direct
+        à la place de la carte (fn_tocSat), 16:9 rognée pour remplir la zone, HUD du capteur incrusté (coins, réticule,
+        échelle, lignes de données), pistes amies du réseau, marqueurs, quadrillage. Console : SAT 1 / SAT 2, prise de main
+        (une main par satellite ; toute commande d'un satellite libre la donne), POINTAGE (grille tapée, clic sur la
+        carte, suivi d'un groupe ou d'une unité, inscription à la main courante, repère du camp), zoom continu 0,25× à 8×
+        (boutons ou molette), CAPTEUR (AUTO, JOUR, NUIT, WHOT, BHOT, FUS W, FUS B), DÉPLACER (ou glisser l'image, clic pour
+        centrer), CALQUES de ce PC, dérive et suivi du relief, ÉCRAN ISR (un écran ou une dalle de la salle reçoit la vue) ;
         les autres PC et écrans le montrent en lecture seule ;
       - CHRONOS : chronos du poste (chrono, compte à rebours, heure H en ZULU), communs au camp (fn_tocRoom) ;
       - RADIO : radios ACRE2 de l'opérateur (fn_mpu5, lecture seule) : canal, fréquences, voyants RX / TX, alternat ;
@@ -52,7 +55,7 @@
       ["layout"]        pose la mise en page en cours (onglet, outil de la carte)     ["audit"] -> défauts de l'onglet affiché
       ["mk", [classe, clé]] contrôle créé pour fn_tocDraw / fn_tocHallUi (même registre)   ["tip", [contrôle, aide, brut]]
       ["label", [clé, long, court, brut]] libellé d'un bouton changé (mesuré de nouveau)     ["press", clé] boutons du PC
-      ["satClick", [u, v]] centre le satellite (clic sur l'image)   ["satOverlay"] cadres de suivi (chaque image)
+      ["satClick", [u, v]] centre le satellite (clic sur l'image)   ["satOverlay"] HUD du capteur (4 fois par seconde)
       ["satDown"|"satUp", [x, y]] glisser sur l'image : déplace la vue     ["satWheel", z] molette sur l'image : zoom
       ["tool", nom]     "SELECT" | "MEASURE" | "MARKER"     ["layer", clé] "ai" | "ev"     ["search"]     ["left", [x, y]]
       ["frame", quoi]   "net" (tout le réseau) | "me" | "post" | [x, y]
@@ -74,12 +77,16 @@ private _side = str side group player;
 private _tr = { _this call comspec_atak_native_fnc_tr };
 private _feedOf = { (missionNamespace getVariable [format ["COMSPEC_ATAK_TocFeed_%1", _side], []]) };
 private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
-private _sideRgb = (createHashMapFromArray [["WEST", [0.28, 0.62, 1]], ["EAST", [0.95, 0.3, 0.25]], ["GUER", [0.36, 0.85, 0.42]], ["CIV", [0.75, 0.5, 0.95]]]) getOrDefault [_side, [0.28, 0.62, 1]];
-// Onglets, en rangées : poste, salle TOC (satellite, chronos, radio, diffusion), registres du poste.
-private _tabRows = [["GROUPES", "ORBAT", "FLUX", "ORDRES", "CAMP"], ["RÉSEAU", "SAT", "CHRONOS", "RADIO", "SALLE"], ["MAIN COURANTE", "EXCHECK", "PERTES", "DEMANDES"]];
+// Thème TOC (fn_tocTheme, docs/TOC-THEME.md) : seule source des couleurs du PC. _tcol : RGBA d'un jeton ; _tink : texte
+// structuré écrit avec color='@jeton', traduit puis coloré.
+private _tcol = { params ["_k", ["_al", 1]]; ["rgba", [_k, _al]] call comspec_atak_native_fnc_tocTheme };
+private _tink = { ["ink", _this call comspec_atak_native_fnc_tr] call comspec_atak_native_fnc_tocTheme };
+// Onglets sur deux rangées pleine largeur sous la barre du haut (refonte 11/11, console de JOC) : réseau et liaisons,
+// puis salle et registres du poste.
+private _tabRows = [["GROUPES", "ORBAT", "FLUX", "ORDRES", "CAMP", "RÉSEAU", "RADIO"], ["SAT", "SALLE", "CHRONOS", "MAIN COURANTE", "EXCHECK", "PERTES", "DEMANDES"]];
 // Grille du PC, seule source des tailles : fractions de la hauteur d'écran (safeZoneH). Largeurs × pixelW / pixelH.
 private _grid = createHashMapFromArray [
-    ["gap", 0.005], ["pad", 0.013], ["brand", 0.016], ["title", 0.058], ["titleRow", 0.052], ["bar", 0.034], ["tab", 0.034], ["row", 0.034],
+    ["gap", 0.005], ["pad", 0.013], ["brand", 0.016], ["title", 0.056], ["titleRow", 0.05], ["bar", 0.032], ["tab", 0.032], ["row", 0.034], ["head", 0.034], ["hair", 0.002],
     ["tall", 0.04], ["label", 0.022], ["help", 0.05], ["strip", 0.032], ["toolHint", 0.046], ["info2", 0.05], ["info3", 0.075],
     ["flexMin", 0.06], ["font", 0.019], ["fontTab", 0.017], ["fontMin", 0.0145], ["panel", 0.36], ["panelMin", 0.5], ["panelMax", 0.62]
 ];
@@ -116,6 +123,12 @@ private _groups = {
     _out
 };
 private _setStatus = { params ["_msg"]; _st set ["status", [_msg, diag_tickTime + 6]]; };
+// Calques de l'image satellite, propres à ce PC : marqueurs, pistes amies, quadrillage, lignes de données, cadres.
+private _satOv = {
+    private _o = _st getOrDefault ["satOv", createHashMap];
+    if ((count _o) isEqualTo 0) then { _o = createHashMapFromArray [["MRKR", true], ["BFT", true], ["GRID", false], ["DATA", true], ["BOX", true]]; _st set ["satOv", _o]; };
+    _o
+};
 // Libellé d'un bouton qui tient dans sa largeur : police de la grille réduite jusqu'au plancher, puis libellé court ;
 // le libellé long et l'aide restent sur la ligne d'aide au survol. Brut : libellé déjà traduit (compteurs des onglets).
 private _fitC = {
@@ -268,74 +281,82 @@ switch (_mode) do {
         private _stx = { params ["_key"]; ["COMSPEC_RscStructuredText", _key] call _mk };
         private _lblOf = {
             params ["_key", "_txt"];
-            private _c = ["COMSPEC_RscLabel", _key] call _mk;
+            private _c = ["COMSPEC_RscTocLbl", _key] call _mk;
             _c ctrlSetText (_txt call _tr);
             _c
         };
         private _combo = {
             params ["_key", ["_opts", []], ["_tip", ""]];
-            private _c = ["COMSPEC_RscCombo", _key] call _mk;
+            private _c = ["COMSPEC_RscTocCombo", _key] call _mk;
             { private _i = _c lbAdd ((_x select 0) call _tr); _c lbSetData [_i, _x select 1]; } forEach _opts;
             if (_tip isNotEqualTo "") then { [_c, _tip] call _tipOf; };
             _c
         };
         private _edit = {
-            params ["_key", ["_tip", ""], ["_cls", "COMSPEC_RscEdit"]];
+            params ["_key", ["_tip", ""], ["_cls", "COMSPEC_RscTocEdit"]];
             private _c = [_cls, _key] call _mk;
             if (_tip isNotEqualTo "") then { [_c, _tip] call _tipOf; };
             _c
         };
         // Coque du PC : bord sombre, écran, marque en bas ; zones posées une fois (rectangles gardés pour la grille).
+        // Écran : barre du haut (poste, heures, liaison, FLASH, prise du poste) et deux rangées d'onglets pleine largeur sur
+        // le fond BG1, filet ; dessous la zone de gauche (carte, satellite, plan de la salle) et le panneau de l'onglet
+        // (titre et état, filet, contenu, aide) ; ligne d'état en bas sur toute la largeur.
         private _sw = safeZoneW;
         private _x0 = safeZoneX + _sw * 0.025; private _y0 = safeZoneY + _u * 0.022; private _w0 = _sw * 0.95; private _h0 = _u * 0.956;
         private _pdy = (_grid get "pad") * _u; private _pdx = (_grid get "pad") * _ux;
         private _gy = (_grid get "gap") * _u; private _gx = (_grid get "gap") * _ux;
         private _shell = ["COMSPEC_RscText", "shellOut", true] call _mk;
         _shell ctrlSetPosition [_x0, _y0, _w0, _h0];
-        _shell ctrlSetBackgroundColor [0.085, 0.09, 0.095, 1];
+        _shell ctrlSetBackgroundColor [0.085, 0.09, 0.095, 1]; // couleur de la coque (objet), hors thème de l'écran
         private _rim = ["COMSPEC_RscText", "shellIn", true] call _mk;
         _rim ctrlSetPosition [_x0 + _pdx * 0.4, _y0 + _pdy * 0.4, _w0 - _pdx * 0.8, _h0 - _pdy * 0.8];
-        _rim ctrlSetBackgroundColor [0.12, 0.125, 0.13, 1];
+        _rim ctrlSetBackgroundColor [0.12, 0.125, 0.13, 1]; // couleur de la coque (objet), hors thème de l'écran
         private _xi = _x0 + _pdx; private _yi = _y0 + _pdy; private _wi = _w0 - 2 * _pdx; private _hi = _h0 - 2 * _pdy - (_grid get "brand") * _u;
         private _scrn = ["COMSPEC_RscText", "screen", true] call _mk;
         _scrn ctrlSetPosition [_xi, _yi, _wi, _hi];
-        _scrn ctrlSetBackgroundColor [0.025, 0.03, 0.027, 1];
+        _scrn ctrlSetBackgroundColor (["bg0"] call _tcol);
         _st set ["inner", [_xi, _yi, _wi, _hi]];
         private _brand = ["COMSPEC_RscTextCenter", "brand", true] call _mk;
         _brand ctrlSetPosition [_x0, _yi + _hi + 0.001 * _u, _w0, (_grid get "brand") * _u];
         _brand ctrlSetText (("COMSPEC · POSTE DE COMMANDEMENT") call _tr);
         _brand ctrlSetFontHeight ((_grid get "fontMin") * _u);
-        _brand ctrlSetTextColor [0.5, 0.53, 0.55, 1];
-        // Barre de titre et ligne d'état.
+        _brand ctrlSetTextColor (["muted"] call _tcol);
+        // Barre du haut et onglets sur un même fond, filet dessous ; ligne d'état en bas.
         private _titleH = (_grid get "title") * _u;
+        private _tabsH = 2 * (_grid get "tab") * _u + _gy;
+        private _topH = _titleH + _tabsH + 2 * _gy;
         private _tBg = ["COMSPEC_RscText", "titleBg", true] call _mk;
-        _tBg ctrlSetPosition [_xi, _yi, _wi, _titleH];
-        _tBg ctrlSetBackgroundColor [0.06, 0.08, 0.07, 1];
+        _tBg ctrlSetPosition [_xi, _yi, _wi, _topH];
+        _tBg ctrlSetBackgroundColor (["bg1"] call _tcol);
         private _tLine = ["COMSPEC_RscText", "titleLine", true] call _mk;
-        _tLine ctrlSetPosition [_xi, _yi + _titleH - 0.003 * _u, _wi, 0.003 * _u];
-        _tLine ctrlSetBackgroundColor (_sideRgb + [1]);
+        _tLine ctrlSetPosition [_xi, _yi + _topH, _wi, (_grid get "hair") * _u];
+        _tLine ctrlSetBackgroundColor (["line"] call _tcol);
         _st set ["rTitle", [_xi + 2 * _gx, _yi + 0.001 * _u, _wi - 4 * _gx, _titleH - 0.005 * _u]];
+        _st set ["rTabs", [_xi + 2 * _gx, _yi + _titleH + _gy, _wi - 4 * _gx, _tabsH]];
         private _barH = (_grid get "bar") * _u;
         _st set ["rBar", [_xi, _yi + _hi - _barH, _wi, _barH]];
-        // Corps : gauche (carte, satellite ou plan de la salle), panneau de droite (onglets, contenu, aide).
-        private _by = _yi + _titleH + _gy;
-        private _bh = _hi - _titleH - _barH - 2 * _gy;
+        // Corps : gauche (carte, satellite ou plan de la salle), panneau de l'onglet à droite (titre, contenu, aide).
+        private _by = _yi + _topH + 2 * _gy;
+        private _bh = _hi - _topH - _barH - 3 * _gy;
         private _pw = ((((_wi / _ux) * (_grid get "panel")) max (_grid get "panelMin")) min (_grid get "panelMax")) * _ux;
         private _px = _xi + _wi - _pw;
         _st set ["rLeft", [_xi + _gx, _by, (_px - _gx) - (_xi + _gx), _bh]];
         private _pBg = ["COMSPEC_RscText", "rBg", true] call _mk;
         _pBg ctrlSetPosition [_px, _by, _pw, _bh];
-        _pBg ctrlSetBackgroundColor [0.045, 0.055, 0.048, 1];
-        private _cx = _px + _gx; private _cw = _pw - 2 * _gx;
-        private _tabsH = 3 * (_grid get "tab") * _u + 2 * _gy;
-        _st set ["rTabs", [_cx, _by + _gy, _cw, _tabsH]];
+        _pBg ctrlSetBackgroundColor (["bg1"] call _tcol);
+        private _cx = _px + 2 * _gx; private _cw = _pw - 4 * _gx;
         private _helpH = (_grid get "help") * _u;
         _st set ["rHelp", [_cx, _by + _bh - _gy - _helpH, _cw, _helpH]];
-        private _cy = _by + _gy + _tabsH + 2 * _gy;
+        private _cy = _by + _gy;
         _st set ["rRight", [_cx, _cy, _cw, (_by + _bh - _gy - _helpH - 2 * _gy) - _cy]];
         { (_ui get _x) ctrlCommit 0; } forEach ["shellOut", "shellIn", "screen", "brand", "titleBg", "titleLine", "rBg"];
+        // Filet accent sous l'onglet choisi (posé par « tab ») ; titre du panneau et son filet (posés par la grille).
+        (["COMSPEC_RscText", "tabMark", true] call _mk) ctrlSetBackgroundColor (["accent"] call _tcol);
+        ["pHead"] call _stx;
+        (["COMSPEC_RscText", "pRule", true] call _mk) ctrlSetBackgroundColor (["line"] call _tcol);
         // Fond noir de l'image satellite (sous l'image, l'image garde le format 16:9 des écrans).
-        (["COMSPEC_RscText", "sBack", true] call _mk) ctrlSetBackgroundColor [0, 0, 0, 1];
+        (["COMSPEC_RscText", "sBack", true] call _mk) ctrlSetBackgroundColor (["bg0"] call _tcol);
         // Barre de titre : poste et opérateur, heures et liaison, FLASH, prise du poste.
         ["title"] call _stx;
         ["clock"] call _stx;
@@ -354,17 +375,17 @@ switch (_mode) do {
         _map ctrlAddEventHandler ["MouseMoving", { params ["_m", "_mx", "_my"]; ["move", _m ctrlMapScreenToWorld [_mx, _my]] call comspec_atak_native_fnc_tocDraw; }];
         ["search", "Grille, groupe, indicatif ou nom de marqueur"] call _edit;
         // Barre de dessin sous la carte (réglages de l'outil choisi) et consigne de l'outil.
-        (["dInfo"] call _stx) ctrlSetStructuredText parseText format ["<t size='0.8' color='#8a9a93'>%1</t>", ("Réglages de l'outil : choisissez TRAIT, DESSIN, PLAN ou MARQUEUR.") call _tr];
+        (["dInfo"] call _stx) ctrlSetStructuredText parseText (["ink", format ["<t size='0.8' color='@muted'>%1</t>", ("Réglages de l'outil : choisissez TRAIT, DESSIN, PLAN ou MARQUEUR.") call _tr]] call comspec_atak_native_fnc_tocTheme);
         ["toolHint"] call _stx;
         ["build"] call comspec_atak_native_fnc_tocDraw;
         // GROUPES
-        private _gl = ["COMSPEC_RscListBoxDense", "gList"] call _mk;
+        private _gl = ["COMSPEC_RscTocList", "gList"] call _mk;
         _gl ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ["pick", ["GROUPES", _c lbData _i]] call comspec_atak_native_fnc_tocLaptop; }];
         ["gInfo"] call _stx;
         // Ordre réel à un groupe IA (fn_aiOrder), au point choisi d'un clic droit sur la carte.
         private _ga = ["gAi", (((["kinds"] call comspec_atak_native_fnc_aiOrder) select { (_x select 0) isNotEqualTo "FOLLOW" }) apply { [_x select 1, _x select 0] }), "Ordre exécuté par le groupe IA choisi, au point du clic droit sur la carte"] call _combo;
         // ORBAT du site
-        private _bl = ["COMSPEC_RscListBoxDense", "bList"] call _mk;
+        private _bl = ["COMSPEC_RscTocList", "bList"] call _mk;
         _bl ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ["pick", ["ORBAT", _c lbData _i]] call comspec_atak_native_fnc_tocLaptop; }];
         ["bInfo"] call _stx;
         // RÉSEAU : état, météo, contenu des écrans
@@ -376,7 +397,7 @@ switch (_mode) do {
         private _ff = ["fFilter", [["Tout le flux", ""], ["Alertes (PANIQUE, TIC, MEDEVAC…)", "A"], ["Comptes rendus", "R"], ["Ordres et messages", "M"]]] call _combo;
         _ff lbSetCurSel 0;
         _ff ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; (uiNamespace getVariable ["COMSPEC_ATAK_TocLap", createHashMap]) set ["fKind", _c lbData _i]; (uiNamespace getVariable ["COMSPEC_ATAK_TocLap", createHashMap]) set ["sig", ""]; }];
-        private _fl = ["COMSPEC_RscListBoxDense", "fList"] call _mk;
+        private _fl = ["COMSPEC_RscTocList", "fList"] call _mk;
         _fl ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ["pick", ["FLUX", _c lbData _i]] call comspec_atak_native_fnc_tocLaptop; }];
         ["fInfo"] call _stx;
         // ORDRES
@@ -387,7 +408,7 @@ switch (_mode) do {
         ["oL3", "DESTINATAIRE"] call _lblOf;
         ["oTarget"] call _combo;
         ["oL4", "CONSIGNE"] call _lblOf;
-        ["oText", "Consigne de l'ordre, 400 signes au plus. Exemple : tenir le carrefour jusqu'à la relève", "COMSPEC_RscEditMulti"] call _edit;
+        ["oText", "Consigne de l'ordre, 400 signes au plus. Exemple : tenir le carrefour jusqu'à la relève", "COMSPEC_RscTocEditMulti"] call _edit;
         ["oL5", "OBJECTIF (CLIC DROIT SUR LA CARTE OU GRILLE)"] call _lblOf;
         ["oGrid", "Grille de l'objectif : clic droit sur la carte, ou tapez-la"] call _edit;
         ["oInfo"] call _stx;
@@ -396,7 +417,7 @@ switch (_mode) do {
         ["cDest"] call _combo;
         private _cp = ["cPrio", ["ROUTINE", "URGENT", "FLASH"] apply { [_x, _x] }] call _combo;
         ["cL2", "MESSAGE"] call _lblOf;
-        ["cText", "Message, 400 signes au plus : il arrive dans Messages, conversation TOC du poste", "COMSPEC_RscEditMulti"] call _edit;
+        ["cText", "Message, 400 signes au plus : il arrive dans Messages, conversation TOC du poste", "COMSPEC_RscTocEditMulti"] call _edit;
         ["cL3", "INDICATIF DU POSTE (CONFIG.JSON, TOC.CALLSIGN)"] call _lblOf;
         private _cs = ["cCs", "Indicatif du poste, en capitales (24 signes au plus)"] call _edit;
         _cs ctrlSetText (["callsign"] call comspec_atak_native_fnc_tocPost); // i18n:brut (saisi, réenregistré tel quel)
@@ -404,17 +425,25 @@ switch (_mode) do {
         ["cL4", "CAMÉRA SUR LES ÉCRANS DU POSTE"] call _lblOf;
         ["cCam", [], "Les écrans TOC à moins de 30 m montrent cette caméra en direct ; « Carte et flux » les remet à l'affichage du poste"] call _combo;
         ["cInfo"] call _stx;
-        // SAT : image satellite à la place de la carte (16:9, cadres de suivi par-dessus), bandeau d'état au-dessus,
-        // légende dessous ; commandes à droite.
+        // SAT : image satellite à la place de la carte, 16:9 rognée dans un groupe qui la découpe (aucune bande, aucune
+        // déformation), bandeau d'état au-dessus ; console à droite (titre de bloc sur sa propre ligne, rien au-dessus).
         ["sStrip"] call _stx;
-        (_ui get "sStrip") ctrlSetBackgroundColor [0, 0, 0, 0.7];
-        ["RscPicture", "sPic"] call _mk;
-        ["sLegend"] call _stx;
+        (_ui get "sStrip") ctrlSetBackgroundColor (["bg0", 0.7] call _tcol);
+        private _clip = ["RscControlsGroupNoScrollbars", "sClip", true] call _mk;
+        _ui set ["sPic", _d ctrlCreate ["RscPicture", -1, _clip]];
         ["sInfo"] call _stx;
-        ["sL1", "SUIVRE UN GROUPE OU UNE UNITÉ DU RÉSEAU"] call _lblOf;
+        ["sL1", "POINTAGE"] call _lblOf;
+        ["sGrid", "Grille à viser, 4 à 10 chiffres, puis VISER LA GRILLE. Exemple : 123 456"] call _edit;
         ["sFollow", [], "Le satellite suit le groupe (centre de ses nœuds ATAK) ou l'unité choisie, à la position que le réseau connaît"] call _combo;
+        ["sNote", "Note inscrite avec la vue (INSCRIRE) ou nom du repère posé (MARQUER). Exemple : VÉHICULE À L'ARRÊT"] call _edit;
+        ["sZoom"] call _stx;
+        ["sL2", "CAPTEUR"] call _lblOf;
+        ["sL3", "DÉPLACER"] call _lblOf;
+        ["sL4", "CALQUES"] call _lblOf;
+        ["sL5", "ÉCRAN ISR"] call _lblOf;
+        ["sScr", [], "Écran ou dalle de la salle qui reçoit ce satellite (ENVOYER) ou revient à la carte (EFFACER)"] call _combo;
         // CHRONOS : chronos du poste (fn_tocRoom), affichés aussi sur les écrans en affichage horloge.
-        private _tl = ["COMSPEC_RscListBoxDense", "tList"] call _mk;
+        private _tl = ["COMSPEC_RscTocList", "tList"] call _mk;
         _tl ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; if (_i >= 0) then { (uiNamespace getVariable ["COMSPEC_ATAK_TocLap", createHashMap]) set ["selT", _c lbData _i]; }; }];
         ["tL1", "NOUVEAU CHRONO"] call _lblOf;
         ["tName", "Nom affiché sur le tableau, en capitales. Exemple : H-HOUR, ALPHA EN POSITION, RELÈVE"] call _edit;
@@ -424,12 +453,12 @@ switch (_mode) do {
         // RADIO : réseaux radio de l'opérateur (ACRE2 / TFAR, lecture seule), un bloc par radio.
         ["kInfo"] call _stx;
         // MAIN COURANTE : entrées du poste (automatiques et à la main), heure ZULU.
-        private _ll = ["COMSPEC_RscListBoxDense", "lList"] call _mk;
+        private _ll = ["COMSPEC_RscTocList", "lList"] call _mk;
         _ll ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; if (_i >= 0) then { (uiNamespace getVariable ["COMSPEC_ATAK_TocLap", createHashMap]) set ["selL", _c lbData _i]; }; }];
         ["lText", "Entrée à la main, inscrite à l'heure ZULU avec votre nom. Exemple : BRAVO signale le pont nord détruit"] call _edit;
         ["lInfo"] call _stx;
         // EXCHECK : liste d'exécution (n°, événement, mot de code, élément, heure prévue, heure réelle).
-        private _xl = ["COMSPEC_RscListBoxDense", "xList"] call _mk;
+        private _xl = ["COMSPEC_RscTocList", "xList"] call _mk;
         _xl ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; if (_i >= 0) then { (uiNamespace getVariable ["COMSPEC_ATAK_TocLap", createHashMap]) set ["selX", _c lbData _i]; }; }];
         ["xL1", "NOUVELLE LIGNE"] call _lblOf;
         ["xEv", "Événement. Exemple : Franchissement de la ligne de départ"] call _edit;
@@ -443,7 +472,7 @@ switch (_mode) do {
         ["kcEl", [], "Élément (groupe) dont le compte change"] call _combo;
         (["kcKind", [["Ami blessé", "wia"], ["Ami tué", "kia"], ["Ennemi neutralisé", "ekia"], ["Ennemi blessé ou capturé", "ewia"]]] call _combo) lbSetCurSel 0;
         // DEMANDES : appuis, MEDEVAC, ravitaillements reçus des éléments, statut et réponse renvoyée au téléphone.
-        private _ql = ["COMSPEC_RscListBoxDense", "qList"] call _mk;
+        private _ql = ["COMSPEC_RscTocList", "qList"] call _mk;
         _ql ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; if (_i >= 0) then { (uiNamespace getVariable ["COMSPEC_ATAK_TocLap", createHashMap]) set ["selQ", _c lbData _i]; }; }];
         ["qInfo"] call _stx;
         ["qAns", "Réponse envoyée au téléphone du demandeur avec le statut. Exemple : hélico décolle, ETA 8 min, fumée verte"] call _edit;
@@ -505,20 +534,36 @@ switch (_mode) do {
             ["sSlot1", "L", "SAT 2", "", "Satellite piloté et affiché par ce PC", 0],
             ["sTake", "L", "PRENDRE LA MAIN", "PRENDRE", "Un seul opérateur pilote un satellite à la fois ; les autres écrans le montrent en lecture seule", 1],
             ["sRelease", "L", "RENDRE LA MAIN", "RENDRE", "Laisse le satellite à un autre opérateur", 0],
-            ["sAUTO", "L", "AUTO", "", "Image en couleurs le jour, vision nocturne la nuit", 0],
+            ["sTaskGrid", "L", "VISER LA GRILLE", "GRILLE", "Le satellite vise la grille tapée à gauche", 1],
+            ["sMap", "L", "SUR LA CARTE", "CARTE", "La carte remplace l'image : un clic gauche sur la carte y place le satellite", 0],
+            ["sFollowGo", "L", "SUIVRE", "", "Le satellite suit le groupe ou l'unité choisi", 0],
+            ["sFollowOff", "L", "ARRÊTER LE SUIVI", "ARRÊTER", "Le satellite reste sur place", 0],
+            ["sLog", "L", "INSCRIRE", "", "Inscrit cette vue à la main courante : grille, capteur, zoom et note", 0],
+            ["sTag", "L", "MARQUER", "", "Pose au centre de la vue un repère visible par tout le camp, au nom de la note", 0],
+            ["sOut", "L", "ZOOM −", "", "Éloigne la vue (zoom divisé par 1,25 ; 0,25× au plus loin, 2 km de large) ; aussi : molette sur l'image", 0],
+            ["sIn", "L", "ZOOM +", "", "Rapproche la vue (zoom multiplié par 1,25 ; 8× au plus près, 62 m de large) ; aussi : molette sur l'image", 0],
+            ["sAUTO", "L", "AUTO", "", "Jour le jour, thermique blanc chaud la nuit", 0],
             ["sDAY", "L", "JOUR", "", "Image en couleurs (éclaircie la nuit)", 0],
             ["sNV", "L", "NUIT", "", "Vision nocturne verte", 0],
-            ["sTI", "L", "THERMIQUE", "THERM.", "Image thermique (chaud en blanc)", 0],
-            ["sN", "L", "NORD", "", "Déplace la vue d'un tiers vers le nord (ou : glisser l'image)", 0],
-            ["sS", "L", "SUD", "", "Déplace la vue d'un tiers vers le sud (ou : glisser l'image)", 0],
+            ["sWHOT", "L", "WHOT", "", "Thermique blanc chaud : ce qui est chaud (hommes, moteurs) en blanc", 0],
+            ["sBHOT", "L", "BHOT", "", "Thermique noir chaud : ce qui est chaud en noir", 0],
+            ["sFUSW", "L", "FUS W", "", "Fusion : thermique blanc chaud et contours des bâtiments", 0],
+            ["sFUSB", "L", "FUS B", "", "Fusion : thermique noir chaud et contours des bâtiments", 0],
             ["sW", "L", "OUEST", "", "Déplace la vue d'un tiers vers l'ouest (ou : glisser l'image)", 0],
-            ["sE", "L", "EST", "", "Déplace la vue d'un tiers vers l'est (ou : glisser l'image)", 0],
-            ["sIn", "L", "ZOOM +", "", "Rapproche la vue (largeur divisée par 1,5 ; 80 m de large au plus près) ; aussi : molette sur l'image", 0],
-            ["sOut", "L", "ZOOM −", "", "Éloigne la vue (largeur multipliée par 1,5 ; 5 km de large au plus) ; aussi : molette sur l'image", 0],
+            ["sN", "L", "NORD", "", "Déplace la vue d'un tiers vers le nord (ou : glisser l'image)", 0],
             ["sHome", "L", "POSTE", "", "Centre le satellite sur le poste", 0],
-            ["sFollowGo", "L", "SUIVRE", "", "Le satellite suit le groupe ou l'unité choisi", 1],
-            ["sFollowOff", "L", "ARRÊTER LE SUIVI", "ARRÊTER", "Le satellite reste sur place", 0],
-            ["sShow", "L", "AFFICHER CE SATELLITE SUR LES ÉCRANS DU POSTE", "SUR LES ÉCRANS", "Écrans TOC à moins de 30 m du poste : vue satellite en lecture seule", 0],
+            ["sS", "L", "SUD", "", "Déplace la vue d'un tiers vers le sud (ou : glisser l'image)", 0],
+            ["sE", "L", "EST", "", "Déplace la vue d'un tiers vers l'est (ou : glisser l'image)", 0],
+            ["sOvMRKR", "L", "MARQUEURS", "MRKR", "Marqueurs de la carte et tâches de la mission sur l'image (ce PC seulement)", 0],
+            ["sOvBFT", "L", "PISTES", "BFT", "Symboles et indicatifs des alliés du réseau ATAK (ce PC seulement)", 0],
+            ["sOvGRID", "L", "GRILLE", "", "Quadrillage de la carte : cases de 100 m, 1 km en vue large (ce PC seulement)", 0],
+            ["sOvDATA", "L", "DONNÉES", "DATA", "Lignes de données du capteur : zoom, hauteur, grille, altitude, heure (ce PC seulement)", 0],
+            ["sOvBOX", "L", "CADRES", "BOX", "Cadre autour de chaque allié du réseau (ce PC seulement)", 0],
+            ["sJit", "L", "DÉRIVE", "", "Simule la dérive lente de la plateforme (éteinte par défaut)", 0],
+            ["sTerr", "L", "SUIVI DU RELIEF", "RELIEF", "La hauteur suit le relief sous la vue ; éteint : hauteur constante", 0],
+            ["sRefresh", "L", "TOUT RAFRAÎCHIR", "RAFRAÎCHIR", "Recharge pistes, marqueurs et contours (le réseau du camp est publié toutes les 3 s)", 0],
+            ["sSend", "L", "ENVOYER", "", "L'écran ou la dalle choisi montre ce satellite, en lecture seule", 1],
+            ["sClear", "L", "EFFACER", "", "L'écran ou la dalle choisi revient à la carte et au flux du poste", 0],
             ["tStart", "L", "LANCER", "", "Lance ou reprend le chrono choisi", 1],
             ["tStop", "L", "ARRÊTER", "", "Arrête le chrono choisi à sa valeur", 0],
             ["tReset", "L", "ZÉRO", "", "Remet le chrono choisi à zéro (compte à rebours : à sa durée)", 0],
@@ -556,7 +601,7 @@ switch (_mode) do {
         ];
         {
             _x params ["_key", "_to", "_long", "_short", "_tip", "_prim"];
-            private _c = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_prim isEqualTo 1), _key] call _mk;
+            private _c = [["COMSPEC_RscTocButton", "COMSPEC_RscTocButtonPrimary", "COMSPEC_RscTocTab"] select ([[0, 1] select (_prim isEqualTo 1), 2] select (_to isEqualTo "T")), _key] call _mk;
             _c setVariable ["fit", [_long, _short, _tip]];
             _c setVariable ["tabBtn", _to isEqualTo "T"];
             _c ctrlSetText (_long call _tr);
@@ -568,25 +613,14 @@ switch (_mode) do {
             })];
             [_c, _tip] call _tipOf;
         } forEach _btnDefs;
-        // Cadres de suivi posés sur l'image satellite (au-dessus d'elle), message d'attente.
-        private _boxes = [];
-        for "_i" from 1 to 40 do {
-            private _b = [];
-            for "_j" from 1 to 4 do { _b pushBack (_d ctrlCreate ["COMSPEC_RscText", -1]); };
-            _b pushBack (_d ctrlCreate ["RscPicture", -1]);
-            private _bl2 = _d ctrlCreate ["COMSPEC_RscText", -1];
-            _bl2 ctrlSetFontHeight ((_grid get "fontMin") * _u); _bl2 ctrlSetBackgroundColor [0, 0, 0, 0.55];
-            _b pushBack _bl2;
-            { _x ctrlShow false; } forEach _b;
-            _boxes pushBack _b;
-        };
-        _st set ["satBoxes", _boxes];
+        // HUD du capteur posé sur l'image satellite (au-dessus d'elle, hors registre : fn_tocSat le pose), message d'attente.
+        _st set ["satHud", ["hudMake", [_d, controlNull, "PC"]] call comspec_atak_native_fnc_tocSat];
         ["sWait"] call _stx;
         // Aide du contrôle survolé (ou de l'onglet) et ligne d'état.
         private _help = ["help"] call _stx;
-        _help ctrlSetBackgroundColor [0.03, 0.04, 0.035, 1];
+        _help ctrlSetBackgroundColor (["bg0"] call _tcol);
         private _bar = ["bar"] call _stx;
-        _bar ctrlSetBackgroundColor [0.06, 0.08, 0.07, 1];
+        _bar ctrlSetBackgroundColor (["bg1"] call _tcol);
         // Image satellite : clic pour centrer, glisser pour déplacer, molette pour zoomer (fn_tocSat).
         _d displayAddEventHandler ["MouseButtonDown", { params ["", "_b", "_mx", "_my"]; if (_b isEqualTo 0) then { ["satDown", [_mx, _my]] call comspec_atak_native_fnc_tocLaptop; }; }];
         _d displayAddEventHandler ["MouseButtonUp", { params ["", "_b", "_mx", "_my"]; if (_b isEqualTo 0) then { ["satUp", [_mx, _my]] call comspec_atak_native_fnc_tocLaptop; }; }];
@@ -644,7 +678,7 @@ switch (_mode) do {
             if !(_c getVariable ["tipRaw", false]) then { _tip = _tip call _tr; };
             private _head = if (_c getVariable ["short", false]) then { format ["<t font='COMSPEC_BarlowBold'>%1</t> · ", [[_long call _tr, _long] select (_c getVariable ["raw", false])] call _esc] } else { "" };
             private _why = _c getVariable ["why", ""];
-            _s = format ["<t size='0.8' color='#cfd8d3'>%1%2%3</t>", _head, [_tip] call _esc, ["", format ["<br/><t color='#e0b040'>%1</t>", [_why call _tr] call _esc]] select (!ctrlEnabled _c && {_why isNotEqualTo ""})];
+            _s = format ["<t size='0.8' color='@text2'>%1%2%3</t>", _head, [_tip] call _esc, ["", format ["<br/><t color='@amber'>%1</t>", [_why call _tr] call _esc]] select (!ctrlEnabled _c && {_why isNotEqualTo ""})];
         } else {
             private _tabHelp = createHashMapFromArray [
                 ["GROUPES", "Choisissez un groupe : la carte se centre sur lui. Clic droit sur la carte : point de l'ORDRE IA."],
@@ -653,7 +687,7 @@ switch (_mode) do {
                 ["ORDRES", "Clic droit sur la carte : objectif de l'ordre. L'ordre arrive dans l'app Tâches des destinataires."],
                 ["CAMP", "Message au camp ou à un chef de groupe, indicatif du poste, caméra sur les écrans du poste."],
                 ["RÉSEAU", "État du réseau du camp et contenu des écrans TOC à moins de 30 m."],
-                ["SAT", "Molette sur l'image : zoom · clic : centre la vue · clic maintenu puis glisser : déplace la vue. Une commande sur un satellite libre vous en donne la main."],
+                ["SAT", "Molette sur l'image : zoom · clic : centre la vue · glisser : déplace la vue. Pistes : alliés du réseau ATAK seulement (gris : point ancien). Une commande sur un satellite libre vous en donne la main."],
                 ["CHRONOS", "Chronos, comptes à rebours et heure H, communs à tous les PC du camp."],
                 ["RADIO", "Radios de l'opérateur, en lecture seule : parlez avec votre touche d'alternat."],
                 ["SALLE", "Cliquez un écran ou une dalle sur le plan, puis choisissez son contenu."],
@@ -662,9 +696,9 @@ switch (_mode) do {
                 ["PERTES", "Pertes et résultats par élément ; corrigez à la main si besoin."],
                 ["DEMANDES", "Choisissez une demande, écrivez la réponse, puis son statut."]
             ];
-            _s = format ["<t size='0.8' color='#8a9a93'>%1</t>", [(_tabHelp getOrDefault [_st getOrDefault ["tab", "GROUPES"], ""]) call _tr] call _esc];
+            _s = format ["<t size='0.8' color='@muted'>%1</t>", [(_tabHelp getOrDefault [_st getOrDefault ["tab", "GROUPES"], ""]) call _tr] call _esc];
         };
-        _h ctrlSetStructuredText parseText _s;
+        _h ctrlSetStructuredText parseText (["ink", _s] call comspec_atak_native_fnc_tocTheme);
     };
     case "layout": {
         // Mise en page en cours : barre de titre, onglets, gauche (carte et barre de l'outil, satellite ou plan de la
@@ -673,14 +707,14 @@ switch (_mode) do {
         private _tab = _st getOrDefault ["tab", "GROUPES"];
         private _tool = _st getOrDefault ["tool", "SELECT"];
         private _left = switch (true) do {
-            case (_tab isEqualTo "SAT"): { "L:SAT" };
+            case (_tab isEqualTo "SAT"): { ["L:SAT", "L:SATMAP"] select (_st getOrDefault ["satMap", false]) };
             case (_tab isEqualTo "SALLE"): { "L:SALLE" };
             case (_tool in ["LINE", "DRAW", "PLAN", "MARKER"]): { "L:MAP:" + _tool };
             default { "L:MAP:OTHER" };
         };
         private _layout = createHashMapFromArray [
-["F:TITLE", [["titleRow", [1, -0.3, -0.14, -0.08, -0.17, -0.09], ["title", "clock", ["flashTxt", 1, "row"], ["flashGo", 1, "row"], ["postGo", 1, "row"], ["close", 1, "row"]]]]],
-["F:TABS", [["tab", [1, 1, 1, 1, 1], ["tabGROUPES", "tabORBAT", "tabFLUX", "tabORDRES", "tabCAMP"]], ["tab", [1, 1, 1, 1, 1], ["tabRÉSEAU", "tabSAT", "tabCHRONOS", "tabRADIO", "tabSALLE"]], ["tab", [1, 1, 1, 1], ["tabMAIN COURANTE", "tabEXCHECK", "tabPERTES", "tabDEMANDES"]]]],
+["F:TITLE", [["titleRow", [1, -0.42, -0.15, -0.07, -0.15, -0.08], ["title", "clock", ["flashTxt", 1, "row"], ["flashGo", 1, "row"], ["postGo", 1, "row"], ["close", 1, "row"]]]]],
+["F:TABS", [["tab", [1, 1, 1, 1, 1, 1, 1], ["tabGROUPES", "tabORBAT", "tabFLUX", "tabORDRES", "tabCAMP", "tabRÉSEAU", "tabRADIO"]], ["tab", [1, 1, 1, 1, 1, 1, 1], ["tabSAT", "tabSALLE", "tabCHRONOS", "tabMAIN COURANTE", "tabEXCHECK", "tabPERTES", "tabDEMANDES"]]]],
 ["F:HELP", [["help", [1], ["help"]]]],
 ["F:BAR", [["bar", [1], ["bar"]]]],
 ["L:MAP:OTHER", [["row", [1, 1, 1, 1, 1, 0.6, 1, 2, 1.1], ["framenet", "frameme", "framesel", "toolMEASURE", "toolMARKER", "layerai", "layerev", "search", "searchGo"]], [1, [1], ["map"]], ["row", [1, 1, 1, 1, 1], ["toolLINE", "toolDRAW", "toolPLAN", "toolERASE", "dUndo"]], ["row", [1], ["dInfo"]], ["toolHint", [1], ["toolHint"]]]],
@@ -688,25 +722,26 @@ switch (_mode) do {
 ["L:MAP:DRAW", [["row", [1, 1, 1, 1, 1, 0.6, 1, 2, 1.1], ["framenet", "frameme", "framesel", "toolMEASURE", "toolMARKER", "layerai", "layerev", "search", "searchGo"]], [1, [1], ["map"]], ["row", [1, 1, 1, 1, 1], ["toolLINE", "toolDRAW", "toolPLAN", "toolERASE", "dUndo"]], ["row", [1.2, 1, 1, 1, 1.5], ["dColor", "dWidth", "dArrow", "dClosed", "dClear"]], ["toolHint", [1], ["toolHint"]]]],
 ["L:MAP:PLAN", [["row", [1, 1, 1, 1, 1, 0.6, 1, 2, 1.1], ["framenet", "frameme", "framesel", "toolMEASURE", "toolMARKER", "layerai", "layerev", "search", "searchGo"]], [1, [1], ["map"]], ["row", [1, 1, 1, 1, 1], ["toolLINE", "toolDRAW", "toolPLAN", "toolERASE", "dUndo"]], ["row", [2.2, 1.4, 1, 1.1], ["dKind", "dPlanTxt", "dPlanEnd", "dPlanCancel"]], ["toolHint", [1], ["toolHint"]]]],
 ["L:MAP:MARKER", [["row", [1, 1, 1, 1, 1, 0.6, 1, 2, 1.1], ["framenet", "frameme", "framesel", "toolMEASURE", "toolMARKER", "layerai", "layerev", "search", "searchGo"]], [1, [1], ["map"]], ["row", [1, 1, 1, 1, 1], ["toolLINE", "toolDRAW", "toolPLAN", "toolERASE", "dUndo"]], ["row", [1, 1.5, 1, 1.3, 0.9, 1.1], ["mAff", "mType", "mColor", "mText", "mTtl", "mChan"]], ["toolHint", [1], ["toolHint"]]]],
-["L:SAT", [["strip", [1], ["sStrip"]], [1, [1], ["sBack"]], ["info2", [1], ["sLegend"]]]],
+["L:SAT", [["strip", [1], ["sStrip"]], [1, [1], ["sBack"]]]],
+["L:SATMAP", [["strip", [1], ["sStrip"]], [1, [1], ["map"]]]],
 ["L:SALLE", [["row", [1], ["hPlanTitle"]], [1, [1], ["hPlanBg"]]]],
-["R:GROUPES", [[3, [1], ["gList"]], [2, [1], ["gInfo"]], ["row", [2, 1], ["gAi", "gAiGo"]], ["row", [1, 1, 1], ["gOrder", "gMsg", "gCenter"]]]],
-["R:ORBAT", [[3, [1], ["bList"]], [1.3, [1], ["bInfo"]], ["row", [1, 1, 1], ["bMsg", "bCenter", ""]]]],
-["R:FLUX", [["row", [1], ["fFilter"]], [3, [1], ["fList"]], [1.2, [1], ["fInfo"]], ["row", [1, 1, 1], ["fCenter", "", ""]]]],
-["R:ORDRES", [["label", [1, 1], ["oL1", "oL2"]], ["row", [1, 1], ["oKind", "oPrio"]], ["label", [1], ["oL3"]], ["row", [1], ["oTarget"]], ["label", [1], ["oL4"]], ["info3", [1], ["oText"]], ["label", [1], ["oL5"]], ["row", [2, 1], ["oGrid", "oClear"]], ["tall", [1], ["oSend"]], [1, [1], ["oInfo"]]]],
-["R:CAMP", [["label", [1], ["cL1"]], ["row", [2, 1], ["cDest", "cPrio"]], ["label", [1], ["cL2"]], ["info3", [1], ["cText"]], ["tall", [1], ["cSend"]], ["label", [1], ["cL3"]], ["row", [2, 1], ["cCs", "cSave"]], ["label", [1], ["cL4"]], ["row", [2, 1], ["cCam", "cCamGo"]], [1, [1], ["cInfo"]]]],
-["R:RÉSEAU", [[1, [1], ["rInfo"]], ["label", [1], ["rL1"]], ["row", [2, 1], ["rShow", "rGo"]]]],
-["R:SAT", [["row", [1, 1], ["sSlot0", "sSlot1"]], ["info3", [1], ["sInfo"]], ["row", [1, 1], ["sTake", "sRelease"]], ["row", [1, 1, 1, 1], ["sAUTO", "sDAY", "sNV", "sTI"]], ["row", [1, 1, 1, 1], ["sN", "sS", "sW", "sE"]], ["row", [1, 1, 1], ["sIn", "sOut", "sHome"]], ["label", [1], ["sL1"]], ["row", [1], ["sFollow"]], ["row", [1, 1], ["sFollowGo", "sFollowOff"]], ["row", [1], ["sShow"]]]],
-["R:CHRONOS", [[2, [1], ["tList"]], ["row", [1, 1, 1, 1], ["tStart", "tStop", "tReset", "tDel"]], ["label", [1], ["tL1"]], ["row", [1], ["tName"]], ["row", [1, 1], ["tKind", "tVal"]], ["row", [1, 1], ["tAdd", "tShow"]], [1, [1], ["tInfo"]]]],
-["R:RADIO", [[1, [1], ["kInfo"]]]],
-["R:SALLE", [["info2", [1], ["hInfo"]], ["row", [2, 1], ["hName", "hCreate"]], ["row", [1, 1.6, 1.6], ["hRad", "hLinkAll", "hAim"]], ["info2", [1], ["hSel"]], ["row", [2, 1], ["hWhat", "hShow"]], ["row", [2, 1], ["hScrName", "hScrRen"]], ["row", [1, 1, 1], ["hPower", "hBlink", "hLink"]], ["row", [1, 1, 1, 1], ["hMosRot", "hMosCase", "hMosSrc", "hMosPut"]], ["row", [2, 1, 1], ["hScene", "hSceneGo", "hSceneDel"]], ["row", [2, 1], ["hSceneName", "hSceneSave"]], ["row", [1, 1], ["hAllOn", "hAllOff"]]]],
-["R:MAIN COURANTE", [[3, [1], ["lList"]], ["row", [2, 1], ["lText", "lAdd"]], ["row", [1], ["lShow"]], [0.7, [1], ["lInfo"]]]],
-["R:EXCHECK", [[2, [1], ["xList"]], ["row", [1, 1, 1, 1], ["xDone", "xUndo", "xDel", "xShow"]], ["label", [1], ["xL1"]], ["row", [1], ["xEv"]], ["row", [1, 1, 1], ["xCw", "xEl", "xAt"]], ["row", [1], ["xAdd"]], [1, [1], ["xInfo"]]]],
-["R:PERTES", [[2, [1], ["kcInfo"]], ["label", [1], ["kcL1"]], ["row", [1, 1], ["kcEl", "kcKind"]], ["row", [1, 1], ["kcPlus", "kcMinus"]], ["row", [1], ["kcShow"]]]],
-["R:DEMANDES", [[2, [1], ["qList"]], [1, [1], ["qInfo"]], ["row", [1], ["qAns"]], ["row", [1, 1, 1], ["qPRISE", "qREFUSEE", "qTERMINEE"]], ["row", [1], ["qShow"]]]]
+["R:GROUPES", [["head", [1], ["pHead"]], ["hair", [1], ["pRule"]], [3, [1], ["gList"]], [2, [1], ["gInfo"]], ["row", [2, 1], ["gAi", "gAiGo"]], ["row", [1, 1, 1], ["gOrder", "gMsg", "gCenter"]]]],
+["R:ORBAT", [["head", [1], ["pHead"]], ["hair", [1], ["pRule"]], [3, [1], ["bList"]], [1.3, [1], ["bInfo"]], ["row", [1, 1, 1], ["bMsg", "bCenter", ""]]]],
+["R:FLUX", [["head", [1], ["pHead"]], ["hair", [1], ["pRule"]], ["row", [1], ["fFilter"]], [3, [1], ["fList"]], [1.2, [1], ["fInfo"]], ["row", [1, 1, 1], ["fCenter", "", ""]]]],
+["R:ORDRES", [["head", [1], ["pHead"]], ["hair", [1], ["pRule"]], ["label", [1, 1], ["oL1", "oL2"]], ["row", [1, 1], ["oKind", "oPrio"]], ["label", [1], ["oL3"]], ["row", [1], ["oTarget"]], ["label", [1], ["oL4"]], ["info3", [1], ["oText"]], ["label", [1], ["oL5"]], ["row", [2, 1], ["oGrid", "oClear"]], ["tall", [1], ["oSend"]], [1, [1], ["oInfo"]]]],
+["R:CAMP", [["head", [1], ["pHead"]], ["hair", [1], ["pRule"]], ["label", [1], ["cL1"]], ["row", [2, 1], ["cDest", "cPrio"]], ["label", [1], ["cL2"]], ["info3", [1], ["cText"]], ["tall", [1], ["cSend"]], ["label", [1], ["cL3"]], ["row", [2, 1], ["cCs", "cSave"]], ["label", [1], ["cL4"]], ["row", [2, 1], ["cCam", "cCamGo"]], [1, [1], ["cInfo"]]]],
+["R:RÉSEAU", [["head", [1], ["pHead"]], ["hair", [1], ["pRule"]], [1, [1], ["rInfo"]], ["label", [1], ["rL1"]], ["row", [2, 1], ["rShow", "rGo"]]]],
+["R:SAT", [["row", [1, 1], ["sSlot0", "sSlot1"]], ["info2", [1], ["sInfo"]], ["row", [1, 1], ["sTake", "sRelease"]], ["label", [1], ["sL1"]], ["row", [2, 1, 1], ["sGrid", "sTaskGrid", "sMap"]], ["row", [2, 1, 1], ["sFollow", "sFollowGo", "sFollowOff"]], ["row", [2, 1, 1], ["sNote", "sLog", "sTag"]], ["row", [1, 1.2, 1], ["sOut", "sZoom", "sIn"]], ["label", [1], ["sL2"]], ["row", [1, 1, 1, 1], ["sAUTO", "sDAY", "sNV", "sWHOT"]], ["row", [1, 1, 1, 1], ["sBHOT", "sFUSW", "sFUSB", ""]], ["row", [1.3, 1, 1, 1, 1, 1], ["sL3", "sW", "sN", "sHome", "sS", "sE"]], ["row", [1.3, 1, 1, 1, 1, 1], ["sL4", "sOvMRKR", "sOvBFT", "sOvGRID", "sOvDATA", "sOvBOX"]], ["row", [1, 1, 1], ["sJit", "sTerr", "sRefresh"]], ["label", [1], ["sL5"]], ["row", [2, 1, 1], ["sScr", "sSend", "sClear"]]]],
+["R:CHRONOS", [["head", [1], ["pHead"]], ["hair", [1], ["pRule"]], [2, [1], ["tList"]], ["row", [1, 1, 1, 1], ["tStart", "tStop", "tReset", "tDel"]], ["label", [1], ["tL1"]], ["row", [1], ["tName"]], ["row", [1, 1], ["tKind", "tVal"]], ["row", [1, 1], ["tAdd", "tShow"]], [1, [1], ["tInfo"]]]],
+["R:RADIO", [["head", [1], ["pHead"]], ["hair", [1], ["pRule"]], [1, [1], ["kInfo"]]]],
+["R:SALLE", [["head", [1], ["pHead"]], ["hair", [1], ["pRule"]], ["info2", [1], ["hInfo"]], ["row", [2, 1], ["hName", "hCreate"]], ["row", [1, 1.6, 1.6], ["hRad", "hLinkAll", "hAim"]], ["info2", [1], ["hSel"]], ["row", [2, 1], ["hWhat", "hShow"]], ["row", [2, 1], ["hScrName", "hScrRen"]], ["row", [1, 1, 1], ["hPower", "hBlink", "hLink"]], ["row", [1, 1, 1, 1], ["hMosRot", "hMosCase", "hMosSrc", "hMosPut"]], ["row", [2, 1, 1], ["hScene", "hSceneGo", "hSceneDel"]], ["row", [2, 1], ["hSceneName", "hSceneSave"]], ["row", [1, 1], ["hAllOn", "hAllOff"]]]],
+["R:MAIN COURANTE", [["head", [1], ["pHead"]], ["hair", [1], ["pRule"]], [3, [1], ["lList"]], ["row", [2, 1], ["lText", "lAdd"]], ["row", [1], ["lShow"]], [0.7, [1], ["lInfo"]]]],
+["R:EXCHECK", [["head", [1], ["pHead"]], ["hair", [1], ["pRule"]], [2, [1], ["xList"]], ["row", [1, 1, 1, 1], ["xDone", "xUndo", "xDel", "xShow"]], ["label", [1], ["xL1"]], ["row", [1], ["xEv"]], ["row", [1, 1, 1], ["xCw", "xEl", "xAt"]], ["row", [1], ["xAdd"]], [1, [1], ["xInfo"]]]],
+["R:PERTES", [["head", [1], ["pHead"]], ["hair", [1], ["pRule"]], [2, [1], ["kcInfo"]], ["label", [1], ["kcL1"]], ["row", [1, 1], ["kcEl", "kcKind"]], ["row", [1, 1], ["kcPlus", "kcMinus"]], ["row", [1], ["kcShow"]]]],
+["R:DEMANDES", [["head", [1], ["pHead"]], ["hair", [1], ["pRule"]], [2, [1], ["qList"]], [1, [1], ["qInfo"]], ["row", [1], ["qAns"]], ["row", [1, 1, 1], ["qPRISE", "qREFUSEE", "qTERMINEE"]], ["row", [1], ["qShow"]]]]
         ];
         // Fonds toujours montrés (posés une fois au chargement).
-        private _on = ["shellOut", "shellIn", "screen", "brand", "titleBg", "titleLine", "rBg"];
+        private _on = ["shellOut", "shellIn", "screen", "brand", "titleBg", "titleLine", "rBg", "tabMark"];
         {
             _x params ["_lk", "_rk"];
             private _rows = _layout getOrDefault [_lk, []];
@@ -715,24 +750,31 @@ switch (_mode) do {
             { { _on pushBack (if (_x isEqualType "") then { _x } else { _x select 0 }); } forEach (_x select 2); } forEach _rows;
         } forEach [["F:TITLE", "rTitle"], ["F:TABS", "rTabs"], ["F:HELP", "rHelp"], ["F:BAR", "rBar"], [_left, "rLeft"], ["R:" + _tab, "rRight"]];
         { (_ui get _x) ctrlShow (_x in _on); } forEach (_st getOrDefault ["keys", []]);
-        // Satellite : image au format 16:9 des écrans, en haut de sa zone, centrée ; message d'attente au milieu.
-        private _sat = _tab isEqualTo "SAT";
+        // Filet accent sous l'onglet choisi.
+        (ctrlPosition (_ui get ("tab" + _tab))) params ["_tbx", "_tby", "_tbw", "_tbh"];
+        (_ui get "tabMark") ctrlSetPosition [_tbx, _tby + _tbh - 0.003 * safeZoneH, _tbw, 0.003 * safeZoneH];
+        (_ui get "tabMark") ctrlCommit 0;
+        // Satellite : image 16:9 qui couvre toute sa zone (rognée au bord le plus long par le groupe sClip) : ni bande
+        // noire ni déformation ; zone visible (satRect) et image entière (satImg) gardées pour la souris et le HUD.
+        private _sat = _tab isEqualTo "SAT" && {!(_st getOrDefault ["satMap", false])};
         if (_sat) then {
             (ctrlPosition (_ui get "sBack")) params ["_bx", "_by", "_bw", "_bh"];
             private _ar = (_bw / pixelW) / ((_bh max pixelH) / pixelH);
             private _sw = _bw; private _sh = _bh;
-            if (_ar > 16 / 9) then { _sw = _bw * (16 / 9) / _ar; } else { _sh = _bh * _ar / (16 / 9); };
-            private _sRect = [_bx + (_bw - _sw) / 2, _by, _sw, _sh];
-            _st set ["satRect", _sRect];
-            (_ui get "sPic") ctrlSetPosition _sRect;
+            if (_ar > 16 / 9) then { _sh = _bh * _ar / (16 / 9); } else { _sw = _bw * (16 / 9) / _ar; };
+            _st set ["satRect", [_bx, _by, _bw, _bh]];
+            _st set ["satImg", [_bx + (_bw - _sw) / 2, _by + (_bh - _sh) / 2, _sw, _sh]];
+            (_ui get "sClip") ctrlSetPosition [_bx, _by, _bw, _bh];
+            (_ui get "sClip") ctrlCommit 0;
+            (_ui get "sClip") ctrlShow true;
+            (_ui get "sPic") ctrlSetPosition [(_bw - _sw) / 2, (_bh - _sh) / 2, _sw, _sh];
             (_ui get "sPic") ctrlCommit 0;
-            (_ui get "sWait") ctrlSetPosition [_sRect select 0, (_sRect select 1) + _sh * 0.4, _sw, 0.08 * safeZoneH];
+            (_ui get "sWait") ctrlSetPosition [_bx, _by + _bh * 0.4, _bw, 0.08 * safeZoneH];
             (_ui get "sWait") ctrlCommit 0;
-            (_ui get "sPic") ctrlShow true;
         };
         (_ui get "sPic") ctrlShow _sat;
         (_ui get "sWait") ctrlShow false;
-        if (!_sat) then { { { _x ctrlShow false; } forEach _x; } forEach (_st getOrDefault ["satBoxes", []]); };
+        if (!_sat) then { ["hudHide", _st getOrDefault ["satHud", createHashMap]] call comspec_atak_native_fnc_tocSat; };
         // Salle : plan du mur sous son titre (fn_tocHallUi place ses dalles dedans).
         if (_tab isEqualTo "SALLE") then {
             (ctrlPosition (_ui get "hPlanTitle")) params ["_tx", "_ty", "_tw"];
@@ -793,7 +835,7 @@ switch (_mode) do {
     };
     case "satDown": {
         // Appui sur l'image satellite : début d'un glisser (ou d'un clic).
-        if ((_st getOrDefault ["tab", ""]) isNotEqualTo "SAT") exitWith {};
+        if ((_st getOrDefault ["tab", ""]) isNotEqualTo "SAT" || {_st getOrDefault ["satMap", false]}) exitWith {};
         (_st getOrDefault ["satRect", [0, 0, 0, 0]]) params ["_rx", "_ry", "_rw", "_rh"];
         _a params ["_mx", "_my"];
         if (_mx < _rx || {_mx > _rx + _rw} || {_my < _ry} || {_my > _ry + _rh}) exitWith { _st set ["satDrag", []]; };
@@ -804,7 +846,8 @@ switch (_mode) do {
         private _p0 = _st getOrDefault ["satDrag", []];
         _st set ["satDrag", []];
         if ((count _p0) < 2 || {(_st getOrDefault ["tab", ""]) isNotEqualTo "SAT"}) exitWith {};
-        (_st getOrDefault ["satRect", [0, 0, 1, 1]]) params ["_rx", "_ry", "_rw", "_rh"];
+        // Parts de l'image entière (16:9, rognée à l'écran).
+        (_st getOrDefault ["satImg", [0, 0, 1, 1]]) params ["_rx", "_ry", "_rw", "_rh"];
         _a params ["_mx", "_my"];
         private _du = (_mx - (_p0 select 0)) / (_rw max 0.001);
         private _dv = (_my - (_p0 select 1)) / (_rh max 0.001);
@@ -815,8 +858,8 @@ switch (_mode) do {
         [format ["SAT %1 : vue déplacée", _n + 1]] call _setStatus;
     };
     case "satWheel": {
-        // Molette sur l'image : zoom (une demande toutes les 0,15 s au plus).
-        if ((_st getOrDefault ["tab", ""]) isNotEqualTo "SAT" || {_a isEqualTo 0}) exitWith {};
+        // Molette sur l'image : zoom continu, ×1,15 par cran (une demande toutes les 0,15 s au plus ; la caméra glisse).
+        if ((_st getOrDefault ["tab", ""]) isNotEqualTo "SAT" || {_a isEqualTo 0} || {_st getOrDefault ["satMap", false]}) exitWith {};
         (_st getOrDefault ["satRect", [0, 0, 0, 0]]) params ["_rx", "_ry", "_rw", "_rh"];
         getMousePosition params ["_mx", "_my"];
         if (_mx < _rx || {_mx > _rx + _rw} || {_my < _ry} || {_my > _ry + _rh}) exitWith {};
@@ -824,7 +867,7 @@ switch (_mode) do {
         _st set ["wheelAt", diag_tickTime];
         private _n = _st getOrDefault ["satN", 0];
         if !(["satCan", _n] call _fn) exitWith {};
-        ["send", ["sat", [_n, "zoom", [1.25, 1 / 1.25] select (_a > 0)]]] call comspec_atak_native_fnc_tocRoom;
+        ["send", ["sat", [_n, "zoom", [1.15, 1 / 1.15] select (_a > 0)]]] call comspec_atak_native_fnc_tocRoom;
     };
     case "satCan": {
         // Satellite pilotable par ce PC : j'ai la main, ou il est libre (la commande me la donne). Sinon la raison
@@ -871,15 +914,21 @@ switch (_mode) do {
         if ((_st getOrDefault ["tab", ""]) isEqualTo "SAT" && {_t isNotEqualTo "SAT"}) then { ["need", [_side, _st getOrDefault ["satN", 0], 30]] call comspec_atak_native_fnc_tocSat; };
         _st set ["tab", _t];
         _st set ["hoverC", controlNull];
-        { (_ui get ("tab" + _x)) ctrlSetBackgroundColor ([[0.07, 0.085, 0.075, 1], [0.18, 0.38, 0.21, 1]] select (_x isEqualTo _t)); } forEach _allTabs;
+        // Onglet choisi : fond BG2, texte accent, filet accent dessous (posé par « layout ») ; les autres à plat.
+        {
+            private _on = _x isEqualTo _t;
+            (_ui get ("tab" + _x)) ctrlSetBackgroundColor ([["bg1"] call _tcol, ["bg2"] call _tcol] select _on);
+            (_ui get ("tab" + _x)) ctrlSetTextColor ([["text2"] call _tcol, ["accent"] call _tcol] select _on);
+        } forEach _allTabs;
         // Mise en page de l'onglet (gauche : carte, satellite ou plan de la salle) ; rien d'autre n'est montré.
         ["layout"] call _fn;
         if (_t isEqualTo "SALLE") then { ["refresh"] call comspec_atak_native_fnc_tocHallUi; };
         if !(_t in ["SAT", "SALLE"]) then { ["show"] call comspec_atak_native_fnc_tocDraw; };
-        // SAT : cadres de suivi posés à chaque image.
+        // SAT : HUD du capteur reposé 4 fois par seconde (texte et symboles), rien quand l'onglet est fermé.
         private _sat = _t isEqualTo "SAT";
+        if (!_sat) then { _st set ["satMap", false]; };
         if (_sat && {(_st getOrDefault ["satPfh", -1]) < 0}) then {
-            _st set ["satPfh", [{ ["satOverlay"] call comspec_atak_native_fnc_tocLaptop; }, 0] call CBA_fnc_addPerFrameHandler];
+            _st set ["satPfh", [{ ["satOverlay"] call comspec_atak_native_fnc_tocLaptop; }, 0.25] call CBA_fnc_addPerFrameHandler];
         };
         if (!_sat && {(_st getOrDefault ["satPfh", -1]) >= 0}) then { [_st get "satPfh"] call CBA_fnc_removePerFrameHandler; _st set ["satPfh", -1]; };
         _st set ["sig", ""];
@@ -949,46 +998,19 @@ switch (_mode) do {
         private _n = _st getOrDefault ["satN", 0];
         private _p = ["unproject", [_side, _n, _u, _v]] call comspec_atak_native_fnc_tocSat;
         if ((count _p) < 2) exitWith {};
+        if !(["satCan", _n] call _fn) exitWith {};
         ["send", ["sat", [_n, "center", _p]]] call comspec_atak_native_fnc_tocRoom;
         [format ["SAT %1 : centré sur la grille %2", _n + 1, [[_p select 0, _p select 1, 0], 6] call comspec_atak_native_fnc_gridRef]] call _setStatus;
     };
     case "satOverlay": {
-        // Chaque image : cadres de suivi posés sur l'image satellite (projection, fn_tocSat).
+        // HUD du capteur sur l'image (fn_tocSat « hudPaint ») : seulement onglet SAT ouvert, image rendue.
         if ((count _ui) isEqualTo 0) exitWith {};
+        private _hud = _st getOrDefault ["satHud", createHashMap];
         private _n = _st getOrDefault ["satN", 0];
-        (_st getOrDefault ["satRect", [0, 0, 0, 0]]) params ["_rx", "_ry", "_rw", "_rh"];
-        private _boxes = _st getOrDefault ["satBoxes", []];
-        private _used = 0;
-        if ((["rt", [_side, _n]] call comspec_atak_native_fnc_tocSat) isNotEqualTo "") then {
-            {
-                _x params ["", "_cs", "_fr", "_kind", "_pos", "_size"];
-                if (_used >= (count _boxes)) exitWith {};
-                private _pr = ["project", [_side, _n, _pos]] call comspec_atak_native_fnc_tocSat;
-                if ((count _pr) < 3) then { continue };
-                _pr params ["_u", "_v", "_span"];
-                if (_u < 0 || {_u > 1} || {_v < 0} || {_v > 1}) then { continue };
-                private _gx = _rx + _u * _rw; private _gy = _ry + _v * _rh;
-                private _w = ((_size / _span) * _rw) max (pixelW * 14);
-                private _h = _w * (pixelH / pixelW);
-                private _col = switch (_fr) do { case 0: { _sideRgb + [1] }; case 1: { (_sideRgb apply { _x * 0.75 }) + [0.85] }; default { [0.7, 0.7, 0.7, 0.8] }; };
-                (_boxes select _used) params ["_l1", "_l2", "_l3", "_l4", "_ic", "_lb"];
-                { _x ctrlSetBackgroundColor _col; } forEach [_l1, _l2, _l3, _l4];
-                _l1 ctrlSetPosition [_gx - _w / 2, _gy - _h / 2, _w, pixelH * 2];
-                _l2 ctrlSetPosition [_gx - _w / 2, _gy + _h / 2 - pixelH * 2, _w, pixelH * 2];
-                _l3 ctrlSetPosition [_gx - _w / 2, _gy - _h / 2, pixelW * 2, _h];
-                _l4 ctrlSetPosition [_gx + _w / 2 - pixelW * 2, _gy - _h / 2, pixelW * 2, _h];
-                _ic ctrlSetText (format ["\A3\ui_f\data\map\markers\nato\b_%1.paa", (createHashMapFromArray [["veh", "motor_inf"], ["air", "air"], ["boat", "naval"], ["armor", "armor"]]) getOrDefault [_kind, "inf"]]); // i18n:brut (image)
-                _ic ctrlSetTextColor _col;
-                _ic ctrlSetPosition [_gx + _w / 2 + pixelW * 3, _gy - _h / 2 - pixelH * 20, pixelW * 18, pixelH * 18];
-                private _txt = _cs + (["", " · ancien", " · perdu", " · hors ligne"] select ((_fr min 3) max 0));
-                _lb ctrlSetText ((_txt) call comspec_atak_native_fnc_tr);
-                _lb ctrlSetTextColor ([[1, 1, 1, 1], [0.8, 0.8, 0.8, 1]] select (_fr >= 2));
-                _lb ctrlSetPosition [_gx + _w / 2 + pixelW * 23, _gy - _h / 2 - pixelH * 20, (ctrlTextWidth _lb) + pixelW * 8, pixelH * 20];
-                { _x ctrlCommit 0; _x ctrlShow true; } forEach [_l1, _l2, _l3, _l4, _ic, _lb];
-                _used = _used + 1;
-            } forEach (["targets", _side] call comspec_atak_native_fnc_tocSat);
+        if ((_st getOrDefault ["tab", ""]) isNotEqualTo "SAT" || {_st getOrDefault ["satMap", false]} || {(["rt", [_side, _n]] call comspec_atak_native_fnc_tocSat) isEqualTo ""}) exitWith {
+            ["hudHide", _hud] call comspec_atak_native_fnc_tocSat;
         };
-        for "_i" from _used to ((count _boxes) - 1) do { { _x ctrlShow false; } forEach (_boxes select _i); };
+        ["hudPaint", [_hud, _side, _n, _st getOrDefault ["satImg", [0, 0, 1, 1]], _st getOrDefault ["satRect", [0, 0, 1, 1]], call _satOv]] call comspec_atak_native_fnc_tocSat;
     };
     case "tool": {
         // Un outil à la fois ; le même bouton rend la sélection.
@@ -997,10 +1019,10 @@ switch (_mode) do {
         _st set ["tool", _t];
         _st set ["toolSet", true];
         _st set ["measure", []];
-        { (_ui getOrDefault ["tool" + _x, controlNull]) ctrlSetBackgroundColor ([[0.07, 0.085, 0.075, 1], [0.18, 0.38, 0.21, 1]] select (_x isEqualTo _t)); } forEach ["MEASURE", "MARKER"];
+        { (_ui getOrDefault ["tool" + _x, controlNull]) ctrlSetBackgroundColor ([(["bg1"] call _tcol), (["lineStrong"] call _tcol)] select (_x isEqualTo _t)); } forEach ["MEASURE", "MARKER"];
         ["show"] call comspec_atak_native_fnc_tocDraw;
         // Consigne de l'outil, sous la barre de dessin (deux lignes au plus) ; la barre montre les réglages de l'outil.
-        (_ui getOrDefault ["toolHint", controlNull]) ctrlSetStructuredText parseText format ["<t size='0.8' color='#cfd8d3'>%1</t>", [(switch (_t) do {
+        (_ui getOrDefault ["toolHint", controlNull]) ctrlSetStructuredText parseText (["ink", format ["<t size='0.8' color='@text2'>%1</t>", [(switch (_t) do {
             case "MEASURE": { "MESURE : clic gauche sur A, puis sur B · clic droit : objectif de l'ordre" };
             case "MARKER": { "MARQUEUR : choisissez camp, type, couleur, nom, durée et canal en bas, puis clic gauche pour poser" };
             case "LINE": { "TRAIT : clic sur A, Ctrl+clic pour chaque étape, clic sur B · ROUTES : le trait suit les routes" };
@@ -1008,15 +1030,25 @@ switch (_mode) do {
             case "PLAN": { "PLAN : choisissez le graphisme, cliquez ses points, puis clic droit ou TERMINER · 2 clics pour une zone = rectangle" };
             case "ERASE": { "EFFACER : clic sur un marqueur, un trait ou un élément du plan (supprimé pour tous)" };
             default { "Molette : zoom · clic gauche : fiche d'une unité · clic gauche maintenu : déplacer · clic droit : objectif de l'ordre" };
-        }) call _tr] call _esc];
+        }) call _tr] call _esc]] call comspec_atak_native_fnc_tocTheme);
         if (_st getOrDefault ["laid", false]) then { ["layout"] call _fn; };
     };
     case "layer": {
         private _k = "hide" + _a;
         _st set [_k, !(_st getOrDefault [_k, false])];
-        (_ui getOrDefault ["layer" + _a, controlNull]) ctrlSetBackgroundColor ([[0.07, 0.085, 0.075, 1], [0.3, 0.12, 0.1, 1]] select (_st get _k));
+        (_ui getOrDefault ["layer" + _a, controlNull]) ctrlSetBackgroundColor ([(["bg1"] call _tcol), (["redDim"] call _tcol)] select (_st get _k));
     };
     case "left": {
+        // Pointage du satellite sur la carte (SUR LA CARTE) : le clic place la vue, l'image revient.
+        if ((_st getOrDefault ["tab", ""]) isEqualTo "SAT" && {_st getOrDefault ["satMap", false]}) exitWith {
+            _st set ["satMap", false];
+            private _n = _st getOrDefault ["satN", 0];
+            if (["satCan", _n] call _fn) then {
+                ["send", ["sat", [_n, "center", [_a select 0, _a select 1]]]] call comspec_atak_native_fnc_tocRoom;
+                [format ["SAT %1 : grille %2", _n + 1, [[_a select 0, _a select 1, 0], 6] call comspec_atak_native_fnc_gridRef]] call _setStatus;
+            };
+            ["layout"] call _fn;
+        };
         switch (_st getOrDefault ["tool", "SELECT"]) do {
             case "MEASURE": {
                 private _ms = _st getOrDefault ["measure", []];
@@ -1128,9 +1160,10 @@ switch (_mode) do {
                 ["send", ["sat", [_st getOrDefault ["satN", 0], "take", [(getPosASL _o) select 0, (getPosASL _o) select 1]]]] call comspec_atak_native_fnc_tocRoom;
             };
             case "sRelease": { ["send", ["sat", [_st getOrDefault ["satN", 0], "release", []]]] call comspec_atak_native_fnc_tocRoom; };
-            case "sAUTO"; case "sDAY"; case "sNV"; case "sTI": {
-                ["send", ["sat", [_st getOrDefault ["satN", 0], "mode", _a select [1]]]] call comspec_atak_native_fnc_tocRoom;
-                [format ["SAT %1 : image %2", (_st getOrDefault ["satN", 0]) + 1, (createHashMapFromArray [["sAUTO", "auto"], ["sDAY", "jour"], ["sNV", "vision nocturne"], ["sTI", "thermique"]]) get _a]] call _setStatus;
+            case "sAUTO"; case "sDAY"; case "sNV"; case "sWHOT"; case "sBHOT"; case "sFUSW"; case "sFUSB": {
+                private _n = _st getOrDefault ["satN", 0];
+                ["send", ["sat", [_n, "mode", _a select [1]]]] call comspec_atak_native_fnc_tocRoom;
+                [format ["SAT %1 : capteur %2", _n + 1, [["name", _a select [1]] call comspec_atak_native_fnc_tocSat, "auto"] select (_a isEqualTo "sAUTO")]] call _setStatus;
             };
             case "sHome": {
                 private _o = _st getOrDefault ["obj", player];
@@ -1142,9 +1175,29 @@ switch (_mode) do {
             };
             case "sIn"; case "sOut": {
                 private _n = _st getOrDefault ["satN", 0];
-                private _hw = ((((_room0 select 2) param [_n, []]) param [2, 600]) * ([1.5, 1 / 1.5] select (_a isEqualTo "sIn"))) max 40 min 2500;
-                ["send", ["sat", [_n, "zoom", [1.5, 1 / 1.5] select (_a isEqualTo "sIn")]]] call comspec_atak_native_fnc_tocRoom;
-                [format ["SAT %1 : largeur de la vue %2 m", _n + 1, round (2 * _hw)]] call _setStatus;
+                private _f = [1.25, 1 / 1.25] select (_a isEqualTo "sIn");
+                private _z = ["zoomOf", (((_room0 select 2) param [_n, []]) param [2, 500]) * _f] call comspec_atak_native_fnc_tocSat;
+                ["send", ["sat", [_n, "zoom", _f]]] call comspec_atak_native_fnc_tocRoom;
+                [format ["SAT %1 : zoom %2X, %3 m de large", _n + 1, _z toFixed 2, round (2 * (["halfOf", _z] call comspec_atak_native_fnc_tocSat))]] call _setStatus;
+            };
+            case "sTaskGrid": {
+                private _n = _st getOrDefault ["satN", 0];
+                private _gp = [trim (ctrlText (_ui get "sGrid"))] call comspec_atak_native_fnc_gridParse;
+                if ((count _gp) < 3) exitWith { ["Grille illisible : 4 à 10 chiffres, par exemple 123 456"] call _setStatus; };
+                if !(["satCan", _n] call _fn) exitWith {};
+                ["send", ["sat", [_n, "center", [(_gp select 0) select 0, (_gp select 0) select 1]]]] call comspec_atak_native_fnc_tocRoom;
+                [format ["SAT %1 : grille %2", _n + 1, _gp select 2]] call _setStatus;
+            };
+            case "sMap": {
+                private _n = _st getOrDefault ["satN", 0];
+                if (!(_st getOrDefault ["satMap", false]) && {!(["satCan", _n] call _fn)}) exitWith {};
+                _st set ["satMap", !(_st getOrDefault ["satMap", false])];
+                ["layout"] call _fn;
+                if (_st get "satMap") then {
+                    private _aim = ["aim", [_side, _n]] call comspec_atak_native_fnc_tocSat;
+                    if ((count _aim) >= 2) then { ["frame", _aim select 0] call _fn; };
+                    ["Cliquez sur la carte : le satellite s'y place"] call _setStatus;
+                };
             };
             case "sFollowGo": {
                 private _sf = _ui get "sFollow";
@@ -1153,11 +1206,73 @@ switch (_mode) do {
                 ["send", ["sat", [_st getOrDefault ["satN", 0], "follow", [_v select 0, _v select 1]]]] call comspec_atak_native_fnc_tocRoom;
             };
             case "sFollowOff": { ["send", ["sat", [_st getOrDefault ["satN", 0], "unfollow", []]]] call comspec_atak_native_fnc_tocRoom; };
-            case "sShow": {
+            case "sLog"; case "sTag": {
+                // Inscription à la main courante, repère du camp (canal Camp, comme un marqueur posé au téléphone).
                 private _n = _st getOrDefault ["satN", 0];
-                private _scr = (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x && {alive _x} && {(player distance _x) < 30} && {((_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [1, ""]) in ["", _side]} };
-                if ((count _scr) isEqualTo 0) exitWith { ["Aucun écran TOC à moins de 30 m du poste"] call _setStatus; };
-                { ["view", [_x, "sat", _n]] call comspec_atak_native_fnc_tocScreen; ["ensure", [_x, "SAT"]] call comspec_atak_native_fnc_tocScreen; } forEach _scr;
+                private _aim = ["aim", [_side, _n]] call comspec_atak_native_fnc_tocSat;
+                if ((count _aim) < 2) exitWith { ["Satellite pas encore placé : prenez la main"] call _setStatus; };
+                (_aim select 0) params ["_ax", "_ay"];
+                private _grid = [[_ax, _ay, 0], 6] call comspec_atak_native_fnc_gridRef;
+                private _note = trim (ctrlText (_ui get "sNote"));
+                private _ss = (_room0 select 2) param [_n, []];
+                if (_a isEqualTo "sLog") exitWith {
+                    ["send", ["log", ["SAT", format ["SAT %1 · grille %2 · %3 · zoom %4X%5", _n + 1, _grid, ["name", ["effect", _ss param [3, "AUTO"]] call comspec_atak_native_fnc_tocSat] call comspec_atak_native_fnc_tocSat,
+                        (["zoomOf", _ss param [2, 500]] call comspec_atak_native_fnc_tocSat) toFixed 2, ["", " · " + _note] select (_note isNotEqualTo "")]]]] call comspec_atak_native_fnc_tocRoom;
+                    ["Vue inscrite à la main courante"] call _setStatus;
+                };
+                private _i = (missionNamespace getVariable ["COMSPEC_ATAK_TocTagN", 0]) + 1;
+                missionNamespace setVariable ["COMSPEC_ATAK_TocTagN", _i];
+                private _name = (toUpper ([_note, format ["SAT %1 REP %2", _n + 1, _i]] select (_note isEqualTo ""))) select [0, 40];
+                private _m = "";
+                {
+                    _m = ["create", [format ["_USER_DEFINED #%1/%2/%3", clientOwner, 50000 + _i, _x], [_ax, _ay, 0], _x]] call comspec_atak_native_fnc_markerNet;
+                    if (_m isNotEqualTo "") exitWith {};
+                } forEach ([1, currentChannel] arrayIntersect [1, currentChannel]);
+                if (_m isEqualTo "") exitWith { ["Repère refusé sur le canal Camp par le serveur"] call _setStatus; };
+                _m setMarkerTypeLocal "mil_objective";
+                _m setMarkerColorLocal "ColorOrange";
+                _m setMarkerText _name;
+                [_m] call comspec_atak_native_fnc_markerWeb;
+                ["send", ["log", ["SAT", format ["Repère %1 posé, grille %2", _name, _grid]]]] call comspec_atak_native_fnc_tocRoom;
+                [format ["Repère %1 posé, grille %2", _name, _grid]] call _setStatus;
+            };
+            case "sOvMRKR"; case "sOvBFT"; case "sOvGRID"; case "sOvDATA"; case "sOvBOX": {
+                private _o = call _satOv;
+                private _k = _a select [3];
+                _o set [_k, !(_o getOrDefault [_k, true])];
+                ["satOverlay"] call _fn;
+            };
+            case "sJit"; case "sTerr": {
+                private _n = _st getOrDefault ["satN", 0];
+                (((_room0 select 2) param [_n, []]) param [8, [false, true]]) params [["_jit", false], ["_terr", true]];
+                ["send", ["sat", [_n, "opt", [["terr", "jit"] select (_a isEqualTo "sJit"), [!_terr, !_jit] select (_a isEqualTo "sJit")]]]] call comspec_atak_native_fnc_tocRoom;
+            };
+            case "sRefresh": {
+                uiNamespace setVariable ["COMSPEC_ATAK_TocSatMk", createHashMap];
+                uiNamespace setVariable ["COMSPEC_ATAK_TocSatEdge", createHashMap];
+                { (_ui get _x) setVariable ["COMSPEC_ATAK_Sig", []]; } forEach ["sFollow", "sScr"];
+                ["satOverlay"] call _fn;
+                ["Pistes, marqueurs et contours rechargés (réseau du camp publié toutes les 3 s)"] call _setStatus;
+            };
+            case "sSend"; case "sClear": {
+                // ÉCRAN ISR : un écran ou une dalle de la salle (fn_tocHall), ou tous les écrans du poste (30 m).
+                private _n = _st getOrDefault ["satN", 0];
+                private _sc = _ui get "sScr";
+                private _id = _sc lbData ((lbCurSel _sc) max 0);
+                private _all = _id in ["", "ALL"];
+                private _scr = if (_all) then { call _nearScreens } else { [objectFromNetId _id] select { !isNull _x } };
+                if ((count _scr) isEqualTo 0) exitWith { [["Écran introuvable : choisissez-le de nouveau", "Aucun écran TOC à moins de 30 m du poste"] select _all] call _setStatus; };
+                if (_a isEqualTo "sClear") exitWith {
+                    private _done = _scr select { ((_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isEqualTo "SAT" };
+                    { ["apply", [_x, "SPLIT"]] call comspec_atak_native_fnc_tocScreen; } forEach _done;
+                    [format ["%1 écran(s) revenu(s) à la carte et au flux", count _done]] call _setStatus;
+                };
+                {
+                    if (_all) then { ["view", [_x, "sat", _n]] call comspec_atak_native_fnc_tocScreen; ["ensure", [_x, "SAT"]] call comspec_atak_native_fnc_tocScreen; } else {
+                        ["apply", [_x, ["SAT1", "SAT2"] select (_n isEqualTo 1)]] call comspec_atak_native_fnc_tocScreen;
+                        if (_x getVariable ["COMSPEC_ATAK_TocOff", false]) then { ["do", ["power", [_x, true]]] call comspec_atak_native_fnc_tocHall; };
+                    };
+                } forEach _scr;
                 [format ["%1 écran(s) : vue satellite SAT %2", count _scr, _n + 1]] call _setStatus;
             };
             // Chronos du poste.
@@ -1319,21 +1434,21 @@ switch (_mode) do {
         private _post = (_room select 7) select { (_x select 2) isEqualTo getPlayerUID player };
         // Barre de titre sur deux lignes (poste ; camp et opérateur), heures et liaison à droite sur deux lignes : tout tient
         // aussi en 4:3. Tailles de texte communes au PC : titre 1.1, corps 0.85, aide 0.8 (base 0.024 × safeZoneH).
-        (_ui get "title") ctrlSetStructuredText parseText ((format ["<t size='1.1' font='COMSPEC_BarlowBold'>POSTE TOC · %1</t><br/><t size='0.8' color='%4'>%2 · %3</t>", [_cs] call _esc, _sideName,
-            [format ["opérateur %1", [name player] call _esc], format ["poste pris par %1 à %2Z", [name player] call _esc, (_post param [0, []]) param [3, ""]]] select ((count _post) > 0), ["#8a9a93", "#5cc76b"] select ((count _post) > 0)]) call comspec_atak_native_fnc_tr);
+        (_ui get "title") ctrlSetStructuredText parseText (["ink", ((format ["<t size='1.1' font='COMSPEC_BarlowBold'>POSTE TOC · %1</t><br/><t size='0.8' color='%4'>%2 · %3</t>", [_cs] call _esc, _sideName,
+            [format ["opérateur %1", [name player] call _esc], format ["poste pris par %1 à %2Z", [name player] call _esc, (_post param [0, []]) param [3, ""]]] select ((count _post) > 0), ["@muted", "@accent"] select ((count _post) > 0)]) call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
         ([["postGo", "PRENDRE LE POSTE", "POSTE"], ["postGo", "LIBÉRER LE POSTE", "LIBÉRER"]] select ((count _post) > 0)) call _relabel;
-        private _live = [["<t color='#e05a4a'>HORS LIGNE</t>", "<t color='#e0b040'>RETARD</t>"] select (_age >= 0), "<t color='#5cc76b'>EN DIRECT</t>"] select (_age >= 0 && {_age < 12});
+        private _live = [["<t color='@red'>● HORS LIGNE</t>", "<t color='@amber'>● RETARD</t>"] select (_age >= 0), "<t color='@accent'>● EN DIRECT</t>"] select (_age >= 0 && {_age < 12});
         // Liaison radio du poste : ACRE2 ou TFAR chargé, radios de l'opérateur (lecture seule, fn_mpu5).
         private _radio = switch (true) do {
             case (!isNil "acre_api_fnc_getCurrentRadioList"): {
                 private _nr = count (["radios"] call comspec_atak_native_fnc_mpu5);
-                format ["<t color='%1'>ACRE2</t>", ["#e0b040", "#5cc76b"] select (_nr > 0)]
+                format ["<t color='%1'>ACRE2</t>", ["@amber", "@accent"] select (_nr > 0)]
             };
-            case (!isNil "TFAR_fnc_activeSwRadio"): { "<t color='#5cc76b'>TFAR</t>" };
-            default { "<t color='#6f7773'>SANS RADIO</t>" };
+            case (!isNil "TFAR_fnc_activeSwRadio"): { "<t color='@accent'>TFAR</t>" };
+            default { "<t color='@muted'>SANS RADIO</t>" };
         };
-        (_ui get "clock") ctrlSetStructuredText parseText ((format ["<t align='right' size='0.85'><t font='COMSPEC_BarlowBold'>%1</t> <t color='#8a9a93'>ZULU</t>  <t font='COMSPEC_BarlowBold'>%2</t> <t color='#8a9a93'>LOCAL</t><br/>%3 · %4</t>",
-            ["zulu"] call comspec_atak_native_fnc_tocRoom, [dayTime, "HH:MM:SS"] call BIS_fnc_timeToString, _radio, _live]) call comspec_atak_native_fnc_tr);
+        (_ui get "clock") ctrlSetStructuredText parseText (["ink", ((format ["<t align='right' size='0.9'><t font='EtelkaMonospaceProBold'>%1</t><t size='0.75' color='@muted'> ZULU   </t><t font='EtelkaMonospacePro' color='@text2'>%2</t><t size='0.75' color='@muted'> LOCAL</t></t><br/><t align='right' size='0.75'>%3<t color='@muted'> · </t>%4</t>",
+            ["zulu"] call comspec_atak_native_fnc_tocRoom, [dayTime, "HH:MM:SS"] call BIS_fnc_timeToString, _radio, _live]) call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
         private _cnt = [0, 0, 0, 0];
         { private _f = (_x select 4) min 3; _cnt set [_f, (_cnt select _f) + (_x param [8, 1])]; } forEach _nodes;
         _stats params [["_jam", 0], ["_relays", 0], ["_players", 0], ["_ais", 0]];
@@ -1341,23 +1456,41 @@ switch (_mode) do {
         private _pipN = count ((_st getOrDefault ["pip", []]) select { ((((_x select 0) getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isEqualTo "TOC") });
         private _bar = _ui get "bar";
         private _nAl = {(_x param [2, ""]) in ["FLASH", "URGENT"] && {serverTime - (_x param [7, -1e9]) < 1200}} count _events;
-        private _sMsg = ["", format ["   <t color='#7fd0b0'>%1</t>", [_msg select 0] call _esc]] select (diag_tickTime < (_msg select 1));
-        private _sPip = [format ["<t color='%2'>%1 alerte(s) sur 20 min</t>", _nAl, ["#6f7773", "#e05a4a"] select (_nAl > 0)], format ["<t color='#e0b040'>PIP : %1 écran(s)</t>", _pipN]] select (_pipN > 0);
-        _bar ctrlSetStructuredText parseText ((format ["<t size='0.85'>  RÉSEAU  <t color='#5cc76b'>%1 en ligne</t> · <t color='#e0b040'>%2 anciens</t> · <t color='#9aa39f'>%3 perdus</t> · <t color='#6f7773'>%4 hors ligne</t>   <t color='#8a9a93'>%5 joueurs · %6 IA · %7 relais · %8 brouilleurs</t>   %10%9</t>",
-            _cnt select 0, _cnt select 1, _cnt select 2, _cnt select 3, _players, _ais, _relays, _jam, _sMsg, _sPip]) call comspec_atak_native_fnc_tr);
+        private _sMsg = ["", format ["   <t color='@accent'>%1</t>", [_msg select 0] call _esc]] select (diag_tickTime < (_msg select 1));
+        private _sPip = [format ["<t color='%2'>%1 alerte(s) sur 20 min</t>", _nAl, ["@muted", "@red"] select (_nAl > 0)], format ["<t color='@amber'>PIP : %1 écran(s)</t>", _pipN]] select (_pipN > 0);
+        _bar ctrlSetStructuredText parseText (["ink", ((format ["<t size='0.85'>  RÉSEAU  <t color='@accent'>%1 en ligne</t> · <t color='@amber'>%2 anciens</t> · <t color='@lost'>%3 perdus</t> · <t color='@muted'>%4 hors ligne</t>   <t color='@muted'>%5 joueurs · %6 IA · %7 relais · %8 brouilleurs</t>   %10%9</t>",
+            _cnt select 0, _cnt select 1, _cnt select 2, _cnt select 3, _players, _ais, _relays, _jam, _sMsg, _sPip]) call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
         // Écran étroit (4:3) : la ligne d'état garde l'essentiel sur une ligne, sans texte coupé.
         if ((ctrlTextHeight _bar) > ((ctrlPosition _bar) select 3) * 1.1) then {
-            _bar ctrlSetStructuredText parseText ((format ["<t size='0.85'>  <t color='#5cc76b'>%1 en ligne</t> · <t color='#e0b040'>%2 anciens</t> · <t color='#9aa39f'>%3 perdus</t>%4</t>",
-                _cnt select 0, _cnt select 1, (_cnt select 2) + (_cnt select 3), [_sPip, _sMsg] select (_sMsg isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+            _bar ctrlSetStructuredText parseText (["ink", ((format ["<t size='0.85'>  <t color='@accent'>%1 en ligne</t> · <t color='@amber'>%2 anciens</t> · <t color='@lost'>%3 perdus</t>%4</t>",
+                _cnt select 0, _cnt select 1, (_cnt select 2) + (_cnt select 3), [_sPip, _sMsg] select (_sMsg isNotEqualTo "")]) call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
         };
         // FLASH du poste (fn_tocRoom) : la ligne d'état passe en rouge pendant 3 minutes.
         private _fl = ["flash", _side] call comspec_atak_native_fnc_tocBoard;
-        _bar ctrlSetBackgroundColor ([[0.06, 0.08, 0.07, 1], [0.55, 0.07, 0.05, 1]] select ((count _fl) > 0));
+        _bar ctrlSetBackgroundColor ([(["bg1"] call _tcol), (["redDim"] call _tcol)] select ((count _fl) > 0));
         if ((count _fl) > 0) then {
-            _bar ctrlSetStructuredText parseText ((format ["<t size='0.9'>  <t font='COMSPEC_BarlowBold'>FLASH</t> · %1 <t color='#ffd0c8'>· %2 · %3Z</t></t>", [_fl select 0] call _esc, [_fl select 1] call _esc, _fl select 2]) call comspec_atak_native_fnc_tr);
+            _bar ctrlSetStructuredText parseText (["ink", ((format ["<t size='0.9'>  <t font='COMSPEC_BarlowBold'>FLASH</t> · %1 <t color='@text'>· %2 · %3Z</t></t>", [_fl select 0] call _esc, [_fl select 1] call _esc, _fl select 2]) call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
         };
         private _groupsL = [_nodes] call _groups;
         private _nOrd = count (values ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["localTasks", createHashMap]) select { (_x getOrDefault ["issuerUid", ""]) isEqualTo getPlayerUID player });
+        // En-tête du panneau de l'onglet : titre à gauche, état à droite (filet « pRule » dessous, posé par la grille).
+        private _pStat = switch (_tab) do {
+            case "GROUPES": { format ["%1 groupes · %2 en ligne", count _groupsL, _cnt select 0] };
+            case "ORBAT": { format ["%1 membres", (["store"] call comspec_atak_native_fnc_bftOrbat) get "total"] };
+            case "FLUX": { format ["%1 entrées · %2 alertes", count _events, _nAl] };
+            case "ORDRES": { format ["%1 émis", _nOrd] };
+            case "RÉSEAU": { format ["%1 joueurs · %2 IA · %3 relais", _players, _ais, _relays] };
+            case "CHRONOS": { format ["%1 chronos", count (_room select 1)] };
+            case "MAIN COURANTE": { format ["%1 entrées · ZULU", count (_room select 3)] };
+            case "EXCHECK": { format ["%1 / %2 passés", { (_x param [6, ""]) isNotEqualTo "" } count (_room select 4), count (_room select 4)] };
+            case "PERTES": { format ["%1 éléments", count (_room select 8)] };
+            case "DEMANDES": { format ["%1 reçues", { (_x select 7) isEqualTo "RECUE" } count (_room select 5)] };
+            default { "" };
+        };
+        private _pTitle = (createHashMapFromArray [["ORBAT", "ORBAT DU SITE"], ["PERTES", "PERTES ET RÉSULTATS"], ["RADIO", "RADIOS DE L'OPÉRATEUR"], ["SALLE", "SALLE TOC"], ["CAMP", "MESSAGES AU CAMP"]]) getOrDefault [_tab, _tab];
+        private _ph = _ui get "pHead";
+        private _phs = format ["<t size='0.95' font='COMSPEC_BarlowBold' color='@text'>%1</t><t align='right' size='0.8' color='@muted'>%2</t>", _pTitle, [_pStat] call _esc];
+        if ((_ph getVariable ["COMSPEC_ATAK_Txt", ""]) isNotEqualTo _phs) then { _ph setVariable ["COMSPEC_ATAK_Txt", _phs]; _ph ctrlSetStructuredText parseText (_phs call _tink); };
         // Compteurs des onglets : libellé mesuré de nouveau seulement quand il change.
         {
             _x params ["_k", "_n"];
@@ -1380,25 +1513,25 @@ switch (_mode) do {
                         _x params ["_gn", "", "_ld", "_np", "_nAll", "_n", "_best"];
                         private _i = _lb lbAdd ((format ["%1 · %2 · %3 nœud(s) ATAK", _gn, [format ["%1 joueur(s)", _np], format ["%1 IA", _nAll]] select (_np isEqualTo 0), _n]) call comspec_atak_native_fnc_tr);
                         _lb lbSetData [_i, _gn];
-                        _lb lbSetColor [_i, [[0.36, 0.85, 0.42, 1], [0.88, 0.69, 0.25, 1], [0.6, 0.64, 0.62, 1], [0.44, 0.47, 0.45, 1], [0.55, 0.55, 0.55, 1]] select ((_best min 4) max 0)];
+                        _lb lbSetColor [_i, [(["accent"] call _tcol), (["amber"] call _tcol), (["lost"] call _tcol), (["muted"] call _tcol), (["muted"] call _tcol)] select ((_best min 4) max 0)];
                         if (_gn isEqualTo (_st getOrDefault ["selG", ""])) then { _lb lbSetCurSel _i; };
                     } forEach _groupsL;
                     if ((count _groupsL) isEqualTo 0) then { _lb lbAdd (("Aucun groupe du camp") call comspec_atak_native_fnc_tr); };
                     _st set ["mute", false];
                 };
                 private _g = _groupsL select { (_x select 0) isEqualTo (_st getOrDefault ["selG", ""]) };
-                (_ui get "gInfo") ctrlSetStructuredText parseText (((if ((count _g) isEqualTo 0) then {
-                    format ["<t size='0.9' color='#8a9a93'>%1 groupe(s) dans le camp. Choisissez un groupe : la carte se centre sur lui, puis ORDRE AU GROUPE ou MESSAGE AU CHEF.</t>", count _groupsL]
+                (_ui get "gInfo") ctrlSetStructuredText parseText (["ink", (((if ((count _g) isEqualTo 0) then {
+                    format ["<t size='0.9' color='@muted'>%1 groupe(s) dans le camp. Choisissez un groupe : la carte se centre sur lui, puis ORDRE AU GROUPE ou MESSAGE AU CHEF.</t>", count _groupsL]
                 } else {
                     (_g select 0) params ["_gn", "", "_ld", "_np", "_nAll", "_n", "_best", "_p"];
                     private _ao = (missionNamespace getVariable ["COMSPEC_ATAK_AiOrds", createHashMap]) getOrDefault [["netId", group _ld] call comspec_atak_native_fnc_aiOrder, createHashMap];
                     format ["<t size='1.05' font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.9'>Chef %2 %3<br/>%4 vivant(s) dont %5 joueur(s) · %6 nœud(s) ATAK<br/>%7%8</t>",
                         [_gn] call _esc, [name _ld] call _esc, ["", format [" · n° %1", ([_ld] call comspec_atak_native_fnc_phoneIdent) select 0]] select (isPlayer _ld), _nAll, _np, _n,
                         // if, pas [a, b] select : les deux branches seraient évaluées et _p vide (groupe sans ATAK) planterait le rafraîchissement.
-                        if ((count _p) < 2) then { "<t color='#e0b040'>Position inconnue du poste : aucun ATAK dans ce groupe</t>" } else {
+                        if ((count _p) < 2) then { "<t color='@amber'>Position inconnue du poste : aucun ATAK dans ce groupe</t>" } else {
                             format ["Grille %1 · %2", [[_p select 0, _p select 1, 0], 6] call comspec_atak_native_fnc_gridRef, ["en direct", "point ancien", "point perdu", "téléphone hors ligne"] select ((_best min 3) max 0)] },
-                        if (_np > 0) then { "" } else { format ["<br/><t color='#e0b040'>Ordre IA : %1</t>", [["aucun", format ["%1 (%2)", _ao get "lbl", _ao getOrDefault ["text", ""]]] select ("lbl" in _ao)] call _esc] }]
-                })) call comspec_atak_native_fnc_tr);
+                        if (_np > 0) then { "" } else { format ["<br/><t color='@amber'>Ordre IA : %1</t>", [["aucun", format ["%1 (%2)", _ao get "lbl", _ao getOrDefault ["text", ""]]] select ("lbl" in _ao)] call _esc] }]
+                })) call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
             };
             case "FLUX": {
                 private _lb = _ui get "fList";
@@ -1415,20 +1548,20 @@ switch (_mode) do {
                         if (_fKind isEqualTo "R" && {_isMsg || {_isAlert}}) then { continue };
                         private _i = _lb lbAdd ((format ["%1  %2%3 · %4%5", _time, _kind, ["", " " + _prio] select (_prio isNotEqualTo "" && {_prio isNotEqualTo "ROUTINE"}), _who, ["", " · " + _grid] select (_grid isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
                         _lb lbSetData [_i, str _k];
-                        _lb lbSetColor [_i, switch (true) do { case (_old): { [0.45, 0.48, 0.46, 1] }; case (_prio isEqualTo "FLASH"): { [1, 0.36, 0.3, 1] }; case (_prio isEqualTo "URGENT"): { [0.88, 0.69, 0.25, 1] }; default { [0.85, 0.89, 0.86, 1] }; }];
+                        _lb lbSetColor [_i, switch (true) do { case (_old): { (["muted"] call _tcol) }; case (_prio isEqualTo "FLASH"): { (["red"] call _tcol) }; case (_prio isEqualTo "URGENT"): { (["amber"] call _tcol) }; default { (["text"] call _tcol) }; }];
                         if ((str _k) isEqualTo (_st getOrDefault ["selF", ""])) then { _lb lbSetCurSel _i; };
                     };
                     if ((count _events) isEqualTo 0) then { _lb lbAdd (("Aucun compte rendu ni message pour l'instant") call comspec_atak_native_fnc_tr); };
                     _st set ["mute", false];
                 };
                 private _i = parseNumber (_st getOrDefault ["selF", "-1"]);
-                (_ui get "fInfo") ctrlSetStructuredText parseText (((if (_i < 0 || {_i >= (count _events)}) then {
-                    "<t size='0.9' color='#8a9a93'>Comptes rendus, alertes, MEDEVAC, BDA, ordres et messages du camp (30 derniers, gardés d'une partie à l'autre).</t>"
+                (_ui get "fInfo") ctrlSetStructuredText parseText (["ink", (((if (_i < 0 || {_i >= (count _events)}) then {
+                    "<t size='0.9' color='@muted'>Comptes rendus, alertes, MEDEVAC, BDA, ordres et messages du camp (30 derniers, gardés d'une partie à l'autre).</t>"
                 } else {
                     (_events select _i) params [["_time", ""], ["_kind", ""], ["_prio", ""], ["_who", ""], ["_grid", ""], ["_text", ""], ["_p", []], "", ["_old", false]];
-                    format ["<t size='1.05' font='COMSPEC_BarlowBold'>%1</t> <t size='0.9' color='#8a9a93'>%2 · %3%4%5</t><br/><t size='0.9'>%6</t>",
+                    format ["<t size='1.05' font='COMSPEC_BarlowBold'>%1</t> <t size='0.9' color='@muted'>%2 · %3%4%5</t><br/><t size='0.9'>%6</t>",
                         [_kind] call _esc, _time, [_who] call _esc, ["", " · grille " + _grid] select (_grid isNotEqualTo ""), ["", " · partie précédente"] select _old, [_text] call _esc]
-                })) call comspec_atak_native_fnc_tr);
+                })) call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
             };
             case "ORBAT": {
                 // Même lecture et mêmes droits que le BFT du téléphone : l'API ne répond qu'au compte du joueur.
@@ -1446,7 +1579,7 @@ switch (_mode) do {
                     {
                         _x params ["", "_ud", "_uName", "_uCode", "_uRows"];
                         private _ui0 = _lb lbAdd format ["%1%2%3", ["", "   ", "      ", "         "] select (_ud min 3), _uName, ["", format ["  (%1)", _uCode]] select (_uCode isNotEqualTo "")];
-                        _lb lbSetColor [_ui0, [0.5, 0.72, 0.92, 1]];
+                        _lb lbSetColor [_ui0, (["friend"] call _tcol)];
                         private _pad = ["   ", "      ", "         ", "            "] select (_ud min 3);
                         {
                             private _pe = _people getOrDefault [_x select 1, []];
@@ -1455,26 +1588,26 @@ switch (_mode) do {
                             private _r = _lb lbAdd format ["%1%2%3", _pad, ["", (_x select 2) + " : "] select ((_x select 2) isNotEqualTo "" && {!_vac}), _pe param [0, ""]];
                             _lb lbSetData [_r, _x select 1];
                             _lb lbSetTextRight [_r, (([["hors ligne", "poste vacant"] select _vac, "en jeu"] select _on)) call comspec_atak_native_fnc_tr];
-                            _lb lbSetColor [_r, [[0.55, 0.6, 0.58, 1], [0.36, 0.85, 0.42, 1]] select _on];
+                            _lb lbSetColor [_r, [(["lost"] call _tcol), (["accent"] call _tcol)] select _on];
                         } forEach _uRows;
                     } forEach (_store get "units");
                     _st set ["mute", false];
                 };
                 private _pe = _people getOrDefault [_st getOrDefault ["selB", ""], []];
-                (_ui get "bInfo") ctrlSetStructuredText parseText ((if ((count _pe) isEqualTo 0) then {
-                    format ["<t size='0.85' color='#8a9a93'>%1</t>", [_nTxt] call _esc]
+                (_ui get "bInfo") ctrlSetStructuredText parseText (["ink", ((if ((count _pe) isEqualTo 0) then {
+                    format ["<t size='0.85' color='@muted'>%1</t>", [_nTxt] call _esc]
                 } else {
                     private _o = _onKey getOrDefault [_st getOrDefault ["selB", ""], objNull];
                     format ["<t size='1.05' font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.85'>%2</t><br/><t size='0.85' color='%3'>%4</t>", [_pe select 0] call _esc,
                         (((_pe select 5) select [0, 3]) apply { [(_x select 0) + (["", " · " + (_x select 1)] select ((_x select 1) isNotEqualTo ""))] call _esc }) joinString "<br/>",
-                        ["#8a9a93", "#5cc76b"] select (!isNull _o), ["Hors ligne ou état non communiqué", "En jeu"] select (!isNull _o)]
-                }) call comspec_atak_native_fnc_tr);
+                        ["@muted", "@accent"] select (!isNull _o), ["Hors ligne ou état non communiqué", "En jeu"] select (!isNull _o)]
+                }) call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
             };
             case "RÉSEAU": {
                 private _w = windDir;
-                (_ui get "rInfo") ctrlSetStructuredText parseText ((format ["<t size='1.05' font='COMSPEC_BarlowBold'>RÉSEAU</t><br/><t size='0.9'><t color='#5cc76b'>%1 en ligne</t> · <t color='#e0b040'>%2 anciens</t> · <t color='#9aa39f'>%3 perdus</t> · <t color='#6f7773'>%4 hors ligne</t><br/>%5 joueurs · %6 IA<br/>%7 relais · %8 brouilleurs actifs</t><br/><br/><t size='1.05' font='COMSPEC_BarlowBold'>MÉTÉO</t><br/><t size='0.9'>Nuages %9 %% · pluie %10 %% · brouillard %11 %%<br/>Vent %12 m/s du %13°</t><br/><br/><t size='0.85' color='#8a9a93'>Carte de couverture, brouilleurs en détail et météo prévue : apps Réseau et Météo du téléphone.</t>",
+                (_ui get "rInfo") ctrlSetStructuredText parseText (["ink", ((format ["<t size='1.05' font='COMSPEC_BarlowBold'>RÉSEAU</t><br/><t size='0.9'><t color='@accent'>%1 en ligne</t> · <t color='@amber'>%2 anciens</t> · <t color='@lost'>%3 perdus</t> · <t color='@muted'>%4 hors ligne</t><br/>%5 joueurs · %6 IA<br/>%7 relais · %8 brouilleurs actifs</t><br/><br/><t size='1.05' font='COMSPEC_BarlowBold'>MÉTÉO</t><br/><t size='0.9'>Nuages %9 %% · pluie %10 %% · brouillard %11 %%<br/>Vent %12 m/s du %13°</t><br/><br/><t size='0.85' color='@muted'>Carte de couverture, brouilleurs en détail et météo prévue : apps Réseau et Météo du téléphone.</t>",
                     _cnt select 0, _cnt select 1, _cnt select 2, _cnt select 3, _players, _ais, _relays, _jam,
-                    round (overcast * 100), round (rain * 100), round (fog * 100), round (vectorMagnitude wind), round ((_w + 180) mod 360)]) call comspec_atak_native_fnc_tr);
+                    round (overcast * 100), round (rain * 100), round (fog * 100), round (vectorMagnitude wind), round ((_w + 180) mod 360)]) call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
             };
             case "ORDRES": {
                 private _ot = _ui get "oTarget";
@@ -1486,53 +1619,67 @@ switch (_mode) do {
                     _ot lbSetCurSel ((_opts findIf { (_x select 1) isEqualTo _want }) max 0);
                 };
                 private _mine = values ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["localTasks", createHashMap]) select { (_x getOrDefault ["issuerUid", ""]) isEqualTo getPlayerUID player };
-                private _s = format ["<t size='1.05' font='COMSPEC_BarlowBold'>ORDRES ÉMIS</t> <t size='0.85' color='#8a9a93'>%1</t><br/>", count _mine];
-                if ((count _mine) isEqualTo 0) then { _s = _s + "<t size='0.85' color='#8a9a93'>Aucun ordre émis depuis ce poste</t>"; };
+                private _s = format ["<t size='1.05' font='COMSPEC_BarlowBold'>ORDRES ÉMIS</t> <t size='0.85' color='@muted'>%1</t><br/>", count _mine];
+                if ((count _mine) isEqualTo 0) then { _s = _s + "<t size='0.85' color='@muted'>Aucun ordre émis depuis ce poste</t>"; };
                 {
                     private _acks = ["list", [_x getOrDefault ["id", ""]]] call comspec_atak_native_fnc_orderAck;
                     private _n = createHashMap;
                     { private _k = _y select 1; _n set [_k, (_n getOrDefault [_k, 0]) + 1]; } forEach _acks;
-                    _s = _s + format ["<t size='0.85'><t color='#7fd0b0'>%1</t> %2 → %3 · %4<br/><t color='#8a9a93'>   vu %5 · reçu %6 · en cours %7 · terminé %8</t></t><br/>",
+                    _s = _s + format ["<t size='0.85'><t color='@accent'>%1</t> %2 → %3 · %4<br/><t color='@muted'>   vu %5 · reçu %6 · en cours %7 · terminé %8</t></t><br/>",
                         _x getOrDefault ["time", ""], [_x getOrDefault ["typeLabel", _x getOrDefault ["type", ""]]] call _esc, [["tout le camp", _x getOrDefault ["target", ""]] select ((_x getOrDefault ["target", ""]) isNotEqualTo "")] call _esc,
                         _x getOrDefault ["priority", ""], _n getOrDefault ["SEEN", 0], _n getOrDefault ["ACK", 0], _n getOrDefault ["EXEC", 0], _n getOrDefault ["DONE", 0]];
                 } forEach ((_mine select [0 max ((count _mine) - 5)]) apply { _x });
                 // Missions de tir du camp (appui feu typé, fn_fireSupport) : texte déjà traduit, ajouté après.
-                (_ui get "oInfo") ctrlSetStructuredText parseText (((((_s) call comspec_atak_native_fnc_tr) + (["tocText"] call comspec_atak_native_fnc_fireSupport))) call comspec_atak_native_fnc_tr);
+                (_ui get "oInfo") ctrlSetStructuredText parseText (["ink", (((((_s) call comspec_atak_native_fnc_tr) + (["tocText"] call comspec_atak_native_fnc_fireSupport))) call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
             };
             case "SAT": {
                 private _n = _st getOrDefault ["satN", 0];
-                // Console de l'opérateur : ce satellite est rendu sur ce poste tant que l'onglet est ouvert (30 s de plus après).
-                ["need", [_side, _n]] call comspec_atak_native_fnc_tocSat;
-                { (_ui get ("sSlot" + str _forEachIndex)) ctrlSetBackgroundColor ([[0.07, 0.085, 0.075, 1], [0.18, 0.38, 0.21, 1]] select (_forEachIndex isEqualTo _n)); } forEach [0, 1];
+                // Console de l'opérateur : ce satellite est rendu sur ce poste en haute résolution tant que l'onglet est
+                // ouvert (30 s de plus après).
+                ["need", [_side, _n, 3, true]] call comspec_atak_native_fnc_tocSat;
+                private _on = [0.18, 0.38, 0.21, 1];
+                private _off = [0.07, 0.085, 0.075, 1];
+                { (_ui get ("sSlot" + str _forEachIndex)) ctrlSetBackgroundColor ([_off, _on] select (_forEachIndex isEqualTo _n)); } forEach [0, 1];
                 private _s = (_room select 2) param [_n, []];
                 private _mine = (_s param [7, ""]) isEqualTo getPlayerUID player;
                 private _who = _s param [6, ""];
                 // Pilotable : j'ai la main, ou le satellite est libre (la première commande me la donne, fn_tocRoom).
                 private _can = _mine || {_who isEqualTo ""};
+                private _map = _st getOrDefault ["satMap", false];
                 private _tex = ["tex", [_side, _n]] call comspec_atak_native_fnc_tocSat;
                 private _pic = _ui get "sPic";
                 if ((_pic getVariable ["COMSPEC_ATAK_Tex", ""]) isNotEqualTo _tex) then {
                     _pic setVariable ["COMSPEC_ATAK_Tex", _tex];
                     _pic ctrlSetText ([_tex, "#(argb,8,8,3)color(0,0,0,1)"] select (_tex isEqualTo "")); // i18n:brut (texture)
                 };
-                (_ui get "sWait") ctrlShow (_tex isEqualTo "");
-                if (_tex isEqualTo "") then { (_ui get "sWait") ctrlSetStructuredText parseText (("<t align='center' size='1.05' color='#cfd8d3'>Image satellite en cours d'acquisition…</t><br/><t align='center' size='0.8' color='#8a9a93'>Image noire : activez « Image dans l'image » (Options > Vidéo)</t>") call comspec_atak_native_fnc_tr); };
-                // Image : AUTO (jour le jour, vision nocturne la nuit), JOUR (éclairci la nuit), NUIT, THERMIQUE (fn_tocSat).
+                (_ui get "sWait") ctrlShow (_tex isEqualTo "" && {!_map});
+                if (_tex isEqualTo "") then { (_ui get "sWait") ctrlSetStructuredText parseText (["ink", (("<t align='center' size='1.05' color='@text2'>Image satellite en cours d'acquisition…</t><br/><t align='center' size='0.8' color='@muted'>Image noire : activez « Image dans l'image » (Options > Vidéo)</t>") call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme); };
+                // Capteur (AUTO : jour le jour, thermique la nuit), calques de ce PC, options du satellite : allumés en vert.
                 private _m = _s param [3, "AUTO"];
-                private _night = sunOrMoon < 0.5;
-                { (_ui get ("s" + _x)) ctrlSetBackgroundColor ([[0.07, 0.085, 0.075, 1], [0.18, 0.38, 0.21, 1]] select (_x isEqualTo _m)); } forEach ["AUTO", "DAY", "NV", "TI"];
+                if (_m isEqualTo "TI") then { _m = "WHOT"; };
+                { (_ui get ("s" + _x)) ctrlSetBackgroundColor ([_off, _on] select (_x isEqualTo _m)); } forEach ["AUTO", "DAY", "NV", "WHOT", "BHOT", "FUSW", "FUSB"];
+                private _ov = call _satOv;
+                { (_ui get ("sOv" + _x)) ctrlSetBackgroundColor ([_off, _on] select (_ov getOrDefault [_x, true])); } forEach ["MRKR", "BFT", "GRID", "DATA", "BOX"];
+                (_s param [8, [false, true]]) params [["_jit", false], ["_terr", true]];
+                (_ui get "sJit") ctrlSetBackgroundColor ([_off, _on] select _jit);
+                (_ui get "sTerr") ctrlSetBackgroundColor ([_off, _on] select _terr);
+                (_ui get "sMap") ctrlSetBackgroundColor ([_off, (["amber"] call _tcol)] select _map);
                 private _lab = ["label", [_side, _n]] call comspec_atak_native_fnc_tocSat;
-                (_ui get "sStrip") ctrlSetStructuredText parseText ((format ["<t size='0.85'>  %1 · %2%3</t>", [["<t color='#e0b040'>Lecture seule</t>", "<t color='#5cc76b'>Vous avez la main</t>"] select _mine, "<t color='#7fd0b0'>Libre</t>"] select (_who isEqualTo ""), [_lab] call _esc,
-                    ["", "   <t color='#e0b040'>Nuit : JOUR est éclairci ; NUIT ou THERMIQUE montrent mieux</t>"] select (_night && {_m isEqualTo "DAY"})]) call comspec_atak_native_fnc_tr);
+                (_ui get "sStrip") ctrlSetStructuredText parseText (["ink", ((format ["<t size='0.85'>  %1 · %2%3</t>", [["<t color='@amber'>Lecture seule</t>", "<t color='@accent'>Vous avez la main</t>"] select _mine, "<t color='@accent'>Libre</t>"] select (_who isEqualTo ""), [_lab] call _esc,
+                    ["", "   <t color='@amber'>Cliquez sur la carte : le satellite s'y place</t>"] select _map]) call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
+                // En-tête de la console : satellite et main, puis zoom, largeur au sol et grille visée.
                 private _aim = ["aim", [_side, _n]] call comspec_atak_native_fnc_tocSat;
                 private _where = if ((count _aim) < 2) then { "au-dessus du poste" } else { "grille " + ([[(_aim select 0) select 0, (_aim select 0) select 1, 0], 6] call comspec_atak_native_fnc_gridRef) };
-                private _hw = _s param [2, 600];
-                (_ui get "sInfo") ctrlSetStructuredText parseText ((format ["<t size='1.05' font='COMSPEC_BarlowBold'>SAT %1</t><br/><t size='0.85'>%2<br/>Largeur de la vue %3 · %4</t>", _n + 1,
-                    [[format ["Piloté par %1 : lecture seule", [_who] call _esc], "Vous avez la main"] select _mine, "Libre : la première commande vous donne la main"] select (_who isEqualTo ""),
-                    [format ["%1 m", round (2 * _hw)], format ["%1 km", (round (2 * _hw / 100)) / 10]] select (_hw >= 500), _where]) call comspec_atak_native_fnc_tr);
+                private _hw = _s param [2, 500];
+                private _z = ["zoomOf", _hw] call comspec_atak_native_fnc_tocSat;
+                (_ui get "sInfo") ctrlSetStructuredText parseText (["ink", ((format ["<t size='1.05' font='COMSPEC_BarlowBold'>SAT %1 · %2</t><br/><t size='0.85' color='@text2'>%3 de large · %4</t>", _n + 1,
+                    [[format ["<t color='@amber'>PILOTÉ PAR %1</t>", toUpper ([_who] call _esc)], "<t color='@accent'>ASSIGNÉ ICI</t>"] select _mine, "<t color='@accent'>LIBRE</t>"] select (_who isEqualTo ""),
+                    [format ["%1 m", round (2 * _hw)], format ["%1 km", (round (2 * _hw / 100)) / 10]] select (_hw >= 500), _where]) call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
+                (_ui get "sZoom") ctrlSetStructuredText parseText (["ink", format ["<t align='center' size='1.05' font='COMSPEC_BarlowBold'>%1X</t>", _z toFixed 2]] call comspec_atak_native_fnc_tocTheme);
                 // Commandes grisées quand un autre opérateur a la main ; la raison s'écrit sur la ligne d'aide au survol.
                 private _why = ["", format ["Piloté par %1 : lecture seule. Attendez qu'il rende la main.", _who]] select !_can;
-                { (_ui get _x) ctrlEnable _can; (_ui get _x) setVariable ["why", _why]; } forEach ["sAUTO", "sDAY", "sNV", "sTI", "sHome", "sN", "sS", "sW", "sE", "sIn", "sOut", "sFollowGo", "sFollowOff"];
+                { (_ui get _x) ctrlEnable _can; (_ui get _x) setVariable ["why", _why]; } forEach ["sAUTO", "sDAY", "sNV", "sWHOT", "sBHOT", "sFUSW", "sFUSB", "sHome", "sN", "sS", "sW", "sE", "sIn", "sOut",
+                    "sFollowGo", "sFollowOff", "sTaskGrid", "sMap", "sJit", "sTerr"];
                 (_ui get "sTake") ctrlEnable (!_mine);
                 (_ui get "sRelease") ctrlEnable _mine;
                 (_ui get "sRelease") setVariable ["why", "Vous n'avez pas la main sur ce satellite"];
@@ -1549,7 +1696,30 @@ switch (_mode) do {
                     { private _i = _sf lbAdd ((_x select 0) call comspec_atak_native_fnc_tr); _sf lbSetData [_i, _x select 1]; } forEach _opts;
                     _sf lbSetCurSel ((_opts findIf { (_x select 1) isEqualTo _keep }) max 0);
                 };
-                (_ui get "sLegend") ctrlSetStructuredText parseText (("<t size='0.8' color='#8a9a93'>Cadres : alliés du réseau ATAK (en couleur : en direct ; en gris : point ancien, perdu ou téléphone hors ligne). Une unité sans ATAK n'apparaît jamais. Molette : zoom · clic : centrer · glisser : déplacer.</t>") call comspec_atak_native_fnc_tr);
+                // ÉCRAN ISR : tous les écrans du poste, puis chaque écran ou dalle de la salle (sinon les écrans à 30 m).
+                private _hid = ["of", _st getOrDefault ["obj", objNull]] call comspec_atak_native_fnc_tocHall;
+                private _hosts = if (_hid isEqualTo "") then { (call _nearScreens) select { isNull (_x getVariable ["COMSPEC_ATAK_TocHost", objNull]) } } else { ["screens", _hid] call comspec_atak_native_fnc_tocHall };
+                private _sOpts = [["Tous les écrans du poste (30 m)", "ALL"]];
+                {
+                    private _h = _x;
+                    if ((getNumber (configOf _h >> "comspec_screenRatio")) >= 4) then { continue };
+                    private _np = (getNumber (configOf _h >> "comspec_screenPanels")) max 1;
+                    for "_k" from 0 to (_np - 1) do {
+                        private _po = ["panelOf", [_h, _k]] call comspec_atak_native_fnc_tocScreen;
+                        if (isNull _po) then { continue };
+                        private _c = _po getVariable ["COMSPEC_ATAK_TocScr", []];
+                        private _what = if ((_c param [3, ""]) isEqualTo "SAT") then { format ["SAT %1", (_c param [8, 0]) + 1] } else { (["title", _c param [3, "SPLIT"]] call comspec_atak_native_fnc_tocScreen) param [1, ""] };
+                        _sOpts pushBack [[format ["%1 · %2", (_h getVariable ["COMSPEC_ATAK_TocScr", []]) param [0, "TOC"], _what], format ["%1 · dalle %2 · %3", (_h getVariable ["COMSPEC_ATAK_TocScr", []]) param [0, "TOC"], _k + 1, _what]] select (_np > 1), netId _po];
+                    };
+                } forEach _hosts;
+                private _sc = _ui get "sScr";
+                if ((_sc getVariable ["COMSPEC_ATAK_Sig", []]) isNotEqualTo _sOpts) then {
+                    _sc setVariable ["COMSPEC_ATAK_Sig", _sOpts];
+                    private _keep = _sc lbData ((lbCurSel _sc) max 0);
+                    lbClear _sc;
+                    { private _i = _sc lbAdd ((_x select 0) call comspec_atak_native_fnc_tr); _sc lbSetData [_i, _x select 1]; } forEach _sOpts;
+                    _sc lbSetCurSel ((_sOpts findIf { (_x select 1) isEqualTo _keep }) max 0);
+                };
             };
             case "CHRONOS": {
                 private _tm = _room select 1;
@@ -1566,7 +1736,7 @@ switch (_mode) do {
                     _lb lbSetTextRight [_forEachIndex, _txt];
                     _lb lbSetColorRight [_forEachIndex, _col];
                 } forEach _tm;
-                (_ui get "tInfo") ctrlSetStructuredText parseText (("<t size='0.8' color='#8a9a93'>Chrono : temps écoulé depuis le lancement. Compte à rebours : temps restant, rouge une fois dépassé. Heure H : temps jusqu'à une heure ZULU (H-), puis depuis (H+), toujours en marche. Les chronos sont communs à tous les PC du camp et gardés d'une partie à l'autre.</t>") call comspec_atak_native_fnc_tr);
+                (_ui get "tInfo") ctrlSetStructuredText parseText (["ink", (("<t size='0.8' color='@muted'>Chrono : temps écoulé depuis le lancement. Compte à rebours : temps restant, rouge une fois dépassé. Heure H : temps jusqu'à une heure ZULU (H-), puis depuis (H+), toujours en marche. Les chronos sont communs à tous les PC du camp et gardés d'une partie à l'autre.</t>") call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
             };
             case "RADIO": {
                 // Radios de l'opérateur lues dans ACRE2 (fn_mpu5, lecture seule) : canal, fréquences, voyants RX / TX.
@@ -1578,19 +1748,19 @@ switch (_mode) do {
                     {
                         _x params ["", "_name", "_ch", "_lbl", "_tx", "_rx", "_ptt", "_cur", "_txing"];
                         private _rxOn = (_now findIf { (_x select 0) isNotEqualTo player && {abs ((_x select 2) - _rx) < 0.001} }) >= 0;
-                        _s = _s + format ["<t size='1.05' font='COMSPEC_BarlowBold'>%1</t> <t size='0.85' color='#8a9a93'>canal %2%3</t><br/><t size='0.9'><t color='%4'>● RX</t>   <t color='%5'>● TX</t>   %6 MHz%7 · %8%9</t><br/><br/>",
-                            [_name] call _esc, _ch, ["", " · " + ([_lbl] call _esc)] select (_lbl isNotEqualTo ""), ["#3a423e", "#5cc76b"] select _rxOn, ["#3a423e", "#ff5a4a"] select _txing,
+                        _s = _s + format ["<t size='1.05' font='COMSPEC_BarlowBold'>%1</t> <t size='0.85' color='@muted'>canal %2%3</t><br/><t size='0.9'><t color='%4'>● RX</t>   <t color='%5'>● TX</t>   %6 MHz%7 · %8%9</t><br/><br/>",
+                            [_name] call _esc, _ch, ["", " · " + ([_lbl] call _esc)] select (_lbl isNotEqualTo ""), ["@lineStrong", "@accent"] select _rxOn, ["@lineStrong", "@red"] select _txing,
                             [_tx toFixed 3, "?"] select (_tx <= 0), ["", format [" (réception %1)", _rx toFixed 3]] select (_rx > 0 && {abs (_rx - _tx) > 0.0005}),
                             [format ["alternat %1", _ptt], "sans alternat"] select (_ptt < 1), ["", " · radio active"] select _cur];
                     } forEach _rad;
                     private _who = _now select { (_x select 0) isNotEqualTo player };
                     if ((count _who) > 0) then {
                         _s = _s + "<t size='0.95' font='COMSPEC_BarlowBold'>EN ÉMISSION</t><br/>";
-                        { _s = _s + format ["<t size='0.9'><t color='#5cc76b'>●</t> %1 · %2 MHz%3 · %4 s</t><br/>", [[_x select 0, true] call comspec_atak_native_fnc_unitCallsign] call _esc, (_x select 2) toFixed 3, ["", " · " + ([_x select 3] call _esc)] select ((_x select 3) isNotEqualTo ""), round (_x select 4)]; } forEach _who;
+                        { _s = _s + format ["<t size='0.9'><t color='@accent'>●</t> %1 · %2 MHz%3 · %4 s</t><br/>", [[_x select 0, true] call comspec_atak_native_fnc_unitCallsign] call _esc, (_x select 2) toFixed 3, ["", " · " + ([_x select 3] call _esc)] select ((_x select 3) isNotEqualTo ""), round (_x select 4)]; } forEach _who;
                     };
                 } else {
                     _s = switch (true) do {
-                        case (!isNil "acre_api_fnc_getCurrentRadioList"): { "<t size='0.9' color='#e0b040'>ACRE2 est chargé, mais vous ne portez aucune radio. Prenez une radio ACRE2 pour voir ses canaux ici.</t>" };
+                        case (!isNil "acre_api_fnc_getCurrentRadioList"): { "<t size='0.9' color='@amber'>ACRE2 est chargé, mais vous ne portez aucune radio. Prenez une radio ACRE2 pour voir ses canaux ici.</t>" };
                         case (!isNil "TFAR_fnc_activeSwRadio"): {
                             private _sw = ["api", ["TFAR_fnc_activeSwRadio", [], ""]] call comspec_atak_native_fnc_radioGuard;
                             private _lr = ["api", ["TFAR_fnc_activeLrRadio", [], []]] call comspec_atak_native_fnc_radioGuard;
@@ -1598,10 +1768,10 @@ switch (_mode) do {
                                 [[getText (configFile >> "CfgWeapons" >> _sw >> "displayName")] call _esc, "aucune"] select (!(_sw isEqualType "") || {_sw isEqualTo ""}),
                                 [[getText (configOf (_lr select 0) >> "displayName")] call _esc, "aucune"] select (!(_lr isEqualType []) || {(count _lr) < 1} || {!((_lr select 0) isEqualType objNull)})]
                         };
-                        default { "<t size='0.9' color='#8a9a93'>Aucun mod radio (ACRE2 ou TFAR) sur ce serveur.</t>" };
+                        default { "<t size='0.9' color='@muted'>Aucun mod radio (ACRE2 ou TFAR) sur ce serveur.</t>" };
                     };
                 };
-                (_ui get "kInfo") ctrlSetStructuredText parseText ((_s + "<br/><t size='0.8' color='#8a9a93'>Voyant RX : un équipier émet sur cette fréquence. Voyant TX : vous émettez. Pour parler, utilisez votre touche d'alternat ACRE2 ou TFAR : le PC ne presse pas l'alternat à votre place.</t>") call comspec_atak_native_fnc_tr);
+                (_ui get "kInfo") ctrlSetStructuredText parseText (["ink", ((_s + "<br/><t size='0.8' color='@muted'>Voyant RX : un équipier émet sur cette fréquence. Voyant TX : vous émettez. Pour parler, utilisez votre touche d'alternat ACRE2 ou TFAR : le PC ne presse pas l'alternat à votre place.</t>") call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
             };
             case "SALLE": { ["refresh"] call comspec_atak_native_fnc_tocHallUi; };
             case "MAIN COURANTE": {
@@ -1616,11 +1786,11 @@ switch (_mode) do {
                         _x params ["_t", "_k", "_w", "_txt"];
                         private _i = _lb lbAdd ((format ["%1Z  %2  %3", _t select [0, 8], _k, _txt]) call comspec_atak_native_fnc_tr);
                         _lb lbSetTooltip [_i, (format ["%1Z · %2 · %3", _t, _w, _txt]) call comspec_atak_native_fnc_tr];
-                        _lb lbSetColor [_i, (createHashMapFromArray [["FLASH", [1, 0.36, 0.3, 1]], ["DEMANDE", [0.88, 0.69, 0.25, 1]], ["EXCHECK", [0.5, 0.82, 0.69, 1]], ["POSTE", [0.5, 0.72, 0.88, 1]], ["CR", [0.88, 0.69, 0.25, 1]]]) getOrDefault [_k, [0.85, 0.89, 0.86, 1]]];
+                        _lb lbSetColor [_i, (createHashMapFromArray [["FLASH", (["red"] call _tcol)], ["DEMANDE", (["amber"] call _tcol)], ["EXCHECK", (["text2"] call _tcol)], ["POSTE", (["friend"] call _tcol)], ["CR", (["amber"] call _tcol)]]) getOrDefault [_k, (["text"] call _tcol)]];
                     } forEach _l;
                     if ((count _l) isEqualTo 0) then { _lb lbAdd (("Main courante vide") call comspec_atak_native_fnc_tr); };
                 };
-                (_ui get "lInfo") ctrlSetStructuredText parseText (("<t size='0.8' color='#8a9a93'>Heures en ZULU. S'inscrivent seuls : comptes rendus et alertes reçus, demandes, prises de poste, FLASH, chronos, lignes d'exécution passées. Commune à tous les PC du camp et gardée d'une partie à l'autre.</t>") call comspec_atak_native_fnc_tr);
+                (_ui get "lInfo") ctrlSetStructuredText parseText (["ink", (("<t size='0.8' color='@muted'>Heures en ZULU. S'inscrivent seuls : comptes rendus et alertes reçus, demandes, prises de poste, FLASH, chronos, lignes d'exécution passées. Commune à tous les PC du camp et gardée d'une partie à l'autre.</t>") call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
             };
             case "EXCHECK": {
                 private _ex = _room select 4;
@@ -1633,18 +1803,18 @@ switch (_mode) do {
                         private _i = _lb lbAdd ((format ["%1. %2 · %3 · %4", _n, _cw, _ev, _el]) call comspec_atak_native_fnc_tr);
                         _lb lbSetData [_i, _id];
                         _lb lbSetTextRight [_i, [format ["prévu %1", _at], format ["passé %1", _done]] select (_done isNotEqualTo "")];
-                        _lb lbSetColor [_i, [[0.85, 0.89, 0.86, 1], [0.36, 0.85, 0.42, 1]] select (_done isNotEqualTo "")];
+                        _lb lbSetColor [_i, [(["text"] call _tcol), (["accent"] call _tcol)] select (_done isNotEqualTo "")];
                         if (_id isEqualTo (_st getOrDefault ["selX", ""])) then { _lb lbSetCurSel _i; };
                     } forEach _ex;
                     if ((count _ex) isEqualTo 0) then { _lb lbAdd (("Aucune ligne") call comspec_atak_native_fnc_tr); };
                 };
-                (_ui get "xInfo") ctrlSetStructuredText parseText (("<t size='0.8' color='#8a9a93'>PASSÉ inscrit l'heure ZULU réelle et une entrée à la main courante. La liste se prépare aussi dans le module Écran TOC (Eden ou Zeus). Commune au camp et gardée d'une partie à l'autre.</t>") call comspec_atak_native_fnc_tr);
+                (_ui get "xInfo") ctrlSetStructuredText parseText (["ink", (("<t size='0.8' color='@muted'>PASSÉ inscrit l'heure ZULU réelle et une entrée à la main courante. La liste se prépare aussi dans le module Écran TOC (Eden ou Zeus). Commune au camp et gardée d'une partie à l'autre.</t>") call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
             };
             case "PERTES": {
                 (["boardText", ["KILLS", _room, _side]] call comspec_atak_native_fnc_tocBoard) params ["_l"];
                 // Rien de compté : un texte d'attente plutôt qu'un tableau vide.
-                if ((count (_room select 8)) isEqualTo 0) then { _l = _l + "<br/><t size='0.8' color='#8a9a93'>Aucune perte ni résultat pour l'instant : les comptes rendus du réseau (BDA, porteur d'ATAK tué) et la correction à la main les inscrivent ici.</t>"; };
-                (_ui get "kcInfo") ctrlSetStructuredText parseText ((_l) call comspec_atak_native_fnc_tr);
+                if ((count (_room select 8)) isEqualTo 0) then { _l = _l + "<br/><t size='0.8' color='@muted'>Aucune perte ni résultat pour l'instant : les comptes rendus du réseau (BDA, porteur d'ATAK tué) et la correction à la main les inscrivent ici.</t>"; };
+                (_ui get "kcInfo") ctrlSetStructuredText parseText (["ink", ((_l) call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
                 private _ce = _ui get "kcEl";
                 private _els = ((["squads", _side] call comspec_atak_native_fnc_tocScreen) + ((_room select 8) apply { _x select 0 }));
                 _els = _els arrayIntersect _els;
@@ -1670,19 +1840,19 @@ switch (_mode) do {
                         private _i = _lb lbAdd ((format ["%1Z  %2 · %3%4", _t, _k, _by, ["", " · " + _grid] select (_grid isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
                         _lb lbSetData [_i, _id];
                         _lb lbSetTextRight [_i, (_stLbl getOrDefault [_stt, _stt]) call comspec_atak_native_fnc_tr];
-                        _lb lbSetColor [_i, (createHashMapFromArray [["RECUE", [0.88, 0.69, 0.25, 1]], ["PRISE", [0.5, 0.72, 0.88, 1]], ["REFUSEE", [1, 0.36, 0.3, 1]], ["TERMINEE", [0.36, 0.85, 0.42, 1]]]) getOrDefault [_stt, [0.85, 0.89, 0.86, 1]]];
+                        _lb lbSetColor [_i, (createHashMapFromArray [["RECUE", (["amber"] call _tcol)], ["PRISE", (["friend"] call _tcol)], ["REFUSEE", (["red"] call _tcol)], ["TERMINEE", (["accent"] call _tcol)]]) getOrDefault [_stt, (["text"] call _tcol)]];
                         if (_id isEqualTo (_st getOrDefault ["selQ", ""])) then { _lb lbSetCurSel _i; };
                     } forEach _rq;
                     if ((count _rq) isEqualTo 0) then { _lb lbAdd (("Aucune demande reçue") call comspec_atak_native_fnc_tr); };
                 };
                 private _q = _rq select { (_x select 0) isEqualTo (_st getOrDefault ["selQ", ""]) };
-                (_ui get "qInfo") ctrlSetStructuredText parseText ((if ((count _q) isEqualTo 0) then {
-                    "<t size='0.8' color='#8a9a93'>Les demandes envoyées par les téléphones du camp (MEDEVAC, appel de feu, ravitaillement) arrivent ici. Choisissez-en une, écrivez une réponse si besoin, puis son statut : il part au téléphone du demandeur.</t>"
+                (_ui get "qInfo") ctrlSetStructuredText parseText (["ink", ((if ((count _q) isEqualTo 0) then {
+                    "<t size='0.8' color='@muted'>Les demandes envoyées par les téléphones du camp (MEDEVAC, appel de feu, ravitaillement) arrivent ici. Choisissez-en une, écrivez une réponse si besoin, puis son statut : il part au téléphone du demandeur.</t>"
                 } else {
                     (_q select 0) params ["", "_t", "_k", "_by", "", "_grid", "_txt", "_stt", "_ans"];
-                    format ["<t size='1.05' font='COMSPEC_BarlowBold'>%1</t> <t size='0.85' color='#8a9a93'>%2Z · %3%4 · %5</t><br/><t size='0.9'>%6</t>%7", [_k] call _esc, _t, [_by] call _esc,
-                        ["", " · grille " + _grid] select (_grid isNotEqualTo ""), _stLbl getOrDefault [_stt, _stt], [_txt] call _esc, ["", format ["<br/><t size='0.85' color='#7fd0b0'>Réponse : %1</t>", [_ans] call _esc]] select (_ans isNotEqualTo "")]
-                }) call comspec_atak_native_fnc_tr);
+                    format ["<t size='1.05' font='COMSPEC_BarlowBold'>%1</t> <t size='0.85' color='@muted'>%2Z · %3%4 · %5</t><br/><t size='0.9'>%6</t>%7", [_k] call _esc, _t, [_by] call _esc,
+                        ["", " · grille " + _grid] select (_grid isNotEqualTo ""), _stLbl getOrDefault [_stt, _stt], [_txt] call _esc, ["", format ["<br/><t size='0.85' color='@accent'>Réponse : %1</t>", [_ans] call _esc]] select (_ans isNotEqualTo "")]
+                }) call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
             };
             case "CAMP": {
                 private _cd = _ui get "cDest";
@@ -1701,11 +1871,11 @@ switch (_mode) do {
                 };
                 private _tm = _events select { (_x param [1, ""]) isEqualTo "TOC" };
                 private _s = "<t size='1.05' font='COMSPEC_BarlowBold'>MESSAGES DU POSTE</t><br/>";
-                if ((count _tm) isEqualTo 0) then { _s = _s + "<t size='0.85' color='#8a9a93'>Aucun message envoyé au camp</t>"; };
+                if ((count _tm) isEqualTo 0) then { _s = _s + "<t size='0.85' color='@muted'>Aucun message envoyé au camp</t>"; };
                 private _last = _tm select [0 max ((count _tm) - 5)];
                 reverse _last;
-                { _s = _s + format ["<t size='0.85'><t color='#7fd0b0'>%1</t> %2 · %3<br/>   %4</t><br/>", _x param [0, ""], _x param [2, ""], [_x param [3, ""]] call _esc, [(_x param [5, ""]) select [0, 120]] call _esc]; } forEach _last;
-                (_ui get "cInfo") ctrlSetStructuredText parseText ((_s) call comspec_atak_native_fnc_tr);
+                { _s = _s + format ["<t size='0.85'><t color='@accent'>%1</t> %2 · %3<br/>   %4</t><br/>", _x param [0, ""], _x param [2, ""], [_x param [3, ""]] call _esc, [(_x param [5, ""]) select [0, 120]] call _esc]; } forEach _last;
+                (_ui get "cInfo") ctrlSetStructuredText parseText (["ink", ((_s) call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
                 private _cc = _ui get "cCam";
                 private _srcs = [["Carte et flux du poste", ""]] + ((["sources"] call comspec_atak_native_fnc_tocCam) apply { [_x select 0, _x select 1] });
                 // Liste refaite seulement quand les caméras du camp changent (le choix en cours reste sélectionné).

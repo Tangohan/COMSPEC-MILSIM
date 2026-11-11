@@ -19,8 +19,8 @@ final class AtakTocLaptopLayoutTest extends TestCase
     private const TOC = __DIR__ . '/../../mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/toc/';
     private const EN = __DIR__ . '/../../mod/COMSPEC_ATAK_Native/Sources/addons/main/i18n/en.txt';
     private const FILES = ['fn_tocLaptop.sqf', 'fn_tocDraw.sqf', 'fn_tocHallUi.sqf'];
-    /** Fonds et contrôles posés hors des lignes (image satellite et message d'attente : posés dans sBack). */
-    private const UNLAID = ['shellOut', 'shellIn', 'screen', 'brand', 'titleBg', 'titleLine', 'rBg', 'sPic', 'sWait'];
+    /** Fonds et contrôles posés hors des lignes (image satellite, son groupe de découpe et message d'attente : posés sur sBack). */
+    private const UNLAID = ['shellOut', 'shellIn', 'screen', 'brand', 'titleBg', 'titleLine', 'rBg', 'tabMark', 'sClip', 'sPic', 'sWait'];
 
     private function src(string $file): string
     {
@@ -112,8 +112,9 @@ final class AtakTocLaptopLayoutTest extends TestCase
     public function testEveryControlIsCreatedInTheRegistryAndLaidOut(): void
     {
         $lap = $this->src('fn_tocLaptop.sqf');
-        // Créations : _mk du chargement, « mk » pour fn_tocDraw / fn_tocHallUi, et les 3 contrôles des cadres de suivi.
-        self::assertSame(5, substr_count($lap, 'ctrlCreate ['));
+        // Créations : _mk du chargement, « mk » pour fn_tocDraw / fn_tocHallUi, et l'image satellite dans son groupe de
+        // découpe (le HUD du capteur est créé par fn_tocSat « hudMake »).
+        self::assertSame(3, substr_count($lap, 'ctrlCreate ['));
         foreach (['fn_tocDraw.sqf', 'fn_tocHallUi.sqf'] as $f) {
             self::assertStringNotContainsString('ctrlCreate', $this->src($f), "{$f} crée ses contrôles hors du registre du PC");
             self::assertStringNotContainsString('ctrlSetPosition [_x0', $this->src($f));
@@ -231,21 +232,23 @@ final class AtakTocLaptopLayoutTest extends TestCase
         $yi = $y0 + $g['pad'];
         $wi = $w0 - 2 * $g['pad'];
         $hi = $h0 - 2 * $g['pad'] - $g['brand'];
-        $by = $yi + $g['title'] + $gap;
-        $bh = $hi - $g['title'] - $g['bar'] - 2 * $gap;
+        // Barre du haut puis deux rangées d'onglets pleine largeur (refonte 11/11), filet, corps, ligne d'état.
+        $tabsH = 2 * $g['tab'] + $gap;
+        $topH = $g['title'] + $tabsH + 2 * $gap;
+        $by = $yi + $topH + 2 * $gap;
+        $bh = $hi - $topH - $g['bar'] - 3 * $gap;
         $pw = min(max($wi * $g['panel'], $g['panelMin']), $g['panelMax']);
         $px = $xi + $wi - $pw;
-        $cx = $px + $gap;
-        $cw = $pw - 2 * $gap;
-        $tabsH = 3 * $g['tab'] + 2 * $gap;
-        $cy = $by + $gap + $tabsH + 2 * $gap;
+        $cx = $px + 2 * $gap;
+        $cw = $pw - 4 * $gap;
+        $cy = $by + $gap;
 
         return [
             'inner' => [$xi, $yi, $wi, $hi],
             'rTitle' => [$xi + 2 * $gap, $yi + 0.001, $wi - 4 * $gap, $g['title'] - 0.005],
             'rBar' => [$xi, $yi + $hi - $g['bar'], $wi, $g['bar']],
             'rLeft' => [$xi + $gap, $by, ($px - $gap) - ($xi + $gap), $bh],
-            'rTabs' => [$cx, $by + $gap, $cw, $tabsH],
+            'rTabs' => [$xi + 2 * $gap, $yi + $g['title'] + $gap, $wi - 4 * $gap, $tabsH],
             'rHelp' => [$cx, $by + $bh - $gap - $g['help'], $cw, $g['help']],
             'rRight' => [$cx, $cy, $cw, ($by + $bh - $gap - $g['help'] - 2 * $gap) - $cy],
         ];
@@ -374,6 +377,59 @@ final class AtakTocLaptopLayoutTest extends TestCase
         self::assertGreaterThanOrEqual($g['fontMin'] * 1.6, $g['row'], 'rangée trop basse pour son texte');
     }
 
+    /**
+     * Console SAT (console ISR, retour de TTRD « faut vraiment ce rendu TOC SAT ») : toute la console tient dans le panneau
+     * de droite à chaque format (4:3, 16:10, 16:9, 21:9) ; l'image 16:9 couvre toute sa zone (ni bande noire ni
+     * déformation, rognée au bord le plus long) ; le HUD se pose dans la zone visible.
+     *
+     * @dataProvider screens
+     */
+    public function testSatConsoleFitsAndImageCoversItsArea(float $scale, float $aspect): void
+    {
+        self::assertGreaterThan(0, $scale);
+        $g = $this->grid();
+        $reg = $this->regions($aspect);
+        $layouts = $this->layouts();
+        $right = $this->place($layouts['R:SAT'], $reg['rRight'], $g);
+        $want = ['sSlot0', 'sSlot1', 'sInfo', 'sTake', 'sRelease', 'sL1', 'sGrid', 'sTaskGrid', 'sMap', 'sFollow', 'sFollowGo', 'sFollowOff', 'sNote', 'sLog', 'sTag',
+            'sOut', 'sZoom', 'sIn', 'sL2', 'sAUTO', 'sDAY', 'sNV', 'sWHOT', 'sBHOT', 'sFUSW', 'sFUSB', 'sL3', 'sW', 'sN', 'sHome', 'sS', 'sE',
+            'sL4', 'sOvMRKR', 'sOvBFT', 'sOvGRID', 'sOvDATA', 'sOvBOX', 'sJit', 'sTerr', 'sRefresh', 'sL5', 'sScr', 'sSend', 'sClear'];
+        foreach ($want as $k) {
+            self::assertArrayHasKey($k, $right, "console SAT : « {$k} » absent");
+            self::assertGreaterThanOrEqual($g['fontMin'] * 1.4, $right[$k][3], "console SAT : « {$k} » trop bas pour son texte");
+        }
+        $keys = array_keys($right);
+        for ($i = 0; $i < count($keys); $i++) {
+            for ($j = $i + 1; $j < count($keys); $j++) {
+                self::assertFalse(self::overlap($right[$keys[$i]], $right[$keys[$j]]), "console SAT : « {$keys[$i]} » chevauche « {$keys[$j]} »");
+            }
+        }
+        $bottom = max(array_map(static fn (array $r): float => $r[1] + $r[3], $right));
+        self::assertLessThanOrEqual($reg['rRight'][1] + $reg['rRight'][3] + 0.0005, $bottom, 'console SAT plus haute que le panneau');
+        // Image : zone sBack de L:SAT ; même calcul que « layout » (largeurs physiques : x en hauteurs d'écran).
+        foreach (['L:SAT' => 'sBack', 'L:SATMAP' => 'map'] as $lk => $ck) {
+            self::assertArrayHasKey($ck, $this->place($layouts[$lk], $reg['rLeft'], $g), "{$lk} sans « {$ck} »");
+        }
+        [$bx, $by, $bw, $bh] = $this->place($layouts['L:SAT'], $reg['rLeft'], $g)['sBack'];
+        $ar = $bw / $bh;
+        $sw = $bw;
+        $sh = $bh;
+        if ($ar > 16 / 9) {
+            $sh = $bh * $ar / (16 / 9);
+        } else {
+            $sw = $bw * (16 / 9) / $ar;
+        }
+        self::assertEqualsWithDelta(16 / 9, $sw / $sh, 1e-9, 'image déformée');
+        self::assertGreaterThanOrEqual($bw - 1e-9, $sw, 'bande noire à gauche ou à droite');
+        self::assertGreaterThanOrEqual($bh - 1e-9, $sh, 'bande noire en haut ou en bas');
+        self::assertTrue(abs($sw - $bw) < 1e-9 || abs($sh - $bh) < 1e-9, 'image plus grande que nécessaire');
+        self::assertGreaterThan(0.3, $bh, 'image trop basse');
+        $lap = $this->src('fn_tocLaptop.sqf');
+        self::assertStringContainsString('if (_ar > 16 / 9) then { _sh = _bh * _ar / (16 / 9); } else { _sw = _bw * (16 / 9) / _ar; };', $lap);
+        self::assertStringContainsString('_ui set ["sPic", _d ctrlCreate ["RscPicture", -1, _clip]];', $lap);
+        self::assertStringContainsString('_st set ["satHud", ["hudMake", [_d, controlNull, "PC"]] call comspec_atak_native_fnc_tocSat];', $lap);
+    }
+
     /** @param array<int, float> $a @param array<int, float> $b */
     private static function overlap(array $a, array $b): bool
     {
@@ -409,12 +465,12 @@ final class AtakTocLaptopLayoutTest extends TestCase
         // Nuit : AUTO en vision nocturne, JOUR éclairci (correction de couleur) ; bail jamais raccourci.
         self::assertStringContainsString('case "effect": {', $sat);
         self::assertStringContainsString('private _night = sunOrMoon < 0.5;', $sat);
-        self::assertStringContainsString('case "DAYN": { [3, 1, 3.5, 1, 0.04, [0, 0, 0, 0], [1, 1, 1, 1], [0.299, 0.587, 0.114, 0]] };', $sat);
-        self::assertStringContainsString('_a params ["_side", "_n", ["_secs", 3]];', $sat);
+        self::assertStringContainsString('["DAYN", "jour éclairci (nuit)", [3, 1, 3.5, 1, 0.04, [0, 0, 0, 0], [1, 1, 1, 1], [0.299, 0.587, 0.114, 0]]],', $sat);
+        self::assertStringContainsString('_a params ["_side", "_n", ["_secs", 3], ["_pc", false]];', $sat);
         self::assertStringContainsString('_e set [2, (_e select 2) max (diag_tickTime + _secs)];', $sat);
         $room = $this->src('fn_tocRoom.sqf');
-        self::assertStringContainsString('case "mode": { if (_v in ["AUTO", "DAY", "NV", "TI"]) then { _s set [3, _v]; }; };', $room);
-        self::assertStringContainsString('[-1, -1, 600, "AUTO", "", "", "", ""]', $room);
+        self::assertStringContainsString('if (_v in ["AUTO", "DAY", "NV", "WHOT", "BHOT", "FUSW", "FUSB"]) then { _s set [3, _v]; };', $room);
+        self::assertStringContainsString('[-1, -1, 500, "AUTO", "", "", "", "", [false, true]]', $room);
         $lap = $this->src('fn_tocLaptop.sqf');
         // Onglet SAT quitté : 30 s de rendu gardées ; molette et glisser sur l'image ; commandes grisées avec leur raison.
         self::assertStringContainsString('["need", [_side, _st getOrDefault ["satN", 0], 30]] call comspec_atak_native_fnc_tocSat;', $lap);

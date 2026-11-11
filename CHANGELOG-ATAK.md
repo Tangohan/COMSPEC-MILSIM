@@ -38,6 +38,44 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Pack 4.5.0 Washington : rendu professionnel des écrans TOC et du PC du poste, satellite devenu console ISR (ATAK natif 4.5.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.5.0 : un TOC au look professionnel et un satellite devenu console ISR
+- **Nouveau look** : tous les écrans du TOC et le PC du poste ont le rendu d'une vraie salle d'opérations, lisible de loin, avec des tableaux nets et plus aucun texte coupé.
+- **Console ISR** : le satellite montre une image thermique blanc chaud (et d'autres capteurs au choix) sous un vrai HUD de capteur : réticule, échelle, grille et heure ZULU. La nuit, l'image n'est plus noire.
+- **Pointage et zoom** : visez une grille, cliquez sur la carte ou suivez un groupe, et zoomez à la molette.
+- **Sur le mur** : envoyez l'image du satellite sur l'écran mural de votre choix.
+EN : ATAK 4.5.0: a professional-looking TOC and a satellite that becomes an ISR console
+- **New look**: every TOC screen and the post laptop look like a real operations room, readable from a distance, with clean tables and no more clipped text.
+- **ISR console**: the satellite shows a white-hot thermal image (and other sensors to choose from) under a real sensor HUD: reticle, scale, grid and ZULU time. At night the image is no longer black.
+- **Tasking and zoom**: aim at a grid, click on the map or follow a group, and zoom with the mouse wheel.
+- **On the wall**: send the satellite image to the wall screen of your choice.
+
+### Détail technique
+
+**Écrans du TOC et PC du poste refaits, rendu de salle d'opérations**
+
+- Thème unique `fn_tocTheme` (jetons de couleur, échelle de texte, polices RobotoCondensed / EtelkaMonospacePro, espacements, régions de chaque affichage en 1600 x 900 et 1600 x 400, colonnes des tableaux, règle sous FLASH), tables JSON lues aussi par `tools/toc_mockups.py` (maquettes PNG) et `AtakTocThemeTest` ; `ui/toc_theme.hpp` (classes du PC). Doc : `docs/TOC-THEME.md`.
+- `fn_tocBoard` réécrit en rendu « immédiat » par calques (fonds, filets et pastilles, images, satellite, cadres, textes) : en-tête, FLASH et pied communs, panneaux SPLIT / TOC / SQUAD, et FEED, NET, ORBAT, CLOCK, LOG, EXCHECK, KILLS, REQ, MOSAIC, STRIP, PLATE en tableaux à colonnes fixes ; SAT (console ISR) gardé, aligné sur les jetons (`fn_tocSat` : encre, pistes, plaques).
+- `fn_tocScreen` : la carte seule (fond teinté puis voilé, quadrillage sur plaques, plaques à liseré d'état et filet de rappel, légende) ; FEED, NET et ORBAT passent en tableaux ; tout le reste par `fn_tocBoard`.
+- `fn_tocLaptop` : onglets sur deux rangées pleine largeur (filet accent sous l'onglet choisi), titre et état du panneau de chaque onglet, couleurs et classes du thème (boutons à trois états, champs, listes), heures en monospace.
+- Tests : `AtakTocThemeTest` (contraste ≥ 4,5:1, texte mural ≥ 28 px, régions dans le cadre et sans chevauchement avec et sans FLASH, colonnes, aucune couleur hors du thème, anglais), `AtakTocLaptopLayoutTest` et `AtakTocScreenDisplaysAssetTest` mis à jour.
+- À juger en jeu : rendu réel des polices du jeu (largeur d'Etelka), lisibilité à 3-6 m, teinte de la carte selon la photo du terrain, coût de la réserve de contrôles.
+
+**Le satellite du TOC devient une console ISR**
+
+- `fn_tocSat` : table des capteurs (`_sensors`) et effet `setPiPEffect` (wiki BI : 0 normal, 1 vision nocturne, 2 thermique blanc chaud, 3 correction de couleur, 7 thermique de remplacement « inversé » = noir chaud). DAY `[0]` (nuit : DAYN, correction de couleur ×3,5), NV `[1]`, WHOT `[2]`, BHOT `[7]`, FUSW `[2]`, FUSB `[7]` + contours des bâtiments (`nearestObjects House`, 40 au plus, recalculés toutes les 1,5 s, seulement sous 760 m de large) dessinés en traits tournés (`ctrlSetAngle`) : un r2t n'accepte qu'un effet à la fois. AUTO : DAY le jour, WHOT la nuit (avant : vision nocturne). « TI » de la 4.4 lu comme WHOT.
+- Zoom : 1× = 500 m de large, demi-largeur `250 / zoom`, bornée de 0,25× à 8× (31,25 à 1000 m ; avant 40 à 2500 m) ; actions `zoomTo` et `opt` (`jit` dérive, `terr` suivi du relief) dans `fn_tocRoom`, état du satellite à 9 champs (options). Modes purs `zoomOf`, `halfOf`, `altFov`, `fovDeg`, `scale` (largeur = 2 · hauteur · tan(fov / 2)), `bar` (barre d'échelle), `selfTest`.
+- Caméra : zoom et position glissés (fov lissé), dérive optionnelle (éteinte), relief non suivi en option ; résolution de la cible par poste : H 2048 x 1024 (PC du poste), M 1024 x 512 (écran à 8 m au plus), L 512 x 256 (plus loin), changée par `retarget` (même caméra, nouvelle cible). Une caméra par satellite et par poste, seulement si regardée (logique et plafond `toc_cam_max` / `toc_cam_range` inchangés).
+- HUD (`hudMake` / `hudPaint` / `hudHide`) : contrôles de la même texture, jamais `drawIcon3D` ; coins, réticule, barre d'échelle, 6 lignes de données (police à chasse fixe, textes traduits et mesurés seulement quand ils changent), quadrillage, contours, marqueurs et tâches (`allMapMarkers` visibles du joueur, `simpleTasks`), pistes amies du réseau ATAK seulement (cadre, symbole, indicatif, groupe, état). PC : 4 fois par seconde, onglet SAT ouvert seulement ; mur : 4 fois par seconde au plus.
+- `fn_tocLaptop` : console SAT refaite sur la grille du PC (POINTAGE, zoom, CAPTEUR, DÉPLACER, CALQUES, options, ÉCRAN ISR), image 16:9 rognée dans un groupe (`sClip`) pour couvrir sa zone, pointage sur la carte (`satMap`), INSCRIRE (main courante), MARQUER (marqueur du canal Camp via `fn_markerNet`), ENVOYER / EFFACER par écran ou dalle de la salle (`fn_tocHall`, `panelOf`, `apply`).
+- `fn_tocBoard` : SAT plein cadre (texture 16:9), en-tête masqué, bandeau « Lecture seule » en bas, FLASH en haut ; correction d'une variable inconnue (`_rv`) dans la mise en page des tableaux à deux colonnes.
+- `fn_pageToc` : capteurs WHOT, BHOT, FUS W, FUS B au téléphone.
+- Tests : `AtakTocSatIsrTest` (capteurs, zoom, échelle comparée au `selfTest`, HUD, mur, anglais), `AtakTocLaptopLayoutTest` (console SAT en 4:3, 16:10, 16:9 et 21:9, image sans bande). Guide Steam 37 (poste TOC) mis à jour.
+- À tester en jeu : rendu des capteurs (BHOT `[7]`, fusions), lisibilité du HUD sur image claire et sombre, traits tournés des contours, molette et glisser dans le groupe de découpe, écrans muraux à 3-6 m, ENVOYER sur une dalle.
+
 ## SSE 1.9.1 : tuto des extensions lisible, fenêtre « IA de la zone » réparée, fenêtres qui s'arrêtaient à moitié (SSE 1.9.1)
 
 ### Résumé joueur

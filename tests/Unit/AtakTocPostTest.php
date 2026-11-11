@@ -39,12 +39,14 @@ final class AtakTocPostTest extends TestCase
         $scr = self::read(self::DIR . 'toc/fn_tocScreen.sqf');
         self::assertStringContainsString('private _place = {', $scr);
         self::assertStringContainsString('private _clusters =', $scr);
-        self::assertStringContainsString('private _setTxt = {', $scr);
-        self::assertStringContainsString('(floor (diag_tickTime / 8)) mod _nPg', $scr);
         self::assertStringContainsString('"ORBAT", "TOC", "CAM"', $scr);
-        // Titre et heure ne se recouvrent plus (pixels virtuels 1600 x 900 : titre jusqu'à 1084, heure dès 1100).
-        self::assertStringContainsString('_title ctrlSetPosition ([24, 12, 1060, 62] call _R)', $scr);
-        self::assertStringContainsString('_clock ctrlSetPosition ([1100, 20, 476, 48] call _R)', $scr);
+        // ORBAT en pages automatiques (fn_tocBoard, refonte 11/11) ; groupes limités à leur hauteur avec « + N autres ».
+        $brd = self::read(self::DIR . 'toc/fn_tocBoard.sqf');
+        self::assertStringContainsString('(floor (diag_tickTime / 10)) mod _nPg', $brd);
+        self::assertStringContainsString('"+ %1 autres"', $brd);
+        // Titre et heure ne se recouvrent plus (thème fn_tocTheme : titre jusqu'à 1024, heure de 1024 à 1576).
+        $thm = self::read(self::DIR . 'toc/fn_tocTheme.sqf');
+        self::assertStringContainsString('["title", 24, 12, 1000, 48], ["clock", 1024, 16, 552, 40]', $thm);
         self::assertStringNotContainsString('} forEach _nodes;
             // PIP : objectif', $scr);
     }

@@ -74,24 +74,28 @@ final class AtakTocScreenDisplaysAssetTest extends TestCase
         $draw = self::between($scr, 'case "draw": {', 'case "squadText": {');
         $layouts = self::between($draw, 'private _layouts = createHashMapFromArray [', '];');
         $boardDraw = self::between($brd, 'case "draw": {', 'case "boardText": {');
-        $boardText = self::between($brd, 'case "boardText": {', 'default { false };');
 
         // Caméra sans rendu en direct sur ce poste : carte et flux.
         self::assertStringContainsString('if (_view isEqualTo "CAM") then { _view = "SPLIT"; };', $draw);
-        self::assertStringContainsString('if (_view in _boards) exitWith { ["draw", [_o, _d, _view]] call comspec_atak_native_fnc_tocBoard };', $draw);
+        self::assertStringContainsString('if (_view in _boards) exitWith {', $draw);
+        self::assertStringContainsString('["draw", [_o, _d, _view]] call comspec_atak_native_fnc_tocBoard', $draw);
+        // Affichages à carte : la carte, puis en-tête, pied et panneau par fn_tocBoard (au-dessus).
+        self::assertStringContainsString('["draw", [_o, _d, _view, createHashMapFromArray [["op", _op], ["squad", _squad], ["sqNodes", _sqNodes]]]] call comspec_atak_native_fnc_tocBoard;', $draw);
         foreach ($views as $v) {
             if ($v === 'CAM') {
                 continue;
             }
             if (in_array($v, $boards, true)) {
-                $branch = in_array($v, ['LOG', 'EXCHECK', 'KILLS', 'REQ'], true) ? $boardText : $boardDraw;
-                self::assertMatchesRegularExpression('/case "' . $v . '"[:;]/', $branch, "affichage tableau $v sans branche dans fn_tocBoard");
+                self::assertMatchesRegularExpression('/case "' . $v . '"[:;]/', $boardDraw, "affichage tableau $v sans branche dans fn_tocBoard");
             } else {
-                self::assertStringContainsString('["' . $v . '", [', $layouts, "affichage carte $v sans mise en page");
+                self::assertStringContainsString('["' . $v . '", "', $layouts, "affichage carte $v sans mise en page");
             }
         }
-        // Tableaux mural : lignes limitées à la hauteur (texte coupé, nombre de lignes plafonné).
-        self::assertStringContainsString('(["boardText", [_view, _room, _side, true]] call _fn)', $boardDraw);
+        // Tableaux muraux : lignes limitées à la hauteur (« + N autres »), texte coupé à sa largeur.
+        self::assertStringContainsString('private _cap = floor (_ah / 40);', $boardDraw);
+        self::assertStringContainsString('private _text = {', $boardDraw);
+        // Le PC du poste lit toujours le texte des pertes.
+        self::assertStringContainsString('case "boardText": {', $brd);
         // Contrôle de chaque affichage dans un display d'essai, une erreur n'arrête que lui.
         self::assertStringContainsString('case "audit": {', $scr);
         self::assertStringContainsString('_host createDisplay "COMSPEC_RscTocScreenTexture"', $scr);
