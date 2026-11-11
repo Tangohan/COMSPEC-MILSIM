@@ -49,12 +49,12 @@ switch (_mode) do {
         private _scr = ((missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x && {alive _x} && {isNull (_x getVariable ["COMSPEC_ATAK_TocHost", objNull])} }) apply {
             private _pans = ((_x getVariable ["COMSPEC_ATAK_TocPanels", []]) select { !isNull _x }) apply {
                 private _c = _x getVariable ["COMSPEC_ATAK_TocScr", []];
-                [_x getVariable ["COMSPEC_ATAK_TocPanel", 0], [_c param [3, "SPLIT"], _c param [8, 0], _c param [9, ""], [_x] call _camWant, _x getVariable ["COMSPEC_ATAK_TocMosaic", []], _x getVariable ["COMSPEC_ATAK_TocOff", false], _x getVariable ["COMSPEC_ATAK_TocText", []]]]
+                [_x getVariable ["COMSPEC_ATAK_TocPanel", 0], [_c param [3, "SPLIT"], _c param [8, 0], _c param [9, ""], [_x] call _camWant, _x getVariable ["COMSPEC_ATAK_TocMosaic", []], _x getVariable ["COMSPEC_ATAK_TocOff", false], _x getVariable ["COMSPEC_ATAK_TocText", []], _x getVariable ["COMSPEC_ATAK_TocBc", []]]]
             };
             _pans sort true;
             [typeOf _x, getPosASL _x, vectorDir _x, vectorUp _x, _x getVariable ["COMSPEC_ATAK_TocScr", []], [_x] call _camWant, _pans apply { _x select 1 }, _x getVariable ["COMSPEC_ATAK_TocMosaic", []],
                 [_x getVariable ["COMSPEC_ATAK_TocUid", ""], _x getVariable ["COMSPEC_ATAK_TocHall", ""], _x getVariable ["COMSPEC_ATAK_TocOff", false], _x getVariable ["COMSPEC_ATAK_TocSurf", []],
-                    _x getVariable ["COMSPEC_ATAK_TocOpt", []], _x getVariable ["COMSPEC_ATAK_TocText", []]]]
+                    _x getVariable ["COMSPEC_ATAK_TocOpt", []], _x getVariable ["COMSPEC_ATAK_TocText", []], _x getVariable ["COMSPEC_ATAK_TocBc", []]]]
         };
         // Flux de la partie en cours seulement (celui de la partie précédente a déjà été gardé une fois).
         private _ev = [];
@@ -161,7 +161,9 @@ switch (_mode) do {
             if (_mos isEqualType [] && {(count _mos) >= 5}) then { _o setVariable ["COMSPEC_ATAK_TocMosaic", _mos, true]; };
             // Identifiant stable, salle, allumage.
             // Surface choisie à la désignation (écran d'un autre mod, fenêtre Zeus) : gardée.
-            _ids params [["_uid", ""], ["_hall", ""], ["_off", false], ["_surf", []], ["_opt", []], ["_txt", []]];
+            // Champs publiés gardés à leur index ; nouveaux champs ajoutés à la fin (4.8.0 : diffusion, fn_tocBroadcast).
+            _ids params [["_uid", ""], ["_hall", ""], ["_off", false], ["_surf", []], ["_opt", []], ["_txt", []], ["_bc", []]];
+            if (_bc isEqualType [] && {(count _bc) >= 4}) then { _o setVariable ["COMSPEC_ATAK_TocBc", ["sanitize", _bc] call comspec_atak_native_fnc_tocBroadcast, true]; };
             // Luminosité et distance d'affichage de l'écran (fn_tocConfig) : gardées.
             if (_opt isEqualType [] && {(count _opt) >= 2}) then { _o setVariable ["COMSPEC_ATAK_TocOpt", _opt, true]; };
             // Affichage TEXTE : messages, couleurs, vitesse (nettoyés à nouveau : la sauvegarde vient du profil).

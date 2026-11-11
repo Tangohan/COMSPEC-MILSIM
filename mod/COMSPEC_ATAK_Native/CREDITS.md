@@ -32,6 +32,9 @@ Converties au format police d'Arma par `tools/gen_fonts.py` (dossier `Sources/ad
 - Rajdhani — Indian Type Foundry ;
 - Share Tech — Carrois Apostrophe.
 
+Images des caractères des bandeaux à LED des écrans TOC (`Sources/addons/main/data/toc/led/`, une image par caractère,
+faites par `tools/gen_toc_led_glyphs.py`) : dessinées avec Cascadia Mono Bold — Microsoft, licence SIL Open Font License 1.1.
+
 ## ATAK Enhancements — Iceman
 
 Aucun code Iceman n'est repris dans ce mod. Sa licence n'est pas documentée dans ce dépôt ; ses fonctionnalités

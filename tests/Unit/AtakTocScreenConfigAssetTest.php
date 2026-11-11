@@ -268,9 +268,11 @@ final class AtakTocScreenConfigAssetTest extends TestCase
         $cfg = self::read(self::MAIN . 'functions/toc/fn_tocConfig.sqf');
 
         // Menu ACE : en tête, avant le test « écran désigné » (elle manquait tant que le serveur n'avait rien désigné).
+        // Depuis la 4.8.0 l'arbre du menu est dans fn_tocMenu (« tree ») ; les clés restent exécutées par « aceInit ».
         $ace = self::sqfCase($scr, 'aceInit');
-        $open = strpos($ace, '_out pushBack (["Big", "Ouvrir le PC du poste", "big"');
-        $gate = strpos($ace, "if (!_has) then {\n                // Écran du jeu ou d'un autre mod");
+        $tree = self::sqfCase(self::read(self::MAIN . 'functions/toc/fn_tocMenu.sqf'), 'tree');
+        $open = strpos($tree, '_out pushBack (["Pc", "Ouvrir le PC du poste", ');
+        $gate = strpos($tree, "if (!_has) then {\n            // Écran du jeu ou d'un autre mod");
         self::assertNotFalse($open);
         self::assertNotFalse($gate);
         self::assertLessThan($gate, $open);

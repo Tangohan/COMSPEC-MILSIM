@@ -1767,6 +1767,106 @@
             <English>Places a ready-to-use operator station: desk, chair, desk phone and a complete PC station. The operator faces the direction of the module. The station opens the TOC post PC and its monitors are TOC screens.</English>
             <French>Pose un poste opérateur prêt à servir : bureau, chaise, téléphone de table et poste PC complet. L'opérateur regarde dans la direction du module. Le poste ouvre le PC du poste TOC et ses moniteurs sont des écrans TOC.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_V_COLC">
+            <Original>Camera column (curved screen)</Original>
+            <English>Camera column (curved screen)</English>
+            <French>Colonne caméras (écran incurvé)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_V_COLD">
+            <Original>Duty log column (curved screen)</Original>
+            <English>Duty log column (curved screen)</English>
+            <French>Colonne main courante (écran incurvé)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_V_COLE">
+            <Original>Execution column (curved screen)</Original>
+            <English>Execution column (curved screen)</English>
+            <French>Colonne exécution (écran incurvé)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_V_COLF">
+            <Original>Requests and casualties column (curved screen)</Original>
+            <English>Requests and casualties column (curved screen)</English>
+            <French>Colonne demandes et pertes (écran incurvé)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_NAME">
+            <Original>ATAK · TOC screens table</Original>
+            <English>ATAK · TOC screens table</English>
+            <French>ATAK · Tableau des écrans TOC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_DESC">
+            <Original>Zeus: opens the TOC screens table, one line per panel of every screen of the mission. Choose what each panel shows, place, duplicate, link to a room, generate a full room and its standard feeds. It places nothing and can be used as often as needed. In Eden, open the same table from the COMSPEC ATAK menu.</Original>
+            <English>Zeus: opens the TOC screens table, one line per panel of every screen of the mission. Choose what each panel shows, place, duplicate, link to a room, generate a full room and its standard feeds. It places nothing and can be used as often as needed. In Eden, open the same table from the COMSPEC ATAK menu.</English>
+            <French>Zeus : ouvre le tableau des écrans TOC, une ligne par dalle de chaque écran de la mission. Choisissez ce que montre chaque dalle, posez, dupliquez, liez à une salle, générez une salle complète et ses flux standard. Il ne pose rien et se réutilise autant de fois qu'on veut. Dans Eden, le même tableau s'ouvre par le menu COMSPEC ATAK.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_MENU">
+            <Original>TBE · TOC screens table</Original>
+            <English>TBE · TOC screens table</English>
+            <French>TBE · Tableau des écrans TOC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_BROADCAST">
+            <Original>Broadcast and test card (BROADCAST)</Original>
+            <English>Broadcast and test card (BROADCAST)</English>
+            <French>Diffusion et mire (BROADCAST)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCTXT_NAME">
+            <Original>ATAK · Show a text</Original>
+            <English>ATAK · Show a text</English>
+            <French>ATAK · Afficher un texte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCTXT_T_NAME">
+            <Original>Message shown</Original>
+            <English>Message shown</English>
+            <French>Message affiché</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCTXT_T_TIP">
+            <Original>Message shown by the targeted screens, which switch to the Text display. Writing: message ; colour ; duration in seconds ; blinking. Several messages shown in turn: separate them with |. Colours: G green, A amber, R red, W white. Example: Bienvenue au TOC ; G ; 8 | ALERTE ; R ; 5 ; clignotant. Variables: {zulu} {zulus} {local} {date} {dtg} {h} {camp} {poste} {groupe}. Empty: the module does nothing.</Original>
+            <English>Message shown by the targeted screens, which switch to the Text display. Writing: message ; colour ; duration in seconds ; blinking. Several messages shown in turn: separate them with |. Colours: G green, A amber, R red, W white. Example: Bienvenue au TOC ; G ; 8 | ALERTE ; R ; 5 ; clignotant. Variables: {zulu} {zulus} {local} {date} {dtg} {h} {camp} {poste} {groupe}. Empty: the module does nothing.</English>
+            <French>Message montré par les écrans visés, qui passent en affichage Texte. Écriture : message ; couleur ; durée en secondes ; clignotant. Plusieurs messages à tour de rôle : séparez-les par |. Couleurs : G vert, A ambre, R rouge, W blanc. Exemple : Bienvenue au TOC ; G ; 8 | ALERTE ; R ; 5 ; clignotant. Variables : {zulu} {zulus} {local} {date} {dtg} {h} {camp} {poste} {groupe}. Vide : le module ne fait rien.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCTXT_S_NAME">
+            <Original>Target screens</Original>
+            <English>Target screens</English>
+            <French>Écrans visés</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCTXT_S_TIP">
+            <Original>Screens that receive the message. Synchronized screens: the objects synchronized with the module (none: the nearest text screen). Whole nearest room: every text screen of the TOC room of the nearest linked screen. Only screens able to show text are served (LED strips, 16:9 screens, wall panels, columns).</Original>
+            <English>Screens that receive the message. Synchronized screens: the objects synchronized with the module (none: the nearest text screen). Whole nearest room: every text screen of the TOC room of the nearest linked screen. Only screens able to show text are served (LED strips, 16:9 screens, wall panels, columns).</English>
+            <French>Écrans qui reçoivent le message. Écrans synchronisés : les objets synchronisés avec le module (aucun : l'écran texte le plus proche). Toute la salle la plus proche : tous les écrans texte de la salle TOC de l'écran lié le plus proche. Seuls les écrans capables d'afficher du texte sont servis (bandeaux LED, écrans 16:9, dalles de mur, colonnes).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCTXT_S_SYNC">
+            <Original>Synchronized screens</Original>
+            <English>Synchronized screens</English>
+            <French>Écrans synchronisés</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCTXT_S_NEAREST">
+            <Original>Nearest text screen</Original>
+            <English>Nearest text screen</English>
+            <French>Écran texte le plus proche</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCTXT_S_HALL">
+            <Original>Whole nearest room</Original>
+            <English>Whole nearest room</English>
+            <French>Toute la salle la plus proche</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCTXT_S_NEAR">
+            <Original>All text screens within the radius</Original>
+            <English>All text screens within the radius</English>
+            <French>Tous les écrans texte dans le rayon</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCTXT_R_NAME">
+            <Original>Radius (m)</Original>
+            <English>Radius (m)</English>
+            <French>Rayon (m)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCTXT_R_TIP">
+            <Original>Radius around the module for "All text screens within the radius". Example: 50.</Original>
+            <English>Radius around the module for "All text screens within the radius". Example: 50.</English>
+            <French>Rayon autour du module pour « Tous les écrans texte dans le rayon ». Exemple : 50.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCTXT_DESC">
+            <Original>Writes the message of the screens in Text display (LED strips, 16:9 screens, wall panels). Editor: the message is set at mission start on the synchronized screens, the nearest text screen, the whole nearest room or every text screen within the radius. Zeus: dropped on a screen or on the ground, it opens the text window for that screen or the nearest text screen, with ready-made messages, variables and sending to the whole room. Reusable at will.</Original>
+            <English>Writes the message of the screens in Text display (LED strips, 16:9 screens, wall panels). Editor: the message is set at mission start on the synchronized screens, the nearest text screen, the whole nearest room or every text screen within the radius. Zeus: dropped on a screen or on the ground, it opens the text window for that screen or the nearest text screen, with ready-made messages, variables and sending to the whole room. Reusable at will.</English>
+            <French>Écrit le message des écrans en affichage Texte (bandeaux LED, écrans 16:9, dalles de mur). Éditeur : le message est posé au lancement sur les écrans synchronisés, l'écran texte le plus proche, toute la salle la plus proche ou tous les écrans texte dans le rayon. Zeus : posé sur un écran ou au sol, il ouvre la fenêtre de saisie pour cet écran ou pour l'écran texte le plus proche, avec des messages tout prêts, les variables et l'envoi à toute la salle. Réutilisable à volonté.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_P_NAME">
             <Original>Operator stations</Original>
             <English>Operator stations</English>
