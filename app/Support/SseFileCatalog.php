@@ -26,6 +26,7 @@ final class SseFileCatalog
         'seek' => 'SEEK II',
         'idcheck' => 'Contrôle d’identité en jeu',
         'game' => 'Jeu (liaison directe)',
+        'watch' => 'Surveillance (recoupement)',
     ];
 
     /** Sources acceptées pour une consultation remontée plus tard (kind file_query). */

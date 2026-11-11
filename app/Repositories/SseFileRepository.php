@@ -35,6 +35,11 @@ final class SseFileRepository
         }
     }
 
+    public function db(): Database
+    {
+        return $this->db;
+    }
+
     // ------------------------------------------------------------ Journal
 
     /**
