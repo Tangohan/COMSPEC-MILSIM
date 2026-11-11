@@ -54,7 +54,7 @@ Module Eden « Flashbang (COMSPEC) » : grenade posée, effet sur une zone ou Dr
 Abonnez-vous à CBA_A3 et à ce mod. Chargez-les chez tous les joueurs (obligatoire). Sur le serveur, le mod est recommandé (Zeus, module Eden, IA du serveur) mais pas obligatoire pour lancer des grenades ; s'il vérifie les signatures, ajoutez la clé [b]keys\comspec_flashbang.bikey[/b] au dossier keys du serveur. En multijoueur, chacun voit et entend les mêmes flashs ; les effets ne touchent que les joueurs exposés.
 
 [h2]Support et licence[/h2]
-Bug ou idée : [url=https://discord.gg/CCpJA6Nks]Discord COMSPEC[/url]. © 2026 COMSPEC, licence COMSPEC : usage personnel depuis ce Workshop ; copie, modification et redistribution interdites. Sons enregistrés : licence acquise par COMSPEC ; BANG spéciaux : sons fournis par COMSPEC ; autres synthétisés.
+Bug ou idée : [url=https://discord.gg/CCpJA6Nks]Discord COMSPEC[/url]. © 2026 COMSPEC, licence COMSPEC : usage personnel depuis ce Workshop ; copie, modification et redistribution interdites. Sons enregistrés : licence acquise par COMSPEC ; BANG spéciaux : sons voicy.network, usage non commercial ; autres synthétisés.
 
 [hr][/hr]
 [img]https://athena-comspec.eu/assets/workshop/flashbang/en/banniere.png[/img]
@@ -113,4 +113,4 @@ Eden module "Flashbang (COMSPEC)": placed grenade, area effect or Drill, at star
 Subscribe to CBA_A3 and this mod. Load them on every player's game (required). On the server the mod is recommended (Zeus, Eden module, server AI) but not required for thrown grenades; if it checks signatures, add the [b]keys\comspec_flashbang.bikey[/b] key to the server keys folder. In multiplayer everyone sees and hears the same flashes; the effects only hit exposed players.
 
 [h2]Support and license[/h2]
-Bug or idea: [url=https://discord.gg/CCpJA6Nks]COMSPEC Discord[/url]. © 2026 COMSPEC, COMSPEC license: personal use from this Workshop page; copying, modifying and redistributing are forbidden. Recorded sounds: licensed by COMSPEC; special BANGs: sounds provided by COMSPEC; others synthesised.
+Bug or idea: [url=https://discord.gg/CCpJA6Nks]COMSPEC Discord[/url]. © 2026 COMSPEC, COMSPEC license: personal use from this Workshop page; copying, modifying and redistributing are forbidden. Recorded sounds: licensed by COMSPEC; Special BANGs: sounds from voicy.network, non-commercial use; others synthesised.

@@ -57,7 +57,7 @@ son **à la place** du bang (couche 3D positionnelle et couche proche 2D, mêmes
 Sons longs : les flashs sont calés sur les attaques du son (`instants[]` de `CfgSons.hpp`, classes `Theme_<V>`) ; sons
 courts : intervalle d'au moins 0,6 fois la durée du son. Mèche standard seulement (réglage « Mèche »), pas de
 variante à délai ni R. Niveau : sonie ramenée à celle du bang standard, jamais plus fort (SUPRISE et GERMAN sont des
-sources saturées, seulement baissées). **Sons fournis par COMSPEC.**
+sources saturées, seulement baissées). **Sons des BANG spéciaux : extraits de voicy.network (© leurs auteurs), utilisés à but non commercial.**
 
 ### Grenades à délai (3 s et 8 s)
 
@@ -282,7 +282,7 @@ Suffixe `_synth` : synthétisé pour le mod.
 | Acouphène (variante) | `acouphene_attaque/segment/fin_synth.ogg` | synthèse | 0,5 / 3 / 6 s | réglage « Acouphène : son » |
 | Cuillère | `levier_cuillere_synth.ogg` | synthèse | 0,4 s | au lancer |
 | (réserve) | `acouphene_boucle_enreg.ogg` | enregistrement | 3 s | non utilisé |
-| BANG spéciaux (`Theme_Japan`, `_Women`, `_Surprise`, `_German`) | `bang_japan_enreg.ogg`, `bang_women_enreg.ogg`, `bang_suprise_enreg.ogg`, `bang_german_enreg.ogg` (+ `_stereo_` pour la couche 2D) | sons fournis par COMSPEC | 0,73 / 1,13 / 6,36 / 12,6 s | à la place du bang : à chaque flash (JAPAN, WOMEN) ou une fois au 1er flash (SUPRISE, GERMAN) |
+| BANG spéciaux (`Theme_Japan`, `_Women`, `_Surprise`, `_German`) | `bang_japan_enreg.ogg`, `bang_women_enreg.ogg`, `bang_suprise_enreg.ogg`, `bang_german_enreg.ogg` (+ `_stereo_` pour la couche 2D) | voicy.network, usage non commercial | 0,73 / 1,13 / 6,36 / 12,6 s | à la place du bang : à chaque flash (JAPAN, WOMEN) ou une fois au 1er flash (SUPRISE, GERMAN) |
 
 Sons de la DRILL (réglage « Son de la grenade d'entraînement », ou champ « Son de la DRILL » des modules, qui l'emporte
 pour cette grenade). Un son par pop (1 à 9), lectures indépendantes et superposées, hauteur ±5 % et volume ±1,5 dB
@@ -540,7 +540,7 @@ loaded but not required.
   « [AT.NA] SUPRISE BANG », « [AT.NA] GERMAN BANG »): multicoloured body, the theme sound replaces the bang (short
   sounds on every flash, 3 flashes; long sounds played once from the first flash, 5 flashes over ~6 s and 9 over
   ~12 s, timed on the sound), tinted flash; crate `COMSPEC_FB_Box_Special` (« Special BANG crate »), « Grenade model »
-  field in the Eden and ZEN modules. Sounds provided by COMSPEC;
+  field in the Eden and ZEN modules. Special BANG sounds from voicy.network (© their authors), used non-commercially;
 - every grenade name starts with « [AT.NA] » (grouped in the Arsenal and inventory, 21 characters at most);
 - Eden module `COMSPEC_FB_Module` (« BetterFlash ») with three modes (grenade, area effect, drill), a « Fuse delay » field
   (default = none as before, 3 s, 8 s, custom 0.5-20 s) and a « DRILL sound » field;
