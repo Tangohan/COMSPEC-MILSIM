@@ -102,7 +102,7 @@ switch (_mode) do {
         if (isNull _src || {!alive _src}) exitWith { "" };
         private _e = _cams getOrDefault [_id, []];
         if ((count _e) >= 3 && {!isNull (_e select 0)}) exitWith {
-            _e set [2, diag_tickTime + 3];
+            _e set [2, diag_tickTime + 8];
             if ((_e select 5) <= 0) exitWith { "" };
             format ["#(argb,%1,%1,1)r2t(%2,1.7778)", _e select 5, _e select 1]
         };
@@ -127,9 +127,9 @@ switch (_mode) do {
             };
             default { _cam attachTo [_src, [0, 0.12, 0.03]]; _cam setVectorDirAndUp [[0, 1, 0], [0, 0, 1]]; };
         };
-        _cam cameraEffect ["Internal", "Back", _rt];
+        ["open", [_cam, _rt]] call comspec_atak_native_fnc_tocRtt;
         _rt setPiPEffect [parseNumber (sunOrMoon < 0.3)];
-        _cams set [_id, [_cam, _rt, diag_tickTime + 3, _kind, _src, _res]];
+        _cams set [_id, [_cam, _rt, diag_tickTime + 8, _kind, _src, _res]];
         if (isNil { uiNamespace getVariable "COMSPEC_ATAK_TocMosPfh" }) then {
             uiNamespace setVariable ["COMSPEC_ATAK_TocMosPfh", [{
                 private _cs = uiNamespace getVariable ["COMSPEC_ATAK_TocMosCams", createHashMap];
@@ -162,7 +162,7 @@ switch (_mode) do {
         {
             _y params ["_cam", "_rt", "_until", "", "_src"];
             if (diag_tickTime > _until || {isNull _src} || {!alive _src}) then {
-                if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", _rt]; camDestroy _cam; };
+                if (!isNull _cam) then { ["close", [_cam, _rt]] call comspec_atak_native_fnc_tocRtt; };
                 _cams deleteAt _x;
             };
         } forEach +_cams;

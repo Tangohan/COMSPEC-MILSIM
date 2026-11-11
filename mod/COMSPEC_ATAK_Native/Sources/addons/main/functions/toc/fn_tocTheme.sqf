@@ -1,7 +1,7 @@
 /*
     Thème des écrans TOC (demande de TTRD, 11/11 : « un rendu pro et propre » sur tous les écrans du mur et le PC du poste).
     Seule source des couleurs, des tailles de texte, des polices, des espacements et de la mise en page des écrans muraux
-    (pixels virtuels 1600 x 900 ; faces 4:1 : 1600 x 400 ; colonnes 8:9 d'un écran incurvé, COLA et COLB : 800 x 900). Les tables entre « TABLE » et « FIN » sont du JSON strict :
+    (pixels virtuels 1600 x 900 ; faces 4:1 : 1600 x 400 ; colonnes 8:9 d'un écran incurvé, COLA à COLF : 800 x 900). Les tables entre « TABLE » et « FIN » sont du JSON strict :
     elles sont lues telles quelles par mod/COMSPEC_ATAK_Native/tools/toc_mockups.py (maquettes PNG, mêmes nombres) et par
     tests/Unit/AtakTocThemeTest.php (contraste, tailles, régions dans le cadre et sans chevauchement). Mode d'emploi :
     docs/TOC-THEME.md. Couleurs des contrôles de config du PC : ui/toc_theme.hpp (mêmes valeurs, vérifiées par le test).
@@ -78,7 +78,11 @@ if ((count _thm) isEqualTo 0) then {
 ["STRIP", [["zLbl", 48, 40, 640, 48], ["zDig", 48, 100, 660, 160], ["zSub", 48, 284, 640, 48], ["div1", 720, 48, 2, 304], ["lLbl", 760, 40, 350, 48], ["lDig", 760, 112, 360, 136], ["lSub", 760, 284, 350, 48], ["div2", 1140, 48, 2, 304], ["cLbl", 1176, 40, 400, 48], ["cDig", 1176, 120, 400, 100], ["cSub", 1176, 284, 400, 48]]],
 ["PLATE", [["bar", 0, 0, 20, 400], ["name", 72, 40, 1480, 220], ["sub", 72, 280, 1480, 72]]],
 ["COLA", [["zLbl", 24, 24, 752, 36], ["zDig", 24, 64, 752, 150], ["dtg", 24, 222, 752, 36], ["lRule", 24, 274, 752, 1], ["lLbl", 24, 290, 752, 36], ["lDig", 24, 330, 752, 84], ["lDate", 24, 422, 752, 36], ["tHead", 24, 490, 300, 40], ["tSub", 324, 494, 452, 36], ["tRule", 24, 534, 752, 1], ["tArea", 24, 546, 752, 330]]],
-["COLB", [["netHead", 24, 24, 240, 40], ["netSub", 264, 28, 512, 36], ["netRule", 24, 68, 752, 1], ["tiles", 24, 80, 752, 152], ["grpHead", 24, 252, 240, 40], ["grpSub", 264, 256, 512, 36], ["grpRule", 24, 296, 752, 1], ["grpCols", 24, 304, 752, 36], ["grpArea", 24, 342, 752, 200], ["fluxHead", 24, 562, 240, 40], ["fluxSub", 264, 566, 512, 36], ["fluxRule", 24, 606, 752, 1], ["fluxArea", 24, 614, 752, 262]]]
+["COLB", [["netHead", 24, 24, 240, 40], ["netSub", 264, 28, 512, 36], ["netRule", 24, 68, 752, 1], ["tiles", 24, 80, 752, 152], ["grpHead", 24, 252, 240, 40], ["grpSub", 264, 256, 512, 36], ["grpRule", 24, 296, 752, 1], ["grpCols", 24, 304, 752, 36], ["grpArea", 24, 342, 752, 200], ["fluxHead", 24, 562, 240, 40], ["fluxSub", 264, 566, 512, 36], ["fluxRule", 24, 606, 752, 1], ["fluxArea", 24, 614, 752, 262]]],
+["COLC", [["camHead", 24, 24, 300, 40], ["camSub", 324, 28, 452, 36], ["camRule", 24, 68, 752, 1], ["cam1", 56, 80, 688, 387], ["cam2", 56, 483, 688, 387]]],
+["COLD", [["logHead", 24, 24, 300, 40], ["logSub", 324, 28, 452, 36], ["logRule", 24, 68, 752, 1], ["logArea", 24, 80, 752, 796]]],
+["COLE", [["nxHead", 24, 24, 300, 40], ["nxSub", 324, 28, 452, 36], ["nxRule", 24, 68, 752, 1], ["nxCode", 24, 82, 752, 48], ["nxEv", 24, 138, 752, 36], ["nxAt", 24, 180, 752, 36], ["exHead", 24, 244, 300, 40], ["exSub", 324, 248, 452, 36], ["exRule", 24, 288, 752, 1], ["exProg", 24, 290, 752, 3], ["exCols", 24, 300, 752, 36], ["exArea", 24, 340, 752, 520]]],
+["COLF", [["reqHead", 24, 24, 300, 40], ["reqSub", 324, 28, 452, 36], ["reqRule", 24, 68, 752, 1], ["reqArea", 24, 80, 752, 280], ["killHead", 24, 380, 300, 40], ["killSub", 324, 384, 452, 36], ["killRule", 24, 424, 752, 1], ["killTiles", 24, 436, 752, 152], ["killCols", 24, 600, 752, 36], ["killArea", 24, 640, 752, 240]]]
 ];
     // ---- FIN
     // ---- TABLE _flashRule (JSON) : sous un FLASH, [affichage, régions qui restent en place (préfixes), régions qui raccourcissent].
@@ -91,6 +95,7 @@ if ((count _thm) isEqualTo 0) then {
 ];
     // ---- FIN
     // ---- TABLE _cols (JSON) : colonnes [clé, en-tête, x dans le tableau, largeur, L | R | C | P (pastille), style].
+    // Suffixe _C : tableaux des colonnes 8:9 (COLD main courante, COLE exécution, COLF demandes et pertes), 752 px de large.
     private _cols = [
 ["GRP_S", [["name", "ÉLÉMENT", 0, 256, "L", "bodyBold"], ["n", "NŒUDS", 264, 96, "R", "data"], ["grid", "GRILLE", 372, 140, "R", "data"]]],
 ["FLUX_S", [["time", "", 0, 92, "L", "data"], ["kind", "", 100, 150, "L", "bodyBold"], ["who", "", 258, 254, "L", "body"]]],
@@ -102,7 +107,11 @@ if ((count _thm) isEqualTo 0) then {
 ["KILLS", [["el", "ÉLÉMENT", 0, 600, "L", "bodyBold"], ["wia", "BLESSÉS", 620, 200, "R", "dataBold"], ["kia", "TUÉS", 832, 200, "R", "dataBold"], ["ekia", "NEUTRALISÉS", 1044, 240, "R", "dataBold"], ["ewia", "BLESSÉS / CAPTURÉS", 1296, 256, "R", "dataBold"]]],
 ["KILLS_G", [["f", "AMIS", 620, 412, "R", "caption"], ["e", "ENNEMIS", 1044, 508, "R", "caption"]]],
 ["REQ", [["time", "HEURE", 0, 100, "L", "data"], ["kind", "TYPE", 112, 200, "L", "bodyBold"], ["by", "DEMANDEUR", 324, 230, "L", "body"], ["grid", "GRILLE", 566, 140, "R", "data"], ["text", "DÉTAIL", 724, 640, "L", "body"], ["st", "STATUT", 1376, 176, "P", "body"]]],
-["TIMER", [["name", "", 0, 360, "L", "heading"], ["sub", "", 0, 360, "L", "caption"], ["val", "", 368, 256, "R", "num"]]]
+["TIMER", [["name", "", 0, 360, "L", "heading"], ["sub", "", 0, 360, "L", "caption"], ["val", "", 368, 256, "R", "num"]]],
+["LOG_C", [["time", "", 0, 120, "L", "data"], ["kind", "", 132, 170, "P", "body"], ["who", "", 314, 438, "R", "body"]]],
+["EXCHECK_C", [["n", "N°", 0, 56, "R", "data"], ["cw", "MOT DE CODE", 72, 268, "L", "bodyBold"], ["at", "PRÉVU", 352, 120, "R", "data"], ["st", "ÉTAT", 488, 264, "P", "body"]]],
+["REQ_C", [["time", "", 0, 92, "L", "data"], ["kind", "", 100, 230, "L", "bodyBold"], ["by", "", 338, 220, "L", "body"], ["st", "", 566, 186, "P", "body"]]],
+["KILLS_C", [["el", "ÉLÉMENT", 0, 300, "L", "bodyBold"], ["wia", "BLESSÉS", 312, 120, "R", "dataBold"], ["kia", "TUÉS", 444, 100, "R", "dataBold"], ["ekia", "NEUTRALISÉS", 560, 192, "R", "dataBold"]]]
 ];
     // ---- FIN
     private _hexTo = {

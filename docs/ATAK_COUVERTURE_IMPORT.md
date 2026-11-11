@@ -1,5 +1,7 @@
 # ATAK : import d'une couverture générée sur Athena
 
+> Mise à jour (identités unifiées, étape 4450) : le site n'a plus d'onglet ni d'assistant « Couvertures ». Le membre gère des identités (`/operateur/identite`) ; le téléphone reçoit par « Synchroniser avec Athena » une entrée par identité, dans le même fichier `comspec-cover` v1 (voir `docs/technical/IDENTITES-UNIFIEES.md`). Le fichier à importer hors ligne reste généré par un responsable depuis la fiche du membre. Le mod ne change pas.
+
 But : donner à un joueur une couverture complète et cohérente, générée sur Athena, qu'il importe dans le jeu sans connexion à Athena. Personnes fictives seulement.
 
 Deux voies, même contenu : la synchronisation depuis le téléphone (réseau, derrière la licence) ou le fichier (aucune requête réseau, la DLL lit un fichier local de `Documents\Arma 3 - COMSPEC`). Le bouton « Demander la mise à jour » (paquet Athena) ne change pas.

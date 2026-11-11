@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : les réglages d'icônes marchent sur le petit téléphone (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Les réglages d'icônes s'appliquent aussi au petit téléphone
+- Les réglages d'icônes s'appliquent aussi au petit téléphone : forme, taille de ma forme, taille des alliés et des contacts, réglette « Icônes de la carte ». Avant, ils ne se voyaient que téléphone en main, en grand.
+- Sur la miniature, les symboles gardent une taille lisible (à peu près celle du téléphone en main) et le pion garde sa lettre d'équipe.
+- Les repères des outils de la carte (mesure, ligne de vue, zone de pose, point de pose d'un marqueur) suivent eux aussi la réglette « Icônes de la carte ».
+- Les symboles 2525D ne provoquent plus d'erreur et affichent de nouveau l'échelon et le poste de commandement tirés de l'ORBAT du site.
+EN : Icon settings now apply to the small phone too
+- Icon settings now apply to the small phone too: shape, size of my shape, size of allies and contacts, and the "Map symbols" slider. Before, they only showed with the phone in hand, in large.
+- On the miniature, symbols keep a readable size (about the same as the phone in hand) and the pawn keeps its team letter.
+- The markers of the map tools (measure, line of sight, landing zone, marker drop point) also follow the "Map symbols" slider.
+- 2525D symbols no longer raise an error and show the echelon and command post from the site ORBAT again.
+
+### Détail technique
+- Cause : `fn_mapOnDraw` multipliait chaque taille de symbole par la hauteur de la carte avec un plancher à 0,35 (0,54 en miniature verticale, 0,35 en horizontale, contre 0,65 en main) : symboles de 9 px, lettre du pion masquée sous 14 px, réglages sans effet visible. Une douzaine de repères d'outil gardaient une taille fixe, hors réglette.
+- `fn_mapIconScale` : seule source des tailles (facteur de vue borné de 0,6 à 1,35, réglette de 0,8 à 2,2, tailles des alliés et des contacts de 0,5 à 2,5), lue une fois par image par `fn_mapOnDraw` et par `fn_planDraw` ; auto-contrôle `["check"]`. Rien ne change téléphone en main au réglage par défaut.
+- `fn_milSym` : la table de l'ORBAT avait des objets pour clés (interdit dans une HashMap, erreur de script à chaque symbole 2525D et dans l'aperçu « Mon point GPS ») ; clés `hashValue`.
+- Tests : `AtakMapIconScaleTest` (table réglage × taille de la vue, bornes, chemins de dessin sans taille fixe ni lecture directe du réglage).
+
+---
+
 ## À venir : poste TOC web et plans d'opération sur Athena (site Athena, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -84,6 +107,69 @@ EN : ATAK 4.10.0: stations, rights and journal of the TOC room
 - Aucune alerte du jeu, aucune requête vers Athena, `fn_radioGuard` non touché.
 - Tests : `AtakTocAccessMatrixTest`, `AtakTocPersistFormatTest`, `AtakTocJournalTest`, `AtakTocApiContractTest`, `AtakTocThemeNightTest`.
 - Non vérifié en jeu.
+
+## Pack 4.9.0 Washington : console du poste TOC refaite, tout le TOC sans téléphone (ATAK natif 4.9.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.9.0 : la console du poste TOC est refaite, et elle marche sans téléphone
+- **Quatre rubriques** : Situation, Conduite, Plans et Salle, à gauche de l'écran, comme sur la console web. Touches F1 à F4.
+- **Sans téléphone** : la console montre toutes les unités du camp, même celles qui n'ont pas d'ATAK. Demandes, comptes rendus et ordres se créent au poste.
+- **Carte** : boutons de zoom, échelle, nord, calques à cocher, fiche de l'unité cliquée avec suivi et trace.
+- **Mur d'images** : un bouton met tout le mur sur la situation ; un écran peut être diffusé sur tous les autres.
+EN : ATAK 4.9.0: the TOC station console is rebuilt, and it works without a phone
+- **Four sections**: Situation, Operations, Plans and Room, on the left of the screen, like the web console. F1 to F4 keys.
+- **No phone needed**: the console shows every friendly unit, even those without an ATAK. Requests, reports and orders are created at the station.
+- **Map**: zoom buttons, scale, north, layers to tick, card of the clicked unit with follow and trail.
+- **Video wall**: one button puts the whole wall on the situation; one screen can be broadcast to all the others.
+
+### Détail technique
+- Audit : `docs/audit/2026-11-poste-toc-app.md`. Défauts prouvés par lecture du code de la 4.7.1 : recherche d'une grille sans effet (`fn_gridParse` rend `[[x, y, 0], taille, grille]`, la console lisait `[x, y]`) ; tri des nœuds refait à chaque image. (`_sideRgb` non déclaré et « mk » qui rendait `true` : trouvés aussi, déjà corrigés par la 4.7.2.)
+- `fn_tocLaptop` : console plein écran (plus de coque de PC), en-tête (poste, salle, opérateur, alertes, ZULU / LOCAL, liaisons serveur, Athena et radio), rail des rubriques (table `_sections`, la même que la console web), une rangée d'onglets par rubrique, 18 onglets. Moteur gardé : `_grid`, `_layout`, `_btnDefs`, `_place`, « audit ». Clic droit : point désigné commun (ordre, ordre IA, demande, compte rendu), l'onglet ne change plus.
+- `fn_tocAppData` (nouveau) : source directe. Unités du camp lues dans le jeu et fusionnées avec `COMSPEC_ATAK_TocFeed_<camp>` (par `fn_tocStatus` « feed » quand la 4.8.0 est là) ; nœud à 10 champs, le dixième `"P"` (téléphone) ou `"D"` (source directe). Une unité au téléphone garde son dernier point reçu (le brouillage garde son effet). Calcul côté client, console ouverte, gardé 2 s. Réglage `comspec_atak_native_toc_direct`.
+- `fn_tocApp` (nouveau) : onglets CARTE (9 calques, liste des unités, fiche, SUIVRE, TRACE), DESSIN, PLAN ; compte rendu du poste (`comspec_atak_native_report` par `sideEvent`), demande du poste (`reqAdd`), entrées rapides de main courante ; zoom, échelle et nord dessinés dans « Draw » ; raccourcis clavier.
+- `fn_tocWall` (nouveau) : onglets MUR et SALLE. Appelle le modèle de la 4.8.0 sans le dupliquer : `fn_tocBroadcast` (« start », « stop », « do » bars), `fn_tocLayout` (« list », « apply », « current »), `fn_tocScreen` « view » clé « opt », `fn_tocManager` « open ». Chaque appel est gardé par `isNil` : bouton grisé et raison sur la ligne d'aide avec un PBO plus ancien. Les actions « sur les écrans » visent les dalles 16:9 de la salle du poste (avant : toujours les écrans à 30 m).
+- `fn_tocHallUi` : couleurs du plan par les jetons du thème ; « VISER UN ÉCRAN » n'écrit plus dans le téléphone (résultat sur la ligne d'état à la réouverture).
+- Maquettes : `python -I mod/COMSPEC_ATAK_Native/tools/toc_mockups.py` écrit aussi `app_poste/` (situation, conduite, plans, salle). Ce sont des maquettes tirées des tables du code, pas des captures du jeu.
+- Tests : `AtakTocLaptopLayoutTest` (zones du nouveau cadre, rubriques, raccourcis, aucun appel au téléphone, gardes de la 4.8.0), `AtakTocPostTest`.
+- Non vérifié en jeu : tout le rendu de la console, les raccourcis clavier, le zoom par boutons, l'échelle et le nord, le suivi et la trace, le compte rendu et la demande créés au poste, les commandes du mur avec la 4.8.0.
+
+## Pack 4.8.0 Washington : tableau des écrans TOC (Eden, Zeus, en jeu), mode BROADCAST et mire, écrans qui ne clignotent plus, textes des bandeaux lisibles, menu des écrans refait (ATAK natif 4.8.0.AG - Washington, COMSPEC Link 2.0.123)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.8.0 : un tableau pour régler tous les écrans du TOC, un mode diffusion avec mire, et des écrans qui ne clignotent plus
+- **Tableau des écrans** : une seule fenêtre, dans l'éditeur, au Zeus et en jeu, liste chaque dalle de chaque écran. Vous y choisissez ce que chacune montre, vous posez, dupliquez, générez une salle et tous ses flux d'un coup.
+- **Diffusion (BROADCAST)** : un écran peut être recopié sur toute la salle en même temps, avec un témoin EN DIRECT, et une mire de barres de couleur quand il n'y a pas de source.
+- **Écrans stables et lisibles** : les écrans ne clignotent plus, les textes des bandeaux ne sont plus étirés ni coupés, un joueur connecté n'est plus marqué « perdu », et vous pouvez écrire le texte des bandeaux avec le module « Afficher un texte ».
+- **Zeus et menus** : poser un module TOC en Zeus ne vous ramène plus à la vue de votre personnage, le module Écran TOC pose un nouvel écran à chaque usage, et le menu des écrans est rangé par thèmes avec l'état en clair.
+EN : ATAK 4.8.0: one table to set up every TOC screen, a broadcast mode with a test card, and screens that no longer flicker
+- **Screens table**: a single window, in the editor, in Zeus and in game, lists every panel of every screen. Choose what each one shows, place, duplicate, generate a room and all its feeds in one go.
+- **Broadcast**: one screen can be copied to the whole room at the same time, with a LIVE tally, and a colour-bar test card when there is no source.
+- **Stable, readable screens**: screens no longer flicker, strip texts are no longer stretched or cut, a connected player is no longer shown as "lost", and you can write the strip text with the "Show a text" module.
+- **Zeus and menus**: placing a TOC module in Zeus no longer throws you back to your character's view, the TOC Screen module places a new screen on every use, and the screen menu is sorted by theme with the current state in plain words.
+
+### Détail technique
+- **Clignotement** (lecture du code, non reproduit en jeu). Trois bascules sans retenue, toutes dans la boucle des écrans : (1) `fn_tocSat.sqf` « tick » : la caméra du satellite était libérée 3 s après le dernier regard, et « vu » se mesurait sur l'origine du modèle (au sol ou au plafond), d'où « rendu sur ce poste » / « rendu arrêté » en boucle au journal et l'image qui passait par « en attente » au centre ; bail porté à 12 s, mesuré sur le centre de l'image (10 s pour `fn_tocCam`, 8 s pour `fn_tocMosaic`). (2) `fn_tocScreen.sqf` « tick » : un seul contrôle de visibilité raté éteignait l'écran ; il en faut deux de suite. (3) Image jamais chargée : nouvel essai toutes les 10 s sans fin, maintenant 4, 8, 16, 32, 60 s. En plus : une dalle ne peut plus être dessinée par deux inscriptions (`_claimed`), relais en double retirés (« panels »), contrôles du HUD satellite créés hors cadre et sans couleur (`hudMake`).
+- **Carte AUCUN SIGNAL** (`fn_tocBroadcast` « signal », « nosig ») : tant que le serveur n'a publié aucun flux pour le camp, carte fixe à la place du contenu ; bascule après 2 images avec flux, 3 sans.
+- **Module réutilisé** : `fn_moduleTocScreen.sqf` prenait pour objet visé l'objet le plus proche à moins de 3 m (`fn_moduleContext` « near »), donc l'écran posé juste avant, et ouvrait la fenêtre sur « Retirer » (`["add", "remove"] select …`). L'objet visé est maintenant celui sous le module seulement, l'action proposée est toujours « désigner ou régler », « Retirer » se choisit, et une action pose un nouvel écran à côté. Noms rendus uniques (`fn_tocManager` « uniqueName », « uniqueHall »).
+- **Tableau des écrans** (`fn_tocManager`, module `COMSPEC_ATAK_Module_TocManager`, menu Eden COMSPEC ATAK > TBE) : même fenêtre sur les displays 313, 312 et 46 ; une ligne par dalle ; plan du mur cliquable ; sources par format de dalle ; portée d'application (dalle, lignes cochées, salle, tout) ; génération de salle et de flux ; dispositions (`fn_tocLayout`, 12 dispositions, colonnes COLC à COLF pour l'écran incurvé) ; préréglages dans le profil. Dans Eden, il écrit les attributs des objets.
+- **BROADCAST** (`fn_tocBroadcast`, vue « BROADCAST », variable `COMSPEC_ATAK_TocBc`) : mire dessinée contrôle par contrôle (table `_smpte`), recopie d'un écran source par son identifiant, témoin fixe, mire ou AUCUN SIGNAL si la source est perdue ; `start` / `stop` par salle ou par groupe ; gardé par `fn_tocPersist` (champ ajouté en fin de tableau).
+- **Zeus ramené à la première personne** : `fn_tocSat.sqf`, `fn_tocCam.sqf` et `fn_tocMosaic.sqf` lançaient `cameraEffect ["Internal", "Back", cible]` puis `"Terminate"` pendant que la caméra du Zeus tenait la vue, à chaque création et libération de caméra d'écran. Tout passe par `fn_tocRtt`, qui rend la vue principale à la caméra du Zeus si son interface est ouverte. Cause déduite du code, non vérifiée en jeu.
+- **« Perdu » alors que connecté** : `fn_tocFeed.sqf` déclarait perdu tout point de plus de 4 intervalles + 10 s, alors que `fn_pli.sqf` espace les points jusqu'à 6 intervalles à l'arrêt, et comparait l'heure du joueur à celle du serveur. Règle unique dans `fn_tocStatus` (âge à la réception par le serveur, silence normal compté, joueur local toujours en direct, « source inconnue » en neutre).
+- **Textes étirés** : dans une texture d'interface, le moteur dessine le texte comme pour un écran 4:3 ; sur un bandeau 8:1 il sortait 6 fois trop large. `fn_tocText.sqf` dessine maintenant une image par caractère (`data/toc/led/`), à la taille de la dalle réelle : centré s'il tient, réduit, puis défilant. Plaques et bandeau horloge de même. Sur les écrans 16:9 (étirés 1,33 fois) les largeurs estimées sont corrigées et la mesure du jeu fait foi : plus de texte coupé sans « … ».
+- **Liste des membres vide** sur l'écran d'escouade : `fn_tocBoard.sqf` passait un tableau au lieu d'un nom de région.
+- **En-tête et pied** : le nom du modèle (« 98-inch giant… ») n'est plus écrit sur l'image ; l'en-tête dit ce que l'écran montre, puis le nom donné par quelqu'un s'il y en a un. Horloge de l'en-tête masquée sur l'affichage Horloge.
+- **Diapositive noire** : `fn_screenCast.sqf` posait sur l'objet le fichier du cache du téléphone, que le jeu lit pour l'interface mais rend noir sur un objet. Un fichier n'est posé que s'il est vérifié et hors du cache ; sinon la diapositive reste montrée par le navigateur intégré, ou une carte « Diapositive indisponible » en donne la raison. Confiance de 75 % environ, non vérifié en jeu.
+- **Texte des bandeaux** : module « Afficher un texte » (`fn_moduleTocText`, `fn_tocTextTool`), modèles de messages, envoi à un écran, une salle ou un rayon.
+- **Menu des écrans** (`fn_tocMenu`) : un seul arbre pour ACE et la molette, 7 entrées au plus par niveau, état dans le libellé.
+- **Charge** : voir `docs/TOC-PERF.md` (ce qui tourne selon la distance, retenues ajoutées, ce qui n'est pas fait).
+- Tests : `AtakTocManagerBroadcastAssetTest`, `AtakTocLayoutAssetTest`, `AtakTocAceMenuAssetTest`, `AtakTocTextAspectTest`, `AtakTocTextModuleAssetTest`, `AtakScreenCastSlideValidAssetTest`.
+- Non vérifié en jeu : tout ce qui précède. En particulier la fin du clignotement et du retour à la première personne au Zeus, la fenêtre du tableau (mise en page, Eden), la recopie d'un écran, le rendu des caractères en images.
+- Contient la 4.7.2 (PC du poste qui s'affiche de nouveau) : `origin/main` fusionnée, version gardée à 4.8.0.
+- Diffusion d'un écran satellite : la dalle qui recopie demande le même rendu satellite que sa source (`fn_tocSat.sqf` « tick ») ; image rafraîchie une fois par seconde quand la source elle-même n'est pas regardée. Une source en vue caméra est recopiée en carte et flux, pas en vidéo.
+- Module Écran TOC : attributs rangés du plus courant au plus rare (écran posé, nom, camp, affichage, poste, puis les réglages propres à un affichage).
+- Non fait : aperçus en direct et glisser-déposer dans le tableau, vue de suivi 3D, zoom et calques propres à chaque dalle d'une disposition, vidéo d'une caméra recopiée par une diffusion, blocs blancs sur la carte du PC du poste (`fn_tocLaptop.sqf`, tenu par la branche de l'app du poste), rectangle clair en haut à gauche de la vue satellite (cause non trouvée : les contrôles du HUD sont seulement créés hors cadre et sans couleur), paliers de qualité par distance et audit de charge du reste du mod.
 
 ## Pack 4.7.2 Washington : le poste TOC sur le PC s'affiche de nouveau (ATAK natif 4.7.2.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 

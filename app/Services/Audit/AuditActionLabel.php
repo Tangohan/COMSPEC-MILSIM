@@ -77,6 +77,9 @@ final class AuditActionLabel
         'user_left_community' => 'Départ volontaire d’une communauté',
         'role_assigned' => 'Rôle attribué',
         'effectifs.elevation_criteria_updated' => 'Critères d’élévation modifiés',
+        'operator.access_request.created' => 'Demande d’accès envoyée par un membre',
+        'operator.access_request.cancelled' => 'Demande d’accès annulée par le membre',
+        'operator.access_request.decided' => 'Demande d’accès décidée',
         'group_member_added' => 'Membre ajouté au groupe',
         'group_member_removed' => 'Membre retiré du groupe',
         // Documents (audit global)

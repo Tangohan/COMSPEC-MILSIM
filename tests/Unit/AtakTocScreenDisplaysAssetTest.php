@@ -45,7 +45,7 @@ final class AtakTocScreenDisplaysAssetTest extends TestCase
     {
         $scr = self::read(self::TOC . 'fn_tocScreen.sqf');
         $views = self::list($scr, '_views');
-        self::assertCount(20, $views);
+        self::assertCount(25, $views);
 
         // Module « Poser un écran TOC » (Eden / Zeus) : [libellé, AFFICHAGE].
         $mod = self::read(self::TOC . 'fn_moduleTocScreen.sqf');
@@ -83,6 +83,11 @@ final class AtakTocScreenDisplaysAssetTest extends TestCase
         self::assertStringContainsString('["draw", [_o, _d, _view, createHashMapFromArray [["op", _op], ["squad", _squad], ["sqNodes", _sqNodes]]]] call comspec_atak_native_fnc_tocBoard;', $draw);
         foreach ($views as $v) {
             if ($v === 'CAM') {
+                continue;
+            }
+            if ($v === 'BROADCAST') {
+                // Diffusion et mire : dessinées par fn_tocBroadcast, avant le texte et les tableaux.
+                self::assertStringContainsString('if (_view isEqualTo "BROADCAST") exitWith { ["draw", [_o, _d]] call comspec_atak_native_fnc_tocBroadcast };', $draw);
                 continue;
             }
             if ($v === 'TEXT') {

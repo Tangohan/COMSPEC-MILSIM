@@ -19,14 +19,17 @@ deleteVehicle _logic;
 private _types = ["types"] call comspec_atak_native_fnc_tocPc;
 if ((count _types) isEqualTo 0) exitWith { ["feedback", ["ATAK : aucun poste PC disponible"]] call comspec_atak_native_fnc_zeusMenu; true };
 ["Poste opérateur", [
+    ["COMBO", "Action", [["Poser un nouveau poste ici", "place"], ["Ouvrir le tableau des écrans (tous les écrans de la mission)", "manager"]], "place"],
     ["COMBO", "Poste", _types, (_types select 0) select 1],
     ["EDIT", "Nom", ""],
     ["COMBO", "Camp réservé", [["Tous les camps", ""], ["BLUFOR", "WEST"], ["OPFOR", "EAST"], ["Indépendant", "GUER"], ["Civil", "CIV"]], ""]
 ], {
     params ["_v", "_pos"];
-    _v params ["_cls", "_name", "_side"];
+    _v params ["_act", "_cls", "_name", "_side"];
+    if (_act isEqualTo "manager") exitWith { [{ ["open"] call comspec_atak_native_fnc_tocManager; }, [], 0.2] call comspec_atak_native_fnc_waitAndExec; };
+    if (_name isNotEqualTo "") then { _name = ["uniqueName", _name] call comspec_atak_native_fnc_tocManager; };
     // L'opérateur tourne le dos à la caméra du Zeus : les écrans se voient depuis elle.
     ["station", [_pos, (getPosATL curatorCamera) getDir _pos, _cls, _side, _name]] call comspec_atak_native_fnc_tocPc;
     ["feedback", ["ATAK : poste opérateur posé"]] call comspec_atak_native_fnc_zeusMenu;
-}, _pos, "Pose un poste de travail complet : bureau, chaise, téléphone de table et poste PC fixe. Le poste ouvre le PC du poste TOC et ses moniteurs sont des écrans TOC (PIP du poste sur le moniteur principal)."] call comspec_atak_native_fnc_zeusForm;
+}, _pos, "Chaque usage pose un nouveau poste. Pose un poste de travail complet : bureau, chaise, téléphone de table et poste PC fixe. Le poste ouvre le PC du poste TOC et ses moniteurs sont des écrans TOC (PIP du poste sur le moniteur principal)."] call comspec_atak_native_fnc_zeusForm;
 true

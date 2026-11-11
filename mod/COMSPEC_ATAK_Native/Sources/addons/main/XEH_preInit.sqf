@@ -1195,6 +1195,9 @@ private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_toc_anylaptop", "CHECKBOX",
     ["Tous les ordinateurs portables servent de PC de TOC", "Coché : les ordinateurs portables et postes informatiques du jeu posés dans la mission deviennent des PC de TOC (pour tous les camps). Décoché : seulement l'objet PC portable de TOC et les objets désignés par la mission (this setVariable [""COMSPEC_ATAK_Toc"", true, true])."],
     _loc, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_direct", "CHECKBOX",
+    ["Poste TOC : unités sans téléphone", "Coché : la console du poste TOC montre toutes les unités du camp, y compris celles qui n'ont pas de téléphone ATAK (position lue dans le jeu, état « sans téléphone · source directe »). Décoché : seulement les porteurs d'un téléphone, à leur dernier point reçu. Exemple : décochez pour une mission où le poste ne doit voir que le réseau ATAK."],
+    _loc, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_toc_persist", "CHECKBOX",
     ["Garder les écrans TOC", "Les écrans TOC (module Écran TOC) sont gardés par le serveur d'une partie à l'autre sur la même mission : écrans posés au Zeus recréés à leur place, affichage et cadrage des écrans de la mission remis, flux des comptes rendus repris."],
     _loc, true, 1] call comspec_atak_native_fnc_addSetting;
