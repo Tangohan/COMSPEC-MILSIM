@@ -4,7 +4,7 @@ French version: [ia_de_la_zone.md](ia_de_la_zone.md). Guides index: [index.en.md
 
 ## What it is for
 
-The SSE editor's **Area AI** window sets, for nearby or selected AIs, **who they are at an identity check**: Athena profile, papers they carry and their nature (genuine, cover, forged), behaviour when checked, side. It also lets you view and fix an AI's papers, write **what it answers** when spoken to (**Answers…** button) and **keep** an AI for the next games on the same map.
+The SSE editor's **Area AI** window sets, for nearby or selected AIs, **who they are at an identity check**: Athena profile, papers they carry and their nature (genuine, cover, forged), behaviour when checked, side. It also lets you see its papers as the player will, fix them, write **what it answers** when spoken to (**Questions and answers…**) and keep it in the **map memory** for the next games.
 
 Without it, AIs get papers "by side" (Identity CBA settings) and answer on their own, from their character and cover.
 
@@ -19,66 +19,56 @@ Without it, AIs get papers "by side" (Identity CBA settings) and answer on their
 
 In Eden, set AIs through their attributes (**COMSPEC SSE › Papers**, **Profile at a check**, **AI RP profile** and its **AI workshop… › Answers and limits…** button): everything is saved in the mission.
 
-## The window
+## The window, in three steps
 
-### Top left: finding the AIs
+The window reads from left to right: **1. choose the AIs**, **2. set them up**, **3. apply or keep**. On first opening, a three-bubble guided tour points at each area (**?** button to replay it; **Skip** closes it for this time, **Never again** for good). Nothing changes in game before **Apply**: the status line at the bottom says so ("Changed, not applied yet") and tells what happened ("3 AI updated."). No Arma alert.
 
-- **Radius** (25, 50, 100, 250, 500 m), **Detect around** (around the module, the Zeus camera or you) and **Zeus selection** (the AIs selected before opening). "N AI" counter, 60 at most.
-- **Search** (given name, true name, unit, group, profile; e.g. "Vlachos", "Alpha") and three filters: side, role, state (Athena profile, generated identity, papers on first request, kept).
+### 1. Choose the AIs (left)
 
-### The list
+- **Detect around** and its **radius** (25 to 500 m): the AIs around the module, the Zeus camera or you. **Zeus selection**: the AIs selected before opening. 60 AIs at most.
+- **Search a name…** (given name, true name, unit, group, profile; e.g. "Vlachos", "Alpha") and **Filters** (side, role, state: Athena profile, random name, papers to come, in map memory; **Show all** clears them).
+- The list: check box, **given name** (what its papers say), role, **papers** icon and count, **Athena profile** icon. Papers icon colour: green genuine, red forged, orange it lies or cover, grey not given yet (legend under the list). Hover a name: its **true name** (you only). Clicking a header sorts the list.
+- A click checks or unchecks an AI. **Check all**, **Uncheck**, "N AI checked". Empty list: a panel explains what to do, with both buttons.
 
-One row per AI: check box, **Given name** (what its papers say), **True name** (only you see it), **Truth** (true identity, false identity, forged papers, cover, decided on first request), side, role, profile, number of papers, group.
+### 2. Set them up (middle, one tab per topic)
 
-A click checks or unchecks an AI and shows its sheet. **Check all**, **Uncheck**, "N AI checked". Settings and buttons apply to **the checked AIs**.
+At the top: the AI's name, then for you only its true name, its truth ("False identity (lies)") and its group. Several AIs checked: "Settings apply to the N checked AI".
 
-**Answers…** (right of the counter) opens the **AI answers** window on the checked AIs: see [reponses_ia.en.md](reponses_ia.en.md).
-
-### Kept for next games
-
-The AIs saved for this map (server, Athena or both), with **Reload the saved AI** and **Delete the record**.
-
-### The sheet
-
-| Setting | Values | Example |
+| Tab | Settings | Example |
 |---|---|---|
-| **Athena profile** | **Generate an identity**, then the SSE Office profiles (search, **Refresh**) | "PRF-0012 · Vendor (Yannis Petrakis)": the AI takes that name, legend and papers; an N3 check recognises it on Athena |
-| **Papers carried** | By side, None, ID card, Passport, Driving licence, Card and licence, Card and passport, Military ID, extension types | "Card and licence" for a driver |
-| **Nature** | Genuine papers, Cover, Forged papers | "Forged papers" for an insurgent posing as a civilian |
-| **Behaviour at a check** | By context, Complies, Nervous, Lies confidently, Refuses, Flees, Turns aggressive, Surrenders | "Nervous": hesitates, answers off the point |
-| **Side** | Do not change, Civilians, BLUFOR, OPFOR, Independent | a civilian moved to OPFOR turns hostile |
+| **Identity** | **Where its identity comes from** (random, or an Athena profile), **Authenticity of its papers** (genuine, cover, forged; formerly "Nature"), **Country of its papers** (as the mission, or a country). **Import from Athena** panel: profile count and pack date, search, **Refresh** | "Athena profile: PRF-0012 · Vendor": the AI takes that name, legend and papers; an N3 check recognises it |
+| **Papers** | **Papers it will carry** (by side, none, card, passport, licence, military ID, extension types); **Papers it has on it** (paper and country, number, **Real / fake** badge; formerly "Truth"); **View full screen**, **Make forged** / **Make genuine**, a type and **Give now** | a stolen card: **Make forged** |
+| **Behaviour** | **At a check, it…** (by context, cooperates, nervous, lies with confidence, refuses, runs away, turns aggressive, surrenders); **Questions and answers…** ([AI answers](reponses_ia.en.md) window) | "Nervous": hesitates, answers off the point |
+| **Side** | **Its side after "Apply"** (do not change, civilians, BLUFOR, OPFOR, independents) | a civilian turned OPFOR becomes hostile |
 
-Each setting is explained under its box.
+Each choice is explained under its box, in one sentence.
 
-### Its papers
+### What the player sees (right)
 
-Type, country, number, nature. **View the paper** (as a player will see it), **Make it genuine**, **Make it forged**, and a type to **Give this paper now**.
+The paper chosen in the Papers tab, **drawn as in the player's viewer** (template, fields, MRZ, hologram; **Front / back**), with its caption ("ID card · Republic of Altis · front"). Without a paper: a sentence says why ("No paper yet…"). Below, **At a check**: the name it gives, its papers, its reaction; for you only, the truth; and what will change after **Apply**.
 
-### What the player will see
+### 3. Apply or keep (bottom)
 
-At a check: the name it gives, its papers, its reaction. For you only: its true name and truth, and what will change after **Apply**.
-
-### Bottom
-
-**Keep for next games** (applies, then saves), **Apply to the group** (the whole group of each checked AI), **Apply** (checked AIs; their papers are remade).
+- **Apply** (checked AIs; a "●" dot when settings are waiting) and **Apply to the whole group** (the whole group of each checked AI). The selection stays afterwards.
+- **Map memory…** (formerly "Kept for next games") opens a panel: **Keep the checked AI** (applies, then saves on this server for this map, and on Athena when the link is open: put back at the start of each game), the **Already in memory** list, **Reload**, **Delete**.
 
 ## Step by step: a market with a lookout
 
 Ten civilians on a market, one of them a lookout with forged papers, and a vendor who knows the network's password.
 
 1. Zeus › **Area AI** on a market civilian; radius 50 m › **Detect around**: "10 AI".
-2. **Check all**; Papers **ID card**, Nature **Genuine papers**, Behaviour **By context** › **Apply**.
-3. **Uncheck**, check the lookout: Nature **Forged papers**, Behaviour **Nervous** › **Apply**.
-4. Check the vendor alone › **Answers…**: for "Who are you?", **Custom** "I'm {first}, I've sold fruit here for twenty years."; **Add a custom question**: triggers "password", answer "The falcon flies low." › **Apply**.
-5. To replay the scene: check both and **Keep for next games** (AIs named in Eden preferably). The answers written in step 4 are kept with the vendor.
+2. **Check all**; Papers tab **ID card**, Identity tab **Genuine papers**, Behaviour tab **By context** › **Apply**.
+3. **Uncheck**, check the lookout: Identity tab **Forged papers**, Behaviour tab **Nervous** › **Apply** (on the right, its paper and "At a check" show the result).
+4. Check the vendor alone › Behaviour tab › **Questions and answers…**: for "Who are you?", **Custom** "I'm {first}, I've sold fruit here for twenty years."; **Add a custom question**: triggers "password", answer "The falcon flies low." › **Apply**.
+5. To replay the scene: check both › **Map memory…** › **Keep the checked AI** (AIs named in Eden preferably). The answers written in step 4 are kept with the vendor.
 
 ## Common pitfalls
 
 - **Zeus selection** reads the selection made before opening the window.
 - An AI's papers are **only made on first request**: "on demand" until someone checks it.
 - **Apply remakes the papers** of the checked AIs.
-- **Answers…** applies at once, without Apply; **Keep** then takes these answers along with the AI.
-- **Keep** saves on this server, and on Athena when the link and the Confidentiel clearance allow. An AI without a variable name is found again by its class within 20 m, otherwise: "Saved AI not found".
+- **Questions and answers…**, **Make genuine / forged** and **Give now** act at once, without Apply; **Keep** then takes the answers along with the AI.
+- **Map memory** saves on this server, and on Athena when the link and the Confidentiel clearance allow. An AI without a variable name is found again by its class within 20 m, otherwise: "AI in memory not found".
 - Everything goes through the server (Zeus or administrator only).
 
 ## Athena

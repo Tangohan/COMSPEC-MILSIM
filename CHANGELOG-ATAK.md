@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : fenêtre « IA de la zone » simple à comprendre (COMSPEC SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : La fenêtre « IA de la zone » devient simple : liste, onglets, aperçu du papier
+- Elle se lit en trois étapes : à gauche vous choisissez les IA, au milieu vous les réglez dans quatre onglets (Identité, Papiers, Comportement, Camp), en bas vous appliquez. Chaque réglage est expliqué en une phrase sous sa case.
+- À droite, « Ce que verra le joueur » montre le vrai papier de l'IA, recto et verso, tel qu'un joueur le verra au contrôle.
+- Plus de grande fenêtre d'aide au milieu : une courte visite guidée pointe chaque zone sans la cacher, et le bouton « ? » la remontre. Les textes sont plus grands et plus rien n'est coupé.
+EN : The "AI in the area" window becomes simple: list, tabs, paper preview
+- It reads in three steps: on the left you choose the AIs, in the middle you set them up in four tabs (Identity, Papers, Behaviour, Side), at the bottom you apply. Each setting is explained in one sentence under its box.
+- On the right, "What the player sees" shows the AI's real paper, front and back, as a player will see it at a check.
+- No more big help window in the middle: a short guided tour points at each area without hiding it, and the "?" button shows it again. Texts are larger and nothing is cut off any more.
+
+### Détail technique
+- Page « IA de la zone » de l'éditeur SSE refaite dans de nouveaux fichiers : `editor/dialogs/aizone.hpp` (contrôles, IDC 95000 à 95809), `aizone_styles.hpp` (classes, `AZ_TXT_MIN` 0.78 case = `SSE_TXT_S` de la charte), `coach.hpp` (visite guidée). `editor.hpp` les inclut ; l'ancien bloc Ai* (IDC 945xx) et la modale `GuideDim` / `GuideBox` sont retirés ; titre et état de l'en-tête passent à 0.8 case.
+- `fn_editorAi` réécrit (même nom, mêmes ops appelées par le serveur et l'autotest : `load`, `scan`, `scanUnits`, `rescan`, `click`, `checkAll`, `checkNone`, `sheet`, `applyChecked`, `applyGroup`, `keepChecked`, `keptReload`, `keptForget`, `answers`, `aiReply`, `athenaDone`, `keepItem`, `post`) : colonnes, onglets, volets Filtres et Mémoire de la carte, tri, état vide, ligne d'état sans alerte (plus de `comspec_sse_fnc_toast`), indicateur « Modifié, pas encore appliqué », sélection gardée après Appliquer. Libellés ajustés par `ctrlTextWidth` sans descendre sous 0.78 case, puis « … » et info-bulle.
+- Nouveaux : `fn_editorAiCard` (papier imprimé dessiné dans un groupe, mêmes coordonnées que la visionneuse : gabarit, champs, MRZ, hologramme ; photo en silhouette) et `fn_editorCoach` (bulles ancrées : à côté de la cible, cadre vert, pointe, aucun voile ; 3 étapes ; Suivant / Passer / Ne plus afficher ; `profileNamespace` « comspec_sse_aiZoneCoach » pour la page, « comspec_sse_editorGuided » pour l'éditeur, dont la visite passe aussi en bulles).
+- `fn_editorAiServer` : op `docView` (document imprimé, jamais la vérité, mêmes champs que `_pub` de `fn_idServer`), réglage `country` (pays des papiers, posé sur `COMSPEC_ID_Country` avant que les papiers soient refaits, gardé avec l'IA et remis par la mémoire locale), 16e colonne de ligne (pays). Données gardées inchangées (`comspec_sse_editorAiKept`, `comspec_sse_editorAiKeptSeq`).
+- Textes : 166 clés `STR_COMSPEC_SSE_AZ_*` (FR, EN) dans `editor/stringtable.xml` ; anciennes `STR_COMSPEC_SSE_ED_*` gardées. Vocabulaire : « Vérité » → badge Vrai / Faux, « Nature » → Authenticité, « Gardés pour les prochaines parties » → Mémoire de la carte (anciens noms dans les info-bulles). Manuel en jeu (`STR_COMSPEC_SSE_GUIDE_AIZONE_DESC`) et `docs/guides/ia_de_la_zone(.en).md` en trois étapes.
+- Tests : `tests/Unit/SseAiZoneWindowAssetTest.php` (clés FR / EN de chaque contrôle, aucune taille sous 0.78, libellés et listes qui tiennent en FR et EN, aucun chevauchement par onglet et par volet, visite ancrée et notée, aucune alerte Arma) ; autotest `sse_ia_zone` mis à jour et `sse_ia_zone_etats` (liste vide, remplie, chaque onglet, volets, visite : `AT_fnc_tient`, police minimale, listes déroulantes, rectangles).
+- Non vu en jeu : autotest non lancé (à faire : rendu du papier dans l'aperçu, bulles de la visite, 4:3 et 21:9, tailles d'interface très petite et très grande, Appliquer en multijoueur).
+
 ## SSE 1.9.0 : fenêtre « Réponses de l'IA » simple, peur d'une arme braquée de près, champs des documents (SSE 1.9.0)
 
 ### Résumé joueur

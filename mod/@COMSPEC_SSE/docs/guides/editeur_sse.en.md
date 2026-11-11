@@ -123,7 +123,7 @@ Button **BIBLIOTHÈQUE**.
 - **Au téléphone / Annonce** go through native ATAK; without it, it is an ordinary SSE notification. A phone delivery is never replayed from one session to the next.
 - **The library lives in your profile** (profileNamespace); Athena is only its mirror. Offline, the content stays marked as pending and is sent again at the next opening. In Eden, after an Athena failure, no retry for 60 s.
 - **Classification** only has an effect on an intelligence item.
-- **« Garder pour les prochaines parties »** (Keep for the next sessions) (Area AI page) requires the Athena link and the Confidential clearance; otherwise « Enregistrement sur Athena impossible (liaison, ou habilitation Confidentiel) : rien n'est gardé. » (Cannot save on Athena (link, or Confidential clearance): nothing is kept.)
+- **Map memory… › Keep the checked AI** (Area AI page, formerly « Garder pour les prochaines parties », Keep for the next sessions) requires the Athena link and the Confidential clearance; otherwise « Enregistrement sur Athena impossible (liaison, ou habilitation Confidentiel) : rien n'est gardé. » (Cannot save on Athena (link, or Confidential clearance): nothing is kept.)
 - Debugging: `comspec_sse_id_editorDebug = true` (mission variable) writes the details to the RPT.
 
 ## Athena
