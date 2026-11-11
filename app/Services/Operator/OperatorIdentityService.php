@@ -157,6 +157,9 @@ final class OperatorIdentityService
                 'archived' => $archived,
                 'active' => !$archived && $activeId === $id,
                 'civil_locked' => isset($issuedBy[$id]),
+                // Peut devenir l'identité principale : une identité créée par le membre ou civile (jamais une identité
+                // montée par un responsable, dont la nature reste une vérité de jeu).
+                'promotable' => !$archived && empty($i['is_primary']) && in_array($i['kind'], ['civil', 'alias'], true),
                 'completeness' => self::completeness($i, $profile),
             ];
         }
@@ -399,6 +402,43 @@ final class OperatorIdentityService
         }
         $this->states->setState($tenantId, $userId, OperatorHubRepository::KIND_IDENTITY, $identityId, ['archived_at' => $archive ? gmdate('Y-m-d H:i:s') : null], $userId);
         $this->log($tenantId, $userId, $archive ? 'op_identity.identity_archive' : 'op_identity.identity_restore', 'sse_identity', $identityId);
+
+        return ['ok' => true];
+    }
+
+    /**
+     * Change l'identité principale du membre : celle de son personnage. L'identité choisie devient l'identité civile ;
+     * les autres identités civiles du compte deviennent des identités d'emprunt (l'ordre du registre donne la principale
+     * à la plus ancienne identité civile : il n'en reste donc qu'une). Rien n'est supprimé, les papiers suivent leur
+     * identité.
+     *
+     * @return array{ok: bool, error?: string}
+     */
+    public function setPrimary(int $tenantId, int $userId, int $identityId): array
+    {
+        $all = $this->identities->listForUser($tenantId, $userId);
+        $chosen = null;
+        foreach ($all as $i) {
+            if ((int) $i['id'] === $identityId) {
+                $chosen = $i;
+            }
+        }
+        if ($chosen === null || $this->isArchived($tenantId, $userId, $identityId)) {
+            return ['ok' => false, 'error' => 'Identité introuvable.'];
+        }
+        if (!empty($chosen['is_primary'])) {
+            return ['ok' => true];
+        }
+        if (!in_array($chosen['kind'], ['civil', 'alias'], true)) {
+            return ['ok' => false, 'error' => 'Cette identité vous a été remise par un responsable : elle ne peut pas devenir votre identité principale.'];
+        }
+        foreach ($all as $i) {
+            if ((int) $i['id'] !== $identityId && $i['kind'] === 'civil') {
+                $this->identities->update((int) $i['id'], $tenantId, array_merge($i, ['kind' => 'alias']));
+            }
+        }
+        $this->identities->update($identityId, $tenantId, array_merge($chosen, ['kind' => 'civil']));
+        $this->log($tenantId, $userId, 'op_identity.identity_primary', 'sse_identity', $identityId);
 
         return ['ok' => true];
     }
