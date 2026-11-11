@@ -61,6 +61,10 @@ switch (_act) do {
         _out
     };
     case "feedback": {
+        // Centre Zeus ouvert et déplié : le retour s'écrit dans sa ligne d'état, rien d'autre à l'écran.
+        if ((count (uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreUi", createHashMap])) > 0 && {!(missionNamespace getVariable ["COMSPEC_ATAK_ZeusCentreHidden", false])}) exitWith {
+            ["say", [_args param [0, ""]]] call comspec_atak_native_fnc_zeusCentre;
+        };
         private _t = (_args param [0, ""]) call comspec_atak_native_fnc_tr;
         // Bandeau ZEN (interface du mod ZEN) ; sans ZEN, centre de notifications du téléphone (jamais le message natif du curateur d'Arma).
         if (!isNil "zen_common_fnc_showMessage") exitWith { [_t regexReplace ["%", "%%"]] call zen_common_fnc_showMessage; };

@@ -38,6 +38,22 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : Centre Zeus remis d'aplomb (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Le Centre Zeus est remis d'aplomb : onglets lisibles, plus de boutons vides ni de textes qui se chevauchent
+- Chaque onglet (Joueurs, Serveur, Étiquettes, Outils) n'affiche que ses propres boutons, et la fenêtre prend la hauteur de ce qu'elle montre.
+- Onglet Étiquettes : une case à cocher par information affichée au-dessus des joueurs, avec un exemple ; les boutons d'action sont grisés tant qu'aucun joueur n'est choisi, et leur résultat s'écrit en bas de la fenêtre.
+EN : The Zeus Centre is fixed: readable tabs, no more empty buttons or overlapping text
+- Each tab (Players, Server, Labels, Tools) only shows its own buttons, and the window takes the height of what it shows.
+- Labels tab: one checkbox per piece of information shown above the players, with an example; action buttons are greyed out until a player is chosen, and their result is written at the bottom of the window.
+
+### Détail technique
+- Cause (commit bc1d45278, 4.3.0) : le SQF ne distingue pas la casse des variables. `private _T = { … fnc_tr }` était masquée par `_x params ["_t", …]` (outils, actions) et `private _t = call _ui` (onglets, rafraîchissement, fiche, serveur). « toggle » s'arrêtait au premier `call _T` de l'onglet OUTILS : registre jamais enregistré, onglets jamais cachés, libellés des étiquettes jamais écrits (neuf boutons vides), titre vide ; rafraîchissement, fiche et état du serveur en erreur à chaque appel. La hauteur calculée oubliait en plus la rangée des onglets (rappel ZEN sous le fond).
+- `fn_zeusCentre` : traduction `_tr`, registre `_st` ; grille unique `_grid` (fractions de safeZoneH) et pose unique `_place` / « flow » (lignes, colonnes à poids, marges, corps qui défile, pied fixe, fond à la hauteur de l'onglet) ; `_mk` enregistre chaque contrôle chez son propriétaire, `_btn` impose un libellé (long, court, infobulle) ; ÉTIQUETTES en cases à cocher (`COMSPEC_RscCheckbox`) avec exemple, champs grisés en mode compact ; filtres sur deux rangées ; boutons d'action grisés sans cible ; ligne d'état « say » (retours de `fn_zeusMenu` « feedback » quand le Centre est ouvert) ; « audit » pour l'autotest (bouton vide, chevauchement, texte coupé, hors du panneau).
+- Test `AtakZeusCentreLayoutTest` (noms masqués quelle que soit la casse, propriétaire de chaque contrôle, libellés et anglais, tenue à 3 tailles d'interface × 3 formats), étape d'autotest zeus_centre (audit par onglet, non exécutée), i18n en.txt / xx.txt.
+
 ## SSE 1.9.0 : fenêtre « Réponses de l'IA » simple, peur d'une arme braquée de près, champs des documents (SSE 1.9.0)
 
 ### Résumé joueur
