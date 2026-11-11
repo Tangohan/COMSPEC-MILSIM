@@ -17,7 +17,7 @@ Sans elle, les IA reçoivent des papiers « selon leur camp » (réglages CBA Id
 | Zeus sans ZEN | Module **Éditeur SSE** posé sur une IA (tout son groupe est listé) |
 | Script | `[unité ou liste, position] call comspec_sse_fnc_aiConfigOpen` |
 
-Dans Eden, réglez les IA par leurs attributs (**COMSPEC SSE › Papiers**, **Profil au contrôle**, **Profil IA RP** et son bouton **Atelier IA… › Réponses et limites…**) : tout est enregistré dans la mission.
+Dans Eden, réglez les IA par leurs attributs (**COMSPEC SSE › Papiers**, **Profil au contrôle**, **Profil IA RP** et son bouton **Atelier IA… › Toutes les questions et réponses…** ; une seule question : **Question** et **Réponse de l'IA** dans les mêmes attributs) : tout est enregistré dans la mission.
 
 ## La fenêtre
 

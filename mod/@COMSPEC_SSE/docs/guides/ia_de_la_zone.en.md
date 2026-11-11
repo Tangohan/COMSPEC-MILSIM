@@ -17,7 +17,7 @@ Without it, AIs get papers "by side" (Identity CBA settings) and answer on their
 | Zeus without ZEN | **SSE Editor** module placed on an AI (its whole group is listed) |
 | Script | `[unit or list, position] call comspec_sse_fnc_aiConfigOpen` |
 
-In Eden, set AIs through their attributes (**COMSPEC SSE › Papers**, **Profile at a check**, **AI RP profile** and its **AI workshop… › Answers and limits…** button): everything is saved in the mission.
+In Eden, set AIs through their attributes (**COMSPEC SSE › Papers**, **Profile at a check**, **AI RP profile** and its **AI workshop… › All questions and answers…** button; one question only: **Question** and **AI's answer** in the same attributes): everything is saved in the mission.
 
 ## The window
 

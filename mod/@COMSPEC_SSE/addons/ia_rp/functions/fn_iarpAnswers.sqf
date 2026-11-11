@@ -35,6 +35,16 @@
       ["frame", profil] -> [niveau none | known | free, [étiquettes interdites], [thèmes interdits], sait quelque chose]
       ["themes"] -> [armed, explosives, military, wanted, drugs, politics]
       ["esc", texte] -> < > & échappés (texte structuré : aperçu, fenêtre ; les bulles 3D sont du texte brut)
+    Question / réponse simple (attribut Eden « Profil IA RP », atelier IA en Eden et en Zeus, menu ZEN « Question et
+    réponse… ») : une question perso ordinaire, la même que celles de la fenêtre « Réponses de l'IA » (les deux éditent
+    les mêmes données). Libellé = la question écrite par le maître du jeu ; déclencheurs = la question entière et ses
+    deux mots importants les plus longs (« chef+village » : « Le chef du village, il est où ? » la déclenche aussi) ;
+    textes = situation « Toujours », une réponse par ligne. Situations, ordre, palier et lieu déjà réglés : gardés.
+      ["qaGet", entrées] -> [clé, question, réponse (lignes), nombre de questions perso] de la 1re question perso
+                            (["", "", "", 0] sans question perso)
+      ["qaSet", [entrées, clé ou "", question, réponse]] -> entrées (clé "" : nouvelle question perso ; question et
+                            réponse vides : la question perso sort ; une seule des deux remplie : entrées inchangées)
+      ["qaTriggers", question] -> déclencheurs tirés de la question
     Cadre (profil : « evoke », « banned ») :
       evoke   auto (défaut : « Rien de sensible » pour un civil sans savoir ni secret, sinon « Ce qu'elle sait ») |
               none (Rien de sensible : aucune réplique auto ne laisse entendre quoi que ce soit ni ne parle d'un thème de
@@ -105,6 +115,7 @@ private _normEntry = {
     if (_vs isEqualTo [] || {_custom && {_trig isEqualTo []}}) exitWith { [] };
     [_k, [[_label, 80] call _clean, ""] select (!_custom), [[], _trig] select _custom, _order, _vs, _tier, [_place, 120] call _clean]
 };
+private _isCust = { params ["_k"]; _k isEqualType "" && {(_k select [0, 1]) isEqualTo "c"} && {(parseNumber (_k select [1])) > 0} };
 
 switch (_op) do {
     case "themes": { +_themes };
@@ -206,6 +217,66 @@ switch (_op) do {
         private _fresh = _txt select { _x isNotEqualTo _last };
         if (_fresh isEqualTo []) then { _fresh = _txt; };
         [selectRandom _fresh, _sit, 0]
+    };
+    case "qaTriggers": {
+        private _q = [[_a, ""] select (isNil "_a"), 60] call _clean;
+        if ((trim (_q call comspec_sse_fnc_iarpNorm)) isEqualTo "") exitWith { [] };
+        // Mots qui ne disent rien du sujet (questions, pronoms, politesse), sans accents comme après fn_iarpNorm.
+        private _stop = ["est", "les", "des", "une", "que", "qui", "quoi", "quel", "quelle", "quels", "quelles", "comment", "pourquoi",
+            "quand", "combien", "vous", "nous", "ils", "elles", "elle", "lui", "leur", "leurs", "votre", "vos", "notre", "nos", "ton",
+            "tes", "mon", "mes", "son", "ses", "pour", "par", "sur", "dans", "avec", "sans", "pas", "plus", "moins", "tres", "savez",
+            "sais", "sait", "savoir", "connaissez", "connais", "connait", "dire", "dites", "dis", "pouvez", "peux", "peut", "pourriez",
+            "avez", "ete", "etes", "suis", "sont", "etait", "fait", "faites", "ici", "cela", "ceci", "cet", "cette", "ces", "aux",
+            "voulez", "veux", "faut", "moi", "toi", "oui", "non", "alors", "donc", "mais", "quelqu", "quelque", "chose", "monsieur",
+            "madame", "bonjour", "merci", "svp", "the", "and", "are", "you", "your", "what", "where", "who", "when", "why", "how",
+            "can", "could", "would", "tell", "know", "does", "did", "have", "has", "there", "here", "this", "that", "with", "about",
+            "for", "from", "any", "some", "please", "sir", "hello", "thanks", "was", "were", "will", "she", "him", "her", "his"];
+        private _words = [];
+        { if ((count _x) >= 3 && {!(_x in _stop)}) then { _words pushBackUnique _x; }; } forEach ((_q call comspec_sse_fnc_iarpNorm) splitString " ");
+        // Les deux mots les plus longs, dans l'ordre de la question : tous deux dans le message suffisent.
+        private _rank = _words apply { [-(count _x), _words find _x, _x] };
+        _rank sort true;
+        private _top = (_rank select [0, 2]) apply { [_x select 1, _x select 2] };
+        _top sort true;
+        private _out = [_q];
+        if (_top isNotEqualTo []) then { _out pushBackUnique ((_top apply { _x select 1 }) joinString "+"); };
+        _out
+    };
+    case "qaGet": {
+        private _l = [[], _a] select (!isNil "_a" && {_a isEqualType []});
+        private _cust = _l select { _x isEqualType [] && {[_x param [0, ""]] call _isCust} };
+        if (_cust isEqualTo []) exitWith { ["", "", "", 0] };
+        private _e = _cust select 0;
+        private _txt = ((((_e param [4, []]) select { _x isEqualType [] && {(_x param [0, ""]) isEqualTo "*"} }) param [0, ["", []]]) param [1, []]);
+        [_e select 0, _e param [1, ""], _txt joinString (toString [10]), count _cust]
+    };
+    case "qaSet": {
+        _a params [["_l", []], ["_k", ""], ["_q", ""], ["_ans", ""]];
+        if !(_l isEqualType []) then { _l = []; };
+        _q = [_q, 80] call _clean;
+        private _txt = if (_ans isEqualType "") then { ((_ans splitString (toString [10, 13])) apply { [_x] call _clean }) select { _x isNotEqualTo "" } } else { [] };
+        if !([_k] call _isCust) then { _k = ""; };
+        if (_q isEqualTo "" && {_txt isEqualTo []}) exitWith {
+            if (_k isEqualTo "") then { _l } else { ["normalize", _l select { _x isEqualType [] && {(_x param [0, ""]) isNotEqualTo _k} }] call comspec_sse_fnc_iarpAnswers }
+        };
+        // Question sans réponse (ou l'inverse) : rien ne pourrait la garder, la liste ne change pas (la fenêtre le signale).
+        if (_q isEqualTo "" || {_txt isEqualTo []}) exitWith { _l };
+        private _e = if (_k isEqualTo "") then { [] } else { ["get", [_l, _k]] call comspec_sse_fnc_iarpAnswers };
+        if (_k isEqualTo "") then {
+            if ((count (_l select { _x isEqualType [] && {[_x param [0, ""]] call _isCust} })) >= 20) exitWith {};
+            _k = ["newKey", _l] call comspec_sse_fnc_iarpAnswers;
+        };
+        if (_k isEqualTo "") exitWith { _l };
+        // Même question qu'avant : ses déclencheurs (peut-être retouchés dans les options avancées) restent.
+        private _trig = if (_e isNotEqualTo [] && {(_e param [1, ""]) isEqualTo _q} && {(_e param [2, []]) isNotEqualTo []}) then { _e select 2 } else { ["qaTriggers", _q] call comspec_sse_fnc_iarpAnswers };
+        private _vs = [["*", _txt]] + ((_e param [4, []]) select { _x isEqualType [] && {(_x param [0, ""]) isNotEqualTo "*"} });
+        private _n = [[_k, _q, _trig, _e param [3, "random"], _vs, _e param [5, 0], _e param [6, ""]]] call _normEntry;
+        if (_n isEqualTo []) exitWith { _l };
+        // À sa place dans la liste : la « 1re question perso » reste la même d'une ouverture à l'autre.
+        private _out = +_l;
+        private _i = _out findIf { _x isEqualType [] && {(_x param [0, ""]) isEqualTo _k} };
+        if (_i >= 0) then { _out set [_i, _n]; } else { _out pushBack _n; };
+        ["normalize", _out] call comspec_sse_fnc_iarpAnswers
     };
     case "frame": {
         private _p = [createHashMap, _a] select (!isNil "_a" && {_a isEqualType createHashMap});

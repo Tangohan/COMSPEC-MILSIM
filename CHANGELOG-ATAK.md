@@ -447,6 +447,24 @@ EN : Athena answers faster during games
 - Pages web : 19 sondages ne lisent plus rien quand l'onglet est caché (`document.hidden`) et relisent au retour (`visibilitychange`) ; calques de champ de vision : 8 s puis attente doublée jusqu'à 60 s tant que rien ne change.
 - Aucune migration. Tests : `SseIdentityPackRevisionTest`, `AtakHiddenTabPollingAssetTest`, ajouts à `GameApiResponseCompactorTest`, `RateLimitMiddlewareTest`, `ShortCacheTest`.
 
+## À venir : faire parler une IA, une question et une réponse (COMSPEC SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Faire parler une IA : une question, une réponse
+- Dans l'éditeur, deux cases suffisent sur une IA : la question que les joueurs peuvent lui poser, et ce qu'elle répond. Elle comprend aussi la question posée autrement. Les mêmes cases sont en tête de l'atelier IA et dans le menu Zeus de l'IA.
+- « Savoir » et « Déblocage » s'appellent maintenant « Ce qu'elle sait » et « Quand elle le dit », rangés dans les options avancées, avec une aide et un exemple. Vos missions déjà faites gardent tout.
+EN : Make an AI talk: one question, one answer
+- In the editor, two boxes are enough on an AI: the question players may ask it, and what it answers. It also understands the question asked another way. The same boxes are at the top of the AI workshop and in the AI's Zeus menu.
+- "Knowledge" and "Unlock" are now called "What it knows" and "When it tells", kept in the advanced options, with help and an example. Your existing missions keep everything.
+
+### Détail technique
+- `fn_iarpAnswers` : `qaGet` / `qaSet` / `qaTriggers` (pur). La paire question / réponse est la 1re question perso (`cN`) des réponses du profil, même format que la fenêtre « Réponses de l'IA » : libellé = la question, déclencheurs = la question entière et ses deux mots importants les plus longs (`chef+village`), textes = situation `*` ; situations, ordre, palier et lieu déjà réglés gardés, place dans la liste gardée.
+- Attribut Eden `comspec_sse_iarpProfile` (même propriété, même valeur texte) : contrôle `COMSPEC_SSE_IarpProfileAttr` avec cases Question et Réponse ; valeur relue telle quelle tant qu'elles ne changent pas (`fn_iarpEden`).
+- Atelier IA (`iarp_workshop.hpp`, `fn_iarpWorkshop`) : Question, Réponse de l'IA, « + Variable », bouton « Options avancées » (Ce qu'elle sait, Quand elle le dit : champs `know`, `unlock`, `unlockWord` inchangés) ; zone de test : la question perso reconnue d'abord ; une bibliothèque sans réponses garde les réponses écrites ; question sans réponse : rien n'est appliqué, la ligne d'état le dit.
+- Zeus : menu ZEN « Profil d'IA › Question et réponse… » (`profileTweak` des réponses). Libellés en clair : « Face à un ordre », « Toutes les questions et réponses… ». Clés `stringtable.xml` d'avant gardées (textes changés), nouvelles clés FR / EN.
+- Tests : `fn_iarpSelfTest` (aller-retour, paraphrases, anciennes valeurs), `tests/Unit/SseIarpQuestionReponseAssetTest.php`. À tester en jeu : attribut Eden (hauteur, saisie, enregistrement), atelier (vue simple / avancée, « + Variable »), menu ZEN.
+
 ## À venir : parler aux IA en texte libre et atelier IA en Eden et en Zeus (COMSPEC SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

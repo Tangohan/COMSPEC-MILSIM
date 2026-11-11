@@ -7,8 +7,9 @@
       Journal des échanges  tous les échanges joueurs / IA, en direct (onglet JOURNAL du terminal)
     Menu contextuel (clic droit ZEN) « SSE · Roleplay de l'IA » : visible seulement quand la cible (IA survolée, sélection
     du curateur) compte au moins une IA vivante, jamais sur un joueur seul ; chaque action vaut pour toutes les IA visées.
-      Profil d'IA           Atelier IA… · Appliquer un profil… · Rôle et caractère… · Savoir, secret et couverture… ·
-                            Réponses de l'IA… (fn_iarpAnswersUi : réponse auto ou perso par question, questions perso) ·
+      Profil d'IA           Question et réponse… (la 1re question perso, comme en tête de l'atelier et de l'attribut Eden) ·
+                            Atelier IA… · Appliquer un profil… · Rôle et caractère… · Ce qu'elle sait, secret et couverture… ·
+                            Toutes les questions et réponses… (fn_iarpAnswersUi : réponse auto ou perso par question) ·
                             Ce qu'elle peut évoquer… (cadre : rien de sensible, ce qu'elle sait, libre ; thèmes interdits)
                             (fenêtres ZEN pré-remplies avec le profil de la première IA, lu sur le serveur :
                             fn_iarpServer profileGet / profileSet / profileTweak)
@@ -105,6 +106,32 @@ private _ip = "\z\comspec_sse\addons\zeus\data\";
 
 // --- Profil d'IA ---------------------------------------------------------------------------------------------------
 ["_profile", "STR_COMSPEC_IARP_Z_MProfile", _ip + "mod_ai.paa", {}, _has, [_root], 90] call _mk;
+// Question et réponse : comme en tête de l'atelier et de l'attribut Eden, la 1re question perso (fn_iarpAnswers « qaSet »).
+// Fenêtre [titre, question, réponse, [IA visées, réponses de la 1re IA, clé de la question perso]] ; une seule des deux
+// remplie : rien ne part, elle se rouvre avec ce qui était écrit et le dit dans son titre.
+missionNamespace setVariable ["comspec_sse_iarpZenQa", {
+    params ["_title", "_q", "_r", "_args"];
+    [_title, [
+        ["EDIT", [localize "STR_COMSPEC_IARP_W_Question", localize "STR_COMSPEC_IARP_W_Question_D"], _q],
+        ["EDIT:MULTI", [localize "STR_COMSPEC_IARP_W_Reply", localize "STR_COMSPEC_IARP_W_Reply_D"], [_r, { _this }, 4]]
+    ], {
+        params ["_v", "_args"];
+        _args params ["_units", "_ans", "_k"];
+        _v params [["_q", ""], ["_r", ""]];
+        if (((trim _q) isEqualTo "") isNotEqualTo ((trim _r) isEqualTo "")) exitWith {
+            [localize "STR_COMSPEC_IARP_W_QaHalf", _q, _r, _args] call comspec_sse_iarpZenQa;
+        };
+        ["profileTweak", [[["answers", ["qaSet", [_ans, _k, _q, _r]] call comspec_sse_fnc_iarpAnswers]]], _units] call comspec_sse_iarpZenSend;
+    }, {}, _args] call zen_dialog_fnc_create;
+}];
+["_qa", "STR_COMSPEC_IARP_Z_Qa", _icon, {
+    [_this call comspec_sse_iarpZenTargets, {
+        params ["_t", "_p", "_who", "_units"];
+        private _qa = ["qaGet", _p getOrDefault ["answers", []]] call comspec_sse_fnc_iarpAnswers;
+        [["STR_COMSPEC_IARP_Z_Qa", _units, _who] call comspec_sse_iarpZenTitle, _qa select 1, _qa select 2,
+            [_units, _p getOrDefault ["answers", []], _qa select 0]] call comspec_sse_iarpZenQa;
+    }] call comspec_sse_iarpZenWithProfile;
+}, _has, [_root, _root + "_profile"], 95] call _mk;
 ["_workshop", "STR_COMSPEC_IARP_Z_Workshop", _icon, {
     ["open", ["zeus", _this call comspec_sse_iarpZenTargets]] call comspec_sse_fnc_iarpWorkshop;
 }, _has, [_root, _root + "_profile"], 89] call _mk;

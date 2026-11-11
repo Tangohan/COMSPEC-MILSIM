@@ -508,9 +508,9 @@
             <French>Corruptibilité</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Bribe_D">
-            <Original>Chance of accepting money (« 50 dollars to forget it? », or /me holds out a banknote). Accepted: more trust, and it talks if the unlock is « Bribe ». Example: 90 for a corrupt guard.</Original>
-            <English>Chance of accepting money (« 50 dollars to forget it? », or /me holds out a banknote). Accepted: more trust, and it talks if the unlock is « Bribe ». Example: 90 for a corrupt guard.</English>
-            <French>Chance d'accepter de l'argent (« 50 dollars pour oublier ? », ou /me tend un billet). Accepté : plus de confiance, et elle parle si le déblocage est « Pot-de-vin ». Exemple : 90 pour un garde corrompu.</French>
+            <Original>Chance of accepting money (« 50 dollars to forget it? », or /me holds out a banknote). Accepted: more trust, and it tells what it knows if « When it tells » is « Bribe ». Example: 90 for a corrupt guard.</Original>
+            <English>Chance of accepting money (« 50 dollars to forget it? », or /me holds out a banknote). Accepted: more trust, and it tells what it knows if « When it tells » is « Bribe ». Example: 90 for a corrupt guard.</English>
+            <French>Chance d'accepter de l'argent (« 50 dollars pour oublier ? », ou /me tend un billet). Accepté : plus de confiance, et elle dit ce qu'elle sait si « Quand elle le dit » est « Pot-de-vin ». Exemple : 90 pour un garde corrompu.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_CloseBtn">
             <Original>CLOSE</Original>
@@ -643,19 +643,19 @@
             <French>Atelier IA</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Intro_D">
-            <Original>Set how this AI talks and reacts. Hover over a field to read its help and an example. Tick the box on the right of a field to lock it: Generate and presets leave it alone. Test a sentence on the right without starting the mission.</Original>
-            <English>Set how this AI talks and reacts. Hover over a field to read its help and an example. Tick the box on the right of a field to lock it: Generate and presets leave it alone. Test a sentence on the right without starting the mission.</English>
-            <French>Réglez la façon dont cette IA parle et réagit. Survolez un champ pour lire son aide et un exemple. Cochez la case à droite d'un champ pour le verrouiller : Générer et la bibliothèque n'y touchent plus. Testez une phrase à droite sans lancer la mission.</French>
+            <Original>To make this AI talk: write a question at the bottom left, then its answer. Hover over a field to read its help and an example. Tick the box on the right of a field to lock it: Generate and presets leave it alone. Test a sentence on the right without starting the mission.</Original>
+            <English>To make this AI talk: write a question at the bottom left, then its answer. Hover over a field to read its help and an example. Tick the box on the right of a field to lock it: Generate and presets leave it alone. Test a sentence on the right without starting the mission.</English>
+            <French>Pour faire parler cette IA : écrivez une question en bas à gauche, puis sa réponse. Survolez un champ pour lire son aide et un exemple. Cochez la case à droite d'un champ pour le verrouiller : Générer et la bibliothèque n'y touchent plus. Testez une phrase à droite sans lancer la mission.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Know">
-            <Original>Knowledge</Original>
-            <English>Knowledge</English>
-            <French>Savoir</French>
+            <Original>What it knows</Original>
+            <English>What it knows</English>
+            <French>Ce qu'elle sait</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Know_D">
-            <Original>Intelligence it can give if questioned well (« What do you know? », « Have you seen armed men? »), once unlocked. Empty: it knows nothing and says so. One sentence: given once it trusts you, is bribed or hears the keyword. By levels, one per line: « Vague: » (pressure or some trust), « Precise: » (unlocked), « Complete: » (great trust, confession or two bribes), and « Place: » followed by a grid, coordinates or a mission marker name, then the place name: the precise level puts it on the map of the player who got it, for him only. Example: Vague: Armed men gather at night. / Precise: At the abandoned farm, after evening prayer. / Complete: Six of them, weapons under the barn. / Place: 045 078 Abandoned farm</Original>
-            <English>Intelligence it can give if questioned well (« What do you know? », « Have you seen armed men? »), once unlocked. Empty: it knows nothing and says so. One sentence: given once it trusts you, is bribed or hears the keyword. By levels, one per line: « Vague: » (pressure or some trust), « Precise: » (unlocked), « Complete: » (great trust, confession or two bribes), and « Place: » followed by a grid, coordinates or a mission marker name, then the place name: the precise level puts it on the map of the player who got it, for him only. Example: Vague: Armed men gather at night. / Precise: At the abandoned farm, after evening prayer. / Complete: Six of them, weapons under the barn. / Place: 045 078 Abandoned farm</English>
-            <French>Renseignement qu'elle peut donner si on l'interroge bien (« Que savez-vous ? », « Avez-vous vu des hommes armés ? »), une fois débloqué. Vide : elle ne sait rien et le dit. Une phrase : donnée quand elle a confiance, est payée ou entend le mot-clé. Par paliers, un par ligne : « Vague : » (pression ou un peu de confiance), « Précis : » (débloqué), « Complet : » (grande confiance, aveu ou deux pots-de-vin), et « Lieu : » suivi d'un carroyage, de coordonnées ou du nom d'un marqueur de la mission, puis du nom du lieu : le palier précis le pose sur la carte du joueur qui l'obtient, pour lui seul. Exemple : Vague : Des hommes armés se retrouvent la nuit. / Précis : À la ferme abandonnée, après la prière du soir. / Complet : Ils sont six, les armes sous la grange. / Lieu : 045 078 Ferme abandonnée</French>
+            <Original>A secret or useful piece of intel it can give when questioned (« What do you know? », « Have you seen armed men? »), at the moment set in « When it tells ». Empty: it knows nothing and says so. One sentence is enough. To go further, by levels, one per line: « Vague: » (under pressure or with a little trust), « Precise: » (when it tells), « Complete: » (great trust, confession or two bribes), « Place: » followed by a grid, coordinates or a mission marker name, then the place name (put on the map of the player who gets it, for him only). Example: Armed men meet at night at the abandoned farm.</Original>
+            <English>A secret or useful piece of intel it can give when questioned (« What do you know? », « Have you seen armed men? »), at the moment set in « When it tells ». Empty: it knows nothing and says so. One sentence is enough. To go further, by levels, one per line: « Vague: » (under pressure or with a little trust), « Precise: » (when it tells), « Complete: » (great trust, confession or two bribes), « Place: » followed by a grid, coordinates or a mission marker name, then the place name (put on the map of the player who gets it, for him only). Example: Armed men meet at night at the abandoned farm.</English>
+            <French>Un secret ou une info utile qu'elle peut donner quand on l'interroge (« Que savez-vous ? », « Avez-vous vu des hommes armés ? »), au moment réglé dans « Quand elle le dit ». Vide : elle ne sait rien et le dit. Une phrase suffit. Pour aller plus loin, par paliers, un par ligne : « Vague : » (sous la pression ou avec un peu de confiance), « Précis : » (quand elle le dit), « Complet : » (grande confiance, aveu ou deux pots-de-vin), « Lieu : » suivi d'un carroyage, de coordonnées ou du nom d'un marqueur, puis du nom du lieu (posé sur la carte du joueur qui l'obtient, pour lui seul). Exemple : Des hommes armés se retrouvent la nuit à la ferme abandonnée.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Lang">
             <Original>Language</Original>
@@ -773,9 +773,9 @@
             <French>Si pot-de-vin</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_ReactOrder">
-            <Original>If ordered</Original>
-            <English>If ordered</English>
-            <French>Si ordre</French>
+            <Original>If given an order</Original>
+            <English>If given an order</English>
+            <French>Face à un ordre</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_ReactSearch">
             <Original>If searched</Original>
@@ -788,9 +788,9 @@
             <French>Si menacé</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_React_D">
-            <Original>What it does when searched, threatened, offered money or given an order. Automatic: decided by its sliders, the weapons aimed at it and its state at the check. Example: Threatened → Surrenders for a terrified civilian.</Original>
-            <English>What it does when searched, threatened, offered money or given an order. Automatic: decided by its sliders, the weapons aimed at it and its state at the check. Example: Threatened → Surrenders for a terrified civilian.</English>
-            <French>Ce qu'elle fait quand on la fouille, la menace, lui offre de l'argent ou lui donne un ordre. Automatique : selon ses curseurs, les armes pointées sur elle et son état au contrôle. Exemple : Si menacé → Se rend pour un civil terrorisé.</French>
+            <Original>What it does when searched, threatened, offered money or given an order (« Hands up! », « Follow me », « Get out of the car »). Automatic: decided by its sliders, the weapons aimed at it and its state at the check. Example: If given an order → Refuses for a stubborn shopkeeper; If threatened → Surrenders for a terrified civilian.</Original>
+            <English>What it does when searched, threatened, offered money or given an order (« Hands up! », « Follow me », « Get out of the car »). Automatic: decided by its sliders, the weapons aimed at it and its state at the check. Example: If given an order → Refuses for a stubborn shopkeeper; If threatened → Surrenders for a terrified civilian.</English>
+            <French>Ce qu'elle fait quand on la fouille, la menace, lui offre de l'argent ou lui donne un ordre (« Les mains en l'air ! », « Suivez-moi », « Sortez du véhicule »). Automatique : selon ses curseurs, les armes pointées sur elle et son état au contrôle. Exemple : Face à un ordre → Refuse pour un commerçant têtu ; Si menacé → Se rend pour un civil terrorisé.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_React_agressif">
             <Original>Turns aggressive</Original>
@@ -953,9 +953,9 @@
             <French>ATELIER IA · %1</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Unlock">
-            <Original>Unlock</Original>
-            <English>Unlock</English>
-            <French>Déblocage</French>
+            <Original>When it tells</Original>
+            <English>When it tells</English>
+            <French>Quand elle le dit</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_UnlockBribe">
             <Original>Bribe</Original>
@@ -968,19 +968,19 @@
             <French>Jamais</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_UnlockTrust">
-            <Original>Trust</Original>
-            <English>Trust</English>
-            <French>Confiance</French>
+            <Original>Once trusted</Original>
+            <English>Once trusted</English>
+            <French>En confiance</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_UnlockWord">
-            <Original>Keyword</Original>
-            <English>Keyword</English>
-            <French>Mot-clé</French>
+            <Original>With the keyword</Original>
+            <English>With the keyword</English>
+            <French>Au mot-clé</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Unlock_D">
-            <Original>What makes it talk. Trust: politeness and reassurance (greetings, « calm down »), not threats. Bribe: accepted money. Keyword: a word to say (right field). Never: it keeps quiet. Example: Keyword « falcon » for an informant waiting for a password.</Original>
-            <English>What makes it talk. Trust: politeness and reassurance (greetings, « calm down »), not threats. Bribe: accepted money. Keyword: a word to say (right field). Never: it keeps quiet. Example: Keyword « falcon » for an informant waiting for a password.</English>
-            <French>Ce qui la fait parler. Confiance : politesse et paroles rassurantes (salutations, « calmez-vous »), pas les menaces. Pot-de-vin : argent accepté. Mot-clé : un mot à prononcer (champ de droite). Jamais : elle se tait. Exemple : Mot-clé « faucon » pour un informateur qui attend un mot de passe.</French>
+            <Original>When it gives what it knows. Once trusted: after politeness and reassuring words (greetings, « calm down »), not threats. Bribe: when it accepts money. With the keyword: when the player says the word written on the right. Never: it keeps quiet. Under pressure (threat, weapon aimed) it only lets slip the vague version. Example: With the keyword « falcon » for an informant waiting for a password.</Original>
+            <English>When it gives what it knows. Once trusted: after politeness and reassuring words (greetings, « calm down »), not threats. Bribe: when it accepts money. With the keyword: when the player says the word written on the right. Never: it keeps quiet. Under pressure (threat, weapon aimed) it only lets slip the vague version. Example: With the keyword « falcon » for an informant waiting for a password.</English>
+            <French>Quand elle donne ce qu'elle sait. En confiance : après de la politesse et des paroles rassurantes (salutations, « calmez-vous »), pas des menaces. Pot-de-vin : quand elle accepte de l'argent. Au mot-clé : quand le joueur dit le mot écrit à droite. Jamais : elle se tait. Sous la pression (menace, arme braquée), elle ne lâche que la version vague. Exemple : Au mot-clé « faucon » pour un informateur qui attend un mot de passe.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_Z_Aggro">
             <Original>Turns aggressive</Original>
@@ -1108,9 +1108,9 @@
             <French>Faux papiers</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_Z_Know">
-            <Original>Knowledge, secret and cover…</Original>
-            <English>Knowledge, secret and cover…</English>
-            <French>Savoir, secret et couverture…</French>
+            <Original>What it knows, secret and cover…</Original>
+            <English>What it knows, secret and cover…</English>
+            <French>Ce qu'elle sait, secret et couverture…</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_Z_Log">
             <Original>Exchange log</Original>
@@ -2268,29 +2268,105 @@
             <French>Une question que le jeu ne connaît pas. Exemple : « mot de passe », réponse « Le faucon vole bas. »</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Answers">
-            <Original>Answers and limits…</Original>
-            <English>Answers and limits…</English>
-            <French>Réponses et limites…</French>
+            <Original>All questions and answers…</Original>
+            <English>All questions and answers…</English>
+            <French>Toutes les questions et réponses…</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_AnswersN">
-            <Original>Answers and limits… (%1 custom)</Original>
-            <English>Answers and limits… (%1 custom)</English>
-            <French>Réponses et limites… (%1 perso)</French>
+            <Original>All questions and answers (%1)…</Original>
+            <English>All questions and answers (%1)…</English>
+            <French>Toutes les questions et réponses (%1)…</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_Answers_D">
-            <Original>What she answers, question by question (automatic or your texts), what she may bring up and forbidden themes. Example: « Who are you? » → « I'm {first}, the baker. »</Original>
-            <English>What she answers, question by question (automatic or your texts), what she may bring up and forbidden themes. Example: « Who are you? » → « I'm {first}, the baker. »</English>
-            <French>Ce qu'elle répond, question par question (auto ou vos textes), ce qu'elle peut évoquer et les thèmes interdits. Exemple : « Qui es-tu ? » → « Je suis {prenom}, le boulanger. »</French>
+            <Original>Every question with its answer: the questions players usually ask (automatic answer or yours), your own questions, what it may bring up, forbidden themes and the advanced options (answer per situation, intel revealed, map marker). Example: « Who are you? » → « I'm {first}, the baker. »</Original>
+            <English>Every question with its answer: the questions players usually ask (automatic answer or yours), your own questions, what it may bring up, forbidden themes and the advanced options (answer per situation, intel revealed, map marker). Example: « Who are you? » → « I'm {first}, the baker. »</English>
+            <French>Toutes les questions avec leur réponse : celles que les joueurs posent d'habitude (réponse automatique ou la vôtre), vos propres questions, ce qu'elle peut évoquer, les thèmes interdits et les options avancées (réponse selon la situation, renseignement révélé, repère sur la carte). Exemple : « Qui es-tu ? » → « Je suis {prenom}, le boulanger. »</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_W_AnswersSet">
             <Original>Answers taken: Apply to keep them</Original>
             <English>Answers taken: Apply to keep them</English>
             <French>Réponses prises : Appliquer pour les garder</French>
         </Key>
+        <!-- Faire parler une IA : une question, une réponse (attribut Eden, atelier IA, menu ZEN). -->
+        <Key ID="STR_COMSPEC_IARP_W_Question">
+            <Original>Question</Original>
+            <English>Question</English>
+            <French>Question</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Question_D">
+            <Original>What a player may ask or say to this AI, in their own words. It also recognises close wordings (same important words). Leave empty: no question of your own. Example: Where is the village chief?</Original>
+            <English>What a player may ask or say to this AI, in their own words. It also recognises close wordings (same important words). Leave empty: no question of your own. Example: Where is the village chief?</English>
+            <French>Ce que le joueur peut lui demander ou lui dire, avec ses mots. Elle reconnaît aussi les formulations proches (mêmes mots importants). Vide : pas de question à vous. Exemple : Où est le chef du village ?</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_QuestionHint">
+            <Original>Example: Where is the village chief? — the AI also recognises close wordings</Original>
+            <English>Example: Where is the village chief? — the AI also recognises close wordings</English>
+            <French>Exemple : Où est le chef du village ? — l'IA reconnaît aussi les formulations proches</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_QuestionMore">
+            <Original>Question 1 of %1: the others are in « All questions and answers… »</Original>
+            <English>Question 1 of %1: the others are in « All questions and answers… »</English>
+            <French>Question 1 sur %1 : les autres sont dans « Toutes les questions et réponses… »</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Reply">
+            <Original>AI's answer</Original>
+            <English>AI's answer</English>
+            <French>Réponse de l'IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Reply_D">
+            <Original>What the AI answers to this question. One line per possible answer: it says one of them. Words replaced in game: {first} {name} {city} {job} {player} {time} {here}… Example: The chief is at the mosque, he'll be back tonight.</Original>
+            <English>What the AI answers to this question. One line per possible answer: it says one of them. Words replaced in game: {first} {name} {city} {job} {player} {time} {here}… Example: The chief is at the mosque, he'll be back tonight.</English>
+            <French>Ce que l'IA répond à cette question. Une ligne par réponse possible : elle en dit une. Mots remplacés en jeu : {prenom} {nom} {ville} {metier} {joueur} {heure} {lieu}… Exemple : Le chef est à la mosquée, il revient ce soir.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_ReplyHint">
+            <Original>One line per possible answer · words replaced in game: {first} {name} {city} {job} {player} {time} {here}</Original>
+            <English>One line per possible answer · words replaced in game: {first} {name} {city} {job} {player} {time} {here}</English>
+            <French>Une ligne par réponse possible · mots remplacés en jeu : {prenom} {nom} {ville} {metier} {joueur} {heure} {lieu}</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_ReplyVar">
+            <Original>+ Variable</Original>
+            <English>+ Variable</English>
+            <French>+ Variable</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_ReplyVar_D">
+            <Original>Insert a word replaced in game into the answer: her first name, her town, the player's name, the time… Example: {first} becomes Nikos.</Original>
+            <English>Insert a word replaced in game into the answer: her first name, her town, the player's name, the time… Example: {first} becomes Nikos.</English>
+            <French>Insérer dans la réponse un mot remplacé en jeu : son prénom, sa ville, le nom du joueur, l'heure… Exemple : {prenom} devient Nikos.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_QaHalf">
+            <Original>Question and answer go together: fill in both, or empty both.</Original>
+            <English>Question and answer go together: fill in both, or empty both.</English>
+            <French>Question et réponse vont ensemble : remplissez les deux, ou videz les deux.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Adv">
+            <Original>Advanced options</Original>
+            <English>Advanced options</English>
+            <French>Options avancées</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_AdvHide">
+            <Original>Question, answer</Original>
+            <English>Question, answer</English>
+            <French>Question, réponse</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Adv_D">
+            <Original>What it knows (a secret or useful intel) and when it tells it. Folded by default: nothing is lost, the values stay in the profile; the button turns green when they are used. Example: What it knows « The weapons are under the barn », When it tells « Bribe ».</Original>
+            <English>What it knows (a secret or useful intel) and when it tells it. Folded by default: nothing is lost, the values stay in the profile; the button turns green when they are used. Example: What it knows « The weapons are under the barn », When it tells « Bribe ».</English>
+            <French>Ce qu'elle sait (un secret, une info utile) et quand elle le dit. Repliées par défaut : rien n'est perdu, les valeurs restent dans le profil ; le bouton passe au vert quand elles sont utilisées. Exemple : Ce qu'elle sait « Les armes sont sous la grange », Quand elle le dit « Pot-de-vin ».</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_TestCustom">
+            <Original>Your question « %1 » recognised: your answer</Original>
+            <English>Your question « %1 » recognised: your answer</English>
+            <French>Votre question « %1 » reconnue : votre réponse</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Qa">
+            <Original>Question and answer…</Original>
+            <English>Question and answer…</English>
+            <French>Question et réponse…</French>
+        </Key>
         <Key ID="STR_COMSPEC_IARP_Z_Answers">
-            <Original>AI answers…</Original>
-            <English>AI answers…</English>
-            <French>Réponses de l'IA…</French>
+            <Original>All questions and answers…</Original>
+            <English>All questions and answers…</English>
+            <French>Toutes les questions et réponses…</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_Z_Frame">
             <Original>What she may bring up…</Original>
@@ -2303,9 +2379,9 @@
             <French>Réponses écrites par le maître du jeu</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_ManA_D">
-            <Original>AI workshop › Answers and limits… (Eden: unit attribute; Zeus: SSE · AI roleplay menu › AI answers…, Zone AIs window › Answers…).%1%2Pick a question on the left, then « My answer », and write what she says, one answer per line. « Insert a variable » adds her first name, her town, the player's name…%1%2At the top: what this AI may bring up (Nothing sensitive, What she knows, Free).%1%2Advanced options: an answer per situation, order, intel revealed, map marker, forbidden themes, your own questions.</Original>
-            <English>AI workshop › Answers and limits… (Eden: unit attribute; Zeus: SSE · AI roleplay menu › AI answers…, Zone AIs window › Answers…).%1%2Pick a question on the left, then « My answer », and write what she says, one answer per line. « Insert a variable » adds her first name, her town, the player's name…%1%2At the top: what this AI may bring up (Nothing sensitive, What she knows, Free).%1%2Advanced options: an answer per situation, order, intel revealed, map marker, forbidden themes, your own questions.</English>
-            <French>Atelier IA › Réponses et limites… (Eden : attribut de l'unité ; Zeus : menu SSE · Roleplay de l'IA › Réponses de l'IA…, fenêtre IA de la zone › Réponses…).%1%2Choisissez une question à gauche, puis « Ma réponse », et écrivez ce qu'elle répond, une réponse par ligne. « Insérer une variable » ajoute son prénom, sa ville, le nom du joueur…%1%2En haut : ce que cette IA peut évoquer (Rien de sensible, Ce qu'elle sait, Libre).%1%2Options avancées : une réponse par situation, ordre, renseignement révélé, repère sur la carte, thèmes interdits, vos propres questions.</French>
+            <Original>To make an AI talk: write a question, write its answer. Eden: unit attributes › COMSPEC SSE · AI roleplay › Question and AI's answer (also at the top of the AI workshop); Zeus: SSE · AI roleplay menu › AI profile › Question and answer…. Example: « Where is the village chief? » → « The chief is at the mosque, he'll be back tonight. » Close wordings work too.%1%2For more questions: All questions and answers… (Eden: AI workshop; Zeus: same menu, Zone AIs window › Answers…). Pick a question on the left, then « My answer », and write what she says, one answer per line. « Insert a variable » adds her first name, her town, the player's name…%1%2At the top: what this AI may bring up (Nothing sensitive, What she knows, Free).%1%2Advanced options: an answer per situation, order, intel revealed, map marker, forbidden themes, your own questions.</Original>
+            <English>To make an AI talk: write a question, write its answer. Eden: unit attributes › COMSPEC SSE · AI roleplay › Question and AI's answer (also at the top of the AI workshop); Zeus: SSE · AI roleplay menu › AI profile › Question and answer…. Example: « Where is the village chief? » → « The chief is at the mosque, he'll be back tonight. » Close wordings work too.%1%2For more questions: All questions and answers… (Eden: AI workshop; Zeus: same menu, Zone AIs window › Answers…). Pick a question on the left, then « My answer », and write what she says, one answer per line. « Insert a variable » adds her first name, her town, the player's name…%1%2At the top: what this AI may bring up (Nothing sensitive, What she knows, Free).%1%2Advanced options: an answer per situation, order, intel revealed, map marker, forbidden themes, your own questions.</English>
+            <French>Pour faire parler une IA : écrivez une question, écrivez sa réponse. Eden : attributs de l'unité › COMSPEC SSE · IA RP › Question et Réponse de l'IA (aussi en tête de l'atelier IA) ; Zeus : menu SSE · Roleplay de l'IA › Profil d'IA › Question et réponse…. Exemple : « Où est le chef du village ? » → « Le chef est à la mosquée, il revient ce soir. » Les formulations proches marchent aussi.%1%2Pour d'autres questions : Toutes les questions et réponses… (Eden : atelier IA ; Zeus : même menu, fenêtre IA de la zone › Réponses…). Choisissez une question à gauche, puis « Ma réponse », et écrivez ce qu'elle répond, une réponse par ligne. « Insérer une variable » ajoute son prénom, sa ville, le nom du joueur…%1%2En haut : ce que cette IA peut évoquer (Rien de sensible, Ce qu'elle sait, Libre).%1%2Options avancées : une réponse par situation, ordre, renseignement révélé, repère sur la carte, thèmes interdits, vos propres questions.</French>
         </Key>
         <Key ID="STR_COMSPEC_IARP_ManA_Tip">
             <Original>An AI only talks about what she knows: a civilian with no knowledge never talks about weapons or armed groups. Your texts only replace her line: orders, lies, fear and papers follow the rules.</Original>

@@ -224,6 +224,15 @@ if (AT_iarpSeul) exitWith {};
     private _t = missionNamespace getVariable ["comspec_sse_iarpWsLastTest", []];
     [(_t param [0, ""]) isEqualTo "origin" && {((_t param [2, ""]) find "Kavala") >= 0 || {(_t param [1, ""]) isNotEqualTo "origin"}}, format ["zone de test : %1", _t]] call AT_fnc_check;
     (format ["zone de test : %1", _t]) call AT_fnc_info;
+    // Question / réponse de la vue par défaut : une paraphrase reconnue par la zone de test, gardée dans les réponses.
+    (_d displayCtrl 94793) ctrlSetText "Où est le chef du village ?";
+    (_d displayCtrl 94796) ctrlSetText "Le chef est à la mosquée, il revient ce soir.";
+    (_d displayCtrl 94744) ctrlSetText "Le chef du village, il est où ?";
+    ["test"] call comspec_sse_fnc_iarpWorkshop;
+    private _tq = missionNamespace getVariable ["comspec_sse_iarpWsLastTest", []];
+    [(_tq param [2, ""]) isEqualTo "Le chef est à la mosquée, il revient ce soir.", format ["question / réponse de l'atelier : %1", _tq]] call AT_fnc_check;
+    private _qa = ["qaGet", (["current"] call comspec_sse_fnc_iarpWorkshop) getOrDefault ["answers", []]] call comspec_sse_fnc_iarpAnswers;
+    [(_qa select 1) isEqualTo "Où est le chef du village ?", format ["question / réponse hors des réponses : %1", _qa]] call AT_fnc_check;
     ["ia_atelier_zeus"] call AT_fnc_shot;
     (_d displayCtrl 94747) ctrlSetText "Sortez de mon champ !";
     ["say"] call comspec_sse_fnc_iarpWorkshop;
