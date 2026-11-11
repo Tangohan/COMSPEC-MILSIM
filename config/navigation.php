@@ -137,6 +137,7 @@ return [
                     'title' => 'Terrain',
                     'slot' => 'primary',
                     'links' => [
+                        ['label' => 'Tous mes outils', 'path' => 'operateur', 'active_match' => 'exact', 'description' => 'La page des outils opérateur : identité, papiers, couverture, fichiers, matériel'],
                         ['label' => 'Situation tactique (ATAK web)', 'path' => 'atak', 'active_match' => 'exact', 'description' => 'Carte, positions et comptes rendus de la mission, comme sur le téléphone'],
                         ['label' => 'Lier mon ATAK', 'path' => 'lier', 'description' => 'Relier le téléphone du jeu à votre compte Athena'],
                         ['label' => 'Mon matériel', 'path' => 'equipment?espace=materiel', 'description' => 'Vos tenues, kits et fiches matériel'],
