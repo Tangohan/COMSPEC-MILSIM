@@ -39,7 +39,8 @@ DATA = os.path.join(HERE, "..", "Sources", "addons", "main", "data")
 RENDER = os.path.join(HERE, "render")
 TEX = "z\\comspec_flashbang\\addons\\main\\data\\"
 SAMPLES = int(os.environ.get("RENDER_SAMPLES", "96"))
-BASES = [str(i) for i in range(1, 10)] + ["drill"]
+ORIGINAL = [str(i) for i in range(1, 10)] + ["drill"]
+BASES = ORIGINAL + ["50"]          # 50 : GANG BANG BF
 # Variantes à délai (mèche fixe 3 s / 8 s) : même géométrie, texture du corps marquée (gen_fb_textures.py).
 VARIANTS = BASES + [f"{b}_d{d}" for b in BASES for d in (3, 8)]
 MASS = 0.56
@@ -526,7 +527,7 @@ def render_lineup():
     studio(sc, False, (0.035, 0.036, 0.034, 1), key=1.4)
     sc.world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.05
     obs = []
-    for i, v in enumerate(BASES):
+    for i, v in enumerate(ORIGINAL):
         ob = make_mesh(f"g{v}", build(1, False), preview_materials(v), groups=False)
         x = (i - 4.5) * 0.052
         place(ob, (x, 0.012 * (i % 2), 0), True, math.radians(-90 + (i % 3 - 1) * 8))
@@ -556,7 +557,7 @@ def render_workshop():
         else:
             studio(sc, False, (0.035, 0.036, 0.034, 1), key=1.4)
             sc.world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.05
-        for i, v in enumerate(VARIANTS):
+        for i, v in enumerate(ORIGINAL):
             ob = make_mesh(f"g{v}", build(1, False), preview_materials(v), groups=False)
             place(ob, ((i - 4.5) * 0.052, 0.012 * (i % 2), 0), True, math.radians(-90 + (i % 3 - 1) * 8))
         cd = bpy.data.cameras.new("cam")
@@ -579,11 +580,12 @@ def main():
         render_workshop()
         return
     only = os.environ.get("ONLY")
-    todo = [v for v in VARIANTS if not only or only == v]
+    # ONLY : une variante ou une liste séparée par des virgules (ex. ONLY=50,50_d3,50_d8).
+    todo = [v for v in VARIANTS if not only or v in only.split(",")]
     # DELAYED_ONLY=1 : seulement les variantes à délai (les modèles et icônes standard restent tels quels).
     delayed_only = os.environ.get("DELAYED_ONLY") == "1"
     if delayed_only:
-        todo = [v for v in todo if v not in BASES]
+        todo = [v for v in todo if v not in BASES]  # (DELAYED_ONLY)
     if os.environ.get("NO_EXPORT") != "1":
         os.makedirs(DATA, exist_ok=True)
         for v in todo:

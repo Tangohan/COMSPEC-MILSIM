@@ -43,6 +43,7 @@ PEAK_BANG = -3.0       # crête avant le limiteur (dBFS)
 LOUD_GAIN = 6.0        # gain des bangs avant le limiteur doux (dB) : +5 dB de sonie environ
 CEIL = -1.0            # plafond du limiteur doux (dBFS) : aucun écrêtage numérique
 TINNITUS_RMS = -26.3   # RMS par canal de la boucle enregistrée (avant normalisation de la décroissance)
+TINNITUS_SEG_PEAK = -10.0  # crête des segments de l'acouphène continu (son pur à 3,5 kHz : environ -7 LUFS)
 TINNITUS_PEAK = -6.0   # crête de départ des décroissances d'acouphène (dBFS) : fort, désagréable, pas dangereux
 
 
@@ -249,6 +250,55 @@ def drill_sounds(X):
 
 
 # ----------------------------------------------------------------------------------------- découpe des captures
+def lufs(x):
+    """Sonie intégrée (LUFS) mesurée par ffmpeg (ebur128) sur le signal, après encodage float."""
+    data = np.clip(x, -1, 1).astype(np.float32).tobytes()
+    ch = 1 if x.ndim == 1 else 2
+    pad = np.zeros(int(0.5 * SR) * ch, np.float32).tobytes()
+    r = subprocess.run([FFMPEG, "-hide_banner", "-nostats", "-f", "f32le", "-ar", str(SR), "-ac", str(ch), "-i", "-",
+                        "-af", "ebur128", "-f", "null", "-"], input=data + pad, capture_output=True)
+    out = r.stderr.decode("utf-8", "replace")
+    vals = [line.split()[1] for line in out.splitlines() if line.strip().startswith("I:")]
+    return float(vals[-1]) if vals else -70.0
+
+
+def loud_to(x, target, ceil_db=-1.5):
+    """Gain + limiteur doux (tanh) jusqu'à la sonie visée, crête <= ceil_db (dichotomie sur le gain).
+    Plafond -1,5 dBFS : l'encodage Vorbis d'un signal saturé dépasse la crête d'environ 1 à 1,5 dB."""
+    src = norm_peak(x, -3.0)
+    lo, hi = 0.0, 30.0
+    for _ in range(9):
+        mid = (lo + hi) / 2
+        if lufs(loud(src, mid, ceil_db)) < target:
+            lo = mid
+        else:
+            hi = mid
+    return loud(src, (lo + hi) / 2, ceil_db)
+
+
+def tinnitus_segments(base_loop):
+    """Attaque (0,5 s), boucle (3 s + 30 ms) et fin (6 s) de l'acouphène, à partir d'une boucle de 3 s sans clic."""
+    lp = base_loop if base_loop.ndim == 2 else np.stack([base_loop, base_loop], 1)
+    n3 = int(3.0 * SR)
+    lp = np.tile(lp, (3, 1))
+    xf = int(0.03 * SR)
+    seg = lp[: n3 + xf].copy()
+    ramp = 0.5 - 0.5 * np.cos(np.linspace(0, np.pi, xf))
+    seg[:xf] *= ramp[:, None]
+    seg[-xf:] *= ramp[::-1][:, None]
+    scale = 10 ** (TINNITUS_SEG_PEAK / 20) / (np.abs(seg).max() + 1e-12)
+    seg *= scale
+    na = int(0.5 * SR)
+    t = np.arange(na) / SR
+    att = lp[:na] * scale * (1 + 0.25 * np.exp(-t / 0.15))[:, None] * np.clip(t / 0.012, 0, 1)[:, None]
+    att[-xf:] *= ramp[::-1][:, None]
+    nf = int(6.0 * SR)
+    t = np.arange(nf) / SR
+    fin = lp[:nf] * scale * (np.exp(-t / 1.6) * np.clip((6.0 - t) / 0.5, 0, 1))[:, None]
+    fin[:xf] *= ramp[:, None]
+    return {"attaque": np.clip(att, -0.9, 0.9), "segment": seg, "fin": fin}
+
+
 def loop_from_recording(x8):
     """Boucle de 3 s de l'acouphène 3520 Hz de son_08 (4,60-7,60 s) : passe-haut pour ôter la queue du bang,
     enveloppe aplatie, longueur multiple de 2205 échantillons (= 176 périodes exactes de 3520 Hz à 44,1 kHz)."""
@@ -306,17 +356,23 @@ def main():
     far = convolve(filt(b, lp=1100, order=2), ir)[: int(3.8 * SR)]
     files["bang_lointain_enreg"] = loud(norm_peak(fade(far, 0.01, 1.0), PEAK_BANG))
 
+    # Version 1.0.0 : bangs nettement plus forts (sonie visée par fichier, limiteur doux, crête -1,5 dBFS) ; « proche »
+    # (bang direct, très compressé) et « lointain / derrière un mur » un peu moins poussés.
+    for name, target in (("bang_unique_a_enreg", -10.0), ("bang_unique_b_enreg", -10.0), ("bang_unique_c_enreg", -10.0),
+                         ("bang_grave_enreg", -12.0), ("bang_rafale_enreg", -10.5), ("bang_interieur_etouffe_enreg", -13.0),
+                         ("bang_lointain_enreg", -13.0)):
+        files[name] = loud_to(files[name], target)
+
     # Acouphène : boucle enregistrée (son_08, 3520 Hz) et décroissance 60 s (même enveloppe pour les deux versions).
     loop = loop_from_recording(X[8])
+    # Segments de l'acouphène continu (fn_tinnitusTick) : attaque 0,5 s, boucle 3,03 s (fondus de 30 ms aux bouts pour
+    # le fondu croisé), fin 6 s ; même échelle pour les trois (crête de la boucle à -6 dBFS).
+    for suffix, base_loop in (("enreg", loop), ("synth", synth_tinnitus(3.0))):
+        seg = tinnitus_segments(base_loop)
+        for part, x in seg.items():
+            files[f"acouphene_{part}_{suffix}"] = x
     files["acouphene_boucle_enreg"] = loop
-    dur = 60.0
-    t = np.arange(int(dur * SR)) / SR
-    env = tinnitus_env(t)[:, None]
-    tiled = np.tile(loop, (int(np.ceil(len(t) / len(loop))), 1))[: len(t)]
-    files["acouphene_decroissance_enreg"] = norm_peak(fade(tiled * env, 0.02, 0.0), TINNITUS_PEAK)
-    syn = synth_tinnitus(dur)
-    syn *= 10 ** (TINNITUS_RMS / 20) / np.sqrt((syn[: SR] ** 2).mean())
-    files["acouphene_decroissance_synth"] = norm_peak(fade(syn * env, 0.02, 0.0), TINNITUS_PEAK)
+    # (Les décroissances de 60 s des versions précédentes ne servent plus : remplacées par les segments ci-dessus.)
 
     # Drill et lancer : synthétisés (aucune prise propre dans les captures).
     files["pop_drill_synth"] = loud(norm_peak(synth_pop(), PEAK_BANG))
@@ -330,6 +386,14 @@ def main():
     for name, x in files.items():
         p = os.path.join(OUT, name + ".ogg")
         write_ogg(p, x)
+        # Crête réelle après encodage (Vorbis dépasse la crête d'un signal saturé) : ramenée sous -0,5 dBFS.
+        for _ in range(3):
+            pk = 20 * np.log10(np.abs(decode(p)).max() + 1e-12)
+            if pk <= -0.5:
+                break
+            x = x * 10 ** ((-0.7 - pk) / 20)
+            files[name] = x
+            write_ogg(p, x)
         print(f"{name:32s} {len(x) / SR:6.2f} s  {'stéréo' if x.ndim == 2 else 'mono  '}  crête "
               f"{20 * np.log10(np.abs(x).max() + 1e-12):6.1f} dBFS")
 
@@ -375,8 +439,11 @@ Comment le jeu les utilise :
   sort sans répéter deux fois de suite le même, avec une petite variation de hauteur et de volume. Les lectures se
   chevauchent (la queue d'un bang continue pendant le suivant).
 - bang_grave : joué en plus, en même temps que le PREMIER bang seulement.
-- acouphene_decroissance : joué UNE SEULE fois par joueur (pas N fois). Chaque flash suivant le relance plus tôt dans
-  le fichier (plus fort, plus long), avec un plafond.
+- acouphène : UN seul acouphène continu par joueur et par train de flashs : acouphene_attaque (une fois), puis
+  acouphene_segment enchaîné en boucle (fondu croisé de 30 ms), puis acouphene_fin (une fois). Les flashs suivants
+  prolongent et remontent le niveau, sans jamais relancer l'attaque.
+- niveaux (version 1.0.0) : bangs directs à -10 LUFS environ (limiteur doux, crête sous 0 dBFS après encodage),
+  lointain et derrière un mur à -13 LUFS, segments d'acouphène à crête -10 dBFS.
 
 FICHIER | CE QUE C'EST | EFFET QUI L'UTILISE | ORIGINE | DOUTE
 bang_unique_a_enreg.ogg | bang seul, sa queue naturelle | chaque flash (rejoué N fois) | vidéo 03 (11-05-21) à 0,97 s | aucun : bang net sans acouphène
@@ -387,8 +454,9 @@ bang_rafale_enreg.ogg | 3 bangs enchaînés (~1,15 s d'écart) | DRILL, son au c
 bang_interieur_etouffe_enreg.ogg | bang entendu derrière un mur / pièce voisine | flash entendu à travers un mur | bang a + passe-bas 450 Hz + réverbération de pièce (traitement) | rendu à valider à l'oreille
 bang_lointain_enreg.ogg | bang lointain avec échos | extérieur au-delà de ~150 m | bang b + passe-bas 1,1 kHz + échos (traitement) | rendu à valider à l'oreille
 acouphene_boucle_enreg.ogg | sifflement 3520 Hz (note la7) en boucle de 3 s, sans clic | réserve / acouphène continu | vidéo 08 (11-06-48) 4,6-7,6 s, niveau aplani | c'est un bip pur électronique
-acouphene_decroissance_enreg.ogg | sifflement 3520 Hz de 60 s qui décroît (vite puis lentement) | acouphène (1 fois par joueur) | ta boucle 3520 Hz + enveloppe de décroissance calculée | aucun sur l'identification
-acouphene_decroissance_synth.ogg | même chose, synthétisé : 3520 + 3526 Hz (battement), canal droit +1 Hz | variante plus « naturelle » | synthèse | au choix de TTRD
+acouphene_attaque/segment/fin_enreg.ogg | sifflement 3520 Hz : attaque 0,5 s, boucle 3 s, décroissance 6 s | acouphène continu (1 par joueur) | ta boucle 3520 Hz + enveloppes calculées | aucun sur l'identification
+acouphene_attaque/segment/fin_synth.ogg | même chose, synthétisé : 3520 + 3526 Hz (battement), canal droit +1 Hz | variante plus « naturelle » | synthèse | au choix de TTRD
+(anciens acouphene_decroissance_*.ogg : plus utilisés par le mod)
 pop_drill_synth.ogg | petit pétard + souffle | grenade DRILL, son « Pop » (défaut) | synthèse (pas de prise propre) | -
 pop_sourd_synth.ogg | pétard plus grave, étouffé, petite queue de pièce | grenade DRILL, son « Pop sourd » | synthèse | -
 bang_leger_enreg.ogg | bang C raccourci (0,8 s), grave allégé | grenade DRILL, son « Bang léger » | vidéo 07 à 9,02 s + passe-haut 180 Hz | à écouter

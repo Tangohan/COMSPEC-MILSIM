@@ -21,9 +21,11 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 HERE = os.path.dirname(os.path.abspath(__file__))
 RENDER = os.path.join(HERE, "render")
 ADDON = os.path.join(HERE, "..", "Sources", "addons", "main")
-BASES = [str(i) for i in range(1, 10)] + ["drill"]
+BASES = [str(i) for i in range(1, 10)] + ["drill", "50"]     # 50 : GANG BANG BF
 # Variantes à délai (mèche fixe 3 s / 8 s) : <base>_d3, <base>_d8.
 VARIANTS = BASES + [f"{b}_d{d}" for b in BASES for d in (3, 8)]
+# Variantes « R » (rafale hyper rapide) : icône de la grenade standard + pastille éclair « R ».
+FAST = ["2", "3", "4", "5", "6", "7", "8", "9", "50"]
 DELAY_FILL = {3: (242, 194, 20, 245), 8: (209, 26, 20, 245)}
 DELAY_TEXT = {3: (15, 15, 15, 255), 8: (245, 245, 240, 255)}
 
@@ -32,6 +34,7 @@ TEXTURES = {f"fb_body_{v}_co": f"data/fb_body_{v}_co" for v in VARIANTS}
 TEXTURES.update({k: "data/" + k for k in ("fb_body_nohq", "fb_body_smdi", "fb_metal_co", "fb_metal_nohq", "fb_metal_smdi")})
 TEXTURES.update({k: "ui/" + k for k in ("fb_afterimage_ca", "fb_flare_ca", "fb_module_ca", "fb_logo_ca")})
 TEXTURES.update({f"fb_icon_{v}_ca": f"ui/fb_icon_{v}_ca" for v in VARIANTS})
+TEXTURES.update({f"fb_icon_{n}_r_ca": f"ui/fb_icon_{n}_r_ca" for n in FAST})
 
 
 def font(size):
@@ -60,7 +63,10 @@ def icon(v):
     fill = (24, 70, 170, 240) if base == "drill" else (28, 28, 26, 235)
     d.ellipse([cx - r - 8, cy - r - 8, cx + r + 8, cy + r + 8], fill=(0, 0, 0, 110))
     d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=fill, outline=(240, 240, 235, 255), width=4 * 4)
-    d.text((cx, cy + 6), "D" if base == "drill" else base, font=font(4 * 54), fill=(245, 245, 240, 255), anchor="mm")
+    fill = (150, 20, 15, 240) if base == "50" else fill
+    if base == "50":
+        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=fill, outline=(240, 240, 235, 255), width=4 * 4)
+    d.text((cx, cy + 6), "D" if base == "drill" else base, font=font(4 * (40 if len(base) > 1 else 54)), fill=(245, 245, 240, 255), anchor="mm")
     if delay:
         # Pastille de délai : horloge + « 3s » / « 8s », même famille de couleurs que la bande sur le corps.
         x0, y0, x1, y1 = 4 * 150, 4 * 10, 4 * 248, 4 * 62
@@ -75,6 +81,24 @@ def icon(v):
     badge = badge.resize((256, 256), Image.LANCZOS)
     out = Image.alpha_composite(raw, badge)
     out.save(os.path.join(RENDER, f"fb_icon_{v}_ca.png"))
+
+
+def icon_fast(n):
+    """Icône « R » (rafale hyper rapide) : icône de la grenade standard + pastille orange éclair « R » en haut à droite."""
+    base = Image.open(os.path.join(RENDER, f"fb_icon_{n}_ca.png")).convert("RGBA")
+    S = 4 * 256
+    badge = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(badge)
+    x0, y0, x1, y1 = 4 * 166, 4 * 10, 4 * 248, 4 * 62
+    d.rounded_rectangle([x0 - 8, y0 - 8, x1 + 8, y1 + 8], radius=4 * 28, fill=(0, 0, 0, 110))
+    d.rounded_rectangle([x0, y0, x1, y1], radius=4 * 26, fill=(245, 140, 20, 245), outline=(240, 240, 235, 255), width=4 * 3)
+    cx, cy = x0 + 4 * 24, (y0 + y1) // 2
+    bolt = [(cx + 4 * 4, cy - 4 * 20), (cx - 4 * 10, cy + 4 * 3), (cx + 0, cy + 4 * 3), (cx - 4 * 5, cy + 4 * 20),
+            (cx + 4 * 12, cy - 4 * 4), (cx + 4 * 2, cy - 4 * 4)]
+    d.polygon(bolt, fill=(20, 20, 20, 255))
+    d.text(((cx + 4 * 14 + x1) // 2, cy + 4 * 2), "R", font=font(4 * 40), fill=(20, 20, 20, 255), anchor="mm")
+    badge = badge.resize((256, 256), Image.LANCZOS)
+    Image.alpha_composite(base, badge).save(os.path.join(RENDER, f"fb_icon_{n}_r_ca.png"))
 
 
 def logo():
@@ -122,13 +146,15 @@ def image_to_paa():
     return None
 
 
-def convert(delayed_only=False):
+def convert(delayed_only=False, only=None):
     exe = image_to_paa()
     if not exe:
         sys.exit("ImageToPAA introuvable : définir ARMA3TOOLS")
     jobs = list(TEXTURES.items()) + [("fb_logo_ca", "../../../logo")]
     if delayed_only:
         jobs = [(k, v) for k, v in jobs if "_d3_" in k or "_d8_" in k]
+    if only:
+        jobs = [(k, v) for k, v in jobs if any(m in k for m in only)]
     for src, dst in jobs:
         png = os.path.join(RENDER, src + ".png")
         paa = os.path.normpath(os.path.join(ADDON, dst + ".paa"))
@@ -154,9 +180,14 @@ def main():
     for f in os.listdir(RENDER):
         if f.startswith("icon_raw_") or f == "steam_raw.png":
             os.remove(os.path.join(RENDER, f))
+    for n in FAST:
+        if os.path.exists(os.path.join(RENDER, f"fb_icon_{n}_ca.png")):
+            icon_fast(n)
     if "--no-paa" not in sys.argv:
-        # --delai : ne convertit que les textures et icônes des variantes à délai (les autres PAA restent tels quels).
-        convert(delayed_only="--delai" in sys.argv)
+        # --delai : ne convertit que les textures et icônes des variantes à délai ; --seulement=motif1,motif2 : ne
+        # convertit que les fichiers dont le nom contient un des motifs (les autres PAA restent tels quels).
+        only = next((a.split("=", 1)[1].split(",") for a in sys.argv if a.startswith("--seulement=")), None)
+        convert(delayed_only="--delai" in sys.argv, only=only)
 
 
 if __name__ == "__main__":

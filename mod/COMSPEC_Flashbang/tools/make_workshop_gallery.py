@@ -190,22 +190,22 @@ def cover(img, w, h, fx=0.5, fy=0.5):
 
 T = {
     "titre": {
-        "fr": ("COMSPEC FLASHBANG", "Grenades assourdissantes pour Arma 3 : 1 à 9 flashs, effets réalistes.",
-               ["1 À 9 FLASHS", "GRENADE DRILL", "CBA_A3 SEUL REQUIS"]),
-        "en": ("COMSPEC FLASHBANG", "Stun grenades for Arma 3: 1 to 9 flashes, realistic effects.",
-               ["1 TO 9 FLASHES", "DRILL GRENADE", "ONLY CBA_A3 REQUIRED"])},
+        "fr": ("COMSPEC FLASHBANG", "BetterFlash (BF) : grenades assourdissantes pour Arma 3, de 1 à 9 flashs, GANG BANG de 50, effets réalistes.",
+               ["1 À 9 FLASHS", "GANG BANG 50", "GRENADE DRILL", "CBA_A3 SEUL REQUIS"]),
+        "en": ("COMSPEC FLASHBANG", "BetterFlash (BF): stun grenades for Arma 3, 1 to 9 flashes, a 50-flash GANG BANG, realistic effects.",
+               ["1 TO 9 FLASHES", "50-FLASH GANG BANG", "DRILL GRENADE", "ONLY CBA_A3 REQUIRED"])},
     "grenades": {
-        "fr": ("1 À 9 FLASHS ET DRILL", "Le chiffre sur le corps est le nombre de flashs. Drill bleue : entraînement, "
-               "aucun effet. Chaque modèle existe aussi en mèche 3 s et 8 s.",
-               ["CAISSE FLASH", "CAISSE DÉLAIS", "MÈCHE 3 S / 8 S", "ARSENAL"]),
-        "en": ("1 TO 9 FLASHES AND DRILL", "The number on the body is the number of flashes. The blue Drill is for "
-               "training: a pop, no effect. Every model also comes with a 3 s and 8 s fuse.",
-               ["FLASH CRATE", "DELAY CRATE", "3 S / 8 S FUSE", "ARSENAL"])},
+        "fr": ("1-BANG À 9-BANG BF ET DRILL", "Le chiffre sur le corps est le nombre de flashs. Drill bleue : entraînement, "
+               "aucun effet. Mèche 3 s et 8 s, rafale hyper rapide R, et le GANG BANG BF de 50 flashs.",
+               ["CAISSE BF", "CAISSE DÉLAIS BF", "MÈCHE 3 S / 8 S", "RAFALE R"]),
+        "en": ("1-BANG TO 9-BANG BF AND DRILL", "The number on the body is the number of flashes. The blue Drill is for "
+               "training: a pop, no effect. 3 s and 8 s fuses, hyper fast R burst, and the 50-flash GANG BANG BF.",
+               ["BF CRATE", "BF DELAY CRATE", "3 S / 8 S FUSE", "R BURST"])},
     "timeline": {
-        "fr": ("UN BANG PAR FLASH", "Une grenade à 5 flashs fait exactement 5 flashs et 5 bangs, environ toutes les demi-secondes, "
-               "pareil chez tous les joueurs. Un seul sifflement, relancé à chaque flash."),
-        "en": ("ONE BANG PER FLASH", "A 5-flash grenade makes exactly 5 flashes and 5 bangs, about every half second, the "
-               "same for every player. A single ringing, renewed by each flash.")},
+        "fr": ("UN BANG PAR FLASH", "Une grenade à 5 flashs fait exactement 5 flashs et 5 bangs, toutes les demi-secondes environ ou en rafale, "
+               "pareil chez tous les joueurs. Un seul sifflement continu, prolongé par chaque flash."),
+        "en": ("ONE BANG PER FLASH", "A 5-flash grenade makes exactly 5 flashes and 5 bangs, about every half second or in a burst, the "
+               "same for every player. A single continuous ringing, extended by each flash.")},
     "effets": {
         "fr": ("CE QUE VOIT LE JOUEUR", "Exposé de face à 3 m : la vue se vide, puis revient. Pendant ce temps, "
                "sons étouffés et sifflement qui s'éteint."),
@@ -215,8 +215,8 @@ T = {
         "fr": ("DEDANS OU DEHORS", "Le mod regarde où la grenade éclate : murs, plafond, taille de la pièce."),
         "en": ("INDOORS OR OUTDOORS", "The mod checks where the grenade goes off: walls, ceiling, room size.")},
     "reglages": {
-        "fr": ("VOTRE DOSAGE", "32 réglages CBA, chacun avec un exemple. Trois préréglages pour commencer."),
-        "en": ("YOUR OWN DOSE", "32 CBA settings, each with an example. Three presets to start with.")},
+        "fr": ("VOTRE DOSAGE", "37 réglages CBA, chacun avec un exemple. Trois préréglages pour commencer."),
+        "en": ("YOUR OWN DOSE", "37 CBA settings, each with an example. Three presets to start with.")},
     "compat": {
         "fr": ("COMPATIBLE AVEC VOS MODS", "Seul CBA_A3 est obligatoire. Le reste est reconnu s'il est chargé."),
         "en": ("WORKS WITH YOUR MODS", "Only CBA_A3 is required. The rest is detected when loaded.")},
@@ -301,7 +301,7 @@ def slide_grenades(lang):
     lf, nf = font(38), font(24, "SemiLight")
     for i in range(10):
         cxm = lx + centres[i] * s
-        name = "Drill" if i == 9 else "×%d" % (i + 1)
+        name = "DRILL" if i == 9 else "%d-BANG" % (i + 1)
         n = (("aucun effet" if lang == "fr" else "no effect") if i == 9 else
              ("%d flash%s" % (i + 1, "s" if i and lang == "fr" else ("es" if i else ""))))
         d.text((cxm, ly), name, font=lf, fill=(96, 165, 250) if i == 9 else TEXT, anchor="mm")
@@ -672,7 +672,7 @@ def preview():
     d = ImageDraw.Draw(im)
     d.text((66, 40), "COMSPEC FLASHBANG", font=font(104), fill=TEXT)
     d.rounded_rectangle([70, 160, 170, 168], 4, fill=ACCENT)
-    d.text((70, 190), "×1 … ×9  ·  DRILL", font=font(40, "SemiBold Condensed"), fill=SUB)
+    d.text((70, 190), "BETTERFLASH  ·  1-BANG … 9-BANG BF  ·  GANG BANG  ·  DRILL", font=font(40, "SemiBold Condensed"), fill=SUB)
     return im
 
 
@@ -693,8 +693,8 @@ def banner(lang):
     d.text((x - 4, 70), "COMSPEC", font=font(108), fill=TEXT)
     d.text((x - 4, 174), "FLASHBANG", font=font(108), fill=TEXT)
     d.rounded_rectangle([x, 304, x + 96, 312], 4, fill=ACCENT)
-    sub = ("Grenades assourdissantes réalistes : 1 à 9 flashs, grenade d'entraînement Drill." if fr else
-           "Realistic stun grenades: 1 to 9 flashes, Drill training grenade.")
+    sub = ("BetterFlash (BF) : grenades assourdissantes réalistes de 1 à 9 flashs, GANG BANG de 50, grenade d'entraînement Drill." if fr else
+           "BetterFlash (BF): realistic stun grenades with 1 to 9 flashes, a 50-flash GANG BANG, Drill training grenade.")
     yy = text_block(d, x, 336, sub, font(30, "SemiLight"), SUB, 500, 40)
     cx = x
     for c in (["ARMA 3", "CBA_A3", "ZEN", "ACE3"]):

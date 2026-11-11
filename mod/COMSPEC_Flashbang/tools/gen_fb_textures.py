@@ -32,10 +32,13 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RENDER = os.path.join(HERE, "render")
-BASES = [str(i) for i in range(1, 10)] + ["drill"]
+ORIGINAL = [str(i) for i in range(1, 10)] + ["drill"]
+BASES = ORIGINAL + ["50"]          # 50 : GANG BANG BF (corps noir, bande rouge)
 DELAYS = (3, 8)
-# Variantes : 1..9 et drill (mèche standard), puis <base>_d3 / <base>_d8 (mèche fixe 3 s / 8 s).
+# Variantes : 1..9, drill et 50 (mèche standard), puis <base>_d3 / <base>_d8 (mèche fixe 3 s / 8 s).
 VARIANTS = BASES + [f"{b}_d{d}" for b in BASES for d in DELAYS]
+BLACK = (0.10, 0.10, 0.11)
+RED = (0.72, 0.07, 0.05)
 N = 1024
 SIDE_H = 640                 # hauteur du flanc déroulé (px)
 H_BODY = 0.086               # hauteur réelle du corps (m), pour placer les rangées d'évents
@@ -114,12 +117,12 @@ def disc_mask(shape, cx, cy, r, soft=1.5):
     return np.clip((r - d) / soft + 0.5, 0, 1), d
 
 
-def base_body(drill):
+def base_body(drill, fifty=False):
     """Couleur de fond, hauteur (relief) et masque des évents, communs aux marquages."""
     co = np.zeros((N, N, 3))
     hgt = np.full((N, N), 0.5)
     vent = np.zeros((N, N))
-    paint = BLUE if drill else OLIVE
+    paint = BLUE if drill else (BLACK if fifty else OLIVE)
     grain = noise(N, 1.4)
     co[:] = paint
     co *= (0.92 + 0.10 * grain)[..., None]
@@ -132,7 +135,7 @@ def base_body(drill):
     hgt[bot - 3:bot + 3] = 0.42                                 # sertissage entre corps et culot
     # Bande de couleur près de la fusée (marron = faible explosif ; blanche pour l'exercice).
     b0, b1 = int(0.07 * SIDE_H), int(0.15 * SIDE_H)
-    co[b0:b1] = np.array(WHITE if drill else BROWN) * (0.92 + 0.1 * grain[b0:b1])[..., None]
+    co[b0:b1] = np.array(WHITE if drill else (RED if fifty else BROWN)) * (0.92 + 0.1 * grain[b0:b1])[..., None]
     hgt[b0:b1] += 0.04
     # Bourrelet roulé en haut et en bas du flanc.
     for r0, r1 in ((0, 10), (SIDE_H - 10, SIDE_H)):
@@ -222,21 +225,27 @@ def markings(img, variant):
                 stencil(d, (cx, 384), "COMSPEC FB-D  LOT 26-11-D", 24, white, bold=False)
         else:
             n = int(base)
-            # Délai : chiffre décalé à gauche, cartouche du délai à sa droite.
+            big = n > 9
+            # Délai : chiffre décalé à gauche, cartouche du délai à sa droite. « 50 » : deux chiffres, plus petits.
             if delay:
-                stencil(d, (cx - 52, 250), str(n), 200, white)
-                delay_stamp(d, (cx + 70, 252), delay, 84)
+                stencil(d, (cx - (60 if big else 52), 250), str(n), 140 if big else 200, white)
+                delay_stamp(d, (cx + (76 if big else 70), 252), delay, 76 if big else 84)
             else:
-                stencil(d, (cx, 230), str(n), 230, white)
-            # N pastilles carrées sous le chiffre (lisibles même quand le chiffre est caché).
-            w, gap = 22, 12
-            x0 = cx - (n * w + (n - 1) * gap) / 2
-            for i in range(n):
-                d.rectangle([x0 + i * (w + gap), 352, x0 + i * (w + gap) + w, 374], fill=white)
+                stencil(d, (cx, 236 if big else 230), str(n), 190 if big else 230, white)
+            if big:
+                # GANG BANG BF : pas de pastilles (50), le nom en clair à la place.
+                stencil(d, (cx, 362), "GANG BANG BF", 38, (235, 60, 45))
+            else:
+                # N pastilles carrées sous le chiffre (lisibles même quand le chiffre est caché).
+                w, gap = 22, 12
+                x0 = cx - (n * w + (n - 1) * gap) / 2
+                for i in range(n):
+                    d.rectangle([x0 + i * (w + gap), 352, x0 + i * (w + gap) + w, 374], fill=white)
             stencil(d, (cx - 75, 150), f"{n}-BANG", 34, white, anchor="rm")
             stencil(d, (cx + 75, 150), f"DELAY {delay} s" if delay else "DELAY 1.5 s", 30, white, anchor="lm", bold=bool(delay))
             suffix = f"-D{delay}" if delay else ""
-            stencil(d, (cx, 400), f"COMSPEC FB-{n}{suffix}  LOT 26-11-0{n}", 22, white, bold=False)
+            lot = f"LOT 26-11-{n}" if big else f"LOT 26-11-0{n}"
+            stencil(d, (cx, 400), f"COMSPEC {'BF' if big else 'FB'}-{n}{suffix}  {lot}", 22, white, bold=False)
     if delay:
         # Dos (opposé au levier) : grand cartouche, visible quand la grenade est posée de dos.
         delay_stamp(d, (int(0.5 * N), 250), delay, 120)
@@ -258,7 +267,7 @@ def markings(img, variant):
 def body(variant, hgt_out):
     base, delay = split(variant)
     drill = base == "drill"
-    co, hgt, vent = base_body(drill)
+    co, hgt, vent = base_body(drill, base == "50")
     if delay:
         # 2e bande colorée du délai, juste sous la bande du haut.
         b0, b1 = int(DELAY_BAND[0] * SIDE_H), int(DELAY_BAND[1] * SIDE_H)
@@ -397,16 +406,17 @@ def main():
     keep = []
     # Ordre fixe (le bruit est tiré d'un générateur commun) : variantes standard et textures communes d'abord, à
     # l'identique des versions précédentes, puis les variantes à délai.
-    for v in BASES:
+    for v in ORIGINAL:
         body(v, keep)
     body_maps(*keep[0])
     metal()
     afterimage()
     flare()
     module_icon()
-    for v in VARIANTS:
-        if v not in BASES:
-            body(v, None)
+    # Puis les variantes à délai des modèles d'origine, et enfin le 50 (GANG BANG BF) : les textures déjà livrées
+    # restent identiques.
+    for v in [f"{b}_d{d}" for b in ORIGINAL for d in DELAYS] + ["50", "50_d3", "50_d8"]:
+        body(v, None)
     print("textures écrites dans", RENDER)
 
 
