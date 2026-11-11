@@ -1,3 +1,27 @@
+[h1]COMSPEC ATAK 4.5.0 Washington — TOC au look professionnel, satellite devenu console ISR / Professional-looking TOC, satellite becomes an ISR console[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Nouveau look du TOC[/b] : tous les écrans muraux et le PC du poste ont le rendu d'une vraie salle d'opérations, lisible de loin : en-tête avec heures ZULU et locale, tableaux en colonnes nettes, états en couleur, plus aucun texte coupé ni chevauché.
+[*] [b]Carte et horloge du poste[/b] : carte plus claire (quadrillage numéroté, noms des groupes qui ne se recouvrent plus, légende, échelle et nord), heure ZULU en très grand, mosaïque des caméras avec DIRECT et PAS DE SIGNAL.
+[*] [b]PC du poste[/b] : onglets sur deux rangées en haut, onglet choisi bien visible, un titre et un état par onglet, boutons et listes au même style.
+[*] [b]Satellite : console ISR[/b] : image plein cadre sous le HUD d'un vrai capteur (réticule, échelle, zoom, grille, altitude, heure ZULU). La nuit, l'image passe en thermique blanc chaud au lieu de rester noire.
+[*] [b]Capteurs[/b] : AUTO, JOUR, NUIT, thermique blanc chaud, noir chaud et deux fusions qui ajoutent les contours des bâtiments.
+[*] [b]Pointage et zoom[/b] : visez une grille tapée, cliquez sur la carte ou suivez un groupe ; zoom de 0,25× à 8× à la molette. Inscrivez la vue à la main courante ou posez un repère visible par tout le camp.
+[*] [b]Sur le mur[/b] : envoyez l'image du satellite sur l'écran mural de votre choix.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]New TOC look[/b]: every wall screen and the post laptop look like a real operations room, readable from a distance: a header with ZULU and local times, tables in clean columns, coloured statuses, no more clipped or overlapping text.
+[*] [b]Post map and clock[/b]: a clearer map (numbered grid, group labels that no longer overlap, legend, scale and north arrow), ZULU time in large print, a camera mosaic with LIVE and NO SIGNAL.
+[*] [b]Post laptop[/b]: tabs on two rows at the top, the chosen tab clearly shown, a title and status for every tab, buttons and lists in the same style.
+[*] [b]Satellite: ISR console[/b]: a full-frame image under the HUD of a real sensor (reticle, scale, zoom, grid, elevation, ZULU time). At night the image switches to white-hot thermal instead of staying black.
+[*] [b]Sensors[/b]: AUTO, DAY, NIGHT, white-hot thermal, black-hot and two fused modes that add building outlines.
+[*] [b]Tasking and zoom[/b]: aim at a typed grid, click on the map or follow a group; zoom from 0.25× to 8× with the mouse wheel. Log the view in the duty log or place a marker the whole side can see.
+[*] [b]On the wall[/b]: send the satellite image to the wall screen of your choice.
+[/list]
+
 [h1]COMSPEC ATAK 4.4.1 Washington — écrans TOC visibles, PC du poste lisible, carte Classique fidèle / TOC screens that show up, readable TOC laptop, faithful Classic map[/h1]
 
 [h2]Français[/h2]

@@ -38,20 +38,25 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## À venir : écrans du TOC et PC du poste refaits, rendu de salle d'opérations (ATAK natif, version à attribuer)
+## Pack 4.5.0 Washington : rendu professionnel des écrans TOC et du PC du poste, satellite devenu console ISR (ATAK natif 4.5.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
+### Résumé joueur
 Type : nouveauté
-FR : Les écrans du TOC et le PC du poste ont un rendu de vraie salle d'opérations
-- Tous les écrans du mur partagent la même présentation, lisible de loin : en-tête avec le nom de l'écran et les heures ZULU et locale, pied avec l'état de la liaison, tableaux en colonnes nettes (heures, grilles, états en pastilles de couleur), et plus aucun texte coupé ni chevauché.
-- La carte du poste est plus claire : fond assombri, quadrillage numéroté, plaques des groupes qui ne se recouvrent plus, légende, échelle et nord ; l'horloge affiche l'heure ZULU en très grand, la prochaine ligne d'exécution et les chronos ; la mosaïque de caméras indique DIRECT, la qualité de liaison et PAS DE SIGNAL.
-- Le PC du poste range ses onglets sur deux rangées en haut, montre l'onglet choisi clairement, et chaque onglet a un titre avec son état ; les boutons, listes et champs ont tous le même style.
-EN : The TOC screens and the post laptop now look like a real operations room
-- All wall screens share the same layout, readable from a distance: a header with the screen name and ZULU and local times, a footer with the link status, tables in clean columns (times, grids, coloured status pills), and no more clipped or overlapping text.
-- The post map is clearer: darkened background, numbered grid, group labels that no longer overlap, legend, scale and north arrow; the clock shows ZULU time in large print, the next execution checklist line and the timers; the camera mosaic shows LIVE, link quality and NO SIGNAL.
-- The post laptop puts its tabs on two rows at the top, clearly shows the chosen tab, and every tab has a title with its status; buttons, lists and fields all share the same style.
+FR : ATAK 4.5.0 : un TOC au look professionnel et un satellite devenu console ISR
+- **Nouveau look** : tous les écrans du TOC et le PC du poste ont le rendu d'une vraie salle d'opérations, lisible de loin, avec des tableaux nets et plus aucun texte coupé.
+- **Console ISR** : le satellite montre une image thermique blanc chaud (et d'autres capteurs au choix) sous un vrai HUD de capteur : réticule, échelle, grille et heure ZULU. La nuit, l'image n'est plus noire.
+- **Pointage et zoom** : visez une grille, cliquez sur la carte ou suivez un groupe, et zoomez à la molette.
+- **Sur le mur** : envoyez l'image du satellite sur l'écran mural de votre choix.
+EN : ATAK 4.5.0: a professional-looking TOC and a satellite that becomes an ISR console
+- **New look**: every TOC screen and the post laptop look like a real operations room, readable from a distance, with clean tables and no more clipped text.
+- **ISR console**: the satellite shows a white-hot thermal image (and other sensors to choose from) under a real sensor HUD: reticle, scale, grid and ZULU time. At night the image is no longer black.
+- **Tasking and zoom**: aim at a grid, click on the map or follow a group, and zoom with the mouse wheel.
+- **On the wall**: send the satellite image to the wall screen of your choice.
 
 ### Détail technique
+
+**Écrans du TOC et PC du poste refaits, rendu de salle d'opérations**
+
 - Thème unique `fn_tocTheme` (jetons de couleur, échelle de texte, polices RobotoCondensed / EtelkaMonospacePro, espacements, régions de chaque affichage en 1600 x 900 et 1600 x 400, colonnes des tableaux, règle sous FLASH), tables JSON lues aussi par `tools/toc_mockups.py` (maquettes PNG) et `AtakTocThemeTest` ; `ui/toc_theme.hpp` (classes du PC). Doc : `docs/TOC-THEME.md`.
 - `fn_tocBoard` réécrit en rendu « immédiat » par calques (fonds, filets et pastilles, images, satellite, cadres, textes) : en-tête, FLASH et pied communs, panneaux SPLIT / TOC / SQUAD, et FEED, NET, ORBAT, CLOCK, LOG, EXCHECK, KILLS, REQ, MOSAIC, STRIP, PLATE en tableaux à colonnes fixes ; SAT (console ISR) gardé, aligné sur les jetons (`fn_tocSat` : encre, pistes, plaques).
 - `fn_tocScreen` : la carte seule (fond teinté puis voilé, quadrillage sur plaques, plaques à liseré d'état et filet de rappel, légende) ; FEED, NET et ORBAT passent en tableaux ; tout le reste par `fn_tocBoard`.
@@ -59,20 +64,8 @@ EN : The TOC screens and the post laptop now look like a real operations room
 - Tests : `AtakTocThemeTest` (contraste ≥ 4,5:1, texte mural ≥ 28 px, régions dans le cadre et sans chevauchement avec et sans FLASH, colonnes, aucune couleur hors du thème, anglais), `AtakTocLaptopLayoutTest` et `AtakTocScreenDisplaysAssetTest` mis à jour.
 - À juger en jeu : rendu réel des polices du jeu (largeur d'Etelka), lisibilité à 3-6 m, teinte de la carte selon la photo du terrain, coût de la réserve de contrôles.
 
-## À venir : le satellite du TOC devient une vraie console ISR (ATAK natif, version à attribuer)
+**Le satellite du TOC devient une console ISR**
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Le satellite du TOC devient une vraie console ISR : image thermique, HUD, capteurs, pointage
-- L'onglet SAT du PC du poste montre l'image en plein cadre, sans bande noire, avec le HUD d'un vrai capteur : coins, réticule, barre d'échelle, zoom, hauteur, grille et altitude du centre, heure ZULU, et les écrans muraux le montrent en grand. La nuit, l'image n'est plus noire : AUTO passe en thermique.
-- Sept capteurs au choix : AUTO, JOUR, NUIT, thermique blanc chaud (WHOT), noir chaud (BHOT) et deux fusions (FUS W, FUS B) qui ajoutent les contours des bâtiments. Zoom continu de 0,25× à 8×, à la molette ou aux boutons.
-- Pointage comme en salle d'opérations : viser une grille tapée, cliquer sur la carte, suivre un groupe, inscrire la vue à la main courante, poser un repère visible par tout le camp, et envoyer la vue sur l'écran ou la dalle de votre choix.
-EN : The TOC satellite becomes a real ISR console: thermal image, HUD, sensors, tasking
-- The SAT tab of the post laptop shows the image full frame, with no black bands, under the HUD of a real sensor: corners, reticle, scale bar, zoom, height, grid and elevation of the centre, ZULU time, and wall screens show it in large print. At night the image is no longer black: AUTO switches to thermal.
-- Seven sensors to choose from: AUTO, DAY, NIGHT, white-hot thermal (WHOT), black-hot (BHOT) and two fused modes (FUS W, FUS B) that add building outlines. Continuous zoom from 0.25× to 8×, with the mouse wheel or the buttons.
-- Tasking like in an operations room: aim at a typed grid, click on the map, follow a group, log the view in the duty log, place a marker the whole side can see, and send the view to the screen or panel of your choice.
-
-### Détail technique
 - `fn_tocSat` : table des capteurs (`_sensors`) et effet `setPiPEffect` (wiki BI : 0 normal, 1 vision nocturne, 2 thermique blanc chaud, 3 correction de couleur, 7 thermique de remplacement « inversé » = noir chaud). DAY `[0]` (nuit : DAYN, correction de couleur ×3,5), NV `[1]`, WHOT `[2]`, BHOT `[7]`, FUSW `[2]`, FUSB `[7]` + contours des bâtiments (`nearestObjects House`, 40 au plus, recalculés toutes les 1,5 s, seulement sous 760 m de large) dessinés en traits tournés (`ctrlSetAngle`) : un r2t n'accepte qu'un effet à la fois. AUTO : DAY le jour, WHOT la nuit (avant : vision nocturne). « TI » de la 4.4 lu comme WHOT.
 - Zoom : 1× = 500 m de large, demi-largeur `250 / zoom`, bornée de 0,25× à 8× (31,25 à 1000 m ; avant 40 à 2500 m) ; actions `zoomTo` et `opt` (`jit` dérive, `terr` suivi du relief) dans `fn_tocRoom`, état du satellite à 9 champs (options). Modes purs `zoomOf`, `halfOf`, `altFov`, `fovDeg`, `scale` (largeur = 2 · hauteur · tan(fov / 2)), `bar` (barre d'échelle), `selfTest`.
 - Caméra : zoom et position glissés (fov lissé), dérive optionnelle (éteinte), relief non suivi en option ; résolution de la cible par poste : H 2048 x 1024 (PC du poste), M 1024 x 512 (écran à 8 m au plus), L 512 x 256 (plus loin), changée par `retarget` (même caméra, nouvelle cible). Une caméra par satellite et par poste, seulement si regardée (logique et plafond `toc_cam_max` / `toc_cam_range` inchangés).
