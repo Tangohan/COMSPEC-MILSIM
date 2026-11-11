@@ -205,16 +205,29 @@
     }
   }
 
-  // ---- Création d'une couverture : le pays et le portrait ne servent que pour une personne fictive
+  // ---- Création d'une couverture : seuls les papiers de l'identité choisie sont proposés, puis récapitulés
   var coverForm = document.querySelector('[data-opx-cover-form]');
   if (coverForm) {
-    var randomStep = coverForm.querySelector('[data-opx-cover-random]');
-    var syncSource = function () {
-      var checked = coverForm.querySelector('[data-opx-cover-source]:checked');
-      if (randomStep) { randomStep.hidden = !!checked && checked.value === 'athena'; }
+    var recap = coverForm.querySelector('[data-opx-cover-recap]');
+    var syncCover = function () {
+      var chosen = coverForm.querySelector('[data-opx-cover-identity]:checked');
+      var labels = [];
+      coverForm.querySelectorAll('[data-opx-cover-papers]').forEach(function (block) {
+        var on = !!chosen && block.getAttribute('data-opx-cover-papers') === chosen.value;
+        block.hidden = !on;
+        block.querySelectorAll('input[type="checkbox"]').forEach(function (box) {
+          box.disabled = !on;
+          if (on && box.checked) { labels.push(box.getAttribute('data-opx-label') || ''); }
+        });
+      });
+      if (!recap) { return; }
+      recap.hidden = !chosen;
+      recap.querySelector('[data-opx-recap-identity]').textContent = chosen ? chosen.getAttribute('data-opx-label') || '' : '';
+      recap.querySelector('[data-opx-recap-papers]').textContent = labels.join(' · ');
+      recap.querySelector('[data-opx-recap-none]').hidden = labels.length > 0;
     };
-    coverForm.addEventListener('change', syncSource);
-    syncSource();
+    coverForm.addEventListener('change', syncCover);
+    syncCover();
   }
 
   // ---- Spécimen : impression et image PNG

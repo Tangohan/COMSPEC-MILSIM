@@ -17,6 +17,9 @@ declare(strict_types=1);
  * @var array<string, string> $idProposal
  * @var int $idCoverQuota
  * @var int $idEditId
+ * @var array{by_identity: array<int, list<array<string, mixed>>>, by_document: array<int, list<array<string, mixed>>>} $idCoverUsage
+ * @var int $idCoverIdentity identité présélectionnée dans la création guidée d'une couverture (0 : aucune)
+ * @var string $idCoverWindow « papiers » : ouvre le choix des papiers de la couverture $idEditId
  * @var bool $idUnavailable
  * @var bool $idSteamLinked
  * @var string|null $idManagerUrl
@@ -56,7 +59,8 @@ $historyLabels = [
     'op_identity.document_renew' => 'Renouvellement demandé', 'op_identity.cover_edit' => 'Légende modifiée',
     'op_identity.cover_duplicate' => 'Couverture dupliquée', 'op_identity.cover_revoke' => 'Couverture révoquée',
     'op_identity.cover_activate' => 'Couverture active choisie', 'id_cover.export_generate' => 'Couverture générée',
-    'id_cover.export_athena' => 'Couverture générée depuis l’identité Athena', 'id_cover.export_download' => 'Couverture téléchargée',
+    'op_identity.cover_papers' => 'Papiers de la couverture changés', 'op_identity.cover_attach' => 'Couverture rattachée à une identité',
+    'id_cover.export_athena' => 'Couverture créée sur une identité', 'id_cover.export_download' => 'Couverture téléchargée',
     'id_member.document_lost' => 'Papier déclaré perdu', 'id_member.document_stolen' => 'Papier déclaré volé',
     'id_member.document_delete' => 'Demande annulée', 'id_member.sync_send_game' => 'Identité envoyée en jeu',
     'id_member.kit_save' => 'Papiers portés en jeu recomposés',
