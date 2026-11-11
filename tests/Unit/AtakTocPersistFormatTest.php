@@ -7,7 +7,7 @@ namespace Tests\Unit;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Sauvegarde versionnée de la salle TOC (ATAK natif 4.10.0, feuille de route TOC n° 10) : format 3, rangs publiés du
+ * Sauvegarde versionnée de la salle TOC (ATAK natif 4.12.0, feuille de route TOC n° 10) : format 3, rangs publiés du
  * format 2 inchangés, nouveaux champs à la fin, migration d'une sauvegarde plus ancienne rejouée ici sur un exemple
  * (même table _fields, même calcul que « migrate » de fn_tocPersist.sqf), copies de secours.
  * Lecture du code seulement : rien de tout cela n'a tourné en jeu.

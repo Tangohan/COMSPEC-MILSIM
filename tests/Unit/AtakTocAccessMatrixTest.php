@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Droits de la salle TOC (ATAK natif 4.10.0, feuille de route TOC n° 11, 14, 15) : table des rôles et des droits de
+ * Droits de la salle TOC (ATAK natif 4.12.0, feuille de route TOC n° 11, 14, 15) : table des rôles et des droits de
  * fn_tocAccess.sqf rejouée ici (mêmes tables JSON, même calcul), règle par défaut validée par TTRD (seuls le chef de
  * poste et l'administrateur Zeus changent les écrans et les salles), verrou, contrôle côté serveur.
  * Lecture du code seulement : rien de tout cela n'a tourné en jeu.

@@ -1,6 +1,6 @@
 # Droits, postes, verrou et journal de la salle TOC
 
-ATAK natif 4.10.0. Fichiers : `fn_tocAccess.sqf` (droits et verrou), `fn_tocStation.sqf` (postes nommés),
+ATAK natif 4.12.0. Fichiers : `fn_tocAccess.sqf` (droits et verrou), `fn_tocStation.sqf` (postes nommés),
 `fn_tocHandover.sqf` (relève), `fn_tocJournal.sqf` (journal des actions), `fn_tocDiag.sqf` (diagnostic). Feuille de
 route : `docs/audit/2026-11-toc-feuille-de-route.md` (n° 10 à 17, 35, Z2 à Z4). Tout est tenu par le serveur du jeu,
 sans Athena ni téléphone.
@@ -73,7 +73,7 @@ ou Zeus peut le lever. Il n'est pas gardé d'une partie à l'autre.
   client ne peut pas l'écraser. Les variables publiques (`COMSPEC_ATAK_TocAccess`, `COMSPEC_ATAK_TocStations`,
   `COMSPEC_ATAK_TocHandoverPending`) n'en sont que des copies pour l'affichage.
 - Le journal et les relèves ne sont envoyés qu'à la demande, à qui en a le droit, pour son camp.
-- Un client dont le mod est d'avant la 4.10.0 envoie encore l'ancien événement : son émetteur est inconnu, il n'a donc
+- Un client dont le mod est d'avant la 4.12.0 envoie encore l'ancien événement : son émetteur est inconnu, il n'a donc
   que les droits d'un simple opérateur, et rien dans une salle verrouillée.
 
 ## Points d'accroche pour les autres fichiers du TOC

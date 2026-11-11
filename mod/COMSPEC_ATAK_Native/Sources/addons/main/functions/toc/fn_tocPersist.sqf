@@ -18,7 +18,7 @@
     Avant la 4.4.0 : seuls les écrans (classe, position, nom, camp, affichage, cadrage) et le flux étaient gardés,
     10 s après un changement d'écran.
     Modes (serveur) : ["save"] (écriture regroupée) | ["write"] | ["restore"] | ["clear"] | ["watch"] (toutes les 15 s)
-    Format 3 (4.10.0, feuille de route TOC n° 10) : même tableau, mêmes rangs que le format 2 publié
+    Format 3 (4.12.0, feuille de route TOC n° 10) : même tableau, mêmes rangs que le format 2 publié
     [format, date, écrans, flux, poste, salles, [marqueurs, plans]], et à la suite : journal des actions (fn_tocJournal),
     postes nommés (fn_tocStation), relèves (fn_tocHandover), méta [version du mod, carte, mission, écritures]. Table
     _fields : un nouveau champ s'ajoute toujours à la fin, jamais au milieu. Une sauvegarde plus ancienne (formats 1 et

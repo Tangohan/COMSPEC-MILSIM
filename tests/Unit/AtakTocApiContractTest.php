@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
- * API du TOC pour les créateurs de mission (ATAK natif 4.10.0, feuille de route TOC Z4) et bibliothèque de
+ * API du TOC pour les créateurs de mission (ATAK natif 4.12.0, feuille de route TOC Z4) et bibliothèque de
  * préréglages (Z3) : contrôle des arguments rejoué ici sur la table _sig de fn_tocApi.sqf, verbes et événements tous
  * documentés avec un exemple (docs/TOC-API.md), texte d'échange d'un préréglage relu et réécrit à l'identique.
  * Lecture du code seulement : rien de tout cela n'a tourné en jeu.

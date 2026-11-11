@@ -28,7 +28,8 @@ switch (_mode) do {
         private _raw = if (isNil "comspec_atak_native_fnc_tocStatus") then { [] } else { ["feed", _side] call comspec_atak_native_fnc_tocStatus };
         if (isNil "_raw" || {!(_raw isEqualType [])} || {(count _raw) < 2}) then { _raw = missionNamespace getVariable [format ["COMSPEC_ATAK_TocFeed_%1", _side], []]; };
         _raw params [["_ft", -1], ["_nodes", []], ["_events", []], ["_stats", [0, 0, 0, 0]]];
-        private _out = _nodes apply { private _n = +_x; _n set [9, "P"]; _n };
+        // 4.11.0 : le serveur publie aussi les pistes du jeu (fn_tocTracks, source « J ») ; elles restent « source directe » ici.
+        private _out = _nodes apply { private _n = +_x; _n set [9, ["P", "D"] select ((_n param [9, "A"]) isEqualTo "J")]; _n };
         if (missionNamespace getVariable ["comspec_atak_native_toc_direct", true]) then {
             // Véhicules et piétons déjà couverts par un nœud de téléphone.
             private _cov = createHashMap;

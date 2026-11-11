@@ -1,6 +1,6 @@
 # API du TOC pour les créateurs de mission
 
-Version de l'API : **1.0** (ATAK natif 4.10.0). Fichier : `fn_tocApi.sqf`. Feuille de route : `docs/audit/2026-11-toc-feuille-de-route.md` (Z4).
+Version de l'API : **1.0** (ATAK natif 4.12.0). Fichier : `fn_tocApi.sqf`. Feuille de route : `docs/audit/2026-11-toc-feuille-de-route.md` (Z4).
 
 Tout se passe dans le jeu, sur le serveur de la partie : ni Athena, ni site, ni téléphone. Une mission sans aucun
 téléphone peut créer une salle, poser des écrans, changer leur affichage, verrouiller la salle et suivre ce qui s'y
@@ -409,7 +409,7 @@ Ce sont des événements CBA : on peut aussi s'y abonner avec `CBA_fnc_addEventH
 ## Sauvegarde de la salle
 
 La salle est gardée d'une partie à l'autre dans le profil du serveur (réglage « Garder les écrans TOC »). Depuis la
-4.10.0 la sauvegarde est au format 3 : mêmes rangs que le format 2, et à la suite le journal des actions, les postes
+4.12.0 la sauvegarde est au format 3 : mêmes rangs que le format 2, et à la suite le journal des actions, les postes
 nommés, les relèves et une ligne de méta. Une sauvegarde plus ancienne est complétée à la lecture ; une copie de
 secours est gardée avant la première écriture. Sur le serveur :
 
@@ -423,4 +423,4 @@ private _texte = ["export"] call comspec_atak_native_fnc_tocPersist;    // « CO
 ## Non vérifié en jeu
 
 Cette API a été écrite et vérifiée par lecture du code et par tests statiques. Aucun essai en jeu n'a été fait à la
-4.10.0.
+4.12.0.

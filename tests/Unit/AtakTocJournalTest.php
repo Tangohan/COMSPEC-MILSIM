@@ -7,7 +7,7 @@ namespace Tests\Unit;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Journal des actions du TOC, postes nommés et relève (ATAK natif 4.10.0, feuille de route TOC n° 13, 16, 17) :
+ * Journal des actions du TOC, postes nommés et relève (ATAK natif 4.12.0, feuille de route TOC n° 13, 16, 17) :
  * tampon en anneau rejoué ici, table des actions, résumé de relève rejoué sur un état de salle d'exemple.
  * Lecture du code seulement : rien de tout cela n'a tourné en jeu.
  */

@@ -5,7 +5,7 @@
     salle, ou désigné par le réglage ou la mission), administrateur Zeus (Zeus, hôte, admin connecté, gestionnaires du
     serveur : fn_adminAllowed). Règle par défaut validée par TTRD : seuls le chef de poste et l'administrateur Zeus
     changent les écrans et les salles. Réglage « Droits de la salle TOC » : rôles (défaut), ouvert (comme avant la
-    4.10.0), administrateurs seulement.
+    4.12.0), administrateurs seulement.
     Le serveur ne croit jamais le client : l'auteur d'une demande est retrouvé par remoteExecutedOwner (mode « actor »),
     son camp et son identifiant sont lus sur le serveur. L'état qui fait foi vit dans localNamespace du serveur (un
     client ne peut pas l'écraser) ; missionNamespace COMSPEC_ATAK_TocAccess n'en est qu'une copie pour l'affichage :
@@ -305,7 +305,7 @@ switch (_mode) do {
         true
     };
     case "legacy": {
-        // Ancien événement CBA (client d'avant la 4.10.0) : l'émetteur est inconnu, il n'a donc que les droits d'un
+        // Ancien événement CBA (client d'avant la 4.12.0) : l'émetteur est inconnu, il n'a donc que les droits d'un
         // simple opérateur, et rien dans une salle verrouillée. Écrit au journal.
         if (!isServer) exitWith { false };
         _a params [["_kind", ""], ["_load", []]];

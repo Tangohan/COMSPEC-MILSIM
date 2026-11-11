@@ -7,7 +7,7 @@ namespace Tests\Unit;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Jeu de couleurs « nuit » du thème TOC (ATAK natif 4.10.0, feuille de route TOC n° 35) : ajout pur. Mêmes noms de
+ * Jeu de couleurs « nuit » du thème TOC (ATAK natif 4.12.0, feuille de route TOC n° 35) : ajout pur. Mêmes noms de
  * jetons que le jour, mêmes contrastes minimaux, couleurs plus sombres ; les jetons du jour gardent leur valeur publiée.
  * Lecture du code seulement : rien de tout cela n'a tourné en jeu.
  */

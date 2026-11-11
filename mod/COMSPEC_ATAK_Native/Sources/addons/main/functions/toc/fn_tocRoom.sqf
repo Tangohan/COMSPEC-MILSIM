@@ -14,7 +14,8 @@
                        options [dérive de la plateforme, suivi du relief]]
       3 main courante [[heure ZULU, genre, auteur, texte]...] (les plus récentes à la fin, 150 au plus)
       4 exécution    [[id, n°, événement, mot de code, élément, heure prévue, heure réelle ZULU ("" : pas encore)]...]
-      5 demandes     [[id, heure ZULU, genre, demandeur, UID du demandeur, grille, texte, statut, réponse, [x, y]]...]
+      5 demandes     [[id, heure ZULU, genre, demandeur, UID du demandeur, grille, texte, statut, réponse, [x, y],
+                       détail [[libellé, valeur]...] (4.11.0 : lignes de la saisie du poste, 9 lignes MEDEVAC)]...]
       6 FLASH        [texte, auteur, heure ZULU, serverTime] ou []
       7 postes       [[poste, opérateur, UID, heure ZULU de prise]...]
       8 pertes       [[élément, blessés amis, tués amis, ennemis déclarés neutralisés, ennemis déclarés blessés ou capturés]...]
@@ -22,11 +23,17 @@
     Modes :
       ["init"]                            serveur (fn_tocScreen initServer) : aussi les entrées automatiques (comptes rendus,
                                           alertes, BDA en main courante ; MEDEVAC, appels de feu, ravitaillements en demandes ;
-                                          homme à terre, porteur d'ATAK tué, ennemis neutralisés déclarés par BDA en pertes)
-      ["initClient"]                      client : réponse du poste à une demande, dans le téléphone du demandeur
+                                          homme à terre, toute unité du camp tuée (4.11.0 : plus seulement les porteurs
+                                          d'ATAK), ennemis neutralisés déclarés par BDA en pertes)
+      ["initClient"]                      client : réponse du poste à une demande, dans le téléphone du demandeur et dans
+                                          sa boîte du TOC (fn_tocInbox, lisible sans téléphone)
       ["state", camp]                     partout : état publié (vide si rien)
-      ["send", [action, args]]            client : demande au serveur pour son camp (libellé et UID joints)
-      ["do", [camp, action, args, libellé, UID]]   serveur
+      ["send", [action, args]]            client : demande au serveur pour son camp
+      ["req", [action, args, indicatif du poste]]   serveur, reçu d'un joueur (4.11.0) : le serveur retrouve lui-même le
+                                          joueur (remoteExecutedOwner), son camp, son nom et son UID ; rien de cela ne vient
+                                          plus du client. Action « entry » : saisie du poste (fn_tocEntry « apply »)
+      ["do", [camp, action, args, libellé, UID]]   serveur seulement (mission, modules, fn_tocWeb, fn_tocEntry) ; appelé
+                                          sur un client, il repart en « req » (camp, libellé et UID ignorés)
       ["dump"] / ["load", données]        serveur (fn_tocPersist) : chronos arrêtés à leur valeur, puis repris
       ["timerText", chrono]               partout : [texte, couleur RGBA, état "RUN" | "STOP" | "OVER", couleur #rrggbb]
       ["zulu"]                            partout : heure ZULU "HH:MM:SS" (horloge UTC du poste)
@@ -37,12 +44,15 @@
       | opt ["jit" | "terr", vrai | faux]
       log [genre, texte] | flash texte | flashClear | login poste | logout
       exAdd [événement, mot de code, élément, heure prévue] | exDone id | exUndo id | exDel id | exSet [lignes]
-      reqAdd [genre, demandeur, UID, grille, texte, [x, y]] | reqSet [id, statut, réponse] | reqDel id
+      reqAdd [genre, demandeur, UID, grille, texte, [x, y], détail [[libellé, valeur]...]] | reqSet [id, statut, réponse]
+      | reqDel id | reqExtra [id, détail] (saisie du poste qui complète une demande déjà reçue)
       kill [élément, clé "wia" | "kia" | "ekia" | "ewia", nombre]
     Exemple de mission (serveur) : ["do", ["WEST", "timerAdd", ["H-HOUR", "AT", 22 * 60], "Mission", ""]] call comspec_atak_native_fnc_tocRoom;
 */
 params [["_mode", "state"], ["_a", []]];
 private _fn = comspec_atak_native_fnc_tocRoom;
+// Appel direct d'un joueur par remoteExec : refusé (seul fn_tocRoom « req », qui vérifie l'émetteur, ouvre la suite).
+if (isServer && {isRemoteExecuted} && {!(remoteExecutedOwner in [0, 2])} && {isNil "_tocTrusted"} && {!(_mode in ["req", "state", "zulu", "timerText"])}) exitWith { false };
 private _sides = ["WEST", "EAST", "GUER", "CIV"];
 private _two = { private _n = floor _this; [str _n, "0" + str _n] select (_n < 10) };
 // Satellite sans position (-1) : centré sur le poste à la première prise en main, zoom 0,5× (1 km de large). Capteur
@@ -54,7 +64,7 @@ switch (_mode) do {
         format ["%1:%2:%3", _h call _two, _mi call _two, _s call _two]
     };
     case "me": {
-        format ["%1 · %2", ["callsign"] call comspec_atak_native_fnc_tocPost, name player]
+        format ["%1 · %2", ["callsign"] call comspec_atak_native_fnc_tocPost, [player] call comspec_atak_native_fnc_tocDisplayName]
     };
     case "state": {
         private _s = missionNamespace getVariable [format ["COMSPEC_ATAK_TocRoom_%1", _a], []];
@@ -87,8 +97,36 @@ switch (_mode) do {
     case "send": {
         _a params [["_act", ""], ["_args", []]];
         if (!hasInterface || {isNull player}) exitWith { false };
-        ["comspec_atak_native_tocRoom", ["do", [str side group player, _act, _args, ["me"] call _fn, getPlayerUID player]]] call CBA_fnc_serverEvent;
+        // Serveur 4.11.0 ou plus : il retrouve lui-même qui demande. Serveur plus ancien : ancien envoi (repli).
+        if (missionNamespace getVariable ["COMSPEC_ATAK_TocSrvAuth", false]) then {
+            ["req", [_act, _args, ["callsign"] call comspec_atak_native_fnc_tocPost]] remoteExecCall ["comspec_atak_native_fnc_tocRoom", 2];
+        } else {
+            ["comspec_atak_native_tocRoom", ["do", [str side group player, _act, _args, ["me"] call _fn, getPlayerUID player]]] call CBA_fnc_serverEvent;
+        };
         true
+    };
+    case "req": {
+        if (!isServer) exitWith { false };
+        _a params [["_act", ""], ["_args", []], ["_post", ""]];
+        // Émetteur : la machine qui a envoyé la demande, jamais ce qu'elle déclare. Appel local (hôte) : son joueur.
+        private _p = objNull;
+        if (isRemoteExecuted) then {
+            private _owner = remoteExecutedOwner;
+            _p = (allPlayers select { (owner _x) isEqualTo _owner }) param [0, objNull];
+        } else {
+            if (hasInterface) then { _p = player; };
+        };
+        if (isNull _p || {!(_act isEqualType "")} || {_act in ["", "dropUid"]}) exitWith { false };
+        private _side = str side group _p;
+        if !(_side in _sides) exitWith { false };
+        if !(_post isEqualType "") then { _post = ""; };
+        _post = (trim _post) select [0, 24];
+        private _who = format ["%1 · %2", [_post, "TOC"] select (_post isEqualTo ""), [_p] call comspec_atak_native_fnc_tocDisplayName];
+        private _uid = getPlayerUID _p;
+        // Émetteur vérifié : la suite (fn_tocRoom « do », fn_tocEntry, fn_tocInbox, fn_tocFeed) est ouverte pour cet appel.
+        private _tocTrusted = true;
+        if (_act isEqualTo "entry") exitWith { ["apply", [_side, _who, _uid, _args]] call comspec_atak_native_fnc_tocEntry };
+        ["do", [_side, _act, _args, _who, _uid]] call _fn
     };
     case "initClient": {
         if (!hasInterface) exitWith {};
@@ -97,12 +135,19 @@ switch (_mode) do {
             params [["_k", ""], ["_lbl", ""], ["_ans", ""], ["_who", ""]];
             ["TACTICAL", format ["TOC · %1 %2%3", _k, _lbl, ["", " : " + _ans] select (_ans isNotEqualTo "")], 8, 60, "TOC"] call comspec_atak_native_fnc_notify;
         }] call CBA_fnc_addEventHandler;
+        // Sans téléphone : messages du poste, ordres et réponses gardés dans la boîte du TOC (fn_tocInbox).
+        ["initClient"] call comspec_atak_native_fnc_tocInbox;
     };
     case "init": {
         if (!isServer) exitWith {};
         if (missionNamespace getVariable ["COMSPEC_ATAK_TocRoomInit", false]) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_TocRoomInit", true];
-        ["comspec_atak_native_tocRoom", { _this call comspec_atak_native_fnc_tocRoom; }] call CBA_fnc_addEventHandler;
+        // 4.11.0 : les demandes des joueurs arrivent par « req » (remoteExecCall), où le serveur lit lui-même l'émetteur.
+        // L'ancien événement comspec_atak_native_tocRoom, qui croyait le camp et l'UID écrits par le client, n'est plus
+        // écouté : un client resté en 4.10 ou moins ne peut plus écrire dans la salle (il doit mettre le mod à jour).
+        missionNamespace setVariable ["COMSPEC_ATAK_TocSrvAuth", true, true];
+        // Tableau des ordres du camp et accusés (fn_tocInbox), lisibles sans l'app Tâches.
+        ["initServer"] call comspec_atak_native_fnc_tocInbox;
         // Poste TOC web (Athena) : commandes du site remises par les joueurs du camp (fn_tocWeb).
         ["initServer"] call comspec_atak_native_fnc_tocWeb;
         // Ce que le réseau ATAK apporte au poste (événements de camp relayés par le serveur, rejoués ici) :
@@ -164,13 +209,11 @@ switch (_mode) do {
             // Ennemis déclarés neutralisés par compte rendu (BDA) : comptés à l'élément de l'auteur.
             if (_e > 0) then { ["do", [_side, "kill", [[_side, "", _by] call COMSPEC_ATAK_TocElOf, "ekia", _e], "Réseau ATAK", ""]] call comspec_atak_native_fnc_tocRoom; };
         }] call CBA_fnc_addEventHandler;
-        // Porteur d'ATAK tué : son téléphone le signale au réseau (balise perdue avec l'homme) ; compté à son élément.
+        // Toute unité du camp tuée est comptée à son élément (4.11.0 ; avant : seulement un porteur d'ATAK). Seulement
+        // pour un camp qui a un TOC, et regroupé : une écriture de la salle toutes les 5 s au plus (fn_tocTracks « killed »).
         addMissionEventHandler ["EntityKilled", {
             params ["_u"];
-            if (!(_u isKindOf "CAManBase") || {!([_u] call comspec_atak_native_fnc_hasDevice)}) exitWith {};
-            private _side = str side group _u;
-            if !(_side in ["WEST", "EAST", "GUER", "CIV"]) exitWith {};
-            ["do", [_side, "kill", [groupId group _u, "kia", 1], "Réseau ATAK", ""]] call comspec_atak_native_fnc_tocRoom;
+            ["killed", _u] call comspec_atak_native_fnc_tocTracks;
         }];
         // Opérateur parti : ses satellites et son poste sont libérés.
         addMissionEventHandler ["HandleDisconnect", {
@@ -210,7 +253,13 @@ switch (_mode) do {
         } forEach _a;
     };
     case "do": {
-        if (!isServer) exitWith { ["comspec_atak_native_tocRoom", ["do", _a]] call CBA_fnc_serverEvent; };
+        if (!isServer) exitWith {
+            if (missionNamespace getVariable ["COMSPEC_ATAK_TocSrvAuth", false]) then {
+                ["req", [_a param [1, ""], _a param [2, []], ""]] remoteExecCall ["comspec_atak_native_fnc_tocRoom", 2];
+            } else {
+                ["comspec_atak_native_tocRoom", ["do", _a]] call CBA_fnc_serverEvent;
+            };
+        };
         _a params [["_side", ""], ["_act", ""], ["_args", []], ["_who", ""], ["_uid", ""]];
         if !(_side in _sides) exitWith { false };
         if !(_who isEqualType "") then { _who = str _who; };
@@ -226,6 +275,11 @@ switch (_mode) do {
             if ((count _l) > 150) then { _l deleteRange [0, (count _l) - 150]; };
         };
         private _newId = { format ["%1%2", _this, floor (serverTime * 100) + floor random 1000] };
+        // Détail d'une demande (saisie du poste) : 16 lignes [libellé, valeur] au plus, textes bornés.
+        private _detail = {
+            if !(_this isEqualType []) exitWith { [] };
+            ((_this select { _x isEqualType [] && {(count _x) >= 2} }) select [0, 16]) apply { [[_x select 0, 48] call _txt, [_x select 1, 80] call _txt] }
+        };
         private _changed = true;
         private _tm = _st select 1;
         private _ti = _tm findIf { (_x select 0) isEqualTo _args };
@@ -378,10 +432,11 @@ switch (_mode) do {
                 _st set [4, _ex];
             };
             case "reqAdd": {
-                _args params [["_k", "DEMANDE"], ["_by", ""], ["_byUid", ""], ["_grid", ""], ["_t", ""], ["_p", []]];
+                _args params [["_k", "DEMANDE"], ["_by", ""], ["_byUid", ""], ["_grid", ""], ["_t", ""], ["_p", []], ["_extra", []]];
                 private _rq = _st select 5;
+                if !(_byUid isEqualType "") then { _byUid = ""; };
                 _rq pushBack ["R" call _newId, _zulu, toUpper ([_k, 16] call _txt), [_by, 32] call _txt, _byUid, [_grid, 12] call _txt, [_t, 200] call _txt, "RECUE", "",
-                    [[], [round (_p select 0), round (_p select 1)]] select (_p isEqualType [] && {(count _p) >= 2})];
+                    [[], [round (_p select 0), round (_p select 1)]] select (_p isEqualType [] && {(count _p) >= 2}), _extra call _detail];
                 if ((count _rq) > 40) then { _rq deleteRange [0, (count _rq) - 40]; };
                 ["DEMANDE", format ["%1 de %2 reçue", toUpper ([_k, 16] call _txt), [_by, 32] call _txt]] call _log;
             };
@@ -401,6 +456,14 @@ switch (_mode) do {
                 };
             };
             case "reqDel": { _st set [5, (_st select 5) select { (_x select 0) isNotEqualTo _args }]; };
+            case "reqExtra": {
+                _args params [["_id", ""], ["_extra", []]];
+                private _r = (_st select 5) select { (_x select 0) isEqualTo _id };
+                private _d = _extra call _detail;
+                if ((count _r) isEqualTo 0 || {_d isEqualTo []}) exitWith { _changed = false; };
+                (_r select 0) set [10, _d];
+                ["DEMANDE", format ["%1 de %2 complétée au poste", (_r select 0) select 2, (_r select 0) select 3]] call _log;
+            };
             case "kill": {
                 _args params [["_el", ""], ["_k", ""], ["_n", 1]];
                 private _i = ["wia", "kia", "ekia", "ewia"] find _k;

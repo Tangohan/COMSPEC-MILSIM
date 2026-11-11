@@ -14,7 +14,7 @@
       ["region", [affichage, nom, FLASH]]   région, descendue ou raccourcie sous un FLASH (table _flashRule)
       ["cols", table]               colonnes d'un tableau : [[clé, en-tête, x, l, alignement L|R|C|P (pastille), style]...]
       ["style", [contrôle, style, jeton, hauteur]]   police, taille (px virtuels sur la hauteur donnée, 900 par défaut), couleur
-    Jeu de couleurs « nuit » (4.10.0, feuille de route TOC n° 35) : table _tokensNight, mêmes noms de jetons, pour la
+    Jeu de couleurs « nuit » (4.12.0, feuille de route TOC n° 35) : table _tokensNight, mêmes noms de jetons, pour la
     nuit et la faible lumière. Ajout pur : sans variante demandée, tout rend les couleurs du jour comme avant.
       ["variant"]                   "jour" | "nuit" : réglage « Thème des écrans TOC » (auto : nuit quand le soleil est couché)
       ["rgba", [jeton, alpha, variante]]   variante "jour" (défaut) | "nuit" | "auto" (suit le réglage)
