@@ -526,6 +526,93 @@
     return out;
   }
 
+  /* ---------- Import des marqueurs du jeu ---------- */
+  /**
+   * État de l'import : 'mismatch' (la partie en liaison est sur un autre terrain que le plan), 'nolink' (aucune partie
+   * en liaison et rien à montrer), 'empty' (partie en liaison, aucun marqueur), 'stale' (marqueurs du dernier relevé,
+   * la partie n'est plus en liaison), 'ok'.
+   */
+  function importState(game, planWorld, count) {
+    var gw = String((game && game.world) || '').toLowerCase(), pw = String(planWorld || '').toLowerCase();
+    if (gw && pw && gw !== pw) return 'mismatch';
+    var live = !!(game && game.live);
+    if (!count) return live ? 'empty' : 'nolink';
+    return live ? 'ok' : 'stale';
+  }
+  /** Filtre de la liste : f = { system (écarter les marqueurs de service), side ('' ou camp), box [x0,y0,x1,y1], q }. */
+  function markerFilter(recs, f) {
+    f = f || {};
+    return recs.filter(function (r) {
+      if (f.system && r.system) return false;
+      if (f.side && r.side && r.side !== f.side) return false;
+      if (f.box && !inBox(r.pos, f.box)) return false;
+      if (f.q && fuzzyScore(f.q, (r.label || '') + ' ' + (r.type || '') + ' ' + (r.gid || '')) <= 0) return false;
+      return true;
+    });
+  }
+  function markerKind(r) {
+    if (r.shape === 'ELLIPSE' || r.shape === 'RECTANGLE') return 'area';
+    if (r.shape === 'POLYLINE') return 'line';
+    if (r.el && r.el.kind === 'unit') return 'unit';
+    if (r.source === 'point') return 'point';
+    return 'icon';
+  }
+  /** Groupes de la liste : by = 'kind' | 'channel' | 'side'. Retour : [{ key, items }], ordre stable. */
+  function markerGroups(recs, by) {
+    var order = by === 'kind' ? ['unit', 'icon', 'point', 'area', 'line'] : [];
+    var groups = {};
+    recs.forEach(function (r) {
+      var k = by === 'channel' ? (r.channel === '' ? '?' : r.channel) : (by === 'side' ? (r.side || '?') : markerKind(r));
+      if (!groups[k]) { groups[k] = []; if (order.indexOf(k) < 0) order.push(k); }
+      groups[k].push(r);
+    });
+    return order.filter(function (k) { return groups[k]; }).map(function (k) { return { key: k, items: groups[k] }; });
+  }
+  /**
+   * Ce que l'import fera : éléments à ajouter, éléments déjà importés à mettre à jour, marqueurs ignorés.
+   * o : { mode: 'update' | 'skip' | 'duplicate' (marqueur déjà dans le plan, même identifiant du jeu), link (garder
+   *       le lien), layer, phase, z, color(hex) => couleur de notre palette }.
+   * Retour : { add: [élément], update: { uid: élément }, skipped, known }.
+   */
+  function markerPlan(recs, els, o) {
+    o = o || {};
+    var by = {};
+    (els || []).forEach(function (e) { if (e.props && e.props.gid) by[e.props.gid] = e; });
+    var out = { add: [], update: {}, skipped: 0, known: 0 };
+    var z = o.z || 0;
+    recs.forEach(function (r) {
+      if (!r.el) { out.skipped++; return; }
+      var el = G.clone(r.el);
+      el.props = el.props || {};
+      if (el.kind !== 'unit' && o.color) el.props.color = o.color(el.props.color);
+      if (r.hatch) el.props.dash = 'dash';
+      el.props.gid = r.gid;
+      if (o.link) el.props.glink = true;
+      el.pts = el.pts.map(function (q) { return [Math.round(q[0] * 10) / 10, Math.round(q[1] * 10) / 10]; });
+      var old = by[r.gid];
+      if (old) out.known++;
+      if (old && o.mode === 'skip') { out.skipped++; return; }
+      if (old && o.mode !== 'duplicate') {
+        // Mise à jour : l'élément garde son identité, son calque, ses phases, son ordre et ses réglages propres.
+        var c = G.clone(old);
+        c.kind = el.kind; c.geom = el.geom; c.pts = el.pts;
+        Object.keys(el.props).forEach(function (k) { if (k !== 'glink') c.props[k] = el.props[k]; });
+        if (o.link) c.props.glink = true;
+        if (Array.isArray(c.props.track)) delete c.props.track;
+        out.update[c.uid] = c;
+        return;
+      }
+      el.uid = G.uid('e');
+      el.layer = o.layer || '';
+      el.phases = o.phase ? [o.phase] : [];
+      el.group = '';
+      el.z = ++z;
+      el.locked = false;
+      out.add.push(el);
+    });
+    return out;
+  }
+
   /* ---------- Divers ---------- */
   /** Grille à 10 chiffres (au mètre). */
   function grid10(x, y) {
@@ -570,6 +657,7 @@
     phaseStarts: phaseStarts, phaseAtTime: phaseAtTime, fmtH: fmtH, fmtZulu: fmtZulu, parseH: parseH,
     demSample: demSample, slopeAt: slopeAt, profile: profile, los: los, viewshed: viewshed, demFromBinary: demFromBinary,
     orbatTree: orbatTree, descendants: descendants, reparent: reparent, grid10: grid10, snapToGrid: snapToGrid, fuzzyScore: fuzzyScore,
-    scaleFactor: scaleFactor, rotationAngle: rotationAngle
+    scaleFactor: scaleFactor, rotationAngle: rotationAngle,
+    importState: importState, markerFilter: markerFilter, markerKind: markerKind, markerGroups: markerGroups, markerPlan: markerPlan
   };
 });

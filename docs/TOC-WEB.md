@@ -242,6 +242,34 @@ Côté mod (branche `feat/atak-toc-web-sync`) :
 - **Ce qui se fait en 3D** : choisir (clic, Maj), déplacer en glissant sur le relief, poser un symbole ponctuel (clic, ou glisser depuis la bibliothèque ou l'ORBAT), mesure, ligne de vue, coupe, zone vue, menus, propriétés, frise et briefing. **Le tracé des traits et des zones, les poignées, le cadre et le lasso restent en 2D.** Sans WebGL, la carte reste en 2D et le dit.
 - Limites : cellule de 50 m (pas de micro-relief), pas de bâtiments en volume (le module sait les extruder, l'éditeur ne les lui fournit pas encore), cadence non mesurée sur un vrai poste (rendu vérifié en logiciel seulement).
 
+### Importer les marqueurs présents en jeu
+
+Menu Importer › « Marqueurs présents en jeu » (`plan-markers.js`). Un volet s'ouvre à droite, la carte reste visible.
+
+- **Source** : les marqueurs que le site connaît pour le terrain du plan, par les API du calque « Marqueurs » du poste TOC web (`/api/atak/markers`, plus les points ATAK de `/api/atak/waypoints`) et l'état de la partie (`/atak/toc/api/state`). Aucune nouvelle route : mêmes droits et même cloisonnement par communauté.
+- **Une seule conversion** marqueur Arma → symbole : `TocTracks.markerRecord` (dans `toc-tracks.js`), lue par le calque du poste et par l'import. Icône → repère nommé ; marqueur OTAN (b_, o_, n_, c_, u_) → unité avec son affiliation ; ellipse → ellipse ; rectangle → zone à quatre sommets (tournée) ; pinceau → remplissage, hachures en bord à tirets ; tracé → trait ou flèche ; point ATAK → point de contrôle, de ralliement, objectif ou cible. Couleur ramenée à notre palette (le noir d'Arma, illisible sur la console sombre, devient blanc), texte gardé.
+- **Liste** : groupée par genre, canal ou camp ; recherche ; vignettes ; compteurs ; tout cocher. Filtres : ignorer les marqueurs de service (réapparition, modules, marqueurs vides sans texte), mon camp seulement, dans la vue affichée seulement. Aperçu des marqueurs cochés sur la carte.
+- **Destination** : calque et phase au choix. « Garder le lien avec le jeu » (non coché au départ) : sans lien c'est une copie ; avec le lien, « Actualiser les marqueurs liés » (Ctrl+K) remet l'élément à jour depuis le jeu.
+- **Ré-import** : un marqueur déjà importé (même identifiant en jeu, `props.gid`) est signalé ; au choix mettre à jour l'élément (il garde son calque, ses phases, sa note), ne pas y toucher, ou importer en double.
+- **Une seule opération** : tout l'import se défait d'un Ctrl+Z.
+- **États** : « Aucune partie en liaison », « Terrain de la partie différent de celui du plan », « Aucun marqueur » ; sans liaison mais avec des marqueurs déjà reçus, la liste le dit (« marqueurs du dernier relevé reçu »).
+- **Ce que le jeu n'envoie pas (à faire côté mod, rien n'a été changé ici)** : le canal du marqueur et son auteur ne sont pas dans ce que le site reçoit pour tous les marqueurs (le relevé local envoie identifiant, position, texte, type, couleur, forme, taille, direction, opacité) ; les groupes « par canal » et « par camp » rangent donc ces marqueurs sous « non précisé par le jeu ». Les pings ne sont pas proposés (éphémères).
+
+### Disposition de l'écran
+
+`plan-layout.js`. Chaque volet se replie en un rail d'icônes (boutons, `[` et `]` quand rien n'est choisi), la frise aussi (`9`), la barre d'outils par la palette ; « carte seule » par `0` (Échap pour revenir). Les bords se glissent (largeur des volets, hauteur de la frise ; double-clic : replier ou déplier). Sections repliables : camps de l'ORBAT, familles de la bibliothèque, calques du plan et du jeu, phases, ordre d'opération, légende ; groupes d'outils. Tout est gardé par membre dans le navigateur. À 1366 px et moins, le volet de droite reste replié tant que rien n'est choisi.
+
+### Tutoriel et aide
+
+`plan-help.js`. Tutoriel guidé à la première ouverture (et par l'aide) : dix étapes sur l'écran réel qui avancent quand le geste est fait, à passer, quitter et reprendre. « Plan d'exemple » : un plan privé créé pour s'exercer. Tiroir d'aide (bouton d'aide, touche `?`) : modes d'emploi illustrés, raccourcis, lexique des graphismes, recherche. Astuce au premier usage de chaque outil. Guide écrit : `docs/TOC-PLANS-TUTORIEL.md`, servi par `/atak/toc/plans/aide`.
+
+### Banc d'essai
+
+- `tests/Frontend/fixtures/plan-backend.php` : la vraie vue et les vrais services (PlanService, AtakPlanRepository, PlanValidator, PlanInterop) sur une base sqlite jetable ; tout avertissement PHP y est une erreur 500. `php -d extension=pdo_sqlite -S 127.0.0.1:8790 -t . tests/Frontend/fixtures/plan-backend.php`.
+- `tests/Frontend/cdp.py` : pilote Edge ou Chrome sans écran par DevTools (vrais événements de souris et de clavier, captures, relevé des erreurs de console et des réponses 4xx / 5xx).
+- `tests/Frontend/scenarios/` : `edition`, `disposition`, `marqueurs`, `temps_3d`, `fichiers_acces`, `tutoriel`, `logique` ; `python tests/Frontend/scenarios/tout.py` les enchaîne.
+- Limites du banc : le jeu, la salle, les marqueurs, l'ORBAT de la communauté et le relief y sont simulés dans le navigateur ; le presse-papiers du système n'existe pas sans écran (les événements copier / coller sont joués dans la page) ; le rendu 3D est logiciel.
+
 ### ORBAT Mapper
 
 L'ergonomie s'inspire d'[ORBAT Mapper](https://github.com/orbat-mapper/orbat-mapper) (licence **MIT**) : arbre ORBAT à glisser sur la carte, volets, palette de commandes, frise et lecture, propriétés à onglets. **Aucun code, aucune image ni marque n'en est repris** : l'éditeur reste en JavaScript sans cadre applicatif, sur Leaflet, milsymbol et three.js du site.
@@ -260,7 +288,7 @@ L'ergonomie s'inspire d'[ORBAT Mapper](https://github.com/orbat-mapper/orbat-map
 | `public/assets/css/atak-toc-plan.css` | présentation de l'éditeur (jetons du thème TOC) |
 | `app/Services/AtakToc/PlanTimeline.php`, `PlanInterop.php` | temps ; GeoJSON et KML |
 
-Essais : `tests/Unit/AtakTocPlanV2Test.php`, `AtakTocPlanV2ApiTest.php` ; `tests/Frontend/toc-plan-logic.test.cjs` (Node, ou `tests/Frontend/run-in-browser.html` sans Node). Banc de rendu sans base : `tests/Frontend/fixtures/plan-editor-harness.php` (plan d'exemple et relief synthétique), `plan-3d-demo.html`.
+Essais : `tests/Unit/AtakTocPlanV2Test.php`, `AtakTocPlanV2ApiTest.php` ; `tests/Frontend/toc-plan-logic.test.cjs` (Node, ou `tests/Frontend/run-in-browser.html` sans Node). Banc d'essai : voir plus bas ; démonstration de la vue 3D seule : `tests/Frontend/fixtures/plan-3d-demo.html`.
 
 ### Envoi en jeu et import depuis le jeu
 

@@ -11,8 +11,8 @@
   var play = { on: false, speed: 2, raf: 0, last: 0, lastDraw: 0 };
   var anim = null;
   var SPEEDS = [[0.5, '0,5 min/s'], [1, '1 min/s'], [2, '2 min/s'], [5, '5 min/s'], [15, '15 min/s'], [60, '1 h/s']];
-  var collapsed = false;
-  try { collapsed = window.localStorage.getItem('athena:toc:time-collapsed') === '1'; } catch (e) {}
+  // La frise repliée (plan-layout.js) n'est pas redessinée.
+  function folded() { return document.body.classList.contains('pe-hide-time'); }
 
   function tl() { return P.meta.timeline; }
   function range() { var t = tl(); return [t.start, t.start + t.dur]; }
@@ -45,17 +45,23 @@
   }
 
   /* ---------- Rendu ---------- */
+  function setHtml(el, html) { if (el && el._html !== html) { el._html = html; el.innerHTML = html; } }
   function renderBar() {
     var bar = $('#pe-timebar');
-    if (!bar) return;
+    if (!bar || !P.loaded) return;
     var t = P.time;
     var ph = P.phases.filter(function (x) { return x.uid === P.phase; })[0];
     var sub = t == null ? 'toutes les phases' : (ph ? (P.phases.indexOf(ph) + 1) + '. ' + ph.name : 'avant la première phase');
     var other = t != null ? (tl().zulu ? LG.fmtH(t) : LG.fmtZulu(tl().h, t)) : '';
-    $('#pe-clock').innerHTML = (t == null ? 'PLAN ENTIER' : esc(label(t))) + '<small>' + esc(sub + (other ? ' · ' + other : '')) + '</small>';
-    $('#pe-play').innerHTML = E.icon(play.on ? 'pause' : 'play', 16);
-    $('#pe-play').setAttribute('aria-label', play.on ? 'Pause' : 'Lecture');
-    $('#pe-play').title = play.on ? 'Pause (Espace)' : 'Lecture (Espace)';
+    // Rien n'est réécrit sans changement : un bouton redessiné sous le pointeur pendant la lecture perdrait le clic.
+    setHtml($('#pe-clock'), (t == null ? 'PLAN ENTIER' : esc(label(t))) + '<small>' + esc(sub + (other ? ' · ' + other : '')) + '</small>');
+    var pb = $('#pe-play');
+    if (pb.getAttribute('data-on') !== String(play.on)) {
+      pb.setAttribute('data-on', String(play.on));
+      pb.innerHTML = E.icon(play.on ? 'pause' : 'play', 16);
+      pb.setAttribute('aria-label', play.on ? 'Pause' : 'Lecture');
+      pb.title = play.on ? 'Pause (Espace)' : 'Lecture (Espace)';
+    }
     $('#pe-whole').classList.toggle('is-on', t == null);
     $('#pe-autokey').classList.toggle('is-on', !!P.autoKey);
     $('#pe-autokey').setAttribute('aria-pressed', String(!!P.autoKey));
@@ -63,7 +69,7 @@
   }
   function renderTrack() {
     var el = trackEl();
-    if (!el || collapsed) return;
+    if (!el || !P.loaded || folded()) return;
     var w = el.clientWidth;
     if (!w) return;
     var r = range();
@@ -122,6 +128,7 @@
     var r = range();
     if (P.time == null || P.time >= r[1] - 0.01) E.setTime(r[0]);
     play.on = true; play.last = performance.now(); play.lastDraw = 0;
+    E.emit('play', true);
     renderBar();
     play.raf = requestAnimationFrame(tick);
   }
@@ -277,11 +284,13 @@
       tl().phases[drag.uid] = Math.max(lo, Math.min(hi, Math.round(tOf(ev.clientX))));
       P.phases[i].time_label = LG.fmtH(tl().phases[drag.uid]);
       drag.changed = true;
+      // Dès le premier pas du glisser : un relevé du site arrivant avant le relâchement ne doit pas remettre l'ancien début.
+      P.metaDirty = true; P.phasesDirty = true;
       renderTrack();
     }
     if (drag.type === 'event' && P.canEdit) {
       var e2 = tl().events.filter(function (x) { return x.uid === drag.uid; })[0];
-      if (e2) { e2.t = Math.round(tOf(ev.clientX)); drag.changed = true; renderTrack(); }
+      if (e2) { e2.t = Math.round(tOf(ev.clientX)); drag.changed = true; P.metaDirty = true; renderTrack(); }
     }
     if (drag.type === 'key') { drag.newT = Math.round(tOf(ev.clientX)); var k = $('[data-kf="' + drag.uid + '|' + drag.t + '"]'); if (k) k.style.left = xOf(drag.newT).toFixed(1) + 'px'; }
   }
@@ -318,7 +327,7 @@
   E.action('phaseNext', 'Phase suivante', function () { stepPhase(1); }, { key: 'Page suiv.', group: 'Temps' });
   E.action('phasePrev', 'Phase précédente', function () { stepPhase(-1); }, { key: 'Page préc.', group: 'Temps' });
   E.action('wholePlan', 'Afficher le plan entier (hors du temps)', function () { stop(); E.setPhase(null); }, { group: 'Temps' });
-  E.action('autoKey', 'Clé auto : déplacer une unité pose une image clé', function () { P.autoKey = !P.autoKey; if (P.autoKey && P.time == null) E.setTime(range()[0]); E.say(P.autoKey ? 'Clé auto : déplacer une unité à un instant de la frise lui pose une image clé.' : 'Clé auto coupée : déplacer une unité déplace toute sa trajectoire.'); renderBar(); }, { edit: true, group: 'Temps' });
+  E.action('autoKey', 'Clé auto : déplacer une unité pose une image clé', function () { P.autoKey = !P.autoKey; if (P.autoKey && P.time == null) E.setTime(range()[0]); E.say(P.autoKey ? 'Clé auto : déplacer une unité à un instant de la frise lui pose une image clé.' : 'Clé auto coupée : déplacer une unité déplace toute sa trajectoire.'); renderBar(); E.emit('autokey', P.autoKey); }, { edit: true, group: 'Temps' });
   E.action('addPhase', 'Ajouter une phase', function () { E.addPhase(); render(); }, { edit: true, group: 'Temps' });
   E.action('addEvent', 'Ajouter un repère sur la frise', function () { var t = P.time == null ? 0 : P.time; var v = window.prompt('Nom du repère à ' + LG.fmtH(t) + ' :', ''); if (v && v.trim()) addEvent(t, v.trim(), 'event'); }, { edit: true, group: 'Temps' });
   E.action('excheck', 'Poser les lignes EXCHECK du poste sur la frise', importExcheck, { edit: true, group: 'Temps' });
@@ -326,7 +335,7 @@
 
   E.on('init', function () {
     var foot = $('#pe-time');
-    foot.innerHTML = '<div class="pe-timebar" id="pe-timebar">' +
+    foot.innerHTML = '<div class="pe-div is-row" data-div="time" role="separator" aria-orientation="horizontal" title="Glisser : hauteur de la frise · double-clic : replier ou déplier"></div><div class="pe-timebar" id="pe-timebar">' +
       '<button type="button" class="pe-tbtn" data-run="phasePrev" title="Phase précédente (Page préc.)" aria-label="Phase précédente">' + E.icon('prev', 16) + '</button>' +
       '<button type="button" class="pe-tbtn" id="pe-play" data-run="play"></button>' +
       '<button type="button" class="pe-tbtn" data-run="phaseNext" title="Phase suivante (Page suiv.)" aria-label="Phase suivante">' + E.icon('next', 16) + '</button>' +
@@ -338,20 +347,10 @@
       '<button type="button" class="toc-btn" data-run="addPhase" data-edit-only>' + E.icon('plus', 14) + 'Phase</button>' +
       '<button type="button" class="toc-btn" data-run="addEvent" data-edit-only>' + E.icon('flag', 14) + 'Repère</button>' +
       '<button type="button" class="toc-btn" data-run="excheck" data-edit-only title="Poser les lignes EXCHECK du poste TOC sur la frise">EXCHECK</button>' +
-      '<button type="button" class="pe-tbtn" id="pe-time-fold" aria-expanded="' + !collapsed + '" aria-controls="pe-track" title="Replier ou déplier la frise" aria-label="Replier ou déplier la frise">' + E.icon('caret', 16) + '</button>' +
+      '<button type="button" class="pe-tbtn" id="pe-time-fold" data-collapse="time" aria-expanded="true" aria-controls="pe-track" title="Replier ou déplier la frise (9)" aria-label="Replier ou déplier la frise">' + E.icon('caret', 16) + '</button>' +
       '</div><div class="pe-track" id="pe-track"></div>';
-    foot.classList.toggle('is-collapsed', collapsed);
-    $('#pe-time-fold').style.transform = collapsed ? 'rotate(-90deg)' : 'rotate(90deg)';
     $('#pe-speed').addEventListener('change', function () { play.speed = Number(this.value) || 2; });
     $('#pe-track').addEventListener('pointerdown', onTrackDown);
-    $('#pe-time-fold').addEventListener('click', function () {
-      collapsed = !collapsed;
-      foot.classList.toggle('is-collapsed', collapsed);
-      this.setAttribute('aria-expanded', String(!collapsed));
-      this.style.transform = collapsed ? 'rotate(-90deg)' : 'rotate(90deg)';
-      try { window.localStorage.setItem('athena:toc:time-collapsed', collapsed ? '1' : '0'); } catch (e) {}
-      setTimeout(function () { if (E.tm) E.tm.map.invalidateSize(); if (E.view3d) E.view3d.resize(); renderTrack(); }, 40);
-    });
     document.addEventListener('click', function (e) {
       var b = e.target.closest ? e.target.closest('[data-brief]') : null;
       if (b) { var d = Number(b.getAttribute('data-brief')); if (d === 0) setBriefing(false); else stepPhase(d, true); }
@@ -360,7 +359,9 @@
     });
     document.addEventListener('fullscreenchange', function () { if (!document.fullscreenElement && P.briefing) setBriefing(false); });
     window.addEventListener('resize', function () { renderTrack(); });
+    var prevHook = E.keyHook;
     E.keyHook = function (e) {
+      if (prevHook && !P.briefing && prevHook(e)) return true;
       var k = e.key;
       if (P.briefing) {
         if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); stepPhase(1, true); return true; }

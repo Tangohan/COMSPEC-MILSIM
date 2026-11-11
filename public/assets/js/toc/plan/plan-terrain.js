@@ -444,6 +444,7 @@
       note3d();
       $('#plan-hint').textContent = 'Glisser : déplacer la vue · clic droit ou Ctrl+glisser : tourner et incliner · molette : rapprocher · clic : choisir · glisser un élément choisi : le déplacer sur le relief';
       box.focus({ preventScroll: true });
+      E.emit('mode', '3d');
     };
     if (view3d) { show(); return; }
     if (demState === 'idle') loadDem();
@@ -545,6 +546,7 @@
     E.setTool(P.tool);
     E.renderAll();
     renderAnalysis(null);
+    E.emit('mode', '2d');
   }
   function toggle3d() { if (P.mode === '3d') close3d(); else open3d(); }
 

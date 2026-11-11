@@ -16,6 +16,8 @@ $tocExtraBoot = [
     'sharedDoc' => $tocSharedDoc ?? null,
     // Module de la vue 3D : chargé seulement quand la vue 3D est ouverte.
     'plan3dUrl' => $a('assets/js/toc/plan/plan-3d.js'),
+    // Guide écrit (docs/TOC-PLANS-TUTORIEL.md), lié depuis le tiroir d'aide.
+    'helpUrl' => url('atak/toc/plans/aide'),
 ];
 $tocKeys = [
     ['Ctrl + K', 'Palette de commandes : toute action, unité, calque, phase ou grille'], ['?', 'Cette aide'],
@@ -28,7 +30,7 @@ $tocKeys = [
     ['Ctrl + A', 'Tout choisir'], ['Ctrl + G · Ctrl + Maj + G', 'Grouper · dégrouper'], ['Ctrl + ] · Ctrl + [', 'Avancer · reculer d’un cran'], ['Ctrl + Maj + ] · [', 'Premier plan · arrière-plan'],
     ['[ · ]', 'Pivoter de 15°'], ['+ · −', 'Agrandir · réduire'], ['Flèches', 'Décaler de 10 m (Maj : 100 m, Alt : 1 m)'],
     ['K · Ctrl + H', 'Verrouiller · masquer'], ['S · Maj + S', 'Aimantation aux sommets · à la grille de 10 m'], ['G · B', 'Quadrillage · fond suivant'], ['F · Maj + F', 'Cadrer le plan · la sélection'],
-    ['3', 'Vue 2D ou 3D'], ['Barre d’espace (frise)', 'Lecture ou pause quand la frise a la main'], ['Page préc. · Page suiv.', 'Phase précédente · suivante'], ['← → (briefing)', 'Phase précédente · suivante'],
+    ['3', 'Vue 2D ou 3D'], ['[ · ] (sans sélection)', 'Replier le volet de gauche · de droite'], ['9 · 0', 'Replier la frise · carte seule'], ['Barre d’espace (frise)', 'Lecture ou pause quand la frise a la main'], ['Page préc. · Page suiv.', 'Phase précédente · suivante'], ['← → (briefing)', 'Phase précédente · suivante'],
 ];
 $tocHelpTitle = 'Éditeur de plans : raccourcis';
 $tool = static function (string $id, string $icon, string $label, string $key = '', bool $edit = true) use ($h): string {
@@ -44,11 +46,15 @@ $runBtn = static function (string $id, string $icon, string $label, string $key 
 <head>
 <?php require __DIR__ . '/_head.php'; ?>
 <link rel="stylesheet" href="<?= $h($a('assets/css/atak-toc-plan.css')) ?>">
+<link rel="stylesheet" href="<?= $h($a('assets/css/atak-toc-plan-help.css')) ?>">
 <script src="<?= $h($a('assets/js/toc/plan/plan-logic.js')) ?>" defer></script>
 <script src="<?= $h($a('assets/js/toc/toc-plan-editor.js')) ?>" defer></script>
 <script src="<?= $h($a('assets/js/toc/plan/plan-panels.js')) ?>" defer></script>
+<script src="<?= $h($a('assets/js/toc/plan/plan-layout.js')) ?>" defer></script>
 <script src="<?= $h($a('assets/js/toc/plan/plan-timeline.js')) ?>" defer></script>
 <script src="<?= $h($a('assets/js/toc/plan/plan-terrain.js')) ?>" defer></script>
+<script src="<?= $h($a('assets/js/toc/plan/plan-markers.js')) ?>" defer></script>
+<script src="<?= $h($a('assets/js/toc/plan/plan-help.js')) ?>" defer></script>
 </head>
 <body class="toc-body pe-body">
 <div class="pe" id="pe">
@@ -67,6 +73,7 @@ $runBtn = static function (string $id, string $icon, string $label, string $key 
       <details class="toc-menu" data-needs-edit>
         <summary class="toc-btn"><i data-ic="upload" data-ic-size="16"></i>Importer</summary>
         <div class="toc-menu-list">
+          <button type="button" class="toc-btn" data-run="importMarkers">Marqueurs présents en jeu</button>
           <button type="button" class="toc-btn" data-run="importGame">Plan dessiné en jeu</button>
           <button type="button" class="toc-btn" data-run="importFile">Fichier JSON, GeoJSON ou KML</button>
           <button type="button" class="toc-btn" data-orbat-top="site">ORBAT de la communauté</button>
@@ -93,13 +100,13 @@ $runBtn = static function (string $id, string $icon, string $label, string $key 
   </header>
 
   <div class="pe-tools" role="toolbar" aria-label="Outils">
-    <div class="pe-tgroup"><?= $tool('select', 'select', 'Sélection', 'V', false) . $tool('lasso', 'lasso', 'Lasso', 'Q', false) . $tool('pan', 'pan', 'Main : déplacer la carte', 'H', false) ?></div>
-    <div class="pe-tgroup"><?= $tool('unit', 'unit', 'Unité', 'U') . $tool('text', 'text', 'Texte', 'T') . $tool('line', 'line', 'Trait', 'L') . $tool('arrow', 'arrow', 'Flèche', 'A') . $tool('polygon', 'polygon', 'Polygone', 'P') . $tool('rect', 'rect', 'Rectangle', 'R') . $tool('circle', 'circle', 'Cercle', 'C') . $tool('ellipse', 'ellipse', 'Ellipse', 'E') ?></div>
-    <div class="pe-tgroup"><?= $tool('measure', 'measure', 'Mesure : distance, azimut, surface', 'M', false) . $tool('los', 'los', 'Ligne de vue entre deux points', 'O', false) . $tool('profile', 'profile', 'Coupe du relief le long d’un tracé', '', false) . $tool('viewshed', 'viewshed', 'Zone vue depuis un point', 'W', false) ?>
-      <button type="button" class="pe-tbtn" data-run="slope" aria-pressed="false" title="Teinte des pentes" aria-label="Teinte des pentes"><i data-ic="layers"></i></button></div>
-    <div class="pe-tgroup"><?= $runBtn('snap', 'snap', 'Aimantation aux sommets', 'S', 'aria-pressed="true"') ?>
+    <div class="pe-tgroup" data-group="sel"><?= $tool('select', 'select', 'Sélection', 'V', false) . $tool('lasso', 'lasso', 'Lasso', 'Q', false) . $tool('pan', 'pan', 'Main : déplacer la carte', 'H', false) ?></div>
+    <div class="pe-tgroup" data-group="draw"><?= $tool('unit', 'unit', 'Unité', 'U') . $tool('text', 'text', 'Texte', 'T') . $tool('line', 'line', 'Trait', 'L') . $tool('arrow', 'arrow', 'Flèche', 'A') . $tool('polygon', 'polygon', 'Polygone', 'P') . $tool('rect', 'rect', 'Rectangle', 'R') . $tool('circle', 'circle', 'Cercle', 'C') . $tool('ellipse', 'ellipse', 'Ellipse', 'E') ?><button type="button" class="pe-tbtn pe-tgroup-fold" aria-expanded="true" title="Replier ce groupe d’outils" aria-label="Replier ou déplier ce groupe d’outils"><i data-ic="caret" data-ic-size="12"></i></button></div>
+    <div class="pe-tgroup" data-group="ana"><?= $tool('measure', 'measure', 'Mesure : distance, azimut, surface', 'M', false) . $tool('los', 'los', 'Ligne de vue entre deux points', 'O', false) . $tool('profile', 'profile', 'Coupe du relief le long d’un tracé', '', false) . $tool('viewshed', 'viewshed', 'Zone vue depuis un point', 'W', false) ?>
+      <button type="button" class="pe-tbtn" data-run="slope" aria-pressed="false" title="Teinte des pentes" aria-label="Teinte des pentes"><i data-ic="layers"></i></button><button type="button" class="pe-tbtn pe-tgroup-fold" aria-expanded="true" title="Replier ce groupe d’outils" aria-label="Replier ou déplier ce groupe d’outils"><i data-ic="caret" data-ic-size="12"></i></button></div>
+    <div class="pe-tgroup" data-group="snap"><?= $runBtn('snap', 'snap', 'Aimantation aux sommets', 'S', 'aria-pressed="true"') ?>
       <button type="button" class="pe-tbtn is-text" data-run="snapGrid" aria-pressed="false" title="Aimantation à la grille de 10 m (Maj+S)">10 m</button>
-      <?= $runBtn('grid', 'grid', 'Quadrillage', 'G', 'aria-pressed="true"') ?></div>
+      <?= $runBtn('grid', 'grid', 'Quadrillage', 'G', 'aria-pressed="true"') ?><button type="button" class="pe-tbtn pe-tgroup-fold" aria-expanded="true" title="Replier ce groupe d’outils" aria-label="Replier ou déplier ce groupe d’outils"><i data-ic="caret" data-ic-size="12"></i></button></div>
     <details class="toc-menu pe-tgroup" data-needs-edit>
       <summary class="pe-tbtn" title="Aligner et répartir la sélection" aria-label="Aligner et répartir"><i data-ic="align"></i></summary>
       <div class="toc-menu-list" style="right:auto;left:0">
@@ -123,6 +130,13 @@ $runBtn = static function (string $id, string $icon, string $label, string $key 
 
   <main class="pe-main">
     <aside class="pe-left" id="pe-left" aria-label="ORBAT, calques et bibliothèque">
+      <div class="pe-rail" role="toolbar" aria-label="Volet de gauche replié">
+        <button type="button" class="pe-tbtn" data-collapse="left" title="Déplier le volet de gauche ([)" aria-label="Déplier le volet de gauche"><i data-ic="caret"></i></button>
+        <button type="button" class="pe-tbtn" data-rail="left:orbat" title="ORBAT du plan" aria-label="ORBAT du plan"><i data-ic="tree"></i></button>
+        <button type="button" class="pe-tbtn" data-rail="left:layers" title="Calques" aria-label="Calques"><i data-ic="layers"></i></button>
+        <button type="button" class="pe-tbtn" data-rail="left:lib" title="Bibliothèque de symboles" aria-label="Bibliothèque de symboles"><i data-ic="book"></i></button>
+      </div>
+      <div class="pe-div is-col" data-div="left" role="separator" aria-orientation="vertical" title="Glisser : largeur du volet · double-clic : replier ou déplier"></div>
       <nav class="pe-tabs" role="tablist" aria-label="Volet de gauche">
         <button type="button" class="toc-tab" role="tab" data-left="orbat" aria-selected="false"><i data-ic="tree" data-ic-size="16"></i>ORBAT</button>
         <button type="button" class="toc-tab" role="tab" data-left="layers" aria-selected="false"><i data-ic="layers" data-ic-size="16"></i>Calques</button>
@@ -141,9 +155,14 @@ $runBtn = static function (string $id, string $icon, string $label, string $key 
       </div>
       <div class="pe-pane" data-left-body="layers" hidden>
         <div class="pe-panebody">
-          <div class="toc-sec"><h2>Calques du plan</h2><span>celui du haut est dessiné devant</span></div>
-          <div id="pe-layers-plan"></div>
-          <div class="toc-layers pe-gamelayers" id="plan-game-layers" aria-label="Calques du jeu"></div>
+          <details class="pe-fold" data-fold="layers-plan" open>
+            <summary class="toc-sec"><i data-ic="caret" data-ic-size="14"></i><h2>Calques du plan</h2><span>le premier est dessiné devant</span></summary>
+            <div id="pe-layers-plan"></div>
+          </details>
+          <details class="pe-fold" data-fold="layers-game" open>
+            <summary class="toc-sec"><i data-ic="caret" data-ic-size="14"></i><h2>Calques du jeu</h2><span>en liaison avec la partie</span></summary>
+            <div class="toc-layers pe-gamelayers" id="plan-game-layers" aria-label="Calques du jeu"></div>
+          </details>
         </div>
       </div>
       <div class="pe-pane" data-left-body="lib">
@@ -165,8 +184,9 @@ $runBtn = static function (string $id, string $icon, string $label, string $key 
         <div class="toc-map" id="plan-map" aria-label="Carte du terrain"></div>
         <svg class="pe-overlay" id="plan-overlay" aria-hidden="true"></svg>
         <div class="pe-3d" id="plan-3d" hidden tabindex="0" aria-label="Vue 3D du terrain"></div>
-        <button type="button" class="pe-collapse is-left" data-collapse="left" aria-expanded="true" aria-controls="pe-left" title="Replier ou déplier le volet de gauche" aria-label="Volet de gauche"><i data-ic="caret" data-ic-size="14"></i></button>
-        <button type="button" class="pe-collapse is-right" data-collapse="right" aria-expanded="true" aria-controls="pe-right" title="Replier ou déplier le volet de droite" aria-label="Volet de droite"><i data-ic="caret" data-ic-size="14"></i></button>
+        <button type="button" class="pe-collapse is-left" data-collapse="left" aria-expanded="true" aria-controls="pe-left" title="Replier ou déplier le volet de gauche ([)" aria-label="Replier ou déplier le volet de gauche"><i data-ic="caret" data-ic-size="14"></i></button>
+        <button type="button" class="pe-collapse is-right" data-collapse="right" aria-expanded="true" aria-controls="pe-right" title="Replier ou déplier le volet de droite (])" aria-label="Replier ou déplier le volet de droite"><i data-ic="caret" data-ic-size="14"></i></button>
+        <button type="button" class="toc-btn is-small pe-focus-exit" id="pe-focus-exit" hidden title="Retrouver les volets (0 ou Échap)">Afficher les volets</button>
         <div class="pe-float pe-analysis" id="pe-analysis" hidden></div>
         <div class="pe-float pe-3dnote" id="pe-3dnote" hidden></div>
         <div class="toc-banner plan-readonly" id="plan-ro" hidden></div>
@@ -182,6 +202,13 @@ $runBtn = static function (string $id, string $icon, string $label, string $key 
     </section>
 
     <aside class="pe-right" id="pe-right" aria-label="Propriétés, plan et échanges">
+      <div class="pe-rail" role="toolbar" aria-label="Volet de droite replié">
+        <button type="button" class="pe-tbtn" data-collapse="right" title="Déplier le volet de droite (])" aria-label="Déplier le volet de droite"><i data-ic="caret" style="transform:scaleX(-1)"></i></button>
+        <button type="button" class="pe-tbtn" data-rail="right:props" title="Propriétés de la sélection" aria-label="Propriétés de la sélection"><i data-ic="menu"></i></button>
+        <button type="button" class="pe-tbtn" data-rail="right:plan" title="Plan : phases, ordre d’opération, légende" aria-label="Plan : phases, ordre d’opération, légende"><i data-ic="flag"></i></button>
+        <button type="button" class="pe-tbtn" data-rail="right:notes" title="Échanges" aria-label="Échanges"><i data-ic="share"></i></button>
+      </div>
+      <div class="pe-div is-col" data-div="right" role="separator" aria-orientation="vertical" title="Glisser : largeur du volet · double-clic : replier ou déplier"></div>
       <nav class="pe-tabs" role="tablist" aria-label="Volet de droite">
         <button type="button" class="toc-tab" role="tab" data-right="props" aria-selected="true">Propriétés</button>
         <button type="button" class="toc-tab" role="tab" data-right="plan" aria-selected="false">Plan</button>

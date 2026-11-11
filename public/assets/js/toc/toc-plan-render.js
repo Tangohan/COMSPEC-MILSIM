@@ -170,8 +170,8 @@ window.TocPlanRender = (function () {
 
   function labelHtml(l) {
     var base = 'font:700 ' + l.size + 'px var(--sans);color:' + l.color + ';white-space:nowrap;text-transform:uppercase;opacity:' + (l.opacity == null ? 1 : l.opacity) + ';';
-    if (l.box) return '<span style="' + base + 'background:rgba(7,10,13,.82);padding:1px 6px;border:1px solid ' + l.color + ';display:inline-block;' + (l.align === 'center' ? 'transform:translate(-50%,-50%)' : 'transform:translateY(-50%)') + '">' + esc(l.text) + '</span>';
-    return '<span style="' + base + 'text-shadow:0 0 3px #070a0d,0 0 3px #070a0d,0 0 4px #070a0d;display:inline-block;' + (l.align === 'center' ? 'transform:translate(-50%,-50%)' : 'transform:translateY(-50%)') + '">' + esc(l.text) + '</span>';
+    if (l.box) return '<span class="toc-lbl" style="' + base + 'background:rgba(7,10,13,.82);padding:1px 6px;border:1px solid ' + l.color + ';display:inline-block;' + (l.align === 'center' ? 'transform:translate(-50%,-50%)' : 'transform:translateY(-50%)') + '">' + esc(l.text) + '</span>';
+    return '<span class="toc-lbl" style="' + base + 'text-shadow:0 0 3px #070a0d,0 0 3px #070a0d,0 0 4px #070a0d;display:inline-block;' + (l.align === 'center' ? 'transform:translate(-50%,-50%)' : 'transform:translateY(-50%)') + '">' + esc(l.text) + '</span>';
   }
 
   /** Contenu HTML d'un élément ponctuel (unité, texte, repère) et son point d'ancrage en pixels. */

@@ -8,7 +8,7 @@
 (async function () {
   var out = document.getElementById('out');
   var log = function (s) { out.textContent += s + '\n'; };
-  var files = (new URLSearchParams(location.search).get('f') || 'toc-geo,toc-plan-logic').split(',');
+  var files = (new URLSearchParams(location.search).get('f') || 'toc-geo,toc-tracks,toc-plan-logic,toc-plan-markers').split(',');
   var mods = {};
   async function load(url) {
     if (mods[url]) return mods[url].exports;
@@ -38,6 +38,7 @@
   var pass = 0, fail = 0;
   var geo = await load('/public/assets/js/toc/toc-geo.js');
   var logic = await load('/public/assets/js/toc/plan/plan-logic.js');
+  var tracks = await load('/public/assets/js/toc/toc-tracks.js');
   for (var i = 0; i < files.length; i++) {
     var src = await (await fetch('/tests/Frontend/' + files[i] + '.test.cjs')).text();
     var tests = [];
@@ -47,6 +48,7 @@
       if (n === 'node:path') return { join: function () { return Array.prototype.slice.call(arguments).join('/'); } };
       if (/toc-geo\.js$/.test(n)) return geo;
       if (/plan-logic\.js$/.test(n)) return logic;
+      if (/toc-tracks\.js$/.test(n)) return tracks;
       throw new Error('module inconnu : ' + n);
     };
     new Function('require', '__dirname', src)(req, '');

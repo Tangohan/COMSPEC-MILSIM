@@ -106,6 +106,7 @@ window.TocPlanEditor = (function () {
     if (!noHistory) P.hist.push(before, after);
     applyMap(after);
     if (label) say(label);
+    emit('commit', { before: before, after: after, label: label || '' });
   }
   function applyMap(map) {
     Object.keys(map).forEach(function (uid) {
@@ -135,15 +136,18 @@ window.TocPlanEditor = (function () {
   }
   function flush() {
     if (P.saving || !P.canEdit) return;
-    var ups = Object.keys(P.pending).filter(function (u) { return P.els[u]; }).map(function (u) {
+    // Par lots de 400 (le site en prend 500 au plus par envoi) : le reste part à l'envoi suivant, rien n'est perdu.
+    var upIds = Object.keys(P.pending).filter(function (u) { return P.els[u]; }).slice(0, 400);
+    var ups = upIds.map(function (u) {
       var e = G.clone(P.els[u]);
       delete e.updated_at; delete e.updated_by; delete e.deleted;
       return e;
     });
-    var dels = Object.keys(P.deletes);
-    if (!ups.length && !dels.length) { setSaveState(); return; }
-    var sentPending = P.pending, sentDeletes = P.deletes;
-    P.pending = {}; P.deletes = {};
+    var dels = Object.keys(P.deletes).slice(0, 400);
+    if (!ups.length && !dels.length) { P.pending = {}; setSaveState(); return; }
+    var sentPending = {}, sentDeletes = {};
+    upIds.forEach(function (u) { sentPending[u] = true; delete P.pending[u]; });
+    dels.forEach(function (u) { sentDeletes[u] = true; delete P.deletes[u]; });
     P.saving = true;
     setSaveState();
     var base = {};
@@ -215,7 +219,32 @@ window.TocPlanEditor = (function () {
     });
     P.sel = P.sel.filter(function (u) { return P.els[u]; });
     renderOverlay();
+    cancelAnimationFrame(declutterRaf);
+    declutterRaf = requestAnimationFrame(declutter);
     emit('render');
+  }
+  /**
+   * Libellés qui se chevauchent : chacun est décalé vers le bas (puis vers le haut) jusqu'à trouver une place libre,
+   * trois essais au plus. Les plaques des unités et des repères ne bougent pas : elles servent d'obstacles.
+   */
+  var declutterRaf = 0;
+  function declutter() {
+    if (!tm || P.mode !== '2d') return;
+    var root = tm.map.getContainer();
+    var labels = $$('.toc-lbl', root);
+    if (!labels.length || labels.length > 300) return;
+    var placed = $$('.leaflet-planMarkers-pane .toc-plate', root).slice(0, 400).map(function (n) { var r = n.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; });
+    var rects = labels.map(function (n) { n.style.marginTop = ''; var r = n.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; });
+    var hit = function (a) { for (var i = 0; i < placed.length; i++) { var b = placed[i]; if (a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1]) return true; } return false; };
+    labels.forEach(function (n, i) {
+      var r = rects[i];
+      var h = r[3] - r[1] + 2;
+      var tries = [0, h, -h, 2 * h];
+      var dy = 0;
+      for (var k = 0; k < tries.length; k++) { if (!hit([r[0], r[1] + tries[k], r[2], r[3] + tries[k]])) { dy = tries[k]; break; } }
+      if (dy) n.style.marginTop = dy + 'px';
+      placed.push([r[0], r[1] + dy, r[2], r[3] + dy]);
+    });
   }
 
   /* ---------- Surcouche : contours de sélection, poignées, cadre, lasso ---------- */
@@ -242,14 +271,15 @@ window.TocPlanEditor = (function () {
           var ph = R.pointHtml(d, { catalog: CAT });
           var c = px(d.pts[0]);
           var x = c[0] - ph.anchor[0] - 5, y = c[1] - ph.anchor[1] - 5;
-          h += '<rect class="pe-selpt" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + (ph.w + 10).toFixed(1) + '" height="' + (ph.h + 10).toFixed(1) + '"/>';
+          var box = ' x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + (ph.w + 10).toFixed(1) + '" height="' + (ph.h + 10).toFixed(1) + '"/>';
+          h += '<rect class="pe-sel-bg"' + box + '<rect class="pe-selpt"' + box;
           // Trajectoire de l'unité choisie : images clés et chemin.
           var tr = P.els[d.uid] && P.els[d.uid].props.track;
           if (tr && tr.length > 1) {
             var path = [];
             var t0 = tr[0].t, t1 = tr[tr.length - 1].t;
             for (var k = 0; k <= 40; k++) path.push(px(LG.positionAt(P.els[d.uid], t0 + (t1 - t0) * k / 40, P.els)));
-            h += '<path class="pe-traj" d="' + pathD(path) + '"/>';
+            h += '<path class="pe-sel-bg" d="' + pathD(path) + '"/><path class="pe-traj" d="' + pathD(path) + '"/>';
             tr.forEach(function (kf) { var q = px(kf.p); h += '<path class="pe-key' + (P.time != null && Math.abs(kf.t - P.time) < 0.01 ? ' is-on' : '') + '" d="M' + q[0] + ' ' + (q[1] - 6) + 'l6 6-6 6-6-6z"><title>' + esc(LG.fmtH(kf.t)) + '</title></path>'; });
           }
         } else {
@@ -266,7 +296,8 @@ window.TocPlanEditor = (function () {
         var x0 = a[0] - pad, y0 = a[1] - pad, x1 = c2[0] + pad, y1 = c2[1] + pad;
         var multi = sel.length > 1 || (sel[0].geom !== 'point' || sel[0].kind === 'fan');
         if (multi) {
-          h += '<rect class="pe-selbox" x="' + x0.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + (x1 - x0).toFixed(1) + '" height="' + (y1 - y0).toFixed(1) + '"/>';
+          var sb = ' x="' + x0.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + (x1 - x0).toFixed(1) + '" height="' + (y1 - y0).toFixed(1) + '"/>';
+          h += '<rect class="pe-sel-bg"' + sb + '<rect class="pe-selbox"' + sb;
           if (canEdit && P.tool === 'select') {
             h += handle(x0, y0, 's:nw', 'Agrandir ou réduire', 'is-scale') + handle(x1, y0, 's:ne', 'Agrandir ou réduire', 'is-scale') + handle(x0, y1, 's:sw', 'Agrandir ou réduire', 'is-scale') + handle(x1, y1, 's:se', 'Agrandir ou réduire', 'is-scale');
             var mx = (x0 + x1) / 2;
@@ -636,7 +667,8 @@ window.TocPlanEditor = (function () {
     if (!g || !KINDS[kind]) return;
     var props = P.armed ? P.armed.props : null;
     if (g === 'point') { placePoint(kind, p, props); if (!ev.shiftKey && kind !== 'unit') setTool('select'); return; }
-    if (dbl && P.draft) { P.draft.pts.pop(); finishDraft(); return; }
+    // Double-clic : le premier clic de la paire a déjà posé le dernier point.
+    if (dbl && P.draft) { finishDraft(); return; }
     if (!P.draft) P.draft = { kind: kind, geom: g, pts: [], props: props };
     P.draft.pts.push(p);
     var d = P.draft;
@@ -672,9 +704,13 @@ window.TocPlanEditor = (function () {
     if (ev.button === 1 || (ev.button === 0 && P.space)) { ptr = { type: 'pan', x: ev.clientX, y: ev.clientY }; ev.preventDefault(); track(); return; }
     if (ev.button !== 0) return;
     if (P.briefing) return;
+    // Un champ en cours de saisie est validé avant tout geste sur la carte.
+    if (typingIn(document.activeElement)) document.activeElement.blur();
     if (hEl && P.canEdit) { startHandle(ev, hEl.getAttribute('data-h'), w); return; }
     var tool = P.tool;
     if (tool === 'pan') return;
+    // Pas de sélection de texte ni de glisser natif du navigateur pendant un geste sur la carte.
+    ev.preventDefault();
     var base = { x: ev.clientX, y: ev.clientY, w0: w, moved: false, add: ev.shiftKey || ev.ctrlKey || ev.metaKey, alt: ev.altKey };
     if (tool === 'select' || tool === 'lasso') {
       var stack = stackAt(w);
@@ -993,7 +1029,10 @@ window.TocPlanEditor = (function () {
       if (wasEdit !== P.canEdit) applyRights();
       if (hadChange && !ptr) renderAll();
       setSaveState();
-    }).catch(function () {});
+    }).catch(function (err) {
+      // Réseau coupé : silencieux, le prochain sondage reprendra. Toute autre erreur est un défaut : elle se voit.
+      if (err && !(err instanceof TypeError && /fetch|network/i.test(String(err.message))) && window.console) console.error(err);
+    });
   }
   function loadComments() {
     if (P.readonlyLink) return;
@@ -1001,7 +1040,7 @@ window.TocPlanEditor = (function () {
   }
 
   /* ---------- Boîtes de dialogue : envoi en jeu, import, versions, partage ---------- */
-  function openDialog(id) { var d = $('#' + id); d.hidden = false; var f = $('select, input, button:not([data-close])', d); if (f) f.focus(); }
+  function openDialog(id) { var d = $('#' + id); d.hidden = false; emit('dialog', id); var f = $('select, input, button:not([data-close])', d); if (f) f.focus(); }
   function closeDialogs() { $$('.toc-overlay').forEach(function (o) { o.hidden = true; }); }
   function openPublish() {
     $('#pub-side').value = P.meta.side || 'WEST';
@@ -1021,6 +1060,7 @@ window.TocPlanEditor = (function () {
       btn.disabled = false;
       if (j && j.ok) {
         closeDialogs();
+        emit('published', j);
         say(j.sent + ' élément(s) envoyé(s) dans le plan du camp ' + SIDES[$('#pub-side').value] + (j.skipped ? ' · ' + j.skipped + ' trop détaillé(s), écarté(s)' : '') + '. Ils apparaissent sur les téléphones et le PC du poste dès que le jeu les relève.');
       } else say(ERR[j && (j.reason || j.error)] || 'Envoi refusé.', true);
     }).catch(function () { btn.disabled = false; say('Réseau indisponible.', true); });
@@ -1197,9 +1237,10 @@ window.TocPlanEditor = (function () {
 
   /* ---------- Droits ---------- */
   function applyRights() {
-    $$('[data-needs-edit]').forEach(function (b) { b.hidden = !P.canEdit; });
-    $$('[data-needs-admin]').forEach(function (b) { b.hidden = !P.canAdmin; });
-    $$('[data-needs-api]').forEach(function (b) { b.hidden = P.readonlyLink; });
+    // Un bouton peut demander plusieurs choses (éditer ET joindre le site) : il faut les avoir toutes.
+    $$('[data-needs-edit], [data-needs-admin], [data-needs-api]').forEach(function (b) {
+      b.hidden = (b.hasAttribute('data-needs-edit') && !P.canEdit) || (b.hasAttribute('data-needs-admin') && !P.canAdmin) || (b.hasAttribute('data-needs-api') && P.readonlyLink);
+    });
     $('#plan-title').disabled = !P.canEdit;
     $('#plan-ro').hidden = P.canEdit;
     $('#plan-ro').textContent = mobile ? 'Lecture seule sur téléphone : l’éditeur s’ouvre sur tablette ou ordinateur.' : (P.readonlyLink ? 'Lien de lecture : plan en lecture seule.' : 'Lecture seule : ce plan n’est pas modifiable par vous.');

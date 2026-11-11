@@ -124,6 +124,21 @@ final class AtakTocController
         return Response::view('atak.toc.plans', $this->pageData('Plans d’opération'));
     }
 
+    /** Guide écrit de l'éditeur de plans (docs/TOC-PLANS-TUTORIEL.md), lié depuis l'aide de l'éditeur. */
+    public function planHelp(Request $request, array $params = []): Response
+    {
+        if (!$this->access->canUse()) {
+            return $this->denied();
+        }
+        $file = base_path('docs/TOC-PLANS-TUTORIEL.md');
+        $md = is_file($file) ? (string) file_get_contents($file) : '';
+        $html = $md === ''
+            ? '<p>Le guide n’est pas disponible pour le moment.</p>'
+            : (function_exists('markdown_to_html') ? markdown_to_html($md) : '<pre>' . htmlspecialchars($md, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</pre>');
+
+        return Response::view('atak.toc.plan_help', ['title' => 'Éditeur de plans : guide', 'tocHelpHtml' => $html]);
+    }
+
     public function editor(Request $request, array $params = []): Response
     {
         if (!$this->access->canUse()) {
