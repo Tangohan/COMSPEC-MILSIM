@@ -19,7 +19,7 @@
       ["do", [action, args]]                     client -> serveur ; serveur : actions
         create [nom, camp, PC, id imposé]  link [id, écran]  unlink écran  linkNear [id, [x, y, z], rayon]
         rename [id, nom]  power [écran, allumé]  powerAll [id, allumé]  blink écran
-        sceneSave [id, nom]  sceneApply [id, nom]  sceneDel [id, nom]  spawn [posATL, dir, taille, nom, camp]
+        sceneSave [id, nom]  sceneApply [id, nom]  sceneDel [id, nom]  spawn [posATL, dir, taille, nom, camp, id, classe des postes]
       ["dump"] / ["load", données] / ["saved", id] serveur (fn_tocPersist, module « Salle TOC complète »)
 */
 params [["_mode", "halls"], ["_a", []]];
@@ -69,6 +69,8 @@ switch (_mode) do {
         if (!isServer || {missionNamespace getVariable ["COMSPEC_ATAK_TocHallInit", false]}) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_TocHallInit", true];
         ["comspec_atak_native_tocHall", { ["do", _this] call comspec_atak_native_fnc_tocHall; }] call CBA_fnc_addEventHandler;
+        // Postes PC fixes (fn_tocPc) : désignés comme écrans TOC à leur création.
+        ["initServer"] call comspec_atak_native_fnc_tocPc;
     };
     case "dump": { +(call _all) };
     case "saved": {
@@ -210,8 +212,8 @@ switch (_mode) do {
                 } forEach (_sc param [1, []]);
             };
             case "spawn": {
-                _args params [["_pos", [0, 0, 0]], ["_dir", 0], ["_size", "M"], ["_nm", "SALLE TOC"], ["_sd", "WEST"], ["_id", ""]];
-                ["spawnRoom", [_pos, _dir, _size, _nm, _sd, _id]] call _fn
+                _args params [["_pos", [0, 0, 0]], ["_dir", 0], ["_size", "M"], ["_nm", "SALLE TOC"], ["_sd", "WEST"], ["_id", ""], ["_post", ""]];
+                ["spawnRoom", [_pos, _dir, _size, _nm, _sd, _id, _post]] call _fn
             };
         };
         true
@@ -220,7 +222,8 @@ switch (_mode) do {
         // Salle complète posée d'un coup (module « Salle TOC complète ») : mur d'images, grands écrans, écrans suspendus,
         // bandeau horloge, plaques de nom, bureaux, chaises et PC du jeu de base ; tout lié à la salle. Repère : le module,
         // le mur devant lui (+Y), écrans tournés vers lui.
-        _a params ["_pos", "_dir", "_size", "_nm", "_sd", ["_id", ""]];
+        // _post : classe des postes des opérateurs (PC portable de TOC par défaut, ou un poste PC fixe de fn_tocPc).
+        _a params ["_pos", "_dir", "_size", "_nm", "_sd", ["_id", ""], ["_post", ""]];
         if (!isServer) exitWith { "" };
         if (_id isEqualTo "") then { _id = format ["H%1%2", floor (serverTime * 10), floor random 10000]; };
         ["do", ["create", [_nm, _sd, objNull, _id]]] call _fn;
@@ -280,12 +283,17 @@ switch (_mode) do {
             ["COMSPEC_ATAK_Screen_65_Ceiling", 0, 4.6, 3.2, "EXCHECK", "", "", "EXÉCUTION"] call _put;
         };
         // Postes : un bureau, une chaise, un PC de TOC par place ; rangée face au mur.
+        // Poste PC fixe choisi : posé au milieu du bureau (origine sur le plateau), moniteurs face à l'opérateur ; les
+        // places s'écartent selon sa largeur (mapSize). Il se désigne lui-même comme écran TOC (fn_tocPc), lié à la salle.
         private _nPc = (createHashMapFromArray [["S", 2], ["M", 3], ["L", 4]]) getOrDefault [_size, 3];
+        private _fixed = _post isEqualType "" && {_post isNotEqualTo ""} && {(getNumber (configFile >> "CfgVehicles" >> _post >> "comspec_tocPost")) > 0};
+        private _pcCls = ["COMSPEC_ATAK_TocLaptop", _post] select _fixed;
+        private _step = 1.7 max ([0, (getNumber (configFile >> "CfgVehicles" >> _pcCls >> "mapSize")) + 0.1] select _fixed);
         for "_i" from 0 to (_nPc - 1) do {
-            private _x0 = -((_nPc - 1) * 1.7) / 2 + _i * 1.7;
+            private _x0 = -((_nPc - 1) * _step) / 2 + _i * _step;
             [_desk, _x0, 2.6, 0, 0] call _prop;
             [_chair, _x0, 1.8, 0, 180] call _prop;
-            ["COMSPEC_ATAK_TocLaptop", _x0, 2.55, 0.8, 180, true] call _prop;
+            [_pcCls, _x0, [2.55, 2.6] select _fixed, 0.8, 180, true] call _prop;
         };
         private _i = (call _all) findIf { (_x select 0) isEqualTo _id };
         if (_i >= 0) then {

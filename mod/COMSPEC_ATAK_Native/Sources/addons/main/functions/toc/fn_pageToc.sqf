@@ -40,10 +40,13 @@ if ((count _scr) > 0) then {
         }];
         // Salle TOC : satellite, horloge, écran d'escouade (fn_tocBoard, fn_tocSat).
         private _slot = (_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [8, 0];
-        _rows pushBack ["buttons", ([["SAT 1", "SAT1", _cur isEqualTo "SAT" && {_slot isEqualTo 0}], ["SAT 2", "SAT2", _cur isEqualTo "SAT" && {_slot isEqualTo 1}], ["HORLOGE", "CLOCK", _cur isEqualTo "CLOCK"]]) apply {
+        _rows pushBack ["buttons", (([["SAT 1", "SAT1", _cur isEqualTo "SAT" && {_slot isEqualTo 0}], ["SAT 2", "SAT2", _cur isEqualTo "SAT" && {_slot isEqualTo 1}], ["HORLOGE", "CLOCK", _cur isEqualTo "CLOCK"]]) apply {
             _x params ["_lb", "_k", "_on"];
             [_lb, compile format ["['screen', ['%1', '%2']] call comspec_atak_native_fnc_tocAction;", _id, _k], _on && {!_casting}, true, ""]
-        }];
+        }) + [
+            // Texte à LED (fn_tocText) : la fenêtre « Texte de l'écran » s'ouvre par-dessus le téléphone.
+            ["TEXTE", compile format ["['edit', objectFromNetId '%1'] call comspec_atak_native_fnc_tocText;", _id], _cur isEqualTo "TEXT" && {!_casting}, true, "Écrire un texte sur cet écran : messages, couleur, défilement"]
+        ]];
         private _sqs = ["squads", (_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [1, ""]] call comspec_atak_native_fnc_tocScreen;
         if ((count _sqs) > 0) then {
             _rows pushBack ["combo", "tocSq" + _id, "Escouade", _sqs apply { [_x, _x] }, (_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [9, ""],

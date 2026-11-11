@@ -52,7 +52,8 @@ final class AtakTocScreensPlacementAssetTest extends TestCase
      */
     private static function screenClasses(): array
     {
-        $src = self::read(self::MAIN . 'config.cpp') . "\n" . self::read(self::MAIN . 'toc_screens3d.hpp');
+        // toc_screens_legacy.hpp : premiers écrans (trépied, double, moniteur, téléviseur), refaits avec les modèles du mod.
+        $src = self::read(self::MAIN . 'config.cpp') . "\n" . self::read(self::MAIN . 'toc_screens3d.hpp') . "\n" . self::read(self::MAIN . 'toc_screens_legacy.hpp');
         $out = [];
         if (!preg_match_all('/class\s+(COMSPEC_ATAK_Screen_\w+)\s*:\s*(\w+)\s*\{/', $src, $m, PREG_OFFSET_CAPTURE)) {
             return $out;
@@ -183,9 +184,9 @@ final class AtakTocScreensPlacementAssetTest extends TestCase
         $hpp = self::read(self::MAIN . 'modules.hpp');
         self::assertStringContainsString("expression = \"_this setVariable ['Class',_value,true];\";", $hpp);
         self::assertStringContainsString('_logic getVariable ["Class", "COMSPEC_ATAK_Screen_Tripod"]', $mod);
-        self::assertStringContainsString('["spawn", [getPosATL _logic, getDir _logic, _cls, _name, _side, _view, _toc, _slot, _squad, _pans]]', $mod);
+        self::assertStringContainsString('["spawn", [getPosATL _logic, getDir _logic, _cls, _name, _side, _view, _toc, _slot, _squad, _pans, _extra]]', $mod);
         self::assertStringContainsString('_v params ["_cls", "_name", "_side", "_view", "_toc", "_slot", "_squad", "_ex", "_pans"];', $mod);
-        self::assertStringContainsString('["spawn", [_pos, _pos getDir _cam, _cls, _name, _side, _view, _toc, _slot, _squad, _pans]]', $mod);
+        self::assertStringContainsString('["spawn", [_pos, _pos getDir _cam, _cls, _name, _side, _view, _toc, _slot, _squad, _pans, ', $mod);
         self::assertStringContainsString('["COMBO", "Écran posé", _classes, (_classes select 0) select 1]', $mod);
         // Module lâché au Zeus sans attributs Eden : jamais les défauts (trépied, carte et flux), la fenêtre s'ouvre.
         self::assertStringContainsString('isNil { _logic getVariable "Class" }', $mod);
@@ -198,7 +199,7 @@ final class AtakTocScreensPlacementAssetTest extends TestCase
         // Chaque valeur du module est un écran du mod ou un écran déclaré (plus de classe absente du jeu).
         $tiers = self::read(self::MAIN . 'toc_screens_tiers.hpp');
         foreach (self::moduleClassValues() as $v) {
-            self::assertTrue(str_starts_with($v, 'COMSPEC_ATAK_Screen_') || preg_match('/class\s+' . preg_quote($v, '/') . '\b/', $tiers) === 1, $v);
+            self::assertTrue(str_starts_with($v, 'COMSPEC_ATAK_Screen_') || str_starts_with($v, 'COMSPEC_ATAK_TocPC_') || preg_match('/class\s+' . preg_quote($v, '/') . '\b/', $tiers) === 1, $v);
         }
         self::assertNotContains('Land_ProjectorScreen_01_F', self::moduleClassValues());
     }

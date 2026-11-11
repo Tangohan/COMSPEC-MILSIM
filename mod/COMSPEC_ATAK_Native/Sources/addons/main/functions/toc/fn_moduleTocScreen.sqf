@@ -8,7 +8,8 @@
     Attributs : Nom, Camp affiché (vide : celui de chaque joueur), Affichage (dont « PIP du poste » : l'écran recopie
     ce que l'opérateur a sous les yeux sur le PC du poste ; salle TOC : vue satellite, horloge et chronos, écran
     d'escouade, main courante, liste d'exécution, pertes et résultats, demandes), Satellite montré (SAT 1 / SAT 2),
-    Escouade montrée (nom du groupe), Liste d'exécution préparée (étapes séparées par |, champs par ;), Dalles du mur
+    Escouade montrée (nom du groupe), Texte (affichage « Texte à LED » : messages, couleur, vitesse, défilement,
+    fn_tocText), Liste d'exécution préparée (étapes séparées par |, champs par ;), Dalles du mur
     (contenu des dalles 2 et suivantes d'un mur multi-écrans : « SAT1, CLOCK, SQ:Alpha 1-1, LOG »), Poste TOC,
     Écran posé, Texture (index).
     Eden : PC de TOC synchronisés avec le module (en plus des écrans) : une salle TOC au nom du module est créée, ces PC
@@ -24,6 +25,9 @@ private _vals = [
     _logic getVariable ["Sat", 0], _logic getVariable ["Squad", ""], _logic getVariable ["Excheck", ""], _logic getVariable ["Panels", ""]
 ];
 _vals params ["_name", "_side", "_view", "_toc", "_cls", "_sel", "_slot", "_squad", "_ex", "_pans"];
+// Affichage TEXTE (fn_tocText) : texte, couleur, vitesse, défilement du module -> réglage ([] : pas de texte écrit).
+private _txtCfg = ["fromFields", [_logic getVariable ["Text", ""], _logic getVariable ["TextColor", "G"], _logic getVariable ["TextSpeed", 1], _logic getVariable ["TextScroll", 0]]] call comspec_atak_native_fnc_tocText;
+private _extra = [[], [["text", _txtCfg]]] select (_txtCfg isNotEqualTo []);
 // Liste d'exécution préparée : « événement ; mot de code ; élément ; heure | … » pour le camp de l'écran (tous si vide).
 private _exApply = {
     params ["_txt", "_s"];
@@ -39,15 +43,16 @@ private _zeus = (_ctx get "zeus") || {hasInterface && {time > 1} && {isNil { _lo
 if (!_zeus) exitWith {
     // PC de TOC synchronisés avec le module : une salle TOC à son nom, dont ces PC sont les postes maîtres et ces
     // écrans les écrans liés (fn_tocHall).
-    private _pcs = _targets select { _x isKindOf "COMSPEC_ATAK_TocLaptop" || {_x getVariable ["COMSPEC_ATAK_Toc", false]} || {((toLower (typeOf _x)) find "laptop") >= 0} || {((toLower (typeOf _x)) find "computer") >= 0} };
+    private _pcs = _targets select { _x isKindOf "COMSPEC_ATAK_TocLaptop" || {(getNumber (configOf _x >> "comspec_tocPost")) > 0} || {_x getVariable ["COMSPEC_ATAK_Toc", false]} || {((toLower (typeOf _x)) find "laptop") >= 0} || {((toLower (typeOf _x)) find "computer") >= 0} };
     _targets = _targets - _pcs;
     if ((count _pcs) > 0 && {(count _targets) isEqualTo 0}) then { _targets = []; };
     if ((count _targets) isEqualTo 0 && {(count _pcs) isEqualTo 0}) then {
-        ["spawn", [getPosATL _logic, getDir _logic, _cls, _name, _side, _view, _toc, _slot, _squad, _pans]] call comspec_atak_native_fnc_tocScreen;
+        ["spawn", [getPosATL _logic, getDir _logic, _cls, _name, _side, _view, _toc, _slot, _squad, _pans, _extra]] call comspec_atak_native_fnc_tocScreen;
     } else {
         {
             if (_pans isNotEqualTo "") then { _x setVariable ["COMSPEC_ATAK_TocPanelCfg", ["panelSpec", _pans] call comspec_atak_native_fnc_tocScreen]; };
             ["add", [_x, [_name, format ["%1 %2", _name, _forEachIndex + 1]] select (_name isNotEqualTo "" && {(count _targets) > 1}), _side, _sel, _view, _toc, false, _slot, _squad]] call comspec_atak_native_fnc_tocScreen;
+            if (_txtCfg isNotEqualTo []) then { ["view", [_x, "text", _txtCfg]] call comspec_atak_native_fnc_tocScreen; };
         } forEach _targets;
     };
     if ((count _pcs) > 0 && {isServer}) then {
@@ -66,7 +71,7 @@ private _obj = _targets param [0, _ctx getOrDefault ["near", objNull]];
 private _sides = [["Celui de chaque joueur", ""], ["BLUFOR", "WEST"], ["OPFOR", "EAST"], ["Indépendant", "GUER"], ["Civil", "CIV"]];
 private _views = [["Carte et flux", "SPLIT"], ["Carte seule (carte en grand)", "MAP"], ["Flux seul", "FEED"], ["PIP du poste (ce que voit l'opérateur)", "TOC"],
     ["Vue satellite (suivi des alliés)", "SAT"], ["Horloge ZULU et chronos", "CLOCK"], ["Écran d'escouade (un groupe)", "SQUAD"], ["Main courante du poste", "LOG"],
-    ["Liste d'exécution (EXCHECK)", "EXCHECK"], ["Pertes et résultats", "KILLS"], ["Demandes des éléments", "REQ"]];
+    ["Liste d'exécution (EXCHECK)", "EXCHECK"], ["Pertes et résultats", "KILLS"], ["Demandes des éléments", "REQ"], ["Texte à LED (message libre, défilant)", "TEXT"]];
 private _sats = [["SAT 1", 0], ["SAT 2", 1]];
 // Groupes avec un joueur ou un porteur d'ATAK, tous camps (le Zeus choisit) : « nom (camp) ».
 private _grps = [["Aucune", ""]];
@@ -98,11 +103,13 @@ if (isNull _obj) exitWith {
         ["COMBO", "Escouade montrée (écran d'escouade)", _grps, ""],
         ["EDIT", _exHelp, ""],
         ["EDIT", _panHelp, ""]
-    ], {
+    ] + (["zeusFields"] call comspec_atak_native_fnc_tocText), {
         params ["_v", "_pos"];
         _v params ["_cls", "_name", "_side", "_view", "_toc", "_slot", "_squad", "_ex", "_pans"];
         private _cam = getPosATL curatorCamera;
-        ["spawn", [_pos, _pos getDir _cam, _cls, _name, _side, _view, _toc, _slot, _squad, _pans]] call comspec_atak_native_fnc_tocScreen;
+        // Champs de l'affichage TEXTE (à la suite des neuf premiers) : réglage posé avec l'écran.
+        private _txtCfg = ["fromFields", _v select [9]] call comspec_atak_native_fnc_tocText;
+        ["spawn", [_pos, _pos getDir _cam, _cls, _name, _side, _view, _toc, _slot, _squad, _pans, [[], [["text", _txtCfg]]] select (_txtCfg isNotEqualTo [])]] call comspec_atak_native_fnc_tocScreen;
         [_ex, _side] call COMSPEC_ATAK_TocExZ;
         ["feedback", [format ["ATAK : écran TOC « %1 » posé", [_name, "TOC"] select (_name isEqualTo "")]]] call comspec_atak_native_fnc_zeusMenu;
     }, _pos, "Un grand écran du jeu qui affiche le réseau ATAK du camp tel que le serveur le voit, ou un affichage de la salle TOC (satellite, horloge, escouade, registres du poste). Liste d'exécution : Franchissement LD ; ROMEO ; ALPHA ; 22:30 | Objectif pris ; TANGO ; BRAVO ; 23:10. Gardé pour la partie suivante."] call comspec_atak_native_fnc_zeusForm;
