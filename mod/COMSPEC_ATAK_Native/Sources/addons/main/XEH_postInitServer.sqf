@@ -43,6 +43,8 @@ if (!hasInterface) then { ["init"] call comspec_atak_native_fnc_radioGuard; };
 ["initServer"] call comspec_atak_native_fnc_screenCast;
 // Écrans TOC : registre, données du réseau calculées ici pour tous (fn_tocFeed), écrans gardés d'une partie à l'autre.
 ["initServer"] call comspec_atak_native_fnc_tocScreen;
+// Salle TOC tenue (4.10.0) : droits, verrou, journal des actions, postes nommés, relève (fn_tocAccess).
+["init"] call comspec_atak_native_fnc_tocAccess;
 // IA et ATAK : IA équipées par le réglage ou la mission, leurs points PLI envoyés par le serveur (fn_aiAtak).
 ["init"] call comspec_atak_native_fnc_aiAtak;
 // Graphe de référence du maillage (fn_meshGraph) : une seconde entre deux regards, rien sans la liaison réaliste. La variable dit

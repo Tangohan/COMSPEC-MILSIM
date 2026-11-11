@@ -18,9 +18,23 @@
     Avant la 4.4.0 : seuls les écrans (classe, position, nom, camp, affichage, cadrage) et le flux étaient gardés,
     10 s après un changement d'écran.
     Modes (serveur) : ["save"] (écriture regroupée) | ["write"] | ["restore"] | ["clear"] | ["watch"] (toutes les 15 s)
+    Format 3 (4.10.0, feuille de route TOC n° 10) : même tableau, mêmes rangs que le format 2 publié
+    [format, date, écrans, flux, poste, salles, [marqueurs, plans]], et à la suite : journal des actions (fn_tocJournal),
+    postes nommés (fn_tocStation), relèves (fn_tocHandover), méta [version du mod, carte, mission, écritures]. Table
+    _fields : un nouveau champ s'ajoute toujours à la fin, jamais au milieu. Une sauvegarde plus ancienne (formats 1 et
+    2) est complétée à la lecture (« migrate ») ; une sauvegarde d'un mod plus récent (format 4 et plus) est lue pour
+    ce que ce mod connaît et réécrite avec ses champs inconnus intacts.
+    Copies de secours dans le profil du serveur : <clé>_bak (la sauvegarde telle qu'elle était au lancement de cette
+    partie) et <clé>_v2 (la dernière sauvegarde d'avant le format 3, gardée une fois).
+    Modes ajoutés : ["migrate", données] (pur, rejoué par tests/Unit/AtakTocPersistFormatTest.php) | ["fields"]
+      | ["info"] -> [format, date, taille en caractères, copie de secours présente]
+      | ["export"] -> texte « COMSPEC-TOC-SAVE:3: » + tableau | ["import", texte] (reprise au prochain lancement)
+      | ["rollback"] (remet la copie de secours, reprise au prochain lancement)
 */
-params [["_mode", "save"]];
+params [["_mode", "save"], ["_a", []]];
 if (!isServer) exitWith {};
+// Modes qui remplacent ou lisent toute la sauvegarde : jamais par un appel distant d'un joueur.
+if (_mode in ["clear", "import", "rollback", "export"] && {isRemoteExecuted} && {isMultiplayer} && {isNil "_tocTrusted"}) exitWith { false };
 private _key = format ["COMSPEC_ATAK_TocSave_%1_%2", worldName, missionName];
 private _on = missionNamespace getVariable ["comspec_atak_native_toc_persist", true];
 // Source de la caméra d'un écran, décrite pour être retrouvée à la partie suivante (un netId ne survit pas).
@@ -34,7 +48,61 @@ private _camWant = {
         default { ["CAM", _src getVariable ["COMSPEC_ATAK_CamName", ""]] };
     }
 };
+// ---- TABLE _fields (JSON) : champs de la sauvegarde [rang, nom, format d'arrivée, valeur par défaut]. Les rangs publiés ne bougent jamais.
+private _fields = [
+[0, "format", 1, 3], [1, "date", 1, []], [2, "screens", 1, []], [3, "feed", 1, []], [4, "room", 2, []], [5, "halls", 2, []], [6, "draw", 2, []],
+[7, "journal", 3, []], [8, "stations", 3, []], [9, "handover", 3, []], [10, "meta", 3, []]
+];
+// ---- FIN
+private _format = 3;
+private _migrate = {
+    params [["_d", []]];
+    if !(_d isEqualType [] && {(count _d) >= 4}) exitWith { [] };
+    private _from = _d select 0;
+    if !(_from isEqualType 0) then { _from = 1; };
+    // Sauvegarde d'un mod plus récent : rendue telle quelle (les rangs connus n'ont pas bougé).
+    if (_from > _format) exitWith { +_d };
+    private _out = +_d;
+    {
+        _x params ["_i", "", "", "_def"];
+        if ((count _out) <= _i || {isNil { _out select _i }}) then { _out set [_i, +_def]; };
+    } forEach _fields;
+    _out set [0, _format];
+    _out
+};
 switch (_mode) do {
+    case "fields": { +_fields };
+    case "migrate": { [_a] call _migrate };
+    case "info": {
+        private _d = profileNamespace getVariable [_key, []];
+        if !(_d isEqualType []) then { _d = []; };
+        [_d param [0, 0], _d param [1, []], count str _d, (profileNamespace getVariable [_key + "_bak", []]) isNotEqualTo []]
+    };
+    case "export": { "COMSPEC-TOC-SAVE:3:" + (str ([profileNamespace getVariable [_key, []]] call _migrate)) };
+    case "import": {
+        private _head = "COMSPEC-TOC-SAVE:3:";
+        if !(_a isEqualType "" && {(_a find _head) isEqualTo 0}) exitWith { false };
+        private _raw = _a select [count _head];
+        if !((_raw select [0, 1]) isEqualTo "[" && {(_raw select [(count _raw) - 1]) isEqualTo "]"}) exitWith { false };
+        private _d = [parseSimpleArray _raw] call _migrate;
+        if (_d isEqualTo []) exitWith { false };
+        // La sauvegarde en place devient la copie de secours ; l'importée est reprise au prochain lancement de la mission.
+        profileNamespace setVariable [_key + "_bak", profileNamespace getVariable [_key, []]];
+        profileNamespace setVariable [_key, _d];
+        missionNamespace setVariable ["COMSPEC_ATAK_TocSaveFrozen", true];
+        [true] call comspec_atak_native_fnc_saveProfile;
+        private _tocTrusted = true;
+        ["add", ["", "", "MISSION", "save.import", format ["format %1", _d select 0], true]] call comspec_atak_native_fnc_tocJournal;
+        true
+    };
+    case "rollback": {
+        private _bak = profileNamespace getVariable [_key + "_bak", []];
+        if !(_bak isEqualType [] && {(count _bak) >= 4}) exitWith { false };
+        profileNamespace setVariable [_key, _bak];
+        missionNamespace setVariable ["COMSPEC_ATAK_TocSaveFrozen", true];
+        [true] call comspec_atak_native_fnc_saveProfile;
+        true
+    };
     case "save": {
         // Rien avant la reprise : la sauvegarde de la partie précédente ne doit pas être écrasée par une liste vide.
         if (!_on || {!(missionNamespace getVariable ["COMSPEC_ATAK_TocRestored", false])}) exitWith {};
@@ -45,6 +113,8 @@ switch (_mode) do {
     case "write": {
         missionNamespace setVariable ["COMSPEC_ATAK_TocSaveQueued", false];
         if (!_on || {!(missionNamespace getVariable ["COMSPEC_ATAK_TocRestored", false])}) exitWith {};
+        // Sauvegarde importée ou remise depuis la copie de secours : plus rien n'est écrit par-dessus jusqu'au prochain lancement.
+        if (missionNamespace getVariable ["COMSPEC_ATAK_TocSaveFrozen", false]) exitWith {};
         // Relais des dalles d'un mur : gardés dans l'écran hôte (un réglage par dalle), jamais comme écrans à part.
         private _scr = ((missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x && {alive _x} && {isNull (_x getVariable ["COMSPEC_ATAK_TocHost", objNull])} }) apply {
             private _pans = ((_x getVariable ["COMSPEC_ATAK_TocPanels", []]) select { !isNull _x }) apply {
@@ -68,7 +138,20 @@ switch (_mode) do {
                 missionNamespace getVariable [format ["COMSPEC_ATAK_SK_%1", _x regexReplace ["[^A-Za-z0-9]", "_"]], []]]
         };
         private _plans = ["WEST", "EAST", "GUER", "CIV"] apply { [_x, missionNamespace getVariable [format ["COMSPEC_ATAK_Plan_%1", _x], []]] };
-        profileNamespace setVariable [_key, [2, systemTimeUTC, _scr, _ev, ["dump"] call comspec_atak_native_fnc_tocRoom, ["dump"] call comspec_atak_native_fnc_tocHall, [_mk, _plans]]];
+        // Format 3 : rangs 0 à 6 du format 2 publié, nouveaux champs à la suite (table _fields). Champs inconnus d'une
+        // sauvegarde plus récente (rang 11 et au-delà) : recopiés tels quels, avec son numéro de format.
+        private _tocTrusted = true;
+        private _prev = profileNamespace getVariable [_key, []];
+        if !(_prev isEqualType []) then { _prev = []; };
+        private _n = (missionNamespace getVariable ["COMSPEC_ATAK_TocSaveWrites", 0]) + 1;
+        missionNamespace setVariable ["COMSPEC_ATAK_TocSaveWrites", _n];
+        private _fmtPrev = _prev param [0, 0];
+        if !(_fmtPrev isEqualType 0) then { _fmtPrev = 0; };
+        private _save = [_format max _fmtPrev, systemTimeUTC, _scr, _ev, ["dump"] call comspec_atak_native_fnc_tocRoom, ["dump"] call comspec_atak_native_fnc_tocHall, [_mk, _plans],
+            ["dump"] call comspec_atak_native_fnc_tocJournal, ["dump"] call comspec_atak_native_fnc_tocStation, ["dump"] call comspec_atak_native_fnc_tocHandover,
+            [missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""], worldName, missionName, _n]];
+        profileNamespace setVariable [_key, _save + (_prev select [count _fields])];
+        ["comspec_atak_toc_saved", [_format, _n]] call CBA_fnc_localEvent;
         missionNamespace setVariable ["COMSPEC_ATAK_TocPosSig", hashValue (_scr apply { [_x select 0, (_x select 1) apply { round _x }, (_x select 2) apply { (round (_x * 50)) / 50 }] })];
         // Écriture du profil du serveur regroupée (fn_saveProfile : une par minute au plus, tout de suite en fin de mission).
         [] call comspec_atak_native_fnc_saveProfile;
@@ -109,7 +192,18 @@ switch (_mode) do {
         [{ ["watch"] call comspec_atak_native_fnc_tocPersist; }, 15] call COMSPEC_ATAK_PfhSpread;
         // Dessins posés, changés ou effacés (téléphones, PC du poste) : sauvegardés comme le reste.
         { addMissionEventHandler [_x, { ["save"] call comspec_atak_native_fnc_tocPersist; }]; } forEach ["MarkerCreated", "MarkerDeleted", "MarkerUpdated"];
-        private _data = profileNamespace getVariable [_key, []];
+        private _tocTrusted = true;
+        ["init"] call comspec_atak_native_fnc_tocAccess;
+        private _raw = profileNamespace getVariable [_key, []];
+        // Copies de secours : la sauvegarde telle qu'elle est au lancement, et une fois la dernière d'avant le format 3.
+        if (_raw isEqualType [] && {(count _raw) >= 4}) then {
+            profileNamespace setVariable [_key + "_bak", +_raw];
+            if ((_raw select 0) isEqualType 0 && {(_raw select 0) < _format} && {(profileNamespace getVariable [_key + "_v2", []]) isEqualTo []}) then {
+                profileNamespace setVariable [_key + "_v2", +_raw];
+                ["INFO", "TOC", format ["Sauvegarde de la salle TOC au format %1 : copie de secours gardée, passage au format %2", _raw select 0, _format]] call comspec_atak_native_fnc_log;
+            };
+        };
+        private _data = [_raw] call _migrate;
         if !(_data isEqualType [] && {(count _data) >= 4}) exitWith {};
         _data params ["", "", ["_scr", []], ["_ev", []], ["_room", []], ["_halls", []], ["_draw", []]];
         // Dessins et plans de la partie précédente : remis s'ils n'existent pas déjà.
@@ -176,6 +270,10 @@ switch (_mode) do {
         { if (_x isEqualType [] && {(count _x) >= 2}) then { _hm set [_x select 0, _x select 1]; }; } forEach _ev;
         ["setEvents", _hm] call comspec_atak_native_fnc_tocFeed;
         ["load", _room] call comspec_atak_native_fnc_tocRoom;
+        // Champs du format 3 (vides pour une sauvegarde plus ancienne) : journal, postes nommés, relèves.
+        ["load", _data param [7, []]] call comspec_atak_native_fnc_tocJournal;
+        ["load", _data param [8, []]] call comspec_atak_native_fnc_tocStation;
+        ["load", _data param [9, []]] call comspec_atak_native_fnc_tocHandover;
         ["INFO", "TOC", format ["Salle TOC reprise de la partie précédente : %1 écran(s), état du poste de %2 camp(s)", _n, count _room]] call comspec_atak_native_fnc_log;
     };
 };

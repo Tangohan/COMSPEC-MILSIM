@@ -1,3 +1,29 @@
+[h1]COMSPEC ATAK 4.10.0 Washington — postes, droits et journal de la salle TOC, TOC pilotable par script / stations, rights and journal of the TOC room, TOC driven by script[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Postes, droits et journal de la salle TOC[/b] : chaque PC du TOC devient un poste (chef de quart, opérations, renseignement, feux, logistique, transmissions). Seuls le chef de quart et le Zeus changent les écrans et la salle ; les autres joueurs du camp lisent, tiennent un poste et écrivent dans les registres.
+[*] [b]Journal des actions[/b] : chaque changement d'écran, de salle ou de poste est noté avec son auteur. Le chef de quart et le Zeus le lisent dans une fenêtre à copier.
+[*] [b]Verrou de salle[/b] : le chef de quart verrouille la salle le temps d'un briefing. Le verrou se lève tout seul à la relève ou au départ de son auteur.
+[*] [b]Relève[/b] : le sortant propose la relève, l'entrant la signe près du PC et reçoit un résumé (demandes ouvertes, pertes, prochaines lignes de la liste d'exécution).
+[*] [b]Vous pouvez piloter le TOC par script[/b] : les créateurs de mission créent des salles et des écrans, changent les affichages et les textes, verrouillent la salle et suivent ce qui s'y passe, sans téléphone ni Athena.
+[*] [b]Salle mieux gardée[/b] : copie de secours de la sauvegarde, dispositions de salle réutilisables d'une mission à l'autre, export de diagnostic pour le support.
+[*] [b]Couleurs de nuit[/b] : les fenêtres du TOC s'assombrissent quand le soleil est couché (réglage « Thème des écrans TOC »). Les écrans muraux suivront.
+[*] [b]Réglages[/b] : « Droits de la salle TOC » permet de revenir à l'ancien fonctionnement, où tout le camp règle la salle.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Stations, rights and journal of the TOC room[/b]: every TOC PC becomes a station (watch chief, operations, intelligence, fires, logistics, signals). Only the watch chief and Zeus change the screens and the room; the other players of the side read, hold a station and write in the logs.
+[*] [b]Action journal[/b]: every screen, room or station change is noted with its author. The watch chief and Zeus read it in a window you can copy from.
+[*] [b]Room lock[/b]: the watch chief locks the room for the time of a briefing. The lock lifts by itself at the handover or when its author leaves.
+[*] [b]Handover[/b]: the outgoing player offers the handover, the incoming player signs it near the PC and gets a summary (open requests, casualties, next lines of the execution checklist).
+[*] [b]You can drive the TOC by script[/b]: mission makers create rooms and screens, change displays and texts, lock the room and follow what happens in it, with no phone and no Athena.
+[*] [b]A better kept room[/b]: backup copy of the save, room layouts reusable from one mission to the next, diagnostic export for support.
+[*] [b]Night colours[/b]: the TOC windows dim when the sun has set ("TOC screen theme" setting). Wall screens will follow.
+[*] [b]Settings[/b]: "TOC room rights" lets you go back to the previous behaviour, where the whole side sets up the room.
+[/list]
+
 [h1]COMSPEC ATAK 4.7.2 Washington — le poste TOC sur le PC s'affiche de nouveau / the TOC post shows on the PC again[/h1]
 
 [h2]Français[/h2]
