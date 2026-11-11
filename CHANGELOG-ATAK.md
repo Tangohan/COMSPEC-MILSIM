@@ -38,307 +38,20 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## À venir : fond de carte Classique = la carte d'origine d'Arma 3 (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : Fond de carte Classique = la carte d'origine d'Arma 3
-- Sur la carte du téléphone, le fond **CLASSIQUE** montre maintenant la vraie carte du jeu, la même qu'avec la touche M, et plus une vue satellite. Si vous l'aviez choisi, vous le retrouvez tel quel.
-- Chaque fond de carte a une courte description sous les boutons. **SATELLITE** n'apparaît qu'avec le mod COMSPEC ATAK Photo ; sans lui, une ligne l'explique et la carte s'affiche en **CLASSIQUE**.
-EN : Classic map background = the original Arma 3 map
-- On the phone map, the **CLASSIC** background now shows the real game map, the same as with the M key, instead of a satellite view. If you had picked it, you keep it.
-- Each map background has a short description under the buttons. **SATELLITE** only shows with the COMSPEC ATAK Photo mod; without it, a line explains why and the map shows as **CLASSIC**.
-
-### Détail technique
-- `fn_mapStyle` : nouvelle valeur `CLASSIC` (bouton CLASSIQUE, avant branché sur `SAT`, texture satellite seule) ; `SAT` enregistré relu comme `CLASSIC` ; `PHOTO` sans photo de la carte → `CLASSIC` (avant `TOPO`) ; défaut inchangé (`TOPO`). `["LIST"]` rend la liste [libellé, valeur, description, disponible] partagée par `fn_pageMap` et `fn_pageSettings`.
-- `COMSPEC_RscMapAtakClassic` (`ui/controls.hpp`) tirée directement de `RscMapControl` : couleurs et rendu du jeu, seuls les textes redessinés par l'ATAK et les marqueurs de mission masqués comme sur les autres fonds. Le contrôle 88532 (`MapSat` → `MapClassic`, `COMSPEC_ATAK_IDC_MAP_SAT` → `COMSPEC_ATAK_IDC_MAP_CLASSIC`) la porte ; `COMSPEC_RscMapAtakSat` reste la base d'HYBRIDE.
-- Volet CONFIGURATION de la carte : description du fond choisi sous les boutons (texte qui passe à la ligne), description de chaque fond en infobulle, ligne grise « SATELLITE : nécessite le mod COMSPEC ATAK Photo » quand la photo manque.
-- i18n en.txt et xx.txt (18 phrases, aide des Réglages réécrite), `docs/steam/discussions/01_carte.txt`. Test : `AtakMapClassicAssetTest`, `AtakRealismProfileTest` mis à jour.
-
-## À venir : le téléphone s'ouvre plus vite et ne fait plus ramer le jeu (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : performance
-FR : Le téléphone s'ouvre plus vite et ne fait plus ramer le jeu
-- La carte avec le fond photo ou satellite se charge petit à petit : ouvrir la carte ou changer de zoom ne fige plus le jeu une ou deux secondes. L'image est d'abord un peu floue, puis nette en un instant.
-- Nouveau réglage « Mesure des performances (journal) » (réglages de l'addon, COMSPEC, ATAK · Debug) : si le téléphone rame, coche-le, ouvre le téléphone puis la carte, et envoie ton journal avec Envoyer_mes_logs.bat.
-EN : The phone opens faster and no longer makes the game stutter
-- The map with the photo or satellite background now loads bit by bit: opening the map or zooming no longer freezes the game for a second or two. The picture is a little blurry at first, then sharp in an instant.
-- New setting "Performance measurement (log)" (addon options, COMSPEC, ATAK · Debug): if the phone stutters, tick it, open the phone then the map, and send your log with Envoyer_mes_logs.bat.
-
-### Détail technique
-- Constat (RPT de TTRD du 11/11, ATAK 4.4.0.AG, fond PHOTO, pack photo Altis en tuiles JPG) : 9 images figées téléphone ouvert sur la carte, dont 1,3 à 1,9 s « dans les boucles du mod » au zoom (`carte (image)` max 1860 ms alors que toutes les sous-mesures restaient sous 3 ms), puis plus rien une fois les tuiles vues (carte à 2,2 ms par image). Cause : chaque tuile neuve du fond photo (`fn_photoMap`, JPEG lu dans la PBO et décodé par le jeu au premier `drawIcon`) ; un nouveau niveau de zoom en demandait jusqu'à 64 d'un coup. Présent avant 4.4.0 (`fn_photoMap` inchangé depuis 4.3.0) : pas une régression de la salle TOC ni du sang.
-- `fn_photoMap` : tuiles chargées notées (`COMSPEC_ATAK_PhotoSeen`, dessinées depuis moins de 5 min) ; 2 tuiles neuves au plus par image (1 si l'image précédente a dépassé 100 ms), posées à 1 % d'opacité pour être chargées sans se voir. En attendant, la vue garde le niveau le plus fin déjà chargé en entier (un seul niveau à l'écran, comme avant) ; le niveau deux crans plus grossier est chargé d'abord quand rien n'est prêt. Vue chargée : dessin identique à avant, noms de fichiers faits une fois par image. Relevé `COMSPEC_ATAK_PhotoLast` pour la mesure.
-- `fn_mapOnDraw` : nouvelles clés `[PERF]` `carte fond photo (image)`, `carte unités (image)`, `carte noms des repères (image)` (parties du dessin jusque-là sans mesure).
-- `fn_perfLog` (nouveau) et réglage CBA `comspec_atak_native_perf_log` « Mesure des performances (journal) » (ATAK · Debug, décoché) : lignes `[COMSPEC perf]` dans le RPT seulement (ouverture du téléphone de l'appui à la première image avec ses étapes ; ouverture des apps ; carte toutes les 5 s : moyenne et pire par image, unités, marqueurs, étiquettes, tuiles ; bilan 10 s : img/s, ms/s du mod, boucles CBA chronométrées par `fn_profiler`, contrôles du téléphone, boucles et scripts en file, plus coûteux ; appels de DLL de plus de 5 ms, appels directs du mod et relevé `Perf.Stats` des deux DLL). Décoché : une lecture de variable dans `fn_perfAcc`, `fn_open`, `fn_displayLoad`, `fn_navigate`, `fn_hudToggle`, `fn_interactToggle`, `fn_extensionCall`, `fn_extAwait`.
-- `fn_zeusCentre` : la traduction `_T` était écrasée par des variables `_t` (SQF ne distingue pas la casse) : erreur « call : Type Chaîne » à chaque outil de l'onglet Outils (6 dans le RPT) et même piège dans la fiche joueur et l'état du serveur. Renommée `_trZ`.
-- Vu dans le RPT, hors COMSPEC : 91 erreurs ACE `fnc_determineMapLight` / `fnc_simulateMapLight` (carte principale de nuit au briefing), avertissements de config d'autres mods au chargement.
-- À vérifier en jeu : zoom et dézoom rapides sur le fond PHOTO (plus d'image figée, net en moins d'une seconde), première ouverture du téléphone en main sur la carte, réglage coché puis journal relu.
-
-## À venir : Centre Zeus remis d'aplomb (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : Le Centre Zeus est remis d'aplomb : onglets lisibles, plus de boutons vides ni de textes qui se chevauchent
-- Chaque onglet (Joueurs, Serveur, Étiquettes, Outils) n'affiche que ses propres boutons, et la fenêtre prend la hauteur de ce qu'elle montre.
-- Onglet Étiquettes : une case à cocher par information affichée au-dessus des joueurs, avec un exemple ; les boutons d'action sont grisés tant qu'aucun joueur n'est choisi, et leur résultat s'écrit en bas de la fenêtre.
-EN : The Zeus Centre is fixed: readable tabs, no more empty buttons or overlapping text
-- Each tab (Players, Server, Labels, Tools) only shows its own buttons, and the window takes the height of what it shows.
-- Labels tab: one checkbox per piece of information shown above the players, with an example; action buttons are greyed out until a player is chosen, and their result is written at the bottom of the window.
-
-### Détail technique
-- Cause (commit bc1d45278, 4.3.0) : le SQF ne distingue pas la casse des variables. `private _T = { … fnc_tr }` était masquée par `_x params ["_t", …]` (outils, actions) et `private _t = call _ui` (onglets, rafraîchissement, fiche, serveur). « toggle » s'arrêtait au premier `call _T` de l'onglet OUTILS : registre jamais enregistré, onglets jamais cachés, libellés des étiquettes jamais écrits (neuf boutons vides), titre vide ; rafraîchissement, fiche et état du serveur en erreur à chaque appel. La hauteur calculée oubliait en plus la rangée des onglets (rappel ZEN sous le fond).
-- `fn_zeusCentre` : traduction `_tr`, registre `_st` ; grille unique `_grid` (fractions de safeZoneH) et pose unique `_place` / « flow » (lignes, colonnes à poids, marges, corps qui défile, pied fixe, fond à la hauteur de l'onglet) ; `_mk` enregistre chaque contrôle chez son propriétaire, `_btn` impose un libellé (long, court, infobulle) ; ÉTIQUETTES en cases à cocher (`COMSPEC_RscCheckbox`) avec exemple, champs grisés en mode compact ; filtres sur deux rangées ; boutons d'action grisés sans cible ; ligne d'état « say » (retours de `fn_zeusMenu` « feedback » quand le Centre est ouvert) ; « audit » pour l'autotest (bouton vide, chevauchement, texte coupé, hors du panneau).
-- Test `AtakZeusCentreLayoutTest` (noms masqués quelle que soit la casse, propriétaire de chaque contrôle, libellés et anglais, tenue à 3 tailles d'interface × 3 formats), étape d'autotest zeus_centre (audit par onglet, non exécutée), i18n en.txt / xx.txt.
-
-## À venir : un seul bouton « ATHENA Configuration » dans le menu Échap (ATAK natif et SSE, version à attribuer)
-
-## À venir : émotions des IA réglables, peur des armes comprise (SSE, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Émotions des IA réglables
-- Le maître du jeu choisit les émotions de chaque IA (peur, peur des armes, nervosité, colère, méfiance, soulagement) : une IA sans « peur des armes », comme un policier ou un vétéran, voit votre arme mais reste calme.
-- Préréglages Impassible, Normal, Très émotif ou neutre, pour une IA, tout son groupe ou toute la mission ; une IA neutre répond toujours normalement.
-EN : Adjustable AI emotions
-- The game master picks each AI's emotions (fear, fear of weapons, nervousness, anger, distrust, relief): an AI without "fear of weapons", like a police officer or a veteran, sees your weapon but stays calm.
-- Stoic, Normal, Very emotional or neutral presets, for one AI, their whole group or the whole mission; a neutral AI still answers normally.
-
-### Détail technique
-- `fn_iarpProfile` : champs de profil `emotionsOn` (interrupteur) et `emotions` (`"auto"` ou liste parmi `peur`, `armes`, `nervosite`, `colere`, `mefiance`, `soulagement`) ; `noWeaponFear` écrit à la sérialisation et dans `keepOf` (dérivé : vrai quand `armes` manque), lu à l'import ; opérations `emoIds`, `emoPresets`, `emoActive`, `emoHas`, `edenEmo` / `edenEmoApply` ; `apply` garde les émotions de l'IA quand le profil appliqué ne les règle pas (bibliothèque, module « Atelier IA ») ; `keepOf` / `keepApply` portent les émotions (« Garder pour les prochaines parties »). Priorité : réglage de l'IA, sinon réglage global.
-- Réglages CBA `comspec_sse_iarp_emoOn` et `comspec_sse_iarp_emo_<émotion>` (COMSPEC SSE › IA RP, enregistrables dans la mission) ; attributs Eden `comspec_sse_iarpEmoMode`, `comspec_sse_iarpEmo_<émotion>`, `comspec_sse_iarpEmoGroup` (catégorie IA RP des unités) ; menu ZEN « Profil d'IA › Émotions… » (préréglage, cases, tout son groupe ; `profileTweak` accepte `raise`).
-- Sans `armes` : `fn_iarpReact` « fired » (tir entendu seulement), « level » et `fn_idAiBrain` (armes braquées et soldats arme levée à zéro), `fn_iarpServer` (`_aimedF` pour obéissance, menace, aveu, fuite, palier de renseignement, situation « peur »), témoin d'une arme seule, geste « /me braque son arme ». Sans `peur` / `nervosite` / `colere` : états fuit et rendu sous la menace, nerveux et refus par nervosité, agressif et renforts non choisis ; tension et peur nulles sans aucune des trois ; tons `effraye` / `nerveux` / `agressif` / `mefiant` écartés par `fn_iarpGen`, même imposés ; pression positive ignorée sans elles, apaisement ignoré sans `soulagement`.
-- Gardé volontairement : menottes et reddition ACE déjà faites, état imposé par le Zeus ou l'attribut « Comportement au contrôle », aveu par la confrontation (puis reddition d'un suspect sérieux), fuite d'un insurgé laissé seul après sa reddition, refus de papiers tiré par « Civils qui présentent leurs papiers ».
-- Manuel en jeu (« Émotions des IA »), guides `reponses_ia.md` / `.en.md`, auto-contrôle `fn_iarpSelfTest` (bloc émotions), autotest `ia_rp_peur_armes` (groupe `ia_rp`), non lancés en jeu.
-
----
-
-## À venir : fenêtre des réponses de l'IA plus simple (SSE, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Le menu Échap est rangé : un seul bouton ATHENA Configuration
-- Les boutons COMSPEC du menu Échap sont regroupés dans un seul bouton « ATHENA Configuration », avec le logo Athena et une pastille verte, orange ou rouge selon l'état de la liaison. Il se place là où il ne cache aucun autre bouton.
-- Il ouvre une fenêtre avec l'état de la liaison et du service Athéna, puis Diagnostic et dépannage de la liaison, Réalisme et réseau, Service Athéna et SSE · Roleplay et extensions. Le clic sur « Service Athéna » ne bloque plus le menu.
-EN : The Esc menu is tidied up: one ATHENA Configuration button
-- The COMSPEC buttons of the Esc menu are grouped into a single "ATHENA Configuration" button, with the Athena logo and a green, orange or red dot for the link state. It places itself where it hides no other button.
-- It opens a window with the link and Athena service state, then Link diagnostics and troubleshooting, Realism and network, Athena service and SSE · Roleplay and extensions. Clicking "Athena service" no longer locks up the menu.
-
-### Détail technique
-- Nouveau `fn_athenaConfig` (ATAK natif `main/functions/ui`, copie identique dans le SSE `extensions/functions`) : bouton du menu Échap (`RscDisplayInterrupt`, `RscDisplayMPInterrupt`, idc 93960) et fenêtre « Configuration ATHENA » (`RscDisplayEmpty` enfant du menu Échap). Place du bouton calculée sur les contrôles visibles du menu (vanilla, ACE, CBA, autres mods), revue pendant la première seconde ; hauteur bornée en pixels (24 à 44 px), largeur mesurée sur le texte.
-- Registre `comspec_athena_config_entries` (contrat dans l'en-tête de `fn_athenaConfig`) : ATAK `atak_realism` (Réalisme et réseau), Overwatch connect `ow_diag` (Dépannage liaison) et `ow_athena` (Service Athéna), SSE `sse_extensions`. État `comspec_athena_config_status` posé par Overwatch connect. Hôte `comspec_athena_config_host` : l'ATAK natif ; le SSE seulement sans lui (un seul bouton).
-- Retirés du menu Échap : barre d'Overwatch connect (`fn_onInterruptLoad`, devenu `fn_athenaConfigEntries`), bouton `["button"]` de `fn_netConfig`, `fn_docExtMenu` du SSE. Fenêtres d'origine inchangées.
-- Cause du blocage « Service Athéna » : le gestionnaire du bouton fermait le menu Échap auquel il appartenait (`closeDisplay` dans son propre `ButtonClick`) puis sortait le téléphone sur Réglages. Désormais toute action part à l'image suivante (`CBA_fnc_execNextFrame`) et la question Oui / Non s'ouvre par-dessus le menu Échap, sans le fermer.
-- Logo du bouton : `athena_config_ca.paa`, `athena_config_hover_ca.paa` (256 px, aigle blanc / vert), pastille `athena_dot_ca.paa`. Textes : `i18n/en.txt`, `localisation/template/xx.txt`, stringtable de l'addon SSE `extensions` (`STR_COMSPEC_SSE_ATHCFG_*`). `$PBOPREFIX$` de l'addon SSE `extensions` réparé (caractères de contrôle à la place des barres obliques).
-
-## À venir : fenêtre des extensions de documents lisible, exemple livré et tuto intégré (SSE, version à attribuer)
-
-### À annoncer (Résumé joueur)
-Type : correctif
-FR : Extensions de documents : une fenêtre claire et un tuto intégré
-- La fenêtre « SSE ROLEPLAY · Extensions » n'est plus vide : elle montre l'extension d'exemple (carte de presse, laissez-passer), coupée par défaut, et plus aucun texte n'est coupé.
-- Le bouton « Aide » explique pas à pas ce qu'est une extension, comment l'activer et comment créer la vôtre, avec un exemple à copier.
-EN : Document extensions: a clear window and a built-in tutorial
-- The "SSE ROLEPLAY · Extensions" window is no longer empty: it shows the example extension (press card, pass), off by default, and no text is cut any more.
-- The "Help" button explains step by step what an extension is, how to enable it and how to make your own, with an example to copy.
-
-### Détail technique
-- **Cause des « 0 extension(s) »** : voulu côté code, faux côté livraison. `fn_idDocTypes` « extensions » ne lit que `configFile >> CfgComspecDocumentExtensions` ; le SSE n'en déclare aucune (`identity/CfgComspecDocuments.hpp`, classe vide) et l'extension d'exemple n'était construite qu'en mod séparé (`extensions/example_documents/build_extension.bat` → `@COMSPEC_SSE_ExampleDocuments`), absent de `build_pbo.bat` et de `workshop-pack.ps1`. Un joueur du Workshop n'avait donc jamais d'extension, et la fenêtre gardait ses deux volets vides.
-- **Exemple livré** : `build_pbo.bat` empaquette `extensions/example_documents` en `addons/comspec_sse_ext_example_documents.pbo` (préfixe d'origine, README / tools / scripts hors PBO), exigé par `workshop-pack.ps1`. Nouveaux champs de `CfgComspecDocumentExtensions` : `defaultOff = 1` (coupée tant qu'un Zeus ne l'active pas : `fn_docExtServer` et repli client de `fn_idDocTypes`, nouvelle op « defaultOff », 10e colonne de « extensions ») et `builtin = 1`. Annonce ATAK du Zeus : exemple intégré coupé non annoncé.
-- **Fenêtre** (`extensions/dialogs/extensions.hpp`, `fn_docExtWindow`) : refaite sur la grille 40 x 25 (`ui_macros.hpp` copié par `tools/sync_headers.py`, classes `COMSPEC_SSE_Rsc*`, `comspec_sse_ui` requis) au lieu de coordonnées 0..1 et polices fixes (cause du texte coupé : ligne d'état de 0,04 d'une ligne sous laquelle la 2e ligne passait sous les boutons). Ligne d'état deux lignes au plus, police réduite par paliers ; libellés réduits puis « … » ; liste coupée avec « … » (nom entier en bulle) ; fiche et modèles dans un groupe défilant. Vue « aucune extension » (explication + « Ouvrir le tuto ») à la place des volets vides.
-- **Tuto intégré** : bouton « Aide » de l'en-tête (devient « Extensions » pour revenir), 10 étapes (STR_COMSPEC_SSE_EXT_T1..T10, FR / EN), lecture défilante, étape 5 : `config.cpp` minimal commenté (type « Permis de port d'arme ») et « Copier l'exemple » (`copyToClipboard`, confirmation sur la ligne d'état). Textes de la fenêtre passés au stringtable de l'addon (langue du jeu). Même contenu dans le manuel SSE (`STR_COMSPEC_SSE_GUIDE_EXTENSIONS_DESC` / `_TIP`), guides `docs/guides/extensions_documents*.md`, `menu_extensions*.md` (réglages CBA corrigés), README de l'exemple, `docs/guide/Guide_COMSPEC_SSE.html`.
-- **`$PBOPREFIX$` corrompus** : `addons/extensions` et `extensions/example_documents` contenaient des caractères de contrôle (`\a`, `\e` interprétés à l'écriture) ; réécrits. Sans effet sur `build_pbo.bat` (préfixe passé en argument), mais faux pour hemtt et Addon Builder sans `-prefix`.
-- **Autotest** (`scripts/sse.sqf`) : `sse_extension_exemple` active puis recoupe l'exemple ; nouvelle étape `sse_extensions_fenetre` (vues liste, vide forcée par `comspec_sse_docExtTestEmpty`, tuto et ses 10 étapes : textes qui tiennent, aucun chevauchement, presse-papiers égal à l'exemple en solo).
-- **Non vu en jeu** : rendu réel de la fenêtre, du tuto et de l'état vide, copie dans le presse-papiers en multijoueur (client non hôte), PBO de l'exemple produit par `build_pbo.bat`.
-
-## À venir : Récupérez vos couvertures Athena directement depuis le téléphone (SSE et site, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Récupérez vos couvertures Athena directement depuis le téléphone
-- Dans l'app Ma couverture, touchez « Synchroniser avec Athena » : la liste de vos couvertures Athena s'ouvre, cochez celles que vous voulez et importez-les, sans fichier à télécharger ni à déplacer.
-- La plus récente devient votre couverture active ; les autres restent sur le téléphone et s'activent d'un geste. Sans connexion, « Importer un fichier » marche toujours comme avant.
-EN : Get your Athena covers right from the phone
-- In the My cover app, tap "Sync with Athena": the list of your Athena covers opens, tick the ones you want and import them, with no file to download or move.
-- The most recent one becomes your active cover; the others stay on the phone and can be activated with one tap. Without a connection, "Import a file" still works as before.
-
-### Détail technique
-- SSE, app Ma couverture (`fn_idCoverPage`) : section Importer ma couverture refaite : bouton principal SYNCHRONISER AVEC ATHENA, IMPORTER UN FICHIER (ancienne lecture du fichier `Documents\Arma 3 - COMSPEC`, inchangée), Oublier l'import, rappel de la voie sans connexion. Les trois étapes manuelles disparaissent.
-- Nouvelle fenêtre « Mes couvertures sur Athena » (`fn_idCoverAthena`, dessinée à la place de la page avec les composants `fn_formRender` : header, text, empty, skeleton, buttons, person) : ligne d'état, CHOISIR / CHOISIE par couverture, TOUT SÉLECTIONNER, IMPORTER LA SÉLECTION (n), ACTIVER, RÉESSAYER, FERMER. États vides : service coupé, licence non acceptée, liaison pas encore autorisée, compte non lié (LIER MON COMPTE ouvre l'app Athena), COMSPEC Link absent ou ancien, site pas à jour, Athena muette, aucune couverture. Aucune alerte hors du téléphone.
-- Garde avant toute requête (licence `fn_licenceStatus`, `COMSPEC_AthenaReady`, `athenaStatus` logged, service Athena, `["has"] fn_idAthenaPack`) : rien ne part sans elle.
-- Réseau sans nouvelle commande DLL : `GetIdentityPack` (COMSPEC Link 2.0.118+) avec l'opération `~covers` (liste) ou `~cover:CVR-…,…` (5 fichiers au plus), `since` = `v=1`, réponse dans `settings` (`covers_api` 1), appel non bloquant puis `GetIdentityPackChunk`. Verrou `comspec_sse_idPackBusy` partagé avec `fn_idAthenaPack « fetch »` (même tampon de la DLL) et contrôle de l'opération lue.
-- Couvertures reçues revalidées par `fn_idCoverImport « clean »`, gardées dans le profil (`comspec_sse_idCoverLib`, 10 au plus, jamais l'active en moins) ; nouvelle action `fn_idCoverImport « use »` (profil, envoi au serveur, légende), aussi utilisée par l'import d'un fichier. Le serveur, la légende (`fn_idLegend`) et les papiers sont inchangés.
-- Site : `GET /api/atak/covers`, `GET /api/atak/covers/files`, relais `op=~covers` / `~cover:` de `/api/sse/identity/pack` (PR site séparée). Contrat : `docs/ATAK_COUVERTURE_IMPORT.md`.
-- Guides SSE `ma_couverture.md` / `.en.md`, i18n `en.txt`, `localisation/template/xx.txt`, `tools/i18n_identity_en.tsv`.
-
-## À venir : l'app Fichiers répond toujours (COMSPEC SSE et ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : L'app Fichiers répond toujours : trouvé, introuvable ou erreur
-- Une recherche dans l'app Fichiers ne reste plus bloquée sur « Réponse du fichier en attente… » : en quelques secondes, vous avez la fiche, « Aucun enregistrement » ou une erreur claire avec un bouton « Réessayer », et vous pouvez annuler à tout moment.
-- Le numéro imprimé sur une carte ou un passeport de la mission est retrouvé même tapé avec des espaces, des tirets ou en minuscules, et le pays peut s'écrire ALT, TAN, LIV, MAL ou en code à deux lettres ; chaque recherche s'ajoute à l'onglet JOURNAL.
-EN : The Files app always answers: found, not found or error
-- A search in the Files app no longer stays stuck on "Waiting for the records answer…": within a few seconds you get the record, "No record found" or a clear error with a "Retry" button, and you can cancel at any time.
-- The number printed on a mission ID card or passport is found even when typed with spaces, dashes or in lower case, and the country can be written ALT, TAN, LIV, MAL or as a two-letter code; every search is added to the LOG tab.
-
-### Détail technique
-- Cause de l'attente sans fin : en multijoueur (poste client sur serveur dédié), `fn_fileClient « send »` part en `remoteExecCall ["comspec_sse_fnc_fileServer", 2]` et l'app posait `pending` (`fn_fileAction` « run ») sans aucun minuteur ; seul `fn_fileClient « result »` l'effaçait. Toute réponse perdue (serveur avec un SSE plus ancien sans `fn_fileServer`, `CfgRemoteExec` du serveur ou de la mission, sorties muettes de `fn_fileServer` sur unité nulle ou d'un autre poste) laissait « Réponse du fichier en attente… » pour toujours, sans bouton. De plus la réponse locale n'était posée qu'après l'appel Athena (`QueryIdDocument`, jusqu'à 20 s), et un état `pending` ou une animation restés dans `uiNamespace` d'une mission précédente bloquaient l'app.
-- Machine d'états : `fn_fileQuery` inscrit chaque demande (`comspec_sse_filePending`) et arme 8 s ; `fn_fileClient « timeout »` / « fail » (refus motivé du serveur) posent un résultat d'erreur (motif, « Réessayer ») ; « result » pose la réponse locale tout de suite, puis l'étape Athena en tâche de fond (`athenaState` pending | ok | none | offline | unlinked | timeout, 15 s au plus, aucune requête sans licence acceptée) ; une réponse tardive remplace l'erreur de même étiquette ; « cancel » (bouton « Annuler »). Évènements : `comspec_sse_fileResult` inchangé (HashMap vide en cas d'erreur), nouveau `comspec_sse_fileError`.
-- `fn_fileNorm` (nouveau) : numéro et plaque en capitales sans séparateurs, pays ALT/TNA/LVN/MLD (alias TAN, LIV, MAL, AL, LV, noms) et ISO alpha-2 → alpha-3, appliqué sur le poste et sur le serveur.
-- `fn_fileServer` : QA sur le registre `issued` (chaque papier délivré ou généré, IA comprises) par numéro normalisé, titulaire inscrit à la base, mention « Document douteux » (titulaire différent, volé, révoqué, fiche SEEK II discordante), même numéro sous un autre pays = correspondance possible, fiches SEEK II du numéro, contrôles subis gardés aussi sous le numéro (`numChecks`) ; champ `match` (hit | possible | none) ; jamais de silence (`fail`).
-- `fn_filePage` : carte de réponse (HIT, CORRESPONDANCE POSSIBLE, AUCUN ENREGISTREMENT, ERREUR), sources LOCAL / ATHENA, état d'Athena en une ligne, « Copier le numéro », « Annuler », journal avec les erreurs ; messages dans l'app (plus de toast du téléphone sur ces chemins).
-
-## À venir : tracer un numéro de téléphone depuis l'ATAK, IA comprises (ATAK natif et SSE, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Tracez un numéro de téléphone depuis l'ATAK
-- Un numéro trouvé sur un papier, dans un téléphone fouillé ou en interrogatoire : app GE, onglet TRAÇAGE, puis « Tracer le numéro ». Après quelques secondes, un cercle apparaît sur la carte, petit en ville, large en campagne.
-- Ça marche aussi sur les téléphones des IA. Un téléphone éteint, brouillé ou hors couverture ne donne que sa dernière position connue, et le cercle grandit avec le temps.
-- Suivez un numéro en continu, partagez la position à votre groupe ou au TOC, ou mettez-la dans une fiche SSE. Les numéros lus dans un fichier récupéré ont leur bouton « Tracer » juste dessous.
-EN : Trace a phone number from the ATAK
-- A number found on a paper, in a searched phone or during questioning: EW app, TRACE tab, then "Trace the number". After a few seconds a circle shows on the map, small in town, wide in the countryside.
-- It also works on AI phones. A phone that is off, jammed or out of coverage only gives its last known position, and the circle grows over time.
-- Follow a number continuously, share the position with your group or the TOC, or put it in an SSE sheet. Numbers read in a recovered file get their own "Trace" button right below.
-
-### Détail technique
-- Onglet GÉOLOC de l'app GE devenu TRAÇAGE (`fn_pageEw` clé `GEO` gardée) : nouveau dossier `functions/trace` : `fn_traceCalc` (calculs purs : normalisation du numéro, rayon selon les antennes, cercle qui grandit avec l'âge, état par priorité, attente, extraction des numéros d'un texte, `selfTest`), `fn_traceServer` (serveur seul : index des numéros, couverture, état du téléphone, dernière position connue, limites, réponse au seul demandeur par `comspec_atak_native_traceRes`), `fn_traceAction` (téléphone : requête `remoteExecCall`, onglet, journal, suivi, partage en marqueur, fiche SSE FRO, lien profond `open`, boutons `numRows`, menu ZEN).
-- Avant : la GÉOLOC calculait la position sur le client, seulement pour les unités qui portaient un ATAK, à précision fixe. Après : le serveur répond après la requête opérateur (réglage, ±20 %), position décalée dans un rayon tiré des antennes qui captent le téléphone (relais ATAK du camp ou sans camp, relief compris, puis antennes civiles des localités si le réseau mobile civil est actif), aucune position d'unité non tracée ne quitte le serveur.
-- Numéros connus du réseau : téléphones ATAK (numéro, IMEI, MAC), profils SSE (identité, appareils, champs Eden `comspec_sse_personPhone` / `comspec_sse_phoneNumber`, registre `comspec_sse_logicalEntities`), attribut Eden ATAK `COMSPEC_ATAK_PhoneNumber`, IA réglée « Téléphone » sans numéro : numéro de `fn_phoneIdent` (déterministe). Numéro inconnu, ligne jetable ou camp fermé : « Numéro inconnu du réseau ».
-- Contre-mesures : brouilleur (`COMSPEC_ATAK_Jammers`, filtrage ami respecté), téléphone éteint, mode avion, hors couverture : dernière position connue gardée sur le serveur (`COMSPEC_ATAK_TraceLast`, jamais publique). Attribut Eden et menu ZEN « Téléphone traçable » (`COMSPEC_ATAK_PhoneTrace` : on / off / burner). Zeus : suspendre le traçage (`COMSPEC_ATAK_TraceOff`), mandat (`COMSPEC_ATAK_TraceWarrant`), réseau mobile civil (`COMSPEC_ATAK_TraceCivNet`).
-- Réglages CBA « ATAK · Géolocalisation » : `trace_delay`, `trace_cooldown`, `trace_max`, `trace_rad_multi`, `trace_rad_single`, `trace_grow`, `trace_civnet`, `trace_link` (selon le profil : Milsim et Standard oui, Arcade non), `trace_warrant`. Les réglages GÉOLOC existants (camps traçables, propre camp, IA, suivi, prévenir la cible, secours SIM) s'appliquent toujours.
-- Entrées : app Extraction (fichier texte ouvert : un bouton « TRACER » par numéro), app SSE terrain (résultat Approfondir et Chronologie). Manuel de terrain : page « Tracer un numéro ». Guide web : `docs/steam/discussions/24_ge-guerre-electronique.txt`.
-- Tests : `tests/Unit/AtakTraceNumeroTest.php` (lecture du code : aucun canal d'alerte Arma, appelant vérifié au serveur, réponse ciblée, réglages avec exemple, cas de `selfTest`). Rien de ce lot n'a été vu en jeu.
-
-## À venir : un bouton SSE dans la fenêtre d'édition d'une IA en Zeus (SSE, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Un bouton SSE dans la fenêtre d'édition d'une IA en Zeus
-- Double-cliquez sur une IA en Zeus : la fenêtre d'édition a maintenant un bouton **SSE**. Il ouvre une petite fenêtre au nom de l'IA avec ses papiers, ses réponses, ses émotions et son comportement au contrôle.
-- Ce que vous aviez déjà tapé dans la fenêtre d'édition n'est pas perdu : fermez la fenêtre SSE et vous la retrouvez telle quelle.
-EN : An SSE button in the edit window of an AI in Zeus
-- Double-click an AI in Zeus: the edit window now has an **SSE** button. It opens a small window named after the AI with its papers, its answers, its emotions and its behaviour at a check.
-- What you already typed in the edit window is not lost: close the SSE window and you find it as you left it.
-
-### Détail technique
-- La fenêtre « ÉDITER … » est celle de ZEN (`zen_attributes`, type d'affichage `Object`, boîte `zen_common_RscDisplayScrollbars`) ; les boutons TALENT, COMPÉTENCES, ARSENAL et ceux des autres mods (DÉTECTION, CARACTÉRISTIQUES) y sont posés par `zen_attributes_fnc_addButton`. Le SSE passe par la même porte (`ia_rp/fn_iarpZenHub` « register », depuis `XEH_postInitClient`), aucun fichier d'un autre mod touché. Visible pour une IA vivante seulement (`CAManBase`, pas un joueur), et seulement si le menu ZEN « SSE · Roleplay de l'IA » est posé.
-- Placement par ZEN : grille de 3 colonnes, pas de 5,1 × 1,1 cases pour des boutons de 5 × 1 : écart de 0,1 case dans les deux sens à toute taille d'interface et tout format, aucun chevauchement. Avec les 5 boutons de la capture, le bouton SSE est le 6e : 2e rangée, sous TALENT, à gauche de DÉTECTION.
-- Bouton sans fermeture (`closeDisplay` = false) : la fenêtre « SSE · <nom> » (`COMSPEC_SSE_IarpHub`, IDD 94900, `ia_rp/dialogs/iarp_hub.hpp`) s'empile par-dessus, comme les fenêtres COMPÉTENCES et TALENT de ZEN ; les saisies en attente restent, OK ou ANNULER de ZEN décident ensuite.
-- Entrées : les actions du menu ZEN `fn_iarpZen`, désormais rangées par identifiant dans `comspec_sse_iarpZenActs` (fiche « IA de la zone », vrais papiers, atelier IA, réponses, émotions quand la version les a, rôle et caractère, savoir et secrets) ; mêmes fenêtres et mêmes vérifications serveur, multijoueur compris. Une entrée sans action (addon identity absent…) n'est pas affichée. Sans ZEN : rien (la fenêtre est celle de ZEN). Eden : la fenêtre des attributs n'a pas de rangée de boutons, la catégorie « IA RP » garde son bouton « Atelier IA… ».
-- Chaînes `STR_COMSPEC_IARP_H_*` (FR, EN), manuel en jeu chapitre Zeus (`STR_COMSPEC_SSE_CFG_6E79CF4CEF`). Test : `SseZeusEditButtonAssetTest`. Non vu en jeu.
-
-## À venir : papiers d'une IA en vraie carte pour le Zeus, plus de bandeau de texte (SSE, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : En Zeus, les papiers d'une IA s'affichent enfin comme une vraie carte, avec leur analyse
-- « Voir les vrais papiers » ouvre une fenêtre : le document exactement comme le voit un joueur (photo, champs, bande MRZ, recto et verso) et, à côté, ce que seul le maître du jeu sait : vrai nom, qualité du faux expliquée, défauts et ce qu'un contrôle trouvera.
-- Fini la longue ligne de texte coupée en haut de l'écran : les messages du SSE au maître du jeu vont dans la fenêtre ouverte ou dans le téléphone.
-EN : In Zeus, an AI's papers finally show as a real card, with their analysis
-- "See the real papers" opens a window: the document exactly as a player sees it (photo, fields, MRZ strip, front and back) and, beside it, what only the game master knows: real name, forgery quality explained, flaws and what a check will find.
-- No more long line of text cut off at the top of the screen: SSE messages to the game master go to the open window or to the phone.
-
-### Détail technique
-- `identity` : fenêtre `COMSPEC_SSE_IdZeusPapers` (`dialogs/idZeusPapers.hpp`, grille SSE 40 x 25, `ui_macros.hpp` copié par `tools/sync_headers.py`) pilotée par `fn_idZeusPapers` ; le document est rendu par la visionneuse (`fn_idViewerOnLoad`, nouveaux paramètres d'état `zeus`, `box`, `vh`, sans changement pour les joueurs). Données : `fn_idServer` « truth » répond `zeusPapers` au seul poste du Zeus (`fn_idZeusPapersData`, demandeur vérifié par `fn_isAuthority`) ; analyse pure `fn_idZeusAnalysis` (seuils de `fn_idIssue`, clés `STR_COMSPEC_SSE_ZP_*` de `identity/stringtable.xml`, français et anglais).
-- Entrées : module ZEN « Voir les vrais papiers » (personne, ou objet qui contient des papiers), clic droit « SSE · Roleplay de l'IA › Identité et papiers », bouton « Voir le papier » de la page IA de la zone (sans ZEN). Actions de la fenêtre : sélecteur de document, vrai / faux (`aiCfg docMark`), signalement (`report`), retirer les papiers (`papersOff`), fiche de l'IA ; ligne d'état dans la fenêtre.
-- `fn_zeusNotify` n'utilise plus le bandeau de ZEN (`zen_common_fnc_showMessage`) : téléphone et RPT ; « Poser un exercice » (guide) passe par lui. Tests : `IdZeusPapersAssetTest`, `SseNoAlertChannelAssetTest` (liste blanche justifiée : aide « ? » de l'éditeur, notifications d'Eden) ; en jeu : `mod/@COMSPEC_SSE/tools/test_id_zeus_analysis.sqf`.
-
----
-
-## À venir : papiers de vrais pays (COMSPEC SSE, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Des papiers de vrais pays : France, Allemagne, États-Unis, Belgique, Autriche…
-- Les IA et les joueurs peuvent porter les papiers de 45 pays réels : carte d'identité, passeport, permis de conduire, titre de séjour et carte grise, avec les noms, les villes, les adresses et les numéros de ces pays. Le pays se choisit dans l'atelier IA, dans Eden, dans les réglages de mission, ou se règle tout seul selon la carte.
-- France, Allemagne, États-Unis, Royaume-Uni, Belgique, Autriche, Suisse, Pays-Bas, Italie, Espagne et Pologne ont leurs propres papiers : titres et cases dans la langue du pays, dates au format du pays, bande de lecture et numéros qui se vérifient comme les vrais.
-- Ce sont des papiers de jeu : chacun porte la mention SPÉCIMEN · SIMULATION. Altis, Tanoa, Livonie et Malden restent disponibles : vos anciennes missions ne changent pas.
-EN : Papers from real countries: France, Germany, United States, Belgium, Austria…
-- AIs and players can carry papers from 45 real countries: identity card, passport, driving licence, residence permit and vehicle registration, with that country's names, towns, addresses and numbers. Choose the country in the AI workshop, in Eden, in the mission settings, or let the map decide.
-- France, Germany, United States, United Kingdom, Belgium, Austria, Switzerland, Netherlands, Italy, Spain and Poland have their own papers: titles and boxes in the country's language, dates in the country's format, reading strip and numbers that check out like the real ones.
-- These are game papers: each one carries the mark SPECIMEN · SIMULATION. Altis, Tanoa, Livonia and Malden are still there: your old missions do not change.
-
-### Détail technique
-- Registre `CfgComspecCountries` (`addons/identity/CfgComspecCountries.hpp`, généré par `tools/countries/gen_countries.py` depuis `tools/countries/countries.json`) : 49 pays, codes ISO 3166 alpha-3 / alpha-2 stables (repris par le site et `feat/sse-synchro-web`), 11 pays complets, 34 génériques, 4 fictifs. `fn_idCountries` lit le registre (modes `ordered`, `label`, `resolve`, `auto`, `region`) ; les pays réels ne demandent plus `comspec_sse_id_realSim` (réglage retiré) ; nouveau réglage `comspec_sse_id_countryFallback`.
-- `fn_idNumbers` : motifs et numéros à clé (NIR, registre national belge, BSN, AVS, SVNR, codice fiscale, DNI, NIE, PESEL, dowód, permis britannique, SSN 9xx), VIN. `fn_idMrz` : code document du pays (« IDD<< », « IR », « AR »), numéro long en débordement OACI, données facultatives (Belgique, Espagne). `fn_idIssue` : type remplacé par la pièce courante du pays (Royaume-Uni, États-Unis), adresse, autorité, taille, numéro personnel, titre de séjour, certificat d'immatriculation.
-- Nouveaux types `residence_permit` et `vehicle_registration` (objets `COMSPEC_ID_ResidencePermit`, `COMSPEC_ID_VehicleRegistration`, 128 exemplaires chacun). `fn_idCountryChrome` pose bandeau, drapeau, titre et étiquettes dans la langue du pays sur les gabarits sans texte (`tools/countries/gen_country_assets.py`, ImageToPAA : 22 gabarits de pays, 6 gabarits neutres, 2 icônes, environ +3,5 Mo).
-- Atelier IA : liste dynamique, séparateur des pays fictifs, `recountry` (papiers déjà délivrés refaits dans le pays choisi, papiers d'Athena gardés, ligne d'état de la fenêtre). Eden : `COMSPEC_SSE_CountryCombo` (unité et groupe).
-- Essais : `tools/countries/test_countries.py`, `tests/Unit/SseCountryRegistryTest.php`, `fn_idCountrySelfTest` (autotest `sse_pays_reels`). Non testé en jeu.
-
-## À venir : le nom donné à une IA est enfin celui de ses papiers (SSE, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : Le nom donné à une IA est enfin celui de ses papiers
-- Quand le maître du jeu nomme une IA (atelier IA, Zeus, Eden, IA de la zone), ses papiers portent ce nom, avec le numéro et la bande MRZ de son pays. Fini l'IA qui s'appelle « Nikos KARRAS » dans la discussion et « Christos OIKONOMOU » sur sa carte ; renommée plus tard, elle reçoit des papiers à son nouveau nom.
-- Dans « Parler à… », son nom s'affiche une fois que vous l'avez appris (elle vous l'a dit, ou vous l'avez lu sur ses papiers), sinon « Inconnu » ; la photo de la carte montre son visage, ou une silhouette grise, plus jamais un rectangle bleu.
-EN : The name given to an AI is finally the name on its papers
-- When the game master names an AI (AI workshop, Zeus, Eden, area AI), its papers carry that name, with the number and MRZ strip of its country. No more AI called "Nikos KARRAS" in the chat and "Christos OIKONOMOU" on its card; renamed later, it gets papers in its new name.
-- In "Talk to…", its name shows once you have learned it (it told you, or you read it on its papers), otherwise "Unknown"; the card photo shows its face, or a grey silhouette, never a blue rectangle again.
-
-### Détail technique
-- `identity/fn_idIdentityOf.sqf` (nouveau) : identité unique d'une personne, variable diffusée `comspec_sse_identity`. Priorité : 1. explicite (`COMSPEC_SSE_FirstName` / `LastName`, `COMSPEC_SSE_Sex`, `BirthDate`, `BirthPlace`, pays `COMSPEC_SSE_Country` / `COMSPEC_ID_Country`), 2. nom Arma s'il n'est pas tiré des listes `CfgWorlds › GenericNames`, 3. tirage `fn_idGenerate` fait une fois et gardé. Opérations `get`, `full`, `presented`, `set`, `suggest`, `heldByPlayer`, `selfTest` (tableau de priorité rejoué en jeu).
-- Cause : l'atelier IA écrivait le nom dans `comspec_sse_idName` (discussion) mais `fn_idGenerate` (papiers) ne lisait que `COMSPEC_SSE_FirstName` / `LastName` ; l'analyse du Zeus affichait `name _u` (nom d'unité Arma). Désormais `fn_idIssue`, `fn_idRegistry`, `fn_idAiConfig` (`sync`, `issue`, `apply`, éléments gardés), `fn_idHvt`, `fn_idLegend`, `fn_idServer`, `fn_aiWho`, `fn_iarpName`, `fn_iarpProfile` passent par le résolveur ; `fn_idGenerate` sel vide = résolveur, tirage brut seulement pour lui. L'atelier IA ne tire plus de nom au hasard.
-- Renommage : papiers vrais refaits (réglage `comspec_sse_id_papersFollowName`, coché), papier remis à un joueur gardé tel quel et signalé dans la ligne d'état de l'atelier ; faux tiré par les règles automatiques (`autoKind`) redevient vrai pour une IA nommée ; « Le rendre faux » garde imprimé ≠ vrai.
-- Nom montré : `fn_iarpName` `known` / `learn` (`comspec_sse_nameKnownBy`), « Inconnu » dans l'en-tête, les bulles et le journal tant que le joueur ne l'a pas appris ; Zeus, administrateur et hôte le voient.
-- Photo : le conteneur du studio (`fn_idFace`) était posé sans tenir compte de l'axe du modèle, la caméra filmait sa paroi bleue. Orientation et centrage par la boîte englobante, conteneur gris, caméra vérifiée dans le studio, rendu montré seulement une fois vérifié (4 essais), sinon silhouette.
-- Guide SSE : chapitre « Nom des IA et papiers » (FR + EN). Test : `SseIdentityUniqueTest`.
-
-## À venir : fenêtre « IA de la zone » simple à comprendre (COMSPEC SSE, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : La fenêtre « IA de la zone » devient simple : liste, onglets, aperçu du papier
-- Elle se lit en trois étapes : à gauche vous choisissez les IA, au milieu vous les réglez dans quatre onglets (Identité, Papiers, Comportement, Camp), en bas vous appliquez. Chaque réglage est expliqué en une phrase sous sa case.
-- À droite, « Ce que verra le joueur » montre le vrai papier de l'IA, recto et verso, tel qu'un joueur le verra au contrôle.
-- Plus de grande fenêtre d'aide au milieu : une courte visite guidée pointe chaque zone sans la cacher, et le bouton « ? » la remontre. Les textes sont plus grands et plus rien n'est coupé.
-EN : The "AI in the area" window becomes simple: list, tabs, paper preview
-- It reads in three steps: on the left you choose the AIs, in the middle you set them up in four tabs (Identity, Papers, Behaviour, Side), at the bottom you apply. Each setting is explained in one sentence under its box.
-- On the right, "What the player sees" shows the AI's real paper, front and back, as a player will see it at a check.
-- No more big help window in the middle: a short guided tour points at each area without hiding it, and the "?" button shows it again. Texts are larger and nothing is cut off any more.
-
-### Détail technique
-- Page « IA de la zone » de l'éditeur SSE refaite dans de nouveaux fichiers : `editor/dialogs/aizone.hpp` (contrôles, IDC 95000 à 95809), `aizone_styles.hpp` (classes, `AZ_TXT_MIN` 0.78 case = `SSE_TXT_S` de la charte), `coach.hpp` (visite guidée). `editor.hpp` les inclut ; l'ancien bloc Ai* (IDC 945xx) et la modale `GuideDim` / `GuideBox` sont retirés ; titre et état de l'en-tête passent à 0.8 case.
-- `fn_editorAi` réécrit (même nom, mêmes ops appelées par le serveur et l'autotest : `load`, `scan`, `scanUnits`, `rescan`, `click`, `checkAll`, `checkNone`, `sheet`, `applyChecked`, `applyGroup`, `keepChecked`, `keptReload`, `keptForget`, `answers`, `aiReply`, `athenaDone`, `keepItem`, `post`) : colonnes, onglets, volets Filtres et Mémoire de la carte, tri, état vide, ligne d'état sans alerte (plus de `comspec_sse_fnc_toast`), indicateur « Modifié, pas encore appliqué », sélection gardée après Appliquer. Libellés ajustés par `ctrlTextWidth` sans descendre sous 0.78 case, puis « … » et info-bulle.
-- Nouveaux : `fn_editorAiCard` (papier imprimé dessiné dans un groupe, mêmes coordonnées que la visionneuse : gabarit, champs, MRZ, hologramme ; photo en silhouette) et `fn_editorCoach` (bulles ancrées : à côté de la cible, cadre vert, pointe, aucun voile ; 3 étapes ; Suivant / Passer / Ne plus afficher ; `profileNamespace` « comspec_sse_aiZoneCoach » pour la page, « comspec_sse_editorGuided » pour l'éditeur, dont la visite passe aussi en bulles).
-- `fn_editorAiServer` : op `docView` (document imprimé, jamais la vérité, mêmes champs que `_pub` de `fn_idServer`), réglage `country` (pays des papiers, posé sur `COMSPEC_ID_Country` avant que les papiers soient refaits, gardé avec l'IA et remis par la mémoire locale), 16e colonne de ligne (pays). Données gardées inchangées (`comspec_sse_editorAiKept`, `comspec_sse_editorAiKeptSeq`).
-- Textes : 166 clés `STR_COMSPEC_SSE_AZ_*` (FR, EN) dans `editor/stringtable.xml` ; anciennes `STR_COMSPEC_SSE_ED_*` gardées. Vocabulaire : « Vérité » → badge Vrai / Faux, « Nature » → Authenticité, « Gardés pour les prochaines parties » → Mémoire de la carte (anciens noms dans les info-bulles). Manuel en jeu (`STR_COMSPEC_SSE_GUIDE_AIZONE_DESC`) et `docs/guides/ia_de_la_zone(.en).md` en trois étapes.
-- Tests : `tests/Unit/SseAiZoneWindowAssetTest.php` (clés FR / EN de chaque contrôle, aucune taille sous 0.78, libellés et listes qui tiennent en FR et EN, aucun chevauchement par onglet et par volet, visite ancrée et notée, aucune alerte Arma) ; autotest `sse_ia_zone` mis à jour et `sse_ia_zone_etats` (liste vide, remplie, chaque onglet, volets, visite : `AT_fnc_tient`, police minimale, listes déroulantes, rectangles).
-- Non vu en jeu : autotest non lancé (à faire : rendu du papier dans l'aperçu, bulles de la visite, 4:3 et 21:9, tailles d'interface très petite et très grande, Appliquer en multijoueur).
-
-## À venir : des IA qui réagissent normalement aux messages hors sujet (COMSPEC SSE, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : Les civils réagissent enfin normalement quand on leur dit n'importe quoi
-- Une grossièreté, une insulte ou une question absurde n'est plus prise pour une demande : la personne est choquée, vexée ou méfiante selon son caractère, et si vous insistez elle coupe la conversation un moment. Elle ne vous tend jamais ses papiers sans qu'on les lui demande.
-- Elle comprend mieux le tutoiement et les questions courtes (« Ton prénom ? », « Tes papiers. », « Où tu vas ? »), « Et alors ? » ou « Pourquoi ? » après sa réponse, et quand elle ne comprend pas elle le dit sans se répéter ; l'astuce du GUIDE s'affiche sous la saisie, et la première lettre de vos messages n'est plus coupée.
-EN : Civilians finally react normally when you say anything at all
-- A crude remark, an insult or an absurd question is no longer taken as a request: the person is shocked, offended or wary depending on their character, and if you keep going they end the conversation for a while. They never hand over their papers unless you ask for them.
-- They better understand informal and short questions ("Your name?", "Your papers.", "Where are you going?"), "So what?" or "Why?" after their answer, and when they don't understand they say so without repeating themselves; the GUIDE tip shows under the input line, and the first letter of your messages is no longer cut off.
-
-### Détail technique
-- Cause des répliques incohérentes de la capture (« Oui ? », « Pardon ? », « D'accord, voilà. ») : build antérieur à 7137ffdd3. « Tu aimes le cul ? » n'y était pas reconnu (« unknown », réplique « Pardon ? » de la banque), le rappel « Pas compris… GUIDE » partait dans le fil (`fn_iarpClient` « ack »), et les phrases d'entrée d'état de l'automate (`fn_idAiEnter` : « Oui ? » à « interpelle », « D'accord, voilà. » à « coopere ») s'affichaient dans la conversation. Dans la base 4.4.0, `fn_idAiSay` les tait pendant une conversation, mais « Tu aimes le cul ? » était compris « hobbies » (motif « tu aimes »).
-- Nouveau `fn_iarpOffTopic` + `data\iarp_offtopic.sqf` (sections sms, cats, not, junk, actions, mineOk, more, lexicon, bank) et `data\iarp_ottests.sqf` : couche hors sujet AVANT les demandes à effet (grossièreté, insulte, avances, question personnelle, hors du monde, absurde, charabia) ; `fn_iarpIntent` renvoie une confiance (5e élément) : demande à effet sous 0,4 non déclenchée. Provocation cumulée (retombe de 1 par minute) : confiance −10 à −20, tension +6 à +12, à 3 conversation coupée 90 s (refus en plein contrôle, sinon il s'éloigne), excuses acceptées. Incompris : otMiss1 / otMiss2 / otLost, jamais la même tournure deux fois de suite ; relance par la dernière réplique (otMore.*). Didascalies sur leur propre ligne (fil, bulle 3D) ; phrase type de l'atelier jamais après un ordre ou un refus ; « Partez » : il part.
-- Points d'accroche courts dans `fn_iarpServer` (filtre, réaction, relance, « hello », « Partez »), `fn_iarpGen` (noMine, pas de redite sur les 5 dernières), `fn_iarpData`, `fn_iarpNorm` (écriture SMS), `fn_iarpClient` / `fn_iarpUi` (astuce sous la saisie, bulles alignées à gauche avec marge), `fn_iarpBubble`, `fn_iarpSelfTest`, `config.cpp`, `stringtable.xml`.
-- Banc hors jeu `mod/@COMSPEC_SSE/tools/iarp_harness.py` (même batterie que l'autotest) : 74 messages hors sujet, 138 légitimes, 514 exemples du guide, 28 tours de dialogue, corpus inchangé. Non testé en jeu.
-
-## SSE 1.9.0 : fenêtre « Réponses de l'IA » simple, peur d'une arme braquée de près, champs des documents (SSE 1.9.0)
+## SSE 1.9.0 : IA qui réagissent naturellement, émotions réglables, papiers de 45 pays, une seule identité par IA, outils Zeus refaits (SSE 1.9.0)
 
 ### Résumé joueur
 Type : nouveauté
-FR : SSE 1.9.0 : la fenêtre « Réponses de l'IA » devient simple à prendre en main
-- **Réponses de l'IA** : la fenêtre s'ouvre en mode simple. Choisissez une question, cliquez sur « Ma réponse », écrivez ce que l'IA répond et lisez juste en dessous ce qu'elle dira.
-- **Variables et options** : « Insérer une variable » ajoute son prénom, sa ville ou le nom du joueur. Les réglages plus fins sont rangés dans « Options avancées ».
-- **Arme braquée de près** : une IA a de nouveau peur quand vous la braquez à quelques mètres, même en visant la tête.
-- **Papiers** : les champs à remplir d'un type de document, extensions comprises, sont de nouveau proposés quand vous donnez des papiers.
-EN : SSE 1.9.0: the "AI answers" window is now easy to pick up
-- **AI answers**: the window opens in simple mode. Pick a question, click "My answer", write what the AI says and read right below what it will say.
-- **Variables and options**: "Insert a variable" adds its first name, its town or the player's name. Finer settings are under "Advanced options".
-- **Weapon aimed up close**: an AI is scared again when you aim at it from a few metres, even at the head.
-- **Papers**: the fields to fill in for a document type, extensions included, are offered again when you hand out papers.
+FR : SSE 1.9.0 : des IA plus naturelles, de vrais papiers et des outils Zeus refaits
+- **Parler aux IA** : une IA réagit normalement à une insulte ou une question absurde, comprend le tutoiement et les questions courtes (« Ton prénom ? », « Tes papiers. ») et ne parle que de ce qu'elle sait. Le maître du jeu choisit ses émotions : sans « peur des armes », un policier reste calme devant votre arme.
+- **Écrire ce qu'elle répond** : dans Eden, deux cases sur l'IA suffisent, la question et sa réponse (aussi en tête de l'atelier IA et dans son menu Zeus). La fenêtre « Réponses de l'IA » s'ouvre en mode simple, avec un aperçu de ce qu'elle dira.
+- **Papiers** : le nom donné à une IA est celui de ses papiers, et vous le voyez une fois qu'elle vous l'a dit. Les papiers existent pour 45 pays réels (France, Allemagne, États-Unis…), avec leurs noms, numéros et bande de lecture, marqués SPÉCIMEN.
+- **Pour le Zeus** : un bouton SSE dans la fenêtre d'édition d'une IA, « Voir les vrais papiers » qui montre la vraie carte et son analyse, et une fenêtre « IA de la zone » refaite : choisir, régler dans des onglets, appliquer, avec l'aperçu du papier.
+EN : SSE 1.9.0: more natural AIs, real papers and redone Zeus tools
+- **Talking to AIs**: an AI reacts normally to an insult or an absurd question, understands casual speech and short questions ("Your name?", "Papers.") and only talks about what it knows. The game master picks its emotions: without "fear of weapons", a police officer stays calm in front of your weapon.
+- **Writing what it answers**: in Eden, two boxes on the AI are enough, the question and its answer (also at the top of the AI workshop and in its Zeus menu). The "AI answers" window opens in simple mode, with a preview of what it will say.
+- **Papers**: the name given to an AI is the one on its papers, and you see it once it has told you. Papers exist for 45 real countries (France, Germany, United States…), with their names, numbers and machine-readable strip, marked SPECIMEN.
+- **For the Zeus**: an SSE button in an AI's edit window, "See the real papers" which shows the real card and its analysis, and a redone "Area AI" window: pick, set up in tabs, apply, with a preview of the paper.
 
 ### Détail technique
 
@@ -355,21 +68,104 @@ EN : SSE 1.9.0: the "AI answers" window is now easy to pick up
 - Bancs `fn_iarpSelfTest` / mission d'autotest `scripts/ia_rp.sqf` : contrôle « Libre » au bon ton, confrontation arme braquée dans `ia_rp_dialogue_421`, état, peur et distance notés dans `ia_rp_peur`.
 - Non vu en jeu (autotest non lancé sur consigne).
 
+**Des IA qui réagissent normalement aux messages hors sujet (SSE)**
 
-## Pack 4.4.0 Washington : salle TOC en jeu, vue satellite, vrais grands écrans, sang sur l'écran (ATAK natif 4.4.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.0)
+- Cause des répliques incohérentes de la capture (« Oui ? », « Pardon ? », « D'accord, voilà. ») : build antérieur à 7137ffdd3. « Tu aimes le cul ? » n'y était pas reconnu (« unknown », réplique « Pardon ? » de la banque), le rappel « Pas compris… GUIDE » partait dans le fil (`fn_iarpClient` « ack »), et les phrases d'entrée d'état de l'automate (`fn_idAiEnter` : « Oui ? » à « interpelle », « D'accord, voilà. » à « coopere ») s'affichaient dans la conversation. Dans la base 4.4.0, `fn_idAiSay` les tait pendant une conversation, mais « Tu aimes le cul ? » était compris « hobbies » (motif « tu aimes »).
+- Nouveau `fn_iarpOffTopic` + `data\iarp_offtopic.sqf` (sections sms, cats, not, junk, actions, mineOk, more, lexicon, bank) et `data\iarp_ottests.sqf` : couche hors sujet AVANT les demandes à effet (grossièreté, insulte, avances, question personnelle, hors du monde, absurde, charabia) ; `fn_iarpIntent` renvoie une confiance (5e élément) : demande à effet sous 0,4 non déclenchée. Provocation cumulée (retombe de 1 par minute) : confiance −10 à −20, tension +6 à +12, à 3 conversation coupée 90 s (refus en plein contrôle, sinon il s'éloigne), excuses acceptées. Incompris : otMiss1 / otMiss2 / otLost, jamais la même tournure deux fois de suite ; relance par la dernière réplique (otMore.*). Didascalies sur leur propre ligne (fil, bulle 3D) ; phrase type de l'atelier jamais après un ordre ou un refus ; « Partez » : il part.
+- Points d'accroche courts dans `fn_iarpServer` (filtre, réaction, relance, « hello », « Partez »), `fn_iarpGen` (noMine, pas de redite sur les 5 dernières), `fn_iarpData`, `fn_iarpNorm` (écriture SMS), `fn_iarpClient` / `fn_iarpUi` (astuce sous la saisie, bulles alignées à gauche avec marge), `fn_iarpBubble`, `fn_iarpSelfTest`, `config.cpp`, `stringtable.xml`.
+- Banc hors jeu `mod/@COMSPEC_SSE/tools/iarp_harness.py` (même batterie que l'autotest) : 74 messages hors sujet, 138 légitimes, 514 exemples du guide, 28 tours de dialogue, corpus inchangé. Non testé en jeu.
+
+**Émotions des IA réglables, peur des armes comprise (SSE)**
+
+- `fn_iarpProfile` : champs de profil `emotionsOn` (interrupteur) et `emotions` (`"auto"` ou liste parmi `peur`, `armes`, `nervosite`, `colere`, `mefiance`, `soulagement`) ; `noWeaponFear` écrit à la sérialisation et dans `keepOf` (dérivé : vrai quand `armes` manque), lu à l'import ; opérations `emoIds`, `emoPresets`, `emoActive`, `emoHas`, `edenEmo` / `edenEmoApply` ; `apply` garde les émotions de l'IA quand le profil appliqué ne les règle pas (bibliothèque, module « Atelier IA ») ; `keepOf` / `keepApply` portent les émotions (« Garder pour les prochaines parties »). Priorité : réglage de l'IA, sinon réglage global.
+- Réglages CBA `comspec_sse_iarp_emoOn` et `comspec_sse_iarp_emo_<émotion>` (COMSPEC SSE › IA RP, enregistrables dans la mission) ; attributs Eden `comspec_sse_iarpEmoMode`, `comspec_sse_iarpEmo_<émotion>`, `comspec_sse_iarpEmoGroup` (catégorie IA RP des unités) ; menu ZEN « Profil d'IA › Émotions… » (préréglage, cases, tout son groupe ; `profileTweak` accepte `raise`).
+- Sans `armes` : `fn_iarpReact` « fired » (tir entendu seulement), « level » et `fn_idAiBrain` (armes braquées et soldats arme levée à zéro), `fn_iarpServer` (`_aimedF` pour obéissance, menace, aveu, fuite, palier de renseignement, situation « peur »), témoin d'une arme seule, geste « /me braque son arme ». Sans `peur` / `nervosite` / `colere` : états fuit et rendu sous la menace, nerveux et refus par nervosité, agressif et renforts non choisis ; tension et peur nulles sans aucune des trois ; tons `effraye` / `nerveux` / `agressif` / `mefiant` écartés par `fn_iarpGen`, même imposés ; pression positive ignorée sans elles, apaisement ignoré sans `soulagement`.
+- Gardé volontairement : menottes et reddition ACE déjà faites, état imposé par le Zeus ou l'attribut « Comportement au contrôle », aveu par la confrontation (puis reddition d'un suspect sérieux), fuite d'un insurgé laissé seul après sa reddition, refus de papiers tiré par « Civils qui présentent leurs papiers ».
+- Manuel en jeu (« Émotions des IA »), guides `reponses_ia.md` / `.en.md`, auto-contrôle `fn_iarpSelfTest` (bloc émotions), autotest `ia_rp_peur_armes` (groupe `ia_rp`), non lancés en jeu.
+
+**Faire parler une IA, une question et une réponse (SSE)**
+
+- `fn_iarpAnswers` : `qaGet` / `qaSet` / `qaTriggers` (pur). La paire question / réponse est la 1re question perso (`cN`) des réponses du profil, même format que la fenêtre « Réponses de l'IA » : libellé = la question, déclencheurs = la question entière et ses deux mots importants les plus longs (`chef+village`), textes = situation `*` ; situations, ordre, palier et lieu déjà réglés gardés, place dans la liste gardée.
+- Attribut Eden `comspec_sse_iarpProfile` (même propriété, même valeur texte) : contrôle `COMSPEC_SSE_IarpProfileAttr` avec cases Question et Réponse ; valeur relue telle quelle tant qu'elles ne changent pas (`fn_iarpEden`).
+- Atelier IA (`iarp_workshop.hpp`, `fn_iarpWorkshop`) : Question, Réponse de l'IA, « + Variable », bouton « Options avancées » (Ce qu'elle sait, Quand elle le dit : champs `know`, `unlock`, `unlockWord` inchangés) ; zone de test : la question perso reconnue d'abord ; une bibliothèque sans réponses garde les réponses écrites ; question sans réponse : rien n'est appliqué, la ligne d'état le dit.
+- Zeus : menu ZEN « Profil d'IA › Question et réponse… » (`profileTweak` des réponses). Libellés en clair : « Face à un ordre », « Toutes les questions et réponses… ». Clés `stringtable.xml` d'avant gardées (textes changés), nouvelles clés FR / EN.
+- Tests : `fn_iarpSelfTest` (aller-retour, paraphrases, anciennes valeurs), `tests/Unit/SseIarpQuestionReponseAssetTest.php`. À tester en jeu : attribut Eden (hauteur, saisie, enregistrement), atelier (vue simple / avancée, « + Variable »), menu ZEN.
+
+**Le nom donné à une IA est enfin celui de ses papiers (SSE)**
+
+- `identity/fn_idIdentityOf.sqf` (nouveau) : identité unique d'une personne, variable diffusée `comspec_sse_identity`. Priorité : 1. explicite (`COMSPEC_SSE_FirstName` / `LastName`, `COMSPEC_SSE_Sex`, `BirthDate`, `BirthPlace`, pays `COMSPEC_SSE_Country` / `COMSPEC_ID_Country`), 2. nom Arma s'il n'est pas tiré des listes `CfgWorlds › GenericNames`, 3. tirage `fn_idGenerate` fait une fois et gardé. Opérations `get`, `full`, `presented`, `set`, `suggest`, `heldByPlayer`, `selfTest` (tableau de priorité rejoué en jeu).
+- Cause : l'atelier IA écrivait le nom dans `comspec_sse_idName` (discussion) mais `fn_idGenerate` (papiers) ne lisait que `COMSPEC_SSE_FirstName` / `LastName` ; l'analyse du Zeus affichait `name _u` (nom d'unité Arma). Désormais `fn_idIssue`, `fn_idRegistry`, `fn_idAiConfig` (`sync`, `issue`, `apply`, éléments gardés), `fn_idHvt`, `fn_idLegend`, `fn_idServer`, `fn_aiWho`, `fn_iarpName`, `fn_iarpProfile` passent par le résolveur ; `fn_idGenerate` sel vide = résolveur, tirage brut seulement pour lui. L'atelier IA ne tire plus de nom au hasard.
+- Renommage : papiers vrais refaits (réglage `comspec_sse_id_papersFollowName`, coché), papier remis à un joueur gardé tel quel et signalé dans la ligne d'état de l'atelier ; faux tiré par les règles automatiques (`autoKind`) redevient vrai pour une IA nommée ; « Le rendre faux » garde imprimé ≠ vrai.
+- Nom montré : `fn_iarpName` `known` / `learn` (`comspec_sse_nameKnownBy`), « Inconnu » dans l'en-tête, les bulles et le journal tant que le joueur ne l'a pas appris ; Zeus, administrateur et hôte le voient.
+- Photo : le conteneur du studio (`fn_idFace`) était posé sans tenir compte de l'axe du modèle, la caméra filmait sa paroi bleue. Orientation et centrage par la boîte englobante, conteneur gris, caméra vérifiée dans le studio, rendu montré seulement une fois vérifié (4 essais), sinon silhouette.
+- Guide SSE : chapitre « Nom des IA et papiers » (FR + EN). Test : `SseIdentityUniqueTest`.
+
+**Papiers de vrais pays (SSE)**
+
+- Registre `CfgComspecCountries` (`addons/identity/CfgComspecCountries.hpp`, généré par `tools/countries/gen_countries.py` depuis `tools/countries/countries.json`) : 49 pays, codes ISO 3166 alpha-3 / alpha-2 stables (repris par le site et `feat/sse-synchro-web`), 11 pays complets, 34 génériques, 4 fictifs. `fn_idCountries` lit le registre (modes `ordered`, `label`, `resolve`, `auto`, `region`) ; les pays réels ne demandent plus `comspec_sse_id_realSim` (réglage retiré) ; nouveau réglage `comspec_sse_id_countryFallback`.
+- `fn_idNumbers` : motifs et numéros à clé (NIR, registre national belge, BSN, AVS, SVNR, codice fiscale, DNI, NIE, PESEL, dowód, permis britannique, SSN 9xx), VIN. `fn_idMrz` : code document du pays (« IDD<< », « IR », « AR »), numéro long en débordement OACI, données facultatives (Belgique, Espagne). `fn_idIssue` : type remplacé par la pièce courante du pays (Royaume-Uni, États-Unis), adresse, autorité, taille, numéro personnel, titre de séjour, certificat d'immatriculation.
+- Nouveaux types `residence_permit` et `vehicle_registration` (objets `COMSPEC_ID_ResidencePermit`, `COMSPEC_ID_VehicleRegistration`, 128 exemplaires chacun). `fn_idCountryChrome` pose bandeau, drapeau, titre et étiquettes dans la langue du pays sur les gabarits sans texte (`tools/countries/gen_country_assets.py`, ImageToPAA : 22 gabarits de pays, 6 gabarits neutres, 2 icônes, environ +3,5 Mo).
+- Atelier IA : liste dynamique, séparateur des pays fictifs, `recountry` (papiers déjà délivrés refaits dans le pays choisi, papiers d'Athena gardés, ligne d'état de la fenêtre). Eden : `COMSPEC_SSE_CountryCombo` (unité et groupe).
+- Essais : `tools/countries/test_countries.py`, `tests/Unit/SseCountryRegistryTest.php`, `fn_idCountrySelfTest` (autotest `sse_pays_reels`). Non testé en jeu.
+
+**Papiers d'une IA en vraie carte pour le Zeus, plus de bandeau de texte (SSE)**
+
+- `identity` : fenêtre `COMSPEC_SSE_IdZeusPapers` (`dialogs/idZeusPapers.hpp`, grille SSE 40 x 25, `ui_macros.hpp` copié par `tools/sync_headers.py`) pilotée par `fn_idZeusPapers` ; le document est rendu par la visionneuse (`fn_idViewerOnLoad`, nouveaux paramètres d'état `zeus`, `box`, `vh`, sans changement pour les joueurs). Données : `fn_idServer` « truth » répond `zeusPapers` au seul poste du Zeus (`fn_idZeusPapersData`, demandeur vérifié par `fn_isAuthority`) ; analyse pure `fn_idZeusAnalysis` (seuils de `fn_idIssue`, clés `STR_COMSPEC_SSE_ZP_*` de `identity/stringtable.xml`, français et anglais).
+- Entrées : module ZEN « Voir les vrais papiers » (personne, ou objet qui contient des papiers), clic droit « SSE · Roleplay de l'IA › Identité et papiers », bouton « Voir le papier » de la page IA de la zone (sans ZEN). Actions de la fenêtre : sélecteur de document, vrai / faux (`aiCfg docMark`), signalement (`report`), retirer les papiers (`papersOff`), fiche de l'IA ; ligne d'état dans la fenêtre.
+- `fn_zeusNotify` n'utilise plus le bandeau de ZEN (`zen_common_fnc_showMessage`) : téléphone et RPT ; « Poser un exercice » (guide) passe par lui. Tests : `IdZeusPapersAssetTest`, `SseNoAlertChannelAssetTest` (liste blanche justifiée : aide « ? » de l'éditeur, notifications d'Eden) ; en jeu : `mod/@COMSPEC_SSE/tools/test_id_zeus_analysis.sqf`.
+
+**Un bouton SSE dans la fenêtre d'édition d'une IA en Zeus (SSE)**
+
+- La fenêtre « ÉDITER … » est celle de ZEN (`zen_attributes`, type d'affichage `Object`, boîte `zen_common_RscDisplayScrollbars`) ; les boutons TALENT, COMPÉTENCES, ARSENAL et ceux des autres mods (DÉTECTION, CARACTÉRISTIQUES) y sont posés par `zen_attributes_fnc_addButton`. Le SSE passe par la même porte (`ia_rp/fn_iarpZenHub` « register », depuis `XEH_postInitClient`), aucun fichier d'un autre mod touché. Visible pour une IA vivante seulement (`CAManBase`, pas un joueur), et seulement si le menu ZEN « SSE · Roleplay de l'IA » est posé.
+- Placement par ZEN : grille de 3 colonnes, pas de 5,1 × 1,1 cases pour des boutons de 5 × 1 : écart de 0,1 case dans les deux sens à toute taille d'interface et tout format, aucun chevauchement. Avec les 5 boutons de la capture, le bouton SSE est le 6e : 2e rangée, sous TALENT, à gauche de DÉTECTION.
+- Bouton sans fermeture (`closeDisplay` = false) : la fenêtre « SSE · <nom> » (`COMSPEC_SSE_IarpHub`, IDD 94900, `ia_rp/dialogs/iarp_hub.hpp`) s'empile par-dessus, comme les fenêtres COMPÉTENCES et TALENT de ZEN ; les saisies en attente restent, OK ou ANNULER de ZEN décident ensuite.
+- Entrées : les actions du menu ZEN `fn_iarpZen`, désormais rangées par identifiant dans `comspec_sse_iarpZenActs` (fiche « IA de la zone », vrais papiers, atelier IA, réponses, émotions quand la version les a, rôle et caractère, savoir et secrets) ; mêmes fenêtres et mêmes vérifications serveur, multijoueur compris. Une entrée sans action (addon identity absent…) n'est pas affichée. Sans ZEN : rien (la fenêtre est celle de ZEN). Eden : la fenêtre des attributs n'a pas de rangée de boutons, la catégorie « IA RP » garde son bouton « Atelier IA… ».
+- Chaînes `STR_COMSPEC_IARP_H_*` (FR, EN), manuel en jeu chapitre Zeus (`STR_COMSPEC_SSE_CFG_6E79CF4CEF`). Test : `SseZeusEditButtonAssetTest`. Non vu en jeu.
+
+**Fenêtre « IA de la zone » simple à comprendre (SSE)**
+
+- Page « IA de la zone » de l'éditeur SSE refaite dans de nouveaux fichiers : `editor/dialogs/aizone.hpp` (contrôles, IDC 95000 à 95809), `aizone_styles.hpp` (classes, `AZ_TXT_MIN` 0.78 case = `SSE_TXT_S` de la charte), `coach.hpp` (visite guidée). `editor.hpp` les inclut ; l'ancien bloc Ai* (IDC 945xx) et la modale `GuideDim` / `GuideBox` sont retirés ; titre et état de l'en-tête passent à 0.8 case.
+- `fn_editorAi` réécrit (même nom, mêmes ops appelées par le serveur et l'autotest : `load`, `scan`, `scanUnits`, `rescan`, `click`, `checkAll`, `checkNone`, `sheet`, `applyChecked`, `applyGroup`, `keepChecked`, `keptReload`, `keptForget`, `answers`, `aiReply`, `athenaDone`, `keepItem`, `post`) : colonnes, onglets, volets Filtres et Mémoire de la carte, tri, état vide, ligne d'état sans alerte (plus de `comspec_sse_fnc_toast`), indicateur « Modifié, pas encore appliqué », sélection gardée après Appliquer. Libellés ajustés par `ctrlTextWidth` sans descendre sous 0.78 case, puis « … » et info-bulle.
+- Nouveaux : `fn_editorAiCard` (papier imprimé dessiné dans un groupe, mêmes coordonnées que la visionneuse : gabarit, champs, MRZ, hologramme ; photo en silhouette) et `fn_editorCoach` (bulles ancrées : à côté de la cible, cadre vert, pointe, aucun voile ; 3 étapes ; Suivant / Passer / Ne plus afficher ; `profileNamespace` « comspec_sse_aiZoneCoach » pour la page, « comspec_sse_editorGuided » pour l'éditeur, dont la visite passe aussi en bulles).
+- `fn_editorAiServer` : op `docView` (document imprimé, jamais la vérité, mêmes champs que `_pub` de `fn_idServer`), réglage `country` (pays des papiers, posé sur `COMSPEC_ID_Country` avant que les papiers soient refaits, gardé avec l'IA et remis par la mémoire locale), 16e colonne de ligne (pays). Données gardées inchangées (`comspec_sse_editorAiKept`, `comspec_sse_editorAiKeptSeq`).
+- Textes : 166 clés `STR_COMSPEC_SSE_AZ_*` (FR, EN) dans `editor/stringtable.xml` ; anciennes `STR_COMSPEC_SSE_ED_*` gardées. Vocabulaire : « Vérité » → badge Vrai / Faux, « Nature » → Authenticité, « Gardés pour les prochaines parties » → Mémoire de la carte (anciens noms dans les info-bulles). Manuel en jeu (`STR_COMSPEC_SSE_GUIDE_AIZONE_DESC`) et `docs/guides/ia_de_la_zone(.en).md` en trois étapes.
+- Tests : `tests/Unit/SseAiZoneWindowAssetTest.php` (clés FR / EN de chaque contrôle, aucune taille sous 0.78, libellés et listes qui tiennent en FR et EN, aucun chevauchement par onglet et par volet, visite ancrée et notée, aucune alerte Arma) ; autotest `sse_ia_zone` mis à jour et `sse_ia_zone_etats` (liste vide, remplie, chaque onglet, volets, visite : `AT_fnc_tient`, police minimale, listes déroulantes, rectangles).
+- Non vu en jeu : autotest non lancé (à faire : rendu du papier dans l'aperçu, bulles de la visite, 4:3 et 21:9, tailles d'interface très petite et très grande, Appliquer en multijoueur).
+
+**Fenêtre des extensions de documents lisible, exemple livré et tuto intégré (SSE)**
+
+- **Cause des « 0 extension(s) »** : voulu côté code, faux côté livraison. `fn_idDocTypes` « extensions » ne lit que `configFile >> CfgComspecDocumentExtensions` ; le SSE n'en déclare aucune (`identity/CfgComspecDocuments.hpp`, classe vide) et l'extension d'exemple n'était construite qu'en mod séparé (`extensions/example_documents/build_extension.bat` → `@COMSPEC_SSE_ExampleDocuments`), absent de `build_pbo.bat` et de `workshop-pack.ps1`. Un joueur du Workshop n'avait donc jamais d'extension, et la fenêtre gardait ses deux volets vides.
+- **Exemple livré** : `build_pbo.bat` empaquette `extensions/example_documents` en `addons/comspec_sse_ext_example_documents.pbo` (préfixe d'origine, README / tools / scripts hors PBO), exigé par `workshop-pack.ps1`. Nouveaux champs de `CfgComspecDocumentExtensions` : `defaultOff = 1` (coupée tant qu'un Zeus ne l'active pas : `fn_docExtServer` et repli client de `fn_idDocTypes`, nouvelle op « defaultOff », 10e colonne de « extensions ») et `builtin = 1`. Annonce ATAK du Zeus : exemple intégré coupé non annoncé.
+- **Fenêtre** (`extensions/dialogs/extensions.hpp`, `fn_docExtWindow`) : refaite sur la grille 40 x 25 (`ui_macros.hpp` copié par `tools/sync_headers.py`, classes `COMSPEC_SSE_Rsc*`, `comspec_sse_ui` requis) au lieu de coordonnées 0..1 et polices fixes (cause du texte coupé : ligne d'état de 0,04 d'une ligne sous laquelle la 2e ligne passait sous les boutons). Ligne d'état deux lignes au plus, police réduite par paliers ; libellés réduits puis « … » ; liste coupée avec « … » (nom entier en bulle) ; fiche et modèles dans un groupe défilant. Vue « aucune extension » (explication + « Ouvrir le tuto ») à la place des volets vides.
+- **Tuto intégré** : bouton « Aide » de l'en-tête (devient « Extensions » pour revenir), 10 étapes (STR_COMSPEC_SSE_EXT_T1..T10, FR / EN), lecture défilante, étape 5 : `config.cpp` minimal commenté (type « Permis de port d'arme ») et « Copier l'exemple » (`copyToClipboard`, confirmation sur la ligne d'état). Textes de la fenêtre passés au stringtable de l'addon (langue du jeu). Même contenu dans le manuel SSE (`STR_COMSPEC_SSE_GUIDE_EXTENSIONS_DESC` / `_TIP`), guides `docs/guides/extensions_documents*.md`, `menu_extensions*.md` (réglages CBA corrigés), README de l'exemple, `docs/guide/Guide_COMSPEC_SSE.html`.
+- **`$PBOPREFIX$` corrompus** : `addons/extensions` et `extensions/example_documents` contenaient des caractères de contrôle (`\a`, `\e` interprétés à l'écriture) ; réécrits. Sans effet sur `build_pbo.bat` (préfixe passé en argument), mais faux pour hemtt et Addon Builder sans `-prefix`.
+- **Autotest** (`scripts/sse.sqf`) : `sse_extension_exemple` active puis recoupe l'exemple ; nouvelle étape `sse_extensions_fenetre` (vues liste, vide forcée par `comspec_sse_docExtTestEmpty`, tuto et ses 10 étapes : textes qui tiennent, aucun chevauchement, presse-papiers égal à l'exemple en solo).
+- **Non vu en jeu** : rendu réel de la fenêtre, du tuto et de l'état vide, copie dans le presse-papiers en multijoueur (client non hôte), PBO de l'exemple produit par `build_pbo.bat`.
+
+**Lore de session avec Athena : les IA remontent et redescendent (SSE)**
+
+- Identifiant stable par IA (`comspec_sse_aiUid`, public) : attribut Eden `COMSPEC_ID_AiUid`, sinon BioId, nom de variable, nom déclaré, position (`fn_loreUid`). Le téléphone saisi sur une IA (ATAK, synchro du téléphone) reprend le même identifiant.
+- Module Eden et Zeus « Synchroniser les IA avec Athena » (`fn_loreModule`, `fn_loreServer`, `fn_loreClient`) : `lore_push` par lots (25 personnes, 150 000 caractères au plus, fiche `fn_lorePerson`), `lore_pull` paginé et validé, rafraîchissement automatique (désactivé, 60 s minimum).
+- Données connues sur l'IA (`comspec_sse_lore`, `comspec_sse_loreAt`), réponses et caché MJ côté serveur seulement, réponses branchées sur le profil RP ; registre `comspec_sse_loreReg` ; IA créée après la synchro rattachée à l'InitPost.
+- Fichiers, SEEK II et contrôle d'identité : fiches personne tirées des données connues (`fn_loreFile` dans `fn_fileServer`).
+- Licence : rien ne part avant son acceptation (serveur dédié : signalée par un joueur connecté). Page du guide en jeu et clés FR / EN. Fusion : `fn_lorePerson` lit l'identité unique de l'IA (`fn_idIdentityOf`), le même nom que ses papiers.
+- Pas d'entrée de changelog dans la branche (rédigée à la fusion) ; non testé en jeu.
+
+
+## Pack 4.4.0 Washington : salle TOC en jeu, sang sur l'écran, carte Classique, traçage d'un numéro, ATHENA Configuration (ATAK natif 4.4.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.0)
 
 ### Résumé joueur
 Type : nouveauté
-FR : ATAK 4.4.0 : une vraie salle d'opérations en jeu et du sang sur l'écran du téléphone
-- **Salle TOC prête** : le module « Salle TOC complète » pose une salle déjà câblée, avec murs d'images, grands écrans, horloge, bureaux et PC. Les écrans se posent aussi un par un dans Eden et en Zeus (catégorie « Écrans TOC et projection »).
-- **Vue satellite** : un écran de la salle montre une vue aérienne en direct, de jour, en vision nocturne ou en thermique, et chaque allié équipé d'un ATAK y est encadré avec son indicatif.
-- **Piloter la salle au PC** : dans l'onglet SALLE, cliquez un écran pour choisir ce qu'il montre (horloge ZULU, escouade, caméras, main courante, demandes), puis dessinez sur la carte : vos traits arrivent aussi sur les téléphones.
-- **Sang sur l'écran** : le téléphone se salit selon la gravité, de quelques gouttes à un écran presque rouge. Le sang sèche en quelques minutes et s'essuie mal ; réglez la quantité avec « Sang sur l'écran : quantité maximale ».
-EN : ATAK 4.4.0: a real operations room in game and blood on the phone screen
-- **Ready TOC room**: the "Complete TOC room" module places a room already wired up, with video walls, big screens, a clock, desks and laptops. Screens can also be placed one by one in Eden and in Zeus ("TOC screens and projection" category).
-- **Satellite view**: a room screen shows a live aerial view, by day, in night vision or in thermal, and every ally carrying an ATAK is framed on it with their callsign.
-- **Run the room from the laptop**: in the ROOM tab, click a screen to choose what it shows (ZULU clock, squad, cameras, duty log, requests), then draw on the map: your lines also reach the phones.
-- **Blood on the screen**: the phone gets dirty according to how bad things are, from a few drops to an almost red screen. Blood dries within a few minutes and is hard to wipe off; set the amount with "Blood on the screen: maximum amount".
+FR : ATAK 4.4.0 : une salle d'opérations en jeu, du sang sur l'écran et une carte qui ne rame plus
+- **Salle TOC et sang** : le module « Salle TOC complète » pose une salle déjà câblée (murs d'images, vue satellite en direct, horloge, PC qui choisit ce que montre chaque écran). Le téléphone se salit de sang selon vos blessures ; réglez la quantité avec « Sang sur l'écran : quantité maximale ».
+- **Carte et BFT** : le fond CLASSIQUE est maintenant la vraie carte du jeu, la même qu'avec la touche M, et le fond photo ne fige plus le jeu quand vous zoomez. Le BFT affiche de nouveau l'ORBAT d'Athena de votre unité.
+- **Enquêter au téléphone** : app GE, onglet TRAÇAGE, « Tracer le numéro » place une zone sur la carte, téléphones des IA compris. L'app Fichiers répond toujours, Ma couverture récupère vos couvertures Athena sans fichier, et « Synchroniser avec le web » (menu ACE, à autoriser dans les options) envoie votre téléphone à Athena.
+- **Menu Échap et Zeus** : un seul bouton « ATHENA Configuration » regroupe la liaison, le dépannage, le réalisme et les extensions du SSE. Le Centre Zeus est remis d'aplomb : onglets lisibles, plus de boutons vides.
+EN : ATAK 4.4.0: an operations room in game, blood on the screen and a map that no longer stutters
+- **TOC room and blood**: the "Complete TOC room" module places a room already wired up (video walls, live satellite view, clock, a laptop that picks what each screen shows). The phone gets bloody according to your wounds; set the amount with "Blood on the screen: maximum amount".
+- **Map and BFT**: the CLASSIC background is now the real game map, the same as with the M key, and the photo background no longer freezes the game when you zoom. The BFT shows your unit's Athena ORBAT again.
+- **Investigating with the phone**: EW app, TRACE tab, "TRACE THE NUMBER" puts an area on the map, AI phones included. The Files app always answers, My cover fetches your Athena covers without a file, and "Sync with the web" (ACE menu, to allow in the options) sends your phone to Athena.
+- **Esc menu and Zeus**: a single "ATHENA Configuration" button gathers the link, troubleshooting, realism and SSE extensions. The Zeus Centre is fixed: readable tabs, no more empty buttons.
 
 ### Détail technique
 
@@ -404,8 +200,86 @@ EN : ATAK 4.4.0: a real operations room in game and blood on the phone screen
 - Textures (`tools/gen_screen_fx.py --sang`) : 40 fraîches + 40 séchées (nouvelles : `pool_2-3`, `splat_2-3`, `hand_2-3`, `spatter_2`, `run_0-2`, `arterial_0-1`, `drag_0-1`, `wipe_0-2`, `cover_0-1_land/port`, `veil_0_land/port`), fondu sur les bords, reflets atténués.
 - Autotest `sang_niveaux` (`scripts/sang.sqf`, groupe `sang`) : non lancé (pas vu en jeu).
 
+**Fond de carte Classique = la carte d'origine d'Arma 3 (ATAK natif)**
+
+- `fn_mapStyle` : nouvelle valeur `CLASSIC` (bouton CLASSIQUE, avant branché sur `SAT`, texture satellite seule) ; `SAT` enregistré relu comme `CLASSIC` ; `PHOTO` sans photo de la carte → `CLASSIC` (avant `TOPO`) ; défaut inchangé (`TOPO`). `["LIST"]` rend la liste [libellé, valeur, description, disponible] partagée par `fn_pageMap` et `fn_pageSettings`.
+- `COMSPEC_RscMapAtakClassic` (`ui/controls.hpp`) tirée directement de `RscMapControl` : couleurs et rendu du jeu, seuls les textes redessinés par l'ATAK et les marqueurs de mission masqués comme sur les autres fonds. Le contrôle 88532 (`MapSat` → `MapClassic`, `COMSPEC_ATAK_IDC_MAP_SAT` → `COMSPEC_ATAK_IDC_MAP_CLASSIC`) la porte ; `COMSPEC_RscMapAtakSat` reste la base d'HYBRIDE.
+- Volet CONFIGURATION de la carte : description du fond choisi sous les boutons (texte qui passe à la ligne), description de chaque fond en infobulle, ligne grise « SATELLITE : nécessite le mod COMSPEC ATAK Photo » quand la photo manque.
+- i18n en.txt et xx.txt (18 phrases, aide des Réglages réécrite), `docs/steam/discussions/01_carte.txt`. Test : `AtakMapClassicAssetTest`, `AtakRealismProfileTest` mis à jour.
+
+**Le téléphone s'ouvre plus vite et ne fait plus ramer le jeu (ATAK natif)**
+
+- Constat (RPT de TTRD du 11/11, ATAK 4.4.0.AG, fond PHOTO, pack photo Altis en tuiles JPG) : 9 images figées téléphone ouvert sur la carte, dont 1,3 à 1,9 s « dans les boucles du mod » au zoom (`carte (image)` max 1860 ms alors que toutes les sous-mesures restaient sous 3 ms), puis plus rien une fois les tuiles vues (carte à 2,2 ms par image). Cause : chaque tuile neuve du fond photo (`fn_photoMap`, JPEG lu dans la PBO et décodé par le jeu au premier `drawIcon`) ; un nouveau niveau de zoom en demandait jusqu'à 64 d'un coup. Présent avant 4.4.0 (`fn_photoMap` inchangé depuis 4.3.0) : pas une régression de la salle TOC ni du sang.
+- `fn_photoMap` : tuiles chargées notées (`COMSPEC_ATAK_PhotoSeen`, dessinées depuis moins de 5 min) ; 2 tuiles neuves au plus par image (1 si l'image précédente a dépassé 100 ms), posées à 1 % d'opacité pour être chargées sans se voir. En attendant, la vue garde le niveau le plus fin déjà chargé en entier (un seul niveau à l'écran, comme avant) ; le niveau deux crans plus grossier est chargé d'abord quand rien n'est prêt. Vue chargée : dessin identique à avant, noms de fichiers faits une fois par image. Relevé `COMSPEC_ATAK_PhotoLast` pour la mesure.
+- `fn_mapOnDraw` : nouvelles clés `[PERF]` `carte fond photo (image)`, `carte unités (image)`, `carte noms des repères (image)` (parties du dessin jusque-là sans mesure).
+- `fn_perfLog` (nouveau) et réglage CBA `comspec_atak_native_perf_log` « Mesure des performances (journal) » (ATAK · Debug, décoché) : lignes `[COMSPEC perf]` dans le RPT seulement (ouverture du téléphone de l'appui à la première image avec ses étapes ; ouverture des apps ; carte toutes les 5 s : moyenne et pire par image, unités, marqueurs, étiquettes, tuiles ; bilan 10 s : img/s, ms/s du mod, boucles CBA chronométrées par `fn_profiler`, contrôles du téléphone, boucles et scripts en file, plus coûteux ; appels de DLL de plus de 5 ms, appels directs du mod et relevé `Perf.Stats` des deux DLL). Décoché : une lecture de variable dans `fn_perfAcc`, `fn_open`, `fn_displayLoad`, `fn_navigate`, `fn_hudToggle`, `fn_interactToggle`, `fn_extensionCall`, `fn_extAwait`.
+- `fn_zeusCentre` : la traduction `_T` était écrasée par des variables `_t` (SQF ne distingue pas la casse) : erreur « call : Type Chaîne » à chaque outil de l'onglet Outils (6 dans le RPT) et même piège dans la fiche joueur et l'état du serveur. Fusion 4.4.0 : corrigé une seule fois, par la refonte du Centre Zeus ci-dessous (traduction `_tr`).
+- Vu dans le RPT, hors COMSPEC : 91 erreurs ACE `fnc_determineMapLight` / `fnc_simulateMapLight` (carte principale de nuit au briefing), avertissements de config d'autres mods au chargement.
+- À vérifier en jeu : zoom et dézoom rapides sur le fond PHOTO (plus d'image figée, net en moins d'une seconde), première ouverture du téléphone en main sur la carte, réglage coché puis journal relu.
+
+**L'ORBAT d'Athena s'affiche de nouveau dans le BFT (ATAK natif)**
+
+- `fn_bftOrbat` : l'état IDLE servait à la fois de « jamais demandé » et de « en cours », sans limite de temps ; la réponse `ERR|busy` de COMSPEC Link ne changeait pas l'état, et une lecture perdue (réponse jamais traitée, tâche de fond arrêtée, partie relancée avec l'état gardé dans uiNamespace) laissait « Lecture de l'ORBAT du site… » pour toujours. Nouveaux états LOADING (heure de départ), EMPTY (aucun ORBAT sur le site), WAIT (liaison non autorisée : aucune requête) ; réponse attendue 15 s (`fn_extAwait`), garde-fou de 20 s relu au chargement, au bandeau et à la signature de la page ; DOWN avec une raison courte et nouvel essai 15 s, 30 s, 1 min, 2 min puis 5 min ; relu toutes les 5 min une fois lu.
+- RPT : une ligne `[COMSPEC orbat] ancien -> nouveau : raison (code, durée)` par changement d'état (codes d'erreur seuls, jamais de jeton).
+- `fn_pageBft` : bouton RÉESSAYER à droite du message d'erreur ; ligne « Groupes de jeu, en attendant l'ORBAT du site » au-dessus de l'arbre de repli.
+- `fn_extAwait` (natif) : ticket et table d'attente pris dans un bloc `isNil` (comme `fn_extAwait` de connect) : deux appels simultanés pouvaient partager un ticket ou perdre leur table, d'où une réponse jamais reçue.
+- Aucune nouvelle DLL, aucun changement du site. Non vu en jeu.
+
+**Tracer un numéro de téléphone depuis l'ATAK, IA comprises (ATAK natif et SSE)**
+
+- Onglet GÉOLOC de l'app GE devenu TRAÇAGE (`fn_pageEw` clé `GEO` gardée) : nouveau dossier `functions/trace` : `fn_traceCalc` (calculs purs : normalisation du numéro, rayon selon les antennes, cercle qui grandit avec l'âge, état par priorité, attente, extraction des numéros d'un texte, `selfTest`), `fn_traceServer` (serveur seul : index des numéros, couverture, état du téléphone, dernière position connue, limites, réponse au seul demandeur par `comspec_atak_native_traceRes`), `fn_traceAction` (téléphone : requête `remoteExecCall`, onglet, journal, suivi, partage en marqueur, fiche SSE FRO, lien profond `open`, boutons `numRows`, menu ZEN).
+- Avant : la GÉOLOC calculait la position sur le client, seulement pour les unités qui portaient un ATAK, à précision fixe. Après : le serveur répond après la requête opérateur (réglage, ±20 %), position décalée dans un rayon tiré des antennes qui captent le téléphone (relais ATAK du camp ou sans camp, relief compris, puis antennes civiles des localités si le réseau mobile civil est actif), aucune position d'unité non tracée ne quitte le serveur.
+- Numéros connus du réseau : téléphones ATAK (numéro, IMEI, MAC), profils SSE (identité, appareils, champs Eden `comspec_sse_personPhone` / `comspec_sse_phoneNumber`, registre `comspec_sse_logicalEntities`), attribut Eden ATAK `COMSPEC_ATAK_PhoneNumber`, IA réglée « Téléphone » sans numéro : numéro de `fn_phoneIdent` (déterministe). Numéro inconnu, ligne jetable ou camp fermé : « Numéro inconnu du réseau ».
+- Contre-mesures : brouilleur (`COMSPEC_ATAK_Jammers`, filtrage ami respecté), téléphone éteint, mode avion, hors couverture : dernière position connue gardée sur le serveur (`COMSPEC_ATAK_TraceLast`, jamais publique). Attribut Eden et menu ZEN « Téléphone traçable » (`COMSPEC_ATAK_PhoneTrace` : on / off / burner). Zeus : suspendre le traçage (`COMSPEC_ATAK_TraceOff`), mandat (`COMSPEC_ATAK_TraceWarrant`), réseau mobile civil (`COMSPEC_ATAK_TraceCivNet`).
+- Réglages CBA « ATAK · Géolocalisation » : `trace_delay`, `trace_cooldown`, `trace_max`, `trace_rad_multi`, `trace_rad_single`, `trace_grow`, `trace_civnet`, `trace_link` (selon le profil : Milsim et Standard oui, Arcade non), `trace_warrant`. Les réglages GÉOLOC existants (camps traçables, propre camp, IA, suivi, prévenir la cible, secours SIM) s'appliquent toujours.
+- Entrées : app Extraction (fichier texte ouvert : un bouton « TRACER » par numéro), app SSE terrain (résultat Approfondir et Chronologie). Manuel de terrain : page « Tracer un numéro ». Guide web : `docs/steam/discussions/24_ge-guerre-electronique.txt`.
+- Tests : `tests/Unit/AtakTraceNumeroTest.php` (lecture du code : aucun canal d'alerte Arma, appelant vérifié au serveur, réponse ciblée, réglages avec exemple, cas de `selfTest`). Rien de ce lot n'a été vu en jeu.
+
+**L'app Fichiers répond toujours (SSE et ATAK natif)**
+
+- Cause de l'attente sans fin : en multijoueur (poste client sur serveur dédié), `fn_fileClient « send »` part en `remoteExecCall ["comspec_sse_fnc_fileServer", 2]` et l'app posait `pending` (`fn_fileAction` « run ») sans aucun minuteur ; seul `fn_fileClient « result »` l'effaçait. Toute réponse perdue (serveur avec un SSE plus ancien sans `fn_fileServer`, `CfgRemoteExec` du serveur ou de la mission, sorties muettes de `fn_fileServer` sur unité nulle ou d'un autre poste) laissait « Réponse du fichier en attente… » pour toujours, sans bouton. De plus la réponse locale n'était posée qu'après l'appel Athena (`QueryIdDocument`, jusqu'à 20 s), et un état `pending` ou une animation restés dans `uiNamespace` d'une mission précédente bloquaient l'app.
+- Machine d'états : `fn_fileQuery` inscrit chaque demande (`comspec_sse_filePending`) et arme 8 s ; `fn_fileClient « timeout »` / « fail » (refus motivé du serveur) posent un résultat d'erreur (motif, « Réessayer ») ; « result » pose la réponse locale tout de suite, puis l'étape Athena en tâche de fond (`athenaState` pending | ok | none | offline | unlinked | timeout, 15 s au plus, aucune requête sans licence acceptée) ; une réponse tardive remplace l'erreur de même étiquette ; « cancel » (bouton « Annuler »). Évènements : `comspec_sse_fileResult` inchangé (HashMap vide en cas d'erreur), nouveau `comspec_sse_fileError`.
+- `fn_fileNorm` (nouveau) : numéro et plaque en capitales sans séparateurs, pays ALT/TNA/LVN/MLD (alias TAN, LIV, MAL, AL, LV, noms) et ISO alpha-2 → alpha-3, appliqué sur le poste et sur le serveur.
+- `fn_fileServer` : QA sur le registre `issued` (chaque papier délivré ou généré, IA comprises) par numéro normalisé, titulaire inscrit à la base, mention « Document douteux » (titulaire différent, volé, révoqué, fiche SEEK II discordante), même numéro sous un autre pays = correspondance possible, fiches SEEK II du numéro, contrôles subis gardés aussi sous le numéro (`numChecks`) ; champ `match` (hit | possible | none) ; jamais de silence (`fail`).
+- `fn_filePage` : carte de réponse (HIT, CORRESPONDANCE POSSIBLE, AUCUN ENREGISTREMENT, ERREUR), sources LOCAL / ATHENA, état d'Athena en une ligne, « Copier le numéro », « Annuler », journal avec les erreurs ; messages dans l'app (plus de toast du téléphone sur ces chemins).
+
+**Récupérez vos couvertures Athena directement depuis le téléphone (SSE)**
+
+- SSE, app Ma couverture (`fn_idCoverPage`) : section Importer ma couverture refaite : bouton principal SYNCHRONISER AVEC ATHENA, IMPORTER UN FICHIER (ancienne lecture du fichier `Documents\Arma 3 - COMSPEC`, inchangée), Oublier l'import, rappel de la voie sans connexion. Les trois étapes manuelles disparaissent.
+- Nouvelle fenêtre « Mes couvertures sur Athena » (`fn_idCoverAthena`, dessinée à la place de la page avec les composants `fn_formRender` : header, text, empty, skeleton, buttons, person) : ligne d'état, CHOISIR / CHOISIE par couverture, TOUT SÉLECTIONNER, IMPORTER LA SÉLECTION (n), ACTIVER, RÉESSAYER, FERMER. États vides : service coupé, licence non acceptée, liaison pas encore autorisée, compte non lié (LIER MON COMPTE ouvre l'app Athena), COMSPEC Link absent ou ancien, site pas à jour, Athena muette, aucune couverture. Aucune alerte hors du téléphone.
+- Garde avant toute requête (licence `fn_licenceStatus`, `COMSPEC_AthenaReady`, `athenaStatus` logged, service Athena, `["has"] fn_idAthenaPack`) : rien ne part sans elle.
+- Réseau sans nouvelle commande DLL : `GetIdentityPack` (COMSPEC Link 2.0.118+) avec l'opération `~covers` (liste) ou `~cover:CVR-…,…` (5 fichiers au plus), `since` = `v=1`, réponse dans `settings` (`covers_api` 1), appel non bloquant puis `GetIdentityPackChunk`. Verrou `comspec_sse_idPackBusy` partagé avec `fn_idAthenaPack « fetch »` (même tampon de la DLL) et contrôle de l'opération lue.
+- Couvertures reçues revalidées par `fn_idCoverImport « clean »`, gardées dans le profil (`comspec_sse_idCoverLib`, 10 au plus, jamais l'active en moins) ; nouvelle action `fn_idCoverImport « use »` (profil, envoi au serveur, légende), aussi utilisée par l'import d'un fichier. Le serveur, la légende (`fn_idLegend`) et les papiers sont inchangés.
+- Site : `GET /api/atak/covers`, `GET /api/atak/covers/files`, relais `op=~covers` / `~cover:` de `/api/sse/identity/pack` (PR site séparée). Contrat : `docs/ATAK_COUVERTURE_IMPORT.md`.
+- Guides SSE `ma_couverture.md` / `.en.md`, i18n `en.txt`, `localisation/template/xx.txt`, `tools/i18n_identity_en.tsv`.
+
+**Synchroniser le téléphone avec le web (ATAK natif)**
+
+- `fn_phoneSync` (core) : `kind` `phone_extraction` par `SubmitIdCheck` de COMSPEC Link (aucune nouvelle commande de DLL), contrat ICD-SSE-PHONE-001. JSON par `fn_json`, découpé en morceaux de 4 000 caractères (`forceUnicode`), corps de 240 000 octets au plus (60 morceaux : la DLL accepte 64 arguments, `Async` et ticket compris), 300 éléments par catégorie et par partie, 20 parties au plus ; `extraction_key` commune, `idempotency_key` par partie. Envoi par `fn_extAwait` (45 s), retour `OK|id|ref` dans le téléphone (`fn_notify`) et le RPT (`fn_log`).
+- Portes, revérifiées à chaque envoi : licence (`licenceStatus`), `uplinkOff`, `fn_athenaMode` = `on`, `COMSPEC_AthenaReady`, réglage client `comspec_atak_native_phone_sync` (décoché, `isGlobal` 2 : aucune mission ne peut le cocher), réglage de mission `comspec_atak_native_phone_sync_off`, variable Zeus `COMSPEC_ATAK_PhoneSyncDisabled`, une synchro par 60 s, `SubmitIdCheck` présent dans `GetAtakFeatures`.
+- Téléphone saisi : IA seulement (clé `AI_…` et `ai_uid` renvoyé par le serveur). `fn_phoneServer` « adopt » pose la variable publique `comspec_sse_aiUid` si absente (`mission.monde.nomDeVariable`, sinon identifiant de la session). Boutons : menu ACE (« Synchroniser avec le web », « Synchroniser le téléphone saisi ») et page Téléphones (« SYNCHRONISER AVEC LE WEB »).
+- Limite DLL connue : `IdentityHttpError` rend tout 403 en `unauthorized` ; `unlinked`, `consent_revoked`, `extractions_disabled` ne remontent pas tels quels (message commun dans le téléphone). Les 422 (`too_large`, `consent_required`…) remontent.
+- **À tester en jeu** : action ACE visible seulement avec un téléphone et Athena en « on » ; refus avec le réglage décoché, avec la licence non acceptée, avec `COMSPEC_ATAK_PhoneSyncDisabled` ; envoi réussi et référence EXT-… dans le téléphone ; second clic avant 60 s refusé ; téléphone d'IA saisi (avec et sans `COMSPEC_ATAK_PhoneData`) : bouton de la page et `comspec_sse_aiUid` posé ; téléphone d'un joueur saisi : aucun bouton ; un téléphone avec beaucoup de messages (plusieurs parties).
+
+**Un seul bouton « ATHENA Configuration » dans le menu Échap (ATAK natif et SSE)**
+
+- Nouveau `fn_athenaConfig` (ATAK natif `main/functions/ui`, copie identique dans le SSE `extensions/functions`) : bouton du menu Échap (`RscDisplayInterrupt`, `RscDisplayMPInterrupt`, idc 93960) et fenêtre « Configuration ATHENA » (`RscDisplayEmpty` enfant du menu Échap). Place du bouton calculée sur les contrôles visibles du menu (vanilla, ACE, CBA, autres mods), revue pendant la première seconde ; hauteur bornée en pixels (24 à 44 px), largeur mesurée sur le texte.
+- Registre `comspec_athena_config_entries` (contrat dans l'en-tête de `fn_athenaConfig`) : ATAK `atak_realism` (Réalisme et réseau), Overwatch connect `ow_diag` (Dépannage liaison) et `ow_athena` (Service Athéna), SSE `sse_extensions`. État `comspec_athena_config_status` posé par Overwatch connect. Hôte `comspec_athena_config_host` : l'ATAK natif ; le SSE seulement sans lui (un seul bouton).
+- Retirés du menu Échap : barre d'Overwatch connect (`fn_onInterruptLoad`, devenu `fn_athenaConfigEntries`), bouton `["button"]` de `fn_netConfig`, `fn_docExtMenu` du SSE. Fenêtres d'origine inchangées.
+- Cause du blocage « Service Athéna » : le gestionnaire du bouton fermait le menu Échap auquel il appartenait (`closeDisplay` dans son propre `ButtonClick`) puis sortait le téléphone sur Réglages. Désormais toute action part à l'image suivante (`CBA_fnc_execNextFrame`) et la question Oui / Non s'ouvre par-dessus le menu Échap, sans le fermer.
+- Logo du bouton : `athena_config_ca.paa`, `athena_config_hover_ca.paa` (256 px, aigle blanc / vert), pastille `athena_dot_ca.paa`. Textes : `i18n/en.txt`, `localisation/template/xx.txt`, stringtable de l'addon SSE `extensions` (`STR_COMSPEC_SSE_ATHCFG_*`). `$PBOPREFIX$` de l'addon SSE `extensions` réparé (caractères de contrôle à la place des barres obliques).
+
+**Centre Zeus remis d'aplomb (ATAK natif)**
+
+- Cause (commit bc1d45278, 4.3.0) : le SQF ne distingue pas la casse des variables. `private _T = { … fnc_tr }` était masquée par `_x params ["_t", …]` (outils, actions) et `private _t = call _ui` (onglets, rafraîchissement, fiche, serveur). « toggle » s'arrêtait au premier `call _T` de l'onglet OUTILS : registre jamais enregistré, onglets jamais cachés, libellés des étiquettes jamais écrits (neuf boutons vides), titre vide ; rafraîchissement, fiche et état du serveur en erreur à chaque appel. La hauteur calculée oubliait en plus la rangée des onglets (rappel ZEN sous le fond).
+- `fn_zeusCentre` : traduction `_tr`, registre `_st` ; grille unique `_grid` (fractions de safeZoneH) et pose unique `_place` / « flow » (lignes, colonnes à poids, marges, corps qui défile, pied fixe, fond à la hauteur de l'onglet) ; `_mk` enregistre chaque contrôle chez son propriétaire, `_btn` impose un libellé (long, court, infobulle) ; ÉTIQUETTES en cases à cocher (`COMSPEC_RscCheckbox`) avec exemple, champs grisés en mode compact ; filtres sur deux rangées ; boutons d'action grisés sans cible ; ligne d'état « say » (retours de `fn_zeusMenu` « feedback » quand le Centre est ouvert) ; « audit » pour l'autotest (bouton vide, chevauchement, texte coupé, hors du panneau).
+- Test `AtakZeusCentreLayoutTest` (noms masqués quelle que soit la casse, propriétaire de chaque contrôle, libellés et anglais, tenue à 3 tailles d'interface × 3 formats), étape d'autotest zeus_centre (audit par onglet, non exécutée), i18n en.txt / xx.txt.
+
 **Intégration du pack (fusion des chantiers)**
 - Branches fusionnées sur `release/atak-4.4.0` : salle TOC (avec les écrans 3D), sang sur l'écran, fenêtre « Réponses de l'IA » simple (SSE 1.9.0), descriptions Steam.
+- Second lot fusionné sur `release/atak-4.4.0` (même numéro, pas encore publié) : ATAK `fix/atak-map-classique`, `fix/atak-perf-ouverture`, `fix/atak-bft-orbat`, `fix/atak-zeus-centre-ui`, `feat/atak-athena-config`, `feat/atak-couvertures-sync`, `fix/atak-fichiers-requete`, `feat/atak-tracage-numero`, `feat/atak-sync-telephone` ; SSE `fix/sse-extensions-tuto`, `feat/sse-zeus-acces-edition`, `fix/sse-zeus-papiers`, `feat/sse-pays-reels`, `fix/sse-identite-unique`, `feat/sse-ia-zone-ui`, `feat/sse-eden-question-reponse`, `feat/sse-peur-armes-option`, `fix/sse-dialogue-hors-sujet`, `feat/sse-synchro-web`.
+- Points de fusion : `fn_extAwait` (mesure des performances et ticket en bloc `isNil` gardés ensemble) ; `fn_zeusCentre` (refonte gardée, un seul renommage de la traduction) ; `extensions/config.cpp` (charte UI du tuto et ligne de la Configuration ATHENA) ; papiers : `fn_idIssue` (pays demandé, sinon celui de l'identité unique, résolu par le registre des pays ; titre de séjour : une personne garde son identité, sa nationalité est celle de son identité quand elle vient d'un autre pays), `fn_idGenerate` (noms au féminin du registre et garde de l'identité unique), fenêtre Papiers de l'IA du Zeus à la place de la liste en texte, nom du papier selon son pays ; atelier IA : plus de nom tiré, notes de l'identité et papiers refaits sur une seule ligne d'état, émotions et réponses gardées au choix d'un profil ; « Parler à… » : conversation notée et nom montré une fois appris ; IA de la zone refaite : « Ouvrir le papier » ouvre la fenêtre Papiers de l'IA.
+- Tests mis au comportement fusionné : `AtakPerfLogAssetTest`, `AtakMapClassicAssetTest`, `AtakCoverImportAssetTest`, `SseIdentityUniqueTest`, `SseNoAlertChannelAssetTest`.
 - Mission d'autotest : groupes `ecrans3d`, `toc` et `sang` tous gardés (`init.sqf`, `tools/INGAME_TEST.md`). `localisation/template/xx.txt`, `stringtable.json` et `categories.json` régénérés (`tools/i18n.py community`) : 22 718 phrases (18 051 avant, 19 textes disparus du code retirés), 267 clés de stringtable en plus (écrans, modules et objets absents du gabarit), aucune retirée.
 
 Aucune nouvelle DLL (COMSPEC Link 2.0.123 inchangé), aucune migration. Non vu en jeu : aucune passe de l'autotest n'a tourné pour ce pack.
@@ -438,26 +312,6 @@ EN : AIs understand three times more questions, and the game master can write th
 - **Garder pour les prochaines parties** : `fn_editorAiServer` ajoute `iarp_answers` (« [réponses, evoke, banned] », `fn_iarpProfile` « keepOf ») à la configuration gardée ; `fn_idAiConfig` « apply » (identity) la remet (`fn_iarpProfile` « keepApply »), au démarrage comme depuis le paquet Athena. Profils IA d'Athena (`settings.ai_profiles`) : inchangés ; pour les y porter, il faudrait côté site un champ texte libre `iarp` par profil (même format que `iarp_answers`), repris par `fn_idAiConfig` « ingest ».
 - **Fichiers hors `ia_rp`** : `editor/dialogs/editor.hpp` (bouton `AiAnswers`, IDC 94586, « IA cochées » raccourci), `editor/functions/fn_editorAi.sqf` (« answers »), `editor/functions/fn_editorAiServer.sqf` (garder), `editor/stringtable.xml`, `identity/functions/fn_idAiConfig.sqf` (3 lignes), `main/stringtable.xml` (chapitre « IA de la zone »), guides `docs/guides/ia_de_la_zone*.md` (réécrits), `reponses_ia*.md` (nouveaux), `index*.md`, mission d'autotest `scripts/ia_rp.sqf`. Manuel en jeu : `CfgHints COMSPEC_SSE >> IaRpAnswers` (nouveau), `IaRpTalk` (thèmes). Aucun fichier ATAK.
 - **Non vu en jeu** (autotest non lancé sur consigne) : rendu de la fenêtre « Réponses de l'IA » et du bouton de l'atelier, enregistrement Eden par `set3DENAttribute`, nouveaux ordres (recul, approche, arme posée), coût réel en jeu ; étapes écrites dans `scripts/ia_rp.sqf` (« ia_rp_reponse_perso_attribut », « ia_rp_reponse_perso_zeus », « ia_rp_question_perso », « ia_rp_cadre_civil ») et dans `fn_iarpSelfTest`.
-
-## À venir : synchroniser le téléphone avec le web (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Synchronisez votre téléphone avec les fichiers d'Athena
-- Nouvelle action « Synchroniser avec le web » dans le menu ACE du téléphone : le contenu du téléphone de votre personnage (contacts, messages, notes, photos, apps, positions, repères) rejoint les fichiers d'Athena.
-- Rien ne part sans votre accord : cochez « Autoriser la synchronisation du téléphone avec Athena » dans les options du mod. Le maître du jeu peut l'interdire pour une mission.
-- Le téléphone saisi sur une IA peut aussi être synchronisé depuis sa page de lecture. Le résultat et sa référence s'affichent dans le téléphone.
-EN : Sync your phone with the Athena files
-- New "Sync with the web" action in the phone's ACE menu: your character's phone content (contacts, messages, notes, photos, apps, positions, markers) joins the Athena files.
-- Nothing leaves without your consent: tick "Allow phone sync with Athena" in the mod options. The game master can forbid it for a mission.
-- A phone seized from an AI can also be synced from its reading page. The result and its reference show in the phone.
-
-### Détail technique
-- `fn_phoneSync` (core) : `kind` `phone_extraction` par `SubmitIdCheck` de COMSPEC Link (aucune nouvelle commande de DLL), contrat ICD-SSE-PHONE-001. JSON par `fn_json`, découpé en morceaux de 4 000 caractères (`forceUnicode`), corps de 240 000 octets au plus (60 morceaux : la DLL accepte 64 arguments, `Async` et ticket compris), 300 éléments par catégorie et par partie, 20 parties au plus ; `extraction_key` commune, `idempotency_key` par partie. Envoi par `fn_extAwait` (45 s), retour `OK|id|ref` dans le téléphone (`fn_notify`) et le RPT (`fn_log`).
-- Portes, revérifiées à chaque envoi : licence (`licenceStatus`), `uplinkOff`, `fn_athenaMode` = `on`, `COMSPEC_AthenaReady`, réglage client `comspec_atak_native_phone_sync` (décoché, `isGlobal` 2 : aucune mission ne peut le cocher), réglage de mission `comspec_atak_native_phone_sync_off`, variable Zeus `COMSPEC_ATAK_PhoneSyncDisabled`, une synchro par 60 s, `SubmitIdCheck` présent dans `GetAtakFeatures`.
-- Téléphone saisi : IA seulement (clé `AI_…` et `ai_uid` renvoyé par le serveur). `fn_phoneServer` « adopt » pose la variable publique `comspec_sse_aiUid` si absente (`mission.monde.nomDeVariable`, sinon identifiant de la session). Boutons : menu ACE (« Synchroniser avec le web », « Synchroniser le téléphone saisi ») et page Téléphones (« SYNCHRONISER AVEC LE WEB »).
-- Limite DLL connue : `IdentityHttpError` rend tout 403 en `unauthorized` ; `unlinked`, `consent_revoked`, `extractions_disabled` ne remontent pas tels quels (message commun dans le téléphone). Les 422 (`too_large`, `consent_required`…) remontent.
-- **À tester en jeu** : action ACE visible seulement avec un téléphone et Athena en « on » ; refus avec le réglage décoché, avec la licence non acceptée, avec `COMSPEC_ATAK_PhoneSyncDisabled` ; envoi réussi et référence EXT-… dans le téléphone ; second clic avant 60 s refusé ; téléphone d'IA saisi (avec et sans `COMSPEC_ATAK_PhoneData`) : bouton de la page et `comspec_sse_aiUid` posé ; téléphone d'un joueur saisi : aucun bouton ; un téléphone avec beaucoup de messages (plusieurs parties).
 
 ## Pack 4.3.0 Washington : apps à l'horizontale, carte lisible, drones armés, centre Zeus, IA qui répondent juste, vrais papiers et passage aux fichiers (ATAK natif 4.3.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.7.0)
 
@@ -584,24 +438,6 @@ EN : ATAK 4.3.0: armed drones, landscape apps, a readable map, AIs that answer r
 - Relever (`fn_idPhoto`) : fiche locale puis `comspec_sse_fnc_controlRecord` (fichier de la mission, Athena) ; « SCANNER (ATAK) » de la visionneuse ouvre l'app Fichiers.
 
 Aucune nouvelle DLL (COMSPEC Link 2.0.123 inchangé). Migration 4330 (passage aux fichiers). Non vu en jeu : aucune passe de l'autotest n'a tourné pour ce pack.
-
-## À venir : l'ORBAT d'Athena s'affiche de nouveau dans le BFT (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : L'ORBAT d'Athena s'affiche de nouveau dans le BFT
-- Dans le BFT, vue ORBAT, « Lecture de l'ORBAT du site… » ne reste plus affiché sans fin : l'ORBAT de votre unité arrive en quelques secondes, avec votre place et l'état des membres.
-- Si l'ORBAT ne peut pas être lu, le téléphone dit pourquoi en une ligne, propose « Réessayer », réessaie seul et montre les groupes de jeu en attendant.
-EN : The Athena ORBAT shows again in the BFT
-- In the BFT, ORBAT view, "Reading the site ORBAT…" no longer stays on screen forever: your unit's ORBAT arrives within seconds, with your place and the members' status.
-- If the ORBAT cannot be read, the phone says why in one line, offers "Try again", retries on its own and shows the game groups meanwhile.
-
-### Détail technique
-- `fn_bftOrbat` : l'état IDLE servait à la fois de « jamais demandé » et de « en cours », sans limite de temps ; la réponse `ERR|busy` de COMSPEC Link ne changeait pas l'état, et une lecture perdue (réponse jamais traitée, tâche de fond arrêtée, partie relancée avec l'état gardé dans uiNamespace) laissait « Lecture de l'ORBAT du site… » pour toujours. Nouveaux états LOADING (heure de départ), EMPTY (aucun ORBAT sur le site), WAIT (liaison non autorisée : aucune requête) ; réponse attendue 15 s (`fn_extAwait`), garde-fou de 20 s relu au chargement, au bandeau et à la signature de la page ; DOWN avec une raison courte et nouvel essai 15 s, 30 s, 1 min, 2 min puis 5 min ; relu toutes les 5 min une fois lu.
-- RPT : une ligne `[COMSPEC orbat] ancien -> nouveau : raison (code, durée)` par changement d'état (codes d'erreur seuls, jamais de jeton).
-- `fn_pageBft` : bouton RÉESSAYER à droite du message d'erreur ; ligne « Groupes de jeu, en attendant l'ORBAT du site » au-dessus de l'arbre de repli.
-- `fn_extAwait` (natif) : ticket et table d'attente pris dans un bloc `isNil` (comme `fn_extAwait` de connect) : deux appels simultanés pouvaient partager un ticket ou perdre leur table, d'où une réponse jamais reçue.
-- Aucune nouvelle DLL, aucun changement du site. Non vu en jeu.
 
 ## À venir : configurateur d'équipement, favoris, tendances, pré-kits et poids (site, version à attribuer)
 
@@ -771,24 +607,6 @@ EN : Athena answers faster during games
 - `ensureSystemChatChannels` : drapeau partagé 1 h par communauté et carte (`ShortCache::get` / `put`), plus d'`INSERT IGNORE` à chaque sondage de `/api/chat/channels`.
 - Pages web : 19 sondages ne lisent plus rien quand l'onglet est caché (`document.hidden`) et relisent au retour (`visibilitychange`) ; calques de champ de vision : 8 s puis attente doublée jusqu'à 60 s tant que rien ne change.
 - Aucune migration. Tests : `SseIdentityPackRevisionTest`, `AtakHiddenTabPollingAssetTest`, ajouts à `GameApiResponseCompactorTest`, `RateLimitMiddlewareTest`, `ShortCacheTest`.
-
-## À venir : faire parler une IA, une question et une réponse (COMSPEC SSE, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Faire parler une IA : une question, une réponse
-- Dans l'éditeur, deux cases suffisent sur une IA : la question que les joueurs peuvent lui poser, et ce qu'elle répond. Elle comprend aussi la question posée autrement. Les mêmes cases sont en tête de l'atelier IA et dans le menu Zeus de l'IA.
-- « Savoir » et « Déblocage » s'appellent maintenant « Ce qu'elle sait » et « Quand elle le dit », rangés dans les options avancées, avec une aide et un exemple. Vos missions déjà faites gardent tout.
-EN : Make an AI talk: one question, one answer
-- In the editor, two boxes are enough on an AI: the question players may ask it, and what it answers. It also understands the question asked another way. The same boxes are at the top of the AI workshop and in the AI's Zeus menu.
-- "Knowledge" and "Unlock" are now called "What it knows" and "When it tells", kept in the advanced options, with help and an example. Your existing missions keep everything.
-
-### Détail technique
-- `fn_iarpAnswers` : `qaGet` / `qaSet` / `qaTriggers` (pur). La paire question / réponse est la 1re question perso (`cN`) des réponses du profil, même format que la fenêtre « Réponses de l'IA » : libellé = la question, déclencheurs = la question entière et ses deux mots importants les plus longs (`chef+village`), textes = situation `*` ; situations, ordre, palier et lieu déjà réglés gardés, place dans la liste gardée.
-- Attribut Eden `comspec_sse_iarpProfile` (même propriété, même valeur texte) : contrôle `COMSPEC_SSE_IarpProfileAttr` avec cases Question et Réponse ; valeur relue telle quelle tant qu'elles ne changent pas (`fn_iarpEden`).
-- Atelier IA (`iarp_workshop.hpp`, `fn_iarpWorkshop`) : Question, Réponse de l'IA, « + Variable », bouton « Options avancées » (Ce qu'elle sait, Quand elle le dit : champs `know`, `unlock`, `unlockWord` inchangés) ; zone de test : la question perso reconnue d'abord ; une bibliothèque sans réponses garde les réponses écrites ; question sans réponse : rien n'est appliqué, la ligne d'état le dit.
-- Zeus : menu ZEN « Profil d'IA › Question et réponse… » (`profileTweak` des réponses). Libellés en clair : « Face à un ordre », « Toutes les questions et réponses… ». Clés `stringtable.xml` d'avant gardées (textes changés), nouvelles clés FR / EN.
-- Tests : `fn_iarpSelfTest` (aller-retour, paraphrases, anciennes valeurs), `tests/Unit/SseIarpQuestionReponseAssetTest.php`. À tester en jeu : attribut Eden (hauteur, saisie, enregistrement), atelier (vue simple / avancée, « + Variable »), menu ZEN.
 
 ## À venir : parler aux IA en texte libre et atelier IA en Eden et en Zeus (COMSPEC SSE, version à attribuer)
 
