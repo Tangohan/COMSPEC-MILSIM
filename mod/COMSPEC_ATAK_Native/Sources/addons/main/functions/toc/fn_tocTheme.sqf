@@ -24,12 +24,13 @@ if ((count _thm) isEqualTo 0) then {
 ["line", "#24303a"], ["lineStrong", "#3a4a57"],
 ["text", "#e8eef2"], ["text2", "#aab7c1"], ["muted", "#8494a0"],
 ["accent", "#34d399"], ["accentDim", "#0e3a2b"], ["amber", "#f5b841"], ["red", "#ff5f56"], ["redDim", "#3a1110"], ["blue", "#62b0f5"],
-["friend", "#6cb8ff"], ["hostile", "#ff6b6b"], ["neutral", "#7ee08a"], ["unknown", "#f2d36b"], ["lost", "#8a97a2"]
+["friend", "#6cb8ff"], ["hostile", "#ff6b6b"], ["neutral", "#7ee08a"], ["unknown", "#f2d36b"], ["lost", "#98a4ae"],
+["mapTint", "#a3a8ab"], ["mapTintPic", "#6b7175"]
 ];
     // ---- FIN
     // ---- TABLE _type (JSON) : [style, px virtuels sur 900, police]. Écran mural : rien sous 28 px (texte courant).
     private _type = [
-["display", 132, "monoBold"], ["hero", 72, "monoBold"], ["num", 48, "monoBold"], ["title", 40, "sansBold"], ["heading", 32, "sansBold"],
+["display", 132, "monoBold"], ["hero", 72, "monoBold"], ["num", 48, "monoBold"], ["squadName", 56, "sansBold"], ["title", 40, "sansBold"], ["heading", 32, "sansBold"],
 ["body", 28, "sans"], ["bodyBold", 28, "sansBold"], ["data", 28, "mono"], ["dataBold", 28, "monoBold"], ["caption", 28, "sans"],
 ["stripLabel", 40, "sansBold"], ["stripBig", 130, "monoBold"], ["stripMid", 110, "monoBold"], ["stripChrono", 70, "monoBold"], ["stripSub", 40, "sans"],
 ["plateName", 190, "sansBold"], ["plateSub", 56, "sans"]
@@ -80,8 +81,8 @@ if ((count _thm) isEqualTo 0) then {
 ["NET", [["name", "ÉLÉMENT", 0, 316, "L", "bodyBold"], ["n", "NŒUDS", 324, 96, "R", "data"], ["state", "ÉTAT", 430, 160, "P", "body"], ["grid", "GRILLE", 602, 162, "R", "data"]]],
 ["LOG", [["time", "HEURE Z", 0, 120, "L", "data"], ["kind", "TYPE", 132, 170, "P", "body"], ["text", "ENTRÉE", 314, 966, "L", "body"], ["who", "AUTEUR", 1292, 260, "R", "body"]]],
 ["EXCHECK", [["n", "N°", 0, 56, "R", "data"], ["cw", "MOT DE CODE", 72, 230, "L", "bodyBold"], ["ev", "ÉVÉNEMENT", 314, 570, "L", "body"], ["el", "ÉLÉMENT", 896, 220, "L", "body"], ["at", "PRÉVU", 1128, 120, "R", "data"], ["done", "RÉEL", 1260, 120, "R", "data"], ["st", "ÉTAT", 1400, 152, "P", "body"]]],
-["KILLS", [["el", "ÉLÉMENT", 0, 640, "L", "bodyBold"], ["wia", "BLESSÉS", 660, 200, "R", "dataBold"], ["kia", "TUÉS", 872, 200, "R", "dataBold"], ["ekia", "NEUTRALISÉS", 1104, 220, "R", "dataBold"], ["ewia", "BLESSÉS / CAPTURÉS", 1336, 216, "R", "dataBold"]]],
-["KILLS_G", [["f", "AMIS", 660, 412, "R", "caption"], ["e", "ENNEMIS", 1104, 448, "R", "caption"]]],
+["KILLS", [["el", "ÉLÉMENT", 0, 600, "L", "bodyBold"], ["wia", "BLESSÉS", 620, 200, "R", "dataBold"], ["kia", "TUÉS", 832, 200, "R", "dataBold"], ["ekia", "NEUTRALISÉS", 1044, 240, "R", "dataBold"], ["ewia", "BLESSÉS / CAPTURÉS", 1296, 256, "R", "dataBold"]]],
+["KILLS_G", [["f", "AMIS", 620, 412, "R", "caption"], ["e", "ENNEMIS", 1044, 508, "R", "caption"]]],
 ["REQ", [["time", "HEURE", 0, 100, "L", "data"], ["kind", "TYPE", 112, 200, "L", "bodyBold"], ["by", "DEMANDEUR", 324, 230, "L", "body"], ["grid", "GRILLE", 566, 140, "R", "data"], ["text", "DÉTAIL", 724, 640, "L", "body"], ["st", "STATUT", 1376, 176, "P", "body"]]],
 ["TIMER", [["name", "", 0, 360, "L", "heading"], ["sub", "", 0, 360, "L", "caption"], ["val", "", 368, 256, "R", "num"]]]
 ];

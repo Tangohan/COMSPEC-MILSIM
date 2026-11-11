@@ -1,27 +1,34 @@
 /*
-    Affichages « tableau » des écrans TOC (fn_tocScreen), dans la même texture UI 1600 x 900 que la carte du poste :
-      SAT      vue satellite en direct (fn_tocSat) : image r2t plein cadre (texture 16:9, sans bandes ni en-tête), HUD du
-               capteur incrusté en grand (lisible à 3-6 m : coins, réticule, échelle, lignes de données), pistes amies
-               du réseau (symbole, cadre, indicatif ; ancien / perdu / hors ligne en gris), marqueurs ; bandeau
-               « Lecture seule · SAT 2 · … · contrôlé par … » en bas. Aucune commande : la main est au PC du poste.
-      CLOCK    horloge : heure ZULU et heure locale de la mission en grand, tableau des chronos du poste (fn_tocRoom)
-      LOG      main courante du poste          EXCHECK  liste d'exécution de l'opération
-      KILLS    pertes et résultats par élément REQ      demandes reçues des éléments
-    Les contrôles vivent dans un groupe plein écran posé au-dessus de la carte (créé après elle) ; la carte n'est pas
-    dessinée tant qu'un tableau est affiché. FLASH du poste (fn_tocRoom) : bandeau rouge en tête de tous les affichages.
-    Texte à taille fixe (COMSPEC_RscTocText : size='1' = 28 px virtuels sur 900), mêmes en-têtes que la carte du poste ;
-    chaque ligne coupée à sa largeur (« … ») et chaque tableau limité à ce qui tient sous l'en-tête (preuves en
-    commentaire de chaque affichage, ligne de texte comptée 1,2 x sa police).
+    Rendu des écrans TOC muraux (fn_tocScreen) hors de la carte elle-même, dans la texture UI 1600 x 900 (faces 4:1 :
+    1600 x 400) : en-tête (titre, heures ZULU et locale), bandeau FLASH, pied (écran · affichage, état de la liaison),
+    panneaux des affichages à carte (SPLIT, TOC, SQUAD) et affichages « tableau » :
+      FEED     flux du camp en tableau         NET      groupes du réseau (deux tableaux)     ORBAT    ORBAT du site (3 colonnes)
+      SAT      console ISR (fn_tocSat) : image r2t plein cadre, HUD du capteur (coins, réticule, échelle, données, pistes
+               amies), bandeau « Lecture seule · SAT n · … » en bas ; aucune commande (la main est au PC du poste)
+      CLOCK    ZULU et locale en grand, groupe date-heure, prochaine ligne d'exécution, chronos du poste (fn_tocRoom)
+      LOG      main courante                   EXCHECK  liste d'exécution (barre d'avancement, ligne suivante en évidence)
+      KILLS    pertes et résultats par élément (totaux)   REQ  demandes reçues des éléments (statut en pastille)
+      MOSAIC   mosaïque de caméras (coins de visée, bandeau indicatif, barres de liaison, PAS DE SIGNAL)
+      STRIP    bandeau horloge 4:1             PLATE    plaque de nom 4:1
+    Refonte du 11/11 (« un rendu pro et propre ») : tout vient du thème (fn_tocTheme : couleurs, tailles, polices,
+    régions, colonnes, règles sous FLASH ; maquettes tools/toc_mockups.py avec les mêmes nombres, docs/TOC-THEME.md).
+    Dessin « immédiat » : à chaque image, chaque élément prend un contrôle dans une réserve par calque (fonds, filets et
+    pastilles, images, cadres sur les images, textes) puis les contrôles non repris sont masqués ; l'ordre des calques
+    garantit qu'un texte n'est jamais sous un fond. Textes à taille fixe (jamais moins de 28 px virtuels), coupés à leur
+    largeur avec « … », réécrits seulement s'ils changent ; tableaux limités à leur hauteur avec « + N autres ».
     Modes :
-      ["draw", [écran, display, affichage]]   dessin complet (fn_tocScreen, toutes les 1 à 2 s, écran allumé seulement)
-      ["overlay", [écran, display]]           SAT : HUD du capteur seul, 4 fois par seconde au plus (boucle de fn_tocBoard)
-      ["hide", display]                       masque le tableau (retour à la carte)
+      ["draw", [écran, display, affichage, contexte]]   image complète (fn_tocScreen, toutes les 1 à 2 s, écran allumé) ;
+                                              contexte des affichages à carte : [["op", vue PIP], ["squad", groupe], ["sqNodes", nœuds]]
+      ["overlay", [écran, display]]           SAT : HUD du capteur seul (fn_tocSat « hudPaint »), 4 fois par seconde au plus
+      ["live", [écran, display]]              image vivante (satellite, mosaïque, caméra du chef) redessinée 6 à 7 fois par seconde
+      ["hide", display]                       rien à faire (tout est repris à chaque image), gardé pour les appels existants
       ["flash", camp]                         FLASH en cours : [texte, auteur, heure] ou []
-      ["boardText", [affichage, état, camp, écran mural]]   textes LOG, EXCHECK, KILLS, REQ (le PC du poste lit KILLS)
+      ["boardText", [affichage, état, camp]]  texte structuré LOG, EXCHECK, KILLS, REQ (le PC du poste lit KILLS)
 */
 params [["_mode", "draw"], ["_a", []]];
 disableSerialization;
 private _fn = comspec_atak_native_fnc_tocBoard;
+private _thm = ["get"] call comspec_atak_native_fnc_tocTheme;
 private _texW = 1600;
 private _texH = 900;
 private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
@@ -34,16 +41,11 @@ private _cut = {
     forceUnicode 0;
     (_s select [0, (_n - 1) max 1]) + "…"
 };
-private _setTxt = {
-    params ["_c", "_s"];
-    if ((_c getVariable ["COMSPEC_ATAK_Txt", ""]) isNotEqualTo _s) then {
-        _c setVariable ["COMSPEC_ATAK_Txt", _s];
-        _c ctrlSetStructuredText parseText ((_s) call comspec_atak_native_fnc_tr);
-    };
-};
-// Rectangle en pixels virtuels -> position du display.
-private _R = { params ["_rx", "_ry", "_rw", "_rh"]; [_rx / _texW, _ry / _texH, _rw / _texW, _rh / _texH] };
-// Image satellite : plein cadre (la texture est en 16:9), bandeau de lecture seule en bas (46 px).
+private _tcol = { params ["_k", ["_al", 1]]; private _v = +((_thm get "c") getOrDefault [_k, [1, 0, 1, 1]]); _v set [3, _al]; _v };
+private _ink = { ["ink", _this] call comspec_atak_native_fnc_tocTheme };
+// Rectangle en pixels virtuels -> position dans le display (ou le groupe plein écran).
+private _toR = { params ["_rx", "_ry", "_rw", "_rh"]; [_rx / _texW, _ry / _texH, _rw / _texW, _rh / _texH] };
+// Image satellite (console ISR, fn_tocSat) : plein cadre (la texture est en 16:9), bandeau de lecture seule en bas (46 px).
 private _stripH = 46 / _texH;
 switch (_mode) do {
     case "flash": {
@@ -72,15 +74,12 @@ switch (_mode) do {
                 missionNamespace setVariable ["COMSPEC_ATAK_TocBoardPfh", nil];
             };
             {
-                // Satellite : HUD repris (4 fois par seconde au plus), redessin si l'image est rendue ici ; vidéo : redessin simple.
+                // Satellite : cadres repris, redessin seulement si l'image est rendue ici ; vidéo : redessin simple.
                 if (((((_x select 0) getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isNotEqualTo "SAT") || {["overlay", _x] call comspec_atak_native_fnc_tocBoard}) then { displayUpdate (_x select 1); };
             } forEach _l;
         }, 0.15] call CBA_fnc_addPerFrameHandler];
     };
-    case "hide": {
-        private _g = _a getVariable ["COMSPEC_ATAK_TocBoard", controlNull];
-        if (!isNull _g) then { _g ctrlShow false; };
-    };
+    case "hide": {};
     case "overlay": {
         _a params ["_o", "_d"];
         private _ui = _d getVariable ["COMSPEC_ATAK_TocBoardUi", createHashMap];
@@ -102,86 +101,306 @@ switch (_mode) do {
         true
     };
     case "draw": {
-        _a params ["_o", "_d", "_view"];
+        _a params ["_o", "_d", "_view", ["_ctx", createHashMap]];
         private _cfg = _o getVariable ["COMSPEC_ATAK_TocScr", []];
         _cfg params [["_name", "TOC"], ["_cside", ""]];
         private _side = [_cside, str side group player] select (_cside isEqualTo "");
-        private _rgb = (createHashMapFromArray [["WEST", [0.28, 0.62, 1]], ["EAST", [0.95, 0.3, 0.25]], ["GUER", [0.36, 0.85, 0.42]], ["CIV", [0.75, 0.5, 0.95]]]) getOrDefault [_side, [0.28, 0.62, 1]];
+        private _wide = _view in ["STRIP", "PLATE"];
+        if (_wide) then { _texH = 400; };
         private _g = _d getVariable ["COMSPEC_ATAK_TocBoard", controlNull];
         private _ui = _d getVariable ["COMSPEC_ATAK_TocBoardUi", createHashMap];
         if (isNull _g) then {
+            // Calques, du dessous au-dessus : fonds, filets et pastilles, images, satellite, cadres sur les images, textes.
             _g = _d ctrlCreate ["RscControlsGroupNoScrollbars", -1];
             _g ctrlSetPosition [0, 0, 1, 1];
             _g ctrlCommit 0;
             _d setVariable ["COMSPEC_ATAK_TocBoard", _g];
-            private _mk = {
-                params ["_cls", ["_pos", [0, 0, 0, 0]]];
-                private _c = _d ctrlCreate [_cls, -1, _g];
-                _c ctrlSetPosition _pos;
-                _c ctrlCommit 0;
-                _c
-            };
-            // Fond et en-tête : mêmes places que la carte du poste (fn_tocScreen « build »).
-            (["RscText", [0, 0, 1, 1]] call _mk) ctrlSetBackgroundColor [0.025, 0.03, 0.027, 1];
+            private _lays = createHashMap;
+            {
+                private _l = _d ctrlCreate ["RscControlsGroupNoScrollbars", -1, _g];
+                _l ctrlSetPosition [0, 0, 1, 1];
+                _l ctrlCommit 0;
+                _lays set [_x, _l];
+            } forEach ["b0", "b1", "P", "sat", "b2", "T"];
+            // Satellite (console ISR) : image plein cadre, bandeau de lecture seule, attente, HUD du capteur (fn_tocSat).
+            private _sl = _lays get "sat";
+            private _mk = { params ["_cls", ["_pos", [0, 0, 0, 0]]]; private _c = _d ctrlCreate [_cls, -1, _sl]; _c ctrlSetPosition _pos; _c ctrlCommit 0; _c };
             private _pic = ["RscPicture", [0, 0, 1, 1]] call _mk;
-            private _hdr = ["RscText", [0, 0, 1600, 80] call _R] call _mk;
-            _hdr ctrlSetBackgroundColor [0.045, 0.055, 0.048, 1];
-            private _accent = ["RscText", [0, 80, 1600, 4] call _R] call _mk;
-            private _title = ["COMSPEC_RscTocText", [24, 12, 1060, 62] call _R] call _mk;
-            private _clock = ["COMSPEC_RscTocText", [1100, 20, 476, 48] call _R] call _mk;
             private _strip = ["COMSPEC_RscTocText", [0, 1 - _stripH, 1, _stripH]] call _mk;
-            _strip ctrlSetBackgroundColor [0, 0, 0, 0.62];
-            // HUD du capteur (fn_tocSat), dans le groupe du tableau : mêmes coordonnées que la texture.
-            private _hud = ["hudMake", [_d, _g, "WALL"]] call comspec_atak_native_fnc_tocSat;
-            private _main = ["COMSPEC_RscTocText", [24, 96, 1552, 792] call _R] call _mk;
-            private _main2 = ["COMSPEC_RscTocText", [24, 96, 1552, 792] call _R] call _mk;
+            _strip ctrlSetBackgroundColor (["bg0", 0.78] call _tcol);
             private _wait = ["COMSPEC_RscTocText", [0.1, 0.42, 0.8, 0.14]] call _mk;
-            private _flash = ["COMSPEC_RscTocText", [0, 84, 1600, 52] call _R] call _mk;
-            _flash ctrlSetBackgroundColor [0.62, 0.08, 0.06, 0.95];
-            // Mosaïque : 9 vignettes (fond, image, bandeau, message), placées selon la grille à chaque dessin.
-            private _tiles = [];
-            for "_i" from 1 to 9 do {
-                private _bg = ["RscText"] call _mk; _bg ctrlSetBackgroundColor [0, 0, 0, 1];
-                private _tp = ["RscPicture"] call _mk;
-                private _tl = ["COMSPEC_RscTocText"] call _mk; _tl ctrlSetBackgroundColor [0, 0, 0, 0.62];
-                private _tm = ["COMSPEC_RscTocText"] call _mk;
-                { _x ctrlShow false; } forEach [_bg, _tp, _tl, _tm];
-                _tiles pushBack [_bg, _tp, _tl, _tm];
-            };
-            _ui = createHashMapFromArray [["tiles", _tiles], ["pic", _pic], ["hdr", _hdr], ["accent", _accent], ["title", _title], ["clock", _clock], ["strip", _strip], ["hud", _hud],
-                ["main", _main], ["main2", _main2], ["wait", _wait], ["flash", _flash]];
+            private _hud = ["hudMake", [_d, _sl, "WALL"]] call comspec_atak_native_fnc_tocSat;
+            _ui = createHashMapFromArray [["lays", _lays], ["pools", createHashMap], ["pic", _pic], ["strip", _strip], ["wait", _wait], ["hud", _hud]];
             _d setVariable ["COMSPEC_ATAK_TocBoardUi", _ui];
         };
         _g ctrlShow true;
-        _o setVariable ["COMSPEC_ATAK_TocVideo", false];
-        (_ui get "accent") ctrlSetBackgroundColor (_rgb + [1]);
+        private _pools = _ui get "pools";
+        { (_x) set [1, 0]; } forEach (values _pools);
+        // ---- Réserves : _take [calque] -> contrôle (créé au besoin dans son calque) ----
+        private _take = {
+            params ["_k"];
+            private _p = _pools getOrDefault [_k, []];
+            if ((count _p) isEqualTo 0) then { _p = [[], 0]; _pools set [_k, _p]; };
+            private _i = _p select 1;
+            _p set [1, _i + 1];
+            private _list = _p select 0;
+            if (_i < (count _list)) exitWith { _list select _i };
+            private _cls = (createHashMapFromArray [["L", "COMSPEC_RscTocLabel"], ["R", "COMSPEC_RscTocLabelRight"], ["C", "COMSPEC_RscTocLabelCenter"], ["S", "COMSPEC_RscTocText"], ["P", "RscPicture"]]) getOrDefault [_k, "RscText"];
+            private _lay = (_ui get "lays") get ((createHashMapFromArray [["L", "T"], ["R", "T"], ["C", "T"], ["S", "T"]]) getOrDefault [_k, _k]);
+            private _c = _d ctrlCreate [_cls, -1, _lay];
+            _list pushBack _c;
+            _c
+        };
+        private _put = { params ["_c", "_r"]; _c ctrlSetPosition (_r call _toR); _c ctrlCommit 0; _c ctrlShow true; };
+        private _box = { params ["_r", "_tok", ["_al", 1], ["_lay", "b0"]]; private _c = [_lay] call _take; _c ctrlSetBackgroundColor ([_tok, _al] call _tcol); [_c, _r] call _put; _c };
+        // Texte d'une ligne dans une case : style du thème (police, taille, couleur), traduit puis coupé à la largeur
+        // (estimation large, puis mesure du jeu quand elle est plausible). Réécrit seulement s'il change.
+        private _text = {
+            params ["_r", "_s", ["_st", "body"], ["_tok", "text"], ["_al", "L"], ["_raw", false]];
+            if (_al isEqualTo "P") then { _al = "C"; };
+            private _c = [_al] call _take;
+            ((_thm get "type") getOrDefault [_st, [28, "RobotoCondensed"]]) params ["_px", "_font"];
+            private _sk = [_st, _tok, _texH];
+            if ((_c getVariable ["COMSPEC_ATAK_St", []]) isNotEqualTo _sk) then {
+                _c setVariable ["COMSPEC_ATAK_St", _sk];
+                _c ctrlSetFont _font;
+                _c ctrlSetFontHeight (_px / _texH);
+                _c ctrlSetTextColor ([_tok] call _tcol);
+            };
+            private _w = _r select 2;
+            private _key = format ["%1|%2|%3", _s, round _w, _st];
+            if ((_c getVariable ["COMSPEC_ATAK_Txt", ""]) isNotEqualTo _key) then {
+                _c setVariable ["COMSPEC_ATAK_Txt", _key];
+                private _cw = _px * ([0.42, 0.5] select ((_font find "Monospace") >= 0)) * ([1, 1.08] select ((_font find "Bold") >= 0));
+                private _room = _w - 8;
+                private _t = [[_s call comspec_atak_native_fnc_tr, _s] select _raw, floor (_room / _cw)] call _cut;
+                _c ctrlSetText _t; // i18n:brut (déjà traduit)
+                for "_i" from 1 to 6 do {
+                    private _m = (ctrlTextWidth _c) * _texW;
+                    forceUnicode 0;
+                    private _n = count _t;
+                    if (_m <= 0.5 * _n * _cw || {_m >= 2 * _n * _cw} || {_m <= _room} || {_n <= 3}) exitWith {};
+                    _t = [_t, _n - 2] call _cut;
+                    _c ctrlSetText _t; // i18n:brut (déjà traduit)
+                };
+            };
+            [_c, _r] call _put;
+            _c
+        };
+        // Texte structuré (plusieurs couleurs sur une ligne) : color='@jeton'.
+        private _stx = {
+            params ["_r", "_s"];
+            private _c = ["S"] call _take;
+            if ((_c getVariable ["COMSPEC_ATAK_Txt", ""]) isNotEqualTo _s) then {
+                _c setVariable ["COMSPEC_ATAK_Txt", _s];
+                _c ctrlSetStructuredText parseText ((_s call comspec_atak_native_fnc_tr) call _ink);
+            };
+            [_c, _r] call _put;
+            _c
+        };
+        private _pill = {
+            params ["_r", "_label", "_tok"];
+            _r params ["_qx", "_qy", "_qw", "_qh"];
+            [[_qx, _qy + 4, _qw, _qh - 8], _tok, 0.16, "b1"] call _box;
+            [[_qx, _qy + 4, 3, _qh - 8], _tok, 1, "b1"] call _box;
+            [[_qx + 3, _qy, _qw - 3, _qh], _label, "body", _tok, "C"] call _text;
+        };
+        // ---- Mise en page : régions du thème, descendues sous un FLASH (_flRule) ----
+        private _fl = ["flash", _side] call _fn;
+        private _isFl = (count _fl) > 0 && {!_wide};
+        private _lv = [_view, "SPLIT"] select (_view isEqualTo "TOC");
+        private _rg = { ["region", [_lv, _this, _isFl]] call comspec_atak_native_fnc_tocTheme };
+        private _section = {
+            params ["_k", "_title", ["_sub", ""], ["_pre", ""]];
+            [(_pre + "Head") call _rg, _title, "heading", "text"] call _text;
+            if (_sub isNotEqualTo "") then { [(_pre + "Sub") call _rg, _sub, "caption", "muted", "R"] call _text; };
+            ((_pre + "Rule") call _rg) params ["_qx", "_qy", "_qw"];
+            [[_qx, _qy, _qw, 1], "line", 1, "b1"] call _box;
+            [[_qx, _qy - 1, 40, 2], "accent", 1, "b1"] call _box;
+        };
+        // Section des affichages pleine largeur (régions head / sub / rule).
+        private _sectionW = {
+            params ["_title", ["_sub", ""]];
+            ["head" call _rg, _title, "heading", "text"] call _text;
+            if (_sub isNotEqualTo "") then { ["sub" call _rg, _sub, "caption", "muted", "R"] call _text; };
+            ("rule" call _rg) params ["_qx", "_qy", "_qw"];
+            [[_qx, _qy, _qw, 1], "line", 1, "b1"] call _box;
+            [[_qx, _qy - 1, 40, 2], "accent", 1, "b1"] call _box;
+        };
+        // Cases à gros chiffre : [[nombre, libellé, jeton]...], 2 x 2 dans un panneau, 4 en ligne en pleine largeur.
+        private _tiles = {
+            params ["_r", "_vals", ["_cols", 2]];
+            _r params ["", "", "_w", "_h"];
+            private _rows = ceil ((count _vals) / _cols);
+            private _tw = (_w - (_cols - 1) * 8) / _cols;
+            private _th = (_h - (_rows - 1) * 8) / _rows;
+            {
+                _x params ["_n", "_lbl", "_tok"];
+                private _tx = (_r select 0) + (_forEachIndex mod _cols) * (_tw + 8);
+                private _ty = (_r select 1) + (floor (_forEachIndex / _cols)) * (_th + 8);
+                [[_tx, _ty, _tw, _th], "bg2"] call _box;
+                [[_tx, _ty, 4, _th], _tok, 1, "b1"] call _box;
+                [[_tx + 12, _ty, 84, _th], str _n, "num", _tok, "R", true] call _text;
+                [[_tx + 104, _ty, _tw - 112, _th], _lbl, "body", "text2"] call _text;
+            } forEach _vals;
+        };
+        // Tableau : en-têtes en légende, lignes de 40 px séparées d'un filet, nombres à droite, pastilles d'état.
+        // Lignes : [[texte, jeton]...] dans l'ordre des colonnes ("" : case vide). Trop de lignes : « + N autres ».
+        private _table = {
+            params ["_ck", "_head", "_area", "_rows", ["_more", "+ %1 autres"], ["_hl", -1]];
+            private _cols = (_thm get "cols") getOrDefault [_ck, []];
+            if ((count _head) >= 4) then {
+                _head params ["_hx", "_hy", "", "_hh"];
+                { _x params ["", "_lbl", "_cx", "_cw", "_al"]; if (_lbl isNotEqualTo "") then { [[_hx + _cx, _hy, _cw, _hh], _lbl, "caption", "muted", ["L", "R"] select (_al isEqualTo "R")] call _text; }; } forEach _cols;
+            };
+            _area params ["_ax", "_ay", "_aw", "_ah"];
+            private _cap = floor (_ah / 40);
+            private _shown = if ((count _rows) <= _cap || {_more isEqualTo ""}) then { _rows select [0, _cap] } else { _rows select [0, (_cap - 1) max 0] };
+            {
+                private _row = _x;
+                private _ry = _ay + _forEachIndex * 40;
+                if (_forEachIndex isEqualTo _hl) then { [[_ax, _ry, _aw, 40], "bg2"] call _box; [[_ax, _ry, 3, 40], "accent", 1, "b1"] call _box; };
+                {
+                    _x params ["_key", "", "_cx", "_cw", "_al", "_st"];
+                    (_row param [_forEachIndex, ["", "text"]]) params [["_s", ""], ["_tok", "text"]];
+                    if (_s isNotEqualTo "") then {
+                        switch (true) do {
+                            case (_al isEqualTo "P"): { [[_ax + _cx, _ry, _cw, 40], _s, _tok] call _pill; };
+                            case (_key isEqualTo "dot"): { [[_ax + _cx + 2, _ry + 14, 12, 12], _tok, 1, "b1"] call _box; };
+                            default { [[_ax + _cx, _ry, _cw, 40], _s, _st, _tok, _al] call _text; };
+                        };
+                    };
+                } forEach _cols;
+                [[_ax, _ry + 39, _aw, 1], "line", 0.7, "b1"] call _box;
+            } forEach _shown;
+            if ((count _rows) > (count _shown) && {_more isNotEqualTo ""}) then {
+                [[_ax, _ay + (count _shown) * 40, _aw, 40], format [_more call comspec_atak_native_fnc_tr, (count _rows) - (count _shown)], "caption", "muted", "L", true] call _text;
+            };
+            count _shown
+        };
+        // Coins de visée d'une image en direct (mêmes coins que le satellite) : 4 équerres de 28 px, 3 px d'épaisseur.
+        private _brackets = {
+            params ["_r", ["_tok", "text"], ["_al", 0.85]];
+            _r params ["_qx", "_qy", "_qw", "_qh"];
+            {
+                _x params ["_cx", "_cy", "_sx", "_sy"];
+                [[[_cx, _cx - 28] select (_sx < 0), [_cy, _cy - 3] select (_sy < 0), 28, 3], _tok, _al, "b2"] call _box;
+                [[[_cx, _cx - 3] select (_sx < 0), [_cy, _cy - 28] select (_sy < 0), 3, 28], _tok, _al, "b2"] call _box;
+            } forEach [[_qx, _qy, 1, 1], [_qx + _qw, _qy, -1, 1], [_qx, _qy + _qh, 1, -1], [_qx + _qw, _qy + _qh, -1, -1]];
+        };
+        // Vignette caméra : image (ou PAS DE SIGNAL / CASE LIBRE), coins, pastille DIRECT, bandeau indicatif + liaison + heure.
+        private _camTile = {
+            params ["_r", "_tex", "_cs", "_lk", "_state"];
+            _r params ["_qx", "_qy", "_qw", "_qh"];
+            if (_state isEqualTo "free") exitWith {
+                [_r, "bg1"] call _box;
+                { [_x, "line", 1, "b1"] call _box; } forEach [[_qx, _qy, _qw, 1], [_qx, _qy + _qh - 1, _qw, 1], [_qx, _qy, 1, _qh], [_qx + _qw - 1, _qy, 1, _qh]];
+                [_r, "CASE LIBRE", "body", "muted", "C"] call _text;
+            };
+            [_r, "bg1"] call _box;
+            if (_tex isNotEqualTo "") then {
+                private _p = ["P"] call _take;
+                if ((_p getVariable ["COMSPEC_ATAK_Tex", "-"]) isNotEqualTo _tex) then { _p setVariable ["COMSPEC_ATAK_Tex", _tex]; _p ctrlSetText _tex; }; // i18n:brut (texture)
+                [_p, _r] call _put;
+                [[_qx + 16, _qy + 16, 110, 34], "bg0", 0.75, "b2"] call _box;
+                [[_qx + 26, _qy + 27, 12, 12], "red", 1, "b2"] call _box;
+                [[_qx + 40, _qy + 16, 86, 34], "DIRECT", "bodyBold", "text"] call _text;
+            } else {
+                if (_state isEqualTo "nosig") then {
+                    [[_qx, _qy + _qh / 2 - 50, _qw, 40], "PAS DE SIGNAL", "heading", "red", "C"] call _text;
+                    [[_qx, _qy + _qh / 2 - 8, _qw, 36], "liaison coupée", "caption", "muted", "C"] call _text;
+                } else {
+                    [[_qx, _qy + _qh / 2 - 40, _qw, 40], "À son tour dans un instant", "body", "text2", "C"] call _text;
+                };
+            };
+            [[_qx + 10, _qy + 10, _qw - 20, _qh - 60], ["lineStrong", "text"] select (_tex isNotEqualTo ""), 0.85] call _brackets;
+            [[_qx, _qy + _qh - 40, _qw, 40], "bg0", 0.85, "b2"] call _box;
+            [[_qx + 8, _qy + _qh - 40, _qw - 200, 40], _cs, "bodyBold", "text"] call _text;
+            private _lvl = (createHashMapFromArray [["bonne", 4], ["moyenne", 3], ["faible", 2], ["coupée", 0]]) getOrDefault [_lk, 4];
+            private _lt = (createHashMapFromArray [["bonne", "accent"], ["moyenne", "amber"], ["faible", "amber"], ["coupée", "red"]]) getOrDefault [_lk, "accent"];
+            for "_i" from 0 to 3 do {
+                private _bh = 8 + _i * 6;
+                [[_qx + _qw - 184 + _i * 10, _qy + _qh - 8 - _bh, 6, _bh], [_lt, "lineStrong"] select (_i >= _lvl), 1, "b2"] call _box;
+            };
+            [[_qx + _qw - 120, _qy + _qh - 40, 116, 40], (_zulu select [0, 5]) + "Z", "data", "text2", "R", true] call _text;
+        };
+        // ---- Données communes ----
         private _room = ["state", _side] call comspec_atak_native_fnc_tocRoom;
         private _zulu = ["zulu"] call comspec_atak_native_fnc_tocRoom;
         private _local = [dayTime, "HH:MM:SS"] call BIS_fnc_timeToString;
-        // Titre : même mot que les menus (fn_tocScreen « title »), 1,57 x 28 = 44 px, 40 caractères au plus sur 1060 px.
-        [_ui get "title", format ["<t size='1.57' font='COMSPEC_BarlowBold'>%1 · %2</t>", (["title", _view] call comspec_atak_native_fnc_tocScreen) select 0, [[_name, 22] call _cut] call _esc]] call _setTxt;
-        // « 12:35:42 ZULU   01:27:13 LOCAL » : 30 caractères x 0,46 x 31 px = 428 px sur 476.
-        [_ui get "clock", format ["<t align='right' size='1.1'>%1 <t color='#8a9a93'>ZULU</t>   %2 <t color='#8a9a93'>LOCAL</t></t>", _zulu, _local]] call _setTxt;
-        private _isSat = _view isEqualTo "SAT";
-        { (_ui get _x) ctrlShow _isSat; } forEach ["pic", "strip"];
-        // Satellite plein cadre : pas d'en-tête (l'heure et le capteur sont dans le HUD).
-        { (_ui get _x) ctrlShow !_isSat; } forEach ["main", "main2", "hdr", "accent", "title", "clock"];
-        (_ui get "wait") ctrlShow false;
-        if (!_isSat) then { ["hudHide", _ui get "hud"] call comspec_atak_native_fnc_tocSat; };
-        if (_view isNotEqualTo "MOSAIC") then { { { _x ctrlShow false; } forEach _x; } forEach (_ui getOrDefault ["tiles", []]); };
-        // FLASH du poste : bandeau rouge sous l'en-tête, 3 minutes.
-        private _fl = ["flash", _side] call _fn;
-        (_ui get "flash") ctrlShow ((count _fl) > 0);
-        (_ui get "flash") ctrlSetPosition (([[0, 84, 1600, 52], [0, 0, 1600, 52]] select _isSat) call _R);
-        (_ui get "flash") ctrlCommit 0;
-        if ((count _fl) > 0) then {
-            [_ui get "flash", format ["<t size='1.3' font='COMSPEC_BarlowBold'>  FLASH · %1</t> <t size='1' color='#ffd0c8'>· %2 · %3Z</t>", [[_fl select 0, 50] call _cut] call _esc, [[_fl select 1, 20] call _cut] call _esc, _fl select 2]] call _setTxt;
+        private _feed = missionNamespace getVariable [format ["COMSPEC_ATAK_TocFeed_%1", _side], []];
+        _feed params [["_ft", -1], ["_nodes", []], ["_events", []], ["_stats", []]];
+        _stats params [["_jam", 0], ["_relays", 0], ["_players", 0], ["_ais", 0]];
+        private _cnt = [0, 0, 0, 0];
+        { private _f = ((_x select 4) min 3) max 0; _cnt set [_f, (_cnt select _f) + (_x param [8, 1])]; } forEach _nodes;
+        private _stTok = ["accent", "amber", "red", "muted"];
+        private _stLbl = ["en direct", "ancien", "perdu", "hors ligne"];
+        private _netTiles = [[_cnt select 0, "en ligne", "accent"], [_cnt select 1, "anciens", "amber"], [_cnt select 2, "perdus", "red"], [_cnt select 3, "hors ligne", "muted"]];
+        private _netSub = format ["%1 joueurs · %2 IA · %3 relais", _players, _ais, _relays] + (["", format [" · %1 brouilleurs", _jam]] select (_jam > 0));
+        // Groupes du flux : [nom, nœuds, meilleur état, position].
+        private _groupsOf = {
+            params ["_ns"];
+            private _gm = createHashMap;
+            {
+                private _gk = _x param [7, ""];
+                private _e = _gm getOrDefault [_gk, [0, 9, _x select 2]];
+                _gm set [_gk, [(_e select 0) + (_x param [8, 1]), (_e select 1) min (_x select 4), _e select 2]];
+            } forEach _ns;
+            private _ks = keys _gm;
+            _ks sort true;
+            _ks apply { private _e = _gm get _x; [[_x, "(sans groupe)"] select (_x isEqualTo ""), _e select 0, ((_e select 1) min 3) max 0, _e select 2] }
         };
-        // Zone utile : de 96 px (144 sous un FLASH) à 888 px.
-        private _y0 = [96, 144] select ((count _fl) > 0);
-        private _hAvail = 888 - _y0;
-        { (_ui get _x) ctrlSetPosition ([24, _y0, 1552, _hAvail] call _R); (_ui get _x) ctrlCommit 0; (_ui get _x) ctrlSetBackgroundColor [0, 0, 0, 0]; } forEach ["main", "main2"];
+        private _gridOf = { params ["_p"]; if ((count _p) < 2) exitWith { "" }; [[_p select 0, _p select 1, 0], 6] call comspec_atak_native_fnc_gridRef };
+        private _prioTok = { params ["_p"]; (createHashMapFromArray [["FLASH", "red"], ["URGENT", "amber"], ["IMPORTANT", "blue"]]) getOrDefault [toUpper _p, "muted"] };
+
+        // ---- Fond, en-tête, FLASH, pied (tous les affichages 16:9) ----
+        private _mapView = _view in ["SPLIT", "MAP", "TOC", "SQUAD"];
+        private _op = _ctx getOrDefault ["op", []];
+        private _isSat = _view isEqualTo "SAT";
+        // Satellite plein cadre : ni en-tête ni pied (heure et capteur dans le HUD, nom de l'écran dans le bandeau) ;
+        // FLASH en haut de l'image.
+        if (_isSat && {_isFl}) then {
+            [[0, 0, 1600, 52], "redDim", 0.95, "b2"] call _box;
+            [[0, 0, 8, 52], "red", 1, "b2"] call _box;
+            [[24, 6, 1552, 40], format ["FLASH · %1 · %2 · %3Z", _fl select 0, _fl select 1, _fl select 2], "heading", "text", "L", true] call _text;
+        };
+        if (!_wide && {!_isSat}) then {
+            if (!_mapView) then { [[0, 0, 1600, 900], "bg0"] call _box; };
+            private _frm = ["lay", "FRAME"] call comspec_atak_native_fnc_tocTheme;
+            [_frm get "header", "bg1"] call _box;
+            [_frm get "rule", ["accent", "red"] select _isFl, 1, "b1"] call _box;
+            private _head = (["title", _view] call comspec_atak_native_fnc_tocScreen) select 0;
+            private _ttl = format ["%1 · %2", _head, _name];
+            private _ttok = "text";
+            if ((count _op) >= 8) then { _ttl = format ["PIP · %1", _op param [5, _name]]; _ttok = "amber"; };
+            if (_view isEqualTo "SQUAD") then { _ttl = format ["%1 · %2", _head, [_ctx getOrDefault ["squad", ""], "AUCUN GROUPE"] select ((_ctx getOrDefault ["squad", ""]) isEqualTo "")]; };
+            [_frm get "title", _ttl, "title", _ttok] call _text;
+            [_frm get "clock", format ["<t align='right' size='1'><t font='EtelkaMonospaceProBold'>%1</t><t color='@muted'> Z     </t><t font='EtelkaMonospacePro' color='@text2'>%2</t><t color='@muted'> LOCAL</t></t>", _zulu, _local select [0, 5]]] call _stx;
+            if (_isFl) then {
+                [_frm get "flash", "redDim", 1, "b1"] call _box;
+                [_frm get "flashBar", "red", 1, "b1"] call _box;
+                [_frm get "flashTxt", format ["FLASH · %1 · %2 · %3Z", _fl select 0, _fl select 1, _fl select 2], "heading", "text", "L", true] call _text;
+            };
+            [[0, 848, 1600, 52], "bg0"] call _box;
+            [_frm get "footRule", "line", 1, "b1"] call _box;
+            private _vl = (["title", _view] call comspec_atak_native_fnc_tocScreen) select 1;
+            if ((count _op) >= 8) then { _vl = format ["PIP du poste · %1 · onglet %2", _op param [6, ""], _op param [3, ""]]; };
+            [_frm get "footL", format ["%1 · %2", _name, _vl], "caption", "muted"] call _text;
+            private _age = [-1, round ((serverTime - _ft) max 0)] select (_ft >= 0);
+            [_frm get "footR", switch (true) do {
+                case (_age < 0): { "<t align='right'><t color='@red'>●</t> <t color='@text2'>HORS LIGNE · aucun flux du serveur</t></t>" };
+                case (_age < 12): { format ["<t align='right'><t color='@accent'>●</t> <t color='@text2'>EN DIRECT · données à %1 s</t></t>", _age] };
+                default { format ["<t align='right'><t color='@amber'>●</t> <t color='@text2'>RETARD · données à %1 s</t></t>", _age min 999] };
+            }] call _stx;
+        };
+        // Satellite : calque fixe montré seulement pour lui.
+        ((_ui get "lays") get "sat") ctrlShow _isSat;
+        if (!_isSat) then { ["hudHide", _ui get "hud"] call comspec_atak_native_fnc_tocSat; };
+        _o setVariable ["COMSPEC_ATAK_TocVideo", false];
+        private _anyLive = false;
+
         switch (_view) do {
+            case "MAP": {};
             case "SAT": {
                 private _n = ((_cfg param [8, 0]) max 0) min 1;
                 private _tex = ["tex", [_side, _n]] call comspec_atak_native_fnc_tocSat;
@@ -190,15 +409,283 @@ switch (_mode) do {
                     _pic setVariable ["COMSPEC_ATAK_Tex", _tex];
                     _pic ctrlSetText ([_tex, "#(argb,8,8,3)color(0,0,0,1)"] select (_tex isEqualTo "")); // i18n:brut (texture)
                 };
-                // Un écran du mur ne pilote rien : la main est au PC ou au téléphone du poste. Nom de l'écran en tête du bandeau.
-                [_ui get "strip", format ["<t size='1.15'>  <t color='#e0b040'>Lecture seule</t> · %1</t><t size='1.15' align='right' color='#8a9a93'>%2  </t>", [[["label", [_side, _n]] call comspec_atak_native_fnc_tocSat, 70] call _cut] call _esc, [[_name, 16] call _cut] call _esc]] call _setTxt;
+                // Un écran du mur ne pilote rien : la main est au PC ou au téléphone du poste.
+                // Bandeau = pied de l'écran : lecture seule et satellite à gauche, nom de l'écran à droite.
+                (_ui get "strip") ctrlSetStructuredText parseText ((format ["<t size='1.15'>  <t color='@amber'>Lecture seule</t><t color='@text2'> · %1</t></t><t size='1.15' align='right' color='@muted'>%2  </t>", [[["label", [_side, _n]] call comspec_atak_native_fnc_tocSat, 70] call _cut] call _esc, [[_name, 16] call _cut] call _esc] call comspec_atak_native_fnc_tr) call _ink);
                 (_ui get "wait") ctrlShow (_tex isEqualTo "");
                 if (_tex isEqualTo "") then {
-                    [_ui get "wait", "<t align='center' size='1.6' color='#cfd8d3'>Image satellite en attente</t><br/><t align='center' size='1' color='#8a9a93'>Approchez-vous de l'écran : l'image n'est rendue qu'aux joueurs proches qui le regardent</t>"] call _setTxt;
+                    (_ui get "wait") ctrlSetStructuredText parseText (("<t align='center' size='1.6' color='@text'>Image satellite en attente</t><br/><t align='center' size='1' color='@muted'>Approchez-vous de l'écran : l'image n'est rendue qu'aux joueurs proches qui le regardent</t>" call comspec_atak_native_fnc_tr) call _ink);
                 };
                 ["overlay", [_o, _d]] call _fn;
-                // HUD tant que l'image est rendue (la carte de fond, elle, reste à 1 s).
                 if (_tex isNotEqualTo "") then { ["live", [_o, _d]] call _fn; };
+            };
+            case "TOC";
+            case "SPLIT": {
+                // Panneau : RÉSEAU (4 cases), GROUPES (tableau), FLUX (3 dernières lignes). Carte : fn_tocScreen.
+                ["divider" call _rg, "line", 1, "b1"] call _box;
+                ["", "RÉSEAU", _netSub, "net"] call _section;
+                ["tiles" call _rg, _netTiles] call _tiles;
+                private _gs = [_nodes] call _groupsOf;
+                ["", "GROUPES", format ["%1 éléments", count _gs], "grp"] call _section;
+                private _pick = _op param [4, ""];
+                [ "GRP_S", "grpCols" call _rg, "grpArea" call _rg, _gs apply {
+                    _x params ["_gn", "_n", "_best", "_p"];
+                    [[_gn, [["text", "amber", "red", "muted"] select _best, "amber"] select ((count _op) >= 5 && {_gn isEqualTo _pick})], [str _n, "text2"], [[_p] call _gridOf, "text2"]]
+                }] call _table;
+                ["", "FLUX", format ["%1 sur 20 min", { serverTime - (_x param [7, -1e9]) < 1200 } count _events], "flux"] call _section;
+                private _ev = _events select [0 max ((count _events) - 3)];
+                reverse _ev;
+                if ((count _events) isEqualTo 0) then {
+                    ["fluxArea" call _rg, "Aucun compte rendu ni message pour l'instant", "body", "muted"] call _text;
+                } else {
+                    ["FLUX_S", [], "fluxArea" call _rg, _ev apply {
+                        _x params [["_time", ""], ["_kind", ""], ["_prio", ""], ["_who", ""]];
+                        [[_time select [0, 5], "muted"], [_kind, [[_prio] call _prioTok, "text"] select ((toUpper _prio) in ["", "ROUTINE"])], [_who, "text2"]]
+                    }, ""] call _table;
+                };
+            };
+            case "SQUAD": {
+                // Écran d'escouade : plaque du groupe, cases, membres (pastille d'état), dernier compte rendu ; caméra du chef
+                // en bas s'il la partage (mêmes caméras que la mosaïque).
+                private _squad = _ctx getOrDefault ["squad", ""];
+                private _sqNodes = _ctx getOrDefault ["sqNodes", []];
+                ["divider" call _rg, "line", 1, "b1"] call _box;
+                ["plateBar" call _rg, "accent", 1, "b1"] call _box;
+                ["plate" call _rg, toUpper ([_squad, "AUCUN GROUPE"] select (_squad isEqualTo "")), "squadName", "text"] call _text;
+                if (_squad isEqualTo "") exitWith {
+                    ["plateSub" call _rg, "Choisissez l'escouade au PC du poste, dans l'app Poste TOC ou au menu ACE de l'écran", "body", "text2"] call _text;
+                };
+                private _sc = [0, 0, 0, 0];
+                { private _f = ((_x select 4) min 3) max 0; _sc set [_f, (_sc select _f) + (_x param [8, 1])]; } forEach _sqNodes;
+                ["plateSub" call _rg, [format ["%1 nœud(s) ATAK · %2 en direct", count _sqNodes, _sc select 0], "Aucun ATAK de ce groupe sur le réseau"] select ((count _sqNodes) isEqualTo 0), "body", ["text2", "amber"] select ((count _sqNodes) isEqualTo 0)] call _text;
+                ["tiles" call _rg, [[_sc select 0, "en ligne", "accent"], [_sc select 1, "anciens", "amber"], [_sc select 2, "perdus", "red"], [_sc select 3, "hors ligne", "muted"]]] call _tiles;
+                ["", "MEMBRES", "grille · état", "mem"] call _section;
+                // Caméra poitrine du chef, s'il la partage.
+                private _ltex = "";
+                private _lcs = "";
+                private _gs = allGroups select { (groupId _x) isEqualTo _squad && {(str side _x) isEqualTo _side} };
+                if ((count _gs) > 0) then {
+                    private _lid = netId (leader (_gs select 0));
+                    if (((["sources"] call comspec_atak_native_fnc_tocCam) findIf { (_x select 1) isEqualTo _lid }) >= 0) then {
+                        _ltex = ["tex", _lid] call comspec_atak_native_fnc_tocMosaic;
+                        _lcs = [leader (_gs select 0), true] call comspec_atak_native_fnc_unitCallsign;
+                    };
+                };
+                private _cam = _ltex isNotEqualTo "";
+                ["MEM", [], [["memArea", "memAreaCam"] select _cam] call _rg, _sqNodes apply {
+                    _x params ["", "_cs", "_p", "", "_fr"];
+                    private _f = ((_fr min 3) max 0);
+                    [["•", _stTok select _f], [_cs, "text"], [[_p] call _gridOf, "text2"], [_stLbl select _f, _stTok select _f]]
+                }] call _table;
+                if (_cam) then {
+                    ["cam" call _rg, _ltex, format ["%1 · poitrine", _lcs], "bonne", "live"] call _camTile;
+                    _o setVariable ["COMSPEC_ATAK_TocVideo", true];
+                    _anyLive = true;
+                } else {
+                    // Dernier compte rendu d'un membre (auteur reconnu à son indicatif), deux lignes.
+                    private _names = _sqNodes apply { toLower (_x select 1) };
+                    private _ev = _events select { (toLower (_x param [3, ""])) in _names };
+                    if ((count _ev) > 0) then {
+                        (_ev select ((count _ev) - 1)) params [["_time", ""], ["_kind", ""], ["_prio", ""], ["_who", ""], ["_grid", ""], ["_txt", ""]];
+                        ["", "DERNIER CR", format ["%1Z · %2", _time select [0, 5], _who], "cr"] call _section;
+                        ("crText" call _rg) params ["_qx", "_qy", "_qw"];
+                        [[_qx, _qy, _qw, 32], format ["%1 · %2%3", _kind, _prio, ["", " · grille " + _grid] select (_grid isNotEqualTo "")], "bodyBold", [[_prio] call _prioTok, "text"] select ((toUpper _prio) in ["", "ROUTINE"])] call _text;
+                        [[_qx, _qy + 32, _qw, 32], _txt, "body", "text", "L", true] call _text;
+                    } else {
+                        ["", "DERNIER CR", "", "cr"] call _section;
+                        ["crText" call _rg, "Aucun compte rendu de ce groupe pour l'instant", "body", "muted"] call _text;
+                    };
+                };
+            };
+            case "FEED": {
+                [ "kpi" call _rg, [[{ serverTime - (_x param [7, -1e9]) < 1200 } count _events, "comptes rendus 20 min", "text"],
+                    [{ (toUpper (_x param [2, ""])) isEqualTo "FLASH" } count _events, "FLASH", "red"],
+                    [{ (toUpper (_x param [2, ""])) isEqualTo "URGENT" } count _events, "urgents", "amber"], [_cnt select 0, "nœuds en ligne", "accent"]], 4] call _tiles;
+                ["FLUX DU CAMP", "du plus récent au plus ancien · heures ZULU"] call _sectionW;
+                private _ev = +_events;
+                reverse _ev;
+                if ((count _ev) isEqualTo 0) exitWith { ["area" call _rg, "Aucun compte rendu ni message pour l'instant : ils s'inscrivent ici dès qu'un téléphone du camp en envoie", "body", "muted"] call _text; };
+                ["FEED", "cols" call _rg, "area" call _rg, _ev apply {
+                    _x params [["_time", ""], ["_kind", ""], ["_prio", ""], ["_who", ""], ["_grid", ""], ["_txt", ""], "", "", ["_old", false]];
+                    private _pr = toUpper _prio;
+                    [[_time select [0, 5], ["text2", "muted"] select _old], [_kind, ["text", "muted"] select _old], [[toLower _prio, ""] select (_pr in ["", "ROUTINE"]), [_prio] call _prioTok],
+                     [_who, "text2"], [_grid, "text2"], [_txt, ["text", "muted"] select _old]]
+                }, "+ %1 plus anciens au PC du poste"] call _table;
+            };
+            case "NET": {
+                ["kpi" call _rg, _netTiles, 4] call _tiles;
+                ["GROUPES DU RÉSEAU", _netSub] call _sectionW;
+                private _gs = [_nodes] call _groupsOf;
+                if ((count _gs) isEqualTo 0) exitWith { ["area" call _rg, "Aucun nœud ATAK de ce camp sur le réseau", "body", "muted"] call _text; };
+                private _rows = _gs apply { _x params ["_gn", "_n", "_best", "_p"]; [[_gn, "text"], [str _n, "text2"], [_stLbl select _best, _stTok select _best], [[_p] call _gridOf, "text2"]] };
+                private _per = floor ((("area" call _rg) select 3) / 40);
+                ["NET", "cols" call _rg, "area" call _rg, _rows select [0, _per], ""] call _table;
+                ["NET", "cols2" call _rg, "area2" call _rg, _rows select [_per], "+ %1 autres"] call _table;
+            };
+            case "ORBAT": {
+                // ORBAT du site sur trois colonnes, par pages (10 s), chaque membre avec son état.
+                ["load"] call comspec_atak_native_fnc_bftOrbat;
+                private _store = ["store"] call comspec_atak_native_fnc_bftOrbat;
+                (["presence"] call comspec_atak_native_fnc_bftOrbat) params ["", "_onKey"];
+                (["notice"] call comspec_atak_native_fnc_bftOrbat) params ["_nTxt"];
+                private _people = _store get "people";
+                private _lines = [];
+                {
+                    _x params ["", "_ud", "_uName", "_uCode", "_uRows"];
+                    _lines pushBack ["u", _uName + (["", format [" (%1)", _uCode]] select (_uCode isNotEqualTo ""))];
+                    {
+                        private _pe = _people getOrDefault [_x select 1, []];
+                        if ((_x select 0) isEqualTo "v") then { _lines pushBack ["v", _x select 2]; } else {
+                            _lines pushBack ["m", _pe param [0, ""], (_x select 1) in _onKey, (_pe param [4, 0]) isEqualTo 1];
+                        };
+                    } forEach _uRows;
+                } forEach (_store get "units");
+                private _per = floor ((("col1" call _rg) select 3) / 38);
+                private _nPg = (ceil ((count _lines) / (3 * _per))) max 1;
+                private _pg = (floor (diag_tickTime / 10)) mod _nPg;
+                ["ORBAT DU SITE", _nTxt + (["", format [" · page %1 / %2", _pg + 1, _nPg]] select (_nPg > 1))] call _sectionW;
+                if ((count _lines) isEqualTo 0) exitWith { ["col1" call _rg, "ORBAT du site non chargé", "body", "muted"] call _text; };
+                {
+                    (_x call _rg) params ["_x0", "_y0", "_w0"];
+                    {
+                        private _ry = _y0 + _forEachIndex * 38;
+                        switch (_x select 0) do {
+                            case "u": { [[_x0, _ry, _w0, 38], _x select 1, "bodyBold", "blue", "L", true] call _text; };
+                            case "v": { [[_x0 + 8, _ry + 13, 12, 12], "line", 1, "b1"] call _box; [[_x0 + 24, _ry, _w0 - 24, 38], format ["%1 · poste vacant", _x select 1], "body", "muted"] call _text; };
+                            default {
+                                _x params ["", "_nm", "_on", "_off"];
+                                [[_x0 + 8, _ry + 13, 12, 12], ["lineStrong", "accent"] select _on, 1, "b1"] call _box;
+                                [[_x0 + 24, _ry, _w0 - 160, 38], _nm, "body", ["text2", "text"] select _on, "L", true] call _text;
+                                [[_x0 + _w0 - 136, _ry, 136, 38], ["hors ligne", "en jeu"] select _on, "caption", ["muted", "accent"] select _on, "R"] call _text;
+                            };
+                        };
+                    } forEach (_lines select [(_pg * 3 + _forEachIndex) * _per, _per]);
+                } forEach ["col1", "col2", "col3"];
+            };
+            case "CLOCK": {
+                // ZULU en très grand, groupe date-heure, heure locale de la mission, prochaine ligne d'exécution ; chronos à droite.
+                systemTimeUTC params ["_yy", "_mo", "_dd", "_hh", "_mi"];
+                private _two = { private _v = floor _this; [str _v, "0" + str _v] select (_v < 10) };
+                private _mon = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+                ["zLbl" call _rg, "ZULU", "heading", "accent"] call _text;
+                ["zDig" call _rg, _zulu, "display", "text", "L", true] call _text;
+                ["dtg" call _rg, format ["DTG %1%2%3Z %4 %5", _dd call _two, _hh call _two, _mi call _two, _mon select ((_mo - 1) max 0), (_yy mod 100) call _two], "data", "text2", "L", true] call _text;
+                ["lRule" call _rg, "line", 1, "b1"] call _box;
+                ["lLbl" call _rg, "LOCAL (MISSION)", "heading", "muted"] call _text;
+                ["lDig" call _rg, _local, "hero", "text2", "L", true] call _text;
+                date params ["_my", "_mm", "_md"];
+                ["lDate" call _rg, format ["date de la mission · %1 %2 %3", _md call _two, _mon select ((_mm - 1) max 0), _my], "body", "text2", "L", true] call _text;
+                // Prochaine ligne d'exécution (première non passée) et temps restant si l'heure prévue est HH:MM en ZULU.
+                private _nx = (_room select 4) select { (_x param [6, ""]) isEqualTo "" };
+                ["", "PROCHAINE LIGNE", "liste d'exécution", "nx"] call _section;
+                if ((count _nx) isEqualTo 0) then {
+                    ["nxCode" call _rg, ["Aucune ligne à venir", "Liste d'exécution vide"] select ((count (_room select 4)) isEqualTo 0), "body", "muted"] call _text;
+                } else {
+                    (_nx select 0) params ["", "_n", "_ev", "_cw", "_el", "_at"];
+                    ["nxCode" call _rg, format ["%1 · %2", _n, _cw], "title", "accent", "L", true] call _text;
+                    ["nxEv" call _rg, format ["%1 · %2", _ev, _el], "body", "text", "L", true] call _text;
+                    private _hm = (_at splitString ":") apply { parseNumber _x };
+                    private _rest = "";
+                    if ((count _hm) isEqualTo 2 && {(_at find ":") isEqualTo 2}) then {
+                        systemTimeUTC params ["", "", "", "_h2", "_m2", "_s2"];
+                        private _dsec = ((_hm select 0) * 3600 + (_hm select 1) * 60) - (_h2 * 3600 + _m2 * 60 + _s2);
+                        if (_dsec > 43200) then { _dsec = _dsec - 86400; };
+                        if (_dsec < -43200) then { _dsec = _dsec + 86400; };
+                        _rest = [format [" · en retard de %1 min", round (abs _dsec / 60)], format [" · dans %1:%2", floor (_dsec / 60), (_dsec mod 60) call _two]] select (_dsec >= 0);
+                    };
+                    ["nxAt" call _rg, format ["prévu %1Z%2", _at, _rest], "data", "text2"] call _text;
+                };
+                ["divider" call _rg, "line", 1, "b1"] call _box;
+                private _tm = _room select 1;
+                ["", "CHRONOS", format ["%1 chronos du poste", count _tm], "t"] call _section;
+                ("tArea" call _rg) params ["_ax", "_ay", "_aw", "_ah"];
+                if ((count _tm) isEqualTo 0) exitWith { [[_ax, _ay, _aw, 40], "Aucun chrono : créez-en un au PC du poste (onglet CHRONOS)", "body", "muted"] call _text; };
+                private _maxT = floor (_ah / 76);
+                private _shown = [_maxT, _maxT - 1] select ((count _tm) > _maxT);
+                private _tc = (_thm get "cols") get "TIMER";
+                {
+                    (["timerText", _x] call comspec_atak_native_fnc_tocRoom) params ["_txt", "", "_state", "_hex"];
+                    _x params ["", "_tn", ["_kind", "UP"], ["_val", 0], ["_run", false]];
+                    private _tok = switch (true) do { case (_state isEqualTo "OVER"): { "red" }; case (_state isNotEqualTo "RUN"): { "muted" }; case (_kind isEqualTo "AT"): { "amber" }; default { "accent" }; };
+                    private _sub = (switch (_kind) do {
+                        case "DOWN": { "compte à rebours" };
+                        case "AT": { format ["heure H %1:%2Z", floor (_val / 60) call _two, (_val mod 60) call _two] };
+                        default { "chrono" };
+                    }) + (switch (_state) do { case "OVER": { " · dépassé" }; case "RUN": { [" · en marche", ""] select (_kind isEqualTo "AT") }; default { " · arrêté" }; });
+                    private _ry = _ay + _forEachIndex * 76;
+                    [[_ax + ((_tc select 0) select 2), _ry + 4, (_tc select 0) select 3, 40], _tn, "heading", "text", "L", true] call _text;
+                    [[_ax + ((_tc select 1) select 2), _ry + 42, (_tc select 1) select 3, 32], _sub, "caption", "muted"] call _text;
+                    [[_ax + ((_tc select 2) select 2), _ry + 10, (_tc select 2) select 3, 56], _txt, "num", _tok, "R", true] call _text;
+                    [[_ax, _ry + 75, _aw, 1], "line", 0.7, "b1"] call _box;
+                } forEach (_tm select [0, _shown]);
+                if ((count _tm) > _shown) then { [[_ax, _ay + _shown * 76, _aw, 40], "+ %1 autres chronos au PC du poste", "caption", "muted"] call _text; };
+            };
+            case "LOG": {
+                private _l = +(_room select 3);
+                reverse _l;
+                ["MAIN COURANTE", format ["%1 entrées · heures ZULU", count _l]] call _sectionW;
+                if ((count _l) isEqualTo 0) exitWith { ["area" call _rg, "Main courante vide : comptes rendus, prises de poste, FLASH et chronos s'y inscrivent seuls", "body", "muted"] call _text; };
+                private _kTok = createHashMapFromArray [["FLASH", "red"], ["DEMANDE", "amber"], ["EXCHECK", "accent"], ["POSTE", "blue"], ["CHRONO", "text2"], ["CR", "amber"]];
+                private _kLbl = createHashMapFromArray [["FLASH", "FLASH"], ["DEMANDE", "demande"], ["EXCHECK", "exécution"], ["POSTE", "poste"], ["CHRONO", "chrono"], ["CR", "compte rendu"]];
+                ["LOG", "cols" call _rg, "area" call _rg, _l apply {
+                    _x params ["_t", "_k", "_w", "_txt"];
+                    [[_t select [0, 8], "text2"], [_kLbl getOrDefault [_k, toLower _k], _kTok getOrDefault [_k, "muted"]], [_txt, "text"], [_w, "text2"]]
+                }, "+ %1 plus anciennes au PC du poste"] call _table;
+            };
+            case "EXCHECK": {
+                private _ex = _room select 4;
+                private _done = { (_x param [6, ""]) isNotEqualTo "" } count _ex;
+                ["LISTE D'EXÉCUTION", format ["%1 / %2 passés", _done, count _ex]] call _sectionW;
+                ("prog" call _rg) params ["_px", "_py", "_pw", "_ph"];
+                [[_px, _py, _pw, _ph], "line", 1, "b1"] call _box;
+                if ((count _ex) > 0) then { [[_px, _py, _pw * _done / (count _ex), _ph], "accent", 1, "b1"] call _box; };
+                if ((count _ex) isEqualTo 0) exitWith { ["area" call _rg, "Aucune ligne : préparez la liste au PC du poste (onglet EXCHECK) ou dans le module Écran TOC", "body", "muted"] call _text; };
+                private _nxt = _ex findIf { (_x param [6, ""]) isEqualTo "" };
+                // Fenêtre qui suit l'avancement : la ligne suivante reste visible (deux lignes passées au-dessus d'elle).
+                private _cap = floor ((("area" call _rg) select 3) / 40);
+                private _from = (((_nxt max 0) - 2) max 0) min (((count _ex) - _cap) max 0);
+                ["EXCHECK", "cols" call _rg, "area" call _rg, (_ex select [_from]) apply {
+                    _x params ["", "_n", "_ev", "_cw", "_el", "_at", ["_dn", ""]];
+                    private _ok = _dn isNotEqualTo "";
+                    private _isN = (_ex find _x) isEqualTo _nxt;
+                    [[str _n, "text2"], [_cw, ["text", "accent"] select _ok], [_ev, ["text", "text2"] select _ok], [_el, "text2"], [_at, "text2"], [[_dn, "—"] select (!_ok), ["muted", "accent"] select _ok],
+                     [[["prévu", "prochain"] select _isN, "passé"] select _ok, [["muted", "amber"] select _isN, "accent"] select _ok]]
+                }, "+ %1 autres lignes", [-1, _nxt - _from] select (_nxt >= 0)] call _table;
+            };
+            case "KILLS": {
+                private _k = _room select 8;
+                private _tot = [0, 0, 0, 0];
+                { for "_i" from 0 to 3 do { _tot set [_i, (_tot select _i) + ((_x select (_i + 1)) max 0)]; }; } forEach _k;
+                ["kpi" call _rg, [[_tot select 0, "amis blessés", "amber"], [_tot select 1, "amis tués", "red"], [_tot select 2, "ennemis neutralisés", "accent"], [_tot select 3, "ennemis blessés / pris", "text2"]], 4] call _tiles;
+                ["PAR ÉLÉMENT", "réseau ATAK, BDA et corrections du poste"] call _sectionW;
+                ("groups" call _rg) params ["_gx", "_gy", "", "_gh"];
+                { _x params ["", "_lbl", "_cx", "_cw"]; [[_gx + _cx, _gy, _cw, _gh], _lbl, "caption", "text2", "R"] call _text; [[_gx + _cx + 8, _gy + _gh - 2, _cw - 8, 1], "lineStrong", 1, "b1"] call _box; } forEach ((_thm get "cols") get "KILLS_G");
+                if ((count _k) isEqualTo 0) exitWith { ["area" call _rg, "Rien de rapporté : seuls comptent les pertes amies connues du réseau ATAK et les ennemis déclarés par compte rendu", "body", "muted"] call _text; };
+                private _nr = ["KILLS", "cols" call _rg, "area" call _rg, _k apply {
+                    _x params ["_el", "_wia", "_kia", "_ekia", "_ewia"];
+                    [[_el, "text"], [str _wia, ["muted", "amber"] select (_wia > 0)], [str _kia, ["muted", "red"] select (_kia > 0)], [str _ekia, ["muted", "accent"] select (_ekia > 0)], [str _ewia, ["muted", "text"] select (_ewia > 0)]]
+                }] call _table;
+                // Ligne TOTAL sous un filet fort (si elle tient).
+                ("area" call _rg) params ["_ax", "_ay", "_aw", "_ah"];
+                private _ty = _ay + _nr * 40;
+                if (_ty + 40 <= _ay + _ah && {(count _k) <= _nr}) then {
+                    [[_ax, _ty, _aw, 2], "lineStrong", 1, "b1"] call _box;
+                    { _x params ["", "", "_cx", "_cw", "_al"]; [[_ax + _cx, _ty, _cw, 40], [str (_tot select ((_forEachIndex - 1) max 0)), "TOTAL"] select (_forEachIndex isEqualTo 0), ["dataBold", "bodyBold"] select (_forEachIndex isEqualTo 0), "text", _al] call _text; } forEach ((_thm get "cols") get "KILLS");
+                };
+            };
+            case "REQ": {
+                private _l = +(_room select 5);
+                reverse _l;
+                private _stl = createHashMapFromArray [["RECUE", ["reçue", "amber"]], ["PRISE", ["prise en compte", "blue"]], ["REFUSEE", ["refusée", "red"]], ["TERMINEE", ["terminée", "accent"]]];
+                ["kpi" call _rg, [[{ (_x select 7) isEqualTo "RECUE" } count _l, "reçues", "amber"], [{ (_x select 7) isEqualTo "PRISE" } count _l, "prises en compte", "blue"],
+                    [{ (_x select 7) isEqualTo "TERMINEE" } count _l, "terminées", "accent"], [{ (_x select 7) isEqualTo "REFUSEE" } count _l, "refusées", "red"]], 4] call _tiles;
+                ["DEMANDES DES ÉLÉMENTS", "MEDEVAC, appuis feu, ravitaillements"] call _sectionW;
+                if ((count _l) isEqualTo 0) exitWith { ["area" call _rg, "Aucune demande reçue des éléments", "body", "muted"] call _text; };
+                ["REQ", "cols" call _rg, "area" call _rg, _l apply {
+                    _x params ["", "_t", "_k", "_by", "", "_grid", "_txt", "_stt", ["_ans", ""]];
+                    private _s = _stl getOrDefault [_stt, [toLower _stt, "muted"]];
+                    [[_t, "text2"], [_k, "text"], [_by, "text2"], [_grid, "text2"], [_txt + (["", " → " + _ans] select (_ans isNotEqualTo "")), "text"], _s]
+                }, "+ %1 plus anciennes au PC du poste"] call _table;
             };
             case "MOSAIC": {
                 (["cfg", _o] call comspec_atak_native_fnc_tocMosaic) params ["_gr", "_mm", "_grp"];
@@ -212,180 +699,116 @@ switch (_mode) do {
                     private _st0 = ((floor (time / 2)) * (_b max 1)) mod ((count _ids) max 1);
                     _liveIds = (_ids + _ids) select [_st0, _b];
                 };
-                (_ui get "main") ctrlShow false; (_ui get "main2") ctrlShow false;
-                private _gx = 12 / _texW; private _gy = (_y0 - 6) / _texH; private _gw = 1576 / _texW; private _gh = (894 - _y0) / _texH;
-                private _cw = _gw / _gr; private _ch = _gh / _gr;
-                private _any = false;
-                {
-                    private _i = _forEachIndex;
-                    _x params ["_bg", "_tp", "_tlb", "_tm"];
-                    if (_i >= _n) then { { _x ctrlShow false; } forEach [_bg, _tp, _tlb, _tm]; continue };
+                ("area" call _rg) params ["_gx", "_gy", "_gw", "_gh"];
+                private _tw = (_gw - (_gr - 1) * 16) / _gr;
+                private _th = (_gh - (_gr - 1) * 16) / _gr;
+                for "_i" from 0 to (_n - 1) do {
                     (_tl param [_i, ["", ""]]) params ["_id", "_lbl"];
-                    private _rv = [_gx + (_i mod _gr) * _cw + 0.003, _gy + (floor (_i / _gr)) * _ch + 0.005, _cw - 0.006, _ch - 0.01];
-                    _bg ctrlSetPosition _rv; _bg ctrlCommit 0; _bg ctrlShow true;
-                    _tp ctrlSetPosition _rv; _tp ctrlCommit 0;
-                    _tlb ctrlSetPosition [_rv select 0, (_rv select 1) + (_rv select 3) - 40 / _texH, _rv select 2, 40 / _texH]; _tlb ctrlCommit 0;
-                    _tm ctrlSetPosition [_rv select 0, (_rv select 1) + (_rv select 3) * 0.38, _rv select 2, (_rv select 3) * 0.3]; _tm ctrlCommit 0;
-                    private _tex = "";
-                    private _info = ["", "coupée", 0];
-                    if (_id isNotEqualTo "") then {
-                        _info = ["info", _id] call comspec_atak_native_fnc_tocMosaic;
-                        if (_id in _liveIds) then { _tex = ["tex", _id] call comspec_atak_native_fnc_tocMosaic; };
-                    };
-                    if ((_tp getVariable ["COMSPEC_ATAK_Tex", "-"]) isNotEqualTo _tex) then { _tp setVariable ["COMSPEC_ATAK_Tex", _tex]; _tp ctrlSetText _tex; }; // i18n:brut (texture)
-                    _tp ctrlShow (_tex isNotEqualTo "");
-                    if (_tex isNotEqualTo "") then { _any = true; };
-                    _info params ["_cs", "_lk", "_res"];
-                    private _msg = switch (true) do {
-                        case (_id isEqualTo ""): { "<t align='center' size='1.4' color='#4a524e'>CASE LIBRE</t>" };
-                        case (_res <= 0): { "<t align='center' size='1.8' font='COMSPEC_BarlowBold' color='#e05a4a'>PAS DE SIGNAL</t>" };
-                        case (_tex isEqualTo ""): { "<t align='center' size='1.2' color='#8a9a93'>À son tour dans un instant</t>" };
-                        default { "" };
-                    };
-                    [_tm, _msg] call _setTxt;
-                    _tm ctrlShow (_msg isNotEqualTo "");
-                    private _lkCol = (createHashMapFromArray [["bonne", "#5cc76b"], ["moyenne", "#e0b040"], ["faible", "#e08a40"], ["coupée", "#e05a4a"]]) getOrDefault [_lk, "#9aa39f"];
-                    // Bandeau d'une vignette 3x3 (517 px) : 14 + 18 + 7 caractères x 0,46 x 28 px = 502 px.
-                    private _band = format ["<t size='1'> <t font='COMSPEC_BarlowBold'>%1</t>  <t color='%2'>● liaison %3</t><t align='right' color='#cfd8d3'>%4Z </t></t>",
-                        [[[_cs, _lbl] select (_cs isEqualTo ""), 14] call _cut] call _esc, _lkCol, _lk, _zulu select [0, 5]];
-                    [_tlb, [_band, ""] select (_id isEqualTo "")] call _setTxt;
-                    _tlb ctrlShow (_id isNotEqualTo "");
-                } forEach (_ui get "tiles");
-                [_ui get "title", format ["<t size='1.57' font='COMSPEC_BarlowBold'>%1 · %2</t> <t size='1.1' color='#8a9a93'>%3</t>", (["title", "MOSAIC"] call comspec_atak_native_fnc_tocScreen) select 0, [[_name, 18] call _cut] call _esc,
-                    switch (_mm) do { case "GROUP": { "groupe " + ([[_grp, 18] call _cut] call _esc) }; case "MANUAL": { "choix du poste" }; default { "tout le camp" }; }]] call _setTxt;
-                if (_any) then { ["live", [_o, _d]] call _fn; };
-            };
-            case "CLOCK": {
-                // ZULU 6 x 28 = 168 px (ligne 202), LOCAL 3,4 x 28 = 95 px (ligne 114), blanc 34 px, chronos 1,8 x 28 = 50 px
-                // (ligne 60) : (792 - 202 - 114 - 34) / 60 = 7 chronos, « + n autres » au-delà.
-                private _s = format ["<t align='center'><t size='6' font='COMSPEC_BarlowBold'>%1</t><t size='2.2' color='#8a9a93'> ZULU</t><br/><t size='3.4' font='COMSPEC_BarlowBold' color='#cfd8d3'>%2</t><t size='1.6' color='#8a9a93'> LOCAL</t></t><br/>", _zulu, _local];
-                private _tm = _room select 1;
-                private _maxT = floor ((_hAvail - 202 - 114 - 34) / 60);
-                if ((count _tm) isEqualTo 0) then {
-                    _s = _s + "<br/><t align='center' size='1.1' color='#8a9a93'>Aucun chrono : créez-en un au PC du poste (onglet CHRONOS)</t>";
-                } else {
-                    _s = _s + "<br/>";
-                    // Trop de chronos : la dernière ligne annonce le reste.
-                    private _shown = [_maxT max 1, (_maxT - 1) max 1] select ((count _tm) > _maxT);
-                    {
-                        (["timerText", _x] call comspec_atak_native_fnc_tocRoom) params ["_txt", "", "", "_hex"];
-                        _s = _s + format ["<t size='1.8'><t font='COMSPEC_BarlowBold'>%1</t><t align='right' font='COMSPEC_BarlowBold' color='%2'>%3</t></t><br/>", [[_x select 1, 24] call _cut] call _esc, _hex, _txt];
-                    } forEach (_tm select [0, _shown]);
-                    if ((count _tm) > _shown) then { _s = _s + format ["<t size='1.1' color='#8a9a93'>+ %1 autres chronos au PC du poste</t>", (count _tm) - _shown]; };
+                    private _r = [_gx + (_i mod _gr) * (_tw + 16), _gy + (floor (_i / _gr)) * (_th + 16), _tw, _th];
+                    if (_id isEqualTo "") then { [_r, "", "", "", "free"] call _camTile; continue };
+                    (["info", _id] call comspec_atak_native_fnc_tocMosaic) params ["_cs", "_lk", "_res"];
+                    private _tex = ["", ["tex", _id] call comspec_atak_native_fnc_tocMosaic] select (_id in _liveIds && {_res > 0});
+                    if (_tex isNotEqualTo "") then { _anyLive = true; };
+                    [_r, _tex, [_cs, _lbl] select (_cs isEqualTo ""), _lk, [["wait", "nosig"] select (_res <= 0), "live"] select (_tex isNotEqualTo "")] call _camTile;
                 };
-                (_ui get "main2") ctrlShow false;
-                [_ui get "main", _s] call _setTxt;
             };
-            // Faces 4:1 (texture 2048 x 512) : texte plein cadre, sur fond opaque par-dessus l'en-tête. Un point de police =
-            // 0,0311 de la hauteur (16 px de texture) : ZULU 8 (127 px) + LOCAL 6 + chrono (nom 3,6, temps 5) tiennent en
-            // 1 700 px environ sur 2 048.
-            case "STRIP";
+            case "STRIP": {
+                // Bandeau 4:1 : ZULU, LOCAL, premier chrono du poste.
+                [[0, 0, 1600, 400], "bg0"] call _box;
+                systemTimeUTC params ["_yy", "_mo", "_dd", "_hh", "_mi"];
+                private _two = { private _v = floor _this; [str _v, "0" + str _v] select (_v < 10) };
+                private _mon = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+                ["zLbl" call _rg, "ZULU", "stripLabel", "accent"] call _text;
+                ["zDig" call _rg, _zulu, "stripBig", "text", "L", true] call _text;
+                ["zSub" call _rg, format ["DTG %1%2%3Z %4 %5", _dd call _two, _hh call _two, _mi call _two, _mon select ((_mo - 1) max 0), (_yy mod 100) call _two], "stripSub", "text2", "L", true] call _text;
+                ["div1" call _rg, "line", 1, "b1"] call _box;
+                ["lLbl" call _rg, "LOCAL", "stripLabel", "muted"] call _text;
+                ["lDig" call _rg, _local select [0, 5], "stripMid", "text2", "L", true] call _text;
+                date params ["_my", "_mm", "_md"];
+                ["lSub" call _rg, format ["%1 %2 %3", _md call _two, _mon select ((_mm - 1) max 0), _my], "stripSub", "text2", "L", true] call _text;
+                ["div2" call _rg, "line", 1, "b1"] call _box;
+                private _t = (_room select 1) param [0, []];
+                if ((count _t) isEqualTo 0) exitWith { ["cLbl" call _rg, "AUCUN CHRONO", "stripLabel", "muted"] call _text; };
+                (["timerText", _t] call comspec_atak_native_fnc_tocRoom) params ["_x1", "", "_state", "_hx"];
+                ["cLbl" call _rg, _t select 1, "stripLabel", "text", "L", true] call _text;
+                ["cDig" call _rg, _x1, "stripChrono", switch (true) do { case (_state isEqualTo "OVER"): { "red" }; case (_state isNotEqualTo "RUN"): { "muted" }; case ((_t param [2, "UP"]) isEqualTo "AT"): { "amber" }; default { "accent" }; }, "L", true] call _text;
+                ["cSub" call _rg, (createHashMapFromArray [["RUN", "en marche"], ["STOP", "arrêté"], ["OVER", "dépassé"]]) getOrDefault [_state, ""], "stripSub", "muted"] call _text;
+            };
             case "PLATE": {
-                private _m = _ui get "main";
-                (_ui get "main2") ctrlShow false;
-                (_ui get "flash") ctrlShow false;
-                _m ctrlSetBackgroundColor [0.02, 0.025, 0.022, 1];
-                _m ctrlSetPosition [0, 0, 1, 1];
-                _m ctrlCommit 0;
-                private _s = if (_view isEqualTo "STRIP") then {
-                    // Bandeau : ZULU et LOCAL, puis le premier chrono du poste s'il y en a un.
-                    private _t = (_room select 1) param [0, []];
-                    private _tt = "";
-                    if ((count _t) > 0) then {
-                        (["timerText", _t] call comspec_atak_native_fnc_tocRoom) params ["_x1", "", "", "_hx"];
-                        _tt = format ["   <t size='3.6' color='#8a9a93'>%1</t> <t size='5' font='COMSPEC_BarlowBold' color='%2'>%3</t>", [[_t select 1, 10] call _cut] call _esc, _hx, _x1];
-                    };
-                    format ["<t align='center'><t size='8' font='COMSPEC_BarlowBold' color='#ff5a4a'>%1</t><t size='4' color='#8a9a93'> Z</t>   <t size='6' font='COMSPEC_BarlowBold' color='#e0b040'>%2</t><t size='4' color='#8a9a93'> LOCAL</t>%3</t>",
-                        _zulu, _local, _tt]
-                } else {
-                    // Plaque : nom du groupe lié (écran d'escouade choisi), sinon le nom de l'écran ; état ATAK du groupe dessous.
-                    private _gname = _cfg param [9, ""];
-                    private _txt = toUpper ([_gname, _name] select (_gname isEqualTo ""));
-                    private _sub = "";
-                    if (_gname isNotEqualTo "") then {
-                        private _nodes = ((missionNamespace getVariable [format ["COMSPEC_ATAK_TocFeed_%1", _side], []]) param [1, []]) select { (_x param [7, ""]) isEqualTo _gname };
-                        _sub = format ["<br/><t size='4.5' color='%1'>%2</t>", ["#6f7773", "#5cc76b"] select ((count _nodes) > 0),
-                            [format ["%1 nœud(s) ATAK", count _nodes], "hors réseau"] select ((count _nodes) isEqualTo 0)];
-                    };
-                    format ["<t align='center'><t size='9' font='COMSPEC_BarlowBold'>%1</t>%2</t>", [[_txt, 18] call _cut] call _esc, _sub]
-                };
-                [_m, _s] call _setTxt;
-            };
-            default {
-                (["boardText", [_view, _room, _side, true]] call _fn) params [["_txtL", ""], ["_txtR", ""]];
-                [_ui get "main", _txtL] call _setTxt;
-                (_ui get "main2") ctrlShow (_txtR isNotEqualTo "");
-                if (_txtR isNotEqualTo "") then {
-                    (_ui get "main") ctrlSetPosition ([24, _y0, 764, _hAvail] call _R); (_ui get "main") ctrlCommit 0;
-                    (_ui get "main2") ctrlSetPosition ([812, _y0, 764, _hAvail] call _R); (_ui get "main2") ctrlCommit 0;
-                    [_ui get "main2", _txtR] call _setTxt;
+                // Plaque 4:1 : nom du groupe lié (écran d'escouade choisi), sinon le nom de l'écran ; état ATAK du groupe dessous.
+                [[0, 0, 1600, 400], "bg0"] call _box;
+                ["bar" call _rg, "accent", 1, "b1"] call _box;
+                private _gname = _cfg param [9, ""];
+                ["name" call _rg, toUpper ([_gname, _name] select (_gname isEqualTo "")), "plateName", "text", "L", true] call _text;
+                if (_gname isNotEqualTo "") then {
+                    private _ns = _nodes select { (_x param [7, ""]) isEqualTo _gname };
+                    ("sub" call _rg) params ["_qx", "_qy", "_qw", "_qh"];
+                    [[_qx + 4, _qy + _qh / 2 - 14, 28, 28], ["lost", "accent"] select ((count _ns) > 0), 1, "b1"] call _box;
+                    [[_qx + 44, _qy, _qw - 44, _qh], [format ["%1 nœud(s) ATAK · %2 en direct", count _ns, { (_x select 4) isEqualTo 0 } count _ns], "hors réseau"] select ((count _ns) isEqualTo 0), "plateSub", "text2"] call _text;
                 };
             };
         };
+        // Contrôles non repris à cette image : masqués.
+        {
+            _x params ["_list", "_used"];
+            for "_i" from _used to ((count _list) - 1) do { (_list select _i) ctrlShow false; };
+        } forEach (values _pools);
+        if (_anyLive) then { ["live", [_o, _d]] call _fn; };
         true
     };
     case "boardText": {
-        // Textes des tableaux LOG, EXCHECK, KILLS, REQ : [colonne gauche, colonne droite]. Écran mural (_wall) : lignes
-        // coupées à la largeur et nombre de lignes limité à la hauteur (1552 px utiles, texte 28 px : 118 caractères) ;
-        // sinon (PC du poste) le texte d'avant.
+        // Textes structurés LOG, EXCHECK, KILLS, REQ (le PC du poste lit KILLS) : [colonne gauche, colonne droite].
         _a params ["_view", "_room", ["_side", ""], ["_wall", false]];
-        private _muted = "#8a9a93";
-        switch (_view) do {
+        private _out = switch (_view) do {
             case "LOG": {
-                // Une colonne de 20 lignes (34 px) : 20 x 34 = 680 px sur 744 (sous un FLASH).
                 private _l = (_room select 3) select [0 max ((count (_room select 3)) - 20)];
                 reverse _l;
                 private _rows = _l apply {
                     _x params ["_t", "_k", "_w", "_txt"];
-                    private _c = (createHashMapFromArray [["FLASH", "#ff5a4a"], ["DEMANDE", "#e0b040"], ["EXCHECK", "#7fd0b0"], ["POSTE", "#7fb8e0"], ["CHRONO", "#b0a0e0"], ["CR", "#e0b040"]]) getOrDefault [_k, "#cfd8d3"];
-                    private _who = [_w, 20] call _cut;
-                    private _kk = [_k, 10] call _cut;
-                    forceUnicode 0;
-                    private _room2 = 118 - 10 - (count _kk) - (count _who) - 6;
-                    format ["<t size='1'><t color='%1'>%2Z</t> <t color='%3' font='COMSPEC_BarlowBold'>%4</t> %5 <t color='%1'>· %6</t></t>", _muted, (_t select [0, 8]), _c, [_kk] call _esc, [[_txt, _room2] call _cut] call _esc, [_who] call _esc]
+                    private _c = (createHashMapFromArray [["FLASH", "red"], ["DEMANDE", "amber"], ["EXCHECK", "accent"], ["POSTE", "blue"], ["CHRONO", "text2"], ["CR", "amber"]]) getOrDefault [_k, "text"];
+                    format ["<t size='1'><t color='@muted'>%1Z</t> <t color='@%2' font='RobotoCondensedBold'>%3</t> %4 <t color='@muted'>· %5</t></t>", (_t select [0, 8]), _c, [[_k, 10] call _cut] call _esc, [[_txt, 90] call _cut] call _esc, [[_w, 20] call _cut] call _esc]
                 };
-                if ((count _rows) isEqualTo 0) then { _rows = [format ["<t size='1.1' color='%1'>Main courante vide : comptes rendus, prises de poste, FLASH et chronos s'y inscrivent seuls</t>", _muted]]; };
+                if ((count _rows) isEqualTo 0) then { _rows = ["<t size='1.1' color='@muted'>Main courante vide : comptes rendus, prises de poste, FLASH et chronos s'y inscrivent seuls</t>"]; };
                 [_rows joinString "<br/>", ""]
             };
             case "EXCHECK": {
-                // 18 lignes de 1,15 x 28 = 32 px (ligne 39) : 702 px.
                 private _rows = ((_room select 4) select [0, 18]) apply {
                     _x params ["", "_n", "_ev", "_cw", "_el", "_at", "_done"];
                     private _ok = _done isNotEqualTo "";
-                    format ["<t size='1.15'><t color='%1'>%2</t> <t font='COMSPEC_BarlowBold'>%3</t> %4 <t color='#e0b040'>%5</t> <t color='%6'>· %7</t><t align='right' color='%1'>%8 %9</t></t>",
-                        ["#cfd8d3", "#5cc76b"] select _ok, [format ["%1.", _n], "✔"] select _ok, [[_cw, 16] call _cut] call _esc, [[_ev, 40] call _cut] call _esc, [[_el, 16] call _cut] call _esc, _muted, ["prévu", "passé"] select _ok,
+                    format ["<t size='1.15'><t color='@%1'>%2</t> <t font='RobotoCondensedBold'>%3</t> %4 <t color='@amber'>%5</t> <t color='@muted'>· %6</t><t align='right' color='@muted'>%7 %8</t></t>",
+                        ["text", "accent"] select _ok, [format ["%1.", _n], "✔"] select _ok, [[_cw, 16] call _cut] call _esc, [[_ev, 40] call _cut] call _esc, [[_el, 16] call _cut] call _esc, ["prévu", "passé"] select _ok,
                         [[_at] call _esc, ""] select _ok, [["", _done] select _ok] call _esc]
                 };
-                if ((count _rows) isEqualTo 0) then { _rows = [format ["<t size='1.1' color='%1'>Aucune ligne : préparez la liste au PC du poste (onglet EXCHECK) ou dans le module Écran TOC</t>", _muted]]; };
+                if ((count _rows) isEqualTo 0) then { _rows = ["<t size='1.1' color='@muted'>Aucune ligne : préparez la liste au PC du poste (onglet EXCHECK) ou dans le module Écran TOC</t>"]; };
                 [_rows joinString "<br/>", ""]
             };
             case "KILLS": {
-                // Écran mural : en-tête et 15 éléments de 1,3 x 28 = 36 px (ligne 44) : 704 px.
-                private _rows = [format ["<t size='1.3' font='COMSPEC_BarlowBold'>ÉLÉMENT<t align='right'>AMIS BLESSÉS · TUÉS   ENNEMIS NEUTRALISÉS · BLESSÉS</t></t>"]];
+                private _rows = ["<t size='1.3' font='RobotoCondensedBold'>ÉLÉMENT<t align='right'>AMIS BLESSÉS · TUÉS   ENNEMIS NEUTRALISÉS · BLESSÉS</t></t>"];
                 {
                     _x params ["_el", "_wia", "_kia", "_ekia", "_ewia"];
-                    _rows pushBack format ["<t size='1.35'><t font='COMSPEC_BarlowBold'>%1</t><t align='right'><t color='#e0b040'>%2</t> · <t color='#ff5a4a'>%3</t>          <t color='#5cc76b'>%4</t> · %5</t></t>", [[_el, [60, 30] select _wall] call _cut] call _esc, _wia, _kia, _ekia, _ewia];
-                } forEach ((_room select 8) select [0, [22, 15] select _wall]);
-                if ((count (_room select 8)) isEqualTo 0) then { _rows pushBack format ["<t size='1.2' color='%1'>Rien de rapporté : seuls comptent les pertes amies connues du réseau ATAK et les ennemis déclarés par compte rendu</t>", _muted]; };
+                    _rows pushBack format ["<t size='1.35'><t font='RobotoCondensedBold'>%1</t><t align='right'><t color='@amber'>%2</t> · <t color='@red'>%3</t>          <t color='@accent'>%4</t> · %5</t></t>", [[_el, 60] call _cut] call _esc, _wia, _kia, _ekia, _ewia];
+                } forEach ((_room select 8) select [0, 22]);
+                if ((count (_room select 8)) isEqualTo 0) then { _rows pushBack "<t size='1.2' color='@muted'>Rien de rapporté : seuls comptent les pertes amies connues du réseau ATAK et les ennemis déclarés par compte rendu</t>"; };
                 [(_rows select [0, 22]) joinString "<br/>", ""]
             };
             case "REQ": {
-                // Deux colonnes de 764 px, 8 demandes de deux lignes (1,15 et 1 x 28 px : 72 px) chacune : 576 px.
                 private _l = +(_room select 5);
                 reverse _l;
                 private _rows = (_l select [0, 16]) apply {
                     _x params ["", "_t", "_k", "_by", "", "_grid", "_txt", "_stt", "_ans"];
-                    private _c = (createHashMapFromArray [["RECUE", "#e0b040"], ["PRISE", "#7fb8e0"], ["REFUSEE", "#ff5a4a"], ["TERMINEE", "#5cc76b"]]) getOrDefault [_stt, "#cfd8d3"];
+                    private _c = (createHashMapFromArray [["RECUE", "amber"], ["PRISE", "blue"], ["REFUSEE", "red"], ["TERMINEE", "accent"]]) getOrDefault [_stt, "text"];
                     private _lbl = (createHashMapFromArray [["RECUE", "REÇUE"], ["PRISE", "PRISE EN COMPTE"], ["REFUSEE", "REFUSÉE"], ["TERMINEE", "TERMINÉE"]]) getOrDefault [_stt, _stt];
-                    format ["<t size='1.15'><t color='%1'>%2Z</t> <t font='COMSPEC_BarlowBold'>%3</t> %4%5<t align='right' color='%6' font='COMSPEC_BarlowBold'>%7</t></t><br/><t size='1' color='%1'>   %8%9</t>",
-                        _muted, _t, [[_k, 12] call _cut] call _esc, [[_by, 14] call _cut] call _esc, ["", " · grille " + _grid] select (_grid isNotEqualTo ""), _c, _lbl,
+                    format ["<t size='1.15'><t color='@muted'>%1Z</t> <t font='RobotoCondensedBold'>%2</t> %3%4<t align='right' color='@%5' font='RobotoCondensedBold'>%6</t></t><br/><t size='1' color='@muted'>   %7%8</t>",
+                        _t, [[_k, 12] call _cut] call _esc, [[_by, 14] call _cut] call _esc, ["", " · grille " + _grid] select (_grid isNotEqualTo ""), _c, _lbl,
                         [[_txt, 44] call _cut] call _esc, ["", " · réponse : " + ([[_ans, 30] call _cut] call _esc)] select (_ans isNotEqualTo "")]
                 };
-                if ((count _rows) isEqualTo 0) then { _rows = [format ["<t size='1.1' color='%1'>Aucune demande reçue des éléments</t>", _muted]]; };
+                if ((count _rows) isEqualTo 0) then { _rows = ["<t size='1.1' color='@muted'>Aucune demande reçue des éléments</t>"]; };
                 [(_rows select [0, 8]) joinString "<br/>", (_rows select [8, 8]) joinString "<br/>"]
             };
             default { ["", ""] };
-        }
+        };
+        // Couleurs du thème : le texte reste traduisible (fn_tr ne touche pas aux attributs color='@…').
+        _out apply { _x call _ink }
     };
     default { false };
 };
