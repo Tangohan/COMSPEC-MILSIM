@@ -101,6 +101,8 @@ private _moodOf = {
         if (_u getVariable ["ace_captives_isHandcuffed", false]) exitWith { "cuffed" };
         if ((_u getVariable ["ace_captives_isSurrendering", false]) || {_st isEqualTo "rendu"}) exitWith { "rendu" };
         if (_st in ["fuit", "agressif", "renforts", "refuse", "nerveux"]) exitWith { _st };
+        // Suit un joueur (« Suivez-moi », fn_iarpFollow : variable diffusée) : affiché tant qu'on ne l'a pas relâchée.
+        if (!isNull (_u getVariable ["comspec_sse_iarpFollowing", objNull])) exitWith { "follow" };
         if ((_u getVariable ["comspec_sse_iarpHaltId", 0]) > 0 && {!(_u checkAIFeature "PATH")}) exitWith { "halt" };
         if (_ten >= 55) exitWith { "nerveux" };
         if (_ten >= 30) exitWith { "tendu" };
@@ -666,13 +668,14 @@ switch (_op) do {
 
         // Réaction : ordres, pression, renseignement, couverture.
         private _r = (_p get "react");
+        // _bonus : ordre sans conséquence pour elle (« Suivez-moi » sans arme braquée ni peur) : elle obéit plus volontiers.
         private _obeys = {
-            params ["_kind"];
+            params ["_kind", ["_bonus", 0]];
             private _x1 = _r getOrDefault [_kind, "auto"];
             if (_x1 in ["coopere", "rendu"]) exitWith { true };
             if (_x1 in ["refuse", "fuit", "agressif"]) exitWith { false };
             if (_st isEqualTo "rendu") exitWith { true };
-            private _c = 0.45 + 0.004 * _fearV - 0.004 * (_p get "aggro") + 0.2 * (_aimedF min 2) + 0.003 * ((_pm get "trust") - 30);
+            private _c = 0.45 + 0.004 * _fearV - 0.004 * (_p get "aggro") + 0.2 * (_aimedF min 2) + 0.003 * ((_pm get "trust") - 30) + _bonus;
             if ((time - (_pm get "badge")) < 90) then { _c = _c + 0.15; };
             if (_st isEqualTo "refuse") then { _c = _c - 0.3; };
             if (_st in ["fuit", "agressif", "renforts"]) then { _c = _c - 0.35; };
@@ -786,14 +789,28 @@ switch (_op) do {
                     if (_intent isEqualTo "trunk" && {isNull _veh}) exitWith { _gi = "trunkNone"; _outcome = "aucun véhicule"; };
                     // « Partez » : on le laisse partir, il part (menotté, il ne peut pas) ; seuls l'agressif et le fuyard l'ignorent.
                     if (_intent isEqualTo "leave" && {_t getVariable ["ace_captives_isHandcuffed", false]}) exitWith { _gi = "leaveCuffed"; _outcome = "menotté : ne peut pas partir"; };
-                    if (!(_intent isEqualTo "leave" && {!(_st in ["agressif", "renforts", "fuit"])}) && {!(["order"] call _obeys)}) exitWith { _gi = "noComply"; _outcome = "refuse l'ordre"; [5, "refuse un ordre"] call _tense; };
+                    // « Suivez-moi » : menottée, elle ne marche pas seule (escorte ACE) ; elle le dit au lieu d'accepter sans bouger.
+                    if (_intent isEqualTo "follow" && {_t getVariable ["ace_captives_isHandcuffed", false]}) exitWith { _gi = "followCuffed"; _outcome = "menotté : à escorter (ACE)"; };
+                    // Trop effrayée pour partir avec un inconnu (peur active, tension forte, sans arme braquée) : elle refuse.
+                    if (_intent isEqualTo "follow" && {_scared} && {_tenNow >= 70} && {_aimedF isEqualTo 0} && {_st isNotEqualTo "rendu"} && {(_r getOrDefault ["order", "auto"]) isEqualTo "auto"}) exitWith {
+                        _gi = "noComply"; _tone = "effraye"; _outcome = "trop effrayé pour suivre"; [4, "refuse de suivre (peur)"] call _tense;
+                    };
+                    // Ordre anodin : une IA calme suit volontiers (bonus), une IA tendue ou braquée garde la règle commune.
+                    private _bonus = [0, 0.3] select (_intent isEqualTo "follow" && {_tenNow < 60});
+                    if (!(_intent isEqualTo "leave" && {!(_st in ["agressif", "renforts", "fuit"])}) && {!(["order", _bonus] call _obeys)}) exitWith { _gi = "noComply"; _outcome = "refuse l'ordre"; [5, "refuse un ordre"] call _tense; };
                     _gi = "comply";
                     _outcome = "obéit";
                     switch (_intent) do {
                         case "handsup": { ["surrender"] call _do; ["rendu"] call _want; };
                         case "halt": { ["stop"] call _do; };
                         case "kneel": { ["pos", [["MIDDLE", "DOWN"] select ([[" couch", " allonge", " a terre", " au sol", " par terre", " lie down", " ground"]] call _has)]] call _do; };
-                        case "follow": { ["follow", [_me]] call _do; };
+                        case "follow": {
+                            // Mains en l'air (pas menottée) : elle les baisse pour marcher ; en véhicule : elle descend d'abord.
+                            if (_t getVariable ["ace_captives_isSurrendering", false]) then { ["ace_captives_setSurrendered", [_t, false], _t] call CBA_fnc_targetEvent; };
+                            if (!isNull objectParent _t) then { ["out"] call _do; };
+                            ["follow", [_me]] call _do;
+                            _outcome = "suit le joueur";
+                        };
                         case "leave": { ["free"] call _do; if (_fsm) then { ["release", [_t]] call comspec_sse_fnc_idAiFsm; }; };
                         case "dismount": { ["out"] call _do; };
                         case "dropWeapon": { ["drop"] call _do; _outcome = "lâche son arme"; };

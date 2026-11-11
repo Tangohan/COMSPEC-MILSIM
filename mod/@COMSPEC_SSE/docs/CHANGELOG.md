@@ -2,6 +2,7 @@
 
 ## À venir · Profils d'IA, éditeur SSE en Zeus, papiers et contrôle (version attribuée à la publication)
 
+- **« Suivez-moi » :** une IA qui accepte vous suit vraiment, à deux ou trois mètres, au pas quand vous marchez, en courant quand vous courez, et s'arrête quand vous vous arrêtez. Elle vous suit jusqu'à ce que vous lui disiez « Reste ici » ou « Circulez ». Une IA calme accepte bien plus souvent ; une IA terrorisée peut refuser ; menottée, elle demande à être escortée. L'en-tête de « Parler à » indique « Suit le joueur ».
 - **Papiers, s'il vous plaît :** la réponse de l'IA s'affiche au-dessus de sa tête (bulle de l'ATAK), ou en toast hors de vue : plus rien dans le centre de notifications. L'IA s'arrête dès le début de la demande. Une IA sans papiers reçoit une identité générée (réglage « IA sans papiers », 0 % par défaut).
 - **Photo d'identité :** portrait de face dans une scène dédiée, éclairée, sur fond clair, de jour comme de nuit ; portrait de repli sans PiP.
 - **Papiers :** plus de mention SIMULATION sur les pays du jeu, textes sans halo, colonnes lisibles, sceau discret. Mention discrète gardée pour les pays réels stylisés.

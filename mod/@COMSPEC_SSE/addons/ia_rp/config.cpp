@@ -37,6 +37,7 @@ class CfgFunctions {
             class iarpProfile {};
             class iarpServer {};
             class iarpReact {};
+            class iarpFollow {};
             class iarpMem {};
             class iarpClient {};
             class iarpBubble {};

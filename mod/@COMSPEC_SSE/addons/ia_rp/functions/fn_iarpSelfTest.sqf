@@ -23,6 +23,9 @@
       cohérence    10 réponses « origine » d'une personne honnête : toutes citent la ville de sa couverture
       hors sujet   data\iarp_ottests.sqf (fn_iarpOffTopic « selfTest ») : 60 messages hors sujet sans demande à effet, 120 questions
                    légitimes (tu, vous, court, SMS) comprises, guide, dialogues (relance, incompris, provocation), phrases
+      suivi        « Suivez-moi » (fn_iarpFollow « step », table data\iarp_follow.sqf) : à l'arrêt entre 2,5 et 4 m, repart
+                   au-delà de 4 m, s'arrête à 2,5 m, marche près d'un joueur lent, court derrière un joueur qui court ou
+                   loin devant ; « Suivez-moi. », « Reste ici. », « Va-t'en. » compris ; répliques d'une IA menottée
     Repris par l'autotest (scripts\ia_rp.sqf) ; rien n'est envoyé ni enregistré.
 */
 private _ko = [];
@@ -443,6 +446,22 @@ _info pushBack format ["question / réponse : déclencheurs %1", _qaE param [2, 
 private _t1 = diag_tickTime;
 for "_i" from 1 to 20 do { ["Bonjour, vous avez vu des hommes armés ou des pick-up cette nuit ? Où sont-ils partis ? Combien étaient-ils, et qui commande ici ?"] call comspec_sse_fnc_iarpIntent; };
 _info pushBack format ["interprète : %1 ms par message de quatre questions", round (((diag_tickTime - _t1) / 20) * 10000) / 10];
+// Suivi d'un joueur : table de décision (pure), ordres qui le lancent et le terminent, répliques.
+{
+    _x params ["_d", "_ls", "_mov", "_wMv", "_wPace"];
+    private _r = ["step", [_d, _ls, _mov]] call comspec_sse_fnc_iarpFollow;
+    if (_r isNotEqualTo [_wMv, _wPace]) then { _ko pushBack format ["suivi : à %1 m, joueur à %2 km/h, %3 -> %4 au lieu de %5", _d, _ls, ["à l'arrêt", "en mouvement"] select _mov, _r, [_wMv, _wPace]]; };
+} forEach [
+    [1.5, 0, false, false, "walk"], [3, 0, false, false, "walk"], [3, 0, true, true, "walk"], [2.4, 0, true, false, "walk"], [4.5, 0, false, true, "walk"],
+    [5, 5, true, true, "walk"], [5, 10, true, true, "jog"], [8, 0, false, true, "jog"], [5, 18, true, true, "run"], [20, 0, false, true, "run"], [3.5, 18, false, false, "run"]
+];
+{
+    _x params ["_txt", "_want"];
+    private _got = ([_txt] call comspec_sse_fnc_iarpIntent) select 0;
+    if (_got isNotEqualTo _want) then { _ko pushBack format ["suivi : « %1 » compris %2 au lieu de %3", _txt, _got, _want]; };
+} forEach [["Suivez-moi.", "follow"], ["Suis-moi", "follow"], ["Follow me.", "follow"], ["Reste ici.", "halt"], ["Restez ici.", "halt"], ["Stay here.", "halt"], ["Va-t'en.", "leave"], ["Circulez.", "leave"]];
+{ if !(_x in _bank) then { _ko pushBack format ["suivi : répliques « %1 » absentes de la banque", _x]; }; } forEach ["comply.follow", "noComply.follow", "followCuffed"];
+if ((["block", objNull] call comspec_sse_fnc_iarpFollow) isNotEqualTo "dead") then { _ko pushBack "suivi : une IA absente n'est pas refusée"; };
 // Couche hors sujet (fn_iarpOffTopic « selfTest ») : grossièretés, insultes, charabia, relance, tutoiement, formes courtes.
 (["selfTest"] call comspec_sse_fnc_iarpOffTopic) params [["_koO", []], ["_infoO", []]];
 _ko append _koO;

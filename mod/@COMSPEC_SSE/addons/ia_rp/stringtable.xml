@@ -1527,6 +1527,11 @@
             <English>Handcuffed</English>
             <French>Menotté</French>
         </Key>
+        <Key ID="STR_COMSPEC_IARP_Mood_follow">
+            <Original>Following the player</Original>
+            <English>Following the player</English>
+            <French>Suit le joueur</French>
+        </Key>
         <Key ID="STR_COMSPEC_IARP_Mood_halt">
             <Original>Stopped (Stop)</Original>
             <English>Stopped (Stop)</English>
