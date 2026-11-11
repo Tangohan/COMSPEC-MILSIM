@@ -31,6 +31,7 @@ class CfgFunctions {
             class iarpData {};
             class iarpNorm {};
             class iarpIntent {};
+            class iarpOffTopic {};
             class iarpGen {};
             class iarpFill {};
             class iarpProfile {};

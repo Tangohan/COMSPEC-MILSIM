@@ -13,7 +13,8 @@
       reply    [ia, contenu, intention, nom]     réplique de l'IA à qui je parle : bulle et fil, une seule fois ; nom :
                                                  comme pour une bulle (fn_iarpName « label »)
       ack      [ia, intention, issue]            mon message est traité ; issue « ace » : action ACE habituelle (papiers,
-                                                 fouille), après la réponse de l'IA ; incompris : rappel du GUIDE (une fois)
+                                                 fouille), après la réponse de l'IA ; deux incompris de suite : astuce GUIDE
+                                                 dans la ligne d'aide sous la saisie (fn_iarpUi « hint »), jamais dans le fil
       dropped  [ia]                              message refusé par l'anti-flood du serveur : dit dans le fil
       who      [ia, nom, humeur] · mood [ia, humeur]   en-tête du terminal : nom, état (calme, nerveux, Stop…), peur
       notice   [clé de stringtable, valeurs…]    message court (toast)
@@ -129,15 +130,12 @@ switch (_op) do {
         _a params [["_t", objNull], ["_intent", ""], ["_outcome", ""]];
         missionNamespace setVariable ["comspec_sse_iarpLastAck", [_t, _intent, _outcome, time]];
         if (isNull _t) exitWith {};
-        // Rien de rapproché : une fois par IA, le rappel du GUIDE dans le fil.
-        if (_intent isEqualTo "unknown") exitWith {
-            private _seen = missionNamespace getVariable ["comspec_sse_iarpHinted", []];
-            if !((netId _t) in _seen) then {
-                _seen pushBack (netId _t);
-                missionNamespace setVariable ["comspec_sse_iarpHinted", _seen];
-                [netId _t, "sys", "", localize "STR_COMSPEC_IARP_HintGuide"] call _push;
-            };
-        };
+        // Incompris de suite (par IA) : à partir de deux, l'astuce GUIDE s'affiche dans la ligne d'aide sous la saisie, pas
+        // dans le fil (elle ne s'intercale jamais entre deux répliques) ; un message compris la retire.
+        private _miss = missionNamespace getVariable ["comspec_sse_iarpMiss", createHashMap];
+        missionNamespace setVariable ["comspec_sse_iarpMiss", _miss];
+        _miss set [netId _t, [0, (_miss getOrDefault [netId _t, 0]) + 1] select (_intent in ["unknown", "otGibberish"])];
+        if ((netId _t) isEqualTo _target) then { ["hint"] call comspec_sse_fnc_iarpUi; };
         if (_outcome isNotEqualTo "ace") exitWith {};
         // Papiers et fouille : l'action ACE habituelle, ses durées et ses distances ; rien n'est contourné.
         if (!isNull (uiNamespace getVariable ["comspec_sse_iarpDisplay", displayNull])) then { closeDialog 0; };

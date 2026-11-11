@@ -13,7 +13,8 @@
                 told (colleague | other : sujet déjà raconté à un autre joueur, « Je l'ai déjà dit à votre collègue. »),
                 forbid (étiquettes interdites : « hint », armed, explosives, military, wanted, drugs, politics ; cadre fixé par
                 le maître du jeu, fn_iarpAnswers « frame » : une phrase étiquetée ainsi n'est jamais choisie),
-                preferFact (vrai : une phrase qui cite un fait connu de la couverture passe avant les autres)
+                preferFact (vrai : une phrase qui cite un fait connu de la couverture passe avant les autres),
+                noMine (vrai : pas de phrase type de la personne à la fin ; ordre, refus, hors sujet)
       déjà dit  phrases de base déjà servies par cette personne : jamais redites tant qu'il en reste d'autres
       variables (facultatif) faits connus ({city}, {job}…) : une phrase qui cite un fait absent n'est pas choisie
     Ton venu du caractère (peur, nerfs) : seulement s'il y a une raison (tension, arme pointée, état) ; un peureux sans
@@ -97,6 +98,8 @@ if (_forbid isEqualType [] && {_forbid isNotEqualTo []}) then {
 if (_mode isEqualTo "pool") exitWith { _pool };
 if (_pool isEqualTo []) then { _pool = [["Je ne comprends pas.", "I don't understand."]]; };
 private _fresh = _pool select { !((_x select 0) in _recent) };
+// Toutes déjà dites : au moins pas une des 5 dernières répliques.
+if (_fresh isEqualTo []) then { private _r5 = _recent select [((count _recent) - 5) max 0]; _fresh = _pool select { !((_x select 0) in _r5) }; };
 if (_fresh isEqualTo []) then { _fresh = _pool; };
 private _core = selectRandom _fresh;
 private _fr = [_core select 0];
@@ -141,7 +144,7 @@ if (_deco) then {
     } forEach (_cues call BIS_fnc_arrayShuffle);
     // Fin : bavard plus souvent ; phrase type de la personne (atelier IA) de temps en temps.
     private _mine = (_p getOrDefault ["phrases", []]) select { _x isEqualType "" && {_x isNotEqualTo ""} };
-    if (_mine isNotEqualTo [] && {(random 1) < 0.22}) then {
+    if (_mine isNotEqualTo [] && {!(_ctx getOrDefault ["noMine", false])} && {(random 1) < 0.22}) then {
         private _l = selectRandom _mine;
         [[_l, _l]] call _post;
     } else {

@@ -38,6 +38,23 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : des IA qui réagissent normalement aux messages hors sujet (COMSPEC SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Les civils réagissent enfin normalement quand on leur dit n'importe quoi
+- Une grossièreté, une insulte ou une question absurde n'est plus prise pour une demande : la personne est choquée, vexée ou méfiante selon son caractère, et si vous insistez elle coupe la conversation un moment. Elle ne vous tend jamais ses papiers sans qu'on les lui demande.
+- Elle comprend mieux le tutoiement et les questions courtes (« Ton prénom ? », « Tes papiers. », « Où tu vas ? »), « Et alors ? » ou « Pourquoi ? » après sa réponse, et quand elle ne comprend pas elle le dit sans se répéter ; l'astuce du GUIDE s'affiche sous la saisie, et la première lettre de vos messages n'est plus coupée.
+EN : Civilians finally react normally when you say anything at all
+- A crude remark, an insult or an absurd question is no longer taken as a request: the person is shocked, offended or wary depending on their character, and if you keep going they end the conversation for a while. They never hand over their papers unless you ask for them.
+- They better understand informal and short questions ("Your name?", "Your papers.", "Where are you going?"), "So what?" or "Why?" after their answer, and when they don't understand they say so without repeating themselves; the GUIDE tip shows under the input line, and the first letter of your messages is no longer cut off.
+
+### Détail technique
+- Cause des répliques incohérentes de la capture (« Oui ? », « Pardon ? », « D'accord, voilà. ») : build antérieur à 7137ffdd3. « Tu aimes le cul ? » n'y était pas reconnu (« unknown », réplique « Pardon ? » de la banque), le rappel « Pas compris… GUIDE » partait dans le fil (`fn_iarpClient` « ack »), et les phrases d'entrée d'état de l'automate (`fn_idAiEnter` : « Oui ? » à « interpelle », « D'accord, voilà. » à « coopere ») s'affichaient dans la conversation. Dans la base 4.4.0, `fn_idAiSay` les tait pendant une conversation, mais « Tu aimes le cul ? » était compris « hobbies » (motif « tu aimes »).
+- Nouveau `fn_iarpOffTopic` + `data\iarp_offtopic.sqf` (sections sms, cats, not, junk, actions, mineOk, more, lexicon, bank) et `data\iarp_ottests.sqf` : couche hors sujet AVANT les demandes à effet (grossièreté, insulte, avances, question personnelle, hors du monde, absurde, charabia) ; `fn_iarpIntent` renvoie une confiance (5e élément) : demande à effet sous 0,4 non déclenchée. Provocation cumulée (retombe de 1 par minute) : confiance −10 à −20, tension +6 à +12, à 3 conversation coupée 90 s (refus en plein contrôle, sinon il s'éloigne), excuses acceptées. Incompris : otMiss1 / otMiss2 / otLost, jamais la même tournure deux fois de suite ; relance par la dernière réplique (otMore.*). Didascalies sur leur propre ligne (fil, bulle 3D) ; phrase type de l'atelier jamais après un ordre ou un refus ; « Partez » : il part.
+- Points d'accroche courts dans `fn_iarpServer` (filtre, réaction, relance, « hello », « Partez »), `fn_iarpGen` (noMine, pas de redite sur les 5 dernières), `fn_iarpData`, `fn_iarpNorm` (écriture SMS), `fn_iarpClient` / `fn_iarpUi` (astuce sous la saisie, bulles alignées à gauche avec marge), `fn_iarpBubble`, `fn_iarpSelfTest`, `config.cpp`, `stringtable.xml`.
+- Banc hors jeu `mod/@COMSPEC_SSE/tools/iarp_harness.py` (même batterie que l'autotest) : 74 messages hors sujet, 138 légitimes, 514 exemples du guide, 28 tours de dialogue, corpus inchangé. Non testé en jeu.
+
 ## SSE 1.9.0 : fenêtre « Réponses de l'IA » simple, peur d'une arme braquée de près, champs des documents (SSE 1.9.0)
 
 ### Résumé joueur
