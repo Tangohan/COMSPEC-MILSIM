@@ -18,7 +18,10 @@ Analyse (spectrogrammes, détection d'attaques, corrélation croisée) :
 Fichiers produits (rôle, effet, origine, doutes) : voir LISEZ_MOI plus bas. Suffixe _enreg = enregistrement de TTRD (éventuellement filtré,
 découpé, réverbéré) ; _synth = synthétisé ici (numpy), original.
 
-    python gen_fb_sounds.py [dossier_sources] [--ecoute H:\\StreamLabs\\ogg]
+    python gen_fb_sounds.py [dossier_sources] [--drill] [--ecoute H:\\StreamLabs\\ogg]
+      --drill   n'écrit que les sons au choix de la DRILL (pop sourd, bang léger, sifflet, cloche)
+      --ecoute  copie les fichiers écrits dans le dossier d'écoute et refait son LISEZ-MOI ; les morceaux de
+                sources_decoupees\\ déjà présents ne sont jamais réécrits
 
 Sans argument : sources dans le scratchpad (variable SRC). Python 3 + numpy ; ffmpeg (variable FFMPEG ou PATH).
 """
@@ -47,6 +50,16 @@ def load(i):
     raw = subprocess.run([FFMPEG, "-v", "error", "-i", p, "-f", "f32le", "-ac", "2", "-ar", str(SR), "-"],
                          capture_output=True, check=True).stdout
     return np.frombuffer(raw, np.float32).reshape(-1, 2).astype(np.float64)
+
+
+def decode(path):
+    """OGG du mod décodé (canaux d'origine) : sert aux durées du LISEZ-MOI."""
+    probe = subprocess.run([FFMPEG, "-v", "error", "-i", path, "-f", "f32le", "-ar", str(SR), "-"],
+                           capture_output=True, check=True).stdout
+    mono_raw = subprocess.run([FFMPEG, "-v", "error", "-i", path, "-f", "f32le", "-ac", "1", "-ar", str(SR), "-"],
+                              capture_output=True, check=True).stdout
+    ch = max(1, round(len(probe) / max(1, len(mono_raw))))
+    return np.frombuffer(probe, np.float32).reshape(-1, ch)
 
 
 def cut(x, t0, t1):
@@ -175,6 +188,57 @@ def synth_lever():
     return fade(x, 0.0005, 0.08)
 
 
+def synth_pop_muffled():
+    """« Pop sourd » de la DRILL : même pétard, plus grave et étouffé (passe-bas 900 Hz), petite queue de pièce (0,7 s)."""
+    rng = np.random.default_rng(13)
+    n = int(0.7 * SR)
+    t = np.arange(n) / SR
+    crack = filt(rng.standard_normal(n), lp=2500, hp=300, order=2) * np.exp(-t / 0.015) * 0.6
+    body = np.sin(2 * np.pi * (120 - 40 * t) * t) * np.exp(-t / 0.07)
+    x = filt(crack + body, lp=900, order=3)
+    ir = room_ir(0.35, 0.5, 17, early=((0.009, 0.4), (0.016, 0.25)), lp=1800)
+    return fade(convolve(x, ir)[:n], 0.001, 0.15)
+
+
+def synth_whistle():
+    """Sifflet d'exercice (sifflet à bille) : porteuse ~3,1 kHz trillée par la bille (28 Hz), souffle ; 0,8 s."""
+    rng = np.random.default_rng(29)
+    n = int(0.8 * SR)
+    t = np.arange(n) / SR
+    trill = 1 + 0.035 * np.sign(np.sin(2 * np.pi * 28 * t)) * (0.6 + 0.4 * np.sin(2 * np.pi * 3 * t))
+    f = 3100 * filt(trill, lp=180, order=2)
+    phase = 2 * np.pi * np.cumsum(f) / SR
+    tone = np.sin(phase) + 0.18 * np.sin(2 * phase) + 0.05 * np.sin(3 * phase)
+    breath = filt(rng.standard_normal(n), lp=7000, hp=2000, order=2) * 0.12
+    env = np.clip(t / 0.025, 0, 1) * np.clip((0.8 - t) / 0.09, 0, 1)
+    return fade((tone + breath) * env, 0.002, 0.03)
+
+
+def synth_bell():
+    """Cloche d'exercice : partiels inharmoniques de cloche (880 Hz), décroissances différentes ; 1,6 s."""
+    n = int(1.6 * SR)
+    t = np.arange(n) / SR
+    x = np.zeros(n)
+    for ratio, g, d in ((0.5, 0.35, 1.2), (1.0, 1.0, 0.9), (1.19, 0.45, 0.6), (1.5, 0.35, 0.5), (2.0, 0.5, 0.45),
+                        (2.74, 0.25, 0.3), (3.76, 0.15, 0.2)):
+        x += g * np.sin(2 * np.pi * 880 * ratio * t) * np.exp(-t / d)
+    strike = np.random.default_rng(31).standard_normal(n) * np.exp(-t / 0.004) * 0.4
+    return fade(x + filt(strike, hp=2000, order=2), 0.0005, 0.25)
+
+
+def drill_sounds(X):
+    """Sons au choix de la grenade DRILL (réglage « Son de la grenade d'entraînement »), en plus de pop_drill_synth."""
+    out = {}
+    out["pop_sourd_synth"] = norm_peak(synth_pop_muffled(), PEAK_BANG)
+    # Bang léger : bang C (son_07, 9,02 s), queue raccourcie à 0,8 s, grave allégé (passe-haut 180 Hz) ; le volume
+    # plus faible est donné par la table CfgSons.hpp.
+    light = filt(mono(cut(X[7], 9.020, 9.820)), hp=180, order=2)
+    out["bang_leger_enreg"] = norm_peak(fade(light, 0.002, 0.35), PEAK_BANG)
+    out["sifflet_exercice_synth"] = norm_peak(synth_whistle(), -6.0)
+    out["cloche_exercice_synth"] = norm_peak(synth_bell(), -6.0)
+    return out
+
+
 # ----------------------------------------------------------------------------------------- découpe des captures
 def loop_from_recording(x8):
     """Boucle de 3 s de l'acouphène 3520 Hz de son_08 (4,60-7,60 s) : passe-haut pour ôter la queue du bang,
@@ -201,6 +265,9 @@ def main():
         i = args.index("--ecoute")
         ecoute = args[i + 1]
         del args[i:i + 2]
+    only_drill = "--drill" in args
+    if only_drill:
+        args.remove("--drill")
     if args:
         SRC = args[0]
     os.makedirs(OUT, exist_ok=True)
@@ -245,6 +312,11 @@ def main():
     # Drill et lancer : synthétisés (aucune prise propre dans les captures).
     files["pop_drill_synth"] = norm_peak(synth_pop(), PEAK_BANG)
     files["levier_cuillere_synth"] = norm_peak(synth_lever(), -6.0)
+    drill = drill_sounds(X)
+    files.update(drill)
+    if only_drill:
+        # --drill : n'écrit que les sons au choix de la DRILL (les autres fichiers du mod restent tels quels).
+        files = drill
 
     for name, x in files.items():
         p = os.path.join(OUT, name + ".ogg")
@@ -253,25 +325,29 @@ def main():
               f"{20 * np.log10(np.abs(x).max() + 1e-12):6.1f} dBFS")
 
     # Courbe de niveau de la décroissance (dB RMS par seconde) : sert au calcul intensité -> offset dans le code.
-    d = files["acouphene_decroissance_enreg"]
-    print("décroissance (dB RMS, fenêtre 1 s) :")
-    for s in (0, 1, 2, 3, 5, 8, 12, 20, 30, 40, 45, 50, 55, 59):
-        w = d[s * SR:(s + 1) * SR]
-        print(f"  t={s:2d}s  {20 * np.log10(np.sqrt((w ** 2).mean()) + 1e-12):6.1f} dBFS")
+    if "acouphene_decroissance_enreg" in files:
+        d = files["acouphene_decroissance_enreg"]
+        print("décroissance (dB RMS, fenêtre 1 s) :")
+        for s in (0, 1, 2, 3, 5, 8, 12, 20, 30, 40, 45, 50, 55, 59):
+            w = d[s * SR:(s + 1) * SR]
+            print(f"  t={s:2d}s  {20 * np.log10(np.sqrt((w ** 2).mean()) + 1e-12):6.1f} dBFS")
 
     if ecoute:
         os.makedirs(ecoute, exist_ok=True)
         for name in files:
             shutil.copy2(os.path.join(OUT, name + ".ogg"), os.path.join(ecoute, name + ".ogg"))
+        # Morceaux découpés : écrits une seule fois, jamais réécrits ensuite (TTRD peut les avoir rangés ou annotés).
         dec = os.path.join(ecoute, "sources_decoupees")
         os.makedirs(dec, exist_ok=True)
         for v, t0, t1, what in SEGMENTS:
-            x = fade(cut(X[v], t0, t1), 0.005, 0.03)
             m, s = divmod(int(t0), 60)
-            write_ogg(os.path.join(dec, f"video{v:02d}_{m:02d}m{s:02d}s_{what}.ogg"), x)
+            seg = os.path.join(dec, f"video{v:02d}_{m:02d}m{s:02d}s_{what}.ogg")
+            if not os.path.exists(seg):
+                write_ogg(seg, fade(cut(X[v], t0, t1), 0.005, 0.03))
         lines = [LISEZ_MOI.strip(), "", "Durées des fichiers du mod :"]
-        for name, x in files.items():
-            lines.append(f"  {name}.ogg : {len(x) / SR:.2f} s, {'stéréo' if x.ndim == 2 else 'mono'}")
+        for name in sorted(f[:-4] for f in os.listdir(OUT) if f.endswith(".ogg")):
+            x = decode(os.path.join(OUT, name + ".ogg"))
+            lines.append(f"  {name}.ogg : {len(x) / SR:.2f} s, {'stéréo' if x.shape[1] == 2 else 'mono'}")
         with open(os.path.join(ecoute, "LISEZ-MOI.txt"), "w", encoding="utf-8-sig", newline="\r\n") as fh:
             fh.write("\n".join(lines) + "\n")
         print("copie d'écoute :", ecoute)
@@ -298,14 +374,24 @@ bang_unique_a_enreg.ogg | bang seul, sa queue naturelle | chaque flash (rejoué 
 bang_unique_b_enreg.ogg | bang seul (autre son que a) | chaque flash (rejoué N fois) | vidéo 04 (11-05-40) à 1,08 s, trace de bip 4186 Hz retirée | faible
 bang_unique_c_enreg.ogg | bang seul (3e son), queue courte | chaque flash (rejoué N fois) | vidéo 07 (11-06-29) à 9,03 s, coupé avant le bang suivant | queue coupée à 1,2 s
 bang_grave_enreg.ogg | grave du bang (thump) | 1er flash seulement, en couche | vidéo 01 (11-04-28) à 1,77 s, passe-bas 160 Hz | à écouter : grave peut-être faible
-bang_rafale_enreg.ogg | 3 bangs enchaînés (~1,15 s d'écart) | non utilisé par défaut (référence) | vidéo 07 à 9,0-12,15 s | ce sont 3 sons différents mis bout à bout dans ta capture
+bang_rafale_enreg.ogg | 3 bangs enchaînés (~1,15 s d'écart) | DRILL, son au choix « Rafale courte » | vidéo 07 à 9,0-12,15 s | ce sont 3 sons différents mis bout à bout dans ta capture
 bang_interieur_etouffe_enreg.ogg | bang entendu derrière un mur / pièce voisine | flash entendu à travers un mur | bang a + passe-bas 450 Hz + réverbération de pièce (traitement) | rendu à valider à l'oreille
 bang_lointain_enreg.ogg | bang lointain avec échos | extérieur au-delà de ~150 m | bang b + passe-bas 1,1 kHz + échos (traitement) | rendu à valider à l'oreille
 acouphene_boucle_enreg.ogg | sifflement 3520 Hz (note la7) en boucle de 3 s, sans clic | réserve / acouphène continu | vidéo 08 (11-06-48) 4,6-7,6 s, niveau aplani | c'est un bip pur électronique
 acouphene_decroissance_enreg.ogg | sifflement 3520 Hz de 60 s qui décroît (vite puis lentement) | acouphène (1 fois par joueur) | ta boucle 3520 Hz + enveloppe de décroissance calculée | aucun sur l'identification
 acouphene_decroissance_synth.ogg | même chose, synthétisé : 3520 + 3526 Hz (battement), canal droit +1 Hz | variante plus « naturelle » | synthèse | au choix de TTRD
-pop_drill_synth.ogg | petit pétard + souffle | grenade d'entraînement DRILL | synthèse (pas de prise propre) | -
+pop_drill_synth.ogg | petit pétard + souffle | grenade DRILL, son « Pop » (défaut) | synthèse (pas de prise propre) | -
+pop_sourd_synth.ogg | pétard plus grave, étouffé, petite queue de pièce | grenade DRILL, son « Pop sourd » | synthèse | -
+bang_leger_enreg.ogg | bang C raccourci (0,8 s), grave allégé | grenade DRILL, son « Bang léger » | vidéo 07 à 9,02 s + passe-haut 180 Hz | à écouter
+sifflet_exercice_synth.ogg | sifflet à bille (~3,1 kHz trillé), 0,8 s | grenade DRILL, son « Sifflet d'exercice » | synthèse | -
+cloche_exercice_synth.ogg | coup de cloche (880 Hz, partiels de cloche), 1,6 s | grenade DRILL, son « Cloche d'exercice » | synthèse | -
 levier_cuillere_synth.ogg | cuillère qui saute + clic du percuteur | au lancer | synthèse (les bruits de manipulation des vidéos ne sont pas exploitables) | -
+
+SON DE LA GRENADE DRILL (réglage d'addon « Son de la grenade d'entraînement », ou choix dans le module Eden / Zeus) :
+  Pop (défaut) = pop_drill_synth ; Pop sourd = pop_sourd_synth ; Bang léger = bang_leger_enreg ;
+  Bang réel = bang_unique_a / b / c (le bang d'une vraie grenade, sans aucun effet) ; Rafale courte = bang_rafale_enreg ;
+  Sifflet d'exercice = sifflet_exercice_synth ; Cloche d'exercice = cloche_exercice_synth ; Aucun son = fumée seule.
+  Le son est joué une fois par pop (1 à 9), chaque lecture indépendante, avec la même petite variation que les bangs.
 
 SOURCES DÉCOUPÉES (sources_decoupees\\) - ce que l'analyse a trouvé dans chaque vidéo :
 video01 (11-04-28) : bang grave + acouphène bip pur 9956 Hz (ré#9) qui décroît en ~9 s.

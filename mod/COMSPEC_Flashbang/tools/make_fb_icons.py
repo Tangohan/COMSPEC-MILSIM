@@ -21,7 +21,11 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 HERE = os.path.dirname(os.path.abspath(__file__))
 RENDER = os.path.join(HERE, "render")
 ADDON = os.path.join(HERE, "..", "Sources", "addons", "main")
-VARIANTS = [str(i) for i in range(1, 10)] + ["drill"]
+BASES = [str(i) for i in range(1, 10)] + ["drill"]
+# Variantes à délai (mèche fixe 3 s / 8 s) : <base>_d3, <base>_d8.
+VARIANTS = BASES + [f"{b}_d{d}" for b in BASES for d in (3, 8)]
+DELAY_FILL = {3: (242, 194, 20, 245), 8: (209, 26, 20, 245)}
+DELAY_TEXT = {3: (15, 15, 15, 255), 8: (245, 245, 240, 255)}
 
 # PNG source -> PAA dans l'addon (chemin relatif à Sources/addons/main).
 TEXTURES = {f"fb_body_{v}_co": f"data/fb_body_{v}_co" for v in VARIANTS}
@@ -45,16 +49,29 @@ def font(size):
 
 
 def icon(v):
-    """Grenade réduite à 256 px, badge rond en bas à droite : chiffre blanc sur gris foncé (D blanc sur bleu)."""
+    """Grenade réduite à 256 px, badge rond en bas à droite : chiffre blanc sur gris foncé (D blanc sur bleu) ;
+    variantes à délai : en plus, pastille horloge + « 3s » / « 8s » en haut à droite (jaune 3 s, rouge 8 s)."""
+    base, delay = (v.split("_d")[0], int(v.split("_d")[1])) if "_d" in v else (v, 0)
     raw = Image.open(os.path.join(RENDER, f"icon_raw_{v}.png")).convert("RGBA").resize((256, 256), Image.LANCZOS)
     S = 4 * 256
     badge = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     d = ImageDraw.Draw(badge)
     cx, cy, r = 4 * 204, 4 * 206, 4 * 40
-    fill = (24, 70, 170, 240) if v == "drill" else (28, 28, 26, 235)
+    fill = (24, 70, 170, 240) if base == "drill" else (28, 28, 26, 235)
     d.ellipse([cx - r - 8, cy - r - 8, cx + r + 8, cy + r + 8], fill=(0, 0, 0, 110))
     d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=fill, outline=(240, 240, 235, 255), width=4 * 4)
-    d.text((cx, cy + 6), "D" if v == "drill" else v, font=font(4 * 54), fill=(245, 245, 240, 255), anchor="mm")
+    d.text((cx, cy + 6), "D" if base == "drill" else base, font=font(4 * 54), fill=(245, 245, 240, 255), anchor="mm")
+    if delay:
+        # Pastille de délai : horloge + « 3s » / « 8s », même famille de couleurs que la bande sur le corps.
+        x0, y0, x1, y1 = 4 * 150, 4 * 10, 4 * 248, 4 * 62
+        d.rounded_rectangle([x0 - 8, y0 - 8, x1 + 8, y1 + 8], radius=4 * 28, fill=(0, 0, 0, 110))
+        d.rounded_rectangle([x0, y0, x1, y1], radius=4 * 26, fill=DELAY_FILL[delay], outline=(240, 240, 235, 255), width=4 * 3)
+        ccx, ccy, cr = x0 + 4 * 25, (y0 + y1) // 2, 4 * 16
+        ink = DELAY_TEXT[delay]
+        d.ellipse([ccx - cr, ccy - cr, ccx + cr, ccy + cr], outline=ink, width=4 * 4)
+        d.line([ccx, ccy, ccx, ccy - cr + 4 * 5], fill=ink, width=4 * 4)
+        d.line([ccx, ccy, ccx + cr - 4 * 6, ccy], fill=ink, width=4 * 4)
+        d.text(((ccx + cr + x1) // 2 + 4 * 2, ccy + 4 * 2), f"{delay}s", font=font(4 * 40), fill=ink, anchor="mm")
     badge = badge.resize((256, 256), Image.LANCZOS)
     out = Image.alpha_composite(raw, badge)
     out.save(os.path.join(RENDER, f"fb_icon_{v}_ca.png"))
@@ -105,11 +122,13 @@ def image_to_paa():
     return None
 
 
-def convert():
+def convert(delayed_only=False):
     exe = image_to_paa()
     if not exe:
         sys.exit("ImageToPAA introuvable : définir ARMA3TOOLS")
     jobs = list(TEXTURES.items()) + [("fb_logo_ca", "../../../logo")]
+    if delayed_only:
+        jobs = [(k, v) for k, v in jobs if "_d3_" in k or "_d8_" in k]
     for src, dst in jobs:
         png = os.path.join(RENDER, src + ".png")
         paa = os.path.normpath(os.path.join(ADDON, dst + ".paa"))
@@ -123,18 +142,21 @@ def convert():
 
 
 def main():
-    have_raw = os.path.exists(os.path.join(RENDER, "icon_raw_9.png"))
-    if have_raw:
-        for v in VARIANTS:
-            icon(v)
+    # Compose les icônes dont le rendu brut existe (toutes, ou seulement les variantes à délai après
+    # DELAYED_ONLY=1 dans Blender) ; logo et aperçu Steam seulement si leurs rendus bruts sont là.
+    done = [v for v in VARIANTS if os.path.exists(os.path.join(RENDER, f"icon_raw_{v}.png"))]
+    for v in done:
+        icon(v)
+    if "9" in done:
         logo()
-        if os.path.exists(os.path.join(RENDER, "steam_raw.png")):
-            steam()
-        for f in os.listdir(RENDER):
-            if f.startswith("icon_raw_") or f == "steam_raw.png":
-                os.remove(os.path.join(RENDER, f))
+    if os.path.exists(os.path.join(RENDER, "steam_raw.png")):
+        steam()
+    for f in os.listdir(RENDER):
+        if f.startswith("icon_raw_") or f == "steam_raw.png":
+            os.remove(os.path.join(RENDER, f))
     if "--no-paa" not in sys.argv:
-        convert()
+        # --delai : ne convertit que les textures et icônes des variantes à délai (les autres PAA restent tels quels).
+        convert(delayed_only="--delai" in sys.argv)
 
 
 if __name__ == "__main__":

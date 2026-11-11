@@ -3,7 +3,8 @@ Grenade assourdissante multi-détonations COMSPEC (mod COMSPEC Flashbang) : mod�
 
   fb_<V>.p3d        grenade complète (levier, goupille, anneau) : inventaire, au sol, en main
   fb_<V>_spent.p3d  grenade sans levier ni goupille : projectile en vol et engin au sol pendant les détonations
-                    V = 1..9 (nombre de détonations) et drill (grenade d'exercice bleue)
+                    V = 1..9 (nombre de détonations) et drill (grenade d'exercice bleue), et leurs variantes à
+                    délai V_d3 / V_d8 (même géométrie, corps à bande et tampon de délai)
 
 Référence réelle : Rheinmetall « 6 Bang » (corps acier Ø40 x 112 mm, 563 g, évents de fond, version
 d'entraînement bleue) et Primetake PT4523C (Ø40 mm, 115 mm, 600 g). Modèle original (aucune pièce reprise).
@@ -18,7 +19,7 @@ ombre 0 (enveloppe convexe fermée) ; géométrie (enveloppe convexe, 0,56 kg, a
 (même enveloppe : l'engin au sol est un ThingX) ; géométrie de tir. Sélection retexturable « camo » (corps).
 
     python gen_fb_textures.py
-    blender -b -P model_flashbang.py            (ONLY=nom ; NO_EXPORT=1 ; NO_RENDER=1 ; RENDER_SAMPLES=n)
+    blender -b -P model_flashbang.py            (ONLY=nom ; DELAYED_ONLY=1 ; NO_EXPORT=1 ; NO_RENDER=1 ; RENDER_SAMPLES=n)
 Extension Blender « Arma 3 Object Builder » requise (comme mod/COMSPEC_ATAK_Native/tools/model_items.py).
 Les rendus (icônes, logo, aperçu Steam) sont écrits dans tools/render/ ; conversion PAA : voir README du mod.
 """
@@ -37,7 +38,9 @@ DATA = os.path.join(HERE, "..", "Sources", "addons", "main", "data")
 RENDER = os.path.join(HERE, "render")
 TEX = "z\\comspec_flashbang\\addons\\main\\data\\"
 SAMPLES = int(os.environ.get("RENDER_SAMPLES", "96"))
-VARIANTS = [str(i) for i in range(1, 10)] + ["drill"]
+BASES = [str(i) for i in range(1, 10)] + ["drill"]
+# Variantes à délai (mèche fixe 3 s / 8 s) : même géométrie, texture du corps marquée (gen_fb_textures.py).
+VARIANTS = BASES + [f"{b}_d{d}" for b in BASES for d in (3, 8)]
 MASS = 0.56
 
 R = 0.020            # rayon du corps
@@ -522,7 +525,7 @@ def render_lineup():
     studio(sc, False, (0.035, 0.036, 0.034, 1), key=1.4)
     sc.world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.05
     obs = []
-    for i, v in enumerate(VARIANTS):
+    for i, v in enumerate(BASES):
         ob = make_mesh(f"g{v}", build(1, False), preview_materials(v), groups=False)
         x = (i - 4.5) * 0.052
         place(ob, (x, 0.012 * (i % 2), 0), True, math.radians(-90 + (i % 3 - 1) * 8))
@@ -545,6 +548,10 @@ def main():
         raise SystemExit("Extension Arma 3 Object Builder introuvable dans " + d)
     only = os.environ.get("ONLY")
     todo = [v for v in VARIANTS if not only or only == v]
+    # DELAYED_ONLY=1 : seulement les variantes à délai (les modèles et icônes standard restent tels quels).
+    delayed_only = os.environ.get("DELAYED_ONLY") == "1"
+    if delayed_only:
+        todo = [v for v in todo if v not in BASES]
     if os.environ.get("NO_EXPORT") != "1":
         os.makedirs(DATA, exist_ok=True)
         for v in todo:
@@ -552,7 +559,7 @@ def main():
                 export_model(v, spent)
     if os.environ.get("NO_RENDER") != "1":
         render_icons(todo)
-        if not only:
+        if not only and not delayed_only:
             render_lineup()
 
 
