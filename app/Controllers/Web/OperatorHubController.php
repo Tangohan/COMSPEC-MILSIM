@@ -304,14 +304,16 @@ final class OperatorHubController
             'csrfToken' => Csrf::token(),
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
-        ] + $this->areaData($ctx, $tab, (int) $request->queryString('modifier', '0')));
+        ] + $this->areaData($ctx, $tab, (int) $request->queryString('modifier', '0'), (int) $request->queryString('identite', '0'), $request->queryString('fenetre')));
     }
 
     /**
      * @param array{tenant: int, user: int, row: array<string, mixed>} $ctx
+     * @param int $coverIdentityId onglet Couvertures : identité présélectionnée dans la création guidée (0 : aucune)
+     * @param string $window onglet Couvertures : « papiers » ouvre le choix des papiers de la couverture $editId
      * @return array<string, mixed>
      */
-    public function areaData(array $ctx, string $tab, int $editId = 0): array
+    public function areaData(array $ctx, string $tab, int $editId = 0, int $coverIdentityId = 0, string $window = ''): array
     {
         [$tenantId, $userId] = [$ctx['tenant'], $ctx['user']];
         $tab = isset(self::TABS[$tab]) ? $tab : 'identites';
@@ -327,6 +329,10 @@ final class OperatorHubController
             'idSync' => null,
             'idCoverQuota' => 0,
             'idEditId' => $editId,
+            // Couvertures bâties sur chaque identité et emportant chaque papier (onglets Identités et Papiers).
+            'idCoverUsage' => ['by_identity' => [], 'by_document' => []],
+            'idCoverIdentity' => $coverIdentityId,
+            'idCoverWindow' => $window === 'papiers' ? 'papiers' : '',
             'idUnavailable' => false,
             'idProposal' => [],
             'idSteamLinked' => preg_replace('/\D/', '', (string) ($ctx['row']['steam_id'] ?? '')) !== '',
@@ -344,14 +350,14 @@ final class OperatorHubController
             usort($countries, static fn (array $a, array $b): int => [empty($a['real_sim']), 0] <=> [empty($b['real_sim']), 0]);
             $data['idCountries'] = $countries;
             $data['idProposal'] = MemberIdentityPapersService::primaryProposal($ctx['row'], $ctx['row'], $countries);
-            if ($tab !== 'couverture') {
-                $data['idDocuments'] = $svc->documents($tenantId, $userId);
-            }
+            // Les papiers servent aux trois onglets : une couverture montre ceux qu'elle emporte.
+            $data['idDocuments'] = $svc->documents($tenantId, $userId);
             if ($tab !== 'couverture') {
                 $data['idSync'] = self::syncSummary($tenantId, $userId, (string) ($ctx['row']['steam_id'] ?? ''));
+                $data['idCoverUsage'] = $svc->coverUsage($tenantId, $userId);
             }
             if ($tab === 'couverture') {
-                $data['idCovers'] = $svc->covers($tenantId, $userId);
+                $data['idCovers'] = $svc->linkedCovers($tenantId, $userId, $data['idIdentities'], $data['idDocuments']);
                 $data['idCoverQuota'] = $svc->coverQuota($tenantId, $userId);
             }
             $data['idHistory'] = $svc->history($tenantId, $userId, 12);
@@ -484,11 +490,16 @@ final class OperatorHubController
         if ($ctx instanceof Response) {
             return $ctx;
         }
-        $res = $this->identity()->requestDocument(
-            $ctx['tenant'], $ctx['user'], (int) $request->inputString('identity_id'), $request->inputString('doc_type'), strtoupper(trim($request->inputString('country_code')))
-        );
+        [$identityId, $type, $country] = [(int) $request->inputString('identity_id'), $request->inputString('doc_type'), strtoupper(trim($request->inputString('country_code')))];
+        // Bouton « Demander ce papier » d'une couverture : « identité:type:pays » dans une seule valeur.
+        if (preg_match('/^(\d{1,10}):([a-z_]{1,40}):([A-Za-z0-9]{1,16})$/', $request->inputString('demande'), $m) === 1) {
+            [$identityId, $type, $country] = [(int) $m[1], $m[2], strtoupper($m[3])];
+        }
+        $res = $this->identity()->requestDocument($ctx['tenant'], $ctx['user'], $identityId, $type, $country);
+        // Demande faite depuis une couverture (« Demander ce papier ») : retour à l'onglet Couvertures.
+        $back = $request->inputString('retour') === 'couverture' ? 'operateur/identite/couverture' : 'operateur/identite/documents';
 
-        return $this->back('operateur/identite/documents', $res['ok'] ? 'success' : 'error', $res['ok']
+        return $this->back($back, $res['ok'] ? 'success' : 'error', $res['ok']
             ? 'Demande envoyée : un responsable valide et émet le papier, il apparaîtra ici.'
             : (string) ($res['error'] ?? 'Demande refusée.'));
     }
@@ -565,23 +576,59 @@ final class OperatorHubController
             }
             $bytes = (string) @file_get_contents($tmp);
         }
-        $source = $request->inputString('source') === 'athena' ? 'athena' : 'random';
-        $res = $this->identity()->generateCover(
-            $ctx['tenant'], $ctx['user'], $source, strtoupper(trim($request->inputString('country'))),
-            strtoupper($request->inputString('sex')) ?: null, $request->inputString('lang', 'fr'), $bytes
-        );
+        // Une couverture se bâtit sur une identité du membre et sur ses papiers ; « random » : personne fictive sans
+        // identité ni papiers Athena (non rattachée).
+        $source = $request->inputString('source') === 'random' ? 'random' : 'athena';
+        if ($source === 'athena') {
+            $identityId = (int) $request->inputString('identity_id');
+            if ($identityId < 1) {
+                return $this->back($back, 'error', 'Choisissez l’identité sur laquelle bâtir la couverture.');
+            }
+            $res = $this->identity()->generateCover(
+                $ctx['tenant'], $ctx['user'], 'athena', '', null, $request->inputString('lang', 'fr'), null, null,
+                // « documents[<identité>][] » : seuls les papiers cochés sous l'identité choisie comptent.
+                $identityId, self::idList(is_array($request->input('documents')) ? ($request->input('documents')[$identityId] ?? null) : null), $this->coverInput($request)
+            );
+        } else {
+            $res = $this->identity()->generateCover(
+                $ctx['tenant'], $ctx['user'], 'random', strtoupper(trim($request->inputString('country'))),
+                strtoupper($request->inputString('sex')) ?: null, $request->inputString('lang', 'fr'), $bytes
+            );
+        }
         if ($res['ok']) {
-            return $this->back($back . '?modifier=' . (int) $res['id'] . '#couverture-' . (int) $res['id'], 'success', 'Couverture créée : ' . $res['name'] . '. Relisez la légende et ajustez-la.');
+            return $source === 'athena'
+                ? $this->back($back . '#couverture-' . (int) $res['id'], 'success', 'Couverture créée : ' . $res['name'] . '. En jeu : téléphone › Ma couverture › Synchroniser avec Athena.')
+                : $this->back($back . '?modifier=' . (int) $res['id'] . '#couverture-' . (int) $res['id'], 'success', 'Couverture créée : ' . $res['name'] . '. Relisez la légende et ajustez-la.');
         }
 
         return $this->back($back, 'error', match ($res['error']) {
             'limit' => 'Limite de générations atteinte pour aujourd’hui. Réessayez dans 24 heures.',
             'country' => 'Pays inconnu ou archivé pour cette communauté.',
             'photo' => 'Photo refusée : PNG, JPG ou WebP lisible, 40 pixels au moins.',
-            'no_identity' => 'Pas d’identité principale complète (nom et prénom) : créez-la d’abord.',
+            'no_identity' => 'Identité introuvable ou sans nom et prénom : complétez-la d’abord.',
             'no_paper' => 'Aucun papier émis et valable pour l’identité principale : demandez-en un d’abord.',
+            'paper' => 'Un papier choisi n’appartient pas à cette identité, ou n’est plus émis et valable.',
+            'too_many' => 'Une couverture emporte ' . OperatorIdentityService::COVER_MAX_PAPERS . ' papiers au plus.',
+            'legend' => 'La légende saisie n’est pas valable (champ trop long, ou plus de ' . OperatorIdentityService::MAX_HISTORY_LINES . ' lignes d’histoire).',
             default => 'Aucune couverture libre n’a pu être tirée. Réessayez.',
         });
+    }
+
+    /**
+     * Identifiants cochés dans un formulaire (« documents[] ») : entiers positifs uniques, 50 au plus.
+     *
+     * @return list<int>
+     */
+    private static function idList(mixed $raw): array
+    {
+        $out = [];
+        foreach (is_array($raw) ? array_slice($raw, 0, 50) : [] as $v) {
+            if (is_scalar($v) && ctype_digit((string) $v) && (int) $v > 0) {
+                $out[(int) $v] = true;
+            }
+        }
+
+        return array_keys($out);
     }
 
     public function coverAction(Request $request, array $params = []): Response
@@ -600,12 +647,19 @@ final class OperatorHubController
             'duplicate' => [$svc->duplicateCover($ctx['tenant'], $ctx['user'], $id), 'Couverture dupliquée.', ''],
             'revoke' => [$svc->revokeCover($ctx['tenant'], $ctx['user'], $id), 'Couverture révoquée : elle n’est plus téléchargeable ni proposée au téléphone.', ''],
             'activate' => [$svc->activateCover($ctx['tenant'], $ctx['user'], $id), 'Couverture active choisie.', '#couverture-' . $id],
+            'papers' => [$svc->setCoverDocuments($ctx['tenant'], $ctx['user'], $id, self::idList($request->input('documents'))),
+                'Papiers de la couverture enregistrés. En jeu : téléphone › Ma couverture › Synchroniser avec Athena pour la mettre à jour.', '#couverture-' . $id],
+            'attach' => [$svc->attachCover($ctx['tenant'], $ctx['user'], $id), 'Couverture rattachée à votre identité et à ses papiers.', '#couverture-' . $id],
             default => [['ok' => false, 'error' => 'Action inconnue.'], '', ''],
         };
 
         return $res['ok']
             ? $this->back($back . $anchor, 'success', $ok)
-            : $this->back($back . ($action === 'edit' ? '?modifier=' . $id . '#couverture-' . $id : ''), 'error', (string) ($res['error'] ?? 'Action refusée.'));
+            : $this->back($back . match ($action) {
+                'edit' => '?modifier=' . $id . '#couverture-' . $id,
+                'papers' => '?modifier=' . $id . '&fenetre=papiers#couverture-' . $id,
+                default => '',
+            }, 'error', (string) ($res['error'] ?? 'Action refusée.'));
     }
 
     /** @return array<string, string> */
