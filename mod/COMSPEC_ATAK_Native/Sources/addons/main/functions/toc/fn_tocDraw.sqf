@@ -36,40 +36,40 @@ switch (_mode) do {
         // la hauteur d'écran devenait 0,03 et les libellés tombaient à un demi-pixel (barre sombre, boutons sans texte),
         // et « _W » écrasait la largeur reçue (fond sous le panneau de droite).
         private _mkc = { params ["_cls", "_key", ["_tip", ""]]; private _c = ["mk", [_cls, _key]] call comspec_atak_native_fnc_tocLaptop; if (_tip isNotEqualTo "") then { ["tip", [_c, _tip]] call comspec_atak_native_fnc_tocLaptop; }; _c };
-        private _c1 = ["COMSPEC_RscCombo", "dColor", "Couleur du trait, vue par tous les joueurs"] call _mkc;
+        private _c1 = ["COMSPEC_RscTocCombo", "dColor", "Couleur du trait, vue par tous les joueurs"] call _mkc;
         { private _i = _c1 lbAdd ((_x select 0) call comspec_atak_native_fnc_tr); _c1 lbSetData [_i, _x select 1]; } forEach _cols;
         _c1 lbSetCurSel ((_cols findIf { (_x select 1) isEqualTo (profileNamespace getVariable ["COMSPEC_ATAK_DrawColor", "ColorRed"]) }) max 0);
         _c1 ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; profileNamespace setVariable ["COMSPEC_ATAK_DrawColor", _c lbData _i]; [] call comspec_atak_native_fnc_saveProfile; }];
-        private _c2 = ["COMSPEC_RscCombo", "dWidth", "Épaisseur du trait, vue par tous les joueurs"] call _mkc;
+        private _c2 = ["COMSPEC_RscTocCombo", "dWidth", "Épaisseur du trait, vue par tous les joueurs"] call _mkc;
         { private _i = _c2 lbAdd ((_x select 0) call comspec_atak_native_fnc_tr); _c2 lbSetValue [_i, _x select 1]; } forEach [["Fin", 1], ["Moyen", 2], ["Épais", 3]];
         _c2 lbSetCurSel (((profileNamespace getVariable ["COMSPEC_ATAK_DrawWidth", 2]) - 1) max 0 min 2);
         _c2 ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; profileNamespace setVariable ["COMSPEC_ATAK_DrawWidth", _c lbValue _i]; [] call comspec_atak_native_fnc_saveProfile; }];
         // Plan : graphisme, texte (TERMINER et ABANDONNER : table du PC).
-        private _pk = ["COMSPEC_RscCombo", "dKind", "Graphisme du plan : zone (polygone, 2 clics = rectangle), ligne, point ou direction"] call _mkc;
+        private _pk = ["COMSPEC_RscTocCombo", "dKind", "Graphisme du plan : zone (polygone, 2 clics = rectangle), ligne, point ou direction"] call _mkc;
         {
             _x params ["_cat", "_lbl", "_keys"];
             { private _k = (_cat get "kinds") getOrDefault [_x, []]; if ((count _k) >= 3) then { private _i = _pk lbAdd ((format ["%1 · %2", _lbl, _k select 2]) call comspec_atak_native_fnc_tr); _pk lbSetData [_i, _x]; }; } forEach _keys;
         } forEach ((_cat get "cats") apply { [_cat, _x select 1, _x select 2] });
         _pk lbSetCurSel 0;
-        ["COMSPEC_RscEdit", "dPlanTxt", "Texte du graphisme (vide : celui du type). Exemple : OBJ RAVEN, PL BLUE"] call _mkc;
+        ["COMSPEC_RscTocEdit", "dPlanTxt", "Texte du graphisme (vide : celui du type). Exemple : OBJ RAVEN, PL BLUE"] call _mkc;
         // Palette des marqueurs du téléphone (camp, type, couleur, texte, durée, canal).
         ([] call comspec_atak_native_fnc_markerPaletteData) params ["_affs", "_typesBy"];
-        private _ma = ["COMSPEC_RscCombo", "mAff", "Camp du marqueur, comme la palette de l'ATAK"] call _mkc;
+        private _ma = ["COMSPEC_RscTocCombo", "mAff", "Camp du marqueur, comme la palette de l'ATAK"] call _mkc;
         { private _i = _ma lbAdd ((_x select 1) call comspec_atak_native_fnc_tr); _ma lbSetData [_i, _x select 0]; } forEach _affs;
         _ma lbSetCurSel ((_affs findIf { (_x select 0) isEqualTo (_s getOrDefault ["markerAff", "o"]) }) max 0);
         _ma ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap])) set ["markerAff", _c lbData _i]; ["types"] call comspec_atak_native_fnc_tocDraw; }];
-        private _mt = ["COMSPEC_RscCombo", "mType", "Type du marqueur"] call _mkc;
+        private _mt = ["COMSPEC_RscTocCombo", "mType", "Type du marqueur"] call _mkc;
         _mt ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap])) set ["markerType", _c lbData _i]; }];
-        private _mc = ["COMSPEC_RscCombo", "mColor", "Couleur du marqueur"] call _mkc;
+        private _mc = ["COMSPEC_RscTocCombo", "mColor", "Couleur du marqueur"] call _mkc;
         { private _i = _mc lbAdd ((_x select 0) call comspec_atak_native_fnc_tr); _mc lbSetData [_i, _x select 1]; } forEach ([["Couleur du camp", "AUTO"]] + _cols);
         _mc lbSetCurSel 0;
         _mc ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap])) set ["markerColor", _c lbData _i]; }];
-        ["COMSPEC_RscEdit", "mText", "Nom du marqueur (vide : nom automatique, comme l'ATAK). Exemple : CP NORD"] call _mkc;
-        private _md = ["COMSPEC_RscCombo", "mTtl", "Durée du marqueur : effacé pour tous à l'échéance, comme sur l'ATAK"] call _mkc;
+        ["COMSPEC_RscTocEdit", "mText", "Nom du marqueur (vide : nom automatique, comme l'ATAK). Exemple : CP NORD"] call _mkc;
+        private _md = ["COMSPEC_RscTocCombo", "mTtl", "Durée du marqueur : effacé pour tous à l'échéance, comme sur l'ATAK"] call _mkc;
         { private _i = _md lbAdd ((_x select 0) call comspec_atak_native_fnc_tr); _md lbSetValue [_i, _x select 1]; } forEach [["Permanent", 0], ["15 min", 15], ["30 min", 30], ["1 h", 60], ["2 h", 120]];
         _md lbSetCurSel ((([0, 15, 30, 60, 120] find (profileNamespace getVariable ["COMSPEC_ATAK_MarkerTtl", 0])) max 0));
         _md ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; profileNamespace setVariable ["COMSPEC_ATAK_MarkerTtl", _c lbValue _i]; [] call comspec_atak_native_fnc_saveProfile; }];
-        private _mn = ["COMSPEC_RscCombo", "mChan", "Canal des marqueurs et des traits (qui les voit), comme la palette de l'ATAK"] call _mkc;
+        private _mn = ["COMSPEC_RscTocCombo", "mChan", "Canal des marqueurs et des traits (qui les voit), comme la palette de l'ATAK"] call _mkc;
         for "_i" from 0 to 5 do { private _j = _mn lbAdd ((["channelName", _i] call comspec_atak_native_fnc_markerPlace) call comspec_atak_native_fnc_tr); _mn lbSetValue [_j, _i]; };
         _mn lbSetCurSel ((["channel"] call comspec_atak_native_fnc_markerPlace) max 0 min 5);
         _mn ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ["setChannel", _c lbValue _i] call comspec_atak_native_fnc_markerPlace; }];

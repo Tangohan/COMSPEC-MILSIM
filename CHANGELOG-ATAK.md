@@ -55,6 +55,83 @@ EN : A TOC console and operation plans on Athena
 - Pages `/atak/toc` et `/atak/toc/plans`, droits `atak.toc.use` et `atak.toc.manage`, étapes 4370 et 4380. Détail : `docs/TOC-WEB.md`.
 - Lien avec le jeu par les canaux existants (BriefingPlan.Push canal `toc_room`, commandes web genre `toc`) : branche du mod `feat/atak-toc-web-sync`, sans changement de COMSPEC Link.
 
+## Pack 4.6.0 Washington : écrans TOC réglables dans Eden et Zeus, écrans allumés avec un serveur plus ancien, carte photo fluide, zoom de la carte mini centré (ATAK natif 4.6.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.6.0 : des écrans TOC réglables dans Eden et Zeus, et qui s'allument partout
+- **Réglage des écrans** : chaque écran du TOC se règle dans Eden (attributs de l'objet) et dans Zeus (double-clic, fenêtre « Configurer l'écran ») : nom, camp, affichage, dalles d'un mur, luminosité, salle, distance d'affichage.
+- **Serveur plus ancien** : les écrans TOC s'allument même si le serveur a une version plus ancienne du mod, avec un message clair qui donne les deux versions ; l'action « Ouvrir le PC du poste » est toujours là.
+- **Carte photo** : la carte en photo satellite ne saccade plus.
+- **Zoom de la carte mini** : zoomer ou dézoomer le téléphone en petit garde la carte centrée sur vous, même en véhicule.
+EN : ATAK 4.6.0: TOC screens you can set up in Eden and Zeus, and that light up everywhere
+- **Screen settings**: every TOC screen is set up in Eden (object attributes) and in Zeus (double-click, "Configure the screen" window): name, side, display, wall panels, brightness, room, display distance.
+- **Older server**: TOC screens light up even when the server runs an older version of the mod, with a clear message giving both versions; the "Open the post PC" action is always there.
+- **Photo map**: the satellite photo map no longer stutters.
+- **Mini map zoom**: zooming the phone in its small view in or out keeps the map centred on you, even in a vehicle.
+
+### Détail technique
+
+**Écrans TOC allumés même avec un serveur plus ancien, réglage complet dans Eden et Zeus**
+
+Retour de TTRD du 11/11 (4.5.0, serveur dédié plus ancien) : mur d'images noir alors que le téléphone annonçait « Écran TOC : carte et flux », « L'écran n'a pas répondu » après 8 s, pas d'action « Ouvrir le PC du poste ».
+
+- **Cause** : `fn_tocScreen` « add » envoyait toujours la désignation au serveur, sans réponse attendue ; un serveur plus ancien ne connaît pas la classe de l'objet (objet nul chez lui, sortie muette) ; « ensure » annonçait quand même le succès ; `fn_screenCast` attendait 8 s puis donnait un message vague. L'action « Ouvrir le PC du poste » n'existait que sur un écran déjà désigné par le serveur.
+- **`fn_tocConfig` (nouveau)** : « mode » compare `COMSPEC_ATAK_ServerVersion` à la version du joueur (absente ou plus ancienne en MAJEUR.MINEUR : repli) ; « local » fait exécuter « add », « panels », « remove », « spawn », « view » (et `fn_screenCast` « add » / « remove ») sur le poste du joueur, par les mêmes variables publiques ; « ack » vérifie 3 s après une demande au serveur et bascule l'objet en repli (`COMSPEC_ATAK_TocFb`) ; message avec les deux versions ; une ligne au journal à la connexion (version du serveur, du poste, fonctions TOC du serveur, par demande / réponse `tocPing` / `tocPong`). Essai sur un serveur à jour : `COMSPEC_ATAK_TocForceFallback = true`.
+- **Ouvrir le PC du poste** : en tête du menu ACE (écran COMSPEC pas encore désigné : il le devient), action de la molette sur le poste le plus proche (distance au centre de l'écran, `COMSPEC_ATAK_TocActObj`), bouton OUVRIR LE PC de l'app Poste TOC, entrée du clic droit ZEN. Point ACE des modèles du mod au centre de la boîte (`acePos`), bandeau horloge et plaque de nom compris.
+- **Eden** : macro `COMSPEC_SCREEN_ATTRIBUTES` étendue (usage, nom, camp, affichage dont Éteint, escouade, satellite, caméra, mosaïque, dalles du mur, luminosité, poste TOC, salle, distance d'affichage), aide et exemple pour chacun ; « eden » applique sur le serveur, ou par un joueur si le serveur est ancien.
+- **Zeus** : fenêtre « Configurer l'écran » (ZEN s'il est chargé, sinon `fn_zeusForm`), mêmes champs, mêmes valeurs (« make » / « apply ») : appliquer, tester l'image, identifier, copier vers d'autres écrans, surface de l'image, retirer, supprimer ; résultat écrit dans la fenêtre. Double-clic, clic droit « Configurer l'objet » (aussi sur les écrans du jeu déclarés dans `CfgComspecTocScreens`), bouton CONFIGURER du Centre Zeus.
+- **Nouveaux réglages d'écran** : `COMSPEC_ATAK_TocOpt` [luminosité, distance d'affichage], lus par « tick » (voile sombre, distance par écran), gardés par `fn_tocPersist`. Dalle « OFF » dans l'écriture des dalles d'un mur.
+- Tests : `tests/Unit/AtakTocScreenConfigAssetTest.php` ; en jeu : `["selfTest"] call comspec_atak_native_fnc_tocConfig`.
+- Limites : en repli, rien n'est gardé d'une partie à l'autre, les salles TOC restent tenues par le serveur, et un objet dont la classe est inconnue du serveur n'existe que chez le joueur qui l'a posé.
+
+**Carte photo : rafale d'erreurs `fn_photoMap:277` corrigée**
+
+- La mémoire des tuiles déjà dessinées (`COMSPEC_ATAK_PhotoSeen`) partageait son nom avec un autre compteur (nombre) : `count` / `getOrDefault` sur un nombre à chaque image, rafale d'erreurs au RPT et carte qui saccade. Renommée `COMSPEC_ATAK_PhotoTileSeen`, et remise à neuf si la valeur trouvée n'est pas une table.
+
+**Zoom de la carte du téléphone porté qui reste centré sur vous**
+
+- `fn_mapZoom` : centre recalculé à chaque image (position GPS du moment, unité suivie, ou centre visible fixe), cible par la fonction pure `fn_mapZoomAim` (décalage centre interne / visible normalisé par l'échelle, gardé d'un cran à l'autre), `comspec_lastAim` tenu à jour ; plus de `fn_mapCenter` final quand on suit (il visait avec l'ancien décalage).
+- `comspec_zoomUntil` : le suivi image par image (`fn_mapOnDraw`) et le recentrage de `fn_statusUpdate` se taisent pendant le zoom. Auto-contrôle `["check"] call comspec_atak_native_fnc_mapZoomAim`. Test : `AtakMapMiniZoomFollowAssetTest`.
+
+## Pack 4.5.0 Washington : rendu professionnel des écrans TOC et du PC du poste, satellite devenu console ISR (ATAK natif 4.5.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.5.0 : un TOC au look professionnel et un satellite devenu console ISR
+- **Nouveau look** : tous les écrans du TOC et le PC du poste ont le rendu d'une vraie salle d'opérations, lisible de loin, avec des tableaux nets et plus aucun texte coupé.
+- **Console ISR** : le satellite montre une image thermique blanc chaud (et d'autres capteurs au choix) sous un vrai HUD de capteur : réticule, échelle, grille et heure ZULU. La nuit, l'image n'est plus noire.
+- **Pointage et zoom** : visez une grille, cliquez sur la carte ou suivez un groupe, et zoomez à la molette.
+- **Sur le mur** : envoyez l'image du satellite sur l'écran mural de votre choix.
+EN : ATAK 4.5.0: a professional-looking TOC and a satellite that becomes an ISR console
+- **New look**: every TOC screen and the post laptop look like a real operations room, readable from a distance, with clean tables and no more clipped text.
+- **ISR console**: the satellite shows a white-hot thermal image (and other sensors to choose from) under a real sensor HUD: reticle, scale, grid and ZULU time. At night the image is no longer black.
+- **Tasking and zoom**: aim at a grid, click on the map or follow a group, and zoom with the mouse wheel.
+- **On the wall**: send the satellite image to the wall screen of your choice.
+
+### Détail technique
+
+**Écrans du TOC et PC du poste refaits, rendu de salle d'opérations**
+
+- Thème unique `fn_tocTheme` (jetons de couleur, échelle de texte, polices RobotoCondensed / EtelkaMonospacePro, espacements, régions de chaque affichage en 1600 x 900 et 1600 x 400, colonnes des tableaux, règle sous FLASH), tables JSON lues aussi par `tools/toc_mockups.py` (maquettes PNG) et `AtakTocThemeTest` ; `ui/toc_theme.hpp` (classes du PC). Doc : `docs/TOC-THEME.md`.
+- `fn_tocBoard` réécrit en rendu « immédiat » par calques (fonds, filets et pastilles, images, satellite, cadres, textes) : en-tête, FLASH et pied communs, panneaux SPLIT / TOC / SQUAD, et FEED, NET, ORBAT, CLOCK, LOG, EXCHECK, KILLS, REQ, MOSAIC, STRIP, PLATE en tableaux à colonnes fixes ; SAT (console ISR) gardé, aligné sur les jetons (`fn_tocSat` : encre, pistes, plaques).
+- `fn_tocScreen` : la carte seule (fond teinté puis voilé, quadrillage sur plaques, plaques à liseré d'état et filet de rappel, légende) ; FEED, NET et ORBAT passent en tableaux ; tout le reste par `fn_tocBoard`.
+- `fn_tocLaptop` : onglets sur deux rangées pleine largeur (filet accent sous l'onglet choisi), titre et état du panneau de chaque onglet, couleurs et classes du thème (boutons à trois états, champs, listes), heures en monospace.
+- Tests : `AtakTocThemeTest` (contraste ≥ 4,5:1, texte mural ≥ 28 px, régions dans le cadre et sans chevauchement avec et sans FLASH, colonnes, aucune couleur hors du thème, anglais), `AtakTocLaptopLayoutTest` et `AtakTocScreenDisplaysAssetTest` mis à jour.
+- À juger en jeu : rendu réel des polices du jeu (largeur d'Etelka), lisibilité à 3-6 m, teinte de la carte selon la photo du terrain, coût de la réserve de contrôles.
+
+**Le satellite du TOC devient une console ISR**
+
+- `fn_tocSat` : table des capteurs (`_sensors`) et effet `setPiPEffect` (wiki BI : 0 normal, 1 vision nocturne, 2 thermique blanc chaud, 3 correction de couleur, 7 thermique de remplacement « inversé » = noir chaud). DAY `[0]` (nuit : DAYN, correction de couleur ×3,5), NV `[1]`, WHOT `[2]`, BHOT `[7]`, FUSW `[2]`, FUSB `[7]` + contours des bâtiments (`nearestObjects House`, 40 au plus, recalculés toutes les 1,5 s, seulement sous 760 m de large) dessinés en traits tournés (`ctrlSetAngle`) : un r2t n'accepte qu'un effet à la fois. AUTO : DAY le jour, WHOT la nuit (avant : vision nocturne). « TI » de la 4.4 lu comme WHOT.
+- Zoom : 1× = 500 m de large, demi-largeur `250 / zoom`, bornée de 0,25× à 8× (31,25 à 1000 m ; avant 40 à 2500 m) ; actions `zoomTo` et `opt` (`jit` dérive, `terr` suivi du relief) dans `fn_tocRoom`, état du satellite à 9 champs (options). Modes purs `zoomOf`, `halfOf`, `altFov`, `fovDeg`, `scale` (largeur = 2 · hauteur · tan(fov / 2)), `bar` (barre d'échelle), `selfTest`.
+- Caméra : zoom et position glissés (fov lissé), dérive optionnelle (éteinte), relief non suivi en option ; résolution de la cible par poste : H 2048 x 1024 (PC du poste), M 1024 x 512 (écran à 8 m au plus), L 512 x 256 (plus loin), changée par `retarget` (même caméra, nouvelle cible). Une caméra par satellite et par poste, seulement si regardée (logique et plafond `toc_cam_max` / `toc_cam_range` inchangés).
+- HUD (`hudMake` / `hudPaint` / `hudHide`) : contrôles de la même texture, jamais `drawIcon3D` ; coins, réticule, barre d'échelle, 6 lignes de données (police à chasse fixe, textes traduits et mesurés seulement quand ils changent), quadrillage, contours, marqueurs et tâches (`allMapMarkers` visibles du joueur, `simpleTasks`), pistes amies du réseau ATAK seulement (cadre, symbole, indicatif, groupe, état). PC : 4 fois par seconde, onglet SAT ouvert seulement ; mur : 4 fois par seconde au plus.
+- `fn_tocLaptop` : console SAT refaite sur la grille du PC (POINTAGE, zoom, CAPTEUR, DÉPLACER, CALQUES, options, ÉCRAN ISR), image 16:9 rognée dans un groupe (`sClip`) pour couvrir sa zone, pointage sur la carte (`satMap`), INSCRIRE (main courante), MARQUER (marqueur du canal Camp via `fn_markerNet`), ENVOYER / EFFACER par écran ou dalle de la salle (`fn_tocHall`, `panelOf`, `apply`).
+- `fn_tocBoard` : SAT plein cadre (texture 16:9), en-tête masqué, bandeau « Lecture seule » en bas, FLASH en haut ; correction d'une variable inconnue (`_rv`) dans la mise en page des tableaux à deux colonnes.
+- `fn_pageToc` : capteurs WHOT, BHOT, FUS W, FUS B au téléphone.
+- Tests : `AtakTocSatIsrTest` (capteurs, zoom, échelle comparée au `selfTest`, HUD, mur, anglais), `AtakTocLaptopLayoutTest` (console SAT en 4:3, 16:10, 16:9 et 21:9, image sans bande). Guide Steam 37 (poste TOC) mis à jour.
+- À tester en jeu : rendu des capteurs (BHOT `[7]`, fusions), lisibilité du HUD sur image claire et sombre, traits tournés des contours, molette et glisser dans le groupe de découpe, écrans muraux à 3-6 m, ENVOYER sur une dalle.
+
 ## SSE 1.9.1 : tuto des extensions lisible, fenêtre « IA de la zone » réparée, fenêtres qui s'arrêtaient à moitié (SSE 1.9.1)
 
 ### Résumé joueur

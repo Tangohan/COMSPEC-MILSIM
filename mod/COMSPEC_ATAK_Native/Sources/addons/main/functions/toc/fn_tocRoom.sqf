@@ -8,8 +8,10 @@
       0 révision,
       1 chronos      [[id, nom, genre "UP" (chrono) | "DOWN" (compte à rebours) | "AT" (heure H en ZULU), valeur
                        (durée en s pour DOWN, minute du jour ZULU pour AT), en marche, cumul en s, départ (serverTime)]...]
-      2 satellites   [SAT 1, SAT 2] : [x, y, demi-largeur au sol en m, image "AUTO" | "DAY" | "NV" | "TI", suivi "" | "U" | "G",
-                       cible du suivi (netId de l'unité ou nom du groupe), opérateur qui a la main (libellé), son UID]
+      2 satellites   [SAT 1, SAT 2] : [x, y, demi-largeur au sol en m (31,25 à 1000 : zoom 8× à 0,25×, fn_tocSat),
+                       capteur "AUTO" | "DAY" | "NV" | "WHOT" | "BHOT" | "FUSW" | "FUSB", suivi "" | "U" | "G",
+                       cible du suivi (netId de l'unité ou nom du groupe), opérateur qui a la main (libellé), son UID,
+                       options [dérive de la plateforme, suivi du relief]]
       3 main courante [[heure ZULU, genre, auteur, texte]...] (les plus récentes à la fin, 150 au plus)
       4 exécution    [[id, n°, événement, mot de code, élément, heure prévue, heure réelle ZULU ("" : pas encore)]...]
       5 demandes     [[id, heure ZULU, genre, demandeur, UID du demandeur, grille, texte, statut, réponse, [x, y]]...]
@@ -31,7 +33,8 @@
       ["me"]                              client : libellé de l'opérateur « indicatif du poste · nom »
     Actions (serveur) : timerAdd [nom, genre, valeur] | timerStart id | timerStop id | timerReset id | timerDel id
       sat [n° 0-1, clé, valeur] : clés take [x, y] | release | center [x, y] | pan [dx, dy] (part de la vue) | zoom facteur
-      | mode "AUTO" | "DAY" | "NV" | "TI" | follow ["U" | "G", cible] | unfollow
+      | zoomTo zoom affiché (0,25 à 8) | mode capteur ("TI" de la 4.4 : "WHOT") | follow ["U" | "G", cible] | unfollow
+      | opt ["jit" | "terr", vrai | faux]
       log [genre, texte] | flash texte | flashClear | login poste | logout
       exAdd [événement, mot de code, élément, heure prévue] | exDone id | exUndo id | exDel id | exSet [lignes]
       reqAdd [genre, demandeur, UID, grille, texte, [x, y]] | reqSet [id, statut, réponse] | reqDel id
@@ -42,9 +45,9 @@ params [["_mode", "state"], ["_a", []]];
 private _fn = comspec_atak_native_fnc_tocRoom;
 private _sides = ["WEST", "EAST", "GUER", "CIV"];
 private _two = { private _n = floor _this; [str _n, "0" + str _n] select (_n < 10) };
-// Satellite sans position (-1) : centré sur le poste à la première prise en main. Image AUTO : jour le jour, vision
-// nocturne la nuit (fn_tocSat « effect »).
-private _blank = { [0, [], [[-1, -1, 600, "AUTO", "", "", "", ""], [-1, -1, 600, "AUTO", "", "", "", ""]], [], [], [], [], [], []] };
+// Satellite sans position (-1) : centré sur le poste à la première prise en main, zoom 0,5× (1 km de large). Capteur
+// AUTO : jour le jour, thermique blanc chaud la nuit (fn_tocSat « effect »).
+private _blank = { [0, [], [[-1, -1, 500, "AUTO", "", "", "", "", [false, true]], [-1, -1, 500, "AUTO", "", "", "", "", [false, true]]], [], [], [], [], [], []] };
 switch (_mode) do {
     case "zulu": {
         systemTimeUTC params ["", "", "", "_h", "_mi", "_s"];
@@ -283,8 +286,19 @@ switch (_mode) do {
                         _s set [1, round (((_s select 1) + (_v select 1) * 2 * _h * 9 / 16) max 0 min worldSize)];
                         _s set [4, ""]; _s set [5, ""];
                     };
-                    case "zoom": { if (_v isEqualType 0 && {_v > 0}) then { _s set [2, round (((_s select 2) * _v) max 40 min 2500)]; }; };
-                    case "mode": { if (_v in ["AUTO", "DAY", "NV", "TI"]) then { _s set [3, _v]; }; };
+                    // Zoom continu de 0,25× à 8× (demi-largeur 1000 m à 31,25 m, fn_tocSat « halfOf »), au décimètre.
+                    case "zoom": { if (_v isEqualType 0 && {_v > 0}) then { _s set [2, (round ((((_s select 2) * _v) max 31.25 min 1000) * 10)) / 10]; }; };
+                    case "zoomTo": { if (_v isEqualType 0 && {_v > 0}) then { _s set [2, (round ((["halfOf", _v] call comspec_atak_native_fnc_tocSat) * 10)) / 10]; }; };
+                    case "mode": {
+                        if (_v isEqualTo "TI") then { _v = "WHOT"; };
+                        if (_v in ["AUTO", "DAY", "NV", "WHOT", "BHOT", "FUSW", "FUSB"]) then { _s set [3, _v]; };
+                    };
+                    case "opt": {
+                        _v params [["_ok", ""], ["_on", false]];
+                        private _o = +(_s param [8, [false, true]]);
+                        private _i = ["jit", "terr"] find _ok;
+                        if (_i >= 0 && {_on isEqualType true}) then { _o set [_i, _on]; _s set [8, _o]; };
+                    };
                     case "follow": {
                         _v params [["_fk", ""], ["_fid", ""]];
                         if (_fk in ["U", "G"] && {_fid isEqualType ""} && {_fid isNotEqualTo ""}) then { _s set [4, _fk]; _s set [5, _fid select [0, 40]]; };

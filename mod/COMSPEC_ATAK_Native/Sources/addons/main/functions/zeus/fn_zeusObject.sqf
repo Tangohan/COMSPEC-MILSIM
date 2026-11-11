@@ -5,7 +5,12 @@
     Entrées : double-clic sur l'objet (fn_zeusCentre « hook »), clic droit ZEN, bouton CONFIGURER du Centre Zeus.
     Droits : l'ouverture passe par le serveur (fn_adminAllowed). Les réglages suivent ensuite le chemin de chaque module.
     Actions :
-      "kind" [objet]    -> "screen" | "projector" | "digital" | "paper" | "box" | ""
+      "kind" [objet, large]  -> "screen" | "projector" | "digital" | "paper" | "box" | ""
+                        large (clic droit, bouton CONFIGURER) : aussi les écrans du jeu ou d'autres mods déclarés dans
+                        CfgComspecTocScreens ; sans lui (double-clic), seulement les écrans COMSPEC et les objets déjà
+                        désignés, pour ne pas prendre la place de la fenêtre d'attributs d'une TV du jeu
+    Écran : la fenêtre « Configurer l'écran » (fn_tocConfig « zeus ») s'ouvre directement. Serveur ancien ou sans le
+    mod : il ne répondrait pas à la demande, le Zeus ouvre la fenêtre lui-même.
       "request" [objet] demande au serveur          "open" [objet] (réponse du serveur)
       "double" [objet]  double-clic : referme la fenêtre d'attributs ouverte en même temps, puis "request"
       "run" [id, objet] applique un choix           "initServer" (postInit serveur)
@@ -14,12 +19,13 @@ params [["_act", ""], ["_arg", []]];
 disableSerialization;
 switch (_act) do {
     case "kind": {
-        _arg params [["_o", objNull]];
+        _arg params [["_o", objNull], ["_wide", false]];
         if (isNull _o) exitWith { "" };
         private _cls = typeOf _o;
         private _cfg = configOf _o;
         if ((getNumber (_cfg >> "comspec_projector")) > 0) exitWith { "projector" };
-        if ((getNumber (_cfg >> "comspec_screen")) > 0 || {(_cls find "COMSPEC_ATAK_Screen_") isEqualTo 0} || {(_cls find "COMSPEC_ATAK_ProjScreen") isEqualTo 0}) exitWith { "screen" };
+        if ((getNumber (_cfg >> "comspec_screen")) > 0 || {(_cls find "COMSPEC_ATAK_Screen_") isEqualTo 0} || {(_cls find "COMSPEC_ATAK_ProjScreen") isEqualTo 0}
+            || {(count (_o getVariable ["COMSPEC_ATAK_TocScr", []])) >= 8} || {_wide && {["isScreen", _o] call comspec_atak_native_fnc_tocConfig}}) exitWith { "screen" };
         if (_cls in ["COMSPEC_SSE_Obj_Smartphone", "COMSPEC_SSE_Obj_SatPhone", "COMSPEC_SSE_Obj_Radio", "COMSPEC_SSE_Obj_Laptop", "COMSPEC_SSE_Obj_Tablet", "COMSPEC_SSE_Obj_PCTower", "COMSPEC_SSE_Obj_HardDrive", "COMSPEC_SSE_Obj_USB", "COMSPEC_SSE_Obj_SDCard"]) exitWith { "digital" };
         if ((_cls find "COMSPEC_SSE_Obj_") isEqualTo 0) exitWith { "paper" };
         if ((_cls find "COMSPEC_SSE_Box_") isEqualTo 0 || {_cls isEqualTo "COMSPEC_SSE_DomexCase"}) exitWith { "box" };
@@ -38,7 +44,9 @@ switch (_act) do {
     };
     case "request": {
         _arg params [["_o", objNull]];
-        if (isNull _o || {(["kind", [_o]] call comspec_atak_native_fnc_zeusObject) isEqualTo ""}) exitWith { ["feedback", ["ATAK : sélectionnez un écran, une preuve ou une caisse."]] call comspec_atak_native_fnc_zeusMenu; };
+        if (isNull _o || {(["kind", [_o, true]] call comspec_atak_native_fnc_zeusObject) isEqualTo ""}) exitWith { ["feedback", ["ATAK : sélectionnez un écran, une preuve ou une caisse."]] call comspec_atak_native_fnc_zeusMenu; };
+        // Serveur ancien ou sans le mod (fn_tocConfig « mode ») : pas de réponse à attendre, le Zeus ouvre lui-même.
+        if ((((["mode"] call comspec_atak_native_fnc_tocConfig) select 0) isEqualTo "fallback") && {!isNull (getAssignedCuratorLogic player)}) exitWith { ["open", [_o]] call comspec_atak_native_fnc_zeusObject; };
         ["comspec_atak_native_zeusObject", [player, _o]] call CBA_fnc_serverEvent;
     };
     case "double": {
@@ -56,7 +64,9 @@ switch (_act) do {
     case "open": {
         _arg params [["_o", objNull]];
         if (isNull _o || {isNull (findDisplay 312)}) exitWith {};
-        private _kind = ["kind", [_o]] call comspec_atak_native_fnc_zeusObject;
+        private _kind = ["kind", [_o, true]] call comspec_atak_native_fnc_zeusObject;
+        // Écran : fenêtre « Configurer l'écran », mêmes réglages que les attributs Eden (fn_tocConfig).
+        if (_kind isEqualTo "screen") exitWith { ["zeus", [_o]] call comspec_atak_native_fnc_tocConfig; };
         private _has = { !isNil _this };
         private _state = [];
         private _opts = [];

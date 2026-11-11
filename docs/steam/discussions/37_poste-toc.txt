@@ -82,20 +82,22 @@ Bandeau horloge et plaque de nom (écrans 4:1) : le bandeau affiche l'heure ZULU
 [h3]Les affichages[/h3]
 [list]
 [*][b]Carte et flux, carte seule, flux seul, réseau, ORBAT, PIP du poste, caméra en direct[/b] : comme avant.
-[*][b]Vue satellite (SAT 1 ou SAT 2)[/b] : une vue aérienne en direct, nord en haut, en jour, vision nocturne verte ou thermique. Chaque allié porteur d'un ATAK y est encadré, avec son symbole et son indicatif : en couleur s'il est en direct, en gris si son dernier point est ancien, perdu ou si son téléphone est éteint. Une unité sans ATAK n'est jamais encadrée, un ennemi non plus. Le bandeau du haut dit « Lecture seule », le satellite, l'image et qui le pilote.
+[*][b]Vue satellite (SAT 1 ou SAT 2)[/b] : une vue aérienne en direct, nord en haut, en plein écran, comme une vraie image ISR : capteur jour, vision nocturne, thermique blanc chaud ou noir chaud, ou fusion. Le HUD du capteur est incrusté en grand, lisible à quelques mètres : coins du cadre, réticule au centre, barre d'échelle, capteur et zoom, hauteur, grille et altitude du centre, heure ZULU. Chaque allié porteur d'un ATAK y est encadré, avec son symbole, son indicatif et son groupe : en couleur s'il est en direct, en gris si son dernier point est ancien, perdu ou si son téléphone est éteint. Une unité sans ATAK n'est jamais encadrée, un ennemi non plus. Les marqueurs de la carte et les tâches de la mission apparaissent aussi. Le bandeau du bas dit « Lecture seule », le satellite, le capteur et qui le pilote.
 [*][b]Horloge et chronos[/b] : heure ZULU et heure locale de la mission en grand, puis le tableau des chronos du poste.
 [*][b]Écran d'escouade[/b] : un seul groupe. Son nom en grand, ses membres et leur état ATAK (en direct, point ancien, point perdu, téléphone hors ligne) avec leur grille, son dernier compte rendu, et la carte cadrée sur lui seul. Un écran par élément : c'est le mur de plaques nominatives d'une vraie salle.
 [/list]
 
 [h3]Piloter un satellite[/h3]
 Chaque camp a deux satellites, SAT 1 et SAT 2. Un seul opérateur pilote un satellite à la fois.
+Au PC du poste, l'onglet [b]SAT[/b] est une console ISR : l'image prend la place de la carte, sans bande noire, sous le HUD du capteur ; la console est à droite.
 [olist]
-[*]Au PC du poste, ouvrez l'onglet [b]SAT[/b] : l'image satellite prend la place de la carte. Choisissez SAT 1 ou SAT 2.
-[*]Touchez [b]PRENDRE LA MAIN[/b]. Si un autre opérateur a la main, le bandeau dit « Lecture seule » et son nom.
-[*]Déplacez la vue avec [b]▲ NORD[/b], [b]▼ SUD[/b], [b]◀ OUEST[/b], [b]EST ▶[/b], ou cliquez sur l'image : elle se centre sur ce point. [b]ZOOM +[/b] et [b]ZOOM −[/b] règlent la largeur de la vue (de 80 m à 5 km). [b]POSTE[/b] la ramène au-dessus du poste.
-[*]Choisissez l'image : [b]JOUR[/b], [b]NUIT[/b] (vision nocturne verte) ou [b]THERMIQUE[/b].
-[*]Pour suivre un groupe ou une unité, choisissez-le dans la liste puis [b]SUIVRE[/b] : le satellite suit sa position telle que le réseau ATAK la connaît.
-[*][b]AFFICHER CE SATELLITE SUR LES ÉCRANS DU POSTE[/b] met tous les écrans à moins de 30 m en vue satellite.
+[*]Choisissez [b]SAT 1[/b] ou [b]SAT 2[/b], puis [b]PRENDRE LA MAIN[/b]. L'en-tête dit « ASSIGNÉ ICI », « LIBRE » ou « PILOTÉ PAR » un autre opérateur (lecture seule).
+[*][b]POINTAGE[/b] : tapez une grille puis [b]VISER LA GRILLE[/b] ; ou [b]SUR LA CARTE[/b], puis un clic sur la carte place la vue ; ou choisissez un groupe ou une unité du réseau puis [b]SUIVRE[/b] ([b]ARRÊTER LE SUIVI[/b] pour rester sur place). [b]INSCRIRE[/b] écrit la vue à la main courante (grille, capteur, zoom et votre note) ; [b]MARQUER[/b] pose au centre un repère visible par tout le camp, au nom de la note.
+[*][b]ZOOM −[/b] et [b]ZOOM +[/b], ou la molette sur l'image : de 0,25× (2 km de large) à 8× (62 m). Le zoom est lu au milieu de la console ; le HUD donne la hauteur et la barre d'échelle.
+[*][b]CAPTEUR[/b] : [b]AUTO[/b] (jour le jour, thermique blanc chaud la nuit : plus d'image noire), [b]JOUR[/b] (éclairci la nuit), [b]NUIT[/b] (vision nocturne verte), [b]WHOT[/b] (thermique, le chaud en blanc), [b]BHOT[/b] (thermique, le chaud en noir), [b]FUS W[/b] et [b]FUS B[/b] (fusion : thermique et contours des bâtiments). Le thermique montre seulement ce que le rendu thermique du jeu montre.
+[*][b]DÉPLACER[/b] : [b]OUEST[/b], [b]NORD[/b], [b]POSTE[/b] (au-dessus du poste), [b]SUD[/b], [b]EST[/b] ; ou glissez l'image ; un clic sur l'image la centre sur ce point.
+[*][b]CALQUES[/b] (sur ce PC seulement) : [b]MARQUEURS[/b] (marqueurs et tâches), [b]PISTES[/b] (alliés du réseau), [b]GRILLE[/b] (quadrillage de 100 m), [b]DONNÉES[/b] (lignes du HUD), [b]CADRES[/b]. [b]DÉRIVE[/b] simule la dérive lente de la plateforme (éteinte par défaut), [b]SUIVI DU RELIEF[/b] garde la même hauteur au-dessus du sol, [b]TOUT RAFRAÎCHIR[/b] recharge les pistes et les marqueurs.
+[*][b]ÉCRAN ISR[/b] : choisissez un écran ou une dalle de la salle (ou tous les écrans à moins de 30 m), puis [b]ENVOYER[/b] : il montre ce satellite en lecture seule. [b]EFFACER[/b] le remet sur la carte et le flux.
 [*][b]RENDRE LA MAIN[/b] quand vous partez. Fermer le PC la rend aussi.
 [/olist]
 L'app [b]Poste TOC[/b] du téléphone a les mêmes commandes (section « Satellites du poste »).
@@ -247,20 +249,22 @@ Clock strip and name plate (4:1 screens): the strip shows ZULU time, local time 
 [h3]The displays[/h3]
 [list]
 [*][b]Map and feed, map only, feed only, network, ORBAT, post PIP, live camera[/b]: as before.
-[*][b]Satellite view (SAT 1 or SAT 2)[/b]: a live aerial view, north up, in day, green night vision or thermal. Every ally carrying an ATAK gets a frame, with their symbol and callsign: in colour when live, in grey when their last point is stale or lost or their phone is off. A unit without ATAK is never framed, nor is an enemy. The top strip says « Read only », the satellite, the image and who is in control.
+[*][b]Satellite view (SAT 1 or SAT 2)[/b]: a live aerial view, north up, full screen, like a real ISR feed: day sensor, night vision, white-hot or black-hot thermal, or fused. The sensor HUD is burned in, large enough to read from a few metres: frame corners, centre reticle, scale bar, sensor and zoom, height, grid and elevation of the centre, ZULU time. Every ally carrying an ATAK gets a frame, with their symbol, callsign and group: in colour when live, in grey when their last point is stale or lost or their phone is off. A unit without ATAK is never framed, nor is an enemy. Map markers and mission tasks show too. The bottom strip says « Read only », the satellite, the sensor and who is in control.
 [*][b]Clock and timers[/b]: ZULU time and mission local time in large digits, then the post's timer board.
 [*][b]Squad screen[/b]: a single group. Its name in large letters, its members and their ATAK status (live, stale point, lost point, phone offline) with their grid, its last report, and the map framed on that group only. One screen per element: the name-plate wall of a real operations room.
 [/list]
 
 [h3]Controlling a satellite[/h3]
 Each side has two satellites, SAT 1 and SAT 2. Only one operator controls a satellite at a time.
+On the post laptop, the [b]SAT[/b] tab is an ISR console: the image replaces the map, with no black bands, under the sensor HUD; the console is on the right.
 [olist]
-[*]On the post laptop, open the [b]SAT[/b] tab: the satellite image replaces the map. Choose SAT 1 or SAT 2.
-[*]Tap [b]TAKE CONTROL[/b]. If another operator has control, the strip says « Read only » and their name.
-[*]Move the view with [b]▲ NORTH[/b], [b]▼ SOUTH[/b], [b]◀ WEST[/b], [b]EAST ▶[/b], or click the image: it centres on that point. [b]ZOOM +[/b] and [b]ZOOM −[/b] set the view width (80 m to 5 km). [b]POST[/b] brings it back above the post.
-[*]Choose the image: [b]DAY[/b], [b]NIGHT[/b] (green night vision) or [b]THERMAL[/b].
-[*]To follow a group or a unit, pick it in the list then [b]FOLLOW[/b]: the satellite follows its position as the ATAK network knows it.
-[*][b]SHOW THIS SATELLITE ON THE POST SCREENS[/b] switches every screen within 30 m to the satellite view.
+[*]Choose [b]SAT 1[/b] or [b]SAT 2[/b], then [b]TAKE CONTROL[/b]. The header says « ASSIGNED HERE », « FREE » or « CONTROLLED BY » another operator (read only).
+[*][b]TASKING[/b]: type a grid then [b]AIM AT GRID[/b]; or [b]ON THE MAP[/b], then a click on the map moves the view there; or pick a group or a unit of the network then [b]FOLLOW[/b] ([b]STOP TRACKING[/b] to stay in place). [b]LOG[/b] writes the view to the duty log (grid, sensor, zoom and your note); [b]TAG[/b] places a marker at the centre, visible to the whole side, named after the note.
+[*][b]ZOOM −[/b] and [b]ZOOM +[/b], or the mouse wheel on the image: from 0.25× (2 km wide) to 8× (62 m). The zoom is shown in the middle of the console; the HUD gives the height and the scale bar.
+[*][b]SENSOR[/b]: [b]AUTO[/b] (day by day, white-hot thermal at night: no more black image), [b]DAY[/b] (brightened at night), [b]NIGHT[/b] (green night vision), [b]WHOT[/b] (thermal, hot in white), [b]BHOT[/b] (thermal, hot in black), [b]FUS W[/b] and [b]FUS B[/b] (fused: thermal plus building outlines). Thermal only shows what the game's thermal rendering shows.
+[*][b]PAN[/b]: [b]WEST[/b], [b]NORTH[/b], [b]POST[/b] (above the post), [b]SOUTH[/b], [b]EAST[/b]; or drag the image; a click on the image centres it on that point.
+[*][b]OVERLAY[/b] (this laptop only): [b]MARKERS[/b] (markers and tasks), [b]TRACKS[/b] (network friendlies), [b]GRID[/b] (100 m grid), [b]DATA[/b] (HUD lines), [b]BOXES[/b]. [b]DRIFT[/b] simulates the slow drift of the platform (off by default), [b]TERRAIN FOLLOW[/b] keeps the same height above the ground, [b]REFRESH ALL[/b] reloads tracks and markers.
+[*][b]ISR SCREEN[/b]: pick a screen or a panel of the room (or every screen within 30 m), then [b]SEND[/b]: it shows this satellite, read only. [b]CLEAR[/b] puts it back on the map and feed.
 [*][b]RELEASE CONTROL[/b] when you leave. Closing the laptop releases it too.
 [/olist]
 The phone's [b]TOC post[/b] app has the same controls (« Post satellites » section).

@@ -22,7 +22,9 @@ private _rows = [
     ["memo", "tocMsg", "Message", _draft getOrDefault ["msg", ""], 2],
     ["segment", "Priorité", ["ROUTINE", "URGENT", "FLASH"] apply { [_x, ["prio", _x] call _act, _prio isEqualTo _x] }],
     ["buttons", [["ENVOYER AU CAMP", ["send"] call _act, true, true, "Diffuse le message à tous les joueurs de votre camp"],
-        ["NOUVEL ORDRE", ["order", ""] call _act, false, true, "Ouvre le rédacteur d'ordre (app Tâches)"]]]
+        ["NOUVEL ORDRE", ["order", ""] call _act, false, true, "Ouvre le rédacteur d'ordre (app Tâches)"]]],
+    // PC du poste depuis le téléphone, sans passer par l'action de l'objet (fn_tocConfig « openPc »).
+    ["buttons", [["OUVRIR LE PC", ["pc"] call _act, false, true, "Ouvre le PC du poste en grand : carte, groupes, ordres, écrans de la salle"]]]
 ];
 // Écrans TOC du poste (à 30 m) : caméra du camp à afficher en direct (fn_tocCam), ou retour à la carte et au flux.
 private _scr = (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x && {alive _x} && {(player distance _x) < 30} && {((_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [1, ""]) in ["", str side group player]} };
@@ -81,7 +83,10 @@ private _can = _mine || {_who isEqualTo ""};
 _rows pushBack ["buttons", [["PRENDRE LA MAIN", ["take"] call _sa, true, !_mine, ""], ["RENDRE LA MAIN", ["release"] call _sa, false, _mine, ""]]];
 _rows pushBack ["buttons", [["▲", ["pan", [0, 0.33]] call _sa, false, _can, "Nord"], ["▼", ["pan", [0, -0.33]] call _sa, false, _can, "Sud"], ["◀", ["pan", [-0.33, 0]] call _sa, false, _can, "Ouest"], ["▶", ["pan", [0.33, 0]] call _sa, false, _can, "Est"]]];
 _rows pushBack ["buttons", [["ZOOM +", ["zoom", 1 / 1.5] call _sa, false, _can, ""], ["ZOOM −", ["zoom", 1.5] call _sa, false, _can, ""], ["POSTE", ["home"] call _sa, false, _can, "Centre le satellite sur le poste"]]];
-_rows pushBack ["buttons", [["AUTO", ["mode", "AUTO"] call _sa, (_sst param [3, "AUTO"]) isEqualTo "AUTO", _can, "Jour le jour, vision nocturne la nuit"], ["JOUR", ["mode", "DAY"] call _sa, (_sst param [3, "AUTO"]) isEqualTo "DAY", _can, ""], ["NUIT", ["mode", "NV"] call _sa, (_sst param [3, ""]) isEqualTo "NV", _can, "Vision nocturne verte"], ["THERMIQUE", ["mode", "TI"] call _sa, (_sst param [3, ""]) isEqualTo "TI", _can, ""]]];
+// Capteurs de la console ISR (fn_tocSat) : AUTO (jour le jour, thermique la nuit), jour, nuit, thermiques, fusions.
+private _sm = _sst param [3, "AUTO"];
+_rows pushBack ["buttons", [["AUTO", ["mode", "AUTO"] call _sa, _sm isEqualTo "AUTO", _can, "Jour le jour, thermique blanc chaud la nuit"], ["JOUR", ["mode", "DAY"] call _sa, _sm isEqualTo "DAY", _can, ""], ["NUIT", ["mode", "NV"] call _sa, _sm isEqualTo "NV", _can, "Vision nocturne verte"], ["WHOT", ["mode", "WHOT"] call _sa, _sm in ["WHOT", "TI"], _can, "Thermique blanc chaud : ce qui est chaud (hommes, moteurs) en blanc"]]];
+_rows pushBack ["buttons", [["BHOT", ["mode", "BHOT"] call _sa, _sm isEqualTo "BHOT", _can, "Thermique noir chaud : ce qui est chaud en noir"], ["FUS W", ["mode", "FUSW"] call _sa, _sm isEqualTo "FUSW", _can, "Fusion : thermique blanc chaud et contours des bâtiments"], ["FUS B", ["mode", "FUSB"] call _sa, _sm isEqualTo "FUSB", _can, "Fusion : thermique noir chaud et contours des bâtiments"]]];
 private _fopts = [["Ne suivre personne", ""]];
 private _fnodes = ((missionNamespace getVariable [format ["COMSPEC_ATAK_TocFeed_%1", str side group player], []]) param [1, []]);
 { _fopts pushBackUnique [format ["Groupe %1", _x param [7, ""]], "G|" + (_x param [7, ""])]; } forEach (_fnodes select { (_x param [7, ""]) isNotEqualTo "" });

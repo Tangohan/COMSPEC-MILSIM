@@ -190,3 +190,5 @@ class COMSPEC_RscWebBrowser { type=106; idc=-1; style=0; x=0; y=0; w=0.3; h=0.3;
 class COMSPEC_RscWebBrowserExt: COMSPEC_RscWebBrowser { allowExternalURL=1; };
 class COMSPEC_RscSlider: RscXSliderH { color[]={0.36,0.78,0.42,0.9}; colorActive[]={0.46,0.88,0.52,1}; colorDisabled[]={0.4,0.45,0.42,0.6}; };
 class COMSPEC_RscMapPanel: COMSPEC_RscStructuredText { colorBackground[]={0.025,0.030,0.027,0.78}; };
+// Thème des écrans TOC et du PC du poste (fn_tocTheme) : couleurs et classes du PC.
+#include "toc_theme.hpp"

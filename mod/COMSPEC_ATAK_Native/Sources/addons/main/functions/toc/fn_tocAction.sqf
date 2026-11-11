@@ -1,6 +1,7 @@
 /*
     Actions de l'app Poste TOC (fn_pageToc).
       "prio" niveau | "send" (message au camp) | "order" clé de groupe ("" : tous) | "sms" nom | "nav" page | "saveCs"
+      "pc"                       ouvre le PC du poste (fn_tocConfig « openPc » : poste le plus proche, sinon sans objet)
       "screen" [netId, contenu]  contenu d'un écran du poste (fn_tocScreen "show") ; "SAT1" | "SAT2" | "SQ|groupe" : salle TOC
       "slot" 0 | 1               satellite piloté depuis l'app
       "sat" [clé, valeur]        commande du satellite (fn_tocRoom) : take | release | home | pan | zoom | mode | follow
@@ -58,6 +59,7 @@ switch (_a) do {
         ["CHAT"] call comspec_atak_native_fnc_navigate;
     };
     case "nav": { [_v] call comspec_atak_native_fnc_navigate; };
+    case "pc": { [{ ["openPc", objNull] call comspec_atak_native_fnc_tocConfig; }] call comspec_atak_native_fnc_nextFrame; };
     case "slot": { _draft set ["satN", [0, 1] select (_v isEqualTo 1)]; call _redraw; };
     case "sat": {
         // Satellite du poste (fn_tocRoom) : une seule main par satellite, tenue par le serveur.

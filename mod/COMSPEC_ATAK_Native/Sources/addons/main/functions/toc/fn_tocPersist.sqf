@@ -53,7 +53,8 @@ switch (_mode) do {
             };
             _pans sort true;
             [typeOf _x, getPosASL _x, vectorDir _x, vectorUp _x, _x getVariable ["COMSPEC_ATAK_TocScr", []], [_x] call _camWant, _pans apply { _x select 1 }, _x getVariable ["COMSPEC_ATAK_TocMosaic", []],
-                [_x getVariable ["COMSPEC_ATAK_TocUid", ""], _x getVariable ["COMSPEC_ATAK_TocHall", ""], _x getVariable ["COMSPEC_ATAK_TocOff", false], _x getVariable ["COMSPEC_ATAK_TocSurf", []]]]
+                [_x getVariable ["COMSPEC_ATAK_TocUid", ""], _x getVariable ["COMSPEC_ATAK_TocHall", ""], _x getVariable ["COMSPEC_ATAK_TocOff", false], _x getVariable ["COMSPEC_ATAK_TocSurf", []],
+                    _x getVariable ["COMSPEC_ATAK_TocOpt", []]]]
         };
         // Flux de la partie en cours seulement (celui de la partie précédente a déjà été gardé une fois).
         private _ev = [];
@@ -160,7 +161,9 @@ switch (_mode) do {
             if (_mos isEqualType [] && {(count _mos) >= 5}) then { _o setVariable ["COMSPEC_ATAK_TocMosaic", _mos, true]; };
             // Identifiant stable, salle, allumage.
             // Surface choisie à la désignation (écran d'un autre mod, fenêtre Zeus) : gardée.
-            _ids params [["_uid", ""], ["_hall", ""], ["_off", false], ["_surf", []]];
+            _ids params [["_uid", ""], ["_hall", ""], ["_off", false], ["_surf", []], ["_opt", []]];
+            // Luminosité et distance d'affichage de l'écran (fn_tocConfig) : gardées.
+            if (_opt isEqualType [] && {(count _opt) >= 2}) then { _o setVariable ["COMSPEC_ATAK_TocOpt", _opt, true]; };
             if (_surf isEqualType [] && {(count _surf) >= 3}) then { _o setVariable ["COMSPEC_ATAK_TocSurf", _surf, true]; };
             if (_uid isNotEqualTo "") then { _o setVariable ["COMSPEC_ATAK_TocUid", _uid, true]; };
             _o setVariable ["COMSPEC_ATAK_TocHall", _hall, true];

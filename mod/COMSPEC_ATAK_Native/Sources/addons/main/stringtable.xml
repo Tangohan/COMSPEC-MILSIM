@@ -2167,5 +2167,115 @@
             <English>Find a phone from its number, like a request to the operator.%1%3From the ATAK%4%2EW app, TRACE tab: type the number (or an IMEI), then TRACE THE NUMBER. The answer comes after a few seconds.%2Number read in a recovered file (Extraction app) or in the SSE field app: TRACE button right below.%1%3Result%4%2Uncertainty circle on the map: a few dozen metres when several antennas pick up the phone, several hundred with only one.%2Phone off, jammed or out of coverage: only the last known position, less and less accurate.%2FOLLOW: new position at regular intervals while the phone is open. SHARE: marker for the group or the TOC. TO SSE SHEET: prefilled observation sheet.%2Tracing gives a position, never a name.%1%3Zeus%4%2Right click an AI &gt; ATAK · AI phone: on, off or burner (never traceable), see and copy its number.%2Right click elsewhere &gt; ATAK · Number tracing: suspend tracing, warrant, civilian mobile network.</English>
             <French>Retrouver un téléphone à partir de son numéro, comme une requête à l'opérateur.%1%3Depuis l'ATAK%4%2App GE, onglet TRAÇAGE : saisissez le numéro (ou un IMEI), puis TRACER LE NUMÉRO. La réponse arrive après quelques secondes.%2Numéro lu dans un fichier récupéré (app Extraction) ou dans l'app SSE terrain : bouton TRACER juste dessous.%1%3Résultat%4%2Cercle d'incertitude sur la carte : quelques dizaines de mètres quand plusieurs antennes captent le téléphone, plusieurs centaines avec une seule.%2Téléphone éteint, brouillé ou hors couverture : seulement la dernière position connue, de moins en moins précise.%2SUIVRE : nouvelle position à intervalle régulier tant que le téléphone est ouvert. PARTAGER : marqueur pour le groupe ou le TOC. EN FICHE SSE : fiche d'observation préremplie.%2Le traçage donne une position, jamais un nom.%1%3Zeus%4%2Clic droit sur une IA &gt; ATAK · Téléphone de l'IA : allumé, éteint ou jetable (jamais traçable), voir et copier son numéro.%2Clic droit ailleurs &gt; ATAK · Traçage des numéros : suspendre le traçage, mandat, réseau mobile civil.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_M_TIP">
+            <Original>None: plain object. COMSPEC screen: receives the slides of the Briefing app. TOC screen: shows the side's network, with the settings below applied at mission start. Example: TOC screen for the video wall of the operations room.</Original>
+            <English>None: plain object. COMSPEC screen: receives the slides of the Briefing app. TOC screen: shows the side's network, with the settings below applied at mission start. Example: TOC screen for the video wall of the operations room.</English>
+            <French>Aucun : simple objet. Écran COMSPEC : reçoit les diapositives de l'app Briefing. Écran TOC : affiche le réseau du camp, avec les réglages ci-dessous appliqués au lancement. Exemple : Écran TOC pour le mur d'images de la salle d'opérations.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_N_TIP">
+            <Original>Name shown on the screen and in the menus. Empty: name of the object. Example: TOC Bravo.</Original>
+            <English>Name shown on the screen and in the menus. Empty: name of the object. Example: TOC Bravo.</English>
+            <French>Nom montré sur l'écran et dans les menus. Vide : nom de l'objet. Exemple : TOC Bravo.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_S_TIP">
+            <Original>TOC screen: side whose network is shown ("Each player's own": everyone sees their side). COMSPEC screen: side allowed to drive it. Example: BLUFOR for a friendly post.</Original>
+            <English>TOC screen: side whose network is shown ("Each player's own": everyone sees their side). COMSPEC screen: side allowed to drive it. Example: BLUFOR for a friendly post.</English>
+            <French>Écran TOC : camp dont le réseau est affiché (« Celui de chaque joueur » : chacun voit son camp). Écran COMSPEC : camp qui peut le piloter. Exemple : BLUFOR pour un poste allié.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_V_TIP">
+            <Original>What the TOC screen shows at mission start. Can be changed in game (screen ACE menu, post PC, Zeus). Example: Satellite view on the central screen, Clock on the top one.</Original>
+            <English>What the TOC screen shows at mission start. Can be changed in game (screen ACE menu, post PC, Zeus). Example: Satellite view on the central screen, Clock on the top one.</English>
+            <French>Ce que montre l'écran TOC au lancement. Modifiable en jeu (menu ACE de l'écran, PC du poste, Zeus). Exemple : Vue satellite sur l'écran central, Horloge sur celui du haut.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_V_NET">
+            <Original>Network</Original>
+            <English>Network</English>
+            <French>Réseau</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_V_ORBAT">
+            <Original>Site ORBAT</Original>
+            <English>Site ORBAT</English>
+            <French>ORBAT du site</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_V_CAM">
+            <Original>Live camera</Original>
+            <English>Live camera</English>
+            <French>Caméra en direct</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_V_OFF">
+            <Original>Off (standby)</Original>
+            <English>Off (standby)</English>
+            <French>Éteint (veille)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_CAM_NAME">
+            <Original>Live camera</Original>
+            <English>Live camera</English>
+            <French>Caméra en direct</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_CAM_TIP">
+            <Original>"Live camera" display: source looked up at mission start. CAM:name of a fixed camera, or UAV:class of a drone. Example: CAM:North gate, or UAV:B_UAV_02_dynamicLoadout_F. Empty: chosen in game.</Original>
+            <English>"Live camera" display: source looked up at mission start. CAM:name of a fixed camera, or UAV:class of a drone. Example: CAM:North gate, or UAV:B_UAV_02_dynamicLoadout_F. Empty: chosen in game.</English>
+            <French>Affichage « Caméra en direct » : source cherchée au lancement. CAM:nom d'une caméra fixe, ou UAV:classe d'un drone. Exemple : CAM:Entrée nord, ou UAV:B_UAV_02_dynamicLoadout_F. Vide : choisie en jeu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_MOSG_NAME">
+            <Original>Mosaic: grid</Original>
+            <English>Mosaic: grid</English>
+            <French>Mosaïque : grille</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_MOSG_TIP">
+            <Original>"Camera mosaic" display: 2 x 2 (four cameras) or 3 x 3 (nine). Example: 3 x 3 to follow a whole platoon.</Original>
+            <English>"Camera mosaic" display: 2 x 2 (four cameras) or 3 x 3 (nine). Example: 3 x 3 to follow a whole platoon.</English>
+            <French>Affichage « Mosaïque de caméras » : 2 x 2 (quatre caméras) ou 3 x 3 (neuf). Exemple : 3 x 3 pour suivre toute une section.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_MOSS_NAME">
+            <Original>Mosaic: group</Original>
+            <English>Mosaic: group</English>
+            <French>Mosaïque : groupe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_MOSS_TIP">
+            <Original>Empty: cameras of the whole side. Otherwise, exact name of a group. Example: Alpha 1-1.</Original>
+            <English>Empty: cameras of the whole side. Otherwise, exact name of a group. Example: Alpha 1-1.</English>
+            <French>Vide : caméras de tout le camp. Sinon, nom exact d'un groupe. Exemple : Alpha 1-1.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_PN_TIP">
+            <Original>Multi-panel wall: content of panels 2 onwards, in reading order, separated by commas (panel 1 takes the display above). Words: a display (SPLIT, MAP, CLOCK, LOG…), SAT1, SAT2, SQ:group name, MOS2, MOS3, OFF. Example for a 3 x 2 wall: SAT1, CLOCK, SQ:Alpha 1-1, LOG, OFF.</Original>
+            <English>Multi-panel wall: content of panels 2 onwards, in reading order, separated by commas (panel 1 takes the display above). Words: a display (SPLIT, MAP, CLOCK, LOG…), SAT1, SAT2, SQ:group name, MOS2, MOS3, OFF. Example for a 3 x 2 wall: SAT1, CLOCK, SQ:Alpha 1-1, LOG, OFF.</English>
+            <French>Mur à plusieurs dalles : contenu des dalles 2 et suivantes, dans l'ordre de lecture, séparés par des virgules (la dalle 1 prend l'affichage ci-dessus). Mots : un affichage (SPLIT, MAP, CLOCK, LOG…), SAT1, SAT2, SQ:nom du groupe, MOS2, MOS3, OFF. Exemple pour un mur 3 x 2 : SAT1, CLOCK, SQ:Alpha 1-1, LOG, OFF.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_BR_NAME">
+            <Original>Brightness</Original>
+            <English>Brightness</English>
+            <French>Luminosité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_BR_TIP">
+            <Original>Dimmed picture for a dark room. Example: 50 % for a night mission.</Original>
+            <English>Dimmed picture for a dark room. Example: 50 % for a night mission.</English>
+            <French>Image assombrie pour une salle dans le noir. Exemple : 50 % pour une mission de nuit.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_T_TIP">
+            <Original>Ticked: a player in front of the screen gets the "Open the post PC" action and the TOC Post app on their phone. Example: unticked for a display screen in a corridor.</Original>
+            <English>Ticked: a player in front of the screen gets the "Open the post PC" action and the TOC Post app on their phone. Example: unticked for a display screen in a corridor.</English>
+            <French>Coché : un joueur devant l'écran a l'action « Ouvrir le PC du poste » et l'app Poste TOC de son téléphone. Exemple : décoché pour un écran d'affichage dans un couloir.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_HALL_NAME">
+            <Original>Linked TOC room</Original>
+            <English>Linked TOC room</English>
+            <French>Salle TOC liée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_HALL_TIP">
+            <Original>Name of the room the screen is linked to (wall plan and scenes of the master PC). The room is created if it does not exist. Example: JOC. Empty: no room.</Original>
+            <English>Name of the room the screen is linked to (wall plan and scenes of the master PC). The room is created if it does not exist. Example: JOC. Empty: no room.</English>
+            <French>Nom de la salle à laquelle l'écran est lié (plan du mur et scènes du PC maître). La salle est créée si elle n'existe pas. Exemple : JOC. Vide : aucune salle.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_RG_NAME">
+            <Original>Display distance (m)</Original>
+            <English>Display distance (m)</English>
+            <French>Distance d'affichage (m)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_RG_TIP">
+            <Original>Distance at which this screen lights up for a player. 0: each player's own setting (25 m by default). Example: 60 for a video wall seen from the back of the room. 150 at most.</Original>
+            <English>Distance at which this screen lights up for a player. 0: each player's own setting (25 m by default). Example: 60 for a video wall seen from the back of the room. 150 at most.</English>
+            <French>Distance à laquelle cet écran s'allume pour un joueur. 0 : réglage de chaque joueur (25 m par défaut). Exemple : 60 pour un mur d'images vu du fond de la salle. 150 au plus.</French>
+        </Key>
     </Package>
 </Project>
