@@ -38,8 +38,10 @@ final class AtakMapSlateThemeTest extends TestCase
 
     public function testBackgroundIsOfferedInBothMenus(): void
     {
-        self::assertStringContainsString('["ARDOISE", "SLATE"]', $this->read('functions/pages/fn_pageSettings.sqf'));
-        self::assertStringContainsString('["ARDOISE", "SLATE"]', $this->read('functions/pages/fn_pageMap.sqf'));
+        // Une seule liste des fonds (fn_mapStyle ["LIST"]), lue par la carte et les Réglages.
+        self::assertStringContainsString('["ARDOISE", "SLATE", "ARDOISE : ', $this->read('functions/map/fn_mapStyle.sqf'));
+        self::assertStringContainsString('["LIST"] call comspec_atak_native_fnc_mapStyle', $this->read('functions/pages/fn_pageSettings.sqf'));
+        self::assertStringContainsString('["LIST"] call comspec_atak_native_fnc_mapStyle', $this->read('functions/pages/fn_pageMap.sqf'));
     }
 
     public function testTacticalStyleIsOnByDefaultOnlyWithSlate(): void
