@@ -68,6 +68,15 @@ class COMSPEC_SSE_IdViewer {
             action = "['shoot'] call comspec_sse_fnc_idPhoto";
             colorBackground[] = {0.16, 0.28, 0.2, 1};
         };
+        // Mon propre papier : le présenter à quelqu'un (fenêtre « Présenter mes papiers », fn_idP2pClient).
+        class BtnPresent: RscButton {
+            idc = 93715;
+            text = "$STR_COMSPEC_SSE_P2P_BtnPresent";
+            tooltip = "$STR_COMSPEC_SSE_P2P_ViewerPresent_D";
+            x = 0.43; y = 0.75; w = 0.15; h = 0.045;
+            action = "['fromViewer'] call comspec_sse_fnc_idP2pClient";
+            colorBackground[] = {0.16, 0.28, 0.2, 1};
+        };
         class BtnClose: RscButton {
             idc = 93713;
             text = "FERMER";

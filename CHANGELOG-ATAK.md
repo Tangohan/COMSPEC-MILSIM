@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : contrôle et présentation des papiers entre joueurs (COMSPEC SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Contrôler les papiers d'un autre joueur, et présenter les siens
+- Demandez ses papiers à un joueur (menu ACE sur lui › Contrôle d'identité › Demander les papiers, menu ACE personnel › Mes papiers, ou un raccourci clavier à régler) : une fenêtre s'ouvre chez lui, il coche les papiers qu'il accepte de présenter, ou il refuse, avec ou sans motif. Rien n'est jamais accepté à sa place.
+- Vous lisez sa réponse dans une fenêtre : ses papiers s'ouvrent à l'écran, ou « Le sujet refuse de présenter ses papiers », ou « Pas de réponse » passé le délai (20 s par défaut).
+- Présentez vos papiers sans attendre qu'on vous les demande (menu ACE personnel › Mes papiers › Présenter mes papiers, ou le bouton PRÉSENTER quand vous lisez un de vos papiers) : choisissez les papiers, la personne en face, et si vous les montrez ou les remettez en main.
+- Il faut être à pied, face à face et à quelques mètres. Réglages : COMSPEC SSE › Identité (activer, délai, distance, refus permis, présentation permise) ; un Zeus peut l'autoriser ou l'interdire pour la mission.
+EN : Check another player's papers, and present your own
+- Ask a player for their papers (ACE menu on them › Identity check › Ask for papers, ACE self menu › My papers, or a key you bind): a window opens on their side, they tick the papers they agree to present, or refuse, with or without a reason. Nothing is ever accepted on their behalf.
+- You read their answer in a window: their papers open on screen, or "The subject refuses to present their papers", or "No answer" once the time is up (20 s by default).
+- Present your papers without being asked (ACE self menu › My papers › Present my papers, or the PRESENT button while reading one of your papers): pick the papers, the person in front of you, and whether you show them or hand them over.
+- Both players must be on foot, face to face and a few metres apart. Settings: COMSPEC SSE › Identité (enable, time to answer, distance, refusal allowed, presenting allowed); a Zeus can allow or forbid it for the mission.
+
+### Détail technique
+- Addon `identity` : `fn_idP2pRules` (règles pures : automate pending → accepted / refused / timeout, distance et vue, sous-ensemble de papiers, anti-spam), `fn_idP2pServer`, `fn_idP2pClient`, `fn_idP2pUi`, fenêtre `COMSPEC_SSE_IdP2p`. Relais par `fn_idServer` / `fn_idClient` (aucune nouvelle fonction appelable à distance), poste demandeur vérifié par `remoteExecutedOwner`, messages au seul poste concerné.
+- Le flux des IA (réponse d'une IA, checkpoints IA, menu « Présenter › un papier ») n'est pas changé. Personne en véhicule : non pris en charge (« Contrôler les occupants » et « Faire descendre » restent).
+- Journal Athena : même forme qu'un contrôle d'identité (POST /api/sse/identity/checks, niveau N0 « non fait », constats `p2p`, `p2p_accepted` | `p2p_refused` | `p2p_no_answer` | `p2p_presented`, `p2p_show` | `p2p_give`, `p2p_docs:n`), par `fn_fileSubmit` (licence acceptée, file hors ligne), si la transmission automatique est active.
+- Essais hors jeu : `python mod/@COMSPEC_SSE/tools/test_id_p2p.py`, `tests/Unit/SseIdentityP2pAssetTest.php`. En jeu : `mod/@COMSPEC_SSE/tools/test_id_p2p.sqf`.
+
 ## À venir : les réglages d'icônes marchent sur le petit téléphone (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

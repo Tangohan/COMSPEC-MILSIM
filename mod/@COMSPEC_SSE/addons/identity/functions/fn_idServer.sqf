@@ -5,7 +5,9 @@
     de l'action (« begin » envoyé au début de la barre de progression).
     Poignée de document (_h) : docId (« ID0007 », document présenté ou trouvé) ou classe d'un exemplaire porté.
       begin    [moi, op, cible]          début d'une action à durée
-      ask      [moi, cible]              « Papiers, s'il vous plaît » (IA : fn_idAiAnswer ; joueur : demande 60 s)
+      ask      [moi, cible]              « Papiers, s'il vous plaît » (IA : fn_idAiAnswer ; joueur : fn_idP2pServer « ask »)
+      p2pAnswer [moi, contrôleur, accept | refuse, classes, show | give, motif] · p2pPresent [moi, destinataire, classes,
+                show | give] · p2pZeus [moi, 0 | 1 | 2]   contrôle et présentation entre joueurs (fn_idP2pServer)
       present  [moi, classe, contrôleur | objNull, "present" | "give"]   je tends (ou remets) un de mes documents
       refuse   [moi]                     je refuse de présenter mes papiers
       docs     [moi, cible]              fouille des papiers (mort, menotté, rendu, inconscient)
@@ -190,14 +192,8 @@ switch (_op) do {
             [_me, "Demande interrompue : recommencez sans bouger."] call _tell;
         };
         ["comspec_sse_idAsked", [_t, _me]] call CBA_fnc_localEvent;
-        if (isPlayer _t) exitWith {
-            private _req = _reg get "requests";
-            private _list = (_req getOrDefault [netId _t, []]) select { (_x select 2) > time && {(_x select 1) isNotEqualTo (netId _me)} };
-            _list pushBack [_owner, netId _me, time + 60];
-            _req set [netId _t, _list];
-            ["request", [_me], owner _t] call _reply;
-            ["answer", [_t, "wait", format ["Demande faite à %1 : il doit présenter ses papiers (Mes papiers).", name _t]]] call _reply;
-        };
+        // Joueur : fenêtre de demande chez lui (accepter, refuser, laisser sans réponse), jamais d'accord automatique.
+        if (isPlayer _t) exitWith { ["ask", [_me, _t]] call comspec_sse_fnc_idP2pServer; };
         private _ans = [_t, _me] call comspec_sse_fnc_idAiAnswer;
         private _ctl = _reg getOrDefault ["controlled", createHashMap];
         _reg set ["controlled", _ctl];
@@ -245,6 +241,8 @@ switch (_op) do {
         if ((count _d) isEqualTo 0) exitWith {
             [_to, format ["%1 vous présente un document vierge (aucun titulaire).", name _me], "WARNING"] call _tell;
         };
+        // Vers un joueur : réglages des contrôles entre joueurs (une demande de sa part en attente est close « acceptée »).
+        if !(["legacy", [_me, _to]] call comspec_sse_fnc_idP2pServer) exitWith { ["p2p", ["denied", [_to, "noPresent"]]] call _reply; };
         private _toOwner = owner _to;
         [_d get "id", _me, _toOwner] call _grant;
         if (_mode isEqualTo "give") then { [_cls, _me, _to] call comspec_sse_fnc_idTransfer; };
@@ -264,6 +262,12 @@ switch (_op) do {
             ["comspec_sse_idRefused", [_me, _c]] call CBA_fnc_localEvent;
         } forEach _pend;
     };
+
+    // Contrôle et présentation des papiers entre joueurs (fn_idP2pServer) : réponse à une demande, présentation
+    // d'initiative de plusieurs papiers, choix du Zeus pour la mission.
+    case "p2pAnswer": { ["answer", _args] call comspec_sse_fnc_idP2pServer; };
+    case "p2pPresent": { ["present", _args] call comspec_sse_fnc_idP2pServer; };
+    case "p2pZeus": { ["zeus", _args] call comspec_sse_fnc_idP2pServer; };
 
     case "docs": {
         _args params ["", ["_t", objNull, [objNull]]];

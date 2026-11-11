@@ -637,5 +637,431 @@
             <English>Your current cover is no longer on Athena (revoked or removed). It stays active on this computer until you pick another one.</English>
             <French>Votre couverture en cours n'est plus sur Athena (révoquée ou retirée). Elle reste active sur ce poste tant que vous n'en choisissez pas une autre.</French>
         </Key>
+        <!-- Papiers entre joueurs (fn_idP2pUi, fn_idP2pClient, réglages, Zeus) : clés STR_COMSPEC_SSE_P2P_*, écrites à la main. -->
+        <Key ID="STR_COMSPEC_SSE_P2P_T_Request">
+            <Original>PAPERS, PLEASE</Original>
+            <English>PAPERS, PLEASE</English>
+            <French>PAPIERS, S'IL VOUS PLAÎT</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_T_Present">
+            <Original>PRESENT MY PAPERS</Original>
+            <English>PRESENT MY PAPERS</English>
+            <French>PRÉSENTER MES PAPIERS</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_T_Wait">
+            <Original>PAPERS REQUESTED</Original>
+            <English>PAPERS REQUESTED</English>
+            <French>DEMANDE DE PAPIERS</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_T_Received">
+            <Original>PAPERS PRESENTED</Original>
+            <English>PAPERS PRESENTED</English>
+            <French>PAPIERS PRÉSENTÉS</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_B_Request">
+            <Original>%1 asks for your papers.</Original>
+            <English>%1 asks for your papers.</English>
+            <French>%1 vous demande vos papiers.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_B_RequestHow">
+            <Original>Tick the papers you agree to present, then ACCEPT. Esc or REFUSE: you refuse. No answer before the timer ends: the requester reads "No answer".</Original>
+            <English>Tick the papers you agree to present, then ACCEPT. Esc or REFUSE: you refuse. No answer before the timer ends: the requester reads "No answer".</English>
+            <French>Cochez les papiers que vous acceptez de présenter, puis ACCEPTER. Échap ou REFUSER : vous refusez. Sans réponse avant la fin du délai : le demandeur lit « Pas de réponse ».</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_B_RequestNoRefuse">
+            <Original>Refusing is not allowed in this mission: tick your papers and ACCEPT, or leave the request unanswered.</Original>
+            <English>Refusing is not allowed in this mission: tick your papers and ACCEPT, or leave the request unanswered.</English>
+            <French>Le refus n'est pas permis dans cette mission : cochez vos papiers et ACCEPTER, ou laissez la demande sans réponse.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_B_NoPapers">
+            <Original>You carry no papers.</Original>
+            <English>You carry no papers.</English>
+            <French>Vous n'avez aucun papier sur vous.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_B_Wait">
+            <Original>Request made to %1.</Original>
+            <English>Request made to %1.</English>
+            <French>Demande faite à %1.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_B_WaitHow">
+            <Original>The person can accept, refuse or not answer. You may close this window: the answer will reach your phone.</Original>
+            <English>The person can accept, refuse or not answer. You may close this window: the answer will reach your phone.</English>
+            <French>La personne peut accepter, refuser ou ne pas répondre. Vous pouvez fermer cette fenêtre : la réponse arrivera sur votre téléphone.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_B_Received">
+            <Original>%1 presents %2 paper(s) to you.</Original>
+            <English>%1 presents %2 paper(s) to you.</English>
+            <French>%1 vous présente %2 papier(s).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_B_Given">
+            <Original>%1 hands you %2 paper(s): they are in your inventory.</Original>
+            <English>%1 hands you %2 paper(s): they are in your inventory.</English>
+            <French>%1 vous remet %2 papier(s) : ils sont dans votre inventaire.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_B_ReceivedHow">
+            <Original>OPEN shows the selected paper (front, back, zoom). While the presentation lasts, the papers stay available in the ACE menu on the person: Identity check, Check identity.</Original>
+            <English>OPEN shows the selected paper (front, back, zoom). While the presentation lasts, the papers stay available in the ACE menu on the person: Identity check, Check identity.</English>
+            <French>OUVRIR affiche le papier choisi (recto, verso, zoom). Tant que la présentation dure, les papiers restent accessibles par le menu ACE sur la personne : Contrôle d'identité, Contrôler l'identité.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_B_Present">
+            <Original>Tick your papers and pick the person: on foot, in plain view, within %1 m.</Original>
+            <English>Tick your papers and pick the person: on foot, in plain view, within %1 m.</English>
+            <French>Cochez vos papiers et choisissez la personne : à pied, bien en vue, à moins de %1 m.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_R_Refused">
+            <Original>The subject refuses to present their papers.</Original>
+            <English>The subject refuses to present their papers.</English>
+            <French>Le sujet refuse de présenter ses papiers.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_R_RefusedBy">
+            <Original>%1 gave no reason.</Original>
+            <English>%1 gave no reason.</English>
+            <French>%1 n'a donné aucun motif.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_R_Reason">
+            <Original>Reason given: %1</Original>
+            <English>Reason given: %1</English>
+            <French>Motif donné : %1</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_R_Timeout">
+            <Original>No answer.</Original>
+            <English>No answer.</English>
+            <French>Pas de réponse.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_R_TimeoutBy">
+            <Original>%1 did not answer in time.</Original>
+            <English>%1 did not answer in time.</English>
+            <French>%1 n'a pas répondu dans le délai.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_Reason_none">
+            <Original>Refuse without a reason</Original>
+            <English>Refuse without a reason</English>
+            <French>Refuser sans motif</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_Reason_no_papers">
+            <Original>I do not have my papers on me</Original>
+            <English>I do not have my papers on me</English>
+            <French>Je n'ai pas mes papiers sur moi</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_Reason_not_now">
+            <Original>Not now</Original>
+            <English>Not now</English>
+            <French>Pas maintenant</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_Reason_no_authority">
+            <Original>You have no authority to check me</Original>
+            <English>You have no authority to check me</English>
+            <French>Vous n'avez pas autorité pour me contrôler</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_Reason_superior">
+            <Original>Talk to my superior</Original>
+            <English>Talk to my superior</English>
+            <French>Voyez avec mon supérieur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_Reason_D">
+            <Original>Reason told to the requester if you refuse.</Original>
+            <English>Reason told to the requester if you refuse.</English>
+            <French>Motif dit au demandeur si vous refusez.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_Mode_Show">
+            <Original>Show my papers (I keep them)</Original>
+            <English>Show my papers (I keep them)</English>
+            <French>Montrer mes papiers (je les garde)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_Mode_Give">
+            <Original>Hand them over (the item changes hands)</Original>
+            <English>Hand them over (the item changes hands)</English>
+            <French>Remettre en main (l'objet change de mains)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_Mode_D">
+            <Original>Show: the other person reads the paper on screen and you keep it. Hand over: the paper leaves your inventory for theirs.</Original>
+            <English>Show: the other person reads the paper on screen and you keep it. Hand over: the paper leaves your inventory for theirs.</English>
+            <French>Montrer : l'autre lit le papier à l'écran et vous le gardez. Remettre en main : le papier quitte votre inventaire pour le sien.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_BtnPresent">
+            <Original>PRESENT</Original>
+            <English>PRESENT</English>
+            <French>PRÉSENTER</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_BtnAccept">
+            <Original>ACCEPT</Original>
+            <English>ACCEPT</English>
+            <French>ACCEPTER</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_BtnOpen">
+            <Original>OPEN</Original>
+            <English>OPEN</English>
+            <French>OUVRIR</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_BtnClose">
+            <Original>CLOSE</Original>
+            <English>CLOSE</English>
+            <French>FERMER</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_BtnRefuse">
+            <Original>REFUSE</Original>
+            <English>REFUSE</English>
+            <French>REFUSER</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_BtnLater">
+            <Original>LATER</Original>
+            <English>LATER</English>
+            <French>PLUS TARD</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_BtnOptions">
+            <Original>OPTIONS</Original>
+            <English>OPTIONS</English>
+            <French>OPTIONS</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_BtnOptions_D">
+            <Original>Show or hand over the papers, reason for a refusal.</Original>
+            <English>Show or hand over the papers, reason for a refusal.</English>
+            <French>Montrer ou remettre les papiers en main, motif d'un refus.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_To">
+            <Original>Present to</Original>
+            <English>Present to</English>
+            <French>Présenter à</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_NoOneNear">
+            <Original>Nobody within reach</Original>
+            <English>Nobody within reach</English>
+            <French>Personne à portée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_Someone">
+            <Original>The person</Original>
+            <English>The person</English>
+            <French>La personne</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_S_Opening">
+            <Original>Examining the paper…</Original>
+            <English>Examining the paper…</English>
+            <French>Examen du papier…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_S_PickPaper">
+            <Original>Tick at least one paper.</Original>
+            <English>Tick at least one paper.</English>
+            <French>Cochez au moins un papier.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_S_PickPerson">
+            <Original>Pick the person you present your papers to.</Original>
+            <English>Pick the person you present your papers to.</English>
+            <French>Choisissez la personne à qui présenter vos papiers.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_S_Sending">
+            <Original>Presenting…</Original>
+            <English>Presenting…</English>
+            <French>Présentation en cours…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_ViewerPresent_D">
+            <Original>Present this paper to the person in front of you.</Original>
+            <English>Present this paper to the person in front of you.</English>
+            <French>Présenter ce papier à la personne en face de vous.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_N_Request">
+            <Original>%1 asks for your papers (%2 s). ACE self menu › My papers › Answer the request.</Original>
+            <English>%1 asks for your papers (%2 s). ACE self menu › My papers › Answer the request.</English>
+            <French>%1 vous demande vos papiers (%2 s). Menu ACE personnel › Mes papiers › Répondre à la demande.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_N_Asked">
+            <Original>Papers requested from %1 (%2 s to answer).</Original>
+            <English>Papers requested from %1 (%2 s to answer).</English>
+            <French>Papiers demandés à %1 (%2 s pour répondre).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_N_Accepted">
+            <Original>%1 presents their papers.</Original>
+            <English>%1 presents their papers.</English>
+            <French>%1 présente ses papiers.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_N_Received">
+            <Original>%1 presents %2 paper(s) to you. ACE menu on the person › Identity check › Check identity.</Original>
+            <English>%1 presents %2 paper(s) to you. ACE menu on the person › Identity check › Check identity.</English>
+            <French>%1 vous présente %2 papier(s). Menu ACE sur la personne › Contrôle d'identité › Contrôler l'identité.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_N_Given">
+            <Original>%1 hands you %2 paper(s): they are in your inventory.</Original>
+            <English>%1 hands you %2 paper(s): they are in your inventory.</English>
+            <French>%1 vous remet %2 papier(s) : ils sont dans votre inventaire.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_N_NoTarget">
+            <Original>Papers, please: look at the person, within %1 m.</Original>
+            <English>Papers, please: look at the person, within %1 m.</English>
+            <French>Papiers, s'il vous plaît : regardez la personne, à moins de %1 m.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_D_off">
+            <Original>Paper checks between players are disabled in this mission.</Original>
+            <English>Paper checks between players are disabled in this mission.</English>
+            <French>Les contrôles de papiers entre joueurs sont désactivés dans cette mission.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_D_unable">
+            <Original>%1 is in no state to answer.</Original>
+            <English>%1 is in no state to answer.</English>
+            <French>%1 n'est pas en état de répondre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_D_far">
+            <Original>%1 is too far: stay within %2 m.</Original>
+            <English>%1 is too far: stay within %2 m.</English>
+            <French>%1 est trop loin : restez à moins de %2 m.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_D_los">
+            <Original>%1 is not in plain view: stand face to face.</Original>
+            <English>%1 is not in plain view: stand face to face.</English>
+            <French>%1 n'est pas bien en vue : mettez-vous face à face.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_D_vehicle">
+            <Original>Both of you must be on foot.</Original>
+            <English>Both of you must be on foot.</English>
+            <French>Vous devez être tous les deux à pied.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_D_pending">
+            <Original>A request to %1 is already running.</Original>
+            <English>A request to %1 is already running.</English>
+            <French>Une demande à %1 est déjà en cours.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_D_rate">
+            <Original>Too soon: wait a moment before asking %1 again.</Original>
+            <English>Too soon: wait a moment before asking %1 again.</English>
+            <French>Trop tôt : attendez un instant avant de solliciter de nouveau %1.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_D_noRefuse">
+            <Original>Refusing is not allowed in this mission.</Original>
+            <English>Refusing is not allowed in this mission.</English>
+            <French>Le refus n'est pas permis dans cette mission.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_D_noPresent">
+            <Original>Presenting your papers on your own initiative is disabled in this mission.</Original>
+            <English>Presenting your papers on your own initiative is disabled in this mission.</English>
+            <French>Présenter ses papiers de sa propre initiative est désactivé dans cette mission.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_D_docs">
+            <Original>These papers are no longer on you, or are blank.</Original>
+            <English>These papers are no longer on you, or are blank.</English>
+            <French>Ces papiers ne sont plus sur vous, ou sont vierges.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_AceAsk">
+            <Original>Ask for papers (person aimed at)</Original>
+            <English>Ask for papers (person aimed at)</English>
+            <French>Demander les papiers (personne visée)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_AceAnswer">
+            <Original>Answer the request</Original>
+            <English>Answer the request</English>
+            <French>Répondre à la demande</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_KeyAsk">
+            <Original>Ask for papers</Original>
+            <English>Ask for papers</English>
+            <French>Demander les papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_KeyAsk_D">
+            <Original>Papers, please: asks the person you aim at, within reach, for their papers.</Original>
+            <English>Papers, please: asks the person you aim at, within reach, for their papers.</English>
+            <French>Papiers, s'il vous plaît : demande ses papiers à la personne visée, à portée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_KeyPresent">
+            <Original>Present my papers</Original>
+            <English>Present my papers</English>
+            <French>Présenter mes papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_KeyPresent_D">
+            <Original>Opens the window to present your papers to the person in front of you.</Original>
+            <English>Opens the window to present your papers to the person in front of you.</English>
+            <French>Ouvre la fenêtre pour présenter vos papiers à la personne en face de vous.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_ZeusModule">
+            <Original>Paper checks between players</Original>
+            <English>Paper checks between players</English>
+            <French>Contrôles de papiers entre joueurs</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_ZeusChoice">
+            <Original>For this mission</Original>
+            <English>For this mission</English>
+            <French>Pour cette mission</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_ZeusChoice_D">
+            <Original>Follow the setting: the CBA setting decides. Allow or forbid: your choice wins until the end of the mission.</Original>
+            <English>Follow the setting: the CBA setting decides. Allow or forbid: your choice wins until the end of the mission.</English>
+            <French>Suivre le réglage : le réglage CBA décide. Autoriser ou interdire : votre choix l'emporte jusqu'à la fin de la mission.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_ZeusOpt0">
+            <Original>Follow the setting</Original>
+            <English>Follow the setting</English>
+            <French>Suivre le réglage</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_ZeusOpt1">
+            <Original>Allow</Original>
+            <English>Allow</English>
+            <French>Autoriser</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_ZeusOpt2">
+            <Original>Forbid</Original>
+            <English>Forbid</English>
+            <French>Interdire</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_Zeus_Follow">
+            <Original>Paper checks between players: the mission setting decides again.</Original>
+            <English>Paper checks between players: the mission setting decides again.</English>
+            <French>Contrôles de papiers entre joueurs : le réglage de la mission décide de nouveau.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_Zeus_On">
+            <Original>Paper checks between players: allowed for this mission.</Original>
+            <English>Paper checks between players: allowed for this mission.</English>
+            <French>Contrôles de papiers entre joueurs : autorisés pour cette mission.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_Zeus_Off">
+            <Original>Paper checks between players: forbidden for this mission.</Original>
+            <English>Paper checks between players: forbidden for this mission.</English>
+            <French>Contrôles de papiers entre joueurs : interdits pour cette mission.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_SetEnabled">
+            <Original>Paper checks between players</Original>
+            <English>Paper checks between players</English>
+            <French>Contrôle des papiers entre joueurs</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_SetEnabled_D">
+            <Original>A player can ask another player for their papers, and present their own. Example: at a roadblock, the gendarme asks, the driver ticks his licence and accepts, or refuses. The papers always show the identity played in game, never the Steam name. A Zeus can allow or forbid it for the mission.</Original>
+            <English>A player can ask another player for their papers, and present their own. Example: at a roadblock, the gendarme asks, the driver ticks his licence and accepts, or refuses. The papers always show the identity played in game, never the Steam name. A Zeus can allow or forbid it for the mission.</English>
+            <French>Un joueur peut demander ses papiers à un autre joueur, et présenter les siens. Exemple : à un barrage, le gendarme demande, le conducteur coche son permis et accepte, ou refuse. Les papiers montrent toujours l'identité jouée en jeu, jamais le nom Steam. Un Zeus peut l'autoriser ou l'interdire pour la mission.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_SetTimeout">
+            <Original>Time to answer a request (s)</Original>
+            <English>Time to answer a request (s)</English>
+            <French>Délai pour répondre à une demande (s)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_SetTimeout_D">
+            <Original>Example: 20 = the checked player has 20 seconds to accept or refuse; after that the requester reads "No answer".</Original>
+            <English>Example: 20 = the checked player has 20 seconds to accept or refuse; after that the requester reads "No answer".</English>
+            <French>Exemple : 20 = le joueur contrôlé a 20 secondes pour accepter ou refuser ; passé ce délai, le demandeur lit « Pas de réponse ».</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_SetDistance">
+            <Original>Distance between the two players (m)</Original>
+            <English>Distance between the two players (m)</English>
+            <French>Distance entre les deux joueurs (m)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_SetDistance_D">
+            <Original>Example: 3 = both players must be on foot, in plain view of each other, within 3 metres to ask for or present papers.</Original>
+            <English>Example: 3 = both players must be on foot, in plain view of each other, within 3 metres to ask for or present papers.</English>
+            <French>Exemple : 3 = les deux joueurs doivent être à pied, bien en vue l'un de l'autre, à moins de 3 mètres pour demander ou présenter des papiers.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_SetRefuse">
+            <Original>A player may refuse</Original>
+            <English>A player may refuse</English>
+            <French>Un joueur peut refuser</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_SetRefuse_D">
+            <Original>Ticked: the checked player can refuse (REFUSE button or Esc), with or without a reason. Unticked, for example on a strict training server: he can only accept or leave the request unanswered.</Original>
+            <English>Ticked: the checked player can refuse (REFUSE button or Esc), with or without a reason. Unticked, for example on a strict training server: he can only accept or leave the request unanswered.</English>
+            <French>Coché : le joueur contrôlé peut refuser (bouton REFUSER ou Échap), avec ou sans motif. Décoché, par exemple sur un serveur d'instruction strict : il ne peut qu'accepter ou laisser la demande sans réponse.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_SetPresent">
+            <Original>A player may present his papers unasked</Original>
+            <English>A player may present his papers unasked</English>
+            <French>Un joueur peut présenter ses papiers sans demande</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_P2P_SetPresent_D">
+            <Original>Ticked: anyone can show or hand over papers to a player nearby, for example at a gate, without being asked. Unticked: papers are only presented in answer to a request.</Original>
+            <English>Ticked: anyone can show or hand over papers to a player nearby, for example at a gate, without being asked. Unticked: papers are only presented in answer to a request.</English>
+            <French>Coché : chacun peut montrer ou remettre ses papiers à un joueur proche, par exemple à l'entrée d'un camp, sans qu'on les lui demande. Décoché : les papiers ne se présentent qu'en réponse à une demande.</French>
+        </Key>
     </Package>
 </Project>

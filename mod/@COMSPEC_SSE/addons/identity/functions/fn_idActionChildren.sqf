@@ -108,6 +108,8 @@ switch (_mode) do {
             [format ["COMSPEC_ID_Read_%1", _forEachIndex], _x call _nameOf, {
                 params ["_t", "_p", "_args"];
                 // Mon propre papier : la visionneuse s'ouvre tout de suite (ni barre de progression ni message d'interruption).
+                // Classe retenue pour le bouton PRÉSENTER de la visionneuse (fn_idP2pClient « fromViewer »).
+                missionNamespace setVariable ["comspec_sse_idOwnViewCls", _args select 0];
                 ["send", ["view", [player, _args select 0]]] call comspec_sse_fnc_idClient;
             }, [_x], {}, "\z\comspec_sse\addons\identity\data\icon_card_ca.paa"] call _add;
         } forEach _mine;

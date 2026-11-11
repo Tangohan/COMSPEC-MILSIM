@@ -82,6 +82,11 @@ class CfgFunctions {
             class idCanSearch {};
             class idActionChildren {};
             class idPresentPrompt {};
+            // Contrôle et présentation des papiers entre joueurs : règles pures, serveur, poste du joueur, fenêtre.
+            class idP2pRules {};
+            class idP2pServer {};
+            class idP2pClient {};
+            class idP2pUi {};
             class idTransfer {};
             class idVehicleOccupants {};
             class idKit {};
@@ -221,7 +226,11 @@ class COMSPEC_SSE_RscButtonNav;
 class COMSPEC_SSE_RscButtonZeus;
 class COMSPEC_SSE_RscButtonClose;
 class COMSPEC_SSE_RscControlsGroup;
+class COMSPEC_SSE_RscButton;
+class COMSPEC_SSE_RscListBox;
+class COMSPEC_SSE_RscAccentLine;
 
 #include "dialogs\idViewer.hpp"
 #include "dialogs\docPicker.hpp"
 #include "dialogs\idZeusPapers.hpp"
+#include "dialogs\idP2p.hpp"
