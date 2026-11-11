@@ -1,0 +1,61 @@
+<!doctype html>
+<!-- Lance les essais tests/Frontend/*.test.cjs dans un navigateur quand Node n'est pas installé :
+     php -S 127.0.0.1:8790 -t <racine du dépôt>, puis /tests/Frontend/run-in-browser.html?f=toc-geo,toc-plan-logic
+     Le résultat est écrit dans la page (PASS / FAIL) et dans le titre. -->
+<meta charset="utf-8"><title>essais…</title>
+<pre id="out" style="font:14px monospace;white-space:pre-wrap"></pre>
+<script>
+(async function () {
+  var out = document.getElementById('out');
+  var log = function (s) { out.textContent += s + '\n'; };
+  var files = (new URLSearchParams(location.search).get('f') || 'toc-geo,toc-plan-logic').split(',');
+  var mods = {};
+  async function load(url) {
+    if (mods[url]) return mods[url].exports;
+    var src = await (await fetch(url)).text();
+    var module = { exports: {} };
+    mods[url] = module;
+    var base = url.replace(/[^/]*$/, '');
+    var deps = {};
+    var re = /require\(\s*'(\.[^']+)'\s*\)/g, m;
+    while ((m = re.exec(src))) deps[m[1]] = await load(new URL(m[1], location.origin + base).pathname);
+    new Function('module', 'exports', 'require', src).call(module.exports, module, module.exports, function (n) { return deps[n]; });
+    return module.exports;
+  }
+  function eq(a, b) {
+    if (a === b) return true;
+    if (typeof a !== typeof b || a === null || b === null || typeof a !== 'object') return false;
+    if (Array.isArray(a) !== Array.isArray(b)) return false;
+    var ka = Object.keys(a), kb = Object.keys(b);
+    return ka.length === kb.length && ka.every(function (k) { return eq(a[k], b[k]); });
+  }
+  var assert = {
+    ok: function (v, m) { if (!v) throw new Error(m || 'attendu vrai'); },
+    equal: function (a, b, m) { if (a !== b) throw new Error((m ? m + ' : ' : '') + JSON.stringify(a) + ' !== ' + JSON.stringify(b)); },
+    notEqual: function (a, b, m) { if (a === b) throw new Error((m ? m + ' : ' : '') + JSON.stringify(a) + ' === ' + JSON.stringify(b)); },
+    deepEqual: function (a, b, m) { if (!eq(a, b)) throw new Error((m ? m + ' : ' : '') + JSON.stringify(a) + ' ≠ ' + JSON.stringify(b)); }
+  };
+  var pass = 0, fail = 0;
+  var geo = await load('/public/assets/js/toc/toc-geo.js');
+  var logic = await load('/public/assets/js/toc/plan/plan-logic.js');
+  for (var i = 0; i < files.length; i++) {
+    var src = await (await fetch('/tests/Frontend/' + files[i] + '.test.cjs')).text();
+    var tests = [];
+    var req = function (n) {
+      if (n === 'node:test') return { test: function (name, fn) { tests.push([name, fn]); } };
+      if (n === 'node:assert/strict') return assert;
+      if (n === 'node:path') return { join: function () { return Array.prototype.slice.call(arguments).join('/'); } };
+      if (/toc-geo\.js$/.test(n)) return geo;
+      if (/plan-logic\.js$/.test(n)) return logic;
+      throw new Error('module inconnu : ' + n);
+    };
+    new Function('require', '__dirname', src)(req, '');
+    log('# ' + files[i]);
+    for (var j = 0; j < tests.length; j++) {
+      try { await tests[j][1](); pass++; log('PASS ' + tests[j][0]); } catch (e) { fail++; log('FAIL ' + tests[j][0] + '\n     ' + e.message); }
+    }
+  }
+  log('\n' + pass + ' réussis, ' + fail + ' en échec');
+  document.title = (fail ? 'ECHEC ' : 'OK ') + pass + '/' + (pass + fail);
+})().catch(function (e) { document.getElementById('out').textContent += '\nERREUR ' + e.message; document.title = 'ERREUR'; });
+</script>

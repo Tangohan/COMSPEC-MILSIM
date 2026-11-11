@@ -259,14 +259,128 @@
 
   var ECHELON_CODE = { team: 'A', squad: 'B', section: 'C', platoon: 'D', company: 'E', battalion: 'F', regiment: 'G', brigade: 'H' };
 
-  /** SIDC 2525C (15 caractères) d'une unité : affiliation, fonction, échelon. */
+  /**
+   * SIDC 2525C (15 caractères) d'une unité : affiliation, statut (présent / prévu), fonction, PC ou groupement, échelon.
+   * props.sidc (équipements, fonctions hors liste) sert de base : « * » y est remplacé par l'affiliation ou le statut.
+   */
   function sidc(props, unitTypes) {
-    if (props && props.sidc && /^[A-Z0-9*-]{10,30}$/.test(props.sidc)) return props.sidc;
-    var aff = props && /^[FHNU]$/.test(props.affil) ? props.affil : 'F';
+    props = props || {};
+    var aff = /^[FHNU]$/.test(props.affil) ? props.affil : 'F';
+    var mod = props.hq && props.tf ? 'B' : (props.hq ? 'A' : (props.tf ? 'E' : null));
+    var status = props.status === 'planned' ? 'A' : null;
+    if (props.sidc && /^[A-Z0-9*-]{10,30}$/.test(props.sidc)) {
+      var plain = !/\*/.test(props.sidc) && !mod && !status;
+      if (plain) return props.sidc;
+      var ch = props.sidc.split('');
+      while (ch.length < 15) ch.push('-');
+      if (ch[1] === '*') ch[1] = aff;
+      if (ch[3] === '*') ch[3] = 'P';
+      if (status) ch[3] = status;
+      if (mod) ch[10] = mod;
+      if (ECHELON_CODE[props.echelon] && ch[0] === 'S' && ch[2] === 'G' && ch[4] === 'U') ch[11] = ECHELON_CODE[props.echelon];
+      return ch.join('').replace(/\*/g, '-');
+    }
     var fn = '------';
-    (unitTypes || []).forEach(function (t) { if (t.id === (props && props.unitType)) fn = t.fn; });
-    var ech = ECHELON_CODE[props && props.echelon] || '-';
-    return 'S' + aff + 'GP' + fn + '-' + ech + '---';
+    (unitTypes || []).forEach(function (t) { if (t.id === props.unitType) fn = t.fn; });
+    var ech = ECHELON_CODE[props.echelon] || '-';
+    return 'S' + aff + 'G' + (status || 'P') + fn + (mod || '-') + ech + '---';
+  }
+
+  /** Champs de texte et modificateurs du symbole (milsymbol) : formation supérieure, informations, renforcé / réduit, direction. */
+  function symbolOptions(props) {
+    props = props || {};
+    var o = {};
+    if (props.higher) o.higherFormation = String(props.higher);
+    if (props.info) o.additionalInformation = String(props.info);
+    if (props.mod === 'reinforced') o.reinforcedReduced = '+';
+    if (props.mod === 'reduced') o.reinforcedReduced = '-';
+    if (props.mod === 'both') o.reinforcedReduced = '±';
+    if (props.dir != null && props.dir !== '' && isFinite(Number(props.dir))) o.direction = Number(props.dir);
+    return o;
+  }
+
+  /** Ligne décalée de d mètres (à gauche si d > 0), onglets limités. */
+  function offsetPath(pts, d) {
+    var n = pts.length;
+    var out = [];
+    for (var i = 0; i < n; i++) {
+      var a = pts[Math.max(0, i - 1)], b = pts[i], c = pts[Math.min(n - 1, i + 1)];
+      var n1 = segNormal(a, b), n2 = segNormal(b, c);
+      if (i === 0) n1 = n2;
+      if (i === n - 1) n2 = n1;
+      var mx = n1[0] + n2[0], my = n1[1] + n2[1];
+      var ml = Math.sqrt(mx * mx + my * my);
+      if (ml < 1e-6) { mx = n1[0]; my = n1[1]; ml = 1; }
+      mx /= ml; my /= ml;
+      var k = Math.min(3, 1 / Math.max(0.2, mx * n1[0] + my * n1[1]));
+      out.push([b[0] + mx * d * k, b[1] + my * d * k]);
+    }
+    return out;
+  }
+  function segNormal(a, b) {
+    var dx = b[0] - a[0], dy = b[1] - a[1];
+    var l = Math.sqrt(dx * dx + dy * dy);
+    return l < 1e-9 ? [0, 0] : [-dy / l, dx / l];
+  }
+  function pointAlong(pts, s) {
+    for (var i = 1; i < pts.length; i++) {
+      var d = dist(pts[i - 1], pts[i]);
+      if (s <= d && d > 0) return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * s / d, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * s / d];
+      s -= d;
+    }
+    return pts[pts.length - 1].slice();
+  }
+
+  /**
+   * Axe de progression avec sa largeur (APP-6) : deux bords parallèles, ouverts à l'arrière, et une pointe plus large
+   * que le corps. Retour : polyligne du contour (bord gauche, pointe, bord droit).
+   */
+  function axisOutline(pts, width) {
+    var total = pathLength(pts);
+    var half = Math.max(1, width / 2);
+    if (pts.length < 2 || total < 1) return pts.slice();
+    var head = Math.min(total * 0.6, Math.max(width * 1.2, half * 2));
+    var bodyEnd = total - head;
+    var body = [];
+    var acc = 0;
+    body.push(pts[0].slice());
+    for (var i = 1; i < pts.length; i++) {
+      acc += dist(pts[i - 1], pts[i]);
+      if (acc < bodyEnd - 0.5) body.push(pts[i].slice());
+    }
+    var neck = pointAlong(pts, bodyEnd);
+    body.push(neck);
+    var left = offsetPath(body, half), right = offsetPath(body, -half);
+    var tip = pts[pts.length - 1];
+    var nrm = segNormal(neck, tip);
+    var wl = [neck[0] + nrm[0] * half * 2, neck[1] + nrm[1] * half * 2], wr = [neck[0] - nrm[0] * half * 2, neck[1] - nrm[1] * half * 2];
+    return left.concat([wl, tip.slice(), wr]).concat(right.reverse());
+  }
+
+  /** Éventail de portée : secteur (azimut, ouverture) entre la portée minimale et la portée, en polygone. */
+  function fanOutline(el, segments) {
+    var p = el.props || {};
+    var c = el.pts[0];
+    var r = Math.max(1, Number(p.radius) || 1000), r0 = Math.max(0, Math.min(r, Number(p.minRange) || 0));
+    var arc = Math.max(5, Math.min(360, Number(p.arc) || 60));
+    var b = Number(p.bearing) || 0;
+    var n = Math.max(6, Math.round((segments || 48) * arc / 360));
+    var out = [], i, a;
+    for (i = 0; i <= n; i++) {
+      a = (b - arc / 2 + arc * i / n) * Math.PI / 180;
+      out.push([c[0] + r * Math.sin(a), c[1] + r * Math.cos(a)]);
+    }
+    if (arc >= 360) {
+      out.pop();
+      return out;
+    }
+    if (r0 > 0) {
+      for (i = n; i >= 0; i--) {
+        a = (b - arc / 2 + arc * i / n) * Math.PI / 180;
+        out.push([c[0] + r0 * Math.sin(a), c[1] + r0 * Math.cos(a)]);
+      }
+    } else out.push([c[0], c[1]]);
+    return out;
   }
 
   /** Échelle : longueur ronde (m) la plus proche de la cible. */
@@ -289,6 +403,7 @@
     bbox: bbox, distToSegment: distToSegment, pointInPolygon: pointInPolygon, outline: outline, hitDistance: hitDistance,
     simplify: simplify, centroid: centroid, translate: translate, rotate: rotate, scale: scale, inPhase: inPhase,
     uid: uid, History: History, mergeRemote: mergeRemote, nearestGameColor: nearestGameColor, GAME_COLORS: GAME_COLORS,
-    sidc: sidc, niceScale: niceScale, gridStep: gridStep, clone: clone
+    sidc: sidc, niceScale: niceScale, gridStep: gridStep, clone: clone,
+    symbolOptions: symbolOptions, offsetPath: offsetPath, axisOutline: axisOutline, fanOutline: fanOutline, ECHELON_CODE: ECHELON_CODE
   };
 });

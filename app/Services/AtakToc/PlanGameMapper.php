@@ -13,6 +13,8 @@ use App\Repositories\AtakWebCommandRepository;
  * pointillé, flèche, épaisseur, numéro], porté par une commande web « toc / plnadd » (fil WC1, 480 caractères au plus,
  * texte ASCII). Les formes sans équivalent sont converties : cercle, ellipse et rectangle en polygone, unité neutre ou
  * inconnue en note, FFA/RFA/champ de mines en zone titrée. Couleur : la plus proche des 9 couleurs du jeu.
+ * Éditeur v2 : éventail de portée en zone (secteur en polygone), cercle de portée en zone (cercle extérieur), texte
+ * avec renvoi en note au point d'ancrage ; un élément masqué ou une unité pas encore posée ne part jamais.
  * Retour (« Importer depuis le jeu ») : plan du camp remonté par les téléphones (atak_briefing_plans).
  * Réalisme : seul le plan dessiné part en jeu, jamais une position d'unité.
  */
@@ -143,6 +145,9 @@ final class PlanGameMapper
     {
         $pts = $el['pts'];
         $p = $el['props'];
+        if (($el['kind'] ?? '') === 'fan') {
+            return self::fanOutline($el, $segments);
+        }
         switch ($el['geom']) {
             case 'circle':
             case 'ellipse':
@@ -169,6 +174,48 @@ final class PlanGameMapper
     }
 
     /**
+     * Éventail de portée en polygone : centre puis arc (azimut 0 = nord, sens horaire) ; avec une portée minimale,
+     * couronne de secteur (arc extérieur puis arc intérieur) ; sur 360°, le cercle extérieur.
+     *
+     * @param array<string, mixed> $el
+     * @return list<array{0: float, 1: float}>
+     */
+    public static function fanOutline(array $el, int $segments = 24): array
+    {
+        [$cx, $cy] = $el['pts'][0];
+        $p = $el['props'];
+        $radius = max(1.0, (float) ($p['radius'] ?? 1000));
+        $min = max(0.0, min($radius, (float) ($p['minRange'] ?? 0)));
+        $arc = max(5.0, min(360.0, (float) ($p['arc'] ?? 60)));
+        $bearing = (float) ($p['bearing'] ?? 0);
+        $at = static fn (float $deg, float $r): array => [round($cx + $r * sin(deg2rad($deg)), 1), round($cy + $r * cos(deg2rad($deg)), 1)];
+        $out = [];
+        if ($arc >= 360.0) {
+            for ($i = 0; $i < $segments; $i++) {
+                $out[] = $at(360.0 * $i / $segments, $radius);
+            }
+
+            return $out;
+        }
+        $ring = $min > 0.0;
+        $steps = max(2, min($ring ? intdiv($segments, 2) : $segments, (int) ceil($arc / 15)));
+        $from = $bearing - $arc / 2;
+        if (!$ring) {
+            $out[] = [round((float) $cx, 1), round((float) $cy, 1)];
+        }
+        for ($i = 0; $i <= $steps; $i++) {
+            $out[] = $at($from + $arc * $i / $steps, $radius);
+        }
+        if ($ring) {
+            for ($i = $steps; $i >= 0; $i--) {
+                $out[] = $at($from + $arc * $i / $steps, $min);
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * Éléments du plan web => éléments de l'app Plan du jeu. Seuls les éléments de la phase choisie (ou tous).
      *
      * @param list<array<string, mixed>> $elements éléments validés (PlanValidator::element)
@@ -187,7 +234,7 @@ final class PlanGameMapper
                 continue;
             }
             $def = $kinds[$el['kind']] ?? null;
-            if ($def === null) {
+            if ($def === null || !PlanTimeline::placed($el)) {
                 continue;
             }
             $p = $el['props'];
@@ -203,7 +250,11 @@ final class PlanGameMapper
                     $degraded = 'unit_affil';
                 }
             }
-            if ($game === 'ZONE' && in_array($el['kind'], ['ffa', 'rfa', 'minefield'], true)) {
+            if ($el['kind'] === 'fan') {
+                $game = 'ZONE';
+                $degraded = 'shape_polygon';
+            }
+            if ($game === 'ZONE' && in_array($el['kind'], ['ffa', 'rfa', 'minefield', 'bp', 'dz', 'cbrn', 'obstacle_belt'], true)) {
                 $degraded = 'zone_title';
                 if ($text === '') {
                     $text = (string) ($def['text'] ?? '');
@@ -213,6 +264,10 @@ final class PlanGameMapper
                 $degraded = 'icon_note';
             }
             $pts = self::outline($el);
+            if ($el['kind'] === 'textbox') {
+                // Texte avec renvoi : une note au point d'ancrage.
+                $pts = [$pts[0]];
+            }
             if (in_array($el['geom'], ['circle', 'ellipse', 'rect'], true)) {
                 $degraded = $degraded !== '' ? $degraded : 'shape_polygon';
             }

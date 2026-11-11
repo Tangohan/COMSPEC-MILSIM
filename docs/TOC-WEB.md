@@ -207,6 +207,60 @@ Côté mod (branche `feat/atak-toc-web-sync`) :
   - JSON (format `athena-plan` version 1) ; import JSON contrôlé (2 Mo, 1 500 éléments, schéma vérifié élément par élément).
 - **Plusieurs éditeurs** : chaque élément porte l'heure de son dernier enregistrement, une horloge du plan strictement croissante. Le dernier enregistré gagne, élément par élément. Un éditeur est prévenu quand sa version a remplacé celle d'un autre. Les changements se relèvent toutes les 2,5 s (`?since=` + ETag).
 - **Appareils** : tablette et bureau ; téléphone en lecture seule. Raccourcis clavier : touche « ? ».
+- Les volets, le temps, le relief et la vue 3D sont décrits plus bas.
+
+## Éditeur de plans : volets, glisser-déposer, temps, relief et vue 3D
+
+Écran : barre d'outils en haut ; à gauche **ORBAT**, **Calques**, **Bibliothèque** ; la carte au centre (2D ou 3D) ; à droite **Propriétés**, **Plan**, **Échanges** ; la frise du temps en bas. Les volets se replient. Bureau à partir de 1280 px et tablette ; téléphone en lecture seule.
+
+- **Bibliothèque** : symboles par famille (unités, matériels et installations, points, manœuvre, mesures de coordination, zones, appuis feux, obstacles et NRBC, santé et logistique, dessin libre), recherche, favoris, récents. Un clic arme le symbole (clic sur la carte pour le poser, ou tracer), un glisser le pose où on le lâche, en 2D comme en 3D. Affiliation et échelon des unités posées se choisissent en tête du volet. Les matériels et les fonctions hors liste passent par un code 2525C (`props.sidc`) ; ceux que milsymbol ne sait pas dessiner ne sont pas proposés.
+- **ORBAT du plan** : arbre des unités par affiliation. Glisser une unité sur une autre la rattache, entre deux la range, sur la carte la pose ou la déplace. Œil et verrou par unité, recherche, « à poser » pour une unité qui n'est pas encore sur la carte. « ORBAT du site » reprend les unités de la communauté (celles que le membre voit déjà sur `/orbat`, sans donnée personnelle) ; « Depuis le jeu » ajoute les groupes ATAK en liaison à leur position.
+- **Calques** : ordre par glisser (celui du haut est dessiné devant), œil, verrou, opacité, calque actif ; calques du jeu en dessous, avec « Ajouter au plan ».
+- **Sélection** : clic ; Maj ou Ctrl+clic ; cadre en glissant dans le vide ; lasso (Q) ; Alt+clic pour l'élément du dessous ; tout le calque, toute la phase, tout le même type ; groupes. Poignées : sommets (glisser un milieu ajoute un sommet, double-clic en retire un), rayons, échelle aux quatre coins, rotation (Maj : pas de 15°), portée, azimut et ouverture d'un éventail. Aligner, répartir, avancer ou reculer d'un cran, masquer, verrouiller. Flèches : 10 m (Maj 100 m, Alt 1 m).
+- **Presse-papiers** : copier, couper, coller sous le curseur, coller à la même place, dupliquer, Alt+glisser pour dupliquer en déplaçant. Le presse-papiers du système porte notre format (`athena-plan-clip`) : on colle d'un plan à l'autre, d'un onglet à l'autre ; un plan JSON ou un GeoJSON collé est importé. Copier et coller le style. Copier l'image de la vue.
+- **Palette de commandes** (Ctrl+K) : toute action, symbole, unité, calque, phase, fond de carte, grille (`0425 1169`) ou heure (`H+0:30`). Clic droit : menu sur la carte, un élément ou l'arbre. Touche « ? » : raccourcis.
+- **Graphismes** ajoutés : axe avec sa largeur, limite avec marque d'échelon, lignes de coordination nommées aux deux bouts (PL, LD, LOA, FSCL, CFL, RFL, FLOT), position de combat, TAI, PZ, DZ, zone contaminée, ligne et ceinture d'obstacles, cercles de portée concentriques, éventail de portée (masqué par le relief si demandé), itinéraire avec points de passage numérotés et délais (vitesse), texte avec renvoi, points MEDEVAC, nid de blessés, ravitaillement, poste d'observation, cible, décontamination.
+- **Unités** : indicatif, affiliation, fonction, échelon, statut présent ou prévu, renforcé ou réduit, PC, groupement, formation supérieure, informations, direction de mouvement, unité mère.
+- **Import et export** : JSON du site, **GeoJSON** et **KML** (exports `/atak/toc/plans/{id}/export.geojson` et `export.kml`, import par le menu Importer ou en déposant le fichier sur la carte ; KMZ non pris en charge). Coordonnées en mètres Arma (`crs: arma-metres`), élément complet joint pour un retour sans perte. Un fichier étranger en degrés est ajusté dans la vue affichée. L'import renvoie des éléments contrôlés que l'éditeur pose : il s'annule par Ctrl+Z.
+
+### Temps
+
+- Chaque phase a un début en minutes par rapport à l'heure H (`meta.timeline.phases`) ; l'heure H (ZULU), la durée et l'affichage H+ ou ZULU se règlent dans la frise.
+- Une unité peut porter des **images clés** (`props.track`, 60 au plus) : avec « Clé auto », la déplacer à un instant de la frise pose une image clé ; entre deux images clés elle va en ligne droite, ou le long d'un tracé choisi (`props.route`). Fenêtre de présence par élément (`t0`, `t1`).
+- Frise : lecture, pause, vitesse, tête de lecture à glisser, débuts de phase à glisser, repères (heure H, événements, lignes EXCHECK du poste reprises par « EXCHECK » quand leur heure est en H+), images clés de la sélection à glisser.
+- **Briefing** : plein écran, phase par phase (← →), les unités glissent d'une position à la suivante.
+- **Envoi en jeu** : une phase part avec les positions des unités au début de cette phase ; le plan entier part avec les positions de base. Éléments masqués ou pas encore posés : jamais envoyés.
+- Même calcul côté site (`App\Services\AtakToc\PlanTimeline`) et côté éditeur (`TocPlanLogic.positionAt`).
+
+### Relief et vue 3D
+
+- **Source** : le relief que le site a déjà (relevé du théâtre, cellule de 50 m, `AtakTerrainRepository`), le même que pour l'ombrage et la ligne de vue d'ATAK web. Rien de nouveau à stocker. L'éditeur le lit en binaire : `GET /atak/toc/api/terrain/{carte}/dem` (droit `atak.toc.use`, int16 petit-boutiste, rangée 0 au sud, en-têtes `X-Dem-*`, ETag, cache privé de 5 min ; 404 `relief_unavailable` sans relevé).
+- **Relever un terrain** (une fois par terrain, par TTRD ou un Zeus) : en jeu avec Overwatch connect relié à Athena, poser le module Zeus « Relevé du théâtre » et laisser tourner sur la carte entière. Le relevé envoie le terrain par blocs de 32 × 32 cellules à `/api/atak/terrain/chunk` : 400 blocs pour Altis (615 × 615 cellules). L'avancement se lit dans la fenêtre du relevé et sur `/api/atak/terrain?mapId=…` (`coverage_pct`). L'ATAK natif n'a pas d'outil de relevé : aucun changement de mod ni de DLL n'a été fait.
+- Sans relevé : l'éditeur le dit (« Relief non disponible pour ce terrain : lancez le relevé du théâtre en jeu »), les outils de relief ne répondent pas et la vue 3D reste à plat.
+- **Outils** : altitude sous le curseur et dans Propriétés ; mesure (distance, azimut, surface, dénivelé) ; ligne de vue entre deux points avec hauteurs d'observateur et de cible, et sa coupe ; coupe du relief le long d'un tracé (montée, descente, pente max) ; zone vue depuis un point ; teinte des pentes ; masque des éventails de portée. Calculs dans le navigateur (`plan-logic.js`), relief seul : ni bâtiments ni végétation.
+- **Vue 3D** (bouton 2D / 3D, touche 3) : three.js r160 déjà fourni par le site (`public/assets/vendor/three`, licence MIT), module `public/assets/js/toc/plan/plan-3d.js` chargé seulement à l'ouverture. Terrain entier en maillage grossier (192 × 192 au plus) et zone du plan à la cellule du relevé (512 × 512 au plus), texture du fond affiché (nos tuiles satellite ou plan) ou teinte hypsométrique à défaut. Traits, zones, flèches, cercles, libellés, zone vue et pentes sont **drapés** sur le relief ; unités et repères sont des étiquettes dressées à taille d'écran constante, avec tige et point au sol ; la ligne de vue est tracée dans l'air. Réglages : exagération du relief, heure du soleil, nord en haut.
+- **Ce qui se fait en 3D** : choisir (clic, Maj), déplacer en glissant sur le relief, poser un symbole ponctuel (clic, ou glisser depuis la bibliothèque ou l'ORBAT), mesure, ligne de vue, coupe, zone vue, menus, propriétés, frise et briefing. **Le tracé des traits et des zones, les poignées, le cadre et le lasso restent en 2D.** Sans WebGL, la carte reste en 2D et le dit.
+- Limites : cellule de 50 m (pas de micro-relief), pas de bâtiments en volume (le module sait les extruder, l'éditeur ne les lui fournit pas encore), cadence non mesurée sur un vrai poste (rendu vérifié en logiciel seulement).
+
+### ORBAT Mapper
+
+L'ergonomie s'inspire d'[ORBAT Mapper](https://github.com/orbat-mapper/orbat-mapper) (licence **MIT**) : arbre ORBAT à glisser sur la carte, volets, palette de commandes, frise et lecture, propriétés à onglets. **Aucun code, aucune image ni marque n'en est repris** : l'éditeur reste en JavaScript sans cadre applicatif, sur Leaflet, milsymbol et three.js du site.
+
+### Fichiers
+
+| Fichier | Rôle |
+|---|---|
+| `public/assets/js/toc/toc-plan-editor.js` | cœur : état, enregistrement, carte 2D, sélection, poignées, dessin, presse-papiers, clavier, envoi en jeu |
+| `public/assets/js/toc/plan/plan-logic.js` | calculs sans navigateur (sélection, presse-papiers, temps, relief, ORBAT), testés |
+| `public/assets/js/toc/plan/plan-panels.js` | volets, bibliothèque, ORBAT, calques, propriétés, palette, menus, dépôt de fichiers |
+| `public/assets/js/toc/plan/plan-timeline.js` | frise, lecture, repères, briefing |
+| `public/assets/js/toc/plan/plan-terrain.js` | relief, outils de relief, pont vers la vue 3D |
+| `public/assets/js/toc/plan/plan-3d.js` | vue 3D (module ES, three.js) |
+| `public/assets/js/toc/toc-plan-render.js`, `toc-geo.js` | dessin partagé avec la console (ajouts seulement) |
+| `public/assets/css/atak-toc-plan.css` | présentation de l'éditeur (jetons du thème TOC) |
+| `app/Services/AtakToc/PlanTimeline.php`, `PlanInterop.php` | temps ; GeoJSON et KML |
+
+Essais : `tests/Unit/AtakTocPlanV2Test.php`, `AtakTocPlanV2ApiTest.php` ; `tests/Frontend/toc-plan-logic.test.cjs` (Node, ou `tests/Frontend/run-in-browser.html` sans Node). Banc de rendu sans base : `tests/Frontend/fixtures/plan-editor-harness.php` (plan d'exemple et relief synthétique), `plan-3d-demo.html`.
 
 ### Envoi en jeu et import depuis le jeu
 
@@ -243,3 +297,4 @@ Côté mod (branche `feat/atak-toc-web-sync`) :
 - **Ordres** : la console émet les ordres simples ; FRAGO et modèles d'ordre restent dans ATAK web.
 - **Préférences** : les calques sont gardés dans le navigateur, pas sur le site.
 - **Temps réel** : sondage (3 s pour la salle, 2,5 s pour un plan), pas de websocket.
+- **Éditeur de plans** : image en surimpression calée sur deux points, pièces jointes sur un élément, aimantation aux routes, curseurs et sélections des autres éditeurs, bâtiments en volume dans la vue 3D, tracé des traits et des zones en 3D, KMZ, noms de lieux dans la palette.
