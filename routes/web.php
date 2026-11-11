@@ -509,6 +509,25 @@ return function (Router $router) {
     $router->post('/activite/messages/lu', [ActivityHubController::class, 'markTenantMessagesRead'], [AuthMiddleware::class]);
     $router->get('/calendrier/abonnement/{token}', [CommunityCalendarFeedController::class, 'ics']);
     $router->get('/operateur/terrain', [OperateurTerrainController::class, 'index'], [AuthMiddleware::class]);
+    // Outils opérateur : page d'accueil des outils de chaque membre, et « Mon identité » (identités, papiers, couvertures).
+    // Le membre n'agit que sur son propre compte ; écritures en POST avec jeton CSRF (OperatorHubController).
+    $opHub = \App\Controllers\Web\OperatorHubController::class;
+    $router->get('/operateur', [$opHub, 'index'], [AuthMiddleware::class]);
+    $router->post('/operateur/favoris', [$opHub, 'favorite'], [AuthMiddleware::class]);
+    $router->get('/operateur/identite', [$opHub, 'identities'], [AuthMiddleware::class]);
+    $router->post('/operateur/identite/identites', [$opHub, 'identitySave'], [AuthMiddleware::class]);
+    $router->post('/operateur/identite/identites/{id}/photo', [$opHub, 'identityPhoto'], [AuthMiddleware::class]);
+    $router->post('/operateur/identite/identites/{id}/archiver', [$opHub, 'identityArchive'], [AuthMiddleware::class]);
+    $router->post('/operateur/identite/identites/{id}/activer', [$opHub, 'identityActivate'], [AuthMiddleware::class]);
+    $router->post('/operateur/identite/identites/{id}', [$opHub, 'identitySave'], [AuthMiddleware::class]);
+    $router->get('/operateur/identite/documents', [$opHub, 'documents'], [AuthMiddleware::class]);
+    $router->post('/operateur/identite/documents', [$opHub, 'documentRequest'], [AuthMiddleware::class]);
+    $router->get('/operateur/identite/documents/{id}/specimen', [$opHub, 'documentSpecimen'], [AuthMiddleware::class]);
+    $router->post('/operateur/identite/documents/{id}/action', [$opHub, 'documentAction'], [AuthMiddleware::class]);
+    $router->get('/operateur/identite/couverture', [$opHub, 'covers'], [AuthMiddleware::class]);
+    $router->post('/operateur/identite/couverture', [$opHub, 'coverGenerate'], [AuthMiddleware::class]);
+    $router->get('/operateur/identite/couverture/{id}/telecharger', [$opHub, 'coverDownload'], [AuthMiddleware::class]);
+    $router->post('/operateur/identite/couverture/{id}', [$opHub, 'coverAction'], [AuthMiddleware::class]);
     $mwOperationalBoardEdit = [AuthMiddleware::class, OperationalBoardEditMiddleware::class];
     $router->get('/tableau-operationnel/p/{token}', [OperationalBoardController::class, 'publicWall']);
     $router->get('/tableau-operationnel', [OperationalBoardController::class, 'portalIndex'], [AuthMiddleware::class, OperationalBoardViewMiddleware::class]);
