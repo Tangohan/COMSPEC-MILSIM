@@ -38,6 +38,25 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : l'app Fichiers répond toujours (COMSPEC SSE et ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : L'app Fichiers répond toujours : trouvé, introuvable ou erreur
+- Une recherche dans l'app Fichiers ne reste plus bloquée sur « Réponse du fichier en attente… » : en quelques secondes, vous avez la fiche, « Aucun enregistrement » ou une erreur claire avec un bouton « Réessayer », et vous pouvez annuler à tout moment.
+- Le numéro imprimé sur une carte ou un passeport de la mission est retrouvé même tapé avec des espaces, des tirets ou en minuscules, et le pays peut s'écrire ALT, TAN, LIV, MAL ou en code à deux lettres ; chaque recherche s'ajoute à l'onglet JOURNAL.
+EN : The Files app always answers: found, not found or error
+- A search in the Files app no longer stays stuck on "Waiting for the records answer…": within a few seconds you get the record, "No record found" or a clear error with a "Retry" button, and you can cancel at any time.
+- The number printed on a mission ID card or passport is found even when typed with spaces, dashes or in lower case, and the country can be written ALT, TAN, LIV, MAL or as a two-letter code; every search is added to the LOG tab.
+
+### Détail technique
+- Cause de l'attente sans fin : en multijoueur (poste client sur serveur dédié), `fn_fileClient « send »` part en `remoteExecCall ["comspec_sse_fnc_fileServer", 2]` et l'app posait `pending` (`fn_fileAction` « run ») sans aucun minuteur ; seul `fn_fileClient « result »` l'effaçait. Toute réponse perdue (serveur avec un SSE plus ancien sans `fn_fileServer`, `CfgRemoteExec` du serveur ou de la mission, sorties muettes de `fn_fileServer` sur unité nulle ou d'un autre poste) laissait « Réponse du fichier en attente… » pour toujours, sans bouton. De plus la réponse locale n'était posée qu'après l'appel Athena (`QueryIdDocument`, jusqu'à 20 s), et un état `pending` ou une animation restés dans `uiNamespace` d'une mission précédente bloquaient l'app.
+- Machine d'états : `fn_fileQuery` inscrit chaque demande (`comspec_sse_filePending`) et arme 8 s ; `fn_fileClient « timeout »` / « fail » (refus motivé du serveur) posent un résultat d'erreur (motif, « Réessayer ») ; « result » pose la réponse locale tout de suite, puis l'étape Athena en tâche de fond (`athenaState` pending | ok | none | offline | unlinked | timeout, 15 s au plus, aucune requête sans licence acceptée) ; une réponse tardive remplace l'erreur de même étiquette ; « cancel » (bouton « Annuler »). Évènements : `comspec_sse_fileResult` inchangé (HashMap vide en cas d'erreur), nouveau `comspec_sse_fileError`.
+- `fn_fileNorm` (nouveau) : numéro et plaque en capitales sans séparateurs, pays ALT/TNA/LVN/MLD (alias TAN, LIV, MAL, AL, LV, noms) et ISO alpha-2 → alpha-3, appliqué sur le poste et sur le serveur.
+- `fn_fileServer` : QA sur le registre `issued` (chaque papier délivré ou généré, IA comprises) par numéro normalisé, titulaire inscrit à la base, mention « Document douteux » (titulaire différent, volé, révoqué, fiche SEEK II discordante), même numéro sous un autre pays = correspondance possible, fiches SEEK II du numéro, contrôles subis gardés aussi sous le numéro (`numChecks`) ; champ `match` (hit | possible | none) ; jamais de silence (`fail`).
+- `fn_filePage` : carte de réponse (HIT, CORRESPONDANCE POSSIBLE, AUCUN ENREGISTREMENT, ERREUR), sources LOCAL / ATHENA, état d'Athena en une ligne, « Copier le numéro », « Annuler », journal avec les erreurs ; messages dans l'app (plus de toast du téléphone sur ces chemins).
+
+
 ## SSE 1.9.0 : fenêtre « Réponses de l'IA » simple, peur d'une arme braquée de près, champs des documents (SSE 1.9.0)
 
 ### Résumé joueur
