@@ -3,7 +3,7 @@
     À la place de la carte : plan du mur vu depuis le poste (chaque écran lié à sa place réelle, murs d'images découpés
     en dalles, écrans proches non liés en pâle) ; un clic choisit un écran ou une dalle. À droite : salle (créer,
     renommer), lier tout ce qui est dans un rayon, viser un écran pour le lier, contenu de l'écran choisi (carte, SAT,
-    caméra, mosaïque, escouade, horloge, registres…), nom, allumer / éteindre, identifier (il clignote 2 s), lier /
+    caméra, mosaïque, escouade, horloge, registres, texte à LED avec sa fenêtre de saisie…), nom, allumer / éteindre, identifier (il clignote 2 s), lier /
     délier, réglage de la mosaïque (rotation, source case par case), scènes (enregistrer, remettre, supprimer), tout
     allumer / tout éteindre.
     Modes : ["build"] (contrôles dans le registre du PC, posés par sa grille, fn_tocLaptop) | ["refresh"]
@@ -28,7 +28,7 @@ private _contentOf = {
     if ((count (_o getVariable ["COMSPEC_ATAK_ScreenCast", []])) >= 5) exitWith { "diapositives" };
     (createHashMapFromArray [["SPLIT", "carte et flux"], ["MAP", "carte seule"], ["FEED", "flux seul"], ["NET", "réseau"], ["ORBAT", "ORBAT"], ["TOC", "PIP du poste"],
         ["CAM", "caméra"], ["SAT", format ["SAT %1", (_c param [8, 0]) + 1]], ["CLOCK", "horloge"], ["SQUAD", "escouade " + (_c param [9, ""])], ["LOG", "main courante"],
-        ["EXCHECK", "exécution"], ["KILLS", "pertes"], ["REQ", "demandes"], ["STRIP", "bandeau horloge"], ["PLATE", "plaque " + (_c param [9, ""])], ["MOSAIC", "mosaïque"]]) getOrDefault [_v, _v]
+        ["EXCHECK", "exécution"], ["KILLS", "pertes"], ["REQ", "demandes"], ["STRIP", "bandeau horloge"], ["PLATE", "plaque " + (_c param [9, ""])], ["MOSAIC", "mosaïque"], ["TEXT", "texte"], ["COLA", "colonne horloge"], ["COLB", "colonne flux"]]) getOrDefault [_v, _v]
 };
 switch (_mode) do {
     case "build": {
@@ -119,6 +119,8 @@ switch (_mode) do {
                 private _w = _ui get "hWhat";
                 ["apply", [_o, _w lbData (lbCurSel _w)]] call comspec_atak_native_fnc_tocScreen;
                 if (_o getVariable ["COMSPEC_ATAK_TocOff", false]) then { ["do", ["power", [_o, true]]] call comspec_atak_native_fnc_tocHall; };
+                // Texte : la fenêtre « Texte de l'écran » s'ouvre par-dessus le PC (messages, couleur, défilement, aperçu).
+                if ((_w lbData (lbCurSel _w)) isEqualTo "TEXT") then { ["edit", _o] call comspec_atak_native_fnc_tocText; };
                 format ["%1 : %2", (_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [0, "écran"], _w lbText (lbCurSel _w)] call _status;
             };
             case "hScrRen": {
@@ -236,7 +238,8 @@ switch (_mode) do {
             // Face de l'écran seulement (le pied, la potence ou le support gonflaient le pavé) : largeur de l'objet, hauteur
             // selon le format (16:9, 4:1), en haut de l'objet (en bas pour un écran suspendu).
             private _w = abs ((_p2 select 0) - (_p1 select 0));
-            private _hh = (_w * ([9 / 16, 1 / 4] select ((getNumber (configOf _o >> "comspec_screenRatio")) >= 4))) min (abs ((_p2 select 2) - (_p1 select 2)));
+            private _sr = (getNumber (configOf _o >> "comspec_screenRatio")) max (16 / 9);
+            private _hh = (_w / _sr) min (abs ((_p2 select 2) - (_p1 select 2)));
             private _zc = if (((typeOf _o) find "Ceiling") >= 0) then { (_p1 select 2) + _hh / 2 } else { (_p2 select 2) - _hh / 2 };
             private _ctr = _o modelToWorldWorld [((_p1 select 0) + (_p2 select 0)) / 2, ((_p1 select 1) + (_p2 select 1)) / 2, _zc];
             private _d = (_eye distance2D _ctr) max 0.5;
@@ -251,7 +254,20 @@ switch (_mode) do {
             private _r = [((_cxp - _tw / 2) max _px) min (_px + _pw - _tw), ((_cyp - _th / 2) max _top) min (_top + _ah - _th), _tw, _th];
             // Mur à plusieurs dalles : découpé en dalles (ordre de lecture), chacune choisie à part.
             private _np = getNumber (configOf _o >> "comspec_screenPanels");
+            // Découpe du plan : grilles, bloc et colonnes des grands murs, zones de l'écran incurvé, dalles côte à côte.
+            private _ty = typeOf _o;
+            private _gridC = { params ["_gc", "_gr"]; private _l = []; for "_j" from 0 to (_gr - 1) do { for "_i" from 0 to (_gc - 1) do { _l pushBack [_i / _gc, _j / _gr, 1 / _gc, 1 / _gr]; }; }; _l };
+            private _colC = { params ["_fx", "_fw", "_n"]; private _l = []; for "_j" from 0 to (_n - 1) do { _l pushBack [_fx, _j / _n, _fw, 1 / _n]; }; _l };
             private _cells = switch (true) do {
+                case ((_ty find "Wall4x3_Panels") >= 0): { [4, 3] call _gridC };
+                case ((_ty find "Wall5x3_Panels") >= 0): { [5, 3] call _gridC };
+                case ((_ty find "Wall4x3") >= 0): { [[0, 0, 0.75, 1]] + ([0.75, 0.25, 3] call _colC) };
+                case ((_ty find "Wall5x3") >= 0): { [[0.2, 0, 0.6, 1]] + ([0, 0.2, 3] call _colC) + ([0.8, 0.2, 3] call _colC) };
+                case ((_ty find "Wall6x4_Zones") >= 0): { [3, 2] call _gridC };
+                case ((_ty find "Wall6x4") >= 0): { [[1 / 6, 0, 4 / 6, 1]] + ([0, 1 / 6, 4] call _colC) + ([5 / 6, 1 / 6, 4] call _colC) };
+                case ((_ty find "Curved") >= 0 && {_np isEqualTo 3}): { [[0.25, 0, 0.5, 1], [0, 0, 0.25, 1], [0.75, 0, 0.25, 1]] };
+                case (_np isEqualTo 2): { [2, 1] call _gridC };
+                case (_np isEqualTo 3 && {(_ty find "Mixed") < 0}): { [3, 1] call _gridC };
                 case (_np isEqualTo 4): { [[0, 0, 0.5, 0.5], [0.5, 0, 0.5, 0.5], [0, 0.5, 0.5, 0.5], [0.5, 0.5, 0.5, 0.5]] };
                 case (_np isEqualTo 6): { [[0, 0, 1/3, 0.5], [1/3, 0, 1/3, 0.5], [2/3, 0, 1/3, 0.5], [0, 0.5, 1/3, 0.5], [1/3, 0.5, 1/3, 0.5], [2/3, 0.5, 1/3, 0.5]] };
                 case (_np isEqualTo 3): { [[0, 0, 2/3, 1], [2/3, 0, 1/3, 0.5], [2/3, 0.5, 1/3, 0.5]] };
@@ -302,19 +318,24 @@ switch (_mode) do {
             (_ui get "hScrName") setVariable ["COMSPEC_ATAK_Id", netId _o];
             (_ui get "hScrName") ctrlSetText ((_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [0, ""]); // i18n:brut (nom saisi)
         };
-        // Contenus proposés (comme le menu ACE) ; face 4:1 : bandeau ou plaque seulement.
+        // Contenus proposés (comme le menu ACE), selon le format de la dalle (fn_tocScreen « format ») : bandeau LED (texte),
+        // face 4:1 (bandeau horloge, plaque, texte), colonne d'un écran incurvé (colonne horloge, colonne flux, texte).
         private _ratio = 0;
+        private _kind = "STD";
         if (_has) then {
-            private _hst = _o getVariable ["COMSPEC_ATAK_TocHost", objNull];
-            _ratio = getNumber (configOf ([_o, _hst] select (!isNull _hst)) >> "comspec_screenRatio");
+            _kind = (["format", _o] call comspec_atak_native_fnc_tocScreen) select 3;
+            _ratio = [0, 4] select (_kind isEqualTo "STRIP");
         };
-        private _opts = if (_ratio >= 4) then { [["Bandeau horloge ZULU / LOCAL", "STRIP"], ["Plaque de nom", "PLATE"]] } else {
+        private _opts = if (_kind isNotEqualTo "STD") then {
+            (createHashMapFromArray [["STRIP", [["Bandeau horloge ZULU / LOCAL", "STRIP"], ["Plaque de nom", "PLATE"], ["Texte (panneau à LED)…", "TEXT"]]],
+                ["COL", [["Colonne horloge et chronos", "COLA"], ["Colonne réseau et flux", "COLB"], ["Texte (panneau à LED)…", "TEXT"]]]]) getOrDefault [_kind, [["Texte (panneau à LED)…", "TEXT"]]]
+        } else {
             [["Carte et flux", "SPLIT"], ["Carte seule", "MAP"], ["Flux seul", "FEED"], ["Réseau", "NET"], ["ORBAT du site", "ORBAT"], ["PIP du poste", "TOC"],
              ["Vue satellite SAT 1", "SAT1"], ["Vue satellite SAT 2", "SAT2"], ["Horloge et chronos", "CLOCK"], ["Main courante", "LOG"], ["Liste d'exécution", "EXCHECK"],
-             ["Pertes et résultats", "KILLS"], ["Demandes des éléments", "REQ"], ["Diapositive du Briefing", "SLIDES"], ["Mosaïque 2x2 · tout le camp", "MOS|2|AUTO"], ["Mosaïque 3x3 · tout le camp", "MOS|3|AUTO"]]
+             ["Pertes et résultats", "KILLS"], ["Demandes des éléments", "REQ"], ["Texte (panneau à LED)…", "TEXT"], ["Diapositive du Briefing", "SLIDES"], ["Mosaïque 2x2 · tout le camp", "MOS|2|AUTO"], ["Mosaïque 3x3 · tout le camp", "MOS|3|AUTO"]]
         };
         private _sqs = ["squads", _side] call comspec_atak_native_fnc_tocScreen;
-        if (_ratio >= 4) then { { _opts pushBack [format ["Plaque · %1", _x], "SQ|" + _x]; } forEach _sqs; } else {
+        if (_kind isNotEqualTo "STD") then { if (_ratio >= 4) then { { _opts pushBack [format ["Plaque · %1", _x], "SQ|" + _x]; } forEach _sqs; }; } else {
             { _opts pushBack [format ["Escouade %1", _x], "SQ|" + _x]; _opts pushBack [format ["Mosaïque 2x2 · groupe %1", _x], "MOS|2|G|" + _x]; } forEach _sqs;
             { _opts pushBack [format ["Caméra · %1", _x select 0], "CAM|" + (_x select 1)]; } forEach (["sources"] call comspec_atak_native_fnc_tocCam);
         };

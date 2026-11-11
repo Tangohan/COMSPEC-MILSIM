@@ -197,7 +197,7 @@ final class AtakTocSatIsrTest extends TestCase
         self::assertStringContainsString('private _hud = ["hudMake", [_d, _sl, "WALL"]] call comspec_atak_native_fnc_tocSat;', $board);
         self::assertStringContainsString("<t color='@amber'>Lecture seule</t>", $board);
         // Plein cadre : ni en-tête ni pied (heure et capteur dans le HUD), FLASH en haut de l'image.
-        self::assertStringContainsString('if (!_wide && {!_isSat}) then {', $board);
+        self::assertStringContainsString('if (!_wide && {!_isSat} && {!_col}) then {', $board);
         self::assertStringContainsString('if (_isSat && {_isFl}) then {', $board);
         // Texte du mur lisible à 3-6 m : 34 px sur 900 pour les données, 28 pour les noms.
         self::assertStringContainsString('["fH", 34 / 900], ["fL", 28 / 900]', $this->src('fn_tocSat.sqf'));

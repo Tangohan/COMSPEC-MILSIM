@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : texte à LED défilant, écrans géants, écran incurvé, postes PC et anciens écrans refaits (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Écris ce que tu veux sur les écrans du TOC, et pose des écrans vraiment géants
+- Nouvel affichage « Texte » dans le style du bandeau horloge : tu écris tes messages (couleur, durée, clignotement), ils passent à tour de rôle et défilent quand ils sont trop longs. Il se règle au menu ACE de l'écran (« Afficher un texte… »), au PC du poste (onglet SALLE), dans l'app Poste TOC et dans le module Zeus.
+- Nouveaux écrans : bandeaux LED de 2,4 m et 4,8 m, écran géant 136 pouces, mur LED 220 pouces, murs vidéo 4x3, 5x3 et 6x4, écrans suspendus doubles et triples, et un grand écran incurvé de 7 m.
+- Postes PC fixes complets (1, 2, 3 écrans ou écran incurvé) qui servent de PC du poste, et un module « Poste opérateur » qui pose bureau, chaise et poste d'un coup.
+- Les anciens écrans (téléviseur, écrans sur trépied, moniteur, toiles de projection, vidéoprojecteur, PC portable) ont de nouveaux modèles ; les missions existantes les gardent.
+EN: Write anything on the TOC screens, and place truly giant screens
+- New "Text" display in the look of the clock strip: you write your messages (colour, duration, blinking), they are shown in turn and scroll when they are too long. Set it from the screen's ACE menu ("Show a text…"), the post PC (ROOM tab), the TOC Post app and the Zeus module.
+- New screens: 2.4 m and 4.8 m LED strips, 136-inch giant screen, 220-inch LED wall, 4x3, 5x3 and 6x4 video walls, double and triple hanging screens, and a 7 m curved screen.
+- Complete desktop PC stations (1, 2, 3 screens or a curved screen) that work as the post PC, and an "Operator station" module that places desk, chair and station at once.
+- The older screens (TV, tripod screens, monitor, projection screens, projector, laptop) have new models; existing missions keep them.
+
+### Détail technique
+- `fn_tocText.sqf` : affichage `TEXT` (table `_schema` des paramètres, nettoyage serveur, défilement tiré de `serverTime`, une seule boucle à 30 images par seconde au plus pour les écrans allumés, éditeur avec aperçu). Réglage `COMSPEC_ATAK_TocText`, gardé par `fn_tocPersist`.
+- `fn_tocScreen.sqf` : table `_formats` (rapports 8:9, 16:9, 4:1, 8:1, 16:1), modes `format` et `params`, `comspec_screenPanelRatio[]` et `comspec_screenPanelViews[]` par dalle, budget de huit redessins par tour, dalles 55" des grands murs en 1024 x 512, affichages `COLA` / `COLB` (colonnes de l'écran incurvé, `fn_tocBoard.sqf`).
+- Modèles : `tools/model_toc_screens.py` (géants, murs, suspendus, incurvé, bandeaux LED), `tools/model_toc_legacy.py` (anciens écrans, mêmes noms de classes), `tools/model_toc_pc.py` (postes PC, `comspec_tocPost=1`). Zones des grands murs et dimensions : `mod/docs/MODELS.md`.
+- Non vérifié en jeu : rendu des textures 2048 x 256 et 4096 x 256, mesure `ctrlTextWidth` dans une texture UI, hauteur et orientation des anciens écrans refaits par rapport aux objets déjà posés (le téléviseur est maintenant mural, sans pied).
+
 ## À venir : poste TOC web et plans d'opération sur Athena (site Athena, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

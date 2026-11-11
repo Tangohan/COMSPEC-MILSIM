@@ -1,7 +1,7 @@
 /*
     Thème des écrans TOC (demande de TTRD, 11/11 : « un rendu pro et propre » sur tous les écrans du mur et le PC du poste).
     Seule source des couleurs, des tailles de texte, des polices, des espacements et de la mise en page des écrans muraux
-    (pixels virtuels 1600 x 900 ; faces 4:1 : 1600 x 400). Les tables entre « TABLE » et « FIN » sont du JSON strict :
+    (pixels virtuels 1600 x 900 ; faces 4:1 : 1600 x 400 ; colonnes 8:9 d'un écran incurvé, COLA et COLB : 800 x 900). Les tables entre « TABLE » et « FIN » sont du JSON strict :
     elles sont lues telles quelles par mod/COMSPEC_ATAK_Native/tools/toc_mockups.py (maquettes PNG, mêmes nombres) et par
     tests/Unit/AtakTocThemeTest.php (contraste, tailles, régions dans le cadre et sans chevauchement). Mode d'emploi :
     docs/TOC-THEME.md. Couleurs des contrôles de config du PC : ui/toc_theme.hpp (mêmes valeurs, vérifiées par le test).
@@ -60,7 +60,9 @@ if ((count _thm) isEqualTo 0) then {
 ["REQ", [["kpi", 24, 90, 1552, 72], ["head", 24, 178, 700, 40], ["sub", 724, 182, 852, 36], ["rule", 24, 222, 1552, 1], ["cols", 24, 230, 1552, 36], ["area", 24, 268, 1552, 560]]],
 ["MOSAIC", [["area", 24, 90, 1552, 746]]],
 ["STRIP", [["zLbl", 48, 40, 640, 48], ["zDig", 48, 100, 660, 160], ["zSub", 48, 284, 640, 48], ["div1", 720, 48, 2, 304], ["lLbl", 760, 40, 350, 48], ["lDig", 760, 112, 360, 136], ["lSub", 760, 284, 350, 48], ["div2", 1140, 48, 2, 304], ["cLbl", 1176, 40, 400, 48], ["cDig", 1176, 120, 400, 100], ["cSub", 1176, 284, 400, 48]]],
-["PLATE", [["bar", 0, 0, 20, 400], ["name", 72, 40, 1480, 220], ["sub", 72, 280, 1480, 72]]]
+["PLATE", [["bar", 0, 0, 20, 400], ["name", 72, 40, 1480, 220], ["sub", 72, 280, 1480, 72]]],
+["COLA", [["zLbl", 24, 24, 752, 36], ["zDig", 24, 64, 752, 150], ["dtg", 24, 222, 752, 36], ["lRule", 24, 274, 752, 1], ["lLbl", 24, 290, 752, 36], ["lDig", 24, 330, 752, 84], ["lDate", 24, 422, 752, 36], ["tHead", 24, 490, 300, 40], ["tSub", 324, 494, 452, 36], ["tRule", 24, 534, 752, 1], ["tArea", 24, 546, 752, 330]]],
+["COLB", [["netHead", 24, 24, 240, 40], ["netSub", 264, 28, 512, 36], ["netRule", 24, 68, 752, 1], ["tiles", 24, 80, 752, 152], ["grpHead", 24, 252, 240, 40], ["grpSub", 264, 256, 512, 36], ["grpRule", 24, 296, 752, 1], ["grpCols", 24, 304, 752, 36], ["grpArea", 24, 342, 752, 200], ["fluxHead", 24, 562, 240, 40], ["fluxSub", 264, 566, 512, 36], ["fluxRule", 24, 606, 752, 1], ["fluxArea", 24, 614, 752, 262]]]
 ];
     // ---- FIN
     // ---- TABLE _flashRule (JSON) : sous un FLASH, [affichage, régions qui restent en place (préfixes), régions qui raccourcissent].

@@ -59,6 +59,29 @@ PC : grille de `fn_tocLaptop` (`font` 0,019, plancher `fontMin` 0,0145 x hauteur
   largeur (choisi : `bg2`, texte accent, filet accent), panneau de l'onglet (titre et état, filet), ligne d'aide, ligne
   d'état. Boutons : normal `bg2`, survol `bg3`, désactivé texte atténué, principal en accent.
 
+## Formats d'image et affichage TEXTE
+
+Le format d'une dalle vient de son rapport largeur / hauteur (`comspec_screenRatio`, ou `comspec_screenPanelRatio[]` par
+dalle ; 16:9 sans indication). Table `_formats` de `fn_tocScreen.sqf` (`["format", écran]`) :
+
+| Rapport | Format | Texture | Affichages |
+| --- | --- | --- | --- |
+| moins de 1,3 (colonne 8:9 d'un écran incurvé) | `COL` | 1024 x 1024 | `COLA` (horloge et chronos), `COLB` (réseau et flux), `TEXT` |
+| moins de 3 (16:9) | `STD` | 2048 x 1024 (1024 x 512 pour les dalles 55" d'un mur de 7 zones ou plus) | tous sauf bandeau, plaque et colonnes |
+| moins de 6 (4:1) | `STRIP` | 2048 x 512 | `STRIP`, `PLATE`, `TEXT` |
+| moins de 12 (8:1) | `LED` | 2048 x 256 | `TEXT` |
+| au-delà (16:1) | `LED` | 4096 x 256 (2048 x 128 si elle n'est pas chargée) | `TEXT` |
+
+Une texture procédurale n'est acceptée qu'en puissances de 2 : un bandeau de 12:1 serait tassé ou étiré, d'où le 16:1.
+Colonnes `COLA` / `COLB` : 800 x 900 pixels virtuels, régions dans `_walls`, ni en-tête ni pied.
+
+Affichage `TEXT` (`fn_tocText.sqf`, maquettes `bandeau_texte`, `bandeau_texte_long`, `mur_texte`) : panneau `bg0`,
+caractères à chasse fixe gras, couleur du message (`accent`, `amber`, `red`, `text`), bordure fine atténuée. Longueurs en
+« hauteurs de panneau » : police 0,60 sur un bandeau, 0,26 (une ligne) ou 0,19 (deux lignes) sur un 16:9. Le texte qui
+tient est fixe ; plus large que le panneau il défile de droite à gauche (4, 7 ou 11 caractères par seconde, blanc de
+6 caractères entre deux passages), position tirée de `serverTime`. Paramètres : table `_schema` (`["params", "TEXT"]`),
+les fenêtres de réglage se construisent dessus. Le texte saisi passe toujours par `ctrlSetText`, jamais par `parseText`.
+
 ## À faire / à éviter
 
 - Toute couleur passe par un jeton (`["rgba", [jeton, alpha]]`, `color='@jeton'` + `["ink", texte]`). Aucune valeur
