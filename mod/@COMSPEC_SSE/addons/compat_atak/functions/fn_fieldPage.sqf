@@ -171,6 +171,10 @@ switch (_tab) do {
         if ((_res param [0, objNull]) isEqualTo _t) then {
             _rows pushBack ["section", (_res param [1, ""]) call _tr, ""];
             { _rows pushBack ["text", format ["<t size='0.9'>%1</t>", [_x] call _esc]]; } forEach (_res param [2, []]);
+            // Numéro trouvé dans le résultat (« Numéro associé », appels) : TRACER ouvre l'app GE de l'ATAK, numéro prérempli.
+            if (!isNil "comspec_atak_native_fnc_traceAction") then {
+                _rows append (["numRows", [(_res param [2, []]) select { _x isEqualType "" }, _name, false]] call comspec_atak_native_fnc_traceAction);
+            };
         };
     };
 };

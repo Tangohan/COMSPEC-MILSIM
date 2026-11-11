@@ -2097,5 +2097,65 @@
             <English>TOC display</English>
             <French>Affichage TOC</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_C09E0A401F">
+            <Original>Trace a number</Original>
+            <English>Trace a number</English>
+            <French>Tracer un numéro</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_096FB93AB8">
+            <Original>Tracing</Original>
+            <English>Tracing</English>
+            <French>Traçage</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7A4749C0CC">
+            <Original>Phone (ATAK tracing)</Original>
+            <English>Phone (ATAK tracing)</English>
+            <French>Téléphone (traçage ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_E1D71C836D">
+            <Original>Traceable phone</Original>
+            <English>Traceable phone</English>
+            <French>Téléphone traçable</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_0D33FDB471">
+            <Original>What the ATAK number tracing (EW app, TRACE tab) answers for this AI. By profile: on if the AI has a phone (SSE or ATAK profile). Off: only the last known position. Burner: never traceable, same answer as an unknown number. E.g. careful HVT = Burner; lookout = On.</Original>
+            <English>What the ATAK number tracing (EW app, TRACE tab) answers for this AI. By profile: on if the AI has a phone (SSE or ATAK profile). Off: only the last known position. Burner: never traceable, same answer as an unknown number. E.g. careful HVT = Burner; lookout = On.</English>
+            <French>Ce que répond le traçage de numéro de l'ATAK (app GE, onglet TRAÇAGE) pour cette IA. Selon son profil : allumé si l'IA a un téléphone (profil SSE ou ATAK). Éteint : seulement la dernière position connue. Jetable : jamais traçable, même réponse qu'un numéro inconnu. Ex. : HVT prudente = Jetable ; guetteur = Allumé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_D7DF9E941A">
+            <Original>By its profile (default)</Original>
+            <English>By its profile (default)</English>
+            <French>Selon son profil (défaut)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_8779704739">
+            <Original>On: traceable</Original>
+            <English>On: traceable</English>
+            <French>Allumé : traçable</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_29BDD7A1CC">
+            <Original>Off: last known position only</Original>
+            <English>Off: last known position only</English>
+            <French>Éteint : dernière position connue seulement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_A8F1899708">
+            <Original>Burner: never traceable</Original>
+            <English>Burner: never traceable</English>
+            <French>Jetable : jamais traçable</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_255B7BF1AB">
+            <Original>Phone number</Original>
+            <English>Phone number</English>
+            <French>Numéro de téléphone</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_531AB9FB36">
+            <Original>The AI's number for tracing, to also write on a document or have given during questioning. Empty: number of the SSE profile, otherwise a computed number, always the same for this unit. E.g. 06 12 34 56 78 or +964 750 123 4567.</Original>
+            <English>The AI's number for tracing, to also write on a document or have given during questioning. Empty: number of the SSE profile, otherwise a computed number, always the same for this unit. E.g. 06 12 34 56 78 or +964 750 123 4567.</English>
+            <French>Numéro de l'IA pour le traçage, à écrire aussi sur un document ou à faire donner en interrogatoire. Vide : numéro du profil SSE, sinon un numéro calculé, toujours le même pour cette unité. Ex. : 06 12 34 56 78 ou +964 750 123 4567.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_5F9A1628F9">
+            <Original>Find a phone from its number, like a request to the operator.%1%3From the ATAK%4%2EW app, TRACE tab: type the number (or an IMEI), then TRACE THE NUMBER. The answer comes after a few seconds.%2Number read in a recovered file (Extraction app) or in the SSE field app: TRACE button right below.%1%3Result%4%2Uncertainty circle on the map: a few dozen metres when several antennas pick up the phone, several hundred with only one.%2Phone off, jammed or out of coverage: only the last known position, less and less accurate.%2FOLLOW: new position at regular intervals while the phone is open. SHARE: marker for the group or the TOC. TO SSE SHEET: prefilled observation sheet.%2Tracing gives a position, never a name.%1%3Zeus%4%2Right click an AI &gt; ATAK · AI phone: on, off or burner (never traceable), see and copy its number.%2Right click elsewhere &gt; ATAK · Number tracing: suspend tracing, warrant, civilian mobile network.</Original>
+            <English>Find a phone from its number, like a request to the operator.%1%3From the ATAK%4%2EW app, TRACE tab: type the number (or an IMEI), then TRACE THE NUMBER. The answer comes after a few seconds.%2Number read in a recovered file (Extraction app) or in the SSE field app: TRACE button right below.%1%3Result%4%2Uncertainty circle on the map: a few dozen metres when several antennas pick up the phone, several hundred with only one.%2Phone off, jammed or out of coverage: only the last known position, less and less accurate.%2FOLLOW: new position at regular intervals while the phone is open. SHARE: marker for the group or the TOC. TO SSE SHEET: prefilled observation sheet.%2Tracing gives a position, never a name.%1%3Zeus%4%2Right click an AI &gt; ATAK · AI phone: on, off or burner (never traceable), see and copy its number.%2Right click elsewhere &gt; ATAK · Number tracing: suspend tracing, warrant, civilian mobile network.</English>
+            <French>Retrouver un téléphone à partir de son numéro, comme une requête à l'opérateur.%1%3Depuis l'ATAK%4%2App GE, onglet TRAÇAGE : saisissez le numéro (ou un IMEI), puis TRACER LE NUMÉRO. La réponse arrive après quelques secondes.%2Numéro lu dans un fichier récupéré (app Extraction) ou dans l'app SSE terrain : bouton TRACER juste dessous.%1%3Résultat%4%2Cercle d'incertitude sur la carte : quelques dizaines de mètres quand plusieurs antennes captent le téléphone, plusieurs centaines avec une seule.%2Téléphone éteint, brouillé ou hors couverture : seulement la dernière position connue, de moins en moins précise.%2SUIVRE : nouvelle position à intervalle régulier tant que le téléphone est ouvert. PARTAGER : marqueur pour le groupe ou le TOC. EN FICHE SSE : fiche d'observation préremplie.%2Le traçage donne une position, jamais un nom.%1%3Zeus%4%2Clic droit sur une IA &gt; ATAK · Téléphone de l'IA : allumé, éteint ou jetable (jamais traçable), voir et copier son numéro.%2Clic droit ailleurs &gt; ATAK · Traçage des numéros : suspendre le traçage, mandat, réseau mobile civil.</French>
+        </Key>
     </Package>
 </Project>

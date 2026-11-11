@@ -132,6 +132,10 @@ class CfgFunctions {
         class zeus { file="z\comspec_atak_native\addons\main\functions\zeus";
             class zeusState {}; class zeusCentre {}; class zeusObject {}; class zeusFx {}; class zeusJam {}; class zeusServer {}; class zeusClient {}; class zeusOverlay {}; class zeusMenu {}; class moduleZeusControl {}; class moduleZeusJammer {};
         };
+        // Traçage d'un numéro (app GE, onglet TRAÇAGE) : calculs purs, serveur qui fait foi, téléphone.
+        class trace { file="z\comspec_atak_native\addons\main\functions\trace";
+            class traceCalc {}; class traceServer {}; class traceAction {};
+        };
         class dock { file="z\comspec_atak_native\addons\main\functions\dock";
             class dockServer {}; class dockVisual {}; class dockClient {}; class dockMenu {};
         };
@@ -179,7 +183,7 @@ class COMSPEC_ATAK_Apps {
     class Sniper      { name="Sniper"; page="SNIPER"; section="Spécialités"; order=72; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_sniper.paa"; desc="Calculs de tir longue distance"; };
     class Breach      { name="Brèche"; page="BREACH"; section="Spécialités"; order=74; dock=0; wip=1; icon="\z\comspec_atak_native\addons\main\data\app_breach.paa"; desc="Préparation des brèches et entrées"; };
     class Explo       { name="Explosifs"; short="Explo"; page="EXPLO"; section="Spécialités"; order=76; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_explo.paa"; desc="Charges explosives et minuteries"; };
-    class Ew          { name="GE"; page="EW"; section="Spécialités"; order=78; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_ew.paa"; desc="Guerre électronique : détection et brouillage"; };
+    class Ew          { name="GE"; page="EW"; section="Spécialités"; order=78; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_ew.paa"; desc="Guerre électronique : détection, brouillage et traçage de numéros"; };
     class DroneDetect { name="Anti-drone"; short="C-UAS"; page="DRONEDETECT"; section="Spécialités"; order=80; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_dronedetect.paa"; desc="Détection des drones à proximité"; };
     class Intel       { name="FRS / FRM"; page="FRS"; section="Renseignement"; order=110; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_intel.paa"; desc="Fiches de renseignement FRS / FRM"; };
     class Reco        { name="Reco"; page="RECO"; section="Renseignement"; order=112; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_reco.paa"; desc="Comptes rendus de reconnaissance"; };
@@ -1077,6 +1081,14 @@ class CfgHints {
             image = "\z\comspec_atak_native\addons\main\data\app_ew.paa";
             arguments[] = {};
         };
+        // Traçage d'un numéro (app GE, onglet TRAÇAGE ; fn_traceAction).
+        class PhoneTrace {
+            displayName = "$STR_COMSPEC_ATAK_CFG_C09E0A401F";
+            displayNameShort = "$STR_COMSPEC_ATAK_CFG_096FB93AB8";
+            description = "$STR_COMSPEC_ATAK_CFG_5F9A1628F9";
+            image = "\z\comspec_atak_native\addons\main\data\app_ew.paa";
+            arguments[] = {};
+        };
     };
 };
 
@@ -1101,6 +1113,43 @@ class Cfg3DEN {
             onMissionLoad = "['watch'] call comspec_atak_native_fnc_relayEden";
             onMissionNew = "['watch'] call comspec_atak_native_fnc_relayEden";
             onTerrainNew = "['watch'] call comspec_atak_native_fnc_relayEden";
+        };
+    };
+    // Téléphone d'une IA pour le traçage de numéro (fn_traceServer) : état et numéro, variables publiques posées par le serveur.
+    class Object {
+        class AttributeCategories {
+            class COMSPEC_ATAK_PhoneTraceCat {
+                displayName = "$STR_COMSPEC_ATAK_CFG_7A4749C0CC";
+                collapsed = 1;
+                class Attributes {
+                    class COMSPEC_ATAK_PhoneTrace {
+                        displayName = "$STR_COMSPEC_ATAK_CFG_E1D71C836D";
+                        tooltip = "$STR_COMSPEC_ATAK_CFG_0D33FDB471";
+                        property = "COMSPEC_ATAK_PhoneTrace";
+                        control = "Combo";
+                        expression = "if (isServer && {_value isNotEqualTo ''}) then { _this setVariable ['COMSPEC_ATAK_PhoneTrace', _value, true]; };";
+                        defaultValue = "''";
+                        typeName = "STRING";
+                        condition = "objectBrain";
+                        class values {
+                            class Auto { name = "$STR_COMSPEC_ATAK_CFG_D7DF9E941A"; value = ""; default = 1; };
+                            class On { name = "$STR_COMSPEC_ATAK_CFG_8779704739"; value = "on"; };
+                            class Off { name = "$STR_COMSPEC_ATAK_CFG_29BDD7A1CC"; value = "off"; };
+                            class Burner { name = "$STR_COMSPEC_ATAK_CFG_A8F1899708"; value = "burner"; };
+                        };
+                    };
+                    class COMSPEC_ATAK_PhoneNumber {
+                        displayName = "$STR_COMSPEC_ATAK_CFG_255B7BF1AB";
+                        tooltip = "$STR_COMSPEC_ATAK_CFG_531AB9FB36";
+                        property = "COMSPEC_ATAK_PhoneNumber";
+                        control = "Edit";
+                        expression = "if (isServer && {_value isNotEqualTo ''}) then { _this setVariable ['COMSPEC_ATAK_PhoneNumber', _value, true]; };";
+                        defaultValue = "''";
+                        typeName = "STRING";
+                        condition = "objectBrain";
+                    };
+                };
+            };
         };
     };
 };

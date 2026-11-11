@@ -551,6 +551,8 @@ player addEventHandler ["Respawn", { [{ ["apply"] call comspec_atak_native_fnc_l
 [{ ["tick"] call comspec_atak_native_fnc_tenantAction; }, 30] call COMSPEC_ATAK_PfhSpread;
 // Traces civiles des HVT : alerte à la publication d'une trace (fn_hvtTrace).
 ["init"] call comspec_atak_native_fnc_hvtTrace;
+// Traçage d'un numéro : réponses du serveur et menu Zeus des téléphones d'IA (fn_traceAction).
+["init"] call comspec_atak_native_fnc_traceAction;
 // Téléphones personnels : fiches à jour, relevé sans coût par image (fn_phoneOwn).
 ["init"] call comspec_atak_native_fnc_phoneOwn;
 [{ ["tick"] call comspec_atak_native_fnc_vestMount; ["tick"] call comspec_atak_native_fnc_jpcScreen; ["tick"] call comspec_atak_native_fnc_phoneSecurity; ["tick"] call comspec_atak_native_fnc_phoneOwn; }, 2] call COMSPEC_ATAK_PfhSpread;

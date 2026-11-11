@@ -45,7 +45,7 @@ Chaque app a son sujet dédié : à quoi elle sert, comment l'ouvrir, ses foncti
 [*][b]Médical[/b] (Medical) : triage, moniteur, MEDEVAC 9-line, dossiers. Voir le sujet dédié.
 [*][b]Sniper[/b] (Sniper) : élévation et dérive, télémètre, vent, table de tir. Voir le sujet dédié.
 [*][b]Explosifs[/b] (Explo) : charges posées, mise à feu, minuteries. Voir le sujet dédié.
-[*][b]GE[/b] (Ew) : brouillage, goniométrie, géolocalisation de téléphones. Voir le sujet dédié.
+[*][b]GE[/b] (Ew) : brouillage, goniométrie, traçage de numéros (joueurs et IA). Voir le sujet dédié.
 [*][b]Anti-drone[/b] (DroneDetect) : détection RF des drones proches. Voir le sujet dédié.
 [*][b]Liaison allié[/b] (LinkAlly) : se relier au téléphone d'un équipier à terre. Voir le sujet dédié.
 [*][b]Brèche[/b] (Breach) : en préparation, affichée grisée. Pas encore de sujet.
@@ -154,7 +154,7 @@ Every app has its own thread: what it is for, how to open it, its features, a wa
 [*][b]Medical[/b] (Medical): triage, monitor, MEDEVAC 9-line, records. See the dedicated thread.
 [*][b]Sniper[/b] (Sniper): elevation and windage, rangefinder, wind, range card. See the dedicated thread.
 [*][b]Explosives[/b] (Explo): placed charges, firing, timers. See the dedicated thread.
-[*][b]EW[/b] (Ew): jamming, direction finding, phone geolocation. See the dedicated thread.
+[*][b]EW[/b] (Ew): jamming, direction finding, number tracing (players and AI). See the dedicated thread.
 [*][b]Anti-drone[/b] (DroneDetect): RF detection of nearby drones. See the dedicated thread.
 [*][b]ATAK Link[/b] (LinkAlly): link to a downed teammate's phone. See the dedicated thread.
 [*][b]Breach[/b] (Breach): in preparation, shown greyed out. No thread yet.
