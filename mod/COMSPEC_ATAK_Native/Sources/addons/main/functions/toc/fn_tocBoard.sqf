@@ -1,7 +1,9 @@
 /*
     Affichages « tableau » des écrans TOC (fn_tocScreen), dans la même texture UI 1600 x 900 que la carte du poste :
-      SAT      vue satellite en direct (fn_tocSat) : image r2t dans la texture, suivi des alliés par-dessus (symbole,
-               cadre, indicatif ; ancien / perdu / hors ligne en gris), bandeau « SAT 2 · … · contrôlé par … »
+      SAT      vue satellite en direct (fn_tocSat) : image r2t plein cadre (texture 16:9, sans bandes ni en-tête), HUD du
+               capteur incrusté en grand (lisible à 3-6 m : coins, réticule, échelle, lignes de données), pistes amies
+               du réseau (symbole, cadre, indicatif ; ancien / perdu / hors ligne en gris), marqueurs ; bandeau
+               « Lecture seule · SAT 2 · … · contrôlé par … » en bas. Aucune commande : la main est au PC du poste.
       CLOCK    horloge : heure ZULU et heure locale de la mission en grand, tableau des chronos du poste (fn_tocRoom)
       LOG      main courante du poste          EXCHECK  liste d'exécution de l'opération
       KILLS    pertes et résultats par élément REQ      demandes reçues des éléments
@@ -12,7 +14,7 @@
     commentaire de chaque affichage, ligne de texte comptée 1,2 x sa police).
     Modes :
       ["draw", [écran, display, affichage]]   dessin complet (fn_tocScreen, toutes les 1 à 2 s, écran allumé seulement)
-      ["overlay", [écran, display]]           SAT : cadres de suivi seuls, 5 fois par seconde (boucle de fn_tocBoard)
+      ["overlay", [écran, display]]           SAT : HUD du capteur seul, 4 fois par seconde au plus (boucle de fn_tocBoard)
       ["hide", display]                       masque le tableau (retour à la carte)
       ["flash", camp]                         FLASH en cours : [texte, auteur, heure] ou []
       ["boardText", [affichage, état, camp, écran mural]]   textes LOG, EXCHECK, KILLS, REQ (le PC du poste lit KILLS)
@@ -41,11 +43,8 @@ private _setTxt = {
 };
 // Rectangle en pixels virtuels -> position du display.
 private _R = { params ["_rx", "_ry", "_rw", "_rh"]; [_rx / _texW, _ry / _texH, _rw / _texW, _rh / _texH] };
-// Image satellite : cadre 16:9 sous l'en-tête (84 px), bandes noires sur les côtés.
-private _top = 84 / _texH;
-private _picH = 1 - _top;
-private _picW = (_picH * _texH * 16 / 9) / _texW;
-private _picX = (1 - _picW) / 2;
+// Image satellite : plein cadre (la texture est en 16:9), bandeau de lecture seule en bas (46 px).
+private _stripH = 46 / _texH;
 switch (_mode) do {
     case "flash": {
         private _f = (["state", _a] call comspec_atak_native_fnc_tocRoom) select 6;
@@ -73,7 +72,7 @@ switch (_mode) do {
                 missionNamespace setVariable ["COMSPEC_ATAK_TocBoardPfh", nil];
             };
             {
-                // Satellite : cadres repris, redessin seulement si l'image est rendue ici ; vidéo : redessin simple.
+                // Satellite : HUD repris (4 fois par seconde au plus), redessin si l'image est rendue ici ; vidéo : redessin simple.
                 if (((((_x select 0) getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isNotEqualTo "SAT") || {["overlay", _x] call comspec_atak_native_fnc_tocBoard}) then { displayUpdate (_x select 1); };
             } forEach _l;
         }, 0.15] call CBA_fnc_addPerFrameHandler];
@@ -89,47 +88,18 @@ switch (_mode) do {
         private _c = _o getVariable ["COMSPEC_ATAK_TocScr", []];
         private _side = [_c param [1, ""], str side group player] select ((_c param [1, ""]) isEqualTo "");
         private _n = ((_c param [8, 0]) max 0) min 1;
-        private _rgb = (createHashMapFromArray [["WEST", [0.35, 0.68, 1]], ["EAST", [1, 0.38, 0.32]], ["GUER", [0.4, 0.9, 0.45]], ["CIV", [0.8, 0.55, 1]]]) getOrDefault [_side, [0.35, 0.68, 1]];
-        private _boxes = _ui get "boxes";
-        private _used = 0;
+        private _hud = _ui get "hud";
         private _rendered = (["rt", [_side, _n]] call comspec_atak_native_fnc_tocSat) isNotEqualTo "";
-        if (_rendered) then {
-            {
-                _x params ["", "_cs", "_fr", "_kind", "_pos", "_size"];
-                if (_used >= (count _boxes)) exitWith {};
-                private _pr = ["project", [_side, _n, _pos]] call comspec_atak_native_fnc_tocSat;
-                if ((count _pr) < 3) then { continue };
-                _pr params ["_u", "_v", "_span"];
-                if (_u < 0 || {_u > 1} || {_v < 0} || {_v > 1}) then { continue };
-                // Cadre : taille de l'unité vue d'en haut, 24 px au moins.
-                private _px = ((_size / _span) * _picW * _texW) max 24;
-                private _gx = _picX + _u * _picW;
-                private _gy = _top + _v * _picH;
-                private _w = _px / _texW; private _h = _px / _texH;
-                private _col = switch (_fr) do { case 0: { _rgb + [1] }; case 1: { (_rgb apply { _x * 0.75 }) + [0.85] }; default { [0.7, 0.7, 0.7, 0.8] }; };
-                (_boxes select _used) params ["_l1", "_l2", "_l3", "_l4", "_ic", "_lb"];
-                private _t = 2 / _texW; private _tv = 2 / _texH;
-                { _x ctrlSetBackgroundColor _col; } forEach [_l1, _l2, _l3, _l4];
-                _l1 ctrlSetPosition [_gx - _w / 2, _gy - _h / 2, _w, _tv];
-                _l2 ctrlSetPosition [_gx - _w / 2, _gy + _h / 2 - _tv, _w, _tv];
-                _l3 ctrlSetPosition [_gx - _w / 2, _gy - _h / 2, _t, _h];
-                _l4 ctrlSetPosition [_gx + _w / 2 - _t, _gy - _h / 2, _t, _h];
-                _ic ctrlSetText (format ["\A3\ui_f\data\map\markers\nato\b_%1.paa", (createHashMapFromArray [["veh", "motor_inf"], ["air", "air"], ["boat", "naval"], ["armor", "armor"]]) getOrDefault [_kind, "inf"]]); // i18n:brut (image)
-                _ic ctrlSetTextColor _col;
-                _ic ctrlSetPosition [_gx + _w / 2 + 4 / _texW, _gy - _h / 2 - 34 / _texH, 32 / _texW, 32 / _texH];
-                // Plaque : indicatif coupé à 18 caractères, largeur 0,52 x 28 px par caractère (gras).
-                private _txt = ([_cs, 18] call _cut) + (["", " · ancien", " · perdu", " · hors ligne"] select ((_fr min 3) max 0));
-                _txt = _txt call comspec_atak_native_fnc_tr;
-                _lb ctrlSetText _txt; // i18n:brut (déjà traduit)
-                _lb ctrlSetTextColor ([[1, 1, 1, 1], [0.8, 0.8, 0.8, 1]] select (_fr >= 2));
-                forceUnicode 0;
-                _lb ctrlSetPosition [_gx + _w / 2 + 40 / _texW, _gy - _h / 2 - 34 / _texH, ((count _txt) * 0.52 * 28 + 16) / _texW, 34 / _texH];
-                { _x ctrlCommit 0; _x ctrlShow true; } forEach [_l1, _l2, _l3, _l4, _ic, _lb];
-                _used = _used + 1;
-            } forEach (["targets", _side] call comspec_atak_native_fnc_tocSat);
-        };
-        for "_i" from _used to ((count _boxes) - 1) do { { _x ctrlShow false; } forEach (_boxes select _i); };
-        _rendered
+        if (!_rendered) exitWith { ["hudHide", _hud] call comspec_atak_native_fnc_tocSat; false };
+        // HUD reposé 4 fois par seconde au plus (l'image, elle, suit la boucle de l'écran).
+        if (diag_tickTime - (_d getVariable ["COMSPEC_ATAK_HudAt", -1]) < 0.24) exitWith { true };
+        _d setVariable ["COMSPEC_ATAK_HudAt", diag_tickTime];
+        // Zone visible : sous un FLASH (52 px en haut), au-dessus du bandeau de lecture seule. Calques d'un écran du mur :
+        // marqueurs, pistes, cadres et données ; pas de quadrillage.
+        private _y0 = [0, 52 / _texH] select ((count (["flash", _side] call _fn)) > 0);
+        ["hudPaint", [_hud, _side, _n, [0, 0, 1, 1], [0, _y0, 1, 1 - _stripH - _y0],
+            createHashMapFromArray [["MRKR", true], ["BFT", true], ["GRID", false], ["DATA", true], ["BOX", true]]]] call comspec_atak_native_fnc_tocSat;
+        true
     };
     case "draw": {
         _a params ["_o", "_d", "_view"];
@@ -153,28 +123,19 @@ switch (_mode) do {
             };
             // Fond et en-tête : mêmes places que la carte du poste (fn_tocScreen « build »).
             (["RscText", [0, 0, 1, 1]] call _mk) ctrlSetBackgroundColor [0.025, 0.03, 0.027, 1];
-            private _pic = ["RscPicture", [_picX, _top, _picW, _picH]] call _mk;
+            private _pic = ["RscPicture", [0, 0, 1, 1]] call _mk;
             private _hdr = ["RscText", [0, 0, 1600, 80] call _R] call _mk;
             _hdr ctrlSetBackgroundColor [0.045, 0.055, 0.048, 1];
             private _accent = ["RscText", [0, 80, 1600, 4] call _R] call _mk;
             private _title = ["COMSPEC_RscTocText", [24, 12, 1060, 62] call _R] call _mk;
             private _clock = ["COMSPEC_RscTocText", [1100, 20, 476, 48] call _R] call _mk;
-            private _strip = ["COMSPEC_RscTocText", [_picX, _top, _picW, 44 / _texH]] call _mk;
+            private _strip = ["COMSPEC_RscTocText", [0, 1 - _stripH, 1, _stripH]] call _mk;
             _strip ctrlSetBackgroundColor [0, 0, 0, 0.62];
-            private _boxes = [];
-            for "_i" from 1 to 40 do {
-                private _b = [];
-                for "_j" from 1 to 4 do { _b pushBack (["RscText"] call _mk); };
-                _b pushBack (["RscPicture"] call _mk);
-                private _t = ["COMSPEC_RscTocLabel"] call _mk;
-                _t ctrlSetFont "RobotoCondensedBold"; _t ctrlSetFontHeight (28 / _texH); _t ctrlSetBackgroundColor [0, 0, 0, 0.6];
-                _b pushBack _t;
-                { _x ctrlShow false; } forEach _b;
-                _boxes pushBack _b;
-            };
+            // HUD du capteur (fn_tocSat), dans le groupe du tableau : mêmes coordonnées que la texture.
+            private _hud = ["hudMake", [_d, _g, "WALL"]] call comspec_atak_native_fnc_tocSat;
             private _main = ["COMSPEC_RscTocText", [24, 96, 1552, 792] call _R] call _mk;
             private _main2 = ["COMSPEC_RscTocText", [24, 96, 1552, 792] call _R] call _mk;
-            private _wait = ["COMSPEC_RscTocText", [_picX, 0.45, _picW, 0.12]] call _mk;
+            private _wait = ["COMSPEC_RscTocText", [0.1, 0.42, 0.8, 0.14]] call _mk;
             private _flash = ["COMSPEC_RscTocText", [0, 84, 1600, 52] call _R] call _mk;
             _flash ctrlSetBackgroundColor [0.62, 0.08, 0.06, 0.95];
             // Mosaïque : 9 vignettes (fond, image, bandeau, message), placées selon la grille à chaque dessin.
@@ -187,7 +148,7 @@ switch (_mode) do {
                 { _x ctrlShow false; } forEach [_bg, _tp, _tl, _tm];
                 _tiles pushBack [_bg, _tp, _tl, _tm];
             };
-            _ui = createHashMapFromArray [["tiles", _tiles], ["pic", _pic], ["accent", _accent], ["title", _title], ["clock", _clock], ["strip", _strip], ["boxes", _boxes],
+            _ui = createHashMapFromArray [["tiles", _tiles], ["pic", _pic], ["hdr", _hdr], ["accent", _accent], ["title", _title], ["clock", _clock], ["strip", _strip], ["hud", _hud],
                 ["main", _main], ["main2", _main2], ["wait", _wait], ["flash", _flash]];
             _d setVariable ["COMSPEC_ATAK_TocBoardUi", _ui];
         };
@@ -203,13 +164,16 @@ switch (_mode) do {
         [_ui get "clock", format ["<t align='right' size='1.1'>%1 <t color='#8a9a93'>ZULU</t>   %2 <t color='#8a9a93'>LOCAL</t></t>", _zulu, _local]] call _setTxt;
         private _isSat = _view isEqualTo "SAT";
         { (_ui get _x) ctrlShow _isSat; } forEach ["pic", "strip"];
-        { (_ui get _x) ctrlShow !_isSat; } forEach ["main", "main2"];
+        // Satellite plein cadre : pas d'en-tête (l'heure et le capteur sont dans le HUD).
+        { (_ui get _x) ctrlShow !_isSat; } forEach ["main", "main2", "hdr", "accent", "title", "clock"];
         (_ui get "wait") ctrlShow false;
-        if (!_isSat) then { { { _x ctrlShow false; } forEach _x; } forEach (_ui get "boxes"); };
+        if (!_isSat) then { ["hudHide", _ui get "hud"] call comspec_atak_native_fnc_tocSat; };
         if (_view isNotEqualTo "MOSAIC") then { { { _x ctrlShow false; } forEach _x; } forEach (_ui getOrDefault ["tiles", []]); };
         // FLASH du poste : bandeau rouge sous l'en-tête, 3 minutes.
         private _fl = ["flash", _side] call _fn;
         (_ui get "flash") ctrlShow ((count _fl) > 0);
+        (_ui get "flash") ctrlSetPosition (([[0, 84, 1600, 52], [0, 0, 1600, 52]] select _isSat) call _R);
+        (_ui get "flash") ctrlCommit 0;
         if ((count _fl) > 0) then {
             [_ui get "flash", format ["<t size='1.3' font='COMSPEC_BarlowBold'>  FLASH · %1</t> <t size='1' color='#ffd0c8'>· %2 · %3Z</t>", [[_fl select 0, 50] call _cut] call _esc, [[_fl select 1, 20] call _cut] call _esc, _fl select 2]] call _setTxt;
         };
@@ -226,14 +190,14 @@ switch (_mode) do {
                     _pic setVariable ["COMSPEC_ATAK_Tex", _tex];
                     _pic ctrlSetText ([_tex, "#(argb,8,8,3)color(0,0,0,1)"] select (_tex isEqualTo "")); // i18n:brut (texture)
                 };
-                // Un écran du mur ne pilote rien : la main est au PC ou au téléphone du poste.
-                [_ui get "strip", format ["<t size='1'>  <t color='#e0b040'>Lecture seule</t> · %1</t>", [[["label", [_side, _n]] call comspec_atak_native_fnc_tocSat, 60] call _cut] call _esc]] call _setTxt;
+                // Un écran du mur ne pilote rien : la main est au PC ou au téléphone du poste. Nom de l'écran en tête du bandeau.
+                [_ui get "strip", format ["<t size='1.15'>  <t color='#e0b040'>Lecture seule</t> · %1</t><t size='1.15' align='right' color='#8a9a93'>%2  </t>", [[["label", [_side, _n]] call comspec_atak_native_fnc_tocSat, 70] call _cut] call _esc, [[_name, 16] call _cut] call _esc]] call _setTxt;
                 (_ui get "wait") ctrlShow (_tex isEqualTo "");
                 if (_tex isEqualTo "") then {
                     [_ui get "wait", "<t align='center' size='1.6' color='#cfd8d3'>Image satellite en attente</t><br/><t align='center' size='1' color='#8a9a93'>Approchez-vous de l'écran : l'image n'est rendue qu'aux joueurs proches qui le regardent</t>"] call _setTxt;
                 };
                 ["overlay", [_o, _d]] call _fn;
-                // Cadres de suivi tant que l'image est rendue (la carte de fond, elle, reste à 1 s).
+                // HUD tant que l'image est rendue (la carte de fond, elle, reste à 1 s).
                 if (_tex isNotEqualTo "") then { ["live", [_o, _d]] call _fn; };
             };
             case "MOSAIC": {
@@ -351,7 +315,7 @@ switch (_mode) do {
                 (["boardText", [_view, _room, _side, true]] call _fn) params [["_txtL", ""], ["_txtR", ""]];
                 [_ui get "main", _txtL] call _setTxt;
                 (_ui get "main2") ctrlShow (_txtR isNotEqualTo "");
-                if (_rv isNotEqualTo "") then {
+                if (_txtR isNotEqualTo "") then {
                     (_ui get "main") ctrlSetPosition ([24, _y0, 764, _hAvail] call _R); (_ui get "main") ctrlCommit 0;
                     (_ui get "main2") ctrlSetPosition ([812, _y0, 764, _hAvail] call _R); (_ui get "main2") ctrlCommit 0;
                     [_ui get "main2", _txtR] call _setTxt;
