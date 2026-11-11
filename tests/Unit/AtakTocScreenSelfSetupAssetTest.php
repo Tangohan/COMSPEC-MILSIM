@@ -153,7 +153,7 @@ final class AtakTocScreenSelfSetupAssetTest extends TestCase
         $build = self::read(self::TOC . 'fn_tocHallBuild.sqf');
         // Seul le bureau de la salle complète est figé ; jamais un écran, jamais un PC.
         self::assertSame(1, substr_count($build, 'enableSimulationGlobal false'));
-        self::assertStringContainsString('if (_role isEqualTo "desk") then { if (isServer) then { _o enableSimulationGlobal false; } else { _o enableSimulation false; }; };', $build);
+        self::assertStringContainsString('if (_role in ["desk", "prop"]) then { if (isServer) then { _o enableSimulationGlobal false; } else { _o enableSimulation false; }; };', $build);
         self::assertStringNotContainsString('enableSimulation', self::read(self::TOC . 'fn_tocScreen.sqf'));
     }
 

@@ -14,6 +14,11 @@
       - plafond : obstacle au-dessus du sol, entre 3 m et 4,5 m ; sinon les écrans suspendus sont remplacés de même ;
       - chaque objet est posé par un pas à part : un pas raté n'arrête pas les suivants, et le journal le dit
         (« [COMSPEC TOC] salle | objet k/N classe=… ok | échec raison », puis un résumé).
+    Orientation (table _facing) : la direction de la salle est celle du MUR D'IMAGES, donc celle du regard des
+    opérateurs. Écrans, postes PC et consoles lui tournent le dos (cap + 180 : leur face, leurs moniteurs et l'espace des
+    genoux sont du côté des fauteuils) ; les fauteuils regardent le mur (cap + 0). Mobilier du mod : consoles
+    COMSPEC_ATAK_TocDesk_* (droites : une pièce pour deux ou trois postes ; en arc pour le poste à trois écrans et
+    l'écran incurvé : comspec_tocDesk du poste), fauteuil COMSPEC_ATAK_TocChair, accessoires (table _deskProps).
     Encombrement devant le module (largeur x profondeur) : petite 8 x 7 m, moyenne 11 x 8,5 m, grande 16 x 9,5 m.
 
     Modes :
@@ -29,6 +34,7 @@
       ["remove", id]                    serveur : retire la salle (écrans posés par elle, mobilier, PC)
       ["plan", [taille, postes, mur, hauteur du plafond (-1 : aucun), décalage]]   -> [objets, non posés] (sans effet)
       ["footprint", taille]             -> [largeur, profondeur] en mètres (salle avec mur et plafond)
+      ["facing", [rôle, classe, direction de la salle]]   -> cap de l'objet (degrés) : la règle d'orientation, table _facing
       ["selfTest"]                      -> [réussis, échecs] : chaque taille montée à blanc (classes, chevauchements,
                                         comptes), sans rien poser. Exemple : ["selfTest"] call comspec_atak_native_fnc_tocHallBuild;
 */
@@ -62,19 +68,20 @@ private _rooms = [
 ["side", "COMSPEC_ATAK_Screen_98", 3.75, 8, "wall", "SQUAD", "ESCOUADE", 0, "COMSPEC_ATAK_Screen_98_Stand", 3.75, 8, "SQUAD"],
 ["stand", "COMSPEC_ATAK_Screen_136_Stand", -6.2, 5.6, "floor", "SAT", "SATELLITE", "", "", 0, 0, ""],
 ["stand", "COMSPEC_ATAK_Screen_136_Stand", 6.2, 5.6, "floor", "REQ", "DEMANDES", "", "", 0, 0, ""],
-["clock", "COMSPEC_ATAK_Screen_ClockStrip", -4.2, 8, "wall", "STRIP", "HORLOGE", "", "COMSPEC_ATAK_Screen_Tripod", 4.8, 3.4, "CLOCK"],
+["clock", "COMSPEC_ATAK_Screen_ClockStrip", -4.2, 8, "wall", "STRIP", "HORLOGE", "", "COMSPEC_ATAK_Screen_Tripod", 5.6, 3.4, "CLOCK"],
 ["led", "COMSPEC_ATAK_Screen_LedText8", 3.75, 8, "wall", "TEXT", "MESSAGE", "{poste} · {dtg}", "", 0, 0, ""],
 ["plate", "COMSPEC_ATAK_Screen_NamePlate", -5.4, 8, "wall", "PLATE", "ÉLÉMENT 1", 0, "", 0, 0, ""],
 ["plate", "COMSPEC_ATAK_Screen_NamePlate", -3, 8, "wall", "PLATE", "ÉLÉMENT 2", 1, "", 0, 0, ""],
 ["plate", "COMSPEC_ATAK_Screen_NamePlate", 5.5, 8, "wall", "PLATE", "ÉLÉMENT 3", 2, "", 0, 0, ""],
 ["plate", "COMSPEC_ATAK_Screen_NamePlate", 6.5, 8, "wall", "PLATE", "ÉLÉMENT 4", 3, "", 0, 0, ""],
-["ceiling", "COMSPEC_ATAK_Screen_65_Ceiling3", 0, 5.2, "ceiling", "EXCHECK", "EXÉCUTION", "KILLS, FEED", "COMSPEC_ATAK_Screen_Tripod", -4.8, 3.4, "EXCHECK"]
+["ceiling", "COMSPEC_ATAK_Screen_65_Ceiling3", 0, 5.2, "ceiling", "EXCHECK", "EXÉCUTION", "KILLS, FEED", "COMSPEC_ATAK_Screen_Tripod", -5.6, 3.4, "EXCHECK"]
 ]]
 ];
 // ---- FIN
 // ---- TABLE _dims (JSON) : boîte de chaque objet dans son repère [classe ou rôle, largeur, y devant le dos, y derrière,
 // z bas, z haut] (tools/model_toc_screens.py « closed_boxes », docs/MODELS.md). Écran posé à 180° : il occupe, dans le
-// repère de la salle, de y - « y derrière » à y - « y devant ». Mobilier du jeu : par rôle (desk, chair, pc).
+// repère de la salle, de y - « y derrière » à y - « y devant ». Consoles du mod : par classe (tools/model_toc_furniture.py ;
+// console en arc : son corps central, ses ailes entourent le fauteuil). Mobilier du jeu, fauteuil, PC : par rôle.
 private _dims = [
 ["COMSPEC_ATAK_Screen_Wall2x2_Quad", 2.458, 0, 0.154, 0.885, 2.283],
 ["COMSPEC_ATAK_Screen_Wall3x2", 3.674, 0, 0.154, 0.885, 2.283],
@@ -89,25 +96,70 @@ private _dims = [
 ["COMSPEC_ATAK_Screen_NamePlate", 0.9, 0, 0.042, 2.425, 2.675],
 ["COMSPEC_ATAK_Screen_LedText8", 2.44, 0, 0.085, 2.38, 2.72],
 ["COMSPEC_ATAK_Screen_Tripod", 1.5, -0.5, 0.5, 0, 1.97],
+["COMSPEC_ATAK_TocDesk_Single", 1.6, -0.45, 0.4, 0, 0.74],
+["COMSPEC_ATAK_TocDesk_Double", 3.2, -0.45, 0.4, 0, 0.74],
+["COMSPEC_ATAK_TocDesk_Triple", 4.8, -0.45, 0.4, 0, 0.74],
+["COMSPEC_ATAK_TocDesk_Curved", 2.19, -0.45, 0.4, 0, 0.74],
 ["desk", 1.6, -0.4, 0.4, 0, 0.8],
-["chair", 0.65, -0.33, 0.33, 0, 1.1],
+["chair", 0.66, -0.33, 0.33, 0, 1.1],
 ["pc", 1.6, -0.3, 0.3, 0, 0.5]
 ];
 // ---- FIN
-// ---- TABLE _furniture (JSON) : mobilier du jeu de base, premier présent retenu. Bureaux : [classe, hauteur du plateau].
+// ---- TABLE _furniture (JSON) : mobilier, premier présent retenu : celui du mod, puis celui du jeu de base (serveur
+// sans le mobilier du mod, anciennes salles). Bureaux : [classe, hauteur du plateau].
 private _furniture = [
-["desk", [["Land_TableDesk_F", 0.8], ["Land_CampingTable_F", 0.81], ["Land_WoodenTable_large_F", 0.85]]],
-["chair", [["Land_OfficeChair_01_F", 0], ["Land_CampingChair_V2_F", 0], ["Land_ChairWood_F", 0]]]
+["desk", [["COMSPEC_ATAK_TocDesk_Single", 0.74], ["Land_TableDesk_F", 0.8], ["Land_CampingTable_F", 0.81], ["Land_WoodenTable_large_F", 0.85]]],
+["chair", [["COMSPEC_ATAK_TocChair", 0], ["Land_OfficeChair_01_F", 0], ["Land_CampingChair_V2_F", 0], ["Land_ChairWood_F", 0]]]
+];
+// ---- FIN
+// ---- TABLE _facing (JSON) : cap de chaque rôle, en degrés ajoutés à la direction de la salle (celle du mur d'images
+// et du regard des opérateurs) : [rôle, modèle du mod, objet du jeu de base]. Modèles du mod : la face d'un écran, les
+// moniteurs d'un poste et le côté opérateur d'une console sont dans la direction de l'objet ; le fauteuil regarde dans
+// sa direction. Objets du jeu : le siège des chaises et le côté tiroirs du bureau sont à l'opposé de leur direction.
+private _facing = [
+["screen", 180, 180],
+["pc", 180, 180],
+["desk", 180, 180],
+["chair", 0, 180],
+["prop", 180, 180]
+];
+// ---- FIN
+// ---- TABLE _deskPlan (JSON) : consoles droites du mod selon le nombre de postes : [postes, [[classe, x du milieu en
+// pas de poste]...]]. Un poste : 1,6 m (_k « seat »).
+private _deskPlan = [
+[1, [["COMSPEC_ATAK_TocDesk_Single", 0]]],
+[2, [["COMSPEC_ATAK_TocDesk_Double", 0]]],
+[3, [["COMSPEC_ATAK_TocDesk_Triple", 0]]],
+[4, [["COMSPEC_ATAK_TocDesk_Double", -1], ["COMSPEC_ATAK_TocDesk_Double", 1]]]
+];
+// ---- FIN
+// ---- TABLE _deskProps (JSON) : accessoires posés sur les consoles du mod, par poste (rang du poste modulo le nombre de
+// lignes) : [classe, x vers la gauche de l'opérateur, y vers l'opérateur, cap en plus]. Hors du tapis de bureau, de
+// l'unité centrale et du porte-nom (tests/Unit/AtakTocDeskAssetTest.php).
+private _deskProps = [
+[["COMSPEC_ATAK_TocProp_Headset", 0.56, 0.21, 25], ["COMSPEC_ATAK_TocProp_Mug", -0.66, 0.02, 40]],
+[["COMSPEC_ATAK_TocProp_Notepad", -0.63, 0.2, -6]],
+[["COMSPEC_ATAK_TocProp_Handset", 0.6, 0.2, 10], ["COMSPEC_ATAK_TocProp_Mug", -0.67, 0.24, 150]],
+[["COMSPEC_ATAK_TocProp_Headset", -0.62, 0.16, -20]]
 ];
 // ---- FIN
 // ---- TABLE _k (JSON) : rangée des postes (y du bureau, de la chaise, du PC portable, du poste fixe ; pas mini entre
-// deux postes), plafond accepté pour un écran suspendu (mini, maxi), mur (marge d'adossement, portée de recherche
+// deux postes ; mobilier du mod : pas d'un poste sur une console droite « seat », pas mini entre deux consoles en arc
+// « arcStep »), plafond accepté pour un écran suspendu (mini, maxi), mur (marge d'adossement, portée de recherche
 // derrière la distance prévue, recul maxi), rayon de reconnaissance d'une salle reprise.
-private _k = [["deskY", 2.6], ["chairY", 1.8], ["laptopY", 2.55], ["pcY", 2.6], ["step", 1.7], ["ceilMin", 3], ["ceilMax", 4.5],
+private _k = [["deskY", 2.6], ["chairY", 1.8], ["laptopY", 2.55], ["pcY", 2.6], ["step", 1.7], ["seat", 1.6], ["arcStep", 2.3], ["ceilMin", 3], ["ceilMax", 4.5],
     ["wallGap", 0.02], ["wallFar", 3], ["wallNear", 2], ["keepRadius", 40]];
 // ---- FIN
 private _kv = createHashMapFromArray _k;
 private _screenRoles = ["wall", "side", "stand", "clock", "led", "plate", "ceiling"];
+// Cap d'un objet de la salle (table _facing) : direction de la salle + le décalage de son rôle.
+private _headOf = {
+    params ["_role", "_cls", "_d"];
+    private _key = [_role, "screen"] select (_role in _screenRoles);
+    private _i = _facing findIf { (_x select 0) isEqualTo _key };
+    private _row = _facing select ([_i, 0] select (_i < 0));
+    (_d + (_row select ([2, 1] select ((_cls select [0, 13]) isEqualTo "COMSPEC_ATAK_")))) % 360
+};
 private _roomOf = {
     params ["_size"];
     private _i = _rooms findIf { (_x select 0) isEqualTo _size };
@@ -144,18 +196,39 @@ private _resolve = {
             };
         };
     } forEach _entries;
-    // Postes : un bureau, une chaise et un PC par place, rangée face au mur. Poste PC fixe choisi : au milieu du bureau,
-    // places écartées selon sa largeur (mapSize).
+    // Postes : console, fauteuil et PC par place, rangée face au mur. Poste PC fixe choisi : au milieu de sa place.
     private _fixed = _post isEqualType "" && {_post isNotEqualTo ""} && {(getNumber (configFile >> "CfgVehicles" >> _post >> "comspec_tocPost")) > 0};
     private _pcCls = ["COMSPEC_ATAK_TocLaptop", _post] select _fixed;
-    private _step = (_kv get "step") max ([0, (getNumber (configFile >> "CfgVehicles" >> _pcCls >> "mapSize")) + 0.1] select _fixed);
+    private _pcW = [0, (getNumber (configFile >> "CfgVehicles" >> _pcCls >> "mapSize")) + 0.1] select _fixed;
     (["desk"] call _pickOf) params ["_desk", "_top"];
     private _chair = (["chair"] call _pickOf) select 0;
+    private _own = (_desk select [0, 13]) isEqualTo "COMSPEC_ATAK_";
+    // Console voulue par le poste (comspec_tocDesk : console en arc pour trois écrans et pour l'écran incurvé).
+    private _arc = getText (configFile >> "CfgVehicles" >> _pcCls >> "comspec_tocDesk");
+    if (!_own || {_arc isEqualTo _desk} || {!isClass (configFile >> "CfgVehicles" >> _arc)}) then { _arc = ""; };
+    private _step = (_kv get "step") max _pcW;
+    if (_own) then { _step = [_kv get "seat", (_kv get "arcStep") max _pcW] select (_arc isNotEqualTo ""); };
+    if (_own && {_arc isEqualTo ""}) then {
+        // Consoles droites : une pièce pour deux ou trois postes (table _deskPlan), sinon une par poste.
+        private _pi = _deskPlan findIf { (_x select 0) isEqualTo _seats };
+        if (_pi >= 0) then {
+            { _out pushBack ["desk", _x select 0, (_x select 1) * _step, _kv get "deskY", 0, "floor", "", "", ""]; } forEach ((_deskPlan select _pi) select 1);
+        } else {
+            for "_i" from 0 to (_seats - 1) do { _out pushBack ["desk", _desk, -((_seats - 1) * _step) / 2 + _i * _step, _kv get "deskY", 0, "floor", "", "", ""]; };
+        };
+    };
     for "_i" from 0 to (_seats - 1) do {
         private _sx = -((_seats - 1) * _step) / 2 + _i * _step;
-        _out pushBack ["desk", _desk, _sx, _kv get "deskY", 0, "floor", "", "", ""];
+        if (!_own || {_arc isNotEqualTo ""}) then { _out pushBack ["desk", [_arc, _desk] select (_arc isEqualTo ""), _sx, _kv get "deskY", 0, "floor", "", "", ""]; };
         _out pushBack ["chair", _chair, _sx, _kv get "chairY", 0, "floor", "", "", ""];
         _out pushBack ["pc", _pcCls, _sx, _kv get (["laptopY", "pcY"] select _fixed), _top, "desk", "", format ["POSTE %1", _i + 1], ""];
+        // Accessoires du poste (console du mod seulement) : console à 180°, la gauche de l'opérateur est en -x de la salle.
+        if (_own) then {
+            {
+                _x params ["_pCls", "_px", "_py", "_pd"];
+                _out pushBack ["prop", _pCls, _sx - _px, (_kv get "deskY") - _py, _top, "desk", "", "", _pd];
+            } forEach (_deskProps select (_i % (count _deskProps)));
+        };
     };
     [_out, _skipped]
 };
@@ -163,8 +236,8 @@ private _resolve = {
 private _boxOf = {
     params ["_row"];
     _row params ["_role", "_cls", "_x0", "_y0", "_z0"];
-    private _key = [_cls, _role] select (_role in ["desk", "chair", "pc"]);
-    private _i = _dims findIf { (_x select 0) isEqualTo _key };
+    private _i = _dims findIf { (_x select 0) isEqualTo _cls };
+    if (_i < 0) then { _i = _dims findIf { (_x select 0) isEqualTo _role }; };
     if (_i < 0) exitWith { [] };
     (_dims select _i) params ["", "_w", "_d0", "_d1", "_b0", "_b1"];
     [_x0 - _w / 2, _x0 + _w / 2, _y0 - _d1, _y0 - _d0, _z0 + _b0, _z0 + _b1]
@@ -208,6 +281,10 @@ switch (_mode) do {
     case "plan": {
         _a params [["_size", "M"], ["_post", ""], ["_hasWall", true], ["_ceil", 3.4], ["_dy", 0]];
         [_size, _post, _hasWall, _ceil, _dy] call _resolve
+    };
+    case "facing": {
+        _a params [["_role", "pc"], ["_cls", "COMSPEC_ATAK_"], ["_d", 0]];
+        [_role, _cls, _d] call _headOf
     };
     case "footprint": {
         private _rows = ([_a, "", true, 3.4, 0] call _resolve) select 0;
@@ -286,7 +363,8 @@ switch (_mode) do {
                 _gz = (_org select 2);
                 if (_ch isNotEqualTo [] && {[_ch select 2] call _built}) then { _z0 = ((_ch select 0) select 2) - _gz; };
             };
-            [_role, _cls, [_xy select 0, _xy select 1, _gz + _z0], _dir + ([180, 0] select (_role isEqualTo "desk")), _view, _name, _extra, _mount]
+            // Cap : table _facing (écrans, postes et consoles dos au mur, fauteuils face au mur) ; accessoire : son cap en plus.
+            [_role, _cls, [_xy select 0, _xy select 1, _gz + _z0], ([_role, _cls, _dir] call _headOf) + ([0, _extra] select (_role isEqualTo "prop" && {_extra isEqualType 0})), _view, _name, _extra, _mount]
         };
         // 6. Salle inscrite avant la pose : les écrans s'y lient un par un, un objet raté ne bloque ni elle ni les autres.
         [_id, _nm, _sd, [], "LOCAL" in _flags] call _register;
@@ -334,7 +412,7 @@ switch (_mode) do {
             } else {
                 // Seul le bureau est figé (il ne glisse pas sous le PC). Jamais un écran ni un PC : sans simulation, un objet
                 // peut perdre son menu ACE ; ce sont des objets statiques, ils ne bougent pas.
-                if (_role isEqualTo "desk") then { if (isServer) then { _o enableSimulationGlobal false; } else { _o enableSimulation false; }; };
+                if (_role in ["desk", "prop"]) then { if (isServer) then { _o enableSimulationGlobal false; } else { _o enableSimulation false; }; };
                 if (_role isEqualTo "pc") then {
                     _o setVariable ["COMSPEC_ATAK_TocHall", _id, true];
                     _o setVariable ["COMSPEC_ATAK_TocSide", toUpper _sd, true];
@@ -515,7 +593,15 @@ switch (_mode) do {
                     private _post = _x;
                     private _tag = format ["%1 mur %2 plafond %3 postes « %4 »", _size, _wall, _ceil, _post];
                     ([_size, _post, _wall, _ceil, 0] call _resolve) params ["_rows", "_skipped"];
-                    [_tag + " : tous les objets prévus ou annoncés non posés", ((count _rows) + (count _skipped)) isEqualTo ((count _entries) + 3 * _seats)] call _t;
+                    private _furn = _rows select { (_x select 0) in ["desk", "chair", "pc", "prop"] };
+                    private _pcsIn = _furn select { (_x select 0) isEqualTo "pc" };
+                    private _desksIn = _furn select { (_x select 0) isEqualTo "desk" };
+                    [_tag + " : tous les écrans prévus ou annoncés non posés", ((count _rows) - (count _furn) + (count _skipped)) isEqualTo (count _entries)] call _t;
+                    [_tag + " : un PC et un fauteuil par poste, au moins une console", (count _pcsIn) isEqualTo _seats && {({ (_x select 0) isEqualTo "chair" } count _furn) isEqualTo _seats} && {(count _desksIn) > 0}] call _t;
+                    // Chaque PC est sur une console ; son fauteuil est du côté de ses moniteurs, le mur au-delà.
+                    [_tag + " : chaque PC sur une console", (_pcsIn findIf { private _p = _x; (_desksIn findIf { private _b = [_x] call _boxOf; _b isNotEqualTo [] && {(_p select 2) > (_b select 0)} && {(_p select 2) < (_b select 1)} }) < 0 }) < 0] call _t;
+                    [_tag + " : fauteuils entre le module et les PC, mur au-delà", (_kv get "chairY") < (_kv get "pcY") && {(_kv get "pcY") < (([_size] call _roomOf) select 1)}] call _t;
+                    _rows = _rows select { (_x select 0) isNotEqualTo "prop" };
                     [_tag + " : un mur d'images ou son remplaçant", (_rows findIf { (_x select 0) isEqualTo "wall" }) >= 0] call _t;
                     [_tag + " : rien de mural sans mur, rien de suspendu sans plafond", (_rows findIf { ((_x select 5) isEqualTo "wall" && {!_wall}) || {(_x select 5) isEqualTo "ceiling" && {_ceil < 3}} }) < 0] call _t;
                     private _miss = (_rows select { (_x select 1) isNotEqualTo "" && {!isClass (configFile >> "CfgVehicles" >> (_x select 1))} }) apply { _x select 1 };
@@ -540,6 +626,14 @@ switch (_mode) do {
                 } forEach (["", _widest] arrayIntersect ["", _widest]);
             } forEach [[true, 3.4], [true, -1], [false, 3.4], [false, -1]];
         } forEach _rooms;
+        // Orientation : moniteurs et consoles vers les fauteuils (à l'opposé du mur), fauteuils vers le mur.
+        {
+            private _d = _x;
+            [format ["cap %1 : poste PC dos au mur", _d], (["pc", "COMSPEC_ATAK_TocPC_1", _d] call _headOf) isEqualTo ((_d + 180) % 360)] call _t;
+            [format ["cap %1 : console dos au mur", _d], (["desk", "COMSPEC_ATAK_TocDesk_Single", _d] call _headOf) isEqualTo ((_d + 180) % 360)] call _t;
+            [format ["cap %1 : fauteuil face au mur", _d], (["chair", "COMSPEC_ATAK_TocChair", _d] call _headOf) isEqualTo (_d % 360)] call _t;
+            [format ["cap %1 : écran dos au mur", _d], (["wall", "COMSPEC_ATAK_Screen_Wall3x2", _d] call _headOf) isEqualTo ((_d + 180) % 360)] call _t;
+        } forEach [0, 90, 215];
         ["INFO", format ["Contrôle de la salle TOC complète : %1 réussi(s), échec(s) : %2", _ok, _bad]] call _say;
         [_ok, _bad]
     };

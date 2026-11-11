@@ -196,6 +196,56 @@ et par `fn_tocPc` : désignation comme écran à la pose), `comspec_tocPostView`
 portant `comspec_tocPost=1` est prise sans autre liste (modules « Poste opérateur » et « Salle TOC complète », action ACE).
 Mêmes contrôles que les écrans (sélections dans `hiddenSelections[]` et `data/toc/model.cfg`, `units[]`, noms FR + EN).
 
+## Modèles 3D : mobilier et périphériques de TOC
+
+Objets `COMSPEC_ATAK_TocDesk_*`, `COMSPEC_ATAK_TocChair`, `COMSPEC_ATAK_TocKeyboard*`, `TocMouse*`, `TocTower*`, `TocMiniPC`,
+`TocProp_*` (`Sources/addons/main/toc_furniture.hpp`), écrits par `tools/model_toc_furniture.py` avec les primitives des écrans.
+Les postes PC `COMSPEC_ATAK_TocPC_*` reprennent les mêmes pièces (clavier, souris, tapis, unité centrale).
+
+    python tools/model_toc_furniture.py                   # modèles, textures, matières, tools/toc_furniture_manifest.json
+    python tools/model_toc_pc.py                          # postes PC
+    BLENDER=...blender.exe python tools/render_toc_furniture.py DOSSIER   # rendus de contrôle et aperçus Eden
+
+**Règle d'orientation** (une seule, table `_facing` de `fn_tocHallBuild`, mode « facing ») : l'opérateur est du côté de la
+direction d'une console, d'un poste PC, d'un clavier (+Y : espace des genoux, façade de la baie PC, face des moniteurs) ;
+le fauteuil regarde dans sa direction. Pour une salle dont le mur d'images est dans la direction D : écrans, postes PC et
+consoles à D + 180, fauteuils à D. Un poste PC se pose sur une console à la même position et à la même direction, à
+0,74 m (`comspec_tocDeskTop`). Module « Poste opérateur » : la flèche du module est le regard de l'opérateur.
+
+Console droite : plateau de y = -0,45 (fond) à +0,40 (opérateur), un poste tous les 1,6 m, points mémoire `pc_N`, `mon_N`,
+`chair_N`, `bay_N`, `name_N` (N de la gauche de l'opérateur vers sa droite). Console en arc : centre de l'arc à 1,25 m côté
+opérateur, rayons 0,86 et 1,70 m, demi-angle 40° ; elle porte le poste à trois écrans et l'écran incurvé
+(`comspec_tocDesk`). Pièce d'angle : origine au centre de l'arc, bouts sur le demi-axe -Y et le demi-axe +X.
+LOD : 0 / 2 / 6, ombre, géométrie (boîtes convexes, `autocenter=0`), vue, tir, mémoire. Fauteuil : `ace_sitting`.
+
+| Classe | Modèle | Objet | L x P x H (m) | Faces LOD 0 / 1 / 2 |
+|---|---|---|---|---|
+| `COMSPEC_ATAK_TocProp_CableTray` | `toc_furn_cabletray` | Panier à câbles sous plateau | 0.80 x 0.15 x 0.10 | 228 / 156 / 6 |
+| `COMSPEC_ATAK_TocChair` | `toc_furn_chair` | Fauteuil d'opérateur TOC | 0.66 x 0.66 x 1.12 | 756 / 422 / 176 |
+| `COMSPEC_ATAK_TocDesk_Corner` | `toc_furn_desk_corner` | Console TOC, angle | 1.15 x 1.15 x 0.74 | 198 / 114 / 68 |
+| `COMSPEC_ATAK_TocDesk_Curved` | `toc_furn_desk_curved` | Console TOC en arc | 2.19 x 1.04 x 0.79 | 342 / 163 / 66 |
+| `COMSPEC_ATAK_TocDesk_Double` | `toc_furn_desk_double` | Console TOC 2 postes | 3.20 x 0.85 x 0.79 | 659 / 168 / 62 |
+| `COMSPEC_ATAK_TocDesk_Single` | `toc_furn_desk_single` | Console TOC 1 poste | 1.60 x 0.85 x 0.79 | 412 / 118 / 44 |
+| `COMSPEC_ATAK_TocDesk_Triple` | `toc_furn_desk_triple` | Console TOC 3 postes | 4.80 x 0.85 x 0.79 | 906 / 218 / 80 |
+| `COMSPEC_ATAK_TocProp_Handset` | `toc_furn_handset` | Combiné radio de table | 0.10 x 0.36 x 0.06 | 171 / 27 / 12 |
+| `COMSPEC_ATAK_TocProp_Headset` | `toc_furn_headset` | Casque micro | 0.20 x 0.19 x 0.18 | 400 / 196 / 42 |
+| `COMSPEC_ATAK_TocKeyboard` | `toc_furn_kbd` | Clavier AZERTY | 0.44 x 0.13 x 0.02 | 573 / 11 / 7 |
+| `COMSPEC_ATAK_TocKeyboard_Backlit` | `toc_furn_kbd_backlit` | Clavier rétroéclairé | 0.44 x 0.13 x 0.02 | 573 / 11 / 7 |
+| `COMSPEC_ATAK_TocKeyboard_Qwerty` | `toc_furn_kbd_qwerty` | Clavier QWERTY | 0.44 x 0.13 x 0.02 | 568 / 11 / 7 |
+| `COMSPEC_ATAK_TocKeyboard_TKL` | `toc_furn_kbd_tkl` | Clavier compact AZERTY | 0.36 x 0.13 x 0.02 | 478 / 11 / 7 |
+| `COMSPEC_ATAK_TocMiniPC` | `toc_furn_minipc` | Mini-PC | 0.18 x 0.18 x 0.05 | 58 / 7 / 6 |
+| `COMSPEC_ATAK_TocMouse` | `toc_furn_mouse` | Souris sans fil | 0.06 x 0.12 x 0.04 | 123 / 36 / 5 |
+| `COMSPEC_ATAK_TocMouse_Pad` | `toc_furn_mouse_pad` | Souris et tapis de bureau | 0.80 x 0.30 x 0.04 | 171 / 42 / 11 |
+| `COMSPEC_ATAK_TocProp_Mug` | `toc_furn_mug` | Tasse à café | 0.12 x 0.08 x 0.10 | 158 / 88 / 12 |
+| `COMSPEC_ATAK_TocProp_Notepad` | `toc_furn_notepad` | Bloc-notes et stylo | 0.20 x 0.22 x 0.01 | 44 / 40 / 10 |
+| `COMSPEC_ATAK_TocTower_SFF` | `toc_furn_sff` | Unité centrale compacte | 0.10 x 0.29 x 0.32 | 54 / 39 / 6 |
+| `COMSPEC_ATAK_TocTower_Under` | `toc_furn_sff_under` | Unité centrale sous plateau | 0.45 x 0.29 x 0.14 | 114 / 99 / 42 |
+| `COMSPEC_ATAK_TocDesk_Briefing` | `toc_furn_table_brief` | Table de briefing TOC | 2.40 x 1.10 x 0.74 | 184 / 112 / 40 |
+| `COMSPEC_ATAK_TocTower` | `toc_furn_tower` | Station de travail, tour | 0.21 x 0.45 x 0.47 | 70 / 51 / 6 |
+
+Textures : `toc_top` (stratifié gris clair), `toc_mesh` (résille, feutre), atlas `toc_kit_co` 2048 x 1024 (légendes AZERTY et
+QWERTY, clavier rétroéclairé, façades d'unité centrale, porte-nom, bloc-notes), matière lumineuse `toc_kit_glow`.
+
 ## Modèles 3D : premiers écrans TOC refaits, projection, PC portable
 
 Les premiers écrans (`COMSPEC_ATAK_Screen_Tripod`, `_Dual`, `_Desk`, `_Wall`), les toiles (`COMSPEC_ATAK_ProjScreen`,

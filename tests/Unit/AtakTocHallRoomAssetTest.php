@@ -55,7 +55,8 @@ final class AtakTocHallRoomAssetTest extends TestCase
     private static function config(): string
     {
         return self::read(self::MAIN . 'config.cpp') . "\n" . self::read(self::MAIN . 'toc_screens3d.hpp') . "\n"
-            . self::read(self::MAIN . 'toc_screens_legacy.hpp') . "\n" . self::read(self::MAIN . 'toc_pc.hpp');
+            . self::read(self::MAIN . 'toc_screens_legacy.hpp') . "\n" . self::read(self::MAIN . 'toc_pc.hpp') . "\n"
+            . self::read(self::MAIN . 'toc_furniture.hpp');
     }
 
     /**
@@ -63,7 +64,7 @@ final class AtakTocHallRoomAssetTest extends TestCase
      *
      * @return array{0: list<array{0: string, 1: string, 2: float, 3: float, 4: float, 5: string}>, 1: list<string>}
      */
-    private static function resolve(array $room, bool $wall, float $ceil, float $step): array
+    private static function resolve(array $room, bool $wall, float $ceil, float $step, string $arc = ''): array
     {
         $k = array_column(self::table('_k'), 1, 0);
         [, , $seats, $entries] = $room;
@@ -83,10 +84,19 @@ final class AtakTocHallRoomAssetTest extends TestCase
                 $rows[] = [$role, $alt, (float) $ax, (float) $ay, 0.0, 'floor'];
             }
         }
+        // Mobilier du mod : consoles droites (une pièce pour deux ou trois postes, table _deskPlan) ou une console en
+        // arc par poste ; $step vaut alors « seat » ou le pas des consoles en arc.
         $desk = array_column(self::table('_furniture'), 1, 0)['desk'][0];
+        if ($arc === '') {
+            foreach (array_column(self::table('_deskPlan'), 1, 0)[$seats] as [$cls, $xu]) {
+                $rows[] = ['desk', $cls, $xu * $step, (float) $k['deskY'], 0.0, 'floor'];
+            }
+        }
         for ($i = 0; $i < $seats; $i++) {
             $sx = -(($seats - 1) * $step) / 2 + $i * $step;
-            $rows[] = ['desk', 'desk', $sx, (float) $k['deskY'], 0.0, 'floor'];
+            if ($arc !== '') {
+                $rows[] = ['desk', $arc, $sx, (float) $k['deskY'], 0.0, 'floor'];
+            }
             $rows[] = ['chair', 'chair', $sx, (float) $k['chairY'], 0.0, 'floor'];
             $rows[] = ['pc', 'pc', $sx, (float) $k['pcY'], (float) $desk[1], 'desk'];
         }
@@ -141,8 +151,14 @@ final class AtakTocHallRoomAssetTest extends TestCase
         $src = self::read(self::BUILD);
         self::assertStringContainsString('["COMSPEC_ATAK_TocLaptop", _post] select _fixed', $src);
         $furn = array_column(self::table('_furniture'), 1, 0);
-        self::assertSame('Land_TableDesk_F', $furn['desk'][0][0]);
-        self::assertSame('Land_OfficeChair_01_F', $furn['chair'][0][0]);
+        // Mobilier du mod d'abord (tests/Unit/AtakTocDeskAssetTest.php), celui du jeu de base en repli.
+        self::assertSame('COMSPEC_ATAK_TocDesk_Single', $furn['desk'][0][0]);
+        self::assertSame('COMSPEC_ATAK_TocChair', $furn['chair'][0][0]);
+        self::assertContains('Land_TableDesk_F', array_column($furn['desk'], 0));
+        self::assertContains('Land_OfficeChair_01_F', array_column($furn['chair'], 0));
+        foreach ([$furn['desk'][0][0], $furn['chair'][0][0]] as $own) {
+            self::assertMatchesRegularExpression('/class\s+' . $own . '\s*:/', $cfg);
+        }
         self::assertStringContainsString('_cands findIf { isClass (configFile >> "CfgVehicles" >> (_x select 0)) }', $src);
         // Classe absente du jeu : l'objet est sauté, la salle continue.
         self::assertStringContainsString('if !(isClass (configFile >> "CfgVehicles" >> _cls)) exitWith { [objNull, "classe absente du jeu"] };', $src);
@@ -155,11 +171,14 @@ final class AtakTocHallRoomAssetTest extends TestCase
         foreach (self::table('_rooms') as $room) {
             $size = $room[0];
             foreach ([[true, 3.4], [true, -1.0], [false, 3.4], [false, -1.0]] as [$wall, $ceil]) {
-                // Pas mini (PC portable) et pas du poste fixe le plus large (mapSize 2 + 0,1).
-                foreach ([1.7, 2.1] as $step) {
-                    [$rows, $skipped] = self::resolve($room, $wall, $ceil, $step);
+                // Consoles droites (pas d'un poste) et consoles en arc (poste à trois écrans, écran incurvé).
+                $kk = array_column(self::table('_k'), 1, 0);
+                foreach ([[(float) $kk['seat'], ''], [max((float) $kk['arcStep'], 2.1), 'COMSPEC_ATAK_TocDesk_Curved']] as [$step, $arc]) {
+                    [$rows, $skipped] = self::resolve($room, $wall, $ceil, $step, $arc);
+                    $desks = count(array_filter($rows, static fn (array $r): bool => $r[0] === 'desk'));
+                    self::assertGreaterThanOrEqual(1, $desks);
                     $tag = sprintf('salle %s, mur %s, plafond %s, pas %s', $size, $wall ? 'oui' : 'non', $ceil, $step);
-                    self::assertCount(count($room[3]) + 3 * $room[2], array_merge($rows, $skipped), $tag);
+                    self::assertCount(count($room[3]) + $desks + 2 * $room[2], array_merge($rows, $skipped), $tag);
                     $boxes = array_map(static fn (array $r): array => self::box($r, $dims), $rows);
                     $xMin = 0.0;
                     $xMax = 0.0;
@@ -271,7 +290,7 @@ final class AtakTocHallRoomAssetTest extends TestCase
         // Tout le plan est calculé avant la première pose : un objet déjà posé ne fausse aucune mesure.
         self::assertLessThan(strpos($build, 'private _n = count _plan;'), strpos($build, 'private _plan = _rows apply {'));
         // Bureau figé une fois posé ; écrans, PC et chaise gardent leur simulation (menu ACE).
-        self::assertStringContainsString('if (_role isEqualTo "desk") then { if (isServer) then { _o enableSimulationGlobal false; } else { _o enableSimulation false; }; };', $step);
+        self::assertStringContainsString('if (_role in ["desk", "prop"]) then { if (isServer) then { _o enableSimulationGlobal false; } else { _o enableSimulation false; }; };', $step);
     }
 
     public function testEdenAndZeusCallTheSameBuilder(): void
