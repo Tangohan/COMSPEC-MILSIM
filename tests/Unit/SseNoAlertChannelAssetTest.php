@@ -40,9 +40,8 @@ final class SseNoAlertChannelAssetTest extends TestCase
      * @var array<string, list<string>>
      */
     private const ALLOWED = [
-        // Bouton « ? » de la page IA de la zone : la page d'aide demandée s'ouvre en fenêtre modale posée sur la fenêtre de
-        // l'éditeur (contenu de fenêtre, à la demande), pas une alerte.
-        'mod/@COMSPEC_SSE/addons/editor/functions/fn_editorAi.sqf' => ['BIS_fnc_guiMessage'],
+        // (Fusion 4.4.0 : la fenêtre IA de la zone refaite, feat/sse-ia-zone-ui, n'ouvre plus d'aide par BIS_fnc_guiMessage :
+        // son aide est le guide pas à pas fn_editorCoach, dans la fenêtre.)
         // Éditeur de mission Eden (pas de partie en cours) : confirmation native d'Eden, déjà tolérée par
         // OverwatchVanillaChatSilentAssetTest.
         'mod/@COMSPEC_SSE/addons/editor/functions/fn_editor.sqf' => ['BIS_fnc_3DENNotification'],
