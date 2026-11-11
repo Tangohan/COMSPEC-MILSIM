@@ -36,15 +36,13 @@ $flagLabels = ['genuine' => 'En règle', 'forged' => 'Faux', 'expired' => 'Expir
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-id-workshop.css')) . '">';
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers')) ?>">Identités &amp; documents</a> / <strong>Préparation de mission</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Préparation de mission // Identités et couvertures</div>
         <h1>Identités et couvertures de l’opération</h1>
         <p>Générez en un coup la population d’une opération (civils, militaires, suspects, cibles prioritaires) avec leurs papiers, vérifiez l’aperçu, puis validez : le serveur de jeu donne ces identités à ses IA au lieu d’en inventer. Les recherchés et les HVT de l’opération, et les camps qui y ont accès, se règlent ici.</p>
     </div>
-    <div class="page-reference"><strong><?= $h($scope['set'] ? ($scope['op'] !== '' ? $scope['op'] : 'Hors opération') . ' · ' . $mapLabel($scope['map'] > 0 ? $scope['map'] : null) : 'Choisissez une opération') ?></strong> Réf. ATH-SSE-IDENT-PREP</div>
+    <div class="page-reference"><strong><?= $h($scope['set'] ? ($scope['op'] !== '' ? $scope['op'] : 'Hors opération') . ' · ' . $mapLabel($scope['map'] > 0 ? $scope['map'] : null) : 'Choisissez une opération') ?></strong></div>
 </div>
 
 <form class="toolbar" method="get" action="<?= $h(url('atak/sse/papiers/preparation')) ?>">

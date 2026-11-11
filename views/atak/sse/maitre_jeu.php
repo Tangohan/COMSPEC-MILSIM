@@ -9,24 +9,15 @@ $searchQuery = trim((string) ($searchQuery ?? ''));
 $entriesCount = count($entries);
 $personsCount = count($persons);
 ?>
-<div class="breadcrumb">
-    Athena / SSE / Pilotage /
-    <strong>Maître du jeu</strong>
-</div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Scénario // SEEK Query</div>
         <h1>Maître du jeu</h1>
         <p>
             Préparez les identités surveillées et le rôleplay associé. Le bouton QUERY
             du terminal SEEK interroge ce catalogue réel : il n’invente plus de
             correspondance.
         </p>
-    </div>
-    <div class="page-reference">
-        <strong>Vue // Maître du jeu</strong>
-        Réf. ATH-SSE-MJ
     </div>
 </div>
 

@@ -65,11 +65,6 @@ foreach ($cases as $c) {
     }
 }
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/documents')) ?>">Rédaction</a> /
-    <strong><?= $isEdit ? 'Modifier' : 'Nouveau' ?></strong>
-</div>
 
 <section class="sse-desk-hero sse-desk-hero--compact" aria-labelledby="sse-doc-form-title">
     <div class="sse-desk-hero__main">
@@ -197,7 +192,6 @@ foreach ($cases as $c) {
         <section class="sse-lib__panel" role="dialog" aria-modal="true" aria-labelledby="sse-lib-title">
             <header class="sse-lib__head">
                 <div>
-                    <p class="sse-lib__kicker">Bibliothèque rédactionnelle</p>
                     <h2 id="sse-lib-title">Insérer une mention officielle</h2>
                 </div>
                 <button type="button" class="sse-lib__close" data-lib-close aria-label="Fermer la bibliothèque">×</button>

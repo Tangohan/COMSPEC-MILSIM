@@ -81,7 +81,13 @@ private _cat = ["comspec-equipment-catalog", 1, _ver, (keys _mods) apply { [_x, 
 if (_copy) then {
     private _txt = str _cat;
     copyToClipboard _txt;
-    hint format ["Catalogue d'équipement : %1 objets, %2 Ko, copié au presse-papiers.\nCollez-le dans Athena › Équipement › Configurateur › Importer le catalogue.", count _out, round ((count _txt) / 1024)];
     diag_log text format ["[COMSPEC SSE] Équipement : catalogue exporté (%1 objets, %2 caractères).", count _out, count _txt];
+    // Notification du téléphone ; sans ATAK natif, la fenêtre texte du mod (le catalogue y est sélectionné : Ctrl+C), sinon RPT.
+    private _msg = format ["Catalogue d'équipement : %1 objets, %2 Ko, copié au presse-papiers.\nCollez-le dans Athena › Équipement › Configurateur › Importer le catalogue.", count _out, round ((count _txt) / 1024)];
+    if !([_msg, "SUCCESS", "Équipement"] call comspec_sse_fnc_notify) then {
+        if (isNil "comspec_sse_fnc_loadoutTextDialog" || {!(["Catalogue d'équipement", _msg regexReplace ["\\n", " "], _txt] call comspec_sse_fnc_loadoutTextDialog)}) then {
+            diag_log text format ["[COMSPEC SSE] Équipement : %1", _msg regexReplace ["\\n", " "]];
+        };
+    };
 };
 _cat

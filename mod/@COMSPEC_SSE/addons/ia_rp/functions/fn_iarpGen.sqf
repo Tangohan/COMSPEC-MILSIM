@@ -2,17 +2,26 @@
     Générateur de répliques (pur, toute machine, Eden compris) : grammaire procédurale locale, sans modèle de langage
     ni réseau. Choisit une phrase de la banque (data\iarp_bank.sqf) selon l'intention et le ton, puis l'habille :
     ouverture, hésitation, didascalie de contexte, fin, phrase type de la personne, langue du pays.
-    [intention, profil, contexte, déjà dit] call comspec_sse_fnc_iarpGen -> [modèle fr, modèle en, langue locale, ton, phrase de base]
+    [intention, profil, contexte, déjà dit, variables, mode] call comspec_sse_fnc_iarpGen
+      -> [modèle fr, modèle en, langue locale, ton, phrase de base fr, phrase de base en]
+      mode (facultatif) "pool" -> les phrases de base candidates ([[fr, en, étiquettes]…]) après tous les filtres, sans tirage
+                (banc d'essai : aucune ne doit citer un élément de scénario que l'IA ignore)
       profil    HashMap (fn_iarpProfile) : nerve, talk, aggro, honesty, bribe, fear, drunk (0-100), lang, country, phrases
       contexte  HashMap : state (automate des IA : nerveux, refuse, rendu…), tension (0-100), tone (ton imposé), aimed
                 (armes pointées), wounded, tired, vehicle, night, checkpoint (booléens), country (pays des papiers),
                 plain (vrai : phrase de base seule, sans habillage ; réplique suivie d'une autre dans la même bulle),
-                told (colleague | other : sujet déjà raconté à un autre joueur, « Je l'ai déjà dit à votre collègue. »)
+                told (colleague | other : sujet déjà raconté à un autre joueur, « Je l'ai déjà dit à votre collègue. »),
+                forbid (étiquettes interdites : « hint », armed, explosives, military, wanted, drugs, politics ; cadre fixé par
+                le maître du jeu, fn_iarpAnswers « frame » : une phrase étiquetée ainsi n'est jamais choisie),
+                preferFact (vrai : une phrase qui cite un fait connu de la couverture passe avant les autres)
       déjà dit  phrases de base déjà servies par cette personne : jamais redites tant qu'il en reste d'autres
+      variables (facultatif) faits connus ({city}, {job}…) : une phrase qui cite un fait absent n'est pas choisie
+    Ton venu du caractère (peur, nerfs) : seulement s'il y a une raison (tension, arme pointée, état) ; un peureux sans
+    menace répond calmement.
     Les modèles gardent leurs variables ({city}…) : fn_iarpFill les remplace dans la langue de chaque joueur.
     Ton : imposé, sinon état de l'automate, sinon le trait de caractère le plus marqué.
 */
-params [["_intent", "unknown", [""]], ["_p", createHashMap, [createHashMap]], ["_ctx", createHashMap, [createHashMap]], ["_recent", [], [[]]]];
+params [["_intent", "unknown", [""]], ["_p", createHashMap, [createHashMap]], ["_ctx", createHashMap, [createHashMap]], ["_recent", [], [[]]], ["_vars", nil], ["_mode", "", [""]]];
 private _bank = ["bank"] call comspec_sse_fnc_iarpData;
 private _num = { params ["_k", "_d"]; private _v = _p getOrDefault [_k, _d]; [_d, _v] select (_v isEqualType 0) };
 private _nerve = ["nerve", 50] call _num;
@@ -32,8 +41,10 @@ if (_tone isEqualTo "") then {
         if (_st isEqualTo "refuse") exitWith { "mefiant" };
         if (_st isEqualTo "rendu") exitWith { "effraye" };
         if (_aggro >= 65) exitWith { "agressif" };
-        if (_fear >= 75) exitWith { "effraye" };
-        if (_nerve >= 65) exitWith { "nerveux" };
+        // Peur et nerfs : un caractère, pas un état ; ils colorent la réponse quand quelque chose les réveille.
+        private _stir = _tension >= 25 || {(_ctx getOrDefault ["aimed", 0]) > 0} || {_st in ["ment", "refuse", "fuit", "agressif", "renforts", "nerveux", "rendu"]};
+        if (_fear >= 75 && {_stir}) exitWith { "effraye" };
+        if (_nerve >= 65 && {_stir}) exitWith { "nerveux" };
         if (_honesty <= 30) exitWith { "mefiant" };
         if (_talk >= 70) exitWith { "bavard" };
         if (_talk <= 30) exitWith { "laconique" };
@@ -47,6 +58,43 @@ private _sets = _bank getOrDefault [_intent, _bank getOrDefault ["unknown", crea
 private _pool = [];
 { _pool pushBack _x; _pool pushBack _x; } forEach (_sets getOrDefault [_tone, []]);
 _pool append (_sets getOrDefault ["*", []]);
+// Faits connus (variables du serveur) : une phrase qui cite un fait absent est écartée, s'il en reste d'autres.
+if (!isNil "_vars" && {_vars isEqualType createHashMap}) then {
+    private _has = {
+        params ["_t"];
+        private _ok = true;
+        private _rest = _t;
+        private _guard = 0;
+        while { _ok && {_guard < 8} && {(_rest find "{") >= 0} } do {
+            _guard = _guard + 1;
+            private _a = _rest find "{";
+            private _b = (_rest select [_a]) find "}";
+            if (_b < 0) exitWith {};
+            private _k = _rest select [_a + 1, _b - 1];
+            private _v = _vars getOrDefault [_k, ""];
+            if (_v isEqualType []) then { _v = _v param [0, ""]; };
+            if (!(_k in ["sir", "player"]) && {!(_v isEqualType "") || {_v isEqualTo ""}}) then { _ok = false; };
+            _rest = _rest select [_a + _b + 1];
+        };
+        _ok
+    };
+    private _kept = _pool select { [_x select 0] call _has };
+    if (_kept isNotEqualTo []) then { _pool = _kept; };
+    // Fait connu de la couverture : la phrase qui le cite passe avant les phrases génériques (« Je suis là depuis {since}. »).
+    if (_ctx getOrDefault ["preferFact", false]) then {
+        private _withFact = _pool select { (([[_x select 0, "{sir}", ""] call CBA_fnc_replace, "{player}", ""] call CBA_fnc_replace) find "{") >= 0 };
+        if (_withFact isNotEqualTo []) then { _pool = _withFact; };
+    };
+};
+// Cadre du maître du jeu (fn_iarpAnswers « frame ») : aucune phrase étiquetée d'un thème interdit, ni « hint » chez une IA
+// qui ne sait rien. Rien ne reste : phrases neutres de « dunno » (jamais un détail inventé).
+private _forbid = _ctx getOrDefault ["forbid", []];
+if (_forbid isEqualType [] && {_forbid isNotEqualTo []}) then {
+    private _okTags = { params ["_l"]; private _tg = _l param [2, []]; !(_tg isEqualType []) || {(_tg findIf { _x in _forbid }) < 0} };
+    _pool = _pool select { [_x] call _okTags };
+    if (_pool isEqualTo []) then { _pool = ((_bank getOrDefault ["dunno", createHashMap]) getOrDefault ["*", []]) select { [_x] call _okTags }; };
+};
+if (_mode isEqualTo "pool") exitWith { _pool };
 if (_pool isEqualTo []) then { _pool = [["Je ne comprends pas.", "I don't understand."]]; };
 private _fresh = _pool select { !((_x select 0) in _recent) };
 if (_fresh isEqualTo []) then { _fresh = _pool; };
@@ -114,4 +162,4 @@ if ((_p getOrDefault ["lang", "common"]) isEqualTo "local") then {
     if (_e isEqualTo []) then { _e = ["_local", "*"] call _pickIn; };
     if (_e isNotEqualTo []) then { _local = _e select 0; };
 };
-[_fr joinString " ", _en joinString " ", _local, _tone, _core select 0]
+[_fr joinString " ", _en joinString " ", _local, _tone, _core select 0, _core param [1, _core select 0]]

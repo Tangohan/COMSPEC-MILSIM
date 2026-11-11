@@ -61,12 +61,16 @@ private _rows = [["segment", "", [
     [[format ["REÇUS (%1)", count _recv], format ["REÇUS · %1 NOUVEAU(X)", _unread]] select (_unread > 0), ["tab", "RECV"] call _act, _tab isEqualTo "RECV"]
 ]]];
 
-// Lecture d'un C.R. comme une fiche imprimée, puis son parcours.
+// 4.2.2 : maître-détail quand la largeur le permet (téléphone tenu à l'horizontale, fn_layoutCols) : la liste reste à
+// gauche, le C.R. ouvert se lit à droite au lieu de s'insérer dans la liste.
+private _split = [_bw, "split"] call comspec_atak_native_fnc_layoutCols;
+private _detRows = [];
+// Lecture d'un C.R. comme une fiche imprimée, puis son parcours (dans _into : la liste, ou le volet de droite).
 private _detail = {
-    params ["_r"];
+    params ["_r", ["_into", _rows]];
     {
         _x params ["_k", "_lbl", "_v", ["_tag", ""]];
-        _rows pushBack ["line", _tag, _lbl, _v, "auto", "", "", "mono"];
+        _into pushBack ["line", _tag, _lbl, _v, "auto", "", "", "mono"];
     } forEach (_r getOrDefault ["lines", []]);
     private _extra = [];
     if ((_r getOrDefault ["jnet", ""]) isNotEqualTo "") then { _extra pushBack format ["Remonté sur Athena : %1", toLower (_r get "jnet")]; };
@@ -75,7 +79,7 @@ private _detail = {
     if ((count _rc) > 0) then {
         _extra pushBack format ["Lu par %1", ((values _rc) apply { format ["%1%2 (%3)", _x select 0, ["", " ✓"] select ((_x select 1) isEqualTo "ACK"), _x select 2] }) joinString ", "];
     };
-    if ((count _extra) > 0) then { _rows pushBack ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", (_extra apply { [_x] call _esc }) joinString "<br/>"]]; };
+    if ((count _extra) > 0) then { _into pushBack ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", (_extra apply { [_x] call _esc }) joinString "<br/>"]]; };
 };
 
 switch (_tab) do {
@@ -165,7 +169,12 @@ switch (_tab) do {
             _rows pushBack ["person", [_r getOrDefault ["code", ""]] call _iconOf, format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t font='COMSPEC_BarlowBold'>%3</t>  <t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4</t><br/><t size='0.8'>%5</t><br/><t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextDim") + "'>%6</t>",
                 [_prio] call _prioHex, _prio, [_r getOrDefault ["label", "C.R."]] call _esc, [([_r getOrDefault ["by", "?"], _r getOrDefault ["time", ""], _r getOrDefault ["grid", ""]]) joinString " · "] call _esc,
                 _trail joinString "  ·  ", [_r getOrDefault ["summary", ""]] call _esc], [], [[_prio] call _prioHex] call _hexRgb];
-            if (_open isEqualTo _id) then { [_r] call _detail; };
+            if (_open isEqualTo _id) then {
+                if (_split isEqualTo []) then { [_r] call _detail; } else {
+                    _detRows pushBack ["section", _r getOrDefault ["label", "C.R."], ([_r getOrDefault ["by", "?"], _r getOrDefault ["time", ""], _r getOrDefault ["grid", ""]]) joinString " · "];
+                    [_r, _detRows] call _detail;
+                };
+            };
             private _btns = [[["DÉTAILS", "REPLIER"] select (_open isEqualTo _id), ["open", _id] call _act, false], ["CARTE", ["map", _id] call _act]];
             if (_isSent) then {
                 if (_web in ["ÉCHEC", "HORS LIGNE"]) then { _btns pushBack ["RENVOYER", ["web", _id] call _act, true, true, "Renvoie ce compte rendu à Athena"]; };
@@ -178,5 +187,11 @@ switch (_tab) do {
         } forEach _sel;
     };
 };
-[_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+if (_split isNotEqualTo [] && {(count _detRows) > 0}) then {
+    _split params ["_lw", "_gap", "_dw"];
+    [_rows, [0, 0, _lw, _bh]] call comspec_atak_native_fnc_formRender;
+    [_detRows, [_lw + _gap, 0, _dw, _bh], true, COMSPEC_ATAK_Th get "bg0"] call comspec_atak_native_fnc_formRender;
+} else {
+    [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+};
 true

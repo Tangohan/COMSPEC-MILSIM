@@ -4,20 +4,11 @@ ob_start();
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 /** @var array<string,string> $classifications */
 ?>
-<div class="breadcrumb">
-    Athena / SSE / Dossiers /
-    <strong>Nouveau</strong>
-</div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Ouverture // Création</div>
         <h1>Ouvrir un dossier</h1>
         <p>Création d’un nouveau dossier d’affaire dans le périmètre SSE.</p>
-    </div>
-    <div class="page-reference">
-        <strong>Vue // Nouveau dossier</strong>
-        Réf. ATH-SSE-NOUVEAU
     </div>
 </div>
 

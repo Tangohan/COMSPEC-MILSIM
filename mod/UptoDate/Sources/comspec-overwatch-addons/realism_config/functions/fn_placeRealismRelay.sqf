@@ -26,6 +26,9 @@ params [
     ["_position", [], [[]]]
 ];
 
+// Retour à l'opérateur : notification du téléphone ATAK natif si présent, sinon RPT (jamais le hint d'Arma).
+private _say = { params ["_t"]; if (!isNil "comspec_atak_native_fnc_notify") then { ["INFO", _t, 6, 20, "ATHENA"] call comspec_atak_native_fnc_notify; } else { diag_log text format ["[ATHENA] %1", _t]; }; };
+
 // Vérifier joueur valide
 if (isNull _player) exitWith {
     diag_log "[ATHENA] placeRealismRelay: joueur null";
@@ -39,7 +42,7 @@ if (count _position == 0) then {
 
 // Vérifier que joueur a un kit relais
 if (!("ATHENA_RelayKit" in items _player)) exitWith {
-    hint "❌ Vous n'avez pas de kit relais";
+    ["❌ Vous n'avez pas de kit relais"] call _say;
     diag_log "[ATHENA] placeRealismRelay: joueur n'a pas de kit relais";
     objNull
 };
@@ -91,7 +94,7 @@ if (isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) then {
                 private _maxConn = _target getVariable ["ATHENA_relayMaxConnections", 0];
                 private _status = _target getVariable ["ATHENA_relayStatus", "unknown"];
                 
-                hint format [
+                private _t = format [
                     "📡 RELAIS RADIO\n\nPortée : %1m\nDébit : %2 kbps\nConnexions : %3/%4\nStatut : %5",
                     _range,
                     _throughput,
@@ -99,6 +102,7 @@ if (isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) then {
                     _maxConn,
                     toUpper _status
                 ];
+                if (!isNil "comspec_atak_native_fnc_notify") then { ["INFO", _t, 6, 20, "ATHENA"] call comspec_atak_native_fnc_notify; } else { diag_log text format ["[ATHENA] %1", _t]; };
             },
             {true}
         ] call ace_interact_menu_fnc_createAction,
@@ -123,9 +127,9 @@ if (isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) then {
                 if (getPlayerUID _player == _ownerUID || {_player call ATHENA_fnc_isAdmin}) then {
                     ["ATHENA_relayDestroyed", [_target]] call CBA_fnc_serverEvent;
                     deleteVehicle _target;
-                    hint "✅ Relais détruit";
+                    if (!isNil "comspec_atak_native_fnc_notify") then { ["INFO", "✅ Relais détruit", 6, 20, "ATHENA"] call comspec_atak_native_fnc_notify; } else { diag_log text format ["[ATHENA] %1", "✅ Relais détruit"]; };
                 } else {
-                    hint "❌ Vous n'êtes pas propriétaire de ce relais";
+                    if (!isNil "comspec_atak_native_fnc_notify") then { ["INFO", "❌ Vous n'êtes pas propriétaire de ce relais", 6, 20, "ATHENA"] call comspec_atak_native_fnc_notify; } else { diag_log text format ["[ATHENA] %1", "❌ Vous n'êtes pas propriétaire de ce relais"]; };
                 };
             },
             {true}
@@ -161,10 +165,10 @@ if (_code isEqualTo 0) then {
     // Retirer kit de l'inventaire
     _player removeItem "ATHENA_RelayKit";
     
-    hint format ["✅ Relais posé\nPortée : %1m\nUID : %2", _relayRangeM, _relayUID];
+    [format ["✅ Relais posé\nPortée : %1m\nUID : %2", _relayRangeM, _relayUID]] call _say;
 } else {
     diag_log format ["[ATHENA] placeRealismRelay: ERREUR sync API (code %1)", _code];
-    hint "⚠️ Relais posé mais non synchronisé avec API";
+    ["⚠️ Relais posé mais non synchronisé avec API"] call _say;
 };
 
 // Activer cercle de portée visible par propriétaire

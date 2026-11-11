@@ -12,7 +12,6 @@ $scopes = ['structure' => 'Structure seule', 'complete' => 'Campagne complète']
 <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_campaigns.css')) ?>">
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline"><a href="<?= $h(url('atak/sse/campagnes')) ?>">Campagnes</a> // Catalogue partagé</div>
         <h1>Campagnes partagées</h1>
         <p>
             Les campagnes que d’autres communautés ont choisi de partager. Une copie garde la graine biométrique

@@ -1,0 +1,951 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- COMSPEC SSE, addon editor : fenêtre « IA de la zone » (anglais, français). Clés STR_COMSPEC_SSE_ED_*. -->
+<Project name="COMSPEC_SSE">
+    <Package name="editor">
+        <Key ID="STR_COMSPEC_SSE_ED_Around">
+            <Original>Detect around</Original>
+            <English>Detect around</English>
+            <French>Détecter autour</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Around_D">
+            <Original>Lists the AI around the window's point (module, Zeus camera or you), within the radius chosen on the left. E.g. 50 m around the checkpoint.</Original>
+            <English>Lists the AI around the window's point (module, Zeus camera or you), within the radius chosen on the left. E.g. 50 m around the checkpoint.</English>
+            <French>Liste les IA autour du point de la fenêtre (module, caméra Zeus ou vous), dans le rayon choisi à gauche. Ex. : 50 m autour du checkpoint.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Radius_D">
+            <Original>Detection radius around the point.</Original>
+            <English>Detection radius around the point.</English>
+            <French>Rayon de détection autour du point.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_ZeusSel">
+            <Original>Zeus selection</Original>
+            <English>Zeus selection</English>
+            <French>Sélection Zeus</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_ZeusSel_D">
+            <Original>Lists the AI selected in the Zeus interface before this window was opened.</Original>
+            <English>Lists the AI selected in the Zeus interface before this window was opened.</English>
+            <French>Liste les IA sélectionnées dans l'interface Zeus avant l'ouverture de cette fenêtre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Count">
+            <Original>%1 AI</Original>
+            <English>%1 AI</English>
+            <French>%1 IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Help">
+            <Original>?</Original>
+            <English>?</English>
+            <French>?</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Help_D">
+            <Original>Open the SSE manual page about this window.</Original>
+            <English>Open the SSE manual page about this window.</English>
+            <French>Ouvrir la page du manuel SSE sur cette fenêtre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_HelpMore">
+            <Original>Full manual: Esc › Field Manual › COMSPEC SSE.</Original>
+            <English>Full manual: Esc › Field Manual › COMSPEC SSE.</English>
+            <French>Manuel complet : Échap › Manuel de terrain › COMSPEC SSE.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Search">
+            <Original>Search</Original>
+            <English>Search</English>
+            <French>Rechercher</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Search_D">
+            <Original>Filters the list: given name, true name, unit, group, profile. E.g. Vlachos, Alpha.</Original>
+            <English>Filters the list: given name, true name, unit, group, profile. E.g. Vlachos, Alpha.</English>
+            <French>Filtre la liste : nom donné, vrai nom, unité, groupe, profil. Ex. : Vlachos, Alpha.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_FSide_All">
+            <Original>All sides</Original>
+            <English>All sides</English>
+            <French>Tous les camps</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_FRole_All">
+            <Original>All roles</Original>
+            <English>All roles</English>
+            <French>Tous les rôles</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_FState_All">
+            <Original>All states</Original>
+            <English>All states</English>
+            <French>Tous les états</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Filters_D">
+            <Original>Side, role (civilian, military, suspect, HVT) and state (Athena profile, generated identity, papers decided at first request, kept for next games).</Original>
+            <English>Side, role (civilian, military, suspect, HVT) and state (Athena profile, generated identity, papers decided at first request, kept for next games).</English>
+            <French>Camp, rôle (civil, militaire, suspect, HVT) et état (profil Athena, identité générée, papiers décidés à la première demande, gardée pour les prochaines parties).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Side_auto">
+            <Original>Do not change</Original>
+            <English>Do not change</English>
+            <French>Ne pas changer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Side_civ">
+            <Original>Civilians</Original>
+            <English>Civilians</English>
+            <French>Civils</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Side_west">
+            <Original>BLUFOR</Original>
+            <English>BLUFOR</English>
+            <French>BLUFOR</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Side_east">
+            <Original>OPFOR</Original>
+            <English>OPFOR</English>
+            <French>OPFOR</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Side_guer">
+            <Original>Independents</Original>
+            <English>Independents</English>
+            <French>Indépendants</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_SideS_civ">
+            <Original>civ</Original>
+            <English>civ</English>
+            <French>civ</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_SideS_west">
+            <Original>BLU</Original>
+            <English>BLU</English>
+            <French>BLU</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_SideS_east">
+            <Original>OPF</Original>
+            <English>OPF</English>
+            <French>OPF</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_SideS_guer">
+            <Original>IND</Original>
+            <English>IND</English>
+            <French>IND</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Role_civilian">
+            <Original>Civilian</Original>
+            <English>Civilian</English>
+            <French>Civil</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Role_military">
+            <Original>Military</Original>
+            <English>Military</English>
+            <French>Militaire</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Role_suspect">
+            <Original>Suspect</Original>
+            <English>Suspect</English>
+            <French>Suspect</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Role_hvt">
+            <Original>HVT</Original>
+            <English>HVT</English>
+            <French>HVT</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_RoleS_civilian">
+            <Original>Civ.</Original>
+            <English>Civ.</English>
+            <French>Civil</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_RoleS_military">
+            <Original>Mil.</Original>
+            <English>Mil.</English>
+            <French>Milit.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_RoleS_suspect">
+            <Original>Susp.</Original>
+            <English>Susp.</English>
+            <French>Susp.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_RoleS_hvt">
+            <Original>HVT</Original>
+            <English>HVT</English>
+            <French>HVT</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_State_athena">
+            <Original>Athena profile</Original>
+            <English>Athena profile</English>
+            <French>Profil Athena</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_State_generated">
+            <Original>Generated identity</Original>
+            <English>Generated identity</English>
+            <French>Identité générée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_State_pending">
+            <Original>Papers at first request</Original>
+            <English>Papers at first request</English>
+            <French>Papiers à la 1re demande</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_State_kept">
+            <Original>Kept for next games</Original>
+            <English>Kept for next games</English>
+            <French>Gardée pour les prochaines parties</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Col_Name">
+            <Original>Given name</Original>
+            <English>Given name</English>
+            <French>Nom donné</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Col_True">
+            <Original>True name</Original>
+            <English>True name</English>
+            <French>Vrai nom</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Col_Truth">
+            <Original>Truth</Original>
+            <English>Truth</English>
+            <French>Vérité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Col_Side">
+            <Original>Side</Original>
+            <English>Side</English>
+            <French>Camp</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Col_Role">
+            <Original>Role</Original>
+            <English>Role</English>
+            <French>Rôle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Col_Profile">
+            <Original>Profile</Original>
+            <English>Profile</English>
+            <French>Profil</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Col_Docs">
+            <Original>Papers</Original>
+            <English>Papers</English>
+            <French>Papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Col_Group">
+            <Original>Group</Original>
+            <English>Group</English>
+            <French>Groupe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Col_Type">
+            <Original>Type</Original>
+            <English>Type</English>
+            <French>Type</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Col_Country">
+            <Original>Country</Original>
+            <English>Country</English>
+            <French>Pays</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Col_Number">
+            <Original>Number</Original>
+            <English>Number</English>
+            <French>Numéro</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_List_D">
+            <Original>Click a line to check or uncheck it: actions apply to the checked AI, the sheet shows the last clicked one. Given name: what the AI says and what its papers print. True name: who it really is (Zeus only).</Original>
+            <English>Click a line to check or uncheck it: actions apply to the checked AI, the sheet shows the last clicked one. Given name: what the AI says and what its papers print. True name: who it really is (Zeus only).</English>
+            <French>Cliquez une ligne pour la cocher ou la décocher : les actions portent sur les IA cochées, la fiche montre la dernière cliquée. Nom donné : ce que dit l'IA et ce qu'impriment ses papiers. Vrai nom : qui elle est vraiment (Zeus seulement).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Truth_true">
+            <Original>True identity</Original>
+            <English>True identity</English>
+            <French>Identité vraie</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Truth_lies">
+            <Original>False identity (lies)</Original>
+            <English>False identity (lies)</English>
+            <French>Fausse identité (ment)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Truth_forged">
+            <Original>Forged papers</Original>
+            <English>Forged papers</English>
+            <French>Faux papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Truth_cover">
+            <Original>Cover identity</Original>
+            <English>Cover identity</English>
+            <French>Couverture</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Truth_pending">
+            <Original>Decided at first request</Original>
+            <English>Decided at first request</English>
+            <French>Décidée à la 1re demande</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Truth_none">
+            <Original>No papers</Original>
+            <English>No papers</English>
+            <French>Sans papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_TruthS_true">
+            <Original>True</Original>
+            <English>True</English>
+            <French>Vraie</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_TruthS_lies">
+            <Original>Lies</Original>
+            <English>Lies</English>
+            <French>Ment</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_TruthS_forged">
+            <Original>Forged</Original>
+            <English>Forged</English>
+            <French>Faux</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_TruthS_cover">
+            <Original>Cover</Original>
+            <English>Cover</English>
+            <French>Couv.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_TruthS_pending">
+            <Original>pending</Original>
+            <English>pending</English>
+            <French>à venir</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_TruthS_none">
+            <Original>none</Original>
+            <English>none</English>
+            <French>aucun</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_CheckAll">
+            <Original>Check all</Original>
+            <English>Check all</English>
+            <French>Tout cocher</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_CheckAll_D">
+            <Original>Checks every AI shown in the list (filters apply).</Original>
+            <English>Checks every AI shown in the list (filters apply).</English>
+            <French>Coche toutes les IA affichées dans la liste (les filtres comptent).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_CheckNone">
+            <Original>Uncheck</Original>
+            <English>Uncheck</English>
+            <French>Décocher</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Checked">
+            <Original>%1 AI checked</Original>
+            <English>%1 AI checked</English>
+            <French>%1 IA cochée(s)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_MultiNote">
+            <Original>Several AI checked: the settings shown apply to all of them.</Original>
+            <English>Several AI checked: the settings shown apply to all of them.</English>
+            <French>Plusieurs IA cochées : les réglages affichés s'appliquent à toutes.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Empty">
+            <Original>No AI here: widen the radius, or select them in Zeus.</Original>
+            <English>No AI here: widen the radius, or select them in Zeus.</English>
+            <French>Aucune IA ici : élargissez le rayon, ou sélectionnez-les dans le Zeus.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_EmptyFilter">
+            <Original>No AI matches the search or the filters.</Original>
+            <English>No AI matches the search or the filters.</English>
+            <French>Aucune IA ne correspond à la recherche ou aux filtres.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Kept">
+            <Original>Kept for next games</Original>
+            <English>Kept for next games</English>
+            <French>Gardés pour les prochaines parties</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_KeptNone">
+            <Original>Nothing kept for this map</Original>
+            <English>Nothing kept for this map</English>
+            <French>Rien de gardé pour cette carte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_KeptReload">
+            <Original>Reload the saved AI</Original>
+            <English>Reload the saved AI</English>
+            <French>Recharger l'IA enregistrée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_KeptReload_D">
+            <Original>Puts this AI back as it was saved (profile, papers, behaviour, side). The AI is found by its variable name, otherwise by its class within 20 m of the saved position.</Original>
+            <English>Puts this AI back as it was saved (profile, papers, behaviour, side). The AI is found by its variable name, otherwise by its class within 20 m of the saved position.</English>
+            <French>Remet cette IA comme elle était enregistrée (profil, papiers, comportement, camp). L'IA est retrouvée par son nom de variable, sinon par sa classe à moins de 20 m de la position gardée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_KeptForget">
+            <Original>Delete the record</Original>
+            <English>Delete the record</English>
+            <French>Supprimer l'enregistrement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_KeptForget_D">
+            <Original>Deletes the record: the AI will no longer be put back in the next games (on this server and on Athena).</Original>
+            <English>Deletes the record: the AI will no longer be put back in the next games (on this server and on Athena).</English>
+            <French>Supprime l'enregistrement : l'IA ne sera plus remise en place aux prochaines parties (sur ce serveur et sur Athena).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_KeptNote">
+            <Original>Saved on this server (server profile, per map) and on Athena when the link is open; put back at the start of each game on this map.</Original>
+            <English>Saved on this server (server profile, per map) and on Athena when the link is open; put back at the start of each game on this map.</English>
+            <French>Enregistré sur ce serveur (profil du serveur, par carte) et sur Athena si la liaison est ouverte ; remis en place au début de chaque partie sur cette carte.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_KeptNote_D">
+            <Original>Saved on this server (server profile, per map and operation) and on Athena when the link is open. Put back at the start of each game on this map. An AI placed in Zeus without a variable name is found by its class within 20 m.</Original>
+            <English>Saved on this server (server profile, per map and operation) and on Athena when the link is open. Put back at the start of each game on this map. An AI placed in Zeus without a variable name is found by its class within 20 m.</English>
+            <French>Enregistré sur ce serveur (profil du serveur, par carte et opération) et sur Athena quand la liaison est ouverte. Remis en place au début de chaque partie sur cette carte. Une IA posée au Zeus sans nom de variable est retrouvée par sa classe à moins de 20 m.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_KeptSrc_server">
+            <Original>server</Original>
+            <English>server</English>
+            <French>serveur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_KeptSrc_athena">
+            <Original>Athena</Original>
+            <English>Athena</English>
+            <French>Athena</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_KeptSrc_both">
+            <Original>server + Athena</Original>
+            <English>server + Athena</English>
+            <French>serveur + Athena</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Sheet">
+            <Original>Sheet: %1</Original>
+            <English>Sheet: %1</English>
+            <French>Fiche : %1</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_SheetNone">
+            <Original>No AI: check a line in the list</Original>
+            <English>No AI: check a line in the list</English>
+            <French>Aucune IA : cochez une ligne de la liste</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_SheetUnchecked">
+            <Original>(unchecked)</Original>
+            <English>(unchecked)</English>
+            <French>(non cochée)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_SheetTruth">
+            <Original>Truth: %1 · true name: %2</Original>
+            <English>Truth: %1 · true name: %2</English>
+            <French>Vérité : %1 · vrai nom : %2</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Unit">
+            <Original>unit: %1 · %2 · %3</Original>
+            <English>unit: %1 · %2 · %3</English>
+            <French>unité : %1 · %2 · %3</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Profile">
+            <Original>Athena profile</Original>
+            <English>Athena profile</English>
+            <French>Profil Athena</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_ProfStatus">
+            <Original>%1 profiles received from Athena (pack of %2)</Original>
+            <English>%1 profiles received from Athena (pack of %2)</English>
+            <French>%1 profils reçus d'Athena (paquet du %2)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_ProfStatusNoDate">
+            <Original>%1 profiles received from Athena</Original>
+            <English>%1 profiles received from Athena</English>
+            <French>%1 profils reçus d'Athena</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_ProfNone">
+            <Original>No profile: create them on Athena (SSE Office › AI profiles), then Refresh.</Original>
+            <English>No profile: create them on Athena (SSE Office › AI profiles), then Refresh.</English>
+            <French>Aucun profil : créez-les sur Athena (Bureau SSE › Profils IA), puis Actualiser.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_ProfStatus_D">
+            <Original>AI profiles travel in the identity pack, loaded by the server (COMSPEC Link), otherwise by the post of a linked Zeus. No request without the link.</Original>
+            <English>AI profiles travel in the identity pack, loaded by the server (COMSPEC Link), otherwise by the post of a linked Zeus. No request without the link.</English>
+            <French>Les profils d'IA voyagent dans le paquet d'identité, chargé par le serveur (COMSPEC Link), sinon par le poste d'un Zeus relié. Aucune requête sans la liaison.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Refresh">
+            <Original>Refresh</Original>
+            <English>Refresh</English>
+            <French>Actualiser</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Refresh_D">
+            <Original>Asks the server to reload the identity pack from Athena (profiles and kept AI). E.g. after creating a profile on the site.</Original>
+            <English>Asks the server to reload the identity pack from Athena (profiles and kept AI). E.g. after creating a profile on the site.</English>
+            <French>Demande au serveur de recharger le paquet d'identité depuis Athena (profils et IA gardées). Ex. : après avoir créé un profil sur le site.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Refreshing">
+            <Original>Refresh requested from Athena…</Original>
+            <English>Refresh requested from Athena…</English>
+            <French>Actualisation demandée à Athena…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_ProfSearch_D">
+            <Original>Search a profile: reference, label or name. E.g. PRF-0012, market seller.</Original>
+            <English>Search a profile: reference, label or name. E.g. PRF-0012, market seller.</English>
+            <French>Rechercher un profil : référence, libellé ou nom. Ex. : PRF-0012, vendeur.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_ProfGenerate">
+            <Original>Generate an identity</Original>
+            <English>Generate an identity</English>
+            <French>Générer une identité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_ProfHelp">
+            <Original>Generate: random identity. Athena profile: identity and papers from the site.</Original>
+            <English>Generate: random identity. Athena profile: identity and papers from the site.</English>
+            <French>Générer : identité tirée au sort. Profil Athena : identité et papiers du site.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_ProfHelp_D">
+            <Original>Generate: a random identity for this AI, papers as set below. An Athena profile gives the identity and papers prepared on the site. E.g. PRF-0012 · Market seller (Stavros Vlachos).</Original>
+            <English>Generate: a random identity for this AI, papers as set below. An Athena profile gives the identity and papers prepared on the site. E.g. PRF-0012 · Market seller (Stavros Vlachos).</English>
+            <French>Générer : identité tirée au sort pour cette IA, papiers selon les réglages ci-dessous. Un profil Athena donne l'identité et les papiers préparés sur le site. Ex. : PRF-0012 · Vendeur du marché (Stavros Vlachos).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Identity">
+            <Original>Identity and papers</Original>
+            <English>Identity and papers</English>
+            <French>Identité et papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Carry">
+            <Original>Papers carried</Original>
+            <English>Papers carried</English>
+            <French>Papiers qu'il porte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Kind">
+            <Original>Nature</Original>
+            <English>Nature</English>
+            <French>Nature</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_IdentityHelp">
+            <Original>What it carries, and whether genuine. E.g. stolen card = Forged papers.</Original>
+            <English>What it carries, and whether genuine. E.g. stolen card = Forged papers.</English>
+            <French>Ce qu'il porte, et s'ils sont vrais. Ex. : carte volée = Faux papiers.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_IdentityHelp_D">
+            <Original>By side: ID card for a civilian, military card for a soldier. Genuine papers: in its true name. Cover: another name, papers in order. Forged papers: detected at a check. E.g. an insurgent with a stolen card = Forged papers.</Original>
+            <English>By side: ID card for a civilian, military card for a soldier. Genuine papers: in its true name. Cover: another name, papers in order. Forged papers: detected at a check. E.g. an insurgent with a stolen card = Forged papers.</English>
+            <French>Selon son camp : carte d'identité pour un civil, carte militaire pour un soldat. Vrais papiers : à son vrai nom. Couverture : autre nom, papiers en règle. Faux papiers : détectés au contrôle. Ex. : un insurgé avec une carte volée = Faux papiers.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Papers_auto">
+            <Original>By side</Original>
+            <English>By side</English>
+            <French>Selon son camp</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Papers_none">
+            <Original>None</Original>
+            <English>None</English>
+            <French>Aucun</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Papers_card">
+            <Original>ID card</Original>
+            <English>ID card</English>
+            <French>Carte d'identité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Papers_passport">
+            <Original>Passport</Original>
+            <English>Passport</English>
+            <French>Passeport</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Papers_license">
+            <Original>Driving licence</Original>
+            <English>Driving licence</English>
+            <French>Permis de conduire</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Papers_card_license">
+            <Original>Card and licence</Original>
+            <English>Card and licence</English>
+            <French>Carte et permis</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Papers_card_passport">
+            <Original>Card and passport</Original>
+            <English>Card and passport</English>
+            <French>Carte et passeport</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Papers_military">
+            <Original>Military card</Original>
+            <English>Military card</English>
+            <French>Carte militaire</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Kind_civil">
+            <Original>Genuine papers</Original>
+            <English>Genuine papers</English>
+            <French>Vrais papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Kind_cover">
+            <Original>Cover</Original>
+            <English>Cover</English>
+            <French>Couverture</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Kind_forged">
+            <Original>Forged papers</Original>
+            <English>Forged papers</English>
+            <French>Faux papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Behaviour">
+            <Original>Behaviour at a check</Original>
+            <English>Behaviour at a check</English>
+            <French>Comportement au contrôle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Beh_auto">
+            <Original>By context</Original>
+            <English>By context</English>
+            <French>Selon le contexte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Beh_coopere">
+            <Original>Cooperates</Original>
+            <English>Cooperates</English>
+            <French>Coopère</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Beh_nerveux">
+            <Original>Nervous</Original>
+            <English>Nervous</English>
+            <French>Nerveux</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Beh_ment">
+            <Original>Lies with confidence</Original>
+            <English>Lies with confidence</English>
+            <French>Ment avec aplomb</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Beh_refuse">
+            <Original>Refuses</Original>
+            <English>Refuses</English>
+            <French>Refuse</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Beh_fuit">
+            <Original>Runs away</Original>
+            <English>Runs away</English>
+            <French>S'enfuit</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Beh_agressif">
+            <Original>Turns aggressive</Original>
+            <English>Turns aggressive</English>
+            <French>Devient agressif</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Beh_rendu">
+            <Original>Surrenders</Original>
+            <English>Surrenders</English>
+            <French>Se rend</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_BehHelp">
+            <Original>When asked for its papers. E.g. Nervous = hesitates, answers off the point.</Original>
+            <English>When asked for its papers. E.g. Nervous = hesitates, answers off the point.</English>
+            <French>Quand on lui demande ses papiers. Ex. : Nerveux = hésite, répond à côté.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_BehHelp_D">
+            <Original>What it does when a player asks for its papers. By context: decided from its nature, side and the curfew. E.g. Nervous = hesitates, answers off the point; Runs away = flees.</Original>
+            <English>What it does when a player asks for its papers. By context: decided from its nature, side and the curfew. E.g. Nervous = hesitates, answers off the point; Runs away = flees.</English>
+            <French>Ce qu'il fait quand un joueur lui demande ses papiers. Selon le contexte : décidé d'après sa nature, son camp et le couvre-feu. Ex. : Nerveux = hésite, répond à côté ; S'enfuit = part en courant.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_SideTitle">
+            <Original>Side</Original>
+            <English>Side</English>
+            <French>Camp</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_SideHelp">
+            <Original>Changes its side when applied. E.g. civilian turned OPFOR = hostile.</Original>
+            <English>Changes its side when applied. E.g. civilian turned OPFOR = hostile.</English>
+            <French>Change son camp à l'application. Ex. : civil passé OPFOR = hostile.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_SideHelp_D">
+            <Original>Changes the AI's side when applied (it joins a new group of that side). E.g. a civilian turned OPFOR becomes hostile to BLUFOR players.</Original>
+            <English>Changes the AI's side when applied (it joins a new group of that side). E.g. a civilian turned OPFOR becomes hostile to BLUFOR players.</English>
+            <French>Change le camp de l'IA à l'application (elle rejoint un nouveau groupe de ce camp). Ex. : un civil passé OPFOR devient hostile aux joueurs BLUFOR.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Docs">
+            <Original>Its papers</Original>
+            <English>Its papers</English>
+            <French>Ses papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocsNone">
+            <Original>No paper yet: decided at the 1st request by a player.</Original>
+            <English>No paper yet: decided at the 1st request by a player.</English>
+            <French>Pas encore de papier : décidés à la 1re demande d'un joueur.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Docs_D">
+            <Original>Papers the AI carries, with what is printed and, for you only, whether each one is genuine, a cover or forged. Select one to view it or change it.</Original>
+            <English>Papers the AI carries, with what is printed and, for you only, whether each one is genuine, a cover or forged. Select one to view it or change it.</English>
+            <French>Papiers portés par l'IA, avec ce qui est imprimé et, pour vous seulement, si chacun est vrai, de couverture ou faux. Sélectionnez-en un pour le voir ou le changer.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocOpen">
+            <Original>View the paper</Original>
+            <English>View the paper</English>
+            <French>Voir le papier</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocOpen_D">
+            <Original>Opens the paper as a player will see it (never the truth).</Original>
+            <English>Opens the paper as a player will see it (never the truth).</English>
+            <French>Ouvre le papier tel que le verra un joueur (jamais la vérité).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocTrue">
+            <Original>Make it genuine</Original>
+            <English>Make it genuine</English>
+            <French>Le rendre vrai</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocTrue_D">
+            <Original>This paper becomes a genuine paper in order, in the same name. E.g. cancel a forgery given by mistake.</Original>
+            <English>This paper becomes a genuine paper in order, in the same name. E.g. cancel a forgery given by mistake.</English>
+            <French>Ce papier devient un vrai papier en règle, au même nom. Ex. : annuler un faux donné par erreur.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocFalse">
+            <Original>Make it forged</Original>
+            <English>Make it forged</English>
+            <French>Le rendre faux</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocFalse_D">
+            <Original>This paper will be detected as forged at a check (visual exam, MRZ, chip or file depending on the level). E.g. an insurgent with a stolen ID card.</Original>
+            <English>This paper will be detected as forged at a check (visual exam, MRZ, chip or file depending on the level). E.g. an insurgent with a stolen ID card.</English>
+            <French>Ce papier sera détecté comme faux au contrôle (examen visuel, MRZ, puce ou fichier selon le niveau). Ex. : un insurgé avec une carte d'identité volée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocGive">
+            <Original>Give this paper now</Original>
+            <English>Give this paper now</English>
+            <French>Donner ce papier maintenant</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocGive_D">
+            <Original>Gives the AI the type chosen above right away, instead of waiting for someone to ask. Same name as its current papers.</Original>
+            <English>Gives the AI the type chosen above right away, instead of waiting for someone to ask. Same name as its current papers.</English>
+            <French>Donne tout de suite à l'IA le type choisi au-dessus, au lieu d'attendre qu'on le lui demande. Même nom que ses papiers actuels.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocType_D">
+            <Original>Type of paper to give now.</Original>
+            <English>Type of paper to give now.</English>
+            <French>Type de papier à donner maintenant.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocsHelp">
+            <Original>Genuine / forged: the selected paper. Give: without waiting to be asked.</Original>
+            <English>Genuine / forged: the selected paper. Give: without waiting to be asked.</English>
+            <French>Vrai / faux : le papier choisi. Donner : sans attendre qu'on le lui demande.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocsHelp_D">
+            <Original>Genuine / forged changes the paper selected in the list. Give now: the AI receives the chosen type right away, instead of waiting for a player to ask.</Original>
+            <English>Genuine / forged changes the paper selected in the list. Give now: the AI receives the chosen type right away, instead of waiting for a player to ask.</English>
+            <French>Vrai / faux change le papier choisi dans la liste. Donner maintenant : l'IA reçoit le type choisi tout de suite, au lieu d'attendre qu'un joueur le lui demande.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Doc_id_card">
+            <Original>ID card</Original>
+            <English>ID card</English>
+            <French>Carte d'identité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Doc_passport">
+            <Original>Passport</Original>
+            <English>Passport</English>
+            <French>Passeport</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Doc_driving_license">
+            <Original>Driving licence</Original>
+            <English>Driving licence</English>
+            <French>Permis de conduire</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Doc_military_id">
+            <Original>Military card</Original>
+            <English>Military card</English>
+            <French>Carte militaire</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocS_id_card">
+            <Original>ID card</Original>
+            <English>ID card</English>
+            <French>Carte ID</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocS_passport">
+            <Original>Passport</Original>
+            <English>Passport</English>
+            <French>Passeport</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocS_driving_license">
+            <Original>Licence</Original>
+            <English>Licence</English>
+            <French>Permis</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocS_military_id">
+            <Original>Mil. card</Original>
+            <English>Mil. card</English>
+            <French>Carte mil.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocKS_civil">
+            <Original>Genuine</Original>
+            <English>Genuine</English>
+            <French>Vrai</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocKS_generated">
+            <Original>Genuine</Original>
+            <English>Genuine</English>
+            <French>Vrai</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocKS_cover">
+            <Original>Cover</Original>
+            <English>Cover</English>
+            <French>Couv.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocKS_forged">
+            <Original>Forged</Original>
+            <English>Forged</English>
+            <French>Faux</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocKS_alias">
+            <Original>Alias</Original>
+            <English>Alias</English>
+            <French>Alias</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocK_civil">
+            <Original>Genuine</Original>
+            <English>Genuine</English>
+            <French>Vrai</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocK_generated">
+            <Original>Genuine</Original>
+            <English>Genuine</English>
+            <French>Vrai</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocK_cover">
+            <Original>Cover</Original>
+            <English>Cover</English>
+            <French>Couverture</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocK_forged">
+            <Original>Forged</Original>
+            <English>Forged</English>
+            <French>Faux</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_DocK_alias">
+            <Original>Alias</Original>
+            <English>Alias</English>
+            <French>Alias</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Preview">
+            <Original>What the player will see</Original>
+            <English>What the player will see</English>
+            <French>Ce que verra le joueur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_PrevPlayer">
+            <Original>At a check, the player sees</Original>
+            <English>At a check, the player sees</English>
+            <French>Au contrôle, le joueur voit</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_PrevName">
+            <Original>Introduces himself as %1.</Original>
+            <English>Introduces himself as %1.</English>
+            <French>Se présente comme %1.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_PrevNamePending">
+            <Original>Identity decided at the first request (will be %1 unless a profile or a cover changes it).</Original>
+            <English>Identity decided at the first request (will be %1 unless a profile or a cover changes it).</English>
+            <French>Identité décidée à la première demande (sera %1 sauf profil ou couverture).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_PrevPapers">
+            <Original>Papers: %1</Original>
+            <English>Papers: %1</English>
+            <French>Papiers : %1</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_PrevPapersProfile">
+            <Original>Papers of the Athena profile</Original>
+            <English>Papers of the Athena profile</English>
+            <French>Papiers du profil Athena</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_PrevBeh">
+            <Original>At a check: %1</Original>
+            <English>At a check: %1</English>
+            <French>Au contrôle : %1</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_PrevN3">
+            <Original>It answers above its head. A level 3 check recognises it on Athena when its papers come from the profile.</Original>
+            <English>It answers above its head. A level 3 check recognises it on Athena when its papers come from the profile.</English>
+            <French>Il répond au-dessus de sa tête. Un contrôle N3 le reconnaît sur Athena si ses papiers viennent du profil.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_PrevZeus">
+            <Original>For you only (Zeus)</Original>
+            <English>For you only (Zeus)</English>
+            <French>Pour vous seulement (Zeus)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_PrevTrue">
+            <Original>True name: %1 · %2</Original>
+            <English>True name: %1 · %2</English>
+            <French>Vrai nom : %1 · %2</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_PrevSame">
+            <Original>Same name: it tells the truth.</Original>
+            <English>Same name: it tells the truth.</English>
+            <French>Même nom : il dit la vérité.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_PrevAfterApply">
+            <Original>After Apply: %1 · %2 (papers redone).</Original>
+            <English>After Apply: %1 · %2 (papers redone).</English>
+            <French>Après Appliquer : %1 · %2 (papiers refaits).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Apply">
+            <Original>Apply</Original>
+            <English>Apply</English>
+            <French>Appliquer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Apply_D">
+            <Original>Applies the sheet's settings to the checked AI (profile, papers, nature, behaviour, side). Their papers are redone.</Original>
+            <English>Applies the sheet's settings to the checked AI (profile, papers, nature, behaviour, side). Their papers are redone.</English>
+            <French>Applique les réglages de la fiche aux IA cochées (profil, papiers, nature, comportement, camp). Leurs papiers sont refaits.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_ApplyGroup">
+            <Original>Apply to the group</Original>
+            <English>Apply to the group</English>
+            <French>Appliquer au groupe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_ApplyGroup_D">
+            <Original>Applies the settings to the whole group of each checked AI. E.g. a whole patrol with forged papers.</Original>
+            <English>Applies the settings to the whole group of each checked AI. E.g. a whole patrol with forged papers.</English>
+            <French>Applique les réglages à tout le groupe de chaque IA cochée. Ex. : toute une patrouille en faux papiers.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Keep">
+            <Original>Keep for next games</Original>
+            <English>Keep for next games</English>
+            <French>Garder pour les prochaines parties</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Keep_D">
+            <Original>Applies, then saves the AI, its identity and its papers: it comes back identical in a next mission on this server (and on Athena when the link is open).</Original>
+            <English>Applies, then saves the AI, its identity and its papers: it comes back identical in a next mission on this server (and on Athena when the link is open).</English>
+            <French>Applique, puis enregistre l'IA, son identité et ses papiers : elle revient à l'identique dans une prochaine mission sur ce serveur (et sur Athena quand la liaison est ouverte).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_BarNote">
+            <Original>Apply: checked AI. To the group: their whole group. Keep: applies and saves.</Original>
+            <English>Apply: checked AI. To the group: their whole group. Keep: applies and saves.</English>
+            <French>Appliquer : IA cochées. Au groupe : tout leur groupe. Garder : applique et enregistre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_NeedCheck">
+            <Original>Check an AI in the list first.</Original>
+            <English>Check an AI in the list first.</English>
+            <French>Cochez d'abord une IA dans la liste.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Applying">
+            <Original>Applying to %1 AI…</Original>
+            <English>Applying to %1 AI…</English>
+            <French>Application à %1 IA…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Applied">
+            <Original>Applied to %1 AI.</Original>
+            <English>Applied to %1 AI.</English>
+            <French>Appliqué à %1 IA.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_KeptOk">
+            <Original>%1 AI kept (saved on this server).</Original>
+            <English>%1 AI kept (saved on this server).</English>
+            <French>%1 IA gardée(s) (enregistrées sur ce serveur).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_KeptAthenaOk">
+            <Original>Also saved on Athena.</Original>
+            <English>Also saved on Athena.</English>
+            <French>Enregistré aussi sur Athena.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_KeptAthenaKo">
+            <Original>Athena unreachable (link or clearance): kept on this server only.</Original>
+            <English>Athena unreachable (link or clearance): kept on this server only.</English>
+            <French>Athena injoignable (liaison ou habilitation) : gardé sur ce serveur seulement.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_NoZeusSel">
+            <Original>No AI selected in Zeus: close this window, select them, then reopen it.</Original>
+            <English>No AI selected in Zeus: close this window, select them, then reopen it.</English>
+            <French>Aucune IA sélectionnée dans le Zeus : fermez cette fenêtre, sélectionnez-les, puis rouvrez-la.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Restored">
+            <Original>AI put back as saved: %1.</Original>
+            <English>AI put back as saved: %1.</English>
+            <French>IA remise comme enregistrée : %1.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_RestoreKo">
+            <Original>Saved AI not found (variable name or class within 20 m): %1.</Original>
+            <English>Saved AI not found (variable name or class within 20 m): %1.</English>
+            <French>IA enregistrée introuvable (nom de variable ou classe à moins de 20 m) : %1.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Forgot">
+            <Original>Record deleted.</Original>
+            <English>Record deleted.</English>
+            <French>Enregistrement supprimé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Refused">
+            <Original>Refused by the server: Zeus or admin only.</Original>
+            <English>Refused by the server: Zeus or admin only.</English>
+            <French>Refusé par le serveur : Zeus ou administrateur seulement.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Answers">
+            <Original>Answers…</Original>
+            <English>Answers…</English>
+            <French>Réponses…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ED_Answers_D">
+            <Original>Answers written by the game master for the checked AIs, question by question, and what they may bring up. Example: « Who are you? » → « I'm {first}, the baker. »</Original>
+            <English>Answers written by the game master for the checked AIs, question by question, and what they may bring up. Example: « Who are you? » → « I'm {first}, the baker. »</English>
+            <French>Réponses écrites par le maître du jeu pour les IA cochées, question par question, et ce qu'elles peuvent évoquer. Exemple : « Qui es-tu ? » → « Je suis {prenom}, le boulanger. »</French>
+        </Key>
+    </Package>
+</Project>

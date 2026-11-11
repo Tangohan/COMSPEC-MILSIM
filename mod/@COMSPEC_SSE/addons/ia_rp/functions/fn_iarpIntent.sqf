@@ -3,19 +3,26 @@
     à une intention connue. Aucune IA générative ni requête réseau : mots-clés et synonymes du lexique
     (data\iarp_lexicon.sqf), texte normalisé (accents, ponctuation : fn_iarpNorm).
     [texte] call comspec_sse_fnc_iarpIntent -> [intention, score, [motifs trouvés], [[intention, score]…]]
-      intention : origin, employer, job, travel, pob, contact, address, name, age, family, papers, search, handsup,
-                  follow, halt, leave, kneel, dismount, trunk, threat, bribe, intel, weapons, calm, help, greet, bye,
-                  thanks, sorry, howareyou, yes, no, confront (+ celles d'une mission) ; rien de reconnu : "unknown".
+      intention : une des 120 du lexique (identité, couverture, présence, fouille, ordres, pression, pot-de-vin,
+                  confrontation, renseignement précis, situation locale, relations, personnel, règles du jeu de rôle,
+                  hors sujet, oui / non ; + celles d'une mission) ; rien de reconnu : "unknown".
       4e élément : les demandes du message dans l'ordre où elles sont écrites (3 au plus : une formule de politesse ou
                   un oui / non, deux demandes), découpées sur la ponctuation ; vide si rien n'est reconnu.
+    Mots-clés (entrée « _kw » du lexique) : mots entiers ou débuts de mot, seuls ou à plusieurs (« ou+viens »), comptés en
+    plus des motifs pour les tournures que les motifs n'ont pas prévues (« Tu taffes où ? »).
     Tolérance :
       fautes de frappe  mot de 5 lettres et plus inconnu, rapproché d'un mot du lexique (fn_iarpData « dict ») : lettres
                         doublées ou manquantes (« paapiers », « fouiler »), sinon une lettre de différence ou deux
                         lettres inversées (« papeirs »), deux à partir de 8 lettres ; mêmes deux premières lettres,
                         une seule correction possible, 12 mots rapprochés au plus par message ; « _keep » jamais corrigé.
+                        Deux premières lettres inversées (« aprpiers ») : cherché aussi dans ce sens.
       négation simple   « ne / pas / jamais / sans / not / don't… » dans les 3 mots avant le motif : pot-de-vin et
                         fouille annulés (« je ne veux pas d'argent »), menace changée en apaisement (« je ne vais pas
                         tirer »). Les ordres ne sont pas concernés (« ne bougez pas » reste un ordre).
+    Coût (4.3.x, lexique de 120 intentions, 2 300 motifs, 1 100 mots-clés) : motifs et mots-clés rangés une fois par les trois
+    premières lettres de leur premier mot (index « comspec_sse_iarpData_pidx ») ; un morceau de phrase ne cherche que ceux dont
+    un de ses mots commence pareil (quelques dizaines au lieu de 3 400). Même résultat que la recherche complète (vérifié hors
+    jeu sur 2 000 phrases), environ huit fois moins de travail.
     Exemples : ["Bonjour, d'où êtes-vous ?"] -> ["origin", 15, [" d ou etes vous"], [["greet", 4.8], ["origin", 15]]]
                ["Vos papeirs !"] -> ["papers", 20, …]          ["Je ne veux pas d'argent."] -> ["unknown", 0, [], []]
 */
@@ -25,11 +32,64 @@ private _dict = ["dict"] call comspec_sse_fnc_iarpData;
 private _words = _dict getOrDefault ["words", createHashMap];
 private _skel = _dict getOrDefault ["skel", createHashMap];
 private _idx = _dict getOrDefault ["idx", createHashMap];
-private _lex = (["lexicon"] call comspec_sse_fnc_iarpData) select { ((_x param [0, "_"]) select [0, 1]) isNotEqualTo "_" };
+private _lexAll = ["lexicon"] call comspec_sse_fnc_iarpData;
+private _lex = _lexAll select { ((_x param [0, "_"]) select [0, 1]) isNotEqualTo "_" };
+// Mots-clés par intention (entrée « _kw » du lexique) : [[parties…], longueur comptée]…, préparés une fois.
+private _kw = missionNamespace getVariable ["comspec_sse_iarpData_kw", 0];
+if !(_kw isEqualType createHashMap) then {
+    _kw = createHashMap;
+    {
+        if ((_x param [0, ""]) isEqualTo "_kw") then {
+            {
+                _x params [["_i", ""], ["_items", []]];
+                private _l = _kw getOrDefault [_i, []];
+                {
+                    private _parts = _x splitString "+";
+                    private _len = 0;
+                    { _len = _len + count ([_x, "*", ""] call CBA_fnc_replace); } forEach _parts;
+                    if (_parts isNotEqualTo []) then { _l pushBack [_parts, _len * 0.8]; };
+                } forEach _items;
+                _kw set [_i, _l];
+            } forEach (_x param [2, []]);
+        };
+    } forEach _lexAll;
+    missionNamespace setVariable ["comspec_sse_iarpData_kw", _kw];
+};
+// Index des motifs et des mots-clés (premier mot, trois lettres au plus) : [motifs, mots-clés, poids], préparé une fois.
+private _ix = missionNamespace getVariable ["comspec_sse_iarpData_pidx", 0];
+if !(_ix isEqualType []) then {
+    private _pi = createHashMap;
+    private _ki = createHashMap;
+    private _wi = createHashMap;
+    {
+        _x params ["_i", ["_w", 1], ["_pats", []]];
+        _wi set [_i, _w];
+        {
+            // Motif qui commence par une limite de mot : clé = début de son premier mot ; sinon (rare) toujours cherché.
+            private _k = if ((_x select [0, 1]) isEqualTo " " && {(trim _x) isNotEqualTo ""}) then { ((_x splitString " ") select 0) select [0, 3] } else { "" };
+            private _l = _pi getOrDefault [_k, []];
+            _l pushBack [_i, _x, count _x];
+            _pi set [_k, _l];
+        } forEach _pats;
+    } forEach _lex;
+    {
+        private _i = _x;
+        {
+            _x params ["_parts", "_len"];
+            private _k = ([_parts select 0, "*", ""] call CBA_fnc_replace) select [0, 3];
+            private _l = _ki getOrDefault [_k, []];
+            _l pushBack [_i, _parts, _len];
+            _ki set [_k, _l];
+        } forEach _y;
+    } forEach _kw;
+    _ix = [_pi, _ki, _wi];
+    missionNamespace setVariable ["comspec_sse_iarpData_pidx", _ix];
+};
+_ix params ["_pidx", "_kidx", "_wOf"];
 private _polite = ["greet", "thanks", "sorry", "bye", "yes", "no"];
 // Intentions qu'une négation annule (ou change) : le reste garde son sens (« ne bougez pas »).
 private _negTo = createHashMapFromArray [["bribe", ""], ["search", ""], ["threat", "calm"]];
-private _negs = ["ne", "n", "pas", "jamais", "sans", "aucun", "aucune", "not", "never", "no", "without", "don", "didn", "doesn", "won", "isn", "aren", "wouldn"];
+private _negs = ["ne", "n", "pas", "jamais", "sans", "aucun", "aucune", "not", "never", "no", "without", "don", "didn", "doesn", "won", "isn", "aren", "wouldn", "nobody", "personne"];
 
 // Distance d'édition (Damerau restreinte : deux lettres inversées comptent pour une), arrêtée dès qu'elle dépasse _max.
 private _osa = {
@@ -97,7 +157,7 @@ private _fix = {
                         private _k = _dd * 10 + (abs ((count _x) - _len));
                         if (_k < _bk) then { _bk = _k; _best = _x; _ties = 0; } else { if (_k isEqualTo _bk) then { _ties = _ties + 1; }; };
                     };
-                } forEach (_idx getOrDefault [format ["%1%2", _w select [0, 2], _l], []]);
+                } forEach ((_idx getOrDefault [format ["%1%2", _w select [0, 2], _l], []]) + (_idx getOrDefault [format ["%1%2%3", _w select [1, 1], _w select [0, 1], _l], []]));
             };
             [_w, _best] select (_best isNotEqualTo "" && {_ties isEqualTo 0})
         }
@@ -111,39 +171,70 @@ private _negated = {
     private _win = _before select [((count _before) - 4) max 0];
     (_win findIf { _x in _negs }) >= 0 || {(_win findIf { _x isEqualTo "t" }) >= 0 && {(_win findIf { _x in ["can", "couldn", "shouldn", "wasn"] }) >= 0}}
 };
-// Scores d'un texte corrigé : [[score, intention, position du 1er motif, [motifs]]…] (ordre du lexique).
+// Scores d'un texte corrigé : [[score, intention, position du 1er motif, [motifs]]…] (ordre du lexique). Seuls les motifs et
+// mots-clés dont le premier mot commence comme un mot du morceau sont cherchés (index _pidx / _kidx).
 private _scoreOf = {
     params ["_s"];
     private _res = [];
     private _shift = createHashMap;
+    private _acc = createHashMap;
+    private _toks = _s splitString " ";
+    private _keys = createHashMap;
+    { _keys set [_x select [0, 1], true]; _keys set [_x select [0, 2], true]; _keys set [_x select [0, 3], true]; } forEach _toks;
+    private _cands = +(_pidx getOrDefault ["", []]);
+    private _kc = [];
+    { _cands append (_pidx getOrDefault [_x, []]); _kc append (_kidx getOrDefault [_x, []]); } forEach (keys _keys);
     {
-        _x params ["_intent", ["_w", 1], ["_pats", []]];
-        private _sc = 0;
-        private _m = [];
-        private _pos = 1e6;
-        private _canNeg = _intent in _negTo;
-        {
-            private _at = _s find _x;
-            if (_at >= 0) then {
-                if (_canNeg && {[_s, _at] call _negated}) then {
-                    private _to = _negTo get _intent;
-                    if (_to isNotEqualTo "") then { _shift set [_to, (_shift getOrDefault [_to, 0]) + (count _x)]; };
-                } else {
-                    _sc = _sc + (count _x);
-                    _m pushBack _x;
-                    _pos = _pos min _at;
-                };
+        _x params ["_intent", "_p", "_n"];
+        private _at = _s find _p;
+        if (_at >= 0) then {
+            if (_intent in _negTo && {[_s, _at] call _negated}) then {
+                private _to = _negTo get _intent;
+                if (_to isNotEqualTo "") then { _shift set [_to, (_shift getOrDefault [_to, 0]) + _n]; };
+            } else {
+                private _e = _acc getOrDefault [_intent, [0, 1e6, []]];
+                _e set [0, (_e select 0) + _n];
+                _e set [1, (_e select 1) min _at];
+                (_e select 2) pushBack _p;
+                _acc set [_intent, _e];
             };
-        } forEach _pats;
-        private _add = _shift getOrDefault [_intent, 0];
-        if (_sc > 0 || {_add > 0}) then { _res pushBack [(_sc + _add) * _w, _intent, _pos, _m]; };
+        };
+    } forEach _cands;
+    // Mots-clés : mot entier, « * » début de mot, « a+b » tous présents dans ce morceau de phrase.
+    {
+        _x params ["_intent", "_parts", "_len"];
+        private _hit = (_parts findIf {
+            private _p = _x;
+            if ((_p select [(count _p) - 1]) isEqualTo "*") then {
+                private _pre = _p select [0, (count _p) - 1];
+                private _n = count _pre;
+                (_toks findIf { (_x select [0, _n]) isEqualTo _pre }) < 0
+            } else { !(_p in _toks) }
+        }) < 0;
+        if (_hit) then {
+            private _at = _s find (" " + ([_parts select 0, "*", ""] call CBA_fnc_replace));
+            if (_intent in _negTo && {[_s, _at] call _negated}) then {
+                private _to = _negTo get _intent;
+                if (_to isNotEqualTo "") then { _shift set [_to, (_shift getOrDefault [_to, 0]) + _len]; };
+            } else {
+                private _e = _acc getOrDefault [_intent, [0, 1e6, []]];
+                _e set [0, (_e select 0) + _len];
+                _e set [1, (_e select 1) min _at];
+                (_e select 2) pushBack (_parts joinString "+");
+                _acc set [_intent, _e];
+            };
+        };
+    } forEach _kc;
+    {
+        private _i = _x select 0;
+        private _e = _acc getOrDefault [_i, [0, 1e6, []]];
+        private _add = _shift getOrDefault [_i, 0];
+        if ((_e select 0) > 0 || {_add > 0}) then { _res pushBack [((_e select 0) + _add) * (_x param [1, 1]), _i, _e select 1, _e select 2]; };
     } forEach _lex;
-    // Apaisement venu d'une menace niée, intention placée après « calm » dans le lexique : ajoutée à la fin.
+    // Apaisement venu d'une menace niée, absent des motifs trouvés : ajouté à la fin.
     {
         private _k = _x;
-        private _i = _res findIf { (_x select 1) isEqualTo _k };
-        private _w = ((_lex select { (_x select 0) isEqualTo _k }) param [0, [_k, 1]]) param [1, 1];
-        if (_i < 0) then { _res pushBack [_y * _w, _k, 1e6, []]; };
+        if ((_res findIf { (_x select 1) isEqualTo _k }) < 0) then { _res pushBack [_y * (_wOf getOrDefault [_k, 1]), _k, 1e6, []]; };
     } forEach _shift;
     _res
 };

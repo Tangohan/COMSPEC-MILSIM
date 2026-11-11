@@ -6,14 +6,11 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var list<array<string,mixed>> $devices */
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/exploitation-numerique')) ?>">Exploitation numérique</a> / <strong>Chronologie</strong></div>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Laboratoire // Chronologie unifiée</div>
         <h1>Chronologie numérique</h1>
         <p>Appels, messages, photos, connexions, acquisitions et actions opérateur.</p>
     </div>
-    <div class="page-reference"><strong>Vue // Timeline</strong> ATH-SSE-LABNUM-TL</div>
 </div>
 <form class="toolbar" method="get">
     <div class="toolbar-field"><label for="device_id">Support</label>

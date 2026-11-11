@@ -4,10 +4,8 @@ ob_start();
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/exploitation-numerique')) ?>">Exploitation numérique</a> / <strong>Communications</strong></div>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Laboratoire // Communications</div>
         <h1>Communications</h1>
         <p>Messages et appels extraits — vue par fil et chronologie.</p>
     </div>

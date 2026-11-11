@@ -38,8 +38,7 @@ $eagleSrc = asset_url('assets/img/atak-eagle-logo.png');
                 </div>
             </div>
 
-            <p class="sse-gate-hub__kicker">Session</p>
-            <h1 class="sse-gate-hub__title" data-scramble>Accès SSE</h1>
+            <h1 class="sse-gate-hub__title">Accès SSE</h1>
             <p class="sse-gate-hub__lead">
                 <?php if ($canEnterAsStaff || $canEnterWithoutCode): ?>
                     Votre compte est reconnu pour le renseignement. Vous pouvez entrer sans code, ou saisir un code temporaire pour une session invitée.
@@ -63,7 +62,7 @@ $eagleSrc = asset_url('assets/img/atak-eagle-logo.png');
                 </p>
             <?php endif; ?>
 
-            <form method="post" action="<?= $h(url('atak/sse/entrer')) ?>" id="sse-gate-form" class="sse-gate-hub__form" data-curtain-submit>
+            <form method="post" action="<?= $h(url('atak/sse/entrer')) ?>" id="sse-gate-form" class="sse-gate-hub__form">
                 <?= \App\Core\Csrf::field() ?>
                 <input type="hidden" name="ui_theme" id="sse-ui-theme" value="<?= $h($sseTheme) ?>">
 
@@ -116,7 +115,7 @@ $eagleSrc = asset_url('assets/img/atak-eagle-logo.png');
                 <span class="sse-gate-hub__eagle-sweep"></span>
             </div>
             <div class="sse-gate-hub__brand">
-                <span class="sse-gate-hub__brand-main" data-scramble>ATHENA</span>
+                <span class="sse-gate-hub__brand-main">ATHENA</span>
                 <span class="sse-gate-hub__brand-sub">SSE</span>
             </div>
             <p class="sse-gate-hub__tagline">

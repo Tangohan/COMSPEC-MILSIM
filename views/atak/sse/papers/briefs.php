@@ -21,15 +21,13 @@ $mapLabel = static function (?int $id) use ($maps): string {
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-id-workshop.css')) . '">';
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers')) ?>">Identités &amp; documents</a> / <strong>Briefs de couverture</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Préparation // Briefs de couverture</div>
         <h1>Briefs de couverture</h1>
         <p>La fiche de couverture remise à un joueur : biographie, légende à tenir, contacts, consignes, téléphone et adresse simulés. Il la lit dans Ma situation › Mes papiers ; le serveur de jeu la reçoit avec le pack, reliée à son compte Steam. Un brief par joueur et par portée (par défaut, carte ou opération).</p>
     </div>
-    <div class="page-reference"><strong><?= count($briefs) ?> brief(s)</strong> Réf. ATH-SSE-IDENT-BRF</div>
+    <div class="page-reference"><strong><?= count($briefs) ?> brief(s)</strong></div>
 </div>
 
 <?php if ($rights['manage']): ?>

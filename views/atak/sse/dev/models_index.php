@@ -13,15 +13,12 @@ $filters = is_array($filters ?? null) ? $filters : [];
 $canManage = (bool) ($canManage ?? false);
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/dev')) ?>">Atelier</a> / <strong>Modèles</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Atelier // Bibliothèque</div>
         <h1>Modèles de mission</h1>
         <p>Bibliothèque des profils réutilisables pour peupler les sites sensibles en Arma.</p>
     </div>
-    <div class="page-reference"><strong>Vue // Registre</strong> Réf. ATH-SSE-DEV-MDL</div>
 </div>
 
 <form class="toolbar" method="get" action="<?= $h(url('atak/sse/dev/modeles')) ?>">

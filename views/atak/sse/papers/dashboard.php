@@ -13,15 +13,13 @@ $pad = static fn (int $n): string => str_pad((string) $n, 3, '0', STR_PAD_LEFT);
 $who = static fn (array $c): string => trim(mb_strtoupper((string) ($c['presented_last'] ?? '')) . ' ' . (string) ($c['presented_first'] ?? '')) ?: 'Identité non lue';
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers')) ?>">Identités &amp; documents</a> / <strong>Tableau de bord</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Exploitation // Contrôles d’identité</div>
         <h1>Tableau de bord identité</h1>
         <p>Ce que les contrôles du terrain ont donné pour l’opération : papiers contrôlés, détections, faux, personnes recherchées interpellées, et les fiches de renseignement nées des contrôles, à valider.</p>
     </div>
-    <div class="page-reference"><strong><?= $h($scopeLabel) ?></strong> Réf. ATH-SSE-IDENT-TDB</div>
+    <div class="page-reference"><strong><?= $h($scopeLabel) ?></strong></div>
 </div>
 
 <form class="toolbar" method="get" action="<?= $h(url('atak/sse/papiers/tableau')) ?>">

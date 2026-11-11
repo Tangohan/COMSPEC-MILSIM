@@ -9,15 +9,13 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var array{view:bool,manage:bool,truth:bool} $rights */
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers')) ?>">Identités &amp; documents</a> / <strong>Atelier</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Préparation // Atelier de documents</div>
         <h1>Atelier de documents</h1>
         <p>Composez un papier avec son aperçu en direct (recto et verso, ou pages du passeport), aux couleurs du pays émetteur imaginaire, puis validez-le et émettez-le pour qu’il parte en jeu. L’aperçu s’exporte en image pour le jeu de rôle.</p>
     </div>
-    <div class="page-reference"><strong><?= count($docs) ?> papier(s)</strong> Réf. ATH-SSE-IDENT-ATL</div>
+    <div class="page-reference"><strong><?= count($docs) ?> papier(s)</strong></div>
 </div>
 
 <form class="toolbar" method="get" action="<?= $h(url('atak/sse/papiers/atelier')) ?>">

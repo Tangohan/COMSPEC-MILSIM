@@ -86,6 +86,13 @@ class CfgFunctions {
             class sseApplyProfile {};
             class sseProfilePreset {};
             class sseEdenWriteField {};
+            // SEEK II : contrôle rapide, verdict, enrôlement, signer et envoyer, batterie.
+            class seekQuick {};
+            class seekVerdict {};
+            class seekState {};
+            class seekEnroll {};
+            class seekSend {};
+            class seekBattery {};
             // Fiches de renseignement simplifiées (rédacteur plein cadre ATAK)
             class intelNoteCatalog {};
             class intelNoteCache {};

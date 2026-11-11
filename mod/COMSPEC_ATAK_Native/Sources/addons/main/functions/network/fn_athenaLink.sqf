@@ -39,10 +39,7 @@ switch (_action) do {
             if (!_bridge || {!([] call comspec_overwatch_connect_fnc_isReady)}) then { ["offer", false] call comspec_atak_native_fnc_athenaLink; };
         };
         uiNamespace setVariable ["COMSPEC_ATAK_AthenaTab", "account"];
-        if (isNull ([] call comspec_atak_native_fnc_display) || {!((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false])}) then {
-            [true] call comspec_atak_native_fnc_open;
-        };
-        [{ ["ATHENA"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
+        ["ATHENA"] call comspec_atak_native_fnc_openApp;
     };
     case "watch": {
         if (!hasInterface || {([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "on"}) exitWith {};

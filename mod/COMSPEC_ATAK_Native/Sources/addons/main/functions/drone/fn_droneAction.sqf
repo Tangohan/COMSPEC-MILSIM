@@ -1180,6 +1180,7 @@ switch (_act) do {
                 if ((count _pts) isEqualTo 0) exitWith { _s set ["droneMapPts", [_p]]; };
                 private _a = _pts select 0;
                 _s set ["droneMapPts", []];
+                if (_kind in ["UCAV_ORBIT", "UCAV_HUNT"]) exitWith { ["mapZone", [_kind, _a, _p]] call comspec_atak_native_fnc_ucav; };
                 if (isNull _d || {!(call _needLink)}) exitWith {};
                 if (_kind isEqualTo "HUNT") then {
                     // Zone de recherche rectangulaire : deux coins opposés.
@@ -1325,6 +1326,8 @@ switch (_act) do {
             case "ZONE": {
                 private _zk = _s getOrDefault ["droneZoneKind", "LOITER"];
                 _rows pushBack ([["TOURNER AUTOUR", "LOITER", "Le drone tourne autour du point"], ["OBSERVER", "OBSERVE", "Le drone tourne autour du point, caméra fixée dessus"], ["CHERCHER DES ENNEMIS", "HUNT", "Le drone fouille la zone et signale le premier ennemi vu"]] apply { [_x select 0, ["zoneKind", _x select 1], _zk isEqualTo (_x select 1), _x select 2] });
+                // UCAV commandé (fn_ucav) : la même zone pour son orbite ou son Rechercher et tuer.
+                if (alive (missionNamespace getVariable ["COMSPEC_ATAK_Ucav", objNull])) then { _rows pushBack ([["UCAV : ORBITE", "UCAV_ORBIT", "Centre puis bord : orbite de l'UCAV"], ["UCAV : RECHERCHER ET TUER", "UCAV_HUNT", "Deux coins : zone de Rechercher et tuer de l'UCAV"]] apply { [_x select 0, ["zoneKind", _x select 1], _zk isEqualTo (_x select 1), _x select 2] }); };
             };
         };
         _rows pushBack [["S'ARRÊTER ICI", ["mode", "hover"], false, "Le drone s'arrête et reste en vol stationnaire"], ["REVENIR À MOI", ["mode", "home"], false, "Le drone revient au-dessus de vous"]];
@@ -1456,8 +1459,7 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneDirectCam", objNull];
         missionNamespace setVariable ["COMSPEC_ATAK_DroneShotCam", objNull];
         if (_arg isEqualTo true && {alive player} && {isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])}) then {
-            [true] call comspec_atak_native_fnc_open;
-            [{ ["DRONE"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
+            ["DRONE"] call comspec_atak_native_fnc_openApp;
         };
     };
     // Marquage au viseur de la caméra du drone (appui sur MARQUER ou touche « Marquer la cible »).
@@ -1492,6 +1494,8 @@ switch (_act) do {
     };
     case "picked": {
         // Appelé par la carte (fn_mapMouseButtonDown) avec la position touchée : la grille à 10 chiffres remplit le champ.
+        // Point demandé par la vue UCAV (fn_ucav "pickMap") : orbite ou Rechercher et tuer sur ce point.
+        if ((_s getOrDefault ["ucavPick", ""]) isNotEqualTo "") exitWith { ["picked", _arg] call comspec_atak_native_fnc_ucav; };
         _s set ["droneTaskGridVal", [_arg, 10] call comspec_atak_native_fnc_gridRef];
         _s set ["droneTab", "TASK"];
         ["INFO", format ["Point de la tâche : %1", [_arg, 8] call comspec_atak_native_fnc_gridRef], 3, 30] call comspec_atak_native_fnc_notify;

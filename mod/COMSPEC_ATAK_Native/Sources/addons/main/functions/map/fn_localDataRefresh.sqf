@@ -201,6 +201,10 @@ private _metaCs = createHashMap;
     _track set ["affiliation", _affiliation];
     _track set ["type", _type];
     _track set ["vtype", _vtype];
+    // Engin à bord (silhouette sur la carte, fn_vehIcon) et équipage regroupé (« crewOf » / « crewN », posés ci-dessous).
+    _track set ["veh", [objNull, _veh] select (_veh isNotEqualTo _obj)];
+    _track set ["crewOf", ""];
+    _track set ["crewN", 0];
     _track set ["freshness", _fr];
     _track set ["updated", _upd];
     _track set ["acc", _acc];
@@ -217,6 +221,34 @@ private _metaCs = createHashMap;
         };
     };
 } forEach (_fl select 0);
+
+// Équipage d'un même engin : un seul symbole sur la carte (fn_mapOnDraw), porté par moi si je suis à bord, sinon par le
+// chef de bord (ou le premier) ; les autres pistes le désignent (« crewOf ») et lui compte les autres (« crewN » : « +2 »).
+private _crews = createHashMap;
+{
+    private _v = _y getOrDefault ["veh", objNull];
+    if (isNull _v) then { continue };
+    private _hk = hashValue _v;
+    private _l = _crews getOrDefault [_hk, []];
+    if ((count _l) isEqualTo 0) then { _crews set [_hk, _l]; };
+    _l pushBack _x;
+} forEach _units;
+{
+    if ((count _y) < 2) then { continue };
+    private _ids = _y;
+    private _v = (_units get (_ids select 0)) get "veh";
+    private _rep = _ids select 0;
+    private _cmd = effectiveCommander _v;
+    {
+        private _o = (_units get _x) getOrDefault ["object", objNull];
+        if (_o isEqualTo player) exitWith { _rep = _x; };
+        if (_o isEqualTo _cmd) then { _rep = _x; };
+    } forEach _ids;
+    {
+        private _t = _units get _x;
+        if (_x isEqualTo _rep) then { _t set ["crewN", (count _ids) - 1]; } else { _t set ["crewOf", _rep]; };
+    } forEach _ids;
+} forEach _crews;
 
 // Second passage : pistes Athena restantes qui doublent un allié déjà dessiné
 // (libellé = pseudo Steam alors que l'indicatif tactique est autre, ou même indicatif à < 35 m).

@@ -90,7 +90,7 @@ if (_tab isEqualTo "history") then {
     };
     private _d = _cur get "doc";
     private _lv = _cur get "levels";
-    private _typeTxt = (["Carte d'identité", "Passeport", "Permis de conduire", "Carte militaire"] select ((["id_card", "passport", "driving_license", "military_id"] find (_d getOrDefault ["type", ""])) max 0)) call _tr;
+    private _typeTxt = ["label", _d getOrDefault ["type", ""]] call comspec_sse_fnc_idDocTypes;
     ((_cur get "verdict") call _verdictInfo) params ["_vt", "_vc", "_vbg"];
     // --- Parcours : verdict et état de chaque niveau d'abord, une seule action principale, le reste replié. -----------------
     private _bio = missionNamespace getVariable ["comspec_sse_id_bio", true];
@@ -112,7 +112,23 @@ if (_tab isEqualTo "history") then {
     };
     private _steps = [["N0 VISUEL", 0] call _step, ["N1 MRZ", 1, _hasMrz] call _step, ["N2 PUCE", 2, _hasChip] call _step, ["N3 BASE", 3] call _step];
     if (_bio) then { _steps pushBack (["N4 VISAGE", 4, _subjOk] call _step); };
-    _rows pushBack ["banner", format ["<t color='%1'>%2</t>", _vc, _vt call _tr], _vbg];
+    // Une seule source d'état : la fiche. Refus du dernier niveau (document plus présenté…) : même texte que la
+    // notification ; sinon le verdict, jamais « conforme » tant que les niveaux possibles ne sont pas tous lus.
+    private _notice = _cur getOrDefault ["notice", []];
+    private _avail = [1, 2, 3, 4] select { switch (_x) do { case 1: { _hasMrz }; case 2: { _hasChip }; case 4: { _bio && {_subjOk} }; default { true }; } };
+    private _left = _avail select { !(_x in _lv) };
+    if (_notice isNotEqualTo []) then {
+        _rows pushBack ["banner", format ["<t color='#f2ab33'>%1</t>", [toUpper ((_notice select 1) call _tr)] call _esc], [0.18, 0.12, 0.03, 1]];
+    } else {
+        if ((_cur get "verdict") isEqualTo "ras" && {_left isNotEqualTo []}) then {
+            private _deep = _avail - _left;
+            _rows pushBack ["banner", format ["<t color='#c9d3dd'>%1</t>", [[
+                format ["%1 %2", "RAS AUX NIVEAUX LUS · RESTE" call _tr, (_left apply { format ["N%1", _x] }) joinString " "],
+                "N0 SEULEMENT : AUCUN CONTRÔLE APPROFONDI" call _tr] select (_deep isEqualTo [])] call _esc], [0.09, 0.11, 0.14, 1]];
+        } else {
+            _rows pushBack ["banner", format ["<t color='%1'>%2</t>", _vc, _vt call _tr], _vbg];
+        };
+    };
     _rows pushBack ["steps", _steps];
     _rows pushBack ["person", "\z\comspec_sse\addons\identity\data\silhouette_co.paa",
         format ["<t size='1.1' font='COMSPEC_BarlowBold'>%1 %2</t><br/><t size='0.8' color='#8b98a7'>%3 · %4 · %5</t>",
@@ -122,7 +138,7 @@ if (_tab isEqualTo "history") then {
     private _aMrz = ["Lire la MRZ (N1)" call _tr, ["level", 1] call _act, !(1 in _lv) && {_hasMrz}, "Lecture de la bande MRZ du document."];
     private _aChip = ["Lire la puce (N2)" call _tr, ["level", 2] call _act, !(2 in _lv) && {_hasChip} && {1 in _lv || {!_hasMrz}}, "Lecteur NFC : à moins de 1,5 m du document."];
     private _aBase = ["Interroger la base (N3)" call _tr, ["level", 3] call _act, !(3 in _lv), "Base du pays hors ligne, Athena en ligne."];
-    private _aFace = ["Comparer le visage (N4)" call _tr, ["level", 4] call _act, !(4 in _lv) && {_subjOk}, "Photo du visage comparée à la base biométrique et à la photo du document (téléphone ou SEEK)."];
+    private _aFace = ["Vérifier au SEEK II (N4)" call _tr, ["level", 4] call _act, !(4 in _lv) && {_subjOk}, "Le SEEK II s'ouvre sur la personne : empreintes, iris et visage comparés au document et aux fichiers ; son verdict s'inscrit ici."];
     private _pidDone = _cur getOrDefault ["pid", false];
     private _aPid = [((["Confirmer le PID", "PID confirmé"] select _pidDone) call _tr), ["pid"] call _act, !_pidDone && {_subjOk}, "Identification positive : tuyaux confirmés à votre groupe (chasse HVT), Zeus et Athena prévenus."];
     private _wantPid = (_cur get "verdict") in ["hvt", "recherche"];
@@ -135,9 +151,19 @@ if (_tab isEqualTo "history") then {
     if (_wantPid) then { _chain pushBack _aPid; };
     _chain pushBack _aSend;
     private _nextI = _chain findIf { _x select 2 };
-    if (_nextI >= 0) then {
-        (_chain select _nextI) params ["_l0", "_c0", "", "_t0"];
-        _rows pushBack ["big", [[_l0, _c0, "green", true, _t0]]];
+    private _busy = _cur getOrDefault ["busy", -1];
+    private _scan = ["text", ["idcheck"]] call comspec_sse_fnc_scanAnim;
+    call {
+        // Analyse en cours : animation du lecteur à la place du bouton (réécrite sur place, fn_scanAnim).
+        if (_busy >= 0 && {_scan isNotEqualTo ""}) exitWith { _rows pushBack ["text", _scan, [0.05, 0.08, 0.11, 1], "comspec_sse_idScanCtrl"]; };
+        if (_busy >= 0) exitWith { _rows pushBack ["text", format ["<t color='#8fd3ff'>%1</t>", ("Réponse en attente…" call _tr) call _esc], [0.05, 0.08, 0.11, 1]]; };
+        if (_notice isNotEqualTo [] && {(_notice select 0) isEqualTo "gone"}) exitWith {
+            _rows pushBack ["big", [["Redemander les papiers" call _tr, ["ask"] call _act, "amber", _subjOk, "Le document n'est plus présenté : demandez-le de nouveau à la personne (3 m)."]]];
+        };
+        if (_nextI >= 0) then {
+            (_chain select _nextI) params ["_l0", "_c0", "", "_t0"];
+            _rows pushBack ["big", [[_l0, _c0, "green", true, _t0]]];
+        };
     };
     // Résultat du dernier niveau lu, puis les précédents repliés. Conseil et résultat bien séparés.
     private _lineRow = {
@@ -151,6 +177,8 @@ if (_tab isEqualTo "history") then {
         (_doneNames select -1) params ["_lvlL", "_nameL"];
         _rows pushBack ["section", _nameL call _tr, ""];
         { _rows pushBack ["text", [_x] call _lineRow]; } forEach ((_lv get _lvlL) getOrDefault ["lines", []]);
+        // Base interrogée : la fiche complète est au passage aux fichiers (mentions, autres papiers, contrôles subis).
+        if (_lvlL isEqualTo 3) then { _rows pushBack ["buttons", [["Voir aux fichiers" call _tr, ["files"] call _act, true, true, "App Fichiers : recherche lancée sur ce document."]]]; };
     };
     // Blocs repliables : rien ne disparaît, deux gestes au plus.
     private _fold = {

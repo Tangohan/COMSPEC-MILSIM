@@ -4,6 +4,8 @@
     Variables écrites sur le SERVEUR seulement, sans diffusion : la nature des papiers (couverture, faux) et leur
     qualité font partie de la vérité, que les joueurs ne doivent pas pouvoir lire sur l'unité.
       COMSPEC_ID_Carry    auto | none | card | passport | license | card_license | card_passport | military
+                          | <clé de CfgComspecDocuments> (id_card, press_card… extensions comprises) | <clé1>,<clé2>
+                          (liste dynamique COMSPEC_SSE_DocTypeCombo, comspec_sse_fnc_edenDocTypes)
       COMSPEC_ID_Country  auto | ALT | TNA | LVN | MLD          COMSPEC_ID_Kind  civil | cover | forged
       COMSPEC_ID_Quality  0-100 (faux)          COMSPEC_ID_Profile  auto | civil | insurge | hvt | agent | policier (IA réalistes)
       COMSPEC_ID_Undercover  vrai : infiltré dès le début (couverture, fn_idCover)
@@ -17,21 +19,12 @@ class COMSPEC_SSE_Papiers {
             displayName = "$STR_COMSPEC_SSE_CFG_8E5DEC6D7C";
             tooltip = "$STR_COMSPEC_SSE_CFG_F85EC29CD3";
             property = "COMSPEC_ID_Carry";
-            control = "Combo";
+            // Liste dynamique : alias historiques, puis chaque type du registre (extensions comprises) ; voir fn_edenDocTypes.
+            control = "COMSPEC_SSE_DocTypeCombo";
             expression = "if (isServer && {_value isNotEqualTo 'auto'}) then { _this setVariable ['COMSPEC_ID_Carry', _value]; };";
             defaultValue = "'auto'";
             typeName = "STRING";
             condition = "objectBrain";
-            class values {
-                class Auto { name = "$STR_COMSPEC_SSE_CFG_F8A3C37BEB"; value = "auto"; default = 1; };
-                class None { name = "$STR_COMSPEC_SSE_CFG_D8B59B204A"; value = "none"; };
-                class Card { name = "$STR_COMSPEC_SSE_CFG_D1155ABCAA"; value = "card"; };
-                class Passport { name = "$STR_COMSPEC_SSE_CFG_0D7912ADCF"; value = "passport"; };
-                class License { name = "$STR_COMSPEC_SSE_CFG_D1E45DF088"; value = "license"; };
-                class CardLicense { name = "$STR_COMSPEC_SSE_CFG_D430406714"; value = "card_license"; };
-                class MilitaryCard { name = "Carte militaire"; value = "military"; };
-                class CardPassport { name = "$STR_COMSPEC_SSE_CFG_BEF57EAA88"; value = "card_passport"; };
-            };
         };
         // Profil Athena (éditeur : liste de la communauté si la connexion Athena du menu COMSPEC SSE est ouverte, sinon la
         // dernière liste vue sur ce poste ; sans aucune liste : papiers générés et réglages ci-dessous).

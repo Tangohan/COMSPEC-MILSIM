@@ -5,15 +5,9 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var string $exampleJson */
 $exampleJson = (string) ($exampleJson ?? '{}');
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/dossiers')) ?>">Dossiers</a> /
-    <strong>Importer un scénario</strong>
-</div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Préparation // Scénarios</div>
         <h1>Importer un scénario complet</h1>
         <p>
             Chargez un pack préparé (ChatGPT, Claude ou export Athena) pour créer d’un coup

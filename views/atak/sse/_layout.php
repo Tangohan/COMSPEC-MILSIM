@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 /**
- * SSE Intelligence Workspace — coque plein écran.
+ * Bureau SSE — coque commune à toutes les pages du portail : barre du haut, bandeau d'habilitation,
+ * navigation rangée par usage (App\Support\SsePortalNav), fil d'Ariane et onglets de section.
+ * Navigation instantanée : aucun effet de transition entre les pages.
  * @var string $title
  * @var string $activeNav
  * @var bool $canManage
@@ -11,6 +13,8 @@ declare(strict_types=1);
  * @var string $guestLabel
  * @var string $sseContent
  */
+use App\Support\SsePortalNav;
+
 $activeNav = (string) ($activeNav ?? 'operations');
 $canManage = (bool) ($canManage ?? false);
 $canGrant = (bool) ($canGrant ?? false);
@@ -22,7 +26,7 @@ $error = \App\Core\Session::getFlash('error');
 $success = \App\Core\Session::getFlash('success');
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $sseContent = $sseContent ?? '';
-$pageTitle = (string) ($title ?? 'SSE Intelligence Workspace');
+$pageTitle = (string) ($title ?? 'Bureau SSE');
 $currentPath = (string) ($_SERVER['REQUEST_URI'] ?? url('atak/sse/operations'));
 $nowTs = time();
 $zulu = gmdate('H:i:s') . 'Z';
@@ -43,19 +47,20 @@ $classifBanner = function_exists('sse_ui_classification_label')
     ? sse_ui_classification_label()
     : 'Confidentiel';
 
-// Navigation unique (barre latérale + palette Ctrl+K), rangée selon le cycle du renseignement.
-if (!isset($canMemberPapers)) {
-    // Même règle que la page « Papiers des membres » (gestion SSE ou habilitation Encadrement).
-    try {
-        $canMemberPapers = !$isGuest && (int) \App\Core\Session::get('user_id') > 0 && \App\Controllers\Admin\MemberIdentityPapersController::currentRights()['sse'];
-    } catch (\Throwable) {
-        $canMemberPapers = false;
+// Navigation unique (barre latérale, accueil, fil d'Ariane, palette Ctrl+K), filtrée selon les droits.
+$sseNavData ??= SsePortalNav::forSession($canManage, $canGrant, $isGuest, isset($canMemberPapers) ? (bool) $canMemberPapers : null);
+$sseNav = $sseNavData['sections'];
+$sseNavActive = SsePortalNav::activeId($sseNav, $currentPath, $activeNav);
+$sseNavOpenSection = SsePortalNav::sectionOf($sseNav, $sseNavActive);
+$sseUrl = static fn (string $p): string => (string) url($p);
+$ssePalette = SsePortalNav::paletteEntries($sseNav, $sseUrl, $canManage, $isGuest);
+$sseCrumbs = SsePortalNav::breadcrumb($sseNav, $sseNavActive, $currentPath, $pageTitle, $sseUrl);
+$sseSectionTabs = [];
+foreach ($sseNav as $section) {
+    if ($section['id'] === $sseNavOpenSection) {
+        $sseSectionTabs = $section['items'];
     }
 }
-$sseNav = \App\Support\SsePortalNav::sections($canManage, $canGrant, $isGuest, (bool) $canMemberPapers, \App\Controllers\Web\SseEditorLibraryController::allowed());
-$sseNavActive = \App\Support\SsePortalNav::activeId($sseNav, $currentPath, $activeNav);
-$sseNavOpenSection = \App\Support\SsePortalNav::sectionOf($sseNav, $sseNavActive);
-$ssePalette = \App\Support\SsePortalNav::paletteEntries($sseNav, static fn (string $p): string => (string) url($p), $canManage, $isGuest);
 
 // Habilitation réelle de la session (plafond de lecture), affichée dans le bandeau.
 $sseClearanceKey = 'interne';
@@ -76,6 +81,10 @@ $sseClearanceTone = match ($sseClearanceKey) {
     'encadrement' => 'command',
     default => 'internal',
 };
+// Polices servies par le site et préchargées : le texte ne change pas de police (ni de taille) après l'affichage.
+$sseFontSans = asset_url('assets/fonts/nine-line/inter-latin.woff2');
+$sseFontMono = asset_url('assets/fonts/nine-line/jetbrains-mono-latin.woff2');
+$jsonFlags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS;
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -83,12 +92,16 @@ $sseClearanceTone = match ($sseClearanceKey) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex,nofollow">
+    <meta name="color-scheme" content="dark">
     <title><?= $h($pageTitle) ?> — SSE</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_portal.css')) ?>?v=202608280200">
-    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_workspace.css')) ?>?v=202608280152">
+    <link rel="preload" href="<?= $h($sseFontSans) ?>" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="<?= $h($sseFontMono) ?>" as="font" type="font/woff2" crossorigin>
+    <style>
+        @font-face { font-family: "Inter"; font-style: normal; font-weight: 400 900; font-display: swap; src: url("<?= $h($sseFontSans) ?>") format("woff2"); }
+        @font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 400 800; font-display: swap; src: url("<?= $h($sseFontMono) ?>") format("woff2"); }
+    </style>
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_portal.css')) ?>">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_workspace.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_field_note.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_shell.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/app-update-modal.css')) ?>">
@@ -100,31 +113,15 @@ $sseClearanceTone = match ($sseClearanceKey) {
     <?php endif; ?>
 </head>
 <body class="sse-theme-bureau sse-iw">
-<script>
-/* Arrivée par une transition : le rideau est posé avant le premier affichage, puis se lève (sse-shell.js). */
-(function () {
-  try {
-    var t = parseInt(window.sessionStorage.getItem('sse.curtain') || '0', 10);
-    if (!t || Date.now() - t > 8000 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    var n = Math.max(6, Math.min(14, Math.round(window.innerWidth / 120)));
-    var w = document.createElement('div');
-    w.className = 'sx-curtains is-held is-active';
-    w.setAttribute('aria-hidden', 'true');
-    for (var i = 0; i < n; i++) { var c = document.createElement('span'); c.className = 'sx-curtain'; c.style.setProperty('--i', String(i)); w.appendChild(c); }
-    document.body.appendChild(w);
-  } catch (e) {}
-})();
-</script>
-
 <div class="iw-app sx-app" data-sse-shell>
     <a class="sx-skip" href="#sx-main">Aller au contenu</a>
     <header class="iw-topbar sx-topbar" role="banner">
         <button type="button" class="sx-burger" aria-controls="sx-nav" aria-expanded="false" data-sx-nav-toggle>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-            <span class="sr-only">Menu</span>
+            <span>Menu</span>
         </button>
-        <a class="iw-brand sx-brand" href="<?= $h(url('atak/sse/operations')) ?>">
-            <strong data-scramble>SSE</strong>
+        <a class="iw-brand sx-brand" href="<?= $h(url(SsePortalNav::HOME)) ?>">
+            <strong>SSE</strong>
             <span>Bureau de renseignement</span>
         </a>
 
@@ -138,7 +135,7 @@ $sseClearanceTone = match ($sseClearanceKey) {
             <div class="iw-search-suggest" id="iw-search-suggest" hidden role="listbox" aria-label="Suggestions"></div>
         </form>
         <button type="button" class="sx-cmd" data-sx-palette-open aria-haspopup="dialog" title="Aller à une page ou lancer une action">
-            <span>Aller à…</span><kbd>Ctrl</kbd><kbd>K</kbd>
+            <span>Aller à une page</span><kbd>Ctrl</kbd><kbd>K</kbd>
         </button>
 
         <div class="sx-session" title="<?= $h($sessionKindLabel . ($expiresLabel !== '' ? ' · expire à ' . $expiresLabel : '')) ?>">
@@ -164,12 +161,12 @@ $sseClearanceTone = match ($sseClearanceKey) {
                     </div>
                 </details>
             <?php endif; ?>
-            <a class="iw-btn iw-btn--ghost" href="<?= $h(url('atak/sse/quitter')) ?>" data-no-curtain>Quitter</a>
+            <a class="iw-btn iw-btn--ghost" href="<?= $h(url('atak/sse/quitter')) ?>">Quitter</a>
         </div>
     </header>
 
     <div class="iw-classbar sx-classbar sx-classbar--<?= $h($sseClearanceTone) ?>" role="status" title="<?= $h($sseClearanceOrigin) ?>">
-        <strong><span class="sx-classbar__k">Habilitation</span> <span data-scramble><?= $h(mb_strtoupper($sseClearanceText)) ?></span></strong>
+        <strong>Habilitation <?= $h(mb_strtoupper($sseClearanceText)) ?></strong>
         <span>Diffusion restreinte · personnel habilité · journalisation active</span>
         <?php if ($isGuest && $guestLabel !== ''): ?>
             <em><?= $h($guestLabel) ?></em>
@@ -178,74 +175,81 @@ $sseClearanceTone = match ($sseClearanceKey) {
 
     <div class="iw-shell sx-shell">
         <aside class="iw-nav sx-nav" id="sx-nav" aria-label="Navigation du bureau SSE">
-            <?php
-            $iwIcon = static function (string $name): string {
-                $common = ' class="iw-nav-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
-                return match ($name) {
-                    'ops' => '<svg' . $common . '><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
-                    'inbox' => '<svg' . $common . '><path d="M3.5 13.5 6 5h12l2.5 8.5V19a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1z"/><path d="M3.5 13.5H8l1.5 2.5h5l1.5-2.5h4.5"/></svg>',
-                    'mesh' => '<svg' . $common . '><circle cx="6" cy="7" r="2.2"/><circle cx="18" cy="7" r="2.2"/><circle cx="12" cy="17" r="2.2"/><path d="M8 8.2 10.5 15M16 8.2 13.5 15M8.2 7h7.6"/></svg>',
-                    'interest' => '<svg' . $common . '><path d="M12 3.5 14.2 9l5.8.5-4.4 3.8 1.4 5.7L12 16.2 6.9 19l1.4-5.7L4 9.5 9.8 9z"/></svg>',
-                    'folder' => '<svg' . $common . '><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l1.5 2H19.5A1.5 1.5 0 0 1 21 9.5v8A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>',
-                    'id' => '<svg' . $common . '><circle cx="12" cy="8" r="3.2"/><path d="M5.5 19c1.6-3.2 4-4.8 6.5-4.8S16.9 15.8 18.5 19"/></svg>',
-                    'org' => '<svg' . $common . '><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/><path d="M9 10h.01M15 10h.01"/></svg>',
-                    'site' => '<svg' . $common . '><path d="M12 21s-7-5.2-7-11a7 7 0 1 1 14 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>',
-                    'vehicle' => '<svg' . $common . '><path d="M4 15h16l-1.2-5.2A2 2 0 0 0 16.9 8H7.1a2 2 0 0 0-1.9 1.8L4 15z"/><path d="M6.5 15v2.5M17.5 15v2.5M7.5 11h9"/><circle cx="7.5" cy="17.5" r="1.2"/><circle cx="16.5" cy="17.5" r="1.2"/></svg>',
-                    'gear' => '<svg' . $common . '><path d="M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6z"/><path d="M12 3.2v2M12 18.8v2M4.8 6.4l1.5 1.5M17.7 16.1l1.5 1.5M3.2 12h2M18.8 12h2M4.8 17.6l1.5-1.5M17.7 7.9l1.5-1.5"/></svg>',
-                    'doc' => '<svg' . $common . '><path d="M7 3.5h7l4 4V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><path d="M14 3.5V8h4M9 12h6M9 15.5h6"/></svg>',
-                    'time' => '<svg' . $common . '><circle cx="12" cy="12" r="8.2"/><path d="M12 7.5V12l3.2 2"/></svg>',
-                    'map' => '<svg' . $common . '><path d="M3.5 6.5 9 4.5l6 2 5.5-2v13l-5.5 2-6-2-5.5 2z"/><path d="M9 4.5v13M15 6.5v13"/></svg>',
-                    'cross' => '<svg' . $common . '><circle cx="8" cy="8" r="3"/><circle cx="16" cy="16" r="3"/><path d="M10.2 10.2 13.8 13.8"/></svg>',
-                    'engine' => '<svg' . $common . '><path d="M4 13h3l1.5-3h3L13 13h3l2-3h2"/><path d="M5 16h14"/><circle cx="8" cy="19" r="1.2"/><circle cx="16" cy="19" r="1.2"/></svg>',
-                    'alert' => '<svg' . $common . '><path d="M12 4 21 19H3z"/><path d="M12 10v4M12 16.5h.01"/></svg>',
-                    'lab' => '<svg' . $common . '><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M8.2 14h7.6"/></svg>',
-                    'prepare' => '<svg' . $common . '><path d="M4 19h16M7 16 12 5l5 11"/><path d="M9.2 12h5.6"/></svg>',
-                    'collect' => '<svg' . $common . '><path d="M4 7h16v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7"/><path d="M12 11v4M10 13h4"/></svg>',
-                    'target' => '<svg' . $common . '><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>',
-                    'queue' => '<svg' . $common . '><path d="M5 7h14M5 12h14M5 17h9"/><path d="M17 15.5 19.5 18 22 14"/></svg>',
-                    'report' => '<svg' . $common . '><path d="M5 4h10l4 4v12H5z"/><path d="M15 4v4h4M8 13h8M8 16.5h5"/></svg>',
-                    'write' => '<svg' . $common . '><path d="M4 19.5 5.5 14 16 3.5 20 7.5 9.5 18z"/><path d="M13.5 6 17.5 10"/></svg>',
-                    'paper' => '<svg' . $common . '><rect x="5" y="3.5" width="14" height="17" rx="1"/><path d="M5 7.5h14M5 16.5h14"/></svg>',
-                    'note' => '<svg' . $common . '><path d="M6 3.5h9l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19V5a1.5 1.5 0 0 1 1-1.5z"/><path d="M15 3.5V8h4"/><path d="M8.5 12h7M8.5 15.5h4.5"/></svg>',
-                    'library' => '<svg' . $common . '><path d="M5 4h4v16H5zM10.5 4H15v16h-4.5zM16.5 6.5 21 5v14.5L16.5 21z"/></svg>',
-                    'flag' => '<svg' . $common . '><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>',
-                    'dice' => '<svg' . $common . '><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 8.5h.01M15.5 15.5h.01M12 12h.01M15.5 8.5h.01M8.5 15.5h.01"/></svg>',
-                    'admin' => '<svg' . $common . '><path d="M12 3.5 19 7v5.2c0 4.2-2.8 7.4-7 8.8-4.2-1.4-7-4.6-7-8.8V7z"/><path d="M9.5 12.2 11.2 14l3.5-3.8"/></svg>',
-                    'help' => '<svg' . $common . '><circle cx="12" cy="12" r="8.2"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.2.9-1.2 1.7V14"/><path d="M12 17h.01"/></svg>',
-                    default => '<svg' . $common . '><circle cx="12" cy="12" r="7"/></svg>',
-                };
-            };
-            ?>
-            <?php foreach ($sseNav as $section): ?>
-                <?php $open = $section['id'] === $sseNavOpenSection || in_array($section['id'], ['pilotage', 'dossiers'], true); ?>
-                <details class="sx-nav__group" data-sx-group="<?= $h($section['id']) ?>"<?= $open ? ' open' : '' ?>>
-                    <summary class="iw-nav-section sx-nav__head"><?= $h($section['label']) ?><span class="sx-nav__count"><?= count($section['items']) ?></span></summary>
-                    <ul class="sx-nav__list">
-                        <?php foreach ($section['items'] as $item): ?>
-                            <?php $isActive = $item['id'] === $sseNavActive; ?>
-                            <li>
-                                <a href="<?= $h(url($item['path'])) ?>" class="iw-nav-link sx-nav__link<?= $isActive ? ' is-active' : '' ?>" title="<?= $h($item['hint']) ?>"<?= $isActive ? ' aria-current="page"' : '' ?><?= !empty($item['external']) ? ' data-no-curtain' : '' ?>>
-                                    <?= $iwIcon((string) $item['icon']) ?>
-                                    <span class="sx-nav__label"><?= $h($item['label']) ?></span>
-                                    <?php if (!empty($item['external'])): ?><span class="sx-nav__ext" aria-label="ouvre l’ATAK">↗</span><?php endif; ?>
-                                </a>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                </details>
-            <?php endforeach; ?>
+            <button type="button" class="sx-nav__close" data-sx-nav-close>Fermer le menu</button>
+            <nav aria-label="Espaces du bureau SSE">
+                <?php foreach ($sseNav as $section): ?>
+                    <details class="sx-nav__group" data-sx-group="<?= $h($section['id']) ?>" open>
+                        <summary class="sx-nav__head"><?= $h($section['label']) ?></summary>
+                        <ul class="sx-nav__list">
+                            <?php foreach ($section['items'] as $item): ?>
+                                <?php $isActive = $item['id'] === $sseNavActive; ?>
+                                <li>
+                                    <a href="<?= $h(url($item['path'])) ?>" class="iw-nav-link sx-nav__link<?= $isActive ? ' is-active' : '' ?>" title="<?= $h($item['hint']) ?>"<?= $isActive ? ' aria-current="page"' : '' ?>>
+                                        <?= SsePortalNav::icon((string) $item['icon']) ?>
+                                        <span class="sx-nav__label"><?= $h($item['label']) ?></span>
+                                        <?php if (!empty($item['external'])): ?><span class="sx-nav__ext" aria-label="ouvre l’ATAK">↗</span><?php endif; ?>
+                                    </a>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </details>
+                <?php endforeach; ?>
+            </nav>
 
             <div class="iw-nav-foot sx-nav__foot">
-                <span><?= $h($sessionKindLabel) ?></span>
-                <strong><?= $h($sseClearanceText) ?></strong>
+                <span><?= $h($sessionKindLabel) ?> · <?= $h($sseClearanceText) ?></span>
                 <span class="sx-nav__keys"><kbd>Ctrl</kbd> <kbd>K</kbd> pour aller à une page</span>
             </div>
         </aside>
+        <script>
+        /* Avant le premier affichage : sections repliées par l'utilisateur et défilement de la barre latérale
+           restaurés, pour que la navigation ne bouge pas d'une page à l'autre. */
+        (function () {
+          try {
+            var nav = document.getElementById('sx-nav');
+            var saved = JSON.parse(window.localStorage.getItem('sse.nav.groups') || '{}') || {};
+            Array.prototype.forEach.call(nav.querySelectorAll('[data-sx-group]'), function (g) {
+              var id = g.getAttribute('data-sx-group');
+              if (saved[id] === false && !g.querySelector('.is-active')) g.open = false;
+            });
+            var top = parseInt(window.sessionStorage.getItem('sse.nav.scroll') || '0', 10) || 0;
+            nav.scrollTop = top;
+            var a = nav.querySelector('.is-active');
+            if (a) {
+              var r = a.getBoundingClientRect(), n = nav.getBoundingClientRect();
+              if (r.top < n.top || r.bottom > n.bottom) nav.scrollTop += r.top - n.top - n.height / 3;
+            }
+          } catch (e) {}
+        })();
+        </script>
         <div class="sx-scrim" data-sx-nav-close hidden></div>
 
         <main class="iw-main sx-main" id="sx-main" tabindex="-1">
-            <?php if ($error): ?><div class="flash flash--error"><?= $h($error) ?></div><?php endif; ?>
-            <?php if ($success): ?><div class="flash flash--ok"><?= $h($success) ?></div><?php endif; ?>
+            <?php if (count($sseCrumbs) > 1): ?>
+            <nav class="sx-crumbs" aria-label="Fil d’Ariane">
+                <ol>
+                    <?php foreach ($sseCrumbs as $i => $crumb): ?>
+                        <li>
+                            <?php if ($crumb['href'] !== null): ?>
+                                <a href="<?= $h($crumb['href']) ?>"><?= $h($crumb['label']) ?></a>
+                            <?php else: ?>
+                                <span aria-current="page"><?= $h($crumb['label']) ?></span>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ol>
+            </nav>
+            <?php endif; ?>
+            <?php if (count($sseSectionTabs) > 1): ?>
+                <nav class="sx-tabs" aria-label="Pages de la section">
+                    <?php foreach ($sseSectionTabs as $item): ?>
+                        <?php $isActive = $item['id'] === $sseNavActive; ?>
+                        <a href="<?= $h(url($item['path'])) ?>" class="<?= $isActive ? 'is-active' : '' ?>"<?= $isActive ? ' aria-current="page"' : '' ?>><?= $h($item['label']) ?></a>
+                    <?php endforeach; ?>
+                </nav>
+            <?php endif; ?>
+            <?php if ($error): ?><div class="flash flash--error" role="alert"><?= $h($error) ?></div><?php endif; ?>
+            <?php if ($success): ?><div class="flash flash--ok" role="status"><?= $h($success) ?></div><?php endif; ?>
             <?= $sseContent ?>
         </main>
     </div>
@@ -253,19 +257,20 @@ $sseClearanceTone = match ($sseClearanceKey) {
 
 <script>
 window.SSE_CTX = {
-  csrf: <?= json_encode(\App\Core\Csrf::token(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?>,
+  csrf: <?= json_encode(\App\Core\Csrf::token(), $jsonFlags) ?>,
   canManage: <?= $canManage ? 'true' : 'false' ?>,
   pageTitle: 'Bureau SSE',
   pageActions: [
-    { label: 'Rédiger une fiche de renseignement', href: <?= json_encode(url('atak/sse/fiches/nouvelle'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?> },
-    { label: 'Vue opérationnelle', href: <?= json_encode(url('atak/sse/operations'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?> },
-    { label: 'Transmissions terrain', href: <?= json_encode(url('atak/sse/transmissions'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?> },
-    { label: 'Investigations', href: <?= json_encode(url('atak/sse/toiles'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?> },
-    { label: 'Recherche', href: <?= json_encode(url('atak/sse/recherche'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?> }
+    { label: 'Rédiger une fiche de renseignement', href: <?= json_encode(url('atak/sse/fiches/nouvelle'), $jsonFlags) ?> },
+    { label: 'Accueil du bureau', href: <?= json_encode(url(SsePortalNav::HOME), $jsonFlags) ?> },
+    { label: 'Vue opérationnelle', href: <?= json_encode(url('atak/sse/operations'), $jsonFlags) ?> },
+    { label: 'Transmissions terrain', href: <?= json_encode(url('atak/sse/transmissions'), $jsonFlags) ?> },
+    { label: 'Investigations', href: <?= json_encode(url('atak/sse/toiles'), $jsonFlags) ?> },
+    { label: 'Recherche', href: <?= json_encode(url('atak/sse/recherche'), $jsonFlags) ?> }
     <?php if ($canManage): ?>
     , { separator: true }
-    , { label: 'Ouvrir une investigation', href: <?= json_encode(url('atak/sse/toiles/nouveau'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?> }
-    , { label: 'Créer un objet', href: <?= json_encode(url('atak/sse/objets/nouveau'), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?> }
+    , { label: 'Ouvrir une investigation', href: <?= json_encode(url('atak/sse/toiles/nouveau'), $jsonFlags) ?> }
+    , { label: 'Créer un objet', href: <?= json_encode(url('atak/sse/objets/nouveau'), $jsonFlags) ?> }
     <?php endif; ?>
   ]
 };
@@ -273,15 +278,15 @@ window.SSE_CTX = {
 <dialog class="sx-palette" id="sx-palette" aria-label="Aller à une page">
     <div class="sx-palette__box">
         <label class="sr-only" for="sx-palette-q">Page ou action</label>
-        <input id="sx-palette-q" type="search" placeholder="Aller à… (dossiers, identités, rédaction, nouvelle fiche…)" autocomplete="off" spellcheck="false">
+        <input id="sx-palette-q" type="search" placeholder="Aller à… (dossiers, papiers, fichiers, nouvelle fiche…)" autocomplete="off" spellcheck="false">
         <ul class="sx-palette__list" id="sx-palette-list" role="listbox" aria-label="Résultats"></ul>
         <p class="sx-palette__foot"><kbd>↑</kbd><kbd>↓</kbd> choisir · <kbd>Entrée</kbd> ouvrir · <kbd>Échap</kbd> fermer</p>
     </div>
 </dialog>
-<script type="application/json" id="sx-palette-data"><?= json_encode($ssePalette, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
-<script src="<?= $h(asset_url('assets/js/sse-context-menu.js')) ?>?v=202608072010"></script>
+<script type="application/json" id="sx-palette-data"><?= json_encode($ssePalette, $jsonFlags | JSON_HEX_QUOT) ?></script>
+<script src="<?= $h(asset_url('assets/js/sse-context-menu.js')) ?>"></script>
 <script src="<?= $h(asset_url('assets/js/sse-shell.js')) ?>"></script>
-<script src="<?= $h(asset_url('assets/js/sse-global-search.js')) ?>?v=202608161745"></script>
+<script src="<?= $h(asset_url('assets/js/sse-global-search.js')) ?>"></script>
 <script>
   window.APP_VERSION = <?= json_encode(platform_app_version(), JSON_UNESCAPED_UNICODE) ?>;
   window.APP_BASE_URL = <?= json_encode(rtrim((string) url(''), '/'), JSON_UNESCAPED_UNICODE) ?>;

@@ -120,11 +120,16 @@ switch (_act) do {
     case "tick": {
         // Écran Zeus ouvert : bouton et infobulles du Centre Zeus (fn_zeusCentre) ; rien d'autre ici, écran Zeus ou non.
         if (!isNull (findDisplay 312)) then { ["hook"] call comspec_atak_native_fnc_zeusCentre; };
-        // Alarme de punition : bip strident toutes les 2 s, entendu autour du joueur (jusqu'à 60 m).
-        if ((uiNamespace getVariable ["COMSPEC_ATAK_ZeusNoise", 0]) > diag_tickTime && {alive player}) then {
-            if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_ZeusNoiseAt", -10]) >= 1.9) then {
+        // Alarme de punition (4.2.2) : la sirène d'alarme du jeu (A3\Sounds_F\sfx\alarmCar.wss, 2,0 s, celle que le jeu
+        // boucle pour l'alarme des véhicules), relancée toutes les 2,0 s sans chevauchement, entendue autour du joueur
+        // (jusqu'à 60 m). Avant : alarm_independent (6,6 s) relancée toutes les 1,9 s, trois copies superposées, bip strident.
+        // Elle se tait si le joueur meurt, s'il n'a plus de téléphone, s'il est éteint (batterie vide, désactivé, surchauffe)
+        // ou détruit ; le compte à rebours continue sans elle.
+        if ((uiNamespace getVariable ["COMSPEC_ATAK_ZeusNoise", 0]) > diag_tickTime) then {
+            private _can = alive player && {[player, true] call comspec_atak_native_fnc_hasDevice} && {([] call comspec_atak_native_fnc_canUse) isEqualTo ""};
+            if (_can && {diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_ZeusNoiseAt", -10]) >= 2.0}) then {
                 uiNamespace setVariable ["COMSPEC_ATAK_ZeusNoiseAt", diag_tickTime];
-                playSound3D ["A3\Sounds_F\sfx\alarm_independent.wss", player, false, getPosASL player, 1.5, 1.5, 60];
+                playSound3D ["A3\Sounds_F\sfx\alarmCar.wss", player, false, getPosASL player, 1.6, 1, 60];
                 [] call comspec_atak_native_fnc_vibrate;
             };
         };

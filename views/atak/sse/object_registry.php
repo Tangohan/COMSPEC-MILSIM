@@ -14,7 +14,6 @@ $objectEmpty = (string) ($objectEmpty ?? 'Aucun objet pour le moment.');
 ?>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Objets // <?= $h($objectLabel) ?></div>
         <h1><?= $h($objectLabel) ?></h1>
         <p><?= $h($objectHint) ?></p>
     </div>

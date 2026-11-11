@@ -577,3 +577,343 @@ AT_fnc_formTient = {
     missionNamespace setVariable ["COMSPEC_ATAK_Waypoints", _wp0];
     call AT_fnc_done;
 }, 40] call AT_fnc_run;
+
+// Calques du verre sans clignotement (4.2.2) : surveillance image par image pendant de vrais clics (tools/ingame_test.ps1,
+// AUTOTEST|CLICK), une vibration, et le suivi de la carte en miniature.
+// AT_RfMon : [images, reflet absent, reflet recréé, autre calque absent, images focus devant, types focalisés, dernier reflet]
+AT_fnc_rfStart = {
+    AT_RfMon = [0, 0, 0, 0, 0, [], controlNull];
+    if (!isNil "AT_RfEh") then { removeMissionEventHandler ["EachFrame", AT_RfEh]; };
+    AT_RfEh = addMissionEventHandler ["EachFrame", {
+        private _d = [] call comspec_atak_native_fnc_display;
+        if (isNull _d) exitWith {};
+        AT_RfMon set [0, (AT_RfMon select 0) + 1];
+        private _surf = (uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []];
+        private _g = (_surf select { (_x select 0) isEqualTo "glass" }) apply { _x select 1 };
+        private _gl = _g param [0, controlNull];
+        if (isNull _gl || {!ctrlShown _gl} || {ctrlFade _gl > 0.5}) then { AT_RfMon set [1, (AT_RfMon select 1) + 1]; };
+        if (!isNull _gl && {!(_gl isEqualTo (AT_RfMon select 6))}) then {
+            if (!isNull (AT_RfMon select 6) || {(AT_RfMon select 0) > 1}) then { AT_RfMon set [2, (AT_RfMon select 2) + 1]; };
+            AT_RfMon set [6, _gl];
+        };
+        if ((count _surf) isEqualTo 0 || {(_surf findIf { isNull (_x select 1) }) >= 0}) then { AT_RfMon set [3, (AT_RfMon select 3) + 1]; };
+        // Focus sur un contrôle de premier niveau plus ancien que les calques (ou son groupe) : dessiné devant eux.
+        private _f = focusedCtrl _d;
+        if (!isNull _f && {!(_f isEqualTo (_d displayCtrl 88543))} && {!((ctrlType _f) in [2, 4, 44])}) then {
+            AT_RfMon set [4, (AT_RfMon select 4) + 1];
+            (AT_RfMon select 5) pushBackUnique (ctrlType _f);
+        };
+    }];
+};
+AT_fnc_rfStop = {
+    if (!isNil "AT_RfEh") then { removeMissionEventHandler ["EachFrame", AT_RfEh]; AT_RfEh = nil; };
+    +AT_RfMon
+};
+// Position absolue (écran) d'un contrôle, en remontant ses groupes (défilement supposé en haut).
+AT_fnc_absPos = {
+    params ["_c"];
+    (ctrlPosition _c) params ["_x0", "_y0", "_w", "_h"];
+    private _p = ctrlParentControlsGroup _c;
+    while { !isNull _p } do {
+        (ctrlPosition _p) params ["_gx", "_gy"];
+        _x0 = _x0 + _gx;
+        _y0 = _y0 + _gy;
+        _p = ctrlParentControlsGroup _p;
+    };
+    [_x0, _y0, _w, _h]
+};
+// Vrai clic au centre d'un point de l'écran (coordonnées de l'interface), maintenu _ms millisecondes.
+AT_fnc_vraiClic = {
+    params ["_nom", "_ux", "_uy", ["_ms", 600]];
+    setMousePosition [_ux, _uy];
+    uiSleep 0.15;
+    AT_Shots = AT_Shots + 1;
+    diag_log format ["AUTOTEST|CLICK|%1_%2|%3|%4|%5", [AT_Shots, 3] call CBA_fnc_formatNumber, _nom,
+        ((_ux - safeZoneX) / safeZoneW) toFixed 4, ((_uy - safeZoneY) / safeZoneH) toFixed 4, _ms];
+    uiSleep (_ms / 1000 + 1.5);
+};
+
+["tel_reflet_toucher", {
+    if (["comspec_atak_native_fnc_overlayFront", "comspec_atak_native_fnc_screenSurface"] call AT_fnc_nil) exitWith {};
+    missionNamespace setVariable ["comspec_atak_native_glass_glare", true];
+    [["LAUNCHER", 2] call AT_fnc_page, "lanceur non ouvert"] call AT_fnc_check;
+    private _d = [] call comspec_atak_native_fnc_display;
+    (_d displayCtrl 88531) ctrlSetScrollValues [0, -1];
+    uiSleep 1.5;
+    [uiNamespace getVariable ["COMSPEC_ATAK_DevFront", false], "DevFront faux avec le reflet du verre"] call AT_fnc_check;
+    private _surf = (uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []];
+    [(_surf findIf { (_x select 0) isEqualTo "glass" }) >= 0, "pas de calque de reflet sur le lanceur"] call AT_fnc_check;
+    (([] call comspec_atak_native_fnc_layoutGet) get "device") params ["_sx", "_sy", "_sw", "_sh"];
+    // Tuiles du lanceur : boutons de la zone de contenu, entièrement dans l'écran.
+    private _tuiles = {
+        private _d = [] call comspec_atak_native_fnc_display;
+        ((allControls _d) select {
+            (ctrlType _x) in [1, 16] && {ctrlShown _x} && {ctrlEnabled _x} && {!isNull (ctrlParentControlsGroup _x)}
+        }) apply { [_x, [_x] call AT_fnc_absPos] } select {
+            (_x select 1) params ["_x0", "_y0", "_w", "_h"];
+            _w > 0.01 && {_x0 > _sx} && {_y0 > _sy + _sh * 0.1} && {_x0 + _w < _sx + _sw} && {_y0 + _h < _sy + _sh * 0.85}
+        }
+    };
+    private _t = call _tuiles;
+    [(count _t) >= 3, format ["moins de 3 tuiles cliquables sur le lanceur (%1)", count _t]] call AT_fnc_check;
+    call AT_fnc_rfStart;
+    private _ouvertes = 0;
+    {
+        if (_forEachIndex > 2) then { break };
+        ["LAUNCHER", 1.5] call AT_fnc_page;
+        private _tt = call _tuiles;
+        if (_forEachIndex >= (count _tt)) then { break };
+        ((_tt select _forEachIndex) select 1) params ["_x0", "_y0", "_w", "_h"];
+        private _avant = (call AT_fnc_etat) getOrDefault ["activePage", ""];
+        [format ["reflet_appui_tuile%1", _forEachIndex + 1], _x0 + _w / 2, _y0 + _h / 2, [600, 1500] select (_forEachIndex isEqualTo 1)] call AT_fnc_vraiClic;
+        private _apres = (call AT_fnc_etat) getOrDefault ["activePage", ""];
+        if (_apres isNotEqualTo _avant) then { _ouvertes = _ouvertes + 1; };
+        format ["tuile %1 : %2 -> %3", _forEachIndex + 1, _avant, _apres] call AT_fnc_info;
+    } forEach _t;
+    // Appui sur une zone vide de l'écran (le groupe de contenu prend le focus) et retour à l'accueil.
+    ["LAUNCHER", 1.5] call AT_fnc_page;
+    ["reflet_appui_vide", _sx + _sw * 0.5, _sy + _sh * 0.93, 600] call AT_fnc_vraiClic;
+    private _m = call AT_fnc_rfStop;
+    format ["images %1, reflet absent %2, reflet recréé %3, calque absent %4, images focus devant %5 (types %6), apps ouvertes par clic %7",
+        _m select 0, _m select 1, _m select 2, _m select 3, _m select 4, _m select 5, _ouvertes] call AT_fnc_info;
+    [(_m select 0) > 100, "surveillance image par image sans images"] call AT_fnc_check;
+    [(_m select 1) isEqualTo 0, format ["reflet absent ou caché sur %1 images", _m select 1]] call AT_fnc_check;
+    [(_m select 3) isEqualTo 0, format ["calque d'écran absent sur %1 images", _m select 3]] call AT_fnc_check;
+    [_ouvertes >= 2, format ["vrais clics sur les tuiles : %1 app(s) ouverte(s) sur 3 (clic perdu ?)", _ouvertes]] call AT_fnc_check;
+    // Focus d'un bouton : au plus une image par appui (le moteur le donne à l'enfoncement).
+    [(_m select 4) <= 5, format ["focus devant les calques pendant %1 images (types %2)", _m select 4, _m select 5]] call AT_fnc_check;
+    "Captures reflet_appui_* : prises pendant l'appui, le reflet du verre (bande claire en haut à gauche) et les coins sont visibles" call AT_fnc_visuel;
+    call AT_fnc_done;
+}, 120] call AT_fnc_run;
+
+["tel_vibration_bloc", {
+    if (["comspec_atak_native_fnc_vibrate", "comspec_atak_native_fnc_phoneShake"] call AT_fnc_nil) exitWith {};
+    [["LAUNCHER", 2] call AT_fnc_page, "lanceur non ouvert"] call AT_fnc_check;
+    private _d = [] call comspec_atak_native_fnc_display;
+    private _surf = (uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []];
+    private _gl = ((_surf select { (_x select 0) isEqualTo "glass" }) apply { _x select 1 }) param [0, controlNull];
+    private _suivis = [_d displayCtrl 88509, _d displayCtrl 88531, _gl];
+    private _p0 = _suivis apply { ctrlPosition _x };
+    AT_VibEcarts = [];
+    AT_VibSuivis = _suivis;
+    private _eh = addMissionEventHandler ["EachFrame", {
+        private _ps = AT_VibSuivis apply { if (isNull _x) then { [0, 0] } else { ctrlPosition _x } };
+        private _c = _ps select 0;
+        AT_VibEcarts pushBack [((_ps select 1) select 0) - (_c select 0), ((_ps select 1) select 1) - (_c select 1),
+            ((_ps select 2) select 0) - (_c select 0), ((_ps select 2) select 1) - (_c select 1), _c select 0];
+    }];
+    private _pref0 = profileNamespace getVariable ["COMSPEC_ATAK_Vibrate", true];
+    profileNamespace setVariable ["COMSPEC_ATAK_Vibrate", true];
+    [[] call comspec_atak_native_fnc_vibrate, "vibration refusée avec le réglage allumé"] call AT_fnc_check;
+    uiSleep 0.3;
+    ["vibration_en_cours"] call AT_fnc_shot;
+    uiSleep 0.5;
+    removeMissionEventHandler ["EachFrame", _eh];
+    private _e0 = [((_p0 select 1) select 0) - ((_p0 select 0) select 0), ((_p0 select 1) select 1) - ((_p0 select 0) select 1),
+        ((_p0 select 2) select 0) - ((_p0 select 0) select 0), ((_p0 select 2) select 1) - ((_p0 select 0) select 1), (_p0 select 0) select 0];
+    private _bouge = { (abs ((_x select 4) - (_e0 select 4))) > 0.00001 } count AT_VibEcarts;
+    private _decolle = { (abs ((_x select 0) - (_e0 select 0))) + (abs ((_x select 1) - (_e0 select 1))) + (abs ((_x select 2) - (_e0 select 2))) + (abs ((_x select 3) - (_e0 select 3))) > 0.00001 } count AT_VibEcarts;
+    format ["vibration : %1 images, coque déplacée sur %2, écran décollé de la coque sur %3", count AT_VibEcarts, _bouge, _decolle] call AT_fnc_info;
+    [_bouge > 3, "la coque n'a pas tremblé"] call AT_fnc_check;
+    [_decolle isEqualTo 0, format ["écran ou reflet décollé de la coque sur %1 images", _decolle]] call AT_fnc_check;
+    [(_suivis apply { ctrlPosition _x }) isEqualTo _p0, "coque, écran ou reflet pas revenus exactement à leur place"] call AT_fnc_check;
+    // Réglage coupé : rien ne bouge.
+    profileNamespace setVariable ["COMSPEC_ATAK_Vibrate", false];
+    private _r = [] call comspec_atak_native_fnc_vibrate;
+    uiSleep 0.3;
+    [!(_r isEqualTo true) && {(uiNamespace getVariable ["COMSPEC_ATAK_Vibrating", -1]) < 0}, "vibration jouée avec le réglage coupé"] call AT_fnc_check;
+    profileNamespace setVariable ["COMSPEC_ATAK_Vibrate", _pref0];
+    // Sursaut d'un appui (fn_fx « tap ») sur une page défilée : tout bouge d'un pixel puis revient, défilement gardé.
+    if ([["SETTINGS", 2] call AT_fnc_page, "Réglages non ouverts"] call AT_fnc_check) then {
+        private _d2 = [] call comspec_atak_native_fnc_display;
+        private _cg = _d2 displayCtrl 88531;
+        _cg ctrlSetScrollValues [0.5, -1];
+        uiSleep 0.5;
+        private _sv = ctrlScrollValues _cg;
+        private _pc = ctrlPosition (_d2 displayCtrl 88509);
+        private _pg = ctrlPosition _cg;
+        (([] call comspec_atak_native_fnc_layoutGet) get "device") params ["_sx", "_sy", "_sw", "_sh"];
+        ["tap", [_sx + _sw / 2, _sy + _sh / 2]] call comspec_atak_native_fnc_fx;
+        uiSleep 0.4;
+        format ["appui : défilement %1 -> %2", _sv, ctrlScrollValues _cg] call AT_fnc_info;
+        [(abs (((ctrlScrollValues _cg) select 0) - (_sv select 0))) < 0.002, format ["défilement perdu après l'appui (%1 -> %2)", _sv, ctrlScrollValues _cg]] call AT_fnc_check;
+        [(ctrlPosition (_d2 displayCtrl 88509)) isEqualTo _pc && {(ctrlPosition _cg) isEqualTo _pg}, "coque ou écran pas revenus à leur place après l'appui"] call AT_fnc_check;
+    };
+    call AT_fnc_done;
+}, 40] call AT_fnc_run;
+
+// Miniature (porté, sans souris) : la carte suit le joueur à chaque image ; à l'arrêt, aucun saut ni calque manquant.
+["tel_mini_defilement", {
+    if (["comspec_atak_native_fnc_mapCtrl"] call AT_fnc_nil) exitWith {};
+    if !("COMSPEC_ATAK_Phone" in (items player)) then { player addItem "COMSPEC_ATAK_Phone"; };
+    [] call comspec_atak_native_fnc_close;
+    uiSleep 0.5;
+    [false] call comspec_atak_native_fnc_open;
+    [[{ !isNull ([] call comspec_atak_native_fnc_display) }, 6] call AT_fnc_wait, "miniature non ouverte"] call AT_fnc_check;
+    uiSleep 1;
+    ["MAP"] call comspec_atak_native_fnc_navigate;
+    uiSleep 3;
+    private _map = [[] call comspec_atak_native_fnc_display] call comspec_atak_native_fnc_mapCtrl;
+    [!isNull _map, "pas de carte en miniature"] call AT_fnc_check;
+    call AT_fnc_rfStart;
+    AT_MiniTrace = [];
+    AT_MiniMap = _map;
+    private _eh = addMissionEventHandler ["EachFrame", {
+        if (isNull AT_MiniMap) exitWith {};
+        (ctrlPosition AT_MiniMap) params ["_x", "_y", "_w", "_h"];
+        private _c = AT_MiniMap ctrlMapScreenToWorld [_x + _w / 2, _y + _h / 2];
+        private _g = [] call comspec_atak_native_fnc_gpsPos;
+        AT_MiniTrace pushBack [diag_tickTime, _c distance2D _g, _c, count (allControls ([] call comspec_atak_native_fnc_display))];
+    }];
+    // Marche simulée : 3 m/s vers le nord pendant 3 s, puis arrêt net.
+    private _p = getPosASL player;
+    private _t0 = diag_tickTime;
+    while { diag_tickTime - _t0 < 3 } do {
+        player setPosASL (_p vectorAdd [0, 3 * (diag_tickTime - _t0), 0]);
+        uiSleep 0.01;
+    };
+    private _tStop = diag_tickTime;
+    uiSleep 2.5;
+    removeMissionEventHandler ["EachFrame", _eh];
+    ["mini_fin_defilement"] call AT_fnc_shot;
+    private _m = call AT_fnc_rfStop;
+    private _apres = AT_MiniTrace select { (_x select 0) > _tStop + 0.1 };
+    private _sauts = 0;
+    private _rebonds = 0;
+    {
+        if (_forEachIndex > 0) then {
+            private _prev = _apres select (_forEachIndex - 1);
+            if (((_x select 2) distance2D (_prev select 2)) > 2) then { _sauts = _sauts + 1; };
+            if ((_x select 1) > (_prev select 1) + 0.3) then { _rebonds = _rebonds + 1; };
+        };
+    } forEach _apres;
+    private _crees = { (_x select 3) isNotEqualTo ((AT_MiniTrace select 0) select 3) } count AT_MiniTrace;
+    private _fin = (_apres param [(count _apres) - 1, [0, 999]]) select 1;
+    format ["mini : %1 images, écart final %2 m, sauts après l'arrêt %3, écart qui remonte %4, images où le nombre de contrôles change %5, reflet absent %6, recréé %7, calque absent %8",
+        count AT_MiniTrace, _fin toFixed 2, _sauts, _rebonds, _crees, _m select 1, _m select 2, _m select 3] call AT_fnc_info;
+    [_sauts isEqualTo 0, format ["carte en miniature : %1 sauts après l'arrêt", _sauts]] call AT_fnc_check;
+    [_rebonds isEqualTo 0, format ["carte en miniature : l'écart au joueur remonte %1 fois après l'arrêt", _rebonds]] call AT_fnc_check;
+    [_fin < 3, format ["carte en miniature pas recentrée sur le joueur (%1 m)", _fin toFixed 1]] call AT_fnc_check;
+    [(_m select 1) isEqualTo 0 && {(_m select 3) isEqualTo 0}, format ["calques absents en miniature (reflet %1, autres %2 images)", _m select 1, _m select 3]] call AT_fnc_check;
+    [(_m select 2) isEqualTo 0, format ["reflet recréé %1 fois pendant le suivi", _m select 2]] call AT_fnc_check;
+    player setPosASL _p;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;
+// ATAK 4.2.2, apps pensées pour le téléphone tenu à l'horizontale : textes et boutons d'un formulaire ni l'un sur
+// l'autre ni hors du cadre (colonnes de fn_formRender, fn_layoutCols). Paires voisines seulement (triées par hauteur).
+AT_fnc_formChevauche = {
+    params ["_nom"];
+    private _d = [] call comspec_atak_native_fnc_display;
+    if (isNull _d) exitWith {};
+    private _grps = (uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []]) apply { _x select 1 };
+    private _nKo = 0;
+    {
+        private _g = _x;
+        private _gw = (ctrlPosition _g) select 2;
+        private _els = [];
+        {
+            if ((ctrlParentControlsGroup _x) isEqualTo _g && {ctrlShown _x} && {(ctrlType _x) in [1, 13]}
+                && {!((ctrlClassName _x) in ["COMSPEC_RscButtonOverlay", "COMSPEC_RscButtonInvisible"])}) then {
+                (ctrlPosition _x) params ["_x0", "_y0", "_w0", "_h0"];
+                if (_w0 > pixelW * 2 && {_h0 > pixelH * 2}) then { _els pushBack [_y0, _x0, _w0, _h0, _x]; };
+            };
+        } forEach (allControls _d);
+        _els sort true;
+        {
+            _x params ["_y0", "_x0", "_w0", "_h0"];
+            if (_x0 + _w0 > _gw + pixelW * 3 && {_nKo < 6}) then {
+                _nKo = _nKo + 1;
+                [false, format ["%1 : hors du cadre à droite (x %2 + %3 > %4)", _nom, _x0, _w0, _gw]] call AT_fnc_check;
+            };
+            for "_j" from (_forEachIndex + 1) to ((count _els) - 1) do {
+                (_els select _j) params ["_y1", "_x1", "_w1", "_h1", "_c1"];
+                if (_y1 >= _y0 + _h0) exitWith {};
+                private _iw = ((_x0 + _w0) min (_x1 + _w1)) - (_x0 max _x1);
+                private _ih = ((_y0 + _h0) min (_y1 + _h1)) - (_y0 max _y1);
+                if (_iw > pixelW * 3 && {_ih > pixelH * 3} && {(_iw * _ih) > 0.3 * ((_w0 * _h0) min (_w1 * _h1))} && {_nKo < 6}) then {
+                    _nKo = _nKo + 1;
+                    [false, format ["%1 : deux éléments l'un sur l'autre (%2 / %3, y %4)", _nom, ctrlClassName (_x select 4), ctrlClassName _c1, _y0]] call AT_fnc_check;
+                };
+            };
+        } forEach _els;
+    } forEach _grps;
+};
+
+["tel_paysage_apps", {
+    if (["comspec_atak_native_fnc_layoutCols"] call AT_fnc_nil) exitWith {};
+    private _mode0 = profileNamespace getVariable ["COMSPEC_ATAK_Mode", "MINI"];
+    private _orient0 = profileNamespace getVariable ["COMSPEC_ATAK_Orientation", "PORTRAIT"];
+    private _scale0 = profileNamespace getVariable ["COMSPEC_ATAK_MiniScale", 1];
+    private _apps = ["CHAT", "BFT", "TASK", "ALERTS", "MEDICAL", "REPORTS", "NETWORK", "STATUS", "WAYPOINTS", "SETTINGS", "PROFILE", "WANTED", "NUMBERS", "LOGI"];
+    private _st = call AT_fnc_etat;
+    {
+        _x params ["_mode", "_orient", "_scale", "_nom"];
+        profileNamespace setVariable ["COMSPEC_ATAK_Mode", _mode];
+        profileNamespace setVariable ["COMSPEC_ATAK_Orientation", _orient];
+        profileNamespace setVariable ["COMSPEC_ATAK_MiniScale", _scale];
+        [true] call comspec_atak_native_fnc_open;
+        [[{ !isNull ([] call comspec_atak_native_fnc_display) }, 8] call AT_fnc_wait, format ["téléphone non ouvert (%1)", _nom]] call AT_fnc_check;
+        uiSleep 1.2;
+        private _l = [] call comspec_atak_native_fnc_layoutGet;
+        private _bw = ((_l get "body") select 2);
+        format ["%1 : corps %2 px de large, %3 caractère(s), colonnes section %4, info %5, maître-détail %6", _nom, round (_bw / pixelW), round (_bw / (_l get "colChar")),
+            [_bw, "section"] call comspec_atak_native_fnc_layoutCols, [_bw, "info"] call comspec_atak_native_fnc_layoutCols, ([_bw, "split"] call comspec_atak_native_fnc_layoutCols) isNotEqualTo []] call AT_fnc_info;
+        {
+            private _pg = _x;
+            _st set ["netDiag", false];
+            private _ok = [_pg, 1.2] call AT_fnc_page;
+            [_ok, format ["app %1 non ouverte (%2)", _pg, _nom]] call AT_fnc_check;
+            if (_ok) then {
+                [_pg] call comspec_atak_native_fnc_pageRender;
+                uiSleep 0.5;
+                private _n = format ["paysage_%1_%2", toLower _pg, _nom];
+                [_n] call AT_fnc_formTient;
+                [_n] call AT_fnc_formChevauche;
+                [_n] call AT_fnc_shot;
+            };
+        } forEach _apps;
+        // Dépannage MPU (volet de l'app Réseau).
+        _st set ["netDiag", true];
+        ["NETWORK"] call comspec_atak_native_fnc_pageRender;
+        uiSleep 0.6;
+        [format ["paysage_mpudiag_%1", _nom]] call AT_fnc_formTient;
+        [format ["paysage_mpudiag_%1", _nom]] call AT_fnc_formChevauche;
+        [format ["paysage_mpudiag_%1", _nom]] call AT_fnc_shot;
+        _st set ["netDiag", false];
+    } forEach [
+        ["FULL", "LANDSCAPE", 1, "plein"],
+        ["MINI", "LANDSCAPE", 1.3, "mini_paysage_grand"],
+        ["MINI", "LANDSCAPE", 0.7, "mini_paysage_petit"],
+        ["MINI", "PORTRAIT", 1.3, "mini_portrait_grand"],
+        ["MINI", "PORTRAIT", 0.7, "mini_portrait_petit"]
+    ];
+    // Mode petit porté (pas en main) : barre d'app sans titre ni bouton sur la carte, la carte touche la barre d'état.
+    {
+        _x params ["_orient", "_scale"];
+        profileNamespace setVariable ["COMSPEC_ATAK_Mode", "MINI"];
+        profileNamespace setVariable ["COMSPEC_ATAK_Orientation", _orient];
+        profileNamespace setVariable ["COMSPEC_ATAK_MiniScale", _scale];
+        [true] call comspec_atak_native_fnc_open;
+        uiSleep 0.8;
+        ["MAP"] call comspec_atak_native_fnc_navigate;
+        uiSleep 0.8;
+        [false] call comspec_atak_native_fnc_open;
+        [[{ !isNull ([] call comspec_atak_native_fnc_display) }, 8] call AT_fnc_wait, "téléphone porté non affiché"] call AT_fnc_check;
+        uiSleep 1.5;
+        private _l = [] call comspec_atak_native_fnc_layoutGet;
+        private _gap = ((_l get "body") select 1) - (((_l get "status") select 1) + ((_l get "status") select 3));
+        format ["mini porté %1 %2 : page %3, écart barre d'état / contenu %4 px", _orient, _scale, (call AT_fnc_etat) getOrDefault ["activePage", ""], round (_gap / pixelH)] call AT_fnc_info;
+        if (((call AT_fnc_etat) getOrDefault ["activePage", ""]) isEqualTo "MAP") then {
+            [_gap <= pixelH * 3, format ["mini porté %1 : bande vide de %2 px entre la barre d'état et la carte", _orient, round (_gap / pixelH)]] call AT_fnc_check;
+        };
+        [format ["paysage_mini_porte_carte_%1_%2", toLower _orient, _scale]] call AT_fnc_shot;
+        [] call comspec_atak_native_fnc_close;
+        uiSleep 0.5;
+    } forEach [["LANDSCAPE", 1], ["LANDSCAPE", 0.7], ["PORTRAIT", 1]];
+    "apps en paysage : sections et tuiles en deux colonnes (plein écran), une colonne en portrait et sur le petit téléphone, rien de coupé ni superposé ; mode petit porté sur la carte : pas de bande noire sous la barre d'état" call AT_fnc_visuel;
+    profileNamespace setVariable ["COMSPEC_ATAK_Mode", _mode0];
+    profileNamespace setVariable ["COMSPEC_ATAK_Orientation", _orient0];
+    profileNamespace setVariable ["COMSPEC_ATAK_MiniScale", _scale0];
+    ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+    call AT_fnc_done;
+}, 900] call AT_fnc_run;

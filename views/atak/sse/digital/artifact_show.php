@@ -6,10 +6,8 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var array<string,string> $statuses */
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/exploitation-numerique/artefacts')) ?>">Artefacts</a> / <strong><?= $h($artifact['name'] ?? '') ?></strong></div>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline"><?= $h($artifact['category_label'] ?? '') ?> // <?= $h($artifact['status_label'] ?? '') ?></div>
         <h1><?= $h($artifact['name'] ?? '') ?></h1>
         <p><?= $h($artifact['path'] ?? '—') ?></p>
     </div>

@@ -102,6 +102,17 @@ if (!isNull _target) then {
     (_disp displayCtrl 9507) ctrlSetText ((_nat) call comspec_overwatch_connect_fnc_tr);
     (_disp displayCtrl 9508) ctrlSetText ((_lang) call comspec_overwatch_connect_fnc_tr);
 
+    // Document présenté au contrôle d'identité en cours : c'est ce que l'opérateur a sous les yeux,
+    // il fait foi pour le préremplissage (toujours modifiable). Repris aussi pour la reprise après relevé.
+    private _doc = ["doc", [_target]] call comspec_overwatch_connect_fnc_seekState;
+    if ((count _doc) > 0 && {!(uiNamespace getVariable ["COMSPEC_SsePerson_ResumeCollect", false])}) then {
+        { _x params ["_idc", "_k"]; private _v = _doc getOrDefault [_k, ""]; if (_v isEqualType "" && {_v isNotEqualTo ""}) then { (_disp displayCtrl _idc) ctrlSetText _v; }; } forEach [[9501, "last"], [9502, "first"], [9507, "country"]];
+        private _dob = _doc getOrDefault ["dob", ""];
+        if (_dob isEqualType "" && {_dob isNotEqualTo ""}) then { uiNamespace setVariable ["COMSPEC_SeekDob", _dob]; };
+        _edenFirst = _doc getOrDefault ["first", _edenFirst];
+        _edenLast = _doc getOrDefault ["last", _edenLast];
+    };
+
     private _primary = primaryWeapon _target;
     private _handgun = handgunWeapon _target;
     private _secondary = secondaryWeapon _target;

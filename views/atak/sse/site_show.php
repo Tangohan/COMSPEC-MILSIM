@@ -48,17 +48,9 @@ foreach ($rooms as $r) {
     $roomLabels[(int) ($r['id'] ?? 0)] = (string) ($r['label'] ?? '');
 }
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/sites')) ?>">Sites</a> /
-    <strong><?= $h($site['reference_code'] ?? '') ?></strong>
-</div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">
-            Exploitation // <?= $h($site['site_type_label'] ?? '') ?>
-        </div>
         <h1><?= $h($site['name'] ?? '') ?></h1>
         <p>
             <?= $h($site['reference_code'] ?? '') ?>

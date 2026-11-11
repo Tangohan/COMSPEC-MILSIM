@@ -11,14 +11,8 @@ $status = (string) ($packet['status'] ?? '');
 $canAct = !empty($canManage) && $status === 'a_exploiter';
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/exploitation-numerique/a-exploiter')) ?>">À exploiter</a> /
-    <strong><?= $h($packet['title'] ?? 'Paquet') ?></strong>
-</div>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline"><?= $h($packet['packet_type_label'] ?? '') ?> // <?= $h($packet['status_label'] ?? '') ?></div>
         <h1><?= $h($packet['title'] ?? 'Renseignement') ?></h1>
         <p>
             Support <?= $h($packet['support_label'] ?? '—') ?>

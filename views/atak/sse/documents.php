@@ -94,7 +94,6 @@ foreach ($statusLabels as $key => $label) {
 <section class="sse-desk-hero" aria-labelledby="sse-desk-title">
     <div class="sse-desk-hero__main">
         <div class="sse-desk-hero__kicker">
-            <span class="interest-hero__ref">ATH-SSE-REDAC</span>
             <span class="badge badge--red">Diffusion restreinte</span>
         </div>
         <h1 id="sse-desk-title">Atelier de rédaction</h1>

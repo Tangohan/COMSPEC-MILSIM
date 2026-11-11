@@ -7,14 +7,11 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var array<string,string> $eventTypes */
 /** @var array<string,string> $sourceOptions */
 ?>
-<div class="breadcrumb">Athena / SSE / <strong>Transmissions terrain</strong></div>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Pilotage // Collecte Arma</div>
         <h1>Transmissions terrain</h1>
         <p>Journal de tout ce qui a été envoyé depuis Arma 3 (terminal SSE, ACE, Zeus, etc.) vers le bureau Athena.</p>
     </div>
-    <div class="page-reference"><strong>Vue // Journal terrain</strong>Réf. ATH-SSE-TX</div>
 </div>
 <div class="security-notice">
     <div class="security-notice-code">TERRAIN</div>

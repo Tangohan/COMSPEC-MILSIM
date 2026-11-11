@@ -31,17 +31,16 @@ $statusFields = [
 ];
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers')) ?>">Identités &amp; documents</a> / <strong><?= $h($doc['ref']) ?></strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline"><?= $h($doc['doc_type_label']) ?> // <?= $h($doc['workflow_label']) ?></div>
         <h1><?= $h($doc['ref']) ?> — <?= $h($doc['doc_number']) ?></h1>
         <p><?= $h($country['name'] ?? $doc['country_code']) ?> · titulaire <a class="link" href="<?= $h(url('atak/sse/papiers/identites/' . (int) $doc['identity_id'])) ?>"><?= $h($identity['display_name'] ?? '') ?></a></p>
     </div>
     <div class="page-reference">
         <strong><?= $h($doc['workflow_label']) ?></strong>
         <div class="muted"><?= $doc['workflow'] === 'issued' ? 'Chargé par le serveur de jeu' : 'Pas encore en jeu' ?></div>
+        <div><a class="link" href="<?= $h(\App\Controllers\Web\SseFileController::replayUrl('QA', ['number' => $doc['doc_number'], 'country' => $doc['country_code'], 'doc_type' => $doc['doc_type']])) ?>">Passer aux fichiers</a></div>
     </div>
 </div>
 

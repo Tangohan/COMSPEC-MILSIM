@@ -191,7 +191,8 @@ final class AtakWikiTest extends TestCase
         self::assertStringContainsString('<meta name="description"', $home);
 
         $md = str_replace("\r\n", "\n", (string) file_get_contents($this->root . '/' . AtakWiki::CHANGELOG));
-        preg_match('/^## [^\n]*ATAK natif (\d+\.\d+\.\d+)/m', $md, $m);
+        // Première entrée versionnée : pack ATAK natif ou version du SSE seule.
+        preg_match('/^## [^\n]*\((?:ATAK natif|SSE) (\d+\.\d+\.\d+)/m', $md, $m);
         $releases = AtakWiki::catalog()['releases'];
         // Une version par « Résumé joueur », sauf l'exemple entre ``` de la règle d'écriture.
         $outsideFences = (string) preg_replace('/^```.*?^```[ \t]*$/ms', '', $md);

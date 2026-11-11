@@ -31,11 +31,9 @@ $sseExtraScripts = ($sseExtraScripts ?? '')
     . '<script src="' . $h(asset_url('assets/js/sse-id-images.js')) . '"></script>';
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers')) ?>">Identités &amp; documents</a> / <a class="link" href="<?= $h(url('atak/sse/papiers/atelier')) ?>">Atelier</a> / <strong><?= $h($isNew ? 'Nouveau papier' : $doc['ref']) ?></strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Atelier de documents // <?= $h(C::label(C::WORKFLOWS, (string) $doc['workflow'])) ?></div>
         <h1><?= $h($isNew ? 'Nouveau papier' : $doc['ref'] . ' — ' . $doc['doc_number']) ?></h1>
         <p>Modifiez le papier à gauche : l’aperçu à droite se met à jour en direct, bande de lecture automatique comprise. Tout papier reste un spécimen de jeu, émis par un pays imaginaire ou par un pays réel stylisé (univers réaliste-simulation, gabarit générique).</p>
     </div>

@@ -4,6 +4,7 @@
 
     Params: [_target, _page]
       _page  page d'ouverture (0 = accueil). Permet d'aller droit au dossier.
+             -1 = automatique : CONTRÔLE RAPIDE (10) si une personne est visée, sinon accueil.
 */
 params [["_target", objNull, [objNull]], ["_page", 0, [0]]];
 
@@ -18,8 +19,11 @@ if (!([] call comspec_overwatch_connect_fnc_sseHasTerminalItem)) exitWith {
     false
 };
 
-[_target] call comspec_overwatch_connect_fnc_ssePersonDialogShow;
+if !([_target] call comspec_overwatch_connect_fnc_ssePersonDialogShow) exitWith { false };
 
+if (_page < 0) then {
+    _page = [0, 10] select (!isNull (uiNamespace getVariable ["COMSPEC_SsePerson_Target", objNull]));
+};
 // L'ouverture pose la page 0 ; on bascule ensuite si une autre est demandée.
 if (_page > 0) then {
     [{ [_this] call comspec_overwatch_connect_fnc_sseTerminalPage; }, _page, 0.05] call CBA_fnc_waitAndExecute;

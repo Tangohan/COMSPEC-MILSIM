@@ -9,10 +9,8 @@ $systemArtifacts = array_values(array_filter($artifacts, static fn (array $a): b
 $docs = array_values(array_filter($artifacts, static fn (array $a): bool => ($a['category'] ?? '') === 'document'));
 $deleted = array_values(array_filter($artifacts, static fn (array $a): bool => !empty($a['is_deleted']) || ($a['category'] ?? '') === 'deleted'));
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/exploitation-numerique/supports/' . $id)) ?>"><?= $h($device['reference_code'] ?? '') ?></a> / <strong>Vue ordinateur</strong></div>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Ordinateur / disque // Exploitation</div>
         <h1><?= $h($device['reference_code'] ?? '') ?></h1>
         <p>Utilisateurs, documents, réseaux, historiques et chronologie système.</p>
     </div>

@@ -107,7 +107,9 @@ switch (_type) do {
     default {
         if (_deliveryIndex isEqualTo 2) exitWith { [format ["Papiers au nom de %1.", _title]] call _toPhones; _summary = "Annonce envoyée aux téléphones."; };
         if (_type in ["identity", "paper", "kit"] && {_deliveryIndex isEqualTo 1} && {isNull _target}) exitWith { _summary = "Fouille : aucune personne ni véhicule sous le clic, rien de posé."; };
+        // Même liste que l'éditeur (fn_editor) : les quatre intégrés dans l'ordre historique, puis les clés servies du registre.
         private _paperTypes = ["id_card", "passport", "driving_license", "military_id"];
+        { _paperTypes pushBackUnique _x; } forEach (["list", [""]] call comspec_sse_fnc_idDocTypes);
         private _chosen = switch (_type) do {
             case "paper": { [_paperTypes param [_item getOrDefault ["paper", 0], "id_card"]] };
             // Lot choisi dans le formulaire (avant : toujours carte et passeport, quel que soit le modèle).

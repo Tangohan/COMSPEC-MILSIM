@@ -1,0 +1,132 @@
+/*
+    Phrases jamais vues (fn_iarpSelfTest) : écrites avant la mise au point du lexique et jamais utilisées pour la régler.
+    Elles donnent un taux honnête de reconnaissance, séparé du banc d'essai (data\iarp_corpus.sqf), qui lui sert à régler.
+    Même format : [[langue, texte, intention]…]. Ne pas y ajouter une phrase pour la faire passer : l'ajouter au banc
+    d'essai et en écrire une nouvelle ici.
+*/
+[
+    // ------------------------------------------------------------------ conversation
+    ["fr", "Salut l'ami", "greet"], ["fr", "Bonjour à vous", "greet"], ["fr", "Bonsoir mon gars", "greet"],
+    ["fr", "Comment vous allez aujourd'hui ?", "howareyou"], ["fr", "ça roule ?", "howareyou"], ["fr", "Tout va bien pour vous ?", "howareyou"],
+    ["fr", "Il fait un froid de canard", "smalltalk"], ["fr", "Sale temps aujourd'hui hein", "smalltalk"],
+    ["fr", "Merci pour votre aide", "thanks"], ["fr", "Merci mon ami", "thanks"], ["fr", "Désolé de vous avoir dérangé", "sorry"], ["fr", "Excusez-nous", "sorry"],
+    ["fr", "Bonne soirée à vous", "bye"], ["fr", "On y va, au revoir", "bye"], ["fr", "Prenez soin de vous", "bye"],
+    ["fr", "Vous pouvez répéter s'il vous plaît ?", "repeat"], ["fr", "J'ai pas compris, redis", "repeat"], ["fr", "Vous m'avez compris ?", "understand"],
+    // ------------------------------------------------------------------ identité
+    ["fr", "C'est quoi votre petit nom ?", "name"], ["fr", "Vous vous appelez comment monsieur ?", "name"], ["fr", "Ton prénom c'est quoi", "name"], ["fr", "Qui êtes vous exactement ?", "name"],
+    ["fr", "Vous avez quel âge ?", "age"], ["fr", "t'as quel age toi", "age"], ["fr", "Vous êtes né quand ?", "age"],
+    ["fr", "Vous avez des enfants ?", "family"], ["fr", "Ta femme est où ?", "family"], ["fr", "Vous êtes mariée ?", "family"],
+    ["fr", "Vous habitez à quelle adresse ?", "address"], ["fr", "Montrez-moi votre carte d'identité", "papers"], ["fr", "Ton passeport", "papers"], ["fr", "Papiers svp", "papers"],
+    ["fr", "Vous avez un portable sur vous ?", "phone"], ["fr", "Donne moi ton numéro de téléphone", "phone"], ["fr", "Vous êtes de quelle nationalité ?", "nation"],
+    ["fr", "Tu es étranger toi ?", "nation"], ["fr", "Vous parlez français ?", "speak"], ["fr", "Tu parles anglais un peu ?", "speak"],
+    // ------------------------------------------------------------------ couverture
+    ["fr", "Vous êtes d'où exactement ?", "origin"], ["fr", "Tu vis où ?", "origin"], ["fr", "Vous êtes originaire d'ici ?", "origin"],
+    ["fr", "Tu bosses pour qui ?", "employer"], ["fr", "C'est qui ton patron ?", "employer"], ["fr", "Vous faites quoi comme boulot ?", "job"], ["fr", "C'est quoi ton métier ?", "job"],
+    ["fr", "Où vous allez comme ça ?", "travel"], ["fr", "Vous faites quoi dans le coin ?", "travel"], ["fr", "Vous êtes né où ?", "pob"], ["fr", "Quelqu'un peut se porter garant de vous ?", "contact"],
+    // ------------------------------------------------------------------ présence
+    ["fr", "Ça fait combien de temps que vous êtes là ?", "since"], ["fr", "Depuis quand tu traînes ici ?", "since"], ["fr", "Vous êtes arrivé à quelle heure ?", "since"],
+    ["fr", "Vous êtes venu seul ?", "with"], ["fr", "Il y a quelqu'un avec vous ?", "with"], ["fr", "T'es avec qui là ?", "with"],
+    ["fr", "Qu'est-ce que tu fais dehors si tard ?", "lateHour"], ["fr", "Vous savez qu'il y a un couvre-feu ?", "lateHour"],
+    ["fr", "Tu étais où hier soir ?", "alibi"], ["fr", "Qu'est-ce que vous faisiez cette nuit ?", "alibi"], ["fr", "Vous étiez où ce matin ?", "alibi"],
+    ["fr", "Tu viens souvent ici ?", "often"], ["fr", "Vous passez par là tous les jours ?", "often"],
+    ["fr", "Vous comptez rester longtemps ?", "stayLong"], ["fr", "Tu repars quand d'ici ?", "stayLong"],
+    ["fr", "Tu attends quelqu'un ?", "waitingFor"], ["fr", "Vous attendez qui ici ?", "waitingFor"],
+    ["fr", "C'est chez vous ici ?", "house"], ["fr", "Qui vit dans cette maison ?", "house"],
+    ["fr", "Qu'est-ce qu'il y a dans votre sac ?", "cargo"], ["fr", "Vous transportez quoi ?", "cargo"], ["fr", "Rien à déclarer ?", "declare"],
+    // ------------------------------------------------------------------ fouille, armes, véhicule
+    ["fr", "On va procéder à une fouille", "search"], ["fr", "Videz vos poches svp", "search"], ["fr", "Vous portez une arme ?", "weapons"], ["fr", "T'as un flingue sur toi ?", "weapons"],
+    ["fr", "Vous avez de la came sur vous ?", "drugs"], ["fr", "Combien d'argent vous avez sur vous ?", "money"], ["fr", "Elle est à vous cette voiture ?", "vehicle"],
+    ["fr", "Ouvrez-moi le coffre", "trunk"], ["fr", "Ouvre ton sac", "bag"], ["fr", "Montrez-moi ce qu'il y a dans votre sac à dos", "bag"],
+    // ------------------------------------------------------------------ ordres
+    ["fr", "Levez les mains bien haut", "handsup"], ["fr", "Les mains sur la tête !", "handsup"], ["fr", "Bougez plus !", "halt"], ["fr", "Restez où vous êtes", "halt"],
+    ["fr", "Mettez-vous à genoux tout de suite", "kneel"], ["fr", "Allonge toi par terre", "kneel"], ["fr", "Suis-moi", "follow"], ["fr", "Venez avec nous", "follow"],
+    ["fr", "Vous pouvez y aller monsieur", "leave"], ["fr", "Allez, circule", "leave"], ["fr", "Sortez de la voiture !", "dismount"],
+    ["fr", "Lâche ton fusil !", "dropWeapon"], ["fr", "Posez l'arme par terre", "dropWeapon"], ["fr", "Reculez d'un pas", "stepBack"], ["fr", "Éloignez-vous de la voiture", "stepBack"],
+    ["fr", "Approche un peu", "comeHere"], ["fr", "Venez ici s'il vous plaît", "comeHere"], ["fr", "Tourne-toi", "turnAround"], ["fr", "Retournez-vous, face au mur", "turnAround"],
+    ["fr", "Asseyez-vous là", "sit"], ["fr", "Assis !", "sit"], ["fr", "Ferme-la !", "quiet"], ["fr", "Taisez-vous maintenant", "quiet"], ["fr", "Dépêche-toi", "hurry"], ["fr", "Allez plus vite que ça", "hurry"],
+    ["fr", "Vous pouvez baisser vos bras", "handsDown"], ["fr", "Baissez les mains, c'est bon", "handsDown"],
+    // ------------------------------------------------------------------ pression, pot-de-vin, confrontation
+    ["fr", "Si tu bouges je te tue", "threat"], ["fr", "Tu vas finir en prison", "threat"], ["fr", "Calme-toi, tout va bien", "calm"], ["fr", "Détendez-vous monsieur", "calm"],
+    ["fr", "On peut vous aider ?", "help"], ["fr", "Tu as besoin de quelque chose ?", "help"], ["fr", "Tiens, prends ces billets", "bribe"], ["fr", "Je peux te payer si tu parles", "bribe"],
+    ["fr", "Vous nous mentez", "confront"], ["fr", "Arrête de me raconter des salades, dis la vérité", "confront"], ["fr", "Ces papiers sont des faux", "confront"],
+    // ------------------------------------------------------------------ renseignement
+    ["fr", "T'as vu quelque chose de bizarre ?", "intel"], ["fr", "Vous savez quelque chose ?", "intel"], ["fr", "Dites-moi ce que vous savez", "intel"],
+    ["fr", "Vous avez croisé des types armés ?", "seenArmed"], ["fr", "Il y a des rebelles par ici ?", "seenArmed"], ["fr", "Des combattants sont passés au village ?", "seenArmed"],
+    ["fr", "Vous avez vu passer un pick-up ?", "seenVehicles"], ["fr", "Des voitures sont passées cette nuit ?", "seenVehicles"], ["fr", "Un camion est passé par là ?", "seenVehicles"],
+    ["fr", "Il y a des inconnus au village ?", "strangers"], ["fr", "Vous avez vu des gens que vous connaissez pas ?", "strangers"],
+    ["fr", "Quelqu'un cache des explosifs ici ?", "explosives"], ["fr", "Tu as entendu parler d'une bombe ?", "explosives"],
+    ["fr", "La route est minée ?", "mines"], ["fr", "Il y a des mines dans le champ ?", "mines"],
+    ["fr", "Où est-ce qu'il se cache ?", "whereIs"], ["fr", "Où je peux trouver Ahmed ?", "whereIs"],
+    ["fr", "C'est qui le chef ici ?", "leader"], ["fr", "Qui donne les ordres dans le coin ?", "leader"],
+    ["fr", "Ils étaient combien ?", "howMany"], ["fr", "Combien d'hommes vous avez vu ?", "howMany"],
+    ["fr", "Ils sont passés quand ?", "whenPassed"], ["fr", "Ça s'est passé quand ?", "whenPassed"],
+    ["fr", "Qu'est-ce qui s'est passé ici ?", "happened"], ["fr", "Qui a tué cet homme ?", "happened"], ["fr", "Il s'est passé quoi hier ?", "happened"],
+    ["fr", "Vous avez entendu des tirs cette nuit ?", "heard"], ["fr", "T'as entendu l'explosion ?", "heard"],
+    ["fr", "Ils sont partis par où ?", "whereWent"], ["fr", "Dans quelle direction ils sont allés ?", "whereWent"],
+    ["fr", "Il ressemblait à quoi ?", "describe"], ["fr", "Décris-moi le type", "describe"], ["fr", "La voiture était de quelle couleur ?", "describe"],
+    ["fr", "Il y a des armes cachées dans le village ?", "cache"], ["fr", "Vous connaissez une planque ?", "cache"],
+    ["fr", "Où est leur base ?", "base"], ["fr", "Ils ont un camp près d'ici ?", "base"],
+    ["fr", "Il y a un barrage plus loin ?", "checkpoints"], ["fr", "Des checkpoints sur cette route ?", "checkpoints"],
+    // ------------------------------------------------------------------ situation locale
+    ["fr", "C'est dangereux par ici ?", "safety"], ["fr", "C'est tranquille en ce moment ?", "safety"], ["fr", "Vous avez des problèmes au village ?", "problems"], ["fr", "Des soucis en ce moment ?", "problems"],
+    ["fr", "On peut passer par cette route ?", "roadSafe"], ["fr", "La route du nord est sûre ?", "roadSafe"],
+    ["fr", "Comment est la vie au village ?", "village"], ["fr", "Il y a combien d'habitants ici ?", "village"],
+    ["fr", "Vous avez de l'eau potable ?", "water"], ["fr", "Le puits marche encore ?", "water"], ["fr", "Vous manquez de nourriture ?", "food"], ["fr", "Vous avez de quoi manger ?", "food"],
+    ["fr", "Y a un docteur dans le coin ?", "medical"], ["fr", "Vous avez des médicaments ?", "medical"], ["fr", "De quoi vous avez besoin ici ?", "needs"], ["fr", "Qu'est-ce qui vous manque le plus ?", "needs"],
+    ["fr", "C'est par où le marché ?", "directions"], ["fr", "Où est l'école ?", "directions"], ["fr", "On est où exactement ?", "whereHere"], ["fr", "C'est quoi le nom de ce village ?", "whereHere"],
+    // ------------------------------------------------------------------ relations
+    ["fr", "Vous connaissez cette femme ?", "knowPerson"], ["fr", "C'est qui ce type sur la photo ?", "knowPerson"], ["fr", "Tes voisins sont sympas ?", "neighbors"],
+    ["fr", "Où je peux trouver l'ancien du village ?", "chief"], ["fr", "Le maire est là aujourd'hui ?", "chief"],
+    ["fr", "Vous faites confiance à la police ?", "police"], ["fr", "Les flics passent souvent ?", "police"],
+    ["fr", "Vous pensez quoi des soldats ?", "army"], ["fr", "L'armée vous aide ?", "army"],
+    ["fr", "Tu soutiens les rebelles ?", "rebelsView"], ["fr", "Que pensez-vous des insurgés ?", "rebelsView"],
+    ["fr", "Vous avez confiance en nous ?", "trustUs"], ["fr", "Quelqu'un vous a menacé ?", "threatened"], ["fr", "On vous force à faire ça ?", "threatened"],
+    // ------------------------------------------------------------------ personnel
+    ["fr", "Tu as peur de nous ?", "afraid"], ["fr", "Vous avez peur de quelque chose ?", "afraid"], ["fr", "Vous êtes blessée ?", "hurt"], ["fr", "Tu saignes ?", "hurt"], ["fr", "Vous êtes malade ?", "hurt"],
+    ["fr", "Tu as faim ?", "hungry"], ["fr", "Vous avez mangé aujourd'hui ?", "hungry"], ["fr", "Tu es fatigué ?", "tired"],
+    ["fr", "Vous voulez un peu d'eau ?", "offer"], ["fr", "Tu veux une cigarette ?", "offer"], ["fr", "T'aurais pas une clope ?", "cigarette"], ["fr", "Vous fumez ?", "cigarette"],
+    // ------------------------------------------------------------------ règles du jeu de rôle
+    ["fr", "Vous avez droit à un avocat", "lawyer"], ["fr", "Il vous faut un interprète ?", "interpreter"], ["fr", "Coopérez et tout se passera bien", "cooperate"],
+    ["fr", "Vous avez le droit de rester silencieux", "rights"], ["fr", "Patientez deux minutes", "wait"], ["fr", "Attendez un instant", "wait"],
+    ["fr", "Je te promets qu'il ne t'arrivera rien", "promise"], ["fr", "On va te protéger", "protect"], ["fr", "Il y a une prime pour ce genre d'info", "reward"],
+    ["fr", "Vous savez pourquoi nous sommes ici ?", "whyUs"],
+    // ------------------------------------------------------------------ hors sujet
+    ["fr", "Espèce de crétin", "insult"], ["fr", "T'es vraiment un abruti", "insult"], ["fr", "T'es qu'une mauviette", "mock"], ["fr", "Raconte-nous une blague", "joke"],
+    ["fr", "mdr", "laugh"], ["fr", "Haha", "laugh"], ["fr", "T'es une intelligence artificielle ?", "bot"], ["fr", "Tu crois aux fantômes ?", "absurd"],
+    ["fr", "Tu aimes la musique ?", "hobbies"], ["fr", "T'es célibataire ma belle ?", "flirt"], ["fr", "Belle maison que vous avez", "compliment"], ["fr", "Il est quelle heure ?", "time"],
+    ["fr", "Vous pensez quoi du gouvernement ?", "politics"],
+    // ------------------------------------------------------------------ oui / non, phrases qui ne demandent rien
+    ["fr", "Ouais d'accord", "yes"], ["fr", "Bien sûr que oui", "yes"], ["fr", "Non, pas du tout", "no"], ["fr", "Nan", "no"],
+    ["fr", "Je reviens dans cinq minutes.", "unknown"], ["fr", "Mon collègue arrive.", "unknown"], ["fr", "La radio ne marche plus.", "unknown"],
+
+    // ================================================================== anglais
+    ["en", "Hey there", "greet"], ["en", "Good evening sir", "greet"], ["en", "How are you doing today?", "howareyou"], ["en", "Lovely weather", "smalltalk"],
+    ["en", "Thanks a lot", "thanks"], ["en", "Sorry to bother you", "sorry"], ["en", "Bye now", "bye"], ["en", "Could you repeat that?", "repeat"], ["en", "Do you understand me?", "understand"],
+    ["en", "What do people call you?", "name"], ["en", "How old are you, sir?", "age"], ["en", "Do you have kids?", "family"], ["en", "Let me see your passport", "papers"],
+    ["en", "Have you got a phone?", "phone"], ["en", "What's your nationality?", "nation"], ["en", "Do you speak English?", "speak"],
+    ["en", "Where do you come from?", "origin"], ["en", "Who's your employer?", "employer"], ["en", "What do you do for work?", "job"], ["en", "Where are you heading?", "travel"],
+    ["en", "How long have you been standing here?", "since"], ["en", "Are you by yourself?", "with"], ["en", "Why are you out at this hour?", "lateHour"], ["en", "Where were you yesterday evening?", "alibi"],
+    ["en", "Do you come here every day?", "often"], ["en", "How long will you be staying?", "stayLong"], ["en", "Who are you waiting for?", "waitingFor"], ["en", "Is this your home?", "house"],
+    ["en", "What's in the bag?", "cargo"], ["en", "Anything to declare?", "declare"],
+    ["en", "I need to search you", "search"], ["en", "Are you carrying a weapon?", "weapons"], ["en", "Got any drugs on you?", "drugs"], ["en", "Is that your vehicle?", "vehicle"], ["en", "Open the boot please", "trunk"],
+    ["en", "Open your backpack", "bag"], ["en", "Hands where I can see them!", "handsup"], ["en", "Don't move!", "halt"], ["en", "Get on your knees!", "kneel"], ["en", "Come with me", "follow"],
+    ["en", "You're free to go", "leave"], ["en", "Step out of the car", "dismount"], ["en", "Drop the rifle!", "dropWeapon"], ["en", "Back off!", "stepBack"], ["en", "Come over here", "comeHere"],
+    ["en", "Turn around slowly", "turnAround"], ["en", "Sit down please", "sit"], ["en", "Shut up!", "quiet"], ["en", "Hurry up", "hurry"], ["en", "You can put your hands down", "handsDown"],
+    ["en", "I'll shoot you if you lie", "threat"], ["en", "Relax, we're friends", "calm"], ["en", "Do you need anything?", "help"], ["en", "Here, take this cash", "bribe"], ["en", "Stop lying to me", "confront"],
+    ["en", "What do you know about this?", "intel"], ["en", "Have you seen any armed men?", "seenArmed"], ["en", "Any insurgents nearby?", "seenArmed"], ["en", "Did a car pass by here?", "seenVehicles"],
+    ["en", "Seen any foreigners around?", "strangers"], ["en", "Is someone making bombs?", "explosives"], ["en", "Are there mines on this road?", "mines"], ["en", "Where is he hiding?", "whereIs"],
+    ["en", "Who's in charge here?", "leader"], ["en", "How many men were there?", "howMany"], ["en", "When did they leave?", "whenPassed"], ["en", "What happened here?", "happened"],
+    ["en", "Did you hear the shots?", "heard"], ["en", "Which way did they go?", "whereWent"], ["en", "What did he look like?", "describe"], ["en", "Is there a weapons cache here?", "cache"],
+    ["en", "Where is their camp?", "base"], ["en", "Any roadblocks ahead?", "checkpoints"], ["en", "Is it safe here?", "safety"], ["en", "Any problems in the village?", "problems"],
+    ["en", "Is the road to the north safe?", "roadSafe"], ["en", "Tell me about this village", "village"], ["en", "Do you have clean water?", "water"], ["en", "Do you have enough food?", "food"],
+    ["en", "Is there a doctor nearby?", "medical"], ["en", "What does the village need?", "needs"], ["en", "Where's the market?", "directions"], ["en", "What is this place called?", "whereHere"],
+    ["en", "Do you know this woman?", "knowPerson"], ["en", "Are your neighbors friendly?", "neighbors"], ["en", "Where is the village elder?", "chief"], ["en", "Do you trust the police?", "police"],
+    ["en", "What do you think of the soldiers?", "army"], ["en", "Do you support the rebels?", "rebelsView"], ["en", "Can we trust you?", "trustUs"], ["en", "Has anyone threatened you?", "threatened"],
+    ["en", "Are you scared of us?", "afraid"], ["en", "Are you injured?", "hurt"], ["en", "Are you hungry?", "hungry"], ["en", "You look exhausted", "tired"], ["en", "Would you like some water?", "offer"],
+    ["en", "Got a smoke?", "cigarette"], ["en", "Do you want a lawyer?", "lawyer"], ["en", "We'll find a translator", "interpreter"], ["en", "Will you cooperate with us?", "cooperate"],
+    ["en", "You have the right to remain silent", "rights"], ["en", "Hold on a minute", "wait"], ["en", "I promise you'll be fine", "promise"], ["en", "We will protect you", "protect"],
+    ["en", "There's a reward for information", "reward"], ["en", "Do you know who we are?", "whyUs"], ["en", "You moron", "insult"], ["en", "You're a coward", "mock"], ["en", "Tell me a joke", "joke"],
+    ["en", "lol", "laugh"], ["en", "Are you a robot?", "bot"], ["en", "Do you believe in aliens?", "absurd"], ["en", "Do you like football?", "hobbies"], ["en", "Are you single?", "flirt"],
+    ["en", "Nice house you have", "compliment"], ["en", "What time is it?", "time"], ["en", "What do you think of the government?", "politics"],
+    ["en", "Yeah sure", "yes"], ["en", "Nope", "no"], ["en", "My radio is broken.", "unknown"], ["en", "The convoy leaves at noon.", "unknown"]
+]

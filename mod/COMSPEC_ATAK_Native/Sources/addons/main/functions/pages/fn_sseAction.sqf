@@ -75,10 +75,9 @@ switch (_act) do {
             // (ou tout de suite si la capture a été refusée : sujet trop loin, capture déjà en cours).
             [_t] call comspec_overwatch_connect_fnc_sseCaptureFacePhoto;
             [{ !(missionNamespace getVariable ["COMSPEC_SsePerson_PhotoBusy", false]) }, {
-                [] call comspec_atak_native_fnc_open;
-                [{ ["SSE"] call comspec_atak_native_fnc_navigate; }, [], 0.1] call comspec_atak_native_fnc_waitAndExec;
+                ["SSE"] call comspec_atak_native_fnc_openApp;
             }, [], 5, {
-                [] call comspec_atak_native_fnc_open;
+                ["SSE"] call comspec_atak_native_fnc_openApp;
             }] call CBA_fnc_waitUntilAndExecute;
         }, [_t], 0.15] call comspec_atak_native_fnc_waitAndExec;
     };

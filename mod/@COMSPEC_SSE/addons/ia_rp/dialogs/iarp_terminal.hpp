@@ -1,9 +1,26 @@
 /*
-    Terminal « Parler à… » (fn_iarpUi) : historique de l'échange, saisie multi-ligne, commandes RP colorées, journal.
-    Grille 40 x 25 de la charte SSE (ui_macros.hpp), contrôles COMSPEC_SSE_Rsc* de l'addon ui. Aucun script par image.
+    Terminal « Parler à… » (fn_iarpUi) : en-tête (avatar, nom de l'IA, état, distance), onglets DISCUSSION / GUIDE /
+    JOURNAL, fil en bulles distinctes (moi à droite, l'IA à gauche, actions au centre), menu « Faire une action », saisie.
+    Grille 40 x 25 de la charte SSE (ui_macros.hpp) : suit la taille d'interface et le format d'écran ; aucun script par
+    image (bulles du fil créées à chaque nouveau message, fn_iarpUi « refresh »).
 */
 #define IARP_POS(X,Y,W,H) x = SSE_Q(SSE_X(X)); y = SSE_Q(SSE_Y(Y)); w = SSE_Q(SSE_W(W)); h = SSE_Q(SSE_H(H))
-#define IARP_REL(X,Y,W,H) x = SSE_Q(SSE_W(X)); y = SSE_Q(SSE_H(Y)); w = SSE_Q(SSE_W(W)); h = SSE_Q(SSE_H(H))
+
+// Classes créées par script (fil, guide) : texte de bulle, fond de bulle, exemple cliquable du guide.
+class COMSPEC_SSE_IarpBubbleText: COMSPEC_SSE_RscStructuredText {
+    colorBackground[] = SSE_C_NONE;
+    size = SSE_TXT_M;
+};
+class COMSPEC_SSE_IarpBubbleBg: COMSPEC_SSE_RscText {
+    colorBackground[] = SSE_C_PANEL_ALT;
+};
+class COMSPEC_SSE_IarpExample: COMSPEC_SSE_RscButtonNav {
+    style = 0;
+    sizeEx = SSE_TXT_S;
+    colorBackground[] = {0.11,0.14,0.13,1};
+    colorBackgroundActive[] = {0.17,0.32,0.21,1};
+    colorFocused[] = {0.17,0.32,0.21,1};
+};
 
 class COMSPEC_SSE_IarpTerminal {
     idd = 94600;
@@ -13,29 +30,37 @@ class COMSPEC_SSE_IarpTerminal {
     onUnload = "['onUnload'] call comspec_sse_fnc_iarpUi";
 
     class controlsBackground {
-        class Back: COMSPEC_SSE_RscBackground { IARP_POS(9,3,22,19); };
-        class Head: COMSPEC_SSE_RscHeader { IARP_POS(9,3,22,1.4); };
-        class Line: COMSPEC_SSE_RscAccentLine { IARP_POS(9,4.4,22,0.06); };
+        class Back: COMSPEC_SSE_RscBackground { IARP_POS(6,1.5,28,22); };
+        class Head: COMSPEC_SSE_RscHeader { IARP_POS(6,1.5,28,3.2); };
+        class Line: COMSPEC_SSE_RscAccentLine { IARP_POS(6,4.7,28,0.06); };
+        class ThreadBack: COMSPEC_SSE_RscText { idc = 94612; colorBackground[] = {0.035,0.045,0.05,0.9}; IARP_POS(6.5,6.4,27,10.6); };
     };
     class controls {
-        class Title: COMSPEC_SSE_RscText { idc = 94601; font = SSE_FONT_TITLE; colorText[] = SSE_C_ACCENT; IARP_POS(9.3,3.15,12.8,1.1); };
-        class TabTalk: COMSPEC_SSE_RscButtonNav { idc = 94603; text = "$STR_COMSPEC_IARP_TabTalk"; tooltip = "$STR_COMSPEC_IARP_TabTalk_D"; IARP_POS(22.2,3.2,4.1,1); action = "['tab', ['talk']] call comspec_sse_fnc_iarpUi"; };
-        class TabLog: COMSPEC_SSE_RscButtonNav { idc = 94604; text = "$STR_COMSPEC_IARP_TabLog"; tooltip = "$STR_COMSPEC_IARP_TabLog_D"; IARP_POS(26.4,3.2,3.3,1); action = "['tab', ['log']] call comspec_sse_fnc_iarpUi"; };
-        class Close: COMSPEC_SSE_RscButtonClose { idc = 94605; text = "X"; tooltip = "$STR_COMSPEC_IARP_Close_D"; IARP_POS(29.8,3.2,0.95,1); action = "closeDialog 2"; };
-        class Status: COMSPEC_SSE_RscLabel { idc = 94602; IARP_POS(9.3,4.6,21.4,0.9); };
+        class AvatarBg: COMSPEC_SSE_RscText { idc = 94640; colorBackground[] = {0.15,0.3,0.19,1}; IARP_POS(6.5,1.95,2.9,2.3); };
+        class AvatarTxt: COMSPEC_SSE_RscText { idc = 94641; style = 2; font = SSE_FONT_BOLD; sizeEx = SSE_Q(SSE_GH * 1.25); IARP_POS(6.5,1.95,2.9,2.3); };
+        class Title: COMSPEC_SSE_RscText { idc = 94601; font = SSE_FONT_TITLE; sizeEx = SSE_Q(SSE_GH * 1.15); colorText[] = SSE_C_TEXT; IARP_POS(9.8,1.8,22.3,1.4); };
+        class Status: COMSPEC_SSE_RscStructuredText { idc = 94602; colorBackground[] = SSE_C_NONE; size = SSE_Q(SSE_GH * 0.8); IARP_POS(9.8,3.2,22.3,1.2); };
+        class Close: COMSPEC_SSE_RscButtonClose { idc = 94605; text = "X"; tooltip = "$STR_COMSPEC_IARP_Close_D"; IARP_POS(32.4,1.85,1.27,0.95); action = "closeDialog 2"; };
 
-        class History: COMSPEC_SSE_RscControlsGroup {
-            idc = 94610;
-            IARP_POS(9.3,5.6,21.4,10.4);
-            class controls {
-                class Text: COMSPEC_SSE_RscStructuredText { idc = 94611; IARP_REL(0,0,21.2,10.4); colorBackground[] = SSE_C_NONE; };
-            };
+        class TabTalk: COMSPEC_SSE_RscButtonNav { idc = 94603; text = "$STR_COMSPEC_IARP_TabTalk"; tooltip = "$STR_COMSPEC_IARP_TabTalk_D"; IARP_POS(6.5,5.0,6.2,1.1); action = "['tab', ['talk']] call comspec_sse_fnc_iarpUi"; };
+        class TabGuide: COMSPEC_SSE_RscButtonNav { idc = 94606; text = "$STR_COMSPEC_IARP_TabGuide"; tooltip = "$STR_COMSPEC_IARP_TabGuide_D"; IARP_POS(12.9,5.0,4.6,1.1); action = "['tab', ['guide']] call comspec_sse_fnc_iarpUi"; };
+        class TabLog: COMSPEC_SSE_RscButtonNav { idc = 94604; text = "$STR_COMSPEC_IARP_TabLog"; tooltip = "$STR_COMSPEC_IARP_TabLog_D"; IARP_POS(17.7,5.0,5.2,1.1); action = "['tab', ['log']] call comspec_sse_fnc_iarpUi"; };
+
+        // Fil : bulles créées par script dans ce groupe (défilement jusqu'au dernier message).
+        class History: COMSPEC_SSE_RscControlsGroup { idc = 94610; IARP_POS(6.5,6.4,27,10.6); };
+
+        // Guide : thèmes à gauche, explication et exemples cliquables à droite (tirés du lexique, fn_iarpData « guide »).
+        class GuideThemes: COMSPEC_SSE_RscListBox {
+            idc = 94660;
+            sizeEx = SSE_TXT_S;
+            rowHeight = SSE_Q(SSE_H(1.15));
+            IARP_POS(6.5,6.4,8.4,10.6);
+            onLBSelChanged = "['theme', [_this select 1]] call comspec_sse_fnc_iarpUi";
         };
-        class PfxMe: COMSPEC_SSE_RscButtonNav { idc = 94621; text = "/me"; tooltip = "$STR_COMSPEC_IARP_PfxMe_D"; IARP_POS(9.3,16.2,2.6,1.05); action = "['prefix', ['me']] call comspec_sse_fnc_iarpUi"; };
-        class PfxDo: COMSPEC_SSE_RscButtonNav { idc = 94622; text = "/do"; tooltip = "$STR_COMSPEC_IARP_PfxDo_D"; IARP_POS(12,16.2,2.6,1.05); action = "['prefix', ['do']] call comspec_sse_fnc_iarpUi"; };
-        class PfxTry: COMSPEC_SSE_RscButtonNav { idc = 94623; text = "/try"; tooltip = "$STR_COMSPEC_IARP_PfxTry_D"; IARP_POS(14.7,16.2,2.6,1.05); action = "['prefix', ['try']] call comspec_sse_fnc_iarpUi"; };
-        class PfxTodo: COMSPEC_SSE_RscButtonNav { idc = 94624; text = "/todo"; tooltip = "$STR_COMSPEC_IARP_PfxTodo_D"; IARP_POS(17.4,16.2,3,1.05); action = "['prefix', ['todo']] call comspec_sse_fnc_iarpUi"; };
-        class Count: COMSPEC_SSE_RscLabel { idc = 94626; style = 1; IARP_POS(25.5,16.2,5.2,1.05); };
+        class GuideBody: COMSPEC_SSE_RscControlsGroup { idc = 94661; IARP_POS(15.2,6.4,18.3,10.6); };
+
+        class ActionBtn: COMSPEC_SSE_RscButtonNav { idc = 94650; text = "$STR_COMSPEC_IARP_ActionBtn"; tooltip = "$STR_COMSPEC_IARP_ActionBtn_D"; IARP_POS(6.5,17.3,9.0,1.0); sizeEx = SSE_TXT_S; action = "['actions'] call comspec_sse_fnc_iarpUi"; };
+        class Count: COMSPEC_SSE_RscLabel { idc = 94626; style = 1; IARP_POS(27.5,17.3,6,1.0); };
         class Input: COMSPEC_SSE_RscEdit {
             idc = 94620;
             style = 16;
@@ -43,21 +68,34 @@ class COMSPEC_SSE_IarpTerminal {
             autocomplete = "";
             lineSpacing = 1;
             tooltip = "$STR_COMSPEC_IARP_Input_D";
-            IARP_POS(9.3,17.4,17.8,3.2);
+            IARP_POS(6.5,18.5,21.4,3.0);
             onKeyDown = "['key', _this] call comspec_sse_fnc_iarpUi";
             onKeyUp = "['keyUp'] call comspec_sse_fnc_iarpUi";
         };
-        class Send: COMSPEC_SSE_RscButton { idc = 94625; text = "$STR_COMSPEC_IARP_Send"; tooltip = "$STR_COMSPEC_IARP_Send_D"; IARP_POS(27.3,17.4,3.4,3.2); action = "['send'] call comspec_sse_fnc_iarpUi"; };
-        class Hint: COMSPEC_SSE_RscLabel { idc = 94627; text = "$STR_COMSPEC_IARP_Hint"; IARP_POS(9.3,20.8,21.4,0.9); sizeEx = SSE_Q(SSE_GH * 0.68); };
+        class Send: COMSPEC_SSE_RscButton { idc = 94625; text = "$STR_COMSPEC_IARP_Send"; tooltip = "$STR_COMSPEC_IARP_Send_D"; IARP_POS(28.1,18.5,5.4,3.0); action = "['send'] call comspec_sse_fnc_iarpUi"; };
+        class Hint: COMSPEC_SSE_RscLabel { idc = 94627; text = "$STR_COMSPEC_IARP_Hint"; IARP_POS(6.5,21.75,27,0.9); sizeEx = SSE_Q(SSE_GH * 0.66); };
 
         class Log: COMSPEC_SSE_RscControlsGroup {
             idc = 94630;
-            IARP_POS(9.3,5.6,21.4,13.8);
+            IARP_POS(6.5,6.4,27,14.2);
             class controls {
-                class Text: COMSPEC_SSE_RscStructuredText { idc = 94631; IARP_REL(0,0,21.2,13.8); colorBackground[] = SSE_C_NONE; size = SSE_Q(SSE_GH * 0.74); };
+                class Text: COMSPEC_SSE_RscStructuredText { idc = 94631; x = 0; y = 0; w = SSE_Q(SSE_W(26.6)); h = SSE_Q(SSE_H(14.2)); colorBackground[] = SSE_C_NONE; size = SSE_Q(SSE_GH * 0.78); };
             };
         };
-        class Copy: COMSPEC_SSE_RscButton { idc = 94632; text = "$STR_COMSPEC_IARP_Copy"; tooltip = "$STR_COMSPEC_IARP_Copy_D"; IARP_POS(9.3,19.7,6.4,1.1); action = "['copy'] call comspec_sse_fnc_iarpUi"; };
-        class Refresh: COMSPEC_SSE_RscButtonNav { idc = 94633; text = "$STR_COMSPEC_IARP_Refresh"; tooltip = "$STR_COMSPEC_IARP_Refresh_D"; IARP_POS(15.9,19.7,5,1.1); action = "['tab', ['log']] call comspec_sse_fnc_iarpUi"; };
+        class Copy: COMSPEC_SSE_RscButton { idc = 94632; text = "$STR_COMSPEC_IARP_Copy"; tooltip = "$STR_COMSPEC_IARP_Copy_D"; IARP_POS(6.5,21.0,6.4,1.1); action = "['copy'] call comspec_sse_fnc_iarpUi"; };
+        class Refresh: COMSPEC_SSE_RscButtonNav { idc = 94633; text = "$STR_COMSPEC_IARP_Refresh"; tooltip = "$STR_COMSPEC_IARP_Refresh_D"; IARP_POS(13.1,21.0,5,1.1); action = "['tab', ['log']] call comspec_sse_fnc_iarpUi"; };
+        class Filter: COMSPEC_SSE_RscButtonNav { idc = 94634; text = ""; tooltip = "$STR_COMSPEC_IARP_Filter_D"; IARP_POS(18.3,21.0,7.2,1.1); action = "['filter'] call comspec_sse_fnc_iarpUi"; };
+
+        // Menu « Faire une action » : par-dessus le fil, juste au-dessus du bouton ; caché tant qu'on ne l'ouvre pas.
+        class ActionList: COMSPEC_SSE_RscListBox {
+            idc = 94651;
+            sizeEx = SSE_TXT_S;
+            rowHeight = SSE_Q(SSE_H(0.95));
+            colorBackground[] = {0.07,0.09,0.09,0.99};
+            IARP_POS(6.5,6.45,10.5,10.75);
+            onLBSelChanged = "['actionPick', [_this select 1]] call comspec_sse_fnc_iarpUi";
+        };
+        // Mesure de la largeur d'un texte (bulles ajustées à leur contenu) : jamais visible.
+        class Probe: COMSPEC_SSE_RscText { idc = 94699; IARP_POS(0,0,30,1); colorText[] = SSE_C_NONE; };
     };
 };

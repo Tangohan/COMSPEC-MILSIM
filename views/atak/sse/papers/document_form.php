@@ -20,15 +20,12 @@ $defaultOrigin = match ($identity['kind']) {
 };
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers/identites/' . (int) $identity['id'])) ?>"><?= $h($identity['ref']) ?></a> / <strong>Nouveau papier</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Référentiel // Nouveau papier</div>
         <h1><?= $h(C::label(C::DOC_TYPES, $docType)) ?> — <?= $h($identity['display_name']) ?></h1>
         <p>Le numéro proposé suit le format du pays et n’est attribué à aucun autre papier. Le papier est créé en brouillon : il ne part en jeu qu’une fois validé puis émis.</p>
     </div>
-    <div class="page-reference"><strong>Formulaire</strong> Réf. ATH-SSE-IDENT-DOC</div>
 </div>
 
 <?php if ($country === null): ?>

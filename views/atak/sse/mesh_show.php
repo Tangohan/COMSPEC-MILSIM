@@ -48,15 +48,9 @@ $kindColors = [
     'custom' => '#7dd3fc',
 ];
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/toiles')) ?>">Investigations</a> /
-    <strong><?= $h($mesh['reference_code'] ?? '') ?></strong>
-</div>
 
 <div class="page-heading sse-mesh-heading">
     <div>
-        <div class="page-heading-overline">Investigation // Graphe relationnel</div>
         <h1><?= $h($mesh['title'] ?? '') ?></h1>
         <p class="sse-mesh-heading-meta">
             <span class="<?= $h($classBadge) ?>"><?= $h($mesh['classification_label'] ?? '') ?></span>

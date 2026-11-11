@@ -12,14 +12,9 @@ foreach ($matches as $row) {
 $searchQuery = trim((string) ($searchQuery ?? ''));
 $entriesCount = count($entries);
 ?>
-<div class="breadcrumb">
-    Athena / SSE / Renseignement /
-    <strong>Croisements</strong>
-</div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Surveillance // Correspondances</div>
         <h1>Croisements</h1>
         <p>
             Correspondances probables entre fiches terrain et listes de surveillance
@@ -27,8 +22,6 @@ $entriesCount = count($entries);
         </p>
     </div>
     <div class="page-reference">
-        <strong>Vue // Croisements</strong>
-        Réf. ATH-SSE-CROISEMENTS
         <?php if ($canManage): ?>
             <div style="margin-top:.55rem">
                 <button type="button" class="btn" data-sse-modal-open="sse-modal-watchlist-add">
@@ -233,7 +226,6 @@ $entriesCount = count($entries);
         <?= \App\Core\Csrf::field() ?>
         <header class="sse-modal__head">
             <div>
-                <p class="sse-modal__kicker">Surveillance</p>
                 <h2>Ajouter une entrée surveillée</h2>
             </div>
             <button type="button" class="sse-modal__close" data-sse-modal-close aria-label="Fermer">×</button>
@@ -276,7 +268,6 @@ $entriesCount = count($entries);
         <?= \App\Core\Csrf::field() ?>
         <header class="sse-modal__head">
             <div>
-                <p class="sse-modal__kicker">Surveillance</p>
                 <h2>Retirer de la liste</h2>
             </div>
             <button type="button" class="sse-modal__close" data-sse-modal-close aria-label="Fermer">×</button>

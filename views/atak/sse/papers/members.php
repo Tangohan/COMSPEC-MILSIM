@@ -9,15 +9,12 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 require __DIR__ . '/_subnav.php';
 $yesNo = ['' => 'Tous', 'oui' => 'Oui', 'non' => 'Non'];
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers')) ?>">Identités &amp; documents</a> / <strong>Papiers des membres</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Registre // Membres de la communauté</div>
         <h1>Papiers des membres</h1>
         <p>Identités et papiers fictifs que chaque joueur porte en mission, kit de mission et contrôles subis. Seuls les papiers et le nom affiché sont montrés ici, jamais le dossier du membre.</p>
     </div>
-    <div class="page-reference"><strong>Vue // Registre</strong> Réf. ATH-SSE-IDENT-MBR</div>
 </div>
 
 <form class="toolbar" method="get" action="<?= $h(url('atak/sse/papiers/membres')) ?>">

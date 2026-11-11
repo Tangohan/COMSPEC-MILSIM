@@ -15,7 +15,12 @@
 params [["_tab", "overview", [""]]];
 if (!hasInterface) exitWith {};
 disableSerialization;
-if (!is3DEN) exitWith { hintSilent (("Tableau de bord SSE : disponible dans l'éditeur Eden (menu COMSPEC SSE).") call comspec_sse_fnc_tr); };
+// Hors Eden : notification du téléphone + RPT, jamais une alerte d'Arma.
+if (!is3DEN) exitWith {
+    private _m = "Tableau de bord SSE : disponible dans l'éditeur Eden (menu COMSPEC SSE).";
+    [_m, "INFO", "COMSPEC SSE", "SSE"] call comspec_sse_fnc_notify;
+    [_m, "WARN"] call comspec_sse_fnc_log;
+};
 // Action d'un menu d'Eden : la liste déroulante est encore ouverte, la fenêtre est créée juste après.
 if (!canSuspend) exitWith { [_tab] spawn { uiSleep 0.05; _this call comspec_sse_fnc_openDashboard; }; };
 private _parent = findDisplay 313;

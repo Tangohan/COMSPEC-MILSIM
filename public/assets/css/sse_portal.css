@@ -3948,6 +3948,7 @@ body.sse-theme-bureau .flash {
 
 @media (prefers-reduced-motion: reduce) {
     .sse-scan::after { animation: none; }
+    body.sse-gate *, body.sse-gate *::before, body.sse-gate *::after { animation: none !important; transition: none !important; }
 }
 
 /* Vignette absente : hachures, plut?t qu'un tiret dans le vide. */

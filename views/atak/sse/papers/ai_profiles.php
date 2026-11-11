@@ -12,15 +12,13 @@ $sides = ['civ' => 'Civils', 'west' => 'BLUFOR', 'east' => 'OPFOR', 'guer' => 'I
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-id-workshop.css')) . '">';
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers')) ?>">Identités &amp; documents</a> / <strong>Profils IA</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Préparation // Profils IA</div>
         <h1>Profils IA</h1>
         <p>Une personne prête à être reliée à une IA en jeu, depuis Zeus ou Eden : son identité et ses papiers viennent du registre, un contrôle la reconnaît sur Athena.</p>
     </div>
-    <div class="page-reference"><strong><?= count($profiles) ?> profil(s)</strong> Réf. ATH-SSE-IDENT-PRF</div>
+    <div class="page-reference"><strong><?= count($profiles) ?> profil(s)</strong></div>
 </div>
 
 <form class="panel idw-form" method="get" action="<?= $h(url('atak/sse/papiers/profils-ia')) ?>">

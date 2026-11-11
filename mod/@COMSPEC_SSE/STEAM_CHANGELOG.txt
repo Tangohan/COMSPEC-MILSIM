@@ -1,3 +1,45 @@
+[h1]COMSPEC SSE 1.8.0 — IA qui répondent à beaucoup plus de questions, réponses du maître du jeu / AIs answer far more questions, game master answers (10/11/2026)[/h1]
+[b]Relance Arma complètement. Demande COMSPEC ATAK 4.3.0.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.3.0.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Parler aux IA[/b] : trois fois plus de questions comprises (depuis quand, avec qui, où étiez-vous hier soir, avez-vous vu des véhicules ou des étrangers, comment va le village…). L'onglet GUIDE de la fenêtre « Parler à » les montre toutes.
+[*] [b]Ordres[/b] : « Lâchez votre arme », « Reculez », « Approchez », « Retournez-vous », « Asseyez-vous », « Ouvrez votre sac » : l'IA obéit ou refuse selon son caractère.
+[*] [b]Pas d'invention[/b] : une IA ne parle que de ce qu'elle sait ; un passant qui n'a rien vu le dit simplement.
+[*] [b]Maître du jeu[/b] : dans Eden ou Zeus, écrivez la réponse d'une IA à une question (selon qu'elle est calme, a peur ou est menacée), limitez ce qu'elle peut évoquer, ajoutez vos propres questions (un mot de passe, par exemple).
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Talking to AIs[/b]: three times more questions understood (how long, who with, where were you last night, did you see vehicles or strangers, how is the village…). The GUIDE tab of the "Talk to" window shows them all.
+[*] [b]Orders[/b]: "Drop your weapon", "Step back", "Come here", "Turn around", "Sit down", "Open your bag": the AI obeys or refuses depending on its character.
+[*] [b]No made-up stories[/b]: an AI only talks about what it knows; a passer-by who saw nothing simply says so.
+[*] [b]Game master[/b]: in Eden or Zeus, write an AI's answer to a question (calm, scared or threatened), limit what it may bring up, add your own questions (a password, for example).
+[/list]
+
+[h1]COMSPEC SSE 1.7.0 — IA qui répondent juste, vrais papiers, passage aux fichiers / AIs that answer right, real papers, records checks (10/11/2026)[/h1]
+[b]Relance Arma complètement. Demande COMSPEC ATAK 4.3.0.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.3.0.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Parler aux IA[/b] : une IA ne répond plus qu'une fois, sous le nom écrit sur ses papiers ; l'onglet GUIDE de la fenêtre « Parler à » donne des phrases à essayer.
+[*] [b]Civils[/b] : ils n'ont plus peur sans raison ; seuls une arme braquée sur eux, des tirs proches ou une scène violente les effraient, et ils se calment avec le temps.
+[*] [b]Papiers[/b] : cartes d'identité, passeports et permis ont un nouveau dessin proche des vrais, avec une vraie photo d'identité.
+[*] [b]Fichiers et SEEK II[/b] : vérifiez une personne ou un document dans l'app Fichiers du téléphone ; le lecteur biométrique donne un verdict clair.
+[*] [b]Zeus[/b] : clic droit sur une ou plusieurs IA, puis « SSE · Roleplay de l'IA », pour changer leur caractère, leurs papiers ou leur attitude.
+[*] [b]Identité Athena[/b] : votre identité Athena arrive en jeu même sans Zeus connecté.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Talking to AIs[/b]: an AI answers only once, under the name on its papers; the GUIDE tab of the "Talk to" window gives phrases to try.
+[*] [b]Civilians[/b]: they are no longer scared for no reason; only a weapon aimed at them, nearby shots or a violent scene frighten them, and they calm down over time.
+[*] [b]Papers[/b]: ID cards, passports and licences have a new design close to real ones, with a real ID photo.
+[*] [b]Records and SEEK II[/b]: check a person or a document in the phone's Records app; the biometric reader gives a clear verdict.
+[*] [b]Zeus[/b]: right-click one or more AIs, then "SSE · AI roleplay", to change their character, papers or attitude.
+[*] [b]Athena identity[/b]: your Athena identity reaches the game even with no Zeus online.
+[/list]
+
 [h1]COMSPEC SSE 1.6.1 — IA qui comprennent mieux, avouent, réagissent aux tirs / AIs that understand better, confess, react to gunfire (10/11/2026)[/h1]
 [b]Relance Arma complètement. Demande COMSPEC ATAK 4.2.1.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.2.1.[/b]
 

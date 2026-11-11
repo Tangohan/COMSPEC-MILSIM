@@ -57,7 +57,8 @@ private _seed = _n getOrDefault ["dirtSeed", 1];
 private _sig = format ["%1|%2|%3|%4|%5|%6|%7|%8", _counts, _seed, _rect, _phone, _l get "model", _stains apply { [_x select 0, _x select 1, round ((_x select 2) * 200), round ((_x select 3) * 200)] }, _glare, _l get "phoneTexture"];
 (uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) params ["_oldSig", "_ctrls"];
 if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}) then {
-    { ctrlDelete (_x select 1); } forEach _ctrls;
+    // Anciens contrôles supprimés après la création des nouveaux (fin du bloc) : pas d'image sans reflet ni coins.
+    private _oldCtrls = _ctrls;
     _ctrls = [];
     _rect params ["_rx", "_ry", "_rw", "_rh"];
     _phone params ["_px", "_py", "_pw", "_ph"];
@@ -202,6 +203,7 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
             };
         } forEach ["tl", "tr", "br", "bl"];
     };
+    { ctrlDelete (_x select 1); } forEach _oldCtrls;
 };
 // Opacité selon l'état (chaque seconde, sans recréer).
 private _off = (_hp getOrDefault ["state", "OK"]) isEqualTo "OFF";

@@ -20,11 +20,9 @@ $real = !empty($c['real_sim']);
 require __DIR__ . '/_subnav.php';
 $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/back-office-member-papers.css')) . '">';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers/pays')) ?>">Pays émetteurs</a> / <strong><?= $isEdit ? $h($c['name']) : 'Nouveau pays' ?></strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Référentiel // Pays émetteur</div>
         <h1><?= $isEdit ? $h($c['name']) . ' (' . $h($c['code']) . ')' : 'Nouveau pays émetteur' ?></h1>
         <?php if ($real): ?>
             <p>Pays réel stylisé, réservé à l’univers « Réaliste — simulation » de la communauté. Ses papiers restent des documents de jeu : gabarit générique, mention SIMULATION sur chaque face, aucune armoirie ni motif officiel, photos de personnages du jeu uniquement.</p>
@@ -32,7 +30,6 @@ $sseExtraStyles .= '<link rel="stylesheet" href="' . $h(asset_url('assets/css/ba
             <p>Un pays de jeu est toujours imaginaire. Son code ne doit pas être celui d’un pays réel, sauf dans un univers de fiction (SCP, Star Wars…) ou depuis les pays réels stylisés (univers réaliste-simulation).</p>
         <?php endif; ?>
     </div>
-    <div class="page-reference"><strong>Formulaire</strong> Réf. ATH-SSE-IDENT-PAYS</div>
 </div>
 
 <form class="panel" method="post" enctype="multipart/form-data" action="<?= $h(url('atak/sse/papiers/pays' . ($isEdit ? '/' . (int) $c['id'] : ''))) ?>">

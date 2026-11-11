@@ -22,7 +22,7 @@ switch (_act) do {
             ["warn", "Punir", "Avertissement…", "Bandeau rouge en plein écran avec votre texte, bip d'alarme."],
             ["msg", "Punir", "Message du commandement…", "Bandeau bleu en plein écran et notification avec votre texte."],
             ["glitch", "Punir", "Écran qui bugue (30 s)", "Parasites et bandes de couleur sur l'écran du téléphone."],
-            ["noise", "Punir", "Alarme stridente (20 s)", "Le téléphone sonne fort : les joueurs à 60 m l'entendent."],
+            ["noise", "Punir", "Sirène d'alarme (20 s)", "Le téléphone hurle une sirène d'alarme : les joueurs à 60 m l'entendent."],
             ["buzz", "Punir", "Vibrations à répétition", "Le téléphone vibre une dizaine de fois."],
             ["jam30", "Brouiller", "Brouillage léger (30 %)", "Débit réduit, données qui traînent."],
             ["jam70", "Brouiller", "Brouillage fort (70 %)", "Presque plus de réseau, GPS qui dérive."],
@@ -62,8 +62,9 @@ switch (_act) do {
     };
     case "feedback": {
         private _t = (_args param [0, ""]) call comspec_atak_native_fnc_tr;
-        if (!isNil "zen_common_fnc_showMessage") exitWith { [_t] call zen_common_fnc_showMessage; };
-        [getAssignedCuratorLogic player, _t] call BIS_fnc_showCuratorFeedbackMessage;
+        // Bandeau ZEN (interface du mod ZEN) ; sans ZEN, centre de notifications du téléphone (jamais le message natif du curateur d'Arma).
+        if (!isNil "zen_common_fnc_showMessage") exitWith { [_t regexReplace ["%", "%%"]] call zen_common_fnc_showMessage; };
+        ["INFO", _args param [0, ""], 6, 20, "ZEUS"] call comspec_atak_native_fnc_notify;
     };
     case "apply": {
         _args params [["_id", ""], ["_units", []], ["_int", -1], ["_dur", 0], ["_msg", ""]];

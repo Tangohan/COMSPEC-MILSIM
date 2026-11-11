@@ -1,6 +1,6 @@
 /*
     Inspecteur de lien (mode développeur, fn_devMesh) : viser deux nœuds, lire le détail du bilan radio pour recalibrer
-    les seuils en jeu. Sortie : fenêtre d'aide du jeu et RPT.
+    les seuils en jeu. Sortie : RPT (rapport complet) et centre de notifications du téléphone (jamais le hint d'Arma).
       "actions" : ajoute ou retire les deux actions de visée sur le joueur local
       "pick"    : retient le nœud le plus proche du réticule ; au deuxième, écrit le rapport
       "report"  [nœud A, nœud B] (entrées de "snapshot" de fn_devMesh) -> texte du rapport
@@ -22,7 +22,8 @@ switch (_act) do {
     };
     case "pick": {
         private _s = ["snapshot"] call comspec_atak_native_fnc_devMesh;
-        if ((count _s) isEqualTo 0) exitWith { hintSilent "Aucun graphe sur ce client."; false };
+        private _say = { params ["_t"]; diag_log format ["[COMSPEC ATAK NATIVE][MESH] Inspecteur : %1", _t]; ["INFO", _t, 5, 20, "WAVERELAY"] call comspec_atak_native_fnc_notify; };
+        if ((count _s) isEqualTo 0) exitWith { ["Aucun graphe sur ce client."] call _say; false };
         private _best = [];
         private _bd = 0.25;
         {
@@ -31,16 +32,17 @@ switch (_act) do {
             private _d = (_sc distance2D [0.5, 0.5]);
             if (_d < _bd) then { _bd = _d; _best = _x; };
         } forEach (_s get "nodes");
-        if (_best isEqualTo []) exitWith { hintSilent "Aucun nœud près du réticule."; false };
+        if (_best isEqualTo []) exitWith { ["Aucun nœud près du réticule."] call _say; false };
         private _first = uiNamespace getVariable ["COMSPEC_ATAK_MeshInspectA", []];
         if (_first isEqualTo [] || {(_first select 0) isEqualTo (_best select 0)}) exitWith {
             uiNamespace setVariable ["COMSPEC_ATAK_MeshInspectA", _best];
-            hintSilent format ["Nœud A : %1\nVisez le nœud B.", _best select 2];
+            [format ["Nœud A : %1 · Visez le nœud B.", _best select 2]] call _say;
             true
         };
         uiNamespace setVariable ["COMSPEC_ATAK_MeshInspectA", []];
+        // Le rapport est écrit ligne par ligne au RPT par "report" ; le téléphone n'en reçoit qu'un résumé.
         private _txt = ["report", [_first, _best]] call comspec_atak_native_fnc_devLinkInspect;
-        hintSilent _txt;
+        ["INFO", (_txt splitString (toString [10])) joinString " · ", 10, 20, "WAVERELAY"] call comspec_atak_native_fnc_notify;
         true
     };
     case "report": {

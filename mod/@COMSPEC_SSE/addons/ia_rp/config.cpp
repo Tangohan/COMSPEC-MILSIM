@@ -45,6 +45,9 @@ class CfgFunctions {
             class iarpEden {};
             class iarpModule {};
             class iarpZen {};
+            class iarpName {};
+            class iarpAnswers {};
+            class iarpAnswersUi {};
         };
     };
 };
@@ -69,14 +72,34 @@ class Extended_PostInit_EventHandlers {
     };
 };
 
-// --- Atelier IA : catégorie des modules, module Eden, attribut « Profil IA RP » (unités et module).
-class CfgFactionClasses {
-    class COMSPEC_Cat_IaRp {
-        displayName = "$STR_COMSPEC_IARP_Cat_Modules";
-        priority = 2;
-        side = 7;
+// Manuel SSE (Échap › Manuel de terrain › COMSPEC SSE) : chapitre « Parler aux IA ». La liste complète des phrases, par
+// thème et cliquable, est l'onglet GUIDE de la fenêtre « Parler à » (tirée du lexique : elle ne peut pas diverger).
+class CfgHints {
+    class COMSPEC_SSE {
+        class IaRpTalk {
+            displayName = "$STR_COMSPEC_IARP_Man_T";
+            displayNameShort = "$STR_COMSPEC_IARP_Man_T";
+            description = "$STR_COMSPEC_IARP_Man_D";
+            tip = "$STR_COMSPEC_IARP_Man_Tip";
+            arguments[] = {};
+            image = "\a3\ui_f\data\igui\cfg\simpleTasks\types\talk_ca.paa";
+            noImage = 0;
+        };
+        // Pour le maître du jeu : réponses écrites par lui, ce qu'une IA peut évoquer, thèmes interdits.
+        class IaRpAnswers {
+            displayName = "$STR_COMSPEC_IARP_ManA_T";
+            displayNameShort = "$STR_COMSPEC_IARP_ManA_T";
+            description = "$STR_COMSPEC_IARP_ManA_D";
+            tip = "$STR_COMSPEC_IARP_ManA_Tip";
+            arguments[] = {};
+            image = "\a3\ui_f\data\igui\cfg\simpleTasks\types\talk_ca.paa";
+            noImage = 0;
+        };
     };
 };
+
+// --- Atelier IA : module Eden (catégorie « COMSPEC SSE » des modules de config, addon main), attribut « Profil IA RP »
+// (unités et module). Les modules et le menu ZEN du Zeus : fn_iarpZen.
 
 class CfgVehicles {
     class Logic;
@@ -86,7 +109,7 @@ class CfgVehicles {
         scope = 2;
         scopeCurator = 1;
         displayName = "$STR_COMSPEC_IARP_M_Name";
-        category = "COMSPEC_Cat_IaRp";
+        category = "COMSPEC_Cat_Sse";
         function = "comspec_sse_fnc_iarpModule";
         functionPriority = 1;
         isGlobal = 0;
@@ -195,6 +218,8 @@ class COMSPEC_SSE_RscButtonClose;
 class COMSPEC_SSE_RscEdit;
 class COMSPEC_SSE_RscStructuredText;
 class COMSPEC_SSE_RscControlsGroup;
+class COMSPEC_SSE_RscListBox;
 
 #include "dialogs\iarp_terminal.hpp"
 #include "dialogs\iarp_workshop.hpp"
+#include "dialogs\iarp_answers.hpp"

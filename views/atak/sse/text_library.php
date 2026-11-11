@@ -46,16 +46,10 @@ $filterHref = static function (array $overrides) use ($filterCat, $filterCtx, $f
     return url('atak/sse/bibliotheque') . ($params !== [] ? '?' . http_build_query($params) : '');
 };
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/documents')) ?>">Rédaction</a> /
-    <strong>Mentions officielles</strong>
-</div>
 
 <section class="sse-desk-hero" aria-labelledby="sse-lib-adm-title">
     <div class="sse-desk-hero__main">
         <div class="sse-desk-hero__kicker">
-            <span class="interest-hero__ref">ATH-SSE-BIBLIO</span>
             <span class="badge badge--gray">Administrable</span>
         </div>
         <h1 id="sse-lib-adm-title">Bibliothèque rédactionnelle</h1>

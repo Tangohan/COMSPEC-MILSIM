@@ -977,6 +977,7 @@ return function (Router $router) {
     $router->post('/back-office/renseignement/acces/{id}/revoquer', [\App\Controllers\Admin\AdminSseAccessController::class, 'revoke'], [AuthMiddleware::class]);
     $router->get('/back-office/renseignement/codes', [SsePortalController::class, 'staffEnter'], [AuthMiddleware::class]);
     $router->get('/back-office/renseignement', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/renseignement/acces')), [AuthMiddleware::class]);
+    $router->get('/atak/sse/accueil', [SsePortalController::class, 'home'], $mwSsePortal);
     $router->get('/atak/sse/operations', [SsePortalController::class, 'operations'], $mwSsePortal);
     $router->get('/atak/sse/workspace', [SseIntelligenceWorkspaceController::class, 'show'], $mwSsePortal);
     $router->post('/atak/sse/workspace/inbox/decide', [SseIntelligenceWorkspaceController::class, 'inboxDecide'], $mwSsePortal);
@@ -1014,6 +1015,15 @@ return function (Router $router) {
     $router->post('/atak/sse/papiers/controles/reglages', [\App\Controllers\Web\SseIdentityRegistryController::class, 'checksSettings'], $mwSsePortal);
     $router->get('/atak/sse/papiers/tableau', [\App\Controllers\Web\SseIdentityRegistryController::class, 'dashboard'], $mwSsePortal);
     $router->get('/atak/sse/papiers/controles/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'checkShow'], $mwSsePortal);
+    // RENS › Identités & documents › Passage aux fichiers (QW, QV, QA, QB), journal, mentions, fiches SEEK II.
+    $router->get('/atak/sse/fichiers', [\App\Controllers\Web\SseFileController::class, 'index'], $mwSsePortal);
+    $router->get('/atak/sse/fichiers/requete', [\App\Controllers\Web\SseFileController::class, 'query'], $mwSsePortal);
+    $router->get('/atak/sse/fichiers/journal', [\App\Controllers\Web\SseFileController::class, 'journal'], $mwSsePortal);
+    $router->get('/atak/sse/fichiers/seek', [\App\Controllers\Web\SseFileController::class, 'seekIndex'], $mwSsePortal);
+    $router->get('/atak/sse/fichiers/mentions', [\App\Controllers\Web\SseFileController::class, 'mentionsIndex'], $mwSsePortal);
+    $router->post('/atak/sse/fichiers/mentions', [\App\Controllers\Web\SseFileController::class, 'mentionStore'], $mwSsePortal);
+    $router->post('/atak/sse/fichiers/mentions/{id}/lever', [\App\Controllers\Web\SseFileController::class, 'mentionLift'], $mwSsePortal);
+    $router->post('/atak/sse/fichiers/documents/{id}/signalement', [\App\Controllers\Web\SseFileController::class, 'documentReport'], $mwSsePortal);
     // Papiers des membres (accès direct RENS, sans droit Effectifs) : mêmes actions que l'onglet de la fiche membre.
     $router->get('/atak/sse/papiers/membres', [\App\Controllers\Web\SseIdentityRegistryController::class, 'membersIndex'], $mwSsePortal);
     $router->get('/atak/sse/papiers/membres/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'memberShow'], $mwSsePortal);

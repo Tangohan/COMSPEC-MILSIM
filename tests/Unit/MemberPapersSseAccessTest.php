@@ -139,6 +139,8 @@ final class MemberPapersSseAccessTest extends TestCase
         self::assertStringContainsString("Csrf::validate((string) \$request->input('_csrf_token', ''))", $c);
         self::assertStringContainsString('->isGuest()', $c);
         self::assertSame(url('atak/sse/papiers/membres/7'), MemberIdentityPapersController::baseUrl(7, true));
-        self::assertStringContainsString("['membres', 'Papiers des membres']", self::read('views/atak/sse/papers/_subnav.php'));
+        // Lien dans la navigation du bureau, réservé au même droit que la page.
+        self::assertContains('atak/sse/papiers/membres', array_column(\App\Support\SsePortalNav::sections(false, false, false, true)[5]['items'], 'path'));
+        self::assertNotContains('atak/sse/papiers/membres', array_column(\App\Support\SsePortalNav::sections(false, false, false, false)[5]['items'], 'path'));
     }
 }

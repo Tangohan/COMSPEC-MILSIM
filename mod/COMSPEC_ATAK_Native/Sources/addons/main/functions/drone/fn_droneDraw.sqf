@@ -5,6 +5,8 @@
     Appelé depuis fn_mapOnDraw. Params : [contrôle carte]
 */
 params ["_map"];
+// UCAV commandés de mon camp (fn_ucav) : orbite, zone de Rechercher et tuer, frappe en cours, cibles en file.
+["draw", _map] call comspec_atak_native_fnc_ucav;
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _sq = "#(argb,8,8,3)color(1,1,1,1)";
 

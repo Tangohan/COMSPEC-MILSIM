@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- COMSPEC SSE, addon extensions : textes fixes de la fenêtre « SSE ROLEPLAY · Extensions » (anglais, français).
+     Les textes posés par SQF (fn_docExtWindow, fn_docExtMenu) sont écrits en français et traduits par comspec_sse_fnc_tr. -->
+<Project name="COMSPEC_SSE">
+    <Package name="extensions">
+        <Key ID="STR_COMSPEC_SSE_EXT_Close">
+            <Original>Close</Original>
+            <English>Close</English>
+            <French>Fermer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_Disable">
+            <Original>Disable</Original>
+            <English>Disable</English>
+            <French>Désactiver</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_Enable">
+            <Original>Enable</Original>
+            <English>Enable</English>
+            <French>Activer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_Models">
+            <Original>Document templates</Original>
+            <English>Document templates</English>
+            <French>Modèles de documents</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_Title">
+            <Original>SSE ROLEPLAY · Extensions</Original>
+            <English>SSE ROLEPLAY · Extensions</English>
+            <French>SSE ROLEPLAY · Extensions</French>
+        </Key>
+    </Package>
+</Project>
