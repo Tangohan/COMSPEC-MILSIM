@@ -180,10 +180,10 @@ switch (_mode) do {
         private _title = ["COMSPEC_RscStructuredText", [_xi + _W * 0.006, _yi + _H * 0.006, _wi * 0.36, _th], "title"] call _mk;
         // Heures ZULU et locale, liaison radio, état du flux ; FLASH du poste ; prise du poste.
         private _clock = ["COMSPEC_RscStructuredText", [_xi + _wi * 0.35, _yi + _H * 0.008, _wi * 0.31, _th], "clock"] call _mk;
-        private _fe = ["COMSPEC_RscEdit", [_xi + _wi * 0.665, _yi + _H * 0.008, _wi * 0.1, _th - _H * 0.016], "flashTxt"] call _mk;
+        private _fe = ["COMSPEC_RscEdit", [_xi + _wi * 0.665, _yi + _H * 0.008, _wi * 0.08, _th - _H * 0.016], "flashTxt"] call _mk;
         _fe ctrlSetTooltip (("Texte du FLASH : affiché en rouge sur tous les écrans et PC du poste pendant 3 minutes, et inscrit à la main courante. Exemple : CONTACT NORD, TOUS AU ABRI") call comspec_atak_native_fnc_tr);
-        ["flashGo", [_xi + _wi * 0.768, _yi + _H * 0.006, _W * 0.045, _th - _H * 0.012], "FLASH", { ["act", "flash"] call comspec_atak_native_fnc_tocLaptop; }, true, "Diffuse le FLASH sur tous les écrans et PC du poste du camp"] call _btn;
-        ["postGo", [_xi + _wi * 0.768 + _W * 0.047, _yi + _H * 0.006, _W * 0.07, _th - _H * 0.012], "PRENDRE LE POSTE", { ["act", "login"] call comspec_atak_native_fnc_tocLaptop; }, false, "Inscrit votre nom au poste (barre du haut des PC, main courante) ; un second clic libère le poste"] call _btn;
+        ["flashGo", [_xi + _wi * 0.748, _yi + _H * 0.006, _W * 0.045, _th - _H * 0.012], "FLASH", { ["act", "flash"] call comspec_atak_native_fnc_tocLaptop; }, true, "Diffuse le FLASH sur tous les écrans et PC du poste du camp"] call _btn;
+        ["postGo", [_xi + _wi * 0.748 + _W * 0.047, _yi + _H * 0.006, _W * 0.09, _th - _H * 0.012], "PRENDRE LE POSTE", { ["act", "login"] call comspec_atak_native_fnc_tocLaptop; }, false, "Inscrit votre nom au poste (barre du haut des PC, main courante) ; un second clic libère le poste"] call _btn;
         ["close", [_xi + _wi - _W * 0.07, _yi + _H * 0.006, _W * 0.066, _th - _H * 0.012], "FERMER", { closeDialog 0; }, false, "Fermer le PC (Échap)"] call _btn;
         // Carte : 66 % de la largeur.
         private _sb = _H * 0.034;
@@ -1022,12 +1022,12 @@ switch (_mode) do {
         private _radio = switch (true) do {
             case (!isNil "acre_api_fnc_getCurrentRadioList"): {
                 private _nr = count (["radios"] call comspec_atak_native_fnc_mpu5);
-                format ["<t color='%1'>● ACRE2 · %2 radio(s)</t>", ["#e0b040", "#5cc76b"] select (_nr > 0), _nr]
+                format ["<t color='%1'>● ACRE2</t>", ["#e0b040", "#5cc76b"] select (_nr > 0)]
             };
             case (!isNil "TFAR_fnc_activeSwRadio"): { "<t color='#5cc76b'>● TFAR</t>" };
             default { "<t color='#6f7773'>● SANS RADIO</t>" };
         };
-        (_ui get "clock") ctrlSetStructuredText parseText ((format ["<t align='right' size='1.05'><t font='COMSPEC_BarlowBold'>%1</t> <t color='#8a9a93'>ZULU</t>  <t font='COMSPEC_BarlowBold'>%2</t> <t color='#8a9a93'>LOCAL</t>  %3  %4</t>",
+        (_ui get "clock") ctrlSetStructuredText parseText ((format ["<t align='right' size='0.95'><t font='COMSPEC_BarlowBold'>%1</t> <t color='#8a9a93'>ZULU</t>  <t font='COMSPEC_BarlowBold'>%2</t> <t color='#8a9a93'>LOCAL</t>  %3  %4</t>",
             ["zulu"] call comspec_atak_native_fnc_tocRoom, [dayTime, "HH:MM:SS"] call BIS_fnc_timeToString, _radio, _live]) call comspec_atak_native_fnc_tr);
         private _cnt = [0, 0, 0, 0];
         { private _f = (_x select 4) min 3; _cnt set [_f, (_cnt select _f) + (_x param [8, 1])]; } forEach _nodes;

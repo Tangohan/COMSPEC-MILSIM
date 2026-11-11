@@ -9,6 +9,9 @@ if !("toc" call AT_fnc_groupe) exitWith {};
     private _side = str side group player;
     private _base = getPosATL player;
     private _dir = getDir player;
+    // Terrain dégagé (rien entre le joueur et les écrans : un buisson masquait l'écran satellite au premier passage).
+    private _open = [getPos player, 0, 150, 12, 0, 0.15, 0] call BIS_fnc_findSafePos;
+    player setPosATL [_open select 0, _open select 1, 0];
     // Groupe allié « ALPHA TOC » à 90 m devant, sur un terrain libre, chaque membre avec un téléphone ATAK.
     private _gp = (player getPos [90, _dir]);
     _gp = [_gp, 0, 60, 4, 0, 0.3, 0] call BIS_fnc_findSafePos;
@@ -53,9 +56,9 @@ if !("toc" call AT_fnc_groupe) exitWith {};
     format ["projection des membres d'ALPHA TOC (u, v, largeur) : %1", _pr] call AT_fnc_info;
     "écran SAT : image aérienne en direct, cadres bleus et indicatifs sur les trois soldats d'ALPHA TOC, bandeau Lecture seule" call AT_fnc_visuel;
     ["toc_sat_jour"] call AT_fnc_shot;
-    ["do", [_side, "sat", [0, "mode", "NV"], "Autotest", getPlayerUID player]] call comspec_atak_native_fnc_tocRoom;
+    ["do", [_side, "sat", [0, "mode", "TI"], "Autotest", getPlayerUID player]] call comspec_atak_native_fnc_tocRoom;
     uiSleep 3;
-    ["toc_sat_nuit"] call AT_fnc_shot;
+    ["toc_sat_thermique"] call AT_fnc_shot;
     [_scr select 1] call _look;
     "écran horloge : heure ZULU et locale en grand, trois chronos (H-HOUR en H-, RELÈVE en -, ALPHA EN POSITION en marche)" call AT_fnc_visuel;
     ["toc_horloge"] call AT_fnc_shot;
@@ -66,10 +69,15 @@ if !("toc" call AT_fnc_groupe) exitWith {};
     ["open", _scr select 1] call comspec_atak_native_fnc_tocLaptop;
     [{ !isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull]) }, 6] call AT_fnc_wait;
     [!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull]), "PC du poste non ouvert"] call AT_fnc_check;
+    // Plein jour : image en couleurs (la vision nocturne sature en blanc sous le soleil), puis thermique.
+    ["do", [_side, "sat", [0, "mode", "DAY"], "Autotest", getPlayerUID player]] call comspec_atak_native_fnc_tocRoom;
     ["tab", "SAT"] call comspec_atak_native_fnc_tocLaptop;
     uiSleep 4;
-    "PC du poste, onglet SAT : image satellite en vision nocturne, cadres sur ALPHA TOC, bandeau Vous avez la main" call AT_fnc_visuel;
+    "PC du poste, onglet SAT : image satellite en couleurs puis thermique, cadres sur ALPHA TOC, bandeau Vous avez la main" call AT_fnc_visuel;
     ["toc_pc_sat"] call AT_fnc_shot;
+    ["do", [_side, "sat", [0, "mode", "TI"], "Autotest", getPlayerUID player]] call comspec_atak_native_fnc_tocRoom;
+    uiSleep 2;
+    ["toc_pc_sat_thermique"] call AT_fnc_shot;
     ["tab", "CHRONOS"] call comspec_atak_native_fnc_tocLaptop;
     uiSleep 1.5;
     ["toc_pc_chronos"] call AT_fnc_shot;
