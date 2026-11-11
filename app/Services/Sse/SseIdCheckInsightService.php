@@ -59,6 +59,18 @@ final class SseIdCheckInsightService
         'mrz_viz_dob' => 'Date de naissance de la bande MRZ différente du recto',
         'mrz_viz_name' => 'Nom de la bande MRZ différent du recto',
         'unknown_number' => 'Numéro jamais délivré',
+        // Contrôle et présentation des papiers entre joueurs (mod SSE, fn_idP2pClient) : niveau N0 « non fait ».
+        'p2p' => 'Contrôle joueur à joueur',
+        'p2p_accepted' => 'Papiers présentés à la demande',
+        'p2p_refused' => 'Refus de présenter ses papiers',
+        'p2p_no_answer' => 'Pas de réponse à la demande',
+        'p2p_presented' => 'Papiers présentés de sa propre initiative',
+        'p2p_show' => 'Papiers montrés',
+        'p2p_give' => 'Papiers remis en main',
+        'p2p_reason_no_papers' => 'Motif : n’a pas ses papiers sur lui',
+        'p2p_reason_not_now' => 'Motif : pas maintenant',
+        'p2p_reason_no_authority' => 'Motif : conteste l’autorité du contrôleur',
+        'p2p_reason_superior' => 'Motif : renvoie vers son supérieur',
     ];
 
     private Database $db;
@@ -115,6 +127,11 @@ final class SseIdCheckInsightService
             $readable = [];
             foreach (array_slice($raw, 0, 12) as $c) {
                 if (is_scalar($c) && (string) $c !== '') {
+                    // Nombre de papiers présentés entre joueurs : « p2p_docs:3 ».
+                    if (preg_match('/^p2p_docs:(\d{1,2})$/', (string) $c, $m) === 1) {
+                        $readable[] = (int) $m[1] > 1 ? (int) $m[1] . ' papiers présentés' : '1 papier présenté';
+                        continue;
+                    }
                     $readable[] = self::CODES[(string) $c] ?? (string) $c;
                 }
             }
