@@ -545,6 +545,8 @@ if (["on"] call comspec_atak_native_fnc_fireSupport) then { ["scan"] call comspe
 // Salle TOC : réponse du poste à une demande (téléphone du demandeur, fn_tocRoom).
 ["initClient"] call comspec_atak_native_fnc_tocRoom;
 ["initClient"] call comspec_atak_native_fnc_tocHall;
+// Écrans TOC : version du mod du serveur contre celle de ce poste, une ligne au journal à la connexion (fn_tocConfig).
+["initClient"] call comspec_atak_native_fnc_tocConfig;
 // Configuration locale (config.json, fn_localCfg) : mes numéros publiés aux autres joueurs, aussi après une réapparition
 // ou un changement du service Athéna.
 [{ !isNull player }, { ["apply"] call comspec_atak_native_fnc_localCfg; }] call CBA_fnc_waitUntilAndExecute;

@@ -26,7 +26,9 @@ final class AtakTocPostTest extends TestCase
         self::assertStringContainsString('["castWait", [_a, 0]] call _fn', $cast);
         self::assertStringContainsString('case "castWait":', $cast);
         self::assertStringContainsString("Cet objet n'est pas encore un écran", $cast);
-        self::assertStringContainsString("L'écran n'a pas répondu", $cast);
+        // Délai dépassé : la vraie raison (versions du mod du serveur et du joueur, fn_tocConfig), plus un message vague.
+        self::assertStringContainsString('("Diffusion annulée") call comspec_atak_native_fnc_tr, _why]', $cast);
+        self::assertStringContainsString('private _why = ["reason"] call comspec_atak_native_fnc_tocConfig;', $cast);
         // Écran noir muet remplacé par la raison, écrite sur l'écran.
         self::assertStringContainsString('COMSPEC_ATAK_ScreenMsg', $cast);
         self::assertStringContainsString('COMSPEC_ATAK_ScreenWhy', $cast);

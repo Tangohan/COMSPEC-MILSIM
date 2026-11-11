@@ -178,8 +178,8 @@ switch (_act) do {
         // Écran, preuve ou caisse : fenêtre de configuration (fn_zeusObject).
         private _objOf = {
             params ["", ["_objs", []], "", "", "", ["_hover", objNull]];
-            private _o = (_objs select { (["kind", [_x]] call comspec_atak_native_fnc_zeusObject) isNotEqualTo "" }) param [0, objNull];
-            if (isNull _o && {_hover isEqualType objNull} && {(["kind", [_hover]] call comspec_atak_native_fnc_zeusObject) isNotEqualTo ""}) then { _o = _hover; };
+            private _o = (_objs select { (["kind", [_x, true]] call comspec_atak_native_fnc_zeusObject) isNotEqualTo "" }) param [0, objNull];
+            if (isNull _o && {_hover isEqualType objNull} && {(["kind", [_hover, true]] call comspec_atak_native_fnc_zeusObject) isNotEqualTo ""}) then { _o = _hover; };
             _o
         };
         missionNamespace setVariable ["COMSPEC_ATAK_ZeusObjOf", _objOf];
@@ -187,6 +187,11 @@ switch (_act) do {
             ["request", [_this call (missionNamespace getVariable "COMSPEC_ATAK_ZeusObjOf")]] call comspec_atak_native_fnc_zeusObject;
         }, { !isNull (_this call (missionNamespace getVariable "COMSPEC_ATAK_ZeusObjOf")) }] call comspec_atak_native_fnc_zenAction;
         [_objCfg, [], 8] call zen_context_menu_fnc_addAction;
+        // PC du poste TOC depuis le Zeus : sur l'écran visé s'il y en a un, sinon sans objet (fn_tocConfig « openPc »).
+        private _tocPc = ["comspec_atak_zeus_tocpc", "Ouvrir le PC du poste TOC", "\z\comspec_atak_native\addons\main\data\app_toc.paa", {
+            [{ ["openPc", _this] call comspec_atak_native_fnc_tocConfig; }, _this call (missionNamespace getVariable "COMSPEC_ATAK_ZeusObjOf")] call comspec_atak_native_fnc_nextFrame;
+        }, { true }] call comspec_atak_native_fnc_zenAction;
+        [_tocPc, [], 4] call zen_context_menu_fnc_addAction;
         private _groups = [];
         {
             _x params ["_id", "_grp", "_label", "", ["_modOnly", false]];

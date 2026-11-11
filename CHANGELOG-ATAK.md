@@ -53,6 +53,32 @@ EN : The worn phone map zoom stays centred on you
 - `fn_mapZoom` : centre recalculé à chaque image (position GPS du moment, unité suivie, ou centre visible fixe), cible par la fonction pure `fn_mapZoomAim` (décalage centre interne / visible normalisé par l'échelle, gardé d'un cran à l'autre), `comspec_lastAim` tenu à jour ; plus de `fn_mapCenter` final quand on suit (il visait avec l'ancien décalage).
 - `comspec_zoomUntil` : le suivi image par image (`fn_mapOnDraw`) et le recentrage de `fn_statusUpdate` se taisent pendant le zoom. Auto-contrôle `["check"] call comspec_atak_native_fnc_mapZoomAim`. Test : `AtakMapMiniZoomFollowAssetTest`.
 
+## À venir : écrans TOC allumés même avec un serveur plus ancien, réglage complet dans Eden et Zeus (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Les écrans TOC s'allument même si le serveur n'a pas la même version du mod
+- **Plus d'écran noir** : si le serveur a une version plus ancienne du mod, l'écran est géré par les joueurs et s'allume quand même. Le téléphone dit pourquoi, avec la version du serveur et la tienne, et prévient que l'écran n'est pas sauvegardé par le serveur.
+- **Ouvrir le PC du poste** : l'action est toujours là, en tête du menu ACE de l'écran, à la molette, dans l'app Poste TOC du téléphone et au clic droit du Zeus.
+- **Réglage complet** : chaque écran se règle dans Eden (attributs de l'objet) et dans Zeus (double-clic, fenêtre « Configurer l'écran ») : nom, camp, affichage, dalles d'un mur, luminosité, salle, distance d'affichage, test de l'image, copie vers d'autres écrans.
+EN : TOC screens light up even when the server runs another version of the mod
+- **No more black screen**: when the server runs an older version of the mod, the screen is handled by the players and lights up anyway. The phone says why, with the server's version and yours, and warns that the screen is not saved by the server.
+- **Open the post PC**: the action is always there, at the top of the screen's ACE menu, on the scroll wheel, in the phone's TOC Post app and in the Zeus right-click menu.
+- **Full settings**: every screen is set up in Eden (object attributes) and in Zeus (double-click, "Configure the screen" window): name, side, display, wall panels, brightness, room, display distance, picture test, copy to other screens.
+
+### Détail technique
+
+Retour de TTRD du 11/11 (4.5.0, serveur dédié plus ancien) : mur d'images noir alors que le téléphone annonçait « Écran TOC : carte et flux », « L'écran n'a pas répondu » après 8 s, pas d'action « Ouvrir le PC du poste ».
+
+- **Cause** : `fn_tocScreen` « add » envoyait toujours la désignation au serveur, sans réponse attendue ; un serveur plus ancien ne connaît pas la classe de l'objet (objet nul chez lui, sortie muette) ; « ensure » annonçait quand même le succès ; `fn_screenCast` attendait 8 s puis donnait un message vague. L'action « Ouvrir le PC du poste » n'existait que sur un écran déjà désigné par le serveur.
+- **`fn_tocConfig` (nouveau)** : « mode » compare `COMSPEC_ATAK_ServerVersion` à la version du joueur (absente ou plus ancienne en MAJEUR.MINEUR : repli) ; « local » fait exécuter « add », « panels », « remove », « spawn », « view » (et `fn_screenCast` « add » / « remove ») sur le poste du joueur, par les mêmes variables publiques ; « ack » vérifie 3 s après une demande au serveur et bascule l'objet en repli (`COMSPEC_ATAK_TocFb`) ; message avec les deux versions ; une ligne au journal à la connexion (version du serveur, du poste, fonctions TOC du serveur, par demande / réponse `tocPing` / `tocPong`). Essai sur un serveur à jour : `COMSPEC_ATAK_TocForceFallback = true`.
+- **Ouvrir le PC du poste** : en tête du menu ACE (écran COMSPEC pas encore désigné : il le devient), action de la molette sur le poste le plus proche (distance au centre de l'écran, `COMSPEC_ATAK_TocActObj`), bouton OUVRIR LE PC de l'app Poste TOC, entrée du clic droit ZEN. Point ACE des modèles du mod au centre de la boîte (`acePos`), bandeau horloge et plaque de nom compris.
+- **Eden** : macro `COMSPEC_SCREEN_ATTRIBUTES` étendue (usage, nom, camp, affichage dont Éteint, escouade, satellite, caméra, mosaïque, dalles du mur, luminosité, poste TOC, salle, distance d'affichage), aide et exemple pour chacun ; « eden » applique sur le serveur, ou par un joueur si le serveur est ancien.
+- **Zeus** : fenêtre « Configurer l'écran » (ZEN s'il est chargé, sinon `fn_zeusForm`), mêmes champs, mêmes valeurs (« make » / « apply ») : appliquer, tester l'image, identifier, copier vers d'autres écrans, surface de l'image, retirer, supprimer ; résultat écrit dans la fenêtre. Double-clic, clic droit « Configurer l'objet » (aussi sur les écrans du jeu déclarés dans `CfgComspecTocScreens`), bouton CONFIGURER du Centre Zeus.
+- **Nouveaux réglages d'écran** : `COMSPEC_ATAK_TocOpt` [luminosité, distance d'affichage], lus par « tick » (voile sombre, distance par écran), gardés par `fn_tocPersist`. Dalle « OFF » dans l'écriture des dalles d'un mur.
+- Tests : `tests/Unit/AtakTocScreenConfigAssetTest.php` ; en jeu : `["selfTest"] call comspec_atak_native_fnc_tocConfig`.
+- Limites : en repli, rien n'est gardé d'une partie à l'autre, les salles TOC restent tenues par le serveur, et un objet dont la classe est inconnue du serveur n'existe que chez le joueur qui l'a posé.
+
 ## Pack 4.5.0 Washington : rendu professionnel des écrans TOC et du PC du poste, satellite devenu console ISR (ATAK natif 4.5.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 
 ### Résumé joueur

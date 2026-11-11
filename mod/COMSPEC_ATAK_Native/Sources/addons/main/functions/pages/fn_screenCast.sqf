@@ -77,7 +77,13 @@ switch (_mode) do {
     case "add": {
         _a params [["_o", objNull], ["_name", ""], ["_range", 25], ["_side", ""], ["_sel", 0], ["_ace", true]];
         if (isNull _o) exitWith { false };
-        if (!isServer) exitWith { ["comspec_atak_native_screen", ["add", _a]] call CBA_fnc_serverEvent; true };
+        // Serveur ancien ou sans le mod : ce poste désigne l'écran lui-même (fn_tocConfig « local »), sinon la demande
+        // part au serveur et ce poste vérifie 3 s plus tard qu'elle a pris (« ack »).
+        if (!isServer && {!(["local", _o] call comspec_atak_native_fnc_tocConfig)}) exitWith {
+            ["comspec_atak_native_screen", ["add", _a]] call CBA_fnc_serverEvent;
+            ["ack", [_o, "cast", _a]] call comspec_atak_native_fnc_tocConfig;
+            true
+        };
         if (_name isEqualTo "") then { _name = getText (configOf _o >> "displayName"); };
         if (_name isEqualTo "") then { _name = "Écran"; };
         private _list = (missionNamespace getVariable ["COMSPEC_ATAK_Screens", []]) select { !isNull _x };
@@ -92,7 +98,7 @@ switch (_mode) do {
     };
     case "remove": {
         if (isNull _a) exitWith { false };
-        if (!isServer) exitWith { ["comspec_atak_native_screen", ["remove", _a]] call CBA_fnc_serverEvent; true };
+        if (!isServer && {!(["local", _a] call comspec_atak_native_fnc_tocConfig)}) exitWith { ["comspec_atak_native_screen", ["remove", _a]] call CBA_fnc_serverEvent; true };
         _a setVariable ["COMSPEC_ATAK_ScreenCast", [], true];
         _a setVariable ["COMSPEC_ATAK_Screen", nil, true];
         missionNamespace setVariable ["COMSPEC_ATAK_Screens", (missionNamespace getVariable ["COMSPEC_ATAK_Screens", []]) select { !isNull _x && {_x isNotEqualTo _a} }, true];
@@ -121,7 +127,8 @@ switch (_mode) do {
             ["add", [_a, _nm select [0, 32], 50, "", _sel, true]] call _fn;
             // Hors serveur, la désignation revient du serveur par le réseau : un « cast » immédiat était refusé
             // (« n'est pas désigné comme écran », journal du 08/11, écran TOC). On attend qu'elle arrive.
-            if (!isServer) then {
+            // Désignation faite sur ce poste (serveur ancien) : l'écran est déjà prêt, la diffusion part tout de suite.
+            if (!isServer && {(count (_a getVariable ["COMSPEC_ATAK_Screen", []])) < 5}) then {
                 ["INFO", "Préparation de l'écran pour la diffusion…", 2, 20] call comspec_atak_native_fnc_notify;
                 ["castWait", [_a, 0]] call _fn;
             };
@@ -132,9 +139,12 @@ switch (_mode) do {
         _a params [["_o", objNull], ["_n", 0]];
         if (isNull _o) exitWith { false };
         if ((count (_o getVariable ["COMSPEC_ATAK_Screen", []])) >= 5) exitWith { ["cast", _o] call _fn };
+        // Le serveur n'a rien désigné en 8 s alors que ce poste a pris le relais à 3 s (fn_tocConfig « ack ») : la vraie
+        // raison est dite, avec les deux versions du mod (avant : un message vague, journal de TTRD du 11/11).
         if (_n >= 16) exitWith {
-            ["WARNING", "SCREEN", format ["Diffusion impossible : %1 n'a pas été désigné comme écran par le serveur en 8 s", typeOf _o]] call comspec_atak_native_fnc_log;
-            ["WARNING", "L'écran n'a pas répondu : diffusion annulée, réessayez", 5, 30] call comspec_atak_native_fnc_notify;
+            private _why = ["reason"] call comspec_atak_native_fnc_tocConfig;
+            ["WARNING", "SCREEN", format ["Diffusion impossible : %1 n'a pas été désigné comme écran en 8 s. %2", typeOf _o, _why]] call comspec_atak_native_fnc_log;
+            ["WARNING", format ["%1 : %2", ("Diffusion annulée") call comspec_atak_native_fnc_tr, _why], 8, 30] call comspec_atak_native_fnc_notify;
             false
         };
         [{ ["castWait", _this] call comspec_atak_native_fnc_screenCast; }, [_o, _n + 1], 0.5] call comspec_atak_native_fnc_waitAndExec;
