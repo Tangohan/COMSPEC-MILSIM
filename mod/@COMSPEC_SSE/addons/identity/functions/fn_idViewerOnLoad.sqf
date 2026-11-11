@@ -167,7 +167,14 @@ if (_photoBox isNotEqualTo []) then {
     private _spot = if (_swap) then { [_fx + 0.008, _fy + 0.012, _fw * 0.97, _fh * 0.97, 2.5] } else { [_fx, _fy, _fw, _fh, 0] };
     _spot params ["_px", "_py", "_pw", "_ph", "_angle"];
     [_px, _py, _pw, _ph, _dir + "silhouette_co.paa", _angle] call _pic;
-    if (_face isNotEqualTo "") then { [_px, _py, _pw, _ph, _face, _angle] call _pic; };
+    // Portrait en direct posé caché sur la silhouette : montré seulement une fois vérifié (fn_idFace « ready »), jamais
+    // une image ratée (studio mal cadré : photo bleue unie).
+    if (_face isNotEqualTo "") then {
+        [_px, _py, _pw, _ph, _face, _angle] call _pic;
+        private _fc = _ctrls select -1;
+        _fc ctrlShow (["ready"] call comspec_sse_fnc_idFace);
+        uiNamespace setVariable ["comspec_sse_idFaceCtrl", _fc];
+    };
     if (fileExists (_dir + "photo_paper_ca.paa")) then { [_px, _py, _pw, _ph, _dir + "photo_paper_ca.paa", _angle] call _pic; };
 };
 // Hologramme discret (absent sur certains faux : défaut relevé à l'examen).
