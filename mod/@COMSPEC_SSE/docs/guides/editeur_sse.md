@@ -123,7 +123,7 @@ Bouton **BIBLIOTHÈQUE**.
 - **Au téléphone / Annonce** passent par l'ATAK natif ; sans lui, c'est une notification SSE ordinaire. Un envoi au téléphone n'est jamais rejoué d'une partie à l'autre.
 - **La bibliothèque est dans votre profil** (profileNamespace) ; Athena n'en est que le miroir. Hors ligne, les contenus restent marqués à envoyer et repartent à la prochaine ouverture. Dans Eden, après un échec Athena, pas de nouvel essai pendant 60 s.
 - **Classification** n'a d'effet que sur un renseignement.
-- **« Garder pour les prochaines parties »** (page IA de la zone) exige la liaison Athena et l'habilitation Confidentiel ; sinon « Enregistrement sur Athena impossible (liaison, ou habilitation Confidentiel) : rien n'est gardé. »
+- **« Mémoire de la carte… › Garder les IA cochées »** (page IA de la zone, anciennement « Garder pour les prochaines parties ») exige la liaison Athena et l'habilitation Confidentiel ; sinon « Enregistrement sur Athena impossible (liaison, ou habilitation Confidentiel) : rien n'est gardé. »
 - Débogage : `comspec_sse_id_editorDebug = true` (variable de mission) écrit le détail au RPT.
 
 ## Athena
