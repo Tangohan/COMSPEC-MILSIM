@@ -193,9 +193,12 @@ final class AtakTocSatIsrTest extends TestCase
     {
         $board = $this->src('fn_tocBoard.sqf');
         self::assertStringContainsString('private _pic = ["RscPicture", [0, 0, 1, 1]] call _mk;', $board);
-        self::assertStringContainsString('private _hud = ["hudMake", [_d, _g, "WALL"]] call comspec_atak_native_fnc_tocSat;', $board);
-        self::assertStringContainsString("<t color='#e0b040'>Lecture seule</t>", $board);
-        self::assertStringContainsString('{ (_ui get _x) ctrlShow !_isSat; } forEach ["main", "main2", "hdr", "accent", "title", "clock"];', $board);
+        // Calque fixe du satellite dans le rendu des écrans (fn_tocBoard, refonte 11/11) ; couleurs du thème TOC.
+        self::assertStringContainsString('private _hud = ["hudMake", [_d, _sl, "WALL"]] call comspec_atak_native_fnc_tocSat;', $board);
+        self::assertStringContainsString("<t color='@amber'>Lecture seule</t>", $board);
+        // Plein cadre : ni en-tête ni pied (heure et capteur dans le HUD), FLASH en haut de l'image.
+        self::assertStringContainsString('if (!_wide && {!_isSat}) then {', $board);
+        self::assertStringContainsString('if (_isSat && {_isFl}) then {', $board);
         // Texte du mur lisible à 3-6 m : 34 px sur 900 pour les données, 28 pour les noms.
         self::assertStringContainsString('["fH", 34 / 900], ["fL", 28 / 900]', $this->src('fn_tocSat.sqf'));
     }

@@ -20,7 +20,7 @@ final class AtakTocLaptopLayoutTest extends TestCase
     private const EN = __DIR__ . '/../../mod/COMSPEC_ATAK_Native/Sources/addons/main/i18n/en.txt';
     private const FILES = ['fn_tocLaptop.sqf', 'fn_tocDraw.sqf', 'fn_tocHallUi.sqf'];
     /** Fonds et contrôles posés hors des lignes (image satellite, son groupe de découpe et message d'attente : posés sur sBack). */
-    private const UNLAID = ['shellOut', 'shellIn', 'screen', 'brand', 'titleBg', 'titleLine', 'rBg', 'sClip', 'sPic', 'sWait'];
+    private const UNLAID = ['shellOut', 'shellIn', 'screen', 'brand', 'titleBg', 'titleLine', 'rBg', 'tabMark', 'sClip', 'sPic', 'sWait'];
 
     private function src(string $file): string
     {
@@ -232,21 +232,23 @@ final class AtakTocLaptopLayoutTest extends TestCase
         $yi = $y0 + $g['pad'];
         $wi = $w0 - 2 * $g['pad'];
         $hi = $h0 - 2 * $g['pad'] - $g['brand'];
-        $by = $yi + $g['title'] + $gap;
-        $bh = $hi - $g['title'] - $g['bar'] - 2 * $gap;
+        // Barre du haut puis deux rangées d'onglets pleine largeur (refonte 11/11), filet, corps, ligne d'état.
+        $tabsH = 2 * $g['tab'] + $gap;
+        $topH = $g['title'] + $tabsH + 2 * $gap;
+        $by = $yi + $topH + 2 * $gap;
+        $bh = $hi - $topH - $g['bar'] - 3 * $gap;
         $pw = min(max($wi * $g['panel'], $g['panelMin']), $g['panelMax']);
         $px = $xi + $wi - $pw;
-        $cx = $px + $gap;
-        $cw = $pw - 2 * $gap;
-        $tabsH = 3 * $g['tab'] + 2 * $gap;
-        $cy = $by + $gap + $tabsH + 2 * $gap;
+        $cx = $px + 2 * $gap;
+        $cw = $pw - 4 * $gap;
+        $cy = $by + $gap;
 
         return [
             'inner' => [$xi, $yi, $wi, $hi],
             'rTitle' => [$xi + 2 * $gap, $yi + 0.001, $wi - 4 * $gap, $g['title'] - 0.005],
             'rBar' => [$xi, $yi + $hi - $g['bar'], $wi, $g['bar']],
             'rLeft' => [$xi + $gap, $by, ($px - $gap) - ($xi + $gap), $bh],
-            'rTabs' => [$cx, $by + $gap, $cw, $tabsH],
+            'rTabs' => [$xi + 2 * $gap, $yi + $g['title'] + $gap, $wi - 4 * $gap, $tabsH],
             'rHelp' => [$cx, $by + $bh - $gap - $g['help'], $cw, $g['help']],
             'rRight' => [$cx, $cy, $cw, ($by + $bh - $gap - $g['help'] - 2 * $gap) - $cy],
         ];

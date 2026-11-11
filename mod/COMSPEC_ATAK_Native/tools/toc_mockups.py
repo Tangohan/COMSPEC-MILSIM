@@ -43,6 +43,16 @@ TYPE = {k: (px, FONTS[f]) for k, px, f in sqf_json(THEME_SRC, "_type")}
 SPACE = {k: v for k, v in sqf_json(THEME_SRC, "_space")}
 WALLS = {k: {r[0]: r[1:] for r in v} for k, v in sqf_json(THEME_SRC, "_walls")}
 COLS = {k: v for k, v in sqf_json(THEME_SRC, "_cols")}
+FLASH_RULE = {k: (fixed, shrink) for k, fixed, shrink in sqf_json(THEME_SRC, "_flashRule")}
+
+
+def region(view, key, flash=False):
+    """Même règle que fn_tocTheme « region » : sous un FLASH, tout descend de 52 px sauf les régions fixes."""
+    x, y, w, h = WALLS[view][key]
+    fixed, shrink = FLASH_RULE.get(view, ([], []))
+    if not flash or any(key.startswith(p) for p in fixed):
+        return (x, y, w, h)
+    return (x, y + 52, w, h - (52 if key in shrink else 0))
 
 
 def rgb(token, alpha=1.0):
@@ -152,7 +162,7 @@ class Canvas:
 
 
 # ------------------------------------------------------------------------------------------------------- composants murs
-def frame(cv, title, station, view_label, flash=None, link=("accent", "LIAISON SERVEUR · DONNÉES À 2 s"), clock=("12:35:42", "13:35")):
+def frame(cv, title, station, view_label, flash=None, link=("accent", "EN DIRECT · données à 2 s"), clock=("12:35:42", "13:35")):
     F = WALLS["FRAME"]
     cv.rect(*F["header"], rgb("bg1"))
     cv.rect(*F["rule"], rgb("red" if flash else "accent"))
@@ -449,11 +459,7 @@ def wall(name, title, view_label, drawer, flash=None, station="BRAVO"):
 def draw_split(cv, pip=False, dy=0):
     # Sous un FLASH (bandeau de 52 px) : carte et blocs du haut descendent, le flux reste en bas, les groupes perdent
     # les lignes en trop (même règle que fn_tocScreen « draw »).
-    L = dict(WALLS["SPLIT"])
-    if dy:
-        for k, (x, y, w, h) in list(L.items()):
-            if not k.startswith("flux"):
-                L[k] = (x, y + dy, w, h - (dy if k in ("map", "divider", "grpArea") else 0))
+    L = {k: region("SPLIT", k, dy > 0) for k in WALLS["SPLIT"]}
     mx, my, mw, mh = L["map"]
     map_view(cv, mx, my, mw, mh, NODES, PLACES, alerts=[(470, 230, "TIC")], objective=(600, 330) if pip else None)
     cv.rect(*L["divider"], rgb("line"))
@@ -529,8 +535,8 @@ def draw_squad(cv, cam=False):
     map_view(cv, mx, my, mw, mh, nodes, [(700, 600, "Agia Marina", True)], seed=5, legend=False)
     cv.rect(*L["divider"], rgb("line"))
     cv.rect(*L["plateBar"], rgb("accent"))
-    cv.text(*L["plate"], "ALPHA 1", "title", "text", px=56)
-    cv.text(*L["plateSub"], "4 membres · 3 en direct · chef Sgt Dubois", "body", "text2")
+    cv.text(*L["plate"], "ALPHA 1", "squadName", "text")
+    cv.text(*L["plateSub"], "4 nœud(s) ATAK · 3 en direct", "body", "text2")
     tiles(cv, L["tiles"], [(3, "en ligne", "accent"), (1, "anciens", "amber"), (0, "perdus", "red"), (0, "hors ligne", "muted")])
     section(cv, L["memHead"], L["memSub"], L["memRule"], "MEMBRES", "grille · état")
     mem = [("ALPHA 1-1", "042 116", "accent"), ("ALPHA 1-2", "043 115", "accent"), ("ALPHA 1-3", "045 117", "amber"), ("ALPHA 1-4", "041 114", "accent")]
@@ -572,7 +578,7 @@ def cam_tile(cv, x, y, w, h, cs, link, live=True, free_=False, seed=1):
         cv.text(x + 40, y + 16, 86, 34, "DIRECT", "bodyBold", "text", fit=False)
     else:
         cv.text(x, y + h / 2 - 50, w, 40, "PAS DE SIGNAL", "heading", "red", "C")
-        cv.text(x, y + h / 2 - 8, w, 36, "liaison coupée · dernière image 12:31Z", "caption", "muted", "C")
+        cv.text(x, y + h / 2 - 8, w, 36, "liaison coupée", "caption", "muted", "C")
     # bandeau : indicatif, barres de liaison, heure
     cv.rect(x, y + h - 40, w, 40, rgb("bg0", 0.85))
     lvl = {"bonne": 4, "moyenne": 3, "faible": 2, "coupée": 0}[link]
@@ -609,11 +615,11 @@ def draw_clock(cv):
     cv.rect(*L["lRule"], rgb("line"))
     cv.text(*L["lLbl"], "LOCAL (MISSION)", "heading", "muted")
     cv.text(*L["lDig"], "06:12:08", "hero", "text2", fit=False)
-    cv.text(*L["lDate"], "mardi 14 juin 2035 · lever du soleil 05:21", "body", "text2")
+    cv.text(*L["lDate"], "date de la mission · 14 JUN 2035", "body", "text2")
     section(cv, L["nxHead"], L["nxSub"], L["nxRule"], "PROCHAINE LIGNE", "liste d'exécution")
     cv.text(*L["nxCode"], "4 · ROMEO", "title", "accent")
     cv.text(*L["nxEv"], "Franchissement de la ligne de départ · ALPHA", "body", "text")
-    cv.text(*L["nxAt"], "prévu 12:45Z · dans 09:18", "data", "text2")
+    cv.text(*L["nxAt"], "prévu 12:45Z · dans 9:18", "data", "text2")
     cv.rect(*L["divider"], rgb("line"))
     section(cv, L["tHead"], L["tSub"], L["tRule"], "CHRONOS", "6 chronos du poste")
     timers = [("H-HOUR", "heure H 12:00Z · dépassée", "H+00:35:42", "red"), ("ALPHA EN POSITION", "compte à rebours · en marche", "-00:04:12", "accent"),
@@ -673,7 +679,7 @@ def draw_excheck(cv):
 
 def draw_kills(cv):
     L = WALLS["KILLS"]
-    kpi4(cv, L["kpi"], [(3, "amis blessés", "amber"), (1, "ami tué", "red"), (11, "ennemis neutralisés", "accent"), (4, "ennemis blessés / capturés", "text2")])
+    kpi4(cv, L["kpi"], [(3, "amis blessés", "amber"), (1, "amis tués", "red"), (11, "ennemis neutralisés", "accent"), (4, "ennemis blessés / pris", "text2")])
     section(cv, L["head"], L["sub"], L["rule"], "PAR ÉLÉMENT", "réseau ATAK, BDA et corrections du poste")
     gx, gy, gw, gh = L["groups"]
     for key, label, cx, cw, al, st in COLS["KILLS_G"]:
@@ -693,7 +699,7 @@ def draw_kills(cv):
 
 def draw_req(cv):
     L = WALLS["REQ"]
-    kpi4(cv, L["kpi"], [(2, "reçues", "amber"), (1, "prise en compte", "blue"), (3, "terminées", "accent"), (1, "refusée", "red")])
+    kpi4(cv, L["kpi"], [(2, "reçues", "amber"), (1, "prises en compte", "blue"), (3, "terminées", "accent"), (1, "refusées", "red")])
     section(cv, L["head"], L["sub"], L["rule"], "DEMANDES DES ÉLÉMENTS", "MEDEVAC, appuis feu, ravitaillements")
     st = {"RECUE": ("reçue", "amber"), "PRISE": ("prise en compte", "blue"), "TERMINEE": ("terminée", "accent"), "REFUSEE": ("refusée", "red")}
     reqs = [("12:31", "MEDEVAC", "CHARLIE 3", "048 117", "1 urgence A, HLZ sud, fumée verte", "RECUE"),
@@ -705,6 +711,67 @@ def draw_req(cv):
             ("11:30", "APPUI AÉRIEN", "ALPHA 1-2", "043 115", "Reconnaissance drone sur le carrefour → hors délai", "REFUSEE")]
     rows = [{"time": (t, "text2"), "kind": (k, "text"), "by": (b, "text2"), "grid": (g, "text2"), "text": (x, "text"), "st": st[s]} for t, k, b, g, x, s in reqs]
     table(cv, "REQ", L["cols"], L["area"], rows)
+
+
+# ------------------------------------------------------------------------------------------------------- satellite (ISR)
+def isr_image(w, h, seed=31):
+    """Image thermique « blanc chaud » : le satellite rend la scène (fn_tocSat), ici une imitation en niveaux de gris."""
+    img = terrain(int(w), int(h), seed).convert("L")
+    img = Image.eval(img, lambda c: min(255, int(90 + c * 3.2)))
+    return img.convert("RGBA")
+
+
+def isr_hud(cv, x, y, w, h, fpx=34, lpx=28, th=3, m=18, txt_scale=1.0):
+    """HUD du capteur (fn_tocSat « hudPaint ») : coins, réticule, échelle, lignes de données en monospace sur plaque BG0,
+    pistes amies (cadre, symbole OTAN, indicatif). Encre : texte du thème (image sombre) ou BG0 (blanc chaud)."""
+    ink = rgb("bg0", 0.88)
+    bl = 60
+    x0, y0, x1, y1 = x + m, y + m, x + w - m, y + h - m
+    for cx, cy, sx, sy in ((x0, y0, 1, 1), (x1, y0, -1, 1), (x0, y1, 1, -1), (x1, y1, -1, -1)):
+        cv.rect(cx if sx > 0 else cx - bl, cy if sy > 0 else cy - th, bl, th, ink)
+        cv.rect(cx if sx > 0 else cx - th, cy if sy > 0 else cy - bl, th, bl, ink)
+    mx, my = x + w / 2, y + h / 2
+    for dx, dy, ww, hh in ((-46, -1.5, 30, 3), (16, -1.5, 30, 3), (-1.5, -46, 3, 30), (-1.5, 16, 3, 30)):
+        cv.rect(mx + dx, my + dy, ww, hh, ink)
+    mono, monob = FONTS["mono"], FONTS["monoBold"]
+
+    def plate(px_, py_, s_, right=False, size=fpx):
+        tw = len(s_) * 0.5 * size + 16
+        X = px_ - tw if right else px_
+        cv.rect(X, py_, tw, size * 1.3, rgb("bg0", 0.55))
+        cv.text(X, py_, tw, size * 1.3, s_, None, "text", "C", px=size, fname=mono, fit=False)
+        return size * 1.3
+
+    tx, ty = x0 + 14, y0 + 14
+    h1 = plate(tx, ty, "IMAGE SAT · AUTO BC · 0.50X")
+    plate(tx, ty + h1 + 2, "SAT 1 · NÉB. 7 % · BRUME 2 %")
+    h2 = plate(x1 - 10, ty, "N · ALT 400 M · FOV 12", True)
+    plate(x1 - 10, ty + h2 + 2, "SOURCE SAT 1 · Adj Mercier", True)
+    plate(tx, y1 - 8 - fpx * 1.3, "GR 042116 · ÉLÉV +0013 M")
+    plate(x1 - 10, y1 - 8 - fpx * 1.3, "DIRECT 12:35:42Z", True)
+    bw = 200
+    byb = y1 - 70
+    cv.rect(mx - bw / 2, byb, bw, th, ink)
+    cv.rect(mx - bw / 2, byb - 8, th, 8 + th, ink)
+    cv.rect(mx + bw / 2 - th, byb - 8, th, 8 + th, ink)
+    plate(mx - 50, byb - 8 - lpx * 1.35, "100 M", size=lpx)
+    for (px_, py_, cs, tok) in ((x + w * 0.62, y + h * 0.33, "ALPHA 1-1", "friend"), (x + w * 0.68, y + h * 0.36, "ALPHA 1-2", "friend"), (x + w * 0.4, y + h * 0.6, "BRAVO 2 · ancien", "lost")):
+        cv.line([(px_ - 18, py_ - 18), (px_ + 18, py_ - 18), (px_ + 18, py_ + 18), (px_ - 18, py_ + 18), (px_ - 18, py_ - 18)], rgb(tok), 2)
+        nato(cv, px_ + 40, py_ - 34, tok)
+        lw = len(cs) * 0.5 * lpx + 16
+        cv.rect(px_ + 64, py_ - 52, lw, lpx * 1.3, rgb("bg0", 0.55))
+        cv.text(px_ + 64, py_ - 52, lw, lpx * 1.3, cs, None, "text", "C", px=lpx, fname=mono, fit=False)
+
+
+def draw_sat_wall(cv):
+    cv.img.paste(isr_image(1600, 900), (0, 0))
+    isr_hud(cv, 0, 0, 1600, 854)
+    # Bandeau de lecture seule = pied de l'écran : satellite à gauche, nom de l'écran à droite.
+    cv.rect(0, 854, 1600, 46, rgb("bg0", 0.78))
+    cv.text(16, 854, 1000, 46, "Lecture seule", None, "amber", "L", px=32, fname=FONTS["sans"], fit=False)
+    lw = text_w("Lecture seule", FONTS["sans"], 32)
+    cv.text(20 + lw, 854, 1000, 46, " · SAT 1 · BLANC CHAUD · piloté par Adj Mercier (PC BRAVO-6)", None, "text2", "L", px=32, fname=FONTS["sans"])
+    cv.text(1000, 854, 584, 46, "SAT CENTRE", None, "muted", "R", px=32, fname=FONTS["sans"])
 
 
 # ------------------------------------------------------------------------------------------------------- faces 4:1
@@ -720,11 +787,11 @@ def strip(cv):
     cv.rect(*L["div1"], rgb("line"))
     T(L["lLbl"], "LOCAL", "stripLabel", "muted")
     T(L["lDig"], "06:12", "stripMid", "text2")
-    T(L["lSub"], "mardi 14 juin", "stripSub", "text2")
+    T(L["lSub"], "14 JUN 2035", "stripSub", "text2")
     cv.rect(*L["div2"], rgb("line"))
     T(L["cLbl"], "H-HOUR", "stripLabel", "text")
     T(L["cDig"], "H+00:35:42", "stripChrono", "red")
-    T(L["cSub"], "heure H 12:00Z · dépassée", "stripSub", "muted")
+    T(L["cSub"], "dépassé", "stripSub", "muted")
 
 
 def plate(cv):
@@ -733,7 +800,7 @@ def plate(cv):
     cv.text(*L["name"], "ALPHA 1", "plateName", "text")
     x, y, w, h = L["sub"]
     cv.rect(x + 4, y + h / 2 - 14, 28, 28, rgb("accent"))
-    cv.text(x + 44, y, w - 44, h, "4 nœuds ATAK · 3 en direct · chef Sgt Dubois", "plateSub", "text2")
+    cv.text(x + 44, y, w - 44, h, "4 nœud(s) ATAK · 3 en direct", "plateSub", "text2")
 
 
 # ------------------------------------------------------------------------------------------------------------- PC
@@ -846,6 +913,8 @@ INFO = {
     "qInfo": [("MEDEVAC  12:31Z · CHARLIE 3 · grille 048 117 · REÇUE", "heading"), ("1 urgence A, HLZ sud, fumée verte", "body")],
     "hInfo": [("SALLE TOC BRAVO · ce PC est le poste maître", "heading"), ("6 écrans liés · 2 dalles de mur", "muted")],
     "hSel": [("MUR 3x2 · dalle 2 · carte et flux", "heading"), ("allumé · lié à la salle", "muted")],
+    "sInfo": [("SAT 1 · vous avez la main", "heading"), ("800 m de large · grille 042 116", "body")],
+    "sZoom": [("0.50X", "heading")],
 }
 PANEL_HEAD = {"GROUPES": ("GROUPES", "9 groupes · 18 en ligne"), "ORBAT": ("ORBAT DU SITE", "31 membres · 19 en jeu"), "FLUX": ("FLUX", "15 entrées · 3 alertes"),
               "ORDRES": ("ORDRES", "2 émis"), "CAMP": ("CAMP", "messages et caméras"), "RÉSEAU": ("RÉSEAU", "en direct"), "CHRONOS": ("CHRONOS", "4 chronos"),
@@ -939,7 +1008,7 @@ def pc(tab, out, aspect=16 / 9, H=1080, tool="SELECT"):
             continue
         if key == "clock":
             cv.text(x, y, w, h * 0.55, "12:35:42 ZULU   13:35:42 LOCAL", None, "text", "R", px=0.9 * sb, fname=FONTS["monoBold"], fit=False)
-            cv.text(x, y + h * 0.5, w, h * 0.45, "■ ACRE2 · ● EN DIRECT", None, "accent", "R", px=0.75 * sb, fname=FONTS["sans"])
+            cv.text(x, y + h * 0.5, w, h * 0.45, "■ ACRE2 · ● EN DIRECT", None, "accent", "R", px=0.75 * sb, fname=FONTS["sans"], fit=False)
             continue
         if key == "bar":
             cv.rect(x, y, w, h, rgb("bg1"))
@@ -984,8 +1053,12 @@ def pc(tab, out, aspect=16 / 9, H=1080, tool="SELECT"):
             cv.text(x, y, w, min(h, 0.034 * u), sample, None, "muted" if ph else "text", "L", px=0.024 * u * 0.85, fname=FONTS["sans"])
             continue
         if key == "sBack":
-            cv.rect(x, y, w, h, (0, 0, 0, 255))
-            cv.text(x, y + h * 0.4, w, 0.04 * u, "Onglet SAT : refonte en cours sur la branche feat/toc-sat-isr", None, "muted", "C", px=0.022 * u, fname=FONTS["sans"])
+            cv.img.paste(isr_image(int(w), int(h), 33), (int(x), int(y)))
+            isr_hud(cv, x, y, w, h, fpx=0.0175 * u, lpx=0.0155 * u, th=2, m=12)
+            continue
+        if key == "sStrip":
+            cv.rect(x, y, w, h, rgb("bg0", 0.7))
+            cv.text(x, y, w, h, "  Vous avez la main · SAT 1 · BLANC CHAUD · 0.50X", None, "accent", "L", px=0.85 * sb, fname=FONTS["sans"])
             continue
         if key == "hPlanBg":
             cv.rect(x, y, w, h, rgb("bg1"))
@@ -1051,20 +1124,23 @@ def contact_sheet():
 def main():
     wall("mur_split", "TOC · BRAVO", "carte et flux", draw_split)
     wall("mur_split_flash", "TOC · BRAVO", "carte et flux", lambda cv: draw_split(cv, dy=52), flash="CONTACT NORD, TOUS AUX ABRIS · Cne Martin · 12:35Z")
-    wall("mur_pip", "TOC · BRAVO-6", "PIP du poste · onglet GROUPES", lambda cv: draw_split(cv, pip=True))
+    wall("mur_pip", "TOC · BRAVO-6", "PIP du poste · Adj Mercier · onglet GROUPES", lambda cv: draw_split(cv, pip=True))
     wall("mur_carte", "TOC · BRAVO", "carte seule", draw_map)
     wall("mur_flux", "FLUX · BRAVO", "flux seul", draw_feed)
     wall("mur_reseau", "RÉSEAU · BRAVO", "réseau", draw_net)
     wall("mur_orbat", "ORBAT · BRAVO", "ORBAT du site", draw_orbat)
     wall("mur_escouade", "ESCOUADE · ALPHA 1", "écran d'escouade", draw_squad)
-    wall("mur_escouade_camera", "ESCOUADE · ALPHA 1", "écran d'escouade · caméra du chef", lambda cv: draw_squad(cv, cam=True))
-    wall("mur_mosaique", "CAMÉRAS · MUR CENTRE", "mosaïque 3 x 3 · tout le camp", draw_mosaic)
-    wall("mur_mosaique_2x2", "CAMÉRAS · MUR CENTRE", "mosaïque 2 x 2 · groupe ALPHA", lambda cv: draw_mosaic(cv, 2))
+    wall("mur_escouade_camera", "ESCOUADE · ALPHA 1", "écran d'escouade", lambda cv: draw_squad(cv, cam=True))
+    wall("mur_mosaique", "CAMÉRAS · MUR CENTRE", "mosaïque de caméras", draw_mosaic)
+    wall("mur_mosaique_2x2", "CAMÉRAS · MUR CENTRE", "mosaïque de caméras", lambda cv: draw_mosaic(cv, 2))
     wall("mur_horloge", "HORLOGE · BRAVO", "horloge et chronos", draw_clock)
     wall("mur_main_courante", "MAIN COURANTE · BRAVO", "main courante", draw_log)
     wall("mur_excheck", "EXÉCUTION · BRAVO", "liste d'exécution", draw_excheck)
     wall("mur_pertes", "PERTES ET RÉSULTATS · BRAVO", "pertes et résultats", draw_kills)
     wall("mur_demandes", "DEMANDES · BRAVO", "demandes des éléments", draw_req)
+    cv = Canvas(1600, 900)
+    draw_sat_wall(cv)
+    save(cv.img, "mur_sat")
     cv = Canvas(2048, 512, 2048 / 1600, 512 / 400)
     strip(cv)
     save(cv.img, "bandeau_horloge")
@@ -1075,6 +1151,7 @@ def main():
                    ("RADIO", "pc_radio"), ("SALLE", "pc_salle"), ("CHRONOS", "pc_chronos"), ("MAIN COURANTE", "pc_main_courante"), ("EXCHECK", "pc_excheck"),
                    ("PERTES", "pc_pertes"), ("DEMANDES", "pc_demandes")]:
         pc(tab, n)
+    pc("SAT", "pc_sat")
     pc("GROUPES", "pc_carte_dessin", tool="LINE")
     pc("GROUPES", "pc_groupes_4x3", aspect=4 / 3, H=1080)
     pc("GROUPES", "pc_groupes_21x9", aspect=21 / 9, H=1080)

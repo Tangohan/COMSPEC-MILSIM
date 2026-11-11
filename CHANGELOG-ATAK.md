@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : écrans du TOC et PC du poste refaits, rendu de salle d'opérations (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Les écrans du TOC et le PC du poste ont un rendu de vraie salle d'opérations
+- Tous les écrans du mur partagent la même présentation, lisible de loin : en-tête avec le nom de l'écran et les heures ZULU et locale, pied avec l'état de la liaison, tableaux en colonnes nettes (heures, grilles, états en pastilles de couleur), et plus aucun texte coupé ni chevauché.
+- La carte du poste est plus claire : fond assombri, quadrillage numéroté, plaques des groupes qui ne se recouvrent plus, légende, échelle et nord ; l'horloge affiche l'heure ZULU en très grand, la prochaine ligne d'exécution et les chronos ; la mosaïque de caméras indique DIRECT, la qualité de liaison et PAS DE SIGNAL.
+- Le PC du poste range ses onglets sur deux rangées en haut, montre l'onglet choisi clairement, et chaque onglet a un titre avec son état ; les boutons, listes et champs ont tous le même style.
+EN : The TOC screens and the post laptop now look like a real operations room
+- All wall screens share the same layout, readable from a distance: a header with the screen name and ZULU and local times, a footer with the link status, tables in clean columns (times, grids, coloured status pills), and no more clipped or overlapping text.
+- The post map is clearer: darkened background, numbered grid, group labels that no longer overlap, legend, scale and north arrow; the clock shows ZULU time in large print, the next execution checklist line and the timers; the camera mosaic shows LIVE, link quality and NO SIGNAL.
+- The post laptop puts its tabs on two rows at the top, clearly shows the chosen tab, and every tab has a title with its status; buttons, lists and fields all share the same style.
+
+### Détail technique
+- Thème unique `fn_tocTheme` (jetons de couleur, échelle de texte, polices RobotoCondensed / EtelkaMonospacePro, espacements, régions de chaque affichage en 1600 x 900 et 1600 x 400, colonnes des tableaux, règle sous FLASH), tables JSON lues aussi par `tools/toc_mockups.py` (maquettes PNG) et `AtakTocThemeTest` ; `ui/toc_theme.hpp` (classes du PC). Doc : `docs/TOC-THEME.md`.
+- `fn_tocBoard` réécrit en rendu « immédiat » par calques (fonds, filets et pastilles, images, satellite, cadres, textes) : en-tête, FLASH et pied communs, panneaux SPLIT / TOC / SQUAD, et FEED, NET, ORBAT, CLOCK, LOG, EXCHECK, KILLS, REQ, MOSAIC, STRIP, PLATE en tableaux à colonnes fixes ; SAT (console ISR) gardé, aligné sur les jetons (`fn_tocSat` : encre, pistes, plaques).
+- `fn_tocScreen` : la carte seule (fond teinté puis voilé, quadrillage sur plaques, plaques à liseré d'état et filet de rappel, légende) ; FEED, NET et ORBAT passent en tableaux ; tout le reste par `fn_tocBoard`.
+- `fn_tocLaptop` : onglets sur deux rangées pleine largeur (filet accent sous l'onglet choisi), titre et état du panneau de chaque onglet, couleurs et classes du thème (boutons à trois états, champs, listes), heures en monospace.
+- Tests : `AtakTocThemeTest` (contraste ≥ 4,5:1, texte mural ≥ 28 px, régions dans le cadre et sans chevauchement avec et sans FLASH, colonnes, aucune couleur hors du thème, anglais), `AtakTocLaptopLayoutTest` et `AtakTocScreenDisplaysAssetTest` mis à jour.
+- À juger en jeu : rendu réel des polices du jeu (largeur d'Etelka), lisibilité à 3-6 m, teinte de la carte selon la photo du terrain, coût de la réserve de contrôles.
+
 ## À venir : le satellite du TOC devient une vraie console ISR (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
