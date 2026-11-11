@@ -311,6 +311,25 @@ button.opx-photo:focus-visible { outline: 2px solid #059669; outline-offset: 2px
 .opx-dialog:not([open]):not(.is-js) { display: block; position: static; width: auto; max-height: none; margin: 1rem 0 0; box-shadow: none; }
 .opx-dialog:not([open]):not(.is-js) .opx-dialog__close { display: none; }
 
+/* ---- Aide « Comment faire ma photo ? » ---- */
+.opx-guide__list { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.3rem; font-size: 0.9rem; line-height: 1.5; color: #334155; }
+.opx-guide__variants { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; }
+.opx-guide__check { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; font-weight: 600; color: #0f172a; cursor: pointer; }
+.opx-fields .opx-guide__check { display: inline-flex; font-size: 0.9rem; font-weight: 600; letter-spacing: 0; text-transform: none; color: #0f172a; }
+.opx-fields .opx-guide__check > input { display: inline-block; width: 1rem; height: 1rem; min-height: 0; margin: 0; padding: 0; accent-color: #059669; }
+.opx-guide__list { list-style: disc; }
+.opx-guide__compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.opx-guide__compare figure { margin: 0; display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); gap: 0.75rem; align-items: start; }
+.opx-guide__compare svg { width: 100%; height: auto; border-radius: 6px; border: 1px solid #e2e8f0; }
+.opx-guide__compare figcaption { font-size: 0.85rem; line-height: 1.45; color: #475569; }
+.opx-guide__compare figure:first-child strong { color: #065f46; }
+.opx-guide__compare figure:last-child strong { color: #9f1239; }
+.opx-fields textarea[readonly] { font-family: ui-monospace, 'JetBrains Mono', Consolas, monospace; font-size: 0.82rem; line-height: 1.5; background: #f8fafc; }
+.opx-linkbtn { padding: 0; border: 0; background: none; color: #047857; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.opx-linkbtn:focus-visible { outline: 2px solid #059669; outline-offset: 2px; }
+.opx-dialog__foot .opx-acts__start { margin-right: auto; }
+@media (max-width: 520px) { .opx-guide__compare { grid-template-columns: minmax(0, 1fr); } }
+
 /* ---- Légende d'une couverture, historique ---- */
 .opx-legend { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.8rem 1.5rem; margin: 0; }
 .opx-legend dt { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #6b7280; }

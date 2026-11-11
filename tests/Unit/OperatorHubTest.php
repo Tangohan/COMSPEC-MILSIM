@@ -568,6 +568,33 @@ final class OperatorHubTest extends TestCase
         }
     }
 
+    public function testPhotoGuideReusesTheSingleSourcePromptOnIdentityAndPapersTabs(): void
+    {
+        $this->db();
+        $c = $this->controller(10);
+        $c->identitySave($this->post(['last_name' => 'Gyllen', 'first_name' => 'Jake']));
+        $base = ['csrfToken' => 'jeton', 'success' => null, 'error' => null];
+        $prompt = htmlspecialchars(\App\Support\SseIdPhotoGuide::prompt('fr'), ENT_QUOTES, 'UTF-8');
+        foreach (['identities', 'documents'] as $tab) {
+            $c->$tab(new Request());
+            $html = $this->view('identite', $base + $this->rendered);
+            foreach (['id="dlg-photo-guide"', 'Comment faire ma photo ?', 'data-opx-open="dlg-photo-guide"', 'data-opx-copy-prompt="fr"', 'Copier le prompt', 'translate="no"',
+                'Uniquement des personnages du jeu', 'ChatGPT', '35 × 45', 'Accepté.', 'À refaire.', $prompt] as $needle) {
+                self::assertStringContainsString($needle, $html, $tab . ' : ' . mb_substr($needle, 0, 40));
+            }
+            self::assertSame(1, substr_count($html, 'id="dlg-photo-guide"'), 'une seule fenêtre d’aide par page');
+        }
+        $c->covers(new Request());
+        self::assertStringNotContainsString('dlg-photo-guide', $this->view('identite', $base + $this->rendered));
+        // Source unique : le prompt n'est écrit ni dans la vue ni dans le JavaScript, il vient de SseIdPhotoGuide.
+        $root = dirname(__DIR__, 2);
+        $view = (string) file_get_contents($root . '/views/operateur/_photo_guide.php');
+        self::assertStringContainsString('SseIdPhotoGuide::prompt(', $view);
+        self::assertStringContainsString('SseIdPhotoGuide::VARIANTS', $view);
+        self::assertStringNotContainsString(mb_substr(\App\Support\SseIdPhotoGuide::prompt('fr'), 0, 60), $view);
+        self::assertStringContainsString('data-opx-copy-prompt', (string) file_get_contents($root . '/public/assets/js/operateur-hub.js'));
+    }
+
     public function testDocumentPreviewEscapesTextAndOnlyAcceptsHexColours(): void
     {
         $opxDocSvg = null;
