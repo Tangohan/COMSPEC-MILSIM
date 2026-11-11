@@ -301,6 +301,21 @@ switch (_mode) do {
             private _n = _x select 1;
             _n set [4, [["node", ["J", _x select 3, _age, _iv, true, false]] call comspec_atak_native_fnc_tocNodeStatus, 2] select ((_n select 10) isEqualTo 3)];
         } forEach _tracks;
+        // Réglage « Afficher seulement les entités équipées d'un ATAK » : filtre en plus de la source. Restent les pistes
+        // dont un membre porte un ATAK allumé, et l'opérateur assis à un PC du poste ; l'effectif ne compte qu'elles.
+        if (["only"] call comspec_atak_native_fnc_tocHasAtak) then {
+            private _carrier = { private _o = objectFromNetId _this; !isNull _o && {[_o] call comspec_atak_native_fnc_tocHasAtak} };
+            _phone = _phone select { (_x param [4, 0]) isNotEqualTo 3 };
+            _tracks = _tracks select {
+                ((_x select 2) findIf { _x call _carrier || {private _o = objectFromNetId _x; ((_o getVariable ["COMSPEC_ATAK_TocView", []]) param [0, ""]) isNotEqualTo ""} }) >= 0
+            };
+            private _cP = 0;
+            private _cAi = 0;
+            {
+                { if (_x call _carrier) then { if (isPlayer (objectFromNetId _x)) then { _cP = _cP + 1; } else { _cAi = _cAi + 1; }; }; } forEach (_x select 2);
+            } forEach _tracks;
+            _strength = [_cP, _cAi];
+        };
         (["merge", [_phone, _tracks, _m, _max]] call _fn) params ["_nodes", "_shown", "_total"];
         [_nodes, [_netP, _netAi, _shown, _total, _m, _max], _strength]
     };
@@ -310,6 +325,7 @@ switch (_mode) do {
         private _seen = missionNamespace getVariable ["COMSPEC_ATAK_TocOrbatMax", createHashMap];
         missionNamespace setVariable ["COMSPEC_ATAK_TocOrbatMax", _seen];
         private _ammoMap = missionNamespace getVariable ["COMSPEC_ATAK_TocAmmo", createHashMap];
+        private _atakOnly = ["only"] call comspec_atak_native_fnc_tocHasAtak;
         private _lifeOf = {
             params ["_u"];
             if (!alive _u) exitWith { 3 };
@@ -322,8 +338,11 @@ switch (_mode) do {
             private _g = _x;
             if ((str side _g) isNotEqualTo _side) then { continue };
             private _us = (units _g) select { alive _x };
+            // Filtre « seulement les entités équipées d'un ATAK » : un groupe sans porteur n'est pas listé, ses autres membres non plus.
+            if (_atakOnly) then { _us = _us select { [_x] call comspec_atak_native_fnc_tocHasAtak || {((_x getVariable ["COMSPEC_ATAK_TocView", []]) param [0, ""]) isNotEqualTo ""} }; };
             if (_us isEqualTo []) then { continue };
             private _ld = leader _g;
+            if !(_ld in _us) then { _ld = _us select 0; };
             private _v = vehicle _ld;
             // Drone : son équipage est un groupe du jeu, pas un élément de l'ORBAT.
             if (unitIsUAV _v) then { continue };
@@ -396,7 +415,9 @@ switch (_mode) do {
         private _u = _a;
         if (isNil "COMSPEC_ATAK_TocKillQ") then { COMSPEC_ATAK_TocKillQ = createHashMap; };
         // Véhicule suivi détruit : une ligne dans le flux et la main courante du camp.
+        private _atakOnly = ["only"] call comspec_atak_native_fnc_tocHasAtak;
         if !(_u isKindOf "CAManBase") exitWith {
+            if (_atakOnly) exitWith { false };
             private _rec = (missionNamespace getVariable ["COMSPEC_ATAK_TocVeh", createHashMap]) getOrDefault [netId _u, []];
             if ((count _rec) < 3) exitWith { false };
             COMSPEC_ATAK_TocVeh deleteAt (netId _u);
@@ -411,6 +432,8 @@ switch (_mode) do {
         private _side = str side group _u;
         if !(_side in ["WEST", "EAST", "GUER", "CIV"]) exitWith { false };
         if !(["active", _side] call _fn) exitWith { false };
+        // Filtre coché : un tué sans ATAK n'est ni compté ni écrit dans le flux.
+        if (_atakOnly && {!([_u] call comspec_atak_native_fnc_hasDevice)}) exitWith { false };
         private _el = groupId group _u;
         private _p = getPosASL _u;
         private _wasPlayer = isPlayer _u;

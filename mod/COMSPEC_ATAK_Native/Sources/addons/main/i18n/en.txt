@@ -23937,5 +23937,7 @@
 ["Sapeur confirmé", "Advanced engineer"],
 ["Pilote ou conducteur", "Pilot or driver"],
 ["Aucun joueur du camp en jeu", "No player of the side in game"],
-["%1 joueurs · page %2 sur %3", "%1 players · page %2 of %3"]
+["%1 joueurs · page %2 sur %3", "%1 players · page %2 of %3"],
+["Afficher seulement les entités équipées d'un ATAK", "Show only entities equipped with an ATAK"],
+["Activé : le TOC et ses écrans n'affichent que les unités, véhicules et aéronefs qui portent un téléphone ATAK allumé ; les autres ne sont ni listées ni dessinées ni comptées. Ce filtre s'ajoute au réglage « Source des positions du TOC », qui ne dit que d'où vient la position. Exemple : source Mixte et filtre activé, une section sans téléphone disparaît de la carte, des GROUPES, de l'ORBAT et de l'EFFECTIF, et une section équipée reste à sa vraie position. L'opérateur assis à un PC du poste reste toujours visible.", "On: the TOC and its screens only show the units, vehicles and aircraft that carry an ATAK phone switched on; the others are neither listed, nor drawn, nor counted. This filter comes on top of the “TOC position source” setting, which only says where the position comes from. Example: Mixed source and filter on, a section without phones disappears from the map, GROUPS, the ORBAT and the ROSTER, and an equipped section stays at its real position. The operator sitting at a post PC always stays visible."]
 ]

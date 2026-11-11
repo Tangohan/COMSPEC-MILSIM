@@ -30,7 +30,8 @@ switch (_mode) do {
         _raw params [["_ft", -1], ["_nodes", []], ["_events", []], ["_stats", [0, 0, 0, 0]]];
         // 4.11.0 : le serveur publie aussi les pistes du jeu (fn_tocTracks, source « J ») ; elles restent « source directe » ici.
         private _out = _nodes apply { private _n = +_x; _n set [9, ["P", "D"] select ((_n param [9, "A"]) isEqualTo "J")]; _n };
-        if (missionNamespace getVariable ["comspec_atak_native_toc_direct", true]) then {
+        // 4.11.0, réglage « Afficher seulement les entités équipées d'un ATAK » : pas de lecture directe des unités sans téléphone.
+        if ((missionNamespace getVariable ["comspec_atak_native_toc_direct", true]) && {!(["only"] call comspec_atak_native_fnc_tocHasAtak)}) then {
             // Véhicules et piétons déjà couverts par un nœud de téléphone.
             private _cov = createHashMap;
             { private _o = objectFromNetId (_x select 0); if (!isNull _o) then { _cov set [netId vehicle _o, true]; }; } forEach _nodes;

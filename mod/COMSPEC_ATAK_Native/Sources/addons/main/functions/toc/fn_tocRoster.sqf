@@ -91,6 +91,7 @@ switch (_mode) do {
         private _byGroup = createHashMap;
         { if !((_x param [7, ""]) in _byGroup) then { _byGroup set [_x param [7, ""], _x param [2, []]]; }; } forEach _nodes;
         private _rows = [];
+        private _atakOnly = ["only"] call comspec_atak_native_fnc_tocHasAtak;
         {
             private _g = _x;
             if ((str side _g) isNotEqualTo _side) then { continue };
@@ -99,6 +100,8 @@ switch (_mode) do {
                 private _isAi = !isPlayer _u;
                 if (_isAi && {!_withAi}) then { continue };
                 if (unitIsUAV (vehicle _u)) then { continue };
+                // Filtre « seulement les entités équipées d'un ATAK » (le joueur lui-même et un opérateur au poste restent).
+                if (_atakOnly && {!(["keep", _u] call comspec_atak_native_fnc_tocHasAtak)}) then { continue };
                 private _v = vehicle _u;
                 private _inVeh = _v isNotEqualTo _u;
                 private _crew = "";

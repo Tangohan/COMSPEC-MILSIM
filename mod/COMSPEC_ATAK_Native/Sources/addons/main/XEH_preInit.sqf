@@ -1220,6 +1220,9 @@ private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_toc_headcam", "CHECKBOX",
     ["Caméra de casque sans téléphone", "Coché : la caméra de casque de tout joueur du camp peut être affichée sur un écran TOC ou en mosaïque, même s'il n'a pas de téléphone ATAK. Décoché : seuls les porteurs d'un ATAK qui partagent leur caméra sont proposés. Exemple : coché, le poste suit l'entrée d'une équipe sans téléphone dans un bâtiment."],
     _loc, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_atak_only", "CHECKBOX",
+    ["Afficher seulement les entités équipées d'un ATAK", "Activé : le TOC et ses écrans n'affichent que les unités, véhicules et aéronefs qui portent un téléphone ATAK allumé ; les autres ne sont ni listées ni dessinées ni comptées. Ce filtre s'ajoute au réglage « Source des positions du TOC », qui ne dit que d'où vient la position. Exemple : source Mixte et filtre activé, une section sans téléphone disparaît de la carte, des GROUPES, de l'ORBAT et de l'EFFECTIF, et une section équipée reste à sa vraie position. L'opérateur assis à un PC du poste reste toujours visible."],
+    _loc, false, 1] call comspec_atak_native_fnc_addSetting;
 // Qui est qui dans le TOC (fn_tocDisplayName, fn_tocRoster) : réglages du serveur.
 ["comspec_atak_native_toc_show_steam", "CHECKBOX",
     ["Afficher le pseudo Steam", "Décoché : les écrans TOC et le PC du poste montrent l'indicatif Athena du joueur, sinon son groupe et son rang, jamais son pseudo. Coché : le pseudo est ajouté entre parenthèses. Exemple : décoché « VIPER 2 », coché « VIPER 2 (Tetar) » ; un joueur sans compte relié apparaît comme « Alpha 1-1 · 2 (non lié) »."],

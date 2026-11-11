@@ -21,6 +21,7 @@ Fichiers, tous dans `mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/toc/`
 | `fn_tocInbox.sqf` | Messages, ordres, accusés, retours sans téléphone | client (tableau des ordres : serveur) |
 | `fn_tocDisplayName.sqf` | Nom affiché d'une unité : indicatif Athena, jamais le pseudo Steam | partout |
 | `fn_tocRoster.sqf` | Tableau EFFECTIF : indicatif, rôle, nom et prénom du personnage | client |
+| `fn_tocHasAtak.sqf` | Filtre « seulement les entités équipées d'un ATAK » | partout |
 | `fn_tocFeed.sqf`, `fn_tocRoom.sqf`, `fn_tocCam.sqf` | Existants, étendus | serveur, serveur, client |
 
 ## 1. Lire : le registre des panneaux
@@ -208,6 +209,8 @@ Rien n'a été changé dans leurs fichiers. À faire chez elles, une fois chacun
 Ajouts d'une ligne dans des fichiers d'autres branches (les seuls) :
 
 - `functions/ui/fn_notify.sqf` : téléphone rangé ou absent, le retour part à `fn_tocInbox` « feedback ».
+- `functions/toc/fn_tocAppData.sqf` : pas de lecture directe des unités quand le filtre « seulement les entités
+  équipées d'un ATAK » est coché.
 - `functions/toc/fn_tocAppData.sqf` (console refaite, 4.9.0) : un nœud du flux de source « J » garde le libellé
   « source directe » de la console au lieu d'être pris pour un téléphone. La console lisait déjà le jeu sur le poste
   de l'opérateur ; depuis ce lot le serveur publie les mêmes unités à tous les lecteurs, écrans compris, et la lecture
@@ -282,6 +285,32 @@ Panneaux du registre : `ROSTER` (args `[recherche, tri, décroissant, avec les I
 | `fn_tocMenu.sqf`, `fn_tocManager.sqf` | entrée « Effectif » dans la catégorie DONNÉES |
 | `config.cpp`, `stringtable.xml`, `fn_tocHallUi.sqf`, `fn_moduleTocScreen.sqf` | choix « Effectif » des listes Eden et Zeus (une ligne chacun, réclamée par `AtakTocScreenConfigAssetTest`) |
 | `fn_tocApp.sqf` ou `fn_tocLaptop.sqf` | « Situation › EFFECTIF » : liste depuis `["console", …]`, champ de recherche, tri au clic sur l'en-tête, boutons Suivre, Message, Ordre (`["action", …]`), Exporter (`["export", …]`) |
+
+### Filtre « seulement les entités équipées d'un ATAK » (`fn_tocHasAtak`)
+
+Réglage du serveur `comspec_atak_native_toc_atak_only` (décoché par défaut, le même pour tous). Coché : seules les
+unités, véhicules et aéronefs qui portent un ATAK allumé sont montrés, listés et comptés. C'est un filtre en plus de
+`comspec_atak_native_toc_source`, qui ne dit que d'où vient la position. Jamais caché : l'opérateur assis à un PC du
+poste, et le joueur lui-même sur son propre poste.
+
+| Filtre | Source | Sans ATAK | Avec ATAK allumé |
+|---|---|---|---|
+| décoché | Mixte, Jeu | montré | montré |
+| décoché | Réseau ATAK | caché | montré |
+| coché | Mixte, Jeu | caché | montré, à sa vraie position |
+| coché | Réseau ATAK | caché | montré, à son dernier point |
+
+```sqf
+[_entite] call comspec_atak_native_fnc_tocHasAtak;            // porte un ATAK allumé (unité, véhicule, aéronef, drone)
+["only"] call comspec_atak_native_fnc_tocHasAtak;             // le filtre est coché
+_liste = _liste select { ["keep", _x] call comspec_atak_native_fnc_tocHasAtak };   // à montrer, réglages lus
+```
+
+Déjà filtrés par ce lot, donc par tout ce qui lit le flux ou le registre : pistes (cartes, murs, satellite), GROUPES,
+ORBAT, EFFECTIF, compteurs, pertes et lignes « PERTE » du flux, caméras proposées (mosaïque comprise), lecture directe
+de la console (`fn_tocAppData`, une ligne). À faire dans les autres branches pour toute liste qui lit le jeu sans
+passer par le flux (tableau radio, listes de `fn_tocLaptop`, listes du tableau des écrans en Zeus `fn_tocManager`,
+escouades proposées) : le `select` ci-dessus.
 
 ## 9. Essais sans le jeu
 

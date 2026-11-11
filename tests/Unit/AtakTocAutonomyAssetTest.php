@@ -17,7 +17,7 @@ final class AtakTocAutonomyAssetTest extends TestCase
 {
     private const MAIN = 'mod/COMSPEC_ATAK_Native/Sources/addons/main/';
     private const TOC = self::MAIN . 'functions/toc/';
-    private const NEW_FILES = ['fn_tocTracks.sqf', 'fn_tocNodeStatus.sqf', 'fn_tocEntry.sqf', 'fn_tocInbox.sqf', 'fn_tocPanels.sqf', 'fn_tocDisplayName.sqf', 'fn_tocRoster.sqf'];
+    private const NEW_FILES = ['fn_tocTracks.sqf', 'fn_tocNodeStatus.sqf', 'fn_tocEntry.sqf', 'fn_tocInbox.sqf', 'fn_tocPanels.sqf', 'fn_tocDisplayName.sqf', 'fn_tocRoster.sqf', 'fn_tocHasAtak.sqf'];
 
     private static function read(string $path): string
     {
@@ -469,7 +469,8 @@ final class AtakTocAutonomyAssetTest extends TestCase
         self::assertStringContainsString('["killed", _u] call comspec_atak_native_fnc_tocTracks;', $m[1]);
         $tracks = self::code(self::read(self::TOC . 'fn_tocTracks.sqf'));
         $killed = substr($tracks, (int) strpos($tracks, 'case "killed": {'), 4200);
-        self::assertStringNotContainsString('hasDevice', $killed);
+        // Le téléphone ne compte que si le serveur a coché « Afficher seulement les entités équipées d'un ATAK ».
+        self::assertSame(substr_count($killed, 'hasDevice'), substr_count($killed, '_atakOnly && {!([_u] call comspec_atak_native_fnc_hasDevice)}'));
         self::assertStringContainsString('{ ["do", [_side, "kill", [_x, "kia", _y], "Jeu", ""]] call comspec_atak_native_fnc_tocRoom; } forEach _q;', $killed);
     }
 
@@ -515,7 +516,7 @@ final class AtakTocAutonomyAssetTest extends TestCase
     public function testHelmetCameraOfAPlayerWithoutAPhoneFollowsTheSetting(): void
     {
         $cam = self::code(self::read(self::TOC . 'fn_tocCam.sqf'));
-        self::assertStringContainsString('if ((missionNamespace getVariable ["comspec_atak_native_toc_headcam", true]) isEqualTo true) then {', $cam);
+        self::assertStringContainsString('{(missionNamespace getVariable ["comspec_atak_native_toc_headcam", true]) isEqualTo true}) then {', $cam);
         self::assertStringContainsString('format ["Caméra de casque · %1"', $cam);
         self::assertStringContainsString('COMSPEC_ATAK_TocHeadCamOff', $cam);
         self::assertStringContainsString('if (_src isKindOf "Man" && {_src getVariable ["COMSPEC_ATAK_TocHeadCam", false]}) exitWith { 256 };', $cam);
@@ -703,5 +704,54 @@ final class AtakTocAutonomyAssetTest extends TestCase
             'MORT', 'BLESSÉ', 'EN VÉHICULE', 'SANS TÉLÉPHONE', 'EN LIGNE', 'Médecin', 'Chef de bord', 'Aucun joueur du camp en jeu'] as $t) {
             self::assertStringContainsString('["' . $t . '", "', $en, "« {$t} » sans anglais");
         }
+    }
+
+    // ---------------------------------------------------------------- filtre « seulement les entités équipées d'un ATAK »
+
+    public function testAtakOnlySwitchIsAHardFilterOnTopOfThePositionSource(): void
+    {
+        $src = self::read(self::TOC . 'fn_tocHasAtak.sqf');
+        $show = static fn (bool $only, bool $has, string $mode, bool $own): bool => $own || $has || (!$only && $mode !== 'ATAK');
+        $cases = self::tables($src, 'CAS FILTRE')['_casesShow'];
+        $seen = [];
+        foreach ($cases as [$name, $args, $want]) {
+            self::assertSame($want, $show(...$args), $name);
+            $seen[] = json_encode($args);
+        }
+        // Toute la table : réglage coché ou non, entité avec ou sans ATAK, les trois sources.
+        foreach ([true, false] as $only) {
+            foreach ([true, false] as $has) {
+                foreach (['MIX', 'GAME', 'ATAK'] as $mode) {
+                    self::assertContains(json_encode([$only, $has, $mode, false]), $seen, 'cas manquant');
+                    // Coché : jamais une entité sans ATAK, quelle que soit la source ; avec ATAK : toujours montrée.
+                    self::assertSame($has || (!$only && $mode !== 'ATAK'), $show($only, $has, $mode, false));
+                    self::assertTrue($show($only, $has, $mode, true), 'le poste du joueur n’est jamais caché');
+                }
+            }
+        }
+        // Réglage du serveur, décoché par défaut, expliqué avec un exemple et son lien avec la source des positions.
+        $pre = self::read(self::MAIN . 'XEH_preInit.sqf');
+        self::assertSame(1, preg_match('~"comspec_atak_native_toc_atak_only", "CHECKBOX",\s*\["Afficher seulement les entités équipées d\'un ATAK", "([^"]+)"\],\s*_loc, false, 1\]~', $pre, $m));
+        self::assertStringContainsString('ni listées ni dessinées ni comptées', $m[1]);
+        self::assertStringContainsString('Source des positions du TOC', $m[1]);
+        self::assertStringContainsString('Exemple', $m[1]);
+        $en = self::read(self::MAIN . 'i18n/en.txt');
+        self::assertStringContainsString('["Afficher seulement les entités équipées d\'un ATAK", "Show only entities equipped with an ATAK"]', $en);
+        self::assertStringContainsString('["' . $m[1] . '", "', $en);
+        // Même notion de porteur que les nœuds du réseau, téléphone allumé ; lu au plus toutes les 10 s.
+        self::assertStringContainsString('[_u] call comspec_atak_native_fnc_hasDevice', $src);
+        self::assertStringContainsString('COMSPEC_ATAK_Beacon', $src);
+        self::assertStringContainsString('_cache set [_key, [_has, diag_tickTime + 8 + random 4]];', $src);
+        self::assertStringContainsString('class tocHasAtak {};', self::read(self::MAIN . 'config.cpp'));
+        // Appliqué par la couche de données : pistes et effectif, ORBAT, pertes, EFFECTIF, caméras, lecture directe de la console.
+        $tracks = self::read(self::TOC . 'fn_tocTracks.sqf');
+        self::assertStringContainsString('if (["only"] call comspec_atak_native_fnc_tocHasAtak) then {', $tracks);
+        self::assertStringContainsString('_strength = [_cP, _cAi];', $tracks);
+        self::assertStringContainsString('if (_atakOnly) then { _us = _us select {', $tracks);
+        self::assertStringContainsString('if (_atakOnly && {!([_u] call comspec_atak_native_fnc_hasDevice)}) exitWith { false };', $tracks);
+        self::assertStringContainsString('if (_atakOnly && {!(["keep", _u] call comspec_atak_native_fnc_tocHasAtak)}) then { continue };', self::read(self::TOC . 'fn_tocRoster.sqf'));
+        self::assertStringContainsString('if (!_atakOnly && {(missionNamespace getVariable ["comspec_atak_native_toc_headcam", true]) isEqualTo true}) then {', self::read(self::TOC . 'fn_tocCam.sqf'));
+        self::assertStringContainsString('&& {!(["only"] call comspec_atak_native_fnc_tocHasAtak)}) then {', self::read(self::TOC . 'fn_tocAppData.sqf'));
+        self::assertStringContainsString('comspec_atak_native_toc_atak_only', self::read('docs/TOC-DATA-API.md'));
     }
 }

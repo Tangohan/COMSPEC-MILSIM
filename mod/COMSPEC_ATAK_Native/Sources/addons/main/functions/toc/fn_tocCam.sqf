@@ -46,7 +46,10 @@ switch (_mode) do {
         { _out pushBack [format ["Caméra poitrine · %1", [_x, true] call comspec_atak_native_fnc_unitCallsign], netId _x, "MAN"]; } forEach _chest;
         // Caméra de casque des joueurs du camp sans téléphone (réglage du serveur ; un joueur peut la refuser :
         // player setVariable ["COMSPEC_ATAK_TocHeadCamOff", true, true]).
-        if ((missionNamespace getVariable ["comspec_atak_native_toc_headcam", true]) isEqualTo true) then {
+        // Filtre « seulement les entités équipées d'un ATAK » : ni caméra de casque sans téléphone, ni drone sans opérateur porteur.
+        private _atakOnly = ["only"] call comspec_atak_native_fnc_tocHasAtak;
+        if (_atakOnly) then { _out = _out select { (_x select 2) isNotEqualTo "UAV" || {[objectFromNetId (_x select 1)] call comspec_atak_native_fnc_tocHasAtak} }; };
+        if (!_atakOnly && {(missionNamespace getVariable ["comspec_atak_native_toc_headcam", true]) isEqualTo true}) then {
             {
                 _out pushBack [format ["Caméra de casque · %1", [_x] call comspec_atak_native_fnc_tocDisplayName], netId _x, "MAN"];
             } forEach (allPlayers select { alive _x && {(side group _x) isEqualTo _side} && {!(_x in _chest)} && {!(_x getVariable ["COMSPEC_ATAK_TocHeadCamOff", false])} && {!([_x] call comspec_atak_native_fnc_hasDevice)} });
