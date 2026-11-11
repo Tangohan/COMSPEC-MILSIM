@@ -42,4 +42,18 @@ class COMSPEC_ID_DrivingLicense: COMSPEC_ID_Base {
     picture = "\z\comspec_sse\addons\identity\data\icon_license_ca.paa";
 };
 
+// Pays réels (registre CfgComspecCountries) : titre de séjour et certificat d'immatriculation.
+class COMSPEC_ID_ResidencePermit: COMSPEC_ID_Base {
+    scope = 2;
+    displayName = "$STR_COMSPEC_SSE_CFG_ID_RESIDENCEPERMIT";
+    picture = "\z\comspec_sse\addons\identity\data\icon_residence_ca.paa";
+};
+
+class COMSPEC_ID_VehicleRegistration: COMSPEC_ID_Base {
+    scope = 2;
+    displayName = "$STR_COMSPEC_SSE_CFG_ID_VEHICLEREG";
+    picture = "\z\comspec_sse\addons\identity\data\icon_vreg_ca.paa";
+    model = "\A3\Structures_F\Items\Documents\File2_F.p3d";
+};
+
 #include "CfgWeapons_instances.hpp"

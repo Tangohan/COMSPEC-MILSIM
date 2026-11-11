@@ -64,6 +64,60 @@ class CfgComspecDocuments {
                 DOC_FIELD(authority, "authority", 0.05, 0.25, 0.58);
                 DOC_FIELD_T(issued, "issued", 0.05, 0.40, 0.28, "dmy");
                 DOC_FIELD(profession, "profession", 0.36, 0.40, 0.36);
+                // Pays réels seulement (valeur vide ailleurs, rien n'est posé) : taille, numéro personnel imprimé.
+                DOC_FIELD(height, "height", 0.66, 0.25, 0.30);
+                class personal { key = "personal"; x = 0.66; y = 0.10; w = 0.32; h = 0.042; font = "mono"; };
+            };
+        };
+    };
+
+    // Titre de séjour (pays réels : Titre de séjour, Aufenthaltstitel, Permesso di soggiorno…) : carte ID-1 à puce, MRZ TD1
+    // (code « IR », « AR » en Allemagne). Gabarit de la carte du pays, titre et étiquettes posés en jeu.
+    class residence_permit: id_card {
+        displayName = "Titre de séjour";
+        displayNameEn = "Residence permit";
+        item = "COMSPEC_ID_ResidencePermit";
+        icon = "\z\comspec_sse\addons\identity\data\icon_residence_ca.paa";
+        chip = 1;
+        class recto: recto {
+            class fields {
+                class last { key = "last"; x = 0.34; y = 0.245; w = 0.48; h = DOC_VALUE_H; transform = "upper"; font = "name"; };
+                class first { key = "first"; x = 0.34; y = 0.365; w = 0.48; h = DOC_VALUE_H; font = "name"; };
+                DOC_FIELD(sex, "sex", 0.34, 0.485, 0.10);
+                DOC_FIELD(nat, "nat", 0.45, 0.485, 0.18);
+                DOC_FIELD_T(dob, "dob", 0.64, 0.485, 0.30, "dmy");
+                DOC_FIELD(permit, "permit", 0.34, 0.605, 0.58);
+                class number { key = "number"; x = 0.34; y = 0.725; w = 0.28; h = DOC_VALUE_H; color = "#8c1414"; };
+                DOC_FIELD_T(expires, "expires", 0.64, 0.725, 0.30, "dmy");
+            };
+        };
+    };
+
+    // Certificat d'immatriculation (carte grise, Zulassungsbescheinigung Teil I, V5C, registration) : feuillet A6, sans
+    // photo ni MRZ ; plaque et numéro de châssis (VIN, clé nord-américaine juste) tirés pour le titulaire.
+    class vehicle_registration {
+        displayName = "Certificat d'immatriculation";
+        displayNameEn = "Vehicle registration";
+        category = "permit";
+        item = "COMSPEC_ID_VehicleRegistration";
+        icon = "\z\comspec_sse\addons\identity\data\icon_vreg_ca.paa";
+        ratio = 1.414;
+        sides = 1;
+        countries[] = {};
+        mrz = "";
+        extension = "";
+        class recto {
+            texture = "\z\comspec_sse\addons\identity\data\tpl_vreg_%1_co.paa";
+            class fields {
+                class plate { key = "plate"; x = 0.05; y = 0.215; w = 0.42; h = 0.065; font = "mono"; };
+                DOC_FIELD_T(firstReg, "firstReg", 0.55, 0.215, 0.40, "dmy");
+                class holder { key = "holder"; x = 0.05; y = 0.355; w = 0.90; h = DOC_VALUE_H; font = "name"; };
+                DOC_FIELD(address, "address", 0.05, 0.495, 0.90);
+                DOC_FIELD(vehicle, "vehicle", 0.05, 0.635, 0.45);
+                class vin { key = "vin"; x = 0.55; y = 0.635; w = 0.42; h = 0.055; font = "mono"; };
+                class number { key = "number"; x = 0.05; y = 0.775; w = 0.45; h = DOC_VALUE_H; color = "#8c1414"; };
+                DOC_FIELD_T(issued, "issued", 0.55, 0.775, 0.40, "dmy");
+                class authority { key = "authority"; x = 0.05; y = 0.905; w = 0.90; h = 0.05; };
             };
         };
     };

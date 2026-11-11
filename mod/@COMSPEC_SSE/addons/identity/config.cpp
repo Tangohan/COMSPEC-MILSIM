@@ -16,7 +16,7 @@ class CfgPatches {
     class comspec_sse_identity {
         name = "COMSPEC SSE - Identity";
         units[] = {"COMSPEC_SSE_Module_IdCheckpoint"};
-        weapons[] = {"COMSPEC_ID_Card", "COMSPEC_ID_Passport", "COMSPEC_ID_DrivingLicense", "COMSPEC_ID_MilitaryCard"};
+        weapons[] = {"COMSPEC_ID_Card", "COMSPEC_ID_Passport", "COMSPEC_ID_DrivingLicense", "COMSPEC_ID_MilitaryCard", "COMSPEC_ID_ResidencePermit", "COMSPEC_ID_VehicleRegistration"};
         requiredVersion = REQUIRED_VERSION;
         requiredAddons[] = {
             "comspec_sse_core",
@@ -47,6 +47,10 @@ class CfgFunctions {
             class idRegistry {};
             class idCountries {};
             class idRealCountries {};
+            // Pays réels (registre CfgComspecCountries) : numéros à clé, essais du registre (console de débogage).
+            class idNumbers {};
+            class idCountryChrome {};
+            class idCountrySelfTest {};
             class idGenerate {};
             class idDocNumber {};
             class idMrz {};
@@ -169,6 +173,8 @@ class CfgVehicles {
 };
 
 #include "CfgComspecDocuments.hpp"
+// Pays des papiers (France, Allemagne, États-Unis… puis pays fictifs d'Arma) : généré par tools/countries/gen_countries.py.
+#include "CfgComspecCountries.hpp"
 
 class RscText;
 class RscButton;
