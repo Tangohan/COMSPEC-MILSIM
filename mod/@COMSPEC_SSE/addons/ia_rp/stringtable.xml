@@ -2312,5 +2312,101 @@
             <English>An AI only talks about what she knows: a civilian with no knowledge never talks about weapons or armed groups. Your texts only replace her line: orders, lies, fear and papers follow the rules.</English>
             <French>Une IA ne parle que de ce qu'elle sait : un civil sans savoir ne parle jamais d'armes ni de groupes armés. Vos textes ne remplacent que sa réplique : ordres, mensonge, peur et papiers suivent les règles.</French>
         </Key>
+        <!-- Bouton « SSE » de la fenêtre d'édition d'une IA en Zeus (ZEN) et fenêtre « SSE · <nom> » (fn_iarpZenHub). -->
+        <Key ID="STR_COMSPEC_IARP_H_Btn">
+            <Original>SSE</Original>
+            <English>SSE</English>
+            <French>SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Btn_D">
+            <Original>Open this AI's SSE profile: identity and papers, answers, emotions (e.g. give her an ID card, write what she answers to « Your papers? »).</Original>
+            <English>Open this AI's SSE profile: identity and papers, answers, emotions (e.g. give her an ID card, write what she answers to « Your papers? »).</English>
+            <French>Ouvrir le profil SSE de cette IA : identité et papiers, réponses, émotions (ex. : lui donner une carte d'identité, écrire ce qu'elle répond à « Vos papiers ? »).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Title">
+            <Original>SSE · %1</Original>
+            <English>SSE · %1</English>
+            <French>SSE · %1</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Close">
+            <Original>Back</Original>
+            <English>Back</English>
+            <French>Retour</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Close_D">
+            <Original>Close this window and go back to the unit edit window: what you typed there is still waiting for OK or Cancel.</Original>
+            <English>Close this window and go back to the unit edit window: what you typed there is still waiting for OK or Cancel.</English>
+            <French>Fermer cette fenêtre et revenir à la fenêtre d'édition de l'unité : ce que vous y avez tapé attend toujours OK ou Annuler.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Id">
+            <Original>Identity and papers</Original>
+            <English>Identity and papers</English>
+            <French>Identité et papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Id_D">
+            <Original>Her sheet: name, papers, Athena profile, keep for next sessions.</Original>
+            <English>Her sheet: name, papers, Athena profile, keep for next sessions.</English>
+            <French>Sa fiche : nom, papiers, profil Athena, à garder pour les prochaines parties.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Truth">
+            <Original>See her real papers</Original>
+            <English>See her real papers</English>
+            <French>Voir ses vrais papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Truth_D">
+            <Original>Her true identity and papers, seen by the Zeus only (e.g. what a cover hides).</Original>
+            <English>Her true identity and papers, seen by the Zeus only (e.g. what a cover hides).</English>
+            <French>Sa vraie identité et ses papiers, vus par le Zeus seul (ex. : ce que cache une couverture).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Workshop">
+            <Original>AI workshop</Original>
+            <English>AI workshop</English>
+            <French>Atelier IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Workshop_D">
+            <Original>Personality, way of talking, profile library, import and export.</Original>
+            <English>Personality, way of talking, profile library, import and export.</English>
+            <French>Personnalité, façon de parler, bibliothèque de profils, import et export.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Answers">
+            <Original>AI answers</Original>
+            <English>AI answers</English>
+            <French>Réponses de l'IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Answers_D">
+            <Original>What she answers, question by question, and what she may bring up.</Original>
+            <English>What she answers, question by question, and what she may bring up.</English>
+            <French>Ce qu'elle répond, question par question, et ce qu'elle peut évoquer.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Emo">
+            <Original>Emotions</Original>
+            <English>Emotions</English>
+            <French>Émotions</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Emo_D">
+            <Original>What she feels and shows, fear of weapons included.</Original>
+            <English>What she feels and shows, fear of weapons included.</English>
+            <French>Ce qu'elle ressent et montre, peur des armes comprise.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Control">
+            <Original>Behaviour at a check</Original>
+            <English>Behaviour at a check</English>
+            <French>Comportement au contrôle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Control_D">
+            <Original>Role, temper, reaction to orders, threats, search and bribes.</Original>
+            <English>Role, temper, reaction to orders, threats, search and bribes.</English>
+            <French>Rôle, caractère, réaction aux ordres, aux menaces, à la fouille et au pot-de-vin.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Know">
+            <Original>Knowledge, secrets and cover</Original>
+            <English>Knowledge, secrets and cover</English>
+            <French>Savoir, secrets et couverture</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Know_D">
+            <Original>Her story, what she knows, her secrets and how to get them.</Original>
+            <English>Her story, what she knows, her secrets and how to get them.</English>
+            <French>Son histoire, ce qu'elle sait, ses secrets et comment les obtenir.</French>
+        </Key>
     </Package>
 </Project>

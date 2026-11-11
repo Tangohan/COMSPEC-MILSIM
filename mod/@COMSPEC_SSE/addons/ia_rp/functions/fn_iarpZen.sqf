@@ -96,8 +96,12 @@ private _has = { (_this call comspec_sse_iarpZenTargets) isNotEqualTo [] };
 private _hasId = { !isNil "comspec_sse_fnc_idClient" && {(_this call comspec_sse_iarpZenTargets) isNotEqualTo []} };
 private _hasFsm = { !isNil "comspec_sse_fnc_idAiFsm" && {(_this call comspec_sse_iarpZenTargets) isNotEqualTo []} };
 private _root = "comspec_sse_iarp";
+// Chaque action est aussi rangée par identifiant (« _answers », « _truth »…) : la fenêtre « SSE · <nom de l'IA> » du
+// bouton SSE de la fenêtre d'édition d'une unité (fn_iarpZenHub) lance les mêmes actions, avec l'IA comme cible.
+missionNamespace setVariable ["comspec_sse_iarpZenActs", createHashMap];
 private _mk = {
     params ["_id", "_key", "_ic", "_code", "_cond", "_parent", "_prio", ["_arg", []]];
+    (missionNamespace getVariable "comspec_sse_iarpZenActs") set [_id, [_code, _cond, _arg]];
     [[_root + _id, localize _key, _ic, _code, _cond, _arg] call zen_context_menu_fnc_createAction, _parent, _prio] call zen_context_menu_fnc_addAction;
 };
 private _ip = "\z\comspec_sse\addons\zeus\data\";
