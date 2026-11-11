@@ -3,7 +3,8 @@
 [h2]Français[/h2]
 [list]
 [*] [b]Tableau des écrans[/b] : une fenêtre liste tous les écrans du TOC, dalle par dalle, dans l'éditeur, au Zeus et en jeu.
-[*] [b]Choisir la source[/b] : pour chaque dalle, vous choisissez ce qu'elle montre : carte, satellite, caméras, escouade, horloge, texte, mire.
+[*] [b]Choisir la source[/b] : pour chaque dalle, vous choisissez d'abord la famille (cartes, caméras, satellite, données, temps, diffusion), puis la source. Une caméra est nommée avec son porteur, sa distance et son état.
+[*] [b]Régler la vue[/b] : pour chaque dalle, vous choisissez le cadrage de la carte (zone, secteur, théâtre, centré sur le point regardé), et pour un satellite son capteur ou le groupe qu'il suit.
 [*] [b]Tout générer d'un coup[/b] : un bouton pose une salle complète, un autre donne un flux standard à chaque écran de la salle.
 [*] [b]Dispositions[/b] : les murs d'images et l'écran incurvé ont douze dispositions prêtes (carte et caméras, quatre vues, surveillance…).
 [*] [b]Diffusion[/b] : un écran peut être recopié sur toute la salle en même temps, avec un témoin EN DIRECT.
@@ -25,7 +26,8 @@
 [h2]English[/h2]
 [list]
 [*] [b]Screens table[/b]: one window lists every TOC screen, panel by panel, in the editor, in Zeus and in game.
-[*] [b]Choose the source[/b]: for each panel, choose what it shows: map, satellite, cameras, squad, clock, text, test card.
+[*] [b]Choose the source[/b]: for each panel, first choose the family (maps, cameras, satellite, data, time, broadcast), then the source. A camera is named with its carrier, its distance and its status.
+[*] [b]Set the view[/b]: for each panel, choose the map framing (area, sector, theatre, centred on the point you look at), and for a satellite its sensor or the group it follows.
 [*] [b]Generate everything at once[/b]: one button places a complete room, another gives every screen of the room a standard feed.
 [*] [b]Layouts[/b]: video walls and the curved screen have twelve ready layouts (map and cameras, four views, surveillance…).
 [*] [b]Broadcast[/b]: one screen can be copied to the whole room at the same time, with a LIVE tally.

@@ -81,7 +81,7 @@ final class AtakTocManagerBroadcastAssetTest extends TestCase
         self::assertStringContainsString('class COMSPEC_ATAK_MenuTocManager', $cfg);
         self::assertStringContainsString("['open'] call comspec_atak_native_fnc_tocManager", $cfg);
         self::assertStringContainsString('"COMSPEC_ATAK_Module_TocManager"', $cfg);
-        foreach (['tocManager', 'tocBroadcast', 'tocStatus', 'tocRtt', 'moduleTocManager'] as $fn) {
+        foreach (['tocManager', 'tocBroadcast', 'tocStatus', 'tocRtt', 'tocWho', 'moduleTocManager'] as $fn) {
             self::assertStringContainsString('class ' . $fn . ' {};', $cfg, $fn);
         }
         $mod = self::read(self::MAIN . 'modules.hpp');
@@ -220,6 +220,71 @@ final class AtakTocManagerBroadcastAssetTest extends TestCase
         foreach (['fn_tocScreen.sqf', 'fn_tocBoard.sqf'] as $f) {
             self::assertStringContainsString('["feed", _side] call comspec_atak_native_fnc_tocStatus', self::read(self::TOC . $f), $f);
         }
+    }
+
+    /** « Faut améliorer aussi les select, qu'on sache si on prend une caméra ou quoi » : sources par famille, vue par dalle. */
+    public function testSourcesParFamilleEtVueParDalle(): void
+    {
+        $src = self::read(self::TOC . 'fn_tocManager.sqf');
+        $cats = self::table($src, '_cats');
+        self::assertSame(['MAP', 'CAM', 'SAT', 'DATA', 'TIME', 'BC', 'MISC'], array_column($cats, 1));
+        // Règle de « category », rejouée : chaque source connue tombe dans une famille de la table.
+        $family = static function (string $key): string {
+            $h = explode('|', $key)[0];
+            return match (true) {
+                in_array($h, ['SPLIT', 'MAP', 'TOC'], true) => 'MAP',
+                in_array($h, ['CAM', 'MOS', 'MOSAIC', 'COLC'], true) => 'CAM',
+                in_array($h, ['SAT', 'SAT1', 'SAT2'], true) => 'SAT',
+                in_array($h, ['CLOCK', 'STRIP', 'COLA'], true) => 'TIME',
+                in_array($h, ['BARS', 'BC', 'BROADCAST'], true) => 'BC',
+                in_array($h, ['TEXT', 'OFF'], true) => 'MISC',
+                default => 'DATA',
+            };
+        };
+        foreach (['SPLIT' => 'MAP', 'CAM|2:14' => 'CAM', 'MOS|3|AUTO' => 'CAM', 'SAT2' => 'SAT', 'SQ|Alpha 1-1' => 'DATA', 'REQ' => 'DATA', 'CLOCK' => 'TIME', 'BC|S12-3' => 'BC', 'BARS' => 'BC', 'OFF' => 'MISC'] as $key => $want) {
+            self::assertSame($want, $family($key), $key);
+            self::assertContains($family($key), array_column($cats, 1));
+        }
+        foreach (['case (_h in ["SPLIT", "MAP", "TOC"]): { "MAP" };', 'case (_h in ["CAM", "MOS", "MOSAIC", "COLC"]): { "CAM" };', 'case (_h in ["SAT", "SAT1", "SAT2"]): { "SAT" };',
+            'case (_h in ["CLOCK", "STRIP", "COLA"]): { "TIME" };', 'case (_h in ["BARS", "BC", "BROADCAST"]): { "BC" };', 'case (_h in ["TEXT", "OFF"]): { "MISC" };'] as $line) {
+            self::assertStringContainsString($line, $src);
+        }
+        // Liste en deux temps, caméra nommée avec distance, état et usage ; case du plan avec la famille.
+        foreach (['case "groups":', 'case "cat":', '"fCat"', '["cat", _gi] call _fn;', '· sur %1 écran(s)', '["catLabel", _r select 6] call _fn'] as $needle) {
+            self::assertStringContainsString($needle, $src);
+        }
+        // Listes déroulantes créées après les contrôles du dessous : une liste ouverte passe au-dessus.
+        self::assertStringContainsString('reverse _specs;', $src);
+        self::assertLessThan(strpos($src, 'reverse _specs;'), strpos($src, '_chk ctrlSetText'));
+        // Nom montré : jamais le nom du modèle ; type passé par la traduction du joueur.
+        self::assertStringContainsString('private _type = _mdl call _tr;', $src);
+        self::assertStringContainsString('(_nm find (_mdl select [0, 20])) >= 0', $src);
+        // Pluriel juste.
+        self::assertStringContainsString('["Appliqué à %1 dalle%2", "Appliqué à %1 dalles%2"] select (_ok > 1)', $src);
+        // Cadrage par dalle : table, règle de « frameOf » rejouée (zoom du satellite : 250 m de demi-largeur = 1x, borné).
+        $frames = self::table($src, '_frames');
+        $zoom = static fn (float $half): float => $half > 0 ? min(8.0, max(0.25, 250 / max(1.0, $half))) : 0.0;
+        $byKey = [];
+        foreach ($frames as [$label, $key, $half]) {
+            $byKey[$key] = $half;
+            self::assertNotSame('', $label);
+        }
+        self::assertSame(-1, $byKey['']);
+        self::assertSame(0, $byKey['AUTO']);
+        self::assertEqualsWithDelta(0.5, $zoom($byKey['Z500']), 0.001);
+        self::assertEqualsWithDelta(0.25, $zoom($byKey['Z4000']), 0.001);
+        self::assertSame($byKey['Z500'], $byKey['H500']);
+        self::assertStringContainsString('[0, ((250 / (_half max 1)) max 0.25) min 8] select (_half > 0)', $src);
+        foreach (['["view", [_o, "zoom", _half]] call _ts', '["view", [_o, "center", [_here select 0, _here select 1]]] call _ts', '["zoomTo", _zoom] call _sat', '["follow", ["G", _satDo select [2]]] call _sat', '["mode", _satDo select [2]] call _sat'] as $needle) {
+            self::assertStringContainsString($needle, $src);
+        }
+        // Noms écrits sur les écrans : un seul passage, jamais le pseudo en premier.
+        $who = self::read(self::TOC . 'fn_tocWho.sqf');
+        self::assertLessThan(strpos($who, 'name _u'), strpos($who, 'comspec_atak_native_fnc_tocDisplayName'));
+        self::assertLessThan(strpos($who, 'name _u'), strpos($who, 'comspec_atak_native_fnc_unitCallsign'));
+        $feed = self::read(self::TOC . 'fn_tocFeed.sqf');
+        self::assertStringContainsString('private _cs = ["unit", _u] call comspec_atak_native_fnc_tocWho;', $feed);
+        self::assertStringNotContainsString('name _u', $feed);
     }
 
     /** « Ça freeze de fou, la vue SAT » : budget par qualité, visée et cibles relues par intervalles, soupape. */

@@ -178,8 +178,8 @@ switch (_mode) do {
                     case (_v isKindOf "Tank" || {_v isKindOf "Wheeled_APC_F"}): { "armor" };
                     default { "veh" };
                 };
-                private _cs = [_u, true] call comspec_atak_native_fnc_unitCallsign;
-                if (_cs isEqualTo "") then { _cs = [name _u, groupId group _u] select _isAi; };
+                // Nom écrit sur les écrans : identifiant ou indicatif, puis groupe ; le pseudo en dernier (fn_tocWho).
+                private _cs = ["unit", _u] call comspec_atak_native_fnc_tocWho;
                 // Équipage d'un véhicule : un seul nœud (le meilleur état), occupants comptés.
                 if (_v isNotEqualTo _u) then {
                     private _vk = netId _v;

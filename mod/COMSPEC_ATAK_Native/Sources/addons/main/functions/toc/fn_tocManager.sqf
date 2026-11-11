@@ -24,6 +24,10 @@
                                       source, luminosité, état, jeton d'état, hôte, dalle]
       ["sources", objet]              sources proposées pour une dalle : [[libellé, clé]...]
       ["sourceOf", objet] / ["sourceLabel", clé]
+      ["frames"] / ["frameOf", clé] / ["setView", [objet, cadrage, réglage du satellite, point regardé]]
+                                      cadrage de la carte d'une dalle, zoom, centre, capteur et suivi de son satellite
+      ["category", clé] / ["groups", sources]   famille d'une source ; sources rangées par famille (fonction pure) :
+                                      [[titre, famille, [[libellé, clé]...]]...] (CARTES, CAMÉRAS, SATELLITE, DONNÉES, TEMPS, DIFFUSION, SPÉCIAL)
       ["setSource", [objet, clé]]     pose la source (false : refusée par le format de la dalle)
       ["feeds", [objets]]             flux standard d'un lot d'écrans -> [[objet, clé]...] (sans effet)
       ["uniqueName", nom] / ["uniqueHall", nom]   nom rendu unique dans la mission (« TOC », « TOC 2 »…)
@@ -99,7 +103,11 @@ switch (_mode) do {
                 private _src = objectFromNetId (_k select [4]);
                 if (isNull _src) exitWith { ("caméra perdue") call _tr };
                 private _l = ((["sources"] call comspec_atak_native_fnc_tocCam) select { (_x select 1) isEqualTo (_k select [4]) }) param [0, []];
-                [(_l param [0, "caméra"]) call _tr, getText (configOf _src >> "displayName")] select (_l isEqualTo [])
+                // Genre et nom de la caméra, distance, état, et combien d'écrans la montrent déjà.
+                private _id = _k select [4];
+                private _used = { ((_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isEqualTo "CAM" && {(_x getVariable ["COMSPEC_ATAK_TocCam", ""]) isEqualTo _id} } count (call _reg);
+                format ["%1 · %2 m · %3%4", [(_l param [0, "caméra"]) call _tr, (getText (configOf _src >> "displayName")) call _tr] select (_l isEqualTo []), round (_src distance (call _eye)),
+                    ([("hors ligne") call _tr, ("en ligne") call _tr] select (alive _src && {_l isNotEqualTo []})), ["", format [(" · sur %1 écran(s)") call _tr, _used]] select (_used > 0)]
             };
             case ((_k select [0, 3]) isEqualTo "BC|"): {
                 private _s = ((call _reg) select { (_x getVariable ["COMSPEC_ATAK_TocUid", ""]) isEqualTo (_k select [3]) }) param [0, objNull];
@@ -107,6 +115,87 @@ switch (_mode) do {
             };
             default { ((["title", _k] call _ts) param [1, toLower _k]) call _tr };
         }
+    };
+    case "frames": {
+        // ---- TABLE _frames (JSON) : cadrages proposés [libellé, clé, demi-largeur de carte en m (0 : automatique, -1 : inchangée)].
+        private _frames = [["inchangé", "", -1], ["automatique (tout le réseau)", "AUTO", 0], ["zone (500 m)", "Z500", 500], ["secteur (1,5 km)", "Z1500", 1500], ["théâtre (4 km)", "Z4000", 4000],
+            ["zone, centrée sur le point regardé", "H500", 500], ["secteur, centré sur le point regardé", "H1500", 1500]];
+        // ---- FIN
+        _frames
+    };
+    case "frameOf": {
+        // Cadrage -> [demi-largeur de carte en m (-1 : inchangée, 0 : automatique), centrer sur le point regardé, zoom
+        // affiché du satellite (0 : inchangé ; 250 m de demi-largeur = 1x, borné de 0,25x à 8x)]. Fonction pure.
+        private _row = ((["frames"] call _fn) select { (_x select 1) isEqualTo _a }) param [0, ["", "", -1]];
+        private _half = _row select 2;
+        [_half, (_a select [0, 1]) isEqualTo "H", [0, ((250 / (_half max 1)) max 0.25) min 8] select (_half > 0)]
+    };
+    case "setView": {
+        // Vue d'une dalle : cadrage de la carte (affichages à carte) ou zoom, centre, capteur et suivi du satellite
+        // (affichage satellite : réglage du satellite du camp, partagé par tous les écrans qui le montrent).
+        _a params [["_o", objNull], ["_frame", ""], ["_satDo", ""], ["_here", []]];
+        if (isNull _o || {is3DEN}) exitWith { false };
+        private _c = _o getVariable ["COMSPEC_ATAK_TocScr", []];
+        private _view = _c param [3, ""];
+        private _side = [_c param [1, ""], str side group player] select ((_c param [1, ""]) isEqualTo "");
+        private _isSat = _view isEqualTo "SAT";
+        private _n = ((_c param [8, 0]) max 0) min 1;
+        private _sat = { ["do", [_side, "sat", [_n, _this select 0, _this select 1], ["me"] call comspec_atak_native_fnc_tocRoom, getPlayerUID player]] call comspec_atak_native_fnc_tocRoom; };
+        (["frameOf", _frame] call _fn) params ["_half", "_center", "_zoom"];
+        if (_view in ["SPLIT", "MAP", "TOC", "SQUAD"]) then {
+            if (_half isEqualTo 0) then { ["view", [_o, "auto"]] call _ts; };
+            if (_half > 0) then { ["view", [_o, "zoom", _half]] call _ts; };
+            if (_center && {(count _here) >= 2}) then { ["view", [_o, "center", [_here select 0, _here select 1]]] call _ts; };
+        };
+        if (_isSat) then {
+            if (_zoom > 0) then { ["zoomTo", _zoom] call _sat; };
+            if (_center && {(count _here) >= 2}) then { ["center", [_here select 0, _here select 1]] call _sat; };
+            switch (_satDo select [0, 2]) do {
+                case "M:": { ["mode", _satDo select [2]] call _sat; };
+                case "G:": { ["follow", ["G", _satDo select [2]]] call _sat; };
+                default { if (_satDo isEqualTo "U") then { ["unfollow", []] call _sat; }; };
+            };
+        };
+        _o setVariable ["COMSPEC_ATAK_TocAt", -10];
+        true
+    };
+    case "category": {
+        // Famille d'une source, pour la liste en deux temps : CARTES, CAMÉRAS, SATELLITE, DONNÉES, TEMPS, DIFFUSION, SPÉCIAL.
+        private _h = if (_a isEqualType "") then { (_a splitString "|") param [0, _a] } else { "" };
+        switch (true) do {
+            case (_h in ["SPLIT", "MAP", "TOC"]): { "MAP" };
+            case (_h in ["CAM", "MOS", "MOSAIC", "COLC"]): { "CAM" };
+            case (_h in ["SAT", "SAT1", "SAT2"]): { "SAT" };
+            case (_h in ["CLOCK", "STRIP", "COLA"]): { "TIME" };
+            case (_h in ["BARS", "BC", "BROADCAST"]): { "BC" };
+            case (_h in ["TEXT", "OFF"]): { "MISC" };
+            default { "DATA" };
+        }
+    };
+    case "groups": {
+        // Sources rangées par famille : [[titre, famille, [[libellé, clé]...]]...], familles vides retirées. Sans effet.
+        private _list = if (_a isEqualType []) then { _a } else { [] };
+        // ---- TABLE _cats (JSON) : familles de sources, dans l'ordre de la liste.
+        private _cats = [["CARTES", "MAP"], ["CAMÉRAS", "CAM"], ["SATELLITE", "SAT"], ["DONNÉES", "DATA"], ["TEMPS", "TIME"], ["DIFFUSION", "BC"], ["SPÉCIAL", "MISC"]];
+        // ---- FIN
+        (_cats apply {
+            private _id = _x select 1;
+            [_x select 0, _id, _list select { (["category", _x param [1, ""]] call _fn) isEqualTo _id }]
+        }) select { (_x select 2) isNotEqualTo [] }
+    };
+    case "catLabel": {
+        (createHashMapFromArray [["MAP", "CARTES"], ["CAM", "CAMÉRAS"], ["SAT", "SATELLITE"], ["DATA", "DONNÉES"], ["TIME", "TEMPS"], ["BC", "DIFFUSION"], ["MISC", "SPÉCIAL"]]) getOrDefault [["category", _a] call _fn, "DONNÉES"]
+    };
+    case "cat": {
+        // Famille choisie : la liste « Source » ne montre plus que les sources de cette famille.
+        private _cSrc = _st getOrDefault ["src", controlNull];
+        if (isNull _cSrc) exitWith { false };
+        private _items = ((_st getOrDefault ["groups", []]) param [_a, ["", "", []]]) select 2;
+        lbClear _cSrc;
+        { private _i = _cSrc lbAdd (_x select 0); _cSrc lbSetData [_i, _x select 1]; } forEach _items;
+        private _want = _st getOrDefault ["srcWant", ""];
+        _cSrc lbSetCurSel ((_items findIf { (_x select 1) isEqualTo _want }) max 0);
+        true
     };
     case "sourceOf": {
         private _o = _a;
@@ -273,19 +362,27 @@ switch (_mode) do {
             private _c = _o getVariable ["COMSPEC_ATAK_TocScr", []];
             private _np = (getNumber (configOf _h >> "comspec_screenPanels")) max 1;
             private _k = [0, _o getVariable ["COMSPEC_ATAK_TocPanel", 0]] select (_o isNotEqualTo _h);
-            private _type = getText (configOf _h >> "displayName");
+            private _mdl = getText (configOf _h >> "displayName");
+            private _type = _mdl call _tr;
             if (_np > 1) then { _type = format [("%1 · dalle %2/%3") call _tr, _type, _k + 1, _np]; };
             private _src = ["sourceOf", _o] call _fn;
+            // Nom montré : celui donné par quelqu'un ; sinon ce que montre la dalle (« CARTE ET FLUX », « SATELLITE 1 · 2 »),
+            // jamais le nom anglais du modèle coupé (« Large curved wall screen, 2 imag… »).
+            private _nm = _c param [0, "TOC"];
+            if (_nm in ["", "TOC"] || {_mdl isNotEqualTo "" && {(_nm find (_mdl select [0, 20])) >= 0}}) then {
+                _nm = toUpper (["sourceLabel", [_src, _c param [3, "SPLIT"]] select (_src isEqualTo "OFF")] call _fn);
+                if (_np > 1) then { _nm = format ["%1 · %2", _nm, _k + 1]; };
+            };
             private _hall = _h getVariable ["COMSPEC_ATAK_TocHall", ""];
             private _cs = _c param [1, ""];
             private _fed = ((missionNamespace getVariable [format ["COMSPEC_ATAK_TocFeed_%1", [_cs, str side group player] select (_cs isEqualTo "")], []]) param [0, -1]) >= 0;
             private _state = switch (true) do {
                 case (_src isEqualTo "OFF"): { ["éteint", "muted"] };
                 case ((_c param [3, ""]) in ["SPLIT", "MAP", "TOC", "SQUAD", "FEED", "NET", "COLB", "CAM"] && {!_fed}): { ["aucun signal", "amber"] };
-                case (_h getVariable ["COMSPEC_ATAK_TocFb", false]): { ["en ligne · tenu par un joueur", "accent"] };
+                case (_h getVariable ["COMSPEC_ATAK_TocFb", false]): { ["en ligne (joueur)", "accent"] };
                 default { ["en ligne", "accent"] };
             };
-            _rows pushBack [netId _o, _o, _c param [0, "TOC"], _type, _hn getOrDefault [_hall, ""], round (_o distance _from), _src, ["sourceLabel", _src] call _fn,
+            _rows pushBack [netId _o, _o, _nm, _type, _hn getOrDefault [_hall, ""], round (_o distance _from), _src, ["sourceLabel", _src] call _fn,
                 ((_h getVariable ["COMSPEC_ATAK_TocOpt", []]) param [0, 100]), (_state select 0) call _tr, _state select 1, _h, _k];
         } forEach (call _reg);
         // Écran hôte puis ses dalles, salles regroupées, du plus proche au plus loin.
@@ -370,11 +467,11 @@ switch (_mode) do {
         } forEach _tools;
         // ---- Tableau (gauche) ----
         private _top = _y0 + 19.4 * _u;
-        private _lw = _w * 0.66;
+        private _lw = _w * 0.7;
         private _lh = _h - 19.4 * _u - 13 * _u;
         private _head = ["ctrlListNBox", [_x0 + _u, _top, _lw, 4.4 * _u]] call _mk;
         private _list = ["ctrlListNBox", [_x0 + _u, _top + 4.4 * _u, _lw, _lh - 4.4 * _u], 100] call _mk;
-        private _cols = [0, 0.04, 0.24, 0.5, 0.63, 0.7, 0.87, 0.93];
+        private _cols = [0, 0.03, 0.2, 0.44, 0.55, 0.61, 0.79, 0.85];
         { _x lnbSetColumnsPos _cols; } forEach [_head, _list];
         _head lnbAddRow (["", "Nom", "Type et dalle", "Salle", "Dist.", "Source montrée", "Lum.", "État"] apply { _x call _tr });
         for "_i" from 0 to 7 do { _head lnbSetColor [[0, _i], ["muted"] call _col]; };
@@ -389,7 +486,7 @@ switch (_mode) do {
         private _selTitle = ["ctrlStructuredText", [_px, _top + _u, _pw - _u, 9 * _u]] call _mk;
         // Plan du mur : jusqu'à 24 cases, une par dalle de l'écran choisi.
         private _wallY = _top + 10.5 * _u;
-        private _wallH = 20 * _u;
+        private _wallH = 15 * _u;
         private _cells = [];
         for "_i" from 0 to 23 do {
             private _b = ["ctrlButton", [0, 0, 0, 0]] call _mk;
@@ -399,28 +496,62 @@ switch (_mode) do {
             _cells pushBack _b;
         };
         private _fy = _wallY + _wallH + 2 * _u;
+        // Champs : libellés posés tout de suite, contrôles créés ensuite du bas vers le haut. Une liste déroulante
+        // ouverte est dessinée avec son contrôle : créée après ceux du dessous, elle passe au-dessus d'eux (avant, les
+        // champs et les boutons du dessous s'écrivaient par-dessus la liste ouverte).
+        private _specs = [];
         private _field = {
             params ["_lbl", "_cls", "_key", "_help"];
             private _l = ["ctrlStatic", [_px, _fy, _pw * 0.34, 4.6 * _u]] call _mk;
             _l ctrlSetText (_lbl call _tr);
             _l ctrlSetTextColor (["text2"] call _col);
-            private _c = [_cls, [_px + _pw * 0.35, _fy, _pw * 0.63, 4.6 * _u]] call _mk;
+            _specs pushBack [_cls, [_px + _pw * 0.35, _fy, _pw * 0.63, 4.6 * _u], _key, _help];
+            _helps set [_key, _help];
+            _fy = _fy + 5.4 * _u;
+        };
+        ["Nom", "ctrlEdit", "fName", "Nom affiché sur l'écran et dans les menus. Exemple : MUR NORD."] call _field;
+        ["Famille de source", "ctrlCombo", "fCat", "Genre de ce que montre la dalle : cartes, caméras, satellite, données du poste, temps, diffusion, spécial. La liste Source dessous ne montre que cette famille. Exemple : CAMÉRAS pour choisir quelle caméra."] call _field;
+        ["Source", "ctrlCombo", "fSrc", "Ce que montre la dalle, dans la famille choisie. Une caméra est nommée par son genre et son porteur, avec sa distance et son état. Exemple : Caméra poitrine · TA1 · 120 m · en ligne."] call _field;
+        ["Cadrage", "ctrlCombo", "fView", "Cadrage de la carte ou zoom du satellite de la dalle : automatique, zone (500 m), secteur (1,5 km), théâtre (4 km), ou centré sur le point que vous regardez. Appliquer à « toute la salle » copie le cadrage. Exemple : secteur."] call _field;
+        ["Satellite", "ctrlCombo", "fSat", "Pour une dalle en satellite : capteur (jour, vision nocturne, thermique) ou suivi d'un groupe, qui garde ses troupes au centre de l'image. Exemple : suivre Alpha 1-1."] call _field;
+        ["Luminosité", "ctrlCombo", "fBright", "Image assombrie pour une salle dans le noir. Exemple : 50 % de nuit."] call _field;
+        ["Salle", "ctrlCombo", "fHall", "Salle à laquelle l'écran est lié (bouton Lier à la salle). Exemple : SALLE TOC."] call _field;
+        ["Titre de diffusion", "ctrlEdit", "fTitle", "Texte écrit sur la mire et à côté du témoin EN DIRECT. Exemple : TOC ALPHA · CANAL 1."] call _field;
+        ["Appliquer à", "ctrlCombo", "fScope", "Portée du bouton Appliquer : cette dalle, les lignes cochées (double clic sur une ligne), toute la salle de la ligne, ou tous les écrans."] call _field;
+        ["Type à poser", "ctrlCombo", "fKind", "Écran posé par Ajouter, ou taille de la salle posée par Générer la salle. Exemple : Mur d'images 3x2."] call _field;
+        ["Préréglage", "ctrlEdit", "fPreset", "Nom du préréglage pour Enregistrer et Charger. Exemple : BRIEFING."] call _field;
+        private _apply = ["ctrlButton", [_px, _fy + _u, _pw * 0.48, 5 * _u]] call _mk;
+        _apply ctrlSetText (("Appliquer") call _tr);
+        _apply ctrlAddEventHandler ["ButtonClick", { ["act", "apply"] call comspec_atak_native_fnc_tocManager; }];
+        private _chk = ["ctrlButton", [_px + _pw * 0.5, _fy + _u, _pw * 0.48, 5 * _u]] call _mk;
+        _chk ctrlSetText (("Cocher / décocher") call _tr);
+        _chk ctrlAddEventHandler ["ButtonClick", { ["check", -1] call comspec_atak_native_fnc_tocManager; }];
+        private _ctl = createHashMap;
+        reverse _specs;
+        {
+            _x params ["_cls", "_pos", "_key", "_help"];
+            private _c = [_cls, _pos] call _mk;
             _c ctrlSetTooltip (_help call _tr);
             _c setVariable ["COMSPEC_ATAK_Act", _key];
             _c ctrlAddEventHandler ["SetFocus", { ["help", (_this select 0) getVariable ["COMSPEC_ATAK_Act", ""]] call comspec_atak_native_fnc_tocManager; }];
-            _helps set [_key, _help];
-            _fy = _fy + 5.4 * _u;
-            _c
-        };
-        private _eName = ["Nom", "ctrlEdit", "fName", "Nom affiché sur l'écran et dans les menus. Exemple : MUR NORD."] call _field;
-        private _cSrc = ["Source", "ctrlCombo", "fSrc", "Ce que montre la dalle : un affichage, un satellite, une escouade, une caméra, la mire, ou « recopie de nom » pour recopier un autre écran. Exemple : satellite 1."] call _field;
-        private _cBright = ["Luminosité", "ctrlCombo", "fBright", "Image assombrie pour une salle dans le noir. Exemple : 50 % de nuit."] call _field;
-        private _cHall = ["Salle", "ctrlCombo", "fHall", "Salle à laquelle l'écran est lié (bouton Lier à la salle). Exemple : SALLE TOC."] call _field;
-        private _eTitle = ["Titre de diffusion", "ctrlEdit", "fTitle", "Texte écrit sur la mire et à côté du témoin EN DIRECT. Exemple : TOC ALPHA · CANAL 1."] call _field;
-        private _cScope = ["Appliquer à", "ctrlCombo", "fScope", "Portée du bouton Appliquer : cette dalle, les lignes cochées (double clic sur une ligne), toute la salle de la ligne, ou tous les écrans."] call _field;
-        private _cKind = ["Type à poser", "ctrlCombo", "fKind", "Écran posé par Ajouter, ou taille de la salle posée par Générer la salle. Exemple : Mur d'images 3x2."] call _field;
-        private _ePreset = ["Préréglage", "ctrlEdit", "fPreset", "Nom du préréglage pour Enregistrer et Charger. Exemple : BRIEFING."] call _field;
+            _ctl set [_key, _c];
+        } forEach _specs;
+        private _eName = _ctl get "fName";
+        private _cCat = _ctl get "fCat";
+        private _cSrc = _ctl get "fSrc";
+        private _cBright = _ctl get "fBright";
+        private _cView = _ctl get "fView";
+        private _cSat = _ctl get "fSat";
+        { private _i = _cView lbAdd ((_x select 0) call _tr); _cView lbSetData [_i, _x select 1]; } forEach (["frames"] call _fn);
+        _cView lbSetCurSel 0;
+        private _cHall = _ctl get "fHall";
+        private _eTitle = _ctl get "fTitle";
+        private _cScope = _ctl get "fScope";
+        private _cKind = _ctl get "fKind";
+        private _ePreset = _ctl get "fPreset";
+        _cCat ctrlAddEventHandler ["LBSelChanged", { ["cat", _this select 1] call comspec_atak_native_fnc_tocManager; }];
         { private _i = _cBright lbAdd format ["%1 %2", _x, "%"]; _cBright lbSetValue [_i, _x]; } forEach [100, 75, 50, 25];
+        _cBright lbSetCurSel 0;
         { private _i = _cScope lbAdd ((_x select 0) call _tr); _cScope lbSetData [_i, _x select 1]; } forEach [["cette dalle", "one"], ["les lignes cochées", "checked"], ["toute la salle de la ligne", "hall"], ["tous les écrans", "all"]];
         _cScope lbSetCurSel 0;
         {
@@ -428,18 +559,12 @@ switch (_mode) do {
             _cKind lbSetData [_i, _x select 1];
         } forEach ([["Salle petite, 8 x 7 m", "ROOM:S"], ["Salle moyenne, 11 x 8,5 m", "ROOM:M"], ["Salle grande, 16 x 9,5 m", "ROOM:L"]] + ((["classes"] call _ts) apply { [_x select 0, _x select 1] }));
         _cKind lbSetCurSel 3;
-        private _apply = ["ctrlButton", [_px, _fy + _u, _pw * 0.48, 5 * _u]] call _mk;
-        _apply ctrlSetText (("Appliquer") call _tr);
-        _apply ctrlAddEventHandler ["ButtonClick", { ["act", "apply"] call comspec_atak_native_fnc_tocManager; }];
-        private _chk = ["ctrlButton", [_px + _pw * 0.5, _fy + _u, _pw * 0.48, 5 * _u]] call _mk;
-        _chk ctrlSetText (("Cocher / décocher") call _tr);
-        _chk ctrlAddEventHandler ["ButtonClick", { ["check", -1] call comspec_atak_native_fnc_tocManager; }];
         // ---- Aide du réglage survolé, routage de la source, ligne d'état ----
         private _help = ["ctrlStructuredText", [_x0 + _u, _y0 + _h - 12.4 * _u, _w - 2 * _u, 5.6 * _u]] call _mk;
         private _route = ["ctrlStructuredText", [_x0 + _u, _y0 + _h - 6.6 * _u, _w * 0.6, 5.6 * _u]] call _mk;
         private _status = ["ctrlStructuredText", [_x0 + _w * 0.62, _y0 + _h - 6.6 * _u, _w * 0.37, 5.6 * _u]] call _mk;
         _st = createHashMapFromArray [["d", _d], ["list", _list], ["title", _title], ["selTitle", _selTitle], ["cells", _cells], ["wall", [_px, _wallY, _pw - _u, _wallH]],
-            ["name", _eName], ["src", _cSrc], ["bright", _cBright], ["hall", _cHall], ["bcTitle", _eTitle], ["scope", _cScope], ["kind", _cKind], ["preset", _ePreset],
+            ["name", _eName], ["src", _cSrc], ["cat", _cCat], ["view", _cView], ["sat", _cSat], ["bright", _cBright], ["hall", _cHall], ["bcTitle", _eTitle], ["scope", _cScope], ["kind", _cKind], ["preset", _ePreset],
             ["help", _help], ["route", _route], ["status", _status], ["helps", _helps], ["rows", []], ["checked", []], ["cur", ""]];
         uiNamespace setVariable ["COMSPEC_ATAK_TocMgr", _st];
         // Ligne à choisir à l'ouverture (menu de l'écran, clic droit du Zeus).
@@ -519,12 +644,28 @@ switch (_mode) do {
             ["hex", "text"] call comspec_atak_native_fnc_tocTheme, _nm, ["hex", "text2"] call comspec_atak_native_fnc_tocTheme, _type, _state];
         (_st get "name") ctrlSetText _nm; // i18n:brut (nom saisi par le joueur)
         // Sources de cette dalle.
-        private _cSrc = _st get "src";
-        lbClear _cSrc;
         private _opts = ["sources", _o] call _fn;
         if ((_opts findIf { (_x select 1) isEqualTo _src }) < 0) then { _opts pushBack [_srcL, _src]; };
-        { private _i = _cSrc lbAdd (_x select 0); _cSrc lbSetData [_i, _x select 1]; } forEach _opts;
-        _cSrc lbSetCurSel ((_opts findIf { (_x select 1) isEqualTo _src }) max 0);
+        // Liste en deux temps : la famille (avec le nombre de sources), puis la source dans cette famille.
+        private _groups = ["groups", _opts] call _fn;
+        _st set ["groups", _groups];
+        _st set ["srcWant", _src];
+        private _cCat = _st get "cat";
+        lbClear _cCat;
+        { private _i = _cCat lbAdd format ["%1 (%2)", (_x select 0) call _tr, count (_x select 2)]; _cCat lbSetData [_i, _x select 1]; } forEach _groups;
+        private _gi = (_groups findIf { ((_x select 2) findIf { (_x select 1) isEqualTo _src }) >= 0 }) max 0;
+        _cCat lbSetCurSel _gi;
+        ["cat", _gi] call _fn;
+        // Satellite : capteurs, puis un suivi par groupe du camp de l'écran.
+        private _cSat = _st get "sat";
+        lbClear _cSat;
+        private _satOpts = [["inchangé", ""], ["capteur automatique (jour, thermique la nuit)", "M:AUTO"], ["capteur jour", "M:DAY"], ["vision nocturne", "M:NV"], ["thermique blanc chaud", "M:WHOT"], ["thermique noir chaud", "M:BHOT"], ["ne plus suivre personne", "U"]];
+        { private _i = _cSat lbAdd ((_x select 0) call _tr); _cSat lbSetData [_i, _x select 1]; } forEach _satOpts;
+        if (!is3DEN) then {
+            { private _i = _cSat lbAdd format [("suivre le groupe %1") call _tr, _x]; _cSat lbSetData [_i, "G:" + _x]; } forEach ((["squads", (_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [1, ""]] call _ts) select [0, 16]);
+        };
+        _cSat lbSetCurSel 0;
+        (_st get "view") lbSetCurSel 0;
         private _cB = _st get "bright";
         _cB lbSetCurSel (([100, 75, 50, 25] find _bright) max 0);
         private _cH = _st get "hall";
@@ -550,7 +691,7 @@ switch (_mode) do {
             private _pk = _r select 12;
             _b ctrlSetPosition [_wx + (_pk mod _gc) * _cw, _wy + (floor (_pk / _gc)) * _ch, _cw * 0.97, _ch * 0.94];
             _b ctrlCommit 0;
-            _b ctrlSetText format ["%1 · %2", _pk + 1, _r select 7]; // i18n:brut (numéro et source déjà traduite)
+            _b ctrlSetText format ["%1 · %2 · %3", _pk + 1, (["catLabel", _r select 6] call _fn) call _tr, _r select 7]; // i18n:brut (numéro, famille et source déjà traduites)
             _b ctrlSetTooltip format ["%1 · %2", _r select 2, _r select 7];
             _b ctrlSetBackgroundColor ([["bg2"] call _col, ["accentDim"] call _col] select ((_r select 0) isEqualTo _key));
             _b ctrlShow true;
@@ -561,7 +702,7 @@ switch (_mode) do {
         private _same = (_rows select { (_x select 6) isEqualTo _src && {(_x select 0) isNotEqualTo _key} }) apply { _x select 2 };
         private _uid = if (is3DEN) then { "" } else { _o getVariable ["COMSPEC_ATAK_TocUid", ""] };
         private _outs = (_rows select { _uid isNotEqualTo "" && {(_x select 6) isEqualTo ("BC|" + _uid)} }) apply { _x select 2 };
-        private _txt = format [("Source « %1 » : aussi sur %2.") call _tr, _srcL, [(_same select [0, 8]) joinString ", ", ("aucun autre écran") call _tr] select (_same isEqualTo [])];
+        private _txt = format [("%1 · %2 : aussi sur %3.") call _tr, (["catLabel", _src] call _fn) call _tr, _srcL, [(_same select [0, 8]) joinString ", ", ("aucun autre écran") call _tr] select (_same isEqualTo [])];
         if (_outs isNotEqualTo []) then { _txt = _txt + " " + format [("Recopié par : %1.") call _tr, (_outs select [0, 8]) joinString ", "]; };
         (_st get "route") ctrlSetStructuredText parseText format ["<t size='0.9' color='%1'>%2</t>", ["hex", "muted"] call comspec_atak_native_fnc_tocTheme, _txt];
         true
@@ -607,9 +748,13 @@ switch (_mode) do {
                 private _ttl = trim (ctrlText (_st get "bcTitle"));
                 private _ok = 0;
                 private _no = 0;
+                private _frame = [_st get "view"] call _data;
+                private _satDo = [_st get "sat"] call _data;
+                private _here = call _spot;
                 {
                     private _o = _x select 1;
                     private _one = (_x select 0) isEqualTo (_cur param [0, ""]);
+                    if (!is3DEN) then { ["setView", [_o, _frame, _satDo, _here]] call _fn; };
                     if (is3DEN) then {
                         if ((typeOf _o) select [0, 19] isEqualTo "COMSPEC_ATAK_Module") then { _no = _no + 1; continue };
                         if (["setSource", [_o, _src]] call _fn) then { _ok = _ok + 1; } else { _no = _no + 1; };
@@ -626,7 +771,7 @@ switch (_mode) do {
                         if (_one && {_ttl isNotEqualTo ((["cfg", _o] call comspec_atak_native_fnc_tocBroadcast) select 1)}) then { ["set", [_o, "title", _ttl]] call comspec_atak_native_fnc_tocBroadcast; };
                     };
                 } forEach _to;
-                ["say", format [("Appliqué à %1 dalle(s)%2") call _tr, _ok, ["", format [(" · %1 refusée(s) : source impossible sur ce format de dalle") call _tr, _no]] select (_no > 0)]] call _fn;
+                ["say", format [(["Appliqué à %1 dalle%2", "Appliqué à %1 dalles%2"] select (_ok > 1)) call _tr, _ok, ["", format [([" · %1 refusée : source impossible sur ce format de dalle", " · %1 refusées : source impossible sur ce format de dalle"] select (_no > 1)) call _tr, _no]] select (_no > 0)]] call _fn;
                 call _later;
             };
             case "feeds": {
