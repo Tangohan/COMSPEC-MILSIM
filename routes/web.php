@@ -614,6 +614,8 @@ return function (Router $router) {
     $router->get('/atak/toc/plans', [$tocWeb, 'plans'], $mwAtakMemberOnly);
     $router->get('/atak/toc/plans/lien/{token}', [$tocWeb, 'sharedLink'], $mwAtakMemberOnly);
     $router->get('/atak/toc/plans/{id}/export.json', [$tocWeb, 'exportJson'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/plans/{id}/export.geojson', [$tocWeb, 'exportGeoJson'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/plans/{id}/export.kml', [$tocWeb, 'exportKml'], $mwAtakMemberOnly);
     $router->post('/atak/toc/plans/{id}/export.pdf', [$tocWeb, 'exportPdf'], $mwAtakMemberOnly);
     $router->get('/atak/toc/plans/{id}', [$tocWeb, 'editor'], $mwAtakMemberOnly);
     $router->get('/atak/toc/api/state', [$tocApi, 'state'], $mwAtakMemberOnly);
@@ -636,6 +638,9 @@ return function (Router $router) {
     $router->post('/atak/toc/api/plans/{id}/comments', [$planApi, 'comments'], $mwAtakMemberOnly);
     $router->post('/atak/toc/api/plans/{id}/publish', [$planApi, 'publish'], $mwAtakMemberOnly);
     $router->get('/atak/toc/api/plans/{id}/game-import', [$planApi, 'gameImport'], $mwAtakMemberOnly);
+    $router->post('/atak/toc/api/plans/{id}/import', [$planApi, 'importFile'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/orbat', [$planApi, 'orbat'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/api/terrain/{mapId}/dem', [$planApi, 'dem'], $mwAtakMemberOnly);
     $router->get('/atak/passerelle', [AtakMapGatewayController::class, 'index'], $mwAtakMemberOnly);
     $router->post('/atak/passerelle/creer', [AtakMapGatewayController::class, 'create'], $mwAtakMemberOnly);
     $router->post('/atak/passerelle/rejoindre', [AtakMapGatewayController::class, 'redeem'], $mwAtakMemberOnly);
