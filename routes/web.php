@@ -1029,6 +1029,7 @@ return function (Router $router) {
     $router->get('/atak/sse/papiers/membres/{id}', [\App\Controllers\Web\SseIdentityRegistryController::class, 'memberShow'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/identite-principale', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'savePrimary'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/identites', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'createAlias'], $mwSsePortal);
+    $router->post('/atak/sse/papiers/membres/{id}/identites/{identityId}/photo', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'identityPhoto'], $mwSsePortal);
     $router->get('/atak/sse/papiers/membres/{id}/documents/nouveau', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentForm'], $mwSsePortal);
     $router->get('/atak/sse/papiers/membres/{id}/documents/{docId}/modifier', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentForm'], $mwSsePortal);
     $router->post('/atak/sse/papiers/membres/{id}/documents', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentStore'], $mwSsePortal);
@@ -2222,6 +2223,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/membres/{id}/qualifications-suggerees', [\App\Controllers\Admin\MemberQualificationSuggestionsController::class, 'dismiss'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/identite-principale', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'savePrimary'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/identites', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'createAlias'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/identites/{identityId}/photo', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'identityPhoto'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}/papiers/documents/nouveau', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}/papiers/documents/{docId}/modifier', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentForm'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/papiers/documents', [\App\Controllers\Admin\MemberIdentityPapersController::class, 'documentStore'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
