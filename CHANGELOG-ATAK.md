@@ -315,6 +315,24 @@ EN : ATAK 4.3.0: armed drones, landscape apps, a readable map, AIs that answer r
 
 Aucune nouvelle DLL (COMSPEC Link 2.0.123 inchangé). Migration 4330 (passage aux fichiers). Non vu en jeu : aucune passe de l'autotest n'a tourné pour ce pack.
 
+## À venir : l'ORBAT d'Athena s'affiche de nouveau dans le BFT (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : L'ORBAT d'Athena s'affiche de nouveau dans le BFT
+- Dans le BFT, vue ORBAT, « Lecture de l'ORBAT du site… » ne reste plus affiché sans fin : l'ORBAT de votre unité arrive en quelques secondes, avec votre place et l'état des membres.
+- Si l'ORBAT ne peut pas être lu, le téléphone dit pourquoi en une ligne, propose « Réessayer », réessaie seul et montre les groupes de jeu en attendant.
+EN : The Athena ORBAT shows again in the BFT
+- In the BFT, ORBAT view, "Reading the site ORBAT…" no longer stays on screen forever: your unit's ORBAT arrives within seconds, with your place and the members' status.
+- If the ORBAT cannot be read, the phone says why in one line, offers "Try again", retries on its own and shows the game groups meanwhile.
+
+### Détail technique
+- `fn_bftOrbat` : l'état IDLE servait à la fois de « jamais demandé » et de « en cours », sans limite de temps ; la réponse `ERR|busy` de COMSPEC Link ne changeait pas l'état, et une lecture perdue (réponse jamais traitée, tâche de fond arrêtée, partie relancée avec l'état gardé dans uiNamespace) laissait « Lecture de l'ORBAT du site… » pour toujours. Nouveaux états LOADING (heure de départ), EMPTY (aucun ORBAT sur le site), WAIT (liaison non autorisée : aucune requête) ; réponse attendue 15 s (`fn_extAwait`), garde-fou de 20 s relu au chargement, au bandeau et à la signature de la page ; DOWN avec une raison courte et nouvel essai 15 s, 30 s, 1 min, 2 min puis 5 min ; relu toutes les 5 min une fois lu.
+- RPT : une ligne `[COMSPEC orbat] ancien -> nouveau : raison (code, durée)` par changement d'état (codes d'erreur seuls, jamais de jeton).
+- `fn_pageBft` : bouton RÉESSAYER à droite du message d'erreur ; ligne « Groupes de jeu, en attendant l'ORBAT du site » au-dessus de l'arbre de repli.
+- `fn_extAwait` (natif) : ticket et table d'attente pris dans un bloc `isNil` (comme `fn_extAwait` de connect) : deux appels simultanés pouvaient partager un ticket ou perdre leur table, d'où une réponse jamais reçue.
+- Aucune nouvelle DLL, aucun changement du site. Non vu en jeu.
+
 ## À venir : configurateur d'équipement, favoris, tendances, pré-kits et poids (site, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

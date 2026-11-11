@@ -266,6 +266,57 @@ final class AtakCommunityOrbatTest extends TestCase
         self::assertStringContainsString('(side group _x) isEqualTo _side', $mod);
     }
 
+    /**
+     * Retour de jeu 4.4.0 : « Lecture de l'ORBAT du site… » restait affiché sans fin. Toute lecture est bornée, chaque état
+     * a son message, et rien ne part vers Athena avant l'autorisation de la liaison.
+     */
+    public function testLectureBorneeEtEtatsLisibles(): void
+    {
+        $mod = self::read('mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/pages/fn_bftOrbat.sqf');
+        // Réponse attendue 15 s au plus ; garde-fou de 20 s relu au chargement, au bandeau et à la signature de la page.
+        self::assertStringContainsString('["COMSPECExtension", "GetCommunityOrbat", [], 15] call comspec_atak_native_fnc_extAwait', $mod);
+        self::assertStringContainsString('in ["LOADING", "IDLE"] && {diag_tickTime - (_store getOrDefault ["loadAt", diag_tickTime]) > 20}', $mod);
+        foreach (['case "notice": {', 'case "sig": {'] as $case) {
+            $at = strpos($mod, $case);
+            self::assertNotFalse($at, $case);
+            self::assertStringStartsWith('call _watch;', ltrim(substr($mod, $at + strlen($case))), $case);
+        }
+        // Le bandeau de lecture n'est posé qu'avec son heure de départ (le garde-fou en a besoin).
+        self::assertSame(1, substr_count($mod, '["LOADING", "", '));
+        self::assertMatchesRegularExpression('/_store set \["loadAt", diag_tickTime\];\s*\["LOADING", "", /', $mod);
+        // Tout changement d'état passe par _set : une ligne « [COMSPEC orbat] » au RPT.
+        self::assertSame(1, substr_count($mod, '_store set ["state"'));
+        self::assertStringContainsString('diag_log format ["[COMSPEC orbat] %1 -> %2%3%4"', $mod);
+        self::assertStringNotContainsString('token', strtolower(substr($mod, (int) strpos($mod, 'private _set = {'), 600)));
+        // Licence ou compte non autorisé : WAIT, et aucune requête avant.
+        $load = substr($mod, (int) strpos($mod, 'case "load": {'), (int) strpos($mod, 'case "receive": {') - (int) strpos($mod, 'case "load": {'));
+        self::assertLessThan(strpos($load, 'fnc_extAwait'), strpos($load, '["WAIT", '));
+        self::assertLessThan(strpos($load, '["WAIT", '), strpos($load, 'call _watch;'));
+        // Chaque état a son message ; l'erreur a sa raison et le bouton Réessayer ; ORBAT vide expliqué.
+        foreach (['case "EMPTY":', 'case "WAIT":', 'case "DOWN":', 'case "LOADING":', 'case "NOLINK":', 'case "FORBID":', 'case "DLL":', 'case "OFF":'] as $st) {
+            self::assertStringContainsString($st, substr($mod, (int) strpos($mod, 'case "notice": {')));
+        }
+        self::assertStringContainsString('format ["ORBAT du site indisponible : %1", _why]', $mod);
+        self::assertStringContainsString('"Aucun ORBAT défini sur Athena pour votre unité.', $mod);
+        // Nouvel essai espacé : 15 s, 30 s, 1 min, 2 min, puis 5 min.
+        self::assertStringContainsString('diag_tickTime + ((15 * 2 ^ ((_f - 1) min 5)) min 300)', $mod);
+
+        $bft = self::read('mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/pages/fn_pageBft.sqf');
+        self::assertStringContainsString('"RÉESSAYER"] call comspec_atak_native_fnc_pageCtrl', $bft);
+        self::assertStringContainsString('"Groupes de jeu, en attendant l\'ORBAT du site"', $bft);
+
+        // Tickets des appels non bloquants pris d'un seul tenant (deux scripts ne partagent plus un ticket).
+        $await = self::read('mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/network/fn_extAwait.sqf');
+        self::assertMatchesRegularExpression('/isNil \{\s*_n = \(missionNamespace getVariable \["COMSPEC_ATAK_ExtTicketN", 0\]\) \+ 1;/', $await);
+
+        foreach (['mod/COMSPEC_ATAK_Native/Sources/addons/main/i18n/en.txt', 'mod/COMSPEC_ATAK_Native/localisation/template/xx.txt'] as $dict) {
+            $d = self::read($dict);
+            foreach (['ORBAT du site indisponible : %1', 'pas de réponse en 15 s', 'Mise à jour de l\'ORBAT du site…', 'Groupes de jeu, en attendant l\'ORBAT du site'] as $k) {
+                self::assertStringContainsString('["' . $k . '", ', $d, $dict . ' : ' . $k);
+            }
+        }
+    }
+
     public function testActionsSelonEtatEtBoutons(): void
     {
         $bft = self::read('mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/pages/fn_pageBft.sqf');

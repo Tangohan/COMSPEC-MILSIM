@@ -271,15 +271,21 @@ private _noteTxt = ["", _nTxt] select _noteOn;
 if (_upd && {_noteTxt isNotEqualTo (_live getOrDefault ["note", ""])}) exitWith { false };
 if (_noteOn) then {
     private _noteW = ([_bw, _bw * 0.58] select _land) - _pad;
+    // Erreur : bouton RÉESSAYER à droite du message (relit l'ORBAT tout de suite, au plus toutes les 10 s).
+    private _rbW = [0, (_noteW * 0.26) max (_font * 4)] select _nRetry;
     private _noteTr = (_nTxt) call comspec_atak_native_fnc_tr;
-    private _noteH = [count _noteTr, _noteW] call _textH;
+    private _noteH = ([count _noteTr, _noteW - _rbW] call _textH) max ([0, _font * 1.3] select _nRetry);
     if (!_upd) then {
-        private _nc = ["COMSPEC_RscStructuredText", [_pad, _y, _noteW, _noteH]] call comspec_atak_native_fnc_pageCtrl;
+        private _nc = ["COMSPEC_RscStructuredText", [_pad, _y, _noteW - _rbW, _noteH]] call comspec_atak_native_fnc_pageCtrl;
         _nc ctrlSetStructuredText parseText (format ["<t size='0.9' color='%1'>%2</t>", COMSPEC_ATAK_Th get (switch (_nTone) do { case "alert": { "hexAlert" }; case "info": { "hexInfo" }; default { "hexWarn" }; }), [_noteTr] call _esc]); // i18n:brut
         if (_nRetry) then {
-            private _nb = ["COMSPEC_RscButtonOverlay", [_pad, _y, ([_bw, _bw * 0.58] select _land) - _pad, _noteH]] call comspec_atak_native_fnc_pageCtrl;
+            private _nb = ["COMSPEC_RscButton", [_pad + _noteW - _rbW + _pad / 2, _y, _rbW - _pad / 2, _font * 1.3], "RÉESSAYER"] call comspec_atak_native_fnc_pageCtrl;
+            _nb ctrlSetFontHeight ((_fs * 0.9) max COMSPEC_ATAK_FontMin);
             _nb ctrlSetTooltip (("Clic : relire l'ORBAT du site") call comspec_atak_native_fnc_tr);
-            _nb ctrlAddEventHandler ["ButtonClick", { ["load", true] call comspec_atak_native_fnc_bftOrbat; }];
+            _nb ctrlAddEventHandler ["ButtonClick", {
+                ["load", true] call comspec_atak_native_fnc_bftOrbat;
+                [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
+            }];
         };
     };
     _y = _y + _noteH;
@@ -618,6 +624,12 @@ if (_view isEqualTo "ORBAT") then {
                 [_x select 1, _d + 1, ["", (_x select 2) + " : "] select ((_x select 2) isNotEqualTo "" && {(_x select 0) isEqualTo "p"})] call _addPerson;
             } forEach _uRows;
         } forEach _oUnits;
+    };
+    // ORBAT du site pas encore lu (lecture, erreur, liaison) : l'arbre vient des groupes de jeu, et le tableau le dit.
+    if (!_hasOrb && {!((_orb get "state") in ["EMPTY", "OK"])} && {(count _tracks) > 0}) then {
+        ["Groupes de jeu, en attendant l'ORBAT du site", "", _cMute, "", _cMute, "Arbre fait des groupes de jeu : l'ORBAT du site n'est pas encore lu."] call _put;
+        _rows pushBack ["", ""];
+        _ids pushBack "";
     };
     // Tout ce qui n'est pas dans l'ORBAT du site : pistes (IA comprises) et joueurs de mon camp sans piste.
     private _others = if (_hasOrb) then { _tracks select { !((_x select 1) in _trackKey) } } else { _tracks };
