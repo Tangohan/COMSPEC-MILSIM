@@ -28,7 +28,7 @@ class COMSPEC_ATAK_Screen_Base3D: Static {
     hiddenSelections[]={"screen"};
     hiddenSelectionsTextures[]={COMSPEC_TOC3D_OFF};
     hiddenSelectionsMaterials[]={COMSPEC_TOC3D_MAT};
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_Wall2x2: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -108,7 +108,7 @@ class COMSPEC_ATAK_Screen_LedText8: COMSPEC_ATAK_Screen_Base3D {
     model="\z\comspec_atak_native\addons\main\data\toc\toc_led_text_8.p3d";
     editorPreview="\z\comspec_atak_native\addons\main\data\toc\toc_led_text_8_preview.jpg";
     comspec_screenRatio=8;
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_LedText16: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -117,7 +117,7 @@ class COMSPEC_ATAK_Screen_LedText16: COMSPEC_ATAK_Screen_Base3D {
     model="\z\comspec_atak_native\addons\main\data\toc\toc_led_text_16.p3d";
     editorPreview="\z\comspec_atak_native\addons\main\data\toc\toc_led_text_16_preview.jpg";
     comspec_screenRatio=16;
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_LedText8_Ceiling: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -126,7 +126,7 @@ class COMSPEC_ATAK_Screen_LedText8_Ceiling: COMSPEC_ATAK_Screen_Base3D {
     model="\z\comspec_atak_native\addons\main\data\toc\toc_led_text_8_ceiling.p3d";
     editorPreview="\z\comspec_atak_native\addons\main\data\toc\toc_led_text_8_ceiling_preview.jpg";
     comspec_screenRatio=8;
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_LedText16_Ceiling: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -135,7 +135,7 @@ class COMSPEC_ATAK_Screen_LedText16_Ceiling: COMSPEC_ATAK_Screen_Base3D {
     model="\z\comspec_atak_native\addons\main\data\toc\toc_led_text_16_ceiling.p3d";
     editorPreview="\z\comspec_atak_native\addons\main\data\toc\toc_led_text_16_ceiling_preview.jpg";
     comspec_screenRatio=16;
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 // Écran géant 136 pouces LED tout-en-un (3,011 x 1,694 m) : mural ou sur pied de sol lourd (semelles lestées, sans roulettes).
 class COMSPEC_ATAK_Screen_136: COMSPEC_ATAK_Screen_Base3D {
@@ -144,7 +144,7 @@ class COMSPEC_ATAK_Screen_136: COMSPEC_ATAK_Screen_Base3D {
     displayName="$STR_COMSPEC_ATAK_CFG_TOC3D_136";
     model="\z\comspec_atak_native\addons\main\data\toc\toc_136_wall.p3d";
     editorPreview="\z\comspec_atak_native\addons\main\data\toc\toc_136_wall_preview.jpg";
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_136_Stand: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -152,7 +152,7 @@ class COMSPEC_ATAK_Screen_136_Stand: COMSPEC_ATAK_Screen_Base3D {
     displayName="$STR_COMSPEC_ATAK_CFG_TOC3D_136S";
     model="\z\comspec_atak_native\addons\main\data\toc\toc_136_stand.p3d";
     editorPreview="\z\comspec_atak_native\addons\main\data\toc\toc_136_stand_preview.jpg";
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 // Mur LED 220 pouces à vue directe (4,870 x 2,740 m), une seule image : mural ou autoportant sur trois échelles en treillis.
 class COMSPEC_ATAK_Screen_Led220: COMSPEC_ATAK_Screen_Base3D {
@@ -161,7 +161,7 @@ class COMSPEC_ATAK_Screen_Led220: COMSPEC_ATAK_Screen_Base3D {
     displayName="$STR_COMSPEC_ATAK_CFG_TOC3D_L220";
     model="\z\comspec_atak_native\addons\main\data\toc\toc_led_220_wall.p3d";
     editorPreview="\z\comspec_atak_native\addons\main\data\toc\toc_led_220_wall_preview.jpg";
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=5; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_Led220_Truss: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -169,7 +169,7 @@ class COMSPEC_ATAK_Screen_Led220_Truss: COMSPEC_ATAK_Screen_Base3D {
     displayName="$STR_COMSPEC_ATAK_CFG_TOC3D_L220T";
     model="\z\comspec_atak_native\addons\main\data\toc\toc_led_220_truss.p3d";
     editorPreview="\z\comspec_atak_native\addons\main\data\toc\toc_led_220_truss_preview.jpg";
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=5; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 // Très grands murs de dalles 55 pouces. Une image 16:9 ne couvre pas un mur 4x3 (64:27), 5x3 (80:27) ni 6x4 (8:3) sans
 // déformation : l'image principale prend le plus grand bloc 16:9 (index 0), les autres dalles gardent chacune leur image.
@@ -187,7 +187,7 @@ class COMSPEC_ATAK_Screen_Wall4x3: COMSPEC_ATAK_Screen_Base3D {
     hiddenSelections[]={"panel1","panel2","panel3","panel4"};
     hiddenSelectionsTextures[]={COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF};
     hiddenSelectionsMaterials[]={COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT};
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=5; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_Wall4x3_Panels: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -199,7 +199,7 @@ class COMSPEC_ATAK_Screen_Wall4x3_Panels: COMSPEC_ATAK_Screen_Base3D {
     hiddenSelections[]={"panel1","panel2","panel3","panel4","panel5","panel6","panel7","panel8","panel9","panel10","panel11","panel12"};
     hiddenSelectionsTextures[]={COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF};
     hiddenSelectionsMaterials[]={COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT};
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=5; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_Wall5x3: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -211,7 +211,7 @@ class COMSPEC_ATAK_Screen_Wall5x3: COMSPEC_ATAK_Screen_Base3D {
     hiddenSelections[]={"panel1","panel2","panel3","panel4","panel5","panel6","panel7"};
     hiddenSelectionsTextures[]={COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF};
     hiddenSelectionsMaterials[]={COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT};
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=5; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_Wall5x3_Panels: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -223,7 +223,7 @@ class COMSPEC_ATAK_Screen_Wall5x3_Panels: COMSPEC_ATAK_Screen_Base3D {
     hiddenSelections[]={"panel1","panel2","panel3","panel4","panel5","panel6","panel7","panel8","panel9","panel10","panel11","panel12","panel13","panel14","panel15"};
     hiddenSelectionsTextures[]={COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF};
     hiddenSelectionsMaterials[]={COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT};
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=5; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_Wall6x4: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -235,7 +235,7 @@ class COMSPEC_ATAK_Screen_Wall6x4: COMSPEC_ATAK_Screen_Base3D {
     hiddenSelections[]={"panel1","panel2","panel3","panel4","panel5","panel6","panel7","panel8","panel9"};
     hiddenSelectionsTextures[]={COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF};
     hiddenSelectionsMaterials[]={COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT};
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=5; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_Wall6x4_Zones: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -247,7 +247,7 @@ class COMSPEC_ATAK_Screen_Wall6x4_Zones: COMSPEC_ATAK_Screen_Base3D {
     hiddenSelections[]={"panel1","panel2","panel3","panel4","panel5","panel6"};
     hiddenSelectionsTextures[]={COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF};
     hiddenSelectionsMaterials[]={COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT};
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=5; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 // Écrans suspendus multiples : une barre sous deux tubes de plafond, dalles inclinées de 10° vers le bas, une image par
 // dalle (index de gauche à droite vu de face). _Arc : dalles latérales tournées de 15° vers le centre.
@@ -261,7 +261,7 @@ class COMSPEC_ATAK_Screen_65_Ceiling2: COMSPEC_ATAK_Screen_Base3D {
     hiddenSelections[]={"panel1","panel2"};
     hiddenSelectionsTextures[]={COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF};
     hiddenSelectionsMaterials[]={COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT};
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_65_Ceiling3: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -273,7 +273,7 @@ class COMSPEC_ATAK_Screen_65_Ceiling3: COMSPEC_ATAK_Screen_Base3D {
     hiddenSelections[]={"panel1","panel2","panel3"};
     hiddenSelectionsTextures[]={COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF};
     hiddenSelectionsMaterials[]={COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT};
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_65_Ceiling3_Arc: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -285,7 +285,7 @@ class COMSPEC_ATAK_Screen_65_Ceiling3_Arc: COMSPEC_ATAK_Screen_Base3D {
     hiddenSelections[]={"panel1","panel2","panel3"};
     hiddenSelectionsTextures[]={COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF};
     hiddenSelectionsMaterials[]={COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT};
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_98_Ceiling: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -293,7 +293,7 @@ class COMSPEC_ATAK_Screen_98_Ceiling: COMSPEC_ATAK_Screen_Base3D {
     displayName="$STR_COMSPEC_ATAK_CFG_TOC3D_98C";
     model="\z\comspec_atak_native\addons\main\data\toc\toc_98_ceiling.p3d";
     editorPreview="\z\comspec_atak_native\addons\main\data\toc\toc_98_ceiling_preview.jpg";
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=4; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 // Grand écran LED incurvé 32:9 : arc de 7,20 m x 2,025 m de haut, rayon 7 m, surface d'image continue (aucun joint).
 // Trois zones : index 0 = zone centrale 16:9, 1 = colonne gauche 8:9, 2 = colonne droite 8:9 (comspec_screenPanelRatio,
@@ -309,7 +309,7 @@ class COMSPEC_ATAK_Screen_Curved: COMSPEC_ATAK_Screen_Base3D {
     hiddenSelections[]={"panel1","panel2","panel3"};
     hiddenSelectionsTextures[]={COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF};
     hiddenSelectionsMaterials[]={COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT};
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=5; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_Curved_Duo: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -321,7 +321,7 @@ class COMSPEC_ATAK_Screen_Curved_Duo: COMSPEC_ATAK_Screen_Base3D {
     hiddenSelections[]={"panel1","panel2"};
     hiddenSelectionsTextures[]={COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF};
     hiddenSelectionsMaterials[]={COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT};
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=5; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_Curved_Wall: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -333,7 +333,7 @@ class COMSPEC_ATAK_Screen_Curved_Wall: COMSPEC_ATAK_Screen_Base3D {
     hiddenSelections[]={"panel1","panel2","panel3"};
     hiddenSelectionsTextures[]={COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF};
     hiddenSelectionsMaterials[]={COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT};
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=5; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };
 class COMSPEC_ATAK_Screen_Curved_Wall_Duo: COMSPEC_ATAK_Screen_Base3D {
     scope=2; scopeCurator=2;
@@ -345,5 +345,5 @@ class COMSPEC_ATAK_Screen_Curved_Wall_Duo: COMSPEC_ATAK_Screen_Base3D {
     hiddenSelections[]={"panel1","panel2"};
     hiddenSelectionsTextures[]={COMSPEC_TOC3D_OFF,COMSPEC_TOC3D_OFF};
     hiddenSelectionsMaterials[]={COMSPEC_TOC3D_MAT,COMSPEC_TOC3D_MAT};
-    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=5; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
+    class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_41D5DDB858"; selection=""; distance=6; condition="true"; position="['acePos', _target] call comspec_atak_native_fnc_tocConfig"; }; };
 };

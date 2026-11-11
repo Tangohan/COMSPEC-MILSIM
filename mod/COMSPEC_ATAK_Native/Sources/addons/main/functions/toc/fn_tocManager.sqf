@@ -437,7 +437,9 @@ switch (_mode) do {
              ["Lier à la salle", "link", "Lie les lignes cochées à la salle choisie à droite. Exemple : un écran ajouté après coup rejoint SALLE TOC.", false],
              ["Générer la salle", "room", "Pose une salle d'opérations complète (petite, moyenne ou grande) devant vous, écrans et postes déjà liés.", true],
              ["Générer tous les flux", "feeds", "Donne d'un coup un flux standard à chaque écran de la salle : mur = situation, écrans de côté = satellite, caméras, réseau, bandeaux = horloge et texte, plaques = escouades.", false],
-             ["Disposition", "layout", "Applique une disposition au mur ou à l'écran incurvé de la ligne choisie. Exemple : Quad (carte, satellite, caméras, réseau).", false]],
+             ["Disposition", "layout", "Applique une disposition au mur ou à l'écran incurvé de la ligne choisie. Exemple : Quad (carte, satellite, caméras, réseau).", false],
+             ["Éteindre / allumer", "pwr", "Éteint les dalles cochées (sinon la dalle choisie), ou les rallume si elles sont éteintes. La source reste réglée : rallumée, la dalle reprend ce qu'elle montrait. Exemple : éteindre la dalle 4 du mur.", false],
+             ["Supprimer la salle", "roomDel", "Supprime la salle choisie à droite (liste Salle) avec tous ses objets : écrans, postes, bureaux, chaises. Elle ne revient pas à la partie suivante. Deux appuis : le second confirme. Exemple : retirer SALLE TOC 2.", true]],
             [["Aller", "go", "Amène la caméra (Zeus, Eden) devant l'écran de la ligne choisie.", false],
              ["Identifier", "blink", "L'écran de la ligne choisie clignote 2 s chez les joueurs proches, pour le reconnaître dans la salle.", false],
              ["Écrire un texte", "text", "Ouvre l'éditeur de message des bandeaux et écrans en affichage Texte. Exemple : EXERCICE EN COURS.", false],
@@ -445,6 +447,8 @@ switch (_mode) do {
              ["Arrêter la diffusion", "bcOff", "Chaque écran de la salle reprend l'affichage qu'il avait avant la diffusion.", false],
              ["Enregistrer", "save", "Garde sous le nom écrit à droite la source et la luminosité de chaque écran (profil du joueur, par carte).", false],
              ["Charger", "load", "Remet les sources et luminosités du préréglage dont le nom est écrit à droite.", false],
+             ["Liaisons", "links", "Au Zeus : montre ou cache, dans le monde, un trait de chaque écran et poste vers le centre de sa salle, avec son nom et ce qu'il montre ; un objet sans salle est marqué « non lié » en rouge. Exemple : repérer un écran oublié hors de la salle.", false],
+             ["Dissoudre la salle", "roomKeep", "Raye la salle choisie à droite (liste Salle) mais garde ses écrans et ses postes en place, déliés. Deux appuis : le second confirme. Exemple : fusionner deux salles en reliant ensuite les écrans à l'autre.", true],
              ["Fermer", "close", "Ferme le tableau. Tout est déjà appliqué et gardé avec les écrans.", false]]
         ];
         private _can = ["canEdit"] call _fn;
@@ -452,7 +456,7 @@ switch (_mode) do {
         {
             private _row = _x;
             private _ri = _forEachIndex;
-            private _bw = (_w - 2 * _u) / 8;
+            private _bw = (_w - 2 * _u) / 10;
             {
                 _x params ["_lbl", "_act", "_help", "_need"];
                 private _b = ["ctrlButton", [_x0 + _u + _forEachIndex * _bw, _y0 + 7.4 * _u + _ri * 5.6 * _u, _bw - 0.6 * _u, 5 * _u]] call _mk;
@@ -847,6 +851,45 @@ switch (_mode) do {
                     ["say", "Salle en cours de pose devant vous (quelques secondes)"] call _fn;
                 };
                 [{ ["refresh"] call comspec_atak_native_fnc_tocManager; }, [], 6] call comspec_atak_native_fnc_waitAndExec;
+            };
+            case "links": {
+                if (is3DEN) exitWith { ["say", "Liaisons : au Zeus, en jeu"] call _fn; };
+                private _on = ["toggle"] call comspec_atak_native_fnc_tocLinks;
+                ["say", ["Liaisons cachées", "Liaisons montrées dans le monde (interface Zeus) : écran vert, poste bleu, caméra orange, non lié rouge"] select _on] call _fn;
+            };
+            case "pwr": {
+                if (_picked isEqualTo [] || {is3DEN}) exitWith { ["say", "Choisissez ou cochez d'abord une dalle (en jeu)"] call _fn; };
+                // Une dalle allumée dans le lot : tout s'éteint ; toutes éteintes : tout se rallume. La source n'est pas touchée.
+                private _anyOn = (_picked findIf { (_x select 6) isNotEqualTo "OFF" }) >= 0;
+                {
+                    private _po = _x select 1;
+                    if (_anyOn) then { ["setSource", [_po, "OFF"]] call _fn; } else {
+                        if (["local", _po] call comspec_atak_native_fnc_tocConfig && {!isServer}) then { _po setVariable ["COMSPEC_ATAK_TocOff", false, true]; } else { ["do", ["power", [_po, true]]] call comspec_atak_native_fnc_tocHall; };
+                    };
+                } forEach _picked;
+                ["say", format [(["%1 dalle(s) rallumée(s)", "%1 dalle(s) éteinte(s)"] select _anyOn) call _tr, count _picked]] call _fn;
+                call _later;
+            };
+            case "roomDel";
+            case "roomKeep": {
+                if (is3DEN) exitWith { ["say", "Dans Eden, supprimez le module Salle TOC complète ou les écrans eux-mêmes"] call _fn; };
+                if !(["canEdit"] call _fn) exitWith { ["say", "Réservé au Zeus et aux administrateurs"] call _fn; };
+                private _hid = [_st get "hall"] call _data;
+                private _hname = (_st get "hall") lbText (lbCurSel (_st get "hall"));
+                if (_hid isEqualTo "") exitWith { ["say", "Choisissez d'abord la salle dans la liste Salle, à droite"] call _fn; };
+                private _nObj = count (["screens", _hid] call comspec_atak_native_fnc_tocHall);
+                // Confirmation dans la fenêtre : premier appui, la question ; second appui sous 8 s, l'action.
+                (_st getOrDefault ["arm", ["", "", -1e9]]) params ["_armA", "_armH", "_armT"];
+                if (_armA isNotEqualTo _a || {_armH isNotEqualTo _hid} || {diag_tickTime - _armT > 8}) exitWith {
+                    _st set ["arm", [_a, _hid, diag_tickTime]];
+                    ["say", format [([
+                        "Supprimer la salle %1 et ses %2 écran(s), avec postes et mobilier ? Appuyez encore sur le bouton pour confirmer (8 s)",
+                        "Dissoudre la salle %1 et garder ses %2 écran(s) en place ? Appuyez encore sur le bouton pour confirmer (8 s)"] select (_a isEqualTo "roomKeep")) call _tr, _hname, _nObj]] call _fn;
+                };
+                _st set ["arm", ["", "", -1e9]];
+                ["do", [["roomRemove", "dissolve"] select (_a isEqualTo "roomKeep"), _hid]] call comspec_atak_native_fnc_tocHall;
+                ["say", format [(["Salle %1 supprimée avec ses objets", "Salle %1 dissoute, écrans gardés"] select (_a isEqualTo "roomKeep")) call _tr, _hname]] call _fn;
+                [{ ["refresh"] call comspec_atak_native_fnc_tocManager; }, [], 2.5] call comspec_atak_native_fnc_waitAndExec;
             };
             case "layout": {
                 if (_cur isEqualTo [] || {is3DEN} || {isNil "comspec_atak_native_fnc_tocLayout"}) exitWith { ["say", "Disposition : choisissez en jeu la ligne d'un mur ou d'un écran incurvé"] call _fn; };

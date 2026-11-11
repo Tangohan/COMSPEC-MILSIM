@@ -7,6 +7,9 @@
 [*] [b]Régler la vue[/b] : pour chaque dalle, vous choisissez le cadrage de la carte (zone, secteur, théâtre, centré sur le point regardé), et pour un satellite son capteur ou le groupe qu'il suit.
 [*] [b]Tout générer d'un coup[/b] : un bouton pose une salle complète, un autre donne un flux standard à chaque écran de la salle.
 [*] [b]Dispositions[/b] : les murs d'images et l'écran incurvé ont douze dispositions prêtes (carte et caméras, quatre vues, surveillance…).
+[*] [b]Supprimer une salle[/b] : vous pouvez supprimer une salle TOC avec tous ses objets, ou la dissoudre en gardant ses écrans.
+[*] [b]Éteindre une tuile[/b] : vous pouvez éteindre chaque tuile d'un écran et la rallumer, elle reprend ce qu'elle montrait.
+[*] [b]Liaisons au Zeus[/b] : le Zeus voit les liaisons entre les écrans, les postes et leur salle ; un objet sans salle est marqué en rouge.
 [*] [b]Diffusion[/b] : un écran peut être recopié sur toute la salle en même temps, avec un témoin EN DIRECT.
 [*] [b]Mire[/b] : un écran sans source affiche une mire de barres de couleur avec son titre et l'heure.
 [*] [b]Aucun signal[/b] : un écran sans données affiche une carte fixe AUCUN SIGNAL au lieu d'un contenu à moitié vide.
@@ -19,6 +22,7 @@
 [*] [b]Connecté, pas « perdu »[/b] : un joueur connecté et immobile n'est plus marqué « perdu » sur les écrans.
 [*] [b]En-tête des écrans[/b] : l'écran affiche ce qu'il montre (Satellite, Horloge…), plus le nom anglais du modèle.
 [*] [b]Diapositives[/b] : une diapositive du Briefing ne laisse plus l'écran noir.
+[*] [b]Menu toujours là[/b] : le menu ACE revient sur les bandeaux suspendus, et « Ouvrir le PC du poste » revient sur les postes PC.
 [*] [b]Menu des écrans[/b] : le menu ACE est rangé par thèmes (Afficher, Disposition, Source, Écran, Salle) et montre l'état en cours.
 [*] [b]Écrans éloignés[/b] : les écrans éloignés ou cachés ne consomment plus de ressources à s'allumer et s'éteindre.
 [/list]
@@ -30,6 +34,9 @@
 [*] [b]Set the view[/b]: for each panel, choose the map framing (area, sector, theatre, centred on the point you look at), and for a satellite its sensor or the group it follows.
 [*] [b]Generate everything at once[/b]: one button places a complete room, another gives every screen of the room a standard feed.
 [*] [b]Layouts[/b]: video walls and the curved screen have twelve ready layouts (map and cameras, four views, surveillance…).
+[*] [b]Delete a room[/b]: you can delete a TOC room with all its objects, or dissolve it and keep its screens.
+[*] [b]Switch off a tile[/b]: you can switch off each tile of a screen and back on; it shows what it showed before.
+[*] [b]Links in Zeus[/b]: the Zeus sees the links between screens, stations and their room; an object without a room is marked in red.
 [*] [b]Broadcast[/b]: one screen can be copied to the whole room at the same time, with a LIVE tally.
 [*] [b]Test card[/b]: a screen without a source shows a colour-bar test card with its title and the time.
 [*] [b]No signal[/b]: a screen without data shows a steady NO SIGNAL card instead of half-empty content.
@@ -42,6 +49,7 @@
 [*] [b]Connected, not "lost"[/b]: a connected player standing still is no longer shown as "lost" on the screens.
 [*] [b]Screen header[/b]: the screen displays what it shows (Satellite, Clock…), no longer the English name of the model.
 [*] [b]Slides[/b]: a Briefing slide no longer leaves the screen black.
+[*] [b]Menu always there[/b]: the ACE menu is back on ceiling strips, and "Open the post PC" is back on PC stations.
 [*] [b]Screen menu[/b]: the ACE menu is sorted by theme (Show, Layout, Source, Screen, Room) and shows the current state.
 [*] [b]Distant screens[/b]: distant or hidden screens no longer use resources switching on and off.
 [/list]

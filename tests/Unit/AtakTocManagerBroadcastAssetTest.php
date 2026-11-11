@@ -81,7 +81,7 @@ final class AtakTocManagerBroadcastAssetTest extends TestCase
         self::assertStringContainsString('class COMSPEC_ATAK_MenuTocManager', $cfg);
         self::assertStringContainsString("['open'] call comspec_atak_native_fnc_tocManager", $cfg);
         self::assertStringContainsString('"COMSPEC_ATAK_Module_TocManager"', $cfg);
-        foreach (['tocManager', 'tocBroadcast', 'tocStatus', 'tocRtt', 'tocWho', 'moduleTocManager'] as $fn) {
+        foreach (['tocManager', 'tocBroadcast', 'tocStatus', 'tocRtt', 'tocWho', 'tocLinks', 'moduleTocManager'] as $fn) {
             self::assertStringContainsString('class ' . $fn . ' {};', $cfg, $fn);
         }
         $mod = self::read(self::MAIN . 'modules.hpp');
@@ -285,6 +285,71 @@ final class AtakTocManagerBroadcastAssetTest extends TestCase
         $feed = self::read(self::TOC . 'fn_tocFeed.sqf');
         self::assertStringContainsString('private _cs = ["unit", _u] call comspec_atak_native_fnc_tocWho;', $feed);
         self::assertStringNotContainsString('name _u', $feed);
+    }
+
+    /** Menu ACE absent sur le bandeau à LED suspendu, « Ouvrir le PC » disparu, salles à supprimer, dalles à éteindre, liaisons. */
+    public function testMenuToujoursLaSallesDallesEtLiaisons(): void
+    {
+        // Point ACE : descendu à portée de main, portée de 6 m sur chaque écran (aucune classe à 4 ou 5 m).
+        $cfg = self::read(self::TOC . 'fn_tocConfig.sqf');
+        self::assertStringContainsString('private _top = ((eyePos player) select 2) + 1.2;', $cfg);
+        $hpp = self::read(self::MAIN . 'toc_screens3d.hpp');
+        self::assertGreaterThan(20, preg_match_all('/class ACE_MainActions \{[^}]*distance=6;/', $hpp));
+        self::assertSame(0, preg_match('/class ACE_MainActions \{[^}]*distance=[45];/', $hpp));
+        // Arbre : « Ouvrir le PC du poste » sur tout poste, quel que soit le format de la dalle ; « Écrire un message… »
+        // sur tout écran capable de texte ; jamais un menu vide (entrées de secours et ligne au journal).
+        $menu = self::read(self::TOC . 'fn_tocMenu.sqf');
+        self::assertStringContainsString('private _isPost = (getNumber (configOf _host >> "comspec_tocPost")) > 0 || {_host isKindOf "COMSPEC_ATAK_TocLaptop"}', $menu);
+        self::assertStringContainsString('if ((_isPost || {_std && {', $menu);
+        self::assertLessThan(strpos($menu, '["Use", "Utiliser comme écran TOC"'), strpos($menu, '["Pc", "Ouvrir le PC du poste"'));
+        self::assertStringContainsString('if ("TEXT" in _okViews) then {', $menu);
+        self::assertStringContainsString('["Text", "Écrire un message…"', $menu);
+        foreach (['"SafeText"', '"SafeUse"', '"SafeMgr"', '[COMSPEC TOC] ACE | classe=%1 aucune action'] as $needle) {
+            self::assertStringContainsString($needle, $menu);
+        }
+        // Règle de visibilité rejouée : chaque format d'écran garde au moins une entrée, les postes gardent « Ouvrir ».
+        $entries = static function (string $kind, bool $post, bool $designated): array {
+            $out = [];
+            if ($post || ($kind === 'STD')) {
+                $out[] = 'Pc';
+            }
+            if (!$designated) {
+                $out[] = 'Use';
+            } else {
+                $out[] = 'Show';
+            }
+            $out[] = 'Screen';
+            $out[] = 'Manager';
+
+            return $out;
+        };
+        foreach ([['STD', false, true], ['STD', true, true], ['COL', true, true], ['STRIP', false, true], ['LED', false, true], ['LED', false, false], ['COL', false, true]] as [$kind, $post, $des]) {
+            $list = $entries($kind, $post, $des);
+            self::assertNotEmpty($list, $kind);
+            self::assertContains('Screen', $list);
+            if ($post) {
+                self::assertSame('Pc', $list[0], $kind . ' : ouvrir le poste en tête');
+            }
+        }
+        // Salles : supprimer (avec les objets) ou dissoudre (objets gardés), confirmation dans la fenêtre.
+        $mgr = self::read(self::TOC . 'fn_tocManager.sqf');
+        $hall = self::read(self::TOC . 'fn_tocHall.sqf');
+        self::assertStringContainsString('case "dissolve": {', $hall);
+        self::assertStringContainsString('["do", [["roomRemove", "dissolve"] select (_a isEqualTo "roomKeep"), _hid]] call comspec_atak_native_fnc_tocHall;', $mgr);
+        self::assertStringContainsString('diag_tickTime - _armT > 8', $mgr);
+        self::assertStringContainsString('if !(["canEdit"] call _fn) exitWith', $mgr);
+        // Dalles : éteindre et rallumer sans toucher à la source.
+        self::assertStringContainsString('case "pwr": {', $mgr);
+        self::assertStringContainsString('["do", ["power", [_po, true]]] call comspec_atak_native_fnc_tocHall', $mgr);
+        // Liaisons : dessin seulement interface Zeus ouverte, borné en distance et en nombre.
+        $links = self::read(self::TOC . 'fn_tocLinks.sqf');
+        $colours = self::table($links, '_colours');
+        self::assertSame(['screen', 'post', 'cam', 'none'], array_column($colours, 0));
+        self::assertStringContainsString('if (isNull curatorCamera || {isNull (findDisplay 312)}) exitWith {};', $links);
+        self::assertStringContainsString('if (_n >= 80) exitWith {};', $links);
+        self::assertStringContainsString('> 400', $links);
+        self::assertStringContainsString('removeMissionEventHandler ["Draw3D", _eh];', $links);
+        self::assertStringContainsString('["toggle"] call comspec_atak_native_fnc_tocLinks', $mgr);
     }
 
     /** « Ça freeze de fou, la vue SAT » : budget par qualité, visée et cibles relues par intervalles, soupape. */

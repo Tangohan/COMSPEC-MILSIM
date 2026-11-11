@@ -6,7 +6,10 @@
       - jusqu'à 8 messages montrés à tour de rôle, chacun avec sa couleur (vert, ambre, rouge, blanc), sa durée et son
         clignotement (alerte) ; 300 caractères par message ;
       - variables : {zulu} {zulus} {local} {date} {dtg} {h} (premier chrono « heure H », sinon premier chrono) {camp}
-        {poste} (nom de l'écran) {groupe} (escouade liée à l'écran) ;
+        {poste} (nom donné à l'écran ; un écran qui porte encore le nom de son modèle : nom de sa salle, sinon « TOC »)
+        {groupe} (escouade liée à l'écran) ;
+      - aucun message écrit : invite fixe et centrée « Écrivez votre message : menu de l'écran, Écrire un message »,
+        jamais le nom du modèle ; dès qu'un message existe, l'invite ne paraît plus ;
       - règle d'ajustement : le texte qui tient est fixe, à la plus grande taille (centré, ou aligné) ; trop long, il est
         réduit jusqu'à la taille minimale du format (écran 16:9 et colonne : deux lignes avant) ; plus long encore, il
         défile à la grande taille ;
@@ -24,6 +27,15 @@
     f x cellW / R (part de la largeur). Chasse fixe : la largeur d'un texte est exacte (nombre de caractères x case).
     Un texte dont un caractère n'a pas d'image (chinois, cyrillique) garde le texte du jeu, mis en page avec sa vraie
     largeur (mesure ctrlTextWidth, sinon estimation 3/4) : étiré, mais ni coupé ni chevauché.
+    UN SEUL DESSIN À LA FOIS (retour de TTRD du 11/11, capture : « BONJOUR MOR… » surimprimé par la fin de l'ancien
+    texte, plus petite). Cause : montrer un groupe de contrôles (ctrlShow sur le panneau, sur une bande, au
+    clignotement) remontre aussi ses cases masquées, et une bande au texte inchangé n'était pas refaite : les cases de
+    l'ancien texte, au-delà du nouveau, revenaient à leur ancienne place et à leur ancienne taille. Désormais chaque
+    image est refaite en entier depuis l'état du moment (texte, ajustement, position) : une bande est une rangée de
+    cases (« cells » : texte complété de blancs jusqu'à la dernière case de la réserve), une case vide est masquée ET
+    sans taille (rien à montrer même si le jeu la remontre), l'état montré / masqué de chaque case est reposé à chaque
+    image ; la paire de bandes qui ne sert pas (images ou texte du jeu) et la seconde bande d'un texte fixe sont vidées,
+    masquées et sans taille ; le clignotement sort la fenêtre du texte du panneau au lieu de masquer des bandes.
     Le défilement ne coûte que devant un écran allumé : une seule boucle (30 images par seconde au plus) déplace les deux
     bandes de caractères des écrans en affichage TEXTE, allumés pour ce joueur (proches et regardés, fn_tocScreen
     « tick ») ; elle s'arrête d'elle-même quand il n'y en a plus. La position vient de l'heure du serveur (serverTime) :
@@ -42,7 +54,12 @@
       ["zeusFields"] / ["fromFields", valeurs]   champs du formulaire Zeus (fn_zeusForm) et réglage rendu
       ["marquee", [largeur du texte, largeur du panneau, vitesse, blanc, temps, toujours, passage unique]]
                                          [défile, x du premier texte, longueur de la boucle] (fonction pure)
-      ["selfCheck"]                      contrôle de « marquee » sur la table _vectors : true si tout est juste
+      ["cells", [texte, nombre de cases, décalage en cases, boucle]]
+                                         rangée de cases (fonction pure) : exactement « nombre de cases » codes d'image
+                                         (32 : case vide ; 0 : caractère sans image). Case i = caractère i + décalage,
+                                         vide hors du texte ; boucle : le texte revient après gapChars cases vides
+      ["selfCheck"]                      contrôle de « marquee » (table _vectors) et de « cells » (table _cellRows) :
+                                         true si tout est juste
       ["draw", [écran, display, format]] image de l'écran (fn_tocScreen « draw », chaque seconde, écran allumé)
       ["edit", écran]                    fenêtre « Texte de l'écran » (aperçu en direct) : PC du poste, app Poste TOC, ACE
       ["edEvent", clé]                   événements de la fenêtre
@@ -115,6 +132,22 @@ private _vectors = [
 [1.5, 1, 0.1, 0.05, 40, false, true, true, -1.5, 2.5]
 ];
 // ---- FIN
+// ---- TABLE _cellRows (JSON) : [texte, nombre de cases, décalage, boucle, rangée attendue (un caractère par case)].
+// Rejoués par « selfCheck » en jeu et par tests/Unit/AtakTocTextAspectTest.php.
+private _cellRows = [
+["BONJOUR", 31, 0, false, "BONJOUR                        "],
+["BONJOUR", 7, 0, false, "BONJOUR"],
+["ÉTÉ À 14H", 12, 0, false, "ÉTÉ À 14H   "],
+["", 5, 0, false, "     "],
+["", 4, 3, true, "    "],
+["ABC", 4, 2, false, "C   "],
+["ABC", 4, -2, false, "  AB"],
+["ABC", 12, 0, true, "ABC      ABC"],
+["ABC", 6, 7, true, "  ABC "],
+["ABC", 3, -1, true, " AB"],
+["ABC", 2, 0, false, "AB"]
+];
+// ---- FIN
 private _kv = createHashMapFromArray _k;
 private _tcol = { params ["_tok", ["_al", 1]]; ["rgba", [_tok, _al]] call comspec_atak_native_fnc_tocTheme };
 private _tokOf = { (createHashMapFromArray [["G", "accent"], ["A", "amber"], ["R", "red"], ["W", "text"]]) getOrDefault [_this, "accent"] };
@@ -138,7 +171,18 @@ private _clean = {
     _s select [0, _max]
 };
 private _num = { params ["_v", "_def", "_lo", "_hi"]; if (_v isEqualType true) then { _v = parseNumber _v; }; if !(_v isEqualType 0) then { _v = _def; }; ((round _v) max _lo) min _hi };
-private _default = [[["{poste}", "G", 10, 0]], 1, 0, 0, 1];
+// Réglage par défaut : aucun message (l'écran montre l'invite à écrire, jamais le nom de son modèle).
+private _default = [[], 1, 0, 0, 1];
+// {poste} : le nom donné à l'écran. Un écran qui porte encore le nom de son modèle (nom vide, « TOC », ou qui commence
+// par les 20 premiers caractères du nom de la classe, posé d'office à la désignation) : nom de sa salle, sinon « TOC ».
+private _posteOf = {
+    params ["_o", ["_nm", ""]];
+    if (isNull _o) exitWith { [_nm, "TOC"] select (_nm isEqualTo "") };
+    private _mdl = getText (configOf (_o getVariable ["COMSPEC_ATAK_TocHost", _o]) >> "displayName");
+    if (_nm isNotEqualTo "" && {_nm isNotEqualTo "TOC"} && {_mdl isEqualTo "" || {(_nm find (_mdl select [0, 20])) isNotEqualTo 0}}) exitWith { _nm };
+    private _hn = (["get", ["of", _o] call comspec_atak_native_fnc_tocHall] call comspec_atak_native_fnc_tocHall) param [1, ""];
+    [_hn, "TOC"] select (!(_hn isEqualType "") || {_hn isEqualTo ""})
+};
 // Variables d'un message, remplacées à chaque image.
 private _expand = {
     params ["_s", "_side", "_name", "_squad"];
@@ -191,7 +235,7 @@ private _live = {
         {
             if (_half && {((_fr + _forEachIndex) mod 2) isEqualTo 1}) then { continue };
             _x params ["_d", "_key", "_o"];
-            (_d getVariable [_key + "Anim", []]) params ["_am", "_ca", "_cb", "_tw", "_pw", "_spd", "_gap", "_t0", "_tick0", "_blink", "_ya", "_ha", "_wa", "_sig", "_shown", ["_both", true]];
+            (_d getVariable [_key + "Anim", []]) params ["_am", "_ca", "_cb", "_tw", "_pw", "_spd", "_gap", "_t0", "_tick0", "_blink", "_ya", "_ha", "_wa", "_sig", "_shown", ["_clipC", controlNull], ["_clipR", [0, 0, 0, 0]]];
             private _t = _t0 + (_now - _tick0);
             private _dirty = false;
             if (_am > 0) then {
@@ -204,9 +248,9 @@ private _live = {
                 private _on = (_t mod 1) < 0.6;
                 if (_on isNotEqualTo _shown) then {
                     (_d getVariable [_key + "Anim", []]) set [14, _on];
-                    // Clignotement net (allumé / éteint) ; la seconde bande seulement si elle sert (deux lignes, boucle).
-                    _ca ctrlShow _on;
-                    if (_both) then { _cb ctrlShow _on; };
+                    // Clignotement net (allumé / éteint) : la fenêtre du texte sort du panneau, aucune bande n'est
+                    // masquée ni remontrée (remontrer un groupe remontrerait ses cases vides).
+                    _clipC ctrlSetPosition [(_clipR select 0) + ([4, 0] select _on), _clipR select 1, _clipR select 2, _clipR select 3]; _clipC ctrlCommit 0;
                     _dirty = true;
                 };
             };
@@ -225,30 +269,56 @@ private _ledBg = [0, 0, 0, 1];
 private _hasGlyph = { params ["_cp"]; (_glyphs findIf { _cp >= (_x select 0) && {_cp <= (_x select 1)} }) >= 0 };
 // Tous les caractères du texte ont une image (sinon : texte du jeu, étiré mais mis en page à sa vraie largeur).
 private _allGlyphs = { params ["_cps"]; (_cps findIf { !(_x in _blank) && {!([_x] call _hasGlyph)} }) < 0 };
-// Bande de caractères : groupe _grp (déplacé d'un bloc par le défilement), une image par caractère dans une case
-// _cw x _ch (unités du parent du groupe). Rien n'est refait tant que le texte, la case et la couleur ne changent pas.
+// Rangée de cases (fonction pure) : exactement _n codes d'image (32 : case vide ; 0 : caractère sans image). Case i :
+// caractère i + _shift du texte, vide hors du texte ; _wrap : boucle du défilement, le texte revient après gapChars cases
+// vides. Texte vide : que des cases vides.
+private _cells = {
+    params [["_s", ""], ["_n", 0], ["_shift", 0], ["_wrap", false]];
+    private _src = (toArray _s) apply { if (_x in _blank) then { 32 } else { [0, _x] select ([_x] call _hasGlyph) } };
+    private _len = count _src;
+    private _per = _len + (_kv get "gapChars");
+    private _out = [];
+    for "_i" from 0 to (_n - 1) do {
+        private _j = _i + _shift;
+        if (_wrap) then { _j = ((_j mod _per) + _per) mod _per; };
+        _out pushBack ([32, _src param [_j max 0, 32]] select (_j >= 0 && {_j < _len}));
+    };
+    _out
+};
+// Bande de caractères : groupe _grp (déplacé d'un bloc par le défilement), une image par case de la rangée _row
+// (« cells ») dans une case _cw x _ch (unités du parent du groupe) : la case i de la réserve montre toujours la case i
+// de la rangée. Une case vide est masquée et sans taille. Images, couleurs et positions ne sont reposées que si la
+// rangée, la case ou la couleur changent ; l'état montré / masqué de chaque case l'est à chaque image.
 private _fill = {
-    params ["_dsp", "_grp", "_cps", "_cw", "_ch", "_rgba"];
-    private _cellSig = [_cps, round (_cw * 1e6), round (_ch * 1e6), _rgba];
-    if ((_grp getVariable ["COMSPEC_ATAK_Sig", []]) isEqualTo _cellSig) exitWith {};
-    _grp setVariable ["COMSPEC_ATAK_Sig", _cellSig];
+    params ["_dsp", "_grp", "_row", "_cw", "_ch", "_rgba"];
     private _pool = _grp getVariable ["COMSPEC_ATAK_Cells", []];
-    private _n = 0;
+    private _cellSig = [_row, round (_cw * 1e6), round (_ch * 1e6), _rgba];
+    if ((_grp getVariable ["COMSPEC_ATAK_Sig", []]) isEqualTo _cellSig && {(count _pool) isEqualTo (count _row)}) exitWith {
+        { _x ctrlShow ((_row select _forEachIndex) isNotEqualTo 32); } forEach _pool;
+    };
+    _grp setVariable ["COMSPEC_ATAK_Sig", _cellSig];
+    private _hideCell = { _this ctrlSetPosition [0, 0, 0, 0]; _this ctrlCommit 0; _this ctrlShow false; };
     {
-        if !(_x in _blank) then {
-            if (_n >= (count _pool)) then { _pool pushBack (_dsp ctrlCreate ["RscPicture", -1, _grp]); };
-            private _c = _pool select _n;
-            _n = _n + 1;
-            private _tex = format [_glPath, [0, _x] select ([_x] call _hasGlyph)];
+        if (_forEachIndex >= (count _pool)) then { _pool pushBack (_dsp ctrlCreate ["RscPicture", -1, _grp]); };
+        private _c = _pool select _forEachIndex;
+        if (_x isEqualTo 32) then { _c call _hideCell; } else {
+            private _tex = format [_glPath, _x];
             if ((_c getVariable ["COMSPEC_ATAK_Tex", ""]) isNotEqualTo _tex) then { _c setVariable ["COMSPEC_ATAK_Tex", _tex]; _c ctrlSetText _tex; }; // i18n:brut (texture)
             _c ctrlSetTextColor _rgba;
             _c ctrlSetPosition [_forEachIndex * _cw, 0, _cw, _ch];
             _c ctrlCommit 0;
             _c ctrlShow true;
         };
-    } forEach _cps;
-    for "_i" from _n to ((count _pool) - 1) do { (_pool select _i) ctrlShow false; };
+    } forEach _row;
+    // Réserve plus longue que la rangée (jamais par « _strip », qui complète la rangée) : le reste est masqué.
+    for "_i" from (count _row) to ((count _pool) - 1) do { (_pool select _i) call _hideCell; };
     _grp setVariable ["COMSPEC_ATAK_Cells", _pool];
+};
+// Rangée d'un texte pour une bande : complétée de cases vides jusqu'à la dernière case de sa réserve (un texte plus
+// court que le précédent efface donc tout ce qui dépassait).
+private _strip = {
+    params ["_grp", "_s"];
+    [_s, (count (toArray _s)) max (count (_grp getVariable ["COMSPEC_ATAK_Cells", []])), 0] call _cells
 };
 // Panneau dessiné dans un rectangle (texture d'écran : tout le display ; éditeur : l'aperçu). _pxA : largeur / hauteur
 // RÉELLE du rectangle (rapport de la dalle, jamais celui de la texture) ; _kind : "LED" (bandeau), "STD" (16:9), "COL"
@@ -278,6 +348,7 @@ private _render = {
     };
     private _g = _ui get "g";
     _g ctrlShow true;
+    { (_ui get _x) ctrlShow true; } forEach ["bg", "clip"];
     _g ctrlSetPosition _rect; _g ctrlCommit 0;
     private _ux = _rw / (_pxA max 0.1);
     // Fond noir d'un panneau à LED : les images des caractères sont blanches sur noir, teintées par la couleur du message.
@@ -286,10 +357,17 @@ private _render = {
     // Messages : FLASH du poste d'abord (il remplace tout), sinon ceux de l'écran.
     private _fl = ["flash", _side] call comspec_atak_native_fnc_tocBoard;
     if ((count _fl) >= 3) then { _msgs = [[format ["FLASH · %1 · %2 · %3Z", _fl select 0, _fl select 1, _fl select 2], "R", 10, 1]]; };
-    if ((count _msgs) isEqualTo 0) then { _msgs = [["{poste}", "G", 10, 0]]; };
+    // Aucun message écrit : invite à écrire, fixe et centrée, réduite autant qu'il faut pour tenir (jamais de défilement).
+    private _hintOn = (count _msgs) isEqualTo 0;
+    if (_hintOn) then {
+        _msgs = [[("Écrivez votre message : menu de l'écran, Écrire un message") call comspec_atak_native_fnc_tr, "G", 10, 0]];
+        _scroll = 0;
+        _align = 0;
+    };
     // Règle d'ajustement du type de panneau (table _fits) ; jamais une case de moins de minPx pixels de texture.
     (_fits select ((_fits findIf { (_x select 0) isEqualTo _kind }) max 0)) params ["", "_f1", "_fMin", "_f2", "_ins", "_bth", "_padX"];
     if (_texH > 0) then { _fMin = (_fMin max ((_kv get "minPx") / _texH)) min _f1; };
+    if (_hintOn) then { _fMin = 0; };
     private _wi = _rw - 2 * (_ins + _bth + _padX) * _ux;
     private _hi = _rh * (1 - 2 * (_ins + _bth));
     // Case d'un caractère à la grande taille (largeur, en x) : pas du défilement.
@@ -350,14 +428,23 @@ private _render = {
             [_ins * _ux, _ins * _rh, _bth * _ux, _rh - 2 * _ins * _rh], [_rw - (_ins + _bth) * _ux, _ins * _rh, _bth * _ux, _rh - 2 * _ins * _rh]] select _forEachIndex);
         _x ctrlCommit 0;
     } forEach (_ui get "bd");
+    // Fenêtre du texte : remise à sa place à chaque image (le clignotement l'en sort).
     private _clip = _ui get "clip";
-    _clip ctrlSetPosition [(_ins + _bth + _padX) * _ux, (_ins + _bth) * _rh, _wi, _hi]; _clip ctrlCommit 0;
-    // Bandes : images des caractères, ou texte du jeu si un caractère n'a pas d'image ; l'autre paire est masquée.
+    private _clipR = [(_ins + _bth + _padX) * _ux, (_ins + _bth) * _rh, _wi, _hi];
+    _clip ctrlSetPosition _clipR; _clip ctrlCommit 0;
+    // Bande qui ne sert pas : vidée (aucune case, aucun texte), sans taille et masquée.
+    private _blankStrip = {
+        params ["_c", "_isGl"];
+        if (_isGl) then { [_d, _c, [_c, ""] call _strip, 0, 0, _rgba] call _fill; } else { _c ctrlSetText ""; };
+        _c ctrlSetPosition [0, 0, 0, 0]; _c ctrlCommit 0;
+        _c ctrlShow false;
+    };
+    // Bandes : images des caractères, ou texte du jeu si un caractère n'a pas d'image ; l'autre paire est vidée.
     private _cps = toArray _txt;
     private _gl = [_cps] call _allGlyphs;
     private _ca = _ui get (["ta", "a"] select _gl);
     private _cb = _ui get (["tb", "b"] select _gl);
-    { (_ui get _x) ctrlShow false; } forEach ([["a", "b"], ["ta", "tb"]] select _gl);
+    { [_ui get _x, !_gl] call _blankStrip; } forEach ([["a", "b"], ["ta", "tb"]] select _gl);
     // Texte du jeu : largeur mesurée par le jeu si elle est plausible (entre la moitié et le double de l'estimation),
     // sinon estimée comme le moteur la dessine (hauteur x chasse x 3/4, en part de la largeur du display).
     private _ck = (_kv get "charK") / (_kv get "uiBox");
@@ -373,15 +460,16 @@ private _render = {
     // Ligne écrite dans une bande, à la hauteur de case _fz : rend sa largeur (exacte pour les images : chasse fixe).
     private _line = {
         params ["_c", "_s", "_fz"];
+        // Bande montrée avant d'être remplie : l'état de chaque case est posé ensuite, case par case.
+        _c ctrlShow true;
         private _w = if (_gl) then {
-            private _lc = toArray _s;
+            private _lc = [_c, _s] call _strip;
             [_d, _c, _lc, _cellW * _fz * _ux, _fz * _rh, _rgba] call _fill;
-            (count _lc) * _cellW * _fz * _ux
+            (count (toArray _s)) * _cellW * _fz * _ux
         } else {
             _c ctrlSetTextColor _rgba;
             ([_c, _s, 0.8 * _fz] call _measure) + 0.1 * _fz * _ux
         };
-        _c ctrlShow true;
         _w
     };
     private _w1 = if (_gl) then { (count _cps) * _cellW * _ux } else { ([_ca, _txt, 0.8 * _f1] call _measure) / _f1 };
@@ -401,14 +489,14 @@ private _render = {
                 private _w = [_c, _s, _f] call _line;
                 _c ctrlSetPosition [[_w] call _xOf, _y0 + _row * 1.08 * _lh, _w, _lh]; _c ctrlCommit 0;
             } forEach [[_ca, _lines select 0, 0], [_cb, _lines select 1, 1]];
-            if (_blk > 0) then { _anim = [0, _ca, _cb, 0, _wi, 0, 0, serverTime mod 1, diag_tickTime, true, 0, 0, 0, _sig, true, true]; };
+            if (_blk > 0) then { _anim = [0, _ca, _cb, 0, _wi, 0, 0, serverTime mod 1, diag_tickTime, true, 0, 0, 0, _sig, true]; };
         };
         case 0: {
             // Une ligne fixe (grande taille, ou réduite pour tenir) : centrée ou alignée, jamais de défilement.
-            _cb ctrlShow false;
+            [_cb, _gl] call _blankStrip;
             private _w = [_ca, _txt, _f] call _line;
             _ca ctrlSetPosition [[_w] call _xOf, (_hi - _lh) / 2, _w, _lh]; _ca ctrlCommit 0;
-            if (_blk > 0) then { _anim = [0, _ca, _cb, 0, _wi, 0, 0, serverTime mod 1, diag_tickTime, true, 0, 0, 0, _sig, true, false]; };
+            if (_blk > 0) then { _anim = [0, _ca, _cb, 0, _wi, 0, 0, serverTime mod 1, diag_tickTime, true, 0, 0, 0, _sig, true]; };
         };
         default {
             // Défilement : boucle sans couture (un seul message : deux copies espacées de texte + blanc) ou passage unique
@@ -416,7 +504,7 @@ private _render = {
             // écarte pas (pas de saut à chaque seconde).
             private _am = [1, 2] select _multi;
             private _tw = [_ca, _txt, _f] call _line;
-            if (_multi) then { _cb ctrlShow false; } else { [_cb, _txt, _f] call _line; };
+            if (_multi) then { [_cb, _gl] call _blankStrip; } else { [_cb, _txt, _f] call _line; };
             private _loop = (_tw + _gap) max _wi;
             private _tNow = if (_multi) then { _tLocal } else { serverTime mod (_loop / _spd) };
             private _keep = false;
@@ -429,21 +517,25 @@ private _render = {
             _anim = if (_keep) then { _old set [3, _tw]; _old set [9, _blk > 0]; _old } else {
                 // Départ sur un bord de caractère : jamais une lettre coupée en deux à la première image.
                 private _t0 = (floor (_tNow * _spd / _step)) * _step / _spd;
-                [_am, _ca, _cb, _tw, _wi, _spd, _gap, _t0, diag_tickTime, _blk > 0, (_hi - _lh) / 2, _lh, _tw, _sig, true, !_multi]
+                [_am, _ca, _cb, _tw, _wi, _spd, _gap, _t0, diag_tickTime, _blk > 0, (_hi - _lh) / 2, _lh, _tw, _sig, true]
             };
             if (!_keep) then {
                 ([_tw, _wi, _spd, _gap, _anim select 7, true, _multi] call _marquee) params ["", "_px", "_lp"];
                 _ca ctrlSetPosition [_px, (_hi - _lh) / 2, _tw, _lh]; _ca ctrlCommit 0;
-                _cb ctrlSetPosition [_px + _lp, (_hi - _lh) / 2, _tw, _lh]; _cb ctrlCommit 0;
+                if (!_multi) then { _cb ctrlSetPosition [_px + _lp, (_hi - _lh) / 2, _tw, _lh]; _cb ctrlCommit 0; };
             };
         };
     };
-    // Clignotement : état du moment remis tout de suite (les bandes viennent d'être montrées).
-    if ((count _anim) > 0 && {_anim select 9}) then {
-        private _on = (((_anim select 7) + (diag_tickTime - (_anim select 8))) mod 1) < (_kv get "blinkOn");
-        _anim set [14, _on];
-        (_anim select 1) ctrlShow _on;
-        if (_anim param [15, true]) then { (_anim select 2) ctrlShow _on; };
+    // Clignotement : état du moment remis tout de suite (la fenêtre du texte vient d'être remise à sa place) ; éteint,
+    // la fenêtre sort du panneau.
+    if ((count _anim) > 0) then {
+        _anim set [15, _clip];
+        _anim set [16, _clipR];
+        if (_anim select 9) then {
+            private _on = (((_anim select 7) + (diag_tickTime - (_anim select 8))) mod 1) < (_kv get "blinkOn");
+            _anim set [14, _on];
+            _clip ctrlSetPosition [(_clipR select 0) + ([4, 0] select _on), _clipR select 1, _clipR select 2, _clipR select 3]; _clip ctrlCommit 0;
+        };
     };
     _d setVariable [_key + "Anim", _anim];
     if ((count _anim) > 0) then { [_d, _key, _o] call _live; };
@@ -453,6 +545,7 @@ switch (_mode) do {
     case "schema": { _schema };
     case "default": { +_default };
     case "marquee": { _a call _marquee };
+    case "cells": { _a call _cells };
     case "selfCheck": {
         private _bad = _vectors select {
             _x params ["_tw", "_pw", "_spd", "_gap", "_t", "_always", "_pass", "_eS", "_eX", "_eL"];
@@ -460,7 +553,12 @@ switch (_mode) do {
             _s isNotEqualTo _eS || {(abs (_px - _eX)) > 0.001} || {(abs (_lp - _eL)) > 0.001}
         };
         if (_bad isNotEqualTo []) then { ["WARNING", "TOC", format ["Affichage TEXTE : défilement faux sur %1 cas (%2)", count _bad, _bad select 0]] call comspec_atak_native_fnc_log; };
-        (count _bad) isEqualTo 0
+        private _badRows = _cellRows select {
+            _x params ["_s", "_n", "_shift", "_wrap", "_want"];
+            (toString ([_s, _n, _shift, _wrap] call _cells)) isNotEqualTo _want
+        };
+        if (_badRows isNotEqualTo []) then { ["WARNING", "TOC", format ["Affichage TEXTE : rangée de cases fausse sur %1 cas (%2)", count _badRows, _badRows select 0]] call comspec_atak_native_fnc_log; };
+        (count _bad) isEqualTo 0 && {(count _badRows) isEqualTo 0}
     };
     case "sanitize": {
         private _c = _a;
@@ -513,8 +611,9 @@ switch (_mode) do {
         private _c = _o getVariable ["COMSPEC_ATAK_TocScr", []];
         private _side = [_c param [1, ""], str side group player] select ((_c param [1, ""]) isEqualTo "");
         private _cfg = _o getVariable ["COMSPEC_ATAK_TocText", []];
-        if !(_cfg isEqualType [] && {(count _cfg) >= 5} && {(count (_cfg select 0)) > 0}) then { _cfg = _default; };
-        [_d, controlNull, [0, 0, 1, 1], _ratio, ["LED", _kind] select (_kind in ["STD", "COL"]), _cfg, [_side, _c param [0, "TOC"], _c param [9, ""]], "COMSPEC_ATAK_TxtUi", _o, _texH] call _render;
+        // Réglage absent ou sans message (écran tout juste posé, message effacé) : l'invite à écrire (« _render »).
+        if !(_cfg isEqualType [] && {(count _cfg) >= 5} && {(_cfg select 0) isEqualType []}) then { _cfg = _default; };
+        [_d, controlNull, [0, 0, 1, 1], _ratio, ["LED", _kind] select (_kind in ["STD", "COL"]), _cfg, [_side, [_o, _c param [0, "TOC"]] call _posteOf, _c param [9, ""]], "COMSPEC_ATAK_TxtUi", _o, _texH] call _render;
         true
     };
     case "edit": {
@@ -702,7 +801,7 @@ switch (_mode) do {
         private _c = _o getVariable ["COMSPEC_ATAK_TocScr", []];
         private _kind = _fmt param [3, "STD"];
         [_d, controlNull, _st get "prev", _st get "prevPx", ["LED", _kind] select (_kind in ["STD", "COL"]), _one,
-            [[_c param [1, ""], str side group player] select ((_c param [1, ""]) isEqualTo ""), _c param [0, "TOC"], _c param [9, ""]], "COMSPEC_ATAK_TxtPrev", objNull] call _render;
+            [[_c param [1, ""], str side group player] select ((_c param [1, ""]) isEqualTo ""), [_o, _c param [0, "TOC"]] call _posteOf, _c param [9, ""]], "COMSPEC_ATAK_TxtPrev", objNull] call _render;
         true
     };
     case "labelBegin": {
@@ -738,7 +837,9 @@ switch (_mode) do {
         _grp ctrlShow _gl;
         _tc ctrlShow (!_gl);
         if (!_gl) exitWith {
-            // Caractère sans image : texte du jeu, coupé à sa vraie largeur (hauteur x chasse x 3/4 par caractère).
+            // Caractère sans image : texte du jeu, coupé à sa vraie largeur (hauteur x chasse x 3/4 par caractère) ;
+            // la bande d'images est vidée.
+            [_d, _grp, [_grp, ""] call _strip, 0, 0, _rgba] call _fill;
             private _fh = 0.8 * _rh;
             private _max = (floor (_rw / ((_kv get "charK") / (_kv get "uiBox") * _fh))) max 2;
             if ((count _cps) > _max) then { _s = (toString (_cps select [0, _max - 1])) + "…"; };
@@ -748,7 +849,9 @@ switch (_mode) do {
             _tc ctrlSetPosition [0, 0, _rw, _rh]; _tc ctrlCommit 0;
             _s
         };
-        // Case à la hauteur du rectangle, large de cellW / rapport de la dalle ; réduite d'un bloc pour tenir.
+        // Case à la hauteur du rectangle, large de cellW / rapport de la dalle ; réduite d'un bloc pour tenir. Le texte
+        // du jeu, qui ne sert pas, est vidé.
+        _tc ctrlSetText "";
         private _cw = _cellW * _rh / (_asp max 0.1);
         private _fit = (_rw / (((count _cps) max 1) * _cw)) min 1;
         if (_fit < _min) then {
@@ -759,7 +862,7 @@ switch (_mode) do {
             _cps pushBack 8230;
         };
         private _w = (count _cps) * _cw * _fit;
-        [_d, _grp, _cps, _cw * _fit, _rh * _fit, _rgba] call _fill;
+        [_d, _grp, [_grp, toString _cps] call _strip, _cw * _fit, _rh * _fit, _rgba] call _fill;
         _grp ctrlSetPosition [(createHashMapFromArray [["C", (_rw - _w) / 2], ["R", _rw - _w]]) getOrDefault [_al, 0], _rh * (1 - _fit) / 2, _w, _rh * _fit];
         _grp ctrlCommit 0;
         toString _cps

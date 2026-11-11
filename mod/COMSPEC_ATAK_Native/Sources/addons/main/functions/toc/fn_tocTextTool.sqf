@@ -15,7 +15,8 @@
                          sans limite.
       ["send", [écrans, texte, couleur, vitesse, défilement]]  -> nombre d'écrans servis. Messages séparés par | ou par des
                          retours à la ligne ; l'écran qui n'est pas en affichage TEXTE y passe.
-      ["clear", écrans] -> nombre d'écrans dont le message est effacé (liste vide : texte par défaut de l'affichage)
+      ["clear", écrans] -> nombre d'écrans dont le message est effacé (liste vide : l'écran montre l'invite à écrire
+                         un message de fn_tocText, jamais le nom de son modèle)
       ["spec", réglage] -> texte d'un réglage COMSPEC_ATAK_TocText dans l'écriture des messages (un message par ligne)
       ["dialog", [écran ou écrans, titre, ligne de résultat, repère]]  fenêtre de saisie (Zeus, joueur, gestionnaire) ; le
                          résultat de chaque envoi s'écrit dans la fenêtre, qui reste ouverte.

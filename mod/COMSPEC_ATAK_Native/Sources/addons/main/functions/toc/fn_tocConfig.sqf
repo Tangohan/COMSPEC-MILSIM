@@ -538,6 +538,15 @@ switch (_op) do {
             _m = (_b0 vectorAdd _b1) vectorMultiply 0.5;
             _t setVariable ["COMSPEC_ATAK_TocMid", _m];
         };
+        // Écran suspendu ou posé haut (bandeau à LED sous plafond, écran 98 pouces au plafond) : le centre du modèle
+        // est hors de portée de main, le menu ACE n'apparaissait jamais (retour de TTRD, 4.8.0 : « j'ai posé le texte
+        // défilant, j'ai plus d'action ACE du tout »). Le point est descendu à 1,2 m au plus au-dessus des yeux du
+        // joueur, à la verticale du centre ; l'écran lui-même ne bouge pas.
+        if (hasInterface && {!isNull player}) then {
+            private _w = _t modelToWorldWorld _m;
+            private _top = ((eyePos player) select 2) + 1.2;
+            if ((_w select 2) > _top) then { _m = _t worldToModel (ASLToAGL [_w select 0, _w select 1, _top]); };
+        };
         _m
     };
     case "dim": {

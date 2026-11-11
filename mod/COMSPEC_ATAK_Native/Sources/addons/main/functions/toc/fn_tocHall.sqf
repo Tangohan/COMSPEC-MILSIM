@@ -19,7 +19,7 @@
       ["auto", [objet, camp]]                    salle d'un objet qui se règle seul : la plus proche, sinon « TOC n » créée (fn_tocAuto)
       ["do", [action, args]]                     client -> serveur ; serveur : actions
         create [nom, camp, PC, id imposé]  link [id, écran]  unlink écran  linkNear [id, [x, y, z], rayon]
-        rename [id, nom]  power [écran, allumé]  powerAll [id, allumé]  blink écran
+        rename [id, nom]  power [écran, allumé]  powerAll [id, allumé]  blink écran  dissolve id (salle rayée, objets gardés)
         sceneSave [id, nom]  sceneApply [id, nom]  sceneDel [id, nom]
         spawn [posATL, dir, taille, nom, camp, id, classe des postes, demandeur, aligner]  roomRemove id (fn_tocHallBuild)
       ["dump"] / ["load", données] / ["saved", id] serveur (fn_tocPersist, module « Salle TOC complète »)
@@ -248,8 +248,21 @@ switch (_mode) do {
                 // Le bilan part au demandeur une fois tous les objets posés (fn_tocHallBuild « finish », comspec_atak_native_tocHallDone).
                 ["build", [_pos, _dir, _size, _nm, _sd, _id, _post, _snap, false, _by]] call comspec_atak_native_fnc_tocHallBuild;
             };
-            // Salle complète retirée (module supprimé, fn_tocHallBuild « remove ») : écrans, mobilier et PC posés par elle.
+            // Salle complète retirée (module supprimé, tableau des écrans, fn_tocHallBuild « remove ») : écrans, mobilier
+            // et PC posés par elle ou liés à elle, salle rayée du registre et de la sauvegarde.
             case "roomRemove": { ["remove", _args] call comspec_atak_native_fnc_tocHallBuild; };
+            // Salle dissoute : elle disparaît du registre et de la sauvegarde, ses écrans et ses postes restent en
+            // place, déliés (tableau des écrans, « Dissoudre la salle »).
+            case "dissolve": {
+                private _id = _args;
+                if !(_id isEqualType "") exitWith {};
+                private _i = [_id] call _find;
+                { _x setVariable ["COMSPEC_ATAK_TocHall", "", true]; } forEach (["screens", _id] call _fn);
+                { if ((_x getVariable ["COMSPEC_ATAK_TocHall", ""]) isEqualTo _id) then { _x setVariable ["COMSPEC_ATAK_TocHall", "", true]; }; } forEach (allMissionObjects "COMSPEC_ATAK_TocLaptop");
+                if (_i >= 0) then { _l deleteAt _i; };
+                [_l] call _publish;
+                diag_log text format ["[COMSPEC TOC] salle | %1 dissoute : écrans et postes gardés, déliés", _id];
+            };
         };
         true
     };

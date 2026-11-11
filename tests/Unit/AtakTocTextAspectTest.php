@@ -305,7 +305,8 @@ final class AtakTocTextAspectTest extends TestCase
         self::assertStringContainsString('private _clip = ["RscControlsGroupNoScrollbars", _g] call _mk;', $txt);
         self::assertStringContainsString('private _ga = ["RscControlsGroupNoScrollbars", _clip] call _mk;', $txt);
         self::assertStringContainsString('private _gb = ["RscControlsGroupNoScrollbars", _clip] call _mk;', $txt);
-        self::assertStringContainsString('_clip ctrlSetPosition [(_ins + _bth + _padX) * _ux, (_ins + _bth) * _rh, _wi, _hi]; _clip ctrlCommit 0;', $txt);
+        self::assertStringContainsString('private _clipR = [(_ins + _bth + _padX) * _ux, (_ins + _bth) * _rh, _wi, _hi];', $txt);
+        self::assertStringContainsString('_clip ctrlSetPosition _clipR; _clip ctrlCommit 0;', $txt);
         // Deux copies espacées de la boucle (texte + blanc, jamais moins que la fenêtre) : sans couture.
         self::assertStringContainsString('private _loop = (_tw + _gap) max _wi;', $txt);
         self::assertStringContainsString('_cb ctrlSetPosition [_px + _lp, (_hi - _lh) / 2, _tw, _lh]; _cb ctrlCommit 0;', $txt);
@@ -327,9 +328,145 @@ final class AtakTocTextAspectTest extends TestCase
             }
         }
         // Une largeur de texte exacte : chasse fixe, donc nombre de caractères x case (plus d'estimation).
-        self::assertStringContainsString('(count _lc) * _cellW * _fz * _ux', $txt);
+        self::assertStringContainsString('(count (toArray _s)) * _cellW * _fz * _ux', $txt);
         // Un texte de même longueur (heure qui avance) ne relance pas le défilement.
         self::assertStringContainsString('private _sig = [[_txt, count _cps] select _gl, _kind, _speed, _always, _multi, _mi, round (_rw * 1e4), _colK, _gl];', $txt);
+    }
+
+    /**
+     * Même règle que _cells (fn_tocText.sqf) : rangée d'exactement $n cases, un caractère par case (« espace » : case
+     * vide ; "\0" : caractère sans image). Case i = caractère i + $shift, vide hors du texte ; $wrap : le texte revient
+     * après $gap cases vides.
+     */
+    private static function cells(string $text, int $n, int $shift, bool $wrap, int $gap, array $glyphs): string
+    {
+        $src = array_map(static function (string $ch) use ($glyphs): string {
+            $code = mb_ord($ch);
+            if (in_array($code, [32, 160, 173, 8201, 8239], true)) {
+                return ' ';
+            }
+            foreach ($glyphs as [$lo, $hi]) {
+                if ($code >= $lo && $code <= $hi) {
+                    return $ch;
+                }
+            }
+
+            return "\0";
+        }, mb_str_split($text));
+        $len = count($src);
+        $per = $len + $gap;
+        $out = '';
+        for ($i = 0; $i < $n; $i++) {
+            $j = $i + $shift;
+            if ($wrap) {
+                $j = (($j % $per) + $per) % $per;
+            }
+            $out .= ($j >= 0 && $j < $len) ? $src[$j] : ' ';
+        }
+
+        return $out;
+    }
+
+    public function testOneRendererAtATimeEveryRowIsRedrawnFromItsCells(): void
+    {
+        // Retour de TTRD du 11/11 (capture) : « BONJOUR MOR… » surimprimé par la fin de l'ancien texte (« …text strip
+        // 2.4 », plus petite). Les cases de l'ancien texte au-delà du nouveau étaient seulement masquées, et remontrées
+        // avec leur groupe ; la bande au texte inchangé n'était pas refaite.
+        $txt = self::read(self::TOC . 'fn_tocText.sqf');
+        $k = array_column(self::table($txt, '_k'), 1, 0);
+        $glyphs = self::table($txt, '_glyphs');
+        $rows = self::table($txt, '_cellRows');
+        $seen = ['longer' => 0, 'exact' => 0, 'wrap' => 0, 'empty' => 0, 'shift' => 0];
+        foreach ($rows as $i => [$text, $n, $shift, $wrap, $want]) {
+            self::assertSame($n, mb_strlen($want), "cas $i : la rangée attendue a exactement $n cases");
+            self::assertSame($want, self::cells($text, $n, $shift, $wrap, $k['gapChars'], $glyphs), "cas $i");
+            $len = mb_strlen($text);
+            $seen[$len === 0 ? 'empty' : ($wrap ? 'wrap' : ($shift !== 0 ? 'shift' : ($n > $len ? 'longer' : 'exact')))]++;
+        }
+        foreach ($seen as $kind => $count) {
+            self::assertGreaterThan(0, $count, "aucun cas « $kind » dans la table _cellRows");
+        }
+        // Texte court après un texte long, dans la même réserve de cases : rien de l'ancien ne reste.
+        $old = 'Ceiling-hung LED text strip 2.4';
+        $pool = mb_strlen($old);
+        foreach (['BONJOUR MORGANE', 'TOC', '', 'A'] as $new) {
+            $row = self::cells($new, max(mb_strlen($new), $pool), 0, false, $k['gapChars'], $glyphs);
+            self::assertSame($pool, mb_strlen($row));
+            self::assertSame($new . str_repeat(' ', $pool - mb_strlen($new)), $row, "« $new » après « $old »");
+        }
+        // Boucle : période = texte + blanc ; deux périodes de suite sont identiques, le blanc sépare les deux passages.
+        $loop = self::cells('ALERTE', 2 * (6 + $k['gapChars']), 0, true, $k['gapChars'], $glyphs);
+        self::assertSame(str_repeat('ALERTE' . str_repeat(' ', $k['gapChars']), 2), $loop);
+        self::assertSame(mb_substr($loop, 4, 9), self::cells('ALERTE', 9, 4, true, $k['gapChars'], $glyphs));
+        // Le code : fonction pure, mode « cells », rejouée par « selfCheck » ; une bande = sa rangée complétée jusqu'à la
+        // dernière case de sa réserve ; la case i de la réserve montre la case i de la rangée, vide = masquée et sans taille.
+        self::assertStringContainsString('case "cells": { _a call _cells };', $txt);
+        self::assertStringContainsString('params [["_s", ""], ["_n", 0], ["_shift", 0], ["_wrap", false]];', $txt);
+        self::assertStringContainsString('if (_wrap) then { _j = ((_j mod _per) + _per) mod _per; };', $txt);
+        self::assertStringContainsString('_out pushBack ([32, _src param [_j max 0, 32]] select (_j >= 0 && {_j < _len}));', $txt);
+        self::assertStringContainsString('(toString ([_s, _n, _shift, _wrap] call _cells)) isNotEqualTo _want', $txt);
+        self::assertStringContainsString('[_s, (count (toArray _s)) max (count (_grp getVariable ["COMSPEC_ATAK_Cells", []])), 0] call _cells', $txt);
+        self::assertStringContainsString('private _lc = [_c, _s] call _strip;', $txt);
+        self::assertStringContainsString('private _hideCell = { _this ctrlSetPosition [0, 0, 0, 0]; _this ctrlCommit 0; _this ctrlShow false; };', $txt);
+        self::assertStringContainsString('if (_x isEqualTo 32) then { _c call _hideCell; } else {', $txt);
+        // État montré / masqué de chaque case reposé à chaque image, même quand rien d'autre ne change.
+        self::assertStringContainsString('{ _x ctrlShow ((_row select _forEachIndex) isNotEqualTo 32); } forEach _pool;', $txt);
+        self::assertStringNotContainsString('isEqualTo _cellSig) exitWith {};', $txt);
+        // Un seul dessin : la paire qui ne sert pas (images ou texte du jeu) est vidée, sans taille et masquée ; de même
+        // la seconde bande d'un texte fixe sur une ligne ou d'un passage unique.
+        self::assertStringContainsString('if (_isGl) then { [_d, _c, [_c, ""] call _strip, 0, 0, _rgba] call _fill; } else { _c ctrlSetText ""; };', $txt);
+        self::assertStringContainsString('{ [_ui get _x, !_gl] call _blankStrip; } forEach ([["a", "b"], ["ta", "tb"]] select _gl);', $txt);
+        self::assertSame(2, substr_count($txt, '[_cb, _gl] call _blankStrip;'));
+        // Clignotement : la fenêtre du texte sort du panneau ; plus aucune bande masquée puis remontrée.
+        self::assertSame(2, substr_count($txt, 'ctrlSetPosition [(_clipR select 0) + ([4, 0] select _on), _clipR select 1, _clipR select 2, _clipR select 3];'));
+        foreach (['_ca ctrlShow _on', '_cb ctrlShow _on', '(_anim select 1) ctrlShow', '_cb ctrlShow false'] as $gone) {
+            self::assertStringNotContainsString($gone, $txt);
+        }
+        // Plaques et bandeau horloge (« label ») : même rangée, texte du jeu vidé quand les images servent.
+        self::assertStringContainsString('[_d, _grp, [_grp, toString _cps] call _strip, _cw * _fit, _rh * _fit, _rgba] call _fill;', $txt);
+        self::assertStringContainsString('[_d, _grp, [_grp, ""] call _strip, 0, 0, _rgba] call _fill;', $txt);
+    }
+
+    public function testAScreenNeverPrintsItsModelNameAndAsksForAMessage(): void
+    {
+        // Retour de TTRD du 11/11 : un bandeau tout juste posé écrivait « Ceiling-hung LED text strip 2.4 » (nom de la
+        // classe, posé d'office comme nom de l'écran, et message par défaut « {poste} »).
+        $txt = self::read(self::TOC . 'fn_tocText.sqf');
+        $k = array_column(self::table($txt, '_k'), 1, 0);
+        $fits = array_column(self::table($txt, '_fits'), null, 0);
+        // Aucun message par défaut ; {poste} : nom donné, sinon nom de la salle, sinon « TOC ».
+        self::assertStringContainsString('private _default = [[], 1, 0, 0, 1];', $txt);
+        self::assertStringNotContainsString('[["{poste}", "G", 10, 0]]', $txt);
+        self::assertStringContainsString('private _mdl = getText (configOf (_o getVariable ["COMSPEC_ATAK_TocHost", _o]) >> "displayName");', $txt);
+        self::assertStringContainsString('if (_nm isNotEqualTo "" && {_nm isNotEqualTo "TOC"} && {_mdl isEqualTo "" || {(_nm find (_mdl select [0, 20])) isNotEqualTo 0}}) exitWith { _nm };', $txt);
+        self::assertStringContainsString('private _hn = (["get", ["of", _o] call comspec_atak_native_fnc_tocHall] call comspec_atak_native_fnc_tocHall) param [1, ""];', $txt);
+        self::assertStringContainsString('[_hn, "TOC"] select (!(_hn isEqualType "") || {_hn isEqualTo ""})', $txt);
+        self::assertSame(2, substr_count($txt, '[_o, _c param [0, "TOC"]] call _posteOf'), 'écran et aperçu de l\'éditeur');
+        // Aucun message : invite fixe et centrée, réduite autant qu'il faut ; un message existe : jamais d'invite.
+        $fr = 'Écrivez votre message : menu de l\'écran, Écrire un message';
+        $en = 'Write your message: screen menu, Write a message';
+        self::assertStringContainsString('private _hintOn = (count _msgs) isEqualTo 0;', $txt);
+        self::assertStringContainsString('_msgs = [[("' . $fr . '") call comspec_atak_native_fnc_tr, "G", 10, 0]];', $txt);
+        self::assertStringContainsString('if (_hintOn) then { _fMin = 0; };', $txt);
+        self::assertStringContainsString('if !(_cfg isEqualType [] && {(count _cfg) >= 5} && {(_cfg select 0) isEqualType []}) then { _cfg = _default; };', $txt);
+        self::assertStringContainsString('["' . $fr . '", "' . $en . '"],', self::read(self::MAIN . 'i18n/en.txt'));
+        self::assertStringContainsString('["' . $fr . '", "", "' . $en . '"],', self::read('mod/COMSPEC_ATAK_Native/localisation/template/xx.txt'));
+        // Rejouée sur chaque dalle : l'invite ne défile jamais et reste lisible (case d'au moins minPx pixels).
+        foreach (self::table($txt, '_panels') as [$name, $kind, $ratio, , $texH]) {
+            $fit = $fits[$kind];
+            $fit[2] = 0;
+            foreach ([$fr, $en] as $hint) {
+                [$mode, $f] = self::plan($hint, self::window($ratio, $fit), 1 / $ratio, $k['cellW'], $fit);
+                self::assertNotSame(2, $mode, "$name : l'invite défile");
+                self::assertGreaterThanOrEqual($k['minPx'], $f * $texH, "$name : invite illisible");
+            }
+        }
+        // Le message effacé (fn_tocTextTool « clear ») envoie une liste vide ; la salle posée garde « {poste} · {dtg} ».
+        self::assertStringContainsString('["view", [_x, "text", [[], _old param [1, 1], _old param [2, 0], _old param [3, 0], _old param [4, 1]]]] call _ts;', self::read(self::TOC . 'fn_tocTextTool.sqf'));
+        self::assertStringContainsString('"{poste} · {dtg}"', self::read(self::TOC . 'fn_tocHallBuild.sqf'));
+        foreach (['hint ', 'systemChat', 'titleText', 'cutText', 'BIS_fnc_showNotification'] as $popup) {
+            self::assertStringNotContainsString($popup, $txt);
+        }
     }
 
     public function testEveryGlyphOfTheTableHasItsImage(): void

@@ -96,7 +96,12 @@ switch (_mode) do {
         private _out = [];
 
         // ---- Ouvrir le PC du poste : en tête, sur tout écran qui sert de poste, désigné ou non (écran COMSPEC).
-        if (_std && {[_has && {_o getVariable ["COMSPEC_ATAK_Toc", false]}, (getNumber (configOf _o >> "comspec_screen")) > 0] select !_has} && {isNull objectParent player}) then {
+        // Poste PC (fixe ou portable), écran qui sert de poste : toujours proposé, quel que soit le format de la dalle
+        // visée et qu'on ait un téléphone ou non (retour de TTRD, 4.8.0 : « on a plus le ACE Ouvrir le PC TOC » : la
+        // condition exigeait une dalle 16:9 et le drapeau « poste » sur la dalle visée, pas sur le poste lui-même).
+        private _isPost = (getNumber (configOf _host >> "comspec_tocPost")) > 0 || {_host isKindOf "COMSPEC_ATAK_TocLaptop"}
+            || {_o getVariable ["COMSPEC_ATAK_Toc", false]} || {_host getVariable ["COMSPEC_ATAK_Toc", false]};
+        if ((_isPost || {_std && {[_has && {_o getVariable ["COMSPEC_ATAK_Toc", false]}, (getNumber (configOf _o >> "comspec_screen")) > 0] select !_has}}) && {isNull objectParent player}) then {
             _out pushBack (["Pc", "Ouvrir le PC du poste", "Ouvre le PC du poste TOC : carte, groupes, flux, ordres. Exemple : donner un ordre à Alpha depuis la salle.", "big", _d + "app_toc.paa"] call _leaf);
         };
 
@@ -272,8 +277,9 @@ switch (_mode) do {
                 [format ["B%1", _x], format ["%1 %2", _x, "%"], "Règle la luminosité de l'écran pour tous. Exemple : 50 % dans une salle sombre.", format ["bright|%1", _x], "", _b isEqualTo _x] call _leaf
             };
             _scrK pushBack (["Bright", format ["Luminosité : %1 %2", _b, "%"], "Luminosité de l'écran, valeur en cours dans le libellé. Exemple : 25 % pour une opération de nuit.", "", _bk] call _grp);
-            if (_view isEqualTo "TEXT") then {
-                _scrK pushBack (["Text", "Modifier le texte LED…", "Ouvre la saisie du texte affiché. Exemple : changer « ALERTE » en « FIN D'ALERTE ».", "text"] call _leaf);
+            // Tout écran capable d'afficher du texte, quel que soit son affichage du moment : l'entrée est toujours là.
+            if ("TEXT" in _okViews) then {
+                _scrK pushBack (["Text", "Écrire un message…", "Ouvre la saisie du texte de l'écran ; il passe en affichage Texte. Exemple : « BRIEFING 21:00 ZULU » sur le bandeau.", "text"] call _leaf);
             };
             // Diffusion (BROADCAST) : entrées données par fn_tocBroadcast (mire, salle, témoin), s'il est là.
             private _bc = [];
@@ -379,7 +385,20 @@ switch (_mode) do {
                 [_act, [_kids, _pre + "_" + _id] call _conv, _o]
             }
         };
-        private _out = [["tree", _o] call _fn, "COMSPEC_ATAK_Wall" + (netId _o)] call _conv;
+        private _tree = ["tree", _o] call _fn;
+        // Arbre vide ou illisible : jamais un menu sans rien. Trois entrées de secours, et une ligne au journal par écran.
+        if (isNil "_tree" || {!(_tree isEqualType [])} || {_tree isEqualTo []}) then {
+            _tree = [
+                ["SafeText", "Écrire un message…", "Ouvre la saisie du texte de l'écran. Exemple : « BRIEFING 21:00 ZULU ».", "", "text", [], false],
+                ["SafeUse", "Utiliser comme écran TOC", "Fait de cet objet un écran TOC (carte et flux). Exemple : la TV de la salle de briefing.", "", "split", [], false],
+                ["SafeMgr", "Gérer les écrans (tableau)…", "Ouvre le tableau de tous les écrans TOC. Exemple : changer la vue de dix écrans d'un coup.", "", "manager", [], false]
+            ];
+            if !(_o getVariable ["COMSPEC_ATAK_MenuZeroLog", false]) then {
+                _o setVariable ["COMSPEC_ATAK_MenuZeroLog", true];
+                diag_log text format ["[COMSPEC TOC] ACE | classe=%1 aucune action : arbre du menu vide, entrées de secours posées (affichage %2)", typeOf _o, (_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, "aucun"]];
+            };
+        };
+        private _out = [_tree, "COMSPEC_ATAK_Wall" + (netId _o)] call _conv;
         _o setVariable ["COMSPEC_ATAK_MenuAce", [diag_tickTime, _out]];
         _out
     };
