@@ -8,7 +8,7 @@
       0 révision,
       1 chronos      [[id, nom, genre "UP" (chrono) | "DOWN" (compte à rebours) | "AT" (heure H en ZULU), valeur
                        (durée en s pour DOWN, minute du jour ZULU pour AT), en marche, cumul en s, départ (serverTime)]...]
-      2 satellites   [SAT 1, SAT 2] : [x, y, demi-largeur au sol en m, image "DAY" | "NV" | "TI", suivi "" | "U" | "G",
+      2 satellites   [SAT 1, SAT 2] : [x, y, demi-largeur au sol en m, image "AUTO" | "DAY" | "NV" | "TI", suivi "" | "U" | "G",
                        cible du suivi (netId de l'unité ou nom du groupe), opérateur qui a la main (libellé), son UID]
       3 main courante [[heure ZULU, genre, auteur, texte]...] (les plus récentes à la fin, 150 au plus)
       4 exécution    [[id, n°, événement, mot de code, élément, heure prévue, heure réelle ZULU ("" : pas encore)]...]
@@ -31,7 +31,7 @@
       ["me"]                              client : libellé de l'opérateur « indicatif du poste · nom »
     Actions (serveur) : timerAdd [nom, genre, valeur] | timerStart id | timerStop id | timerReset id | timerDel id
       sat [n° 0-1, clé, valeur] : clés take [x, y] | release | center [x, y] | pan [dx, dy] (part de la vue) | zoom facteur
-      | mode "DAY" | "NV" | "TI" | follow ["U" | "G", cible] | unfollow
+      | mode "AUTO" | "DAY" | "NV" | "TI" | follow ["U" | "G", cible] | unfollow
       log [genre, texte] | flash texte | flashClear | login poste | logout
       exAdd [événement, mot de code, élément, heure prévue] | exDone id | exUndo id | exDel id | exSet [lignes]
       reqAdd [genre, demandeur, UID, grille, texte, [x, y]] | reqSet [id, statut, réponse] | reqDel id
@@ -42,8 +42,9 @@ params [["_mode", "state"], ["_a", []]];
 private _fn = comspec_atak_native_fnc_tocRoom;
 private _sides = ["WEST", "EAST", "GUER", "CIV"];
 private _two = { private _n = floor _this; [str _n, "0" + str _n] select (_n < 10) };
-// Satellite sans position (-1) : centré sur le poste à la première prise en main.
-private _blank = { [0, [], [[-1, -1, 600, "DAY", "", "", "", ""], [-1, -1, 600, "DAY", "", "", "", ""]], [], [], [], [], [], []] };
+// Satellite sans position (-1) : centré sur le poste à la première prise en main. Image AUTO : jour le jour, vision
+// nocturne la nuit (fn_tocSat « effect »).
+private _blank = { [0, [], [[-1, -1, 600, "AUTO", "", "", "", ""], [-1, -1, 600, "AUTO", "", "", "", ""]], [], [], [], [], [], []] };
 switch (_mode) do {
     case "zulu": {
         systemTimeUTC params ["", "", "", "_h", "_mi", "_s"];
@@ -283,7 +284,7 @@ switch (_mode) do {
                         _s set [4, ""]; _s set [5, ""];
                     };
                     case "zoom": { if (_v isEqualType 0 && {_v > 0}) then { _s set [2, round (((_s select 2) * _v) max 40 min 2500)]; }; };
-                    case "mode": { if (_v in ["DAY", "NV", "TI"]) then { _s set [3, _v]; }; };
+                    case "mode": { if (_v in ["AUTO", "DAY", "NV", "TI"]) then { _s set [3, _v]; }; };
                     case "follow": {
                         _v params [["_fk", ""], ["_fid", ""]];
                         if (_fk in ["U", "G"] && {_fid isEqualType ""} && {_fid isNotEqualTo ""}) then { _s set [4, _fk]; _s set [5, _fid select [0, 40]]; };
