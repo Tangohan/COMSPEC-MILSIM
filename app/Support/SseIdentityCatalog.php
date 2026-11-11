@@ -21,11 +21,14 @@ final class SseIdentityCatalog
         'generated' => 'Identité générée',
     ];
 
+    /** Papiers intégrés au mod SSE : mêmes clés et libellés que SseDocumentTypes (test SseDocumentTypesMirrorTest). */
     public const DOC_TYPES = [
         'id_card' => 'Carte d’identité',
         'passport' => 'Passeport',
         'driving_license' => 'Permis de conduire',
         'military_id' => 'Carte militaire',
+        'residence_permit' => 'Titre de séjour',
+        'vehicle_registration' => 'Certificat d’immatriculation',
     ];
 
     public const SEXES = [
