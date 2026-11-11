@@ -3,7 +3,7 @@
       « Lancer flash »  : engin posé au point cliqué, nombre de détonations, grenade d'entraînement, mèche
                           (par défaut = réglage « Mèche », 3 s, 8 s ou personnalisée 0,5-20 s), son de la DRILL.
       « Effet de zone » : effet sur toutes les unités dans un rayon, sans grenade (scénario).
-    Exécution côté serveur (événements CBA comspec_fb_serverDetonate / comspec_fb_serverArea).
+    Exécution sur le serveur s'il a le mod (événements CBA), sinon par ce poste Zeus (fn_serverDetonate / fn_serverArea).
 */
 private _icon = "\z\comspec_flashbang\addons\main\ui\fb_module_ca.paa";
 private _cat = "COMSPEC Flashbang";
@@ -37,8 +37,8 @@ private _cat = "COMSPEC Flashbang";
         };
         private _sfx = ["", format ["_D%1", _fuseMode]] select (_fuseMode in ["3", "8"]);
         private _ammo = if (_drill) then { "COMSPEC_FB_Ammo_Drill" + _sfx } else { format ["COMSPEC_FB_Ammo_%1%2", _n, _sfx] };
-        ["comspec_fb_serverDetonate", [_ammo, _pos vectorAdd [0, 0, 0.05], [[0, 1, 0], [0, 0, 1]], [0, 0, 0], objNull,
-            sideUnknown, _n, _fuse, -1, _snd]] call CBA_fnc_serverEvent;
+        [_ammo, _pos vectorAdd [0, 0, 0.05], [[0, 1, 0], [0, 0, 1]], [0, 0, 0], objNull,
+            sideUnknown, _n, _fuse, -1, _snd] call comspec_fb_fnc_serverDetonate;
     }, {}, _pos] call zen_dialog_fnc_create;
 }, _icon] call zen_custom_modules_fnc_register;
 
@@ -55,6 +55,6 @@ private _cat = "COMSPEC Flashbang";
     ], {
         params ["_values", "_pos"];
         _values params ["_radius", "_strength", "_n", "_fx", "_lead"];
-        ["comspec_fb_serverArea", [_pos vectorAdd [0, 0, 0.05], _radius, _strength, round _n, _fx, _lead]] call CBA_fnc_serverEvent;
+        [_pos vectorAdd [0, 0, 0.05], _radius, _strength, round _n, _fx, _lead] call comspec_fb_fnc_serverArea;
     }, {}, _pos] call zen_dialog_fnc_create;
 }, _icon] call zen_custom_modules_fnc_register;

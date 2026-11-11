@@ -77,4 +77,6 @@ private _drillKeys = getArray (configFile >> "COMSPEC_FB_Sons" >> "drillChoix");
 ["comspec_fb_tinnitusSound", "LIST", "TinnitusSound", "Client", [[0, 1], [
     localize "STR_COMSPEC_FB_TinnitusSound_Rec", localize "STR_COMSPEC_FB_TinnitusSound_Synth"
 ], 0], 0] call _add;
-["comspec_fb_debug", "CHECKBOX", "Debug", "Client", false] call _add;
+// Journal de diagnostic actif par défaut en 1.0.0 (une dizaine de lignes RPT par lancer) ; détail sur demande.
+["comspec_fb_debug", "CHECKBOX", "Debug", "Client", true, 0] call _add;
+["comspec_fb_debugVerbose", "CHECKBOX", "DebugVerbose", "Client", false, 0] call _add;

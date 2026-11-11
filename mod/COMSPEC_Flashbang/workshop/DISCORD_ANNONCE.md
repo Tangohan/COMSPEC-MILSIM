@@ -25,7 +25,7 @@ Des grenades assourdissantes réalistes pour Arma 3. Mod indépendant : seul **C
 • En pièce fermée, ça vous touche même de dos. Derrière un mur : bang sourd, pas de flash.
 • L'IA aussi est éblouie : elle vise mal et se couvre.
 
-**Réglages** : préréglages Réaliste, Arcade et Léger, et 32 réglages CBA (dont volumes et portée du son).
+**Réglages** : préréglages Réaliste, Arcade et Léger, et 33 réglages CBA (dont volumes et portée du son).
 
 **Installation** : abonnez-vous à CBA_A3 et au mod, chargez-les sur le serveur et chez tous les joueurs, ajoutez la clé `comspec_flashbang.bikey` au dossier keys du serveur.
 
@@ -51,7 +51,7 @@ Realistic stun grenades for Arma 3. Standalone mod: only **CBA_A3** is required,
 • In a closed room it hits you even with your back turned. Behind a wall: dull bang, no flash.
 • AI gets dazzled too: it aims badly and takes cover.
 
-**Settings**: Realistic, Arcade and Light presets, plus 32 CBA settings (including volumes and sound range).
+**Settings**: Realistic, Arcade and Light presets, plus 33 CBA settings (including volumes and sound range).
 
 **Installation**: subscribe to CBA_A3 and the mod, load them on the server and for every player, add the `comspec_flashbang.bikey` key to the server keys folder.
 

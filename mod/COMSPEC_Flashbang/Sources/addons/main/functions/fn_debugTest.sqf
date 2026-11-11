@@ -27,8 +27,9 @@ private _unit = call CBA_fnc_currentUnit;
 
 comspec_fb_capture = [];
 private _head = [];
-_head pushBack format ["[COMSPEC FB] TEST %1 (%2), lancé par %3, mission %4, serveur=%5 multijoueur=%6",
-    _mag, _ammo, name _unit, missionName, isServer, isMultiplayer];
+_head pushBack format ["[COMSPEC FB] TEST %1 (%2), lancé par %3, mission %4, serveur=%5 multijoueur=%6, mod sur le serveur=%7 (version %8)",
+    _mag, _ammo, name _unit, missionName, isServer, isMultiplayer, call comspec_fb_fnc_serverHasMod,
+    missionNamespace getVariable ["comspec_fb_serverVersion", "inconnue"]];
 _head pushBack format ["[COMSPEC FB] config : magasin %1, munition %2 (simulation %3, explosionTime %4, timeToLive %5, mèche config %6), engin %7 %8, muzzle %9 dans Throw : %10",
     isClass (configFile >> "CfgMagazines" >> _mag), isClass (configFile >> "CfgAmmo" >> _ammo),
     getText (configFile >> "CfgAmmo" >> _ammo >> "simulation"), getNumber (configFile >> "CfgAmmo" >> _ammo >> "explosionTime"),
@@ -70,7 +71,7 @@ private _wait = _fuse + _n * ((missionNamespace getVariable ["comspec_fb_interva
     // Les étapes sont déjà dans le RPT (fn_log) : seule la conclusion y est ajoutée ; le presse-papiers reçoit tout.
     private _result = [
         "[COMSPEC FB] RÉSULTAT : chaîne complète exécutée sur ce poste (lumière, son et effets : lignes fx et unité)",
-        "[COMSPEC FB] RÉSULTAT : aucune détonation exécutée sur ce poste (voir la dernière étape ci-dessus ; en multijoueur, le serveur doit avoir le mod dans la même version)"
+        "[COMSPEC FB] RÉSULTAT : aucune détonation exécutée sur ce poste (voir la dernière étape ci-dessus ; en multijoueur, voir aussi la ligne « [COMSPEC FB] SERVEUR »)"
     ] select (({ "] burst |" in _x } count _lines) == 0);
     _lines pushBack _result;
     diag_log text _result;

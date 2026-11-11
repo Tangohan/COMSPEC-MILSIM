@@ -21,10 +21,26 @@ addMissionEventHandler ["ProjectileCreated", {
     };
 }];
 
+private _version = getText (configFile >> "CfgPatches" >> "comspec_flashbang_main" >> "versionStr");
+// Le mod doit être chargé sur les clients ; le serveur n'est pas obligatoire. Un serveur qui l'a publie sa version :
+// les clients lui confient alors les grenades (engin synchronisé, supprimable par Zeus). Sinon chaque client lanceur
+// fait autorité (fn_serverDetonate).
+if (isServer) then { missionNamespace setVariable ["comspec_fb_serverVersion", _version, true] };
 private _has = { parseNumber (isClass (configFile >> "CfgPatches" >> _this)) };
 diag_log text format ["[COMSPEC FB] chargé %1 · CBA ok · ACE=%2 ACRE=%3 TFAR=%4 ZEN=%5 · autres flashbang: tsp=%6/dka=%7 · serveur=%8 interface=%9 multijoueur=%10 · journal de diagnostic=%11",
-    getText (configFile >> "CfgPatches" >> "comspec_flashbang_main" >> "versionStr"),
-    "ace_common" call _has, "acre_main" call _has,
+    _version, "ace_common" call _has, "acre_main" call _has,
     ("tfar_core" call _has) max ("task_force_radio" call _has),
     "zen_custom_modules" call _has, "tsp_flashbang" call _has, "KA_Flashbang" call _has,
-    isServer, hasInterface, isMultiplayer, missionNamespace getVariable ["comspec_fb_debug", false]];
+    isServer, hasInterface, isMultiplayer, missionNamespace getVariable ["comspec_fb_debug", true]];
+// Client de partie multijoueur : une ligne sur le serveur, une fois la variable publique reçue (ou pas).
+if (isMultiplayer && {!isServer}) then {
+    [{
+        private _sv = missionNamespace getVariable ["comspec_fb_serverVersion", ""];
+        private _mine = getText (configFile >> "CfgPatches" >> "comspec_flashbang_main" >> "versionStr");
+        diag_log text (switch (true) do {
+            case (_sv isEqualTo ""): { "[COMSPEC FB] SERVEUR : mod absent (clients seulement) : chaque client lanceur fait autorité, engins locaux, pas de suppression par Zeus, IA du serveur non touchées" };
+            case (_sv != _mine): { format ["[COMSPEC FB] SERVEUR : mod présent en version %1, ce client a la version %2 : mettre les deux à jour", _sv, _mine] };
+            default { format ["[COMSPEC FB] SERVEUR : mod présent (version %1)", _sv] };
+        });
+    }, [], 15] call CBA_fnc_waitAndExecute;
+};

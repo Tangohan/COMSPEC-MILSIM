@@ -563,9 +563,9 @@
                 <French>Secondes avant la première détonation, après le début de la mission ou l'activation.  Exemple : 1.5 (mèche d'une vraie grenade).</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Module_Desc">
-                <Original>Fait détoner une grenade assourdissante (ou une DRILL) à la position du module, ou applique l'effet à toutes les unités d'une zone. Se déclenche au début de la mission ou par un déclencheur synchronisé, après le délai puis la mèche choisie.</Original>
-                <English>Detonates a stun grenade (or a DRILL) at the module position, or applies the effect to every unit in an area. Fires at mission start or from a synchronised trigger, after the delay and then the chosen fuse.</English>
-                <French>Fait détoner une grenade assourdissante (ou une DRILL) à la position du module, ou applique l'effet à toutes les unités d'une zone. Se déclenche au début de la mission ou par un déclencheur synchronisé, après le délai puis la mèche choisie.</French>
+                <Original>Fait détoner une grenade assourdissante (ou une DRILL) à la position du module, ou applique l'effet à toutes les unités d'une zone. Se déclenche au début de la mission ou par un déclencheur synchronisé, après le délai puis la mèche choisie. Le mod doit être chargé sur les clients ; le serveur n'est pas obligatoire pour lancer des grenades, mais il l'est pour ce module (recommandé aussi avec Zeus).</Original>
+                <English>Detonates a stun grenade (or a DRILL) at the module position, or applies the effect to every unit in an area. Fires at mission start or from a synchronised trigger, after the delay and then the chosen fuse. The mod must be loaded on clients; the server is not required to throw grenades, but it is for this module (also recommended with Zeus).</English>
+                <French>Fait détoner une grenade assourdissante (ou une DRILL) à la position du module, ou applique l'effet à toutes les unités d'une zone. Se déclenche au début de la mission ou par un déclencheur synchronisé, après le délai puis la mèche choisie. Le mod doit être chargé sur les clients ; le serveur n'est pas obligatoire pour lancer des grenades, mais il l'est pour ce module (recommandé aussi avec Zeus).</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Module_DrillSound">
                 <Original>Son de la DRILL</Original>
@@ -767,10 +767,20 @@
                 <English>Diagnostic log (RPT)</English>
                 <French>Journal de diagnostic (RPT)</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Set_DebugVerbose">
+                <Original>Journal détaillé</Original>
+                <English>Detailed log</English>
+                <French>Journal détaillé</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_DebugVerbose_Tip">
+                <Original>Ajoute au journal de diagnostic les étapes de détail : lumière, sons joués, chaque unité (distance, angle, vue, intensité), analyse intérieur / extérieur, IA, acouphène. Beaucoup de lignes : seulement pour une recherche précise.  Ex. : décoché ; coché le temps d'un test.</Original>
+                <English>Adds the detailed steps to the diagnostic log: light, sounds played, every unit (distance, angle, sight, strength), indoor / outdoor analysis, AI, tinnitus. Many lines: only for a precise investigation.  Example: unticked; ticked for one test.</English>
+                <French>Ajoute au journal de diagnostic les étapes de détail : lumière, sons joués, chaque unité (distance, angle, vue, intensité), analyse intérieur / extérieur, IA, acouphène. Beaucoup de lignes : seulement pour une recherche précise.  Ex. : décoché ; coché le temps d'un test.</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Set_Debug_Tip">
-                <Original>Écrit dans le fichier RPT de ce poste chaque étape d'une grenade : lancer, mèche, serveur, détonations, intensité calculée pour chaque unité, effets appliqués ou raison du refus (lignes « [COMSPEC FB] »). Rien à l'écran, aucun coût quand décoché.  Ex. : active-le, lance une grenade, puis envoie ton RPT.</Original>
-                <English>Writes every step of a grenade to this machine's RPT file: throw, fuse, server, detonations, computed strength for each unit, effects applied or why not (« [COMSPEC FB] » lines). Nothing on screen, no cost when unticked.  Example: tick it, throw a grenade, then send your RPT.</English>
-                <French>Écrit dans le fichier RPT de ce poste chaque étape d'une grenade : lancer, mèche, serveur, détonations, intensité calculée pour chaque unité, effets appliqués ou raison du refus (lignes « [COMSPEC FB] »). Rien à l'écran, aucun coût quand décoché.  Ex. : active-le, lance une grenade, puis envoie ton RPT.</French>
+                <Original>Écrit des lignes [COMSPEC FB] dans le journal Arma (RPT) de ce poste pour comprendre un souci : lancer, mèche, serveur ou client, détonations, effet sur le joueur (une dizaine de lignes par grenade, rien à l'écran). Désactivable.  Ex. : laissez-le coché, lancez une grenade, puis envoyez votre RPT.</Original>
+                <English>Writes [COMSPEC FB] lines to this computer's Arma log (RPT) to understand a problem: throw, fuse, server or client, detonations, effect on the player (about ten lines per grenade, nothing on screen). Can be turned off.  Example: leave it ticked, throw a grenade, then send your RPT.</English>
+                <French>Écrit des lignes [COMSPEC FB] dans le journal Arma (RPT) de ce poste pour comprendre un souci : lancer, mèche, serveur ou client, détonations, effet sur le joueur (une dizaine de lignes par grenade, rien à l'écran). Désactivable.  Ex. : laissez-le coché, lancez une grenade, puis envoyez votre RPT.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_DrillFlash">
                 <Original>Lueur de la DRILL</Original>

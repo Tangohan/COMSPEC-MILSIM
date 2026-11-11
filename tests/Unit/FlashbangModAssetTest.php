@@ -181,4 +181,27 @@ final class FlashbangModAssetTest extends TestCase
         self::assertStringContainsString('getNumber (_cfg >> "comspec_fb_fuse")', $fired);
         self::assertStringContainsString('CBA_missionTime + _fuse', $fired, 'Heure de la 1re détonation fixée au lancer.');
     }
+
+    public function testFonctionneSansLeModSurLeServeur(): void
+    {
+        $post = self::read(self::MAIN . 'XEH_postInit.sqf');
+        self::assertStringContainsString('missionNamespace setVariable ["comspec_fb_serverVersion", _version, true]', $post);
+        self::assertStringContainsString('[COMSPEC FB] SERVEUR : mod absent (clients seulement)', $post);
+        self::assertStringContainsString('comspec_fb_serverVersion', self::read(self::MAIN . 'functions/fn_serverHasMod.sqf'));
+        self::assertStringContainsString('class serverHasMod {};', self::read(self::MAIN . 'CfgFunctions.hpp'));
+        foreach (['fn_serverDetonate.sqf', 'fn_serverArea.sqf'] as $f) {
+            $s = self::read(self::MAIN . 'functions/' . $f);
+            self::assertStringNotContainsString('if (!isServer) exitWith {};', $s, "{$f} doit marcher sur un client.");
+            self::assertStringContainsString('call comspec_fb_fnc_serverHasMod', $s);
+            self::assertStringContainsString('call CBA_fnc_globalEvent', $s, "{$f} : diffusion par le client qui fait autorité.");
+        }
+        self::assertStringContainsString('createVehicleLocal', self::read(self::MAIN . 'functions/fn_timeline.sqf'));
+        $fuse = self::read(self::MAIN . 'functions/fn_fuseEnd.sqf');
+        self::assertStringContainsString('_args call comspec_fb_fnc_serverDetonate;', $fuse);
+        $zen = self::read(self::MAIN . 'functions/fn_zenRegister.sqf');
+        self::assertStringNotContainsString('CBA_fnc_serverEvent', $zen);
+        $pre = self::read(self::MAIN . 'XEH_preInit.sqf');
+        self::assertStringContainsString('["comspec_fb_debug", "CHECKBOX", "Debug", "Client", true, 0]', $pre, 'Journal actif par défaut.');
+        self::assertStringContainsString('"comspec_fb_debugVerbose"', $pre);
+    }
 }

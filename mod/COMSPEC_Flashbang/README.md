@@ -4,6 +4,12 @@ Mod indépendant de grenades assourdissantes pour Arma 3 : grenades de 1 à 9 d�
 d'entraînement DRILL, chacune en mèche standard (réglable) et en mèche à délai 3 s ou 8 s. Seule dépendance : **CBA_A3**. Il ne dépend d'aucun autre mod COMSPEC (ni ATAK, ni SSE, ni
 Overwatch, ni Athena). ACE3, ACRE2, TFAR et ZEN sont reconnus s'ils sont chargés, mais ne sont pas obligatoires.
 
+**Où charger le mod** : le mod doit être chargé sur les clients ; le serveur n'est pas obligatoire pour lancer des
+grenades (recommandé pour une mission avec Zeus ou le module Eden). Avec le mod sur le serveur, l'engin au sol est
+synchronisé, supprimable par Zeus, et les IA du serveur sont touchées. Sans le mod sur le serveur, chaque client
+lanceur fait autorité : il tire les instants et prévient les autres clients (événement CBA, CBA suffit sur le serveur),
+chacun pose son engin local ; les IA locales au serveur ne sont pas touchées et Zeus ne peut pas supprimer l'engin.
+
 *English version below.*
 
 ## Contenu
@@ -187,7 +193,8 @@ Les réglages « client » sont propres à chaque poste ; tous les autres sont i
 | Volume des flashbangs (client) | 200 % | Volume des bangs et sons de la DRILL sur ce poste (50-300 %) ; très fort : baissez le casque avant de tester | 100 % = niveau d'origine |
 | Volume de l'acouphène (client) | 150 % | Volume du sifflement (50-300 %) | 100 % si trop fort au casque |
 | Acouphène : son (client) | Enregistrement | Son enregistré (sous licence, acquis par COMSPEC) ou synthèse | Synthèse |
-| Journal de diagnostic (RPT) (client) | non | Écrit chaque étape d'une grenade dans le RPT de ce poste (lignes `[COMSPEC FB]`), rien à l'écran, aucun coût quand décoché | active-le, lance une grenade, puis envoie ton RPT |
+| Journal de diagnostic (RPT) (client) | oui | Une dizaine de lignes `[COMSPEC FB]` par grenade dans le RPT de ce poste, rien à l'écran ; désactivable | laissez-le coché, lancez une grenade, puis envoyez votre RPT |
+| Journal détaillé (client) | non | Ajoute son, lumière, chaque unité, intérieur / extérieur, IA | coché le temps d'un test |
 
 **Sans CBA** : le mod ne se charge pas, car CBA est requis. CBA fournit les réglages, les événements des grenades
 et l'horloge commune des détonations. Il n'existe pas de réglage par `description.ext`. En mission, on peut forcer
@@ -329,9 +336,12 @@ De dos, l'angle réel dépend de l'inclinaison de la tête (125 à 160°) : 0,47
 
 - Au chargement, une ligne RPT est toujours écrite : `[COMSPEC FB] chargé 1.0.0 · CBA ok · ACE=… ACRE=… TFAR=… ZEN=…
   · autres flashbang: tsp=…/dka=…`.
-- Réglage « Journal de diagnostic (RPT) » (client, décoché par défaut, actif dans la mission de test) : une ligne
-  `[COMSPEC FB]` par étape (lancer, mèche, serveur, détonation, son et lumière, chaque unité : distance, angle, vue,
-  intérieur / extérieur, intensités, effets appliqués ou raison du refus).
+- En multijoueur, sur un client, une ligne 15 s après le chargement : `[COMSPEC FB] SERVEUR : mod présent (version …)`,
+  `… mod absent (clients seulement)` ou `… version différente`.
+- Réglage « Journal de diagnostic (RPT) » (client, **actif par défaut** en 1.0.0) : une dizaine de lignes
+  `[COMSPEC FB]` par grenade (lancer et chemin vanilla / ACE / secours, mèche, serveur ou client qui fait autorité,
+  programmation, une ligne par détonation, effet sur le joueur). Réglage « Journal détaillé » (décoché) : en plus son et
+  lumière, chaque unité (distance, angle, vue, intérieur / extérieur, intensités, effets appliqués ou raison du refus).
 - Test intégré, depuis la console de débogage (n'importe quelle mission, Eden compris) :
   `[3] call comspec_fb_fnc_debugTest;` (Flash ×3), `[5, "D8"] call comspec_fb_fnc_debugTest;` (Flash ×5 · 8 s),
   `[1, "", true] call comspec_fb_fnc_debugTest;` (DRILL). La grenade est posée à 4 m devant le joueur et passe par la
@@ -500,11 +510,15 @@ There is no per-frame cost when idle, and every post-process effect is destroyed
 Drill whistle, Drill bell, No sound) and « Training sound volume » (20-150 %). The « Fuse » setting only applies to
 standard grenades; « Irregularity » also applies to the fixed 3 s / 8 s fuse.
 
+**Where to load it**: the mod must be loaded on clients; the server is optional for thrown grenades (recommended with
+Zeus or the Eden module). Without the mod on the server, the throwing client is the authority and broadcasts one CBA
+event; every client places its own local device (no Zeus deletion, server-local AI not affected).
+
 **Network**: CBA events only (no `remoteExec`), so mission `CfgRemoteExec` whitelists and BattlEye filters cannot
 block the mod.
 
-**Diagnostics**: one `[COMSPEC FB] chargé …` RPT line at load; « Diagnostic log (RPT) » setting (`[COMSPEC FB]` lines
-for every step); console test `[3] call comspec_fb_fnc_debugTest;` (report to RPT and clipboard); automatic in-game
+**Diagnostics**: one `[COMSPEC FB] chargé …` RPT line at load and one `[COMSPEC FB] SERVEUR : …` line on MP clients;
+« Diagnostic log (RPT) » setting, on by default (about ten `[COMSPEC FB]` lines per grenade; « Detailed log » for more); console test `[3] call comspec_fb_fnc_debugTest;` (report to RPT and clipboard); automatic in-game
 test `tools/ingame_test.ps1`.
 
 **Sounds**: the single effect → file table is in `CfgSons.hpp`.

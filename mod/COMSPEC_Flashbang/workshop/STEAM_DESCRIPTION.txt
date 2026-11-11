@@ -29,7 +29,7 @@
 Une flashbang désoriente, elle ne tue pas. Durées et distances suivent des fiches techniques publiques. Pas de flou psychédélique ni de joueur figé. Trois préréglages : [b]Réaliste[/b] (défaut), [b]Arcade[/b] (plus fort, plus long), [b]Léger[/b].
 
 [h2]Réglages[/h2]
-32 réglages CBA (Options › Options des addons › COMSPEC Flashbang), chacun avec un exemple. Par exemple :
+33 réglages CBA (Options › Options des addons › COMSPEC Flashbang), chacun avec un exemple. Par exemple :
 [list]
 [*]Volume des flashbangs et de l'acouphène sur votre poste (sons forts par défaut : baissez le casque avant de tester).
 [*]Portée du son : 250 m par défaut, moins pour un petit terrain.
@@ -49,7 +49,7 @@ Une flashbang désoriente, elle ne tue pas. Durées et distances suivent des fic
 Module Eden « Flashbang (COMSPEC) » : grenade posée, effet sur une zone ou Drill, au départ ou par déclencheur. Avec ZEN : « Lancer un flashbang » et « Effet de flashbang sur une zone ». Les deux ont un « Délai de mèche » : aucun, 3 s, 8 s ou personnalisé (0,5 à 20 s).
 
 [h2]Installation[/h2]
-Abonnez-vous à CBA_A3 et à ce mod. Chargez-les sur le serveur ET chez tous les joueurs, et ajoutez la clé [b]keys\comspec_flashbang.bikey[/b] au dossier keys du serveur. En multijoueur, chacun voit et entend les mêmes flashs ; les effets ne touchent que les joueurs exposés.
+Abonnez-vous à CBA_A3 et à ce mod. Chargez-les chez tous les joueurs (obligatoire). Sur le serveur, le mod est recommandé (Zeus, module Eden, IA du serveur) mais pas obligatoire pour lancer des grenades ; s'il vérifie les signatures, ajoutez la clé [b]keys\comspec_flashbang.bikey[/b] au dossier keys du serveur. En multijoueur, chacun voit et entend les mêmes flashs ; les effets ne touchent que les joueurs exposés.
 
 [h2]Support et licence[/h2]
 Bug ou idée : [url=https://discord.gg/CCpJA6Nks]Discord COMSPEC[/url]. © 2026 COMSPEC, licence COMSPEC : usage personnel depuis ce Workshop ; copie, modification et redistribution interdites. Sons enregistrés : licence acquise par COMSPEC ; autres sons synthétisés.
@@ -86,7 +86,7 @@ Bug ou idée : [url=https://discord.gg/CCpJA6Nks]Discord COMSPEC[/url]. © 2026 
 A flashbang disorients, it does not kill. Durations and distances follow public data sheets. No psychedelic blur, no frozen player. Three presets: [b]Realistic[/b] (default), [b]Arcade[/b] (stronger, longer), [b]Light[/b].
 
 [h2]Settings[/h2]
-32 CBA settings (Options › Addon Options › COMSPEC Flashbang), each with an example. For instance:
+33 CBA settings (Options › Addon Options › COMSPEC Flashbang), each with an example. For instance:
 [list]
 [*]Flashbang and tinnitus volume on your computer (loud by default: turn your headset down before testing).
 [*]Sound range: 250 m by default, less for a small area.
@@ -106,7 +106,7 @@ A flashbang disorients, it does not kill. Durations and distances follow public 
 Eden module "Flashbang (COMSPEC)": placed grenade, area effect or Drill, at start or from a trigger. With ZEN: "Throw a flashbang" and "Flashbang area effect". Both have a "Fuse delay": none, 3 s, 8 s or custom (0.5 to 20 s).
 
 [h2]Installation[/h2]
-Subscribe to CBA_A3 and this mod. Load them on the server AND on every player's game, and add the [b]keys\comspec_flashbang.bikey[/b] key to the server keys folder. In multiplayer everyone sees and hears the same flashes; the effects only hit exposed players.
+Subscribe to CBA_A3 and this mod. Load them on every player's game (required). On the server the mod is recommended (Zeus, Eden module, server AI) but not required for thrown grenades; if it checks signatures, add the [b]keys\comspec_flashbang.bikey[/b] key to the server keys folder. In multiplayer everyone sees and hears the same flashes; the effects only hit exposed players.
 
 [h2]Support and license[/h2]
 Bug or idea: [url=https://discord.gg/CCpJA6Nks]COMSPEC Discord[/url]. © 2026 COMSPEC, COMSPEC license: personal use from this Workshop page; copying, modifying and redistributing are forbidden. Recorded sounds: licensed by COMSPEC; other sounds synthesised.

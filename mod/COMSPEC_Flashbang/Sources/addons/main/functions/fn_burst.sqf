@@ -110,9 +110,9 @@ private _friendly = missionNamespace getVariable ["comspec_fb_friendly", true];
 private _side = _ctx get "side";
 private _aiOn = missionNamespace getVariable ["comspec_fb_aiAffected", true];
 private _meHit = false;
-private _dbg = call comspec_fb_fnc_logOn;
+private _dbg = [true] call comspec_fb_fnc_logOn;
 if (_dbg) then {
-    ["burst", format ["%1 : %2 unité(s) dans %3 m ; joueur local %4", _id, count _units, round _radius,
+    ["unités", format ["%1 : %2 unité(s) dans %3 m ; joueur local %4", _id, count _units, round _radius,
         switch (true) do {
             case (isNull _me): { "absent (serveur ou headless)" };
             case (!alive _me): { "mort : pas d'effet, éblouissement de spectateur seulement" };

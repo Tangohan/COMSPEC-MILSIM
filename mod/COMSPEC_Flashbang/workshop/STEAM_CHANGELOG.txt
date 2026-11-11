@@ -9,7 +9,8 @@
 [*] [b]Effets[/b] : écran blanc, tache rémanente, sons étouffés et sifflement qui s'éteint, visée instable ; JVN et lunettes renforcent l'effet.
 [*] [b]Intérieur / extérieur[/b] : plus fort en pièce fermée, bang sourd derrière un mur, aucun éblouissement sans ligne de vue.
 [*] [b]IA[/b] : elle vise mal, hésite et se couvre, puis se reprend.
-[*] [b]Réglages[/b] : 32 réglages CBA, préréglages Réaliste, Arcade et Léger.
+[*] [b]Réglages[/b] : 33 réglages CBA, préréglages Réaliste, Arcade et Léger ; journal de diagnostic actif par défaut (lignes [COMSPEC FB] dans le RPT, rien à l'écran).
+[*] [b]Serveur[/b] : mod obligatoire chez les joueurs ; sur le serveur, recommandé (Zeus, module Eden, IA du serveur) mais pas obligatoire pour lancer des grenades.
 [*] [b]Missions[/b] : caisse, Arsenal, module Eden, modules Zeus avec ZEN, avec « Délai de mèche » (aucun, 3 s, 8 s, personnalisé). Seul CBA_A3 est requis.
 [/list]
 
@@ -22,6 +23,7 @@
 [*] [b]Effects[/b]: white screen, afterimage, muffled sound and fading ringing, unsteady aim; NVG and scopes make it stronger.
 [*] [b]Indoor / outdoor[/b]: stronger in a closed room, dull bang behind a wall, no dazzle without line of sight.
 [*] [b]AI[/b]: it aims badly, hesitates and takes cover, then recovers.
-[*] [b]Settings[/b]: 32 CBA settings, Realistic, Arcade and Light presets.
+[*] [b]Settings[/b]: 33 CBA settings, Realistic, Arcade and Light presets; diagnostic log on by default ([COMSPEC FB] lines in the RPT, nothing on screen).
+[*] [b]Server[/b]: the mod is required on players' games; on the server it is recommended (Zeus, Eden module, server AI) but not required for thrown grenades.
 [*] [b]Missions[/b]: crate, Arsenal, Eden module, Zeus modules with ZEN, with "Fuse delay" (none, 3 s, 8 s, custom). Only CBA_A3 is required.
 [/list]

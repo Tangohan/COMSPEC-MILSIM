@@ -1,7 +1,15 @@
 /*
-    comspec_fb_fnc_serverDetonate (serveur) : pose l'engin et décide une fois pour toutes du nombre de détonations et de
-    leurs instants (intervalle + écart aléatoire), puis envoie UN seul message aux machines concernées (fn_targets).
-    Chaque machine joue alors les N détonations à partir de ces instants (fn_timeline) : le nombre est le même partout.
+    comspec_fb_fnc_serverDetonate : décide une fois pour toutes du nombre de détonations et de leurs instants
+    (intervalle + écart aléatoire), puis envoie UN seul message ; chaque machine joue les N détonations à partir de ces
+    instants (fn_timeline) : le nombre est le même partout. Appelable sur n'importe quelle machine :
+
+      - serveur (solo, hébergé, dédié avec le mod) : engin au sol synchronisé (ThingX, poussé par les explosions,
+        supprimable par Zeus), message aux seules machines concernées (fn_targets) ;
+      - client, serveur AVEC le mod (comspec_fb_fnc_serverHasMod) : la demande est transmise au serveur (événement CBA) ;
+      - client, serveur SANS le mod : le client fait autorité. Il tire les instants lui-même et diffuse le message à
+        toutes les machines (événement CBA global : CBA suffit sur le serveur) ; chaque machine qui a le mod pose son
+        propre engin local (même position, même vitesse) et joue les détonations. Une seule des trois voies sert pour
+        une grenade : aucun doublon.
 
     [_ammo, _posASL, _vectorDirAndUp, _velocity, _thrower, _side, _nOverride, _lead, _tDet, _drillSound]
         call comspec_fb_fnc_serverDetonate
@@ -16,7 +24,11 @@ params [
     ["_vel", [0, 0, 0], [[]], 3], ["_thrower", objNull, [objNull]], ["_side", sideUnknown, [sideUnknown]],
     ["_nOverride", -1, [0]], ["_lead", 0, [0]], ["_tDet", -1, [0]], ["_drillSound", "", [""]]
 ];
-if (!isServer) exitWith {};
+if (!isServer && {call comspec_fb_fnc_serverHasMod}) exitWith {
+    ["serveur", format ["%1 : demande transmise au serveur (il a le mod)", _ammo]] call comspec_fb_fnc_log;
+    ["comspec_fb_serverDetonate", _this] call CBA_fnc_serverEvent;
+};
+private _client = !isServer;
 private _cfg = configFile >> "CfgAmmo" >> _ammo;
 if !(isNumber (_cfg >> "comspec_fb_bangs")) exitWith {
     ["serveur", format ["munition inconnue : %1", _ammo]] call comspec_fb_fnc_log;
@@ -25,13 +37,17 @@ private _drill = getNumber (_cfg >> "comspec_fb_drill") == 1;
 private _n = if (_drill) then { missionNamespace getVariable ["comspec_fb_drillPops", 1] } else { getNumber (_cfg >> "comspec_fb_bangs") };
 if (_nOverride > 0) then { _n = _nOverride };
 _n = ((round _n) max 1) min 9;
+private _devClass = getText (_cfg >> "comspec_fb_device");
 
-// Engin au sol : objet synchronisé (ThingX), poussé par les explosions, supprimable par Zeus.
-private _device = createVehicle [getText (_cfg >> "comspec_fb_device"), ASLToAGL _posASL, [], 0, "CAN_COLLIDE"];
-_device setVectorDirAndUp _vdu;
-_device setPosASL _posASL;
-_device setVelocity _vel;
-{ _x addCuratorEditableObjects [[_device], false] } forEach allCurators;
+// Engin au sol synchronisé (serveur seulement : un serveur sans le mod ne connaît pas sa classe).
+private _device = objNull;
+if (!_client) then {
+    _device = createVehicle [_devClass, ASLToAGL _posASL, [], 0, "CAN_COLLIDE"];
+    _device setVectorDirAndUp _vdu;
+    _device setPosASL _posASL;
+    _device setVelocity _vel;
+    { _x addCuratorEditableObjects [[_device], false] } forEach allCurators;
+};
 
 // Instants des détonations : 0, puis intervalle réglé +/- écart aléatoire (jamais moins de 0,12 s).
 private _interval = missionNamespace getVariable ["comspec_fb_interval", 0.5];
@@ -44,9 +60,10 @@ for "_i" from 1 to _n do {
 };
 
 comspec_fb_seq = comspec_fb_seq + 1;
-private _id = format ["FB%1", comspec_fb_seq];
+// Identifiant unique entre machines : le client qui fait autorité y met son numéro réseau.
+private _id = if (_client) then { format ["FBc%1_%2", clientOwner, comspec_fb_seq] } else { format ["FB%1", comspec_fb_seq] };
 // Heure de la 1re détonation sur l'horloge commune : celle du lancer si elle est connue, sinon maintenant + délai.
-// 0,1 s de marge au moins : le message arrive avant la première détonation sur les clients.
+// 0,1 s de marge au moins : le message arrive avant la première détonation sur les autres machines.
 private _t0 = if (_tDet > 0) then { _tDet max (CBA_missionTime + 0.1) } else { CBA_missionTime + 0.15 + (_lead max 0) };
 private _kind = ["live", "drill"] select _drill;
 private _extra = [];
@@ -56,21 +73,28 @@ if (_drill) then {
     if !(_snd in _keys) then { _snd = "Pop" };
     _extra = [_snd, missionNamespace getVariable ["comspec_fb_drillVolume", 1]];
 };
-private _msg = [_id, _kind, _device, netId _device, _posASL, _offsets, _t0, _side, _thrower, _extra];
-private _owners = [_posASL] call comspec_fb_fnc_targets;
-comspec_fb_owners set [_id, _owners];
-["serveur", format ["%1 %2 x%3 engin=%4 instants=%5 1re dans %6 s machines=%7%8", _id, _ammo, _n, typeOf _device,
-    _offsets apply { _x toFixed 2 }, (_t0 - CBA_missionTime) toFixed 2, _owners,
-    [format [" son=%1", _extra], ""] select (_extra isEqualTo [])]] call comspec_fb_fnc_log;
-if (isMultiplayer) then {
-    { ["comspec_fb_timeline", _msg, _x] call CBA_fnc_ownerEvent } forEach _owners;
+// Voie client : chaque machine pose son engin local à partir de cette description.
+private _localDev = [[], [_devClass, _posASL, _vdu, _vel, _t + 40]] select _client;
+private _msg = [_id, _kind, _device, ["", netId _device] select !_client, _posASL, _offsets, _t0, _side, _thrower, _extra, _localDev];
+if (_client) then {
+    ["client", format ["%1 %2 x%3 instants=%4 1re dans %5 s : serveur sans le mod, ce client fait autorité (message à toutes les machines)",
+        _id, _ammo, _n, _offsets apply { _x toFixed 2 }, (_t0 - CBA_missionTime) toFixed 2]] call comspec_fb_fnc_log;
+    ["comspec_fb_timeline", _msg] call CBA_fnc_globalEvent;
 } else {
-    _msg call comspec_fb_fnc_timeline;
+    private _owners = [_posASL] call comspec_fb_fnc_targets;
+    comspec_fb_owners set [_id, _owners];
+    ["serveur", format ["%1 %2 x%3 engin=%4 instants=%5 1re dans %6 s machines=%7%8", _id, _ammo, _n, typeOf _device,
+        _offsets apply { _x toFixed 2 }, (_t0 - CBA_missionTime) toFixed 2, _owners,
+        [format [" son=%1", _extra], ""] select (_extra isEqualTo [])]] call comspec_fb_fnc_log;
+    if (isMultiplayer) then {
+        { ["comspec_fb_timeline", _msg, _x] call CBA_fnc_ownerEvent } forEach _owners;
+    } else {
+        _msg call comspec_fb_fnc_timeline;
+    };
+    // Fin : l'engin vide reste 40 s au sol puis disparaît ; on oublie la liste des machines.
+    [{
+        params ["_device", "_id"];
+        if (!isNull _device) then { deleteVehicle _device };
+        comspec_fb_owners deleteAt _id;
+    }, [_device, _id], (_t0 - CBA_missionTime) + _t + 40] call CBA_fnc_waitAndExecute;
 };
-
-// Fin : l'engin vide reste 40 s au sol puis disparaît ; on oublie la liste des machines.
-[{
-    params ["_device", "_id"];
-    if (!isNull _device) then { deleteVehicle _device };
-    comspec_fb_owners deleteAt _id;
-}, [_device, _id], (_t0 - CBA_missionTime) + _t + 40] call CBA_fnc_waitAndExecute;

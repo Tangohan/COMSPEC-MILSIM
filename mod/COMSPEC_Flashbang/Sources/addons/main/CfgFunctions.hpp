@@ -8,6 +8,7 @@ class CfgFunctions {
             class fuseEnd {};
             class serverDetonate {};
             class serverArea {};
+            class serverHasMod {};
             class targets {};
         };
         class detonations {
