@@ -7,6 +7,10 @@
     Params : [écran (défaut : le téléphone), toutes (false)] -> contrôle ; avec toutes = true -> les quatre contrôles.
 */
 params [["_d", displayNull], ["_all", false]];
+// PC du poste TOC ouvert (fn_tocLaptop, fn_tocDraw) : sa carte sert de carte aux outils de dessin partagés avec le
+// téléphone (fn_markerStroke) le temps qu'il est ouvert.
+private _ov = uiNamespace getVariable ["COMSPEC_ATAK_MapCtrlOverride", controlNull];
+if (isNull _d && {!_all} && {!isNull _ov}) exitWith { _ov };
 if (isNull _d) then { _d = [] call comspec_atak_native_fnc_display; };
 if (_all) exitWith { [88530, 88532, 88533, 88534] apply { _d displayCtrl _x } };
 private _idc = switch ([] call comspec_atak_native_fnc_mapStyle) do { case "SAT": { 88532 }; case "HYBRID": { 88533 }; case "SLATE": { 88534 }; default { 88530 }; };

@@ -60,7 +60,13 @@ final class AtakTocPostTest extends TestCase
     public function testOutilsDuPosteReutilisentLeTelephone(): void
     {
         $lap = self::read(self::DIR . 'toc/fn_tocLaptop.sqf');
-        self::assertStringContainsString('call comspec_atak_native_fnc_markerDrop', $lap);
+        // Outils de dessin du PC (fn_tocDraw) : ceux du téléphone, sans copie (marqueur, trait, plan, carte prêtée).
+        $draw = self::read(self::DIR . 'toc/fn_tocDraw.sqf');
+        self::assertStringContainsString('call comspec_atak_native_fnc_markerDrop', $draw);
+        self::assertStringContainsString('call comspec_atak_native_fnc_markerStroke', $draw);
+        self::assertStringContainsString('call comspec_atak_native_fnc_planServer', $draw);
+        self::assertStringContainsString('COMSPEC_ATAK_MapCtrlOverride', self::read(self::DIR . 'map/fn_mapCtrl.sqf'));
+        self::assertStringContainsString('call comspec_atak_native_fnc_tocDraw', $lap);
         self::assertStringContainsString('call comspec_atak_native_fnc_gridParse', $lap);
         self::assertStringContainsString('["load"] call comspec_atak_native_fnc_bftOrbat', $lap);
         foreach (['case "tool":', 'case "search":', 'case "left":', 'case "layer":', 'case "RÉSEAU":', 'case "ORBAT":'] as $needle) {

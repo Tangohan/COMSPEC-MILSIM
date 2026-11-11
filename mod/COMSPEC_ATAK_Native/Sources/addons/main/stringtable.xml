@@ -1717,6 +1717,66 @@
             <English>Map and feed, map only (large map), feed only, or post PIP (the screen mirrors what the operator has in front of them on the post laptop). Can be changed in game (ACE or scroll wheel).</English>
             <French>Carte et flux, carte seule (carte en grand), flux seul, ou PIP du poste (l'écran recopie ce que l'opérateur a sous les yeux sur le PC du poste). Modifiable en jeu (ACE ou molette).</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_NAME">
+            <Original>ATAK · Complete TOC room</Original>
+            <English>ATAK · Complete TOC room</English>
+            <French>ATAK · Salle TOC complète</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_N_NAME">
+            <Original>Room name</Original>
+            <English>Room name</English>
+            <French>Nom de la salle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_N_TIP">
+            <Original>Name shown on the post laptop and in the screens' menus. It also identifies the room from one session to the next: keep the same name to find the room as it was left. Example: TOC BRAVO.</Original>
+            <English>Name shown on the post laptop and in the screens' menus. It also identifies the room from one session to the next: keep the same name to find the room as it was left. Example: TOC BRAVO.</English>
+            <French>Nom affiché au PC du poste et dans les menus des écrans. Il identifie aussi la salle d'une partie à l'autre : gardez le même nom pour retrouver la salle telle qu'elle a été laissée. Exemple : TOC BRAVO.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_S_NAME">
+            <Original>Side</Original>
+            <English>Side</English>
+            <French>Camp</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_S_TIP">
+            <Original>Side whose ATAK network the room shows and whose players can open its laptops. Example: BLUFOR for the NATO command post.</Original>
+            <English>Side whose ATAK network the room shows and whose players can open its laptops. Example: BLUFOR for the NATO command post.</English>
+            <French>Camp dont la salle affiche le réseau ATAK et dont les joueurs peuvent ouvrir les PC. Exemple : BLUFOR pour le poste de commandement de l'OTAN.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_Z_NAME">
+            <Original>Size</Original>
+            <English>Size</English>
+            <French>Taille</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_Z_TIP">
+            <Original>Small: 2x2 video wall and 2 stations. Medium: 3x2 wall, two 98-inch screens, one hanging screen, 3 stations. Large: two hanging screens, two 98-inch stand screens and 4 stations on top. Example: medium for a company, large for a battalion.</Original>
+            <English>Small: 2x2 video wall and 2 stations. Medium: 3x2 wall, two 98-inch screens, one hanging screen, 3 stations. Large: two hanging screens, two 98-inch stand screens and 4 stations on top. Example: medium for a company, large for a battalion.</English>
+            <French>Petite : mur d'images 2x2 et 2 postes. Moyenne : mur 3x2, deux écrans 98 pouces, un écran suspendu, 3 postes. Grande : en plus deux écrans suspendus, deux 98 pouces sur pied et 4 postes. Exemple : moyenne pour une compagnie, grande pour un bataillon.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_Z_S">
+            <Original>Small (2x2 wall, 2 stations)</Original>
+            <English>Small (2x2 wall, 2 stations)</English>
+            <French>Petite (mur 2x2, 2 postes)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_Z_M">
+            <Original>Medium (3x2 wall, 3 stations)</Original>
+            <English>Medium (3x2 wall, 3 stations)</English>
+            <French>Moyenne (mur 3x2, 3 postes)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_Z_L">
+            <Original>Large (3x2 wall, 4 stations)</Original>
+            <English>Large (3x2 wall, 4 stations)</English>
+            <French>Grande (mur 3x2, 4 postes)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_DESC">
+            <Original>Places a complete operations room in front of the module: video wall, big screens, clock strip, name plates, desks, chairs and TOC laptops, all linked to the room. Manage every screen from the ROOM tab of one of the laptops. Kept from one session to the next.</Original>
+            <English>Places a complete operations room in front of the module: video wall, big screens, clock strip, name plates, desks, chairs and TOC laptops, all linked to the room. Manage every screen from the ROOM tab of one of the laptops. Kept from one session to the next.</English>
+            <French>Pose une salle d'opérations complète devant le module : mur d'images, grands écrans, bandeau horloge, plaques de nom, bureaux, chaises et PC de TOC, tous liés à la salle. Gérez tous les écrans depuis l'onglet SALLE d'un des PC. Gardée d'une partie à l'autre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_MOSAIC">
+            <Original>ATAK camera mosaic</Original>
+            <English>ATAK camera mosaic</English>
+            <French>Mosaïque de caméras ATAK</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_STRIP">
             <Original>ZULU / LOCAL clock strip (4:1 screen)</Original>
             <English>ZULU / LOCAL clock strip (4:1 screen)</English>

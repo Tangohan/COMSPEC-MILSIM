@@ -11,6 +11,8 @@
     Escouade montrée (nom du groupe), Liste d'exécution préparée (étapes séparées par |, champs par ;), Dalles du mur
     (contenu des dalles 2 et suivantes d'un mur multi-écrans : « SAT1, CLOCK, SQ:Alpha 1-1, LOG »), Poste TOC,
     Écran posé, Texture (index).
+    Eden : PC de TOC synchronisés avec le module (en plus des écrans) : une salle TOC au nom du module est créée, ces PC
+    en sont les postes maîtres et les écrans synchronisés y sont liés (fn_tocHall).
 */
 params [["_logic", objNull, [objNull]], ["_units", [], [[]]], ["_activated", true, [true]]];
 private _ctx = [_logic, _units, _activated] call comspec_atak_native_fnc_moduleContext;
@@ -30,13 +32,24 @@ private _exApply = {
     { ["do", [_x, "exSet", _lines, "Mission", ""]] call comspec_atak_native_fnc_tocRoom; } forEach ([[_s], ["WEST", "EAST", "GUER", "CIV"]] select (_s isEqualTo ""));
 };
 if !(_ctx get "zeus") exitWith {
-    if ((count _targets) isEqualTo 0) then {
+    // PC de TOC synchronisés avec le module : une salle TOC à son nom, dont ces PC sont les postes maîtres et ces
+    // écrans les écrans liés (fn_tocHall).
+    private _pcs = _targets select { _x isKindOf "COMSPEC_ATAK_TocLaptop" || {_x getVariable ["COMSPEC_ATAK_Toc", false]} || {((toLower (typeOf _x)) find "laptop") >= 0} || {((toLower (typeOf _x)) find "computer") >= 0} };
+    _targets = _targets - _pcs;
+    if ((count _pcs) > 0 && {(count _targets) isEqualTo 0}) then { _targets = []; };
+    if ((count _targets) isEqualTo 0 && {(count _pcs) isEqualTo 0}) then {
         ["spawn", [getPosATL _logic, getDir _logic, _cls, _name, _side, _view, _toc, _slot, _squad, _pans]] call comspec_atak_native_fnc_tocScreen;
     } else {
         {
             if (_pans isNotEqualTo "") then { _x setVariable ["COMSPEC_ATAK_TocPanelCfg", ["panelSpec", _pans] call comspec_atak_native_fnc_tocScreen]; };
             ["add", [_x, [_name, format ["%1 %2", _name, _forEachIndex + 1]] select (_name isNotEqualTo "" && {(count _targets) > 1}), _side, _sel, _view, _toc, false, _slot, _squad]] call comspec_atak_native_fnc_tocScreen;
         } forEach _targets;
+    };
+    if ((count _pcs) > 0 && {isServer}) then {
+        private _hid = format ["E-%1", toUpper ([_name, "TOC"] select (_name isEqualTo ""))];
+        ["do", ["create", [[_name, "TOC"] select (_name isEqualTo ""), _side, _pcs select 0, _hid]]] call comspec_atak_native_fnc_tocHall;
+        { _x setVariable ["COMSPEC_ATAK_TocHall", _hid, true]; } forEach _pcs;
+        { ["do", ["link", [_hid, _x]]] call comspec_atak_native_fnc_tocHall; } forEach _targets;
     };
     // Après la reprise de la partie précédente (3 s) : la liste préparée par la mission passe devant.
     if (isServer) then { [_exApply, [_ex, toUpper _side], 4] call comspec_atak_native_fnc_waitAndExec; };

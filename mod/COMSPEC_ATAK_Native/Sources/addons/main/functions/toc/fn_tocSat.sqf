@@ -220,7 +220,7 @@ switch (_mode) do {
         {
             private _o = _x;
             private _c = _o getVariable ["COMSPEC_ATAK_TocScr", []];
-            if ((count _c) >= 8 && {(_c select 3) isEqualTo "SAT"} && {alive _o} && {(_eye distance _o) < _range}
+            if ((count _c) >= 8 && {(_c select 3) isEqualTo "SAT"} && {alive _o} && {!(_o getVariable ["COMSPEC_ATAK_TocOff", false])} && {(_eye distance _o) < _range}
                 && {(_c select 1) in ["", _me]}
                 && {(getNumber (configOf _o >> "comspec_projBoard")) < 1 || {_o getVariable ["COMSPEC_ATAK_ProjLit", false]}}
                 && {call {

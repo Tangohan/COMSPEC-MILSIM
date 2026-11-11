@@ -36,6 +36,32 @@ switch (_mode) do {
         private _f = (["state", _a] call comspec_atak_native_fnc_tocRoom) select 6;
         if ((count _f) >= 4 && {serverTime - (_f select 3) < 180}) then { [_f select 0, _f select 1, _f select 2] } else { [] }
     };
+    case "live": {
+        // Écran à image vivante (satellite, mosaïque, caméra du chef) : texture UI redessinée 6 à 7 fois par seconde,
+        // tant que l'écran garde cet affichage et sa texture sur ce poste.
+        _a params ["_o", "_d"];
+        private _live = uiNamespace getVariable ["COMSPEC_ATAK_TocBoardLive", []];
+        if ((_live findIf { (_x select 0) isEqualTo _o }) >= 0) exitWith {};
+        _live pushBack [_o, _d];
+        uiNamespace setVariable ["COMSPEC_ATAK_TocBoardLive", _live];
+        if (!isNil { missionNamespace getVariable "COMSPEC_ATAK_TocBoardPfh" }) exitWith {};
+        missionNamespace setVariable ["COMSPEC_ATAK_TocBoardPfh", [{
+            private _l = (uiNamespace getVariable ["COMSPEC_ATAK_TocBoardLive", []]) select {
+                _x params ["_o", "_d"];
+                !isNull _o && {!isNull _d} && {(_o getVariable ["COMSPEC_ATAK_TocTex", ""]) isNotEqualTo ""}
+                    && {(((_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) in ["SAT", "MOSAIC"]) || {_o getVariable ["COMSPEC_ATAK_TocVideo", false]}}
+            };
+            uiNamespace setVariable ["COMSPEC_ATAK_TocBoardLive", _l];
+            if ((count _l) isEqualTo 0) exitWith {
+                [missionNamespace getVariable "COMSPEC_ATAK_TocBoardPfh"] call CBA_fnc_removePerFrameHandler;
+                missionNamespace setVariable ["COMSPEC_ATAK_TocBoardPfh", nil];
+            };
+            {
+                // Satellite : cadres repris, redessin seulement si l'image est rendue ici ; vidéo : redessin simple.
+                if (((((_x select 0) getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isNotEqualTo "SAT") || {["overlay", _x] call comspec_atak_native_fnc_tocBoard}) then { displayUpdate (_x select 1); };
+            } forEach _l;
+        }, 0.15] call CBA_fnc_addPerFrameHandler];
+    };
     case "hide": {
         private _g = _a getVariable ["COMSPEC_ATAK_TocBoard", controlNull];
         if (!isNull _g) then { _g ctrlShow false; };
@@ -131,16 +157,27 @@ switch (_mode) do {
             private _wait = ["COMSPEC_RscStructuredText", [_picX, 0.45, _picW, 0.12]] call _mk;
             private _flash = ["COMSPEC_RscStructuredText", [0, 0.076, 1, 0.06]] call _mk;
             _flash ctrlSetBackgroundColor [0.62, 0.08, 0.06, 0.95];
-            _ui = createHashMapFromArray [["pic", _pic], ["accent", _accent], ["title", _title], ["clock", _clock], ["strip", _strip], ["boxes", _boxes],
+            // Mosaïque : 9 vignettes (fond, image, bandeau, message), placées selon la grille à chaque dessin.
+            private _tiles = [];
+            for "_i" from 1 to 9 do {
+                private _bg = ["RscText"] call _mk; _bg ctrlSetBackgroundColor [0, 0, 0, 1];
+                private _tp = ["RscPicture"] call _mk;
+                private _tl = ["COMSPEC_RscStructuredText"] call _mk; _tl ctrlSetBackgroundColor [0, 0, 0, 0.62];
+                private _tm = ["COMSPEC_RscStructuredText"] call _mk;
+                { _x ctrlShow false; } forEach [_bg, _tp, _tl, _tm];
+                _tiles pushBack [_bg, _tp, _tl, _tm];
+            };
+            _ui = createHashMapFromArray [["tiles", _tiles], ["pic", _pic], ["accent", _accent], ["title", _title], ["clock", _clock], ["strip", _strip], ["boxes", _boxes],
                 ["main", _main], ["main2", _main2], ["wait", _wait], ["flash", _flash]];
             _d setVariable ["COMSPEC_ATAK_TocBoardUi", _ui];
         };
         _g ctrlShow true;
+        _o setVariable ["COMSPEC_ATAK_TocVideo", false];
         (_ui get "accent") ctrlSetBackgroundColor (_rgb + [1]);
         private _room = ["state", _side] call comspec_atak_native_fnc_tocRoom;
         private _zulu = ["zulu"] call comspec_atak_native_fnc_tocRoom;
         private _local = [dayTime, "HH:MM:SS"] call BIS_fnc_timeToString;
-        private _titles = createHashMapFromArray [["SAT", "SATELLITE"], ["CLOCK", "HORLOGE"], ["LOG", "MAIN COURANTE"], ["EXCHECK", "EXÉCUTION"], ["KILLS", "PERTES ET RÉSULTATS"], ["REQ", "DEMANDES"]];
+        private _titles = createHashMapFromArray [["MOSAIC", "CAMÉRAS"], ["SAT", "SATELLITE"], ["CLOCK", "HORLOGE"], ["LOG", "MAIN COURANTE"], ["EXCHECK", "EXÉCUTION"], ["KILLS", "PERTES ET RÉSULTATS"], ["REQ", "DEMANDES"]];
         [_ui get "title", format ["<t size='1.7' font='COMSPEC_BarlowBold'>%1 · %2</t>", _titles getOrDefault [_view, _view], [_name select [0, 20]] call _esc]] call _setTxt;
         [_ui get "clock", format ["<t align='right' size='1.25'>%1 <t color='#8a9a93'>ZULU</t>   %2 <t color='#8a9a93'>LOCAL</t></t>", _zulu, _local]] call _setTxt;
         private _isSat = _view isEqualTo "SAT";
@@ -148,6 +185,7 @@ switch (_mode) do {
         { (_ui get _x) ctrlShow !_isSat; } forEach ["main", "main2"];
         (_ui get "wait") ctrlShow false;
         if (!_isSat) then { { { _x ctrlShow false; } forEach _x; } forEach (_ui get "boxes"); };
+        if (_view isNotEqualTo "MOSAIC") then { { { _x ctrlShow false; } forEach _x; } forEach (_ui getOrDefault ["tiles", []]); };
         // FLASH du poste : bandeau rouge sous l'en-tête, 3 minutes.
         private _fl = ["flash", _side] call _fn;
         (_ui get "flash") ctrlShow ((count _fl) > 0);
@@ -172,28 +210,62 @@ switch (_mode) do {
                     [_ui get "wait", "<t align='center' size='1.6' color='#cfd8d3'>Image satellite en attente</t><br/><t align='center' size='1.1' color='#8a9a93'>Approchez-vous de l'écran : l'image n'est rendue qu'aux joueurs proches qui le regardent</t>"] call _setTxt;
                 };
                 ["overlay", [_o, _d]] call _fn;
-                // Cadres de suivi 5 fois par seconde tant que l'image est rendue (la carte de fond, elle, reste à 1 s).
-                private _live = uiNamespace getVariable ["COMSPEC_ATAK_TocBoardLive", []];
-                if (_tex isNotEqualTo "" && {(_live findIf { (_x select 0) isEqualTo _o }) < 0}) then {
-                    _live pushBack [_o, _d];
-                    uiNamespace setVariable ["COMSPEC_ATAK_TocBoardLive", _live];
-                    if (isNil { missionNamespace getVariable "COMSPEC_ATAK_TocBoardPfh" }) then {
-                        missionNamespace setVariable ["COMSPEC_ATAK_TocBoardPfh", [{
-                            private _l = (uiNamespace getVariable ["COMSPEC_ATAK_TocBoardLive", []]) select {
-                                _x params ["_o", "_d"];
-                                !isNull _o && {!isNull _d} && {((_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isEqualTo "SAT"}
-                                    && {(_o getVariable ["COMSPEC_ATAK_TocTex", ""]) isNotEqualTo ""}
-                            };
-                            uiNamespace setVariable ["COMSPEC_ATAK_TocBoardLive", _l];
-                            if ((count _l) isEqualTo 0) exitWith {
-                                [missionNamespace getVariable "COMSPEC_ATAK_TocBoardPfh"] call CBA_fnc_removePerFrameHandler;
-                                missionNamespace setVariable ["COMSPEC_ATAK_TocBoardPfh", nil];
-                            };
-                            // Image rendue sur ce poste seulement : sinon rien à redessiner.
-                            { if (["overlay", _x] call comspec_atak_native_fnc_tocBoard) then { displayUpdate (_x select 1); }; } forEach _l;
-                        }, 0.2] call CBA_fnc_addPerFrameHandler];
-                    };
+                // Cadres de suivi tant que l'image est rendue (la carte de fond, elle, reste à 1 s).
+                if (_tex isNotEqualTo "") then { ["live", [_o, _d]] call _fn; };
+            };
+            case "MOSAIC": {
+                (["cfg", _o] call comspec_atak_native_fnc_tocMosaic) params ["_gr", "_mm", "_grp"];
+                private _tl = ["tiles", _o] call comspec_atak_native_fnc_tocMosaic;
+                private _n = _gr * _gr;
+                // Plafond du poste : au-delà, les vignettes passent à tour de rôle (2 s chacune).
+                private _ids = (_tl apply { _x select 0 }) select { _x isNotEqualTo "" };
+                private _b = ["budget"] call comspec_atak_native_fnc_tocMosaic;
+                private _liveIds = _ids;
+                if ((count _ids) > _b) then {
+                    private _st0 = ((floor (time / 2)) * (_b max 1)) mod ((count _ids) max 1);
+                    _liveIds = (_ids + _ids) select [_st0, _b];
                 };
+                (_ui get "main") ctrlShow false; (_ui get "main2") ctrlShow false;
+                private _gx = 0.012; private _gy = _y0 - 0.015; private _gw = 0.976; private _gh = 0.985 - _gy;
+                private _cw = _gw / _gr; private _ch = _gh / _gr;
+                private _any = false;
+                {
+                    private _i = _forEachIndex;
+                    _x params ["_bg", "_tp", "_tlb", "_tm"];
+                    if (_i >= _n) then { { _x ctrlShow false; } forEach [_bg, _tp, _tlb, _tm]; continue };
+                    (_tl param [_i, ["", ""]]) params ["_id", "_lbl"];
+                    private _r = [_gx + (_i mod _gr) * _cw + 0.003, _gy + (floor (_i / _gr)) * _ch + 0.005, _cw - 0.006, _ch - 0.01];
+                    _bg ctrlSetPosition _r; _bg ctrlCommit 0; _bg ctrlShow true;
+                    _tp ctrlSetPosition _r; _tp ctrlCommit 0;
+                    _tlb ctrlSetPosition [_r select 0, (_r select 1) + (_r select 3) - 0.06, _r select 2, 0.06]; _tlb ctrlCommit 0;
+                    _tm ctrlSetPosition [_r select 0, (_r select 1) + (_r select 3) * 0.38, _r select 2, (_r select 3) * 0.3]; _tm ctrlCommit 0;
+                    private _tex = "";
+                    private _info = ["", "coupée", 0];
+                    if (_id isNotEqualTo "") then {
+                        _info = ["info", _id] call comspec_atak_native_fnc_tocMosaic;
+                        if (_id in _liveIds) then { _tex = ["tex", _id] call comspec_atak_native_fnc_tocMosaic; };
+                    };
+                    if ((_tp getVariable ["COMSPEC_ATAK_Tex", "-"]) isNotEqualTo _tex) then { _tp setVariable ["COMSPEC_ATAK_Tex", _tex]; _tp ctrlSetText _tex; }; // i18n:brut (texture)
+                    _tp ctrlShow (_tex isNotEqualTo "");
+                    if (_tex isNotEqualTo "") then { _any = true; };
+                    _info params ["_cs", "_lk", "_res"];
+                    private _msg = switch (true) do {
+                        case (_id isEqualTo ""): { "<t align='center' size='1.6' color='#4a524e'>CASE LIBRE</t>" };
+                        case (_res <= 0): { "<t align='center' size='2' font='COMSPEC_BarlowBold' color='#e05a4a'>PAS DE SIGNAL</t>" };
+                        case (_tex isEqualTo ""): { "<t align='center' size='1.4' color='#8a9a93'>À son tour dans un instant</t>" };
+                        default { "" };
+                    };
+                    [_tm, _msg] call _setTxt;
+                    _tm ctrlShow (_msg isNotEqualTo "");
+                    private _lkCol = (createHashMapFromArray [["bonne", "#5cc76b"], ["moyenne", "#e0b040"], ["faible", "#e08a40"], ["coupée", "#e05a4a"]]) getOrDefault [_lk, "#9aa39f"];
+                    private _band = format ["<t size='1.3'> <t font='COMSPEC_BarlowBold'>%1</t>  <t color='%2'>● liaison %3</t><t align='right' color='#cfd8d3'>%4Z </t></t>",
+                        [([_cs, _lbl] select (_cs isEqualTo "")) select [0, 22]] call _esc, _lkCol, _lk, _zulu select [0, 5]];
+                    [_tlb, [_band, ""] select (_id isEqualTo "")] call _setTxt;
+                    _tlb ctrlShow (_id isNotEqualTo "");
+                } forEach (_ui get "tiles");
+                [_ui get "title", format ["<t size='1.7' font='COMSPEC_BarlowBold'>CAMÉRAS · %1</t> <t size='1.2' color='#8a9a93'>%2</t>", [_name select [0, 18]] call _esc,
+                    switch (_mm) do { case "GROUP": { "groupe " + ([_grp] call _esc) }; case "MANUAL": { "choix du poste" }; default { "tout le camp" }; }]] call _setTxt;
+                if (_any) then { ["live", [_o, _d]] call _fn; };
             };
             case "CLOCK": {
                 private _s = format ["<t align='center'><t size='7' font='COMSPEC_BarlowBold'>%1</t><t size='2.4' color='#8a9a93'> ZULU</t><br/><t size='4.2' font='COMSPEC_BarlowBold' color='#cfd8d3'>%2</t><t size='1.8' color='#8a9a93'> LOCAL</t></t><br/><br/>", _zulu, _local];

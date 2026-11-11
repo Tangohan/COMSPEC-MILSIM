@@ -769,6 +769,7 @@ class COMSPEC_ATAK_Module_TocScreen: COMSPEC_ATAK_Module_DataBase {
                 class V10 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_REQ"; value = "REQ"; };
                 class V11 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_STRIP"; value = "STRIP"; };
                 class V12 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_PLATE"; value = "PLATE"; };
+                class V13 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_MOSAIC"; value = "MOSAIC"; };
             };
         };
         // Salle TOC : satellite et escouade montrés, liste d'exécution préparée.
@@ -860,6 +861,58 @@ class COMSPEC_ATAK_Module_TocScreen: COMSPEC_ATAK_Module_DataBase {
     };
     class ModuleDescription {
         description = "$STR_COMSPEC_ATAK_CFG_TOCSCR_DESC";
+    };
+};
+// Salle TOC complète (fn_moduleTocHall, fn_tocHall) : salle d'opérations posée d'un coup, déjà liée à ses PC.
+class COMSPEC_ATAK_Module_TocHall: COMSPEC_ATAK_Module_DataBase {
+    scope = 2;
+    scopeCurator = 2;
+    category = "COMSPEC_Cat_Atak";
+    displayName = "$STR_COMSPEC_ATAK_CFG_TOCHALL_NAME";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_screen.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_screen.paa";
+    function = "comspec_atak_native_fnc_moduleTocHall";
+    class Attributes {
+        class Name {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCHALL_N_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCHALL_N_TIP";
+            property = "COMSPEC_ATAK_Module_TocHall_Name";
+            control = "Edit";
+            expression = "_this setVariable ['Name',_value,true];";
+            defaultValue = "'SALLE TOC'";
+            typeName = "STRING";
+        };
+        class Side {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCHALL_S_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCHALL_S_TIP";
+            property = "COMSPEC_ATAK_Module_TocHall_Side";
+            control = "Combo";
+            expression = "_this setVariable ['Side',_value,true];";
+            defaultValue = "'WEST'";
+            typeName = "STRING";
+            class values {
+                class V1 { name = "BLUFOR"; value = "WEST"; default = 1; };
+                class V2 { name = "OPFOR"; value = "EAST"; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_SCREEN_S_GUER"; value = "GUER"; };
+            };
+        };
+        class Size {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCHALL_Z_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCHALL_Z_TIP";
+            property = "COMSPEC_ATAK_Module_TocHall_Size";
+            control = "Combo";
+            expression = "_this setVariable ['Size',_value,true];";
+            defaultValue = "'M'";
+            typeName = "STRING";
+            class values {
+                class S { name = "$STR_COMSPEC_ATAK_CFG_TOCHALL_Z_S"; value = "S"; };
+                class M { name = "$STR_COMSPEC_ATAK_CFG_TOCHALL_Z_M"; value = "M"; default = 1; };
+                class L { name = "$STR_COMSPEC_ATAK_CFG_TOCHALL_Z_L"; value = "L"; };
+            };
+        };
+    };
+    class ModuleDescription {
+        description = "$STR_COMSPEC_ATAK_CFG_TOCHALL_DESC";
     };
 };
 // IA équipées d'un ATAK (fn_moduleAiAtak, fn_aiAtak).

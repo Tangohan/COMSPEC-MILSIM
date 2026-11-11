@@ -85,7 +85,7 @@ switch (_mode) do {
         private _cands = _reg select {
             private _c = _x getVariable ["COMSPEC_ATAK_TocScr", []];
             private _o = _x;
-            (count _c) >= 8 && {(_c select 3) isEqualTo "CAM"} && {alive _o} && {(_eye distance _o) < _range}
+            (count _c) >= 8 && {(_c select 3) isEqualTo "CAM"} && {alive _o} && {!(_o getVariable ["COMSPEC_ATAK_TocOff", false])} && {(_eye distance _o) < _range}
                 && {(_c select 1) isEqualTo "" || {(_c select 1) isEqualTo _side}}
                 && {(count (_o getVariable ["COMSPEC_ATAK_ScreenCast", []])) < 5}
                 // Toile de projection : seulement éclairée par un projecteur allumé (fn_projector).
