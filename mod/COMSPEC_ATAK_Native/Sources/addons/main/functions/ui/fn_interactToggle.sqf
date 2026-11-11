@@ -9,6 +9,8 @@ if (!hasInterface) exitWith { false };
 // pareil) : un seul basculement.
 if ((uiNamespace getVariable ["COMSPEC_ATAK_ToggleFrame", -1]) isEqualTo diag_frameNo) exitWith { false };
 uiNamespace setVariable ["COMSPEC_ATAK_ToggleFrame", diag_frameNo];
+// Mesure des performances (fn_perfLog) : l'ouverture se chronomètre depuis l'appui.
+if (missionNamespace getVariable ["COMSPEC_ATAK_PerfLog", false]) then { ["key"] call comspec_atak_native_fnc_perfLog; };
 // État réparé avant d'ouvrir (displays orphelins, interaction miniature restée active : fn_vehicleKeys « heal »).
 ["heal"] call comspec_atak_native_fnc_vehicleKeys;
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];

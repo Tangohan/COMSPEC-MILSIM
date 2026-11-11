@@ -22716,5 +22716,7 @@
 ["Resynchroniser un relais", "", "Resync a relay"],
 ["Ouvrir le tableau des relais", "", "Open the relay board"],
 ["Poser un relais à mât (ancien)", "", "Place a mast relay (legacy)"],
-["Poser un brouilleur fixe", "", "Place a fixed jammer"]
+["Poser un brouilleur fixe", "", "Place a fixed jammer"],
+["Mesure des performances (journal)", "", "Performance measurement (log)"],
+["Décoché par défaut. Coché : le journal du jeu (fichier RPT) note le temps d'ouverture du téléphone et de chaque app, le coût du dessin de la carte toutes les 5 s, un bilan toutes les 10 s et les appels lents à la DLL. Rien ne s'affiche à l'écran. Exemple : active-le, ouvre le téléphone puis la carte, puis envoie ton journal avec Envoyer_mes_logs.bat. Décoche-le ensuite.", "", "Unchecked by default. Checked: the game log (RPT file) records how long the phone and each app take to open, the map drawing cost every 5 s, a summary every 10 s and slow DLL calls. Nothing is shown on screen. Example: turn it on, open the phone then the map, then send your log with Envoyer_mes_logs.bat. Uncheck it afterwards."]
 ]

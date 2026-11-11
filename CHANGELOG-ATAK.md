@@ -38,6 +38,26 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : le téléphone s'ouvre plus vite et ne fait plus ramer le jeu (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : performance
+FR : Le téléphone s'ouvre plus vite et ne fait plus ramer le jeu
+- La carte avec le fond photo ou satellite se charge petit à petit : ouvrir la carte ou changer de zoom ne fige plus le jeu une ou deux secondes. L'image est d'abord un peu floue, puis nette en un instant.
+- Nouveau réglage « Mesure des performances (journal) » (réglages de l'addon, COMSPEC, ATAK · Debug) : si le téléphone rame, coche-le, ouvre le téléphone puis la carte, et envoie ton journal avec Envoyer_mes_logs.bat.
+EN : The phone opens faster and no longer makes the game stutter
+- The map with the photo or satellite background now loads bit by bit: opening the map or zooming no longer freezes the game for a second or two. The picture is a little blurry at first, then sharp in an instant.
+- New setting "Performance measurement (log)" (addon options, COMSPEC, ATAK · Debug): if the phone stutters, tick it, open the phone then the map, and send your log with Envoyer_mes_logs.bat.
+
+### Détail technique
+- Constat (RPT de TTRD du 11/11, ATAK 4.4.0.AG, fond PHOTO, pack photo Altis en tuiles JPG) : 9 images figées téléphone ouvert sur la carte, dont 1,3 à 1,9 s « dans les boucles du mod » au zoom (`carte (image)` max 1860 ms alors que toutes les sous-mesures restaient sous 3 ms), puis plus rien une fois les tuiles vues (carte à 2,2 ms par image). Cause : chaque tuile neuve du fond photo (`fn_photoMap`, JPEG lu dans la PBO et décodé par le jeu au premier `drawIcon`) ; un nouveau niveau de zoom en demandait jusqu'à 64 d'un coup. Présent avant 4.4.0 (`fn_photoMap` inchangé depuis 4.3.0) : pas une régression de la salle TOC ni du sang.
+- `fn_photoMap` : tuiles chargées notées (`COMSPEC_ATAK_PhotoSeen`, dessinées depuis moins de 5 min) ; 2 tuiles neuves au plus par image (1 si l'image précédente a dépassé 100 ms), posées à 1 % d'opacité pour être chargées sans se voir. En attendant, la vue garde le niveau le plus fin déjà chargé en entier (un seul niveau à l'écran, comme avant) ; le niveau deux crans plus grossier est chargé d'abord quand rien n'est prêt. Vue chargée : dessin identique à avant, noms de fichiers faits une fois par image. Relevé `COMSPEC_ATAK_PhotoLast` pour la mesure.
+- `fn_mapOnDraw` : nouvelles clés `[PERF]` `carte fond photo (image)`, `carte unités (image)`, `carte noms des repères (image)` (parties du dessin jusque-là sans mesure).
+- `fn_perfLog` (nouveau) et réglage CBA `comspec_atak_native_perf_log` « Mesure des performances (journal) » (ATAK · Debug, décoché) : lignes `[COMSPEC perf]` dans le RPT seulement (ouverture du téléphone de l'appui à la première image avec ses étapes ; ouverture des apps ; carte toutes les 5 s : moyenne et pire par image, unités, marqueurs, étiquettes, tuiles ; bilan 10 s : img/s, ms/s du mod, boucles CBA chronométrées par `fn_profiler`, contrôles du téléphone, boucles et scripts en file, plus coûteux ; appels de DLL de plus de 5 ms, appels directs du mod et relevé `Perf.Stats` des deux DLL). Décoché : une lecture de variable dans `fn_perfAcc`, `fn_open`, `fn_displayLoad`, `fn_navigate`, `fn_hudToggle`, `fn_interactToggle`, `fn_extensionCall`, `fn_extAwait`.
+- `fn_zeusCentre` : la traduction `_T` était écrasée par des variables `_t` (SQF ne distingue pas la casse) : erreur « call : Type Chaîne » à chaque outil de l'onglet Outils (6 dans le RPT) et même piège dans la fiche joueur et l'état du serveur. Renommée `_trZ`.
+- Vu dans le RPT, hors COMSPEC : 91 erreurs ACE `fnc_determineMapLight` / `fnc_simulateMapLight` (carte principale de nuit au briefing), avertissements de config d'autres mods au chargement.
+- À vérifier en jeu : zoom et dézoom rapides sur le fond PHOTO (plus d'image figée, net en moins d'une seconde), première ouverture du téléphone en main sur la carte, réglage coché puis journal relu.
+
 ## SSE 1.9.0 : fenêtre « Réponses de l'IA » simple, peur d'une arme braquée de près, champs des documents (SSE 1.9.0)
 
 ### Résumé joueur
