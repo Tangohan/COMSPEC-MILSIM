@@ -18039,5 +18039,15 @@
 ["Altitude", "", "Altitude"],
 ["PROPOSER", "", "PROPOSE"],
 ["%1 km", "", "%1 km"],
-["%1 x%2", "", "%1 x%2"]
+["%1 x%2", "", "%1 x%2"],
+["Selon le profil", "", "Depending on the profile"],
+["Léger", "", "Light"],
+["Normal", "", "Normal"],
+["Fort", "", "Heavy"],
+["Extrême", "", "Extreme"],
+["Sang sur l'écran : quantité maximale", "", "Blood on the screen: maximum amount"],
+["Jusqu'où le sang peut couvrir l'écran du téléphone dans les pires moments. Léger : quelques gouttes et traces de doigts. Normal : traînées et projections en plus. Fort : grandes nappes, paumes et coulures sur une bonne partie de l'écran. Extrême : écran presque entièrement rouge, on lit à peine entre les taches. Selon le profil : Extrême en Milsim, Fort sinon. Exemple : blessé grave qui saigne, téléphone en main ; réglé sur Extrême, l'écran est couvert en une vingtaine de secondes ; réglé sur Normal, il garde quelques traînées.", "", "How far blood can cover the phone screen at the worst moments. Light: a few drops and fingerprints. Normal: smears and spatter as well. Heavy: large pools, palm prints and runs over a good part of the screen. Extreme: the screen is almost entirely red, you can barely read between the stains. Depending on the profile: Extreme in Milsim, Heavy otherwise. Example: badly wounded and bleeding, phone in hand; set to Extreme, the screen is covered in about twenty seconds; set to Normal, it keeps a few smears."],
+["Nettoyage complet : il reste du sang séché, encore un passage ou de l'eau", "", "Full cleaning: some dried blood is left, one more pass or some water"],
+["Écran essuyé : le sang s'étale, encore un ou deux passages", "", "Screen wiped: the blood smears, one or two more passes"],
+["Écran essuyé : le sang séché tient, plusieurs passages ou un nettoyage complet", "", "Screen wiped: the dried blood sticks, several passes or a full cleaning"]
 ]

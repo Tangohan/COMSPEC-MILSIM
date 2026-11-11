@@ -399,6 +399,10 @@ private _sim = ["COMSPEC", "ATAK · Simulation"];
 ["comspec_atak_native_blood_style", "LIST",
     ["Sang sur l'écran", "Discret : quelques taches pâles. Réaliste : éclaboussures, traces de doigts, coulures, marques de paume. Gore : taches plus grandes et plus nombreuses, flaques épaisses, mains entières."],
     _sim, [[0, 1, 2], ["Discret", "Réaliste", "Gore"], 1], 1] call comspec_atak_native_fnc_addSetting;
+// Sang sur l'écran, niveau maximal (fn_screenDirt) : 0 selon le profil (Extrême en Milsim, Fort sinon).
+["comspec_atak_native_blood_max", "LIST",
+    ["Sang sur l'écran : quantité maximale", "Jusqu'où le sang peut couvrir l'écran du téléphone dans les pires moments. Léger : quelques gouttes et traces de doigts. Normal : traînées et projections en plus. Fort : grandes nappes, paumes et coulures sur une bonne partie de l'écran. Extrême : écran presque entièrement rouge, on lit à peine entre les taches. Selon le profil : Extrême en Milsim, Fort sinon. Exemple : blessé grave qui saigne, téléphone en main ; réglé sur Extrême, l'écran est couvert en une vingtaine de secondes ; réglé sur Normal, il garde quelques traînées."],
+    _sim, [[0, 1, 2, 3, 4], ["Selon le profil", "Léger", "Normal", "Fort", "Extrême"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_clean_items", "EDITBOX",
     ["Kits de nettoyage (optionnel)", "On peut toujours nettoyer l'écran sans rien. Avec un de ces items sur soi (noms de classe exacts, séparés par des virgules), c'est deux fois plus rapide et tout part, sang compris. L'item n'est pas consommé. Vide : aucun kit."],
     _sim, "ACE_fieldDressing,ACE_elasticBandage,ACE_packingBandage,ACE_quikclot", 1] call comspec_atak_native_fnc_addSetting;

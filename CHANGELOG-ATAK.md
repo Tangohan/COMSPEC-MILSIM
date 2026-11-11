@@ -358,6 +358,29 @@ EN : ATAK 4.2.1: smoother phone, clearer apps, a relay network that explains its
 - Langue : le téléphone en anglais sur les captures de l'autotest est voulu (`comspec_atak_native_language`, anglais par défaut depuis 2.1.0, profil de test sans réglage) ; les vérifications passent par `fn_tr` et ne dépendent pas de la langue.
 - Rien de ce lot n'a été vu en jeu avant la publication de ce bloc : autotest et essai en partie à faire.
 
+## À venir : beaucoup plus de sang sur l'écran du téléphone, selon la situation (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Le sang sur l'écran du téléphone suit la gravité de la situation
+- Quelques gouttes pour une petite blessure, des traînées quand vous saignez ou soignez, de grandes nappes, des paumes et des coulures pour une hémorragie, et un écran presque entièrement rouge quand vous êtes à l'agonie ou qu'un homme est tué à bout portant.
+- Le sang frais est rouge vif et brillant, il coule vers le bas de l'écran, puis sèche en quelques minutes : brun, mat et craquelé.
+- Un coup de chiffon étale le sang frais en traînées et le sang séché tient : il faut plusieurs passages, un nettoyage complet ou un kit.
+- Nouveau réglage « Sang sur l'écran : quantité maximale » (Léger, Normal, Fort, Extrême ; par défaut Extrême en Milsim, Fort sinon).
+EN : Blood on the phone screen follows how bad things are
+- A few drops for a small wound, smears when you bleed or treat someone, large pools, palm prints and runs for heavy bleeding, and a screen almost entirely red when you are dying or a man is killed at point-blank range.
+- Fresh blood is bright red and glossy, runs down the screen, then dries within a few minutes: brown, matte and cracked.
+- A wipe smears fresh blood into streaks and dried blood sticks: it takes several passes, a full cleaning or a kit.
+- New setting "Blood on the screen: maximum amount" (Light, Normal, Heavy, Extreme; Extreme in Milsim by default, Heavy otherwise).
+
+### Détail technique
+- `fn_screenDirt` : niveaux 1-4 (`_burst`, cibles de couverture 6 / 20 / 45 / 85 %), causes : débit ACE `ace_medical_woundBleeding`, `ace_medical_bloodVolume` (< 5 L : lourd, < 4 L : extrême), inconscience, plaies aux bras (téléphone en main : +1), sans ACE `isBleeding` + `damage` + `lifeState` ; blessé porté ou traîné qui saigne (`ace_dragging_carriedObject` / `draggedObject`) ; coup reçu (`hit`, niveau selon les dégâts et le nombre de blessures) ; mort à moins de 1,2 / 2 / 2,8 m (`nearby` : 4 / 3 / 2, téléphone sorti ou sur le gilet). Exposition : en main plein niveau, miniature ou gilet un de moins, sac rien. Nouveaux modes `force`, `age`, `residue`, `maxLevel` ; tache : + orientation (la tache tourne avec le verre) et débit (coulures en segments chaînés vers le bas de l'orientation actuelle, un par passage de 5 s tant que le sang a moins de 150 s). Au plus 48 taches (les moins visibles partent). Taille en part du petit côté de l'écran (plus d'écart portrait / paysage).
+- `fn_screenSurface` : ordre voile, couche continue, nappes, essuyages, reste, coulures ; texture séchée `bloodd_*` posée par `ctrlSetText` au passage de 4 min (sans recréer le contrôle), teinte qui fonce de 0 à 6 min ; plein écran tourné d'un quart si l'orientation a changé.
+- Nettoyage (`fn_screenClean`, `clean`) : chiffon = sang frais × 0,3 + traînée `wipe` (5 au plus par passage), séché × 0,72 ; complet sans kit = frais retiré, séché × 0,3 ; kit = tout ; eau et pluie remouillent le sang.
+- Réglage serveur `comspec_atak_native_blood_max` (0 selon le profil, 1-4) ; style Discret : au plus Normal.
+- Textures (`tools/gen_screen_fx.py --sang`) : 40 fraîches + 40 séchées (nouvelles : `pool_2-3`, `splat_2-3`, `hand_2-3`, `spatter_2`, `run_0-2`, `arterial_0-1`, `drag_0-1`, `wipe_0-2`, `cover_0-1_land/port`, `veil_0_land/port`), fondu sur les bords, reflets atténués.
+- Autotest `sang_niveaux` (`scripts/sang.sqf`, groupe `sang`) : non lancé (pas vu en jeu).
+
 ## À venir : moins de sondages et de relectures inutiles (ATAK natif et SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

@@ -7,7 +7,9 @@
     Disposition tirée d'une graine propre à l'appareil (COMSPEC_ATAK_Device dirtSeed) : même dessin d'une seconde à l'autre,
     les contrôles ne sont recréés que si le nombre de taches change ; sinon seule l'opacité suit l'état. Chaque genre et
     chaque tache a sa propre suite de tirages : une trace de doigt de plus ne déplace plus les autres.
-    Sang (1.97.0) : taches gardées dans COMSPEC_ATAK_Device "stains" (fn_screenDirt), dessinées à leur place enregistrée.
+    Sang (1.97.0) : taches gardées dans COMSPEC_ATAK_Device "stains" (fn_screenDirt), dessinées à leur place enregistrée ;
+    taille en part du petit côté de l'écran, tournées avec le verre si l'orientation a changé, version séchée (bloodd_*)
+    échangée sans recréer le contrôle.
     Contrôles de page hors zone de contenu, inactifs (les clics passent au travers). Écran éteint : pixels et lignes cachés.
     Params : [état matériel (fn_deviceHealth)]
 */
@@ -68,6 +70,16 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
     // Suite de tirages propre à un genre et à un numéro de tache (rien ne bouge quand une autre tache apparaît).
     private _from = { params ["_cat", "_i"]; _k = _cat * 1000 + _i * 23; };
     private _tex = { format ["\z\comspec_atak_native\addons\main\data\%1.paa", _this] };
+    // Nom de la texture fraîche d'une tache (la version séchée : même nom en bloodd_).
+    private _bloodTex = {
+        params ["_kind", "_var", "_sl"];
+        switch (_kind) do {
+            case "print": { format ["bloodc_print_%1", _var mod 4] };
+            case "cover": { format ["bloodc_cover_%1_%2", _var mod 2, ["port", "land"] select _sl] };
+            case "veil": { format ["bloodc_veil_0_%1", ["port", "land"] select _sl] };
+            default { format ["bloodc_%1_%2", _kind, _var mod ((createHashMapFromArray [["smear", 3], ["splat", 4], ["hand", 4], ["spatter", 3], ["pool", 4], ["run", 3], ["wipe", 3]]) getOrDefault [_kind, 2])] };
+        };
+    };
     private _pic = {
         params ["_kind", "_t", "_cx", "_cy", "_w", "_h", ["_a", 0]];
         private _c = ["COMSPEC_RscPhone", [_cx, _cy, _w, _h], _t, false] call comspec_atak_native_fnc_pageCtrl;
@@ -138,24 +150,50 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
         private _side = [1, -1] select (_zx < 0.5);
         ["prints", format ["dirt_print_%1", floor ((call _rnd) * 4)] call _tex, _rx + (_rw - _w) * _zx, _ry + (_rh - _h) * _zy, _w, _h, _side * (10 + 35 * call _rnd)] call _pic;
     };
-    // Taches de sang, chacune à sa place enregistrée (centre x / y en part de l'écran, taille en part de sa hauteur).
+    // Taches de sang, chacune à sa place enregistrée (centre x / y en part de l'écran, taille en part du petit côté :
+    // même taille réelle en portrait et en paysage, en main et en miniature). Une tache posée dans l'autre orientation
+    // tourne avec le verre (paysage -> portrait : quart de tour horaire). Ordre : voile, couche continue, nappes,
+    // traînées d'essuyage, le reste, coulures par-dessus.
+    private _short = _rh min (_rw * _ratio);
+    private _land = _l getOrDefault ["landscape", true];
+    private _layer = createHashMapFromArray [["veil", 0], ["cover", 1], ["pool", 2], ["wipe", 3], ["run", 5]];
+    private _order = [];
+    { _order pushBack [_layer getOrDefault [_x select 0, 4], _forEachIndex]; } forEach _stains;
+    _order sort true;
     {
-        _x params ["_kind", "_var", "_sx", "_sy", "_size", "_ang"];
-        private _h = _rh * _size;
-        private _w = _h / _ratio;
-        // Textures en couleur (tools/gen_screen_fx.py) : film mince rouge vif et translucide, cœur bordeaux, bord séché,
-        // reflets humides ; teintées en blanc quand le sang est frais, puis vers le brun en séchant (plus bas).
-        private _t = switch (_kind) do {
-            case "print": { _w = _w * 0.5; format ["bloodc_print_%1", _var mod 4] };
-            case "smear": { _w = _w * 2; format ["bloodc_smear_%1", _var mod 3] };
-            case "drip": { _w = _w * 0.5; format ["bloodc_drip_%1", _var mod 2] };
-            default { format ["bloodc_%1_%2", _kind, _var mod 2] };
+        private _i = _x select 1;
+        (_stains select _i) params ["_kind", "_var", "_sx", "_sy", "_size", "_ang", "", "", ["_sl", _land]];
+        private _turn = 0;
+        if (_sl isNotEqualTo _land) then {
+            if (_land) then { private _t = _sx; _sx = _sy; _sy = 1 - _t; _turn = -90; } else { private _t = _sx; _sx = 1 - _sy; _sy = _t; _turn = 90; };
         };
-        // Centre gardé dans l'écran (une grande tache ne déborde pas sur le décor).
-        private _cx = (_rx + _rw * _sx) max (_rx + (_w min _rw) / 2) min (_rx + _rw - (_w min _rw) / 2);
-        private _cy = (_ry + _rh * _sy) max (_ry + (_h min _rh) / 2) min (_ry + _rh - (_h min _rh) / 2);
-        [format ["stain%1", _forEachIndex], _t call _tex, _cx - _w / 2, _cy - _h / 2, _w, _h, _ang] call _pic;
-    } forEach _stains;
+        // Textures en couleur (tools/gen_screen_fx.py) : film mince rouge vif et translucide, cœur bordeaux, bord séché,
+        // reflets humides ; version séchée (bloodd_*) quand le sang a séché (plus bas, sans recréer le contrôle).
+        private _base = [_kind, _var, _sl] call _bloodTex;
+        if (_kind in ["cover", "veil"]) then {
+            // Plein écran, texture de l'orientation où la tache a été posée ; autre orientation : tournée d'un quart.
+            if (_turn isEqualTo 0) then {
+                [format ["stain%1", _i], _base call _tex, _rx, _ry, _rw, _rh] call _pic;
+            } else {
+                private _w = _rh / _ratio;
+                private _h = _rw * _ratio;
+                [format ["stain%1", _i], _base call _tex, _rx + (_rw - _w) / 2, _ry + (_rh - _h) / 2, _w, _h, _turn] call _pic;
+            };
+        } else {
+            private _h = _short * _size;
+            private _w = _h * ((createHashMapFromArray [["print", 0.5], ["drip", 0.5], ["drag", 0.5], ["run", 0.125], ["smear", 2], ["arterial", 2], ["wipe", 2]]) getOrDefault [_kind, 1]) / _ratio;
+            // Centre gardé dans l'écran (une grande tache ne déborde pas sur le décor) ; coulures : à leur place
+            // exacte (segments bout à bout).
+            private _cx = _rx + _rw * _sx;
+            private _cy = _ry + _rh * _sy;
+            if (_kind isNotEqualTo "run") then {
+                _cx = _cx max (_rx + (_w min _rw) / 2) min (_rx + _rw - (_w min _rw) / 2);
+                _cy = _cy max (_ry + (_h min _rh) / 2) min (_ry + _rh - (_h min _rh) / 2);
+            };
+            [format ["stain%1", _i], _base call _tex, _cx - _w / 2, _cy - _h / 2, _w, _h, (_ang + _turn) mod 360] call _pic;
+        };
+        (_ctrls select ((count _ctrls) - 1)) pushBack _base;
+    } forEach _order;
     // Sang sur la coque : sur le rebord autour de l'écran (la texture du téléphone est carrée et en grande partie
     // transparente : on se cale sur l'écran, pas sur le cadre de la texture, sinon le sang flotte dans le vide).
     private _bx = _rw * 0.055;
@@ -207,6 +245,7 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
 };
 // Opacité selon l'état (chaque seconde, sans recréer).
 private _off = (_hp getOrDefault ["state", "OK"]) isEqualTo "OFF";
+private _texPath = { format ["\z\comspec_atak_native\addons\main\data\%1.paa", _this] };
 private _style = (missionNamespace getVariable ["comspec_atak_native_blood_style", 1]) max 0 min 2;
 {
     _x params ["_kind", "_c"];
@@ -225,13 +264,25 @@ private _style = (missionNamespace getVariable ["comspec_atak_native_blood_style
         case "corner": {};
         default {
             // Tache de sang : opacité propre (elle pâlit au nettoyage, à la pluie) ; style discret plus léger.
-            // Le sang sèche : rouge vif les premières minutes, puis plus sombre et brun (10 min environ), plus mat.
+            // Le sang sèche (fn_screenDirt _dryOf) : rouge vif et brillant la première minute, s'assombrit, puis vers
+            // 4 min passe à la texture séchée (mate, brune, bord épais, craquelée), qui fonce encore un peu jusqu'à 6 min.
             if ((_kind select [0, 5]) isEqualTo "stain") then {
                 private _st = _stains param [parseNumber (_kind select [5]), []];
                 if (_st isNotEqualTo []) then {
                     private _a = (_st select 6) * ([0.7, 0.92, 1] select _style);
-                    private _dry = (((time - (_st param [7, time - 600])) - 60) / 540) max 0 min 1;
-                    _c ctrlSetTextColor [1 - 0.36 * _dry, 1 - 0.52 * _dry, 1 - 0.6 * _dry, _a * (1 - 0.15 * _dry)];
+                    private _dry = (((time - (_st param [7, time - 600])) - 60) / 300) max 0 min 1;
+                    private _base = _x param [2, ""];
+                    if (_base isNotEqualTo "") then {
+                        private _want = [_base, "bloodd_" + (_base select [7])] select (_dry >= 0.6);
+                        if ((_x param [3, _base]) isNotEqualTo _want) then { _c ctrlSetText (_want call _texPath); _x set [3, _want]; };
+                    };
+                    if (_dry < 0.6) then {
+                        private _k = _dry / 0.6;
+                        _c ctrlSetTextColor [1 - 0.25 * _k, 1 - 0.4 * _k, 1 - 0.45 * _k, _a * (1 - 0.08 * _k)];
+                    } else {
+                        private _k = (_dry - 0.6) / 0.4;
+                        _c ctrlSetTextColor [1 - 0.12 * _k, 1 - 0.12 * _k, 1 - 0.12 * _k, _a * 0.92];
+                    };
                 };
             };
         };
