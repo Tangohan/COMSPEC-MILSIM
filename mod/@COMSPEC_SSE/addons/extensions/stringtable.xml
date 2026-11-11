@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- COMSPEC SSE, addon extensions : textes fixes de la fenêtre « SSE ROLEPLAY · Extensions » (anglais, français).
-     Les textes posés par SQF (fn_docExtWindow, fn_docExtMenu) sont écrits en français et traduits par comspec_sse_fnc_tr. -->
+     Les textes posés par SQF (fn_docExtWindow) sont écrits en français et traduits par comspec_sse_fnc_tr.
+     STR_COMSPEC_SSE_ATHCFG_* : Configuration ATHENA du menu Échap sans l'ATAK natif (XEH_preInit, fn_athenaConfig). -->
 <Project name="COMSPEC_SSE">
     <Package name="extensions">
         <Key ID="STR_COMSPEC_SSE_EXT_Close">
@@ -27,6 +28,51 @@
             <Original>SSE ROLEPLAY · Extensions</Original>
             <English>SSE ROLEPLAY · Extensions</English>
             <French>SSE ROLEPLAY · Extensions</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ATHCFG_Button">
+            <Original>ATHENA Configuration</Original>
+            <English>ATHENA Configuration</English>
+            <French>ATHENA Configuration</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ATHCFG_Title">
+            <Original>ATHENA Configuration</Original>
+            <English>ATHENA Configuration</English>
+            <French>Configuration ATHENA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ATHCFG_Open">
+            <Original>Open the ATHENA configuration</Original>
+            <English>Open the ATHENA configuration</English>
+            <French>Ouvrir la configuration ATHENA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ATHCFG_Close">
+            <Original>Close</Original>
+            <English>Close</English>
+            <French>Fermer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ATHCFG_CloseTip">
+            <Original>Close and go back to the Esc menu (Esc key)</Original>
+            <English>Close and go back to the Esc menu (Esc key)</English>
+            <French>Fermer et revenir au menu Échap (touche Échap)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ATHCFG_VerAtak">
+            <Original>Native ATAK %1</Original>
+            <English>Native ATAK %1</English>
+            <French>ATAK natif %1</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ATHCFG_VerSse">
+            <Original>SSE %1</Original>
+            <English>SSE %1</English>
+            <French>SSE %1</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ATHCFG_SseTitle">
+            <Original>SSE · Roleplay and extensions</Original>
+            <English>SSE · Roleplay and extensions</English>
+            <French>SSE · Roleplay et extensions</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ATHCFG_SseDesc">
+            <Original>SSE document extensions: see them, then turn each one on or off (Zeus, admin).</Original>
+            <English>SSE document extensions: see them, then turn each one on or off (Zeus, admin).</English>
+            <French>Extensions de documents du SSE : les voir, puis activer ou couper chacune (Zeus, administrateur).</French>
         </Key>
     </Package>
 </Project>

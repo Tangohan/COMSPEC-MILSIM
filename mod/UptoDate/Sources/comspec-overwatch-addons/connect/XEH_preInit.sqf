@@ -25,6 +25,9 @@ private _comspecCompatMavic = {
 };
 [] call _comspecCompatMavic;
 
+// Configuration ATHENA (menu Échap) : état de la liaison, Dépannage liaison et Service Athéna dans la fenêtre de l'ATAK natif.
+[] call comspec_overwatch_connect_fnc_athenaConfigEntries;
+
 if (!isNil "comspec_overwatch_connect_fnc_log") then {
     ["INFO", "Compat", format [
         "Mavic setting isNil=%1 | ZEN addAttribute isNil=%2",

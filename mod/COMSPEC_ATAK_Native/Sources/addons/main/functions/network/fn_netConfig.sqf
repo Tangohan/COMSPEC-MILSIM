@@ -1,15 +1,15 @@
 /*
-    Configurateur « Réalisme et réseau » du menu Échap : tous les réglages de réalisme (fn_realismCatalog) rangés par thème, valeur en vigueur et source,
+    Configurateur « Réalisme et réseau » (menu Échap > ATHENA Configuration, fn_athenaConfig) : tous les réglages de réalisme (fn_realismCatalog) rangés par thème, valeur en vigueur et source,
     boutons de l'assistant (fn_setupWizard) et de coupure du lien radio, conditions du moment.
     Profil : le choisir remet chaque liste à la valeur du profil ; Appliquer n'envoie que le profil et les réglages qui
     s'en écartent, pour qu'un changement de profil plus tard les reprenne tous.
-      - tout le monde l'ouvre (bouton « Conditions réseau » du menu Échap) et voit les valeurs en vigueur et leur source ;
+      - tout le monde l'ouvre (menu Échap > ATHENA Configuration > Réalisme et réseau) et voit les valeurs en vigueur et leur source ;
       - un administrateur du serveur (#login), l'hôte ou un Zeus applique au serveur : COMSPEC_ATAK_NetCond diffusée
         à tous les joueurs (et aux arrivants), notification à chacun, puis envoi au site (COMSPEC Link
         NetConditions.Report) : la page Contrôle serveur montre les conditions appliquées en jeu ;
       - une condition imposée par la communauté sur le site (Contrôle serveur > Réseau et simulation) est verrouillée.
     Ordre des sources : fn_netCond.
-    Params : ["button", écran du menu Échap] | ["open", écran parent] | ["apply", [[clé, valeur]...]] (client) |
+    Params : ["open", écran parent] | ["apply", [[clé, valeur]...]] (client) |
              ["server", [[clé, valeur]...], nom] (serveur) | ["canEdit"] -> booléen | ["presets"] | ["expect", profil] -> HashMap clé -> valeur
 */
 params [["_mode", "open"], ["_a", displayNull], ["_b", ""]];
@@ -41,24 +41,6 @@ switch (_mode) do {
             ["Zone dégradée", [["realism", 2], ["bgLoad", 50], ["lossFloor", 10], ["latencyAdd", 150]]],
             ["Entraînement : simulation coupée", [["sim", false]]]
         ]
-    };
-    case "button": {
-        private _d = _a;
-        if (isNull _d || {!hasInterface}) exitWith {};
-        private _old = _d displayCtrl 9690;
-        if (!isNull _old) then { ctrlDelete _old; };
-        private _bt = _d ctrlCreate ["ctrlButton", 9690];
-        private _w = 0.125 * safeZoneW;
-        // Sous la barre COMSPEC d'Overwatch (en haut à droite), alignée sur son bord droit.
-        _bt ctrlSetPosition [safeZoneX + safeZoneW * 0.988 - _w, safeZoneY + 0.068 * safeZoneH, _w, 0.034 * safeZoneH];
-        _bt ctrlSetText ((("Réalisme et réseau" call _T)) call comspec_atak_native_fnc_tr);
-        // Police proportionnelle au bouton : avec la taille d'interface NORMALE ou plus grande, la police par défaut
-        // débordait du bouton (texte écrasé).
-        _bt ctrlSetFontHeight (0.034 * safeZoneH * 0.6);
-        _bt ctrlSetTooltip ((("Profil de réalisme et simulation du serveur : réseau radio, météo, surcharge, pertes, positions BFT, GPS, batterie" call _T)) call comspec_atak_native_fnc_tr);
-        _bt ctrlSetBackgroundColor [0.10, 0.30, 0.16, 0.95];
-        _bt ctrlAddEventHandler ["ButtonClick", { ["open", ctrlParent (_this select 0)] call comspec_atak_native_fnc_netConfig; }];
-        _bt ctrlCommit 0;
     };
     case "apply": {
         if !(["canEdit"] call comspec_atak_native_fnc_netConfig) exitWith {

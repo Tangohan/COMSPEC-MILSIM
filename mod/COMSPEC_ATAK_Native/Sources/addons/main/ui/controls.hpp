@@ -64,6 +64,8 @@ class COMSPEC_RscButtonOverlay: COMSPEC_RscButton { colorBackground[]={0,0,0,0};
 class COMSPEC_RscButtonFlat: COMSPEC_RscButtonOverlay { colorDisabled[]={0.42,0.46,0.44,0.7}; colorBackgroundActive[]={1,1,1,0.10}; };
 // Touches physiques de la coque : aucune surbrillance (la texture du téléphone suffit).
 class COMSPEC_RscButtonInvisible: COMSPEC_RscButtonOverlay { colorBackgroundActive[]={0,0,0,0}; colorBackgroundDisabled[]={0,0,0,0}; colorDisabled[]={0,0,0,0}; colorShadow[]={0,0,0,0}; };
+// Ligne et bouton de la Configuration ATHENA (fn_athenaConfig, menu Échap) : transparent, survol et focus clavier en vert Athena.
+class COMSPEC_ATAK_AthenaCfgRow: COMSPEC_RscButtonOverlay { colorBackgroundActive[]={0.204,0.827,0.6,0.14}; colorFocused[]={0.204,0.827,0.6,0.10}; colorBackground2[]={0.204,0.827,0.6,0.10}; };
 class COMSPEC_RscEdit: RscEdit { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]=ATAK_BG0; colorSelection[]=ATAK_GREEN_DIM; sizeEx="0.024 * safeZoneH"; };
 class COMSPEC_RscEditMulti: COMSPEC_RscEdit { style=16; lineSpacing=1; };
 class COMSPEC_RscCombo: RscCombo { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]=ATAK_BG0; colorSelect[]=ATAK_TEXT; colorSelectBackground[]=ATAK_GREEN_DIM; sizeEx="0.024 * safeZoneH"; };
