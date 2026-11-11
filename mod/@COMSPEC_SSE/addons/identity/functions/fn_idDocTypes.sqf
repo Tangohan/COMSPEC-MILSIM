@@ -61,7 +61,7 @@ if (isNil "_all") then {
         if !((_t get "category") in _cats) then { _t set ["category", "other"]; };
         if ((_t get "sides") < 2 || {(count (_t get "verso")) isEqualTo 0}) then { _t set ["sides", 1]; };
         private _inputs = [];
-        { { if (_x get "input") then { _inputs pushBack [_x get "key", [_x get "label", _x get "key"] select ((_x get "label") isEqualTo ""), _x get "default"]; }; } forEach (_y get "fields"); } forEach [["recto", _t get "recto"], ["verso", _t get "verso"]];
+        { { if (_x get "input") then { _inputs pushBack [_x get "key", [_x get "label", _x get "key"] select ((_x get "label") isEqualTo ""), _x get "default"]; }; } forEach (_x getOrDefault ["fields", []]); } forEach [_t get "recto", _t get "verso"];
         _t set ["inputs", _inputs];
         _all set [_key, _t];
     } forEach ("true" configClasses (configFile >> "CfgComspecDocuments"));

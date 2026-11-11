@@ -289,12 +289,16 @@ if ((count _qs) < 100) then { _ko pushBack format ["cadre : %1 questions de rens
 if (_bad isNotEqualTo []) then { _ko pushBack format ["cadre : civil sans savoir, terme de scénario dans %1 réponse(s) : %2", count _bad, (_bad select [0, 4]) joinString " ; "]; };
 _info pushBack format ["cadre : civil sans savoir, %1 questions de renseignement, %2 réplique(s) avec un terme de scénario", count _qs, count _bad];
 // Phrases étiquetées (« hint », thèmes) : jamais chez « Rien de sensible » ; « Libre » les garde.
+// La seule phrase « armed » d'intelNo est du ton « effraye » (banque) : ton imposé, sinon un civil calme ne l'a jamais
+// dans ses candidates, quel que soit le cadre.
 private _intelNoC = ["intelNo", _civ, _ctxC, [], _varsC, "pool"] call comspec_sse_fnc_iarpGen;
-if ((_intelNoC findIf { (_x param [2, []]) isNotEqualTo [] }) >= 0) then { _ko pushBack "cadre : phrase étiquetée chez un civil sans savoir"; };
+private _intelNoCe = ["intelNo", _civ, createHashMapFromArray [["forbid", _forbidC], ["tone", "effraye"]], [], _varsC, "pool"] call comspec_sse_fnc_iarpGen;
+if (((_intelNoC + _intelNoCe) findIf { (_x param [2, []]) isNotEqualTo [] }) >= 0) then { _ko pushBack "cadre : phrase étiquetée chez un civil sans savoir"; };
 private _free = ["normalize", createHashMapFromArray [["role", "civil"], ["evoke", "free"]]] call comspec_sse_fnc_iarpProfile;
 (["frame", _free] call comspec_sse_fnc_iarpAnswers) params ["", "_forbidF"];
-private _intelNoF = ["intelNo", _free, createHashMapFromArray [["forbid", _forbidF]], [], _varsC, "pool"] call comspec_sse_fnc_iarpGen;
-if ((_intelNoF findIf { "armed" in (_x param [2, []]) }) < 0) then { _ko pushBack "cadre : « Libre » écarte encore les phrases étiquetées"; };
+private _intelNoF = ["intelNo", _free, createHashMapFromArray [["forbid", _forbidF], ["tone", "effraye"]], [], _varsC, "pool"] call comspec_sse_fnc_iarpGen;
+private _intelNoFc = ["intelNo", _free, createHashMapFromArray [["forbid", _forbidF]], [], _varsC, "pool"] call comspec_sse_fnc_iarpGen;
+if ((_intelNoF findIf { "armed" in (_x param [2, []]) }) < 0 || {(_intelNoFc findIf { "hint" in (_x param [2, []]) }) < 0}) then { _ko pushBack "cadre : « Libre » écarte encore les phrases étiquetées"; };
 // Thème interdit : « Explosifs » coché même en « Libre ».
 private _banP = ["normalize", createHashMapFromArray [["role", "insurge"], ["evoke", "free"], ["banned", ["explosives", "inconnu"]]]] call comspec_sse_fnc_iarpProfile;
 (["frame", _banP] call comspec_sse_fnc_iarpAnswers) params ["_lvlB", "_forbidB", "_bannedB"];

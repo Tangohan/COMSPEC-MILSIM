@@ -219,6 +219,7 @@ class COMSPEC_SSE_RscEdit;
 class COMSPEC_SSE_RscStructuredText;
 class COMSPEC_SSE_RscControlsGroup;
 class COMSPEC_SSE_RscListBox;
+class RscToolbox;
 
 #include "dialogs\iarp_terminal.hpp"
 #include "dialogs\iarp_workshop.hpp"

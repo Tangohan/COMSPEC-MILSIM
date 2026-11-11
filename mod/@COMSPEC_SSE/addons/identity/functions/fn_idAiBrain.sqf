@@ -59,8 +59,12 @@ private _context = {
             private _w = currentWeapon _x;
             if (_w isNotEqualTo "" && {_w isNotEqualTo (binocular _x)} && {!(weaponLowered _x)}) then {
                 if (_d < 20) then { _soldiers = _soldiers + 1; };
-                // Arme braquée sur lui : arme levée, canon à 8° de son buste, 25 m au plus.
-                if (_d <= 25 && {((_x weaponDirection _w) vectorDotProduct (vectorNormalized ((aimPos _u) vectorDiff (eyePos _x)))) > 0.99}) then { _aimed = _aimed + 1; _aimNear = _aimNear min _d; };
+                // Arme braquée sur lui : arme levée, canon à 8° de son buste ou, de près, à moins de 0,6 m de lui (à 3 m, viser
+                // la tête sort du cône de 8°), 25 m au plus. Même règle que fn_iarpReact « aimedAt ».
+                private _wd = _x weaponDirection _w;
+                private _to = (aimPos _u) vectorDiff (eyePos _x);
+                private _al = _to vectorDotProduct _wd;
+                if (_d <= 25 && {_al > 0} && {(_wd vectorDotProduct (vectorNormalized _to)) > 0.99 || {(vectorMagnitude (_to vectorDiff (_wd vectorMultiply _al))) < 0.6}}) then { _aimed = _aimed + 1; _aimNear = _aimNear min _d; };
             };
         };
     } forEach (_u nearEntities ["CAManBase", 40]);

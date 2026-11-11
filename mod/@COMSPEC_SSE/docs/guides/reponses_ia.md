@@ -4,7 +4,7 @@ Version anglaise : [reponses_ia.en.md](reponses_ia.en.md). Sommaire : [index.md]
 
 ## À quoi ça sert
 
-Les joueurs parlent aux IA en texte libre (interaction ACE › **Parler à…**, ou Ctrl+T). L'IA comprend environ **120 sortes de questions**, en français et en anglais, fautes et tutoiement compris, et répond selon son caractère, sa couverture et ce qu'elle sait. Le maître du jeu peut, question par question, garder cette **réponse auto** ou écrire une **réponse perso**, et fixer **ce que l'IA peut évoquer**.
+Les joueurs parlent aux IA en texte libre (interaction ACE › **Parler à…**, ou Ctrl+T). L'IA comprend environ **120 sortes de questions**, en français et en anglais, fautes et tutoiement compris, et répond selon son caractère, sa couverture et ce qu'elle sait. Le maître du jeu peut, question par question, garder cette **réponse automatique** ou écrire **sa réponse** (« Ma réponse »), et fixer **ce que l'IA peut évoquer**.
 
 Règle d'or : **une IA ne parle que de ce qu'elle sait**. Un passant sans savoir ne parle jamais d'armes, de groupes armés, de pick-up, de mines ou de caches : « Non, je n'ai rien vu de tel. », « Je ne sais pas, je viens d'arriver. »
 
@@ -39,28 +39,31 @@ Une IA se souvient : à « Tu as un téléphone ? », elle répond la même chos
 
 ## La fenêtre « Réponses de l'IA »
 
-### En haut : le cadre
+Elle s'ouvre en **mode simple** : seulement ce qu'il faut pour écrire une réponse. Tout le reste est dans **Options avancées**, en bas à droite, replié par défaut.
 
-- **Ce qu'elle peut évoquer** : **Auto** (« Rien de sensible » pour un civil sans savoir ni secret, sinon « Ce qu'elle sait »), **Rien de sensible** (réponses neutres, jamais de sous-entendu), **Ce qu'elle sait** (son savoir, ses secrets et vos textes ; les réponses auto ne parlent d'aucun thème de scénario), **Libre** (les réponses auto peuvent évoquer des thèmes, sauf interdits).
-- **Thèmes interdits** : Armes (et groupes armés), Explosifs (et mines), Lieux militaires (bases, checkpoints), Recherchés (où est-il, photo, description), Drogue, Politique (et police, armée). Sur une question d'un thème coché : réponse neutre (« Je ne sais rien là-dessus. »), **même avec une réponse perso**.
+### Mode simple
 
-### À gauche : les questions
+1. **En haut**, une seule ligne : **Ce que cette IA peut évoquer** : **Rien de sensible** (jamais d'armes, de mines ni d'indice), **Ce qu'elle sait** (seulement son savoir, ses secrets et vos réponses) ou **Libre** (tout, sauf les thèmes interdits). Sans choix de votre part, la fenêtre montre le niveau choisi d'après son profil (« Rien de sensible » pour un civil sans savoir ni secret, sinon « Ce qu'elle sait ») et le profil le garde automatique.
+2. **À gauche**, les questions, par thème, les mêmes que l'onglet GUIDE des joueurs, avec **Chercher** (« nom », « armés », « mot de passe »). À droite d'une question : **Ma réponse** si vous en avez écrit une, **Interdit** si son thème est interdit.
+3. **À droite**, la question choisie (et d'autres façons de la poser), puis **Réponse automatique** ou **Ma réponse**.
+4. Avec **Ma réponse** : écrivez **ce qu'elle répond, une réponse par ligne** (plusieurs lignes : elle en dit une). **Insérer une variable** ouvre la liste des mots remplacés en jeu (son prénom, sa ville, le nom du joueur…) avec leur valeur d'exemple ; un clic l'insère là où est le curseur.
+5. **L'IA dira** montre la réponse avec les variables remplacées ; une variable inconnue, une question perso sans mot déclencheur ou un thème interdit y sont signalés.
+6. **Enregistrer** (Zeus : tout de suite ; Eden : dans l'attribut de chaque unité ; atelier : repris par son bouton Appliquer). **Tout son groupe** (Zeus, IA de la zone) enregistre aussi sur chaque IA de son groupe. La ligne d'état à côté dit si c'est enregistré.
 
-Les mêmes que l'onglet GUIDE des joueurs, par thème, avec **Chercher** (« nom », « armés », « mot de passe »). À droite de chacune : **Auto**, **Perso (2)** (nombre de textes) ou **Interdit**. En tête : vos **questions perso**, et **Ajouter une question perso**.
+### Options avancées
 
-### À droite : la réponse
+Le bouton indique combien de réglages avancés sont utilisés (« Options avancées (2 réglages utilisés) »). Ouvert, il montre une phrase d'aide pour le réglage survolé.
 
 | Réglage | Rôle | Exemple |
 |---|---|---|
-| **Réponse** | Réponse auto ou Réponse perso | Perso pour « Qui es-tu ? » |
-| **Ordre** | Au hasard (jamais deux fois de suite la même) ou Dans l'ordre (pour chaque joueur, le dernier texte se répète) | un témoin qui en dit plus à chaque fois |
-| **Question**, **Déclencheurs** | Question perso seulement : son nom (pour vous) et les mots qui la déclenchent, séparés par « ; » ; « a+b » : les deux mots dans le message | « mot de passe; password » |
-| **Situation** | Toujours, S'il est calme, S'il a peur, Si on le menace (ou arme braquée), S'il est accusé de mentir, La 1re fois, Si on lui redemande, S'il accepte, S'il refuse ; la plus précise qui a un texte l'emporte | « S'il a peur » : « Je… je suis Nikos ! Ne tirez pas ! » |
-| **Réponses** | Une par ligne, 300 caractères au plus, 8 par situation | voir les variables |
-| **Débloque** | Rien, palier vague, précis ou complet de son savoir, pour ce joueur | précis |
-| **Lieu** | Comme une ligne « Lieu : » du savoir : carroyage, coordonnées ou marqueur, puis le nom ; posé une fois sur la carte de ce joueur | 045 078 Ferme abandonnée |
+| **Thèmes interdits** | Armes (et groupes armés), Explosifs (et mines), Lieux militaires, Recherchés, Drogue, Politique : sur ces thèmes, elle dit ne rien savoir, **même avec votre réponse** | Explosifs |
+| **Situation** | Toujours, S'il est calme, S'il a peur, Si on le menace (ou arme braquée), S'il est accusé de mentir, La 1re fois, Si on lui redemande, S'il accepte, S'il refuse ; la plus précise qui a une réponse l'emporte | « S'il a peur » : « Je… je suis {prenom} ! Ne tirez pas ! » |
+| **Ordre** | Au hasard (jamais deux fois de suite la même) ou Dans l'ordre (pour chaque joueur, la dernière se répète) | un témoin qui en dit plus à chaque fois |
+| **Puis révèle** | Rien de plus, Un indice vague, Un renseignement précis ou Tout ce qu'elle sait, pour ce joueur | Un renseignement précis |
+| **Repère** | Comme une ligne « Lieu : » du savoir : carroyage, coordonnées ou marqueur, puis le nom ; posé une fois sur la carte de ce joueur | 045 078 Ferme abandonnée |
+| **Ajouter ma propre question** | Une question que le jeu ne connaît pas : **Nom de la question** (pour vous), **Mots qui la déclenchent** séparés par « ; » (« a+b » : les deux mots dans le message), puis la réponse ; **Supprimer** l'enlève | « mot de passe; password » → « Le faucon vole bas. » |
 
-**Aperçu** : la réponse avec les variables remplacées par des valeurs d'exemple ; une variable inconnue est signalée. **Revenir en auto** efface la réponse perso (ou supprime la question perso). **Tout son groupe** (Zeus) applique aussi au groupe de chaque IA. **Appliquer** (Zeus : tout de suite ; Eden : dans l'attribut de chaque unité) ou **Valider** (atelier).
+Refermer les options avancées ne les efface pas : elles restent enregistrées, et le bouton les compte.
 
 ### Variables
 
@@ -82,17 +85,18 @@ Fait absent : « … » (l'aperçu le signale).
 ## Pas à pas : le boulanger et le guetteur
 
 1. Eden, attributs du boulanger › **Atelier IA…** : Nom « Nikos KARRAS », histoire « Métier : boulanger ».
-2. **Réponses et limites…** › « Qui es-tu ? » › **Réponse perso** : « Je suis {prenom}, le boulanger. Tout le monde me connaît ici. » ; Situation **S'il a peur** : « Je… je suis {prenom} ! Je fais le pain, c'est tout ! »
-3. « Avez-vous vu des hommes armés ? » › Perso, Situation **S'il accepte** : « Hier soir, trois pick-up vers le nord. » ; Débloque **Palier précis** ; Lieu « 045 078 Ferme abandonnée » ; Situation **S'il refuse** : « Je ne veux pas d'ennuis. »
-4. **Ajouter une question perso** : Question « Mot de passe », Déclencheurs « mot de passe; password », Réponse « Le faucon vole bas. »
-5. **Valider**, puis **Appliquer** dans l'atelier. En jeu : « Qui es-tu ? » → « Je suis Nikos, le boulanger. Tout le monde me connaît ici. »
+2. **Réponses et limites…** › « Qui es-tu ? » › **Ma réponse** : « Je suis {prenom}, le boulanger. Tout le monde me connaît ici. » (le prénom par **Insérer une variable**).
+3. **Options avancées** › Situation **S'il a peur** : « Je… je suis {prenom} ! Je fais le pain, c'est tout ! »
+4. « Avez-vous vu des hommes armés ? » › **Ma réponse**, Situation **S'il accepte** : « Hier soir, trois pick-up vers le nord. » ; Puis révèle **Un renseignement précis** ; Repère « 045 078 Ferme abandonnée » ; Situation **S'il refuse** : « Je ne veux pas d'ennuis. »
+5. **Ajouter ma propre question** : Nom « Mot de passe », Mots qui la déclenchent « mot de passe; password », réponse « Le faucon vole bas. »
+6. **Enregistrer**, puis **Appliquer** dans l'atelier. En jeu : « Qui es-tu ? » → « Je suis Nikos, le boulanger. Tout le monde me connaît ici. »
 
-Les autres civils du marché, sans savoir, restent en **Auto** : à « Il y a des insurgés ici ? », « Non. Je vais juste au marché, moi. »
+Les autres civils du marché, sans savoir, restent en **Réponse automatique** : à « Il y a des insurgés ici ? », « Non. Je vais juste au marché, moi. »
 
 ## Pièges fréquents
 
-- Une réponse perso **ne remplace que la phrase** : un ordre refusé reste refusé, un menteur reste démasquable, les papiers passent toujours par le contrôle ACE. Pour un ordre, une fouille ou un pot-de-vin, « Toujours » vaut quand il obéit ; s'il refuse, seul « S'il refuse » est dit.
-- Une question perso remplace la conversation du message ; un ordre ou une menace du même message est traité quand même (« Stop ! Le mot de passe. »).
+- Votre réponse **ne remplace que la phrase** : un ordre refusé reste refusé, un menteur reste démasquable, les papiers passent toujours par le contrôle ACE. Pour un ordre, une fouille ou un pot-de-vin, « Toujours » vaut quand il obéit ; s'il refuse, seul « S'il refuse » est dit.
+- Votre propre question remplace la conversation du message ; un ordre ou une menace du même message est traité quand même (« Stop ! Le mot de passe. »).
 - Un thème interdit l'emporte sur vos textes.
 - Les réponses restent sur le serveur (jamais envoyées aux joueurs), sont enregistrées dans la mission (Eden) et partent avec l'IA par **Garder pour les prochaines parties**.
 - Les caractères `<` `>` `&` s'affichent tels quels ; un retour à la ligne sépare deux réponses.
