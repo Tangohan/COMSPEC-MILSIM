@@ -62716,4 +62716,7 @@ return [
     'Pages que votre session ne voit pas' => 'Pages your session cannot see',
     'Toutes les pages du bureau, rangées par usage. La barre latérale garde le même rangement ;' => 'Every page of the office, grouped by use. The side bar keeps the same layout;',
     'ouvre une page par son nom.' => 'opens a page by its name.',
+    'Dans le jeu : téléphone › Ma couverture › Importer ma couverture › Synchroniser avec Athena. La couverture générée ici s’y récupère sans fichier ; le téléchargement ci-dessous reste possible pour jouer sans connexion.' => 'In game: phone › My cover › Import my cover › Sync with Athena. The cover generated here is fetched there without any file; the download below is still available to play without a connection.',
+    'Ma couverture › Importer ma couverture › Importer un fichier' => 'My cover › Import my cover › Import a file',
+    'En jeu, sur le téléphone ATAK : Ma couverture › Importer ma couverture › Importer un fichier. Aucune connexion à Athena n’est nécessaire en jeu ; Oublier l’import revient à l’identité d’avant.' => 'In game, on the ATAK phone: My cover › Import my cover › Import a file. No connection to Athena is needed in game; Forget the import returns to the previous identity.',
 ];
