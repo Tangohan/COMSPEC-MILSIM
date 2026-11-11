@@ -16,9 +16,10 @@
     sinon pas écrite (LOCK et sélection toujours écrits) ; 40 au plus.
     Fond des plaques à l'opacité choisie (volet CONFIGURATION), liseré à la couleur du repère, éclairci s'il est noir.
     Params : [carte, taille des textes, facteur écran, échelle de la carte, repères déjà titrés à ignorer,
-              cartouches ENI actifs (fn_mapLabels)]
+              cartouches ENI actifs (fn_mapLabels), carte CLASSIQUE (le moteur titre les marqueurs du jeu : seuls les
+              repères Athena absents du jeu sont écrits ici)]
 */
-params ["_map", "_ts", "_kt", "_scale", ["_skip", []], ["_boxOn", false]];
+params ["_map", "_ts", "_kt", "_scale", ["_skip", []], ["_boxOn", false], ["_engineMk", false]];
 private _LF = uiNamespace getVariable ["COMSPEC_ATAK_LblF", createHashMap];
 if !(_LF getOrDefault ["lay", false]) exitWith {};
 if !(missionNamespace getVariable ["comspec_atak_native_map_show_marker_text", true]) exitWith {};
@@ -130,6 +131,7 @@ private _n = 0;
     if (_n >= 40) then { break };
     _x params ["_id", "_local", "_pos", "_txt", "_c", "_sz", "_lock", "_eni", ["_cL", []]];
     if (_id in _skip) then { continue };
+    if (_engineMk && {_local}) then { continue };
     // Contact ENI : déjà dans son cartouche rouge (fn_mapLabels), ou masqué (volet CONFIGURATION).
     if (_eni && {_boxOn || {!_eniOn}}) then { continue };
     if (_cL isEqualTo []) then { _cL = _c; };

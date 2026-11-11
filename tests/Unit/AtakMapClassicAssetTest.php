@@ -7,8 +7,9 @@ namespace Tests\Unit;
 use PHPUnit\Framework\TestCase;
 
 /**
- * ATAK natif : fond de carte CLASSIQUE = la carte d'origine d'Arma 3 (contrôle carte du jeu, aucune image dessous),
- * et liste des fonds cohérente entre le code, les traductions et le guide. Rendu à juger en jeu.
+ * ATAK natif : fond de carte CLASSIQUE = la carte d'origine d'Arma 3, celle de la touche M (contrôle carte du jeu sans
+ * aucune retouche, le moteur y écrit lui-même noms, grille et marqueurs), premier de la liste et fond par défaut, dans le
+ * volet de la carte comme dans les Réglages. Rendu à juger en jeu.
  */
 final class AtakMapClassicAssetTest extends TestCase
 {
@@ -29,54 +30,73 @@ final class AtakMapClassicAssetTest extends TestCase
         return array_map(static fn (array $r): array => [$r[1], $r[2], $r[3]], $m);
     }
 
-    public function testClassicIsTheEngineMapWithNoPictureUnderIt(): void
+    public function testClassicIsTheVanillaMapWithoutAnyOverride(): void
     {
         $controls = $this->read('ui/controls.hpp');
-        self::assertSame(1, preg_match('/class COMSPEC_RscMapAtakClassic: RscMapControl \{([^}]*)\};/', $controls, $m));
-        $body = $m[1];
-        // Couleurs et texture satellite du jeu : aucune n'est redéfinie (seuls les noms de lieux, redessinés par l'ATAK).
-        preg_match_all('/\b(color\w+)\[\]/', $body, $c);
-        self::assertSame(['colorNames'], $c[1]);
-        foreach (['maxSatelliteAlpha', 'alphaFade', 'showCountourInterval'] as $attr) {
-            self::assertStringNotContainsString($attr, $body);
-        }
-        self::assertStringContainsString('showMarkers=0;', $body);
+        // Hérite de RscMapControl (base de la carte M, RscDisplayMainMap >> CA_Map) sans un seul attribut redéfini.
+        self::assertStringContainsString("\nclass COMSPEC_RscMapAtakClassic: RscMapControl {};", str_replace("\r", '', $controls));
 
         $disp = $this->read('ui/displays.hpp');
-        self::assertStringContainsString('class MapClassic: COMSPEC_RscMapAtakClassic { idc=COMSPEC_ATAK_IDC_MAP_CLASSIC;', $disp);
+        self::assertSame(1, preg_match('/class MapClassic: COMSPEC_RscMapAtakClassic \{([^\n]*)\};/', $disp, $d));
+        // Le contrôle du téléphone n'ajoute que son idc, sa place et ses gestionnaires (aucune couleur ni taille).
+        preg_match_all('/(?:^\s*|;\s*)(\w+)(?:\[\])?=/',preg_replace('/"[^"]*"/', '""', $d[1]), $a);
+        $attrs = array_values(array_unique($a[1]));
+        sort($attrs);
+        self::assertSame(['idc', 'onDraw', 'onMouseButtonDblClick', 'onMouseButtonDown', 'onMouseButtonUp', 'onMouseMoving'], $attrs);
         self::assertStringContainsString('#define COMSPEC_ATAK_IDC_MAP_CLASSIC 88532', $this->read('ui/ui_ids.hpp'));
         self::assertStringContainsString('case "CLASSIC": { 88532 };', $this->read('functions/map/fn_mapCtrl.sqf'));
 
-        // Ni photo, ni voile : le dessin ne pose rien sous les symboles en CLASSIQUE.
+        // Ni photo, ni voile ; noms de lieux, numéros de grille, marqueurs du jeu et leurs noms laissés au moteur.
         $draw = $this->read('functions/map/fn_mapOnDraw.sqf');
-        // Fusion 4.4.0 : fix/atak-perf-ouverture entoure l'appel d'une mesure (« carte fond photo (image) »).
         self::assertSame(1, preg_match('/if \(_bgStyle in \[([^\]]*)\]\) then \{[^{}]*?\[_map, _bgStyle\] call comspec_atak_native_fnc_photoMap;/', $draw, $p));
         self::assertStringNotContainsString('"CLASSIC"', $p[1]);
         self::assertStringNotContainsString('case "CLASSIC"', $draw);
         self::assertStringNotContainsString('"CLASSIC"', $this->read('functions/map/fn_photoMap.sqf'));
+        self::assertStringContainsString('private _engineTxt = (ctrlIDC _map) isEqualTo 88532;', $draw);
+        self::assertStringContainsString('if (!_engineTxt) then { [_map, _mk] call comspec_atak_native_fnc_mapGameMarkers; };', $draw);
+        self::assertStringContainsString('[_map, _tsL, _kt, _scale, _tagged, _boxOn, _engineTxt] call comspec_atak_native_fnc_mapMarkerText;', $draw);
+        self::assertStringContainsString('if (!_engineTxt && {_state getOrDefault ["interactive", false]}) then { [_map, _ts, _kt, _scale] call comspec_atak_native_fnc_mapPlaceText; };', $draw);
+        self::assertStringContainsString('if (!_engineTxt && {_spanX > 1}', $draw);
+        $txt = $this->read('functions/map/fn_mapMarkerText.sqf');
+        self::assertStringContainsString('["_engineMk", false]];', $txt);
+        self::assertStringContainsString('if (_engineMk && {_local}) then { continue };', $txt);
     }
 
-    public function testStyleSelectionAndFallbacks(): void
+    public function testClassicIsFirstAndTheDefault(): void
     {
         $style = $this->read('functions/map/fn_mapStyle.sqf');
         self::assertStringContainsString('if (_v isEqualTo "SAT") then { _v = "CLASSIC"; };', $style);
         self::assertStringContainsString('{(["info"] call comspec_atak_native_fnc_photoMap) isEqualTo []}) then { _v = "CLASSIC"; };', $style);
-        // Défaut des nouveaux joueurs : TOPO (aucune image), inchangé.
-        self::assertStringContainsString('_v = ["TOPO", "NIGHT"] select', $style);
+        // Défaut des nouveaux joueurs : CLASSIQUE ; choix enregistrés gardés.
+        self::assertStringContainsString('_v = ["CLASSIC", "NIGHT"] select', $style);
+        self::assertStringContainsString('"HYBRID", "SLATE"]) then { _v = "CLASSIC"; };', $style);
         $keys = array_column($this->styles(), 1);
-        self::assertSame(['TOPO', 'LIGHT', 'DARK', 'NIGHT', 'SLATE', 'CLASSIC', 'HYBRID', 'PHOTO'], $keys);
+        self::assertSame(['CLASSIC', 'TOPO', 'LIGHT', 'DARK', 'NIGHT', 'SLATE', 'HYBRID', 'PHOTO'], $keys);
         foreach ($keys as $k) {
             self::assertStringContainsString('"' . $k . '"', (string) preg_replace('/.*if !\(_v in (\[[^\]]*\]).*/s', '$1', $style), $k);
         }
-        // SATELLITE n'a un bouton qu'avec la photo de la carte ; sinon une ligne dit pourquoi.
+        self::assertSame("CLASSIQUE : la carte d'origine d'Arma 3, celle de la touche M", $this->styles()[0][2]);
         self::assertStringContainsString('"SATELLITE : la vraie photo de la carte (mod COMSPEC ATAK Photo)", (["info"] call comspec_atak_native_fnc_photoMap) isNotEqualTo []]', $style);
+
+        // Volet de la carte (CONFIGURATION) : liste dans l'ordre de fn_mapStyle, deux boutons par rangée, description dessous.
         $page = $this->read('functions/pages/fn_pageMap.sqf');
         self::assertStringContainsString('private _bgAll = ["LIST"] call comspec_atak_native_fnc_mapStyle;', $page);
+        self::assertStringContainsString('private _styles = _bgAll select { _x select 3 };', $page);
+        self::assertStringContainsString('for "_i" from 0 to ((count _opts) - 1) step 2 do { _rows pushBack ["segment", "", _opts select [_i, 2]]; };', $page);
+        self::assertStringContainsString('_rows pushBack ["text", format ["<t size=\'0.8\' color=\'%1\'>%2</t>", _hDim, _cur select 2]];', $page);
         self::assertStringContainsString('SATELLITE : nécessite le mod COMSPEC ATAK Photo', $page);
-        self::assertStringNotContainsString('["CLASSIQUE", "SAT"]', $page);
+
+        // Réglages > Carte : même liste, même ordre, deux par rangée, fond en service relu par fn_mapStyle, description.
         $settings = $this->read('functions/pages/fn_pageSettings.sqf');
-        self::assertStringContainsString('(["LIST"] call comspec_atak_native_fnc_mapStyle) select [4, 4]) select { _x select 3 }', $settings);
-        self::assertStringNotContainsString('["CLASSIQUE", "SAT"]', $settings);
+        self::assertStringContainsString('private _bgNow = [] call comspec_atak_native_fnc_mapStyle;', $settings);
+        self::assertStringContainsString('private _bgList = (["LIST"] call comspec_atak_native_fnc_mapStyle) select { _x select 3 };', $settings);
+        self::assertStringContainsString('for "_i" from 0 to ((count _bgList) - 1) step 2 do {', $settings);
+        self::assertStringContainsString('(_bgList select [_i, 2]) apply {', $settings);
+        self::assertStringContainsString('_v isEqualTo _bgNow]', $settings);
+        self::assertStringContainsString('_bgCur select 2]]; };', $settings);
+        self::assertStringContainsString('_map insert [(_map findIf { (_x param [1, ""]) isEqualTo "Relief des bâtiments" }) max 0, _bgRows];', $settings);
+        self::assertStringNotContainsString('select [4, 4]', $settings);
+        self::assertStringNotContainsString('["CLASSIQUE", "SAT"]', $settings . $page);
     }
 
     public function testStylesAreTranslatedAndInTheGuide(): void
@@ -93,8 +113,10 @@ final class AtakMapClassicAssetTest extends TestCase
                 self::assertStringContainsString('["' . $label . '", "', $en, $label);
             }
         }
-        self::assertStringContainsString("[b]CLASSIQUE[/b] : la carte d'origine d'Arma 3", $guide);
-        self::assertStringContainsString('[b]CLASSIC[/b]: the original Arma 3 map', $guide);
+        self::assertStringContainsString('["CLASSIQUE : la carte d\'origine d\'Arma 3, celle de la touche M", "CLASSIC: the original Arma 3 map, the one on the M key"]', $en);
+        self::assertStringContainsString("[b]CLASSIQUE[/b] : la carte d'origine d'Arma 3, celle de la touche M, par défaut", $guide);
+        self::assertStringContainsString('[b]CLASSIC[/b]: the original Arma 3 map, the one on the M key, default', $guide);
         self::assertStringContainsString('["SATELLITE : nécessite le mod COMSPEC ATAK Photo", "SATELLITE: requires the COMSPEC ATAK Photo mod"]', $en);
+        self::assertStringContainsString('["Fond de carte", "Map background"]', $en);
     }
 }

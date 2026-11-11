@@ -91,6 +91,10 @@ uiNamespace setVariable ["COMSPEC_ATAK_MapIs", _is];
 private _mk = 0.62 * ((_kRaw max 0.45) min 1.2) * _is;
 uiNamespace setVariable ["COMSPEC_ATAK_MkScale", _mk];
 private _bgStyle = [] call comspec_atak_native_fnc_mapStyle;
+// Carte CLASSIQUE (contrôle 88532, COMSPEC_RscMapAtakClassic = carte M sans retouche) : le moteur écrit lui-même noms de
+// lieux, numéros de grille, marqueurs de la mission et leurs noms. Pas de second dessin ici (doublons). Écran sans ce
+// contrôle (fn_mapCtrl : carte 88530) : l'ATAK dessine tout, comme sur les autres fonds.
+private _engineTxt = (ctrlIDC _map) isEqualTo 88532;
 // Cartouches façon ATAK (fn_mapLabels) en carte plein écran ; la petite carte (téléphone en HUD) garde l'indicatif simple.
 private _boxOn = _lblOn && {_kRaw > 0.75} && {_scale < 0.25};
 private _lblCands = [];
@@ -234,7 +238,7 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_LayerHeat", false]) then {
 // Marqueurs de la mission (symboles, zones, traits) : la carte Arma ne les dessine plus (showMarkers = 0).
 // Mesures de l'onglet PERFS du Debug (fn_perfAcc) : marqueurs de la mission, repères Athena (halo), zones et routes.
 private _perfM = diag_tickTime;
-[_map, _mk] call comspec_atak_native_fnc_mapGameMarkers;
+if (!_engineTxt) then { [_map, _mk] call comspec_atak_native_fnc_mapGameMarkers; };
 ["carte marqueurs mission (image)", _perfM] call comspec_atak_native_fnc_perfAcc;
 
 // GPS : itinéraire en trait épais (bordure sombre, bleu à parcourir, gris déjà parcouru), arrivée en drapeau.
@@ -1010,7 +1014,8 @@ uiNamespace setVariable ["COMSPEC_ATAK_MarkerTagPool", _pool select { !isNull _x
 // Noms des repères (fn_mapMarkerText, style au choix) : la carte Arma n'écrit plus le texte des marqueurs.
 // Ceux qui ont déjà leur cartouche E / N (ci-dessus) sont sautés ; masquables dans CALQUES (Noms des repères).
 private _perfN = diag_tickTime;
-[_map, _tsL, _kt, _scale, _tagged, _boxOn] call comspec_atak_native_fnc_mapMarkerText;
+// Carte CLASSIQUE : seuls les repères Athena absents du jeu (le moteur titre déjà les marqueurs de la mission).
+[_map, _tsL, _kt, _scale, _tagged, _boxOn, _engineTxt] call comspec_atak_native_fnc_mapMarkerText;
 ["carte noms des repères (image)", _perfN] call comspec_atak_native_fnc_perfAcc;
 
 // Calques Logistique (points de largage) et guerre électronique (gonio, brouilleurs).
@@ -1065,7 +1070,8 @@ if (_lay) then {
     };
     // Noms des villes, villages, lieux-dits et sites (fn_mapPlaceText), les moins prioritaires. La carte Arma ne les écrit
     // plus (COMSPEC_RscMapAtak). Téléphone porté (HUD) : pas de toponymes, coût inutile pendant le combat (SQF-C01).
-    if (_state getOrDefault ["interactive", false]) then { [_map, _ts, _kt, _scale] call comspec_atak_native_fnc_mapPlaceText; };
+    // Carte CLASSIQUE : noms écrits par le moteur, comme sur la carte M.
+    if (!_engineTxt && {_state getOrDefault ["interactive", false]}) then { [_map, _ts, _kt, _scale] call comspec_atak_native_fnc_mapPlaceText; };
     ["layout"] call comspec_atak_native_fnc_mapLbl;
     uiNamespace setVariable ["COMSPEC_ATAK_LblVeh", _vehSeen];
 };
@@ -1091,7 +1097,8 @@ private _gTl = _map ctrlMapScreenToWorld [_mx, _my];
 private _gBr = _map ctrlMapScreenToWorld [_mx + _mw, _my + _mh];
 private _spanX = (_gBr select 0) - (_gTl select 0);
 private _spanY = (_gTl select 1) - (_gBr select 1);
-if (_spanX > 1 && {_spanY > 1} && {profileNamespace getVariable ["COMSPEC_ATAK_LblGrid", true]}) then {
+// Carte CLASSIQUE : numéros de grille du moteur (carte M), pas de seconde série.
+if (!_engineTxt && {_spanX > 1} && {_spanY > 1} && {profileNamespace getVariable ["COMSPEC_ATAK_LblGrid", true]}) then {
     private _maxN = [6, 10] select (_k > 0.75);
     private _steps = [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000];
     private _si = _steps findIf { ((_spanX max _spanY) / _x) <= _maxN };
