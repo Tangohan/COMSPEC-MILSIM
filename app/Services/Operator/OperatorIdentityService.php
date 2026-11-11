@@ -1001,7 +1001,8 @@ final class OperatorIdentityService
     /** @return list<array<string, mixed>> */
     public function countries(int $tenantId): array
     {
-        return $this->countries->listForTenant($tenantId, true);
+        // Même ordre que le mod : pays complets d'abord (France, Allemagne, États-Unis…), puis le reste du registre.
+        return \App\Support\SseDocumentTypes::sortCountries($this->countries->listForTenant($tenantId, true));
     }
 
     /** @return list<array<string, mixed>> */

@@ -333,6 +333,8 @@ final class OperatorHubController
             'idHair' => SseFileSubjectCatalog::HAIR,
             'idEyes' => SseFileSubjectCatalog::EYES,
             'idDocTypes' => SseIdentityCatalog::DOC_TYPES,
+            // Liste de choix rangée par catégorie, comme le sélecteur du mod (identité, voyage, permis et véhicule).
+            'idDocTypeGroups' => \App\Support\SseDocumentTypes::grouped(),
             // Responsables : lien vers la gestion des papiers des membres (Bureau SSE), selon leurs droits habituels.
             'idManagerUrl' => (($this->can)('atak.sse.case.manage') || ($this->can)('atak.sse.grant') || ($this->can)('admin.organization')) && ($this->allowsPath)('atak/sse/papiers/membres')
                 ? url('atak/sse/papiers/membres') : null,

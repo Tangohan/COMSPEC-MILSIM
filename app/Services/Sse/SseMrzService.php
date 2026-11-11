@@ -174,9 +174,16 @@ final class SseMrzService
             return self::td3($data + ['doc_code' => 'P']);
         }
 
+        // Type sans bande de lecture (certificat d'immatriculation) : rien, comme le mod (fn_idMrz.sqf).
+        if (!\App\Support\SseDocumentTypes::hasMrz($type)) {
+            return [];
+        }
+
         return self::td1($data + ['doc_code' => match ($type) {
             'driving_license' => 'D',
             'military_id' => 'A',
+            // Titre de séjour : carte TD1, code « IR ».
+            'residence_permit' => 'IR',
             default => 'I',
         }]);
     }
