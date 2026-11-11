@@ -215,6 +215,7 @@ final class RolePermissionMatrixCatalog
                     'atak.certificates.view', 'atak.certificates.manage',
                     'atak.config.manage', 'atak.mission_cycle.manage', 'atak.command.alert', 'atak.aar.manage',
                     'atak.sse.access', 'atak.sse.grant', 'atak.sse.case.manage', 'atak.sse.export',
+                    'atak.sse.files.admin', 'atak.sse.lore.manage',
                     'atak.sse.clearance.encadrement', 'atak.sse.clearance.confidentiel', 'atak.sse.clearance.tres_restreint',
                     'operations.missions.view', 'operations.missions.manage',
                     'operations.aar.view', 'operations.aar.export',
