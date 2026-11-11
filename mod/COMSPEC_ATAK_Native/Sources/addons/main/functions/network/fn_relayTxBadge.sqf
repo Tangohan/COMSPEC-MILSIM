@@ -60,6 +60,8 @@ switch (_act) do {
     case "draw": {
         // Voix relayée par le maillage : icône « transmet » de la barre d'état du téléphone (fn_mpuLink "badge").
         ["txMark", [3]] call comspec_atak_native_fnc_mpuLink;
+        // Chemin de la voix (fn_voicePath) : la voix passe vraiment par le maillage, à ce nombre de sauts.
+        ["mesh", [_arg param [0, 0]]] call comspec_atak_native_fnc_voicePath;
         if !((missionNamespace getVariable ["comspec_atak_native_relay_tx_badge", true]) isEqualTo true) exitWith {};
         private _h = _arg param [0, 0];
         if !(uiNamespace getVariable ["COMSPEC_ATAK_RelayTxUp", false]) then {
