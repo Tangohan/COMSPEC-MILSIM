@@ -72,7 +72,8 @@ Une salle TOC, c'est un PC du poste et un mur d'écrans. Trois façons de poser 
 [list]
 [*][b]Eden[/b] : module [b]ATAK · Écran TOC[/b], synchronisé avec une TV ou un écran du jeu, ou posé seul (il pose alors l'écran choisi, tourné comme lui). Attributs : nom, camp, affichage, satellite montré, escouade montrée, liste d'exécution préparée.
 [*][b]Zeus[/b] : le même module, lâché sur un objet (il le désigne) ou sur le sol (il pose un écran face à la caméra).
-[*][b]En jeu[/b] : menu ACE de n'importe quel écran du jeu, [b]Écran COMSPEC › Affichage TOC › Afficher le réseau TOC[/b].
+[*][b]En jeu[/b] : menu ACE de n'importe quel écran du jeu, [b]Écran COMSPEC › Utiliser comme écran TOC[/b].
+[*][b]Écrans d'autres mods[/b] : l'écran blanc de salle de briefing, les écrans renforcés, l'ordinateur multi-écran et l'écran tactique d'Eden Objects sont reconnus d'office (menu ACE ci-dessus, liste du module). Pour tout autre objet, lâchez le module Zeus dessus : choisissez la surface de l'image (★ : celle proposée), [b]Tester l'image[/b], puis [b]Désigner comme écran TOC[/b]. Un objet sans surface d'image le dit dans la fenêtre.
 [/list]
 Chaque écran garde un affichage. Il se change au menu ACE de l'écran ([b]Salle TOC[/b] et [b]Affichage TOC[/b]), au PC du poste ou dans l'app Poste TOC.
 Murs d'images à plusieurs dalles (2x2 à 4 dalles, 3x2 à 6 dalles, 3x2 mixte) : [b]chaque dalle a son propre affichage[/b] (dalle 1 en haut à gauche, dans l'ordre de lecture). Choisissez-le au menu ACE [b]Dalles du mur[/b], dans l'onglet DIFFUSER du PC (chaque dalle y est un écran), ou dans l'attribut [b]Dalles du mur[/b] du module, par exemple « SAT1, CLOCK, SQ:Alpha 1-1 ».
@@ -236,7 +237,8 @@ A TOC room is a post laptop and a wall of screens. Three ways to place a screen:
 [list]
 [*][b]Eden[/b]: the [b]ATAK · TOC screen[/b] module, synced with a game TV or screen, or placed alone (it then places the chosen screen, turned like the module). Attributes: name, side, display, satellite shown, squad shown, prepared execution checklist.
 [*][b]Zeus[/b]: the same module, dropped on an object (it designates it) or on the ground (it places a screen facing the camera).
-[*][b]In game[/b]: ACE menu of any game screen, [b]COMSPEC screen › TOC display › Show the TOC network[/b].
+[*][b]In game[/b]: ACE menu of any game screen, [b]COMSPEC screen › Use as a TOC screen[/b].
+[*][b]Screens from other mods[/b]: the white briefing room screen, the rugged screens, the multi-screen computer and the Eden Objects tactical screen are recognised out of the box (ACE menu above, module list). For any other object, drop the Zeus module on it: pick the picture surface (★: the suggested one), [b]Test the picture[/b], then [b]Designate as TOC screen[/b]. An object without a picture surface says so in the window.
 [/list]
 Each screen keeps one display. Change it from the screen's ACE menu ([b]TOC room[/b] and [b]TOC display[/b]), from the post laptop or from the TOC post app.
 Multi-panel video walls (2x2 with 4 panels, 3x2 with 6 panels, mixed 3x2): [b]each panel has its own display[/b] (panel 1 top left, in reading order). Choose it from the [b]Wall panels[/b] ACE menu, in the CAST tab of the laptop (each panel is a screen there), or in the module's [b]Wall panels[/b] attribute, for example « SAT1, CLOCK, SQ:Alpha 1-1 ».

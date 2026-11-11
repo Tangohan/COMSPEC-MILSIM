@@ -1050,6 +1050,8 @@ class CfgEditorCategories {
 class CfgEditorSubcategories {
     class COMSPEC_ATAK_EdSubcat_Screens { displayName="$STR_COMSPEC_ATAK_CFG_46B4D5944D"; };
 };
+// Écrans du jeu et d'autres mods utilisables comme écrans TOC (surface de l'image), extensible par un autre mod.
+#include "toc_screens_tiers.hpp"
 class CfgFactionClasses {
     class NO_CATEGORY;
     class COMSPEC_Cat_Atak: NO_CATEGORY { displayName = "$STR_COMSPEC_ATAK_CFG_8A1AE40616"; priority = 2; side = 7; };
