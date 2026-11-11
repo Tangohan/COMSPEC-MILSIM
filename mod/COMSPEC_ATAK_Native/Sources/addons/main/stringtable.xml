@@ -1742,6 +1742,126 @@
             <English>PC stations</English>
             <French>Postes PC</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_PROP_CABLETRAY">
+            <Original>Under-desk cable tray (COMSPEC)</Original>
+            <English>Under-desk cable tray (COMSPEC)</English>
+            <French>Panier à câbles sous plateau (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_CHAIR">
+            <Original>TOC operator chair (COMSPEC)</Original>
+            <English>TOC operator chair (COMSPEC)</English>
+            <French>Fauteuil d'opérateur TOC (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_DESK_CORNER">
+            <Original>TOC console, corner (COMSPEC)</Original>
+            <English>TOC console, corner (COMSPEC)</English>
+            <French>Console TOC, angle (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_DESK_CURVED">
+            <Original>TOC console, curved (COMSPEC)</Original>
+            <English>TOC console, curved (COMSPEC)</English>
+            <French>Console TOC en arc (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_DESK_DOUBLE">
+            <Original>TOC console, 2 seats (COMSPEC)</Original>
+            <English>TOC console, 2 seats (COMSPEC)</English>
+            <French>Console TOC 2 postes (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_DESK_SINGLE">
+            <Original>TOC console, 1 seat (COMSPEC)</Original>
+            <English>TOC console, 1 seat (COMSPEC)</English>
+            <French>Console TOC 1 poste (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_DESK_TRIPLE">
+            <Original>TOC console, 3 seats (COMSPEC)</Original>
+            <English>TOC console, 3 seats (COMSPEC)</English>
+            <French>Console TOC 3 postes (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_PROP_HANDSET">
+            <Original>Desk radio handset (COMSPEC)</Original>
+            <English>Desk radio handset (COMSPEC)</English>
+            <French>Combiné radio de table (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_PROP_HEADSET">
+            <Original>Headset (COMSPEC)</Original>
+            <English>Headset (COMSPEC)</English>
+            <French>Casque micro (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_KEYBOARD">
+            <Original>Keyboard, AZERTY (COMSPEC)</Original>
+            <English>Keyboard, AZERTY (COMSPEC)</English>
+            <French>Clavier AZERTY (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_KEYBOARD_BACKLIT">
+            <Original>Backlit keyboard (COMSPEC)</Original>
+            <English>Backlit keyboard (COMSPEC)</English>
+            <French>Clavier rétroéclairé (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_KEYBOARD_QWERTY">
+            <Original>Keyboard, QWERTY (COMSPEC)</Original>
+            <English>Keyboard, QWERTY (COMSPEC)</English>
+            <French>Clavier QWERTY (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_KEYBOARD_TKL">
+            <Original>Compact keyboard, AZERTY (COMSPEC)</Original>
+            <English>Compact keyboard, AZERTY (COMSPEC)</English>
+            <French>Clavier compact AZERTY (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_MINIPC">
+            <Original>Mini PC (COMSPEC)</Original>
+            <English>Mini PC (COMSPEC)</English>
+            <French>Mini-PC (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_MOUSE">
+            <Original>Wireless mouse (COMSPEC)</Original>
+            <English>Wireless mouse (COMSPEC)</English>
+            <French>Souris sans fil (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_MOUSE_PAD">
+            <Original>Mouse and desk mat (COMSPEC)</Original>
+            <English>Mouse and desk mat (COMSPEC)</English>
+            <French>Souris et tapis de bureau (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_PROP_MUG">
+            <Original>Coffee mug (COMSPEC)</Original>
+            <English>Coffee mug (COMSPEC)</English>
+            <French>Tasse à café (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_PROP_NOTEPAD">
+            <Original>Notepad and pen (COMSPEC)</Original>
+            <English>Notepad and pen (COMSPEC)</English>
+            <French>Bloc-notes et stylo (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_TOWER_SFF">
+            <Original>Compact workstation (COMSPEC)</Original>
+            <English>Compact workstation (COMSPEC)</English>
+            <French>Unité centrale compacte (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_TOWER_UNDER">
+            <Original>Under-desk workstation (COMSPEC)</Original>
+            <English>Under-desk workstation (COMSPEC)</English>
+            <French>Unité centrale sous plateau (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_DESK_BRIEFING">
+            <Original>TOC briefing table (COMSPEC)</Original>
+            <English>TOC briefing table (COMSPEC)</English>
+            <French>Table de briefing TOC (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_TOWER">
+            <Original>Workstation tower (COMSPEC)</Original>
+            <English>Workstation tower (COMSPEC)</English>
+            <French>Station de travail, tour (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_SUBCAT">
+            <Original>TOC furniture</Original>
+            <English>TOC furniture</English>
+            <French>Mobilier de TOC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCFURN_PROPS_SUBCAT">
+            <Original>TOC accessories</Original>
+            <English>TOC accessories</English>
+            <French>Accessoires de TOC</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCPCMOD_NAME">
             <Original>ATAK · Operator station</Original>
             <English>ATAK · Operator station</English>
@@ -1763,9 +1883,9 @@
             <French>Nom montré en tête de ses moniteurs (vide : le nom du poste).</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCPCMOD_DESC">
-            <Original>Places a ready-to-use operator station: desk, chair, desk phone and a complete PC station. The operator faces the direction of the module. The station opens the TOC post PC and its monitors are TOC screens.</Original>
-            <English>Places a ready-to-use operator station: desk, chair, desk phone and a complete PC station. The operator faces the direction of the module. The station opens the TOC post PC and its monitors are TOC screens.</English>
-            <French>Pose un poste opérateur prêt à servir : bureau, chaise, téléphone de table et poste PC complet. L'opérateur regarde dans la direction du module. Le poste ouvre le PC du poste TOC et ses moniteurs sont des écrans TOC.</French>
+            <Original>Places a ready-to-use operator station: console desk, operator chair, radio handset, headset and a complete PC station. The operator LOOKS in the direction of the module (point the arrow at the wall of screens): the monitors face the operator. The station opens the TOC post PC and its monitors are TOC screens.</Original>
+            <English>Places a ready-to-use operator station: console desk, operator chair, radio handset, headset and a complete PC station. The operator LOOKS in the direction of the module (point the arrow at the wall of screens): the monitors face the operator. The station opens the TOC post PC and its monitors are TOC screens.</English>
+            <French>Pose un poste opérateur prêt à servir : console, fauteuil, combiné radio, casque et poste PC complet. L'opérateur REGARDE dans la direction du module (pointez la flèche vers le mur d'images) : les moniteurs lui font face. Le poste ouvre le PC du poste TOC et ses moniteurs sont des écrans TOC.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_V_COLC">
             <Original>Camera column (curved screen)</Original>

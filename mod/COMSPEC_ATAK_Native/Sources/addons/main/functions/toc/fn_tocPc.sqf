@@ -7,8 +7,11 @@
       - ses moniteurs sont de vrais écrans TOC : le poste se désigne lui-même à la pose (Eden, Zeus, module, salle
         complète), moniteur principal en PIP du poste (comspec_tocPostView), un contenu par moniteur
         (comspec_screenPanels, comspec_screenPanelViews) ; réglable ensuite comme tout écran (PC, ACE, app Poste TOC) ;
-      - poste opérateur (module « Poste opérateur », « station ») : bureau, chaise et téléphone de table du jeu de base,
-        le poste posé dessus, prêt à servir. Un poste gardé d'une partie à l'autre (fn_tocPersist) qui se retrouve en
+      - poste opérateur (module « Poste opérateur », « station ») : console et fauteuil du mod (tools/
+        model_toc_furniture.py ; console voulue par le poste : comspec_tocDesk ; à défaut le bureau et la chaise du jeu de
+        base), combiné radio et casque, le poste posé dessus, prêt à servir. Orientation : la direction donnée est celle
+        du REGARD de l'opérateur (celle du module) ; les caps viennent de fn_tocHallBuild « facing », la même règle que la
+        salle complète : poste et console tournés vers l'opérateur (cap + 180), fauteuil dans le sens du regard. Un poste gardé d'une partie à l'autre (fn_tocPersist) qui se retrouve en
         l'air (son bureau n'est pas gardé) reçoit un bureau et une chaise à la reprise.
     Modes :
       ["classes"]                     classes des postes PC présentes (comspec_tocPost=1), gardées en cache
@@ -17,7 +20,7 @@
       ["initServer"]                  serveur (fn_tocHall « init ») : désignation des postes à leur création
       ["station", [posATL, direction du regard de l'opérateur, classe, camp, nom]]
                                       serveur (ailleurs : demande au serveur) : pose un poste opérateur complet
-      ["furnish", [poste, direction du regard]]   serveur : bureau, chaise et téléphone sous un poste
+      ["furnish", [poste, direction du regard, accessoires]]   serveur : console et fauteuil sous un poste (posé au sol trouvé)
 */
 params [["_mode", "classes"], ["_a", []]];
 private _fn = comspec_atak_native_fnc_tocPc;
@@ -29,11 +32,18 @@ private _classes = {
     };
     _c
 };
-// Hauteur du plateau du bureau du jeu choisi (le poste a son origine sur le plateau).
+// Bureau d'un poste et hauteur de son plateau (le poste a son origine sur le plateau) : la console voulue par le poste
+// (comspec_tocDesk, hauteur comspec_tocDeskTop), sinon la console droite du mod, sinon un bureau du jeu de base.
 private _deskOf = {
-    private _cands = [["Land_TableDesk_F", 0.8], ["Land_CampingTable_F", 0.81], ["Land_WoodenTable_large_F", 0.85]];
-    _cands param [_cands findIf { isClass (configFile >> "CfgVehicles" >> (_x select 0)) }, ["", 0.8]]
+    params [["_pcCls", ""]];
+    private _cfg = configFile >> "CfgVehicles";
+    private _want = getText (_cfg >> _pcCls >> "comspec_tocDesk");
+    private _cands = [[_want, getNumber (_cfg >> _want >> "comspec_tocDeskTop")], ["COMSPEC_ATAK_TocDesk_Single", 0.74],
+        ["Land_TableDesk_F", 0.8], ["Land_CampingTable_F", 0.81], ["Land_WoodenTable_large_F", 0.85]];
+    _cands param [_cands findIf { (_x select 0) isNotEqualTo "" && {(_x select 1) > 0} && {isClass (_cfg >> (_x select 0))} }, ["", 0.8]]
 };
+// Cap d'un objet du poste pour un regard d'opérateur donné : la règle de la salle complète (table _facing).
+private _head = { params ["_role", "_cls", "_d"]; ["facing", [_role, _cls, _d]] call comspec_atak_native_fnc_tocHallBuild };
 switch (_mode) do {
     case "classes": { call _classes };
     case "types": { (call _classes) apply { [getText (configFile >> "CfgVehicles" >> _x >> "displayName"), _x] } };
@@ -65,30 +75,44 @@ switch (_mode) do {
         true
     };
     case "furnish": {
-        _a params [["_pc", objNull], ["_dir", 0], ["_phone", false]];
+        _a params [["_pc", objNull], ["_dir", 0], ["_extras", false]];
         if (!isServer || {isNull _pc}) exitWith { [] };
-        (call _deskOf) params ["_desk", "_top"];
+        ([typeOf _pc] call _deskOf) params ["_desk", "_top"];
         private _pick = { params ["_cands"]; (_cands select { isClass (configFile >> "CfgVehicles" >> _x) }) param [0, ""] };
-        private _chair = [["Land_OfficeChair_01_F", "Land_CampingChair_V2_F", "Land_ChairWood_F"]] call _pick;
-        private _pos = getPosATL _pc;
-        private _base = [_pos select 0, _pos select 1, ((_pos select 2) - _top) max 0];
+        private _chair = [["COMSPEC_ATAK_TocChair", "Land_OfficeChair_01_F", "Land_CampingChair_V2_F", "Land_ChairWood_F"]] call _pick;
+        // Sol sous le poste (plancher, toit, terrain) : le bureau y est posé et le poste remis à la hauteur du plateau.
+        private _asl = getPosASL _pc;
+        private _hits = (lineIntersectsSurfaces [_asl vectorAdd [0, 0, 0.05], _asl vectorAdd [0, 0, -1.6], _pc, objNull, true, 4, "GEOM", "FIRE"]) select { !((_x select 2) isKindOf "AllVehicles") };
+        private _floor = if (_hits isEqualTo []) then { (_asl select 2) - (((getPosATL _pc) select 2) min _top) } else { ((_hits select 0) select 0) select 2 };
+        private _base = [_asl select 0, _asl select 1, _floor];
+        _pc setPosASL [_asl select 0, _asl select 1, _floor + _top];
         private _out = [];
         private _put = {
-            params ["_cls", "_fwd", "_left", "_up", "_d"];
+            params ["_role", "_cls", "_fwd", "_left", "_up", "_turn"];
             if (_cls isEqualTo "") exitWith { objNull };
             // Repère de l'opérateur : devant lui (_fwd), à sa gauche (_left).
-            private _p = _base getPos [_fwd, _dir];
-            _p = _p getPos [_left, _dir - 90];
-            private _o = createVehicle [_cls, [_p select 0, _p select 1, (_base select 2) + _up], [], 0, "CAN_COLLIDE"];
-            _o setDir (_dir + _d);
-            _o setPosATL [_p select 0, _p select 1, (_base select 2) + _up];
+            private _p = [(_base select 0) + _fwd * (sin _dir) - _left * (cos _dir), (_base select 1) + _fwd * (cos _dir) + _left * (sin _dir), (_base select 2) + _up];
+            private _o = createVehicle [_cls, ASLToATL _p, [], 0, "CAN_COLLIDE"];
+            private _h = ([_role, _cls, _dir] call _head) + _turn;
+            _o setPosASL _p;
+            _o setVectorDirAndUp [[sin _h, cos _h, 0], [0, 0, 1]];
+            if (_role isNotEqualTo "chair") then { _o enableSimulationGlobal false; };
             { _x addCuratorEditableObjects [[_o], false]; } forEach allCurators;
             _out pushBack _o;
             _o
         };
-        [_desk, 0, 0, 0, 0] call _put;
-        [_chair, -0.85, 0, 0, 180] call _put;
-        if (_phone) then { [[["Land_SatellitePhone_F", "Land_PortableLongRangeRadio_F", "Land_FMradio_F"]] call _pick, -0.2, 0.62, _top, 160] call _put; };
+        ["desk", _desk, 0, 0, 0, 0] call _put;
+        ["chair", _chair, -0.8, 0, 0, 0] call _put;
+        if (_extras) then {
+            // Combiné radio à gauche, casque à droite, hors du tapis de bureau ; sans le mobilier du mod : téléphone du jeu.
+            private _own = (_desk select [0, 13]) isEqualTo "COMSPEC_ATAK_";
+            if (_own) then {
+                ["prop", "COMSPEC_ATAK_TocProp_Handset", -0.2, 0.6, _top, 10] call _put;
+                ["prop", "COMSPEC_ATAK_TocProp_Headset", -0.16, -0.62, _top, -20] call _put;
+            } else {
+                ["prop", [["Land_SatellitePhone_F", "Land_PortableLongRangeRadio_F", "Land_FMradio_F"]] call _pick, -0.2, 0.62, _top, -20] call _put;
+            };
+        };
         _out
     };
     case "station": {
@@ -100,11 +124,11 @@ switch (_mode) do {
             ["WARNING", "TOC", "Poste opérateur : aucun poste PC disponible sur ce serveur"] call comspec_atak_native_fnc_log;
             objNull
         };
-        (call _deskOf) params ["", "_top"];
+        ([_cls] call _deskOf) params ["", "_top"];
         private _at = [_pos select 0, _pos select 1, (_pos param [2, 0]) + _top];
         private _pc = createVehicle [_cls, _at, [], 0, "CAN_COLLIDE"];
-        // Les moniteurs font face à l'opérateur : le poste est tourné à l'opposé de son regard.
-        _pc setDir (_dir + 180);
+        // Les moniteurs font face à l'opérateur : le poste est tourné à l'opposé de son regard (table _facing).
+        _pc setDir (["pc", _cls, _dir] call _head);
         _pc setPosATL _at;
         if (_side isNotEqualTo "") then { _pc setVariable ["COMSPEC_ATAK_TocSide", toUpper _side, true]; };
         { _x addCuratorEditableObjects [[_pc], false]; } forEach allCurators;

@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : consoles, fauteuil, clavier, souris et unité centrale du TOC refaits, postes remis à l'endroit (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Le mobilier du TOC est refait, et les postes sont à l'endroit
+- La salle TOC complète et le module « Poste opérateur » posent maintenant nos propres consoles d'opérateur (graphite, plateau gris clair, passe-câbles, baie PC, porte-nom) et un vrai fauteuil d'opérateur, à la place des vieux bureaux et de la chaise du jeu.
+- Les postes sont à l'endroit : les opérateurs sont assis face au mur d'images, leurs moniteurs tournés vers eux. Dans Eden, la flèche du module « Poste opérateur » pointe vers ce que l'opérateur regarde.
+- Les postes PC ont un nouveau clavier extra-plat aux touches légendées, une souris ergonomique sur son tapis de bureau et une unité centrale compacte ; le poste à trois écrans et l'écran incurvé reçoivent une console en arc.
+- Nouveaux objets à poser dans Eden et Zeus (COMSPEC › Mobilier de TOC et Accessoires de TOC) : consoles 1, 2 et 3 postes, console en arc, angle, table de briefing, fauteuil, claviers (AZERTY, QWERTY, compact, rétroéclairé), souris, tours et mini-PC, casque, bloc-notes, tasse, combiné radio, panier à câbles.
+EN : The TOC furniture is rebuilt, and the workstations now face the right way
+- The complete TOC room and the "Operator station" module now place our own operator consoles (graphite, light grey top, cable slot, PC bay, name plate) and a real operator chair, instead of the old game desks and chair.
+- Workstations face the right way: operators sit facing the wall of screens, with their monitors turned towards them. In Eden, the arrow of the "Operator station" module points at what the operator looks at.
+- PC stations get a new low-profile keyboard with printed keys, an ergonomic mouse on its desk mat and a compact workstation; the three-monitor station and the curved monitor get a curved console.
+- New objects to place in Eden and Zeus (COMSPEC › TOC furniture and TOC accessories): 1, 2 and 3-seat consoles, curved console, corner, briefing table, chair, keyboards (AZERTY, QWERTY, compact, backlit), mouse, towers and mini PC, headset, notepad, mug, radio handset, cable tray.
+
+### Détail technique
+- Cause du « à l'envers » : dans `fn_tocHallBuild` le bureau était le seul objet posé au cap de la salle (`_dir + ([180, 0] select (_role isEqualTo "desk"))`), tous les autres à `_dir + 180` ; même chose dans `fn_tocPc` « furnish » (`[_desk, 0, 0, 0, 0]`). Le côté tiroirs du bureau du jeu se retrouvait vers le mur d'images. Les caps passent maintenant par une seule table, `_facing` (mode « facing »), pour la salle complète (Eden, Zeus, repli) et pour le poste opérateur : écrans, postes PC et consoles à D + 180, fauteuils du mod à D (D : direction du mur d'images, donc du regard).
+- 22 modèles du mod (`tools/model_toc_furniture.py`, `data/toc/toc_furn_*.p3d`, `toc_furniture.hpp`) : classes `COMSPEC_ATAK_TocDesk_Single/_Double/_Triple/_Curved/_Corner/_Briefing`, `COMSPEC_ATAK_TocChair` (ACE : s'asseoir), `COMSPEC_ATAK_TocKeyboard*`, `TocMouse*`, `TocTower*`, `TocMiniPC`, `TocProp_*`. LOD 0 / 2 / 6, ombre, géométrie, vue, tir, points mémoire (`pc_N`, `chair_N`, `mon_N`, `bay_N`, `name_N`). Textures : `toc_top`, `toc_mesh`, atlas `toc_kit` (légendes, façades, pages), matière lumineuse `toc_kit_glow`.
+- Postes PC `COMSPEC_ATAK_TocPC_*` (mêmes classes, mêmes sélections) : clavier, souris, tapis et unité centrale des nouvelles pièces, unité à la gauche de l'opérateur, câbles vers le passe-câbles ; `comspec_tocDesk` choisit la console (droite, ou en arc pour trois écrans et l'incurvé).
+- Salle complète : consoles droites d'une pièce (table `_deskPlan` : 2 postes, 3 postes, 2 + 2), pas de 1,6 m ; consoles en arc au pas de 2,3 m ; accessoires par poste (table `_deskProps`) ; écrans sur trépied de la grande salle sans mur reculés à x = ±5,6 m. Le mobilier du jeu reste le repli, les anciennes salles gardées ne changent pas.
+- Rendus Blender et aperçus Eden : `tools/render_toc_furniture.py` (la salle rendue est montée par les tables du constructeur). Tests : `tests/Unit/AtakTocDeskAssetTest.php`, `AtakTocHallRoomAssetTest.php`. Non vérifié en jeu.
+
 ## À venir : poste TOC web et plans d'opération sur Athena (site Athena, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

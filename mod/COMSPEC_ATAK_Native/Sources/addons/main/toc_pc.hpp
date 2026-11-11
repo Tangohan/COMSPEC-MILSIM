@@ -1,6 +1,7 @@
-// Postes PC fixes de salle d'opérations COMSPEC (tools/model_toc_pc.py, data\toc\) : unité centrale, moniteur(s), clavier
-// et souris en un seul objet. Origine sur le plateau de la table (à poser à la hauteur du plateau : 0,8 m sur le bureau
-// du jeu), milieu du poste en largeur, l'opérateur du côté de la direction de l'objet.
+// Postes PC fixes de salle d'opérations COMSPEC (tools/model_toc_pc.py, data\toc\) : unité centrale compacte, moniteur(s),
+// clavier, souris et tapis de bureau en un seul objet. Origine sur le plateau de la table (à poser à la hauteur du
+// plateau : 0,74 m sur les consoles du mod, toc_furniture.hpp ; 0,8 m sur le bureau du jeu), milieu du poste en largeur,
+// l'opérateur du côté de la direction de l'objet (même règle que les consoles : même position, même direction).
 // Postes TOC (comspec_tocPost=1, fn_tocPost) : même action « PC du poste TOC » que le PC portable de TOC, enregistrables
 // dans une salle (fn_tocHall). Leurs moniteurs sont de vrais écrans TOC (comspec_screen=1) : désignés d'eux-mêmes à la
 // pose (fn_tocPc « initServer »), le moniteur principal en PIP du poste (comspec_tocPostView), un contenu par moniteur
@@ -14,6 +15,8 @@ class COMSPEC_ATAK_TocPC_1: COMSPEC_ATAK_Screen_Base3D {
     mapSize=1.2; armor=200;
     comspec_tocPost=1;
     comspec_tocPostView="TOC";
+    // Console du mod sous ce poste (fn_tocPc « furnish », fn_tocHallBuild) : droite ; en arc pour trois écrans et l'incurvé.
+    comspec_tocDesk="COMSPEC_ATAK_TocDesk_Single";
     class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_TOCPC_ACE"; selection=""; distance=3; condition="true"; position="[0, 0.1, 0.25]"; }; };
     class Attributes {
         class COMSPEC_ATAK_TocSide {
@@ -42,6 +45,7 @@ class COMSPEC_ATAK_TocPC_3: COMSPEC_ATAK_TocPC_1 {
     model="\z\comspec_atak_native\addons\main\data\toc\toc_pc_3.p3d";
     editorPreview="\z\comspec_atak_native\addons\main\data\toc\toc_pc_3_preview.jpg";
     mapSize=2;
+    comspec_tocDesk="COMSPEC_ATAK_TocDesk_Curved";
     comspec_tocPostView="FEED";
     comspec_screenPanels=3;
     comspec_screenPanelViews[]={"FEED","TOC","SPLIT"};
@@ -54,4 +58,5 @@ class COMSPEC_ATAK_TocPC_Curved: COMSPEC_ATAK_TocPC_2 {
     displayName="$STR_COMSPEC_ATAK_CFG_TOCPC_C";
     model="\z\comspec_atak_native\addons\main\data\toc\toc_pc_curved.p3d";
     editorPreview="\z\comspec_atak_native\addons\main\data\toc\toc_pc_curved_preview.jpg";
+    comspec_tocDesk="COMSPEC_ATAK_TocDesk_Curved";
 };

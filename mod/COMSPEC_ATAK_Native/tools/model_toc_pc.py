@@ -1,13 +1,14 @@
 """
-Postes PC fixes de salle d'opérations (TOC / JOC) : unité centrale, moniteur(s), clavier mécanique, souris et tapis,
-câbles, en UN objet posé sur une table. Mêmes primitives, matières, format MLOD et moteur d'aperçu que les écrans
+Postes PC fixes de salle d'opérations (TOC / JOC) : unité centrale compacte, moniteur(s), clavier extra-plat, souris et
+tapis de bureau, câbles, en UN objet posé sur une table. Clavier, souris, tapis et unités centrales : pièces de
+model_toc_furniture.py (les mêmes que les objets posables seuls), l'unité à la gauche de l'opérateur (+X). Mêmes primitives, matières, format MLOD et moteur d'aperçu que les écrans
 (model_toc_screens.py, importé tel quel), modèles dans Sources/addons/main/data/toc/.
 
 Repère : X à droite, Y vers l'avant (côté écran : l'opérateur est en +Y), Z vers le haut. Origine : dessus du plateau de
 la table, milieu du poste en X. Vu par l'opérateur, sa gauche est en +X (comme tous les écrans : panel1 à gauche).
 
 Modèles (dalle 27" : 0,5977 x 0,3362 m visibles ; 49" 32:9 : 1,1960 x 0,3364 m, rayon 1,8 m) :
-  toc_pc_1       tour, un 27" sur pied, clavier, souris                      sélection « screen »
+  toc_pc_1       unité compacte, un 27" sur pied, clavier, souris                      sélection « screen »
   toc_pc_2       tour, deux 27" côte à côte sur un bras double               panel1 (gauche), panel2
   toc_pc_3       mini-PC, trois 27" en arc (latéraux tournés de 22°)         panel1, panel2, panel3
   toc_pc_curved  tour, 49" incurvé 32:9 sur pied                             panel1 (moitié gauche 16:9), panel2
@@ -29,6 +30,7 @@ import numpy as np
 from PIL import Image
 
 import model_toc_screens as T
+import model_toc_furniture as F
 
 M27 = (0.5977, 0.3362)
 P49 = (1.1960, 0.3364)
@@ -288,9 +290,22 @@ def curved_monitor(m, cz, detail, sels, ys=YS):
     return A, At, th, Z0, Z1
 
 
-def desk_set(m, detail, kb_x=0.0, pad_x=-0.42):
-    keyboard(m, kb_x, YS + 0.37, detail)
-    mouse(m, pad_x, YS + 0.37, detail)
+PAD = (-0.50, 0.30, 0.08, 0.36)     # tapis de bureau : clavier et souris dessus (console en arc : bord avant à 0,39 m)
+
+
+def desk_set(m, detail, unit_x=None):
+    """Tapis de bureau, clavier complet et souris (model_toc_furniture.py) ; câble du clavier vers l'unité centrale."""
+    F.deskpad(m, PAD[0], PAD[1], PAD[2], PAD[3], detail)
+    F.keyboard(m, 0.0, 0.235, detail, base_z=0.0034)
+    F.mouse(m, -0.36, 0.25, detail, base_z=0.0034)
+    if detail == 0 and unit_x is not None:
+        # Clavier et souris sans fil. Câbles de l'unité centrale : du dos au passe-câbles de la console (fond du plateau).
+        for dx in (-0.02, 0.02):
+            cable(m, [(unit_x + dx, UNIT_Y0 - 0.002, 0.06), (unit_x + dx, UNIT_Y0 - 0.05, 0.005), (unit_x + dx * 2 - 0.06, SLOT_Y, 0.005)])
+
+
+UNIT_Y0 = -0.22       # dos de l'unité centrale compacte (façade à +0,07, vers l'opérateur)
+SLOT_Y = -0.395       # passe-câbles à brosse des consoles du mod (model_toc_furniture.py « seat_fittings »)
 
 
 # --------------------------------------------------------------------------------------------------------------------
@@ -304,18 +319,21 @@ ARC = math.radians(22)
 
 def monitor_cables(m, cx, cz, to_x):
     """Câbles d'un moniteur : de la coque au plateau, puis vers l'unité centrale."""
-    y = YS - 0.03
-    cable(m, [(cx + 0.06, y, cz - 0.09), (cx + 0.06, YS - 0.1, 0.02), (cx + 0.04, YS - 0.2, 0.004), (to_x, YS - 0.26, 0.004)])
+    # Du dos du moniteur au mât (ou à la colonne du pied), le long de lui, puis au passe-câbles au fond du plateau.
+    del to_x
+    px = 0.012 if cx >= 0 else -0.012
+    yp = YS - 0.145 if abs(cx) > 0.01 or cz == CZA else YS - 0.095
+    cable(m, [(cx * 0.75 + px, YS - 0.045, cz - 0.07), (px, yp, cz - 0.10), (px, yp, 0.02), (px * 3, SLOT_Y, 0.005)])
 
 
 def make_pc_1(detail):
     m = T.Mesh()
     monitor(m, 0.0, CZ1, detail, "screen")
     stand_single(m, CZ1, detail)
-    tower(m, -0.62, detail)
-    desk_set(m, detail, kb_x=0.02, pad_x=-0.40)
+    F.sff(m, 0.45, UNIT_Y0, detail)
+    desk_set(m, detail, 0.45)
     if detail == 0:
-        monitor_cables(m, 0.0, CZ1, -0.52)
+        monitor_cables(m, 0.0, CZ1, 0.45)
     return m
 
 
@@ -329,11 +347,11 @@ def make_pc_2(detail):
     arm_pole(m, CZA, detail)
     if detail < 2:
         arm_bar(m, -PW / 2 - 0.05, PW / 2 + 0.05, CZA, detail)
-    tower(m, -0.86, detail)
-    desk_set(m, detail, kb_x=0.02, pad_x=-0.40)
+    F.sff(m, 0.72, UNIT_Y0, detail)
+    desk_set(m, detail, 0.72)
     if detail == 0:
-        monitor_cables(m, PW / 2, CZA, -0.76)
-        monitor_cables(m, -PW / 2, CZA, -0.76)
+        monitor_cables(m, PW / 2, CZA, 0.72)
+        monitor_cables(m, -PW / 2, CZA, 0.70)
     return m
 
 
@@ -356,10 +374,11 @@ def make_pc_3(detail):
             arm_bar(sub, min(sx * (PW / 2 + 0.004), cx + sx * 0.05), max(sx * (PW / 2 + 0.004), cx + sx * 0.05), CZA, detail)
         m.merge(turned(sub, sx * ARC, side_pivot(sx)))
     arm_pole(m, CZA, detail)
-    mini_pc(m, -0.52, YS + 0.12, detail)
-    desk_set(m, detail, kb_x=0.02, pad_x=-0.40)
+    F.mini_pc(m, 0.50, -0.03, detail)
+    desk_set(m, detail)
     if detail == 0:
-        monitor_cables(m, 0.0, CZA, -0.45)
+        monitor_cables(m, 0.0, CZA, 0.0)
+        cable(m, [(0.50, -0.12, 0.03), (0.50, -0.20, 0.005), (0.40, SLOT_Y, 0.005)])
     return m
 
 
@@ -368,10 +387,10 @@ def make_pc_curved(detail):
     cz = 0.11 + 0.014 + P49[1] / 2
     curved_monitor(m, cz, detail, ("panel1", "panel2"))
     stand_single(m, cz, detail, wide=0.34)
-    tower(m, -0.80, detail)
-    desk_set(m, detail, kb_x=0.02, pad_x=-0.40)
+    F.sff(m, 0.72, UNIT_Y0, detail)
+    desk_set(m, detail, 0.72)
     if detail == 0:
-        monitor_cables(m, 0.0, cz, -0.70)
+        monitor_cables(m, 0.0, cz, 0.72)
     return m
 
 
@@ -383,23 +402,27 @@ def mon_box(cx, cz, a=0.0, pivot=(0.0, 0.0)):
     return ("pts", pts)
 
 
-KB_BOX = (0.02 - 0.19, 0.02 + 0.19, YS + 0.37 - 0.075, YS + 0.37 + 0.075, 0.0, 0.035)
-PAD_BOX = (-0.40 - 0.15, -0.40 + 0.15, YS + 0.37 - 0.12, YS + 0.37 + 0.12, 0.0, 0.035)
+KB_BOX = (-0.22, 0.22, 0.17, 0.30, 0.0, 0.035)
+PAD_BOX = (PAD[0], PAD[1], PAD[2], PAD[3], 0.0, 0.02)
 
 
 def tower_box(cx):
-    return (cx - 0.105, cx + 0.105, YS - 0.30, YS + 0.13, 0.0, 0.462)
+    return (cx - 0.05, cx + 0.05, UNIT_Y0, UNIT_Y0 + 0.29, 0.0, 0.318)
+
+
+# Unité centrale de chaque poste : sa boîte sur le plateau (à la gauche de l'opérateur, +X).
+UNITS = {"toc_pc_1": tower_box(0.45), "toc_pc_2": tower_box(0.72), "toc_pc_curved": tower_box(0.72), "toc_pc_3": (0.41, 0.59, -0.12, 0.06, 0.0, 0.05)}
 
 
 def closed_boxes(name):
     if name == "toc_pc_1":
-        return [mon_box(0.0, CZ1), (-0.13, 0.13, YS - 0.17, YS + 0.05, 0.0, CZ1 - 0.1), tower_box(-0.62), KB_BOX, PAD_BOX]
+        return [mon_box(0.0, CZ1), (-0.13, 0.13, YS - 0.17, YS + 0.05, 0.0, CZ1 - 0.1), tower_box(0.45), KB_BOX, PAD_BOX]
     if name == "toc_pc_2":
         return [mon_box(PW / 2 + 0.002, CZA), mon_box(-PW / 2 - 0.002, CZA), (-0.06, 0.06, YS - 0.17, YS - 0.05, 0.0, CZA + 0.09),
-                tower_box(-0.86), KB_BOX, PAD_BOX]
+                tower_box(0.72), KB_BOX, PAD_BOX]
     if name == "toc_pc_3":
         return [mon_box(0.0, CZA), mon_box(PW + 0.004, CZA, ARC, side_pivot(1)), mon_box(-PW - 0.004, CZA, -ARC, side_pivot(-1)),
-                (-0.06, 0.06, YS - 0.17, YS - 0.05, 0.0, CZA + 0.09), (-0.615, -0.425, YS + 0.025, YS + 0.215, 0.0, 0.054), KB_BOX, PAD_BOX]
+                (-0.06, 0.06, YS - 0.17, YS - 0.05, 0.0, CZA + 0.09), (0.41, 0.59, -0.12, 0.06, 0.0, 0.05), KB_BOX, PAD_BOX]
     if name == "toc_pc_curved":
         cz = 0.11 + 0.014 + P49[1] / 2
         R = CURVE_R
@@ -417,7 +440,7 @@ def closed_boxes(name):
                         rr = r / math.cos(a - am) if r < R else r
                         pts.append((rr * math.sin(a), YS + R - rr * math.cos(a), z))
             boxes.append(("pts", pts))
-        return boxes + [(-0.17, 0.17, YS - 0.17, YS + 0.05, 0.0, cz - 0.1), tower_box(-0.80), KB_BOX, PAD_BOX]
+        return boxes + [(-0.17, 0.17, YS - 0.17, YS + 0.05, 0.0, cz - 0.1), tower_box(0.72), KB_BOX, PAD_BOX]
     raise KeyError(name)
 
 
@@ -487,7 +510,9 @@ def main():
     try:
         T.textures(tmp)     # PNG du cadre pour l'aperçu seulement (les PAA du mod ne sont pas réécrits)
         models = {name: write_model(name) for name in MODELS}
-        if not os.environ.get("NO_PREVIEW"):
+        # Aperçus Eden : rendus dans Blender avec le mobilier (tools/render_toc_furniture.py). Le petit moteur logiciel
+        # ne connaît pas les textures du clavier et des façades : LEGACY_PREVIEW=1 pour l'utiliser quand même.
+        if os.environ.get("LEGACY_PREVIEW"):
             rd = os.environ.get("RENDER_DIR", "")
             if rd:
                 os.makedirs(rd, exist_ok=True)
