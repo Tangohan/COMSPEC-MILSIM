@@ -38,6 +38,26 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : les caméras IP apparaissent dans Vidéo live et dans le TOC (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Les caméras IP posées dans l'éditeur apparaissent enfin
+- Les nouvelles caméras (dôme, tube infrarouge, thermique, mini-dôme…) posées dans l'éditeur ou en Zeus apparaissent dans l'app Vidéo live et dans les sources du TOC, pour tout leur camp, sans rien avoir à partager.
+- Une caméra posée en Zeus prend le camp du joueur le plus proche ; dans l'éditeur, c'est le camp choisi dans ses attributs.
+- Ces caméras de site sont câblées : elles restent en ligne même sans téléphone à côté.
+EN : IP cameras placed in the editor finally show up
+- The new cameras (dome, infrared bullet, thermal, mini dome…) placed in the editor or in Zeus now appear in the Live Feed app and in the TOC sources, for their whole side, with nothing to share.
+- A camera placed in Zeus takes the side of the nearest player; in the editor, it is the side picked in its attributes.
+- These site cameras are wired: they stay online even with no phone nearby.
+
+### Détail technique
+- Cause : `fn_camProp` enregistre une caméra d'éditeur sans poseur ; avec le partage obligatoire (réglage par défaut), `fn_camShare « can »` ne l'accordait qu'au poseur ou aux accès partagés, donc à personne. Vidéo live (`fn_pageLivecam`) et le TOC (`fn_tocCam « sources »`) lisent tous deux `fn_camAction « list »`, filtrée par cette règle. Les 16 classes `COMSPEC_ATAK_Cam_*` étaient touchées ; la caméra posée par un joueur ne l'était pas.
+- Correction : marque publique `COMSPEC_ATAK_CamPublic` posée par `fn_camProp` avant l'inscription ; `fn_camShare « can »` l'accorde au camp ; `fn_camAction « status »` ne demande plus d'ATAK à portée de Wi-Fi pour ces caméras. Balayage de secours au postInit du serveur (`allMissionObjects`), une seule inscription par caméra. Camp d'une caméra posée en Zeus : celui du joueur le plus proche.
+- `comspec_atak_native_fnc_camList` : `[] call` → `[[id, nom, type, état, position ASL, ptz], …]` des caméras visibles ; `["visible", […]]` : règle de visibilité, fonction pure.
+- Journal serveur, une ligne par caméra : `[COMSPEC CAM] caméra | classe=… nom=… camp=… lives=oui/non toc=oui/non raison=…`.
+- Test : `AtakCameraRegistryAssetTest`.
+
 ## À venir : poste TOC web et plans d'opération sur Athena (site Athena, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

@@ -140,7 +140,7 @@ class CfgFunctions {
             class dockServer {}; class dockVisual {}; class dockClient {}; class dockMenu {};
         };
         class camera { file="z\comspec_atak_native\addons\main\functions\camera";
-            class camAction {}; class camView {}; class pipCheck {}; class camVar {}; class camShare {}; class photoFaces {}; class blackStage {}; class mapCapture {}; class shotDir {};
+            class camAction {}; class camList {}; class camView {}; class pipCheck {}; class camVar {}; class camShare {}; class photoFaces {}; class blackStage {}; class mapCapture {}; class shotDir {};
         };
         class pages { file="z\comspec_atak_native\addons\main\functions\pages";
             class pageSpace {};
