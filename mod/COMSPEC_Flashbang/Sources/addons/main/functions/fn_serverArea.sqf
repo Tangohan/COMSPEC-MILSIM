@@ -2,6 +2,7 @@
     comspec_fb_fnc_serverArea (serveur) : « effet sur une zone » sans grenade (scénario, Zeus, Eden).
     Toutes les unités à moins de _radius m reçoivent l'effet à la force _strength (0..1), sans calcul de ligne de vue,
     N fois. _showFx : lumière, particules et bang au centre (sinon effet seul, silencieux).
+    _lead : secondes avant la première détonation (délai du module + mèche choisie).
     [_posASL, _radius, _strength, _n, _showFx, _lead] call comspec_fb_fnc_serverArea
 */
 params [
@@ -24,9 +25,9 @@ comspec_fb_seq = comspec_fb_seq + 1;
 private _id = format ["FB%1", comspec_fb_seq];
 private _msg = [_id, "area", objNull, "", _posASL, _offsets, CBA_missionTime + 0.15 + (_lead max 0), sideUnknown, objNull, [_radius, _strength, _showFx]];
 private _owners = [_posASL] call comspec_fb_fnc_targets;
-["serveur", format ["%1 zone r=%2 force=%3 x%4", _id, _radius, _strength, _n]] call comspec_fb_fnc_log;
+["serveur", format ["%1 zone r=%2 force=%3 x%4 dans %5 s machines=%6", _id, _radius, _strength, _n, (0.15 + (_lead max 0)) toFixed 2, _owners]] call comspec_fb_fnc_log;
 if (isMultiplayer) then {
-    _msg remoteExecCall ["comspec_fb_fnc_timeline", _owners];
+    { ["comspec_fb_timeline", _msg, _x] call CBA_fnc_ownerEvent } forEach _owners;
 } else {
     _msg call comspec_fb_fnc_timeline;
 };

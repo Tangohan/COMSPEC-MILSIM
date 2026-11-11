@@ -6,6 +6,8 @@
       Zone C       pièce avec fenêtres (Cargo HQ) : IA dedans, IA dehors face à la fenêtre, IA dehors dos tourné
       Zone D       couloir (caserne) : IA au fond du couloir et dans les chambres
       Zone E       hangar (atelier industriel) : IA à 5, 12 et 20 m
+      Zone F       délais : caisse des grenades 3 s / 8 s sur la ligne de lancer, pièce fermée à 15 m avec 2 IA
+                   (comparer 1,5 s / 3 s / 8 s : la grenade roule jusqu'à la pièce et détone à l'heure)
     Les IA sont du camp du joueur (réglage « Effet sur son camp » actif par défaut), immobiles et invulnérables.
 */
 private _p0 = [1650.5, 5467.7, 0];
@@ -43,7 +45,7 @@ private _target = {
 // ------------------------------------------------------------------ départ
 private _start = [0, -8] call _at;
 private _box = ["COMSPEC_FB_Box", [2, -10] call _at, 105] call _obj;
-["COMSPEC_FB_Box", [-2, -10] call _at, 105] call _obj;
+["COMSPEC_FB_Box_Delay", [-2, -10] call _at, 105] call _obj;
 private _sign = ["SignAd_Sponsor_F", [0, -14] call _at, 105] call _obj;
 _sign setObjectTextureGlobal [0, "images\consignes.paa"];
 missionNamespace setVariable ["COMSPEC_FB_Range_Box", _box, true];
@@ -90,6 +92,20 @@ private _dp = (_d buildingPos -1);
 private _e = ["Land_i_Shed_Ind_F", [270, 0] call _at, 105] call _obj;
 { [[270 + _x, 2] call _at, getPosATL _e, false] call _target } forEach [5, 12, 20];
 
+// ------------------------------------------------------------------ zone F : délais (3 s / 8 s)
+private _fLine = [315, 0] call _at;
+["COMSPEC_FB_Box_Delay", [315, -4] call _at, 105] call _obj;
+["COMSPEC_FB_Box", [315, 4] call _at, 105] call _obj;
+["Land_HelipadCircle_F", _fLine] call _obj;
+private _f = ["Land_Cargo_House_V1_F", [330, 0] call _at, 105] call _obj;
+private _fp = (_f buildingPos -1);
+if (_fp isNotEqualTo []) then {
+    [_fp select 0, _fLine, false] call _target;
+    [(_fp select 0) vectorAdd [0.8, 0.8, 0], _fLine, true] call _target;
+} else {
+    [_f modelToWorld [0, 0, 0], _fLine, false] call _target;
+};
+
 // Repères de carte.
 {
     _x params ["_name", "_f", "_text"];
@@ -98,6 +114,7 @@ private _e = ["Land_i_Shed_Ind_F", [270, 0] call _at, 105] call _obj;
     _m setMarkerText _text;
 } forEach [
     ["fb_start", 0, "Départ / caisses"], ["fb_a", 25, "A - champ ouvert"], ["fb_b", 90, "B - pièce fermée"],
-    ["fb_c", 140, "C - pièce à fenêtres"], ["fb_d", 200, "D - couloir"], ["fb_e", 270, "E - hangar"]
+    ["fb_c", 140, "C - pièce à fenêtres"], ["fb_d", 200, "D - couloir"], ["fb_e", 270, "E - hangar"],
+    ["fb_f", 315, "F - délais (ligne de lancer, pièce à 15 m)"]
 ];
-missionNamespace setVariable ["COMSPEC_FB_Range_Zones", [0, 25, 90, 140, 200, 270] apply { [_x, -6] call _at }, true];
+missionNamespace setVariable ["COMSPEC_FB_Range_Zones", [0, 25, 90, 140, 200, 270, 315] apply { [_x, -6] call _at }, true];

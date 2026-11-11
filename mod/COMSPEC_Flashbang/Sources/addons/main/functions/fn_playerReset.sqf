@@ -14,7 +14,10 @@ if (_id >= 0) then { stopSound _id };
 if ("orig" in _st) then {
     [1, true] call comspec_fb_fnc_hearing;
     private _unit = _st getOrDefault ["unit", objNull];
-    if (!isNull _unit) then { _unit setCustomAimCoef ((_st get "orig") getOrDefault ["aim", 1]) };
+    if (!isNull _unit) then {
+        _unit setCustomAimCoef ((_st get "orig") getOrDefault ["aim", 1]);
+        _unit setAnimSpeedCoef ((_st get "orig") getOrDefault ["anim", 1]);
+    };
 };
 { _st deleteAt _x } forEach (keys _st);
 ["joueur", "effets terminés, tout est rétabli"] call comspec_fb_fnc_log;

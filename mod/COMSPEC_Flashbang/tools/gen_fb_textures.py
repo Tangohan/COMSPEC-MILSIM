@@ -1,7 +1,7 @@
 """
 Textures du mod COMSPEC Flashbang (Pillow + numpy), sources PNG dans tools/render/ :
 
-  fb_body_<V>_co.png    corps de la grenade, V = 1..9 et drill (1024 x 1024)
+  fb_body_<V>_co.png    corps de la grenade, V = 1..9 et drill, et leurs variantes à délai <V>_d3 / <V>_d8 (1024 x 1024)
   fb_body_nohq.png      relief commun du corps (évents, bande, cordon de soudure)
   fb_body_smdi.png      reflets communs du corps (peinture satinée, évents mats)
   fb_metal_co.png       atlas de la tête : fusée, levier, anneau et goupille, boîtier du percuteur (512 x 512)
@@ -19,6 +19,8 @@ Disposition de fb_body_<V>_co (UV posées par model_flashbang.py) :
 Référence réelle : fiches Rheinmetall « 6 Bang » (Ø40 x 112 mm, acier, évents en partie basse, bande marron)
 et Primetake PT4523C (115 mm, Ø40 mm). Le marquage est fictif (lot COMSPEC), le chiffre N et N pastilles
 permettent de distinguer les variantes en main et au sol (chiffre répété sur les deux flancs).
+Variantes à délai : 2e bande colorée sous la bande du haut (jaune 3 s, rouge 8 s) avec « 3s » / « 8s » tout autour,
+cartouche « 3s » / « 8s » de la même couleur à côté du chiffre (deux flancs) et en grand au dos.
 
     python gen_fb_textures.py         puis  python model_flashbang.py (dans Blender) et la conversion PAA (README)
 """
@@ -30,7 +32,10 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RENDER = os.path.join(HERE, "render")
-VARIANTS = [str(i) for i in range(1, 10)] + ["drill"]
+BASES = [str(i) for i in range(1, 10)] + ["drill"]
+DELAYS = (3, 8)
+# Variantes : 1..9 et drill (mèche standard), puis <base>_d3 / <base>_d8 (mèche fixe 3 s / 8 s).
+VARIANTS = BASES + [f"{b}_d{d}" for b in BASES for d in DELAYS]
 N = 1024
 SIDE_H = 640                 # hauteur du flanc déroulé (px)
 H_BODY = 0.086               # hauteur réelle du corps (m), pour placer les rangées d'évents
@@ -41,6 +46,10 @@ BLUE = (0.10, 0.30, 0.66)
 BROWN = (0.45, 0.27, 0.13)
 STEEL_DARK = (0.12, 0.12, 0.12)
 WHITE = (0.93, 0.93, 0.90)
+# Bande de délai (2e bande sous la bande marron / blanche) : jaune = 3 s, rouge = 8 s.
+DELAY_COLOR = {3: (0.95, 0.76, 0.08), 8: (0.82, 0.10, 0.08)}
+DELAY_BAND = (0.158, 0.205)       # 2e bande (fraction de la hauteur du flanc, depuis le haut)
+DELAY_BAND_Y = sum(DELAY_BAND) / 2
 
 # Évents : (hauteur relative depuis le bas du corps, nombre de trous sur le tour, rayon en px)
 VENT_ROWS = [(0.11, 8, 30), (0.25, 8, 30)]
@@ -172,42 +181,89 @@ def stencil(draw, xy, text, size, fill, anchor="mm", bold=True):
     draw.text(xy, text, font=font(size, bold), fill=fill, anchor=anchor)
 
 
+def split(variant):
+    """'5_d8' -> ('5', 8) ; '5' -> ('5', 0) ; 'drill_d3' -> ('drill', 3)."""
+    if "_d" in variant:
+        b, d = variant.split("_d")
+        return b, int(d)
+    return variant, 0
+
+
+def delay_stamp(d, xy, delay, size):
+    """Cartouche de délai : rectangle arrondi de la couleur du délai, « 3s » / « 8s » dedans, liseré blanc."""
+    col = tuple(int(c * 255) for c in DELAY_COLOR[delay])
+    f = font(size)
+    l, t, r, b = d.textbbox(xy, f"{delay}s", font=f, anchor="mm")
+    pad = size * 0.18
+    d.rounded_rectangle([l - pad, t - pad, r + pad, b + pad], radius=int(size * 0.2), fill=col,
+                        outline=tuple(int(c * 255) for c in WHITE), width=max(3, size // 22))
+    d.text(xy, f"{delay}s", font=f, fill=(15, 15, 15) if delay == 3 else (245, 245, 240), anchor="mm")
+
+
 def markings(img, variant):
-    """Marquages blancs sérigraphiés sur les deux flancs (u = 0,25 et u = 0,75) : chiffre, pastilles, textes."""
+    """Marquages blancs sérigraphiés sur les deux flancs (u = 0,25 et u = 0,75) : chiffre, pastilles, textes ;
+    variantes à délai : cartouche « 3s » / « 8s » à côté du chiffre et en grand au dos (u = 0,5)."""
     d = ImageDraw.Draw(img)
-    drill = variant == "drill"
+    base, delay = split(variant)
+    drill = base == "drill"
     white = tuple(int(c * 255) for c in WHITE)
     for cu in (0.25, 0.75):
         cx = int(cu * N)
         if drill:
             # « DRILL » en gros, écrit autour du corps, répété au-dessus du culot.
             stencil(d, (cx, 210), "DRILL", 96, white)
-            stencil(d, (cx, 300), "INERTE / TRAINING", 40, white, bold=False)
-            stencil(d, (cx, 345), "NO FLASH - NO BANG", 30, white, bold=False)
-            stencil(d, (cx, 384), "COMSPEC FB-D  LOT 26-11-D", 24, white, bold=False)
+            if delay:
+                delay_stamp(d, (cx, 302), delay, 70)
+                stencil(d, (cx, 362), "INERTE / TRAINING", 34, white, bold=False)
+                stencil(d, (cx, 396), f"COMSPEC FB-D{delay}  LOT 26-11-D", 24, white, bold=False)
+            else:
+                stencil(d, (cx, 300), "INERTE / TRAINING", 40, white, bold=False)
+                stencil(d, (cx, 345), "NO FLASH - NO BANG", 30, white, bold=False)
+                stencil(d, (cx, 384), "COMSPEC FB-D  LOT 26-11-D", 24, white, bold=False)
         else:
-            n = int(variant)
-            stencil(d, (cx, 230), str(n), 230, white)
+            n = int(base)
+            # Délai : chiffre décalé à gauche, cartouche du délai à sa droite.
+            if delay:
+                stencil(d, (cx - 52, 250), str(n), 200, white)
+                delay_stamp(d, (cx + 70, 252), delay, 84)
+            else:
+                stencil(d, (cx, 230), str(n), 230, white)
             # N pastilles carrées sous le chiffre (lisibles même quand le chiffre est caché).
             w, gap = 22, 12
             x0 = cx - (n * w + (n - 1) * gap) / 2
             for i in range(n):
                 d.rectangle([x0 + i * (w + gap), 352, x0 + i * (w + gap) + w, 374], fill=white)
             stencil(d, (cx - 75, 150), f"{n}-BANG", 34, white, anchor="rm")
-            stencil(d, (cx + 75, 150), "DELAY 1.5 s", 30, white, anchor="lm", bold=False)
-            stencil(d, (cx, 400), f"COMSPEC FB-{n}  LOT 26-11-0{n}", 22, white, bold=False)
+            stencil(d, (cx + 75, 150), f"DELAY {delay} s" if delay else "DELAY 1.5 s", 30, white, anchor="lm", bold=bool(delay))
+            suffix = f"-D{delay}" if delay else ""
+            stencil(d, (cx, 400), f"COMSPEC FB-{n}{suffix}  LOT 26-11-0{n}", 22, white, bold=False)
+    if delay:
+        # Dos (opposé au levier) : grand cartouche, visible quand la grenade est posée de dos.
+        delay_stamp(d, (int(0.5 * N), 250), delay, 120)
     # Bande : rappel du chiffre tout autour (lisible sous n'importe quel angle).
-    tag = "D" if drill else variant
+    tag = "D" if drill else base
     col = (40, 40, 40) if drill else white
     for k in range(8):
         stencil(d, (int((k + 0.5) / 8 * N), int(0.11 * SIDE_H)), tag, 40, col)
+    if delay:
+        # 2e bande : « 3s » / « 8s » tout autour (noir sur jaune, blanc sur rouge), entre les rappels du chiffre.
+        dcol = (15, 15, 15) if delay == 3 else (245, 245, 240)
+        for k in range(8):
+            stencil(d, (int((k + 0.5) / 8 * N), int(DELAY_BAND_Y * SIDE_H)), f"{delay}s", 24, dcol)
     # Fond : marquage gravé.
-    stencil(d, (BOTTOM_C[0], BOTTOM_C[1] + 118), "FB-D" if drill else f"FB-{variant}", 26, (150, 150, 150))
+    tagb = ("FB-D" if drill else f"FB-{base}") + (f"-{delay}s" if delay else "")
+    stencil(d, (BOTTOM_C[0], BOTTOM_C[1] + 118), tagb, 26, (150, 150, 150))
 
 
 def body(variant, hgt_out):
-    drill = variant == "drill"
+    base, delay = split(variant)
+    drill = base == "drill"
     co, hgt, vent = base_body(drill)
+    if delay:
+        # 2e bande colorée du délai, juste sous la bande du haut.
+        b0, b1 = int(DELAY_BAND[0] * SIDE_H), int(DELAY_BAND[1] * SIDE_H)
+        grain = noise(N, 1.4)[b0:b1]
+        co[b0:b1] = np.array(DELAY_COLOR[delay]) * (0.92 + 0.1 * grain)[..., None]
     img = Image.fromarray((np.clip(co, 0, 1) * 255).astype(np.uint8))
     markings(img, variant)
     # Usure légère : arêtes et marquages un peu éraflés, poussière vers le bas.
@@ -339,13 +395,18 @@ def module_icon():
 def main():
     os.makedirs(RENDER, exist_ok=True)
     keep = []
-    for v in VARIANTS:
+    # Ordre fixe (le bruit est tiré d'un générateur commun) : variantes standard et textures communes d'abord, à
+    # l'identique des versions précédentes, puis les variantes à délai.
+    for v in BASES:
         body(v, keep)
     body_maps(*keep[0])
     metal()
     afterimage()
     flare()
     module_icon()
+    for v in VARIANTS:
+        if v not in BASES:
+            body(v, None)
     print("textures écrites dans", RENDER)
 
 

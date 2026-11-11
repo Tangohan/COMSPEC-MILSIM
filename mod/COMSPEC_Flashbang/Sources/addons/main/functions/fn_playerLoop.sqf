@@ -35,7 +35,9 @@ if (_pp isEqualTo []) then {
         _h ppEffectForceInNVG true;
         _h
     };
-    _pp = [["ColorCorrections", 1590] call _mk, ["DynamicBlur", 490] call _mk, ["FilmGrain", 2090] call _mk];
+    // Priorités hautes et libres (600 et 2500 sont prises par d'autres mods de flashbang) ; si une priorité est
+    // occupée, ppEffectCreate rend -1 et on essaie la suivante. Créés une seule fois, détruits par fn_playerReset.
+    _pp = [["ColorCorrections", 2590] call _mk, ["DynamicBlur", 620] call _mk, ["FilmGrain", 2090] call _mk];
     _st set ["pp", _pp];
     (_pp select 0) ppEffectEnable true;
     (_pp select 1) ppEffectEnable true;
@@ -45,7 +47,9 @@ _pp params ["_cc", "_blur", "_grain"];
 _cc ppEffectAdjust [1 + 0.15 * _W, (1 - 0.4 * _W - 0.15 * _B) max 0.4, 0, [1, 1, 1, ((_W ^ 0.9) * 0.9) min 0.9],
     [1, 1, 1, (1 - 0.25 * (_W max (0.5 * _B))) max 0.7], [0.299, 0.587, 0.114, 0]];
 _cc ppEffectCommit 0.03;
-_blur ppEffectAdjust [(_B * 1.4 + _W * 0.6) min 2.2];
+// Flou fort au début (DynamicBlur ~45 à 3 m de face, au moins la force des autres mods de flashbang), qui décroît
+// avec la récupération (~35 à 3 s, ~17 à 6 s).
+_blur ppEffectAdjust [((_B ^ 1.2) * 40 + _W * 10) min 50];
 _blur ppEffectCommit 0.03;
 // JVN : tube saturé, grain fort tant que l'éblouissement dure.
 if (currentVisionMode _unit == 1 && {_now < (_st getOrDefault ["nvgUntil", 0])}) then {
@@ -72,7 +76,7 @@ if (!isNull _disp) then {
             (_spots select _k) params ["_sx", "_sy", "_peak", "_t0", "_dur"];
             private _v = [[_peak, _t0, _dur, 0.03, 1.5], _now] call comspec_fb_fnc_chanValue;
             private _age = _now - _t0;
-            private _size = (0.06 + 0.08 * _peak) * safeZoneH;
+            private _size = (0.10 + 0.16 * _peak) * safeZoneH;
             private _w = _size * pixelW / pixelH;
             private _jx = 0.002 * sin (_age * 420);
             private _jy = 0.002 * cos (_age * 310);
@@ -101,7 +105,9 @@ if (!isNull _disp) then {
 
 // ------------------------------------------------------------------ visée et ouïe
 private _aim0 = (_st get "orig") getOrDefault ["aim", 1];
-private _aimNow = _aim0 * (1 + 1.8 * _A);
+private _aimNow = _aim0 * (1 + 4 * _A);
+// Pas plus lents et moins sûrs (désorientation) : jusqu'à 0,8 de la vitesse d'animation, jamais d'immobilisation.
+_unit setAnimSpeedCoef (((_st get "orig") getOrDefault ["anim", 1]) * (1 - 0.2 * (_A min 1)));
 if (missionNamespace getVariable ["ace_advanced_fatigue_enabled", false]) then {
     // ACE règle lui-même le coefficient à chaque image : on ne fait que l'augmenter.
     _unit setCustomAimCoef ((getCustomAimCoef _unit) max _aimNow);

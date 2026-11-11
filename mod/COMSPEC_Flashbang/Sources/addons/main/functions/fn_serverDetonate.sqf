@@ -3,14 +3,18 @@
     leurs instants (intervalle + écart aléatoire), puis envoie UN seul message aux machines concernées (fn_targets).
     Chaque machine joue alors les N détonations à partir de ces instants (fn_timeline) : le nombre est le même partout.
 
-    [_ammo, _posASL, _vectorDirAndUp, _velocity, _thrower, _side, _nOverride, _lead] call comspec_fb_fnc_serverDetonate
-      _nOverride : nombre de détonations imposé (Zeus, Eden ; -1 = celui de la grenade, réglage pour la DRILL)
-      _lead      : délai supplémentaire avant la première détonation (s) ; Zeus / Eden : mèche simulée
+    [_ammo, _posASL, _vectorDirAndUp, _velocity, _thrower, _side, _nOverride, _lead, _tDet, _drillSound]
+        call comspec_fb_fnc_serverDetonate
+      _nOverride  : nombre de détonations imposé (Zeus, Eden ; -1 = celui de la grenade, réglage pour la DRILL)
+      _lead       : délai avant la première détonation (s) ; Zeus / Eden : délai + mèche simulée
+      _tDet       : heure absolue (CBA_missionTime) de la 1re détonation, fixée au lancer (fn_fired) ; -1 = maintenant
+                    + _lead. Un message arrivé en retard détone au plus tôt, sans jamais sauter de détonation.
+      _drillSound : son de la DRILL imposé par le module (clé de drillChoix[] dans CfgSons.hpp) ; "" = réglage d'addon
 */
 params [
     ["_ammo", "", [""]], ["_posASL", [0, 0, 0], [[]], 3], ["_vdu", [[0, 1, 0], [0, 0, 1]], [[]]],
     ["_vel", [0, 0, 0], [[]], 3], ["_thrower", objNull, [objNull]], ["_side", sideUnknown, [sideUnknown]],
-    ["_nOverride", -1, [0]], ["_lead", 0, [0]]
+    ["_nOverride", -1, [0]], ["_lead", 0, [0]], ["_tDet", -1, [0]], ["_drillSound", "", [""]]
 ];
 if (!isServer) exitWith {};
 private _cfg = configFile >> "CfgAmmo" >> _ammo;
@@ -41,15 +45,25 @@ for "_i" from 1 to _n do {
 
 comspec_fb_seq = comspec_fb_seq + 1;
 private _id = format ["FB%1", comspec_fb_seq];
-// 0,15 s d'avance : le message arrive avant la première détonation sur les clients (horloge commune CBA_missionTime).
-private _t0 = CBA_missionTime + 0.15 + (_lead max 0);
+// Heure de la 1re détonation sur l'horloge commune : celle du lancer si elle est connue, sinon maintenant + délai.
+// 0,1 s de marge au moins : le message arrive avant la première détonation sur les clients.
+private _t0 = if (_tDet > 0) then { _tDet max (CBA_missionTime + 0.1) } else { CBA_missionTime + 0.15 + (_lead max 0) };
 private _kind = ["live", "drill"] select _drill;
-private _msg = [_id, _kind, _device, netId _device, _posASL, _offsets, _t0, _side, _thrower, []];
+private _extra = [];
+if (_drill) then {
+    private _keys = getArray (configFile >> "COMSPEC_FB_Sons" >> "drillChoix");
+    private _snd = if (_drillSound in _keys) then { _drillSound } else { missionNamespace getVariable ["comspec_fb_drillSound", "Pop"] };
+    if !(_snd in _keys) then { _snd = "Pop" };
+    _extra = [_snd, missionNamespace getVariable ["comspec_fb_drillVolume", 1]];
+};
+private _msg = [_id, _kind, _device, netId _device, _posASL, _offsets, _t0, _side, _thrower, _extra];
 private _owners = [_posASL] call comspec_fb_fnc_targets;
 comspec_fb_owners set [_id, _owners];
-["serveur", format ["%1 %2 x%3 instants=%4 machines=%5", _id, _ammo, _n, _offsets apply { _x toFixed 2 }, _owners]] call comspec_fb_fnc_log;
+["serveur", format ["%1 %2 x%3 engin=%4 instants=%5 1re dans %6 s machines=%7%8", _id, _ammo, _n, typeOf _device,
+    _offsets apply { _x toFixed 2 }, (_t0 - CBA_missionTime) toFixed 2, _owners,
+    [format [" son=%1", _extra], ""] select (_extra isEqualTo [])]] call comspec_fb_fnc_log;
 if (isMultiplayer) then {
-    _msg remoteExecCall ["comspec_fb_fnc_timeline", _owners];
+    { ["comspec_fb_timeline", _msg, _x] call CBA_fnc_ownerEvent } forEach _owners;
 } else {
     _msg call comspec_fb_fnc_timeline;
 };

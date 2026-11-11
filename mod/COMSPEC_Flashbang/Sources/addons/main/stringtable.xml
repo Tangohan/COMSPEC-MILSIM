@@ -3,169 +3,544 @@
     <Package name="main">
         <Container name="main">
             <Key ID="STR_COMSPEC_FB_Box">
-                <Original>Caisse de grenades assourdissantes</Original>
-                <English>Stun grenade crate</English>
-                <French>Caisse de grenades assourdissantes</French>
+                <Original>Caisse Flash</Original>
+                <English>Flash crate</English>
+                <French>Caisse Flash</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Box_Delay">
+                <Original>Caisse délais</Original>
+                <English>Delay crate</English>
+                <French>Caisse délais</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Device">
-                <Original>Grenade assourdissante (engin)</Original>
-                <English>Stun grenade (device)</English>
-                <French>Grenade assourdissante (engin)</French>
+                <Original>Flash (engin)</Original>
+                <English>Flash (device)</English>
+                <French>Flash (engin)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_DrillSound_Aucun">
+                <Original>Aucun son</Original>
+                <English>No sound</English>
+                <French>Aucun son</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_DrillSound_BangLeger">
+                <Original>Bang léger</Original>
+                <English>Light bang</English>
+                <French>Bang léger</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_DrillSound_BangReel">
+                <Original>Bang réel</Original>
+                <English>Real bang</English>
+                <French>Bang réel</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_DrillSound_Cloche">
+                <Original>Cloche d'exercice</Original>
+                <English>Drill bell</English>
+                <French>Cloche d'exercice</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_DrillSound_Pop">
+                <Original>Pop</Original>
+                <English>Pop</English>
+                <French>Pop</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_DrillSound_PopSourd">
+                <Original>Pop sourd</Original>
+                <English>Muffled pop</English>
+                <French>Pop sourd</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_DrillSound_Rafale">
+                <Original>Rafale courte</Original>
+                <English>Short burst</English>
+                <French>Rafale courte</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_DrillSound_Setting">
+                <Original>Selon le réglage de l'addon</Original>
+                <English>Per addon setting</English>
+                <French>Selon le réglage de l'addon</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_DrillSound_Sifflet">
+                <Original>Sifflet d'exercice</Original>
+                <English>Drill whistle</English>
+                <French>Sifflet d'exercice</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Drill_D3_Desc">
+                <Original>Grenade d'entraînement bleue à mèche longue fixe de 3 s (n'explose pas à l'impact) : pop et fumée, aucun effet. Bande jaune et marquage « 3s ».</Original>
+                <English>Blue training grenade with a fixed 3 s long fuse (does not go off on impact): pop and smoke, no effect. Yellow band and « 3s » stamp.</English>
+                <French>Grenade d'entraînement bleue à mèche longue fixe de 3 s (n'explose pas à l'impact) : pop et fumée, aucun effet. Bande jaune et marquage « 3s ».</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Drill_D3_Name">
+                <Original>Drill · 3 s</Original>
+                <English>Drill · 3 s</English>
+                <French>Drill · 3 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Drill_D3_Short">
+                <Original>FB-DRILL 3s</Original>
+                <English>FB-DRILL 3s</English>
+                <French>FB-DRILL 3s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Drill_D8_Desc">
+                <Original>Grenade d'entraînement bleue à mèche longue fixe de 8 s (n'explose pas à l'impact) : pop et fumée, aucun effet. Bande rouge et marquage « 8s ».</Original>
+                <English>Blue training grenade with a fixed 8 s long fuse (does not go off on impact): pop and smoke, no effect. Red band and « 8s » stamp.</English>
+                <French>Grenade d'entraînement bleue à mèche longue fixe de 8 s (n'explose pas à l'impact) : pop et fumée, aucun effet. Bande rouge et marquage « 8s ».</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Drill_D8_Name">
+                <Original>Drill · 8 s</Original>
+                <English>Drill · 8 s</English>
+                <French>Drill · 8 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Drill_D8_Short">
+                <Original>FB-DRILL 8s</Original>
+                <English>FB-DRILL 8s</English>
+                <French>FB-DRILL 8s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Drill_Desc">
-                <Original>Grenade d'entraînement bleue : petit pop et bouffée de fumée, aucun flash, aucun effet sur les joueurs ni l'IA.</Original>
-                <English>Blue training grenade: small pop and a puff of smoke, no flash, no effect on players or AI.</English>
-                <French>Grenade d'entraînement bleue : petit pop et bouffée de fumée, aucun flash, aucun effet sur les joueurs ni l'IA.</French>
+                <Original>Grenade d'entraînement bleue, mèche standard : pop (son au choix, réglage « Son de la grenade d'entraînement ») et bouffée de fumée, aucun flash, aucun effet sur les joueurs ni l'IA.</Original>
+                <English>Blue training grenade, standard fuse: a pop (sound chosen in the « Training grenade sound » setting) and a puff of smoke, no flash, no effect on players or AI.</English>
+                <French>Grenade d'entraînement bleue, mèche standard : pop (son au choix, réglage « Son de la grenade d'entraînement ») et bouffée de fumée, aucun flash, aucun effet sur les joueurs ni l'IA.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Drill_Name">
-                <Original>Grenade d'entraînement FB-DRILL (inerte)</Original>
-                <English>Training grenade FB-DRILL (inert)</English>
-                <French>Grenade d'entraînement FB-DRILL (inerte)</French>
+                <Original>Drill</Original>
+                <English>Drill</English>
+                <French>Drill</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Drill_Short">
                 <Original>FB-DRILL</Original>
                 <English>FB-DRILL</English>
                 <French>FB-DRILL</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_1_D3_Desc">
+                <Original>Grenade assourdissante à 1 détonation, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</Original>
+                <English>Stun grenade, 1 detonation, fixed 3 s long fuse: throw, let it bounce or roll, it goes off 3 s after the throw. Does not go off on impact. Yellow band and « 3s » stamp on the body.</English>
+                <French>Grenade assourdissante à 1 détonation, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_1_D3_Name">
+                <Original>Flash ×1 · 3 s</Original>
+                <English>Flash ×1 · 3 s</English>
+                <French>Flash ×1 · 3 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_1_D3_Short">
+                <Original>FB-1 3s</Original>
+                <English>FB-1 3s</English>
+                <French>FB-1 3s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_1_D8_Desc">
+                <Original>Grenade assourdissante à 1 détonation, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</Original>
+                <English>Stun grenade, 1 detonation, fixed 8 s long fuse: to throw ahead from a safe position, it goes off 8 s after the throw. Does not go off on impact. Red band and « 8s » stamp on the body.</English>
+                <French>Grenade assourdissante à 1 détonation, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_1_D8_Name">
+                <Original>Flash ×1 · 8 s</Original>
+                <English>Flash ×1 · 8 s</English>
+                <French>Flash ×1 · 8 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_1_D8_Short">
+                <Original>FB-1 8s</Original>
+                <English>FB-1 8s</English>
+                <French>FB-1 8s</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Flash_1_Desc">
-                <Original>Grenade assourdissante à 1 détonation (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
-                <English>Stun grenade, 1 detonation (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
-                <French>Grenade assourdissante à 1 détonation (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+                <Original>Grenade assourdissante à 1 détonation (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 1 detonation (flash + bang), standard fuse (« Fuse » setting, 1.5 s by default). Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 1 détonation (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_1_Name">
-                <Original>Grenade assourdissante FB-1 (1 flash)</Original>
-                <English>Stun grenade FB-1 (1-bang)</English>
-                <French>Grenade assourdissante FB-1 (1 flash)</French>
+                <Original>Flash ×1</Original>
+                <English>Flash ×1</English>
+                <French>Flash ×1</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_1_Short">
                 <Original>FB-1</Original>
                 <English>FB-1</English>
                 <French>FB-1</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_2_D3_Desc">
+                <Original>Grenade assourdissante à 2 détonations, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</Original>
+                <English>Stun grenade, 2 detonations, fixed 3 s long fuse: throw, let it bounce or roll, it goes off 3 s after the throw. Does not go off on impact. Yellow band and « 3s » stamp on the body.</English>
+                <French>Grenade assourdissante à 2 détonations, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_2_D3_Name">
+                <Original>Flash ×2 · 3 s</Original>
+                <English>Flash ×2 · 3 s</English>
+                <French>Flash ×2 · 3 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_2_D3_Short">
+                <Original>FB-2 3s</Original>
+                <English>FB-2 3s</English>
+                <French>FB-2 3s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_2_D8_Desc">
+                <Original>Grenade assourdissante à 2 détonations, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</Original>
+                <English>Stun grenade, 2 detonations, fixed 8 s long fuse: to throw ahead from a safe position, it goes off 8 s after the throw. Does not go off on impact. Red band and « 8s » stamp on the body.</English>
+                <French>Grenade assourdissante à 2 détonations, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_2_D8_Name">
+                <Original>Flash ×2 · 8 s</Original>
+                <English>Flash ×2 · 8 s</English>
+                <French>Flash ×2 · 8 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_2_D8_Short">
+                <Original>FB-2 8s</Original>
+                <English>FB-2 8s</English>
+                <French>FB-2 8s</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Flash_2_Desc">
-                <Original>Grenade assourdissante à 2 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
-                <English>Stun grenade, 2 detonations (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
-                <French>Grenade assourdissante à 2 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+                <Original>Grenade assourdissante à 2 détonations (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 2 detonations (flash + bang), standard fuse (« Fuse » setting, 1.5 s by default). Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 2 détonations (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_2_Name">
-                <Original>Grenade assourdissante FB-2 (2 flashs)</Original>
-                <English>Stun grenade FB-2 (2-bangs)</English>
-                <French>Grenade assourdissante FB-2 (2 flashs)</French>
+                <Original>Flash ×2</Original>
+                <English>Flash ×2</English>
+                <French>Flash ×2</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_2_Short">
                 <Original>FB-2</Original>
                 <English>FB-2</English>
                 <French>FB-2</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_3_D3_Desc">
+                <Original>Grenade assourdissante à 3 détonations, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</Original>
+                <English>Stun grenade, 3 detonations, fixed 3 s long fuse: throw, let it bounce or roll, it goes off 3 s after the throw. Does not go off on impact. Yellow band and « 3s » stamp on the body.</English>
+                <French>Grenade assourdissante à 3 détonations, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_3_D3_Name">
+                <Original>Flash ×3 · 3 s</Original>
+                <English>Flash ×3 · 3 s</English>
+                <French>Flash ×3 · 3 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_3_D3_Short">
+                <Original>FB-3 3s</Original>
+                <English>FB-3 3s</English>
+                <French>FB-3 3s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_3_D8_Desc">
+                <Original>Grenade assourdissante à 3 détonations, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</Original>
+                <English>Stun grenade, 3 detonations, fixed 8 s long fuse: to throw ahead from a safe position, it goes off 8 s after the throw. Does not go off on impact. Red band and « 8s » stamp on the body.</English>
+                <French>Grenade assourdissante à 3 détonations, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_3_D8_Name">
+                <Original>Flash ×3 · 8 s</Original>
+                <English>Flash ×3 · 8 s</English>
+                <French>Flash ×3 · 8 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_3_D8_Short">
+                <Original>FB-3 8s</Original>
+                <English>FB-3 8s</English>
+                <French>FB-3 8s</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Flash_3_Desc">
-                <Original>Grenade assourdissante à 3 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
-                <English>Stun grenade, 3 detonations (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
-                <French>Grenade assourdissante à 3 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+                <Original>Grenade assourdissante à 3 détonations (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 3 detonations (flash + bang), standard fuse (« Fuse » setting, 1.5 s by default). Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 3 détonations (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_3_Name">
-                <Original>Grenade assourdissante FB-3 (3 flashs)</Original>
-                <English>Stun grenade FB-3 (3-bangs)</English>
-                <French>Grenade assourdissante FB-3 (3 flashs)</French>
+                <Original>Flash ×3</Original>
+                <English>Flash ×3</English>
+                <French>Flash ×3</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_3_Short">
                 <Original>FB-3</Original>
                 <English>FB-3</English>
                 <French>FB-3</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_4_D3_Desc">
+                <Original>Grenade assourdissante à 4 détonations, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</Original>
+                <English>Stun grenade, 4 detonations, fixed 3 s long fuse: throw, let it bounce or roll, it goes off 3 s after the throw. Does not go off on impact. Yellow band and « 3s » stamp on the body.</English>
+                <French>Grenade assourdissante à 4 détonations, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_4_D3_Name">
+                <Original>Flash ×4 · 3 s</Original>
+                <English>Flash ×4 · 3 s</English>
+                <French>Flash ×4 · 3 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_4_D3_Short">
+                <Original>FB-4 3s</Original>
+                <English>FB-4 3s</English>
+                <French>FB-4 3s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_4_D8_Desc">
+                <Original>Grenade assourdissante à 4 détonations, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</Original>
+                <English>Stun grenade, 4 detonations, fixed 8 s long fuse: to throw ahead from a safe position, it goes off 8 s after the throw. Does not go off on impact. Red band and « 8s » stamp on the body.</English>
+                <French>Grenade assourdissante à 4 détonations, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_4_D8_Name">
+                <Original>Flash ×4 · 8 s</Original>
+                <English>Flash ×4 · 8 s</English>
+                <French>Flash ×4 · 8 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_4_D8_Short">
+                <Original>FB-4 8s</Original>
+                <English>FB-4 8s</English>
+                <French>FB-4 8s</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Flash_4_Desc">
-                <Original>Grenade assourdissante à 4 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
-                <English>Stun grenade, 4 detonations (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
-                <French>Grenade assourdissante à 4 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+                <Original>Grenade assourdissante à 4 détonations (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 4 detonations (flash + bang), standard fuse (« Fuse » setting, 1.5 s by default). Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 4 détonations (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_4_Name">
-                <Original>Grenade assourdissante FB-4 (4 flashs)</Original>
-                <English>Stun grenade FB-4 (4-bangs)</English>
-                <French>Grenade assourdissante FB-4 (4 flashs)</French>
+                <Original>Flash ×4</Original>
+                <English>Flash ×4</English>
+                <French>Flash ×4</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_4_Short">
                 <Original>FB-4</Original>
                 <English>FB-4</English>
                 <French>FB-4</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_5_D3_Desc">
+                <Original>Grenade assourdissante à 5 détonations, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</Original>
+                <English>Stun grenade, 5 detonations, fixed 3 s long fuse: throw, let it bounce or roll, it goes off 3 s after the throw. Does not go off on impact. Yellow band and « 3s » stamp on the body.</English>
+                <French>Grenade assourdissante à 5 détonations, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_5_D3_Name">
+                <Original>Flash ×5 · 3 s</Original>
+                <English>Flash ×5 · 3 s</English>
+                <French>Flash ×5 · 3 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_5_D3_Short">
+                <Original>FB-5 3s</Original>
+                <English>FB-5 3s</English>
+                <French>FB-5 3s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_5_D8_Desc">
+                <Original>Grenade assourdissante à 5 détonations, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</Original>
+                <English>Stun grenade, 5 detonations, fixed 8 s long fuse: to throw ahead from a safe position, it goes off 8 s after the throw. Does not go off on impact. Red band and « 8s » stamp on the body.</English>
+                <French>Grenade assourdissante à 5 détonations, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_5_D8_Name">
+                <Original>Flash ×5 · 8 s</Original>
+                <English>Flash ×5 · 8 s</English>
+                <French>Flash ×5 · 8 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_5_D8_Short">
+                <Original>FB-5 8s</Original>
+                <English>FB-5 8s</English>
+                <French>FB-5 8s</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Flash_5_Desc">
-                <Original>Grenade assourdissante à 5 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
-                <English>Stun grenade, 5 detonations (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
-                <French>Grenade assourdissante à 5 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+                <Original>Grenade assourdissante à 5 détonations (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 5 detonations (flash + bang), standard fuse (« Fuse » setting, 1.5 s by default). Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 5 détonations (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_5_Name">
-                <Original>Grenade assourdissante FB-5 (5 flashs)</Original>
-                <English>Stun grenade FB-5 (5-bangs)</English>
-                <French>Grenade assourdissante FB-5 (5 flashs)</French>
+                <Original>Flash ×5</Original>
+                <English>Flash ×5</English>
+                <French>Flash ×5</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_5_Short">
                 <Original>FB-5</Original>
                 <English>FB-5</English>
                 <French>FB-5</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_6_D3_Desc">
+                <Original>Grenade assourdissante à 6 détonations, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</Original>
+                <English>Stun grenade, 6 detonations, fixed 3 s long fuse: throw, let it bounce or roll, it goes off 3 s after the throw. Does not go off on impact. Yellow band and « 3s » stamp on the body.</English>
+                <French>Grenade assourdissante à 6 détonations, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_6_D3_Name">
+                <Original>Flash ×6 · 3 s</Original>
+                <English>Flash ×6 · 3 s</English>
+                <French>Flash ×6 · 3 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_6_D3_Short">
+                <Original>FB-6 3s</Original>
+                <English>FB-6 3s</English>
+                <French>FB-6 3s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_6_D8_Desc">
+                <Original>Grenade assourdissante à 6 détonations, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</Original>
+                <English>Stun grenade, 6 detonations, fixed 8 s long fuse: to throw ahead from a safe position, it goes off 8 s after the throw. Does not go off on impact. Red band and « 8s » stamp on the body.</English>
+                <French>Grenade assourdissante à 6 détonations, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_6_D8_Name">
+                <Original>Flash ×6 · 8 s</Original>
+                <English>Flash ×6 · 8 s</English>
+                <French>Flash ×6 · 8 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_6_D8_Short">
+                <Original>FB-6 8s</Original>
+                <English>FB-6 8s</English>
+                <French>FB-6 8s</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Flash_6_Desc">
-                <Original>Grenade assourdissante à 6 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
-                <English>Stun grenade, 6 detonations (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
-                <French>Grenade assourdissante à 6 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+                <Original>Grenade assourdissante à 6 détonations (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 6 detonations (flash + bang), standard fuse (« Fuse » setting, 1.5 s by default). Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 6 détonations (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_6_Name">
-                <Original>Grenade assourdissante FB-6 (6 flashs)</Original>
-                <English>Stun grenade FB-6 (6-bangs)</English>
-                <French>Grenade assourdissante FB-6 (6 flashs)</French>
+                <Original>Flash ×6</Original>
+                <English>Flash ×6</English>
+                <French>Flash ×6</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_6_Short">
                 <Original>FB-6</Original>
                 <English>FB-6</English>
                 <French>FB-6</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_7_D3_Desc">
+                <Original>Grenade assourdissante à 7 détonations, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</Original>
+                <English>Stun grenade, 7 detonations, fixed 3 s long fuse: throw, let it bounce or roll, it goes off 3 s after the throw. Does not go off on impact. Yellow band and « 3s » stamp on the body.</English>
+                <French>Grenade assourdissante à 7 détonations, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_7_D3_Name">
+                <Original>Flash ×7 · 3 s</Original>
+                <English>Flash ×7 · 3 s</English>
+                <French>Flash ×7 · 3 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_7_D3_Short">
+                <Original>FB-7 3s</Original>
+                <English>FB-7 3s</English>
+                <French>FB-7 3s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_7_D8_Desc">
+                <Original>Grenade assourdissante à 7 détonations, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</Original>
+                <English>Stun grenade, 7 detonations, fixed 8 s long fuse: to throw ahead from a safe position, it goes off 8 s after the throw. Does not go off on impact. Red band and « 8s » stamp on the body.</English>
+                <French>Grenade assourdissante à 7 détonations, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_7_D8_Name">
+                <Original>Flash ×7 · 8 s</Original>
+                <English>Flash ×7 · 8 s</English>
+                <French>Flash ×7 · 8 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_7_D8_Short">
+                <Original>FB-7 8s</Original>
+                <English>FB-7 8s</English>
+                <French>FB-7 8s</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Flash_7_Desc">
-                <Original>Grenade assourdissante à 7 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
-                <English>Stun grenade, 7 detonations (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
-                <French>Grenade assourdissante à 7 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+                <Original>Grenade assourdissante à 7 détonations (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 7 detonations (flash + bang), standard fuse (« Fuse » setting, 1.5 s by default). Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 7 détonations (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_7_Name">
-                <Original>Grenade assourdissante FB-7 (7 flashs)</Original>
-                <English>Stun grenade FB-7 (7-bangs)</English>
-                <French>Grenade assourdissante FB-7 (7 flashs)</French>
+                <Original>Flash ×7</Original>
+                <English>Flash ×7</English>
+                <French>Flash ×7</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_7_Short">
                 <Original>FB-7</Original>
                 <English>FB-7</English>
                 <French>FB-7</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_8_D3_Desc">
+                <Original>Grenade assourdissante à 8 détonations, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</Original>
+                <English>Stun grenade, 8 detonations, fixed 3 s long fuse: throw, let it bounce or roll, it goes off 3 s after the throw. Does not go off on impact. Yellow band and « 3s » stamp on the body.</English>
+                <French>Grenade assourdissante à 8 détonations, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_8_D3_Name">
+                <Original>Flash ×8 · 3 s</Original>
+                <English>Flash ×8 · 3 s</English>
+                <French>Flash ×8 · 3 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_8_D3_Short">
+                <Original>FB-8 3s</Original>
+                <English>FB-8 3s</English>
+                <French>FB-8 3s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_8_D8_Desc">
+                <Original>Grenade assourdissante à 8 détonations, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</Original>
+                <English>Stun grenade, 8 detonations, fixed 8 s long fuse: to throw ahead from a safe position, it goes off 8 s after the throw. Does not go off on impact. Red band and « 8s » stamp on the body.</English>
+                <French>Grenade assourdissante à 8 détonations, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_8_D8_Name">
+                <Original>Flash ×8 · 8 s</Original>
+                <English>Flash ×8 · 8 s</English>
+                <French>Flash ×8 · 8 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_8_D8_Short">
+                <Original>FB-8 8s</Original>
+                <English>FB-8 8s</English>
+                <French>FB-8 8s</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Flash_8_Desc">
-                <Original>Grenade assourdissante à 8 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
-                <English>Stun grenade, 8 detonations (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
-                <French>Grenade assourdissante à 8 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+                <Original>Grenade assourdissante à 8 détonations (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 8 detonations (flash + bang), standard fuse (« Fuse » setting, 1.5 s by default). Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 8 détonations (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_8_Name">
-                <Original>Grenade assourdissante FB-8 (8 flashs)</Original>
-                <English>Stun grenade FB-8 (8-bangs)</English>
-                <French>Grenade assourdissante FB-8 (8 flashs)</French>
+                <Original>Flash ×8</Original>
+                <English>Flash ×8</English>
+                <French>Flash ×8</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_8_Short">
                 <Original>FB-8</Original>
                 <English>FB-8</English>
                 <French>FB-8</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_9_D3_Desc">
+                <Original>Grenade assourdissante à 9 détonations, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</Original>
+                <English>Stun grenade, 9 detonations, fixed 3 s long fuse: throw, let it bounce or roll, it goes off 3 s after the throw. Does not go off on impact. Yellow band and « 3s » stamp on the body.</English>
+                <French>Grenade assourdissante à 9 détonations, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_9_D3_Name">
+                <Original>Flash ×9 · 3 s</Original>
+                <English>Flash ×9 · 3 s</English>
+                <French>Flash ×9 · 3 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_9_D3_Short">
+                <Original>FB-9 3s</Original>
+                <English>FB-9 3s</English>
+                <French>FB-9 3s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_9_D8_Desc">
+                <Original>Grenade assourdissante à 9 détonations, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</Original>
+                <English>Stun grenade, 9 detonations, fixed 8 s long fuse: to throw ahead from a safe position, it goes off 8 s after the throw. Does not go off on impact. Red band and « 8s » stamp on the body.</English>
+                <French>Grenade assourdissante à 9 détonations, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_9_D8_Name">
+                <Original>Flash ×9 · 8 s</Original>
+                <English>Flash ×9 · 8 s</English>
+                <French>Flash ×9 · 8 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_9_D8_Short">
+                <Original>FB-9 8s</Original>
+                <English>FB-9 8s</English>
+                <French>FB-9 8s</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Flash_9_Desc">
-                <Original>Grenade assourdissante à 9 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
-                <English>Stun grenade, 9 detonations (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
-                <French>Grenade assourdissante à 9 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+                <Original>Grenade assourdissante à 9 détonations (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 9 detonations (flash + bang), standard fuse (« Fuse » setting, 1.5 s by default). Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 9 détonations (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_9_Name">
-                <Original>Grenade assourdissante FB-9 (9 flashs)</Original>
-                <English>Stun grenade FB-9 (9-bangs)</English>
-                <French>Grenade assourdissante FB-9 (9 flashs)</French>
+                <Original>Flash ×9</Original>
+                <English>Flash ×9</English>
+                <French>Flash ×9</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_9_Short">
                 <Original>FB-9</Original>
                 <English>FB-9</English>
                 <French>FB-9</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Fuse_3">
+                <Original>3 s</Original>
+                <English>3 s</English>
+                <French>3 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Fuse_8">
+                <Original>8 s</Original>
+                <English>8 s</English>
+                <French>8 s</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Fuse_Custom">
+                <Original>Personnalisé</Original>
+                <English>Custom</English>
+                <French>Personnalisé</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Fuse_DefaultEden">
+                <Original>Par défaut (aucune)</Original>
+                <English>Default (none)</English>
+                <French>Par défaut (aucune)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Fuse_DefaultZen">
+                <Original>Par défaut (réglage)</Original>
+                <English>Default (setting)</English>
+                <French>Par défaut (réglage)</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Module">
-                <Original>Flashbang (COMSPEC)</Original>
-                <English>Flashbang (COMSPEC)</English>
-                <French>Flashbang (COMSPEC)</French>
+                <Original>Flashbang</Original>
+                <English>Flashbang</English>
+                <French>Flashbang</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Module_Bursts">
                 <Original>Nombre de détonations</Original>
@@ -188,9 +563,39 @@
                 <French>Secondes avant la première détonation, après le début de la mission ou l'activation.  Exemple : 1.5 (mèche d'une vraie grenade).</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Module_Desc">
-                <Original>Fait détoner une grenade assourdissante à la position du module, ou applique l'effet à toutes les unités d'une zone. Se déclenche au début de la mission (après le délai) ou par un déclencheur synchronisé.</Original>
-                <English>Detonates a stun grenade at the module position, or applies the effect to every unit in an area. Fires at mission start (after the delay) or from a synchronised trigger.</English>
-                <French>Fait détoner une grenade assourdissante à la position du module, ou applique l'effet à toutes les unités d'une zone. Se déclenche au début de la mission (après le délai) ou par un déclencheur synchronisé.</French>
+                <Original>Fait détoner une grenade assourdissante (ou une DRILL) à la position du module, ou applique l'effet à toutes les unités d'une zone. Se déclenche au début de la mission ou par un déclencheur synchronisé, après le délai puis la mèche choisie.</Original>
+                <English>Detonates a stun grenade (or a DRILL) at the module position, or applies the effect to every unit in an area. Fires at mission start or from a synchronised trigger, after the delay and then the chosen fuse.</English>
+                <French>Fait détoner une grenade assourdissante (ou une DRILL) à la position du module, ou applique l'effet à toutes les unités d'une zone. Se déclenche au début de la mission ou par un déclencheur synchronisé, après le délai puis la mèche choisie.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_DrillSound">
+                <Original>Son de la DRILL</Original>
+                <English>DRILL sound</English>
+                <French>Son de la DRILL</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_DrillSound_Tip">
+                <Original>Son joué à chaque pop de la grenade d'entraînement (mode DRILL, ou case DRILL dans Zeus). « Selon le réglage de l'addon » : réglage « Son de la grenade d'entraînement ». Un autre choix l'emporte sur le réglage pour cette grenade.  Ex. : Sifflet d'exercice pour marquer le top départ d'une entrée.</Original>
+                <English>Sound played on each pop of the training grenade (DRILL mode, or DRILL box in Zeus). « Per addon setting »: « Training grenade sound » setting. Any other choice overrides the setting for this grenade.  Example: Drill whistle to mark the go signal of an entry.</English>
+                <French>Son joué à chaque pop de la grenade d'entraînement (mode DRILL, ou case DRILL dans Zeus). « Selon le réglage de l'addon » : réglage « Son de la grenade d'entraînement ». Un autre choix l'emporte sur le réglage pour cette grenade.  Ex. : Sifflet d'exercice pour marquer le top départ d'une entrée.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_FuseCustom">
+                <Original>Mèche personnalisée (s)</Original>
+                <English>Custom fuse (s)</English>
+                <French>Mèche personnalisée (s)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_FuseCustom_Tip">
+                <Original>Utilisé seulement si « Délai de mèche » = Personnalisé : mèche de 0,5 à 20 s.  Ex. : 12 : détonation 12 s après l'activation.</Original>
+                <English>Only used when « Fuse delay » = Custom: fuse from 0.5 to 20 s.  Example: 12: detonation 12 s after activation.</English>
+                <French>Utilisé seulement si « Délai de mèche » = Personnalisé : mèche de 0,5 à 20 s.  Ex. : 12 : détonation 12 s après l'activation.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_FuseMode">
+                <Original>Délai de mèche</Original>
+                <English>Fuse delay</English>
+                <French>Délai de mèche</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_FuseMode_Tip">
+                <Original>Mèche ajoutée au délai ci-dessus, pour tous les modes (grenade, zone, DRILL) : la détonation arrive après cette durée. Par défaut : aucune mèche (comme avant). 3 s / 8 s : grenade à délai (engin marqué 3s / 8s). Personnalisé : valeur du champ « Mèche personnalisée ».  Ex. : 8 s : la grenade explose 8 secondes après son lancer (ici, après l'activation du module).</Original>
+                <English>Fuse added to the delay above, for every mode (grenade, area, DRILL): the detonation comes after this time. Default: no fuse (as before). 3 s / 8 s: delayed grenade (device stamped 3s / 8s). Custom: value of the « Custom fuse » field.  Example: 8 s: the grenade goes off 8 seconds after it is thrown (here, after the module activates).</English>
+                <French>Mèche ajoutée au délai ci-dessus, pour tous les modes (grenade, zone, DRILL) : la détonation arrive après cette durée. Par défaut : aucune mèche (comme avant). 3 s / 8 s : grenade à délai (engin marqué 3s / 8s). Personnalisé : valeur du champ « Mèche personnalisée ».  Ex. : 8 s : la grenade explose 8 secondes après son lancer (ici, après l'activation du module).</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Module_Mode">
                 <Original>Mode</Original>
@@ -248,9 +653,9 @@
                 <French>Mode zone : 1 = comme à 2 m d'une vraie grenade, 0,3 = gêne légère.  Exemple : 0.8.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Muzzle">
-                <Original>Grenade assourdissante</Original>
-                <English>Stun grenade</English>
-                <French>Grenade assourdissante</French>
+                <Original>Flash</Original>
+                <English>Flash</English>
+                <French>Flash</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Preset_Arcade">
                 <Original>Arcade (plus long, plus fort)</Original>
@@ -328,14 +733,14 @@
                 <French>L'IA éblouie vise mal, repère mal et hésite quelques secondes.  Exemple : coché.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_BangVolume">
-                <Original>Volume du bang</Original>
-                <English>Bang volume</English>
-                <French>Volume du bang</French>
+                <Original>Volume des flashbangs</Original>
+                <English>Flashbang volume</English>
+                <French>Volume des flashbangs</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_BangVolume_Tip">
-                <Original>Volume des détonations sur ce poste.  Exemple : 1 ; 0.6 si le bang est trop fort au casque.</Original>
-                <English>Detonation volume on this computer.  Example: 1; 0.6 if the bang is too loud in the headset.</English>
-                <French>Volume des détonations sur ce poste.  Exemple : 1 ; 0.6 si le bang est trop fort au casque.</French>
+                <Original>Volume des bangs et des sons de la DRILL sur ce poste (50 à 300 %, 200 % par défaut : très fort, baissez le volume de votre casque avant de tester). Au-delà du plafond d'une lecture, le bang est joué en plusieurs lectures superposées.  Ex. : 100 % = niveau d'origine ; baissez si le bang est trop fort dans votre casque.</Original>
+                <English>Volume of the bangs and DRILL sounds on this computer (50 to 300 %, 200 % by default: very loud, turn your headset down before testing). Above the per-playback cap the bang is played as several overlapping playbacks.  Example: 100 % = original level; lower it if the bang is too loud in your headset.</English>
+                <French>Volume des bangs et des sons de la DRILL sur ce poste (50 à 300 %, 200 % par défaut : très fort, baissez le volume de votre casque avant de tester). Au-delà du plafond d'une lecture, le bang est joué en plusieurs lectures superposées.  Ex. : 100 % = niveau d'origine ; baissez si le bang est trop fort dans votre casque.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_Blur">
                 <Original>Perte d'acuité (flou)</Original>
@@ -358,14 +763,14 @@
                 <French>Petite blessure si la grenade éclate à moins de 1 m (jamais avec ACE Médical).  Exemple : décoché.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_Debug">
-                <Original>Journal de débogage (RPT)</Original>
-                <English>Debug log (RPT)</English>
-                <French>Journal de débogage (RPT)</French>
+                <Original>Journal de diagnostic (RPT)</Original>
+                <English>Diagnostic log (RPT)</English>
+                <French>Journal de diagnostic (RPT)</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_Debug_Tip">
-                <Original>Écrit chaque étape dans le fichier RPT (rien à l'écran).  Exemple : décoché.</Original>
-                <English>Writes every step to the RPT file (nothing on screen).  Example: unticked.</English>
-                <French>Écrit chaque étape dans le fichier RPT (rien à l'écran).  Exemple : décoché.</French>
+                <Original>Écrit dans le fichier RPT de ce poste chaque étape d'une grenade : lancer, mèche, serveur, détonations, intensité calculée pour chaque unité, effets appliqués ou raison du refus (lignes « [COMSPEC FB] »). Rien à l'écran, aucun coût quand décoché.  Ex. : active-le, lance une grenade, puis envoie ton RPT.</Original>
+                <English>Writes every step of a grenade to this machine's RPT file: throw, fuse, server, detonations, computed strength for each unit, effects applied or why not (« [COMSPEC FB] » lines). Nothing on screen, no cost when unticked.  Example: tick it, throw a grenade, then send your RPT.</English>
+                <French>Écrit dans le fichier RPT de ce poste chaque étape d'une grenade : lancer, mèche, serveur, détonations, intensité calculée pour chaque unité, effets appliqués ou raison du refus (lignes « [COMSPEC FB] »). Rien à l'écran, aucun coût quand décoché.  Ex. : active-le, lance une grenade, puis envoie ton RPT.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_DrillFlash">
                 <Original>Lueur de la DRILL</Original>
@@ -386,6 +791,26 @@
                 <Original>Nombre de pops de la grenade d'entraînement (1 à 9).  Exemple : 1, ou 3 pour simuler une trois-coups.</Original>
                 <English>Number of pops of the training grenade (1 to 9).  Example: 1, or 3 to mimic a three-bang.</English>
                 <French>Nombre de pops de la grenade d'entraînement (1 à 9).  Exemple : 1, ou 3 pour simuler une trois-coups.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_DrillSound">
+                <Original>Son de la grenade d'entraînement</Original>
+                <English>Training grenade sound</English>
+                <French>Son de la grenade d'entraînement</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_DrillSound_Tip">
+                <Original>Son joué à chaque pop de la grenade DRILL, pour tous (un par pop, lectures superposées, petite variation de hauteur et de volume). Pop sourd : étouffé. Bang réel : le bang d'une vraie grenade, sans aucun effet. Aucun son : fumée seule. Le module Eden et le module Zeus peuvent imposer un autre son.  Ex. : « Pop » pour un exercice discret, « Bang réel » pour s'entraîner au bruit d'une vraie détonation.</Original>
+                <English>Sound played on each pop of the DRILL grenade, for everyone (one per pop, overlapping, small pitch and volume variation). Muffled pop: dull. Real bang: the bang of a real grenade, with no effect. No sound: smoke only. The Eden and Zeus modules can force another sound.  Example: « Pop » for a discreet drill, « Real bang » to train with the noise of a real detonation.</English>
+                <French>Son joué à chaque pop de la grenade DRILL, pour tous (un par pop, lectures superposées, petite variation de hauteur et de volume). Pop sourd : étouffé. Bang réel : le bang d'une vraie grenade, sans aucun effet. Aucun son : fumée seule. Le module Eden et le module Zeus peuvent imposer un autre son.  Ex. : « Pop » pour un exercice discret, « Bang réel » pour s'entraîner au bruit d'une vraie détonation.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_DrillVolume">
+                <Original>Volume du son d'entraînement</Original>
+                <English>Training sound volume</English>
+                <French>Volume du son d'entraînement</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_DrillVolume_Tip">
+                <Original>Volume du son de la grenade DRILL, pour tous (20 à 150 %), en plus du « Volume du bang » de chaque poste.  Ex. : 60 % pour un exercice de nuit près des habitations.</Original>
+                <English>Volume of the DRILL grenade sound, for everyone (20 to 150 %), on top of each player's « Bang volume ».  Example: 60 % for a night drill near houses.</English>
+                <French>Volume du son de la grenade DRILL, pour tous (20 à 150 %), en plus du « Volume du bang » de chaque poste.  Ex. : 60 % pour un exercice de nuit près des habitations.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_EarProtection">
                 <Original>Protection auditive (dB)</Original>
@@ -423,9 +848,9 @@
                 <French>Mèche (s)</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_Fuse_Tip">
-                <Original>Temps entre le lâcher de la cuillère et la première détonation.  Exemple : 1.5 (M84 : 1 à 2,3 s).</Original>
-                <English>Time between spoon release and the first detonation.  Example: 1.5 (M84: 1 to 2.3 s).</English>
-                <French>Temps entre le lâcher de la cuillère et la première détonation.  Exemple : 1.5 (M84 : 1 à 2,3 s).</French>
+                <Original>Temps entre le lâcher de la cuillère et la première détonation des grenades standard. Ne s'applique pas aux grenades à délai 3 s / 8 s (mèche fixe).  Exemple : 1.5 (M84 : 1 à 2,3 s).</Original>
+                <English>Time between spoon release and the first detonation of standard grenades. Does not apply to the 3 s / 8 s delayed grenades (fixed fuse).  Example: 1.5 (M84: 1 to 2.3 s).</English>
+                <French>Temps entre le lâcher de la cuillère et la première détonation des grenades standard. Ne s'applique pas aux grenades à délai 3 s / 8 s (mèche fixe).  Exemple : 1.5 (M84 : 1 à 2,3 s).</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_IndoorDetection">
                 <Original>Détecter intérieur / extérieur</Original>
@@ -473,9 +898,9 @@
                 <French>Irrégularité (s)</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_Jitter_Tip">
-                <Original>Écart aléatoire ajouté à chaque intervalle (les vraies grenades sont irrégulières).  Exemple : 0.12.</Original>
-                <English>Random spread added to each interval (real grenades are irregular).  Example: 0.12.</English>
-                <French>Écart aléatoire ajouté à chaque intervalle (les vraies grenades sont irrégulières).  Exemple : 0.12.</French>
+                <Original>Écart aléatoire ajouté à chaque intervalle (les vraies grenades sont irrégulières), et à la mèche fixe des grenades 3 s / 8 s.  Exemple : 0.12.</Original>
+                <English>Random spread added to each interval (real grenades are irregular), and to the fixed fuse of the 3 s / 8 s grenades.  Example: 0.12.</English>
+                <French>Écart aléatoire ajouté à chaque intervalle (les vraies grenades sont irrégulières), et à la mèche fixe des grenades 3 s / 8 s.  Exemple : 0.12.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_MaxStack">
                 <Original>Cécité cumulée max (s)</Original>
@@ -553,9 +978,9 @@
                 <French>Rayon plein effet (m)</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_RadiusFull_Tip">
-                <Original>Distance jusqu'à laquelle le flash a tout son effet sur un œil qui le regarde.  Exemple : 6.</Original>
-                <English>Distance up to which the flash has full effect on an eye looking at it.  Example: 6.</English>
-                <French>Distance jusqu'à laquelle le flash a tout son effet sur un œil qui le regarde.  Exemple : 6.</French>
+                <Original>Distance jusqu'à laquelle le flash a tout son effet (table de calibration : 3 m).  Exemple : 3 ; 5 pour un effet plus fort.</Original>
+                <English>Distance up to which the flash has full effect (calibration table: 3 m). Example: 3; 5 for a stronger effect.</English>
+                <French>Distance jusqu'à laquelle le flash a tout son effet (table de calibration : 3 m).  Exemple : 3 ; 5 pour un effet plus fort.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_RadiusMax">
                 <Original>Rayon maximal (m)</Original>
@@ -566,6 +991,16 @@
                 <Original>Au-delà, plus d'éblouissement (le bang reste entendu et assourdit jusqu'à ~60 m).  Exemple : 25.</Original>
                 <English>Beyond it, no more dazzle (the bang is still heard and deafens up to ~60 m).  Example: 25.</English>
                 <French>Au-delà, plus d'éblouissement (le bang reste entendu et assourdit jusqu'à ~60 m).  Exemple : 25.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_SoundRange">
+                <Original>Portée du son (m)</Original>
+                <English>Sound range (m)</English>
+                <French>Portée du son (m)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_SoundRange_Tip">
+                <Original>Distance jusqu'à laquelle on entend le bang en terrain dégagé (très fort sous 25 m, net jusqu'à 100 m, lointain au-delà, retard de 343 m/s) ; moitié à travers un mur ou depuis un local fermé. N'agit pas sur les effets (éblouissement, désorientation), limités au rayon maximal.  Ex. : 250 = on l'entend à un quart de kilomètre en terrain dégagé ; baissez pour un petit terrain.</Original>
+                <English>Distance up to which the bang is heard in open ground (very loud under 25 m, clear up to 100 m, distant beyond, delayed at 343 m/s); half through a wall or from a closed room. Does not change the effects (dazzle, disorientation), which stay within the maximum radius.  Example: 250 = heard a quarter of a kilometre away in open ground; lower it for a small area.</English>
+                <French>Distance jusqu'à laquelle on entend le bang en terrain dégagé (très fort sous 25 m, net jusqu'à 100 m, lointain au-delà, retard de 343 m/s) ; moitié à travers un mur ou depuis un local fermé. N'agit pas sur les effets (éblouissement, désorientation), limités au rayon maximal.  Ex. : 250 = on l'entend à un quart de kilomètre en terrain dégagé ; baissez pour un petit terrain.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_Tinnitus">
                 <Original>Acouphène</Original>
@@ -592,6 +1027,16 @@
                 <English>Recording (licensed recorded pure tone) or synthesis (beating tone).  Example: Recording.</English>
                 <French>Enregistrement (son pur enregistré, sous licence) ou synthèse (son avec battement).  Exemple : Enregistrement.</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Set_TinnitusVolume">
+                <Original>Volume de l'acouphène</Original>
+                <English>Tinnitus volume</English>
+                <French>Volume de l'acouphène</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_TinnitusVolume_Tip">
+                <Original>Volume du sifflement d'acouphène sur ce poste (50 à 300 %, 150 % par défaut : fort et désagréable, comme le vrai).  Ex. : 100 % = niveau d'origine ; baissez si le sifflement est trop fort dans votre casque.</Original>
+                <English>Volume of the tinnitus whistle on this computer (50 to 300 %, 150 % by default: loud and unpleasant, like the real one).  Example: 100 % = original level; lower it if the whistle is too loud in your headset.</English>
+                <French>Volume du sifflement d'acouphène sur ce poste (50 à 300 %, 150 % par défaut : fort et désagréable, comme le vrai).  Ex. : 100 % = niveau d'origine ; baissez si le sifflement est trop fort dans votre casque.</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Set_Tinnitus_Tip">
                 <Original>Sifflement aigu qui décroît après une détonation proche.  Exemple : coché.</Original>
                 <English>High-pitched ringing that fades after a close detonation.  Example: ticked.</English>
@@ -608,9 +1053,19 @@
                 <French>Synthèse</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Zen_Area">
-                <Original>Effet de flashbang sur une zone</Original>
-                <English>Flashbang area effect</English>
-                <French>Effet de flashbang sur une zone</French>
+                <Original>Effet de zone</Original>
+                <English>Area effect</English>
+                <French>Effet de zone</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Zen_AreaDelay">
+                <Original>Délai (s)</Original>
+                <English>Delay (s)</English>
+                <French>Délai (s)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Zen_AreaDelay_Tip">
+                <Original>Secondes avant la première détonation de l'effet de zone.  Ex. : 8 : l'effet arrive 8 s après la validation.</Original>
+                <English>Seconds before the first detonation of the area effect.  Example: 8: the effect comes 8 s after you confirm.</English>
+                <French>Secondes avant la première détonation de l'effet de zone.  Ex. : 8 : l'effet arrive 8 s après la validation.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Zen_Drill">
                 <Original>Grenade d'entraînement (DRILL)</Original>
@@ -622,10 +1077,15 @@
                 <English>Pops with no flash or effect; pop count = number of detonations.  Example: unticked.</English>
                 <French>Pops sans flash ni effet, nombre de pops = nombre de détonations.  Exemple : décoché.</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Zen_FuseMode_Tip">
+                <Original>Par défaut : mèche du réglage d'addon « Mèche » (1,5 s). 3 s / 8 s : grenade à délai (engin marqué 3s / 8s). Personnalisé : curseur suivant (0,5 à 20 s).  Ex. : 8 s : la grenade explose 8 secondes après son lancer.</Original>
+                <English>Default: fuse from the « Fuse » addon setting (1.5 s). 3 s / 8 s: delayed grenade (device stamped 3s / 8s). Custom: next slider (0.5 to 20 s).  Example: 8 s: the grenade goes off 8 seconds after it is thrown.</English>
+                <French>Par défaut : mèche du réglage d'addon « Mèche » (1,5 s). 3 s / 8 s : grenade à délai (engin marqué 3s / 8s). Personnalisé : curseur suivant (0,5 à 20 s).  Ex. : 8 s : la grenade explose 8 secondes après son lancer.</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Zen_Throw">
-                <Original>Lancer un flashbang</Original>
-                <English>Throw a flashbang</English>
-                <French>Lancer un flashbang</French>
+                <Original>Lancer flash</Original>
+                <English>Throw flash</English>
+                <French>Lancer flash</French>
             </Key>
         </Container>
     </Package>

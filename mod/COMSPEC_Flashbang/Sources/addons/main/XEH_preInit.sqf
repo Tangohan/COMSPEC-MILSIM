@@ -9,6 +9,16 @@ comspec_fb_seq = 0;                    // compteur d'identifiants (serveur)
 comspec_fb_owners = createHashMap;     // serveur : id -> machines destinataires (annulation)
 comspec_fb_lastSound = createHashMap;  // dernier fichier joué par effet (pas deux fois de suite le même)
 
+// Messages réseau : événements CBA (publicVariable), pas remoteExec : rien à ajouter à la liste blanche CfgRemoteExec
+// d'une mission, et un filtre BattlEye remoteexec.txt ne les bloque pas.
+if (isServer) then {
+    ["comspec_fb_serverDetonate", { _this call comspec_fb_fnc_serverDetonate }] call CBA_fnc_addEventHandler;
+    ["comspec_fb_serverArea", { _this call comspec_fb_fnc_serverArea }] call CBA_fnc_addEventHandler;
+};
+["comspec_fb_timeline", { _this call comspec_fb_fnc_timeline }] call CBA_fnc_addEventHandler;
+["comspec_fb_cancel", { _this call comspec_fb_fnc_cancel }] call CBA_fnc_addEventHandler;
+["comspec_fb_aiRestore", { _this call comspec_fb_fnc_aiRestore }] call CBA_fnc_addEventHandler;
+
 private _cat = "COMSPEC Flashbang";
 private _add = {
     params ["_name", "_type", "_key", "_sub", "_values", ["_global", 1]];
@@ -25,9 +35,10 @@ private _add = {
     localize "STR_COMSPEC_FB_Preset_Real", localize "STR_COMSPEC_FB_Preset_Arcade", localize "STR_COMSPEC_FB_Preset_Light"
 ], 0]] call _add;
 ["comspec_fb_intensity", "SLIDER", "Intensity", "General", [0, 2, 1, 2]] call _add;
-["comspec_fb_radiusFull", "SLIDER", "RadiusFull", "General", [1, 15, 6, 1]] call _add;
+["comspec_fb_radiusFull", "SLIDER", "RadiusFull", "General", [1, 15, 3, 1]] call _add;
 ["comspec_fb_radiusMax", "SLIDER", "RadiusMax", "General", [5, 60, 25, 0]] call _add;
 ["comspec_fb_maxStack", "SLIDER", "MaxStack", "General", [5, 30, 15, 0]] call _add;
+["comspec_fb_soundRange", "SLIDER", "SoundRange", "General", [50, 500, 250, 0]] call _add;
 ["comspec_fb_indoorDetection", "CHECKBOX", "IndoorDetection", "General", true] call _add;
 ["comspec_fb_indoorMult", "SLIDER", "IndoorMult", "General", [1, 2, 1.4, 2]] call _add;
 ["comspec_fb_damage", "CHECKBOX", "Damage", "General", false] call _add;
@@ -52,11 +63,17 @@ private _add = {
 // 6. Entraînement
 ["comspec_fb_drillPops", "SLIDER", "DrillPops", "Drill", [1, 9, 1, 0]] call _add;
 ["comspec_fb_drillFlash", "CHECKBOX", "DrillFlash", "Drill", false] call _add;
+// Son de la DRILL : valeurs = clés de la table CfgSons.hpp (drillChoix[]), libellés STR_COMSPEC_FB_DrillSound_<clé>.
+private _drillKeys = getArray (configFile >> "COMSPEC_FB_Sons" >> "drillChoix");
+["comspec_fb_drillSound", "LIST", "DrillSound", "Drill", [_drillKeys,
+    _drillKeys apply { localize format ["STR_COMSPEC_FB_DrillSound_%1", _x] }, 0]] call _add;
+["comspec_fb_drillVolume", "SLIDER", "DrillVolume", "Drill", [0.2, 1.5, 1, 0, true]] call _add;
 // 7. Client (propre à chaque joueur)
 ["comspec_fb_quality", "LIST", "Quality", "Client", [[0, 1, 2], [
     localize "STR_COMSPEC_FB_Quality_Low", localize "STR_COMSPEC_FB_Quality_Med", localize "STR_COMSPEC_FB_Quality_High"
 ], 1], 0] call _add;
-["comspec_fb_bangVolume", "SLIDER", "BangVolume", "Client", [0.2, 3, 1, 2], 0] call _add;
+["comspec_fb_bangVolume", "SLIDER", "BangVolume", "Client", [0.5, 3, 2, 0, true], 0] call _add;
+["comspec_fb_tinnitusVolume", "SLIDER", "TinnitusVolume", "Client", [0.5, 3, 1.5, 0, true], 0] call _add;
 ["comspec_fb_tinnitusSound", "LIST", "TinnitusSound", "Client", [[0, 1], [
     localize "STR_COMSPEC_FB_TinnitusSound_Rec", localize "STR_COMSPEC_FB_TinnitusSound_Synth"
 ], 0], 0] call _add;

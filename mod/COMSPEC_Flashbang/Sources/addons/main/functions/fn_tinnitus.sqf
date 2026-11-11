@@ -33,9 +33,11 @@ for "_k" from 1 to 18 do {
     if ((_mid call _amp) > _target) then { _lo = _mid } else { _hi = _mid };
 };
 private _off = (_lo max (50 - _durMax)) min 47;
-// Gain : compense un départ plus tardif dans le fichier, 2,0 = niveau nominal (le fichier part à -27 dBFS RMS).
+// Gain : compense un départ plus tardif dans le fichier (le fichier part à -6 dBFS crête) ; réglage « Volume de
+// l'acouphène » (150 % par défaut).
 private _gain = (_target / ((_off call _amp) max 0.01)) min 2.5;
 if (_id >= 0) then { stopSound _id };
-private _newId = playSoundUI [getText (_cfg >> "cfgSound"), (2 * _gain) min 5, 1, false, _off];
+private _vol = (_gain * (missionNamespace getVariable ["comspec_fb_tinnitusVolume", 1.5])) min 5;
+private _newId = playSoundUI [getText (_cfg >> "cfgSound"), _vol, 1, false, _off];
 _st set ["tinn", [_newId, _off, _now, _gain]];
-["acouphène", format ["niveau %1 -> %2, offset %3 s, gain %4", _cur toFixed 2, _target toFixed 2, _off toFixed 1, _gain toFixed 2]] call comspec_fb_fnc_log;
+["acouphène", format ["niveau %1 -> %2, offset %3 s, gain %4, volume %5", _cur toFixed 2, _target toFixed 2, _off toFixed 1, _gain toFixed 2, _vol toFixed 2]] call comspec_fb_fnc_log;
