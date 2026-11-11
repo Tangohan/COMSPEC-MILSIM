@@ -263,17 +263,75 @@ while { _z > _zFull && {_miss > 0} && {_z > _zMin} } do {
     _T = _T2; _x0 = _x02; _x1 = _x12; _y0 = _y02; _y1 = _y12;
     _miss = call _collect;
 };
+// Tuiles déjà chargées par le jeu (dessinées depuis moins de 5 min) : fichier -> heure du dernier dessin. Pour la mission
+// seulement (missionNamespace) : après un redémarrage, rien n'est supposé encore en mémoire.
+private _seen = missionNamespace getVariable ["COMSPEC_ATAK_PhotoSeen", createHashMap];
+if ((count _seen) > 20000) then { _seen = createHashMap; };
+missionNamespace setVariable ["COMSPEC_ATAK_PhotoSeen", _seen];
+private _isUp = { (_now - (_seen getOrDefault [_this call _file, -1e9])) < 300 };
 private _draw = {
-    params ["_zz", "_tx", "_ty"];
+    params ["_zz", "_tx", "_ty", ["_a", 1], ["_f", ""]];
     private _S = _ext / (2 ^ _zz);
     private _px = _k * _S / _mpp;
-    _map drawIcon [[_zz, _tx, _ty] call _file, [1, 1, 1, 1], [(_tx + 0.5) * _S, _ext - (_ty + 0.5) * _S, 0], _px, _px, 0, "", 0];
+    if (_f isEqualTo "") then { _f = [_zz, _tx, _ty] call _file; };
+    _seen set [_f, _now];
+    _map drawIcon [_f, [1, 1, 1, _a], [(_tx + 0.5) * _S, _ext - (_ty + 0.5) * _S, 0], _px, _px, 0, "", 0];
 };
+// Chargement étalé (4.4.0, TTRD « le téléphone lag, ça rame ») : chaque tuile neuve (JPEG lu dans la PBO et décodé par
+// le jeu) figeait l'image ; un nouveau zoom en demandait jusqu'à 64 d'un coup, d'où 1 à 2 s d'image figée (RPT du 11/11 :
+// « carte (image) max 1860 ms »). Désormais 2 tuiles neuves au plus par image (1 si l'image précédente a déjà ramé),
+// posées presque transparentes : la vue garde le niveau le plus fin déjà chargé en entier, puis passe au niveau visé
+// quand toutes ses tuiles sont prêtes (jamais deux niveaux mêlés à l'écran). Le niveau deux crans plus grossier, vite
+// chargé, passe d'abord quand rien n'est encore prêt. Une fois chargées, rien ne change : même image qu'avant.
+private _show = _fine;
+private _pre = [];
+// Noms des fichiers du niveau visé, faits une fois par image (test de chargement et dessin).
+private _fineF = _fine apply { _x call _file };
+private _newN = { (_now - (_seen getOrDefault [_x, -1e9])) >= 300 } count _fineF;
+private _zShow = _z;
+if (_newN > 0) then {
+    private _lvl = [];
+    private _zz = _z - 1;
+    _zShow = _zMin;
+    while { _zz >= _zMin } do {
+        ([_zz] call _range) params ["", "_a0", "_a1", "_b0", "_b1"];
+        private _l = [];
+        private _ok = true;
+        for "_ty" from _b0 to _b1 do {
+            for "_tx" from _a0 to _a1 do {
+                if ([_zz, _tx, _ty] call _exists) then { _l pushBack [_zz, _tx, _ty]; if (_ok && {!([_zz, _tx, _ty] call _isUp)}) then { _ok = false; }; };
+            };
+        };
+        if (_ok || {_zz isEqualTo _zMin}) exitWith { _lvl = _l; _zShow = _zz; };
+        _zz = _zz - 1;
+    };
+    private _queue = [];
+    private _zMid = _z - 2;
+    if (_zShow < _zMid && {_zMid >= _zMin}) then {
+        ([_zMid] call _range) params ["", "_a0", "_a1", "_b0", "_b1"];
+        for "_ty" from _b0 to _b1 do {
+            for "_tx" from _a0 to _a1 do {
+                if ([_zMid, _tx, _ty] call _exists && {!([_zMid, _tx, _ty] call _isUp)}) then { _queue pushBack [_zMid, _tx, _ty]; };
+            };
+        };
+    };
+    _queue append (_fine select { !(_x call _isUp) });
+    _pre = _queue select [0, [2, 1] select (diag_deltaTime > 0.1)];
+    _show = _lvl;
+};
+// Relevé pour la mesure des performances (fn_perfLog) : [tuiles affichées, tuiles en chargement, neuves restantes, niveau
+// affiché, niveau visé].
+uiNamespace setVariable ["COMSPEC_ATAK_PhotoLast", [count _show, count _pre, _newN, _zShow, _z]];
 // Mer sous la photo, sur toute la carte : les cases entièrement en mer ne sont pas photographiées (noir sinon).
 // Bleu des tuiles corrigées (RVB 72, 104, 155).
 _map drawRectangle [[worldSize / 2, worldSize / 2, 0], worldSize / 2, worldSize / 2, 0, [0.282, 0.408, 0.608, 1], "#(rgb,8,8,3)color(0.282,0.408,0.608,1)"];
 { _y call _draw; } forEach _coarse;
-{ _x call _draw; } forEach _fine;
+if (_newN isEqualTo 0) then {
+    { (_x + [1, _fineF select _forEachIndex]) call _draw; } forEach _fine;
+} else {
+    { _x call _draw; } forEach _show;
+    { (_x + [0.01]) call _draw; } forEach _pre;
+};
 // Relief des bâtiments (ombre portée, contour des toits) aux zooms proches ; Réglages > Carte pour le couper.
 if (profileNamespace getVariable ["COMSPEC_ATAK_PhotoRelief", true]) then { [_map, _wM, _tl, _br] call comspec_atak_native_fnc_photoRelief; };
 if (!_web) exitWith {};

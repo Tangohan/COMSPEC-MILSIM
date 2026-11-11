@@ -1,4 +1,4 @@
-[APP] GE — guerre électronique : brouilleur, goniométrie, géolocalisation de téléphones, effets du brouillage
+[APP] GE — guerre électronique : brouilleur, goniométrie, traçage de numéros, effets du brouillage
 
 [i]Message 1/2[/i]
 [h1]GE[/h1]
@@ -6,7 +6,7 @@
 
 [h2]FRANÇAIS[/h2]
 [h3]À quoi ça sert[/h3]
-Mener la guerre électronique avec le téléphone : poser un brouilleur qui coupe le réseau et fausse le GPS des téléphones autour, relever la direction des émissions ennemies (goniométrie), localiser un téléphone par son numéro, son IMEI ou son adresse MAC, et voir ce que le brouillage vous fait subir.
+Mener la guerre électronique avec le téléphone : poser un brouilleur qui coupe le réseau et fausse le GPS des téléphones autour, relever la direction des émissions ennemies (goniométrie), tracer un téléphone (de joueur ou d'IA) par son numéro, son IMEI ou son adresse MAC, et voir ce que le brouillage vous fait subir.
 
 [h3]Comment l'ouvrir[/h3]
 Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[/b] le prend en main (souris). Sur l'écran d'accueil, l'app est dans la catégorie [b]Spécialités[/b] (pas dans le dock). Si elle a été désinstallée, l'App Store permet de la réinstaller.
@@ -15,28 +15,41 @@ Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[
 [list]
 [*][b]BROUILLAGE[/b] : brouilleur à votre position. [b]Rayon[/b] 300, 600 ou 1 000 m, [b]Durée[/b] 5, 10 ou 20 min, [b]Filtrage ami[/b] (votre camp garde le réseau et le GPS dans la zone), puis [b]DÉMARRER LE BROUILLAGE[/b] (à l'arrêt si vous êtes en véhicule). Une fois actif : position, temps restant, distance, [b]ARRÊTER LE BROUILLEUR[/b]. Il reste visible à la goniométrie ennemie tant qu'il émet.
 [*][b]GONIO[/b] : spectre et boussole en tête, puis [b]BALAYER[/b] (récepteur en recharge 45 s entre deux balayages). Relève les téléphones des joueurs ennemis et les brouilleurs à moins de 3 km : type (TÉLÉPHONE, GONIO pour un goniomètre qui vient de balayer, BROUILLEUR), relèvement à quelques degrés près (erreur plus grande au loin), bande de distance, heure ; [b]VOIR SUR LA CARTE[/b], [b]EFFACER[/b]. Attention : balayer émet aussi, la goniométrie ennemie vous voit pendant 20 s.
-[*][b]GÉOLOC[/b] : saisissez un numéro (06 12 34 56 78), un IMEI (35-…) ou une adresse MAC (A4:5E:…), puis [b]LOCALISER[/b]. Résultat : en ligne, éteint ou hors réseau, batterie vide en secours SIM, ou abonné introuvable ; grille, marge d'erreur, distance et heure du relevé. Boutons [b]CARTE[/b], [b]SUIVRE[/b] / [b]ARRÊTER LE SUIVI[/b] (nouvelle position à intervalle régulier), [b]EFFACER[/b]. En bas, [b]Mon téléphone[/b] : votre numéro, IMEI et adresse MAC, à donner ou à cacher en roleplay.
+[*][b]TRAÇAGE[/b] (ancien GÉOLOC) : tracer un numéro, voir la partie [b]Tracer un numéro[/b] plus bas. En bas, [b]Mon téléphone[/b] : votre numéro, IMEI et adresse MAC, à donner ou à cacher en roleplay.
 [*][b]ÉTAT[/b] : effets subis à votre position : taux de brouillage, erreur GPS, suivi des forces (BFT) normal ou dégradé, qualité du réseau (débit, pertes) ; liste des brouilleurs amis actifs (grille, rayon, distance, temps restant, filtrage ami).
 [/list]
+
+[h3]Tracer un numéro[/h3]
+Un numéro trouvé sur un papier, dans un téléphone fouillé, dans un fichier récupéré ou donné en interrogatoire se trace comme une requête à l'opérateur. Le traçage donne une position approchée, jamais un nom.
+[olist]
+[*]App [b]GE[/b], onglet [b]TRAÇAGE[/b] : saisissez le numéro (06 12 34 56 78, +964 750 123 4567), un IMEI ou une adresse MAC. Le champ [b]Qui[/b] est facultatif : ce que vous savez déjà de ce numéro.
+[*][b]TRACER LE NUMÉRO[/b] : « Requête opérateur… », la réponse arrive après quelques secondes (8 s par défaut). Une attente sépare deux requêtes (20 s par défaut).
+[*]Résultat : un cercle orange sur la carte, l'heure du relevé et la grille. Plusieurs antennes captent le téléphone (ville) : quelques dizaines de mètres ; une seule (campagne) : plusieurs centaines ; loin de toute localité et sans relais : [b]hors couverture[/b].
+[*]Téléphone éteint, en mode avion, dans une zone brouillée ou hors couverture : seulement la [b]dernière position connue[/b], en gris, avec son âge ; son cercle grandit avec le temps.
+[*][b]SUIVRE[/b] : nouvelle position à intervalle régulier tant que le téléphone est ouvert (3 numéros à la fois par défaut), positions précédentes reliées sur la carte. [b]PARTAGER[/b] : marqueur prérempli, choisissez le canal (groupe, TOC). [b]EN FICHE SSE[/b] : fiche d'observation préremplie. [b]Journal de traçage[/b] : toutes vos requêtes.
+[/olist]
+Raccourcis : un fichier texte ouvert dans l'app [b]Extraction[/b] (contacts, messages, journal d'appels) et le résultat [b]Approfondir[/b] ou [b]Chronologie[/b] de l'app [b]SSE terrain[/b] ont un bouton [b]TRACER[/b] par numéro, qui ouvre l'onglet avec le numéro déjà saisi.
+Réponses possibles : en ligne, batterie vide (carte SIM en secours), éteint ou hors réseau, pas de signal (zone brouillée), hors couverture, [b]Numéro inconnu du réseau[/b] (aussi pour une ligne jetable), numéro de votre camp (si la mission l'interdit), [b]Pas de liaison avec l'opérateur[/b] (votre téléphone n'a pas de réseau), traçage suspendu ou sans mandat.
+Zeus : clic droit sur une IA > [b]ATAK · Téléphone de l'IA (traçage)[/b] : allumé, éteint, jetable (jamais traçable), [b]Voir et copier son numéro[/b] (à écrire sur un document). Clic droit ailleurs > [b]ATAK · Traçage des numéros[/b] : suspendre le traçage, accorder ou retirer le mandat, couper le réseau mobile civil. Dans Eden, attributs de l'IA > [b]Téléphone (traçage ATAK)[/b] : état et numéro.
 
 [h3]Pas-à-pas d'un usage typique[/h3]
 [olist]
 [*]Onglet [b]GONIO[/b] : [b]BALAYER[/b], notez le relèvement d'un téléphone ennemi, déplacez-vous et balayez de nouveau pour recouper sur la carte.
 [*]Onglet [b]BROUILLAGE[/b] : choisissez 600 m et 10 min, laissez le filtrage ami, [b]DÉMARRER LE BROUILLAGE[/b].
 [*]Onglet [b]ÉTAT[/b] : vérifiez que votre camp garde le réseau.
-[*]Numéro récupéré sur un prisonnier : onglet [b]GÉOLOC[/b], [b]LOCALISER[/b], puis [b]SUIVRE[/b].
+[*]Numéro récupéré sur un prisonnier : onglet [b]TRAÇAGE[/b], [b]TRACER LE NUMÉRO[/b], puis [b]SUIVRE[/b].
 [/olist]
 
 [h3]Réglages CBA liés[/h3]
 [list]
 [*][b]COMSPEC › ATAK · Simulation › Guerre électronique pour tous[/b] (serveur, coché par défaut) : décoché, brouillage et goniométrie sont réservés aux unités marquées opérateur GE par la mission ou aux rôles « guerre électronique », « brouilleur » ou « SIGINT ».
 [*][b]COMSPEC › ATAK · Simulation › Brouilleurs du mod Crows Electronic Warfare[/b], [b]Brouillage des scripts TFAR[/b], [b]Objets brouilleurs d'autres mods[/b] (format Classe:rayon:force, par exemple Land_DataTerminal_01_F:500:90) (serveur).
-[*][b]COMSPEC › ATAK · Géolocalisation[/b] (serveur) : [b]Géolocalisation des téléphones[/b], [b]Réservé aux opérateurs GE[/b], [b]Géolocalisables : BLUFOR / OPFOR / INDÉPENDANTS / CIVILS[/b], [b]Géolocaliser son propre camp[/b], [b]IA géolocalisables[/b], [b]Précision (m)[/b], [b]Mise à jour du suivi (s)[/b], [b]Prévenir la cible[/b], [b]Carte SIM localisable téléphone éteint[/b], [b]Téléphone éteint : retrouver un allié[/b].
+[*][b]COMSPEC › ATAK · Géolocalisation[/b] (serveur) : [b]Géolocalisation des téléphones[/b], [b]Réservé aux opérateurs GE[/b], [b]Géolocalisables : BLUFOR / OPFOR / INDÉPENDANTS / CIVILS[/b], [b]Géolocaliser son propre camp[/b], [b]IA géolocalisables[/b], [b]Précision (m)[/b], [b]Mise à jour du suivi (s)[/b], [b]Prévenir la cible[/b], [b]Carte SIM localisable téléphone éteint[/b], [b]Téléphone éteint : retrouver un allié[/b], et pour le traçage : [b]durée de la requête[/b], [b]attente entre deux requêtes[/b], [b]numéros suivis en même temps[/b], [b]précision avec plusieurs antennes / une seule antenne[/b], [b]dernière position, croissance du cercle[/b], [b]réseau mobile civil[/b], [b]liaison ATAK exigée[/b] (selon le profil : oui en Milsim et Standard, non en Arcade), [b]mandat du Zeus exigé[/b].
 [/list]
 
 [h3]Interactions[/h3]
 [list]
-[*][b]Carte[/b] : relèvements et positions géolocalisées ; la recherche de la carte retrouve aussi un téléphone par son numéro ou son IMEI.
+[*][b]Carte[/b] : relèvements et numéros tracés (cercle, dernière position, positions précédentes) ; la recherche de la carte retrouve aussi un téléphone par son numéro ou son IMEI.
 [*][b]Réseau, GPS et BFT[/b] : le brouillage coupe ou ralentit les envois, fausse le GPS et fige les positions du BFT des téléphones touchés.
 [*][b]Athena[/b] : avec la liaison, les relèvements partent sur la carte SIGINT d'Athena.
 [*][b]Zeus / TFAR / autres mods[/b] : brouilleurs de Crows Electronic Warfare posés par Zeus, scripts de brouillage TFAR et objets brouilleurs listés brouillent aussi l'ATAK.
@@ -46,7 +59,7 @@ Le téléphone : [b]Ctrl+U[/b] le porte dans un coin de l'écran, [b]Ctrl+Maj+U[
 [list]
 [*]La goniométrie ne donne jamais de position exacte : seulement un relèvement et une bande de distance. Un téléphone au repos n'est relevé qu'environ deux fois sur trois, toujours s'il vient de balayer.
 [*]Seuls les téléphones des joueurs ennemis sont relevés par la goniométrie.
-[*]Un téléphone éteint, sans réseau ou changé ne répond plus à la géolocalisation, sauf en secours SIM si le serveur l'autorise.
+[*]Un téléphone éteint, sans réseau ou changé ne donne plus que sa dernière position connue, sauf en secours SIM si le serveur l'autorise.
 [/list]
 
 [h3]Version d'introduction[/h3]
@@ -55,7 +68,7 @@ Présente depuis les premières versions de l'ATAK natif (1.x).
 [i]Message 2/2 — English[/i]
 [h2]ENGLISH[/h2]
 [h3]What it is for[/h3]
-Wage electronic warfare with the phone: set up a jammer that cuts the network and skews the GPS of nearby phones, take bearings on enemy emissions (direction finding), locate a phone by its number, IMEI or MAC address, and see what jamming does to you. The app is named [b]EW[/b] in English.
+Wage electronic warfare with the phone: set up a jammer that cuts the network and skews the GPS of nearby phones, take bearings on enemy emissions (direction finding), trace a phone (of a player or an AI) by its number, IMEI or MAC address, and see what jamming does to you. The app is named [b]EW[/b] in English.
 
 [h3]How to open it[/h3]
 The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/b] takes it in hand (mouse). On the home screen, the app sits in the [b]Specialized[/b] category (not in the dock). If it was uninstalled, the App Store reinstalls it.
@@ -64,28 +77,41 @@ The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/
 [list]
 [*][b]Jamming[/b]: jammer at your position. [b]Radius[/b] 300, 600 or 1,000 m, [b]Duration[/b] 5, 10 or 20 min, [b]Friendly filtering[/b] (your side keeps network and GPS inside the area), then [b]START JAMMING[/b] (stopped if you are in a vehicle). Once active: position, time left, distance, [b]STOP JAMMER[/b]. It stays visible to enemy direction finding while it emits.
 [*][b]GONIO[/b] (direction finding): spectrum and compass on top, then [b]SCAN[/b] (receiver recharges 45 s between scans). Picks up enemy players' phones and jammers within 3 km: type (phone, GONIO for a direction finder that just scanned, jammer), bearing within a few degrees (larger error far away), distance band, time; [b]SHOW ON MAP[/b], [b]CLEAR[/b]. Beware: scanning also emits, enemy direction finding sees you for 20 s.
-[*][b]GEOLOC[/b]: enter a number (06 12 34 56 78), an IMEI (35-…) or a MAC address (A4:5E:…), then [b]LOCATE[/b]. Result: online, off or out of network, empty battery in SIM emergency mode, or subscriber not found; grid, error margin, distance and time of the fix. Buttons [b]MAP[/b], follow / [b]STOP TRACKING[/b] (new position at regular intervals), [b]CLEAR[/b]. At the bottom, [b]My phone[/b]: your number, IMEI and MAC address, to give or hide in roleplay.
+[*][b]TRACE[/b] (formerly GEOLOC): trace a number, see [b]Trace a number[/b] below. At the bottom, [b]My phone[/b]: your number, IMEI and MAC address, to give or hide in roleplay.
 [*][b]STATUS[/b]: [b]Effects suffered[/b] at your position: jamming rate, GPS error, Blue Force Tracking normal or degraded, network quality (throughput, loss); list of active [b]Friendly jammers[/b] (grid, radius, distance, time left, friendly filtering).
 [/list]
+
+[h3]Trace a number[/h3]
+A number found on a paper, in a searched phone, in a recovered file or given during questioning is traced like a request to the operator. Tracing gives an approximate position, never a name.
+[olist]
+[*][b]EW[/b] app, [b]TRACE[/b] tab: type the number (06 12 34 56 78, +964 750 123 4567), an IMEI or a MAC address. The [b]Who[/b] field is optional: what you already know about this number.
+[*][b]TRACE THE NUMBER[/b]: "Operator request…", the answer comes after a few seconds (8 s by default). A wait separates two requests (20 s by default).
+[*]Result: an orange circle on the map, the time of the fix and the grid. Several antennas pick up the phone (town): a few dozen metres; only one (countryside): several hundred; far from any locality and without relays: [b]out of coverage[/b].
+[*]Phone off, in airplane mode, in a jammed area or out of coverage: only the [b]last known position[/b], in grey, with its age; its circle grows over time.
+[*][b]FOLLOW[/b]: new position at regular intervals while the phone is open (3 numbers at once by default), previous positions linked on the map. [b]SHARE[/b]: prefilled marker, choose the channel (group, TOC). [b]TO SSE SHEET[/b]: prefilled observation sheet. [b]Tracing log[/b]: all your requests.
+[/olist]
+Shortcuts: a text file opened in the [b]Extraction[/b] app (contacts, messages, call log) and the [b]Dig deeper[/b] or [b]Timeline[/b] result of the [b]SSE field[/b] app have a [b]TRACE[/b] button per number, which opens the tab with the number already typed.
+Possible answers: online, dead battery (SIM card in emergency mode), off or out of network, no signal (jammed area), out of coverage, [b]Number unknown to the network[/b] (also for a burner line), number of your own side (if the mission forbids it), [b]No link with the operator[/b] (your phone has no network), tracing suspended or no warrant.
+Zeus: right click an AI > [b]ATAK · AI phone (tracing)[/b]: on, off, burner (never traceable), [b]See and copy its number[/b] (to write on a document). Right click elsewhere > [b]ATAK · Number tracing[/b]: suspend tracing, grant or withdraw the warrant, cut the civilian mobile network. In Eden, AI attributes > [b]Phone (ATAK tracing)[/b]: state and number.
 
 [h3]Typical walkthrough[/h3]
 [olist]
 [*][b]GONIO[/b] tab: [b]SCAN[/b], note the bearing of an enemy phone, move and scan again to cross the bearings on the map.
 [*][b]Jamming[/b] tab: pick 600 m and 10 min, keep friendly filtering, [b]START JAMMING[/b].
 [*][b]STATUS[/b] tab: check that your side keeps the network.
-[*]Number taken from a prisoner: [b]GEOLOC[/b] tab, [b]LOCATE[/b], then follow.
+[*]Number taken from a prisoner: [b]TRACE[/b] tab, [b]TRACE THE NUMBER[/b], then [b]FOLLOW[/b].
 [/olist]
 
 [h3]Related CBA settings[/h3]
 [list]
 [*][b]COMSPEC › ATAK · Simulation › Electronic warfare open to all[/b] (server, checked by default): unchecked, jamming and direction finding are reserved to units flagged as EW operators by the mission or to "electronic warfare", "jammer" or "SIGINT" roles.
 [*][b]COMSPEC › ATAK · Simulation › Crows Electronic Warfare jammers[/b], [b]TFAR jamming scripts[/b], [b]Jammer objects from other mods[/b] (format Class:radius:strength, for example Land_DataTerminal_01_F:500:90) (server).
-[*][b]COMSPEC › ATAK · Géolocalisation[/b] (server): [b]Phone tracing[/b], [b]Reserved for EW operators[/b], [b]Traceable: BLUFOR / OPFOR / INDEPENDENT / CIVILIAN[/b], [b]Track own side[/b], [b]Traceable AI[/b], [b]Accuracy (m)[/b], [b]Tracking refresh (s)[/b], [b]Warn target[/b], [b]SIM card emergency mode[/b], [b]SIM emergency: find a friendly[/b].
+[*][b]COMSPEC › ATAK · Géolocalisation[/b] (server): [b]Phone tracing[/b], [b]Reserved for EW operators[/b], [b]Traceable: BLUFOR / OPFOR / INDEPENDENT / CIVILIAN[/b], [b]Track own side[/b], [b]Traceable AI[/b], [b]Accuracy (m)[/b], [b]Tracking refresh (s)[/b], [b]Warn target[/b], [b]SIM card emergency mode[/b], [b]SIM emergency: find a friendly[/b], and for tracing: [b]request duration[/b], [b]wait between two requests[/b], [b]numbers followed at once[/b], [b]accuracy with several antennas / a single antenna[/b], [b]last position, circle growth[/b], [b]civilian mobile network[/b], [b]ATAK link required[/b] (by profile: yes in Milsim and Standard, no in Arcade), [b]Zeus warrant required[/b].
 [/list]
 
 [h3]Interactions[/h3]
 [list]
-[*][b]Map[/b]: bearings and geolocated positions; the map search also finds a phone by its number or IMEI.
+[*][b]Map[/b]: bearings and traced numbers (circle, last position, previous positions); the map search also finds a phone by its number or IMEI.
 [*][b]Network, GPS and BFT[/b]: jamming cuts or slows transmissions, skews the GPS and freezes the BFT positions of affected phones.
 [*][b]Athena[/b]: with the link, bearings go to Athena's SIGINT map.
 [*][b]Zeus / TFAR / other mods[/b]: Crows Electronic Warfare jammers placed by Zeus, TFAR jamming scripts and listed jammer objects also jam the ATAK.
@@ -95,7 +121,7 @@ The phone: [b]Ctrl+U[/b] carries it in a corner of the screen, [b]Ctrl+Shift+U[/
 [list]
 [*]Direction finding never gives an exact position: only a bearing and a distance band. An idle phone is picked up roughly two times out of three… always if it has just scanned.
 [*]Only enemy players' phones are picked up by direction finding.
-[*]A phone that is off, out of network or swapped no longer answers geolocation, except in SIM emergency mode if the server allows it.
+[*]A phone that is off, out of network or swapped only gives its last known position, except in SIM emergency mode if the server allows it.
 [/list]
 
 [h3]Introduced in[/h3]

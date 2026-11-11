@@ -35,7 +35,16 @@ if (_a isEqualType "" && {_a isEqualTo "parse"}) exitWith {
         _r set ["format", "TD1"];
         _r set ["issuer", _l1 select [2, 3]];
         _r set ["number", (_l1 select [5, 9]) regexReplace ["<", ""]];
-        if (((_l1 select [5, 9]) call _ck) isNotEqualTo (_l1 select [14, 1])) then { _err pushBack "number"; };
+        // Numéro long (plus de 9 caractères, ICAO 9303 partie 5) : « < » à la place de la clé, suite du numéro et sa clé en
+        // tête des données facultatives.
+        if (((_l1 select [14, 1]) isEqualTo "<") && {(_l1 select [15, 1]) isNotEqualTo "<"}) then {
+            private _seg = ((_l1 select [15]) splitString "<") param [0, ""];
+            private _full = (_l1 select [5, 9]) + (_seg select [0, (count _seg) - 1]);
+            _r set ["number", _full];
+            if ((_full call _ck) isNotEqualTo (_seg select [(count _seg) - 1, 1])) then { _err pushBack "number"; };
+        } else {
+            if (((_l1 select [5, 9]) call _ck) isNotEqualTo (_l1 select [14, 1])) then { _err pushBack "number"; };
+        };
         _r set ["dob", _l2 select [0, 6]];
         if (((_l2 select [0, 6]) call _ck) isNotEqualTo (_l2 select [6, 1])) then { _err pushBack "dob"; };
         _r set ["sex", _l2 select [7, 1]];
@@ -81,6 +90,8 @@ if (_a isEqualType "" && {_a isEqualTo "parse"}) exitWith {
 // --- Écriture -------------------------------------------------------------------------------------------------
 private _doc = _a;
 private _type = _doc getOrDefault ["type", "id_card"];
+// Titre de séjour : carte TD1 (code « IR » par défaut, « AR » en Allemagne… : mrzCode du document).
+if (_type isEqualTo "residence_permit") then { _type = "id_card"; if ((_doc getOrDefault ["mrzCode", ""]) isEqualTo "") then { _doc = +_doc; _doc set ["mrzCode", "IR"]; }; };
 if !(_type in ["id_card", "passport", "driving_license", "military_id"]) then {
     // Type d'extension (CfgComspecDocuments) : gabarit TD1 (code « I< ») ou TD3 selon sa déclaration, sinon pas de MRZ.
     private _m = (["get", _type] call comspec_sse_fnc_idDocTypes) getOrDefault ["mrz", ""];
@@ -151,7 +162,18 @@ private _name = [_doc getOrDefault ["mrzLast", _doc getOrDefault ["last", ""]], 
 
 // Carte : TD1 « I< » ; permis (hors ICAO) : même gabarit, code « D< » (comme le site, pour le lecteur N1).
 if (_type in ["id_card", "driving_license", "military_id"]) exitWith {
-    private _l1 = [(["I<", "D<", "A<"] select ((["id_card", "driving_license", "military_id"] find _type) max 0)) + _issuer + _num + _numCk, 30] call _pad;
+    // Code du document : celui du pays s'il en a un (« ID » Allemagne, France… ; « IR » titre de séjour), sinon I< / D< / A<.
+    private _code = _doc getOrDefault ["mrzCode", ""];
+    if ((count _code) isNotEqualTo 2) then { _code = ["I<", "D<", "A<"] select ((["id_card", "driving_license", "military_id"] find _type) max 0); };
+    // Numéro de plus de 9 caractères (carte belge : 12 chiffres) : débordement ICAO dans les données facultatives.
+    private _raw = (((_doc getOrDefault ["mrzNumber", _doc getOrDefault ["number", ""]]) call _clean) splitString "<") joinString "";
+    private _opt = (((_doc getOrDefault ["mrzOptional", ""]) call _clean) splitString "<") joinString "";
+    private _head = if ((count _raw) > 9) then {
+        private _lck = _raw call _ck;
+        if ((_doc getOrDefault ["mrzFlaw", ""]) isEqualTo "check") then { _lck = str (((parseNumber _lck) + 3) mod 10); };
+        (_raw select [0, 9]) + "<" + (_raw select [9]) + _lck + "<" + _opt
+    } else { _num + _numCk + _opt };
+    private _l1 = [_code + _issuer + _head, 30] call _pad;
     private _l2 = _dob + (_dob call _ck) + _sex + _exp + (_exp call _ck) + _nat;
     _l2 = [_l2, 29] call _pad;
     private _comp = (_l1 select [5, 25]) + (_l2 select [0, 7]) + (_l2 select [8, 7]) + (_l2 select [18, 11]);

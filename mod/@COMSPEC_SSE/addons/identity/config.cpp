@@ -1,4 +1,5 @@
 #include "script_component.hpp"
+#include "ui_macros.hpp"
 
 /*
     COMSPEC IDENTITY : documents d'identité fictifs, contrôle par ACE et par l'app « Contrôle ID » de l'ATAK.
@@ -15,8 +16,8 @@
 class CfgPatches {
     class comspec_sse_identity {
         name = "COMSPEC SSE - Identity";
-        units[] = {"COMSPEC_SSE_Module_IdCheckpoint"};
-        weapons[] = {"COMSPEC_ID_Card", "COMSPEC_ID_Passport", "COMSPEC_ID_DrivingLicense", "COMSPEC_ID_MilitaryCard"};
+        units[] = {"COMSPEC_SSE_Module_IdCheckpoint", "COMSPEC_SSE_Module_LoreSync"};
+        weapons[] = {"COMSPEC_ID_Card", "COMSPEC_ID_Passport", "COMSPEC_ID_DrivingLicense", "COMSPEC_ID_MilitaryCard", "COMSPEC_ID_ResidencePermit", "COMSPEC_ID_VehicleRegistration"};
         requiredVersion = REQUIRED_VERSION;
         requiredAddons[] = {
             "comspec_sse_core",
@@ -47,7 +48,12 @@ class CfgFunctions {
             class idRegistry {};
             class idCountries {};
             class idRealCountries {};
+            // Pays réels (registre CfgComspecCountries) : numéros à clé, essais du registre (console de débogage).
+            class idNumbers {};
+            class idCountryChrome {};
+            class idCountrySelfTest {};
             class idGenerate {};
+            class idIdentityOf {};
             class idDocNumber {};
             class idMrz {};
             class idMrzCheck {};
@@ -96,9 +102,14 @@ class CfgFunctions {
             class idCoverPage {};
             class idCoverSync {};
             class idCoverImport {};
+            class idCoverAthena {};
             class idBio {};
             class idHvt {};
             class idAiConfig {};
+            // Fenêtre « Papiers de l'IA » du Zeus : document tel que le voit un joueur, analyse (vraie identité, qualité, défauts).
+            class idZeusPapers {};
+            class idZeusPapersData {};
+            class idZeusAnalysis {};
             // API publique des papiers en jeu (mods et scripts, serveur) : identité Athena liée, propriétaire, suivi.
             class idPaperOf {};
             class idPaperOwner {};
@@ -113,8 +124,16 @@ class CfgFunctions {
             class fileSubmit {};
             class filePage {};
             class fileAction {};
+            class fileNorm {};
             class controlRecord {};
             class scanAnim {};
+            // Lore de session Athena (ICD-SSE-LORE-001) : identifiant stable des IA, remontée, redescente, fichiers.
+            class loreUid {};
+            class lorePerson {};
+            class loreServer {};
+            class loreClient {};
+            class loreModule {};
+            class loreFile {};
         };
     };
 };
@@ -126,6 +145,8 @@ class CfgRemoteExec {
         class comspec_sse_fnc_idClient { allowedTargets = 1; };
         class comspec_sse_fnc_fileServer { allowedTargets = 2; };
         class comspec_sse_fnc_fileClient { allowedTargets = 1; };
+        class comspec_sse_fnc_loreServer { allowedTargets = 2; jip = 0; };
+        class comspec_sse_fnc_loreClient { allowedTargets = 1; jip = 0; };
     };
 };
 
@@ -157,6 +178,11 @@ class Extended_InitPost_EventHandlers {
         class comspec_sse_identity {
             serverInit = "[{ ['kit', [_this select 0]] call comspec_sse_fnc_idRegistry; }, [_this select 0], 1] call CBA_fnc_waitAndExecute;";
         };
+        // Lore de session Athena : identifiant stable (comspec_sse_aiUid) et lore déjà reçu rattaché, y compris pour une
+        // IA créée après la synchro (attributs Eden et nom de variable posés avant).
+        class comspec_sse_lore {
+            serverInit = "[{ if (!isNull (_this select 0)) then { ['attach', [_this select 0]] call comspec_sse_fnc_loreServer; }; }, [_this select 0], 1.5] call CBA_fnc_waitAndExecute;";
+        };
     };
 };
 
@@ -169,6 +195,8 @@ class CfgVehicles {
 };
 
 #include "CfgComspecDocuments.hpp"
+// Pays des papiers (France, Allemagne, États-Unis… puis pays fictifs d'Arma) : généré par tools/countries/gen_countries.py.
+#include "CfgComspecCountries.hpp"
 
 class RscText;
 class RscButton;
@@ -180,5 +208,20 @@ class RscCombo;
 class RscXSliderH;
 class RscCheckBox;
 
+// Classes de la charte SSE (addon comspec_sse_ui, dans requiredAddons).
+class COMSPEC_SSE_RscText;
+class COMSPEC_SSE_RscLabel;
+class COMSPEC_SSE_RscDim;
+class COMSPEC_SSE_RscBackground;
+class COMSPEC_SSE_RscPanel;
+class COMSPEC_SSE_RscAccentLineZeus;
+class COMSPEC_SSE_RscStructuredText;
+class COMSPEC_SSE_RscCombo;
+class COMSPEC_SSE_RscButtonNav;
+class COMSPEC_SSE_RscButtonZeus;
+class COMSPEC_SSE_RscButtonClose;
+class COMSPEC_SSE_RscControlsGroup;
+
 #include "dialogs\idViewer.hpp"
 #include "dialogs\docPicker.hpp"
+#include "dialogs\idZeusPapers.hpp"

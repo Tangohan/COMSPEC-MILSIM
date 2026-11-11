@@ -2,6 +2,17 @@
     Photo d'identité en direct (client), pendant que la visionneuse est ouverte (fn_idViewerOnLoad, onUnload d'idViewer).
     ["start", doc] -> texture de rendu à poser sur un RscPicture ; "" sans PiP ou réglage coupé (le portrait de repli reste).
     ["stop"]       -> détruit caméra, mannequin, studio et lumières, rend l'exposition automatique : plus aucun rendu.
+    ["ready"]      -> vrai quand le portrait est vérifié (tête en place, caméra DANS le studio) : la visionneuse ne montre le
+                      rendu qu'à ce moment (contrôle uiNamespace comspec_sse_idFaceCtrl, caché d'ici là) ; avant, ou après
+                      4 essais ratés : la silhouette neutre de repli (silhouette_co), jamais une image ratée.
+    Photo bleue unie (« dégradé bleu » sur la carte, 11/2026) : le conteneur bleu était posé sans tenir compte de l'axe de
+    son modèle. Son grand côté n'était pas dans l'axe de la photo : la caméra, à 1,6 m devant le visage, se retrouvait
+    DEHORS, dans la paroi, et filmait la tôle bleue éclairée par les lampes du studio. Le conteneur est maintenant orienté
+    d'après sa boîte englobante (grand côté dans l'axe nord-sud), centré entre le fond et la caméra (setPosWorld), gris
+    neutre, et la caméra est vérifiée à l'intérieur avant de montrer le rendu (sinon nouvel essai, puis la silhouette).
+    Rien n'est gardé d'une ouverture à l'autre : le visage et le haut viennent du document reçu à chaque ouverture
+    (faceAvoid : visage actuel du titulaire), un changement de visage ou de tenue est donc pris à l'ouverture suivante ;
+    un seul studio à la fois (la visionneuse est unique), détruit à la fermeture.
 
     Studio photo fermé, loin de tout : un conteneur maritime (createVehicleLocal, invisible des autres postes) posé en
     l'air au-dessus de la mer ; dedans, un mannequin local de face, sans casque ni lunettes, en haut sombre uni, devant un
@@ -21,7 +32,9 @@ if (!hasInterface) exitWith { "" };
 private _rtt = "comspec_sse_idface";
 private _state = uiNamespace getVariable ["comspec_sse_idFaceState", []];
 
+if (_op isEqualTo "ready") exitWith { _state param [2, false] };
 if (_op isEqualTo "stop") exitWith {
+    uiNamespace setVariable ["comspec_sse_idFaceCtrl", controlNull];
     if (_state isNotEqualTo []) then {
         _state params ["_cam", "_objs"];
         if (!isNull _cam) then {
@@ -73,8 +86,17 @@ private _mk = {
     _objs pushBack _o;
     _o
 };
-// Conteneur fermé (6 m dans l'axe nord-sud, 2,4 x 2,6 m) posé au niveau des pieds : ni soleil ni ciel sur le mannequin.
-["Land_Cargo20_blue_F", _spot vectorAdd [0, 0, -0.05], 0] call _mk;
+// Conteneur fermé (6 x 2,4 x 2,6 m), gris neutre, ni soleil ni ciel sur le mannequin. Grand côté dans l'axe de la photo
+// (nord-sud) d'après SA boîte englobante, centré entre le fond (0,9 m derrière la tête) et la caméra (1,6 m devant),
+// plancher sous les pieds : la caméra est dedans quel que soit l'axe du modèle.
+private _box = ["Land_Cargo20_grey_F", _spot, 0] call _mk;
+if (isNull _box) then { _box = ["Land_Cargo20_blue_F", _spot, 0] call _mk; };
+if (!isNull _box) then {
+    (boundingBoxReal _box) params ["_b1", "_b2"];
+    if (((_b2 select 0) - (_b1 select 0)) > ((_b2 select 1) - (_b1 select 1))) then { _box setDir 90; };
+    private _ctr = [((_b1 select 0) + (_b2 select 0)) / 2, ((_b1 select 1) + (_b2 select 1)) / 2, _b1 select 2];
+    _box setPosWorld ((_spot vectorAdd [0, 0.35, -0.12]) vectorDiff (_box vectorModelToWorld _ctr));
+};
 // Mannequin de face (regard vers le nord, caméra au nord), haut sombre uni, tête nue, visage neutre.
 private _doll = "C_man_1" createVehicleLocal [0, 0, 0];
 _doll enableSimulation false;
@@ -118,16 +140,42 @@ _cam camSetFov 0.085;
 _cam camCommit 0;
 // Exposition fixée : même photo de jour et de nuit (rendue au jeu à la fermeture).
 setAperture 12;
-uiNamespace setVariable ["comspec_sse_idFaceState", [_cam, _objs]];
-// Le visage et la tête sont en place après la première image : second réglage.
-[{
-    params ["_cam", "_doll", "_pick", "_spot"];
+uiNamespace setVariable ["comspec_sse_idFaceState", [_cam, _objs, false]];
+// Le visage et la tête sont en place après la première image : second réglage, puis vérification (tête à hauteur
+// d'homme, caméra et tête dans le studio). Vérifié : le rendu est montré ; sinon nouvel essai (4 au plus, 0,25 s), puis
+// la silhouette reste.
+comspec_sse_idFaceCheck = {
+    params ["_cam", "_doll", "_pick", "_spot", "_box", ["_try", 1]];
     if (isNull _cam || {isNull _doll}) exitWith {};
+    if (((uiNamespace getVariable ["comspec_sse_idFaceState", []]) param [0, objNull]) isNotEqualTo _cam) exitWith {};
     _doll setFace _pick;
     _doll setMimic "neutral";
-    private _aim = (_spot vectorAdd (_doll selectionPosition "pilot")) vectorAdd [0, 0, -0.04];
-    _cam camSetPos (ASLToAGL (_aim vectorAdd [0, 1.6, 0]));
+    private _rel = _doll selectionPosition "pilot";
+    private _aim = (_spot vectorAdd _rel) vectorAdd [0, 0, -0.04];
+    private _camPos = _aim vectorAdd [0, 1.6, 0];
+    _cam camSetPos (ASLToAGL _camPos);
     _cam camSetTarget (ASLToAGL _aim);
     _cam camCommit 0;
-}, [_cam, _doll, _pick, _spot], 0.25] call CBA_fnc_waitAndExecute;
+    private _inside = {
+        params ["_p"];
+        if (isNull _box) exitWith { true };
+        private _m = _box worldToModel (ASLToAGL _p);
+        (boundingBoxReal _box) params ["_b1", "_b2"];
+        private _ok = true;
+        { if ((_m select _x) <= ((_b1 select _x) + 0.05) || {(_m select _x) >= ((_b2 select _x) - 0.05)}) then { _ok = false; }; } forEach [0, 1, 2];
+        _ok
+    };
+    private _good = ((_rel select 2) > 1.2) && {(_rel select 2) < 2.1} && {[_camPos] call _inside} && {[_aim] call _inside};
+    if (_good) exitWith {
+        private _st = uiNamespace getVariable ["comspec_sse_idFaceState", []];
+        if ((count _st) >= 2) then { _st set [2, true]; };
+        private _c = uiNamespace getVariable ["comspec_sse_idFaceCtrl", controlNull];
+        if (!isNull _c) then { _c ctrlShow true; };
+    };
+    if (_try >= 4) exitWith {
+        diag_log text format ["[COMSPEC SSE] Identité : portrait non vérifié (tête %1, caméra hors du studio), silhouette gardée.", _rel];
+    };
+    [comspec_sse_idFaceCheck, [_cam, _doll, _pick, _spot, _box, _try + 1], 0.25] call CBA_fnc_waitAndExecute;
+};
+[comspec_sse_idFaceCheck, [_cam, _doll, _pick, _spot, _box], 0.25] call CBA_fnc_waitAndExecute;
 _texture

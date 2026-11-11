@@ -20,10 +20,11 @@ if (!hasInterface) exitWith {};
 }, [], 45] call CBA_fnc_waitUntilAndExecute;
 
 // Zeus : notification ATAK listant les extensions chargées (réglage comspec_sse_docExt_notify), une fois le joueur
-// et son Zeus en place ; rien si aucune extension n'est chargée, rien sans Zeus (délai de 3 minutes).
+// et son Zeus en place ; rien si aucune extension n'est chargée (exemple intégré coupé compris), rien sans Zeus (délai de 3 minutes).
 [{ !isNull player && {!isNull (getAssignedCuratorLogic player)} && {!isNil {missionNamespace getVariable "comspec_sse_docExtOff"}} }, {
     if (!(missionNamespace getVariable ["comspec_sse_docExt_notify", true]) || {isNil "comspec_sse_fnc_notify"}) exitWith {};
-    private _rows = ["extensions"] call comspec_sse_fnc_idDocTypes;
+    // L'extension d'exemple livrée avec le SSE (intégrée), tant qu'elle reste coupée, n'est pas annoncée.
+    private _rows = (["extensions"] call comspec_sse_fnc_idDocTypes) select { !(_x select 8) || {_x select 7} };
     if (_rows isEqualTo []) exitWith {};
     private _lines = _rows apply {
         _x params ["_cls", "_name", "", "_version", "", "_docs", "", "_active"];

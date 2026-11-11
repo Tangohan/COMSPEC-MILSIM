@@ -84,7 +84,7 @@ switch (_op) do {
         if (isNull _u || {!alive _u} || {!(missionNamespace getVariable ["comspec_sse_id_enabled", true])}) exitWith { false };
         if ((_u getVariable ["COMSPEC_ID_Carry", "auto"]) isNotEqualTo "auto") then { ["ensure", [_u]] call comspec_sse_fnc_idRegistry; };
         // Attribut Eden de groupe : le groupe porte le réglage, chaque unité le reprend à son apparition.
-        { _x params ["_gv", "_uv"]; private _gval = (group _u) getVariable [_gv, ""]; if (_gval isNotEqualTo "" && {(_u getVariable [_uv, ""]) in ["", "auto"]}) then { _u setVariable [_uv, _gval]; }; } forEach [["COMSPEC_ID_GroupProfile", "COMSPEC_ID_AiProfile"], ["COMSPEC_ID_GroupBehaviour", "COMSPEC_ID_Behaviour"], ["COMSPEC_ID_GroupCarry", "COMSPEC_ID_Carry"]];
+        { _x params ["_gv", "_uv"]; private _gval = (group _u) getVariable [_gv, ""]; if (_gval isNotEqualTo "" && {(_u getVariable [_uv, ""]) in ["", "auto"]}) then { _u setVariable [_uv, _gval]; }; } forEach [["COMSPEC_ID_GroupProfile", "COMSPEC_ID_AiProfile"], ["COMSPEC_ID_GroupBehaviour", "COMSPEC_ID_Behaviour"], ["COMSPEC_ID_GroupCarry", "COMSPEC_ID_Carry"], ["COMSPEC_ID_GroupCountry", "COMSPEC_ID_Country"]];
         // Attribut Eden « Infiltré (couverture) » : infiltration ouverte une fois les papiers posés.
         if (_u getVariable ["COMSPEC_ID_Undercover", false]) then { [{ ["start", [_this, createHashMap]] call comspec_sse_fnc_idCover; }, _u, 2] call CBA_fnc_waitAndExecute; };
         {
@@ -223,8 +223,19 @@ switch (_op) do {
             private _prof = [_u, _key] call comspec_sse_fnc_bioProfile;
             if (_prof getOrDefault ["falsePapers", false]) then { _kind = "forged"; _quality = 70; };
         };
+        // IA nommée par la mission (Zeus, Eden, atelier IA, profil, élément gardé) : ses papiers portent ce nom. Un faux tiré
+        // par les règles automatiques (taux d'insurgés faussaires, biométrie « auto ») ne le remplace pas ; seuls un choix
+        // explicite (attribut « Faux papiers », Zeus « Le rendre faux », biométrie « faux papiers : oui ») le rendent faux.
+        if (_kind isEqualTo "forged" && {_carry isEqualTo "auto"} && {_u getVariable ["COMSPEC_SSE_NameAuthored", false]}
+            && {(_u getVariable ["COMSPEC_ID_Kind", "civil"]) isNotEqualTo "forged"} && {(_u getVariable ["COMSPEC_SSE_BioFalsePapers", "auto"]) isNotEqualTo "oui"}) then {
+            _kind = "civil";
+        };
+        // Faux tiré par les règles automatiques (pas un choix de la mission) : noté sur le papier ; si l'IA est nommée plus
+        // tard, ses papiers redeviennent vrais à son nom (fn_idAiConfig « sync »).
+        private _autoKind = _kind isEqualTo "forged" && {_carry isEqualTo "auto"} && {(_u getVariable ["COMSPEC_ID_Kind", "civil"]) isNotEqualTo "forged"}
+            && {(_u getVariable ["COMSPEC_SSE_BioFalsePapers", "auto"]) isNotEqualTo "oui"};
         {
-            private _spec = createHashMapFromArray [["type", _x], ["kind", _kind], ["quality", _quality], ["country", _country]];
+            private _spec = createHashMapFromArray [["type", _x], ["kind", _kind], ["quality", _quality], ["country", _country], ["autoKind", _autoKind]];
             // Le permis suit la carte : vrais papiers (le faux ne porte que sur la pièce d'identité).
             if (_x isEqualTo "driving_license" && {_forEachIndex > 0}) then { _spec set ["kind", "civil"]; };
             // Matérialisation tout de suite pour les joueurs (objet dans l'inventaire), paresseuse pour les IA.
@@ -233,7 +244,7 @@ switch (_op) do {
         } forEach _types;
         // Avis local : la personne recherchée est fichée sous son vrai nom (base N3 hors ligne).
         if (_wanted isNotEqualTo "") then {
-            private _own = [_u, _key] call comspec_sse_fnc_idGenerate;
+            private _own = ["get", [_u, _key]] call comspec_sse_fnc_idIdentityOf;
             private _true = trim (_u getVariable ["COMSPEC_SSE_BioTrueName", ""]);
             private _tl = _own get "last";
             private _tf = _own get "first";

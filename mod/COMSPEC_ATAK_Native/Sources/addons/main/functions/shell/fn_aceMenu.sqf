@@ -8,6 +8,7 @@
       Accessoires ▸ batterie externe, filtre d'écran JVN
       Passerelle du véhicule ▸ relais, poste de commandement, couper (équipage) ; aussi sur les véhicules (dehors)
       Relais ATAK (sur l'objet relais) ▸ état, couper, allumer, changer la batterie
+      Synchroniser avec le web (mon téléphone) / Synchroniser le téléphone saisi (IA), fn_phoneSync
       Effacement d'urgence
       Débrancher le câble DL-7 (pendant une extraction)
       Radio de données (liaison réaliste, fn_mpuLink) ▸ relier à la MPU5 (câble / Wi-Fi), batterie
@@ -218,6 +219,15 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
         }, { private _b = _target getVariable ["COMSPEC_AtakRelayBatt", -1]; _b isEqualType 0 && {_b >= 0} && {_b < 95} }]
     ];
 } forEach ["Static", "Thing", "LandVehicle", "Ship", "Air"];
+
+// Synchroniser avec le web (fn_phoneSync) : mon téléphone, ou le téléphone d'IA saisi ouvert. Masqué en ATAK local ;
+// licence, liaison, accord du joueur et interdiction de la mission sont revérifiés au clic (refus expliqué dans le téléphone).
+[_root, "COMSPEC_ATAK_SyncWeb", "Synchroniser avec le web", "\z\comspec_atak_native\addons\main\data\logo_atak.paa",
+    { ["own"] call comspec_atak_native_fnc_phoneSync; },
+    { ([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "off" && {[_player, true] call comspec_atak_native_fnc_hasDevice} }] call _add;
+[_root, "COMSPEC_ATAK_SyncSeized", "Synchroniser le téléphone saisi", "\z\comspec_atak_native\addons\main\data\logo_atak.paa",
+    { ["seized"] call comspec_atak_native_fnc_phoneSync; },
+    { ([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "off" && {["seizedOk"] call comspec_atak_native_fnc_phoneSync} }] call _add;
 
 [_root, "COMSPEC_ATAK_Wipe", "<t color='#e5483a'>Effacement d'urgence</t>", "", { ["wipe"] call comspec_atak_native_fnc_phoneSecurity; },
     { !(["wiped"] call comspec_atak_native_fnc_phoneSecurity) }] call _add;

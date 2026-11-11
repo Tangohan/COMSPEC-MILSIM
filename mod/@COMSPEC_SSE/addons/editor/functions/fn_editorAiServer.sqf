@@ -7,7 +7,11 @@
       status     [moi]                            -> status [nombre de profils, date du paquet, liaison du serveur]
       docs       [moi, unité]                     -> docs [netId, [[id, type, numéro, nom, prénom, nature, pays]…]]
       docAdd     [moi, unité, type] · docMark [moi, unité, docId, nature]   -> docs
-      apply      [moi, unités, réglages, garder]  -> applied [n, n gardées] (+ athenaPost [[charge, id local]…] si le
+      docView    [moi, unité, docId]              -> docView [docId, document imprimé] (aperçu « Ce que verra le joueur » :
+                                                     les champs que reçoit un joueur qui le tient, jamais la vérité)
+      apply      [moi, unités, réglages, garder]  -> applied [n, n gardées] ; réglage « country » (pays des papiers, « auto »
+                                                     ou un code) posé sur l'unité (COMSPEC_ID_Country) avant que ses papiers
+                                                     soient refaits, et gardé avec elle (+ athenaPost [[charge, id local]…] si le
                                                      serveur n'a pas la DLL : le poste du Zeus envoie, puis athenaDone)
       athenaDone [moi, id local, id Athena]       la copie sur Athena est faite (serveur ou poste du Zeus)
       unkeep     [moi, id] · restoreOne [moi, id] -> note [clé, paramètres, genre]
@@ -95,11 +99,20 @@ private _find = {
     };
     _u
 };
+// Pays des papiers (fenêtre « IA de la zone », onglet Identité) : variable lue par fn_idRegistry « ensure ».
+private _setCountry = {
+    params ["_units", "_c"];
+    if !(_c isEqualType "") exitWith {};
+    if (_c isEqualTo "") exitWith {};
+    if (_c isNotEqualTo "auto" && {!(_c in ([] call comspec_sse_fnc_idCountries))}) exitWith {};
+    { _x setVariable ["COMSPEC_ID_Country", _c]; } forEach _units;
+};
 private _restoreEntry = {
     params ["_k", ["_used", []]];
     private _u = [_k, _used] call _find;
     if (isNull _u) exitWith { objNull };
     private _cfg = (_k getOrDefault ["config", []]) call _toMap;
+    [[_u], (_cfg getOrDefault ["country", ""]) call _str] call _setCountry;
     _cfg set ["profile", (_k getOrDefault ["profile_id", ""]) call _str];
     if ((_cfg get "profile") in ["0", ""]) then { _cfg set ["profile", ""]; };
     ["apply", [[_u], _cfg]] call comspec_sse_fnc_idAiConfig;
@@ -185,7 +198,7 @@ private _row = {
     { if (_keptId isEqualTo "" && {([_x select 4] call _find) isEqualTo _u}) then { _keptId = _x select 0; }; } forEach _kept;
     [netId _u, _w getOrDefault ["given", ""], _w getOrDefault ["true", ""], _w getOrDefault ["truth", "pending"], _w getOrDefault ["side", "civ"], _w getOrDefault ["role", "civilian"],
         _w getOrDefault ["profileRef", ""], _w getOrDefault ["profileId", ""], _w getOrDefault ["docs", 0], _u getVariable ["COMSPEC_ID_Behaviour", "auto"], groupId (group _u), name _u,
-        _u getVariable ["COMSPEC_ID_Carry", "auto"], _u getVariable ["COMSPEC_ID_Kind", "civil"], _keptId]
+        _u getVariable ["COMSPEC_ID_Carry", "auto"], _u getVariable ["COMSPEC_ID_Kind", "civil"], _keptId, _u getVariable ["COMSPEC_ID_Country", "auto"]]
 };
 private _docsOf = {
     params ["_u"];
@@ -229,10 +242,32 @@ switch (_op) do {
         ["docMark", [_u, _id, _kind]] call comspec_sse_fnc_idAiConfig;
         ["docs", [netId _u, [_u] call _docsOf]] call _reply;
     };
+    case "docView": {
+        // Aperçu du Zeus : le papier tel qu'imprimé (mêmes champs que _pub de fn_idServer), sans la vérité.
+        _a params ["", ["_u", objNull, [objNull]], ["_id", "", [""]]];
+        if (isNull _u || {_id isEqualTo ""}) exitWith {};
+        private _dd = ["doc", [_id]] call comspec_sse_fnc_idRegistry;
+        if ((count _dd) isEqualTo 0) exitWith {};
+        private _c = ([] call comspec_sse_fnc_idCountries) getOrDefault [_dd get "country", createHashMap];
+        private _p = createHashMap;
+        { _p set [_x, _dd getOrDefault [_x, ""]]; } forEach ["id", "type", "country", "number", "last", "first", "sex", "dob", "pob", "nat", "profession", "issued", "expires", "authority", "address", "rank", "force"];
+        { _p set [_x select 0, _dd getOrDefault [_x select 0, ""]]; } forEach ((["get", _dd getOrDefault ["type", ""]] call comspec_sse_fnc_idDocTypes) getOrDefault ["inputs", []]);
+        _p set ["countryName", _c getOrDefault ["name", _dd get "country"]];
+        _p set ["countryNameEn", _c getOrDefault ["nameEn", ""]];
+        _p set ["zone", [_c getOrDefault ["zone", ""], ""] select !(_c getOrDefault ["realSim", false])];
+        _p set ["mrz", [_dd] call comspec_sse_fnc_idMrz];
+        private _f = _dd getOrDefault ["flaws", []];
+        _p set ["holo", !("holo" in _f)];
+        _p set ["font", "font" in _f];
+        _p set ["photo", "photo" in _f];
+        _p set ["photoSwap", (_dd getOrDefault ["forgeryKind", ""]) isEqualTo "photo_swap"];
+        ["docView", [_id, _p]] call _reply;
+    };
     case "apply": {
         _a params ["", ["_list", [], [[]]], ["_spec", createHashMap, [createHashMap]], ["_keep", false, [false]]];
         private _targets = [_list] call _units;
         if (_targets isEqualTo []) exitWith { ["NeedCheck", [], "WARNING"] call _note; };
+        [_targets, (_spec getOrDefault ["country", ""]) call _str] call _setCountry;
         private _n = ["apply", [_targets, _spec]] call comspec_sse_fnc_idAiConfig;
         private _nk = 0;
         if (_keep) then {
@@ -249,6 +284,12 @@ switch (_op) do {
                 private _cfg = [];
                 { _cfg pushBack [_x, (_spec get _x) call _str]; } forEach (keys _spec);
                 _cfg pushBack ["local_id", _id];
+                // Identité unique (nom donné, naissance, pays) gardée avec elle : remise par fn_idAiConfig « apply ».
+                if (_u getVariable ["COMSPEC_SSE_NameAuthored", false]) then {
+                    private _idn = ["get", [_u]] call comspec_sse_fnc_idIdentityOf;
+                    _cfg pushBack ["identity", str ([_idn getOrDefault ["first", ""], _idn getOrDefault ["last", ""], _u getVariable ["COMSPEC_SSE_Sex", ""],
+                        _u getVariable ["COMSPEC_SSE_BirthDate", ""], _u getVariable ["COMSPEC_SSE_BirthPlace", ""], _u getVariable ["COMSPEC_SSE_Country", ""]])];
+                };
                 // Réponses écrites par le maître du jeu et ce que l'IA peut évoquer (ia_rp) : gardées avec elle, remises par
                 // fn_idAiConfig « apply » (ici et depuis le paquet Athena, champ libre de la configuration).
                 if (!isNil "comspec_sse_fnc_iarpProfile") then {

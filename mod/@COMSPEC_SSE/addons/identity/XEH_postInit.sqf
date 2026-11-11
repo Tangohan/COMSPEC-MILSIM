@@ -152,3 +152,5 @@ addMissionEventHandler ["EntityKilled", {
 }];
 // Fichiers de la mission (fn_fileServer) : contrôles subis notés au fichier du document.
 ["init"] call comspec_sse_fnc_fileServer;
+// Lore de session Athena (fn_loreServer) : état de la dernière synchro de l'opération publié pour la fenêtre du module.
+["init"] call comspec_sse_fnc_loreServer;

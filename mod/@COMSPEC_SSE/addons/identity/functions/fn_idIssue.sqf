@@ -23,13 +23,29 @@ private _reg = ["init"] call comspec_sse_fnc_idRegistry;
 private _key = if (isNull _u) then { _spec getOrDefault ["holderKey", ""] } else { [_u] call comspec_sse_fnc_bioPersonKey };
 if (_key isEqualTo "") then { _key = format ["X%1", floor random 999999]; };
 private _type = _spec getOrDefault ["type", "id_card"];
+// Identité unique de la personne (fn_idIdentityOf : nom donné par le Zeus, Eden, l'atelier IA, un profil, sinon tirée une
+// fois et gardée) : c'est elle qui est imprimée, et son pays délivre le papier quand le Zeus n'en impose pas un autre.
+private _ident = if (isNull _u) then { createHashMap } else { ["get", [_u, _key, (_spec getOrDefault ["country", ""]) call { [_this, ""] select !(_this isEqualType "") }]] call comspec_sse_fnc_idIdentityOf };
 // Types du registre (CfgComspecDocuments : papiers intégrés et extensions actives) ; inconnu ou extension coupée : carte.
 private _tdef = ["get", _type] call comspec_sse_fnc_idDocTypes;
 if ((count _tdef) isEqualTo 0 || {!(["enabled", _tdef get "extension"] call comspec_sse_fnc_idDocTypes)}) then { _type = "id_card"; _tdef = ["get", "id_card"] call comspec_sse_fnc_idDocTypes; };
+// Pays : celui demandé, sinon celui de l'identité de la personne (fn_idIdentityOf) ; code (« FRA »), alpha-2 (« FR »)
+// ou ancien nom gardé par une mission ; « auto » ou inconnu : pays de la mission.
 private _country = _spec getOrDefault ["country", ""];
-if (_country isEqualTo "" || {_country isEqualTo "auto"}) then { _country = ["default"] call comspec_sse_fnc_idCountries; };
+if (_country isEqualTo "" || {_country isEqualTo "auto"}) then { _country = _ident getOrDefault ["country", ""]; };
+_country = ["resolve", _country] call comspec_sse_fnc_idCountries;
 private _countries = [] call comspec_sse_fnc_idCountries;
 if !(_country in _countries) then { _country = ["default"] call comspec_sse_fnc_idCountries; };
+// Pays réel qui ne délivre pas ce type (Royaume-Uni, États-Unis : pas de carte nationale) : sa pièce courante
+// (permis de conduire) ; une extension (press_card…) passe toujours.
+private _cdef = _countries getOrDefault [_country, createHashMap];
+// Pays fictif : seulement pour les papiers des pays réels (titre de séjour, carte grise), comme avant pour le reste.
+if (((_tdef getOrDefault ["extension", ""]) isEqualTo "") && {(_spec getOrDefault ["athenaId", ""]) isEqualTo ""}
+    && {!(_cdef getOrDefault ["fictional", true]) || {_type in ["residence_permit", "vehicle_registration"]}}
+    && {(_cdef getOrDefault ["docTypes", []]) isNotEqualTo []} && {!(_type in (_cdef get "docTypes"))}) then {
+    _type = _cdef getOrDefault ["primary", "id_card"];
+    _tdef = ["get", _type] call comspec_sse_fnc_idDocTypes;
+};
 // Papier généré en mission : seulement par un pays actif qui délivre ce type (pays archivé sur Athena : ses papiers
 // déjà émis, repris du paquet avec athenaId, restent valables et lisibles).
 if ((_spec getOrDefault ["athenaId", ""]) isEqualTo "" && {!(["usable", [_country, _type]] call comspec_sse_fnc_idCountries)}) then {
@@ -48,8 +64,8 @@ _id = "ID" + _id;
 private _r = { [_key, format ["iss|%1|%2|%3", _type, _kind, _this]] call comspec_sse_fnc_bioRand };
 
 // --- Identité imprimée et vraie identité -----------------------------------------------------------------------
-private _own = [_u, _key, "", _country] call comspec_sse_fnc_idGenerate;
-private _printed = _own;
+private _own = if (isNull _u) then { ["get", [objNull, _key, _country]] call comspec_sse_fnc_idIdentityOf } else { _ident };
+private _printed = +_own;
 private _trueLast = _own get "last";
 private _trueFirst = _own get "first";
 if (_kind in ["cover", "forged", "alias"]) then {
@@ -74,6 +90,8 @@ private _valid = _c getOrDefault ["validity", 10];
 // Durées par type (pays du paquet Athena, pays réels stylisés) ; sinon 10 ans, permis 15 ans.
 _valid = if (_valid isEqualType createHashMap) then { _valid getOrDefault [_type, [10, 15] select (_type isEqualTo "driving_license")] } else { [_valid, 15] select (_type isEqualTo "driving_license") };
 if !(_valid isEqualType 0) then { _valid = 10; };
+// Pays réel : 0 = sans date d'expiration (carte grise, permis suisse) ; le reste comme avant.
+private _noExpiry = _valid <= 0 && {!(_c getOrDefault ["fictional", true])};
 _valid = _valid max 1;
 private _back = floor (("age" call _r) * (_valid - 1));
 private _im = 1 + ((floor (("im" call _r) * 12)) min 11);
@@ -90,13 +108,44 @@ if (_kind isEqualTo "civil" && {("expired" call _r) < 0.04}) then {
     if (_em < 1) then { _em = _em + 12; _ey = _ey - 1; };
     _expires = [_ey, _em, 1] call _ymd;
 };
+if (_noExpiry) then { _expires = ""; };
 if ((_spec getOrDefault ["expires", ""]) isNotEqualTo "") then { _expires = _spec get "expires"; };
 private _cities = _c getOrDefault ["cities", ["-"]];
-private _city = _cities select (floor (("city" call _r) * (count _cities)) min ((count _cities) - 1));
+private _ci = floor (("city" call _r) * (count _cities)) min ((count _cities) - 1);
+private _city = _cities select _ci;
+private _row = (_c getOrDefault ["cityRows", []]) param [_ci, [_city, "", ""]];
+_row params [["_cityName", _city], ["_postal", ""], ["_rcode", ""]];
+private _real = !(_c getOrDefault ["fictional", true]);
+private _region = if (_real) then { ["region", [_country, _rcode]] call comspec_sse_fnc_idCountries } else { createHashMap };
 private _streets = ["RUE DU PORT", "AV. CENTRALE", "RUE DE L'ÉGLISE", "CH. DES OLIVIERS", "PL. DU MARCHÉ", "RUE HAUTE", "BD DE LA MER"];
 private _addr = format ["%1 %2, %3", 1 + floor (("no" call _r) * 120), _streets select (floor (("st" call _r) * (count _streets)) min 6), _city];
+// Pays réel : adresse au format du pays (« {no} {street}, {postal} {city} », « {street} {no}, {postal} {city} »…).
+private _fill = {
+    private _t = _this;
+    { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [
+        ["{city}", _cityName], ["{postal}", _postal], ["{R}", _rcode], ["{region}", _region getOrDefault ["name", _rcode]]
+    ];
+    _t
+};
+if (_real && {(_c getOrDefault ["streets", []]) isNotEqualTo []}) then {
+    private _st = _c get "streets";
+    _addr = [_c getOrDefault ["address", "{no} {street}, {postal} {city}"], "{no}", str (1 + floor (("no" call _r) * 120))] call CBA_fnc_replace;
+    _addr = [_addr, "{street}", _st select ((floor (("st" call _r) * (count _st))) min ((count _st) - 1))] call CBA_fnc_replace;
+    _addr = _addr call _fill;
+    _addr = trim ([_addr, " ,", ","] call CBA_fnc_replace);
+};
+// Contexte des numéros à clé (NIR, PESEL, codice fiscale, permis britannique…).
+private _nctx = createHashMapFromArray [["sex", _printed get "sex"], ["dob", _printed get "dob"], ["last", _printed get "last"], ["first", _printed get "first"],
+    ["pob", _printed get "pob"], ["region", _rcode], ["area", _region getOrDefault ["area", "555"]]];
 private _number = _spec getOrDefault ["number", ""];
-if (_number isEqualTo "") then { _number = [_country, _type, format ["%1|%2", _key, _kind]] call comspec_sse_fnc_idDocNumber; };
+if (_number isEqualTo "") then { _number = [_country, _type, format ["%1|%2", _key, _kind], 0, _nctx] call comspec_sse_fnc_idDocNumber; };
+// Autorité : celle du type (« Préfecture — {city} », « Stadt {city} » ; États-Unis « state » : l'agence de l'État).
+private _auth = [_c getOrDefault ["authority", ""], format ["Préfecture de %1", _city]] select ((_c getOrDefault ["authority", ""]) isEqualTo "");
+if (_real) then {
+    private _a = (_c getOrDefault ["authorities", createHashMap]) getOrDefault [_type, _c getOrDefault ["authority", ""]];
+    if (_a isEqualTo "state") then { _a = _region getOrDefault ["authority", _region getOrDefault ["name", _rcode]]; };
+    if (_a isNotEqualTo "") then { _auth = _a call _fill; };
+};
 
 // Puce : documents intégrés à puce, ou champ « chip = 1 » du type (extensions).
 private _chipType = _type in ["id_card", "passport", "military_id"] || {(_tdef getOrDefault ["chip", false]) isEqualTo true};
@@ -104,11 +153,12 @@ private _doc = createHashMapFromArray [
     ["id", _id], ["cls", ""], ["type", _type], ["country", _country], ["mrzIssuer", _c getOrDefault ["mrz", _country]], ["number", _number],
     ["last", _printed get "last"], ["first", _printed get "first"], ["sex", _printed get "sex"], ["dob", _printed get "dob"],
     ["pob", _printed get "pob"], ["nat", _c getOrDefault ["mrz", _country]], ["profession", _printed getOrDefault ["profession", ""]],
-    ["issued", _issued], ["expires", _expires], ["authority", [_c getOrDefault ["authority", ""], format ["Préfecture de %1", _city]] select ((_c getOrDefault ["authority", ""]) isEqualTo "")], ["address", _addr],
+    ["issued", _issued], ["expires", _expires], ["authority", _auth], ["address", _addr],
+    ["city", _cityName], ["postal", _postal], ["region", _rcode],
     ["chip", ["absent", "ok"] select _chipType], ["chipExpected", _chipType],
     ["kind", _kind], ["quality", _q], ["forgeryKind", ""], ["flaws", []], ["report", _spec getOrDefault ["report", ""]],
     ["holderKey", _key], ["trueLast", _trueLast], ["trueFirst", _trueFirst], ["athenaId", _spec getOrDefault ["athenaId", ""]],
-    ["chipNote", ""], ["issuedAt", time],
+    ["chipNote", ""], ["issuedAt", time], ["autoKind", (_spec getOrDefault ["autoKind", false]) isEqualTo true],
     // Lien avec Athena et propriétaire (API fn_idPaperOf / fn_idPaperOwner) : identité Athena du papier, joueur à qui il
     // a été remis (Steam ID, nom), chaîne de possession (fn_idPaperTrack).
     ["athenaIdentity", _spec getOrDefault ["athenaIdentity", ""]],
@@ -129,6 +179,74 @@ if (_type isEqualTo "military_id") then {
     _doc set ["force", [_force, "Forces armées"] select (_force isEqualTo "")];
     _doc set ["cardSide", if (isNull _u) then { "" } else { ["east", "west", "guer", "civ"] select (([east, west, independent, civilian] find (side group _u)) max 0) }];
     if ((_doc get "profession") isEqualTo "") then { _doc set ["profession", "Militaire"]; };
+};
+
+// --- Pays réel : nationalité imprimée, taille, numéro personnel, MRZ du pays, État (États-Unis), carte grise --------
+if (_real) then {
+    if ((_c getOrDefault ["natText", ""]) isNotEqualTo "") then { _doc set ["natText", _c get "natText"]; };
+    // Taille : tirée de la personne (graine), imprimée en cm ou en pieds-pouces (États-Unis).
+    ([[163, 32], [152, 28]] select ((_printed get "sex") isEqualTo "F")) params ["_lo", "_span"];
+    private _cm = round (_lo + ([_key, "height"] call comspec_sse_fnc_bioRand) * _span);
+    _doc set ["heightCm", _cm];
+    _doc set ["height", if ((_c getOrDefault ["height", "cm"]) isEqualTo "ftin") then {
+        private _in = round (_cm / 2.54);
+        format ["%1'-%2""", floor (_in / 12), _in mod 12]
+    } else { format ["%1 cm", _cm] }];
+    // Numéro personnel (NIR, numéro de registre national, PESEL, BSN, SSN…) : même personne, même numéro sur toutes ses
+    // pièces ; imprimé seulement là où la vraie pièce le porte (printPersonal), sinon gardé pour les fichiers.
+    private _ps = (_c getOrDefault ["number_format", createHashMap]) getOrDefault ["personal", ""];
+    if (_ps isNotEqualTo "") then {
+        private _pn = ["make", [_ps, [_key + "|personal|" + _country] call comspec_sse_fnc_bioHash, "personal", _nctx]] call comspec_sse_fnc_idNumbers;
+        // Espagne : le DNI est le numéro de la carte elle-même.
+        if (_country isEqualTo "ESP" && {_type isEqualTo "id_card"}) then { _pn = _number; };
+        _doc set ["personal", _pn];
+        _doc set ["personalPrint", ((_c getOrDefault ["printPersonal", 0]) isEqualTo 1) && {_type in ["id_card", "residence_permit"]}];
+    };
+    // Code du document dans la MRZ (« ID », « IR », « AR »… : deuxième lettre au choix de l'État émetteur).
+    private _mc = (_c getOrDefault ["mrzCodes", createHashMap]) getOrDefault [_type, ""];
+    if (_mc isNotEqualTo "") then { _doc set ["mrzCode", _mc]; };
+    // Belgique, Espagne : numéro personnel dans les données facultatives de la ligne 1 (TD1).
+    if (_country in ["BEL", "ESP"] && {(_doc getOrDefault ["personal", ""]) isNotEqualTo ""}) then { _doc set ["mrzOptional", _doc get "personal"]; };
+    // États-Unis (et pays à régions) : État de délivrance, imprimé en tête des permis et cartes d'État.
+    if ((_region getOrDefault ["name", ""]) isNotEqualTo "") then { _doc set ["state", toUpper (_region get "name")]; };
+    if (_type isEqualTo "residence_permit") then {
+        _doc set ["permit", (["Résident · Resident", "Séjour temporaire · Temporary", "Travailleur · Worker", "Étudiant · Student"] select (floor (("permit" call _r) * 4) min 3))];
+        // Titre de séjour : la nationalité est celle d'un autre pays (ressortissant étranger).
+        private _others = (["ordered", false] call comspec_sse_fnc_idCountries) - [_country];
+        if (_others isNotEqualTo []) then {
+            // Personne d'un autre pays que celui qui délivre (identité unique, fn_idIdentityOf) : c'est sa nationalité.
+            private _idc = _ident getOrDefault ["country", ""];
+            private _o = if (!isNull _u && {_idc in _others}) then { _idc } else {
+                _others select ((floor (("foreign" call _r) * (count _others))) min ((count _others) - 1))
+            };
+            _doc set ["nat", (_countries getOrDefault [_o, createHashMap]) getOrDefault ["mrz", _o]];
+            _doc set ["natText", _o];
+            // Papier sans personne (posé au sol) : nom et lieu de naissance du pays d'origine (sauf nom imposé par le Zeus
+            // ou le paquet). Une personne garde son identité unique : son nom est celui de ses autres papiers.
+            if (isNull _u && {(_spec getOrDefault ["last", ""]) isEqualTo ""} && {_kind in ["civil", "generated"]}) then {
+                private _fo = ["get", [objNull, _key, _o]] call comspec_sse_fnc_idIdentityOf;
+                { _doc set [_x, _fo get _x]; } forEach ["last", "first", "pob"];
+                _doc set ["trueLast", _fo get "last"];
+                _doc set ["trueFirst", _fo get "first"];
+            };
+        };
+    };
+    if (_type isEqualTo "vehicle_registration") then {
+        private _plate = _c getOrDefault ["plate", ""];
+        if ((_region getOrDefault ["plate", ""]) isNotEqualTo "") then { _plate = _region get "plate"; };
+        _doc set ["plate", ["make", [_plate, [_key + "|plate"] call comspec_sse_fnc_bioHash, "plate", _nctx]] call comspec_sse_fnc_idNumbers];
+        private _cars = switch (_c getOrDefault ["zone", "europe"]) do {
+            case "americas": { ["FORD F-150", "TOYOTA CAMRY", "CHEVROLET SILVERADO", "HONDA CIVIC", "JEEP WRANGLER", "NISSAN ALTIMA", "DODGE RAM 1500", "TOYOTA COROLLA"] };
+            case "other": { ["TOYOTA HILUX", "TOYOTA COROLLA", "HYUNDAI ELANTRA", "KIA RIO", "NISSAN SUNNY", "MITSUBISHI L200", "LADA NIVA", "DACIA LOGAN"] };
+            default { ["RENAULT CLIO", "PEUGEOT 208", "VOLKSWAGEN GOLF", "OPEL CORSA", "SKODA OCTAVIA", "FIAT PANDA", "TOYOTA YARIS", "FORD FOCUS", "DACIA SANDERO", "BMW 320D"] };
+        };
+        _doc set ["vehicle", _cars select ((floor (("car" call _r) * (count _cars))) min ((count _cars) - 1))];
+        _doc set ["vin", ["vin", [[_key + "|vin"] call comspec_sse_fnc_bioHash, "vin", ["SSE", "1SE"] select ((_c getOrDefault ["zone", ""]) isEqualTo "americas")]] call comspec_sse_fnc_idNumbers];
+        _doc set ["holder", format ["%1 %2", toUpper (_doc get "last"), _doc get "first"]];
+        _doc set ["firstReg", [(_iy - floor (("reg" call _r) * 8)) max 1990, _im, _id_] call _ymd];
+        _doc set ["chip", "absent"];
+        _doc set ["chipExpected", false];
+    };
 };
 
 // Champs propres au type (input = 1 : saisis par le Zeus, sinon valeur par défaut du type) : imprimés tels quels.

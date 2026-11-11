@@ -38,6 +38,17 @@ if ((count _scr) > 0) then {
             _x params ["_lb", "_k"];
             [_lb, compile format ["['screen', ['%1', '%2']] call comspec_atak_native_fnc_tocAction;", _id, _k], (_k isEqualTo _cur && {!_casting}) || {_k isEqualTo "SLIDES" && {_casting}}, true, ""]
         }];
+        // Salle TOC : satellite, horloge, écran d'escouade (fn_tocBoard, fn_tocSat).
+        private _slot = (_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [8, 0];
+        _rows pushBack ["buttons", ([["SAT 1", "SAT1", _cur isEqualTo "SAT" && {_slot isEqualTo 0}], ["SAT 2", "SAT2", _cur isEqualTo "SAT" && {_slot isEqualTo 1}], ["HORLOGE", "CLOCK", _cur isEqualTo "CLOCK"]]) apply {
+            _x params ["_lb", "_k", "_on"];
+            [_lb, compile format ["['screen', ['%1', '%2']] call comspec_atak_native_fnc_tocAction;", _id, _k], _on && {!_casting}, true, ""]
+        }];
+        private _sqs = ["squads", (_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [1, ""]] call comspec_atak_native_fnc_tocScreen;
+        if ((count _sqs) > 0) then {
+            _rows pushBack ["combo", "tocSq" + _id, "Escouade", _sqs apply { [_x, _x] }, (_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [9, ""],
+                ["AFFICHER", compile format ["params ['_g']; ['screen', ['%1', 'SQ|' + _g]] call comspec_atak_native_fnc_tocAction;", _id]]];
+        };
     } forEach _scr;
     _rows pushBack ["section", "Caméra sur les écrans du poste", "Image en direct pour les joueurs devant l'écran"];
     if ((count _srcs) isEqualTo 0) then { _rows pushBack ["text", "<t size='0.85' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucune caméra du camp à afficher : drone du camp en vol, caméra fixe ou caméra de téléphone partagée avec vous.</t>"]; };
@@ -57,6 +68,26 @@ if ((count _scr) > 0) then {
         };
     } forEach _scr;
 };
+// Satellites du poste (fn_tocSat) : pilotés aussi d'ici, une seule main par satellite.
+private _sn = _draft getOrDefault ["satN", 0];
+private _sst = ((["state", str side group player] call comspec_atak_native_fnc_tocRoom) select 2) param [_sn, []];
+private _mine = (_sst param [7, ""]) isEqualTo getPlayerUID player;
+private _who = _sst param [6, ""];
+private _sa = { params ["_k", ["_v", []]]; compile format ["['sat', [%1, %2]] call comspec_atak_native_fnc_tocAction;", str _k, str _v] };
+_rows pushBack ["section", "Satellites du poste", ["label", [str side group player, _sn]] call comspec_atak_native_fnc_tocSat];
+_rows pushBack ["segment", "Satellite", [["SAT 1", ["slot", 0] call _act, _sn isEqualTo 0], ["SAT 2", ["slot", 1] call _act, _sn isEqualTo 1]]];
+_rows pushBack ["text", format ["<t size='0.85'>%1</t>", [[format ["Piloté par %1 : lecture seule", [_who] call _esc], "Vous avez la main"] select _mine, "Libre : prenez la main pour le piloter"] select (_who isEqualTo "")]];
+private _can = _mine || {_who isEqualTo ""};
+_rows pushBack ["buttons", [["PRENDRE LA MAIN", ["take"] call _sa, true, !_mine, ""], ["RENDRE LA MAIN", ["release"] call _sa, false, _mine, ""]]];
+_rows pushBack ["buttons", [["▲", ["pan", [0, 0.33]] call _sa, false, _can, "Nord"], ["▼", ["pan", [0, -0.33]] call _sa, false, _can, "Sud"], ["◀", ["pan", [-0.33, 0]] call _sa, false, _can, "Ouest"], ["▶", ["pan", [0.33, 0]] call _sa, false, _can, "Est"]]];
+_rows pushBack ["buttons", [["ZOOM +", ["zoom", 1 / 1.5] call _sa, false, _can, ""], ["ZOOM −", ["zoom", 1.5] call _sa, false, _can, ""], ["POSTE", ["home"] call _sa, false, _can, "Centre le satellite sur le poste"]]];
+_rows pushBack ["buttons", [["JOUR", ["mode", "DAY"] call _sa, (_sst param [3, "DAY"]) isEqualTo "DAY", _can, ""], ["NUIT", ["mode", "NV"] call _sa, (_sst param [3, ""]) isEqualTo "NV", _can, "Vision nocturne verte"], ["THERMIQUE", ["mode", "TI"] call _sa, (_sst param [3, ""]) isEqualTo "TI", _can, ""]]];
+private _fopts = [["Ne suivre personne", ""]];
+private _fnodes = ((missionNamespace getVariable [format ["COMSPEC_ATAK_TocFeed_%1", str side group player], []]) param [1, []]);
+{ _fopts pushBackUnique [format ["Groupe %1", _x param [7, ""]], "G|" + (_x param [7, ""])]; } forEach (_fnodes select { (_x param [7, ""]) isNotEqualTo "" });
+{ _fopts pushBack [_x select 1, "U|" + (_x select 0)]; } forEach _fnodes;
+_rows pushBack ["combo", "tocSatF", "Suivre", _fopts, [(_sst param [4, ""]) + "|" + (_sst param [5, ""]), ""] select ((_sst param [4, ""]) isEqualTo ""),
+    ["SUIVRE", { params ['_v']; ['sat', ['follow', _v]] call comspec_atak_native_fnc_tocAction; }]];
 // Groupes du camp ayant des joueurs : chef, effectif, numéro et grille du chef.
 private _groups = [];
 { if (side _x isEqualTo side group player && {({isPlayer _x && {alive _x}} count (units _x)) > 0}) then { _groups pushBackUnique _x; }; } forEach allGroups;

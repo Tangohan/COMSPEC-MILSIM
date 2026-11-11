@@ -10,7 +10,7 @@
       ["fired", [ia, tireur, distance]]   tir proche (réglages « Réaction aux tirs », « Portée des tirs ») : l'IA se jette au
                                sol (« Ne tirez pas ! »), se rend, fuit, ou se bat (insurgé armé et agressif) selon son profil ;
                                8 s au moins entre deux réactions ; seulement en conversation (3 min) ou engagée par l'automate
-      ["witness", [victime, joueur]]      un civil menacé ou braqué : jusqu'à 5 IA civiles proches (réglage « Témoins »,
+      ["witness", [victime, joueur, arme seule]]   un civil menacé ou braqué : jusqu'à 5 IA civiles proches (réglage « Témoins »,
                                rayon réglable) qui voient la scène sont choquées (tension de l'automate en hausse, qui retombe
                                de 30 par minute) ; hors automate, elles regardent la scène ou s'enfuient (peureuses)
       ["shock", ia] -> choc (tirs, scène vue, 0-80) plus pression de la conversation (-30 à 60), lu par fn_idAiBrain ;
@@ -24,6 +24,9 @@
     groupe, ou d'un Zeus à distance, ne compte pas.
     Par IA (menu ZEN « Réactions… », fn_iarpServer reactSet) : variable d'unité comspec_sse_iarpReactOff, liste parmi
     "shots" (ne réagit plus aux tirs proches) et "witness" (n'est plus témoin), diffusée pour la fenêtre du Zeus.
+    Émotions (fn_iarpProfile « emoActive ») : « armes » décochée, tirs proches et armes braquées ne comptent plus (le tir
+    reste « entendu ») ; « peur » décochée, ni choc, ni témoin, ni mise à terre, reddition ou fuite ; « colère » décochée,
+    pas de riposte ; pression qui monte seulement avec peur, nervosité ou colère, apaisement seulement avec soulagement.
     Coût : suivi d'un stop, une fonction CBA toutes les 2 s par IA arrêtée ; tirs, un gestionnaire par IA suivie,
     réaction bornée par le délai de 8 s ; témoins, une recherche de 8 IA au plus par menace (20 s par victime).
 */
@@ -43,6 +46,10 @@ private _shockOf = {
     (_v - (time - _at) * 0.5) max 0
 };
 private _addShock = { params ["_u", "_d"]; _u setVariable ["comspec_sse_idShock", [(([_u] call _shockOf) + _d) min 80, time]]; };
+// Émotions actives de cette IA (fn_iarpProfile « emoActive » : son réglage, sinon le global). « armes » décochée : une
+// arme braquée, levée ou un tir proche ne lui fait rien ; « peur » décochée : ni choc, ni fuite, ni reddition par peur.
+private _emo = { params ["_u"]; ["emoActive", _u] call comspec_sse_fnc_iarpProfile };
+private _feels = { params ["_l"]; (_l findIf { _x in ["peur", "nervosite", "colere"] }) >= 0 };
 // Réaction coupée pour cette IA par le Zeus ("shots" | "witness").
 private _off = { params ["_u", "_what"]; private _l = _u getVariable ["comspec_sse_iarpReactOff", []]; _l isEqualType [] && {_what in _l} };
 private _pressOf = {
@@ -145,19 +152,28 @@ switch (_op) do {
         if (_fsm in ["", "calme"] && {(time - (_u getVariable ["comspec_sse_iarpTalkAt", -1000])) > 180}) exitWith {};
         if (_fsm in ["agressif", "renforts"]) exitWith {};
         if ((_u getVariable ["ace_captives_isHandcuffed", false]) || {_u getVariable ["ACE_isUnconscious", false]} || {(lifeState _u) isEqualTo "INCAPACITATED"}) exitWith {};
+        // Tir entendu (gardé pour « Vous avez entendu ? ») ; sans peur des armes, il ne lui fait rien.
         _u setVariable ["comspec_sse_iarpShotAt", time];
-        [_u, 35] call _addShock;
-        [_u, 35, format ["tirs proches (%1 m)", round _d], _firer] call _fearLog;
+        private _em = [_u] call _emo;
+        if !("armes" in _em) exitWith {};
+        if ([_em] call _feels) then {
+            [_u, 35] call _addShock;
+            [_u, 35, format ["tirs proches (%1 m)", round _d], _firer] call _fearLog;
+        };
         private _p = ["get", _u] call comspec_sse_fnc_iarpProfile;
         private _inFsm = !(_fsm in ["", "calme"]);
         private _armed = (primaryWeapon _u) isNotEqualTo "" || {(handgunWeapon _u) isNotEqualTo ""};
+        private _scared = "peur" in _em;
+        // Riposte : colère ; à terre, reddition, fuite : peur. Ni l'une ni l'autre : elle ne bouge pas.
         private _choice = call {
-            if (_inFsm && {_armed} && {(_p get "role") in ["insurge", "hvt"]} && {(_p get "aggro") >= 60} && {(random 1) < 0.5}) exitWith { "fight" };
+            if (_inFsm && {_armed} && {"colere" in _em} && {(_p get "role") in ["insurge", "hvt"]} && {(_p get "aggro") >= 60} && {(random 1) < 0.5}) exitWith { "fight" };
+            if (!_scared) exitWith { "" };
             if (_u getVariable ["ace_captives_isSurrendering", false]) exitWith { "down" };
             if ((_p get "fear") >= 70 || {_d < 12 && {(random 1) < 0.5}}) exitWith { "surrender" };
             if ((_p get "nerve") >= 60 && {(_p get "aggro") < 60} && {isNull objectParent _u} && {(random 1) < 0.6}) exitWith { "flee" };
             "down"
         };
+        if (_choice isEqualTo "") exitWith {};
         switch (_choice) do {
             case "fight": { _u setVariable ["comspec_sse_idWant", "agressif"]; };
             case "surrender": {
@@ -176,7 +192,8 @@ switch (_op) do {
     };
 
     case "witness": {
-        _a params [["_v", objNull, [objNull]], ["_by", objNull, [objNull]]];
+        // _byWeapon : la scène n'est qu'une arme braquée (pas de menace dite) ; un témoin sans peur des armes n'en est pas choqué.
+        _a params [["_v", objNull, [objNull]], ["_by", objNull, [objNull]], ["_byWeapon", false, [false]]];
         if (isNull _v || {!(missionNamespace getVariable ["comspec_sse_iarp_witness", true])}) exitWith {};
         if (time < ((_v getVariable ["comspec_sse_iarpWitAt", -100]) + 20)) exitWith {};
         _v setVariable ["comspec_sse_iarpWitAt", time];
@@ -186,6 +203,7 @@ switch (_op) do {
             alive _x && {!isPlayer _x} && {_x isNotEqualTo _v} && {_x isNotEqualTo _by} && {(side group _x) isEqualTo civilian}
                 && {!(_x getVariable ["ACE_isUnconscious", false])} && {!(_x getVariable ["ace_captives_isHandcuffed", false])}
                 && {!([_x, "witness"] call _off)}
+                && { private _em = [_x] call _emo; "peur" in _em && {!_byWeapon || {"armes" in _em}} }
         }) apply { [_x distance _v, _x] };
         _c sort true;
         private _n = 0;
@@ -214,6 +232,10 @@ switch (_op) do {
     case "press": {
         _a params [["_u", objNull, [objNull]], ["_d", 0, [0]], ["_reason", "", [""]], ["_by", objNull, [objNull]]];
         if (isNull _u || {_d isEqualTo 0}) exitWith {};
+        // Montée : peur, nervosité ou colère active ; apaisement : soulagement actif. Sinon rien ne bouge.
+        private _em = [_u] call _emo;
+        if (_d > 0 && {!([_em] call _feels)}) exitWith {};
+        if (_d < 0 && {!("soulagement" in _em)}) exitWith {};
         _u setVariable ["comspec_sse_iarpPress", [((([_u] call _pressOf) + _d) max -30) min 60, time]];
         [_u, _d, _reason, _by] call _fearLog;
     };
@@ -226,7 +248,11 @@ switch (_op) do {
             private _w = currentWeapon _x;
             if (alive _x && {_x isNotEqualTo _u} && {_w isNotEqualTo ""} && {_w isNotEqualTo (binocular _x)} && {!(weaponLowered _x)}) then {
                 private _d = _x distance _u;
-                if (_d <= 25 && {((_x weaponDirection _w) vectorDotProduct (vectorNormalized ((aimPos _u) vectorDiff (eyePos _x)))) > 0.99}) then { _n = _n + 1; _near = _near min _d; };
+                // Canon à 8° de son buste ou, de près, à moins de 0,6 m de lui : à 3 m, viser la tête sort du cône de 8°.
+                private _wd = _x weaponDirection _w;
+                private _to = (aimPos _u) vectorDiff (eyePos _x);
+                private _al = _to vectorDotProduct _wd;
+                if (_d <= 25 && {_al > 0} && {(_wd vectorDotProduct (vectorNormalized _to)) > 0.99 || {(vectorMagnitude (_to vectorDiff (_wd vectorMultiply _al))) < 0.6}}) then { _n = _n + 1; _near = _near min _d; };
             };
         } forEach (_u nearEntities ["CAManBase", 25]);
         [_n, _near]
@@ -234,7 +260,11 @@ switch (_op) do {
     case "level": {
         private _u = _a;
         if !(_u isEqualType objNull) exitWith { 0 };
+        // Aucune émotion qui fait monter la peur (neutre, impassible) : 0 ; sans peur des armes, l'arme braquée ne compte pas.
+        private _em = [_u] call _emo;
+        if !([_em] call _feels) exitWith { 0 };
         (["aimedAt", [_u]] call comspec_sse_fnc_iarpReact) params ["_n", "_near"];
+        if !("armes" in _em) then { _n = 0; };
         private _aim = if (_n > 0) then { ([10, 18, 26] select ((parseNumber (_near <= 12)) + (parseNumber (_near <= 5)))) + 8 * ((_n - 1) min 2) } else { 0 };
         (((([_u] call _shockOf) + ([_u] call _pressOf) + _aim) max 0) min 100)
     };

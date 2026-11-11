@@ -1077,6 +1077,51 @@
             <English>TOC TV (COMSPEC)</English>
             <French>Téléviseur TOC (COMSPEC)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_W22">
+            <Original>Video wall 2x2, single image (COMSPEC)</Original>
+            <English>Video wall 2x2, single image (COMSPEC)</English>
+            <French>Mur d'images 2x2, image unique (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_W22Q">
+            <Original>Video wall 2x2, 4 panels (COMSPEC)</Original>
+            <English>Video wall 2x2, 4 panels (COMSPEC)</English>
+            <French>Mur d'images 2x2, 4 dalles (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_W32">
+            <Original>Large video wall 3x2, 6 panels (COMSPEC)</Original>
+            <English>Large video wall 3x2, 6 panels (COMSPEC)</English>
+            <French>Grand mur d'images 3x2, 6 dalles (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_W32M">
+            <Original>Large video wall 3x2, image and 2 panels (COMSPEC)</Original>
+            <English>Large video wall 3x2, image and 2 panels (COMSPEC)</English>
+            <French>Grand mur d'images 3x2, image et 2 dalles (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_98">
+            <Original>98-inch giant wall screen (COMSPEC)</Original>
+            <English>98-inch giant wall screen (COMSPEC)</English>
+            <French>Écran géant 98 pouces mural (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_98S">
+            <Original>98-inch giant screen on rolling stand (COMSPEC)</Original>
+            <English>98-inch giant screen on rolling stand (COMSPEC)</English>
+            <French>Écran géant 98 pouces sur pied roulant (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_65C">
+            <Original>65-inch ceiling-hung screen (COMSPEC)</Original>
+            <English>65-inch ceiling-hung screen (COMSPEC)</English>
+            <French>Écran 65 pouces suspendu (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_CLK">
+            <Original>LED clock strip (COMSPEC)</Original>
+            <English>LED clock strip (COMSPEC)</English>
+            <French>Bandeau horloge LED (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_PLT">
+            <Original>Element name plate (COMSPEC)</Original>
+            <English>Element name plate (COMSPEC)</English>
+            <French>Plaque de nom d'élément (COMSPEC)</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_C126739753">
             <Original>Antenna height (m)</Original>
             <English>Antenna height (m)</English>
@@ -1672,6 +1717,151 @@
             <English>Map and feed, map only (large map), feed only, or post PIP (the screen mirrors what the operator has in front of them on the post laptop). Can be changed in game (ACE or scroll wheel).</English>
             <French>Carte et flux, carte seule (carte en grand), flux seul, ou PIP du poste (l'écran recopie ce que l'opérateur a sous les yeux sur le PC du poste). Modifiable en jeu (ACE ou molette).</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_NAME">
+            <Original>ATAK · Complete TOC room</Original>
+            <English>ATAK · Complete TOC room</English>
+            <French>ATAK · Salle TOC complète</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_N_NAME">
+            <Original>Room name</Original>
+            <English>Room name</English>
+            <French>Nom de la salle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_N_TIP">
+            <Original>Name shown on the post laptop and in the screens' menus. It also identifies the room from one session to the next: keep the same name to find the room as it was left. Example: TOC BRAVO.</Original>
+            <English>Name shown on the post laptop and in the screens' menus. It also identifies the room from one session to the next: keep the same name to find the room as it was left. Example: TOC BRAVO.</English>
+            <French>Nom affiché au PC du poste et dans les menus des écrans. Il identifie aussi la salle d'une partie à l'autre : gardez le même nom pour retrouver la salle telle qu'elle a été laissée. Exemple : TOC BRAVO.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_S_NAME">
+            <Original>Side</Original>
+            <English>Side</English>
+            <French>Camp</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_S_TIP">
+            <Original>Side whose ATAK network the room shows and whose players can open its laptops. Example: BLUFOR for the NATO command post.</Original>
+            <English>Side whose ATAK network the room shows and whose players can open its laptops. Example: BLUFOR for the NATO command post.</English>
+            <French>Camp dont la salle affiche le réseau ATAK et dont les joueurs peuvent ouvrir les PC. Exemple : BLUFOR pour le poste de commandement de l'OTAN.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_Z_NAME">
+            <Original>Size</Original>
+            <English>Size</English>
+            <French>Taille</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_Z_TIP">
+            <Original>Small: 2x2 video wall and 2 stations. Medium: 3x2 wall, two 98-inch screens, one hanging screen, 3 stations. Large: two hanging screens, two 98-inch stand screens and 4 stations on top. Example: medium for a company, large for a battalion.</Original>
+            <English>Small: 2x2 video wall and 2 stations. Medium: 3x2 wall, two 98-inch screens, one hanging screen, 3 stations. Large: two hanging screens, two 98-inch stand screens and 4 stations on top. Example: medium for a company, large for a battalion.</English>
+            <French>Petite : mur d'images 2x2 et 2 postes. Moyenne : mur 3x2, deux écrans 98 pouces, un écran suspendu, 3 postes. Grande : en plus deux écrans suspendus, deux 98 pouces sur pied et 4 postes. Exemple : moyenne pour une compagnie, grande pour un bataillon.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_Z_S">
+            <Original>Small (2x2 wall, 2 stations)</Original>
+            <English>Small (2x2 wall, 2 stations)</English>
+            <French>Petite (mur 2x2, 2 postes)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_Z_M">
+            <Original>Medium (3x2 wall, 3 stations)</Original>
+            <English>Medium (3x2 wall, 3 stations)</English>
+            <French>Moyenne (mur 3x2, 3 postes)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_Z_L">
+            <Original>Large (3x2 wall, 4 stations)</Original>
+            <English>Large (3x2 wall, 4 stations)</English>
+            <French>Grande (mur 3x2, 4 postes)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_DESC">
+            <Original>Places a complete operations room in front of the module: video wall, big screens, clock strip, name plates, desks, chairs and TOC laptops, all linked to the room. Manage every screen from the ROOM tab of one of the laptops. Kept from one session to the next.</Original>
+            <English>Places a complete operations room in front of the module: video wall, big screens, clock strip, name plates, desks, chairs and TOC laptops, all linked to the room. Manage every screen from the ROOM tab of one of the laptops. Kept from one session to the next.</English>
+            <French>Pose une salle d'opérations complète devant le module : mur d'images, grands écrans, bandeau horloge, plaques de nom, bureaux, chaises et PC de TOC, tous liés à la salle. Gérez tous les écrans depuis l'onglet SALLE d'un des PC. Gardée d'une partie à l'autre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_MOSAIC">
+            <Original>ATAK camera mosaic</Original>
+            <English>ATAK camera mosaic</English>
+            <French>Mosaïque de caméras ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_STRIP">
+            <Original>ZULU / LOCAL clock strip (4:1 screen)</Original>
+            <English>ZULU / LOCAL clock strip (4:1 screen)</English>
+            <French>Bandeau horloge ZULU / LOCAL (écran 4:1)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_PLATE">
+            <Original>Element name plate (4:1 screen)</Original>
+            <English>Element name plate (4:1 screen)</English>
+            <French>Plaque de nom d'élément (écran 4:1)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_PN_NAME">
+            <Original>Wall panels</Original>
+            <English>Wall panels</English>
+            <French>Dalles du mur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_PN_TIP">
+            <Original>Multi-panel video wall: content of panels 2 onwards, in reading order (panel 1 takes the module's display), separated by commas: SPLIT, SAT1, SAT2, CLOCK, LOG, EXCHECK, KILLS, REQ or SQ:group name. Example for a 2x2 wall: SAT1, CLOCK, SQ:Alpha 1-1. Can be changed in game (Wall panels ACE menu, CAST tab of the laptop).</Original>
+            <English>Multi-panel video wall: content of panels 2 onwards, in reading order (panel 1 takes the module's display), separated by commas: SPLIT, SAT1, SAT2, CLOCK, LOG, EXCHECK, KILLS, REQ or SQ:group name. Example for a 2x2 wall: SAT1, CLOCK, SQ:Alpha 1-1. Can be changed in game (Wall panels ACE menu, CAST tab of the laptop).</English>
+            <French>Mur d'images à plusieurs dalles : contenu des dalles 2 et suivantes, dans l'ordre de lecture (la dalle 1 prend l'affichage du module), séparés par des virgules : SPLIT, SAT1, SAT2, CLOCK, LOG, EXCHECK, KILLS, REQ ou SQ:nom du groupe. Exemple pour un mur 2x2 : SAT1, CLOCK, SQ:Alpha 1-1. Modifiable en jeu (menu ACE Dalles du mur, onglet DIFFUSER du PC).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_SAT">
+            <Original>Satellite view (friendly tracking)</Original>
+            <English>Satellite view (friendly tracking)</English>
+            <French>Vue satellite (suivi des alliés)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_CLOCK">
+            <Original>ZULU clock and timers</Original>
+            <English>ZULU clock and timers</English>
+            <French>Horloge ZULU et chronos</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_SQUAD">
+            <Original>Squad screen (one group)</Original>
+            <English>Squad screen (one group)</English>
+            <French>Écran d'escouade (un groupe)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_LOG">
+            <Original>Post duty log</Original>
+            <English>Post duty log</English>
+            <French>Main courante du poste</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_EXCHECK">
+            <Original>Execution checklist (EXCHECK)</Original>
+            <English>Execution checklist (EXCHECK)</English>
+            <French>Liste d'exécution (EXCHECK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_KILLS">
+            <Original>Casualties and results</Original>
+            <English>Casualties and results</English>
+            <French>Pertes et résultats</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_REQ">
+            <Original>Element requests</Original>
+            <English>Element requests</English>
+            <French>Demandes des éléments</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_SQ_NAME">
+            <Original>Squad shown</Original>
+            <English>Squad shown</English>
+            <French>Escouade montrée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_SQ_TIP">
+            <Original>Name of the group (its Arma callsign) shown by the Squad screen display: name plate, members and their ATAK status, map framed on it. Example: Alpha 1-1. Can be changed in game (ACE, post laptop, TOC post app).</Original>
+            <English>Name of the group (its Arma callsign) shown by the Squad screen display: name plate, members and their ATAK status, map framed on it. Example: Alpha 1-1. Can be changed in game (ACE, post laptop, TOC post app).</English>
+            <French>Nom du groupe (indicatif Arma du groupe) montré par l'affichage Écran d'escouade : plaque à son nom, membres et leur état ATAK, carte cadrée sur lui. Exemple : Alpha 1-1. Modifiable en jeu (ACE, PC du poste, app Poste TOC).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_SAT_NAME">
+            <Original>Satellite shown</Original>
+            <English>Satellite shown</English>
+            <French>Satellite montré</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_SAT_TIP">
+            <Original>Satellite shown by the Satellite view display (two per side, controlled from the post laptop or the TOC post app). Example: SAT 1 on the big centre screen, SAT 2 on the right one.</Original>
+            <English>Satellite shown by the Satellite view display (two per side, controlled from the post laptop or the TOC post app). Example: SAT 1 on the big centre screen, SAT 2 on the right one.</English>
+            <French>Satellite montré par l'affichage Vue satellite (deux par camp, pilotés depuis le PC du poste ou l'app Poste TOC). Exemple : SAT 1 sur le grand écran du centre, SAT 2 sur celui de droite.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_EX_NAME">
+            <Original>Prepared execution checklist</Original>
+            <English>Prepared execution checklist</English>
+            <French>Liste d'exécution préparée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_EX_TIP">
+            <Original>Operation steps for the EXCHECK tab of the post laptop, separated by | ; in each step: event ; code word ; element ; planned time. Example: LD crossed ; ROMEO ; ALPHA ; 22:30 | Objective seized ; TANGO ; BRAVO ; 23:10. Empty: nothing is prepared (the list kept from the previous session stays).</Original>
+            <English>Operation steps for the EXCHECK tab of the post laptop, separated by | ; in each step: event ; code word ; element ; planned time. Example: LD crossed ; ROMEO ; ALPHA ; 22:30 | Objective seized ; TANGO ; BRAVO ; 23:10. Empty: nothing is prepared (the list kept from the previous session stays).</English>
+            <French>Étapes de l'opération pour l'onglet EXCHECK du PC du poste, séparées par | ; dans chaque étape : événement ; mot de code ; élément ; heure prévue. Exemple : Franchissement LD ; ROMEO ; ALPHA ; 22:30 | Objectif pris ; TANGO ; BRAVO ; 23:10. Vide : rien n'est préparé (la liste gardée de la partie précédente reste).</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCSIDE">
             <Original>TOC post side</Original>
             <English>TOC post side</English>
@@ -1906,6 +2096,66 @@
             <Original>TOC display</Original>
             <English>TOC display</English>
             <French>Affichage TOC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_C09E0A401F">
+            <Original>Trace a number</Original>
+            <English>Trace a number</English>
+            <French>Tracer un numéro</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_096FB93AB8">
+            <Original>Tracing</Original>
+            <English>Tracing</English>
+            <French>Traçage</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7A4749C0CC">
+            <Original>Phone (ATAK tracing)</Original>
+            <English>Phone (ATAK tracing)</English>
+            <French>Téléphone (traçage ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_E1D71C836D">
+            <Original>Traceable phone</Original>
+            <English>Traceable phone</English>
+            <French>Téléphone traçable</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_0D33FDB471">
+            <Original>What the ATAK number tracing (EW app, TRACE tab) answers for this AI. By profile: on if the AI has a phone (SSE or ATAK profile). Off: only the last known position. Burner: never traceable, same answer as an unknown number. E.g. careful HVT = Burner; lookout = On.</Original>
+            <English>What the ATAK number tracing (EW app, TRACE tab) answers for this AI. By profile: on if the AI has a phone (SSE or ATAK profile). Off: only the last known position. Burner: never traceable, same answer as an unknown number. E.g. careful HVT = Burner; lookout = On.</English>
+            <French>Ce que répond le traçage de numéro de l'ATAK (app GE, onglet TRAÇAGE) pour cette IA. Selon son profil : allumé si l'IA a un téléphone (profil SSE ou ATAK). Éteint : seulement la dernière position connue. Jetable : jamais traçable, même réponse qu'un numéro inconnu. Ex. : HVT prudente = Jetable ; guetteur = Allumé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_D7DF9E941A">
+            <Original>By its profile (default)</Original>
+            <English>By its profile (default)</English>
+            <French>Selon son profil (défaut)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_8779704739">
+            <Original>On: traceable</Original>
+            <English>On: traceable</English>
+            <French>Allumé : traçable</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_29BDD7A1CC">
+            <Original>Off: last known position only</Original>
+            <English>Off: last known position only</English>
+            <French>Éteint : dernière position connue seulement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_A8F1899708">
+            <Original>Burner: never traceable</Original>
+            <English>Burner: never traceable</English>
+            <French>Jetable : jamais traçable</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_255B7BF1AB">
+            <Original>Phone number</Original>
+            <English>Phone number</English>
+            <French>Numéro de téléphone</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_531AB9FB36">
+            <Original>The AI's number for tracing, to also write on a document or have given during questioning. Empty: number of the SSE profile, otherwise a computed number, always the same for this unit. E.g. 06 12 34 56 78 or +964 750 123 4567.</Original>
+            <English>The AI's number for tracing, to also write on a document or have given during questioning. Empty: number of the SSE profile, otherwise a computed number, always the same for this unit. E.g. 06 12 34 56 78 or +964 750 123 4567.</English>
+            <French>Numéro de l'IA pour le traçage, à écrire aussi sur un document ou à faire donner en interrogatoire. Vide : numéro du profil SSE, sinon un numéro calculé, toujours le même pour cette unité. Ex. : 06 12 34 56 78 ou +964 750 123 4567.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_5F9A1628F9">
+            <Original>Find a phone from its number, like a request to the operator.%1%3From the ATAK%4%2EW app, TRACE tab: type the number (or an IMEI), then TRACE THE NUMBER. The answer comes after a few seconds.%2Number read in a recovered file (Extraction app) or in the SSE field app: TRACE button right below.%1%3Result%4%2Uncertainty circle on the map: a few dozen metres when several antennas pick up the phone, several hundred with only one.%2Phone off, jammed or out of coverage: only the last known position, less and less accurate.%2FOLLOW: new position at regular intervals while the phone is open. SHARE: marker for the group or the TOC. TO SSE SHEET: prefilled observation sheet.%2Tracing gives a position, never a name.%1%3Zeus%4%2Right click an AI &gt; ATAK · AI phone: on, off or burner (never traceable), see and copy its number.%2Right click elsewhere &gt; ATAK · Number tracing: suspend tracing, warrant, civilian mobile network.</Original>
+            <English>Find a phone from its number, like a request to the operator.%1%3From the ATAK%4%2EW app, TRACE tab: type the number (or an IMEI), then TRACE THE NUMBER. The answer comes after a few seconds.%2Number read in a recovered file (Extraction app) or in the SSE field app: TRACE button right below.%1%3Result%4%2Uncertainty circle on the map: a few dozen metres when several antennas pick up the phone, several hundred with only one.%2Phone off, jammed or out of coverage: only the last known position, less and less accurate.%2FOLLOW: new position at regular intervals while the phone is open. SHARE: marker for the group or the TOC. TO SSE SHEET: prefilled observation sheet.%2Tracing gives a position, never a name.%1%3Zeus%4%2Right click an AI &gt; ATAK · AI phone: on, off or burner (never traceable), see and copy its number.%2Right click elsewhere &gt; ATAK · Number tracing: suspend tracing, warrant, civilian mobile network.</English>
+            <French>Retrouver un téléphone à partir de son numéro, comme une requête à l'opérateur.%1%3Depuis l'ATAK%4%2App GE, onglet TRAÇAGE : saisissez le numéro (ou un IMEI), puis TRACER LE NUMÉRO. La réponse arrive après quelques secondes.%2Numéro lu dans un fichier récupéré (app Extraction) ou dans l'app SSE terrain : bouton TRACER juste dessous.%1%3Résultat%4%2Cercle d'incertitude sur la carte : quelques dizaines de mètres quand plusieurs antennes captent le téléphone, plusieurs centaines avec une seule.%2Téléphone éteint, brouillé ou hors couverture : seulement la dernière position connue, de moins en moins précise.%2SUIVRE : nouvelle position à intervalle régulier tant que le téléphone est ouvert. PARTAGER : marqueur pour le groupe ou le TOC. EN FICHE SSE : fiche d'observation préremplie.%2Le traçage donne une position, jamais un nom.%1%3Zeus%4%2Clic droit sur une IA &gt; ATAK · Téléphone de l'IA : allumé, éteint ou jetable (jamais traçable), voir et copier son numéro.%2Clic droit ailleurs &gt; ATAK · Traçage des numéros : suspendre le traçage, mandat, réseau mobile civil.</French>
         </Key>
     </Package>
 </Project>

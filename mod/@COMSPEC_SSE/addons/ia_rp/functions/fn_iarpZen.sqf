@@ -7,8 +7,9 @@
       Journal des échanges  tous les échanges joueurs / IA, en direct (onglet JOURNAL du terminal)
     Menu contextuel (clic droit ZEN) « SSE · Roleplay de l'IA » : visible seulement quand la cible (IA survolée, sélection
     du curateur) compte au moins une IA vivante, jamais sur un joueur seul ; chaque action vaut pour toutes les IA visées.
-      Profil d'IA           Atelier IA… · Appliquer un profil… · Rôle et caractère… · Savoir, secret et couverture… ·
-                            Réponses de l'IA… (fn_iarpAnswersUi : réponse auto ou perso par question, questions perso) ·
+      Profil d'IA           Question et réponse… (la 1re question perso, comme en tête de l'atelier et de l'attribut Eden) ·
+                            Atelier IA… · Appliquer un profil… · Rôle et caractère… · Ce qu'elle sait, secret et couverture… ·
+                            Toutes les questions et réponses… (fn_iarpAnswersUi : réponse auto ou perso par question) ·
                             Ce qu'elle peut évoquer… (cadre : rien de sensible, ce qu'elle sait, libre ; thèmes interdits)
                             (fenêtres ZEN pré-remplies avec le profil de la première IA, lu sur le serveur :
                             fn_iarpServer profileGet / profileSet / profileTweak)
@@ -96,8 +97,12 @@ private _has = { (_this call comspec_sse_iarpZenTargets) isNotEqualTo [] };
 private _hasId = { !isNil "comspec_sse_fnc_idClient" && {(_this call comspec_sse_iarpZenTargets) isNotEqualTo []} };
 private _hasFsm = { !isNil "comspec_sse_fnc_idAiFsm" && {(_this call comspec_sse_iarpZenTargets) isNotEqualTo []} };
 private _root = "comspec_sse_iarp";
+// Chaque action est aussi rangée par identifiant (« _answers », « _truth »…) : la fenêtre « SSE · <nom de l'IA> » du
+// bouton SSE de la fenêtre d'édition d'une unité (fn_iarpZenHub) lance les mêmes actions, avec l'IA comme cible.
+missionNamespace setVariable ["comspec_sse_iarpZenActs", createHashMap];
 private _mk = {
     params ["_id", "_key", "_ic", "_code", "_cond", "_parent", "_prio", ["_arg", []]];
+    (missionNamespace getVariable "comspec_sse_iarpZenActs") set [_id, [_code, _cond, _arg]];
     [[_root + _id, localize _key, _ic, _code, _cond, _arg] call zen_context_menu_fnc_createAction, _parent, _prio] call zen_context_menu_fnc_addAction;
 };
 private _ip = "\z\comspec_sse\addons\zeus\data\";
@@ -105,6 +110,32 @@ private _ip = "\z\comspec_sse\addons\zeus\data\";
 
 // --- Profil d'IA ---------------------------------------------------------------------------------------------------
 ["_profile", "STR_COMSPEC_IARP_Z_MProfile", _ip + "mod_ai.paa", {}, _has, [_root], 90] call _mk;
+// Question et réponse : comme en tête de l'atelier et de l'attribut Eden, la 1re question perso (fn_iarpAnswers « qaSet »).
+// Fenêtre [titre, question, réponse, [IA visées, réponses de la 1re IA, clé de la question perso]] ; une seule des deux
+// remplie : rien ne part, elle se rouvre avec ce qui était écrit et le dit dans son titre.
+missionNamespace setVariable ["comspec_sse_iarpZenQa", {
+    params ["_title", "_q", "_r", "_args"];
+    [_title, [
+        ["EDIT", [localize "STR_COMSPEC_IARP_W_Question", localize "STR_COMSPEC_IARP_W_Question_D"], _q],
+        ["EDIT:MULTI", [localize "STR_COMSPEC_IARP_W_Reply", localize "STR_COMSPEC_IARP_W_Reply_D"], [_r, { _this }, 4]]
+    ], {
+        params ["_v", "_args"];
+        _args params ["_units", "_ans", "_k"];
+        _v params [["_q", ""], ["_r", ""]];
+        if (((trim _q) isEqualTo "") isNotEqualTo ((trim _r) isEqualTo "")) exitWith {
+            [localize "STR_COMSPEC_IARP_W_QaHalf", _q, _r, _args] call comspec_sse_iarpZenQa;
+        };
+        ["profileTweak", [[["answers", ["qaSet", [_ans, _k, _q, _r]] call comspec_sse_fnc_iarpAnswers]]], _units] call comspec_sse_iarpZenSend;
+    }, {}, _args] call zen_dialog_fnc_create;
+}];
+["_qa", "STR_COMSPEC_IARP_Z_Qa", _icon, {
+    [_this call comspec_sse_iarpZenTargets, {
+        params ["_t", "_p", "_who", "_units"];
+        private _qa = ["qaGet", _p getOrDefault ["answers", []]] call comspec_sse_fnc_iarpAnswers;
+        [["STR_COMSPEC_IARP_Z_Qa", _units, _who] call comspec_sse_iarpZenTitle, _qa select 1, _qa select 2,
+            [_units, _p getOrDefault ["answers", []], _qa select 0]] call comspec_sse_iarpZenQa;
+    }] call comspec_sse_iarpZenWithProfile;
+}, _has, [_root, _root + "_profile"], 95] call _mk;
 ["_workshop", "STR_COMSPEC_IARP_Z_Workshop", _icon, {
     ["open", ["zeus", _this call comspec_sse_iarpZenTargets]] call comspec_sse_fnc_iarpWorkshop;
 }, _has, [_root, _root + "_profile"], 89] call _mk;
@@ -191,13 +222,55 @@ private _ip = "\z\comspec_sse\addons\zeus\data\";
     }] call comspec_sse_iarpZenWithProfile;
 }, _has, [_root, _root + "_profile"], 84] call _mk;
 
+// Émotions de ces IA : préréglage (réglage de la mission, personnalisé, tout cocher, impassible, très émotif, tout
+// décocher), une case par émotion, « tout son groupe ». Le réglage de l'IA l'emporte sur le réglage global.
+["_emotions", "STR_COMSPEC_IARP_Z_Emo", _ip + "mod_person.paa", {
+    [_this call comspec_sse_iarpZenTargets, {
+        params ["_t", "_p", "_who", "_units"];
+        private _ids = ["emoIds"] call comspec_sse_fnc_iarpProfile;
+        private _modes = ["auto", "custom", "normal", "impassible", "emotif", "neutre"];
+        private _cur = call {
+            if !(_p getOrDefault ["emotionsOn", true]) exitWith { "neutre" };
+            if ((_p getOrDefault ["emotions", "auto"]) isEqualType []) exitWith { "custom" };
+            "auto"
+        };
+        private _on = ["emoActive", _p] call comspec_sse_fnc_iarpProfile;
+        private _rows = [["LIST", [localize "STR_COMSPEC_IARP_Z_EmoMode", localize "STR_COMSPEC_IARP_Z_EmoMode_D"],
+            [_modes, _modes apply { localize ("STR_COMSPEC_IARP_Z_EmoMode_" + _x) }, (_modes find _cur) max 0, 6]]];
+        { _rows pushBack ["CHECKBOX", [localize ("STR_COMSPEC_IARP_S_Emo_" + _x + "_T"), localize ("STR_COMSPEC_IARP_S_Emo_" + _x + "_D")], _x in _on]; } forEach _ids;
+        _rows pushBack ["CHECKBOX", [localize "STR_COMSPEC_IARP_Z_EmoGroup", localize "STR_COMSPEC_IARP_Z_EmoGroup_D"], false];
+        [["STR_COMSPEC_IARP_Z_Emo", _units, _who] call comspec_sse_iarpZenTitle, _rows, {
+            params ["_v", "_args"];
+            private _ids = ["emoIds"] call comspec_sse_fnc_iarpProfile;
+            private _mode = _v select 0;
+            private _checked = [];
+            { if ((_v select (_forEachIndex + 1)) isEqualTo true) then { _checked pushBack _x; }; } forEach _ids;
+            private _rows = call {
+                if (_mode isEqualTo "auto") exitWith { [["emotionsOn", true], ["emotions", "auto"]] };
+                if (_mode isEqualTo "custom") exitWith { [["emotionsOn", true], ["emotions", _checked]] };
+                private _pr = ((["emoPresets"] call comspec_sse_fnc_iarpProfile) select { (_x select 0) isEqualTo _mode }) param [0, ["", _ids, []]];
+                [["emotionsOn", _mode isNotEqualTo "neutre"], ["emotions", _pr select 1], ["raise", _pr select 2]]
+            };
+            private _units = _args select 0;
+            // Tout son groupe : les IA vivantes des groupes des IA visées.
+            if ((_v select ((count _ids) + 1)) isEqualTo true) then {
+                private _all = [];
+                { { if (alive _x && {!isPlayer _x}) then { _all pushBackUnique _x; }; } forEach (units group _x); } forEach _units;
+                _units = _all;
+            };
+            ["profileTweak", [_rows], _units] call comspec_sse_iarpZenSend;
+        }, {}, [_units]] call zen_dialog_fnc_create;
+    }] call comspec_sse_iarpZenWithProfile;
+}, _has, [_root, _root + "_profile"], 83] call _mk;
+
 // --- Identité et papiers (addon identity : mêmes opérations serveur que ses modules « Donner des papiers », « Voir les
 // vrais papiers » et que la page « IA de la zone » de l'éditeur SSE) --------------------------------------------------
 private _idIcon = "\z\comspec_sse\addons\identity\data\icon_card_ca.paa";
 ["_id", "STR_COMSPEC_IARP_Z_MId", _idIcon, {}, _hasId, [_root], 80] call _mk;
 ["_truth", "STR_COMSPEC_IARP_Z_Truth", _ip + "mod_evidence.paa", {
     private _u = (_this call comspec_sse_iarpZenTargets) param [0, objNull];
-    if (!isNull _u) then { ["send", ["truth", [player, _u]]] call comspec_sse_fnc_idClient; };
+    // Fenêtre « Papiers de l'IA » (identity, fn_idZeusPapers) : le document et son analyse, plus de bandeau de texte.
+    if (!isNull _u) then { ["open", [_u]] call comspec_sse_fnc_idZeusPapers; };
 }, _hasId, [_root, _root + "_id"], 79] call _mk;
 ["_give", "STR_COMSPEC_IARP_Z_Give", _idIcon, {
     private _u = _this call comspec_sse_iarpZenTargets;

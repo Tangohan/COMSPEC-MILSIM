@@ -5,6 +5,8 @@ setlocal EnableExtensions EnableDelayedExpansion
 REM Construit comspec_sse_ext_example_documents.pbo avec AddonBuilder (Arma 3 Tools), comme build_pbo.bat du SSE.
 REM Sortie : extensions\@COMSPEC_SSE_ExampleDocuments\addons\ (mod charge avec -mod=@COMSPEC_SSE;@COMSPEC_SSE_ExampleDocuments).
 REM README.md, tools\ et ce script ne vont pas dans le PBO : les sources sont copiees dans un dossier de travail d'abord.
+REM Le pack SSE embarque deja cette extension (build_pbo.bat du SSE, coupee par defaut) : ce script sert a tester une
+REM copie modifiee comme mod separe ; ne chargez pas les deux en meme temps.
 
 set "BUILDER_PATH=F:\SteamLibrary\steamapps\common\Arma 3 Tools\AddonBuilder\AddonBuilder.exe"
 set "SRC_DIR=%~dp0"

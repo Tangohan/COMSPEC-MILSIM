@@ -43,7 +43,8 @@ if (_vc isNotEqualTo "") then { _codes pushBackUnique _vc; };
 private _st = createHashMapFromArray [["stolen", "stolen"], ["lost", "lost"], ["revoked", "revoked"], ["suspended", "revoked"], ["expired", "expired"]];
 {
     _x params [["_c", ""], ["_t", ""], ["_n", ""], ["_s", "ok"]];
-    if ((_recs findIf { (_x getOrDefault ["number", ""]) isEqualTo _n && {(_x getOrDefault ["kind", ""]) isEqualTo "document"} }) < 0) then {
+    // Numéros comparés normalisés (fn_fileNorm) : « AL 123-456 » d'Athena est le même document que « AL123456 » local.
+    if ((_recs findIf { (["number", _x getOrDefault ["number", ""]] call comspec_sse_fnc_fileNorm) isEqualTo (["number", _n] call comspec_sse_fnc_fileNorm) && {(_x getOrDefault ["kind", ""]) isEqualTo "document"} }) < 0) then {
         _recs pushBack createHashMapFromArray [["kind", "document"], ["ref", "ATHENA"], ["number", _n], ["country", _c], ["docType", _t],
             ["last", _holder param [0, ""]], ["first", _holder param [1, ""]], ["dob", _info getOrDefault ["dob", ""]],
             ["codes", [[], [_st get _s]] select (_s in _st)], ["lines", ["Fichier Athena."]], ["checks", []]];
@@ -54,7 +55,10 @@ if (_holder isEqualType [] && {(_holder param [0, ""]) isNotEqualTo ""} && {(_re
     _recs pushBack createHashMapFromArray [["kind", "person"], ["ref", _ref], ["last", _holder select 0], ["first", _holder param [1, ""]],
         ["dob", _info getOrDefault ["dob", ""]], ["codes", +_codes], ["lines", [format ["Fichier Athena%1.", ["", format [" : %1 contrôle(s) subi(s)", _info get "checks"]] select ((_info getOrDefault ["checks", 0]) > 0)]]], ["checks", []]];
 };
-if (_found) then { _res set ["hit", true]; };
+if (_found) then {
+    _res set ["hit", true];
+    if ((_res getOrDefault ["match", "none"]) isEqualTo "none") then { _res set ["match", "hit"]; };
+};
 if (_res get "hit") then { _codes = _codes - ["unknown"]; };
 _res set ["codes", _codes];
 _res set ["records", _recs];

@@ -37,6 +37,19 @@ Cohérence = papiers (une pièce de couverture, un seul nom, sa préparation) + 
 
 Après la lecture des papiers, un garde pose 2 questions (3 au poste strict) : « D'où venez-vous ? », « Pour qui travaillez-vous ? », « Raison du déplacement ? », « Quel est votre métier ? », « Où êtes-vous né ? », « Qui peut confirmer ce que vous dites ? ». Trois réponses au choix (la vraie légende et deux leurres), dans Ma couverture ou **Mes papiers › Répondre**. Délai : 20 s (réglage), +10 s par question. Mauvaise réponse ou silence : soupçons.
 
+## Récupérer sa couverture d'Athena
+
+Une couverture générée sur Athena (Ma couverture › Générer) se récupère sans manipuler de fichier :
+
+1. Téléphone ATAK › **Ma couverture** › section **Importer ma couverture** › **SYNCHRONISER AVEC ATHENA**.
+2. La fenêtre **Mes couvertures sur Athena** liste vos couvertures : nom, métier et ville, pays, état (Nouvelle, Déjà importée, Mise à jour disponible, Active, Expirée), taille, date.
+3. Touchez **CHOISIR** sur une ou plusieurs couvertures (ou **TOUT SÉLECTIONNER**), puis **IMPORTER LA SÉLECTION**. La ligne d'état dit le résultat, par exemple « 2 importée(s), 1 déjà à jour ».
+4. La plus récente de la sélection devient votre **couverture active** (celle de votre légende) et remplace la précédente. Les autres restent sur ce poste : **ACTIVER** les joue à sa place.
+
+Conditions : licence acceptée, liaison Athena autorisée sur ce poste, compte Athena lié au téléphone (sinon la fenêtre propose **LIER MON COMPTE**), COMSPEC Link 2.0.118 ou plus. Rien n'est demandé à Athena tant que ces conditions ne sont pas remplies. Une couverture expirée (90 jours) ne s'importe plus. La photo reste sur Athena.
+
+Sans connexion : sur Athena › Ma couverture, **Télécharger**, déposez le fichier dans `Documents\Arma 3 - COMSPEC`, puis **IMPORTER UN FICHIER**. **Oublier l'import** revient à la légende d'avant, sans toucher à vos papiers.
+
 ## Pas à pas : traverser un checkpoint ennemi
 
 1. Avant la mission, le Zeus : **Donner une couverture › Infiltrer**, carte cochée, « STAVROU Nikos ». Vous recevez la carte et votre légende dans **Ma couverture** : lisez-la (métier, employeur, lieu de naissance).

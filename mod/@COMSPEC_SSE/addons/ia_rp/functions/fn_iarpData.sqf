@@ -10,6 +10,9 @@
                       tiré du lexique (exemples et thème de chaque intention, entrée « _cmd ») : il suit le lexique, missions comprises
       ["corpus"]   -> [[langue, texte, intention]…] banc d'essai de l'interprète (data\iarp_corpus.sqf, fn_iarpSelfTest)
       ["unseen"]   -> même format : phrases jamais vues pendant la mise au point (data\iarp_unseen.sqf), taux honnête
+      ["offtopic"] -> [[section, valeur]…] couche hors sujet (data\iarp_offtopic.sqf, fn_iarpOffTopic) ; ses sections « lexicon »
+                      et « bank » s'ajoutent au lexique et à la banque (tutoiement, formes courtes, relance, hors sujet)
+      ["ottests"]  -> banc d'essai de la couche hors sujet (data\iarp_ottests.sqf, fn_iarpSelfTest)
       ["topics"]   -> HashMap intention -> thème de scénario que le maître du jeu peut interdire (6e élément du lexique :
                       armed, explosives, military, wanted, drugs, politics)
       ["reset"]    oublie les données lues (fichier de mission modifié pendant les essais)
@@ -19,7 +22,7 @@
 */
 params [["_what", "bank", [""]]];
 if (_what isEqualTo "reset") exitWith {
-    { missionNamespace setVariable ["comspec_sse_iarpData_" + _x, nil]; } forEach ["bank", "lexicon", "presets", "dict", "kw", "pidx", "guide", "corpus", "unseen", "topics"];
+    { missionNamespace setVariable ["comspec_sse_iarpData_" + _x, nil]; } forEach ["bank", "lexicon", "presets", "dict", "kw", "pidx", "guide", "corpus", "unseen", "topics", "offtopic", "ottests", "sms"];
     true
 };
 private _key = "comspec_sse_iarpData_" + _what;
@@ -97,6 +100,13 @@ private _read = {
 };
 private _base = [format ["\z\comspec_sse\addons\ia_rp\data\iarp_%1.sqf", _what]] call _read;
 private _extra = [[format ["iarp_%1.sqf", _what]] call _read, missionNamespace getVariable ["comspec_sse_iarpExtra_" + _what, 0]];
+// Couche hors sujet (data\iarp_offtopic.sqf) : ses entrées de lexique et ses phrases passent avant celles de la mission.
+if (_what in ["lexicon", "bank"]) then {
+    private _ot = [];
+    { if ((_x param [0, ""]) isEqualTo _what) exitWith { _ot = _x param [1, []]; }; } forEach (["offtopic"] call comspec_sse_fnc_iarpData);
+    if (_what isEqualTo "bank") then { _ot = createHashMapFromArray (_ot apply { [_x select 0, createHashMapFromArray (_x select 1)] }); };
+    _extra = [_ot] + _extra;
+};
 
 private _out = switch (_what) do {
     case "lexicon": {
@@ -120,7 +130,9 @@ private _out = switch (_what) do {
         _l
     };
     case "corpus";
-    case "unseen": { [[], +_base] select (_base isEqualType []) };
+    case "unseen";
+    case "offtopic";
+    case "ottests": { [[], +_base] select (_base isEqualType []) };
     case "bank": {
         private _b = [createHashMap, +_base] select (_base isEqualType createHashMap);
         {

@@ -37,11 +37,12 @@ if (!hasInterface) exitWith {};
         ] call comspec_sse_fnc_zenDialog;
     }, "\z\comspec_sse\addons\zeus\data\mod_trash.paa"] call comspec_sse_fnc_zenModule;
 
+    // Fenêtre « Papiers de l'IA » (fn_idZeusPapers) : le document tel qu'un joueur le voit et son analyse ; sur une
+    // personne, ou sur un objet / porte-objets au sol qui contient des papiers.
     [_cat, "Voir les vrais papiers", {
         params ["_pos", "_obj"];
-        private _u = [_obj] call (missionNamespace getVariable "comspec_sse_idZenUnitOf");
-        if (isNull _u) exitWith {};
-        ["send", ["truth", [player, _u]]] call comspec_sse_fnc_idClient;
+        if (isNull _obj) exitWith { ["Placez le module sur une personne ou sur un objet qui contient des papiers.", "warn"] call comspec_sse_fnc_zeusNotify; };
+        ["open", [_obj]] call comspec_sse_fnc_idZeusPapers;
     }, "\z\comspec_sse\addons\zeus\data\mod_evidence.paa"] call comspec_sse_fnc_zenModule;
     // IA réalistes et checkpoints IA (Lot 3) : tout s'exécute sur le serveur, qui vérifie que le demandeur est Zeus.
     private _cpRows = [

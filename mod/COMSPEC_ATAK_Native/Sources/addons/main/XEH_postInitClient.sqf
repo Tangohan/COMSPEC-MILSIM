@@ -538,6 +538,9 @@ if (["on"] call comspec_atak_native_fnc_fireSupport) then { ["scan"] call comspe
 // proche, et un moniteur COMSPEC de ces classes n'avait alors aucune action.
 ["aceInit"] call comspec_atak_native_fnc_tocScreen;
 [{ ["tick"] call comspec_atak_native_fnc_tocPost; }, 1] call COMSPEC_ATAK_PfhSpread;
+// Salle TOC : réponse du poste à une demande (téléphone du demandeur, fn_tocRoom).
+["initClient"] call comspec_atak_native_fnc_tocRoom;
+["initClient"] call comspec_atak_native_fnc_tocHall;
 // Configuration locale (config.json, fn_localCfg) : mes numéros publiés aux autres joueurs, aussi après une réapparition
 // ou un changement du service Athéna.
 [{ !isNull player }, { ["apply"] call comspec_atak_native_fnc_localCfg; }] call CBA_fnc_waitUntilAndExecute;
@@ -548,6 +551,8 @@ player addEventHandler ["Respawn", { [{ ["apply"] call comspec_atak_native_fnc_l
 [{ ["tick"] call comspec_atak_native_fnc_tenantAction; }, 30] call COMSPEC_ATAK_PfhSpread;
 // Traces civiles des HVT : alerte à la publication d'une trace (fn_hvtTrace).
 ["init"] call comspec_atak_native_fnc_hvtTrace;
+// Traçage d'un numéro : réponses du serveur et menu Zeus des téléphones d'IA (fn_traceAction).
+["init"] call comspec_atak_native_fnc_traceAction;
 // Téléphones personnels : fiches à jour, relevé sans coût par image (fn_phoneOwn).
 ["init"] call comspec_atak_native_fnc_phoneOwn;
 [{ ["tick"] call comspec_atak_native_fnc_vestMount; ["tick"] call comspec_atak_native_fnc_jpcScreen; ["tick"] call comspec_atak_native_fnc_phoneSecurity; ["tick"] call comspec_atak_native_fnc_phoneOwn; }, 2] call COMSPEC_ATAK_PfhSpread;

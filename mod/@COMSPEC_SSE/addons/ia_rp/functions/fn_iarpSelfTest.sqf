@@ -15,10 +15,14 @@
       guide        chaque exemple du guide (lexique) compris comme son intention ; menu « Faire une action » : chaque
                    geste FR et EN reconnu ; ton : un peureux sans menace répond calmement ; faits absents jamais cités
       banque       au moins 50 intentions, 6 phrases de base au moins chacune (FR et EN) ; variantes (base × décors)
+      émotions     réglage global, réglage de l'IA qui l'emporte, IA neutre jamais effrayée, nerveuse, agressive ni
+                   méfiante ; sans peur des armes, un peureux braqué reste calme ; émotions et noWeaponFear sérialisés
       mémoire      fiche par joueur (fn_iarpMem), « déjà dit à votre collègue », mémoire d'avant reprise
       paliers      savoir d'une phrase (comme avant) et par paliers avec lieu, palier débloqué selon confiance et pression
       redite       même question 10 fois à la même personne : moins de 3 répliques identiques
       cohérence    10 réponses « origine » d'une personne honnête : toutes citent la ville de sa couverture
+      hors sujet   data\iarp_ottests.sqf (fn_iarpOffTopic « selfTest ») : 60 messages hors sujet sans demande à effet, 120 questions
+                   légitimes (tu, vous, court, SMS) comprises, guide, dialogues (relance, incompris, provocation), phrases
     Repris par l'autotest (scripts\ia_rp.sqf) ; rien n'est envoyé ni enregistré.
 */
 private _ko = [];
@@ -170,6 +174,42 @@ private _calmTone = (["howareyou", _fearful, createHashMapFromArray [["tension",
 private _scaredTone = (["howareyou", _fearful, createHashMapFromArray [["tension", 70], ["aimed", 1]], []] call comspec_sse_fnc_iarpGen) select 3;
 if (_calmTone in ["effraye", "nerveux"]) then { _ko pushBack format ["peur : un peureux sans menace répond « %1 »", _calmTone]; };
 if !(_scaredTone in ["effraye", "nerveux"]) then { _ko pushBack format ["peur : un peureux braqué répond « %1 »", _scaredTone]; };
+// Émotions (fn_iarpProfile « emoActive ») : réglage global, réglage de l'IA qui l'emporte, tons écartés, profil sérialisé.
+// Réglages globaux posés le temps du contrôle (sur cette machine seulement), puis remis.
+private _gVars = ["comspec_sse_iarp_emoOn"] + ((["emoIds"] call comspec_sse_fnc_iarpProfile) apply { format ["comspec_sse_iarp_emo_%1", _x] });
+private _gOld = _gVars apply { missionNamespace getVariable [_x, true] };
+{ missionNamespace setVariable [_x, true]; } forEach _gVars;
+private _pAuto = ["defaults"] call comspec_sse_fnc_iarpProfile;
+if ((count (["emoActive", _pAuto] call comspec_sse_fnc_iarpProfile)) isNotEqualTo 6) then { _ko pushBack "émotions : un profil « auto » n'a pas les 6 émotions du réglage global"; };
+missionNamespace setVariable ["comspec_sse_iarp_emo_armes", false];
+if (["emoHas", [_pAuto, "armes"]] call comspec_sse_fnc_iarpProfile) then { _ko pushBack "émotions : peur des armes décochée au global, toujours active"; };
+private _pCop = ["normalize", createHashMapFromArray [["emotions", ["peur", "armes", "mefiance"]]]] call comspec_sse_fnc_iarpProfile;
+if !(["emoHas", [_pCop, "armes"]] call comspec_sse_fnc_iarpProfile) then { _ko pushBack "émotions : le réglage de l'IA ne l'emporte pas sur le global"; };
+missionNamespace setVariable ["comspec_sse_iarp_emo_armes", true];
+missionNamespace setVariable ["comspec_sse_iarp_emoOn", false];
+if ((["emoActive", _pAuto] call comspec_sse_fnc_iarpProfile) isNotEqualTo []) then { _ko pushBack "émotions : interrupteur global coupé, émotions toujours actives"; };
+if ((["emoActive", _pCop] call comspec_sse_fnc_iarpProfile) isNotEqualTo ["peur", "armes", "mefiance"]) then { _ko pushBack "émotions : interrupteur global coupé, réglage de l'IA perdu"; };
+missionNamespace setVariable ["comspec_sse_iarp_emoOn", true];
+private _pNeutral = ["normalize", createHashMapFromArray [["fear", 95], ["nerve", 90], ["aggro", 90], ["honesty", 10], ["emotionsOn", false]]] call comspec_sse_fnc_iarpProfile;
+private _toneN = (["howareyou", _pNeutral, createHashMapFromArray [["tension", 90], ["aimed", 2], ["state", "rendu"], ["tone", "agressif"]], []] call comspec_sse_fnc_iarpGen) select 3;
+if (_toneN in ["effraye", "nerveux", "agressif", "mefiant"]) then { _ko pushBack format ["émotions : IA neutre au ton « %1 »", _toneN]; };
+// Sans peur des armes : braquée sans autre menace, un peureux reste calme ; braqué avec la peur des armes, il a peur.
+private _pNoGun = ["normalize", createHashMapFromArray [["fear", 95], ["nerve", 80], ["aggro", 0], ["emotions", ["peur", "nervosite", "colere", "mefiance", "soulagement"]]]] call comspec_sse_fnc_iarpProfile;
+private _toneG = (["howareyou", _pNoGun, createHashMapFromArray [["tension", 5], ["aimed", 1]], []] call comspec_sse_fnc_iarpGen) select 3;
+if (_toneG in ["effraye", "nerveux"]) then { _ko pushBack format ["émotions : sans peur des armes, un peureux braqué répond « %1 »", _toneG]; };
+private _pGun = ["normalize", createHashMapFromArray [["fear", 95], ["nerve", 80], ["aggro", 0]]] call comspec_sse_fnc_iarpProfile;
+private _toneG2 = (["howareyou", _pGun, createHashMapFromArray [["tension", 5], ["aimed", 1]], []] call comspec_sse_fnc_iarpGen) select 3;
+if !(_toneG2 in ["effraye", "nerveux"]) then { _ko pushBack format ["émotions : avec la peur des armes, un peureux braqué répond « %1 »", _toneG2]; };
+// Profil : émotions gardées à la sérialisation ; noWeaponFear écrit (synchro web) et relu.
+private _rawE = ["serialize", _pNoGun] call comspec_sse_fnc_iarpProfile;
+private _pE = ["parse", _rawE] call comspec_sse_fnc_iarpProfile;
+if ((_pE get "emotions") isNotEqualTo (_pNoGun get "emotions") || {(_rawE find """noWeaponFear"",true") < 0}) then { _ko pushBack format ["émotions : perdues à la sérialisation (%1)", _pE get "emotions"]; };
+private _pN2 = ["parse", ["serialize", _pNeutral] call comspec_sse_fnc_iarpProfile] call comspec_sse_fnc_iarpProfile;
+if (_pN2 get "emotionsOn") then { _ko pushBack "émotions : interrupteur « Émotions » perdu à la sérialisation"; };
+private _pW = ["normalize", createHashMapFromArray [["noWeaponFear", true]]] call comspec_sse_fnc_iarpProfile;
+if ((_pW get "emotions") isNotEqualTo ["peur", "nervosite", "colere", "mefiance", "soulagement"]) then { _ko pushBack format ["émotions : noWeaponFear importé mal lu %1", _pW get "emotions"]; };
+{ missionNamespace setVariable [_x, _gOld select _forEachIndex]; } forEach _gVars;
+_info pushBack format ["émotions : neutre « %1 », sans peur des armes « %2 », avec « %3 »", _toneN, _toneG, _toneG2];
 // Faits absents : une phrase qui cite {job} n'est pas choisie sans métier.
 for "_i" from 1 to 12 do {
     private _g = ["howareyou", ["defaults"] call comspec_sse_fnc_iarpProfile, createHashMap, [], createHashMapFromArray [["sir", ["monsieur", "sir"]]]] call comspec_sse_fnc_iarpGen;
@@ -289,12 +329,16 @@ if ((count _qs) < 100) then { _ko pushBack format ["cadre : %1 questions de rens
 if (_bad isNotEqualTo []) then { _ko pushBack format ["cadre : civil sans savoir, terme de scénario dans %1 réponse(s) : %2", count _bad, (_bad select [0, 4]) joinString " ; "]; };
 _info pushBack format ["cadre : civil sans savoir, %1 questions de renseignement, %2 réplique(s) avec un terme de scénario", count _qs, count _bad];
 // Phrases étiquetées (« hint », thèmes) : jamais chez « Rien de sensible » ; « Libre » les garde.
+// La seule phrase « armed » d'intelNo est du ton « effraye » (banque) : ton imposé, sinon un civil calme ne l'a jamais
+// dans ses candidates, quel que soit le cadre.
 private _intelNoC = ["intelNo", _civ, _ctxC, [], _varsC, "pool"] call comspec_sse_fnc_iarpGen;
-if ((_intelNoC findIf { (_x param [2, []]) isNotEqualTo [] }) >= 0) then { _ko pushBack "cadre : phrase étiquetée chez un civil sans savoir"; };
+private _intelNoCe = ["intelNo", _civ, createHashMapFromArray [["forbid", _forbidC], ["tone", "effraye"]], [], _varsC, "pool"] call comspec_sse_fnc_iarpGen;
+if (((_intelNoC + _intelNoCe) findIf { (_x param [2, []]) isNotEqualTo [] }) >= 0) then { _ko pushBack "cadre : phrase étiquetée chez un civil sans savoir"; };
 private _free = ["normalize", createHashMapFromArray [["role", "civil"], ["evoke", "free"]]] call comspec_sse_fnc_iarpProfile;
 (["frame", _free] call comspec_sse_fnc_iarpAnswers) params ["", "_forbidF"];
-private _intelNoF = ["intelNo", _free, createHashMapFromArray [["forbid", _forbidF]], [], _varsC, "pool"] call comspec_sse_fnc_iarpGen;
-if ((_intelNoF findIf { "armed" in (_x param [2, []]) }) < 0) then { _ko pushBack "cadre : « Libre » écarte encore les phrases étiquetées"; };
+private _intelNoF = ["intelNo", _free, createHashMapFromArray [["forbid", _forbidF], ["tone", "effraye"]], [], _varsC, "pool"] call comspec_sse_fnc_iarpGen;
+private _intelNoFc = ["intelNo", _free, createHashMapFromArray [["forbid", _forbidF]], [], _varsC, "pool"] call comspec_sse_fnc_iarpGen;
+if ((_intelNoF findIf { "armed" in (_x param [2, []]) }) < 0 || {(_intelNoFc findIf { "hint" in (_x param [2, []]) }) < 0}) then { _ko pushBack "cadre : « Libre » écarte encore les phrases étiquetées"; };
 // Thème interdit : « Explosifs » coché même en « Libre ».
 private _banP = ["normalize", createHashMapFromArray [["role", "insurge"], ["evoke", "free"], ["banned", ["explosives", "inconnu"]]]] call comspec_sse_fnc_iarpProfile;
 (["frame", _banP] call comspec_sse_fnc_iarpAnswers) params ["_lvlB", "_forbidB", "_bannedB"];
@@ -351,8 +395,56 @@ private _pA = ["normalize", createHashMapFromArray [["name", "Nikos KARRAS"], ["
 private _pB = ["parse", ["serialize", _pA] call comspec_sse_fnc_iarpProfile] call comspec_sse_fnc_iarpProfile;
 if ((_pB get "answers") isNotEqualTo (_pA get "answers") || {(_pB get "evoke") isNotEqualTo "known"} || {(_pB get "banned") isNotEqualTo ["drugs"]}) then { _ko pushBack "réponses : perdues à la sérialisation du profil"; };
 _info pushBack format ["réponses : %1 entrée(s) valides sur %2, « %3 »", count _ans, count _ansIn, _filled];
+// ---------------------------------------------------------------- question / réponse simple (attribut Eden, atelier, Zeus)
+// Une question perso du même format que la fenêtre des réponses ; une paraphrase proche la déclenche.
+private _qaQ = "Où est le chef du village ?";
+private _qaR = format ["Le chef est à la mosquée, il revient ce soir.%1Demandez à {prenom}, il sait tout.", _nl];
+private _qa = ["qaSet", [[], "", _qaQ, _qaR]] call comspec_sse_fnc_iarpAnswers;
+private _qaE = ["get", [_qa, "c1"]] call comspec_sse_fnc_iarpAnswers;
+if (_qaE isEqualTo [] || {(_qaE select 1) isNotEqualTo _qaQ} || {((_qaE select 4) select 0) isNotEqualTo ["*", ["Le chef est à la mosquée, il revient ce soir.", "Demandez à {prenom}, il sait tout."]]}) then {
+    _ko pushBack format ["question / réponse : entrée %1", _qaE];
+};
+if ((["normalize", _qa] call comspec_sse_fnc_iarpAnswers) isNotEqualTo _qa) then { _ko pushBack "question / réponse : hors du format des réponses"; };
+{
+    _x params ["_txt", "_want"];
+    private _got = ["match", [_qa, _txt call comspec_sse_fnc_iarpNorm]] call comspec_sse_fnc_iarpAnswers;
+    if (_got isNotEqualTo _want) then { _ko pushBack format ["question / réponse : « %1 » -> « %2 »", _txt, _got]; };
+} forEach [["Où est le chef du village ?", "c1"], ["Le chef du village, il est où ?", "c1"], ["Vous savez où se trouve le chef du village ?", "c1"],
+    ["ou est le CHEF du village", "c1"], ["Où est le marché ?", ""], ["Vos papiers.", ""]];
+private _qaPk = ["pick", [_qaE, ["calm", "first"], [0, ""]]] call comspec_sse_fnc_iarpAnswers;
+if !((_qaPk param [0, ""]) in ["Le chef est à la mosquée, il revient ce soir.", "Demandez à {prenom}, il sait tout."]) then { _ko pushBack format ["question / réponse : réplique %1", _qaPk]; };
+(["qaGet", _qa] call comspec_sse_fnc_iarpAnswers) params ["_qgK", "_qgQ", "_qgR", "_qgN"];
+if ([_qgK, _qgQ, _qgR, _qgN] isNotEqualTo ["c1", _qaQ, _qaR, 1]) then { _ko pushBack format ["question / réponse : relue %1", [_qgK, _qgQ, _qgR, _qgN]]; };
+// Réponse retouchée au même endroit : situations avancées, palier et déclencheurs retouchés gardés ; question seule : rien
+// ne change ; question et réponse vidées : la question perso sort, les autres restent.
+private _qaAdv = [["name", "", [], "random", [["*", ["Je suis {prenom}."]]], 0, ""], ["c1", _qaQ, ["chef"], "seq", [["*", ["x"]], ["fear", ["Pitié !"]]], 2, ""]];
+private _qa2 = ["qaSet", [_qaAdv, "c1", _qaQ, "Il est parti."]] call comspec_sse_fnc_iarpAnswers;
+private _qa2E = ["get", [_qa2, "c1"]] call comspec_sse_fnc_iarpAnswers;
+if ((_qa2 apply { _x select 0 }) isNotEqualTo ["name", "c1"] || {(_qa2E select 2) isNotEqualTo ["chef"]} || {(_qa2E select 3) isNotEqualTo "seq"} || {(_qa2E select 5) isNotEqualTo 2}
+    || {(_qa2E select 4) isNotEqualTo [["*", ["Il est parti."]], ["fear", ["Pitié !"]]]}) then { _ko pushBack format ["question / réponse : retouche %1", _qa2E]; };
+if ((["qaSet", [_qaAdv, "c1", "Autre question ?", ""]] call comspec_sse_fnc_iarpAnswers) isNotEqualTo _qaAdv) then { _ko pushBack "question / réponse : question seule enregistrée"; };
+if (((["qaSet", [_qaAdv, "c1", "", ""]] call comspec_sse_fnc_iarpAnswers) apply { _x select 0 }) isNotEqualTo ["name"]) then { _ko pushBack "question / réponse : vidée mais gardée"; };
+// Aller-retour par le profil (attribut Eden) avec un savoir et un déblocage d'avant : rien ne se perd.
+private _qaP = ["normalize", createHashMapFromArray [["know", format ["Vague : Des hommes la nuit.%1Précis : À la ferme.", _nl]], ["unlock", "keyword"], ["unlockWord", "faucon"], ["answers", _qa]]] call comspec_sse_fnc_iarpProfile;
+private _qaP2 = ["parse", ["serialize", _qaP] call comspec_sse_fnc_iarpProfile] call comspec_sse_fnc_iarpProfile;
+if ((_qaP2 get "answers") isNotEqualTo _qa || {(_qaP2 get "know") isNotEqualTo (_qaP get "know")} || {(_qaP2 get "unlock") isNotEqualTo "keyword"} || {(_qaP2 get "unlockWord") isNotEqualTo "faucon"}) then {
+    _ko pushBack "question / réponse : perdue (ou savoir perdu) à la sérialisation du profil";
+};
+// Mission d'avant (profil sans réponses, savoir d'une phrase, déblocage « Pot-de-vin ») : chargée telle quelle, aucune question.
+private _old = ["parse", '[["name","Nikos KARRAS"],["know","Les armes sont sous la grange."],["unlock","bribe"],["unlockWord",""],["react",[["order","refuse"]]]]'] call comspec_sse_fnc_iarpProfile;
+if ((_old get "know") isNotEqualTo "Les armes sont sous la grange." || {(_old get "unlock") isNotEqualTo "bribe"} || {((_old get "react") get "order") isNotEqualTo "refuse"}
+    || {(["qaGet", _old get "answers"] call comspec_sse_fnc_iarpAnswers) isNotEqualTo ["", "", "", 0]}) then { _ko pushBack "question / réponse : ancienne mission mal relue"; };
+// Textes des nouveaux champs (FR et EN dans stringtable.xml : ici, au moins présents dans la langue du jeu).
+{ if !(isLocalized ("STR_COMSPEC_IARP_" + _x)) then { _ko pushBack format ["question / réponse : texte %1 absent", _x]; }; } forEach
+    ["W_Question", "W_Question_D", "W_QuestionHint", "W_QuestionMore", "W_Reply", "W_Reply_D", "W_ReplyHint", "W_ReplyVar", "W_ReplyVar_D", "W_QaHalf",
+     "W_Adv", "W_AdvHide", "W_Adv_D", "W_TestCustom", "Z_Qa"];
+_info pushBack format ["question / réponse : déclencheurs %1", _qaE param [2, []]];
 // Coût : message long, fautes, plusieurs demandes (index des motifs : quelques dizaines cherchés par morceau).
 private _t1 = diag_tickTime;
 for "_i" from 1 to 20 do { ["Bonjour, vous avez vu des hommes armés ou des pick-up cette nuit ? Où sont-ils partis ? Combien étaient-ils, et qui commande ici ?"] call comspec_sse_fnc_iarpIntent; };
 _info pushBack format ["interprète : %1 ms par message de quatre questions", round (((diag_tickTime - _t1) / 20) * 10000) / 10];
+// Couche hors sujet (fn_iarpOffTopic « selfTest ») : grossièretés, insultes, charabia, relance, tutoiement, formes courtes.
+(["selfTest"] call comspec_sse_fnc_iarpOffTopic) params [["_koO", []], ["_infoO", []]];
+_ko append _koO;
+_info append _infoO;
 [_ko, _info]

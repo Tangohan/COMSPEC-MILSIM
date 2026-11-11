@@ -330,9 +330,10 @@ final class SseIdRealCountryTest extends TestCase
             }
         }
         $countries = self::read('mod/@COMSPEC_SSE/addons/identity/functions/fn_idCountries.sqf');
-        self::assertStringContainsString('missionNamespace getVariable ["comspec_sse_id_realSim", false]', $countries, 'réservé à l’univers réaliste-simulation');
-        self::assertStringContainsString('"comspec_sse_id_realSim", "CHECKBOX"', self::read('mod/@COMSPEC_SSE/addons/identity/functions/fn_idInitSettings.sqf'));
-        self::assertStringContainsString('], false] call _add;', self::read('mod/@COMSPEC_SSE/addons/identity/functions/fn_idInitSettings.sqf'));
+        // Mod : pays réels du registre CfgComspecCountries proposés d'office (France, Allemagne, États-Unis… d'abord) ; les pays
+        // stylisés du site restent le repli d'un pays importé par le paquet Athena et absent du registre.
+        self::assertStringContainsString('[] call comspec_sse_fnc_idRealCountries', $countries);
+        self::assertStringContainsString('configFile >> "CfgComspecCountries"', $countries);
         self::assertStringContainsString('class idRealCountries {};', self::read('mod/@COMSPEC_SSE/addons/identity/config.cpp'));
         $mrz = self::read('mod/@COMSPEC_SSE/addons/identity/functions/fn_idMrz.sqf');
         self::assertStringContainsString('getOrDefault ["mrzIssuer", ""]', $mrz);

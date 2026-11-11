@@ -1,3 +1,36 @@
+[h1]COMSPEC SSE 1.9.0 — IA plus naturelles, émotions réglables, papiers de 45 pays, outils Zeus refaits / more natural AIs, adjustable emotions, papers from 45 countries, redone Zeus tools (11/11/2026)[/h1]
+[b]Relance Arma complètement. Demande COMSPEC ATAK 4.4.0.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.4.0.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Messages hors sujet[/b] : une insulte, une grossièreté ou une question absurde n'est plus prise pour une demande. L'IA est choquée, vexée ou méfiante selon son caractère, et coupe la conversation si vous insistez.
+[*] [b]Mieux comprise[/b] : tutoiement et questions courtes (« Ton prénom ? », « Tes papiers. »), « Et alors ? » après sa réponse ; quand elle ne comprend pas, elle le dit sans se répéter.
+[*] [b]Émotions réglables[/b] : peur, peur des armes, nervosité, colère, méfiance, soulagement, pour une IA, son groupe ou toute la mission. Sans « peur des armes », elle voit votre arme mais reste calme.
+[*] [b]Une question, une réponse[/b] : dans Eden, deux cases sur l'IA, la question et ce qu'elle répond ; elle comprend aussi la question posée autrement. Mêmes cases dans l'atelier IA et en Zeus.
+[*] [b]Réponses de l'IA[/b] : la fenêtre s'ouvre en mode simple, avec « Insérer une variable » et l'aperçu de ce qu'elle dira.
+[*] [b]Une seule identité[/b] : le nom donné à une IA est celui de ses papiers ; dans « Parler à… », il s'affiche une fois appris, sinon « Inconnu ». Plus de photo bleue sur les cartes.
+[*] [b]Papiers de 45 pays réels[/b] : carte d'identité, passeport, permis, titre de séjour et carte grise, avec noms, adresses et numéros du pays, marqués SPÉCIMEN. Altis, Tanoa, Livonie et Malden restent.
+[*] [b]Zeus[/b] : bouton SSE dans la fenêtre d'édition d'une IA ; « Voir les vrais papiers » montre la vraie carte et son analyse, sans bandeau de texte.
+[*] [b]IA de la zone[/b] : fenêtre refaite en trois étapes (choisir, régler dans des onglets, appliquer), avec l'aperçu du papier et une courte visite guidée.
+[*] [b]Extensions de documents[/b] : la fenêtre montre l'extension d'exemple (coupée par défaut) et un tuto pas à pas pour créer la vôtre.
+[*] [b]Synchroniser les IA avec Athena[/b] : nouveau module Eden et Zeus qui envoie et reçoit ce qu'on sait des IA de la session. Arme braquée de près et champs des papiers corrigés.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Off-topic messages[/b]: an insult, a rude remark or an absurd question is no longer taken as a request. The AI is shocked, offended or wary depending on its character, and ends the talk if you insist.
+[*] [b]Better understood[/b]: casual speech and short questions ("Your name?", "Papers."), "So what?" after its answer; when it does not understand, it says so without repeating itself.
+[*] [b]Adjustable emotions[/b]: fear, fear of weapons, nervousness, anger, distrust, relief, for one AI, its group or the whole mission. Without "fear of weapons", it sees your weapon but stays calm.
+[*] [b]One question, one answer[/b]: in Eden, two boxes on the AI, the question and what it answers; it also understands the question asked another way. Same boxes in the AI workshop and in Zeus.
+[*] [b]AI answers[/b]: the window opens in simple mode, with "Insert a variable" and a preview of what it will say.
+[*] [b]One identity[/b]: the name given to an AI is the one on its papers; in "Talk to…", it shows once learnt, otherwise "Unknown". No more blue photo on cards.
+[*] [b]Papers from 45 real countries[/b]: ID card, passport, driving licence, residence permit and vehicle registration, with the country's names, addresses and numbers, marked SPECIMEN. Altis, Tanoa, Livonia and Malden remain.
+[*] [b]Zeus[/b]: SSE button in an AI's edit window; "See the real papers" shows the real card and its analysis, with no text banner.
+[*] [b]Area AI[/b]: window redone in three steps (pick, set up in tabs, apply), with a preview of the paper and a short guided tour.
+[*] [b]Document extensions[/b]: the window shows the sample extension (off by default) and a step-by-step guide to make your own.
+[*] [b]Sync AIs with Athena[/b]: new Eden and Zeus module that sends and receives what is known about the session's AIs. Weapon aimed up close and paper fields fixed.
+[/list]
+
 [h1]COMSPEC SSE 1.8.0 — IA qui répondent à beaucoup plus de questions, réponses du maître du jeu / AIs answer far more questions, game master answers (10/11/2026)[/h1]
 [b]Relance Arma complètement. Demande COMSPEC ATAK 4.3.0.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.3.0.[/b]
 

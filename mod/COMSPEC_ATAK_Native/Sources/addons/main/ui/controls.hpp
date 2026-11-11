@@ -64,6 +64,8 @@ class COMSPEC_RscButtonOverlay: COMSPEC_RscButton { colorBackground[]={0,0,0,0};
 class COMSPEC_RscButtonFlat: COMSPEC_RscButtonOverlay { colorDisabled[]={0.42,0.46,0.44,0.7}; colorBackgroundActive[]={1,1,1,0.10}; };
 // Touches physiques de la coque : aucune surbrillance (la texture du téléphone suffit).
 class COMSPEC_RscButtonInvisible: COMSPEC_RscButtonOverlay { colorBackgroundActive[]={0,0,0,0}; colorBackgroundDisabled[]={0,0,0,0}; colorDisabled[]={0,0,0,0}; colorShadow[]={0,0,0,0}; };
+// Ligne et bouton de la Configuration ATHENA (fn_athenaConfig, menu Échap) : transparent, survol et focus clavier en vert Athena.
+class COMSPEC_ATAK_AthenaCfgRow: COMSPEC_RscButtonOverlay { colorBackgroundActive[]={0.204,0.827,0.6,0.14}; colorFocused[]={0.204,0.827,0.6,0.10}; colorBackground2[]={0.204,0.827,0.6,0.10}; };
 class COMSPEC_RscEdit: RscEdit { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]=ATAK_BG0; colorSelection[]=ATAK_GREEN_DIM; sizeEx="0.024 * safeZoneH"; };
 class COMSPEC_RscEditMulti: COMSPEC_RscEdit { style=16; lineSpacing=1; };
 class COMSPEC_RscCombo: RscCombo { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]=ATAK_BG0; colorSelect[]=ATAK_TEXT; colorSelectBackground[]=ATAK_GREEN_DIM; sizeEx="0.024 * safeZoneH"; };
@@ -95,11 +97,20 @@ class COMSPEC_RscMap: RscMapControl { colorBackground[]={0.045,0.055,0.048,1}; c
 // couleur transparente, comme la carte de la montre.
 class COMSPEC_RscMapAtak: COMSPEC_RscMap { showMarkers=0; sizeExLabel="0.0005"; sizeExGrid="0.0005"; sizeExNames="0.0005"; sizeExInfo="0.021 * safeZoneH"; sizeEx="0.021 * safeZoneH";
     ptsPerSquareTxt=100000; colorNames[]={0,0,0,0}; };
+// Fond CLASSIQUE du téléphone (fn_mapStyle, fn_mapCtrl) : la carte d'origine d'Arma 3, celle de la touche M. Classe tirée
+// directement de RscMapControl, sans COMSPEC_RscMap : couleurs du jeu (terrain, mer, forêts, routes, courbes de niveau,
+// carroyage) et texture satellite estompée selon le zoom, exactement comme la carte du jeu. Aucune image dessous ni voile.
+// Seuls les textes que l'ATAK redessine par-dessus (repères, noms de lieux, numéros de grille) et les marqueurs de la mission
+// sont masqués ici comme sur les autres fonds, pour ne pas les voir en double.
+class COMSPEC_RscMapAtakClassic: RscMapControl { showMarkers=0; sizeExLabel="0.0005"; sizeExGrid="0.0005"; sizeExNames="0.0005";
+    sizeExUnits="0.024 * safeZoneH"; sizeExInfo="0.021 * safeZoneH"; sizeExLevel="0.016 * safeZoneH"; sizeEx="0.021 * safeZoneH";
+    ptsPerSquareTxt=100000; colorNames[]={0,0,0,0}; };
 // Carte de l'app JTAC (dessin à part, fn_jtacDraw) : textes Arma des repères et des lieux gardés.
-// Fonds SATELLITE et HYBRIDE du téléphone (fn_mapStyle, fn_mapCtrl) : la texture satellite du terrain à toutes les
+// Fond HYBRIDE du téléphone (fn_mapStyle, fn_mapCtrl) : la texture satellite du terrain à toutes les
 // échelles (maxSatelliteAlpha 1, jamais estompée), sans les aplats de forêt, rochers, courbes de niveau ni mer.
 // HYBRIDE garde les routes et pistes par-dessus, comme la vue « Satellite + routes » d'une appli de cartes.
-// Même principe que cTab (carte SAT / TOPO = deux contrôles carte, un seul affiché).
+// Même principe que cTab (carte SAT / TOPO = deux contrôles carte, un seul affiché). COMSPEC_RscMapAtakSat n'est plus
+// que la base d'HYBRIDE (son contrôle sert désormais au fond CLASSIQUE).
 #define ATAK_NOCOL {0,0,0,0}
 class COMSPEC_RscMapAtakSat: COMSPEC_RscMapAtak { maxSatelliteAlpha=1; alphaFadeStartScale=100; alphaFadeEndScale=100; showCountourInterval=0;
     colorSea[]=ATAK_NOCOL; colorForest[]=ATAK_NOCOL; colorForestBorder[]=ATAK_NOCOL; colorRocks[]=ATAK_NOCOL; colorRocksBorder[]=ATAK_NOCOL;

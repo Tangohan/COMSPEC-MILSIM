@@ -29,7 +29,7 @@ if (_lang isEqualTo "en") exitWith {
         "<t size='1' font='RobotoCondensedBold' color='#e8b84a'>NO</t><t size='1' color='#e8f4f0'>  play without Athena</t>",
         [["Local ATAK: map, BFT and chat between players on this server", "No connection, no sync", "No data sent outside the game", "Regular server, usual Arma mods"], "#e8b84a"] call _list,
         "NO, STAY LOCAL",
-        "<t size='0.72' color='#8aa0b4'>Change it at any time: </t><t size='0.72' color='#c8d8e4'>ATAK phone › Settings › Athena service</t><t size='0.72' color='#8aa0b4'> or </t><t size='0.72' color='#c8d8e4'>Escape menu › Athena service</t>",
+        "<t size='0.72' color='#8aa0b4'>Change it at any time: </t><t size='0.72' color='#c8d8e4'>ATAK phone › Settings › Athena service</t><t size='0.72' color='#8aa0b4'> or </t><t size='0.72' color='#c8d8e4'>Escape menu › ATHENA Configuration › Athena service</t>",
         ["Current choice:", "Yes, Athena", "No, local"] call _cur,
         "Close"
     ]
@@ -45,7 +45,7 @@ if (_lang isEqualTo "en") exitWith {
     "<t size='1' font='RobotoCondensedBold' color='#e8b84a'>NON</t><t size='1' color='#e8f4f0'>  jouer sans Athéna</t>",
     [["ATAK local : carte, BFT et messages entre joueurs du serveur", "Aucune connexion ni synchro", "Aucune donnée envoyée hors du jeu", "Serveur classique, mods Arma habituels"], "#e8b84a"] call _list,
     "NON, RESTER EN LOCAL",
-    "<t size='0.72' color='#8aa0b4'>Modifiable à tout moment : </t><t size='0.72' color='#c8d8e4'>téléphone ATAK › Réglages › Service Athéna</t><t size='0.72' color='#8aa0b4'> ou </t><t size='0.72' color='#c8d8e4'>menu Échap › Service Athéna</t>",
+    "<t size='0.72' color='#8aa0b4'>Modifiable à tout moment : </t><t size='0.72' color='#c8d8e4'>téléphone ATAK › Réglages › Service Athéna</t><t size='0.72' color='#8aa0b4'> ou </t><t size='0.72' color='#c8d8e4'>menu Échap › ATHENA Configuration › Service Athéna</t>",
     ["Choix actuel :", "Oui, Athéna", "Non, local"] call _cur,
     "Fermer"
 ]

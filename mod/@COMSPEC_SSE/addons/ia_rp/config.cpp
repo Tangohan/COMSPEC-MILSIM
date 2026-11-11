@@ -31,6 +31,7 @@ class CfgFunctions {
             class iarpData {};
             class iarpNorm {};
             class iarpIntent {};
+            class iarpOffTopic {};
             class iarpGen {};
             class iarpFill {};
             class iarpProfile {};
@@ -48,6 +49,7 @@ class CfgFunctions {
             class iarpName {};
             class iarpAnswers {};
             class iarpAnswersUi {};
+            class iarpZenHub {};
         };
     };
 };
@@ -91,6 +93,16 @@ class CfgHints {
             displayNameShort = "$STR_COMSPEC_IARP_ManA_T";
             description = "$STR_COMSPEC_IARP_ManA_D";
             tip = "$STR_COMSPEC_IARP_ManA_Tip";
+            arguments[] = {};
+            image = "\a3\ui_f\data\igui\cfg\simpleTasks\types\talk_ca.paa";
+            noImage = 0;
+        };
+        // Pour le maître du jeu : émotions des IA (peur des armes comprise), réglage global, par IA et par groupe.
+        class IaRpEmotions {
+            displayName = "$STR_COMSPEC_IARP_ManE_T";
+            displayNameShort = "$STR_COMSPEC_IARP_ManE_T";
+            description = "$STR_COMSPEC_IARP_ManE_D";
+            tip = "$STR_COMSPEC_IARP_ManE_Tip";
             arguments[] = {};
             image = "\a3\ui_f\data\igui\cfg\simpleTasks\types\talk_ca.paa";
             noImage = 0;
@@ -146,16 +158,20 @@ class CfgVehicles {
 };
 
 class ctrlStatic;
+class ctrlStaticMulti;
+class ctrlEdit;
+class ctrlEditMulti;
 class ctrlButton;
 class Cfg3DEN {
     class Attributes {
         class Default;
         class Title: Default { class Controls { class Title; }; };
-        // Résumé du profil et bouton « Atelier IA… » ; valeur (profil en texte) gardée sur le groupe (fn_iarpEden).
+        // Résumé du profil, « Question » et « Réponse de l'IA » (la 1re question perso du profil, fn_iarpAnswers
+        // « qaSet »), puis le bouton « Atelier IA… » ; valeur (profil en texte) gardée sur le groupe (fn_iarpEden).
         class COMSPEC_SSE_IarpProfileAttr: Title {
             attributeLoad = "['load', [_this, _value]] call comspec_sse_fnc_iarpEden";
             attributeSave = "['save', _this] call comspec_sse_fnc_iarpEden";
-            h = "10 * (pixelH * pixelGrid * 0.5)";
+            h = "45 * (pixelH * pixelGrid * 0.5)";
             class Controls: Controls {
                 class Title: Title {};
                 class Summary: ctrlStatic {
@@ -166,12 +182,76 @@ class Cfg3DEN {
                     h = "5 * (pixelH * pixelGrid * 0.5)";
                     colorBackground[] = {0, 0, 0, 0.25};
                 };
+                class LabelQ: ctrlStatic {
+                    idc = 110;
+                    style = 1;
+                    text = "$STR_COMSPEC_IARP_W_Question";
+                    tooltip = "$STR_COMSPEC_IARP_W_Question_D";
+                    x = "0";
+                    y = "6 * (pixelH * pixelGrid * 0.5)";
+                    w = "47 * (pixelW * pixelGrid * 0.5)";
+                    h = "5 * (pixelH * pixelGrid * 0.5)";
+                };
+                class QaQ: ctrlEdit {
+                    idc = 103;
+                    tooltip = "$STR_COMSPEC_IARP_W_Question_D";
+                    maxChars = 80;
+                    x = "48 * (pixelW * pixelGrid * 0.5)";
+                    y = "6 * (pixelH * pixelGrid * 0.5)";
+                    w = "82 * (pixelW * pixelGrid * 0.5)";
+                    h = "5 * (pixelH * pixelGrid * 0.5)";
+                    onKeyUp = "['hint', [ctrlParentControlsGroup (_this select 0)]] call comspec_sse_fnc_iarpEden";
+                };
+                class HintQ: ctrlStaticMulti {
+                    idc = 104;
+                    style = 16;
+                    text = "$STR_COMSPEC_IARP_W_QuestionHint";
+                    tooltip = "$STR_COMSPEC_IARP_W_Question_D";
+                    x = "48 * (pixelW * pixelGrid * 0.5)";
+                    y = "11 * (pixelH * pixelGrid * 0.5)";
+                    w = "82 * (pixelW * pixelGrid * 0.5)";
+                    h = "7 * (pixelH * pixelGrid * 0.5)";
+                    sizeEx = "3.2 * (pixelH * pixelGrid * 0.5)";
+                    colorText[] = {1, 1, 1, 0.6};
+                };
+                class LabelA: ctrlStatic {
+                    idc = 111;
+                    style = 1;
+                    text = "$STR_COMSPEC_IARP_W_Reply";
+                    tooltip = "$STR_COMSPEC_IARP_W_Reply_D";
+                    x = "0";
+                    y = "19 * (pixelH * pixelGrid * 0.5)";
+                    w = "47 * (pixelW * pixelGrid * 0.5)";
+                    h = "5 * (pixelH * pixelGrid * 0.5)";
+                };
+                class QaA: ctrlEditMulti {
+                    idc = 105;
+                    tooltip = "$STR_COMSPEC_IARP_W_Reply_D";
+                    maxChars = 2400;
+                    x = "48 * (pixelW * pixelGrid * 0.5)";
+                    y = "19 * (pixelH * pixelGrid * 0.5)";
+                    w = "82 * (pixelW * pixelGrid * 0.5)";
+                    h = "12 * (pixelH * pixelGrid * 0.5)";
+                    onKeyUp = "['hint', [ctrlParentControlsGroup (_this select 0)]] call comspec_sse_fnc_iarpEden";
+                };
+                class HintA: ctrlStaticMulti {
+                    idc = 106;
+                    style = 16;
+                    text = "$STR_COMSPEC_IARP_W_ReplyHint";
+                    tooltip = "$STR_COMSPEC_IARP_W_Reply_D";
+                    x = "48 * (pixelW * pixelGrid * 0.5)";
+                    y = "31 * (pixelH * pixelGrid * 0.5)";
+                    w = "82 * (pixelW * pixelGrid * 0.5)";
+                    h = "7 * (pixelH * pixelGrid * 0.5)";
+                    sizeEx = "3.2 * (pixelH * pixelGrid * 0.5)";
+                    colorText[] = {1, 1, 1, 0.6};
+                };
                 class Open: ctrlButton {
                     idc = 102;
                     text = "$STR_COMSPEC_IARP_W_Open";
                     tooltip = "$STR_COMSPEC_IARP_W_Attr_D";
                     x = "48 * (pixelW * pixelGrid * 0.5)";
-                    y = "5 * (pixelH * pixelGrid * 0.5)";
+                    y = "39 * (pixelH * pixelGrid * 0.5)";
                     w = "82 * (pixelW * pixelGrid * 0.5)";
                     h = "5 * (pixelH * pixelGrid * 0.5)";
                     onButtonClick = "['open', [ctrlParentControlsGroup (_this select 0)]] call comspec_sse_fnc_iarpEden";
@@ -196,6 +276,96 @@ class Cfg3DEN {
                         typeName = "STRING";
                         condition = "objectBrain";
                     };
+                    // Émotions de cette IA (fn_iarpProfile « edenEmo », serveur) : préréglage, une case par émotion, tout son
+                    // groupe ; composées à l'image suivante dans son profil (champs « emotionsOn », « emotions »).
+                    class comspec_sse_iarpEmoMode {
+                        displayName = "$STR_COMSPEC_IARP_Z_EmoMode";
+                        tooltip = "$STR_COMSPEC_IARP_E_EmoMode_D";
+                        property = "comspec_sse_iarpEmoMode";
+                        control = "Combo";
+                        expression = "if (isServer && {_value isNotEqualTo 'auto'}) then { ['edenEmo', [_this, 'mode', _value]] call comspec_sse_fnc_iarpProfile; };";
+                        defaultValue = "'auto'";
+                        typeName = "STRING";
+                        condition = "objectBrain";
+                        class values {
+                            class Auto { name = "$STR_COMSPEC_IARP_Z_EmoMode_auto"; value = "auto"; default = 1; };
+                            class Custom { name = "$STR_COMSPEC_IARP_Z_EmoMode_custom"; value = "custom"; };
+                            class Normal { name = "$STR_COMSPEC_IARP_Z_EmoMode_normal"; value = "normal"; };
+                            class Impassible { name = "$STR_COMSPEC_IARP_Z_EmoMode_impassible"; value = "impassible"; };
+                            class Emotif { name = "$STR_COMSPEC_IARP_Z_EmoMode_emotif"; value = "emotif"; };
+                            class Neutre { name = "$STR_COMSPEC_IARP_Z_EmoMode_neutre"; value = "neutre"; };
+                        };
+                    };
+                    class comspec_sse_iarpEmo_peur {
+                        displayName = "$STR_COMSPEC_IARP_S_Emo_peur_T";
+                        tooltip = "$STR_COMSPEC_IARP_S_Emo_peur_D";
+                        property = "comspec_sse_iarpEmo_peur";
+                        control = "Checkbox";
+                        expression = "if (isServer && {!_value}) then { ['edenEmo', [_this, 'peur', false]] call comspec_sse_fnc_iarpProfile; };";
+                        defaultValue = "true";
+                        typeName = "BOOL";
+                        condition = "objectBrain";
+                    };
+                    class comspec_sse_iarpEmo_armes {
+                        displayName = "$STR_COMSPEC_IARP_S_Emo_armes_T";
+                        tooltip = "$STR_COMSPEC_IARP_S_Emo_armes_D";
+                        property = "comspec_sse_iarpEmo_armes";
+                        control = "Checkbox";
+                        expression = "if (isServer && {!_value}) then { ['edenEmo', [_this, 'armes', false]] call comspec_sse_fnc_iarpProfile; };";
+                        defaultValue = "true";
+                        typeName = "BOOL";
+                        condition = "objectBrain";
+                    };
+                    class comspec_sse_iarpEmo_nervosite {
+                        displayName = "$STR_COMSPEC_IARP_S_Emo_nervosite_T";
+                        tooltip = "$STR_COMSPEC_IARP_S_Emo_nervosite_D";
+                        property = "comspec_sse_iarpEmo_nervosite";
+                        control = "Checkbox";
+                        expression = "if (isServer && {!_value}) then { ['edenEmo', [_this, 'nervosite', false]] call comspec_sse_fnc_iarpProfile; };";
+                        defaultValue = "true";
+                        typeName = "BOOL";
+                        condition = "objectBrain";
+                    };
+                    class comspec_sse_iarpEmo_colere {
+                        displayName = "$STR_COMSPEC_IARP_S_Emo_colere_T";
+                        tooltip = "$STR_COMSPEC_IARP_S_Emo_colere_D";
+                        property = "comspec_sse_iarpEmo_colere";
+                        control = "Checkbox";
+                        expression = "if (isServer && {!_value}) then { ['edenEmo', [_this, 'colere', false]] call comspec_sse_fnc_iarpProfile; };";
+                        defaultValue = "true";
+                        typeName = "BOOL";
+                        condition = "objectBrain";
+                    };
+                    class comspec_sse_iarpEmo_mefiance {
+                        displayName = "$STR_COMSPEC_IARP_S_Emo_mefiance_T";
+                        tooltip = "$STR_COMSPEC_IARP_S_Emo_mefiance_D";
+                        property = "comspec_sse_iarpEmo_mefiance";
+                        control = "Checkbox";
+                        expression = "if (isServer && {!_value}) then { ['edenEmo', [_this, 'mefiance', false]] call comspec_sse_fnc_iarpProfile; };";
+                        defaultValue = "true";
+                        typeName = "BOOL";
+                        condition = "objectBrain";
+                    };
+                    class comspec_sse_iarpEmo_soulagement {
+                        displayName = "$STR_COMSPEC_IARP_S_Emo_soulagement_T";
+                        tooltip = "$STR_COMSPEC_IARP_S_Emo_soulagement_D";
+                        property = "comspec_sse_iarpEmo_soulagement";
+                        control = "Checkbox";
+                        expression = "if (isServer && {!_value}) then { ['edenEmo', [_this, 'soulagement', false]] call comspec_sse_fnc_iarpProfile; };";
+                        defaultValue = "true";
+                        typeName = "BOOL";
+                        condition = "objectBrain";
+                    };
+                    class comspec_sse_iarpEmoGroup {
+                        displayName = "$STR_COMSPEC_IARP_Z_EmoGroup";
+                        tooltip = "$STR_COMSPEC_IARP_E_EmoGroup_D";
+                        property = "comspec_sse_iarpEmoGroup";
+                        control = "Checkbox";
+                        expression = "if (isServer && {_value}) then { ['edenEmo', [_this, 'group', true]] call comspec_sse_fnc_iarpProfile; };";
+                        defaultValue = "false";
+                        typeName = "BOOL";
+                        condition = "objectBrain";
+                    };
                 };
             };
         };
@@ -209,7 +379,9 @@ class COMSPEC_SSE_RscCheckBox;
 class COMSPEC_SSE_RscSlider;
 class COMSPEC_SSE_RscButtonZeus;
 class COMSPEC_SSE_RscHeader;
+class COMSPEC_SSE_RscHeaderZeus;
 class COMSPEC_SSE_RscAccentLine;
+class COMSPEC_SSE_RscAccentLineZeus;
 class COMSPEC_SSE_RscText;
 class COMSPEC_SSE_RscLabel;
 class COMSPEC_SSE_RscButton;
@@ -219,7 +391,9 @@ class COMSPEC_SSE_RscEdit;
 class COMSPEC_SSE_RscStructuredText;
 class COMSPEC_SSE_RscControlsGroup;
 class COMSPEC_SSE_RscListBox;
+class RscToolbox;
 
 #include "dialogs\iarp_terminal.hpp"
 #include "dialogs\iarp_workshop.hpp"
 #include "dialogs\iarp_answers.hpp"
+#include "dialogs\iarp_hub.hpp"

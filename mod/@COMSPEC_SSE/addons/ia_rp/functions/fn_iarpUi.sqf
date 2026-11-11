@@ -3,9 +3,13 @@
       open [ia | objNull, onglet]   ouvre sur une IA vivante à 5 m (à pied) ; objNull + "log" : journal seul (Zeus).
                                     Le téléphone ATAK ouvert est rangé (la fenêtre ne se pose pas dessus).
       onLoad / onUnload             brouillon gardé par IA (Échap ferme sans rien perdre)
-      head                          en-tête : avatar (initiales), nom (identité SSE, sinon « Anonyme »), état et distance
+      head                          en-tête : avatar (initiales), nom (identité unique une fois apprise, sinon « Inconnu » :
+                                    même règle que les bulles, fn_iarpName), état et distance
       tab [talk | guide | log]      DISCUSSION (fil), GUIDE (ce qu'on peut dire, exemples cliquables), JOURNAL
-      refresh                       fil en bulles : moi à droite, l'IA à gauche, actions et récits au centre, « … écrit »
+      refresh                       fil en bulles : moi à droite, l'IA à gauche, actions et récits au centre, « … écrit » ;
+                                    texte aligné à gauche dans sa bulle (jamais rogné), didascalie « (Il hoche la tête.) » sur
+                                    sa propre ligne, en gris
+      hint                          ligne d'aide sous la saisie : astuce GUIDE après deux messages incompris de suite
       theme [index] · example [texte]   guide : thème choisi ; un exemple cliqué va dans le champ de saisie
       actions · actionPick [index] · action [id]   menu « Faire une action » (lexique « _actions ») : geste envoyé comme un
                                     /me compris par l'IA, ligne « Vous levez lentement les mains. » dans le fil
@@ -142,6 +146,7 @@ switch (_op) do {
         _al lbSetData [(lbSize _al) - 1, "free"];
         ["head"] call comspec_sse_fnc_iarpUi;
         ["keyUp"] call comspec_sse_fnc_iarpUi;
+        ["hint"] call comspec_sse_fnc_iarpUi;
         ["tab", [uiNamespace getVariable ["comspec_sse_iarpTab", "talk"]]] call comspec_sse_fnc_iarpUi;
         ["tick"] call comspec_sse_fnc_iarpUi;
         private _h = [{ ["tick"] call comspec_sse_fnc_iarpUi; }, 0.5] call CBA_fnc_addPerFrameHandler;
@@ -166,12 +171,14 @@ switch (_op) do {
             (_d displayCtrl 94602) ctrlSetStructuredText parseText "";
         };
         private _who = (missionNamespace getVariable ["comspec_sse_iarpWho", createHashMap]) getOrDefault [netId _t, ["", [], 0]];
+        // Même règle que les bulles (fn_iarpName) : le nom une fois appris (dit, lu sur ses papiers), sinon « Inconnu » ;
+        // le Zeus le voit toujours. Jamais un nom que le joueur ne connaît pas.
         private _name = ["name", [_t]] call comspec_sse_fnc_iarpClient;
-        if ((_who select 0) isNotEqualTo "" && {(_t getVariable ["comspec_sse_idName", ""]) isEqualTo ""}) then { _name = _who select 0; };
+        private _known = (["known", [_t, player]] call comspec_sse_fnc_iarpName) && {(_t getVariable ["comspec_sse_idName", ""]) isNotEqualTo ""};
         (_d displayCtrl 94601) ctrlSetText _name;
-        // Initiales : prénom et nom (« Nikos KARRAS » -> NK) ; anonyme : « ? ».
+        // Initiales : prénom et nom (« Nikos KARRAS » -> NK) ; inconnu : « ? ».
         private _ws = (_name splitString " ") select { _x isNotEqualTo "" };
-        private _ini = if ((_t getVariable ["comspec_sse_idName", ""]) isEqualTo "" && {(_who select 0) isEqualTo ""}) then { "?" } else {
+        private _ini = if (!_known) then { "?" } else {
             toUpper (((_ws select [0, 2]) apply { _x select [0, 1] }) joinString "")
         };
         (_d displayCtrl 94641) ctrlSetText _ini;
@@ -186,6 +193,13 @@ switch (_op) do {
         (_d displayCtrl 94602) ctrlSetStructuredText parseText format ["<t font='%1' color='%2'>%3</t><t color='#7F8A84'>   ·   %4   ·   %5</t>",
             _fBold, [_mc] call _hex, toUpper (_lab call _esc), format [localize "STR_COMSPEC_IARP_Fear", _ten],
             format [localize (["STR_COMSPEC_IARP_StatusFar", "STR_COMSPEC_IARP_StatusNear"] select _ok), round _dist]];
+    };
+    case "hint": {
+        if (isNull _d) exitWith {};
+        private _n = (missionNamespace getVariable ["comspec_sse_iarpMiss", createHashMap]) getOrDefault [uiNamespace getVariable ["comspec_sse_iarpTarget", ""], 0];
+        private _c = _d displayCtrl 94627;
+        _c ctrlSetText localize (["STR_COMSPEC_IARP_Hint", "STR_COMSPEC_IARP_HintMiss"] select (_n >= 2));
+        _c ctrlSetTextColor ([[0.62, 0.68, 0.64, 1], [0.95, 0.72, 0.28, 1]] select (_n >= 2));
     };
     case "tick": {
         if (isNull _d) exitWith {};
@@ -248,14 +262,37 @@ switch (_op) do {
         private _py = 0.2 * _gh;
         private _probe = _d displayCtrl 94699;
         _probe ctrlSetFont _fReg;
-        private _widthOf = { params ["_s", ["_k", 1]]; _probe ctrlSetText _s; (ctrlTextWidth _probe) * _k };
+        private _widthOf = { params ["_s", ["_k", 1], ["_f", _fReg]]; _probe ctrlSetFont _f; _probe ctrlSetText _s; (ctrlTextWidth _probe) * _k };
+        // Didascalie (« (Il ne bouge pas.) ») : ligne à part, police fine, grise ; la parole garde sa ligne.
+        private _stageOf = {
+            params ["_s"];
+            private _out = [];
+            private _rest = _s;
+            private _guard = 0;
+            while { _rest isNotEqualTo "" && {_guard < 12} } do {
+                _guard = _guard + 1;
+                private _a1 = _rest find "(";
+                private _b1 = if (_a1 < 0) then { -1 } else { (_rest select [_a1]) find ")" };
+                if (_a1 < 0 || {_b1 < 0}) exitWith { _out pushBack [false, trim _rest]; _rest = ""; };
+                if (_a1 > 0) then { _out pushBack [false, trim (_rest select [0, _a1])]; };
+                _out pushBack [true, _rest select [_a1, _b1 + 1]];
+                _rest = trim (_rest select [_a1 + _b1 + 1]);
+            };
+            _out select { (_x select 1) isNotEqualTo "" }
+        };
+        // Largeur d'une bulle : texte mesuré dans sa police, plus une marge d'au moins un caractère (0,9 case) ; le texte
+        // est aligné à gauche dans sa bulle, son premier caractère ne peut pas sortir du cadre.
+        private _padW = 0.9 * _gw;
         private _net = uiNamespace getVariable ["comspec_sse_iarpTarget", ""];
         private _l = ((missionNamespace getVariable ["comspec_sse_iarpHist", createHashMap]) getOrDefault [_net, []]) select [((count ((missionNamespace getVariable ["comspec_sse_iarpHist", createHashMap]) getOrDefault [_net, []])) - 40) max 0];
         private _y = 0.3 * _gh;
+        // Bulles de l'IA : le nom montré dans l'en-tête, maintenant (appris depuis : le fil entier passe d'« Inconnu » à
+        // son nom) ; en-tête et bulles disent toujours la même chose.
+        private _aiNow = if (isNull (call _targetObj)) then { "" } else { ["shown", call _targetObj] call comspec_sse_fnc_iarpName };
         private _add = {
             params ["_side", "_body", "_plainW", "_bg", ["_stripe", []]];
             // _side : left (IA), right (moi), center (action, récit, système)
-            private _inner = if (_side isEqualTo "center") then { _W * 0.86 } else { ((_plainW + 0.012) min (_maxW - 2 * _px)) max (4 * _gw) };
+            private _inner = if (_side isEqualTo "center") then { _W * 0.86 } else { ((_plainW * 1.06 + _padW) min (_maxW - 2 * _px)) max (4 * _gw) };
             private _bx = switch (_side) do { case "right": { _W - _inner - 2 * _px }; case "center": { (_W - _inner) / 2 - _px }; default { 0 } };
             // Fond et liseré d'abord (le texte, créé après, passe par-dessus), hauteur posée une fois le texte mesuré.
             private _b = controlNull;
@@ -287,14 +324,24 @@ switch (_op) do {
             private _tm = format ["<t size='0.72' color='#7F8A84'>%1</t>", _hm];
             switch (_kind) do {
                 case "ai": {
+                    if (_aiNow isNotEqualTo "") then { _who = _aiNow; };
                     private _hdr = format ["<t font='%1' size='0.78' color='%2'>%3</t>  %4", _fBold, ["ai"] call _colOf, toUpper (_who call _esc), _tm];
-                    private _w = (([_text] call _widthOf) max (([toUpper _who + "  00:00"] call _widthOf) * 0.82));
-                    ["left", format ["%1<br/><t font='%2' color='#E6EDE6'>%3</t>", _hdr, _fReg, _text call _esc], _w, [0.1, 0.15, 0.15, 0.98], ["ai"] call _rgbOf] call _add;
+                    private _segs = [_text] call _stageOf;
+                    private _w = ([toUpper _who, 0.78, _fBold] call _widthOf) + (["  00:00", 0.72] call _widthOf);
+                    { _w = _w max ([_x select 1] call _widthOf); } forEach _segs;
+                    private _body = (_segs apply {
+                        if (_x select 0) then { format ["<t font='%1' color='#9EAFA6'>%2</t>", _fLight, (_x select 1) call _esc] }
+                        else { format ["<t font='%1' color='#E6EDE6'>%2</t>", _fReg, (_x select 1) call _esc] }
+                    }) joinString "<br/>";
+                    ["left", format ["%1<br/>%2", _hdr, _body], _w, [0.1, 0.15, 0.15, 0.98], ["ai"] call _rgbOf] call _add;
                 };
                 case "say": {
-                    private _hdr = format ["<t align='right'><t font='%1' size='0.78' color='#A9D9B0'>%2</t>  %3</t>", _fBold, toUpper (localize "STR_COMSPEC_IARP_Me"), _tm];
-                    private _w = ([_text] call _widthOf) max (([toUpper (localize "STR_COMSPEC_IARP_Me") + "  00:00"] call _widthOf) * 0.82);
-                    ["right", format ["%1<br/><t align='right' font='%2' color='%3'>%4</t>", _hdr, _fReg, ["say"] call _colOf, _text call _esc], _w, [0.13, 0.25, 0.16, 0.98], [0.45, 0.8, 0.5, 1]] call _add;
+                    // Ma bulle, à droite du fil ; son texte aligné à gauche (un texte aligné à droite plus large que la bulle
+                    // perdait sa première lettre : « OI », « uel est ton prénom ? »).
+                    private _meT = toUpper (localize "STR_COMSPEC_IARP_Me");
+                    private _hdr = format ["<t font='%1' size='0.78' color='#A9D9B0'>%2</t>  %3", _fBold, _meT call _esc, _tm];
+                    private _w = ([_text] call _widthOf) max (([_meT, 0.78, _fBold] call _widthOf) + (["  00:00", 0.72] call _widthOf));
+                    ["right", format ["%1<br/><t font='%2' color='%3'>%4</t>", _hdr, _fReg, ["say"] call _colOf, _text call _esc], _w, [0.13, 0.25, 0.16, 0.98], [0.45, 0.8, 0.5, 1]] call _add;
                 };
                 case "sys": {
                     ["center", format ["<t align='center' font='%1' size='0.82' color='#9EAFA6'>%2</t>", _fLight, _text call _esc], 0, []] call _add;

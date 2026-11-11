@@ -1,7 +1,7 @@
 /*
     Texte libre avec les IA : côté poste du joueur (réponses du serveur fn_iarpServer, envois).
       send     [op, args]                        vers le serveur (appel direct sur l'hôte ou en solo)
-      name     [unité] -> nom affiché            le même partout : fn_iarpName « shown » (papiers, légende, « Anonyme »)
+      name     [unité] -> nom affiché            le même partout : fn_iarpName « shown » (identité unique une fois apprise, sinon « Inconnu »)
       bubble   [unité, genre, nom, contenu, fil] bulle 3D (fn_iarpBubble) ; genre say | me | do | todo | tryOk | tryKo | ai
                contenu : texte du joueur, ou réplique d'IA [modèle fr, modèle en, variables, langue locale, pays]
                nom d'une IA : nom affiché, ou [nom, vrai nom, nature] pour le Zeus (fn_iarpName « label »)
@@ -13,13 +13,16 @@
       reply    [ia, contenu, intention, nom]     réplique de l'IA à qui je parle : bulle et fil, une seule fois ; nom :
                                                  comme pour une bulle (fn_iarpName « label »)
       ack      [ia, intention, issue]            mon message est traité ; issue « ace » : action ACE habituelle (papiers,
-                                                 fouille), après la réponse de l'IA ; incompris : rappel du GUIDE (une fois)
+                                                 fouille), après la réponse de l'IA ; deux incompris de suite : astuce GUIDE
+                                                 dans la ligne d'aide sous la saisie (fn_iarpUi « hint »), jamais dans le fil
       dropped  [ia]                              message refusé par l'anti-flood du serveur : dit dans le fil
       who      [ia, nom, humeur] · mood [ia, humeur]   en-tête du terminal : nom, état (calme, nerveux, Stop…), peur
       notice   [clé de stringtable, valeurs…]    message court (toast)
       log      [lignes] · zeus [lignes]          journal (onglet JOURNAL ; Zeus : lignes en direct, sans doublon)
       profile  [ia, profil texte, nom]           profil lu pour l'atelier IA du Zeus, ou pour une fenêtre du menu ZEN en
                                                  attente (uiNamespace comspec_sse_iarpZenPending, fn_iarpZen)
+      wsNote   [[[clé, valeurs…]…]]               nom donné à une IA : identité, papiers déjà remis, pays suggéré (ligne
+                                                 d'état de l'atelier IA)
       mem      [ia, [avoué, affirmé, joueurs], nom]   mémoire de l'IA pour le Zeus (fenêtre ZEN, fn_iarpServer memGet)
       mark     [position, lieu, nom de l'IA]     renseignement précis avec un lieu : marqueur sur MA carte seulement
     Fils, brouillons et journal vivent dans missionNamespace : une autre mission (mêmes netId) repart à zéro.
@@ -31,7 +34,7 @@ if (_op isEqualTo "send") exitWith {
     if (isServer) then { [_sop, _sa] call comspec_sse_fnc_iarpServer; } else { [_sop, _sa] remoteExecCall ["comspec_sse_fnc_iarpServer", 2]; };
     true
 };
-// Nom affiché : une seule règle, fn_iarpName « shown » (papiers SSE, sinon légende SSE, sinon « Anonyme »).
+// Nom affiché : une seule règle, fn_iarpName « shown » (identité unique une fois apprise, sinon « Inconnu »).
 if (_op isEqualTo "name") exitWith {
     _a params [["_u", objNull]];
     ["shown", _u] call comspec_sse_fnc_iarpName
@@ -129,15 +132,12 @@ switch (_op) do {
         _a params [["_t", objNull], ["_intent", ""], ["_outcome", ""]];
         missionNamespace setVariable ["comspec_sse_iarpLastAck", [_t, _intent, _outcome, time]];
         if (isNull _t) exitWith {};
-        // Rien de rapproché : une fois par IA, le rappel du GUIDE dans le fil.
-        if (_intent isEqualTo "unknown") exitWith {
-            private _seen = missionNamespace getVariable ["comspec_sse_iarpHinted", []];
-            if !((netId _t) in _seen) then {
-                _seen pushBack (netId _t);
-                missionNamespace setVariable ["comspec_sse_iarpHinted", _seen];
-                [netId _t, "sys", "", localize "STR_COMSPEC_IARP_HintGuide"] call _push;
-            };
-        };
+        // Incompris de suite (par IA) : à partir de deux, l'astuce GUIDE s'affiche dans la ligne d'aide sous la saisie, pas
+        // dans le fil (elle ne s'intercale jamais entre deux répliques) ; un message compris la retire.
+        private _miss = missionNamespace getVariable ["comspec_sse_iarpMiss", createHashMap];
+        missionNamespace setVariable ["comspec_sse_iarpMiss", _miss];
+        _miss set [netId _t, [0, (_miss getOrDefault [netId _t, 0]) + 1] select (_intent in ["unknown", "otGibberish"])];
+        if ((netId _t) isEqualTo _target) then { ["hint"] call comspec_sse_fnc_iarpUi; };
         if (_outcome isNotEqualTo "ace") exitWith {};
         // Papiers et fouille : l'action ACE habituelle, ses durées et ses distances ; rien n'est contourné.
         if (!isNull (uiNamespace getVariable ["comspec_sse_iarpDisplay", displayNull])) then { closeDialog 0; };
@@ -173,6 +173,11 @@ switch (_op) do {
         missionNamespace setVariable ["comspec_sse_iarpWho", _w];
         if ((netId _t) isEqualTo _target) then { ["head"] call comspec_sse_fnc_iarpUi; };
     };
+    // Ligne d'état de l'atelier IA (jamais une alerte) : papiers refaits dans le pays choisi.
+    case "wsStatus": {
+        _a params [["_key", ""]];
+        if (!isNil "comspec_sse_fnc_iarpWorkshop") then { ["status", [format ([localize _key] + (_a select [1]))]] call comspec_sse_fnc_iarpWorkshop; };
+    };
     case "notice": {
         _a params [["_key", ""]];
         private _vals = _a select [1];
@@ -207,6 +212,13 @@ switch (_op) do {
         if (_who isNotEqualTo "") then { _what = format ["%1 (%2)", _what, _who]; };
         _m setMarkerTextLocal format [localize "STR_COMSPEC_IARP_MarkIntel", _what];
         ["notice", ["STR_COMSPEC_IARP_N_Marked", _what]] call comspec_sse_fnc_iarpClient;
+    };
+    case "wsNote": {
+        // Retour du serveur après un nom donné (identité, papiers déjà remis, pays suggéré) : ligne d'état de l'atelier IA.
+        _a params [["_notes", []]];
+        private _txt = (_notes apply { format ([localize (_x param [0, ""])] + (_x select [1])) }) joinString " ";
+        if (!isNil "comspec_sse_fnc_iarpWorkshop") then { ["note", [_txt]] call comspec_sse_fnc_iarpWorkshop; };
+        diag_log text format ["[COMSPEC SSE] IA RP : %1", _txt];
     };
     case "profile": {
         _a params [["_t", objNull], ["_raw", ""], ["_who", ""]];

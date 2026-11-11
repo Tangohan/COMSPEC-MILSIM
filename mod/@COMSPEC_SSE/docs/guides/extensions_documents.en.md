@@ -6,7 +6,9 @@ French version: [extensions_documents.md](extensions_documents.md). Guides index
 
 A **document extension** is a small third-party addon that depends on the SSE and **adds document types** (press card, area pass, access card, NGO badge…) without touching the mod: its PAA textures, its fields, its layout, its countries. Once loaded, its types appear everywhere the SSE offers a type: the **Choisir un document** (Choose a document) window (Zeus, Eden), the Eden **Papiers** (Papers) attribute, the SSE editor (Paper type), the Area AI page (AJOUTER CE PAPIER (ADD THIS PAPER)), the viewer and the check.
 
-Shipped example: `mod/@COMSPEC_SSE/extensions/example_documents/` (config.cpp, textures, README) with a **press card** and a **pass**.
+Shipped example: `mod/@COMSPEC_SSE/extensions/example_documents/` (config.cpp, textures, README) with a **press card** and a **pass**. It is **included in the SSE pack** (`comspec_sse_ext_example_documents.pbo`) and **off by default**: enable « Documents d'exemple » in the **SSE ROLEPLAY · Extensions** window to try it.
+
+**Built-in tutorial**: the same window has a **Help** button (« How it works », 10 steps, FR / EN) that brings this guide in game and gives a minimal commented `config.cpp` to copy to the clipboard (« Copy the example »).
 
 ## Structure of an extension
 
@@ -78,6 +80,8 @@ One class per document type.
 | `description` | One sentence | `"Carte de presse et laissez-passer de zone."` |
 | `documents[]` | The extension's `CfgComspecDocuments` classes | `{"press_card", "zone_pass"}` |
 | `preview` | Preview texture for the Extensions menu | `"\z\mon_ext\...\preview.paa"` |
+| `defaultOff` | `1`: extension off until a Zeus enables it in the window (optional, used by the shipped example) | `defaultOff = 1;` |
+| `builtin` | `1`: shown as « shipped with the SSE » (reserved for extensions of the SSE pack) | `builtin = 1;` |
 
 ## Full example (press card)
 
@@ -149,6 +153,10 @@ class CfgComspecDocuments {
 };
 ```
 
+## Adding a country
+
+An extension can also add a **country of the papers**: a class in `class CfgComspecCountries` of its `config.cpp`, named after the ISO 3166 alpha-3 code, with the same fields as `addons/identity/CfgComspecCountries.hpp` (copy `class FRA` and change the values). The country shows in every list; its papers use the neutral templates, title and labels in its language. Fields: `tools/countries/README.md`; guide: [pays_des_papiers.en.md](pays_des_papiers.en.md).
+
 ## Step by step: testing the extension
 
 1. Copy `extensions/example_documents/` under your own name, rename the `$PBOPREFIX$`, the classes and the textures.
@@ -159,6 +167,8 @@ class CfgComspecDocuments {
 6. Get yourself checked: without MRZ or chip, only N0 (visual), N3 (database) and N4 (face) apply.
 
 ## Common pitfalls
+
+- **The window shows « No document extension loaded »**: no addon declares `CfgComspecDocumentExtensions` (PBO not loaded, or an older SSE without the built-in example). Built-in papers stay available; the **Open the tutorial** button explains what to do.
 
 - **`requiredAddons[]` must contain `comspec_sse_identity`**: otherwise your classes may be read before the SSE's (`COMSPEC_ID_Card` inheritance not found).
 - **`_001`… instances**: plan enough of them; beyond the stock, the document stays virtual (logged to the RPT).

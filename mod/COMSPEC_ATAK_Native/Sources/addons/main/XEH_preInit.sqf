@@ -13,6 +13,26 @@ COMSPEC_ATAK_FontBody = 0; // taille de base du texte structuré des pages (fn_l
 // renvoyait les deux valeurs à tous les joueurs et à la file JIP.
 missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION];
 missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", VERSION_STR];
+// Configuration ATHENA (menu Échap, fn_athenaConfig) : l'ATAK natif est l'hôte du bouton unique et de la fenêtre, même
+// si le SSE est chargé (le SSE ne l'est que sans l'ATAK natif). Contrat du registre : en-tête de fn_athenaConfig.
+missionNamespace setVariable ["comspec_athena_config_host", createHashMapFromArray [
+    ["fn", comspec_atak_native_fnc_athenaConfig],
+    ["tr", { _this call comspec_atak_native_fnc_tr }],
+    ["logo", "\z\comspec_atak_native\addons\main\data\logo_athena.paa"],
+    ["icon", "\z\comspec_atak_native\addons\main\data\athena_config_ca.paa"],
+    ["iconHover", "\z\comspec_atak_native\addons\main\data\athena_config_hover_ca.paa"],
+    ["dot", "\z\comspec_atak_native\addons\main\data\athena_dot_ca.paa"],
+    ["row", "COMSPEC_ATAK_AthenaCfgRow"]
+]];
+private _athCfg = (missionNamespace getVariable ["comspec_athena_config_entries", []]) select { (_x select 0) isNotEqualTo "atak_realism" };
+_athCfg pushBack ["atak_realism",
+    { "Réalisme et réseau" call comspec_atak_native_fnc_tr },
+    { "Conditions réseau et réalisme du serveur : chacun les voit, un admin ou un Zeus les règle pour tous." call comspec_atak_native_fnc_tr },
+    "\z\comspec_atak_native\addons\main\data\app_network.paa",
+    { true },
+    { params ["_parent"]; ["open", _parent] call comspec_atak_native_fnc_netConfig; },
+    20, "child"];
+missionNamespace setVariable ["comspec_athena_config_entries", _athCfg];
 // Versions compilées dans ce code : fn_integrityCheck les compare à la config chargée, à la DLL et au site.
 missionNamespace setVariable ["COMSPEC_ATAK_CodeVersion", VERSION_STR];
 missionNamespace setVariable ["COMSPEC_ATAK_LinkExpected", LINK_VERSION_STR];
@@ -93,6 +113,15 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     {
         if (!hasInterface) exitWith {};
         [{ time > 0 }, { [["stop", "start"] select _this] call comspec_atak_native_fnc_profiler; }, _this isEqualTo true] call CBA_fnc_waitUntilAndExecute;
+    }] call comspec_atak_native_fnc_addSetting;
+// Mesure des performances (fn_perfLog, 4.4.0), par joueur, décochée par défaut : lignes [COMSPEC perf] dans le RPT
+// (ouverture du téléphone et des apps, dessin de la carte, bilan toutes les 10 s). Rien à l'écran ; aucun coût décochée.
+["comspec_atak_native_perf_log", "CHECKBOX",
+    ["Mesure des performances (journal)", "Décoché par défaut. Coché : le journal du jeu (fichier RPT) note le temps d'ouverture du téléphone et de chaque app, le coût du dessin de la carte toutes les 5 s, un bilan toutes les 10 s et les appels lents à la DLL. Rien ne s'affiche à l'écran. Exemple : active-le, ouvre le téléphone puis la carte, puis envoie ton journal avec Envoyer_mes_logs.bat. Décoche-le ensuite."],
+    ["COMSPEC", "ATAK · Debug"], false, 0,
+    {
+        if (!hasInterface) exitWith {};
+        [{ time > 0 }, { [["stop", "start"] select _this] call comspec_atak_native_fnc_perfLog; }, _this isEqualTo true] call CBA_fnc_waitUntilAndExecute;
     }] call comspec_atak_native_fnc_addSetting;
 
 // Liaison Athena proposée à la première sortie du téléphone sans compte (fn_displayLoad), par joueur.
@@ -399,6 +428,10 @@ private _sim = ["COMSPEC", "ATAK · Simulation"];
 ["comspec_atak_native_blood_style", "LIST",
     ["Sang sur l'écran", "Discret : quelques taches pâles. Réaliste : éclaboussures, traces de doigts, coulures, marques de paume. Gore : taches plus grandes et plus nombreuses, flaques épaisses, mains entières."],
     _sim, [[0, 1, 2], ["Discret", "Réaliste", "Gore"], 1], 1] call comspec_atak_native_fnc_addSetting;
+// Sang sur l'écran, niveau maximal (fn_screenDirt) : 0 selon le profil (Extrême en Milsim, Fort sinon).
+["comspec_atak_native_blood_max", "LIST",
+    ["Sang sur l'écran : quantité maximale", "Jusqu'où le sang peut couvrir l'écran du téléphone dans les pires moments. Léger : quelques gouttes et traces de doigts. Normal : traînées et projections en plus. Fort : grandes nappes, paumes et coulures sur une bonne partie de l'écran. Extrême : écran presque entièrement rouge, on lit à peine entre les taches. Selon le profil : Extrême en Milsim, Fort sinon. Exemple : blessé grave qui saigne, téléphone en main ; réglé sur Extrême, l'écran est couvert en une vingtaine de secondes ; réglé sur Normal, il garde quelques traînées."],
+    _sim, [[0, 1, 2, 3, 4], ["Selon le profil", "Léger", "Normal", "Fort", "Extrême"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_clean_items", "EDITBOX",
     ["Kits de nettoyage (optionnel)", "On peut toujours nettoyer l'écran sans rien. Avec un de ces items sur soi (noms de classe exacts, séparés par des virgules), c'est deux fois plus rapide et tout part, sang compris. L'item n'est pas consommé. Vide : aucun kit."],
     _sim, "ACE_fieldDressing,ACE_elasticBandage,ACE_packingBandage,ACE_quikclot", 1] call comspec_atak_native_fnc_addSetting;
@@ -434,7 +467,7 @@ missionNamespace setVariable ["COMSPEC_ZeusAtakPlayerActionsRegistered", true];
 { missionNamespace setVariable [_x, true]; } forEach ["COMSPEC_ZenAtakPlayerModulesRegistered", "COMSPEC_AceAtakPlayerModulesRegistered", "COMSPEC_AceTrackActionsRegistered", "COMSPEC_AceTheaterSurveyRegistered"];
 private _geo = ["COMSPEC", "ATAK · Géolocalisation"];
 ["comspec_atak_native_geoloc_enabled", "CHECKBOX",
-    ["Géolocalisation des téléphones", "App GE (guerre électronique), onglet GÉOLOC : localiser un téléphone avec son numéro, son IMEI ou son adresse MAC (roleplay)."],
+    ["Géolocalisation des téléphones", "App GE (guerre électronique), onglet TRAÇAGE : tracer un téléphone, de joueur ou d'IA, avec son numéro, son IMEI ou son adresse MAC (roleplay). Ex. : numéro lu sur un papier saisi, position approchée sur la carte."],
     _geo, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_geoloc_ew_only", "CHECKBOX",
     ["Réservé aux opérateurs GE", "Coché : seuls les joueurs qui ont accès à la guerre électronique (voir ATAK · Simulation) peuvent géolocaliser."],
@@ -459,6 +492,34 @@ private _geo = ["COMSPEC", "ATAK · Géolocalisation"];
     _geo, [10, 300, 30, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_geoloc_warn", "CHECKBOX",
     ["Prévenir la cible", "Le joueur géolocalisé reçoit une alerte discrète « activité réseau anormale »."],
+    _geo, false, 1] call comspec_atak_native_fnc_addSetting;
+// Traçage d'un numéro (onglet TRAÇAGE de l'app GE, fn_traceServer) : délai, attente, suivi, précision, réseau civil, droits.
+["comspec_atak_native_trace_delay", "SLIDER",
+    ["Traçage : durée de la requête (s)", "Temps entre TRACER et la réponse de l'opérateur (±20 %). Le suivi continu répond deux fois plus vite. Ex. : 8 s, la position arrive 6 à 10 s après la demande."],
+    _geo, [1, 60, 8, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_cooldown", "SLIDER",
+    ["Traçage : attente entre deux requêtes (s)", "Temps minimum entre deux traçages lancés à la main par un même joueur. Ex. : 20 s, un opérateur ne trace pas plus de trois numéros par minute."],
+    _geo, [0, 300, 20, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_max", "SLIDER",
+    ["Traçage : numéros suivis en même temps", "Nombre de numéros qu'un joueur peut suivre en continu à la fois. Ex. : 3, un quatrième suivi est refusé tant qu'un autre n'est pas arrêté."],
+    _geo, [1, 10, 3, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_rad_multi", "SLIDER",
+    ["Traçage : précision avec plusieurs antennes (m)", "Rayon du cercle quand trois antennes ou plus captent le téléphone (le double avec deux), à ±25 %. Ex. : 100 m, cercle de 75 à 125 m en ville."],
+    _geo, [10, 500, 100, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_rad_single", "SLIDER",
+    ["Traçage : précision avec une seule antenne (m)", "Rayon du cercle quand une seule antenne capte le téléphone, plus grand loin de l'antenne (0,4 à 1,9 fois). Ex. : 800 m, cercle de 300 à 1 500 m en campagne."],
+    _geo, [50, 3000, 800, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_grow", "SLIDER",
+    ["Traçage : dernière position, croissance du cercle (m/s)", "Un téléphone éteint, brouillé ou hors couverture ne donne que sa dernière position : son cercle grandit avec le temps, la cible a pu bouger. Ex. : 1,5 m/s, +90 m par minute (une marche)."],
+    _geo, [0, 10, 1.5, 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_civnet", "CHECKBOX",
+    ["Traçage : réseau mobile civil", "Coché : les villes et villages ont des antennes civiles (ville : précis, campagne : large, plus de 6 km de toute localité : hors couverture), en plus des relais ATAK. Décoché : seuls les relais captent les téléphones. Ex. : désert sans relais décoché, personne n'est traçable."],
+    _geo, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_link", "LIST",
+    ["Traçage : liaison ATAK exigée", "Le téléphone qui trace doit avoir du réseau (hors brouillage) pour joindre l'opérateur. Selon le profil : oui en Milsim et Standard, non en Arcade. Ex. : sans réseau, « Pas de liaison avec l'opérateur »."],
+    _geo, [[0, 1, 2], ["Selon le profil de réalisme", "Toujours", "Jamais"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_warrant", "CHECKBOX",
+    ["Traçage : mandat du Zeus exigé", "Coché : l'opérateur refuse toute requête tant que le Zeus n'a pas accordé le mandat (clic droit > ATAK · Traçage des numéros). Ex. : enquête où le traçage s'obtient en cours de mission."],
     _geo, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_sim_sos", "CHECKBOX",
     ["Carte SIM localisable téléphone éteint", "Quand la batterie est vide, le téléphone s'éteint mais sa carte SIM continue d'être captée par les relais. On peut alors le retrouver par son numéro ou son IMEI (onglet GÉOLOC de l'app GE, RECHERCHER sur la carte), plus ou moins précisément selon le nombre de relais qui le captent."],
@@ -730,7 +791,7 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
     _mpuCat, false, 1, { if (_this && {hasInterface}) then { [{ ["applyCut"] call comspec_atak_native_fnc_radioGuard; }] call comspec_atak_native_fnc_nextFrame; }; }] call comspec_atak_native_fnc_addSetting;
 // Assistant de configuration (fn_setupWizard) : proposé une fois à l'admin.
 ["comspec_atak_native_wizard_offer", "CHECKBOX",
-    ["Proposer l'assistant de configuration", "Une seule fois, à un admin ou un Zeus. L'assistant reste dans le menu Échap, Réalisme et réseau."],
+    ["Proposer l'assistant de configuration", "Une seule fois, à un admin ou un Zeus. L'assistant reste dans le menu Échap : ATHENA Configuration, Réalisme et réseau."],
     _mpuCat, true, 0] call comspec_atak_native_fnc_addSetting;
 // Voix ACRE2 / TFAR relayée par le maillage MPU5 (fn_mpuVoice) : passerelle radio sur IP. Reste décochée par défaut : jamais jouée, et la voix des joueurs passe avant (voir fn_radioGuard).
 ["comspec_atak_native_mpu_voice", "CHECKBOX",
@@ -932,6 +993,14 @@ private _phones = ["COMSPEC", "ATAK · Téléphones personnels"];
 ["comspec_atak_native_pin_block", "SLIDER",
     ["Code du téléphone : blocage (s)", "Durée du blocage après le dernier essai. Elle n'est jamais définitive."],
     _phones, [10, 1800, 120, 0], 1] call comspec_atak_native_fnc_addSetting;
+// Synchroniser le téléphone avec le web (fn_phoneSync, ICD-SSE-PHONE-001). Accord du joueur : réglage du joueur seul (2),
+// qu'aucun serveur ni aucune mission ne peut cocher à sa place. Le MJ peut l'interdire pour la mission.
+["comspec_atak_native_phone_sync", "CHECKBOX",
+    ["Autoriser la synchronisation du téléphone avec Athena", "Décoché par défaut : rien n'est envoyé. Coché : l'action Synchroniser avec le web envoie aux fichiers d'Athena le contenu du téléphone de votre personnage (contacts, messages, notes, noms des photos, apps, positions, repères, numéro et IMEI du jeu), jamais rien de votre PC. Une fois par minute au plus. Exemple : cochez, puis menu ACE, Téléphone ATAK, Synchroniser avec le web : la référence EXT-000123 s'affiche dans le téléphone."],
+    _phones, false, 2] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_phone_sync_off", "CHECKBOX",
+    ["Interdire la synchronisation des téléphones pendant cette mission", "Coché : aucun téléphone n'est envoyé au web pendant cette mission, même si le joueur l'a autorisé. Exemple : cochez pour une mission d'entraînement dont les téléphones ne doivent pas remplir les fichiers d'Athena. Un Zeus peut aussi l'interdire en cours de partie avec la variable de mission COMSPEC_ATAK_PhoneSyncDisabled à true."],
+    _phones, false, 1] call comspec_atak_native_fnc_addSetting;
 // Tinder : chasse aux HVT (fn_hvtIntel). Chaque cible peut aussi être réglée à part (module Eden / Zeus « Tinder : profil HVT / SSE »).
 private _hvt = ["COMSPEC", "ATAK · Tinder : chasse aux HVT"];
 // Traces civiles (fn_hvtTrace) : décochées par défaut, jamais de position exacte ni de suivi en direct.

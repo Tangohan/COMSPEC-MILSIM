@@ -1,12 +1,17 @@
 #include "script_component.hpp"
+#include "ui_macros.hpp"
 
 /*
-    COMSPEC SSE — Extensions de documents (menu « SSE ROLEPLAY · Extensions »).
+    COMSPEC SSE — Extensions de documents (fenêtre « SSE ROLEPLAY · Extensions »).
     Une extension est un addon tiers qui déclare ses types de papiers dans CfgComspecDocuments et se présente dans
     CfgComspecDocumentExtensions (voir addons/identity/CfgComspecDocuments.hpp et extensions/example_documents/README.md).
     Ici : réglages CBA (SSE ROLEPLAY › Extensions), liste des extensions coupées calculée par le serveur et diffusée
     (comspec_sse_docExtOff + évènement CBA comspec_sse_docExtOffChanged, lue par comspec_sse_fnc_idDocTypes), fenêtre
-    d'activation (Zeus, menu Échap, Eden via comspec_sse_fnc_docExtOpen).
+    d'activation (Zeus, Configuration ATHENA du menu Échap, Eden via comspec_sse_fnc_docExtOpen) avec son tuto intégré
+    « Comment ça marche ». L'extension d'exemple (extensions/example_documents) est livrée dans le pack SSE, coupée par
+    défaut (defaultOff = 1).
+    Sans l'ATAK natif, le SSE porte aussi le bouton « ATHENA Configuration » du menu Échap (fn_athenaConfig, copie
+    identique de celle de l'ATAK natif ; avec l'ATAK natif, c'est l'ATAK qui l'affiche et le SSE n'y ajoute que son entrée).
 */
 class CfgPatches {
     class comspec_sse_extensions {
@@ -14,7 +19,7 @@ class CfgPatches {
         units[] = {};
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
-        requiredAddons[] = {"comspec_sse_identity", "comspec_sse_zeus", "comspec_sse_core", "comspec_sse_main", "cba_main", "cba_xeh"};
+        requiredAddons[] = {"comspec_sse_identity", "comspec_sse_zeus", "comspec_sse_core", "comspec_sse_main", "comspec_sse_ui", "cba_main", "cba_xeh"};
         author = "COMSPEC";
         VERSION_CONFIG;
     };
@@ -29,7 +34,7 @@ class CfgFunctions {
             class docExtServer {};
             class docExtWindow {};
             class docExtOpen {};
-            class docExtMenu {};
+            class athenaConfig {};
         };
     };
 };
@@ -53,20 +58,48 @@ class Extended_PostInit_EventHandlers {
     };
 };
 
-// Menu Échap (SP et MP) : bouton « SSE ROLEPLAY · Extensions », en jeu seulement (fn_docExtMenu).
+// Menu Échap (SP et MP) : bouton « ATHENA Configuration » seulement sans l'ATAK natif (avec lui, son bouton suffit :
+// jamais deux boutons). L'entrée « SSE · Roleplay et extensions » est ajoutée au registre au preInit, dans les deux cas.
 class Extended_DisplayLoad_EventHandlers {
     class RscDisplayInterrupt {
-        comspec_sse_extensions = "(_this select 0) call comspec_sse_fnc_docExtMenu";
+        comspec_sse_extensions = "if (!isClass (configFile >> 'CfgPatches' >> 'comspec_atak_native_main')) then { ['button', _this select 0] call comspec_sse_fnc_athenaConfig; }";
     };
     class RscDisplayMPInterrupt {
-        comspec_sse_extensions = "(_this select 0) call comspec_sse_fnc_docExtMenu";
+        comspec_sse_extensions = "if (!isClass (configFile >> 'CfgPatches' >> 'comspec_atak_native_main')) then { ['button', _this select 0] call comspec_sse_fnc_athenaConfig; }";
     };
 };
 
-class RscText;
-class RscButton;
-class RscStructuredText;
+// Charte UI du SSE (addons/ui/dialogs/base.hpp) : classes déclarées par comspec_sse_ui.
 class RscPicture;
-class RscListBox;
+class RscButton; // base de COMSPEC_SSE_AthenaCfgRow (Configuration ATHENA)
+class COMSPEC_SSE_RscDim;
+class COMSPEC_SSE_RscBackground;
+class COMSPEC_SSE_RscPanel;
+class COMSPEC_SSE_RscHeader;
+class COMSPEC_SSE_RscAccentLine;
+class COMSPEC_SSE_RscText;
+class COMSPEC_SSE_RscStructuredText;
+class COMSPEC_SSE_RscControlsGroup;
+class COMSPEC_SSE_RscListBox;
+class COMSPEC_SSE_RscButton;
+class COMSPEC_SSE_RscButtonNav;
+class COMSPEC_SSE_RscButtonClose;
+
+// Ligne et bouton de la Configuration ATHENA (fn_athenaConfig) : transparent, survol et focus clavier en vert Athena.
+class COMSPEC_SSE_AthenaCfgRow: RscButton {
+    text = "";
+    shadow = 0;
+    colorText[] = {1, 1, 1, 1};
+    colorDisabled[] = {0, 0, 0, 0};
+    colorBackground[] = {0, 0, 0, 0};
+    colorBackgroundDisabled[] = {0, 0, 0, 0};
+    colorBackgroundActive[] = {0.204, 0.827, 0.6, 0.14};
+    colorFocused[] = {0.204, 0.827, 0.6, 0.10};
+    colorBackground2[] = {0.204, 0.827, 0.6, 0.10};
+    colorBorder[] = {0, 0, 0, 0};
+    colorShadow[] = {0, 0, 0, 0};
+    offsetPressedX = 0;
+    offsetPressedY = 0;
+};
 
 #include "dialogs\extensions.hpp"

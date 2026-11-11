@@ -124,11 +124,15 @@ if (_defer && {!isNull ([] call comspec_atak_native_fnc_display)}) exitWith {
         [_page] call comspec_atak_native_fnc_pageRender;
         if (_fxOn) then { [_fxAct, ["resume", _t0]] call comspec_atak_native_fnc_fx; };
         ["navigation : appui jusqu'à la page dessinée", _t0] call comspec_atak_native_fnc_perfAcc;
+        // Mesure des performances (fn_perfLog) : ouverture d'une app, de l'appui à l'image affichée.
+        if (missionNamespace getVariable ["COMSPEC_ATAK_PerfLog", false]) then { ["app", [_page, _t0]] call comspec_atak_native_fnc_perfLog; };
     }, [_page, _tok, _fxAct, _fxOn, _t0]] call comspec_atak_native_fnc_nextFrame;
     ["INFO", "UI", format ["Navigate %1", _page]] call comspec_atak_native_fnc_log;
     true
 };
+private _perfT = diag_tickTime;
 [_page] call comspec_atak_native_fnc_pageRender;
 if (_fxAct isNotEqualTo "") then { [_fxAct] call comspec_atak_native_fnc_fx; };
+if (missionNamespace getVariable ["COMSPEC_ATAK_PerfLog", false]) then { ["app", [_page, _perfT]] call comspec_atak_native_fnc_perfLog; };
 ["INFO", "UI", format ["Navigate %1", _page]] call comspec_atak_native_fnc_log;
 true

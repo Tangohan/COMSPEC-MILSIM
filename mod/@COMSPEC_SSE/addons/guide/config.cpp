@@ -86,6 +86,15 @@ class CfgHints {
             image = HINT_IMG;
             noImage = 0;
         };
+        class Countries {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_COUNTRIES_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_COUNTRIES_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_COUNTRIES_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_COUNTRIES_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
         class Extensions {
             displayName = "$STR_COMSPEC_SSE_GUIDE_EXTENSIONS_TITLE";
             displayNameShort = "$STR_COMSPEC_SSE_GUIDE_EXTENSIONS_TITLE";
@@ -104,11 +113,31 @@ class CfgHints {
             image = HINT_IMG;
             noImage = 0;
         };
+        // Nom des IA : le nom donné est celui de ses papiers (identité unique, fn_idIdentityOf), faux papiers, « Inconnu ».
+        class IdName {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_IDNAME_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_IDNAME_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_IDNAME_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_IDNAME_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
         class AiZone {
             displayName = "$STR_COMSPEC_SSE_GUIDE_AIZONE_TITLE";
             displayNameShort = "$STR_COMSPEC_SSE_GUIDE_AIZONE_TITLE";
             description = "$STR_COMSPEC_SSE_GUIDE_AIZONE_DESC";
             tip = "$STR_COMSPEC_SSE_GUIDE_AIZONE_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        // Lore de session Athena (module Identité › Synchroniser les IA avec Athena, fn_loreServer).
+        class Lore {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_LORE_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_LORE_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_LORE_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_LORE_TIP";
             arguments[] = {};
             image = HINT_IMG;
             noImage = 0;

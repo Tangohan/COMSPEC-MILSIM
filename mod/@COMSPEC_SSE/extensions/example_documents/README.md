@@ -5,6 +5,12 @@ dossier pour créer votre propre extension : il suffit de déclarer vos types da
 dans `CfgComspecDocumentExtensions` et de fournir vos textures. Le SSE fait le reste : délivrance, visionneuse,
 contrôle, Zeus, éditeur SSE, attribut Eden, menu « SSE ROLEPLAY · Extensions ».
 
+**Livrée dans le pack SSE** : `build_pbo.bat` du SSE empaquette ce dossier en `addons/comspec_sse_ext_example_documents.pbo`
+(même préfixe), publié avec le mod. L'extension y est **coupée par défaut** (`defaultOff = 1`) : un Zeus l'active dans la
+fenêtre « SSE ROLEPLAY · Extensions ». Il n'est donc plus utile de charger `@COMSPEC_SSE_ExampleDocuments` à côté du SSE
+(`build_extension.bat` reste pour tester une copie modifiée comme mod séparé ; ne chargez pas les deux en même temps).
+Le tuto « Comment ça marche » de la fenêtre (bouton **Aide**) reprend ces étapes et donne un `config.cpp` minimal à copier.
+
 ```
 example_documents/
   $PBOPREFIX$              z\comspec_sse_ext\addons\example_documents  (préfixe du PBO : chemin des textures)
@@ -131,6 +137,8 @@ le menu « SSE ROLEPLAY · Extensions » et qu'il peut activer ou désactiver.
 | `description` | `"Carte de presse et laissez-passer : …"` | Une phrase pour le volet de droite. |
 | `documents[]` | `{"press_card", "laissez_passer"}` | Clés de vos types (ajoutées à celles qui portent `extension = "<classe>"`). |
 | `preview` | `"...\data\tpl_press_card_recto_co.paa"` | Image d'aperçu (sinon le recto du premier modèle). |
+| `defaultOff` | `1` | Facultatif : extension coupée tant qu'un Zeus ne l'active pas (l'exemple livré dans le pack SSE). |
+| `builtin` | `1` | Réservé aux extensions du pack SSE : affichée « livrée avec le SSE ». |
 
 ```cpp
 class CfgComspecDocumentExtensions {

@@ -24,7 +24,7 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         $cfg = (string) file_get_contents($base . '/config.cpp');
         $dlg = (string) file_get_contents($base . '/display_diag_isolate.hpp');
         $launch = (string) file_get_contents($base . '/functions/fn_diagIsolateLaunch.sqf');
-        $esc = (string) file_get_contents($base . '/functions/fn_onInterruptLoad.sqf');
+        $esc = (string) file_get_contents($base . '/functions/fn_athenaConfigEntries.sqf');
 
         $probe = (string) file_get_contents($base . '/functions/fn_diagIsolateProbe.sqf');
         $snap = (string) file_get_contents($base . '/functions/fn_diagStatusSnapshot.sqf');
@@ -97,8 +97,12 @@ final class OverwatchDiagIsolateAssetTest extends TestCase
         self::assertStringContainsString('[20] call comspec_overwatch_connect_fnc_diagIsolateStart', $diagAction);
         self::assertStringContainsString('[55] call comspec_overwatch_connect_fnc_diagIsolateStart', $diagAction);
         self::assertStringContainsString("['full'] call comspec_overwatch_connect_fnc_diagAction;", $dlg);
-        self::assertStringContainsString('9606', $esc);
+        // Menu Échap : plus de barre Overwatch ; Dépannage liaison est une entrée de la Configuration ATHENA (ATAK natif).
+        self::assertStringContainsString('"ow_diag"', $esc);
+        self::assertStringContainsString('comspec_athena_config_entries', $esc);
+        self::assertStringContainsString('comspec_overwatch_connect_fnc_diagIsolateLaunch', $esc);
         self::assertStringContainsString('Dépannage liaison', $esc);
+        self::assertStringNotContainsString('Interrupt', (string) file_get_contents($base . '/CfgEventHandlers.hpp'));
         self::assertStringNotContainsString('ctrlSetText "COMSPEC Overwatch"', $esc);
 
         self::assertStringContainsString('snapshot → getPacketLossStats', $snap);

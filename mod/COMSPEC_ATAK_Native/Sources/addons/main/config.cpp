@@ -3,7 +3,7 @@ class CfgPatches {
     class comspec_atak_native_main {
         name="COMSPEC ATAK Native Standalone"; author="COMSPEC"; requiredVersion=2.14;
         requiredAddons[]={"A3_UI_F","A3_Weapons_F","A3_Modules_F","A3_Anims_F_Config_Sdr","cba_main","cba_xeh","3DEN","A3_Props_F_Exp_Military_Camps","A3_Structures_F_Heli_Items_Electronics","A3_Structures_F_Civ_InfoBoards","A3_Props_F_Orange_Civilian_InfoBoards"};
-        units[]={"Item_COMSPEC_ATAK_BuildingAntennaKit","Item_COMSPEC_ATAK_SatAntennaKit","Item_COMSPEC_ATAK_MastAntennaKit","Item_COMSPEC_ATAK_NetDetonator","Item_COMSPEC_ATAK_WristGps","Item_COMSPEC_ATAK_WristGpsItem","Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_MPU5","Item_COMSPEC_ATAK_EudCable","Item_COMSPEC_ATAK_RadioBattery","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","Item_COMSPEC_ATAK_Camera","Item_COMSPEC_ATAK_DockKit","Item_COMSPEC_ATAK_GarminWatch","Item_COMSPEC_ATAK_GarminWatchItem","Item_COMSPEC_ATAK_GarminWatch_Coyote","Item_COMSPEC_ATAK_GarminWatchItem_Coyote","Item_COMSPEC_ATAK_GarminWatch_FreeCandy","Item_COMSPEC_ATAK_GarminWatchItem_FreeCandy","Item_COMSPEC_ATAK_GarminWatch_USA","Item_COMSPEC_ATAK_GarminWatchItem_USA","Item_COMSPEC_ATAK_Phone","Item_COMSPEC_ATAK_Phone_S7_OD","Item_COMSPEC_ATAK_Phone_S7_Black","Item_COMSPEC_ATAK_Phone_S23","Item_COMSPEC_ATAK_Phone_iPhone","Item_COMSPEC_ATAK_Phone_IP17","Item_COMSPEC_ATAK_Phone_Rugged","Item_COMSPEC_ATAK_Phone_Sonim","Item_COMSPEC_ATAK_Phone_Tablet","COMSPEC_ATAK_ChargingDock","COMSPEC_ATAK_TocLaptop","COMSPEC_ATAK_Screen_Tripod","COMSPEC_ATAK_Screen_Desk","COMSPEC_ATAK_Screen_Wall","COMSPEC_ATAK_Screen_Dual","COMSPEC_ATAK_ProjScreen","COMSPEC_ATAK_ProjScreen_Wall","COMSPEC_ATAK_Projector","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset","COMSPEC_ATAK_Module_DatingProfile","COMSPEC_ATAK_Module_ZeusControl","COMSPEC_ATAK_Module_ZeusJammer","COMSPEC_ATAK_Module_Relay","COMSPEC_ATAK_Module_Mesh","COMSPEC_ATAK_Module_Screen","COMSPEC_ATAK_Module_TocScreen","COMSPEC_ATAK_Module_AiAtak"}; weapons[]={"COMSPEC_ATAK_BuildingAntennaKit","COMSPEC_ATAK_SatAntennaKit","COMSPEC_ATAK_MastAntennaKit","COMSPEC_ATAK_NetDetonator","COMSPEC_ATAK_Goniometer","COMSPEC_ATAK_KeyLoader","COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_MPU5","COMSPEC_ATAK_EudCable","COMSPEC_ATAK_RadioBattery","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Camera","COMSPEC_ATAK_DockKit","COMSPEC_ATAK_GarminWatch","COMSPEC_ATAK_GarminWatchItem","COMSPEC_ATAK_GarminWatch_Coyote","COMSPEC_ATAK_GarminWatchItem_Coyote","COMSPEC_ATAK_GarminWatch_FreeCandy","COMSPEC_ATAK_GarminWatchItem_FreeCandy","COMSPEC_ATAK_GarminWatch_USA","COMSPEC_ATAK_GarminWatchItem_USA","COMSPEC_ATAK_Phone","COMSPEC_ATAK_Phone_S7_OD","COMSPEC_ATAK_Phone_S7_Black","COMSPEC_ATAK_Phone_S23","COMSPEC_ATAK_Phone_iPhone","COMSPEC_ATAK_Phone_IP17","COMSPEC_ATAK_Phone_Rugged","COMSPEC_ATAK_Phone_Sonim","COMSPEC_ATAK_Phone_Tablet"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
+        units[]={"Item_COMSPEC_ATAK_BuildingAntennaKit","Item_COMSPEC_ATAK_SatAntennaKit","Item_COMSPEC_ATAK_MastAntennaKit","Item_COMSPEC_ATAK_NetDetonator","Item_COMSPEC_ATAK_WristGps","Item_COMSPEC_ATAK_WristGpsItem","Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_MPU5","Item_COMSPEC_ATAK_EudCable","Item_COMSPEC_ATAK_RadioBattery","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","Item_COMSPEC_ATAK_Camera","Item_COMSPEC_ATAK_DockKit","Item_COMSPEC_ATAK_GarminWatch","Item_COMSPEC_ATAK_GarminWatchItem","Item_COMSPEC_ATAK_GarminWatch_Coyote","Item_COMSPEC_ATAK_GarminWatchItem_Coyote","Item_COMSPEC_ATAK_GarminWatch_FreeCandy","Item_COMSPEC_ATAK_GarminWatchItem_FreeCandy","Item_COMSPEC_ATAK_GarminWatch_USA","Item_COMSPEC_ATAK_GarminWatchItem_USA","Item_COMSPEC_ATAK_Phone","Item_COMSPEC_ATAK_Phone_S7_OD","Item_COMSPEC_ATAK_Phone_S7_Black","Item_COMSPEC_ATAK_Phone_S23","Item_COMSPEC_ATAK_Phone_iPhone","Item_COMSPEC_ATAK_Phone_IP17","Item_COMSPEC_ATAK_Phone_Rugged","Item_COMSPEC_ATAK_Phone_Sonim","Item_COMSPEC_ATAK_Phone_Tablet","COMSPEC_ATAK_ChargingDock","COMSPEC_ATAK_TocLaptop","COMSPEC_ATAK_Screen_Tripod","COMSPEC_ATAK_Screen_Desk","COMSPEC_ATAK_Screen_Wall","COMSPEC_ATAK_Screen_Dual","COMSPEC_ATAK_Screen_Wall2x2","COMSPEC_ATAK_Screen_Wall2x2_Quad","COMSPEC_ATAK_Screen_Wall3x2","COMSPEC_ATAK_Screen_Wall3x2_Mixed","COMSPEC_ATAK_Screen_98","COMSPEC_ATAK_Screen_98_Stand","COMSPEC_ATAK_Screen_65_Ceiling","COMSPEC_ATAK_Screen_ClockStrip","COMSPEC_ATAK_Screen_NamePlate","COMSPEC_ATAK_ProjScreen","COMSPEC_ATAK_ProjScreen_Wall","COMSPEC_ATAK_Projector","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset","COMSPEC_ATAK_Module_DatingProfile","COMSPEC_ATAK_Module_ZeusControl","COMSPEC_ATAK_Module_ZeusJammer","COMSPEC_ATAK_Module_Relay","COMSPEC_ATAK_Module_Mesh","COMSPEC_ATAK_Module_Screen","COMSPEC_ATAK_Module_TocScreen","COMSPEC_ATAK_Module_TocHall","COMSPEC_ATAK_Module_AiAtak"}; weapons[]={"COMSPEC_ATAK_BuildingAntennaKit","COMSPEC_ATAK_SatAntennaKit","COMSPEC_ATAK_MastAntennaKit","COMSPEC_ATAK_NetDetonator","COMSPEC_ATAK_Goniometer","COMSPEC_ATAK_KeyLoader","COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_MPU5","COMSPEC_ATAK_EudCable","COMSPEC_ATAK_RadioBattery","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Camera","COMSPEC_ATAK_DockKit","COMSPEC_ATAK_GarminWatch","COMSPEC_ATAK_GarminWatchItem","COMSPEC_ATAK_GarminWatch_Coyote","COMSPEC_ATAK_GarminWatchItem_Coyote","COMSPEC_ATAK_GarminWatch_FreeCandy","COMSPEC_ATAK_GarminWatchItem_FreeCandy","COMSPEC_ATAK_GarminWatch_USA","COMSPEC_ATAK_GarminWatchItem_USA","COMSPEC_ATAK_Phone","COMSPEC_ATAK_Phone_S7_OD","COMSPEC_ATAK_Phone_S7_Black","COMSPEC_ATAK_Phone_S23","COMSPEC_ATAK_Phone_iPhone","COMSPEC_ATAK_Phone_IP17","COMSPEC_ATAK_Phone_Rugged","COMSPEC_ATAK_Phone_Sonim","COMSPEC_ATAK_Phone_Tablet"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
     };
 };
 // Langues du mod en plus du français (fn_langList). Un mod de traduction communautaire ajoute sa propre classe
@@ -36,13 +36,13 @@ class CfgComspecLanguages {
 class CfgFunctions {
     class comspec_atak_native { tag="comspec_atak_native";
         class core { file="z\comspec_atak_native\addons\main\functions\core";
-            class phoneOwn {}; class phoneServer {}; class log {}; class deviceGuard {}; class frameQueue {}; class nextFrame {}; class waitAndExec {}; class battery {}; class gpsFix {}; class pli {}; class aiAtak {}; class moduleAiAtak {}; class gpsPos {}; class weather {}; class stateInit {}; class storeSet {}; class profileSave {}; class schedulerStart {}; class schedulerStop {}; class schedulerTick {}; class debugDump {}; class deviceCatalog {}; class deviceScan {}; class hasDevice {}; class deviceDenied {}; class tenantRule {}; class pref {}; class tenantApply {}; class canUse {}; class batterySwap {}; class linkQuality {}; class perfAcc {}; class perfDll {}; class profiler {}; class deviceHealth {}; class deviceDamage {}; class deviceRepair {}; class phoneIdent {}; class phoneCarried {}; class ramUsage {}; class athenaPulse {}; class syncStats {}; class batteryItem {}; class aircrewTerminal {}; class repairStart {}; class clockFmt {}; class deviceImpact {}; class deviceReport {}; class screenDirt {}; class screenClean {}; class medShow {}; class medVitals {}; class integrityCheck {}; class startupCheck {}; class simSos {}; class saveProfile {}; class localCfg {}; class dupCheck {};
+            class phoneOwn {}; class phoneServer {}; class phoneSync {}; class log {}; class deviceGuard {}; class frameQueue {}; class nextFrame {}; class waitAndExec {}; class battery {}; class gpsFix {}; class pli {}; class aiAtak {}; class moduleAiAtak {}; class gpsPos {}; class weather {}; class stateInit {}; class storeSet {}; class profileSave {}; class schedulerStart {}; class schedulerStop {}; class schedulerTick {}; class debugDump {}; class deviceCatalog {}; class deviceScan {}; class hasDevice {}; class deviceDenied {}; class tenantRule {}; class pref {}; class tenantApply {}; class canUse {}; class batterySwap {}; class linkQuality {}; class perfAcc {}; class perfDll {}; class profiler {}; class perfLog {}; class deviceHealth {}; class deviceDamage {}; class deviceRepair {}; class phoneIdent {}; class phoneCarried {}; class ramUsage {}; class athenaPulse {}; class syncStats {}; class batteryItem {}; class aircrewTerminal {}; class repairStart {}; class clockFmt {}; class deviceImpact {}; class deviceReport {}; class screenDirt {}; class screenClean {}; class medShow {}; class medVitals {}; class integrityCheck {}; class startupCheck {}; class simSos {}; class saveProfile {}; class localCfg {}; class dupCheck {};
         };
         class ui { file="z\comspec_atak_native\addons\main\functions\ui";
             class appSpaces {}; class display {}; class open {}; class close {}; class hudToggle {}; class interactToggle {}; class orientationToggle {}; class phoneDrag {}; class formRender {}; class formValue {}; class formSet {}; class clickNext {}; class keyBlock {}; class keyPass {}; class keybinds {}; class fullAlert {}; class vibrate {}; class phoneShake {}; class dataBarEnabled {}; class displayLoad {}; class displayUnload {}; class layoutGet {}; class layoutApply {}; class layoutCols {}; class fontSet {}; class fontApply {}; class fontText {}; class navigate {}; class openApp {}; class back {}; class modeToggle {};
             class pageRender {}; class pageClear {}; class pageCtrl {}; class textFit {}; class titleFit {}; class texUsable {}; class tileCreate {}; class iconTint {}; class appList {}; class appBadge {}; class appFolders {}; class chatUnread {}; class dockRender {}; class launcherRender {}; class launcherFilter {}; class deviceOverlay {}; class appVisible {}; class appInstall {}; class accent {}; class theme {};
             class statusUpdate {}; class mobileQr {}; class inspectorUpdate {}; class unitCard {}; class abbrev {}; class notify {}; class notificationsRender {}; class notifCenter {}; class notifMeta {}; class powerFx {}; class overlayFront {}; class overlayRaise {}; class screenFx {}; class foreignHud {}; class screenSurface {};
-            class fx {}; class toast {}; class undoSnack {}; class miniInteract {}; class vehicleKeys {}; class buzzAlert {}; class quickSettings {}; class lockScreen {}; class tr {}; class langApply {}; class langList {}; class langResolve {}; class addSetting {}; class aceAction {}; class zenAction {}; class zenModule {}; class trMenu {}; class menuRelang {}; class keyRelang {}; class wallPath {};
+            class fx {}; class toast {}; class undoSnack {}; class miniInteract {}; class vehicleKeys {}; class buzzAlert {}; class quickSettings {}; class lockScreen {}; class tr {}; class athenaConfig {}; class langApply {}; class langList {}; class langResolve {}; class addSetting {}; class aceAction {}; class zenAction {}; class zenModule {}; class trMenu {}; class menuRelang {}; class keyRelang {}; class wallPath {};
         };
         class map { file="z\comspec_atak_native\addons\main\functions\map";
             class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class natoSymbol {}; class mapLabels {}; class mapHudRects {}; class mapMarkerText {}; class mapPlaceText {}; class mapGameMarkers {}; class mapTextW {}; class mapCtxMenu {}; class mapPing {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {}; class unitGroup {}; class gridRef {}; class mapZoom {}; class mapToolMenu {}; class mapToolRun {}; class markerAt {}; class markerCatalog {}; class markerEditOpen {}; class markerEditor {}; class markerEditSave {}; class markerDelete {}; class markerWeb {}; class markerNet {}; class markerWebSweep {}; class markerStroke {}; class mapMouseButtonUp {}; class mapDblClick {}; class mapUnfocus {}; class inspToggle {}; class markerPalette {}; class markerPaletteData {}; class markerPlace {}; class markerDeletable {}; class markerLabels {}; class markerAutoName {}; class sigintPoll {}; class reliefDraw {}; class meshDraw {}; class logisticsDraw {}; class ewDraw {}; class mapSearch {}; class gridParse {}; class mapStyle {}; class mapCtrl {}; class photoMap {}; class photoRelief {}; class textureKeep {}; class strokeSimplify {}; class strokeDraw {}; class strokeBar {}; class roadPath {}; class cardinal {}; class mapPrefs {};
@@ -102,7 +102,7 @@ class CfgFunctions {
             class vehicleTerminal {}; class vehicleGateway {};
         };
         class toc { file="z\comspec_atak_native\addons\main\functions\toc";
-            class tocPost {}; class pageToc {}; class tocAction {}; class tocLaptop {}; class tocScreen {}; class tocCam {}; class projector {}; class tocFeed {}; class tocPersist {}; class moduleTocScreen {};
+            class tocPost {}; class pageToc {}; class tocAction {}; class tocLaptop {}; class tocScreen {}; class tocCam {}; class projector {}; class tocFeed {}; class tocPersist {}; class moduleTocScreen {}; class tocRoom {}; class tocSat {}; class tocBoard {}; class tocMosaic {}; class tocHall {}; class moduleTocHall {}; class tocHallUi {}; class tocDraw {};
         };
         class datalink { file="z\comspec_atak_native\addons\main\functions\datalink";
             class dataSetup {}; class dataParseFiles {}; class dataServer {}; class dataAction {}; class dataInit {}; class dataOverlay {}; class pageDataLink {}; class zeusForm {}; class moduleContext {}; class moduleDataNode {}; class moduleDataFile {}; class moduleDataReset {}; class moduleDating {};
@@ -131,6 +131,10 @@ class CfgFunctions {
         };
         class zeus { file="z\comspec_atak_native\addons\main\functions\zeus";
             class zeusState {}; class zeusCentre {}; class zeusObject {}; class zeusFx {}; class zeusJam {}; class zeusServer {}; class zeusClient {}; class zeusOverlay {}; class zeusMenu {}; class moduleZeusControl {}; class moduleZeusJammer {};
+        };
+        // Traçage d'un numéro (app GE, onglet TRAÇAGE) : calculs purs, serveur qui fait foi, téléphone.
+        class trace { file="z\comspec_atak_native\addons\main\functions\trace";
+            class traceCalc {}; class traceServer {}; class traceAction {};
         };
         class dock { file="z\comspec_atak_native\addons\main\functions\dock";
             class dockServer {}; class dockVisual {}; class dockClient {}; class dockMenu {};
@@ -179,7 +183,7 @@ class COMSPEC_ATAK_Apps {
     class Sniper      { name="Sniper"; page="SNIPER"; section="Spécialités"; order=72; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_sniper.paa"; desc="Calculs de tir longue distance"; };
     class Breach      { name="Brèche"; page="BREACH"; section="Spécialités"; order=74; dock=0; wip=1; icon="\z\comspec_atak_native\addons\main\data\app_breach.paa"; desc="Préparation des brèches et entrées"; };
     class Explo       { name="Explosifs"; short="Explo"; page="EXPLO"; section="Spécialités"; order=76; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_explo.paa"; desc="Charges explosives et minuteries"; };
-    class Ew          { name="GE"; page="EW"; section="Spécialités"; order=78; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_ew.paa"; desc="Guerre électronique : détection et brouillage"; };
+    class Ew          { name="GE"; page="EW"; section="Spécialités"; order=78; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_ew.paa"; desc="Guerre électronique : détection, brouillage et traçage de numéros"; };
     class DroneDetect { name="Anti-drone"; short="C-UAS"; page="DRONEDETECT"; section="Spécialités"; order=80; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_dronedetect.paa"; desc="Détection des drones à proximité"; };
     class Intel       { name="FRS / FRM"; page="FRS"; section="Renseignement"; order=110; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_intel.paa"; desc="Fiches de renseignement FRS / FRM"; };
     class Reco        { name="Reco"; page="RECO"; section="Renseignement"; order=112; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_reco.paa"; desc="Comptes rendus de reconnaissance"; };
@@ -780,7 +784,7 @@ class CfgVehicles {
     class COMSPEC_ATAK_EdScreenSide { displayName="$STR_COMSPEC_ATAK_CFG_05AE3C3891"; tooltip="$STR_COMSPEC_ATAK_CFG_27C3139B5E"; property="COMSPEC_ATAK_EdScreenSide"; control="Combo"; typeName="STRING"; defaultValue="''"; expression="_this setVariable ['COMSPEC_ATAK_EdScreenSide', _value];"; \
         class Values { class All { name="$STR_COMSPEC_ATAK_CFG_B97AE3B4F9"; value=""; }; class West { name="BLUFOR"; value="WEST"; }; class East { name="OPFOR"; value="EAST"; }; class Guer { name="$STR_COMSPEC_ATAK_CFG_DE8D4F953A"; value="GUER"; }; class Civ { name="$STR_COMSPEC_ATAK_CFG_496B2073F0"; value="CIV"; }; }; }; \
     class COMSPEC_ATAK_EdScreenView { displayName="$STR_COMSPEC_ATAK_CFG_F498CD766E"; tooltip="$STR_COMSPEC_ATAK_CFG_92A2324457"; property="COMSPEC_ATAK_EdScreenView"; control="Combo"; typeName="STRING"; defaultValue="'SPLIT'"; expression="_this setVariable ['COMSPEC_ATAK_EdScreenView', _value];"; \
-        class Values { class Split { name="$STR_COMSPEC_ATAK_CFG_4593B0D445"; value="SPLIT"; }; class Map { name="$STR_COMSPEC_ATAK_CFG_B90B587171"; value="MAP"; }; class Feed { name="$STR_COMSPEC_ATAK_CFG_7B35D19C6C"; value="FEED"; }; class Toc { name="$STR_COMSPEC_ATAK_CFG_5ADFA17BF2"; short="TOC"; value="TOC"; }; }; }; \
+        class Values { class Split { name="$STR_COMSPEC_ATAK_CFG_4593B0D445"; value="SPLIT"; }; class Map { name="$STR_COMSPEC_ATAK_CFG_B90B587171"; value="MAP"; }; class Feed { name="$STR_COMSPEC_ATAK_CFG_7B35D19C6C"; value="FEED"; }; class Toc { name="$STR_COMSPEC_ATAK_CFG_5ADFA17BF2"; short="TOC"; value="TOC"; }; class Sat { name="$STR_COMSPEC_ATAK_CFG_TOCSCR_V_SAT"; value="SAT"; }; class Clock { name="$STR_COMSPEC_ATAK_CFG_TOCSCR_V_CLOCK"; value="CLOCK"; }; }; }; \
 }
     // Écrans TOC, vidéoprojecteur et toiles COMSPEC : vrais modèles du jeu (objets Apex, Helicopters, Laws of War, que
     // chaque joueur possède), aperçus Eden du jeu. Écrans (comspec_screen=1) : image sur la dalle 0, dalles superposées
@@ -873,6 +877,8 @@ class CfgVehicles {
         hiddenSelectionsTextures[]={""};
         hiddenSelectionsMaterials[]={"\z\comspec_atak_native\addons\items\data\comspec_proj_on.rvmat"};
     };
+    // Écrans de salle d'opérations du mod (murs d'images, 98", 65" suspendu, horloge, plaque) : toc_screens3d.hpp.
+    #include "toc_screens3d.hpp"
     // Vidéoprojecteur du jeu (fn_projector) : COMSPEC_ATAK_Proj [allumé, tableau] public (joueurs qui rejoignent compris).
     class COMSPEC_ATAK_Projector: Land_Projector_01_F {
         scope=2; scopeCurator=2; author="COMSPEC";
@@ -1075,6 +1081,14 @@ class CfgHints {
             image = "\z\comspec_atak_native\addons\main\data\app_ew.paa";
             arguments[] = {};
         };
+        // Traçage d'un numéro (app GE, onglet TRAÇAGE ; fn_traceAction).
+        class PhoneTrace {
+            displayName = "$STR_COMSPEC_ATAK_CFG_C09E0A401F";
+            displayNameShort = "$STR_COMSPEC_ATAK_CFG_096FB93AB8";
+            description = "$STR_COMSPEC_ATAK_CFG_5F9A1628F9";
+            image = "\z\comspec_atak_native\addons\main\data\app_ew.paa";
+            arguments[] = {};
+        };
     };
 };
 
@@ -1101,6 +1115,43 @@ class Cfg3DEN {
             onTerrainNew = "['watch'] call comspec_atak_native_fnc_relayEden";
         };
     };
+    // Téléphone d'une IA pour le traçage de numéro (fn_traceServer) : état et numéro, variables publiques posées par le serveur.
+    class Object {
+        class AttributeCategories {
+            class COMSPEC_ATAK_PhoneTraceCat {
+                displayName = "$STR_COMSPEC_ATAK_CFG_7A4749C0CC";
+                collapsed = 1;
+                class Attributes {
+                    class COMSPEC_ATAK_PhoneTrace {
+                        displayName = "$STR_COMSPEC_ATAK_CFG_E1D71C836D";
+                        tooltip = "$STR_COMSPEC_ATAK_CFG_0D33FDB471";
+                        property = "COMSPEC_ATAK_PhoneTrace";
+                        control = "Combo";
+                        expression = "if (isServer && {_value isNotEqualTo ''}) then { _this setVariable ['COMSPEC_ATAK_PhoneTrace', _value, true]; };";
+                        defaultValue = "''";
+                        typeName = "STRING";
+                        condition = "objectBrain";
+                        class values {
+                            class Auto { name = "$STR_COMSPEC_ATAK_CFG_D7DF9E941A"; value = ""; default = 1; };
+                            class On { name = "$STR_COMSPEC_ATAK_CFG_8779704739"; value = "on"; };
+                            class Off { name = "$STR_COMSPEC_ATAK_CFG_29BDD7A1CC"; value = "off"; };
+                            class Burner { name = "$STR_COMSPEC_ATAK_CFG_A8F1899708"; value = "burner"; };
+                        };
+                    };
+                    class COMSPEC_ATAK_PhoneNumber {
+                        displayName = "$STR_COMSPEC_ATAK_CFG_255B7BF1AB";
+                        tooltip = "$STR_COMSPEC_ATAK_CFG_531AB9FB36";
+                        property = "COMSPEC_ATAK_PhoneNumber";
+                        control = "Edit";
+                        expression = "if (isServer && {_value isNotEqualTo ''}) then { _this setVariable ['COMSPEC_ATAK_PhoneNumber', _value, true]; };";
+                        defaultValue = "''";
+                        typeName = "STRING";
+                        condition = "objectBrain";
+                    };
+                };
+            };
+        };
+    };
 };
 
 class Extended_PreStart_EventHandlers { class comspec_atak_native_main { init="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_preStart.sqf'"; }; };
@@ -1108,9 +1159,10 @@ class Extended_PreInit_EventHandlers { class comspec_atak_native_main { init="ca
 // Intro du mod sur l'écran de démarrage d'Arma (une fois par lancement du jeu), jamais sur le menu principal.
 // Marque COMSPEC (emblème, « OVERWATCH · ATAK NATIF », version) sur les chargements de mission.
 class Extended_DisplayLoad_EventHandlers {
-    // Menu Échap (solo et multijoueur) : bouton « Conditions réseau » (fn_netConfig), sous la barre COMSPEC d'Overwatch.
-    class RscDisplayInterrupt { comspec_atak_native_netcfg="['button', _this select 0] call comspec_atak_native_fnc_netConfig"; };
-    class RscDisplayMPInterrupt { comspec_atak_native_netcfg="['button', _this select 0] call comspec_atak_native_fnc_netConfig"; };
+    // Menu Échap (solo et multijoueur) : un seul bouton « ATHENA Configuration » (fn_athenaConfig), qui ouvre la fenêtre
+    // regroupant le diagnostic de la liaison, Réalisme et réseau, le SSE… L'ATAK natif en est l'hôte (XEH_preInit).
+    class RscDisplayInterrupt { comspec_atak_native_athenacfg="['button', _this select 0] call comspec_atak_native_fnc_athenaConfig"; };
+    class RscDisplayMPInterrupt { comspec_atak_native_athenacfg="['button', _this select 0] call comspec_atak_native_fnc_athenaConfig"; };
     class RscDisplayStart { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_introSplash.sqf'"; };
     class RscDisplayLoadMission { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_loadingBadge.sqf'"; };
     class RscDisplayLoading { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_loadingBadge.sqf'"; };

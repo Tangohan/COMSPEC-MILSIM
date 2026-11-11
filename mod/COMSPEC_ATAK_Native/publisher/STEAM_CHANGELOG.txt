@@ -1,3 +1,35 @@
+[h1]COMSPEC ATAK 4.4.0 Washington — salle TOC en jeu, sang sur l'écran, carte Classique, traçage d'un numéro / TOC room in game, blood on the screen, Classic map, number tracing[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Salle TOC prête[/b] : le module « Salle TOC complète » pose une salle déjà câblée : murs d'images, grands écrans (98 et 65 pouces, murs de 4 et 6 écrans), horloge, bureaux et PC. Les écrans se posent aussi un par un dans Eden et en Zeus.
+[*] [b]Écrans de la salle[/b] : vue satellite en direct (jour, vision nocturne, thermique), horloge ZULU, escouade, mosaïque des caméras, main courante, pertes et demandes. Au PC, onglet SALLE, cliquez un écran pour choisir ce qu'il montre et dessinez sur la carte : vos traits arrivent sur les téléphones.
+[*] [b]Sang sur l'écran[/b] : le téléphone se salit selon vos blessures, de quelques gouttes à un écran presque rouge. Réglage « Sang sur l'écran : quantité maximale ».
+[*] [b]Carte Classique[/b] : le fond CLASSIQUE est la vraie carte du jeu, la même qu'avec la touche M. Chaque fond a sa description sous les boutons.
+[*] [b]Carte plus fluide[/b] : le fond photo ou satellite se charge petit à petit et ne fige plus le jeu au zoom. Nouveau réglage « Mesure des performances (journal) » si le téléphone rame.
+[*] [b]Tracer un numéro[/b] : app GE, onglet TRAÇAGE, « TRACER LE NUMÉRO » : une zone apparaît sur la carte, petite en ville, large en campagne, téléphones des IA compris. Suivez-le, partagez-le au groupe ou au TOC.
+[*] [b]BFT[/b] : l'ORBAT d'Athena de votre unité s'affiche de nouveau ; s'il ne peut pas être lu, le téléphone dit pourquoi et montre les groupes de jeu.
+[*] [b]Apps Fichiers et Ma couverture[/b] : une recherche répond toujours (fiche, « Aucun enregistrement » ou erreur avec « Réessayer ») ; « Synchroniser avec Athena » récupère vos couvertures sans fichier à déplacer.
+[*] [b]Synchroniser avec le web[/b] : action du menu ACE du téléphone qui envoie son contenu à Athena. Rien ne part sans la case « Autoriser la synchronisation du téléphone avec Athena » dans les options.
+[*] [b]ATHENA Configuration[/b] : un seul bouton dans le menu Échap regroupe l'état de la liaison, le dépannage, le réalisme et les extensions du SSE.
+[*] [b]Centre Zeus[/b] : onglets lisibles, plus de boutons vides ni de textes qui se chevauchent, étiquettes réglées par cases à cocher.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Ready TOC room[/b]: the "Complete TOC room" module places a room already wired up: video walls, big screens (98 and 65 inches, walls of 4 and 6 screens), a clock, desks and laptops. Screens can also be placed one by one in Eden and in Zeus.
+[*] [b]Room screens[/b]: live satellite view (day, night vision, thermal), ZULU clock, squad, camera mosaic, duty log, casualties and requests. On the laptop, ROOM tab, click a screen to choose what it shows and draw on the map: your lines reach the phones.
+[*] [b]Blood on the screen[/b]: the phone gets dirty according to your wounds, from a few drops to an almost red screen. Setting "Blood on the screen: maximum amount".
+[*] [b]Classic map[/b]: the CLASSIC background is the real game map, the same as with the M key. Each background has its description under the buttons.
+[*] [b]Smoother map[/b]: the photo or satellite background loads bit by bit and no longer freezes the game when zooming. New setting "Performance measurement (log)" if the phone stutters.
+[*] [b]Trace a number[/b]: EW app, TRACE tab, "TRACE THE NUMBER": an area appears on the map, small in town, large in the countryside, AI phones included. Follow it, share it with the group or the TOC.
+[*] [b]BFT[/b]: your unit's Athena ORBAT shows again; if it cannot be read, the phone says why and shows the game groups.
+[*] [b]Files and My cover apps[/b]: a search always answers (record, "No record" or an error with "Retry"); "Sync with Athena" fetches your covers without moving a file.
+[*] [b]Sync with the web[/b]: phone ACE menu action that sends its content to Athena. Nothing leaves without the "Allow phone sync with Athena" box in the options.
+[*] [b]ATHENA Configuration[/b]: a single button in the Esc menu gathers the link state, troubleshooting, realism and SSE extensions.
+[*] [b]Zeus Centre[/b]: readable tabs, no more empty buttons or overlapping text, labels set with checkboxes.
+[/list]
+
 [h1]COMSPEC ATAK 4.3.0 Washington — drones armés, apps à l'horizontale, carte lisible, centre Zeus, app Fichiers / armed drones, landscape apps, readable map, Zeus centre, Records app[/h1]
 
 [h2]Français[/h2]

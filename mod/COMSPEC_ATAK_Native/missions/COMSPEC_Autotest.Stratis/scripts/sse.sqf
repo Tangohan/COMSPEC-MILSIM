@@ -255,10 +255,11 @@ AT_fnc_ia = {
 }, 120] call AT_fnc_run;
 
 // Fenêtre « IA de la zone » (centre Zeus de l'ATAK, fn_aiConfigOpen) : trois IA civiles, profils Athena simulés (ingérés comme le
-// paquet d'identité), une IA en fausse identité (vrai papier à un autre nom) : la liste donne le nom donné, le vrai nom et « Ment » ;
-// aucun bouton, titre ni en-tête coupé ; aperçu entier ; application d'un profil ; garder puis supprimer l'enregistrement ; capture.
+// paquet d'identité), une IA en fausse identité (vrai papier à un autre nom) : la liste donne le nom donné et l'icône « ment »,
+// le vrai nom est dans la ligne Zeus du milieu ; aucun bouton, titre ni en-tête coupé ; le vrai papier est dessiné dans
+// « Ce que verra le joueur » ; application d'un profil ; mémoire de la carte (garder puis supprimer) ; captures.
 ["sse_ia_zone", {
-    if (["comspec_sse_fnc_aiConfigOpen", "comspec_sse_fnc_editorAi", "comspec_sse_fnc_editorAiServer", "comspec_sse_fnc_aiWho", "comspec_sse_fnc_idAiConfig", "comspec_sse_fnc_idRegistry", "comspec_sse_fnc_idIssue"] call AT_fnc_nil) exitWith {};
+    if (["comspec_sse_fnc_aiConfigOpen", "comspec_sse_fnc_editorAi", "comspec_sse_fnc_editorAiServer", "comspec_sse_fnc_editorAiCard", "comspec_sse_fnc_aiWho", "comspec_sse_fnc_idAiConfig", "comspec_sse_fnc_idRegistry", "comspec_sse_fnc_idIssue"] call AT_fnc_nil) exitWith {};
     if (!isServer) exitWith { "serveur distant : profils Athena non simulables depuis ce poste" call AT_fnc_skip; };
     private _a = call AT_fnc_ia;
     private _b = call AT_fnc_ia;
@@ -287,57 +288,62 @@ AT_fnc_ia = {
     [[_a, _b, _c], getPosATL player] call comspec_sse_fnc_aiConfigOpen;
     private _ouvert = { !isNull (uiNamespace getVariable ["comspec_sse_editorDisplay", displayNull]) };
     if !([[_ouvert, 6] call AT_fnc_wait, "fenêtre IA de la zone non ouverte"] call AT_fnc_check) exitWith { call _menage; call AT_fnc_done; };
+    ["stop"] call comspec_sse_fnc_editorCoach;
     private _etat = { uiNamespace getVariable ["comspec_sse_editorAi", createHashMap] };
     [[{ (count ((call _etat) getOrDefault ["rows", []])) isEqualTo 3 }, 8] call AT_fnc_wait, "liste des IA non reçue (3 attendues)"] call AT_fnc_check;
     uiSleep 1;
     private _d = uiNamespace getVariable ["comspec_sse_editorDisplay", displayNull];
-    // État des profils : « 3 profils reçus d'Athena (paquet du 10/11 20:30) » ; liste : Générer + 3 profils.
-    private _statut = ctrlText (_d displayCtrl 94552);
-    [(_statut find "3") >= 0 && {(_statut find "20:30") >= 0}, format ["état des profils : « %1 »", _statut]] call AT_fnc_check;
-    [(lbSize (_d displayCtrl 94532)) isEqualTo 4, format ["liste des profils : %1 entrées (4 attendues)", lbSize (_d displayCtrl 94532)]] call AT_fnc_check;
-    // Ligne de _b : nom donné (papiers), vrai nom différent, vérité « Ment ».
-    private _l = _d displayCtrl 94510;
+    // Profils : 3 reçus, liste « Tirée au sort » + 3 profils, volet « Importer depuis Athena (3 profils) ».
+    [(count ((call _etat) getOrDefault ["profiles", []])) isEqualTo 3, "profils Athena non reçus (3 attendus)"] call AT_fnc_check;
+    [(lbSize (_d displayCtrl 95101)) isEqualTo 4, format ["liste des profils : %1 entrées (4 attendues)", lbSize (_d displayCtrl 95101)]] call AT_fnc_check;
+    [((ctrlText (_d displayCtrl 95109)) find "3") >= 0, format ["volet Athena : « %1 »", ctrlText (_d displayCtrl 95109)]] call AT_fnc_check;
+    // Ligne de _b : nom donné (papiers), jamais le nom d'unité Arma ; vérité « lies » et vrai nom différent dans la ligne reçue.
+    private _l = _d displayCtrl 95017;
     private _rb = -1;
     for "_i" from 0 to (((lnbSize _l) select 0) - 1) do { if ((_l lnbData [_i, 0]) isEqualTo (netId _b)) exitWith { _rb = _i; }; };
     if ([_rb >= 0, "IA en fausse identité absente de la liste"] call AT_fnc_check) then {
         private _donne = _l lnbText [_rb, 1];
-        private _vrai = _l lnbText [_rb, 2];
-        private _verite = _l lnbText [_rb, 3];
         [((toLower _donne) find "vlachos") >= 0, format ["nom donné : « %1 » (attendu Stavros VLACHOS)", _donne]] call AT_fnc_check;
-        [_vrai isNotEqualTo "" && {(toLower _vrai) isNotEqualTo (toLower _donne)}, format ["vrai nom absent ou identique au nom donné : « %1 »", _vrai]] call AT_fnc_check;
-        [_verite isEqualTo (localize "STR_COMSPEC_SSE_ED_TruthS_lies"), format ["vérité : « %1 » (attendu « %2 »)", _verite, localize "STR_COMSPEC_SSE_ED_TruthS_lies"]] call AT_fnc_check;
-        [(_l lnbText [_rb, 1]) isNotEqualTo (name _b), "nom d'unité Arma présenté comme nom de l'IA"] call AT_fnc_check;
+        [_donne isNotEqualTo (name _b), "nom d'unité Arma présenté comme nom de l'IA"] call AT_fnc_check;
+        private _ligne = ((call _etat) getOrDefault ["rows", []]) select { (_x select 0) isEqualTo (netId _b) };
+        [((_ligne param [0, []]) param [3, ""]) isEqualTo "lies" && {((_ligne select 0) select 2) isNotEqualTo ((_ligne select 0) select 1)}, "vérité ou vrai nom de la ligne faux"] call AT_fnc_check;
     };
-    // Aucun bouton, titre de section, en-tête de colonne ni libellé coupé.
-    { [_d displayCtrl _x, format ["contrôle %1", _x]] call AT_fnc_tient; } forEach [94503, 94504, 94506, 94576, 94523, 94524, 94525, 94505, 94518, 94521, 94520, 94530, 94550, 94553, 94556, 94533, 94535, 94559, 94562, 94511, 94513, 94514, 94515, 94517, 94541, 94544, 94546, 94545, 94577, 94578, 94579, 94580, 94581, 94582, 94583, 94584, 94566, 94567, 94568, 94569];
-    // Fiche de _b (cochée seule) : papiers reçus, titre au nom donné, vrai nom dans la ligne du dessous, aperçu entier.
+    // Fiche de _b (cochée seule) : papier reçu, titre au nom donné, vrai nom dans la ligne Zeus, papier dessiné à droite.
     ["checkNone"] call comspec_sse_fnc_editorAi;
     (call _etat) set ["checked", [netId _b]];
     (call _etat) set ["cur", netId _b];
     ["sheet"] call comspec_sse_fnc_editorAi;
     [[{ (count ((call _etat) getOrDefault ["docs", []])) isEqualTo 1 }, 6] call AT_fnc_wait, "papiers de l'IA non reçus (1 attendu)"] call AT_fnc_check;
+    [[{ (count ((_d displayCtrl 95503) getVariable ["comspec_sse_cardCtrls", []])) > 3 }, 6] call AT_fnc_wait, "papier non dessiné dans « Ce que verra le joueur »"] call AT_fnc_check;
     uiSleep 0.5;
-    [((toLower (ctrlText (_d displayCtrl 94530))) find "vlachos") >= 0, format ["titre de la fiche : « %1 »", ctrlText (_d displayCtrl 94530)]] call AT_fnc_check;
-    [((toLower (ctrlText (_d displayCtrl 94549))) find (toLower (_qui getOrDefault ["true", "?"]))) >= 0, format ["vrai nom absent de la fiche : « %1 »", ctrlText (_d displayCtrl 94549)]] call AT_fnc_check;
-    [_d displayCtrl 94530, "titre de la fiche"] call AT_fnc_tient;
-    [_d displayCtrl 94543, "aperçu « ce que verra le joueur »"] call AT_fnc_tient;
-    [((lnbSize (_d displayCtrl 94512)) select 0) isEqualTo 1, "liste des papiers vide"] call AT_fnc_check;
+    [((toLower (ctrlText (_d displayCtrl 95030))) find "vlachos") >= 0, format ["titre de la fiche : « %1 »", ctrlText (_d displayCtrl 95030)]] call AT_fnc_check;
+    [((toLower (ctrlText (_d displayCtrl 95031))) find (toLower (_qui getOrDefault ["true", "?"]))) >= 0, format ["vrai nom absent de la ligne Zeus : « %1 »", ctrlText (_d displayCtrl 95031)]] call AT_fnc_check;
+    [!ctrlShown (_d displayCtrl 95504), "phrase d'attente affichée par-dessus le papier dessiné"] call AT_fnc_check;
+    [_d displayCtrl 95508, "aperçu « au contrôle »"] call AT_fnc_tient;
+    ["tab", "docs"] call comspec_sse_fnc_editorAi;
+    uiSleep 0.3;
+    [((lnbSize (_d displayCtrl 95208)) select 0) isEqualTo 1, "liste des papiers vide"] call AT_fnc_check;
     ["ia_zone_fiche"] call AT_fnc_shot;
-    // Profil Athena appliqué à _b : la ligne passe sur PRF-9001.
-    private _pc = _d displayCtrl 94532;
+    ["tab", "id"] call comspec_sse_fnc_editorAi;
+    // Profil Athena appliqué à _b : la ligne passe sur PRF-9001 ; la fenêtre garde la sélection.
+    private _pc = _d displayCtrl 95101;
     for "_i" from 0 to ((lbSize _pc) - 1) do { if ((_pc lbData _i) isEqualTo "9001") exitWith { _pc lbSetCurSel _i; }; };
     [(_pc lbData (lbCurSel _pc)) isEqualTo "9001", "profil PRF-9001 non sélectionnable"] call AT_fnc_check;
+    [(call _etat) getOrDefault ["dirty", false], "réglage changé sans « Modifié, pas encore appliqué »"] call AT_fnc_check;
     ["applyChecked"] call comspec_sse_fnc_editorAi;
     private _applique = { (((call _etat) getOrDefault ["rows", []]) findIf { (_x select 0) isEqualTo (netId _b) && {(_x select 6) isEqualTo "PRF-9001"} }) >= 0 };
     [[_applique, 10] call AT_fnc_wait, "profil non appliqué (ligne sans PRF-9001 après Appliquer)"] call AT_fnc_check;
     uiSleep 0.5;
-    // Garder pour les prochaines parties : enregistré sur ce serveur (liste des gardés), puis l'enregistrement est supprimé.
+    [(netId _b) in ((call _etat) getOrDefault ["checked", []]), "sélection perdue après « Appliquer »"] call AT_fnc_check;
+    [!((call _etat) getOrDefault ["dirty", true]), "« Modifié » encore affiché après « Appliquer »"] call AT_fnc_check;
+    // Mémoire de la carte : gardée sur ce serveur (liste du volet), puis supprimée.
+    ["memory"] call comspec_sse_fnc_editorAi;
     ["keepChecked"] call comspec_sse_fnc_editorAi;
-    private _kc = _d displayCtrl 94519;
+    private _kc = _d displayCtrl 95806;
     private _garde = { (lbSize _kc) > 0 && {(_kc lbData 0) isNotEqualTo ""} };
-    if ([[_garde, 10] call AT_fnc_wait, "IA gardée absente de la liste des gardés"] call AT_fnc_check) then {
-        (format ["gardé : %1", _kc lbText 0]) call AT_fnc_info;
-        ["ia_zone_gardee"] call AT_fnc_shot;
+    if ([[_garde, 10] call AT_fnc_wait, "IA gardée absente de la mémoire de la carte"] call AT_fnc_check) then {
+        (format ["mémoire : %1", _kc lbText 0]) call AT_fnc_info;
+        ["ia_zone_memoire"] call AT_fnc_shot;
         ["unkeep", [player, _kc lbData 0]] call comspec_sse_fnc_editorAiServer;
         uiSleep 1;
         [(lbSize _kc) > 0 && {(_kc lbData 0) isEqualTo ""}, "enregistrement non supprimé"] call AT_fnc_check;
@@ -347,6 +353,128 @@ AT_fnc_ia = {
     call _menage;
     call AT_fnc_done;
 }, 120] call AT_fnc_run;
+
+// Fenêtre « IA de la zone », chaque état (liste vide, liste remplie, chaque onglet, volets Athena, Filtres et Mémoire, visite
+// guidée) : aucun texte coupé (AT_fnc_tient), aucune police sous la taille minimale (0.78 case de la grille), chaque liste
+// déroulante assez large pour son plus long libellé, aucun contrôle visible qui en chevauche un autre (rectangles à l'écran).
+["sse_ia_zone_etats", {
+    if (["comspec_sse_fnc_aiConfigOpen", "comspec_sse_fnc_editorAi", "comspec_sse_fnc_editorCoach", "comspec_sse_fnc_uiGrid"] call AT_fnc_nil) exitWith {};
+    ([] call comspec_sse_fnc_uiGrid) params ["", "", "_gw", "_gh"];
+    private _min = _gh * 0.78 * 0.99;
+    private _ouvert = { !isNull (uiNamespace getVariable ["comspec_sse_editorDisplay", displayNull]) };
+    private _etat = { uiNamespace getVariable ["comspec_sse_editorAi", createHashMap] };
+    // Posés par-dessus d'autres à dessein : fonds, invites sous un champ, icônes d'en-tête, repère d'onglet, groupes (papier,
+    // texte « au contrôle »), phrase d'attente du papier, panneau d'état vide et phrase « pas encore de papier » sur leur liste
+    // (leur propre disposition est vérifiée sans le jeu : tests/Unit/SseAiZoneWindowAssetTest.php).
+    private _dessous = [95000, 95007, 95008, 95013, 95015, 95018, 95019, 95020, 95021, 95022, 95036, 95037, 95113, 95114, 95502, 95503, 95504, 95507, 95600, 95700, 95701, 95800, 95801, 95209];
+    private _verifie = {
+        params ["_nom"];
+        private _d = uiNamespace getVariable ["comspec_sse_editorDisplay", displayNull];
+        private _vus = ((["idcs"] call comspec_sse_fnc_editorAi) apply { _d displayCtrl _x }) select { !isNull _x && {ctrlShown _x} };
+        private _m = _d ctrlCreate ["RscText", -1];
+        _m ctrlShow false;
+        {
+            private _c = _x;
+            private _t = ctrlType _c;
+            // Texte qui tient (une image n'a pas de texte : son chemin n'est pas mesuré).
+            if (_t in [0, 1, 13] && {!((ctrlStyle _c) in [48, 2096])}) then { [_c, format ["%1 · %2", _nom, ctrlIDC _c]] call AT_fnc_tient; };
+            if (_t in [0, 1, 2]) then { [(ctrlFontHeight _c) >= _min, format ["%1 · %2 : police %3 sous le minimum %4", _nom, ctrlIDC _c, ctrlFontHeight _c, _min]] call AT_fnc_check; };
+            // Liste déroulante : chaque libellé tient dans la case (flèche déduite, carrée).
+            if (_t isEqualTo 4) then {
+                (ctrlPosition _c) params ["", "", "_w", "_h"];
+                _m ctrlSetFont "RobotoCondensed";
+                _m ctrlSetFontHeight (ctrlFontHeight _c);
+                for "_i" from 0 to ((lbSize _c) - 1) do {
+                    _m ctrlSetText (_c lbText _i);
+                    [(ctrlTextWidth _m) <= (_w - _h * 0.75) * 1.02, format ["%1 · %2 : « %3 » coupé dans la liste", _nom, ctrlIDC _c, _c lbText _i]] call AT_fnc_check;
+                };
+            };
+        } forEach _vus;
+        ctrlDelete _m;
+        // Chevauchements : contrôles visibles d'une même couche (un volet ouvert est une couche à part, posée au-dessus).
+        private _volet = ((["idcs"] call comspec_sse_fnc_editorAi) select { _x >= 95700 && {_x < 95900} }) apply { _d displayCtrl _x };
+        private _couches = [_vus - _volet, _vus arrayIntersect _volet];
+        {
+            private _l = _x select { !((ctrlIDC _x) in _dessous) };
+            for "_i" from 0 to ((count _l) - 2) do {
+                for "_j" from (_i + 1) to ((count _l) - 1) do {
+                    (ctrlPosition (_l select _i)) params ["_x1", "_y1", "_w1", "_h1"];
+                    (ctrlPosition (_l select _j)) params ["_x2", "_y2", "_w2", "_h2"];
+                    private _e = _gh * 0.02;
+                    private _sur = (_x1 + _w1 - _e) > _x2 && {(_x2 + _w2 - _e) > _x1} && {(_y1 + _h1 - _e) > _y2} && {(_y2 + _h2 - _e) > _y1};
+                    [!_sur, format ["%1 : %2 chevauche %3", _nom, ctrlIDC (_l select _i), ctrlIDC (_l select _j)]] call AT_fnc_check;
+                };
+            };
+        } forEach _couches;
+    };
+    // 1. Liste vide (aucune unité donnée, point loin de tout) : panneau d'aide et ses deux boutons.
+    uiNamespace setVariable ["comspec_sse_editorAiUnits", []];
+    ["open", [[0, 0, 0], objNull, "ai"]] call comspec_sse_fnc_editor;
+    if !([[_ouvert, 6] call AT_fnc_wait, "fenêtre IA de la zone non ouverte"] call AT_fnc_check) exitWith { call AT_fnc_done; };
+    ["stop"] call comspec_sse_fnc_editorCoach;
+    [[{ (call _etat) getOrDefault ["scanned", false] }, 8] call AT_fnc_wait, "réponse du serveur non reçue"] call AT_fnc_check;
+    uiSleep 0.5;
+    private _d = uiNamespace getVariable ["comspec_sse_editorDisplay", displayNull];
+    if ((count ((call _etat) getOrDefault ["rows", []])) isEqualTo 0) then {
+        [ctrlShown (_d displayCtrl 95019) && {ctrlShown (_d displayCtrl 95021)}, "état vide sans son panneau d'aide"] call AT_fnc_check;
+        "liste vide" call _verifie;
+        ["ia_zone_vide"] call AT_fnc_shot;
+    } else { "IA autour de [0,0] : état vide non vérifié" call AT_fnc_info; };
+    // 2. Liste remplie, chaque onglet, puis les volets et la visite guidée.
+    private _a = call AT_fnc_ia;
+    private _b = call AT_fnc_ia;
+    _b setPosATL (player getPos [3.5, (getDir player) + 35]);
+    uiSleep 0.5;
+    ["scanUnits", [_a, _b]] call comspec_sse_fnc_editorAi;
+    [[{ (count ((call _etat) getOrDefault ["rows", []])) isEqualTo 2 }, 8] call AT_fnc_wait, "liste des IA non reçue (2 attendues)"] call AT_fnc_check;
+    ["checkAll"] call comspec_sse_fnc_editorAi;
+    uiSleep 0.5;
+    "liste remplie" call _verifie;
+    {
+        ["tab", _x] call comspec_sse_fnc_editorAi;
+        uiSleep 0.4;
+        (format ["onglet %1", _x]) call _verifie;
+        [format ["ia_zone_onglet_%1", _x]] call AT_fnc_shot;
+    } forEach ["id", "docs", "beh", "side"];
+    ["tab", "id"] call comspec_sse_fnc_editorAi;
+    ["fold"] call comspec_sse_fnc_editorAi;
+    uiSleep 0.3;
+    "volet Athena" call _verifie;
+    ["fold"] call comspec_sse_fnc_editorAi;
+    ["filters"] call comspec_sse_fnc_editorAi;
+    uiSleep 0.3;
+    [!ctrlEnabled (_d displayCtrl 95017), "liste cliquable sous le volet Filtres"] call AT_fnc_check;
+    "volet Filtres" call _verifie;
+    ["ia_zone_filtres"] call AT_fnc_shot;
+    ["filters"] call comspec_sse_fnc_editorAi;
+    ["memory"] call comspec_sse_fnc_editorAi;
+    uiSleep 0.3;
+    "volet Mémoire de la carte" call _verifie;
+    ["memory"] call comspec_sse_fnc_editorAi;
+    // Visite guidée : bulle à côté de sa cible (jamais dessus), texte et boutons entiers, aucun voile.
+    ["coach"] call comspec_sse_fnc_editorAi;
+    for "_s" from 1 to 3 do {
+        uiSleep 0.4;
+        [["open"] call comspec_sse_fnc_editorCoach, format ["visite guidée fermée avant l'étape %1", _s]] call AT_fnc_check;
+        // Cible = l'intérieur du cadre vert (haut 95900, droite 95903).
+        (ctrlPosition (_d displayCtrl 95900)) params ["_ox", "_oy"];
+        (ctrlPosition (_d displayCtrl 95903)) params ["_rx", "", "", "_rh"];
+        private _tx = _ox + _gw * 0.15;
+        private _ty = _oy + _gh * 0.15;
+        private _tb = _oy + _rh - _gh * 0.15;
+        (ctrlPosition (_d displayCtrl 95905)) params ["_bx", "_by", "_bw", "_bh"];
+        [!((_bx + _bw) > _tx && {_rx > _bx} && {(_by + _bh) > _ty} && {_tb > _by}), format ["étape %1 : la bulle couvre sa cible", _s]] call AT_fnc_check;
+        { [_d displayCtrl _x, format ["visite %1 · %2", _s, _x]] call AT_fnc_tient; } forEach [95907, 95908, 95909, 95910];
+        [format ["ia_zone_visite_%1", _s]] call AT_fnc_shot;
+        ["next"] call comspec_sse_fnc_editorCoach;
+    };
+    [!(["open"] call comspec_sse_fnc_editorCoach), "visite guidée encore ouverte après « Terminer »"] call AT_fnc_check;
+    [profileNamespace getVariable ["comspec_sse_aiZoneCoach", false], "visite terminée non notée dans le profil"] call AT_fnc_check;
+    ["close"] call comspec_sse_fnc_editor;
+    [[{ !(call _ouvert) }, 4] call AT_fnc_wait, "fenêtre non fermée"] call AT_fnc_check;
+    { deleteVehicle _x; } forEach [_a, _b];
+    call AT_fnc_done;
+}, 150] call AT_fnc_run;
 
 // App Ma couverture : fiche en cache. Réouverture dans la minute = aucune nouvelle demande au serveur ; Actualiser et
 // Demander la mise à jour en envoient une ; fiche inchangée = réponse courte (coverSame, le cache est gardé et complété).
@@ -541,7 +669,10 @@ AT_fnc_notifGarde = {
 
 ["sse_extension_exemple", {
     if (["comspec_sse_fnc_idDocTypes", "comspec_sse_fnc_idIssue"] call AT_fnc_nil) exitWith {};
-    if !(isClass (configFile >> "CfgPatches" >> "comspec_sse_ext_example_documents")) exitWith { "extension d'exemple non chargée (mod @COMSPEC_SSE_ExampleDocuments absent)" call AT_fnc_skip; };
+    if !(isClass (configFile >> "CfgPatches" >> "comspec_sse_ext_example_documents")) exitWith { "extension d'exemple absente (comspec_sse_ext_example_documents.pbo pas dans le pack SSE)" call AT_fnc_skip; };
+    // Livrée dans le pack SSE, coupée par défaut (defaultOff = 1) : active pour l'étape, recoupée à la fin.
+    [(["defaultOff"] call comspec_sse_fnc_idDocTypes) isEqualTo ["example_documents"], "extension d'exemple pas coupée par défaut (defaultOff)"] call AT_fnc_check;
+    if (!isNil "comspec_sse_fnc_docExtServer") then { ["set", ["example_documents", true]] call comspec_sse_fnc_docExtServer; uiSleep 1; };
     private _exts = ["extensions"] call comspec_sse_fnc_idDocTypes;
     (format ["extensions détectées : %1", _exts apply { format ["%1 %2 (%3 modèles, %4)", _x select 1, _x select 3, count (_x select 5), ["coupée", "active"] select (_x select 7)] }]) call AT_fnc_info;
     [(_exts findIf { (_x select 0) isEqualTo "example_documents" }) >= 0, "extension example_documents non détectée"] call AT_fnc_check;
@@ -567,6 +698,7 @@ AT_fnc_notifGarde = {
         ["set", ["example_documents", true]] call comspec_sse_fnc_docExtServer;
         uiSleep 1;
         ["press_card" in (["list", [""]] call comspec_sse_fnc_idDocTypes), "extension rallumée : la carte de presse n'est pas servie"] call AT_fnc_check;
+        ["set", ["example_documents", false]] call comspec_sse_fnc_docExtServer;
     } else { "fn_docExtServer absente de ce build" call AT_fnc_info; };
     if (!isNil "comspec_sse_fnc_docExtOpen") then {
         [] call comspec_sse_fnc_docExtOpen;
@@ -575,3 +707,86 @@ AT_fnc_notifGarde = {
     deleteVehicle _u;
     call AT_fnc_done;
 }, 120] call AT_fnc_run;
+
+// Fenêtre « SSE ROLEPLAY · Extensions » : aucun texte coupé, aucun contrôle sur un autre, dans les trois vues (liste,
+// aucune extension, tuto et ses 10 étapes) ; « Copier l'exemple » remplit le presse-papiers (solo) et le dit dans la fenêtre.
+AT_fnc_extVerif = {
+    params ["_etat"];
+    private _d = findDisplay 93900;
+    if (isNull _d) exitWith { [false, format ["%1 : fenêtre fermée", _etat]] call AT_fnc_check };
+    private _fond = ["Dim", "Back", "Head", "Line", "RightPanel", "ReadBack", "Probe"];
+    private _vis = (allControls _d) select {
+        private _g = ctrlParentControlsGroup _x;
+        ctrlShown _x && {!((ctrlClassName _x) in _fond)} && {isNull _g || {ctrlShown _g}} && {((ctrlPosition _x) select 2) > 0}
+    };
+    // Texte d'un groupe défilant : sa hauteur suit le texte, seul le groupe compte.
+    { if ((ctrlType _x) in [0, 1, 13, 16] && {isNull (ctrlParentControlsGroup _x)}) then { [_x, format ["%1 : %2", _etat, ctrlClassName _x]] call AT_fnc_tient; }; } forEach _vis;
+    private _top = _vis select { isNull (ctrlParentControlsGroup _x) && {(ctrlClassName _x) isNotEqualTo "ctrlButton"} };
+    private _n = count _top;
+    for "_i" from 0 to (_n - 2) do {
+        (ctrlPosition (_top select _i)) params ["_ax", "_ay", "_aw", "_ah"];
+        for "_j" from (_i + 1) to (_n - 1) do {
+            (ctrlPosition (_top select _j)) params ["_bx", "_by", "_bw", "_bh"];
+            private _ix = ((_ax + _aw) min (_bx + _bw)) - (_ax max _bx);
+            private _iy = ((_ay + _ah) min (_by + _bh)) - (_ay max _by);
+            [_ix < 0.002 || {_iy < 0.002}, format ["%1 : %2 sur %3", _etat, ctrlClassName (_top select _i), ctrlClassName (_top select _j)]] call AT_fnc_check;
+        };
+    };
+};
+["sse_extensions_fenetre", {
+    if (["comspec_sse_fnc_docExtWindow", "comspec_sse_fnc_docExtOpen"] call AT_fnc_nil) exitWith {};
+    (format ["résolution %1", getResolution]) call AT_fnc_info;
+    uiNamespace setVariable ["comspec_sse_docExtTestEmpty", false];
+    [] call comspec_sse_fnc_docExtOpen;
+    if !([[{ !isNull findDisplay 93900 }, 6] call AT_fnc_wait, "fenêtre Extensions non ouverte"] call AT_fnc_check) exitWith { call AT_fnc_done; };
+    uiSleep 0.5;
+    private _d = findDisplay 93900;
+    [(["view"] call comspec_sse_fnc_docExtWindow) isEqualTo "list", "vue liste attendue (extension d'exemple livrée)"] call AT_fnc_check;
+    ["liste"] call AT_fnc_extVerif;
+    ["extensions_liste"] call AT_fnc_shot;
+    // Aucune extension : état vide à la place des volets, bouton « Ouvrir le tuto ».
+    uiNamespace setVariable ["comspec_sse_docExtTestEmpty", true];
+    ["refresh"] call comspec_sse_fnc_docExtWindow;
+    uiSleep 0.3;
+    [(["view"] call comspec_sse_fnc_docExtWindow) isEqualTo "empty", "vue vide attendue"] call AT_fnc_check;
+    [ctrlShown (_d displayCtrl 93952) && {!ctrlShown (_d displayCtrl 93910)}, "état vide : bouton Ouvrir le tuto absent ou liste encore affichée"] call AT_fnc_check;
+    ["vide"] call AT_fnc_extVerif;
+    ["extensions_vide"] call AT_fnc_shot;
+    ["help", "tuto"] call comspec_sse_fnc_docExtWindow;
+    uiNamespace setVariable ["comspec_sse_docExtTestEmpty", false];
+    uiSleep 0.3;
+    [(["view"] call comspec_sse_fnc_docExtWindow) isEqualTo "tuto", "Ouvrir le tuto : vue tuto attendue"] call AT_fnc_check;
+    private _steps = _d displayCtrl 93960;
+    [(lbSize _steps) isEqualTo 10, format ["tuto : %1 étapes au lieu de 10", lbSize _steps]] call AT_fnc_check;
+    for "_i" from 0 to ((lbSize _steps) - 1) do {
+        _steps lbSetCurSel _i;
+        uiSleep 0.2;
+        [format ["tuto %1", _i + 1]] call AT_fnc_extVerif;
+        private _txt = (_d displayCtrl 93961) controlsGroupCtrl 93962;
+        [(ctrlTextHeight _txt) <= ((ctrlPosition _txt) select 3) * 1.01, format ["tuto %1 : texte plus haut que sa zone défilante", _i + 1]] call AT_fnc_check;
+        [(ctrlShown (_d displayCtrl 93963)) isEqualTo (_i isEqualTo 4), format ["tuto %1 : bouton Copier l'exemple mal affiché", _i + 1]] call AT_fnc_check;
+        if (_i isEqualTo 4) then { ["extensions_tuto_config"] call AT_fnc_shot; };
+    };
+    _steps lbSetCurSel 4;
+    uiSleep 0.2;
+    ["copy"] call comspec_sse_fnc_docExtWindow;
+    if (!isMultiplayer) then {
+        [copyFromClipboard isEqualTo (["skeleton"] call comspec_sse_fnc_docExtWindow), "Copier l'exemple : presse-papiers différent du config.cpp affiché"] call AT_fnc_check;
+    };
+    [(ctrlText (_d displayCtrl 93924)) isNotEqualTo "", "Copier l'exemple : rien sur la ligne d'état"] call AT_fnc_check;
+    ["copie"] call AT_fnc_extVerif;
+    ["help"] call comspec_sse_fnc_docExtWindow;
+    uiSleep 0.3;
+    [(["view"] call comspec_sse_fnc_docExtWindow) isEqualTo "list", "bouton Extensions : retour à la liste attendu"] call AT_fnc_check;
+    closeDialog 0;
+    call AT_fnc_done;
+}, 120] call AT_fnc_run;
+
+// Pays réels des papiers (registre CfgComspecCountries) : registre, clés des numéros, MRZ OACI (fn_idCountrySelfTest).
+["sse_pays_reels", {
+    if (["comspec_sse_fnc_idCountrySelfTest"] call AT_fnc_nil) exitWith {};
+    ([] call comspec_sse_fnc_idCountrySelfTest) params ["_ko", "_info"];
+    { _x call AT_fnc_info; } forEach _info;
+    { [false, _x] call AT_fnc_check; } forEach _ko;
+    call AT_fnc_done;
+}, 30] call AT_fnc_run;

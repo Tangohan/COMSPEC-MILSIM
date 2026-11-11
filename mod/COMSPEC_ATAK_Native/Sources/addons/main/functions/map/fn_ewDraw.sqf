@@ -27,15 +27,27 @@ private _none = "#(argb,8,8,3)color(0,0,0,0)";
     _map drawIcon [_none, _c, _from getPos [_b1, _brg], 0, 0, 0, format ["%1 %2°", _kind call comspec_atak_native_fnc_tr, round _brg], 1, 0.024 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), (COMSPEC_ATAK_FontSet select 1), "right"];
     _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", _c, _from, 10, 10, 0, "", 0];
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_EwBearings", []]);
-// Géolocalisations : cercle d'incertitude orange, plein si le suivi est actif.
+// Numéros tracés (fn_traceAction) : cercle d'incertitude orange, plein si le suivi est actif ; dernière position connue
+// (éteint, brouillé, hors couverture) en gris, cercle qui grandit avec son âge ; positions précédentes reliées.
+private _clock = [time, serverTime] select isMultiplayer;
+private _grow = (missionNamespace getVariable ["comspec_atak_native_trace_grow", 1.5]) max 0;
 {
     private _p = _x getOrDefault ["pos", []];
     if ((count _p) < 2) then { continue; };
-    private _rgb = [[0.95, 0.67, 0.20], [0.6, 0.6, 0.6]] select ((_x getOrDefault ["status", ""]) isNotEqualTo "OK");
+    private _live = (_x getOrDefault ["status", ""]) in ["OK", "SOS", "PENDING"];
+    private _rgb = [[0.6, 0.6, 0.6], [0.95, 0.67, 0.20]] select _live;
+    private _age = (_clock - (_x getOrDefault ["at", _clock])) max 0;
     private _r = (_x getOrDefault ["rad", 100]) max 10;
+    if (!_live) then { _r = ["aged", [_r, _age, _grow, 5000]] call comspec_atak_native_fnc_traceCalc; };
+    private _h = _x getOrDefault ["hist", []];
+    for "_k" from 1 to ((count _h) - 1) do {
+        _map drawLine [(_h select (_k - 1)) select 0, (_h select _k) select 0, _rgb + [0.45]];
+        _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", _rgb + [0.5], (_h select (_k - 1)) select 0, 7, 7, 0, "", 0];
+    };
     _map drawEllipse [_p, _r, _r, 0, _rgb + [0.95], ""];
     _map drawEllipse [_p, _r, _r, 0, _rgb + [[0.08, 0.18] select (_x getOrDefault ["track", false])], _fill];
-    _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", _rgb + [1], _p, 12, 12, 0, (format ["GÉOLOC %1 · %2", _x get "q", _x getOrDefault ["hour", ""]]) call comspec_atak_native_fnc_tr, 1, 0.026 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), (COMSPEC_ATAK_FontSet select 1), "right"];
+    private _lbl = [format ["Tracé : %1 · dernière position, il y a %2 min", _x get "q", floor (_age / 60)], format ["Tracé : %1 · %2", _x get "q", _x getOrDefault ["hour", ""]]] select _live;
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa", _rgb + [1], _p, 14, 14, 0, _lbl call comspec_atak_native_fnc_tr, 1, 0.026 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), (COMSPEC_ATAK_FontSet select 1), "right"];
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_GeoTracks", []]);
 private _now = [time, serverTime] select isMultiplayer;
 private _side = str side group player;

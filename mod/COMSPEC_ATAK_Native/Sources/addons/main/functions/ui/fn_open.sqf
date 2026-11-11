@@ -6,6 +6,9 @@
 params [["_interactive", true]];
 if (!hasInterface) exitWith { false };
 disableSerialization;
+// Mesure des performances (fn_perfLog) : chronomètre de l'ouverture, de l'appui à la première image.
+private _perfLog = missionNamespace getVariable ["COMSPEC_ATAK_PerfLog", false];
+if (_perfLog) then { ["openStart", _interactive] call comspec_atak_native_fnc_perfLog; };
 if (isNil { uiNamespace getVariable "COMSPEC_ATAK_State" }) then { [] call comspec_atak_native_fnc_stateInit; };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 // Réouverture en main d'un téléphone déjà en main (remis au premier plan, fn_interactToggle) : l'interaction avec la
@@ -35,7 +38,9 @@ if (_interactive) exitWith {
     // ouvert sur 46, le téléphone restait dessous, invisible, souris et commandes de vol prises (fn_vehicleKeys, 2.9.41).
     private _parent = ["parent"] call comspec_atak_native_fnc_vehicleKeys;
     if (isNull _parent) exitWith { ["ERROR", "UI", "No parent display"] call comspec_atak_native_fnc_log; false };
+    private _perfC = diag_tickTime;
     private _disp = _parent createDisplay "COMSPEC_RscDisplayATAK";
+    if (_perfLog) then { ["phase", ["création de l'écran (scripts d'ouverture compris)", _perfC]] call comspec_atak_native_fnc_perfLog; };
     if (isNull _disp) then { ["WARNING", "ATAK", format ["Téléphone en main impossible à ouvrir sur la fenêtre IDD %1", ctrlIDD _parent]] call comspec_atak_native_fnc_log; };
     // Téléphone en main : les raccourcis CBA ne passent plus. Principal, orientation et position relus ici
     // (porter, prendre en main et zoom : fn_displayLoad).
@@ -68,5 +73,7 @@ if (_interactive) exitWith {
 };
 // Style « porté » JPC : l'ATAK s'affiche sur l'écran 3D de la tablette du gilet (fn_jpcScreen), sinon miniature.
 if (["active"] call comspec_atak_native_fnc_jpcScreen) exitWith { ["open"] call comspec_atak_native_fnc_jpcScreen };
+private _perfC = diag_tickTime;
 ("COMSPEC_ATAK_Hud" call BIS_fnc_rscLayer) cutRsc ["COMSPEC_RscTitleATAK", "PLAIN", 0, false];
+if (_perfLog) then { ["phase", ["création de l'écran (scripts d'ouverture compris)", _perfC]] call comspec_atak_native_fnc_perfLog; };
 true

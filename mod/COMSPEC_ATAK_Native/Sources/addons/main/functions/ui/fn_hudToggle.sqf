@@ -4,6 +4,8 @@
     - en main (grand) : le téléphone redevient la miniature (il ne se range pas).
 */
 if (!hasInterface) exitWith { false };
+// Mesure des performances (fn_perfLog) : l'ouverture se chronomètre depuis l'appui.
+if (missionNamespace getVariable ["COMSPEC_ATAK_PerfLog", false]) then { ["key"] call comspec_atak_native_fnc_perfLog; };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _d = [] call comspec_atak_native_fnc_display;
 // Téléphone en train de redescendre (4.2.1, fn_close animé) : rangé tout de suite.

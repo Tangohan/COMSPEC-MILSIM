@@ -7,7 +7,8 @@ la classe du catalogue (héritage), scope = 1 : invisibles dans l'Arsenal et le 
 
   python tools/gen_id_instances.py          # régénère le fichier (versionné)
   python tools/gen_id_instances.py --check  # échoue si le fichier versionné diffère
-Stock (décision Lot 1) : 512 cartes, 256 passeports, 256 permis, 256 cartes militaires. Changer aussi STOCK dans fn_idRegistry.sqf.
+Stock (décision Lot 1) : 512 cartes, 256 passeports, 256 permis, 256 cartes militaires ; pays réels : 128 titres de séjour,
+128 certificats d'immatriculation. Changer aussi STOCK dans fn_idRegistry.sqf.
 
 Extension de documents (addon tiers, voir extensions/example_documents/README.md) : même principe, dans son dossier.
   python tools/gen_id_instances.py --extension extensions/example_documents --stock COMSPEC_EXT_PressCard=64,COMSPEC_EXT_LaissezPasser=64
@@ -17,7 +18,8 @@ Extension de documents (addon tiers, voir extensions/example_documents/README.md
 import os
 import sys
 
-STOCK = [("COMSPEC_ID_Card", 512), ("COMSPEC_ID_Passport", 256), ("COMSPEC_ID_DrivingLicense", 256), ("COMSPEC_ID_MilitaryCard", 256)]
+STOCK = [("COMSPEC_ID_Card", 512), ("COMSPEC_ID_Passport", 256), ("COMSPEC_ID_DrivingLicense", 256), ("COMSPEC_ID_MilitaryCard", 256),
+         ("COMSPEC_ID_ResidencePermit", 128), ("COMSPEC_ID_VehicleRegistration", 128)]
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "addons", "identity", "CfgWeapons_instances.hpp")
 

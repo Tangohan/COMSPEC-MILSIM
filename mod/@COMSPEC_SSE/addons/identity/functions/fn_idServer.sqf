@@ -16,7 +16,8 @@
       vehicle  [moi, véhicule]           contrôle des occupants        dismount [moi, véhicule]  faire descendre
       kit      [moi, ancien corps | objNull]   papiers du kit Athena (connexion, JIP, respawn ; Steam ID lu ici)
       paperMoved [moi, classe, conteneur, take | put]   j'ai pris / posé un papier (fn_idPaperTrack, sans anti-flood)
-      give / report / truth              Zeus (curateur) : donner des papiers, signaler, vraie identité
+      give / report / truth              Zeus (curateur) : donner des papiers, signaler, papiers vus par le Zeus
+                                         (truth [moi, personne | objet] -> zeusPapers, fenêtre fn_idZeusPapers)
       pack     [moi, texte, full | self] paquet Athena relayé (complet : Zeus ; sinon ses seuls papiers)
       packFail [moi, full | self, code]  relais impossible (raison montrée dans Ma couverture)
       aiCfg    [moi, sous-op, args]      Zeus : fenêtre de configuration des IA (fn_idAiConfig, éditeur SSE › IA)
@@ -101,8 +102,14 @@ private _pub = {
     { _p set [_x select 0, _d getOrDefault [_x select 0, ""]]; } forEach ((["get", _d getOrDefault ["type", ""]] call comspec_sse_fnc_idDocTypes) getOrDefault ["inputs", []]);
     _p set ["countryName", _c getOrDefault ["name", _d get "country"]];
     _p set ["countryNameEn", _c getOrDefault ["nameEn", ""]];
-    // Pays réel stylisé : gabarit générique de sa zone (europe | americas | other), jamais un vrai modèle.
+    // Pays réel stylisé d'un paquet Athena : gabarit générique de sa zone (europe | americas | other), jamais un vrai
+    // modèle. Pays réel du registre : « bare » (gabarit du pays ou gabarit neutre, titre et étiquettes posés en jeu).
     _p set ["zone", [_c getOrDefault ["zone", ""], ""] select !(_c getOrDefault ["realSim", false])];
+    if ((_c getOrDefault ["tier", ""]) in ["full", "generic"]) then {
+        _p set ["zone", "bare"];
+        { _p set [_x, _d getOrDefault [_x, ""]]; } forEach ["natText", "height", "state", "permit", "plate", "vehicle", "vin", "holder", "firstReg", "city", "postal", "region"];
+        _p set ["personal", ["", _d getOrDefault ["personal", ""]] select (_d getOrDefault ["personalPrint", false])];
+    };
     _p set ["chipLogo", _d getOrDefault ["chipExpected", false]];
     _p set ["mrz", [_d] call comspec_sse_fnc_idMrz];
     // Défauts physiques : visibles par qui regarde bien (le constat N0, lui, dépend du tirage).
@@ -316,6 +323,9 @@ switch (_op) do {
             ["comspec_sse_idChecked", [_me, _d get "id", 0, _res]] call CBA_fnc_localEvent;
         };
         if (!_ok) exitWith {};
+        // Nom lu sur ses papiers : le joueur le connaît désormais (en-tête et bulles de « Parler à », fn_iarpName).
+        private _bearer = ["owner", _d getOrDefault ["holderKey", ""]] call comspec_sse_fnc_bioRegistry;
+        if (!isNil "comspec_sse_fnc_iarpName" && {_bearer isEqualType objNull} && {!isNull _bearer} && {!isPlayer _bearer}) then { ["learn", [_bearer, [_me]]] call comspec_sse_fnc_iarpName; };
         ["doc", [[_d] call _pub, _res, _subj, _own, [_subj] call comspec_sse_fnc_bioPersonKey]] call _reply;
     };
 
@@ -462,7 +472,7 @@ switch (_op) do {
         switch (_op) do {
             case "give": {
                 private _id = [_u, _x1] call comspec_sse_fnc_idModuleGive;
-                ["zeus", [[format ["Papiers donnés à %1 : %2.", name _u, [["doc", [_id]] call comspec_sse_fnc_idRegistry] call _label], "Échec : papiers non délivrés."] select (_id isEqualTo ""), ["info", "warn"] select (_id isEqualTo "")]] call _reply;
+                ["zeus", [[format ["Papiers donnés à %1 : %2.", ["full", [_u]] call comspec_sse_fnc_idIdentityOf, [["doc", [_id]] call comspec_sse_fnc_idRegistry] call _label], "Échec : papiers non délivrés."] select (_id isEqualTo ""), ["info", "warn"] select (_id isEqualTo "")]] call _reply;
             };
             case "report": {
                 private _mode = [_x1, ""] select !(_x1 isEqualType "");
@@ -475,29 +485,12 @@ switch (_op) do {
                     if (_b isNotEqualTo []) then { _b set [3, _mode]; };
                     _n = _n + 1;
                 } forEach (["unitDocs", [_u]] call comspec_sse_fnc_idRegistry);
-                ["zeus", [format ["%1 document(s) de %2 : %3.", _n, name _u, ["signalement levé", format ["signalé « %1 »", _mode]] select (_mode isNotEqualTo "")], "info"]] call _reply;
+                ["zeus", [format ["%1 document(s) de %2 : %3.", _n, ["full", [_u]] call comspec_sse_fnc_idIdentityOf, ["signalement levé", format ["signalé « %1 »", _mode]] select (_mode isNotEqualTo "")], "info"]] call _reply;
             };
             default {
-                private _lines = [format ["Vrais papiers de %1 :", name _u]];
-                {
-                    private _d = ["doc", [_x]] call comspec_sse_fnc_idRegistry;
-                    _lines pushBack format ["%1 n° %2 · imprimé %3 %4 · vrai %5 %6 · %7%8 · qualité %9", _d get "type", _d get "number",
-                        toUpper (_d get "last"), _d get "first", toUpper (_d get "trueLast"), _d get "trueFirst", _d get "kind",
-                        ["", format [" (%1)", _d get "forgeryKind"]] select ((_d get "forgeryKind") isNotEqualTo ""), _d get "quality"];
-                    _lines pushBack format ["   défauts : %1 · puce : %2 · signalement : %3 · %4", [(_d get "flaws") joinString ", ", "aucun"] select ((_d get "flaws") isEqualTo []),
-                        _d get "chip", [_d get "report", "aucun"] select ((_d get "report") isEqualTo ""), ["virtuel", "objet " + (_d get "cls")] select ((_d get "cls") isNotEqualTo "")];
-                } forEach (["unitDocs", [_u]] call comspec_sse_fnc_idRegistry);
-                if ((count _lines) isEqualTo 1) then { _lines pushBack "aucun document."; };
-                private _cs = ["state", [_u]] call comspec_sse_fnc_idCover;
-                if ((count _cs) > 0) then {
-                    (["score", [_u]] call comspec_sse_fnc_idCover) params ["_sc", "_why"];
-                    private _stt = if (_cs get "burnt") then { format ["brûlée (%1)", _cs get "burnWhy"] } else { ["levée", "intacte"] select (_cs get "on") };
-                    _lines pushBack format ["Infiltré : couverture %1, cohérence %2/100%3, soupçons %4.", _stt, _sc,
-                        ["", format [" (%1)", _why joinString ", "]] select (_why isNotEqualTo []), round (_cs get "susp")];
-                };
-                private _hv = ["of", [_u]] call comspec_sse_fnc_idHvt;
-                if ((count _hv) > 0) then { _lines pushBack format ["HVT %1 : %2 %3, étape %4.", _hv get "ref", toUpper (_hv get "last"), _hv get "first", _hv get "stage"]; };
-                ["zeus", [_lines joinString endl, "info"]] call _reply;
+                // Fenêtre « Papiers de l'IA » du Zeus (fn_idZeusPapers) : document imprimé et analyse, au seul poste demandeur.
+                // Avant : une ligne de texte dans le bandeau de ZEN, coupée aux bords de l'écran.
+                ["zeusPapers", [[_u, _pub] call comspec_sse_fnc_idZeusPapersData]] call _reply;
             };
         };
     };

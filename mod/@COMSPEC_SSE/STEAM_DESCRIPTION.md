@@ -9,13 +9,16 @@ titres numérotés `01 · …` en `[h1]`, grille des fonctionnalités, vignettes
 
 - **Version FR** : description principale (langue par défaut de la fiche).
 - **Version EN** : à coller dans la traduction anglaise de la fiche (Publisher ou page Steam › « Ajouter une traduction »).
+- **Longueur** : Steam refuse une description de plus de 8 000 caractères (compter en octets UTF-8 : un caractère
+  accentué en vaut deux). Chaque bloc ci-dessous est collé seul et doit rester sous cette limite (état SSE 1.8 :
+  environ 7 450 octets pour le FR, 6 850 pour l'EN).
 - Ne **pas** joindre ce fichier au pack publié (`workshop-pack.ps1` l'exclut).
 - **Dépendance** : sur la page Steam, ajouter à la main **COMSPEC ATAK Native (3684656708)** comme « Required item »
   (le Publisher ne le fait pas). CBA_A3 et ACE3 aussi.
 - **Galerie** : images 1920 x 1080 produites par `tools/make_workshop_gallery.py` dans `docs/workshop/gallery/{fr,en}/`
   (voir `PACKAGING.md`, section « Galerie Workshop »).
-- **À compléter avant publication** : la section `04 · NOUVEAUTÉS` (volontairement générique) avec le numéro de
-  version et les nouveautés réelles de la mise à jour.
+- **Section `04 · NOUVEAUTÉS`** : à tenir à jour à chaque version (4 à 6 puces, sans numéro de version ; l'historique
+  complet est dans l'onglet Notes de mise à jour de Steam).
 
 Variante de titres : les en-têtes graphiques `section-01-about.png` … `section-09-credits.png` et
 `separateur.png` existent aussi (même dossier). Pour les utiliser, remplacer chaque `[h1]NN · …[/h1]` par
@@ -31,26 +34,27 @@ Variante de titres : les en-têtes graphiques `section-01-about.png` … `sectio
 [quote][b]Prérequis :[/b] Arma 3 2.14 ou plus récent, [url=https://steamcommunity.com/sharedfiles/filedetails/?id=450814997]CBA_A3[/url], [url=https://steamcommunity.com/sharedfiles/filedetails/?id=463939057]ACE3[/url] et [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3684656708][b]COMSPEC ATAK Native[/b][/url] (obligatoire). COMSPEC Overwatch n'est plus nécessaire.[/quote]
 
 [h1]01 · À PROPOS[/h1]
-[b]COMSPEC SSE[/b] (Sensitive Site Exploitation) fait de chaque objectif une scène à exploiter. Fouiller les personnes, les corps, les objets et les véhicules, relever empreintes, iris, visage et ADN sur un terminal SEEK II, exploiter téléphones, ordinateurs et clés USB, mettre les pièces sous scellé et remonter le réseau jusqu'au chef.
+[b]COMSPEC SSE[/b] (Sensitive Site Exploitation) fait de chaque objectif une scène à exploiter. Contrôlez les papiers, parlez aux civils, fouillez personnes, corps, objets et véhicules, relevez empreintes, iris, visage et ADN sur un terminal SEEK II, exploitez téléphones et ordinateurs, mettez les pièces sous scellé et remontez le réseau jusqu'au chef.
 
-Le renseignement collecté part vers [b]Athena[/b], le portail web COMSPEC : les fiches arrivent au Bureau SSE, rangées par affaire. Le chef de mission prépare tout dans Eden ou au Zeus, en quelques modules.
+Le renseignement part vers [b]Athena[/b], le portail web COMSPEC, rangé par affaire. Le chef de mission prépare tout dans Eden ou au Zeus.
 
 Gratuit, non commercial, en [b]français et en anglais[/b].
 
 [h1]02 · FONCTIONNALITÉS[/h1]
 [img]https://athena-comspec.eu/assets/workshop/sse/fr/fonctionnalites.png[/img]
 [list]
-[*][b]Fouille et collecte[/b] - menu ACE sur les personnes, corps, objets et véhicules : inspecter, fouiller, photographier, lire les documents, collecter dans un sachet de preuve, révéler une cache.
-[*][b]Biométrie SEEK II[/b] - empreintes (10 doigts), iris, photo du visage et ADN sur un vrai terminal. Qualité de capture réaliste (nuit, pluie, masque, blessures ACE), recherche 1:N, watchlist tiers 1 à 4, fausses alertes, empreintes latentes sur les armes et les objets.
-[*][b]Identités uniques[/b] - chaque personnage a ses propres empreintes, iris et ADN ; un personnage récurrent garde les mêmes d'une mission à l'autre. Laboratoire ADN à résultat différé, avec recherche familiale.
-[*][b]Exploitation numérique[/b] - téléphones, ordinateurs, clés USB et cartes SD : contacts, messages, appels, photos, coordonnées, documents, identifiants. Supports scénarisés (DOMEX) dont le contenu remonte à Athena.
-[*][b]Câble DL-7[/b] - avec COMSPEC ATAK Native, branchez votre téléphone sur un support, trouvez ou forcez le mot de passe et téléchargez les fichiers préparés par le chef de mission.
-[*][b]Chaîne de traçabilité[/b] - chaque pièce a son numéro, chaque scellé son journal (saisie, collecte, photo, ouverture, remise) ; journal infalsifiable, registre des scellés, remise des pièces à un équipier.
-[*][b]Organisations et tableau des liens[/b] - réseaux, cellules, clans, milices avec rôles réalistes ; tableau des liens en graphe ou en ORBAT, soupçonné ou confirmé. Les joueurs découvrent le réseau en exploitant.
-[*][b]Campagnes[/b] - permanente, récurrente (bootcamp) ou temporaire : personnages, organisations, ce que les joueurs savent et registre des scellés gardés d'une mission à l'autre, export et import en texte.
-[*][b]Zeus et Eden[/b] - un site complet en un module, 24 modèles de génération, un scénario prêt à jouer (FALCON), attributs SSE sur chaque unité et objet, tableau de bord SSE dans Eden, exercice posé en un clic au Zeus.
-[*][b]Liaison Athena[/b] - fiches personnes, biométrie et exploitation numérique transmises au Bureau SSE, rangées par référence d'affaire ; hors liaison, elles attendent dans une file. Campagnes copiées et partagées entre communautés.
-[*][b]Guide intégré[/b] - manuel de terrain en jeu (menu ACE, Eden, Zeus) et guide complet en PDF livré avec le mod.
+[*][b]Fouille et collecte[/b] - inspecter, fouiller, photographier, lire les documents trouvés, collecter dans un sachet de preuve, révéler une cache.
+[*][b]Papiers d'identité[/b] - carte d'identité, passeport, permis, carte militaire, proches des vrais, avec photo du titulaire. Vrais, faux ou couverture. D'autres types (carte de presse, laissez-passer…) par extensions.
+[*][b]Contrôle d'identité[/b] - demander les papiers au menu ACE, les examiner, lire la bande MRZ et la puce, interroger le fichier. Checkpoints IA et couvre-feu.
+[*][b]Fichiers[/b] - app du téléphone pour vérifier une personne, un document ou une plaque, et retrouver les relevés SEEK.
+[*][b]Parler aux IA[/b] - en texte libre (Ctrl+T). Elles répondent selon leur caractère et ce qu'elles savent, peuvent mentir, avouer ou fuir quand on les confronte, et ont peur d'une arme braquée. Ordres simples compris.
+[*][b]Couvertures et infiltrés[/b] - jouez sous une fausse identité ; tenue, arme ou mauvaise réponse peuvent la faire tomber. HVT et avis BOLO.
+[*][b]Biométrie SEEK II[/b] - empreintes, iris, visage et ADN, qualité de capture réaliste, verdict clair (concordant, discordant, inconnu, signalé), empreintes latentes.
+[*][b]Identités uniques[/b] - chaque personnage a ses empreintes, son iris et son ADN, gardés d'une mission à l'autre ; laboratoire ADN à résultat différé.
+[*][b]Exploitation numérique[/b] - téléphones, ordinateurs, clés USB : contacts, messages, photos, fichiers. Avec l'ATAK, branchez le câble DL-7 et forcez le mot de passe.
+[*][b]Chaîne de traçabilité[/b] - chaque pièce a son numéro, chaque scellé son journal ; registre des scellés, remise à un équipier.
+[*][b]Réseaux et campagnes[/b] - organisations, cellules, tableau des liens ; personnages et scellés gardés d'une mission à l'autre.
+[*][b]Guides[/b] - manuel en jeu avec recherche, bouton « ? » dans chaque fenêtre, guides complets livrés avec le mod.
 [/list]
 
 [h1]03 · GALERIE[/h1]
@@ -58,75 +62,58 @@ Gratuit, non commercial, en [b]français et en anglais[/b].
 Plus d'images dans la galerie en haut de la page.
 
 [h1]04 · NOUVEAUTÉS[/h1]
-[b]Version 1.0[/b]
 [list]
-[*][b]COMSPEC ATAK Native obligatoire[/b] : SSE et ATAK forment un seul ensemble. Nouvelle app [b]SSE terrain[/b] sur le téléphone : cible visée, avancement du site avec feu vert d'exfiltration, scellés détenus, journal.
-[*][b]Presque plus de menus ACE[/b] : on fouille et on met sous scellé au contact, tout le reste passe par le téléphone et les kits portés.
-[*][b]Kits réalistes à consommables[/b] : empreintes, ADN, test de résidus de tir, SEEK II, sac de Faraday (contre l'effacement à distance des téléphones), cônes de preuve numérotés, valise DOMEX.
-[*][b]Numérique au câble DL-7[/b] : chaque téléphone ou PC généré se branche, se force et se télécharge ; les résultats vont au dossier.
-[*][b]Photos de preuve[/b] avec l'app Photo de l'ATAK : les pièces cadrées sont inscrites au dossier.
-[*][b]Sept sites préfabriqués[/b] (planque, labo d'IED, faux papiers, cache d'armes, PC de cellule, boîte aux lettres morte, hawala), réseau multi-sites, caisses de kits et 17 pièces de preuve posables, pour Eden et Zeus.
-[*][b]Dossier fiable en multijoueur[/b] : le serveur tient les fiches, génération reproductible, identités distinctes, lieux réels de la carte.
+[*][b]IA plus bavardes[/b] : elles comprennent trois fois plus de questions (présence, renseignement, village, ordres comme « Lâchez votre arme »). L'onglet GUIDE de « Parler à » les montre par thème.
+[*][b]Une IA ne parle que de ce qu'elle sait[/b] : un passant qui n'a rien vu le dit, sans inventer.
+[*][b]Réponses écrites par le maître du jeu[/b], dans Eden ou en Zeus : selon que l'IA est calme, a peur ou est menacée, avec son prénom ou sa ville. Une version plus simple de cette fenêtre arrive.
+[*][b]Papiers réalistes[/b] avec vraie photo, quinze styles de feuilles pour les documents trouvés, app Fichiers.
+[*][b]Zeus[/b] : clic droit sur des IA pour changer caractère, papiers ou attitude ; le Zeus voit leur vrai nom et si leurs papiers sont faux.
 [/list]
 Historique complet dans l'onglet [b]Notes de mise à jour[/b].
 
 [h1]05 · PRÉREQUIS[/h1]
 [table]
 [tr][th]Mod[/th][th]Nécessaire ?[/th][/tr]
-[tr][td]Arma 3[/td][td]Version 2.14 ou plus récente[/td][/tr]
+[tr][td]Arma 3[/td][td]2.14 ou plus récent[/td][/tr]
 [tr][td][url=https://steamcommunity.com/sharedfiles/filedetails/?id=450814997]CBA_A3[/url][/td][td]Obligatoire[/td][/tr]
-[tr][td][url=https://steamcommunity.com/sharedfiles/filedetails/?id=463939057]ACE3[/url][/td][td]Obligatoire (menus d'interaction)[/td][/tr]
+[tr][td][url=https://steamcommunity.com/sharedfiles/filedetails/?id=463939057]ACE3[/url][/td][td]Obligatoire[/td][/tr]
 [tr][td][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3684656708]COMSPEC ATAK Native[/url][/td][td]Obligatoire[/td][/tr]
-[tr][td][url=https://steamcommunity.com/sharedfiles/filedetails/?id=1779063631]Zeus Enhanced (ZEN)[/url][/td][td]Optionnel (menus Zeus COMSPEC SSE · Mission et · Outils)[/td][/tr]
-[tr][td]COMSPEC Overwatch[/td][td]Optionnel, n'est plus nécessaire pour Athena[/td][/tr]
-[tr][td]BII Identifi[/td][td]Optionnel (passerelle activée s'il est chargé)[/td][/tr]
+[tr][td][url=https://steamcommunity.com/sharedfiles/filedetails/?id=1779063631]Zeus Enhanced (ZEN)[/url][/td][td]Optionnel (modules Zeus)[/td][/tr]
+[tr][td]BII Identifi[/td][td]Optionnel (passerelle)[/td][/tr]
 [/table]
-Le mod doit tourner [b]aussi sur le serveur[/b] (identités, campagnes, registre des scellés, transmissions).
+Le mod doit tourner [b]aussi sur le serveur[/b].
 
 [h1]06 · INSTALLATION[/h1]
 [olist]
 [*]Abonnez-vous à ce mod : Steam ajoute CBA_A3, ACE3 et COMSPEC ATAK Native.
-[*]Dans le lanceur Arma 3, activez CBA_A3, ACE3, COMSPEC ATAK Native puis COMSPEC SSE.
-[*]Retirez les anciennes versions du SSE chargées en local, s'il y en a.
-[*]Après une mise à jour, relancez Arma complètement, pas seulement la mission.
+[*]Activez-les dans le lanceur, puis COMSPEC SSE.
+[*]Après une mise à jour, relancez Arma complètement.
 [/olist]
-[b]Sur le terrain :[/b] menu ACE personnel › COMSPEC SSE › [b]Équiper le kit SSE[/b], puis menu ACE sur une personne ou un objet › [b]SSE[/b]. [b]Ctrl+Maj+S[/b] ouvre le terminal SEEK.
+[b]Sur le terrain :[/b] menu ACE personnel › COMSPEC SSE › [b]Équiper le kit SSE[/b], puis menu ACE sur une personne ou un objet. [b]Ctrl+Maj+S[/b] ouvre l'outil SSE, [b]Ctrl+T[/b] parle à l'IA en face.
 
 [h1]07 · POUR LES MISSION MAKERS[/h1]
-Les modules sont dans Eden (Systèmes › Modules › [b]COMSPEC SSE[/b]) et au Zeus, rangés en cinq catégories.
+Modules dans Eden (Systèmes › Modules) et au Zeus, en trois catégories :
 [list]
-[*][b]Sites et objets[/b] - créer un site SSE complet, générer un profil, rendre un objet exploitable, poser un objet de renseignement, appliquer un modèle, site d'entraînement.
-[*][b]Personnes et liens[/b] - identité d'un sujet (réponse du SEEK), organisation, lier des entités.
-[*][b]Mission et scénario[/b] - campagne, directeur de scénario (dataset FALCON, niveaux de révélation), dotation en terminal SEEK, génération depuis un brief, présentation des documents, référence d'affaire Athena.
-[*][b]Numérique[/b] - support DOMEX, palier d'accès, point carte, données à extraire au câble DL-7.
-[*][b]Outils du Zeus[/b] - panneau et gestionnaire de site, connu des joueurs ou vérité, compte rendu (AAR) avec graphe, enregistrer un modèle, tutoriel « poser un exercice ici ».
+[*][b]Renseignement[/b] - site complet en un module, 24 modèles, scénario prêt à jouer (FALCON), organisations, Éditeur SSE (renseignement, identité, papier, dossier, kit).
+[*][b]Identité[/b] - donner des papiers, checkpoint IA, couverture, HVT, BOLO, voir les vrais papiers.
+[*][b]Mission[/b] - campagne, dossier Athena, présentation des documents.
 [/list]
-Dans Eden, double-cliquez sur une unité ou un objet : catégories [b]COMSPEC SSE[/b] (renseignement, documents, téléphone, ordinateur, biométrie, organisation, extraction DL-7). Menu [b]COMSPEC SSE[/b] de la barre d'Eden : tableau de bord de la mission et manuel.
-Réglages serveur : [b]Options › Réglages de l'addon › COMSPEC SSE[/b] (matériel exigé, durées, biométrie, organisations et scellés, campagnes, Athena).
+[b]Atelier IA[/b] (Eden et Zeus) : caractère, histoire, secrets, ce qu'elle sait, réponses et thèmes interdits, gardés pour les parties suivantes. Double-clic sur une unité ou un objet : attributs [b]COMSPEC SSE[/b]. Réglages : [b]Options › Réglages de l'addon › COMSPEC SSE[/b].
 
 [h1]08 · FAQ[/h1]
 [b]Faut-il un compte Athena ?[/b]
-Non. Tout le SSE fonctionne en jeu sans Athena. La liaison ajoute le Bureau SSE : dossiers, campagnes, exploitation numérique.
-[spoiler]Les fiches sont rangées dans l'affaire indiquée par le module Référence de dossier SSE. Sans référence, elles vont dans la seule affaire ouverte, sinon dans une affaire du jour « à trier ».[/spoiler]
+Non. Tout fonctionne en jeu sans Athena. La liaison ajoute le Bureau SSE : dossiers, campagnes, fichiers, vos propres papiers.
 
 [b]Je n'ai aucune action biométrique.[/b]
-Le serveur exige le matériel SSE : prenez le kit (menu ACE personnel › COMSPEC SSE › Équiper le kit SSE) ou demandez à décocher [i]Exiger le matériel SSE[/i].
+Prenez le kit (menu ACE personnel › COMSPEC SSE › Équiper le kit SSE) ou demandez à décocher [i]Exiger le matériel SSE[/i].
 
 [b]Pourquoi COMSPEC ATAK Native est-il obligatoire ?[/b]
-Le câble DL-7, les notifications et la liaison avec Athena passent par lui. Il est gratuit et s'installe tout seul avec ce mod.
-
-[b]Ma campagne ne se recharge pas.[/b]
-Gardez le même identifiant de campagne d'une mission à l'autre. Pour changer de serveur, envoyez-la à Athena puis récupérez-la.
+Les apps Contrôle ID et Fichiers, le câble DL-7 et la liaison Athena passent par lui. Il s'installe tout seul avec ce mod.
 
 [h1]09 · CRÉDITS ET LIENS[/h1]
-[list]
-[*]Développé par [b]COMSPEC[/b].
-[*]Construit sur [b]CBA_A3[/b] et [b]ACE3[/b], avec [b]COMSPEC ATAK Native[/b].
-[*]Passerelle optionnelle vers [b]BII Identifi[/b] (S.O.A.R).
-[/list]
-Gratuit, non commercial, aucun contenu payant.
+Développé par [b]COMSPEC[/b], sur [b]CBA_A3[/b] et [b]ACE3[/b], avec [b]COMSPEC ATAK Native[/b]. Passerelle optionnelle vers [b]BII Identifi[/b] (S.O.A.R). Gratuit, aucun contenu payant.
 
-[b]Licence :[/b] © COMSPEC, tous droits réservés. Usage personnel via cette page officielle du Workshop. Interdit sans autorisation écrite de COMSPEC : copier, ré-héberger, redistribuer, ré-empaqueter dans un autre pack ou modpack, modifier, décompiler ou extraire le code, les images, les textures ou la DLL, tout usage commercial. Texte complet : LICENSE.txt dans le dossier du mod.
+[b]Licence :[/b] © COMSPEC, tous droits réservés. Usage personnel via cette page officielle du Workshop. Interdit sans autorisation écrite : copier, ré-héberger, redistribuer, ré-empaqueter, modifier, décompiler ou extraire le code, les images ou la DLL, tout usage commercial. Texte complet : LICENSE.txt dans le dossier du mod.
 
 [url=https://athena-comspec.eu]Portail Athena[/url]  ·  [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3684656708]COMSPEC ATAK Native[/url]
 ```
@@ -141,26 +128,27 @@ Gratuit, non commercial, aucun contenu payant.
 [quote][b]Requirements:[/b] Arma 3 2.14 or newer, [url=https://steamcommunity.com/sharedfiles/filedetails/?id=450814997]CBA_A3[/url], [url=https://steamcommunity.com/sharedfiles/filedetails/?id=463939057]ACE3[/url] and [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3684656708][b]COMSPEC ATAK Native[/b][/url] (required). COMSPEC Overwatch is no longer needed.[/quote]
 
 [h1]01 · ABOUT THIS MOD[/h1]
-[b]COMSPEC SSE[/b] (Sensitive Site Exploitation) turns every objective into a scene to exploit. Search people, bodies, objects and vehicles, take fingerprints, iris, face and DNA on a SEEK II terminal, exploit phones, computers and USB keys, seal the evidence and work your way up the network to its leader.
+[b]COMSPEC SSE[/b] (Sensitive Site Exploitation) turns every objective into a scene to exploit. Check papers, talk to civilians, search people, bodies, objects and vehicles, take fingerprints, iris, face and DNA on a SEEK II terminal, exploit phones and computers, seal the evidence and work your way up the network to its leader.
 
-The intelligence you collect goes to [b]Athena[/b], the COMSPEC web portal: records reach the SSE office, filed by case. Mission makers set everything up in Eden or Zeus with a few modules.
+The intelligence goes to [b]Athena[/b], the COMSPEC web portal, filed by case. Mission makers set everything up in Eden or Zeus.
 
 Free, non-commercial, in [b]English and French[/b].
 
 [h1]02 · FEATURES[/h1]
 [img]https://athena-comspec.eu/assets/workshop/sse/en/fonctionnalites.png[/img]
 [list]
-[*][b]Search and collect[/b] - ACE menu on people, bodies, objects and vehicles: inspect, search, photograph, read documents, collect into an evidence bag, reveal a cache.
-[*][b]SEEK II biometrics[/b] - fingerprints (10 fingers), iris, face photo and DNA on a real terminal. Realistic capture quality (night, rain, mask, ACE wounds), 1:N search, tier 1 to 4 watchlist, false alarms, latent prints on weapons and objects.
-[*][b]Unique identities[/b] - every character has their own fingerprints, iris and DNA; a recurring character keeps them from one mission to the next. DNA lab with delayed results and family search.
-[*][b]Digital exploitation[/b] - phones, computers, USB keys and SD cards: contacts, messages, calls, photos, coordinates, documents, credentials. Scripted devices (DOMEX) whose content goes up to Athena.
-[*][b]DL-7 cable[/b] - with COMSPEC ATAK Native, plug your phone into a device, find or crack the password and download the files the mission maker left there.
-[*][b]Chain of custody[/b] - every item has its number, every seal its log (seizure, collection, photo, opening, hand-over); tamper-evident log, seal register, hand items over to a teammate.
-[*][b]Organisations and link chart[/b] - networks, cells, clans, militias with realistic roles; link chart as a graph or ORBAT, suspected or confirmed. Players uncover the network by exploiting it.
-[*][b]Campaigns[/b] - permanent, recurring (bootcamp) or temporary: characters, organisations, what players know and the seal register kept from one mission to the next, text export and import.
-[*][b]Zeus and Eden[/b] - a full site in one module, 24 generation templates, a ready-to-play scenario (FALCON), SSE attributes on every unit and object, SSE dashboard in Eden, a training drill placed in one click in Zeus.
-[*][b]Athena link[/b] - person, biometric and digital records sent to the SSE office, filed by case reference; without a link they wait in a queue. Campaigns copied and shared between communities.
-[*][b]Built-in guide[/b] - in-game field manual (ACE menu, Eden, Zeus) and a full PDF guide shipped with the mod.
+[*][b]Search and collect[/b] - inspect, search, photograph, read documents you find, collect into an evidence bag, reveal a cache.
+[*][b]Identity papers[/b] - ID card, passport, driving licence, military ID, close to real ones, with the holder's photo. Genuine, forged or cover. More types (press card, pass…) through extensions.
+[*][b]ID checks[/b] - ask for papers from the ACE menu, examine them, read the MRZ strip and chip, query the records. AI checkpoints and curfew.
+[*][b]Records[/b] - phone app to check a person, a document or a plate, and find SEEK results.
+[*][b]Talk to AIs[/b] - in free text (Ctrl+T). They answer from their character and what they know, may lie, confess or run when confronted, and fear a weapon aimed at them. Simple orders understood.
+[*][b]Covers and undercover play[/b] - play under a false identity; clothes, a weapon or a wrong answer can blow it. HVTs and BOLO notices.
+[*][b]SEEK II biometrics[/b] - fingerprints, iris, face and DNA, realistic capture quality, clear verdict (match, mismatch, unknown, flagged), latent prints.
+[*][b]Unique identities[/b] - every character has their own fingerprints, iris and DNA, kept from one mission to the next; DNA lab with delayed results.
+[*][b]Digital exploitation[/b] - phones, computers, USB keys: contacts, messages, photos, files. With the ATAK, plug in the DL-7 cable and crack the password.
+[*][b]Chain of custody[/b] - every item has its number, every seal its log; seal register, hand-over to a teammate.
+[*][b]Networks and campaigns[/b] - organisations, cells, link chart; characters and seals kept from one mission to the next.
+[*][b]Guides[/b] - searchable in-game manual, a « ? » button in every window, full guides shipped with the mod.
 [/list]
 
 [h1]03 · GALLERY[/h1]
@@ -168,75 +156,58 @@ Free, non-commercial, in [b]English and French[/b].
 More pictures in the gallery at the top of the page.
 
 [h1]04 · WHAT'S NEW[/h1]
-[b]Version 1.0[/b]
 [list]
-[*][b]COMSPEC ATAK Native required[/b]: SSE and ATAK work as one. New [b]SSE field[/b] app on the phone: current target, site progress with an exfil green light, evidence held, log.
-[*][b]Almost no ACE menus left[/b]: search and seal by hand, everything else goes through the phone and the kits you carry.
-[*][b]Realistic kits with consumables[/b]: fingerprints, DNA, gunshot residue test, SEEK II, Faraday bag (stops remote wipes of phones), numbered evidence markers, DOMEX case.
-[*][b]Digital through the DL-7 cable[/b]: every generated phone or PC can be plugged in, cracked and downloaded; results go to the case file.
-[*][b]Evidence photos[/b] with the ATAK Photo app: framed items are added to the case file.
-[*][b]Seven ready-made sites[/b] (safehouse, IED lab, forgery workshop, weapons cache, cell HQ, dead drop, hawala), multi-site networks, kit crates and 17 placeable evidence items, for Eden and Zeus.
-[*][b]Reliable case files in multiplayer[/b]: the server owns the records, reproducible generation, distinct identities, real map locations.
+[*][b]Chattier AIs[/b]: they understand three times more questions (presence, intel, the village, orders such as "Drop your weapon"). The GUIDE tab of "Talk to" lists them by theme.
+[*][b]An AI only talks about what it knows[/b]: a passer-by who saw nothing says so, without making things up.
+[*][b]Answers written by the game master[/b], in Eden or Zeus: depending on whether the AI is calm, scared or threatened, with its first name or town. A simpler version of this window is on the way.
+[*][b]Realistic papers[/b] with a real photo, fifteen paper styles for found documents, Records app.
+[*][b]Zeus[/b]: right-click AIs to change their character, papers or attitude; Zeus sees their real name and whether their papers are forged.
 [/list]
 Full history in the [b]Change Notes[/b] tab.
 
 [h1]05 · REQUIREMENTS[/h1]
 [table]
 [tr][th]Mod[/th][th]Needed?[/th][/tr]
-[tr][td]Arma 3[/td][td]Version 2.14 or newer[/td][/tr]
+[tr][td]Arma 3[/td][td]2.14 or newer[/td][/tr]
 [tr][td][url=https://steamcommunity.com/sharedfiles/filedetails/?id=450814997]CBA_A3[/url][/td][td]Required[/td][/tr]
-[tr][td][url=https://steamcommunity.com/sharedfiles/filedetails/?id=463939057]ACE3[/url][/td][td]Required (interaction menus)[/td][/tr]
+[tr][td][url=https://steamcommunity.com/sharedfiles/filedetails/?id=463939057]ACE3[/url][/td][td]Required[/td][/tr]
 [tr][td][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3684656708]COMSPEC ATAK Native[/url][/td][td]Required[/td][/tr]
-[tr][td][url=https://steamcommunity.com/sharedfiles/filedetails/?id=1779063631]Zeus Enhanced (ZEN)[/url][/td][td]Optional (COMSPEC SSE · Mission and · Tools Zeus menus)[/td][/tr]
-[tr][td]COMSPEC Overwatch[/td][td]Optional, no longer needed for Athena[/td][/tr]
-[tr][td]BII Identifi[/td][td]Optional (bridge enabled when loaded)[/td][/tr]
+[tr][td][url=https://steamcommunity.com/sharedfiles/filedetails/?id=1779063631]Zeus Enhanced (ZEN)[/url][/td][td]Optional (Zeus modules)[/td][/tr]
+[tr][td]BII Identifi[/td][td]Optional (bridge)[/td][/tr]
 [/table]
-The mod must run [b]on the server too[/b] (identities, campaigns, seal register, transmissions).
+The mod must run [b]on the server too[/b].
 
 [h1]06 · INSTALLATION[/h1]
 [olist]
 [*]Subscribe to this mod: Steam adds CBA_A3, ACE3 and COMSPEC ATAK Native.
-[*]In the Arma 3 Launcher, enable CBA_A3, ACE3, COMSPEC ATAK Native then COMSPEC SSE.
-[*]Remove any old local copy of SSE.
-[*]After an update, restart Arma completely, not just the mission.
+[*]Enable them in the Launcher, then COMSPEC SSE.
+[*]After an update, restart Arma completely.
 [/olist]
-[b]In the field:[/b] ACE self menu › COMSPEC SSE › [b]Equip SSE kit[/b], then ACE menu on a person or object › [b]SSE[/b]. [b]Ctrl+Shift+S[/b] opens the SEEK terminal.
+[b]In the field:[/b] ACE self menu › COMSPEC SSE › [b]Equip SSE kit[/b], then ACE menu on a person or object. [b]Ctrl+Shift+S[/b] opens the SSE tool, [b]Ctrl+T[/b] talks to the AI in front of you.
 
 [h1]07 · FOR MISSION MAKERS[/h1]
-Modules are in Eden (Systems › Modules › [b]COMSPEC SSE[/b]) and in Zeus, in five categories.
+Modules in Eden (Systems › Modules) and in Zeus, in three categories:
 [list]
-[*][b]Sites and objects[/b] - create a full SSE site, generate a profile, make an object exploitable, place an intel object, apply a template, training site.
-[*][b]People and links[/b] - subject identity (SEEK answer), organisation, link entities.
-[*][b]Mission and scenario[/b] - campaign, scenario director (FALCON dataset, reveal levels), SEEK terminal issue, generate from a brief, document style, Athena case reference.
-[*][b]Digital[/b] - DOMEX device, access stage, map point, data to extract with the DL-7 cable.
-[*][b]Zeus tools[/b] - site panel and manager, known to players or ground truth, after-action report with graph, save a template, "place a drill here" tutorial.
+[*][b]Intelligence[/b] - a full site in one module, 24 templates, a ready-to-play scenario (FALCON), organisations, SSE editor (intel, identity, paper, case file, kit).
+[*][b]Identity[/b] - give papers, AI checkpoint, cover, HVT, BOLO, see the real papers.
+[*][b]Mission[/b] - campaign, Athena case, document style.
 [/list]
-In Eden, double-click a unit or object: [b]COMSPEC SSE[/b] categories (intel, documents, phone, computer, biometrics, organisation, DL-7 extraction). [b]COMSPEC SSE[/b] menu in the Eden toolbar: mission dashboard and manual.
-Server settings: [b]Options › Addon Options › COMSPEC SSE[/b] (required equipment, durations, biometrics, organisations and seals, campaigns, Athena).
+[b]AI workshop[/b] (Eden and Zeus): character, story, secrets, what it knows, answers and forbidden themes, kept for later games. Double-click a unit or object: [b]COMSPEC SSE[/b] attributes. Settings: [b]Options › Addon Options › COMSPEC SSE[/b].
 
 [h1]08 · FAQ[/h1]
 [b]Do I need an Athena account?[/b]
-No. All of SSE works in game without Athena. The link adds the SSE office: case files, campaigns, digital exploitation.
-[spoiler]Records are filed in the case set by the SSE case reference module. Without a reference, they go to the only open case, otherwise to a "to sort" case of the day.[/spoiler]
+No. Everything works in game without Athena. The link adds the SSE office: case files, campaigns, records, your own papers.
 
 [b]I have no biometric actions.[/b]
-The server requires SSE equipment: take the kit (ACE self menu › COMSPEC SSE › Equip SSE kit) or ask for [i]Require SSE equipment[/i] to be turned off.
+Take the kit (ACE self menu › COMSPEC SSE › Equip SSE kit) or ask for [i]Require SSE equipment[/i] to be turned off.
 
 [b]Why is COMSPEC ATAK Native required?[/b]
-The DL-7 cable, notifications and the Athena link go through it. It is free and installs itself with this mod.
-
-[b]My campaign does not reload.[/b]
-Keep the same campaign ID from one mission to the next. To move to another server, send it to Athena then fetch it back.
+The ID Check and Records apps, the DL-7 cable and the Athena link go through it. It installs itself with this mod.
 
 [h1]09 · CREDITS & LINKS[/h1]
-[list]
-[*]Developed by [b]COMSPEC[/b].
-[*]Built on [b]CBA_A3[/b] and [b]ACE3[/b], with [b]COMSPEC ATAK Native[/b].
-[*]Optional bridge to [b]BII Identifi[/b] (S.O.A.R).
-[/list]
-Free, non-commercial, no paid content ever.
+Developed by [b]COMSPEC[/b], on [b]CBA_A3[/b] and [b]ACE3[/b], with [b]COMSPEC ATAK Native[/b]. Optional bridge to [b]BII Identifi[/b] (S.O.A.R). Free, no paid content ever.
 
-[b]Licence:[/b] © COMSPEC, all rights reserved. Personal use through this official Workshop page. Not allowed without written permission from COMSPEC: copying, re-uploading, redistributing, repacking in another pack or modpack, modifying, decompiling or extracting the code, images, textures or DLL, any commercial use. Full text: LICENSE.txt in the mod folder.
+[b]Licence:[/b] © COMSPEC, all rights reserved. Personal use through this official Workshop page. Not allowed without written permission: copying, re-uploading, redistributing, repacking, modifying, decompiling or extracting the code, images or DLL, any commercial use. Full text: LICENSE.txt in the mod folder.
 
 [url=https://athena-comspec.eu]Athena portal[/url]  ·  [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3684656708]COMSPEC ATAK Native[/url]
 ```
