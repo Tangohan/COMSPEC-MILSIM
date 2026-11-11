@@ -8,7 +8,7 @@
 [*] [b]Caméras IP[/b] : une famille de caméras à poser (dôme, tube infrarouge, thermique, mini-dôme…).
 [*] [b]Salle serveur[/b] : baies, coffrets, chemins de câbles et climatiseur à poser dans l'éditeur et en Zeus.
 [*] [b]Voyants et destruction[/b] : un voyant montre l'état de chaque relais (en service, dégradé, brouillé, éteint) ; un pylône détruit se plie et tombe.
-[*] [b]Téléchargement plus léger[/b] : environ 40 Mo de moins, et la carte de couverture se recalcule bien plus vite.
+[*] [b]Relais plus légers[/b] : les modèles des relais pèsent environ 33 Mo de moins, et la carte de couverture se recalcule bien plus vite.
 [*] [b]Changement : brouilleur GPS[/b] : un brouilleur GPS seul ne crée plus de zone blanche sur la couverture du réseau.
 [*] [b]Changement : relais M12 et M20[/b] : ce sont maintenant des mâts tactiques verts ; les missions existantes les gardent à leur place.
 [*] [b]Salle TOC complète[/b] : le module pose enfin toute la salle sur le sol, dans Eden comme dans Zeus : mur d'images, grands écrans, bandeaux, plaques de nom, bureaux, chaises et PC, tous liés à la même salle.
@@ -33,7 +33,7 @@
 [*] [b]IP cameras[/b]: a family of cameras to place (dome, infrared bullet, thermal, mini dome…).
 [*] [b]Server room[/b]: racks, cabinets, cable trays and an AC unit to place in the editor and in Zeus.
 [*] [b]Status lights and destruction[/b]: a light shows the state of each relay (running, degraded, jammed, off); a destroyed tower bends and falls.
-[*] [b]Lighter download[/b]: about 40 MB less, and the coverage map recomputes much faster.
+[*] [b]Lighter relays[/b]: the relay models are about 33 MB lighter, and the coverage map recomputes much faster.
 [*] [b]Change: GPS jammer[/b]: a GPS jammer alone no longer creates a dead zone in the network coverage.
 [*] [b]Change: M12 and M20 relays[/b]: they are now green tactical masts; existing missions keep them in place.
 [*] [b]Complete TOC room[/b]: the module finally places the whole room on the ground, in Eden and in Zeus: video wall, big screens, strips, name plates, desks, chairs and computers, all linked to the same room.

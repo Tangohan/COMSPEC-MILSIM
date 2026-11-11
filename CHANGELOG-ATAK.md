@@ -60,19 +60,19 @@ EN : A TOC console and operation plans on Athena
 ### Résumé joueur
 Type : nouveauté
 FR : ATAK 4.7.0 : des relais refaits en 3D, une salle TOC qui se pose en entier, un téléphone qui casse comme un vrai
-- **Relais, antennes, caméras** : pylônes et mâts redessinés comme de vrais sites, nouveaux modèles dont des relais déguisés en arbre (faux pin, faux palmier), antennes murales, caméras IP et objets de salle serveur à poser dans l'éditeur et en Zeus. Le mod pèse environ 40 Mo de moins.
+- **Relais, antennes, caméras** : pylônes et mâts redessinés comme de vrais sites, nouveaux modèles dont des relais déguisés en arbre (faux pin, faux palmier), antennes murales, caméras IP et objets de salle serveur à poser dans l'éditeur et en Zeus.
 - **Salle et écrans du TOC** : le module « Salle TOC complète » pose enfin toute la salle sur le sol, dans Eden comme dans Zeus. Nouvel affichage « Texte » qui défile, écrans géants, incurvés et suspendus, postes PC complets.
 - **Écran du téléphone** : le verre casse de treize façons, la dalle peut tomber en panne et le sang est plus crédible ; tout se règle ou se coupe dans les options.
 - **Poste TOC et Athena** : ce que fait le poste en jeu se voit en direct sur le poste TOC web d'Athena, et un plan préparé sur le site s'envoie en jeu.
 EN : ATAK 4.7.0: relays rebuilt in 3D, a TOC room placed in full, a phone that breaks like a real one
-- **Relays, antennas, cameras**: towers and masts redrawn as real sites, new models including tree-disguised relays (fake pine, fake palm), wall antennas, IP cameras and server-room objects to place in the editor and in Zeus. The mod is about 40 MB lighter.
+- **Relays, antennas, cameras**: towers and masts redrawn as real sites, new models including tree-disguised relays (fake pine, fake palm), wall antennas, IP cameras and server-room objects to place in the editor and in Zeus.
 - **TOC room and screens**: the "Complete TOC room" module finally places the whole room on the ground, in Eden and in Zeus. New scrolling "Text" display, giant, curved and hanging screens, complete PC stations.
 - **Phone screen**: the glass breaks in thirteen ways, the panel can fail and blood looks more believable; everything can be tuned or turned off in the options.
 - **TOC and Athena**: what the in-game post does shows live on Athena's web TOC, and a plan prepared on the site can be sent into the game.
 
 ### Détail technique
 
-COMSPEC Link inchangé (2.0.123) : aucune source de la DLL n'a changé depuis la 4.6.0.
+COMSPEC Link inchangé (2.0.123) : aucune source de la DLL n'a changé depuis la 4.6.0. PBO construits (octets) : main 125 616 679 (95 535 630 en 4.6.0 : écrans TOC et bris d'écran), towers 56 197 915 (89 380 262), items 29 649 104 (22 254 547), comspec_overwatch_connect 48 463 549, comspec_overwatch_main 178 077 ; le pack pèse environ 4 Mo de plus qu'en 4.6.0, les relais seuls 33 Mo de moins.
 
 **Bris d'écran réalistes, pannes de dalle, bugs d'affichage et sang plus crédible**
 
