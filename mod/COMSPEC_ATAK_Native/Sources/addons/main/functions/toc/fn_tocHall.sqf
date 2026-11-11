@@ -16,6 +16,7 @@
       ["of", objet]                              id de la salle d'un PC ou d'un écran (relais : celle de son hôte)
       ["screens", id]                            écrans hôtes liés à la salle
       ["uid", écran]                             identifiant stable (posé par le serveur)
+      ["auto", [objet, camp]]                    salle d'un objet qui se règle seul : la plus proche, sinon « TOC n » créée (fn_tocAuto)
       ["do", [action, args]]                     client -> serveur ; serveur : actions
         create [nom, camp, PC, id imposé]  link [id, écran]  unlink écran  linkNear [id, [x, y, z], rayon]
         rename [id, nom]  power [écran, allumé]  powerAll [id, allumé]  blink écran
@@ -41,6 +42,32 @@ switch (_mode) do {
         (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select {
             !isNull _x && {isNull (_x getVariable ["COMSPEC_ATAK_TocHost", objNull])} && {(_x getVariable ["COMSPEC_ATAK_TocHall", ""]) isEqualTo _a}
         }
+    };
+    case "auto": {
+        // Salle d'un écran ou d'un poste qui se règle tout seul (fn_tocAuto) : la sienne s'il en a une, sinon celle de
+        // l'écran ou du poste lié le plus proche (30 m), sinon une nouvelle salle « TOC n ». Fait sur ce poste : le
+        // serveur, ou un joueur quand le serveur est plus ancien ou sans le mod (même variable publique, non gardée).
+        _a params [["_o", objNull], ["_sd", ""]];
+        if (isNull _o) exitWith { "" };
+        private _l = +(call _all);
+        private _known = _l apply { _x select 0 };
+        private _cur = _o getVariable ["COMSPEC_ATAK_TocHall", ""];
+        if (_cur isNotEqualTo "" && {_cur in _known}) exitWith { _cur };
+        private _near = (((missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) + (nearestObjects [_o, ["COMSPEC_ATAK_TocLaptop"], 30])) select {
+            !isNull _x && {_x isNotEqualTo _o} && {(_x distance _o) < 30} && {(_x getVariable ["COMSPEC_ATAK_TocHall", ""]) in _known}
+        });
+        _near = [_near, [], { _x distance _o }, "ASCEND"] call BIS_fnc_sortBy;
+        private _id = if (_near isEqualTo []) then { "" } else { (_near select 0) getVariable ["COMSPEC_ATAK_TocHall", ""] };
+        if (_id isEqualTo "") then {
+            private _n = 1;
+            while { (_l findIf { (_x select 1) isEqualTo (format ["TOC %1", _n]) }) >= 0 && {_n < 99} } do { _n = _n + 1; };
+            _id = format ["A%1-%2", _n, floor random 100000];
+            _l pushBack ([_id, format ["TOC %1", _n], toUpper _sd, [], []] + ([[], ["LOCAL"]] select (!isServer)));
+            missionNamespace setVariable ["COMSPEC_ATAK_TocHalls", _l, true];
+        };
+        _o setVariable ["COMSPEC_ATAK_TocHall", _id, true];
+        ["save"] call comspec_atak_native_fnc_tocPersist;
+        _id
     };
     case "initClient": {
         if (!hasInterface) exitWith {};
@@ -218,8 +245,8 @@ switch (_mode) do {
                 // Demande du Zeus (fn_tocHallBuild « zeus ») : même constructeur que le module Eden. _by : joueur à qui
                 // le résultat est rendu (ligne de retour du Zeus) ; _snap : alignement sur les murs du bâtiment.
                 _args params [["_pos", [0, 0, 0]], ["_dir", 0], ["_size", "M"], ["_nm", "SALLE TOC"], ["_sd", "WEST"], ["_id", ""], ["_post", ""], ["_by", objNull], ["_snap", false]];
-                private _res = ["build", [_pos, _dir, _size, _nm, _sd, _id, _post, _snap, false]] call comspec_atak_native_fnc_tocHallBuild;
-                if (_by isEqualType objNull && {!isNull _by}) then { ["comspec_atak_native_tocHallDone", [_res], _by] call CBA_fnc_targetEvent; };
+                // Le bilan part au demandeur une fois tous les objets posés (fn_tocHallBuild « finish », comspec_atak_native_tocHallDone).
+                ["build", [_pos, _dir, _size, _nm, _sd, _id, _post, _snap, false, _by]] call comspec_atak_native_fnc_tocHallBuild;
             };
             // Salle complète retirée (module supprimé, fn_tocHallBuild « remove ») : écrans, mobilier et PC posés par elle.
             case "roomRemove": { ["remove", _args] call comspec_atak_native_fnc_tocHallBuild; };

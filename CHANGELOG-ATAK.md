@@ -55,6 +55,27 @@ EN : A TOC console and operation plans on Athena
 - Pages `/atak/toc` et `/atak/toc/plans`, droits `atak.toc.use` et `atak.toc.manage`, étapes 4370 et 4380. Détail : `docs/TOC-WEB.md`.
 - Lien avec le jeu par les canaux existants (BriefingPlan.Push canal `toc_room`, commandes web genre `toc`) : branche du mod `feat/atak-toc-web-sync`, sans changement de COMSPEC Link.
 
+## Pack 4.7.1 Washington : menu ACE des écrans du TOC réparé, écran qui se règle tout seul à la pose, salle TOC posée en entier (ATAK natif 4.7.1.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : correctif
+FR : ATAK 4.7.1 : le menu ACE des écrans du TOC est de retour, et un écran posé se règle tout seul
+- **Menu ACE des écrans** : l'interaction ACE revient sur tous les écrans et postes PC du TOC (elle avait disparu en 4.7.0).
+- **Écran posé, écran prêt** : un écran posé s'allume et se configure tout seul, quel que soit le moyen (éditeur, Zeus, module, script) : bon affichage selon l'écran, relié à la salle la plus proche, ou à une nouvelle salle « TOC 1 ».
+- **Salle TOC complète** : le module pose de nouveau toute la salle, y compris quand le serveur n'a pas le mod à jour.
+EN : ATAK 4.7.1: the ACE menu of TOC screens is back, and a placed screen sets itself up
+- **Screen ACE menu**: ACE interaction is back on every TOC screen and PC station (it had disappeared in 4.7.0).
+- **Placed screen, ready screen**: a placed screen lights up and configures itself, whatever the way it was placed (editor, Zeus, module, script): the right display for the screen, linked to the nearest room, or to a new "TOC 1" room.
+- **Complete TOC room**: the module places the whole room again, including when the server does not run the up-to-date mod.
+
+### Détail technique
+- Cause prouvée (journal de TTRD, 4.7.0, 45 fois « Type Objet, Chaîne attendu », `fn_tocScreen.sqf` ligne 114) : `_entryOf` écrivait `[configOf _o, configFile >> "CfgVehicles" >> _o] select (_o isEqualType "")`. Les deux éléments du tableau sont évalués : l'un des deux est toujours une erreur de type, qui arrête le script appelant. Depuis la 4.7.0, les enfants du menu ACE de l'écran lisent le format de la dalle (`["format", _o]`, donc `_ratioOf` puis `_entryOf`) : menu vide, donc aucune interaction. La même erreur arrêtait la désignation (« add ») et donc la pose d'une salle après le premier écran ; la ligne existe depuis la 4.4.1, ce qui explique très probablement le retour « un seul écran » de la 4.6.0. Corrigé par un `if` / `else`.
+- Ce n'est pas le chemin sans serveur qui cassait : l'erreur est la même sur le serveur. Dans la session de TTRD (serveur sans les fonctions TOC), la salle s'est arrêtée au premier écran pour cette raison.
+- `fn_tocHallBuild` : un rappel par objet (`step`, file `fn_waitAndExec`) puis un bilan (`finish`) ; une erreur dans un pas n'arrête plus que ce pas (une boucle ne suffisait pas : la première erreur arrêtait tout). Lignes `[COMSPEC TOC] salle | …` écrites aussi dans le journal COMSPEC. Seul le bureau reste figé : plus aucun écran ni PC sans simulation.
+- `fn_tocAuto` (nouveau) : événement de création sur `COMSPEC_ATAK_Screen_Base3D` (écrans, murs, bandeaux, postes PC) et `COMSPEC_ATAK_TocLaptop`, sur chaque machine, objets déjà présents compris, plus un passage toutes les 30 s. Réglage une seule fois par objet, 2 s après la pose (9 s au lancement) : désignation si personne ne l'a faite, affichage par défaut du format (16:9 carte et flux, bandeau horloge, plaque, texte à LED, colonne, poste PC en console), salle la plus proche à 30 m ou nouvelle salle « TOC n » (`fn_tocHall` « auto »). Le serveur règle ; serveur plus ancien ou sans le mod : le poste où l'objet est local, sinon le premier joueur. Une ligne par écran : `[COMSPEC TOC] écran | classe=… salle=… vue=… ok`.
+- Tests : `AtakTocScreenSelfSetupAssetTest` (aucun tableau qui mêle les deux lectures de config, action ACE principale et menu sur chaque classe posable, aucun objet simple, lignée du réglage automatique), `AtakTocHallRoomAssetTest` mis à jour.
+- Non vérifié en jeu : menu ACE revenu sur chaque modèle, réglage automatique (Eden, Zeus, serveur dédié, serveur sans le mod, joueur arrivé en cours de partie), salle complète posée objet par objet.
+
 ## Pack 4.7.0 Washington : relais, antennes et caméras refaits en 3D, salle TOC complète posée en entier, texte à LED et écrans géants, bris d'écran réalistes, poste TOC relié à Athena (ATAK natif 4.7.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 
 ### Résumé joueur

@@ -17,8 +17,10 @@
     Encombrement devant le module (largeur x profondeur) : petite 8 x 7 m, moyenne 11 x 8,5 m, grande 16 x 9,5 m.
 
     Modes :
-      ["build", [posATL, direction, taille, nom, camp, id, classe des postes, aligner sur le bâtiment, repli]]
-                                        pose la salle sur ce poste -> [id, posés, prévus, [remarques], nom]
+      ["build", [posATL, direction, taille, nom, camp, id, classe des postes, aligner sur le bâtiment, repli, demandeur]]
+                                        pose la salle sur ce poste, un rappel par objet -> [id, 0, prévus, [remarques], nom] ;
+                                        le bilan (« finish ») rend [id, posés, prévus, [remarques], nom] au demandeur
+      ["step", …] / ["finish", …]       un objet de la salle / bilan de la pose (rappels de « build »)
       ["eden", [module, posATL, direction, taille, nom, camp, postes, supprimer avec le module]]
                                         serveur, après la reprise de la partie précédente : salle déjà reprise pour ce
                                         module (même nom, même endroit, même carte) : gardée ; incomplète : reposée
@@ -181,6 +183,25 @@ private _hit = {
 // Mur ou plafond : seulement un bâtiment ou un mur posé (jamais un arbre, un rocher ni le relief).
 private _built = { params ["_o"]; !isNull _o && {_o isKindOf "Building"} };
 private _say = { params ["_lvl", "_txt"]; [_lvl, "TOC", _txt] call comspec_atak_native_fnc_log; };
+// Une ligne au journal du jeu (« [COMSPEC TOC] … », RPT) et au journal COMSPEC (celui que les joueurs envoient).
+private _journal = {
+    params ["_txt"];
+    diag_log text ("[COMSPEC TOC] " + _txt);
+    if (!isNil "comspec_overwatch_connect_fnc_log") then { ["INFO", "ATAK TOC", _txt] call comspec_overwatch_connect_fnc_log; };
+};
+// Salle inscrite au registre (créée, ou son mobilier mis à jour) ; sur un poste en repli, par la même variable publique.
+private _register = {
+    params ["_id", "_nm", "_sd", "_props", ["_local", false]];
+    private _l = +((missionNamespace getVariable ["COMSPEC_ATAK_TocHalls", []]) select { _x isEqualType [] && {(count _x) >= 5} });
+    private _i = _l findIf { (_x select 0) isEqualTo _id };
+    if (_i < 0) then {
+        _l pushBack ([_id, (toUpper _nm) select [0, 32], toUpper _sd, [], _props] + ([[], ["LOCAL"]] select _local));
+    } else {
+        (_l select _i) set [4, _props];
+    };
+    missionNamespace setVariable ["COMSPEC_ATAK_TocHalls", _l, true];
+    ["save"] call comspec_atak_native_fnc_tocPersist;
+};
 private _halls = { +((missionNamespace getVariable ["COMSPEC_ATAK_TocHalls", []]) select { _x isEqualType [] && {(count _x) >= 5} }) };
 
 switch (_mode) do {
@@ -198,7 +219,7 @@ switch (_mode) do {
         [_x1 - _x0, _y1]
     };
     case "build": {
-        _a params [["_pos", [0, 0, 0]], ["_dir", 0], ["_size", "M"], ["_nm", "SALLE TOC"], ["_sd", "WEST"], ["_id", ""], ["_post", ""], ["_snap", false], ["_fallback", false]];
+        _a params [["_pos", [0, 0, 0]], ["_dir", 0], ["_size", "M"], ["_nm", "SALLE TOC"], ["_sd", "WEST"], ["_id", ""], ["_post", ""], ["_snap", false], ["_fallback", false], ["_by", objNull]];
         // Seul le serveur pose, ou ce poste quand il tient lui-même les écrans (serveur plus ancien : fn_tocConfig « local »).
         if (!isServer && {!(["local", objNull] call comspec_atak_native_fnc_tocConfig)}) exitWith { ["", 0, 0, ["FAIL"], _nm] };
         if !(_size in (_rooms apply { _x select 0 })) then { _size = "M"; };
@@ -268,22 +289,23 @@ switch (_mode) do {
             [_role, _cls, [_xy select 0, _xy select 1, _gz + _z0], _dir + ([180, 0] select (_role isEqualTo "desk")), _view, _name, _extra, _mount]
         };
         // 6. Salle inscrite avant la pose : les écrans s'y lient un par un, un objet raté ne bloque ni elle ni les autres.
-        private _register = {
-            params ["_props"];
-            private _l = call _halls;
-            private _i = _l findIf { (_x select 0) isEqualTo _id };
-            if (_i < 0) then {
-                _l pushBack ([_id, (toUpper _nm) select [0, 32], toUpper _sd, [], _props] + ([[], ["LOCAL"]] select ("LOCAL" in _flags)));
-            } else {
-                (_l select _i) set [4, _props];
-            };
-            missionNamespace setVariable ["COMSPEC_ATAK_TocHalls", _l, true];
-            ["save"] call comspec_atak_native_fnc_tocPersist;
-        };
-        [[]] call _register;
-        // 7. Un pas par objet : [objet, raison de l'échec].
-        private _step = {
-            params ["_row"];
+        [_id, _nm, _sd, [], "LOCAL" in _flags] call _register;
+        // 7. Un rappel par objet (file du mod, fn_waitAndExec) : une erreur de script dans un pas n'arrête que ce pas.
+        // Dans une simple boucle, la première erreur arrêtait toute la pose (4.7.0 : journal sans aucune ligne d'objet).
+        private _n = count _plan;
+        private _ctx = [_id, _nm, _sd, _size, _n, _sqs, [], [], [], _flags, _skipped, _by];
+        {
+            [{ ["step", _this] call comspec_atak_native_fnc_tocHallBuild; }, [_ctx, _x, _forEachIndex], 0.05 * _forEachIndex] call comspec_atak_native_fnc_waitAndExec;
+        } forEach _plan;
+        // 8. Bilan une fois tous les pas passés : mobilier gardé avec la salle, résumé, résultat rendu au demandeur.
+        [{ ["finish", _this] call comspec_atak_native_fnc_tocHallBuild; }, _ctx, 0.05 * _n + 0.5] call comspec_atak_native_fnc_waitAndExec;
+        [_id, 0, _n, _flags, _nm]
+    };
+    case "step": {
+        // Pose d'un objet de la salle : [contexte de la pose, ligne du plan, rang]. Le contexte est partagé par tous les pas.
+        _a params ["_ctx", "_row", "_k"];
+        _ctx params ["_id", "_nm", "_sd", "", "_n", "_sqs", "_objs", "_props", "_done"];
+        private _res = call {
             _row params ["_role", "_cls", "_at", "_d", "_view", "_name", "_extra", "_mount"];
             if (_cls isEqualTo "") exitWith { [objNull, "aucun mobilier du jeu disponible"] };
             if !(isClass (configFile >> "CfgVehicles" >> _cls)) exitWith { [objNull, "classe absente du jeu"] };
@@ -306,11 +328,13 @@ switch (_mode) do {
             _o setVectorDirAndUp [[sin _d, cos _d, 0], [0, 0, 1]];
             _o setVelocity [0, 0, 0];
             _o setVariable ["COMSPEC_ATAK_TocRoom", _id, true];
+            _o setVariable ["COMSPEC_ATAK_TocRoomRole", _role];
             if (_role in _screenRoles) then {
                 _o setVariable ["COMSPEC_ATAK_TocHall", _id, true];
             } else {
-                // Bureau et PC figés là où ils sont posés (le PC ne glisse pas du plateau) ; la chaise reste libre.
-                if (_role in ["desk", "pc"]) then { if (isServer) then { _o enableSimulationGlobal false; } else { _o enableSimulation false; }; };
+                // Seul le bureau est figé (il ne glisse pas sous le PC). Jamais un écran ni un PC : sans simulation, un objet
+                // peut perdre son menu ACE ; ce sont des objets statiques, ils ne bougent pas.
+                if (_role isEqualTo "desk") then { if (isServer) then { _o enableSimulationGlobal false; } else { _o enableSimulation false; }; };
                 if (_role isEqualTo "pc") then {
                     _o setVariable ["COMSPEC_ATAK_TocHall", _id, true];
                     _o setVariable ["COMSPEC_ATAK_TocSide", toUpper _sd, true];
@@ -324,37 +348,43 @@ switch (_mode) do {
             };
             [_o, ""]
         };
-        private _n = count _plan;
-        private _objs = [];
-        private _props = [];
-        private _bad = 0;
-        private _master = objNull;
-        {
-            private _row = _x;
-            private _res = [_row] call _step;
-            if (isNil "_res" || {!(_res isEqualType [])}) then { _res = [objNull, "erreur de script (voir plus haut dans le journal)"]; };
-            _res params [["_o", objNull], ["_why", ""]];
-            if (isNull _o) then {
-                _bad = _bad + 1;
-                diag_log text format ["[COMSPEC TOC] salle | objet %1/%2 classe=%3 échec %4", _forEachIndex + 1, _n, _row select 1, _why];
-            } else {
-                _objs pushBack _o;
-                if !((_row select 0) in _screenRoles) then { _props pushBack [typeOf _o, getPosASL _o, vectorDir _o, vectorUp _o, (_row select 0) isEqualTo "pc"]; };
-                if (isNull _master && {(_row select 0) isEqualTo "pc"}) then { _master = _o; };
-                diag_log text format ["[COMSPEC TOC] salle | objet %1/%2 classe=%3 ok", _forEachIndex + 1, _n, _row select 1];
-            };
-        } forEach _plan;
-        { diag_log text format ["[COMSPEC TOC] salle | non posé classe=%1 : pas de %2 à cet endroit", _x select 1, ["plafond", "mur"] select ((_x select 2) isEqualTo "wall")]; } forEach _skipped;
-        // 8. Mobilier et PC gardés avec la salle ; premier PC : poste maître (tous les PC de la salle la pilotent).
-        [_props] call _register;
-        if (!isNull _master) then { _master setVariable ["COMSPEC_ATAK_TocHallMaster", true, true]; };
+        if (isNil "_res" || {!(_res isEqualType [])}) then { _res = [objNull, "erreur de script (voir plus haut dans le journal)"]; };
+        _res params [["_o", objNull], ["_why", ""]];
+        _done pushBack _k;
+        if (isNull _o) then {
+            [format ["salle | objet %1/%2 classe=%3 échec %4", _k + 1, _n, _row select 1, _why]] call _journal;
+        } else {
+            _objs pushBack _o;
+            if !((_row select 0) in _screenRoles) then { _props pushBack [typeOf _o, getPosASL _o, vectorDir _o, vectorUp _o, (_row select 0) isEqualTo "pc"]; };
+            [format ["salle | objet %1/%2 classe=%3 ok", _k + 1, _n, _row select 1]] call _journal;
+        };
+        true
+    };
+    case "finish": {
+        _a params ["_id", "_nm", "_sd", "_size", "_n", "", "_objs", "_props", "_done", "_flags", "_skipped", ["_by", objNull]];
+        // Pas arrêté par une erreur de script : il n'a rien noté, le bilan le dit.
+        for "_k" from 0 to (_n - 1) do {
+            if !(_k in _done) then { [format ["salle | objet %1/%2 échec erreur de script (voir plus haut dans le journal)", _k + 1, _n]] call _journal; };
+        };
+        { [format ["salle | non posé classe=%1 : pas de %2 à cet endroit", _x select 1, ["plafond", "mur"] select ((_x select 2) isEqualTo "wall")]] call _journal; } forEach _skipped;
+        _objs = _objs select { !isNull _x };
+        [_id, _nm, _sd, _props, "LOCAL" in _flags] call _register;
+        // Premier PC : poste maître (tous les PC de la salle la pilotent).
+        private _mi = _objs findIf { (_x getVariable ["COMSPEC_ATAK_TocRoomRole", ""]) isEqualTo "pc" };
+        if (_mi >= 0) then { (_objs select _mi) setVariable ["COMSPEC_ATAK_TocHallMaster", true, true]; };
         private _map = missionNamespace getVariable ["COMSPEC_ATAK_TocHallObjs", createHashMap];
         _map set [_id, _objs];
         missionNamespace setVariable ["COMSPEC_ATAK_TocHallObjs", _map];
-        if (_bad > 0) then { _flags pushBack "FAIL"; };
-        [["INFO", "WARNING"] select (_bad > 0), format ["salle | « %1 » (%2) posée : %3 objet(s) sur %4, %5 non posé(s) faute de mur ou de plafond, remarques %6, salle %7",
-            _nm, _size, _n - _bad, _n, count _skipped, _flags, _id]] call _say;
-        [_id, _n - _bad, _n, _flags, _nm]
+        private _ok = count _objs;
+        if (_ok < _n) then { _flags pushBackUnique "FAIL"; };
+        [format ["salle | « %1 » (%2) posée : %3 objet(s) sur %4, %5 non posé(s) faute de mur ou de plafond, remarques %6, salle %7",
+            _nm, _size, _ok, _n, count _skipped, _flags, _id]] call _journal;
+        // Résultat pour le Zeus qui a demandé la salle : ce poste, ou son poste par le réseau.
+        private _res = [_id, _ok, _n, _flags, _nm];
+        if (_by isEqualType objNull && {!isNull _by}) then {
+            if (hasInterface && {_by isEqualTo player}) then { ["done", [_res]] call _fn; } else { ["comspec_atak_native_tocHallDone", [_res], _by] call CBA_fnc_targetEvent; };
+        };
+        _res
     };
     case "eden": {
         _a params [["_logic", objNull], ["_pos", [0, 0, 0]], ["_dir", 0], ["_size", "M"], ["_nm", "SALLE TOC"], ["_sd", "WEST"], ["_post", ""], ["_bind", true]];
@@ -404,7 +434,7 @@ switch (_mode) do {
         private _id = format ["H%1%2", floor (serverTime * 10), floor random 10000];
         // Ce poste est le serveur, ou le serveur est plus ancien (repli) : la salle est posée ici, par le même constructeur.
         if (isServer || {["local", objNull] call comspec_atak_native_fnc_tocConfig}) exitWith {
-            ["done", [["build", [_pos, _dir, _size, _nm, _sd, _id, _post, true, !isServer]] call _fn]] call _fn;
+            ["build", [_pos, _dir, _size, _nm, _sd, _id, _post, true, !isServer, player]] call _fn;
             true
         };
         ["do", ["spawn", [_pos, _dir, _size, _nm, _sd, _id, _post, player, true]]] call comspec_atak_native_fnc_tocHall;
@@ -416,7 +446,7 @@ switch (_mode) do {
             ["WARNING", "TOC", "salle | le serveur n'a pas posé la salle en 8 s : pose par ce poste, non gardée d'une partie à l'autre"] call comspec_atak_native_fnc_log;
             missionNamespace setVariable ["COMSPEC_ATAK_TocForceFallback", true];
             _args params ["_pos", "_dir", "_size", "_nm", "_sd", "_post"];
-            ["done", [["build", [_pos, _dir, _size, _nm, _sd, _id, _post, true, true]] call comspec_atak_native_fnc_tocHallBuild]] call comspec_atak_native_fnc_tocHallBuild;
+            ["build", [_pos, _dir, _size, _nm, _sd, _id, _post, true, true, player]] call comspec_atak_native_fnc_tocHallBuild;
         }, [[_pos, _dir, _size, _nm, _sd, _post], _id], 8] call comspec_atak_native_fnc_waitAndExec;
         true
     };

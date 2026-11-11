@@ -95,6 +95,16 @@ foreach ($idCountries as $c) {
                                             <div><dt>Expire le</dt><dd><?= $h($dateFr($doc['expires_on'])) ?></dd></div>
                                             <?php if (!empty($doc['issued_at'])): ?><div><dt>Émis pour le jeu</dt><dd><?= $h($dateFr((string) $doc['issued_at'])) ?></dd></div><?php endif; ?>
                                         </dl>
+                                        <?php $usedBy = $idCoverUsage['by_document'][(int) $doc['id']] ?? []; ?>
+                                        <?php if ($usedBy !== []): ?>
+                                            <p class="opx-uses"><?= count($usedBy) === 1 ? 'Emporté par la couverture' : 'Emporté par les couvertures' ?>
+                                                <?php foreach ($usedBy as $n => $use): ?>
+                                                    <a href="<?= $h(url('operateur/identite/couverture') . '#couverture-' . (int) $use['id']) ?>" translate="no"><?= $h($use['name']) ?></a><?= $n < count($usedBy) - 1 ? ', ' : '' ?>
+                                                <?php endforeach; ?>
+                                            </p>
+                                        <?php elseif ($doc['status'] === 'valid'): ?>
+                                            <p class="opx-uses">Dans aucune couverture.</p>
+                                        <?php endif; ?>
                                         <?php if ($doc['status'] === 'requested'): ?>
                                             <p class="opx-note">Demande en attente : un responsable la valide et émet le papier. Les valeurs affichées sont une proposition.</p>
                                         <?php elseif (in_array($doc['status'], ['lost', 'stolen'], true)): ?>

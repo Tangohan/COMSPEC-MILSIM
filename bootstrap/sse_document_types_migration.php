@@ -31,7 +31,7 @@ return static function (PDO $pdo, ?callable $log = null): int {
     }
     // La colonne a été créée en VARCHAR(80) : trop courte dès qu'un pays porte les types du mod (erreur 1406).
     if (in_array($pdo->getAttribute(PDO::ATTR_DRIVER_NAME), ['mysql', 'mariadb'], true)) {
-        $pdo->exec("ALTER TABLE sse_id_countries MODIFY doc_types VARCHAR(255) NOT NULL DEFAULT 'id_card'");
+        $pdo->exec("ALTER TABLE sse_id_countries MODIFY doc_types VARCHAR(255) DEFAULT NULL");
     }
     $rows = $pdo->query("SELECT id, code, doc_types, validity_json FROM sse_id_countries WHERE real_sim = 1 AND doc_types IS NOT NULL AND doc_types <> ''")->fetchAll(PDO::FETCH_ASSOC);
     $update = $pdo->prepare('UPDATE sse_id_countries SET doc_types = :types, validity_json = :validity WHERE id = :id');

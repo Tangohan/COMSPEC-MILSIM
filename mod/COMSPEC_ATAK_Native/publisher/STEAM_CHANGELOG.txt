@@ -1,3 +1,23 @@
+[h1]COMSPEC ATAK 4.7.1 Washington — menu ACE des écrans du TOC réparé, écran qui se règle tout seul / ACE menu of TOC screens fixed, screens set themselves up[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Menu ACE des écrans[/b] : l'interaction ACE revient sur tous les écrans et postes PC du TOC. Elle avait disparu en 4.7.0.
+[*] [b]Écran posé, écran prêt[/b] : un écran posé s'allume et se configure tout seul, que vous le posiez dans l'éditeur, en Zeus, par un module ou par un script.
+[*] [b]Bon affichage d'office[/b] : carte et flux sur un écran, horloges sur le bandeau horloge, texte sur le bandeau LED, nom d'escouade sur la plaque, console sur un poste PC.
+[*] [b]Salle trouvée toute seule[/b] : l'écran se relie à la salle la plus proche ; s'il n'y en a pas, une salle « TOC 1 » est créée.
+[*] [b]Salle TOC complète[/b] : le module pose de nouveau toute la salle, y compris quand le serveur n'a pas le mod à jour.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Screen ACE menu[/b]: ACE interaction is back on every TOC screen and PC station. It had disappeared in 4.7.0.
+[*] [b]Placed screen, ready screen[/b]: a placed screen lights up and configures itself, whether you place it in the editor, in Zeus, with a module or with a script.
+[*] [b]Right display by default[/b]: map and feed on a screen, clocks on the clock strip, text on the LED strip, squad name on the name plate, console on a PC station.
+[*] [b]Room found by itself[/b]: the screen links to the nearest room; if there is none, a "TOC 1" room is created.
+[*] [b]Complete TOC room[/b]: the module places the whole room again, including when the server does not run the up-to-date mod.
+[/list]
+
 [h1]COMSPEC ATAK 4.7.0 Washington — relais refaits en 3D, salle TOC posée en entier, écrans géants, bris d'écran réalistes / relays rebuilt in 3D, TOC room placed in full, giant screens, realistic screen damage[/h1]
 
 [h2]Français[/h2]

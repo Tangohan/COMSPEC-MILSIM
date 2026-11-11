@@ -184,12 +184,22 @@ $identityForm = static function (?array $identity, bool $primary, array $default
                                         <?php endif; ?>
                                     </div>
                                 </div>
-                                <dl class="opx-facts">
+                                <dl class="opx-facts opx-facts--6">
                                     <div><dt>Né(e) le</dt><dd><?= $h($dateFr($identity['birth_date'])) ?></dd></div>
                                     <div><dt>Lieu de naissance</dt><dd><?= $h($identity['birth_place'] ?: '—') ?></dd></div>
                                     <div><dt>Nationalité</dt><dd><?= $h($countryName($identity['nationality'])) ?></dd></div>
                                     <div><dt>Signalement</dt><dd><?= $h($signalement !== '' ? $signalement : 'À renseigner') ?></dd></div>
                                     <div><dt>Papiers</dt><dd><a href="<?= $h(url('operateur/identite/documents') . '#papiers-' . $id) ?>"><?php if ($papers === 0): ?>Aucun papier<?php elseif ($papers === 1): ?>1 papier<?php else: ?><?= $papers ?> papiers<?php endif; ?></a></dd></div>
+                                    <?php $builtOn = $idCoverUsage['by_identity'][$id] ?? []; ?>
+                                    <div><dt>Couvertures</dt><dd>
+                                        <?php if ($builtOn !== []): ?>
+                                            <a href="<?= $h(url('operateur/identite/couverture') . '#couverture-' . (int) $builtOn[0]['id']) ?>"><?php if (count($builtOn) === 1): ?>1 couverture<?php else: ?><?= count($builtOn) ?> couvertures<?php endif; ?></a>
+                                        <?php elseif (!$identity['archived']): ?>
+                                            <a href="<?= $h(url('operateur/identite/couverture') . '?identite=' . $id) ?>">Aucune, en créer une</a>
+                                        <?php else: ?>
+                                            Aucune
+                                        <?php endif; ?>
+                                    </dd></div>
                                 </dl>
                                 <?php if (!$identity['archived']): ?>
                                     <div class="opx-complete">
