@@ -53,3 +53,29 @@ joué quand elle a vraiment peur, réplique propre quand elle est menottée (esc
   fenêtre « Parler à » déjà en place. Aucune fenêtre d'alerte du jeu.
 - Réglages CBA, attributs Eden, menu Zeus (ZEN) : niveau, intensité des dégâts, mortel. Coupé par défaut.
 - Hors périmètre : IA contre IA. `fn_radioGuard` et le contrôle d'identité entre joueurs ne sont pas touchés.
+
+## 4. Mods TSP de TTRD (lecture seule du dossier Workshop, aucun code ni fichier repris)
+
+| Mod | Dossier Workshop | CfgPatches | Ce qu'on en utilise |
+|-----|------------------|------------|---------------------|
+| TSP Melee | `3026491672` (pack « # S.O.A.R - FN », `tsp_melee.pbo` et ses armes) | `tsp_melee` (requiert `tsp_core`) | `[ia, mode, vrai] spawn tsp_fnc_melee_action` (modes `push`, `main`, `alt`), gardes `tsp_fnc_melee_can` et `tsp_fnc_melee_weapon` (= `fist`), réglage `tsp_cba_melee`, évènement CBA local `tsp_melee_damageMan` [attaquant, victime], `tsp_fnc_melee_stun`, `CfgMelee >> fist` (dégâts estimés) ; gestes `tsp_melee_fistPunchRight`, `tsp_melee_fistPunchLeft`, `tsp_melee_fistPush`, mouvement `tsp_melee_fistStun` |
+| TSP Core | `3283642267` (« Speshal Core ») et copie du pack | `tsp_core` | rien directement : `tsp_fnc_gesture_stop` et l'action `tsp_common_stop` pour rendre la garde |
+| TSP Animate | `3283612524` (« Animate - Rewrite ») et copies des packs | `tsp_animate` (+ `tsp_animate_ace`) | gestes `tsp_animate_bird_loop`, `tsp_animate_thumbsdown_loop`, `tsp_animate_loser_loop` quand une IA insulte |
+
+- TSP Melee sait faire frapper une IA : `tsp_fnc_melee_action` choisit alors lui-même sa victime (l'homme le plus proche
+  à 2,5 m) et applique lui-même dégâts, sonné, assommé, sons et parade (`tsp_fnc_hitpoint_damage`, ACE médical compris).
+  Le SSE ne l'appelle donc que si le joueur visé est bien le plus proche, n'ajoute aucun dégât, et fait jouer ses
+  plafonds en **arrêtant** la bagarre (pas en rognant le coup). Pour un plafond exact : réglage « Intégré SSE ».
+- `tsp_fnc_melee_ai` (boucle de combat IA de TSP) n'est jamais appelée : elle vise tout ce qui n'est pas ami et ne
+  s'arrête qu'à la mort de l'IA.
+- TSP Animate n'a ni coup de poing, ni mains en l'air, ni marche d'escorte utilisable par une IA (ses gestes de captif
+  sont ceux d'ACE, déjà suivis) : seuls ses gestes de provocation servent. Rien dans ses fichiers ne parle des IA.
+- Sans TSP : Arma 3 n'a aucune animation de coup de poing debout. Le moteur intégré joue un signe de la main du jeu
+  (`GestureAttack`, `GestureGo`…, le premier qui existe), un court élan, un recul du joueur, une secousse de caméra et
+  un son de coup du jeu. C'est lisible, pas beau.
+
+## 5. Non vérifié en jeu
+
+Tout (Arma n'a pas été lancé) : allure réelle du suivi et passage des portes, reprise sur client sans tête, rendu des
+gestes, `tsp_fnc_melee_action` lancée sur un serveur dédié, dégâts réels avec ACE médical, hauteur de la fenêtre
+« SSE · <nom> » avec une ligne de plus, listes des attributs Eden.

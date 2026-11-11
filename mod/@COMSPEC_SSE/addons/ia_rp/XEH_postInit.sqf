@@ -19,6 +19,8 @@
     if (isNull _u || {!local _u} || {!alive _u}) exitWith {};
     if (_cmd isEqualTo "unlock") exitWith { _u lock 0; };
     if !(_cmd in ["follow", "look", "turn", "drop"]) then { ["stop", [_u, _cmd]] call comspec_sse_fnc_iarpFollow; };
+    // Bagarre en cours (fn_iarpMelee) : un ordre qui l'immobilise, la rend ou la fait partir y met fin.
+    if (_cmd in ["stop", "surrender", "free", "flee", "pos", "out", "follow"]) then { ["stop", [_u, "order"]] call comspec_sse_fnc_iarpMelee; };
     switch (_cmd) do {
         case "surrender": {
             if (isClass (configFile >> "CfgPatches" >> "ace_captives")) then { ["ace_captives_setSurrendered", [_u, true], _u] call CBA_fnc_targetEvent; } else { _u action ["Surrender", _u]; };
@@ -80,4 +82,20 @@
 }] call CBA_fnc_addEventHandler;
 if (isServer) then {
     ["comspec_sse_iarpFired", { ["fired", _this] call comspec_sse_fnc_iarpReact; }] call CBA_fnc_addEventHandler;
+};
+
+// Agressivité des IA (fn_iarpAggro, serveur) : bagarre et gestes là où l'IA est locale, coup reçu chez le joueur touché,
+// comptes rendus au serveur ; un contrôle de papiers par l'action du menu (identity : comspec_sse_idAsked) compte
+// comme le même contrôle demandé en texte.
+["comspec_sse_iarpMelee", { _this call comspec_sse_fnc_iarpMelee; }] call CBA_fnc_addEventHandler;
+["comspec_sse_iarpMeleeHit", { ["hit", _this] call comspec_sse_fnc_iarpMelee; }] call CBA_fnc_addEventHandler;
+if (isServer) then {
+    ["comspec_sse_iarpAggroEv", { _this call comspec_sse_fnc_iarpAggro; }] call CBA_fnc_addEventHandler;
+    ["comspec_sse_idAsked", {
+        params [["_t", objNull], ["_me", objNull]];
+        if (!isNull _t && {!isPlayer _t} && {!isNull _me}) then {
+            private _r = ["trigger", [_t, _me, "papers"]] call comspec_sse_fnc_iarpAggro;
+            if ((_r param [2, false]) && {(_r param [1, ""]) in ["irritated", "hostile"]}) then { ["speak", [_t, _r select 1, "papers"]] call comspec_sse_fnc_iarpAggro; };
+        };
+    }] call CBA_fnc_addEventHandler;
 };

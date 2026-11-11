@@ -28,7 +28,7 @@ private _L = { localize ("STR_COMSPEC_IARP_H_" + _this) };
 // [identifiant de l'action ZEN (fn_iarpZen), suffixe des textes : titre « X », explication « X_D »]
 private _entries = [
     ["_editor", "Id"], ["_truth", "Truth"], ["_workshop", "Workshop"], ["_answers", "Answers"],
-    ["_emotions", "Emo"], ["_traits", "Control"], ["_know", "Know"]
+    ["_emotions", "Emo"], ["_aggro", "Aggro"], ["_traits", "Control"], ["_know", "Know"]
 ];
 private _target = {
     params ["_u"];

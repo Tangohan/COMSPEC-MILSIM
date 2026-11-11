@@ -2,7 +2,8 @@
     Réglages CBA de l'IA RP (COMSPEC SSE › IA RP), posés au preInit sur toutes les machines. Textes : stringtable.xml
     de l'addon (français, anglais), chacun avec son explication et un exemple.
     Globaux (le serveur décide) : texte libre, portée, indicateur, journal, longueur, ordres (durée et distance de relâche
-    d'un « Stop »), réaction aux tirs proches, témoins, émotions des IA (dont la peur des armes), /try, Zeus.
+    d'un « Stop »), réaction aux tirs proches, témoins, émotions des IA (dont la peur des armes), agressivité des IA
+    (niveau, intensité des dégâts, mortel, assommer, arme sortie, moteur de corps à corps, gestes TSP), /try, Zeus.
     Par joueur : couleurs des commandes. Touche d'ouverture : CBA › Touches (XEH_postInitClient).
 */
 if (isNil "CBA_fnc_addSetting") exitWith { false };
@@ -26,6 +27,18 @@ private _add = {
 // une case par émotion. Une IA réglée dans Eden ou par le Zeus (profil « emotions ») l'emporte sur ces cases.
 ["comspec_sse_iarp_emoOn", "CHECKBOX", "STR_COMSPEC_IARP_S_EmoOn", true] call _add;
 { [format ["comspec_sse_iarp_emo_%1", _x], "CHECKBOX", format ["STR_COMSPEC_IARP_S_Emo_%1", _x], true] call _add; } forEach ["peur", "armes", "nervosite", "colere", "mefiance", "soulagement"];
+// Agressivité des IA envers les joueurs (fn_iarpAggro, fn_iarpMelee) : coupée par défaut. Une IA réglée dans Eden ou par
+// le Zeus (niveau, trait, intensité, mortel) l'emporte sur ces réglages ; la colère doit rester cochée dans ses émotions.
+["comspec_sse_iarp_aggro", "LIST", "STR_COMSPEC_IARP_S_Aggro", [["off", "verbal", "physical"],
+    [localize "STR_COMSPEC_IARP_S_Aggro_off", localize "STR_COMSPEC_IARP_S_Aggro_verbal", localize "STR_COMSPEC_IARP_S_Aggro_physical"], 0]] call _add;
+["comspec_sse_iarp_aggroDamage", "SLIDER", "STR_COMSPEC_IARP_S_AggroDamage", [0, 100, 50, 0]] call _add;
+["comspec_sse_iarp_aggroLethal", "CHECKBOX", "STR_COMSPEC_IARP_S_AggroLethal", false] call _add;
+["comspec_sse_iarp_aggroKo", "CHECKBOX", "STR_COMSPEC_IARP_S_AggroKo", false] call _add;
+["comspec_sse_iarp_aggroWeapon", "CHECKBOX", "STR_COMSPEC_IARP_S_AggroWeapon", false] call _add;
+// Corps à corps : TSP Melee s'il est chargé (CfgPatches « tsp_melee »), sinon le moteur intégré ; gestes de TSP Animate.
+["comspec_sse_iarp_aggroMelee", "LIST", "STR_COMSPEC_IARP_S_AggroMelee", [["auto", "tsp", "sse"],
+    [localize "STR_COMSPEC_IARP_S_AggroMelee_auto", localize "STR_COMSPEC_IARP_S_AggroMelee_tsp", localize "STR_COMSPEC_IARP_S_AggroMelee_sse"], 0]] call _add;
+["comspec_sse_iarp_aggroTspAnim", "CHECKBOX", "STR_COMSPEC_IARP_S_AggroTspAnim", true] call _add;
 ["comspec_sse_iarp_tryChance", "SLIDER", "STR_COMSPEC_IARP_S_Try", [5, 95, 50, 0]] call _add;
 ["comspec_sse_iarp_log", "CHECKBOX", "STR_COMSPEC_IARP_S_Log", true] call _add;
 ["comspec_sse_iarp_logMax", "SLIDER", "STR_COMSPEC_IARP_S_LogMax", [50, 2000, 500, 0]] call _add;

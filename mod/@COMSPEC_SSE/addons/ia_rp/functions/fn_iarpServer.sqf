@@ -100,6 +100,8 @@ private _moodOf = {
     private _k = call {
         if (_u getVariable ["ace_captives_isHandcuffed", false]) exitWith { "cuffed" };
         if ((_u getVariable ["ace_captives_isSurrendering", false]) || {_st isEqualTo "rendu"}) exitWith { "rendu" };
+        // Hostile, ou en pleine bagarre (fn_iarpAggro) : « menaçant ».
+        if ((["rank", _u] call comspec_sse_fnc_iarpAggro) >= 2) exitWith { "agressif" };
         if (_st in ["fuit", "agressif", "renforts", "refuse", "nerveux"]) exitWith { _st };
         // Suit un joueur (« Suivez-moi », fn_iarpFollow : variable diffusée) : affiché tant qu'on ne l'a pas relâchée.
         if (!isNull (_u getVariable ["comspec_sse_iarpFollowing", objNull])) exitWith { "follow" };
@@ -331,6 +333,7 @@ switch (_op) do {
                     };
                     case "aggressive": { private _r = "agressif" call _force; if (!_r) then { _noFsm = true; }; _r };
                     case "calm": {
+                        ["reset", [_t]] call comspec_sse_fnc_iarpAggro;
                         _t setVariable ["comspec_sse_idTension", 0];
                         _t setVariable ["comspec_sse_idShock", [0, time]];
                         _t setVariable ["comspec_sse_idWant", ""];
@@ -391,6 +394,16 @@ switch (_op) do {
             };
         } forEach _units;
         ["notice", ["STR_COMSPEC_IARP_Z_N_MemCleared", _n]] call _reply;
+    };
+
+    // Agressivité de ces IA (menu ZEN « Agressivité… », Zeus ou administrateur) : niveau, trait, intensité des dégâts,
+    // mortel, rayon (toutes les IA autour de la première), puis ordre immédiat éventuel (s'en prendre au joueur, calmer).
+    case "aggroSet": {
+        if !([_me] call comspec_sse_fnc_isAuthority) exitWith {};
+        _args params ["", ["_units", [], [[]]], ["_mode", "auto", [""]], ["_trait", "auto", [""]], ["_dmg", -1, [0]], ["_lethal", -1, [0]], ["_radius", 0, [0]], ["_act", "", [""]]];
+        // Calme général et zones : l'ordre seul, sans toucher aux réglages des IA visées.
+        if !(_act in ["calmOn", "calmOff", "safe", "safeClear"]) then { ["set", [_units, _mode, _trait, _dmg, _lethal, _radius]] call comspec_sse_fnc_iarpAggro; };
+        if (_act in ["attack", "calm", "calmOn", "calmOff", "safe", "safeClear"]) then { ["zeus", [_units, _act, _radius]] call comspec_sse_fnc_iarpAggro; };
     };
 
     case "reactSet": {
@@ -727,6 +740,11 @@ switch (_op) do {
             };
         };
         // Une réaction par demande, dans l'ordre : [réplique, ton, issue, intention, déjà dit à un autre].
+        // Agressivité (fn_iarpAggro, coupée par défaut) : ce message l'a-t-il piquée (insulte, menace, fouille, papiers,
+        // ordre, bousculade en /me) ? [] : rien ; sinon [réplique fr, en, palier, refuse les ordres] : la réplique hostile
+        // remplace la réponse ordinaire, et une IA hostile n'obéit plus (sauf « partez »).
+        private _agg = ["say", [_t, _me, _list, _cmd, _norm]] call comspec_sse_fnc_iarpAggro;
+        if (isNil "_agg" || {!(_agg isEqualType [])}) then { _agg = []; };
         private _parts = [];
         private _mark = [];
         {
@@ -789,6 +807,7 @@ switch (_op) do {
                     if (_intent isEqualTo "trunk" && {isNull _veh}) exitWith { _gi = "trunkNone"; _outcome = "aucun véhicule"; };
                     // « Partez » : on le laisse partir, il part (menotté, il ne peut pas) ; seuls l'agressif et le fuyard l'ignorent.
                     if (_intent isEqualTo "leave" && {_t getVariable ["ace_captives_isHandcuffed", false]}) exitWith { _gi = "leaveCuffed"; _outcome = "menotté : ne peut pas partir"; };
+                    if ((_agg param [3, false]) && {_intent isNotEqualTo "leave"}) exitWith { _gi = "noComply"; _tone = "agressif"; _outcome = "hostile : refuse l'ordre"; };
                     // « Suivez-moi » : menottée, elle ne marche pas seule (escorte ACE) ; elle le dit au lieu d'accepter sans bouger.
                     if (_intent isEqualTo "follow" && {_t getVariable ["ace_captives_isHandcuffed", false]}) exitWith { _gi = "followCuffed"; _outcome = "menotté : à escorter (ACE)"; };
                     // Trop effrayée pour partir avec un inconnu (peur active, tension forte, sans arme braquée) : elle refuse.
@@ -1151,6 +1170,8 @@ switch (_op) do {
             _gen = +_gen;
             _gen resize 6;
             if (isNil {_gen select 5}) then { _gen set [5, _gen param [4, ""]]; };
+            // IA hostile : sa réplique (fn_iarpAggro, data\iarp_hostile.sqf) à la place de la réponse ordinaire.
+            if (_forEachIndex isEqualTo _mainI && {(count _agg) >= 2}) then { _gen set [0, _agg select 0]; _gen set [1, _agg select 1]; _gen set [4, _agg select 0]; _gen set [5, _agg select 1]; };
             // Réponse perso du maître du jeu : elle remplace la réplique, pas la décision (ordre obéi ou non, palier, mensonge).
             private _cust = false;
             private _ck = (createHashMapFromArray [["papersWait", "papers"], ["papersCloser", "papers"], ["searchWait", "search"]]) getOrDefault [_int1, _int1];

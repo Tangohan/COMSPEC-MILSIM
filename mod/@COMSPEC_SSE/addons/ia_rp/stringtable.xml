@@ -2690,5 +2690,330 @@
             <English>Untick all: the AI never changes emotion but still talks normally.</English>
             <French>Tout décocher : l'IA ne change jamais d'émotion mais parle normalement.</French>
         </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Aggro_T">
+            <Original>Aggressiveness of AIs</Original>
+            <English>Aggressiveness of AIs</English>
+            <French>Agressivité des IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Aggro_D">
+            <Original>How far an angry AI goes against a player. Never: nothing changes. Verbal: insults, threats, refuses orders. Physical: also shoves, slaps and punches (an unarmed civilian only uses his hands). Off by default; an AI set in Eden or by Zeus overrides this. Example: Physical for a tense checkpoint where a search can turn into a brawl.</Original>
+            <English>How far an angry AI goes against a player. Never: nothing changes. Verbal: insults, threats, refuses orders. Physical: also shoves, slaps and punches (an unarmed civilian only uses his hands). Off by default; an AI set in Eden or by Zeus overrides this. Example: Physical for a tense checkpoint where a search can turn into a brawl.</English>
+            <French>Jusqu'où va une IA en colère contre un joueur. Jamais : rien ne change. Verbale : insultes, menaces, ordres refusés. Physique : en plus elle bouscule, gifle et frappe (un civil sans arme ne se sert que de ses mains). Coupé par défaut ; une IA réglée dans Eden ou par le Zeus l'emporte. Exemple : Physique pour un point de contrôle tendu où une fouille peut finir en bagarre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Aggro_off">
+            <Original>Never</Original>
+            <English>Never</English>
+            <French>Jamais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Aggro_verbal">
+            <Original>Verbal (insults, threats)</Original>
+            <English>Verbal (insults, threats)</English>
+            <French>Verbale (insultes, menaces)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Aggro_physical">
+            <Original>Physical (shoves, punches)</Original>
+            <English>Physical (shoves, punches)</English>
+            <French>Physique (bouscule, frappe)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_AggroDamage_T">
+            <Original>Strength of the blows</Original>
+            <English>Strength of the blows</English>
+            <French>Force des coups</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_AggroDamage_D">
+            <Original>Damage of a blow from an AI, from 0 (shoves only, no damage) to 100 (twice the normal blow). At 50 a punch takes about 8 % of health and a player cannot lose more than 30 % in one minute. Example: 25 for a scuffle that only bruises, 100 for a real beating.</Original>
+            <English>Damage of a blow from an AI, from 0 (shoves only, no damage) to 100 (twice the normal blow). At 50 a punch takes about 8 % of health and a player cannot lose more than 30 % in one minute. Example: 25 for a scuffle that only bruises, 100 for a real beating.</English>
+            <French>Dégâts d'un coup donné par une IA, de 0 (bousculades seulement, aucun dégât) à 100 (coup deux fois plus fort). À 50, un coup de poing retire environ 8 % de la vie et un joueur ne perd jamais plus de 30 % en une minute. Exemple : 25 pour une échauffourée qui ne laisse que des bleus, 100 pour une vraie raclée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_AggroLethal_T">
+            <Original>Blows can kill</Original>
+            <English>Blows can kill</English>
+            <French>Coups mortels</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_AggroLethal_D">
+            <Original>Unticked (default): a blow never takes a player beyond 60 % damage, the AI stops before. Ticked: no ceiling, a beaten player can die. Example: leave unticked for a public mission; tick it for a hard scenario where a lynching is a real danger.</Original>
+            <English>Unticked (default): a blow never takes a player beyond 60 % damage, the AI stops before. Ticked: no ceiling, a beaten player can die. Example: leave unticked for a public mission; tick it for a hard scenario where a lynching is a real danger.</English>
+            <French>Décoché (défaut) : un coup ne porte jamais un joueur au-delà de 60 % de dégâts, l'IA s'arrête avant. Coché : plus de plafond, un joueur roué de coups peut mourir. Exemple : laissez décoché pour une mission publique ; cochez pour un scénario dur où un lynchage est un vrai danger.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_AggroKo_T">
+            <Original>Punches can knock out</Original>
+            <English>Punches can knock out</English>
+            <French>Les coups peuvent assommer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_AggroKo_D">
+            <Original>Ticked: with a strength of 50 or more, a punch has a 15 % chance of knocking the player out for about ten seconds (ACE unconsciousness when ACE is loaded). Example: tick it so a player alone in a hostile crowd really needs his team.</Original>
+            <English>Ticked: with a strength of 50 or more, a punch has a 15 % chance of knocking the player out for about ten seconds (ACE unconsciousness when ACE is loaded). Example: tick it so a player alone in a hostile crowd really needs his team.</English>
+            <French>Coché : avec une force de 50 ou plus, un coup de poing a 15 % de chances d'assommer le joueur une dizaine de secondes (inconscience ACE quand ACE est chargé). Exemple : cochez pour qu'un joueur seul dans une foule hostile ait vraiment besoin de son équipe.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_AggroWeapon_T">
+            <Original>An armed AI may draw its weapon</Original>
+            <English>An armed AI may draw its weapon</English>
+            <French>Une IA armée peut sortir son arme</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_AggroWeapon_D">
+            <Original>Ticked together with « Blows can kill »: an armed AI pushed to blows opens fire instead of punching (realistic AI state « aggressive »). Unticked (default): even armed, it only uses its fists. Example: tick both for an insurgent hidden in a crowd.</Original>
+            <English>Ticked together with « Blows can kill »: an armed AI pushed to blows opens fire instead of punching (realistic AI state « aggressive »). Unticked (default): even armed, it only uses its fists. Example: tick both for an insurgent hidden in a crowd.</English>
+            <French>Coché, avec « Coups mortels » : une IA armée poussée à bout ouvre le feu au lieu de frapper (état « agressif » des IA réalistes). Décoché (défaut) : même armée, elle ne se sert que de ses poings. Exemple : cochez les deux pour un insurgé caché dans une foule.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_AggroMelee_T">
+            <Original>Hand-to-hand combat</Original>
+            <English>Hand-to-hand combat</English>
+            <French>Combat corps à corps</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_AggroMelee_D">
+            <Original>Which system plays an AI's blows. Automatic: TSP Melee when that mod is loaded (its animations, sounds, blocking and damage rules, same as between players), otherwise the SSE built-in one. TSP Melee: same, falls back to built-in if the mod is missing. SSE built-in: always ours, with the exact SSE damage ceilings. Example: choose SSE built-in when you want the « never lethal » ceiling guaranteed to the percent.</Original>
+            <English>Which system plays an AI's blows. Automatic: TSP Melee when that mod is loaded (its animations, sounds, blocking and damage rules, same as between players), otherwise the SSE built-in one. TSP Melee: same, falls back to built-in if the mod is missing. SSE built-in: always ours, with the exact SSE damage ceilings. Example: choose SSE built-in when you want the « never lethal » ceiling guaranteed to the percent.</English>
+            <French>Quel système joue les coups d'une IA. Automatique : TSP Melee quand ce mod est chargé (ses animations, ses sons, sa parade et ses règles de dégâts, comme entre joueurs), sinon le système intégré au SSE. TSP Melee : pareil, avec repli sur l'intégré si le mod manque. Intégré SSE : toujours le nôtre, avec les plafonds de dégâts exacts du SSE. Exemple : choisissez Intégré SSE quand vous voulez le plafond « jamais mortel » garanti au pour cent près.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_AggroMelee_auto">
+            <Original>Automatic (TSP Melee if loaded)</Original>
+            <English>Automatic (TSP Melee if loaded)</English>
+            <French>Automatique (TSP Melee si présent)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_AggroMelee_tsp">
+            <Original>TSP Melee</Original>
+            <English>TSP Melee</English>
+            <French>TSP Melee</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_AggroMelee_sse">
+            <Original>SSE built-in</Original>
+            <English>SSE built-in</English>
+            <French>Intégré SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_AggroTspAnim_T">
+            <Original>TSP animations</Original>
+            <English>TSP animations</English>
+            <French>Animations TSP</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_AggroTspAnim_D">
+            <Original>Ticked (automatic): when TSP Animate or TSP Melee is loaded, hostile AIs use their gestures (rude hand signs when insulting, fist swings and stagger with the built-in combat). Unticked: only the base game hand signals. Example: untick if a gesture looks wrong with another animation mod.</Original>
+            <English>Ticked (automatic): when TSP Animate or TSP Melee is loaded, hostile AIs use their gestures (rude hand signs when insulting, fist swings and stagger with the built-in combat). Unticked: only the base game hand signals. Example: untick if a gesture looks wrong with another animation mod.</English>
+            <French>Coché (automatique) : quand TSP Animate ou TSP Melee est chargé, les IA hostiles utilisent leurs gestes (signes grossiers quand elles insultent, coups de poing et joueur sonné avec le combat intégré). Décoché : seulement les signes de la main du jeu. Exemple : décochez si un geste rend mal avec un autre mod d'animations.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Aggro">
+            <Original>Aggressiveness…</Original>
+            <English>Aggressiveness…</English>
+            <French>Agressivité…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Aggro_auto">
+            <Original>Mission setting</Original>
+            <English>Mission setting</English>
+            <French>Réglage de la mission</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Aggro_no">
+            <Original>No</Original>
+            <English>No</English>
+            <French>Non</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Aggro_yes">
+            <Original>Yes</Original>
+            <English>Yes</English>
+            <French>Oui</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroMode">
+            <Original>Aggressiveness</Original>
+            <English>Aggressiveness</English>
+            <French>Agressivité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroMode_D">
+            <Original>How far this AI goes when a player angers it: never, verbal (insults, threats, refuses orders), physical (shoves, slaps, punches). Example: Physical for the village drunk, Never for a child.</Original>
+            <English>How far this AI goes when a player angers it: never, verbal (insults, threats, refuses orders), physical (shoves, slaps, punches). Example: Physical for the village drunk, Never for a child.</English>
+            <French>Jusqu'où va cette IA quand un joueur la met en colère : jamais, verbale (insultes, menaces, ordres refusés), physique (bouscule, gifle, frappe). Exemple : Physique pour l'ivrogne du village, Jamais pour un enfant.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_E_AggroMode_D">
+            <Original>How far this AI goes when a player angers it (insult, threat, search, papers, orders, a shove): never, verbal, physical. « Mission setting » follows the CBA setting « Aggressiveness of AIs ». Example: Physical for a man who lost his house in a raid.</Original>
+            <English>How far this AI goes when a player angers it (insult, threat, search, papers, orders, a shove): never, verbal, physical. « Mission setting » follows the CBA setting « Aggressiveness of AIs ». Example: Physical for a man who lost his house in a raid.</English>
+            <French>Jusqu'où va cette IA quand un joueur la met en colère (insulte, menace, fouille, papiers, ordres, bousculade) : jamais, verbale, physique. « Réglage de la mission » suit le réglage CBA « Agressivité des IA ». Exemple : Physique pour un homme dont la maison a été détruite lors d'un raid.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroTrait">
+            <Original>Temper</Original>
+            <English>Temper</English>
+            <French>Caractère</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroTrait_D">
+            <Original>What kind of angry person this is: it sets how fast the anger rises and falls, what the AI says, and whether it really hits. Automatic: drawn from the AI workshop sliders. Example: Bluffing coward shouts a lot and never hits; Resentful stays angry for a long time.</Original>
+            <English>What kind of angry person this is: it sets how fast the anger rises and falls, what the AI says, and whether it really hits. Automatic: drawn from the AI workshop sliders. Example: Bluffing coward shouts a lot and never hits; Resentful stays angry for a long time.</English>
+            <French>Quel genre de personne en colère : cela règle la vitesse à laquelle la colère monte et retombe, ce que l'IA dit, et si elle frappe vraiment. Automatique : tiré des curseurs de l'atelier IA. Exemple : Lâche qui bluffe crie beaucoup et ne frappe jamais ; Rancunier reste en colère longtemps.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_E_AggroTrait_D">
+            <Original>Temper of this AI when angry: speed of the anger, what it says, whether it really hits. Automatic: drawn from the AI workshop sliders (drunkenness, aggressiveness, fear, role). Example: Drunk for a man leaving the bar, who swings and misses.</Original>
+            <English>Temper of this AI when angry: speed of the anger, what it says, whether it really hits. Automatic: drawn from the AI workshop sliders (drunkenness, aggressiveness, fear, role). Example: Drunk for a man leaving the bar, who swings and misses.</English>
+            <French>Caractère de cette IA en colère : vitesse de la colère, ce qu'elle dit, si elle frappe vraiment. Automatique : tiré des curseurs de l'atelier IA (ivresse, agressivité, peur, rôle). Exemple : Ivre pour un homme qui sort du bar, qui frappe et rate.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroTrait_auto">
+            <Original>Automatic (from her profile)</Original>
+            <English>Automatic (from her profile)</English>
+            <French>Automatique (d'après son profil)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroTrait_none">
+            <Original>No particular temper</Original>
+            <English>No particular temper</English>
+            <French>Sans caractère particulier</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroTrait_hostile">
+            <Original>Hostile</Original>
+            <English>Hostile</English>
+            <French>Hostile</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroTrait_irritable">
+            <Original>Short-tempered</Original>
+            <English>Short-tempered</English>
+            <French>Irritable</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroTrait_drunk">
+            <Original>Drunk</Original>
+            <English>Drunk</English>
+            <French>Ivre</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroTrait_fanatic">
+            <Original>Fanatic</Original>
+            <English>Fanatic</English>
+            <French>Fanatique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroTrait_resentful">
+            <Original>Resentful</Original>
+            <English>Resentful</English>
+            <French>Rancunier</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroTrait_proud">
+            <Original>Proud</Original>
+            <English>Proud</English>
+            <French>Fier</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroTrait_bluff">
+            <Original>Bluffing coward</Original>
+            <English>Bluffing coward</English>
+            <French>Lâche qui bluffe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroDmgOwn">
+            <Original>Own strength of blows</Original>
+            <English>Own strength of blows</English>
+            <French>Force des coups propre à ces IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroDmgOwn_D">
+            <Original>Ticked: the slider below applies to these AIs. Unticked: they follow the mission setting. Example: tick it and set 80 for the village blacksmith.</Original>
+            <English>Ticked: the slider below applies to these AIs. Unticked: they follow the mission setting. Example: tick it and set 80 for the village blacksmith.</English>
+            <French>Coché : le curseur ci-dessous vaut pour ces IA. Décoché : elles suivent le réglage de la mission. Exemple : cochez et mettez 80 pour le forgeron du village.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroDmg">
+            <Original>Strength of the blows</Original>
+            <English>Strength of the blows</English>
+            <French>Force des coups</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroDmg_D">
+            <Original>From 0 (shoves only, no damage) to 100 (twice the normal blow). Example: 25 for an old man, 80 for a dock worker.</Original>
+            <English>From 0 (shoves only, no damage) to 100 (twice the normal blow). Example: 25 for an old man, 80 for a dock worker.</English>
+            <French>De 0 (bousculades seulement, aucun dégât) à 100 (coup deux fois plus fort). Exemple : 25 pour un vieil homme, 80 pour un docker.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_E_AggroDmg_D">
+            <Original>Strength of this AI's blows: shoves only, light, normal, strong, very strong. « Mission setting » follows the CBA setting « Strength of the blows ». Example: Light for a teenager, Very strong for a boxer.</Original>
+            <English>Strength of this AI's blows: shoves only, light, normal, strong, very strong. « Mission setting » follows the CBA setting « Strength of the blows ». Example: Light for a teenager, Very strong for a boxer.</English>
+            <French>Force des coups de cette IA : bousculades seulement, légère, normale, forte, très forte. « Réglage de la mission » suit le réglage CBA « Force des coups ». Exemple : Légère pour un adolescent, Très forte pour un boxeur.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroDmg_0">
+            <Original>Shoves only (no damage)</Original>
+            <English>Shoves only (no damage)</English>
+            <French>Bousculades seulement (aucun dégât)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroDmg_25">
+            <Original>Light</Original>
+            <English>Light</English>
+            <French>Légère</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroDmg_50">
+            <Original>Normal</Original>
+            <English>Normal</English>
+            <French>Normale</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroDmg_75">
+            <Original>Strong</Original>
+            <English>Strong</English>
+            <French>Forte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroDmg_100">
+            <Original>Very strong</Original>
+            <English>Very strong</English>
+            <French>Très forte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroLethal">
+            <Original>Blows can kill</Original>
+            <English>Blows can kill</English>
+            <French>Coups mortels</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroLethal_D">
+            <Original>No: this AI stops before a player goes beyond 60 % damage. Yes: no ceiling. Example: Yes for the leader of a lynch mob, No everywhere else.</Original>
+            <English>No: this AI stops before a player goes beyond 60 % damage. Yes: no ceiling. Example: Yes for the leader of a lynch mob, No everywhere else.</English>
+            <French>Non : cette IA s'arrête avant qu'un joueur dépasse 60 % de dégâts. Oui : aucun plafond. Exemple : Oui pour le meneur d'un lynchage, Non partout ailleurs.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_E_AggroLethal_D">
+            <Original>Can this AI beat a player to death? No: it stops before 60 % damage. Yes: no ceiling. « Mission setting » follows the CBA setting « Blows can kill ». Example: Yes only for a scripted lynching.</Original>
+            <English>Can this AI beat a player to death? No: it stops before 60 % damage. Yes: no ceiling. « Mission setting » follows the CBA setting « Blows can kill ». Example: Yes only for a scripted lynching.</English>
+            <French>Cette IA peut-elle tuer un joueur à coups de poing ? Non : elle s'arrête avant 60 % de dégâts. Oui : aucun plafond. « Réglage de la mission » suit le réglage CBA « Coups mortels ». Exemple : Oui seulement pour un lynchage scénarisé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroRadius">
+            <Original>Also every AI within (m)</Original>
+            <English>Also every AI within (m)</English>
+            <French>Aussi toutes les IA à moins de (m)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroRadius_D">
+            <Original>0: only the selected AIs. Otherwise every AI within this distance of the first one gets the same settings: a whole area at once. Example: 80 to make a whole market hostile.</Original>
+            <English>0: only the selected AIs. Otherwise every AI within this distance of the first one gets the same settings: a whole area at once. Example: 80 to make a whole market hostile.</English>
+            <French>0 : seulement les IA choisies. Sinon toutes les IA à cette distance de la première reçoivent les mêmes réglages : toute une zone d'un coup. Exemple : 80 pour rendre tout un marché hostile.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroAct">
+            <Original>Right now</Original>
+            <English>Right now</English>
+            <French>Tout de suite</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroAct_D">
+            <Original>Nothing: only the settings. Go for the nearest player: these AIs turn physical and attack the closest player on foot within 30 m. Calm them down: anger back to zero, brawl stopped. General calm: no AI is aggressive any more, on the whole map, until you end it. No-aggressiveness zone: nothing happens inside it (a base, a hospital). Example: Go for the nearest player when the crowd must turn on the patrol on your signal.</Original>
+            <English>Nothing: only the settings. Go for the nearest player: these AIs turn physical and attack the closest player on foot within 30 m. Calm them down: anger back to zero, brawl stopped. General calm: no AI is aggressive any more, on the whole map, until you end it. No-aggressiveness zone: nothing happens inside it (a base, a hospital). Example: Go for the nearest player when the crowd must turn on the patrol on your signal.</English>
+            <French>Rien : seulement les réglages. S'en prendre au joueur le plus proche : ces IA passent au niveau physique et attaquent le joueur à pied le plus proche, à 30 m au plus. Les calmer : colère à zéro, bagarre arrêtée. Calme général : plus aucune IA n'est agressive, sur toute la carte, jusqu'à ce que vous y mettiez fin. Zone sans agressivité : rien ne s'y passe (une base, un hôpital). Exemple : S'en prendre au joueur le plus proche quand la foule doit se retourner contre la patrouille à votre signal.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroAct_none">
+            <Original>Nothing</Original>
+            <English>Nothing</English>
+            <French>Rien</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroAct_attack">
+            <Original>Go for the nearest player</Original>
+            <English>Go for the nearest player</English>
+            <French>S'en prendre au joueur le plus proche</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroAct_calm">
+            <Original>Calm them down</Original>
+            <English>Calm them down</English>
+            <French>Les calmer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Aggro">
+            <Original>Aggressiveness</Original>
+            <English>Aggressiveness</English>
+            <French>Agressivité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_H_Aggro_D">
+            <Original>Whether she insults, shoves or hits a player who angers her, and how hard.</Original>
+            <English>Whether she insults, shoves or hits a player who angers her, and how hard.</English>
+            <French>Si elle insulte, bouscule ou frappe un joueur qui la met en colère, et avec quelle force.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroAct_calmOn">
+            <Original>General calm: no aggressiveness anywhere</Original>
+            <English>General calm: no aggressiveness anywhere</English>
+            <French>Calme général : plus aucune agressivité, partout</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroAct_calmOff">
+            <Original>End of the general calm</Original>
+            <English>End of the general calm</English>
+            <French>Fin du calme général</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroAct_safe">
+            <Original>No-aggressiveness zone around the first AI (radius above, 50 m if 0)</Original>
+            <English>No-aggressiveness zone around the first AI (radius above, 50 m if 0)</English>
+            <French>Zone sans agressivité autour de la 1re IA (rayon ci-dessus, 50 m si 0)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_AggroAct_safeClear">
+            <Original>Remove every no-aggressiveness zone</Original>
+            <English>Remove every no-aggressiveness zone</English>
+            <French>Retirer toutes les zones sans agressivité</French>
+        </Key>
     </Package>
 </Project>
