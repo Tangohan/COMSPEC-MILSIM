@@ -114,6 +114,7 @@ class CfgFunctions {
             class fileSubmit {};
             class filePage {};
             class fileAction {};
+            class fileNorm {};
             class controlRecord {};
             class scanAnim {};
         };

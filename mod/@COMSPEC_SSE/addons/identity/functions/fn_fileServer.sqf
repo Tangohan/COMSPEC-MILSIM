@@ -5,20 +5,29 @@
     contrôles subis en jeu. Jamais la vérité de jeu : une couverture est en règle, un faux est inconnu des fichiers.
     Appel du poste : remoteExecCall ["comspec_sse_fnc_fileServer", 2] (comspec_sse_fnc_fileClient « send »).
       query     [moi, type, critères, source, étiquette]   type QW | QA | QB | QV ; réponse « result » [étiquette, résultat]
+                                                          ou « fail » [étiquette, motif] : jamais de silence
       seekStore [moi, fiche SEEK II]                      fiche enregistrée au fichier (QB et QW la retrouvent)
       record    [moi, relevé]                             relevé d'un document (fn_controlRecord) : contrôle subi au fichier
-    Évènement serveur comspec_sse_idChecked (fn_idServer) : chaque niveau de contrôle d'un document est noté au fichier.
-    Résultat : HashMap qrn, type, query, source, at (HH:MM), date, hit, codes (mentions, du plus grave au moins grave),
-      records [HashMap kind person | document | bio, ref, last, first, dob, number, country, docType, expires, codes, lines,
-      bioKey, rec, checks [[heure, grille, contrôleur, niveau, verdict]…]], online (faux ici ; le poste complète par Athena).
+    Évènement serveur comspec_sse_idChecked (fn_idServer) : chaque niveau de contrôle d'un document est noté au fichier,
+    sous son identifiant et sous son numéro normalisé (un numéro inconnu de la base garde ses contrôles subis).
+    Numéros et pays comparés normalisés (fn_fileNorm : capitales, sans espaces ni tirets ; alias des pays). Documents :
+    registre « issued » (fn_idIssue, chaque papier délivré ou généré en mission, IA comprises) et paquet Athena ; la fiche
+    donne le titulaire inscrit à la base, avec « Document douteux » si la base, une mention ou une fiche SEEK II
+    discordante le disent.
+    Résultat : HashMap qrn, type, query, source, tag, at (HH:MM), date, hit, match (hit | possible | none), codes (mentions,
+      du plus grave au moins grave), records [HashMap kind person | document | bio, ref, last, first, dob, number,
+      country, docType, expires, codes, lines, bioKey, rec, checks [[heure, grille, contrôleur, niveau, verdict]…]],
+      numChecks (contrôles subis d'un numéro inconnu), online (faux ici ; le poste complète par Athena).
 */
 params [["_op", "", [""]], ["_args", [], [[]]]];
 if (!isServer) exitWith {};
 private _fr = missionNamespace getVariable "comspec_sse_fileReg";
 if (isNil "_fr") then {
-    _fr = createHashMapFromArray [["seq", 0], ["seek", createHashMap], ["checks", createHashMap], ["keyChecks", createHashMap], ["log", []]];
+    _fr = createHashMapFromArray [["seq", 0], ["seek", createHashMap], ["checks", createHashMap], ["keyChecks", createHashMap], ["numChecks", createHashMap], ["log", []]];
     missionNamespace setVariable ["comspec_sse_fileReg", _fr];
 };
+if !("numChecks" in _fr) then { _fr set ["numChecks", createHashMap]; };
+private _num = { ["number", _this] call comspec_sse_fnc_fileNorm };
 if (_op isEqualTo "init") exitWith {
     // Contrôles subis : chaque niveau lu par un contrôleur (téléphone, SEEK II) est inscrit au fichier du document.
     ["comspec_sse_idChecked", {
@@ -28,36 +37,39 @@ if (_op isEqualTo "init") exitWith {
     true
 };
 if (_op isEqualTo "note") exitWith {
-    _args params [["_me", objNull], ["_id", ""], ["_lvl", 0], ["_verdict", "ras"], ["_key", ""]];
+    _args params [["_me", objNull], ["_id", ""], ["_lvl", 0], ["_verdict", "ras"], ["_key", ""], ["_nk", ""]];
     private _line = [[dayTime, "HH:MM"] call BIS_fnc_timeToString, [mapGridPosition _me, ""] select (isNull _me), [name _me, "?"] select (isNull _me), _lvl, _verdict];
-    if (_id isNotEqualTo "") then {
-        private _l = (_fr get "checks") getOrDefault [_id, []];
-        _l pushBack _line;
-        if ((count _l) > 20) then { _l deleteAt 0; };
-        (_fr get "checks") set [_id, _l];
+    // Numéro du document contrôlé : ses contrôles restent au fichier même s'il est inconnu de la base.
+    if (_nk isEqualTo "" && {_id isNotEqualTo ""}) then {
+        _nk = ((((missionNamespace getVariable ["comspec_sse_idReg", createHashMap]) getOrDefault ["docs", createHashMap]) getOrDefault [_id, createHashMap]) getOrDefault ["number", ""]) call _num;
     };
-    if (_key isNotEqualTo "") then {
-        private _l = (_fr get "keyChecks") getOrDefault [_key, []];
-        _l pushBack _line;
-        if ((count _l) > 20) then { _l deleteAt 0; };
-        (_fr get "keyChecks") set [_key, _l];
-    };
+    {
+        _x params ["_k", "_bag"];
+        if (_k isNotEqualTo "") then {
+            private _l = (_fr get _bag) getOrDefault [_k, []];
+            _l pushBack _line;
+            if ((count _l) > 20) then { _l deleteAt 0; };
+            (_fr get _bag) set [_k, _l];
+        };
+    } forEach [[_id, "checks"], [_key, "keyChecks"], [_nk, "numChecks"]];
     true
 };
 private _owner = if (isRemoteExecuted) then { remoteExecutedOwner } else { clientOwner };
-_args params [["_me", objNull, [objNull]]];
-if (isNull _me) exitWith {};
-if (isMultiplayer && {isRemoteExecuted} && {(owner _me) isNotEqualTo _owner}) exitWith {
-    diag_log text format ["[COMSPEC SSE] Fichiers : « %1 » refusé au poste %2 (unité d'un autre poste).", _op, _owner];
-};
 private _reply = {
     params ["_rop", "_ra"];
     if (_owner isEqualTo clientOwner || {!isMultiplayer}) then { [_rop, _ra] call comspec_sse_fnc_fileClient; } else { [_rop, _ra] remoteExecCall ["comspec_sse_fnc_fileClient", _owner]; };
 };
+// Consultation refusée : le poste reçoit le motif (avant, il attendait sans fin « Réponse du fichier en attente… »).
+private _refuse = { if (_op isEqualTo "query") then { ["fail", [_args param [4, ""], _this]] call _reply; }; };
+_args params [["_me", objNull, [objNull]]];
+if (isNull _me) exitWith { "Demande sans unité : relancez la requête." call _refuse; };
+if (isMultiplayer && {isRemoteExecuted} && {(owner _me) isNotEqualTo _owner}) exitWith {
+    diag_log text format ["[COMSPEC SSE] Fichiers : « %1 » refusé au poste %2 (unité d'un autre poste).", _op, _owner];
+    "Demande refusée par le serveur : unité d'un autre poste." call _refuse;
+};
 private _reg = ["init"] call comspec_sse_fnc_idRegistry;
+private _cty = { ["country", _this] call comspec_sse_fnc_fileNorm };
 private _U = { toUpper trim _this };
-// Numéro de document comparé sans espaces ni tirets.
-private _num = { (toUpper _this) regexReplace ["[^A-Z0-9]", ""] };
 // Date de naissance : AAAA-MM-JJ ou JJ/MM/AAAA, comparée en chiffres AAAAMMJJ.
 private _dob = {
     private _d = (_this regexReplace ["[^0-9]", ""]);
@@ -70,17 +82,22 @@ private _codeMap = createHashMapFromArray [
     ["bolo_doc", "bolo"], ["watch_signale", "flagged"], ["watch_recherche", "wanted"], ["watch_hvt", "hvt"], ["unknown_number", "unknown"],
     ["mil_enemy_force", "enemy_force"], ["watch_homonym", "homonym"]
 ];
-private _order = ["armed_dangerous", "hvt", "warrant", "wanted", "missing", "stolen", "revoked", "bolo", "lost", "flagged", "holder_mismatch", "enemy_force", "caution", "expired", "homonym", "unknown"];
+private _order = ["armed_dangerous", "hvt", "warrant", "wanted", "missing", "stolen", "revoked", "doubtful", "bolo", "lost", "flagged", "holder_mismatch", "enemy_force", "caution", "expired", "homonym", "unknown"];
 private _sortCodes = { private _c = _this arrayIntersect _this; (_order select { _x in _c }) + (_c select { !(_x in _order) }) };
+// Fiche d'un document délivré : titulaire inscrit à la base (pas celui qu'un faux imprime), mentions du contrôle N3.
 private _docRec = {
-    params ["_id"];
+    params ["_id", ["_base", []]];
     private _d = (_reg get "docs") getOrDefault [_id, createHashMap];
     if ((count _d) isEqualTo 0) exitWith { createHashMap };
     private _res = [_d, _me, 3, objNull] call comspec_sse_fnc_idEvaluate;
     private _codes = ((_res getOrDefault ["codes", []]) apply { _codeMap getOrDefault [_x, ""] }) select { _x isNotEqualTo "" };
+    if ((_codes arrayIntersect ["holder_mismatch", "stolen", "revoked"]) isNotEqualTo []) then { _codes pushBack "doubtful"; };
+    private _bl = _base param [1, ""];
+    private _bf = _base param [2, ""];
+    private _same = _bl isEqualTo "" || {(toUpper _bl) isEqualTo (toUpper (_d getOrDefault ["last", ""])) && {(toUpper _bf) isEqualTo (toUpper (_d getOrDefault ["first", ""]))}};
     createHashMapFromArray [
-        ["kind", "document"], ["ref", _id], ["last", _d getOrDefault ["last", ""]], ["first", _d getOrDefault ["first", ""]],
-        ["dob", _d getOrDefault ["dob", ""]], ["number", _d getOrDefault ["number", ""]], ["country", _d getOrDefault ["country", ""]],
+        ["kind", "document"], ["ref", _id], ["last", [_bl, _d getOrDefault ["last", ""]] select _same], ["first", [_bf, _d getOrDefault ["first", ""]] select _same],
+        ["dob", ["", _d getOrDefault ["dob", ""]] select _same], ["number", _d getOrDefault ["number", ""]], ["country", _d getOrDefault ["country", ""]],
         ["docType", _d getOrDefault ["type", ""]], ["expires", _d getOrDefault ["expires", ""]], ["codes", _codes call _sortCodes],
         ["lines", _res getOrDefault ["lines", []]], ["checks", +((_fr get "checks") getOrDefault [_id, []])]
     ]
@@ -95,51 +112,63 @@ switch (_op) do {
         private _qrn = format ["FQ-%1-%2", (missionNamespace getVariable ["COMSPEC_MapId", 1]), (str (100000 + _seq)) select [1, 5]];
         private _recs = [];
         private _seenDocs = [];
-        private _addDoc = { params ["_id"]; if (_id in _seenDocs) exitWith {}; _seenDocs pushBack _id; private _r = [_id] call _docRec; if ((count _r) > 0) then { _recs pushBack _r; }; };
+        private _match = "hit";
+        private _numChecks = [];
+        private _addDoc = { params ["_id", ["_base", []]]; if (_id in _seenDocs) exitWith {}; _seenDocs pushBack _id; private _r = [_id, _base] call _docRec; if ((count _r) > 0) then { _recs pushBack _r; }; };
         private _seekRec = {
             params ["_s"];
+            private _v = _s getOrDefault ["verdict", ""];
             createHashMapFromArray [
                 ["kind", "bio"], ["ref", _s getOrDefault ["rec", ""]], ["rec", _s getOrDefault ["rec", ""]], ["bioKey", _s getOrDefault ["bioKey", ""]],
                 ["last", _s getOrDefault ["last", ""]], ["first", _s getOrDefault ["first", ""]], ["dob", _s getOrDefault ["dob", ""]],
                 ["number", _s getOrDefault ["docNumber", ""]], ["country", _s getOrDefault ["docCountry", ""]], ["docType", _s getOrDefault ["docType", ""]],
-                ["codes", [[], ["flagged"]] select ((_s getOrDefault ["verdict", ""]) isEqualTo "signale")],
-                ["lines", [format ["SEEK II %1 · %2 · %3 · %4", _s getOrDefault ["rec", ""], toUpper (_s getOrDefault ["verdict", ""]), _s getOrDefault ["by", ""], _s getOrDefault ["clock", ""]]]],
+                // Verdict SEEK II discordant (papiers contre biométrie) : document douteux, sans dire pourquoi.
+                ["codes", ([[], ["flagged"]] select (_v isEqualTo "signale")) + ([[], ["doubtful"]] select (_v isEqualTo "discordant"))],
+                ["lines", [format ["SEEK II %1 · %2 · %3 · %4", _s getOrDefault ["rec", ""], toUpper _v, _s getOrDefault ["by", ""], _s getOrDefault ["clock", ""]]]],
                 ["checks", +((_fr get "keyChecks") getOrDefault [_s getOrDefault ["bioKey", "-"], []])]
             ]
         };
         switch (_type) do {
             case "QA": {
                 private _n = (_q getOrDefault ["number", ""]) call _num;
-                private _c = (_q getOrDefault ["country", ""]) call _U;
-                private _t = _q getOrDefault ["docType", ""];
+                private _c = (_q getOrDefault ["country", ""]) call _cty;
                 if (_n isEqualTo "") exitWith {};
+                // Même numéro sous un autre pays que celui saisi : gardé pour une correspondance possible.
+                private _other = [];
                 {
                     private _p = _x splitString "|";
-                    if (((_p param [2, ""]) call _num) isEqualTo _n && {_c isEqualTo "" || {(_p param [0, ""]) isEqualTo _c}} && {_t isEqualTo "" || {(_p param [1, ""]) isEqualTo _t}}) then {
-                        [(_y param [0, ""])] call _addDoc;
+                    if (((_p param [2, ""]) call _num) isEqualTo _n) then {
+                        if (_c isEqualTo "" || {((_p param [0, ""]) call _cty) isEqualTo _c}) then { [_y param [0, ""], _y] call _addDoc; } else { _other pushBack [_y param [0, ""], _y]; };
                     };
                 } forEach (_reg getOrDefault ["issued", createHashMap]);
                 // Document du paquet Athena sans exemplaire en jeu : fiche résumée (numéro, état).
                 {
                     private _p = _x splitString "|";
-                    if (((_p param [2, ""]) call _num) isEqualTo _n && {_c isEqualTo "" || {(_p param [0, ""]) isEqualTo _c}} && {(_recs findIf { ((_x get "number") call _num) isEqualTo _n }) < 0}) then {
+                    if (((_p param [2, ""]) call _num) isEqualTo _n && {_c isEqualTo "" || {((_p param [0, ""]) call _cty) isEqualTo _c}} && {(_recs findIf { ((_x getOrDefault ["number", ""]) call _num) isEqualTo _n }) < 0}) then {
                         private _rep = _y getOrDefault ["report", ""];
+                        private _rc = switch (_rep) do { case "vole": { ["stolen", "doubtful"] }; case "perdu": { ["lost"] }; case "revoque": { ["revoked", "doubtful"] }; default { [] }; };
                         _recs pushBack createHashMapFromArray [["kind", "document"], ["ref", _y getOrDefault ["ref", ""]], ["number", _p param [2, ""]], ["country", _p param [0, ""]], ["docType", _p param [1, ""]],
                             ["last", _y getOrDefault ["last", ""]], ["first", _y getOrDefault ["first", ""]], ["dob", _y getOrDefault ["dob", ""]],
-                            ["codes", (switch (_rep) do { case "vole": { ["stolen"] }; case "perdu": { ["lost"] }; case "revoque": { ["revoked"] }; default { [] }; })], ["lines", []], ["checks", []]];
+                            ["codes", _rc], ["lines", []], ["checks", []]];
                     };
                 } forEach (_reg getOrDefault ["athena", createHashMap]);
+                if (_recs isEqualTo [] && {_other isNotEqualTo []}) then { { _x call _addDoc; } forEach _other; _match = "possible"; };
+                // Fiches SEEK II qui citent ce numéro (document présenté au contrôle biométrique).
+                { if (((_y getOrDefault ["docNumber", ""]) call _num) isEqualTo _n) then { _recs pushBack ([_y] call _seekRec); }; } forEach (_fr get "seek");
+                _numChecks = +((_fr get "numChecks") getOrDefault [_n, []]);
             };
             case "QW": {
                 private _l = (_q getOrDefault ["last", ""]) call _U;
                 private _f = (_q getOrDefault ["first", ""]) call _U;
                 private _b = (_q getOrDefault ["dob", ""]) call _dob;
                 if (_l isEqualTo "") exitWith {};
+                // Nom seul : plusieurs personnes peuvent répondre, correspondance à recouper.
+                if (_f isEqualTo "" && {_b isEqualTo ""}) then { _match = "possible"; };
                 {
                     _y params [["_bid", ""], ["_bl", ""], ["_bf", ""]];
                     if ((_bl call _U) isEqualTo _l && {_f isEqualTo "" || {(_bf call _U) isEqualTo _f}}) then {
                         private _d = (_reg get "docs") getOrDefault [_bid, createHashMap];
-                        if (_b isEqualTo "" || {((_d getOrDefault ["dob", ""]) call _dob) isEqualTo _b}) then { [_bid] call _addDoc; };
+                        if (_b isEqualTo "" || {((_d getOrDefault ["dob", ""]) call _dob) isEqualTo _b}) then { [_bid, _y] call _addDoc; };
                     };
                 } forEach (_reg getOrDefault ["issued", createHashMap]);
                 // Avis de recherche et BOLO sur le nom.
@@ -159,7 +188,7 @@ switch (_op) do {
                 private _k = trim (_q getOrDefault ["bioKey", ""]);
                 private _rn = (_q getOrDefault ["rec", ""]) call _U;
                 // Identifiant tapé dans un seul champ : REC-… (fiche SEEK II) ou clé biométrique.
-                if (_rn isEqualTo "" && {(_k select [0, 4]) isEqualTo "REC-"}) then { _rn = _k call _U; _k = ""; };
+                if (_rn isEqualTo "" && {((toUpper _k) select [0, 4]) isEqualTo "REC-"}) then { _rn = _k call _U; _k = ""; };
                 {
                     if ((_rn isNotEqualTo "" && {(_x call _U) isEqualTo _rn}) || {_k isNotEqualTo "" && {(_y getOrDefault ["bioKey", ""]) isEqualTo _k}}) then {
                         _recs pushBack ([_y] call _seekRec);
@@ -170,7 +199,7 @@ switch (_op) do {
                 if (_k isNotEqualTo "" && {!isNil "comspec_sse_fnc_bioRecord"}) then {
                     private _u = ["owner", _k] call comspec_sse_fnc_bioRegistry;
                     private _br = [_u, _k] call comspec_sse_fnc_bioRecord;
-                    if ((count _br) > 0) then {
+                    if (_br isEqualType createHashMap && {(count _br) > 0}) then {
                         private _tier = _br getOrDefault ["tier", 0];
                         private _nm = (_br getOrDefault ["name", ""]) splitString " ";
                         _recs pushBack createHashMapFromArray [["kind", "bio"], ["ref", _br getOrDefault ["id", ""]], ["bioKey", _k],
@@ -189,10 +218,11 @@ switch (_op) do {
         { _codes append (_x getOrDefault ["codes", []]); } forEach _recs;
         _codes = _codes call _sortCodes;
         private _hit = _recs isNotEqualTo [];
-        if (!_hit) then { _codes = [["unknown"], ["no_vehicle_file"]] select (_type isEqualTo "QV"); };
+        if (!_hit) then { _codes = [["unknown"], ["no_vehicle_file"]] select (_type isEqualTo "QV"); _match = "none"; };
         private _res = createHashMapFromArray [
-            ["qrn", _qrn], ["type", _type], ["query", _q], ["source", _src], ["at", [dayTime, "HH:MM"] call BIS_fnc_timeToString],
-            ["date", date], ["hit", _hit], ["codes", _codes], ["records", _recs select [0, 12]], ["online", false], ["by", name _me]
+            ["qrn", _qrn], ["type", _type], ["query", _q], ["source", _src], ["tag", _tag], ["at", [dayTime, "HH:MM"] call BIS_fnc_timeToString],
+            ["date", date], ["hit", _hit], ["match", _match], ["codes", _codes], ["records", _recs select [0, 12]], ["numChecks", _numChecks select [((count _numChecks) - 5) max 0, 5]],
+            ["online", false], ["by", name _me]
         ];
         private _log = _fr get "log";
         _log pushBack [_qrn, _type, _src, name _me, _res get "at", _hit, _codes];
@@ -210,16 +240,20 @@ switch (_op) do {
         _s deleteAt "unit";
         if ((_s getOrDefault ["by", ""]) isEqualTo "") then { _s set ["by", name _me]; };
         (_fr get "seek") set [_rn, _s];
-        ["note", [_me, "", 4, _s getOrDefault ["verdict", ""], _s getOrDefault ["bioKey", ""]]] call comspec_sse_fnc_fileServer;
+        ["note", [_me, "", 4, _s getOrDefault ["verdict", ""], _s getOrDefault ["bioKey", ""], (_s getOrDefault ["docNumber", ""]) call _num]] call comspec_sse_fnc_fileServer;
         ["seekStored", [_rn, _s getOrDefault ["clock", ""]]] call _reply;
     };
     case "record": {
         _args params ["", ["_r", createHashMap, [createHashMap]]];
-        // Relevé d'un document : contrôle subi inscrit au fichier du numéro (base locale), sans rien inventer.
+        // Relevé d'un document : contrôle subi inscrit au fichier du numéro (base locale), sans rien inventer. Numéro
+        // inconnu de la base : le relevé reste noté sous le numéro (contrôles subis d'une réponse « aucun enregistrement »).
         private _n = (_r getOrDefault ["number", ""]) call _num;
+        private _c = (_r getOrDefault ["country", ""]) call _cty;
         private _id = "";
-        { private _p = _x splitString "|"; if (((_p param [2, ""]) call _num) isEqualTo _n) exitWith { _id = _y param [0, ""]; }; } forEach (_reg getOrDefault ["issued", createHashMap]);
-        ["note", [_me, _id, 0, _r getOrDefault ["visual", "releve"]]] call comspec_sse_fnc_fileServer;
+        if (_n isNotEqualTo "") then {
+            { private _p = _x splitString "|"; if (((_p param [2, ""]) call _num) isEqualTo _n && {_c isEqualTo "" || {((_p param [0, ""]) call _cty) isEqualTo _c}}) exitWith { _id = _y param [0, ""]; }; } forEach (_reg getOrDefault ["issued", createHashMap]);
+        };
+        ["note", [_me, _id, 0, _r getOrDefault ["visual", "releve"], "", _n]] call comspec_sse_fnc_fileServer;
         ["recorded", [_r getOrDefault ["key", ""], _id]] call _reply;
     };
 };
