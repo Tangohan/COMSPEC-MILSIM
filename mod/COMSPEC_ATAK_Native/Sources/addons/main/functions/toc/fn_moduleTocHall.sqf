@@ -43,6 +43,7 @@ if (!_zeus) exitWith {
 private _pos = getPosATL _logic;
 deleteVehicle _logic;
 ["Salle TOC complète", [
+    ["COMBO", "Action", [["Poser une nouvelle salle ici", "place"], ["Ouvrir le tableau des écrans (tous les écrans de la mission)", "manager"]], "place"],
     ["COMBO", "Taille", [["Petite, 8 x 7 m : mur 2x2, 2 postes", "S"], ["Moyenne, 11 x 8,5 m : mur 3x2, deux écrans 98 pouces, écran double suspendu, 3 postes", "M"],
         ["Grande, 16 x 9,5 m : mur 4x3, écrans 98 et 136 pouces, écran triple suspendu, 4 postes", "L"]], "M"],
     ["EDIT", "Nom de la salle", "SALLE TOC"],
@@ -50,10 +51,13 @@ deleteVehicle _logic;
     ["COMBO", "Postes des opérateurs", [["PC portable de TOC", ""]] + (["types"] call comspec_atak_native_fnc_tocPc), ""]
 ], {
     params ["_v", "_pos"];
-    _v params [["_size", "M"], ["_name", ""], ["_side", "WEST"], ["_post", ""]];
+    _v params [["_act", "place"], ["_size", "M"], ["_name", ""], ["_side", "WEST"], ["_post", ""]];
+    if (_act isEqualTo "manager") exitWith { [{ ["open"] call comspec_atak_native_fnc_tocManager; }, [], 0.2] call comspec_atak_native_fnc_waitAndExec; };
     if !(_side in ["WEST", "EAST", "GUER"]) then { _side = "WEST"; };
+    // Chaque usage pose une salle de plus : nom rendu unique (« SALLE TOC », « SALLE TOC 2 »…).
+    _name = ["uniqueHall", [toUpper _name, "SALLE TOC"] select (_name isEqualTo "")] call comspec_atak_native_fnc_tocManager;
     // Le mur est posé à l'opposé de la caméra du Zeus : la salle s'ouvre vers lui.
     private _dir = (getPosATL curatorCamera) getDir _pos;
     ["zeus", [_pos, _dir, _size, [toUpper _name, "SALLE TOC"] select (_name isEqualTo ""), _side, _post]] call comspec_atak_native_fnc_tocHallBuild;
-}, _pos, "Pose une salle d'opérations complète devant vous, sur le sol sous le module, déjà liée à ses PC. Contre un mur et sous un plafond : écrans muraux et suspendus ; en extérieur : écrans sur pied. Gardée pour la partie suivante."] call comspec_atak_native_fnc_zeusForm;
+}, _pos, "Chaque usage pose une nouvelle salle. Pose une salle d'opérations complète devant vous, sur le sol sous le module, déjà liée à ses PC. Contre un mur et sous un plafond : écrans muraux et suspendus ; en extérieur : écrans sur pied. Gardée pour la partie suivante."] call comspec_atak_native_fnc_zeusForm;
 true
