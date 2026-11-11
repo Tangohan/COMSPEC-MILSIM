@@ -565,4 +565,55 @@ final class AtakTocPlanV2Test extends TestCase
         self::assertSame($els[0]['uid'], $els[1]['props']['route']);
         self::assertSame('import_format', PlanInterop::fromAthena('{"format":"autre"}')[2]);
     }
+
+    public function testOrigineDansLeJeuDUnMarqueurImporte(): void
+    {
+        $base = ['uid' => 'e_mk', 'kind' => 'icon', 'geom' => 'point', 'pts' => [[5250, 4950]], 'props' => ['color' => '#f24d47', 'label' => 'OBJ', 'icon' => 'target']];
+        [$el] = PlanValidator::element(array_replace_recursive($base, ['props' => ['gid' => '_USER_DEFINED #2/1/1', 'glink' => true]]));
+        self::assertSame('_USER_DEFINED #2/1/1', $el['props']['gid'], 'identifiant du marqueur en jeu gardé');
+        self::assertTrue($el['props']['glink']);
+
+        [$copy] = PlanValidator::element(array_replace_recursive($base, ['props' => ['gid' => 'zone_nord']]));
+        self::assertSame('zone_nord', $copy['props']['gid']);
+        self::assertArrayNotHasKey('glink', $copy['props'], 'sans lien demandé : simple copie');
+
+        [$alone] = PlanValidator::element(array_replace_recursive($base, ['props' => ['glink' => true]]));
+        self::assertArrayNotHasKey('glink', $alone['props'], 'pas de lien sans identifiant du jeu');
+        self::assertArrayNotHasKey('gid', $alone['props']);
+
+        [$odd] = PlanValidator::element(array_replace_recursive($base, ['props' => ['gid' => "marqueur\u{00e9}\x07"]]));
+        self::assertArrayNotHasKey('gid', $odd['props'], 'identifiant hors ASCII imprimable : écarté');
+        [$long] = PlanValidator::element(array_replace_recursive($base, ['props' => ['gid' => str_repeat('a', 200)]]));
+        self::assertSame(80, strlen($long['props']['gid']));
+
+        [$old] = PlanValidator::element($base);
+        self::assertArrayNotHasKey('gid', $old['props'], 'un élément dessiné à la main n’a pas d’origine en jeu');
+    }
+
+    public function testEnregistrementParLotEnUneSeuleTransaction(): void
+    {
+        if (!extension_loaded('pdo_sqlite')) {
+            self::markTestSkipped('pdo_sqlite requis');
+        }
+        $pdo = AtakTocPlanServiceTest::open();
+        $repo = new \App\Repositories\AtakPlanRepository($pdo);
+        $id = $repo->create(1, 1, 'Lot', 1, 'altis', 'private', null, PlanValidator::meta([]));
+        $els = [];
+        for ($i = 0; $i < 120; $i++) {
+            [$el] = PlanValidator::element(['uid' => 'e_' . $i, 'kind' => 'icon', 'geom' => 'point', 'pts' => [[100 + $i, 200]], 'props' => ['label' => 'P' . $i]]);
+            $els[] = $el;
+        }
+        $res = $repo->upsertElements(1, $id, $els, 1);
+        self::assertCount(120, $res['saved']);
+        self::assertFalse($pdo->inTransaction(), 'la transaction du lot est refermée');
+        self::assertSame(120, $repo->countElements($id));
+        $ms = array_values($res['saved']);
+        self::assertSame($ms, array_values(array_unique($ms)), 'horloge strictement croissante dans le lot');
+
+        // Appel fait depuis une transaction déjà ouverte : elle n'est ni refermée ni doublée.
+        $pdo->beginTransaction();
+        $repo->upsertElements(1, $id, [$els[0]], 1);
+        self::assertTrue($pdo->inTransaction());
+        $pdo->rollBack();
+    }
 }

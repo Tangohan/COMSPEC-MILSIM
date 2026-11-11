@@ -632,6 +632,7 @@ return function (Router $router) {
     $planApi = \App\Controllers\Api\AtakPlanApiController::class;
     $router->get('/atak/toc', [$tocWeb, 'console'], $mwAtakMemberOnly);
     $router->get('/atak/toc/plans', [$tocWeb, 'plans'], $mwAtakMemberOnly);
+    $router->get('/atak/toc/plans/aide', [$tocWeb, 'planHelp'], $mwAtakMemberOnly);
     $router->get('/atak/toc/plans/lien/{token}', [$tocWeb, 'sharedLink'], $mwAtakMemberOnly);
     $router->get('/atak/toc/plans/{id}/export.json', [$tocWeb, 'exportJson'], $mwAtakMemberOnly);
     $router->get('/atak/toc/plans/{id}/export.geojson', [$tocWeb, 'exportGeoJson'], $mwAtakMemberOnly);

@@ -158,6 +158,8 @@
     if (!P.canEdit) { E.say('Lecture seule.', true); return; }
     libUsed(it);
     var d = KINDS[it.kind] || {};
+    // La tuile rend le clavier : sinon Entrée la réarmerait au lieu de terminer le tracé.
+    if (document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('pe-tile')) document.activeElement.blur();
     E.setTool(it.kind, { kind: it.kind, props: libProps(it), geom: it.kind === 'rect' ? 'rect' : (it.kind === 'ellipse' ? 'ellipse' : (d.geoms || ['point'])[0]) });
     E.say(it.label + ' : cliquez sur la carte' + ((d.geoms || ['point'])[0] === 'point' ? ' (Maj : en poser plusieurs)' : ''));
     $$('.pe-tile').forEach(function (t) { t.classList.toggle('is-armed', t.getAttribute('data-lib') === it.id); });
@@ -311,11 +313,12 @@
       var roots = tree[a[0]];
       var n = units.filter(function (u) { return (u.props.affil || 'F') === a[0]; }).length;
       if (!n && a[0] !== 'F') return;
-      h += '<div class="pe-side" data-side-drop="' + a[0] + '"><span class="pe-side-dot" style="background:' + E.AFFIL_COLOR[a[0]] + '"></span><b>' + esc(AFFIL_TITLES[a[0]]) + '</b><small class="mono">' + n + '</small></div>';
-      h += '<div role="group">' + roots.map(function (r) { return nodeHtml(r, 0, match); }).join('') + '</div>';
+      h += '<details class="pe-fold pe-sidefold" data-fold="orbat-' + a[0] + '" open><summary class="pe-side" data-side-drop="' + a[0] + '">' + icon('caret', 14) + '<span class="pe-side-dot" style="background:' + E.AFFIL_COLOR[a[0]] + '"></span><b>' + esc(AFFIL_TITLES[a[0]]) + '</b><small class="mono">' + n + '</small></summary>';
+      h += '<div role="group">' + (roots.length ? roots.map(function (r) { return nodeHtml(r, 0, match); }).join('') : '<p class="toc-note">Aucune unité : glissez-en une ici ou depuis la bibliothèque.</p>') + '</div></details>';
     });
     if (match && !Object.keys(match).length) h = '<div class="toc-empty"><p>Aucune unité pour « ' + esc(q) + ' ».</p></div>';
     body.innerHTML = h;
+    if (!match) refold(body);
   }
   function placeUnit(uid, world) {
     var el = P.els[uid];
@@ -471,6 +474,11 @@
 
   /* ---------- Panneau de droite ---------- */
   function sec(t, s) { return '<div class="toc-sec"><h2>' + esc(t) + '</h2><span>' + (s || '') + '</span></div>'; }
+  /** Section repliable d'un volet : l'en-tête est le résumé, l'état est gardé par plan-layout.js (data-fold). */
+  function fold(key, t, s, body, closed) {
+    return '<details class="pe-fold" data-fold="' + key + '"' + (closed ? '' : ' open') + '><summary class="toc-sec">' + icon('caret', 14) + '<h2>' + esc(t) + '</h2><span>' + (s || '') + '</span></summary>' + body + '</details>';
+  }
+  function refold(root) { if (E.layout && E.layout.restoreFolds) E.layout.restoreFolds(root); }
   function opt(list, cur) { return list.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(cur == null ? '' : cur) === String(o[0]) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join(''); }
   function field(label, html, cls) { return '<label class="pe-f' + (cls ? ' ' + cls : '') + '"><span>' + esc(label) + '</span>' + html + '</label>'; }
   function txt(key, val, max, dis, extra) { return '<input class="toc-input" type="text" data-prop="' + key + '" maxlength="' + max + '" value="' + esc(val == null ? '' : val) + '"' + dis + (extra || '') + '>'; }
@@ -490,13 +498,23 @@
   function fmtArea(m2) { return m2 >= 1e6 ? (m2 / 1e6).toFixed(2).replace('.', ',') + ' km²' : (m2 >= 1e4 ? (m2 / 1e4).toFixed(1).replace('.', ',') + ' ha' : Math.round(m2) + ' m²'); }
 
   var PROP_TABS = [['id', 'Identité'], ['style', 'Style'], ['pos', 'Emplacement'], ['time', 'Temps'], ['notes', 'Notes']];
+  /* Un volet n'est pas redessiné pendant qu'on y appuie : le bouton visé disparaîtrait sous le pointeur et le clic
+   * serait perdu (arrivée d'un changement d'un autre éditeur, enregistrement…). Il l'est au relâchement. */
+  var pressed = false, redrawLater = false;
+  function holdRedraw() {
+    if (!pressed) return false;
+    redrawLater = true;
+    return true;
+  }
   function renderRight(force) {
     var body = $('#pe-right-body');
     if (!body || !P.loaded) return;
+    if (!force && holdRedraw()) return;
     if (!force && body.contains(document.activeElement) && E.typingIn(document.activeElement)) return;
     var keep = body.scrollTop;
     body.innerHTML = rightTab === 'plan' ? planTab() : (rightTab === 'notes' ? notesTab() : propsTab());
     body.scrollTop = keep;
+    refold(body);
     var cnt = $('#pe-notes-count');
     if (cnt) { var open = P.comments.filter(function (c) { return !c.resolved; }).length; cnt.textContent = open ? String(open) : ''; cnt.hidden = !open; }
   }
@@ -663,7 +681,7 @@
     var n = P.meta.notes || {};
     var dis = P.canEdit ? '' : ' disabled';
     var starts = LG.phaseStarts(P.phases, P.meta.timeline);
-    var h = sec('Phases', P.phases.length + ' phase(s)');
+    var h = '';
     if (!P.phases.length) h += '<div class="toc-empty"><p>Pas de phase : le plan se présente d’un bloc. Ajoutez des phases pour briefer pas à pas et faire bouger les unités dans le temps.</p></div>';
     h += P.phases.map(function (ph, i) {
       var count = E.list().filter(function (e) { return (e.phases || []).indexOf(ph.uid) >= 0; }).length;
@@ -672,16 +690,18 @@
         '<div class="pe-stack is-row"><button type="button" class="toc-btn is-small" data-ph-act="show">Afficher</button>' + (P.canEdit ? '<button type="button" class="toc-btn is-small" data-ph-act="assign"' + (P.sel.length ? '' : ' disabled') + ' title="Mettre la sélection dans cette phase">+ sélection</button><button type="button" class="toc-btn is-small" data-ph-act="up"' + (i ? '' : ' disabled') + ' aria-label="Monter la phase">↑</button><button type="button" class="toc-btn is-small" data-ph-act="del" aria-label="Retirer la phase">' + icon('trash', 14) + '</button>' : '') + '<span class="toc-muted">' + count + ' él. propres</span></div></div>';
     }).join('');
     if (P.canEdit) h += '<button type="button" class="toc-btn is-primary is-block" data-phase-add>Ajouter une phase</button>';
-    h += sec('Ordre d’opération', 'SMEAC, facultatif');
-    h += '<div class="pe-form"><div class="pe-row2">' + field('Camp du plan', '<select class="toc-select" data-meta="side"' + dis + '>' + opt(Object.keys(E.SIDES).map(function (s) { return [s, E.SIDES[s]]; }), P.meta.side) + '</select>') + field('Groupe date-heure', '<input class="toc-input mono" data-meta="dtg" maxlength="40" placeholder="111800ZNOV26" value="' + esc(P.meta.dtg || '') + '"' + dis + '>') + '</div>';
+    var out = fold('plan-phases', 'Phases', P.phases.length + ' phase(s)', h);
+    h = '<div class="pe-form"><div class="pe-row2">' + field('Camp du plan', '<select class="toc-select" data-meta="side"' + dis + '>' + opt(Object.keys(E.SIDES).map(function (s) { return [s, E.SIDES[s]]; }), P.meta.side) + '</select>') + field('Groupe date-heure', '<input class="toc-input mono" data-meta="dtg" maxlength="40" placeholder="111800ZNOV26" value="' + esc(P.meta.dtg || '') + '"' + dis + '>') + '</div>';
     NOTE_TITLES.forEach(function (t) { h += field(t[1], '<textarea class="toc-textarea" rows="3" maxlength="6000" data-note="' + t[0] + '"' + dis + '>' + esc(n[t[0]] || '') + '</textarea>'); });
-    h += '</div>' + sec('Légende', 'imprimée sur la fiche');
+    h += '</div>';
+    out += fold('plan-order', 'Ordre d’opération', 'SMEAC, facultatif', h, true);
+    h = '';
     var seen = {};
     E.list().forEach(function (e) { var k = (KINDS[e.kind] || {}).label || e.kind; seen[k] = e.props.color; });
     h += '<p class="toc-note">' + (Object.keys(seen).length ? 'Types utilisés : ' + Object.keys(seen).map(function (k) { return '<span style="color:' + esc(seen[k]) + '">■</span> ' + esc(k); }).join(' · ') : 'Le plan est vide.') + '</p>';
     h += (P.meta.legend || []).map(function (l, i) { return '<div class="pe-legend"><input type="color" data-lg-c="' + i + '" value="' + esc(l.color) + '"' + dis + ' aria-label="Couleur"><input class="toc-input" data-lg-l="' + i + '" value="' + esc(l.label) + '" maxlength="60"' + dis + ' aria-label="Libellé"><button type="button" class="pe-node-btn is-keep" data-lg-d="' + i + '"' + dis + ' aria-label="Retirer la ligne">' + icon('trash', 15) + '</button></div>'; }).join('');
     if (P.canEdit) h += '<button type="button" class="toc-btn is-block" data-legend-add>Ajouter une ligne de légende</button>';
-    return h;
+    return out + fold('plan-legend', 'Légende', 'imprimée sur la fiche', h, true);
   }
   function notesTab() {
     var h = sec('Échanges', P.presence.length + ' membre(s) sur le plan');
@@ -1017,6 +1037,13 @@
     left.addEventListener('input', onLeftInput);
     left.addEventListener('change', onLeftInput);
     left.addEventListener('pointerdown', onDragDown);
+    [left, right].forEach(function (panel) { panel.addEventListener('pointerdown', function () { pressed = true; }, true); });
+    document.addEventListener('pointerup', function () {
+      if (!pressed) return;
+      pressed = false;
+      // Après le clic lui-même, pour que son gestionnaire voie encore l'ancien contenu.
+      if (redrawLater) setTimeout(function () { redrawLater = false; renderLeft(); renderRight(); }, 0);
+    }, true);
     left.addEventListener('toggle', function (e) { var d = e.target; if (d.hasAttribute && d.hasAttribute('data-libcat')) { libOpen[d.getAttribute('data-libcat')] = d.open; save('libopen', libOpen); } }, true);
     left.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.pe-tile')) { e.preventDefault(); e.target.click(); } });
     left.addEventListener('dblclick', function (e) { var n = e.target.closest('[data-node]'); if (n && !e.target.closest('button')) { var el = P.els[n.getAttribute('data-node')]; if (el && el.props.placed !== false) goTo((E.shownOf(el.uid) || el).pts[0]); } });
@@ -1045,14 +1072,6 @@
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (document.activeElement) document.activeElement.click(); }
     });
     document.addEventListener('pointerdown', function (e) { if (!menu.hidden && !menu.contains(e.target)) closeMenu(); }, true);
-    $$('[data-collapse]').forEach(function (b) { b.addEventListener('click', function () {
-      var side = b.getAttribute('data-collapse');
-      var on = document.body.classList.toggle('pe-hide-' + side);
-      b.setAttribute('aria-expanded', String(!on));
-      save('hide-' + side, on);
-      setTimeout(function () { if (E.tm) E.tm.map.invalidateSize(); if (E.view3d) E.view3d.resize(); E.emit('layout'); }, 60);
-    }); });
-    ['left', 'right'].forEach(function (s) { if (load('hide-' + s, false)) { document.body.classList.add('pe-hide-' + s); var b = $('[data-collapse="' + s + '"]'); if (b) b.setAttribute('aria-expanded', 'false'); } });
     bindFileDrop();
     E.escape = function () {
       if (!menu.hidden) { closeMenu(); return true; }
@@ -1061,7 +1080,7 @@
     };
   });
   E.on('loaded', function () { setLeftTab(leftTab); setRightTab('props'); syncToolbar(); renderPresence(); });
-  E.on('render', function () { renderLeft(); renderRight(); syncToolbar(); });
+  E.on('render', function () { if (!holdRedraw()) renderLeft(); renderRight(); syncToolbar(); });
   E.on('selection', function () { if (leftTab === 'orbat') renderOrbat(); renderRight(true); });
   E.on('time', function () { renderRight(); });
   E.on('phases', function () { renderRight(); });

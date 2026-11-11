@@ -395,15 +395,84 @@
   function brush(name, alpha) {
     var b = String(name || 'Solid').toLowerCase();
     var a = alpha == null || !isFinite(Number(alpha)) ? 1 : Math.max(0.15, Math.min(1, Number(alpha)));
-    if (b.indexOf('border') >= 0 || b.indexOf('hollow') >= 0) return { fill: 0, hatch: '', stroke: a };
+    // « SolidBorder » est un plein avec bord : à lire avant « Border » (contour seul), qu'il contient.
     if (b.indexOf('solidfull') >= 0) return { fill: 0.6 * a, hatch: '', stroke: a };
     if (b.indexOf('solidborder') >= 0 || b === 'solid') return { fill: 0.28 * a, hatch: '', stroke: a };
+    if (b.indexOf('border') >= 0 || b.indexOf('hollow') >= 0) return { fill: 0, hatch: '', stroke: a };
     if (b.indexOf('cross') >= 0) return { fill: 0.06 * a, hatch: 'cross', stroke: a };
     if (b.indexOf('grid') >= 0) return { fill: 0.06 * a, hatch: 'grid', stroke: a };
     if (b.indexOf('horizontal') >= 0) return { fill: 0.06 * a, hatch: 'horiz', stroke: a };
     if (b.indexOf('vertical') >= 0) return { fill: 0.06 * a, hatch: 'vert', stroke: a };
     if (b.indexOf('diag') >= 0) return { fill: 0.06 * a, hatch: 'diag', stroke: a };
     return { fill: 0.22 * a, hatch: '', stroke: a };
+  }
+
+  /** Icône du TOC -> repère d'un plan (PlanCatalog::ICONS) ou type de point du plan. */
+  var PLAN_ICON = { dot: 'dot', circle: 'dot', square: 'square', triangle: 'triangle', objective: 'target', pin: 'flag', flag: 'flag', arrow: 'triangle', ambush: 'diamond', destroy: 'cross', warning: 'triangle', unknown: 'diamond', start: 'flag', end: 'flag', pickup: 'star', join: 'star', waypoint: 'dot', kia: 'cross', mine: 'diamond', label: 'dot', respawn: 'star' };
+  var SYSTEM_ID = /^(bis_|module|ace_|zen_|tfar|acre|comspec_|respawn|_dummy|debug)/i;
+
+  /** Marqueur de service (réapparition, module, marqueur vide de mission) : écarté par défaut d'un import. '' sinon. */
+  function markerSystem(d) {
+    var type = String((d && (d.type || d.icon)) || '').toLowerCase();
+    var id = String((d && (d.id || d.name)) || '');
+    var shape = String((d && d.shape) || 'ICON').toUpperCase();
+    var text = String((d && (d.text || d.label)) || '').trim();
+    if (/^respawn/i.test(type) || /^respawn/i.test(id)) return 'respawn';
+    if (SYSTEM_ID.test(id)) return 'module';
+    if (shape === 'ICON' && (type === 'empty' || type === 'emptyicon' || type === '') && !text) return 'empty';
+    return '';
+  }
+
+  /**
+   * Marqueur du jeu (ligne de /api/atak/markers) -> fiche commune au calque du TOC et à l'import dans un plan :
+   * { id, gid (identifiant du marqueur en jeu), shape, label, type, color, side, source, channel, system, pos, ts,
+   *   spec (icône ou symbole OTAN), el (élément de plan : zone, tracé ou point), hatch }.
+   * G = TocGeo (rotation d'un rectangle). null si le marqueur n'a pas de position ou a été retiré.
+   */
+  function markerRecord(r, sym, G) {
+    if (!r || String(r.id).indexOf('del:') === 0) return null;
+    var d = r.markerData;
+    if (typeof d === 'string') { try { d = JSON.parse(d); } catch (e) { d = null; } }
+    if (!d || d.suppressed || d.type === 'comspec_del') return null;
+    var p = markerPos(d);
+    var shape = String(d.shape || 'ICON').toUpperCase();
+    var path = shape === 'POLYLINE' ? markerPath(d) : [];
+    if (!p && path.length) p = path[0];
+    if (!p) return null;
+    var label = String(d.text || d.label || d.name || '').trim();
+    if (label === String(d.id || '') || /^_user_defined/i.test(label)) label = '';
+    var col = markerColor(d.color, '#f2d36b');
+    var size = Array.isArray(d.size) ? [Math.max(1, Number(d.size[0]) || 1), Math.max(1, Number(d.size[1]) || 1)] : [Math.max(1, Number(d.size) || 1), Math.max(1, Number(d.size) || 1)];
+    var dir = Number(d.dir != null ? d.dir : d.heading) || 0;
+    var rec = {
+      id: r.id, gid: String(d.id || d.name || ('m' + r.id)).slice(0, 80), shape: shape, label: label, type: String(d.type || d.icon || ''), color: col, side: side(d.side),
+      source: d.source === 'web' ? 'web' : 'jeu', channel: d.channel != null && d.channel !== '' ? String(d.channel) : '', system: markerSystem(d), pos: p, ts: r.updated_at || null,
+      size: size, dir: dir, d: d, spec: null, el: null, hatch: ''
+    };
+    if (shape === 'ELLIPSE' || shape === 'RECTANGLE') {
+      var br = brush(d.brush, d.alpha);
+      var props = { color: col, width: 2, fill: br.fill, label: label, rotation: -dir };
+      rec.el = shape === 'ELLIPSE'
+        ? { geom: 'ellipse', kind: 'ellipse', pts: [p], props: Object.assign(props, { rx: size[0], ry: size[1] }) }
+        : G.rotate({ geom: 'rect', kind: 'rect', pts: [[p[0] - size[0], p[1] - size[1]], [p[0] + size[0], p[1] + size[1]]], props: props }, dir);
+      if (rec.el.geom === 'area') rec.el.kind = 'polygon';
+      rec.hatch = br.hatch;
+    } else if (shape === 'POLYLINE' && path.length >= 2) {
+      var arrow = /arrow/i.test(String(d.type || ''));
+      rec.el = { geom: 'line', kind: arrow ? 'arrow' : 'line', pts: path, props: { color: col, width: 3, label: label, arrow: arrow ? 'end' : 'none' } };
+    } else {
+      rec.shape = 'ICON';
+      var spec = markerSpec(sym, d.type || d.icon);
+      rec.spec = spec;
+      if (spec.nato) {
+        // Marqueur OTAN : une vraie unité du plan (symbole par son code 2525C, affiliation du préfixe).
+        var code = sidc(sym, spec.nato, spec.affil, false, '');
+        rec.el = { geom: 'point', kind: 'unit', pts: [p], props: { affil: spec.affil, unitType: 'unknown', echelon: '', sidc: code.slice(0, 1) + '*' + code.slice(2, 3) + '*' + code.slice(4, 10), callsign: label.slice(0, 40), size: 26 } };
+      } else {
+        rec.el = { geom: 'point', kind: 'icon', pts: [p], props: { icon: PLAN_ICON[spec.icon] || 'dot', color: col, label: label.slice(0, 60), size: Math.round(22 * Math.max(0.8, Math.min(1.6, size[0]))), rotation: spec.icon === 'arrow' ? dir : 0 } };
+      }
+    }
+    return rec;
   }
 
   /* Icônes des repères : tracés 24 x 24, trait seul (f : rempli). Une entrée par icône de TocSymbols::ICONS. */
@@ -504,6 +573,7 @@
     unitTrack: unitTrack, vehicleTrack: vehicleTrack, airTrack: airTrack, dedupe: dedupe, merge: merge, groups: groups,
     cluster: cluster, labelMode: labelMode, clusterRadius: clusterRadius, placeLabels: placeLabels, leader: leader,
     markerSpec: markerSpec, markerColor: markerColor, markerPos: markerPos, markerPath: markerPath, brush: brush, iconSvg: iconSvg,
+    markerRecord: markerRecord, markerSystem: markerSystem, PLAN_ICON: PLAN_ICON,
     veilFor: veilFor, suggest: suggest
   };
 });

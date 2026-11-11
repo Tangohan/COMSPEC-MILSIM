@@ -1,0 +1,142 @@
+/* Aide de l'éditeur de plans (plan-help.js) : tutoriel guidé, tiroir d'aide, astuces d'outil, illustrations animées.
+ * Jetons du thème TOC (atak-toc.css). Rien ici ne capte la souris en dehors de la fiche, du tiroir et de l'astuce. */
+
+/* ---------- Tutoriel : voile percé, cadres des cibles, fiche ---------- */
+.ph-veil { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1700; pointer-events: none; }
+.ph-veil path { fill: rgba(7, 10, 13, .56); }
+.ph-ring { position: fixed; z-index: 1701; pointer-events: none; border: 2px solid var(--toc-accent); box-shadow: 0 0 0 4px rgba(52, 211, 153, .16); animation: ph-ring 2.2s ease-in-out infinite; transition: left .18s ease, top .18s ease, width .18s ease, height .18s ease; }
+.ph-ring[hidden] { display: none; }
+@keyframes ph-ring { 50% { box-shadow: 0 0 0 9px rgba(52, 211, 153, 0); } }
+
+.ph-card { position: fixed; left: 12px; top: 12px; z-index: 2500; width: min(340px, calc(100vw - 24px)); background: var(--toc-bg1); border: 1px solid var(--toc-lineStrong); border-top: 2px solid var(--toc-accent); box-shadow: 0 14px 40px rgba(0, 0, 0, .6); padding: 0 var(--sp-l) var(--sp-m); color: var(--toc-text); transition: left .22s ease, top .22s ease; }
+.ph-card[hidden] { display: none; }
+.ph-card:focus { outline: none; }
+.ph-card:focus-visible { outline: 2px solid var(--toc-accent); outline-offset: 2px; }
+.ph-card.is-dragged { transition: none; }
+.ph-card.is-ok { animation: ph-ok .7s ease-out; }
+@keyframes ph-ok { 0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, .7), 0 14px 40px rgba(0, 0, 0, .6); } 100% { box-shadow: 0 0 0 14px rgba(52, 211, 153, 0), 0 14px 40px rgba(0, 0, 0, .6); } }
+.ph-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-m); padding: var(--sp-m) 0 var(--sp-s); cursor: move; touch-action: none; user-select: none; }
+.ph-card-head h2 { margin: 0; font: 700 var(--fs-heading)/1.2 var(--sans); text-transform: uppercase; letter-spacing: .03em; }
+.ph-card-n { color: var(--toc-muted); font-size: 13px; white-space: nowrap; }
+.ph-card p { margin: 0 0 var(--sp-m); color: var(--toc-text2); line-height: 1.45; }
+.ph-card-checks { list-style: none; margin: 0 0 var(--sp-m); padding: 0; display: grid; gap: 6px; }
+.ph-card-checks li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; align-items: start; color: var(--toc-text); }
+.ph-card-checks i { width: 16px; height: 16px; margin-top: 2px; border: 1px solid var(--toc-lineStrong); background: var(--toc-bg0); position: relative; }
+.ph-card-checks li.is-done { color: var(--toc-muted); }
+.ph-card-checks li.is-done i { background: var(--toc-accent); border-color: var(--toc-accent); }
+.ph-card-checks li.is-done i::after { content: ""; position: absolute; left: 4px; top: 1px; width: 5px; height: 9px; border: solid var(--toc-bg0); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.ph-card-bar { height: 2px; background: var(--toc-line); margin-bottom: var(--sp-m); }
+.ph-card-bar i { display: block; height: 100%; background: var(--toc-accent); transition: width .3s ease; }
+.ph-card-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.ph-card-acts .toc-btn[hidden] { display: none; }
+.ph-card-quit { margin-left: auto; }
+.ph-link { display: inline-block; margin-top: var(--sp-s); padding: 2px 0; background: none; border: 0; border-bottom: 1px solid currentColor; color: var(--toc-accent); font: 400 var(--fs-body) var(--sans); cursor: pointer; white-space: nowrap; }
+.ph-link:hover { color: var(--toc-text); }
+.ph-link[hidden] { display: none; }
+
+/* ---------- Tiroir d'aide : à droite, non modal ---------- */
+.ph-drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 1800; width: min(440px, 100vw); height: auto; grid-template-rows: auto auto minmax(0, 1fr) auto; }
+.ph-drawer[hidden] { display: none; }
+.ph-drawer .toc-drawer-head { align-items: center; }
+.ph-drawer-tools { padding: var(--sp-m) var(--sp-l) 0; border-bottom: 1px solid var(--toc-line); background: var(--toc-bg1); }
+.ph-drawer-tools .pe-search { display: flex; align-items: center; gap: 8px; color: var(--toc-muted); }
+.ph-drawer-tools .toc-input { flex: 1; width: 100%; }
+.ph-tabs { display: flex; margin-top: var(--sp-s); }
+.ph-tabs .toc-tab { flex: 1; min-width: 0; height: var(--row); padding: 0 var(--sp-s); display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: 700 var(--fs-body) var(--sans); text-transform: uppercase; letter-spacing: .03em; cursor: pointer; border-left: 0; border-right: 0; }
+.ph-count { min-width: 20px; padding: 0 5px; background: var(--toc-bg3); color: var(--toc-text); font-size: 12px; }
+.ph-count[hidden] { display: none; }
+.ph-drawer .toc-drawer-body { padding-top: var(--sp-s); }
+.ph-none { padding: var(--sp-m) 0; }
+
+.ph-how { border-bottom: 1px solid var(--toc-line); }
+.ph-how > summary { display: flex; align-items: center; gap: 8px; padding: 9px 0; cursor: pointer; list-style: none; font-weight: 700; color: var(--toc-text); }
+.ph-how > summary::-webkit-details-marker { display: none; }
+.ph-how > summary:hover { color: var(--toc-accent); }
+.ph-how > summary .pe-ic { flex: none; color: var(--toc-muted); transition: transform .15s ease; }
+.ph-how[open] > summary .pe-ic { transform: rotate(90deg); color: var(--toc-accent); }
+.ph-how-body { padding: 0 0 var(--sp-m) 22px; }
+.ph-how ol { margin: var(--sp-s) 0 0; padding-left: 20px; color: var(--toc-text2); display: grid; gap: 4px; line-height: 1.4; }
+.ph-how ol li::marker { color: var(--toc-accent); font: 700 13px var(--mono); }
+
+.ph-keys { display: grid; gap: 2px; }
+.ph-key { display: grid; grid-template-columns: minmax(118px, 38%) minmax(0, 1fr); gap: var(--sp-m); align-items: baseline; padding: 4px 0; border-bottom: 1px solid var(--toc-line); }
+.ph-key kbd { justify-self: start; font: 700 13px var(--mono); background: var(--toc-bg2); border: 1px solid var(--toc-line); padding: 1px 8px; }
+.ph-key span { color: var(--toc-text2); }
+.ph-key[hidden], .ph-gl[hidden] { display: none; }
+
+.ph-gl { display: grid; grid-template-columns: 12px minmax(0, 1fr); column-gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--toc-line); }
+.ph-gl i { width: 12px; height: 12px; margin-top: 4px; grid-row: span 2; border: 1px solid rgba(7, 10, 13, .6); }
+.ph-gl b { font-weight: 700; }
+.ph-gl span { grid-column: 2; color: var(--toc-text2); }
+
+.ph-foot { display: flex; flex-wrap: wrap; gap: 6px; background: var(--toc-bg2); }
+.ph-foot .toc-btn[hidden] { display: none; }
+
+/* ---------- Astuce d'outil : une ligne au bas de la carte, au-dessus du message de l'éditeur ---------- */
+.ph-hint { position: absolute; left: 50%; bottom: calc(14px + var(--ph-toast, 0px)); transform: translateX(-50%); z-index: 690; display: flex; align-items: center; gap: var(--sp-m); max-width: min(900px, calc(100% - 60px)); padding: 4px 4px 4px 14px; background: rgba(13, 19, 24, .96); border: 1px solid var(--toc-lineStrong); border-left: 4px solid var(--toc-amber); color: var(--toc-text); }
+.ph-hint[hidden] { display: none; }
+.ph-hint .ph-link { margin-top: 0; color: var(--toc-text2); flex: none; }
+.ph-hint .pe-ibtn { flex: none; }
+.is-briefing .ph-hint { display: none; }
+
+/* ---------- Illustrations des modes d'emploi ---------- */
+.ph-ill { display: block; width: 100%; max-width: 360px; height: auto; background: var(--toc-bg0); border: 1px solid var(--toc-line); fill: none; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; overflow: hidden; }
+.ph-i-map { fill: #121a20; stroke: var(--toc-line); stroke-width: 1; }
+.ph-i-ctr { stroke: #2b3944; stroke-width: 1; }
+.ph-i-pan { fill: var(--toc-bg2); stroke: var(--toc-lineStrong); stroke-width: 1; }
+.ph-i-dim { stroke: var(--toc-muted); stroke-width: 1.2; opacity: .7; }
+.ph-i-f { stroke: var(--toc-friend); fill: rgba(108, 184, 255, .14); }
+.ph-i-h { stroke: var(--toc-hostile); fill: rgba(255, 107, 107, .14); }
+.ph-i-amb { stroke: var(--toc-amber); fill: rgba(245, 184, 65, .12); }
+.ph-i-acc { stroke: var(--toc-accent); stroke-width: 2; }
+.ph-i-accf { fill: var(--toc-accent); stroke: none; }
+.ph-i-ff { fill: var(--toc-friend); stroke: none; }
+.ph-i-hf { fill: var(--toc-hostile); stroke: none; }
+.ph-i-ambf { fill: var(--toc-amber); stroke: none; }
+.ph-i-dot circle { fill: var(--toc-bg0); stroke: var(--toc-text); }
+.ph-i-cur { fill: var(--toc-text); stroke: var(--toc-bg0); stroke-width: 1; }
+.ph-i-marq { stroke: var(--toc-accent); stroke-width: 1.2; stroke-dasharray: 4 3; fill: rgba(52, 211, 153, .08); }
+.ph-i-sel { stroke: var(--toc-accent); stroke-width: 1.2; fill: rgba(52, 211, 153, .12); }
+.ph-i-ph { stroke: var(--toc-lineStrong); fill: var(--toc-bg3); stroke-width: 1; }
+.ph-i-gnd { fill: #1d2a26; stroke: #3d5a4c; stroke-width: 1.2; }
+.ph-i-eye { stroke: var(--toc-text2); stroke-width: 1.2; }
+.ph-i-file { fill: var(--toc-bg3); stroke: var(--toc-text2); stroke-width: 1.2; }
+
+.ph-a-go { animation: ph-go 4.5s ease-in-out infinite; }
+@keyframes ph-go { 0%, 12% { transform: translate(0, 0); opacity: 1; } 58%, 86% { transform: translate(var(--dx), var(--dy)); opacity: 1; } 94%, 100% { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
+.ph-a-slide { animation: ph-slide 4.5s linear infinite; }
+@keyframes ph-slide { 0%, 8% { transform: translateX(0); } 86%, 100% { transform: translateX(var(--dx)); } }
+.ph-a-back { animation: ph-back 4.5s ease-in-out infinite; }
+@keyframes ph-back { 0%, 8% { transform: translateX(0); } 38%, 56% { transform: translateX(var(--dx)); } 82%, 100% { transform: translateX(0); } }
+.ph-a-late { animation: ph-late 4.5s linear infinite; }
+@keyframes ph-late { 0%, 52% { opacity: 0; } 58%, 86% { opacity: 1; } 94%, 100% { opacity: 0; } }
+.ph-a-on { animation: ph-on 4.5s linear infinite; }
+@keyframes ph-on { 0%, 54% { opacity: 0; } 60%, 88% { opacity: 1; } 95%, 100% { opacity: 0; } }
+.ph-a-grow { transform-box: fill-box; transform-origin: 0 0; animation: ph-grow 4.5s ease-in-out infinite; }
+@keyframes ph-grow { 0%, 12% { transform: scale(0); opacity: 1; } 58%, 86% { transform: scale(1); opacity: 1; } 94%, 100% { transform: scale(1); opacity: 0; } }
+.ph-a-draw { stroke-dasharray: 1; animation: ph-draw 4.5s ease-in-out infinite; }
+@keyframes ph-draw { 0%, 8% { stroke-dashoffset: 1; } 56%, 90% { stroke-dashoffset: 0; opacity: 1; } 96%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+.ph-a-blink { animation: ph-blink 2.4s steps(1) infinite; }
+@keyframes ph-blink { 0% { opacity: 1; } 50% { opacity: .12; } }
+.ph-a-s3 { animation: ph-s3 6s steps(1) infinite; }
+@keyframes ph-s3 { 0% { opacity: 1; } 33.3% { opacity: 0; } 100% { opacity: 0; } }
+.ph-a-pop { transform-box: fill-box; transform-origin: 50% 50%; animation: ph-pop 4.5s ease-out infinite; }
+@keyframes ph-pop { 0%, 10% { transform: translateX(-26px) scale(.4); opacity: 0; } 30%, 88% { transform: none; opacity: 1; } 96%, 100% { transform: none; opacity: 0; } }
+.ph-a-wave { animation: ph-wave 1.5s linear infinite; }
+@keyframes ph-wave { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
+.ph-a-fold { animation: ph-fold 4.8s ease-in-out infinite; }
+@keyframes ph-fold { 0%, 20% { transform: scaleX(1); } 38%, 62% { transform: scaleX(0); } 80%, 100% { transform: scaleX(1); } }
+.ph-a-tilt { transform-box: fill-box; transform-origin: 50% 100%; animation: ph-tilt 5s ease-in-out infinite; }
+@keyframes ph-tilt { 0%, 15% { transform: none; } 45%, 75% { transform: scaleY(.52) skewX(-24deg); } 95%, 100% { transform: none; } }
+
+@media (max-width: 1500px) {
+  .ph-card { width: min(276px, calc(100vw - 16px)); padding: 0 var(--sp-m) var(--sp-m); }
+}
+@media (max-width: 1100px) {
+  .ph-hint { flex-wrap: wrap; justify-content: flex-end; }
+  .ph-hint > span { flex: 1 1 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ph-ill *, .ph-ring, .ph-card.is-ok { animation: none !important; }
+  .ph-ring, .ph-card, .ph-card-bar i, .ph-how > summary .pe-ic { transition: none !important; }
+}

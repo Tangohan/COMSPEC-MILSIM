@@ -42,6 +42,20 @@
 [*] [b]Distant screens[/b]: distant or hidden screens no longer use resources switching on and off.
 [/list]
 
+[h1]COMSPEC ATAK 4.7.2 Washington — le poste TOC sur le PC s'affiche de nouveau / the TOC post shows on the PC again[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]PC du poste TOC[/b] : il s'ouvre de nouveau avec ses onglets, ses boutons et sa barre de dessin.
+[*] [b]Carte du PC[/b] : elle montre de nouveau le poste et les groupes du camp, sans message d'erreur à l'écran.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]TOC post PC[/b]: it opens again with its tabs, its buttons and its drawing bar.
+[*] [b]PC map[/b]: it shows the post and the side's groups again, with no error message on screen.
+[/list]
+
 [h1]COMSPEC ATAK 4.7.1 Washington — menu ACE des écrans du TOC réparé, écran qui se règle tout seul / ACE menu of TOC screens fixed, screens set themselves up[/h1]
 
 [h2]Français[/h2]
