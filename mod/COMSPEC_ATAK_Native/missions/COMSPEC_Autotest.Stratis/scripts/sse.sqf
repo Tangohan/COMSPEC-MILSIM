@@ -541,7 +541,10 @@ AT_fnc_notifGarde = {
 
 ["sse_extension_exemple", {
     if (["comspec_sse_fnc_idDocTypes", "comspec_sse_fnc_idIssue"] call AT_fnc_nil) exitWith {};
-    if !(isClass (configFile >> "CfgPatches" >> "comspec_sse_ext_example_documents")) exitWith { "extension d'exemple non chargée (mod @COMSPEC_SSE_ExampleDocuments absent)" call AT_fnc_skip; };
+    if !(isClass (configFile >> "CfgPatches" >> "comspec_sse_ext_example_documents")) exitWith { "extension d'exemple absente (comspec_sse_ext_example_documents.pbo pas dans le pack SSE)" call AT_fnc_skip; };
+    // Livrée dans le pack SSE, coupée par défaut (defaultOff = 1) : active pour l'étape, recoupée à la fin.
+    [(["defaultOff"] call comspec_sse_fnc_idDocTypes) isEqualTo ["example_documents"], "extension d'exemple pas coupée par défaut (defaultOff)"] call AT_fnc_check;
+    if (!isNil "comspec_sse_fnc_docExtServer") then { ["set", ["example_documents", true]] call comspec_sse_fnc_docExtServer; uiSleep 1; };
     private _exts = ["extensions"] call comspec_sse_fnc_idDocTypes;
     (format ["extensions détectées : %1", _exts apply { format ["%1 %2 (%3 modèles, %4)", _x select 1, _x select 3, count (_x select 5), ["coupée", "active"] select (_x select 7)] }]) call AT_fnc_info;
     [(_exts findIf { (_x select 0) isEqualTo "example_documents" }) >= 0, "extension example_documents non détectée"] call AT_fnc_check;
@@ -567,11 +570,86 @@ AT_fnc_notifGarde = {
         ["set", ["example_documents", true]] call comspec_sse_fnc_docExtServer;
         uiSleep 1;
         ["press_card" in (["list", [""]] call comspec_sse_fnc_idDocTypes), "extension rallumée : la carte de presse n'est pas servie"] call AT_fnc_check;
+        ["set", ["example_documents", false]] call comspec_sse_fnc_docExtServer;
     } else { "fn_docExtServer absente de ce build" call AT_fnc_info; };
     if (!isNil "comspec_sse_fnc_docExtOpen") then {
         [] call comspec_sse_fnc_docExtOpen;
         if ([[{ dialog }, 6] call AT_fnc_wait, "fenêtre Extensions non ouverte"] call AT_fnc_check) then { uiSleep 1; ["extensions_fenetre"] call AT_fnc_shot; closeDialog 0; };
     } else { "fn_docExtOpen absente de ce build" call AT_fnc_info; };
     deleteVehicle _u;
+    call AT_fnc_done;
+}, 120] call AT_fnc_run;
+
+// Fenêtre « SSE ROLEPLAY · Extensions » : aucun texte coupé, aucun contrôle sur un autre, dans les trois vues (liste,
+// aucune extension, tuto et ses 10 étapes) ; « Copier l'exemple » remplit le presse-papiers (solo) et le dit dans la fenêtre.
+AT_fnc_extVerif = {
+    params ["_etat"];
+    private _d = findDisplay 93900;
+    if (isNull _d) exitWith { [false, format ["%1 : fenêtre fermée", _etat]] call AT_fnc_check };
+    private _fond = ["Dim", "Back", "Head", "Line", "RightPanel", "ReadBack", "Probe"];
+    private _vis = (allControls _d) select {
+        private _g = ctrlParentControlsGroup _x;
+        ctrlShown _x && {!((ctrlClassName _x) in _fond)} && {isNull _g || {ctrlShown _g}} && {((ctrlPosition _x) select 2) > 0}
+    };
+    // Texte d'un groupe défilant : sa hauteur suit le texte, seul le groupe compte.
+    { if ((ctrlType _x) in [0, 1, 13, 16] && {isNull (ctrlParentControlsGroup _x)}) then { [_x, format ["%1 : %2", _etat, ctrlClassName _x]] call AT_fnc_tient; }; } forEach _vis;
+    private _top = _vis select { isNull (ctrlParentControlsGroup _x) && {(ctrlClassName _x) isNotEqualTo "ctrlButton"} };
+    private _n = count _top;
+    for "_i" from 0 to (_n - 2) do {
+        (ctrlPosition (_top select _i)) params ["_ax", "_ay", "_aw", "_ah"];
+        for "_j" from (_i + 1) to (_n - 1) do {
+            (ctrlPosition (_top select _j)) params ["_bx", "_by", "_bw", "_bh"];
+            private _ix = ((_ax + _aw) min (_bx + _bw)) - (_ax max _bx);
+            private _iy = ((_ay + _ah) min (_by + _bh)) - (_ay max _by);
+            [_ix < 0.002 || {_iy < 0.002}, format ["%1 : %2 sur %3", _etat, ctrlClassName (_top select _i), ctrlClassName (_top select _j)]] call AT_fnc_check;
+        };
+    };
+};
+["sse_extensions_fenetre", {
+    if (["comspec_sse_fnc_docExtWindow", "comspec_sse_fnc_docExtOpen"] call AT_fnc_nil) exitWith {};
+    (format ["résolution %1", getResolution]) call AT_fnc_info;
+    uiNamespace setVariable ["comspec_sse_docExtTestEmpty", false];
+    [] call comspec_sse_fnc_docExtOpen;
+    if !([[{ !isNull findDisplay 93900 }, 6] call AT_fnc_wait, "fenêtre Extensions non ouverte"] call AT_fnc_check) exitWith { call AT_fnc_done; };
+    uiSleep 0.5;
+    private _d = findDisplay 93900;
+    [(["view"] call comspec_sse_fnc_docExtWindow) isEqualTo "list", "vue liste attendue (extension d'exemple livrée)"] call AT_fnc_check;
+    ["liste"] call AT_fnc_extVerif;
+    ["extensions_liste"] call AT_fnc_shot;
+    // Aucune extension : état vide à la place des volets, bouton « Ouvrir le tuto ».
+    uiNamespace setVariable ["comspec_sse_docExtTestEmpty", true];
+    ["refresh"] call comspec_sse_fnc_docExtWindow;
+    uiSleep 0.3;
+    [(["view"] call comspec_sse_fnc_docExtWindow) isEqualTo "empty", "vue vide attendue"] call AT_fnc_check;
+    [ctrlShown (_d displayCtrl 93952) && {!ctrlShown (_d displayCtrl 93910)}, "état vide : bouton Ouvrir le tuto absent ou liste encore affichée"] call AT_fnc_check;
+    ["vide"] call AT_fnc_extVerif;
+    ["extensions_vide"] call AT_fnc_shot;
+    ["help", "tuto"] call comspec_sse_fnc_docExtWindow;
+    uiNamespace setVariable ["comspec_sse_docExtTestEmpty", false];
+    uiSleep 0.3;
+    [(["view"] call comspec_sse_fnc_docExtWindow) isEqualTo "tuto", "Ouvrir le tuto : vue tuto attendue"] call AT_fnc_check;
+    private _steps = _d displayCtrl 93960;
+    [(lbSize _steps) isEqualTo 10, format ["tuto : %1 étapes au lieu de 10", lbSize _steps]] call AT_fnc_check;
+    for "_i" from 0 to ((lbSize _steps) - 1) do {
+        _steps lbSetCurSel _i;
+        uiSleep 0.2;
+        [format ["tuto %1", _i + 1]] call AT_fnc_extVerif;
+        private _txt = (_d displayCtrl 93961) controlsGroupCtrl 93962;
+        [(ctrlTextHeight _txt) <= ((ctrlPosition _txt) select 3) * 1.01, format ["tuto %1 : texte plus haut que sa zone défilante", _i + 1]] call AT_fnc_check;
+        [(ctrlShown (_d displayCtrl 93963)) isEqualTo (_i isEqualTo 4), format ["tuto %1 : bouton Copier l'exemple mal affiché", _i + 1]] call AT_fnc_check;
+        if (_i isEqualTo 4) then { ["extensions_tuto_config"] call AT_fnc_shot; };
+    };
+    _steps lbSetCurSel 4;
+    uiSleep 0.2;
+    ["copy"] call comspec_sse_fnc_docExtWindow;
+    if (!isMultiplayer) then {
+        [copyFromClipboard isEqualTo (["skeleton"] call comspec_sse_fnc_docExtWindow), "Copier l'exemple : presse-papiers différent du config.cpp affiché"] call AT_fnc_check;
+    };
+    [(ctrlText (_d displayCtrl 93924)) isNotEqualTo "", "Copier l'exemple : rien sur la ligne d'état"] call AT_fnc_check;
+    ["copie"] call AT_fnc_extVerif;
+    ["help"] call comspec_sse_fnc_docExtWindow;
+    uiSleep 0.3;
+    [(["view"] call comspec_sse_fnc_docExtWindow) isEqualTo "list", "bouton Extensions : retour à la liste attendu"] call AT_fnc_check;
+    closeDialog 0;
     call AT_fnc_done;
 }, 120] call AT_fnc_run;

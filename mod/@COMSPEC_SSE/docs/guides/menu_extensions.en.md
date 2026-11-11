@@ -11,7 +11,7 @@ See the **document extensions** loaded on the server (third-party addons that ad
 | Context | Path |
 |---|---|
 | In game | Esc › **SSE ROLEPLAY · Extensions** (window) |
-| CBA settings | Esc › Options › Addon Options › category **SSE ROLEPLAY · Extensions**: one switch per extension (server side, synchronised to clients) |
+| CBA settings | Esc › Options › Addon Options › category **SSE ROLEPLAY · Extensions**: extensions served (yes / no), list of extensions switched off at start, Zeus announcement (server side, synchronised to clients) |
 | Zeus | ZEN › COMSPEC · Identité (COMSPEC · Identity) › **Extensions** |
 | Eden | Menu bar › COMSPEC SSE › **Extensions** |
 
@@ -28,7 +28,19 @@ List of detected extensions (`CfgComspecDocumentExtensions`); for each one:
 | **Aperçu** (Preview) | the extension's `preview` texture |
 | **Switch** Activée / Désactivée (Enabled / Disabled) | server state, applied to all clients |
 
-Status line at the bottom of the window (« Extension désactivée : ses 2 modèles ne sont plus proposés » (Extension disabled: its 2 templates are no longer offered)); no Arma hint. **Fermer** (Close) button, Esc closes.
+Status line at the bottom of the window (two lines at most, smaller font if needed); no Arma hint. **Enable / Disable** and **Close** buttons, Esc closes. The list cuts a long name with « … » (full name in the tooltip); the card (description, templates) scrolls when long.
+
+**Documents d'exemple** (press card, pass) ships with the SSE and is **off by default**: enable it to try it, disable it afterwards if needed (choice kept on the server).
+
+**No extension detected**: instead of the two panels, the window explains that the built-in papers stay available, what an extension is and how to load one, with an **Open the tutorial** button.
+
+## Built-in tutorial « How it works »
+
+**Help** button in the header (any time; the same button, renamed **Extensions**, goes back to the list). Steps on the left, scrolling reading panel on the right:
+
+1. What is an extension? 2. Enable or disable. 3. The shipped example. 4. Make your addon (`$PBOPREFIX$`, `requiredAddons` with `comspec_sse_identity`). 5. The minimal config.cpp (commented « Firearms permit » type, **Copy the example** button: clipboard, confirmation on the status line). 6. Fields of a type. 7. Textures (PAA, powers of two, `_co` / `_ca`). 8. Pack and load (`-mod=`). 9. Test. 10. Common problems.
+
+The same content is in the SSE manual (chapter **Document extensions**, « ? » button).
 
 ## Step by step: disabling the press card for a military mission
 

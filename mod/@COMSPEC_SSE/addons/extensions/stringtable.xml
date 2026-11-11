@@ -1,32 +1,283 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- COMSPEC SSE, addon extensions : textes fixes de la fenêtre « SSE ROLEPLAY · Extensions » (anglais, français).
-     Les textes posés par SQF (fn_docExtWindow, fn_docExtMenu) sont écrits en français et traduits par comspec_sse_fnc_tr. -->
+<!-- COMSPEC SSE, addon extensions : textes de la fenêtre « SSE ROLEPLAY · Extensions » et de son tuto intégré
+     « Comment ça marche » (T1 à T10 : titre _T, texte _B en texte structuré). Langue du jeu (localize).
+     Fichier écrit à la main ; le même tuto est repris dans le manuel SSE (STR_COMSPEC_SSE_GUIDE_EXTENSIONS_DESC). -->
 <Project name="COMSPEC_SSE">
     <Package name="extensions">
+        <Key ID="STR_COMSPEC_SSE_EXT_Back">
+            <Original>Extensions</Original>
+            <English>Extensions</English>
+            <French>Extensions</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_Back_D">
+            <Original>Back to the list of loaded extensions.</Original>
+            <English>Back to the list of loaded extensions.</English>
+            <French>Retour à la liste des extensions chargées.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_Builtin">
+            <Original>shipped with the SSE</Original>
+            <English>shipped with the SSE</English>
+            <French>livrée avec le SSE</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_EXT_Close">
             <Original>Close</Original>
             <English>Close</English>
             <French>Fermer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_Copied">
+            <Original>Example copied to the clipboard: paste it into your addon's config.cpp, then adapt names, paths and positions.</Original>
+            <English>Example copied to the clipboard: paste it into your addon's config.cpp, then adapt names, paths and positions.</English>
+            <French>Exemple copié dans le presse-papiers : collez-le dans le config.cpp de votre addon, puis adaptez noms, chemins et positions.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_CopiedMp">
+            <Original>Example sent to the clipboard. Online, Arma may block the clipboard for a client: the full text stays shown above.</Original>
+            <English>Example sent to the clipboard. Online, Arma may block the clipboard for a client: the full text stays shown above.</English>
+            <French>Exemple envoyé au presse-papiers. En ligne, Arma peut bloquer le presse-papiers d'un client : le texte complet reste affiché au-dessus.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_Copy">
+            <Original>Copy the example</Original>
+            <English>Copy the example</English>
+            <French>Copier l'exemple</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_Copy_D">
+            <Original>Copies this config.cpp to the clipboard, ready to paste into your addon.</Original>
+            <English>Copies this config.cpp to the clipboard, ready to paste into your addon.</English>
+            <French>Copie ce config.cpp dans le presse-papiers, prêt à coller dans votre addon.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_DefaultOff">
+            <Original>off until enabled</Original>
+            <English>off until enabled</English>
+            <French>coupée tant qu'on ne l'active pas</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_EXT_Disable">
             <Original>Disable</Original>
             <English>Disable</English>
             <French>Désactiver</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_EmptyBody">
+            <Original>This is normal if you did not load any extension addon: the SSE built-in papers (ID card, passport, driving licence…) work without one.&lt;br/&gt;&lt;br/&gt;An extension is a separate addon that adds document types: ID cards or passports of other countries or factions, permits, passes. Load it after the SSE on the server and on every player, then reopen this window.&lt;br/&gt;&lt;br/&gt;The SSE also ships an example extension (press card, pass). If it does not show here, this SSE build is older or incomplete: update the mod.</Original>
+            <English>This is normal if you did not load any extension addon: the SSE built-in papers (ID card, passport, driving licence…) work without one.&lt;br/&gt;&lt;br/&gt;An extension is a separate addon that adds document types: ID cards or passports of other countries or factions, permits, passes. Load it after the SSE on the server and on every player, then reopen this window.&lt;br/&gt;&lt;br/&gt;The SSE also ships an example extension (press card, pass). If it does not show here, this SSE build is older or incomplete: update the mod.</English>
+            <French>C'est normal si vous n'avez chargé aucun addon d'extension : les papiers intégrés du SSE (carte d'identité, passeport, permis de conduire…) fonctionnent sans.&lt;br/&gt;&lt;br/&gt;Une extension est un addon séparé qui ajoute des types de documents : cartes d'identité ou passeports d'autres pays ou factions, permis, laissez-passer. Chargez-la après le SSE, sur le serveur et chez chaque joueur, puis rouvrez cette fenêtre.&lt;br/&gt;&lt;br/&gt;Le SSE livre aussi une extension d'exemple (carte de presse, laissez-passer). Si elle n'apparaît pas ici, ce SSE est ancien ou incomplet : mettez le mod à jour.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_EmptyTitle">
+            <Original>No document extension loaded</Original>
+            <English>No document extension loaded</English>
+            <French>Aucune extension de documents chargée</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_EXT_Enable">
             <Original>Enable</Original>
             <English>Enable</English>
             <French>Activer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_Help">
+            <Original>Help</Original>
+            <English>Help</English>
+            <French>Aide</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_Help_D">
+            <Original>How it works: what an extension is, how to enable one, how to make your own.</Original>
+            <English>How it works: what an extension is, how to enable one, how to make your own.</English>
+            <French>Comment ça marche : ce qu'est une extension, comment l'activer, comment créer la vôtre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_Lang">
+            <Original>en</Original>
+            <English>en</English>
+            <French>fr</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_EXT_Models">
             <Original>Document templates</Original>
             <English>Document templates</English>
             <French>Modèles de documents</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_NoModels">
+            <Original>No template declared</Original>
+            <English>No template declared</English>
+            <French>Aucun modèle déclaré</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_OpenTuto">
+            <Original>Open the tutorial</Original>
+            <English>Open the tutorial</English>
+            <French>Ouvrir le tuto</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_StActive">
+            <Original>%1: enabled. Its papers are offered to Zeus, the SSE editor and the AI.</Original>
+            <English>%1: enabled. Its papers are offered to Zeus, the SSE editor and the AI.</English>
+            <French>%1 : active. Ses papiers sont proposés aux Zeus, à l'éditeur SSE et aux IA.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_StEden">
+            <Original>In Eden: read only. Enable or disable in game (Zeus, Esc menu); the choice applies to the whole server.</Original>
+            <English>In Eden: read only. Enable or disable in game (Zeus, Esc menu); the choice applies to the whole server.</English>
+            <French>Dans Eden : consultation seulement. L'activation se fait en jeu (Zeus, menu Échap) et vaut pour tout le serveur.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_StEmpty">
+            <Original>The SSE built-in papers still work. Help explains how to add your own.</Original>
+            <English>The SSE built-in papers still work. Help explains how to add your own.</English>
+            <French>Les papiers intégrés du SSE restent disponibles. Le bouton Aide explique comment ajouter les vôtres.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_StInactive">
+            <Original>%1: disabled. Its papers are no longer offered; papers already handed out stay readable.</Original>
+            <English>%1: disabled. Its papers are no longer offered; papers already handed out stay readable.</English>
+            <French>%1 : désactivée. Ses papiers ne sont plus proposés ; ceux déjà délivrés restent lisibles.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_StOffSetting">
+            <Original>Document extensions are switched off by the CBA setting SSE ROLEPLAY › Extensions: only the built-in papers are offered.</Original>
+            <English>Document extensions are switched off by the CBA setting SSE ROLEPLAY › Extensions: only the built-in papers are offered.</English>
+            <French>Extensions de documents coupées par le réglage CBA SSE ROLEPLAY › Extensions : seuls les papiers intégrés sont proposés.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_StReadOnly">
+            <Original>%1: %2. Only a Zeus or an administrator can enable or disable an extension.</Original>
+            <English>%1: %2. Only a Zeus or an administrator can enable or disable an extension.</English>
+            <French>%1 : %2. Seul un Zeus ou un administrateur peut activer ou désactiver une extension.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_StSent">
+            <Original>Request sent to the server: %1 → %2. The list updates as soon as it answers.</Original>
+            <English>Request sent to the server: %1 → %2. The list updates as soon as it answers.</English>
+            <French>Demande envoyée au serveur : %1 → %2. La liste se met à jour dès sa réponse.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_StTuto">
+            <Original>Pick a step on the left. Long pages scroll.</Original>
+            <English>Pick a step on the left. Long pages scroll.</English>
+            <French>Choisissez une étape à gauche. Les pages longues défilent.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_StTutoCode">
+            <Original>Copy the example puts this config.cpp on the clipboard.</Original>
+            <English>Copy the example puts this config.cpp on the clipboard.</English>
+            <French>Copier l'exemple place ce config.cpp dans le presse-papiers.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_Summary">
+            <Original>%1 document extension(s) detected · %2 enabled</Original>
+            <English>%1 document extension(s) detected · %2 enabled</English>
+            <French>%1 extension(s) de documents détectée(s) · %2 active(s)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_SummaryTuto">
+            <Original>How it works · %1 steps, read in order</Original>
+            <English>How it works · %1 steps, read in order</English>
+            <French>Comment ça marche · %1 étapes, à lire dans l'ordre</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T10_B">
+            <Original>• &lt;t color='#e8b84a'&gt;Extension missing from this list&lt;/t&gt;: PBO not loaded (check -mod= and the order), or no class in CfgComspecDocumentExtensions.&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Listed, but 0 template&lt;/t&gt;: the extension field of your types does not match the class name exactly, or documents[] is wrong.&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Type not offered&lt;/t&gt;: extension disabled here, or switched off by the CBA setting (list of switched-off extensions).&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Error at start, class not found&lt;/t&gt;: requiredAddons without "comspec_sse_identity".&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Black or white background&lt;/t&gt;: wrong texture path (prefix), missing PAA, sides not powers of two, or %1 without a texture for that country.&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Virtual document&lt;/t&gt;: no free item_001… copy left; declare more.&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Text cut on the document&lt;/t&gt;: enlarge the field w or h, check with ZOOM.</Original>
+            <English>• &lt;t color='#e8b84a'&gt;Extension missing from this list&lt;/t&gt;: PBO not loaded (check -mod= and the order), or no class in CfgComspecDocumentExtensions.&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Listed, but 0 template&lt;/t&gt;: the extension field of your types does not match the class name exactly, or documents[] is wrong.&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Type not offered&lt;/t&gt;: extension disabled here, or switched off by the CBA setting (list of switched-off extensions).&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Error at start, class not found&lt;/t&gt;: requiredAddons without "comspec_sse_identity".&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Black or white background&lt;/t&gt;: wrong texture path (prefix), missing PAA, sides not powers of two, or %1 without a texture for that country.&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Virtual document&lt;/t&gt;: no free item_001… copy left; declare more.&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Text cut on the document&lt;/t&gt;: enlarge the field w or h, check with ZOOM.</English>
+            <French>• &lt;t color='#e8b84a'&gt;L'extension n'est pas dans cette liste&lt;/t&gt; : PBO non chargé (vérifiez -mod= et l'ordre), ou pas de classe dans CfgComspecDocumentExtensions.&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Elle apparaît, mais 0 modèle&lt;/t&gt; : le champ extension de vos types ne reprend pas exactement le nom de la classe, ou documents[] est faux.&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Le type n'est pas proposé&lt;/t&gt; : extension désactivée ici, ou coupée par le réglage CBA (liste des extensions coupées).&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Erreur au lancement, classe introuvable&lt;/t&gt; : requiredAddons sans "comspec_sse_identity".&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Fond noir ou blanc&lt;/t&gt; : chemin de texture faux (préfixe), PAA absent, côtés pas en puissance de deux, ou %1 sans texture pour ce pays.&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Document virtuel&lt;/t&gt; : plus d'exemplaire item_001… libre ; déclarez-en davantage.&lt;br/&gt;• &lt;t color='#e8b84a'&gt;Texte coupé sur le document&lt;/t&gt; : agrandissez w ou h du champ, vérifiez au ZOOM.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T10_T">
+            <Original>Common problems</Original>
+            <English>Common problems</English>
+            <French>Problèmes fréquents</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T1_B">
+            <Original>A document extension is a &lt;t color='#73cc80'&gt;separate addon&lt;/t&gt; that adds paper types to the SSE: ID cards or passports of other countries or factions, permits, passes, professional cards.&lt;br/&gt;&lt;br/&gt;Its types show up wherever the SSE offers a paper: Zeus › Give papers, Eden Papers attribute, SSE editor, AI of the area. Issuing, the viewer and checks work as for the built-in papers.&lt;br/&gt;&lt;br/&gt;Without any extension nothing is missing: the SSE built-in papers stay available.</Original>
+            <English>A document extension is a &lt;t color='#73cc80'&gt;separate addon&lt;/t&gt; that adds paper types to the SSE: ID cards or passports of other countries or factions, permits, passes, professional cards.&lt;br/&gt;&lt;br/&gt;Its types show up wherever the SSE offers a paper: Zeus › Give papers, Eden Papers attribute, SSE editor, AI of the area. Issuing, the viewer and checks work as for the built-in papers.&lt;br/&gt;&lt;br/&gt;Without any extension nothing is missing: the SSE built-in papers stay available.</English>
+            <French>Une extension de documents est un &lt;t color='#73cc80'&gt;addon séparé&lt;/t&gt; qui ajoute des types de papiers au SSE : cartes d'identité ou passeports d'autres pays ou factions, permis, laissez-passer, cartes professionnelles.&lt;br/&gt;&lt;br/&gt;Ses types apparaissent partout où le SSE propose un papier : Zeus › Donner des papiers, attribut Eden Papiers, éditeur SSE, IA de la zone. Délivrance, visionneuse et contrôles marchent comme pour les papiers intégrés.&lt;br/&gt;&lt;br/&gt;Sans extension, rien ne manque : les papiers intégrés du SSE restent disponibles.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T1_T">
+            <Original>What is an extension?</Original>
+            <English>What is an extension?</English>
+            <French>Qu'est-ce qu'une extension ?</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T2_B">
+            <Original>This window lists the loaded extensions. Pick one on the left: its card, templates and a preview show on the right.&lt;br/&gt;&lt;br/&gt;The &lt;t color='#73cc80'&gt;Enable / Disable&lt;/t&gt; button (bottom) applies to the whole server and is kept from one game to the next. You must be Zeus, administrator or host; otherwise the window is read only.&lt;br/&gt;&lt;br/&gt;A disabled extension no longer offers its papers; papers already handed out stay readable. The CBA setting SSE ROLEPLAY › Extensions can also switch all extensions off, or list some to switch off at start.&lt;br/&gt;&lt;br/&gt;Open this window: Esc › SSE ROLEPLAY · Extensions, Zeus module COMSPEC · Extensions, or Eden › COMSPEC SSE › Extensions.</Original>
+            <English>This window lists the loaded extensions. Pick one on the left: its card, templates and a preview show on the right.&lt;br/&gt;&lt;br/&gt;The &lt;t color='#73cc80'&gt;Enable / Disable&lt;/t&gt; button (bottom) applies to the whole server and is kept from one game to the next. You must be Zeus, administrator or host; otherwise the window is read only.&lt;br/&gt;&lt;br/&gt;A disabled extension no longer offers its papers; papers already handed out stay readable. The CBA setting SSE ROLEPLAY › Extensions can also switch all extensions off, or list some to switch off at start.&lt;br/&gt;&lt;br/&gt;Open this window: Esc › SSE ROLEPLAY · Extensions, Zeus module COMSPEC · Extensions, or Eden › COMSPEC SSE › Extensions.</English>
+            <French>Cette fenêtre liste les extensions chargées. Choisissez-en une à gauche : sa fiche, ses modèles et un aperçu s'affichent à droite.&lt;br/&gt;&lt;br/&gt;Le bouton &lt;t color='#73cc80'&gt;Activer / Désactiver&lt;/t&gt; (en bas) vaut pour tout le serveur et reste gardé d'une partie à l'autre. Il faut être Zeus, administrateur ou hôte ; sinon la fenêtre est en lecture seule.&lt;br/&gt;&lt;br/&gt;Une extension désactivée ne propose plus ses papiers ; ceux déjà délivrés restent lisibles. Le réglage CBA SSE ROLEPLAY › Extensions peut aussi couper toutes les extensions, ou en lister à couper au lancement.&lt;br/&gt;&lt;br/&gt;Ouvrir cette fenêtre : Échap › SSE ROLEPLAY · Extensions, module Zeus COMSPEC · Extensions, ou Eden › COMSPEC SSE › Extensions.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T2_T">
+            <Original>Enable or disable</Original>
+            <English>Enable or disable</English>
+            <French>Activer ou désactiver</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T3_B">
+            <Original>The SSE ships the « Documents d'exemple » extension: a press card and a pass. It is &lt;t color='#73cc80'&gt;off by default&lt;/t&gt; so it adds nothing to your missions.&lt;br/&gt;&lt;br/&gt;To try it: pick it in the list, click Enable, then Zeus › Give papers › Press card. Fill in « Média », give it to a player or an AI and open it.&lt;br/&gt;&lt;br/&gt;Its sources (folder extensions/example_documents of the SSE project: commented config.cpp, textures, README) are a ready-made template.</Original>
+            <English>The SSE ships the « Documents d'exemple » extension: a press card and a pass. It is &lt;t color='#73cc80'&gt;off by default&lt;/t&gt; so it adds nothing to your missions.&lt;br/&gt;&lt;br/&gt;To try it: pick it in the list, click Enable, then Zeus › Give papers › Press card. Fill in « Média », give it to a player or an AI and open it.&lt;br/&gt;&lt;br/&gt;Its sources (folder extensions/example_documents of the SSE project: commented config.cpp, textures, README) are a ready-made template.</English>
+            <French>Le SSE livre l'extension « Documents d'exemple » : une carte de presse et un laissez-passer. Elle est &lt;t color='#73cc80'&gt;coupée par défaut&lt;/t&gt; pour ne rien ajouter à vos missions.&lt;br/&gt;&lt;br/&gt;Pour l'essayer : choisissez-la dans la liste, cliquez Activer, puis Zeus › Donner des papiers › Carte de presse. Remplissez « Média », donnez-la à un joueur ou à une IA et ouvrez-la.&lt;br/&gt;&lt;br/&gt;Ses sources (dossier extensions/example_documents du projet SSE : config.cpp commenté, textures, README) forment un modèle prêt à copier.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T3_T">
+            <Original>The shipped example</Original>
+            <English>The shipped example</English>
+            <French>L'exemple livré</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T4_B">
+            <Original>An extension is an ordinary Arma mod:&lt;br/&gt;@MyDocuments\addons\my_documents.pbo&lt;br/&gt;&lt;br/&gt;In the addon folder:&lt;br/&gt;• $PBOPREFIX$: one line, e.g. z\mine\addons\documents (start of every texture path);&lt;br/&gt;• config.cpp: CfgPatches, CfgWeapons, CfgComspecDocuments, CfgComspecDocumentExtensions;&lt;br/&gt;• data\: the PAA textures.&lt;br/&gt;&lt;br/&gt;In CfgPatches, &lt;t color='#73cc80'&gt;requiredAddons[] must contain "comspec_sse_identity"&lt;/t&gt;: the SSE then loads before your addon. Next step: a complete config.cpp to copy.</Original>
+            <English>An extension is an ordinary Arma mod:&lt;br/&gt;@MyDocuments\addons\my_documents.pbo&lt;br/&gt;&lt;br/&gt;In the addon folder:&lt;br/&gt;• $PBOPREFIX$: one line, e.g. z\mine\addons\documents (start of every texture path);&lt;br/&gt;• config.cpp: CfgPatches, CfgWeapons, CfgComspecDocuments, CfgComspecDocumentExtensions;&lt;br/&gt;• data\: the PAA textures.&lt;br/&gt;&lt;br/&gt;In CfgPatches, &lt;t color='#73cc80'&gt;requiredAddons[] must contain "comspec_sse_identity"&lt;/t&gt;: the SSE then loads before your addon. Next step: a complete config.cpp to copy.</English>
+            <French>Une extension est un mod Arma ordinaire :&lt;br/&gt;@MesDocuments\addons\mes_documents.pbo&lt;br/&gt;&lt;br/&gt;Dans le dossier de l'addon :&lt;br/&gt;• $PBOPREFIX$ : une ligne, ex. z\mes\addons\documents (début de tous les chemins de textures) ;&lt;br/&gt;• config.cpp : CfgPatches, CfgWeapons, CfgComspecDocuments, CfgComspecDocumentExtensions ;&lt;br/&gt;• data\ : les textures PAA.&lt;br/&gt;&lt;br/&gt;Dans CfgPatches, &lt;t color='#73cc80'&gt;requiredAddons[] doit contenir "comspec_sse_identity"&lt;/t&gt; : le SSE est ainsi chargé avant votre addon. Étape suivante : un config.cpp complet à copier.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T4_T">
+            <Original>Make your addon</Original>
+            <English>Make your addon</English>
+            <French>Créer son addon</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T5_B">
+            <Original>A complete « Firearms permit » type. &lt;t color='#73cc80'&gt;Copy the example&lt;/t&gt; puts it on the clipboard; then adapt class names, paths and positions. The // lines explain each field.</Original>
+            <English>A complete « Firearms permit » type. &lt;t color='#73cc80'&gt;Copy the example&lt;/t&gt; puts it on the clipboard; then adapt class names, paths and positions. The // lines explain each field.</English>
+            <French>Un type « Permis de port d'arme » complet. &lt;t color='#73cc80'&gt;Copier l'exemple&lt;/t&gt; le place dans le presse-papiers ; adaptez ensuite noms de classes, chemins et positions. Les lignes // expliquent chaque champ.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T5_T">
+            <Original>The minimal config.cpp</Original>
+            <English>The minimal config.cpp</English>
+            <French>Le config.cpp minimal</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T6_B">
+            <Original>• displayName / displayNameEn: shown name (FR / EN).&lt;br/&gt;• category: identity, travel, permit, professional, pass or other (list group).&lt;br/&gt;• item: blank CfgWeapons item; the copies item_001, item_002… are the papers handed out (one per issued document).&lt;br/&gt;• ratio: width / height (1.585 card, 1.42 passport, 1.414 A6).&lt;br/&gt;• sides: 1 or 2 (class recto, class verso).&lt;br/&gt;• countries[]: issuing countries, empty = all. A country marker %1 in the texture path is replaced by the lower-case country code.&lt;br/&gt;• mrz: empty (no band), td1 (card, 3 lines), td3 (passport, 2 lines).&lt;br/&gt;• extension: your class name in CfgComspecDocumentExtensions.&lt;br/&gt;&lt;br/&gt;Positions from 0 to 1 (fraction of the side): class photo {x; y; w; h}, class holo {x; y; w}, and in class fields one field per value: key (last, first, dob, number, expires, issued, authority…), x, y, w, h, transform (upper, dmy), font (name, mono), color, text (fixed text), input = 1 + label + default (typed by the Zeus).&lt;br/&gt;&lt;br/&gt;CfgComspecDocumentExtensions: name, author, version, description, documents[], preview.</Original>
+            <English>• displayName / displayNameEn: shown name (FR / EN).&lt;br/&gt;• category: identity, travel, permit, professional, pass or other (list group).&lt;br/&gt;• item: blank CfgWeapons item; the copies item_001, item_002… are the papers handed out (one per issued document).&lt;br/&gt;• ratio: width / height (1.585 card, 1.42 passport, 1.414 A6).&lt;br/&gt;• sides: 1 or 2 (class recto, class verso).&lt;br/&gt;• countries[]: issuing countries, empty = all. A country marker %1 in the texture path is replaced by the lower-case country code.&lt;br/&gt;• mrz: empty (no band), td1 (card, 3 lines), td3 (passport, 2 lines).&lt;br/&gt;• extension: your class name in CfgComspecDocumentExtensions.&lt;br/&gt;&lt;br/&gt;Positions from 0 to 1 (fraction of the side): class photo {x; y; w; h}, class holo {x; y; w}, and in class fields one field per value: key (last, first, dob, number, expires, issued, authority…), x, y, w, h, transform (upper, dmy), font (name, mono), color, text (fixed text), input = 1 + label + default (typed by the Zeus).&lt;br/&gt;&lt;br/&gt;CfgComspecDocumentExtensions: name, author, version, description, documents[], preview.</English>
+            <French>• displayName / displayNameEn : nom affiché (FR / EN).&lt;br/&gt;• category : identity, travel, permit, professional, pass ou other (groupe de la liste).&lt;br/&gt;• item : objet vierge de CfgWeapons ; les exemplaires item_001, item_002… sont les papiers remis (un par document délivré).&lt;br/&gt;• ratio : largeur / hauteur (1.585 carte, 1.42 passeport, 1.414 A6).&lt;br/&gt;• sides : 1 ou 2 faces (class recto, class verso).&lt;br/&gt;• countries[] : pays émetteurs, vide = tous. Un marqueur pays %1 dans le chemin de texture est remplacé par le code pays en minuscules.&lt;br/&gt;• mrz : vide (pas de bande), td1 (carte, 3 lignes), td3 (passeport, 2 lignes).&lt;br/&gt;• extension : nom de votre classe dans CfgComspecDocumentExtensions.&lt;br/&gt;&lt;br/&gt;Positions de 0 à 1 (fraction de la face) : class photo {x; y; w; h}, class holo {x; y; w}, et dans class fields un champ par valeur : key (last, first, dob, number, expires, issued, authority…), x, y, w, h, transform (upper, dmy), font (name, mono), color, text (texte fixe), input = 1 + label + default (saisi par le Zeus).&lt;br/&gt;&lt;br/&gt;CfgComspecDocumentExtensions : name, author, version, description, documents[], preview.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T6_T">
+            <Original>Fields of a type</Original>
+            <English>Fields of a type</English>
+            <French>Les champs d'un type</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T7_B">
+            <Original>• PAA format, sides in &lt;t color='#73cc80'&gt;powers of two&lt;/t&gt;: 1024 × 512 for a card (the SSE stretches it to the real ratio), 1024 × 1024 at most for a page.&lt;br/&gt;• Suffix _co for a background (permit_recto_co.paa), _ca for an icon with transparency (icon_permit_ca.paa, 64 × 64 or 128 × 128).&lt;br/&gt;• Conversion from PNG: TexView 2 or ImageToPAA (Arma 3 Tools).&lt;br/&gt;• Leave the value areas blank: the SSE writes name, number and dates at the class fields positions; paint only the labels.&lt;br/&gt;• Keep « SIMULATION — DOCUMENT DE JEU » on each side; never reproduce a real model or an official emblem.&lt;br/&gt;• Path in config.cpp = prefix + folder: \z\mine\addons\documents\data\permit_recto_co.paa. Keep the whole addon small (a few hundred KB).</Original>
+            <English>• PAA format, sides in &lt;t color='#73cc80'&gt;powers of two&lt;/t&gt;: 1024 × 512 for a card (the SSE stretches it to the real ratio), 1024 × 1024 at most for a page.&lt;br/&gt;• Suffix _co for a background (permit_recto_co.paa), _ca for an icon with transparency (icon_permit_ca.paa, 64 × 64 or 128 × 128).&lt;br/&gt;• Conversion from PNG: TexView 2 or ImageToPAA (Arma 3 Tools).&lt;br/&gt;• Leave the value areas blank: the SSE writes name, number and dates at the class fields positions; paint only the labels.&lt;br/&gt;• Keep « SIMULATION — DOCUMENT DE JEU » on each side; never reproduce a real model or an official emblem.&lt;br/&gt;• Path in config.cpp = prefix + folder: \z\mine\addons\documents\data\permit_recto_co.paa. Keep the whole addon small (a few hundred KB).</English>
+            <French>• Format PAA, côtés en &lt;t color='#73cc80'&gt;puissance de deux&lt;/t&gt; : 1024 × 512 pour une carte (le SSE l'étire au ratio réel), 1024 × 1024 au plus pour une page.&lt;br/&gt;• Suffixe _co pour un fond (permis_recto_co.paa), _ca pour une icône avec transparence (icon_permis_ca.paa, 64 × 64 ou 128 × 128).&lt;br/&gt;• Conversion depuis un PNG : TexView 2 ou ImageToPAA (Arma 3 Tools).&lt;br/&gt;• Laissez vides les zones des valeurs : le SSE écrit nom, numéro et dates aux positions de class fields ; peignez seulement les étiquettes.&lt;br/&gt;• Gardez « SIMULATION — DOCUMENT DE JEU » sur chaque face ; aucune reproduction de vrai modèle ni d'emblème officiel.&lt;br/&gt;• Chemin dans config.cpp = préfixe + dossier : \z\mes\addons\documents\data\permis_recto_co.paa. Gardez l'addon léger (quelques centaines de Ko).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T7_T">
+            <Original>Textures</Original>
+            <English>Textures</English>
+            <French>Les textures</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T8_B">
+            <Original>1. Pack the folder into a PBO with Addon Builder (Arma 3 Tools) or hemtt, keeping the $PBOPREFIX$ prefix.&lt;br/&gt;2. Put it in @MyDocuments\addons\.&lt;br/&gt;3. Start Arma with the SSE, then the extension: -mod=@CBA_A3;@COMSPEC_SSE;@MyDocuments (or tick both mods in the launcher).&lt;br/&gt;4. In multiplayer, the server and every player load the same addon; sign it (.bisign + .bikey in the server keys) if the server checks signatures.</Original>
+            <English>1. Pack the folder into a PBO with Addon Builder (Arma 3 Tools) or hemtt, keeping the $PBOPREFIX$ prefix.&lt;br/&gt;2. Put it in @MyDocuments\addons\.&lt;br/&gt;3. Start Arma with the SSE, then the extension: -mod=@CBA_A3;@COMSPEC_SSE;@MyDocuments (or tick both mods in the launcher).&lt;br/&gt;4. In multiplayer, the server and every player load the same addon; sign it (.bisign + .bikey in the server keys) if the server checks signatures.</English>
+            <French>1. Empaquetez le dossier en PBO avec Addon Builder (Arma 3 Tools) ou hemtt, en gardant le préfixe du $PBOPREFIX$.&lt;br/&gt;2. Placez-le dans @MesDocuments\addons\.&lt;br/&gt;3. Lancez Arma avec le SSE puis l'extension : -mod=@CBA_A3;@COMSPEC_SSE;@MesDocuments (ou cochez les deux mods dans le lanceur).&lt;br/&gt;4. En multijoueur, le serveur et chaque joueur chargent le même addon ; signez-le (.bisign, et .bikey dans les clés du serveur) si le serveur vérifie les signatures.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T8_T">
+            <Original>Pack and load</Original>
+            <English>Pack and load</English>
+            <French>Empaqueter et charger</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T9_B">
+            <Original>1. Open this window: your extension shows on the left with its template count. Enable it if needed.&lt;br/&gt;2. Zeus › Give papers: pick your type, fill in the typed fields, give it to yourself.&lt;br/&gt;3. ACE › My papers › Open my papers: check layout, FRONT / BACK, ZOOM.&lt;br/&gt;4. Get checked: without MRZ there is no band reading; visual check and database work.&lt;br/&gt;5. At start, the RPT log lists the loaded extensions (line [COMSPEC SSE] Extensions de documents).</Original>
+            <English>1. Open this window: your extension shows on the left with its template count. Enable it if needed.&lt;br/&gt;2. Zeus › Give papers: pick your type, fill in the typed fields, give it to yourself.&lt;br/&gt;3. ACE › My papers › Open my papers: check layout, FRONT / BACK, ZOOM.&lt;br/&gt;4. Get checked: without MRZ there is no band reading; visual check and database work.&lt;br/&gt;5. At start, the RPT log lists the loaded extensions (line [COMSPEC SSE] Extensions de documents).</English>
+            <French>1. Ouvrez cette fenêtre : votre extension apparaît à gauche avec son nombre de modèles. Activez-la si besoin.&lt;br/&gt;2. Zeus › Donner des papiers : choisissez votre type, remplissez les champs saisis, donnez-le à vous-même.&lt;br/&gt;3. ACE › Mes papiers › Ouvrir mes papiers : vérifiez la mise en page, RECTO / VERSO, ZOOM.&lt;br/&gt;4. Faites-vous contrôler : sans MRZ, pas de lecture de bande ; contrôle visuel et base fonctionnent.&lt;br/&gt;5. Au lancement, le journal RPT liste les extensions chargées (ligne [COMSPEC SSE] Extensions de documents).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_T9_T">
+            <Original>Test</Original>
+            <English>Test</English>
+            <French>Tester</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_EXT_Title">
             <Original>SSE ROLEPLAY · Extensions</Original>
             <English>SSE ROLEPLAY · Extensions</English>
             <French>SSE ROLEPLAY · Extensions</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_WordOff">
+            <Original>disabled</Original>
+            <English>disabled</English>
+            <French>désactivée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_WordOffCap">
+            <Original>Off</Original>
+            <English>Off</English>
+            <French>Désactivée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_WordOn">
+            <Original>enabled</Original>
+            <English>enabled</English>
+            <French>active</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_WordOnCap">
+            <Original>On</Original>
+            <English>On</English>
+            <French>Active</French>
         </Key>
     </Package>
 </Project>
