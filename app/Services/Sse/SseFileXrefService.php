@@ -204,6 +204,22 @@ final class SseFileXrefService
         $this->fireWatches($tenantId, $type, $sourceId, array_column($tokens, 'token'), $text);
     }
 
+    /**
+     * Indexe une source juste écrite, sans jamais faire échouer l'écriture (fichiers absents, base indisponible) ; le
+     * rattrapage par curseur la reprendra sinon. Le curseur n'est pas avancé : l'indexation suivante la refait à l'identique.
+     */
+    public static function indexQuietly(int $tenantId, string $type, int $sourceId): void
+    {
+        if ($tenantId < 1 || $sourceId < 1) {
+            return;
+        }
+        try {
+            (new self())->reindex($tenantId, $type, $sourceId);
+        } catch (\Throwable $e) {
+            error_log('Fichiers SSE : recoupement différé (' . $type . ' ' . $sourceId . ') : ' . $e->getMessage());
+        }
+    }
+
     public function reindex(int $tenantId, string $type, int $sourceId): void
     {
         if (!isset(self::SOURCES[$type])) {
