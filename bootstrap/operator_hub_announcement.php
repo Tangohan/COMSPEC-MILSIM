@@ -6,6 +6,7 @@ use App\Support\Migrations\SchemaInspector;
 
 /**
  * Annonce « Nouveau : vos outils opérateur » (platform_alerts), publiée une seule fois pour 14 jours.
+ * Le texte ne vaut que pour une annonce pas encore publiée : une ligne déjà en base n'est jamais réécrite.
  *
  * @return callable(PDO, ?\DateTimeImmutable=): bool vrai si l'annonce vient d'être créée
  */
@@ -24,7 +25,7 @@ return static function (PDO $pdo, ?\DateTimeImmutable $now = null): bool {
     $row = [
         'kind' => 'novelty',
         'title' => 'Nouveau : vos outils opérateur',
-        'body' => 'Vos identités, papiers, couvertures, fichiers et matériel sont réunis sur une seule page. Ouvrez le menu Espaces, puis la tuile bleue « Outils opérateur ».',
+        'body' => 'Vos identités, papiers, fichiers et matériel sont réunis sur une seule page. Ouvrez le menu Espaces, puis la tuile bleue « Outils opérateur ».',
         'cta_label' => 'Ouvrir mes outils',
         'cta_url' => $link,
         'starts_at' => $now->format('Y-m-d H:i:s'),

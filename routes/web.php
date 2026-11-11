@@ -525,10 +525,11 @@ return function (Router $router) {
     $router->post('/operateur/identite/documents', [$opHub, 'documentRequest'], [AuthMiddleware::class]);
     $router->get('/operateur/identite/documents/{id}/specimen', [$opHub, 'documentSpecimen'], [AuthMiddleware::class]);
     $router->post('/operateur/identite/documents/{id}/action', [$opHub, 'documentAction'], [AuthMiddleware::class]);
-    $router->get('/operateur/identite/couverture', [$opHub, 'covers'], [AuthMiddleware::class]);
-    $router->post('/operateur/identite/couverture', [$opHub, 'coverGenerate'], [AuthMiddleware::class]);
-    $router->get('/operateur/identite/couverture/{id}/telecharger', [$opHub, 'coverDownload'], [AuthMiddleware::class]);
-    $router->post('/operateur/identite/couverture/{id}', [$opHub, 'coverAction'], [AuthMiddleware::class]);
+    // Anciennes adresses des couvertures : il n'y a plus que des identités, tout renvoie à /operateur/identite.
+    $router->get('/operateur/identite/couverture', [$opHub, 'legacyCovers'], [AuthMiddleware::class]);
+    $router->post('/operateur/identite/couverture', [$opHub, 'legacyCovers'], [AuthMiddleware::class]);
+    $router->get('/operateur/identite/couverture/{id}/telecharger', [$opHub, 'legacyCovers'], [AuthMiddleware::class]);
+    $router->post('/operateur/identite/couverture/{id}', [$opHub, 'legacyCovers'], [AuthMiddleware::class]);
     $mwOperationalBoardEdit = [AuthMiddleware::class, OperationalBoardEditMiddleware::class];
     $router->get('/tableau-operationnel/p/{token}', [OperationalBoardController::class, 'publicWall']);
     $router->get('/tableau-operationnel', [OperationalBoardController::class, 'portalIndex'], [AuthMiddleware::class, OperationalBoardViewMiddleware::class]);

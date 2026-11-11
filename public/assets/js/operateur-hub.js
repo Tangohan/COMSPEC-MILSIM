@@ -3,7 +3,7 @@
  *
  * Page d'accueil : recherche d'un outil (touche « / »), épingles sans rechargement (repli : envoi du formulaire).
  * Mon identité : fenêtres (élément dialog), confirmation des actions définitives, recto/verso d'un papier, types de
- * papier selon le pays, étapes de création d'une couverture. Spécimen : impression et image PNG.
+ * papier selon le pays, création guidée d'une identité, filtres des identités. Spécimen : impression et image PNG.
  * Sans JavaScript, tout reste utilisable : les fenêtres sont alors des blocs dans la page.
  */
 (function () {
@@ -205,29 +205,63 @@
     }
   }
 
-  // ---- Création d'une couverture : seuls les papiers de l'identité choisie sont proposés, puis récapitulés
-  var coverForm = document.querySelector('[data-opx-cover-form]');
-  if (coverForm) {
-    var recap = coverForm.querySelector('[data-opx-cover-recap]');
-    var syncCover = function () {
-      var chosen = coverForm.querySelector('[data-opx-cover-identity]:checked');
-      var labels = [];
-      coverForm.querySelectorAll('[data-opx-cover-papers]').forEach(function (block) {
-        var on = !!chosen && block.getAttribute('data-opx-cover-papers') === chosen.value;
-        block.hidden = !on;
-        block.querySelectorAll('input[type="checkbox"]').forEach(function (box) {
-          box.disabled = !on;
-          if (on && box.checked) { labels.push(box.getAttribute('data-opx-label') || ''); }
-        });
-      });
-      if (!recap) { return; }
-      recap.hidden = !chosen;
-      recap.querySelector('[data-opx-recap-identity]').textContent = chosen ? chosen.getAttribute('data-opx-label') || '' : '';
-      recap.querySelector('[data-opx-recap-papers]').textContent = labels.join(' · ');
-      recap.querySelector('[data-opx-recap-none]').hidden = labels.length > 0;
+  // ---- Création guidée d'une identité : papiers délivrés par le pays choisi, récapitulatif
+  document.querySelectorAll('[data-opx-wizard]').forEach(function (form) {
+    var types = {};
+    try { types = JSON.parse(form.getAttribute('data-opx-types') || '{}'); } catch (err) { types = {}; }
+    var field = function (name) { return form.querySelector('[name="' + name + '"]'); };
+    var put = function (key, text) {
+      var el = form.querySelector('[data-opx-recap="' + key + '"]');
+      if (el) { el.textContent = text; }
     };
-    coverForm.addEventListener('change', syncCover);
-    syncCover();
+    var syncWizard = function () {
+      var nat = field('nationality');
+      var allowed = nat && nat.value ? (types[nat.value] || []) : null;
+      var labels = [];
+      form.querySelectorAll('[data-opx-wizard-paper]').forEach(function (box) {
+        var ok = allowed !== null && allowed.indexOf(box.value) !== -1;
+        box.disabled = !ok;
+        if (!ok) { box.checked = false; }
+        var choice = box.closest('.opx-choice');
+        if (choice) { choice.classList.toggle('is-disabled', !ok); }
+        if (box.checked) { labels.push(box.getAttribute('data-opx-label') || ''); }
+      });
+      var name = [field('first_name') ? field('first_name').value.trim() : '', field('last_name') ? field('last_name').value.trim().toUpperCase() : ''].join(' ').trim();
+      var dob = field('birth_date') ? field('birth_date').value : '';
+      var place = field('birth_place') ? field('birth_place').value.trim() : '';
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dob);
+      put('name', name || '—');
+      put('birth', [m ? m[3] + '/' + m[2] + '/' + m[1] : '', place].filter(Boolean).join(' · ') || '—');
+      put('nationality', nat && nat.value && nat.selectedOptions[0] ? nat.selectedOptions[0].textContent : '—');
+      put('papers', labels.length ? labels.join(' · ') : (form.getAttribute('data-opx-none') || 'Aucun'));
+    };
+    form.addEventListener('input', syncWizard);
+    form.addEventListener('change', syncWizard);
+    syncWizard();
+  });
+
+  // ---- Filtres de la liste des identités (sans JavaScript : toutes les cartes restent affichées)
+  var filters = document.querySelector('[data-opx-filters]');
+  if (filters) {
+    filters.hidden = false;
+    var empty = document.querySelector('[data-opx-filter-empty]');
+    filters.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-opx-filter]');
+      if (!btn) { return; }
+      var want = btn.getAttribute('data-opx-filter');
+      var shown = 0;
+      filters.querySelectorAll('[data-opx-filter]').forEach(function (b) {
+        b.classList.toggle('is-on', b === btn);
+        b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+      });
+      document.querySelectorAll('[data-opx-identity-card]').forEach(function (card) {
+        var tags = (card.getAttribute('data-opx-identity-card') || '').split(' ');
+        var on = want === '' || tags.indexOf(want) !== -1;
+        card.hidden = !on;
+        shown += on ? 1 : 0;
+      });
+      if (empty) { empty.hidden = shown > 0; }
+    });
   }
 
   // ---- Spécimen : impression et image PNG
