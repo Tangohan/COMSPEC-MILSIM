@@ -40,15 +40,17 @@ final class AtakMapPhotoController
             return $this->notFound();
         }
         $etag = '"mp-' . substr(sha1($path . '|' . (string) filemtime($path)), 0, 16) . '"';
+        // Cache long (une semaine, puis revalidation par ETag) : un fond change rarement (nouvelle publication).
+        $cache = 'public, max-age=604800, stale-while-revalidate=86400';
         $resp = new Response();
         if (trim((string) ($_SERVER['HTTP_IF_NONE_MATCH'] ?? '')) === $etag) {
-            $resp->setStatusCode(304)->header('ETag', $etag)->header('Cache-Control', 'public, max-age=86400');
+            $resp->setStatusCode(304)->header('ETag', $etag)->header('Cache-Control', $cache);
 
             return $resp;
         }
         $resp->setStatusCode(200)
             ->header('Content-Type', $m[2] === 'jpg' ? 'image/jpeg' : 'image/webp')
-            ->header('Cache-Control', 'public, max-age=86400')
+            ->header('Cache-Control', $cache)
             ->header('ETag', $etag)
             ->header('Access-Control-Allow-Origin', '*')
             ->setBody((string) file_get_contents($path));

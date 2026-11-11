@@ -214,6 +214,7 @@ final class RolePermissionMatrixCatalog
                     'atak.terminals.view', 'atak.terminals.manage',
                     'atak.certificates.view', 'atak.certificates.manage',
                     'atak.config.manage', 'atak.mission_cycle.manage', 'atak.command.alert', 'atak.aar.manage',
+                    'atak.toc.use', 'atak.toc.manage',
                     'atak.sse.access', 'atak.sse.grant', 'atak.sse.case.manage', 'atak.sse.export',
                     'atak.sse.files.admin', 'atak.sse.lore.manage',
                     'atak.sse.clearance.encadrement', 'atak.sse.clearance.confidentiel', 'atak.sse.clearance.tres_restreint',
@@ -222,6 +223,7 @@ final class RolePermissionMatrixCatalog
                 ],
                 self::LEVEL_SA_SECTION => [
                     'atak.terminals.view', 'atak.certificates.view',
+                    'atak.toc.use',
                     'atak.sse.access',
                     'atak.sse.clearance.encadrement',
                     'operations.missions.view', 'operations.aar.view',

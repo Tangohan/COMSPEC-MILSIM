@@ -549,3 +549,9 @@ kbd {
 .ow-squad-face.is-more{background:#0f1513;color:var(--athena-muted,#9aa5a2)}
 .ow-bft-chan.is-hidden-map{border:1px solid #e7b14d;color:#e7b14d;background:rgba(231,177,77,.1);cursor:pointer;font:inherit}
 .ow-selection-halo{pointer-events:none}
+
+/* Poste TOC web et plans d'opération (liens de la barre et du menu Plus). */
+.ow-nav a.ow-nav-link { display: inline-flex; align-items: center; height: 48px; padding: 0 10px; color: var(--athena-green); font-weight: 700; font-size: 12.5px; text-decoration: none; white-space: nowrap; }
+.ow-nav a.ow-nav-link:hover, .ow-nav a.ow-nav-link:focus-visible { background: #0b0d0d; color: #fff; }
+.ow-more-menu a.ow-more-link { display: block; padding: 8px 12px; color: var(--athena-green); font-weight: 700; font-size: 13px; text-decoration: none; }
+.ow-more-menu a.ow-more-link:hover { background: #0b0d0d; color: #fff; }

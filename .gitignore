@@ -27,6 +27,8 @@ config/cdn_libraries.local.php
 !/storage/atak_terrain/.gitkeep
 /storage/map-tiles/*
 !/storage/map-tiles/.gitkeep
+# Fonds « Photo COMSPEC » publiés par tools/map_stitch.py --upload (plusieurs Go) : jamais dans le dépôt.
+/storage/map-photo/*
 /storage/snapshots/*
 !/storage/snapshots/.gitignore
 # Photos terrain / intel : hors Git (dossiers créés au déploiement)
