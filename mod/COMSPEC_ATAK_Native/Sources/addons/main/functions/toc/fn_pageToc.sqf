@@ -81,7 +81,7 @@ private _can = _mine || {_who isEqualTo ""};
 _rows pushBack ["buttons", [["PRENDRE LA MAIN", ["take"] call _sa, true, !_mine, ""], ["RENDRE LA MAIN", ["release"] call _sa, false, _mine, ""]]];
 _rows pushBack ["buttons", [["▲", ["pan", [0, 0.33]] call _sa, false, _can, "Nord"], ["▼", ["pan", [0, -0.33]] call _sa, false, _can, "Sud"], ["◀", ["pan", [-0.33, 0]] call _sa, false, _can, "Ouest"], ["▶", ["pan", [0.33, 0]] call _sa, false, _can, "Est"]]];
 _rows pushBack ["buttons", [["ZOOM +", ["zoom", 1 / 1.5] call _sa, false, _can, ""], ["ZOOM −", ["zoom", 1.5] call _sa, false, _can, ""], ["POSTE", ["home"] call _sa, false, _can, "Centre le satellite sur le poste"]]];
-_rows pushBack ["buttons", [["JOUR", ["mode", "DAY"] call _sa, (_sst param [3, "DAY"]) isEqualTo "DAY", _can, ""], ["NUIT", ["mode", "NV"] call _sa, (_sst param [3, ""]) isEqualTo "NV", _can, "Vision nocturne verte"], ["THERMIQUE", ["mode", "TI"] call _sa, (_sst param [3, ""]) isEqualTo "TI", _can, ""]]];
+_rows pushBack ["buttons", [["AUTO", ["mode", "AUTO"] call _sa, (_sst param [3, "AUTO"]) isEqualTo "AUTO", _can, "Jour le jour, vision nocturne la nuit"], ["JOUR", ["mode", "DAY"] call _sa, (_sst param [3, "AUTO"]) isEqualTo "DAY", _can, ""], ["NUIT", ["mode", "NV"] call _sa, (_sst param [3, ""]) isEqualTo "NV", _can, "Vision nocturne verte"], ["THERMIQUE", ["mode", "TI"] call _sa, (_sst param [3, ""]) isEqualTo "TI", _can, ""]]];
 private _fopts = [["Ne suivre personne", ""]];
 private _fnodes = ((missionNamespace getVariable [format ["COMSPEC_ATAK_TocFeed_%1", str side group player], []]) param [1, []]);
 { _fopts pushBackUnique [format ["Groupe %1", _x param [7, ""]], "G|" + (_x param [7, ""])]; } forEach (_fnodes select { (_x param [7, ""]) isNotEqualTo "" });

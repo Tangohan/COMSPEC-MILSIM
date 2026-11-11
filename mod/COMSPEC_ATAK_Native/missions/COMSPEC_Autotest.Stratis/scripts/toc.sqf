@@ -373,7 +373,10 @@ if (AT_TocAll || {"tocsalle" in AT_Groupes}) then {
             };
             uiSleep 2.5;
             ["toc_pc_" + (toLower (_x splitString " " joinString "_"))] call AT_fnc_shot;
-        } forEach ["SALLE", "SAT", "CHRONOS", "MAIN COURANTE", "EXCHECK", "PERTES", "DEMANDES", "RADIO", "GROUPES"];
+            // Mise en page de l'onglet : bouton sans texte, texte coupé, chevauchement, hors de l'écran du PC.
+            private _def = ["audit"] call comspec_atak_native_fnc_tocLaptop;
+            [(count _def) isEqualTo 0, format ["PC du poste, onglet %1 : %2", _x, _def joinString " ; "]] call AT_fnc_check;
+        } forEach ["SALLE", "SAT", "CHRONOS", "MAIN COURANTE", "EXCHECK", "PERTES", "DEMANDES", "RADIO", "GROUPES", "ORBAT", "FLUX", "ORDRES", "CAMP", "RÉSEAU"];
         // Scène, extinction, rallumage depuis le PC maître.
         ["do", ["sceneSave", [_hid, "OPÉRATION"]]] call comspec_atak_native_fnc_tocHall;
         ["do", ["powerAll", [_hid, false]]] call comspec_atak_native_fnc_tocHall;

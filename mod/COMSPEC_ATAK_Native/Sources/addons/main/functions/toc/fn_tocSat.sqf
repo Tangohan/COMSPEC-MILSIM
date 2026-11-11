@@ -1,6 +1,7 @@
 /*
     Vue satellite du TOC (demande de TTRD, 11/11) : deux satellites par camp (SAT 1, SAT 2), vue 3D en direct prise de
-    très haut, nord en haut, en jour, vision nocturne verte ou thermique, avec le suivi des alliés par-dessus (symbole,
+    très haut, nord en haut, en AUTO (jour le jour, vision nocturne la nuit), jour (éclairci la nuit), vision nocturne
+    verte ou thermique, avec le suivi des alliés par-dessus (symbole,
     cadre autour de l'unité, indicatif), comme un flux ISR.
     Seul l'état circule (fn_tocRoom, satellites : centre, demi-largeur au sol, image, suivi, opérateur qui a la main).
     Chaque joueur crée lui-même la caméra et la cible de rendu d'un satellite (comspec_tocsat_<camp>_<n>, une par
@@ -13,7 +14,8 @@
     Suivi réaliste : seuls les nœuds du réseau ATAK du camp (fn_tocFeed, même source que la carte du TOC) ; en direct à leur
     position, ancien / perdu / hors ligne à leur dernier point PLI, en gris. Jamais d'unité sans ATAK, jamais d'ennemi.
     Modes (client) :
-      ["need", [camp, n°]]                 cette vue doit être rendue (PC du poste ouvert sur l'onglet SAT) pendant 3 s
+      ["need", [camp, n°, s]]              cette vue doit être rendue (PC du poste ouvert sur l'onglet SAT) pendant s secondes
+                                           (3 par défaut ; 30 quand l'opérateur quitte l'onglet SAT, retour sans attente)
       ["tick", écrans]                     chaque seconde (fn_tocScreen) : caméras créées ou libérées ; renvoie les clés rendues
       ["rt", [camp, n°]]                   nom de la cible de rendu ("" : pas rendue sur ce poste)
       ["pose", [camp, n°]]                 [position ASL de la caméra, fov] ou []
@@ -22,6 +24,7 @@
       ["targets", camp]                    nœuds suivis : [[clé, indicatif, fraîcheur, genre, position ASL, taille m, groupe]...]
       ["aim", [camp, n°]]                  point visé [x, y] (suivi compris) et demi-largeur, ou []
       ["label", [camp, n°]]                ligne d'état « SAT 2 · vision nocturne · contrôlé par … »
+      ["effect", mode]                     image réellement rendue : "DAY" | "DAYN" (jour éclairci, nuit) | "NV" | "TI"
       ["tex", [camp, n°]]                  texture de l'image (r2t), "" si pas rendue
 */
 params [["_mode", "tick"], ["_a", []]];
@@ -75,10 +78,25 @@ switch (_mode) do {
         };
         [_p, _h]
     };
+    case "effect": {
+        // Mode choisi -> image rendue. La nuit (soleil couché), le rendu « jour » d'une caméra d'image dans l'image est
+        // presque noir (retour de TTRD, 11/11, mission à 01:26 : bâtiments éclairés seuls visibles) : AUTO passe en vision
+        // nocturne, JOUR est éclairci (correction de couleur, exposition × 3,5).
+        private _night = sunOrMoon < 0.5;
+        switch (_a) do {
+            case "NV": { "NV" };
+            case "TI": { "TI" };
+            case "DAY": { ["DAY", "DAYN"] select _night };
+            default { ["DAY", "NV"] select _night };
+        }
+    };
     case "label": {
         _a params ["_side", "_n"];
         private _s = ((["state", _side] call comspec_atak_native_fnc_tocRoom) select 2) param [_n, []];
-        private _img = (createHashMapFromArray [["DAY", "jour"], ["NV", "vision nocturne"], ["TI", "thermique"]]) getOrDefault [_s param [3, "DAY"], "jour"];
+        private _m = _s param [3, "AUTO"];
+        private _eff = ["effect", _m] call _fn;
+        private _img = format ["%1%2", (createHashMapFromArray [["AUTO", "auto · "], ["DAY", ""], ["NV", ""], ["TI", ""]]) getOrDefault [_m, ""],
+            (createHashMapFromArray [["DAY", "jour"], ["DAYN", "jour éclairci (nuit)"], ["NV", "vision nocturne"], ["TI", "thermique"]]) getOrDefault [_eff, "jour"]];
         private _fol = switch (_s param [4, ""]) do {
             case "G": { format [" · suit le groupe %1", _s param [5, ""]] };
             case "U": {
@@ -91,14 +109,16 @@ switch (_mode) do {
         [format ["SAT %1 · %2%3 · libre", _n + 1, _img, _fol], format ["SAT %1 · %2%3 · contrôlé par %4", _n + 1, _img, _fol, _who]] select (_who isNotEqualTo "")
     };
     case "need": {
-        private _k = _a call _keyOf;
+        _a params ["_side", "_n", ["_secs", 3]];
+        private _k = [_side, _n] call _keyOf;
         private _e = _cams getOrDefault [_k, []];
         if ((count _e) isEqualTo 0) then {
             _e = [objNull, "", 0, ""];
             _cams set [_k, _e];
         };
-        _e set [2, diag_tickTime + 3];
-        if (isNull (_e select 0)) then { ["make", _a] call _fn; };
+        // Bail du rendu : jamais raccourci (l'onglet SAT quitté garde 30 s, le rafraîchissement suivant n'en remet pas 3).
+        _e set [2, (_e select 2) max (diag_tickTime + _secs)];
+        if (isNull (_e select 0)) then { ["make", [_side, _n]] call _fn; };
         true
     };
     case "make": {
@@ -135,10 +155,17 @@ switch (_mode) do {
                     private _side = _p select 0;
                     private _n = parseNumber (_p select 1);
                     private _st = ((["state", _side] call comspec_atak_native_fnc_tocRoom) select 2) param [_n, []];
-                    private _m = _st param [3, "DAY"];
+                    // Image rendue (AUTO et JOUR suivent la nuit, fn_tocSat « effect ») ; changée seulement quand elle change.
+                    private _m = ["effect", _st param [3, "AUTO"]] call comspec_atak_native_fnc_tocSat;
                     if (_m isNotEqualTo _img) then {
                         _y set [3, _m];
-                        _rt setPiPEffect [(createHashMapFromArray [["DAY", 0], ["NV", 1], ["TI", 2]]) getOrDefault [_m, 0]];
+                        _rt setPiPEffect (switch (_m) do {
+                            case "NV": { [1] };
+                            case "TI": { [2] };
+                            // Correction de couleur : luminosité × 3,5, léger relevé des noirs (nuit : image jour lisible).
+                            case "DAYN": { [3, 1, 3.5, 1, 0.04, [0, 0, 0, 0], [1, 1, 1, 1], [0.299, 0.587, 0.114, 0]] };
+                            default { [0] };
+                        });
                     };
                     private _aim = ["aim", [_side, _n]] call comspec_atak_native_fnc_tocSat;
                     if ((count _aim) < 2) then { continue };

@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : PC du poste TOC remis d'aplomb, satellite visible la nuit (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Le PC du poste TOC est de nouveau lisible et le satellite se voit la nuit
+- Toutes les fenêtres du PC sont rangées : plus de boutons qui se chevauchent ni de texte invisible, la barre de dessin sous la carte montre enfin TRAIT, DESSIN, PLAN, EFFACER et ANNULER, et l'aide du bouton survolé s'écrit en bas du panneau au lieu de couvrir le bouton voisin.
+- La vue satellite n'est plus noire la nuit (nouveau mode AUTO, JOUR éclairci), se zoome à la molette, se déplace en faisant glisser l'image, et ne s'arrête plus quand vous changez d'onglet un instant.
+EN : The TOC post PC is readable again and the satellite works at night
+- Every PC window is tidied up: no more overlapping buttons or invisible text, the drawing bar under the map finally shows LINE, DRAW, PLAN, ERASE and UNDO, and the help of the hovered button appears at the bottom of the panel instead of covering the next button.
+- The satellite view is no longer black at night (new AUTO mode, brightened DAY), zooms with the mouse wheel, moves when you drag the image, and no longer stops when you briefly switch tabs.
+
+### Détail technique
+- Causes (retour de TTRD, 11/11, build 4.4.0) : `fn_tocDraw` « build » déclarait `_h = _H * 0.03` et `_W = safeZoneW` à côté du paramètre `_w` : le SQF ne distingue pas la casse, la hauteur d'écran devenait 0,03 (libellés de la barre de dessin à un demi-pixel) et le fond prenait toute la largeur de l'écran ; barre d'outils de la carte posée à la main sur la carte, « CHERCHER » sous les onglets ; infobulles d'Arma ouvertes sur le bouton voisin ; image satellite en mode `DAY` (défaut) dans une mission de nuit (01:26) : `setPiPEffect [0]` presque noir ; bail de rendu de 3 s renouvelé seulement par l'onglet SAT (`rendu arrêté` 3 s après le changement d'onglet).
+- `fn_tocLaptop` : une seule grille (`_grid`), une seule routine de pose (`_place`), mises en page par zone dans `_layout` (titre, onglets, gauche carte / SAT / salle, panneau de l'onglet, aide, ligne d'état), un registre de contrôles (`keys`) : seul ce que la mise en page en cours nomme est montré. Boutons dans une table `_btnDefs` (libellé long, court, aide) mesurés par `_fitC`. Ligne d'aide au survol (`hover`, `help`), raison d'un bouton grisé (`why`). Mode `audit` (bouton sans texte, texte coupé, chevauchement, hors de l'écran) appelé par l'autotest `toc.sqf` pour chaque onglet.
+- `fn_tocDraw` et `fn_tocHallUi` créent leurs contrôles dans le registre du PC (`["mk", …]`, `["tip", …]`, `["label", …]`) ; positions posées par la grille du PC.
+- SAT : mode `AUTO` (défaut, `fn_tocRoom`), `fn_tocSat` « effect » (nuit : `AUTO` → vision nocturne, `DAY` → correction de couleur ×3,5) ; `need` accepte une durée, jamais raccourcie (30 s en quittant l'onglet SAT) ; molette (`MouseZChanged`), glisser (`satDown` / `satUp` → `pan`), image 16:9 en haut de sa zone, légende dessous. App Poste TOC du téléphone : bouton AUTO.
+- Tests : `AtakTocLaptopLayoutTest` (noms qui ne diffèrent que par la casse, registre et mise en page, libellés FR + EN, aucun chevauchement ni débordement en 4:3, 16:10, 16:9 et 21:9, satellite de nuit). i18n : 126 phrases dans `i18n/en.txt` et `localisation/template/xx.txt`.
+
 ## SSE 1.9.0 : IA qui réagissent naturellement, émotions réglables, papiers de 45 pays, une seule identité par IA, outils Zeus refaits (SSE 1.9.0)
 
 ### Résumé joueur
