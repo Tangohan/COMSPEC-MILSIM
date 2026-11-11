@@ -19,7 +19,8 @@
     enregistrer et charger un préréglage (profil du joueur, par carte).
     Les résultats s'écrivent dans la ligne d'état de la fenêtre, jamais par-dessus le jeu.
     Modes :
-      ["open", [objet à choisir]]     ouvre le tableau (Eden : display 313 ; Zeus : 312 ; en jeu : 46)
+      ["open", [objet à choisir]]     ouvre la fenêtre « Gérer les écrans » (fn_tocManagerUi), qui lit les modes ci-dessous
+      ["openTable", [objet à choisir]]   ouvre l'ancien tableau (Eden : display 313 ; Zeus : 312 ; en jeu : 46)
       ["rows"]                        lignes : [clé, objet ou entité, nom, type, salle, distance, clé de source, libellé de
                                       source, luminosité, état, jeton d'état, hôte, dalle]
       ["sources", objet]              sources proposées pour une dalle : [[libellé, clé]...]
@@ -394,6 +395,13 @@ switch (_mode) do {
         true
     };
     case "open": {
+        // La fenêtre « Gérer les écrans » (fn_tocManagerUi : arbre, schéma du mur, inspecteur à onglets) remplace ce
+        // tableau partout où il s'ouvrait (Eden, Zeus, menu de l'écran, PC du poste). Le tableau reste joignable :
+        // « openTable » (bouton ANCIEN TABLEAU de la fenêtre), ou missionNamespace COMSPEC_ATAK_TocMgrClassic = true.
+        if (!isNil "comspec_atak_native_fnc_tocManagerUi" && {!(missionNamespace getVariable ["COMSPEC_ATAK_TocMgrClassic", false])}) exitWith { ["open", _a] call comspec_atak_native_fnc_tocManagerUi };
+        ["openTable", _a] call _fn
+    };
+    case "openTable": {
         if (!hasInterface) exitWith { false };
         // Lancé depuis un menu (Eden, ACE) ou un formulaire qui se referme : la fenêtre est créée juste après.
         if (!canSuspend) exitWith { [_mode, _a] spawn { uiSleep 0.08; _this call comspec_atak_native_fnc_tocManager; }; true };

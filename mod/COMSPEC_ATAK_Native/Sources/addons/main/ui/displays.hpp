@@ -87,6 +87,9 @@ class COMSPEC_RscTocLaptop {
     class controls {};
 };
 
+// Fenêtre « Gérer les écrans » du TOC (fn_tocManagerUi) : classes de ses contrôles et son display.
+#include "toc_manager.hpp"
+
 class RscTitles {
     // Terminal porté (HUD) : visible pendant que l'on joue, sans souris ni clavier.
     class COMSPEC_RscTitleATAK: COMSPEC_RscDisplayATAK {

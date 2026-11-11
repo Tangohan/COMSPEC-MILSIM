@@ -1922,6 +1922,161 @@
             <English>TBE · TOC screens table</English>
             <French>TBE · Tableau des écrans TOC</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_V_SCREEN">
+            <Original>SCREEN</Original>
+            <English>SCREEN</English>
+            <French>ÉCRAN</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_V_ROOMS">
+            <Original>ROOMS</Original>
+            <English>ROOMS</English>
+            <French>SALLES</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_V_LOG">
+            <Original>LOG</Original>
+            <English>LOG</English>
+            <French>JOURNAL</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_V_ROUTE">
+            <Original>ROUTING · SOON</Original>
+            <English>ROUTING · SOON</English>
+            <French>ROUTAGE · BIENTÔT</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_S_ONE">
+            <Original>This panel</Original>
+            <English>This panel</English>
+            <French>Cette dalle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_S_SEL">
+            <Original>Selection</Original>
+            <English>Selection</English>
+            <French>Sélection</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_S_SCREEN">
+            <Original>Whole screen</Original>
+            <English>Whole screen</English>
+            <French>Tout l'écran</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_S_ROOM">
+            <Original>The room</Original>
+            <English>The room</English>
+            <French>La salle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_C_ALL">
+            <Original>ALL</Original>
+            <English>ALL</English>
+            <French>TOUTES</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_C_LIVE">
+            <Original>ONLINE</Original>
+            <English>ONLINE</English>
+            <French>EN LIGNE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_C_UAV">
+            <Original>DRONES</Original>
+            <English>DRONES</English>
+            <French>DRONES</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_C_FIXED">
+            <Original>FIXED</Original>
+            <English>FIXED</English>
+            <French>FIXES</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_C_WORN">
+            <Original>WORN</Original>
+            <English>WORN</English>
+            <French>PORTÉES</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_P_ON">
+            <Original>ON</Original>
+            <English>ON</English>
+            <French>ALLUMÉE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_P_STANDBY">
+            <Original>STANDBY</Original>
+            <English>STANDBY</English>
+            <French>VEILLE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_P_OFF">
+            <Original>OFF</Original>
+            <English>OFF</English>
+            <French>ÉTEINTE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_X_KEEP">
+            <Original>UNCHANGED</Original>
+            <English>UNCHANGED</English>
+            <French>INCHANGÉ</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_X_LOOK">
+            <Original>LOOKED POINT</Original>
+            <English>LOOKED POINT</English>
+            <French>POINT REGARDÉ</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_X_ME">
+            <Original>MY POSITION</Original>
+            <English>MY POSITION</English>
+            <French>MA POSITION</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_K_GREEN">
+            <Original>Green</Original>
+            <English>Green</English>
+            <French>Vert</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_K_AMBER">
+            <Original>Amber</Original>
+            <English>Amber</English>
+            <French>Ambre</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_K_RED">
+            <Original>Red</Original>
+            <English>Red</English>
+            <French>Rouge</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_K_WHITE">
+            <Original>White</Original>
+            <English>White</English>
+            <French>Blanc</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_D_SLOW">
+            <Original>Slow</Original>
+            <English>Slow</English>
+            <French>Lent</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_D_NORMAL">
+            <Original>Normal</Original>
+            <English>Normal</English>
+            <French>Normal</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_D_FAST">
+            <Original>Fast</Original>
+            <English>Fast</English>
+            <French>Rapide</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_R_FIT">
+            <Original>If the text does not fit</Original>
+            <English>If the text does not fit</English>
+            <French>Si le texte dépasse</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_R_ALWAYS">
+            <Original>Always scroll</Original>
+            <English>Always scroll</English>
+            <French>Toujours défiler</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_A_CENTER">
+            <Original>Centred</Original>
+            <English>Centred</English>
+            <French>Centré</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_A_LEFT">
+            <Original>Left</Original>
+            <English>Left</English>
+            <French>À gauche</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCMGR_A_RIGHT">
+            <Original>Right</Original>
+            <English>Right</English>
+            <French>À droite</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_BROADCAST">
             <Original>Broadcast and test card (BROADCAST)</Original>
             <English>Broadcast and test card (BROADCAST)</English>
