@@ -12,7 +12,8 @@ use App\Repositories\SseCoverExportRepository;
  * Le compte est toujours celui du jeton de jeu (jamais un identifiant envoyé par le jeu) : un membre ne voit et ne
  * télécharge que les couvertures générées pour lui (par lui ou par un gestionnaire, colonne user_id), dans sa communauté.
  *
- *  - listFor()  : couvertures du membre, sans leur contenu (nom, résumé, pays, état, photo, dates, taille, empreinte).
+ *  - listFor()  : couvertures du membre, sans leur contenu (nom, résumé, pays, état, photo, dates, taille, empreinte),
+ *                 avec « active » : celle que le membre a choisie sur le site (Outils opérateur), en tête de liste.
  *  - filesFor() : fichiers « comspec-cover » v1 choisis, tels que générés (SseCoverExportService, aucun second format),
  *                 relus par SseCoverExportService::parse ; seule la photo est retirée (« cover.photo » à null) : le jeu ne
  *                 peut pas l'afficher et elle pèse jusqu'à 150 000 caractères. Chaque fichier servi est marqué téléchargé
@@ -38,7 +39,7 @@ final class SseCoverSyncService
     }
 
     /**
-     * Couvertures du membre, la plus récente d'abord.
+     * Couvertures du membre : celle qu'il a marquée active d'abord, puis la plus récente d'abord.
      *
      * @return list<array<string, mixed>>
      */
@@ -47,7 +48,14 @@ final class SseCoverSyncService
         $now ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $nowIso = $now->format('Y-m-d\TH:i:s\Z');
         $out = [];
+        // Couvertures révoquées par le membre (Outils opérateur) : absentes de la liste du téléphone.
+        $revoked = \App\Repositories\OperatorHubRepository::revokedCoverIds($tenantId, $userId);
+        // Couverture marquée active par le membre : « active » à vrai sur elle seule (champ ajouté, ignoré d'un mod ancien).
+        $activeId = \App\Repositories\OperatorHubRepository::activeCoverId($tenantId, $userId);
         foreach ($this->exports->listFilesForUser($tenantId, $userId, self::LIST_LIMIT) as $row) {
+            if (isset($revoked[(int) $row['id']])) {
+                continue;
+            }
             $json = (string) ($row['payload_json'] ?? '');
             // Lecture sans contrôle de date (epoch) : une couverture expirée reste listée, marquée « expired ».
             $parsed = SseCoverExportService::parse($json, new \DateTimeImmutable('@0'));
@@ -71,8 +79,11 @@ final class SseCoverSyncService
                 'sha' => (string) $row['content_sha'],
                 'by_manager' => $row['created_by_user_id'] !== null && (int) $row['created_by_user_id'] !== $userId,
                 'downloaded' => !empty($row['downloaded_at']),
+                'active' => $activeId > 0 && (int) $row['id'] === $activeId,
             ];
         }
+        // Tri stable (PHP 8) : l'active passe en tête, le reste garde l'ordre du plus récent au plus ancien.
+        usort($out, static fn (array $a, array $b): int => (int) $b['active'] <=> (int) $a['active']);
 
         return $out;
     }

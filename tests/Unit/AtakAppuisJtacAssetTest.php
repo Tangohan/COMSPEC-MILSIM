@@ -29,7 +29,8 @@ final class AtakAppuisJtacAssetTest extends TestCase
         self::assertStringContainsString('extra.tab', $nav);
         self::assertStringContainsString('firstUnpinnedIn(visible) || pick', $nav);
 
-        self::assertStringContainsString("case 'jtac':\n        return true;", $profile);
+        // Fins de ligne normalisées : le dépôt peut être cloné en CRLF (Windows, core.autocrlf).
+        self::assertStringContainsString("case 'jtac':\n        return true;", str_replace("\r\n", "\n", $profile));
         self::assertStringContainsString('if (!btn) return false;', $chrome);
         self::assertStringNotContainsString('if (!btn || btn.hidden) return false;', $chrome);
 
