@@ -26,7 +26,10 @@ if !(_o getVariable ["COMSPEC_TowerKilledEh", false]) then {
     private _cfg = configOf _o;
     private _p = getPosATL _o;
     private _n = _o getVariable ["COMSPEC_TowerName", ""];
-    if (_n isEqualTo "") then { _n = format ["Pylône %1", mapGridPosition _o]; };
+    // Nom par défaut : « Pylône <carroyage> », ou le nom de famille de la classe (comspec_atak_relayNoun : antennes murales).
+    private _noun = getText (_cfg >> "comspec_atak_relayNoun");
+    if (_noun isEqualTo "") then { _noun = "Pylône"; };
+    if (_n isEqualTo "") then { _n = format ["%1 %2", _noun, mapGridPosition _o]; };
     _o setVariable ["COMSPEC_AtakRelay", true, true];
     _o setVariable ["COMSPEC_AtakRelayName", _n, true];
     _o setVariable ["COMSPEC_AtakRelayIdentity", _n, true];
@@ -34,7 +37,7 @@ if !(_o getVariable ["COMSPEC_TowerKilledEh", false]) then {
     _o setVariable ["COMSPEC_AtakRelayKind", "tour", true];
     _o setVariable ["COMSPEC_AtakRelayRange", getNumber (_cfg >> "comspec_atak_relayRange") max 1000, true];
     _o setVariable ["COMSPEC_AtakRelayThroughput", getNumber (_cfg >> "comspec_atak_relayThroughput") max 1, true];
-    _o setVariable ["COMSPEC_AtakRelayHeight", getNumber (_cfg >> "comspec_atak_relayHeight") max 4, true];
+    _o setVariable ["COMSPEC_AtakRelayHeight", getNumber (_cfg >> "comspec_atak_relayHeight") max 1, true];
     _o setVariable ["COMSPEC_AtakRelaySlots", getNumber (_cfg >> "comspec_atak_relaySlots"), true];
     _o setVariable ["COMSPEC_AtakRelaySide", _o getVariable ["COMSPEC_TowerSide", ""], true];
     _o setVariable ["COMSPEC_AtakRelayRoot", (_o getVariable ["COMSPEC_TowerUplink", "root"]) isNotEqualTo "repeater", true];
@@ -48,6 +51,15 @@ if !(_o getVariable ["COMSPEC_TowerKilledEh", false]) then {
     if (_o getVariable ["COMSPEC_TowerIndestructible", false]) then { [_o, false] remoteExec ["allowDamage", _o]; };
     private _list = (missionNamespace getVariable ["COMSPEC_AtakRelays", []]) select { !isNull _x };
     _list pushBackUnique _o;
-    missionNamespace setVariable ["COMSPEC_AtakRelays", _list, true];
+    // Liste locale ici, diffusée une seule fois à l'image suivante : dix pylônes posés dans Eden ne diffusent plus dix listes
+    // de plus en plus longues au lancement de la mission.
+    missionNamespace setVariable ["COMSPEC_AtakRelays", _list];
+    if !(missionNamespace getVariable ["COMSPEC_ATAK_TowerListPending", false]) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_TowerListPending", true];
+        [{
+            missionNamespace setVariable ["COMSPEC_ATAK_TowerListPending", false];
+            missionNamespace setVariable ["COMSPEC_AtakRelays", (missionNamespace getVariable ["COMSPEC_AtakRelays", []]) select { !isNull _x }, true];
+        }, []] call comspec_atak_native_fnc_nextFrame;
+    };
     if (!isNil "comspec_overwatch_connect_fnc_syncAtakRelay") then { [_o, true] call comspec_overwatch_connect_fnc_syncAtakRelay; };
 }, [_o]] call comspec_atak_native_fnc_nextFrame;

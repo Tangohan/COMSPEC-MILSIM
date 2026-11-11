@@ -103,6 +103,8 @@ switch (_mode) do {
         if (missionNamespace getVariable ["COMSPEC_ATAK_TocRoomInit", false]) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_TocRoomInit", true];
         ["comspec_atak_native_tocRoom", { _this call comspec_atak_native_fnc_tocRoom; }] call CBA_fnc_addEventHandler;
+        // Poste TOC web (Athena) : commandes du site remises par les joueurs du camp (fn_tocWeb).
+        ["initServer"] call comspec_atak_native_fnc_tocWeb;
         // Ce que le réseau ATAK apporte au poste (événements de camp relayés par le serveur, rejoués ici) :
         // main courante, demandes des éléments, pertes et résultats. Rien d'autre n'y entre que ce qui est rapporté.
         private _elOf = {

@@ -1,10 +1,15 @@
-// Pylônes relais 3D du réseau ATAK natif (tools/model_relay_towers.py), PBO à part de main (taille des modèles MLOD).
-// Fonction d'enregistrement comme relais : comspec_atak_native_fnc_relayTower (main) ; textes : stringtable de main.
+// Relais 3D du réseau ATAK natif : pylônes, mâts tactiques, antennes murales, kits déployés (tools/model_relay_towers.py,
+// tools/model_relay_kits.py), caméras IP (cfg_cameras.hpp) et infrastructure réseau (cfg_infra.hpp). PBO à part de main.
+// Enregistrement comme relais : comspec_atak_native_fnc_relayTower (main). Classes et noms : tools/gen_relay_config.py
+// (cfg_relays.hpp, cfg_units.hpp, stringtable.xml de cet addon). Audit : docs/audit/2026-11-relais.md.
+#include "cfg_units.hpp"
+#define COMSPEC_INFRA_UNITS "COMSPEC_ATAK_Infra_RackPatch","COMSPEC_ATAK_Infra_RackServer","COMSPEC_ATAK_Infra_Wall9U","COMSPEC_ATAK_Infra_Wall12U","COMSPEC_ATAK_Infra_ServerTower","COMSPEC_ATAK_Infra_UPS","COMSPEC_ATAK_Infra_SwitchDesk","COMSPEC_ATAK_Infra_CRAC","COMSPEC_ATAK_Infra_ElecCabinet","COMSPEC_ATAK_Infra_TrayStraight","COMSPEC_ATAK_Infra_TrayCorner","COMSPEC_ATAK_Infra_TrayTee","COMSPEC_ATAK_Infra_TrunkStraight","COMSPEC_ATAK_Infra_TrunkCorner"
+#define COMSPEC_CAM_UNITS "COMSPEC_ATAK_Cam_PTZ_Wall","COMSPEC_ATAK_Cam_PTZ_Wall_Dark","COMSPEC_ATAK_Cam_PTZ_Pole","COMSPEC_ATAK_Cam_Bullet_Wall","COMSPEC_ATAK_Cam_Bullet_Wall_Dark","COMSPEC_ATAK_Cam_Bullet_Ceiling","COMSPEC_ATAK_Cam_Bullet_Pole","COMSPEC_ATAK_Cam_Bullet_Corner","COMSPEC_ATAK_Cam_Thermal_Wall","COMSPEC_ATAK_Cam_Thermal_Wall_Dark","COMSPEC_ATAK_Cam_Thermal_Pole","COMSPEC_ATAK_Cam_MiniDome","COMSPEC_ATAK_Cam_MiniDome_Wall","COMSPEC_ATAK_Cam_Fisheye","COMSPEC_ATAK_Cam_Tactical","COMSPEC_ATAK_Cam_Covert"
 class CfgPatches {
     class comspec_atak_native_towers {
         name="COMSPEC ATAK Native - Pylônes relais"; author="COMSPEC"; requiredVersion=2.14;
-        requiredAddons[]={"comspec_atak_native_main","A3_Structures_F","cba_xeh"};
-        units[]={"COMSPEC_ATAK_RelayTower_M12","COMSPEC_ATAK_RelayTower_M20","COMSPEC_ATAK_RelayTower_30","COMSPEC_ATAK_RelayTower_40","COMSPEC_ATAK_RelayTower_50"}; weapons[]={};
+        requiredAddons[]={"comspec_atak_native_main","comspec_atak_native_items","A3_Structures_F","cba_xeh"};
+        units[]={COMSPEC_RELAY_UNITS,COMSPEC_CAM_UNITS,COMSPEC_INFRA_UNITS}; weapons[]={};
     };
 };
 class CfgVehicles {
@@ -20,6 +25,15 @@ class CfgVehicles {
         destrType="DestructBuilding"; armor=700;
         comspec_atak_relayRange=6000; comspec_atak_relayHeight=28; comspec_atak_relayThroughput=20; comspec_atak_relaySlots=64;
         class DestructionEffects: DestructionEffects {};
+        // Sélections : 0 = camo (toute la structure : galvanisé, rouge-blanc, vert OTAN, sable), 1 = led (voyant d'état des
+        // armoires et des radios, posé par fn_relayLed selon l'état réel du relais).
+        hiddenSelections[]={"camo","led"};
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\towers\data\relay_steel_co.paa","#(argb,8,8,3)color(0.02,0.02,0.02,1,co)"};
+        // Équipements masquables (model.cfg, animations « hide ») : eq1 = équipement léger, eq2 = complément du complet.
+        class AnimationSources {
+            class eq1 { source="user"; animPeriod=0.001; initPhase=0; };
+            class eq2 { source="user"; animPeriod=0.001; initPhase=0; };
+        };
         // Feux d'obstacle rouges (globes émissifs du modèle + lumière du jeu la nuit), points mémoire light_*.
         class MarkerLights {
             class Top {
@@ -30,6 +44,29 @@ class CfgVehicles {
             };
         };
         class Attributes {
+            class COMSPEC_TowerPaint {
+                displayName="$STR_COMSPEC_ATAK_REL_PAINT"; tooltip="$STR_COMSPEC_ATAK_REL_PAINT_TIP";
+                property="COMSPEC_TowerPaint"; control="Combo"; typeName="STRING"; defaultValue="''";
+                expression="[_this, _value, -1] call comspec_atak_native_fnc_relayLook;";
+                class values {
+                    class V0 { name="$STR_COMSPEC_ATAK_REL_PAINT_DEF"; value=""; default=1; };
+                    class V1 { name="$STR_COMSPEC_ATAK_REL_PAINT_GALVA"; value="galva"; };
+                    class V2 { name="$STR_COMSPEC_ATAK_REL_PAINT_RW"; value="rw"; };
+                    class V3 { name="$STR_COMSPEC_ATAK_REL_PAINT_OLIVE"; value="olive"; };
+                    class V4 { name="$STR_COMSPEC_ATAK_REL_PAINT_SAND"; value="sand"; };
+                };
+            };
+            class COMSPEC_TowerEquip {
+                displayName="$STR_COMSPEC_ATAK_REL_EQUIP"; tooltip="$STR_COMSPEC_ATAK_REL_EQUIP_TIP";
+                property="COMSPEC_TowerEquip"; control="Combo"; typeName="NUMBER"; defaultValue="0 - 1";
+                expression="[_this, '', _value] call comspec_atak_native_fnc_relayLook;";
+                class values {
+                    class V0 { name="$STR_COMSPEC_ATAK_REL_PAINT_DEF"; value=-1; default=1; };
+                    class V1 { name="$STR_COMSPEC_ATAK_REL_EQUIP_FULL"; value=2; };
+                    class V2 { name="$STR_COMSPEC_ATAK_REL_EQUIP_LIGHT"; value=1; };
+                    class V3 { name="$STR_COMSPEC_ATAK_REL_EQUIP_BARE"; value=0; };
+                };
+            };
             class COMSPEC_TowerName {
                 displayName="$STR_COMSPEC_ATAK_CFG_ACB975B116"; tooltip="$STR_COMSPEC_ATAK_CFG_2669F78090";
                 property="COMSPEC_TowerName"; control="Edit"; typeName="STRING"; defaultValue="''";
@@ -82,79 +119,57 @@ class CfgVehicles {
             };
         };
     };
-    // Monopoles (plus petits) : 12 m et 20 m.
-    class COMSPEC_ATAK_RelayTower_M12: COMSPEC_ATAK_RelayTower_Base {
-        scope=2; scopeCurator=2;
-        displayName="$STR_COMSPEC_ATAK_CFG_M12_NAME";
-        model="\z\comspec_atak_native\addons\towers\data\relay_tower_m12.p3d";
-        editorPreview="\z\comspec_atak_native\addons\towers\data\relay_tower_m12_preview.jpg";
-        comspec_atak_relayRange=3000; comspec_atak_relayHeight=11; comspec_atak_relayThroughput=10; comspec_atak_relaySlots=32;
-        armor=300; mapSize=2;
-        class DestructionEffects: DestructionEffects {
-            class Ruin1 { simulation="ruin"; type="\z\comspec_atak_native\addons\towers\data\relay_tower_m12_ruin.p3d"; position=""; intensity=1; interval=1; lifeTime=1; };
-        };
+    #include "cfg_relays.hpp"
+    // Antennes déployées par les kits (fn_antennaKit, classes de main) : modèles du mod à la place des modèles d'Arma.
+    // Sans cet addon, main garde les modèles d'Arma : rien ne casse.
+    class COMSPEC_ATAK_DeployedAntenna_Base;
+    class COMSPEC_ATAK_DeployedAntenna_Sat: COMSPEC_ATAK_DeployedAntenna_Base {
+        model="\z\comspec_atak_native\addons\towers\data\relay_kit_sat.p3d";
+        hiddenSelections[]={"camo","led"};
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\towers\data\relay_steel_olive_co.paa","#(argb,8,8,3)color(0.02,0.02,0.02,1,co)"};
     };
-    class COMSPEC_ATAK_RelayTower_M20: COMSPEC_ATAK_RelayTower_Base {
-        scope=2; scopeCurator=2;
-        displayName="$STR_COMSPEC_ATAK_CFG_M20_NAME";
-        model="\z\comspec_atak_native\addons\towers\data\relay_tower_m20.p3d";
-        editorPreview="\z\comspec_atak_native\addons\towers\data\relay_tower_m20_preview.jpg";
-        comspec_atak_relayRange=4500; comspec_atak_relayHeight=18; comspec_atak_relayThroughput=15; comspec_atak_relaySlots=48;
-        armor=400; mapSize=3;
-        class DestructionEffects: DestructionEffects {
-            class Ruin1 { simulation="ruin"; type="\z\comspec_atak_native\addons\towers\data\relay_tower_m20_ruin.p3d"; position=""; intensity=1; interval=1; lifeTime=1; };
-        };
+    class COMSPEC_ATAK_DeployedAntenna_Mini: COMSPEC_ATAK_DeployedAntenna_Base {
+        model="\z\comspec_atak_native\addons\towers\data\relay_kit_mini.p3d";
+        hiddenSelections[]={"camo","led"};
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\towers\data\relay_steel_co.paa","#(argb,8,8,3)color(0.02,0.02,0.02,1,co)"};
     };
-    class COMSPEC_ATAK_RelayTower_30: COMSPEC_ATAK_RelayTower_Base {
-        scope=2; scopeCurator=2;
-        displayName="$STR_COMSPEC_ATAK_CFG_A820F0E110";
-        model="\z\comspec_atak_native\addons\towers\data\relay_tower_30.p3d";
-        editorPreview="\z\comspec_atak_native\addons\towers\data\relay_tower_30_preview.jpg";
-        comspec_atak_relayRange=6000; comspec_atak_relayHeight=28; comspec_atak_relayThroughput=20; comspec_atak_relaySlots=64;
-        armor=500;
-        class DestructionEffects: DestructionEffects {
-            class Ruin1 { simulation="ruin"; type="\z\comspec_atak_native\addons\towers\data\relay_tower_30_ruin.p3d"; position=""; intensity=1; interval=1; lifeTime=1; };
-        };
+    class COMSPEC_ATAK_DeployedAntenna_Omni: COMSPEC_ATAK_DeployedAntenna_Base {
+        model="\z\comspec_atak_native\addons\towers\data\relay_kit_field.p3d";
+        hiddenSelections[]={"camo","led"};
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\towers\data\relay_steel_olive_co.paa","#(argb,8,8,3)color(0.02,0.02,0.02,1,co)"};
     };
-    class COMSPEC_ATAK_RelayTower_40: COMSPEC_ATAK_RelayTower_Base {
-        scope=2; scopeCurator=2;
-        class MarkerLights: MarkerLights {
-            class Mid1: Top { name="light_mid1"; blinking=0; intensity=40; drawLightSize=0.25; };
-            class Mid2: Mid1 { name="light_mid2"; };
-        };
-        displayName="$STR_COMSPEC_ATAK_CFG_7FACF53561";
-        model="\z\comspec_atak_native\addons\towers\data\relay_tower_40.p3d";
-        editorPreview="\z\comspec_atak_native\addons\towers\data\relay_tower_40_preview.jpg";
-        comspec_atak_relayRange=9000; comspec_atak_relayHeight=38; comspec_atak_relayThroughput=30; comspec_atak_relaySlots=96;
-        armor=700;
-        class DestructionEffects: DestructionEffects {
-            class Ruin1 { simulation="ruin"; type="\z\comspec_atak_native\addons\towers\data\relay_tower_40_ruin.p3d"; position=""; intensity=1; interval=1; lifeTime=1; };
-        };
-    };
-    class COMSPEC_ATAK_RelayTower_50: COMSPEC_ATAK_RelayTower_Base {
-        scope=2; scopeCurator=2;
-        class MarkerLights: MarkerLights {
-            class Mid1: Top { name="light_mid1"; blinking=0; intensity=40; drawLightSize=0.25; };
-            class Mid2: Mid1 { name="light_mid2"; };
-        };
-        displayName="$STR_COMSPEC_ATAK_CFG_83983FCE7E";
-        model="\z\comspec_atak_native\addons\towers\data\relay_tower_50.p3d";
-        editorPreview="\z\comspec_atak_native\addons\towers\data\relay_tower_50_preview.jpg";
-        comspec_atak_relayRange=12000; comspec_atak_relayHeight=48; comspec_atak_relayThroughput=40; comspec_atak_relaySlots=128;
-        armor=900;
-        class DestructionEffects: DestructionEffects {
-            class Ruin1 { simulation="ruin"; type="\z\comspec_atak_native\addons\towers\data\relay_tower_50_ruin.p3d"; position=""; intensity=1; interval=1; lifeTime=1; };
-        };
-    };
-    class COMSPEC_ATAK_RelayTower_M12_ruins: Ruins_F { scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_CFG_M12_RUIN"; model="\z\comspec_atak_native\addons\towers\data\relay_tower_m12_ruin.p3d"; };
-    class COMSPEC_ATAK_RelayTower_M20_ruins: Ruins_F { scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_CFG_M20_RUIN"; model="\z\comspec_atak_native\addons\towers\data\relay_tower_m20_ruin.p3d"; };
-    class COMSPEC_ATAK_RelayTower_30_ruins: Ruins_F { scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_CFG_DB4BE04D53"; model="\z\comspec_atak_native\addons\towers\data\relay_tower_30_ruin.p3d"; };
-    class COMSPEC_ATAK_RelayTower_40_ruins: Ruins_F { scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_CFG_69F7129E3B"; model="\z\comspec_atak_native\addons\towers\data\relay_tower_40_ruin.p3d"; };
-    class COMSPEC_ATAK_RelayTower_50_ruins: Ruins_F { scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_CFG_BFA2360137"; model="\z\comspec_atak_native\addons\towers\data\relay_tower_50_ruin.p3d"; };
+    // Caméras IP et infrastructure réseau intérieure (modèles dans items.pbo).
+    #include "cfg_cameras.hpp"
+    #include "cfg_infra.hpp"
 };
 class CfgEditorSubcategories {
     class COMSPEC_ATAK_EdSubcat_Relays { displayName="$STR_COMSPEC_ATAK_CFG_E4E74278CD"; };
+    class COMSPEC_ATAK_EdSubcat_RelayVariants { displayName="$STR_COMSPEC_ATAK_REL_SUB_VARIANTS"; };
+    class COMSPEC_ATAK_EdSubcat_RelayAntennas { displayName="$STR_COMSPEC_ATAK_REL_SUB_ANTENNAS"; };
+    class COMSPEC_ATAK_EdSubcat_Cameras { displayName="$STR_COMSPEC_ATAK_REL_SUB_CAMERAS"; };
+    class COMSPEC_ATAK_EdSubcat_Infra { displayName="$STR_COMSPEC_ATAK_REL_SUB_INFRA"; };
+};
+class CfgFunctions {
+    class comspec_atak_native {
+        class towers {
+            file="\z\comspec_atak_native\addons\towers\functions";
+            class relayLed {}; class relayFx {}; class relayLook {};
+        };
+        #include "cfg_functions_extra.hpp"
+    };
 };
 class Extended_Init_EventHandlers {
     class COMSPEC_ATAK_RelayTower_Base { class comspec_atak_native_tower { serverInit="[_this select 0] call comspec_atak_native_fnc_relayTower"; }; };
+    class COMSPEC_ATAK_Infra_Base { class comspec_atak_native_infra { init="['init', _this select 0] call comspec_atak_native_fnc_infra"; }; };
+    class COMSPEC_ATAK_Cam_Base { class comspec_atak_native_cam { serverInit="[_this select 0] call comspec_atak_native_fnc_camProp"; }; };
+};
+class Extended_Killed_EventHandlers {
+    class COMSPEC_ATAK_RelayTower_Base { class comspec_atak_native_tower_fx { killed="[_this select 0] remoteExec ['comspec_atak_native_fnc_relayFx', [0, -2] select isDedicated]"; }; };
+};
+class Extended_PreInit_EventHandlers {
+    class comspec_atak_native_infra { init="['settings'] call comspec_atak_native_fnc_infra"; };
+};
+class Extended_PostInit_EventHandlers {
+    class comspec_atak_native_infra { init="['postInit'] call comspec_atak_native_fnc_infra"; };
+    class comspec_atak_native_towers { clientInit="['init'] call comspec_atak_native_fnc_relayLed; [] call comspec_atak_native_fnc_camLed;"; };
 };
