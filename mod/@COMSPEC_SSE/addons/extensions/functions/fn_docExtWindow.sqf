@@ -10,6 +10,12 @@
       ["step"]            étape du tuto choisie                     ["copy"]            exemple de config.cpp copié
       ["view"]            -> vue affichée : "list", "empty", "tuto" ("" fenêtre fermée ; autotest)
       ["skeleton"]        -> exemple de config.cpp (texte brut, langue du jeu)
+      ["prev"] / ["next"] étape précédente / suivante du tuto (boutons du bas ; flèches haut / bas dans la liste)
+      ["audit"]           -> liste des problèmes (vide si tout va bien) : textes des étapes, IDC, liste remplie, étape
+                             choisie, lecture non vide. Lancé à chaque ouverture, résultat au journal RPT seulement.
+    Attention : en SQF les noms de variables ignorent la casse (_l et _L sont la même variable). L'ancien raccourci
+    de traduction « _L » était écrasé par « private _l = <liste> » : liste du tuto et liste des extensions restaient
+    vides (SSE 1.9.0). D'où _loc pour la traduction et _lst pour les listes.
     Vues : « list » (extensions présentes), « empty » (aucune : explication et « Ouvrir le tuto » à la place des
     volets), « tuto ». Activer / Désactiver : Zeus, administrateur ou hôte seulement (grisé sinon) ; Eden : consultation.
     Aucune alerte Arma : tout se dit dans la fenêtre (ligne d'état du bas, deux lignes au plus, police réduite au besoin).
@@ -17,8 +23,14 @@
 */
 params [["_op", "open", [""]], ["_a", displayNull, [displayNull, ""]]];
 disableSerialization;
-private _L = { localize ("STR_COMSPEC_SSE_EXT_" + _this) };
-private _fr = ("Lang" call _L) isEqualTo "fr";
+// Traduction ; clé absente du PBO : nom de la clé affiché (jamais de ligne vide) et signalé au journal.
+private _loc = {
+    private _key = "STR_COMSPEC_SSE_EXT_" + _this;
+    private _s = localize _key;
+    if (_s isEqualTo "") then { diag_log format ["[COMSPEC SSE] Extensions : texte absent du stringtable %1", _key]; _s = _key; };
+    _s
+};
+private _fr = ("Lang" call _loc) isEqualTo "fr";
 private _nl = toString [10];
 private _steps = 10;
 
@@ -173,10 +185,10 @@ private _rowOf = {
     ((call _rows) select { (toLower (_x select 0)) isEqualTo (toLower _cls) }) param [0, []]
 };
 private _current = {
-    private _l = 93910 call _ctl;
-    private _i = lbCurSel _l;
+    private _lst = 93910 call _ctl;
+    private _i = lbCurSel _lst;
     if (_i < 0) exitWith { [] };
-    [_l lbData _i] call _rowOf
+    [_lst lbData _i] call _rowOf
 };
 private _mode = { uiNamespace getVariable ["comspec_sse_docExtMode", "list"] };
 private _view = {
@@ -189,9 +201,9 @@ private _layout = {
     private _v = call _view;
     { (_x call _ctl) ctrlShow (_v isEqualTo "list"); } forEach [93910, 93926, 93920, 93927, 93923, 93930];
     { (_x call _ctl) ctrlShow (_v isEqualTo "empty"); } forEach [93951, 93952];
-    { (_x call _ctl) ctrlShow (_v isEqualTo "tuto"); } forEach [93960, 93964, 93961, 93963];
-    (93903 call _ctl) ctrlSetTooltip ((["Help_D", "Back_D"] select (_v isEqualTo "tuto")) call _L);
-    [93903 call _ctl, (["Help", "Back"] select (_v isEqualTo "tuto")) call _L] call _fitLine;
+    { (_x call _ctl) ctrlShow (_v isEqualTo "tuto"); } forEach [93960, 93964, 93961, 93963, 93965, 93966];
+    (93903 call _ctl) ctrlSetTooltip ((["Help_D", "Back_D"] select (_v isEqualTo "tuto")) call _loc);
+    [93903 call _ctl, (["Help", "Back"] select (_v isEqualTo "tuto")) call _loc] call _fitLine;
     _v
 };
 
@@ -212,28 +224,28 @@ private _select = {
     [93920 call _ctl, _name] call _fitLine;
     private _meta = [_author] select { _x isNotEqualTo "" };
     if (_version isNotEqualTo "") then { _meta pushBack ("v" + _version); };
-    if (_builtin) then { _meta pushBack ("Builtin" call _L); };
-    if (_defaultOff) then { _meta pushBack ("DefaultOff" call _L); };
+    if (_builtin) then { _meta pushBack ("Builtin" call _loc); };
+    if (_defaultOff) then { _meta pushBack ("DefaultOff" call _loc); };
     private _lines = _docs apply { format ["<t color='#73cc80'>•</t> %1 <t color='#9eafa4'>(%2)</t>", [["label", _x] call comspec_sse_fnc_idDocTypes] call _esc, [_x] call _esc] };
-    if (_lines isEqualTo []) then { _lines = [["NoModels" call _L] call _esc]; };
+    if (_lines isEqualTo []) then { _lines = [["NoModels" call _loc] call _esc]; };
     [93927, 93921, format ["<t color='#9eafa4'>%1</t><br/>%2<br/><br/><t color='#73cc80' font='RobotoCondensedBold'>%3</t><br/>%4",
-        [_meta joinString " · "] call _esc, [_desc] call _esc, ["Models" call _L] call _esc, _lines joinString "<br/>"]] call _fillScroll;
+        [_meta joinString " · "] call _esc, [_desc] call _esc, ["Models" call _loc] call _esc, _lines joinString "<br/>"]] call _fillScroll;
     // Aperçu : image « preview » de l'extension, sinon le recto du premier modèle (repli alt).
     private _pic = _preview;
     if (_pic isEqualTo "" || {!fileExists _pic}) then {
         _pic = if (_docs isEqualTo []) then { "" } else { ["texture", [_docs select 0, "recto", "alt", ""]] call comspec_sse_fnc_idDocTypes };
     };
     (93923 call _ctl) ctrlSetText _pic;
-    [_toggle, (["Enable", "Disable"] select _active) call _L] call _fitLine;
+    [_toggle, (["Enable", "Disable"] select _active) call _loc] call _fitLine;
     private _can = call _canEdit;
     _toggle ctrlEnable (_can && _enabledSetting);
-    private _word = (["WordOff", "WordOn"] select _active) call _L;
+    private _word = (["WordOff", "WordOn"] select _active) call _loc;
     private _stateTxt = switch (true) do {
-        case (!_enabledSetting): { "StOffSetting" call _L };
-        case (is3DEN): { "StEden" call _L };
-        case (!_can): { format ["StReadOnly" call _L, _name, _word] };
-        case (_active): { format ["StActive" call _L, _name] };
-        default { format ["StInactive" call _L, _name] };
+        case (!_enabledSetting): { "StOffSetting" call _loc };
+        case (is3DEN): { "StEden" call _loc };
+        case (!_can): { format ["StReadOnly" call _loc, _name, _word] };
+        case (_active): { format ["StActive" call _loc, _name] };
+        default { format ["StInactive" call _loc, _name] };
     };
     [[_stateTxt] call _esc] call _setState;
 };
@@ -242,7 +254,7 @@ private _select = {
 private _step = {
     if (isNull _d) exitWith {};
     private _n = ((lbCurSel (93960 call _ctl)) max 0) + 1;
-    private _body = format ["<t size='1.25' font='PuristaMedium' color='#73cc80'>%1</t><br/><br/>%2", [format ["T%1_T", _n] call _L] call _esc, format ["T%1_B", _n] call _L];
+    private _body = format ["<t size='1.25' font='PuristaMedium' color='#73cc80'>%1</t><br/><br/>%2", [format ["T%1_T", _n] call _loc] call _esc, format ["T%1_B", _n] call _loc];
     private _code = _n isEqualTo 5;
     if (_code) then {
         // Retraits gardés (espaces insécables), police à chasse fixe, un peu plus petite ; commentaires en gris.
@@ -256,9 +268,13 @@ private _step = {
             private _col = ["#e6ede6", "#9eafa4"] select ((_t select [_i, 2]) isEqualTo "//");
             format ["<t color='%1'>%2%3</t>", _col, _lead, _t select [_i]]
         };
-        _body = _body + format ["<br/><br/><t font='EtelkaMonospacePro' size='0.72'>%1</t>", _lines joinString "<br/>"];
+        // Taille 1 = SSE_TXT_S (0.78 case), plancher de lisibilité de la charte : les lignes longues passent à la ligne.
+        _body = _body + format ["<br/><br/><t font='EtelkaMonospacePro' size='1'>%1</t>", _lines joinString "<br/>"];
     };
+    uiNamespace setVariable ["comspec_sse_docExtLastBody", _body];
     (93963 call _ctl) ctrlShow _code;
+    (93965 call _ctl) ctrlEnable (_n > 1);
+    (93966 call _ctl) ctrlEnable (_n < _steps);
     // Lecture plus haute quand le bouton « Copier » n'est pas affiché (il est posé sous la lecture).
     private _grp = 93961 call _ctl;
     (ctrlPosition _grp) params ["_gx", "_gy", "_gw"];
@@ -266,15 +282,57 @@ private _step = {
     _grp ctrlSetPosition [_gx, _gy, _gw, _gh];
     _grp ctrlCommit 0;
     [93961, 93962, _body] call _fillScroll;
-    [[(["StTuto", "StTutoCode"] select _code) call _L] call _esc] call _setState;
+    [[(["StTuto", "StTutoCode"] select _code) call _loc] call _esc] call _setState;
 };
 private _fillTuto = {
-    private _l = 93960 call _ctl;
-    private _keep = (lbCurSel _l) max 0;
-    lbClear _l;
-    for "_n" from 1 to _steps do { _l lbAdd format ["%1. %2", _n, format ["T%1_T", _n] call _L]; };
-    _l lbSetCurSel _keep;
+    private _lst = 93960 call _ctl;
+    private _keep = (lbCurSel _lst) max 0;
+    lbClear _lst;
+    for "_n" from 1 to _steps do { _lst lbAdd format ["%1. %2", _n, format ["T%1_T", _n] call _loc]; };
+    // Étape 1 choisie à l'ouverture ; focus sur la liste : flèches haut / bas pour passer d'une étape à l'autre.
+    _lst lbSetCurSel (_keep min ((lbSize _lst) - 1));
+    ctrlSetFocus _lst;
     call _step;
+};
+// Étape précédente (-1) / suivante (+1).
+private _move = {
+    params ["_dir"];
+    if (isNull _d || {(call _view) isNotEqualTo "tuto"}) exitWith {};
+    private _lst = 93960 call _ctl;
+    _lst lbSetCurSel ((((lbCurSel _lst) max 0) + _dir) max 0 min ((lbSize _lst) - 1));
+    ctrlSetFocus _lst;
+    call _step;
+};
+// Contrôle interne : liste des problèmes trouvés (vide = tout va bien).
+private _audit = {
+    private _ko = [];
+    for "_n" from 1 to _steps do {
+        {
+            private _key = format ["STR_COMSPEC_SSE_EXT_T%1_%2", _n, _x];
+            private _s = localize _key;
+            if (_s isEqualTo "") then { _ko pushBack format ["%1 absent du stringtable", _key]; } else {
+                if ((str parseText _s) isEqualTo "") then { _ko pushBack format ["%1 : texte structuré illisible", _key]; };
+            };
+        } forEach ["T", "B"];
+    };
+    if ((call _skeleton) isEqualTo []) then { _ko pushBack "exemple de config.cpp vide"; };
+    if (!isNull _d) then {
+        { if (isNull (_x call _ctl)) then { _ko pushBack format ["IDC %1 absent de la fenêtre", _x]; }; } forEach [93910, 93924, 93960, 93961, 93963, 93964, 93965, 93966];
+        if (isNull ((93961 call _ctl) controlsGroupCtrl 93962)) then { _ko pushBack "IDC 93962 (lecture) absent du groupe 93961"; };
+        if ((call _view) isEqualTo "tuto") then {
+            private _lst = 93960 call _ctl;
+            if ((lbSize _lst) isNotEqualTo _steps) then { _ko pushBack format ["liste du tuto : %1 étapes au lieu de %2", lbSize _lst, _steps]; };
+            for "_i" from 0 to ((lbSize _lst) - 1) do { if ((_lst lbText _i) isEqualTo "") then { _ko pushBack format ["étape %1 sans titre", _i + 1]; }; };
+            if ((lbCurSel _lst) < 0) then { _ko pushBack "aucune étape choisie"; };
+            if ((uiNamespace getVariable ["comspec_sse_docExtLastBody", ""]) isEqualTo "") then { _ko pushBack "lecture vide"; };
+        };
+        if ((call _view) isEqualTo "list") then {
+            private _lst = 93910 call _ctl;
+            if ((lbSize _lst) isNotEqualTo (count (call _rows))) then { _ko pushBack format ["liste des extensions : %1 lignes au lieu de %2", lbSize _lst, count (call _rows)]; };
+            for "_i" from 0 to ((lbSize _lst) - 1) do { if ((_lst lbText _i) isEqualTo "") then { _ko pushBack format ["extension %1 sans nom", _i + 1]; }; };
+        };
+    };
+    _ko
 };
 
 // Liste de gauche (sélection gardée), puis volet de droite ; ou vue vide ; ou tuto.
@@ -282,47 +340,52 @@ private _fill = {
     if (isNull _d) exitWith {};
     private _all = call _rows;
     private _v = call _layout;
-    [93902 call _ctl, if (_v isEqualTo "tuto") then { format ["SummaryTuto" call _L, _steps] } else { format ["Summary" call _L, count _all, count (_all select { _x select 7 })] }] call _fitLine;
+    [93902 call _ctl, if (_v isEqualTo "tuto") then { format ["SummaryTuto" call _loc, _steps] } else { format ["Summary" call _loc, count _all, count (_all select { _x select 7 })] }] call _fitLine;
     if (_v isEqualTo "tuto") exitWith { call _fillTuto; };
     if (_v isEqualTo "empty") exitWith {
-        [93951 call _ctl, format ["<t size='1.25' font='PuristaMedium' color='#73cc80'>%1</t><br/><br/>%2", ["EmptyTitle" call _L] call _esc, "EmptyBody" call _L]] call _fitRich;
-        [93952 call _ctl, "OpenTuto" call _L] call _fitLine;
-        [[("StEmpty" call _L)] call _esc] call _setState;
+        [93951 call _ctl, format ["<t size='1.25' font='PuristaMedium' color='#73cc80'>%1</t><br/><br/>%2", ["EmptyTitle" call _loc] call _esc, "EmptyBody" call _loc]] call _fitRich;
+        [93952 call _ctl, "OpenTuto" call _loc] call _fitLine;
+        [[("StEmpty" call _loc)] call _esc] call _setState;
     };
-    private _l = 93910 call _ctl;
-    private _keep = if ((lbCurSel _l) >= 0) then { _l lbData (lbCurSel _l) } else { "" };
-    lbClear _l;
+    private _lst = 93910 call _ctl;
+    private _keep = if ((lbCurSel _lst) >= 0) then { _lst lbData (lbCurSel _lst) } else { "" };
+    lbClear _lst;
     private _sel = -1;
     {
         _x params ["_cls", "_name", "", "", "", "", "", "_active"];
         private _full = [_name, _cls] select (_name isEqualTo "");
-        private _right = (["WordOffCap", "WordOnCap"] select _active) call _L;
-        private _i = _l lbAdd ([_full, _right] call _rowText);
-        _l lbSetData [_i, _cls];
-        _l lbSetTooltip [_i, _full];
-        _l lbSetTextRight [_i, _right];
-        _l lbSetColor [_i, [[0.62, 0.68, 0.64, 1], [0.9, 0.93, 0.9, 1]] select _active];
-        _l lbSetColorRight [_i, [[0.62, 0.68, 0.64, 1], [0.45, 0.8, 0.5, 1]] select _active];
+        private _right = (["WordOffCap", "WordOnCap"] select _active) call _loc;
+        private _i = _lst lbAdd ([_full, _right] call _rowText);
+        _lst lbSetData [_i, _cls];
+        _lst lbSetTooltip [_i, _full];
+        _lst lbSetTextRight [_i, _right];
+        _lst lbSetColor [_i, [[0.62, 0.68, 0.64, 1], [0.9, 0.93, 0.9, 1]] select _active];
+        _lst lbSetColorRight [_i, [[0.62, 0.68, 0.64, 1], [0.45, 0.8, 0.5, 1]] select _active];
         if (_cls isEqualTo _keep) then { _sel = _i; };
     } forEach _all;
-    _l lbSetCurSel (_sel max 0);
+    _lst lbSetCurSel (_sel max 0);
     call _select;
 };
 
 switch (_op) do {
     case "open": {
         uiNamespace setVariable ["comspec_sse_docExtMode", ["list", "tuto"] select (_a isEqualTo "tuto")];
-        if (!isNull _d) exitWith { call _fill; true };
+        if (!isNull _d) exitWith { call _fill; { diag_log format ["[COMSPEC SSE] Extensions, contrôle de la fenêtre : %1", _x]; } forEach (call _audit); true };
         createDialog "COMSPEC_SSE_DocExtensions"
     };
     case "load": {
         _d = _a;
         uiNamespace setVariable ["comspec_sse_docExtDisplay", _d];
         // Titre et boutons fixes : même ajustement que les libellés posés en SQF.
-        { [_x call _ctl, ctrlText (_x call _ctl)] call _fitLine; } forEach [93901, 93931, 93963];
+        { [_x call _ctl, ctrlText (_x call _ctl)] call _fitLine; } forEach [93901, 93931, 93963, 93965, 93966];
         call _fill;
+        // Contrôle interne à chaque ouverture : problèmes au journal RPT seulement (aucune alerte à l'écran).
+        { diag_log format ["[COMSPEC SSE] Extensions, contrôle de la fenêtre : %1", _x]; } forEach (call _audit);
         true
     };
+    case "prev": { [-1] call _move; true };
+    case "next": { [1] call _move; true };
+    case "audit": { call _audit };
     case "unload": { uiNamespace setVariable ["comspec_sse_docExtDisplay", displayNull]; true };
     case "select": { call _select; true };
     case "step": { call _step; true };
@@ -339,7 +402,7 @@ switch (_op) do {
         if (isNull _d) exitWith { false };
         copyToClipboard ((call _skeleton) joinString _nl);
         // En ligne, Arma peut refuser le presse-papiers à un client : le texte reste affiché dans le tuto.
-        [[(["Copied", "CopiedMp"] select (isMultiplayer && {!isServer})) call _L] call _esc] call _setState;
+        [[(["Copied", "CopiedMp"] select (isMultiplayer && {!isServer})) call _loc] call _esc] call _setState;
         true
     };
     case "toggle": {
@@ -350,7 +413,7 @@ switch (_op) do {
         if (_name isEqualTo "") then { _name = _cls; };
         if !(call _canEdit) exitWith { call _select; false };
         // Ligne d'état avant l'envoi : sur un serveur hébergé, le serveur relit la fenêtre dans la foulée.
-        [[format ["StSent" call _L, _name, (["WordOn", "WordOff"] select _active) call _L]] call _esc] call _setState;
+        [[format ["StSent" call _loc, _name, (["WordOn", "WordOff"] select _active) call _loc]] call _esc] call _setState;
         (93930 call _ctl) ctrlEnable false;
         ["set", [_cls, !_active]] remoteExecCall ["comspec_sse_fnc_docExtServer", 2];
         true

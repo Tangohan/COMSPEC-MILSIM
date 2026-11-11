@@ -325,5 +325,25 @@
             <English>On</English>
             <French>Active</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_Prev">
+            <Original>Previous step</Original>
+            <English>Previous step</English>
+            <French>Étape précédente</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_Prev_D">
+            <Original>Back to the previous step of the tutorial (Up arrow in the list).</Original>
+            <English>Back to the previous step of the tutorial (Up arrow in the list).</English>
+            <French>Revenir à l'étape précédente du tuto (flèche haut dans la liste).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_Next">
+            <Original>Next step</Original>
+            <English>Next step</English>
+            <French>Étape suivante</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_EXT_Next_D">
+            <Original>Go to the next step of the tutorial (Down arrow in the list).</Original>
+            <English>Go to the next step of the tutorial (Down arrow in the list).</English>
+            <French>Passer à l'étape suivante du tuto (flèche bas dans la liste).</French>
+        </Key>
     </Package>
 </Project>

@@ -743,6 +743,8 @@ AT_fnc_extVerif = {
     private _d = findDisplay 93900;
     [(["view"] call comspec_sse_fnc_docExtWindow) isEqualTo "list", "vue liste attendue (extension d'exemple livrée)"] call AT_fnc_check;
     ["liste"] call AT_fnc_extVerif;
+    private _koListe = ["audit"] call comspec_sse_fnc_docExtWindow;
+    [_koListe isEqualTo [], format ["liste, contrôle interne : %1", _koListe joinString " ; "]] call AT_fnc_check;
     ["extensions_liste"] call AT_fnc_shot;
     // Aucune extension : état vide à la place des volets, bouton « Ouvrir le tuto ».
     uiNamespace setVariable ["comspec_sse_docExtTestEmpty", true];
@@ -758,6 +760,13 @@ AT_fnc_extVerif = {
     [(["view"] call comspec_sse_fnc_docExtWindow) isEqualTo "tuto", "Ouvrir le tuto : vue tuto attendue"] call AT_fnc_check;
     private _steps = _d displayCtrl 93960;
     [(lbSize _steps) isEqualTo 10, format ["tuto : %1 étapes au lieu de 10", lbSize _steps]] call AT_fnc_check;
+    [(lbCurSel _steps) isEqualTo 0, "tuto : étape 1 non choisie à l'ouverture"] call AT_fnc_check;
+    private _ko = ["audit"] call comspec_sse_fnc_docExtWindow;
+    [_ko isEqualTo [], format ["tuto, contrôle interne : %1", _ko joinString " ; "]] call AT_fnc_check;
+    ["next"] call comspec_sse_fnc_docExtWindow;
+    [(lbCurSel _steps) isEqualTo 1, "tuto : Étape suivante ne passe pas à l'étape 2"] call AT_fnc_check;
+    ["prev"] call comspec_sse_fnc_docExtWindow;
+    [(lbCurSel _steps) isEqualTo 0, "tuto : Étape précédente ne revient pas à l'étape 1"] call AT_fnc_check;
     for "_i" from 0 to ((lbSize _steps) - 1) do {
         _steps lbSetCurSel _i;
         uiSleep 0.2;
