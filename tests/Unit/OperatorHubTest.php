@@ -211,9 +211,9 @@ final class OperatorHubTest extends TestCase
     {
         $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
         preg_match_all('#\$router->(get|post)\(\'(/operateur[^\']*)\', \[(\$opHub|OperateurTerrainController::class), \'(\w+)\'\], \[AuthMiddleware::class\]\);#', $routes, $m, PREG_SET_ORDER);
-        self::assertCount(18, $m, 'toutes les routes /operateur passent par AuthMiddleware');
-        self::assertSame(18, preg_match_all('#\$router->\w+\(\'/operateur#', $routes));
-        $writes = ['favorite', 'identitySave', 'identityPhoto', 'identityArchive', 'identityActivate', 'identityPrimary', 'documentRequest', 'documentAction', 'coverGenerate', 'coverAction'];
+        self::assertCount(20, $m, 'toutes les routes /operateur passent par AuthMiddleware');
+        self::assertSame(20, preg_match_all('#\$router->\w+\(\'/operateur#', $routes));
+        $writes = ['favorite', 'accessRequest', 'accessCancel', 'identitySave', 'identityPhoto', 'identityArchive', 'identityActivate', 'identityPrimary', 'documentRequest', 'documentAction', 'coverGenerate', 'coverAction'];
         foreach ($m as [, $verb, $path, , $action]) {
             self::assertTrue(method_exists(OperatorHubController::class, $action) || $action === 'index', $action);
             self::assertSame(in_array($action, $writes, true) ? 'post' : 'get', $verb, $path);

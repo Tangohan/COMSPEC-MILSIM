@@ -29,6 +29,11 @@
           var field = document.getElementById(set.split(':')[0]);
           if (field) { field.value = set.split(':')[1]; }
         }
+        // Demande d'accès : la case du droit de la tuile cliquée est cochée d'avance.
+        var check = opener.getAttribute('data-opx-check');
+        if (check) {
+          dialog.querySelectorAll('input[type="checkbox"][name="droits[]"]').forEach(function (box) { box.checked = box.value === check; });
+        }
         if (!dialog.open) { dialog.showModal(); }
         var href = opener.getAttribute('href');
         var target = href && href.charAt(0) === '#' ? document.getElementById(href.slice(1)) : null;
