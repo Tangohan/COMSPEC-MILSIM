@@ -141,7 +141,7 @@ Les réglages « client » sont propres à chaque poste ; tous les autres sont i
 | Lueur de la DRILL | non | Petite lueur brève, aucun autre effet | oui |
 | Qualité des effets visuels (client) | Moyenne | Nombre de particules | Basse sur un petit PC |
 | Volume du bang (client) | 1 | Volume des détonations sur ce poste | 0.6 au casque |
-| Acouphène : son (client) | Enregistrement | Son enregistré par TTRD ou synthèse | Synthèse |
+| Acouphène : son (client) | Enregistrement | Son enregistré (sous licence) ou synthèse | Synthèse |
 | Journal de débogage (client) | non | Écrit chaque étape dans le RPT, rien à l'écran | oui pour un test |
 
 **Sans CBA** : le mod ne se charge pas, car CBA est requis. CBA fournit les réglages, les événements des grenades
@@ -151,7 +151,7 @@ une valeur dans `cba_settings.sqf`, par exemple `force comspec_fb_maxStack = 10;
 ## Sons : un seul endroit pour les changer
 
 La table effet → fichier est dans `Sources/addons/main/CfgSons.hpp` (classe `COMSPEC_FB_Sons`). Pour changer le son
-d'un effet, on modifie une seule ligne `fichiers[]`. Suffixe `_enreg` : enregistrement de TTRD (COMSPEC).
+d'un effet, on modifie une seule ligne `fichiers[]`. Suffixe `_enreg` : son enregistré, sous licence, acquis par COMSPEC.
 Suffixe `_synth` : synthétisé pour le mod.
 
 | Effet | Fichier | Origine | Durée | Usage |
@@ -259,10 +259,14 @@ Le script :
 1. lance `hemtt build`, qui rapifie la config et binarise les p3d ;
 2. copie le PBO dans `@COMSPEC_Flashbang\addons` ;
 3. copie `mod.cpp`, `logo.paa` et ce README ;
-4. signe le PBO avec la clé du mod (`signing\`, ignorée par Git, créée au premier build). La clé publique va dans
-   `@COMSPEC_Flashbang\keys`.
+4. signe le PBO avec la clé du mod. La clé privée est créée une seule fois, hors du dépôt
+   (`%APPDATA%\COMSPEC\signing\flashbang`, ou `COMSPEC_FB_SIGNING_DIR`), puis réutilisée à chaque build : il faut la
+   garder et ne jamais la committer. La clé publique va dans `@COMSPEC_Flashbang\keys`.
 
 Le dossier `@COMSPEC_Flashbang` se charge avec `-mod=` (avec CBA_A3).
+
+Publication Workshop (objet 3837805212) : voir [workshop/PACKAGING.md](workshop/PACKAGING.md) (pack propre,
+description, galerie, note de version, annonce).
 
 Régénérer les ressources (dossier `tools\`) :
 - textures : `py -3 gen_fb_textures.py` ;
@@ -303,8 +307,8 @@ carte (onglet Flashbang) et sur le panneau.
 
 - **Conception, code, modèle 3D, textures, icônes** : COMSPEC.
 - **Sons** :
-  - **enregistrements de TTRD (COMSPEC)** : bangs, couche grave et acouphène enregistré ;
-  - **synthèse COMSPEC** : pop DRILL, cuillère, acouphène de synthèse, réverbérations et échos.
+  - **sons sous licence, acquis par COMSPEC** : bangs, couche grave et acouphène enregistré ;
+  - **synthétisés par COMSPEC** : pop DRILL, cuillère, acouphène de synthèse, réverbérations et échos.
 - **Références techniques** : fiches publiques Primetake, Rheinmetall, NonLethal Technologies et Combined Systems,
   Wikipedia (M84), directive 2003/10/CE, études sur l'éblouissement (HFES, DTIC).
 
@@ -361,7 +365,7 @@ There is no per-frame cost when idle, and every post-process effect is destroyed
 (default), Arcade and Light.
 
 **Sounds**: the single effect → file table is in `CfgSons.hpp`.
-- `_enreg`: recordings by TTRD (COMSPEC).
+- `_enreg`: licensed recordings acquired by COMSPEC.
 - `_synth`: synthesised.
 - Each bang is replayed once per detonation, with pitch and volume variation and overlapping playback. The tinnitus
   plays once per player.
@@ -378,4 +382,4 @@ Load `@COMSPEC_Flashbang` with CBA_A3.
 
 **Test mission**: `missions/COMSPEC_FB_Range.Stratis`. See the « Liste de test » checklist above.
 
-**Credits**: COMSPEC (code, model, textures, icons, synthesised sounds); recordings by TTRD (COMSPEC).
+**Credits**: COMSPEC (code, model, textures, icons, synthesised sounds); recorded sounds licensed by COMSPEC.

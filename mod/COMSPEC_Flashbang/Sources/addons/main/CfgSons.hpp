@@ -1,6 +1,6 @@
 /*
     TABLE UNIQUE EFFET -> FICHIER SON. Pour changer le son d'un effet, modifier UNE ligne « fichiers[] » ci-dessous
-    (fichiers dans sounds\, OGG Vorbis ; _enreg = enregistrement de TTRD, _synth = synthétisé). Le code ne cite aucun
+    (fichiers dans sounds\, OGG Vorbis ; _enreg = enregistrement sous licence acquis par COMSPEC, _synth = synthétisé). Le code ne cite aucun
     nom de fichier : il lit cette table (fn_playBang, fn_tinnitus, fn_fired, fn_burst).
 
     Effet            | Fichier(s)                                   | Origine        | Durée   | Usage

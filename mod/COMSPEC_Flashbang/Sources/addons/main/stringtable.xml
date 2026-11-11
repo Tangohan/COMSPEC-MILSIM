@@ -588,9 +588,9 @@
                 <French>Acouphène : son</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_TinnitusSound_Tip">
-                <Original>Enregistrement (son pur enregistré par TTRD) ou synthèse (son avec battement).  Exemple : Enregistrement.</Original>
-                <English>Recording (pure tone recorded by TTRD) or synthesis (beating tone).  Example: Recording.</English>
-                <French>Enregistrement (son pur enregistré par TTRD) ou synthèse (son avec battement).  Exemple : Enregistrement.</French>
+                <Original>Enregistrement (son pur enregistré, sous licence) ou synthèse (son avec battement).  Exemple : Enregistrement.</Original>
+                <English>Recording (licensed recorded pure tone) or synthesis (beating tone).  Example: Recording.</English>
+                <French>Enregistrement (son pur enregistré, sous licence) ou synthèse (son avec battement).  Exemple : Enregistrement.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_Tinnitus_Tip">
                 <Original>Sifflement aigu qui décroît après une détonation proche.  Exemple : coché.</Original>
