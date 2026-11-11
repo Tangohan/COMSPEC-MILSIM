@@ -74,7 +74,11 @@ final class AtakPerfLogAssetTest extends TestCase
     {
         $src = $this->read('functions/zeus/fn_zeusCentre.sqf');
         // SQF ne distingue pas _t de _T : la traduction porte un nom qu'aucune variable locale ne reprend.
-        self::assertDoesNotMatchRegularExpression('/\b_T\b/', $src);
-        self::assertStringContainsString('private _trZ = { _this call comspec_atak_native_fnc_tr };', $src);
+        // Fusion 4.4.0 : la refonte du Centre Zeus (fix/atak-zeus-centre-ui) nomme la traduction _tr (plus _trZ) ;
+        // les commentaires qui racontent l'ancien bogue citent _T, ils sont retirés avant la vérification.
+        $code = preg_replace('~^\s*//.*$~m', '', $src);
+        self::assertDoesNotMatchRegularExpression('/\b_T\b/', $code);
+        self::assertStringContainsString('private _tr = { _this call comspec_atak_native_fnc_tr };', $src);
+        self::assertSame(1, preg_match_all('/(private\s+_tr\s*=|"_tr")/i', $code));
     }
 }

@@ -153,7 +153,7 @@ private _aLost = _pal get "aLost";
 
 // Fond PHOTO (capture de la carte : mod, ou fond d'Athena téléchargé en jeu) : tuiles sous tous les symboles ; en
 // SATELLITE, la capture du mod remplace la texture du terrain là où elle existe.
-// Mesuré à part (4.4.1) : les tuiles neuves en étaient la cause des images figées au zoom, sans clé à elles dans le RPT.
+// Mesuré à part (4.4.0) : les tuiles neuves en étaient la cause des images figées au zoom, sans clé à elles dans le RPT.
 if (_bgStyle in ["PHOTO", "SAT"]) then {
     private _perfP = diag_tickTime;
     [_map, _bgStyle] call comspec_atak_native_fnc_photoMap;
@@ -383,7 +383,7 @@ private _msText = _scale < 0.06 && {_lblOn};
 private _hovC = _state getOrDefault ["cursorPos", []];
 private _hovM = ((_map ctrlMapScreenToWorld [0.5, 0.5]) distance2D (_map ctrlMapScreenToWorld [0.5 + pixelW * 14, 0.5]));
 private _hovUnit = false;
-// Unités (trace, symboles, cartouches) mesurées à part dans le RPT (4.4.1).
+// Unités (trace, symboles, cartouches) mesurées à part dans le RPT (4.4.0).
 private _perfU = diag_tickTime;
 // Trace (fil d'Ariane) de mes positions, sous les symboles.
 if (_selfCfg select 4) then {

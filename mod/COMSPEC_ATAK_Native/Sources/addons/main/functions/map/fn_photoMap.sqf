@@ -277,7 +277,7 @@ private _draw = {
     _seen set [_f, _now];
     _map drawIcon [_f, [1, 1, 1, _a], [(_tx + 0.5) * _S, _ext - (_ty + 0.5) * _S, 0], _px, _px, 0, "", 0];
 };
-// Chargement étalé (4.4.1, TTRD « le téléphone lag, ça rame ») : chaque tuile neuve (JPEG lu dans la PBO et décodé par
+// Chargement étalé (4.4.0, TTRD « le téléphone lag, ça rame ») : chaque tuile neuve (JPEG lu dans la PBO et décodé par
 // le jeu) figeait l'image ; un nouveau zoom en demandait jusqu'à 64 d'un coup, d'où 1 à 2 s d'image figée (RPT du 11/11 :
 // « carte (image) max 1860 ms »). Désormais 2 tuiles neuves au plus par image (1 si l'image précédente a déjà ramé),
 // posées presque transparentes : la vue garde le niveau le plus fin déjà chargé en entier, puis passe au niveau visé

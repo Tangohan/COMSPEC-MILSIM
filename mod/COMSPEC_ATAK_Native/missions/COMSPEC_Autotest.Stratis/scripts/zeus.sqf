@@ -96,6 +96,8 @@ if ("zeus" call AT_fnc_groupe) then {
             {
                 if ((ctrlType _x) isEqualTo 1 && {ctrlShown _x}) then { [_x, format ["bouton (%1)", _nom]] call AT_fnc_tient; };
             } forEach (_ui get "all");
+            // Contrôle du Centre lui-même : bouton sans texte, chevauchement, texte coupé, contrôle hors du panneau.
+            { [false, format ["onglet %1 : %2", _nom, _x]] call AT_fnc_check; } forEach (["audit"] call comspec_atak_native_fnc_zeusCentre);
         };
         ["joueurs"] call _verif;
         ["zeus_centre_joueurs"] call AT_fnc_shot;

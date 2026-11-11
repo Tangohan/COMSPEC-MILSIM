@@ -49,7 +49,8 @@ final class AtakMapClassicAssetTest extends TestCase
 
         // Ni photo, ni voile : le dessin ne pose rien sous les symboles en CLASSIQUE.
         $draw = $this->read('functions/map/fn_mapOnDraw.sqf');
-        self::assertSame(1, preg_match('/if \(_bgStyle in \[([^\]]*)\]\) then \{ \[_map, _bgStyle\] call comspec_atak_native_fnc_photoMap; \};/', $draw, $p));
+        // Fusion 4.4.0 : fix/atak-perf-ouverture entoure l'appel d'une mesure (« carte fond photo (image) »).
+        self::assertSame(1, preg_match('/if \(_bgStyle in \[([^\]]*)\]\) then \{[^{}]*?\[_map, _bgStyle\] call comspec_atak_native_fnc_photoMap;/', $draw, $p));
         self::assertStringNotContainsString('"CLASSIC"', $p[1]);
         self::assertStringNotContainsString('case "CLASSIC"', $draw);
         self::assertStringNotContainsString('"CLASSIC"', $this->read('functions/map/fn_photoMap.sqf'));

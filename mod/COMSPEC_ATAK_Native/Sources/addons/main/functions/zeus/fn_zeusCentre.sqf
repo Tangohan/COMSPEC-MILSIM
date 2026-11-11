@@ -6,29 +6,103 @@
     Sources : variables déjà publiques (COMSPEC_ATAK_Pub, Spk, MeshNode via fn_meshRead, NetUp, NetLoad, ZeusFx, SimSos, Airplane,
     Gateway du véhicule, COMSPEC_DroneLock, caméras) ; le reste vient de la fiche à la demande (fn_zeusState).
     Un état non reçu n'est pas affiché : la fiche écrit « relevé en attente » ; un relevé qui vieillit (> 45 s) est redemandé en entier.
-    Panneau (4.2.2) : adossé au bord gauche de la liste de droite de Zeus (mesurée à l'ouverture), fond opaque, hauteur selon le
-    nombre de joueurs, au-dessus des panneaux ZEN du bas. Quatre onglets : JOUEURS (recherche, filtres, liste, fiche, actions,
-    cible joueur / sélection Zeus / liste), SERVEUR (état du serveur, fn_zeusState « srvScan »), ÉTIQUETTES (étiquettes 3D :
-    mode compact ou détaillé, champs), OUTILS (fenêtres du mod et du SSE). Aucun texte coupé : chaque bouton mesure son texte
-    (« fit ») et passe au libellé court avec l'infobulle longue.
+    Panneau : adossé au bord gauche de la liste de droite de Zeus (mesurée à l'ouverture), fond opaque, au-dessus des panneaux ZEN
+    du bas. Quatre onglets : JOUEURS (recherche, filtres, liste, fiche, actions, cible joueur / sélection Zeus / liste), SERVEUR
+    (état du serveur, fn_zeusState « srvScan »), ÉTIQUETTES (étiquettes 3D : oui / non, mode compact ou détaillé, champs cochés),
+    OUTILS (fenêtres du mod et du SSE).
+    Mise en page : une seule source des tailles (_grid, en fractions de safeZoneH, largeurs × pixelW / pixelH : même rendu à toutes
+    les tailles d'interface et tous les formats d'écran) et une seule routine qui pose (_place, appelée par « flow »). Chaque onglet
+    décrit ses lignes : un corps qui défile s'il dépasse, un pied fixe ; chaque ligne ses colonnes. La hauteur du fond suit l'onglet
+    affiché. Chaque contrôle est créé par _mk avec son propriétaire (« frame » ou un onglet) : l'onglet affiché montre les siens et
+    cache ceux des autres, enfants compris ; un contrôle ne peut pas être oublié. Chaque bouton passe par _btn : toujours un libellé,
+    mesuré à chaque placement (« fit » : police réduite, puis libellé court et infobulle longue).
+    Retours des actions : ligne d'état en bas du Centre (« say »), jamais de message à l'écran hors de la fenêtre.
     Fenêtre ouverte depuis le centre (« tool ») : le centre se replie le temps qu'elle est ouverte et revient à sa fermeture ;
     l'écran Zeus dessine ses propres contrôles au-dessus des dialogues (createDialog), le centre les recouvrait.
     Actions :
       "hook"    (fn_zeusClient, chaque seconde, écran Zeus ouvert) : pose le bouton et les infobulles de la liste des modules
-      "toggle"  ouvre ou ferme le panneau (bouton, touche CBA ZeusCentre)      "tab" [clé] : onglet
+      "toggle"  ouvre ou ferme le panneau (bouton, touche CBA ZeusCentre)      "tab" [clé] : onglet     "flow" [clé] : pose l'onglet
       "close"   ferme le panneau        "closed" : écran Zeus fermé, tout s'arrête
       "hide" / "show" : replie / déplie   "tool" [code] : replie, exécute, revient à la fermeture de la fenêtre ouverte
       "refresh" lit les variables, recalcule la liste et les étiquettes (boucle de 2 s)   "server" : onglet SERVEUR
       "filter" [clé]   "select" [uid]   "act" [id de fn_zeusMenu]   "admin" fiche dans l'app Admin   "pin" retirer le code
       "camera"  caméra Zeus sur le joueur   "labels" étiquettes 3D oui / non   "labelCfg" [clé, valeur]   "draw" (Draw3D)
+      "say" [texte] ligne d'état   "audit" défauts de l'onglet affiché (autotest)
       "tips" infobulles de la liste des modules   "edge" -> bord gauche de la liste de droite de Zeus
 */
 #define DISP (findDisplay 312)
 params [["_act", ""], ["_arg", []]];
 disableSerialization;
+// Aides du fichier : chaque nom n'est déclaré qu'une fois, casse comprise. Le SQF ne distingue pas _t de _T : en 4.3.0,
+// « _x params ["_t", …] » et « private _t = call _ui » masquaient la traduction _T, et le Centre s'arrêtait à moitié construit
+// (onglets tous visibles, boutons sans texte). Vérifié par AtakZeusCentreAssetTest.
 private _ui = { uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreUi", createHashMap] };
-private _trZ = { _this call comspec_atak_native_fnc_tr };
+private _tr = { _this call comspec_atak_native_fnc_tr };
 private _esc = { [[_this, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
+// Grille du Centre, seule source des tailles : fractions de la hauteur d'écran (safeZoneH).
+private _grid = createHashMapFromArray [
+    ["width", 0.46], ["top", 0.048], ["bottom", 0.858], ["gap", 0.005], ["row", 0.030], ["head", 0.044], ["logo", 0.036],
+    ["font", 0.019], ["fontMin", 0.0145], ["listRow", 0.027], ["cardMin", 0.14], ["cardMax", 0.36], ["tool", 0.42], ["toolRow", 0.032]
+];
+// Pose des lignes : [hMin, hMax, colonnes, cellules, extensible]. Colonne : poids > 0 (part de la place restante) ou < 0 (largeur
+// fixe). Cellule : [contrôle, colonne, nombre de colonnes, hauteur fixe]. hMax > hMin : la ligne prend la hauteur de son texte,
+// bornée. Extensible : hauteur donnée (_flexH). Une marge entre deux colonnes et entre deux lignes : rien ne se chevauche.
+// Rend la hauteur totale.
+private _place = {
+    params ["_rows", "_px", "_py", "_pw", ["_flexH", -1]];
+    private _gy = (_grid get "gap") * safeZoneH;
+    private _gx = _gy * pixelW / pixelH;
+    private _sbw = 0.012 + _gx;
+    private _cy = _py;
+    {
+        _x params ["_hMin", "_hMax", "_wts", "_cells", ["_flex", false]];
+        private _hRow = [_hMin, _flexH] select (_flex && {_flexH >= 0});
+        private _fixed = 0;
+        private _share = 0;
+        { if (_x < 0) then { _fixed = _fixed - _x; } else { _share = _share + _x; }; } forEach _wts;
+        private _free = (_pw - _fixed - ((count _wts) - 1) * _gx) max 0;
+        private _xs = [];
+        private _ws = [];
+        private _cx = _px;
+        {
+            private _cw = [_free * _x / (_share max 0.0001), -_x] select (_x < 0);
+            _xs pushBack _cx;
+            _ws pushBack _cw;
+            _cx = _cx + _cw + _gx;
+        } forEach _wts;
+        private _set = {
+            {
+                _x params ["_c", "_col", ["_span", 1], ["_hFix", -1]];
+                private _last = _col + _span - 1;
+                private _cw = (_xs select _last) + (_ws select _last) - (_xs select _col);
+                private _ch = [_hRow, _hFix] select (_hFix > 0);
+                _c ctrlSetPosition [_xs select _col, _cy, _cw, _ch];
+                _c ctrlCommit 0;
+                // Groupe qui défile (fiche du joueur) : son texte prend la largeur moins la barre, sa hauteur suit le texte.
+                private _in = _c getVariable ["inner", controlNull];
+                if (!isNull _in) then {
+                    _in ctrlSetPosition [0, 0, _cw - _sbw, _ch];
+                    _in ctrlCommit 0;
+                    _in ctrlSetPosition [0, 0, _cw - _sbw, (ctrlTextHeight _in) max _ch];
+                    _in ctrlCommit 0;
+                };
+            } forEach _cells;
+        };
+        call _set;
+        if (_hMax > _hMin && {!_flex}) then {
+            private _need = _hMin;
+            { if ((ctrlType (_x select 0)) isEqualTo 13) then { _need = _need max (ctrlTextHeight (_x select 0)); }; } forEach _cells;
+            _hRow = _need min _hMax;
+            call _set;
+        };
+        {
+            private _f = (_x select 0) getVariable ["fit", []];
+            if (_f isNotEqualTo []) then { ["fit", [_x select 0] + _f] call comspec_atak_native_fnc_zeusCentre; };
+        } forEach _cells;
+        _cy = _cy + _hRow + _gy;
+    } forEach _rows;
+    ((_cy - _py) - _gy) max 0
+};
 // Version MAJEUR.MINEUR.CORRECTIF d'un texte de version (« 4.2.0.AG - Washington · … » -> [4, 2, 0]) ; [] si absente.
 private _verOf = {
     if !(_this isEqualType "") exitWith { [] };
@@ -49,7 +123,7 @@ private _refVer = {
     if (_v isEqualTo []) then { _v = (missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""]) call _verOf; };
     _v
 };
-private _ago = { if (_this < 60) then { format [("il y a %1 s") call _trZ, _this] } else { format [("il y a %1 min") call _trZ, floor (_this / 60)] } };
+private _ago = { if (_this < 60) then { format [("il y a %1 s") call _tr, _this] } else { format [("il y a %1 min") call _tr, floor (_this / 60)] } };
 // Réglages des étiquettes 3D du Zeus, gardés dans son profil.
 private _labelCfg = {
     private _d = createHashMapFromArray [["mode", "compact"], ["name", true], ["phone", true], ["bat", true], ["net", true], ["athena", true], ["acct", true], ["ver", true], ["tx", true], ["alerts", true]];
@@ -97,28 +171,29 @@ switch (_act) do {
         private _b = _d ctrlCreate ["COMSPEC_RscButton", -1];
         _b ctrlSetPosition [_right - _bw - 0.004 * _h * _kw, safeZoneY + 0.008 * _h, _bw, 0.034 * _h];
         _b ctrlSetFontHeight (0.021 * _h);
-        _b ctrlSetText (("CENTRE ZEUS") call _trZ);
-        _b ctrlSetTooltip (("État des ATAK, actions, état du serveur et outils Zeus") call _trZ);
+        _b ctrlSetText (("CENTRE ZEUS") call _tr);
+        _b ctrlSetTooltip (("État des ATAK, actions, état du serveur et outils Zeus") call _tr);
         _b ctrlCommit 0;
         _b ctrlAddEventHandler ["ButtonClick", { ["toggle"] call comspec_atak_native_fnc_zeusCentre; }];
         uiNamespace setVariable ["COMSPEC_ATAK_ZeusCentreBtn", _b];
     };
     case "fit": {
-        // Texte d'un bouton qui tient dans sa largeur : police réduite jusqu'à 0,0145 h, puis libellé court et infobulle longue.
+        // Texte d'un bouton qui tient dans sa largeur : police réduite jusqu'au plancher de la grille, puis libellé court et
+        // infobulle longue.
         _arg params ["_c", "_long", ["_short", ""], ["_tip", ""]];
         private _h = safeZoneH;
         private _w = (ctrlPosition _c) select 2;
         private _try = {
-            params ["_txt"];
-            private _f = 0.019 * _h;
-            _c ctrlSetText (_txt call _trZ);
+            params ["_lbl"];
+            private _f = (_grid get "font") * _h;
+            _c ctrlSetText (_lbl call _tr);
             _c ctrlSetFontHeight _f;
-            while { (ctrlTextWidth _c) > _w * 0.94 && {_f > 0.0145 * _h} } do { _f = _f - 0.0005 * _h; _c ctrlSetFontHeight _f; };
+            while { (ctrlTextWidth _c) > _w * 0.94 && {_f > (_grid get "fontMin") * _h} } do { _f = _f - 0.0005 * _h; _c ctrlSetFontHeight _f; };
             (ctrlTextWidth _c) <= _w * 0.94
         };
         private _ok = [_long] call _try;
-        private _full = [_tip, format ["%1. %2", _long call _trZ, _tip call _trZ]] select (_tip isNotEqualTo "" && {_short isNotEqualTo ""});
-        if (!_ok && {_short isNotEqualTo ""}) then { [_short] call _try; _c ctrlSetTooltip ([_long call _trZ, _full] select (_tip isNotEqualTo "")); } else { if (_tip isNotEqualTo "") then { _c ctrlSetTooltip (_tip call _trZ); }; };
+        private _full = [_tip, format ["%1. %2", _long call _tr, _tip call _tr]] select (_tip isNotEqualTo "" && {_short isNotEqualTo ""});
+        if (!_ok && {_short isNotEqualTo ""}) then { [_short] call _try; _c ctrlSetTooltip ([_long call _tr, _full] select (_tip isNotEqualTo "")); } else { if (_tip isNotEqualTo "") then { _c ctrlSetTooltip (_tip call _tr); }; };
         _c ctrlCommit 0;
     };
     case "toggle": {
@@ -127,98 +202,138 @@ switch (_act) do {
         if ((count (call _ui)) > 0) exitWith { ["close"] call comspec_atak_native_fnc_zeusCentre; true };
         private _h = safeZoneH;
         private _kw = pixelW / pixelH;
+        private _gy = (_grid get "gap") * _h;
+        private _gx = _gy * _kw;
+        private _row = (_grid get "row") * _h;
+        private _w = (_grid get "width") * _h * _kw;
         private _right = ["edge"] call comspec_atak_native_fnc_zeusCentre;
-        private _w = 0.46 * _h * _kw;
-        private _p = 0.004 * _h;
-        private _pw = _p * _kw;
-        private _x0 = (_right - _w - _pw) max (safeZoneX + 0.01);
-        private _yTop = safeZoneY + 0.048 * _h;
-        // Au-dessus des panneaux ZEN du bas (FPS serveur, corps) : rien sous 86 % de la hauteur.
-        private _hMax = 0.81 * _h;
-        private _nPl = { !(_x isKindOf "HeadlessClient_F") } count allPlayers;
-        private _listH = ((_nPl max 3) min 10) * 0.027 * _h + 0.006 * _h;
-        private _rowH = 0.030 * _h;
-        // En-tête, onglets, recherche, filtres, liste, [fiche], deux rangées d'actions, rappel : neuf marges.
-        private _fixed = 0.044 * _h + 2 * _rowH + 0.078 * _h + _listH + 9 * _p;
-        private _cardH = ((_hMax - _fixed) max (0.20 * _h)) min (0.40 * _h);
-        private _hPanel = (_fixed + _cardH) min _hMax;
-        _cardH = _hPanel - _fixed;
+        private _x0 = (_right - _w - _gx) max (safeZoneX + 0.01);
+        private _yTop = safeZoneY + (_grid get "top") * _h;
+        // Au-dessus des panneaux ZEN du bas (FPS serveur, corps) : rien sous le bas de la grille.
+        private _yMax = safeZoneY + (_grid get "bottom") * _h - _gy;
+        private _ix = _x0 + _gx;
+        private _iw = _w - 2 * _gx;
+        // Registre : le cadre commun puis un tableau par onglet, enfants des groupes compris.
+        private _own = createHashMapFromArray [["frame", []], ["players", []], ["server", []], ["labels", []], ["tools", []]];
         private _mk = {
-            params ["_cls", "_pos", ["_txt", ""], ["_tip", ""], ["_ev", ""], ["_grp", controlNull]];
+            params ["_who", "_cls", ["_grp", controlNull]];
             private _c = if (isNull _grp) then { _d ctrlCreate [_cls, -1] } else { _d ctrlCreate [_cls, -1, _grp] };
-            _c ctrlSetPosition _pos;
-            if (_txt isNotEqualTo "") then { _c ctrlSetText (_txt call comspec_atak_native_fnc_tr); };
-            if (_tip isNotEqualTo "") then { _c ctrlSetTooltip (_tip call comspec_atak_native_fnc_tr); };
-            if (_cls isEqualTo "COMSPEC_RscButton") then { _c ctrlSetFontHeight (0.019 * _h); };
-            _c ctrlCommit 0;
-            if (_ev isNotEqualTo "") then { _c ctrlAddEventHandler ["ButtonClick", _ev]; };
+            (_own get _who) pushBack _c;
             _c
         };
-        private _ctrls = [];
-        private _tabs = createHashMapFromArray [["players", []], ["server", []], ["labels", []], ["tools", []]];
-        private _bg = ["COMSPEC_RscPanel", [_x0, _yTop, _w, _hPanel]] call _mk;
-        _bg ctrlSetBackgroundColor [0.045, 0.055, 0.048, 1];
-        _bg ctrlCommit 0;
-        _ctrls pushBack _bg;
-        // En-tête : emblème Athena, titre, compteurs, fermeture.
-        private _y = _yTop + _p;
-        private _logoH = 0.036 * _h;
-        private _logo = ["COMSPEC_RscPicture", [_x0 + _pw, _y, _logoH * _kw, _logoH]] call _mk;
-        _logo ctrlSetText "\z\comspec_atak_native\addons\main\data\logo_athena.paa";
-        _logo ctrlSetTextColor [1, 1, 1, 1];
-        _logo ctrlCommit 0;
-        _ctrls pushBack _logo;
-        private _closeW = 0.030 * _h * _kw;
-        private _head = ["COMSPEC_RscStructuredText", [_x0 + 2 * _pw + _logoH * _kw, _y - 0.002 * _h, _w - 4 * _pw - _logoH * _kw - _closeW, 0.044 * _h]] call _mk;
-        _ctrls pushBack _head;
-        private _close = ["COMSPEC_RscButton", [_x0 + _w - _pw - _closeW, _y + 0.003 * _h, _closeW, 0.030 * _h], "X", "Fermer le Centre Zeus (Ctrl+Z, selon vos touches)", "['close'] call comspec_atak_native_fnc_zeusCentre;"] call _mk;
-        _ctrls pushBack _close;
-        _y = _y + 0.044 * _h;
-        // Onglets.
-        private _tb = createHashMap;
-        private _tw = (_w - 5 * _pw) / 4;
-        {
-            _x params ["_k", "_lbl", "_short", "_tip"];
-            private _c = ["COMSPEC_RscButton", [_x0 + _pw + _forEachIndex * (_tw + _pw), _y, _tw, _rowH]] call _mk;
-            ["fit", [_c, _lbl, _short, _tip]] call comspec_atak_native_fnc_zeusCentre;
-            _c setVariable ["k", _k];
-            _c ctrlAddEventHandler ["ButtonClick", { params ["_c"]; ["tab", [_c getVariable "k"]] call comspec_atak_native_fnc_zeusCentre; }];
-            _tb set [_k, _c];
-            _ctrls pushBack _c;
-        } forEach [
+        private _btn = {
+            params ["_who", "_long", "_short", "_tip", "_code", ["_cls", "COMSPEC_RscButton"], ["_grp", controlNull]];
+            private _c = [_who, _cls, _grp] call _mk;
+            _c ctrlSetText (_long call _tr);
+            _c ctrlSetFontHeight ((_grid get "font") * _h);
+            _c setVariable ["fit", [_long, _short, _tip]];
+            if (_code isNotEqualTo "") then { _c ctrlAddEventHandler ["ButtonClick", _code]; };
+            _c
+        };
+        private _stx = {
+            params ["_who", "_html", ["_grp", controlNull]];
+            private _c = [_who, "COMSPEC_RscStructuredText", _grp] call _mk;
+            _c ctrlSetStructuredText parseText _html;
+            _c
+        };
+        private _dim = { format ["<t size='0.75' color='#8a9a93'>%1</t>", _this call _tr] };
+        // Tables des boutons : libellé long, libellé court, infobulle ; jamais vides (AtakZeusCentreAssetTest).
+        private _tblTabs = [
             ["players", "JOUEURS", "JOUEURS", "État des ATAK des joueurs, fiche et actions"],
             ["server", "SERVEUR", "SERVEUR", "État du serveur : FPS, versions, liaison Athena, paquet d'identité, maillage, journal"],
-            ["labels", "ÉTIQUETTES", "ÉTIQ.", "Étiquettes 3D au-dessus des joueurs : mode compact ou détaillé, champs affichés"],
+            ["labels", "ÉTIQUETTES", "ÉTIQ.", "Étiquettes 3D au-dessus des joueurs : oui ou non, mode compact ou détaillé, champs affichés"],
             ["tools", "OUTILS", "OUTILS", "Fenêtres du mod et du SSE, raccourcis"]
         ];
-        _y = _y + _rowH + _p;
-        private _yBody = _y;
-        private _bodyH = _hPanel - (_yBody - _yTop) - _p;
-        // --- Onglet JOUEURS -------------------------------------------------------------------------------------------
-        private _search = ["COMSPEC_RscEdit", [_x0 + _pw, _y, _w - 2 * _pw, 0.028 * _h], "", "Recherche : pseudo, indicatif ou groupe"] call _mk;
-        _search ctrlSetFontHeight (0.019 * _h);
-        _search ctrlAddEventHandler ["KeyUp", { ["search"] call comspec_atak_native_fnc_zeusCentre; }];
-        (_tabs get "players") pushBack _search;
-        _y = _y + 0.028 * _h + _p;
-        // Filtres : une rangée de six ; libellé court si la place manque.
-        private _fb = createHashMap;
-        private _fw = (_w - 7 * _pw) / 6;
-        {
-            _x params ["_k", "_lbl", "_short", "_tip"];
-            private _c = ["COMSPEC_RscButton", [_x0 + _pw + _forEachIndex * (_fw + _pw), _y, _fw, 0.028 * _h]] call _mk;
-            _c setVariable ["k", _k];
-            _c setVariable ["lbl", [_lbl, _short, _tip]];
-            _c ctrlAddEventHandler ["ButtonClick", { params ["_c"]; ["filter", [_c getVariable "k"]] call comspec_atak_native_fnc_zeusCentre; }];
-            _fb set [_k, _c];
-            (_tabs get "players") pushBack _c;
-        } forEach [
+        private _tblFilters = [
             ["all", "TOUS", "TOUS", "Tous les joueurs"], ["link", "LIÉS", "LIÉS", "Session Athena ouverte (relevé reçu)"],
             ["nolink", "HORS LIAISON", "HORS", "Sans session Athena au dernier relevé reçu"],
             ["relay", "RELAIS", "REL.", "Porte une radio qui relaie, a posé une radio ou est à bord d'une passerelle"],
             ["spk", "HAUT-PARLEUR", "HP", "Musique en haut-parleur"], ["alert", "ALERTES", "ALERT.", "PANIQUE, téléphone détruit, code bloqué, SIM en secours, relevé jamais reçu"]
         ];
-        _y = _y + 0.028 * _h + _p;
-        private _list = ["COMSPEC_RscListBoxDense", [_x0 + _pw, _y, _w - 2 * _pw, _listH]] call _mk;
+        // Actions : « sel » = le joueur choisi dans la liste ; « tgt » = la cible choisie (joueur, sélection Zeus, joueurs affichés).
+        private _tblActions = [
+            ["CAMÉRA", "CAM", "Place la caméra Zeus sur le joueur choisi (double-clic dans la liste)", "['camera'] call comspec_atak_native_fnc_zeusCentre;", "sel"],
+            ["COUPER LE SON", "MUET", "Coupe les haut-parleurs de la cible", "['act', ['mute_on']] call comspec_atak_native_fnc_zeusCentre;", "tgt"],
+            ["RÉTABLIR LE SON", "SON", "Rétablit les haut-parleurs de la cible", "['act', ['mute_off']] call comspec_atak_native_fnc_zeusCentre;", "tgt"],
+            ["RETIRER LE CODE", "CODE", "Retire le code du téléphone de la cible et remet ses essais à zéro", "['pin'] call comspec_atak_native_fnc_zeusCentre;", "tgt"],
+            ["FICHE ADMIN", "ADMIN", "Ouvre la fiche du joueur choisi dans l'app Admin du téléphone", "['tool', [{ ['admin'] call comspec_atak_native_fnc_zeusCentre; }]] call comspec_atak_native_fnc_zeusCentre;", "sel"]
+        ];
+        private _tblModes = [
+            ["compact", "COMPACT", "COMPACT", "Indicatif et nom, puis seulement ce qui cloche"],
+            ["detailed", "DÉTAILLÉ", "DÉTAILLÉ", "Une ligne par champ coché, joueurs à moins de 400 m"]
+        ];
+        // Champs des étiquettes 3D (clés de _labelCfg, lues par « refresh ») : nom et description avec exemple.
+        private _tblFields = [
+            ["name", "Indicatif et nom", "Ex. : TA1 · Adam. Toujours affiché en mode compact."],
+            ["phone", "Téléphone", "Rangé, porté ou en main ; éteint ou écran fêlé. Ex. : Tél. en main."],
+            ["bat", "Batterie", "Ex. : 64 %, en orange sous 20 %."],
+            ["net", "Signal et maillage", "Barres, nœud du maillage, relais. Ex. : Signal 3 · nœud 2 · 140 m."],
+            ["athena", "Liaison Athena", "Ex. : Athena : connecté, hors liaison ou jamais lié."],
+            ["acct", "Compte Athena", "Compte relié, après la liaison. Ex. : Athena : connecté · TA1-Adam."],
+            ["ver", "Version du mod", "Ex. : Mod 4.4.0 · à jour ; en orange s'il n'est pas à jour."],
+            ["tx", "Haut-parleur, radio, drone", "Ex. : HAUT-PARLEUR · RADIO EN ÉMISSION · pilote de drone."],
+            ["alerts", "Alertes", "Ex. : PANIQUE, TÉLÉPHONE DÉTRUIT, CODE BLOQUÉ. Aussi en mode compact."]
+        ];
+        private _tblTools = [
+            ["CONFIGURER L'OBJET", "CONFIGURER", "Fenêtre de l'objet sélectionné dans Zeus : écran, preuve, caisse (aussi par double-clic).", "['request', [((curatorSelected param [0, []]) select { !(_x isKindOf 'CAManBase') }) param [0, objNull]]] call comspec_atak_native_fnc_zeusObject;", true],
+            ["ASSISTANT ATAK", "ASSISTANT", "Assistant de configuration du réalisme et du réseau, un choix expliqué à la fois.", "['open'] call comspec_atak_native_fnc_setupWizard;", true]
+        ];
+        if (!isNil "comspec_sse_fnc_aiConfigOpen") then { _tblTools pushBack ["IA DE LA ZONE (SSE)", "IA (SSE)", "Configuration des IA : profil Athena, identité, papiers, comportement, camp.", "[(curatorSelected param [0, []]) select { _x isKindOf 'CAManBase' && {!isPlayer _x} }, screenToWorld [0.5, 0.5]] call comspec_sse_fnc_aiConfigOpen;", true]; };
+        if (!isNil "comspec_sse_fnc_editor") then { _tblTools pushBack ["ÉDITEUR SSE", "ÉDITEUR", "Éditeur de renseignement au centre de l'écran : sites, preuves, entités.", "['open', [screenToWorld [0.5, 0.5], objNull]] call comspec_sse_fnc_editor;", true]; };
+        if (!isNil "comspec_sse_fnc_chartOpen") then { _tblTools pushBack ["TABLEAU DES LIENS", "LIENS", "Graphe des personnes, organisations, objets et données, vue Zeus.", "[true] call comspec_sse_fnc_chartOpen;", true]; };
+        if (!isNil "comspec_sse_fnc_openGuide") then { _tblTools pushBack ["MANUEL SSE", "MANUEL", "Manuel du Zeus pour le SSE.", "['Zeus'] call comspec_sse_fnc_openGuide;", true]; };
+        if (!isNil "comspec_atak_native_fnc_devMeshOverlay") then { _tblTools pushBack ["GRAPHE DU MAILLAGE (3D)", "MAILLAGE", "Superposition 3D du graphe du maillage de votre camp (lecture seule, graphe du serveur).", "uiNamespace setVariable ['COMSPEC_ATAK_MeshZeusSide', str side group player]; ['toggle'] call comspec_atak_native_fnc_devMeshOverlay;", false]; };
+
+        // --- Cadre commun : fond, emblème Athena, titre et compteurs, fermeture, onglets, ligne d'état ------------------------
+        private _bg = ["frame", "COMSPEC_RscPanel"] call _mk;
+        _bg ctrlSetPosition [_x0, _yTop, _w, 0.2 * _h];
+        _bg ctrlSetBackgroundColor [0.045, 0.055, 0.048, 1];
+        _bg ctrlCommit 0;
+        private _logo = ["frame", "COMSPEC_RscPicture"] call _mk;
+        _logo ctrlSetText "\z\comspec_atak_native\addons\main\data\logo_athena.paa";
+        _logo ctrlSetTextColor [1, 1, 1, 1];
+        // Titre posé dès l'ouverture (même hauteur que le titre complet) : le cadre ne bouge plus ensuite.
+        private _head = ["frame", format ["<t size='1.05' font='RobotoCondensedBold'>%1</t><br/>%2", ("CENTRE ZEUS") call _tr, ("Relevé demandé…") call _dim]] call _stx;
+        private _close = ["frame", "X", "X", "Fermer le Centre Zeus (Ctrl+Z, selon vos touches)", "['close'] call comspec_atak_native_fnc_zeusCentre;"] call _btn;
+        private _tb = createHashMap;
+        private _tabCells = [];
+        {
+            _x params ["_k", "_lbl", "_short", "_tip"];
+            private _c = ["frame", _lbl, _short, _tip, ""] call _btn;
+            _c setVariable ["k", _k];
+            _c ctrlAddEventHandler ["ButtonClick", { params ["_c"]; ["tab", [_c getVariable "k"]] call comspec_atak_native_fnc_zeusCentre; }];
+            _tb set [_k, _c];
+            _tabCells pushBack [_c, _forEachIndex, 1];
+        } forEach _tblTabs;
+        private _say = ["frame", ""] call _stx;
+        _say ctrlShow false;
+        private _logoH = (_grid get "logo") * _h;
+        private _frameRows = [
+            [(_grid get "head") * _h, 0.07 * _h, [-(_logoH * _kw), 1, -(_row * _kw)], [[_logo, 0, 1, _logoH], [_head, 1, 1], [_close, 2, 1, _row]]],
+            [_row, _row, [1, 1, 1, 1], _tabCells]
+        ];
+        private _yBody = _yTop + _gy + ([_frameRows, _ix, _yTop + _gy, _iw] call _place) + _gy;
+
+        // --- JOUEURS : recherche, filtres, liste, fiche (corps) ; actions, action du catalogue, rappel (pied) -----------------
+        private _pBody = ["players", "COMSPEC_RscControlsGroup"] call _mk;
+        private _search = ["players", "COMSPEC_RscEdit", _pBody] call _mk;
+        _search ctrlSetFontHeight ((_grid get "font") * _h);
+        _search ctrlSetTooltip (("Recherche : pseudo, indicatif ou groupe") call _tr);
+        _search ctrlAddEventHandler ["KeyUp", { ["search"] call comspec_atak_native_fnc_zeusCentre; }];
+        private _fb = createHashMap;
+        private _fCells = [];
+        {
+            _x params ["_k", "_lbl", "_short", "_tip"];
+            private _c = ["players", _lbl, _short, _tip, "", "COMSPEC_RscButton", _pBody] call _btn;
+            _c setVariable ["k", _k];
+            _c setVariable ["lbl", [_lbl, _short, _tip]];
+            _c ctrlAddEventHandler ["ButtonClick", { params ["_c"]; ["filter", [_c getVariable "k"]] call comspec_atak_native_fnc_zeusCentre; }];
+            _fb set [_k, _c];
+            _fCells pushBack [_c, _forEachIndex % 3, 1];
+        } forEach _tblFilters;
+        private _nPl = { !(_x isKindOf "HeadlessClient_F") } count allPlayers;
+        private _listH = (((_nPl max 3) min 10) * (_grid get "listRow") + 0.006) * _h;
+        private _list = ["players", "COMSPEC_RscListBoxDense", _pBody] call _mk;
         _list ctrlSetBackgroundColor [0.025, 0.030, 0.027, 1];
         _list ctrlAddEventHandler ["LBSelChanged", {
             params ["_c", "_i"];
@@ -226,147 +341,129 @@ switch (_act) do {
             ["select", [_c lbData _i]] call comspec_atak_native_fnc_zeusCentre;
         }];
         _list ctrlAddEventHandler ["LBDblClick", { ["camera"] call comspec_atak_native_fnc_zeusCentre; }];
-        (_tabs get "players") pushBack _list;
-        // État vide de la liste, posé dessus : désactivé pour laisser passer la souris, montré seulement sans ligne.
-        private _empty = ["COMSPEC_RscStructuredText", [_x0 + 2 * _pw, _y + 0.006 * _h, _w - 4 * _pw, _listH - 0.012 * _h]] call _mk;
+        // État vide de la liste, posé dessus exprès (« overlay ») : désactivé pour laisser passer la souris, montré sans ligne.
+        private _empty = ["players", "", _pBody] call _stx;
         _empty ctrlEnable false;
-        (_tabs get "players") pushBack _empty;
-        _y = _y + _listH + _p;
-        private _grp = ["COMSPEC_RscControlsGroup", [_x0 + _pw, _y, _w - 2 * _pw, _cardH]] call _mk;
-        (_tabs get "players") pushBack _grp;
-        private _card = ["COMSPEC_RscStructuredText", [0, 0, _w - 2 * _pw - 0.018 * _h * _kw, _cardH], "", "", "", _grp] call _mk;
-        _y = _y + _cardH + _p;
-        // Actions rapides sur le joueur choisi.
-        private _qw = (_w - 6 * _pw) / 5;
-        {
-            _x params ["_t", "_short", "_tip", "_code"];
-            private _c = ["COMSPEC_RscButton", [_x0 + _pw + _forEachIndex * (_qw + _pw), _y, _qw, _rowH], "", "", _code] call _mk;
-            ["fit", [_c, _t, _short, _tip]] call comspec_atak_native_fnc_zeusCentre;
-            (_tabs get "players") pushBack _c;
-        } forEach [
-            ["CAMÉRA", "CAM", "Place la caméra Zeus sur le joueur (double-clic dans la liste)", "['camera'] call comspec_atak_native_fnc_zeusCentre;"],
-            ["COUPER LE SON", "MUET", "Coupe ses haut-parleurs", "['act', ['mute_on']] call comspec_atak_native_fnc_zeusCentre;"],
-            ["RÉTABLIR LE SON", "SON", "Rétablit ses haut-parleurs", "['act', ['mute_off']] call comspec_atak_native_fnc_zeusCentre;"],
-            ["RETIRER LE CODE", "CODE", "Retire le code de son téléphone et remet ses essais à zéro", "['pin'] call comspec_atak_native_fnc_zeusCentre;"],
-            ["FICHE ADMIN", "ADMIN", "Ouvre sa fiche dans l'app Admin du téléphone", "['tool', [{ ['admin'] call comspec_atak_native_fnc_zeusCentre; }]] call comspec_atak_native_fnc_zeusCentre;"]
+        _empty setVariable ["overlay", true];
+        private _cardGrp = ["players", "COMSPEC_RscControlsGroup", _pBody] call _mk;
+        private _card = ["players", "", _cardGrp] call _stx;
+        _cardGrp setVariable ["inner", _card];
+        private _pRows = [
+            [_row, _row, [1], [[_search, 0, 1]]],
+            // Filtres sur deux rangées de trois : « HORS LIAISON (12) » tient en entier.
+            [_row, _row, [1, 1, 1], _fCells select [0, 3]],
+            [_row, _row, [1, 1, 1], _fCells select [3, 3]],
+            [_listH, _listH, [1], [[_list, 0, 1], [_empty, 0, 1]]],
+            [(_grid get "cardMin") * _h, (_grid get "cardMax") * _h, [1], [[_cardGrp, 0, 1]], true]
         ];
-        _y = _y + _rowH + _p;
-        // Catalogue des actions, cible, application.
-        private _catW = (_w - 4 * _pw) * 0.50;
-        private _tgtW = (_w - 4 * _pw) * 0.30;
-        private _apW = (_w - 4 * _pw) * 0.20;
-        private _cat = ["COMSPEC_RscCombo", [_x0 + _pw, _y, _catW, _rowH], "", "Action de fn_zeusMenu à appliquer à la cible"] call _mk;
-        _cat ctrlSetFontHeight (0.018 * _h);
+        private _needSel = [];
+        private _needTgt = [];
+        private _aCells = [];
         {
-            _x params ["_id", "_g", "_lbl", "_help", ["_modOnly", false]];
+            _x params ["_lbl", "_short", "_tip", "_code", "_need"];
+            private _c = ["players", _lbl, _short, _tip, _code] call _btn;
+            ([_needTgt, _needSel] select (_need isEqualTo "sel")) pushBack _c;
+            _aCells pushBack [_c, _forEachIndex, 1];
+        } forEach _tblActions;
+        private _cat = ["players", "COMSPEC_RscCombo"] call _mk;
+        _cat ctrlSetFontHeight (0.018 * _h);
+        _cat ctrlSetTooltip (("Action à appliquer à la cible") call _tr);
+        {
+            _x params ["_id", "_g", "_lbl", "", ["_modOnly", false]];
             if (!_modOnly) then {
-                private _i = _cat lbAdd format ["%1 : %2", _g call _trZ, _lbl call _trZ];
+                private _i = _cat lbAdd format ["%1 : %2", _g call _tr, _lbl call _tr];
                 _cat lbSetData [_i, _id];
             };
         } forEach (["catalog"] call comspec_atak_native_fnc_zeusMenu);
         _cat lbSetCurSel 0;
-        (_tabs get "players") pushBack _cat;
-        private _tgt = ["COMSPEC_RscCombo", [_x0 + 2 * _pw + _catW, _y, _tgtW, _rowH], "", "À qui s'applique l'action"] call _mk;
+        private _tgt = ["players", "COMSPEC_RscCombo"] call _mk;
         _tgt ctrlSetFontHeight (0.018 * _h);
+        _tgt ctrlSetTooltip (("À qui s'applique l'action") call _tr);
         {
             _x params ["_k", "_lbl"];
-            private _i = _tgt lbAdd (_lbl call _trZ);
+            private _i = _tgt lbAdd (_lbl call _tr);
             _tgt lbSetData [_i, _k];
         } forEach [["sel", "Joueur choisi"], ["zeus", "Sélection Zeus"], ["list", "Joueurs affichés"]];
         _tgt lbSetCurSel 0;
-        (_tabs get "players") pushBack _tgt;
-        private _ap = ["COMSPEC_RscButtonPrimary", [_x0 + 3 * _pw + _catW + _tgtW, _y, _apW, _rowH], "", "", "private _c = (uiNamespace getVariable 'COMSPEC_ATAK_ZeusCentreUi') get 'cat'; ['act', [_c lbData (lbCurSel _c)]] call comspec_atak_native_fnc_zeusCentre;"] call _mk;
-        ["fit", [_ap, "APPLIQUER", "OK", "Applique l'action choisie à la cible (joueur choisi, sélection Zeus ou joueurs affichés)"]] call comspec_atak_native_fnc_zeusCentre;
-        (_tabs get "players") pushBack _ap;
-        _y = _y + _rowH + _p;
-        private _keys = ["COMSPEC_RscStructuredText", [_x0 + _pw, _y, _w - 2 * _pw, 0.022 * _h]] call _mk;
-        _keys ctrlSetStructuredText parseText (("<t size='0.7' color='#8a9a93'>Clic droit (ZEN) : ATAK · Contrôle Zeus, ATAK · Relais, ATAK · Maillage</t>") call _trZ);
-        (_tabs get "players") pushBack _keys;
-        // --- Onglet SERVEUR -------------------------------------------------------------------------------------------
-        _y = _yBody;
-        private _srvGrp = ["COMSPEC_RscControlsGroup", [_x0 + _pw, _y, _w - 2 * _pw, _bodyH - _rowH - _p]] call _mk;
-        (_tabs get "server") pushBack _srvGrp;
-        private _srvTxt = ["COMSPEC_RscStructuredText", [0, 0, _w - 2 * _pw - 0.018 * _h * _kw, _bodyH - _rowH - _p], "", "", "", _srvGrp] call _mk;
-        private _sbW = (_w - 3 * _pw) / 2;
-        private _sb1 = ["COMSPEC_RscButton", [_x0 + _pw, _yTop + _hPanel - _p - _rowH, _sbW, _rowH], "", "", "missionNamespace setVariable ['COMSPEC_ATAK_ZeusSrvAsked', -100]; ['refresh'] call comspec_atak_native_fnc_zeusCentre;"] call _mk;
-        ["fit", [_sb1, "ACTUALISER", "MAJ", "Redemande l'état au serveur (sinon toutes les 5 s, onglet ouvert seulement)"]] call comspec_atak_native_fnc_zeusCentre;
-        (_tabs get "server") pushBack _sb1;
-        private _sb2 = ["COMSPEC_RscButton", [_x0 + 2 * _pw + _sbW, _yTop + _hPanel - _p - _rowH, _sbW, _rowH], "", "", "copyToClipboard (missionNamespace getVariable ['COMSPEC_ATAK_ZeusSrvText', '']); ['feedback', ['État du serveur copié dans le presse-papiers.']] call comspec_atak_native_fnc_zeusMenu;"] call _mk;
-        ["fit", [_sb2, "COPIER", "COPIER", "Copie l'état du serveur en texte (pour un rapport)"]] call comspec_atak_native_fnc_zeusCentre;
-        (_tabs get "server") pushBack _sb2;
-        // --- Onglet ÉTIQUETTES ----------------------------------------------------------------------------------------
-        _y = _yBody;
+        _tgt ctrlAddEventHandler ["LBSelChanged", { ["card"] call comspec_atak_native_fnc_zeusCentre; }];
+        private _ap = ["players", "APPLIQUER", "OK", "Applique l'action choisie à la cible (joueur choisi, sélection Zeus ou joueurs affichés)", "private _c = (uiNamespace getVariable 'COMSPEC_ATAK_ZeusCentreUi') get 'cat'; ['act', [_c lbData (lbCurSel _c)]] call comspec_atak_native_fnc_zeusCentre;", "COMSPEC_RscButtonPrimary"] call _btn;
+        _needTgt pushBack _ap;
+        private _keys = ["players", ("Clic droit (ZEN) : ATAK · Contrôle Zeus, ATAK · Relais, ATAK · Maillage") call _dim] call _stx;
+        private _pFoot = [
+            [_row, _row, [1, 1, 1, 1, 1], _aCells],
+            [_row, _row, [5, 3, 2], [[_cat, 0, 1], [_tgt, 1, 1], [_ap, 2, 1]]],
+            [0.018 * _h, 0.05 * _h, [1], [[_keys, 0, 1]]]
+        ];
+
+        // --- SERVEUR : état du serveur (corps qui défile) ; actualiser, copier (pied) ---------------------------------------
+        private _sBody = ["server", "COMSPEC_RscControlsGroup"] call _mk;
+        private _srvTxt = ["server", "", _sBody] call _stx;
+        private _sb1 = ["server", "ACTUALISER", "MAJ", "Redemande l'état au serveur (sinon toutes les 5 s, onglet ouvert seulement)", "missionNamespace setVariable ['COMSPEC_ATAK_ZeusSrvAsked', -100]; ['refresh'] call comspec_atak_native_fnc_zeusCentre;"] call _btn;
+        private _sb2 = ["server", "COPIER", "COPIER", "Copie l'état du serveur en texte (pour un rapport)", "copyToClipboard (missionNamespace getVariable ['COMSPEC_ATAK_ZeusSrvText', '']); ['say', ['État du serveur copié dans le presse-papiers.']] call comspec_atak_native_fnc_zeusCentre;"] call _btn;
+        private _sRows = [[0.06 * _h, 100, [1], [[_srvTxt, 0, 1]]]];
+        private _sFoot = [[_row, _row, [1, 1], [[_sb1, 0, 1], [_sb2, 1, 1]]]];
+
+        // --- ÉTIQUETTES : oui / non, mode, champs cochés avec exemple, légende (corps qui défile) ---------------------------
+        private _lBody = ["labels", "COMSPEC_RscControlsGroup"] call _mk;
         private _lb = createHashMap;
-        private _lbOn = ["COMSPEC_RscButton", [_x0 + _pw, _y, _w - 2 * _pw, _rowH], "", "", "['labels'] call comspec_atak_native_fnc_zeusCentre;"] call _mk;
-        _lb set ["on", _lbOn];
-        (_tabs get "labels") pushBack _lbOn;
-        _y = _y + _rowH + _p;
-        private _mw = (_w - 3 * _pw) / 2;
+        // Ligne à cocher : case (bascule), nom en gras et description à côté ; un clic sur le texte bascule aussi (« overlay »).
+        private _toggle = {
+            params ["_k", "_lbl", "_desc"];
+            private _cb = ["labels", "COMSPEC_RscCheckbox", _lBody] call _mk;
+            _cb setVariable ["k", _k];
+            _cb ctrlSetTooltip (_desc call _tr);
+            _cb ctrlAddEventHandler ["CheckedChanged", {
+                params ["_c"];
+                if (uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreFill", false]) exitWith {};
+                ["labelCfg", [_c getVariable "k", cbChecked _c]] call comspec_atak_native_fnc_zeusCentre;
+            }];
+            private _tx = ["labels", format ["<t size='0.85' font='RobotoCondensedBold'>%1</t>   %2", _lbl call _tr, _desc call _dim], _lBody] call _stx;
+            private _ov = ["labels", "COMSPEC_RscButtonOverlay", _lBody] call _mk;
+            _ov setVariable ["k", _k];
+            _ov setVariable ["overlay", true];
+            _ov ctrlSetTooltip (_desc call _tr);
+            _ov ctrlAddEventHandler ["ButtonClick", { params ["_c"]; ["labelCfg", [_c getVariable "k"]] call comspec_atak_native_fnc_zeusCentre; }];
+            _lb set [_k, [_cb, _tx, _ov]];
+            [_row, 0.08 * _h, [-(_row * _kw), 1], [[_cb, 0, 1, _row], [_tx, 1, 1], [_ov, 1, 1]]]
+        };
+        private _lRows = [["on", "Étiquettes 3D", "Au-dessus des joueurs, panneau ouvert seulement."] call _toggle];
+        private _mCells = [];
         {
-            _x params ["_k", "_lbl", "_tip"];
-            private _c = ["COMSPEC_RscButton", [_x0 + _pw + _forEachIndex * (_mw + _pw), _y, _mw, _rowH], "", "", format ["['labelCfg', ['mode', '%1']] call comspec_atak_native_fnc_zeusCentre;", _k]] call _mk;
-            ["fit", [_c, _lbl, "", _tip]] call comspec_atak_native_fnc_zeusCentre;
+            _x params ["_k", "_lbl", "_short", "_tip"];
+            private _c = ["labels", _lbl, _short, _tip, format ["['labelCfg', ['mode', '%1']] call comspec_atak_native_fnc_zeusCentre;", _k], "COMSPEC_RscButton", _lBody] call _btn;
             _lb set ["mode_" + _k, _c];
-            (_tabs get "labels") pushBack _c;
-        } forEach [
-            ["compact", "COMPACT", "Indicatif et nom, puis seulement ce qui cloche (alerte, hors liaison, téléphone éteint ou détruit, batterie faible, mod pas à jour, haut-parleur ou radio en émission). Exemple pour Adam, indicatif TA1, sans liaison Athena, deux lignes, le nom puis HORS LIAISON."],
-            ["detailed", "DÉTAILLÉ", "Toutes les lignes cochées ci-dessous, pour chaque joueur à moins de 400 m. Exemple pour Adam, cinq lignes, le nom, le téléphone et la batterie, le signal et le nœud du maillage, la liaison Athena et le compte, la version du mod."]
-        ];
-        _y = _y + _rowH + _p;
-        private _cw = (_w - 4 * _pw) / 3;
+            _mCells pushBack [_c, _forEachIndex, 1];
+        } forEach _tblModes;
+        _lRows pushBack [_row, _row, [1, 1], _mCells];
+        private _modeTxt = ["labels", "", _lBody] call _stx;
+        _lRows pushBack [0.02 * _h, 0.12 * _h, [1], [[_modeTxt, 0, 1]]];
+        { _lRows pushBack (_x call _toggle); } forEach _tblFields;
+        private _lbHelp = ["labels", ("Étiquettes dessinées au-dessus des joueurs, panneau ouvert seulement, taille constante à l'écran. Un équipage = une étiquette. Au-delà de 400 m, seul le point reste (les alertes restent écrites). Vert : tout va bien ; orange : à surveiller ; rouge : alerte ; gris : relevé en attente. Réglages gardés dans votre profil.") call _dim, _lBody] call _stx;
+        _lRows pushBack [0.02 * _h, 0.2 * _h, [1], [[_lbHelp, 0, 1]]];
+
+        // --- OUTILS : un bouton et sa description par fenêtre, rappel (corps qui défile) ------------------------------------
+        private _tBody = ["tools", "COMSPEC_RscControlsGroup"] call _mk;
+        private _tRows = [];
+        private _toolRow = (_grid get "toolRow") * _h;
         {
-            _x params ["_k", "_lbl", "_tip"];
-            private _c = ["COMSPEC_RscButton", [_x0 + _pw + (_forEachIndex % 3) * (_cw + _pw), _y + (floor (_forEachIndex / 3)) * (_rowH + _p), _cw, _rowH], "", "", format ["['labelCfg', ['%1']] call comspec_atak_native_fnc_zeusCentre;", _k]] call _mk;
-            _c setVariable ["lbl", [_lbl, _tip]];
-            _lb set [_k, _c];
-            (_tabs get "labels") pushBack _c;
-        } forEach [
-            ["name", "Indicatif et nom", "Indicatif tactique et pseudo du joueur (toujours en mode compact)"],
-            ["phone", "Téléphone", "Écran rangé, porté ou en main ; allumé, éteint, fêlé ou détruit"],
-            ["bat", "Batterie", "Niveau de batterie en %"],
-            ["net", "Signal et maillage", "Barres de signal, nœud du maillage et distance à la passerelle"],
-            ["athena", "Liaison Athena", "Connecté, hors liaison, jamais lié"],
-            ["acct", "Compte Athena", "Indicatif ou pseudo du compte Athena relié"],
-            ["ver", "Version du mod", "Version du mod du joueur, à jour ou pas par rapport au serveur"],
-            ["tx", "Haut-parleur et radio", "Musique en haut-parleur, radio en émission"],
-            ["alerts", "Alertes", "PANIQUE, téléphone détruit, code bloqué, SIM en secours"]
-        ];
-        _y = _y + 3 * (_rowH + _p);
-        private _lbHelp = ["COMSPEC_RscStructuredText", [_x0 + _pw, _y, _w - 2 * _pw, _bodyH - (_y - _yBody)]] call _mk;
-        _lbHelp ctrlSetStructuredText parseText (("<t size='0.8' color='#8a9a93'>Étiquettes dessinées au-dessus des joueurs, panneau ouvert seulement, taille constante à l'écran. Un équipage = une étiquette. Au-delà de 400 m, seul le point reste (les alertes restent écrites). Vert : tout va bien ; orange : à surveiller ; rouge : alerte ; gris : relevé en attente. Réglages gardés dans votre profil.</t>") call _trZ);
-        (_tabs get "labels") pushBack _lbHelp;
-        // --- Onglet OUTILS --------------------------------------------------------------------------------------------
-        _y = _yBody;
-        private _tools = [
-            ["CONFIGURER L'OBJET", "CONFIGURER", "Fenêtre de l'objet sélectionné dans Zeus : écran, preuve, caisse (aussi par double-clic).", "['request', [((curatorSelected param [0, []]) select { !(_x isKindOf 'CAManBase') }) param [0, objNull]]] call comspec_atak_native_fnc_zeusObject;", true],
-            ["ASSISTANT ATAK", "ASSISTANT", "Assistant de configuration du réalisme et du réseau, un choix expliqué à la fois.", "['open'] call comspec_atak_native_fnc_setupWizard;", true]
-        ];
-        if (!isNil "comspec_sse_fnc_aiConfigOpen") then { _tools pushBack ["IA DE LA ZONE (SSE)", "IA (SSE)", "Configuration des IA : profil Athena, identité, papiers, comportement, camp.", "[(curatorSelected param [0, []]) select { _x isKindOf 'CAManBase' && {!isPlayer _x} }, screenToWorld [0.5, 0.5]] call comspec_sse_fnc_aiConfigOpen;", true]; };
-        if (!isNil "comspec_sse_fnc_editor") then { _tools pushBack ["ÉDITEUR SSE", "ÉDITEUR", "Éditeur de renseignement au centre de l'écran : sites, preuves, entités.", "['open', [screenToWorld [0.5, 0.5], objNull]] call comspec_sse_fnc_editor;", true]; };
-        if (!isNil "comspec_sse_fnc_chartOpen") then { _tools pushBack ["TABLEAU DES LIENS", "LIENS", "Graphe des personnes, organisations, objets et données, vue Zeus.", "[true] call comspec_sse_fnc_chartOpen;", true]; };
-        if (!isNil "comspec_sse_fnc_openGuide") then { _tools pushBack ["MANUEL SSE", "MANUEL", "Manuel du Zeus pour le SSE.", "['Zeus'] call comspec_sse_fnc_openGuide;", true]; };
-        if (!isNil "comspec_atak_native_fnc_devMeshOverlay") then { _tools pushBack ["GRAPHE DU MAILLAGE (3D)", "MAILLAGE", "Superposition 3D du graphe du maillage de votre camp (lecture seule, graphe du serveur).", "uiNamespace setVariable ['COMSPEC_ATAK_MeshZeusSide', str side group player]; ['toggle'] call comspec_atak_native_fnc_devMeshOverlay;", false]; };
-        private _tlW = (_w - 3 * _pw) * 0.42;
-        {
-            // Titre en _tTitle : SQF ne distingue pas _t de _trZ (la traduction), « call _trZ » plantait juste en dessous
-            // (RPT du 11/11, fn_zeusCentre.sqf ligne 357, une erreur par outil à chaque ouverture de l'onglet).
-            _x params ["_tTitle", "_short", "_desc", "_code", "_wrap"];
+            _x params ["_lbl", "_short", "_desc", "_code", "_wrap"];
             private _run = [_code, format ["['tool', [{ %1 }]] call comspec_atak_native_fnc_zeusCentre;", _code]] select _wrap;
-            private _c = ["COMSPEC_RscButton", [_x0 + _pw, _y, _tlW, 0.032 * _h], "", "", _run] call _mk;
-            ["fit", [_c, _tTitle, _short, _desc]] call comspec_atak_native_fnc_zeusCentre;
-            (_tabs get "tools") pushBack _c;
-            private _dc = ["COMSPEC_RscStructuredText", [_x0 + 2 * _pw + _tlW, _y, _w - 3 * _pw - _tlW, 0.032 * _h]] call _mk;
-            _dc ctrlSetStructuredText parseText ((format ["<t size='0.72' color='#b8c4bd'>%1</t>", _desc]) call _trZ);
-            (_tabs get "tools") pushBack _dc;
-            _y = _y + 0.032 * _h + _p;
-        } forEach _tools;
-        private _tHelp = ["COMSPEC_RscStructuredText", [_x0 + _pw, _y, _w - 2 * _pw, (_bodyH - (_y - _yBody)) max (0.03 * _h)]] call _mk;
-        _tHelp ctrlSetStructuredText parseText (("<t size='0.72' color='#8a9a93'>Clic droit (ZEN) sur un joueur : ATAK · Contrôle Zeus ; sur un relais : ATAK · Relais ; sur le sol : ATAK · Maillage (brouilleurs, clés, météo radio). Les fenêtres ouvertes d'ici passent devant le centre, qui revient à leur fermeture.</t>") call _trZ);
-        (_tabs get "tools") pushBack _tHelp;
-        { _ctrls append _y; } forEach _tabs;
+            private _c = ["tools", _lbl, _short, _desc, _run, "COMSPEC_RscButton", _tBody] call _btn;
+            private _dc = ["tools", format ["<t size='0.72' color='#b8c4bd'>%1</t>", _desc call _tr], _tBody] call _stx;
+            _tRows pushBack [_toolRow, 0.09 * _h, [_grid get "tool", 1 - (_grid get "tool")], [[_c, 0, 1, _toolRow], [_dc, 1, 1]]];
+        } forEach _tblTools;
+        private _tHelp = ["tools", ("Clic droit (ZEN) sur un joueur : ATAK · Contrôle Zeus ; sur un relais : ATAK · Relais ; sur le sol : ATAK · Maillage (brouilleurs, clés, météo radio). Les fenêtres ouvertes d'ici passent devant le centre, qui revient à leur fermeture.") call _dim, _tBody] call _stx;
+        _tRows pushBack [0.02 * _h, 0.2 * _h, [1], [[_tHelp, 0, 1]]];
+
+        private _tabs = createHashMapFromArray ((_tblTabs apply { _x select 0 }) apply { [_x, _own get _x] });
+        private _all = +(_own get "frame");
+        { _all append _y; } forEach _tabs;
         uiNamespace setVariable ["COMSPEC_ATAK_ZeusCentreUi", createHashMapFromArray [
-            ["all", _ctrls], ["head", _head], ["tabs", _tabs], ["tabBtns", _tb], ["filters", _fb], ["list", _list], ["empty", _empty], ["card", _card], ["cat", _cat],
-            ["tgt", _tgt], ["grp", _grp], ["search", _search], ["srvTxt", _srvTxt], ["srvGrp", _srvGrp], ["lb", _lb], ["x0", _x0], ["w", _w]
+            ["all", _all], ["bg", _bg], ["frame", _own get "frame"], ["tabs", _tabs], ["box", [_ix, _iw, _yTop, _yBody, _yMax]],
+            ["spec", createHashMapFromArray [["players", [_pBody, _pRows, _pFoot]], ["server", [_sBody, _sRows, _sFoot]], ["labels", [_lBody, _lRows, []]], ["tools", [_tBody, _tRows, []]]]],
+            ["head", _head], ["say", _say], ["tabBtns", _tb], ["filters", _fb], ["list", _list], ["empty", _empty], ["card", _card], ["cat", _cat],
+            ["tgt", _tgt], ["grp", _cardGrp], ["search", _search], ["srvTxt", _srvTxt], ["lb", _lb], ["fields", _tblFields apply { _x select 0 }],
+            ["modeTxt", _modeTxt], ["needSel", _needSel], ["needTgt", _needTgt], ["x0", _x0], ["w", _w]
         ]];
         missionNamespace setVariable ["COMSPEC_ATAK_ZeusStateDenied", false];
         missionNamespace setVariable ["COMSPEC_ATAK_ZeusCentreLabels", missionNamespace getVariable ["comspec_atak_native_zeus_centre_3d", true]];
@@ -374,33 +471,139 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_ZeusSrvAsked", -100];
         missionNamespace setVariable ["COMSPEC_ATAK_ZeusCentreHidden", false];
         uiNamespace setVariable ["COMSPEC_ATAK_ZeusCentreLines", []];
-        ["tab", [uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreTab", "players"]]] call comspec_atak_native_fnc_zeusCentre;
         ["refresh"] call comspec_atak_native_fnc_zeusCentre;
-        missionNamespace setVariable ["COMSPEC_ATAK_ZeusCentrePfh", [{ ["refresh"] call comspec_atak_native_fnc_zeusCentre; }, 2] call CBA_fnc_addPerFrameHandler];
         ["labels", [true]] call comspec_atak_native_fnc_zeusCentre;
+        ["tab", [uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreTab", "players"]]] call comspec_atak_native_fnc_zeusCentre;
+        missionNamespace setVariable ["COMSPEC_ATAK_ZeusCentrePfh", [{ ["refresh"] call comspec_atak_native_fnc_zeusCentre; }, 2] call CBA_fnc_addPerFrameHandler];
         true
     };
+    case "flow": {
+        // Pose l'onglet : pied et ligne d'état mesurés, corps (extensible ou qui défile) dans la place restante, puis le fond à la
+        // hauteur de l'ensemble. Seul endroit qui pose un onglet.
+        private _st = call _ui;
+        if ((count _st) isEqualTo 0) exitWith {};
+        private _k = _arg param [0, uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreTab", "players"]];
+        private _spec = (_st get "spec") getOrDefault [_k, []];
+        if (_spec isEqualTo []) exitWith {};
+        _spec params ["_body", "_rows", "_foot"];
+        (_st get "box") params ["_ix", "_iw", "_yTop", "_yBody", "_yMax"];
+        private _gy = (_grid get "gap") * safeZoneH;
+        private _sbw = 0.012 + _gy * pixelW / pixelH;
+        private _say = _st get "say";
+        private _msg = _say getVariable ["msg", ""];
+        private _sayRows = [[0.02 * safeZoneH, 0.06 * safeZoneH, [1], [[_say, 0, 1]]]];
+        // Hauteurs du pied et de la ligne d'état, mesurées puis posées à leur place.
+        private _footH = [_foot, _ix, _yBody, _iw] call _place;
+        private _sayH = [0, [_sayRows, _ix, _yBody, _iw] call _place] select (_msg isNotEqualTo "");
+        private _avail = _yMax - _yBody - ([0, _footH + _gy] select (_footH > 0)) - ([0, _sayH + _gy] select (_sayH > 0));
+        private _flexI = _rows findIf { _x param [4, false] };
+        private _flexH = -1;
+        private _bodyH = [_rows, 0, 0, _iw] call _place;
+        if (_flexI >= 0) then {
+            (_rows select _flexI) params ["_fMin", "_fMax"];
+            _flexH = ((_avail - (_bodyH - _fMin)) max _fMin) min _fMax;
+            _bodyH = [_rows, 0, 0, _iw, _flexH] call _place;
+        };
+        // Plus haut que la place : le corps défile, la barre de défilement a sa colonne à droite.
+        if (_bodyH > _avail + 0.0005) then { _bodyH = [_rows, 0, 0, _iw - _sbw, _flexH] call _place; };
+        private _bodyShown = _bodyH min _avail;
+        _body ctrlSetPosition [_ix, _yBody, _iw, _bodyShown];
+        _body ctrlCommit 0;
+        private _yy = _yBody + _bodyShown + _gy;
+        if (_footH > 0) then { [_foot, _ix, _yy, _iw] call _place; _yy = _yy + _footH + _gy; };
+        _say ctrlShow (_msg isNotEqualTo "" && {!(missionNamespace getVariable ["COMSPEC_ATAK_ZeusCentreHidden", false])});
+        if (_sayH > 0) then { [_sayRows, _ix, _yy, _iw] call _place; _yy = _yy + _sayH + _gy; };
+        private _bg = _st get "bg";
+        private _p = ctrlPosition _bg;
+        _p set [3, _yy - _yTop];
+        _bg ctrlSetPosition _p;
+        _bg ctrlCommit 0;
+    };
     case "tab": {
-        private _t = call _ui;
-        if ((count _t) isEqualTo 0) exitWith {};
+        private _st = call _ui;
+        if ((count _st) isEqualTo 0) exitWith {};
         private _k = _arg param [0, "players"];
-        if !(_k in (_t get "tabs")) then { _k = "players"; };
+        if !(_k in (_st get "tabs")) then { _k = "players"; };
         uiNamespace setVariable ["COMSPEC_ATAK_ZeusCentreTab", _k];
         private _hidden = missionNamespace getVariable ["COMSPEC_ATAK_ZeusCentreHidden", false];
-        { private _on = _x isEqualTo _k && {!_hidden}; { _x ctrlShow _on; } forEach _y; } forEach (_t get "tabs");
-        { _y ctrlSetBackgroundColor ([[0.070, 0.082, 0.072, 1], [0.18, 0.38, 0.21, 1]] select (_x isEqualTo _k)); } forEach (_t get "tabBtns");
+        // Registre : l'onglet choisi montre les siens, tous les autres sont cachés, enfants des groupes compris.
+        { private _on = _x isEqualTo _k && {!_hidden}; { _x ctrlShow _on; } forEach _y; } forEach (_st get "tabs");
+        { _x ctrlShow !_hidden; } forEach (_st get "frame");
+        { _y ctrlSetBackgroundColor ([[0.070, 0.082, 0.072, 1], [0.18, 0.38, 0.21, 1]] select (_x isEqualTo _k)); } forEach (_st get "tabBtns");
         if (_k isEqualTo "server") then { missionNamespace setVariable ["COMSPEC_ATAK_ZeusSrvAsked", -100]; ["server"] call comspec_atak_native_fnc_zeusCentre; };
         if (_k isEqualTo "labels") then { ["labelCfg", []] call comspec_atak_native_fnc_zeusCentre; };
         if (_k isEqualTo "players") then { ["refresh", [true]] call comspec_atak_native_fnc_zeusCentre; };
+        ["flow", [_k]] call comspec_atak_native_fnc_zeusCentre;
     };
     case "hide";
     case "show": {
-        private _t = call _ui;
-        if ((count _t) isEqualTo 0) exitWith {};
+        private _st = call _ui;
+        if ((count _st) isEqualTo 0) exitWith {};
         private _on = _act isEqualTo "show";
         missionNamespace setVariable ["COMSPEC_ATAK_ZeusCentreHidden", !_on];
-        { _x ctrlShow _on; } forEach (_t get "all");
-        if (_on) then { ["tab", [uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreTab", "players"]]] call comspec_atak_native_fnc_zeusCentre; };
+        if (_on) then {
+            ["tab", [uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreTab", "players"]]] call comspec_atak_native_fnc_zeusCentre;
+        } else {
+            { _x ctrlShow false; } forEach (_st get "all");
+        };
+    };
+    case "say": {
+        // Retour d'une action, écrit dans le Centre (ligne d'état du bas, 8 s) : aucun message à l'écran hors de la fenêtre.
+        private _st = call _ui;
+        if ((count _st) isEqualTo 0) exitWith { false };
+        private _msg = _arg param [0, ""];
+        private _say = _st get "say";
+        _say setVariable ["msg", _msg];
+        _say setVariable ["until", diag_tickTime + 8];
+        _say ctrlSetStructuredText parseText (format ["<t size='0.8' color='#c9e0d1'>%1</t>", (_msg call _tr) call _esc]);
+        ["flow", []] call comspec_atak_native_fnc_zeusCentre;
+        true
+    };
+    case "audit": {
+        // Contrôle de l'onglet affiché (autotest) : bouton visible sans texte, texte coupé, deux contrôles du même parent qui se
+        // chevauchent, contrôle hors du fond. Les contrôles posés dessus exprès (« overlay ») sont ignorés. Vide : tout va bien.
+        private _st = call _ui;
+        if ((count _st) isEqualTo 0) exitWith { ["Centre Zeus fermé"] };
+        private _k = uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreTab", "players"];
+        private _bg = _st get "bg";
+        private _out = [];
+        private _vis = ((_st get "frame") + ((_st get "tabs") getOrDefault [_k, []])) select {
+            private _pg = ctrlParentControlsGroup _x;
+            ctrlShown _x && {_x isNotEqualTo _bg} && {isNull _pg || {ctrlShown _pg}}
+        };
+        private _solid = _vis select { !(_x getVariable ["overlay", false]) };
+        private _name = { [ctrlText _this, ctrlClassName _this] select ((ctrlText _this) isEqualTo "") };
+        {
+            (ctrlPosition _x) params ["", "", "_cw", "_ch"];
+            if ((ctrlType _x) isEqualTo 1) then {
+                if ((ctrlText _x) isEqualTo "") then { _out pushBack format ["bouton sans texte (%1)", ctrlClassName _x]; };
+                if ((ctrlTextWidth _x) > _cw * 1.02) then { _out pushBack format ["texte coupé : %1", ctrlText _x]; };
+            };
+            if ((ctrlType _x) isEqualTo 13 && {(ctrlTextHeight _x) > _ch * 1.05}) then { _out pushBack format ["texte coupé (%1, %2 > %3)", ctrlClassName _x, ctrlTextHeight _x, _ch]; };
+        } forEach _solid;
+        {
+            private _a = _x;
+            (ctrlPosition _a) params ["_ax", "_ay", "_aw", "_ah"];
+            for "_j" from (_forEachIndex + 1) to ((count _solid) - 1) do {
+                private _b = _solid select _j;
+                if ((ctrlParentControlsGroup _a) isEqualTo (ctrlParentControlsGroup _b)) then {
+                    (ctrlPosition _b) params ["_bx", "_by", "_bw", "_bh"];
+                    if (_ax < _bx + _bw - 0.0005 && {_bx < _ax + _aw - 0.0005} && {_ay < _by + _bh - 0.0005} && {_by < _ay + _ah - 0.0005}) then {
+                        _out pushBack format ["chevauchement : %1 / %2", _a call _name, _b call _name];
+                    };
+                };
+            };
+        } forEach _solid;
+        (ctrlPosition _bg) params ["_fx", "_fy", "_fw", "_fh"];
+        {
+            if (isNull (ctrlParentControlsGroup _x)) then {
+                (ctrlPosition _x) params ["_cx", "_cy", "_cw", "_ch"];
+                if (_cx < _fx - 0.0005 || {_cy < _fy - 0.0005} || {_cx + _cw > _fx + _fw + 0.0005} || {_cy + _ch > _fy + _fh + 0.0005}) then {
+                    _out pushBack format ["hors du panneau : %1", _x call _name];
+                };
+            };
+        } forEach _solid;
+        _out
     };
     case "tool": {
         // Replie le centre, ouvre la fenêtre, puis guette le nouvel affichage (dialogue ou fenêtre enfant) jusqu'à 2 s :
@@ -455,33 +658,51 @@ switch (_act) do {
         ["labelCfg", []] call comspec_atak_native_fnc_zeusCentre;
     };
     case "labelCfg": {
-        // ["labelCfg", [clé]] bascule un champ ; ["labelCfg", ["mode", valeur]] ; ["labelCfg", []] redessine seulement.
+        // ["labelCfg", [clé]] bascule un champ ; ["labelCfg", [clé, valeur]] le règle (mode : "compact" / "detailed") ;
+        // clé "on" : étiquettes 3D oui / non ; ["labelCfg", []] redessine seulement.
+        private _k = _arg param [0, ""];
+        if (_k isEqualTo "on") exitWith {
+            private _cur = missionNamespace getVariable ["COMSPEC_ATAK_ZeusCentreLabels", true];
+            if ((count _arg) < 2 || {(_arg select 1) isNotEqualTo _cur}) then { ["labels"] call comspec_atak_native_fnc_zeusCentre; } else { ["labelCfg", []] call comspec_atak_native_fnc_zeusCentre; };
+        };
         private _cfg = call _labelCfg;
-        if (_arg isNotEqualTo []) then {
-            private _k = _arg param [0, ""];
+        if (_k isNotEqualTo "") then {
             if ((count _arg) < 2) then { _cfg set [_k, !(_cfg getOrDefault [_k, true])]; } else { _cfg set [_k, _arg select 1]; };
             profileNamespace setVariable ["COMSPEC_ATAK_ZeusLabelCfg", (keys _cfg) apply { [_x, _cfg get _x] }];
             [] call comspec_atak_native_fnc_saveProfile;
             ["refresh", [true]] call comspec_atak_native_fnc_zeusCentre;
         };
-        private _t = call _ui;
-        if ((count _t) isEqualTo 0) exitWith {};
-        private _lb = _t get "lb";
+        private _st = call _ui;
+        if ((count _st) isEqualTo 0) exitWith {};
+        private _lb = _st get "lb";
         private _on = missionNamespace getVariable ["COMSPEC_ATAK_ZeusCentreLabels", true];
-        private _onC = _lb get "on";
-        ["fit", [_onC, ["ÉTIQUETTES 3D : NON", "ÉTIQUETTES 3D : OUI"] select _on, ["3D : NON", "3D : OUI"] select _on, "Étiquettes au-dessus des joueurs, panneau ouvert seulement"]] call comspec_atak_native_fnc_zeusCentre;
-        _onC ctrlSetBackgroundColor ([[0.070, 0.082, 0.072, 1], [0.18, 0.38, 0.21, 1]] select _on);
         private _mode = _cfg getOrDefault ["mode", "compact"];
-        { (_lb get ("mode_" + _x)) ctrlSetBackgroundColor ([[0.070, 0.082, 0.072, 1], [0.18, 0.38, 0.21, 1]] select (_x isEqualTo _mode)); } forEach ["compact", "detailed"];
+        private _detailed = _mode isEqualTo "detailed";
+        // Cases cochées selon le profil ; en compact, seules les alertes comptent : les autres champs sont grisés.
+        uiNamespace setVariable ["COMSPEC_ATAK_ZeusCentreFill", true];
+        ((_lb get "on") select 0) cbSetChecked _on;
         {
-            private _c = _lb get _x;
-            if (!isNull _c) then {
-                (_c getVariable ["lbl", ["", ""]]) params ["_lbl", "_tip"];
-                private _v = _cfg getOrDefault [_x, true];
-                ["fit", [_c, format ["%1 : %2", _lbl, ["non", "oui"] select _v], "", _tip]] call comspec_atak_native_fnc_zeusCentre;
-                _c ctrlSetBackgroundColor ([[0.070, 0.082, 0.072, 1], [0.14, 0.26, 0.17, 1]] select _v);
-            };
-        } forEach ["name", "phone", "bat", "net", "athena", "acct", "ver", "tx", "alerts"];
+            private _c = _lb get ("mode_" + _x);
+            _c ctrlSetBackgroundColor ([[0.070, 0.082, 0.072, 1], [0.18, 0.38, 0.21, 1]] select (_x isEqualTo _mode));
+            _c ctrlEnable _on;
+        } forEach ["compact", "detailed"];
+        {
+            (_lb get _x) params ["_cb", "_tx", "_ov"];
+            private _use = _on && {_detailed || {_x isEqualTo "alerts"}};
+            _cb cbSetChecked (_cfg getOrDefault [_x, true]);
+            _cb ctrlEnable _use;
+            _ov ctrlEnable _use;
+            _tx ctrlSetFade ([0.55, 0] select _use);
+            _tx ctrlCommit 0;
+        } forEach (_st get "fields");
+        uiNamespace setVariable ["COMSPEC_ATAK_ZeusCentreFill", false];
+        private _desc = switch (true) do {
+            case (!_on): { "Étiquettes coupées : cochez Étiquettes 3D pour les afficher." };
+            case (_detailed): { "Détaillé : une ligne par champ coché, pour chaque joueur à moins de 400 m. Ex. : TA1 · Adam, puis Tél. en main · 64 %, puis Signal 3 · nœud 2 · 140 m." };
+            default { "Compact : indicatif et nom, puis seulement ce qui cloche. Ex. : TA1 · Adam, puis HORS LIAISON. Les champs ci-dessous servent au mode détaillé ; ici, seules les alertes comptent." };
+        };
+        (_st get "modeTxt") ctrlSetStructuredText parseText (format ["<t size='0.78' color='#c9e0d1'>%1</t>", _desc call _tr]);
+        if ((uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreTab", "players"]) isEqualTo "labels") then { ["flow", ["labels"]] call comspec_atak_native_fnc_zeusCentre; };
     };
     case "draw": {
         // Sécurité : l'événement Unload ne s'est pas produit (changement de mission).
@@ -521,9 +742,15 @@ switch (_act) do {
     };
     case "refresh": {
         if (isNull DISP) exitWith { ["closed"] call comspec_atak_native_fnc_zeusCentre; };
-        private _t = call _ui;
-        if ((count _t) isEqualTo 0) exitWith {};
+        private _st = call _ui;
+        if ((count _st) isEqualTo 0) exitWith {};
         private _now = diag_tickTime;
+        // Ligne d'état : effacée après son délai, l'onglet reprend sa hauteur.
+        private _say = _st get "say";
+        if ((_say getVariable ["msg", ""]) isNotEqualTo "" && {_now > (_say getVariable ["until", 0])}) then {
+            _say setVariable ["msg", ""];
+            ["flow", []] call comspec_atak_native_fnc_zeusCentre;
+        };
         private _rows = missionNamespace getVariable ["COMSPEC_ATAK_ZeusRows", createHashMap];
         // Demande au serveur : toutes les 5 s, et jamais vue fermée (cette boucle n'existe alors plus). Une fiche qui a plus de
         // 45 s (le joueur renvoie la sienne au moins toutes les 30 s) : toutes les fiches sont redemandées, au plus toutes les 30 s.
@@ -604,15 +831,19 @@ switch (_act) do {
         {
             private _k = _x;
             (_y getVariable ["lbl", ["", "", ""]]) params ["_lbl", "_short", "_tip"];
-            ["fit", [_y, format ["%1 (%2)", _lbl, _n get _k], format ["%1 (%2)", _short, _n get _k], _tip]] call comspec_atak_native_fnc_zeusCentre;
+            // Libellé traduit avant d'y ajouter le compte ; gardé pour le prochain placement (« flow »).
+            private _fit = [format ["%1 (%2)", _lbl call _tr, _n get _k], format ["%1 (%2)", _short call _tr, _n get _k], _tip];
+            _y setVariable ["fit", _fit];
+            ["fit", [_y] + _fit] call comspec_atak_native_fnc_zeusCentre;
             _y ctrlSetBackgroundColor ([[0.070, 0.082, 0.072, 1], [0.18, 0.36, 0.22, 1]] select (_k isEqualTo _flt));
-        } forEach (_t get "filters");
+        } forEach (_st get "filters");
         private _denied = missionNamespace getVariable ["COMSPEC_ATAK_ZeusStateDenied", false];
         private _pending = { (_x get "age") < 0 } count _model;
-        private _sub = if (_denied) then { ("Relevé refusé par le serveur") call _trZ } else {
-            format ["%1 · %2", format [("%1 joueur(s)") call _trZ, count _model], format [("%1 lié(s)") call _trZ, _n get "link"]] + ([format [" · %1", format [("%1 en attente") call _trZ, _pending]], ""] select (_pending isEqualTo 0))
+        private _sub = if (_denied) then { ("Relevé refusé par le serveur") call _tr } else {
+            format ["%1 · %2", format [("%1 joueur(s)") call _tr, count _model], format [("%1 lié(s)") call _tr, _n get "link"]] + ([format [" · %1", format [("%1 en attente") call _tr, _pending]], ""] select (_pending isEqualTo 0))
         };
-        (_t get "head") ctrlSetStructuredText parseText (format ["<t size='1.05' font='RobotoCondensedBold'>%1</t><br/><t size='0.78' color='#8a9a93'>%2</t>", ("CENTRE ZEUS") call _trZ, _sub]);
+        // Même gabarit que le titre posé à l'ouverture (« toggle ») : le cadre garde sa hauteur.
+        (_st get "head") ctrlSetStructuredText parseText (format ["<t size='1.05' font='RobotoCondensedBold'>%1</t><br/><t size='0.75' color='#8a9a93'>%2</t>", ("CENTRE ZEUS") call _tr, _sub]);
         // Joueur choisi dans Zeus : sa fiche s'ouvre ici (le clic sur l'unité vaut clic dans la liste).
         private _picked = ((curatorSelected param [0, []]) select { isPlayer _x }) param [0, objNull];
         if (!isNull _picked) then {
@@ -622,7 +853,7 @@ switch (_act) do {
         } else { missionNamespace setVariable ["COMSPEC_ATAK_ZeusCentrePicked", ""]; };
         private _test = _pred get _flt;
         private _shown = _model select { call _test };
-        private _q = toLower (ctrlText (_t get "search"));
+        private _q = toLower (ctrlText (_st get "search"));
         if (_q isNotEqualTo "") then {
             _shown = _shown select { ((toLower format ["%1 %2 %3", _x get "name", _x get "cs", groupId group (_x get "u")]) find _q) >= 0 };
         };
@@ -649,9 +880,9 @@ switch (_act) do {
                 default { [0.79, 0.88, 0.82, 1] };
             };
             private _cs = _m get "cs";
-            [format ["%1%2  ·  %3", [format ["%1 · ", _cs], ""] select (_cs isEqualTo "" || {_cs isEqualTo (_m get "name")}), _m get "name", (_tok apply { _x call _trZ }) joinString " · "], _m get "uid", _col]
+            [format ["%1%2  ·  %3", [format ["%1 · ", _cs], ""] select (_cs isEqualTo "" || {_cs isEqualTo (_m get "name")}), _m get "name", (_tok apply { _x call _tr }) joinString " · "], _m get "uid", _col]
         };
-        private _list = _t get "list";
+        private _list = _st get "list";
         if (_lines isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreLines", []]) || {_arg isEqualTo [true]}) then {
             uiNamespace setVariable ["COMSPEC_ATAK_ZeusCentreLines", _lines];
             uiNamespace setVariable ["COMSPEC_ATAK_ZeusCentreFill", true];
@@ -667,14 +898,14 @@ switch (_act) do {
             } forEach _lines;
             if (_at >= 0) then { _list lbSetCurSel _at; };
             uiNamespace setVariable ["COMSPEC_ATAK_ZeusCentreFill", false];
-            private _empty = _t get "empty";
+            private _empty = _st get "empty";
             if (_lines isEqualTo []) then {
                 private _why = switch (true) do {
                     case (_model isEqualTo []): { "Aucun joueur connecté." };
                     case (_q isNotEqualTo ""): { "Aucun joueur ne correspond à la recherche." };
                     default { "Aucun joueur dans ce filtre. TOUS les montre tous." };
                 };
-                _empty ctrlSetStructuredText parseText (format ["<t size='0.85' color='#8a9a93' align='center'>%1</t>", _why call _trZ]);
+                _empty ctrlSetStructuredText parseText (format ["<t size='0.85' color='#8a9a93' align='center'>%1</t>", _why call _tr]);
                 _empty ctrlShow ((uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreTab", "players"]) isEqualTo "players" && {!(missionNamespace getVariable ["COMSPEC_ATAK_ZeusCentreHidden", false])});
             } else { _empty ctrlSetStructuredText parseText ""; _empty ctrlShow false; };
         };
@@ -712,8 +943,8 @@ switch (_act) do {
                     default { _green };
                 };
                 if ((count _ms) > 1) then {
-                    _lines pushBack [format [("%1 joueurs") call _trZ, count _ms], _worst, 0.030];
-                    { _lines pushBack [((_x get "alerts") select 0) call _trZ, _red, 0.026]; } forEach (_bad select [0, 3]);
+                    _lines pushBack [format [("%1 joueurs") call _tr, count _ms], _worst, 0.030];
+                    { _lines pushBack [((_x get "alerts") select 0) call _tr, _red, 0.026]; } forEach (_bad select [0, 3]);
                 } else {
                     private _m = _first;
                     (_m get "pub") params [["_b", -1], ["_s", -1]];
@@ -722,7 +953,7 @@ switch (_act) do {
                     private _cs = _m get "cs";
                     private _title = [format ["%1 · %2", _cs, _m get "name"], _m get "name"] select (_cs isEqualTo "" || {_cs isEqualTo (_m get "name")});
                     if (_cfg getOrDefault ["name", true] || {!_detailed}) then { _lines pushBack [_title, _worst, 0.030]; };
-                    if (_cfg getOrDefault ["alerts", true]) then { { _lines pushBack [_x call _trZ, _red, 0.026]; } forEach ((_m get "alerts") select [0, 2]); };
+                    if (_cfg getOrDefault ["alerts", true]) then { { _lines pushBack [_x call _tr, _red, 0.026]; } forEach ((_m get "alerts") select [0, 2]); };
                     private _bat = if (_fresh) then { _row select 4 } else { _b };
                     private _devTxt = switch (true) do {
                         case ((_m get "dev") isEqualTo "BROKEN"): { "" };
@@ -736,16 +967,16 @@ switch (_act) do {
                     if (_detailed) then {
                         if (_cfg getOrDefault ["phone", true] || {_cfg getOrDefault ["bat", true]}) then {
                             private _parts = [];
-                            if (_cfg getOrDefault ["phone", true] && {_devTxt isNotEqualTo ""}) then { _parts pushBack (_devTxt call _trZ); };
+                            if (_cfg getOrDefault ["phone", true] && {_devTxt isNotEqualTo ""}) then { _parts pushBack (_devTxt call _tr); };
                             if (_cfg getOrDefault ["bat", true] && {_batTxt isNotEqualTo ""}) then { _parts pushBack _batTxt; };
                             if (_parts isNotEqualTo []) then { _lines pushBack [_parts joinString " · ", [_white, _amber] select ((_m get "dev") in ["OFF"] || {_bat isEqualType 0 && {_bat >= 0} && {_bat < 20}}), 0.026]; };
                         };
                         if (_cfg getOrDefault ["net", true]) then {
                             private _parts = [];
-                            if (_s isEqualType 0 && {_s >= 0}) then { _parts pushBack format [("Signal %1") call _trZ, _s]; };
+                            if (_s isEqualType 0 && {_s >= 0}) then { _parts pushBack format [("Signal %1") call _tr, _s]; };
                             private _node = _m get "node";
-                            if (_node isNotEqualTo []) then { _parts pushBack format [("nœud %1 · %2 m") call _trZ, _node select 0, _node select 1]; };
-                            if (_m get "relay") then { _parts pushBack (("relais") call _trZ); };
+                            if (_node isNotEqualTo []) then { _parts pushBack format [("nœud %1 · %2 m") call _tr, _node select 0, _node select 1]; };
+                            if (_m get "relay") then { _parts pushBack (("relais") call _tr); };
                             if (_parts isNotEqualTo []) then { _lines pushBack [_parts joinString " · ", [_white, _amber] select (_s isEqualType 0 && {_s isEqualTo 0}), 0.026]; };
                         };
                         if (_cfg getOrDefault ["athena", true] || {_cfg getOrDefault ["acct", true]}) then {
@@ -755,32 +986,32 @@ switch (_act) do {
                                 case ((_row select 5) in ["unlinked", "unset", "off"]): { "Athena : jamais lié" };
                                 default { "Athena : hors liaison" };
                             };
-                            private _txt = [_st call _trZ, ""] select !(_cfg getOrDefault ["athena", true]);
+                            private _txt = [_st call _tr, ""] select !(_cfg getOrDefault ["athena", true]);
                             if (_cfg getOrDefault ["acct", true] && {_fresh} && {(_row param [13, ""]) isNotEqualTo ""}) then { _txt = ([_txt + " · ", ""] select (_txt isEqualTo "")) + (_row select 13); };
                             if (_txt isNotEqualTo "") then { _lines pushBack [_txt, [[_amber, _green] select (_m get "logged"), _grey] select !_fresh, 0.026]; };
                         };
                         if (_cfg getOrDefault ["ver", true] && {_fresh}) then {
                             private _v = (_m get "ver") joinString ".";
                             private _vt = switch (_m get "verCmp") do { case (-1): { "PAS À JOUR" }; case 0: { "à jour" }; case 1: { "plus récent" }; default { "version inconnue" }; };
-                            _lines pushBack [format [("Mod %1 · %2") call _trZ, [_v, "?"] select (_v isEqualTo ""), _vt call _trZ], [_white, _amber] select ((_m get "verCmp") isEqualTo -1), 0.026];
+                            _lines pushBack [format [("Mod %1 · %2") call _tr, [_v, "?"] select (_v isEqualTo ""), _vt call _tr], [_white, _amber] select ((_m get "verCmp") isEqualTo -1), 0.026];
                         };
                         if (_cfg getOrDefault ["tx", true]) then {
                             private _parts = [];
-                            if ((_m get "spk") isNotEqualTo []) then { _parts pushBack (("HAUT-PARLEUR") call _trZ); };
-                            if (_fresh && {_row select 10}) then { _parts pushBack (("RADIO EN ÉMISSION") call _trZ); };
-                            if ((_m get "pilot") isNotEqualTo "") then { _parts pushBack (("pilote de drone") call _trZ); };
+                            if ((_m get "spk") isNotEqualTo []) then { _parts pushBack (("HAUT-PARLEUR") call _tr); };
+                            if (_fresh && {_row select 10}) then { _parts pushBack (("RADIO EN ÉMISSION") call _tr); };
+                            if ((_m get "pilot") isNotEqualTo "") then { _parts pushBack (("pilote de drone") call _tr); };
                             if (_parts isNotEqualTo []) then { _lines pushBack [_parts joinString " · ", _amber, 0.026]; };
                         };
                     } else {
                         // Compact : seulement ce qui cloche.
-                        if ((_m get "age") < 0) then { _lines pushBack [("SANS RELEVÉ") call _trZ, _grey, 0.026]; };
-                        if (_fresh && {!(_m get "logged")}) then { _lines pushBack [("HORS LIAISON") call _trZ, _amber, 0.026]; };
-                        if ((_m get "dev") isEqualTo "OFF") then { _lines pushBack [("TÉL. ÉTEINT") call _trZ, _amber, 0.026]; };
-                        if (_bat isEqualType 0 && {_bat >= 0} && {_bat < 20}) then { _lines pushBack [format [("BATTERIE %1 %%") call _trZ, _bat], _amber, 0.026]; };
-                        if ((_m get "verCmp") isEqualTo -1) then { _lines pushBack [format [("MOD %1 PAS À JOUR") call _trZ, (_m get "ver") joinString "."], _amber, 0.026]; };
+                        if ((_m get "age") < 0) then { _lines pushBack [("SANS RELEVÉ") call _tr, _grey, 0.026]; };
+                        if (_fresh && {!(_m get "logged")}) then { _lines pushBack [("HORS LIAISON") call _tr, _amber, 0.026]; };
+                        if ((_m get "dev") isEqualTo "OFF") then { _lines pushBack [("TÉL. ÉTEINT") call _tr, _amber, 0.026]; };
+                        if (_bat isEqualType 0 && {_bat >= 0} && {_bat < 20}) then { _lines pushBack [format [("BATTERIE %1 %%") call _tr, _bat], _amber, 0.026]; };
+                        if ((_m get "verCmp") isEqualTo -1) then { _lines pushBack [format [("MOD %1 PAS À JOUR") call _tr, (_m get "ver") joinString "."], _amber, 0.026]; };
                         private _parts = [];
-                        if ((_m get "spk") isNotEqualTo []) then { _parts pushBack (("HP") call _trZ); };
-                        if (_fresh && {_row select 10}) then { _parts pushBack (("RADIO") call _trZ); };
+                        if ((_m get "spk") isNotEqualTo []) then { _parts pushBack (("HP") call _tr); };
+                        if (_fresh && {_row select 10}) then { _parts pushBack (("RADIO") call _tr); };
                         if (_parts isNotEqualTo []) then { _lines pushBack [_parts joinString " · ", _amber, 0.026]; };
                     };
                 };
@@ -792,16 +1023,24 @@ switch (_act) do {
         } else { missionNamespace setVariable ["COMSPEC_ATAK_ZeusCentreMarks", []]; };
     };
     case "card": {
-        private _t = call _ui;
-        if ((count _t) isEqualTo 0) exitWith {};
+        private _st = call _ui;
+        if ((count _st) isEqualTo 0) exitWith {};
         private _uid = missionNamespace getVariable ["COMSPEC_ATAK_ZeusCentreSel", ""];
         private _model = missionNamespace getVariable ["COMSPEC_ATAK_ZeusCentreModel", []];
         private _i = _model findIf { (_x get "uid") isEqualTo _uid };
-        private _card = _t get "card";
-        if (_i < 0) exitWith { _card ctrlSetStructuredText parseText (("<t size='0.85' color='#8a9a93'>Choisissez un joueur dans la liste, ou sélectionnez-le dans Zeus. Double-clic : caméra sur le joueur.</t>") call _trZ); };
+        private _card = _st get "card";
+        // Boutons d'action grisés sans personne à viser : joueur choisi (caméra, fiche admin) ou cible choisie (son, code, action).
+        { _x ctrlEnable (_i >= 0); } forEach (_st get "needSel");
+        private _nTgt = count (["targets"] call comspec_atak_native_fnc_zeusCentre);
+        { _x ctrlEnable (_nTgt > 0); } forEach (_st get "needTgt");
+        if (_i < 0) exitWith { _card ctrlSetStructuredText parseText (("<t size='0.85' color='#8a9a93'>Choisissez un joueur dans la liste, ou sélectionnez-le dans Zeus. Double-clic : caméra sur le joueur.</t>") call _tr);
+            private _p0 = ctrlPosition _card;
+            _p0 set [3, (ctrlPosition (_st get "grp")) select 3];
+            _card ctrlSetPosition _p0;
+            _card ctrlCommit 0;
+        };
         private _m = _model select _i;
         private _u = _m get "u";
-        private _tr = _trZ;
         private _yes = { [("non") call _tr, ("oui") call _tr] select _this };
         private _row = _m get "row";
         private _fresh = _m get "fresh";
@@ -892,89 +1131,89 @@ switch (_act) do {
         uiNamespace setVariable ["COMSPEC_ATAK_ZeusCentreCardText", _L joinString "<br/>"];
         _card ctrlSetStructuredText parseText (_L joinString "<br/>");
         private _pos = ctrlPosition _card;
-        _pos set [3, (ctrlTextHeight _card) max ((ctrlPosition (_t get "grp")) select 3)];
+        _pos set [3, (ctrlTextHeight _card) max ((ctrlPosition (_st get "grp")) select 3)];
         _card ctrlSetPosition _pos;
         _card ctrlCommit 0;
     };
     case "server": {
-        private _t = call _ui;
-        if ((count _t) isEqualTo 0) exitWith {};
-        private _txt = _t get "srvTxt";
+        private _st = call _ui;
+        if ((count _st) isEqualTo 0) exitWith {};
+        private _txt = _st get "srvTxt";
         private _rec = missionNamespace getVariable ["COMSPEC_ATAK_ZeusSrv", []];
         private _L = [];
         private _plain = [];
-        private _sec = { _L pushBack format ["<t size='0.85' font='RobotoCondensedBold' color='#7fd08a'>%1</t>", _this call _trZ]; _plain pushBack format ["== %1", _this call _trZ]; };
+        private _sec = { _L pushBack format ["<t size='0.85' font='RobotoCondensedBold' color='#7fd08a'>%1</t>", _this call _tr]; _plain pushBack format ["== %1", _this call _tr]; };
         private _line = {
             params ["_k", "_v", ["_col", ""]];
-            _L pushBack format ["<t size='0.82' color='#8a9a93'>%1 : </t><t size='0.82'%3>%2</t>", _k call _trZ, _v, ["", format [" color='%1'", _col]] select (_col isNotEqualTo "")];
-            _plain pushBack format ["%1 : %2", _k call _trZ, _v];
+            _L pushBack format ["<t size='0.82' color='#8a9a93'>%1 : </t><t size='0.82'%3>%2</t>", _k call _tr, _v, ["", format [" color='%1'", _col]] select (_col isNotEqualTo "")];
+            _plain pushBack format ["%1 : %2", _k call _tr, _v];
         };
-        private _yn = { [("non") call _trZ, ("oui") call _trZ] select (_this isEqualTo true) };
+        private _yn = { [("non") call _tr, ("oui") call _tr] select (_this isEqualTo true) };
         if (_rec isEqualTo []) then {
-            _L pushBack format ["<t size='0.85' color='#8a9a93'>%1</t>", (["État du serveur demandé…", "Relevé refusé par le serveur."] select (missionNamespace getVariable ["COMSPEC_ATAK_ZeusStateDenied", false])) call _trZ];
+            _L pushBack format ["<t size='0.85' color='#8a9a93'>%1</t>", (["État du serveur demandé…", "Relevé refusé par le serveur."] select (missionNamespace getVariable ["COMSPEC_ATAK_ZeusStateDenied", false])) call _tr];
         } else {
             _rec params ["_s", "_at"];
             private _age = round (diag_tickTime - _at);
             private _up = _s getOrDefault ["uptime", 0];
-            _L pushBack format ["<t size='1' font='RobotoCondensedBold'>%1</t> <t size='0.78' color='#8a9a93'>%2 · %3</t>", (_s getOrDefault ["mission", ""]) call _esc, (_s getOrDefault ["world", ""]) call _esc, ([("hôte"), ("serveur dédié")] select ((_s getOrDefault ["dedicated", false]) isEqualTo true)) call _trZ];
+            _L pushBack format ["<t size='1' font='RobotoCondensedBold'>%1</t> <t size='0.78' color='#8a9a93'>%2 · %3</t>", (_s getOrDefault ["mission", ""]) call _esc, (_s getOrDefault ["world", ""]) call _esc, ([("hôte"), ("serveur dédié")] select ((_s getOrDefault ["dedicated", false]) isEqualTo true)) call _tr];
             _plain pushBack format ["%1 · %2", _s getOrDefault ["mission", ""], _s getOrDefault ["world", ""]];
-            _L pushBack format ["<t size='0.78' color='#8a9a93'>%1</t>", format [("État reçu %1") call _trZ, _age call _ago]];
+            _L pushBack format ["<t size='0.78' color='#8a9a93'>%1</t>", format [("État reçu %1") call _tr, _age call _ago]];
             "SERVEUR" call _sec;
             ["Mission en cours depuis", format ["%1 h %2 min", floor (_up / 3600), floor ((_up % 3600) / 60)]] call _line;
             private _fps = _s getOrDefault ["fps", 0];
             ["FPS serveur", format ["%1 (min %2)", _fps, _s getOrDefault ["fpsMin", 0]], ["", "#f2ab33"] select (_fps < 20)] call _line;
-            ["Joueurs", format ["%1 · %2", _s getOrDefault ["players", 0], format [("%1 client(s) headless") call _trZ, _s getOrDefault ["hc", 0]]]] call _line;
-            ["IA", format ["%1 · %2 · %3", format [("%1 unité(s)") call _trZ, _s getOrDefault ["ai", 0]], format [("%1 groupe(s)") call _trZ, _s getOrDefault ["groups", 0]], format [("%1 véhicule(s)") call _trZ, _s getOrDefault ["vehicles", 0]]]] call _line;
+            ["Joueurs", format ["%1 · %2", _s getOrDefault ["players", 0], format [("%1 client(s) headless") call _tr, _s getOrDefault ["hc", 0]]]] call _line;
+            ["IA", format ["%1 · %2 · %3", format [("%1 unité(s)") call _tr, _s getOrDefault ["ai", 0]], format [("%1 groupe(s)") call _tr, _s getOrDefault ["groups", 0]], format [("%1 véhicule(s)") call _tr, _s getOrDefault ["vehicles", 0]]]] call _line;
             ["Morts au sol", str (_s getOrDefault ["dead", 0])] call _line;
             "VERSIONS CHARGÉES SUR LE SERVEUR" call _sec;
             { [_x select 0, (_x select 1) call _esc] call _line; } forEach (_s getOrDefault ["mods", []]);
             private _mine = (missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""]) call _verOf;
             private _srvV = (_s getOrDefault ["atakVersion", ""]) call _verOf;
-            if (_mine isNotEqualTo [] && {_srvV isNotEqualTo []} && {_mine isNotEqualTo _srvV}) then { ["Votre mod", format [("%1, différent du serveur") call _trZ, _mine joinString "."], "#f2ab33"] call _line; };
+            if (_mine isNotEqualTo [] && {_srvV isNotEqualTo []} && {_mine isNotEqualTo _srvV}) then { ["Votre mod", format [("%1, différent du serveur") call _tr, _mine joinString "."], "#f2ab33"] call _line; };
             "LIAISON ATHENA DU SERVEUR" call _sec;
             private _a = createHashMapFromArray (_s getOrDefault ["athena", []]);
             private _mode = _a getOrDefault ["mode", "absent"];
-            ["Service", ((createHashMapFromArray [["on", "Athena"], ["off", "local seulement (réglage serveur)"], ["absent", "COMSPEC Overwatch absent"]]) get _mode) call _trZ] call _line;
+            ["Service", ((createHashMapFromArray [["on", "Athena"], ["off", "local seulement (réglage serveur)"], ["absent", "COMSPEC Overwatch absent"]]) get _mode) call _tr] call _line;
             if (_mode isEqualTo "on") then {
                 ["Session", (_a getOrDefault ["auth", "—"]) call _esc] call _line;
                 private _lk = _a getOrDefault ["link", "—"];
                 ["Liaison", _lk call _esc, ["#f2ab33", ""] select (_lk isEqualTo "linked")] call _line;
                 ["Prêt (identité reçue)", (_a getOrDefault ["ready", false]) call _yn] call _line;
                 private _okAge = _a getOrDefault ["okAge", -1];
-                ["Dernière réponse d'Athena", [("jamais") call _trZ, _okAge call _ago] select (_okAge >= 0), ["#f2ab33", ""] select (_okAge >= 0 && {_okAge < 900})] call _line;
+                ["Dernière réponse d'Athena", [("jamais") call _tr, _okAge call _ago] select (_okAge >= 0), ["#f2ab33", ""] select (_okAge >= 0 && {_okAge < 900})] call _line;
                 ["Hub serveur actif", (_a getOrDefault ["hub", false]) call _yn] call _line;
                 ["File d'envoi", str (_a getOrDefault ["queue", 0])] call _line;
-                if ((_a getOrDefault ["uplinkOff", false]) isEqualTo true) then { ["Envois", ("coupés (liaison désactivée sur le serveur)") call _trZ, "#f25a48"] call _line; };
+                if ((_a getOrDefault ["uplinkOff", false]) isEqualTo true) then { ["Envois", ("coupés (liaison désactivée sur le serveur)") call _tr, "#f25a48"] call _line; };
                 if ((_a getOrDefault ["detail", ""]) isNotEqualTo "") then { ["Détail", (_a getOrDefault ["detail", ""]) call _esc] call _line; };
                 if ((_a getOrDefault ["err", ""]) in ["", "0"]) then {} else { ["Dernière erreur DLL", (_a getOrDefault ["err", ""]) call _esc, "#f2ab33"] call _line; };
             };
             "PAQUET D'IDENTITÉ (SSE)" call _sec;
             private _id = _s getOrDefault ["identity", []];
             if (_id isEqualTo []) then {
-                _L pushBack format ["<t size='0.82' color='#8a9a93'>%1</t>", ("Addon identité du SSE absent du serveur.") call _trZ];
+                _L pushBack format ["<t size='0.82' color='#8a9a93'>%1</t>", ("Addon identité du SSE absent du serveur.") call _tr];
             } else {
                 private _m = createHashMapFromArray _id;
                 ["DLL d'identité", (_m getOrDefault ["dll", false]) call _yn] call _line;
                 private _pa = _m getOrDefault ["packAt", ""];
-                ["Paquet reçu", [format [("non (%1 tentative(s))") call _trZ, _m getOrDefault ["tries", 0]], format [("oui, généré le %1") call _trZ, _pa call _esc]] select (_pa isNotEqualTo ""), ["#f2ab33", ""] select (_pa isNotEqualTo "")] call _line;
-                ["Contenu", format ["%1 · %2 · %3 · %4", format [("%1 document(s)") call _trZ, _m getOrDefault ["docs", 0]], format [("%1 pays") call _trZ, _m getOrDefault ["countries", 0]], format [("%1 identité(s) préparée(s)") call _trZ, _m getOrDefault ["population", 0]], format [("%1 avis") call _trZ, _m getOrDefault ["watch", 0]]]] call _line;
+                ["Paquet reçu", [format [("non (%1 tentative(s))") call _tr, _m getOrDefault ["tries", 0]], format [("oui, généré le %1") call _tr, _pa call _esc]] select (_pa isNotEqualTo ""), ["#f2ab33", ""] select (_pa isNotEqualTo "")] call _line;
+                ["Contenu", format ["%1 · %2 · %3 · %4", format [("%1 document(s)") call _tr, _m getOrDefault ["docs", 0]], format [("%1 pays") call _tr, _m getOrDefault ["countries", 0]], format [("%1 identité(s) préparée(s)") call _tr, _m getOrDefault ["population", 0]], format [("%1 avis") call _tr, _m getOrDefault ["watch", 0]]]] call _line;
             };
             "MAILLAGE ET RELAIS" call _sec;
             private _me = createHashMapFromArray (_s getOrDefault ["mesh", []]);
             ["Liaison réaliste", (_me getOrDefault ["on", false]) call _yn] call _line;
             if ((_me getOrDefault ["on", false]) isEqualTo true) then {
-                ["Graphe du serveur", format [("n° %1") call _trZ, _me getOrDefault ["seq", -1]]] call _line;
-                { [_x select 0, format ["%1 · %2 · %3", format [("%1 nœud(s)") call _trZ, _x select 1], format [("%1 lien(s)") call _trZ, _x select 2], format [("%1 trouvé(s)") call _trZ, _x select 3]]] call _line; } forEach (_me getOrDefault ["sides", []]);
+                ["Graphe du serveur", format [("n° %1") call _tr, _me getOrDefault ["seq", -1]]] call _line;
+                { [_x select 0, format ["%1 · %2 · %3", format [("%1 nœud(s)") call _tr, _x select 1], format [("%1 lien(s)") call _tr, _x select 2], format [("%1 trouvé(s)") call _tr, _x select 3]]] call _line; } forEach (_me getOrDefault ["sides", []]);
             };
             "ORDRES AUX IA" call _sec;
             private _ord = _s getOrDefault ["orders", []];
-            if (_ord isEqualTo []) then { _L pushBack format ["<t size='0.82' color='#8a9a93'>%1</t>", ("Aucun ordre gardé.") call _trZ]; } else { ["Par état", (_ord apply { format ["%1 %2", _x select 1, _x select 0] }) joinString " · "] call _line; };
+            if (_ord isEqualTo []) then { _L pushBack format ["<t size='0.82' color='#8a9a93'>%1</t>", ("Aucun ordre gardé.") call _tr]; } else { ["Par état", (_ord apply { format ["%1 %2", _x select 1, _x select 0] }) joinString " · "] call _line; };
             "CENTRE ZEUS" call _sec;
             ["Zeus à l'écoute", str (_s getOrDefault ["zeusWatch", 0])] call _line;
             ["Fiches connues", str (_s getOrDefault ["zeusRows", 0])] call _line;
             "DERNIÈRES ALERTES DU JOURNAL" call _sec;
             private _log = _s getOrDefault ["log", []];
-            if (_log isEqualTo []) then { _L pushBack format ["<t size='0.82' color='#8a9a93'>%1</t>", ("Aucune erreur ni avertissement COMSPEC sur le serveur.") call _trZ]; };
+            if (_log isEqualTo []) then { _L pushBack format ["<t size='0.82' color='#8a9a93'>%1</t>", ("Aucune erreur ni avertissement COMSPEC sur le serveur.") call _tr]; };
             {
                 _x params ["_ago2", "_lvl", "_mod", "_msg"];
                 _L pushBack format ["<t size='0.75' color='%1'>%2 [%3] %4</t> <t size='0.75'>%5</t>", ["#f2ab33", "#f25a48"] select (_lvl isEqualTo "ERROR"), _ago2 call _ago, _lvl, _mod, _msg call _esc];
@@ -983,15 +1222,13 @@ switch (_act) do {
         };
         missionNamespace setVariable ["COMSPEC_ATAK_ZeusSrvText", _plain joinString (toString [13, 10])];
         _txt ctrlSetStructuredText parseText (_L joinString "<br/>");
-        private _pos = ctrlPosition _txt;
-        _pos set [3, (ctrlTextHeight _txt) max ((ctrlPosition (_t get "srvGrp")) select 3)];
-        _txt ctrlSetPosition _pos;
-        _txt ctrlCommit 0;
+        // Hauteur du texte : l'onglet se repose (« flow »), le corps défile s'il dépasse.
+        if ((uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreTab", "players"]) isEqualTo "server") then { ["flow", ["server"]] call comspec_atak_native_fnc_zeusCentre; };
     };
     case "targets": {
         // Joueurs visés par une action : selon la cible choisie (joueur choisi, sélection Zeus, joueurs affichés).
-        private _t = call _ui;
-        private _mode = if ((count _t) isEqualTo 0) then { "sel" } else { private _c = _t get "tgt"; _c lbData (lbCurSel _c) };
+        private _st = call _ui;
+        private _mode = if ((count _st) isEqualTo 0) then { "sel" } else { private _c = _st get "tgt"; _c lbData (lbCurSel _c) };
         private _uid = missionNamespace getVariable ["COMSPEC_ATAK_ZeusCentreSel", ""];
         switch (_mode) do {
             case "zeus": { ["players", curatorSelected param [0, []]] call comspec_atak_native_fnc_zeusMenu };
@@ -1011,7 +1248,7 @@ switch (_act) do {
         private _units = ["targets"] call comspec_atak_native_fnc_zeusCentre;
         if (_units isEqualTo []) exitWith { ["feedback", ["ATAK : aucun joueur visé."]] call comspec_atak_native_fnc_zeusMenu; };
         { ["server", ["phonePin", [getPlayerUID _x]]] call comspec_atak_native_fnc_adminClient; } forEach _units;
-        ["feedback", [format [("Demande envoyée au serveur : code retiré (%1 joueur(s)).") call _trZ, count _units]]] call comspec_atak_native_fnc_zeusMenu;
+        ["feedback", [format [("Demande envoyée au serveur : code retiré (%1 joueur(s)).") call _tr, count _units]]] call comspec_atak_native_fnc_zeusMenu;
     };
     case "camera": {
         private _uid = missionNamespace getVariable ["COMSPEC_ATAK_ZeusCentreSel", ""];
