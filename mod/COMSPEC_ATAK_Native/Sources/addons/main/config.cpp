@@ -102,7 +102,7 @@ class CfgFunctions {
             class vehicleTerminal {}; class vehicleGateway {};
         };
         class toc { file="z\comspec_atak_native\addons\main\functions\toc";
-            class tocPost {}; class pageToc {}; class tocAction {}; class tocLaptop {}; class tocScreen {}; class tocCam {}; class projector {}; class tocFeed {}; class tocPersist {}; class moduleTocScreen {}; class tocRoom {}; class tocSat {}; class tocBoard {}; class tocMosaic {}; class tocHall {}; class moduleTocHall {}; class tocHallUi {}; class tocDraw {}; class tocTheme {};
+            class tocPost {}; class pageToc {}; class tocAction {}; class tocLaptop {}; class tocScreen {}; class tocCam {}; class projector {}; class tocFeed {}; class tocPersist {}; class moduleTocScreen {}; class tocRoom {}; class tocSat {}; class tocBoard {}; class tocMosaic {}; class tocHall {}; class moduleTocHall {}; class tocHallUi {}; class tocDraw {}; class tocTheme {}; class tocWeb {};
         };
         class datalink { file="z\comspec_atak_native\addons\main\functions\datalink";
             class dataSetup {}; class dataParseFiles {}; class dataServer {}; class dataAction {}; class dataInit {}; class dataOverlay {}; class pageDataLink {}; class zeusForm {}; class moduleContext {}; class moduleDataNode {}; class moduleDataFile {}; class moduleDataReset {}; class moduleDating {};
