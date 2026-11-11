@@ -133,6 +133,10 @@ $identityForm = static function (?array $identity, bool $primary, array $default
                 <h2 id="opx-ids-title" class="dash-zone__title">Mes identités</h2>
                 <p class="dash-zone__lead">L’identité principale est celle de votre personnage. Une seule identité est active en jeu : ses papiers émis vous sont remis en mission.</p>
             </header>
+            <div class="opx-acts">
+                <button type="button" class="cc-btn cc-btn-ghost" data-opx-open="dlg-photo-guide"><?= $opxIcon('camera', '') ?> Comment faire ma photo ?</button>
+                <p class="opx-note">La photo d’identité de votre personnage, à faire avec un générateur d’image : étapes et prompt à copier.</p>
+            </div>
             <ul class="opx-cards">
                 <?php foreach ($idIdentities as $identity): ?>
                     <?php
@@ -247,6 +251,7 @@ $identityForm = static function (?array $identity, bool $primary, array $default
                                         </label>
                                     </div>
                                     <div class="opx-dialog__foot">
+                                        <button type="button" class="cc-btn cc-btn-ghost opx-acts__start" data-opx-open="dlg-photo-guide">Comment faire ma photo ?</button>
                                         <?php if (!empty($identity['photo_path'])): ?>
                                             <button type="submit" name="photo_remove" value="1" class="cc-btn opx-btn-quiet opx-btn-danger">Retirer la photo</button>
                                         <?php endif; ?>

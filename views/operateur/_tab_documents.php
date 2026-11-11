@@ -34,6 +34,7 @@ foreach ($idCountries as $c) {
                     <h3 id="opx-sync-title">Remise en jeu</h3>
                     <p><strong><?= $h($idSync['title'] !== '' ? $idSync['title'] : $idSync['state_label']) ?></strong><?php if ($idSync['at'] !== ''): ?> · le <?= $h($dateFr($idSync['at'])) ?><?php endif; ?></p>
                     <?php if ($idSync['why'] !== ''): ?><p><?= $h($idSync['why']) ?></p><?php endif; ?>
+                    <p>La photo imprimée sur vos papiers est celle de l’identité. <button type="button" class="opx-linkbtn" data-opx-open="dlg-photo-guide">Comment faire ma photo ?</button></p>
                     <?php if (!$idSteamLinked): ?>
                         <p>Votre compte n’est pas lié à Steam : le serveur de jeu ne peut pas vous remettre vos papiers. <a class="opx-link" href="<?= $h(url('account/steam/connect')) ?>">Lier mon compte Steam</a></p>
                     <?php endif; ?>
