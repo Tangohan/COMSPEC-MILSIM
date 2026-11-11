@@ -255,6 +255,14 @@ final class PlanValidator
         if (!empty($p['hidden'])) {
             $out['hidden'] = true;
         }
+        // Origine dans le jeu (import des marqueurs présents en jeu) : identifiant du marqueur, et lien gardé ou non.
+        $gid = self::text($p['gid'] ?? '', 80);
+        if ($gid !== '' && preg_match('/^[\x20-\x7E]+$/', $gid) === 1) {
+            $out['gid'] = $gid;
+            if (!empty($p['glink'])) {
+                $out['glink'] = true;
+            }
+        }
         foreach (['t0', 't1'] as $k) {
             $t = self::number($p[$k] ?? null, self::TIME_MIN, self::TIME_MAX);
             if ($t !== null) {
