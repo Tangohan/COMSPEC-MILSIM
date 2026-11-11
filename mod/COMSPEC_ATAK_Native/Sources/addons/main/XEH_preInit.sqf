@@ -1231,6 +1231,26 @@ private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_toc_view_range", "SLIDER",
     ["Distance d'affichage des écrans TOC (m)", "Un écran TOC n'est dessiné et rafraîchi que si vous êtes plus près que cette distance, à peu près face à lui et sans mur entre vous. Un peu plus loin, il garde sa dernière image ; au-delà, il se met en veille : ni calcul ni caméra. Les caméras d'écran suivent aussi cette distance. Exemple : 25 m pour une salle d'opérations, 60 m pour un grand écran dehors."],
     _loc, [10, 100, 25, 0], 0] call comspec_atak_native_fnc_addSetting;
+// Salle TOC tenue (4.12.0) : droits, chef de poste, journal des actions, thème de nuit (fn_tocAccess, fn_tocStation, fn_tocJournal, fn_tocTheme).
+private _tocHeld = ["COMSPEC", "ATAK · Salle TOC : postes, droits et journal"];
+["comspec_atak_native_toc_access_mode", "LIST",
+    ["Droits de la salle TOC", "Qui peut changer les écrans et régler la salle. Rôles : seuls le chef de poste (le joueur qui tient le poste « chef de quart » de la salle) et l'administrateur Zeus les changent ; les autres joueurs du camp lisent, tiennent un poste et écrivent dans les registres. Ouvert : tout joueur du camp change tout, comme avant la 4.12.0. Administrateurs : seuls le Zeus et les administrateurs du serveur. Exemple : en « Rôles », un joueur de passage ouvre le PC et lit la carte, mais son changement d'affichage est refusé et écrit au journal."],
+    _tocHeld, [["roles", "open", "admin"], ["Rôles (chef de poste et Zeus)", "Ouvert (tout le camp)", "Administrateurs seulement"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_chief_rank", "LIST",
+    ["Grade minimal du chef de quart", "Grade du jeu à partir duquel un joueur peut prendre le poste « chef de quart » d'une salle (action ACE sur soi, Poste TOC) et devenir ainsi chef de poste. Exemple : avec « Sergent », un caporal peut tenir le poste Opérations, pas celui de chef de quart."],
+    _tocHeld, [[0, 1, 2, 3, 4, 5, 6], ["Soldat (tout le monde)", "Caporal", "Sergent", "Lieutenant", "Capitaine", "Commandant", "Colonel"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_chief_uids", "EDITBOX",
+    ["Chefs de poste désignés", "Identifiants Steam (17 chiffres) séparés par des virgules : ces joueurs sont chefs de poste dans toutes les salles de leur camp, sans avoir à tenir un poste. Exemple : 76561198000000001, 76561198000000002."],
+    _tocHeld, "", 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_journal_max", "SLIDER",
+    ["Lignes gardées au journal du TOC", "Nombre de lignes du journal des actions gardées pour chaque camp ; les plus anciennes sortent. Les 200 dernières sont gardées d'une partie à l'autre avec la salle. Exemple : 500 lignes couvrent une soirée d'opération."],
+    _tocHeld, [50, 2000, 500, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_journal_log", "CHECKBOX",
+    ["Journal du TOC dans le journal COMSPEC", "Chaque action de la salle (écran changé, salle verrouillée, poste pris, relève, refus) est aussi écrite une fois dans le journal COMSPEC du serveur. Exemple : « Journal du TOC n° 12 · 21:04:10Z WEST Dupont (chief) Salle verrouillée »."],
+    _tocHeld, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_theme", "LIST",
+    ["Thème des écrans TOC", "Couleurs du TOC pour vous seul. Nuit : fonds plus noirs et textes assombris, pour ne pas être ébloui dans une salle sombre. S'applique aujourd'hui aux fenêtres du journal, du diagnostic et des relèves ; les écrans muraux et la console du poste l'adopteront dans une prochaine version. Exemple : « Automatique » passe en nuit quand le soleil de la mission est couché."],
+    _tocHeld, [["auto", "jour", "nuit"], ["Automatique (nuit quand le soleil est couché)", "Jour", "Nuit"], 0], 0] call comspec_atak_native_fnc_addSetting;
 // IA et ATAK (fn_aiAtak).
 private _ai = ["COMSPEC", "ATAK · IA"];
 ["comspec_atak_native_ai_atak", "LIST",

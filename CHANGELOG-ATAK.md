@@ -97,6 +97,36 @@ EN : A TOC console and operation plans on Athena
 - Pages `/atak/toc` et `/atak/toc/plans`, droits `atak.toc.use` et `atak.toc.manage`, étapes 4370 et 4380. Détail : `docs/TOC-WEB.md`.
 - Lien avec le jeu par les canaux existants (BriefingPlan.Push canal `toc_room`, commandes web genre `toc`) : branche du mod `feat/atak-toc-web-sync`, sans changement de COMSPEC Link.
 
+## Pack 4.12.0 Washington : postes, droits et journal de la salle TOC, TOC pilotable par script (ATAK natif 4.12.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.12.0 : postes, droits et journal de la salle TOC
+- Postes, droits et journal de la salle TOC : chaque PC du TOC devient un poste (chef de quart, opérations, renseignement, feux, logistique, transmissions). Seuls le chef de quart et le Zeus changent les écrans et la salle, et chaque action est notée dans un journal que le chef de quart et le Zeus peuvent lire.
+- Verrou et relève : le chef de quart verrouille la salle le temps d'un briefing, et passe son poste par une relève signée, avec un résumé de la situation.
+- Vous pouvez piloter le TOC par script : les créateurs de mission créent des salles et des écrans, changent les affichages, verrouillent la salle et suivent ce qui s'y passe, sans téléphone.
+- Salle mieux gardée : copie de secours de la sauvegarde, dispositions de salle réutilisables d'une mission à l'autre, export de diagnostic pour le support, couleurs de nuit pour les fenêtres du TOC.
+EN : ATAK 4.12.0: stations, rights and journal of the TOC room
+- Stations, rights and journal of the TOC room: every TOC PC becomes a station (watch chief, operations, intelligence, fires, logistics, signals). Only the watch chief and Zeus change the screens and the room, and every action is noted in a journal that the watch chief and Zeus can read.
+- Lock and handover: the watch chief locks the room for the time of a briefing, and hands the station over with a signed handover and a summary of the situation.
+- You can drive the TOC by script: mission makers create rooms and screens, change the displays, lock the room and follow what happens in it, with no phone.
+- A better kept room: backup copy of the save, room layouts reusable from one mission to the next, diagnostic export for support, night colours for the TOC windows.
+
+### Détail technique
+- Feuille de route TOC (`docs/audit/2026-11-toc-feuille-de-route.md`), parts des lots 2 et 4 qui ne touchent ni la console ni les écrans : n° 10, 13 à 17, 35, Z2, Z3 (couche de données), Z4. Numéro 4.12.0 : main porte déjà 4.8.0 (tableau des écrans), 4.9.0 (console) et 4.11.0 (TOC sans téléphone) ; ce lot, préparé sous le numéro 4.10.0, prend le numéro libre suivant.
+- `fn_tocAccess.sqf` (nouveau) : rôles opérateur, chef de poste, administrateur Zeus ; table des droits par mode (réglage « Droits de la salle TOC » : rôles par défaut, ouvert, administrateurs) ; verrou de salle. Le serveur retrouve l'émetteur par `remoteExecutedOwner`, lit son camp et son UID lui-même ; l'état qui fait foi est dans `localNamespace` du serveur. Demandes d'écran (« view », « remove ») et de salle par `remoteExecCall` (« gate ») ; l'ancien événement CBA n'a plus que les droits d'un opérateur (« legacy »).
+- `fn_tocJournal.sqf` (nouveau) : journal des actions en anneau par camp (500 lignes, réglable), envoyé à la demande au chef de poste et au Zeus, une ligne par action dans le journal COMSPEC, 200 lignes gardées avec la salle.
+- `fn_tocStation.sqf`, `fn_tocHandover.sqf` (nouveaux) : postes nommés (CDQ, OPS, RENS, FEUX, LOG, TRANS), un chef de quart par salle, poste gardé 5 minutes après une déconnexion ; relève proposée, résumée par le serveur, signée par l'entrant, exportée en texte. Actions ACE sur soi « Poste TOC ».
+- `fn_tocPersist.sqf` : format 3. Rangs 0 à 6 du format 2 inchangés, nouveaux champs à la fin (journal, postes, relèves, méta), migration à la lecture, copies de secours `_bak` et `_v2`, export, import et retour arrière en texte, champs d'un format plus récent recopiés tels quels.
+- `fn_tocTheme.sqf` : table `_tokensNight` (mêmes jetons, pour la nuit), modes `variant`, `tokens`, variante facultative sur `rgba`, `hex`, `ink`. Aucun jeton du jour changé. Réglage « Thème des écrans TOC » ; adopté pour l'instant par la seule fenêtre du journal, du diagnostic et des relèves.
+- `fn_tocDiag.sqf` (nouveau) : relevé du TOC (salles, écrans, flux, postes, sauvegarde, performances, versions) sans nom ni identifiant de joueur, écrit au journal COMSPEC, copié et montré dans une fenêtre ; action Zeus « ATAK · TOC », touche CBA, action ACE sur soi.
+- `fn_tocApi.sqf` (nouveau), `docs/TOC-API.md` : API 1.0, 35 verbes, 15 événements `comspec_atak_toc_*`, arguments contrôlés, jamais d'erreur de script. `fn_tocPresets.sqf` (nouveau) : préréglages de salle dans le profil du serveur ou la mission, texte d'échange.
+- Accroches d'une ligne dans les fichiers des autres branches : `fn_tocHall.sqf` (envoi et ancien événement), `fn_tocScreen.sqf` (envoi de « view » et « remove », ancien événement), `XEH_postInitServer.sqf`, `XEH_postInitClient.sqf`, `config.cpp`, `XEH_preInit.sqf` (six réglages, chacun avec un exemple). `docs/TOC-ACCESS.md` décrit les points d'accroche. `fn_tocRoom.sqf` n'est pas touché (contrôle des demandes du lot 1).
+- Noms montrés par ce lot (journal, postes, relèves, verrou) : jamais le pseudo Steam. `fn_tocAccess` « nameOf » appelle le résolveur commun `comspec_atak_native_fnc_tocDisplayName` quand il est chargé (lot « sans téléphone »), sinon écrit le groupe et le rang du jeu (« Alpha 1-1 · 2 »).
+- Aucune alerte du jeu, aucune requête vers Athena, `fn_radioGuard` non touché.
+- Tests : `AtakTocAccessMatrixTest`, `AtakTocPersistFormatTest`, `AtakTocJournalTest`, `AtakTocApiContractTest`, `AtakTocThemeNightTest`.
+- Non vérifié en jeu.
+
 ## Pack 4.11.0 Washington : le TOC fonctionne sans téléphone (ATAK natif 4.11.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 
 ### Résumé joueur
