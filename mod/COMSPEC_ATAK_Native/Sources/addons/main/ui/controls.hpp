@@ -41,6 +41,13 @@ class COMSPEC_RscStructuredText: RscStructuredText { shadow=0; colorText[]=ATAK_
     // Police des balises <t> sans font=… (Roboto Condensed dans la classe du jeu).
     class Attributes: Attributes { font=ATAK_FONT; };
 };
+// Écrans TOC posés dans le monde (texture UI, fn_tocScreen / fn_tocBoard) : tailles fixes en part de la hauteur de la
+// texture, jamais selon la taille d'interface du joueur qui regarde (safeZoneH). Mise en page 1600 x 900 virtuels :
+// 0.0311 = 28 px, le texte courant (size='1' des balises <t>).
+class COMSPEC_RscTocText: COMSPEC_RscStructuredText { size=0.0311; };
+class COMSPEC_RscTocLabel: COMSPEC_RscText { sizeEx=0.0311; };
+class COMSPEC_RscTocLabelRight: COMSPEC_RscTocLabel { style=1; };
+class COMSPEC_RscTocLabelCenter: COMSPEC_RscTocLabel { style=2; };
 class COMSPEC_RscButton: RscButton {
     // Désactivé (ctrlEnable false) : texte nettement atténué et fond quasi transparent, bien distinct d'un bouton
     // disponible non choisi (fond BG2, texte clair).

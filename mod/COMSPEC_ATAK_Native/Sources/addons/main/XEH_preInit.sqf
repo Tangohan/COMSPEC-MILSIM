@@ -1175,6 +1175,10 @@ private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_toc_cam_range", "SLIDER",
     ["Distance d'activation des caméras d'écran (m)", "Un écran TOC en affichage caméra ne montre l'image en direct qu'aux joueurs plus proches que cette distance et qui le regardent. Plus loin, il montre la carte et le flux du poste."],
     _loc, [10, 150, 40, 0], 1] call comspec_atak_native_fnc_addSetting;
+// Écrans TOC posés dans le monde (fn_tocScreen « tick ») : réglage de chaque joueur (son PC, ses images par seconde).
+["comspec_atak_native_toc_view_range", "SLIDER",
+    ["Distance d'affichage des écrans TOC (m)", "Un écran TOC n'est dessiné et rafraîchi que si vous êtes plus près que cette distance, à peu près face à lui et sans mur entre vous. Un peu plus loin, il garde sa dernière image ; au-delà, il se met en veille : ni calcul ni caméra. Les caméras d'écran suivent aussi cette distance. Exemple : 25 m pour une salle d'opérations, 60 m pour un grand écran dehors."],
+    _loc, [10, 100, 25, 0], 0] call comspec_atak_native_fnc_addSetting;
 // IA et ATAK (fn_aiAtak).
 private _ai = ["COMSPEC", "ATAK · IA"];
 ["comspec_atak_native_ai_atak", "LIST",

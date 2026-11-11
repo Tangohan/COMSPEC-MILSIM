@@ -4,8 +4,9 @@
     camp (nacelle), caméra fixe (fn_camAction) ou caméra poitrine d'un porteur d'ATAK (comme la Live cam).
     Seul le choix circule en multijoueur : variable publique de l'écran COMSPEC_ATAK_TocCam = netId de la source
     (posée par le serveur, joueurs qui rejoignent compris). Chaque joueur crée lui-même sa caméra et sa cible de rendu
-    (comspec_toccam_<n>, une par écran), seulement pour les écrans qu'il regarde, à moins de
-    comspec_atak_native_toc_cam_range mètres, et au plus comspec_atak_native_toc_cam_max à la fois (les plus proches).
+    (comspec_toccam_<n>, une par écran), seulement pour les écrans allumés qu'il regarde (fn_tocScreen ne lui passe
+    que ceux-là : distance d'affichage, devant soi, pas derrière un mur), à moins de comspec_atak_native_toc_cam_range
+    mètres, et au plus comspec_atak_native_toc_cam_max à la fois (les plus proches).
     Ailleurs, l'écran montre la carte et le flux du poste (vue SPLIT), sans rendu. Qualité d'image selon la liaison
     montante de la source (fn_feedLink) : le poste est filaire, le téléphone de qui regarde n'y est pour rien.
     Modes :
@@ -92,8 +93,9 @@ switch (_mode) do {
                 && {(getNumber (configOf _o >> "comspec_projBoard")) < 1 || {_o getVariable ["COMSPEC_ATAK_ProjLit", false]}}
                 && {alive objectFromNetId (_o getVariable ["COMSPEC_ATAK_TocCam", ""])}
                 // Regardé il y a moins de 3 s : un coup d'œil ailleurs ne coupe pas l'image, personne devant = pas de rendu.
+                // Centre de l'image, pas l'origine du modèle (au sol ou au plafond : hors champ devant un écran mural).
                 && {call {
-                    if ((worldToScreen (ASLToAGL getPosASL _o)) isNotEqualTo []) then { _o setVariable ["COMSPEC_ATAK_TocCamSeen", diag_tickTime]; };
+                    if ((worldToScreen (ASLToAGL (["center", _o] call comspec_atak_native_fnc_tocScreen))) isNotEqualTo []) then { _o setVariable ["COMSPEC_ATAK_TocCamSeen", diag_tickTime]; };
                     diag_tickTime - (_o getVariable ["COMSPEC_ATAK_TocCamSeen", -1e9]) < 3
                 }}
         };

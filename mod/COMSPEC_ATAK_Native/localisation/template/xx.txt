@@ -23040,5 +23040,17 @@
 ["16:9 (écran, TV, mur d'images)", "", "16:9 (screen, TV, video wall)"],
 ["Bandeau 4:1 (horloge, plaque de nom)", "", "4:1 strip (clock, name plate)"],
 ["Matière d'écran COMSPEC, lumineuse jour et nuit", "", "COMSPEC screen material, bright day and night"],
-["L'objet affiche le réseau ATAK du camp ou un affichage de la salle TOC pour chaque joueur à moins de 150 m. ★ : surface proposée. Image absente ou mal placée : choisissez une autre surface et testez l'image.", "", "The object shows the side's ATAK network or a TOC room display to every player within 150 m. ★: suggested surface. Picture missing or misplaced: pick another surface and test the picture."]
+["L'objet affiche le réseau ATAK du camp ou un affichage de la salle TOC pour chaque joueur à moins de 150 m. ★ : surface proposée. Image absente ou mal placée : choisissez une autre surface et testez l'image.", "", "The object shows the side's ATAK network or a TOC room display to every player within 150 m. ★: suggested surface. Picture missing or misplaced: pick another surface and test the picture."],
+["+ %1 autres chronos au PC du poste", "", "+ %1 more timers on the post PC"],
+["AUCUN GROUPE", "", "NO GROUP"],
+["(sans groupe)", "", "(no group)"],
+["NŒUDS", "", "NODES"],
+["anciens", "", "stale"],
+["perdus", "", "lost"],
+["demandes des éléments", "", "requests from elements"],
+["quadrillage %1", "", "grid %1"],
+["%1 brouilleurs", "", "%1 jammers"],
+["onglet %1", "", "tab %1"],
+["Distance d'affichage des écrans TOC (m)", "", "TOC screen display distance (m)"],
+["Un écran TOC n'est dessiné et rafraîchi que si vous êtes plus près que cette distance, à peu près face à lui et sans mur entre vous. Un peu plus loin, il garde sa dernière image ; au-delà, il se met en veille : ni calcul ni caméra. Les caméras d'écran suivent aussi cette distance. Exemple : 25 m pour une salle d'opérations, 60 m pour un grand écran dehors.", "", "A TOC screen is drawn and refreshed only when you are closer than this distance, roughly facing it and with no wall in between. A little further away it keeps its last image; beyond that it goes to standby: no computing, no camera. Screen cameras follow this distance too. Example: 25 m for an operations room, 60 m for a big outdoor screen."]
 ]
