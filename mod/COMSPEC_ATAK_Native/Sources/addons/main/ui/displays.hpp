@@ -113,6 +113,16 @@ class RscTitles {
             class Label: COMSPEC_RscStructuredText { idc=7774; x=-2; y=-2; w=0.05; h=0.05; text=""; };
         };
     };
+    // Encadré « Qui parle » (fn_tocRadioUi) : émetteurs en cours et leur réseau, placé par le code.
+    class COMSPEC_RscTitleTocRadioHud {
+        idd=-1; duration=1e+011; fadein=0; fadeout=0; movingEnable=0;
+        onLoad="uiNamespace setVariable ['COMSPEC_ATAK_TocRadioHudDisplay', _this select 0]";
+        class controls {
+            class Back: COMSPEC_RscText { idc=7781; x=-2; y=-2; w=0.05; h=0.05; colorBackground[]={0.027,0.039,0.051,0.78}; };
+            class Bar: COMSPEC_RscText { idc=7782; x=-2; y=-2; w=0.004; h=0.05; colorBackground[]={0.204,0.827,0.6,1}; };
+            class Label: COMSPEC_RscStructuredText { idc=7783; x=-2; y=-2; w=0.05; h=0.05; text=""; };
+        };
+    };
     // GPS de poignet (fn_wristGps) : contrôles créés par le code.
     class COMSPEC_RscTitleWristGps {
         idd=-1; duration=1e+011; fadein=0; fadeout=0; movingEnable=0;

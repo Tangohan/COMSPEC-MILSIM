@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : le TOC voit qui parle sur quelle fréquence (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Le TOC voit qui parle à la radio, et sur quelle fréquence
+- Nouvel affichage « Activité radio » pour les écrans du TOC : l'indicatif de celui qui parle et sa fréquence en grand, puis chaque réseau avec son dernier émetteur, depuis quand il est silencieux et son occupation.
+- Nouvelle console radio (menu d'un écran TOC › Activité radio, ou module Zeus « Activité radio ») : qui émet en ce moment, liste des réseaux à surveiller que vous nommez vous-même (par exemple CMD NET sur 31.000), historique des 50 dernières émissions.
+- Le TOC est prévenu quand deux personnes parlent en même temps sur le même réseau, et quand un réseau de commandement reste muet trop longtemps.
+- Fonctionne avec ACRE2, avec TFAR, et sans mod radio (canaux du jeu). Aucun téléphone ni Athena requis.
+- En option dans les réglages du mod : un petit encadré « Qui parle » à l'écran, pour vos propres réseaux ; les Zeus l'ont d'office.
+EN : The TOC sees who is talking on the radio, and on which frequency
+- New "Radio activity" display for the TOC screens: the callsign of whoever is talking and their frequency in large type, then each net with its last talker, how long it has been silent and how busy it is.
+- New radio console (menu of a TOC screen › Radio activity, or the "Radio activity" Zeus module): who is transmitting right now, a list of nets to watch that you name yourself (for example CMD NET on 31.000), history of the last 50 transmissions.
+- The TOC is told when two people talk at the same time on the same net, and when a command net stays quiet for too long.
+- Works with ACRE2, with TFAR, and without a radio mod (game channels). No phone and no Athena needed.
+- Optional in the mod settings: a small "Who is talking" box on screen, for your own nets; Zeus players get it by default.
+
+### Détail technique
+- Audit : `docs/audit/2026-11-radio-ptt.md`. Modèle `fn_tocRadio` (événements seulement, collecte éteinte tant que personne ne regarde, envois regroupés, état complet à l'abonnement), affichages `fn_tocRadioUi` (affichage `RADIO` des écrans, panneau « mount » pour la console du poste, calque `COMSPEC_RscTitleTocRadioHud`), module `COMSPEC_ATAK_Module_TocRadio`.
+- ACRE2 et TFAR lus par `fn_radioGuard` seulement, aucune dépendance ajoutée. Six réglages CBA (« ATAK · Mode local et poste TOC »).
+- Tests : `tests/Unit/AtakTocRadioAssetTest.php` (calculs rejoués sur la table `_vectors`, branchements, traductions).
+- Non vu en jeu : voir la fin de l'audit.
+
 ## À venir : poste TOC web et plans d'opération sur Athena (site Athena, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

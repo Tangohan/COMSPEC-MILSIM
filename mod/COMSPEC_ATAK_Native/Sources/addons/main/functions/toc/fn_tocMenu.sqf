@@ -132,6 +132,7 @@ switch (_mode) do {
                 ["EXCHECK", ["excheck", "Liste d'exécution", "Étapes de l'opération et leur état. Exemple : « JAGUAR » passé, « LION » attendu."]],
                 ["KILLS", ["kills", "Pertes et résultats", "Pertes amies et résultats sur l'ennemi. Exemple : le bilan en fin d'action."]],
                 ["REQ", ["req", "Demandes des éléments", "Demandes en attente : MEDEVAC, appui, ravitaillement. Exemple : voir une demande d'évacuation."]],
+                ["RADIO", ["view|RADIO", "Activité radio", "Qui parle, sur quel réseau et quelle fréquence. Exemple : voir qui émet sur le réseau de commandement."]],
                 ["STRIP", ["strip", "Bandeau horloge ZULU / LOCAL", "Bandeau avec les deux heures. Exemple : au-dessus du mur d'écrans."]],
                 ["BROADCAST", ["view|BROADCAST", "Diffusion et mire (BROADCAST)", "Montre un autre écran ou, sans source, la mire. Exemple : le même écran recopié dans toute la salle."]],
                 ["TEXT", ["text", "Texte à LED…", "Ouvre la saisie du texte de l'écran. Exemple : « BRIEFING 21:00 ZULU » sur le bandeau."]],
@@ -149,7 +150,7 @@ switch (_mode) do {
                 private _n = ["V" + _v, _def select 1, _def select 2, _def select 0, "", _view isEqualTo _v] call _leaf;
                 switch (true) do {
                     case (_v in ["SPLIT", "MAP", "FEED", "NET", "ORBAT", "TOC"]): { _mapK pushBack _n; };
-                    case (_v in ["CLOCK", "LOG", "EXCHECK", "KILLS", "REQ"]): { _brdK pushBack _n; };
+                    case (_v in ["CLOCK", "LOG", "EXCHECK", "KILLS", "REQ", "RADIO"]): { _brdK pushBack _n; };
                     default { _other pushBack _n; };
                 };
             } forEach _okViews;
@@ -353,6 +354,10 @@ switch (_mode) do {
         if (!isNil "comspec_atak_native_fnc_tocManager") then {
             _out pushBack (["Manager", "Gérer les écrans (tableau)…", "Ouvre le tableau de tous les écrans TOC. Exemple : changer la vue de dix écrans d'un coup.", "manager", _d + "app_settings.paa"] call _leaf);
         };
+        // Console radio (fn_tocRadioUi) : qui parle, sur quelle fréquence, si elle est là.
+        if (!isNil "comspec_atak_native_fnc_tocRadioUi") then {
+            _out pushBack (["Radio", "Activité radio (console)…", "Ouvre la console radio du poste : qui parle, sur quel réseau, liste de veille, historique. Exemple : ajouter 31.000 à la veille.", "radio", _d + "app_network.paa"] call _leaf);
+        };
         [_out, "Root"] call _fit
     };
     case "ace": {
@@ -494,6 +499,9 @@ switch (_mode) do {
             case "manager": {
                 // À l'image suivante : le menu ACE se referme d'abord.
                 if (!isNil "comspec_atak_native_fnc_tocManager") then { [{ ["open"] call comspec_atak_native_fnc_tocManager; }, []] call comspec_atak_native_fnc_nextFrame; };
+            };
+            case "radio": {
+                if (!isNil "comspec_atak_native_fnc_tocRadioUi") then { [{ ["open"] call comspec_atak_native_fnc_tocRadioUi; }, []] call comspec_atak_native_fnc_nextFrame; };
             };
             case "view": { ["show", [_o, _rest]] call _ts; };
             case "plate": {

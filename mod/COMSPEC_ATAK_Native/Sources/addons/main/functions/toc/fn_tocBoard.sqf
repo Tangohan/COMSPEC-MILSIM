@@ -552,6 +552,10 @@ switch (_mode) do {
                 ["NET", "cols" call _rg, "area" call _rg, _rows select [0, _per], ""] call _table;
                 ["NET", "cols2" call _rg, "area2" call _rg, _rows select [_per], "+ %1 autres"] call _table;
             };
+            case "RADIO": {
+                // Activité radio (fn_tocRadioUi « wall ») : qui parle, sur quel réseau, quelle fréquence ; dessiné avec les outils d'ici.
+                ["wall", [_side, createHashMapFromArray [["text", _text], ["box", _box], ["tiles", _tiles], ["section", _sectionW], ["table", _table], ["rg", _rg]]]] call comspec_atak_native_fnc_tocRadioUi;
+            };
             case "ORBAT": {
                 // ORBAT du site sur trois colonnes, par pages (10 s), chaque membre avec son état.
                 ["load"] call comspec_atak_native_fnc_bftOrbat;

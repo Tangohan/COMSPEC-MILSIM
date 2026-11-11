@@ -45,7 +45,7 @@ final class AtakTocScreenDisplaysAssetTest extends TestCase
     {
         $scr = self::read(self::TOC . 'fn_tocScreen.sqf');
         $views = self::list($scr, '_views');
-        self::assertCount(25, $views);
+        self::assertCount(26, $views);
 
         // Module « Poser un écran TOC » (Eden / Zeus) : [libellé, AFFICHAGE].
         $mod = self::read(self::TOC . 'fn_moduleTocScreen.sqf');

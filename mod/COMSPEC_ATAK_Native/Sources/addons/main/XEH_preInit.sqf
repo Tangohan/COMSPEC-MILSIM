@@ -1212,6 +1212,25 @@ private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_toc_view_range", "SLIDER",
     ["Distance d'affichage des écrans TOC (m)", "Un écran TOC n'est dessiné et rafraîchi que si vous êtes plus près que cette distance, à peu près face à lui et sans mur entre vous. Un peu plus loin, il garde sa dernière image ; au-delà, il se met en veille : ni calcul ni caméra. Les caméras d'écran suivent aussi cette distance. Exemple : 25 m pour une salle d'opérations, 60 m pour un grand écran dehors."],
     _loc, [10, 100, 25, 0], 0] call comspec_atak_native_fnc_addSetting;
+// Activité radio au poste TOC (fn_tocRadio, fn_tocRadioUi) : qui parle, sur quelle fréquence.
+["comspec_atak_native_toc_radio_enabled", "CHECKBOX",
+    ["Activité radio au poste TOC", "Coché : le poste TOC voit qui parle à la radio, sur quel réseau et quelle fréquence (console radio, écran mural RADIO, encadré « Qui parle »). ACRE2, TFAR ou, sans mod radio, les canaux du jeu. Rien ne circule tant que personne ne regarde. Décoché : aucune émission n'est signalée. Exemple : décochez pour une mission où le poste ne doit rien savoir des radios."],
+    _loc, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_radio_nets", "EDITBOX",
+    ["Réseaux surveillés par défaut", "Liste de veille des postes TOC tant que personne ne l'a changée (console radio, module Activité radio). Réseaux séparés par des virgules : nom=fréquence en MHz, ou la fréquence seule ; une étoile à la fin demande un contrôle radio régulier. Exemple : CMD NET=31.000*, AIR=40.500, 152.250. Sans mod radio : VON-CAMP, VON-CMDT."],
+    _loc, "", 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_radio_see_all", "CHECKBOX",
+    ["Le TOC voit tous les réseaux du camp", "Décoché (par défaut) : le poste ne voit que les réseaux de sa liste de veille. Coché : il voit toutes les émissions de son camp, même sur une fréquence qu'il ne veille pas. Exemple : cochez pour une partie d'entraînement, décochez pour qu'une équipe puisse parler sur une fréquence discrète."],
+    _loc, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_radio_silence", "SLIDER",
+    ["Silence d'un réseau (min)", "Un réseau marqué « contrôle radio attendu » est signalé quand personne n'y a parlé depuis ce nombre de minutes. 0 : jamais d'alerte. Exemple : 10 affiche « silence 12 min » sur le réseau de commandement resté muet 12 minutes."],
+    _loc, [0, 60, 10, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_radio_hud", "CHECKBOX",
+    ["Encadré « Qui parle » à l'écran", "Réglage personnel, décoché par défaut. Coché : un petit encadré à droite de l'écran liste qui émet en ce moment sur les réseaux de vos radios, avec le réseau, la fréquence et la durée. Il disparaît quand personne ne parle. Exemple : « ● ALPHA 1-1 CMD NET 31.000 0:07 »."],
+    _loc, false, 0, { if (hasInterface && {!isNil "comspec_atak_native_fnc_tocRadioUi"}) then { ["hudSync"] call comspec_atak_native_fnc_tocRadioUi; }; }] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_radio_hud_zeus", "CHECKBOX",
+    ["Encadré « Qui parle » au Zeus", "Réglage personnel, coché par défaut. Dans l'interface du Zeus, l'encadré liste les émissions de tous les camps et de tous les réseaux. Exemple : vérifier d'un coup d'œil que les deux camps se parlent."],
+    _loc, true, 0, { if (hasInterface && {!isNil "comspec_atak_native_fnc_tocRadioUi"}) then { ["hudSync"] call comspec_atak_native_fnc_tocRadioUi; }; }] call comspec_atak_native_fnc_addSetting;
 // IA et ATAK (fn_aiAtak).
 private _ai = ["COMSPEC", "ATAK · IA"];
 ["comspec_atak_native_ai_atak", "LIST",

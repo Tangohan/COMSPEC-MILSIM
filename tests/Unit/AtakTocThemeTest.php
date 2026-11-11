@@ -159,7 +159,7 @@ final class AtakTocThemeTest extends TestCase
     /** @return iterable<string, array{string}> */
     public static function walls(): iterable
     {
-        foreach (['FRAME', 'SPLIT', 'MAP', 'SQUAD', 'FEED', 'NET', 'ORBAT', 'CLOCK', 'LOG', 'EXCHECK', 'KILLS', 'REQ', 'MOSAIC', 'STRIP', 'PLATE'] as $v) {
+        foreach (['FRAME', 'SPLIT', 'MAP', 'SQUAD', 'FEED', 'NET', 'ORBAT', 'CLOCK', 'LOG', 'EXCHECK', 'KILLS', 'REQ', 'RADIO', 'MOSAIC', 'STRIP', 'PLATE'] as $v) {
             yield $v => [$v];
         }
     }
@@ -245,7 +245,7 @@ final class AtakTocThemeTest extends TestCase
         // Table de colonnes -> largeur de son tableau.
         $areaW = ['GRP_S' => $walls['SPLIT']['grpArea'][2], 'FLUX_S' => $walls['SPLIT']['fluxArea'][2], 'MEM' => $walls['SQUAD']['memArea'][2],
             'FEED' => $walls['FEED']['area'][2], 'NET' => $walls['NET']['area'][2], 'LOG' => $walls['LOG']['area'][2], 'EXCHECK' => $walls['EXCHECK']['area'][2],
-            'KILLS' => $walls['KILLS']['area'][2], 'KILLS_G' => $walls['KILLS']['area'][2], 'REQ' => $walls['REQ']['area'][2], 'TIMER' => $walls['CLOCK']['tArea'][2],
+            'KILLS' => $walls['KILLS']['area'][2], 'KILLS_G' => $walls['KILLS']['area'][2], 'REQ' => $walls['REQ']['area'][2], 'RADIO' => $walls['RADIO']['area'][2], 'TIMER' => $walls['CLOCK']['tArea'][2],
             'LOG_C' => $walls['COLD']['logArea'][2], 'EXCHECK_C' => $walls['COLE']['exArea'][2], 'REQ_C' => $walls['COLF']['reqArea'][2], 'KILLS_C' => $walls['COLF']['killArea'][2]];
         foreach (self::table('_cols') as [$name, $cols]) {
             self::assertArrayHasKey($name, $areaW, "colonnes {$name} sans tableau");
