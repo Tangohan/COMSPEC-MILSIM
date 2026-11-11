@@ -13,14 +13,14 @@ FONTS = r"C:\Windows\Fonts"
 LINES = [
     ("COMSPEC FLASHBANG - CHAMP DE TEST", 46, (255, 255, 255)),
     ("", 14, None),
-    ("FB-1 à FB-9 : nombre de détonations    FB-DRILL : bleue, inerte", 30, (235, 235, 235)),
+    ("Flash ×1 à ×9 : nombre de détonations    Drill : bleue, inerte", 30, (235, 235, 235)),
     ("G : lancer      Ctrl+G : changer de grenade", 30, (235, 235, 235)),
     ("", 14, None),
     ("A  champ ouvert : cercle à 25 m, IA de 2 à 35 m", 28, (255, 214, 120)),
     ("B  pièce fermée   C  pièce à fenêtres", 28, (255, 214, 120)),
-    ("D  couloir   E  hangar", 28, (255, 214, 120)),
+    ("D  couloir   E  hangar   F  délais : 1,5 s / 3 s / 8 s", 28, (255, 214, 120)),
     ("", 14, None),
-    ("Caisse : jour / nuit, aller aux zones, recharger", 28, (235, 235, 235)),
+    ("Caisses Flash et délais : jour / nuit, zones, recharger", 28, (235, 235, 235)),
     ("Comparer : JVN, lunette, dos tourné, derrière un mur", 28, (235, 235, 235)),
     ("Consignes complètes : carte > Flashbang", 28, (170, 200, 255)),
 ]

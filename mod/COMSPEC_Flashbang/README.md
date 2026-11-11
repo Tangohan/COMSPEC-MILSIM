@@ -74,20 +74,23 @@ Les 40 classes sont générées par des macros (`FB_AMMO_DELAYS`, `FB_MAG_DELAYS
 
 Ces effets ne touchent que lui. La lumière et le bang, eux, sont vus et entendus par tout le monde.
 
-- **Éblouissement** : voile blanc instantané. L'image est pleinement blanche environ 1,2 s, puis elle revient
-  d'abord vite, ensuite lentement. Le contraste et les couleurs sont réduits pendant ce temps.
-- **Image rémanente** : une tache reste à l'endroit de l'écran où était le flash. Elle est claire pendant 0,8 s, puis
+- **Éblouissement** : voile blanc instantané. À 3 m, l'écran est entièrement blanc environ 1,5 s, le blanc s'efface
+  en 1,5 s environ, la vision reste très dégradée jusqu'à 6-8 s (voile, contraste et couleurs réduits), puis revient
+  vers 12 s. Chaque flash suivant redonne un blanc plein écran bref.
+- **Image rémanente** : une grande tache reste à l'endroit de l'écran où était le flash. Elle est claire pendant 0,8 s, puis
   sombre, avec une teinte qui dérive. Elle bouge avec le regard (elle est sur la rétine) et s'efface en 25 s au plus.
   Si le flash était hors du champ de vision, il n'y a pas de tache.
-- **Perte d'acuité** : flou léger qui se dissipe en 10 s environ. Il n'y a ni distorsion ni effet « psychédélique ».
+- **Perte d'acuité** : flou fort au début (DynamicBlur ~45 à 3 m de face, ~35 à 3 s, ~17 à 6 s), qui se dissipe en
+  12 s environ. Il n'y a ni distorsion ni effet « psychédélique ».
 - **JVN allumées** : tube saturé, voile beaucoup plus fort et grain marqué.
 - **Optique ou jumelles pointées sur le flash** : halo dans l'optique et effet multiplié par 1,5.
 - **Ouïe** : on entend le bang. Ensuite les sons du jeu, la voix et la radio baissent (jusqu'à 25 % du volume, jamais
   le silence total), puis reviennent lentement (35 s à pleine exposition).
 - **Acouphène** : sifflement aigu continu. Il part fort et retombe vite les premières secondes, puis traîne
   (jusqu'à 45 s, réglable).
-- **Motricité** : la visée devient instable pendant environ 8 s, avec une secousse brève de la caméra due à l'onde de
-  pression. Le joueur n'est ni immobilisé ni mis à terre, et ne subit aucun dégât par défaut.
+- **Désorientation** : secousse brève de la caméra (onde de pression), puis oscillation lente qui décroît (vertige),
+  visée très instable (dispersion jusqu'à x5) et pas plus lents (jusqu'à 80 % de la vitesse) pendant environ 10 s.
+  Le joueur n'est ni immobilisé ni mis à terre, et ne subit aucun dégât par défaut.
 - **Plusieurs flashs** : chaque flash relance et prolonge les effets. Le total est plafonné : 15 s d'éblouissement
   cumulé par défaut, 60 s d'ouïe étouffée, environ 45 s d'acouphène.
 
@@ -139,9 +142,12 @@ Ce que ça change :
   peu.
 - **Extérieur** :
   - le bang est sec et l'effet chute plus vite avec la distance ;
-  - au-delà de 150 m, on entend un bang lointain avec écho ;
+  - le bang est très fort sous 25 m, net jusqu'à 100 m, puis lointain avec écho ; on ne l'entend plus au-delà de la
+    « Portée du son » (250 m ; moitié à travers un mur ou depuis un local fermé) ;
   - le son arrive avec le retard dû à la distance (343 m/s) ;
-  - de jour l'éblouissement est moindre (0,65), de nuit il est plus fort (multiplicateur nuit).
+  - la nuit l'éblouissement est plus fort (multiplicateur nuit).
+- La portée du son ne change pas les effets : éblouissement et désorientation restent limités au rayon maximal
+  (25 m).
 
 ## Réglages
 
@@ -152,15 +158,16 @@ Les réglages « client » sont propres à chaque poste ; tous les autres sont i
 |---|---|---|---|
 | Préréglage | Réaliste | Réaliste (valeurs des sources), Arcade (+25 % de force, +60 % de durée), Léger (-30 %, -40 %) | Arcade pour une soirée détente |
 | Intensité globale | 1 | Multiplie tous les effets | 0.5 = moitié moins fort |
-| Rayon plein effet (m) | 6 | Plein éblouissement jusqu'à cette distance | 4 pour un effet plus localisé |
+| Rayon plein effet (m) | 3 | Plein éblouissement jusqu'à cette distance (table de calibration) | 5 pour un effet plus fort |
+| Portée du son (m) | 250 | Distance d'audibilité du bang en terrain dégagé (moitié à travers un mur) ; n'agit pas sur les effets | 250 = un quart de kilomètre ; moins pour un petit terrain |
 | Rayon maximal (m) | 25 | Au-delà, plus d'éblouissement ; le bang assourdit jusqu'à ~60 m | 15 |
 | Cécité cumulée max (s) | 15 | Plafond d'éblouissement quand les flashs s'enchaînent | 10 |
 | Détecter intérieur / extérieur | oui | Analyse du local, sinon 1 rayon vers le haut | non sur un serveur très chargé |
 | Multiplicateur intérieur | 1.4 | Force et portée en petite pièce | 1.6 |
 | Blessure à bout portant | non | Petite blessure à moins de 1 m (jamais avec ACE Médical) | oui |
 | Éblouissement | oui | Voile, image rémanente, halo | non pour ne garder que le son |
-| Perte d'acuité (flou) | oui | Flou léger qui se dissipe | non |
-| Multiplicateur nuit | 1.3 | Force la nuit / dans le noir (jour : 0,65) | 1.5 |
+| Perte d'acuité (flou) | oui | Flou fort qui se dissipe | non |
+| Multiplicateur nuit | 1.3 | Force la nuit / dans le noir (jour : 1) | 1.5 |
 | Multiplicateur JVN | 2 | Force avec JVN allumées | 3 |
 | Acouphène | oui | Sifflement qui décroît | non |
 | Durée max de l'acouphène (s) | 45 | Durée audible maximale | 20 |
@@ -177,7 +184,8 @@ Les réglages « client » sont propres à chaque poste ; tous les autres sont i
 | Son de la grenade d'entraînement | Pop | Son de chaque pop de la DRILL : Pop, Pop sourd, Bang léger, Bang réel, Rafale courte, Sifflet d'exercice, Cloche d'exercice, Aucun son | « Pop » pour un exercice discret, « Bang réel » pour s'entraîner au bruit d'une vraie détonation |
 | Volume du son d'entraînement | 100 % | Volume du son de la DRILL pour tous (20 à 150 %) | 60 % la nuit près des habitations |
 | Qualité des effets visuels (client) | Moyenne | Nombre de particules | Basse sur un petit PC |
-| Volume du bang (client) | 1 | Volume des détonations sur ce poste | 0.6 au casque |
+| Volume des flashbangs (client) | 200 % | Volume des bangs et sons de la DRILL sur ce poste (50-300 %) ; très fort : baissez le casque avant de tester | 100 % = niveau d'origine |
+| Volume de l'acouphène (client) | 150 % | Volume du sifflement (50-300 %) | 100 % si trop fort au casque |
 | Acouphène : son (client) | Enregistrement | Son enregistré par TTRD ou synthèse | Synthèse |
 | Journal de diagnostic (RPT) (client) | non | Écrit chaque étape d'une grenade dans le RPT de ce poste (lignes `[COMSPEC FB]`), rien à l'écran, aucun coût quand décoché | active-le, lance une grenade, puis envoie ton RPT |
 
@@ -196,7 +204,7 @@ Suffixe `_synth` : synthétisé pour le mod.
 | Bang d'un flash | `bang_unique_a_enreg.ogg`, `_b_`, `_c_` | enregistrement | 2,4 / 2,4 / 1,2 s | rejoué N fois (1 par flash) |
 | Couche grave | `bang_grave_enreg.ogg` | enregistrement filtré | 1,0 s | avec le 1er flash seulement |
 | Bang derrière un mur | `bang_interieur_etouffe_enreg.ogg` | enregistrement + réverbération synthétique | 2,8 s | auditeur séparé par un mur |
-| Bang lointain | `bang_lointain_enreg.ogg` | enregistrement + échos synthétiques | 3,8 s | dehors, au-delà de 150 m |
+| Bang lointain | `bang_lointain_enreg.ogg` | enregistrement + échos synthétiques | 3,8 s | dehors, au-delà de 100 m |
 | Acouphène | `acouphene_decroissance_enreg.ogg` | enregistrement + enveloppe calculée | 60 s | joué 1 fois par joueur, prolongé par chaque flash |
 | Acouphène (variante) | `acouphene_decroissance_synth.ogg` | synthèse | 60 s | réglage « Acouphène : son » |
 | Cuillère | `levier_cuillere_synth.ogg` | synthèse | 0,4 s | au lancer |
@@ -220,6 +228,10 @@ comme les bangs. « Aucun son » : fumée seule.
 Les fichiers d'écoute sont copiés dans `H:\StreamLabs\ogg\` (tableau dans `LISEZ-MOI.txt`).
 
 Détails des bangs :
+- Niveaux des fichiers : bangs à crête -1 dBFS après un limiteur doux (environ -14 à -16 LUFS, +4,5 LU par rapport à
+  la première version), acouphène à crête -6 dBFS (+17 LU). Volume de lecture : volume de la table x « Volume des
+  flashbangs » (200 %) ; `playSound3D` plafonne à 5 par lecture, au-delà le bang est joué en 2 ou 3 lectures
+  superposées. Limiteur : -1 dB par bang au-delà du 4e (9 bangs ne saturent pas, le premier garde son impact).
 - Chaque bang est une lecture indépendante (`playSound3D` local). Les bangs se superposent sans se couper.
 - Hauteur ±5 %, volume ±1,5 dB, tirage parmi les 3 bangs sans répéter deux fois de suite le même.
 - Tous les fichiers sont en OGG Vorbis 44,1 kHz, sans écrêtage (crête ≤ -1 dBTP).
@@ -237,16 +249,29 @@ signalés.
 | Acouphène | aigu continu qui décroît, ≤ 45 s | acouphène et assourdissement temporaires, de quelques secondes à quelques minutes (description M84) | durée bornée pour le jeu |
 | Ouïe étouffée | jusqu'à 25 % du volume, retour en ~35 s | décalage temporaire du seuil d'audition après un bruit impulsionnel | pas de vraie courbe audiométrique |
 | Lumière | flash bref et très intense | 4 à 8 millions de candelas (M84 6-8 Mcd ; Primetake 8 Mcd ; Rheinmetall 4 Mcd) | lumière de jeu, pic ~2 images puis décroissance en 0,3 s |
-| Éblouissement | plein blanc ~1,2 s, récupération ~6 s, image rémanente jusqu'à 25 s | récupération de 5 s à 2 min selon l'intensité et la tâche ([HFES 2023, Flash Blindness Recovery for Pilots in the Modern Cockpit](https://katalog.lib.cas.cz/KNAV/EdsRecord/edo,ejs64963113)) | durées fixes x exposition^0,6 |
-| Adaptation | jour 0,65, nuit 1,3 | la récupération dépend de la taille de la pupille et de l'adaptation (rapports DTIC, ex. [AD0627332](https://apps.dtic.mil/sti/pdfs/AD0627332.pdf)) | `sunOrMoon` et toit au-dessus de la tête au lieu d'une vraie luminance |
-| Regarder ailleurs | 100 % à < 25°, 35 % à 90°, 10 % de dos | l'éblouissement dépend de l'éclairement de la rétine | courbe linéaire par morceaux |
+| Éblouissement | plein blanc ~1,5 s à 3 m, vision très dégradée 6-8 s, récupération ~12 s, image rémanente jusqu'à 25 s | récupération de 5 s à 2 min selon l'intensité et la tâche ([HFES 2023, Flash Blindness Recovery for Pilots in the Modern Cockpit](https://katalog.lib.cas.cz/KNAV/EdsRecord/edo,ejs64963113)) | durées fixes x exposition^0,6 |
+| Adaptation | jour 1, nuit 1,3 | la récupération dépend de la taille de la pupille et de l'adaptation (rapports DTIC, ex. [AD0627332](https://apps.dtic.mil/sti/pdfs/AD0627332.pdf)) | `sunOrMoon` et toit au-dessus de la tête au lieu d'une vraie luminance |
+| Distance et regard | table ci-dessous | à quelques mètres, plusieurs millions de candelas saturent toute la rétine, y compris en vision périphérique, et la pupille n'a pas le temps de se fermer ; de dos, la scène entière s'illumine | interpolation linéaire par morceaux |
 | Mèche | 1,5 s | M84 : 1 à 2,3 s ; Rheinmetall : 1,0 s ; NonLethal Technologies MP-FB-2 : 1,5 s | réglable 0,5-4 s ; variantes fixes 3 s et 8 s (choix de jeu, pour les entrées synchronisées) |
 | Multi-coups | 0,5 s ± 0,12 s, 1 à 9 coups | MP-FB-2 : 2e coup 0,5 s après le 1er ; Combined Systems 7290 : familles 2 à 9 coups | irrégularité aléatoire uniforme |
 | Empilement | chaque coup relance et prolonge, plafond 15 s | « chaque détonation relance la désorientation » | +50 % de la durée restante par coup |
 | Corps | Ø40 mm, 114 mm, 0,56 kg, évents en bas, bande marron | Rheinmetall 6 Bang Ø40 x 112 mm, 563 g ; Primetake Ø40 x 115 mm, 600 g | évents en texture et relief |
 | DRILL | pop sans flash, corps bleu | Rheinmetall : version d'entraînement 150 dB, corps bleu | pas de flash par défaut |
-| Motricité | visée instable ~8 s, secousse brève | désorientation, perte d'équilibre possible (Primetake), pas d'incapacité | pas de chute ni de ragdoll |
+| Désorientation | visée très instable, pas plus lents (0,8), oscillation de la caméra ~10 s, secousse brève | désorientation, perte d'équilibre possible (Primetake), pas d'incapacité | pas de chute ni de ragdoll |
 | Dégâts | aucun par défaut | non létale par conception ; brûlures possibles au contact | réglage « Blessure à bout portant » |
+
+**Table de calibration de l'éblouissement** (vision 0 à 1, extérieur, de jour, réglages par défaut ; distance
+œil-grenade, 3,5 m = grenade au sol à 3 m ; intérieur : x multiplicateur intérieur ; nuit et JVN : plus fort) :
+
+| Distance | 0-3,5 m | 5 m | 10 m | 15 m | 25 m |
+|---|---|---|---|---|---|
+| Regard ≤ 65° du flash | 1,00 | 0,85 | 0,50 | 0,30 | 0,04 |
+| De côté (90°) | 0,92 | 0,50 | 0,25 | 0,10 | 0 |
+| De dos (180°) | 0,35 | 0,20 | 0,08 | 0,03 | 0 |
+
+Mesure en jeu (autotest, joueur debout, grenade au sol, midi) : 2 m 1,00 / 0,98 (60°) / 0,90 (90°) ; 3 m 0,97 /
+0,96 / 0,82-0,84 ; 5 m 0,84 / 0,83 / 0,48 ; 10 m 0,50 / 0,50 / 0,25 ; 15 m 0,30 / 0,30 / 0,10 ; 25 m 0,04 / 0 / 0.
+De dos, l'angle réel dépend de l'inclinaison de la tête (125 à 160°) : 0,47 à 0,70 à 2-3 m.
 
 **Retiré parce que non réaliste** :
 - flou radial ;
@@ -317,8 +342,12 @@ signalés.
 
 ## Limites connues
 
-- **Rien n'a été testé en jeu à la livraison** : rendus visuels, niveaux sonores, comportement de l'IA et
-  synchronisation multijoueur sont relus mais pas encore vus en partie.
+- **Vérifié en jeu par l'autotest** (solo, CBA + ACE, avant l'arrêt des tests demandé par TTRD) : lancer avancé ACE
+  x1, x3, x9 (1re détonation à 1,50 s), Flash x1 · 8 s ACE (7,97 s, aucune détonation à l'impact), DRILL · 3 s ACE,
+  lancer vanilla x1 (1,51 s) et x9 (9/9 détonations), effets appliqués au joueur et à une IA, test console, calibration
+  extérieure mesurée. **Pas vu en jeu** : lancers vanilla x3 / 3 s / 8 s / DRILL avec le banc final, chemin de secours
+  ProjectileCreated, intérieur mesuré, rendu visuel du blanc, du flou et de la tache, désorientation recalibrée,
+  niveaux sonores (rien n'a été écouté), multijoueur.
 - **Lumière à travers les murs** : les lumières d'Arma traversent les murs. Le flash est donc limité à la taille de la
   pièce, mais une lueur peut se voir de l'autre côté d'un mur fin.
 - **Engin au sol** : un ThingX de 0,56 kg peut trembler légèrement sur certaines surfaces.
@@ -446,7 +475,13 @@ skills are restored exactly.
 hangar (under 0.1 ms per grenade).
 - Closed rooms: louder bang, stronger and wider dazzle, and reflected light even with your back turned.
 - A solid wall stops the flash; the bang still goes through, muffled.
-- Outdoors: the effect falls off faster, there is a distant echo beyond 150 m, and sound is delayed at 343 m/s.
+- Outdoors: very loud under 25 m, clear up to 100 m, distant echo beyond, inaudible beyond the « Sound range » (250 m,
+  half through a wall); sound is delayed at 343 m/s. The sound range does not change the effects (25 m max).
+
+**Calibration**: dazzle 1.0 within 3.5 m eye distance when looking within 65°, 0.92 at 90°, 0.35 from behind; 5 m
+0.85/0.5; 10 m 0.5/0.25; 15 m 0.3/0.1; 25 m negligible. Full white screen ~1.5 s at 3 m, heavy blur (DynamicBlur ~45),
+recovery ~12 s, unsteady aim, slower steps (0.8) and slow camera sway for ~10 s. Bang files peak at -1 dBFS (soft
+limiter), tinnitus at -6 dBFS; « Flashbang volume » 200 % and « Tinnitus volume » 150 % by default.
 
 **Exact bang count**:
 1. The thrower's machine runs the fuse on its own grenade.
