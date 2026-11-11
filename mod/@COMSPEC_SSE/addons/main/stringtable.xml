@@ -5312,6 +5312,191 @@
             <English>Military ID</English>
             <French>Carte militaire</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_Module">
+            <Original>Sync AI with Athena</Original>
+            <English>Sync AI with Athena</English>
+            <French>Synchroniser les IA avec Athena</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_ModuleDesc">
+            <Original>Session lore: sends the mission's AI (identity, description, papers, what they know, written answers) to Athena under the operation code, then brings back what the game master decided on the website. Known data feeds the Files app, SEEK II and identity checks; the AI answers with what was written for it. Server only, nothing is sent before the COMSPEC licence is accepted. Example: operation code OP-SOMBRE-LAC-2, all AI, send and fetch at start.</Original>
+            <English>Session lore: sends the mission's AI (identity, description, papers, what they know, written answers) to Athena under the operation code, then brings back what the game master decided on the website. Known data feeds the Files app, SEEK II and identity checks; the AI answers with what was written for it. Server only, nothing is sent before the COMSPEC licence is accepted. Example: operation code OP-SOMBRE-LAC-2, all AI, send and fetch at start.</English>
+            <French>Lore de session : envoie les IA de la mission (identité, signalement, papiers, ce qu'elles savent, réponses écrites) sur Athena sous le code d'opération, puis ramène ce que le maître du jeu a décidé sur le site. Les données connues alimentent l'app Fichiers, le SEEK II et les contrôles d'identité ; l'IA répond avec ce qui a été écrit pour elle. Serveur seulement, rien ne part avant l'acceptation de la licence COMSPEC. Exemple : code d'opération OP-SOMBRE-LAC-2, toutes les IA, envoyer et récupérer au démarrage.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_Scope">
+            <Original>Which AI</Original>
+            <English>Which AI</English>
+            <French>IA concernées</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_ScopeTip">
+            <Original>All AI of the mission (players never), the AI synchronized with this module and their groups, or the AI created by an SSE module (sites, buildings, exercise). Example: synchronize the leader of a cell to send the whole cell.</Original>
+            <English>All AI of the mission (players never), the AI synchronized with this module and their groups, or the AI created by an SSE module (sites, buildings, exercise). Example: synchronize the leader of a cell to send the whole cell.</English>
+            <French>Toutes les IA de la mission (jamais les joueurs), les IA synchronisées avec ce module et leur groupe, ou les IA créées par un module SSE (sites, bâtiments, exercice). Exemple : synchronisez le chef d'une cellule pour envoyer toute la cellule.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_ScopeAll">
+            <Original>All AI of the mission</Original>
+            <English>All AI of the mission</English>
+            <French>Toutes les IA de la mission</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_ScopeSynced">
+            <Original>AI synchronized with the module (and their group)</Original>
+            <English>AI synchronized with the module (and their group)</English>
+            <French>IA synchronisées au module (et leur groupe)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_ScopeSse">
+            <Original>AI created by an SSE module</Original>
+            <English>AI created by an SSE module</English>
+            <French>IA créées par un module SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_ScopeGroup">
+            <Original>Group of the unit under the module</Original>
+            <English>Group of the unit under the module</English>
+            <French>Groupe de l'unité sous le module</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_ScopeSel">
+            <Original>Zeus selection</Original>
+            <English>Zeus selection</English>
+            <French>Sélection Zeus</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_ScopeZeusTip">
+            <Original>All AI of the mission, the group of the AI the module is placed on, the AI selected in Zeus, or the AI created by an SSE module. 500 AI at most per session. Example: select the four guards of a checkpoint, then Zeus selection.</Original>
+            <English>All AI of the mission, the group of the AI the module is placed on, the AI selected in Zeus, or the AI created by an SSE module. 500 AI at most per session. Example: select the four guards of a checkpoint, then Zeus selection.</English>
+            <French>Toutes les IA de la mission, le groupe de l'IA sur laquelle le module est posé, les IA sélectionnées dans Zeus, ou les IA créées par un module SSE. 500 IA au plus par session. Exemple : sélectionnez les quatre gardes d'un checkpoint, puis Sélection Zeus.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_Op">
+            <Original>Operation code (session)</Original>
+            <English>Operation code (session)</English>
+            <French>Code d'opération (session)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_OpTip">
+            <Original>Key of the session on Athena: 2 to 64 characters, letters, digits and _ . : -. The same code on the website and in the game links them. Empty: setting COMSPEC SSE › Identity › Athena operation. Example: OP-SOMBRE-LAC-2.</Original>
+            <English>Key of the session on Athena: 2 to 64 characters, letters, digits and _ . : -. The same code on the website and in the game links them. Empty: setting COMSPEC SSE › Identity › Athena operation. Example: OP-SOMBRE-LAC-2.</English>
+            <French>Clé de la session sur Athena : 2 à 64 caractères, lettres, chiffres et _ . : -. Le même code sur le site et en jeu les relie. Vide : réglage COMSPEC SSE › Identité › Opération Athena. Exemple : OP-SOMBRE-LAC-2.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_PushStart">
+            <Original>Send the AI at start</Original>
+            <English>Send the AI at start</English>
+            <French>Envoyer les IA au démarrage</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_PushStartTip">
+            <Original>About ten seconds after launch, the server sends the chosen AI to Athena. A person already known (same identifier) is only completed: what the game master wrote on the website is never overwritten. Example: ticked for the first session of a campaign.</Original>
+            <English>About ten seconds after launch, the server sends the chosen AI to Athena. A person already known (same identifier) is only completed: what the game master wrote on the website is never overwritten. Example: ticked for the first session of a campaign.</English>
+            <French>Une dizaine de secondes après le lancement, le serveur envoie les IA choisies sur Athena. Une personne déjà connue (même identifiant) est seulement complétée : ce que le maître du jeu a écrit sur le site n'est jamais écrasé. Exemple : coché pour la première session d'une campagne.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_PullStart">
+            <Original>Fetch from Athena at start</Original>
+            <English>Fetch from Athena at start</English>
+            <French>Récupérer depuis Athena au démarrage</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_PullStartTip">
+            <Original>After the sending, the server reads the session on Athena: known data goes to the Files app, SEEK II and identity checks, the AI answers with its written answers. Example: ticked so the players find the files prepared during the week.</Original>
+            <English>After the sending, the server reads the session on Athena: known data goes to the Files app, SEEK II and identity checks, the AI answers with its written answers. Example: ticked so the players find the files prepared during the week.</English>
+            <French>Après l'envoi, le serveur lit la session sur Athena : les données connues vont à l'app Fichiers, au SEEK II et aux contrôles d'identité, l'IA répond avec ses réponses écrites. Exemple : coché pour que les joueurs trouvent les fichiers préparés dans la semaine.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_Refresh">
+            <Original>Automatic refresh (s)</Original>
+            <English>Automatic refresh (s)</English>
+            <French>Rafraîchissement automatique (s)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_RefreshTip">
+            <Original>Fetches the session again at this interval during the game. 0: off (default). 60 s minimum; Athena may ask for a longer interval, which is then respected. Example: 300 to see the game master's changes every 5 minutes.</Original>
+            <English>Fetches the session again at this interval during the game. 0: off (default). 60 s minimum; Athena may ask for a longer interval, which is then respected. Example: 300 to see the game master's changes every 5 minutes.</English>
+            <French>Relit la session à cet intervalle pendant la partie. 0 : désactivé (par défaut). 60 s minimum ; Athena peut demander un intervalle plus long, qui est alors respecté. Exemple : 300 pour voir les changements du maître du jeu toutes les 5 minutes.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_Action">
+            <Original>Action</Original>
+            <English>Action</English>
+            <French>Action</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_ActionTip">
+            <Original>Send: the chosen AI go to Athena. Fetch: what the website decided comes back to the AI of the game. Automatic refresh: fetches again at the interval below (0 stops it). Example: Send then fetch, after placing new AI.</Original>
+            <English>Send: the chosen AI go to Athena. Fetch: what the website decided comes back to the AI of the game. Automatic refresh: fetches again at the interval below (0 stops it). Example: Send then fetch, after placing new AI.</English>
+            <French>Envoyer : les IA choisies partent sur Athena. Récupérer : ce que le site a décidé revient sur les IA de la partie. Rafraîchissement automatique : relit à l'intervalle ci-dessous (0 l'arrête). Exemple : Envoyer puis récupérer, après avoir posé de nouvelles IA.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_ActBoth">
+            <Original>Send then fetch</Original>
+            <English>Send then fetch</English>
+            <French>Envoyer puis récupérer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_ActPush">
+            <Original>Send the AI to Athena</Original>
+            <English>Send the AI to Athena</English>
+            <French>Envoyer les IA à Athena</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_ActPull">
+            <Original>Fetch from Athena</Original>
+            <English>Fetch from Athena</English>
+            <French>Récupérer depuis Athena</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_ActAuto">
+            <Original>Automatic refresh (interval below)</Original>
+            <English>Automatic refresh (interval below)</English>
+            <French>Rafraîchissement automatique (intervalle ci-dessous)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_ActStatus">
+            <Original>Show the state only</Original>
+            <English>Show the state only</English>
+            <French>Voir l'état seulement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_Never">
+            <Original>never</Original>
+            <English>never</English>
+            <French>jamais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_Off">
+            <Original>off</Original>
+            <English>off</English>
+            <French>désactivé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_DescSession">
+            <Original>Session: %1 · %2</Original>
+            <English>Session: %1 · %2</English>
+            <French>Session : %1 · %2</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_DescPush">
+            <Original>Last sending: %1 · %2</Original>
+            <English>Last sending: %1 · %2</English>
+            <French>Dernier envoi : %1 · %2</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_DescPull">
+            <Original>Last fetch: %1 · %2</Original>
+            <English>Last fetch: %1 · %2</English>
+            <French>Dernière récupération : %1 · %2</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_DescAuto">
+            <Original>Automatic refresh: %1</Original>
+            <English>Automatic refresh: %1</English>
+            <French>Rafraîchissement automatique : %1</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_NoLicence">
+            <Original>Athena lore: COMSPEC licence not accepted on this computer, nothing is sent.</Original>
+            <English>Athena lore: COMSPEC licence not accepted on this computer, nothing is sent.</English>
+            <French>Lore Athena : licence COMSPEC non acceptée sur ce poste, rien n'est envoyé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_NoTarget">
+            <Original>Athena lore: place the module on an AI, or select AI in Zeus.</Original>
+            <English>Athena lore: place the module on an AI, or select AI in Zeus.</English>
+            <French>Lore Athena : posez le module sur une IA, ou sélectionnez des IA dans Zeus.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_Sent">
+            <Original>Athena lore: request sent to the server, the answer comes back in the module window.</Original>
+            <English>Athena lore: request sent to the server, the answer comes back in the module window.</English>
+            <French>Lore Athena : demande envoyée au serveur, la réponse revient dans la fenêtre du module.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_Prefix">
+            <Original>Athena lore:</Original>
+            <English>Athena lore:</English>
+            <French>Lore Athena :</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_AiUid">
+            <Original>Athena identifier (session lore)</Original>
+            <English>Athena identifier (session lore)</English>
+            <French>Identifiant Athena (lore)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_LORE_AiUidTip">
+            <Original>Stable identifier of this person on Athena, kept from one session to the next. Empty: Eden variable name, else declared SSE name, else position. Letters, digits and _ . : - (64 at most). Example: KARIM-HADDAD-01.</Original>
+            <English>Stable identifier of this person on Athena, kept from one session to the next. Empty: Eden variable name, else declared SSE name, else position. Letters, digits and _ . : - (64 at most). Example: KARIM-HADDAD-01.</English>
+            <French>Identifiant stable de cette personne sur Athena, gardé d'une session à l'autre. Vide : nom de variable Eden, sinon nom déclaré SSE, sinon position. Lettres, chiffres et _ . : - (64 au plus). Exemple : KARIM-HADDAD-01.</French>
+        </Key>
     </Package>
     <Package name="guide">
         <Key ID="STR_COMSPEC_SSE_GUIDE_MENU_TOOLS">
@@ -5614,6 +5799,21 @@
             <Original>Full guide: docs/guides/pays_des_papiers.en.md</Original>
             <English>Full guide: docs/guides/pays_des_papiers.en.md</English>
             <French>Guide complet : docs/guides/pays_des_papiers.md</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_GUIDE_LORE_TITLE">
+            <Original>Prepare a session: lore and Athena sync</Original>
+            <English>Prepare a session: lore and Athena sync</English>
+            <French>Préparer une session : lore et synchro Athena</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_GUIDE_LORE_DESC">
+            <Original>&lt;t color='#7fd08a'&gt;What it is for&lt;/t&gt;&lt;br/&gt;Prepare the people of a session on the Athena website and find them in game: who they are, how they look, what the files say about them, what they answer.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Before the session&lt;/t&gt;&lt;br/&gt;• Choose an operation code, e.g. OP-SOMBRE-LAC-2: the same on the website and in the module.&lt;br/&gt;• In Eden, place the module Identity › Sync AI with Athena. Give a variable name (or an Athena identifier) to the people who matter: they are found again from one session to the next.&lt;br/&gt;• Launch the mission once: the AI go to Athena. On the website, complete each person: what the files know, what is hidden, the answers of the AI.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;During the session&lt;/t&gt;&lt;br/&gt;• Fetch at start brings back what you decided. Zeus: the same module placed in game (send, fetch, automatic refresh, state of the last sync).&lt;br/&gt;• The Files app, SEEK II and identity checks only show what is known in the files. The AI answers with its written answers.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Pitfalls&lt;/t&gt;&lt;br/&gt;• Nothing leaves before the COMSPEC licence is accepted, nor without the Athena link.&lt;br/&gt;• Session locked on the website: nothing is changed.&lt;br/&gt;• 500 people at most per session; what you wrote on the website is never overwritten by the game.</Original>
+            <English>&lt;t color='#7fd08a'&gt;What it is for&lt;/t&gt;&lt;br/&gt;Prepare the people of a session on the Athena website and find them in game: who they are, how they look, what the files say about them, what they answer.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Before the session&lt;/t&gt;&lt;br/&gt;• Choose an operation code, e.g. OP-SOMBRE-LAC-2: the same on the website and in the module.&lt;br/&gt;• In Eden, place the module Identity › Sync AI with Athena. Give a variable name (or an Athena identifier) to the people who matter: they are found again from one session to the next.&lt;br/&gt;• Launch the mission once: the AI go to Athena. On the website, complete each person: what the files know, what is hidden, the answers of the AI.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;During the session&lt;/t&gt;&lt;br/&gt;• Fetch at start brings back what you decided. Zeus: the same module placed in game (send, fetch, automatic refresh, state of the last sync).&lt;br/&gt;• The Files app, SEEK II and identity checks only show what is known in the files. The AI answers with its written answers.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Pitfalls&lt;/t&gt;&lt;br/&gt;• Nothing leaves before the COMSPEC licence is accepted, nor without the Athena link.&lt;br/&gt;• Session locked on the website: nothing is changed.&lt;br/&gt;• 500 people at most per session; what you wrote on the website is never overwritten by the game.</English>
+            <French>&lt;t color='#7fd08a'&gt;À quoi ça sert&lt;/t&gt;&lt;br/&gt;Préparer les personnes d'une session sur le site Athena et les retrouver en jeu : qui elles sont, leur signalement, ce que disent les fichiers, ce qu'elles répondent.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Avant la session&lt;/t&gt;&lt;br/&gt;• Choisissez un code d'opération, par exemple OP-SOMBRE-LAC-2 : le même sur le site et dans le module.&lt;br/&gt;• Dans Eden, posez le module Identité › Synchroniser les IA avec Athena. Donnez un nom de variable (ou un identifiant Athena) aux personnes qui comptent : elles sont retrouvées d'une session à l'autre.&lt;br/&gt;• Lancez la mission une fois : les IA partent sur Athena. Sur le site, complétez chaque personne : ce que savent les fichiers, ce qui reste caché, les réponses de l'IA.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Pendant la session&lt;/t&gt;&lt;br/&gt;• Récupérer au démarrage ramène ce que vous avez décidé. Zeus : le même module posé en jeu (envoyer, récupérer, rafraîchissement automatique, état de la dernière synchro).&lt;br/&gt;• L'app Fichiers, le SEEK II et les contrôles d'identité ne montrent que ce qui est connu des fichiers. L'IA répond avec ses réponses écrites.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Pièges&lt;/t&gt;&lt;br/&gt;• Rien ne part avant l'acceptation de la licence COMSPEC, ni sans liaison Athena.&lt;br/&gt;• Session verrouillée sur le site : rien n'est modifié.&lt;br/&gt;• 500 personnes au plus par session ; ce que vous avez écrit sur le site n'est jamais écrasé par le jeu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_GUIDE_LORE_TIP">
+            <Original>Module: Identity › Sync AI with Athena (Eden and Zeus).</Original>
+            <English>Module: Identity › Sync AI with Athena (Eden and Zeus).</English>
+            <French>Module : Identité › Synchroniser les IA avec Athena (Eden et Zeus).</French>
         </Key>
     </Package>
 </Project>
