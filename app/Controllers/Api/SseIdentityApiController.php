@@ -26,7 +26,8 @@ use App\Support\SseIdentityPackCache;
 /**
  * API COMSPEC IDENTITY (Lot 1) — lue par COMSPEC Link pour le mod SSE.
  *
- * - GET  /api/sse/identity/pack               → pack du serveur de jeu (vérité de jeu comprise)
+ * - GET  /api/sse/identity/pack               → pack du serveur de jeu (vérité de jeu comprise) ; op « ~covers » ou
+ *                                                 « ~cover:… » : couvertures du compte relié (AtakCoverSyncApiController)
  * - GET  /api/sse/identity/documents/lookup   → contrôle N3 en ligne d'un papier présenté
  * - POST /api/sse/identity/checks             → contrôle remonté du terrain (idempotent) ; avec kind = bolo | hvt :
  *                                                 avis né en jeu (BOLO, HVT désignée), créé ou mis à jour (lots 4 et 5) ;
@@ -80,6 +81,12 @@ final class SseIdentityApiController
         $mapId = $this->mapId($request);
         $op = self::queryText($request, 'op');
         $since = self::queryText($request, 'since');
+
+        // Couvertures du membre (op « ~covers » ou « ~cover:CVR-…,… ») : app Ma couverture › Synchroniser avec Athena, par
+        // la commande GetIdentityPack de COMSPEC Link (sans nouvelle DLL). Compte du jeton de jeu seulement.
+        if (str_starts_with($op, '~cover')) {
+            return (new AtakCoverSyncApiController())->packResponse($op, $since, $mapId);
+        }
 
         // Paquet « self » (op « ~self » ou « ~self:OPÉRATION ») : relayé par le téléphone d'un joueur pour un serveur de jeu
         // sans COMSPEC Link. Seuls les papiers, l'identité et le brief du compte relié (jeton de jeu) partent ; une clé de
