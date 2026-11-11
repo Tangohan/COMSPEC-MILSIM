@@ -504,6 +504,70 @@ final class OperatorHubTest extends TestCase
         self::assertStringContainsString('Définir mon identité principale', $html);
     }
 
+    /**
+     * Régression (erreur 500 en ligne après la refonte) : la page est rendue dans le vrai gabarit, avec la gestion
+     * d'erreurs de la production (App\Core\ExceptionHandler : tout avertissement PHP devient une ErrorException). Les
+     * partiels du tableau de bord lisent des variables que ce contrôleur ne passe pas : views/operateur/page.php doit
+     * les poser, pour un membre au profil vide comme pour un propriétaire qui a tous les droits.
+     */
+    public function testPagesRenderInTheRealShellWithEveryPhpWarningFatal(): void
+    {
+        $this->db();
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['HTTP_HOST'] = 'localhost';
+        Session::set('user_id', 10);
+        Session::set('tenant_id', 1);
+        $exports = new SseCoverExportRepository();
+        $limiter = $this->createMock(FileRateLimiter::class);
+        $limiter->method('tooManyAttempts')->willReturn(false);
+        $noop = static function (): void {
+        };
+        $make = static fn (bool $owner): OperatorHubController => new OperatorHubController(
+            new OperatorHubRepository(),
+            new OperatorIdentityService(null, null, null, null, null, null, $exports, new SseCoverExportService($exports, null, null, $noop, 'test-key'), $noop),
+            // Profil vide : ni indicatif, ni Steam, ni unité.
+            static fn (): ?array => ['tenant' => 1, 'user' => 10, 'row' => ['id' => 10, 'display_name' => '', 'steam_id' => null]],
+            static fn (string $p): bool => $owner,
+            static fn (string $path): bool => true,
+            null,
+            static fn (Request $r): bool => true,
+            static function (string $type, string $message): void {
+            },
+            $limiter,
+            static fn (int $t, int $u): array => [],
+        );
+        $level = ob_get_level();
+        set_error_handler(static function (int $severity, string $message, string $file, int $line): bool {
+            if (!(error_reporting() & $severity)) {
+                return false;
+            }
+            throw new \ErrorException($message, 0, $severity, $file, $line);
+        });
+        try {
+            foreach ([false, true] as $owner) {
+                $c = $make($owner);
+                foreach (['index' => 'Outils opérateur', 'identities' => 'Mon identité', 'documents' => 'Mon identité', 'covers' => 'Mes couvertures'] as $method => $needle) {
+                    $_SERVER['REQUEST_URI'] = '/operateur';
+                    $res = $c->$method(new Request());
+                    self::assertSame(200, $res->statusCode(), $method);
+                    self::assertStringContainsString($needle, $res->body(), $method);
+                    self::assertStringContainsString('dash-cc dash-cc--rail', $res->body(), $method . ' : rendu dans le gabarit du tableau de bord');
+                    self::assertStringContainsString('</html>', $res->body(), $method . ' : page rendue jusqu’au bout');
+                }
+            }
+        } finally {
+            restore_error_handler();
+            while (ob_get_level() > $level) {
+                ob_end_clean();
+            }
+        }
+        // La page pose elle-même ce que les partiels du tableau de bord attendent de son contrôleur.
+        $page = (string) file_get_contents(dirname(__DIR__, 2) . '/views/operateur/page.php');
+        foreach (['$dashboard_tenant_label =', '$show_staff_enlistments =', '$currentUser ='] as $var) {
+            self::assertStringContainsString($var, $page, $var);
+        }
+    }
+
     public function testDocumentPreviewEscapesTextAndOnlyAcceptsHexColours(): void
     {
         $opxDocSvg = null;
