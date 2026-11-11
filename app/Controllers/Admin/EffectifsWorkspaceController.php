@@ -4256,6 +4256,18 @@ class EffectifsWorkspaceController
             return Response::redirect(url('back-office/ressources/effectifs/elevations'));
         }
         $proposal = $validated['proposal'];
+        // Droits demandés à l'origine : pour dire au membre ce qui est accordé et ce qui ne l'est pas.
+        $requestedPermissionIds = json_decode((string) ($existing['proposed_permission_ids'] ?? ''), true);
+        $requestedPermissionIds = is_array($requestedPermissionIds) ? array_values(array_map('intval', $requestedPermissionIds)) : [];
+        $afterDecision = static function (string $decided, array $grantedIds) use ($tenantId, $existing, $requestedPermissionIds, $note): void {
+            try {
+                (new \App\Services\Operator\OperatorAccessRequestService())->afterDecision(
+                    $tenantId, $existing, $decided, $requestedPermissionIds, $grantedIds, $note, (int) Session::get('user_id')
+                );
+            } catch (\Throwable $e) {
+                error_log('Demande d’élévation : journal ou notification de la décision impossible : ' . $e->getMessage());
+            }
+        };
 
         if ($status === 'approved') {
             if ($request->input('confirm_apply') !== '1') {
@@ -4290,6 +4302,7 @@ class EffectifsWorkspaceController
                 $ok ? $apply['message'] : 'Statut invalide ou mise à jour impossible.'
             );
             if ($ok) {
+                $afterDecision('approved', is_array($proposal['permission_ids'] ?? null) ? $proposal['permission_ids'] : []);
                 $targetId = (int) ($existing['target_user_id'] ?? 0);
                 if ($targetId > 0) {
                     (new \App\Support\PersonnelHrPdfService())->maybeAutoIssue(
@@ -4322,6 +4335,9 @@ class EffectifsWorkspaceController
             (int) Session::get('user_id'),
             $note
         );
+        if ($ok && $status === 'rejected') {
+            $afterDecision('rejected', []);
+        }
         Session::flash(
             $ok ? 'success' : 'error',
             $ok ? 'Le statut de la demande a été mis à jour.' : 'Statut invalide ou mise à jour impossible.'
