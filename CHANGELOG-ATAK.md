@@ -305,6 +305,25 @@ EN : SSE 1.9.0: more natural AIs, real papers and redone Zeus tools
 - Pas d'entrée de changelog dans la branche (rédigée à la fusion) ; non testé en jeu.
 
 
+## À venir : fenêtres qui s'arrêtaient à moitié (ATAK natif et SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Plusieurs fenêtres qui s'affichaient à moitié fonctionnent de nouveau
+- La fenêtre IA de la zone remplit de nouveau sa liste et ses volets, et la barre de dessin de la salle TOC affiche ses boutons lisibles à la bonne largeur.
+- Dans la discussion avec une IA, vos propres messages se calent de nouveau à droite de la fenêtre.
+EN : Several windows that only half showed work again
+- The Zone AI window fills its list and panels again, and the TOC room drawing bar shows readable buttons at the right width.
+- In a chat with an AI, your own messages line up on the right of the window again.
+
+### Détail technique
+- Cause commune : en SQF les variables locales ignorent la casse (`_L` = `_l`). Nouveau détecteur `tools/sqf_case_shadow_check.py` (portées, `params`, `for`, helpers appelés depuis une portée qui masque le nom ; verdict BREAKS / RISK / OK), note `docs/SQF-VARIABLES-CASSE.md`, test PHP `SqfCaseInsensitiveShadowAssetTest` (règle sans Python, exceptions dans `tools/sqf_case_shadow_allowlist.txt`).
+- `editor/fn_editorAi.sqf` (BREAKS) : la liste `private _l` des volets (l. 232, 537, 556) écrasait la traduction `_L` ; renommée `_lnb`. `_empty` (booléen) masquait la liste d'IDC `_EMPTY` passée à `_vis` ; renommé `_isEmpty`.
+- `toc/fn_tocDraw.sqf` (RISK) : `private _h` écrasait `_H` (hauteur d'écran, police des boutons minuscule) et `_W` écrasait la largeur `_w` reçue (fond trop large) ; `_szH` / `_szW`.
+- `ia_rp/fn_iarpUi.sqf` (RISK) : la largeur de bulle `_w` masquait la largeur du fil `_W` lue par `_add` (bulles « moi » mal placées) ; `_bubW`.
+- `extensions/fn_docExtWindow.sqf` (BREAKS) laissé tel quel : corrigé sur `fix/sse-extensions-tuto-vide`, en exception jusqu'à sa fusion.
+- Renommages seuls, aucun autre changement. Non vu en jeu (analyse statique, `hemtt check` ATAK et SSE sans nouvelle erreur).
+
 ## Pack 4.4.0 Washington : salle TOC en jeu, sang sur l'écran, carte Classique, traçage d'un numéro, ATHENA Configuration (ATAK natif 4.4.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.0)
 
 ### Résumé joueur

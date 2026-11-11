@@ -348,13 +348,13 @@ switch (_mode) do {
                 [_m, _s] call _setTxt;
             };
             default {
-                (["boardText", [_view, _room, _side, true]] call _fn) params [["_l", ""], ["_r", ""]];
-                [_ui get "main", _l] call _setTxt;
-                (_ui get "main2") ctrlShow (_r isNotEqualTo "");
+                (["boardText", [_view, _room, _side, true]] call _fn) params [["_txtL", ""], ["_txtR", ""]];
+                [_ui get "main", _txtL] call _setTxt;
+                (_ui get "main2") ctrlShow (_txtR isNotEqualTo "");
                 if (_r isNotEqualTo "") then {
                     (_ui get "main") ctrlSetPosition ([24, _y0, 764, _hAvail] call _R); (_ui get "main") ctrlCommit 0;
                     (_ui get "main2") ctrlSetPosition ([812, _y0, 764, _hAvail] call _R); (_ui get "main2") ctrlCommit 0;
-                    [_ui get "main2", _r] call _setTxt;
+                    [_ui get "main2", _txtR] call _setTxt;
                 };
             };
         };

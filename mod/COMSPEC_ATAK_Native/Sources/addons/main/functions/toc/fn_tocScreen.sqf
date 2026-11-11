@@ -891,7 +891,7 @@ switch (_mode) do {
                 _c ctrlSetStructuredText parseText ((_s) call comspec_atak_native_fnc_tr);
             };
         };
-        private _place2 = { params ["_c", "_r"]; _c ctrlSetPosition (_r call _R); _c ctrlCommit 0; _c ctrlShow true; };
+        private _place2 = { params ["_c", "_rect"]; _c ctrlSetPosition (_rect call _R); _c ctrlCommit 0; _c ctrlShow true; };
 
         // ---- En-tête : titre (FLASH, PIP), heure ZULU et locale, état du flux ----
         (_ui get "accent") ctrlSetBackgroundColor (_sideRgb + [1]);
