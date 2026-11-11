@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Mon identité › Papiers. Variables de views/operateur/identite.php.
+ * Mes identités › Papiers. Chaque papier appartient à une identité : la page les range identité par identité. Variables de views/operateur/identite.php.
  *
  * Aperçu recto/verso de chaque papier, état, actions du membre (perte, vol, renouvellement, annulation de sa demande),
  * demande d'un nouveau papier, et état de la remise en jeu.
@@ -49,8 +49,8 @@ foreach ($idCountries as $c) {
     <section class="dash-zone dash-zone--actions">
         <div class="dash-zone__inner">
             <div class="cc-empty">
-                <p><strong>Pas encore d’identité.</strong> Un papier se rattache à une identité : définissez d’abord votre identité principale.</p>
-                <a class="cc-btn cc-btn-primary" href="<?= $h(url('operateur/identite')) ?>">Définir mon identité</a>
+                <p><strong>Pas encore d’identité.</strong> Un papier appartient à une identité : créez d’abord votre personnage.</p>
+                <a class="cc-btn cc-btn-primary" href="<?= $h(url('operateur/identite')) ?>">Créer mon personnage</a>
             </div>
         </div>
     </section>
@@ -62,7 +62,7 @@ foreach ($idCountries as $c) {
             <div class="dash-zone__inner">
                 <header class="dash-zone__head">
                     <h2 id="papiers-titre-<?= (int) $identity['id'] ?>" class="dash-zone__title" translate="no"><?= $h($identity['display_name']) ?></h2>
-                    <p class="dash-zone__lead"><?= $identity['is_primary'] ? 'Identité principale' : 'Identité d’emprunt' ?><?= $identity['active'] ? ' · active en jeu' : '' ?><?= $identity['archived'] ? ' · archivée' : '' ?></p>
+                    <p class="dash-zone__lead"><?= $identity['is_primary'] ? 'Personnage' : 'Identité d’emprunt' ?><?= $identity['active'] ? ' · active en jeu' : '' ?><?= $identity['archived'] ? ' · archivée' : '' ?> · <a class="opx-link" href="<?= $h(url('operateur/identite') . '#identite-' . (int) $identity['id']) ?>">voir l’identité</a></p>
                 </header>
                 <?php if ($docs === []): ?>
                     <div class="cc-empty">
@@ -95,16 +95,6 @@ foreach ($idCountries as $c) {
                                             <div><dt>Expire le</dt><dd><?= $h($dateFr($doc['expires_on'])) ?></dd></div>
                                             <?php if (!empty($doc['issued_at'])): ?><div><dt>Émis pour le jeu</dt><dd><?= $h($dateFr((string) $doc['issued_at'])) ?></dd></div><?php endif; ?>
                                         </dl>
-                                        <?php $usedBy = $idCoverUsage['by_document'][(int) $doc['id']] ?? []; ?>
-                                        <?php if ($usedBy !== []): ?>
-                                            <p class="opx-uses"><?= count($usedBy) === 1 ? 'Emporté par la couverture' : 'Emporté par les couvertures' ?>
-                                                <?php foreach ($usedBy as $n => $use): ?>
-                                                    <a href="<?= $h(url('operateur/identite/couverture') . '#couverture-' . (int) $use['id']) ?>" translate="no"><?= $h($use['name']) ?></a><?= $n < count($usedBy) - 1 ? ', ' : '' ?>
-                                                <?php endforeach; ?>
-                                            </p>
-                                        <?php elseif ($doc['status'] === 'valid'): ?>
-                                            <p class="opx-uses">Dans aucune couverture.</p>
-                                        <?php endif; ?>
                                         <?php if ($doc['status'] === 'requested'): ?>
                                             <p class="opx-note">Demande en attente : un responsable la valide et émet le papier. Les valeurs affichées sont une proposition.</p>
                                         <?php elseif (in_array($doc['status'], ['lost', 'stolen'], true)): ?>
@@ -150,7 +140,7 @@ foreach ($idCountries as $c) {
                             <label class="opx-fields__wide" for="req-identity">Identité
                                 <select id="req-identity" name="identity_id" required>
                                     <?php foreach ($activeIdentities as $identity): ?>
-                                        <option value="<?= (int) $identity['id'] ?>"><?= $h($identity['display_name']) ?><?= $identity['is_primary'] ? ' (principale)' : '' ?></option>
+                                        <option value="<?= (int) $identity['id'] ?>"><?= $h($identity['display_name']) ?><?= $identity['is_primary'] ? ' (personnage)' : '' ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </label>
