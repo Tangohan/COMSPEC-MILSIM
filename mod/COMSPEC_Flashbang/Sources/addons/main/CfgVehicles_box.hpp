@@ -1,0 +1,10 @@
+            class _xx_COMSPEC_FB_Flash_1 { magazine = "COMSPEC_FB_Flash_1"; count = 10; };
+            class _xx_COMSPEC_FB_Flash_2 { magazine = "COMSPEC_FB_Flash_2"; count = 10; };
+            class _xx_COMSPEC_FB_Flash_3 { magazine = "COMSPEC_FB_Flash_3"; count = 10; };
+            class _xx_COMSPEC_FB_Flash_4 { magazine = "COMSPEC_FB_Flash_4"; count = 10; };
+            class _xx_COMSPEC_FB_Flash_5 { magazine = "COMSPEC_FB_Flash_5"; count = 10; };
+            class _xx_COMSPEC_FB_Flash_6 { magazine = "COMSPEC_FB_Flash_6"; count = 10; };
+            class _xx_COMSPEC_FB_Flash_7 { magazine = "COMSPEC_FB_Flash_7"; count = 10; };
+            class _xx_COMSPEC_FB_Flash_8 { magazine = "COMSPEC_FB_Flash_8"; count = 10; };
+            class _xx_COMSPEC_FB_Flash_9 { magazine = "COMSPEC_FB_Flash_9"; count = 10; };
+            class _xx_COMSPEC_FB_Drill { magazine = "COMSPEC_FB_Drill"; count = 10; };

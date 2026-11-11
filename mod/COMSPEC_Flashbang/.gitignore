@@ -1,0 +1,7 @@
+# Sortie de build (chargée avec -mod=, jamais committée) et clé de signature privée.
+@COMSPEC_Flashbang/
+signing/
+Sources/.hemttout/
+*.biprivatekey
+*.bisign
+*.bikey

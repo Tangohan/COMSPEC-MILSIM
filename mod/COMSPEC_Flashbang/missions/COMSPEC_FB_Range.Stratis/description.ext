@@ -1,0 +1,15 @@
+author = "COMSPEC";
+onLoadName = "COMSPEC Flashbang - champ de test";
+onLoadMission = "Champ de test des grenades assourdissantes : champ ouvert, pièce fermée, pièce à fenêtre, couloir, hangar. Consignes : carte > Flashbang.";
+briefing = 1;
+debriefing = 0;
+saving = 0;
+enableDebugConsole = 1;
+respawn = 3;
+respawnDelay = 3;
+respawnOnStart = -1;
+class Header {
+    gameType = "Sandbox";
+    minPlayers = 1;
+    maxPlayers = 1;
+};

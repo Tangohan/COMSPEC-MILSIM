@@ -8,3 +8,5 @@ Pour builder **Overwatch** : `mod\UptoDate\build_mod.bat`, puis `mod\UptoDate\wo
 Pour builder **SSE** : `mod\@COMSPEC_SSE\build_mod.bat`, puis `mod\@COMSPEC_SSE\workshop-pack.ps1` → dossier `mod\publisher\@COMSPEC_SSE`. Guide chef de mission : `mod/@COMSPEC_SSE/docs/PUBLICATION.md`.
 
 Pour builder **COMSPEC Base SOF** (mobilier de base SOF posable dans Eden, mod indépendant) : `mod\COMSPEC_SOF_Base\build_mod.bat` (voir `mod/COMSPEC_SOF_Base/README.md`).
+
+Pour builder **COMSPEC Flashbang** (grenades assourdissantes de 1 à 9 coups et DRILL, mod indépendant, dépendance CBA_A3) : `mod\COMSPEC_Flashbang\build_mod.bat` depuis PowerShell (voir `mod/COMSPEC_Flashbang/README.md`).

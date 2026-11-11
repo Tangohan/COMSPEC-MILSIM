@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project name="COMSPEC Flashbang">
+    <Package name="main">
+        <Container name="main">
+            <Key ID="STR_COMSPEC_FB_Box">
+                <Original>Caisse de grenades assourdissantes</Original>
+                <English>Stun grenade crate</English>
+                <French>Caisse de grenades assourdissantes</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Device">
+                <Original>Grenade assourdissante (engin)</Original>
+                <English>Stun grenade (device)</English>
+                <French>Grenade assourdissante (engin)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Drill_Desc">
+                <Original>Grenade d'entraînement bleue : petit pop et bouffée de fumée, aucun flash, aucun effet sur les joueurs ni l'IA.</Original>
+                <English>Blue training grenade: small pop and a puff of smoke, no flash, no effect on players or AI.</English>
+                <French>Grenade d'entraînement bleue : petit pop et bouffée de fumée, aucun flash, aucun effet sur les joueurs ni l'IA.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Drill_Name">
+                <Original>Grenade d'entraînement FB-DRILL (inerte)</Original>
+                <English>Training grenade FB-DRILL (inert)</English>
+                <French>Grenade d'entraînement FB-DRILL (inerte)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Drill_Short">
+                <Original>FB-DRILL</Original>
+                <English>FB-DRILL</English>
+                <French>FB-DRILL</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_1_Desc">
+                <Original>Grenade assourdissante à 1 détonation (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 1 detonation (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 1 détonation (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_1_Name">
+                <Original>Grenade assourdissante FB-1 (1 flash)</Original>
+                <English>Stun grenade FB-1 (1-bang)</English>
+                <French>Grenade assourdissante FB-1 (1 flash)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_1_Short">
+                <Original>FB-1</Original>
+                <English>FB-1</English>
+                <French>FB-1</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_2_Desc">
+                <Original>Grenade assourdissante à 2 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 2 detonations (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 2 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_2_Name">
+                <Original>Grenade assourdissante FB-2 (2 flashs)</Original>
+                <English>Stun grenade FB-2 (2-bangs)</English>
+                <French>Grenade assourdissante FB-2 (2 flashs)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_2_Short">
+                <Original>FB-2</Original>
+                <English>FB-2</English>
+                <French>FB-2</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_3_Desc">
+                <Original>Grenade assourdissante à 3 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 3 detonations (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 3 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_3_Name">
+                <Original>Grenade assourdissante FB-3 (3 flashs)</Original>
+                <English>Stun grenade FB-3 (3-bangs)</English>
+                <French>Grenade assourdissante FB-3 (3 flashs)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_3_Short">
+                <Original>FB-3</Original>
+                <English>FB-3</English>
+                <French>FB-3</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_4_Desc">
+                <Original>Grenade assourdissante à 4 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 4 detonations (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 4 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_4_Name">
+                <Original>Grenade assourdissante FB-4 (4 flashs)</Original>
+                <English>Stun grenade FB-4 (4-bangs)</English>
+                <French>Grenade assourdissante FB-4 (4 flashs)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_4_Short">
+                <Original>FB-4</Original>
+                <English>FB-4</English>
+                <French>FB-4</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_5_Desc">
+                <Original>Grenade assourdissante à 5 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 5 detonations (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 5 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_5_Name">
+                <Original>Grenade assourdissante FB-5 (5 flashs)</Original>
+                <English>Stun grenade FB-5 (5-bangs)</English>
+                <French>Grenade assourdissante FB-5 (5 flashs)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_5_Short">
+                <Original>FB-5</Original>
+                <English>FB-5</English>
+                <French>FB-5</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_6_Desc">
+                <Original>Grenade assourdissante à 6 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 6 detonations (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 6 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_6_Name">
+                <Original>Grenade assourdissante FB-6 (6 flashs)</Original>
+                <English>Stun grenade FB-6 (6-bangs)</English>
+                <French>Grenade assourdissante FB-6 (6 flashs)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_6_Short">
+                <Original>FB-6</Original>
+                <English>FB-6</English>
+                <French>FB-6</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_7_Desc">
+                <Original>Grenade assourdissante à 7 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 7 detonations (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 7 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_7_Name">
+                <Original>Grenade assourdissante FB-7 (7 flashs)</Original>
+                <English>Stun grenade FB-7 (7-bangs)</English>
+                <French>Grenade assourdissante FB-7 (7 flashs)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_7_Short">
+                <Original>FB-7</Original>
+                <English>FB-7</English>
+                <French>FB-7</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_8_Desc">
+                <Original>Grenade assourdissante à 8 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 8 detonations (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 8 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_8_Name">
+                <Original>Grenade assourdissante FB-8 (8 flashs)</Original>
+                <English>Stun grenade FB-8 (8-bangs)</English>
+                <French>Grenade assourdissante FB-8 (8 flashs)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_8_Short">
+                <Original>FB-8</Original>
+                <English>FB-8</English>
+                <French>FB-8</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_9_Desc">
+                <Original>Grenade assourdissante à 9 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</Original>
+                <English>Stun grenade, 9 detonations (flash + bang), 1.5 s fuse. Non-lethal: dazzles, deafens, disorients.</English>
+                <French>Grenade assourdissante à 9 détonations (flash + bang), mèche 1,5 s. Non létale : éblouit, assourdit, désoriente.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_9_Name">
+                <Original>Grenade assourdissante FB-9 (9 flashs)</Original>
+                <English>Stun grenade FB-9 (9-bangs)</English>
+                <French>Grenade assourdissante FB-9 (9 flashs)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Flash_9_Short">
+                <Original>FB-9</Original>
+                <English>FB-9</English>
+                <French>FB-9</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module">
+                <Original>Flashbang (COMSPEC)</Original>
+                <English>Flashbang (COMSPEC)</English>
+                <French>Flashbang (COMSPEC)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_Bursts">
+                <Original>Nombre de détonations</Original>
+                <English>Number of detonations</English>
+                <French>Nombre de détonations</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_Bursts_Tip">
+                <Original>Nombre de flashs consécutifs, de 1 à 9.  Exemple : 3 pour une grenade trois coups.</Original>
+                <English>Consecutive bangs, 1 to 9.  Example: 3 for a three-bang grenade.</English>
+                <French>Nombre de flashs consécutifs, de 1 à 9.  Exemple : 3 pour une grenade trois coups.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_Delay">
+                <Original>Délai (s)</Original>
+                <English>Delay (s)</English>
+                <French>Délai (s)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_Delay_Tip">
+                <Original>Secondes avant la première détonation, après le début de la mission ou l'activation.  Exemple : 1.5 (mèche d'une vraie grenade).</Original>
+                <English>Seconds before the first detonation, after mission start or activation.  Example: 1.5 (real grenade fuse).</English>
+                <French>Secondes avant la première détonation, après le début de la mission ou l'activation.  Exemple : 1.5 (mèche d'une vraie grenade).</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_Desc">
+                <Original>Fait détoner une grenade assourdissante à la position du module, ou applique l'effet à toutes les unités d'une zone. Se déclenche au début de la mission (après le délai) ou par un déclencheur synchronisé.</Original>
+                <English>Detonates a stun grenade at the module position, or applies the effect to every unit in an area. Fires at mission start (after the delay) or from a synchronised trigger.</English>
+                <French>Fait détoner une grenade assourdissante à la position du module, ou applique l'effet à toutes les unités d'une zone. Se déclenche au début de la mission (après le délai) ou par un déclencheur synchronisé.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_Mode">
+                <Original>Mode</Original>
+                <English>Mode</English>
+                <French>Mode</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_Mode_Drill">
+                <Original>Entraînement (DRILL)</Original>
+                <English>Training (DRILL)</English>
+                <French>Entraînement (DRILL)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_Mode_Grenade">
+                <Original>Grenade</Original>
+                <English>Grenade</English>
+                <French>Grenade</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_Mode_Tip">
+                <Original>Grenade : engin posé ici qui détone N fois. Zone : effet sur toutes les unités du rayon, sans grenade. Entraînement : grenade DRILL (pops sans effet).  Exemple : Grenade.</Original>
+                <English>Grenade: a device placed here detonates N times. Area: effect on every unit in the radius, no grenade. Training: DRILL grenade (pops, no effect).  Example: Grenade.</English>
+                <French>Grenade : engin posé ici qui détone N fois. Zone : effet sur toutes les unités du rayon, sans grenade. Entraînement : grenade DRILL (pops sans effet).  Exemple : Grenade.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_Mode_Zone">
+                <Original>Effet sur une zone</Original>
+                <English>Area effect</English>
+                <French>Effet sur une zone</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_Radius">
+                <Original>Rayon de la zone (m)</Original>
+                <English>Area radius (m)</English>
+                <French>Rayon de la zone (m)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_Radius_Tip">
+                <Original>Mode zone : rayon dans lequel toutes les unités sont touchées.  Exemple : 10 pour une pièce.</Original>
+                <English>Area mode: radius in which every unit is affected.  Example: 10 for a room.</English>
+                <French>Mode zone : rayon dans lequel toutes les unités sont touchées.  Exemple : 10 pour une pièce.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_ShowFx">
+                <Original>Flash et bang visibles</Original>
+                <English>Visible flash and bang</English>
+                <French>Flash et bang visibles</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_ShowFx_Tip">
+                <Original>Mode zone : montrer la lumière et jouer le bang au centre. Décoché : effet seul, silencieux.  Exemple : coché.</Original>
+                <English>Area mode: show the light and play the bang at the centre. Unticked: effect only, silent.  Example: ticked.</English>
+                <French>Mode zone : montrer la lumière et jouer le bang au centre. Décoché : effet seul, silencieux.  Exemple : coché.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_Strength">
+                <Original>Force de l'effet (0 à 1)</Original>
+                <English>Effect strength (0 to 1)</English>
+                <French>Force de l'effet (0 à 1)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_Strength_Tip">
+                <Original>Mode zone : 1 = comme à 2 m d'une vraie grenade, 0,3 = gêne légère.  Exemple : 0.8.</Original>
+                <English>Area mode: 1 = like 2 m from a real grenade, 0.3 = mild.  Example: 0.8.</English>
+                <French>Mode zone : 1 = comme à 2 m d'une vraie grenade, 0,3 = gêne légère.  Exemple : 0.8.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Muzzle">
+                <Original>Grenade assourdissante</Original>
+                <English>Stun grenade</English>
+                <French>Grenade assourdissante</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Preset_Arcade">
+                <Original>Arcade (plus long, plus fort)</Original>
+                <English>Arcade (longer, stronger)</English>
+                <French>Arcade (plus long, plus fort)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Preset_Light">
+                <Original>Léger</Original>
+                <English>Light</English>
+                <French>Léger</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Preset_Real">
+                <Original>Réaliste</Original>
+                <English>Realistic</English>
+                <French>Réaliste</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Quality_High">
+                <Original>Haute</Original>
+                <English>High</English>
+                <French>Haute</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Quality_Low">
+                <Original>Basse</Original>
+                <English>Low</English>
+                <French>Basse</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Quality_Med">
+                <Original>Moyenne</Original>
+                <English>Medium</English>
+                <French>Moyenne</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_SetCat_Ai">
+                <Original>4 - IA et équipe</Original>
+                <English>4 - AI and team</English>
+                <French>4 - IA et équipe</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_SetCat_Client">
+                <Original>7 - Ce poste (client)</Original>
+                <English>7 - This computer (client)</English>
+                <French>7 - Ce poste (client)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_SetCat_Drill">
+                <Original>6 - Entraînement (DRILL)</Original>
+                <English>6 - Training (DRILL)</English>
+                <French>6 - Entraînement (DRILL)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_SetCat_General">
+                <Original>1 - Général</Original>
+                <English>1 - General</English>
+                <French>1 - Général</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_SetCat_Hearing">
+                <Original>3 - Audition</Original>
+                <English>3 - Hearing</English>
+                <French>3 - Audition</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_SetCat_Timing">
+                <Original>5 - Mèche et détonations</Original>
+                <English>5 - Fuse and detonations</English>
+                <French>5 - Mèche et détonations</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_SetCat_Vision">
+                <Original>2 - Vision</Original>
+                <English>2 - Vision</English>
+                <French>2 - Vision</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiAffected">
+                <Original>IA affectée</Original>
+                <English>AI affected</English>
+                <French>IA affectée</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_AiAffected_Tip">
+                <Original>L'IA éblouie vise mal, repère mal et hésite quelques secondes.  Exemple : coché.</Original>
+                <English>Dazzled AI aims and spots poorly and hesitates for a few seconds.  Example: ticked.</English>
+                <French>L'IA éblouie vise mal, repère mal et hésite quelques secondes.  Exemple : coché.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_BangVolume">
+                <Original>Volume du bang</Original>
+                <English>Bang volume</English>
+                <French>Volume du bang</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_BangVolume_Tip">
+                <Original>Volume des détonations sur ce poste.  Exemple : 1 ; 0.6 si le bang est trop fort au casque.</Original>
+                <English>Detonation volume on this computer.  Example: 1; 0.6 if the bang is too loud in the headset.</English>
+                <French>Volume des détonations sur ce poste.  Exemple : 1 ; 0.6 si le bang est trop fort au casque.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Blur">
+                <Original>Perte d'acuité (flou)</Original>
+                <English>Loss of acuity (blur)</English>
+                <French>Perte d'acuité (flou)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Blur_Tip">
+                <Original>Flou léger qui se dissipe : perte de netteté due à l'éblouissement.  Exemple : coché.</Original>
+                <English>Light blur that fades: loss of sharpness from the dazzle.  Example: ticked.</English>
+                <French>Flou léger qui se dissipe : perte de netteté due à l'éblouissement.  Exemple : coché.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Damage">
+                <Original>Blessure à bout portant</Original>
+                <English>Point-blank injury</English>
+                <French>Blessure à bout portant</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Damage_Tip">
+                <Original>Petite blessure si la grenade éclate à moins de 1 m (jamais avec ACE Médical).  Exemple : décoché.</Original>
+                <English>Minor injury if the grenade goes off within 1 m (never with ACE Medical).  Example: unticked.</English>
+                <French>Petite blessure si la grenade éclate à moins de 1 m (jamais avec ACE Médical).  Exemple : décoché.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Debug">
+                <Original>Journal de débogage (RPT)</Original>
+                <English>Debug log (RPT)</English>
+                <French>Journal de débogage (RPT)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Debug_Tip">
+                <Original>Écrit chaque étape dans le fichier RPT (rien à l'écran).  Exemple : décoché.</Original>
+                <English>Writes every step to the RPT file (nothing on screen).  Example: unticked.</English>
+                <French>Écrit chaque étape dans le fichier RPT (rien à l'écran).  Exemple : décoché.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_DrillFlash">
+                <Original>Lueur de la DRILL</Original>
+                <English>DRILL glow</English>
+                <French>Lueur de la DRILL</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_DrillFlash_Tip">
+                <Original>La grenade d'entraînement fait une petite lueur très brève (aucun autre effet).  Exemple : décoché.</Original>
+                <English>The training grenade gives a small, very short glow (no other effect).  Example: unticked.</English>
+                <French>La grenade d'entraînement fait une petite lueur très brève (aucun autre effet).  Exemple : décoché.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_DrillPops">
+                <Original>Pops de la grenade DRILL</Original>
+                <English>DRILL grenade pops</English>
+                <French>Pops de la grenade DRILL</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_DrillPops_Tip">
+                <Original>Nombre de pops de la grenade d'entraînement (1 à 9).  Exemple : 1, ou 3 pour simuler une trois-coups.</Original>
+                <English>Number of pops of the training grenade (1 to 9).  Example: 1, or 3 to mimic a three-bang.</English>
+                <French>Nombre de pops de la grenade d'entraînement (1 à 9).  Exemple : 1, ou 3 pour simuler une trois-coups.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_EarProtection">
+                <Original>Protection auditive (dB)</Original>
+                <English>Hearing protection (dB)</English>
+                <French>Protection auditive (dB)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_EarProtection_Tip">
+                <Original>Réduction du bang pour les bouchons d'oreille ACE ou un casque protecteur ACE.  Exemple : 25 (bouchons mousse).</Original>
+                <English>Bang reduction for ACE earplugs or a protective ACE headset.  Example: 25 (foam plugs).</English>
+                <French>Réduction du bang pour les bouchons d'oreille ACE ou un casque protecteur ACE.  Exemple : 25 (bouchons mousse).</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Flash">
+                <Original>Éblouissement</Original>
+                <English>Dazzle</English>
+                <French>Éblouissement</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Flash_Tip">
+                <Original>Voile blanc, image rémanente, halo dans les optiques.  Exemple : coché.</Original>
+                <English>White-out, afterimage, scope halo.  Example: ticked.</English>
+                <French>Voile blanc, image rémanente, halo dans les optiques.  Exemple : coché.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Friendly">
+                <Original>Effet sur son camp</Original>
+                <English>Effect on own side</English>
+                <French>Effet sur son camp</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Friendly_Tip">
+                <Original>Décoché : les unités du camp du lanceur ne sont pas affectées.  Exemple : coché (réaliste).</Original>
+                <English>Unticked: units on the thrower's side are not affected.  Example: ticked (realistic).</English>
+                <French>Décoché : les unités du camp du lanceur ne sont pas affectées.  Exemple : coché (réaliste).</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Fuse">
+                <Original>Mèche (s)</Original>
+                <English>Fuse (s)</English>
+                <French>Mèche (s)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Fuse_Tip">
+                <Original>Temps entre le lâcher de la cuillère et la première détonation.  Exemple : 1.5 (M84 : 1 à 2,3 s).</Original>
+                <English>Time between spoon release and the first detonation.  Example: 1.5 (M84: 1 to 2.3 s).</English>
+                <French>Temps entre le lâcher de la cuillère et la première détonation.  Exemple : 1.5 (M84 : 1 à 2,3 s).</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_IndoorDetection">
+                <Original>Détecter intérieur / extérieur</Original>
+                <English>Detect indoor / outdoor</English>
+                <French>Détecter intérieur / extérieur</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_IndoorDetection_Tip">
+                <Original>Analyse la pièce autour de la grenade (11 rayons répartis sur 4 images) : effet plus fort en local fermé. Décocher pour économiser le processeur.  Exemple : coché.</Original>
+                <English>Scans the room around the grenade (11 rays over 4 frames): stronger effect in a closed room. Untick to save CPU.  Example: ticked.</English>
+                <French>Analyse la pièce autour de la grenade (11 rayons répartis sur 4 images) : effet plus fort en local fermé. Décocher pour économiser le processeur.  Exemple : coché.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_IndoorMult">
+                <Original>Multiplicateur intérieur</Original>
+                <English>Indoor multiplier</English>
+                <French>Multiplicateur intérieur</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_IndoorMult_Tip">
+                <Original>Force et portée en petite pièce (réflexions du son et de la lumière) ; couloir, pièce et hangar en reçoivent une part.  Exemple : 1.4.</Original>
+                <English>Strength and reach in a small room (sound and light reflections); corridor, room and hangar get part of it.  Example: 1.4.</English>
+                <French>Force et portée en petite pièce (réflexions du son et de la lumière) ; couloir, pièce et hangar en reçoivent une part.  Exemple : 1.4.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Intensity">
+                <Original>Intensité globale</Original>
+                <English>Global intensity</English>
+                <French>Intensité globale</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Intensity_Tip">
+                <Original>Multiplie la force de tous les effets (vision et audition).  Exemple : 1 = réaliste, 0.5 = moitié moins fort.</Original>
+                <English>Multiplies the strength of every effect (vision and hearing).  Example: 1 = realistic, 0.5 = half as strong.</English>
+                <French>Multiplie la force de tous les effets (vision et audition).  Exemple : 1 = réaliste, 0.5 = moitié moins fort.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Interval">
+                <Original>Intervalle entre détonations (s)</Original>
+                <English>Interval between bangs (s)</English>
+                <French>Intervalle entre détonations (s)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Interval_Tip">
+                <Original>Temps moyen entre deux détonations d'une grenade multi-coups.  Exemple : 0.5.</Original>
+                <English>Average time between two bangs of a multi-bang grenade.  Example: 0.5.</English>
+                <French>Temps moyen entre deux détonations d'une grenade multi-coups.  Exemple : 0.5.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Jitter">
+                <Original>Irrégularité (s)</Original>
+                <English>Irregularity (s)</English>
+                <French>Irrégularité (s)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Jitter_Tip">
+                <Original>Écart aléatoire ajouté à chaque intervalle (les vraies grenades sont irrégulières).  Exemple : 0.12.</Original>
+                <English>Random spread added to each interval (real grenades are irregular).  Example: 0.12.</English>
+                <French>Écart aléatoire ajouté à chaque intervalle (les vraies grenades sont irrégulières).  Exemple : 0.12.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_MaxStack">
+                <Original>Cécité cumulée max (s)</Original>
+                <English>Max stacked blindness (s)</English>
+                <French>Cécité cumulée max (s)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_MaxStack_Tip">
+                <Original>Plafond de durée de l'éblouissement quand plusieurs flashs s'enchaînent (pas d'aveuglement infini).  Exemple : 15.</Original>
+                <English>Cap on dazzle duration when several bangs follow each other (no endless blindness).  Example: 15.</English>
+                <French>Plafond de durée de l'éblouissement quand plusieurs flashs s'enchaînent (pas d'aveuglement infini).  Exemple : 15.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Muffle">
+                <Original>Ouïe étouffée</Original>
+                <English>Muffled hearing</English>
+                <French>Ouïe étouffée</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Muffle_Tip">
+                <Original>Les sons du jeu baissent après le bang puis reviennent lentement (jamais le silence total).  Exemple : coché.</Original>
+                <English>Game sounds drop after the bang then slowly return (never total silence).  Example: ticked.</English>
+                <French>Les sons du jeu baissent après le bang puis reviennent lentement (jamais le silence total).  Exemple : coché.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_NightMult">
+                <Original>Multiplicateur nuit</Original>
+                <English>Night multiplier</English>
+                <French>Multiplicateur nuit</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_NightMult_Tip">
+                <Original>Force de l'éblouissement la nuit ou dans le noir (pupille ouverte). En plein jour : 0,65.  Exemple : 1.3.</Original>
+                <English>Dazzle strength at night or in the dark (open pupil). In full daylight: 0.65.  Example: 1.3.</English>
+                <French>Force de l'éblouissement la nuit ou dans le noir (pupille ouverte). En plein jour : 0,65.  Exemple : 1.3.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_NvgMult">
+                <Original>Multiplicateur JVN</Original>
+                <English>NVG multiplier</English>
+                <French>Multiplicateur JVN</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_NvgMult_Tip">
+                <Original>Force de l'éblouissement avec les jumelles de vision nocturne allumées (tube saturé, grain).  Exemple : 2.</Original>
+                <English>Dazzle strength with night vision goggles on (saturated tube, grain).  Example: 2.</English>
+                <French>Force de l'éblouissement avec les jumelles de vision nocturne allumées (tube saturé, grain).  Exemple : 2.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Preset">
+                <Original>Préréglage</Original>
+                <English>Preset</English>
+                <French>Préréglage</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Preset_Tip">
+                <Original>Réaliste : valeurs tirées des sources (README). Arcade : effets 25 % plus forts et 60 % plus longs. Léger : 30 % plus faibles, 40 % plus courts.  Exemple : Réaliste.</Original>
+                <English>Realistic: values from sources (README). Arcade: effects 25 % stronger and 60 % longer. Light: 30 % weaker, 40 % shorter.  Example: Realistic.</English>
+                <French>Réaliste : valeurs tirées des sources (README). Arcade : effets 25 % plus forts et 60 % plus longs. Léger : 30 % plus faibles, 40 % plus courts.  Exemple : Réaliste.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Quality">
+                <Original>Qualité des effets visuels</Original>
+                <English>Visual effects quality</English>
+                <French>Qualité des effets visuels</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Quality_Tip">
+                <Original>Nombre de particules (étincelles, poussière, onde de choc).  Exemple : Moyenne.</Original>
+                <English>Number of particles (sparks, dust, shockwave).  Example: Medium.</English>
+                <French>Nombre de particules (étincelles, poussière, onde de choc).  Exemple : Moyenne.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_RadioMuffle">
+                <Original>Radio étouffée</Original>
+                <English>Muffled radio</English>
+                <French>Radio étouffée</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_RadioMuffle_Tip">
+                <Original>Baisse aussi la radio (vanilla, ACRE2, TFAR) pendant l'ouïe étouffée. Avec ACE, ACE s'en charge toujours.  Exemple : coché.</Original>
+                <English>Also lowers the radio (vanilla, ACRE2, TFAR) while hearing is muffled. With ACE, ACE always does it.  Example: ticked.</English>
+                <French>Baisse aussi la radio (vanilla, ACRE2, TFAR) pendant l'ouïe étouffée. Avec ACE, ACE s'en charge toujours.  Exemple : coché.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_RadiusFull">
+                <Original>Rayon plein effet (m)</Original>
+                <English>Full-effect radius (m)</English>
+                <French>Rayon plein effet (m)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_RadiusFull_Tip">
+                <Original>Distance jusqu'à laquelle le flash a tout son effet sur un œil qui le regarde.  Exemple : 6.</Original>
+                <English>Distance up to which the flash has full effect on an eye looking at it.  Example: 6.</English>
+                <French>Distance jusqu'à laquelle le flash a tout son effet sur un œil qui le regarde.  Exemple : 6.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_RadiusMax">
+                <Original>Rayon maximal (m)</Original>
+                <English>Maximum radius (m)</English>
+                <French>Rayon maximal (m)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_RadiusMax_Tip">
+                <Original>Au-delà, plus d'éblouissement (le bang reste entendu et assourdit jusqu'à ~60 m).  Exemple : 25.</Original>
+                <English>Beyond it, no more dazzle (the bang is still heard and deafens up to ~60 m).  Example: 25.</English>
+                <French>Au-delà, plus d'éblouissement (le bang reste entendu et assourdit jusqu'à ~60 m).  Exemple : 25.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Tinnitus">
+                <Original>Acouphène</Original>
+                <English>Tinnitus</English>
+                <French>Acouphène</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_TinnitusMax">
+                <Original>Durée max de l'acouphène (s)</Original>
+                <English>Max tinnitus duration (s)</English>
+                <French>Durée max de l'acouphène (s)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_TinnitusMax_Tip">
+                <Original>Durée audible maximale du sifflement.  Exemple : 45.</Original>
+                <English>Maximum audible ringing duration.  Example: 45.</English>
+                <French>Durée audible maximale du sifflement.  Exemple : 45.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_TinnitusSound">
+                <Original>Acouphène : son</Original>
+                <English>Tinnitus: sound</English>
+                <French>Acouphène : son</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_TinnitusSound_Tip">
+                <Original>Enregistrement (son pur enregistré par TTRD) ou synthèse (son avec battement).  Exemple : Enregistrement.</Original>
+                <English>Recording (pure tone recorded by TTRD) or synthesis (beating tone).  Example: Recording.</English>
+                <French>Enregistrement (son pur enregistré par TTRD) ou synthèse (son avec battement).  Exemple : Enregistrement.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Tinnitus_Tip">
+                <Original>Sifflement aigu qui décroît après une détonation proche.  Exemple : coché.</Original>
+                <English>High-pitched ringing that fades after a close detonation.  Example: ticked.</English>
+                <French>Sifflement aigu qui décroît après une détonation proche.  Exemple : coché.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_TinnitusSound_Rec">
+                <Original>Enregistrement</Original>
+                <English>Recording</English>
+                <French>Enregistrement</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_TinnitusSound_Synth">
+                <Original>Synthèse</Original>
+                <English>Synthesis</English>
+                <French>Synthèse</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Zen_Area">
+                <Original>Effet de flashbang sur une zone</Original>
+                <English>Flashbang area effect</English>
+                <French>Effet de flashbang sur une zone</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Zen_Drill">
+                <Original>Grenade d'entraînement (DRILL)</Original>
+                <English>Training grenade (DRILL)</English>
+                <French>Grenade d'entraînement (DRILL)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Zen_Drill_Tip">
+                <Original>Pops sans flash ni effet, nombre de pops = nombre de détonations.  Exemple : décoché.</Original>
+                <English>Pops with no flash or effect; pop count = number of detonations.  Example: unticked.</English>
+                <French>Pops sans flash ni effet, nombre de pops = nombre de détonations.  Exemple : décoché.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Zen_Throw">
+                <Original>Lancer un flashbang</Original>
+                <English>Throw a flashbang</English>
+                <French>Lancer un flashbang</French>
+            </Key>
+        </Container>
+    </Package>
+</Project>

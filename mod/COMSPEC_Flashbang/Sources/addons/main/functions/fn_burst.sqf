@@ -1,0 +1,131 @@
+/*
+    comspec_fb_fnc_burst : UNE détonation, sur cette machine (appelée exactement une fois par instant par fn_timeline).
+
+    1. Position : l'engin synchronisé s'il existe (il a pu rouler ou être poussé), sinon la position reçue.
+       Engin déjà vu puis disparu (supprimé par Zeus, détruit) : la grenade est annulée, plus aucune détonation.
+    2. Interface : lumière et particules (fn_fx), bang pour la caméra locale (sourd derrière un mur, lointain
+       au-delà de 150 m, retard de 343 m/s), couche grave au premier flash.
+    3. Effets sur les unités LOCALES proches : le joueur (fn_playerHit), les IA (fn_aiHit). Spectateurs, Zeus et
+       joueurs hors zone qui regardent la scène : simple éblouissement passager (fn_glare).
+    [_id, _index] call comspec_fb_fnc_burst
+*/
+params ["_id", "_index"];
+private _ctx = comspec_fb_events getOrDefault [_id, createHashMap];
+if (count _ctx == 0 || {_ctx get "cancelled"}) exitWith {};
+private _kind = _ctx get "kind";
+
+// ------------------------------------------------------------------ position
+private _device = _ctx get "device";
+if (_kind != "area") then {
+    if (isNull _device) then {
+        _device = objectFromNetId (_ctx get "netId");
+        if (!isNull _device) then { _ctx set ["device", _device]; _ctx set ["resolved", true] };
+    };
+    if (isNull _device && {_ctx get "resolved"}) then {
+        _ctx set ["cancelled", true];
+        if (isServer) then {
+            private _owners = (comspec_fb_owners getOrDefault [_id, []]) - [2];
+            if (isMultiplayer && {_owners isNotEqualTo []}) then { [_id] remoteExecCall ["comspec_fb_fnc_cancel", _owners] };
+        };
+    };
+};
+if (_ctx get "cancelled") exitWith {
+    ["burst", format ["%1 : engin supprimé, détonation %2/%3 annulée", _id, _index + 1, _ctx get "n"]] call comspec_fb_fnc_log;
+};
+private _pos = if (isNull _device) then { _ctx get "pos" } else { (getPosASL _device) vectorAdd [0, 0, 0.06] };
+_ctx set ["pos", _pos];
+_ctx set ["done", (_ctx get "done") + 1];
+
+// Intérieur / extérieur : analyse étalée (fn_envProbe) ; en attendant, un seul rayon vers le haut.
+private _env = _ctx get "env";
+if ((_env getOrDefault ["state", ""]) != "done" && {_kind != "area"}) then {
+    if (missionNamespace getVariable ["comspec_fb_indoorDetection", true]) then {
+        private _roof = [_pos, _device] call comspec_fb_fnc_roofAbove;
+        _env = createHashMapFromArray [["enclosed", _roof], ["class", ["exterieur", "piece"] select _roof],
+            ["mult", [1, 1 + ((missionNamespace getVariable ["comspec_fb_indoorMult", 1.4]) - 1) * 0.7] select _roof], ["radius", 5], ["maxAxis", 8]];
+    } else {
+        _env = createHashMap;
+    };
+};
+private _extra = _ctx get "extra";
+private _showFx = _kind != "area" || {_extra param [2, true]};
+["burst", format ["%1 détonation %2/%3 %4 env=%5", _id, _index + 1, _ctx get "n", _kind, _env getOrDefault ["class", "?"]]] call comspec_fb_fnc_log;
+
+// ------------------------------------------------------------------ lumière, particules, son (caméra locale)
+if (hasInterface && _showFx) then {
+    [_ctx, _pos, _env] call comspec_fb_fnc_fx;
+    private _cam = AGLToASL (positionCameraToWorld [0, 0, 0]);
+    private _dc = _cam vectorDistance _pos;
+    private _delay = _dc / 343;
+    private _gain = missionNamespace getVariable ["comspec_fb_bangVolume", 1];
+    private _wall = (lineIntersectsSurfaces [_pos vectorAdd [0, 0, 0.3], _cam, _device, vehicle (call CBA_fnc_currentUnit), true, 1, "GEOM", "VIEW"]) isNotEqualTo [];
+    if (_kind == "drill") then {
+        ["PopDrill", _pos, _delay, _wall, _gain] call comspec_fb_fnc_playBang;
+    } else {
+        switch (true) do {
+            case (_dc > 150 && {!_wall}): { ["BangLointain", _pos, _delay, false, _gain] call comspec_fb_fnc_playBang };
+            case (_wall): { ["BangEtouffe", _pos, _delay, true, _gain] call comspec_fb_fnc_playBang };
+            default {
+                ["BangUnique", _pos, _delay, false, _gain] call comspec_fb_fnc_playBang;
+                if (_index == 0) then { ["BangGrave", _pos, _delay, false, _gain] call comspec_fb_fnc_playBang };
+            };
+        };
+    };
+};
+
+// ------------------------------------------------------------------ effets sur les unités locales
+if (_kind == "drill") exitWith {
+    // Entraînement : aucun effet, sauf (réglage) une lueur faible pour le joueur qui regarde.
+    if (hasInterface && {missionNamespace getVariable ["comspec_fb_drillFlash", false]}) then {
+        [_pos, 0.15, _device] call comspec_fb_fnc_glare;
+    };
+};
+
+private _me = if (hasInterface) then { call CBA_fnc_currentUnit } else { objNull };
+private _meInGame = !isNull _me && {alive _me} && {isNull curatorCamera};
+private _area = _kind == "area";
+private _radius = if (_area) then { _extra param [0, 10] } else {
+    ((missionNamespace getVariable ["comspec_fb_radiusMax", 25]) * (_env getOrDefault ["mult", 1])) max 60
+};
+private _center = ASLToAGL _pos;
+private _units = _center nearEntities [["CAManBase"], _radius];
+{ _units append (crew _x) } forEach (_center nearEntities [["LandVehicle", "Air", "Ship", "StaticWeapon"], _radius min 40]);
+_units = _units arrayIntersect _units;
+private _friendly = missionNamespace getVariable ["comspec_fb_friendly", true];
+private _side = _ctx get "side";
+private _aiOn = missionNamespace getVariable ["comspec_fb_aiAffected", true];
+private _meHit = false;
+{
+    private _u = _x;
+    private _isMe = _meInGame && {_u == _me};
+    private _concerned = local _u && {alive _u}
+        && {_friendly || {_side isEqualTo sideUnknown} || {side group _u != _side}}
+        && {_isMe || {!isPlayer _u && _aiOn}};
+    if (_concerned) then {
+        private _exp = if (_area) then {
+            private _s = (_extra param [1, 0.8]) * (parseNumber ((_u distance _center) <= (_extra param [0, 10])));
+            [_s, _s, createHashMapFromArray [["dist", _u distance _center], ["durMult", 1], ["angle", 0]]]
+        } else {
+            [_u, _ctx, _pos, _env, _isMe] call comspec_fb_fnc_exposure
+        };
+        _exp params ["_vis", "_aud", "_info"];
+        if (_vis > 0.02 || {_aud > 0.02}) then {
+            if (_isMe) then {
+                _meHit = true;
+                [_vis, _aud, _info, _pos] call comspec_fb_fnc_playerHit;
+            } else {
+                [_u, _vis, _aud, _pos, _info] call comspec_fb_fnc_aiHit;
+            };
+            // Blessure légère à bout portant (réglage, désactivé par défaut ; jamais avec ACE Médical).
+            if (!_area && {missionNamespace getVariable ["comspec_fb_damage", false]} && {(_info get "dist") < 1}
+                && {!isClass (configFile >> "CfgPatches" >> "ace_medical")} && {isDamageAllowed _u}) then {
+                _u setDamage ((damage _u) + 0.08);
+            };
+        };
+    };
+} forEach _units;
+
+// Observateurs : spectateur, Zeus, mort, ou joueur hors de la zone qui voit le flash.
+if (hasInterface && _showFx && {!_meHit}) then {
+    [_pos, 1, _device] call comspec_fb_fnc_glare;
+};
