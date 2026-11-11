@@ -52,7 +52,7 @@ final class AtakRealismProfileTest extends TestCase
     public function testSatelliteMapsShareTheMapHandlers(): void
     {
         $disp = $this->read(self::MAIN . '/ui/displays.hpp');
-        self::assertStringContainsString('class MapSat: COMSPEC_RscMapAtakSat { idc=COMSPEC_ATAK_IDC_MAP_SAT;', $disp);
+        self::assertStringContainsString('class MapClassic: COMSPEC_RscMapAtakClassic { idc=COMSPEC_ATAK_IDC_MAP_CLASSIC;', $disp);
         self::assertStringContainsString('class MapHyb: COMSPEC_RscMapAtakHyb { idc=COMSPEC_ATAK_IDC_MAP_HYB;', $disp);
         self::assertSame(4, substr_count($disp, 'onDraw="private _perfT = diag_tickTime; _this call comspec_atak_native_fnc_mapOnDraw;'));
         self::assertStringContainsString('maxSatelliteAlpha=1;', $this->read(self::MAIN . '/ui/controls.hpp'));

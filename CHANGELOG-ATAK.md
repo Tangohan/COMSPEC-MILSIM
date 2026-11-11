@@ -38,6 +38,23 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : fond de carte Classique = la carte d'origine d'Arma 3 (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Fond de carte Classique = la carte d'origine d'Arma 3
+- Sur la carte du téléphone, le fond **CLASSIQUE** montre maintenant la vraie carte du jeu, la même qu'avec la touche M, et plus une vue satellite. Si vous l'aviez choisi, vous le retrouvez tel quel.
+- Chaque fond de carte a une courte description sous les boutons. **SATELLITE** n'apparaît qu'avec le mod COMSPEC ATAK Photo ; sans lui, une ligne l'explique et la carte s'affiche en **CLASSIQUE**.
+EN : Classic map background = the original Arma 3 map
+- On the phone map, the **CLASSIC** background now shows the real game map, the same as with the M key, instead of a satellite view. If you had picked it, you keep it.
+- Each map background has a short description under the buttons. **SATELLITE** only shows with the COMSPEC ATAK Photo mod; without it, a line explains why and the map shows as **CLASSIC**.
+
+### Détail technique
+- `fn_mapStyle` : nouvelle valeur `CLASSIC` (bouton CLASSIQUE, avant branché sur `SAT`, texture satellite seule) ; `SAT` enregistré relu comme `CLASSIC` ; `PHOTO` sans photo de la carte → `CLASSIC` (avant `TOPO`) ; défaut inchangé (`TOPO`). `["LIST"]` rend la liste [libellé, valeur, description, disponible] partagée par `fn_pageMap` et `fn_pageSettings`.
+- `COMSPEC_RscMapAtakClassic` (`ui/controls.hpp`) tirée directement de `RscMapControl` : couleurs et rendu du jeu, seuls les textes redessinés par l'ATAK et les marqueurs de mission masqués comme sur les autres fonds. Le contrôle 88532 (`MapSat` → `MapClassic`, `COMSPEC_ATAK_IDC_MAP_SAT` → `COMSPEC_ATAK_IDC_MAP_CLASSIC`) la porte ; `COMSPEC_RscMapAtakSat` reste la base d'HYBRIDE.
+- Volet CONFIGURATION de la carte : description du fond choisi sous les boutons (texte qui passe à la ligne), description de chaque fond en infobulle, ligne grise « SATELLITE : nécessite le mod COMSPEC ATAK Photo » quand la photo manque.
+- i18n en.txt et xx.txt (18 phrases, aide des Réglages réécrite), `docs/steam/discussions/01_carte.txt`. Test : `AtakMapClassicAssetTest`, `AtakRealismProfileTest` mis à jour.
+
 ## SSE 1.9.0 : fenêtre « Réponses de l'IA » simple, peur d'une arme braquée de près, champs des documents (SSE 1.9.0)
 
 ### Résumé joueur
