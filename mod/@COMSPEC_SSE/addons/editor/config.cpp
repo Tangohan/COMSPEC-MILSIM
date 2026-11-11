@@ -30,6 +30,8 @@ class CfgFunctions {
             class editorFound {};
             class editorAi {};
             class editorAiServer {};
+            class editorAiCard {};
+            class editorCoach {};
             class aiWho {};
             class aiConfigOpen {};
             class editorModule {};

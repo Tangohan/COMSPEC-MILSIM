@@ -6,7 +6,7 @@
       aiPage              page « IA de la zone » (fn_editorAi)
       type i · delivery i · model i · preview · save · publish
       toggleLibrary · filter i · libFill · libSelect · libEdit · libDuplicate · libPlace · libArchive · libLink
-      guideNext · placed [id, résumé] · receive [titre, texte] · found [id, joueur, quand] · status [texte, en ligne] · libRefresh
+      guide [forcer] · guideNext · placed [id, résumé] · receive [titre, texte] · found [id, joueur, quand] · status [texte, en ligne] · libRefresh
     Bibliothèque : profileNamespace « comspec_sse_editorLib » (liste de HashMap), suivie sur Athena par fn_editorLibrary.
 */
 params [["_op", "", [""]], ["_arg", 0]];
@@ -77,10 +77,7 @@ private _who = { if (isNull player) then { profileName } else { name player } };
 private _editorIdcs = [94063, 94010, 94011, 94020, 94021, 94022, 94030, 94031, 94032, 94040, 94041, 94042, 94043, 94046, 94047, 94048, 94050, 94051, 94052, 94053, 94054, 94055, 94060, 94061, 94062];
 { private _b = _x; for "_i" from 0 to 4 do { _editorIdcs pushBack (_b + _i); }; } forEach [94100, 94110, 94120, 94130, 94140, 94200, 94210, 94220];
 _editorIdcs append [94056, 94057, 94058];
-// Page « IA de la zone » (dialogs/editor.hpp). 94543 est dans le groupe 94573 (position relative) : jamais déplacé seul.
-private _aiIdcs = [94500, 94502, 94503, 94504, 94505, 94506, 94507, 94508, 94509, 94510, 94511, 94512, 94513, 94514, 94515, 94516, 94517, 94518, 94519, 94520, 94521, 94522, 94523, 94524, 94525, 94526, 94527, 94528, 94529,
-    94530, 94532, 94533, 94534, 94535, 94536, 94538, 94540, 94541, 94542, 94544, 94545, 94546, 94548, 94549, 94550, 94551, 94552, 94553, 94554, 94555, 94556, 94557, 94558, 94559, 94560, 94561, 94562, 94563, 94564, 94565,
-    94566, 94567, 94568, 94569, 94571, 94572, 94573, 94574, 94575, 94576, 94577, 94578, 94579, 94580, 94581, 94582, 94583, 94584];
+// Page « IA de la zone » (dialogs/aizone.hpp) : ses contrôles sont montrés et cachés par fn_editorAi (« page », « layout »).
 private _libIdcs = [94300, 94320, 94321, 94322, 94323, 94330, 94331, 94332, 94333, 94334, 94335, 94336, 94337, 94338, 94339, 94340, 94310, 94311, 94312, 94313, 94314, 94315, 94316, 94317];
 
 // Valeurs du formulaire -> brouillon en cours.
@@ -267,10 +264,12 @@ private _vis = {
 private _page = {
     params ["_show", ["_ai", false]];
     _st set ["page", if (_ai) then { "ai" } else { ["editor", "library"] select _show }];
+    // Une visite guidée ouverte appartient à la page quittée.
+    ["stop"] call comspec_sse_fnc_editorCoach;
     { (_d displayCtrl _x) ctrlShow (!_show && {!_ai}); (_d displayCtrl _x) ctrlEnable (!_show && {!_ai}); } forEach _editorIdcs;
     { (_d displayCtrl _x) ctrlShow false; } forEach [94044, 94045, 94056, 94057, 94058];
     { [_x, _show && {!_ai}] call _vis; } forEach _libIdcs;
-    { [_x, _ai] call _vis; } forEach _aiIdcs;
+    ["page", _ai] call comspec_sse_fnc_editorAi;
     (_d displayCtrl 94002) ctrlSetText ((if (_ai) then { "SSE / IA DE LA ZONE" } else { ["SSE / ÉDITEUR", "SSE / BIBLIOTHÈQUE"] select _show }) call comspec_sse_fnc_tr);
     (_d displayCtrl 94004) ctrlSetText ((["BIBLIOTHÈQUE", "NOUVEAU"] select (_show || {_ai})) call comspec_sse_fnc_tr);
     (_d displayCtrl 94006) ctrlShow !is3DEN;
@@ -324,33 +323,25 @@ switch (_op) do {
         } forEach _deliveries;
         (_d displayCtrl 94322) lnbSetColumnsPos [0, 0.05, 0.5, 0.66, 0.84];
         if ((_st getOrDefault ["startPage", ""]) isEqualTo "ai") then { [false, true] call _page; } else { [false] call _page; };
-        // Guidage au premier lancement seulement.
-        private _seen = profileNamespace getVariable ["comspec_sse_editorGuided", false];
-        { (_d displayCtrl _x) ctrlShow !_seen; } forEach [94400, 94401, 94402, 94403];
-        if (!_seen) then { _st set ["guide", -1]; ["guideNext"] call comspec_sse_fnc_editor; };
+        // Visite guidée au premier lancement (bulles ancrées, fn_editorCoach). La page « IA de la zone » a la sienne.
+        if ((_st getOrDefault ["page", ""]) isNotEqualTo "ai") then { ["guide", false] call comspec_sse_fnc_editor; };
     };
     case "unload": {
+        ["stop"] call comspec_sse_fnc_editorCoach;
         uiNamespace setVariable ["comspec_sse_editorDisplay", displayNull];
         ["flush"] call comspec_sse_fnc_editorLibrary;
     };
     case "close": { _d closeDisplay 2; };
-    case "guideNext": {
-        private _steps = [
-            ["Bienvenue dans l'éditeur SSE", "Choisissez à gauche ce que vous créez. Un modèle remplit le formulaire en un clic."],
-            ["Voyez ce que verront les joueurs", "L'aperçu à droite suit votre saisie. Rien n'est envoyé avant « Placer et publier »."],
-            ["Placez dans le monde", "Choisissez comment les joueurs l'obtiennent, puis cliquez dans le monde. La bibliothèque garde tout : recherche, duplication, historique."]
-        ];
-        private _n = (_st getOrDefault ["guide", -1]) + 1;
-        if (_n >= (count _steps)) exitWith {
-            profileNamespace setVariable ["comspec_sse_editorGuided", true];
-            saveProfileNamespace;
-            { (_d displayCtrl _x) ctrlShow false; } forEach [94400, 94401, 94402, 94403];
-        };
-        _st set ["guide", _n];
-        (_steps select _n) params ["_t", "_b"];
-        (_d displayCtrl 94402) ctrlSetStructuredText parseText format ["<t font='PuristaBold' size='1.3'>%1</t><br/><br/>%2", [_t] call _esc, [_b] call _esc];
-        (_d displayCtrl 94403) ctrlSetText (["SUIVANT", "COMMENCER"] select (_n isEqualTo ((count _steps) - 1)));
+    case "guide": {
+        // Trois bulles posées à côté de ce qu'elles expliquent : les types, l'aperçu, les modes de remise.
+        private _k = { localize ("STR_COMSPEC_SSE_AZ_" + _this) };
+        ["start", [[
+            ["EdCo1T" call _k, "EdCo1B" call _k, [0.3, 3.1, 7.6, 13.4]],
+            ["EdCo2T" call _k, "EdCo2B" call _k, [25.7, 3.1, 13.8, 17.5]],
+            ["EdCo3T" call _k, "EdCo3B" call _k, [8.7, 17.6, 16.2, 2.8]]
+        ], "comspec_sse_editorGuided", _arg isEqualTo true]] call comspec_sse_fnc_editorCoach;
     };
+    case "guideNext": { ["next"] call comspec_sse_fnc_editorCoach; };
     case "aiPage": {
         if ((_st getOrDefault ["page", ""]) isEqualTo "editor") then { call _read; };
         [false, true] call _page;
