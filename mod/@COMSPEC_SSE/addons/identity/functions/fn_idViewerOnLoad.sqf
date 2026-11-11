@@ -31,7 +31,7 @@ private _buttons = {
     (_st getOrDefault ["geo", [0.2, 0.2, 0.6, 0.4]]) params ["_cx", "_cy", "_cw", "_ch"];
     private _by = _cy + _ch + _vh * 0.075;
     private _own = _st get "own";
-    private _btns = [[93710, (_st getOrDefault ["sides", 2]) > 1], [93711, !_zeus], [93712, !_own && {!_zeus}], [93714, !_own && {!_zeus}], [93713, !_zeus]];
+    private _btns = [[93710, (_st getOrDefault ["sides", 2]) > 1], [93711, !_zeus], [93712, !_own && {!_zeus}], [93714, !_own && {!_zeus}], [93715, _own && {!_zeus}], [93713, !_zeus]];
     { (_d displayCtrl (_x select 0)) ctrlShow (_x select 1); } forEach _btns;
     _btns = _btns select { _x select 1 };
     private _nb = count _btns;

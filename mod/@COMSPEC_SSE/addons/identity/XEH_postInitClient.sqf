@@ -2,6 +2,19 @@
 if (!hasInterface) exitWith {};
 [] call comspec_sse_fnc_initAceIdentity;
 [] call comspec_sse_fnc_idZenRegister;
+// Papiers entre joueurs : raccourcis clavier (aucune touche par défaut, Options › Commandes › Modules › COMSPEC SSE).
+if (!isNil "CBA_fnc_addKeybind") then {
+    ["COMSPEC SSE", "comspec_sse_id_keyAsk", [localize "STR_COMSPEC_SSE_P2P_KeyAsk", localize "STR_COMSPEC_SSE_P2P_KeyAsk_D"], {
+        if (dialog) exitWith { false };
+        ["ask", []] call comspec_sse_fnc_idP2pClient;
+        true
+    }, {}, [0, [false, false, false]]] call CBA_fnc_addKeybind;
+    ["COMSPEC SSE", "comspec_sse_id_keyPresent", [localize "STR_COMSPEC_SSE_P2P_KeyPresent", localize "STR_COMSPEC_SSE_P2P_KeyPresent_D"], {
+        if (dialog) exitWith { false };
+        ["present", []] call comspec_sse_fnc_idP2pClient;
+        true
+    }, {}, [0, [false, false, false]]] call CBA_fnc_addKeybind;
+};
 // BOLO / HVT diffusé par le commandement (fn_idHvt) : notification ATAK, onglet BOLO de Contrôle ID, app Recherchés.
 ["comspec_sse_idBoloNew", {
     params [["_t", ""]];
