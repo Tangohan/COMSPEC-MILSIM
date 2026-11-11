@@ -159,9 +159,9 @@ private _lit = {
 };
 // Distance d'affichage (réglage du joueur, 10 à 100 m) : au-delà, ni rendu ni rafraîchissement.
 private _viewRange = {
-    private _r = missionNamespace getVariable ["comspec_atak_native_toc_view_range", 25];
-    if !(_r isEqualType 0) then { _r = 25; };
-    (_r max 10) min 100
+    private _rv = missionNamespace getVariable ["comspec_atak_native_toc_view_range", 25];
+    if !(_rv isEqualType 0) then { _rv = 25; };
+    (_rv max 10) min 100
 };
 // Centre de l'image (ASL) : milieu de la boîte du modèle de l'écran hôte (relais d'un mur : le mur), gardé par objet.
 private _centerOf = {
@@ -324,17 +324,17 @@ switch (_mode) do {
         private _pc = _h getVariable ["COMSPEC_ATAK_TocPanelCfg", []];
         for "_k" from 1 to (_n - 1) do {
             if ((_px findIf { (_x getVariable ["COMSPEC_ATAK_TocPanel", 0]) isEqualTo _k }) < 0) then {
-                private _r = createVehicle ["Land_HelipadEmpty_F", getPosATL _h, [], 0, "CAN_COLLIDE"];
-                _r attachTo [_h, [0, 0, 1.5]];
-                _r setVariable ["COMSPEC_ATAK_TocHost", _h, true];
-                _r setVariable ["COMSPEC_ATAK_TocPanel", _k, true];
-                _r setVariable ["COMSPEC_ATAK_TocOwned", true, true];
+                private _rv = createVehicle ["Land_HelipadEmpty_F", getPosATL _h, [], 0, "CAN_COLLIDE"];
+                _rv attachTo [_h, [0, 0, 1.5]];
+                _rv setVariable ["COMSPEC_ATAK_TocHost", _h, true];
+                _rv setVariable ["COMSPEC_ATAK_TocPanel", _k, true];
+                _rv setVariable ["COMSPEC_ATAK_TocOwned", true, true];
                 (_pc param [_k - 1, []]) params [["_v", "SPLIT"], ["_sl", 0], ["_sq", ""], ["_cam", []], ["_mos", []], ["_off", false]];
-                if (_mos isEqualType [] && {(count _mos) >= 5}) then { _r setVariable ["COMSPEC_ATAK_TocMosaic", _mos, true]; };
-                if (_off isEqualTo true) then { _r setVariable ["COMSPEC_ATAK_TocOff", true, true]; };
-                ["add", [_r, format ["%1 · %2", (_hc param [0, "TOC"]) select [0, 22], _k + 1], _hc param [1, ""], _k, _v, false, false, _sl, _sq]] call _fn;
-                if (_cam isEqualType [] && {(count _cam) >= 2}) then { _r setVariable ["COMSPEC_ATAK_TocCamWant", _cam]; };
-                _px pushBack _r;
+                if (_mos isEqualType [] && {(count _mos) >= 5}) then { _rv setVariable ["COMSPEC_ATAK_TocMosaic", _mos, true]; };
+                if (_off isEqualTo true) then { _rv setVariable ["COMSPEC_ATAK_TocOff", true, true]; };
+                ["add", [_rv, format ["%1 · %2", (_hc param [0, "TOC"]) select [0, 22], _k + 1], _hc param [1, ""], _k, _v, false, false, _sl, _sq]] call _fn;
+                if (_cam isEqualType [] && {(count _cam) >= 2}) then { _rv setVariable ["COMSPEC_ATAK_TocCamWant", _cam]; };
+                _px pushBack _rv;
             };
         };
         _h setVariable ["COMSPEC_ATAK_TocPanels", _px, true];
@@ -995,9 +995,9 @@ switch (_mode) do {
                     private _n = 2 ^ _zz;
                     [_T, (floor ((_cx - _hw) / _T)) max 0, (floor ((_cx + _hw - 0.001) / _T)) min (_n - 1), (floor ((_ext - (_cy + _hh)) / _T)) max 0, (floor ((_ext - (_cy - _hh) - 0.001) / _T)) min (_n - 1)]
                 };
-                private _r = [_z] call _rng;
-                while { _z > _zMin && {(((_r select 2) - (_r select 1) + 1) * ((_r select 4) - (_r select 3) + 1)) > 36} } do { _z = _z - 1; _r = [_z] call _rng; };
-                _r params ["_T", "_x0", "_x1", "_y0", "_y1"];
+                private _rv = [_z] call _rng;
+                while { _z > _zMin && {(((_rv select 2) - (_rv select 1) + 1) * ((_rv select 4) - (_rv select 3) + 1)) > 36} } do { _z = _z - 1; _rv = [_z] call _rng; };
+                _rv params ["_T", "_x0", "_x1", "_y0", "_y1"];
                 private _haveP = uiNamespace getVariable ["COMSPEC_ATAK_PhotoHave", createHashMap];
                 uiNamespace setVariable ["COMSPEC_ATAK_PhotoHave", _haveP];
                 for "_ty" from _y0 to _y1 do {
@@ -1042,10 +1042,10 @@ switch (_mode) do {
             // Huit places autour du point (droite, gauche, dessus, dessous, diagonales) ; mode 1 : centrée sur le point
             // (noms de lieux). Jamais hors du cadre de la carte (plaques coupées au bord). Sans place libre : rien.
             private _place = {
-                params ["_px", "_py", "_w", "_h", "_r", ["_mode", 0]];
-                private _q = _r * 0.7;
+                params ["_px", "_py", "_w", "_h", "_rv", ["_mode", 0]];
+                private _q = _rv * 0.7;
                 private _cands = [
-                    [[_px + _r, _py - _h / 2], [_px - _r - _w, _py - _h / 2], [_px - _w / 2, _py - _r - _h], [_px - _w / 2, _py + _r],
+                    [[_px + _rv, _py - _h / 2], [_px - _rv - _w, _py - _h / 2], [_px - _w / 2, _py - _rv - _h], [_px - _w / 2, _py + _rv],
                      [_px + _q, _py - _q - _h], [_px + _q, _py + _q], [_px - _q - _w, _py - _q - _h], [_px - _q - _w, _py + _q]],
                     [[_px - _w / 2, _py - _h / 2], [_px - _w / 2, _py - _h - 8], [_px - _w / 2, _py + 8]]
                 ] select _mode;
@@ -1660,8 +1660,8 @@ switch (_mode) do {
             private _h = [_o] spawn {
                 disableSerialization;
                 params ["_o"];
-                private _r = ["draw", [_o, uiNamespace getVariable ["COMSPEC_ATAK_TocAuditD", displayNull]]] call comspec_atak_native_fnc_tocScreen;
-                missionNamespace setVariable ["COMSPEC_ATAK_TocAuditDone", !isNil "_r"];
+                private _rv = ["draw", [_o, uiNamespace getVariable ["COMSPEC_ATAK_TocAuditD", displayNull]]] call comspec_atak_native_fnc_tocScreen;
+                missionNamespace setVariable ["COMSPEC_ATAK_TocAuditDone", !isNil "_rv"];
             };
             private _t0 = diag_tickTime;
             waitUntil { scriptDone _h || {diag_tickTime - _t0 > 5} };

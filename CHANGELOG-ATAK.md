@@ -38,50 +38,78 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## À venir : fond de carte CLASSIQUE identique à la carte M (ATAK natif, version à attribuer)
+## SSE 1.9.1 : tuto des extensions lisible, fenêtre « IA de la zone » réparée, fenêtres qui s'arrêtaient à moitié (SSE 1.9.1)
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
+### Résumé joueur
 Type : correctif
-FR : Carte du téléphone : le fond CLASSIQUE est la vraie carte d'Arma
-- Le fond CLASSIQUE montre maintenant la carte du jeu exactement comme avec la touche M : mêmes couleurs, courbes et altitudes, noms des villes, numéros de grille et marqueurs du jeu, avec vos repères ATAK par-dessus. C'est le fond par défaut pour les nouveaux joueurs ; votre choix déjà enregistré est gardé.
-- CLASSIQUE est le premier bouton de « Fond de carte », dans le volet de la carte comme dans Réglages > Carte : les fonds sont rangés deux par deux, rien n'est coupé, et la ligne sous les boutons dit quel fond est affiché.
-EN : Phone map: the CLASSIC background is the real Arma map
-- The CLASSIC background now shows the game map exactly as with the M key: same colours, contour lines and heights, town names, grid numbers and game markers, with your ATAK markers on top. It is the default for new players; your saved choice is kept.
-- CLASSIC is the first button of "Map background", in the map panel and in Settings > Map: backgrounds are laid out two by two, nothing is cut off, and the line under the buttons says which background is shown.
+FR : SSE 1.9.1 : des fenêtres qui s'affichent de nouveau en entier
+- **Tuto des extensions** : dans SSE ROLEPLAY · Extensions, la liste et le tuto « Comment ça marche » ne sont plus vides ; Étape précédente et Étape suivante font défiler les 10 étapes.
+- **IA de la zone** : la fenêtre du Zeus n'empile plus ses panneaux ; Filtres, Importer depuis Athena et Mémoire de la carte s'ouvrent un à la fois et se ferment d'un clic à côté ou avec Échap.
+- **Fenêtres à moitié affichées** : les fenêtres qui s'arrêtaient en cours d'affichage marchent de nouveau, et dans une discussion avec une IA vos messages se calent de nouveau à droite.
+EN : SSE 1.9.1: windows that show in full again
+- **Extensions tutorial**: in SSE ROLEPLAY · Extensions, the list and the "How it works" tutorial are no longer empty; Previous step and Next step move through the 10 steps.
+- **Area AI**: the Zeus window no longer stacks its panels; Filters, Import from Athena and Map memory open one at a time and close with a click beside them or with Esc.
+- **Half-shown windows**: windows that stopped halfway while opening work again, and in a chat with an AI your own messages line up on the right again.
 
 ### Détail technique
+
+**Tuto des extensions de documents de nouveau lisible**
+
+- Cause (`extensions/functions/fn_docExtWindow.sqf`, SSE 1.9.0, l. 20 / 272 / 292) : en SQF les noms de variables ignorent la casse. Le raccourci de traduction `_L` était écrasé par `private _l = <liste>` dans `_fillTuto` et `_fill` ; l'appel `call _L` suivant échouait (contrôle au lieu de code) avant le premier `lbAdd`. Liste des étapes, lecture et ligne d'état restaient vides dans le tuto ; la liste des extensions et sa fiche aussi. La vue vide n'était pas touchée.
+- Correctif : `_loc` (traduction, clé absente → nom de la clé affiché et ligne au RPT, jamais de ligne vide) et `_lst` (listes). Étape 1 choisie à l'ouverture, focus sur la liste (flèches haut / bas), boutons `BtnPrev` / `BtnNext` (IDC 93965 / 93966, opérations `prev` / `next`, grisés aux extrémités), exemple de config.cpp à la taille de texte de la charte (0,78 case).
+- Contrôle interne `["audit"]` (textes FR / EN des 10 étapes, texte structuré lisible, IDC, liste remplie, étape choisie, lecture non vide ; liste des extensions remplie) lancé à chaque ouverture, résultat au RPT seulement ; repris par l'autotest `sse_extensions_fenetre` avec Étape précédente / suivante.
+- Test PHP `SseExtensionsTutoAssetTest` : clés FR / EN non vides, clés uniques dans les stringtables SSE, corps en texte structuré valide, IDC de la fenêtre utilisés par la fonction, étape 1 choisie, aucune variable SQF identique à la casse près.
+- Non vu en jeu (autotest non lancé sur consigne).
+
+**Fenêtre « IA de la zone » réparée, volets un par un**
+
+- Cause (RPT du 11 novembre, 13 h 44) : en SQF la casse des noms ne compte pas. Dans `editor/functions/fn_editorAi.sqf`, `_render` déclarait `private _l` (la liste) qui écrasait l'aide de traduction `_L` : `"Filters" call _L` sur un contrôle, script arrêté ; `_layout` déclarait `private _empty` qui écrasait la liste d'idc `_EMPTY` : `forEach _idcs` sur un booléen. Rien n'était jamais caché : volets, quatre onglets et boutons d'état vide restaient affichés ensemble. Même piège latent : `_all`/`_ALL`, `_gH`/`_gh`, `_sides`.
+- Registre `_OWN` : chaque idc de `aizone.hpp` a un propriétaire (cadre, liste, état vide, en-tête, un par onglet, aperçu, barre, voile, un par volet) ; `_showOnly` cache tout propriétaire non visible à chaque changement d'état, au début et à la fin de « load ». Contrôles sous condition (`_showIf`) jamais hors de leur propriétaire. Aide de traduction renommée `_loc`.
+- Volets : une seule clé d'état `volet` (« ath », « filt », « mem »), fermés au départ ; voile `AzScrim` (95850, clic à côté = « voletClose »), Échap par `KeyDown` (« escape ») ; « Importer depuis Athena » devient un volet (fond 95115, liseré 95116). Boutons en double de l'état vide (95021, 95022) retirés : le texte renvoie aux boutons du haut.
+- Op « audit » : contrôles affichés hors de leur propriétaire, chevauchements par couche, textes coupés, volets ouverts ; la visite guidée ne s'ouvre pas si l'audit trouve une fenêtre cassée (journal seulement). « Actualiser » se termine dans la ligne d'état (`AZ_RefreshDone`, ou `AZ_RefreshLate` au bout de 25 s).
+- `tests/Unit/SseAiZoneWindowAssetTest.php` : aucun nom local qui reprend (casse ignorée) un nom du premier niveau dans `fn_editorAi`, `fn_editor`, `fn_editorAiCard`, `fn_editorCoach` ; chaque contrôle a un seul propriétaire ; volets fermés au départ et au-dessus du voile ; aucun chevauchement pour chaque onglet × liste remplie / vide × volet. Autotest `sse_ia_zone_etats` passé à l'audit (non exécuté).
+- Même motif repéré dans le RPT hors de cette fenêtre : `extensions/functions/fn_docExtWindow.sqf` ligne 299 (`call _L` sur un contrôle), laissé à la branche des extensions.
+
+**Fenêtres qui s'arrêtaient à moitié**
+
+- Cause commune : en SQF les variables locales ignorent la casse (`_L` = `_l`). Nouveau détecteur `tools/sqf_case_shadow_check.py` (portées, `params`, `for`, helpers appelés depuis une portée qui masque le nom ; verdict BREAKS / RISK / OK), note `docs/SQF-VARIABLES-CASSE.md`, test PHP `SqfCaseInsensitiveShadowAssetTest` (règle sans Python, exceptions dans `tools/sqf_case_shadow_allowlist.txt`).
+- `editor/fn_editorAi.sqf` (BREAKS) : la liste `private _l` des volets écrasait la traduction `_L` ; `_empty` (booléen) masquait la liste d'IDC `_EMPTY` passée à `_vis`. À la fusion, version de la fenêtre « IA de la zone » refaite gardée (`_loc`, `_isEmpty`).
+- `toc/fn_tocDraw.sqf` (RISK, ATAK) : `private _h` écrasait `_H` (hauteur d'écran, police des boutons minuscule) et `_W` écrasait la largeur `_w` reçue (fond trop large). À la fusion, barre refaite par le PC du poste TOC gardée (pose par la grille du PC, sans ces noms).
+- `ia_rp/fn_iarpUi.sqf` (RISK) : la largeur de bulle `_w` masquait la largeur du fil `_W` lue par `_add` (bulles « moi » mal placées) ; `_bubW`.
+- `extensions/fn_docExtWindow.sqf` (BREAKS) : corrigé par la branche des extensions (même lot), exception retirée à la fusion.
+- Renommages seuls, aucun autre changement. Non vu en jeu (analyse statique, `hemtt check` ATAK et SSE sans nouvelle erreur).
+
+## Pack 4.4.1 Washington : écrans TOC visibles et bien rendus, PC du poste lisible, carte CLASSIQUE, page MPU5, note de service et versions au Centre Zeus (ATAK natif 4.4.1.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : correctif
+FR : ATAK 4.4.1 : des écrans TOC qui s'affichent, un PC lisible et une carte CLASSIQUE fidèle
+- **Écrans TOC posés** : les nouveaux écrans TOC (murs d'images, écrans 98 et 65 pouces, horloge, plaque de nom) apparaissent dans Eden et Zeus, et c'est bien l'écran choisi qui est posé. L'écran blanc de salle de briefing, les écrans sur trépied, l'ordinateur multi-écran et l'écran tactique servent aussi d'écran TOC.
+- **Écrans TOC affichés** : tous les affichages se dessinent, en texte lisible, et seulement quand vous êtes près de l'écran et face à lui (réglage « Distance d'affichage des écrans TOC », 25 m par défaut).
+- **PC du poste TOC** : boutons rangés et lisibles, vue satellite visible la nuit, zoom à la molette et image qui se déplace à la souris.
+- **Téléphone et Zeus** : le fond CLASSIQUE est la carte du jeu et le premier de la liste, la page Radio de données (MPU5) est plus claire, un bouton « Ouvrir la note de service » apparaît partout où la licence manque, et le Centre Zeus montre la vraie version de chaque joueur.
+EN : ATAK 4.4.1: TOC screens that show up, a readable laptop and a faithful CLASSIC map
+- **Placed TOC screens**: the new TOC screens (video walls, 98 and 65 inch screens, clock, name plate) show up in Eden and Zeus, and the screen you picked is the one placed. The white briefing room screen, tripod screens, the multi-screen computer and the tactical screen also work as TOC screens.
+- **Displayed TOC screens**: every display is drawn, with readable text, and only when you are close to the screen and facing it ("TOC screen display distance" setting, 25 m by default).
+- **TOC post laptop**: tidy, readable buttons, a satellite view you can see at night, mouse wheel zoom and an image you drag with the mouse.
+- **Phone and Zeus**: the CLASSIC background is the game map and first in the list, the data radio page (MPU5) is clearer, an "Open the service note" button shows wherever the licence is missing, and the Zeus Centre shows each player's real version.
+
+### Détail technique
+
+**Fond de carte CLASSIQUE identique à la carte M**
+
 - `COMSPEC_RscMapAtakClassic: RscMapControl {}` sans aucun attribut (la carte M, `RscDisplayMainMap >> CA_Map`, est un RscMapControl sans réglage de rendu) ; sur ce contrôle (idc 88532), `fn_mapOnDraw` ne redessine plus marqueurs du jeu, leurs noms, noms de lieux ni numéros de grille (`_engineTxt`).
 - `fn_mapStyle` : CLASSIC en tête de « LIST » et défaut ; `fn_pageMap` (volet) et `fn_pageSettings` (Réglages) : deux boutons par rangée, fond relu par `fn_mapStyle` (un ancien « SAT » allume CLASSIQUE), description sous les boutons.
 - Non vérifié en jeu : ACE retouche aussi `CA_Map` seul (arbres masqués, assombrissement de nuit), non repris sur le téléphone.
 
----
-## À venir : écrans TOC posables partout, écran choisi bien posé, écrans des autres mods (ATAK natif, version à attribuer)
+**Écrans TOC posables partout, écran choisi bien posé, écrans des autres mods**
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : Tous les écrans TOC se posent, et c'est le bon écran qui apparaît
-- Les murs d'images, les écrans 98 et 65 pouces, le bandeau horloge et la plaque de nom apparaissent enfin dans Eden et dans Zeus (COMSPEC › Écrans TOC et projection), et l'écran choisi dans le module Écran TOC est bien celui qui est posé, avec l'affichage choisi.
-- Les écrans des autres mods servent d'écran TOC : l'écran blanc de salle de briefing, les écrans renforcés, l'ordinateur multi-écran et l'écran tactique sont reconnus (menu ACE « Utiliser comme écran TOC ») ; pour tout autre objet, le module Zeus lâché dessus laisse choisir la surface de l'image et la tester.
-EN : Every TOC screen can be placed, and the right screen appears
-- Video walls, the 98 and 65 inch screens, the clock strip and the name plate finally show up in Eden and Zeus (COMSPEC › TOC and projection screens), and the screen picked in the TOC screen module is the one placed, with the chosen display.
-- Screens from other mods work as TOC screens: the white briefing room screen, the rugged screens, the multi-screen computer and the tactical screen are recognised (ACE menu "Use as a TOC screen"); for any other object, the Zeus module dropped on it lets you pick the picture surface and test it.
-
-### Détail technique
 - `toc_screens3d.hpp` : `COMSPEC_ATAK_Screen_Base3D` héritait de `Static` sans `side` (camp 4, inconnu) : Eden et Zeus ne listaient aucun des neuf nouveaux écrans. `side=3`.
 - `fn_moduleTocScreen` : module lâché au Zeus pris pour un module Eden (attributs jamais posés) : défauts trépied / SPLIT / « TOC ». Fenêtre ouverte dès que `Class` n'est pas posé et que le joueur est Zeus. `fn_tocScreen` « spawn » : la classe choisie passe telle quelle ; repli journalisé (classe inconnue du serveur) ; journal « Écran TOC posé : classe ».
 - `CfgComspecTocScreens` (`toc_screens_tiers.hpp`, extensible) : surface, dalles recopiées, format, matière par classe (ou parente). Fenêtre Zeus sur un objet : surface (liste des sélections, proposée), format 16:9 / 4:1, matière, « Tester l'image » ; `COMSPEC_ATAK_TocSurf` gardé par `fn_tocPersist`. Liste de pose avec aperçus Eden.
-## À venir : écrans TOC lisibles, tous les affichages qui marchent, rien de calculé de loin (ATAK natif, version à attribuer)
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : Les écrans TOC s'affichent tous, se lisent de loin et ne coûtent rien quand vous n'êtes pas devant
-- Horloge, satellite, escouade, mosaïque de caméras, main courante, liste d'exécution, pertes, demandes, murs d'images et bandeaux s'affichent comme la carte et le flux, sur chaque écran, même à plusieurs dans la salle.
-- Textes plus grands et jamais coupés, carte plus nette cadrée sur votre réseau, avec l'échelle, les villes et des noms qui ne se chevauchent plus. Un écran n'est dessiné que si vous êtes à moins de 25 m et face à lui (réglage « Distance d'affichage des écrans TOC »).
-EN : All TOC screens now show up, read well from a distance and cost nothing when you are not in front of them
-- Clock, satellite, squad, camera mosaic, duty log, execution checklist, casualties, requests, video walls and strips now show up like the map and feed, on every screen, even with several in the same room.
-- Bigger text that is never cut off, a clearer map framed on your network, with a scale bar, towns and labels that no longer overlap. A screen is only drawn when you are within 25 m and facing it ("TOC screen display distance" setting).
+**Écrans TOC lisibles, tous les affichages qui marchent, rien de calculé de loin**
 
-### Détail technique
 **Pourquoi seuls certains écrans s'affichaient (4.4.0)**
 - `fn_tocScreen` « load » : le display d'une texture UI allait à l'écran « en attente », pas à celui dont la texture venait de se charger ; une texture ancienne vue après coup donnait son display au mauvais écran (deux écrans sur une image, l'autre noir). Désormais `displayUniqueName` → écran (`COMSPEC_ATAK_TocTexObj`), texture abandonnée ignorée.
 - `fn_tocScreen` « tick » : une seule texture en attente à la fois ; un écran jamais dessiné par le jeu (derrière soi, dalle d'un mur, bandeau) la reprenait toutes les 4 s et bloquait tous les autres. Désormais une texture par écran allumé, demandées ensemble ; échec au bout de 6 s : trace une fois, nouvel essai 4 s plus tard sans bloquer personne.
@@ -104,92 +132,33 @@ EN : All TOC screens now show up, read well from a distance and cost nothing whe
 - Op `["audit"]` (console, joueur ou Zeus) : chaque affichage dessiné dans un display d'essai, chacun dans son propre script ; résultat OK / ERREUR / VIDE / SANS TITRE au journal et dans `uiNamespace` `COMSPEC_ATAK_TocAudit`.
 - Op `["title", affichage]` : titres et libellés communs (en-têtes, menus, notifications du téléphone).
 - Tests : `AtakTocScreenDisplaysAssetTest` (chaque affichage des menus Eden / Zeus / ACE a sa branche de dessin et un titre FR + EN ; distance, index, caméras ; texture rendue à son écran ; tailles fixes), `AtakTocPostTest` mis à jour. Non vérifié en jeu (aucun lancement d'Arma) : rendu réel des tailles, `ctrlTextWidth` dans une texture UI, `displayUniqueName` au chargement.
-## À venir : PC du poste TOC remis d'aplomb, satellite visible la nuit (ATAK natif, version à attribuer)
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : Le PC du poste TOC est de nouveau lisible et le satellite se voit la nuit
-- Toutes les fenêtres du PC sont rangées : plus de boutons qui se chevauchent ni de texte invisible, la barre de dessin sous la carte montre enfin TRAIT, DESSIN, PLAN, EFFACER et ANNULER, et l'aide du bouton survolé s'écrit en bas du panneau au lieu de couvrir le bouton voisin.
-- La vue satellite n'est plus noire la nuit (nouveau mode AUTO, JOUR éclairci), se zoome à la molette, se déplace en faisant glisser l'image, et ne s'arrête plus quand vous changez d'onglet un instant.
-EN : The TOC post PC is readable again and the satellite works at night
-- Every PC window is tidied up: no more overlapping buttons or invisible text, the drawing bar under the map finally shows LINE, DRAW, PLAN, ERASE and UNDO, and the help of the hovered button appears at the bottom of the panel instead of covering the next button.
-- The satellite view is no longer black at night (new AUTO mode, brightened DAY), zooms with the mouse wheel, moves when you drag the image, and no longer stops when you briefly switch tabs.
+**PC du poste TOC remis d'aplomb, satellite visible la nuit**
 
-### Détail technique
 - Causes (retour de TTRD, 11/11, build 4.4.0) : `fn_tocDraw` « build » déclarait `_h = _H * 0.03` et `_W = safeZoneW` à côté du paramètre `_w` : le SQF ne distingue pas la casse, la hauteur d'écran devenait 0,03 (libellés de la barre de dessin à un demi-pixel) et le fond prenait toute la largeur de l'écran ; barre d'outils de la carte posée à la main sur la carte, « CHERCHER » sous les onglets ; infobulles d'Arma ouvertes sur le bouton voisin ; image satellite en mode `DAY` (défaut) dans une mission de nuit (01:26) : `setPiPEffect [0]` presque noir ; bail de rendu de 3 s renouvelé seulement par l'onglet SAT (`rendu arrêté` 3 s après le changement d'onglet).
 - `fn_tocLaptop` : une seule grille (`_grid`), une seule routine de pose (`_place`), mises en page par zone dans `_layout` (titre, onglets, gauche carte / SAT / salle, panneau de l'onglet, aide, ligne d'état), un registre de contrôles (`keys`) : seul ce que la mise en page en cours nomme est montré. Boutons dans une table `_btnDefs` (libellé long, court, aide) mesurés par `_fitC`. Ligne d'aide au survol (`hover`, `help`), raison d'un bouton grisé (`why`). Mode `audit` (bouton sans texte, texte coupé, chevauchement, hors de l'écran) appelé par l'autotest `toc.sqf` pour chaque onglet.
 - `fn_tocDraw` et `fn_tocHallUi` créent leurs contrôles dans le registre du PC (`["mk", …]`, `["tip", …]`, `["label", …]`) ; positions posées par la grille du PC.
 - SAT : mode `AUTO` (défaut, `fn_tocRoom`), `fn_tocSat` « effect » (nuit : `AUTO` → vision nocturne, `DAY` → correction de couleur ×3,5) ; `need` accepte une durée, jamais raccourcie (30 s en quittant l'onglet SAT) ; molette (`MouseZChanged`), glisser (`satDown` / `satUp` → `pan`), image 16:9 en haut de sa zone, légende dessous. App Poste TOC du téléphone : bouton AUTO.
 - Tests : `AtakTocLaptopLayoutTest` (noms qui ne diffèrent que par la casse, registre et mise en page, libellés FR + EN, aucun chevauchement ni débordement en 4:3, 16:10, 16:9 et 21:9, satellite de nuit). i18n : 126 phrases dans `i18n/en.txt` et `localisation/template/xx.txt`.
-## À venir : note de service à portée de main, versions justes au Centre Zeus (ATAK natif et SSE, version à attribuer)
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : La licence s'accepte depuis le téléphone, et le Zeus voit la vraie version de chacun
-- Partout où le téléphone dit « Licence pas encore acceptée » (Mes couvertures sur Athena, Ma couverture, Fichiers, ORBAT du BFT, Téléphones, Configuration ATHENA du menu Échap), un bouton « Ouvrir la note de service » l'affiche tout de suite ; une fois acceptée, vous revenez à la même page et la liste de vos couvertures se recharge seule. Rien n'est envoyé à Athena avant.
-- Au Centre Zeus, chaque étiquette montre la version du mod réellement installée par le joueur, comparée à celle du serveur : « à jour », « pas à jour » seulement s'il est plus ancien, et une note bleue « plus récent que le serveur » s'il a une version plus récente.
-EN : The licence can be accepted from the phone, and the Zeus sees everyone's real version
-- Wherever the phone says "Licence not accepted yet" (My covers on Athena, My cover, Files, BFT ORBAT, Phones, ATHENA Configuration in the Escape menu), an "Open the service note" button shows it right away; once accepted, you come back to the same page and your cover list reloads by itself. Nothing is sent to Athena before that.
-- In the Zeus Centre, each label shows the mod version the player really has installed, compared to the server's: "up to date", "outdated" only when it is older, and a blue "newer than the server" note when it is newer.
+**Note de service à portée de main, versions justes au Centre Zeus**
 
-### Détail technique
 - `fn_licenceOpen` (ATAK, ui) : point d'entrée commun de la note de service d'Overwatch connect (`fn_showBetaAccessNote [true]`, texte de `fn_ndaTexts` inchangé). Téléphone en main rangé le temps de la note puis rouvert sur la page d'appel (`fn_openApp`), rappel `[acceptée]` à la fermeture ; `["ok"]` / `["can"]`. Aucun appel réseau : l'acceptation reste celle de `fn_ndaAccept` (lecture jusqu'à la fin).
 - Boutons : `fn_idCoverAthena` état `licence` (acceptée : `retry` automatique, la garde `_gate` reste devant `GetIdentityPack`), `fn_idCoverPage`, `fn_filePage` (nouvel état Athena `licence` posé par `fn_fileClient`, consultation relancée après acceptation), `fn_bftOrbat` « notice » WAIT (`réessayer` = « licence ») + `fn_pageBft`, `fn_pagePhones`, entrée `atak_licence` de la Configuration ATHENA (`XEH_preInit`, affichée seulement licence en attente, fenêtre rouverte ensuite). `RELIRE LA LICENCE` (Réglages) passe par le même chemin.
 - Étiquettes « Version du mod » (`fn_zeusCentre`) : la version lue était celle de la fiche relayée par le serveur (`fn_zeusState` « row »). Un serveur ATAK 4.2.1 ou plus ancien refuse les fiches de 14 champs envoyées depuis 4.2.2 et garde la dernière acceptée (session précédente du joueur), renvoyée à chaque envoi complet et tenue pour fraîche côté Zeus ; la référence retombait sur la version du Zeus lui-même tant que l'onglet SERVEUR n'était pas ouvert. Désormais : version publiée par chaque poste sur son unité (`COMSPEC_ATAK_ModVer`, `XEH_postInitClient`), fiche en repli ; référence = `COMSPEC_ATAK_ServerVersion` publiée par le serveur (`XEH_postInitServer`), sinon l'onglet SERVEUR (demandé toutes les 2 min au plus), sinon la plus récente vue en jeu.
 - `fn_verCmp` (ATAK, core) : lecture et comparaison MAJEUR.MINEUR.CORRECTIF nombre par nombre, `["max", …]`, `["selfTest"]` (4.4.0 contre 4.2.1, égales, plus récente, illisible, incomplète, vide). Test `AtakLicenceOpenVersionTagAssetTest`.
 - Overwatch connect : lit seulement sa propre version (`CfgPatches`), rien à corriger. Non vu en jeu.
-## À venir : page MPU5 (Radio de données) plus claire (ATAK natif, version à attribuer)
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : Radio de données (MPU5) plus claire
-- En haut, l'état en trois lignes (radio, téléphone, maillage) et ce qu'il faut faire ; les réglages sont rangés par thème, le choix en cours en surbrillance (puissance Faible / Moyenne / Forte, canal − 3 +).
-- La voix par le maillage tient sur une ligne ; le bouton GUIDE explique les étapes, DÉPANNAGE MPU reste à côté.
-EN : Clearer data radio (MPU5)
-- At the top, the status in three lines (radio, phone, mesh) and what to do; settings are grouped by theme, with the current choice highlighted (power Low / Medium / High, channel − 3 +).
-- Voice over the mesh fits on one line; the GUIDE button explains the steps, MPU TROUBLESHOOTING stays next to it.
+**Page MPU5 (Radio de données) plus claire**
 
-### Détail technique
 - `fn_pageNetwork` : section « Radio de données » refaite (état en 3 lignes à pastilles, ligne « à faire » avec la raison des boutons grisés, rangées `_ctlRow` : libellé à gauche, cases de même hauteur et de même largeur, `fn_textFit`). Section voix repliée par défaut (`_openDef` sans « voice »), volet `netGuide` (étapes numérotées, retour du téléphone par `backSub`).
 - `fn_mpuLink` : `"txpower"` et `"width"` acceptent un cran 0-2 (sans cran : le suivant, comme avant, pour le menu ACE).
 - Textes ajoutés à `i18n/en.txt` et `localisation/template/xx.txt` ; test `AtakMpu5PageAssetTest`.
 
----
-## À venir : tuto des extensions de documents de nouveau lisible (SSE, version à attribuer)
+**Fusion du lot (release/atak-4.4.1)**
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : La fenêtre Extensions et son tuto s'affichent de nouveau
-- Dans SSE ROLEPLAY · Extensions, la liste des extensions et le tuto « Comment ça marche » ne sont plus vides : les 10 étapes s'affichent, la première est ouverte d'office et le texte se lit à droite.
-- Des boutons Étape précédente et Étape suivante (ou les flèches haut et bas) font défiler le tuto, et Copier l'exemple copie le config.cpp affiché.
-EN : The Extensions window and its tutorial show again
-- In SSE ROLEPLAY · Extensions, the list of extensions and the "How it works" tutorial are no longer empty: the 10 steps show, the first one opens by itself and its text reads on the right.
-- Previous step and Next step buttons (or the Up and Down arrows) move through the tutorial, and Copy the example copies the config.cpp shown.
-
-### Détail technique
-- Cause (`extensions/functions/fn_docExtWindow.sqf`, SSE 1.9.0, l. 20 / 272 / 292) : en SQF les noms de variables ignorent la casse. Le raccourci de traduction `_L` était écrasé par `private _l = <liste>` dans `_fillTuto` et `_fill` ; l'appel `call _L` suivant échouait (contrôle au lieu de code) avant le premier `lbAdd`. Liste des étapes, lecture et ligne d'état restaient vides dans le tuto ; la liste des extensions et sa fiche aussi. La vue vide n'était pas touchée.
-- Correctif : `_loc` (traduction, clé absente → nom de la clé affiché et ligne au RPT, jamais de ligne vide) et `_lst` (listes). Étape 1 choisie à l'ouverture, focus sur la liste (flèches haut / bas), boutons `BtnPrev` / `BtnNext` (IDC 93965 / 93966, opérations `prev` / `next`, grisés aux extrémités), exemple de config.cpp à la taille de texte de la charte (0,78 case).
-- Contrôle interne `["audit"]` (textes FR / EN des 10 étapes, texte structuré lisible, IDC, liste remplie, étape choisie, lecture non vide ; liste des extensions remplie) lancé à chaque ouverture, résultat au RPT seulement ; repris par l'autotest `sse_extensions_fenetre` avec Étape précédente / suivante.
-- Test PHP `SseExtensionsTutoAssetTest` : clés FR / EN non vides, clés uniques dans les stringtables SSE, corps en texte structuré valide, IDC de la fenêtre utilisés par la fonction, étape 1 choisie, aucune variable SQF identique à la casse près.
-- Non vu en jeu (autotest non lancé sur consigne).
-## À venir : fenêtre « IA de la zone » réparée, volets un par un (COMSPEC SSE, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : La fenêtre « IA de la zone » du Zeus s'affiche de nouveau correctement
-- Plus de panneaux empilés ni de textes superposés : la fenêtre montre la liste, l'onglet choisi et l'aperçu du papier, rien d'autre.
-- « Filtres », « Importer depuis Athena » et « Mémoire de la carte » s'ouvrent un à la fois, par-dessus la fenêtre assombrie ; un clic à côté ou Échap les ferme. Après « Actualiser », la ligne du bas dit quand la liste est relue.
-EN : The Zeus "Area AI" window displays correctly again
-- No more stacked panels or overlapping text: the window shows the list, the chosen tab and the paper preview, nothing else.
-- "Filters", "Import from Athena" and "Map memory" open one at a time over the dimmed window; a click beside them or Esc closes them. After "Refresh", the bottom line says when the list has been read again.
-
-### Détail technique
-- Cause (RPT du 11 novembre, 13 h 44) : en SQF la casse des noms ne compte pas. Dans `editor/functions/fn_editorAi.sqf`, `_render` déclarait `private _l` (la liste) qui écrasait l'aide de traduction `_L` : `"Filters" call _L` sur un contrôle, script arrêté ; `_layout` déclarait `private _empty` qui écrasait la liste d'idc `_EMPTY` : `forEach _idcs` sur un booléen. Rien n'était jamais caché : volets, quatre onglets et boutons d'état vide restaient affichés ensemble. Même piège latent : `_all`/`_ALL`, `_gH`/`_gh`, `_sides`.
-- Registre `_OWN` : chaque idc de `aizone.hpp` a un propriétaire (cadre, liste, état vide, en-tête, un par onglet, aperçu, barre, voile, un par volet) ; `_showOnly` cache tout propriétaire non visible à chaque changement d'état, au début et à la fin de « load ». Contrôles sous condition (`_showIf`) jamais hors de leur propriétaire. Aide de traduction renommée `_loc`.
-- Volets : une seule clé d'état `volet` (« ath », « filt », « mem »), fermés au départ ; voile `AzScrim` (95850, clic à côté = « voletClose »), Échap par `KeyDown` (« escape ») ; « Importer depuis Athena » devient un volet (fond 95115, liseré 95116). Boutons en double de l'état vide (95021, 95022) retirés : le texte renvoie aux boutons du haut.
-- Op « audit » : contrôles affichés hors de leur propriétaire, chevauchements par couche, textes coupés, volets ouverts ; la visite guidée ne s'ouvre pas si l'audit trouve une fenêtre cassée (journal seulement). « Actualiser » se termine dans la ligne d'état (`AZ_RefreshDone`, ou `AZ_RefreshLate` au bout de 25 s).
-- `tests/Unit/SseAiZoneWindowAssetTest.php` : aucun nom local qui reprend (casse ignorée) un nom du premier niveau dans `fn_editorAi`, `fn_editor`, `fn_editorAiCard`, `fn_editorCoach` ; chaque contrôle a un seul propriétaire ; volets fermés au départ et au-dessus du voile ; aucun chevauchement pour chaque onglet × liste remplie / vide × volet. Autotest `sse_ia_zone_etats` passé à l'audit (non exécuté).
-- Même motif repéré dans le RPT hors de cette fenêtre : `extensions/functions/fn_docExtWindow.sqf` ligne 299 (`call _L` sur un contrôle), laissé à la branche des extensions.
+- Branches fusionnées : `fix/atak-carte-classique-reglages`, `fix/toc-ecrans-visibles`, `fix/toc-ecrans-rendu`, `fix/toc-pc-ui`, `fix/atak-licence-ouvrir-version`, `fix/atak-mpu5-ui`, `fix/sse-extensions-tuto-vide`, `fix/sse-ia-zone-volets`, `fix/sqf-variables-casse`. Correctifs seuls : CORRECTIF +1 (ATAK natif 4.4.0 → 4.4.1, SSE 1.9.0 → 1.9.1). Link inchangé (2.0.123) : aucune DLL modifiée.
+- `fn_editorAi.sqf` et `fn_tocDraw.sqf` : versions de `fix/sse-ia-zone-volets` et `fix/toc-pc-ui` gardées (les doublons de casse y étaient déjà retirés). Détecteur `tools/sqf_case_shadow_check.py --all` relancé après fusion : `_r` (valeur) écrasait l'aide `_R` dans `fn_tocBoard` (texte gauche / droite, renommés `_txtL` / `_txtR`) et dans `fn_tocScreen` `_place2` (`_rect`) ; 0 BREAKS. Exception temporaire `fn_docExtWindow.sqf` retirée de `tools/sqf_case_shadow_allowlist.txt`.
 
 ## SSE 1.9.0 : IA qui réagissent naturellement, émotions réglables, papiers de 45 pays, une seule identité par IA, outils Zeus refaits (SSE 1.9.0)
 
@@ -304,25 +273,6 @@ EN : SSE 1.9.0: more natural AIs, real papers and redone Zeus tools
 - Licence : rien ne part avant son acceptation (serveur dédié : signalée par un joueur connecté). Page du guide en jeu et clés FR / EN. Fusion : `fn_lorePerson` lit l'identité unique de l'IA (`fn_idIdentityOf`), le même nom que ses papiers.
 - Pas d'entrée de changelog dans la branche (rédigée à la fusion) ; non testé en jeu.
 
-
-## À venir : fenêtres qui s'arrêtaient à moitié (ATAK natif et SSE, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : Plusieurs fenêtres qui s'affichaient à moitié fonctionnent de nouveau
-- La fenêtre IA de la zone remplit de nouveau sa liste et ses volets, et la barre de dessin de la salle TOC affiche ses boutons lisibles à la bonne largeur.
-- Dans la discussion avec une IA, vos propres messages se calent de nouveau à droite de la fenêtre.
-EN : Several windows that only half showed work again
-- The Zone AI window fills its list and panels again, and the TOC room drawing bar shows readable buttons at the right width.
-- In a chat with an AI, your own messages line up on the right of the window again.
-
-### Détail technique
-- Cause commune : en SQF les variables locales ignorent la casse (`_L` = `_l`). Nouveau détecteur `tools/sqf_case_shadow_check.py` (portées, `params`, `for`, helpers appelés depuis une portée qui masque le nom ; verdict BREAKS / RISK / OK), note `docs/SQF-VARIABLES-CASSE.md`, test PHP `SqfCaseInsensitiveShadowAssetTest` (règle sans Python, exceptions dans `tools/sqf_case_shadow_allowlist.txt`).
-- `editor/fn_editorAi.sqf` (BREAKS) : la liste `private _l` des volets (l. 232, 537, 556) écrasait la traduction `_L` ; renommée `_lnb`. `_empty` (booléen) masquait la liste d'IDC `_EMPTY` passée à `_vis` ; renommé `_isEmpty`.
-- `toc/fn_tocDraw.sqf` (RISK) : `private _h` écrasait `_H` (hauteur d'écran, police des boutons minuscule) et `_W` écrasait la largeur `_w` reçue (fond trop large) ; `_szH` / `_szW`.
-- `ia_rp/fn_iarpUi.sqf` (RISK) : la largeur de bulle `_w` masquait la largeur du fil `_W` lue par `_add` (bulles « moi » mal placées) ; `_bubW`.
-- `extensions/fn_docExtWindow.sqf` (BREAKS) laissé tel quel : corrigé sur `fix/sse-extensions-tuto-vide`, en exception jusqu'à sa fusion.
-- Renommages seuls, aucun autre changement. Non vu en jeu (analyse statique, `hemtt check` ATAK et SSE sans nouvelle erreur).
 
 ## Pack 4.4.0 Washington : salle TOC en jeu, sang sur l'écran, carte Classique, traçage d'un numéro, ATHENA Configuration (ATAK natif 4.4.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.0)
 

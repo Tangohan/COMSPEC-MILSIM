@@ -170,7 +170,8 @@ final class AtakTocScreensPlacementAssetTest extends TestCase
         self::assertStringContainsString('format ["Écran TOC posé : %1 (%2), affichage %3, nom « %4 »", _cls,', $spawn);
         self::assertStringContainsString('["add", [_o, _name, _side, 0, _view, _toc, true, _slot, _squad]] call _fn;', $spawn);
         self::assertStringContainsString('affichage « %2 » inconnu de ce serveur', self::caseBody($toc, 'add'));
-        self::assertStringContainsString('format ["Écran TOC %1 (%2) : affichage %3, texture UI %4 demandée sur la dalle %5 (%6)", typeOf _o', $toc);
+        // Distance ajoutée au journal par fix/toc-ecrans-rendu (texture demandée seulement à portée d'affichage).
+        self::assertStringContainsString('format ["Écran TOC %1 (%2) : affichage %3, texture UI %4 demandée sur la dalle %5 (%6), à %7 m", typeOf _o', $toc);
 
         // Liste de pose : [nom, classe, aperçu], écrans COMSPEC puis écrans déclarés (jeu, autres mods).
         $classes = self::caseBody($toc, 'classes');

@@ -257,11 +257,11 @@ switch (_mode) do {
                     _x params ["_bg", "_tp", "_tlb", "_tm"];
                     if (_i >= _n) then { { _x ctrlShow false; } forEach [_bg, _tp, _tlb, _tm]; continue };
                     (_tl param [_i, ["", ""]]) params ["_id", "_lbl"];
-                    private _r = [_gx + (_i mod _gr) * _cw + 0.003, _gy + (floor (_i / _gr)) * _ch + 0.005, _cw - 0.006, _ch - 0.01];
-                    _bg ctrlSetPosition _r; _bg ctrlCommit 0; _bg ctrlShow true;
-                    _tp ctrlSetPosition _r; _tp ctrlCommit 0;
-                    _tlb ctrlSetPosition [_r select 0, (_r select 1) + (_r select 3) - 40 / _texH, _r select 2, 40 / _texH]; _tlb ctrlCommit 0;
-                    _tm ctrlSetPosition [_r select 0, (_r select 1) + (_r select 3) * 0.38, _r select 2, (_r select 3) * 0.3]; _tm ctrlCommit 0;
+                    private _rv = [_gx + (_i mod _gr) * _cw + 0.003, _gy + (floor (_i / _gr)) * _ch + 0.005, _cw - 0.006, _ch - 0.01];
+                    _bg ctrlSetPosition _rv; _bg ctrlCommit 0; _bg ctrlShow true;
+                    _tp ctrlSetPosition _rv; _tp ctrlCommit 0;
+                    _tlb ctrlSetPosition [_rv select 0, (_rv select 1) + (_rv select 3) - 40 / _texH, _rv select 2, 40 / _texH]; _tlb ctrlCommit 0;
+                    _tm ctrlSetPosition [_rv select 0, (_rv select 1) + (_rv select 3) * 0.38, _rv select 2, (_rv select 3) * 0.3]; _tm ctrlCommit 0;
                     private _tex = "";
                     private _info = ["", "coupée", 0];
                     if (_id isNotEqualTo "") then {
@@ -351,7 +351,7 @@ switch (_mode) do {
                 (["boardText", [_view, _room, _side, true]] call _fn) params [["_txtL", ""], ["_txtR", ""]];
                 [_ui get "main", _txtL] call _setTxt;
                 (_ui get "main2") ctrlShow (_txtR isNotEqualTo "");
-                if (_r isNotEqualTo "") then {
+                if (_rv isNotEqualTo "") then {
                     (_ui get "main") ctrlSetPosition ([24, _y0, 764, _hAvail] call _R); (_ui get "main") ctrlCommit 0;
                     (_ui get "main2") ctrlSetPosition ([812, _y0, 764, _hAvail] call _R); (_ui get "main2") ctrlCommit 0;
                     [_ui get "main2", _txtR] call _setTxt;
