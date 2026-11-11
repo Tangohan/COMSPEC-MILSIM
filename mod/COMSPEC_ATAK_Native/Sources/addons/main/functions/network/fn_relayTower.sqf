@@ -48,6 +48,15 @@ if !(_o getVariable ["COMSPEC_TowerKilledEh", false]) then {
     if (_o getVariable ["COMSPEC_TowerIndestructible", false]) then { [_o, false] remoteExec ["allowDamage", _o]; };
     private _list = (missionNamespace getVariable ["COMSPEC_AtakRelays", []]) select { !isNull _x };
     _list pushBackUnique _o;
-    missionNamespace setVariable ["COMSPEC_AtakRelays", _list, true];
+    // Liste locale ici, diffusée une seule fois à l'image suivante : dix pylônes posés dans Eden ne diffusent plus dix listes
+    // de plus en plus longues au lancement de la mission.
+    missionNamespace setVariable ["COMSPEC_AtakRelays", _list];
+    if !(missionNamespace getVariable ["COMSPEC_ATAK_TowerListPending", false]) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_TowerListPending", true];
+        [{
+            missionNamespace setVariable ["COMSPEC_ATAK_TowerListPending", false];
+            missionNamespace setVariable ["COMSPEC_AtakRelays", (missionNamespace getVariable ["COMSPEC_AtakRelays", []]) select { !isNull _x }, true];
+        }, []] call comspec_atak_native_fnc_nextFrame;
+    };
     if (!isNil "comspec_overwatch_connect_fnc_syncAtakRelay") then { [_o, true] call comspec_overwatch_connect_fnc_syncAtakRelay; };
 }, [_o]] call comspec_atak_native_fnc_nextFrame;
