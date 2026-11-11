@@ -161,6 +161,24 @@ class OperatorHubRepository
     }
 
     /**
+     * Couverture que le membre a marquée active (identifiant de sse_cover_exports) ; 0 : aucune. Une couverture révoquée
+     * n'est jamais rendue. Table absente : 0.
+     */
+    public static function activeCoverId(int $tenantId, int $userId): int
+    {
+        try {
+            $row = Database::getInstance()->fetchOne(
+                "SELECT item_id FROM operator_identity_states WHERE tenant_id = :t AND user_id = :u AND item_kind = 'cover' AND is_active = 1 AND revoked_at IS NULL ORDER BY updated_at DESC, id DESC LIMIT 1",
+                ['t' => $tenantId, 'u' => $userId]
+            );
+
+            return $row !== null ? (int) $row['item_id'] : 0;
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /**
      * Journal des changements faits par le membre depuis ses outils (journal d'audit SSE), le plus récent d'abord.
      *
      * @return list<array{action: string, object_type: string, object_id: ?int, created_at: string, after: array<string, mixed>}>

@@ -576,6 +576,16 @@ Réponse `{"id": nombre, "ref": texte}` : `saved;AAAA-MM-JJ HH:MM`, `unchanged;A
 
 Confidentialité : ces lignes (`sse_id_game_covers`) ne rejoignent ni le registre des identités, ni les listes de surveillance, ni le paquet. Lecture : le joueur dans Mes papiers, l'habilitation Confidentiel sur la fiche du membre.
 
+## ICD-SSE-COVER-SYNC-001 — Couvertures d'Athena récupérées par le téléphone
+
+Site vers jeu : `GET /api/sse/identity/pack?op=~covers` (liste) ou `op=~cover:CVR-…,CVR-…` (5 fichiers au plus), `since` = `v=1`, relayés par `GetIdentityPack` de COMSPEC Link (DLL inchangée) ; aussi `GET /api/atak/covers` et `GET /api/atak/covers/files?refs=`. Réponse au format du paquet, tout dans `settings` : `covers_api` (1), `covers` ou `files` + `errors`. Compte et communauté : ceux du jeton de jeu.
+
+Entrée de `covers` : `ref`, `name`, `summary`, `country`, `country_code`, `status` (`valid`, `expired`, `invalid`), `has_photo`, `generated_at`, `expires_at`, `updated_at`, `size`, `sha`, `by_manager`, `downloaded`, `active`.
+
+- `active` (booléen, ajouté sans changer `covers_api`) : vrai sur la seule couverture que le membre a marquée active dans `/operateur/identite/couverture` (`operator_identity_states`, `item_kind` = `cover`, `is_active` = 1, borné à la communauté et au membre). Aucune active, ou table absente : faux partout. Un mod plus ancien ignore le champ ; un mod récent face à un site sans ce champ garde son choix habituel.
+- Ordre : la couverture active d'abord, puis de la plus récente à la plus ancienne.
+- Une couverture révoquée par le membre n'est plus listée (et n'est jamais `active`).
+
 ## ICD-SSE-PACK-SELF-001 — Paquet d'un seul compte, relayé par le téléphone du joueur
 
 Serveur de jeu sans COMSPEC Link et sans Zeus relié : le serveur demande à chaque joueur (`packFetch self`) de lire ses propres papiers, une fois sa liaison Athena établie. `GetIdentityPack [carte, "~self" | "~self:OPÉRATION", ""]` (DLL inchangée : l'opération part dans `op`) → `GET /api/sse/identity/pack?op=~self…` → même forme que le paquet, réduite au compte du jeton de jeu : son kit, ses papiers (sans `forgery_kind` ni `forgery_quality`), les identités qu'ils portent, son brief, les pays ; `watch`, `wanted`, `population` vides ; jamais servi par le cache partagé. Clé de communauté seule : 403 `unlinked`. Le serveur de jeu refiltre : kit du Steam ID qu'il lit lui-même, pays inconnus seulement, rien d'autre.
