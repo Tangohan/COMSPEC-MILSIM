@@ -91,6 +91,22 @@ class SseCoverExportRepository
         return (int) ($row['n'] ?? 0);
     }
 
+    /**
+     * Remplace le fichier d'une couverture du membre (légende modifiée) : même référence, nouveau contenu signé.
+     *
+     * @param array{cover_name: string, doc_number: string, content_sha: string, payload_json: string} $row
+     */
+    public function updatePayload(int $tenantId, int $userId, int $id, array $row): bool
+    {
+        return $this->db->execute(
+            'UPDATE sse_cover_exports SET cover_name = :name, doc_number = :num, content_sha = :sha, payload_json = :json WHERE id = :id AND tenant_id = :t AND user_id = :u',
+            [
+                'name' => mb_substr((string) $row['cover_name'], 0, 190), 'num' => mb_substr((string) $row['doc_number'], 0, 60),
+                'sha' => (string) $row['content_sha'], 'json' => (string) $row['payload_json'], 'id' => $id, 't' => $tenantId, 'u' => $userId,
+            ]
+        ) > 0;
+    }
+
     public function markDownloaded(int $tenantId, int $id, string $now): void
     {
         $this->db->execute('UPDATE sse_cover_exports SET downloaded_at = :now WHERE id = :id AND tenant_id = :t', ['now' => $now, 'id' => $id, 't' => $tenantId]);

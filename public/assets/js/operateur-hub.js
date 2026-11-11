@@ -1,0 +1,225 @@
+/**
+ * Outils opérateur (/operateur) et Mon identité (/operateur/identite).
+ *
+ * Page d'accueil : recherche d'un outil (touche « / »), épingles sans rechargement (repli : envoi du formulaire).
+ * Mon identité : confirmation des actions définitives, recto/verso d'un papier, aperçu de la photo choisie, types de
+ * papier selon le pays, étapes de création d'une couverture. Spécimen : impression et image PNG.
+ * Sans JavaScript, tout reste utilisable (liens et formulaires classiques).
+ */
+(function () {
+  'use strict';
+
+  function norm(s) {
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }
+
+  // ---- Recherche d'un outil
+  var hub = document.querySelector('[data-opx-hub]');
+  if (hub) {
+    var input = hub.querySelector('[data-opx-search-input]');
+    var noResult = hub.querySelector('[data-opx-noresult]');
+    var filter = function () {
+      var q = norm(input.value).trim();
+      var any = false;
+      hub.querySelectorAll('[data-opx-section]').forEach(function (section) {
+        var shown = 0;
+        section.querySelectorAll('[data-opx-tool]').forEach(function (card) {
+          var ok = q === '' || norm(card.getAttribute('data-opx-search')).indexOf(q) !== -1;
+          card.hidden = !ok;
+          if (ok) { shown++; }
+        });
+        // La section des épinglés reste visible sans recherche (elle porte l'aide « Rien d'épinglé »).
+        var isFav = !!section.querySelector('[data-opx-favlist]');
+        section.hidden = q !== '' ? shown === 0 : (!isFav && shown === 0);
+        if (shown > 0) { any = true; }
+      });
+      if (noResult) { noResult.hidden = q === '' || any; }
+    };
+    if (input) {
+      input.addEventListener('input', filter);
+      document.addEventListener('keydown', function (e) {
+        var t = e.target;
+        var typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+        if (e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          e.preventDefault();
+          input.focus();
+          input.select();
+        } else if (e.key === 'Escape' && t === input && input.value !== '') {
+          input.value = '';
+          filter();
+        }
+      });
+    }
+
+    // ---- Épingles
+    var favList = hub.querySelector('[data-opx-favlist]');
+    var favEmpty = hub.querySelector('[data-opx-favempty]');
+    var setStar = function (key, on) {
+      hub.querySelectorAll('[data-opx-tool="' + key + '"] .opx-fav').forEach(function (btn) {
+        btn.classList.toggle('is-on', on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        btn.title = on ? 'Retirer des épinglés' : 'Épingler en haut de la page';
+      });
+    };
+    hub.addEventListener('submit', function (e) {
+      var form = e.target.closest('[data-opx-fav]');
+      if (!form || !window.fetch) { return; }
+      e.preventDefault();
+      var card = form.closest('[data-opx-tool]');
+      var key = card.getAttribute('data-opx-tool');
+      fetch(form.action, { method: 'POST', body: new FormData(form), credentials: 'same-origin', headers: { Accept: 'application/json' } })
+        .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+        .then(function (res) {
+          if (!res.ok || !res.body.ok) {
+            window.alert(res.body && res.body.message ? res.body.message : 'Action impossible pour l’instant.');
+            return;
+          }
+          var on = !!res.body.favorite;
+          setStar(key, on);
+          if (!favList) { return; }
+          var pinned = favList.querySelector('[data-opx-tool="' + key + '"]');
+          if (on && !pinned) {
+            var source = hub.querySelector('[data-opx-tool="' + key + '"]');
+            var copy = source.cloneNode(true);
+            copy.classList.add('opx-card--pinned');
+            copy.hidden = false;
+            favList.appendChild(copy);
+          } else if (!on && pinned) {
+            pinned.remove();
+          }
+          if (favEmpty) { favEmpty.hidden = favList.children.length > 0; }
+        })
+        .catch(function () { form.submit(); });
+    });
+  }
+
+  // ---- Confirmation des actions définitives
+  document.addEventListener('submit', function (e) {
+    var form = e.target.closest('[data-opx-confirm]');
+    if (form && !window.confirm(form.getAttribute('data-opx-confirm'))) {
+      e.preventDefault();
+    }
+  });
+
+  // ---- Recto / verso d'un papier
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-opx-flip]');
+    if (!btn) { return; }
+    var doc = btn.closest('[data-opx-doc]');
+    var recto = doc.querySelector('[data-opx-face="recto"]');
+    var verso = doc.querySelector('[data-opx-face="verso"]');
+    var showVerso = verso.hidden;
+    verso.hidden = !showVerso;
+    recto.hidden = showVerso;
+    btn.setAttribute('aria-pressed', showVerso ? 'true' : 'false');
+    btn.textContent = showVerso ? 'Voir le recto' : 'Voir le verso';
+  });
+
+  // ---- Aperçu de la photo choisie (avant l'envoi ; le serveur recadre et réenregistre l'image)
+  document.querySelectorAll('[data-opx-photo-input]').forEach(function (inputEl) {
+    inputEl.addEventListener('change', function () {
+      var preview = inputEl.closest('form').querySelector('[data-opx-photo-preview]');
+      var file = inputEl.files && inputEl.files[0];
+      if (!preview || !file || !/^image\/(png|jpeg|webp)$/.test(file.type)) { return; }
+      var url = URL.createObjectURL(file);
+      preview.style.backgroundImage = 'url("' + url + '")';
+      preview.classList.add('has-image');
+    });
+  });
+
+  // ---- Demande de papier : seuls les types délivrés par le pays choisi
+  var req = document.querySelector('[data-opx-doc-request]');
+  if (req) {
+    var types = {};
+    try { types = JSON.parse(req.getAttribute('data-opx-types') || '{}'); } catch (err) { types = {}; }
+    var country = req.querySelector('[data-opx-req-country]');
+    var type = req.querySelector('[data-opx-req-type]');
+    var syncTypes = function () {
+      var allowed = types[country.value] || null;
+      var first = null;
+      Array.prototype.forEach.call(type.options, function (o) {
+        var ok = !allowed || allowed.indexOf(o.value) !== -1;
+        o.hidden = !ok;
+        o.disabled = !ok;
+        if (ok && first === null) { first = o.value; }
+      });
+      if (type.selectedOptions[0] && type.selectedOptions[0].disabled && first !== null) { type.value = first; }
+    };
+    if (country && type) {
+      country.addEventListener('change', syncTypes);
+      syncTypes();
+    }
+  }
+
+  // ---- Création d'une couverture : le pays et le portrait ne servent que pour une personne fictive
+  var coverForm = document.querySelector('[data-opx-cover-form]');
+  if (coverForm) {
+    var randomStep = coverForm.querySelector('[data-opx-cover-random]');
+    var syncSource = function () {
+      var checked = coverForm.querySelector('[data-opx-cover-source]:checked');
+      if (randomStep) { randomStep.hidden = !!checked && checked.value === 'athena'; }
+    };
+    coverForm.addEventListener('change', syncSource);
+    syncSource();
+  }
+
+  // ---- Ouvrir le bloc visé par l'ancre (champ à compléter dans un formulaire replié)
+  var openTarget = function () {
+    if (!location.hash) { return; }
+    var target;
+    try { target = document.querySelector(location.hash); } catch (err) { return; }
+    if (!target) { return; }
+    var details = target.closest('details');
+    if (details && !details.open) { details.open = true; }
+    if (typeof target.focus === 'function' && /^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName)) {
+      target.focus({ preventScroll: true });
+    }
+    target.scrollIntoView({ block: 'center' });
+  };
+  window.addEventListener('hashchange', openTarget);
+  openTarget();
+
+  // ---- Spécimen : impression et image PNG
+  var specimen = document.querySelector('[data-opx-specimen]');
+  if (specimen) {
+    var base = specimen.getAttribute('data-opx-specimen') || 'specimen';
+    specimen.addEventListener('click', function (e) {
+      if (e.target.closest('[data-opx-print]')) {
+        window.print();
+        return;
+      }
+      var btn = e.target.closest('[data-opx-png]');
+      if (!btn) { return; }
+      var side = btn.getAttribute('data-opx-png');
+      var svg = document.querySelector('[data-opx-face="' + side + '"] svg');
+      if (!svg) { return; }
+      // Certains navigateurs ne dessinent un SVG sur un canevas que s'il porte une largeur et une hauteur.
+      var copy = svg.cloneNode(true);
+      copy.setAttribute('width', '856');
+      copy.setAttribute('height', '540');
+      var xml = new XMLSerializer().serializeToString(copy);
+      var img = new Image();
+      img.onload = function () {
+        var canvas = document.createElement('canvas');
+        canvas.width = 1712;
+        canvas.height = 1080;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(function (blob) {
+          if (!blob) { return; }
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = base + '-' + side + '.png';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+        }, 'image/png');
+      };
+      img.onerror = function () { window.alert('L’image n’a pas pu être préparée. Utilisez l’impression en PDF.'); };
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+    });
+  }
+})();
