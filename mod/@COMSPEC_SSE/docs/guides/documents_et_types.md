@@ -16,6 +16,8 @@ Les types sont déclarés dans le registre de configuration **`CfgComspecDocumen
 | `passport` | Passeport | 2 lignes (TD3) | oui | page de passeport (1,42) | une page |
 | `driving_license` | Permis de conduire | 3 lignes (« D< ») | non | carte ID-1 | recto / verso |
 | `military_id` | Carte militaire (hérite de la carte d'identité) | 3 lignes | oui | carte ID-1 | recto / verso |
+| `residence_permit` | Titre de séjour (pays réels) | 3 lignes (TD1, « IR », « AR » en Allemagne) | oui | carte ID-1 | recto / verso |
+| `vehicle_registration` | Certificat d'immatriculation (pays réels) | aucune | non | feuillet A6 (1,414) | une face |
 
 Pays fictifs (réglage « Pays des papiers », par défaut selon la carte) :
 
@@ -26,7 +28,7 @@ Pays fictifs (réglage « Pays des papiers », par défaut selon la carte) :
 | LVN | République de Livonie | LV####### | Mairie de Lubjansk |
 | MLD | République de Malden | M@@###### | Préfecture du Port |
 
-(# un chiffre, @ une lettre ; validité 10 ans.) Avec le réglage **Univers réaliste-simulation (pays réels stylisés)**, des pays réels stylisés s'ajoutent (gabarit générique par zone, « SIMULATION — DOCUMENT DE JEU », numéros de jeu) : voir [controle_identite.md](controle_identite.md).
+(# un chiffre, @ une lettre ; validité 10 ans.) **Pays réels** (proposés d'office, en tête des listes) : France, Allemagne, États-Unis, Royaume-Uni, Belgique, Autriche, Suisse, Pays-Bas, Italie, Espagne, Pologne (complets), puis 34 autres pays (génériques). Papiers, formats, MRZ et numéros de chaque pays : [pays_des_papiers.md](pays_des_papiers.md).
 
 ## Nature, procédé, qualité
 
@@ -56,7 +58,7 @@ La nature n'est **jamais visible des joueurs** : seuls le Zeus (« Voir les vrai
 
 De gauche à droite :
 
-1. **Pays** : liste des pays émetteurs (fictifs, plus les pays réels stylisés si le réglage est actif). Un type peut restreindre ses pays (`countries[]`) : il disparaît de la liste du milieu pour un pays qu'il ne couvre pas.
+1. **Pays** : pays réels d'abord, puis les pays fictifs d'Arma. Un type peut restreindre ses pays (`countries[]`) ; un pays ne propose que les papiers qu'il délivre (Royaume-Uni : pas de carte nationale). L'aperçu montre le titre et les étiquettes dans la langue du pays.
 2. **Types** : regroupés par catégorie (identité, voyage, permis, professionnel, laissez-passer, autre) ; les types d'une extension portent son nom entre parenthèses, ex. « Carte de presse (Documents d'exemple) ».
 3. **Aperçu** du document choisi : recto (et verso si le type en a un), avec les champs imprimés tels qu'ils seront vus.
 

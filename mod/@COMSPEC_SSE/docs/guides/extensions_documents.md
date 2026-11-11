@@ -149,6 +149,10 @@ class CfgComspecDocuments {
 };
 ```
 
+## Ajouter un pays
+
+Une extension peut aussi ajouter un **pays des papiers** : une classe dans `class CfgComspecCountries` de son `config.cpp`, nommée par le code ISO 3166 alpha-3, avec les mêmes champs que `addons/identity/CfgComspecCountries.hpp` (copier `class FRA` et changer les valeurs). Le pays apparaît dans toutes les listes ; ses papiers prennent les gabarits neutres, titre et étiquettes dans sa langue. Détail des champs : `tools/countries/README.md` ; guide : [pays_des_papiers.md](pays_des_papiers.md).
+
 ## Pas à pas : tester l'extension
 
 1. Copiez `extensions/example_documents/` sous votre propre nom, renommez le `$PBOPREFIX$`, les classes et les textures.

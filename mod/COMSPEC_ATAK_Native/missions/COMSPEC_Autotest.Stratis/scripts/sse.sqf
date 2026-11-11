@@ -575,3 +575,12 @@ AT_fnc_notifGarde = {
     deleteVehicle _u;
     call AT_fnc_done;
 }, 120] call AT_fnc_run;
+
+// Pays réels des papiers (registre CfgComspecCountries) : registre, clés des numéros, MRZ OACI (fn_idCountrySelfTest).
+["sse_pays_reels", {
+    if (["comspec_sse_fnc_idCountrySelfTest"] call AT_fnc_nil) exitWith {};
+    ([] call comspec_sse_fnc_idCountrySelfTest) params ["_ko", "_info"];
+    { _x call AT_fnc_info; } forEach _info;
+    { [false, _x] call AT_fnc_check; } forEach _ko;
+    call AT_fnc_done;
+}, 30] call AT_fnc_run;

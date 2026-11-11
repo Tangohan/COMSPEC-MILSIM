@@ -16,6 +16,8 @@ Types are declared in the **`CfgComspecDocuments`** config registry; the mod shi
 | `passport` | Passeport (Passport) | 2 lines (TD3) | yes | passport page (1.42) | one page |
 | `driving_license` | Permis de conduire (Driving licence) | 3 lines (« D< ») | no | ID-1 card | front / back |
 | `military_id` | Carte militaire (Military ID) (inherits from the identity card) | 3 lines | yes | ID-1 card | front / back |
+| `residence_permit` | Residence permit (real countries) | 3 lines (TD1, « IR », « AR » in Germany) | yes | ID-1 card | front / back |
+| `vehicle_registration` | Vehicle registration (real countries) | none | no | A6 sheet (1.414) | one side |
 
 Fictional countries (setting « Pays des papiers » (Country of the papers), by default according to the map):
 
@@ -26,7 +28,7 @@ Fictional countries (setting « Pays des papiers » (Country of the papers), by 
 | LVN | République de Livonie (Republic of Livonia) | LV####### | Mairie de Lubjansk (Lubjansk Town Hall) |
 | MLD | République de Malden (Republic of Malden) | M@@###### | Préfecture du Port (Port Prefecture) |
 
-(# a digit, @ a letter; valid for 10 years.) With the setting **Univers réaliste-simulation (pays réels stylisés)** (Realistic-simulation universe (stylised real countries)), stylised real countries are added (generic template per region, « SIMULATION — DOCUMENT DE JEU » (SIMULATION — GAME DOCUMENT), game numbers): see [controle_identite.en.md](controle_identite.en.md).
+(# a digit, @ a letter; valid for 10 years.) **Real countries** (offered by default, at the top of the lists): France, Germany, United States, United Kingdom, Belgium, Austria, Switzerland, Netherlands, Italy, Spain, Poland (full), then 34 other countries (generic). Papers, formats, MRZ and numbers of each country: [pays_des_papiers.en.md](pays_des_papiers.en.md).
 
 ## Kind, method, quality
 
@@ -56,7 +58,7 @@ The kind is **never visible to players**: only Zeus (« Voir les vrais papiers �
 
 From left to right:
 
-1. **Pays** (Country): list of issuing countries (fictional, plus stylised real countries if the setting is on). A type can restrict its countries (`countries[]`): it disappears from the middle list for a country it does not cover.
+1. **Pays** (Country): real countries first, then the fictional Arma countries. A type can restrict its countries (`countries[]`); a country only offers the papers it issues (United Kingdom: no national card). The preview shows the title and labels in the country's language.
 2. **Types** (Types): grouped by category (identity, travel, permit, professional, pass, other); an extension's types carry its name in parentheses, e.g. « Carte de presse (Documents d'exemple) » (Press card (Example documents)).
 3. **Aperçu** (Preview) of the chosen document: front (and back if the type has one), with the printed fields as they will be seen.
 
