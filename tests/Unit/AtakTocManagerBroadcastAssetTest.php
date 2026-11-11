@@ -344,7 +344,7 @@ final class AtakTocManagerBroadcastAssetTest extends TestCase
         // Liaisons : dessin seulement interface Zeus ouverte, borné en distance et en nombre.
         $links = self::read(self::TOC . 'fn_tocLinks.sqf');
         $colours = self::table($links, '_colours');
-        self::assertSame(['screen', 'post', 'cam', 'none'], array_column($colours, 0));
+        self::assertSame(['screen', 'post', 'cam', 'furn', 'none'], array_column($colours, 0));
         self::assertStringContainsString('if (isNull curatorCamera || {isNull (findDisplay 312)}) exitWith {};', $links);
         self::assertStringContainsString('if (_n >= 80) exitWith {};', $links);
         self::assertStringContainsString('> 400', $links);

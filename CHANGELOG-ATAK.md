@@ -38,6 +38,31 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : nouvelle fenêtre de gestion des écrans du TOC (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Nouvelle fenêtre de gestion des écrans
+- « Gérer les écrans » s'ouvre maintenant sur une vraie fenêtre : à gauche la liste des salles, des écrans et de leurs dalles, au centre le dessin du mur avec l'image de chaque dalle, à droite ses réglages rangés par onglets.
+- Choisir ce que montre une dalle se fait en deux clics : la famille (cartes, caméras, satellite, données, temps, plans, diffusion, texte), puis la source. Les caméras sont listées avec leur état, et une caméra hors ligne est signalée avant de l'appliquer.
+- Chaque dalle se règle à part : largeur et centre de la carte, capteur et suivi du satellite, mosaïque de caméras, disposition du mur, messages du bandeau avec leur file, luminosité.
+- Chaque dalle s'allume, s'éteint ou se met en veille : une dalle en veille se rallume seule quand quelqu'un approche, et un délai de veille automatique se règle par écran.
+- Supprimer une salle ou tout réinitialiser demande une confirmation dans la fenêtre, et rien ne s'affiche plus par-dessus le jeu : chaque résultat s'écrit en bas de la fenêtre. Le Zeus voit aussi les caméras et le mobilier dans les liaisons.
+EN : New screens management window
+- "Manage screens" now opens a real window: on the left the list of rooms, screens and their panels, in the centre the drawing of the wall with the image of each panel, on the right its settings sorted into tabs.
+- Choosing what a panel shows takes two clicks: the family (maps, cameras, satellite, data, time, plans, broadcast, text), then the source. Cameras are listed with their status, and an offline camera is flagged before you apply it.
+- Each panel is set on its own: map width and centre, satellite sensor and follow, camera mosaic, wall layout, strip messages with their queue, brightness.
+- Each panel can be switched on, off or put on standby: a panel on standby switches back on by itself when someone comes near, and an automatic standby delay is set per screen.
+- Deleting a room or resetting everything asks for a confirmation inside the window, and nothing is shown over the game any more: every result is written at the bottom of the window. The Zeus also sees cameras and furniture in the links.
+
+### Détail technique
+- `fn_tocManagerUi` (fenêtre : display `COMSPEC_RscTocManager`, contrôles 8700 à 8799 créés par le code, classes `ui/toc_manager.hpp`, tailles en pixels de conception sur 1080 de haut, variante compacte dans Eden et sous 1500 de large), `fn_tocManagerUiData` (tables JSON et règles pures : identifiants, onglets, familles, champs, boutons, « sourceList », « plan », « confirm »), `fn_tocManagerUiApply` (lecture du jeu et exécution par les chemins de la 4.8.0), `fn_tocManagerUiPower` (veille et veille automatique, serveur, boucle de 5 s lancée par CfgFunctions postInit).
+- `fn_tocManager` « open » ouvre la nouvelle fenêtre partout (Eden, Zeus, menu de l'écran, PC du poste : ouverte par-dessus) ; l'ancien tableau reste joignable (« openTable », bouton ANCIEN TABLEAU, ou `COMSPEC_ATAK_TocMgrClassic = true`).
+- Vignettes : texture UI déjà posée sur la dalle par `fn_tocScreen` (aucun rendu ajouté), relue 2 fois par seconde au plus, fenêtre ouverte ; repli : case sans image (Eden, plus de 12 dalles, case « Vignettes en direct » décochée).
+- `fn_tocLinks` : caméras fixes non montrées, mobilier d'une salle complète, mode « list » (liés et non liés) pour la vue SALLES.
+- Remis à plus tard : vue ROUTAGE (matrice source > sortie), phases et diaporama d'un plan (il manque un affichage PLAN dans `fn_tocScreen`), calques par dalle, image sur plusieurs dalles, relais dans les liaisons, bibliothèque `fn_tocPresets`, veille gardée d'une partie à l'autre.
+- Tests : `tests/Unit/AtakTocManagerUiAssetTest.php`, `tests/Unit/AtakTocManagerUiPlanAssetTest.php`.
+
 ## À venir : consoles, fauteuil, clavier, souris et unité centrale du TOC refaits, postes remis à l'endroit (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
