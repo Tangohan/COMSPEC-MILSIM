@@ -733,14 +733,14 @@
                 <French>L'IA éblouie vise mal, repère mal et hésite quelques secondes.  Exemple : coché.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_BangVolume">
-                <Original>Volume du bang</Original>
-                <English>Bang volume</English>
-                <French>Volume du bang</French>
+                <Original>Volume des flashbangs</Original>
+                <English>Flashbang volume</English>
+                <French>Volume des flashbangs</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_BangVolume_Tip">
-                <Original>Volume des détonations sur ce poste.  Exemple : 1 ; 0.6 si le bang est trop fort au casque.</Original>
-                <English>Detonation volume on this computer.  Example: 1; 0.6 if the bang is too loud in the headset.</English>
-                <French>Volume des détonations sur ce poste.  Exemple : 1 ; 0.6 si le bang est trop fort au casque.</French>
+                <Original>Volume des bangs et des sons de la DRILL sur ce poste (50 à 300 %, 200 % par défaut : très fort, baissez le volume de votre casque avant de tester). Au-delà du plafond d'une lecture, le bang est joué en plusieurs lectures superposées.  Ex. : 100 % = niveau d'origine ; baissez si le bang est trop fort dans votre casque.</Original>
+                <English>Volume of the bangs and DRILL sounds on this computer (50 to 300 %, 200 % by default: very loud, turn your headset down before testing). Above the per-playback cap the bang is played as several overlapping playbacks.  Example: 100 % = original level; lower it if the bang is too loud in your headset.</English>
+                <French>Volume des bangs et des sons de la DRILL sur ce poste (50 à 300 %, 200 % par défaut : très fort, baissez le volume de votre casque avant de tester). Au-delà du plafond d'une lecture, le bang est joué en plusieurs lectures superposées.  Ex. : 100 % = niveau d'origine ; baissez si le bang est trop fort dans votre casque.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_Blur">
                 <Original>Perte d'acuité (flou)</Original>
@@ -978,9 +978,9 @@
                 <French>Rayon plein effet (m)</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_RadiusFull_Tip">
-                <Original>Distance jusqu'à laquelle le flash a tout son effet sur un œil qui le regarde.  Exemple : 6.</Original>
-                <English>Distance up to which the flash has full effect on an eye looking at it.  Example: 6.</English>
-                <French>Distance jusqu'à laquelle le flash a tout son effet sur un œil qui le regarde.  Exemple : 6.</French>
+                <Original>Distance jusqu'à laquelle le flash a tout son effet (table de calibration : 3 m).  Exemple : 3 ; 5 pour un effet plus fort.</Original>
+                <English>Distance up to which the flash has full effect (calibration table: 3 m). Example: 3; 5 for a stronger effect.</English>
+                <French>Distance jusqu'à laquelle le flash a tout son effet (table de calibration : 3 m).  Exemple : 3 ; 5 pour un effet plus fort.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_RadiusMax">
                 <Original>Rayon maximal (m)</Original>
@@ -991,6 +991,16 @@
                 <Original>Au-delà, plus d'éblouissement (le bang reste entendu et assourdit jusqu'à ~60 m).  Exemple : 25.</Original>
                 <English>Beyond it, no more dazzle (the bang is still heard and deafens up to ~60 m).  Example: 25.</English>
                 <French>Au-delà, plus d'éblouissement (le bang reste entendu et assourdit jusqu'à ~60 m).  Exemple : 25.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_SoundRange">
+                <Original>Portée du son (m)</Original>
+                <English>Sound range (m)</English>
+                <French>Portée du son (m)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_SoundRange_Tip">
+                <Original>Distance jusqu'à laquelle on entend le bang en terrain dégagé (très fort sous 25 m, net jusqu'à 100 m, lointain au-delà, retard de 343 m/s) ; moitié à travers un mur ou depuis un local fermé. N'agit pas sur les effets (éblouissement, désorientation), limités au rayon maximal.  Ex. : 250 = on l'entend à un quart de kilomètre en terrain dégagé ; baissez pour un petit terrain.</Original>
+                <English>Distance up to which the bang is heard in open ground (very loud under 25 m, clear up to 100 m, distant beyond, delayed at 343 m/s); half through a wall or from a closed room. Does not change the effects (dazzle, disorientation), which stay within the maximum radius.  Example: 250 = heard a quarter of a kilometre away in open ground; lower it for a small area.</English>
+                <French>Distance jusqu'à laquelle on entend le bang en terrain dégagé (très fort sous 25 m, net jusqu'à 100 m, lointain au-delà, retard de 343 m/s) ; moitié à travers un mur ou depuis un local fermé. N'agit pas sur les effets (éblouissement, désorientation), limités au rayon maximal.  Ex. : 250 = on l'entend à un quart de kilomètre en terrain dégagé ; baissez pour un petit terrain.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_Tinnitus">
                 <Original>Acouphène</Original>
@@ -1016,6 +1026,16 @@
                 <Original>Enregistrement (son pur enregistré par TTRD) ou synthèse (son avec battement).  Exemple : Enregistrement.</Original>
                 <English>Recording (pure tone recorded by TTRD) or synthesis (beating tone).  Example: Recording.</English>
                 <French>Enregistrement (son pur enregistré par TTRD) ou synthèse (son avec battement).  Exemple : Enregistrement.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_TinnitusVolume">
+                <Original>Volume de l'acouphène</Original>
+                <English>Tinnitus volume</English>
+                <French>Volume de l'acouphène</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_TinnitusVolume_Tip">
+                <Original>Volume du sifflement d'acouphène sur ce poste (50 à 300 %, 150 % par défaut : fort et désagréable, comme le vrai).  Ex. : 100 % = niveau d'origine ; baissez si le sifflement est trop fort dans votre casque.</Original>
+                <English>Volume of the tinnitus whistle on this computer (50 to 300 %, 150 % by default: loud and unpleasant, like the real one).  Example: 100 % = original level; lower it if the whistle is too loud in your headset.</English>
+                <French>Volume du sifflement d'acouphène sur ce poste (50 à 300 %, 150 % par défaut : fort et désagréable, comme le vrai).  Ex. : 100 % = niveau d'origine ; baissez si le sifflement est trop fort dans votre casque.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_Tinnitus_Tip">
                 <Original>Sifflement aigu qui décroît après une détonation proche.  Exemple : coché.</Original>

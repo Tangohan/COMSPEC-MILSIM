@@ -57,26 +57,35 @@ if (hasInterface && _showFx) then {
     private _cam = AGLToASL (positionCameraToWorld [0, 0, 0]);
     private _dc = _cam vectorDistance _pos;
     private _delay = _dc / 343;
-    private _gain = missionNamespace getVariable ["comspec_fb_bangVolume", 1];
+    // Volume des flashbangs (client, 200 % par défaut) ; limiteur : -1 dB par bang au-delà du 4e (9 bangs ne saturent
+    // pas, le premier garde tout son impact).
+    private _gain = (missionNamespace getVariable ["comspec_fb_bangVolume", 2]) * (10 ^ (-((_index - 3) max 0) / 20));
     private _wall = (lineIntersectsSurfaces [_pos vectorAdd [0, 0, 0.3], _cam, _device, vehicle (call CBA_fnc_currentUnit), true, 1, "GEOM", "VIEW"]) isNotEqualTo [];
-    if (_kind == "drill") then {
-        // Son choisi pour la DRILL (réglage d'addon ou module), décidé par le serveur : une lecture par pop.
-        _extra params [["_snd", "Pop", [""]], ["_vol", 1, [0]]];
-        if (_snd != "Aucun") then {
-            [format ["Drill_%1", _snd], _pos, _delay, _wall, _gain * _vol] call comspec_fb_fnc_playBang;
-        };
-    } else {
-        switch (true) do {
-            case (_dc > 150 && {!_wall}): { ["BangLointain", _pos, _delay, false, _gain] call comspec_fb_fnc_playBang };
-            case (_wall): { ["BangEtouffe", _pos, _delay, true, _gain] call comspec_fb_fnc_playBang };
-            default {
-                ["BangUnique", _pos, _delay, false, _gain] call comspec_fb_fnc_playBang;
-                if (_index == 0) then { ["BangGrave", _pos, _delay, false, _gain] call comspec_fb_fnc_playBang };
+    // Portée d'audibilité (réglage « Portée du son », 250 m) : moitié à travers un mur ou depuis un local fermé.
+    // Elle ne concerne que le son : les effets restent limités au rayon maximal (~25 m).
+    private _range = missionNamespace getVariable ["comspec_fb_soundRange", 250];
+    if (_wall || {_env getOrDefault ["enclosed", false]}) then { _range = _range * 0.5 };
+    if (_dc <= _range) then {
+        if (_kind == "drill") then {
+            // Son choisi pour la DRILL (réglage d'addon ou module), décidé par le serveur : une lecture par pop.
+            _extra params [["_snd", "Pop", [""]], ["_vol", 1, [0]]];
+            if (_snd != "Aucun") then {
+                [format ["Drill_%1", _snd], _pos, _delay, _wall, _gain * _vol, _range] call comspec_fb_fnc_playBang;
+            };
+        } else {
+            // Très fort sous 25 m, net jusqu'à ~100 m, au-delà bang lointain avec échos (retard 343 m/s).
+            switch (true) do {
+                case (_dc > 100 && {!_wall}): { ["BangLointain", _pos, _delay, false, _gain, _range] call comspec_fb_fnc_playBang };
+                case (_wall): { ["BangEtouffe", _pos, _delay, true, _gain, _range] call comspec_fb_fnc_playBang };
+                default {
+                    ["BangUnique", _pos, _delay, false, _gain, _range] call comspec_fb_fnc_playBang;
+                    if (_index == 0) then { ["BangGrave", _pos, _delay, false, _gain, _range] call comspec_fb_fnc_playBang };
+                };
             };
         };
     };
-    ["fx", format ["%1 : lumière et particules créées, son à %2 m (retard %3 s, %4)", _id, round _dc, _delay toFixed 2,
-        ["direct", "derrière un mur"] select _wall]] call comspec_fb_fnc_log;
+    ["fx", format ["%1 : lumière et particules créées, son à %2 m (retard %3 s, %4, portée du son %5 m%6)", _id, round _dc, _delay toFixed 2,
+        ["direct", "derrière un mur"] select _wall, round _range, [" : trop loin, pas de son", ""] select (_dc <= _range)]] call comspec_fb_fnc_log;
 };
 
 // ------------------------------------------------------------------ effets sur les unités locales

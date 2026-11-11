@@ -26,14 +26,16 @@
     Aucun                 | (aucun fichier)                         | -              | -
 */
 class COMSPEC_FB_Sons {
-    // volume : multiplicateur de playSound3D ; distance : portée max (m) ; pitchVar : variation de hauteur (+/-).
+    // volume : multiplicateur de playSound3D, multiplié ensuite par le réglage « Volume des flashbangs » (200 % par
+    // défaut : BangUnique joue à 5, le plafond d'une lecture ; au-delà, 2 ou 3 lectures superposées) ;
+    // distance : portée max (m) ; pitchVar : variation de hauteur (+/-).
     class BangUnique {
         fichiers[] = {"bang_unique_a_enreg.ogg", "bang_unique_b_enreg.ogg", "bang_unique_c_enreg.ogg"};
         volume = 2.5; distance = 900; pitchVar = 0.05; volumeVarDb = 1.5;
     };
     class BangGrave {
         fichiers[] = {"bang_grave_enreg.ogg"};
-        volume = 2.0; distance = 300; pitchVar = 0.03; volumeVarDb = 1;
+        volume = 2.2; distance = 400; pitchVar = 0.03; volumeVarDb = 1;
     };
     class BangEtouffe {
         fichiers[] = {"bang_interieur_etouffe_enreg.ogg"};

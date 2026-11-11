@@ -39,8 +39,11 @@ FFMPEG = os.environ.get("FFMPEG") or shutil.which("ffmpeg") or (
     r"C:\Users\tetar\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe"
     r"\ffmpeg-9.0-full_build\bin\ffmpeg.exe")
 SR = 44100
-PEAK_BANG = -3.0       # crête des bangs (dBFS) : fort mais pas perçant, le volume final est réglé dans la config
-TINNITUS_RMS = -26.3   # RMS par canal au départ de l'acouphène : environ -20 LUFS pour un sinus à 3,5 kHz
+PEAK_BANG = -3.0       # crête avant le limiteur (dBFS)
+LOUD_GAIN = 6.0        # gain des bangs avant le limiteur doux (dB) : +5 dB de sonie environ
+CEIL = -1.0            # plafond du limiteur doux (dBFS) : aucun écrêtage numérique
+TINNITUS_RMS = -26.3   # RMS par canal de la boucle enregistrée (avant normalisation de la décroissance)
+TINNITUS_PEAK = -6.0   # crête de départ des décroissances d'acouphène (dBFS) : fort, désagréable, pas dangereux
 
 
 # ----------------------------------------------------------------------------------------------------- outils
@@ -104,6 +107,12 @@ def filt(x, lp=None, hp=None, order=4, notch=()):
 
 def norm_peak(x, db):
     return x * (10 ** (db / 20) / (np.abs(x).max() + 1e-12))
+
+
+def loud(x, gain_db=LOUD_GAIN, ceil_db=CEIL):
+    """Bang plus fort sans écrêtage : gain puis limiteur doux (tanh), crête <= ceil_db, transitoires arrondis."""
+    t = 10 ** (ceil_db / 20)
+    return t * np.tanh(x * 10 ** (gain_db / 20) / t)
 
 
 def convolve(x, ir):
@@ -229,11 +238,11 @@ def synth_bell():
 def drill_sounds(X):
     """Sons au choix de la grenade DRILL (réglage « Son de la grenade d'entraînement »), en plus de pop_drill_synth."""
     out = {}
-    out["pop_sourd_synth"] = norm_peak(synth_pop_muffled(), PEAK_BANG)
+    out["pop_sourd_synth"] = loud(norm_peak(synth_pop_muffled(), PEAK_BANG))
     # Bang léger : bang C (son_07, 9,02 s), queue raccourcie à 0,8 s, grave allégé (passe-haut 180 Hz) ; le volume
     # plus faible est donné par la table CfgSons.hpp.
     light = filt(mono(cut(X[7], 9.020, 9.820)), hp=180, order=2)
-    out["bang_leger_enreg"] = norm_peak(fade(light, 0.002, 0.35), PEAK_BANG)
+    out["bang_leger_enreg"] = loud(norm_peak(fade(light, 0.002, 0.35), PEAK_BANG))
     out["sifflet_exercice_synth"] = norm_peak(synth_whistle(), -6.0)
     out["cloche_exercice_synth"] = norm_peak(synth_bell(), -6.0)
     return out
@@ -275,27 +284,27 @@ def main():
     files = {}
 
     # Bangs isolés (rejoués N fois par le code, un par flash).
-    files["bang_unique_a_enreg"] = norm_peak(fade(mono(cut(X[3], 0.967, 3.367)), 0.002, 0.45), PEAK_BANG)
+    files["bang_unique_a_enreg"] = loud(norm_peak(fade(mono(cut(X[3], 0.967, 3.367)), 0.002, 0.45), PEAK_BANG))
     # Bang B : trace d'acouphène 4186 Hz dans la capture, retirée par encoches étroites.
     bang_b = filt(mono(cut(X[4], 1.077, 3.477)), notch=(4186.0, 8372.0, 12558.0))
-    files["bang_unique_b_enreg"] = norm_peak(fade(bang_b, 0.002, 0.45), PEAK_BANG)
-    files["bang_unique_c_enreg"] = norm_peak(fade(mono(cut(X[7], 9.020, 10.215)), 0.002, 0.30), PEAK_BANG)
+    files["bang_unique_b_enreg"] = loud(norm_peak(fade(bang_b, 0.002, 0.45), PEAK_BANG))
+    files["bang_unique_c_enreg"] = loud(norm_peak(fade(mono(cut(X[7], 9.020, 10.215)), 0.002, 0.30), PEAK_BANG))
     # Couche grave du premier bang : bang F (son_01) en passe-bas 160 Hz (l'acouphène 9956 Hz disparaît).
     thump = filt(mono(cut(X[1], 1.764, 2.764)), lp=160, order=4)
-    files["bang_grave_enreg"] = norm_peak(fade(thump, 0.004, 0.35), PEAK_BANG)
+    files["bang_grave_enreg"] = loud(norm_peak(fade(thump, 0.004, 0.35), PEAK_BANG))
     # Rafale enregistrée (3 bangs à ~1,15 s, son_07 9,0-12,15 s), encoches sur l'acouphène 4186 Hz naissant.
     raf = filt(mono(cut(X[7], 9.020, 12.150)), notch=(4186.0, 8372.0, 12558.0))
-    files["bang_rafale_enreg"] = norm_peak(fade(raf, 0.002, 0.15), PEAK_BANG)
+    files["bang_rafale_enreg"] = loud(norm_peak(fade(raf, 0.002, 0.15), PEAK_BANG))
     # Derrière un mur / pièce voisine : bang A filtré (passe-bas 450 Hz) + réverbération de pièce RT60 0,6 s.
     a = mono(cut(X[3], 0.967, 3.467))
     ir = room_ir(0.6, 0.9, 3, early=((0.011, 0.5), (0.019, 0.35), (0.031, 0.25)), lp=2500)
     wet = convolve(filt(a, lp=450, order=3), ir)[: int(2.8 * SR)]
-    files["bang_interieur_etouffe_enreg"] = norm_peak(fade(wet, 0.003, 0.6), PEAK_BANG)
+    files["bang_interieur_etouffe_enreg"] = loud(norm_peak(fade(wet, 0.003, 0.6), PEAK_BANG))
     # Lointain (> 150 m dehors) : bang B, absorption de l'air (passe-bas 1,1 kHz), échos de façades et queue longue.
     b = bang_b
     ir = room_ir(2.2, 3.2, 5, early=((0.38, 0.32), (0.91, 0.18), (1.6, 0.09)), lp=1500)
     far = convolve(filt(b, lp=1100, order=2), ir)[: int(3.8 * SR)]
-    files["bang_lointain_enreg"] = norm_peak(fade(far, 0.01, 1.0), PEAK_BANG)
+    files["bang_lointain_enreg"] = loud(norm_peak(fade(far, 0.01, 1.0), PEAK_BANG))
 
     # Acouphène : boucle enregistrée (son_08, 3520 Hz) et décroissance 60 s (même enveloppe pour les deux versions).
     loop = loop_from_recording(X[8])
@@ -304,13 +313,13 @@ def main():
     t = np.arange(int(dur * SR)) / SR
     env = tinnitus_env(t)[:, None]
     tiled = np.tile(loop, (int(np.ceil(len(t) / len(loop))), 1))[: len(t)]
-    files["acouphene_decroissance_enreg"] = fade(tiled * env, 0.02, 0.0)
+    files["acouphene_decroissance_enreg"] = norm_peak(fade(tiled * env, 0.02, 0.0), TINNITUS_PEAK)
     syn = synth_tinnitus(dur)
     syn *= 10 ** (TINNITUS_RMS / 20) / np.sqrt((syn[: SR] ** 2).mean())
-    files["acouphene_decroissance_synth"] = fade(syn * env, 0.02, 0.0)
+    files["acouphene_decroissance_synth"] = norm_peak(fade(syn * env, 0.02, 0.0), TINNITUS_PEAK)
 
     # Drill et lancer : synthétisés (aucune prise propre dans les captures).
-    files["pop_drill_synth"] = norm_peak(synth_pop(), PEAK_BANG)
+    files["pop_drill_synth"] = loud(norm_peak(synth_pop(), PEAK_BANG))
     files["levier_cuillere_synth"] = norm_peak(synth_lever(), -6.0)
     drill = drill_sounds(X)
     files.update(drill)

@@ -35,9 +35,10 @@ private _add = {
     localize "STR_COMSPEC_FB_Preset_Real", localize "STR_COMSPEC_FB_Preset_Arcade", localize "STR_COMSPEC_FB_Preset_Light"
 ], 0]] call _add;
 ["comspec_fb_intensity", "SLIDER", "Intensity", "General", [0, 2, 1, 2]] call _add;
-["comspec_fb_radiusFull", "SLIDER", "RadiusFull", "General", [1, 15, 6, 1]] call _add;
+["comspec_fb_radiusFull", "SLIDER", "RadiusFull", "General", [1, 15, 3, 1]] call _add;
 ["comspec_fb_radiusMax", "SLIDER", "RadiusMax", "General", [5, 60, 25, 0]] call _add;
 ["comspec_fb_maxStack", "SLIDER", "MaxStack", "General", [5, 30, 15, 0]] call _add;
+["comspec_fb_soundRange", "SLIDER", "SoundRange", "General", [50, 500, 250, 0]] call _add;
 ["comspec_fb_indoorDetection", "CHECKBOX", "IndoorDetection", "General", true] call _add;
 ["comspec_fb_indoorMult", "SLIDER", "IndoorMult", "General", [1, 2, 1.4, 2]] call _add;
 ["comspec_fb_damage", "CHECKBOX", "Damage", "General", false] call _add;
@@ -71,7 +72,8 @@ private _drillKeys = getArray (configFile >> "COMSPEC_FB_Sons" >> "drillChoix");
 ["comspec_fb_quality", "LIST", "Quality", "Client", [[0, 1, 2], [
     localize "STR_COMSPEC_FB_Quality_Low", localize "STR_COMSPEC_FB_Quality_Med", localize "STR_COMSPEC_FB_Quality_High"
 ], 1], 0] call _add;
-["comspec_fb_bangVolume", "SLIDER", "BangVolume", "Client", [0.2, 3, 1, 2], 0] call _add;
+["comspec_fb_bangVolume", "SLIDER", "BangVolume", "Client", [0.5, 3, 2, 0, true], 0] call _add;
+["comspec_fb_tinnitusVolume", "SLIDER", "TinnitusVolume", "Client", [0.5, 3, 1.5, 0, true], 0] call _add;
 ["comspec_fb_tinnitusSound", "LIST", "TinnitusSound", "Client", [[0, 1], [
     localize "STR_COMSPEC_FB_TinnitusSound_Rec", localize "STR_COMSPEC_FB_TinnitusSound_Synth"
 ], 0], 0] call _add;

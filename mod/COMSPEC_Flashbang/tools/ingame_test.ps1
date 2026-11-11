@@ -58,25 +58,68 @@ $psi.WorkingDirectory = Split-Path -Parent $ArmaExe
 $psi.Arguments = $arguments
 $psi.UseShellExecute = $false
 $parent = [Diagnostics.Process]::Start($psi)
+$script:notrePid = $parent.Id
 function Get-NotreArma {
-    if ($parent -and -not $parent.HasExited) { return $parent }
-    # Relancé par Steam : même profil dans la ligne de commande, ou à défaut un Arma démarré après ce lancement
-    # (aucun Arma ne tournait au départ, sinon le test aurait refusé de démarrer).
-    $p = Get-CimInstance Win32_Process -Filter "Name='arma3_x64.exe'" -ErrorAction SilentlyContinue |
-        Where-Object { $_.CommandLine -like "*-name=$Profil*" } | ForEach-Object { Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue } | Select-Object -First 1
-    if (-not $p) { $p = Get-Process -Name 'arma3_x64' -ErrorAction SilentlyContinue | Where-Object { $_.StartTime -ge $debut.AddSeconds(-2) } | Select-Object -First 1 }
-    return $p
+    # Le processus lancé, ou celui que Steam a relancé : un Arma démarré après ce lancement (aucun ne tournait au
+    # départ, sinon le test aurait refusé de démarrer). Son identifiant est retenu dès qu'il est trouvé.
+    $p = Get-Process -Id $script:notrePid -ErrorAction SilentlyContinue
+    if ($p -and -not $p.HasExited) { return $p }
+    $c = @(Get-Process -Name 'arma3_x64' -ErrorAction SilentlyContinue | Where-Object {
+        $t = $null; try { $t = $_.StartTime } catch { }
+        (-not $t) -or ($t -ge $debut.AddSeconds(-5))
+    })
+    if ($c.Count -gt 0) { $script:notrePid = $c[0].Id; return $c[0] }
+    return $null
 }
-$rpt = $null; $etat = 'EN_COURS'; $finA = $null; $vuA = $null
+# Captures de la fenêtre du jeu (calque blanc et tache rémanente compris, que la commande screenshot n'enregistre pas) :
+# la mission écrit AUTOTEST|SHOT|nom, le script capture la zone de la fenêtre en JPEG dans le dossier du passage.
+Add-Type -ReferencedAssemblies System.Drawing -TypeDefinition @'
+using System; using System.Drawing; using System.Drawing.Imaging; using System.Runtime.InteropServices;
+public static class FbCap {
+    [StructLayout(LayoutKind.Sequential)] struct RECT { public int L, T, R, B; }
+    [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr h, out RECT r);
+    [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr h);
+    [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
+    public static string Shot(IntPtr h, string path) {
+        SetProcessDPIAware(); SetForegroundWindow(h);
+        RECT r; if (!GetWindowRect(h, out r)) return "fenêtre introuvable";
+        int w = r.R - r.L, hh = r.B - r.T; if (w < 50 || hh < 50) return "fenêtre trop petite";
+        using (var bmp = new Bitmap(w, hh)) using (var g = Graphics.FromImage(bmp)) {
+            g.CopyFromScreen(r.L, r.T, 0, 0, new Size(w, hh)); bmp.Save(path, ImageFormat.Jpeg);
+        }
+        return "ok";
+    }
+}
+'@
+$dossierCaptures = Join-Path $Sortie 'captures'
+[void](New-Item -ItemType Directory -Force -Path $dossierCaptures)
+$rpt = $null; $etat = 'EN_COURS'; $finA = $null; $vuA = $null; $pos = [int64]0; $reste = ''
 try {
     while ($true) {
-        Start-Sleep -Seconds 1
+        Start-Sleep -Milliseconds 150
         if (-not $rpt) { $rpt = Get-ChildItem -LiteralPath $RptDir -Filter '*.rpt' | Where-Object { $_.LastWriteTime -ge $debut } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 }
         $p = Get-NotreArma
         if ($rpt) {
+            # Seulement les octets nouveaux du RPT.
             $fs = [IO.File]::Open($rpt.FullName, 'Open', 'Read', 'ReadWrite,Delete')
-            try { $txt = (New-Object IO.StreamReader($fs, [Text.Encoding]::UTF8)).ReadToEnd() } finally { $fs.Dispose() }
-            if ($txt -match 'AUTOTEST\|FIN') { if (-not $finA) { $finA = Get-Date } }
+            try {
+                $neuf = ''
+                if ($fs.Length -gt $pos) {
+                    [void]$fs.Seek($pos, 'Begin'); $buf = New-Object byte[] ($fs.Length - $pos)
+                    $n = $fs.Read($buf, 0, $buf.Length); $pos += $n; $neuf = [Text.Encoding]::UTF8.GetString($buf, 0, $n)
+                }
+            } finally { $fs.Dispose() }
+            $tout = $reste + $neuf; $i = $tout.LastIndexOf("`n")
+            if ($i -ge 0) {
+                $reste = $tout.Substring($i + 1)
+                foreach ($l in $tout.Substring(0, $i).Split("`n")) {
+                    if ($l -match 'AUTOTEST\|SHOT\|([A-Za-z0-9_]+)' -and $p) {
+                        $f = Join-Path $dossierCaptures ($Matches[1] + '.jpg')
+                        Write-Host ("Capture {0} : {1}" -f $Matches[1], [FbCap]::Shot($p.MainWindowHandle, $f))
+                    }
+                    if ($l -match 'AUTOTEST\|FIN' -and -not $finA) { $finA = Get-Date }
+                }
+            } else { $reste = $tout }
         }
         if ($finA -and ((Get-Date) - $finA).TotalSeconds -gt 3) { $etat = 'FINI'; break }
         if ($p) { $vuA = Get-Date }

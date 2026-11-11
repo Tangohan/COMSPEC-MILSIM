@@ -34,6 +34,67 @@ if (!hasInterface) exitWith {};
     diag_log text format ["AUTOTEST|INFO|ACE lancer avancé chargé=%1 activé=%2 XEH fired sur le joueur=%3", _ace,
         missionNamespace getVariable ["ace_advanced_throwing_enabled", "nil"], count (player getVariable ["cba_xeh_fired", []])];
 
+    // ------------------------------------------------------------------ calibration de l'éblouissement
+    // Exposition calculée par le mod (fn_exposure, sans détonation) pour le joueur à 2-25 m, regard à 0/60/90/180°
+    // du flash, dehors à midi ; comparée à la table du README (bornes basse et haute par distance et angle).
+    private _g = AGLToASL (_home vectorAdd [0, 30, 0]);
+    private _ctx = createHashMapFromArray [["device", objNull], ["id", "CAL"], ["pos", _g]];
+    private _envExt = createHashMapFromArray [["state", "done"], ["class", "exterieur"], ["enclosed", false], ["mult", 1]];
+    // [distance, angle, min, max]
+    private _spec = [
+        [2, 0, 0.9, 2], [2, 60, 0.9, 2], [2, 90, 0.85, 2], [2, 180, 0.25, 0.65],
+        [3, 0, 0.9, 2], [3, 60, 0.9, 2], [3, 90, 0.85, 2], [3, 180, 0.25, 0.5],
+        [5, 0, 0.78, 1], [5, 60, 0.75, 1], [5, 90, 0.4, 0.65], [5, 180, 0.1, 0.3],
+        [10, 0, 0.4, 0.62], [10, 60, 0.4, 0.62], [10, 90, 0.17, 0.35], [10, 180, 0, 0.15],
+        [15, 0, 0.22, 0.4], [15, 60, 0.22, 0.4], [15, 90, 0.05, 0.17], [15, 180, 0, 0.08],
+        [25, 0, 0, 0.07], [25, 90, 0, 0.03], [25, 180, 0, 0.02]
+    ];
+    private _calKo = 0;
+    {
+        _x params ["_d", "_a", "_lo", "_hi"];
+        player setPosASL (_g vectorAdd [0, -_d, -0.06]);
+        player setDir _a;
+        sleep 0.2;
+        private _e = [player, _ctx, _g vectorAdd [0, 0, 0.06], _envExt, true] call comspec_fb_fnc_exposure;
+        _e params ["_v", "_au", "_info"];
+        private _ok = _v >= _lo && {_v <= _hi};
+        if (!_ok) then { _calKo = _calKo + 1 };
+        diag_log text format ["AUTOTEST|CAL|exterieur d=%1 m angle=%2 (mesuré %3) vision=%4 audition=%5 attendu %6..%7 %8",
+            _d, _a, round (_info getOrDefault ["angle", -1]), _v toFixed 2, _au toFixed 2, _lo, _hi, ["KO", "ok"] select _ok];
+    } forEach _spec;
+    // Intérieur : même mesure dans une pièce fermée (Cargo House) ; doit être au moins aussi fort que dehors.
+    private _house = createVehicle ["Land_Cargo_House_V1_F", _home vectorAdd [0, 70, 0], [], 0, "CAN_COLLIDE"];
+    _house setDir 0;
+    sleep 1;
+    private _bp = _house buildingPos -1;
+    if (count _bp >= 1) then {
+        // Grenade et joueur au plancher, aux deux bouts de la pièce (2,5 m).
+        private _z = (AGLToASL (_bp select 0)) select 2;
+        private _gi = _house modelToWorldWorld [-1.5, 0, 0];
+        _gi set [2, _z];
+        private _pi = _house modelToWorldWorld [1, 0, 0];
+        _pi set [2, _z];
+        private _ctxI = createHashMapFromArray [["device", objNull], ["id", "CALI"], ["pos", _gi], ["env", createHashMap]];
+        [_ctxI] call comspec_fb_fnc_envProbe;
+        sleep 1;
+        private _envI = _ctxI get "env";
+        {
+            player setPosASL _pi;
+            player setDir ((_pi getDir _gi) + _x);
+            sleep 0.2;
+            private _e = [player, _ctxI, _gi vectorAdd [0, 0, 0.06], _envI, true] call comspec_fb_fnc_exposure;
+            private _ok = (_e select 0) >= ([0.9, 0.85, 0.3] select ([0, 90, 180] find _x));
+            if (!_ok) then { _calKo = _calKo + 1 };
+            diag_log text format ["AUTOTEST|CAL|interieur %1 d=%2 m angle=%3 vision=%4 audition=%5 %6", _envI getOrDefault ["class", "?"],
+                ((_pi vectorDistance _gi) toFixed 1), _x, (_e select 0) toFixed 2, (_e select 1) toFixed 2, ["KO", "ok"] select _ok];
+        } forEach [0, 90, 180];
+    } else {
+        diag_log text "AUTOTEST|INFO|calibration intérieure sautée (pas de position dans le bâtiment)";
+    };
+    deleteVehicle _house;
+    diag_log text format ["AUTOTEST|%1|calibration|%2 mesure(s) hors table", ["KO", "OK"] select (_calKo == 0), _calKo];
+    player setPosATL _home;
+
     // [nom, magasin, nombre de détonations, mèche attendue (s), chemin "vanilla" | "ace" | "secours", drill]
     private _cases = [
         ["a1_vanilla_x1", "COMSPEC_FB_Flash_1", 1, 1.5, "vanilla", false],
@@ -99,6 +160,17 @@ if (!hasInterface) exitWith {};
             player setDir 0;
             _ai setPosATL (_p vectorAdd [5, 0, 0]);
             _ai setDir 270;
+        };
+        // Captures de la fenêtre (calque blanc, tache rémanente, flou) : joueur à 3 m face à la grenade.
+        if (_name == "b3_ace_x3" && {!isNull _dev}) then {
+            sleep 0.45;
+            diag_log text "AUTOTEST|SHOT|flash3m_0s5";
+            sleep 2.5;
+            diag_log text "AUTOTEST|SHOT|flash3m_3s";
+            sleep 3;
+            diag_log text "AUTOTEST|SHOT|flash3m_6s";
+            sleep 4;
+            diag_log text "AUTOTEST|SHOT|flash3m_10s";
         };
         sleep (_n * 0.65 + 2.5);
         player setVariable ["cba_xeh_fired", _xehSave];
