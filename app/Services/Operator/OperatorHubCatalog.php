@@ -95,6 +95,51 @@ final class OperatorHubCatalog
     }
 
     /**
+     * Droit qui ouvre un outil réservé, en clair (affiché sur une tuile grisée : « Accès réservé : … »).
+     * Le premier droit de any_permissions est celui d'un simple utilisateur de l'outil : c'est lui qui se demande.
+     */
+    public const PERMISSION_LABELS = [
+        'atak.sse.access' => 'Bureau SSE',
+        'atak.toc.use' => 'Poste TOC',
+    ];
+
+    /**
+     * Tous les outils de la communauté, avec « locked » : vrai quand il manque un droit au membre (tuile grisée, non
+     * cliquable, droit à demander dans « needs »). Un outil dont le module est fermé à la communauté, ou dont la route
+     * n'existe pas, n'est pas listé du tout : il n'y a rien à demander.
+     *
+     * @param callable(string): bool $can
+     * @param callable(string): bool $allowsPath
+     * @param callable(string): bool|null $routeDeclared
+     * @return list<array<string, mixed>>
+     */
+    public static function withAccess(callable $can, callable $allowsPath, ?callable $routeDeclared = null): array
+    {
+        $routeDeclared ??= [self::class, 'routeDeclared'];
+        $out = [];
+        foreach (self::TOOLS as $tool) {
+            if (isset($tool['route']) && !$routeDeclared((string) $tool['route'])) {
+                continue;
+            }
+            $perms = $tool['any_permissions'] ?? [];
+            $granted = $perms === [];
+            foreach ($perms as $p) {
+                $granted = $granted || $can($p);
+            }
+            // Le chemin se juge sans droit manquant : un membre sans le droit verrait sinon l'outil disparaître.
+            if ($granted && !$allowsPath((string) strtok((string) $tool['path'], '?'))) {
+                continue;
+            }
+            $tool['locked'] = !$granted;
+            $tool['needs'] = $granted ? '' : (string) $perms[0];
+            $tool['needs_label'] = $granted ? '' : (self::PERMISSION_LABELS[$perms[0]] ?? (string) $perms[0]);
+            $out[] = $tool;
+        }
+
+        return $out;
+    }
+
+    /**
      * Outils rangés pour la page : favoris en tête (dans l'ordre où ils ont été épinglés), puis par groupe. Un
      * favori dont l'outil n'est plus accessible est ignoré. Un groupe vide n'est pas rendu.
      *
@@ -113,7 +158,7 @@ final class OperatorHubCatalog
         }
         $fav = [];
         foreach ($favorites as $k) {
-            if (isset($byKey[$k])) {
+            if (isset($byKey[$k]) && empty($byKey[$k]['locked'])) {
                 $fav[] = $byKey[$k];
             }
         }

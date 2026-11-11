@@ -211,9 +211,9 @@ final class OperatorHubTest extends TestCase
     {
         $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
         preg_match_all('#\$router->(get|post)\(\'(/operateur[^\']*)\', \[(\$opHub|OperateurTerrainController::class), \'(\w+)\'\], \[AuthMiddleware::class\]\);#', $routes, $m, PREG_SET_ORDER);
-        self::assertCount(17, $m, 'toutes les routes /operateur passent par AuthMiddleware');
-        self::assertSame(17, preg_match_all('#\$router->\w+\(\'/operateur#', $routes));
-        $writes = ['favorite', 'identitySave', 'identityPhoto', 'identityArchive', 'identityActivate', 'documentRequest', 'documentAction', 'coverGenerate', 'coverAction'];
+        self::assertCount(18, $m, 'toutes les routes /operateur passent par AuthMiddleware');
+        self::assertSame(18, preg_match_all('#\$router->\w+\(\'/operateur#', $routes));
+        $writes = ['favorite', 'identitySave', 'identityPhoto', 'identityArchive', 'identityActivate', 'identityPrimary', 'documentRequest', 'documentAction', 'coverGenerate', 'coverAction'];
         foreach ($m as [, $verb, $path, , $action]) {
             self::assertTrue(method_exists(OperatorHubController::class, $action) || $action === 'index', $action);
             self::assertSame(in_array($action, $writes, true) ? 'post' : 'get', $verb, $path);
@@ -344,11 +344,15 @@ final class OperatorHubTest extends TestCase
         self::assertSame(['documents'], array_column($data['hubLayout']['favorites'], 'key'));
 
         $html = $this->view('hub', ['csrfToken' => 'jeton'] + $data);
-        foreach (['<h1>Outils opérateur</h1>', 'Viper 1-1', 'En opération', 'Mon identité', 'Mon matériel', 'Préparation', 'Comptes rendus', 'Épinglés',
-            'data-opx-search-input', 'Passage aux fichiers', '8 à compléter', 'Relié', 'name="_csrf_token" value="jeton"', 'data-opx-tool="documents"'] as $needle) {
+        foreach (['Outils opérateur<span class="dash-hero__title-dot"', 'Viper 1-1', 'En opération', 'Mon identité', 'Mon matériel', 'Préparation', 'Comptes rendus', 'Épinglés',
+            'data-opx-search-input', 'Passage aux fichiers', '8 à compléter', 'Relié', 'name="_csrf_token" value="jeton"', 'data-opx-tool="documents"',
+            // Composants du tableau de bord, pas de style à part.
+            'class="dash-zone', 'dash-zone__title', 'dash-quick__item', 'dash-quick__arrow', 'dash-hero__brief-item', 'cc-badge'] as $needle) {
             self::assertStringContainsString($needle, $html, $needle);
         }
-        self::assertStringNotContainsString('Poste TOC', $html, 'route absente de cette branche : pas de carte');
+        // Outil dont il manque le droit : tuile grisée, non cliquable, droit en clair.
+        self::assertStringContainsString('Accès réservé : Poste TOC', $html);
+        self::assertStringNotContainsString('href="/atak/toc"', $html);
         self::assertStringNotContainsString('kicker', $html, 'aucun petit libellé au-dessus des titres');
         self::assertStringNotContainsString('eyebrow', $html);
         self::assertSame(1, substr_count($html, '<h1'));
@@ -357,9 +361,10 @@ final class OperatorHubTest extends TestCase
         $plain = $this->controller(11);
         $plain->index(new Request());
         $html = $this->view('hub', ['csrfToken' => 'jeton'] + $this->rendered);
-        self::assertStringNotContainsString('Passage aux fichiers', $html);
-        self::assertStringNotContainsString('Comptes rendus', $html);
-        self::assertStringContainsString('Rien d’épinglé', $html);
+        self::assertStringContainsString('Accès réservé : Bureau SSE', $html, 'outils du Bureau SSE montrés grisés');
+        self::assertStringNotContainsString('/atak/sse/fichiers"', $html, 'aucun lien vers un outil fermé');
+        self::assertSame(0, substr_count($html, 'data-opx-tool="fichiers"') - substr_count($html, 'opx-tile is-locked" data-opx-tool="fichiers"'));
+        self::assertStringContainsString('Astuce : l’étoile', $html);
         self::assertStringContainsString('À créer', $html);
     }
 
@@ -376,11 +381,15 @@ final class OperatorHubTest extends TestCase
         $c->identities(new Request());
         self::assertSame('operateur.identite', $this->rendered['content']);
         $html = $this->view('identite', $base + $this->rendered);
-        foreach (['<h1>Mon identité</h1>', 'Simulation fictive', 'Jake GYLLEN', 'Principale', 'Envoyée en jeu', 'champ(s) à compléter', 'Photo d’identité', 'Identité d’emprunt',
-            '?modifier=' . $identityId . '#photo-' . $identityId, 'Enregistré.', 'aria-current="page"', 'operateur/identite/identites/' . $identityId . '/photo'] as $needle) {
+        foreach (['Mon identité<span class="dash-hero__title-dot"', 'Simulation fictive', 'Jake GYLLEN', 'Identité principale', 'Active en jeu', 'Il manque 5 champs', 'Photo d’identité', 'Identité d’emprunt',
+            'data-opx-open="dlg-photo-' . $identityId . '"', 'Ajouter une photo', 'Enregistré.', 'aria-current="page"', 'operateur/identite/identites/' . $identityId . '/photo',
+            'class="cc-card opx-card', 'cc-btn cc-btn-primary', 'cc-progress', '<dialog class="opx-dialog" id="dlg-identite-' . $identityId . '"'] as $needle) {
             self::assertStringContainsString($needle, $html, $needle);
         }
         self::assertSame(1, substr_count($html, 'Simulation fictive'), 'dit une seule fois, discrètement');
+        self::assertSame(1, substr_count($html, 'Active en jeu</span>'), 'une seule identité active en jeu');
+        self::assertStringNotContainsString('<details', $html, 'de vrais boutons et des fenêtres, pas de triangles');
+        self::assertStringNotContainsString('(s)', $html, 'singulier et pluriel écrits en entier');
         foreach (['Alias', 'Identité de couverture', 'falsifi', 'Identité civile'] as $secret) {
             self::assertStringNotContainsString($secret, $html, 'jamais la nature d’une identité : ' . $secret);
         }
@@ -406,6 +415,93 @@ final class OperatorHubTest extends TestCase
         self::assertSame('no-store', $specimen->headerValue('Cache-Control'));
         self::assertSame(2, substr_count($specimen->body(), 'SPÉCIMEN · SIMULATION'));
         self::assertStringContainsString('noindex', $specimen->body());
+    }
+
+    public function testPagesUseTheDashboardShellAndComponents(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $page = (string) file_get_contents($root . '/views/operateur/page.php');
+        foreach (['dashboard-impact.css', 'dashboard-refresh.css', 'dashboard-rail.css', 'athena-header.css', 'portal-footer.css', 'dashboard_aside.php', 'header_dashboard.php',
+            'portal_footer.php', 'dash-cc dash-cc--rail', 'dash-cc__main'] as $needle) {
+            self::assertStringContainsString($needle, $page, $needle);
+        }
+        self::assertStringContainsString("Response::view('operateur.page'", (string) file_get_contents($root . '/app/Controllers/Web/OperatorHubController.php'));
+        // La feuille de style propre aux outils ne redéfinit pas les composants du tableau de bord.
+        $css = (string) file_get_contents($root . '/public/assets/css/operateur-hub.css');
+        foreach (['.cc-card {', '.cc-btn {', '.cc-badge {', '.dash-zone {', '.dash-quick__item {', '.dash-zone__title {'] as $dup) {
+            self::assertDoesNotMatchRegularExpression('/^' . preg_quote($dup, '/') . '/m', $css, $dup);
+        }
+        self::assertStringNotContainsString('#60a5fa', $css, 'accent vert du site ; le bleu ne sert qu’à la tuile du menu Espaces');
+        foreach (glob($root . '/views/operateur/*.php') ?: [] as $view) {
+            if (basename($view) === 'terrain.php') {
+                continue;
+            }
+            $src = (string) file_get_contents($view);
+            self::assertStringNotContainsString('kicker', $src, basename($view) . ' : aucun petit libellé au-dessus des titres');
+            self::assertStringNotContainsString('eyebrow', $src, basename($view));
+        }
+    }
+
+    public function testLockedToolsAreListedGreyedWithThePermissionToAsk(): void
+    {
+        $path = static fn (string $p): bool => true;
+        $none = static fn (string $p): bool => false;
+        $all = OperatorHubCatalog::withAccess($none, $path, static fn (string $r): bool => true);
+        $byKey = array_column($all, null, 'key');
+        self::assertCount(count(OperatorHubCatalog::TOOLS), $all, 'tous les outils sont montrés');
+        self::assertTrue($byKey['fichiers']['locked']);
+        self::assertSame('atak.sse.access', $byKey['fichiers']['needs']);
+        self::assertSame('Bureau SSE', $byKey['fichiers']['needs_label']);
+        self::assertSame('atak.toc.use', $byKey['toc']['needs']);
+        self::assertFalse($byKey['atak']['locked']);
+        self::assertSame('', $byKey['atak']['needs']);
+        // Route absente : rien à demander, l'outil n'est pas listé. Module fermé à la communauté : pas listé non plus.
+        self::assertArrayNotHasKey('toc', array_column(OperatorHubCatalog::withAccess($none, $path, static fn (string $r): bool => false), null, 'key'));
+        $noAtak = array_column(OperatorHubCatalog::withAccess(static fn (string $p): bool => true, static fn (string $p): bool => !str_starts_with($p, 'atak'), static fn (string $r): bool => true), null, 'key');
+        self::assertArrayNotHasKey('atak', $noAtak);
+        self::assertArrayNotHasKey('fichiers', $noAtak);
+        // Un outil grisé ne s'épingle pas et n'apparaît pas dans les épinglés.
+        $layout = OperatorHubCatalog::layout($all, ['fichiers', 'atak']);
+        self::assertSame(['atak'], array_column($layout['favorites'], 'key'));
+        foreach (OperatorHubCatalog::TOOLS as $tool) {
+            foreach ($tool['any_permissions'] ?? [] as $n => $p) {
+                if ($n === 0) {
+                    self::assertArrayHasKey($p, OperatorHubCatalog::PERMISSION_LABELS, 'libellé en clair du droit ' . $p);
+                }
+            }
+        }
+    }
+
+    public function testAMemberChoosesTheirMainIdentity(): void
+    {
+        $this->db();
+        $jake = $this->controller(10);
+        $jake->identitySave($this->post(['last_name' => 'Georgiou', 'first_name' => 'Yannis']));
+        $jake->identitySave($this->post(['last_name' => 'Gyllen', 'first_name' => 'Jake']));
+        $ids = array_map('intval', $this->pdo->query('SELECT id FROM sse_identities ORDER BY id')->fetchAll(PDO::FETCH_COLUMN));
+        // La seconde identité devient la principale ; l'ancienne devient une identité d'emprunt, rien n'est supprimé.
+        $jake->identityPrimary($this->post(), ['id' => (string) $ids[1]]);
+        self::assertSame('success', end($this->flashes)[0], end($this->flashes)[1]);
+        $jake->identities(new Request());
+        $list = array_column($this->rendered['idIdentities'], null, 'id');
+        self::assertTrue($list[$ids[1]]['is_primary']);
+        self::assertFalse($list[$ids[0]]['is_primary']);
+        self::assertTrue($list[$ids[0]]['promotable']);
+        self::assertFalse($list[$ids[1]]['promotable']);
+        self::assertCount(2, $list);
+        self::assertSame(1, count(array_filter($list, static fn (array $i): bool => $i['active'])), 'une seule identité active en jeu');
+        // Un autre membre ne change pas l'identité principale de Jake ; une identité remise par un responsable non plus.
+        $this->controller(11)->identityPrimary($this->post(), ['id' => (string) $ids[0]]);
+        self::assertSame('error', end($this->flashes)[0]);
+        $this->pdo->exec("UPDATE sse_identities SET kind = 'cover' WHERE id = " . $ids[0]);
+        $jake->identityPrimary($this->post(), ['id' => (string) $ids[0]]);
+        self::assertSame('error', end($this->flashes)[0]);
+        self::assertSame('civil', (string) $this->pdo->query('SELECT kind FROM sse_identities WHERE id = ' . $ids[1])->fetchColumn());
+        // Sans identité : formulaire prérempli depuis le profil du membre.
+        $this->controller(11)->identities(new Request());
+        self::assertArrayHasKey('last_name', $this->rendered['idProposal']);
+        $html = $this->view('identite', ['csrfToken' => 'jeton', 'success' => null, 'error' => null] + $this->rendered);
+        self::assertStringContainsString('Définir mon identité principale', $html);
     }
 
     public function testDocumentPreviewEscapesTextAndOnlyAcceptsHexColours(): void

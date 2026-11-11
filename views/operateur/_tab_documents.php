@@ -19,6 +19,7 @@ $actionLabels = [
     'renew' => ['Demander le renouvellement', ''],
     'cancel' => ['Annuler ma demande', 'Annuler cette demande de papier ?'],
 ];
+$statusBadge = ['ok' => 'cc-badge--ink', 'warn' => 'cc-badge--amber', 'wait' => 'cc-badge--amber', 'bad' => 'cc-badge--rose'];
 $typesByCountry = [];
 foreach ($idCountries as $c) {
     $typesByCountry[$c['code']] = array_values($c['doc_types']);
@@ -26,120 +27,142 @@ foreach ($idCountries as $c) {
 ?>
 
 <?php if ($idSync !== null): ?>
-    <section class="opx-sync opx-sync--<?= $h($idSync['delivery'] === 'received' ? 'ok' : ($idSync['state'] === 'blocked' ? 'bad' : 'wait')) ?>" aria-labelledby="opx-sync-title">
-        <div>
-            <h2 id="opx-sync-title">Remise en jeu</h2>
-            <p class="opx-sync__state">
-                <strong><?= $h($idSync['title'] !== '' ? $idSync['title'] : $idSync['state_label']) ?></strong><?php if ($idSync['at'] !== ''): ?> · le <?= $h($idSync['at']) ?> UTC<?php endif; ?>
-            </p>
-            <?php if ($idSync['why'] !== ''): ?><p><?= $h($idSync['why']) ?></p><?php endif; ?>
-            <?php if (!$idSteamLinked): ?>
-                <p>Votre compte n’est pas lié à Steam : le serveur de jeu ne peut pas vous remettre vos papiers. <a href="<?= $h(url('account/steam/connect')) ?>">Lier mon compte Steam</a></p>
-            <?php endif; ?>
+    <section class="dash-zone dash-zone--actions" aria-labelledby="opx-sync-title">
+        <div class="dash-zone__inner dash-zone__inner--tight">
+            <article class="cc-card opx-sync opx-sync--<?= $h($idSync['delivery'] === 'received' ? 'ok' : ($idSync['state'] === 'blocked' ? 'bad' : 'wait')) ?>">
+                <div>
+                    <h3 id="opx-sync-title">Remise en jeu</h3>
+                    <p><strong><?= $h($idSync['title'] !== '' ? $idSync['title'] : $idSync['state_label']) ?></strong><?php if ($idSync['at'] !== ''): ?> · le <?= $h($dateFr($idSync['at'])) ?><?php endif; ?></p>
+                    <?php if ($idSync['why'] !== ''): ?><p><?= $h($idSync['why']) ?></p><?php endif; ?>
+                    <?php if (!$idSteamLinked): ?>
+                        <p>Votre compte n’est pas lié à Steam : le serveur de jeu ne peut pas vous remettre vos papiers. <a class="opx-link" href="<?= $h(url('account/steam/connect')) ?>">Lier mon compte Steam</a></p>
+                    <?php endif; ?>
+                </div>
+                <span class="cc-badge <?= $h(['ready' => 'cc-badge--ink', 'incomplete' => 'cc-badge--amber', 'error' => 'cc-badge--rose', 'blocked' => 'cc-badge--rose'][$idSync['state']] ?? 'cc-badge--amber') ?>">Préparation : <?= $h($idSync['state_label']) ?></span>
+            </article>
         </div>
-        <span class="opx-pill opx-pill--<?= $h(['ready' => 'ok', 'incomplete' => 'warn', 'error' => 'bad', 'blocked' => 'bad'][$idSync['state']] ?? 'idle') ?>">Préparation : <?= $h($idSync['state_label']) ?></span>
     </section>
 <?php endif; ?>
 
 <?php if ($activeIdentities === []): ?>
-    <div class="opx-empty">
-        <h2>Pas encore d’identité</h2>
-        <p>Un papier se rattache à une identité. Créez d’abord votre identité principale.</p>
-        <a class="opx-btn opx-btn--primary" href="<?= $h(url('operateur/identite')) ?>">Créer mon identité</a>
-    </div>
+    <section class="dash-zone dash-zone--actions">
+        <div class="dash-zone__inner">
+            <div class="cc-empty">
+                <p><strong>Pas encore d’identité.</strong> Un papier se rattache à une identité : définissez d’abord votre identité principale.</p>
+                <a class="cc-btn cc-btn-primary" href="<?= $h(url('operateur/identite')) ?>">Définir mon identité</a>
+            </div>
+        </div>
+    </section>
 <?php else: ?>
     <?php foreach ($idIdentities as $identity): ?>
         <?php $docs = $docsByIdentity[(int) $identity['id']] ?? []; ?>
         <?php if ($identity['archived'] && $docs === []) { continue; } ?>
-        <section class="opx-section" id="papiers-<?= (int) $identity['id'] ?>" aria-labelledby="papiers-titre-<?= (int) $identity['id'] ?>">
-            <div class="opx-section__head">
-                <h2 id="papiers-titre-<?= (int) $identity['id'] ?>" translate="no"><?= $h($identity['display_name']) ?></h2>
-                <p><?= $identity['is_primary'] ? 'Identité principale' : 'Identité d’emprunt' ?><?= $identity['active'] ? ' · envoyée en jeu' : '' ?><?= $identity['archived'] ? ' · archivée' : '' ?></p>
-            </div>
-            <?php if ($docs === []): ?>
-                <p class="opx-hint">Aucun papier pour cette identité. Demandez-en un ci-dessous.</p>
-            <?php else: ?>
-                <ul class="opx-docs">
-                    <?php foreach ($docs as $doc): ?>
-                        <?php $photoUrl = !empty($doc['photo_path']) ? url((string) $doc['photo_path']) : null; ?>
-                        <li class="opx-doc" id="papier-<?= (int) $doc['id'] ?>" data-opx-doc>
-                            <div class="opx-doc__preview" data-opx-doc-faces>
-                                <div class="opx-doc__face" data-opx-face="recto"><?= $opxDocSvg($doc, 'recto', $photoUrl) ?></div>
-                                <div class="opx-doc__face" data-opx-face="verso" hidden><?= $opxDocSvg($doc, 'verso', $photoUrl) ?></div>
-                            </div>
-                            <div class="opx-doc__info">
-                                <div class="opx-doc__head">
-                                    <h3><?= $h($doc['doc_type_label']) ?> <span class="opx-doc__country"><?= $h($doc['country_name']) ?></span></h3>
-                                    <div class="opx-pills">
-                                        <span class="opx-pill opx-pill--<?= $h($doc['status_tone']) ?>"><?= $h($doc['status_label']) ?></span>
-                                        <?php if ($doc['expires_soon']): ?><span class="opx-pill opx-pill--warn">Expire bientôt</span><?php endif; ?>
+        <section class="dash-zone dash-zone--actions" id="papiers-<?= (int) $identity['id'] ?>" aria-labelledby="papiers-titre-<?= (int) $identity['id'] ?>">
+            <div class="dash-zone__inner">
+                <header class="dash-zone__head">
+                    <h2 id="papiers-titre-<?= (int) $identity['id'] ?>" class="dash-zone__title" translate="no"><?= $h($identity['display_name']) ?></h2>
+                    <p class="dash-zone__lead"><?= $identity['is_primary'] ? 'Identité principale' : 'Identité d’emprunt' ?><?= $identity['active'] ? ' · active en jeu' : '' ?><?= $identity['archived'] ? ' · archivée' : '' ?></p>
+                </header>
+                <?php if ($docs === []): ?>
+                    <div class="cc-empty">
+                        <p>Aucun papier pour cette identité.</p>
+                        <button type="button" class="cc-btn cc-btn-primary" data-opx-open="dlg-papier" data-opx-set="req-identity:<?= (int) $identity['id'] ?>">Demander un papier</button>
+                    </div>
+                <?php else: ?>
+                    <ul class="opx-cards">
+                        <?php foreach ($docs as $doc): ?>
+                            <?php $photoUrl = !empty($doc['photo_path']) ? url((string) $doc['photo_path']) : null; ?>
+                            <li>
+                                <article class="cc-card opx-doc" id="papier-<?= (int) $doc['id'] ?>" data-opx-doc>
+                                    <div data-opx-doc-faces>
+                                        <div data-opx-face="recto"><?= $opxDocSvg($doc, 'recto', $photoUrl) ?></div>
+                                        <div data-opx-face="verso" hidden><?= $opxDocSvg($doc, 'verso', $photoUrl) ?></div>
                                     </div>
-                                </div>
-                                <dl class="opx-facts opx-facts--tight">
-                                    <div><dt>Numéro</dt><dd translate="no"><?= $h($doc['doc_number'] !== '' ? $doc['doc_number'] : '—') ?></dd></div>
-                                    <div><dt>Délivré le</dt><dd><?= $h($dateFr($doc['issued_on'])) ?></dd></div>
-                                    <div><dt>Expire le</dt><dd><?= $h($dateFr($doc['expires_on'])) ?></dd></div>
-                                    <?php if (!empty($doc['issued_at'])): ?><div><dt>Émis pour le jeu</dt><dd><?= $h($dateFr((string) $doc['issued_at'])) ?></dd></div><?php endif; ?>
-                                </dl>
-                                <?php if ($doc['status'] === 'requested'): ?>
-                                    <p class="opx-note">Demande en attente : un responsable la valide et émet le papier. Les valeurs affichées sont une proposition.</p>
-                                <?php elseif (in_array($doc['status'], ['lost', 'stolen'], true)): ?>
-                                    <p class="opx-note">Signalé aux contrôles et au passage aux fichiers. Présenté en jeu, ce papier déclenche une alerte.</p>
-                                <?php endif; ?>
-                                <div class="opx-doc__acts">
-                                    <button type="button" class="opx-btn opx-btn--line" data-opx-flip aria-pressed="false">Voir le verso</button>
-                                    <a class="opx-btn opx-btn--line" href="<?= $h(url('operateur/identite/documents/' . (int) $doc['id'] . '/specimen')) ?>" target="_blank" rel="noopener">Télécharger le spécimen</a>
-                                    <?php foreach ($doc['actions'] as $action): ?>
-                                        <?php [$label, $confirm] = $actionLabels[$action] ?? [$action, '']; ?>
-                                        <form method="post" action="<?= $h(url('operateur/identite/documents/' . (int) $doc['id'] . '/action')) ?>"<?= $confirm !== '' ? ' data-opx-confirm="' . $h($confirm) . '"' : '' ?>>
-                                            <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-                                            <button type="submit" name="action" value="<?= $h($action) ?>" class="opx-btn <?= $action === 'renew' ? 'opx-btn--line' : 'opx-btn--quiet' ?>"><?= $h($label) ?></button>
-                                        </form>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            <?php endif; ?>
+                                    <div class="opx-doc__info">
+                                        <div>
+                                            <h3 class="opx-card__title"><?= $h($doc['doc_type_label']) ?></h3>
+                                            <p class="opx-card__sub"><?= $h($doc['country_name']) ?></p>
+                                            <div class="opx-card__badges">
+                                                <span class="cc-badge <?= $h($statusBadge[$doc['status_tone']] ?? 'cc-badge--amber') ?>"><?= $h($doc['status_label']) ?></span>
+                                                <?php if ($doc['expires_soon']): ?><span class="cc-badge cc-badge--amber">Expire bientôt</span><?php endif; ?>
+                                            </div>
+                                        </div>
+                                        <dl class="opx-facts opx-facts--4">
+                                            <div><dt>Numéro</dt><dd translate="no"><?= $h($doc['doc_number'] !== '' ? $doc['doc_number'] : '—') ?></dd></div>
+                                            <div><dt>Délivré le</dt><dd><?= $h($dateFr($doc['issued_on'])) ?></dd></div>
+                                            <div><dt>Expire le</dt><dd><?= $h($dateFr($doc['expires_on'])) ?></dd></div>
+                                            <?php if (!empty($doc['issued_at'])): ?><div><dt>Émis pour le jeu</dt><dd><?= $h($dateFr((string) $doc['issued_at'])) ?></dd></div><?php endif; ?>
+                                        </dl>
+                                        <?php if ($doc['status'] === 'requested'): ?>
+                                            <p class="opx-note">Demande en attente : un responsable la valide et émet le papier. Les valeurs affichées sont une proposition.</p>
+                                        <?php elseif (in_array($doc['status'], ['lost', 'stolen'], true)): ?>
+                                            <p class="opx-note">Signalé aux contrôles et au passage aux fichiers. Présenté en jeu, ce papier déclenche une alerte.</p>
+                                        <?php endif; ?>
+                                        <div class="opx-acts">
+                                            <button type="button" class="cc-btn cc-btn-ghost" data-opx-flip aria-pressed="false">Voir le verso</button>
+                                            <a class="cc-btn cc-btn-ghost" href="<?= $h(url('operateur/identite/documents/' . (int) $doc['id'] . '/specimen')) ?>" target="_blank" rel="noopener">Télécharger le spécimen</a>
+                                            <?php foreach ($doc['actions'] as $action): ?>
+                                                <?php [$label, $confirm] = $actionLabels[$action] ?? [$action, '']; ?>
+                                                <form method="post" action="<?= $h(url('operateur/identite/documents/' . (int) $doc['id'] . '/action')) ?>"<?php if ($confirm !== ''): ?> data-opx-confirm="<?= $h($confirm) ?>"<?php endif; ?>>
+                                                    <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                                                    <button type="submit" name="action" value="<?= $h($action) ?>" class="cc-btn <?= $action === 'renew' ? 'cc-btn-ghost' : 'opx-btn-quiet opx-btn-danger' ?>"><?= $h($label) ?></button>
+                                                </form>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                </article>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </div>
         </section>
     <?php endforeach; ?>
 
-    <section class="opx-panel" id="demander-un-papier">
-        <h2>Demander un papier</h2>
-        <p class="opx-panel__lead">Choisissez l’identité, le pays et le type. Un responsable valide la demande et émet le papier : il apparaît alors ici et part en jeu.</p>
-        <?php if ($idCountries === []): ?>
-            <p class="opx-note">Aucun pays n’est actif dans votre communauté : les responsables doivent en activer un dans le registre des papiers.</p>
-        <?php else: ?>
-            <form class="opx-form" method="post" action="<?= $h(url('operateur/identite/documents')) ?>" data-opx-doc-request data-opx-types="<?= $h((string) json_encode($typesByCountry)) ?>">
-                <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-                <div class="opx-fields">
-                    <label for="req-identity">Identité
-                        <select id="req-identity" name="identity_id" required>
-                            <?php foreach ($activeIdentities as $identity): ?>
-                                <option value="<?= (int) $identity['id'] ?>"><?= $h($identity['display_name']) ?><?= $identity['is_primary'] ? ' (principale)' : '' ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
-                    <label for="req-country">Pays émetteur
-                        <select id="req-country" name="country_code" required data-opx-req-country>
-                            <?php foreach ($idCountries as $c): ?>
-                                <option value="<?= $h($c['code']) ?>"><?= $h($c['name']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
-                    <label for="req-type">Type de papier
-                        <select id="req-type" name="doc_type" required data-opx-req-type>
-                            <?php foreach ($idDocTypes as $k => $label): ?>
-                                <option value="<?= $h($k) ?>"><?= $h($label) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </label>
+    <section class="dash-zone" id="demander-un-papier" aria-labelledby="opx-req-title">
+        <div class="dash-zone__inner">
+            <header class="dash-zone__head">
+                <h2 id="opx-req-title" class="dash-zone__title">Demander un papier</h2>
+                <p class="dash-zone__lead">Choisissez l’identité, le pays et le type. Un responsable valide la demande et émet le papier : il apparaît alors ici et part en jeu.</p>
+            </header>
+            <?php if ($idCountries === []): ?>
+                <div class="cc-empty"><p>Aucun pays n’est actif dans votre communauté : les responsables doivent en activer un dans le registre des papiers.</p></div>
+            <?php else: ?>
+                <div class="opx-acts">
+                    <button type="button" class="cc-btn cc-btn-primary" data-opx-open="dlg-papier"><?= $opxIcon('plus', '') ?> Demander un papier</button>
                 </div>
-                <div class="opx-form__acts">
-                    <button type="submit" class="opx-btn opx-btn--primary">Envoyer la demande</button>
-                </div>
-            </form>
-        <?php endif; ?>
+                <?= $dialogOpen('dlg-papier', 'Demander un papier', 'Un responsable valide la demande et émet le papier.') ?>
+                    <form class="opx-form" method="post" action="<?= $h(url('operateur/identite/documents')) ?>" data-opx-doc-request data-opx-types="<?= $h((string) json_encode($typesByCountry)) ?>">
+                        <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                        <div class="opx-fields">
+                            <label class="opx-fields__wide" for="req-identity">Identité
+                                <select id="req-identity" name="identity_id" required>
+                                    <?php foreach ($activeIdentities as $identity): ?>
+                                        <option value="<?= (int) $identity['id'] ?>"><?= $h($identity['display_name']) ?><?= $identity['is_primary'] ? ' (principale)' : '' ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <label for="req-country">Pays émetteur
+                                <select id="req-country" name="country_code" required data-opx-req-country>
+                                    <?php foreach ($idCountries as $c): ?>
+                                        <option value="<?= $h($c['code']) ?>"><?= $h($c['name']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <label for="req-type">Type de papier
+                                <select id="req-type" name="doc_type" required data-opx-req-type>
+                                    <?php foreach ($idDocTypes as $k => $label): ?>
+                                        <option value="<?= $h($k) ?>"><?= $h($label) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="opx-dialog__foot">
+                            <button type="submit" class="cc-btn cc-btn-primary">Envoyer la demande</button>
+                        </div>
+                    </form>
+                <?= $dialogClose ?>
+            <?php endif; ?>
+        </div>
     </section>
 <?php endif; ?>

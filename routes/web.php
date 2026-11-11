@@ -519,6 +519,7 @@ return function (Router $router) {
     $router->post('/operateur/identite/identites/{id}/photo', [$opHub, 'identityPhoto'], [AuthMiddleware::class]);
     $router->post('/operateur/identite/identites/{id}/archiver', [$opHub, 'identityArchive'], [AuthMiddleware::class]);
     $router->post('/operateur/identite/identites/{id}/activer', [$opHub, 'identityActivate'], [AuthMiddleware::class]);
+    $router->post('/operateur/identite/identites/{id}/principale', [$opHub, 'identityPrimary'], [AuthMiddleware::class]);
     $router->post('/operateur/identite/identites/{id}', [$opHub, 'identitySave'], [AuthMiddleware::class]);
     $router->get('/operateur/identite/documents', [$opHub, 'documents'], [AuthMiddleware::class]);
     $router->post('/operateur/identite/documents', [$opHub, 'documentRequest'], [AuthMiddleware::class]);
