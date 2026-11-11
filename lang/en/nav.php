@@ -799,4 +799,11 @@ return [
     'fichiers_controles_d_identite_seek_ii_et_telephones' => 'Records, identity checks, SEEK II and phones',
     'fichiers_sse' => 'SSE records',
     'fiches_fusion_des_doublons_extractions_de_telephones_journal_et_reglages_des_fichiers' => 'Records, duplicate merging, phone extractions, log and records settings',
+    'toc' => 'TOC',
+    'poste_toc' => 'TOC console',
+    'plans_d_operation' => 'Operation plans',
+    'la_console_du_poste_de_commandement_comme_le_pc_du_poste_en_jeu' => 'The command post console, like the in-game TOC laptop',
+    'preparer_un_plan_sur_la_carte_le_briefer_par_phases_l_envoyer_en_jeu' => 'Prepare a plan on the map, brief it phase by phase, send it into the game',
+    'console_du_poste_de_commandement' => 'Command post console',
+    'preparer_et_envoyer_en_jeu' => 'Prepare and send into the game',
 ];

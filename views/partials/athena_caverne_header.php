@@ -130,6 +130,11 @@ $navItems = [
 ];
 $navItems[] = ['key' => 'academy', 'label' => 'Academy', 'href' => url('academy'), 'path' => 'academy'];
 $navItems[] = ['key' => 'effectifs', 'label' => 'Effectifs', 'href' => url('personnel'), 'path' => 'personnel'];
+// Poste TOC web : entrée directe, seulement pour qui tient le poste (pas de lien mort pour les autres).
+$canToc = function_exists('can') && (can('atak.toc.use') || can('atak.toc.manage') || can('admin.organization'));
+if ($canToc) {
+    $navItems[] = ['key' => 'toc', 'label' => 'TOC', 'href' => url('atak/toc'), 'path' => 'atak/toc'];
+}
 if ($headerNoOrg) {
     $navItems[] = ['key' => 'registre', 'label' => 'Registre des unités', 'href' => url('communities'), 'path' => 'communities'];
 }
@@ -188,6 +193,10 @@ $espaceLinks = [
     // Accès direct à son parcours dans l'Academy, filtré comme le reste (module formation).
     ['abbr' => 'MES', 'label' => 'Mes formations', 'desc' => 'Mon parcours et mes inscriptions', 'href' => url('academy/courses'), 'path' => 'academy/formations'],
 ];
+if ($canToc) {
+    $espaceLinks[] = ['abbr' => 'TOC', 'label' => 'Poste TOC', 'desc' => 'Console du poste de commandement', 'href' => url('atak/toc'), 'path' => 'atak/toc'];
+    $espaceLinks[] = ['abbr' => 'PLN', 'label' => 'Plans d’opération', 'desc' => 'Préparer et envoyer en jeu', 'href' => url('atak/toc/plans'), 'path' => 'atak/toc/plans'];
+}
 if ($canRecruit) {
     $espaceLinks[] = [
         'abbr' => 'REC',
