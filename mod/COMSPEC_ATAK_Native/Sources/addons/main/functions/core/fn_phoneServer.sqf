@@ -5,6 +5,7 @@
     mécanique de jeu, pas une sécurité. La remise à zéro passe par fn_adminServer, seul juge des droits.
     Mission : sur une IA, COMSPEC_ATAK_PhonePin (4 à 8 chiffres), COMSPEC_ATAK_PhoneHint et COMSPEC_ATAK_PhoneData
     ([["msgs", [[heure, auteur, texte]...]], ["notes", [[titre, texte]...]], ["marks", [[grille, texte]...]]]).
+    Téléphone d'IA lu : ses données portent aussi « ai_uid » (variable publique comspec_sse_aiUid, posée ici si absente).
     Params : [action, arguments]
       "init"                          "pin" [unité, empreinte, indice]        "store" [unité, ids, données]
       "adopt" [id, clé, unité d'origine]    "unlock" [unité, id, clé, empreinte]    "forget" [id]    "reset" [clé]
@@ -79,7 +80,25 @@ switch (_act) do {
         private _data = _from getVariable ["COMSPEC_ATAK_PhoneData", []];
         if !(_data isEqualType [] && {(count str _data) <= 16000}) then { _data = []; };
         ([_from] call comspec_atak_native_fnc_phoneIdent) params ["_num", "_imei"];
-        _store set [_id, [["wiped", false], ["number", _num], ["imei", _imei], ["callsign", ""], ["at", ""]] + (_data select { _x isEqualTypeArray ["", []] })];
+        // Identifiant stable de l'IA (owner.ai_uid de la synchro web, fn_phoneSync ; même variable que le SSE) : variable
+        // publique comspec_sse_aiUid, posée ici si la mission ou le SSE ne l'a pas fait. Nom de variable Eden : même valeur
+        // d'une session à l'autre ; sinon un identifiant de cette session.
+        private _ai = [];
+        if (!isPlayer _from && {(_key select [0, 3]) isEqualTo "AI_"}) then {
+            private _aiUid = _from getVariable ["comspec_sse_aiUid", ""];
+            // Règle du SSE quand il est chargé (comspec_sse_fnc_loreUid « assign » : Eden, biométrie, variable, nom, position).
+            if (!(_aiUid isEqualType "" && {_aiUid isNotEqualTo ""}) && {!isNil "comspec_sse_fnc_loreUid"}) then { _aiUid = ["assign", _from] call comspec_sse_fnc_loreUid; };
+            if !(_aiUid isEqualType "" && {_aiUid isNotEqualTo ""}) then {
+                private _vn = vehicleVarName _from;
+                private _n = (missionNamespace getVariable ["COMSPEC_ATAK_AiUidSeq", 0]) + 1;
+                missionNamespace setVariable ["COMSPEC_ATAK_AiUidSeq", _n];
+                _aiUid = if (_vn isNotEqualTo "") then { format ["%1.%2.%3", missionName, worldName, _vn] } else { format ["ai.%1.%2.%3", worldName, round serverTime, _n] };
+                _aiUid = (_aiUid regexReplace ["[^A-Za-z0-9_.:-]", "_"]) select [0, 61];
+                _from setVariable ["comspec_sse_aiUid", _aiUid, true];
+            };
+            _ai = [["ai_uid", _aiUid select [0, 61]]];
+        };
+        _store set [_id, [["wiped", false], ["number", _num], ["imei", _imei], ["callsign", ""], ["at", ""]] + _ai + (_data select { _x isEqualTypeArray ["", []] })];
     };
     case "unlock": {
         _xa params [["_unit", objNull, [objNull]], ["_id", "", [""]], ["_key", "", [""]], ["_hash", "", [""]]];

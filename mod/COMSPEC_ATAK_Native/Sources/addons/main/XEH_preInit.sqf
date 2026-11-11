@@ -993,6 +993,14 @@ private _phones = ["COMSPEC", "ATAK · Téléphones personnels"];
 ["comspec_atak_native_pin_block", "SLIDER",
     ["Code du téléphone : blocage (s)", "Durée du blocage après le dernier essai. Elle n'est jamais définitive."],
     _phones, [10, 1800, 120, 0], 1] call comspec_atak_native_fnc_addSetting;
+// Synchroniser le téléphone avec le web (fn_phoneSync, ICD-SSE-PHONE-001). Accord du joueur : réglage du joueur seul (2),
+// qu'aucun serveur ni aucune mission ne peut cocher à sa place. Le MJ peut l'interdire pour la mission.
+["comspec_atak_native_phone_sync", "CHECKBOX",
+    ["Autoriser la synchronisation du téléphone avec Athena", "Décoché par défaut : rien n'est envoyé. Coché : l'action Synchroniser avec le web envoie aux fichiers d'Athena le contenu du téléphone de votre personnage (contacts, messages, notes, noms des photos, apps, positions, repères, numéro et IMEI du jeu), jamais rien de votre PC. Une fois par minute au plus. Exemple : cochez, puis menu ACE, Téléphone ATAK, Synchroniser avec le web : la référence EXT-000123 s'affiche dans le téléphone."],
+    _phones, false, 2] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_phone_sync_off", "CHECKBOX",
+    ["Interdire la synchronisation des téléphones pendant cette mission", "Coché : aucun téléphone n'est envoyé au web pendant cette mission, même si le joueur l'a autorisé. Exemple : cochez pour une mission d'entraînement dont les téléphones ne doivent pas remplir les fichiers d'Athena. Un Zeus peut aussi l'interdire en cours de partie avec la variable de mission COMSPEC_ATAK_PhoneSyncDisabled à true."],
+    _phones, false, 1] call comspec_atak_native_fnc_addSetting;
 // Tinder : chasse aux HVT (fn_hvtIntel). Chaque cible peut aussi être réglée à part (module Eden / Zeus « Tinder : profil HVT / SSE »).
 private _hvt = ["COMSPEC", "ATAK · Tinder : chasse aux HVT"];
 // Traces civiles (fn_hvtTrace) : décochées par défaut, jamais de position exacte ni de suivi en direct.
