@@ -98,6 +98,34 @@ private _weakChain = ["chain", [_weakAdj, _weakVia, 0]] call comspec_atak_native
 [_results, "chemin : boucle bornée", count (["chain", [[[[1, 5, 1]], [[0, 5, 1]]], [1, 0], 0]] call comspec_atak_native_fnc_meshGraph), 17] call _expect;
 [_results, "brouillage : hors zone", ["jamAt", [[2000, 0, 0], [[[0, 0, 0], 500]], 1]] call comspec_atak_native_fnc_meshGraph, 1] call _expect;
 [_results, "brouillage : autre canal", ["jamAt", [[0, 0, 0], [[[0, 0, 0], 500, 0, "", 1e9, false, 1, 2, ""]], 1]] call comspec_atak_native_fnc_meshGraph, 1] call _expect;
+// Couverture des relais (fn_relayNet) : accélérateur déterministe, bandes fondues sans perte, lecture directe, reprise incrémentale.
+private _covCells = [[[0, 0, 0], 5, 0, "A"], [[0, 100, 0], 5, 0, "A"], [[0, 200, 0], 1, 10, "A"], [[100, 0, 0], 0, 100, ""], [[100, 200, 0], 0, 100, ""]];
+private _acc1 = ["covAccel", [_covCells, [100, 100], 100, 3]] call comspec_atak_native_fnc_relayNet;
+private _acc2 = ["covAccel", [+_covCells, [100, 100], 100, 3]] call comspec_atak_native_fnc_relayNet;
+[_results, "couverture : bandes fondues", _acc1 select 2, [[[0, 50, 0], 50, 100, 0], [[0, 200, 0], 50, 50, 2], [[100, 0, 0], 50, 50, 4], [[100, 200, 0], 50, 50, 4]]] call _expect;
+[_results, "couverture : même grille, mêmes bandes", _acc1 select 2, _acc2 select 2] call _expect;
+[_results, "couverture : même grille, même index", [0, 1, 2, 3, 4, 5] apply { (_acc1 select 1) getOrDefault [_x, -1] }, [0, 1, 2, 3, 4, 5] apply { (_acc2 select 1) getOrDefault [_x, -1] }] call _expect;
+[_results, "couverture : index d'une case", (_acc1 select 1) getOrDefault [5, -1], 4] call _expect;
+private _covArea = 0;
+{ _covArea = _covArea + (_x select 2) / 50; } forEach (_acc1 select 2);
+[_results, "couverture : les bandes couvrent toutes les cases", _covArea, count _covCells] call _expect;
+[_results, "couverture : paliers", [5, 2, 0.6, 0.1, 0] apply { ["covBand", [_x]] call comspec_atak_native_fnc_relayNet }, [0, 1, 2, 3, 4]] call _expect;
+private _covSigA = [[0, 0], 5000, 1, [0, 0, 0, false, 100], [], [[[10, 10, 30], 2000, 12, "R1"], [[5000, 0, 30], 2000, 12, "R2"]]];
+private _covSigB = [[0, 0], 5000, 1, [0, 0, 0, false, 100], [], [[[10, 10, 30], 2000, 12, "R1"], [[5200, 0, 30], 2000, 12, "R2"]]];
+private _covSigC = [[50, 0], 5000, 1, [0, 0, 0, false, 100], [], [[[10, 10, 30], 2000, 12, "R1"]]];
+[_results, "couverture : rien n'a changé, rien à recalculer", ["covDirty", [_covSigA, +_covSigA]] call comspec_atak_native_fnc_relayNet, [true, []]] call _expect;
+[_results, "couverture : relais déplacé, deux disques", ["covDirty", [_covSigA, _covSigB]] call comspec_atak_native_fnc_relayNet, [true, [[[5000, 0, 30], 2000], [[5200, 0, 30], 2000]]]] call _expect;
+[_results, "couverture : centre déplacé, tout recalculer", ["covDirty", [_covSigA, _covSigC]] call comspec_atak_native_fnc_relayNet, [false, []]] call _expect;
+[_results, "couverture : première fois, tout recalculer", ["covDirty", [[], _covSigA]] call comspec_atak_native_fnc_relayNet, [false, []]] call _expect;
+// Lecture d'un point : même réponse avec l'index qu'en parcourant la grille (ancien format, sans accélérateur).
+private _covSaved = missionNamespace getVariable "COMSPEC_ATAK_Coverage";
+missionNamespace setVariable ["COMSPEC_ATAK_Coverage", [[100, 100], 100, _covCells, 150, 60, 12, 1, 3.6, _acc1, _covSigA, 0]];
+private _atFast = [[10, 190, 0], [95, 20, 0], [400, 400, 0]] apply { ["at", _x] call comspec_atak_native_fnc_relayNet };
+missionNamespace setVariable ["COMSPEC_ATAK_Coverage", [[100, 100], 100, _covCells, 150, 60, 12, 1, 3.6]];
+private _atScan = [[10, 190, 0], [95, 20, 0], [400, 400, 0]] apply { ["at", _x] call comspec_atak_native_fnc_relayNet };
+if (isNil "_covSaved") then { missionNamespace setVariable ["COMSPEC_ATAK_Coverage", nil]; } else { missionNamespace setVariable ["COMSPEC_ATAK_Coverage", _covSaved]; };
+[_results, "couverture : lecture par l'index", _atFast, [[1, 10, "A"], [0, 100, ""], []]] call _expect;
+[_results, "couverture : index et parcours d'accord", _atFast, _atScan] call _expect;
 private _ok = { _x select 1 } count _results;
 { diag_log format ["[COMSPEC ATAK NATIVE][MESH] Test %1 : %2", _x select 0, ["échoué", "réussi"] select (_x select 1)]; } forEach _results;
 diag_log format ["[COMSPEC ATAK NATIVE][MESH] Tests : %1 réussis sur %2", _ok, count _results];

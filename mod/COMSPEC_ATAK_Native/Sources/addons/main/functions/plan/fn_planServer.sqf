@@ -15,6 +15,8 @@
       "merge"   [éléments, nom]      ajoute des éléments au plan (brouillon ou plan enregistré)
       "patch"   [ids à retirer, éléments à remettre]   annuler / rétablir : les éléments gardent leur id
       "roomNew" [nom]                crée une salle et la donne à l'unité (événement comspec_atak_native_planRoom)
+      "webPatch" [camp, ids à retirer, éléments]   serveur seul, plan envoyé par le poste TOC web (fn_tocWeb) : droits
+                                     vérifiés par Athena (atak.toc.use), unité objNull, les éléments gardent leur id W…
     Après chaque modification, l'unité reçoit ce qui a changé (événement comspec_atak_native_planDiff
     [repère, salle, avant, après]) : c'est son historique ANNULER / RÉTABLIR (fn_planAction "histPush").
     Sans serveur (appel local, toute machine) :
@@ -94,7 +96,17 @@ if (_op isEqualTo "patchList") exitWith {
     _l
 };
 
-if (!isServer || {isNull _by}) exitWith { false };
+// Plan du poste TOC web (fn_tocWeb, serveur) : camp donné, droits vérifiés par Athena, pas d'unité qui agit.
+private _webSide = "";
+if (_op isEqualTo "webPatch") then {
+    _webSide = _args param [0, ""];
+    if !(_webSide isEqualType "" && {_webSide in ["WEST", "EAST", "GUER", "CIV"]}) then { _webSide = "-"; };
+    _args = [_args param [1, []], _args param [2, []]];
+    _op = "patch";
+    _room = "";
+};
+if (_webSide isEqualTo "-") exitWith { false };
+if (!isServer || {isNull _by && {_webSide isEqualTo ""}}) exitWith { false };
 private _say = { params ["_msg"]; ["comspec_atak_native_note", [_msg], _by] call CBA_fnc_targetEvent; };
 if !(_room isEqualType "") then { _room = ""; };
 _room = toUpper (_room select [0, 8]);
@@ -113,10 +125,10 @@ if (_op isEqualTo "roomNew") exitWith {
     ["INFO", "PLAN", format ["Salle de plan %1 créée par %2", _id, name _by]] call comspec_atak_native_fnc_log;
     true
 };
-private _var = if (_room isEqualTo "") then { format ["COMSPEC_ATAK_Plan_%1", side group _by] } else { "COMSPEC_ATAK_PlanRoom_" + _room };
+private _var = if (_room isEqualTo "") then { format ["COMSPEC_ATAK_Plan_%1", [side group _by, _webSide] select (_webSide isNotEqualTo "")] } else { "COMSPEC_ATAK_PlanRoom_" + _room };
 // Salle : il suffit d'en avoir le code ; plan du camp : réglage serveur.
 if (_room isNotEqualTo "" && {isNil { missionNamespace getVariable _var }}) exitWith { [format ["Plan : salle %1 introuvable (fermée avec la mission ?)", _room]] call _say; false };
-if (_room isEqualTo "" && {!([_by, "can"] call comspec_atak_native_fnc_planServer)}) exitWith {
+if (_room isEqualTo "" && {_webSide isEqualTo ""} && {!([_by, "can"] call comspec_atak_native_fnc_planServer)}) exitWith {
     [["Plan de briefing : édition réservée aux chefs de groupe, Zeus et admins", "Plan de briefing : édition réservée à Zeus et aux admins"] select ((missionNamespace getVariable ["comspec_atak_native_plan_edit", 1]) >= 2)] call _say;
     false
 };
@@ -213,7 +225,7 @@ if (_room isEqualTo "") then {
     // Salle : ouverte à tous les camps et sans liste de membres côté serveur, elle reste publique.
     missionNamespace setVariable [_var, [_rev + 1, _items, _name, getPlayerUID _by, _creator], true];
 };
-if ((count _before) + (count _after) > 0) then {
+if ((count _before) + (count _after) > 0 && {!isNull _by}) then {
     ["comspec_atak_native_planDiff", [_tag, _room, _before, _after], _by] call CBA_fnc_targetEvent;
 };
 true

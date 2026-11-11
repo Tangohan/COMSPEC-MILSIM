@@ -1,0 +1,9 @@
+// Infrastructure réseau : voyants (lumineux, la couleur vient de la texture : setObjectTexture).
+ambient[]={1,1,1,1};
+diffuse[]={1,1,1,1};
+forcedDiffuse[]={0,0,0,0};
+emmisive[]={8,8,8,1};
+specular[]={0.1,0.1,0.1,1};
+specularPower=30;
+PixelShaderID="Normal";
+VertexShaderID="Basic";

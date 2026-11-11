@@ -358,9 +358,9 @@
             <French>Si le module n'est synchronisé à aucun objet : objet créé à son emplacement.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_43A7D9BDFC">
-            <Original>Tripod projection board (COMSPEC)</Original>
-            <English>Tripod projection board (COMSPEC)</English>
-            <French>Tableau de projection sur trépied (COMSPEC)</French>
+            <Original>Projection screen on tripod (COMSPEC)</Original>
+            <English>Projection screen on tripod (COMSPEC)</English>
+            <French>Toile de projection sur trépied (COMSPEC)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_44DB25404A">
             <Original>A relay placed on the map runs on mains. Battery only for an intended field relay: it shuts down when empty and players replace the battery via ACE.</Original>
@@ -378,9 +378,9 @@
             <French>Contrôle Zeus</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_477D05DF6A">
-            <Original>Dual TOC screen on tripod (COMSPEC)</Original>
-            <English>Dual TOC screen on tripod (COMSPEC)</English>
-            <French>Double écran TOC sur trépied (COMSPEC)</French>
+            <Original>Dual 43-inch screens on tripod (COMSPEC)</Original>
+            <English>Dual 43-inch screens on tripod (COMSPEC)</English>
+            <French>Double écran 43 pouces sur trépied (COMSPEC)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_47E44D31D4">
             <Original>Battery 8 h</Original>
@@ -758,9 +758,9 @@
             <French>Un bloc par fichier, séparés par une ligne ---. Première ligne : nom | type (texte, document, identifiants, coord, image, audio). Lignes suivantes : contenu.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_8C3886D686">
-            <Original>Large TOC screen on tripod (COMSPEC)</Original>
-            <English>Large TOC screen on tripod (COMSPEC)</English>
-            <French>Grand écran TOC sur trépied (COMSPEC)</French>
+            <Original>65-inch screen on tripod (COMSPEC)</Original>
+            <English>65-inch screen on tripod (COMSPEC)</English>
+            <French>Écran 65 pouces sur trépied (COMSPEC)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_8E77DB9711">
             <Original>Always (trap)</Original>
@@ -1073,9 +1073,9 @@
             <French>Pylône relais 50 m (ruine)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_BFF6157B7C">
-            <Original>TOC TV (COMSPEC)</Original>
-            <English>TOC TV (COMSPEC)</English>
-            <French>Téléviseur TOC (COMSPEC)</French>
+            <Original>55-inch wall TV (COMSPEC)</Original>
+            <English>55-inch wall TV (COMSPEC)</English>
+            <French>Téléviseur 55 pouces mural (COMSPEC)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_W22">
             <Original>Video wall 2x2, single image (COMSPEC)</Original>
@@ -1122,6 +1122,116 @@
             <English>Element name plate (COMSPEC)</English>
             <French>Plaque de nom d'élément (COMSPEC)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_LT8">
+            <Original>LED text strip 2.4 m (COMSPEC)</Original>
+            <English>LED text strip 2.4 m (COMSPEC)</English>
+            <French>Bandeau LED texte 2,4 m (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_LT16">
+            <Original>LED text strip 4.8 m (COMSPEC)</Original>
+            <English>LED text strip 4.8 m (COMSPEC)</English>
+            <French>Bandeau LED texte 4,8 m (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_LT8C">
+            <Original>Ceiling-hung LED text strip 2.4 m (COMSPEC)</Original>
+            <English>Ceiling-hung LED text strip 2.4 m (COMSPEC)</English>
+            <French>Bandeau LED texte 2,4 m suspendu (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_LT16C">
+            <Original>Ceiling-hung LED text strip 4.8 m (COMSPEC)</Original>
+            <English>Ceiling-hung LED text strip 4.8 m (COMSPEC)</English>
+            <French>Bandeau LED texte 4,8 m suspendu (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_136">
+            <Original>136-inch giant wall screen (COMSPEC)</Original>
+            <English>136-inch giant wall screen (COMSPEC)</English>
+            <French>Écran géant 136 pouces mural (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_136S">
+            <Original>136-inch giant screen on floor stand (COMSPEC)</Original>
+            <English>136-inch giant screen on floor stand (COMSPEC)</English>
+            <French>Écran géant 136 pouces sur pied (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_L220">
+            <Original>220-inch LED wall, wall-mounted (COMSPEC)</Original>
+            <English>220-inch LED wall, wall-mounted (COMSPEC)</English>
+            <French>Mur LED 220 pouces mural (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_L220T">
+            <Original>220-inch LED wall on truss feet (COMSPEC)</Original>
+            <English>220-inch LED wall on truss feet (COMSPEC)</English>
+            <French>Mur LED 220 pouces sur treillis (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_W43">
+            <Original>Video wall 4x3, 3x3 image and 3 panels (COMSPEC)</Original>
+            <English>Video wall 4x3, 3x3 image and 3 panels (COMSPEC)</English>
+            <French>Mur d'images 4x3, image 3x3 et 3 dalles (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_W43P">
+            <Original>Video wall 4x3, 12 panels (COMSPEC)</Original>
+            <English>Video wall 4x3, 12 panels (COMSPEC)</English>
+            <French>Mur d'images 4x3, 12 dalles (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_W53">
+            <Original>Video wall 5x3, 3x3 image and 6 panels (COMSPEC)</Original>
+            <English>Video wall 5x3, 3x3 image and 6 panels (COMSPEC)</English>
+            <French>Mur d'images 5x3, image 3x3 et 6 dalles (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_W53P">
+            <Original>Video wall 5x3, 15 panels (COMSPEC)</Original>
+            <English>Video wall 5x3, 15 panels (COMSPEC)</English>
+            <French>Mur d'images 5x3, 15 dalles (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_W64">
+            <Original>Video wall 6x4, 4x4 image and 8 panels (COMSPEC)</Original>
+            <English>Video wall 6x4, 4x4 image and 8 panels (COMSPEC)</English>
+            <French>Mur d'images 6x4, image 4x4 et 8 dalles (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_W64Z">
+            <Original>Video wall 6x4, six 2x2 zones (COMSPEC)</Original>
+            <English>Video wall 6x4, six 2x2 zones (COMSPEC)</English>
+            <French>Mur d'images 6x4, 6 zones 2x2 (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_65C2">
+            <Original>Dual 65-inch ceiling-hung screens (COMSPEC)</Original>
+            <English>Dual 65-inch ceiling-hung screens (COMSPEC)</English>
+            <French>Double écran 65 pouces suspendu (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_65C3">
+            <Original>Triple 65-inch ceiling-hung screens (COMSPEC)</Original>
+            <English>Triple 65-inch ceiling-hung screens (COMSPEC)</English>
+            <French>Triple écran 65 pouces suspendu (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_65C3A">
+            <Original>Triple 65-inch ceiling-hung screens, angled (COMSPEC)</Original>
+            <English>Triple 65-inch ceiling-hung screens, angled (COMSPEC)</English>
+            <French>Triple écran 65 pouces suspendu en arc (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_98C">
+            <Original>98-inch giant ceiling-hung screen (COMSPEC)</Original>
+            <English>98-inch giant ceiling-hung screen (COMSPEC)</English>
+            <French>Écran géant 98 pouces suspendu (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_CRV">
+            <Original>Large curved screen, map and 2 columns (COMSPEC)</Original>
+            <English>Large curved screen, map and 2 columns (COMSPEC)</English>
+            <French>Grand écran incurvé, carte et 2 colonnes (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_CRVD">
+            <Original>Large curved screen, 2 images (COMSPEC)</Original>
+            <English>Large curved screen, 2 images (COMSPEC)</English>
+            <French>Grand écran incurvé, 2 images (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_CRVW">
+            <Original>Large curved wall screen, map and 2 columns (COMSPEC)</Original>
+            <English>Large curved wall screen, map and 2 columns (COMSPEC)</English>
+            <French>Grand écran incurvé mural, carte et 2 colonnes (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOC3D_CRVWD">
+            <Original>Large curved wall screen, 2 images (COMSPEC)</Original>
+            <English>Large curved wall screen, 2 images (COMSPEC)</English>
+            <French>Grand écran incurvé mural, 2 images (COMSPEC)</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_C126739753">
             <Original>Antenna height (m)</Original>
             <English>Antenna height (m)</English>
@@ -1133,9 +1243,9 @@
             <French>Indice</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_C3303CA58C">
-            <Original>Wall projection board (COMSPEC)</Original>
-            <English>Wall projection board (COMSPEC)</English>
-            <French>Tableau de projection mural (COMSPEC)</French>
+            <Original>Wall projection screen (COMSPEC)</Original>
+            <English>Wall projection screen (COMSPEC)</English>
+            <French>Toile de projection murale (COMSPEC)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_C3601BD34B">
             <Original>0: type's height. A higher antenna clears terrain better.</Original>
@@ -1228,9 +1338,9 @@
             <French>Mât démonté. Clic droit ici ou ACE, Équipement : Déployer. Répéteur : il lui faut un relais raccordé à portée.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_D875FDECAE">
-            <Original>Desk TOC monitor (COMSPEC)</Original>
-            <English>Desk TOC monitor (COMSPEC)</English>
-            <French>Moniteur TOC de bureau (COMSPEC)</French>
+            <Original>27-inch desk monitor (COMSPEC)</Original>
+            <English>27-inch desk monitor (COMSPEC)</English>
+            <French>Moniteur 27 pouces de bureau (COMSPEC)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_DB4BE04D53">
             <Original>Relay tower 30 m (ruin)</Original>
@@ -1602,10 +1712,95 @@
             <English>TBR · Relay table</English>
             <French>TBR · Tableau des relais</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCPC_1">
+            <Original>PC station, 1 monitor (COMSPEC)</Original>
+            <English>PC station, 1 monitor (COMSPEC)</English>
+            <French>Poste PC 1 écran (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCPC_2">
+            <Original>PC station, 2 monitors (COMSPEC)</Original>
+            <English>PC station, 2 monitors (COMSPEC)</English>
+            <French>Poste PC 2 écrans (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCPC_3">
+            <Original>PC station, 3 monitors (COMSPEC)</Original>
+            <English>PC station, 3 monitors (COMSPEC)</English>
+            <French>Poste PC 3 écrans (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCPC_C">
+            <Original>PC station, curved monitor (COMSPEC)</Original>
+            <English>PC station, curved monitor (COMSPEC)</English>
+            <French>Poste PC écran incurvé (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCPC_ACE">
+            <Original>PC station</Original>
+            <English>PC station</English>
+            <French>Poste PC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCPC_SUBCAT">
+            <Original>PC stations</Original>
+            <English>PC stations</English>
+            <French>Postes PC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCPCMOD_NAME">
+            <Original>ATAK · Operator station</Original>
+            <English>ATAK · Operator station</English>
+            <French>ATAK · Poste opérateur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCPCMOD_C_NAME">
+            <Original>Station</Original>
+            <English>Station</English>
+            <French>Poste</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCPCMOD_C_TIP">
+            <Original>PC station placed on the desk: one, two or three monitors, or a curved monitor.</Original>
+            <English>PC station placed on the desk: one, two or three monitors, or a curved monitor.</English>
+            <French>Poste PC posé sur le bureau : un, deux ou trois écrans, ou écran incurvé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCPCMOD_N_TIP">
+            <Original>Name shown at the top of its monitors (empty: the name of the station).</Original>
+            <English>Name shown at the top of its monitors (empty: the name of the station).</English>
+            <French>Nom montré en tête de ses moniteurs (vide : le nom du poste).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCPCMOD_DESC">
+            <Original>Places a ready-to-use operator station: desk, chair, desk phone and a complete PC station. The operator faces the direction of the module. The station opens the TOC post PC and its monitors are TOC screens.</Original>
+            <English>Places a ready-to-use operator station: desk, chair, desk phone and a complete PC station. The operator faces the direction of the module. The station opens the TOC post PC and its monitors are TOC screens.</English>
+            <French>Pose un poste opérateur prêt à servir : bureau, chaise, téléphone de table et poste PC complet. L'opérateur regarde dans la direction du module. Le poste ouvre le PC du poste TOC et ses moniteurs sont des écrans TOC.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_P_NAME">
+            <Original>Operator stations</Original>
+            <English>Operator stations</English>
+            <French>Postes des opérateurs</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_P_TIP">
+            <Original>What is placed on each desk: the TOC laptop, or a complete PC station whose monitors are screens of the room.</Original>
+            <English>What is placed on each desk: the TOC laptop, or a complete PC station whose monitors are screens of the room.</English>
+            <French>Ce qui est posé sur chaque bureau : le PC portable de TOC, ou un poste PC complet dont les moniteurs sont des écrans de la salle.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCLAPTOP">
             <Original>TOC laptop (ATAK)</Original>
             <English>TOC laptop (ATAK)</English>
             <French>PC portable de TOC (ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCOLD_DESK2">
+            <Original>Dual 27-inch desk monitors (COMSPEC)</Original>
+            <English>Dual 27-inch desk monitors (COMSPEC)</English>
+            <French>Double moniteur 27 pouces de bureau (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCOLD_DESK3">
+            <Original>Triple 27-inch desk monitors (COMSPEC)</Original>
+            <English>Triple 27-inch desk monitors (COMSPEC)</English>
+            <French>Triple moniteur 27 pouces de bureau (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCOLD_PROJC">
+            <Original>Ceiling video projector (COMSPEC)</Original>
+            <English>Ceiling video projector (COMSPEC)</English>
+            <French>Vidéoprojecteur de plafond (COMSPEC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCOLD_TV75">
+            <Original>75-inch wall TV (COMSPEC)</Original>
+            <English>75-inch wall TV (COMSPEC)</English>
+            <French>Téléviseur 75 pouces mural (COMSPEC)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_DUAL">
             <Original>Dual tripod screen</Original>
@@ -1758,29 +1953,39 @@
             <French>Taille</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_Z_TIP">
-            <Original>Small: 2x2 video wall and 2 stations. Medium: 3x2 wall, two 98-inch screens, one hanging screen, 3 stations. Large: two hanging screens, two 98-inch stand screens and 4 stations on top. Example: medium for a company, large for a battalion.</Original>
-            <English>Small: 2x2 video wall and 2 stations. Medium: 3x2 wall, two 98-inch screens, one hanging screen, 3 stations. Large: two hanging screens, two 98-inch stand screens and 4 stations on top. Example: medium for a company, large for a battalion.</English>
-            <French>Petite : mur d'images 2x2 et 2 postes. Moyenne : mur 3x2, deux écrans 98 pouces, un écran suspendu, 3 postes. Grande : en plus deux écrans suspendus, deux 98 pouces sur pied et 4 postes. Exemple : moyenne pour une compagnie, grande pour un bataillon.</French>
+            <Original>Small: 2x2 video wall, clock strip, 2 name plates, 2 stations. Medium: 3x2 wall, two 98-inch screens, clock and LED text strips, 4 name plates, double hanging screen, 3 stations. Large: 4x3 wall, two 98-inch and two 136-inch screens, triple hanging screen, 4 stations. Example: medium for a company, large for a battalion.</Original>
+            <English>Small: 2x2 video wall, clock strip, 2 name plates, 2 stations. Medium: 3x2 wall, two 98-inch screens, clock and LED text strips, 4 name plates, double hanging screen, 3 stations. Large: 4x3 wall, two 98-inch and two 136-inch screens, triple hanging screen, 4 stations. Example: medium for a company, large for a battalion.</English>
+            <French>Petite : mur d'images 2x2, bandeau horloge, 2 plaques de nom, 2 postes. Moyenne : mur 3x2, deux écrans 98 pouces, bandeaux horloge et texte à LED, 4 plaques de nom, écran double suspendu, 3 postes. Grande : mur 4x3, deux écrans 98 pouces et deux 136 pouces, écran triple suspendu, 4 postes. Exemple : moyenne pour une compagnie, grande pour un bataillon.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_Z_S">
-            <Original>Small (2x2 wall, 2 stations)</Original>
-            <English>Small (2x2 wall, 2 stations)</English>
-            <French>Petite (mur 2x2, 2 postes)</French>
+            <Original>Small, 8 x 7 m (2x2 wall, 2 stations)</Original>
+            <English>Small, 8 x 7 m (2x2 wall, 2 stations)</English>
+            <French>Petite, 8 x 7 m (mur 2x2, 2 postes)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_Z_M">
-            <Original>Medium (3x2 wall, 3 stations)</Original>
-            <English>Medium (3x2 wall, 3 stations)</English>
-            <French>Moyenne (mur 3x2, 3 postes)</French>
+            <Original>Medium, 11 x 8.5 m (3x2 wall, 3 stations)</Original>
+            <English>Medium, 11 x 8.5 m (3x2 wall, 3 stations)</English>
+            <French>Moyenne, 11 x 8,5 m (mur 3x2, 3 postes)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_Z_L">
-            <Original>Large (3x2 wall, 4 stations)</Original>
-            <English>Large (3x2 wall, 4 stations)</English>
-            <French>Grande (mur 3x2, 4 postes)</French>
+            <Original>Large, 16 x 9.5 m (4x3 wall, 4 stations)</Original>
+            <English>Large, 16 x 9.5 m (4x3 wall, 4 stations)</English>
+            <French>Grande, 16 x 9,5 m (mur 4x3, 4 postes)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_B_NAME">
+            <Original>Delete the room with the module</Original>
+            <English>Delete the room with the module</English>
+            <French>Supprimer la salle avec le module</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_B_TIP">
+            <Original>Ticked: deleting this module during the game (Zeus) also removes the screens, desks and computers it placed. Example: untick it to keep the room when the module is deleted.</Original>
+            <English>Ticked: deleting this module during the game (Zeus) also removes the screens, desks and computers it placed. Example: untick it to keep the room when the module is deleted.</English>
+            <French>Coché : supprimer ce module en cours de partie (Zeus) retire aussi les écrans, bureaux et PC qu'il a posés. Exemple : décochez pour garder la salle quand le module est supprimé.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCHALL_DESC">
-            <Original>Places a complete operations room in front of the module: video wall, big screens, clock strip, name plates, desks, chairs and TOC laptops, all linked to the room. Manage every screen from the ROOM tab of one of the laptops. Kept from one session to the next.</Original>
-            <English>Places a complete operations room in front of the module: video wall, big screens, clock strip, name plates, desks, chairs and TOC laptops, all linked to the room. Manage every screen from the ROOM tab of one of the laptops. Kept from one session to the next.</English>
-            <French>Pose une salle d'opérations complète devant le module : mur d'images, grands écrans, bandeau horloge, plaques de nom, bureaux, chaises et PC de TOC, tous liés à la salle. Gérez tous les écrans depuis l'onglet SALLE d'un des PC. Gardée d'une partie à l'autre.</French>
+            <Original>Places a complete operations room in front of the module, on the floor under it: video wall, big screens, clock strip, LED text strip, name plates, desks, chairs and TOC computers, all linked to one room. Footprint in front of the module (width x depth): small 8 x 7 m, medium 11 x 8.5 m, large 16 x 9.5 m. Against a wall and under a ceiling of 3 to 4.5 m, the wall and hanging screens are used; outdoors or without a wall, screens on stands replace them. Manage every screen from the ROOM tab of one of the computers. Kept from one session to the next.</Original>
+            <English>Places a complete operations room in front of the module, on the floor under it: video wall, big screens, clock strip, LED text strip, name plates, desks, chairs and TOC computers, all linked to one room. Footprint in front of the module (width x depth): small 8 x 7 m, medium 11 x 8.5 m, large 16 x 9.5 m. Against a wall and under a ceiling of 3 to 4.5 m, the wall and hanging screens are used; outdoors or without a wall, screens on stands replace them. Manage every screen from the ROOM tab of one of the computers. Kept from one session to the next.</English>
+            <French>Pose une salle d'opérations complète devant le module, sur le sol qui est sous lui : mur d'images, grands écrans, bandeau horloge, bandeau de texte à LED, plaques de nom, bureaux, chaises et PC de TOC, tous liés à une seule salle. Encombrement devant le module (largeur x profondeur) : petite 8 x 7 m, moyenne 11 x 8,5 m, grande 16 x 9,5 m. Contre un mur et sous un plafond de 3 à 4,5 m, les écrans muraux et suspendus sont utilisés ; en extérieur ou sans mur, des écrans sur pied les remplacent. Gérez tous les écrans depuis l'onglet SALLE d'un des PC. Gardée d'une partie à l'autre.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_MOSAIC">
             <Original>ATAK camera mosaic</Original>
@@ -1796,6 +2001,96 @@
             <Original>Element name plate (4:1 screen)</Original>
             <English>Element name plate (4:1 screen)</English>
             <French>Plaque de nom d'élément (écran 4:1)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_V_TEXT">
+            <Original>LED text (free message, scrolling)</Original>
+            <English>LED text (free message, scrolling)</English>
+            <French>Texte à LED (message libre, défilant)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_TX_NAME">
+            <Original>Text</Original>
+            <English>Text</English>
+            <French>Texte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_TX_TIP">
+            <Original>LED text display: the message shown, in the look of the clock strip. Several messages shown in turn: separate them with |. Each message can set its colour, duration in seconds and blinking: message ; amber ; 20 ; blinking. Variables: {zulu} {local} {date} {dtg} {h} {camp} {poste} {groupe}. A text wider than the screen scrolls. Can be changed in game (screen ACE menu, post PC, TOC Post app).</Original>
+            <English>LED text display: the message shown, in the look of the clock strip. Several messages shown in turn: separate them with |. Each message can set its colour, duration in seconds and blinking: message ; amber ; 20 ; blinking. Variables: {zulu} {local} {date} {dtg} {h} {camp} {poste} {groupe}. A text wider than the screen scrolls. Can be changed in game (screen ACE menu, post PC, TOC Post app).</English>
+            <French>Affichage Texte à LED : le message montré, dans le style du bandeau horloge. Plusieurs messages à tour de rôle : séparez-les par |. Chaque message peut fixer sa couleur, sa durée en secondes et son clignotement : message ; ambre ; 20 ; clignotant. Variables : {zulu} {local} {date} {dtg} {h} {camp} {poste} {groupe}. Un texte plus large que l'écran défile. Modifiable en jeu (menu ACE de l'écran, PC du poste, app Poste TOC).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_NAME">
+            <Original>Text colour</Original>
+            <English>Text colour</English>
+            <French>Couleur du texte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_TIP">
+            <Original>Colour of the messages that do not set their own.</Original>
+            <English>Colour of the messages that do not set their own.</English>
+            <French>Couleur des messages qui ne fixent pas la leur.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_G">
+            <Original>Green</Original>
+            <English>Green</English>
+            <French>Vert</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_A">
+            <Original>Amber</Original>
+            <English>Amber</English>
+            <French>Ambre</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_R">
+            <Original>Red</Original>
+            <English>Red</English>
+            <French>Rouge</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_W">
+            <Original>White</Original>
+            <English>White</English>
+            <French>Blanc</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_TXS_NAME">
+            <Original>Text scrolling speed</Original>
+            <English>Text scrolling speed</English>
+            <French>Vitesse du défilement du texte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_TXS_TIP">
+            <Original>Speed of a scrolling text.</Original>
+            <English>Speed of a scrolling text.</English>
+            <French>Vitesse d'un texte qui défile.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_TXS_0">
+            <Original>Slow</Original>
+            <English>Slow</English>
+            <French>Lent</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_TXS_1">
+            <Original>Normal</Original>
+            <English>Normal</English>
+            <French>Normal</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_TXS_2">
+            <Original>Fast</Original>
+            <English>Fast</English>
+            <French>Rapide</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_TXM_NAME">
+            <Original>Text scrolling</Original>
+            <English>Text scrolling</English>
+            <French>Défilement du texte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_TXM_TIP">
+            <Original>A text wider than the screen always scrolls. Always scroll: even a short text scrolls.</Original>
+            <English>A text wider than the screen always scrolls. Always scroll: even a short text scrolls.</English>
+            <French>Un texte plus large que l'écran défile toujours. Toujours défiler : même un texte court défile.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_TXM_0">
+            <Original>Only when the text is too long</Original>
+            <English>Only when the text is too long</English>
+            <French>Seulement si le texte dépasse</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_TXM_1">
+            <Original>Always scroll</Original>
+            <English>Always scroll</English>
+            <French>Toujours défiler</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_PN_NAME">
             <Original>Wall panels</Original>
@@ -2206,6 +2501,16 @@
             <Original>Off (standby)</Original>
             <English>Off (standby)</English>
             <French>Éteint (veille)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_V_COLA">
+            <Original>Clock and timers column (curved screen)</Original>
+            <English>Clock and timers column (curved screen)</English>
+            <French>Colonne horloge et chronos (écran incurvé)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_V_COLB">
+            <Original>Network and feed column (curved screen)</Original>
+            <English>Network and feed column (curved screen)</English>
+            <French>Colonne réseau et flux (écran incurvé)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_EDSCR_CAM_NAME">
             <Original>Live camera</Original>

@@ -166,8 +166,9 @@ final class SseIdRealCountryTest extends TestCase
         self::assertSame('DE@######', $de['number_format']);
         self::assertSame('europe', $de['zone']);
         self::assertSame(['de', 'en', 'fr'], $de['languages']);
-        self::assertSame(['id_card' => 10, 'passport' => 10, 'driving_license' => 15, 'military_id' => 15], $de['validity']);
-        self::assertSame(['passport', 'driving_license', 'military_id'], $repo->findByCode(1, 'GBR')['doc_types']);
+        // Papiers du registre du mod (SseDocumentTypes) : titre de séjour (durée de la carte) et certificat d'immatriculation compris.
+        self::assertSame(['id_card' => 10, 'passport' => 10, 'driving_license' => 15, 'residence_permit' => 10, 'vehicle_registration' => 15, 'military_id' => 15], $de['validity']);
+        self::assertSame(['passport', 'driving_license', 'residence_permit', 'vehicle_registration', 'military_id'], $repo->findByCode(1, 'GBR')['doc_types']);
         self::assertNull($repo->findByCode(2, 'DEU'), 'autre communauté : rien d’imposé');
 
         // Rejouer : déjà présent ; archivé : rétabli ; édition : univers, MRZ et format verrouillés, pas de drapeau.
@@ -281,9 +282,9 @@ final class SseIdRealCountryTest extends TestCase
         self::assertFalse($by['DEU']['fictional']);
         self::assertSame('europe', $by['DEU']['zone']);
         self::assertSame('Deutschland', $by['DEU']['name_native']);
-        self::assertSame(['passport' => 10, 'driving_license' => 10, 'military_id' => 10], $by['GBR']['validity']);
+        self::assertSame(['passport' => 10, 'driving_license' => 10, 'residence_permit' => 10, 'vehicle_registration' => 10, 'military_id' => 10], $by['GBR']['validity']);
         self::assertSame(['#1C2541', '#C8102E'], $by['GBR']['colors']);
-        self::assertSame(['id_card', 'passport', 'driving_license', 'military_id'], $by['DEU']['doc_types']);
+        self::assertSame(['id_card', 'passport', 'driving_license', 'residence_permit', 'vehicle_registration', 'military_id'], $by['DEU']['doc_types']);
         self::assertFalse($by['ALT']['real_sim']);
         self::assertSame('', $by['ALT']['zone']);
     }

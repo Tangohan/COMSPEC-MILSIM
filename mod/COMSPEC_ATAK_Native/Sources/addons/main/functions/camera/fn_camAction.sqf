@@ -193,7 +193,7 @@ switch (_mode) do {
     case "srvReg": {
         if (!isServer) exitWith { false };
         private _list = (missionNamespace getVariable ["COMSPEC_ATAK_Cams", []]) select { !isNull _x && {_x isNotEqualTo _a} };
-        if (_b isEqualTo true && {!isNull _a} && {(typeOf _a) isEqualTo CAM_CLASS}) then {
+        if (_b isEqualTo true && {!isNull _a} && {_a isKindOf CAM_CLASS}) then {
             _list pushBack _a;
             if (isNil { _a getVariable "COMSPEC_ATAK_CamSrvEh" }) then {
                 _a setVariable ["COMSPEC_ATAK_CamSrvEh", true];

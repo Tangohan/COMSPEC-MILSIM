@@ -226,7 +226,8 @@ final class PlanService
 
     /**
      * « Envoyer en jeu » : retire en jeu les éléments déjà envoyés par ce plan, puis pose ceux du plan (ou d'une
-     * phase) dans le plan partagé du camp. Rien d'autre que le plan n'est envoyé.
+     * phase) dans le plan partagé du camp. Rien d'autre que le plan n'est envoyé. Une phase qui a un début dans la
+     * chronologie (meta.timeline.phases) est envoyée telle qu'elle est à cet instant (PlanTimeline::atTime).
      *
      * @param array<string, mixed> $plan
      * @return array{ok: bool, reason: string, sent: int, skipped: int, degraded: array<string, int>, commands: list<int>}
@@ -239,7 +240,14 @@ final class PlanService
         $planId = (int) $plan['id'];
         $tenantId = (int) $plan['tenant_id'];
         $mapId = (int) $plan['map_id'];
-        $items = PlanGameMapper::toGameItems($planId, $this->repo->elements($planId), $phaseUid);
+        $elements = $this->repo->elements($planId);
+        // Phase placée dans le temps : chaque élément est pris à sa position à cet instant, les absents sont écartés.
+        // Plan entier (ou phase sans début) : position de base ; masqués et « non posés » écartés par le traducteur.
+        $start = $phaseUid !== null ? PlanTimeline::phaseStart(is_array($plan['meta'] ?? null) ? $plan['meta'] : [], $phaseUid) : null;
+        if ($start !== null) {
+            $elements = PlanTimeline::atTime($elements, $start);
+        }
+        $items = PlanGameMapper::toGameItems($planId, $elements, $phaseUid);
         if ($items === []) {
             return ['ok' => false, 'reason' => 'nothing_to_send', 'sent' => 0, 'skipped' => 0, 'degraded' => [], 'commands' => []];
         }

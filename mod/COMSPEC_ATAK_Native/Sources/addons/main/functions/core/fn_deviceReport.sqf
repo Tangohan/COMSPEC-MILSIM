@@ -19,6 +19,7 @@ if (_mode isEqualTo "export") exitWith {
         ["dust", (_n getOrDefault ["dust", 0]) call _r], ["prints", (_n getOrDefault ["prints", 0]) call _r],
         ["blood", ((_n getOrDefault ["blood", 0]) max (_n getOrDefault ["frameBlood", 0])) call _r],
         ["level", round (missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100])],
+        ["scr", ["export"] call comspec_atak_native_fnc_screenDamage],
         ["log", (_n getOrDefault ["log", []]) apply { format ["%1 · %2 : %3", _x select 0, _x select 1, _x select 2] }]
     ]
 };
@@ -57,6 +58,12 @@ _rows pushBack ["info", "Écran", [[(_dmg max (_pix * 0.6) max (_scr * 0.3)), _s
     ["gps", "GPS", { params ["_v"]; [format ["imprécis (±%1 m)", round (15 + 85 * _v)], "hors service"] select (_v >= 1) }],
     ["antenna", "Antenne", { params ["_v"]; format ["signal -%1 %%", round (75 * _v)] }]
 ];
+// Pannes de l'écran, une par ligne, en clair (fn_screenDamage « rows ») : bris de verre et pannes de dalle.
+private _scr = _m getOrDefault ["scr", []];
+if (_scr isEqualType [] && {(count _scr) >= 3} && {(_scr select 2) isNotEqualTo []}) then {
+    _rows pushBack ["text", "<t size='0.85' color='#c9d4cf'>Pannes de l'écran</t>"];
+    _rows append (["rows", _scr] call comspec_atak_native_fnc_screenDamage);
+};
 private _dirt = [];
 if ((["dust"] call _g) > 0.1) then { _dirt pushBack "poussiéreux"; };
 if ((["prints"] call _g) > 0.1) then { _dirt pushBack "traces de doigts"; };

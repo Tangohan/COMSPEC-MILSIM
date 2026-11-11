@@ -13,6 +13,8 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 require __DIR__ . '/_document_svg.php';
 $lang = function_exists('locale') ? locale() : 'fr';
 $name = 'specimen-' . preg_replace('/[^A-Za-z0-9-]/', '', (string) $doc['ref']);
+// Papier à une seule face (passeport, certificat d'immatriculation) : pas de verso.
+$twoSides = \App\Support\SseDocumentTypes::sides((string) ($doc['doc_type'] ?? '')) === 2;
 ?>
 <!doctype html>
 <html lang="<?= $h($lang) ?>">
@@ -32,7 +34,7 @@ $name = 'specimen-' . preg_replace('/[^A-Za-z0-9-]/', '', (string) $doc['ref']);
             <div class="opx-specimen__acts" data-opx-specimen="<?= $h($name) ?>">
                 <button type="button" class="opx-specimen__btn opx-specimen__btn--primary" data-opx-print>Imprimer ou enregistrer en PDF</button>
                 <button type="button" class="opx-specimen__btn" data-opx-png="recto">Image du recto (PNG)</button>
-                <button type="button" class="opx-specimen__btn" data-opx-png="verso">Image du verso (PNG)</button>
+                <?php if ($twoSides): ?><button type="button" class="opx-specimen__btn" data-opx-png="verso">Image du verso (PNG)</button><?php endif; ?>
                 <a class="opx-specimen__btn" href="<?= $h(url('operateur/identite/documents')) ?>">Retour à mes papiers</a>
             </div>
         </header>
@@ -40,10 +42,12 @@ $name = 'specimen-' . preg_replace('/[^A-Za-z0-9-]/', '', (string) $doc['ref']);
             <?= $opxDocSvg($doc, 'recto', $doc['photo_data'] ?? null) ?>
             <figcaption>Recto</figcaption>
         </figure>
+        <?php if ($twoSides): ?>
         <figure class="opx-specimen__face" data-opx-face="verso">
             <?= $opxDocSvg($doc, 'verso', $doc['photo_data'] ?? null) ?>
             <figcaption>Verso</figcaption>
         </figure>
+        <?php endif; ?>
     </main>
     <script src="<?= $h(asset_url('assets/js/operateur-hub.js')) ?>" defer></script>
 </body>

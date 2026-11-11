@@ -113,6 +113,8 @@ $historyLabels = [
     <?php else: ?>
         <?php require __DIR__ . '/_tab_' . ($idTab === 'documents' ? 'documents' : ($idTab === 'couverture' ? 'couverture' : 'identites')) . '.php'; ?>
 
+        <?php if ($idTab !== 'couverture') { require __DIR__ . '/_photo_guide.php'; } ?>
+
         <?php if ($idHistory !== []): ?>
             <section class="dash-zone" aria-labelledby="opx-history-title">
                 <div class="dash-zone__inner">

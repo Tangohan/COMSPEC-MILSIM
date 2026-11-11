@@ -46,8 +46,27 @@ if ((_amount > 0 || {(count _parts) > 0}) && {_dmg < 1}) then {
         case ((_w find "eau") >= 0): { [["l_ink", 3], ["tint", 3], ["flicker", 1], ["l_pixels", 2]] };
         default { [["g_scratch", 3], ["g_web", 2], ["l_pixels", 2], ["l_hlines", 2], ["tint", 3]] };
     };
+    // Bris d'écran réalistes (fn_screenDamage) : la cause donne des impacts posés sur le verre et des pannes de dalle ;
+    // les anciens calques de verre (g_*) ne sont alors plus tirés (les impacts les remplacent).
+    private _cause = switch (true) do {
+        case ((_w find "balle") >= 0): { "bullet" };
+        case ((_w find "éclat") >= 0): { "frag" };
+        case ((_w find "chute") >= 0): { "fall" };
+        case ((_w find "accident") >= 0): { "crash" };
+        case ((_w find "explosion") >= 0): { "blast" };
+        case ((_w find "eau") >= 0): { "water" };
+        case ((_w find "impulsion") >= 0): { "emp" };
+        case ((_w find "chaleur") >= 0 || {(_w find "feu") >= 0}): { "heat" };
+        case ((_w find "impact") >= 0): { "shock" };
+        default { "fall" };
+    };
+    if ((["level"] call comspec_atak_native_fnc_screenDamage) > 0) then {
+        ["cause", [_cause, _amount, _parts]] call comspec_atak_native_fnc_screenDamage;
+        _table = _table select { ((_x select 0) select [0, 2]) isNotEqualTo "g_" };
+    };
     private _fxList = _n getOrDefault ["fx", []];
     for "_i" from 1 to ([1, 2] select (_amount >= 0.2)) do {
+        if (_table isEqualTo []) exitWith {};
         private _pick = selectRandom _table;
         if ((count _fxList) < 7 && {(_fxList findIf { (_x select 0) isEqualTo (_pick select 0) }) < 0}) then {
             _fxList pushBack [_pick select 0, floor random (_pick select 1)];

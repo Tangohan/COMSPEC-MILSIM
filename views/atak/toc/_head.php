@@ -14,6 +14,14 @@
  */
 $h = static fn ($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $a = static fn (string $p): string => function_exists('asset_url') ? asset_url($p) : url($p);
+$tocSymbols = \App\Services\AtakToc\TocSymbols::forClient();
+if (function_exists('locale') && locale() === 'en') {
+    // Libellés des genres de symbole : données envoyées au script, traduites ici (le dictionnaire du navigateur ne
+    // contient que les textes écrits dans les scripts).
+    foreach ($tocSymbols['kinds'] as $k => $kind) {
+        $tocSymbols['kinds'][$k]['label'] = \App\Support\HtmlTranslator::translateText((string) $kind['label']);
+    }
+}
 $tocBoot = [
     'base' => rtrim(url(''), '/'),
     'terrains' => $tocTerrains ?? [],
@@ -22,6 +30,8 @@ $tocBoot = [
     'canManage' => !empty($tocCanManage),
     'csrf' => (string) ($tocCsrf ?? ''),
     'catalog' => $tocCatalog ?? [],
+    'symbols' => $tocSymbols,
+    'userId' => (int) (\App\Core\Session::get('user_id') ?? 0),
 ] + (is_array($tocExtraBoot ?? null) ? $tocExtraBoot : []);
 ?>
 <meta charset="utf-8">
@@ -43,4 +53,6 @@ $tocBoot = [
 <script src="<?= $h($a('assets/js/toc/toc-geo.js')) ?>" defer></script>
 <script src="<?= $h($a('assets/js/toc/toc-map.js')) ?>" defer></script>
 <script src="<?= $h($a('assets/js/toc/toc-plan-render.js')) ?>" defer></script>
+<script src="<?= $h($a('assets/js/toc/toc-tracks.js')) ?>" defer></script>
+<script src="<?= $h($a('assets/js/toc/toc-overlay.js')) ?>" defer></script>
 <script src="<?= $h($a('assets/js/toc/toc-layers.js')) ?>" defer></script>

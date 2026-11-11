@@ -42,7 +42,8 @@ window.TocMap = (function () {
       zoomSnap: 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 90, preferCanvas: false, keyboard: true, boxZoom: true
     });
     map.attributionControl.setPrefix(false);
-    L.control.zoom({ position: 'bottomright', zoomInTitle: 'Rapprocher', zoomOutTitle: 'Éloigner' }).addTo(map);
+    // opts.controls === false : la page fournit ses propres commandes de carte (console du poste).
+    if (opts.controls !== false) L.control.zoom({ position: 'bottomright', zoomInTitle: 'Rapprocher', zoomOutTitle: 'Éloigner' }).addTo(map);
     function toLL(p) { return L.latLng(p[1] + oy, p[0] + ox); }
     function toWorld(ll) { return [ll.lng - ox, ll.lat - oy]; }
 
@@ -60,7 +61,7 @@ window.TocMap = (function () {
     map.createPane('tocGrid');
     map.getPane('tocGrid').style.zIndex = 300;
     map.getPane('tocGrid').style.pointerEvents = 'none';
-    var veil = L.rectangle([toLL([-5000, -5000]), toLL([world + 5000, world + 5000])], { pane: 'tocVeil', stroke: false, fillColor: '#070a0d', fillOpacity: 0.35, interactive: false }).addTo(map);
+    var veil = L.rectangle([toLL([-5000, -5000]), toLL([world + 5000, world + 5000])], { pane: 'tocVeil', stroke: false, fillColor: '#070a0d', fillOpacity: 0.18, interactive: false }).addTo(map);
 
     /* Pyramide de tuiles en mètres Arma (côté = tileSize / factor), chargée à la demande. */
     var photo = { spec: null, tiles: {}, timer: null };
@@ -167,7 +168,7 @@ window.TocMap = (function () {
     northEl.className = 'toc-north';
     northEl.setAttribute('aria-hidden', 'true');
     northEl.innerHTML = '<svg width="18" height="20" viewBox="0 0 18 20"><path d="M9 1 L16 18 L9 13 L2 18 Z" fill="none" stroke="#e8eef2" stroke-width="2"/></svg><span>N</span>';
-    container.parentNode.appendChild(northEl);
+    if (opts.controls !== false) container.parentNode.appendChild(northEl);
     function metersPerPixel() {
       var b = map.getBounds();
       return (b.getEast() - b.getWest()) / Math.max(1, map.getSize().x);

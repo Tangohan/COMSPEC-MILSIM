@@ -51,6 +51,31 @@
     if (auto && typeof auto.showModal === 'function') { auto.showModal(); }
   }
 
+  // ---- Aide « Comment faire ma photo ? » : copie du prompt (langue du bouton), variantes cochées ajoutées à la fin
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-opx-copy-prompt]');
+    if (!btn) { return; }
+    var lang = btn.getAttribute('data-opx-copy-prompt');
+    var scope = btn.closest('dialog') || document;
+    var source = scope.querySelector('[data-opx-prompt-text="' + lang + '"]');
+    if (!source) { return; }
+    var text = source.value;
+    scope.querySelectorAll('[data-opx-variant-' + lang + ']:checked').forEach(function (box) {
+      text += ' ' + box.getAttribute('data-opx-variant-' + lang);
+    });
+    var ok = scope.querySelector('[data-opx-copy-ok]');
+    var fail = scope.querySelector('[data-opx-copy-fail]');
+    var done = function (success) {
+      if (ok) { ok.hidden = !success; }
+      if (fail) { fail.hidden = success; }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+    } else {
+      done(false);
+    }
+  });
+
   // ---- Recherche d'un outil
   var hub = document.querySelector('[data-opx-hub]');
   if (hub) {
