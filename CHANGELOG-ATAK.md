@@ -55,6 +55,24 @@ EN : A TOC console and operation plans on Athena
 - Pages `/atak/toc` et `/atak/toc/plans`, droits `atak.toc.use` et `atak.toc.manage`, étapes 4370 et 4380. Détail : `docs/TOC-WEB.md`.
 - Lien avec le jeu par les canaux existants (BriefingPlan.Push canal `toc_room`, commandes web genre `toc`) : branche du mod `feat/atak-toc-web-sync`, sans changement de COMSPEC Link.
 
+## Pack 4.7.2 Washington : le poste TOC sur le PC s'affiche de nouveau (ATAK natif 4.7.2.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : correctif
+FR : ATAK 4.7.2 : le poste TOC sur le PC s'affiche de nouveau
+- Le PC du poste TOC s'ouvre de nouveau avec ses onglets, ses boutons et sa barre de dessin.
+- La carte du PC montre de nouveau le poste et les groupes du camp, sans message d'erreur à l'écran.
+EN : ATAK 4.7.2: the TOC post shows on the PC again
+- The TOC post PC opens again with its tabs, its buttons and its drawing bar.
+- The PC map shows the post and the side's groups again, with no error message on screen.
+
+### Détail technique
+- Journal de TTRD (4.7.1) : 216 fois « 0 éléments fournis, 4 attendus » à `fn_tocLaptop.sqf` ligne 1942, et à chaque ouverture du PC « setVariable : Type Booléen » ligne 166, sans la ligne « PC du poste … ouvert ».
+- Carte : `_sideRgb` lue aux lignes 1942, 1961 et 1962 du mode `draw` sans être définie. Sa définition, en tête du fichier, avait été retirée par la refonte du thème (4.5.0, `bfc4ca42c`) ; elle est remise dans `draw`, tirée du jeton `friend` du thème comme dans `fn_tocSat`.
+- Ouverture : le fichier finit par `true`, donc le mode `mk` rendait `true` au lieu du contrôle créé ; `fn_tocDraw` (ligne 38) le passait à `tip`, l'erreur arrêtait l'ouverture du PC. `mk` et `audit` rendent maintenant leur valeur (`_ret`), et `tip` ignore ce qui n'est pas un contrôle.
+- `tools/sqf_undefined_local_check.py` (nouveau) : variables locales lues sans définition dans leur fichier, casse ignorée, variables du moteur exclues. Sur les 2 134 fichiers des mods : un seul cas, celui-ci. Test `SqfUndefinedLocalAssetTest` (même règle en PHP).
+- Non vérifié en jeu.
+
 ## Pack 4.7.1 Washington : menu ACE des écrans du TOC réparé, écran qui se règle tout seul à la pose, salle TOC posée en entier (ATAK natif 4.7.1.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 
 ### Résumé joueur
