@@ -1204,6 +1204,10 @@ private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_toc_cam_range", "SLIDER",
     ["Distance d'activation des caméras d'écran (m)", "Un écran TOC en affichage caméra ne montre l'image en direct qu'aux joueurs plus proches que cette distance et qui le regardent. Plus loin, il montre la carte et le flux du poste."],
     _loc, [10, 150, 40, 0], 1] call comspec_atak_native_fnc_addSetting;
+// Vue satellite des écrans TOC et du PC du poste (fn_tocSat) : réglage de chaque joueur.
+["comspec_atak_native_toc_sat_quality", "LIST",
+    ["Qualité de la vue satellite", "Coût de la vue satellite des écrans TOC et du PC du poste sur votre PC. Basse (par défaut) : petite image, 2 images par seconde sur un écran du mur, 5 sur l'écran que vous regardez de près. Moyenne : image plus fine de près. Haute : image fine partout, plus fluide. Désactivée : aucune image satellite, l'écran l'indique. Exemple : passez en Basse ou Désactivée si le jeu saccade dans la salle TOC."],
+    _loc, [[0, 1, 2, 3], ["Désactivée", "Basse", "Moyenne", "Haute"], 1], 0] call comspec_atak_native_fnc_addSetting;
 // Écrans TOC posés dans le monde (fn_tocScreen « tick ») : réglage de chaque joueur (son PC, ses images par seconde).
 ["comspec_atak_native_toc_view_range", "SLIDER",
     ["Distance d'affichage des écrans TOC (m)", "Un écran TOC n'est dessiné et rafraîchi que si vous êtes plus près que cette distance, à peu près face à lui et sans mur entre vous. Un peu plus loin, il garde sa dernière image ; au-delà, il se met en veille : ni calcul ni caméra. Les caméras d'écran suivent aussi cette distance. Exemple : 25 m pour une salle d'opérations, 60 m pour un grand écran dehors."],

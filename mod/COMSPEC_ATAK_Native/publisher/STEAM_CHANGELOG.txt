@@ -10,6 +10,7 @@
 [*] [b]Mire[/b] : un écran sans source affiche une mire de barres de couleur avec son titre et l'heure.
 [*] [b]Aucun signal[/b] : un écran sans données affiche une carte fixe AUCUN SIGNAL au lieu d'un contenu à moitié vide.
 [*] [b]Écrans qui ne clignotent plus[/b] : la vue satellite, les caméras et les écrans à moitié cachés ne s'éteignent plus et ne se rallument plus sans arrêt.
+[*] [b]Vue satellite plus légère[/b] : la vue satellite ne fait plus saccader le jeu, et un réglage « Qualité de la vue satellite » (Désactivée, Basse, Moyenne, Haute) permet de l'alléger encore.
 [*] [b]Zeus[/b] : poser un module TOC en Zeus ne vous ramène plus à la vue de votre personnage.
 [*] [b]Module Écran TOC[/b] : chaque usage pose un nouvel écran ; « Retirer » est un choix à part, jamais proposé d'office.
 [*] [b]Textes des bandeaux[/b] : les lettres ne sont plus étirées ni coupées ; un texte court reste centré, un texte long défile.
@@ -31,6 +32,7 @@
 [*] [b]Test card[/b]: a screen without a source shows a colour-bar test card with its title and the time.
 [*] [b]No signal[/b]: a screen without data shows a steady NO SIGNAL card instead of half-empty content.
 [*] [b]Screens no longer flicker[/b]: the satellite view, cameras and half-hidden screens no longer switch off and on endlessly.
+[*] [b]Lighter satellite view[/b]: the satellite view no longer makes the game stutter, and a "Satellite view quality" setting (Disabled, Low, Medium, High) lets you lighten it further.
 [*] [b]Zeus[/b]: placing a TOC module in Zeus no longer throws you back to your character's view.
 [*] [b]TOC Screen module[/b]: every use places a new screen; "Remove" is a separate choice, never offered by default.
 [*] [b]Strip texts[/b]: letters are no longer stretched or cut; a short text stays centred, a long text scrolls.

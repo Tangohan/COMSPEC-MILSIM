@@ -222,6 +222,40 @@ final class AtakTocManagerBroadcastAssetTest extends TestCase
         }
     }
 
+    /** « Ça freeze de fou, la vue SAT » : budget par qualité, visée et cibles relues par intervalles, soupape. */
+    public function testVueSatelliteBudgetParQualite(): void
+    {
+        $sat = self::read(self::TOC . 'fn_tocSat.sqf');
+        $budget = self::table($sat, '_budget');
+        self::assertCount(4, $budget);
+        // Désactivée : aucun rendu. Basse (défaut) : jamais la grande image, 2 images par seconde au mur, 5 de près.
+        self::assertSame(['', '', ''], array_slice($budget[0], 0, 3));
+        self::assertNotContains('H', array_slice($budget[1], 1, 2));
+        self::assertSame('L', $budget[1][1]);
+        self::assertGreaterThanOrEqual(0.5, $budget[1][3]);
+        foreach (array_slice($budget, 1) as $row) {
+            self::assertGreaterThanOrEqual(0.15, $row[4], 'jamais plus de 7 images par seconde');
+            self::assertGreaterThanOrEqual($row[4], $row[3]);
+        }
+        self::assertStringContainsString('missionNamespace getVariable ["comspec_atak_native_toc_sat_quality", 1]', $sat);
+        // Visée relue 5 fois par seconde au plus, cibles gardées 0,3 s : plus rien de lourd à chaque image du jeu.
+        self::assertStringContainsString('if (diag_tickTime - (_goal select 0) > 0.2) then {', $sat);
+        self::assertStringContainsString('if (diag_tickTime - (_tgh select 0) < 0.3) exitWith { _tgh select 1 };', $sat);
+        // Soupape : image de plus de 4 ms, intervalle doublé (4 fois au plus) pendant 30 s.
+        self::assertStringContainsString('if (_a <= 0.004) exitWith { false };', $sat);
+        self::assertStringContainsString('[(_k * 2) min 4, diag_tickTime + 30]', $sat);
+        $brd = self::read(self::TOC . 'fn_tocBoard.sqf');
+        self::assertStringContainsString('>= (["interval", _lo] call comspec_atak_native_fnc_tocSat)', $brd);
+        self::assertStringContainsString('["cost", diag_tickTime - _lt0] call comspec_atak_native_fnc_tocSat;', $brd);
+        // Réglage du joueur, expliqué avec un exemple, Basse par défaut.
+        $pre = self::read(self::MAIN . 'XEH_preInit.sqf');
+        self::assertStringContainsString('["comspec_atak_native_toc_sat_quality", "LIST",', $pre);
+        self::assertStringContainsString('[[0, 1, 2, 3], ["Désactivée", "Basse", "Moyenne", "Haute"], 1]', $pre);
+        self::assertSame(1, preg_match('/Qualité de la vue satellite", "[^"]*Exemple : /u', $pre));
+        $en = self::read(self::MAIN . 'i18n/en.txt');
+        self::assertStringContainsString('["Qualité de la vue satellite", "Satellite view quality"]', $en);
+    }
+
     public function testNomDuModeleJamaisEcritSurLImage(): void
     {
         $src = self::read(self::TOC . 'fn_tocBoard.sqf');

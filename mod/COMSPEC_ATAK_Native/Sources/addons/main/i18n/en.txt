@@ -1,6 +1,11 @@
 [
 ["ennemis blessés / pris", "enemy wounded / captured"],
 ["AMIS", "FRIENDLY"],
+["Qualité de la vue satellite", "Satellite view quality"],
+["Coût de la vue satellite des écrans TOC et du PC du poste sur votre PC. Basse (par défaut) : petite image, 2 images par seconde sur un écran du mur, 5 sur l'écran que vous regardez de près. Moyenne : image plus fine de près. Haute : image fine partout, plus fluide. Désactivée : aucune image satellite, l'écran l'indique. Exemple : passez en Basse ou Désactivée si le jeu saccade dans la salle TOC.", "Cost of the satellite view of TOC screens and of the post PC on your PC. Low (default): small image, 2 frames per second on a wall screen, 5 on the screen you look at closely. Medium: finer image up close. High: fine image everywhere, smoother. Disabled: no satellite image, the screen says so. Example: switch to Low or Disabled if the game stutters in the TOC room."],
+["Basse", "Low"],
+["Haute", "High"],
+["<t align='center' size='1.6' color='@text'>Vue satellite désactivée</t><br/><t align='center' size='1' color='@muted'>Réglage du joueur : Qualité de la vue satellite</t>", "<t align='center' size='1.6' color='@text'>Satellite view disabled</t><br/><t align='center' size='1' color='@muted'>Player setting: Satellite view quality</t>"],
 ["%1 ligne(s) cochée(s)", "%1 line(s) ticked"],
 ["%1 sources", "%1 sources available"],
 ["%1 · dalle %2/%3", "%1 · panel %2/%3"],
