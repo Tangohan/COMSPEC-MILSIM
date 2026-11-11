@@ -2327,6 +2327,16 @@
             <English>Access hint</English>
             <French>Indice d’accès</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2FA5F19D1C">
+            <Original>Update its papers when its identity changes</Original>
+            <English>Update its papers when its identity changes</English>
+            <French>Mettre à jour ses papiers quand son identité change</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1A65F5A343">
+            <Original>A renamed AI (Zeus, AI workshop, area AI) keeps papers in its new name. A paper already handed to a player keeps what is printed on it (the Zeus window says so). Unticked: its papers keep the old name.</Original>
+            <English>A renamed AI (Zeus, AI workshop, area AI) keeps papers in its new name. A paper already handed to a player keeps what is printed on it (the Zeus window says so). Unticked: its papers keep the old name.</English>
+            <French>Une IA renommée (Zeus, atelier IA, IA de la zone) garde des papiers à son nouveau nom. Un papier déjà remis à un joueur garde ce qui y est imprimé (la fenêtre du Zeus le signale). Décoché : ses papiers gardent l'ancien nom.</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_70E69E8648">
             <Original>Return kit papers on respawn</Original>
             <English>Return kit papers on respawn</English>
@@ -5383,6 +5393,21 @@
             <Original>Full guide: docs/guides/controle_identite.en.md</Original>
             <English>Full guide: docs/guides/controle_identite.en.md</English>
             <French>Guide complet : docs/guides/controle_identite.md</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_GUIDE_IDNAME_TITLE">
+            <Original>AI names and papers</Original>
+            <English>AI names and papers</English>
+            <French>Nom des IA et papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_GUIDE_IDNAME_DESC">
+            <Original>&lt;t color='#7fd08a'&gt;The name you give the AI is the name on its papers&lt;/t&gt;&lt;br/&gt;A name given in the AI workshop, the Zeus « Profil SSE » module, the Eden « Nom » and « Prénom » attributes or the « IA de la zone » window (Athena profile, kept element) becomes its identity. Its papers (name, sex, birth, number and MRZ of its country), its bubbles, SEEK II, the files and the Zeus analysis carry this name.&lt;br/&gt;No name given: the Arma unit name if it was chosen in Eden, otherwise an identity drawn once and kept for the whole game.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Renaming an AI&lt;/t&gt;&lt;br/&gt;Its papers are remade with its new name (setting « Mettre à jour ses papiers quand son identité change », ticked by default). A paper already handed to a player keeps what is printed on it: the AI workshop tells you.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Forged papers&lt;/t&gt;&lt;br/&gt;« Le rendre faux » (IA de la zone) or the « Faux papiers » kind: the paper carries another name, its true name stays the one you gave it (only you see it). An AI you named never gets a randomly drawn forgery.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;What players see&lt;/t&gt;&lt;br/&gt;« Inconnu » (Unknown) in the header and bubbles of « Parler à… » until they have learned its name: it said it, or they read it on its papers. The Zeus always sees it.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Country&lt;/t&gt;&lt;br/&gt;No country set: the mission's. If the name suggests another country, the AI workshop says so, without changing anything.</Original>
+            <English>&lt;t color='#7fd08a'&gt;The name you give the AI is the name on its papers&lt;/t&gt;&lt;br/&gt;A name given in the AI workshop, the Zeus « Profil SSE » module, the Eden « Nom » and « Prénom » attributes or the « IA de la zone » window (Athena profile, kept element) becomes its identity. Its papers (name, sex, birth, number and MRZ of its country), its bubbles, SEEK II, the files and the Zeus analysis carry this name.&lt;br/&gt;No name given: the Arma unit name if it was chosen in Eden, otherwise an identity drawn once and kept for the whole game.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Renaming an AI&lt;/t&gt;&lt;br/&gt;Its papers are remade with its new name (setting « Mettre à jour ses papiers quand son identité change », ticked by default). A paper already handed to a player keeps what is printed on it: the AI workshop tells you.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Forged papers&lt;/t&gt;&lt;br/&gt;« Le rendre faux » (IA de la zone) or the « Faux papiers » kind: the paper carries another name, its true name stays the one you gave it (only you see it). An AI you named never gets a randomly drawn forgery.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;What players see&lt;/t&gt;&lt;br/&gt;« Inconnu » (Unknown) in the header and bubbles of « Parler à… » until they have learned its name: it said it, or they read it on its papers. The Zeus always sees it.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Country&lt;/t&gt;&lt;br/&gt;No country set: the mission's. If the name suggests another country, the AI workshop says so, without changing anything.</English>
+            <French>&lt;t color='#7fd08a'&gt;Le nom que vous donnez à l'IA est celui de ses papiers&lt;/t&gt;&lt;br/&gt;Un nom donné dans l'atelier IA, le module Zeus « Profil SSE », les attributs Eden « Nom » et « Prénom » ou la fenêtre « IA de la zone » (profil Athena, élément gardé) devient son identité. Ses papiers (nom, sexe, naissance, numéro et MRZ de son pays), ses bulles, SEEK II, les fichiers et l'analyse du Zeus portent ce nom.&lt;br/&gt;Sans nom donné : le nom Arma de l'unité s'il a été choisi en Eden, sinon une identité tirée une fois et gardée toute la partie.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Renommer une IA&lt;/t&gt;&lt;br/&gt;Ses papiers sont refaits à son nouveau nom (réglage « Mettre à jour ses papiers quand son identité change », coché par défaut). Un papier déjà remis à un joueur garde ce qui y est imprimé : l'atelier IA vous le signale.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Faux papiers&lt;/t&gt;&lt;br/&gt;« Le rendre faux » (IA de la zone) ou la nature « Faux papiers » : le papier porte un autre nom, son vrai nom reste celui que vous lui avez donné (vous seul le voyez). Une IA que vous avez nommée ne reçoit jamais un faux tiré au hasard.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Ce que voient les joueurs&lt;/t&gt;&lt;br/&gt;« Inconnu » dans l'en-tête et les bulles de « Parler à… » tant qu'ils n'ont pas appris son nom : elle l'a dit, ou ils l'ont lu sur ses papiers. Le Zeus le voit toujours.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Pays&lt;/t&gt;&lt;br/&gt;Pays non précisé : celui de la mission. Si le nom fait penser à un autre pays, l'atelier IA le suggère, sans rien changer.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_GUIDE_IDNAME_TIP">
+            <Original>Setting: COMSPEC SSE › Identité › Mettre à jour ses papiers quand son identité change.</Original>
+            <English>Setting: COMSPEC SSE › Identité › Mettre à jour ses papiers quand son identité change.</English>
+            <French>Réglage : COMSPEC SSE › Identité › Mettre à jour ses papiers quand son identité change.</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_GUIDE_AIZONE_TITLE">
             <Original>Area AI (AI workshop)</Original>
