@@ -22,6 +22,7 @@ class CfgFunctions {
             class edenInitEntity {};
             class edenAiProfiles {};
             class edenDocTypes {};
+            class edenCountries {};
             class domexGetNode {};
             class domexApplyObject {};
         };
@@ -62,6 +63,12 @@ class Cfg3DEN {
             attributeSave = "['save', _this controlsGroupCtrl 100] call comspec_sse_fnc_edenDocTypes";
             class Controls: Controls { class Title: Title {}; class Value: Value {}; };
         };
+        // Pays des papiers (registre CfgComspecCountries : pays réels, puis pays fictifs d'Arma) : comspec_sse_fnc_edenCountries.
+        class COMSPEC_SSE_CountryCombo: Combo {
+            attributeLoad = "['load', [_this controlsGroupCtrl 100, _value]] call comspec_sse_fnc_edenCountries";
+            attributeSave = "['save', _this controlsGroupCtrl 100] call comspec_sse_fnc_edenCountries";
+            class Controls: Controls { class Title: Title {}; class Value: Value {}; };
+        };
     };
     // Groupe entier : même réglage pour chaque unité, repris à son apparition (fn_idRegistry « kit »).
     class Group {
@@ -87,6 +94,15 @@ class Cfg3DEN {
                         property = "COMSPEC_ID_GroupCarry";
                         control = "COMSPEC_SSE_DocTypeCombo";
                         expression = "if (isServer && {_value isNotEqualTo 'auto'}) then { _this setVariable ['COMSPEC_ID_GroupCarry', _value]; };";
+                        defaultValue = "'auto'";
+                        typeName = "STRING";
+                    };
+                    class COMSPEC_ID_GroupCountry {
+                        displayName = "$STR_COMSPEC_SSE_ID_SetCountry";
+                        tooltip = "$STR_COMSPEC_SSE_ID_GroupCountryTip";
+                        property = "COMSPEC_ID_GroupCountry";
+                        control = "COMSPEC_SSE_CountryCombo";
+                        expression = "if (isServer && {_value isNotEqualTo 'auto'}) then { _this setVariable ['COMSPEC_ID_GroupCountry', _value]; };";
                         defaultValue = "'auto'";
                         typeName = "STRING";
                     };

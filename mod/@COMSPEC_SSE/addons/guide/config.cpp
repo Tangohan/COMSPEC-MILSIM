@@ -86,6 +86,15 @@ class CfgHints {
             image = HINT_IMG;
             noImage = 0;
         };
+        class Countries {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_COUNTRIES_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_COUNTRIES_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_COUNTRIES_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_COUNTRIES_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
         class Extensions {
             displayName = "$STR_COMSPEC_SSE_GUIDE_EXTENSIONS_TITLE";
             displayNameShort = "$STR_COMSPEC_SSE_GUIDE_EXTENSIONS_TITLE";

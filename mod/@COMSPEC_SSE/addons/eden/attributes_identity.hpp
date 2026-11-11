@@ -6,7 +6,7 @@
       COMSPEC_ID_Carry    auto | none | card | passport | license | card_license | card_passport | military
                           | <clé de CfgComspecDocuments> (id_card, press_card… extensions comprises) | <clé1>,<clé2>
                           (liste dynamique COMSPEC_SSE_DocTypeCombo, comspec_sse_fnc_edenDocTypes)
-      COMSPEC_ID_Country  auto | ALT | TNA | LVN | MLD          COMSPEC_ID_Kind  civil | cover | forged
+      COMSPEC_ID_Country  auto | code du registre (FRA, DEU, USA… ; ALT, TNA, LVN, MLD)         COMSPEC_ID_Kind  civil | cover | forged
       COMSPEC_ID_Quality  0-100 (faux)          COMSPEC_ID_Profile  auto | civil | insurge | hvt | agent | policier (IA réalistes)
       COMSPEC_ID_Undercover  vrai : infiltré dès le début (couverture, fn_idCover)
     Automatique : les joueurs n'ont rien, les IA ont des papiers selon leur camp (réglages COMSPEC SSE › Identité).
@@ -58,22 +58,17 @@ class COMSPEC_SSE_Papiers {
                 class Rendu { name = "Se rend"; value = "rendu"; };
             };
         };
+        // Liste dynamique (fn_edenCountries) : Auto (selon la carte), pays réels, puis pays fictifs d'Arma ; anciennes valeurs
+        // (ALT, TNA, LVN, MLD) gardées.
         class COMSPEC_ID_Country {
             displayName = "$STR_COMSPEC_SSE_CFG_6A56979958";
-            tooltip = "$STR_COMSPEC_SSE_CFG_3DDBED6623";
+            tooltip = "$STR_COMSPEC_SSE_ID_UnitCountryTip";
             property = "COMSPEC_ID_Country";
-            control = "Combo";
+            control = "COMSPEC_SSE_CountryCombo";
             expression = "if (isServer && {_value isNotEqualTo 'auto'}) then { _this setVariable ['COMSPEC_ID_Country', _value]; };";
             defaultValue = "'auto'";
             typeName = "STRING";
             condition = "objectBrain";
-            class values {
-                class Auto { name = "$STR_COMSPEC_SSE_CFG_F8A3C37BEB"; value = "auto"; default = 1; };
-                class ALT { name = "$STR_COMSPEC_SSE_CFG_4FFC3A9C10"; value = "ALT"; };
-                class TNA { name = "$STR_COMSPEC_SSE_CFG_7336D48B54"; value = "TNA"; };
-                class LVN { name = "$STR_COMSPEC_SSE_CFG_300D164467"; value = "LVN"; };
-                class MLD { name = "$STR_COMSPEC_SSE_CFG_73B65B11ED"; value = "MLD"; };
-            };
         };
         class COMSPEC_ID_Kind {
             displayName = "$STR_COMSPEC_SSE_CFG_BD419A13FB";

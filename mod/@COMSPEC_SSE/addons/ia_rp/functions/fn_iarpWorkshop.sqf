@@ -7,6 +7,9 @@
       help [champ] · slider [idc, valeur]
       preset (charger le profil de bibliothèque) · generate (tirage local, champs verrouillés gardés) · test
       apply · applyGen (Zeus : un tirage par IA sélectionnée) · say (Zeus : faire dire une réplique) · import · export
+      status [texte] (ligne d'état ; papiers refaits dans le pays choisi, fn_iarpServer)
+    Pays des papiers : « Auto (selon la carte) », pays réels du registre (France, Allemagne, États-Unis…), séparateur, pays
+    fictifs d'Arma (Altis, Tanoa, Livonie, Malden) ; liste lue dans comspec_sse_fnc_idCountries.
       answers (fenêtre « Réponses de l'IA », fn_iarpAnswersUi) · current -> profil de la fenêtre · extra [réponses, evoke,
       banned] (repris de la fenêtre « Réponses de l'IA », appliqués avec le reste du profil)
     Rien n'est envoyé à Athena : import / export par copier-coller du texte du profil. Champs : fn_iarpProfile.
@@ -24,7 +27,14 @@ private _locks = [["name", 94760], ["role", 94761], ["lang", 94762], ["nerve", 9
 private _combos = [
     [94721, "role", ["auto", "civil", "insurge", "hvt", "agent", "policier"]],
     [94722, "lang", ["common", "local"]],
-    [94723, "country", ["auto", "ALT", "TNA", "LVN", "MLD"]],
+    [94723, "country", call {
+        // Pays réels du registre, puis "" (séparateur, lu « auto »), puis les pays fictifs d'Arma.
+        if (isNil "comspec_sse_fnc_idCountries") exitWith { ["auto", "ALT", "TNA", "LVN", "MLD"] };
+        private _all = [] call comspec_sse_fnc_idCountries;
+        private _o = ["ordered"] call comspec_sse_fnc_idCountries;
+        private _r = _o select { !((_all get _x) getOrDefault ["fictional", false]) };
+        ["auto"] + _r + [""] + (_o - _r)
+    }],
     [94736, "unlock", ["trust", "bribe", "keyword", "never"]]
 ];
 private _reacts = [[94731, "search"], [94732, "threat"], [94733, "bribe"], [94734, "order"]];
@@ -36,7 +46,7 @@ private _lines = { params ["_c"]; ((ctrlText (_c call _ctl)) splitString (_nl + 
 private _read = {
     private _p = createHashMap;
     _p set ["name", trim (ctrlText (94720 call _ctl))];
-    { _x params ["_idc", "_k", "_vals"]; private _i = lbCurSel (_idc call _ctl); _p set [_k, _vals select (_i max 0)]; } forEach _combos;
+    { _x params ["_idc", "_k", "_vals"]; private _i = lbCurSel (_idc call _ctl); private _v = _vals select (_i max 0); _p set [_k, [_v, "auto"] select (_v isEqualTo "")]; } forEach _combos;
     { _x params ["_k", "_idc"]; _p set [_k, round (sliderPosition (_idc call _ctl))]; } forEach _sliders;
     _p set ["story", ctrlText (94740 call _ctl)];
     _p set ["phrases", [94741] call _lines];
@@ -106,7 +116,7 @@ switch (_op) do {
         private _labels = createHashMapFromArray [
             ["role", ["W_RoleAuto", "W_RoleCivil", "W_RoleInsurge", "W_RoleHvt", "W_RoleAgent", "W_RolePolice"]],
             ["lang", ["W_LangCommon", "W_LangLocal"]],
-            ["country", ["W_CountryAuto", "W_CountryALT", "W_CountryTNA", "W_CountryLVN", "W_CountryMLD"]],
+            ["country", []],
             ["unlock", ["W_UnlockTrust", "W_UnlockBribe", "W_UnlockWord", "W_UnlockNever"]]
         ];
         {
@@ -114,6 +124,18 @@ switch (_op) do {
             private _c = _idc call _ctl;
             lbClear _c;
             { _c lbAdd (localize ("STR_COMSPEC_IARP_" + _x)); } forEach (_labels get _k);
+            // Pays : libellés du registre (langue du jeu), séparateur grisé avant les pays fictifs.
+            if (_k isEqualTo "country") then {
+                {
+                    private _i = _c lbAdd (switch (true) do {
+                        case (_x isEqualTo "auto"): { localize "STR_COMSPEC_IARP_W_CountryAutoMap" };
+                        case (_x isEqualTo ""): { localize "STR_COMSPEC_IARP_W_CountryFictional" };
+                        case (isNil "comspec_sse_fnc_idCountries"): { _x };
+                        default { ["label", [_x]] call comspec_sse_fnc_idCountries };
+                    });
+                    if (_x isEqualTo "") then { _c lbSetColor [_i, [0.6, 0.63, 0.68, 1]]; };
+                } forEach (_x select 2);
+            };
         } forEach _combos;
         {
             private _c = (_x select 0) call _ctl;
@@ -145,6 +167,7 @@ switch (_op) do {
         ["help", ["Intro"]] call comspec_sse_fnc_iarpWorkshop;
     };
     case "onUnload": { uiNamespace setVariable ["comspec_sse_iarpWsDisplay", displayNull]; };
+    case "status": { if (!isNull _d) then { (_a param [0, ""]) call _status; }; };
     case "answers": { if (!isNull _d) then { ["open", ["workshop"]] call comspec_sse_fnc_iarpAnswersUi; }; };
     case "current": { if (isNull _d) exitWith { createHashMap }; call _read };
     case "extra": {

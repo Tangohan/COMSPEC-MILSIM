@@ -2312,5 +2312,31 @@
             <English>An AI only talks about what she knows: a civilian with no knowledge never talks about weapons or armed groups. Your texts only replace her line: orders, lies, fear and papers follow the rules.</English>
             <French>Une IA ne parle que de ce qu'elle sait : un civil sans savoir ne parle jamais d'armes ni de groupes armés. Vos textes ne remplacent que sa réplique : ordres, mensonge, peur et papiers suivent les règles.</French>
         </Key>
+        <!-- Pays réels des papiers (registre CfgComspecCountries) -->
+        <Key ID="STR_COMSPEC_IARP_W_Country">
+            <Original>Country of the papers</Original>
+            <English>Country of the papers</English>
+            <French>Pays des papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_Country_D">
+            <Original>Country of the AI's papers and language: name, numbers, address, MRZ. Auto: by map. Example: Germany: a German Personalausweis and a few words of German. Papers already issued are redone in that country (except Athena papers).</Original>
+            <English>Country of the AI's papers and language: name, numbers, address, MRZ. Auto: by map. Example: Germany: a German Personalausweis and a few words of German. Papers already issued are redone in that country (except Athena papers).</English>
+            <French>Pays des papiers et de la langue de l'IA : nom, numéros, adresse, MRZ. Auto : selon la carte. Exemple : Allemagne : un Personalausweis allemand et quelques mots d'allemand. Papiers déjà délivrés : refaits dans ce pays (sauf ceux d'Athena).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_CountryAutoMap">
+            <Original>Auto (by map)</Original>
+            <English>Auto (by map)</English>
+            <French>Auto (selon la carte)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_CountryFictional">
+            <Original>— Fictional countries (Arma maps) —</Original>
+            <English>— Fictional countries (Arma maps) —</English>
+            <French>— Pays fictifs (cartes Arma) —</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_W_PapersRedone">
+            <Original>Papers redone in the chosen country: %1 AI(s). Athena papers kept: %2.</Original>
+            <English>Papers redone in the chosen country: %1 AI(s). Athena papers kept: %2.</English>
+            <French>Papiers refaits dans le pays choisi : %1 IA. Papiers d'Athena gardés : %2.</French>
+        </Key>
     </Package>
 </Project>
