@@ -146,8 +146,12 @@ final class SseIdentityUniqueTest extends TestCase
             self::assertStringContainsString('comspec_sse_fnc_idIdentityOf', self::read(self::A . $consumer), $consumer);
         }
         // Analyse du Zeus : plus le nom d'unité Arma.
+        // Fusion 4.4.0 : la liste en texte « Vrais papiers de … » est remplacée par la fenêtre Papiers de l'IA du Zeus
+        // (fix/sse-zeus-papiers) ; son en-tête prend le nom donné de fn_aiWho (identité unique), l'unité Arma en second.
         $server = self::read(self::A . 'identity/functions/fn_idServer.sqf');
-        self::assertStringContainsString('format ["Vrais papiers de %1 :", ["full", [_u]] call comspec_sse_fnc_idIdentityOf]', $server);
+        self::assertStringContainsString('["zeusPapers", [[_u, _pub] call comspec_sse_fnc_idZeusPapersData]] call _reply;', $server);
+        self::assertStringContainsString('_out set ["given", _w getOrDefault ["given", ""]];', self::read(self::A . 'identity/functions/fn_idZeusPapersData.sqf'));
+        self::assertStringContainsString('format ["UnitAs" call _L, _given, _un]', self::read(self::A . 'identity/functions/fn_idZeusPapers.sqf'));
         // Dossier SSE généré après coup : il reprend l'identité unique.
         self::assertStringContainsString('_entity getVariable ["comspec_sse_identity", []]', self::read(self::A . 'generator/functions/fn_applyAuthoredIdentity.sqf'));
     }

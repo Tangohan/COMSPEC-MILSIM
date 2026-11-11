@@ -214,12 +214,17 @@ if (_real) then {
         // Titre de séjour : la nationalité est celle d'un autre pays (ressortissant étranger).
         private _others = (["ordered", false] call comspec_sse_fnc_idCountries) - [_country];
         if (_others isNotEqualTo []) then {
-            private _o = _others select ((floor (("foreign" call _r) * (count _others))) min ((count _others) - 1));
+            // Personne d'un autre pays que celui qui délivre (identité unique, fn_idIdentityOf) : c'est sa nationalité.
+            private _idc = _ident getOrDefault ["country", ""];
+            private _o = if (!isNull _u && {_idc in _others}) then { _idc } else {
+                _others select ((floor (("foreign" call _r) * (count _others))) min ((count _others) - 1))
+            };
             _doc set ["nat", (_countries getOrDefault [_o, createHashMap]) getOrDefault ["mrz", _o]];
             _doc set ["natText", _o];
-            // Nom et lieu de naissance du pays d'origine (sauf nom imposé par le Zeus ou le paquet).
-            if ((_spec getOrDefault ["last", ""]) isEqualTo "" && {_kind in ["civil", "generated"]}) then {
-                private _fo = [_u, _key, "", _o] call comspec_sse_fnc_idGenerate;
+            // Papier sans personne (posé au sol) : nom et lieu de naissance du pays d'origine (sauf nom imposé par le Zeus
+            // ou le paquet). Une personne garde son identité unique : son nom est celui de ses autres papiers.
+            if (isNull _u && {(_spec getOrDefault ["last", ""]) isEqualTo ""} && {_kind in ["civil", "generated"]}) then {
+                private _fo = ["get", [objNull, _key, _o]] call comspec_sse_fnc_idIdentityOf;
                 { _doc set [_x, _fo get _x]; } forEach ["last", "first", "pob"];
                 _doc set ["trueLast", _fo get "last"];
                 _doc set ["trueFirst", _fo get "first"];
