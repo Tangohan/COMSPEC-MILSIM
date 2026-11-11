@@ -895,6 +895,8 @@ player addEventHandler ["Respawn", { missionNamespace setVariable ["COMSPEC_ATAK
 
 // Saleté de l'écran (fn_screenDirt, rendu fn_screenSurface) : poussière, pluie, traces de doigts, sang après un soin.
 [{ ["tick"] call comspec_atak_native_fnc_screenDirt; }, 5] call COMSPEC_ATAK_PfhSpread;
+// Bris d'écran réalistes (fn_screenDamage) : l'eau sous le verre sèche, usure lente en « réaliste ».
+[{ ["tick"] call comspec_atak_native_fnc_screenDamage; }, 10] call COMSPEC_ATAK_PfhSpread;
 ["ace_treatmentSucceded", {
     params [["_medic", objNull], ["_patient", objNull]];
     if (_medic isEqualTo player && {_patient isNotEqualTo player || {(player getVariable ["ace_medical_woundBleeding", 0]) > 0}}) then { ["treat", _patient] call comspec_atak_native_fnc_screenDirt; };

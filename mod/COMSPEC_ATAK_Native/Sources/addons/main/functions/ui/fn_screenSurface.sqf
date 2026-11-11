@@ -30,11 +30,15 @@ private _frame = ["frameBlood"] call _g;
 private _drops = ["drops"] call _g;
 private _scratch = _parts getOrDefault ["scratch", 0];
 private _pix = _parts getOrDefault ["pixels", 0];
-// Gouttes de pluie sur l'écran désactivées (TTRD, 1.82.0) : effet en cours de refonte (W.I.P), plus aucune goutte dessinée.
+// Gouttes de pluie (refaites : lentilles d'eau de tools/gen_screen_damage.py, posées par plaques, jamais en pavage) et
+// boue ; pannes du modèle fn_screenDamage (verre et dalle), dessinées par fn_screenFaults.
+private _mud = ["mud"] call _g;
+private _faults = ["list"] call comspec_atak_native_fnc_screenDamage;
+private _wetNow = _dirt && {(_n getOrDefault ["wetUntil", -1]) > time};
 private _stains = if (_dirt) then { _n getOrDefault ["stains", []] } else { [] };
 private _counts = [
     parseNumber (_dust > 0.08),
-    ceil (_prints * 6), count _stains, ceil (_frame * 4), 0,
+    ceil (_prints * 6), count _stains, ceil (_frame * 4), [0, 1 + parseNumber (_drops > 0.5)] select (_drops > 0.12), ceil (_mud * 3),
     ceil (_scratch * 8), ceil (_pix * 14), [0, 1 + floor ((_pix - 0.5) * 4)] select (_pix >= 0.5)
 ];
 // Verre (4.2.1) : reflet de la vitre (réglage CBA comspec_atak_native_glass_glare, aussi dans Réglages > Thème et écran)
@@ -56,7 +60,8 @@ private _corner = if (_tex3d) then { [] } else {
     ]) getOrDefault [_l getOrDefault ["model", "s7"], []]
 };
 private _seed = _n getOrDefault ["dirtSeed", 1];
-private _sig = format ["%1|%2|%3|%4|%5|%6|%7|%8", _counts, _seed, _rect, _phone, _l get "model", _stains apply { [_x select 0, _x select 1, round ((_x select 2) * 200), round ((_x select 3) * 200)] }, _glare, _l get "phoneTexture"];
+private _sig = format ["%1|%2|%3|%4|%5|%6|%7|%8|%9|%10", _counts, _seed, _rect, _phone, _l get "model", _stains apply { [_x select 0, _x select 1, round ((_x select 2) * 200), round ((_x select 3) * 200)] }, _glare, _l get "phoneTexture",
+    _faults apply { [_x select 0, _x select 1, _x select 4, round ((_x select 2) * 200), round ((_x select 3) * 200)] }, ["impact"] call comspec_atak_native_fnc_screenDamage];
 (uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) params ["_oldSig", "_ctrls"];
 if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}) then {
     // Anciens contrôles supprimés après la création des nouveaux (fin du bloc) : pas d'image sans reflet ni coins.
@@ -77,7 +82,7 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
             case "print": { format ["bloodc_print_%1", _var mod 4] };
             case "cover": { format ["bloodc_cover_%1_%2", _var mod 2, ["port", "land"] select _sl] };
             case "veil": { format ["bloodc_veil_0_%1", ["port", "land"] select _sl] };
-            default { format ["bloodc_%1_%2", _kind, _var mod ((createHashMapFromArray [["smear", 3], ["splat", 4], ["hand", 4], ["spatter", 3], ["pool", 4], ["run", 3], ["wipe", 3]]) getOrDefault [_kind, 2])] };
+            default { format ["bloodc_%1_%2", _kind, _var mod ((createHashMapFromArray [["smear", 3], ["splat", 4], ["hand", 4], ["spatter", 3], ["pool", 4], ["run", 3], ["wipe", 3], ["puddle", 1]]) getOrDefault [_kind, 2])] };
         };
     };
     private _pic = {
@@ -94,7 +99,10 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
         _c ctrlSetBackgroundColor _col;
         _ctrls pushBack [_kind, _c];
     };
-    _counts params ["_cDust", "_cPrints", "_cBlood", "_cFrame", "_cDrops", "_cScratch", "_cPix", "_cLines"];
+    _counts params ["_cDust", "_cPrints", "_cBlood", "_cFrame", "_cDrops", "_cMud", "_cScratch", "_cPix", "_cLines"];
+    // Ordre des calques, du fond vers l'œil (fn_screenDamage « layers ») : dalle, verre, liquides et saleté, sang,
+    // reflet, coins. Les pannes de dalle sont sous le verre : dessinées en premier.
+    ["build", "panel", _faults, _rect, _ratio, _l getOrDefault ["landscape", true], _ctrls, _pic, _box] call comspec_atak_native_fnc_screenFaults;
     // Pixels morts et lignes (sous la saleté, qui est sur le verre). Visibles à l'écran du jeu : amas de pixels de
     // 2 à 6 px plutôt qu'un point isolé, taches noires (dalle morte) et lignes de 2 à 4 px quand l'écran est très abîmé.
     for "_i" from 1 to _cPix do {
@@ -131,6 +139,8 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
         private _w = _len / _ratio;
         ["scratch", "#(argb,8,8,3)color(1,1,1,1)", _rx + (_rw - _w) * (call _rnd), _ry + _rh * (0.05 + 0.9 * call _rnd), _w, pixelH, 360 * call _rnd] call _pic;
     };
+    // Bris de verre : au-dessus de la dalle, sous la saleté et le sang (qui sont posés sur le verre).
+    ["build", "glass", _faults, _rect, _ratio, _l getOrDefault ["landscape", true], _ctrls, _pic, _box] call comspec_atak_native_fnc_screenFaults;
     if (_cDust > 0) then {
         ["dust", format ["dirt_dust_%1", _seed mod 2] call _tex, _rx, _ry, _rw, _rh] call _pic;
         // Coque aussi : poussière plus dense contre les arêtes, même cadre que la texture du modèle.
@@ -156,7 +166,14 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
     // traînées d'essuyage, le reste, coulures par-dessus.
     private _short = _rh min (_rw * _ratio);
     private _land = _l getOrDefault ["landscape", true];
-    private _layer = createHashMapFromArray [["veil", 0], ["cover", 1], ["pool", 2], ["wipe", 3], ["run", 5]];
+    // Boue : éclaboussures épaisses, posées une fois (graine de l'appareil), sous le sang.
+    for "_i" from 1 to _cMud do {
+        [8, _i] call _from;
+        private _s = _short * (0.3 + 0.3 * call _rnd);
+        private _w = _s / _ratio;
+        ["mud", format ["dirt_mud_%1", _i mod 2] call _tex, _rx + (_rw - _w) * (call _rnd), _ry + (_rh - _s) * (call _rnd), _w, _s, 360 * call _rnd] call _pic;
+    };
+    private _layer = createHashMapFromArray [["veil", 0], ["cover", 1], ["pool", 2], ["wipe", 3], ["seep", 4], ["run", 5], ["puddle", 6]];
     private _order = [];
     { _order pushBack [_layer getOrDefault [_x select 0, 4], _forEachIndex]; } forEach _stains;
     _order sort true;
@@ -181,12 +198,12 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
             };
         } else {
             private _h = _short * _size;
-            private _w = _h * ((createHashMapFromArray [["print", 0.5], ["drip", 0.5], ["drag", 0.5], ["run", 0.125], ["smear", 2], ["arterial", 2], ["wipe", 2]]) getOrDefault [_kind, 1]) / _ratio;
+            private _w = _h * ((createHashMapFromArray [["print", 0.5], ["drip", 0.5], ["drag", 0.5], ["run", 0.125], ["smear", 2], ["arterial", 2], ["wipe", 2], ["puddle", 4]]) getOrDefault [_kind, 1]) / _ratio;
             // Centre gardé dans l'écran (une grande tache ne déborde pas sur le décor) ; coulures : à leur place
             // exacte (segments bout à bout).
             private _cx = _rx + _rw * _sx;
             private _cy = _ry + _rh * _sy;
-            if (_kind isNotEqualTo "run") then {
+            if !(_kind in ["run", "puddle"]) then {
                 _cx = _cx max (_rx + (_w min _rw) / 2) min (_rx + _rw - (_w min _rw) / 2);
                 _cy = _cy max (_ry + (_h min _rh) / 2) min (_ry + _rh - (_h min _rh) / 2);
             };
@@ -208,10 +225,12 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
         private _fy = [_ry + (_rh - _h) * (call _rnd), _ry + (_rh - _h) * (call _rnd), _ry - _by - _h / 2, _ry + _rh + _by - _h / 2] select _side;
         ["frame", format ["bloodc_smear_%1", floor ((call _rnd) * 3)] call _tex, _fx, _fy, _w, _h, [90, 90, 0, 0] select _side] call _pic;
     };
+    // Pluie : une ou deux plaques de gouttes (carrées, tournées, à des places tirées une fois), par-dessus le sang.
     for "_i" from 1 to _cDrops do {
         [7, _i] call _from;
-        private _s = _rh * (0.012 + 0.022 * call _rnd);
-        ["drops", "dirt_drop" call _tex, _rx + (_rw - _s / _ratio) * (call _rnd), _ry + (_rh - _s) * (call _rnd), _s / _ratio, _s] call _pic;
+        private _s = _short * (0.8 + 0.2 * call _rnd);
+        private _w = _s / _ratio;
+        ["drops", format ["dirt_rain_%1", _i mod 2] call _tex, _rx + (_rw - _w) * (call _rnd), _ry + (_rh - _s) * (call _rnd), _w, _s, 90 * floor (4 * call _rnd)] call _pic;
     };
     // Reflet de la vitre : blanc, l'alpha de la texture dessine une bande douce en biais en haut à gauche ; opacité
     // faible, suivie plus bas (jour / nuit). Par-dessus la saleté, sous les coins.
@@ -258,7 +277,8 @@ private _style = (missionNamespace getVariable ["comspec_atak_native_blood_style
         case "caseDust": { _c ctrlSetTextColor [0.58, 0.51, 0.39, (0.05 + 0.5 * _dust) min 0.55]; };
         case "prints": { _c ctrlSetTextColor [0.82, 0.82, 0.76, 0.06 + 0.18 * _prints]; };
         case "frame": { _c ctrlSetTextColor [0.8, 0.7, 0.68, 0.55 + 0.4 * _frame]; };
-        case "drops": { _c ctrlSetTextColor [0.85, 0.92, 1, 0.35 + 0.3 * _drops]; };
+        case "drops": { _c ctrlSetTextColor [1, 1, 1, (0.3 + 0.6 * _drops) min 0.9]; };
+        case "mud": { _c ctrlSetTextColor [1, 1, 1, (0.5 + 0.5 * _mud) min 0.96]; };
         // Reflet : discret, plus faible la nuit (moins de lumière à refléter) ; jamais un voile sur la carte ou le texte.
         case "glass": { _c ctrlSetTextColor [1, 1, 1, 0.22 * (0.45 + 0.55 * sunOrMoon)]; };
         case "corner": {};
@@ -276,6 +296,11 @@ private _style = (missionNamespace getVariable ["comspec_atak_native_blood_style
                         private _want = [_base, "bloodd_" + (_base select [7])] select (_dry >= 0.6);
                         if ((_x param [3, _base]) isNotEqualTo _want) then { _c ctrlSetText (_want call _texPath); _x set [3, _want]; };
                     };
+                    if (_wetNow) then {
+                        // Sous la pluie ou à la sortie de l'eau : le sang se dilue en voile rosé, plus transparent.
+                        _c ctrlSetTextColor [1, 0.84, 0.88, _a * 0.62];
+                        continue;
+                    };
                     if (_dry < 0.6) then {
                         private _k = _dry / 0.6;
                         _c ctrlSetTextColor [1 - 0.25 * _k, 1 - 0.4 * _k, 1 - 0.45 * _k, _a * (1 - 0.08 * _k)];
@@ -288,6 +313,8 @@ private _style = (missionNamespace getVariable ["comspec_atak_native_blood_style
         };
     };
 } forEach _ctrls;
+// Bris de verre et pannes de dalle : lumière sur les arêtes, ligne qui clignote, tache qui grandit, eau qui bouge.
+if (_faults isNotEqualTo []) then { ["update", _ctrls select { ((_x select 0) select [0, 2]) isEqualTo "sf" }, _hp] call comspec_atak_native_fnc_screenFaults; };
 uiNamespace setVariable ["COMSPEC_ATAK_SurfOverlay", [_sig, _ctrls]];
 if ((count _ctrls) > 0) then {
     uiNamespace setVariable ["COMSPEC_ATAK_DevFront", true];

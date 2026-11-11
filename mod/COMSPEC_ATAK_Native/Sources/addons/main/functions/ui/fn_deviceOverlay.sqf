@@ -108,7 +108,11 @@ if (_lvl isEqualTo 0 && {!_broken}) then {
 };
 uiNamespace setVariable ["COMSPEC_ATAK_DevLook", _look];
 // Fêlures et encre : partiellement transparentes aux niveaux 1-2 pour que l'écran reste utilisable.
-private _showCrack = _lvl > 0 && {!_broken};
+// Bris d'écran réalistes (fn_screenDamage, réglage « Bris d'écran » autre que « désactivé ») : dès que l'appareil porte
+// des impacts enregistrés, ce sont eux qu'on voit (fn_screenFaults) ; l'ancienne toile plein écran et les traits
+// procéduraux ne restent que pour l'écran en morceaux (niveau 3, zones mortes) et pour un état sans impact enregistré.
+private _newGlass = (((["list"] call comspec_atak_native_fnc_screenDamage) findIf { (_x select 0) in ["hair", "web", "bull", "corner", "chip", "diag", "press", "bullet", "crush"] }) >= 0);
+private _showCrack = _lvl > 0 && {!_broken} && {!_newGlass || {_lvl >= 3}};
 _crack ctrlShow _showCrack;
 if (_showCrack) then {
     _crack ctrlSetText (((format ["crack_%1_%2", _lvl, _look get "crackVar"] call _tex)) call comspec_atak_native_fnc_tr);
@@ -208,12 +212,12 @@ if (_sig isNotEqualTo _deadSig) then {
 // Graine tirée au premier choc (COMSPEC_ATAK_DevLook) : même dessin d'une seconde à l'autre, nouveau après réparation.
 private _fxOn = ((_fx param [1, -1]) > diag_tickTime);
 private _crackFx = profileNamespace getVariable ["COMSPEC_ATAK_CrackFx", true];
-private _lsig = format ["%1|%2|%3|%4|%5|%6", _look getOrDefault ["seed", -1], _lvl, _broken, _ori, _rect, _crackFx];
+private _lsig = format ["%1|%2|%3|%4|%5|%6|%7", _look getOrDefault ["seed", -1], _lvl, _broken, _ori, _rect, _crackFx, _newGlass];
 if (_lsig isNotEqualTo _lineSig) then {
     { ctrlDelete _x; } forEach _lines;
     _lines = [];
     _lineSig = _lsig;
-    if ((_lvl > 0 || _broken) && {_crackFx}) then {
+    if ((_lvl > 0 || _broken) && {_crackFx} && {!_newGlass || _broken}) then {
         _rect params ["_rx", "_ry", "_rw", "_rh"];
         private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
         private _seed = _look getOrDefault ["seed", 0];
@@ -403,6 +407,12 @@ uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", [_crack, _black, _txt, _bloc
 [_hp] call comspec_atak_native_fnc_screenSurface;
 // Variantes de dégâts (fuite d'encre, rétroéclairage, arc-en-ciel de pression) et parasites du brouillage (fn_screenFx).
 [_hp] call comspec_atak_native_fnc_screenFx;
+// Bugs d'affichage passagers (fn_screenGlitch) : tirage de fond ; écran éteint, le bug en cours s'arrête.
+if (_off) then {
+    if ((uiNamespace getVariable ["COMSPEC_ATAK_Glitch", []]) isNotEqualTo []) then { ["stop"] call comspec_atak_native_fnc_screenGlitch; };
+} else {
+    ["bg", _hp] call comspec_atak_native_fnc_screenGlitch;
+};
 // Effets du Zeus (verrou, écran qui bugue, surchauffe) par-dessus tout ; écran éteint : rien à montrer.
 private _zOn = [] call comspec_atak_native_fnc_zeusOverlay;
 if (_zOn && {!_off}) then { [] call comspec_atak_native_fnc_overlayFront; };
