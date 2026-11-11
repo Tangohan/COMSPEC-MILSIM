@@ -194,7 +194,7 @@ final class AtakTocScreensPlacementAssetTest extends TestCase
         // Image d'aperçu dans la liste.
         self::assertStringContainsString('_c lbSetPicture [_i, _pic]', self::read(self::MAIN . 'functions/datalink/fn_zeusForm.sqf'));
         // Salle complète : chaque écran voulu passe sa classe.
-        self::assertStringContainsString('["spawn", [[_x0, _y0, _z0] call _at, _dir + 180, _cls,', self::read(self::MAIN . 'functions/toc/fn_tocHall.sqf'));
+        self::assertStringContainsString('_o = ["spawn", [ASLToATL _at, _d, _cls,', self::read(self::MAIN . 'functions/toc/fn_tocHallBuild.sqf'));
 
         // Chaque valeur du module est un écran du mod ou un écran déclaré (plus de classe absente du jeu).
         $tiers = self::read(self::MAIN . 'toc_screens_tiers.hpp');

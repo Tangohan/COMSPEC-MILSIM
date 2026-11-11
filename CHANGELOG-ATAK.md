@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : la salle TOC complète se pose en entier, au sol, dans Eden comme dans Zeus (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : La salle TOC complète se pose enfin en entier
+- Le module « Salle TOC complète » pose toute la salle sur le sol, dans Eden comme dans Zeus : mur d'images, grands écrans, bandeaux horloge et texte, plaques de nom, bureaux, chaises et PC, tous liés à la même salle. Plus d'écran seul qui flotte en l'air.
+- En extérieur ou sans mur, la salle se monte avec des écrans sur pied ; contre un mur et sous un plafond, elle utilise les écrans muraux et suspendus. Le Zeus lit le résultat dans sa ligne de retour, et la taille de chaque salle est écrite dans le module.
+EN : The complete TOC room is finally placed in full
+- The "Complete TOC room" module places the whole room on the ground, in Eden and in Zeus: video wall, big screens, clock and text strips, name plates, desks, chairs and computers, all linked to the same room. No more single screen floating in the air.
+- Outdoors or without a wall, the room is built with screens on stands; against a wall and under a ceiling, it uses the wall and hanging screens. The Zeus reads the result in the feedback line, and the size of each room is written in the module.
+
+### Détail technique
+- Retour d'un testeur (4.6.0) : « pas de salle, dans Eden comme dans Zeus, seulement un grand écran qui flotte en l'air ». Ancienne pose (`fn_tocHall` « spawnRoom ») : écrans muraux (mur d'images, 98 pouces, bandeau, plaques, origine au sol et dos au mur) et écran suspendu (à 3,2 m) posés à la hauteur du module, sans mur, sans plafond, sans recherche du sol ; salle sautée en entier dès qu'une salle du même nom figurait dans la sauvegarde de la carte (`saved`, clé carte + mission, la même pour toute mission d'essai non enregistrée) ; module Zeus sans le garde-fou du module Écran TOC ; rien n'est dessiné dans l'éditeur (seule l'icône du module, un écran, y apparaît).
+- `fn_tocHallBuild` (nouveau), seul constructeur pour Eden, Zeus et le repli : tables `_rooms` (S, M, L), `_dims`, `_furniture` ; sol sous le module puis sous chaque objet (`lineIntersectsSurfaces`), mur devant (à 1,5 m et 2,4 m du sol) et plafond (3 à 4,5 m) seulement sur un bâtiment ; sinon remplaçant sur pied de la table, ou objet non posé et dit au journal. Un pas par objet (`[COMSPEC TOC] salle | objet k/N classe=… ok | échec raison`), résumé final, résultat rendu au Zeus (`comspec_atak_native_tocHallDone`).
+- Petite : mur 2x2, bandeau horloge, 2 plaques, 2 postes. Moyenne : mur 3x2, deux 98 pouces, bandeaux horloge et texte à LED, 4 plaques, écran double suspendu, 3 postes. Grande : mur 4x3, deux 98 pouces, deux 136 pouces sur pied, bandeaux, 4 plaques, écran triple suspendu, 4 postes. Sans mur : 136 pouces sur pied (petite) ou mur LED 220 pouces sur portique, 98 pouces sur pied, horloge sur un écran sur trépied.
+- Reprise : la salle d'un module Eden est reconnue à ses écrans en place (même nom, à moins de 40 m, même carte), plus à son nom dans la sauvegarde ; reprise incomplète : retirée puis reposée. Attribut « Supprimer la salle avec le module ». Serveur plus ancien ou muet 8 s : le poste du Zeus pose la salle, non gardée.
+- Tests : `tests/Unit/AtakTocHallRoomAssetTest.php` ; en jeu : `["selfTest"] call comspec_atak_native_fnc_tocHallBuild`. Non vérifié en jeu : pose réelle dans Eden et Zeus, détection du mur et du plafond selon les bâtiments, hauteur des plateaux de bureau, serveur dédié, repli.
+
 ## À venir : le poste TOC du jeu relié au poste TOC web d'Athena, plans envoyés du site (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

@@ -1015,6 +1015,16 @@ class COMSPEC_ATAK_Module_TocHall: COMSPEC_ATAK_Module_DataBase {
                 class P4 { name = "$STR_COMSPEC_ATAK_CFG_TOCPC_C"; value = "COMSPEC_ATAK_TocPC_Curved"; };
             };
         };
+        // Module supprimé en cours de partie (Zeus, script) : sa salle part avec lui (fn_tocHallBuild « remove »).
+        class Bind {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCHALL_B_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCHALL_B_TIP";
+            property = "COMSPEC_ATAK_Module_TocHall_Bind";
+            control = "Checkbox";
+            expression = "_this setVariable ['Bind',_value,true];";
+            defaultValue = "true";
+            typeName = "BOOL";
+        };
     };
     class ModuleDescription {
         description = "$STR_COMSPEC_ATAK_CFG_TOCHALL_DESC";
