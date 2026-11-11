@@ -48,6 +48,7 @@ class CfgFunctions {
             class iarpName {};
             class iarpAnswers {};
             class iarpAnswersUi {};
+            class iarpZenHub {};
         };
     };
 };
@@ -209,7 +210,9 @@ class COMSPEC_SSE_RscCheckBox;
 class COMSPEC_SSE_RscSlider;
 class COMSPEC_SSE_RscButtonZeus;
 class COMSPEC_SSE_RscHeader;
+class COMSPEC_SSE_RscHeaderZeus;
 class COMSPEC_SSE_RscAccentLine;
+class COMSPEC_SSE_RscAccentLineZeus;
 class COMSPEC_SSE_RscText;
 class COMSPEC_SSE_RscLabel;
 class COMSPEC_SSE_RscButton;
@@ -224,3 +227,4 @@ class RscToolbox;
 #include "dialogs\iarp_terminal.hpp"
 #include "dialogs\iarp_workshop.hpp"
 #include "dialogs\iarp_answers.hpp"
+#include "dialogs\iarp_hub.hpp"

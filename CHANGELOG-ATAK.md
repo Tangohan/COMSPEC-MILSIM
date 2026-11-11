@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : un bouton SSE dans la fenêtre d'édition d'une IA en Zeus (SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Un bouton SSE dans la fenêtre d'édition d'une IA en Zeus
+- Double-cliquez sur une IA en Zeus : la fenêtre d'édition a maintenant un bouton **SSE**. Il ouvre une petite fenêtre au nom de l'IA avec ses papiers, ses réponses, ses émotions et son comportement au contrôle.
+- Ce que vous aviez déjà tapé dans la fenêtre d'édition n'est pas perdu : fermez la fenêtre SSE et vous la retrouvez telle quelle.
+EN : An SSE button in the edit window of an AI in Zeus
+- Double-click an AI in Zeus: the edit window now has an **SSE** button. It opens a small window named after the AI with its papers, its answers, its emotions and its behaviour at a check.
+- What you already typed in the edit window is not lost: close the SSE window and you find it as you left it.
+
+### Détail technique
+- La fenêtre « ÉDITER … » est celle de ZEN (`zen_attributes`, type d'affichage `Object`, boîte `zen_common_RscDisplayScrollbars`) ; les boutons TALENT, COMPÉTENCES, ARSENAL et ceux des autres mods (DÉTECTION, CARACTÉRISTIQUES) y sont posés par `zen_attributes_fnc_addButton`. Le SSE passe par la même porte (`ia_rp/fn_iarpZenHub` « register », depuis `XEH_postInitClient`), aucun fichier d'un autre mod touché. Visible pour une IA vivante seulement (`CAManBase`, pas un joueur), et seulement si le menu ZEN « SSE · Roleplay de l'IA » est posé.
+- Placement par ZEN : grille de 3 colonnes, pas de 5,1 × 1,1 cases pour des boutons de 5 × 1 : écart de 0,1 case dans les deux sens à toute taille d'interface et tout format, aucun chevauchement. Avec les 5 boutons de la capture, le bouton SSE est le 6e : 2e rangée, sous TALENT, à gauche de DÉTECTION.
+- Bouton sans fermeture (`closeDisplay` = false) : la fenêtre « SSE · <nom> » (`COMSPEC_SSE_IarpHub`, IDD 94900, `ia_rp/dialogs/iarp_hub.hpp`) s'empile par-dessus, comme les fenêtres COMPÉTENCES et TALENT de ZEN ; les saisies en attente restent, OK ou ANNULER de ZEN décident ensuite.
+- Entrées : les actions du menu ZEN `fn_iarpZen`, désormais rangées par identifiant dans `comspec_sse_iarpZenActs` (fiche « IA de la zone », vrais papiers, atelier IA, réponses, émotions quand la version les a, rôle et caractère, savoir et secrets) ; mêmes fenêtres et mêmes vérifications serveur, multijoueur compris. Une entrée sans action (addon identity absent…) n'est pas affichée. Sans ZEN : rien (la fenêtre est celle de ZEN). Eden : la fenêtre des attributs n'a pas de rangée de boutons, la catégorie « IA RP » garde son bouton « Atelier IA… ».
+- Chaînes `STR_COMSPEC_IARP_H_*` (FR, EN), manuel en jeu chapitre Zeus (`STR_COMSPEC_SSE_CFG_6E79CF4CEF`). Test : `SseZeusEditButtonAssetTest`. Non vu en jeu.
+
 ## SSE 1.9.0 : fenêtre « Réponses de l'IA » simple, peur d'une arme braquée de près, champs des documents (SSE 1.9.0)
 
 ### Résumé joueur
