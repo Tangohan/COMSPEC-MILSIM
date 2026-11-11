@@ -38,6 +38,30 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : bris d'écran réalistes, pannes de dalle, bugs d'affichage et sang plus crédible (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Un écran de téléphone qui casse comme un vrai
+- **Bris d'écran** : treize façons de casser le verre (fêlure fine, toile, coin écrasé, impact de balle, dalle écrasée, eau sous le verre…), posées là où le téléphone a été touché ; tournez-le, le dégât reste au même endroit du verre.
+- **Pannes et bugs sans verre cassé** : pixels morts ou bloqués, lignes de couleur, tache d'encre qui grandit, zone tactile morte, et des bugs d'une fraction de seconde après un choc, dans l'eau ou sous brouillage.
+- **Sang plus crédible** : plus sombre et translucide sur les bords, il se dilue sous la pluie, s'accumule en bas de l'écran et reste dans les fêlures après un coup de chiffon ; boue et gouttes de pluie s'y ajoutent.
+EN : A phone screen that breaks like a real one
+- **Screen damage**: thirteen ways to break the glass (hairline crack, spider web, crushed corner, bullet impact, crushed panel, water under the glass…), placed where the phone was hit; rotate it and the damage stays at the same place on the glass.
+- **Faults and glitches without broken glass**: dead or stuck pixels, coloured lines, a growing ink blot, a dead touch zone, and split-second glitches after a shock, in water or under jamming.
+- **More believable blood**: darker and translucent at the edges, it thins out in the rain, pools at the bottom of the screen and stays in the cracks after a wipe; mud and raindrops join in.
+
+### Détail technique
+- Modèle unique par appareil dans `COMSPEC_ATAK_Device` (`scr`, `scrSeed`, `scrN`) : `fn_screenDamage` (catalogue de 13 bris de verre, 13 pannes de dalle, 11 bugs ; causes balle, éclat, chute, accident, souffle, choc encaissé, eau, chaleur, IEM, brouillage, usure, froid, batterie faible, pression ; tirages reproductibles par appareil ; export / import ; diagnostic en clair dans le rapport de l'appareil ; `selftest`).
+- Rendu : `fn_screenFaults` (repère du verre en portrait, quart de tour en paysage, gabarits point / coin / bande / libre, jamais d'étirement, seconde passe décalée qui suit la lumière et le reflet, 90 contrôles au plus), appelé par `fn_screenSurface` dans l'ordre dalle, verre, saleté, sang, pluie, reflet, coins. `fn_screenGlitch` : un bug à la fois, 4 contrôles au plus, un seul gestionnaire `EachFrame` posé pendant le bug.
+- L'ancienne toile plein écran et ses traits ne restent que pour l'écran en morceaux ou sans impact enregistré ; réglage « Bris d'écran : réalisme » sur Désactivé = ancien rendu.
+- Réparation : kit (verre et dalle), nettoyage complet ou kit de nettoyage (film décollé, boue), redémarrage (bugs, un pixel bloqué sur deux), l'eau sous le verre sèche seule. Zeus : une entrée par bris, panne et bug, et « Retirer tous les bris et pannes ».
+- Réglages CBA (ATAK · Simulation) : `screen_fx_level`, `panel_faults`, `screen_glitch`, `screen_impact`, `screen_fault_rate`, `screen_glitch_rate` ; aussi dans le panneau de réalisme.
+- Sang : `gen_screen_fx.py` (film rouge profond sans liseré clair, ménisque rosé au lieu des reflets ronds, craquelures aux cellules inégales, grandes taches en 512 px), genres `seep` et `puddle`, voile rosé sous la pluie (`wetUntil`), boue (`mud`), gouttes de pluie refaites. Textures : `gen_screen_damage.py` (dessins d'origine) ; maquettes : `gen_screen_mockups.py`. Données de l'addon : +7,5 Mo.
+- Pas d'attribut Eden (il n'existe pas d'attribut d'appareil ; les textes d'Eden passent par les stringtables). Tests : `AtakScreenDamageAssetTest`.
+
+---
+
 ## Pack 4.5.0 Washington : rendu professionnel des écrans TOC et du PC du poste, satellite devenu console ISR (ATAK natif 4.5.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 
 ### Résumé joueur
