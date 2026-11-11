@@ -46,6 +46,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; }
 body.toc-body {
   background: var(--toc-bg0);
@@ -200,7 +201,7 @@ body.toc-body {
 .toc-list .is-done { color: var(--toc-accent); }
 
 /* Pastilles d'état : jeton à 16 %, liseré, texte du jeton. */
-.toc-pill { display: inline-flex; align-items: center; height: calc(var(--row) - 10px); padding: 0 var(--sp-s); border: 1px solid currentColor; font-weight: 700; text-transform: uppercase; white-space: nowrap; color: var(--toc-text2); background: rgba(132, 148, 160, .16); }
+.toc-pill { font-family: var(--sans); letter-spacing: .02em; display: inline-flex; align-items: center; height: calc(var(--row) - 10px); padding: 0 var(--sp-s); border: 1px solid currentColor; font-weight: 700; text-transform: uppercase; white-space: nowrap; color: var(--toc-text2); background: rgba(132, 148, 160, .16); }
 .toc-pill.is-accent { color: var(--toc-accent); background: rgba(52, 211, 153, .16); }
 .toc-pill.is-amber { color: var(--toc-amber); background: rgba(245, 184, 65, .16); }
 .toc-pill.is-red { color: var(--toc-red); background: rgba(255, 95, 86, .16); }
@@ -309,7 +310,7 @@ body.toc-body {
 .plan-tools details > summary { cursor: pointer; list-style: none; padding: var(--sp-s) var(--sp-xs); font: 700 var(--fs-body) var(--sans); text-transform: uppercase; color: var(--toc-text2); border-bottom: 1px solid var(--toc-line); }
 .plan-tools details > summary::-webkit-details-marker { display: none; }
 .plan-side { background: var(--toc-bg1); display: grid; grid-template-rows: auto 1fr; min-height: 0; }
-.plan-side-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-bottom: 1px solid var(--toc-line); }
+.plan-side-tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); border-bottom: 1px solid var(--toc-line); }
 .plan-side-body { overflow: auto; padding: 0 var(--sp-l) var(--sp-l); min-height: 0; }
 .plan-phases { display: flex; gap: var(--sp-xs); padding: var(--sp-xs) var(--sp-s); background: var(--toc-bg1); border-top: 1px solid var(--toc-line); overflow-x: auto; align-items: center; }
 .plan-phases .toc-btn { flex: none; }
@@ -344,16 +345,21 @@ body.toc-body {
   .toc-top { grid-template-columns: minmax(0, 1fr) auto; }
   .toc-top .toc-actions { grid-column: 1 / -1; justify-content: flex-start; }
   .toc-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .toc-main { grid-template-columns: 1fr; grid-template-rows: minmax(320px, 55vh) auto; overflow: auto; }
+  .toc-main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(320px, 55vh) auto; overflow: auto; }
   body.toc-body { overflow: auto; }
   .toc { height: auto; min-height: 100vh; }
-  .plan-main { grid-template-columns: 170px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(240px, 40vh); }
+  .plan { height: auto; min-height: 100vh; }
+  .plan-main { grid-template-columns: 170px minmax(0, 1fr); grid-template-rows: minmax(62vh, auto) auto; }
+  .plan-main .toc-left { min-height: 62vh; }
   .plan-side { grid-column: 1 / -1; }
 }
 @media (max-width: 640px) {
   .toc-clocks .toc-clock-row { gap: var(--sp-s); }
   .toc-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .plan-main { grid-template-columns: 1fr; }
+  .plan-main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(62vh, auto) auto; }
+  .plan-side { min-width: 0; }
+  .plan .toc-actions .toc-btn { padding: 0 var(--sp-m); }
   .plan-tools { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+.toc-map.is-drawing .leaflet-interactive { pointer-events: none !important; }

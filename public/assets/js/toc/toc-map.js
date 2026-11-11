@@ -139,7 +139,9 @@ window.TocMap = (function () {
       var b = map.getBounds();
       var west = Math.max(0, b.getWest() - ox), east = Math.min(world, b.getEast() - ox);
       var south = Math.max(0, b.getSouth() - oy), north = Math.min(world, b.getNorth() - oy);
-      var step = G.gridStep(east - west);
+      // Pas du quadrillage : lignes à 60 px au moins (100 m, 1 km ou 10 km).
+      var ppm = 1 / Math.max(1e-6, metersPerPixel());
+      var step = [100, 1000, 10000].filter(function (s) { return s * ppm >= 60; })[0] || 10000;
       var lineStyle = { pane: 'tocGrid', color: '#3a4a57', weight: 1, opacity: 0.75, interactive: false };
       // Plaques à 3 chiffres (grille à 6 chiffres, cases de 100 m), comme le PC du poste en jeu.
       var lbl = function (v) { var s = String(Math.floor(v / 100)); while (s.length < 3) s = '0' + s; return s; };

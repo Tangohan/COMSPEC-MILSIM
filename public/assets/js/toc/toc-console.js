@@ -249,7 +249,7 @@
     var items = S.layers ? S.layers.feed() : [];
     var h = sec('Flux du camp', items.length + ' compte(s) rendu(s) · heures ZULU');
     if (!items.length) return h + empty('Aucun compte rendu reçu sur ce terrain.', '<p class="toc-note">SALUTE, MEDEVAC, TIC et SITREP envoyés des téléphones arrivent ici.</p>');
-    return h + '<table class="toc-table"><thead><tr><th style="width:62px">Heure</th><th style="width:96px">Type</th><th>Émetteur</th><th class="num" style="width:96px">Grille</th></tr></thead><tbody>' +
+    return h + '<table class="toc-table"><thead><tr><th style="width:72px">Heure</th><th style="width:104px">Type</th><th>Émetteur</th><th class="num" style="width:96px">Grille</th></tr></thead><tbody>' +
       items.slice(0, 60).map(function (f) {
         var tone = /TIC|CONTACT|FLASH/.test(f.kind) ? 'red' : (/MEDEVAC|URG/.test(f.kind) ? 'amber' : '');
         return '<tr data-sel="feed" data-id="' + esc(f.id) + '" title="' + esc(f.text) + '"><td class="mono">' + esc(f.t) + '</td><td>' + (tone ? pill(f.kind, tone) : '<b>' + esc(f.kind) + '</b>') + '</td><td>' + esc(f.who) + '</td><td class="num">' + esc(f.pos ? G.grid(f.pos[0], f.pos[1], 6) : '') + '</td></tr>';
@@ -370,7 +370,7 @@
     var h = sec('Main courante', log.length + ' entrée(s) · heures ZULU');
     h += '<form class="toc-form" data-form="log"><textarea class="toc-textarea" name="text" rows="2" maxlength="200" placeholder="Entrée de la main courante…" aria-label="Entrée"></textarea><button class="toc-btn is-primary is-block" type="submit">Inscrire <kbd>Ctrl+Entrée</kbd></button></form>';
     if (!log.length) return h + empty('La main courante est vide : comptes rendus, demandes, FLASH et EXCHECK s’y inscrivent seuls.');
-    return h + '<table class="toc-table"><thead><tr><th style="width:84px">Heure Z</th><th style="width:104px">Type</th><th>Entrée</th></tr></thead><tbody>' + log.slice(0, 150).map(function (l) {
+    return h + '<table class="toc-table"><thead><tr><th style="width:100px">Heure Z</th><th style="width:112px">Type</th><th>Entrée</th></tr></thead><tbody>' + log.slice(0, 150).map(function (l) {
       return '<tr title="' + esc(l.author) + '"><td class="mono">' + esc(l.t) + '</td><td>' + pill(l.kind, logTone(l.kind)) + '</td><td class="wrap">' + esc(l.text) + ' <span class="toc-muted">· ' + esc(l.author) + '</span>' + pendingMark(l) + '</td></tr>';
     }).join('') + '</tbody></table>';
   }
@@ -419,7 +419,7 @@
     var h = sec('Demandes', 'MEDEVAC, appuis feu, ravitaillements');
     h += '<div class="toc-kpis"><div class="toc-kpi is-amber"><b>' + c.RECUE + '</b><span>reçues</span></div><div class="toc-kpi is-blue"><b>' + c.PRISE + '</b><span>prises en compte</span></div><div class="toc-kpi is-accent"><b>' + c.TERMINEE + '</b><span>terminées</span></div><div class="toc-kpi is-red"><b>' + c.REFUSEE + '</b><span>refusées</span></div></div>';
     if (!rq.length) return h + empty('Aucune demande des éléments : MEDEVAC, appels de feu et ravitaillements faits en jeu arrivent ici.');
-    h += '<table class="toc-table"><thead><tr><th style="width:62px">Heure</th><th style="width:118px">Type</th><th>Demandeur</th><th class="num" style="width:132px">Statut</th></tr></thead><tbody>' + rq.slice().reverse().map(function (r) {
+    h += '<table class="toc-table"><thead><tr><th style="width:72px">Heure</th><th style="width:124px">Type</th><th>Demandeur</th><th class="num" style="width:168px">Statut</th></tr></thead><tbody>' + rq.slice().reverse().map(function (r) {
       return '<tr data-sel="req" data-id="' + esc(r.id) + '" class="' + (S.sel.req === r.id ? 'is-sel' : '') + '"><td class="mono">' + esc(r.t.slice(0, 5)) + '</td><td><b>' + esc(r.kind) + '</b></td><td>' + esc(r.by) + '</td><td class="num">' + pill(REQ_LABEL[r.status] || r.status, reqTone(r.status)) + pendingMark(r) + '</td></tr>';
     }).join('') + '</tbody></table>';
     var sel = rq.filter(function (r) { return r.id === S.sel.req; })[0];

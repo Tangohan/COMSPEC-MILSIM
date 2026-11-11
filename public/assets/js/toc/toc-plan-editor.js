@@ -449,6 +449,8 @@
     $('#plan-hint').textContent = HINT[t] || HINT[g] || '';
     if (t === 'pan' || t === 'select') tm.map.doubleClickZoom.enable(); else tm.map.doubleClickZoom.disable();
     tm.map.getContainer().style.cursor = t === 'pan' ? 'grab' : (t === 'select' ? '' : 'crosshair');
+    // Dessin et mesure : les clics traversent les éléments déjà posés (plan et calques du jeu) jusqu'à la carte.
+    tm.map.getContainer().classList.toggle('is-drawing', t !== 'select' && t !== 'pan');
     if (t !== 'measure') clearMeasure();
   }
 
@@ -631,7 +633,7 @@
     var h = sec('Calques du plan', ls.length + ' calque(s)');
     h += ls.map(function (l) {
       var n = list().filter(function (e) { return e.layer === l.uid; }).length;
-      return '<div class="toc-layer" data-layer-row="' + l.uid + '"><input type="checkbox" data-lv="' + l.uid + '"' + (l.visible !== false ? ' checked' : '') + ' aria-label="Afficher"><input class="toc-input" data-ln="' + l.uid + '" value="' + esc(l.name) + '" maxlength="40" aria-label="Nom du calque"' + (P.canEdit ? '' : ' disabled') + '><button type="button" class="toc-btn is-small" data-ll="' + l.uid + '">' + (l.locked ? 'Verrouillé' : 'Libre') + '</button><small>' + n + ' élément(s)' + (P.layer === l.uid ? ' · calque actif' : '') + (P.canEdit ? ' · <a href="#" data-la="' + l.uid + '">rendre actif</a>' + (ls.length > 1 ? ' · <a href="#" data-ld="' + l.uid + '">retirer</a>' : '') : '') + '</small></div>';
+      return '<div class="toc-layer" data-layer-row="' + l.uid + '"><input type="checkbox" data-lv="' + l.uid + '"' + (l.visible !== false ? ' checked' : '') + ' aria-label="Afficher"><input class="toc-input" data-ln="' + l.uid + '" value="' + esc(l.name) + '" maxlength="40" aria-label="Nom du calque"' + (P.canEdit ? '' : ' disabled') + '><button type="button" class="toc-btn is-small" data-ll="' + l.uid + '">' + (l.locked ? 'Verrouillé' : 'Libre') + '</button><small>' + n + ' élément(s)' + (P.layer === l.uid ? ' · calque actif' : '') + (P.canEdit ? ' · <a href="#" data-lyr-active="' + l.uid + '">rendre actif</a>' + (ls.length > 1 ? ' · <a href="#" data-ld="' + l.uid + '">retirer</a>' : '') : '') + '</small></div>';
     }).join('');
     if (P.canEdit) h += '<button type="button" class="toc-btn is-block" data-act="layer-add">Ajouter un calque</button>';
     h += sec('Calques du jeu', 'superposés à la carte') + '<p class="toc-note">Pistes, marqueurs, formes, plan du camp, zones… : « Ajouter au plan » sur chaque élément copie un élément du jeu dans ce plan.</p><button type="button" class="toc-btn is-block" data-act="game-layers">Ouvrir les calques du jeu <kbd>J</kbd></button>';
@@ -716,7 +718,7 @@
     if (t.hasAttribute('data-goto')) { var el = P.els[t.getAttribute('data-goto')]; if (el) { tm.centerOn(G.centroid(el)); select([el.uid]); } return; }
     if (t.hasAttribute('data-resolve')) { api('/atak/toc/api/plans/' + P.id + '/comments', { resolve: Number(t.getAttribute('data-resolve')), resolved: t.getAttribute('data-state') === '1' }).then(function (j) { if (j && j.ok) { P.comments = j.comments; P.forceSide = true; renderSide(); } }); return; }
     if (t.hasAttribute('data-ll')) { var l = layerOf(t.getAttribute('data-ll')); if (l && P.canEdit) { l.locked = !l.locked; metaChanged(); P.forceSide = true; renderAll(); } return; }
-    if (t.hasAttribute('data-la')) { P.layer = t.getAttribute('data-la'); P.forceSide = true; renderSide(); return; }
+    if (t.hasAttribute('data-lyr-active')) { P.layer = t.getAttribute('data-lyr-active'); P.forceSide = true; renderSide(); return; }
     if (t.hasAttribute('data-ld')) { removeLayer(t.getAttribute('data-ld')); return; }
     if (t.hasAttribute('data-lg-d')) { P.meta.legend.splice(Number(t.getAttribute('data-lg-d')), 1); metaChanged(); P.forceSide = true; renderSide(); return; }
     if (t.hasAttribute('data-ph-act')) { phaseAction(t.getAttribute('data-ph-act'), t.closest('[data-phase-card]').getAttribute('data-phase-card')); return; }
@@ -1039,7 +1041,7 @@
           ctx.beginPath(); ctx.arc(c[0], c[1], (p.size || 24) / 3, 0, Math.PI * 2); ctx.stroke();
         }
         var t = el.kind === 'unit' ? (p.callsign || '') : (p.label || '');
-        if (t) { ctx.font = '700 ' + (el.kind === 'text' ? (p.size || 18) : 14) + 'px "Roboto Condensed", sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = '#070a0d'; ctx.setLineDash([]); var dx = el.kind === 'text' ? 0 : 18; ctx.strokeText(t, c[0] + dx, c[1] + 5); ctx.fillText(t, c[0] + dx, c[1] + 5); }
+        if (t) { ctx.font = '700 ' + (el.kind === 'text' ? (p.size || 18) : 14) + 'px "Roboto Condensed", Arial'; ctx.lineWidth = 3; ctx.strokeStyle = '#070a0d'; ctx.setLineDash([]); var dx = el.kind === 'text' ? 0 : 18; ctx.strokeText(t, c[0] + dx, c[1] + 5); ctx.fillText(t, c[0] + dx, c[1] + 5); }
         return;
       }
       var poly = G.outline(el, 64).map(pt);
@@ -1051,11 +1053,11 @@
         var heads = p.arrow === 'both' ? [[poly[poly.length - 2], poly[poly.length - 1]], [poly[1], poly[0]]] : [[poly[poly.length - 2], poly[poly.length - 1]]];
         heads.forEach(function (ab) { var a = Math.atan2(ab[1][1] - ab[0][1], ab[1][0] - ab[0][0]); ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(ab[1][0], ab[1][1]); ctx.lineTo(ab[1][0] - 16 * Math.cos(a - 0.45), ab[1][1] - 16 * Math.sin(a - 0.45)); ctx.lineTo(ab[1][0] - 16 * Math.cos(a + 0.45), ab[1][1] - 16 * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill(); });
       }
-      if (p.label) { var cc = pt(G.centroid(el)); ctx.setLineDash([]); ctx.font = '700 15px "Roboto Condensed", sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = '#070a0d'; ctx.strokeText(p.label, cc[0], cc[1]); ctx.fillText(p.label, cc[0], cc[1]); }
+      if (p.label) { var cc = pt(G.centroid(el)); ctx.setLineDash([]); ctx.font = '700 15px "Roboto Condensed", Arial'; ctx.lineWidth = 3; ctx.strokeStyle = '#070a0d'; ctx.strokeText(p.label, cc[0], cc[1]); ctx.fillText(p.label, cc[0], cc[1]); }
     });
     ctx.setLineDash([]);
     ctx.fillStyle = 'rgba(7,10,13,.85)'; ctx.fillRect(0, rect.height - 34, rect.width, 34);
-    ctx.fillStyle = '#e8eef2'; ctx.font = '700 15px "Roboto Condensed", sans-serif';
+    ctx.fillStyle = '#e8eef2'; ctx.font = '700 15px "Roboto Condensed", Arial';
     var ph = P.phases.filter(function (x) { return x.uid === P.phase; })[0];
     ctx.fillText((P.plan.title + (ph ? ' · ' + ph.name : '')).toUpperCase(), 12, rect.height - 12);
     ctx.textAlign = 'right';
