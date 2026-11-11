@@ -37,6 +37,19 @@ Consistency = papers (one cover document, a single name, its preparation) + cove
 
 After reading the papers, a guard asks 2 questions (3 at a strict post): « D'où venez-vous ? » (Where are you coming from?), « Pour qui travaillez-vous ? » (Who do you work for?), « Raison du déplacement ? » (Reason for travelling?), « Quel est votre métier ? » (What is your job?), « Où êtes-vous né ? » (Where were you born?), « Qui peut confirmer ce que vous dites ? » (Who can confirm what you say?). Three answers to choose from (the true cover story and two decoys), in Ma couverture or **Mes papiers › Répondre**. Time limit: 20 s (setting), +10 s per question. Wrong answer or silence: suspicion.
 
+## Getting your cover from Athena
+
+A cover generated on Athena (My cover › Generate) can be fetched without handling any file:
+
+1. ATAK phone › **Ma couverture** › **Import my cover** section › **SYNC WITH ATHENA**.
+2. The **My covers on Athena** window lists your covers: name, job and city, country, state (New, Already imported, Update available, Active, Expired), size, date.
+3. Tap **CHOOSE** on one or more covers (or **SELECT ALL**), then **IMPORT SELECTION**. The status line gives the result, for example "2 imported, 1 already up to date".
+4. The most recent one in the selection becomes your **active cover** (the one your legend uses) and replaces the previous one. The others stay on this computer: **ACTIVATE** plays one of them instead.
+
+Requirements: licence accepted, Athena link authorised on this computer, Athena account linked to the phone (otherwise the window offers **LINK MY ACCOUNT**), COMSPEC Link 2.0.118 or later. Nothing is asked of Athena until these are met. An expired cover (90 days) can no longer be imported. The photo stays on Athena.
+
+Without a connection: on Athena › My cover, **Download**, put the file in `Documents\Arma 3 - COMSPEC`, then **IMPORT A FILE**. **Forget the import** goes back to the previous legend without touching your papers.
+
 ## Step by step: crossing an enemy checkpoint
 
 1. Before the mission, the Zeus: **Donner une couverture › Infiltrer**, card checked, "STAVROU Nikos". You receive the card and your cover story in **Ma couverture**: read it (job, employer, place of birth).

@@ -9,6 +9,9 @@
     ["run"]                 JOUEUR  lit le fichier, le valide (la DLL, puis ici), le garde dans le profil du joueur
                             (profileNamespace) et l'envoie au serveur. Résultat : comspec_sse_idCoverImportSt (HashMap
                             kind ok | err, text, ref, at), la page est redessinée.
+    ["use", [HashMap]]      JOUEUR  couverture déjà nettoyée (« clean ») devenue l'active : profil, envoi au serveur, page
+                            redessinée. Appelé par « run » et par la fenêtre Mes couvertures sur Athena (fn_idCoverAthena,
+                            synchronisation depuis Athena : seule autre voie, par le réseau, derrière la licence)
     ["resend"]              JOUEUR  renvoie l'import gardé au serveur (connexion, JIP, respawn : le registre du serveur ne
                             garde rien d'une mission à l'autre)
     ["forget"]              JOUEUR  oublie l'import (profil et serveur)
@@ -120,7 +123,6 @@ switch (_op) do {
         };
         private _p = _head splitString "|";
         private _n = parseNumber (_p param [1, "0"]);
-        private _ref = _p param [2, ""];
         private _buf = "";
         private _ok = _n > 0 && {_n <= 50};
         if (_ok) then {
@@ -135,12 +137,17 @@ switch (_op) do {
         private _m = createHashMapFromArray (_root select { _x isEqualType [] && {count _x isEqualTo 2} && {(_x select 0) isEqualType ""} });
         private _cover = ["clean", [_m]] call comspec_sse_fnc_idCoverImport;
         if ((count _cover) isEqualTo 0) exitWith { [_err get "cover"] call _fail };
+        ["use", [_cover]] call comspec_sse_fnc_idCoverImport
+    };
+    case "use": {
+        _a params [["_cover", createHashMap, [createHashMap]]];
+        if ((count _cover) isEqualTo 0) exitWith { false };
         profileNamespace setVariable ["comspec_sse_idCoverImport", _cover];
         saveProfileNamespace;
         missionNamespace setVariable ["comspec_sse_idCoverImportSent", false];
         _st set ["kind", "ok"];
         _st set ["text", format [("Couverture importée : %1." call comspec_sse_fnc_tr), _cover get "name"]];
-        _st set ["ref", _ref];
+        _st set ["ref", _cover getOrDefault ["ref", ""]];
         ["resend"] call comspec_sse_fnc_idCoverImport;
         call _redraw;
         true
