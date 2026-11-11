@@ -10,85 +10,57 @@ $canManage = !empty($filesCanManage);
 require __DIR__ . '/_nav.php';
 $allQuery = '?' . http_build_query(['etat' => 'toutes']);
 $back = 'atak/sse/fichiers/mentions' . ($onlyActive ? '' : $allQuery);
+$csrf = '<input type="hidden" name="_csrf_token" value="' . $h((string) $csrfToken) . '"><input type="hidden" name="back" value="' . $h($back) . '">';
+$tone = static fn (string $m): string => in_array($m, \App\Support\SseFileCatalog::MENTIONS_WANTED, true) ? 'r' : ($m === 'caution' ? 'a' : 'b');
 ?>
-
-<div class="page-heading">
-    <div>
-        <h1>Mentions aux fichiers</h1>
-        <p>Mandats, avis de recherche, signalements, personnes disparues, « armé et dangereux » et consignes de prudence, posés sur une identité, un papier ou une fiche SEEK II. Les papiers volés ou perdus se déclarent sur le papier lui-même.</p>
+<div class="fx">
+    <div class="fx-th">
+        <div>
+            <h1>Mentions aux fichiers</h1>
+            <p>Mandats, avis de recherche, signalements, personnes disparues, « armé et dangereux » et consignes de prudence, posés sur une identité, un papier ou une fiche SEEK II. Les papiers volés ou perdus se déclarent sur le papier lui-même.</p>
+        </div>
+    </div>
+    <div class="<?= $canManage ? 'fx-wk' : '' ?>">
+        <?php if ($canManage): ?>
+            <form class="fx-card" method="post" action="<?= $h(url('atak/sse/fichiers/mentions')) ?>"><?= $csrf ?>
+                <div class="fx-ch"><h2>Poser une mention</h2></div>
+                <div class="fx-fs">
+                    <label class="fx-f"><span>Fiche</span><input class="fx-in m" name="target_ref" value="<?= $h($prefillRef ?? '') ?>" required autocomplete="off" placeholder="IDT-12, DOC-34 ou REC-000412"><small>La référence affichée en tête de la fiche, du papier ou du relevé SEEK II.</small></label>
+                    <label class="fx-f"><span>Mention</span><select class="fx-in" name="mention"><?php foreach ($mentionLabels as $k => $label): ?><option value="<?= $h($k) ?>"><?= $h($label) ?></option><?php endforeach; ?></select></label>
+                    <label class="fx-f"><span>Référence</span><input class="fx-in" name="reference" maxlength="64" placeholder="ex. WARRANT 26-1187"></label>
+                    <label class="fx-f"><span>Note</span><input class="fx-in" name="note" maxlength="1000" placeholder="ex. porteur habituel d’une arme de poing"></label>
+                </div>
+                <div class="fx-ff"><button class="btn pri" type="submit">Poser la mention</button></div>
+            </form>
+        <?php endif; ?>
+        <section class="fx-card">
+            <div class="fx-ch"><h2><?= $onlyActive ? 'Mentions actives' : 'Toutes les mentions' ?></h2>
+                <?php if ($onlyActive): ?><a href="<?= $h(url('atak/sse/fichiers/mentions') . $allQuery) ?>">Voir aussi les mentions levées</a><?php else: ?><a href="<?= $h(url('atak/sse/fichiers/mentions')) ?>">Mentions actives seulement</a><?php endif; ?>
+            </div>
+            <?php if ($mentions === []): ?>
+                <div class="fx-nr"><b>AUCUNE MENTION</b><p>Les mentions posées par les responsables apparaissent ici et dans chaque réponse des fichiers.</p></div>
+            <?php endif; ?>
+            <?php foreach ($mentions as $m): ?>
+                <div class="fx-mi" style="margin:10px 16px">
+                    <div class="fx-row">
+                        <span class="fx-hn"><span class="fx-flg <?= $tone((string) $m['mention']) ?>"><?= $h($m['mention_label']) ?></span>
+                            <?php if ($m['target']['url'] !== null): ?><a href="<?= $h($m['target']['url']) ?>" translate="no"><?= $h($m['target']['label']) ?></a><?php else: ?><span translate="no"><?= $h($m['target']['label']) ?></span><?php endif; ?>
+                            <?php if (!$m['active']): ?><span class="fx-flg">Levée</span><?php endif; ?></span>
+                        <?php if ($m['target']['query'] !== null): ?><a class="btn sm" href="<?= $h($m['target']['query']) ?>">Passer aux fichiers</a><?php endif; ?>
+                    </div>
+                    <?php if (($m['note'] ?? '') !== ''): ?><p translate="no"><?= $h($m['note']) ?></p><?php endif; ?>
+                    <small><?= ($m['reference'] ?? '') !== '' ? $h($m['reference']) . ' · ' : '' ?>posée le <?= $h(substr((string) $m['created_at'], 0, 16)) ?><?= $m['created_by'] !== '' ? ' par ' . $h($m['created_by']) : '' ?><?= $m['lifted_at'] !== null ? ' · levée le ' . $h(substr((string) $m['lifted_at'], 0, 16)) . ($m['lifted_by'] !== '' ? ' par ' . $h($m['lifted_by']) : '') : '' ?></small>
+                    <?php if ($canManage && $m['active']): ?>
+                        <form class="fx-inline" method="post" action="<?= $h(url('atak/sse/fichiers/mentions/' . (int) $m['id'] . '/lever')) ?>"><?= $csrf ?>
+                            <label class="fx-f"><span>Motif de la levée</span><input class="fx-in" name="lift_note" maxlength="500" placeholder="ex. interpellé le 11/11, mandat exécuté"></label>
+                            <button class="btn" type="submit">Lever</button>
+                        </form>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+        </section>
     </div>
 </div>
-
-<?php if ($canManage): ?>
-    <section class="panel">
-        <div class="panel-header"><div class="panel-title">Poser une mention</div><div class="panel-meta">Responsables du registre</div></div>
-        <div class="panel-body">
-            <form class="fq-form" method="post" action="<?= $h(url('atak/sse/fichiers/mentions')) ?>">
-                <input type="hidden" name="_csrf_token" value="<?= $h((string) $csrfToken) ?>">
-                <input type="hidden" name="back" value="<?= $h($back) ?>">
-                <div><label for="fq-ref">Fiche (IDT-…, DOC-… ou REC-…)</label><input id="fq-ref" name="target_ref" type="text" value="<?= $h($prefillRef ?? '') ?>" required autocomplete="off"></div>
-                <div>
-                    <label for="fq-mention">Mention</label>
-                    <select id="fq-mention" name="mention">
-                        <?php foreach ($mentionLabels as $k => $label): ?>
-                            <option value="<?= $h($k) ?>"><?= $h($label) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div><label for="fq-reference">Référence</label><input id="fq-reference" name="reference" type="text" maxlength="64" placeholder="N° de mandat, d’avis…"></div>
-                <div><label for="fq-note">Note</label><input id="fq-note" name="note" type="text" maxlength="1000"></div>
-                <div class="fq-form__submit"><button class="btn" type="submit">Poser la mention</button></div>
-            </form>
-        </div>
-    </section>
-<?php endif; ?>
-
-<section class="panel">
-    <div class="panel-header">
-        <div class="panel-title"><?= $onlyActive ? 'Mentions actives' : 'Toutes les mentions' ?></div>
-        <div class="panel-meta">
-            <?php if ($onlyActive): ?>
-                <a class="link" href="<?= $h(url('atak/sse/fichiers/mentions') . $allQuery) ?>">Voir aussi les mentions levées</a>
-            <?php else: ?>
-                <a class="link" href="<?= $h(url('atak/sse/fichiers/mentions')) ?>">Mentions actives seulement</a>
-            <?php endif; ?>
-        </div>
-    </div>
-    <?php if ($mentions === []): ?>
-        <div class="empty-state"><div class="empty-state-inner"><strong>Aucune mention</strong><p>Les mentions posées par les responsables apparaissent ici et dans chaque réponse des fichiers.</p></div></div>
-    <?php else: ?>
-        <div class="table-wrap">
-            <table>
-                <thead><tr><th>Mention</th><th>Fiche</th><th>Référence</th><th>Note</th><th>Posée</th><th>Levée</th><th></th></tr></thead>
-                <tbody>
-                <?php foreach ($mentions as $m): ?>
-                    <tr>
-                        <td><strong><?= $h($m['mention_label']) ?></strong> <span class="fq-code"><?= $h($m['mention']) ?></span></td>
-                        <td>
-                            <?php if ($m['target']['url'] !== null): ?><a class="link" href="<?= $h($m['target']['url']) ?>" translate="no"><?= $h($m['target']['label']) ?></a><?php else: ?><span translate="no"><?= $h($m['target']['label']) ?></span><?php endif; ?>
-                            <?php if ($m['target']['query'] !== null): ?> · <a class="link" href="<?= $h($m['target']['query']) ?>">Passer aux fichiers</a><?php endif; ?>
-                        </td>
-                        <td translate="no"><?= $h($m['reference'] ?? '—') ?></td>
-                        <td translate="no"><?= $h($m['note'] ?? '—') ?></td>
-                        <td><?= $h($m['created_at']) ?><?php if ($m['created_by'] !== ''): ?><div class="fq-code" translate="no"><?= $h($m['created_by']) ?></div><?php endif; ?></td>
-                        <td><?= $h($m['lifted_at'] ?? '—') ?><?php if ($m['lifted_by'] !== ''): ?><div class="fq-code" translate="no"><?= $h($m['lifted_by']) ?></div><?php endif; ?></td>
-                        <td>
-                            <?php if ($canManage && $m['active']): ?>
-                                <form class="fq-actions" method="post" action="<?= $h(url('atak/sse/fichiers/mentions/' . (int) $m['id'] . '/lever')) ?>">
-                                    <input type="hidden" name="_csrf_token" value="<?= $h((string) $csrfToken) ?>">
-                                    <input type="hidden" name="back" value="<?= $h($back) ?>">
-                                    <input type="text" name="lift_note" maxlength="500" placeholder="Motif de la levée" aria-label="Motif de la levée">
-                                    <button class="btn btn--ghost" type="submit">Lever</button>
-                                </form>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    <?php endif; ?>
-</section>
 <?php
 $sseContent = ob_get_clean();
 require dirname(__DIR__) . '/_layout.php';

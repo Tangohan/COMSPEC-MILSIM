@@ -220,7 +220,8 @@ $accessChildren = [
     ['label' => 'Rôles', 'href' => effectifs_workspace_url('roles'), 'active' => $navAccessActive && !$navAt($effPath . '/droits')],
     ['label' => 'Droits par membre', 'href' => effectifs_workspace_url('droits'), 'active' => $navAt($effPath . '/droits')],
     ['label' => 'Fonctions et emplois', 'href' => effectifs_workspace_url('fonctions'), 'active' => $navJobsActive],
-    ['label' => 'Accès au renseignement', 'href' => url('back-office/renseignement/acces'), 'active' => $navAt('back-office/renseignement')],
+    ['label' => 'Accès au renseignement', 'href' => url('back-office/renseignement/acces'), 'active' => $navAt('back-office/renseignement') && !$navAt('back-office/renseignement/fichiers')],
+    ['label' => 'Fichiers SSE', 'href' => url('back-office/renseignement/fichiers'), 'active' => $navAt('back-office/renseignement/fichiers')],
 ];
 
 // ——— PILOTAGE ———

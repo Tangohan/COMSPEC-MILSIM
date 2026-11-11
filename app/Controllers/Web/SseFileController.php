@@ -41,51 +41,162 @@ final class SseFileController
         $this->access ??= new SseAccessCodeService();
     }
 
-    /** Écran de saisie (onglets QW, QV, QA, QB) et dernières consultations. */
+    /** Onglets du terminal (code court, libellé). */
+    public const TABS = ['qw' => 'Personne', 'qv' => 'Véhicule', 'qa' => 'Document', 'qb' => 'Biométrie', 'qd' => 'Appareil ATAK'];
+
+    /**
+     * Terminal : case unique et filtres de signalement (QW), véhicule (QV), document (QA), biométrie (QB), appareils
+     * ATAK (QD). Résultats classés avec la confiance ; chaque nouvelle requête (avec son motif) est inscrite au journal.
+     */
     public function index(Request $request, array $params = []): Response
     {
-        $type = strtoupper($request->queryString('type', 'QW'));
-
-        return $this->render('atak.sse.files.index', [
+        $tenantId = $this->tenantId();
+        $ctx = new SseFilesContext($this->access);
+        $settings = $ctx->settings();
+        $legacy = strtolower($request->queryString('type'));
+        $tab = strtolower($request->queryString('t', $legacy !== '' ? $legacy : 'qw'));
+        $tab = isset(self::TABS[$tab]) ? $tab : 'qw';
+        $purpose = strtoupper($request->queryString('motif'));
+        $purpose = isset(\App\Support\SseFileSubjectCatalog::PURPOSES[$purpose]) ? $purpose : '';
+        $p = \App\Services\Sse\SseFileSearchService::cleanParams($_GET);
+        $page = max(1, (int) $request->queryString('page', '1'));
+        $data = [
             'title' => 'Passage aux fichiers',
-            'queryType' => isset(SseFileCatalog::QUERY_TYPES[$type]) ? $type : 'QW',
-            'criteria' => self::criteriaFrom($request),
+            'tab' => $tab,
+            'params' => $p,
+            'purpose' => $purpose,
+            'purposeRequired' => !empty($settings['purpose_required']),
+            'terminalCountry' => (string) $settings['default_country'],
+            'search' => null,
+            'vehicles' => null,
             'result' => null,
-            'recent' => $this->safeList(fn (): array => $this->files()->listQueries($this->tenantId(), ['limit' => 8])),
-        ]);
+            'needPurpose' => false,
+            'criteria' => self::criteriaFrom($request),
+            'vehicleQuery' => ['plate' => mb_substr(trim($request->queryString('plate')), 0, 20), 'text' => mb_substr(trim($request->queryString('desc')), 0, 60)],
+            'recent' => $this->safeList(fn (): array => $this->files()->listQueries($tenantId, ['limit' => 6])),
+            'savedSearches' => [],
+            'recentSearches' => [],
+            'watches' => [],
+            'devices' => [],
+        ];
+        $uid = $this->userId();
+        $wantsSearch = match ($tab) {
+            'qw' => \App\Services\Sse\SseFileSearchService::hasCriteria($p),
+            'qv' => $data['vehicleQuery']['plate'] !== '' || $data['vehicleQuery']['text'] !== '',
+            'qa', 'qb' => trim($data['criteria']['number']) !== '',
+            default => false,
+        };
+        $throttled = $wantsSearch && (new \App\Services\Security\FileRateLimiter())->tooManyAttempts('sse_files_search|' . $tenantId . '|' . (int) $uid . '|' . session_id(), 120, 60);
+        if ($throttled) {
+            Session::flash('error', 'Trop de requêtes en une minute : patientez un instant avant d’interroger de nouveau les fichiers.');
+        } elseif ($wantsSearch && $purpose === '' && $data['purposeRequired']) {
+            $data['needPurpose'] = true;
+        } elseif ($wantsSearch) {
+            try {
+                if ($tab === 'qw') {
+                    $search = new \App\Services\Sse\SseFileSearchService();
+                    $data['search'] = $search->search($tenantId, $p, $page);
+                    $this->logSearch($tenantId, $p, $purpose, (int) $data['search']['total'], $page);
+                    if ($uid !== null) {
+                        (new \App\Repositories\SseFileRecordRepository())->rememberSearch($tenantId, $uid, $p);
+                    }
+                } elseif ($tab === 'qv') {
+                    $data['vehicles'] = (new \App\Services\Sse\SseFileSearchService())->vehicles($tenantId, $data['vehicleQuery']['plate'], $data['vehicleQuery']['text']);
+                    $this->logSearch($tenantId, ['plate' => $data['vehicleQuery']['plate'], 'q' => $data['vehicleQuery']['text']], $purpose, count($data['vehicles']), 1, 'QV');
+                } else {
+                    $data['result'] = $this->service()->run($tenantId, strtoupper($tab), $data['criteria'], [
+                        'source' => 'web', 'operator_user_id' => $uid, 'operator_label' => $this->operatorLabel(),
+                    ]);
+                    $this->setPurpose($tenantId, (int) $data['result']['query_id'], $purpose);
+                }
+            } catch (\Throwable $e) {
+                error_log('Passage aux fichiers : consultation impossible : ' . $e->getMessage());
+                Session::flash('error', 'Les fichiers ne répondent pas pour le moment. Réessayez plus tard.');
+            }
+        }
+        if ($uid !== null) {
+            try {
+                $records = new \App\Repositories\SseFileRecordRepository();
+                $data['savedSearches'] = $records->searches($tenantId, $uid, true, 8);
+                $data['recentSearches'] = $records->searches($tenantId, $uid, false, 6);
+                $data['watches'] = (new \App\Services\Sse\SseFileXrefService($records))->watches($tenantId, $uid);
+                if ($tab === 'qd') {
+                    $data['devices'] = (new \App\Services\Sse\SsePhoneExtractionService($records))->list($tenantId, ['page' => 1], $ctx->canAdmin())['rows'];
+                }
+            } catch (\Throwable $e) {
+                error_log('Passage aux fichiers : listes du membre illisibles : ' . $e->getMessage());
+            }
+        }
+
+        return $ctx->render('atak.sse.files.index', $data + ['replayUrl' => self::replayUrl(strtoupper($tab === 'qd' ? 'qa' : $tab), $data['criteria'])]);
     }
 
-    /** Consultation (GET : rejouable depuis le journal) ; journalisée, source « web ». */
+    /**
+     * Une recherche de fiches inscrite au journal (une fois par jeu de critères, pas à chaque page ni à chaque filtre
+     * retapé à l'identique).
+     *
+     * @param array<string, string> $p
+     */
+    private function logSearch(int $tenantId, array $p, string $purpose, int $total, int $page, string $type = 'QW'): void
+    {
+        $criteria = array_filter($p, static fn (string $v): bool => $v !== '');
+        $hash = sha1($type . json_encode($criteria));
+        if ($page > 1 || Session::get('sse_files_last_search') === $hash) {
+            return;
+        }
+        Session::set('sse_files_last_search', $hash);
+        try {
+            $logged = $this->files()->logQuery($tenantId, [
+                'query_type' => $type,
+                'criteria' => $criteria,
+                'source' => 'web',
+                'operator_user_id' => $this->userId(),
+                'operator_label' => $this->operatorLabel(),
+                'hit' => $total > 0,
+                'verdict' => $total > 0 ? null : 'inconnu',
+                'codes' => ['matches:' . $total],
+            ]);
+            $this->setPurpose($tenantId, $logged['id'], $purpose);
+        } catch (\Throwable $e) {
+            error_log('Passage aux fichiers : recherche non journalisée : ' . $e->getMessage());
+        }
+    }
+
+    private function setPurpose(int $tenantId, int $queryId, string $purpose): void
+    {
+        if ($queryId < 1 || $purpose === '') {
+            return;
+        }
+        try {
+            $this->files()->db()->execute('UPDATE sse_file_queries SET purpose = :p WHERE id = :id AND tenant_id = :t', ['p' => $purpose, 'id' => $queryId, 't' => $tenantId]);
+        } catch (\Throwable) {
+            // Colonne purpose absente (étape 4340 pas encore passée) : le motif n'est pas gardé.
+        }
+    }
+
+    /**
+     * Ancienne adresse de consultation (liens « Rejouer » du journal, du registre et du jeu) : renvoie au terminal avec
+     * les mêmes critères. La consultation est faite (et journalisée) par le terminal, avec son motif.
+     */
     public function query(Request $request, array $params = []): Response
     {
         $type = strtoupper($request->queryString('type', 'QW'));
         $type = isset(SseFileCatalog::QUERY_TYPES[$type]) ? $type : 'QW';
-        $criteria = self::criteriaFrom($request);
-        if (!self::hasCriteria($type, $criteria)) {
-            Session::flash('error', 'Renseignez au moins un critère de recherche.');
-
-            return Response::redirect(url(self::BASE) . '?type=' . $type);
+        $criteria = array_filter(self::criteriaFrom($request), static fn (string $v): bool => $v !== '');
+        $q = ['t' => strtolower($type)];
+        if ($type === 'QW') {
+            $q += array_intersect_key($criteria, ['last' => 1, 'first' => 1, 'dob' => 1]);
+        } elseif ($type === 'QV') {
+            $q['plate'] = $criteria['number'] ?? '';
+        } else {
+            $q += $criteria;
         }
-        $result = null;
-        try {
-            $result = $this->service()->run($this->tenantId(), $type, $criteria, [
-                'source' => 'web',
-                'operator_user_id' => $this->userId(),
-                'operator_label' => $this->operatorLabel(),
-            ]);
-        } catch (\Throwable $e) {
-            error_log('Passage aux fichiers : consultation impossible : ' . $e->getMessage());
-            Session::flash('error', 'Les fichiers ne répondent pas pour le moment. Réessayez plus tard.');
+        $motif = strtoupper($request->queryString('motif'));
+        if ($motif !== '') {
+            $q['motif'] = $motif;
         }
 
-        return $this->render('atak.sse.files.index', [
-            'title' => ($result['qrn'] ?? '') !== '' ? $result['qrn'] . ' — Passage aux fichiers' : 'Passage aux fichiers',
-            'queryType' => $type,
-            'criteria' => $criteria,
-            'result' => $result,
-            'replayUrl' => self::replayUrl($type, $criteria),
-            'recent' => [],
-        ]);
+        return Response::redirect(url(self::BASE) . '?' . http_build_query($q));
     }
 
     /** Journal des consultations (site et jeu), filtrable par source, type et HIT. */

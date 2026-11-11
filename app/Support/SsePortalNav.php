@@ -74,14 +74,17 @@ final class SsePortalNav
                 $only($canMemberPapers, ['id' => 'papiers-briefs', 'label' => 'Briefs de couverture', 'hint' => 'Biographie, légende et consignes remises aux joueurs couverts.', 'path' => 'atak/sse/papiers/briefs', 'icon' => 'note', 'keywords' => 'briefs couverture legende biographie consignes']),
                 $only($canMemberPapers, ['id' => 'papiers-echanges', 'label' => 'Import et export', 'hint' => 'Importer ou exporter identités et papiers (CSV, JSON).', 'path' => 'atak/sse/papiers/echanges', 'icon' => 'transfer', 'keywords' => 'import export csv json identites papiers']),
             ]))],
-            ['id' => 'fichiers', 'label' => 'Fichiers et contrôles', 'hint' => 'Interroger les fichiers et suivre les contrôles d’identité faits en jeu.', 'items' => [
-                ['id' => 'fichiers', 'label' => 'Passage aux fichiers', 'hint' => 'Interroger les fichiers comme depuis un terminal de patrouille.', 'path' => 'atak/sse/fichiers', 'icon' => 'search', 'keywords' => 'fichiers requete hit terminal patrouille'],
+            ['id' => 'fichiers', 'label' => 'Fichiers et contrôles', 'hint' => 'Interroger les fichiers et suivre les contrôles d’identité faits en jeu.', 'items' => array_values(array_filter([
+                ['id' => 'fichiers', 'label' => 'Passage aux fichiers', 'hint' => 'Interroger les fichiers comme depuis un terminal de patrouille.', 'path' => 'atak/sse/fichiers', 'icon' => 'search', 'aliases' => ['atak/sse/fichiers/sujet', 'atak/sse/fichiers/source', 'atak/sse/fichiers/comparer'], 'keywords' => 'fichiers requete hit terminal patrouille alias recherche sujet fiche'],
+                ['id' => 'fichiers-photos', 'label' => 'Photothèque', 'hint' => 'Photos signalétiques filtrées par signalement, comparaison de deux fiches.', 'path' => 'atak/sse/fichiers/photos', 'icon' => 'id', 'keywords' => 'photos photographie signalement visage comparer trombinoscope'],
+                ['id' => 'fichiers-telephones', 'label' => 'Téléphones du jeu', 'hint' => 'Extractions des téléphones ATAK synchronisés depuis le jeu.', 'path' => 'atak/sse/fichiers/telephones', 'icon' => 'collect', 'keywords' => 'telephone extraction atak contacts messages positions'],
+                $only(!$isGuest && ($canManage || self::canLore($isGuest)), ['id' => 'fichiers-lore', 'label' => 'Lore des sessions', 'hint' => 'Préparer les personnes d’une mission et ce que les fichiers en savent.', 'path' => 'atak/sse/fichiers/lore', 'icon' => 'dice', 'keywords' => 'lore session mission mj zeus eden ia synchronisation']),
                 ['id' => 'fichiers-journal', 'label' => 'Journal des consultations', 'hint' => 'Toutes les consultations des fichiers, sur le site ou en jeu.', 'path' => 'atak/sse/fichiers/journal', 'icon' => 'time', 'keywords' => 'journal consultations historique'],
                 ['id' => 'fichiers-mentions', 'label' => 'Mentions aux fichiers', 'hint' => 'Mandats, avis de recherche, signalements et consignes de prudence.', 'path' => 'atak/sse/fichiers/mentions', 'icon' => 'alert', 'keywords' => 'mentions mandat recherche signalement disparu arme dangereux'],
                 ['id' => 'fichiers-seek', 'label' => 'Fiches SEEK II', 'hint' => 'Enregistrements biométriques faits en jeu avec le SEEK II.', 'path' => 'atak/sse/fichiers/seek', 'icon' => 'id', 'keywords' => 'seek biometrie empreintes iris visage'],
                 ['id' => 'papiers-controles', 'label' => 'Contrôles reçus', 'hint' => 'Contrôles d’identité transmis depuis le terrain.', 'path' => 'atak/sse/papiers/controles', 'icon' => 'queue', 'keywords' => 'controles identite verdict terrain checkpoint'],
                 ['id' => 'papiers-frm', 'label' => 'FRM à valider', 'hint' => 'Brouillons de fiches FRM nés des contrôles, à valider.', 'path' => 'atak/sse/papiers/tableau#frm', 'icon' => 'note', 'keywords' => 'frm brouillons valider fiches controles'],
-            ]],
+            ]))],
             ['id' => 'roleplay', 'label' => 'IA et roleplay', 'hint' => 'Préparer ce que les joueurs rencontreront en jeu : population, IA, campagnes, scénarios.', 'items' => array_values(array_filter([
                 $only($canMemberPapers, ['id' => 'papiers-profils-ia', 'label' => 'Profils IA', 'hint' => 'Identité, camp, papiers et comportement à relier aux IA en jeu (Zeus, Eden).', 'path' => 'atak/sse/papiers/profils-ia', 'icon' => 'person', 'keywords' => 'ia pnj zeus eden profil population']),
                 $only($canMemberPapers, ['id' => 'papiers-preparation', 'label' => 'Préparation de mission', 'hint' => 'Générer la population, les recherchés et les HVT d’une opération.', 'path' => 'atak/sse/papiers/preparation', 'icon' => 'prepare', 'keywords' => 'preparation mission population civils militaires suspects hvt recherches generation']),
@@ -104,6 +107,12 @@ final class SsePortalNav
      *
      * @return array{sections: list<array<string, mixed>>, restricted: list<array{label: string, reason: string}>}
      */
+    /** Lore des sessions : MJ (atak.sse.lore.manage) ou administrateur, jamais en session invitée. */
+    public static function canLore(bool $isGuest): bool
+    {
+        return !$isGuest && function_exists('can') && (can('atak.sse.lore.manage') || can('admin.access'));
+    }
+
     public static function forSession(bool $canManage, bool $canGrant, bool $isGuest, ?bool $canMemberPapers = null): array
     {
         if ($canMemberPapers === null) {

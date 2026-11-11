@@ -597,6 +597,50 @@ Serveur de jeu sans COMSPEC Link et sans Zeus relié : le serveur demande à cha
 - Cache serveur : paquet et révision gardés 5 min par communauté (clé : communauté, carte, opération, `since`, page ; jamais partagés entre communautés, droits vérifiés avant chaque lecture). Toute écriture réussie du registre (portail SSE, papiers et kit d'un membre, couverture, identité, envois du jeu vers `/api/sse/`) le vide. `generated_at` d'une réponse servie par le cache = heure du calcul : l'utiliser comme `since` relit au pire un peu plus de papiers, jamais moins.
 - Débit : 60 pages par minute et par appelant (compte du jeton de jeu, sinon communauté de la clé et IP), 240 contrôles `documents/lookup` par minute ; au-delà 429 `too_many_requests` avec `Retry-After`. Usage normal : 5 pages au début de la mission, puis au plus un paquet toutes les 2 min.
 
+## ICD-SSE-PHONE-001 — Synchroniser un téléphone du jeu avec le web (extraction)
+
+Canal : `SubmitIdCheck` de COMSPEC Link (aucune nouvelle DLL) → `POST /api/sse/identity/checks`, `kind` = `phone_extraction`. Données du téléphone du **personnage** (jeu) seulement : rien du vrai appareil du joueur. Aucun envoi avant l'autorisation de la licence (`comspec_overwatch_connect_fnc_licenceStatus`) ni quand la liaison est coupée (`uplinkOff`).
+
+| Champ | Contenu |
+|---|---|
+| `idempotency_key` | 4 à 80 caractères, une clé par partie envoyée |
+| `extraction_key` | 4 à 80 caractères : même valeur pour toutes les parties d'une même extraction |
+| `part` | `[index, total]` (1 ≤ index ≤ total ≤ 20) ; absent = une seule partie |
+| `consent` | `true` obligatoire (réglage du joueur, désactivé par défaut ; le MJ peut l'interdire pour la mission) |
+| `device` | `uid` (identifiant stable du téléphone du jeu), `label`, `model`, `number`, `imei` |
+| `owner` | `kind` (`player` ou `ai`), `label` (nom du personnage), `ai_uid` (IA : identifiant stable, voir ICD-SSE-LORE-001) |
+| `op`, `grid`, `game_time` | portée et lieu de l'extraction |
+| `data` | `contacts` `[{name, number, note}]`, `calls` `[{at, number, name, dir: in/out/missed, duration_s}]`, `messages` `[{at, from, to, body, channel}]`, `notes` `[{at, title, body}]`, `photos` `[{at, file, caption, grid}]`, `apps` `[{name, version}]`, `positions` `[{at, grid, note}]`, `places` `[{name, grid, note}]`, `network` `{carrier, number, imei, mac, wifi: [noms]}` |
+
+Limites : 300 éléments par catégorie et par partie, 2 000 par extraction, 1 000 caractères par texte, 256 Ko par corps ; au-delà 422 `too_large`. Compte : celui du jeton de jeu (Bearer) ; clé de communauté seule : 403 `unlinked`. Le membre peut retirer son accord pour un téléphone depuis le site : 422 `consent_revoked`. Fonction coupée par la communauté : 422 `extractions_disabled` (422 et non 403 : COMSPEC Link rend tout 403 au jeu sous `unauthorized`). Réponse `{"id": n, "ref": "EXT-000123", "duplicate": bool}`.
+
+## ICD-SSE-LORE-001 — Lore de session : remontée des IA et redescente des données décidées sur le web
+
+Canal : `SubmitIdCheck` (aucune nouvelle DLL) → `POST /api/sse/identity/checks`. Une session = une communauté + un code d'opération (`op`) : une mission ne lit jamais une autre session. Aucun envoi avant l'autorisation de la licence.
+
+**Remontée (`kind` = `lore_push`)**, par lots de 25 personnes au plus (500 par session) :
+
+| Champ | Contenu |
+|---|---|
+| `idempotency_key` | une clé par lot |
+| `op` | code d'opération (2 à 64 caractères `A-Z a-z 0-9 _ . : -`) |
+| `mission` | `title`, `world`, `country` (pays par défaut des IA, ISO alpha-3) |
+| `batch` | `[index, total]` |
+| `persons[]` | `uid` (identifiant stable de l'IA, gardé d'une session à l'autre), `country`, `last`, `first`, `sex` (M/F), `dob` (AAAA-MM-JJ), `birth_place`, `nationality`, `profession`, `aliases` [textes], `height_cm`, `weight_kg`, `build`, `hair`, `eyes`, `marks`, `addresses` [textes], `vehicles` `[{plate, make, model, color}]`, `phones` [textes], `links` `[{uid, relation}]`, `status` `{wanted, bolo, hvt, watchlist, armed}` (booléens), `knowledge` (ce qu'elle sait, MJ), `answers` `{answers: [textes], evoke: texte, banned: [textes]}`, `cover`, `side`, `faction`, `group`, `class` |
+
+Personne nouvelle : créée (identité du registre + fiche). Personne connue (même `uid`) : seules les données vides sur le web sont complétées ; ce que le MJ a écrit sur le web n'est jamais écrasé. Session verrouillée : rien n'est modifié, la date de remontée est notée. Réponse `ref` : `ok;créées;complétées;ignorées;verrou(0/1)`.
+
+**Redescente (`kind` = `lore_pull`)** : `op`, `page` (0, 1, …). Réponse `ref` (7 400 octets au plus) au format `parseSimpleArray` :
+
+`[[session, phase, verrou, heure_serveur, modifié_le, rafraîchissement_s, titre], [[uid, réf, [[clé, valeur]…], [[clé, valeur]…], [[clé, valeur]…]]…], page_suivante]`
+
+- 1er tableau de paires : données **connues des fichiers** et déjà révélées (phase ≤ phase en cours) : `last`, `first`, `sex`, `dob`, `birth_place`, `nationality`, `profession`, `aliases`, `height_cm`, `weight_kg`, `build`, `hair`, `eyes`, `marks`, `addresses`, `vehicles`, `phones`, `cautions`, `flags`, `affiliation`, `country`, `in_files`.
+- 2e : réponses de l'IA (`answers`, `evoke`, `banned`) : servies au serveur de jeu pour que l'IA réponde ; à garder côté serveur.
+- 3e : données **cachées (MJ)** : seulement pour un compte relié qui a le droit « Préparer le lore des sessions » ; vide sinon (clé de communauté seule, joueur).
+- `page_suivante` : 0 à la dernière page. Textes : `""` pour un guillemet, `\n` pour un retour à la ligne, `\p` pour `|`.
+
+Variables posées en jeu (mod SSE) : voir le guide « Préparer une session : lore et synchro Athena ».
+
 ## Web Tacmap poll frequencies (implementation)
 
 | Client | Interval | Target |

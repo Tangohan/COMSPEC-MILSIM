@@ -189,6 +189,12 @@ final class SseIdentityApiController
             return $this->aiProfileResponse($tenantId, $mapId, $body);
         }
 
+        // Fichiers SSE : extraction d'un téléphone du jeu (ICD-SSE-PHONE-001), lore de session (ICD-SSE-LORE-001).
+        if (($body['kind'] ?? null) === \App\Services\Sse\SsePhoneExtractionService::KIND
+            || in_array($body['kind'] ?? null, \App\Services\Sse\SseLoreService::KINDS, true)) {
+            return $this->filesGameResponse($tenantId, $mapId, $body);
+        }
+
         // Passage aux fichiers : consultation faite hors liaison, fiche biométrique SEEK II (réponse id + ref).
         if (in_array($body['kind'] ?? null, SseFileQueryService::KINDS, true)) {
             return $this->fileResponse($tenantId, $mapId, $body);
@@ -319,6 +325,55 @@ final class SseIdentityApiController
         }
 
         return Response::json($result, $result['duplicate'] ? 200 : 201);
+    }
+
+    /**
+     * Fichiers SSE envoyés par le jeu : extraction de téléphone (compte du jeton de jeu obligatoire), remontée et
+     * redescente du lore de session (clé de la communauté ; le caché MJ seulement pour un compte qui a le droit).
+     * Débit borné par communauté et par compte (FileRateLimiter) en plus de la règle générale de la route.
+     *
+     * @param array<string, mixed> $body
+     */
+    private function filesGameResponse(int $tenantId, int $mapId, array $body): Response
+    {
+        $kind = (string) $body['kind'];
+        $gameUser = ComspecApiKeyAuth::matchedUserId();
+        [$max, $window] = match ($kind) {
+            \App\Services\Sse\SsePhoneExtractionService::KIND => [40, 600],
+            default => [240, 60],
+        };
+        $limiter = new \App\Services\Security\FileRateLimiter();
+        if ($limiter->tooManyAttempts('sse_files_game|' . $kind . '|' . $tenantId . '|' . (int) $gameUser, $max, $window)) {
+            return Response::json(['error' => 'too_many_requests', 'message' => 'Trop d’envois : réessayez dans un moment.', 'retry_after' => $window], 429)
+                ->header('Retry-After', (string) $window);
+        }
+        try {
+            $result = match ($kind) {
+                \App\Services\Sse\SsePhoneExtractionService::KIND => (new \App\Services\Sse\SsePhoneExtractionService())
+                    ->ingest($tenantId, $gameUser, $body, strlen((string) json_encode($body, JSON_UNESCAPED_UNICODE))),
+                \App\Services\Sse\SseLoreService::KIND_PUSH => (new \App\Services\Sse\SseLoreService())->push($tenantId, $mapId, $body, $gameUser),
+                default => (new \App\Services\Sse\SseLoreService())->pull($tenantId, $body, $gameUser),
+            };
+        } catch (\PDOException $e) {
+            error_log('Fichiers SSE : envoi du jeu non enregistré : ' . $e->getMessage());
+
+            return Response::json(['error' => 'unavailable', 'message' => 'Envoi non enregistré pour le moment.'], 503);
+        }
+        if (isset($result['error'])) {
+            $messages = [
+                'unlinked' => 'Compte Athena non relié en jeu : rien n’a été envoyé.',
+                'consent_required' => 'Synchronisation non autorisée par le joueur.',
+                'consent_revoked' => 'Vous avez retiré votre accord pour ce téléphone sur le site.',
+                'extractions_disabled' => 'La communauté a désactivé la synchronisation des téléphones.',
+                'too_large' => 'Envoi trop volumineux : découpez-le en parties plus petites.',
+                'unknown_session' => 'Aucune session de lore pour ce code d’opération.',
+                'invalid_op' => 'Code d’opération invalide.',
+            ];
+
+            return Response::json(['error' => $result['error'], 'message' => $messages[$result['error']] ?? 'Envoi refusé : rien n’a été enregistré.'], (int) ($result['status'] ?? 422));
+        }
+
+        return Response::json($result, !empty($result['duplicate']) ? 200 : 201);
     }
 
     /**

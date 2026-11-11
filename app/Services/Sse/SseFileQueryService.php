@@ -140,6 +140,15 @@ final class SseFileQueryService
             error_log('Passage aux fichiers : journal indisponible : ' . $e->getMessage());
         }
         $qrn = (string) $logged['qrn'];
+        // Sujet consulté (une seule identité répond) : la consultation compte dans ses contacts antérieurs.
+        $hitIds = array_values(array_unique(array_map(static fn (array $i): int => (int) $i['id'], $result['report']['identities'] ?? [])));
+        if ((int) $logged['id'] > 0 && count($hitIds) === 1) {
+            try {
+                $this->files->db()->execute('UPDATE sse_file_queries SET identity_id = :i WHERE id = :id AND tenant_id = :t', ['i' => $hitIds[0], 'id' => (int) $logged['id'], 't' => $tenantId]);
+            } catch (\Throwable) {
+                // Colonne identity_id absente (étape 4340 pas encore passée).
+            }
+        }
 
         $answer = [
             'found' => $result['found'],

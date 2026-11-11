@@ -147,7 +147,9 @@ final class SsePortalNavTest extends TestCase
         self::assertArrayNotHasKey('papiers-membres', self::section(SsePortalNav::sections(true, true), 'identite'));
 
         $files = self::section(SsePortalNav::sections(false, false, true), 'fichiers');
-        self::assertSame(['fichiers', 'fichiers-journal', 'fichiers-mentions', 'fichiers-seek', 'papiers-controles', 'papiers-frm'], array_keys($files));
+        self::assertSame(['fichiers', 'fichiers-photos', 'fichiers-telephones', 'fichiers-journal', 'fichiers-mentions', 'fichiers-seek', 'papiers-controles', 'papiers-frm'], array_keys($files));
+        self::assertArrayHasKey('fichiers-lore', self::section(SsePortalNav::sections(true, false, false), 'fichiers'), 'Lore des sessions : gestion SSE ou MJ, jamais en invité');
+        self::assertArrayNotHasKey('fichiers-lore', self::section(SsePortalNav::sections(true, false, true), 'fichiers'));
         self::assertSame('atak/sse/papiers/tableau#frm', $files['papiers-frm']);
         self::assertSame(['papiers-profils-ia', 'papiers-preparation', 'campagnes', 'dev', 'editeur', 'maitre-jeu'], array_keys(self::section(SsePortalNav::sections(true, false, false, true, true), 'roleplay')));
 

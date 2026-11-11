@@ -72,7 +72,7 @@ body.sse-iw .panel-body form.fq-form .btn { margin-top: 0; }
     justify-content: space-between;
     gap: 0.6rem 1rem;
     padding: 1rem 0.9rem;
-    border-left: 8px solid var(--green, #059669);
+    background: rgba(16, 185, 129, 0.07);
 }
 .fq-verdict__big {
     font-family: "JetBrains Mono", ui-monospace, Consolas, monospace;
@@ -83,9 +83,9 @@ body.sse-iw .panel-body form.fq-form .btn { margin-top: 0; }
     color: var(--text-strong, inherit);
 }
 .fq-verdict__text { font-size: 1rem; font-weight: 700; color: var(--text-strong, inherit); }
-.fq-verdict--nohit { border-left-color: var(--muted, #64748b); }
-.fq-verdict--signale { border-left-color: var(--amber, #f59e0b); background: rgba(245, 158, 11, 0.07); }
-.fq-verdict--alert { border-left-color: var(--red, #dc2626); background: rgba(220, 38, 38, 0.08); }
+.fq-verdict--nohit { background: rgba(127, 127, 127, 0.06); }
+.fq-verdict--signale { background: rgba(251, 191, 36, 0.1); }
+.fq-verdict--alert { background: rgba(248, 113, 113, 0.12); }
 .fq-verdict--alert .fq-verdict__big { color: var(--red, #dc2626); }
 .fq-armed {
     margin: 0;
