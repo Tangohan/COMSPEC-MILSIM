@@ -47,6 +47,8 @@ _c set [0, (_c select 0) + 1];
 _c set [1, (_c select 1) + _dt];
 if (_dt > (_c select 2)) then { _c set [2, _dt]; };
 missionNamespace setVariable ["COMSPEC_ATAK_PerfAcc", _acc];
+// Mesure des performances (fn_perfLog, réglage décoché par défaut) : mêmes mesures, bilans [COMSPEC perf] à part.
+if (missionNamespace getVariable ["COMSPEC_ATAK_PerfLog", false]) then { ["acc", [_key, _dt]] call comspec_atak_native_fnc_perfLog; };
 // Temps mesuré dans l'image en cours, toutes clés confondues : la ligne « Image figée » (XEH_postInitClient) dit
 // ainsi quelle part de l'image figée a été passée dans les boucles du mod (le reste : moteur, autres mods).
 missionNamespace setVariable ["COMSPEC_ATAK_PerfFrame", (missionNamespace getVariable ["COMSPEC_ATAK_PerfFrame", 0]) + _dt];

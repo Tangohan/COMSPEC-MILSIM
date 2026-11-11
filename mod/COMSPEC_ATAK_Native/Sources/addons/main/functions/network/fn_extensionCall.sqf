@@ -15,6 +15,8 @@ private _ret = "COMSPECATAKNativeExtension" callExtension [_command, _args];
 if (missionNamespace getVariable ["COMSPEC_ATAK_Prof", false]) then { ["DLL native " + _command, _pt] call comspec_atak_native_fnc_perfAcc; } else {
     if (_authQ) then { ["DLL native GetAuthState", _pt] call comspec_atak_native_fnc_perfAcc; };
 };
+// Mesure des performances (fn_perfLog) : appel de plus de 5 ms noté dans le journal.
+if (missionNamespace getVariable ["COMSPEC_ATAK_PerfLog", false]) then { ["ext", ["native", _command, _pt]] call comspec_atak_native_fnc_perfLog; };
 private _raw = if (_ret isEqualType []) then { _ret param [0, ""] } else { _ret };
 if !(_raw isEqualType "") then { _raw = str _raw; };
 if (_authQ) then { missionNamespace setVariable ["COMSPEC_ATAK_AuthStateMemo", [diag_tickTime, _raw]]; };

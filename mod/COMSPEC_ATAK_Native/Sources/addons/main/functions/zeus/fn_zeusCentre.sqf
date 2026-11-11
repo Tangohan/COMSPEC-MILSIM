@@ -27,7 +27,7 @@
 params [["_act", ""], ["_arg", []]];
 disableSerialization;
 private _ui = { uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreUi", createHashMap] };
-private _T = { _this call comspec_atak_native_fnc_tr };
+private _trZ = { _this call comspec_atak_native_fnc_tr };
 private _esc = { [[_this, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
 // Version MAJEUR.MINEUR.CORRECTIF d'un texte de version (« 4.2.0.AG - Washington · … » -> [4, 2, 0]) ; [] si absente.
 private _verOf = {
@@ -49,7 +49,7 @@ private _refVer = {
     if (_v isEqualTo []) then { _v = (missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""]) call _verOf; };
     _v
 };
-private _ago = { if (_this < 60) then { format [("il y a %1 s") call _T, _this] } else { format [("il y a %1 min") call _T, floor (_this / 60)] } };
+private _ago = { if (_this < 60) then { format [("il y a %1 s") call _trZ, _this] } else { format [("il y a %1 min") call _trZ, floor (_this / 60)] } };
 // Réglages des étiquettes 3D du Zeus, gardés dans son profil.
 private _labelCfg = {
     private _d = createHashMapFromArray [["mode", "compact"], ["name", true], ["phone", true], ["bat", true], ["net", true], ["athena", true], ["acct", true], ["ver", true], ["tx", true], ["alerts", true]];
@@ -97,8 +97,8 @@ switch (_act) do {
         private _b = _d ctrlCreate ["COMSPEC_RscButton", -1];
         _b ctrlSetPosition [_right - _bw - 0.004 * _h * _kw, safeZoneY + 0.008 * _h, _bw, 0.034 * _h];
         _b ctrlSetFontHeight (0.021 * _h);
-        _b ctrlSetText (("CENTRE ZEUS") call _T);
-        _b ctrlSetTooltip (("État des ATAK, actions, état du serveur et outils Zeus") call _T);
+        _b ctrlSetText (("CENTRE ZEUS") call _trZ);
+        _b ctrlSetTooltip (("État des ATAK, actions, état du serveur et outils Zeus") call _trZ);
         _b ctrlCommit 0;
         _b ctrlAddEventHandler ["ButtonClick", { ["toggle"] call comspec_atak_native_fnc_zeusCentre; }];
         uiNamespace setVariable ["COMSPEC_ATAK_ZeusCentreBtn", _b];
@@ -111,14 +111,14 @@ switch (_act) do {
         private _try = {
             params ["_txt"];
             private _f = 0.019 * _h;
-            _c ctrlSetText (_txt call _T);
+            _c ctrlSetText (_txt call _trZ);
             _c ctrlSetFontHeight _f;
             while { (ctrlTextWidth _c) > _w * 0.94 && {_f > 0.0145 * _h} } do { _f = _f - 0.0005 * _h; _c ctrlSetFontHeight _f; };
             (ctrlTextWidth _c) <= _w * 0.94
         };
         private _ok = [_long] call _try;
-        private _full = [_tip, format ["%1. %2", _long call _T, _tip call _T]] select (_tip isNotEqualTo "" && {_short isNotEqualTo ""});
-        if (!_ok && {_short isNotEqualTo ""}) then { [_short] call _try; _c ctrlSetTooltip ([_long call _T, _full] select (_tip isNotEqualTo "")); } else { if (_tip isNotEqualTo "") then { _c ctrlSetTooltip (_tip call _T); }; };
+        private _full = [_tip, format ["%1. %2", _long call _trZ, _tip call _trZ]] select (_tip isNotEqualTo "" && {_short isNotEqualTo ""});
+        if (!_ok && {_short isNotEqualTo ""}) then { [_short] call _try; _c ctrlSetTooltip ([_long call _trZ, _full] select (_tip isNotEqualTo "")); } else { if (_tip isNotEqualTo "") then { _c ctrlSetTooltip (_tip call _trZ); }; };
         _c ctrlCommit 0;
     };
     case "toggle": {
@@ -260,7 +260,7 @@ switch (_act) do {
         {
             _x params ["_id", "_g", "_lbl", "_help", ["_modOnly", false]];
             if (!_modOnly) then {
-                private _i = _cat lbAdd format ["%1 : %2", _g call _T, _lbl call _T];
+                private _i = _cat lbAdd format ["%1 : %2", _g call _trZ, _lbl call _trZ];
                 _cat lbSetData [_i, _id];
             };
         } forEach (["catalog"] call comspec_atak_native_fnc_zeusMenu);
@@ -270,7 +270,7 @@ switch (_act) do {
         _tgt ctrlSetFontHeight (0.018 * _h);
         {
             _x params ["_k", "_lbl"];
-            private _i = _tgt lbAdd (_lbl call _T);
+            private _i = _tgt lbAdd (_lbl call _trZ);
             _tgt lbSetData [_i, _k];
         } forEach [["sel", "Joueur choisi"], ["zeus", "Sélection Zeus"], ["list", "Joueurs affichés"]];
         _tgt lbSetCurSel 0;
@@ -280,7 +280,7 @@ switch (_act) do {
         (_tabs get "players") pushBack _ap;
         _y = _y + _rowH + _p;
         private _keys = ["COMSPEC_RscStructuredText", [_x0 + _pw, _y, _w - 2 * _pw, 0.022 * _h]] call _mk;
-        _keys ctrlSetStructuredText parseText (("<t size='0.7' color='#8a9a93'>Clic droit (ZEN) : ATAK · Contrôle Zeus, ATAK · Relais, ATAK · Maillage</t>") call _T);
+        _keys ctrlSetStructuredText parseText (("<t size='0.7' color='#8a9a93'>Clic droit (ZEN) : ATAK · Contrôle Zeus, ATAK · Relais, ATAK · Maillage</t>") call _trZ);
         (_tabs get "players") pushBack _keys;
         // --- Onglet SERVEUR -------------------------------------------------------------------------------------------
         _y = _yBody;
@@ -333,7 +333,7 @@ switch (_act) do {
         ];
         _y = _y + 3 * (_rowH + _p);
         private _lbHelp = ["COMSPEC_RscStructuredText", [_x0 + _pw, _y, _w - 2 * _pw, _bodyH - (_y - _yBody)]] call _mk;
-        _lbHelp ctrlSetStructuredText parseText (("<t size='0.8' color='#8a9a93'>Étiquettes dessinées au-dessus des joueurs, panneau ouvert seulement, taille constante à l'écran. Un équipage = une étiquette. Au-delà de 400 m, seul le point reste (les alertes restent écrites). Vert : tout va bien ; orange : à surveiller ; rouge : alerte ; gris : relevé en attente. Réglages gardés dans votre profil.</t>") call _T);
+        _lbHelp ctrlSetStructuredText parseText (("<t size='0.8' color='#8a9a93'>Étiquettes dessinées au-dessus des joueurs, panneau ouvert seulement, taille constante à l'écran. Un équipage = une étiquette. Au-delà de 400 m, seul le point reste (les alertes restent écrites). Vert : tout va bien ; orange : à surveiller ; rouge : alerte ; gris : relevé en attente. Réglages gardés dans votre profil.</t>") call _trZ);
         (_tabs get "labels") pushBack _lbHelp;
         // --- Onglet OUTILS --------------------------------------------------------------------------------------------
         _y = _yBody;
@@ -348,18 +348,20 @@ switch (_act) do {
         if (!isNil "comspec_atak_native_fnc_devMeshOverlay") then { _tools pushBack ["GRAPHE DU MAILLAGE (3D)", "MAILLAGE", "Superposition 3D du graphe du maillage de votre camp (lecture seule, graphe du serveur).", "uiNamespace setVariable ['COMSPEC_ATAK_MeshZeusSide', str side group player]; ['toggle'] call comspec_atak_native_fnc_devMeshOverlay;", false]; };
         private _tlW = (_w - 3 * _pw) * 0.42;
         {
-            _x params ["_t", "_short", "_desc", "_code", "_wrap"];
+            // Titre en _tTitle : SQF ne distingue pas _t de _trZ (la traduction), « call _trZ » plantait juste en dessous
+            // (RPT du 11/11, fn_zeusCentre.sqf ligne 357, une erreur par outil à chaque ouverture de l'onglet).
+            _x params ["_tTitle", "_short", "_desc", "_code", "_wrap"];
             private _run = [_code, format ["['tool', [{ %1 }]] call comspec_atak_native_fnc_zeusCentre;", _code]] select _wrap;
             private _c = ["COMSPEC_RscButton", [_x0 + _pw, _y, _tlW, 0.032 * _h], "", "", _run] call _mk;
-            ["fit", [_c, _t, _short, _desc]] call comspec_atak_native_fnc_zeusCentre;
+            ["fit", [_c, _tTitle, _short, _desc]] call comspec_atak_native_fnc_zeusCentre;
             (_tabs get "tools") pushBack _c;
             private _dc = ["COMSPEC_RscStructuredText", [_x0 + 2 * _pw + _tlW, _y, _w - 3 * _pw - _tlW, 0.032 * _h]] call _mk;
-            _dc ctrlSetStructuredText parseText ((format ["<t size='0.72' color='#b8c4bd'>%1</t>", _desc]) call _T);
+            _dc ctrlSetStructuredText parseText ((format ["<t size='0.72' color='#b8c4bd'>%1</t>", _desc]) call _trZ);
             (_tabs get "tools") pushBack _dc;
             _y = _y + 0.032 * _h + _p;
         } forEach _tools;
         private _tHelp = ["COMSPEC_RscStructuredText", [_x0 + _pw, _y, _w - 2 * _pw, (_bodyH - (_y - _yBody)) max (0.03 * _h)]] call _mk;
-        _tHelp ctrlSetStructuredText parseText (("<t size='0.72' color='#8a9a93'>Clic droit (ZEN) sur un joueur : ATAK · Contrôle Zeus ; sur un relais : ATAK · Relais ; sur le sol : ATAK · Maillage (brouilleurs, clés, météo radio). Les fenêtres ouvertes d'ici passent devant le centre, qui revient à leur fermeture.</t>") call _T);
+        _tHelp ctrlSetStructuredText parseText (("<t size='0.72' color='#8a9a93'>Clic droit (ZEN) sur un joueur : ATAK · Contrôle Zeus ; sur un relais : ATAK · Relais ; sur le sol : ATAK · Maillage (brouilleurs, clés, météo radio). Les fenêtres ouvertes d'ici passent devant le centre, qui revient à leur fermeture.</t>") call _trZ);
         (_tabs get "tools") pushBack _tHelp;
         { _ctrls append _y; } forEach _tabs;
         uiNamespace setVariable ["COMSPEC_ATAK_ZeusCentreUi", createHashMapFromArray [
@@ -607,10 +609,10 @@ switch (_act) do {
         } forEach (_t get "filters");
         private _denied = missionNamespace getVariable ["COMSPEC_ATAK_ZeusStateDenied", false];
         private _pending = { (_x get "age") < 0 } count _model;
-        private _sub = if (_denied) then { ("Relevé refusé par le serveur") call _T } else {
-            format ["%1 · %2", format [("%1 joueur(s)") call _T, count _model], format [("%1 lié(s)") call _T, _n get "link"]] + ([format [" · %1", format [("%1 en attente") call _T, _pending]], ""] select (_pending isEqualTo 0))
+        private _sub = if (_denied) then { ("Relevé refusé par le serveur") call _trZ } else {
+            format ["%1 · %2", format [("%1 joueur(s)") call _trZ, count _model], format [("%1 lié(s)") call _trZ, _n get "link"]] + ([format [" · %1", format [("%1 en attente") call _trZ, _pending]], ""] select (_pending isEqualTo 0))
         };
-        (_t get "head") ctrlSetStructuredText parseText (format ["<t size='1.05' font='RobotoCondensedBold'>%1</t><br/><t size='0.78' color='#8a9a93'>%2</t>", ("CENTRE ZEUS") call _T, _sub]);
+        (_t get "head") ctrlSetStructuredText parseText (format ["<t size='1.05' font='RobotoCondensedBold'>%1</t><br/><t size='0.78' color='#8a9a93'>%2</t>", ("CENTRE ZEUS") call _trZ, _sub]);
         // Joueur choisi dans Zeus : sa fiche s'ouvre ici (le clic sur l'unité vaut clic dans la liste).
         private _picked = ((curatorSelected param [0, []]) select { isPlayer _x }) param [0, objNull];
         if (!isNull _picked) then {
@@ -647,7 +649,7 @@ switch (_act) do {
                 default { [0.79, 0.88, 0.82, 1] };
             };
             private _cs = _m get "cs";
-            [format ["%1%2  ·  %3", [format ["%1 · ", _cs], ""] select (_cs isEqualTo "" || {_cs isEqualTo (_m get "name")}), _m get "name", (_tok apply { _x call _T }) joinString " · "], _m get "uid", _col]
+            [format ["%1%2  ·  %3", [format ["%1 · ", _cs], ""] select (_cs isEqualTo "" || {_cs isEqualTo (_m get "name")}), _m get "name", (_tok apply { _x call _trZ }) joinString " · "], _m get "uid", _col]
         };
         private _list = _t get "list";
         if (_lines isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreLines", []]) || {_arg isEqualTo [true]}) then {
@@ -672,7 +674,7 @@ switch (_act) do {
                     case (_q isNotEqualTo ""): { "Aucun joueur ne correspond à la recherche." };
                     default { "Aucun joueur dans ce filtre. TOUS les montre tous." };
                 };
-                _empty ctrlSetStructuredText parseText (format ["<t size='0.85' color='#8a9a93' align='center'>%1</t>", _why call _T]);
+                _empty ctrlSetStructuredText parseText (format ["<t size='0.85' color='#8a9a93' align='center'>%1</t>", _why call _trZ]);
                 _empty ctrlShow ((uiNamespace getVariable ["COMSPEC_ATAK_ZeusCentreTab", "players"]) isEqualTo "players" && {!(missionNamespace getVariable ["COMSPEC_ATAK_ZeusCentreHidden", false])});
             } else { _empty ctrlSetStructuredText parseText ""; _empty ctrlShow false; };
         };
@@ -710,8 +712,8 @@ switch (_act) do {
                     default { _green };
                 };
                 if ((count _ms) > 1) then {
-                    _lines pushBack [format [("%1 joueurs") call _T, count _ms], _worst, 0.030];
-                    { _lines pushBack [((_x get "alerts") select 0) call _T, _red, 0.026]; } forEach (_bad select [0, 3]);
+                    _lines pushBack [format [("%1 joueurs") call _trZ, count _ms], _worst, 0.030];
+                    { _lines pushBack [((_x get "alerts") select 0) call _trZ, _red, 0.026]; } forEach (_bad select [0, 3]);
                 } else {
                     private _m = _first;
                     (_m get "pub") params [["_b", -1], ["_s", -1]];
@@ -720,7 +722,7 @@ switch (_act) do {
                     private _cs = _m get "cs";
                     private _title = [format ["%1 · %2", _cs, _m get "name"], _m get "name"] select (_cs isEqualTo "" || {_cs isEqualTo (_m get "name")});
                     if (_cfg getOrDefault ["name", true] || {!_detailed}) then { _lines pushBack [_title, _worst, 0.030]; };
-                    if (_cfg getOrDefault ["alerts", true]) then { { _lines pushBack [_x call _T, _red, 0.026]; } forEach ((_m get "alerts") select [0, 2]); };
+                    if (_cfg getOrDefault ["alerts", true]) then { { _lines pushBack [_x call _trZ, _red, 0.026]; } forEach ((_m get "alerts") select [0, 2]); };
                     private _bat = if (_fresh) then { _row select 4 } else { _b };
                     private _devTxt = switch (true) do {
                         case ((_m get "dev") isEqualTo "BROKEN"): { "" };
@@ -734,16 +736,16 @@ switch (_act) do {
                     if (_detailed) then {
                         if (_cfg getOrDefault ["phone", true] || {_cfg getOrDefault ["bat", true]}) then {
                             private _parts = [];
-                            if (_cfg getOrDefault ["phone", true] && {_devTxt isNotEqualTo ""}) then { _parts pushBack (_devTxt call _T); };
+                            if (_cfg getOrDefault ["phone", true] && {_devTxt isNotEqualTo ""}) then { _parts pushBack (_devTxt call _trZ); };
                             if (_cfg getOrDefault ["bat", true] && {_batTxt isNotEqualTo ""}) then { _parts pushBack _batTxt; };
                             if (_parts isNotEqualTo []) then { _lines pushBack [_parts joinString " · ", [_white, _amber] select ((_m get "dev") in ["OFF"] || {_bat isEqualType 0 && {_bat >= 0} && {_bat < 20}}), 0.026]; };
                         };
                         if (_cfg getOrDefault ["net", true]) then {
                             private _parts = [];
-                            if (_s isEqualType 0 && {_s >= 0}) then { _parts pushBack format [("Signal %1") call _T, _s]; };
+                            if (_s isEqualType 0 && {_s >= 0}) then { _parts pushBack format [("Signal %1") call _trZ, _s]; };
                             private _node = _m get "node";
-                            if (_node isNotEqualTo []) then { _parts pushBack format [("nœud %1 · %2 m") call _T, _node select 0, _node select 1]; };
-                            if (_m get "relay") then { _parts pushBack (("relais") call _T); };
+                            if (_node isNotEqualTo []) then { _parts pushBack format [("nœud %1 · %2 m") call _trZ, _node select 0, _node select 1]; };
+                            if (_m get "relay") then { _parts pushBack (("relais") call _trZ); };
                             if (_parts isNotEqualTo []) then { _lines pushBack [_parts joinString " · ", [_white, _amber] select (_s isEqualType 0 && {_s isEqualTo 0}), 0.026]; };
                         };
                         if (_cfg getOrDefault ["athena", true] || {_cfg getOrDefault ["acct", true]}) then {
@@ -753,32 +755,32 @@ switch (_act) do {
                                 case ((_row select 5) in ["unlinked", "unset", "off"]): { "Athena : jamais lié" };
                                 default { "Athena : hors liaison" };
                             };
-                            private _txt = [_st call _T, ""] select !(_cfg getOrDefault ["athena", true]);
+                            private _txt = [_st call _trZ, ""] select !(_cfg getOrDefault ["athena", true]);
                             if (_cfg getOrDefault ["acct", true] && {_fresh} && {(_row param [13, ""]) isNotEqualTo ""}) then { _txt = ([_txt + " · ", ""] select (_txt isEqualTo "")) + (_row select 13); };
                             if (_txt isNotEqualTo "") then { _lines pushBack [_txt, [[_amber, _green] select (_m get "logged"), _grey] select !_fresh, 0.026]; };
                         };
                         if (_cfg getOrDefault ["ver", true] && {_fresh}) then {
                             private _v = (_m get "ver") joinString ".";
                             private _vt = switch (_m get "verCmp") do { case (-1): { "PAS À JOUR" }; case 0: { "à jour" }; case 1: { "plus récent" }; default { "version inconnue" }; };
-                            _lines pushBack [format [("Mod %1 · %2") call _T, [_v, "?"] select (_v isEqualTo ""), _vt call _T], [_white, _amber] select ((_m get "verCmp") isEqualTo -1), 0.026];
+                            _lines pushBack [format [("Mod %1 · %2") call _trZ, [_v, "?"] select (_v isEqualTo ""), _vt call _trZ], [_white, _amber] select ((_m get "verCmp") isEqualTo -1), 0.026];
                         };
                         if (_cfg getOrDefault ["tx", true]) then {
                             private _parts = [];
-                            if ((_m get "spk") isNotEqualTo []) then { _parts pushBack (("HAUT-PARLEUR") call _T); };
-                            if (_fresh && {_row select 10}) then { _parts pushBack (("RADIO EN ÉMISSION") call _T); };
-                            if ((_m get "pilot") isNotEqualTo "") then { _parts pushBack (("pilote de drone") call _T); };
+                            if ((_m get "spk") isNotEqualTo []) then { _parts pushBack (("HAUT-PARLEUR") call _trZ); };
+                            if (_fresh && {_row select 10}) then { _parts pushBack (("RADIO EN ÉMISSION") call _trZ); };
+                            if ((_m get "pilot") isNotEqualTo "") then { _parts pushBack (("pilote de drone") call _trZ); };
                             if (_parts isNotEqualTo []) then { _lines pushBack [_parts joinString " · ", _amber, 0.026]; };
                         };
                     } else {
                         // Compact : seulement ce qui cloche.
-                        if ((_m get "age") < 0) then { _lines pushBack [("SANS RELEVÉ") call _T, _grey, 0.026]; };
-                        if (_fresh && {!(_m get "logged")}) then { _lines pushBack [("HORS LIAISON") call _T, _amber, 0.026]; };
-                        if ((_m get "dev") isEqualTo "OFF") then { _lines pushBack [("TÉL. ÉTEINT") call _T, _amber, 0.026]; };
-                        if (_bat isEqualType 0 && {_bat >= 0} && {_bat < 20}) then { _lines pushBack [format [("BATTERIE %1 %%") call _T, _bat], _amber, 0.026]; };
-                        if ((_m get "verCmp") isEqualTo -1) then { _lines pushBack [format [("MOD %1 PAS À JOUR") call _T, (_m get "ver") joinString "."], _amber, 0.026]; };
+                        if ((_m get "age") < 0) then { _lines pushBack [("SANS RELEVÉ") call _trZ, _grey, 0.026]; };
+                        if (_fresh && {!(_m get "logged")}) then { _lines pushBack [("HORS LIAISON") call _trZ, _amber, 0.026]; };
+                        if ((_m get "dev") isEqualTo "OFF") then { _lines pushBack [("TÉL. ÉTEINT") call _trZ, _amber, 0.026]; };
+                        if (_bat isEqualType 0 && {_bat >= 0} && {_bat < 20}) then { _lines pushBack [format [("BATTERIE %1 %%") call _trZ, _bat], _amber, 0.026]; };
+                        if ((_m get "verCmp") isEqualTo -1) then { _lines pushBack [format [("MOD %1 PAS À JOUR") call _trZ, (_m get "ver") joinString "."], _amber, 0.026]; };
                         private _parts = [];
-                        if ((_m get "spk") isNotEqualTo []) then { _parts pushBack (("HP") call _T); };
-                        if (_fresh && {_row select 10}) then { _parts pushBack (("RADIO") call _T); };
+                        if ((_m get "spk") isNotEqualTo []) then { _parts pushBack (("HP") call _trZ); };
+                        if (_fresh && {_row select 10}) then { _parts pushBack (("RADIO") call _trZ); };
                         if (_parts isNotEqualTo []) then { _lines pushBack [_parts joinString " · ", _amber, 0.026]; };
                     };
                 };
@@ -796,10 +798,10 @@ switch (_act) do {
         private _model = missionNamespace getVariable ["COMSPEC_ATAK_ZeusCentreModel", []];
         private _i = _model findIf { (_x get "uid") isEqualTo _uid };
         private _card = _t get "card";
-        if (_i < 0) exitWith { _card ctrlSetStructuredText parseText (("<t size='0.85' color='#8a9a93'>Choisissez un joueur dans la liste, ou sélectionnez-le dans Zeus. Double-clic : caméra sur le joueur.</t>") call _T); };
+        if (_i < 0) exitWith { _card ctrlSetStructuredText parseText (("<t size='0.85' color='#8a9a93'>Choisissez un joueur dans la liste, ou sélectionnez-le dans Zeus. Double-clic : caméra sur le joueur.</t>") call _trZ); };
         private _m = _model select _i;
         private _u = _m get "u";
-        private _tr = _T;
+        private _tr = _trZ;
         private _yes = { [("non") call _tr, ("oui") call _tr] select _this };
         private _row = _m get "row";
         private _fresh = _m get "fresh";
@@ -901,78 +903,78 @@ switch (_act) do {
         private _rec = missionNamespace getVariable ["COMSPEC_ATAK_ZeusSrv", []];
         private _L = [];
         private _plain = [];
-        private _sec = { _L pushBack format ["<t size='0.85' font='RobotoCondensedBold' color='#7fd08a'>%1</t>", _this call _T]; _plain pushBack format ["== %1", _this call _T]; };
+        private _sec = { _L pushBack format ["<t size='0.85' font='RobotoCondensedBold' color='#7fd08a'>%1</t>", _this call _trZ]; _plain pushBack format ["== %1", _this call _trZ]; };
         private _line = {
             params ["_k", "_v", ["_col", ""]];
-            _L pushBack format ["<t size='0.82' color='#8a9a93'>%1 : </t><t size='0.82'%3>%2</t>", _k call _T, _v, ["", format [" color='%1'", _col]] select (_col isNotEqualTo "")];
-            _plain pushBack format ["%1 : %2", _k call _T, _v];
+            _L pushBack format ["<t size='0.82' color='#8a9a93'>%1 : </t><t size='0.82'%3>%2</t>", _k call _trZ, _v, ["", format [" color='%1'", _col]] select (_col isNotEqualTo "")];
+            _plain pushBack format ["%1 : %2", _k call _trZ, _v];
         };
-        private _yn = { [("non") call _T, ("oui") call _T] select (_this isEqualTo true) };
+        private _yn = { [("non") call _trZ, ("oui") call _trZ] select (_this isEqualTo true) };
         if (_rec isEqualTo []) then {
-            _L pushBack format ["<t size='0.85' color='#8a9a93'>%1</t>", (["État du serveur demandé…", "Relevé refusé par le serveur."] select (missionNamespace getVariable ["COMSPEC_ATAK_ZeusStateDenied", false])) call _T];
+            _L pushBack format ["<t size='0.85' color='#8a9a93'>%1</t>", (["État du serveur demandé…", "Relevé refusé par le serveur."] select (missionNamespace getVariable ["COMSPEC_ATAK_ZeusStateDenied", false])) call _trZ];
         } else {
             _rec params ["_s", "_at"];
             private _age = round (diag_tickTime - _at);
             private _up = _s getOrDefault ["uptime", 0];
-            _L pushBack format ["<t size='1' font='RobotoCondensedBold'>%1</t> <t size='0.78' color='#8a9a93'>%2 · %3</t>", (_s getOrDefault ["mission", ""]) call _esc, (_s getOrDefault ["world", ""]) call _esc, ([("hôte"), ("serveur dédié")] select ((_s getOrDefault ["dedicated", false]) isEqualTo true)) call _T];
+            _L pushBack format ["<t size='1' font='RobotoCondensedBold'>%1</t> <t size='0.78' color='#8a9a93'>%2 · %3</t>", (_s getOrDefault ["mission", ""]) call _esc, (_s getOrDefault ["world", ""]) call _esc, ([("hôte"), ("serveur dédié")] select ((_s getOrDefault ["dedicated", false]) isEqualTo true)) call _trZ];
             _plain pushBack format ["%1 · %2", _s getOrDefault ["mission", ""], _s getOrDefault ["world", ""]];
-            _L pushBack format ["<t size='0.78' color='#8a9a93'>%1</t>", format [("État reçu %1") call _T, _age call _ago]];
+            _L pushBack format ["<t size='0.78' color='#8a9a93'>%1</t>", format [("État reçu %1") call _trZ, _age call _ago]];
             "SERVEUR" call _sec;
             ["Mission en cours depuis", format ["%1 h %2 min", floor (_up / 3600), floor ((_up % 3600) / 60)]] call _line;
             private _fps = _s getOrDefault ["fps", 0];
             ["FPS serveur", format ["%1 (min %2)", _fps, _s getOrDefault ["fpsMin", 0]], ["", "#f2ab33"] select (_fps < 20)] call _line;
-            ["Joueurs", format ["%1 · %2", _s getOrDefault ["players", 0], format [("%1 client(s) headless") call _T, _s getOrDefault ["hc", 0]]]] call _line;
-            ["IA", format ["%1 · %2 · %3", format [("%1 unité(s)") call _T, _s getOrDefault ["ai", 0]], format [("%1 groupe(s)") call _T, _s getOrDefault ["groups", 0]], format [("%1 véhicule(s)") call _T, _s getOrDefault ["vehicles", 0]]]] call _line;
+            ["Joueurs", format ["%1 · %2", _s getOrDefault ["players", 0], format [("%1 client(s) headless") call _trZ, _s getOrDefault ["hc", 0]]]] call _line;
+            ["IA", format ["%1 · %2 · %3", format [("%1 unité(s)") call _trZ, _s getOrDefault ["ai", 0]], format [("%1 groupe(s)") call _trZ, _s getOrDefault ["groups", 0]], format [("%1 véhicule(s)") call _trZ, _s getOrDefault ["vehicles", 0]]]] call _line;
             ["Morts au sol", str (_s getOrDefault ["dead", 0])] call _line;
             "VERSIONS CHARGÉES SUR LE SERVEUR" call _sec;
             { [_x select 0, (_x select 1) call _esc] call _line; } forEach (_s getOrDefault ["mods", []]);
             private _mine = (missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""]) call _verOf;
             private _srvV = (_s getOrDefault ["atakVersion", ""]) call _verOf;
-            if (_mine isNotEqualTo [] && {_srvV isNotEqualTo []} && {_mine isNotEqualTo _srvV}) then { ["Votre mod", format [("%1, différent du serveur") call _T, _mine joinString "."], "#f2ab33"] call _line; };
+            if (_mine isNotEqualTo [] && {_srvV isNotEqualTo []} && {_mine isNotEqualTo _srvV}) then { ["Votre mod", format [("%1, différent du serveur") call _trZ, _mine joinString "."], "#f2ab33"] call _line; };
             "LIAISON ATHENA DU SERVEUR" call _sec;
             private _a = createHashMapFromArray (_s getOrDefault ["athena", []]);
             private _mode = _a getOrDefault ["mode", "absent"];
-            ["Service", ((createHashMapFromArray [["on", "Athena"], ["off", "local seulement (réglage serveur)"], ["absent", "COMSPEC Overwatch absent"]]) get _mode) call _T] call _line;
+            ["Service", ((createHashMapFromArray [["on", "Athena"], ["off", "local seulement (réglage serveur)"], ["absent", "COMSPEC Overwatch absent"]]) get _mode) call _trZ] call _line;
             if (_mode isEqualTo "on") then {
                 ["Session", (_a getOrDefault ["auth", "—"]) call _esc] call _line;
                 private _lk = _a getOrDefault ["link", "—"];
                 ["Liaison", _lk call _esc, ["#f2ab33", ""] select (_lk isEqualTo "linked")] call _line;
                 ["Prêt (identité reçue)", (_a getOrDefault ["ready", false]) call _yn] call _line;
                 private _okAge = _a getOrDefault ["okAge", -1];
-                ["Dernière réponse d'Athena", [("jamais") call _T, _okAge call _ago] select (_okAge >= 0), ["#f2ab33", ""] select (_okAge >= 0 && {_okAge < 900})] call _line;
+                ["Dernière réponse d'Athena", [("jamais") call _trZ, _okAge call _ago] select (_okAge >= 0), ["#f2ab33", ""] select (_okAge >= 0 && {_okAge < 900})] call _line;
                 ["Hub serveur actif", (_a getOrDefault ["hub", false]) call _yn] call _line;
                 ["File d'envoi", str (_a getOrDefault ["queue", 0])] call _line;
-                if ((_a getOrDefault ["uplinkOff", false]) isEqualTo true) then { ["Envois", ("coupés (liaison désactivée sur le serveur)") call _T, "#f25a48"] call _line; };
+                if ((_a getOrDefault ["uplinkOff", false]) isEqualTo true) then { ["Envois", ("coupés (liaison désactivée sur le serveur)") call _trZ, "#f25a48"] call _line; };
                 if ((_a getOrDefault ["detail", ""]) isNotEqualTo "") then { ["Détail", (_a getOrDefault ["detail", ""]) call _esc] call _line; };
                 if ((_a getOrDefault ["err", ""]) in ["", "0"]) then {} else { ["Dernière erreur DLL", (_a getOrDefault ["err", ""]) call _esc, "#f2ab33"] call _line; };
             };
             "PAQUET D'IDENTITÉ (SSE)" call _sec;
             private _id = _s getOrDefault ["identity", []];
             if (_id isEqualTo []) then {
-                _L pushBack format ["<t size='0.82' color='#8a9a93'>%1</t>", ("Addon identité du SSE absent du serveur.") call _T];
+                _L pushBack format ["<t size='0.82' color='#8a9a93'>%1</t>", ("Addon identité du SSE absent du serveur.") call _trZ];
             } else {
                 private _m = createHashMapFromArray _id;
                 ["DLL d'identité", (_m getOrDefault ["dll", false]) call _yn] call _line;
                 private _pa = _m getOrDefault ["packAt", ""];
-                ["Paquet reçu", [format [("non (%1 tentative(s))") call _T, _m getOrDefault ["tries", 0]], format [("oui, généré le %1") call _T, _pa call _esc]] select (_pa isNotEqualTo ""), ["#f2ab33", ""] select (_pa isNotEqualTo "")] call _line;
-                ["Contenu", format ["%1 · %2 · %3 · %4", format [("%1 document(s)") call _T, _m getOrDefault ["docs", 0]], format [("%1 pays") call _T, _m getOrDefault ["countries", 0]], format [("%1 identité(s) préparée(s)") call _T, _m getOrDefault ["population", 0]], format [("%1 avis") call _T, _m getOrDefault ["watch", 0]]]] call _line;
+                ["Paquet reçu", [format [("non (%1 tentative(s))") call _trZ, _m getOrDefault ["tries", 0]], format [("oui, généré le %1") call _trZ, _pa call _esc]] select (_pa isNotEqualTo ""), ["#f2ab33", ""] select (_pa isNotEqualTo "")] call _line;
+                ["Contenu", format ["%1 · %2 · %3 · %4", format [("%1 document(s)") call _trZ, _m getOrDefault ["docs", 0]], format [("%1 pays") call _trZ, _m getOrDefault ["countries", 0]], format [("%1 identité(s) préparée(s)") call _trZ, _m getOrDefault ["population", 0]], format [("%1 avis") call _trZ, _m getOrDefault ["watch", 0]]]] call _line;
             };
             "MAILLAGE ET RELAIS" call _sec;
             private _me = createHashMapFromArray (_s getOrDefault ["mesh", []]);
             ["Liaison réaliste", (_me getOrDefault ["on", false]) call _yn] call _line;
             if ((_me getOrDefault ["on", false]) isEqualTo true) then {
-                ["Graphe du serveur", format [("n° %1") call _T, _me getOrDefault ["seq", -1]]] call _line;
-                { [_x select 0, format ["%1 · %2 · %3", format [("%1 nœud(s)") call _T, _x select 1], format [("%1 lien(s)") call _T, _x select 2], format [("%1 trouvé(s)") call _T, _x select 3]]] call _line; } forEach (_me getOrDefault ["sides", []]);
+                ["Graphe du serveur", format [("n° %1") call _trZ, _me getOrDefault ["seq", -1]]] call _line;
+                { [_x select 0, format ["%1 · %2 · %3", format [("%1 nœud(s)") call _trZ, _x select 1], format [("%1 lien(s)") call _trZ, _x select 2], format [("%1 trouvé(s)") call _trZ, _x select 3]]] call _line; } forEach (_me getOrDefault ["sides", []]);
             };
             "ORDRES AUX IA" call _sec;
             private _ord = _s getOrDefault ["orders", []];
-            if (_ord isEqualTo []) then { _L pushBack format ["<t size='0.82' color='#8a9a93'>%1</t>", ("Aucun ordre gardé.") call _T]; } else { ["Par état", (_ord apply { format ["%1 %2", _x select 1, _x select 0] }) joinString " · "] call _line; };
+            if (_ord isEqualTo []) then { _L pushBack format ["<t size='0.82' color='#8a9a93'>%1</t>", ("Aucun ordre gardé.") call _trZ]; } else { ["Par état", (_ord apply { format ["%1 %2", _x select 1, _x select 0] }) joinString " · "] call _line; };
             "CENTRE ZEUS" call _sec;
             ["Zeus à l'écoute", str (_s getOrDefault ["zeusWatch", 0])] call _line;
             ["Fiches connues", str (_s getOrDefault ["zeusRows", 0])] call _line;
             "DERNIÈRES ALERTES DU JOURNAL" call _sec;
             private _log = _s getOrDefault ["log", []];
-            if (_log isEqualTo []) then { _L pushBack format ["<t size='0.82' color='#8a9a93'>%1</t>", ("Aucune erreur ni avertissement COMSPEC sur le serveur.") call _T]; };
+            if (_log isEqualTo []) then { _L pushBack format ["<t size='0.82' color='#8a9a93'>%1</t>", ("Aucune erreur ni avertissement COMSPEC sur le serveur.") call _trZ]; };
             {
                 _x params ["_ago2", "_lvl", "_mod", "_msg"];
                 _L pushBack format ["<t size='0.75' color='%1'>%2 [%3] %4</t> <t size='0.75'>%5</t>", ["#f2ab33", "#f25a48"] select (_lvl isEqualTo "ERROR"), _ago2 call _ago, _lvl, _mod, _msg call _esc];
@@ -1009,7 +1011,7 @@ switch (_act) do {
         private _units = ["targets"] call comspec_atak_native_fnc_zeusCentre;
         if (_units isEqualTo []) exitWith { ["feedback", ["ATAK : aucun joueur visé."]] call comspec_atak_native_fnc_zeusMenu; };
         { ["server", ["phonePin", [getPlayerUID _x]]] call comspec_atak_native_fnc_adminClient; } forEach _units;
-        ["feedback", [format [("Demande envoyée au serveur : code retiré (%1 joueur(s)).") call _T, count _units]]] call comspec_atak_native_fnc_zeusMenu;
+        ["feedback", [format [("Demande envoyée au serveur : code retiré (%1 joueur(s)).") call _trZ, count _units]]] call comspec_atak_native_fnc_zeusMenu;
     };
     case "camera": {
         private _uid = missionNamespace getVariable ["COMSPEC_ATAK_ZeusCentreSel", ""];

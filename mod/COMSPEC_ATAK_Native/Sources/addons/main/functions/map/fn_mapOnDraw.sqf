@@ -153,7 +153,12 @@ private _aLost = _pal get "aLost";
 
 // Fond PHOTO (capture de la carte : mod, ou fond d'Athena téléchargé en jeu) : tuiles sous tous les symboles ; en
 // SATELLITE, la capture du mod remplace la texture du terrain là où elle existe.
-if (_bgStyle in ["PHOTO", "SAT"]) then { [_map, _bgStyle] call comspec_atak_native_fnc_photoMap; };
+// Mesuré à part (4.4.1) : les tuiles neuves en étaient la cause des images figées au zoom, sans clé à elles dans le RPT.
+if (_bgStyle in ["PHOTO", "SAT"]) then {
+    private _perfP = diag_tickTime;
+    [_map, _bgStyle] call comspec_atak_native_fnc_photoMap;
+    ["carte fond photo (image)", _perfP] call comspec_atak_native_fnc_perfAcc;
+};
 // Fond de carte (Réglages > Carte ou CALQUES) : voile sous tous les symboles (dessiné en premier).
 private _veil = switch (_bgStyle) do {
     case "LIGHT": { [1, 1, 1, 0.38] };
@@ -378,6 +383,8 @@ private _msText = _scale < 0.06 && {_lblOn};
 private _hovC = _state getOrDefault ["cursorPos", []];
 private _hovM = ((_map ctrlMapScreenToWorld [0.5, 0.5]) distance2D (_map ctrlMapScreenToWorld [0.5 + pixelW * 14, 0.5]));
 private _hovUnit = false;
+// Unités (trace, symboles, cartouches) mesurées à part dans le RPT (4.4.1).
+private _perfU = diag_tickTime;
 // Trace (fil d'Ariane) de mes positions, sous les symboles.
 if (_selfCfg select 4) then {
     private _tp = ["trailPts"] call comspec_atak_native_fnc_mapPrefs;
@@ -605,6 +612,7 @@ if (_selfCfg select 4) then {
         };
     };
 } forEach (_data getOrDefault ["units",createHashMap]);
+["carte unités (image)", _perfU] call comspec_atak_native_fnc_perfAcc;
 
 // Listes filtrées du magasin des marqueurs (repères Athena absents du jeu ; marqueurs à cartouche E / N), refaites quand
 // sa révision change (au plus 4 fois par seconde) et toutes les 2 s par sécurité : avant, deux passes complètes sur tous
@@ -1001,7 +1009,9 @@ uiNamespace setVariable ["COMSPEC_ATAK_MarkerTagPool", _pool select { !isNull _x
 
 // Noms des repères (fn_mapMarkerText, style au choix) : la carte Arma n'écrit plus le texte des marqueurs.
 // Ceux qui ont déjà leur cartouche E / N (ci-dessus) sont sautés ; masquables dans CALQUES (Noms des repères).
+private _perfN = diag_tickTime;
 [_map, _tsL, _kt, _scale, _tagged, _boxOn] call comspec_atak_native_fnc_mapMarkerText;
+["carte noms des repères (image)", _perfN] call comspec_atak_native_fnc_perfAcc;
 
 // Calques Logistique (points de largage) et guerre électronique (gonio, brouilleurs).
 if (profileNamespace getVariable ["COMSPEC_ATAK_LayerLogi", true]) then { [_map] call comspec_atak_native_fnc_logisticsDraw; };

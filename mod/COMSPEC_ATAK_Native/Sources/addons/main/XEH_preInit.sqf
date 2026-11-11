@@ -94,6 +94,15 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
         if (!hasInterface) exitWith {};
         [{ time > 0 }, { [["stop", "start"] select _this] call comspec_atak_native_fnc_profiler; }, _this isEqualTo true] call CBA_fnc_waitUntilAndExecute;
     }] call comspec_atak_native_fnc_addSetting;
+// Mesure des performances (fn_perfLog, 4.4.1), par joueur, décochée par défaut : lignes [COMSPEC perf] dans le RPT
+// (ouverture du téléphone et des apps, dessin de la carte, bilan toutes les 10 s). Rien à l'écran ; aucun coût décochée.
+["comspec_atak_native_perf_log", "CHECKBOX",
+    ["Mesure des performances (journal)", "Décoché par défaut. Coché : le journal du jeu (fichier RPT) note le temps d'ouverture du téléphone et de chaque app, le coût du dessin de la carte toutes les 5 s, un bilan toutes les 10 s et les appels lents à la DLL. Rien ne s'affiche à l'écran. Exemple : active-le, ouvre le téléphone puis la carte, puis envoie ton journal avec Envoyer_mes_logs.bat. Décoche-le ensuite."],
+    ["COMSPEC", "ATAK · Debug"], false, 0,
+    {
+        if (!hasInterface) exitWith {};
+        [{ time > 0 }, { [["stop", "start"] select _this] call comspec_atak_native_fnc_perfLog; }, _this isEqualTo true] call CBA_fnc_waitUntilAndExecute;
+    }] call comspec_atak_native_fnc_addSetting;
 
 // Liaison Athena proposée à la première sortie du téléphone sans compte (fn_displayLoad), par joueur.
 ["comspec_atak_native_link_offer", "CHECKBOX",
