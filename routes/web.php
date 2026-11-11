@@ -514,6 +514,8 @@ return function (Router $router) {
     $opHub = \App\Controllers\Web\OperatorHubController::class;
     $router->get('/operateur', [$opHub, 'index'], [AuthMiddleware::class]);
     $router->post('/operateur/favoris', [$opHub, 'favorite'], [AuthMiddleware::class]);
+    $router->post('/operateur/acces/demander', [$opHub, 'accessRequest'], [AuthMiddleware::class]);
+    $router->post('/operateur/acces/annuler', [$opHub, 'accessCancel'], [AuthMiddleware::class]);
     $router->get('/operateur/identite', [$opHub, 'identities'], [AuthMiddleware::class]);
     $router->post('/operateur/identite/identites', [$opHub, 'identitySave'], [AuthMiddleware::class]);
     $router->post('/operateur/identite/identites/{id}/photo', [$opHub, 'identityPhoto'], [AuthMiddleware::class]);

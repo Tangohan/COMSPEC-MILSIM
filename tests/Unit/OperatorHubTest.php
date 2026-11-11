@@ -208,9 +208,9 @@ final class OperatorHubTest extends TestCase
     {
         $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
         preg_match_all('#\$router->(get|post)\(\'(/operateur[^\']*)\', \[(\$opHub|OperateurTerrainController::class), \'(\w+)\'\], \[AuthMiddleware::class\]\);#', $routes, $m, PREG_SET_ORDER);
-        self::assertCount(18, $m, 'toutes les routes /operateur passent par AuthMiddleware');
-        self::assertSame(18, preg_match_all('#\$router->\w+\(\'/operateur#', $routes));
-        $writes = ['favorite', 'identitySave', 'identityPhoto', 'identityArchive', 'identityActivate', 'identityPrimary', 'documentRequest', 'documentAction'];
+        self::assertCount(20, $m, 'toutes les routes /operateur passent par AuthMiddleware');
+        self::assertSame(20, preg_match_all('#\$router->\w+\(\'/operateur#', $routes));
+        $writes = ['favorite', 'accessRequest', 'accessCancel', 'identitySave', 'identityPhoto', 'identityArchive', 'identityActivate', 'identityPrimary', 'documentRequest', 'documentAction'];
         // Anciennes adresses des couvertures : gardées (GET et POST), elles renvoient toutes aux identités.
         self::assertSame(4, preg_match_all('#\'/operateur/identite/couverture[^\']*\', \[\$opHub, \'legacyCovers\'\]#', $routes));
         foreach ($m as [, $verb, $path, , $action]) {

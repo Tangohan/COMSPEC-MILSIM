@@ -122,7 +122,15 @@
 .opx-tile.is-locked .dash-quick__text em { color: #64748b; }
 .opx-tile__lock { display: inline-flex; align-items: center; gap: 0.4rem; margin-top: auto; font-size: 0.8rem; font-weight: 700; color: #475569; }
 .opx-tile__lock svg { width: 1rem; height: 1rem; }
-.opx-tile__ask { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.opx-tile__ask { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0; }
+.opx-tile__askbtn {
+  min-height: 2.25rem; padding: 0.35rem 0.8rem; border: 1px solid #0b1a14; border-radius: 0.5rem;
+  background: #fff; color: #0b1a14; font: inherit; font-size: 0.8rem; font-weight: 800; cursor: pointer;
+}
+.opx-tile__askbtn:hover { background: #0b1a14; color: #fff; }
+.opx-tile__askbtn:focus-visible { outline: 2px solid #059669; outline-offset: 2px; }
+.opx-tile__asknote { font-size: 0.78rem; line-height: 1.4; color: #475569; overflow-wrap: anywhere; }
+.opx-tile.is-locked .opx-tile__lock ~ * { margin-top: 0; }
 .opx-pinhint { max-width: 100rem; margin: 0 auto; padding: 1.25rem 1.25rem 2rem; font-size: 0.875rem; color: #666; }
 @media (min-width: 768px) { .opx-pinhint { padding-left: 2rem; padding-right: 2rem; } }
 @media (max-width: 639px) {

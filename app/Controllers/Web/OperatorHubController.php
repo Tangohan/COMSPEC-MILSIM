@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\OperatorHubRepository;
+use App\Services\Operator\OperatorAccessRequestService;
 use App\Services\Operator\OperatorHubCatalog;
 use App\Services\Operator\OperatorIdentityService;
 use App\Services\Sse\MemberIdentityPapersService;
@@ -29,6 +30,7 @@ final class OperatorHubController
     public const TABS = ['identites' => 'Identités', 'documents' => 'Papiers'];
     private const WRITES_PER_10_MIN = 40;
     private const UPLOADS_PER_HOUR = 12;
+    private const ACCESS_REQUESTS_PER_HOUR = 6;
 
     public function __construct(
         private ?OperatorHubRepository $hub = null,
@@ -48,6 +50,7 @@ final class OperatorHubController
         private ?FileRateLimiter $limiter = null,
         /** @var (\Closure(int, int): list<array<string, mixed>>)|null terminaux ATAK du membre */
         private ?\Closure $terminals = null,
+        private ?OperatorAccessRequestService $access = null,
     ) {
         $this->can ??= static fn (string $p): bool => function_exists('can') && can($p);
         $this->allowsPath ??= static fn (string $path): bool => !function_exists('portal_nav_href_permission_allowed') || portal_nav_href_permission_allowed(url($path));
@@ -90,6 +93,8 @@ final class OperatorHubController
             'content' => 'operateur.hub',
             'athena_header_section' => 'Outils opérateur',
             'csrfToken' => Csrf::token(),
+            'success' => Session::getFlash('success'),
+            'error' => Session::getFlash('error'),
         ] + $this->hubData($ctx));
     }
 
@@ -103,7 +108,7 @@ final class OperatorHubController
     {
         [$tenantId, $userId] = [$ctx['tenant'], $ctx['user']];
         // Tous les outils de la communauté : ceux qu'il manque un droit pour ouvrir sont rendus grisés.
-        $tools = OperatorHubCatalog::withAccess($this->can, $this->allowsPath);
+        $tools = $this->withAccessRequests(OperatorHubCatalog::withAccess($this->can, $this->allowsPath), $tenantId, $userId);
         $favorites = [];
         try {
             $favorites = $this->hub()->favorites($tenantId, $userId);
@@ -136,7 +141,112 @@ final class OperatorHubController
             'hubFigures' => self::figures($summary, $atak),
             'hubToolCount' => count($tools),
             'hubLockedCount' => count(array_filter($tools, static fn (array $t): bool => !empty($t['locked']))),
+            'hubAccessRights' => self::requestableRights($tools),
         ];
+    }
+
+    /**
+     * Pose sur chaque outil grisé l'état de la demande d'accès du membre (« access »). Table des demandes absente
+     * (étape pas encore passée) ou droit inconnu de la communauté : « unavailable », la tuile reste grisée sans bouton.
+     *
+     * @param list<array<string, mixed>> $tools
+     * @return list<array<string, mixed>>
+     */
+    private function withAccessRequests(array $tools, int $tenantId, int $userId): array
+    {
+        $slugs = array_values(array_unique(array_filter(array_column($tools, 'needs'))));
+        $states = [];
+        if ($slugs !== []) {
+            try {
+                $states = $this->access()->states($tenantId, $userId, $slugs);
+            } catch (\Throwable $e) {
+                error_log('Outils opérateur : demandes d’accès indisponibles : ' . $e->getMessage());
+            }
+        }
+        $off = ['state' => 'unavailable', 'at' => '', 'note' => '', 'retry_at' => '', 'can_retry' => false];
+        foreach ($tools as $n => $tool) {
+            $tools[$n]['access'] = !empty($tool['locked']) ? ($states[(string) $tool['needs']] ?? $off) : null;
+        }
+
+        return $tools;
+    }
+
+    /**
+     * Droits que le membre peut demander maintenant, avec les outils que chacun ouvre (fenêtre « Demander l'accès »).
+     *
+     * @param list<array<string, mixed>> $tools
+     * @return list<array{slug: string, label: string, help: string, tools: list<string>}>
+     */
+    public static function requestableRights(array $tools): array
+    {
+        $out = [];
+        foreach ($tools as $tool) {
+            $access = $tool['access'] ?? null;
+            if (empty($tool['locked']) || !is_array($access) || !($access['state'] === 'none' || ($access['state'] === 'refused' && $access['can_retry']))) {
+                continue;
+            }
+            $slug = (string) $tool['needs'];
+            $out[$slug] ??= ['slug' => $slug, 'label' => (string) $tool['needs_label'], 'help' => OperatorHubCatalog::PERMISSION_HELP[$slug] ?? '', 'tools' => []];
+            $out[$slug]['tools'][] = (string) $tool['label'];
+        }
+
+        return array_values($out);
+    }
+
+    /**
+     * Demande d'accès aux outils grisés : le membre coche un ou plusieurs droits et donne un motif facultatif. Seuls
+     * les droits de ses outils grisés sont retenus ; il ne demande que pour lui-même.
+     */
+    public function accessRequest(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guardWrite($request, 'operateur');
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $asked = $request->input('droits', []);
+        $asked = array_map('strval', is_array($asked) ? $asked : [$asked]);
+        $locked = array_values(array_unique(array_filter(array_column(OperatorHubCatalog::withAccess($this->can, $this->allowsPath), 'needs'))));
+        $slugs = array_values(array_intersect($locked, $asked));
+        if ($slugs === []) {
+            return $this->back('operateur', 'error', 'Choisissez au moins un accès à demander.');
+        }
+        if ($this->throttled('access', $ctx['user'], self::ACCESS_REQUESTS_PER_HOUR, 3600)) {
+            return $this->back('operateur', 'error', 'Trop de demandes en peu de temps. Réessayez dans une heure.');
+        }
+        $name = trim((string) ($ctx['row']['callsign'] ?? '')) ?: trim((string) ($ctx['row']['display_name'] ?? ''));
+        try {
+            $res = $this->access()->request($ctx['tenant'], $ctx['user'], $slugs, $request->inputString('motif'), $name);
+        } catch (\Throwable $e) {
+            error_log('Outils opérateur : demande d’accès impossible : ' . $e->getMessage());
+            $res = ['ok' => false, 'error' => 'Les demandes d’accès ne sont pas encore disponibles. Voyez un responsable.'];
+        }
+
+        return $this->back('operateur', $res['ok'] ? 'success' : 'error', $res['ok']
+            ? 'Demande envoyée : un responsable la traite, vous serez prévenu de sa décision.'
+            : (string) ($res['error'] ?? 'Demande impossible.'));
+    }
+
+    /** Le membre annule sa demande en attente pour le droit d'un outil grisé. */
+    public function accessCancel(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guardWrite($request, 'operateur');
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $slug = '';
+        foreach (OperatorHubCatalog::withAccess($this->can, $this->allowsPath) as $tool) {
+            if ($tool['key'] === $request->inputString('tool')) {
+                $slug = (string) $tool['needs'];
+            }
+        }
+        $done = false;
+        try {
+            $done = $slug !== '' && $this->access()->cancel($ctx['tenant'], $ctx['user'], $slug);
+        } catch (\Throwable $e) {
+            error_log('Outils opérateur : annulation de demande impossible : ' . $e->getMessage());
+        }
+
+        return $this->back('operateur', $done ? 'success' : 'error', $done ? 'Demande annulée.' : 'Aucune demande en attente à annuler.');
     }
 
     /**
@@ -632,6 +742,11 @@ final class OperatorHubController
     private function hub(): OperatorHubRepository
     {
         return $this->hub ??= new OperatorHubRepository();
+    }
+
+    private function access(): OperatorAccessRequestService
+    {
+        return $this->access ??= new OperatorAccessRequestService();
     }
 
     private function identity(): OperatorIdentityService

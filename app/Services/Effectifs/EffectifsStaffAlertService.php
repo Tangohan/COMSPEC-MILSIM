@@ -182,6 +182,8 @@ class EffectifsStaffAlertService
             'role_id' => (int) ($proposal['role_id'] ?? 0) ?: null,
             'job_role_id' => (int) ($proposal['job_role_id'] ?? 0) ?: null,
             'unit_id' => (int) ($proposal['unit_id'] ?? 0) ?: null,
+            // Droits cochés dans la demande : sans eux, la page de traitement n'avait rien à pré-cocher.
+            'permission_ids' => is_array($proposal['permission_ids'] ?? null) ? $proposal['permission_ids'] : [],
         ];
         $proposalSummary = $this->formatProposalSummary($tenantId, $proposal);
 
