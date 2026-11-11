@@ -12,6 +12,11 @@
                 <English>BF delay crate</English>
                 <French>Caisse délais BF</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Box_Special">
+                <Original>Caisse BANG spéciaux</Original>
+                <English>Special BANG crate</English>
+                <French>Caisse BANG spéciaux</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Device">
                 <Original>BF (engin)</Original>
                 <English>BF (device)</English>
@@ -68,9 +73,9 @@
                 <French>BF -BetterFlash- · grenade d'entraînement bleue à mèche longue fixe de 3 s (n'explose pas à l'impact) : pop et fumée, aucun effet. Bande jaune et marquage « 3s ».</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Drill_D3_Name">
-                <Original>DRILL BF · 3 s</Original>
-                <English>DRILL BF · 3 s</English>
-                <French>DRILL BF · 3 s</French>
+                <Original>[AT.NA] DRILL 3s</Original>
+                <English>[AT.NA] DRILL 3s</English>
+                <French>[AT.NA] DRILL 3s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Drill_D3_Short">
                 <Original>BF-DRILL 3s</Original>
@@ -83,9 +88,9 @@
                 <French>BF -BetterFlash- · grenade d'entraînement bleue à mèche longue fixe de 8 s (n'explose pas à l'impact) : pop et fumée, aucun effet. Bande rouge et marquage « 8s ».</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Drill_D8_Name">
-                <Original>DRILL BF · 8 s</Original>
-                <English>DRILL BF · 8 s</English>
-                <French>DRILL BF · 8 s</French>
+                <Original>[AT.NA] DRILL 8s</Original>
+                <English>[AT.NA] DRILL 8s</English>
+                <French>[AT.NA] DRILL 8s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Drill_D8_Short">
                 <Original>BF-DRILL 8s</Original>
@@ -98,9 +103,9 @@
                 <French>BF -BetterFlash- · grenade d'entraînement bleue, mèche standard : pop (son au choix, réglage « Son de la grenade d'entraînement ») et bouffée de fumée, aucun flash, aucun effet sur les joueurs ni l'IA.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Drill_Name">
-                <Original>DRILL BF</Original>
-                <English>DRILL BF</English>
-                <French>DRILL BF</French>
+                <Original>[AT.NA] DRILL BF</Original>
+                <English>[AT.NA] DRILL BF</English>
+                <French>[AT.NA] DRILL BF</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Drill_Short">
                 <Original>BF-DRILL</Original>
@@ -128,9 +133,9 @@
                 <French>BF -BetterFlash- · 1 flash, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_1_D3_Name">
-                <Original>1-BANG BF · 3 s</Original>
-                <English>1-BANG BF · 3 s</English>
-                <French>1-BANG BF · 3 s</French>
+                <Original>[AT.NA] 1-BANG 3s</Original>
+                <English>[AT.NA] 1-BANG 3s</English>
+                <French>[AT.NA] 1-BANG 3s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_1_D3_Short">
                 <Original>BF-1 3s</Original>
@@ -143,9 +148,9 @@
                 <French>BF -BetterFlash- · 1 flash, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_1_D8_Name">
-                <Original>1-BANG BF · 8 s</Original>
-                <English>1-BANG BF · 8 s</English>
-                <French>1-BANG BF · 8 s</French>
+                <Original>[AT.NA] 1-BANG 8s</Original>
+                <English>[AT.NA] 1-BANG 8s</English>
+                <French>[AT.NA] 1-BANG 8s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_1_D8_Short">
                 <Original>BF-1 8s</Original>
@@ -158,9 +163,9 @@
                 <French>BF -BetterFlash- · 1 flash à la suite (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_1_Name">
-                <Original>1-BANG BF</Original>
-                <English>1-BANG BF</English>
-                <French>1-BANG BF</French>
+                <Original>[AT.NA] 1-BANG BF</Original>
+                <English>[AT.NA] 1-BANG BF</English>
+                <French>[AT.NA] 1-BANG BF</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_1_Short">
                 <Original>BF-1</Original>
@@ -173,9 +178,9 @@
                 <French>BF -BetterFlash- · 2 flashs, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_2_D3_Name">
-                <Original>2-BANG BF · 3 s</Original>
-                <English>2-BANG BF · 3 s</English>
-                <French>2-BANG BF · 3 s</French>
+                <Original>[AT.NA] 2-BANG 3s</Original>
+                <English>[AT.NA] 2-BANG 3s</English>
+                <French>[AT.NA] 2-BANG 3s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_2_D3_Short">
                 <Original>BF-2 3s</Original>
@@ -188,9 +193,9 @@
                 <French>BF -BetterFlash- · 2 flashs, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_2_D8_Name">
-                <Original>2-BANG BF · 8 s</Original>
-                <English>2-BANG BF · 8 s</English>
-                <French>2-BANG BF · 8 s</French>
+                <Original>[AT.NA] 2-BANG 8s</Original>
+                <English>[AT.NA] 2-BANG 8s</English>
+                <French>[AT.NA] 2-BANG 8s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_2_D8_Short">
                 <Original>BF-2 8s</Original>
@@ -203,9 +208,9 @@
                 <French>BF -BetterFlash- · 2 flashs à la suite (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_2_Name">
-                <Original>2-BANG BF</Original>
-                <English>2-BANG BF</English>
-                <French>2-BANG BF</French>
+                <Original>[AT.NA] 2-BANG BF</Original>
+                <English>[AT.NA] 2-BANG BF</English>
+                <French>[AT.NA] 2-BANG BF</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_2_R_Desc">
                 <Original>BF -BetterFlash- · 2 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R.</Original>
@@ -213,9 +218,9 @@
                 <French>BF -BetterFlash- · 2 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_2_R_Name">
-                <Original>2-BANG BF R</Original>
-                <English>2-BANG BF R</English>
-                <French>2-BANG BF R</French>
+                <Original>[AT.NA] 2-BANG R</Original>
+                <English>[AT.NA] 2-BANG R</English>
+                <French>[AT.NA] 2-BANG R</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_2_R_Short">
                 <Original>BF-2 R</Original>
@@ -233,9 +238,9 @@
                 <French>BF -BetterFlash- · 3 flashs, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_3_D3_Name">
-                <Original>3-BANG BF · 3 s</Original>
-                <English>3-BANG BF · 3 s</English>
-                <French>3-BANG BF · 3 s</French>
+                <Original>[AT.NA] 3-BANG 3s</Original>
+                <English>[AT.NA] 3-BANG 3s</English>
+                <French>[AT.NA] 3-BANG 3s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_3_D3_Short">
                 <Original>BF-3 3s</Original>
@@ -248,9 +253,9 @@
                 <French>BF -BetterFlash- · 3 flashs, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_3_D8_Name">
-                <Original>3-BANG BF · 8 s</Original>
-                <English>3-BANG BF · 8 s</English>
-                <French>3-BANG BF · 8 s</French>
+                <Original>[AT.NA] 3-BANG 8s</Original>
+                <English>[AT.NA] 3-BANG 8s</English>
+                <French>[AT.NA] 3-BANG 8s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_3_D8_Short">
                 <Original>BF-3 8s</Original>
@@ -263,9 +268,9 @@
                 <French>BF -BetterFlash- · 3 flashs à la suite (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_3_Name">
-                <Original>3-BANG BF</Original>
-                <English>3-BANG BF</English>
-                <French>3-BANG BF</French>
+                <Original>[AT.NA] 3-BANG BF</Original>
+                <English>[AT.NA] 3-BANG BF</English>
+                <French>[AT.NA] 3-BANG BF</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_3_R_Desc">
                 <Original>BF -BetterFlash- · 3 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R.</Original>
@@ -273,9 +278,9 @@
                 <French>BF -BetterFlash- · 3 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_3_R_Name">
-                <Original>3-BANG BF R</Original>
-                <English>3-BANG BF R</English>
-                <French>3-BANG BF R</French>
+                <Original>[AT.NA] 3-BANG R</Original>
+                <English>[AT.NA] 3-BANG R</English>
+                <French>[AT.NA] 3-BANG R</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_3_R_Short">
                 <Original>BF-3 R</Original>
@@ -293,9 +298,9 @@
                 <French>BF -BetterFlash- · 4 flashs, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_4_D3_Name">
-                <Original>4-BANG BF · 3 s</Original>
-                <English>4-BANG BF · 3 s</English>
-                <French>4-BANG BF · 3 s</French>
+                <Original>[AT.NA] 4-BANG 3s</Original>
+                <English>[AT.NA] 4-BANG 3s</English>
+                <French>[AT.NA] 4-BANG 3s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_4_D3_Short">
                 <Original>BF-4 3s</Original>
@@ -308,9 +313,9 @@
                 <French>BF -BetterFlash- · 4 flashs, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_4_D8_Name">
-                <Original>4-BANG BF · 8 s</Original>
-                <English>4-BANG BF · 8 s</English>
-                <French>4-BANG BF · 8 s</French>
+                <Original>[AT.NA] 4-BANG 8s</Original>
+                <English>[AT.NA] 4-BANG 8s</English>
+                <French>[AT.NA] 4-BANG 8s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_4_D8_Short">
                 <Original>BF-4 8s</Original>
@@ -323,9 +328,9 @@
                 <French>BF -BetterFlash- · 4 flashs à la suite (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_4_Name">
-                <Original>4-BANG BF</Original>
-                <English>4-BANG BF</English>
-                <French>4-BANG BF</French>
+                <Original>[AT.NA] 4-BANG BF</Original>
+                <English>[AT.NA] 4-BANG BF</English>
+                <French>[AT.NA] 4-BANG BF</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_4_R_Desc">
                 <Original>BF -BetterFlash- · 4 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R.</Original>
@@ -333,9 +338,9 @@
                 <French>BF -BetterFlash- · 4 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_4_R_Name">
-                <Original>4-BANG BF R</Original>
-                <English>4-BANG BF R</English>
-                <French>4-BANG BF R</French>
+                <Original>[AT.NA] 4-BANG R</Original>
+                <English>[AT.NA] 4-BANG R</English>
+                <French>[AT.NA] 4-BANG R</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_4_R_Short">
                 <Original>BF-4 R</Original>
@@ -353,9 +358,9 @@
                 <French>BF -BetterFlash- · 50 flashs, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps. Très long et très éprouvant (15 à 20 s) : à utiliser avec parcimonie.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_50_D3_Name">
-                <Original>GANG BANG · 3 s</Original>
-                <English>GANG BANG · 3 s</English>
-                <French>GANG BANG · 3 s</French>
+                <Original>[AT.NA] GANG BANG 3s</Original>
+                <English>[AT.NA] GANG BANG 3s</English>
+                <French>[AT.NA] GANG BANG 3s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_50_D3_Short">
                 <Original>BF-50 3s</Original>
@@ -368,9 +373,9 @@
                 <French>BF -BetterFlash- · 50 flashs, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps. Très long et très éprouvant (15 à 20 s) : à utiliser avec parcimonie.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_50_D8_Name">
-                <Original>GANG BANG · 8 s</Original>
-                <English>GANG BANG · 8 s</English>
-                <French>GANG BANG · 8 s</French>
+                <Original>[AT.NA] GANG BANG 8s</Original>
+                <English>[AT.NA] GANG BANG 8s</English>
+                <French>[AT.NA] GANG BANG 8s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_50_D8_Short">
                 <Original>BF-50 8s</Original>
@@ -383,9 +388,9 @@
                 <French>BF -BetterFlash- · 50 flashs à la suite (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente. Très long et très éprouvant (15 à 20 s) : à utiliser avec parcimonie.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_50_Name">
-                <Original>GANG BANG BF</Original>
-                <English>GANG BANG BF</English>
-                <French>GANG BANG BF</French>
+                <Original>[AT.NA] GANG BANG BF</Original>
+                <English>[AT.NA] GANG BANG BF</English>
+                <French>[AT.NA] GANG BANG BF</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_50_R_Desc">
                 <Original>BF -BetterFlash- · 50 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R. Très long et très éprouvant (15 à 20 s) : à utiliser avec parcimonie.</Original>
@@ -393,9 +398,9 @@
                 <French>BF -BetterFlash- · 50 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R. Très long et très éprouvant (15 à 20 s) : à utiliser avec parcimonie.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_50_R_Name">
-                <Original>GANG BANG BF R</Original>
-                <English>GANG BANG BF R</English>
-                <French>GANG BANG BF R</French>
+                <Original>[AT.NA] GANG BANG R</Original>
+                <English>[AT.NA] GANG BANG R</English>
+                <French>[AT.NA] GANG BANG R</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_50_R_Short">
                 <Original>BF-50 R</Original>
@@ -413,9 +418,9 @@
                 <French>BF -BetterFlash- · 5 flashs, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_5_D3_Name">
-                <Original>5-BANG BF · 3 s</Original>
-                <English>5-BANG BF · 3 s</English>
-                <French>5-BANG BF · 3 s</French>
+                <Original>[AT.NA] 5-BANG 3s</Original>
+                <English>[AT.NA] 5-BANG 3s</English>
+                <French>[AT.NA] 5-BANG 3s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_5_D3_Short">
                 <Original>BF-5 3s</Original>
@@ -428,9 +433,9 @@
                 <French>BF -BetterFlash- · 5 flashs, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_5_D8_Name">
-                <Original>5-BANG BF · 8 s</Original>
-                <English>5-BANG BF · 8 s</English>
-                <French>5-BANG BF · 8 s</French>
+                <Original>[AT.NA] 5-BANG 8s</Original>
+                <English>[AT.NA] 5-BANG 8s</English>
+                <French>[AT.NA] 5-BANG 8s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_5_D8_Short">
                 <Original>BF-5 8s</Original>
@@ -443,9 +448,9 @@
                 <French>BF -BetterFlash- · 5 flashs à la suite (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_5_Name">
-                <Original>5-BANG BF</Original>
-                <English>5-BANG BF</English>
-                <French>5-BANG BF</French>
+                <Original>[AT.NA] 5-BANG BF</Original>
+                <English>[AT.NA] 5-BANG BF</English>
+                <French>[AT.NA] 5-BANG BF</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_5_R_Desc">
                 <Original>BF -BetterFlash- · 5 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R.</Original>
@@ -453,9 +458,9 @@
                 <French>BF -BetterFlash- · 5 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_5_R_Name">
-                <Original>5-BANG BF R</Original>
-                <English>5-BANG BF R</English>
-                <French>5-BANG BF R</French>
+                <Original>[AT.NA] 5-BANG R</Original>
+                <English>[AT.NA] 5-BANG R</English>
+                <French>[AT.NA] 5-BANG R</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_5_R_Short">
                 <Original>BF-5 R</Original>
@@ -473,9 +478,9 @@
                 <French>BF -BetterFlash- · 6 flashs, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_6_D3_Name">
-                <Original>6-BANG BF · 3 s</Original>
-                <English>6-BANG BF · 3 s</English>
-                <French>6-BANG BF · 3 s</French>
+                <Original>[AT.NA] 6-BANG 3s</Original>
+                <English>[AT.NA] 6-BANG 3s</English>
+                <French>[AT.NA] 6-BANG 3s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_6_D3_Short">
                 <Original>BF-6 3s</Original>
@@ -488,9 +493,9 @@
                 <French>BF -BetterFlash- · 6 flashs, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_6_D8_Name">
-                <Original>6-BANG BF · 8 s</Original>
-                <English>6-BANG BF · 8 s</English>
-                <French>6-BANG BF · 8 s</French>
+                <Original>[AT.NA] 6-BANG 8s</Original>
+                <English>[AT.NA] 6-BANG 8s</English>
+                <French>[AT.NA] 6-BANG 8s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_6_D8_Short">
                 <Original>BF-6 8s</Original>
@@ -503,9 +508,9 @@
                 <French>BF -BetterFlash- · 6 flashs à la suite (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_6_Name">
-                <Original>6-BANG BF</Original>
-                <English>6-BANG BF</English>
-                <French>6-BANG BF</French>
+                <Original>[AT.NA] 6-BANG BF</Original>
+                <English>[AT.NA] 6-BANG BF</English>
+                <French>[AT.NA] 6-BANG BF</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_6_R_Desc">
                 <Original>BF -BetterFlash- · 6 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R.</Original>
@@ -513,9 +518,9 @@
                 <French>BF -BetterFlash- · 6 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_6_R_Name">
-                <Original>6-BANG BF R</Original>
-                <English>6-BANG BF R</English>
-                <French>6-BANG BF R</French>
+                <Original>[AT.NA] 6-BANG R</Original>
+                <English>[AT.NA] 6-BANG R</English>
+                <French>[AT.NA] 6-BANG R</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_6_R_Short">
                 <Original>BF-6 R</Original>
@@ -533,9 +538,9 @@
                 <French>BF -BetterFlash- · 7 flashs, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_7_D3_Name">
-                <Original>7-BANG BF · 3 s</Original>
-                <English>7-BANG BF · 3 s</English>
-                <French>7-BANG BF · 3 s</French>
+                <Original>[AT.NA] 7-BANG 3s</Original>
+                <English>[AT.NA] 7-BANG 3s</English>
+                <French>[AT.NA] 7-BANG 3s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_7_D3_Short">
                 <Original>BF-7 3s</Original>
@@ -548,9 +553,9 @@
                 <French>BF -BetterFlash- · 7 flashs, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_7_D8_Name">
-                <Original>7-BANG BF · 8 s</Original>
-                <English>7-BANG BF · 8 s</English>
-                <French>7-BANG BF · 8 s</French>
+                <Original>[AT.NA] 7-BANG 8s</Original>
+                <English>[AT.NA] 7-BANG 8s</English>
+                <French>[AT.NA] 7-BANG 8s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_7_D8_Short">
                 <Original>BF-7 8s</Original>
@@ -563,9 +568,9 @@
                 <French>BF -BetterFlash- · 7 flashs à la suite (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_7_Name">
-                <Original>7-BANG BF</Original>
-                <English>7-BANG BF</English>
-                <French>7-BANG BF</French>
+                <Original>[AT.NA] 7-BANG BF</Original>
+                <English>[AT.NA] 7-BANG BF</English>
+                <French>[AT.NA] 7-BANG BF</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_7_R_Desc">
                 <Original>BF -BetterFlash- · 7 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R.</Original>
@@ -573,9 +578,9 @@
                 <French>BF -BetterFlash- · 7 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_7_R_Name">
-                <Original>7-BANG BF R</Original>
-                <English>7-BANG BF R</English>
-                <French>7-BANG BF R</French>
+                <Original>[AT.NA] 7-BANG R</Original>
+                <English>[AT.NA] 7-BANG R</English>
+                <French>[AT.NA] 7-BANG R</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_7_R_Short">
                 <Original>BF-7 R</Original>
@@ -593,9 +598,9 @@
                 <French>BF -BetterFlash- · 8 flashs, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_8_D3_Name">
-                <Original>8-BANG BF · 3 s</Original>
-                <English>8-BANG BF · 3 s</English>
-                <French>8-BANG BF · 3 s</French>
+                <Original>[AT.NA] 8-BANG 3s</Original>
+                <English>[AT.NA] 8-BANG 3s</English>
+                <French>[AT.NA] 8-BANG 3s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_8_D3_Short">
                 <Original>BF-8 3s</Original>
@@ -608,9 +613,9 @@
                 <French>BF -BetterFlash- · 8 flashs, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_8_D8_Name">
-                <Original>8-BANG BF · 8 s</Original>
-                <English>8-BANG BF · 8 s</English>
-                <French>8-BANG BF · 8 s</French>
+                <Original>[AT.NA] 8-BANG 8s</Original>
+                <English>[AT.NA] 8-BANG 8s</English>
+                <French>[AT.NA] 8-BANG 8s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_8_D8_Short">
                 <Original>BF-8 8s</Original>
@@ -623,9 +628,9 @@
                 <French>BF -BetterFlash- · 8 flashs à la suite (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_8_Name">
-                <Original>8-BANG BF</Original>
-                <English>8-BANG BF</English>
-                <French>8-BANG BF</French>
+                <Original>[AT.NA] 8-BANG BF</Original>
+                <English>[AT.NA] 8-BANG BF</English>
+                <French>[AT.NA] 8-BANG BF</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_8_R_Desc">
                 <Original>BF -BetterFlash- · 8 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R.</Original>
@@ -633,9 +638,9 @@
                 <French>BF -BetterFlash- · 8 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_8_R_Name">
-                <Original>8-BANG BF R</Original>
-                <English>8-BANG BF R</English>
-                <French>8-BANG BF R</French>
+                <Original>[AT.NA] 8-BANG R</Original>
+                <English>[AT.NA] 8-BANG R</English>
+                <French>[AT.NA] 8-BANG R</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_8_R_Short">
                 <Original>BF-8 R</Original>
@@ -653,9 +658,9 @@
                 <French>BF -BetterFlash- · 9 flashs, mèche longue fixe de 3 s : lancer, laisser rebondir ou rouler, détonation 3 s après le lancer. N'explose pas à l'impact. Bande jaune et marquage « 3s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_9_D3_Name">
-                <Original>9-BANG BF · 3 s</Original>
-                <English>9-BANG BF · 3 s</English>
-                <French>9-BANG BF · 3 s</French>
+                <Original>[AT.NA] 9-BANG 3s</Original>
+                <English>[AT.NA] 9-BANG 3s</English>
+                <French>[AT.NA] 9-BANG 3s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_9_D3_Short">
                 <Original>BF-9 3s</Original>
@@ -668,9 +673,9 @@
                 <French>BF -BetterFlash- · 9 flashs, mèche longue fixe de 8 s : pour lancer à l'avance depuis une position sûre, détonation 8 s après le lancer. N'explose pas à l'impact. Bande rouge et marquage « 8s » sur le corps.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_9_D8_Name">
-                <Original>9-BANG BF · 8 s</Original>
-                <English>9-BANG BF · 8 s</English>
-                <French>9-BANG BF · 8 s</French>
+                <Original>[AT.NA] 9-BANG 8s</Original>
+                <English>[AT.NA] 9-BANG 8s</English>
+                <French>[AT.NA] 9-BANG 8s</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_9_D8_Short">
                 <Original>BF-9 8s</Original>
@@ -683,9 +688,9 @@
                 <French>BF -BetterFlash- · 9 flashs à la suite (flash + bang), mèche standard (réglage « Mèche », 1,5 s par défaut). Non létale : éblouit, assourdit, désoriente.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_9_Name">
-                <Original>9-BANG BF</Original>
-                <English>9-BANG BF</English>
-                <French>9-BANG BF</French>
+                <Original>[AT.NA] 9-BANG BF</Original>
+                <English>[AT.NA] 9-BANG BF</English>
+                <French>[AT.NA] 9-BANG BF</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_9_R_Desc">
                 <Original>BF -BetterFlash- · 9 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R.</Original>
@@ -693,9 +698,9 @@
                 <French>BF -BetterFlash- · 9 flashs en rafale hyper rapide (environ 0,065 s entre deux flashs : effet stroboscopique), mèche standard. Icône marquée R.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_9_R_Name">
-                <Original>9-BANG BF R</Original>
-                <English>9-BANG BF R</English>
-                <French>9-BANG BF R</French>
+                <Original>[AT.NA] 9-BANG R</Original>
+                <English>[AT.NA] 9-BANG R</English>
+                <French>[AT.NA] 9-BANG R</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Flash_9_R_Short">
                 <Original>BF-9 R</Original>
@@ -731,6 +736,36 @@
                 <Original>Par défaut (réglage)</Original>
                 <English>Default (setting)</English>
                 <French>Par défaut (réglage)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_German_Desc">
+                <Original>BF -BetterFlash- · BANG spécial : 9 flashs répartis sur 12 s environ ; le son « GERMAN BANG » est joué une seule fois, dès le premier flash, à la place des bangs. Flashs dorés, corps à bandes noir, rouge et or. Mêmes effets qu'une grenade assourdissante, mèche standard.</Original>
+                <English>BF -BetterFlash- · special BANG: 9 flashes spread over about 12 s; the « GERMAN BANG » sound plays once, from the first flash, instead of the bangs. Golden flashes, black, red and gold banded body. Same effects as a stun grenade, standard fuse.</English>
+                <French>BF -BetterFlash- · BANG spécial : 9 flashs répartis sur 12 s environ ; le son « GERMAN BANG » est joué une seule fois, dès le premier flash, à la place des bangs. Flashs dorés, corps à bandes noir, rouge et or. Mêmes effets qu'une grenade assourdissante, mèche standard.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_German_Name">
+                <Original>[AT.NA] GERMAN BANG</Original>
+                <English>[AT.NA] GERMAN BANG</English>
+                <French>[AT.NA] GERMAN BANG</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_German_Short">
+                <Original>GERMAN BANG</Original>
+                <English>GERMAN BANG</English>
+                <French>GERMAN BANG</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Japan_Desc">
+                <Original>BF -BetterFlash- · BANG spécial : 3 flashs, le son « JAPAN BANG » remplace le bang à chaque flash (un flash toutes les 0,5 s environ). Flash blanc et rouge, corps blanc à disque rouge. Mêmes effets qu'une grenade assourdissante, mèche standard.</Original>
+                <English>BF -BetterFlash- · special BANG: 3 flashes, the « JAPAN BANG » sound replaces the bang on every flash (one flash about every 0.5 s). White and red flash, white body with a red disc. Same effects as a stun grenade, standard fuse.</English>
+                <French>BF -BetterFlash- · BANG spécial : 3 flashs, le son « JAPAN BANG » remplace le bang à chaque flash (un flash toutes les 0,5 s environ). Flash blanc et rouge, corps blanc à disque rouge. Mêmes effets qu'une grenade assourdissante, mèche standard.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Japan_Name">
+                <Original>[AT.NA] JAPAN BANG</Original>
+                <English>[AT.NA] JAPAN BANG</English>
+                <French>[AT.NA] JAPAN BANG</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Japan_Short">
+                <Original>JAPAN BANG</Original>
+                <English>JAPAN BANG</English>
+                <French>JAPAN BANG</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Module">
                 <Original>BetterFlash</Original>
@@ -851,6 +886,16 @@
                 <Original>Mode zone : 1 = comme à 2 m d'une vraie grenade, 0,3 = gêne légère.  Exemple : 0.8.</Original>
                 <English>Area mode: 1 = like 2 m from a real grenade, 0.3 = mild.  Example: 0.8.</English>
                 <French>Mode zone : 1 = comme à 2 m d'une vraie grenade, 0,3 = gêne légère.  Exemple : 0.8.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_Theme">
+                <Original>Modèle de grenade</Original>
+                <English>Grenade model</English>
+                <French>Modèle de grenade</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Module_Theme_Tip">
+                <Original>Mode grenade seulement. « Standard » : grenade à N flashs (nombre ci-dessus). BANG spécial : la grenade joue le son et les flashs de son thème ; le nombre de détonations et la cadence sont ignorés.  Exemple : GERMAN BANG = 9 flashs sur 12 s, le son joué une fois.</Original>
+                <English>Grenade mode only. « Standard »: N-flash grenade (number above). Special BANG: the grenade plays the sound and flashes of its theme; the number of detonations and the rate are ignored.  Example: GERMAN BANG = 9 flashes over 12 s, the sound played once.</English>
+                <French>Mode grenade seulement. « Standard » : grenade à N flashs (nombre ci-dessus). BANG spécial : la grenade joue le son et les flashs de son thème ; le nombre de détonations et la cadence sont ignorés.  Exemple : GERMAN BANG = 9 flashs sur 12 s, le son joué une fois.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Muzzle">
                 <Original>BF</Original>
@@ -1312,6 +1357,26 @@
                 <English>Randomness of each detonation and each victim: irregular intervals (a few almost simultaneous flashes), flash strength 60 to 140 %, tint, particles, sound (pitch ±8 %, volume ±2 dB), the first bang strongest and the next ones « rolling », dazzle ±10 %, per-player sensitivity, per-AI reaction and duration. The average stays on the calibration table. 0 %: everything regular.  Example: 60 % (default); 20 % for repeatable training.</English>
                 <French>Hasard de chaque détonation et de chaque victime : intervalles irréguliers (quelques flashs quasi simultanés), force du flash 60 à 140 %, teinte, particules, son (hauteur ±8 %, volume ±2 dB), 1er bang le plus fort et les suivants qui « roulent », éblouissement ±10 %, sensibilité propre à chaque joueur, réaction et durée propres à chaque IA. La moyenne reste celle de la table de calibration. 0 % : tout est régulier.  Ex. : 60 % (défaut) ; 20 % pour un entraînement reproductible.</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Surprise_Desc">
+                <Original>BF -BetterFlash- · BANG spécial : 5 flashs répartis sur 6 s environ ; le son « SUPRISE BANG » est joué une seule fois, dès le premier flash, à la place des bangs. Flashs multicolores, corps arc-en-ciel à « ? ». Mêmes effets qu'une grenade assourdissante, mèche standard.</Original>
+                <English>BF -BetterFlash- · special BANG: 5 flashes spread over about 6 s; the « SUPRISE BANG » sound plays once, from the first flash, instead of the bangs. Multicoloured flashes, rainbow body with a « ? ». Same effects as a stun grenade, standard fuse.</English>
+                <French>BF -BetterFlash- · BANG spécial : 5 flashs répartis sur 6 s environ ; le son « SUPRISE BANG » est joué une seule fois, dès le premier flash, à la place des bangs. Flashs multicolores, corps arc-en-ciel à « ? ». Mêmes effets qu'une grenade assourdissante, mèche standard.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Surprise_Name">
+                <Original>[AT.NA] SUPRISE BANG</Original>
+                <English>[AT.NA] SUPRISE BANG</English>
+                <French>[AT.NA] SUPRISE BANG</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Surprise_Short">
+                <Original>SUPRISE BANG</Original>
+                <English>SUPRISE BANG</English>
+                <French>SUPRISE BANG</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Theme_Standard">
+                <Original>Standard (N flashs)</Original>
+                <English>Standard (N flashes)</English>
+                <French>Standard (N flashs)</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_TinnitusSound_Rec">
                 <Original>Enregistrement</Original>
                 <English>Recording</English>
@@ -1321,6 +1386,21 @@
                 <Original>Synthèse</Original>
                 <English>Synthesis</English>
                 <French>Synthèse</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Women_Desc">
+                <Original>BF -BetterFlash- · BANG spécial : 3 flashs, le son « WOMEN BANG » remplace le bang à chaque flash (un flash toutes les 0,75 s environ). Flash rose, violet ou turquoise, corps en dégradé. Mêmes effets qu'une grenade assourdissante, mèche standard.</Original>
+                <English>BF -BetterFlash- · special BANG: 3 flashes, the « WOMEN BANG » sound replaces the bang on every flash (one flash about every 0.75 s). Pink, purple or turquoise flash, gradient body. Same effects as a stun grenade, standard fuse.</English>
+                <French>BF -BetterFlash- · BANG spécial : 3 flashs, le son « WOMEN BANG » remplace le bang à chaque flash (un flash toutes les 0,75 s environ). Flash rose, violet ou turquoise, corps en dégradé. Mêmes effets qu'une grenade assourdissante, mèche standard.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Women_Name">
+                <Original>[AT.NA] WOMEN BANG</Original>
+                <English>[AT.NA] WOMEN BANG</English>
+                <French>[AT.NA] WOMEN BANG</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Women_Short">
+                <Original>WOMEN BANG</Original>
+                <English>WOMEN BANG</English>
+                <French>WOMEN BANG</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Zen_Area">
                 <Original>Effet de zone BF</Original>

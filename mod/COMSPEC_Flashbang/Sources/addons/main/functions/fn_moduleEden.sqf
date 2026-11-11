@@ -5,6 +5,8 @@
     + délai, ou activation d'un déclencheur synchronisé.
     Mèche (tous les modes) : ajoutée au délai. « Par défaut » = aucune mèche (comportement d'avant : missions existantes
     inchangées) ; 3 s / 8 s : grenade à délai (engin marqué 3 s / 8 s en mode grenade et DRILL) ; personnalisée 0,5-20 s.
+    Modèle (mode grenade) : « Standard » = grenade à N flashs ; BANG spécial (Japan, Women, Surprise, German) = son,
+    nombre et instants des flashs du thème (le nombre et la cadence du module sont ignorés, engin du thème).
     S'exécute là où la logique est locale (serveur en Eden, poste du Zeus quand il est posé en Zeus), une seule fois ;
     sans attributs (pose Zeus vanilla) : grenade de 3 détonations, sans délai ni mèche, à l'endroit posé.
     [_logic, _units, _activated] call comspec_fb_fnc_moduleEden
@@ -49,14 +51,18 @@ private _pos = (getPosASL _logic) vectorAdd [0, 0, 0.05];
 private _vdu = [[0, 1, 0], [0, 0, 1]];
 ["module", format ["type=Eden/%1 pos=%2 N=%3 délai=%4 s mèche=%5 s (%6) cadence=%9 son DRILL=%7 poste=%8", _mode, _pos apply { round _x }, _n, _delay, _fuse,
     _fuseMode, [_snd, "réglage"] select (_snd == ""), ["client (Zeus)", "serveur"] select isServer, _rate]] call comspec_fb_fnc_log;
-private _ammo = if (_mode == "drill") then { "COMSPEC_FB_Ammo_Drill" + _sfx } else { format ["COMSPEC_FB_Ammo_%1%2", [_n min 9, 50] select (_n > 9), _sfx] };
+private _theme = ["Theme", "standard"] call _str;
+private _themed = _mode == "grenade" && {isClass (configFile >> "COMSPEC_FB_Sons" >> ("Theme_" + _theme))};
+private _ammo = if (_themed) then { "COMSPEC_FB_Ammo_" + _theme } else {
+if (_mode == "drill") then { "COMSPEC_FB_Ammo_Drill" + _sfx } else { format ["COMSPEC_FB_Ammo_%1%2", [_n min 9, 50] select (_n > 9), _sfx] }
+};
 if (_mode != "zone" && {!isClass (configFile >> "CfgAmmo" >> _ammo)}) exitWith {
     ["module", format ["ÉCHEC : munition %1 introuvable, rien n'est déclenché", _ammo]] call comspec_fb_fnc_log;
 };
 switch (_mode) do {
     case "zone": { [_pos, _radius, _strength, _n, _fx, _lead, _rate] call comspec_fb_fnc_serverArea };
     case "drill": { [_ammo, _pos, _vdu, [0, 0, 0], objNull, sideUnknown, _n, _lead, -1, _snd, _rate] call comspec_fb_fnc_serverDetonate };
-    default { [_ammo, _pos, _vdu, [0, 0, 0], objNull, sideUnknown, _n, _lead, -1, "", _rate] call comspec_fb_fnc_serverDetonate };
+    default { [_ammo, _pos, _vdu, [0, 0, 0], objNull, sideUnknown, [_n, -1] select _themed, _lead, -1, "", _rate] call comspec_fb_fnc_serverDetonate };
 };
 // Posé en Zeus : la logique n'a plus d'utilité une fois l'ordre donné.
 if (!is3DENPreview && {!isNull (getAssignedCuratorLogic player)} && {local _logic}) then {

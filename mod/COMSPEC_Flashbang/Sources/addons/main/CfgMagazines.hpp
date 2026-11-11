@@ -179,4 +179,21 @@ class CfgMagazines {
     FB_MAG_FAST(Flash_9,9,9);
     FB_MAG_FAST(Flash_50,50,50);
 
+    // BANG spéciaux (son propre, corps multicolore) : COMSPEC_FB_Japan / _Women / _Surprise / _German.
+#define FB_MAG_THEME(C,F) class COMSPEC_FB_##C: COMSPEC_FB_Flash_Base { \
+        scope = 2; \
+        scopeArsenal = 2; \
+        scopeCurator = 2; \
+        displayName = QUOTE($STR_COMSPEC_FB_##C##_Name); \
+        displayNameShort = QUOTE($STR_COMSPEC_FB_##C##_Short); \
+        descriptionShort = QUOTE($STR_COMSPEC_FB_##C##_Desc); \
+        picture = QPATHTOF(ui\fb_icon_##F##_ca.paa); \
+        model = QPATHTOF(data\fb_##F##.p3d); \
+        ammo = QUOTE(COMSPEC_FB_Ammo_##C); \
+    }
+    FB_MAG_THEME(Japan,japan);
+    FB_MAG_THEME(Women,women);
+    FB_MAG_THEME(Surprise,surprise);
+    FB_MAG_THEME(German,german);
+
 };

@@ -20,7 +20,8 @@ ombre 0 (enveloppe convexe fermée) ; géométrie (enveloppe convexe, 0,56 kg, a
 
     python gen_fb_textures.py
     blender -b -P model_flashbang.py            (ONLY=nom ; DELAYED_ONLY=1 ; NO_EXPORT=1 ; NO_RENDER=1 ; RENDER_SAMPLES=n ;
-                                                 WORKSHOP=1 : seulement les rendus de la page Workshop)
+                                                 WORKSHOP=1 : seulement les rendus de la page Workshop ;
+                                                 WORKSHOP=themes : rang des quatre BANG spéciaux seulement)
 Extension Blender « Arma 3 Object Builder » requise (comme mod/COMSPEC_ATAK_Native/tools/model_items.py).
 Les rendus (icônes, logo, aperçu Steam) sont écrits dans tools/render/ ; conversion PAA : voir README du mod.
 """
@@ -42,7 +43,9 @@ SAMPLES = int(os.environ.get("RENDER_SAMPLES", "96"))
 ORIGINAL = [str(i) for i in range(1, 10)] + ["drill"]
 BASES = ORIGINAL + ["50"]          # 50 : GANG BANG BF
 # Variantes à délai (mèche fixe 3 s / 8 s) : même géométrie, texture du corps marquée (gen_fb_textures.py).
-VARIANTS = BASES + [f"{b}_d{d}" for b in BASES for d in (3, 8)]
+# BANG spéciaux (son propre, corps multicolore : gen_fb_textures.py) : même géométrie, mèche standard seulement.
+THEMES = ["japan", "women", "surprise", "german"]
+VARIANTS = BASES + [f"{b}_d{d}" for b in BASES for d in (3, 8)] + THEMES
 MASS = 0.56
 
 R = 0.020            # rayon du corps
@@ -571,11 +574,35 @@ def render_workshop():
         render(os.path.join(RENDER, name + ".png"))
 
 
+def render_workshop_themes():
+    """Rang des quatre BANG spéciaux (WORKSHOP=themes), même caméra et même échelle que ws_lineup_alpha :
+    ws_lineup_themes.png (2400 x 760, fond transparent), accolé au rang des dix par make_workshop_gallery.py."""
+    bpy.ops.wm.read_homefile(use_empty=True)
+    sc = bpy.context.scene
+    studio(sc, True, key=1.2)
+    for i, v in enumerate(THEMES):
+        ob = make_mesh(f"g{v}", build(1, False), preview_materials(v), groups=False)
+        place(ob, ((i - 1.5) * 0.052, 0.012 * (i % 2), 0), True, math.radians(-90 + (i % 3 - 1) * 8))
+    cd = bpy.data.cameras.new("cam")
+    cd.lens = 50
+    co = bpy.data.objects.new("cam", cd)
+    sc.collection.objects.link(co)
+    cam, look = (0.0, -0.80, 0.16), (0, 0, 0.045)
+    co.location = cam
+    co.rotation_euler = (Vector(look) - Vector(cam)).to_track_quat("-Z", "Y").to_euler()
+    sc.camera = co
+    sc.render.resolution_x, sc.render.resolution_y = 2400, 760
+    render(os.path.join(RENDER, "ws_lineup_themes.png"))
+
+
 def main():
     d = bpy.utils.user_resource("SCRIPTS", path="addons", create=True)
     sys.path.insert(0, d)
     if not addon_utils.enable("Arma3ObjectBuilder", default_set=True):
         raise SystemExit("Extension Arma 3 Object Builder introuvable dans " + d)
+    if os.environ.get("WORKSHOP") == "themes":
+        render_workshop_themes()
+        return
     if os.environ.get("WORKSHOP") == "1":
         render_workshop()
         return

@@ -8,7 +8,8 @@
     Lance aussi, si activée, l'analyse intérieur / extérieur du point d'explosion, étalée sur quelques images.
 
     [_id, _kind, _device, _netId, _posASL, _offsets, _t0, _side, _thrower, _extra, _localDev, _gains] call comspec_fb_fnc_timeline
-      _kind     : "live" (grenade), "drill" (entraînement), "area" (effet de zone sans grenade, _extra = [rayon, force, fx])
+      _kind     : "live" (grenade ; _extra = [thème] pour un BANG spécial), "drill" (entraînement), "area" (effet de zone
+                  sans grenade, _extra = [rayon, force, fx])
       _localDev : voie client (serveur sans le mod) : [classe, posASL, [dir, up], vitesse, durée de vie] de l'engin que
                   chaque machine pose elle-même (createVehicleLocal) ; [] = engin synchronisé posé par le serveur
       _gains    : force relative de chaque détonation (fn_plan : 1er bang 1, les suivants 0,65 à 1) ; [] = toutes à 1
@@ -37,7 +38,10 @@ if (_localDev isNotEqualTo []) then {
     };
 };
 
+// BANG spécial : thème et palette du flash (table des sons, Theme_<V>) ; "" et [] pour une grenade standard.
+private _theme = if (_kind == "live") then { _extra param [0, "", [""]] } else { "" };
 private _ctx = createHashMapFromArray [
+    ["theme", _theme], ["teintes", getArray (configFile >> "COMSPEC_FB_Sons" >> ("Theme_" + _theme) >> "teintes")],
     ["id", _id], ["kind", _kind], ["device", _device], ["netId", _netId], ["resolved", !isNull _device],
     ["pos", _posASL], ["side", _side], ["thrower", _thrower], ["extra", _extra], ["n", count _offsets],
     ["done", 0], ["cancelled", false], ["env", createHashMap], ["lastBang", -1], ["gains", _gains],

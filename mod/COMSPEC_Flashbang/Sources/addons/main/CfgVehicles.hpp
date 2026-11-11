@@ -50,6 +50,13 @@ class CfgVehicles {
 #include "CfgVehicles_boxDelay.hpp"
         };
     };
+    // Caisse des BANG spéciaux (JAPAN, WOMEN, SUPRISE, GERMAN) : 10 de chaque.
+    class COMSPEC_FB_Box_Special: COMSPEC_FB_Box {
+        displayName = "$STR_COMSPEC_FB_Box_Special";
+        class TransportMagazines {
+#include "CfgVehicles_boxSpecial.hpp"
+        };
+    };
 
     // Module Eden (et Zeus vanilla, valeurs par défaut) : grenade à N flashs, effet de zone ou grenade d'entraînement.
     class Logic;
@@ -98,6 +105,21 @@ class CfgVehicles {
                 tooltip = "$STR_COMSPEC_FB_Module_Bursts_Tip";
                 typeName = "NUMBER";
                 defaultValue = "3";
+            };
+            // Modèle (mode grenade) : grenade standard à N flashs, ou BANG spécial (son et flashs du thème).
+            class Theme: Combo {
+                property = "COMSPEC_FB_Module_Theme";
+                displayName = "$STR_COMSPEC_FB_Module_Theme";
+                tooltip = "$STR_COMSPEC_FB_Module_Theme_Tip";
+                typeName = "STRING";
+                defaultValue = """standard""";
+                class Values {
+                    class Standard { name = "$STR_COMSPEC_FB_Theme_Standard"; value = "standard"; };
+                    class Japan { name = "$STR_COMSPEC_FB_Japan_Short"; value = "Japan"; };
+                    class Women { name = "$STR_COMSPEC_FB_Women_Short"; value = "Women"; };
+                    class Surprise { name = "$STR_COMSPEC_FB_Surprise_Short"; value = "Surprise"; };
+                    class German { name = "$STR_COMSPEC_FB_German_Short"; value = "German"; };
+                };
             };
             class Delay: Edit {
                 property = "COMSPEC_FB_Module_Delay";

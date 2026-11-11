@@ -18,3 +18,7 @@
             class _xx_COMSPEC_FB_Flash_8_R { magazine = "COMSPEC_FB_Flash_8_R"; count = 2; };
             class _xx_COMSPEC_FB_Flash_9_R { magazine = "COMSPEC_FB_Flash_9_R"; count = 2; };
             class _xx_COMSPEC_FB_Flash_50_R { magazine = "COMSPEC_FB_Flash_50_R"; count = 2; };
+            class _xx_COMSPEC_FB_Japan { magazine = "COMSPEC_FB_Japan"; count = 2; };
+            class _xx_COMSPEC_FB_Women { magazine = "COMSPEC_FB_Women"; count = 2; };
+            class _xx_COMSPEC_FB_Surprise { magazine = "COMSPEC_FB_Surprise"; count = 2; };
+            class _xx_COMSPEC_FB_German { magazine = "COMSPEC_FB_German"; count = 2; };

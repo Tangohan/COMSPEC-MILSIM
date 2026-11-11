@@ -8,6 +8,8 @@
     - DRILL : petite bouffée de fumée et, si le réglage le demande, une lueur faible.
     Hasard (réglage « Variation aléatoire ») : force du flash 60 à 140 %, teinte blanc / blanc-bleu / blanc chaud,
     taille et densité des particules, direction de l'onde de poussière, éclats en plus ; _g = force de la détonation.
+    BANG spéciaux : teinte de la lumière et des étincelles tirée à chaque flash dans la palette du thème (teintes[]
+    de CfgSons.hpp : JAPAN blanc / rouge, GERMAN doré, WOMEN rose / violet / turquoise, SUPRISE arc-en-ciel).
     Flammes (réglage « Flammes (visuel) », client : Aucune / Légère / Marquée) : courtes langues de gaz incandescents
     orange-blanc par les évents (0,15 - 0,3 s), lueur chaude très atténuée mêlée au flash ; aucun feu, aucun dégât.
     Budget et rafales : au plus 8 lumières à la fois sur ce poste ; une détonation à moins de 0,08 s de la précédente
@@ -18,6 +20,15 @@ params ["_ctx", "_pos", "_env", ["_g", 1]];
 private _k = (_g * (1 + ([0.67] call comspec_fb_fnc_rand))) max 0.3;      // 0,6 à 1,4 à 60 %
 private _sz = 1 + ([0.45] call comspec_fb_fnc_rand);                       // taille des particules
 private _tint = [[0.93, 0.96, 1], [0.88, 0.93, 1], [1, 0.95, 0.85]] select (floor random 3);
+// Étincelles : blanc chaud -> orange (couleurs puis émission) ; BANG spécial : couleur du thème.
+private _spark = [[[1, 0.95, 0.85, 1], [1, 0.8, 0.5, 0.8], [1, 0.6, 0.3, 0]], [[40, 35, 25, 1], [8, 5, 2, 0]]];
+private _spark2 = [[[1, 0.9, 0.7, 1], [1, 0.7, 0.4, 0.8], [1, 0.5, 0.2, 0]], [[30, 25, 15, 1], [6, 4, 1, 0]]];
+private _palette = _ctx getOrDefault ["teintes", []];
+if (_palette isNotEqualTo []) then {
+    _tint = +(selectRandom _palette);
+    _spark = [[_tint + [1], _tint + [0.8], (_tint vectorMultiply 0.7) + [0]], [(_tint vectorMultiply 40) + [1], (_tint vectorMultiply 8) + [0]]];
+    _spark2 = _spark;
+};
 private _kind = _ctx get "kind";
 private _q = missionNamespace getVariable ["comspec_fb_quality", 1];
 private _cam = AGLToASL (positionCameraToWorld [0, 0, 0]);
@@ -126,8 +137,8 @@ if (_q >= 1) then {
 // Étincelles et gaz brillants projetés par les évents (nombre selon la qualité).
 private _sparkInterval = ([0.02, 0.008, 0.004] select _q) / (_k max 0.5);
 [[_basic, "", "Billboard", 1, 0.35, [0, 0, 0.1], [0, 0, 1.5], 0, 3, 1, 0.3, [0.06, 0.03, 0.01],
-    [[1, 0.95, 0.85, 1], [1, 0.8, 0.5, 0.8], [1, 0.6, 0.3, 0]], [1], 0.05, 0.3, "", "", "", 0, false, 0.3,
-    [[40, 35, 25, 1], [8, 5, 2, 0]]],
+    _spark select 0, [1], 0.05, 0.3, "", "", "", 0, false, 0.3,
+    _spark select 1],
  [0.2, [0.05, 0.05, 0.05], [7, 7, 4], 0, 0.02, [0, 0, 0, 0], 0, 0], _sparkInterval, 0.06] call _emit;
 
 // Poussière soulevée au sol (dehors) ou débris légers (dedans), puis fumée blanche brève.
@@ -145,7 +156,7 @@ if (_q >= 1 && {random 1 < 0.4 + 0.5 * (missionNamespace getVariable ["comspec_f
     private _a = random 360;
     private _sp = 3 + random 5;
     [[_basic, "", "Billboard", 1, 0.5 + random 0.4, [0, 0, 0.15], [_sp * sin _a, _sp * cos _a, 1 + random 2], 0, 4, 1, 0.2,
-        [0.04, 0.02, 0.01], [[1, 0.9, 0.7, 1], [1, 0.7, 0.4, 0.8], [1, 0.5, 0.2, 0]], [1], 0.1, 0.3, "", "", "", 0, false, 0.4,
-        [[30, 25, 15, 1], [6, 4, 1, 0]]],
+        [0.04, 0.02, 0.01], _spark2 select 0, [1], 0.1, 0.3, "", "", "", 0, false, 0.4,
+        _spark2 select 1],
      [0.2, [0.05, 0.05, 0.05], [4, 4, 3], 0, 0.02, [0, 0, 0, 0], 0, 0], 0.01 + random 0.02, 0.05 + random 0.06] call _emit;
 };

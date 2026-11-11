@@ -46,6 +46,7 @@ private _target = {
 private _start = [0, -8] call _at;
 private _box = ["COMSPEC_FB_Box", [2, -10] call _at, 105] call _obj;
 ["COMSPEC_FB_Box_Delay", [-2, -10] call _at, 105] call _obj;
+["COMSPEC_FB_Box_Special", [6, -10] call _at, 105] call _obj;
 private _sign = ["SignAd_Sponsor_F", [0, -14] call _at, 105] call _obj;
 _sign setObjectTextureGlobal [0, "images\consignes.paa"];
 missionNamespace setVariable ["COMSPEC_FB_Range_Box", _box, true];

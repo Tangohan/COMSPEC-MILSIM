@@ -55,7 +55,9 @@ private _v2 = 0;
 if (_ui != "" && {!_inside} && {_dc >= 0} && {_dc < 25}) then {
     _v2 = (_vol * 0.5 * linearConversion [8, 25, _dc, 1, 0, true]) min 5;
 };
-for "_k" from 1 to (_copies + parseNumber (_v2 > 0.05)) do { comspec_fb_sndEnds pushBack (_now + _delay + 2.5) };
+// Durée comptée dans le budget : 2,5 s pour un bang ; durée du fichier (au plus 4 s) pour un son de BANG spécial.
+private _dur = if (isNumber (_cfg >> "duree")) then { (getNumber (_cfg >> "duree")) min 4 } else { 2.5 };
+for "_k" from 1 to (_copies + parseNumber (_v2 > 0.05)) do { comspec_fb_sndEnds pushBack (_now + _delay + _dur) };
 ["son", format ["%1 : %2, volume 3D %3 (%4 lecture(s)), couche proche 2D %5, portée %6 m, hauteur %7, retard %8 s%9", _entry,
     _files select _i, _vol toFixed 2, _copies, _v2 toFixed 2, round _dist, _pitch toFixed 3, _delay toFixed 3,
     ["", ", intérieur"] select _inside]] call comspec_fb_fnc_log;

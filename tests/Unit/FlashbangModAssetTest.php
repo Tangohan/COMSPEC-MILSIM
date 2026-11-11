@@ -15,6 +15,13 @@ final class FlashbangModAssetTest extends TestCase
     private const MAIN = 'mod/COMSPEC_Flashbang/Sources/addons/main/';
     private const BASES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '50', 'Drill'];
     private const FAST = ['2', '3', '4', '5', '6', '7', '8', '9', '50'];
+    /** BANG spéciaux : classe => [fichier du modèle, nombre de flashs, nom affiché]. */
+    private const THEMES = [
+        'Japan' => ['japan', 3, 'JAPAN BANG'],
+        'Women' => ['women', 3, 'WOMEN BANG'],
+        'Surprise' => ['surprise', 5, 'SUPRISE BANG'],
+        'German' => ['german', 9, 'GERMAN BANG'],
+    ];
 
     private static function path(string $p): string
     {
@@ -111,7 +118,7 @@ final class FlashbangModAssetTest extends TestCase
             }
             self::assertStringContainsString("magazine = \"{$mag}\";", $box, "{$mag} absent des caisses");
             if ($d > 0) {
-                self::assertStringContainsString("{$d} s", $s[$key . '_Name']['fr']);
+                self::assertStringEndsWith(" {$d}s", $s[$key . '_Name']['fr']);
                 self::assertStringContainsString("{$d} s", $s[$key . '_Desc']['fr']);
             }
         }
@@ -125,24 +132,118 @@ final class FlashbangModAssetTest extends TestCase
         foreach (self::variants() as [$mag]) {
             $names[] = 'STR_' . $mag . '_Name';
         }
-        $others = ['STR_COMSPEC_FB_Box', 'STR_COMSPEC_FB_Box_Delay', 'STR_COMSPEC_FB_Device', 'STR_COMSPEC_FB_Muzzle',
+        foreach (array_keys(self::THEMES) as $theme) {
+            $names[] = "STR_COMSPEC_FB_{$theme}_Name";
+        }
+        $others = ['STR_COMSPEC_FB_Box', 'STR_COMSPEC_FB_Box_Delay', 'STR_COMSPEC_FB_Box_Special', 'STR_COMSPEC_FB_Device', 'STR_COMSPEC_FB_Muzzle',
             'STR_COMSPEC_FB_Module', 'STR_COMSPEC_FB_Zen_Throw', 'STR_COMSPEC_FB_Zen_Area'];
         foreach (['fr', 'en'] as $lang) {
             $vals = [];
             foreach (array_merge($names, $others) as $k) {
                 $v = $s[$k][$lang];
-                self::assertLessThanOrEqual(16, mb_strlen($v), "{$k} ({$lang}) trop long : « {$v} »");
+                // Grenades : préfixe « [AT.NA] » (tri groupé dans l'Arsenal), colonne d'inventaire coupée vers 21 caractères.
+                $max = in_array($k, $names, true) || $k === 'STR_COMSPEC_FB_Box_Special' ? 21 : 16;
+                self::assertLessThanOrEqual($max, mb_strlen($v), "{$k} ({$lang}) trop long : « {$v} »");
                 $vals[] = $v;
             }
             self::assertSame(count($vals), count(array_unique($vals)), "Noms en double ({$lang})");
             foreach ($names as $k) {
                 self::assertDoesNotMatchRegularExpression('/^Grenade/u', $s[$k][$lang], 'Pas de mot long en tête.');
-                self::assertMatchesRegularExpression('/BF|GANG BANG/u', $s[$k][$lang], 'Marque BF dans le nom.');
+                self::assertStringStartsWith('[AT.NA] ', $s[$k][$lang], 'Préfixe [AT.NA] sur toutes les grenades.');
+            }
+            foreach ($others as $k) {
+                self::assertStringNotContainsString('[AT.NA]', $s[$k][$lang], 'Préfixe réservé aux grenades.');
             }
             foreach (self::variants() as [$mag]) {
                 self::assertStringContainsString('BetterFlash', $s['STR_' . $mag . '_Desc'][$lang], 'Marque dans l\'info-bulle.');
             }
         }
+    }
+
+    public function testBangSpeciauxClassesSonsEtModeles(): void
+    {
+        $s = self::strings();
+        $ammo = self::read(self::MAIN . 'CfgAmmo.hpp');
+        $mags = self::read(self::MAIN . 'CfgMagazines.hpp');
+        $weap = self::read(self::MAIN . 'CfgWeapons.hpp');
+        $dev = self::read(self::MAIN . 'CfgVehicles_devices.hpp');
+        $veh = self::read(self::MAIN . 'CfgVehicles.hpp');
+        $cfg = self::read(self::MAIN . 'config.cpp');
+        $sons = self::read(self::MAIN . 'CfgSons.hpp');
+        $box = self::read(self::MAIN . 'CfgVehicles_box.hpp');
+        $special = self::read(self::MAIN . 'CfgVehicles_boxSpecial.hpp');
+        $modelCfg = self::read(self::MAIN . 'data/model.cfg');
+        $zen = self::read(self::MAIN . 'functions/fn_zenRegister.sqf');
+        foreach (self::THEMES as $theme => [$file, $n, $shown]) {
+            // Classes : munition, magasin, muzzle (dans le cycle de Throw), engin, CfgPatches.
+            self::assertStringContainsString("FB_AMMO_THEME({$theme},{$file},{$n});", $ammo);
+            self::assertStringContainsString("FB_MAG_THEME({$theme},{$file});", $mags);
+            self::assertStringContainsString("class COMSPEC_FB_Muzzle_{$theme}: ThrowMuzzle", $weap);
+            self::assertStringContainsString("magazines[] = {\"COMSPEC_FB_{$theme}\"};", $weap);
+            self::assertSame(2, substr_count($weap, "COMSPEC_FB_Muzzle_{$theme}"), 'Muzzle déclaré et ajouté à Throw.');
+            self::assertStringContainsString("class COMSPEC_FB_Device_{$theme}: COMSPEC_FB_Device_Base", $dev);
+            self::assertStringContainsString("\"COMSPEC_FB_{$theme}\"", $cfg);
+            self::assertStringContainsString("\"COMSPEC_FB_Ammo_{$theme}\"", $cfg);
+            // Modèle, texture multicolore, icône.
+            foreach (["data/fb_{$file}.p3d", "data/fb_{$file}_spent.p3d", "data/fb_body_{$file}_co.paa", "ui/fb_icon_{$file}_ca.paa"] as $f) {
+                self::assertFileExists(self::path(self::MAIN . $f), "{$theme} : {$f}");
+            }
+            self::assertStringContainsString("class fb_{$file}: fb_1", $modelCfg);
+            self::assertStringContainsString("class fb_{$file}_spent: fb_1", $modelCfg);
+            // Textes FR + EN : nom préfixé, court, info-bulle marquée.
+            foreach (['fr', 'en'] as $lang) {
+                self::assertSame('[AT.NA] ' . $shown, $s["STR_COMSPEC_FB_{$theme}_Name"][$lang]);
+                self::assertLessThanOrEqual(21, mb_strlen($s["STR_COMSPEC_FB_{$theme}_Name"][$lang]));
+                self::assertSame($shown, $s["STR_COMSPEC_FB_{$theme}_Short"][$lang]);
+                self::assertStringContainsString('BetterFlash', $s["STR_COMSPEC_FB_{$theme}_Desc"][$lang]);
+                self::assertStringContainsString($shown, $s["STR_COMSPEC_FB_{$theme}_Desc"][$lang]);
+            }
+            // Caisses : 2 dans la caisse standard, 10 dans la caisse dédiée ; listes des modules Eden et ZEN.
+            self::assertStringContainsString("magazine = \"COMSPEC_FB_{$theme}\"; count = 2;", $box);
+            self::assertStringContainsString("magazine = \"COMSPEC_FB_{$theme}\"; count = 10;", $special);
+            self::assertStringContainsString("class {$theme} { name = \"\$STR_COMSPEC_FB_{$theme}_Short\"; value = \"{$theme}\"; };", $veh);
+            self::assertStringContainsString("\"{$theme}\"", $zen);
+            // Son du thème : fichier 3D et couche 2D présents, durée, flashs calés ou espacés.
+            self::assertSame(1, preg_match('/class Theme_' . $theme . ' \{(.*?)\n    \};/s', $sons, $m), "Entrée Theme_{$theme}");
+            $entry = $m[1];
+            self::assertSame(1, preg_match('/fichiers\[\] = \{"([^"]+)"\};/', $entry, $f));
+            self::assertFileExists(self::path(self::MAIN . 'sounds/' . $f[1]));
+            self::assertStringEndsWith('_enreg.ogg', $f[1]);
+            self::assertSame(1, preg_match('/ui\[\] = \{"([^"]+)"\};/', $entry, $u));
+            self::assertSame(1, preg_match('/FB_UI_SOUND\(' . $u[1] . ',([^)]+)\);/', $sons, $uf), "Couche 2D de {$theme}");
+            self::assertFileExists(self::path(self::MAIN . 'sounds/' . $uf[1]));
+            self::assertSame(1, preg_match('/duree = ([0-9.]+); unique = ([01]); intervalle = ([0-9.]+); instants\[\] = \{([^}]*)\};/', $entry, $d));
+            $dur = (float) $d[1];
+            $instants = array_values(array_filter(array_map('trim', explode(',', $d[4])), static fn (string $v): bool => $v !== ''));
+            if ($d[2] === '1') {
+                // Son long joué une fois : un instant par flash, croissants, tous pendant le son.
+                self::assertGreaterThan(4.0, $dur);
+                self::assertCount($n, $instants, "{$theme} : un instant par flash.");
+                self::assertSame('0', $instants[0]);
+                for ($i = 1; $i < $n; $i++) {
+                    self::assertGreaterThan((float) $instants[$i - 1] + 0.3, (float) $instants[$i]);
+                }
+                self::assertLessThan($dur, (float) $instants[$n - 1]);
+            } else {
+                // Son court rejoué à chaque flash : intervalle d'au moins 0,6 x la durée.
+                self::assertSame([], $instants);
+                self::assertGreaterThanOrEqual(0.6 * $dur, (float) $d[3]);
+            }
+            self::assertMatchesRegularExpression('/teintes\[\] = \{\{[^;]+\}\};/', $entry, 'Palette du flash.');
+            self::assertStringContainsString('volume = 2.5; distance = 900;', $entry, 'Mêmes volume et portée que le bang standard.');
+        }
+        self::assertStringContainsString('class COMSPEC_FB_Box_Special: COMSPEC_FB_Box', $veh);
+        self::assertStringContainsString('"COMSPEC_FB_Box_Special"', $cfg);
+        self::assertStringContainsString('comspec_fb_theme = QUOTE(V);', $ammo);
+        // Le son du thème remplace le bang ; un son long n'est lu qu'une fois ; l'acouphène reste celui du mod.
+        $burst = self::read(self::MAIN . 'functions/fn_burst.sqf');
+        self::assertStringContainsString('if (!_themeMute) then { ["Theme_" + _theme, _pos, _delay, _wall, _gain, _range, _dc] call comspec_fb_fnc_playBang };', $burst);
+        self::assertStringContainsString('>> "unique") == 1', $burst);
+        $server = self::read(self::MAIN . 'functions/fn_serverDetonate.sqf');
+        self::assertStringContainsString('getArray (_tcfg >> "instants")', $server);
+        self::assertStringContainsString('if (_theme != "") then { _extra = [_theme] };', $server);
+        self::assertStringContainsString('selectRandom _palette', self::read(self::MAIN . 'functions/fn_fx.sqf'));
+        self::assertStringNotContainsString('Theme_', self::read(self::MAIN . 'functions/fn_tinnitus.sqf'));
     }
 
     public function testSonsDeLaDrillPointentVersDesFichiers(): void

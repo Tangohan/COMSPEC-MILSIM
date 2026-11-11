@@ -41,6 +41,10 @@ if (_nOverride > 0) then { _n = _nOverride };
 // 1 à 9, ou jusqu'à 50 (GANG BANG BF) si le réglage « Autoriser les grenades à plus de 9 flashs » est coché.
 _n = ((round _n) max 1) min ([9, 50] select (missionNamespace getVariable ["comspec_fb_allowBig", true]));
 private _devClass = getText (_cfg >> "comspec_fb_device");
+// BANG spécial (JAPAN, WOMEN, SUPRISE, GERMAN) : thème de la munition, décrit dans la table des sons (Theme_<V>).
+private _theme = getText (_cfg >> "comspec_fb_theme");
+private _tcfg = configFile >> "COMSPEC_FB_Sons" >> ("Theme_" + _theme);
+if (_drill || {!isClass _tcfg}) then { _theme = "" };
 
 // Engin au sol synchronisé (serveur seulement : un serveur sans le mod ne connaît pas sa classe).
 private _device = objNull;
@@ -55,7 +59,25 @@ if (!_client) then {
 // Instants et forces des détonations, tirés une fois (fn_plan : irréguliers, 1er bang le plus fort).
 if (_rate < 0 && {isNumber (_cfg >> "comspec_fb_rate")}) then { _rate = getNumber (_cfg >> "comspec_fb_rate") };
 ([_n, _rate] call comspec_fb_fnc_plan) params ["_offsets", "_gains", "_mode"];
+// BANG spécial : les flashs suivent le son. Instants fixes calés sur les attaques du son (sons longs, joués une
+// fois), sinon un flash tous les « intervalle » s (sons courts, rejoués à chaque flash sans trop se recouvrir).
+if (_theme != "") then {
+    private _inst = getArray (_tcfg >> "instants");
+    private _step = (getNumber (_tcfg >> "intervalle")) max 0.1;
+    private _t1 = 0;
+    _offsets = [];
+    for "_i" from 0 to (_n - 1) do {
+        if (_i < count _inst) then {
+            _t1 = _inst select _i;
+        } else {
+            if (_i > 0) then { _t1 = _t1 + _step * (1 + ([0.1] call comspec_fb_fnc_rand)) };
+        };
+        _offsets pushBack _t1;
+    };
+    _mode = 0;
+};
 private _modeName = ["normale", "rapide", "hyper rapide", "aléatoire"] select _mode;
+if (_theme != "") then { _modeName = format ["du thème %1", _theme] };
 private _meanDt = if (_n > 1) then { (selectMax _offsets) / (_n - 1) } else { 0 };
 private _t = (selectMax _offsets) + 1;
 
@@ -74,6 +96,8 @@ if (_drill) then {
     if !(_snd in _keys) then { _snd = "Pop" };
     _extra = [_snd, missionNamespace getVariable ["comspec_fb_drillVolume", 1]];
 };
+// Grenade réelle : _extra = [thème] pour un BANG spécial (son et teintes joués par chaque machine), [] sinon.
+if (_theme != "") then { _extra = [_theme] };
 // Voie client : chaque machine pose son engin local à partir de cette description.
 private _localDev = [[], [_devClass, _posASL, _vdu, _vel, _t + 40]] select _client;
 private _msg = [_id, _kind, _device, ["", netId _device] select !_client, _posASL, _offsets, _t0, _side, _thrower, _extra, _localDev, _gains];

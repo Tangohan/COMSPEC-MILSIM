@@ -13,7 +13,8 @@ class CfgWeapons {
         muzzles[] += {"COMSPEC_FB_Muzzle_1", "COMSPEC_FB_Muzzle_2", "COMSPEC_FB_Muzzle_3", "COMSPEC_FB_Muzzle_4", "COMSPEC_FB_Muzzle_5", "COMSPEC_FB_Muzzle_6", "COMSPEC_FB_Muzzle_7", "COMSPEC_FB_Muzzle_8", "COMSPEC_FB_Muzzle_9", "COMSPEC_FB_Muzzle_50", "COMSPEC_FB_Muzzle_Drill",
             FB_MUZZLE_NAMES(1), FB_MUZZLE_NAMES(2), FB_MUZZLE_NAMES(3), FB_MUZZLE_NAMES(4), FB_MUZZLE_NAMES(5),
             FB_MUZZLE_NAMES(6), FB_MUZZLE_NAMES(7), FB_MUZZLE_NAMES(8), FB_MUZZLE_NAMES(9), FB_MUZZLE_NAMES(50), FB_MUZZLE_NAMES(Drill),
-            "COMSPEC_FB_Muzzle_2_R", "COMSPEC_FB_Muzzle_3_R", "COMSPEC_FB_Muzzle_4_R", "COMSPEC_FB_Muzzle_5_R", "COMSPEC_FB_Muzzle_6_R", "COMSPEC_FB_Muzzle_7_R", "COMSPEC_FB_Muzzle_8_R", "COMSPEC_FB_Muzzle_9_R", "COMSPEC_FB_Muzzle_50_R"};
+            "COMSPEC_FB_Muzzle_2_R", "COMSPEC_FB_Muzzle_3_R", "COMSPEC_FB_Muzzle_4_R", "COMSPEC_FB_Muzzle_5_R", "COMSPEC_FB_Muzzle_6_R", "COMSPEC_FB_Muzzle_7_R", "COMSPEC_FB_Muzzle_8_R", "COMSPEC_FB_Muzzle_9_R", "COMSPEC_FB_Muzzle_50_R",
+            "COMSPEC_FB_Muzzle_Japan", "COMSPEC_FB_Muzzle_Women", "COMSPEC_FB_Muzzle_Surprise", "COMSPEC_FB_Muzzle_German"};
         class ThrowMuzzle;
         class COMSPEC_FB_Muzzle_1: ThrowMuzzle {
             displayName = "$STR_COMSPEC_FB_Muzzle";
@@ -79,6 +80,11 @@ class CfgWeapons {
         class COMSPEC_FB_Muzzle_8_R: ThrowMuzzle { displayName = "$STR_COMSPEC_FB_Muzzle"; magazines[] = {"COMSPEC_FB_Flash_8_R"}; };
         class COMSPEC_FB_Muzzle_9_R: ThrowMuzzle { displayName = "$STR_COMSPEC_FB_Muzzle"; magazines[] = {"COMSPEC_FB_Flash_9_R"}; };
         class COMSPEC_FB_Muzzle_50_R: ThrowMuzzle { displayName = "$STR_COMSPEC_FB_Muzzle"; magazines[] = {"COMSPEC_FB_Flash_50_R"}; };
+        // BANG spéciaux.
+        class COMSPEC_FB_Muzzle_Japan: ThrowMuzzle { displayName = "$STR_COMSPEC_FB_Muzzle"; magazines[] = {"COMSPEC_FB_Japan"}; };
+        class COMSPEC_FB_Muzzle_Women: ThrowMuzzle { displayName = "$STR_COMSPEC_FB_Muzzle"; magazines[] = {"COMSPEC_FB_Women"}; };
+        class COMSPEC_FB_Muzzle_Surprise: ThrowMuzzle { displayName = "$STR_COMSPEC_FB_Muzzle"; magazines[] = {"COMSPEC_FB_Surprise"}; };
+        class COMSPEC_FB_Muzzle_German: ThrowMuzzle { displayName = "$STR_COMSPEC_FB_Muzzle"; magazines[] = {"COMSPEC_FB_German"}; };
 
     };
 };

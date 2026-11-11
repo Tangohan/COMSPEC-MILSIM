@@ -6,6 +6,7 @@ condensées (Bahnschrift de Windows, comme les galeries ATAK et SSE). Aucun peti
 Entrées (tools/render/) :
   workshop_lineup_dark.jpg    rang des dix grenades sur fond sombre, 1920 x 1080 (rendu Blender)
   workshop_lineup_alpha.webp  même rang sur fond transparent, avec ombres, 2400 x 760 (rendu Blender)
+  workshop_lineup_themes.webp rang des quatre BANG spéciaux, même caméra (WORKSHOP=themes blender -b -P model_flashbang.py)
   fb_afterimage_ca.png        tache rémanente du mod (texture réelle de l'effet)
   fb_module_ca.png            icône du module Eden
   Si les rendus bruts ws_lineup_dark.png / ws_lineup_alpha.png existent (WORKSHOP=1 blender -b -P
@@ -164,10 +165,38 @@ def prepare_sources():
         im.save(os.path.join(RENDER, "workshop_lineup_alpha.webp"), quality=90, method=6)
         os.remove(raw_alpha)
         print("source  render/workshop_lineup_alpha.webp")
+    raw_themes = os.path.join(RENDER, "ws_lineup_themes.png")
+    if os.path.isfile(raw_themes):
+        im = Image.open(raw_themes).convert("RGBA")
+        im = im.crop(im.getchannel("A").point(lambda a: 255 if a > 8 else 0).getbbox())
+        im.save(os.path.join(RENDER, "workshop_lineup_themes.webp"), quality=90, method=6)
+        os.remove(raw_themes)
+        print("source  render/workshop_lineup_themes.webp")
 
 
 def lineup_alpha():
     return Image.open(os.path.join(RENDER, "workshop_lineup_alpha.webp")).convert("RGBA")
+
+
+def lineup_all():
+    """Rang des dix grenades puis des quatre BANG spéciaux (même échelle), posés sur la même ligne de sol."""
+    a = lineup_alpha()
+    b = Image.open(os.path.join(RENDER, "workshop_lineup_themes.webp")).convert("RGBA")
+
+    def solid(im):
+        return im.getchannel("A").point(lambda v: 255 if v > 250 else 0).getbbox()
+    sa, sb = solid(a), solid(b)
+    gap = 70
+    # Bord droit des objets du premier rang, bord gauche des objets du second ; pieds alignés.
+    dx = sa[2] + gap - sb[0]
+    dy = sa[3] - sb[3]
+    top = min(0, dy)
+    out = Image.new("RGBA", (max(a.width, dx + b.width), max(a.height, dy + b.height) - top), (0, 0, 0, 0))
+    out.alpha_composite(a, (0, -top))
+    out.alpha_composite(b, (dx, dy - top))
+    # Recadrage sur les objets (marge pour les ombres) : le rang est centré dans la diapositive.
+    so = solid(out)
+    return out.crop((max(0, so[0] - 130), 0, min(out.width, so[2] + 130), out.height))
 
 
 def lineup_dark():
@@ -195,12 +224,14 @@ T = {
         "en": ("COMSPEC FLASHBANG", "BetterFlash (BF): stun grenades for Arma 3, 1 to 9 flashes, a 50-flash GANG BANG, realistic effects.",
                ["1 TO 9 FLASHES", "50-FLASH GANG BANG", "DRILL GRENADE", "ONLY CBA_A3 REQUIRED"])},
     "grenades": {
-        "fr": ("1-BANG À 9-BANG BF ET DRILL", "Le chiffre sur le corps est le nombre de flashs. Drill bleue : entraînement, "
-               "aucun effet. Mèche 3 s et 8 s, rafale hyper rapide R, et le GANG BANG BF de 50 flashs.",
-               ["CAISSE BF", "CAISSE DÉLAIS BF", "MÈCHE 3 S / 8 S", "RAFALE R"]),
-        "en": ("1-BANG TO 9-BANG BF AND DRILL", "The number on the body is the number of flashes. The blue Drill is for "
-               "training: a pop, no effect. 3 s and 8 s fuses, hyper fast R burst, and the 50-flash GANG BANG BF.",
-               ["BF CRATE", "BF DELAY CRATE", "3 S / 8 S FUSE", "R BURST"])},
+        "fr": ("GRENADES BF ET BANG SPÉCIAUX", "Le chiffre sur le corps est le nombre de flashs. Drill bleue : entraînement, "
+               "aucun effet. Mèche 3 s et 8 s, rafale R, GANG BANG BF de 50 flashs. BANG spéciaux multicolores : chacun joue son propre son. "
+               "Dans l'Arsenal, toutes les grenades commencent par [AT.NA].",
+               ["CAISSE BF", "CAISSE DÉLAIS BF", "CAISSE BANG SPÉCIAUX", "RAFALE R"]),
+        "en": ("BF GRENADES AND SPECIAL BANGS", "The number on the body is the number of flashes. The blue Drill is for "
+               "training: a pop, no effect. 3 s and 8 s fuses, R burst, 50-flash GANG BANG BF. Multicoloured special BANGs: each plays its own sound. "
+               "In the Arsenal, every grenade starts with [AT.NA].",
+               ["BF CRATE", "BF DELAY CRATE", "SPECIAL BANG CRATE", "R BURST"])},
     "timeline": {
         "fr": ("UN BANG PAR FLASH", "Une grenade à 5 flashs fait exactement 5 flashs et 5 bangs, toutes les demi-secondes environ ou en rafale, "
                "pareil chez tous les joueurs. Un seul sifflement continu, prolongé par chaque flash."),
@@ -245,8 +276,8 @@ def slide_titre(lang):
     return im
 
 
-def grenade_centres(li):
-    """Abscisses des dix grenades dans le rendu transparent (colonnes opaques = objets, ombres semi-transparentes)."""
+def grenade_centres(li, count=10):
+    """Abscisses des grenades dans le rendu transparent (colonnes opaques = objets, ombres semi-transparentes)."""
     a = li.getchannel("A")
     solid = a.point(lambda v: 255 if v > 250 else 0)
     cols = [solid.crop((x, 0, x + 1, li.height)).getbbox() is not None for x in range(li.width)]
@@ -258,7 +289,7 @@ def grenade_centres(li):
             if x - start > li.width * 0.02:
                 runs.append((start + x) / 2)
             start = None
-    return runs if len(runs) == 10 else [li.width * (k + 0.5) / 10 for k in range(10)]
+    return runs if len(runs) == count else [li.width * (k + 0.5) / count for k in range(count)]
 
 
 def soften_shadows(li, k=0.55, edge=140):
@@ -290,19 +321,25 @@ def slide_grenades(lang):
         cx = chip(d, cx, 78, c, cf)
     top = y + 40
     area_h = H - top - 190
-    src = lineup_alpha()
-    centres = grenade_centres(src)
+    src = lineup_all()
+    centres = grenade_centres(src, 14)
     li = soften_shadows(fit(src, W - 2 * X0, area_h))
     s = li.width / src.width
     lx = (W - li.width) // 2
     im.paste(li, (lx, top + (area_h - li.height) // 2), li)
     d = ImageDraw.Draw(im)
     ly = top + area_h + 34
-    lf, nf = font(38), font(24, "SemiLight")
+    lf, nf = font(30), font(21, "SemiLight")
+    # BANG spéciaux : nom, nombre de flashs, couleur du thème.
+    themes = [("JAPAN", 3, (248, 113, 113)), ("WOMEN", 3, (232, 121, 249)), ("SUPRISE", 5, (250, 204, 21)), ("GERMAN", 9, (251, 191, 36))]
+    for i, (name, k, col) in enumerate(themes):
+        cxm = lx + centres[10 + i] * s
+        d.text((cxm, ly), name, font=lf, fill=col, anchor="mm")
+        d.text((cxm, ly + 40), "%d flash%s" % (k, "s" if lang == "fr" else "es"), font=nf, fill=MUTED, anchor="mm")
     for i in range(10):
         cxm = lx + centres[i] * s
         name = "DRILL" if i == 9 else "%d-BANG" % (i + 1)
-        n = (("aucun effet" if lang == "fr" else "no effect") if i == 9 else
+        n = (("inerte" if lang == "fr" else "inert") if i == 9 else
              ("%d flash%s" % (i + 1, "s" if i and lang == "fr" else ("es" if i else ""))))
         d.text((cxm, ly), name, font=lf, fill=(96, 165, 250) if i == 9 else TEXT, anchor="mm")
         d.text((cxm, ly + 40), n, font=nf, fill=MUTED, anchor="mm")

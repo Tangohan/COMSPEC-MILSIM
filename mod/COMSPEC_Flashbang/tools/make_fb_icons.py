@@ -23,7 +23,12 @@ RENDER = os.path.join(HERE, "render")
 ADDON = os.path.join(HERE, "..", "Sources", "addons", "main")
 BASES = [str(i) for i in range(1, 10)] + ["drill", "50"]     # 50 : GANG BANG BF
 # Variantes à délai (mèche fixe 3 s / 8 s) : <base>_d3, <base>_d8.
-VARIANTS = BASES + [f"{b}_d{d}" for b in BASES for d in (3, 8)]
+# BANG spéciaux : badge de la couleur du thème, nombre de flashs dedans (bord, fond, encre).
+THEMES = {"japan": (3, (200, 22, 30, 255), (245, 245, 240, 245), (200, 22, 30, 255)),
+          "women": (3, (245, 245, 240, 255), (150, 70, 200, 245), (245, 245, 240, 255)),
+          "surprise": ("?", (245, 245, 240, 255), (20, 20, 20, 245), (255, 220, 40, 255)),
+          "german": (9, (20, 20, 20, 255), (240, 194, 26, 245), (20, 20, 20, 255))}
+VARIANTS = BASES + [f"{b}_d{d}" for b in BASES for d in (3, 8)] + list(THEMES)
 # Variantes « R » (rafale hyper rapide) : icône de la grenade standard + pastille éclair « R ».
 FAST = ["2", "3", "4", "5", "6", "7", "8", "9", "50"]
 DELAY_FILL = {3: (242, 194, 20, 245), 8: (209, 26, 20, 245)}
@@ -66,7 +71,12 @@ def icon(v):
     fill = (150, 20, 15, 240) if base == "50" else fill
     if base == "50":
         d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=fill, outline=(240, 240, 235, 255), width=4 * 4)
-    d.text((cx, cy + 6), "D" if base == "drill" else base, font=font(4 * (40 if len(base) > 1 else 54)), fill=(245, 245, 240, 255), anchor="mm")
+    if base in THEMES:
+        label, edge, fill, ink = THEMES[base]
+        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=fill, outline=edge, width=4 * 5)
+        d.text((cx, cy + 6), str(label), font=font(4 * 54), fill=ink, anchor="mm")
+    else:
+        d.text((cx, cy + 6), "D" if base == "drill" else base, font=font(4 * (40 if len(base) > 1 else 54)), fill=(245, 245, 240, 255), anchor="mm")
     if delay:
         # Pastille de délai : horloge + « 3s » / « 8s », même famille de couleurs que la bande sur le corps.
         x0, y0, x1, y1 = 4 * 150, 4 * 10, 4 * 248, 4 * 62

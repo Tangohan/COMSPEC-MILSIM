@@ -1,7 +1,8 @@
 /*
     comspec_fb_fnc_zenRegister : modules Zeus (Zeus Enhanced, facultatif), catégorie « COMSPEC Flashbang ».
       « Lancer flash »  : engin posé au point cliqué, nombre de détonations, grenade d'entraînement, mèche
-                          (par défaut = réglage « Mèche », 3 s, 8 s ou personnalisée 0,5-20 s), son de la DRILL.
+                          (par défaut = réglage « Mèche », 3 s, 8 s ou personnalisée 0,5-20 s), son de la DRILL,
+                          modèle (standard ou BANG spécial : JAPAN, WOMEN, SUPRISE, GERMAN).
       « Effet de zone » : effet sur toutes les unités dans un rayon, sans grenade (scénario).
     Exécution sur le serveur s'il a le mod (événements CBA), sinon par ce poste Zeus (fn_serverDetonate / fn_serverArea).
 */
@@ -29,10 +30,15 @@ private _cat = "BetterFlash";
         ["COMBO", [localize "STR_COMSPEC_FB_Module_DrillSound", localize "STR_COMSPEC_FB_Module_DrillSound_Tip"], [
             [""] + _keys,
             [localize "STR_COMSPEC_FB_DrillSound_Setting"] + (_keys apply { localize format ["STR_COMSPEC_FB_DrillSound_%1", _x] }),
+            0]],
+        ["COMBO", [localize "STR_COMSPEC_FB_Module_Theme", localize "STR_COMSPEC_FB_Module_Theme_Tip"], [
+            ["standard", "Japan", "Women", "Surprise", "German"],
+            [localize "STR_COMSPEC_FB_Theme_Standard", localize "STR_COMSPEC_FB_Japan_Short", localize "STR_COMSPEC_FB_Women_Short",
+                localize "STR_COMSPEC_FB_Surprise_Short", localize "STR_COMSPEC_FB_German_Short"],
             0]]
     ], {
         params ["_values", "_pos"];
-        _values params ["_n", "_drill", "_fuseMode", "_custom", "_rate", "_snd"];
+        _values params ["_n", "_drill", "_fuseMode", "_custom", "_rate", "_snd", ["_theme", "standard", [""]]];
         _n = ((round _n) max 1) min 50;
         private _fuse = switch (_fuseMode) do {
             case "3": { 3 };
@@ -42,6 +48,11 @@ private _cat = "BetterFlash";
         };
         private _sfx = ["", format ["_D%1", _fuseMode]] select (_fuseMode in ["3", "8"]);
         private _ammo = if (_drill) then { "COMSPEC_FB_Ammo_Drill" + _sfx } else { format ["COMSPEC_FB_Ammo_%1%2", [_n min 9, 50] select (_n > 9), _sfx] };
+        // BANG spécial : munition du thème, nombre et instants des flashs du thème (le curseur est ignoré).
+        if (!_drill && {isClass (configFile >> "COMSPEC_FB_Sons" >> ("Theme_" + _theme))}) then {
+            _ammo = "COMSPEC_FB_Ammo_" + _theme;
+            _n = -1;
+        };
         ["module", format ["type=ZEN/lancer pos=%1 N=%2 drill=%3 mèche=%4 s (%5) son=%6 munition=%7", _pos apply { round _x }, _n, _drill,
             _fuse toFixed 1, _fuseMode, [_snd, "réglage"] select (_snd == ""), _ammo]] call comspec_fb_fnc_log;
         if !(isClass (configFile >> "CfgAmmo" >> _ammo)) exitWith {

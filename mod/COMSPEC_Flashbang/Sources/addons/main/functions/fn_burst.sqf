@@ -96,6 +96,12 @@ if (hasInterface && _showFx) then {
     // Elle ne concerne que le son : les effets restent limités au rayon maximal (~25 m).
     private _range = missionNamespace getVariable ["comspec_fb_soundRange", 250];
     if (_wall || {_env getOrDefault ["enclosed", false]}) then { _range = _range * 0.5 };
+    // BANG spécial : le son du thème remplace le bang. Son long (unique = 1) : une seule lecture, décidée au premier
+    // flash joué sur ce poste (hors de portée à ce moment-là : pas de lecture en cours de route).
+    private _theme = _ctx getOrDefault ["theme", ""];
+    private _themeMute = _theme != "" && {_ctx getOrDefault ["themePlayed", false]}
+        && {getNumber (configFile >> "COMSPEC_FB_Sons" >> ("Theme_" + _theme) >> "unique") == 1};
+    if (_theme != "") then { _ctx set ["themePlayed", true] };
     if (_dc <= _range) then {
         if (_kind == "drill") then {
             // Son choisi pour la DRILL (réglage d'addon ou module), décidé par le serveur : une lecture par pop.
@@ -106,6 +112,9 @@ if (hasInterface && _showFx) then {
         } else {
             // Très fort sous 25 m, net jusqu'à ~100 m, au-delà bang lointain avec échos (retard 343 m/s).
             switch (true) do {
+                case (_theme != ""): {
+                    if (!_themeMute) then { ["Theme_" + _theme, _pos, _delay, _wall, _gain, _range, _dc] call comspec_fb_fnc_playBang };
+                };
                 case (_dc > 100 && {!_wall}): { ["BangLointain", _pos, _delay, false, _gain, _range] call comspec_fb_fnc_playBang };
                 case (_wall): { ["BangEtouffe", _pos, _delay, true, _gain, _range] call comspec_fb_fnc_playBang };
                 default {

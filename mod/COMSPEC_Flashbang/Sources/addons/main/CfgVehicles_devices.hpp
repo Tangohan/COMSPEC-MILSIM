@@ -48,3 +48,16 @@
     FB_DEVICE_DELAYS(9,9);
     FB_DEVICE_DELAYS(50,50);
     FB_DEVICE_DELAYS(Drill,drill);
+    // BANG spéciaux : corps multicolore du thème.
+    class COMSPEC_FB_Device_Japan: COMSPEC_FB_Device_Base {
+        model = QPATHTOF(data\fb_japan_spent.p3d);
+    };
+    class COMSPEC_FB_Device_Women: COMSPEC_FB_Device_Base {
+        model = QPATHTOF(data\fb_women_spent.p3d);
+    };
+    class COMSPEC_FB_Device_Surprise: COMSPEC_FB_Device_Base {
+        model = QPATHTOF(data\fb_surprise_spent.p3d);
+    };
+    class COMSPEC_FB_Device_German: COMSPEC_FB_Device_Base {
+        model = QPATHTOF(data\fb_german_spent.p3d);
+    };

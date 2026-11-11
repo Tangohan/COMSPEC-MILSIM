@@ -126,4 +126,17 @@ class CfgAmmo {
     FB_AMMO_FAST(9);
     FB_AMMO_FAST(50);
 
+    // BANG spéciaux : la grenade joue SON son (CfgSons.hpp, Theme_<V>) à la place du bang, corps multicolore.
+    // FB_AMMO_THEME(classe, fichier, nombre de flashs) ; instants des flashs et teintes : table Theme_<V>.
+#define FB_AMMO_THEME(V,F,N) class COMSPEC_FB_Ammo_##V: COMSPEC_FB_Ammo_Base { \
+        model = QPATHTOF(data\fb_##F##_spent.p3d); \
+        comspec_fb_bangs = N; \
+        comspec_fb_theme = QUOTE(V); \
+        comspec_fb_device = QUOTE(COMSPEC_FB_Device_##V); \
+    }
+    FB_AMMO_THEME(Japan,japan,3);
+    FB_AMMO_THEME(Women,women,3);
+    FB_AMMO_THEME(Surprise,surprise,5);
+    FB_AMMO_THEME(German,german,9);
+
 };

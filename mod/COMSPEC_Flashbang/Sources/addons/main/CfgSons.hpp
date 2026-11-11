@@ -23,6 +23,15 @@
     Drill_Sifflet         | sifflet_exercice_synth.ogg              | synthèse       | 0,8 s
     Drill_Cloche          | cloche_exercice_synth.ogg               | synthèse       | 1,6 s
     Aucun                 | (aucun fichier)                         | -              | -
+
+    BANG spéciaux (grenades COMSPEC_FB_Japan / _Women / _Surprise / _German) : le son du thème remplace le bang
+    (BangUnique + BangGrave, et leurs variantes étouffée / lointaine), mêmes volume, portée et couche proche 2D.
+    Sons fournis par COMSPEC (tools/gen_fb_theme_sounds.py : sonie ramenée à celle du bang standard, jamais plus fort).
+    Thème          | Fichier 3D (mono)        | Couche 2D                      | Durée  | Flashs | Lecture
+    Theme_Japan    | bang_japan_enreg.ogg     | bang_japan_stereo_enreg.ogg    | 0,73 s | 3      | à chaque flash, un flash toutes les ~0,5 s
+    Theme_Women    | bang_women_enreg.ogg     | bang_women_stereo_enreg.ogg    | 1,13 s | 3      | à chaque flash, un flash toutes les ~0,75 s
+    Theme_Surprise | bang_suprise_enreg.ogg   | bang_suprise_enreg.ogg (mono)  | 6,36 s | 5      | UNE fois au 1er flash, flashs calés sur les attaques du son
+    Theme_German   | bang_german_enreg.ogg    | bang_german_stereo_enreg.ogg   | 12,6 s | 9      | UNE fois au 1er flash, flashs calés sur les attaques du son
 */
 class COMSPEC_FB_Sons {
     // ui[] : classes CfgSounds de la couche proche 2D (même ordre que fichiers[]) ;
@@ -79,6 +88,38 @@ class COMSPEC_FB_Sons {
         fichiers[] = {"cloche_exercice_synth.ogg"};
         volume = 0.9; distance = 250; pitchVar = 0.05; volumeVarDb = 1.5;
     };
+    // BANG spéciaux. unique = 1 : le son est joué UNE fois, au premier flash (sons longs) ; 0 : à chaque flash.
+    // instants[] : instants des flashs (s depuis le 1er), calés sur les attaques du son ; vide : un flash tous les
+    // « intervalle » s (au moins 0,6 x la durée du son, +/- 10 % x variation). duree : durée du fichier (s).
+    // teintes[] : couleurs du flash et des étincelles, une tirée au hasard à chaque flash (fn_fx).
+    class Theme_Japan {
+        fichiers[] = {"bang_japan_enreg.ogg"};
+        ui[] = {"COMSPEC_FB_UI_Japan"};
+        volume = 2.5; distance = 900; pitchVar = 0.03; volumeVarDb = 1;
+        duree = 0.73; unique = 0; intervalle = 0.5; instants[] = {};
+        teintes[] = {{1, 1, 1}, {1, 0.3, 0.26}};
+    };
+    class Theme_Women {
+        fichiers[] = {"bang_women_enreg.ogg"};
+        ui[] = {"COMSPEC_FB_UI_Women"};
+        volume = 2.5; distance = 900; pitchVar = 0.03; volumeVarDb = 1;
+        duree = 1.13; unique = 0; intervalle = 0.75; instants[] = {};
+        teintes[] = {{1, 0.45, 0.72}, {0.72, 0.45, 1}, {0.4, 0.95, 0.92}};
+    };
+    class Theme_Surprise {
+        fichiers[] = {"bang_suprise_enreg.ogg"};
+        ui[] = {"COMSPEC_FB_UI_Surprise"};
+        volume = 2.5; distance = 900; pitchVar = 0; volumeVarDb = 0;
+        duree = 6.36; unique = 1; intervalle = 1.5; instants[] = {0, 1.44, 2.76, 4.34, 6.23};
+        teintes[] = {{1, 0.3, 0.3}, {1, 0.62, 0.2}, {1, 0.92, 0.3}, {0.35, 1, 0.4}, {0.35, 0.65, 1}, {0.72, 0.42, 1}};
+    };
+    class Theme_German {
+        fichiers[] = {"bang_german_enreg.ogg"};
+        ui[] = {"COMSPEC_FB_UI_German"};
+        volume = 2.5; distance = 900; pitchVar = 0; volumeVarDb = 0;
+        duree = 12.6; unique = 1; intervalle = 1.4; instants[] = {0, 1.58, 3.11, 4.71, 6.38, 7.87, 9.97, 11.03, 12.07};
+        teintes[] = {{1, 0.82, 0.38}, {1, 0.72, 0.28}};
+    };
     class Levier {
         fichiers[] = {"levier_cuillere_synth.ogg"};
         volume = 0.8; distance = 25; pitchVar = 0.05; volumeVarDb = 1;
@@ -114,4 +155,9 @@ class CfgSounds {
     FB_UI_SOUND(COMSPEC_FB_UI_BangC,bang_unique_c_enreg.ogg);
     FB_UI_SOUND(COMSPEC_FB_UI_Grave,bang_grave_enreg.ogg);
     FB_UI_SOUND(COMSPEC_FB_UI_Rafale,bang_rafale_enreg.ogg);
+    // BANG spéciaux : version stéréo quand la source l'est (SUPRISE est mono).
+    FB_UI_SOUND(COMSPEC_FB_UI_Japan,bang_japan_stereo_enreg.ogg);
+    FB_UI_SOUND(COMSPEC_FB_UI_Women,bang_women_stereo_enreg.ogg);
+    FB_UI_SOUND(COMSPEC_FB_UI_Surprise,bang_suprise_enreg.ogg);
+    FB_UI_SOUND(COMSPEC_FB_UI_German,bang_german_stereo_enreg.ogg);
 };

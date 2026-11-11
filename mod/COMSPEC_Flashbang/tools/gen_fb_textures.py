@@ -22,10 +22,14 @@ permettent de distinguer les variantes en main et au sol (chiffre répété sur 
 Variantes à délai : 2e bande colorée sous la bande du haut (jaune 3 s, rouge 8 s) avec « 3s » / « 8s » tout autour,
 cartouche « 3s » / « 8s » de la même couleur à côté du chiffre (deux flancs) et en grand au dos.
 
+BANG spéciaux (japan, women, surprise, german) : flanc multicolore par thème, fb_body_<thème>_co.png
+(python gen_fb_textures.py --themes : seulement ceux-là).
+
     python gen_fb_textures.py         puis  python model_flashbang.py (dans Blender) et la conversion PAA (README)
 """
 import math
 import os
+import sys
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -401,8 +405,148 @@ def module_icon():
     img.resize((128, 128), Image.LANCZOS).save(os.path.join(RENDER, "fb_module_ca.png"))
 
 
+# ------------------------------------------------------------------------------------------------- BANG spéciaux
+# Grenades à thème (son propre, corps multicolore) : même géométrie, même culot à évents, flanc peint par thème.
+# Formes simples (aplats, bandes, dégradé, confettis) : aucun drapeau détaillé, aucun emblème.
+THEMES = {"japan": "JAPAN BANG", "women": "WOMEN BANG", "surprise": "SUPRISE BANG", "german": "GERMAN BANG"}
+THEME_FLASHES = {"japan": 3, "women": 3, "surprise": 5, "german": 9}
+PAINT_TOP, PAINT_BOT = 10, int((1 - 0.36) * SIDE_H) - 3      # zone peinte du flanc (sous le bourrelet, au-dessus du culot)
+BAND = (int(0.07 * SIDE_H), int(0.15 * SIDE_H))              # bande de couleur près de la fusée
+
+
+def outlined(d, xy, text, size, fill, edge, w=None):
+    d.text(xy, text, font=font(size), fill=fill, anchor="mm", stroke_width=w or max(3, size // 14), stroke_fill=edge)
+
+
+def theme_paint(theme):
+    """Peinture du flanc (lignes PAINT_TOP..PAINT_BOT, RVB 0..1) et couleur de la couronne supérieure."""
+    h = PAINT_BOT - PAINT_TOP
+    a = np.zeros((h, N, 3))
+    ys = (np.arange(h)[:, None] + PAINT_TOP).astype(float)
+    xs = np.arange(N)[None, :].astype(float)
+    if theme == "japan":
+        a[:] = (0.94, 0.94, 0.92)
+        top = (0.94, 0.94, 0.92)
+    elif theme == "german":
+        # Trois bandes horizontales noir / rouge / or sous la bande du haut.
+        y0 = BAND[1]
+        step = (PAINT_BOT - y0) / 3
+        a[:] = (0.07, 0.07, 0.07)
+        a[(ys[:, 0] >= y0 + step) & (ys[:, 0] < y0 + 2 * step)] = (0.80, 0.07, 0.06)
+        a[ys[:, 0] >= y0 + 2 * step] = (0.96, 0.76, 0.10)
+        top = (0.07, 0.07, 0.07)
+    elif theme == "women":
+        # Dégradé vertical rose -> violet -> turquoise.
+        stops = np.array([(0.98, 0.36, 0.62), (0.58, 0.30, 0.82), (0.16, 0.78, 0.76)])
+        f = np.clip((ys[:, 0] - PAINT_TOP) / (h - 1), 0, 1) * 2
+        i = np.minimum(f.astype(int), 1)
+        k = (f - i)[:, None]
+        a[:] = (stops[i] * (1 - k) + stops[i + 1] * k)[:, None, :]
+        top = tuple(stops[0])
+    else:
+        # Arc-en-ciel en bandes obliques qui se raccordent à la couture, confettis par-dessus.
+        cols = np.array([(0.90, 0.12, 0.14), (0.98, 0.52, 0.10), (0.98, 0.84, 0.12), (0.20, 0.72, 0.28),
+                         (0.14, 0.52, 0.92), (0.50, 0.28, 0.82)])
+        idx = (np.floor((xs + ys * 0.8) / (N / 12)) % 6).astype(int)
+        a[:] = cols[idx]
+        top = (0.50, 0.28, 0.82)
+    return a, top
+
+
+def theme_art(img, theme):
+    """Formes et marquages du thème, dessinés sur les deux flancs (u = 0,25 et u = 0,75) et sur la bande."""
+    d = ImageDraw.Draw(img)
+    name = THEMES[theme]
+    n = THEME_FLASHES[theme]
+    white, black = (245, 245, 240), (18, 18, 18)
+    y_band = (BAND[0] + BAND[1]) // 2
+    if theme == "japan":
+        red = (200, 22, 30)
+        d.rectangle([0, BAND[0], N, BAND[1]], fill=red)
+        for y in (BAND[1] + 12, PAINT_BOT - 22):                       # liserés rouges
+            d.rectangle([0, y, N, y + 7], fill=red)
+        for cu in (0.25, 0.75):
+            cx = int(cu * N)
+            d.ellipse([cx - 68, 186 - 68, cx + 68, 186 + 68], fill=red)
+            d.text((cx, 296), "JAPAN", font=font(62), fill=black, anchor="mm")
+            d.text((cx, 352), "BANG", font=font(62), fill=black, anchor="mm")
+        band_ink, tag = white, "JAPAN"
+    elif theme == "german":
+        d.rectangle([0, BAND[0], N, BAND[1]], fill=(240, 194, 26))
+        step = (PAINT_BOT - BAND[1]) / 3
+        for cu in (0.25, 0.75):
+            cx = int(cu * N)
+            d.text((cx, BAND[1] + step * 0.5), "GERMAN", font=font(62), fill=white, anchor="mm")
+            d.text((cx, BAND[1] + step * 1.5), "BANG", font=font(76), fill=white, anchor="mm")
+            d.text((cx, BAND[1] + step * 2.5), f"{n} FLASH", font=font(46), fill=black, anchor="mm")
+        band_ink, tag = black, "GERMAN"
+    elif theme == "women":
+        d.rectangle([0, BAND[0], N, BAND[1]], fill=white)
+        for cu in (0.25, 0.75):
+            cx = int(cu * N)
+            outlined(d, (cx, 206), "WOMEN", 76, white, (70, 24, 110))
+            outlined(d, (cx, 292), "BANG", 84, white, (70, 24, 110))
+            for k in range(n):                                          # n pastilles
+                x = cx + (k - (n - 1) / 2) * 44
+                d.ellipse([x - 13, 372 - 13, x + 13, 372 + 13], fill=white, outline=(70, 24, 110), width=3)
+        band_ink, tag = (150, 40, 130), "WOMEN"
+    else:
+        r = np.random.default_rng(7)
+        conf = [(245, 245, 240), (255, 220, 40), (255, 90, 170), (60, 220, 220), (20, 20, 20)]
+        for _ in range(170):
+            x, y = int(r.uniform(0, N)), int(r.uniform(BAND[1] + 6, PAINT_BOT - 6))
+            s = int(r.uniform(5, 12))
+            c = conf[int(r.integers(0, len(conf)))]
+            round_one = r.random() < 0.5
+            for dx in (-N, 0, N):
+                if round_one:
+                    d.ellipse([x + dx - s, y - s, x + dx + s, y + s], fill=c)
+                else:
+                    d.rectangle([x + dx - s, y - s // 2, x + dx + s, y + s // 2], fill=c)
+        d.rectangle([0, BAND[0], N, BAND[1]], fill=black)
+        for cu in (0.25, 0.75):
+            cx = int(cu * N)
+            d.rounded_rectangle([cx - 138, 108, cx + 138, 398], radius=26, fill=black)
+            outlined(d, (cx, 196), "?", 170, (255, 220, 40), white, 5)
+            d.text((cx, 312), "SUPRISE", font=font(52), fill=white, anchor="mm")
+            d.text((cx, 362), "BANG", font=font(52), fill=white, anchor="mm")
+        band_ink, tag = (255, 220, 40), "SUPRISE"
+    for x in (0, N // 4, N // 2, 3 * N // 4, N):                        # rappel du nom sur la bande (flancs, dos, couture)
+        d.text((x, y_band), tag, font=font(38), fill=band_ink, anchor="mm")
+    d.text((BOTTOM_C[0], BOTTOM_C[1] + 118), "FB-" + tag, font=font(26), fill=(150, 150, 150), anchor="mm")
+
+
+def theme_body(theme):
+    """Corps d'un BANG spécial : culot, évents et relief communs (base_body), flanc et couronne repeints."""
+    co, _hgt, _vent = base_body(False)
+    paint, top = theme_paint(theme)
+    grain = noise(N, 1.4)
+    co[PAINT_TOP:PAINT_BOT] = paint * (0.94 + 0.08 * grain[PAINT_TOP:PAINT_BOT])[..., None]
+    tm, _ = disc_mask((N, N), *TOP_C, 170)
+    co = co * (1 - tm[..., None]) + np.array(top)[None, None] * (0.9 + 0.1 * grain[..., None]) * tm[..., None]
+    img = Image.fromarray((np.clip(co, 0, 1) * 255).astype(np.uint8))
+    theme_art(img, theme)
+    arr = np.asarray(img).astype(float) / 255
+    wear = np.clip(noise(N, 2.2) - 0.76, 0, 1) * 2.5                    # usure plus légère : couleurs franches
+    arr = arr * (1 - 0.18 * wear[..., None]) + 0.18 * wear[..., None] * np.array((0.45, 0.44, 0.40))
+    img = Image.fromarray((np.clip(arr, 0, 1) * 255).astype(np.uint8)).filter(ImageFilter.SMOOTH)
+    img.save(os.path.join(RENDER, f"fb_body_{theme}_co.png"))
+
+
+def themes():
+    """BANG spéciaux : générateur de bruit propre (les textures déjà livrées ne changent pas)."""
+    global rng
+    rng = np.random.default_rng(1200)
+    for t in THEMES:
+        theme_body(t)
+
+
 def main():
     os.makedirs(RENDER, exist_ok=True)
+    if "--themes" in sys.argv:
+        themes()
+        print("textures des BANG spéciaux écrites dans", RENDER)
+        return
     keep = []
     # Ordre fixe (le bruit est tiré d'un générateur commun) : variantes standard et textures communes d'abord, à
     # l'identique des versions précédentes, puis les variantes à délai.
@@ -417,6 +561,7 @@ def main():
     # restent identiques.
     for v in [f"{b}_d{d}" for b in ORIGINAL for d in DELAYS] + ["50", "50_d3", "50_d8"]:
         body(v, None)
+    themes()
     print("textures écrites dans", RENDER)
 
 
