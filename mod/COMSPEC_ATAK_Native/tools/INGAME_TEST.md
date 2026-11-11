@@ -22,7 +22,7 @@ Faire le build d'abord (`build_mod.bat`) : le test charge les PBO de `@COMSPEC_A
 | `-Mods` | Liste complète, remplace CBA, ACE, ACRE, ATAK, SSE. |
 | `-SansAcre`, `-SansSse` | Retire ce mod. |
 | `-SansAcreMpu5` | Ne charge pas `ACRE_MPU5.pbo` (MPU-5 d'ACRE), copié seul depuis le pack `3026491672` pour le groupe `acre`. |
-| `-Groupes` | `fonctions telephone carte antennes gps explo sse zeus acre reseau` (vide : tous). |
+| `-Groupes` | `fonctions telephone carte antennes gps explo sse zeus acre reseau ecrans3d` (vide : tous). `ecrans3d` : écrans de salle d'opérations du mod posés contre un mur, image TOC, nuit puis jour, captures. |
 | `-DureeMaxMinutes` | Défaut 45. Au-delà, le jeu est fermé. |
 | `-DemarrageMaxSecondes` | Défaut 300. Sans première ligne `AUTOTEST`, on passe au plan suivant. |
 | `-Lancement` | `Auto` (défaut), `Init`, `Autotest`. |
