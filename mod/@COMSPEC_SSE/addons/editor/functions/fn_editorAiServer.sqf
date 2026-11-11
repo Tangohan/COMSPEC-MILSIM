@@ -249,6 +249,12 @@ switch (_op) do {
                 private _cfg = [];
                 { _cfg pushBack [_x, (_spec get _x) call _str]; } forEach (keys _spec);
                 _cfg pushBack ["local_id", _id];
+                // Identité unique (nom donné, naissance, pays) gardée avec elle : remise par fn_idAiConfig « apply ».
+                if (_u getVariable ["COMSPEC_SSE_NameAuthored", false]) then {
+                    private _idn = ["get", [_u]] call comspec_sse_fnc_idIdentityOf;
+                    _cfg pushBack ["identity", str ([_idn getOrDefault ["first", ""], _idn getOrDefault ["last", ""], _u getVariable ["COMSPEC_SSE_Sex", ""],
+                        _u getVariable ["COMSPEC_SSE_BirthDate", ""], _u getVariable ["COMSPEC_SSE_BirthPlace", ""], _u getVariable ["COMSPEC_SSE_Country", ""]])];
+                };
                 // Réponses écrites par le maître du jeu et ce que l'IA peut évoquer (ia_rp) : gardées avec elle, remises par
                 // fn_idAiConfig « apply » (ici et depuis le paquet Athena, champ libre de la configuration).
                 if (!isNil "comspec_sse_fnc_iarpProfile") then {

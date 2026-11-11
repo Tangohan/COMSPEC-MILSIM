@@ -25,6 +25,7 @@ private _names = _codes apply {
 // Carte que le registre ne connaît pas (VR, carte de la communauté) : pays pris par « Auto ». Altis par défaut, comme avant.
 ["comspec_sse_id_countryFallback", "LIST", [localize "STR_COMSPEC_SSE_ID_SetFallback", localize "STR_COMSPEC_SSE_ID_SetFallbackTip"], [_codes, _names, (_codes find "ALT") max 0]] call _add;
 ["comspec_sse_id_aiPapers", "CHECKBOX", ["Papiers des IA", "Les IA ont des papiers selon leur camp (civils, insurgés, cibles). Les joueurs n'en ont que par l'attribut Eden, le kit ou le module Zeus."], true] call _add;
+["comspec_sse_id_papersFollowName", "CHECKBOX", ["Mettre à jour ses papiers quand son identité change", "Une IA renommée (Zeus, atelier IA, IA de la zone) garde des papiers à son nouveau nom. Un papier déjà remis à un joueur garde ce qui y est imprimé (la fenêtre du Zeus le signale). Décoché : ses papiers gardent l'ancien nom."], true] call _add;
 ["comspec_sse_id_kitRespawn", "CHECKBOX", ["Rendre les papiers du kit au respawn", "Les joueurs qui ont un kit de papiers sur Athena (fiche membre) le retrouvent à chaque réapparition. Décoché : seulement à l'arrivée en mission."], true] call _add;
 ["comspec_sse_id_civComply", "SLIDER", ["Civils qui présentent leurs papiers (%)", "Part des civils qui tendent leurs papiers quand on les leur demande."], [0, 100, 90, 0]] call _add;
 ["comspec_sse_id_forgedRate", "SLIDER", ["Insurgés porteurs de faux papiers (%)", "Part des combattants ennemis qui ont de faux papiers. Les autres n'en ont pas."], [0, 100, 60, 0]] call _add;

@@ -23,11 +23,17 @@ private _reg = ["init"] call comspec_sse_fnc_idRegistry;
 private _key = if (isNull _u) then { _spec getOrDefault ["holderKey", ""] } else { [_u] call comspec_sse_fnc_bioPersonKey };
 if (_key isEqualTo "") then { _key = format ["X%1", floor random 999999]; };
 private _type = _spec getOrDefault ["type", "id_card"];
+// Identité unique de la personne (fn_idIdentityOf : nom donné par le Zeus, Eden, l'atelier IA, un profil, sinon tirée une
+// fois et gardée) : c'est elle qui est imprimée, et son pays délivre le papier quand le Zeus n'en impose pas un autre.
+private _ident = if (isNull _u) then { createHashMap } else { ["get", [_u, _key, (_spec getOrDefault ["country", ""]) call { [_this, ""] select !(_this isEqualType "") }]] call comspec_sse_fnc_idIdentityOf };
 // Types du registre (CfgComspecDocuments : papiers intégrés et extensions actives) ; inconnu ou extension coupée : carte.
 private _tdef = ["get", _type] call comspec_sse_fnc_idDocTypes;
 if ((count _tdef) isEqualTo 0 || {!(["enabled", _tdef get "extension"] call comspec_sse_fnc_idDocTypes)}) then { _type = "id_card"; _tdef = ["get", "id_card"] call comspec_sse_fnc_idDocTypes; };
-// Pays : code (« FRA »), alpha-2 (« FR ») ou ancien nom gardé par une mission ; « auto » ou inconnu : pays de la mission.
-private _country = ["resolve", _spec getOrDefault ["country", ""]] call comspec_sse_fnc_idCountries;
+// Pays : celui demandé, sinon celui de l'identité de la personne (fn_idIdentityOf) ; code (« FRA »), alpha-2 (« FR »)
+// ou ancien nom gardé par une mission ; « auto » ou inconnu : pays de la mission.
+private _country = _spec getOrDefault ["country", ""];
+if (_country isEqualTo "" || {_country isEqualTo "auto"}) then { _country = _ident getOrDefault ["country", ""]; };
+_country = ["resolve", _country] call comspec_sse_fnc_idCountries;
 private _countries = [] call comspec_sse_fnc_idCountries;
 if !(_country in _countries) then { _country = ["default"] call comspec_sse_fnc_idCountries; };
 // Pays réel qui ne délivre pas ce type (Royaume-Uni, États-Unis : pas de carte nationale) : sa pièce courante
@@ -58,8 +64,8 @@ _id = "ID" + _id;
 private _r = { [_key, format ["iss|%1|%2|%3", _type, _kind, _this]] call comspec_sse_fnc_bioRand };
 
 // --- Identité imprimée et vraie identité -----------------------------------------------------------------------
-private _own = [_u, _key, "", _country] call comspec_sse_fnc_idGenerate;
-private _printed = _own;
+private _own = if (isNull _u) then { ["get", [objNull, _key, _country]] call comspec_sse_fnc_idIdentityOf } else { _ident };
+private _printed = +_own;
 private _trueLast = _own get "last";
 private _trueFirst = _own get "first";
 if (_kind in ["cover", "forged", "alias"]) then {
@@ -152,7 +158,7 @@ private _doc = createHashMapFromArray [
     ["chip", ["absent", "ok"] select _chipType], ["chipExpected", _chipType],
     ["kind", _kind], ["quality", _q], ["forgeryKind", ""], ["flaws", []], ["report", _spec getOrDefault ["report", ""]],
     ["holderKey", _key], ["trueLast", _trueLast], ["trueFirst", _trueFirst], ["athenaId", _spec getOrDefault ["athenaId", ""]],
-    ["chipNote", ""], ["issuedAt", time],
+    ["chipNote", ""], ["issuedAt", time], ["autoKind", (_spec getOrDefault ["autoKind", false]) isEqualTo true],
     // Lien avec Athena et propriétaire (API fn_idPaperOf / fn_idPaperOwner) : identité Athena du papier, joueur à qui il
     // a été remis (Steam ID, nom), chaîne de possession (fn_idPaperTrack).
     ["athenaIdentity", _spec getOrDefault ["athenaIdentity", ""]],

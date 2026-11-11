@@ -323,6 +323,9 @@ switch (_op) do {
             ["comspec_sse_idChecked", [_me, _d get "id", 0, _res]] call CBA_fnc_localEvent;
         };
         if (!_ok) exitWith {};
+        // Nom lu sur ses papiers : le joueur le connaît désormais (en-tête et bulles de « Parler à », fn_iarpName).
+        private _bearer = ["owner", _d getOrDefault ["holderKey", ""]] call comspec_sse_fnc_bioRegistry;
+        if (!isNil "comspec_sse_fnc_iarpName" && {_bearer isEqualType objNull} && {!isNull _bearer} && {!isPlayer _bearer}) then { ["learn", [_bearer, [_me]]] call comspec_sse_fnc_iarpName; };
         ["doc", [[_d] call _pub, _res, _subj, _own, [_subj] call comspec_sse_fnc_bioPersonKey]] call _reply;
     };
 
@@ -469,7 +472,7 @@ switch (_op) do {
         switch (_op) do {
             case "give": {
                 private _id = [_u, _x1] call comspec_sse_fnc_idModuleGive;
-                ["zeus", [[format ["Papiers donnés à %1 : %2.", name _u, [["doc", [_id]] call comspec_sse_fnc_idRegistry] call _label], "Échec : papiers non délivrés."] select (_id isEqualTo ""), ["info", "warn"] select (_id isEqualTo "")]] call _reply;
+                ["zeus", [[format ["Papiers donnés à %1 : %2.", ["full", [_u]] call comspec_sse_fnc_idIdentityOf, [["doc", [_id]] call comspec_sse_fnc_idRegistry] call _label], "Échec : papiers non délivrés."] select (_id isEqualTo ""), ["info", "warn"] select (_id isEqualTo "")]] call _reply;
             };
             case "report": {
                 private _mode = [_x1, ""] select !(_x1 isEqualType "");
@@ -482,7 +485,7 @@ switch (_op) do {
                     if (_b isNotEqualTo []) then { _b set [3, _mode]; };
                     _n = _n + 1;
                 } forEach (["unitDocs", [_u]] call comspec_sse_fnc_idRegistry);
-                ["zeus", [format ["%1 document(s) de %2 : %3.", _n, name _u, ["signalement levé", format ["signalé « %1 »", _mode]] select (_mode isNotEqualTo "")], "info"]] call _reply;
+                ["zeus", [format ["%1 document(s) de %2 : %3.", _n, ["full", [_u]] call comspec_sse_fnc_idIdentityOf, ["signalement levé", format ["signalé « %1 »", _mode]] select (_mode isNotEqualTo "")], "info"]] call _reply;
             };
             default {
                 // Fenêtre « Papiers de l'IA » du Zeus (fn_idZeusPapers) : document imprimé et analyse, au seul poste demandeur.

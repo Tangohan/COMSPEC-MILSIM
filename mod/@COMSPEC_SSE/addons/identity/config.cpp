@@ -53,6 +53,7 @@ class CfgFunctions {
             class idCountryChrome {};
             class idCountrySelfTest {};
             class idGenerate {};
+            class idIdentityOf {};
             class idDocNumber {};
             class idMrz {};
             class idMrzCheck {};

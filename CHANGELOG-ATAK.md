@@ -245,6 +245,25 @@ EN : Papers from real countries: France, Germany, United States, Belgium, Austri
 - Atelier IA : liste dynamique, séparateur des pays fictifs, `recountry` (papiers déjà délivrés refaits dans le pays choisi, papiers d'Athena gardés, ligne d'état de la fenêtre). Eden : `COMSPEC_SSE_CountryCombo` (unité et groupe).
 - Essais : `tools/countries/test_countries.py`, `tests/Unit/SseCountryRegistryTest.php`, `fn_idCountrySelfTest` (autotest `sse_pays_reels`). Non testé en jeu.
 
+## À venir : le nom donné à une IA est enfin celui de ses papiers (SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Le nom donné à une IA est enfin celui de ses papiers
+- Quand le maître du jeu nomme une IA (atelier IA, Zeus, Eden, IA de la zone), ses papiers portent ce nom, avec le numéro et la bande MRZ de son pays. Fini l'IA qui s'appelle « Nikos KARRAS » dans la discussion et « Christos OIKONOMOU » sur sa carte ; renommée plus tard, elle reçoit des papiers à son nouveau nom.
+- Dans « Parler à… », son nom s'affiche une fois que vous l'avez appris (elle vous l'a dit, ou vous l'avez lu sur ses papiers), sinon « Inconnu » ; la photo de la carte montre son visage, ou une silhouette grise, plus jamais un rectangle bleu.
+EN : The name given to an AI is finally the name on its papers
+- When the game master names an AI (AI workshop, Zeus, Eden, area AI), its papers carry that name, with the number and MRZ strip of its country. No more AI called "Nikos KARRAS" in the chat and "Christos OIKONOMOU" on its card; renamed later, it gets papers in its new name.
+- In "Talk to…", its name shows once you have learned it (it told you, or you read it on its papers), otherwise "Unknown"; the card photo shows its face, or a grey silhouette, never a blue rectangle again.
+
+### Détail technique
+- `identity/fn_idIdentityOf.sqf` (nouveau) : identité unique d'une personne, variable diffusée `comspec_sse_identity`. Priorité : 1. explicite (`COMSPEC_SSE_FirstName` / `LastName`, `COMSPEC_SSE_Sex`, `BirthDate`, `BirthPlace`, pays `COMSPEC_SSE_Country` / `COMSPEC_ID_Country`), 2. nom Arma s'il n'est pas tiré des listes `CfgWorlds › GenericNames`, 3. tirage `fn_idGenerate` fait une fois et gardé. Opérations `get`, `full`, `presented`, `set`, `suggest`, `heldByPlayer`, `selfTest` (tableau de priorité rejoué en jeu).
+- Cause : l'atelier IA écrivait le nom dans `comspec_sse_idName` (discussion) mais `fn_idGenerate` (papiers) ne lisait que `COMSPEC_SSE_FirstName` / `LastName` ; l'analyse du Zeus affichait `name _u` (nom d'unité Arma). Désormais `fn_idIssue`, `fn_idRegistry`, `fn_idAiConfig` (`sync`, `issue`, `apply`, éléments gardés), `fn_idHvt`, `fn_idLegend`, `fn_idServer`, `fn_aiWho`, `fn_iarpName`, `fn_iarpProfile` passent par le résolveur ; `fn_idGenerate` sel vide = résolveur, tirage brut seulement pour lui. L'atelier IA ne tire plus de nom au hasard.
+- Renommage : papiers vrais refaits (réglage `comspec_sse_id_papersFollowName`, coché), papier remis à un joueur gardé tel quel et signalé dans la ligne d'état de l'atelier ; faux tiré par les règles automatiques (`autoKind`) redevient vrai pour une IA nommée ; « Le rendre faux » garde imprimé ≠ vrai.
+- Nom montré : `fn_iarpName` `known` / `learn` (`comspec_sse_nameKnownBy`), « Inconnu » dans l'en-tête, les bulles et le journal tant que le joueur ne l'a pas appris ; Zeus, administrateur et hôte le voient.
+- Photo : le conteneur du studio (`fn_idFace`) était posé sans tenir compte de l'axe du modèle, la caméra filmait sa paroi bleue. Orientation et centrage par la boîte englobante, conteneur gris, caméra vérifiée dans le studio, rendu montré seulement une fois vérifié (4 essais), sinon silhouette.
+- Guide SSE : chapitre « Nom des IA et papiers » (FR + EN). Test : `SseIdentityUniqueTest`.
+
 ## SSE 1.9.0 : fenêtre « Réponses de l'IA » simple, peur d'une arme braquée de près, champs des documents (SSE 1.9.0)
 
 ### Résumé joueur

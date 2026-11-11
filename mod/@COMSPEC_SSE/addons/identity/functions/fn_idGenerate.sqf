@@ -10,8 +10,13 @@
     Sexe : celui du modèle (le site le tire avec « sex » quand on ne l'impose pas). Année : celle de la mission.
     Noms : réservoirs du pays fictif ; personne d'une région SSE (fiche « identity ») : réservoirs de cette région.
     Clés : last, first, sex (M | F), dob (AAAA-MM-JJ), pob, nat (code pays), profession, age, seed.
+    _raw     vrai : tirage brut (seul fn_idIdentityOf l'appelle ainsi). Faux, sel "" et une personne : c'est SON identité,
+             donc celle de l'identité unique (fn_idIdentityOf « get » : nom donné, nom Arma choisi, sinon tirage gardé).
 */
-params [["_unit", objNull, [objNull]], ["_key", "", [""]], ["_salt", "", [""]], ["_country", "", [""]]];
+params [["_unit", objNull, [objNull]], ["_key", "", [""]], ["_salt", "", [""]], ["_country", "", [""]], ["_raw", false, [false]]];
+if (!_raw && {_salt isEqualTo ""} && {!isNull _unit} && {!isNil "comspec_sse_fnc_idIdentityOf"}) exitWith {
+    ["get", [_unit, _key, _country]] call comspec_sse_fnc_idIdentityOf
+};
 if (_key isEqualTo "" && {!isNull _unit}) then { _key = [_unit] call comspec_sse_fnc_bioPersonKey; };
 if (_country isEqualTo "") then { _country = ["default"] call comspec_sse_fnc_idCountries; };
 private _c = ([] call comspec_sse_fnc_idCountries) getOrDefault [_country, createHashMap];
@@ -44,7 +49,7 @@ if (_sex isEqualTo "F" && {_region isEqualTo "" || {_region isEqualTo "RANDOM"}}
     private _li = _last find _ln;
     if (_li >= 0 && {_li < count _lf}) then { _ln = _lf select _li; } else { _ln = _ln + (_c getOrDefault ["lastFSuffix", ""]); };
 };
-if (_salt isEqualTo "" && {!isNull _unit}) then {
+if (!_raw && {_salt isEqualTo ""} && {!isNull _unit}) then {
     // Nom déclaré par la mission (Eden, Zeus, générateur SSE) : c'est lui qui est imprimé.
     private _df = _unit getVariable ["COMSPEC_SSE_FirstName", ""];
     private _dl = _unit getVariable ["COMSPEC_SSE_LastName", ""];

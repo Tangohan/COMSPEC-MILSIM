@@ -113,6 +113,16 @@ class CfgHints {
             image = HINT_IMG;
             noImage = 0;
         };
+        // Nom des IA : le nom donné est celui de ses papiers (identité unique, fn_idIdentityOf), faux papiers, « Inconnu ».
+        class IdName {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_IDNAME_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_IDNAME_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_IDNAME_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_IDNAME_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
         class AiZone {
             displayName = "$STR_COMSPEC_SSE_GUIDE_AIZONE_TITLE";
             displayNameShort = "$STR_COMSPEC_SSE_GUIDE_AIZONE_TITLE";

@@ -3,7 +3,8 @@
       open [ia | objNull, onglet]   ouvre sur une IA vivante à 5 m (à pied) ; objNull + "log" : journal seul (Zeus).
                                     Le téléphone ATAK ouvert est rangé (la fenêtre ne se pose pas dessus).
       onLoad / onUnload             brouillon gardé par IA (Échap ferme sans rien perdre)
-      head                          en-tête : avatar (initiales), nom (identité SSE, sinon « Anonyme »), état et distance
+      head                          en-tête : avatar (initiales), nom (identité unique une fois apprise, sinon « Inconnu » :
+                                    même règle que les bulles, fn_iarpName), état et distance
       tab [talk | guide | log]      DISCUSSION (fil), GUIDE (ce qu'on peut dire, exemples cliquables), JOURNAL
       refresh                       fil en bulles : moi à droite, l'IA à gauche, actions et récits au centre, « … écrit »
       theme [index] · example [texte]   guide : thème choisi ; un exemple cliqué va dans le champ de saisie
@@ -166,12 +167,14 @@ switch (_op) do {
             (_d displayCtrl 94602) ctrlSetStructuredText parseText "";
         };
         private _who = (missionNamespace getVariable ["comspec_sse_iarpWho", createHashMap]) getOrDefault [netId _t, ["", [], 0]];
+        // Même règle que les bulles (fn_iarpName) : le nom une fois appris (dit, lu sur ses papiers), sinon « Inconnu » ;
+        // le Zeus le voit toujours. Jamais un nom que le joueur ne connaît pas.
         private _name = ["name", [_t]] call comspec_sse_fnc_iarpClient;
-        if ((_who select 0) isNotEqualTo "" && {(_t getVariable ["comspec_sse_idName", ""]) isEqualTo ""}) then { _name = _who select 0; };
+        private _known = (["known", [_t, player]] call comspec_sse_fnc_iarpName) && {(_t getVariable ["comspec_sse_idName", ""]) isNotEqualTo ""};
         (_d displayCtrl 94601) ctrlSetText _name;
-        // Initiales : prénom et nom (« Nikos KARRAS » -> NK) ; anonyme : « ? ».
+        // Initiales : prénom et nom (« Nikos KARRAS » -> NK) ; inconnu : « ? ».
         private _ws = (_name splitString " ") select { _x isNotEqualTo "" };
-        private _ini = if ((_t getVariable ["comspec_sse_idName", ""]) isEqualTo "" && {(_who select 0) isEqualTo ""}) then { "?" } else {
+        private _ini = if (!_known) then { "?" } else {
             toUpper (((_ws select [0, 2]) apply { _x select [0, 1] }) joinString "")
         };
         (_d displayCtrl 94641) ctrlSetText _ini;
@@ -252,6 +255,9 @@ switch (_op) do {
         private _net = uiNamespace getVariable ["comspec_sse_iarpTarget", ""];
         private _l = ((missionNamespace getVariable ["comspec_sse_iarpHist", createHashMap]) getOrDefault [_net, []]) select [((count ((missionNamespace getVariable ["comspec_sse_iarpHist", createHashMap]) getOrDefault [_net, []])) - 40) max 0];
         private _y = 0.3 * _gh;
+        // Bulles de l'IA : le nom montré dans l'en-tête, maintenant (appris depuis : le fil entier passe d'« Inconnu » à
+        // son nom) ; en-tête et bulles disent toujours la même chose.
+        private _aiNow = if (isNull (call _targetObj)) then { "" } else { ["shown", call _targetObj] call comspec_sse_fnc_iarpName };
         private _add = {
             params ["_side", "_body", "_plainW", "_bg", ["_stripe", []]];
             // _side : left (IA), right (moi), center (action, récit, système)
@@ -287,6 +293,7 @@ switch (_op) do {
             private _tm = format ["<t size='0.72' color='#7F8A84'>%1</t>", _hm];
             switch (_kind) do {
                 case "ai": {
+                    if (_aiNow isNotEqualTo "") then { _who = _aiNow; };
                     private _hdr = format ["<t font='%1' size='0.78' color='%2'>%3</t>  %4", _fBold, ["ai"] call _colOf, toUpper (_who call _esc), _tm];
                     private _w = (([_text] call _widthOf) max (([toUpper _who + "  00:00"] call _widthOf) * 0.82));
                     ["left", format ["%1<br/><t font='%2' color='#E6EDE6'>%3</t>", _hdr, _fReg, _text call _esc], _w, [0.1, 0.15, 0.15, 0.98], ["ai"] call _rgbOf] call _add;
