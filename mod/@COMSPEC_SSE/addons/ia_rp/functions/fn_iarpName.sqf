@@ -1,19 +1,29 @@
 /*
     Nom d'une personne tel qu'il s'affiche (bulles, fenêtre « Parler à… », atelier IA, menus du Zeus). Pour une IA :
-    jamais le nom d'unité Arma (« Khrushchev »), mais le nom que portent son identité et ses papiers SSE
-    (comspec_sse_idName, posé par l'identité SSE et par l'atelier IA), sinon « Anonyme ». Pour un joueur : son nom.
-    Une seule règle pour le nom affiché d'une IA : nom de ses papiers SSE, sinon de sa légende SSE, sinon « Anonyme ».
-      ["ensure", unité]               (SERVEUR) -> nom affiché brut, "" si aucun ; s'il manque : nom imprimé sur ses
-                                      papiers (identité SSE, décidée ici au besoin), sinon celui de sa légende ; diffusé
-                                      (comspec_sse_idName). Ailleurs qu'au serveur : comme « shown » sans « Anonyme ».
-      ["shown", unité]                (toute machine) -> nom affiché aux joueurs (serveur : « ensure » d'abord)
-      ["truth", unité]                (SERVEUR) -> [nom affiché brut, vrai nom, nature] ; nature : true (identité vraie),
-                                      lies (le nom affiché n'est pas celui de son identité : elle ment), forged (faux
+    jamais le nom d'unité Arma (« Afanasyev »), mais le nom qu'elle donne, celui de son identité unique (addon identity,
+    fn_idIdentityOf : nom donné par le Zeus, Eden, l'atelier IA, un profil, sinon tiré une fois et gardé) et de ses
+    papiers ; faux papiers ou couverture : le nom imprimé. Diffusé dans comspec_sse_idName. Pour un joueur : son nom.
+
+    Règle du nom montré (en-tête ET bulles, la même) : un joueur voit le nom d'une IA une fois qu'il l'a APPRIS — elle
+    l'a dit (« Comment vous appelez-vous ? », réponse donnée), ou il l'a lu sur ses papiers (visionneuse) ; sinon
+    « Inconnu », partout. Le Zeus (curateur), l'administrateur et l'hôte voient toujours le nom (et, dans les bulles,
+    le vrai nom et la nature de l'identité). Joueurs qui le connaissent : variable d'unité diffusée
+    comspec_sse_nameKnownBy (identifiants Steam), posée par le serveur (« learn »).
+      ["ensure", unité]               (SERVEUR) -> nom présenté brut, "" si aucun ; papiers décidés au besoin (identité
+                                      unique, fn_idIdentityOf « presented ») ; diffusé (comspec_sse_idName). Ailleurs
+                                      qu'au serveur : comme « shown » sans « Inconnu ».
+      ["shown", unité]                (toute machine) -> nom montré au joueur de ce poste : le nom s'il le connaît
+                                      (« known »), sinon « Inconnu » (serveur : « ensure » d'abord)
+      ["known", [unité, joueur]]      -> vrai si ce joueur connaît son nom (Zeus, administrateur, hôte : toujours)
+      ["learn", [unité, [joueurs]]]   (SERVEUR) ces joueurs connaissent désormais son nom
+      ["truth", unité]                (SERVEUR) -> [nom présenté brut, vrai nom, nature] ; nature : true (identité vraie),
+                                      lies (le nom présenté n'est pas celui de son identité : elle ment), forged (faux
                                       papiers), cover (couverture). Vrai nom : identité réelle (trueFirst / trueLast de ses
-                                      papiers au registre, sinon identité générée fn_idGenerate), sinon le nom affiché.
-                                      Sans l'addon identity : [nom affiché, nom affiché, "true"]. Nom brut : "" sans nom.
+                                      papiers au registre, sinon son identité unique), sinon le nom présenté.
+                                      Sans l'addon identity : [nom, nom, "true"]. Nom brut : "" sans nom.
       ["for", [unité, destinataire]]  (SERVEUR) -> ce que voit ce destinataire : la vérité (« truth ») s'il est Zeus ou
-                                      administrateur (fn_isAuthority), le nom affiché brut sinon ; à passer à « label »
+                                      administrateur (fn_isAuthority), le nom brut s'il le connaît, "" sinon ; à passer à
+                                      « label » (qui affiche « Inconnu » pour "")
       ["label", nom | [nom, vrai nom, nature]]   (client) -> texte : « Stavros VLACHOS » pour tous ; pour le Zeus,
                                       « Stavros VLACHOS (Nikos KARRAS · Faux papiers) » (indicateur : Identité vraie,
                                       Fausse identité (ment), Faux papiers, Couverture ; rien si l'identité est vraie)
@@ -30,17 +40,26 @@ private _rawOf = {
     trim _n
 };
 private _same = { params ["_x1", "_x2"]; (toUpper (trim _x1)) isEqualTo (toUpper (trim _x2)) };
+private _uidOf = { params ["_p"]; private _i = getPlayerUID _p; if (_i isEqualTo "") then { _i = "N:" + name _p; }; _i };
+// Ce joueur connaît-il le nom de cette personne ?
+private _knows = {
+    params ["_u", "_v"];
+    if (!(_u isEqualType objNull) || {isNull _u}) exitWith { false };
+    if (isPlayer _u || {!(_v isEqualType objNull)} || {isNull _v}) exitWith { true };
+    if (!isNull (getAssignedCuratorLogic _v)) exitWith { true };
+    // Administrateur, hôte, partie solo : fn_isAuthority (à jour au serveur et au poste de l'hôte).
+    if (isServer && {[_v] call comspec_sse_fnc_isAuthority}) exitWith { true };
+    ([_v] call _uidOf) in (_u getVariable ["comspec_sse_nameKnownBy", []])
+};
 
 switch (_op) do {
     case "ensure": {
         private _n = [_a] call _rawOf;
-        if (_n isNotEqualTo "" || {!isServer} || {!(_a isEqualType objNull)} || {isNull _a} || {isPlayer _a}) exitWith { _n };
-        if (!isNil "comspec_sse_fnc_idRegistry") then {
-            ["ensure", [_a]] call comspec_sse_fnc_idRegistry;
-            private _d = ["doc", [(["unitDocs", [_a]] call comspec_sse_fnc_idRegistry) param [0, ""]]] call comspec_sse_fnc_idRegistry;
-            if (_d isEqualType createHashMap && {(count _d) > 0}) then { _n = trim format ["%1 %2", _d getOrDefault ["first", ""], _d getOrDefault ["last", ""]]; };
-        };
-        if (_n isEqualTo "" && {!isNil "comspec_sse_fnc_idLegend"}) then {
+        if (!isServer || {!(_a isEqualType objNull)} || {isNull _a} || {isPlayer _a}) exitWith { _n };
+        // Identité unique (addon identity) : papiers décidés d'abord, puis le nom présenté, toujours le même.
+        if (!isNil "comspec_sse_fnc_idIdentityOf") exitWith { ["presented", [_a]] call comspec_sse_fnc_idIdentityOf };
+        if (_n isNotEqualTo "") exitWith { _n };
+        if (!isNil "comspec_sse_fnc_idLegend") then {
             private _L = ["get", [_a]] call comspec_sse_fnc_idLegend;
             if (_L isEqualType createHashMap) then { _n = trim format ["%1 %2", _L getOrDefault ["first", ""], _L getOrDefault ["last", ""]]; };
         };
@@ -50,7 +69,23 @@ switch (_op) do {
     case "shown": {
         private _n = [_a] call _rawOf;
         if (_n isEqualTo "" && {isServer}) then { _n = ["ensure", _a] call comspec_sse_fnc_iarpName; };
+        // Nom pas encore appris par le joueur de ce poste : « Inconnu », comme dans les bulles.
+        if (hasInterface && {!isNull player} && {_n isNotEqualTo ""} && {!([_a, player] call _knows)}) then { _n = ""; };
         [_n, call _anon] select (_n isEqualTo "")
+    };
+    case "known": {
+        _a params [["_u", objNull], ["_v", objNull]];
+        [_u, _v] call _knows
+    };
+    case "learn": {
+        if (!isServer) exitWith { false };
+        _a params [["_u", objNull, [objNull]], ["_who", [], [[]]]];
+        if (isNull _u || {isPlayer _u}) exitWith { false };
+        private _list = +(_u getVariable ["comspec_sse_nameKnownBy", []]);
+        private _n0 = count _list;
+        { if (_x isEqualType objNull && {!isNull _x} && {isPlayer _x || {_x isEqualTo player}}) then { _list pushBackUnique ([_x] call _uidOf); }; } forEach _who;
+        if ((count _list) > _n0) then { _u setVariable ["comspec_sse_nameKnownBy", _list, true]; };
+        true
     };
     case "truth": {
         private _raw = [_a] call _rawOf;
@@ -72,24 +107,21 @@ switch (_op) do {
                 _true = trim format ["%1 %2", _main getOrDefault ["trueFirst", ""], toUpper (_main get "trueLast")];
             };
         };
-        if (_true isEqualTo "" && {!isNil "comspec_sse_fnc_idGenerate"}) then {
-            private _g = [_a] call comspec_sse_fnc_idGenerate;
-            if (_g isEqualType createHashMap && {(_g getOrDefault ["last", ""]) isNotEqualTo ""}) then {
-                _true = trim format ["%1 %2", _g getOrDefault ["first", ""], toUpper (_g get "last")];
-            };
-        };
+        if (_true isEqualTo "" && {!isNil "comspec_sse_fnc_idIdentityOf"}) then { _true = ["full", [_a]] call comspec_sse_fnc_idIdentityOf; };
         if (_true isEqualTo "") then { _true = _raw; };
-        // Nom affiché différent de son identité réelle (nom de l'atelier IA) : elle ment sur son nom.
+        // Nom présenté différent de son identité réelle sans faux papier ni couverture : elle ment sur son nom.
         if (_nat isEqualTo "true" && {_raw isNotEqualTo ""} && {!([_raw, _true] call _same)}) then { _nat = "lies"; };
         [_raw, _true, _nat]
     };
     case "for": {
         _a params [["_u", objNull], ["_to", objNull]];
-        if (!isServer) exitWith { [_u] call _rawOf };
+        if (!isServer) exitWith { [[_u] call _rawOf, ""] select !([_u, _to] call _knows) };
         if (_u isEqualType objNull && {!isNull _u} && {!isPlayer _u}) then { ["ensure", _u] call comspec_sse_fnc_iarpName; };
         if (!isNull _to && {_u isEqualType objNull} && {!isNull _u} && {!isPlayer _u} && {[_to] call comspec_sse_fnc_isAuthority}) exitWith {
             ["truth", _u] call comspec_sse_fnc_iarpName
         };
+        // Joueur qui ne l'a pas encore appris : rien (« Inconnu » à l'affichage).
+        if (!([_u, _to] call _knows)) exitWith { "" };
         [_u] call _rawOf
     };
     case "label": {
