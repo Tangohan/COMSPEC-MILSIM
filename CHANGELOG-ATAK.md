@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : tuto des extensions de documents de nouveau lisible (SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : La fenêtre Extensions et son tuto s'affichent de nouveau
+- Dans SSE ROLEPLAY · Extensions, la liste des extensions et le tuto « Comment ça marche » ne sont plus vides : les 10 étapes s'affichent, la première est ouverte d'office et le texte se lit à droite.
+- Des boutons Étape précédente et Étape suivante (ou les flèches haut et bas) font défiler le tuto, et Copier l'exemple copie le config.cpp affiché.
+EN : The Extensions window and its tutorial show again
+- In SSE ROLEPLAY · Extensions, the list of extensions and the "How it works" tutorial are no longer empty: the 10 steps show, the first one opens by itself and its text reads on the right.
+- Previous step and Next step buttons (or the Up and Down arrows) move through the tutorial, and Copy the example copies the config.cpp shown.
+
+### Détail technique
+- Cause (`extensions/functions/fn_docExtWindow.sqf`, SSE 1.9.0, l. 20 / 272 / 292) : en SQF les noms de variables ignorent la casse. Le raccourci de traduction `_L` était écrasé par `private _l = <liste>` dans `_fillTuto` et `_fill` ; l'appel `call _L` suivant échouait (contrôle au lieu de code) avant le premier `lbAdd`. Liste des étapes, lecture et ligne d'état restaient vides dans le tuto ; la liste des extensions et sa fiche aussi. La vue vide n'était pas touchée.
+- Correctif : `_loc` (traduction, clé absente → nom de la clé affiché et ligne au RPT, jamais de ligne vide) et `_lst` (listes). Étape 1 choisie à l'ouverture, focus sur la liste (flèches haut / bas), boutons `BtnPrev` / `BtnNext` (IDC 93965 / 93966, opérations `prev` / `next`, grisés aux extrémités), exemple de config.cpp à la taille de texte de la charte (0,78 case).
+- Contrôle interne `["audit"]` (textes FR / EN des 10 étapes, texte structuré lisible, IDC, liste remplie, étape choisie, lecture non vide ; liste des extensions remplie) lancé à chaque ouverture, résultat au RPT seulement ; repris par l'autotest `sse_extensions_fenetre` avec Étape précédente / suivante.
+- Test PHP `SseExtensionsTutoAssetTest` : clés FR / EN non vides, clés uniques dans les stringtables SSE, corps en texte structuré valide, IDC de la fenêtre utilisés par la fonction, étape 1 choisie, aucune variable SQF identique à la casse près.
+- Non vu en jeu (autotest non lancé sur consigne).
+
 ## SSE 1.9.0 : IA qui réagissent naturellement, émotions réglables, papiers de 45 pays, une seule identité par IA, outils Zeus refaits (SSE 1.9.0)
 
 ### Résumé joueur
