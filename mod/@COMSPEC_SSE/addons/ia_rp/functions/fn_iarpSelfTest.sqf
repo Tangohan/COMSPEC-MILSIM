@@ -355,6 +355,50 @@ private _pA = ["normalize", createHashMapFromArray [["name", "Nikos KARRAS"], ["
 private _pB = ["parse", ["serialize", _pA] call comspec_sse_fnc_iarpProfile] call comspec_sse_fnc_iarpProfile;
 if ((_pB get "answers") isNotEqualTo (_pA get "answers") || {(_pB get "evoke") isNotEqualTo "known"} || {(_pB get "banned") isNotEqualTo ["drugs"]}) then { _ko pushBack "réponses : perdues à la sérialisation du profil"; };
 _info pushBack format ["réponses : %1 entrée(s) valides sur %2, « %3 »", count _ans, count _ansIn, _filled];
+// ---------------------------------------------------------------- question / réponse simple (attribut Eden, atelier, Zeus)
+// Une question perso du même format que la fenêtre des réponses ; une paraphrase proche la déclenche.
+private _qaQ = "Où est le chef du village ?";
+private _qaR = format ["Le chef est à la mosquée, il revient ce soir.%1Demandez à {prenom}, il sait tout.", _nl];
+private _qa = ["qaSet", [[], "", _qaQ, _qaR]] call comspec_sse_fnc_iarpAnswers;
+private _qaE = ["get", [_qa, "c1"]] call comspec_sse_fnc_iarpAnswers;
+if (_qaE isEqualTo [] || {(_qaE select 1) isNotEqualTo _qaQ} || {((_qaE select 4) select 0) isNotEqualTo ["*", ["Le chef est à la mosquée, il revient ce soir.", "Demandez à {prenom}, il sait tout."]]}) then {
+    _ko pushBack format ["question / réponse : entrée %1", _qaE];
+};
+if ((["normalize", _qa] call comspec_sse_fnc_iarpAnswers) isNotEqualTo _qa) then { _ko pushBack "question / réponse : hors du format des réponses"; };
+{
+    _x params ["_txt", "_want"];
+    private _got = ["match", [_qa, _txt call comspec_sse_fnc_iarpNorm]] call comspec_sse_fnc_iarpAnswers;
+    if (_got isNotEqualTo _want) then { _ko pushBack format ["question / réponse : « %1 » -> « %2 »", _txt, _got]; };
+} forEach [["Où est le chef du village ?", "c1"], ["Le chef du village, il est où ?", "c1"], ["Vous savez où se trouve le chef du village ?", "c1"],
+    ["ou est le CHEF du village", "c1"], ["Où est le marché ?", ""], ["Vos papiers.", ""]];
+private _qaPk = ["pick", [_qaE, ["calm", "first"], [0, ""]]] call comspec_sse_fnc_iarpAnswers;
+if !((_qaPk param [0, ""]) in ["Le chef est à la mosquée, il revient ce soir.", "Demandez à {prenom}, il sait tout."]) then { _ko pushBack format ["question / réponse : réplique %1", _qaPk]; };
+(["qaGet", _qa] call comspec_sse_fnc_iarpAnswers) params ["_qgK", "_qgQ", "_qgR", "_qgN"];
+if ([_qgK, _qgQ, _qgR, _qgN] isNotEqualTo ["c1", _qaQ, _qaR, 1]) then { _ko pushBack format ["question / réponse : relue %1", [_qgK, _qgQ, _qgR, _qgN]]; };
+// Réponse retouchée au même endroit : situations avancées, palier et déclencheurs retouchés gardés ; question seule : rien
+// ne change ; question et réponse vidées : la question perso sort, les autres restent.
+private _qaAdv = [["name", "", [], "random", [["*", ["Je suis {prenom}."]]], 0, ""], ["c1", _qaQ, ["chef"], "seq", [["*", ["x"]], ["fear", ["Pitié !"]]], 2, ""]];
+private _qa2 = ["qaSet", [_qaAdv, "c1", _qaQ, "Il est parti."]] call comspec_sse_fnc_iarpAnswers;
+private _qa2E = ["get", [_qa2, "c1"]] call comspec_sse_fnc_iarpAnswers;
+if ((_qa2 apply { _x select 0 }) isNotEqualTo ["name", "c1"] || {(_qa2E select 2) isNotEqualTo ["chef"]} || {(_qa2E select 3) isNotEqualTo "seq"} || {(_qa2E select 5) isNotEqualTo 2}
+    || {(_qa2E select 4) isNotEqualTo [["*", ["Il est parti."]], ["fear", ["Pitié !"]]]}) then { _ko pushBack format ["question / réponse : retouche %1", _qa2E]; };
+if ((["qaSet", [_qaAdv, "c1", "Autre question ?", ""]] call comspec_sse_fnc_iarpAnswers) isNotEqualTo _qaAdv) then { _ko pushBack "question / réponse : question seule enregistrée"; };
+if (((["qaSet", [_qaAdv, "c1", "", ""]] call comspec_sse_fnc_iarpAnswers) apply { _x select 0 }) isNotEqualTo ["name"]) then { _ko pushBack "question / réponse : vidée mais gardée"; };
+// Aller-retour par le profil (attribut Eden) avec un savoir et un déblocage d'avant : rien ne se perd.
+private _qaP = ["normalize", createHashMapFromArray [["know", format ["Vague : Des hommes la nuit.%1Précis : À la ferme.", _nl]], ["unlock", "keyword"], ["unlockWord", "faucon"], ["answers", _qa]]] call comspec_sse_fnc_iarpProfile;
+private _qaP2 = ["parse", ["serialize", _qaP] call comspec_sse_fnc_iarpProfile] call comspec_sse_fnc_iarpProfile;
+if ((_qaP2 get "answers") isNotEqualTo _qa || {(_qaP2 get "know") isNotEqualTo (_qaP get "know")} || {(_qaP2 get "unlock") isNotEqualTo "keyword"} || {(_qaP2 get "unlockWord") isNotEqualTo "faucon"}) then {
+    _ko pushBack "question / réponse : perdue (ou savoir perdu) à la sérialisation du profil";
+};
+// Mission d'avant (profil sans réponses, savoir d'une phrase, déblocage « Pot-de-vin ») : chargée telle quelle, aucune question.
+private _old = ["parse", '[["name","Nikos KARRAS"],["know","Les armes sont sous la grange."],["unlock","bribe"],["unlockWord",""],["react",[["order","refuse"]]]]'] call comspec_sse_fnc_iarpProfile;
+if ((_old get "know") isNotEqualTo "Les armes sont sous la grange." || {(_old get "unlock") isNotEqualTo "bribe"} || {((_old get "react") get "order") isNotEqualTo "refuse"}
+    || {(["qaGet", _old get "answers"] call comspec_sse_fnc_iarpAnswers) isNotEqualTo ["", "", "", 0]}) then { _ko pushBack "question / réponse : ancienne mission mal relue"; };
+// Textes des nouveaux champs (FR et EN dans stringtable.xml : ici, au moins présents dans la langue du jeu).
+{ if !(isLocalized ("STR_COMSPEC_IARP_" + _x)) then { _ko pushBack format ["question / réponse : texte %1 absent", _x]; }; } forEach
+    ["W_Question", "W_Question_D", "W_QuestionHint", "W_QuestionMore", "W_Reply", "W_Reply_D", "W_ReplyHint", "W_ReplyVar", "W_ReplyVar_D", "W_QaHalf",
+     "W_Adv", "W_AdvHide", "W_Adv_D", "W_TestCustom", "Z_Qa"];
+_info pushBack format ["question / réponse : déclencheurs %1", _qaE param [2, []]];
 // Coût : message long, fautes, plusieurs demandes (index des motifs : quelques dizaines cherchés par morceau).
 private _t1 = diag_tickTime;
 for "_i" from 1 to 20 do { ["Bonjour, vous avez vu des hommes armés ou des pick-up cette nuit ? Où sont-ils partis ? Combien étaient-ils, et qui commande ici ?"] call comspec_sse_fnc_iarpIntent; };

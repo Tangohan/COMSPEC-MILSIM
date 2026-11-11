@@ -147,16 +147,20 @@ class CfgVehicles {
 };
 
 class ctrlStatic;
+class ctrlStaticMulti;
+class ctrlEdit;
+class ctrlEditMulti;
 class ctrlButton;
 class Cfg3DEN {
     class Attributes {
         class Default;
         class Title: Default { class Controls { class Title; }; };
-        // Résumé du profil et bouton « Atelier IA… » ; valeur (profil en texte) gardée sur le groupe (fn_iarpEden).
+        // Résumé du profil, « Question » et « Réponse de l'IA » (la 1re question perso du profil, fn_iarpAnswers
+        // « qaSet »), puis le bouton « Atelier IA… » ; valeur (profil en texte) gardée sur le groupe (fn_iarpEden).
         class COMSPEC_SSE_IarpProfileAttr: Title {
             attributeLoad = "['load', [_this, _value]] call comspec_sse_fnc_iarpEden";
             attributeSave = "['save', _this] call comspec_sse_fnc_iarpEden";
-            h = "10 * (pixelH * pixelGrid * 0.5)";
+            h = "45 * (pixelH * pixelGrid * 0.5)";
             class Controls: Controls {
                 class Title: Title {};
                 class Summary: ctrlStatic {
@@ -167,12 +171,76 @@ class Cfg3DEN {
                     h = "5 * (pixelH * pixelGrid * 0.5)";
                     colorBackground[] = {0, 0, 0, 0.25};
                 };
+                class LabelQ: ctrlStatic {
+                    idc = 110;
+                    style = 1;
+                    text = "$STR_COMSPEC_IARP_W_Question";
+                    tooltip = "$STR_COMSPEC_IARP_W_Question_D";
+                    x = "0";
+                    y = "6 * (pixelH * pixelGrid * 0.5)";
+                    w = "47 * (pixelW * pixelGrid * 0.5)";
+                    h = "5 * (pixelH * pixelGrid * 0.5)";
+                };
+                class QaQ: ctrlEdit {
+                    idc = 103;
+                    tooltip = "$STR_COMSPEC_IARP_W_Question_D";
+                    maxChars = 80;
+                    x = "48 * (pixelW * pixelGrid * 0.5)";
+                    y = "6 * (pixelH * pixelGrid * 0.5)";
+                    w = "82 * (pixelW * pixelGrid * 0.5)";
+                    h = "5 * (pixelH * pixelGrid * 0.5)";
+                    onKeyUp = "['hint', [ctrlParentControlsGroup (_this select 0)]] call comspec_sse_fnc_iarpEden";
+                };
+                class HintQ: ctrlStaticMulti {
+                    idc = 104;
+                    style = 16;
+                    text = "$STR_COMSPEC_IARP_W_QuestionHint";
+                    tooltip = "$STR_COMSPEC_IARP_W_Question_D";
+                    x = "48 * (pixelW * pixelGrid * 0.5)";
+                    y = "11 * (pixelH * pixelGrid * 0.5)";
+                    w = "82 * (pixelW * pixelGrid * 0.5)";
+                    h = "7 * (pixelH * pixelGrid * 0.5)";
+                    sizeEx = "3.2 * (pixelH * pixelGrid * 0.5)";
+                    colorText[] = {1, 1, 1, 0.6};
+                };
+                class LabelA: ctrlStatic {
+                    idc = 111;
+                    style = 1;
+                    text = "$STR_COMSPEC_IARP_W_Reply";
+                    tooltip = "$STR_COMSPEC_IARP_W_Reply_D";
+                    x = "0";
+                    y = "19 * (pixelH * pixelGrid * 0.5)";
+                    w = "47 * (pixelW * pixelGrid * 0.5)";
+                    h = "5 * (pixelH * pixelGrid * 0.5)";
+                };
+                class QaA: ctrlEditMulti {
+                    idc = 105;
+                    tooltip = "$STR_COMSPEC_IARP_W_Reply_D";
+                    maxChars = 2400;
+                    x = "48 * (pixelW * pixelGrid * 0.5)";
+                    y = "19 * (pixelH * pixelGrid * 0.5)";
+                    w = "82 * (pixelW * pixelGrid * 0.5)";
+                    h = "12 * (pixelH * pixelGrid * 0.5)";
+                    onKeyUp = "['hint', [ctrlParentControlsGroup (_this select 0)]] call comspec_sse_fnc_iarpEden";
+                };
+                class HintA: ctrlStaticMulti {
+                    idc = 106;
+                    style = 16;
+                    text = "$STR_COMSPEC_IARP_W_ReplyHint";
+                    tooltip = "$STR_COMSPEC_IARP_W_Reply_D";
+                    x = "48 * (pixelW * pixelGrid * 0.5)";
+                    y = "31 * (pixelH * pixelGrid * 0.5)";
+                    w = "82 * (pixelW * pixelGrid * 0.5)";
+                    h = "7 * (pixelH * pixelGrid * 0.5)";
+                    sizeEx = "3.2 * (pixelH * pixelGrid * 0.5)";
+                    colorText[] = {1, 1, 1, 0.6};
+                };
                 class Open: ctrlButton {
                     idc = 102;
                     text = "$STR_COMSPEC_IARP_W_Open";
                     tooltip = "$STR_COMSPEC_IARP_W_Attr_D";
                     x = "48 * (pixelW * pixelGrid * 0.5)";
-                    y = "5 * (pixelH * pixelGrid * 0.5)";
+                    y = "39 * (pixelH * pixelGrid * 0.5)";
                     w = "82 * (pixelW * pixelGrid * 0.5)";
                     h = "5 * (pixelH * pixelGrid * 0.5)";
                     onButtonClick = "['open', [ctrlParentControlsGroup (_this select 0)]] call comspec_sse_fnc_iarpEden";

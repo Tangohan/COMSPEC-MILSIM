@@ -8,6 +8,14 @@ Les joueurs parlent aux IA en texte libre (interaction ACE › **Parler à…**,
 
 Règle d'or : **une IA ne parle que de ce qu'elle sait**. Un passant sans savoir ne parle jamais d'armes, de groupes armés, de pick-up, de mines ou de caches : « Non, je n'ai rien vu de tel. », « Je ne sais pas, je viens d'arriver. »
 
+## Pour faire parler une IA : écrivez une question, écrivez sa réponse
+
+1. Eden : attributs de l'unité › **COMSPEC SSE · IA RP** › **Question** : ce que le joueur peut lui demander, avec ses mots. Zeus : clic droit › **SSE · Roleplay de l'IA › Profil d'IA › Question et réponse…** (les mêmes deux cases sont aussi en tête de l'**Atelier IA**).
+2. **Réponse de l'IA** : ce qu'elle répond (une ligne par réponse possible ; **+ Variable** ou `{prenom}`, `{ville}`, `{joueur}`… pour les mots remplacés en jeu).
+3. C'est tout : les formulations proches marchent aussi. Exemple : Question « Où est le chef du village ? », Réponse « Le chef est à la mosquée, il revient ce soir. » ; en jeu, « Le chef du village, il est où ? » donne cette réponse.
+
+Ces deux cases sont la première de « vos propres questions » : d'autres questions, une réponse selon la situation ou un renseignement révélé se règlent dans **Toutes les questions et réponses…** (ci-dessous). **Options avancées** (dans l'atelier) garde **Ce qu'elle sait** (un secret, une info utile ; anciennement « Savoir ») et **Quand elle le dit** (en confiance, pot-de-vin, au mot-clé, jamais ; anciennement « Déblocage ») : les missions déjà faites gardent leurs valeurs. « Si ordre » s'appelle maintenant **Face à un ordre** (ce qu'elle fait à « Les mains en l'air ! », « Suivez-moi »).
+
 ## Ce que les joueurs peuvent demander
 
 L'onglet **GUIDE** de la fenêtre « Parler à » liste tout, par thème, avec des exemples cliquables :
@@ -32,10 +40,11 @@ Une IA se souvient : à « Tu as un téléphone ? », elle répond la même chos
 
 | Contexte | Chemin |
 |---|---|
-| Eden | Attributs d'une unité › **COMSPEC SSE · IA RP › Profil IA RP › Atelier IA… › Réponses et limites…**, puis **Valider** et **Appliquer** dans l'atelier : enregistré dans la mission |
-| Zeus, ZEN | Clic droit sur une ou plusieurs IA › **SSE · Roleplay de l'IA › Profil d'IA › Réponses de l'IA…** (ou **Ce qu'elle peut évoquer…** pour le cadre seul) |
+| Eden, une question | Attributs d'une unité › **COMSPEC SSE · IA RP › Question** et **Réponse de l'IA** : enregistré dans la mission |
+| Eden, toutes | Attributs d'une unité › **COMSPEC SSE · IA RP › Profil IA RP › Atelier IA… › Toutes les questions et réponses…**, puis **Valider** et **Appliquer** dans l'atelier : enregistré dans la mission |
+| Zeus, ZEN | Clic droit sur une ou plusieurs IA › **SSE · Roleplay de l'IA › Profil d'IA › Question et réponse…** (une question) ou **Toutes les questions et réponses…** (ou **Ce qu'elle peut évoquer…** pour le cadre seul) |
 | Zeus, IA de la zone | Cochez les IA › **Réponses…** (voir [ia_de_la_zone.md](ia_de_la_zone.md)) |
-| Zeus, Atelier IA | module ou menu **Atelier IA** › **Réponses et limites…** |
+| Zeus, Atelier IA | module ou menu **Atelier IA** › **Question**, **Réponse de l'IA**, ou **Toutes les questions et réponses…** |
 
 ## La fenêtre « Réponses de l'IA »
 
@@ -85,7 +94,7 @@ Fait absent : « … » (l'aperçu le signale).
 ## Pas à pas : le boulanger et le guetteur
 
 1. Eden, attributs du boulanger › **Atelier IA…** : Nom « Nikos KARRAS », histoire « Métier : boulanger ».
-2. **Réponses et limites…** › « Qui es-tu ? » › **Ma réponse** : « Je suis {prenom}, le boulanger. Tout le monde me connaît ici. » (le prénom par **Insérer une variable**).
+2. **Toutes les questions et réponses…** › « Qui es-tu ? » › **Ma réponse** : « Je suis {prenom}, le boulanger. Tout le monde me connaît ici. » (le prénom par **Insérer une variable**).
 3. **Options avancées** › Situation **S'il a peur** : « Je… je suis {prenom} ! Je fais le pain, c'est tout ! »
 4. « Avez-vous vu des hommes armés ? » › **Ma réponse**, Situation **S'il accepte** : « Hier soir, trois pick-up vers le nord. » ; Puis révèle **Un renseignement précis** ; Repère « 045 078 Ferme abandonnée » ; Situation **S'il refuse** : « Je ne veux pas d'ennuis. »
 5. **Ajouter ma propre question** : Nom « Mot de passe », Mots qui la déclenchent « mot de passe; password », réponse « Le faucon vole bas. »

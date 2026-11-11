@@ -72,13 +72,22 @@ class COMSPEC_SSE_IarpWorkshop {
         class LROrder: COMSPEC_SSE_RscLabel { text = "$STR_COMSPEC_IARP_W_ReactOrder"; WS_POS(1.3,18.15,6,0.9); };
         class ROrder: COMSPEC_SSE_RscCombo { idc = 94734; tooltip = "$STR_COMSPEC_IARP_W_React_D"; onMouseEnter = "['help', ['React']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(7.4,18.15,10.8,0.95); };
         class LockReact: COMSPEC_SSE_RscCheckBox { idc = 94770; tooltip = "$STR_COMSPEC_IARP_W_Lock_D"; onMouseEnter = "['help', ['Lock']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(18.4,15.0,0.9,0.9); };
-        class LKnow: COMSPEC_SSE_RscLabel { text = "$STR_COMSPEC_IARP_W_Know"; WS_POS(1.3,19.3,6,0.9); };
-        class Know: COMSPEC_SSE_RscEdit { idc = 94735; tooltip = "$STR_COMSPEC_IARP_W_Know_D"; onMouseEnter = "['help', ['Know']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(7.4,19.3,10.8,1.5); style = 16; autocomplete = ""; maxChars = 4000; };
-        class LockKnow: COMSPEC_SSE_RscCheckBox { idc = 94771; tooltip = "$STR_COMSPEC_IARP_W_Lock_D"; onMouseEnter = "['help', ['Lock']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(18.4,19.35,0.9,0.9); };
-        class LUnlock: COMSPEC_SSE_RscLabel { text = "$STR_COMSPEC_IARP_W_Unlock"; WS_POS(1.3,21.0,6,0.9); };
-        class Unlock: COMSPEC_SSE_RscCombo { idc = 94736; tooltip = "$STR_COMSPEC_IARP_W_Unlock_D"; onMouseEnter = "['help', ['Unlock']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(7.4,21.0,5.3,1); };
-        class UnlockWord: COMSPEC_SSE_RscEdit { idc = 94737; tooltip = "$STR_COMSPEC_IARP_W_Unlock_D"; onMouseEnter = "['help', ['Unlock']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(12.9,21.0,5.3,1); autocomplete = ""; };
-        class LockUnlock: COMSPEC_SSE_RscCheckBox { idc = 94772; tooltip = "$STR_COMSPEC_IARP_W_Lock_D"; onMouseEnter = "['help', ['Lock']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(18.4,21.05,0.9,0.9); };
+        // Vue par défaut : une question du joueur et la réponse de l'IA (une question perso des réponses, fn_iarpAnswers
+        // « qaSet »). « Options avancées » : à la même place, ce qu'elle sait et quand elle le dit (champs know, unlock).
+        class LQaQ: COMSPEC_SSE_RscLabel { idc = 94792; text = "$STR_COMSPEC_IARP_W_Question"; WS_POS(1.3,19.3,6,0.9); };
+        class QaQ: COMSPEC_SSE_RscEdit { idc = 94793; tooltip = "$STR_COMSPEC_IARP_W_Question_D"; onMouseEnter = "['help', ['Question']] call comspec_sse_fnc_iarpWorkshop"; onKeyUp = "['qaHint'] call comspec_sse_fnc_iarpWorkshop"; WS_POS(7.4,19.25,11.9,1); autocomplete = ""; maxChars = 80; };
+        class QaQHint: COMSPEC_SSE_RscStructuredText { idc = 94794; WS_POS(7.4,20.3,11.9,1.4); size = SSE_Q(SSE_GH * 0.62); };
+        class LQaA: COMSPEC_SSE_RscLabel { idc = 94795; text = "$STR_COMSPEC_IARP_W_Reply"; WS_POS(1.3,21.8,6,0.9); };
+        class QaA: COMSPEC_SSE_RscEdit { idc = 94796; tooltip = "$STR_COMSPEC_IARP_W_Reply_D"; onMouseEnter = "['help', ['Reply']] call comspec_sse_fnc_iarpWorkshop"; onKeyUp = "['qaHint'] call comspec_sse_fnc_iarpWorkshop"; WS_POS(7.4,21.75,7.2,1.05); style = 16; autocomplete = ""; maxChars = 2400; };
+        class QaVar: COMSPEC_SSE_RscCombo { idc = 94797; tooltip = "$STR_COMSPEC_IARP_W_ReplyVar_D"; onMouseEnter = "['help', ['ReplyVar']] call comspec_sse_fnc_iarpWorkshop"; onLBSelChanged = "['qaVar', [_this select 1]] call comspec_sse_fnc_iarpWorkshop"; WS_POS(14.75,21.75,4.55,1.05); };
+        class Adv: COMSPEC_SSE_RscButtonNav { idc = 94758; text = "$STR_COMSPEC_IARP_W_Adv"; tooltip = "$STR_COMSPEC_IARP_W_Adv_D"; onMouseEnter = "['help', ['Adv']] call comspec_sse_fnc_iarpWorkshop"; action = "['adv'] call comspec_sse_fnc_iarpWorkshop"; sizeEx = SSE_Q(SSE_GH * 0.7); WS_POS(1.3,20.45,5.9,0.9); };
+        class LKnow: COMSPEC_SSE_RscLabel { idc = 94799; text = "$STR_COMSPEC_IARP_W_Know"; WS_POS(1.3,19.3,6,0.9); };
+        class Know: COMSPEC_SSE_RscEdit { idc = 94735; tooltip = "$STR_COMSPEC_IARP_W_Know_D"; onMouseEnter = "['help', ['Know']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(7.4,19.25,10.8,1.4); style = 16; autocomplete = ""; maxChars = 4000; };
+        class LockKnow: COMSPEC_SSE_RscCheckBox { idc = 94771; tooltip = "$STR_COMSPEC_IARP_W_Lock_D"; onMouseEnter = "['help', ['Lock']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(18.4,19.3,0.9,0.9); };
+        class LUnlock: COMSPEC_SSE_RscLabel { idc = 94757; text = "$STR_COMSPEC_IARP_W_Unlock"; WS_POS(1.3,21.8,6,0.9); };
+        class Unlock: COMSPEC_SSE_RscCombo { idc = 94736; tooltip = "$STR_COMSPEC_IARP_W_Unlock_D"; onMouseEnter = "['help', ['Unlock']] call comspec_sse_fnc_iarpWorkshop"; onLBSelChanged = "['unlockWord'] call comspec_sse_fnc_iarpWorkshop"; WS_POS(7.4,21.75,5.3,1); };
+        class UnlockWord: COMSPEC_SSE_RscEdit { idc = 94737; tooltip = "$STR_COMSPEC_IARP_W_Unlock_D"; onMouseEnter = "['help', ['Unlock']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(12.9,21.75,5.3,1); autocomplete = ""; };
+        class LockUnlock: COMSPEC_SSE_RscCheckBox { idc = 94772; tooltip = "$STR_COMSPEC_IARP_W_Lock_D"; onMouseEnter = "['help', ['Lock']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(18.4,21.8,0.9,0.9); };
         class LStory: COMSPEC_SSE_RscLabel { text = "$STR_COMSPEC_IARP_W_Story"; WS_POS(20.2,2.25,5,0.9); };
         class Story: COMSPEC_SSE_RscEdit { idc = 94740; tooltip = "$STR_COMSPEC_IARP_W_Story_D"; onMouseEnter = "['help', ['Story']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(25.4,2.2,12.2,3.4); style = 16; autocomplete = ""; maxChars = 4000; };
         class LockStory: COMSPEC_SSE_RscCheckBox { idc = 94773; tooltip = "$STR_COMSPEC_IARP_W_Lock_D"; onMouseEnter = "['help', ['Lock']] call comspec_sse_fnc_iarpWorkshop"; WS_POS(37.8,2.25,0.9,0.9); };
@@ -103,7 +112,7 @@ class COMSPEC_SSE_IarpWorkshop {
         class Import: COMSPEC_SSE_RscButtonNav { idc = 94750; text = "$STR_COMSPEC_IARP_W_Import"; tooltip = "$STR_COMSPEC_IARP_W_ImportExport_D"; onMouseEnter = "['help', ['ImportExport']] call comspec_sse_fnc_iarpWorkshop"; action = "['import'] call comspec_sse_fnc_iarpWorkshop"; WS_POS(25.4,17.6,6,1); };
         class Export: COMSPEC_SSE_RscButtonNav { idc = 94751; text = "$STR_COMSPEC_IARP_W_Export"; tooltip = "$STR_COMSPEC_IARP_W_ImportExport_D"; onMouseEnter = "['help', ['ImportExport']] call comspec_sse_fnc_iarpWorkshop"; action = "['export'] call comspec_sse_fnc_iarpWorkshop"; WS_POS(31.6,17.6,7.1,1); };
         class Help: COMSPEC_SSE_RscStructuredText { idc = 94752; WS_POS(20.2,18.9,18.5,3.7); size = SSE_Q(SSE_GH * 0.78); };
-        // Réponses écrites par le maître du jeu, ce que l'IA peut évoquer, thèmes interdits (fn_iarpAnswersUi).
+        // Toutes les questions et réponses, ce que l'IA peut évoquer, thèmes interdits (fn_iarpAnswersUi).
         class Answers: COMSPEC_SSE_RscButtonNav { idc = 94756; text = "$STR_COMSPEC_IARP_W_Answers"; tooltip = "$STR_COMSPEC_IARP_W_Answers_D"; onMouseEnter = "['help', ['Answers']] call comspec_sse_fnc_iarpWorkshop"; action = "['answers'] call comspec_sse_fnc_iarpWorkshop"; WS_POS(1.3,22.9,17.9,1.2); };
         class Apply: COMSPEC_SSE_RscButton { idc = 94753; text = "$STR_COMSPEC_IARP_W_ApplyBtn"; tooltip = "$STR_COMSPEC_IARP_W_Apply_D"; onMouseEnter = "['help', ['Apply']] call comspec_sse_fnc_iarpWorkshop"; action = "['apply'] call comspec_sse_fnc_iarpWorkshop"; WS_POS(20.2,22.9,6,1.2); };
         class ApplyGen: COMSPEC_SSE_RscButtonZeus { idc = 94754; text = "$STR_COMSPEC_IARP_W_ApplyGenBtn"; tooltip = "$STR_COMSPEC_IARP_W_ApplyGen_D"; onMouseEnter = "['help', ['ApplyGen']] call comspec_sse_fnc_iarpWorkshop"; action = "['applyGen'] call comspec_sse_fnc_iarpWorkshop"; WS_POS(26.4,22.9,7.6,1.2); };

@@ -8,6 +8,14 @@ Players talk to AIs in free text (ACE interaction › **Talk to…**, or Ctrl+T)
 
 Golden rule: **an AI only talks about what it knows**. A passer-by with no knowledge never talks about weapons, armed groups, pickups, mines or caches: "No, I haven't seen anything like that.", "I don't know, I just got here."
 
+## To make an AI talk: write a question, write its answer
+
+1. Eden: unit attributes › **COMSPEC SSE · AI roleplay** › **Question**: what a player may ask it, in their own words. Zeus: right-click › **SSE · AI roleplay › AI profile › Question and answer…** (the same two boxes are also at the top of the **AI workshop**).
+2. **AI's answer**: what it answers (one line per possible answer; **+ Variable** or `{first}`, `{city}`, `{player}`… for words replaced in game).
+3. That's it: close wordings work too. Example: Question "Where is the village chief?", Answer "The chief is at the mosque, he'll be back tonight."; in game, "The village chief, where is he?" gets this answer.
+
+These two boxes are the first of "your own questions": more questions, an answer per situation or revealed intel are set in **All questions and answers…** (below). **Advanced options** (in the workshop) keeps **What it knows** (a secret, useful intel; formerly "Knowledge") and **When it tells** (once trusted, bribe, with the keyword, never; formerly "Unlock"): missions already made keep their values. "If ordered" is now **If given an order** (what it does at "Hands up!", "Follow me").
+
 ## What players can ask
 
 The **GUIDE** tab of the "Talk to" window lists everything, by theme, with clickable examples:
@@ -32,10 +40,11 @@ An AI remembers: asked "Do you have a phone?" twice, it says the same thing; "Sa
 
 | Context | Path |
 |---|---|
-| Eden | Unit attributes › **COMSPEC SSE · AI roleplay › AI RP profile › AI workshop… › Answers and limits…**, then **Confirm** and **Apply** in the workshop: saved in the mission |
-| Zeus, ZEN | Right-click one or more AIs › **SSE · AI roleplay › AI profile › AI answers…** (or **What she may bring up…** for the frame alone) |
+| Eden, one question | Unit attributes › **COMSPEC SSE · AI roleplay › Question** and **AI's answer**: saved in the mission |
+| Eden, all | Unit attributes › **COMSPEC SSE · AI roleplay › AI RP profile › AI workshop… › All questions and answers…**, then **Confirm** and **Apply** in the workshop: saved in the mission |
+| Zeus, ZEN | Right-click one or more AIs › **SSE · AI roleplay › AI profile › Question and answer…** (one question) or **All questions and answers…** (or **What she may bring up…** for the frame alone) |
 | Zeus, Area AI | Check the AIs › **Answers…** (see [ia_de_la_zone.en.md](ia_de_la_zone.en.md)) |
-| Zeus, AI workshop | **AI workshop** module or menu › **Answers and limits…** |
+| Zeus, AI workshop | **AI workshop** module or menu › **Question**, **AI's answer**, or **All questions and answers…** |
 
 ## The "AI answers" window
 
@@ -85,7 +94,7 @@ Missing fact: "…" (the preview flags it).
 ## Step by step: the baker and the lookout
 
 1. Eden, the baker's attributes › **AI workshop…**: Name "Nikos KARRAS", story "Job: baker".
-2. **Answers and limits…** › "Who are you?" › **My answer**: "I'm {first}, the baker. Everyone knows me here." (the first name through **Insert a variable**).
+2. **All questions and answers…** › "Who are you?" › **My answer**: "I'm {first}, the baker. Everyone knows me here." (the first name through **Insert a variable**).
 3. **Advanced options** › Situation **If afraid**: "I… I'm {first}! I bake bread, that's all!"
 4. "Have you seen armed men?" › **My answer**, Situation **If he agrees**: "Last night, three pickups heading north."; Then reveals **Precise intel**; Map marker "045 078 Abandoned farm"; Situation **If he refuses**: "I don't want trouble."
 5. **Add my own question**: name "Password", words that trigger it "password; mot de passe", answer "The falcon flies low."
