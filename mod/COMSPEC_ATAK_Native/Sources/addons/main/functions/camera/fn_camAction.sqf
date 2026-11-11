@@ -74,7 +74,8 @@ switch (_mode) do {
         // Liaison de la caméra au réseau : un ATAK du camp (le sien compris) à portée de son Wi-Fi.
         private _side = _a getVariable ["COMSPEC_ATAK_CamSide", ""];
         private _near = (allPlayers findIf { alive _x && {(_x distance _a) < _range} && {str side group _x isEqualTo _side} && {[_x] call comspec_atak_native_fnc_hasDevice} }) >= 0;
-        if (!_near) exitWith { ["LINK", "Hors liaison", [0.88, 0.64, 0.23, 1]] };
+        // Caméra d'infrastructure : câblée au réseau du site, pas besoin d'un ATAK à portée de son Wi-Fi.
+        if (!_near && {!(_a getVariable ["COMSPEC_ATAK_CamPublic", false])}) exitWith { ["LINK", "Hors liaison", [0.88, 0.64, 0.23, 1]] };
         private _v = ["video", _a] call _fn;
         if ((_v getOrDefault ["active", false]) && {!(_v getOrDefault ["ok", true])}) exitWith { ["LINK", "Hors réseau des relais", [0.88, 0.64, 0.23, 1]] };
         ["OK", "En ligne", [0.36, 0.78, 0.42, 1]]

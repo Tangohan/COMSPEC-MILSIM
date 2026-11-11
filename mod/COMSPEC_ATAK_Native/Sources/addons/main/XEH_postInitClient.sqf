@@ -230,6 +230,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 [{ ["offer"] call comspec_atak_native_fnc_setupWizard; }, [], 30] call comspec_atak_native_fnc_waitAndExec;
 // Case « RELAIS ATAK » pendant une émission ACRE2 (fn_relayTxBadge) : événements seulement, rien ne tourne hors émission.
 ["init"] call comspec_atak_native_fnc_relayTxBadge;
+// Chemin de la voix (fn_voicePath) : mêmes événements d'émission, pour l'app Wave Relay, la barre d'état et le TOC.
+["init"] call comspec_atak_native_fnc_voicePath;
 // Notification MPU à l'écran pendant l'alternat (fn_mpuHud) : événements seulement, une boucle de 0,25 s tant que quelqu'un émet.
 ["init"] call comspec_atak_native_fnc_mpuHud;
 // Messages des groupes de conversation (fn_meshGroups).
@@ -545,6 +547,8 @@ if (["on"] call comspec_atak_native_fnc_fireSupport) then { ["scan"] call comspe
 // Salle TOC : réponse du poste à une demande (téléphone du demandeur, fn_tocRoom).
 ["initClient"] call comspec_atak_native_fnc_tocRoom;
 ["initClient"] call comspec_atak_native_fnc_tocHall;
+// Salle TOC tenue (4.12.0) : retours des demandes, actions ACE « Poste TOC », diagnostic (fn_tocAccess).
+["initClient"] call comspec_atak_native_fnc_tocAccess;
 // Écrans TOC : version du mod du serveur contre celle de ce poste, une ligne au journal à la connexion (fn_tocConfig).
 ["initClient"] call comspec_atak_native_fnc_tocConfig;
 // Écran ou poste PC posé : il se règle tout seul (fn_tocAuto). Le serveur le fait ; serveur plus ancien ou sans le mod : ce poste.

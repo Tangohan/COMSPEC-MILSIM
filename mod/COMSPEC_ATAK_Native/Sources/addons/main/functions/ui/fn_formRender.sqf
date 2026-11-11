@@ -56,6 +56,8 @@
           code (facultatif) : clic sur la carte
       ["check", niveau, libellé, valeur, aide]   étape d'une chaîne (liaison) : pastille d'icône (niveau "ok" | "now" |
           "warn" | "ko" | "todo" | "off"), libellé à gauche, valeur à droite, aide en petit dessous ; hauteur au contenu
+      ["meter", titre, détail, pourcentage (-1 : sans jauge), [étiquettes], code, choisie]   ligne à jauge de qualité (app Wave Relay)
+      ["graph", modèle (fn_meshGraphView "model"), options, hauteur en rangées]   graphe du réseau dessiné dans le formulaire
     Composants partagés 3.1.0 (système de design, docs/ui/atak-design-system.md) :
       ["header", titre, sous-titre, [[libellé, code, principal]...], code retour]   en-tête d'app : grand titre, actions à
           droite, bouton « retour » quand un sous-écran est ouvert
@@ -1214,6 +1216,40 @@ private _renderRow = {
             private _ln = ["COMSPEC_RscText", [_lx, _y + pixelH * 2, _w - _lx + _pad * 0.5, pixelH]] call _mk;
             _ln ctrlSetBackgroundColor [1, 1, 1, 0.07];
             _y = _y + pixelH * 6;
+        };
+        case "meter": {
+            // Ligne à jauge (voisins du maillage, relais) : nom en gras, pourcentage et barre à droite, détail dessous, étiquettes
+            // (ce qui limite le lien) en ambre à droite du détail. Carte cliquable si un code est donné ; choisie : liseré d'accent.
+            _row params ["", ["_mTitle", ""], ["_mSub", ""], ["_mPct", 0], ["_mTags", []], ["_mCode", {}], ["_mSel", false]];
+            private _mCol = [(_th get "alert"), (_th get "warn"), (_th get "ok")] select (([0, 1] select (_mPct >= 30)) + ([0, 1] select (_mPct >= 60)));
+            private _mHex = [_hAL, _hWA, _hOK] select (([0, 1] select (_mPct >= 30)) + ([0, 1] select (_mPct >= 60)));
+            private _mH = _fs * 2.75;
+            private _mCard = ["COMSPEC_RscText", [_pad, _y, _w, _mH]] call _mk;
+            _mCard ctrlSetBackgroundColor ([(_th get "surface"), (_th get "surfaceHi")] select _mSel);
+            if (_mSel) then { (["COMSPEC_RscText", [_pad, _y, pixelW * 6, _mH]] call _mk) ctrlSetBackgroundColor _acc; };
+            private _mPw = _fs * 3.2 * pixelW / pixelH;
+            private _mBw = (_w * 0.26) min (_fs * 9 * pixelW / pixelH);
+            private _mT = ["COMSPEC_RscStructuredText", [_pad * 1.8, _y + _fs * 0.15, _w - _pad * 1.6, _fs * 1.3]] call _mk;
+            _mT ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='" + _hT + "'>%1</t><t align='right' font='COMSPEC_BarlowBold' color='%2'>%3</t>", _mTitle, _mHex,
+                [format ["%1 %%", _mPct], "-"] select (_mPct < 0)]) call comspec_atak_native_fnc_tr);
+            if (_mPct >= 0) then {
+                private _mBx = _pad + _w - _pad * 0.8 - _mPw - _mBw;
+                (["COMSPEC_RscText", [_mBx, _y + _fs * 0.62, _mBw, pixelH * 5]] call _mk) ctrlSetBackgroundColor (_th get "surface2");
+                (["COMSPEC_RscText", [_mBx, _y + _fs * 0.62, _mBw * ((_mPct max 2) min 100) / 100, pixelH * 5]] call _mk) ctrlSetBackgroundColor _mCol;
+            };
+            private _mS = ["COMSPEC_RscStructuredText", [_pad * 1.8, _y + _fs * 1.42, _w - _pad * 1.6, _fs * 1.2]] call _mk;
+            _mS ctrlSetStructuredText parseText ((format ["<t size='0.82' color='" + _hTD + "'>%1</t>%2", _mSub,
+                ["", format ["<t align='right' size='0.74' font='COMSPEC_BarlowBold' color='" + _hWA + "'>%1</t>", (_mTags apply { toUpper (_x call comspec_atak_native_fnc_tr) }) joinString " · "]] select (_mTags isNotEqualTo [])]) call comspec_atak_native_fnc_tr);
+            if (_mCode isNotEqualTo {}) then { [["COMSPEC_RscButtonInvisible", [_pad, _y, _w, _mH]] call _mk, _mCode] call _click; };
+            _y = _y + _mH + pixelH * 3;
+        };
+        case "graph": {
+            // Graphe du réseau (fn_meshGraphView "draw") : même mise en page et même dessin que la fenêtre de Zeus et le TOC.
+            _row params ["", ["_gModel", createHashMap], ["_gOpt", createHashMap], ["_gRows", 5]];
+            private _gH = _rowH * _gRows;
+            _gOpt set ["fs", _fs];
+            ["draw", [_d, _grp, [_pad, _y, _w, _gH], _gModel, _gOpt]] call comspec_atak_native_fnc_meshGraphView;
+            _y = _y + _gH + _pad / 2;
         };
         case "gap": { _y = _y + _pad; };
         case "person": {

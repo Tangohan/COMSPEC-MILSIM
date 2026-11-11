@@ -2,6 +2,9 @@
     Caméra en direct sur un écran TOC (demande de TTRD, 01/11) : affichage « CAMÉRA » (fn_tocScreen, vue CAM). L'écran
     montre en temps réel une caméra du camp choisie au téléphone (app Poste TOC) ou au menu ACE de l'écran : drone du
     camp (nacelle), caméra fixe (fn_camAction) ou caméra poitrine d'un porteur d'ATAK (comme la Live cam).
+    4.11.0, « le TOC sans téléphone » : caméra de casque de tout joueur du camp, même sans téléphone, si le réglage
+    « Caméra de casque sans téléphone » (comspec_atak_native_toc_headcam, coché par défaut) le permet ; image de
+    qualité fixe (256 px), la source n'ayant pas de liaison à mesurer. Genre "MAN" comme la caméra poitrine.
     Seul le choix circule en multijoueur : variable publique de l'écran COMSPEC_ATAK_TocCam = netId de la source
     (posée par le serveur, joueurs qui rejoignent compris). Chaque joueur crée lui-même sa caméra et sa cible de rendu
     (comspec_toccam_<n>, une par écran), seulement pour les écrans allumés qu'il regarde (fn_tocScreen ne lui passe
@@ -22,6 +25,8 @@ private _fn = comspec_atak_native_fnc_tocCam;
 private _resOf = {
     params ["_src"];
     if (_src isKindOf "Man" && {_src isEqualTo player}) exitWith { 512 };
+    // Caméra de casque d'un joueur sans téléphone : pas de liaison à mesurer, qualité fixe.
+    if (_src isKindOf "Man" && {_src getVariable ["COMSPEC_ATAK_TocHeadCam", false]}) exitWith { 256 };
     ((["eval", _src] call comspec_atak_native_fnc_feedLink) getOrDefault ["up", [0, 100]]) params [["_k", 0], ["_l", 100]];
     switch (true) do {
         case (_k <= 0): { 0 };
@@ -37,7 +42,15 @@ switch (_mode) do {
         private _out = [];
         { _out pushBack [format ["Drone · %1", getText (configOf _x >> "displayName")], netId _x, "UAV"]; } forEach (allUnitsUAV select { alive _x && {(side group _x) isEqualTo _side} && {!isNull driver _x || {!isNull gunner _x}} });
         { _out pushBack [format ["Caméra fixe · %1", _x getVariable ["COMSPEC_ATAK_CamName", "caméra"]], netId _x, "CAM"]; } forEach (["list"] call comspec_atak_native_fnc_camAction);
-        { _out pushBack [format ["Caméra poitrine · %1", [_x, true] call comspec_atak_native_fnc_unitCallsign], netId _x, "MAN"]; } forEach (allPlayers select { alive _x && {(side group _x) isEqualTo _side} && {[_x] call comspec_atak_native_fnc_hasDevice} && {["can", _x] call comspec_atak_native_fnc_camShare} });
+        private _chest = allPlayers select { alive _x && {(side group _x) isEqualTo _side} && {[_x] call comspec_atak_native_fnc_hasDevice} && {["can", _x] call comspec_atak_native_fnc_camShare} };
+        { _out pushBack [format ["Caméra poitrine · %1", [_x, true] call comspec_atak_native_fnc_unitCallsign], netId _x, "MAN"]; } forEach _chest;
+        // Caméra de casque des joueurs du camp sans téléphone (réglage du serveur ; un joueur peut la refuser :
+        // player setVariable ["COMSPEC_ATAK_TocHeadCamOff", true, true]).
+        if ((missionNamespace getVariable ["comspec_atak_native_toc_headcam", true]) isEqualTo true) then {
+            {
+                _out pushBack [format ["Caméra de casque · %1", [_x] call comspec_atak_native_fnc_tocDisplayName], netId _x, "MAN"];
+            } forEach (allPlayers select { alive _x && {(side group _x) isEqualTo _side} && {!(_x in _chest)} && {!(_x getVariable ["COMSPEC_ATAK_TocHeadCamOff", false])} && {!([_x] call comspec_atak_native_fnc_hasDevice)} });
+        };
         _out
     };
     case "set": {
@@ -122,7 +135,13 @@ switch (_mode) do {
                 _cam camCommit 0;
                 switch (_kind) do {
                     // Caméra poitrine, comme la Live cam (fn_livecamStart).
-                    case "MAN": { _cam attachTo [_src, [0, 0.22, 0.05], "spine3", true]; _cam setVectorDirAndUp [[0, 1, 0], [0, 0, 1]]; };
+                    case "MAN": {
+                        // Sans téléphone : caméra de casque (tête), si le réglage le permet toujours ; sinon caméra poitrine.
+                        private _head = !([_src] call comspec_atak_native_fnc_hasDevice) && {(missionNamespace getVariable ["comspec_atak_native_toc_headcam", true]) isEqualTo true};
+                        _src setVariable ["COMSPEC_ATAK_TocHeadCam", _head];
+                        if (_head) then { _cam attachTo [_src, [0, 0.14, 0.12], "head", true]; } else { _cam attachTo [_src, [0, 0.22, 0.05], "spine3", true]; };
+                        _cam setVectorDirAndUp [[0, 1, 0], [0, 0, 1]];
+                    };
                     // Nacelle : orientée chaque image par la boucle ci-dessous.
                     case "UAV": {
                         private _p0 = _src selectionPosition ["uavCameraGunnerPos", "Memory"];

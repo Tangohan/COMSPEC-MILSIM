@@ -50,8 +50,10 @@ final class AtakRealismeDefautTest extends TestCase
         self::assertSame('true', $this->defaultOf('mesh_body_mask'));
         // Exigerait un objet que personne n'a sans préparation de mission.
         self::assertSame('false', $this->defaultOf('mpu_require'));
-        // Exceptions : préparation de mission, Zeus ou mission, développeur, voix non testée en jeu.
-        foreach (['mesh_keys', 'hvt_trace', 'mesh_dev', 'mpu_voice', 'mesh_tfar_code', 'radio_cut'] as $off) {
+        // 4.8 : le maillage et la MPU5 marchent sans réglage, voix relayée comprise (demande du propriétaire).
+        self::assertSame('true', $this->defaultOf('mpu_voice'));
+        // Exceptions : préparation de mission, Zeus ou mission, développeur.
+        foreach (['mesh_keys', 'hvt_trace', 'mesh_dev', 'mesh_tfar_code', 'radio_cut'] as $off) {
             self::assertSame('false', $this->defaultOf($off), $off);
         }
     }
@@ -99,7 +101,12 @@ final class AtakRealismeDefautTest extends TestCase
         // Le réseau ne peut qu'améliorer le signal, jamais le retirer.
         $v = $this->read('functions/network/fn_mpuVoice.sqf');
         self::assertStringContainsString('if (_hops < 0 || {_lvl >= 3}) exitWith { [_px, _dbm] };', $v);
-        self::assertStringContainsString('[_px max ([0.7, 0.45] select (_lvl >= 2)), _dbm max ([-80, -95] select (_lvl >= 2))]', $v);
+        self::assertStringContainsString('[_px max (_q select 3), _dbm max (_q select 4)]', $v);
+        // 4.8 : chaque sortie de « sigMap » rend le signal d'origine ou le meilleur des deux, quelle que soit la priorité choisie.
+        $map = substr($v, (int) strpos($v, 'if (_act isEqualTo "sigMap") exitWith {'), 1400);
+        $map = substr($map, 0, (int) strpos($map, "\n};"));
+        preg_match_all('~exitWith \{ (\[[^}]*\]) \};~', $map, $outs);
+        self::assertSame(['[_px, _dbm]', '[_px, _dbm]', '[_px, _dbm]'], $outs[1]);
     }
 
     public function testRestoreAndChaining(): void

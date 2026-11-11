@@ -1,6 +1,6 @@
 /*
     Voix ACRE2 / TFAR relayée par le maillage MPU5 (passerelle radio sur IP, comme une vraie MPU5 reliée par câble audio
-    à la radio tactique) : réglage serveur comspec_atak_native_mpu_voice (désactivé par défaut), avec la liaison réaliste
+    à la radio tactique) : réglage serveur comspec_atak_native_mpu_voice (activé par défaut depuis la 4.8), avec la liaison réaliste
     (comspec_atak_native_mpu_real, fn_mpuLink). Aucune donnée ATAK ne passe par la radio : seule la voix passe par la MPU5.
     Condition : l'émetteur et le récepteur portent chacun une MPU5 allumée (batterie) à laquelle ils ont relié leur radio
     (« pont radio » : action ACE Téléphone ATAK > Radio de données, ou app Réseau), et leurs MPU5 sont dans le même
@@ -53,19 +53,24 @@
 params [["_act", ""], ["_arg", []]];
 // Chemin rapide : appelé par ACRE2 pour chaque signal reçu.
 if (_act isEqualTo "sigMap") exitWith {
-    _arg params ["_px", "_dbm", "_hops", "_lvl", "_grav"];
+    // 6e à 8e paramètres (4.8) : dégradation (0 aucune, 1 légère, 2 réaliste : les valeurs d'avant), seuil de coupure %, priorité de
+    // l'auditeur (0 le meilleur des deux, 1 radio classique d'abord : le maillage seulement si la radio porte mal, 2 maillage d'abord : comme 0 à l'oreille).
+    // Règle de sûreté inchangée : le réseau ne peut qu'améliorer le signal, jamais le retirer. Qualité : fn_voicePath "quality", la même que l'écran.
+    _arg params ["_px", "_dbm", "_hops", "_lvl", "_grav", ["_mode", 2], ["_cut", 0], ["_pol", 0]];
     if (_hops < 0 || {_lvl >= 3}) exitWith { [_px, _dbm] };
-    if (!_grav || {_lvl <= 0}) exitWith { [_px max ((1 - 0.04 * _hops) max 0.6), _dbm max (-60 - 3 * _hops)] };
-    [_px max ([0.7, 0.45] select (_lvl >= 2)), _dbm max ([-80, -95] select (_lvl >= 2))]
+    private _q = ["quality", [_hops, [0, _lvl] select _grav, _mode, 0, _cut]] call comspec_atak_native_fnc_voicePath;
+    if ((_q select 0) >= 4) exitWith { [_px, _dbm] };
+    if (_pol isEqualTo 1 && {_px >= 0.5}) exitWith { [_px, _dbm] };
+    [_px max (_q select 3), _dbm max (_q select 4)]
 };
 // Réglage « Au moins un relais dans la mission » (coché par défaut) : sans aucun relais en service pour mon camp (module « Poser un
 // relais », pylône, passerelle de véhicule, poste de commandement), la voix ne passe pas par le maillage, même entre deux MPU5 voisines
 // ni dans le maillage d'équipe du chef de groupe : la radio garde sa portée normale.
 private _relayOk = {
-    if !((missionNamespace getVariable ["comspec_atak_native_mpu_voice_needRelay", true]) isEqualTo true) exitWith { true };
+    if (!((missionNamespace getVariable ["comspec_atak_native_mpu_voice_needRelay", true]) isEqualTo true) && {!(["gateOn"] call comspec_atak_native_fnc_relayNet)}) exitWith { true };
     ((["list", [side group player]] call comspec_atak_native_fnc_relayNet) findIf { (_x select 3) in ["relay", "gw", "cp"] && {(_x select 6) isNotEqualTo false} }) >= 0
 };
-private _enabled = { (missionNamespace getVariable ["comspec_atak_native_mpu_voice", false]) && {call _relayOk} && {["voice"] call comspec_atak_native_fnc_radioGuard} && {["active"] call comspec_atak_native_fnc_mpuLink} };
+private _enabled = { (missionNamespace getVariable ["comspec_atak_native_mpu_voice", true]) && {call _relayOk} && {["voice"] call comspec_atak_native_fnc_radioGuard} && {["active"] call comspec_atak_native_fnc_mpuLink} };
 private _read = ["read"] call comspec_atak_native_fnc_radioGuard;
 private _acre = _read && {!isNil "acre_api_fnc_getCurrentRadioList"};
 private _tfar = _read && {!isNil "TFAR_fnc_activeSwRadio"};
@@ -257,10 +262,10 @@ switch (_act) do {
         [_u, ["voice", _u] call comspec_atak_native_fnc_meshRead] call _linked
     };
     case "summary": {
-        // Voix par le réseau, en clair, pour l'app Wave Relay (MON NŒUD, VOIX) : jamais un écran muet.
+        // Voix par le réseau, en clair, pour l'app Wave Relay (ÉTAT, VOIX) : jamais un écran muet.
         // -> [code ("off" | "cut" | "noreal" | "nobridge" | "wait" | "on"), état court, aide]
-        if !((missionNamespace getVariable ["comspec_atak_native_mpu_voice", false]) isEqualTo true) exitWith {
-            ["off", "désactivée (réglage admin)", "Pour l'activer, un admin ou un Zeus coche « Voix relayée par le maillage » dans Échap > Réalisme (section Maillage), puis Appliquer au serveur ; ou dans Réglages d'addons > COMSPEC > ATAK · Radio de données (MPU5). Ensuite, chaque joueur relie sa radio à sa MPU5 : onglet VOIX, ou menu ACE Téléphone ATAK > Radio de données."]
+        if !((missionNamespace getVariable ["comspec_atak_native_mpu_voice", true]) isEqualTo true) exitWith {
+            ["off", "coupée par un admin", "Active par défaut, coupée sur ce serveur. Pour la remettre : un admin ou un Zeus coche « Voix relayée par le maillage » dans Échap > Réalisme (section Maillage), puis Appliquer au serveur."]
         };
         if !(["voice"] call comspec_atak_native_fnc_radioGuard) exitWith { ["cut", "coupée", ["text"] call comspec_atak_native_fnc_radioGuard] };
         if !(["active"] call comspec_atak_native_fnc_mpuLink) exitWith {
@@ -408,7 +413,11 @@ switch (_act) do {
         (missionNamespace getVariable ["COMSPEC_ATAK_VoicePairMap", []]) params [["_oldPairs", createHashMap], ["_oldAcks", createHashMap]];
         {
             private _who = (_oldPairs getOrDefault [_x, []]) param [2, objNull];
-            if (isPlayer _who) then { ["comspec_atak_native_meshVoiceAck", [_x, _y], _who] call CBA_fnc_targetEvent; };
+            if (isPlayer _who) then {
+                ["comspec_atak_native_meshVoiceAck", [_x, _y], _who] call CBA_fnc_targetEvent;
+                // Journal de l'app Wave Relay : émission reçue par le maillage, avec sa qualité (fn_voicePath "rx").
+                ["rx", [_who, _y, (_oldPairs getOrDefault [_x, []]) param [1, 0]]] call comspec_atak_native_fnc_voicePath;
+            };
         } forEach _oldAcks;
         missionNamespace setVariable ["COMSPEC_ATAK_VoicePairMap", [_pairs, createHashMap]];
         missionNamespace setVariable ["COMSPEC_ATAK_VoiceRx", [_pub param [1, ""], ""] select ((_pub param [0, ""]) isNotEqualTo "acre")];

@@ -679,6 +679,15 @@ switch (_act) do {
         { if ((_x select 2) isEqualTo 2 && {!isNull (_x select 0)}) then { _gws pushBack _forEachIndex; }; } forEach _nodes;
         private _mode = "relay";
         private _lead = leader group player;
+        // Relais exigé (fn_relayNet "gateOn", coché par défaut) : sans passerelle en service dans le graphe, aucun réseau. Ni maillage d'équipe
+        // autour du chef de groupe, ni maillage autonome : la raison exacte vient de fn_relayNet "gate" (aucun relais, détruit, éteint, brouillé).
+        if (_gws isEqualTo [] && {["gateOn"] call comspec_atak_native_fnc_relayNet}) exitWith {
+            private _gate = ["gate", ["", true]] call comspec_atak_native_fnc_relayNet;
+            _res set ["why", [_gate select 2, "Aucun relais en service à portée"] select ((_gate select 2) isEqualTo "")];
+            _res set ["fix", _gate select 3];
+            _res set ["gate", _gate select 1];
+            _res
+        };
         if (_gws isEqualTo []) then {
             private _li = _nodes findIf { (_x select 1) isEqualTo _lead && {(_x select 3) isEqualTo _chan} };
             if (_lead isNotEqualTo player && {_li >= 0}) then { _gws = [_li]; _mode = "lead"; } else { _gws = [_me]; _mode = "self"; };
