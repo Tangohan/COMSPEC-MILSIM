@@ -1,3 +1,29 @@
+[h1]COMSPEC ATAK 4.4.1 Washington — écrans TOC visibles, PC du poste lisible, carte Classique fidèle / TOC screens that show up, readable TOC laptop, faithful Classic map[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Écrans TOC posés[/b] : les nouveaux écrans TOC (murs d'images, écrans 98 et 65 pouces, horloge, plaque de nom) apparaissent dans Eden et Zeus, et c'est bien l'écran choisi qui est posé.
+[*] [b]Écrans d'autres objets[/b] : l'écran blanc de salle de briefing, les écrans sur trépied, l'ordinateur multi-écran et l'écran tactique servent d'écran TOC (menu ACE « Utiliser comme écran TOC »).
+[*] [b]Écrans TOC affichés[/b] : tous les affichages se dessinent, en texte lisible, et seulement quand vous êtes près de l'écran et face à lui. Réglage « Distance d'affichage des écrans TOC » (25 m par défaut).
+[*] [b]PC du poste TOC[/b] : boutons rangés et lisibles, vue satellite visible la nuit, zoom à la molette et image qui se déplace à la souris.
+[*] [b]Carte Classique[/b] : le fond CLASSIQUE est la carte du jeu, comme avec la touche M, et le premier de la liste.
+[*] [b]Radio de données (MPU5)[/b] : la page est plus claire, avec l'état en haut et les réglages rangés par thème.
+[*] [b]Licence[/b] : un bouton « Ouvrir la note de service » apparaît partout où la licence n'est pas encore acceptée.
+[*] [b]Centre Zeus[/b] : chaque joueur affiche sa vraie version du mod, comparée à celle du serveur.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Placed TOC screens[/b]: the new TOC screens (video walls, 98 and 65 inch screens, clock, name plate) show up in Eden and Zeus, and the screen you picked is the one placed.
+[*] [b]Screens from other objects[/b]: the white briefing room screen, tripod screens, the multi-screen computer and the tactical screen work as TOC screens (ACE menu "Use as a TOC screen").
+[*] [b]Displayed TOC screens[/b]: every display is drawn, with readable text, and only when you are close to the screen and facing it. Setting "TOC screen display distance" (25 m by default).
+[*] [b]TOC post laptop[/b]: tidy, readable buttons, a satellite view you can see at night, mouse wheel zoom and an image you drag with the mouse.
+[*] [b]Classic map[/b]: the CLASSIC background is the game map, as with the M key, and first in the list.
+[*] [b]Data radio (MPU5)[/b]: the page is clearer, with the status at the top and settings grouped by theme.
+[*] [b]Licence[/b]: an "Open the service note" button shows wherever the licence is not accepted yet.
+[*] [b]Zeus Centre[/b]: each player shows their real mod version, compared to the server's.
+[/list]
+
 [h1]COMSPEC ATAK 4.4.0 Washington — salle TOC en jeu, sang sur l'écran, carte Classique, traçage d'un numéro / TOC room in game, blood on the screen, Classic map, number tracing[/h1]
 
 [h2]Français[/h2]

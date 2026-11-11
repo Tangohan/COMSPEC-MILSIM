@@ -13,7 +13,7 @@
     en carte (fn_tocScreen) et dans la sauvegarde de la salle (fn_tocPersist). Réglages de style gardés dans le profil,
     comme ceux du téléphone (COMSPEC_ATAK_DrawColor, DrawWidth, DrawArrow, DrawClosed, DrawRoads ; palette des marqueurs).
     La carte du PC sert de carte aux outils du téléphone le temps qu'il est ouvert (fn_mapCtrl, COMSPEC_ATAK_MapCtrlOverride).
-    Modes : ["build", [display, x, y, w]] | ["tool", outil] | ["down", [pos, ctrl]] | ["move", pos] | ["up", pos]
+    Modes : ["build"] (réglages dans le registre du PC, posés par sa grille) | ["tool", outil] | ["down", [pos, ctrl]] | ["move", pos] | ["up", pos]
             | ["left", pos] | ["right", pos] -> vrai si l'outil a pris le clic | ["draw", carte] | ["act", clé] | ["unload"]
 */
 params [["_mode", "draw"], ["_a", []]];
@@ -30,101 +30,53 @@ private _planSrv = { params ["_op", "_args"]; ["comspec_atak_native_planSrv", [p
 private _cols = [["Rouge", "ColorRed"], ["Orange", "ColorOrange"], ["Jaune", "ColorYellow"], ["Vert", "ColorGreen"], ["Bleu", "ColorBlue"], ["Rose", "ColorPink"], ["Noir", "ColorBlack"], ["Blanc", "ColorWhite"]];
 switch (_mode) do {
     case "build": {
-        _a params ["_d", "_x0", "_y0", "_w"];
-        private _H = safeZoneH; private _W = safeZoneW;
-        private _h = _H * 0.03; private _g = _W * 0.003;
-        private _mk = {
-            params ["_cls", "_pos", ["_key", ""]];
-            private _c = _d ctrlCreate [_cls, -1];
-            _c ctrlSetPosition _pos; _c ctrlCommit 0;
-            if (_key isNotEqualTo "") then { _ui set [_key, _c]; };
-            _c
-        };
-        private _btn = {
-            params ["_key", "_x1", "_w1", "_txt", "_tip", ["_row", 0]];
-            private _c = ["COMSPEC_RscButton", [_x1, _y0 + _row * (_h + _g), _w1, _h], _key] call _mk;
-            _c ctrlSetText ((_txt) call comspec_atak_native_fnc_tr);
-            _c ctrlSetFontHeight (_H * 0.016);
-            _c ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
-            _c ctrlAddEventHandler ["ButtonClick", compile format ["['act', %1] call comspec_atak_native_fnc_tocDraw;", str _key]];
-            _c
-        };
-        private _bg = ["COMSPEC_RscText", [_x0 - _g, _y0 - _g, _w + 2 * _g, 2 * _h + 3 * _g], "dBg"] call _mk;
-        _bg ctrlSetBackgroundColor [0.02, 0.025, 0.022, 0.85];
-        // Rangée 1 : outils de dessin (un seul actif, avec MESURE et MARQUEUR de la barre du haut).
-        private _bw = _W * 0.052;
-        {
-            _x params ["_k", "_t", "_tip"];
-            [_k, _x0 + _forEachIndex * (_bw + _g), _bw, _t, _tip] call _btn;
-        } forEach [
-            ["toolLINE", "TRAIT", "Clic A, Ctrl+clic pour chaque étape, clic B : trait partagé, comme l'outil TRAIT de l'ATAK"],
-            ["toolDRAW", "DESSIN", "Clic gauche maintenu : dessin libre partagé, comme l'ATAK"],
-            ["toolPLAN", "PLAN", "Graphismes de l'app Plan (zones, lignes de phase, axes…) : clics, puis clic droit ou TERMINER"],
-            ["toolERASE", "EFFACER", "Clic sur un marqueur, un trait ou un élément du plan : supprimé pour tous"],
-            ["dUndo", "ANNULER", "Efface mon dernier trait (TRAIT, DESSIN) ou mon dernier élément du plan (PLAN)"]
-        ];
-        // Rangée 1, suite : réglages de l'outil choisi (montrés selon l'outil).
-        private _sx = _x0 + 5 * (_bw + _g) + _g * 3;
-        private _cw = _W * 0.07;
-        private _c1 = ["COMSPEC_RscCombo", [_sx, _y0, _cw, _h], "dColor"] call _mk;
+        // Réglages des outils (combos, champs) créés dans le registre du PC (fn_tocLaptop « mk ») et posés par sa grille,
+        // sous la carte ; les boutons (TRAIT, DESSIN, PLAN, EFFACER, ANNULER, FLÈCHE…) viennent de la table du PC.
+        // En 4.4.0 cette barre posait ses contrôles elle-même avec « _h = _H * 0.03 » : le SQF ne distingue pas _h de _H,
+        // la hauteur d'écran devenait 0,03 et les libellés tombaient à un demi-pixel (barre sombre, boutons sans texte),
+        // et « _W » écrasait la largeur reçue (fond sous le panneau de droite).
+        private _mkc = { params ["_cls", "_key", ["_tip", ""]]; private _c = ["mk", [_cls, _key]] call comspec_atak_native_fnc_tocLaptop; if (_tip isNotEqualTo "") then { ["tip", [_c, _tip]] call comspec_atak_native_fnc_tocLaptop; }; _c };
+        private _c1 = ["COMSPEC_RscCombo", "dColor", "Couleur du trait, vue par tous les joueurs"] call _mkc;
         { private _i = _c1 lbAdd ((_x select 0) call comspec_atak_native_fnc_tr); _c1 lbSetData [_i, _x select 1]; } forEach _cols;
         _c1 lbSetCurSel ((_cols findIf { (_x select 1) isEqualTo (profileNamespace getVariable ["COMSPEC_ATAK_DrawColor", "ColorRed"]) }) max 0);
-        _c1 ctrlSetTooltip (("Couleur du trait, vue par tous les joueurs") call comspec_atak_native_fnc_tr);
         _c1 ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; profileNamespace setVariable ["COMSPEC_ATAK_DrawColor", _c lbData _i]; [] call comspec_atak_native_fnc_saveProfile; }];
-        private _c2 = ["COMSPEC_RscCombo", [_sx + _cw + _g, _y0, _cw * 0.8, _h], "dWidth"] call _mk;
+        private _c2 = ["COMSPEC_RscCombo", "dWidth", "Épaisseur du trait, vue par tous les joueurs"] call _mkc;
         { private _i = _c2 lbAdd ((_x select 0) call comspec_atak_native_fnc_tr); _c2 lbSetValue [_i, _x select 1]; } forEach [["Fin", 1], ["Moyen", 2], ["Épais", 3]];
         _c2 lbSetCurSel (((profileNamespace getVariable ["COMSPEC_ATAK_DrawWidth", 2]) - 1) max 0 min 2);
-        _c2 ctrlSetTooltip (("Épaisseur du trait, vue par tous les joueurs") call comspec_atak_native_fnc_tr);
         _c2 ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; profileNamespace setVariable ["COMSPEC_ATAK_DrawWidth", _c lbValue _i]; [] call comspec_atak_native_fnc_saveProfile; }];
-        private _tx = _sx + _cw * 1.8 + 2 * _g;
-        { _x params ["_k", "_t", "_tip"]; [_k, _tx + _forEachIndex * (_bw + _g), _bw, _t, _tip] call _btn; } forEach [
-            ["dArrow", "FLÈCHE", "Pointe de flèche au bout du trait, dans le sens du tracé"],
-            ["dRoads", "ROUTES", "Le trait suit les routes entre les points (convoi, patrouille)"],
-            ["dClosed", "FERMÉ", "Le dessin libre revient à son point de départ (zone)"],
-            ["dClear", "EFF. MES TRAITS", "Efface tous mes traits et dessins"]
-        ];
-        // Plan : graphisme, texte, terminer.
-        private _pk = ["COMSPEC_RscCombo", [_sx, _y0, _cw * 2.2, _h], "dKind"] call _mk;
+        // Plan : graphisme, texte (TERMINER et ABANDONNER : table du PC).
+        private _pk = ["COMSPEC_RscCombo", "dKind", "Graphisme du plan : zone (polygone, 2 clics = rectangle), ligne, point ou direction"] call _mkc;
         {
             _x params ["_cat", "_lbl", "_keys"];
             { private _k = (_cat get "kinds") getOrDefault [_x, []]; if ((count _k) >= 3) then { private _i = _pk lbAdd ((format ["%1 · %2", _lbl, _k select 2]) call comspec_atak_native_fnc_tr); _pk lbSetData [_i, _x]; }; } forEach _keys;
         } forEach ((_cat get "cats") apply { [_cat, _x select 1, _x select 2] });
         _pk lbSetCurSel 0;
-        _pk ctrlSetTooltip (("Graphisme du plan : zone (polygone, 2 clics = rectangle), ligne, point ou direction") call comspec_atak_native_fnc_tr);
-        private _pt = ["COMSPEC_RscEdit", [_sx + _cw * 2.2 + _g, _y0, _cw * 1.1, _h], "dPlanTxt"] call _mk;
-        _pt ctrlSetTooltip (("Texte du graphisme (vide : celui du type). Exemple : OBJ RAVEN, PL BLUE") call comspec_atak_native_fnc_tr);
-        ["dPlanEnd", _sx + _cw * 3.3 + 2 * _g, _bw, "TERMINER", "Pose le graphisme en cours (aussi : clic droit)"] call _btn;
-        ["dPlanCancel", _sx + _cw * 3.3 + 3 * _g + _bw, _bw, "ABANDONNER", "Abandonne le graphisme en cours"] call _btn;
-        // Rangée 2 : palette des marqueurs du téléphone (camp, type, couleur, texte, durée, canal).
+        ["COMSPEC_RscEdit", "dPlanTxt", "Texte du graphisme (vide : celui du type). Exemple : OBJ RAVEN, PL BLUE"] call _mkc;
+        // Palette des marqueurs du téléphone (camp, type, couleur, texte, durée, canal).
         ([] call comspec_atak_native_fnc_markerPaletteData) params ["_affs", "_typesBy"];
-        private _y2 = _y0 + _h + _g;
-        private _ma = ["COMSPEC_RscCombo", [_x0, _y2, _cw, _h], "mAff"] call _mk;
+        private _ma = ["COMSPEC_RscCombo", "mAff", "Camp du marqueur, comme la palette de l'ATAK"] call _mkc;
         { private _i = _ma lbAdd ((_x select 1) call comspec_atak_native_fnc_tr); _ma lbSetData [_i, _x select 0]; } forEach _affs;
         _ma lbSetCurSel ((_affs findIf { (_x select 0) isEqualTo (_s getOrDefault ["markerAff", "o"]) }) max 0);
         _ma ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap])) set ["markerAff", _c lbData _i]; ["types"] call comspec_atak_native_fnc_tocDraw; }];
-        private _mt = ["COMSPEC_RscCombo", [_x0 + _cw + _g, _y2, _cw * 1.6, _h], "mType"] call _mk;
+        private _mt = ["COMSPEC_RscCombo", "mType", "Type du marqueur"] call _mkc;
         _mt ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap])) set ["markerType", _c lbData _i]; }];
-        private _mc = ["COMSPEC_RscCombo", [_x0 + _cw * 2.6 + 2 * _g, _y2, _cw, _h], "mColor"] call _mk;
+        private _mc = ["COMSPEC_RscCombo", "mColor", "Couleur du marqueur"] call _mkc;
         { private _i = _mc lbAdd ((_x select 0) call comspec_atak_native_fnc_tr); _mc lbSetData [_i, _x select 1]; } forEach ([["Couleur du camp", "AUTO"]] + _cols);
         _mc lbSetCurSel 0;
         _mc ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap])) set ["markerColor", _c lbData _i]; }];
-        private _mx = ["COMSPEC_RscEdit", [_x0 + _cw * 3.6 + 3 * _g, _y2, _cw * 1.3, _h], "mText"] call _mk;
-        _mx ctrlSetTooltip (("Nom du marqueur (vide : nom automatique, comme l'ATAK). Exemple : CP NORD") call comspec_atak_native_fnc_tr);
-        private _md = ["COMSPEC_RscCombo", [_x0 + _cw * 4.9 + 4 * _g, _y2, _cw, _h], "mTtl"] call _mk;
+        ["COMSPEC_RscEdit", "mText", "Nom du marqueur (vide : nom automatique, comme l'ATAK). Exemple : CP NORD"] call _mkc;
+        private _md = ["COMSPEC_RscCombo", "mTtl", "Durée du marqueur : effacé pour tous à l'échéance, comme sur l'ATAK"] call _mkc;
         { private _i = _md lbAdd ((_x select 0) call comspec_atak_native_fnc_tr); _md lbSetValue [_i, _x select 1]; } forEach [["Permanent", 0], ["15 min", 15], ["30 min", 30], ["1 h", 60], ["2 h", 120]];
         _md lbSetCurSel ((([0, 15, 30, 60, 120] find (profileNamespace getVariable ["COMSPEC_ATAK_MarkerTtl", 0])) max 0));
-        _md ctrlSetTooltip (("Durée du marqueur : effacé pour tous à l'échéance, comme sur l'ATAK") call comspec_atak_native_fnc_tr);
         _md ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; profileNamespace setVariable ["COMSPEC_ATAK_MarkerTtl", _c lbValue _i]; [] call comspec_atak_native_fnc_saveProfile; }];
-        private _mn = ["COMSPEC_RscCombo", [_x0 + _cw * 5.9 + 5 * _g, _y2, _cw * 1.1, _h], "mChan"] call _mk;
+        private _mn = ["COMSPEC_RscCombo", "mChan", "Canal des marqueurs et des traits (qui les voit), comme la palette de l'ATAK"] call _mkc;
         for "_i" from 0 to 5 do { private _j = _mn lbAdd ((["channelName", _i] call comspec_atak_native_fnc_markerPlace) call comspec_atak_native_fnc_tr); _mn lbSetValue [_j, _i]; };
         _mn lbSetCurSel ((["channel"] call comspec_atak_native_fnc_markerPlace) max 0 min 5);
-        _mn ctrlSetTooltip (("Canal des marqueurs et des traits (qui les voit), comme la palette de l'ATAK") call comspec_atak_native_fnc_tr);
         _mn ctrlAddEventHandler ["LBSelChanged", { params ["_c", "_i"]; ["setChannel", _c lbValue _i] call comspec_atak_native_fnc_markerPlace; }];
         ["types"] call _fn;
         // La carte du PC sert de carte aux outils du téléphone tant que le PC est ouvert.
         _st set ["mapModeWas", _s getOrDefault ["mapMode", "SELECT"]];
         uiNamespace setVariable ["COMSPEC_ATAK_MapCtrlOverride", _ui getOrDefault ["map", controlNull]];
-        ["show"] call _fn;
     };
     case "types": {
         private _mt = _ui getOrDefault ["mType", controlNull];
@@ -137,13 +89,7 @@ switch (_mode) do {
         if ((count _l) > 0) then { _s set ["markerType", (_l select ((lbCurSel _mt) max 0)) select 0]; };
     };
     case "show": {
-        // Réglages montrés selon l'outil ; outil allumé en vert.
-        private _draw = _tool in ["LINE", "DRAW"];
-        { (_ui getOrDefault [_x, controlNull]) ctrlShow _draw; } forEach ["dColor", "dWidth", "dArrow", "dClear"];
-        (_ui getOrDefault ["dRoads", controlNull]) ctrlShow (_tool isEqualTo "LINE");
-        (_ui getOrDefault ["dClosed", controlNull]) ctrlShow (_tool isEqualTo "DRAW");
-        { (_ui getOrDefault [_x, controlNull]) ctrlShow (_tool isEqualTo "PLAN"); } forEach ["dKind", "dPlanTxt", "dPlanEnd", "dPlanCancel"];
-        { (_ui getOrDefault [_x, controlNull]) ctrlShow (_tool isEqualTo "MARKER"); } forEach ["mAff", "mType", "mColor", "mText", "mTtl", "mChan"];
+        // Outil allumé en vert ; ses réglages sont montrés par la mise en page du PC (fn_tocLaptop « layout »).
         private _on = [0.18, 0.38, 0.21, 1]; private _off = [0.07, 0.085, 0.075, 1];
         { (_ui getOrDefault ["tool" + _x, controlNull]) ctrlSetBackgroundColor ([_off, _on] select (_x isEqualTo _tool)); } forEach ["LINE", "DRAW", "PLAN", "ERASE"];
         { (_ui getOrDefault [_x select 0, controlNull]) ctrlSetBackgroundColor ([_off, _on] select (profileNamespace getVariable [_x select 1, false])); } forEach [["dArrow", "COMSPEC_ATAK_DrawArrow"], ["dRoads", "COMSPEC_ATAK_DrawRoads"], ["dClosed", "COMSPEC_ATAK_DrawClosed"]];

@@ -4,7 +4,9 @@
 //   milieu  x 15.6 .. 29.2  les réglages des IA cochées, en quatre onglets (Identité, Papiers, Comportement, Camp)
 //   droite  x 29.5 .. 39.7  « Ce que verra le joueur » : le vrai papier rendu (recto / verso) et ce qu'il dira au contrôle
 //   bas     y 23.2 .. 25    une ligne d'état, « Mémoire de la carte… », « Appliquer à tout le groupe », « Appliquer »
-// Deux volets s'ouvrent par-dessus (Filtres, Mémoire de la carte) ; la visite guidée est dans coach.hpp.
+// Trois volets s'ouvrent par-dessus, un à la fois, sur un voile (Importer depuis Athena, Filtres, Mémoire de la carte) ;
+// la visite guidée est dans coach.hpp. Chaque idc a un propriétaire dans le registre de fn_editorAi (_OWN) : seul ce qui
+// appartient à l'état affiché est montré.
 // Textes : stringtable.xml de l'addon (STR_COMSPEC_SSE_AZ_*, anciennes clés STR_COMSPEC_SSE_ED_* gardées).
 // Taille de texte : jamais sous AZ_TXT_MIN (aizone_styles.hpp). Largeurs comptées caractère par caractère (RobotoCondensed)
 // avec 6 % de marge, en français et en anglais : tests/Unit/SseAiZoneWindowAssetTest.php. En jeu, fn_editorAi réduit au
@@ -41,9 +43,8 @@ class AzList: COMSPEC_SSE_AzList {
 // État vide : un vrai panneau d'aide avec les deux façons de remplir la liste.
 class AzEmptyBg: COMSPEC_SSE_EdText { idc = 95018; colorBackground[] = AZ_FIELD; ED_POS(0.3,6.65,15.0,13.0); };
 class AzEmptyTitle: COMSPEC_SSE_AzHeading { idc = 95019; style = 2; ED_POS(1.0,9.2,13.6,1.1); };
+// Le texte renvoie aux boutons « Détecter autour » et « Sélection Zeus » du haut (pas de seconde copie des boutons).
 class AzEmptyText: COMSPEC_SSE_AzHelp { idc = 95020; size = SSE_Q(SSE_GH * AZ_TXT_BODY); ED_POS(1.0,10.5,13.6,3.7); class Attributes { font = "RobotoCondensed"; color = "#9fb0a8"; align = "center"; shadow = 0; }; };
-class AzEmptyScan: COMSPEC_SSE_AzButton { idc = 95021; text = "$STR_COMSPEC_SSE_ED_Around"; tooltip = "$STR_COMSPEC_SSE_ED_Around_D"; ED_POS(1.6,14.5,5.9,1.1); action = "['scan'] call comspec_sse_fnc_editorAi"; };
-class AzEmptyZeus: COMSPEC_SSE_AzButton { idc = 95022; text = "$STR_COMSPEC_SSE_ED_ZeusSel"; tooltip = "$STR_COMSPEC_SSE_ED_ZeusSel_D"; ED_POS(8.1,14.5,5.9,1.1); action = "['scanZeus'] call comspec_sse_fnc_editorAi"; };
 class AzCheckAll: COMSPEC_SSE_AzButton { idc = 95023; text = "$STR_COMSPEC_SSE_ED_CheckAll"; tooltip = "$STR_COMSPEC_SSE_ED_CheckAll_D"; ED_POS(0.3,19.85,4.6,1.1); action = "['checkAll'] call comspec_sse_fnc_editorAi"; };
 class AzCheckNone: COMSPEC_SSE_AzButton { idc = 95024; text = "$STR_COMSPEC_SSE_ED_CheckNone"; tooltip = "$STR_COMSPEC_SSE_AZ_CheckNone_D"; ED_POS(5.05,19.85,3.9,1.1); action = "['checkNone'] call comspec_sse_fnc_editorAi"; };
 class AzChecked: COMSPEC_SSE_AzText { idc = 95025; style = 1; colorText[] = ED_GREEN; tooltip = "$STR_COMSPEC_SSE_AZ_Checked_D"; ED_POS(9.1,19.9,6.2,1.0); };
@@ -69,13 +70,8 @@ class AzKindHelp: COMSPEC_SSE_AzHelp { idc = 95105; tooltip = "$STR_COMSPEC_SSE_
 class AzCtryLabel: COMSPEC_SSE_AzText { idc = 95106; text = "$STR_COMSPEC_SSE_AZ_CtryLabel"; tooltip = "$STR_COMSPEC_SSE_AZ_Ctry_D"; ED_POS(15.6,13.35,13.6,0.85); };
 class AzCtry: COMSPEC_SSE_AzCombo { idc = 95107; tooltip = "$STR_COMSPEC_SSE_AZ_Ctry_D"; ED_POS(15.6,14.2,13.6,1.1); onLBSelChanged = "['changed'] call comspec_sse_fnc_editorAi"; };
 class AzCtryHelp: COMSPEC_SSE_AzHelp { idc = 95108; text = "$STR_COMSPEC_SSE_AZ_CtryHelp"; tooltip = "$STR_COMSPEC_SSE_AZ_Ctry_D"; ED_POS(15.6,15.35,13.6,1.75); };
-// Volet repliable « Importer depuis Athena » : état des profils, recherche, Actualiser.
+// Bouton du volet « Importer depuis Athena » (le volet lui-même est plus bas, avec les autres volets).
 class AzFold: COMSPEC_SSE_AzButton { idc = 95109; style = 0; tooltip = "$STR_COMSPEC_SSE_ED_ProfStatus_D"; ED_POS(15.6,17.3,13.6,1.1); action = "['fold'] call comspec_sse_fnc_editorAi"; };
-class AzAthStatus: COMSPEC_SSE_AzHelp { idc = 95110; tooltip = "$STR_COMSPEC_SSE_ED_ProfStatus_D"; ED_POS(15.6,18.55,13.6,2.55); };
-class AzAthSearchBg: COMSPEC_SSE_EdText { idc = 95113; colorBackground[] = AZ_FIELD; ED_POS(15.6,21.3,9.1,1.1); };
-class AzAthSearchHint: COMSPEC_SSE_AzMuted { idc = 95114; text = "$STR_COMSPEC_SSE_AZ_ProfHint"; ED_POS(15.75,21.3,8.8,1.1); };
-class AzAthSearch: COMSPEC_SSE_AzEditClear { idc = 95111; tooltip = "$STR_COMSPEC_SSE_ED_ProfSearch_D"; ED_POS(15.6,21.3,9.1,1.1); onKeyUp = "['profFilter'] call comspec_sse_fnc_editorAi"; };
-class AzAthRefresh: COMSPEC_SSE_AzButton { idc = 95112; text = "$STR_COMSPEC_SSE_ED_Refresh"; tooltip = "$STR_COMSPEC_SSE_ED_Refresh_D"; ED_POS(24.85,21.3,4.35,1.1); action = "['refresh'] call comspec_sse_fnc_editorAi"; };
 
 // --- onglet Papiers (y 5.55 .. 22.4)
 class AzCarryLabel: COMSPEC_SSE_AzText { idc = 95200; text = "$STR_COMSPEC_SSE_AZ_CarryLabel"; tooltip = "$STR_COMSPEC_SSE_ED_IdentityHelp_D"; ED_POS(15.6,5.55,13.6,0.85); };
@@ -137,6 +133,19 @@ class AzStatus: COMSPEC_SSE_AzHelp { idc = 95601; size = SSE_Q(SSE_GH * 0.8); to
 class AzMemory: COMSPEC_SSE_AzButton { idc = 95602; text = "$STR_COMSPEC_SSE_AZ_Memory"; tooltip = "$STR_COMSPEC_SSE_AZ_Memory_D"; ED_POS(14.2,23.45,8.2,1.3); action = "['memory'] call comspec_sse_fnc_editorAi"; };
 class AzGroup: COMSPEC_SSE_AzButton { idc = 95603; text = "$STR_COMSPEC_SSE_AZ_ApplyGroup"; tooltip = "$STR_COMSPEC_SSE_ED_ApplyGroup_D"; ED_POS(22.6,23.45,9.6,1.3); action = "['applyGroup'] call comspec_sse_fnc_editorAi"; };
 class AzApply: COMSPEC_SSE_AzPrimary { idc = 95604; text = "$STR_COMSPEC_SSE_ED_Apply"; tooltip = "$STR_COMSPEC_SSE_ED_Apply_D"; ED_POS(32.4,23.45,7.3,1.3); action = "['applyChecked'] call comspec_sse_fnc_editorAi"; };
+
+// ------------------------------------------------------------ volets : fermés au départ, un seul ouvert à la fois
+// Voile sous le volet ouvert (déclaré avant les volets : dessiné sous eux, au-dessus de la page) ; un clic à côté ferme.
+class AzScrim: COMSPEC_SSE_AzScrim { idc = 95850; ED_POS(0,1.8,40,23.2); action = "['voletClose'] call comspec_sse_fnc_editorAi"; };
+
+// ------------------------------------------------------------ volet « Importer depuis Athena » (sous son bouton)
+class AzAthBg: COMSPEC_SSE_AzPopup { idc = 95115; ED_POS(15.4,18.35,14.0,4.3); };
+class AzAthAccent: COMSPEC_SSE_AzAccent { idc = 95116; ED_POS(15.4,18.35,14.0,0.1); };
+class AzAthStatus: COMSPEC_SSE_AzHelp { idc = 95110; tooltip = "$STR_COMSPEC_SSE_ED_ProfStatus_D"; ED_POS(15.6,18.55,13.6,2.55); };
+class AzAthSearchBg: COMSPEC_SSE_EdText { idc = 95113; colorBackground[] = AZ_FIELD; ED_POS(15.6,21.3,9.1,1.1); };
+class AzAthSearchHint: COMSPEC_SSE_AzMuted { idc = 95114; text = "$STR_COMSPEC_SSE_AZ_ProfHint"; ED_POS(15.75,21.3,8.8,1.1); };
+class AzAthSearch: COMSPEC_SSE_AzEditClear { idc = 95111; tooltip = "$STR_COMSPEC_SSE_ED_ProfSearch_D"; ED_POS(15.6,21.3,9.1,1.1); onKeyUp = "['profFilter'] call comspec_sse_fnc_editorAi"; };
+class AzAthRefresh: COMSPEC_SSE_AzButton { idc = 95112; text = "$STR_COMSPEC_SSE_ED_Refresh"; tooltip = "$STR_COMSPEC_SSE_ED_Refresh_D"; ED_POS(24.85,21.3,4.35,1.1); action = "['refresh'] call comspec_sse_fnc_editorAi"; };
 
 // ------------------------------------------------------------ volet « Filtres » (sous le bouton, aligné à droite)
 class AzFiBg: COMSPEC_SSE_AzPopup { idc = 95700; ED_POS(4.7,5.75,10.6,5.65); };

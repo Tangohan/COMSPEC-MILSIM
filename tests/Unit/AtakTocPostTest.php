@@ -42,9 +42,9 @@ final class AtakTocPostTest extends TestCase
         self::assertStringContainsString('private _setTxt = {', $scr);
         self::assertStringContainsString('(floor (diag_tickTime / 8)) mod _nPg', $scr);
         self::assertStringContainsString('"ORBAT", "TOC", "CAM"', $scr);
-        // Titre et heure ne se recouvrent plus.
-        self::assertStringContainsString('_title ctrlSetPosition [0.012, 0.012, 0.5, 0.06]', $scr);
-        self::assertStringContainsString('_clock ctrlSetPosition [0.515, 0.016, 0.475, 0.056]', $scr);
+        // Titre et heure ne se recouvrent plus (pixels virtuels 1600 x 900 : titre jusqu'à 1084, heure dès 1100).
+        self::assertStringContainsString('_title ctrlSetPosition ([24, 12, 1060, 62] call _R)', $scr);
+        self::assertStringContainsString('_clock ctrlSetPosition ([1100, 20, 476, 48] call _R)', $scr);
         self::assertStringNotContainsString('} forEach _nodes;
             // PIP : objectif', $scr);
     }

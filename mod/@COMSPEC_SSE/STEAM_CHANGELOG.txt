@@ -1,3 +1,22 @@
+[h1]COMSPEC SSE 1.9.1 — tuto des extensions, fenêtre « IA de la zone », fenêtres qui s'affichaient à moitié / extensions tutorial, Area AI window, half-shown windows (11/11/2026)[/h1]
+[b]Relance Arma complètement. Demande COMSPEC ATAK 4.4.1.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.4.1.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Tuto des extensions[/b] : dans SSE ROLEPLAY · Extensions, la liste et le tuto « Comment ça marche » ne sont plus vides ; Étape précédente et Étape suivante font défiler les 10 étapes.
+[*] [b]IA de la zone[/b] : la fenêtre du Zeus n'empile plus ses panneaux ; Filtres, Importer depuis Athena et Mémoire de la carte s'ouvrent un à la fois et se ferment d'un clic à côté ou avec Échap.
+[*] [b]Fenêtres à moitié affichées[/b] : les fenêtres qui s'arrêtaient en cours d'affichage marchent de nouveau ; dans une discussion avec une IA, vos messages se calent de nouveau à droite.
+[*] [b]Licence[/b] : Ma couverture et Fichiers proposent « Ouvrir la note de service » tant que la licence n'est pas acceptée.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Extensions tutorial[/b]: in SSE ROLEPLAY · Extensions, the list and the "How it works" tutorial are no longer empty; Previous step and Next step move through the 10 steps.
+[*] [b]Area AI[/b]: the Zeus window no longer stacks its panels; Filters, Import from Athena and Map memory open one at a time and close with a click beside them or with Esc.
+[*] [b]Half-shown windows[/b]: windows that stopped halfway while opening work again; in a chat with an AI, your own messages line up on the right again.
+[*] [b]Licence[/b]: My cover and Files offer "Open the service note" while the licence is not accepted.
+[/list]
+
 [h1]COMSPEC SSE 1.9.0 — IA plus naturelles, émotions réglables, papiers de 45 pays, outils Zeus refaits / more natural AIs, adjustable emotions, papers from 45 countries, redone Zeus tools (11/11/2026)[/h1]
 [b]Relance Arma complètement. Demande COMSPEC ATAK 4.4.0.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.4.0.[/b]
 

@@ -6,7 +6,7 @@
     caméra, mosaïque, escouade, horloge, registres…), nom, allumer / éteindre, identifier (il clignote 2 s), lier /
     délier, réglage de la mosaïque (rotation, source case par case), scènes (enregistrer, remettre, supprimer), tout
     allumer / tout éteindre.
-    Modes : ["build", [display, ui, rect du plan, rect du panneau, hauteur de ligne, marge]] | ["keys"] | ["refresh"]
+    Modes : ["build"] (contrôles dans le registre du PC, posés par sa grille, fn_tocLaptop) | ["refresh"]
             | ["pick", netId] | ["act", clé] | ["aim"] (viser un écran : le PC se ferme, l'écran regardé est lié)
 */
 params [["_mode", "refresh"], ["_a", []]];
@@ -31,94 +31,43 @@ private _contentOf = {
         ["EXCHECK", "exécution"], ["KILLS", "pertes"], ["REQ", "demandes"], ["STRIP", "bandeau horloge"], ["PLATE", "plaque " + (_c param [9, ""])], ["MOSAIC", "mosaïque"]]) getOrDefault [_v, _v]
 };
 switch (_mode) do {
-    case "keys": {
-        ["hPlanBg", "hPlanTitle", "hInfo", "hName", "hCreate", "hRad", "hLinkAll", "hAim", "hSel", "hWhat", "hShow", "hScrName", "hScrRen", "hPower", "hBlink", "hLink",
-         "hMosRot", "hMosCase", "hMosSrc", "hMosPut", "hScene", "hSceneGo", "hSceneDel", "hSceneName", "hSceneSave", "hAllOn", "hAllOff"]
-    };
     case "build": {
-        _a params ["_d", "_plan", "_pan", "_rh", "_m"];
-        private _H = safeZoneH; private _W = safeZoneW;
-        private _mk = {
-            params ["_cls", "_pos", ["_key", ""]];
-            private _c = _d ctrlCreate [_cls, -1];
-            _c ctrlSetPosition _pos; _c ctrlCommit 0;
-            if (_key isNotEqualTo "") then { _ui set [_key, _c]; };
-            _c
-        };
-        private _btn = {
-            params ["_key", "_pos", "_txt", ["_primary", false], ["_tip", ""]];
-            private _c = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, _pos, _key] call _mk;
-            _c ctrlSetText ((_txt) call comspec_atak_native_fnc_tr);
-            _c ctrlSetFontHeight (_H * 0.017);
-            if (_tip isNotEqualTo "") then { _c ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
-            _c ctrlAddEventHandler ["ButtonClick", compile format ["['act', %1] call comspec_atak_native_fnc_tocHallUi;", str _key]];
-            _c
-        };
-        _plan params ["_px", "_py", "_pw", "_ph"];
-        (["COMSPEC_RscText", _plan, "hPlanBg"] call _mk) ctrlSetBackgroundColor [0.035, 0.045, 0.04, 1];
-        private _pt = ["COMSPEC_RscStructuredText", [_px, _py, _pw, _H * 0.034], "hPlanTitle"] call _mk;
-        _pt ctrlSetBackgroundColor [0, 0, 0, 0.5];
+        // Contrôles de l'onglet dans le registre du PC (fn_tocLaptop « mk ») : la grille du PC les pose (plan à gauche,
+        // gestion à droite) ; les boutons viennent de la table du PC (cible H). Dalles du plan : posées ici à chaque
+        // rafraîchissement, hors registre.
+        private _mkc = { params ["_cls", "_key", ["_tip", ""]]; private _c = ["mk", [_cls, _key]] call comspec_atak_native_fnc_tocLaptop; if (_tip isNotEqualTo "") then { ["tip", [_c, _tip]] call comspec_atak_native_fnc_tocLaptop; }; _c };
+        (["COMSPEC_RscText", "hPlanBg"] call _mkc) ctrlSetBackgroundColor [0.035, 0.045, 0.04, 1];
+        (_ui get "hPlanBg") setVariable ["bg", true];
+        (["COMSPEC_RscStructuredText", "hPlanTitle"] call _mkc) ctrlSetBackgroundColor [0, 0, 0, 0.5];
         // Écrans et dalles du plan : boutons réutilisés à chaque rafraîchissement.
         private _tiles = [];
         for "_i" from 1 to 48 do {
-            private _b = _d ctrlCreate ["COMSPEC_RscButton", -1];
-            _b ctrlSetFontHeight (_H * 0.015);
+            private _b = ["mk", ["COMSPEC_RscButton", ""]] call comspec_atak_native_fnc_tocLaptop;
+            _b ctrlSetFontHeight (safeZoneH * 0.0145);
             _b ctrlShow false;
             _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; ["pick", _c getVariable ["COMSPEC_ATAK_Id", ""]] call comspec_atak_native_fnc_tocHallUi; }];
             _tiles pushBack _b;
         };
         _st set ["hallTiles", _tiles];
-        _pan params ["_cx", "_cy", "_cw", "_ch"];
-        private _bw2 = (_cw - _m) / 2; private _bw3 = (_cw - 2 * _m) / 3; private _bw4 = (_cw - 3 * _m) / 4;
-        private _y = _cy;
-        ["COMSPEC_RscStructuredText", [_cx, _y, _cw, _H * 0.05], "hInfo"] call _mk;
-        _y = _y + _H * 0.052;
-        private _hn = ["COMSPEC_RscEdit", [_cx, _y, _cw - _bw3 - _m, _rh], "hName"] call _mk;
-        _hn ctrlSetTooltip (("Nom de la salle, montré dans les menus des écrans. Exemple : TOC BRAVO") call comspec_atak_native_fnc_tr);
-        ["hCreate", [_cx + _cw - _bw3, _y, _bw3, _rh], "CRÉER LA SALLE", true, "Ce PC devient le poste maître d'une nouvelle salle"] call _btn;
-        _y = _y + _rh + _H * 0.006;
-        private _rc = ["COMSPEC_RscCombo", [_cx, _y, _bw4, _rh], "hRad"] call _mk;
+        ["COMSPEC_RscStructuredText", "hInfo"] call _mkc;
+        ["COMSPEC_RscEdit", "hName", "Nom de la salle, montré dans les menus des écrans. Exemple : TOC BRAVO"] call _mkc;
+        private _rc = ["COMSPEC_RscCombo", "hRad", "Rayon autour du poste pour LIER TOUT. Exemple : 20 m pour une salle de bâtiment"] call _mkc;
         { private _i = _rc lbAdd ((_x select 0) call comspec_atak_native_fnc_tr); _rc lbSetValue [_i, _x select 1]; } forEach [["10 m", 10], ["20 m", 20], ["40 m", 40]];
         _rc lbSetCurSel 1;
-        _rc ctrlSetTooltip (("Rayon autour du poste pour LIER TOUT. Exemple : 20 m pour une salle de bâtiment") call comspec_atak_native_fnc_tr);
-        ["hLinkAll", [_cx + _bw4 + _m, _y, _bw4 * 1.5 + _m / 2, _rh], "LIER TOUT", false, "Lie à cette salle tous les écrans du camp dans le rayon choisi"] call _btn;
-        ["hAim", [_cx + _bw4 * 2.5 + _m * 1.5, _y, _bw4 * 1.5 + _m * 1.5, _rh], "VISER UN ÉCRAN", false, "Le PC se ferme : regardez un écran pendant 20 s au plus, il est lié à la salle et le PC se rouvre"] call _btn;
-        _y = _y + _rh + _H * 0.01;
-        ["COMSPEC_RscStructuredText", [_cx, _y, _cw, _H * 0.05], "hSel"] call _mk;
-        _y = _y + _H * 0.052;
-        ["COMSPEC_RscCombo", [_cx, _y, _cw - _bw3 - _m, _rh], "hWhat"] call _mk;
-        ["hShow", [_cx + _cw - _bw3, _y, _bw3, _rh], "AFFICHER", true, "L'écran ou la dalle choisi montre ce contenu"] call _btn;
-        _y = _y + _rh + _H * 0.006;
-        private _sn = ["COMSPEC_RscEdit", [_cx, _y, _cw - _bw3 - _m, _rh], "hScrName"] call _mk;
-        _sn ctrlSetTooltip (("Nom de l'écran, en tête de son image. Exemple : SAT CENTRE") call comspec_atak_native_fnc_tr);
-        ["hScrRen", [_cx + _cw - _bw3, _y, _bw3, _rh], "RENOMMER"] call _btn;
-        _y = _y + _rh + _H * 0.006;
-        ["hPower", [_cx, _y, _bw3, _rh], "ÉTEINDRE", false, "Éteint ou rallume l'écran choisi"] call _btn;
-        ["hBlink", [_cx + _bw3 + _m, _y, _bw3, _rh], "IDENTIFIER", false, "L'écran choisi clignote 2 s dans la salle"] call _btn;
-        ["hLink", [_cx + 2 * (_bw3 + _m), _y, _bw3, _rh], "LIER", false, "Lie ou délie l'écran choisi"] call _btn;
-        _y = _y + _rh + _H * 0.008;
+        ["COMSPEC_RscStructuredText", "hSel"] call _mkc;
+        ["COMSPEC_RscCombo", "hWhat", "Contenu montré par l'écran ou la dalle choisi"] call _mkc;
+        ["COMSPEC_RscEdit", "hScrName", "Nom de l'écran, en tête de son image. Exemple : SAT CENTRE"] call _mkc;
         // Mosaïque choisie : rotation des pages, source case par case.
-        private _mr = ["COMSPEC_RscCombo", [_cx, _y, _bw4, _rh], "hMosRot"] call _mk;
+        private _mr = ["COMSPEC_RscCombo", "hMosRot", "Rotation des pages de la mosaïque"] call _mkc;
         { private _i = _mr lbAdd ((_x select 0) call comspec_atak_native_fnc_tr); _mr lbSetValue [_i, _x select 1]; } forEach [["Sans rotation", 0], ["Rotation 10 s", 10], ["Rotation 20 s", 20], ["Rotation 30 s", 30]];
         _mr lbSetCurSel 1;
         _mr ctrlAddEventHandler ["LBSelChanged", { ["act", "hMosRot"] call comspec_atak_native_fnc_tocHallUi; }];
-        private _mc = ["COMSPEC_RscCombo", [_cx + _bw4 + _m, _y, _bw4, _rh], "hMosCase"] call _mk;
+        private _mc = ["COMSPEC_RscCombo", "hMosCase", "Case de la mosaïque"] call _mkc;
         for "_i" from 1 to 9 do { _mc lbAdd ((format ["Case %1", _i]) call comspec_atak_native_fnc_tr); };
         _mc lbSetCurSel 0;
-        ["COMSPEC_RscCombo", [_cx + 2 * (_bw4 + _m), _y, _bw4, _rh], "hMosSrc"] call _mk;
-        ["hMosPut", [_cx + 3 * (_bw4 + _m), _y, _bw4, _rh], "PLACER", false, "Met la caméra choisie dans la case choisie (la mosaïque passe en choix case par case)"] call _btn;
-        _y = _y + _rh + _H * 0.014;
-        ["COMSPEC_RscCombo", [_cx, _y, _cw - 2 * _bw4 - 2 * _m, _rh], "hScene"] call _mk;
-        ["hSceneGo", [_cx + _cw - 2 * _bw4 - _m, _y, _bw4, _rh], "REMETTRE", true, "Remet tout le mur comme dans la scène choisie"] call _btn;
-        ["hSceneDel", [_cx + _cw - _bw4, _y, _bw4, _rh], "SUPPRIMER"] call _btn;
-        _y = _y + _rh + _H * 0.006;
-        private _sc = ["COMSPEC_RscEdit", [_cx, _y, _cw - _bw3 - _m, _rh], "hSceneName"] call _mk;
-        _sc ctrlSetTooltip (("Nom de la scène : tout le mur tel qu'il est maintenant. Exemple : BRIEFING, OPÉRATION, NUIT") call comspec_atak_native_fnc_tr);
-        ["hSceneSave", [_cx + _cw - _bw3, _y, _bw3, _rh], "ENREGISTRER"] call _btn;
-        _y = _y + _rh + _H * 0.008;
-        ["hAllOn", [_cx, _y, _bw2, _rh], "TOUT ALLUMER"] call _btn;
-        ["hAllOff", [_cx + _bw2 + _m, _y, _bw2, _rh], "TOUT ÉTEINDRE"] call _btn;
-        _st set ["hallPlan", _plan];
+        ["COMSPEC_RscCombo", "hMosSrc", "Caméra à placer dans la case"] call _mkc;
+        ["COMSPEC_RscCombo", "hScene", "Scène enregistrée de la salle"] call _mkc;
+        ["COMSPEC_RscEdit", "hSceneName", "Nom de la scène : tout le mur tel qu'il est maintenant. Exemple : BRIEFING, OPÉRATION, NUIT"] call _mkc;
     };
     case "pick": { _st set ["selH", _a]; ["refresh"] call _fn; };
     case "aim": {
@@ -253,11 +202,11 @@ switch (_mode) do {
                 && {((_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [1, ""]) in ["", _side]}
         });
         (_ui get "hInfo") ctrlSetStructuredText parseText ((if (_hid isEqualTo "") then {
-            "<t size='1.15' font='COMSPEC_BarlowBold'>Ce PC n'a pas encore de salle</t><br/><t size='0.95' color='#8a9a93'>Donnez-lui un nom puis CRÉER LA SALLE : ce PC en sera le poste maître.</t>"
+            "<t size='1.05' font='COMSPEC_BarlowBold'>Ce PC n'a pas encore de salle</t><br/><t size='0.8' color='#8a9a93'>Donnez-lui un nom puis CRÉER LA SALLE : ce PC en sera le poste maître.</t>"
         } else {
-            format ["<t size='1.3' font='COMSPEC_BarlowBold'>%1</t>  <t size='0.95' color='#8a9a93'>%2 écran(s) lié(s) · %3 scène(s)</t>", [_hall param [1, ""]] call _esc, count _linked, count (_hall param [3, []])]
+            format ["<t size='1.05' font='COMSPEC_BarlowBold'>%1</t>  <t size='0.8' color='#8a9a93'>%2 écran(s) lié(s) · %3 scène(s)</t>", [_hall param [1, ""]] call _esc, count _linked, count (_hall param [3, []])]
         }) call comspec_atak_native_fnc_tr);
-        (_ui get "hCreate") ctrlSetText (([["RENOMMER LA SALLE", "CRÉER LA SALLE"] select (_hid isEqualTo "")] select 0) call comspec_atak_native_fnc_tr);
+        ["label", [["hCreate", "RENOMMER LA SALLE", "RENOMMER"], ["hCreate", "CRÉER LA SALLE", "CRÉER"]] select (_hid isEqualTo "")] call comspec_atak_native_fnc_tocLaptop;
         if ((_ui get "hName") getVariable ["COMSPEC_ATAK_Hid", "-"] isNotEqualTo _hid) then {
             (_ui get "hName") setVariable ["COMSPEC_ATAK_Hid", _hid];
             (_ui get "hName") ctrlSetText (_hall param [1, ""]); // i18n:brut (nom saisi)
@@ -330,23 +279,25 @@ switch (_mode) do {
                 _b ctrlSetText ((if (_np > 1) then { format ["%1 · %2", _k + 1, [_po] call _contentOf] } else {
                     format ["%1%2", ["○ ", ""] select _isLinked, [_po] call _contentOf]
                 }) call comspec_atak_native_fnc_tr);
-                _b ctrlSetTooltip ((format ["%1 · %2 · %3 m", (_po getVariable ["COMSPEC_ATAK_TocScr", []]) param [0, "TOC"], [_po] call _contentOf, round (_pc distance _o)]) call comspec_atak_native_fnc_tr);
+                // Nom, contenu et distance sur la ligne d'aide du PC au survol (pas d'infobulle sur le plan).
+                ["tip", [_b, (format ["%1 · %2 · %3 m", (_po getVariable ["COMSPEC_ATAK_TocScr", []]) param [0, "TOC"], [_po] call _contentOf, round (_pc distance _o)]) call comspec_atak_native_fnc_tr, true]] call comspec_atak_native_fnc_tocLaptop;
                 _b ctrlShow true;
                 _used = _used + 1;
             } forEach _cells;
         } forEach (_linked + _near);
         for "_i" from _used to ((count _tiles) - 1) do { (_tiles select _i) ctrlShow false; };
-        (_ui get "hPlanTitle") ctrlSetStructuredText parseText ((format ["<t size='1.0'>  Mur vu depuis ce poste · %1 lié(s) · %2 proche(s) non lié(s) · cliquez un écran ou une dalle</t>", count _linked, count _near]) call comspec_atak_native_fnc_tr);
+        (_ui get "hPlanTitle") ctrlSetStructuredText parseText ((format ["<t size='0.85'>  Mur vu depuis ce poste · %1 lié(s) · %2 proche(s) non lié(s) · cliquez un écran ou une dalle</t>", count _linked, count _near]) call comspec_atak_native_fnc_tr);
         // Écran choisi.
         private _o = call _selObj;
         private _has = !isNull _o;
-        (_ui get "hSel") ctrlSetStructuredText parseText ((if (!_has) then { "<t size='0.95' color='#8a9a93'>Aucun écran choisi : cliquez un écran ou une dalle sur le plan.</t>" } else {
-            format ["<t size='1.15' font='COMSPEC_BarlowBold'>%1</t>  <t size='0.95' color='#8a9a93'>%2 · %3</t>", [(_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [0, "TOC"]] call _esc, [_o] call _contentOf,
+        (_ui get "hSel") ctrlSetStructuredText parseText ((if (!_has) then { "<t size='0.8' color='#8a9a93'>Aucun écran choisi : cliquez un écran ou une dalle sur le plan.</t>" } else {
+            format ["<t size='1.05' font='COMSPEC_BarlowBold'>%1</t>  <t size='0.8' color='#8a9a93'>%2 · %3</t>", [(_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [0, "TOC"]] call _esc, [_o] call _contentOf,
                 [["non lié", "lié à la salle"] select ((["of", _o] call comspec_atak_native_fnc_tocHall) isEqualTo _hid && {_hid isNotEqualTo ""}), "lié à une autre salle"] select ((["of", _o] call comspec_atak_native_fnc_tocHall) isNotEqualTo "" && {(["of", _o] call comspec_atak_native_fnc_tocHall) isNotEqualTo _hid})]
         }) call comspec_atak_native_fnc_tr);
         { (_ui get _x) ctrlEnable _has; } forEach ["hShow", "hScrRen", "hPower", "hBlink", "hLink"];
-        (_ui get "hPower") ctrlSetText ((["ÉTEINDRE", "ALLUMER"] select (_has && {_o getVariable ["COMSPEC_ATAK_TocOff", false]})) call comspec_atak_native_fnc_tr);
-        (_ui get "hLink") ctrlSetText ((["LIER", "DÉLIER"] select (_has && {(["of", _o] call comspec_atak_native_fnc_tocHall) isEqualTo _hid} && {_hid isNotEqualTo ""})) call comspec_atak_native_fnc_tr);
+        ["label", ["hPower", ["ÉTEINDRE", "ALLUMER"] select (_has && {_o getVariable ["COMSPEC_ATAK_TocOff", false]})]] call comspec_atak_native_fnc_tocLaptop;
+        ["label", ["hLink", ["LIER", "DÉLIER"] select (_has && {(["of", _o] call comspec_atak_native_fnc_tocHall) isEqualTo _hid} && {_hid isNotEqualTo ""})]] call comspec_atak_native_fnc_tocLaptop;
+        { (_ui get _x) setVariable ["why", "Choisissez d'abord un écran sur le plan"]; } forEach ["hShow", "hScrRen", "hPower", "hBlink", "hLink"];
         if (_has && {(_ui get "hScrName") getVariable ["COMSPEC_ATAK_Id", ""] isNotEqualTo (netId _o)}) then {
             (_ui get "hScrName") setVariable ["COMSPEC_ATAK_Id", netId _o];
             (_ui get "hScrName") ctrlSetText ((_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [0, ""]); // i18n:brut (nom saisi)
@@ -378,6 +329,7 @@ switch (_mode) do {
         // Mosaïque : réglages montrés seulement si l'écran choisi est en mosaïque.
         private _isMos = _has && {((_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isEqualTo "MOSAIC"};
         { (_ui get _x) ctrlShow _isMos; } forEach ["hMosRot", "hMosCase", "hMosSrc", "hMosPut"];
+        { (_ui get _x) setVariable ["why", "Créez d'abord la salle de ce PC"]; } forEach ["hLinkAll", "hAim", "hSceneGo", "hSceneDel", "hSceneSave", "hAllOn", "hAllOff"];
         if (_isMos) then {
             private _ms = _ui get "hMosSrc";
             private _src = [["Case vide", ""]] + ((["sources"] call comspec_atak_native_fnc_tocCam) apply { [_x select 0, _x select 1] });

@@ -1778,5 +1778,15 @@
             <English>Paper</English>
             <French>Papier</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_AZ_RefreshDone">
+            <Original>List read again from Athena: %1 AI.</Original>
+            <English>List read again from Athena: %1 AI.</English>
+            <French>Liste relue depuis Athena : %1 IA.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_AZ_RefreshLate">
+            <Original>Athena did not answer: the list shown is the last one known.</Original>
+            <English>Athena did not answer: the list shown is the last one known.</English>
+            <French>Athena n'a pas répondu : la liste affichée est la dernière connue.</French>
+        </Key>
     </Package>
 </Project>

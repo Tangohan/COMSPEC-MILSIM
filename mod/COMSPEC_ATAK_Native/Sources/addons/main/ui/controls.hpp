@@ -41,6 +41,13 @@ class COMSPEC_RscStructuredText: RscStructuredText { shadow=0; colorText[]=ATAK_
     // Police des balises <t> sans font=… (Roboto Condensed dans la classe du jeu).
     class Attributes: Attributes { font=ATAK_FONT; };
 };
+// Écrans TOC posés dans le monde (texture UI, fn_tocScreen / fn_tocBoard) : tailles fixes en part de la hauteur de la
+// texture, jamais selon la taille d'interface du joueur qui regarde (safeZoneH). Mise en page 1600 x 900 virtuels :
+// 0.0311 = 28 px, le texte courant (size='1' des balises <t>).
+class COMSPEC_RscTocText: COMSPEC_RscStructuredText { size=0.0311; };
+class COMSPEC_RscTocLabel: COMSPEC_RscText { sizeEx=0.0311; };
+class COMSPEC_RscTocLabelRight: COMSPEC_RscTocLabel { style=1; };
+class COMSPEC_RscTocLabelCenter: COMSPEC_RscTocLabel { style=2; };
 class COMSPEC_RscButton: RscButton {
     // Désactivé (ctrlEnable false) : texte nettement atténué et fond quasi transparent, bien distinct d'un bouton
     // disponible non choisi (fond BG2, texte clair).
@@ -97,14 +104,14 @@ class COMSPEC_RscMap: RscMapControl { colorBackground[]={0.045,0.055,0.048,1}; c
 // couleur transparente, comme la carte de la montre.
 class COMSPEC_RscMapAtak: COMSPEC_RscMap { showMarkers=0; sizeExLabel="0.0005"; sizeExGrid="0.0005"; sizeExNames="0.0005"; sizeExInfo="0.021 * safeZoneH"; sizeEx="0.021 * safeZoneH";
     ptsPerSquareTxt=100000; colorNames[]={0,0,0,0}; };
-// Fond CLASSIQUE du téléphone (fn_mapStyle, fn_mapCtrl) : la carte d'origine d'Arma 3, celle de la touche M. Classe tirée
-// directement de RscMapControl, sans COMSPEC_RscMap : couleurs du jeu (terrain, mer, forêts, routes, courbes de niveau,
-// carroyage) et texture satellite estompée selon le zoom, exactement comme la carte du jeu. Aucune image dessous ni voile.
-// Seuls les textes que l'ATAK redessine par-dessus (repères, noms de lieux, numéros de grille) et les marqueurs de la mission
-// sont masqués ici comme sur les autres fonds, pour ne pas les voir en double.
-class COMSPEC_RscMapAtakClassic: RscMapControl { showMarkers=0; sizeExLabel="0.0005"; sizeExGrid="0.0005"; sizeExNames="0.0005";
-    sizeExUnits="0.024 * safeZoneH"; sizeExInfo="0.021 * safeZoneH"; sizeExLevel="0.016 * safeZoneH"; sizeEx="0.021 * safeZoneH";
-    ptsPerSquareTxt=100000; colorNames[]={0,0,0,0}; };
+// Fond CLASSIQUE du téléphone (fn_mapStyle, fn_mapCtrl) : la carte d'origine d'Arma 3, celle de la touche M. La carte M
+// (RscDisplayMainMap >> controlsBackground >> CA_Map) est un RscMapControl sans autre réglage de rendu : cette classe en
+// hérite telle quelle, AUCUN attribut redéfini (couleurs, courbes et altitudes, texture satellite, noms de lieux, numéros
+// de grille, marqueurs de la mission et leurs textes, tailles). Les mods qui retouchent RscMapControl (ACE...) s'y
+// appliquent comme sur la carte M. fn_mapOnDraw ne redessine sur ce contrôle ni les noms de lieux, ni les numéros de
+// grille, ni les marqueurs de la mission et leurs noms (le moteur les écrit déjà) : seulement les couches de l'ATAK.
+// Avant 4.4.x : textes et marqueurs du moteur masqués puis redessinés au style tactique, la carte ne ressemblait pas à M.
+class COMSPEC_RscMapAtakClassic: RscMapControl {};
 // Carte de l'app JTAC (dessin à part, fn_jtacDraw) : textes Arma des repères et des lieux gardés.
 // Fond HYBRIDE du téléphone (fn_mapStyle, fn_mapCtrl) : la texture satellite du terrain à toutes les
 // échelles (maxSatelliteAlpha 1, jamais estompée), sans les aplats de forêt, rochers, courbes de niveau ni mer.

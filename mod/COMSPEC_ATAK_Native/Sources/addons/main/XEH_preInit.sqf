@@ -32,6 +32,15 @@ _athCfg pushBack ["atak_realism",
     { true },
     { params ["_parent"]; ["open", _parent] call comspec_atak_native_fnc_netConfig; },
     20, "child"];
+// Licence pas encore acceptée : la note de service s'ouvre d'ici (fn_licenceOpen), puis la fenêtre revient.
+_athCfg = _athCfg select { (_x select 0) isNotEqualTo "atak_licence" };
+_athCfg pushBack ["atak_licence",
+    { "Ouvrir la note de service" call comspec_atak_native_fnc_tr },
+    { "Licence pas encore acceptée : rien n'est envoyé à Athena avant. Lisez et acceptez la note de service." call comspec_atak_native_fnc_tr },
+    "\z\comspec_atak_native\addons\main\data\app_settings.paa",
+    { !(["ok"] call comspec_atak_native_fnc_licenceOpen) && {["can"] call comspec_atak_native_fnc_licenceOpen} },
+    { [{ if (!isNull findDisplay 49) then { ["open", findDisplay 49] call comspec_atak_native_fnc_athenaConfig; }; }, ""] call comspec_atak_native_fnc_licenceOpen; },
+    5, "close"];
 missionNamespace setVariable ["comspec_athena_config_entries", _athCfg];
 // Versions compilées dans ce code : fn_integrityCheck les compare à la config chargée, à la DLL et au site.
 missionNamespace setVariable ["COMSPEC_ATAK_CodeVersion", VERSION_STR];
@@ -1175,6 +1184,10 @@ private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_toc_cam_range", "SLIDER",
     ["Distance d'activation des caméras d'écran (m)", "Un écran TOC en affichage caméra ne montre l'image en direct qu'aux joueurs plus proches que cette distance et qui le regardent. Plus loin, il montre la carte et le flux du poste."],
     _loc, [10, 150, 40, 0], 1] call comspec_atak_native_fnc_addSetting;
+// Écrans TOC posés dans le monde (fn_tocScreen « tick ») : réglage de chaque joueur (son PC, ses images par seconde).
+["comspec_atak_native_toc_view_range", "SLIDER",
+    ["Distance d'affichage des écrans TOC (m)", "Un écran TOC n'est dessiné et rafraîchi que si vous êtes plus près que cette distance, à peu près face à lui et sans mur entre vous. Un peu plus loin, il garde sa dernière image ; au-delà, il se met en veille : ni calcul ni caméra. Les caméras d'écran suivent aussi cette distance. Exemple : 25 m pour une salle d'opérations, 60 m pour un grand écran dehors."],
+    _loc, [10, 100, 25, 0], 0] call comspec_atak_native_fnc_addSetting;
 // IA et ATAK (fn_aiAtak).
 private _ai = ["COMSPEC", "ATAK · IA"];
 ["comspec_atak_native_ai_atak", "LIST",

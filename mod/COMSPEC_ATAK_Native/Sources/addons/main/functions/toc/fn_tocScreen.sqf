@@ -4,9 +4,12 @@
     (fn_tocFeed) : carte avec les nœuds ATAK (joueurs et IA équipées, à leur dernier point PLI, en direct / ancien /
     perdu / hors ligne), marqueurs de la mission, derniers comptes rendus, alertes et messages du poste, état du réseau.
     L'écran est une texture UI (#(rgb,2048,1024,1)ui("COMSPEC_RscTocScreenTexture", nom unique)) posée par chaque joueur
-    sur l'objet (setObjectTexture local), rafraîchie toutes les 2 s quand l'écran est proche et visible. Une carte Arma
-    ne se dessine pas dans une texture UI (fn_jpcMap) : le fond est la photo de la carte (mod @COMSPEC_ATAK_Photo,
-    fn_photoMap) ou, sans lui, la carte d'ensemble du terrain (pictureMap), avec le quadrillage kilométrique.
+    sur l'objet (setObjectTexture local), rafraîchie toutes les 1 à 2 s seulement quand l'écran est allumé pour ce
+    joueur : à moins de la distance d'affichage (réglage « Distance d'affichage des écrans TOC », 25 m par défaut),
+    devant lui et pas derrière un mur. Un peu plus loin ou pas regardé : dernière image figée, aucun calcul ; au-delà :
+    veille (texture d'origine). Voir « tick ». Une carte Arma ne se dessine pas dans une texture UI (fn_jpcMap) : le fond
+    est la photo de la carte (mod @COMSPEC_ATAK_Photo, fn_photoMap) ou, sans lui, la carte d'ensemble du terrain
+    (pictureMap, assombrie), avec quadrillage numéroté, échelle, villes et villages.
     Carte en grand : l'écran passe en CARTE SEULE, et l'action « Ouvrir le PC du poste » ouvre l'écran du PC portable
     du poste (fn_tocLaptop), indépendant du téléphone.
     PIP du TOC (demande de TTRD, 26/10) : affichage « PIP DU POSTE », l'écran recopie ce que l'opérateur a devant lui
@@ -36,7 +39,12 @@
       ["view", [objet, clé, valeur]]       "mode" affichage | "zoom" demi-largeur | "center" position | "auto"
                                            | "sat" 0 ou 1 | "squad" nom du groupe | "cam" netId de la caméra
       ["squads", camp]                     groupes proposés pour l'affichage SQUAD (noms, camp du joueur si "")
-      ["classes"]                          écrans du jeu proposés à la pose [[libellé, classe]...] (classes présentes)
+      ["classes"]                          écrans proposés à la pose [[nom, classe, aperçu]...] (classes présentes) :
+                                           écrans COMSPEC puis CfgComspecTocScreens (jeu et autres mods)
+      ["surfaces", objet]                  surfaces d'image d'un objet [[[nom, index]...], index proposé] ([[], -1] : aucune)
+      ["test", [objet, dalle]]             client : image de test 8 s sur la dalle (fenêtre Zeus « Tester l'image »)
+    Écran d'un autre mod : CfgComspecTocScreens (toc_screens_tiers.hpp) donne sa surface, ses dalles recopiées, son
+    format et sa matière ; COMSPEC_ATAK_TocSurf [index, format, matière] (fenêtre Zeus) l'emporte sur tout.
       ["tick"]                             client, chaque seconde (XEH_postInitClient) : textures et rafraîchissement
       ["surface", [objet, dalle, active]]  client : prépare la dalle pour une image (matière d'écran, dalles superposées
                                            masquées) ou remet tout (aussi pour fn_screenCast et fn_tocCam)
@@ -52,8 +60,14 @@
       ["aceInit"]                          ACE sur les classes d'écran du jeu (partout) : TOC, PIP, diapositives
       ["ensure", [objet, affichage]]       désigne l'objet comme écran TOC (mode demandé) si besoin
       ["show", [objet, contenu]]           contenu choisi depuis le téléphone ou le PC : affichage, ou "SLIDES" (diapositives)
-    Rendu (2 s, écran vu) : symboles regroupés et plaques sans chevauchement, colonnes par groupes en pages automatiques,
-    textes réécrits seulement s'ils changent. ORBAT : celui du site (fn_bftOrbat), lu par chaque joueur avec son compte.
+      ["center", objet]                    centre de l'image (ASL), pour savoir si l'écran est vu (fn_tocCam aussi)
+      ["title", affichage]                 [mot d'en-tête, libellé des menus] ; "" : table de tous les affichages
+      ["audit"]                            contrôle de chaque affichage dans un display d'essai (journal, COMSPEC_ATAK_TocAudit)
+      ["build", display] / ["draw", [objet, display]]   contrôles de la carte du poste / dessin d'une image
+    Rendu (1 à 2 s, écran allumé) : mise en page en pixels virtuels 1600 x 900, polices fixes (28 px pour le texte courant,
+    jamais selon la taille d'interface de qui regarde), une ligne = un contrôle coupé à sa largeur (« … ») ; symboles
+    regroupés (cases de 64 px, 110 px en vue d'ensemble) et plaques sans chevauchement, jamais hors du cadre ; groupes
+    en pages automatiques ; textes réécrits seulement s'ils changent. ORBAT : celui du site (fn_bftOrbat).
     Exemple de mission : ["add", [this, "TOC Bravo", "WEST"]] call comspec_atak_native_fnc_tocScreen;
 */
 params [["_mode", "tick"], ["_a", objNull]];
@@ -70,8 +84,45 @@ private _boards = ["SAT", "CLOCK", "LOG", "EXCHECK", "KILLS", "REQ", "STRIP", "P
 // Dalle d'un mur multi-écrans : objet relais (fn_tocScreen « panels ») qui porte son propre affichage ; l'image va
 // sur la dalle de l'écran hôte (COMSPEC_ATAK_TocHost), à l'index de la dalle.
 private _hostOf = { params ["_o"]; private _h = _o getVariable ["COMSPEC_ATAK_TocHost", objNull]; [_o, _h] select (!isNull _h) };
-// Face 4:1 (bandeau horloge, plaque de nom) : texture 2048 x 512.
-private _ratioOf = { params ["_o"]; getNumber (configOf ([_o] call _hostOf) >> "comspec_screenRatio") };
+// Écran du jeu ou d'un autre mod déclaré dans CfgComspecTocScreens (toc_screens_tiers.hpp) : entrée de sa classe ou de
+// la classe parente la plus proche (variantes d'Eden Expansion, etc.) ; configNull sinon. Objet ou nom de classe.
+private _entryOf = {
+    params ["_o"];
+    private _c = [configOf _o, configFile >> "CfgVehicles" >> _o] select (_o isEqualType "");
+    private _e = configNull;
+    for "_i" from 0 to 8 do {
+        if (isNull _c || {!isNull _e}) exitWith {};
+        private _t = configFile >> "CfgComspecTocScreens" >> configName _c;
+        if (isClass _t) then { _e = _t; } else { _c = inheritsFrom _c; };
+    };
+    _e
+};
+// Index d'une sélection cachée par son nom (-1 : absente).
+private _selIdx = { params ["_o", "_n"]; (getArray (configOf _o >> "hiddenSelections")) findIf { (toLower _x) isEqualTo (toLower _n) } };
+// Surface imposée à la désignation (fenêtre Zeus sur un objet) : COMSPEC_ATAK_TocSurf [index, format, matière d'écran].
+// Face 4:1 (bandeau horloge, plaque de nom, ou format « bandeau » choisi) : texture 2048 x 512.
+private _ratioOf = {
+    params ["_o"];
+    private _h = [_o] call _hostOf;
+    (getNumber (configOf _h >> "comspec_screenRatio")) max ((_h getVariable ["COMSPEC_ATAK_TocSurf", []]) param [1, 0]) max (getNumber (([_h] call _entryOf) >> "ratio"))
+};
+// Dalles qui recopient l'image : config de l'écran COMSPEC (index), sinon entrée CfgComspecTocScreens (noms).
+private _mirrorOf = {
+    params ["_o"];
+    private _m = getArray (configOf _o >> "comspec_screenMirror");
+    if (_m isNotEqualTo [] || {(count (_o getVariable ["COMSPEC_ATAK_TocSurf", []])) >= 1}) exitWith { _m };
+    ((getArray (([_o] call _entryOf) >> "mirror")) apply { [_o, _x] call _selIdx }) select { _x >= 0 }
+};
+// Matière d'écran du mod (jour / nuit) sur la dalle : oui, sauf si la désignation ou l'entrée demande la matière d'origine.
+private _matOn = {
+    params ["_o"];
+    private _f = _o getVariable ["COMSPEC_ATAK_TocSurf", []];
+    if ((count _f) >= 3) exitWith { _f select 2 };
+    private _e = [_o] call _entryOf;
+    isNull _e || {!isNumber (_e >> "material")} || {(getNumber (_e >> "material")) > 0}
+};
+// Nom de sélection qui évoque un écran (proposition automatique de la surface).
+private _screenish = { params ["_n"]; _n = toLower _n; (["screen", "display", "monitor", "lcd", "ecran", "écran"] findIf { (_n find _x) >= 0 }) >= 0 || {_n in ["tv", "tv_1", "tv1"]} };
 // [nom, camp, index, affichage, demi-largeur, centre, poste TOC, posé en jeu, satellite, groupe]
 private _cfgOf = {
     params ["_o"];
@@ -85,12 +136,16 @@ private _sideOk = {
     _s isEqualTo "" || {_s isEqualTo str side group _u}
 };
 // Dalle visible : même logique que fn_screenCast (souvent « screen » / « display », pas la sélection 0 du châssis).
+// Ordre : surface choisie à la désignation, puis surface connue (CfgComspecTocScreens), puis nom évoquant un écran.
 private _face = {
     params ["_o", "_sel"];
+    private _forced = _o getVariable ["COMSPEC_ATAK_TocSurf", []];
+    if ((count _forced) >= 1) exitWith { _forced select 0 };
+    private _known = [_o, getText (([_o] call _entryOf) >> "selection")] call _selIdx;
+    if (_known >= 0) exitWith { _known };
     private _names = getArray (configOf _o >> "hiddenSelections");
-    private _named = _names findIf { (toLower _x) in ["screen", "display", "lcd", "monitor"] };
-    private _curName = toLower (_names param [_sel, ""]);
-    if (_named >= 0 && {!(_curName in ["screen", "display", "lcd", "monitor"])}) then { _named } else { _sel }
+    private _named = _names findIf { [_x] call _screenish };
+    if (_named >= 0 && {!([_names param [_sel, ""]] call _screenish)}) then { _named } else { _sel }
 };
 // Diapositives en cours sur cet objet : le TOC cède la dalle (fn_screenCast).
 private _casting = {
@@ -101,6 +156,56 @@ private _casting = {
 private _lit = {
     params ["_o"];
     (getNumber (configOf _o >> "comspec_projBoard")) < 1 || {_o getVariable ["COMSPEC_ATAK_ProjLit", false]}
+};
+// Distance d'affichage (réglage du joueur, 10 à 100 m) : au-delà, ni rendu ni rafraîchissement.
+private _viewRange = {
+    private _rv = missionNamespace getVariable ["comspec_atak_native_toc_view_range", 25];
+    if !(_rv isEqualType 0) then { _rv = 25; };
+    (_rv max 10) min 100
+};
+// Centre de l'image (ASL) : milieu de la boîte du modèle de l'écran hôte (relais d'un mur : le mur), gardé par objet.
+private _centerOf = {
+    params ["_o"];
+    private _h = [_o] call _hostOf;
+    private _m = _h getVariable "COMSPEC_ATAK_TocMid";
+    if (isNil "_m") then {
+        (boundingBoxReal _h) params [["_b0", [0, 0, 0]], ["_b1", [0, 0, 0]]];
+        _m = (_b0 vectorAdd _b1) vectorMultiply 0.5;
+        _h setVariable ["COMSPEC_ATAK_TocMid", _m];
+    };
+    _h modelToWorldVisualWorld _m
+};
+// Rectangle en pixels virtuels -> position du display.
+private _R = { params ["_rx", "_ry", "_rw", "_rh"]; [_rx / _texW, _ry / _texH, _rw / _texW, _rh / _texH] };
+// Texte coupé à n caractères avec « … » (caractères Unicode : un accent n'est jamais coupé en deux).
+private _cut = {
+    params ["_s", "_n"];
+    if !(_s isEqualType "") then { _s = str _s; };
+    forceUnicode 0;
+    if ((count _s) <= _n) exitWith { _s };
+    forceUnicode 0;
+    (_s select [0, (_n - 1) max 1]) + "…"
+};
+// Libellé d'une ligne dans une case de _w px virtuels : traduit puis coupé avec « … ». Estimation : 0,46 x la police
+// par caractère (0,52 en gras), plus large que la police condensée réelle ; la mesure du jeu (ctrlTextWidth), quand
+// elle est plausible, coupe encore si le texte déborde. Réécrit seulement s'il change.
+private _lbl = {
+    params ["_c", "_t", "_w"];
+    private _key = format ["%1|%2", _t, round _w];
+    if ((_c getVariable ["COMSPEC_ATAK_Txt", ""]) isEqualTo _key) exitWith {};
+    _c setVariable ["COMSPEC_ATAK_Txt", _key];
+    private _cw = (_c getVariable ["COMSPEC_ATAK_Fpx", 28]) * ([0.46, 0.52] select (_c getVariable ["COMSPEC_ATAK_Bold", false]));
+    private _room = _w - 8;
+    private _s = [_t call comspec_atak_native_fnc_tr, floor (_room / _cw)] call _cut;
+    _c ctrlSetText _s; // i18n:brut (déjà traduit)
+    for "_i" from 1 to 6 do {
+        private _m = (ctrlTextWidth _c) * _texW;
+        forceUnicode 0;
+        private _n = count _s;
+        if (_m <= 0.5 * _n * _cw || {_m >= 2 * _n * _cw} || {_m <= _room} || {_n <= 3}) exitWith {};
+        _s = [_s, _n - 2] call _cut;
+        _c ctrlSetText _s; // i18n:brut (déjà traduit)
+    };
 };
 
 switch (_mode) do {
@@ -115,35 +220,49 @@ switch (_mode) do {
         true
     };
     case "classes": {
-        // Écrans COMSPEC en tête (modèles du jeu réglés pour l'image, fiables jour et nuit), puis les écrans du jeu.
-        ([
-            ["Mur d'images 2x2, image unique (COMSPEC)", "COMSPEC_ATAK_Screen_Wall2x2"],
-            ["Mur d'images 2x2, 4 dalles (COMSPEC)", "COMSPEC_ATAK_Screen_Wall2x2_Quad"],
-            ["Grand mur d'images 3x2, 6 dalles (COMSPEC)", "COMSPEC_ATAK_Screen_Wall3x2"],
-            ["Grand mur d'images 3x2, image et 2 dalles (COMSPEC)", "COMSPEC_ATAK_Screen_Wall3x2_Mixed"],
-            ["Écran géant 98 pouces mural (COMSPEC)", "COMSPEC_ATAK_Screen_98"],
-            ["Écran géant 98 pouces sur pied roulant (COMSPEC)", "COMSPEC_ATAK_Screen_98_Stand"],
-            ["Écran 65 pouces suspendu (COMSPEC)", "COMSPEC_ATAK_Screen_65_Ceiling"],
-            ["Bandeau horloge ZULU / LOCAL (COMSPEC)", "COMSPEC_ATAK_Screen_ClockStrip"],
-            ["Plaque de nom d'élément (COMSPEC)", "COMSPEC_ATAK_Screen_NamePlate"],
-            ["Grand écran TOC sur trépied (COMSPEC)", "COMSPEC_ATAK_Screen_Tripod"],
-            ["Double écran TOC sur trépied (COMSPEC)", "COMSPEC_ATAK_Screen_Dual"],
-            ["Téléviseur TOC (COMSPEC)", "COMSPEC_ATAK_Screen_Wall"],
-            ["Moniteur TOC de bureau (COMSPEC)", "COMSPEC_ATAK_Screen_Desk"],
-            ["Grand écran sur trépied", "Land_TripodScreen_01_large_F"],
-            ["Grand écran sur trépied (noir)", "Land_TripodScreen_01_large_black_F"],
-            ["Grand écran sur trépied (sable)", "Land_TripodScreen_01_large_sand_F"],
-            ["Double écran sur trépied", "Land_TripodScreen_01_dual_v1_F"],
-            ["Double écran sur trépied (noir)", "Land_TripodScreen_01_dual_v1_black_F"],
-            ["Double écran sur trépied (sable)", "Land_TripodScreen_01_dual_v1_sand_F"],
-            ["Double écran incliné sur trépied", "Land_TripodScreen_01_dual_v2_F"],
-            ["Double écran incliné sur trépied (noir)", "Land_TripodScreen_01_dual_v2_black_F"],
-            ["Double écran incliné sur trépied (sable)", "Land_TripodScreen_01_dual_v2_sand_F"],
-            ["TV à écran plat", "Land_FlatTV_01_F"],
-            ["Écran de projection", "Land_ProjectorScreen_01_F"],
-            ["Poste informatique", "Land_PCSet_01_screen_F"],
-            ["Ordinateur portable", "Land_Laptop_unfolded_F"]
-        ]) select { isClass (configFile >> "CfgVehicles" >> (_x select 1)) }
+        // Écrans COMSPEC en tête (modèles réglés pour l'image, fiables jour et nuit), puis les écrans du jeu et des mods
+        // déclarés dans CfgComspecTocScreens (toc_screens_tiers.hpp et ceux des autres mods), seulement les classes
+        // présentes. [nom de l'objet (langue du joueur), classe, aperçu Eden ("" sans)] : la classe passe telle quelle
+        // jusqu'à la pose (« spawn »).
+        private _out = [];
+        private _add = {
+            params ["_c"];
+            private _cfg = configFile >> "CfgVehicles" >> _c;
+            if (!isClass _cfg || {(getNumber (_cfg >> "scope")) < 1} || {(_out findIf { (_x select 1) isEqualTo _c }) >= 0}) exitWith {};
+            private _n = getText (_cfg >> "displayName");
+            _out pushBack [[_n, _c] select (_n isEqualTo ""), _c, getText (_cfg >> "editorPreview")];
+        };
+        {
+            [_x] call _add;
+        } forEach ["COMSPEC_ATAK_Screen_Wall2x2", "COMSPEC_ATAK_Screen_Wall2x2_Quad", "COMSPEC_ATAK_Screen_Wall3x2", "COMSPEC_ATAK_Screen_Wall3x2_Mixed",
+            "COMSPEC_ATAK_Screen_98", "COMSPEC_ATAK_Screen_98_Stand", "COMSPEC_ATAK_Screen_65_Ceiling", "COMSPEC_ATAK_Screen_ClockStrip",
+            "COMSPEC_ATAK_Screen_NamePlate", "COMSPEC_ATAK_Screen_Tripod", "COMSPEC_ATAK_Screen_Dual", "COMSPEC_ATAK_Screen_Wall", "COMSPEC_ATAK_Screen_Desk"];
+        { [configName _x] call _add; } forEach ("true" configClasses (configFile >> "CfgComspecTocScreens"));
+        _out
+    };
+    case "surfaces": {
+        // Surfaces possibles d'un objet (fenêtre Zeus « Écran TOC » sur un objet) : [[[nom, index]...], index proposé].
+        // Proposé : surface déjà choisie, sinon surface connue (CfgComspecTocScreens), sinon nom évoquant un écran, sinon 0.
+        // Aucune sélection cachée : [[], -1] (l'objet ne peut pas recevoir d'image).
+        private _o = _a;
+        if (isNull _o) exitWith { [[], -1] };
+        private _names = getArray (configOf _o >> "hiddenSelections");
+        if (_names isEqualTo []) exitWith { [[], -1] };
+        private _list = [];
+        { _list pushBack [_x, _forEachIndex]; } forEach _names;
+        [_list, (([_o, 0] call _face) max 0) min ((count _names) - 1)]
+    };
+    case "test": {
+        // « Tester l'image » : fond COMSPEC (orientation lisible) sur la surface choisie, 8 s, sur ce poste seulement,
+        // puis texture d'avant remise. L'objet n'est pas désigné.
+        _a params [["_o", objNull], ["_sel", 0]];
+        if (isNull _o || {!hasInterface}) exitWith { false };
+        private _old = (getObjectTextures _o) param [_sel, ""];
+        _o setObjectTexture [_sel, "\z\comspec_atak_native\addons\main\data\wall_athena_land.paa"];
+        // Remise seulement si l'image de test est toujours là (une image TOC posée entre-temps n'est pas écrasée).
+        [{ params ["_o", "_sel", "_old"]; if (!isNull _o && {((toLower ((getObjectTextures _o) param [_sel, ""])) find "wall_athena_land") >= 0}) then { _o setObjectTexture [_sel, _old]; }; }, [_o, _sel, _old], 8] call comspec_atak_native_fnc_waitAndExec;
+        ["INFO", "TOC", format ["Écran TOC : test de l'image sur %1, surface %2 (%3)", typeOf _o, _sel, (getArray (configOf _o >> "hiddenSelections")) param [_sel, "?"]]] call comspec_atak_native_fnc_log;
+        true
     };
     case "squads": {
         // Groupes du camp à montrer sur un écran d'escouade : ceux qui ont un joueur ou un nœud ATAK (jamais l'ennemi).
@@ -161,7 +280,10 @@ switch (_mode) do {
         if (!isServer) exitWith { ["comspec_atak_native_tocScreen", ["add", _a]] call CBA_fnc_serverEvent; true };
         if (_name isEqualTo "") then { _name = "TOC"; };
         private _old = [_o] call _cfgOf;
-        if !(_view in _views) then { _view = "SPLIT"; };
+        if !(_view in _views) then {
+            ["WARNING", "TOC", format ["Écran TOC %1 : affichage « %2 » inconnu de ce serveur, carte et flux à la place", typeOf _o, _view]] call comspec_atak_native_fnc_log;
+            _view = "SPLIT";
+        };
         // Face 4:1 : bandeau horloge ou plaque de nom seulement ; un écran 16:9 ne prend pas ces deux affichages.
         if (([_o] call _ratioOf) >= 4) then {
             if !(_view in ["STRIP", "PLATE"]) then { _view = ["STRIP", "PLATE"] select (((typeOf _o) find "NamePlate") >= 0); };
@@ -202,17 +324,17 @@ switch (_mode) do {
         private _pc = _h getVariable ["COMSPEC_ATAK_TocPanelCfg", []];
         for "_k" from 1 to (_n - 1) do {
             if ((_px findIf { (_x getVariable ["COMSPEC_ATAK_TocPanel", 0]) isEqualTo _k }) < 0) then {
-                private _r = createVehicle ["Land_HelipadEmpty_F", getPosATL _h, [], 0, "CAN_COLLIDE"];
-                _r attachTo [_h, [0, 0, 1.5]];
-                _r setVariable ["COMSPEC_ATAK_TocHost", _h, true];
-                _r setVariable ["COMSPEC_ATAK_TocPanel", _k, true];
-                _r setVariable ["COMSPEC_ATAK_TocOwned", true, true];
+                private _rv = createVehicle ["Land_HelipadEmpty_F", getPosATL _h, [], 0, "CAN_COLLIDE"];
+                _rv attachTo [_h, [0, 0, 1.5]];
+                _rv setVariable ["COMSPEC_ATAK_TocHost", _h, true];
+                _rv setVariable ["COMSPEC_ATAK_TocPanel", _k, true];
+                _rv setVariable ["COMSPEC_ATAK_TocOwned", true, true];
                 (_pc param [_k - 1, []]) params [["_v", "SPLIT"], ["_sl", 0], ["_sq", ""], ["_cam", []], ["_mos", []], ["_off", false]];
-                if (_mos isEqualType [] && {(count _mos) >= 5}) then { _r setVariable ["COMSPEC_ATAK_TocMosaic", _mos, true]; };
-                if (_off isEqualTo true) then { _r setVariable ["COMSPEC_ATAK_TocOff", true, true]; };
-                ["add", [_r, format ["%1 · %2", (_hc param [0, "TOC"]) select [0, 22], _k + 1], _hc param [1, ""], _k, _v, false, false, _sl, _sq]] call _fn;
-                if (_cam isEqualType [] && {(count _cam) >= 2}) then { _r setVariable ["COMSPEC_ATAK_TocCamWant", _cam]; };
-                _px pushBack _r;
+                if (_mos isEqualType [] && {(count _mos) >= 5}) then { _rv setVariable ["COMSPEC_ATAK_TocMosaic", _mos, true]; };
+                if (_off isEqualTo true) then { _rv setVariable ["COMSPEC_ATAK_TocOff", true, true]; };
+                ["add", [_rv, format ["%1 · %2", (_hc param [0, "TOC"]) select [0, 22], _k + 1], _hc param [1, ""], _k, _v, false, false, _sl, _sq]] call _fn;
+                if (_cam isEqualType [] && {(count _cam) >= 2}) then { _rv setVariable ["COMSPEC_ATAK_TocCamWant", _cam]; };
+                _px pushBack _rv;
             };
         };
         _h setVariable ["COMSPEC_ATAK_TocPanels", _px, true];
@@ -267,6 +389,7 @@ switch (_mode) do {
         _a setVariable ["COMSPEC_ATAK_TocPanels", nil, true];
         _a setVariable ["COMSPEC_ATAK_TocScr", nil, true];
         _a setVariable ["COMSPEC_ATAK_Toc", nil, true];
+        _a setVariable ["COMSPEC_ATAK_TocSurf", nil, true];
         missionNamespace setVariable ["COMSPEC_ATAK_TocScreens", (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x && {_x isNotEqualTo _a} }, true];
         // Écran créé par le module (ou recréé par la sauvegarde) : l'objet part avec lui.
         if (_owned) then { deleteVehicle _a; };
@@ -276,8 +399,17 @@ switch (_mode) do {
     case "spawn": {
         _a params [["_pos", [0, 0, 0]], ["_dir", 0], ["_cls", ""], ["_name", ""], ["_side", ""], ["_view", "SPLIT"], ["_toc", true], ["_slot", 0], ["_squad", ""], ["_pans", ""]];
         if (!isServer) exitWith { ["comspec_atak_native_tocScreen", ["spawn", _a]] call CBA_fnc_serverEvent; objNull };
+        // La classe choisie (module Eden, fenêtre Zeus, salle complète) passe telle quelle jusqu'à createVehicle : écran de
+        // la liste, écran COMSPEC ou écran déclaré dans CfgComspecTocScreens. Classe inconnue de ce serveur (mod du serveur
+        // plus ancien que celui du Zeus) : premier écran de la liste, et le journal le dit. Avant, ce repli était muet et
+        // posait toujours le même grand écran sur trépied, quel que soit le choix (journal de TTRD, 11/11).
         private _cands = (["classes"] call _fn) apply { _x select 1 };
-        if !(_cls in _cands) then { _cls = _cands param [0, ""]; };
+        private _want = _cls;
+        if !(_cls isEqualType "" && {_cls isNotEqualTo ""} && {isClass (configFile >> "CfgVehicles" >> _cls)}
+            && {(_cls in _cands) || {(getNumber (configFile >> "CfgVehicles" >> _cls >> "comspec_screen")) > 0} || {!isNull ([_cls] call _entryOf)}}) then {
+            _cls = _cands param [0, ""];
+            ["WARNING", "TOC", format ["Écran TOC : écran « %1 » inconnu de ce serveur (mod du serveur pas à jour ?), « %2 » posé à la place", _want, _cls]] call comspec_atak_native_fnc_log;
+        };
         if (_cls isEqualTo "") exitWith {
             ["WARNING", "TOC", "Écran TOC : aucun écran du jeu disponible pour la pose."] call comspec_atak_native_fnc_log;
             objNull
@@ -288,6 +420,8 @@ switch (_mode) do {
         _o setVariable ["COMSPEC_ATAK_TocOwned", true, true];
         if (_pans isNotEqualTo "") then { _o setVariable ["COMSPEC_ATAK_TocPanelCfg", ["panelSpec", _pans] call _fn]; };
         ["add", [_o, _name, _side, 0, _view, _toc, true, _slot, _squad]] call _fn;
+        // Trace de la pose : la classe réellement créée et l'affichage demandé (vérifiable dans le journal du serveur).
+        ["INFO", "TOC", format ["Écran TOC posé : %1 (%2), affichage %3, nom « %4 »", _cls, getText (configOf _o >> "displayName"), _view, [_name, "TOC"] select (_name isEqualTo "")]] call comspec_atak_native_fnc_log;
         // Zeus : l'écran créé se manipule comme un objet posé à la main.
         { _x addCuratorEditableObjects [[_o], false]; } forEach allCurators;
         _o
@@ -338,7 +472,7 @@ switch (_mode) do {
             { _o setObjectTexture _x; } forEach _sibs;
             // Dalles recopiées (double écran) : matière de la config remise.
             private _mats = getArray (configOf _o >> "hiddenSelectionsMaterials");
-            { _o setObjectMaterial [_x, _mats param [_x, ""]]; } forEach (getArray (configOf _o >> "comspec_screenMirror"));
+            { if ((_mats param [_x, ""]) isNotEqualTo "") then { _o setObjectMaterial [_x, _mats select _x]; }; } forEach ([_o] call _mirrorOf);
             _o setVariable [_pv, nil];
             true
         };
@@ -355,9 +489,11 @@ switch (_mode) do {
             private _panes = [];
             { if ((_x select [0, 7]) isEqualTo "screen_") then { _panes pushBack _forEachIndex; }; } forEach _names;
             // Plus de deux dalles « screen_ » : mur d'images superposé (pas deux moniteurs côte à côte).
+            // Dalles recopiées (poste à trois moniteurs) : gardées, elles montrent la même image.
             private _sibs = [];
+            private _mirs = [_o] call _mirrorOf;
             if ((count _panes) > 2 && {_sel in _panes}) then {
-                { if (_x isNotEqualTo _sel) then { _sibs pushBack [_x, _texs param [_x, ""]]; _o setObjectTexture [_x, ""]; }; } forEach _panes;
+                { if (_x isNotEqualTo _sel && {!(_x in _mirs)}) then { _sibs pushBack [_x, _texs param [_x, ""]]; _o setObjectTexture [_x, ""]; }; } forEach _panes;
             };
             _prep = [_sel, (getObjectMaterials _o) param [_sel, ""], _sibs, ""];
             _o setVariable [_pv, _prep];
@@ -370,10 +506,11 @@ switch (_mode) do {
         // Matière réimposée aussi quand l'objet ne la porte plus (dalle d'index > 0 restée noire de jour, 11/11).
         private _norm = { private _t = toLower _this; if ((_t select [0, 1]) isEqualTo "\") then { _t = _t select [1]; }; _t };
         private _cur = ((getObjectMaterials _o) param [_sel, ""]) call _norm;
-        if ((_prep select 3) isNotEqualTo _mat || {_cur isNotEqualTo "" && {_cur isNotEqualTo (_mat call _norm)}}) then {
+        // Matière d'origine demandée (écran d'un autre mod déjà lumineux) : rien n'est imposé.
+        if ([_o] call _matOn && {(_prep select 3) isNotEqualTo _mat || {_cur isNotEqualTo "" && {_cur isNotEqualTo (_mat call _norm)}}}) then {
             _prep set [3, _mat];
             _o setObjectMaterial [_sel, _mat];
-            { _o setObjectMaterial [_x, _mat]; } forEach (getArray (configOf _o >> "comspec_screenMirror"));
+            { _o setObjectMaterial [_x, _mat]; } forEach ([_o] call _mirrorOf);
         };
         true
     };
@@ -391,7 +528,7 @@ switch (_mode) do {
             true
         };
         _o setObjectTexture [_sel, _tex];
-        private _mir = getArray (configOf _o >> "comspec_screenMirror");
+        private _mir = [_o] call _mirrorOf;
         if (_mir isNotEqualTo []) then {
             private _def = getArray (configOf _o >> "hiddenSelectionsTextures");
             private _back = _tex isEqualTo (_def param [_sel, ""]);
@@ -410,124 +547,322 @@ switch (_mode) do {
         (getObjectTextures _o) param [_sel, ""]
     };
     case "load": {
-        // Le display de la texture arrive ici à sa création : il appartient à l'écran en attente (un seul à la fois).
+        // Le display de la texture arrive ici à sa création (la première fois que le jeu dessine la texture). Il est
+        // rendu à l'écran qui porte CETTE texture (nom unique du display) : avant, il allait à l'écran « en attente »,
+        // et une texture ancienne vue plus tard (écran regardé après coup) donnait son display au mauvais écran.
         // Displays rangés dans uiNamespace (jamais dans une variable d'objet : un display ne se sérialise pas).
-        private _p = uiNamespace getVariable ["COMSPEC_ATAK_TocPending", []];
-        private _o = _p param [0, objNull];
-        if (isNull _o || {isNull _a}) exitWith {};
+        if (isNull _a) exitWith {};
+        private _nm = displayUniqueName _a;
+        // Display d'essai de l'op « audit » (pas une texture) : n'appartient à aucun écran.
+        if (_nm isEqualTo "" && {uiNamespace getVariable ["COMSPEC_ATAK_TocAuditing", false]}) exitWith {};
+        private _texObj = uiNamespace getVariable ["COMSPEC_ATAK_TocTexObj", createHashMap];
+        private _o = _texObj getOrDefault [_nm, objNull];
+        // Repli (nom absent) : dernière texture demandée.
+        if (isNull _o) then {
+            private _p = uiNamespace getVariable ["COMSPEC_ATAK_TocPending", []];
+            if (_nm isEqualTo "" || {(_p param [2, ""]) isEqualTo _nm}) then { _o = _p param [0, objNull]; _nm = _p param [2, ""]; };
+        };
+        // Texture abandonnée entre-temps (écran quitté, nouvel essai sous un autre nom) : display ignoré.
+        if (isNull _o || {(_o getVariable ["COMSPEC_ATAK_TocTex", ""]) isNotEqualTo _nm}) exitWith {};
         private _disps = uiNamespace getVariable ["COMSPEC_ATAK_TocDisps", createHashMap];
-        _disps set [_p param [2, ""], _a];
+        _disps set [_nm, _a];
         uiNamespace setVariable ["COMSPEC_ATAK_TocDisps", _disps];
+        _texObj deleteAt _nm;
+        // Première image tout de suite (sinon noir jusqu'au tour suivant).
         _o setVariable ["COMSPEC_ATAK_TocDraws", 0];
-        uiNamespace setVariable ["COMSPEC_ATAK_TocPending", []];
-        ["INFO", "SCREEN", format ["Écran TOC %1 : texture UI %2 chargée, image dessinée", typeOf _o, _p param [2, ""]]] call comspec_atak_native_fnc_log;
+        _o setVariable ["COMSPEC_ATAK_TocAt", -10];
+        if (((uiNamespace getVariable ["COMSPEC_ATAK_TocPending", []]) param [2, ""]) isEqualTo _nm) then { uiNamespace setVariable ["COMSPEC_ATAK_TocPending", []]; };
+        ["INFO", "SCREEN", format ["Écran TOC %1 : texture UI %2 chargée, image dessinée", typeOf _o, _nm]] call comspec_atak_native_fnc_log;
+        // Première image à l'image suivante, sans attendre le tour de la seconde (display retrouvé par son nom).
+        [{
+            params ["_o", "_nm"];
+            private _d = (uiNamespace getVariable ["COMSPEC_ATAK_TocDisps", createHashMap]) getOrDefault [_nm, displayNull];
+            if (isNull _o || {isNull _d} || {!(_o getVariable ["COMSPEC_ATAK_TocOn", false])}) exitWith {};
+            _o setVariable ["COMSPEC_ATAK_TocAt", diag_tickTime];
+            ["draw", [_o, _d]] call comspec_atak_native_fnc_tocScreen;
+            displayUpdate _d;
+        }, [_o, _nm]] call comspec_atak_native_fnc_nextFrame;
+    };
+    case "center": {
+        // Centre de l'image (ASL) : milieu de la boîte du modèle de l'écran hôte, gardé une fois par objet. L'origine des
+        // modèles est au sol (trépied, murs d'images, 98 pouces) ou au plafond (écran suspendu) : regarder l'image ne
+        // mettait pas l'origine à l'écran, l'écran passait pour « pas vu » (plus redessiné, caméras jamais lancées).
+        [_a] call _centerOf
     };
     case "tick": {
+        // Client, chaque seconde. Coût proportionnel aux seuls écrans proches : index par cases de 100 m, refait quand
+        // le registre change (ou toutes les 10 s : écran traîné, déplacé au Zeus).
+        //   allumé  : à moins de la distance d'affichage (réglage, 25 m par défaut), devant soi (100° au plus de l'axe
+        //             de la caméra) et pas derrière un mur (checkVisibility toutes les 3 s) : texture UI, rafraîchie
+        //             toutes les 1 à 2 s, caméras et satellite possibles ;
+        //   figé    : un peu plus loin ou pas regardé : la dernière image reste, rien n'est recalculé (ni dessin, ni
+        //             caméra, ni boucle par image) ;
+        //   veille  : au-delà (distance + 50 %, 10 m au moins) : texture d'origine de l'écran remise, display abandonné.
+        // Retour devant l'écran : première image tout de suite.
         if (!hasInterface || {isNull player}) exitWith {};
         disableSerialization;
+        private _now = diag_tickTime;
         private _disps = uiNamespace getVariable ["COMSPEC_ATAK_TocDisps", createHashMap];
-        private _reg = (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x };
+        uiNamespace setVariable ["COMSPEC_ATAK_TocDisps", _disps];
+        private _texObj = uiNamespace getVariable ["COMSPEC_ATAK_TocTexObj", createHashMap];
+        uiNamespace setVariable ["COMSPEC_ATAK_TocTexObj", _texObj];
+        private _reg = missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []];
         private _local = (missionNamespace getVariable ["COMSPEC_ATAK_TocLocal", []]) select { !isNull _x };
-        private _pend = uiNamespace getVariable ["COMSPEC_ATAK_TocPending", []];
-        // Attente du display plus de 4 s : l'écran suivant peut prendre son tour (nouvel essai plus tard).
-        if ((count _pend) >= 2 && {diag_tickTime - (_pend select 1) > 4}) then {
-            if (!isNull (_pend select 0)) then {
-                (_pend select 0) setVariable ["COMSPEC_ATAK_TocTex", ""];
-                // Trace une fois par écran : l'image n'a jamais été dessinée par le jeu (dalle cachée ou hors champ).
-                if !((_pend select 0) getVariable ["COMSPEC_ATAK_TocLoadWarn", false]) then {
-                    (_pend select 0) setVariable ["COMSPEC_ATAK_TocLoadWarn", true];
-                    ["WARNING", "TOC", format ["Écran TOC %1 : image non chargée en 4 s (dalle %2), nouvel essai", typeOf (_pend select 0), (_pend select 0) getVariable ["COMSPEC_ATAK_TocSel", 0]]] call comspec_atak_native_fnc_log;
+        private _range = call _viewRange;
+        private _hold = _range + (10 max (_range * 0.5));
+        private _grid = uiNamespace getVariable ["COMSPEC_ATAK_TocGrid", [-1e9, -1, createHashMap]];
+        if ((_grid select 1) isNotEqualTo (count _reg) || {_now - (_grid select 0) > 10}) then {
+            private _h = createHashMap;
+            {
+                if (!isNull _x) then {
+                    private _p = getPosASL _x;
+                    private _k = [floor ((_p select 0) / 100), floor ((_p select 1) / 100)];
+                    private _l = _h getOrDefault [_k, []];
+                    _l pushBack _x;
+                    _h set [_k, _l];
                 };
-            };
-            _pend = [];
-            uiNamespace setVariable ["COMSPEC_ATAK_TocPending", []];
+            } forEach _reg;
+            _grid = [_now, count _reg, _h];
+            uiNamespace setVariable ["COMSPEC_ATAK_TocGrid", _grid];
         };
-        private _cam = positionCameraToWorld [0, 0, 0];
-        // Écrans en vue caméra rendus en direct par ce poste (proches, regardés, dans la limite) : pas de texture UI.
-        private _live = ["tick", _reg] call comspec_atak_native_fnc_tocCam;
-        // Satellites à rendre sur ce poste (écrans SAT regardés de près), dans la limite restante des caméras.
-        ["tick", _reg] call comspec_atak_native_fnc_tocSat;
-        ["tick"] call comspec_atak_native_fnc_tocMosaic;
+        private _eye = AGLToASL (positionCameraToWorld [0, 0, 0]);
+        private _dir = vectorNormalized ((AGLToASL (positionCameraToWorld [0, 0, 1])) vectorDiff _eye);
+        private _gx = floor ((_eye select 0) / 100);
+        private _gy = floor ((_eye select 1) / 100);
+        private _span = ceil (_hold / 100);
+        private _near = [];
+        for "_i" from (_gx - _span) to (_gx + _span) do {
+            for "_j" from (_gy - _span) to (_gy + _span) do { _near append ((_grid select 2) getOrDefault [[_i, _j], []]); };
+        };
+        // Écrans proches, plus ceux qui gardent encore une texture sur ce poste (à remettre en veille).
+        private _rows = [];
         {
             private _o = _x;
+            if (isNull _o) then { continue };
             private _cfg = [_o] call _cfgOf;
-            private _want = (count _cfg) >= 8 && {_o in _reg} && {alive _o} && {!(_o getVariable ["COMSPEC_ATAK_TocOff", false])} && {(_cam distance _o) < 150} && {[_o] call _sideOk} && {[_o] call _lit};
-            private _tex = _o getVariable ["COMSPEC_ATAK_TocTex", ""];
-            if (_want) then {
-                if !(_o getVariable ["COMSPEC_ATAK_TocAct", false]) then {
-                    _o setVariable ["COMSPEC_ATAK_TocAct", true];
-                    ["actions", _o] call _fn;
-                };
-                // Diapositives prioritaires : on libère la dalle pour fn_screenCast. Caméra en direct : fn_tocCam la tient.
-                if ([_o] call _casting || {_o in _live}) then {
-                    if (_tex isNotEqualTo "") then {
-                        // Caméra en direct : fn_tocCam vient de poser son image, ne pas la recouvrir.
-                        // Diapositive déjà posée par fn_screenCast sur ce poste (cas des autres joueurs que le diffuseur) :
-                        // ne pas la recouvrir par la texture d'origine, ni défaire la préparation de la dalle.
-                        if (!(_o in _live) && {(_o getVariable ["COMSPEC_ATAK_ScreenCur", ""]) isEqualTo ""}) then {
-                            ["paint", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], _o getVariable ["COMSPEC_ATAK_TocOrig", ""]]] call _fn;
-                            ["surface", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], false]] call _fn;
-                        };
-                        _o setVariable ["COMSPEC_ATAK_TocTex", ""];
-                        _disps deleteAt _tex;
-                        if ((_pend param [0, objNull]) isEqualTo _o) then { uiNamespace setVariable ["COMSPEC_ATAK_TocPending", []]; _pend = []; };
-                        _local = _local - [_o];
+            private _ok = (count _cfg) >= 8 && {alive _o} && {!(_o getVariable ["COMSPEC_ATAK_TocOff", false])} && {[_o] call _sideOk} && {[_o] call _lit};
+            private _ctr = [_o] call _centerOf;
+            private _dist = _eye distance _ctr;
+            private _seen = false;
+            if (_ok && {_dist < _range}) then {
+                _seen = _dist < 3 || {((vectorNormalized (_ctr vectorDiff _eye)) vectorDotProduct _dir) > -0.17};
+                // Derrière un mur : point visé à 15 cm devant la dalle, l'écran lui-même ignoré ; jamais tout près.
+                if (_seen && {_dist > 5}) then {
+                    private _vis = _o getVariable ["COMSPEC_ATAK_TocVis", [-1e9, true]];
+                    if (_now - (_vis select 0) > 3) then {
+                        private _to = _ctr vectorAdd ((vectorNormalized (_eye vectorDiff _ctr)) vectorMultiply 0.15);
+                        _vis = [_now, ([vehicle player, "VIEW", [_o] call _hostOf] checkVisibility [_eye, _to]) > 0.02];
+                        _o setVariable ["COMSPEC_ATAK_TocVis", _vis];
                     };
-                } else {
-                if (_tex isEqualTo "" && {(count _pend) isEqualTo 0}) then {
-                    private _n = (uiNamespace getVariable ["COMSPEC_ATAK_TocSeq", 0]) + 1;
-                    uiNamespace setVariable ["COMSPEC_ATAK_TocSeq", _n];
-                    _tex = format ["comspec_atak_toc_%1", _n];
-                    private _sel = [_o, _cfg select 2] call _face;
-                    if (isNil { _o getVariable "COMSPEC_ATAK_TocOrig" }) then { _o setVariable ["COMSPEC_ATAK_TocOrig", ["orig", [_o, _sel]] call _fn]; };
-                    _o setVariable ["COMSPEC_ATAK_TocTex", _tex];
-                    _o setVariable ["COMSPEC_ATAK_TocSel", _sel];
-                    _pend = [_o, diag_tickTime, _tex];
-                    uiNamespace setVariable ["COMSPEC_ATAK_TocPending", _pend];
-                    if !(_o getVariable ["COMSPEC_ATAK_TocReqLog", false]) then {
-                        _o setVariable ["COMSPEC_ATAK_TocReqLog", true];
-                        ["INFO", "SCREEN", format ["Écran TOC %1 (%2) : affichage %3, texture UI %4 demandée sur la dalle %5 (%6)", typeOf _o, _cfg select 0, _cfg select 3, _tex, _sel, (getArray (configOf _o >> "hiddenSelections")) param [_sel, "?"]]] call comspec_atak_native_fnc_log;
-                    };
-                    ["paint", [_o, _sel, format ["%1ui(""COMSPEC_RscTocScreenTexture"",""%2"")", [_texSpec, "#(rgb,2048,512,1)"] select (([_o] call _ratioOf) >= 4), _tex]]] call _fn;
-                    ["surface", [_o, _sel, true]] call _fn;
-                    _local pushBackUnique _o;
-                };
-                private _disp = _disps getOrDefault [_tex, displayNull];
-                if (!isNull _disp) then {
-                    private _draws = _o getVariable ["COMSPEC_ATAK_TocDraws", 0];
-                    // Horloge et satellite : chaque seconde (secondes de l'horloge, bandeau du satellite).
-                    private _due = diag_tickTime - (_o getVariable ["COMSPEC_ATAK_TocAt", -10]) >= ([1.9, 0.9] select ((_cfg select 3) in ["CLOCK", "SAT", "STRIP", "MOSAIC"]));
-                    // Toujours les premières images (sinon noir tant qu'on ne l'a pas regardé), puis seulement vu et proche.
-                    private _seen = (_cam distance _o) < 80 && {(worldToScreen (ASLToAGL getPosASL _o)) isNotEqualTo []};
-                    if (_due && {_draws < 3 || {_seen}}) then {
-                        // Matière jour / nuit suivie (rien ne change tant que le soleil ne passe pas l'horizon).
-                        ["surface", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], true]] call _fn;
-                        _o setVariable ["COMSPEC_ATAK_TocAt", diag_tickTime];
-                        _o setVariable ["COMSPEC_ATAK_TocDraws", _draws + 1];
-                        ["draw", [_o, _disp]] call _fn;
-                        displayUpdate _disp;
-                    };
-                };
-                }; // fin hors diffusion diapositives
-            } else {
-                // Trop loin, retiré ou détruit : texture d'origine remise, display abandonné.
-                if (_tex isNotEqualTo "") then {
-                    ["paint", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], _o getVariable ["COMSPEC_ATAK_TocOrig", ""]]] call _fn;
-                    ["surface", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], false]] call _fn;
-                    _o setVariable ["COMSPEC_ATAK_TocTex", ""];
-                    _disps deleteAt _tex;
-                    if ((_pend param [0, objNull]) isEqualTo _o) then { uiNamespace setVariable ["COMSPEC_ATAK_TocPending", []]; _pend = []; };
-                    _local = _local - [_o];
+                    _seen = _vis select 1;
                 };
             };
-        } forEach (_reg + (_local - _reg));
+            _rows pushBack [_o, _cfg, _ok, _dist, _seen];
+        } forEach (_near + (_local - _near));
+        private _act = (_rows select { (_x select 2) && {_x select 4} }) apply { _x select 0 };
+        // Image vraiment à l'écran (centre de la dalle) : caméras en direct et satellite seulement pour celles-là.
+        {
+            if ((worldToScreen (ASLToAGL ([_x] call _centerOf))) isNotEqualTo []) then {
+                _x setVariable ["COMSPEC_ATAK_TocCamSeen", _now];
+                _x setVariable ["COMSPEC_ATAK_TocSatSeen", _now];
+            };
+        } forEach _act;
+        // Caméras d'écran, satellites, mosaïques : seulement les écrans allumés (proches et regardés).
+        private _live = ["tick", _act] call comspec_atak_native_fnc_tocCam;
+        ["tick", _act] call comspec_atak_native_fnc_tocSat;
+        ["tick"] call comspec_atak_native_fnc_tocMosaic;
+        private _release = {
+            params ["_o", "_tex"];
+            if (!(_o in _live) && {(_o getVariable ["COMSPEC_ATAK_ScreenCur", ""]) isEqualTo ""}) then {
+                ["paint", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], _o getVariable ["COMSPEC_ATAK_TocOrig", ""]]] call _fn;
+                ["surface", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], false]] call _fn;
+            };
+            _o setVariable ["COMSPEC_ATAK_TocTex", ""];
+            _disps deleteAt _tex;
+            _texObj deleteAt _tex;
+            _local = _local - [_o];
+        };
+        {
+            _x params ["_o", "_cfg", "_ok", "_dist", "_seen"];
+            private _tex = _o getVariable ["COMSPEC_ATAK_TocTex", ""];
+            private _on = _ok && {_seen};
+            _o setVariable ["COMSPEC_ATAK_TocOn", _on];
+            if (_on && {!(_o getVariable ["COMSPEC_ATAK_TocAct", false])}) then {
+                _o setVariable ["COMSPEC_ATAK_TocAct", true];
+                ["actions", _o] call _fn;
+            };
+            switch (true) do {
+                // Diapositives prioritaires : la dalle va à fn_screenCast. Caméra en direct : fn_tocCam la tient.
+                case (_on && {[_o] call _casting || {_o in _live}}): {
+                    if (_tex isNotEqualTo "") then { [_o, _tex] call _release; };
+                };
+                case _on: {
+                    // Retour devant l'écran : image tout de suite.
+                    if !(_o getVariable ["COMSPEC_ATAK_TocWasOn", false]) then { _o setVariable ["COMSPEC_ATAK_TocWasOn", true]; _o setVariable ["COMSPEC_ATAK_TocAt", -10]; };
+                    // Texture UI : une par écran, toutes demandées ensemble (chacune reconnue à son nom au chargement).
+                    if (_tex isEqualTo "" && {_now >= (_o getVariable ["COMSPEC_ATAK_TocRetry", 0])}) then {
+                        private _n = (uiNamespace getVariable ["COMSPEC_ATAK_TocSeq", 0]) + 1;
+                        uiNamespace setVariable ["COMSPEC_ATAK_TocSeq", _n];
+                        _tex = format ["comspec_atak_toc_%1", _n];
+                        private _sel = [_o, _cfg select 2] call _face;
+                        if (isNil { _o getVariable "COMSPEC_ATAK_TocOrig" }) then { _o setVariable ["COMSPEC_ATAK_TocOrig", ["orig", [_o, _sel]] call _fn]; };
+                        _o setVariable ["COMSPEC_ATAK_TocTex", _tex];
+                        _o setVariable ["COMSPEC_ATAK_TocSel", _sel];
+                        _o setVariable ["COMSPEC_ATAK_TocReqAt", _now];
+                        _texObj set [_tex, _o];
+                        uiNamespace setVariable ["COMSPEC_ATAK_TocPending", [_o, _now, _tex]];
+                        if !(_o getVariable ["COMSPEC_ATAK_TocReqLog", false]) then {
+                            _o setVariable ["COMSPEC_ATAK_TocReqLog", true];
+                            ["INFO", "SCREEN", format ["Écran TOC %1 (%2) : affichage %3, texture UI %4 demandée sur la dalle %5 (%6), à %7 m", typeOf _o, _cfg select 0, _cfg select 3, _tex, _sel, (getArray (configOf ([_o] call _hostOf) >> "hiddenSelections")) param [_sel, "?"], round _dist]] call comspec_atak_native_fnc_log;
+                        };
+                        ["paint", [_o, _sel, format ["%1ui(""COMSPEC_RscTocScreenTexture"",""%2"")", [_texSpec, "#(rgb,2048,512,1)"] select (([_o] call _ratioOf) >= 4), _tex]]] call _fn;
+                        ["surface", [_o, _sel, true]] call _fn;
+                        _local pushBackUnique _o;
+                    };
+                    private _disp = _disps getOrDefault [_tex, displayNull];
+                    if (isNull _disp) then {
+                        // Jamais chargée en 6 s alors que l'écran est devant soi (dalle masquée, mauvaise sélection) : trace une
+                        // fois, nouvel essai sous un autre nom 4 s plus tard. Les autres écrans ne l'attendent plus.
+                        if (_tex isNotEqualTo "" && {_now - (_o getVariable ["COMSPEC_ATAK_TocReqAt", _now]) > 6}) then {
+                            if !(_o getVariable ["COMSPEC_ATAK_TocLoadWarn", false]) then {
+                                _o setVariable ["COMSPEC_ATAK_TocLoadWarn", true];
+                                ["WARNING", "TOC", format ["Écran TOC %1 : image non chargée en 6 s (dalle %2), nouvel essai", typeOf _o, _o getVariable ["COMSPEC_ATAK_TocSel", 0]]] call comspec_atak_native_fnc_log;
+                            };
+                            _o setVariable ["COMSPEC_ATAK_TocTex", ""];
+                            _texObj deleteAt _tex;
+                            _o setVariable ["COMSPEC_ATAK_TocRetry", _now + 4];
+                        };
+                    } else {
+                        // Horloge, satellite, bandeau, mosaïque : chaque seconde ; le reste toutes les 2 s.
+                        private _due = _now - (_o getVariable ["COMSPEC_ATAK_TocAt", -10]) >= ([1.9, 0.9] select ((_cfg select 3) in ["CLOCK", "SAT", "STRIP", "MOSAIC"]));
+                        if (_due) then {
+                            // Matière jour / nuit suivie (rien ne change tant que le soleil ne passe pas l'horizon).
+                            ["surface", [_o, _o getVariable ["COMSPEC_ATAK_TocSel", 0], true]] call _fn;
+                            _o setVariable ["COMSPEC_ATAK_TocAt", _now];
+                            _o setVariable ["COMSPEC_ATAK_TocDraws", (_o getVariable ["COMSPEC_ATAK_TocDraws", 0]) + 1];
+                            ["draw", [_o, _disp]] call _fn;
+                            displayUpdate _disp;
+                        };
+                    };
+                };
+                // Figé : proche mais pas regardé, ou juste au-delà de la distance d'affichage. Dernière image gardée.
+                case (_ok && {_dist < _hold} && {_tex isNotEqualTo ""}): {
+                    _o setVariable ["COMSPEC_ATAK_TocWasOn", false];
+                };
+                // Veille : loin, éteint, retiré ou détruit. Texture d'origine remise, display abandonné.
+                default {
+                    _o setVariable ["COMSPEC_ATAK_TocWasOn", false];
+                    if (_tex isNotEqualTo "") then { [_o, _tex] call _release; };
+                };
+            };
+        } forEach _rows;
         missionNamespace setVariable ["COMSPEC_ATAK_TocLocal", _local];
+    };
+    case "build": {
+        // Contrôles de la carte du poste et du panneau, créés une fois par display (réserves réutilisées à chaque image).
+        // Mise en page en pixels virtuels 1600 x 900 (_R), polices fixes en pixels virtuels (28 px = texte courant) :
+        // le texte ne dépend plus de la taille d'interface de qui regarde (safeZoneH, coupures du panneau RÉSEAU).
+        private _d = _a;
+        disableSerialization;
+        // Tableau (fn_tocBoard) créé avant la carte : supprimé, il sera recréé par-dessus elle.
+        private _brd = _d getVariable ["COMSPEC_ATAK_TocBoard", controlNull];
+        if (!isNull _brd) then { ctrlDelete _brd; _d setVariable ["COMSPEC_ATAK_TocBoard", controlNull]; _d setVariable ["COMSPEC_ATAK_TocBoardUi", createHashMap]; };
+        private _mk = {
+            params ["_cls", ["_grp", controlNull], ["_fpx", 0], ["_bold", false]];
+            private _c = if (isNull _grp) then { _d ctrlCreate [_cls, -1] } else { _d ctrlCreate [_cls, -1, _grp] };
+            if (_fpx > 0) then {
+                _c ctrlSetFontHeight (_fpx / _texH);
+                _c ctrlSetFont (["RobotoCondensed", "RobotoCondensedBold"] select _bold);
+                _c setVariable ["COMSPEC_ATAK_Fpx", _fpx];
+                _c setVariable ["COMSPEC_ATAK_Bold", _bold];
+            };
+            _c ctrlSetPosition [0, 0, 0, 0];
+            _c ctrlCommit 0;
+            _c
+        };
+        private _box = { params ["_rect", "_rgba"]; private _c = ["RscText"] call _mk; _c ctrlSetBackgroundColor _rgba; _c ctrlSetPosition (_rect call _R); _c ctrlCommit 0; _c };
+        [[0, 0, 1600, 900], [0.025, 0.03, 0.027, 1]] call _box;
+        [[0, 0, 1600, 80], [0.045, 0.055, 0.048, 1]] call _box;
+        private _accent = [[0, 80, 1600, 4], [0.28, 0.62, 1, 1]] call _box;
+        private _title = ["COMSPEC_RscTocText"] call _mk;
+        _title ctrlSetPosition ([24, 12, 1060, 62] call _R); _title ctrlCommit 0;
+        private _clock = ["COMSPEC_RscTocText"] call _mk;
+        _clock ctrlSetPosition ([1100, 20, 476, 48] call _R); _clock ctrlCommit 0;
+        // ---- Carte (groupe : tout y est en pixels du groupe) ----
+        private _grp = ["RscControlsGroupNoScrollbars"] call _mk;
+        private _sea = ["RscText", _grp] call _mk;
+        _sea ctrlSetBackgroundColor [0.05, 0.07, 0.08, 1];
+        private _tiles = []; for "_i" from 1 to 36 do { _tiles pushBack (["RscPicture", _grp] call _mk); };
+        // Voile sombre sur le fond (thème ATHENA) : symboles et plaques ressortent, la carte d'ensemble floue s'efface.
+        private _dim = ["RscText", _grp] call _mk;
+        _dim ctrlSetBackgroundColor [0.02, 0.035, 0.03, 0.22];
+        private _lines = []; for "_i" from 1 to 28 do { private _l = ["RscText", _grp] call _mk; _l ctrlSetBackgroundColor [1, 1, 1, 0.13]; _lines pushBack _l; };
+        private _gLbls = []; for "_i" from 1 to 28 do { private _t = ["COMSPEC_RscTocLabelCenter", _grp, 24, true] call _mk; _t ctrlSetBackgroundColor [0, 0, 0, 0.5]; _t ctrlSetTextColor [0.8, 0.86, 0.82, 1]; _gLbls pushBack _t; };
+        private _places = []; for "_i" from 1 to 16 do { private _t = ["COMSPEC_RscTocLabelCenter", _grp, 28, false] call _mk; _t ctrlSetBackgroundColor [0, 0, 0, 0.4]; _t ctrlSetTextColor [0.88, 0.91, 0.89, 1]; _places pushBack _t; };
+        private _segs = []; for "_i" from 1 to 260 do { private _c = ["RscPicture", _grp] call _mk; _c ctrlSetText "#(argb,8,8,3)color(1,1,1,1)"; _segs pushBack _c; }; // i18n:brut (texture)
+        private _segLbls = []; for "_i" from 1 to 24 do { private _t = ["COMSPEC_RscTocLabel", _grp, 26, true] call _mk; _t ctrlSetBackgroundColor [0, 0, 0, 0.6]; _segLbls pushBack _t; };
+        private _mkIcons = []; private _mkLbls = [];
+        for "_i" from 1 to 40 do { _mkIcons pushBack (["RscPicture", _grp] call _mk); private _t = ["COMSPEC_RscTocLabel", _grp, 26, true] call _mk; _t ctrlSetBackgroundColor [0, 0, 0, 0.6]; _t ctrlSetTextColor [1, 1, 1, 1]; _mkLbls pushBack _t; };
+        private _evIcons = []; for "_i" from 1 to 12 do { _evIcons pushBack (["RscPicture", _grp] call _mk); };
+        private _uIcons = []; private _uLbls = [];
+        for "_i" from 1 to 100 do {
+            _uIcons pushBack (["RscPicture", _grp] call _mk);
+            private _t = ["COMSPEC_RscTocLabel", _grp, 28, true] call _mk;
+            _t ctrlSetBackgroundColor [0, 0, 0, 0.62];
+            _uLbls pushBack _t;
+        };
+        private _scBg = ["RscText", _grp] call _mk; _scBg ctrlSetBackgroundColor [0, 0, 0, 0.62];
+        private _scBar = ["RscText", _grp] call _mk; _scBar ctrlSetBackgroundColor [1, 1, 1, 1];
+        private _scT0 = ["RscText", _grp] call _mk; _scT0 ctrlSetBackgroundColor [1, 1, 1, 1];
+        private _scT1 = ["RscText", _grp] call _mk; _scT1 ctrlSetBackgroundColor [1, 1, 1, 1];
+        private _scTxt = ["COMSPEC_RscTocLabel", _grp, 28, false] call _mk; _scTxt ctrlSetTextColor [1, 1, 1, 1];
+        private _noBg = ["RscText", _grp] call _mk; _noBg ctrlSetBackgroundColor [0, 0, 0, 0.62];
+        private _noArrow = ["COMSPEC_RscTocLabelCenter", _grp, 24, true] call _mk; _noArrow ctrlSetText "▲"; // i18n:brut (symbole)
+        private _noTxt = ["COMSPEC_RscTocLabelCenter", _grp, 32, true] call _mk; _noTxt ctrlSetText (("N") call comspec_atak_native_fnc_tr);
+        private _empty = ["COMSPEC_RscTocText", _grp] call _mk;
+        // ---- Panneau ----
+        private _pip = ["COMSPEC_RscTocLabel", controlNull, 28, true] call _mk; _pip ctrlSetTextColor [0.88, 0.69, 0.25, 1];
+        private _netT = ["COMSPEC_RscTocLabel", controlNull, 36, true] call _mk; _netT ctrlSetTextColor [0.9, 0.94, 0.91, 1];
+        private _netS = ["COMSPEC_RscTocLabelRight", controlNull, 28, false] call _mk; _netS ctrlSetTextColor [0.58, 0.64, 0.6, 1];
+        private _cnt = [];
+        {
+            private _bg = ["RscText"] call _mk; _bg ctrlSetBackgroundColor [0.07, 0.082, 0.072, 1];
+            private _n = ["COMSPEC_RscTocLabelCenter", controlNull, 44, true] call _mk; _n ctrlSetTextColor _x;
+            private _l = ["COMSPEC_RscTocLabelCenter", controlNull, 28, false] call _mk; _l ctrlSetTextColor [0.58, 0.64, 0.6, 1];
+            _cnt pushBack [_bg, _n, _l];
+        } forEach [[0.36, 0.78, 0.42, 1], [0.88, 0.69, 0.25, 1], [0.66, 0.7, 0.68, 1], [0.48, 0.52, 0.5, 1]];
+        private _grpT = ["COMSPEC_RscTocText"] call _mk;
+        private _colH = [["COMSPEC_RscTocLabel", controlNull, 28, true] call _mk, ["COMSPEC_RscTocLabelRight", controlNull, 28, true] call _mk, ["COMSPEC_RscTocLabel", controlNull, 28, true] call _mk];
+        { _x ctrlSetTextColor [0.58, 0.64, 0.6, 1]; } forEach _colH;
+        private _tbl = [];
+        for "_i" from 1 to 16 do {
+            private _bg = ["RscText"] call _mk; _bg ctrlSetBackgroundColor [1, 1, 1, [0, 0.035] select ((_i mod 2) isEqualTo 0)];
+            _tbl pushBack [_bg, ["COMSPEC_RscTocLabel", controlNull, 30, true] call _mk, ["COMSPEC_RscTocLabelRight", controlNull, 30, false] call _mk, ["COMSPEC_RscTocLabel", controlNull, 30, false] call _mk];
+        };
+        private _fluxBg = ["RscText"] call _mk; _fluxBg ctrlSetBackgroundColor [0.045, 0.055, 0.048, 1];
+        private _fluxT = ["COMSPEC_RscTocLabel", controlNull, 32, true] call _mk; _fluxT ctrlSetTextColor [0.9, 0.94, 0.91, 1];
+        private _fluxL = []; for "_i" from 1 to 16 do { _fluxL pushBack (["COMSPEC_RscTocText"] call _mk); };
+        private _info = ["COMSPEC_RscTocText"] call _mk;
+        private _orbN = ["COMSPEC_RscTocLabel", controlNull, 28, false] call _mk; _orbN ctrlSetTextColor [0.58, 0.64, 0.6, 1];
+        private _orb1 = ["COMSPEC_RscTocText"] call _mk;
+        private _orb2 = ["COMSPEC_RscTocText"] call _mk;
+        private _sqT = ["COMSPEC_RscTocText"] call _mk;
+        private _sqL = ["COMSPEC_RscTocText"] call _mk;
+        // Écran d'escouade : caméra poitrine du chef en bas du panneau (16:9, 580 x 326).
+        private _lc = ["RscPicture"] call _mk;
+        private _ll = ["COMSPEC_RscTocText"] call _mk; _ll ctrlSetBackgroundColor [0, 0, 0, 0.62];
+        createHashMapFromArray [["accent", _accent], ["title", _title], ["clock", _clock], ["grp", _grp], ["sea", _sea], ["tiles", _tiles], ["dim", _dim],
+            ["lines", _lines], ["gLbls", _gLbls], ["places", _places], ["segs", _segs], ["segLbls", _segLbls], ["mkIcons", _mkIcons], ["mkLbls", _mkLbls],
+            ["evIcons", _evIcons], ["uIcons", _uIcons], ["uLbls", _uLbls], ["scale", [_scBg, _scBar, _scT0, _scT1, _scTxt]], ["north", [_noBg, _noArrow, _noTxt]],
+            ["empty", _empty], ["pip", _pip], ["netT", _netT], ["netS", _netS], ["cnt", _cnt], ["grpT", _grpT], ["colH", _colH], ["tbl", _tbl],
+            ["fluxBg", _fluxBg], ["fluxT", _fluxT], ["fluxL", _fluxL], ["info", _info], ["orbN", _orbN], ["orb1", _orb1], ["orb2", _orb2],
+            ["sqT", _sqT], ["sqL", _sqL], ["lead", _lc], ["leadLbl", _ll]]
     };
     case "draw": {
         _a params ["_o", "_d"];
         disableSerialization;
         private _cfg = [_o] call _cfgOf;
-        _cfg params ["_name", "_cside", "", "_view", "_half", "_center"];
+        _cfg params [["_name", "TOC"], ["_cside", ""], "", ["_view", "SPLIT"], ["_half", 0], ["_center", []]];
         // Vue caméra sans rendu en direct sur ce poste (trop loin, pas regardée, limite atteinte) : carte et flux.
         if (_view isEqualTo "CAM") then { _view = "SPLIT"; };
         // Satellite, horloge, tableaux du poste : dessinés par fn_tocBoard par-dessus la carte (non dessinée).
@@ -539,7 +874,6 @@ switch (_mode) do {
         _feed params [["_ft", -1], ["_nodes", []], ["_events", []], ["_stats", []]];
         private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
         private _sideRgb = (createHashMapFromArray [["WEST", [0.28, 0.62, 1]], ["EAST", [0.95, 0.3, 0.25]], ["GUER", [0.36, 0.85, 0.42]], ["CIV", [0.75, 0.5, 0.95]]]) getOrDefault [_side, [0.28, 0.62, 1]];
-        private _sideName = (createHashMapFromArray [["WEST", "BLUFOR"], ["EAST", "OPFOR"], ["GUER", "Indépendant"], ["CIV", "Civil"]]) getOrDefault [_side, _side];
         // PIP du poste : ce que l'opérateur du PC regarde (fn_tocLaptop). L'opérateur du poste de même nom passe devant.
         private _op = [];
         if (_view isEqualTo "TOC") then {
@@ -549,98 +883,56 @@ switch (_mode) do {
             if ((count _op) < 8) then { _view = "SPLIT"; _op = []; };
         };
         private _ui = _d getVariable ["COMSPEC_ATAK_TocUi", createHashMap];
-        // Contrôles créés une fois par display (réserves d'icônes et de textes réutilisées à chaque image).
-        if ((count _ui) isEqualTo 0) then {
-            // Tableau (fn_tocBoard) créé avant la carte : supprimé, il sera recréé par-dessus elle.
-            private _brd = _d getVariable ["COMSPEC_ATAK_TocBoard", controlNull];
-            if (!isNull _brd) then { ctrlDelete _brd; _d setVariable ["COMSPEC_ATAK_TocBoard", controlNull]; _d setVariable ["COMSPEC_ATAK_TocBoardUi", createHashMap]; };
-            private _mk = {
-                params ["_cls", ["_grp", controlNull]];
-                private _c = if (isNull _grp) then { _d ctrlCreate [_cls, -1] } else { _d ctrlCreate [_cls, -1, _grp] };
-                _c ctrlSetPosition [0, 0, 0, 0];
-                _c ctrlCommit 0;
-                _c
+        if ((count _ui) isEqualTo 0) then { _ui = ["build", _d] call _fn; _d setVariable ["COMSPEC_ATAK_TocUi", _ui]; };
+        private _setTxt = {
+            params ["_c", "_s"];
+            if ((_c getVariable ["COMSPEC_ATAK_Txt", ""]) isNotEqualTo _s) then {
+                _c setVariable ["COMSPEC_ATAK_Txt", _s];
+                _c ctrlSetStructuredText parseText ((_s) call comspec_atak_native_fnc_tr);
             };
-            private _bg = ["RscText"] call _mk;
-            _bg ctrlSetBackgroundColor [0.03, 0.04, 0.035, 1];
-            _bg ctrlSetPosition [0, 0, 1, 1]; _bg ctrlCommit 0;
-            private _hdr = ["RscText"] call _mk;
-            _hdr ctrlSetBackgroundColor [0.06, 0.08, 0.07, 1];
-            _hdr ctrlSetPosition [0, 0, 1, 0.075]; _hdr ctrlCommit 0;
-            private _accent = ["RscText"] call _mk;
-            _accent ctrlSetPosition [0, 0.072, 1, 0.004]; _accent ctrlCommit 0;
-            private _title = ["COMSPEC_RscStructuredText"] call _mk;
-            _title ctrlSetPosition [0.012, 0.012, 0.5, 0.06]; _title ctrlCommit 0;
-            private _clock = ["COMSPEC_RscStructuredText"] call _mk;
-            _clock ctrlSetPosition [0.515, 0.016, 0.475, 0.056]; _clock ctrlCommit 0;
-            private _grp = ["RscControlsGroupNoScrollbars"] call _mk;
-            private _sea = ["RscText", _grp] call _mk;
-            _sea ctrlSetBackgroundColor [0.16, 0.22, 0.28, 1];
-            private _tiles = []; for "_i" from 1 to 36 do { _tiles pushBack (["RscPicture", _grp] call _mk); };
-            private _lines = []; for "_i" from 1 to 28 do { private _l = ["RscText", _grp] call _mk; _l ctrlSetBackgroundColor [0, 0, 0, 0.28]; _lines pushBack _l; };
-            private _mkIcons = []; private _mkLbls = [];
-            for "_i" from 1 to 40 do { _mkIcons pushBack (["RscPicture", _grp] call _mk); private _t = ["RscText", _grp] call _mk; _t ctrlSetFontHeight 0.024; _t ctrlSetFont "RobotoCondensedBold"; _t ctrlSetBackgroundColor [0, 0, 0, 0.55]; _t ctrlSetTextColor [1, 1, 1, 1]; _mkLbls pushBack _t; };
-            private _evIcons = []; for "_i" from 1 to 12 do { _evIcons pushBack (["RscPicture", _grp] call _mk); };
-            // Traits, formes et plan du camp : segments (images blanches tournées, teintées) et étiquettes, réutilisés.
-            private _segs = []; for "_i" from 1 to 260 do { private _c = ["RscPicture", _grp] call _mk; _c ctrlSetText "#(argb,8,8,3)color(1,1,1,1)"; _segs pushBack _c; }; // i18n:brut (texture)
-            private _segLbls = []; for "_i" from 1 to 24 do { private _t = ["RscText", _grp] call _mk; _t ctrlSetFontHeight 0.03; _t ctrlSetFont "RobotoCondensedBold"; _t ctrlSetBackgroundColor [0, 0, 0, 0.6]; _segLbls pushBack _t; };
-            private _uIcons = []; private _uLbls = [];
-            for "_i" from 1 to 100 do {
-                _uIcons pushBack (["RscPicture", _grp] call _mk);
-                private _t = ["RscText", _grp] call _mk;
-                _t ctrlSetFontHeight 0.026; _t ctrlSetFont "RobotoCondensedBold"; _t ctrlSetBackgroundColor [0, 0, 0, 0.55];
-                _uLbls pushBack _t;
-            };
-            private _scale = ["RscText", _grp] call _mk;
-            _scale ctrlSetFontHeight 0.026; _scale ctrlSetBackgroundColor [0, 0, 0, 0.6]; _scale ctrlSetTextColor [1, 1, 1, 1];
-            private _north = ["RscText", _grp] call _mk;
-            _north ctrlSetFontHeight 0.04; _north ctrlSetFont "RobotoCondensedBold"; _north ctrlSetBackgroundColor [0, 0, 0, 0.6]; _north ctrlSetTextColor [1, 1, 1, 1];
-            _north ctrlSetText (("N ▲") call comspec_atak_native_fnc_tr);
-            private _empty = ["COMSPEC_RscStructuredText", _grp] call _mk;
-            private _panel = ["COMSPEC_RscStructuredText"] call _mk;
-            _panel ctrlSetBackgroundColor [0.05, 0.065, 0.058, 1];
-            private _panel2 = ["COMSPEC_RscStructuredText"] call _mk;
-            _panel2 ctrlSetBackgroundColor [0.05, 0.065, 0.058, 1];
-            private _flux = ["COMSPEC_RscStructuredText"] call _mk;
-            _flux ctrlSetBackgroundColor [0.05, 0.065, 0.058, 1];
-            private _tbl = [];
-            for "_i" from 1 to 24 do {
-                _tbl pushBack ((["left", "right", "left"]) apply {
-                    private _tc = ["RscText"] call _mk;
-                    _tc ctrlSetFontHeight 0.03;
-                    _tc ctrlSetFont "RobotoCondensed";
-                    _tc
-                });
-            };
-            _ui = createHashMapFromArray [["panel2", _panel2], ["flux", _flux], ["tbl", _tbl], ["accent", _accent], ["title", _title], ["clock", _clock], ["grp", _grp], ["sea", _sea], ["tiles", _tiles], ["lines", _lines],
-                ["mkIcons", _mkIcons], ["mkLbls", _mkLbls], ["evIcons", _evIcons], ["segs", _segs], ["segLbls", _segLbls], ["uIcons", _uIcons], ["uLbls", _uLbls], ["scale", _scale], ["north", _north], ["empty", _empty], ["panel", _panel]];
-            _d setVariable ["COMSPEC_ATAK_TocUi", _ui];
         };
+        private _place2 = { params ["_c", "_rect"]; _c ctrlSetPosition (_rect call _R); _c ctrlCommit 0; _c ctrlShow true; };
+
+        // ---- En-tête : titre (FLASH, PIP), heure ZULU et locale, état du flux ----
         (_ui get "accent") ctrlSetBackgroundColor (_sideRgb + [1]);
         private _age = [-1, round ((serverTime - _ft) max 0)] select (_ft >= 0);
-        (_ui get "title") ctrlSetStructuredText parseText (((format ["<t size='1.7' font='COMSPEC_BarlowBold'>TOC · %1</t>", [_name select [0, 20]] call _esc])) call comspec_atak_native_fnc_tr);
+        private _head = (["title", _view] call _fn) select 0;
+        private _tt = format ["<t size='1.57' font='COMSPEC_BarlowBold'>%1 · %2</t>", _head, [[_name, 34] call _cut] call _esc];
         if ((count _op) >= 8) then {
-            (_ui get "title") ctrlSetStructuredText parseText (((format ["<t size='1.7' font='COMSPEC_BarlowBold'>TOC · %1</t>  <t size='1.2' color='#e0b040'>PIP du poste</t>",
-                [(_op param [5, _name]) select [0, 14]] call _esc])) call comspec_atak_native_fnc_tr);
+            _tt = format ["<t size='1.57' font='COMSPEC_BarlowBold'>TOC · %1</t>  <t size='1.15' color='#e0b040'>PIP du poste</t>", [[_op param [5, _name], 22] call _cut] call _esc];
         };
         if (_squad isNotEqualTo "") then {
-            (_ui get "title") ctrlSetStructuredText parseText (((format ["<t size='1.7' font='COMSPEC_BarlowBold'>ESCOUADE · %1</t>", [_squad select [0, 24]] call _esc])) call comspec_atak_native_fnc_tr);
+            _tt = format ["<t size='1.57' font='COMSPEC_BarlowBold'>%1 · %2</t>", _head, [[_squad, 34] call _cut] call _esc];
         };
         // FLASH du poste (fn_tocRoom) : en tête de l'écran, liseré rouge, 3 minutes.
         private _fl = ["flash", _side] call comspec_atak_native_fnc_tocBoard;
         if ((count _fl) > 0) then {
             (_ui get "accent") ctrlSetBackgroundColor [0.9, 0.2, 0.15, 1];
-            (_ui get "title") ctrlSetStructuredText parseText (((format ["<t size='1.6' font='COMSPEC_BarlowBold' color='#ff5a4a'>FLASH</t> <t size='1.35'>· %1</t>", [(_fl select 0) select [0, 44]] call _esc])) call comspec_atak_native_fnc_tr);
+            _tt = format ["<t size='1.57' font='COMSPEC_BarlowBold' color='#ff5a4a'>FLASH</t> <t size='1.3'>· %1</t>", [[_fl select 0, 52] call _cut] call _esc];
         };
-        private _live = [["<t color='#e05a4a'>● HORS LIGNE</t>", "<t color='#e0b040'>● RETARD</t>"] select (_age >= 0), "<t color='#5cc76b'>● EN DIRECT</t>"] select (_age >= 0 && {_age < 12});
-        (_ui get "clock") ctrlSetStructuredText parseText (((format ["<t align='right' size='1.2'>%1Z  %2  <t color='#8a9a93'>%3</t>  %4</t>",
-            (["zulu"] call comspec_atak_native_fnc_tocRoom) select [0, 5], [dayTime, "HH:MM"] call BIS_fnc_timeToString, [format ["il y a %1 s", _age], "aucune donnée"] select (_age < 0), _live])) call comspec_atak_native_fnc_tr);
+        [_ui get "title", _tt] call _setTxt;
+        private _live = switch (true) do {
+            case (_age < 0): { "<t color='#e05a4a'>● HORS LIGNE</t>" };
+            case (_age < 12): { "<t color='#5cc76b'>● EN DIRECT</t>" };
+            // « 12:35Z  01:27  ● RETARD 999 s » : 29 caractères x 0,46 x 32 px = 427 px sur 476.
+            default { format ["<t color='#e0b040'>● RETARD</t> <t color='#8a9a93'>%1 s</t>", _age min 999] };
+        };
+        [_ui get "clock", format ["<t align='right' size='1.15'>%1Z  <t color='#8a9a93'>%2</t>  %3</t>",
+            (["zulu"] call comspec_atak_native_fnc_tocRoom) select [0, 5], [dayTime, "HH:MM"] call BIS_fnc_timeToString, _live]] call _setTxt;
 
-        // Mise en page selon l'affichage : carte + flux, carte seule, flux seul.
-        private _top = 0.08;
-        private _noMap = _view in ["FEED", "NET", "ORBAT"];
-        private _mapR = switch (true) do { case (_view isEqualTo "MAP"): { [0, _top, 1, 1 - _top] }; case _noMap: { [0, 0, 0, 0] }; default { [0, _top, 0.64, 1 - _top] }; };
-        private _panR = switch (true) do { case (_view isEqualTo "MAP"): { [0, 0, 0, 0] }; case _noMap: { [0.015, _top + 0.01, 0.97, 0.98 - _top] }; default { [0.648, _top + 0.008, 0.344, 0.984 - _top] }; };
+        // ---- Mise en page par affichage (pixels virtuels) : [carte, panneau] ----
+        // Preuve de tenue (1600 x 900, texte courant 28 px, ligne 38 px) dans « layout » plus bas et dans le CHANGELOG.
+        private _layouts = createHashMapFromArray [
+            ["SPLIT", [[0, 84, 1000, 816], [1012, 580]]],
+            ["TOC", [[0, 84, 1000, 816], [1012, 580]]],
+            ["MAP", [[0, 84, 1600, 816], []]],
+            ["FEED", [[], [24, 1552]]],
+            ["NET", [[], [24, 1552]]],
+            ["ORBAT", [[], [24, 1552]]],
+            ["SQUAD", [[0, 84, 1000, 816], [1012, 580]]]
+        ];
+        (_layouts getOrDefault [_view, _layouts get "SPLIT"]) params ["_mapR", "_panR"];
+        private _isMap = (count _mapR) isEqualTo 4;
         // PIP : cadrage de la carte imposé par le PC de l'opérateur.
         if ((count _op) >= 8) then { _center = _op select 1; _half = _op select 2; };
         // Écran d'escouade : carte cadrée sur les seuls nœuds du groupe (400 m de demi-largeur au moins).
@@ -652,43 +944,50 @@ switch (_mode) do {
             _half = ((((selectMax _xs) - (selectMin _xs)) max (((selectMax _ys) - (selectMin _ys)) * 16 / 9)) * 0.75) max 400;
         };
         private _grp = _ui get "grp";
-        _grp ctrlSetPosition _mapR; _grp ctrlCommit 0;
-        _grp ctrlShow !_noMap;
+        _grp ctrlShow _isMap;
 
         // ---- Carte -------------------------------------------------------------------------------------------
-        if (!_noMap) then {
-            _mapR params ["", "", "_mw", "_mh"];
-            private _pxW = _mw * _texW;
-            private _pxH = _mh * _texH;
-            // Cadrage : centre et demi-largeur choisis, sinon le réseau entier (marge 25 %), 600 m au moins.
+        if (_isMap) then {
+            _grp ctrlSetPosition (_mapR call _R); _grp ctrlCommit 0;
+            _mapR params ["", "", "_mwPx", "_mhPx"];
+            // Cadrage : centre et demi-largeur choisis ; sinon le réseau autour de son centre médian, assez large pour
+            // 85 % des nœuds (un nœud isolé au bout de l'île ne dézoome plus tout l'écran), entre 700 m et 4 km.
             private _cx = worldSize / 2; private _cy = worldSize / 2; private _hw = _half;
-            if ((count _center) >= 2) then { _cx = _center select 0; _cy = _center select 1; } else {
-                if ((count _nodes) > 0) then {
-                    private _xs = _nodes apply { (_x select 2) select 0 };
-                    private _ys = _nodes apply { (_x select 2) select 1 };
-                    private _x0 = selectMin _xs; private _x1 = selectMax _xs; private _y0 = selectMin _ys; private _y1 = selectMax _ys;
-                    _cx = (_x0 + _x1) / 2; _cy = (_y0 + _y1) / 2;
-                    if (_hw <= 0) then { _hw = ((((_x1 - _x0) / 2) max (((_y1 - _y0) / 2) * _pxW / _pxH)) * 1.25) max 600; };
-                } else {
-                    private _p = getPosASL _o; _cx = _p select 0; _cy = _p select 1;
+            private _autoC = (count _center) < 2;
+            if (!_autoC) then { _cx = _center select 0; _cy = _center select 1; };
+            if ((count _nodes) > 0 && {_autoC || {_hw <= 0}}) then {
+                private _xs = _nodes apply { (_x select 2) select 0 }; _xs sort true;
+                private _ys = _nodes apply { (_x select 2) select 1 }; _ys sort true;
+                private _mx = _xs select (floor ((count _xs) / 2));
+                private _my = _ys select (floor ((count _ys) / 2));
+                if (_autoC) then { _cx = _mx; _cy = _my; };
+                if (_hw <= 0) then {
+                    private _ds = _nodes apply { private _p = _x select 2; (abs ((_p select 0) - _cx)) max ((abs ((_p select 1) - _cy)) * _mwPx / _mhPx) };
+                    _ds sort true;
+                    _hw = (((_ds select ((floor ((count _ds) * 0.85)) min ((count _ds) - 1))) * 1.3) max 700) min 4000;
                 };
+            } else {
+                if (_autoC) then { private _p = getPosASL _o; _cx = _p select 0; _cy = _p select 1; };
             };
             if (_hw <= 0) then { _hw = 1500; };
             _hw = (_hw max 100) min (worldSize max 1000);
             _o setVariable ["COMSPEC_ATAK_TocShown", [[_cx, _cy], _hw]];
-            private _k = _pxW / (2 * _hw);           // pixels de texture par mètre
-            private _hh = _hw * _pxH / _pxW;
+            // Vue d'ensemble (île entière ou presque) : symboles regroupés plus large, ni plaques de marqueurs ni villages.
+            private _far = _hw > 3500;
+            private _k = _mwPx / (2 * _hw);           // pixels virtuels par mètre
+            private _hh = _hw * _mhPx / _mwPx;
             private _toG = { params ["_px", "_py"]; [(_px - (_cx - _hw)) * _k / _texW, ((_cy + _hh) - _py) * _k / _texH] };
             private _inView = { params ["_px", "_py"]; _px > (_cx - _hw) && {_px < (_cx + _hw)} && {_py > (_cy - _hh)} && {_py < (_cy + _hh)} };
-            (_ui get "sea") ctrlSetPosition [0, 0, _mw, _mh]; (_ui get "sea") ctrlCommit 0;
-            // Fond : photo de la carte (mod @COMSPEC_ATAK_Photo), sinon carte d'ensemble du terrain.
+            (_ui get "sea") ctrlSetPosition ([0, 0, _mwPx, _mhPx] call _R); (_ui get "sea") ctrlCommit 0;
+            (_ui get "dim") ctrlSetPosition ([0, 0, _mwPx, _mhPx] call _R); (_ui get "dim") ctrlCommit 0;
+            // Fond : photo de la carte (mod @COMSPEC_ATAK_Photo), sinon carte d'ensemble du terrain (pictureMap, assombrie).
             private _tiles = _ui get "tiles";
             private _used = 0;
             private _info = ["info"] call comspec_atak_native_fnc_photoMap;
             if ((count _info) > 0 && {(_info param [6, ""]) isEqualTo "pbo"}) then {
                 _info params ["_ext", "_ts", "_zMin", "_zMax", "_path", "_fx"];
                 private _zPaths = _info param [10, createHashMap];
-                private _mpp = 2 * _hw / _pxW;
+                private _mpp = 2 * _hw / (_mwPx * 1.28);  // la texture a 1,28 pixel réel par pixel virtuel (2048 / 1600)
                 private _z = (ceil (log (_ext / (_ts * _mpp)) / log 2) max _zMin) min ((_info param [11, _zMax]) min _zMax);
                 private _rng = {
                     params ["_zz"];
@@ -696,9 +995,9 @@ switch (_mode) do {
                     private _n = 2 ^ _zz;
                     [_T, (floor ((_cx - _hw) / _T)) max 0, (floor ((_cx + _hw - 0.001) / _T)) min (_n - 1), (floor ((_ext - (_cy + _hh)) / _T)) max 0, (floor ((_ext - (_cy - _hh) - 0.001) / _T)) min (_n - 1)]
                 };
-                private _r = [_z] call _rng;
-                while { _z > _zMin && {(((_r select 2) - (_r select 1) + 1) * ((_r select 4) - (_r select 3) + 1)) > 36} } do { _z = _z - 1; _r = [_z] call _rng; };
-                _r params ["_T", "_x0", "_x1", "_y0", "_y1"];
+                private _rv = [_z] call _rng;
+                while { _z > _zMin && {(((_rv select 2) - (_rv select 1) + 1) * ((_rv select 4) - (_rv select 3) + 1)) > 36} } do { _z = _z - 1; _rv = [_z] call _rng; };
+                _rv params ["_T", "_x0", "_x1", "_y0", "_y1"];
                 private _haveP = uiNamespace getVariable ["COMSPEC_ATAK_PhotoHave", createHashMap];
                 uiNamespace setVariable ["COMSPEC_ATAK_PhotoHave", _haveP];
                 for "_ty" from _y0 to _y1 do {
@@ -711,6 +1010,7 @@ switch (_mode) do {
                             private _c = _tiles select _used;
                             ([_tx * _T, _ext - _ty * _T] call _toG) params ["_gx", "_gy"];
                             _c ctrlSetText ((_f) call comspec_atak_native_fnc_tr);
+                            _c ctrlSetTextColor [0.92, 0.94, 0.92, 1];
                             _c ctrlSetPosition [_gx, _gy, _T * _k / _texW, _T * _k / _texH];
                             _c ctrlCommit 0;
                             _c ctrlShow true;
@@ -725,6 +1025,7 @@ switch (_mode) do {
                     private _c = _tiles select 0;
                     ([0, worldSize] call _toG) params ["_gx", "_gy"];
                     _c ctrlSetText ((_pm) call comspec_atak_native_fnc_tr);
+                    _c ctrlSetTextColor [0.74, 0.78, 0.75, 1];
                     _c ctrlSetPosition [_gx, _gy, worldSize * _k / _texW, worldSize * _k / _texH];
                     _c ctrlCommit 0;
                     _c ctrlShow true;
@@ -732,47 +1033,106 @@ switch (_mode) do {
                 };
             };
             for "_i" from _used to ((count _tiles) - 1) do { (_tiles select _i) ctrlShow false; };
-            // Quadrillage : pas de 100 m à 10 km, une dizaine de lignes par axe au plus.
-            private _step = 100;
-            { if ((2 * _hw / _step) > 10) then { _step = _x; }; } forEach [200, 500, 1000, 2000, 5000, 10000];
-            private _lines = _ui get "lines";
-            private _li = 0;
-            for "_gx" from ((ceil ((_cx - _hw) / _step)) * _step) to (_cx + _hw) step _step do {
-                if (_li < 14) then {
-                    private _c = _lines select _li;
-                    _c ctrlSetPosition [(([_gx, 0] call _toG) select 0), 0, 1.5 / _texW, _mh]; _c ctrlCommit 0; _c ctrlShow true;
-                    _li = _li + 1;
-                };
-            };
-            for "_gy" from ((ceil ((_cy - _hh) / _step)) * _step) to (_cy + _hh) step _step do {
-                if (_li < 28) then {
-                    private _c = _lines select _li;
-                    _c ctrlSetPosition [0, (([0, _gy] call _toG) select 1), _mw, 1.5 / _texH]; _c ctrlCommit 0; _c ctrlShow true;
-                    _li = _li + 1;
-                };
-            };
-            for "_i" from _li to ((count _lines) - 1) do { (_lines select _i) ctrlShow false; };
-            // Plaques posées une à une, en pixels de texture : à droite, à gauche, au-dessus, au-dessous ; sans place libre, symbole seul.
+            // Plaques sans chevauchement, en pixels du groupe : cases prises (symboles, puces fixes, plaques posées).
             private _taken = [];
             private _free = {
                 params ["_x0", "_y0", "_w", "_h"];
                 (_taken findIf { _x0 < ((_x select 0) + (_x select 2)) && {(_x0 + _w) > (_x select 0)} && {_y0 < ((_x select 1) + (_x select 3))} && {(_y0 + _h) > (_x select 1)} }) < 0
             };
+            // Huit places autour du point (droite, gauche, dessus, dessous, diagonales) ; mode 1 : centrée sur le point
+            // (noms de lieux). Jamais hors du cadre de la carte (plaques coupées au bord). Sans place libre : rien.
             private _place = {
-                params ["_px", "_py", "_w", "_h", "_r"];
+                params ["_px", "_py", "_w", "_h", "_rv", ["_mode", 0]];
+                private _q = _rv * 0.7;
+                private _cands = [
+                    [[_px + _rv, _py - _h / 2], [_px - _rv - _w, _py - _h / 2], [_px - _w / 2, _py - _rv - _h], [_px - _w / 2, _py + _rv],
+                     [_px + _q, _py - _q - _h], [_px + _q, _py + _q], [_px - _q - _w, _py - _q - _h], [_px - _q - _w, _py + _q]],
+                    [[_px - _w / 2, _py - _h / 2], [_px - _w / 2, _py - _h - 8], [_px - _w / 2, _py + 8]]
+                ] select _mode;
                 private _res = [];
                 {
-                    if ([_x select 0, _x select 1, _w, _h] call _free) exitWith { _res = [_x select 0, _x select 1]; _taken pushBack [_x select 0, _x select 1, _w, _h]; };
-                } forEach [[_px + _r, _py - _h / 2], [_px - _r - _w, _py - _h / 2], [_px - _w / 2, _py - _r - _h], [_px - _w / 2, _py + _r]];
+                    _x params ["_x0", "_y0"];
+                    if (_x0 >= 2 && {_y0 >= 2} && {(_x0 + _w) <= (_mwPx - 2)} && {(_y0 + _h) <= (_mhPx - 2)} && {[_x0, _y0, _w, _h] call _free}) exitWith {
+                        _res = [_x0, _y0];
+                        _taken pushBack [_x0, _y0, _w, _h];
+                    };
+                } forEach _cands;
                 _res
             };
-            // Nœuds voisins (même case de 64 pixels) regroupés en un symbole : le plus frais donne le nom, « +n » le reste.
+            // Largeur d'une plaque d'une ligne : 0,52 x police par caractère en gras (estimation large) + marges.
+            private _plateW = { params ["_t", "_f"]; ((count _t) * 0.52 * _f) + 16 };
+            // Échelle (bas gauche) et nord (haut droite) : posés d'abord, rien ne passe dessous.
+            private _mpp = 2 * _hw / _mwPx;
+            private _raw = 200 * _mpp;
+            private _p10 = 10 ^ (floor (log _raw));
+            private _nice = _p10;
+            { if (_p10 * _x <= _raw) then { _nice = _p10 * _x; }; } forEach [1, 2, 5];
+            private _barPx = _nice / _mpp;
+            // Quadrillage : pas de 100 m à 10 km, une dizaine de lignes par axe au plus.
+            private _step = 100;
+            { if ((2 * _hw / _step) > 10) then { _step = _x; }; } forEach [200, 500, 1000, 2000, 5000, 10000];
+            private _sTxt = format ["%1 · %2", [format ["%1 m", _nice], format ["%1 km", _nice / 1000]] select (_nice >= 1000),
+                format ["quadrillage %1", [format ["%1 m", _step], format ["%1 km", _step / 1000]] select (_step >= 1000)]];
+            private _sTw = ((count _sTxt) * 0.46 * 28) + 12;
+            (_ui get "scale") params ["_scBg", "_scBar", "_scT0", "_scT1", "_scTxt"];
+            private _sy = _mhPx - 58;
+            [_scBg, [16, _sy, 28 + _barPx + 14 + _sTw, 46]] call _place2;
+            [_scBar, [30, _sy + 22, _barPx, 6]] call _place2;
+            [_scT0, [30, _sy + 12, 3, 22]] call _place2;
+            [_scT1, [30 + _barPx - 3, _sy + 12, 3, 22]] call _place2;
+            [_scTxt, _sTxt, _sTw] call _lbl;
+            [_scTxt, [30 + _barPx + 14, _sy + 4, _sTw, 38]] call _place2;
+            _taken pushBack [16, _sy, 28 + _barPx + 14 + _sTw, 46];
+            (_ui get "north") params ["_noBg", "_noArrow", "_noTxt"];
+            [_noBg, [_mwPx - 68, 12, 56, 66]] call _place2;
+            [_noArrow, [_mwPx - 68, 14, 56, 28]] call _place2;
+            [_noTxt, [_mwPx - 68, 40, 56, 36]] call _place2;
+            _taken pushBack [_mwPx - 68, 12, 56, 66];
+            // Lignes du quadrillage et leurs numéros (hectomètres, comme les grilles des comptes rendus) au bord haut et gauche.
+            private _g3 = { private _s = str (floor (_this / 100)); while { (count _s) < 3 } do { _s = "0" + _s; }; _s };
+            private _lines = _ui get "lines";
+            private _gLbls = _ui get "gLbls";
+            private _li = 0;
+            private _gi = 0;
+            for "_gx" from ((ceil ((_cx - _hw) / _step)) * _step) to (_cx + _hw) step _step do {
+                if (_li < 14) then {
+                    private _px = (([_gx, 0] call _toG) select 0) * _texW;
+                    [_lines select _li, [_px - 1, 0, 2, _mhPx]] call _place2;
+                    _li = _li + 1;
+                    if (_px > 40 && {_px < (_mwPx - 120)}) then {
+                        private _t = _gLbls select _gi;
+                        _t ctrlSetText ((_gx call _g3) call comspec_atak_native_fnc_tr);
+                        [_t, [_px - 26, 4, 52, 30]] call _place2;
+                        _taken pushBack [_px - 26, 4, 52, 30];
+                        _gi = _gi + 1;
+                    };
+                };
+            };
+            for "_gy" from ((ceil ((_cy - _hh) / _step)) * _step) to (_cy + _hh) step _step do {
+                if (_li < 28) then {
+                    private _py = (([0, _gy] call _toG) select 1) * _texH;
+                    [_lines select _li, [0, _py - 1, _mwPx, 2]] call _place2;
+                    _li = _li + 1;
+                    if (_py > 44 && {_py < (_mhPx - 80)}) then {
+                        private _t = _gLbls select _gi;
+                        _t ctrlSetText ((_gy call _g3) call comspec_atak_native_fnc_tr);
+                        [_t, [4, _py - 15, 52, 30]] call _place2;
+                        _taken pushBack [4, _py - 15, 52, 30];
+                        _gi = _gi + 1;
+                    };
+                };
+            };
+            for "_i" from _li to ((count _lines) - 1) do { (_lines select _i) ctrlShow false; };
+            for "_i" from _gi to ((count _gLbls) - 1) do { (_gLbls select _i) ctrlShow false; };
+            // Nœuds voisins (même case de 64 px, 110 px en vue d'ensemble) regroupés en un symbole : le plus frais donne
+            // le nom, « +n » le reste. Symboles posés avant toute plaque.
+            private _cell = [64, 110] select _far;
             private _cells = createHashMap;
             {
                 private _p = _x select 2;
                 if ([_p select 0, _p select 1] call _inView) then {
                     ([_p select 0, _p select 1] call _toG) params ["_gx", "_gy"];
-                    private _ck = [floor (_gx * _texW / 64), floor (_gy * _texH / 64)];
+                    private _ck = [floor (_gx * _texW / _cell), floor (_gy * _texH / _cell)];
                     private _lst = _cells getOrDefault [_ck, []];
                     _lst pushBack _x;
                     _cells set [_ck, _lst];
@@ -785,61 +1145,137 @@ switch (_mode) do {
                 [(_m select 0) select 4, _m select 0, _sum, _m]
             };
             _clusters = [_clusters, [], { _x select 0 }, "ASCEND"] call BIS_fnc_sortBy;
-            private _nodeDraw = [];
+            _clusters = _clusters select [0, 99];
             {
-                _x params ["", "_lead", "_sum", "_mem"];
-                _lead params ["", "_cs", "_p", "", "_fr"];
+                (_x select 1) params ["", "", "_p"];
                 ([_p select 0, _p select 1] call _toG) params ["_gx", "_gy"];
-                private _lbl = _cs + (["", format [" +%1", _sum - 1]] select (_sum > 1)) + (["", " · ancien", " · perdu", " · hors ligne"] select (_fr min 3));
-                private _lw = (count _lbl) * 12 + 12;
-                private _at = [_gx * _texW, _gy * _texH, _lw, 26, 22] call _place;
-                _nodeDraw pushBack [_lead, _mem, _gx, _gy, _lbl, _lw, _at];
-            } forEach (_clusters select [0, 99]);
-            // Marqueurs de la mission visibles par ce joueur (icônes seulement).
+                _taken pushBack [_gx * _texW - 20, _gy * _texH - 20, 40, 40];
+            } forEach _clusters;
+            // Marqueurs de la mission visibles par ce joueur : symboles (deux presque au même point : un seul).
             private _mkSeen = createHashMap;
             private _mkIcons = _ui get "mkIcons";
             private _mkLbls = _ui get "mkLbls";
             private _mi = 0;
+            private _mkTodo = [];
             private _colCache = uiNamespace getVariable ["COMSPEC_ATAK_TocMkCol", createHashMap];
             uiNamespace setVariable ["COMSPEC_ATAK_TocMkCol", _colCache];
+            private _mkCol = {
+                params ["_m", ["_def", [1, 1, 1, 1]]];
+                private _col = _colCache getOrDefault [markerColor _m, []];
+                if (_col isEqualTo []) then {
+                    _col = (getArray (configFile >> "CfgMarkerColors" >> (markerColor _m) >> "color")) apply { if (_x isEqualType "") then { call compile _x } else { _x } };
+                    if ((count _col) < 4) then { _col = _def; };
+                    _colCache set [markerColor _m, _col];
+                };
+                _col
+            };
             {
                 if (_mi < 40 && {(markerShape _x) isEqualTo "ICON"} && {(markerAlpha _x) > 0}) then {
                     private _p = getMarkerPos _x;
                     if ([_p select 0, _p select 1] call _inView) then {
                         private _icon = getText (configFile >> "CfgMarkers" >> (markerType _x) >> "icon");
-                        ([_p select 0, _p select 1] call _toG) params ["_mgx", "_mgy"];
-                        // Deux marqueurs presque au même point : un seul symbole.
-                        private _mkCk = [floor (_mgx * _texW / 28), floor (_mgy * _texH / 28)];
+                        ([_p select 0, _p select 1] call _toG) params ["_gx", "_gy"];
+                        private _mkCk = [floor (_gx * _texW / 28), floor (_gy * _texH / 28)];
                         if (_icon isNotEqualTo "" && {!(_mkCk in _mkSeen)}) then {
                             _mkSeen set [_mkCk, true];
-                            private _col = _colCache getOrDefault [markerColor _x, []];
-                            if (_col isEqualTo []) then {
-                                _col = (getArray (configFile >> "CfgMarkerColors" >> (markerColor _x) >> "color")) apply { if (_x isEqualType "") then { call compile _x } else { _x } };
-                                if ((count _col) < 4) then { _col = [0, 0, 0, 1]; };
-                                _colCache set [markerColor _x, _col];
-                            };
-                            ([_p select 0, _p select 1] call _toG) params ["_gx", "_gy"];
                             private _c = _mkIcons select _mi;
                             _c ctrlSetText ((_icon) call comspec_atak_native_fnc_tr);
-                            _c ctrlSetTextColor _col;
-                            _c ctrlSetPosition [_gx - 13 / _texW, _gy - 13 / _texH, 26 / _texW, 26 / _texH]; _c ctrlCommit 0; _c ctrlShow true;
-                            private _t = _mkLbls select _mi;
-                            private _txt = markerText _x;
-                            _t ctrlSetText ((_txt) call comspec_atak_native_fnc_tr);
-                            private _mw2 = (count _txt) * 11 + 10;
-                            private _mAt = if (_txt isEqualTo "") then { [] } else { [_gx * _texW, _gy * _texH, _mw2, 24, 16] call _place };
-                            if ((count _mAt) > 0) then { _t ctrlSetPosition [(_mAt select 0) / _texW, (_mAt select 1) / _texH, _mw2 / _texW, 24 / _texH]; _t ctrlCommit 0; };
-                            _t ctrlShow ((count _mAt) > 0);
+                            _c ctrlSetTextColor ([_x, [0, 0, 0, 1]] call _mkCol);
+                            _c ctrlSetPosition [_gx - 15 / _texW, _gy - 15 / _texH, 30 / _texW, 30 / _texH]; _c ctrlCommit 0; _c ctrlShow true;
+                            _taken pushBack [_gx * _texW - 15, _gy * _texH - 15, 30, 30];
+                            _mkTodo pushBack [_mi, _gx, _gy, markerText _x];
                             _mi = _mi + 1;
                         };
                     };
                 };
             } forEach allMapMarkers;
-            for "_i" from _mi to 39 do { (_mkIcons select _i) ctrlShow false; (_mkLbls select _i) ctrlShow false; };
+            for "_i" from _mi to 39 do { (_mkIcons select _i) ctrlShow false; };
+            // Comptes rendus et alertes géolocalisés des 20 dernières minutes.
+            private _evIcons = _ui get "evIcons";
+            private _ei = 0;
+            {
+                _x params ["", "", "", "", "", "", ["_p", []], ["_at", -1e9]];
+                if (_ei < 12 && {(count _p) >= 2} && {serverTime - _at < 1200} && {[_p select 0, _p select 1] call _inView}) then {
+                    ([_p select 0, _p select 1] call _toG) params ["_gx", "_gy"];
+                    private _c = _evIcons select _ei;
+                    _c ctrlSetText (("\A3\ui_f\data\map\markers\military\warning_CA.paa") call comspec_atak_native_fnc_tr);
+                    _c ctrlSetTextColor [1, 0.35, 0.2, 1];
+                    _c ctrlSetPosition [_gx - 17 / _texW, _gy - 17 / _texH, 34 / _texW, 34 / _texH]; _c ctrlCommit 0; _c ctrlShow true;
+                    _taken pushBack [_gx * _texW - 17, _gy * _texH - 17, 34, 34];
+                    _ei = _ei + 1;
+                };
+            } forEach _events;
+            for "_i" from _ei to 11 do { (_evIcons select _i) ctrlShow false; };
+            // Nœuds ATAK : symbole OTAN ami, couleur du camp ; ancien pâli, perdu et hors ligne en gris. Plaques d'abord
+            // pour eux (priorité), puis marqueurs, dessins, noms de lieux.
+            private _uIcons = _ui get "uIcons";
+            private _uLbls = _ui get "uLbls";
+            private _ui0 = 0;
+            {
+                _x params ["", "_lead", "_sum", "_mem"];
+                _lead params ["", "_cs", "_p", "", "_fr", "_kind"];
+                ([_p select 0, _p select 1] call _toG) params ["_gx", "_gy"];
+                private _tex = format ["\A3\ui_f\data\map\markers\nato\b_%1.paa", (createHashMapFromArray [["veh", "motor_inf"], ["air", "air"], ["boat", "naval"], ["armor", "armor"]]) getOrDefault [_kind, "inf"]];
+                private _col = switch (_fr) do {
+                    case 0: { _sideRgb + [1] };
+                    case 1: { (_sideRgb apply { _x * 0.75 }) + [0.75] };
+                    case 2: { [0.62, 0.62, 0.62, 0.85] };
+                    default { [0.45, 0.45, 0.45, 0.7] };
+                };
+                // PIP : le groupe choisi par l'opérateur ressort en jaune ; écran d'escouade : son groupe.
+                private _pickG = _op param [4, ""];
+                private _picked = ((count _op) >= 5 && {(_op param [3, ""]) isEqualTo "GROUPES"} && {_pickG isNotEqualTo ""} && {(_mem findIf { (_x param [7, ""]) isEqualTo _pickG }) >= 0})
+                    || {_squad isNotEqualTo "" && {(_mem findIf { (_x param [7, ""]) isEqualTo _squad }) >= 0}};
+                private _c = _uIcons select _ui0;
+                _c ctrlSetText ((_tex) call comspec_atak_native_fnc_tr);
+                _c ctrlSetTextColor ([_col, [1, 0.85, 0.3, 1]] select _picked);
+                _c ctrlSetPosition [_gx - 20 / _texW, _gy - 20 / _texH, 40 / _texW, 40 / _texH]; _c ctrlCommit 0; _c ctrlShow true;
+                private _lt = ([_cs, 18] call _cut) + (["", format [" +%1", _sum - 1]] select (_sum > 1)) + ([["", " · ancien", " · perdu", " · hors ligne"] select (_fr min 3), ""] select _far);
+                private _lw = [_lt, 28] call _plateW;
+                private _t = _uLbls select _ui0;
+                private _at = [_gx * _texW, _gy * _texH, _lw, 36, 24] call _place;
+                if ((count _at) > 0) then {
+                    [_t, _lt, _lw] call _lbl;
+                    _t ctrlSetTextColor ([[[1, 1, 1, 1], [0.8, 0.8, 0.8, 1]] select (_fr >= 2), [1, 0.85, 0.3, 1]] select _picked);
+                    [_t, [_at select 0, _at select 1, _lw, 36]] call _place2;
+                } else { _t ctrlShow false; };
+                _ui0 = _ui0 + 1;
+            } forEach _clusters;
+            // PIP : objectif de l'ordre en cours de rédaction sur le PC.
+            if ((count _op) >= 9) then {
+                private _opos = _op param [8, []];
+                if ((count _opos) >= 2 && {[_opos select 0, _opos select 1] call _inView} && {_ui0 < 100}) then {
+                    ([_opos select 0, _opos select 1] call _toG) params ["_gx", "_gy"];
+                    private _c = _uIcons select _ui0;
+                    _c ctrlSetText (("\A3\ui_f\data\map\markers\military\objective_CA.paa") call comspec_atak_native_fnc_tr);
+                    _c ctrlSetTextColor [1, 0.85, 0.2, 1];
+                    _c ctrlSetPosition [_gx - 22 / _texW, _gy - 22 / _texH, 44 / _texW, 44 / _texH]; _c ctrlCommit 0; _c ctrlShow true;
+                    private _t = _uLbls select _ui0;
+                    private _lw = ["OBJECTIF", 28] call _plateW;
+                    private _oAt = [_gx * _texW, _gy * _texH, _lw, 36, 26] call _place;
+                    if ((count _oAt) > 0) then {
+                        [_t, "OBJECTIF", _lw] call _lbl;
+                        _t ctrlSetTextColor [1, 0.9, 0.5, 1];
+                        [_t, [_oAt select 0, _oAt select 1, _lw, 36]] call _place2;
+                    } else { _t ctrlShow false; };
+                    _ui0 = _ui0 + 1;
+                };
+            };
+            for "_i" from _ui0 to 99 do { (_uIcons select _i) ctrlShow false; (_uLbls select _i) ctrlShow false; };
+            // Plaques des marqueurs (pas en vue d'ensemble).
+            {
+                _x params ["_i", "_gx", "_gy", "_txt"];
+                private _t = _mkLbls select _i;
+                private _s = [_txt, 20] call _cut;
+                private _w = [_s, 26] call _plateW;
+                private _at = if (_far || {_s isEqualTo ""}) then { [] } else { [_gx * _texW, _gy * _texH, _w, 32, 18] call _place };
+                if ((count _at) > 0) then { [_t, _s, _w] call _lbl; [_t, [_at select 0, _at select 1, _w, 32]] call _place2; } else { _t ctrlShow false; };
+            } forEach _mkTodo;
+            for "_i" from _mi to 39 do { (_mkLbls select _i) ctrlShow false; };
             // Dessins et plans de l'ATAK et du PC du poste (mêmes marqueurs, même plan du camp), traits épaissis pour être
             // lus de loin : traits et formes de joueur (polylignes, rectangles, ellipses), plan du camp (fn_planServer).
-            private _segs = _ui getOrDefault ["segs", []];
-            private _segLbls = _ui getOrDefault ["segLbls", []];
+            private _segs = _ui get "segs";
+            private _segLbls = _ui get "segLbls";
             private _si = 0; private _li2 = 0;
             private _seg = {
                 params ["_a", "_b", "_col", "_th"];
@@ -861,26 +1297,17 @@ switch (_mode) do {
             };
             private _segLbl = {
                 params ["_p", "_txt", "_col"];
-                if (_txt isEqualTo "" || {_li2 >= (count _segLbls)} || {!([_p select 0, _p select 1] call _inView)}) exitWith {};
+                if (_far || {_txt isEqualTo ""} || {_li2 >= (count _segLbls)} || {!([_p select 0, _p select 1] call _inView)}) exitWith {};
                 ([_p select 0, _p select 1] call _toG) params ["_gx", "_gy"];
-                private _w = (count _txt) * 13 + 14;
-                private _at = [_gx * _texW, _gy * _texH, _w, 28, 10] call _place;
+                private _s = [_txt, 20] call _cut;
+                private _w = [_s, 26] call _plateW;
+                private _at = [_gx * _texW, _gy * _texH, _w, 32, 12] call _place;
                 if ((count _at) isEqualTo 0) exitWith {};
                 private _t = _segLbls select _li2;
-                _t ctrlSetText ((_txt) call comspec_atak_native_fnc_tr);
+                [_t, _s, _w] call _lbl;
                 _t ctrlSetTextColor _col;
-                _t ctrlSetPosition [(_at select 0) / _texW, (_at select 1) / _texH, _w / _texW, 28 / _texH]; _t ctrlCommit 0; _t ctrlShow true;
+                [_t, [_at select 0, _at select 1, _w, 32]] call _place2;
                 _li2 = _li2 + 1;
-            };
-            private _mkCol = {
-                params ["_m"];
-                private _col = _colCache getOrDefault [markerColor _m, []];
-                if (_col isEqualTo []) then {
-                    _col = (getArray (configFile >> "CfgMarkerColors" >> (markerColor _m) >> "color")) apply { if (_x isEqualType "") then { call compile _x } else { _x } };
-                    if ((count _col) < 4) then { _col = [1, 1, 1, 1]; };
-                    _colCache set [markerColor _m, _col];
-                };
-                _col
             };
             {
                 private _m = _x;
@@ -919,111 +1346,118 @@ switch (_mode) do {
             } forEach ((missionNamespace getVariable [format ["COMSPEC_ATAK_Plan_%1", _side], [0, [], ""]]) param [1, []]);
             for "_i" from _si to ((count _segs) - 1) do { (_segs select _i) ctrlShow false; };
             for "_i" from _li2 to ((count _segLbls) - 1) do { (_segLbls select _i) ctrlShow false; };
-            // Comptes rendus et alertes géolocalisés des 20 dernières minutes.
-            private _evIcons = _ui get "evIcons";
-            private _ei = 0;
-            {
-                _x params ["", "", "", "", "", "", ["_p", []], ["_at", -1e9]];
-                if (_ei < 12 && {(count _p) >= 2} && {serverTime - _at < 1200} && {[_p select 0, _p select 1] call _inView}) then {
-                    ([_p select 0, _p select 1] call _toG) params ["_gx", "_gy"];
-                    private _c = _evIcons select _ei;
-                    _c ctrlSetText (("\A3\ui_f\data\map\markers\military\warning_CA.paa") call comspec_atak_native_fnc_tr);
-                    _c ctrlSetTextColor [1, 0.35, 0.2, 1];
-                    _c ctrlSetPosition [_gx - 15 / _texW, _gy - 15 / _texH, 30 / _texW, 30 / _texH]; _c ctrlCommit 0; _c ctrlShow true;
-                    _ei = _ei + 1;
-                };
-            } forEach _events;
-            for "_i" from _ei to 11 do { (_evIcons select _i) ctrlShow false; };
-            // Nœuds ATAK : symbole OTAN ami, couleur du camp ; ancien pâli, perdu et hors ligne en gris.
-            private _uIcons = _ui get "uIcons";
-            private _uLbls = _ui get "uLbls";
-            private _ui0 = 0;
-            {
-                _x params ["_lead", "_mem", "_gx", "_gy", "_lbl", "_lw", "_at"];
-                _lead params ["", "", "", "", "_fr", "_kind"];
-                private _tex = format ["\A3\ui_f\data\map\markers\nato\b_%1.paa", (createHashMapFromArray [["veh", "motor_inf"], ["air", "air"], ["boat", "naval"], ["armor", "armor"]]) getOrDefault [_kind, "inf"]];
-                private _col = switch (_fr) do {
-                    case 0: { _sideRgb + [1] };
-                    case 1: { (_sideRgb apply { _x * 0.75 }) + [0.75] };
-                    case 2: { [0.62, 0.62, 0.62, 0.85] };
-                    default { [0.45, 0.45, 0.45, 0.7] };
-                };
-                private _c = _uIcons select _ui0;
-                _c ctrlSetText ((_tex) call comspec_atak_native_fnc_tr);
-                _c ctrlSetTextColor _col;
-                _c ctrlSetPosition [_gx - 18 / _texW, _gy - 18 / _texH, 36 / _texW, 36 / _texH]; _c ctrlCommit 0; _c ctrlShow true;
-                private _t = _uLbls select _ui0;
-                _t ctrlSetText ((_lbl) call comspec_atak_native_fnc_tr);
-                // PIP : le groupe choisi par l'opérateur ressort en jaune.
-                private _pickG = _op param [4, ""];
-                private _picked = ((count _op) >= 5 && {(_op param [3, ""]) isEqualTo "GROUPES"} && {_pickG isNotEqualTo ""} && {(_mem findIf { (_x param [7, ""]) isEqualTo _pickG }) >= 0})
-                    || {_squad isNotEqualTo "" && {(_mem findIf { (_x param [7, ""]) isEqualTo _squad }) >= 0}};
-                _t ctrlSetTextColor ([[[1, 1, 1, 1], [0.8, 0.8, 0.8, 1]] select (_fr >= 2), [1, 0.85, 0.3, 1]] select _picked);
-                if (_picked) then { _c ctrlSetTextColor [1, 0.85, 0.3, 1]; };
-                if ((count _at) > 0) then { _t ctrlSetPosition [(_at select 0) / _texW, (_at select 1) / _texH, _lw / _texW, 26 / _texH]; _t ctrlCommit 0; };
-                _t ctrlShow ((count _at) > 0);
-                _ui0 = _ui0 + 1;
-            } forEach _nodeDraw;
-            // PIP : objectif de l'ordre en cours de rédaction sur le PC, et repère du groupe choisi.
-            if ((count _op) >= 9) then {
-                private _opos = _op param [8, []];
-                if ((count _opos) >= 2 && {[_opos select 0, _opos select 1] call _inView} && {_ui0 < 100}) then {
-                    ([_opos select 0, _opos select 1] call _toG) params ["_gx", "_gy"];
-                    private _c = _uIcons select _ui0;
-                    _c ctrlSetText (("\A3\ui_f\data\map\markers\military\objective_CA.paa") call comspec_atak_native_fnc_tr);
-                    _c ctrlSetTextColor [1, 0.85, 0.2, 1];
-                    _c ctrlSetPosition [_gx - 20 / _texW, _gy - 20 / _texH, 40 / _texW, 40 / _texH]; _c ctrlCommit 0; _c ctrlShow true;
-                    private _t = _uLbls select _ui0;
-                    _t ctrlSetText (("OBJECTIF") call comspec_atak_native_fnc_tr);
-                    _t ctrlSetTextColor [1, 0.9, 0.5, 1];
-                    private _oAt = [_gx * _texW, _gy * _texH, 120, 26, 24] call _place;
-                    if ((count _oAt) > 0) then { _t ctrlSetPosition [(_oAt select 0) / _texW, (_oAt select 1) / _texH, 120 / _texW, 26 / _texH]; _t ctrlCommit 0; };
-                    _t ctrlShow ((count _oAt) > 0);
-                    _ui0 = _ui0 + 1;
-                };
+            // Noms de lieux en dernier, là où il reste de la place : capitales et villes (villages aussi de près).
+            // Cache par cadrage (nearestLocations une fois tant que la carte ne bouge pas).
+            private _places = _ui get "places";
+            private _pk = [round (_cx / 50), round (_cy / 50), round (_hw / 50)];
+            private _locs = _d getVariable ["COMSPEC_ATAK_TocLocs", []];
+            if ((_locs param [0, []]) isNotEqualTo _pk) then {
+                private _types = ["NameCityCapital", "NameCity"] + ([["NameVillage"], []] select _far);
+                _locs = [_pk, ((nearestLocations [[_cx, _cy], _types, _hw * 1.45]) select [0, 30]) apply { [locationPosition _x, text _x, type _x] }];
+                _d setVariable ["COMSPEC_ATAK_TocLocs", _locs];
             };
-            for "_i" from _ui0 to 99 do { (_uIcons select _i) ctrlShow false; (_uLbls select _i) ctrlShow false; };
-            private _sc = _ui get "scale";
-            private _scTxt = ((format ["Carreaux de %1 · largeur %2", [format ["%1 m", _step], format ["%1 km", _step / 1000]] select (_step >= 1000), [format ["%1 m", round (2 * _hw)], format ["%1 km", (round (2 * _hw / 100)) / 10]] select (_hw >= 500)])) call comspec_atak_native_fnc_tr;
-            _sc ctrlSetText _scTxt; // i18n:brut (déjà traduit)
-            _sc ctrlSetPosition [10 / _texW, _mh - 36 / _texH, ((count _scTxt) * 13 + 20) / _texW, 30 / _texH]; _sc ctrlCommit 0;
-            private _no = _ui get "north";
-            _no ctrlSetPosition [_mw - 70 / _texW, 10 / _texH, 60 / _texW, 44 / _texH]; _no ctrlCommit 0;
+            private _pi = 0;
+            {
+                _x params ["_lp", "_lt", "_ty"];
+                if (_pi < 16 && {_lt isNotEqualTo ""} && {[_lp select 0, _lp select 1] call _inView}) then {
+                    ([_lp select 0, _lp select 1] call _toG) params ["_gx", "_gy"];
+                    private _s = [_lt, 18] call _cut;
+                    private _w = [_s, 28] call _plateW;
+                    private _at = [_gx * _texW, _gy * _texH, _w, 36, 0, 1] call _place;
+                    if ((count _at) > 0) then {
+                        private _t = _places select _pi;
+                        [_t, _s, _w] call _lbl;
+                        _t ctrlSetTextColor ([[0.78, 0.82, 0.79, 0.95], [0.92, 0.95, 0.93, 1]] select (_ty in ["NameCityCapital", "NameCity"]));
+                        [_t, [_at select 0, _at select 1, _w, 36]] call _place2;
+                        _pi = _pi + 1;
+                    };
+                };
+            } forEach (_locs param [1, []]);
+            for "_i" from _pi to ((count _places) - 1) do { (_places select _i) ctrlShow false; };
             private _em = _ui get "empty";
             _em ctrlShow ((count _nodes) isEqualTo 0);
-            _em ctrlSetStructuredText parseText (((("<t align='center' size='1.6' color='#cfd8d3'>Aucun nœud ATAK de ce camp sur le réseau</t>"))) call comspec_atak_native_fnc_tr);
-            _em ctrlSetPosition [0, _mh / 2 - 0.03, _mw, 0.06]; _em ctrlCommit 0;
+            [_em, "<t align='center' size='1.3' color='#cfd8d3'>Aucun nœud ATAK de ce camp sur le réseau</t>"] call _setTxt;
+            _em ctrlSetPosition ([0, _mhPx / 2 - 24, _mwPx, 48] call _R); _em ctrlCommit 0;
         };
 
-        // ---- Panneau : résumé du réseau, groupes en colonnes par pages, flux ; textes réécrits seulement s'ils changent ---
-        private _setTxt = {
-            params ["_c", "_s"];
-            if ((_c getVariable ["COMSPEC_ATAK_Txt", ""]) isNotEqualTo _s) then {
-                _c setVariable ["COMSPEC_ATAK_Txt", _s];
-                _c ctrlSetStructuredText parseText ((_s) call comspec_atak_native_fnc_tr);
-            };
+        // ---- Panneau ----------------------------------------------------------------------------------------
+        // Blocs : PIP, RÉSEAU (titre, compteurs), GROUPES (tableau), FLUX, ORBAT, ESCOUADE. Chaque ligne est un contrôle
+        // d'une ligne coupé à sa largeur (« … ») : plus de texte qui passe sous le bloc suivant.
+        private _hideAll = {
+            { (_ui get _x) ctrlShow false; } forEach ["pip", "netT", "netS", "grpT", "fluxBg", "fluxT", "info", "orbN", "orb1", "orb2", "sqT", "sqL"];
+            { { _x ctrlShow false; } forEach _x; } forEach (_ui get "cnt");
+            { _x ctrlShow false; } forEach (_ui get "colH");
+            { { _x ctrlShow false; } forEach _x; } forEach (_ui get "tbl");
+            { _x ctrlShow false; } forEach (_ui get "fluxL");
         };
-        private _pan = _ui get "panel";
-        private _pan2 = _ui get "panel2";
-        private _flx = _ui get "flux";
-        private _tbl = _ui get "tbl";
-        private _tblOn = _view in ["SPLIT", "TOC", "NET"];
-        private _full = _view in ["FEED", "NET", "ORBAT"];
-        _panR params ["_px", "_py", "_pw", "_ph"];
-        _pan ctrlShow (_view isNotEqualTo "MAP");
-        _pan2 ctrlShow (_view isEqualTo "ORBAT");
-        _flx ctrlShow (_view in ["SPLIT", "TOC"]);
-        private _used = 0;
-        private _cnt = [0, 0, 0, 0];
-        { private _f = (_x select 4) min 3; _cnt set [_f, (_cnt select _f) + (_x param [8, 1])]; } forEach _nodes;
+        call _hideAll;
+        private _cntN = [0, 0, 0, 0];
+        { private _f = (_x select 4) min 3; _cntN set [_f, (_cntN select _f) + (_x param [8, 1])]; } forEach _nodes;
         _stats params [["_jam", 0], ["_relays", 0], ["_players", 0], ["_ais", 0]];
-        private _s = "";
-        if ((count _op) >= 8) then {
-            _s = format ["<t size='1.05' color='#e0b040'>PIP · %1 · onglet %2</t><br/>", [_op param [6, ""]] call _esc, [_op param [3, ""]] call _esc];
+        private _px = 0; private _pw = 0;
+        if ((count _panR) >= 2) then { _px = _panR select 0; _pw = _panR select 1; };
+        private _cx0 = _px + 12;            // bord gauche du texte
+        private _cw = _pw - 24;             // largeur utile
+        private _y = 92;
+        // Compteurs : 4 cases (nombre 44 px, libellé 28 px) ; SPLIT : (556 - 3 x 8) / 4 = 133 px, « hors ligne » estimé
+        // à 10 x 0,46 x 28 = 129 px.
+        private _counts = {
+            params ["_vals", "_y0"];
+            private _tw = (_cw - 24) / 4;
+            {
+                (_x) params ["_bg", "_n", "_l"];
+                private _x0 = _cx0 + _forEachIndex * (_tw + 8);
+                [_bg, [_x0, _y0, _tw, 84]] call _place2;
+                [_n, str (_vals select _forEachIndex), _tw] call _lbl;
+                [_n, [_x0, _y0 + 2, _tw, 48]] call _place2;
+                [_l, ["en ligne", "anciens", "perdus", "hors ligne"] select _forEachIndex, _tw] call _lbl;
+                [_l, [_x0, _y0 + 48, _tw, 34]] call _place2;
+            } forEach (_ui get "cnt");
         };
-        _s = _s + format ["<t size='1.15' font='COMSPEC_BarlowBold'>RÉSEAU</t> <t size='1.05'><t color='#5cc76b'>%1 en ligne</t> · <t color='#e0b040'>%2 anc.</t> · <t color='#9aa39f'>%3 perd.</t> · <t color='#6f7773'>%4 hors l.</t></t><br/><t size='1' color='#8a9a93'>%5 joueurs · %6 IA · %7 relais · %8 brouilleurs</t>",
-            _cnt select 0, _cnt select 1, _cnt select 2, _cnt select 3, _players, _ais, _relays, _jam];
-        if (_tblOn) then {
+        private _netBlock = {
+            [_ui get "netT", "RÉSEAU", 240] call _lbl;
+            [_ui get "netT", [_cx0, _y, 240, 46]] call _place2;
+            private _sub = [format ["%1 joueurs", _players], format ["%1 IA", _ais], format ["%1 relais", _relays]];
+            if (_jam > 0) then { _sub pushBack format ["%1 brouilleurs", _jam]; };
+            _sub = _sub joinString " · ";
+            [_ui get "netS", _sub, _cw - 250] call _lbl;
+            [_ui get "netS", [_cx0 + 250, _y + 6, _cw - 250, 38]] call _place2;
+            [_cntN, _y + 50] call _counts;
+            _y = _y + 144;
+        };
+        // Flux : une ligne par événement, coupée à la largeur (43 caractères en SPLIT : 556 / (0,46 x 28)).
+        private _fluxBlock = {
+            params ["_top", "_bottom", "_full"];
+            [_ui get "fluxBg", [_px, _top, _pw, _bottom - _top]] call _place2;
+            [_ui get "fluxT", "FLUX", 200] call _lbl;
+            [_ui get "fluxT", [_cx0, _top + 8, 200, 40]] call _place2;
+            private _rows = floor ((_bottom - _top - 56) / 38);
+            private _ev = _events select [0 max ((count _events) - _rows)];
+            reverse _ev;
+            private _chars = floor (_cw / (0.46 * 28));
+            private _fl = _ui get "fluxL";
+            if ((count _events) isEqualTo 0) then {
+                private _c = _fl select 0;
+                [_c, format ["<t size='1' color='#8a9a93'>%1</t>", [["Aucun compte rendu ni message pour l'instant" call comspec_atak_native_fnc_tr, _chars] call _cut] call _esc]] call _setTxt;
+                [_c, [_cx0, _top + 52, _cw, 38]] call _place2;
+            };
+            {
+                _x params [["_time", ""], ["_kind", ""], ["_prio", ""], ["_who", ""], ["_grid", ""], ["_text", ""], "", "", ["_old", false]];
+                private _pc = switch (toUpper _prio) do { case "FLASH": { "#ff5a4a" }; case "URGENT": { "#e0b040" }; default { ["#7fd0b0", "#6f7773"] select _old }; };
+                private _t1 = [_time, 8] call _cut;
+                private _k1 = [_kind call comspec_atak_native_fnc_tr, 14] call _cut;
+                private _w1 = [_who, 16] call _cut;
+                forceUnicode 0;
+                private _rest = _chars - (count (_t1 + _k1 + _w1)) - 3;
+                private _x1 = if (_full && {_text isNotEqualTo ""} && {_rest > 8}) then { " · " + ([_text, _rest - 3] call _cut) } else { "" };
+                private _c = _fl select _forEachIndex;
+                [_c, format ["<t size='1'><t color='#8a9a93'>%1</t> <t color='%2' font='COMSPEC_BarlowBold'>%3</t> %4%5</t>", [_t1] call _esc, _pc, [_k1] call _esc, [_w1] call _esc, [_x1] call _esc]] call _setTxt;
+                [_c, [_cx0, _top + 52 + _forEachIndex * 38, _cw, 38]] call _place2;
+            } forEach (_ev select [0, (_rows max 0) min (count _fl)]);
+        };
+        // Tableau des groupes : 40 px par ligne (police 30) ; colonnes 58 % / 12 % / reste.
+        private _tableBlock = {
+            params ["_bottom"];
             private _gm = createHashMap;
             {
                 private _g = _x param [7, ""];
@@ -1032,101 +1466,111 @@ switch (_mode) do {
             } forEach _nodes;
             private _gk = keys _gm;
             _gk sort true;
-            private _hdrH = 0.125 + ([0, 0.04] select ((count _op) >= 8));
-            private _rowH = 0.036;
-            private _bottom = [0.68, 0.985] select _full;
-            private _nRow = (floor ((_bottom - _py - _hdrH) / _rowH)) min (count _tbl);
+            private _nRow = (floor ((_bottom - _y - 82) / 40)) min (count (_ui get "tbl"));
             // Pages automatiques : une toutes les 8 s quand tout ne tient pas.
             private _nPg = (ceil ((count _gk) / (_nRow max 1))) max 1;
             private _pg = (floor (diag_tickTime / 8)) mod _nPg;
-            _s = _s + format ["<br/><t size='1.15' font='COMSPEC_BarlowBold'>GROUPES</t> <t size='1' color='#8a9a93'>%1 · nœuds · grille%2</t>", count _gk, ["", format [" · page %1 / %2", _pg + 1, _nPg]] select (_nPg > 1)];
-            private _colX = [_px + 0.006, _px + _pw * 0.58, _px + _pw * 0.70];
-            private _colW = [_pw * 0.57, _pw * 0.11, _pw * 0.29];
+            [_ui get "grpT", format ["<t size='1.15' font='COMSPEC_BarlowBold'>GROUPES</t> <t size='1' color='#8a9a93'>%1%2</t>", count _gk, ["", format [" · page %1 / %2", _pg + 1, _nPg]] select (_nPg > 1)]] call _setTxt;
+            [_ui get "grpT", [_cx0, _y, _cw, 42]] call _place2;
+            private _wN = _cw * 0.58; private _wC = _cw * 0.12; private _wG = _cw - _wN - _wC - 12;
+            (_ui get "colH") params ["_h0", "_h1", "_h2"];
+            [_h0, "ÉLÉMENT", _wN] call _lbl; [_h0, [_cx0, _y + 44, _wN, 34]] call _place2;
+            [_h1, "NŒUDS", _wC] call _lbl; [_h1, [_cx0 + _wN, _y + 44, _wC, 34]] call _place2;
+            [_h2, "GRILLE", _wG] call _lbl; [_h2, [_cx0 + _wN + _wC + 12, _y + 44, _wG, 34]] call _place2;
+            if ((count _gk) isEqualTo 0) then {
+                [_ui get "info", "<t size='1' color='#8a9a93'>Aucun nœud ATAK de ce camp sur le réseau</t>"] call _setTxt;
+                [_ui get "info", [_cx0, _y + 82, _cw, 38]] call _place2;
+            };
             {
                 private _k = _x;
                 (_gm get _k) params ["_n", "_p", "_best"];
-                private _row = _tbl select _forEachIndex;
-                private _rgba = [[0.36, 0.78, 0.42, 1], [0.88, 0.69, 0.25, 1], [0.6, 0.64, 0.62, 1], [0.44, 0.47, 0.45, 1]] select ((_best min 3) max 0);
-                private _vals = [_k, str _n, [[_p select 0, _p select 1, 0], 6] call comspec_atak_native_fnc_gridRef];
-                private _y = _py + _hdrH + _forEachIndex * _rowH;
-                {
-                    private _i = _forEachIndex;
-                    _x ctrlSetText ((_vals select _i) call comspec_atak_native_fnc_tr);
-                    _x ctrlSetTextColor ([_rgba, [0.85, 0.89, 0.86, 1]] select (_i > 0));
-                    _x ctrlSetPosition [_colX select _i, _y, _colW select _i, _rowH];
-                    _x ctrlCommit 0;
-                    _x ctrlShow true;
-                } forEach _row;
-                _used = _used + 1;
-            } forEach (_gk select [_pg * _nRow, _nRow]);
-            if ((count _gk) isEqualTo 0) then { _s = _s + "<br/><t size='1' color='#8a9a93'>Aucun nœud ATAK de ce camp sur le réseau</t>"; };
-            _pan ctrlSetPosition [_px, _py, _pw, _hdrH]; _pan ctrlCommit 0;
+                ((_ui get "tbl") select _forEachIndex) params ["_bg", "_c0", "_c1", "_c2"];
+                private _ry = _y + 82 + _forEachIndex * 40;
+                [_bg, [_px + 4, _ry, _pw - 8, 40]] call _place2;
+                [_c0, [_k, "(sans groupe)"] select (_k isEqualTo ""), _wN] call _lbl;
+                _c0 ctrlSetTextColor ([[0.36, 0.78, 0.42, 1], [0.88, 0.69, 0.25, 1], [0.66, 0.7, 0.68, 1], [0.48, 0.52, 0.5, 1]] select ((_best min 3) max 0));
+                [_c0, [_cx0, _ry + 1, _wN, 38]] call _place2;
+                [_c1, str _n, _wC] call _lbl;
+                _c1 ctrlSetTextColor [0.85, 0.89, 0.86, 1];
+                [_c1, [_cx0 + _wN, _ry + 1, _wC, 38]] call _place2;
+                [_c2, [[_p select 0, _p select 1, 0], 6] call comspec_atak_native_fnc_gridRef, _wG] call _lbl;
+                _c2 ctrlSetTextColor [0.85, 0.89, 0.86, 1];
+                [_c2, [_cx0 + _wN + _wC + 12, _ry + 1, _wG, 38]] call _place2;
+            } forEach (_gk select [_pg * _nRow, _nRow max 0]);
         };
-        for "_i" from _used to ((count _tbl) - 1) do { { _x ctrlShow false; } forEach (_tbl select _i); };
-        // Flux : une ligne par événement sous la table, en entier dans l'affichage FEED.
-        if (_view in ["SPLIT", "TOC", "FEED"]) then {
-            private _eMax = [5, 18] select (_view isEqualTo "FEED");
-            private _ev = _events select [0 max ((count _events) - _eMax)];
-            reverse _ev;
-            private _es = "<t size='1.15' font='COMSPEC_BarlowBold'>FLUX</t><br/>";
-            if ((count _events) isEqualTo 0) then { _es = _es + "<t size='1' color='#8a9a93'>Aucun compte rendu ni message pour l'instant</t>"; };
-            {
-                _x params [["_time", ""], ["_kind", ""], ["_prio", ""], ["_who", ""], ["_grid", ""], ["_text", ""], "", "", ["_old", false]];
-                private _pc = switch (toUpper _prio) do { case "FLASH": { "#ff5a4a" }; case "URGENT": { "#e0b040" }; default { ["#7fd0b0", "#6f7773"] select _old }; };
-                _es = _es + format ["<t size='1'><t color='#8a9a93'>%1</t> <t color='%2' font='COMSPEC_BarlowBold'>%3</t> %4%5</t><br/>", _time, _pc, [_kind] call _esc, [_who select [0, 16]] call _esc,
-                    ["", format [" · %1", [_text select [0, 110]] call _esc]] select (_view isEqualTo "FEED" && {_text isNotEqualTo ""})];
-            } forEach _ev;
-            if (_view isEqualTo "FEED") then { _s = _s + "<br/><br/>" + _es; _pan ctrlSetPosition _panR; _pan ctrlCommit 0; } else {
-                _flx ctrlSetPosition [_px, 0.685, _pw, 0.3]; _flx ctrlCommit 0;
-                [_flx, _es] call _setTxt;
+        switch (_view) do {
+            case "MAP": {};
+            case "FEED": {
+                call _netBlock;
+                [_y + 4, 884, true] call _fluxBlock;
+            };
+            case "NET": {
+                call _netBlock;
+                [884] call _tableBlock;
+            };
+            case "ORBAT": {
+                // ORBAT du site : sur deux colonnes, par pages, chaque membre avec son état (20 lignes de 34 px par colonne).
+                ["load"] call comspec_atak_native_fnc_bftOrbat;
+                private _store = ["store"] call comspec_atak_native_fnc_bftOrbat;
+                (["presence"] call comspec_atak_native_fnc_bftOrbat) params ["", "_onKey"];
+                (["notice"] call comspec_atak_native_fnc_bftOrbat) params ["_nTxt"];
+                private _people = _store get "people";
+                private _lines = [];
+                {
+                    _x params ["", "_ud", "_uName", "_uCode", "_uRows"];
+                    _lines pushBack format ["<t size='1.05' font='COMSPEC_BarlowBold' color='#7fb8e0'>%1%2%3</t>", ["", "· "] select (_ud > 0), [[_uName, 34] call _cut] call _esc, ["", format [" (%1)", [[_uCode, 10] call _cut] call _esc]] select (_uCode isNotEqualTo "")];
+                    {
+                        private _pe = _people getOrDefault [_x select 1, []];
+                        if ((_x select 0) isEqualTo "v") then {
+                            _lines pushBack format ["<t size='1' color='#6f7773'>○ %1 · poste vacant</t>", [[_x select 2, 28] call _cut] call _esc];
+                        } else {
+                            private _on = (_x select 1) in _onKey;
+                            if ((_pe param [4, 0]) isEqualTo 1) then {
+                                _lines pushBack format ["<t size='1' color='#6f7773'>· %1</t>", [[_pe param [0, ""], 40] call _cut] call _esc];
+                            } else {
+                                _lines pushBack format ["<t size='1'><t color='%1'>%2</t> %3</t>", ["#6f7773", "#5cc76b"] select _on, ["○", "●"] select _on, [[_pe param [0, ""], 40] call _cut] call _esc];
+                            };
+                        };
+                    } forEach _uRows;
+                } forEach (_store get "units");
+                private _perCol = 20;
+                private _nPg = (ceil ((count _lines) / (2 * _perCol))) max 1;
+                private _pg = (floor (diag_tickTime / 10)) mod _nPg;
+                private _page = _lines select [_pg * 2 * _perCol, 2 * _perCol];
+                [_ui get "orbN", format ["%1%2", _nTxt, ["", format [" · page %1 / %2", _pg + 1, _nPg]] select (_nPg > 1)], _cw] call _lbl;
+                [_ui get "orbN", [_cx0, 96, _cw, 38]] call _place2;
+                [_ui get "orb1", (_page select [0, _perCol]) joinString "<br/>"] call _setTxt;
+                [_ui get "orb1", [_cx0, 140, _cw / 2 - 12, 744]] call _place2;
+                [_ui get "orb2", (_page select [_perCol, _perCol]) joinString "<br/>"] call _setTxt;
+                [_ui get "orb2", [_cx0 + _cw / 2 + 12, 140, _cw / 2 - 12, 744]] call _place2;
+            };
+            case "SQUAD": {
+                // Écran d'escouade : nom du groupe, compteurs du groupe, membres, dernier compte rendu ; caméra du chef
+                // en bas si elle est partagée (alors 7 membres au plus et pas de compte rendu).
+                [_ui get "sqT", format ["<t size='2.2' font='COMSPEC_BarlowBold'>%1</t>", [[toUpper ([_squad, "AUCUN GROUPE"] select (_squad isEqualTo "")), 17] call _cut] call _esc]] call _setTxt;
+                [_ui get "sqT", [_cx0, 92, _cw, 76]] call _place2;
+                private _sc = [0, 0, 0, 0];
+                { private _f = (_x select 4) min 3; _sc set [_f, (_sc select _f) + (_x param [8, 1])]; } forEach _sqNodes;
+                [_sc, 172] call _counts;
+                private _cam = (_o getVariable ["COMSPEC_ATAK_TocVideo", false]);
+                [_ui get "sqL", ["squadText", [_squad, _sqNodes, _events, [12, 7] select _cam, !_cam, floor (_cw / (0.46 * 28))]] call _fn] call _setTxt;
+                [_ui get "sqL", [_cx0, 268, _cw, [616, 280] select _cam]] call _place2;
+            };
+            default {
+                // SPLIT et PIP : RÉSEAU, GROUPES jusqu'à 632 px, FLUX de 640 à 892 px.
+                if ((count _op) >= 8) then {
+                    [_ui get "pip", format ["PIP · %1 · %2", _op param [6, ""], format ["onglet %1", _op param [3, ""]]], _cw] call _lbl;
+                    [_ui get "pip", [_cx0, 92, _cw, 36]] call _place2;
+                    _y = 132;
+                };
+                call _netBlock;
+                [632] call _tableBlock;
+                [640, 892, false] call _fluxBlock;
             };
         };
-        // ORBAT du site : sur deux colonnes, par pages, chaque membre avec son état.
-        if (_view isEqualTo "ORBAT") then {
-            ["load"] call comspec_atak_native_fnc_bftOrbat;
-            private _store = ["store"] call comspec_atak_native_fnc_bftOrbat;
-            (["presence"] call comspec_atak_native_fnc_bftOrbat) params ["", "_onKey"];
-            (["notice"] call comspec_atak_native_fnc_bftOrbat) params ["_nTxt"];
-            private _people = _store get "people";
-            private _lines = [];
-            {
-                _x params ["", "_ud", "_uName", "_uCode", "_uRows"];
-                _lines pushBack format ["<t size='1.05' font='COMSPEC_BarlowBold' color='#7fb8e0'>%1%2%3</t>", ["", "· "] select (_ud > 0), [_uName select [0, 34]] call _esc, ["", format [" (%1)", [_uCode] call _esc]] select (_uCode isNotEqualTo "")];
-                {
-                    private _pe = _people getOrDefault [_x select 1, []];
-                    if ((_x select 0) isEqualTo "v") then {
-                        _lines pushBack format ["<t size='1' color='#6f7773'>○ %1 · poste vacant</t>", [(_x select 2) select [0, 28]] call _esc];
-                    } else {
-                        private _on = (_x select 1) in _onKey;
-                        private _anon = (_pe param [4, 0]) isEqualTo 1;
-                        _lines pushBack format ["<t size='1'><t color='%1'>%2</t> %3</t>", ["#6f7773", "#5cc76b"] select _on, ["○", "●"] select _on, [(_pe param [0, ""]) select [0, 38]] call _esc];
-                        if (_anon) then { _lines set [(count _lines) - 1, format ["<t size='1' color='#6f7773'>· %1</t>", [(_pe param [0, ""]) select [0, 38]] call _esc]]; };
-                    };
-                } forEach _uRows;
-            } forEach (_store get "units");
-            private _perCol = 24;
-            private _nPg = (ceil ((count _lines) / (2 * _perCol))) max 1;
-            private _pg = (floor (diag_tickTime / 10)) mod _nPg;
-            private _page = _lines select [_pg * 2 * _perCol, 2 * _perCol];
-            _s = format ["<t size='1' color='#8a9a93'>%1%2</t><br/>", [_nTxt] call _esc, ["", format [" · page %1 / %2", _pg + 1, _nPg]] select (_nPg > 1)] + ((_page select [0, _perCol]) joinString "<br/>");
-            _pan ctrlSetPosition [_px, _py, _pw * 0.495, _ph]; _pan ctrlCommit 0;
-            _pan2 ctrlSetPosition [_px + _pw * 0.505, _py, _pw * 0.495, _ph]; _pan2 ctrlCommit 0;
-            [_pan2, (_page select [_perCol, _perCol]) joinString "<br/>"] call _setTxt;
-        };
-        // Écran d'escouade : plaque au nom du groupe, membres et leur état ATAK, dernière position, dernier compte rendu.
-        if (_view isEqualTo "SQUAD") then {
-            _s = ["squadText", [_squad, _sqNodes, _events]] call _fn;
-            _pan ctrlSetPosition _panR; _pan ctrlCommit 0;
-        };
         // Écran d'escouade : caméra poitrine du chef en bas du panneau, s'il la partage (mêmes caméras que la mosaïque).
-        private _lc = _ui getOrDefault ["lead", controlNull];
-        private _ll = _ui getOrDefault ["leadLbl", controlNull];
-        if (isNull _lc) then {
-            _lc = _d ctrlCreate ["RscPicture", -1]; _lc ctrlSetPosition [0.656, 0.64, 0.328, 0.328]; _lc ctrlCommit 0;
-            _ll = _d ctrlCreate ["COMSPEC_RscStructuredText", -1]; _ll ctrlSetPosition [0.656, 0.64, 0.328, 0.05]; _ll ctrlCommit 0;
-            _ll ctrlSetBackgroundColor [0, 0, 0, 0.6];
-            _ui set ["lead", _lc]; _ui set ["leadLbl", _ll];
-        };
+        private _lc = _ui get "lead";
+        private _ll = _ui get "leadLbl";
         private _ltex = "";
         if (_view isEqualTo "SQUAD" && {_squad isNotEqualTo ""}) then {
             private _gs = allGroups select { (groupId _x) isEqualTo _squad && {(str side _x) isEqualTo _side} };
@@ -1135,47 +1579,107 @@ switch (_mode) do {
                 if (((["sources"] call comspec_atak_native_fnc_tocCam) findIf { (_x select 1) isEqualTo _lid }) >= 0) then {
                     _ltex = ["tex", _lid] call comspec_atak_native_fnc_tocMosaic;
                     if (_ltex isNotEqualTo "") then {
-                        _ll ctrlSetStructuredText parseText ((format ["<t size='1.1'> Caméra poitrine · %1</t>", [[leader (_gs select 0), true] call comspec_atak_native_fnc_unitCallsign] call _esc]) call comspec_atak_native_fnc_tr);
+                        [_ll, format ["<t size='1'> Caméra poitrine · %1</t>", [[[leader (_gs select 0), true] call comspec_atak_native_fnc_unitCallsign, 24] call _cut] call _esc]] call _setTxt;
                     };
                 };
             };
         };
         if ((_lc getVariable ["COMSPEC_ATAK_Tex", "-"]) isNotEqualTo _ltex) then { _lc setVariable ["COMSPEC_ATAK_Tex", _ltex]; _lc ctrlSetText _ltex; }; // i18n:brut (texture)
+        _lc ctrlSetPosition ([1012, 556, 580, 326] call _R); _lc ctrlCommit 0;
+        _ll ctrlSetPosition ([1012, 556, 580, 40] call _R); _ll ctrlCommit 0;
         _lc ctrlShow (_ltex isNotEqualTo ""); _ll ctrlShow (_ltex isNotEqualTo "");
         _o setVariable ["COMSPEC_ATAK_TocVideo", _ltex isNotEqualTo ""];
         if (_ltex isNotEqualTo "") then { ["live", [_o, _d]] call comspec_atak_native_fnc_tocBoard; };
-        if (_view isNotEqualTo "MAP") then { [_pan, _s] call _setTxt; };
         true
     };
     case "squadText": {
-        _a params ["_squad", "_sqNodes", "_events"];
+        // Membres d'un groupe (une ligne chacun, coupée à _chars caractères), puis son dernier compte rendu.
+        _a params ["_squad", "_sqNodes", "_events", ["_max", 12], ["_withCr", true], ["_chars", 43]];
         private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
-        if (_squad isEqualTo "") exitWith { "<t size='1.3' color='#8a9a93'>Aucun groupe choisi : choisissez l'escouade au PC du poste, dans l'app Poste TOC ou au menu ACE de l'écran</t>" };
-        private _cnt = [0, 0, 0, 0];
-        { private _f = (_x select 4) min 3; _cnt set [_f, (_cnt select _f) + (_x param [8, 1])]; } forEach _sqNodes;
-        private _s = format ["<t size='3.4' font='COMSPEC_BarlowBold'>%1</t><br/><t size='1.1'><t color='#5cc76b'>%2 en direct</t> · <t color='#e0b040'>%3 anc.</t> · <t color='#9aa39f'>%4 perdus</t> · <t color='#6f7773'>%5 hors ligne</t></t><br/><br/>",
-            [toUpper (_squad select [0, 22])] call _esc, _cnt select 0, _cnt select 1, _cnt select 2, _cnt select 3];
+        if (_squad isEqualTo "") exitWith { "<t size='1' color='#8a9a93'>Aucun groupe choisi : choisissez l'escouade au PC du poste, dans l'app Poste TOC ou au menu ACE de l'écran</t>" };
+        private _s = "";
         if ((count _sqNodes) isEqualTo 0) then {
-            _s = _s + "<t size='1.2' color='#e0b040'>Aucun ATAK de ce groupe sur le réseau : le poste ne connaît ni ses membres ni sa position</t><br/>";
+            _s = "<t size='1' color='#e0b040'>Aucun ATAK de ce groupe sur le réseau : le poste ne connaît ni ses membres ni sa position</t><br/>";
         };
         {
             _x params ["", "_cs", "_p", "", "_fr", "_kind", "", "", ["_n", 1]];
             private _col = ["#5cc76b", "#e0b040", "#9aa39f", "#6f7773"] select ((_fr min 3) max 0);
-            _s = _s + format ["<t size='1.3'><t color='%1'>●</t> <t font='COMSPEC_BarlowBold'>%2</t>%3 <t color='#8a9a93'>· %4 · %5</t></t><br/>", _col, [_cs] call _esc,
-                ["", format [" +%1", _n - 1]] select (_n > 1), ["en direct", "point ancien", "point perdu", "téléphone hors ligne"] select ((_fr min 3) max 0),
-                [[_p select 0, _p select 1, 0], 6] call comspec_atak_native_fnc_gridRef];
-        } forEach (_sqNodes select [0, 12]);
-        // Dernier compte rendu d'un membre du groupe (auteur reconnu à son indicatif).
+            _s = _s + format ["<t size='1'><t color='%1'>●</t> <t font='COMSPEC_BarlowBold'>%2</t>%3 <t color='#8a9a93'>· %4 · %5</t></t><br/>", _col, [[_cs, 14] call _cut] call _esc,
+                ["", format [" +%1", _n - 1]] select (_n > 1), [[_p select 0, _p select 1, 0], 6] call comspec_atak_native_fnc_gridRef,
+                ["en direct", "ancien", "perdu", "hors ligne"] select ((_fr min 3) max 0)];
+        } forEach (_sqNodes select [0, _max]);
+        if (!_withCr) exitWith { _s };
+        // Dernier compte rendu d'un membre du groupe (auteur reconnu à son indicatif), deux lignes au plus.
         private _names = _sqNodes apply { toLower (_x select 1) };
         private _ev = _events select { (toLower (_x param [3, ""])) in _names };
         if ((count _ev) > 0) then {
             (_ev select ((count _ev) - 1)) params [["_time", ""], ["_kind", ""], ["_prio", ""], ["_who", ""], ["_grid", ""], ["_text", ""]];
-            _s = _s + format ["<br/><t size='1.25' font='COMSPEC_BarlowBold'>%1 %2</t> <t size='1.05' color='#8a9a93'>%3 · %4%5</t><br/><t size='1.1'>%6</t>",
-                [_kind] call _esc, [_prio] call _esc, _time, [_who] call _esc, ["", " · grille " + _grid] select (_grid isNotEqualTo ""), [_text select [0, 160]] call _esc];
+            _s = _s + format ["<br/><t size='1.1' font='COMSPEC_BarlowBold'>%1 %2</t> <t size='1' color='#8a9a93'>%3 · %4%5</t><br/><t size='1'>%6</t>",
+                [[_kind, 14] call _cut] call _esc, [[_prio, 10] call _cut] call _esc, _time, [[_who, 16] call _cut] call _esc, ["", " · grille " + _grid] select (_grid isNotEqualTo ""), [[_text, 2 * _chars - 4] call _cut] call _esc];
         } else {
-            _s = _s + "<br/><t size='1.05' color='#8a9a93'>Aucun compte rendu de ce groupe pour l'instant</t>";
+            _s = _s + "<br/><t size='1' color='#8a9a93'>Aucun compte rendu de ce groupe pour l'instant</t>";
         };
         _s
+    };
+    case "title": {
+        // Titre de chaque affichage : [mot d'en-tête de l'écran, libellé des menus et notifications], en français
+        // (traduit à l'affichage). "" : la table entière (contrôle « audit », test tests/Unit/AtakTocScreenDisplaysAssetTest.php).
+        private _t = createHashMapFromArray [
+            ["SPLIT", ["TOC", "carte et flux"]], ["MAP", ["TOC", "carte seule"]], ["FEED", ["FLUX", "flux seul"]],
+            ["NET", ["RÉSEAU", "réseau"]], ["ORBAT", ["ORBAT", "ORBAT du site"]], ["TOC", ["TOC", "PIP du poste"]],
+            ["CAM", ["CAMÉRA", "caméra en direct"]], ["SAT", ["SATELLITE", "vue satellite"]], ["CLOCK", ["HORLOGE", "horloge et chronos"]],
+            ["SQUAD", ["ESCOUADE", "écran d'escouade"]], ["LOG", ["MAIN COURANTE", "main courante"]], ["EXCHECK", ["EXÉCUTION", "liste d'exécution"]],
+            ["KILLS", ["PERTES ET RÉSULTATS", "pertes et résultats"]], ["REQ", ["DEMANDES", "demandes des éléments"]],
+            ["STRIP", ["BANDEAU", "bandeau horloge"]], ["PLATE", ["PLAQUE", "plaque de nom"]], ["MOSAIC", ["CAMÉRAS", "mosaïque de caméras"]]
+        ];
+        if (_a isEqualTo "") exitWith { _t };
+        _t getOrDefault [_a, [_a, toLower _a]]
+    };
+    case "audit": {
+        // Contrôle du code des affichages, sans écran posé (console de débogage, joueur ou Zeus) : chaque affichage est
+        // dessiné dans un display d'essai (visible quelques images à l'écran), chacun dans son propre script (une erreur
+        // n'arrête que lui). Résultat : [[affichage, "OK" | "ERREUR" | "VIDE" | "SANS TITRE", contrôles visibles]...],
+        // aussi au journal et dans uiNamespace COMSPEC_ATAK_TocAudit. Hors script suspendable : relancé à part, [] rendu.
+        // Exemple : ["audit"] call comspec_atak_native_fnc_tocScreen;
+        if (!hasInterface) exitWith { [] };
+        if (!canSuspend) exitWith { ["audit"] spawn comspec_atak_native_fnc_tocScreen; [] };
+        disableSerialization;
+        private _host = findDisplay 46;
+        if (isNull _host) exitWith { [] };
+        private _titles = ["title", ""] call _fn;
+        uiNamespace setVariable ["COMSPEC_ATAK_TocAuditing", true];
+        private _o = "Land_HelipadEmpty_F" createVehicleLocal [0, 0, 0];
+        private _out = [];
+        {
+            private _v = _x;
+            // Display neuf pour chaque affichage : contrôles construits depuis zéro, comme sur un écran qui vient d'être posé.
+            private _d = _host createDisplay "COMSPEC_RscTocScreenTexture";
+            _o setVariable ["COMSPEC_ATAK_TocScr", ["Audit", "", 0, _v, 0, [], false, false, 0, ""]];
+            uiNamespace setVariable ["COMSPEC_ATAK_TocAuditD", _d];
+            missionNamespace setVariable ["COMSPEC_ATAK_TocAuditDone", false];
+            private _h = [_o] spawn {
+                disableSerialization;
+                params ["_o"];
+                private _rv = ["draw", [_o, uiNamespace getVariable ["COMSPEC_ATAK_TocAuditD", displayNull]]] call comspec_atak_native_fnc_tocScreen;
+                missionNamespace setVariable ["COMSPEC_ATAK_TocAuditDone", !isNil "_rv"];
+            };
+            private _t0 = diag_tickTime;
+            waitUntil { scriptDone _h || {diag_tickTime - _t0 > 5} };
+            private _shown = { ctrlShown _x && {((ctrlPosition _x) select 2) > 0} } count (allControls _d);
+            private _st = switch (true) do {
+                case !(missionNamespace getVariable ["COMSPEC_ATAK_TocAuditDone", false]): { "ERREUR" };
+                case (_shown < 5): { "VIDE" };
+                case !(_v in _titles): { "SANS TITRE" };
+                default { "OK" };
+            };
+            _out pushBack [_v, _st, _shown];
+            [["INFO", "WARNING"] select (_st isNotEqualTo "OK"), "TOC", format ["Audit des écrans TOC : %1 %2 (%3 contrôles visibles)", _v, _st, _shown]] call comspec_atak_native_fnc_log;
+            _d closeDisplay 2;
+        } forEach _views;
+        deleteVehicle _o;
+        uiNamespace setVariable ["COMSPEC_ATAK_TocAuditing", false];
+        uiNamespace setVariable ["COMSPEC_ATAK_TocAudit", _out];
+        _out
     };
     case "ensure": {
         // Désigne l'objet comme écran TOC (ou change seulement l'affichage) : ACE sur n'importe quel écran du jeu.
@@ -1191,9 +1695,8 @@ switch (_mode) do {
             ["add", [_o, _nm select [0, 32], "", 0, _view, true, false]] call _fn;
         };
         _o setVariable ["COMSPEC_ATAK_TocAt", -10];
-        private _lbl = (createHashMapFromArray [["SPLIT", "carte et flux"], ["MAP", "carte seule"], ["FEED", "flux seul"], ["NET", "réseau"], ["ORBAT", "ORBAT du site"], ["TOC", "PIP du poste"], ["CAM", "caméra en direct"],
-            ["SAT", "vue satellite"], ["CLOCK", "horloge et chronos"], ["MOSAIC", "mosaïque de caméras"], ["STRIP", "bandeau horloge"], ["PLATE", "plaque de nom"], ["SQUAD", "écran d'escouade"], ["LOG", "main courante"], ["EXCHECK", "liste d'exécution"], ["KILLS", "pertes et résultats"], ["REQ", "demandes"]]) getOrDefault [_view, _view];
-        ["INFO", format ["Écran TOC : %1", _lbl], 2, 20] call comspec_atak_native_fnc_notify;
+        // Notification du téléphone (jamais une fenêtre du jeu) ; libellé commun aux menus (« title »).
+        ["INFO", format ["Écran TOC : %1", (["title", _view] call _fn) select 1], 2, 20] call comspec_atak_native_fnc_notify;
         if (_view isEqualTo "TOC") then {
             private _side = str side group player;
             private _ops = allPlayers select { !isNull _x && {alive _x} && {((_x getVariable ["COMSPEC_ATAK_TocView", []]) param [0, ""]) isEqualTo _side} };
@@ -1329,7 +1832,8 @@ switch (_mode) do {
             _diff pushBack (["Pip", "Montrer ce que voit le PC du poste (PIP)", "pip"] call _mk);
             private _out = [];
             if (!_has) then {
-                _out pushBack (["Split", "Afficher le réseau TOC", "split"] call _mk);
+                // Écran du jeu ou d'un autre mod (CfgComspecTocScreens) : il devient un écran TOC, image sur sa surface connue.
+                _out pushBack (["Split", "Utiliser comme écran TOC", "split"] call _mk);
             } else {
                 private _show = [];
                 if (_ratio4) then {

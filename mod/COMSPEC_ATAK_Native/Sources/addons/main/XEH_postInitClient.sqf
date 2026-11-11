@@ -359,6 +359,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     if ((player getVariable ["COMSPEC_ATAK_IdentDb", []]) isNotEqualTo _ph) then { player setVariable ["COMSPEC_ATAK_IdentDb", _ph, true]; };
     private _icon = profileNamespace getVariable ["COMSPEC_ATAK_SelfIcon", ""];
     if ((player getVariable ["COMSPEC_ATAK_Icon", ""]) isNotEqualTo _icon) then { player setVariable ["COMSPEC_ATAK_Icon", _icon, true]; };
+    // Version du mod de CE poste, sur son unité (Centre Zeus, « Version du mod ») : diffusée seulement quand elle manque
+    // (arrivée, réapparition, unité changée). Jamais relayée par la fiche du serveur, qui pouvait garder une ancienne version.
+    private _modV = missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""];
+    if ((player getVariable ["COMSPEC_ATAK_ModVer", ""]) isNotEqualTo _modV) then { player setVariable ["COMSPEC_ATAK_ModVer", _modV, true]; };
     // Balise BFT : en ligne si j'ai un téléphone allumé avec du signal (diffusée seulement quand elle change).
     // Équipage d'aéronef : tablette de bord, même téléphone éteint ou cassé.
     private _on = (([player] call comspec_atak_native_fnc_aircrewTerminal) || {([player] call comspec_atak_native_fnc_hasDevice)

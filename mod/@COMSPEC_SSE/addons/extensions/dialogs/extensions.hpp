@@ -4,7 +4,8 @@
     16:9, 16:10, 21:9. Trois vues, choisies par fn_docExtWindow (« layout ») :
       - extensions : liste à gauche ; nom, fiche (description et modèles, défilante) et aperçu à droite ;
       - vide       : aucune extension détectée, explication et bouton « Ouvrir le tuto » à la place des deux volets ;
-      - tuto       : « Comment ça marche », étapes à gauche, lecture défilante à droite, « Copier l'exemple ».
+      - tuto       : « Comment ça marche », étapes à gauche (étape 1 choisie à l'ouverture, flèches haut / bas),
+                     lecture défilante à droite, « Copier l'exemple », « Étape précédente / suivante » en bas.
     En-tête : titre, résumé, bouton « Aide » (tuto, à tout moment). Bas : ligne d'état sur deux lignes au plus (police
     réduite si besoin), puis les boutons, sous la ligne d'état : rien ne se chevauche. Aucune alerte Arma.
 */
@@ -121,6 +122,21 @@ class COMSPEC_SSE_DocExtensions {
             tooltip = "$STR_COMSPEC_SSE_EXT_Copy_D";
             action = "['copy'] call comspec_sse_fnc_docExtWindow";
             EXT_POS(15,18,10,1.5);
+        };
+        // Étape précédente / suivante : rangée du bas, à la place de « Activer » (caché dans le tuto).
+        class BtnPrev: COMSPEC_SSE_RscButtonNav {
+            idc = 93965;
+            text = "$STR_COMSPEC_SSE_EXT_Prev";
+            tooltip = "$STR_COMSPEC_SSE_EXT_Prev_D";
+            action = "['prev'] call comspec_sse_fnc_docExtWindow";
+            EXT_POS(14.5,22.4,7.5,1.5);
+        };
+        class BtnNext: COMSPEC_SSE_RscButton {
+            idc = 93966;
+            text = "$STR_COMSPEC_SSE_EXT_Next";
+            tooltip = "$STR_COMSPEC_SSE_EXT_Next_D";
+            action = "['next'] call comspec_sse_fnc_docExtWindow";
+            EXT_POS(22.5,22.4,7.5,1.5);
         };
 
         // ---- bas : ligne d'état (deux lignes au plus), puis les boutons

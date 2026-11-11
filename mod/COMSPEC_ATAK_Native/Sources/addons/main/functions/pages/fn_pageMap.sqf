@@ -570,9 +570,11 @@ if (_interactive) then {
                     ["VOIR MON GROUPE", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["grpTab", "MINE"]; ["GROUP"] call comspec_atak_native_fnc_navigate; }, false, true, "Ouvre l'app Groupe"]
                 ]];
             };
-            // Fond de carte : boutons sur deux rangées au-delà de trois (liste de fn_mapStyle). Sous les boutons, la description
-            // du fond choisi (texte qui passe à la ligne : jamais coupé dans le volet étroit) ; SATELLITE sans la photo de
-            // cette carte : pas de bouton, une ligne grise dit pourquoi.
+            // Fond de carte (liste de fn_mapStyle, CLASSIQUE en premier) : grille fixe de deux colonnes, une rangée de
+            // hauteur fixe par paire (quatre rangées), dans le volet défilant : aucun bouton rejeté hors de la vue ni coupé,
+            // quelle que soit la taille de l'interface (avant : deux rangées de quatre, CLASSIQUE sixième). Le fond choisi
+            // est en vert ; dessous, sa description (texte qui passe à la ligne). SATELLITE sans la photo de cette carte :
+            // pas de bouton, une ligne grise dit pourquoi.
             private _style = [] call comspec_atak_native_fnc_mapStyle;
             private _bgAll = ["LIST"] call comspec_atak_native_fnc_mapStyle;
             private _styles = _bgAll select { _x select 3 };
@@ -583,12 +585,11 @@ if (_interactive) then {
                     _x params ["_t", "_k", "_desc"];
                     [_t, format ["[%1] call comspec_atak_native_fnc_mapStyle; ['MAP'] call comspec_atak_native_fnc_pageRender;", str _k], _k isEqualTo _style, _desc]
                 };
-                private _per = [count _opts, ceil ((count _opts) / 2)] select ((count _opts) > 3);
-                for "_i" from 0 to ((count _opts) - 1) step _per do { _rows pushBack ["segment", "", _opts select [_i, _per]]; };
+                for "_i" from 0 to ((count _opts) - 1) step 2 do { _rows pushBack ["segment", "", _opts select [_i, 2]]; };
                 private _hDim = COMSPEC_ATAK_Th get "hexMapDim";
                 private _cur = _styles param [(_styles findIf { (_x select 1) isEqualTo _style }) max 0, []];
                 if ((count _cur) > 2) then { _rows pushBack ["text", format ["<t size='0.8' color='%1'>%2</t>", _hDim, _cur select 2]]; };
-                if !((_bgAll select 7) select 3) then { _rows pushBack ["text", format ["<t size='0.75' color='%1'>SATELLITE : nécessite le mod COMSPEC ATAK Photo</t>", _hDim]]; };
+                if (({ (_x select 1) isEqualTo "PHOTO" } count _styles) isEqualTo 0) then { _rows pushBack ["text", format ["<t size='0.75' color='%1'>SATELLITE : nécessite le mod COMSPEC ATAK Photo</t>", _hDim]]; };
             };
             // Bandeau du curseur et mon point GPS : choix du joueur (profil), préparés au changement (fn_mapPrefs).
             private _bcNow = ["band"] call comspec_atak_native_fnc_mapPrefs;

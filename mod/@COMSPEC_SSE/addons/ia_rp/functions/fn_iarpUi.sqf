@@ -327,21 +327,21 @@ switch (_op) do {
                     if (_aiNow isNotEqualTo "") then { _who = _aiNow; };
                     private _hdr = format ["<t font='%1' size='0.78' color='%2'>%3</t>  %4", _fBold, ["ai"] call _colOf, toUpper (_who call _esc), _tm];
                     private _segs = [_text] call _stageOf;
-                    private _w = ([toUpper _who, 0.78, _fBold] call _widthOf) + (["  00:00", 0.72] call _widthOf);
-                    { _w = _w max ([_x select 1] call _widthOf); } forEach _segs;
+                    private _bubW = ([toUpper _who, 0.78, _fBold] call _widthOf) + (["  00:00", 0.72] call _widthOf);
+                    { _bubW = _bubW max ([_x select 1] call _widthOf); } forEach _segs;
                     private _body = (_segs apply {
                         if (_x select 0) then { format ["<t font='%1' color='#9EAFA6'>%2</t>", _fLight, (_x select 1) call _esc] }
                         else { format ["<t font='%1' color='#E6EDE6'>%2</t>", _fReg, (_x select 1) call _esc] }
                     }) joinString "<br/>";
-                    ["left", format ["%1<br/>%2", _hdr, _body], _w, [0.1, 0.15, 0.15, 0.98], ["ai"] call _rgbOf] call _add;
+                    ["left", format ["%1<br/>%2", _hdr, _body], _bubW, [0.1, 0.15, 0.15, 0.98], ["ai"] call _rgbOf] call _add;
                 };
                 case "say": {
                     // Ma bulle, à droite du fil ; son texte aligné à gauche (un texte aligné à droite plus large que la bulle
                     // perdait sa première lettre : « OI », « uel est ton prénom ? »).
                     private _meT = toUpper (localize "STR_COMSPEC_IARP_Me");
                     private _hdr = format ["<t font='%1' size='0.78' color='#A9D9B0'>%2</t>  %3", _fBold, _meT call _esc, _tm];
-                    private _w = ([_text] call _widthOf) max (([_meT, 0.78, _fBold] call _widthOf) + (["  00:00", 0.72] call _widthOf));
-                    ["right", format ["%1<br/><t font='%2' color='%3'>%4</t>", _hdr, _fReg, ["say"] call _colOf, _text call _esc], _w, [0.13, 0.25, 0.16, 0.98], [0.45, 0.8, 0.5, 1]] call _add;
+                    private _bubW = ([_text] call _widthOf) max (([_meT, 0.78, _fBold] call _widthOf) + (["  00:00", 0.72] call _widthOf));
+                    ["right", format ["%1<br/><t font='%2' color='%3'>%4</t>", _hdr, _fReg, ["say"] call _colOf, _text call _esc], _bubW, [0.13, 0.25, 0.16, 0.98], [0.45, 0.8, 0.5, 1]] call _add;
                 };
                 case "sys": {
                     ["center", format ["<t align='center' font='%1' size='0.82' color='#9EAFA6'>%2</t>", _fLight, _text call _esc], 0, []] call _add;

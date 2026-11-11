@@ -1,0 +1,15 @@
+# Exceptions de tools/sqf_case_shadow_check.py et tests/Unit/SqfCaseInsensitiveShadowAssetTest.php
+# Une ligne par cas : chemin/relatif.sqf:_nomDuHelper  # raison (obligatoire)
+# Le SQF ignore la casse des variables locales (_L = _l). N'ajouter une ligne qu'après avoir vérifié
+# avec « python -I tools/sqf_case_shadow_check.py --all » que les deux orthographes vivent dans des portées
+# séparées (verdict OK). Mieux vaut renommer la variable que l'ajouter ici.
+
+# Portées séparées vérifiées (OK) : la valeur n'existe que dans un helper ou un bloc qui n'appelle pas le helper.
+mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/drone/fn_pageUcav.sqf:_T  # params "_t" seulement dans _esc
+mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/drone/fn_pageUcav.sqf:_A  # params "_a" seulement dans le corps de _A lui-même
+mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/garmin/fn_watch.sqf:_P  # _p local à _zone et à la pagination
+mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/map/fn_mapCtxMenu.sqf:_T  # _T dans le bloc d'annulation, _t ailleurs
+mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/network/fn_mpuDiag.sqf:_T  # params "_t" seulement dans _add
+mod/@COMSPEC_SSE/addons/ia_rp/functions/fn_iarpAnswersUi.sqf:_L  # _l local au bloc d'enregistrement, sans call _L après
+mod/@COMSPEC_SSE/addons/identity/functions/fn_fileServer.sqf:_U  # _u dans le dernier bloc du cas, sans call _U après
+mod/@COMSPEC_SSE/addons/identity/functions/fn_loreFile.sqf:_U  # _u dans le cas QB, _U appelé dans les autres cas

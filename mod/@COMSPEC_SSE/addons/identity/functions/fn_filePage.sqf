@@ -173,10 +173,15 @@ if ((count _res) > 0 && {_pending isEqualTo ""} && {_scan isEqualTo ""}) then {
         case "ok": { "fiche ajoutée" };
         case "none": { "aucune fiche" };
         case "unlinked": { "non lié" };
+        case "licence": { "licence pas encore acceptée" };
         case "timeout": { "sans réponse" };
         default { "hors ligne" };
     };
     _rows pushBack ["info", "Athena" call _tr, _as call _tr];
+    // Licence pas encore acceptée : note de service ouverte d'ici (fn_licenceOpen de l'ATAK natif) ; acceptée, la consultation est relancée.
+    if ((_res getOrDefault ["athenaState", ""]) isEqualTo "licence" && {!isNil "comspec_atak_native_fnc_licenceOpen"}) then {
+        _rows pushBack ["buttons", [["OUVRIR LA NOTE DE SERVICE" call _tr, compile format ["[{ params ['_ok']; if (_ok) then { ['retry', %1] call comspec_sse_fnc_fileAction; }; }, %2] call comspec_atak_native_fnc_licenceOpen;", _vi, str _page], false, true, "Lisez et acceptez la licence : rien n'est envoyé à Athena avant." call _tr]]];
+    };
     if (_res getOrDefault ["localDown", false]) then { _rows pushBack ["info", "Fichier local" call _tr, "sans réponse du serveur" call _tr]; };
     switch (_o) do {
         case "error": {

@@ -841,12 +841,18 @@ class COMSPEC_ATAK_Module_TocScreen: COMSPEC_ATAK_Module_DataBase {
                 class C7 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_98"; value = "COMSPEC_ATAK_Screen_98"; };
                 class C8 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_98S"; value = "COMSPEC_ATAK_Screen_98_Stand"; };
                 class C9 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_65C"; value = "COMSPEC_ATAK_Screen_65_Ceiling"; };
+                class C10 { name = "$STR_COMSPEC_ATAK_CFG_D875FDECAE"; value = "COMSPEC_ATAK_Screen_Desk"; };
+                class C11 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_CLK"; value = "COMSPEC_ATAK_Screen_ClockStrip"; };
+                class C12 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_PLT"; value = "COMSPEC_ATAK_Screen_NamePlate"; };
                 class V0 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_LARGE"; value = "Land_TripodScreen_01_large_F"; };
                 class V1 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_LARGEB"; value = "Land_TripodScreen_01_large_black_F"; };
                 class V2 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_DUAL"; value = "Land_TripodScreen_01_dual_v1_F"; };
                 class V3 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_TV"; value = "Land_FlatTV_01_F"; };
-                class V4 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_PROJ"; value = "Land_ProjectorScreen_01_F"; };
+                // Ancien V4 : « Land_ProjectorScreen_01_F », classe absente du jeu (toujours remplacée à la pose).
+                // Écran de salle de briefing (blanc « OPSIS », DLC Jets) et ordinateur multi-écran renforcé (Contact).
+                class V4 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_BRIEF"; value = "Land_BriefingRoomScreen_01_F"; };
                 class V5 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_PC"; value = "Land_PCSet_01_screen_F"; };
+                class V6 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_MULTI"; value = "Land_MultiScreenComputer_01_black_F"; };
             };
         };
         class Index {

@@ -103,25 +103,19 @@ private _place = {
     } forEach _rows;
     ((_cy - _py) - _gy) max 0
 };
-// Version MAJEUR.MINEUR.CORRECTIF d'un texte de version (« 4.2.0.AG - Washington · … » -> [4, 2, 0]) ; [] si absente.
-private _verOf = {
-    if !(_this isEqualType "") exitWith { [] };
-    private _m = ((_this regexFind ["^[0-9]+\.[0-9]+\.[0-9]+"]) param [0, []]) param [0, []];
-    if (_m isEqualTo []) then { [] } else { ((_m select 0) splitString ".") apply { parseNumber _x } }
-};
-// -1 : plus ancien que la référence, 0 : identique, 1 : plus récent, 2 : inconnu.
-private _verCmp = {
-    params ["_v", "_ref"];
-    if (_v isEqualTo [] || {_ref isEqualTo []}) exitWith { 2 };
-    private _r = 0;
-    { if (_r isEqualTo 0) then { _r = [[-1, 1] select (_x > (_ref select _forEachIndex)), 0] select (_x isEqualTo (_ref select _forEachIndex)); }; } forEach _v;
-    _r
-};
+// Version MAJEUR.MINEUR.CORRECTIF d'un texte de version (« 4.2.0.AG - Washington · … » -> [4, 2, 0]) ; [] si absente (fn_verCmp).
+private _verOf = { ["parse", _this] call comspec_atak_native_fnc_verCmp };
+// -1 : plus ancien que la référence, 0 : identique, 1 : plus récent, 2 : inconnu (fn_verCmp, vérifiable par « selfTest »).
+private _verCmp = { _this call comspec_atak_native_fnc_verCmp };
+// Référence des étiquettes « Version du mod » -> [version, du serveur ?] : celle que le serveur publie (COMSPEC_ATAK_ServerVersion),
+// sinon celle de l'onglet SERVEUR, sinon la plus récente des postes en jeu (_seen) et de ce poste. Avant, sans l'onglet
+// SERVEUR ouvert, la référence était la version du Zeus lui-même.
 private _refVer = {
-    private _srv = (missionNamespace getVariable ["COMSPEC_ATAK_ZeusSrv", [createHashMap, 0]]) select 0;
-    private _v = (_srv getOrDefault ["atakVersion", ""]) call _verOf;
-    if (_v isEqualTo []) then { _v = (missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""]) call _verOf; };
-    _v
+    params [["_seen", []]];
+    private _v = (missionNamespace getVariable ["COMSPEC_ATAK_ServerVersion", ""]) call _verOf;
+    if (_v isEqualTo []) then { _v = (((missionNamespace getVariable ["COMSPEC_ATAK_ZeusSrv", [createHashMap, 0]]) select 0) getOrDefault ["atakVersion", ""]) call _verOf; };
+    if (_v isNotEqualTo []) exitWith { [_v, true] };
+    [["max", _seen + [missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""]]] call comspec_atak_native_fnc_verCmp, false]
 };
 private _ago = { if (_this < 60) then { format [("il y a %1 s") call _tr, _this] } else { format [("il y a %1 min") call _tr, floor (_this / 60)] } };
 // Réglages des étiquettes 3D du Zeus, gardés dans son profil.
@@ -765,7 +759,11 @@ switch (_act) do {
             ["srvRequest"] call comspec_atak_native_fnc_zeusState;
             ["server"] call comspec_atak_native_fnc_zeusCentre;
         };
-        private _refV = call _refVer;
+        // Serveur qui ne publie pas sa version (mod plus ancien) : son état est lu toutes les 2 min au plus, pour la référence.
+        if ((missionNamespace getVariable ["COMSPEC_ATAK_ServerVersion", ""]) isEqualTo "" && {_now - (missionNamespace getVariable ["COMSPEC_ATAK_ZeusSrvAsked", -100]) >= 120}) then {
+            missionNamespace setVariable ["COMSPEC_ATAK_ZeusSrvAsked", _now];
+            ["srvRequest"] call comspec_atak_native_fnc_zeusState;
+        };
         // Drones : qui pilote (COMSPEC_DroneLock : uid), à qui appartient-il. Caméras posées.
         private _pilot = createHashMap;
         private _owned = createHashMap;
@@ -812,15 +810,23 @@ switch (_act) do {
             if (_pin > 0) then { _alerts pushBack "CODE BLOQUÉ"; };
             if (_sos isEqualTo true) then { _alerts pushBack "SIM EN SECOURS"; };
             private _logged = _fresh && {_row select 6};
-            private _ver = if (_fresh) then { (_row select 7) call _verOf } else { [] };
+            // Version du mod : celle que le poste publie sur son unité (COMSPEC_ATAK_ModVer, XEH_postInitClient), sinon sa fiche.
+            // La fiche passe par le serveur, qui peut garder celle d'une session précédente (serveur 4.2.1 et avant : fiche de
+            // 14 champs refusée, l'ancienne reste et repart à chaque envoi complet comme si elle était neuve).
+            private _ver = (_u getVariable ["COMSPEC_ATAK_ModVer", ""]) call _verOf;
+            if (_ver isEqualTo [] && {_fresh}) then { _ver = (_row select 7) call _verOf; };
             _model pushBack (createHashMapFromArray [
                 ["u", _u], ["uid", _uid], ["name", name _u], ["cs", [_u, true] call comspec_atak_native_fnc_unitCallsign], ["row", _row], ["fresh", _fresh], ["age", _age],
                 ["pub", _pub], ["dev", _dev], ["spk", _spk], ["node", _node], ["mpu", _mpu],
                 ["gw", _gw], ["dropped", _dropped], ["relay", _isRelay], ["alerts", _alerts], ["logged", _logged], ["pin", _pin], ["panic", _panic],
-                ["ver", _ver], ["verCmp", [_ver, _refV] call _verCmp],
+                ["ver", _ver], ["verCmp", 2],
                 ["pilot", _pilot getOrDefault [_uid, ""]], ["drones", _owned getOrDefault [_uid, 0]], ["cams", _cams getOrDefault [_uid, 0]]
             ]);
         } forEach allPlayers;
+        // Comparaison à la référence une fois toutes les versions lues : à jour (égale), plus récent que le serveur, pas à jour.
+        private _ref = [_model apply { _x get "ver" }] call _refVer;
+        missionNamespace setVariable ["COMSPEC_ATAK_ZeusCentreRef", _ref];
+        { _x set ["verCmp", [_x get "ver", _ref select 0] call _verCmp]; } forEach _model;
         private _pred = createHashMapFromArray [
             ["all", { true }], ["link", { _x get "logged" }], ["nolink", { (_x get "fresh") && {!(_x get "logged")} }], ["relay", { _x get "relay" }],
             ["spk", { (_x get "spk") isNotEqualTo [] }], ["alert", { (_x get "alerts") isNotEqualTo [] || {(_x get "age") < 0} }]
@@ -871,6 +877,7 @@ switch (_act) do {
             if (_m get "relay") then { _tok pushBack "REL"; };
             if ((_m get "pilot") isNotEqualTo "") then { _tok pushBack "UAV"; };
             if ((_m get "verCmp") isEqualTo -1) then { _tok pushBack "PAS À JOUR"; };
+            if ((_m get "verCmp") isEqualTo 1) then { _tok pushBack "PLUS RÉCENT QUE LE SERVEUR"; };
             if ((_m get "age") < 0) then { _tok pushBack "SANS RELEVÉ"; };
             if ((_m get "alerts") isNotEqualTo []) then { _tok pushBack ((_m get "alerts") select 0); };
             private _col = switch (true) do {
@@ -931,6 +938,7 @@ switch (_act) do {
             private _red = [0.95, 0.3, 0.25, 1];
             private _grey = [0.72, 0.76, 0.74, 0.9];
             private _white = [0.92, 0.95, 0.93, 1];
+            private _blue = [0.45, 0.72, 0.98, 0.95];
             missionNamespace setVariable ["COMSPEC_ATAK_ZeusCentreMarks", (_marks select [0, 40]) apply {
                 _x params ["_dist", "_o", "_ms"];
                 private _bad = _ms select { (_x get "alerts") isNotEqualTo [] };
@@ -990,10 +998,10 @@ switch (_act) do {
                             if (_cfg getOrDefault ["acct", true] && {_fresh} && {(_row param [13, ""]) isNotEqualTo ""}) then { _txt = ([_txt + " · ", ""] select (_txt isEqualTo "")) + (_row select 13); };
                             if (_txt isNotEqualTo "") then { _lines pushBack [_txt, [[_amber, _green] select (_m get "logged"), _grey] select !_fresh, 0.026]; };
                         };
-                        if (_cfg getOrDefault ["ver", true] && {_fresh}) then {
+                        if (_cfg getOrDefault ["ver", true] && {_fresh || {(_m get "ver") isNotEqualTo []}}) then {
                             private _v = (_m get "ver") joinString ".";
-                            private _vt = switch (_m get "verCmp") do { case (-1): { "PAS À JOUR" }; case 0: { "à jour" }; case 1: { "plus récent" }; default { "version inconnue" }; };
-                            _lines pushBack [format [("Mod %1 · %2") call _tr, [_v, "?"] select (_v isEqualTo ""), _vt call _tr], [_white, _amber] select ((_m get "verCmp") isEqualTo -1), 0.026];
+                            private _vt = switch (_m get "verCmp") do { case (-1): { "PAS À JOUR" }; case 0: { "à jour" }; case 1: { "plus récent que le serveur" }; default { "version inconnue" }; };
+                            _lines pushBack [format [("Mod %1 · %2") call _tr, [_v, "?"] select (_v isEqualTo ""), _vt call _tr], switch (_m get "verCmp") do { case (-1): { _amber }; case 1: { _blue }; default { _white }; }, 0.026];
                         };
                         if (_cfg getOrDefault ["tx", true]) then {
                             private _parts = [];
@@ -1009,6 +1017,7 @@ switch (_act) do {
                         if ((_m get "dev") isEqualTo "OFF") then { _lines pushBack [("TÉL. ÉTEINT") call _tr, _amber, 0.026]; };
                         if (_bat isEqualType 0 && {_bat >= 0} && {_bat < 20}) then { _lines pushBack [format [("BATTERIE %1 %%") call _tr, _bat], _amber, 0.026]; };
                         if ((_m get "verCmp") isEqualTo -1) then { _lines pushBack [format [("MOD %1 PAS À JOUR") call _tr, (_m get "ver") joinString "."], _amber, 0.026]; };
+                        if ((_m get "verCmp") isEqualTo 1) then { _lines pushBack [format [("MOD %1 PLUS RÉCENT QUE LE SERVEUR") call _tr, (_m get "ver") joinString "."], _blue, 0.026]; };
                         private _parts = [];
                         if ((_m get "spk") isNotEqualTo []) then { _parts pushBack (("HP") call _tr); };
                         if (_fresh && {_row select 10}) then { _parts pushBack (("RADIO") call _tr); };
@@ -1078,14 +1087,16 @@ switch (_act) do {
                 ["maintenance", "maintenance"], ["error", "erreur"], ["unset", "non configuré"]
             ]) getOrDefault [_row select 5, _row select 5]) call _tr] call _line;
             if ((_row param [13, ""]) isNotEqualTo "") then { ["Compte", (_row select 13) call _esc] call _line; };
-            private _refV = call _refVer;
+            (missionNamespace getVariable ["COMSPEC_ATAK_ZeusCentreRef", [[], false]]) params [["_refV", []], ["_refSrv", false]];
             private _vt = switch (_m get "verCmp") do {
-                case (-1): { format ["<t color='#f2ab33'>%1</t>", format [("pas à jour (serveur %1)") call _tr, _refV joinString "."]] };
+                case (-1): { format ["<t color='#f2ab33'>%1</t>", format [(["pas à jour (la plus récente en jeu : %1)", "pas à jour (serveur %1)"] select _refSrv) call _tr, _refV joinString "."]] };
                 case 0: { format ["<t color='#7fd08a'>%1</t>", ("à jour") call _tr] };
-                case 1: { ("plus récent que le serveur") call _tr };
+                case 1: { format ["<t color='#73b8fa'>%1</t>", format [("plus récent que le serveur (%1)") call _tr, _refV joinString "."]] };
                 default { ("version inconnue") call _tr };
             };
-            ["Mod", format ["%1 · %2", (["?", _row select 7] select ((_row select 7) isNotEqualTo "")) call _esc, _vt]] call _line;
+            // Version réelle du poste (_m « ver ») ; le texte complet de la fiche seulement s'il dit la même version.
+            private _vTxt = [(_m get "ver") joinString ".", _row select 7] select (((_row select 7) call _verOf) isEqualTo (_m get "ver"));
+            ["Mod", format ["%1 · %2", (["?", _vTxt] select (_vTxt isNotEqualTo "")) call _esc, _vt]] call _line;
             private _lk = _row select 8;
             private _lkExp = missionNamespace getVariable ["COMSPEC_ATAK_LinkExpected", ""];
             ["Link", format ["%1%2", (["?", _lk] select (_lk isNotEqualTo "")) call _esc, ["", format [" · <t color='#f2ab33'>%1</t>", format [("attendu %1") call _tr, _lkExp]]] select (_lk isNotEqualTo "" && {_lkExp isNotEqualTo ""} && {((_lk call _verOf) isNotEqualTo (_lkExp call _verOf))})]] call _line;

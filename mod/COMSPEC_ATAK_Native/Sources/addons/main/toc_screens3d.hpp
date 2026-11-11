@@ -10,8 +10,11 @@
 // (une carte 16:9 y serait écrasée), contenu posé par d'autres affichages.
 #define COMSPEC_TOC3D_MAT "\z\comspec_atak_native\addons\main\data\toc\toc_glass_off.rvmat"
 #define COMSPEC_TOC3D_OFF "#(argb,8,8,3)color(0,0,0,1,co)"
+// side=3 obligatoire : Static hérite de All (side=4, camp « inconnu ») et Eden comme Zeus ne listent que les objets
+// des camps 0 à 3 (Thing, NonStrategic : 3). Sans lui, ces écrans existaient sans apparaître nulle part (TTRD, 11/11).
 class COMSPEC_ATAK_Screen_Base3D: Static {
     scope=0; scopeCurator=0; author="COMSPEC";
+    side=3; faction="Default";
     icon="iconObject_1x1"; mapSize=2;
     vehicleClass="Items"; editorCategory="COMSPEC_ATAK_EdCat"; editorSubcategory="COMSPEC_ATAK_EdSubcat_Screens";
     destrType="DestructNo"; armor=500;
