@@ -1207,7 +1207,7 @@ private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_toc_cam_range", "SLIDER",
     ["Distance d'activation des caméras d'écran (m)", "Un écran TOC en affichage caméra ne montre l'image en direct qu'aux joueurs plus proches que cette distance et qui le regardent. Plus loin, il montre la carte et le flux du poste."],
     _loc, [10, 150, 40, 0], 1] call comspec_atak_native_fnc_addSetting;
-// Le TOC sans téléphone (4.10.0, fn_tocTracks, fn_tocCam) : réglages du serveur.
+// Le TOC sans téléphone (4.11.0, fn_tocTracks, fn_tocCam) : réglages du serveur.
 ["comspec_atak_native_toc_source", "LIST",
     ["Source des positions du TOC", "D'où viennent les unités montrées sur les écrans TOC et le PC du poste. Mixte : toute unité du camp est vue à sa vraie position, et un porteur d'ATAK garde en plus l'état de sa liaison ; exemple : une section sans téléphone apparaît sur le mur à côté d'une section équipée. Jeu : toute unité du camp est vue, les téléphones ne sont pas lus ; exemple : un téléphone éteint ne change rien au mur. Réseau ATAK : seuls les porteurs d'ATAK sont vus, à leur dernier point ; exemple : un groupe qui perd ses téléphones disparaît du mur."],
     _loc, [["mix", "game", "atak"], ["Mixte (jeu et réseau ATAK)", "Jeu (toute unité du camp)", "Réseau ATAK (porteurs seulement)"], 0], 1] call comspec_atak_native_fnc_addSetting;
@@ -1220,6 +1220,13 @@ private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_toc_headcam", "CHECKBOX",
     ["Caméra de casque sans téléphone", "Coché : la caméra de casque de tout joueur du camp peut être affichée sur un écran TOC ou en mosaïque, même s'il n'a pas de téléphone ATAK. Décoché : seuls les porteurs d'un ATAK qui partagent leur caméra sont proposés. Exemple : coché, le poste suit l'entrée d'une équipe sans téléphone dans un bâtiment."],
     _loc, true, 1] call comspec_atak_native_fnc_addSetting;
+// Qui est qui dans le TOC (fn_tocDisplayName, fn_tocRoster) : réglages du serveur.
+["comspec_atak_native_toc_show_steam", "CHECKBOX",
+    ["Afficher le pseudo Steam", "Décoché : les écrans TOC et le PC du poste montrent l'indicatif Athena du joueur, sinon son groupe et son rang, jamais son pseudo. Coché : le pseudo est ajouté entre parenthèses. Exemple : décoché « VIPER 2 », coché « VIPER 2 (Tetar) » ; un joueur sans compte relié apparaît comme « Alpha 1-1 · 2 (non lié) »."],
+    _loc, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_roster_names", "LIST",
+    ["Afficher nom et prénom sur les écrans du TOC", "Nom et prénom du personnage (identité SSE du joueur) dans le tableau EFFECTIF. PC du poste seulement : les écrans du mur montrent indicatif et rôle, l'opérateur voit aussi nom et prénom ; exemple : un visiteur dans la salle ne lit pas les identités au mur. Nulle part : jamais affichés. Partout : aussi sur les écrans du mur ; exemple : un appel en début de mission devant le mur."],
+    _loc, [["console", "off", "all"], ["PC du poste seulement", "Nulle part", "Partout (écrans du mur compris)"], 0], 1] call comspec_atak_native_fnc_addSetting;
 // Écrans TOC posés dans le monde (fn_tocScreen « tick ») : réglage de chaque joueur (son PC, ses images par seconde).
 ["comspec_atak_native_toc_view_range", "SLIDER",
     ["Distance d'affichage des écrans TOC (m)", "Un écran TOC n'est dessiné et rafraîchi que si vous êtes plus près que cette distance, à peu près face à lui et sans mur entre vous. Un peu plus loin, il garde sa dernière image ; au-delà, il se met en veille : ni calcul ni caméra. Les caméras d'écran suivent aussi cette distance. Exemple : 25 m pour une salle d'opérations, 60 m pour un grand écran dehors."],

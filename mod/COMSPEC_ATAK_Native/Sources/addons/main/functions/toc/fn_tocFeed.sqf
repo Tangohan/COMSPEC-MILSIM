@@ -11,7 +11,7 @@
                 (comptes rendus, alertes, SALUTE, MEDEVAC, BDA, ordres, messages du poste TOC)
         état  : [brouilleurs actifs, relais, joueurs du camp, IA du camp, [joueurs sur le réseau ATAK, IA sur le réseau
                  ATAK, pistes affichées, pistes en tout, réglage "MIX" | "GAME" | "ATAK", plafond]]
-    4.10.0, « le TOC sans téléphone » : les nœuds ne sont plus réservés aux porteurs d'ATAK. Le serveur lit aussi le jeu
+    4.11.0, « le TOC sans téléphone » : les nœuds ne sont plus réservés aux porteurs d'ATAK. Le serveur lit aussi le jeu
     (fn_tocTracks : unités, véhicules, aéronefs, drones du camp) et fusionne les deux selon le réglage « Source des
     positions du TOC » ; chaque nœud porte sa source, sa santé, ses munitions (champs 9 à 15, décrits dans fn_tocTracks)
     et son état vient de la meilleure source vivante (fn_tocNodeStatus). ORBAT du jeu et ordres du camp : publiés aux
@@ -189,7 +189,7 @@ switch (_mode) do {
                     default { "veh" };
                 };
                 private _cs = [_u, true] call comspec_atak_native_fnc_unitCallsign;
-                if (_cs isEqualTo "") then { _cs = [name _u, groupId group _u] select _isAi; };
+                if (_cs isEqualTo "") then { _cs = [[_u] call comspec_atak_native_fnc_tocDisplayName, groupId group _u] select _isAi; };
                 // Équipage d'un véhicule : un seul nœud (le meilleur état), occupants comptés.
                 if (_v isNotEqualTo _u) then {
                     private _vk = netId _v;

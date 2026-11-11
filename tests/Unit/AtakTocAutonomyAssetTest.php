@@ -7,7 +7,7 @@ namespace Tests\Unit;
 use PHPUnit\Framework\TestCase;
 
 /**
- * ATAK natif 4.10.0, « le TOC fonctionne sans téléphone » (lot 1 de docs/audit/2026-11-toc-feuille-de-route.md).
+ * ATAK natif 4.11.0, « le TOC fonctionne sans téléphone » (lot 1 de docs/audit/2026-11-toc-feuille-de-route.md).
  * Les règles pures du SQF portent leurs tables de cas entre « ---- … (JSON) » et « ---- FIN … » : elles sont rejouées
  * ici par les mêmes règles écrites en PHP (état d'une piste, fusion téléphone et jeu, plafond, intervalle du relevé,
  * validation des saisies du poste, doublons). Le reste est lu dans les sources : contrôle de l'émetteur par le
@@ -17,7 +17,7 @@ final class AtakTocAutonomyAssetTest extends TestCase
 {
     private const MAIN = 'mod/COMSPEC_ATAK_Native/Sources/addons/main/';
     private const TOC = self::MAIN . 'functions/toc/';
-    private const NEW_FILES = ['fn_tocTracks.sqf', 'fn_tocNodeStatus.sqf', 'fn_tocEntry.sqf', 'fn_tocInbox.sqf', 'fn_tocPanels.sqf'];
+    private const NEW_FILES = ['fn_tocTracks.sqf', 'fn_tocNodeStatus.sqf', 'fn_tocEntry.sqf', 'fn_tocInbox.sqf', 'fn_tocPanels.sqf', 'fn_tocDisplayName.sqf', 'fn_tocRoster.sqf'];
 
     private static function read(string $path): string
     {
@@ -445,7 +445,7 @@ final class AtakTocAutonomyAssetTest extends TestCase
         self::assertStringContainsString('_p = (allPlayers select { (owner _x) isEqualTo _owner }) param [0, objNull];', $req);
         self::assertStringContainsString('private _side = str side group _p;', $req);
         self::assertStringContainsString('private _uid = getPlayerUID _p;', $req);
-        self::assertStringContainsString('name _p', $req);
+        self::assertStringContainsString('[_p] call comspec_atak_native_fnc_tocDisplayName', $req);
         // La demande du joueur ne porte plus ni camp ni UID.
         self::assertStringContainsString('["req", [_act, _args, ["callsign"] call comspec_atak_native_fnc_tocPost]] remoteExecCall ["comspec_atak_native_fnc_tocRoom", 2];', $room);
         // L'événement qui croyait le client n'est plus écouté par le serveur.
@@ -580,10 +580,128 @@ final class AtakTocAutonomyAssetTest extends TestCase
             self::assertStringContainsString($word, $doc);
         }
         $log = self::read('CHANGELOG-ATAK.md');
-        self::assertStringContainsString('## Pack 4.10.0 Washington : le TOC fonctionne sans téléphone (ATAK natif 4.10.0.AG - Washington', $log);
-        self::assertStringContainsString('FR : ATAK 4.10.0 : le TOC fonctionne sans téléphone', $log);
-        self::assertStringContainsString('EN : ATAK 4.10.0: the TOC works without a phone', $log);
-        self::assertStringContainsString('[h1]COMSPEC ATAK 4.10.0 Washington', self::read('mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt'));
-        self::assertStringContainsString('#define VERSION_STR "4.10.0"', self::read(self::MAIN . 'script_component.hpp'));
+        self::assertStringContainsString('## Pack 4.11.0 Washington : le TOC fonctionne sans téléphone (ATAK natif 4.11.0.AG - Washington', $log);
+        self::assertStringContainsString('FR : ATAK 4.11.0 : le TOC fonctionne sans téléphone', $log);
+        self::assertStringContainsString('EN : ATAK 4.11.0: the TOC works without a phone', $log);
+        self::assertStringContainsString('[h1]COMSPEC ATAK 4.11.0 Washington', self::read('mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt'));
+        self::assertStringContainsString('#define VERSION_STR "4.11.0"', self::read(self::MAIN . 'script_component.hpp'));
+    }
+
+    // ---------------------------------------------------------------- qui est qui : nom affiché, effectif
+
+    /** fn_tocDisplayName « pick ». @param array<int, mixed> $a */
+    private static function pickName(array $a): string
+    {
+        [$isAi, $cs, $linked, $grp, $slot, $role, $steam, $show] = $a;
+        $des = ($grp !== '' && $slot > 0) ? $grp . ' · ' . $slot : $grp;
+        if ($isAi) {
+            return $cs !== '' ? $cs : ($des !== '' ? $des : 'IA');
+        }
+        $mark = $linked ? '' : ' (non lié)';
+        if ($cs !== '') {
+            $out = $cs;
+        } elseif ($des !== '') {
+            $out = $des . $mark;
+        } elseif ($role !== '') {
+            $out = $role . $mark;
+        } elseif ($show && $steam !== '') {
+            $out = $steam;
+        } else {
+            $out = 'Opérateur';
+        }
+        if ($show && $steam !== '' && $out !== $steam) {
+            $out .= ' (' . $steam . ')';
+        }
+
+        return $out;
+    }
+
+    public function testDisplayNamePrefersTheAthenaCallsignAndNeverTheSteamNameByDefault(): void
+    {
+        $src = self::read(self::TOC . 'fn_tocDisplayName.sqf');
+        $cases = self::tables($src, 'CAS NOM')['_casesName'];
+        self::assertGreaterThanOrEqual(10, count($cases));
+        foreach ($cases as [$name, $args, $want]) {
+            self::assertSame($want, self::pickName($args), $name);
+            // Réglage décoché : le pseudo ne sort jamais, quel que soit le reste.
+            $off = $args;
+            $off[7] = false;
+            self::assertStringNotContainsString($args[6], self::pickName($off), $name . ' : pseudo affiché réglage décoché');
+        }
+        // Signature attendue par les autres branches : [unité] -> texte.
+        self::assertStringContainsString('params [["_a", objNull], ["_b", []]];', $src);
+        self::assertStringContainsString('[_u, true] call comspec_atak_native_fnc_unitCallsign', $src);
+        self::assertStringContainsString('getVariable ["comspec_atak_native_toc_show_steam", false]', $src);
+        self::assertMatchesRegularExpression('~"comspec_atak_native_toc_show_steam", "CHECKBOX",.*?_loc, false, 1\]~s', self::read(self::MAIN . 'XEH_preInit.sqf'));
+        // Aucune requête : ni extension, ni Link.
+        foreach (['callExtension', 'comspec_overwatch_', 'fnc_api'] as $bad) {
+            self::assertStringNotContainsString($bad, self::code($src));
+        }
+        // Les fichiers de ce lot n'écrivent plus `name _unité` dans un affichage : seul le résolveur lit le pseudo.
+        foreach (['fn_tocTracks.sqf', 'fn_tocRoster.sqf', 'fn_tocPanels.sqf', 'fn_tocEntry.sqf', 'fn_tocFeed.sqf', 'fn_tocCam.sqf'] as $f) {
+            self::assertSame(0, preg_match('~\bname _\w+|profileName~', self::code(self::read(self::TOC . $f))), $f . ' : pseudo lu hors de fn_tocDisplayName');
+        }
+        self::assertSame(1, preg_match_all('~\bname _\w+~', self::code($src)), 'fn_tocDisplayName : une seule lecture du pseudo');
+        self::assertStringContainsString('[_p] call comspec_atak_native_fnc_tocDisplayName', self::read(self::TOC . 'fn_tocRoom.sqf'));
+    }
+
+    public function testRosterRolesIdentityAndPrivacyModes(): void
+    {
+        $src = self::read(self::TOC . 'fn_tocRoster.sqf');
+        $role = static function (array $a): string {
+            [$fn, $medic, $eng, $eod, $crew, $lead, $atak] = $a;
+            $ace = $medic >= 2 ? 'Médecin' : ($medic >= 1 ? 'Infirmier' : ($eod ? 'EOD' : ($eng >= 2 ? 'Sapeur confirmé' : ($eng >= 1 ? 'Sapeur' : ''))));
+            $crewL = ['driver' => 'Pilote ou conducteur', 'commander' => 'Chef de bord', 'gunner' => 'Tireur', 'turret' => 'Tireur', 'cargo' => ''][strtolower($crew)] ?? '';
+            $l = array_values(array_filter([$fn, $ace, $crewL, $atak, $lead ? 'Chef de groupe' : ''], static fn (string $x): bool => $x !== ''));
+            if ($l === []) {
+                return '—';
+            }
+
+            return ($crewL !== '' && $l[0] !== $crewL) ? $l[0] . ' · ' . $crewL : $l[0];
+        };
+        foreach (self::tables($src, 'CAS ROLE')['_casesRole'] as [$name, $args, $want]) {
+            self::assertSame($want, $role($args), $name);
+        }
+        $identity = static function (array $a): array {
+            [$last, $first, $set, $ctx] = $a;
+            if (!($set === 'all' || ($set === 'console' && $ctx === 'console'))) {
+                return ['', '', false];
+            }
+            $last = trim($last);
+            $first = trim($first);
+
+            return [$last !== '' ? $last : '—', $first !== '' ? $first : '—', true];
+        };
+        foreach (self::tables($src, 'CAS IDENTITE')['_casesIdentity'] as [$name, $args, $want]) {
+            self::assertSame($want, $identity($args), $name);
+        }
+        // Par défaut, jamais de nom ni de prénom sur un écran du mur ; « off » : nulle part.
+        self::assertSame(['', '', false], $identity(['DURAND', 'Paul', 'console', 'wall']));
+        self::assertSame(['', '', false], $identity(['DURAND', 'Paul', 'off', 'console']));
+        $state = static function (array $a): string {
+            [$alive, $life, $veh, $phone] = $a;
+
+            return (!$alive || $life >= 3) ? 'MORT' : ($life >= 1 ? 'BLESSÉ' : ($veh ? 'EN VÉHICULE' : (!$phone ? 'SANS TÉLÉPHONE' : 'EN LIGNE')));
+        };
+        foreach (self::tables($src, 'CAS ETAT')['_casesState'] as [$name, $args, $want]) {
+            self::assertSame($want, $state($args), $name);
+        }
+        // Nom et prénom : identité SSE du personnage, jamais le pseudo ; indicatif par le résolveur.
+        self::assertStringContainsString('_u getVariable ["COMSPEC_SSE_LastName", ""], _u getVariable ["COMSPEC_SSE_FirstName", ""]', $src);
+        self::assertStringContainsString('[_u] call comspec_atak_native_fnc_tocDisplayName', $src);
+        self::assertMatchesRegularExpression('~"comspec_atak_native_toc_roster_names", "LIST",.*?\[\["console", "off", "all"\], \[[^\]]+\], 0\], 1\]~s', self::read(self::MAIN . 'XEH_preInit.sqf'));
+        // Le mur et le PC passent tous deux par le réglage ; colonnes sans NOM ni PRÉNOM quand ils sont cachés.
+        self::assertStringContainsString('["identity", [_x select 3, _x select 4, _set, "wall"]] call _fn', $src);
+        self::assertStringContainsString('["identity", [_r select 3, _r select 4, _set, "console"]] call _fn', $src);
+        self::assertStringContainsString('[["cs", "INDICATIF", 0.28], ["role", "RÔLE", 0.32], ["unit", "UNITÉ", 0.22], ["state", "ÉTAT", 0.18]]', $src);
+        $panels = self::read(self::TOC . 'fn_tocPanels.sqf');
+        self::assertStringContainsString('["ROSTER", "EFFECTIF", {', $panels);
+        self::assertStringContainsString('["ROSTERWALL", "EFFECTIF", {', $panels);
+        // Textes anglais.
+        $en = self::read(self::MAIN . 'i18n/en.txt');
+        foreach (['Afficher le pseudo Steam', 'Afficher nom et prénom sur les écrans du TOC', 'PC du poste seulement', 'EFFECTIF', 'INDICATIF', 'RÔLE', 'NOM', 'PRÉNOM', 'UNITÉ', 'ÉTAT',
+            'MORT', 'BLESSÉ', 'EN VÉHICULE', 'SANS TÉLÉPHONE', 'EN LIGNE', 'Médecin', 'Chef de bord', 'Aucun joueur du camp en jeu'] as $t) {
+            self::assertStringContainsString('["' . $t . '", "', $en, "« {$t} » sans anglais");
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
-    Registre des panneaux du TOC (4.10.0, préalable posé par la feuille de route). Avant, chaque tableau lisait lui-même
+    Registre des panneaux du TOC (4.11.0, préalable posé par la feuille de route). Avant, chaque tableau lisait lui-même
     l'état du téléphone ou les variables du serveur, dans fn_tocLaptop, fn_tocBoard et fn_tocScreen à la fois. Ici une
     seule entrée : le PC du poste et les écrans demandent un panneau par son nom et reçoivent ses lignes, le texte à
     montrer quand il est vide et la note de plafond. Aucun panneau ne lit le téléphone. Un panneau d'un lot suivant
@@ -22,6 +22,8 @@
       KILLS     pertes et résultats                           EXCHECK   liste d'exécution
       TIMERS    chronos                                       POSTS     postes tenus
       CAMS      caméras du camp (fn_tocCam « sources »)       FEEDBACK  dernier retour d'action [[texte, type, âge]]
+      ROSTER    effectif pour le PC (fn_tocRoster « console », args [recherche, tri, décroissant, avec les IA])
+      ROSTERWALL effectif pour un écran (fn_tocRoster « wall », args [page, lignes par page])
     Exemple : (["data", ["ORBAT", "WEST"]] call comspec_atak_native_fnc_tocPanels) params ["_titre", "_lignes", "_etat", "_texte", "_note"];
 */
 params [["_mode", "list"], ["_a", []]];
@@ -100,6 +102,13 @@ switch (_mode) do {
             ["TIMERS", "CHRONOS", { params ["_side"]; [[_side, 1] call COMSPEC_ATAK_TocPanelRoom, ""] }, "AUCUN CHRONO"],
             ["POSTS", "POSTES", { params ["_side"]; [[_side, 7] call COMSPEC_ATAK_TocPanelRoom, ""] }, "Aucun poste tenu"],
             ["CAMS", "CAMÉRAS", { [["sources"] call comspec_atak_native_fnc_tocCam, ""] }, "Aucune caméra du camp à afficher (drone, caméra fixe, caméra de casque ou caméra partagée)"],
+            ["ROSTER", "EFFECTIF", { params ["_side", "_args"]; [["console", [_side] + ([[], _args] select (_args isEqualType []))] call comspec_atak_native_fnc_tocRoster, ""] }, "Aucun joueur du camp en jeu"],
+            ["ROSTERWALL", "EFFECTIF", {
+                params ["_side", "_args"];
+                if !(_args isEqualType []) then { _args = []; };
+                (["wall", [_side, _args param [0, 0], _args param [1, 12]]] call comspec_atak_native_fnc_tocRoster) params ["", "_lines", "_page", "_pages", "_total"];
+                [_lines, format ["%1 joueurs · page %2 sur %3", _total, _page + 1, _pages]]
+            }, "Aucun joueur du camp en jeu"],
             ["FEEDBACK", "RETOUR", {
                 private _l = ["lastFeedback"] call comspec_atak_native_fnc_tocInbox;
                 [[[], [_l]] select (_l isNotEqualTo []), ""]

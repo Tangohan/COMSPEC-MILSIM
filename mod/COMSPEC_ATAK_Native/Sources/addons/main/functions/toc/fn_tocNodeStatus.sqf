@@ -1,5 +1,5 @@
 /*
-    État d'une piste du TOC, tiré de la meilleure source vivante (4.10.0, « le TOC sans téléphone »). Avant, l'état ne
+    État d'une piste du TOC, tiré de la meilleure source vivante (4.11.0, « le TOC sans téléphone »). Avant, l'état ne
     venait que du dernier point PLI du téléphone : une unité vivante et visible, sans téléphone ou dont le téléphone ne
     balisait pas, était « perdue » ou « hors ligne ». Fonction pure, mêmes codes que les écrans et le PC du poste :
       0 en direct | 1 ancien | 2 perdu | 3 hors ligne | 4 source inconnue (neutre, jamais en rouge)

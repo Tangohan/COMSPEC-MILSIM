@@ -2,7 +2,7 @@
     Caméra en direct sur un écran TOC (demande de TTRD, 01/11) : affichage « CAMÉRA » (fn_tocScreen, vue CAM). L'écran
     montre en temps réel une caméra du camp choisie au téléphone (app Poste TOC) ou au menu ACE de l'écran : drone du
     camp (nacelle), caméra fixe (fn_camAction) ou caméra poitrine d'un porteur d'ATAK (comme la Live cam).
-    4.10.0, « le TOC sans téléphone » : caméra de casque de tout joueur du camp, même sans téléphone, si le réglage
+    4.11.0, « le TOC sans téléphone » : caméra de casque de tout joueur du camp, même sans téléphone, si le réglage
     « Caméra de casque sans téléphone » (comspec_atak_native_toc_headcam, coché par défaut) le permet ; image de
     qualité fixe (256 px), la source n'ayant pas de liaison à mesurer. Genre "MAN" comme la caméra poitrine.
     Seul le choix circule en multijoueur : variable publique de l'écran COMSPEC_ATAK_TocCam = netId de la source
@@ -48,8 +48,7 @@ switch (_mode) do {
         // player setVariable ["COMSPEC_ATAK_TocHeadCamOff", true, true]).
         if ((missionNamespace getVariable ["comspec_atak_native_toc_headcam", true]) isEqualTo true) then {
             {
-                private _cs = [_x, true] call comspec_atak_native_fnc_unitCallsign;
-                _out pushBack [format ["Caméra de casque · %1", [_cs, name _x] select (_cs isEqualTo "")], netId _x, "MAN"];
+                _out pushBack [format ["Caméra de casque · %1", [_x] call comspec_atak_native_fnc_tocDisplayName], netId _x, "MAN"];
             } forEach (allPlayers select { alive _x && {(side group _x) isEqualTo _side} && {!(_x in _chest)} && {!(_x getVariable ["COMSPEC_ATAK_TocHeadCamOff", false])} && {!([_x] call comspec_atak_native_fnc_hasDevice)} });
         };
         _out

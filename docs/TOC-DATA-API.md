@@ -1,7 +1,7 @@
-# TOC : données et saisies sans téléphone (ATAK natif 4.10.0)
+# TOC : données et saisies sans téléphone (ATAK natif 4.11.0)
 
 Numéro : la feuille de route prévoyait 4.9.0 pour ce lot ; la refonte de la console du poste a pris la 4.9.0, ce lot
-sort donc en 4.10.0.
+sort en 4.11.0 (la 4.10.0 est prise par la branche « salle tenue », PR #1561).
 
 Lot 1 de `docs/audit/2026-11-toc-feuille-de-route.md`. Principe posé par TTRD : **tout le TOC doit être utilisable
 sans téléphone**. Cette page est le contrat entre la couche données (cette branche) et ceux qui affichent : la
@@ -19,6 +19,8 @@ Fichiers, tous dans `mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/toc/`
 | `fn_tocNodeStatus.sqf` | État d'une piste (fonction pure) | partout |
 | `fn_tocEntry.sqf` | Saisies du poste : formulaires, validation, écriture | client puis serveur |
 | `fn_tocInbox.sqf` | Messages, ordres, accusés, retours sans téléphone | client (tableau des ordres : serveur) |
+| `fn_tocDisplayName.sqf` | Nom affiché d'une unité : indicatif Athena, jamais le pseudo Steam | partout |
+| `fn_tocRoster.sqf` | Tableau EFFECTIF : indicatif, rôle, nom et prénom du personnage | client |
 | `fn_tocFeed.sqf`, `fn_tocRoom.sqf`, `fn_tocCam.sqf` | Existants, étendus | serveur, serveur, client |
 
 ## 1. Lire : le registre des panneaux
@@ -112,7 +114,7 @@ recopier : une seule table de seuils pour le téléphone, mêmes codes 0 à 4, m
 
 | Réglage | Défaut | Effet |
 |---|---|---|
-| `comspec_atak_native_toc_source` | `mix` | `mix` : tout le monde est vu, un porteur garde en plus l'état de sa liaison. `game` : tout le monde est vu, les téléphones ne sont pas lus. `atak` : comme avant la 4.10.0 |
+| `comspec_atak_native_toc_source` | `mix` | `mix` : tout le monde est vu, un porteur garde en plus l'état de sa liaison. `game` : tout le monde est vu, les téléphones ne sont pas lus. `atak` : comme avant la 4.11.0 |
 | `comspec_atak_native_toc_tracks_ai` | `leaders` | IA suivies hors groupes de joueurs : chefs et véhicules, toutes, aucune |
 | `comspec_atak_native_toc_tracks_max` | 150 | plafond de pistes par camp (20 à 400) |
 | `comspec_atak_native_toc_headcam` | coché | caméra de casque d'un joueur sans téléphone |
@@ -183,7 +185,7 @@ saisie nettoyée]` sans rien envoyer ; `submit` écrit la première erreur dans 
 part en `remoteExecCall` vers le mode `req` : le serveur lit `remoteExecutedOwner`, retrouve le joueur, son camp
 (`side group`), son nom et son UID (`getPlayerUID`). Ce que le client écrivait (camp, libellé, UID) n'est plus lu.
 
-- L'ancien événement `comspec_atak_native_tocRoom` n'est plus écouté par un serveur 4.10.0. Un client plus ancien que
+- L'ancien événement `comspec_atak_native_tocRoom` n'est plus écouté par un serveur 4.11.0. Un client plus ancien que
   le serveur ne peut plus écrire dans la salle.
 - Serveur plus ancien que le client : le client garde l'ancien envoi (le serveur publie `COMSPEC_ATAK_TocSrvAuth`).
 - Un `remoteExec` direct d'un client vers `fn_tocRoom` « do », `fn_tocEntry` « apply », `fn_tocInbox` « ackFor »,
@@ -217,14 +219,78 @@ changer côté Link, hors `fn_radioGuard` : un opérateur assis à un poste (`CO
 `fn_vehicleTerminal` qui rend `"toc"`) doit compter comme terminal, et la ligne « Pas de terminal » ne doit plus
 s'écrire au journal pour un joueur sans téléphone.
 
-## 8. Essais sans le jeu
+## 8. Qui est qui : nom affiché et tableau EFFECTIF
+
+### Nom affiché (`fn_tocDisplayName`)
+
+```sqf
+private _nom = [_unite] call comspec_atak_native_fnc_tocDisplayName;   // « VIPER 2 », « Alpha 1-1 · 2 (non lié) »
+```
+
+Seule fonction à appeler pour écrire qui est qui. Ordre pour un joueur : indicatif Athena (ATAK, nœud, C2 / Groupe,
+compte relié) ; sinon groupe et rang du jeu, avec « (non lié) » si le compte n'est pas relié ; sinon rôle ; le pseudo
+Steam seulement en dernier recours et seulement si le réglage `comspec_atak_native_toc_show_steam` est coché (décoché
+par défaut ; coché, il est ajouté entre parenthèses). IA : indicatif, sinon groupe et rang, jamais la classe. Aucune
+requête : tout vient de variables déjà publiées sur l'unité.
+
+Déjà appliqué dans ce lot : nœuds et ORBAT (`fn_tocTracks`), nœuds des téléphones (`fn_tocFeed`), auteur des lignes de
+la salle (`fn_tocRoom` « me » et « req »), caméra de casque (`fn_tocCam`), EFFECTIF. À basculer dans les autres branches
+(`name _unité`, `name player`) :
+
+| Fichier | Lignes | Affichage |
+|---|---|---|
+| `fn_tocLaptop.sqf` | 245, 1584, 2035, 2066 | opérateur du PC, « poste pris par », « Chef de … », pied de la console |
+| `fn_tocAppData.sqf` | 53, 99 | repli du nom d'un nœud, fiche d'une unité (« name ») |
+| `fn_pageToc.sqf` | 109, 110 | app Poste TOC du téléphone |
+
+Recherche à relancer : `grep -nE "name (player|_[a-zA-Z]+)|profileName" functions/toc/*.sqf`, hors `fn_tocDisplayName.sqf`.
+`fn_tocRoom.sqf` (recherche d'un élément par son nom) et `fn_tocInbox.sqf` « ackFor » comparent ou transmettent un nom
+sans l'afficher : à laisser.
+
+### Tableau EFFECTIF (`fn_tocRoster`)
+
+Ligne : `[clé, indicatif, rôle, nom, prénom, unité, état, grille, mise à jour, IA, compte relié, a un ATAK, [x, y]]`.
+
+- Rôle : fonction de l'ORBAT ou rôle du slot (`fn_displayRole`), sinon ACE (médecin, infirmier, EOD, sapeur), sinon
+  poste à bord, sinon rôle ATAK, sinon « Chef de groupe » ; le poste à bord est ajouté quand il dit autre chose.
+- Nom et prénom : ceux du personnage, identité SSE active du joueur (`COMSPEC_SSE_LastName`, `COMSPEC_SSE_FirstName`,
+  publiées sur l'unité par le mod SSE, donc lisibles pour un joueur distant). Jamais la vraie vie, jamais le pseudo.
+  Aucune identité : « — ».
+- État : `MORT`, `BLESSÉ`, `EN VÉHICULE`, `SANS TÉLÉPHONE`, `EN LIGNE`, dans cet ordre de priorité.
+- Réglage `comspec_atak_native_toc_roster_names` : `console` (défaut : nom et prénom au PC seulement), `off`, `all`.
+
+```sqf
+// Écran : colonnes selon le réglage, lignes groupées par unité (titre ["#", unité, effectif, pertes]), pages.
+(["wall", ["WEST", _page, 12]] call comspec_atak_native_fnc_tocRoster) params ["_cols", "_lignes", "_page", "_pages", "_total"];
+// PC du poste : recherche, tri ("cs", "role", "last", "first", "unit", "state"), sens, IA comprises ou non.
+private _lignes = ["console", ["WEST", "alpha", "unit", false, false]] call comspec_atak_native_fnc_tocRoster;
+private _texte = ["export", "WEST"] call comspec_atak_native_fnc_tocRoster;                  // à copier
+["action", [_cle, "follow"]] call comspec_atak_native_fnc_tocRoster;                        // suivi au satellite 1
+(["action", [_cle, "order"]] call comspec_atak_native_fnc_tocRoster) params ["_genre", "_saisie"];   // à ouvrir dans fn_tocEntry
+```
+
+Panneaux du registre : `ROSTER` (args `[recherche, tri, décroissant, avec les IA]`), `ROSTERWALL` (args `[page, lignes]`).
+
+**Ce lot fournit les données, pas les deux vues.** Il n'existe pas de registre de vues dans le tableau des écrans
+(4.8.0) : un affichage est une entrée écrite en dur dans une dizaine d'endroits. Pour l'affichage « EFFECTIF » :
+
+| Fichier | Ajout |
+|---|---|
+| `fn_tocScreen.sqf` | `"ROSTER"` dans `_views` et `_boards` (l. 90, 107), son titre (l. 1568) |
+| `fn_tocBoard.sqf` | dessin du tableau depuis `["wall", …]` : une ligne par entrée, largeur de colonne = part de `_cols`, page suivante toutes les 10 s |
+| `fn_tocTheme.sqf`, `docs/TOC-THEME.md` | régions et colonnes de `ROSTER` (tables `_lay`, `_cols`) |
+| `fn_tocMenu.sqf`, `fn_tocManager.sqf` | entrée « Effectif » dans la catégorie DONNÉES |
+| `config.cpp`, `stringtable.xml`, `fn_tocHallUi.sqf`, `fn_moduleTocScreen.sqf` | choix « Effectif » des listes Eden et Zeus (une ligne chacun, réclamée par `AtakTocScreenConfigAssetTest`) |
+| `fn_tocApp.sqf` ou `fn_tocLaptop.sqf` | « Situation › EFFECTIF » : liste depuis `["console", …]`, champ de recherche, tri au clic sur l'en-tête, boutons Suivre, Message, Ordre (`["action", …]`), Exporter (`["export", …]`) |
+
+## 9. Essais sans le jeu
 
 - `tests/Unit/AtakTocAutonomyAssetTest.php` rejoue en PHP les tables de cas écrites dans le SQF (états, fusion,
   plafond, intervalles, validation, doublons).
 - En jeu, console de débogage : `["selfTest"] call comspec_atak_native_fnc_tocNodeStatus`, `…_tocTracks`,
-  `…_tocEntry` rendent `[réussis, cas en échec]`.
+  `…_tocEntry`, `…_tocDisplayName`, `…_tocRoster` rendent `[réussis, cas en échec]`.
 
-## 9. Liste d'essai « mission à zéro téléphone » (à dérouler par TTRD)
+## 10. Liste d'essai « mission à zéro téléphone » (à dérouler par TTRD)
 
 Mission : réglage « objet obligatoire » actif, **aucun téléphone** dans les inventaires ni les caisses, Athena
 coupé, COMSPEC Link absent du serveur. Une salle TOC moyenne posée par le module, deux groupes de joueurs, un groupe

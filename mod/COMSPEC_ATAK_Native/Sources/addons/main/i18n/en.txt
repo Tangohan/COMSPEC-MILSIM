@@ -23923,5 +23923,19 @@
 ["Brouilleurs", "Jammers"],
 ["En attente des données du serveur", "Waiting for server data"],
 ["Données du serveur en retard", "Server data is late"],
-["Panneau inconnu", "Unknown panel"]
+["Panneau inconnu", "Unknown panel"],
+["Afficher le pseudo Steam", "Show the Steam name"],
+["Décoché : les écrans TOC et le PC du poste montrent l'indicatif Athena du joueur, sinon son groupe et son rang, jamais son pseudo. Coché : le pseudo est ajouté entre parenthèses. Exemple : décoché « VIPER 2 », coché « VIPER 2 (Tetar) » ; un joueur sans compte relié apparaît comme « Alpha 1-1 · 2 (non lié) ».", "Unchecked: TOC screens and the post PC show the player's Athena callsign, otherwise his group and rank in it, never his Steam name. Checked: the Steam name is added in brackets. Example: unchecked “VIPER 2”, checked “VIPER 2 (Tetar)”; a player whose account is not linked appears as “Alpha 1-1 · 2 (non lié)”."],
+["Afficher nom et prénom sur les écrans du TOC", "Show last and first name on TOC screens"],
+["Nom et prénom du personnage (identité SSE du joueur) dans le tableau EFFECTIF. PC du poste seulement : les écrans du mur montrent indicatif et rôle, l'opérateur voit aussi nom et prénom ; exemple : un visiteur dans la salle ne lit pas les identités au mur. Nulle part : jamais affichés. Partout : aussi sur les écrans du mur ; exemple : un appel en début de mission devant le mur.", "Last and first name of the character (the player's SSE identity) in the STRENGTH ROSTER table. Post PC only: wall screens show callsign and role, the operator also sees last and first name; example: a visitor in the room cannot read identities on the wall. Nowhere: never shown. Everywhere: also on wall screens; example: a roll call in front of the wall at mission start."],
+["PC du poste seulement", "Post PC only"],
+["Nulle part", "Nowhere"],
+["Partout (écrans du mur compris)", "Everywhere (wall screens included)"],
+["EFFECTIF", "ROSTER"],
+["MORT", "DEAD"],
+["EN VÉHICULE", "IN VEHICLE"],
+["Sapeur confirmé", "Advanced engineer"],
+["Pilote ou conducteur", "Pilot or driver"],
+["Aucun joueur du camp en jeu", "No player of the side in game"],
+["%1 joueurs · page %2 sur %3", "%1 players · page %2 of %3"]
 ]

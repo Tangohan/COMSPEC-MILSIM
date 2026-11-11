@@ -1,11 +1,11 @@
 /*
-    Pistes du jeu pour le TOC (4.10.0, principe posé par TTRD : « tout le TOC doit être utilisable sans téléphone »).
+    Pistes du jeu pour le TOC (4.11.0, principe posé par TTRD : « tout le TOC doit être utilisable sans téléphone »).
     Avant, un nœud n'existait que si l'unité portait un ATAK (fn_tocFeed) : sans téléphone, carte, GROUPES, RÉSEAU et
     ORBAT étaient vides. Ici le serveur lit le jeu lui-même (unités, véhicules, aéronefs, drones du camp) et fusionne
     avec ce que les téléphones rapportent. Réglage « Source des positions du TOC » (comspec_atak_native_toc_source) :
       mix  (défaut) tout le monde est vu à sa vraie position ; un porteur d'ATAK garde en plus l'état de sa liaison
       game          tout le monde est vu, les téléphones ne sont pas lus
-      atak          comme avant la 4.10.0 : seuls les porteurs, à leur dernier point
+      atak          comme avant la 4.11.0 : seuls les porteurs, à leur dernier point
     Coût serveur : aucune boucle ici. fn_tocFeed « tick » appelle « nodes » pour les seuls camps qui ont un lecteur
     (PC du poste ouvert ou joueur près d'un écran) ; le relevé est gardé entre deux appels et son intervalle s'allonge
     avec le nombre de pistes (« interval ») ; au plus comspec_atak_native_toc_tracks_max pistes (« cap »), les joueurs
@@ -15,7 +15,7 @@
     (un seul nœud, occupants comptés), chefs des groupes d'IA ; toutes les IA si comspec_atak_native_toc_tracks_ai
     vaut "all", aucune IA hors groupe de joueurs si "none".
 
-    Nœud publié dans COMSPEC_ATAK_TocFeed_<camp> (champs 0 à 8 inchangés depuis la 4.4, 9 à 15 ajoutés en 4.10.0) :
+    Nœud publié dans COMSPEC_ATAK_TocFeed_<camp> (champs 0 à 8 inchangés depuis la 4.4, 9 à 15 ajoutés en 4.11.0) :
       0 clé (netId de l'unité, du chef de bord pour un véhicule)   1 indicatif   2 [x, y]   3 cap
       4 état (fn_tocNodeStatus : 0 en direct, 1 ancien, 2 perdu, 3 hors ligne, 4 source inconnue)
       5 genre "inf" | "veh" | "armor" | "air" | "boat"   6 IA   7 groupe   8 occupants
@@ -89,7 +89,7 @@ switch (_mode) do {
     };
     case "merge": {
         _a params [["_phone", []], ["_tracks", []], ["_m", "MIX"], ["_max", 150]];
-        // Nœud d'un téléphone complété aux champs de la 4.10.0 (copie : le nœud reçu n'est pas modifié).
+        // Nœud d'un téléphone complété aux champs de la 4.11.0 (copie : le nœud reçu n'est pas modifié).
         private _pad = {
             params ["_n"];
             private _o = +_n;
@@ -225,7 +225,8 @@ switch (_mode) do {
                 private _key = netId _u;
                 private _life = [_u] call _lifeOf;
                 private _cs = [_u, true] call comspec_atak_native_fnc_unitCallsign;
-                if (_cs isEqualTo "") then { _cs = [_gName, name _u] select _isP; };
+                // Jamais le pseudo : fn_tocDisplayName ; un chef d'IA qui tient lieu de son groupe porte le nom du groupe.
+                if (_cs isEqualTo "") then { _cs = if (!_isP && {_u isEqualTo _ld}) then { _gName } else { [_u] call comspec_atak_native_fnc_tocDisplayName }; };
                 // Équipage d'un véhicule : un seul nœud, au nom du chef de bord, occupants comptés.
                 if (_inVeh) then {
                     private _vk = netId _v;
@@ -352,11 +353,11 @@ switch (_mode) do {
                     if (_role isEqualTo "") then { _role = getText (configOf _u >> "displayName"); };
                     // « Chef d'équipe@ALPHA » (nom de groupe du lobby) : seul le rôle est gardé.
                     _role = (_role splitString "@") param [0, _role];
-                    _members pushBack [(name _u) select [0, 24], _role select [0, 28], isPlayer _u, _life];
+                    _members pushBack [([_u] call comspec_atak_native_fnc_tocDisplayName) select [0, 32], _role select [0, 28], isPlayer _u, _life];
                 };
             } forEach _us;
             private _lead = [_ld, true] call comspec_atak_native_fnc_unitCallsign;
-            if (_lead isEqualTo "") then { _lead = name _ld; };
+            if (_lead isEqualTo "") then { _lead = [_ld] call comspec_atak_native_fnc_tocDisplayName; };
             _rows pushBack [groupId _g, _gk, _lead select [0, 28], isPlayer _ld, count _us, _top, { isPlayer _x } count _us, _kind,
                 [(getText (configOf _v >> "displayName")) select [0, 24], ""] select (_kind isEqualTo "inf"), _wia, [_low, 0] select (_low > 3), _worst, _members];
         } forEach allGroups;
@@ -419,7 +420,7 @@ switch (_mode) do {
         private _i = _tracks findIf { _key in (_x select 2) };
         if (_i >= 0 || {_wasPlayer}) then {
             private _cs = [_u, true] call comspec_atak_native_fnc_unitCallsign;
-            if (_cs isEqualTo "") then { _cs = [_el, name _u] select _wasPlayer; };
+            if (_cs isEqualTo "") then { _cs = [_u] call comspec_atak_native_fnc_tocDisplayName; };
             private _node = [_key, _cs select [0, 28], [round (_p select 0), round (_p select 1)], round (getDir _u), 0, "inf", !_wasPlayer, _el, 1, "J", 3, [], 0, 0, [], ["", ""]];
             if (isNil "COMSPEC_ATAK_TocDead") then { COMSPEC_ATAK_TocDead = createHashMap; };
             private _dead = COMSPEC_ATAK_TocDead getOrDefault [_side, []];

@@ -1,4 +1,4 @@
-[h1]COMSPEC ATAK 4.10.0 Washington — le TOC fonctionne sans téléphone / the TOC works without a phone[/h1]
+[h1]COMSPEC ATAK 4.11.0 Washington — le TOC fonctionne sans téléphone / the TOC works without a phone[/h1]
 
 [h2]Français[/h2]
 [list]
@@ -8,6 +8,7 @@
 [*] [b]Pertes[/b] : toute unité du camp tuée est comptée, plus seulement les porteurs d'un téléphone.
 [*] [b]Caméra de casque[/b] : la caméra d'un joueur sans téléphone peut passer sur un écran (réglage du serveur, activé par défaut).
 [*] [b]Réglage « Source des positions du TOC »[/b] : Mixte (par défaut), Jeu ou Réseau ATAK. Choisissez Réseau ATAK pour garder le comportement d'avant.
+[*] [b]Indicatifs, pas pseudos[/b] : le TOC écrit l'indicatif Athena du joueur, sinon son groupe et son rang (« Alpha 1-1 · 2 »). Le pseudo Steam n'apparaît que si le serveur coche « Afficher le pseudo Steam ».
 [*] [b]Salle mieux protégée[/b] : un joueur ne peut plus écrire dans la salle d'un autre camp.
 [/list]
 
@@ -19,6 +20,7 @@
 [*] [b]Casualties[/b]: every unit of the side that is killed is counted, not only phone carriers.
 [*] [b]Helmet camera[/b]: the camera of a player without a phone can go on a screen (server setting, on by default).
 [*] [b]“TOC position source” setting[/b]: Mixed (default), Game or ATAK network. Pick ATAK network to keep the previous behaviour.
+[*] [b]Callsigns, not Steam names[/b]: the TOC writes the player's Athena callsign, otherwise his group and rank in it (“Alpha 1-1 · 2”). The Steam name only shows if the server checks “Show the Steam name”.
 [*] [b]Better protected room[/b]: a player can no longer write into another side's room.
 [/list]
 
