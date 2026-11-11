@@ -38,6 +38,23 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : poste TOC web et plans d'opération sur Athena (site Athena, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Le poste TOC et des plans d'opération sur Athena
+- Nouveau poste TOC web (menu Opérateur › Poste TOC, ou TOC dans la barre d'ATAK web) : la même console que le PC du poste en jeu, avec la carte commune sur notre fond satellite, les groupes, le flux, les chronos, la main courante, la liste d'exécution, les pertes et les demandes.
+- Nouveaux plans d'opération : dessinez sur la carte du terrain avec les symboles OTAN et les graphismes tactiques, découpez le plan en phases, briefez pas à pas, travaillez à plusieurs, exportez en image, en PDF ou en fichier.
+- Un plan s'envoie en jeu en un clic et apparaît dans l'app Plan des téléphones et sur le PC du poste ; le plan dessiné en jeu se récupère sur Athena.
+EN : A TOC console and operation plans on Athena
+- New web TOC (Operator menu › TOC console, or TOC in the ATAK web bar): the same console as the in-game post laptop, with the common map on our satellite background, groups, feed, timers, duty log, execution checklist, casualties and requests.
+- New operation plans: draw on the terrain map with NATO symbols and tactical graphics, split the plan into phases, brief step by step, work together, export as an image, a PDF or a file.
+- A plan is sent into the game in one click and appears in the phones' Plan app and on the post laptop; the plan drawn in game can be brought back to Athena.
+
+### Détail technique
+- Pages `/atak/toc` et `/atak/toc/plans`, droits `atak.toc.use` et `atak.toc.manage`, étapes 4370 et 4380. Détail : `docs/TOC-WEB.md`.
+- Lien avec le jeu par les canaux existants (BriefingPlan.Push canal `toc_room`, commandes web genre `toc`) : branche du mod `feat/atak-toc-web-sync`, sans changement de COMSPEC Link.
+
 ## SSE 1.9.1 : tuto des extensions lisible, fenêtre « IA de la zone » réparée, fenêtres qui s'arrêtaient à moitié (SSE 1.9.1)
 
 ### Résumé joueur
