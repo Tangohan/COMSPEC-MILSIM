@@ -16,6 +16,8 @@ if (missionNamespace getVariable ["COMSPEC_ATAK_ServerInitDone", false]) exitWit
 missionNamespace setVariable ["COMSPEC_ATAK_ServerInitDone", true];
 // Le serveur a le mod : il écrit le plan partagé de l'app Plan (sinon les clients gardent leurs tracés en brouillon).
 missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
+// Version du mod du serveur, une fois : référence des étiquettes « Version du mod » du Centre Zeus (fn_zeusCentre, fn_verCmp).
+missionNamespace setVariable ["COMSPEC_ATAK_ServerVersion", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""], true];
 // Téléphones de joueurs ramassés par l'IA ennemie, exploitation du BFT et compromissions (fn_captureServer).
 ["init"] call comspec_atak_native_fnc_captureServer;
 // Socles de recharge CS-10 : mémoire, recharge et emplacements (fn_dockServer).

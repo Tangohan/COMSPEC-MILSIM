@@ -255,6 +255,9 @@ _y = _y + _font * 1.4 + _pad / 2;
 // Message important de l'ORBAT du site (compte non lié, Athena injoignable…) : sur plusieurs lignes au-dessus du tableau, où
 // une cellule le couperait. Touché, il relit l'ORBAT quand c'est possible. Un autre message : rendu complet.
 (if (_view isEqualTo "ORBAT") then { ["notice"] call comspec_atak_native_fnc_bftOrbat } else { ["", "muted", false] }) params ["_nTxt", "_nTone", "_nRetry"];
+// Licence pas encore acceptée (« licence ») : le bouton du bandeau ouvre la note de service (fn_licenceOpen) au lieu de relire.
+private _nLic = _nRetry isEqualTo "licence";
+_nRetry = _nLic || {_nRetry isEqualTo true};
 // Hauteur d'un texte structuré de _n caractères à la taille relative _sz sur la largeur _w (texte condensé : un caractère
 // fait au plus la moitié de sa hauteur) : le nombre de lignes est prévu, le texte n'est jamais coupé.
 private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
@@ -272,13 +275,21 @@ if (_upd && {_noteTxt isNotEqualTo (_live getOrDefault ["note", ""])}) exitWith 
 if (_noteOn) then {
     private _noteW = ([_bw, _bw * 0.58] select _land) - _pad;
     // Erreur : bouton RÉESSAYER à droite du message (relit l'ORBAT tout de suite, au plus toutes les 10 s).
-    private _rbW = [0, (_noteW * 0.26) max (_font * 4)] select _nRetry;
+    private _rbW = [0, (_noteW * ([0.26, 0.4] select _nLic)) max (_font * 4)] select _nRetry;
     private _noteTr = (_nTxt) call comspec_atak_native_fnc_tr;
     private _noteH = ([count _noteTr, _noteW - _rbW] call _textH) max ([0, _font * 1.3] select _nRetry);
     if (!_upd) then {
         private _nc = ["COMSPEC_RscStructuredText", [_pad, _y, _noteW - _rbW, _noteH]] call comspec_atak_native_fnc_pageCtrl;
         _nc ctrlSetStructuredText parseText (format ["<t size='0.9' color='%1'>%2</t>", COMSPEC_ATAK_Th get (switch (_nTone) do { case "alert": { "hexAlert" }; case "info": { "hexInfo" }; default { "hexWarn" }; }), [_noteTr] call _esc]); // i18n:brut
-        if (_nRetry) then {
+        if (_nLic) then {
+            private _nb = ["COMSPEC_RscButton", [_pad + _noteW - _rbW + _pad / 2, _y, _rbW - _pad / 2, _font * 1.3], "OUVRIR LA NOTE DE SERVICE"] call comspec_atak_native_fnc_pageCtrl;
+            _nb ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin);
+            _nb ctrlSetTooltip (("Lisez et acceptez la licence : rien n'est envoyé à Athena avant.") call comspec_atak_native_fnc_tr);
+            _nb ctrlAddEventHandler ["ButtonClick", {
+                [{}, "BFT"] call comspec_atak_native_fnc_licenceOpen;
+            }];
+        };
+        if (_nRetry && {!_nLic}) then {
             private _nb = ["COMSPEC_RscButton", [_pad + _noteW - _rbW + _pad / 2, _y, _rbW - _pad / 2, _font * 1.3], "RÉESSAYER"] call comspec_atak_native_fnc_pageCtrl;
             _nb ctrlSetFontHeight ((_fs * 0.9) max COMSPEC_ATAK_FontMin);
             _nb ctrlSetTooltip (("Clic : relire l'ORBAT du site") call comspec_atak_native_fnc_tr);

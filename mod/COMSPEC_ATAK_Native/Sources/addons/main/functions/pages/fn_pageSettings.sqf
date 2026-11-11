@@ -691,11 +691,8 @@ if (_cat isEqualTo "ABOUT" || {_query isNotEqualTo ""}) then {
         ["buttons", [
             ["CRÉDITS", { [{ ["CREDITS"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }],
             ["DEBUG", { [{ ["DEBUG"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame; }, (count _anom) > 0],
-            // Note de service du menu principal (accès, licence) : on range le téléphone pour lui laisser la souris.
-            ["RELIRE LA LICENCE", {
-                [] call comspec_atak_native_fnc_close;
-                [{ if (!isNil "comspec_overwatch_connect_fnc_showBetaAccessNote") then { [true] call comspec_overwatch_connect_fnc_showBetaAccessNote; }; }, [], 0.1] call comspec_atak_native_fnc_waitAndExec;
-            }, false, !isNil "comspec_overwatch_connect_fnc_showBetaAccessNote"]
+            // Note de service du menu principal (accès, licence) : téléphone rangé le temps de la note, puis retour ici (fn_licenceOpen).
+            ["RELIRE LA LICENCE", { [] call comspec_atak_native_fnc_licenceOpen; }, false, ["can"] call comspec_atak_native_fnc_licenceOpen]
         ]]
     ];
 };

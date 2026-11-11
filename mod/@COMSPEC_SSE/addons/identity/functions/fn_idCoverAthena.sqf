@@ -179,7 +179,9 @@ if (_op isEqualTo "rows") exitWith {
     private _retry = ["RÉESSAYER" call _tr, ["retry"] call _act];
     private _empty = switch (_state) do {
         case "off": { ["Service Athena coupé", "Le service Athena est sur Non sur ce poste : rien n'est demandé à Athena. Rallumez-le dans l'app Athena, ou importez un fichier.", []] };
-        case "licence": { ["Licence pas encore acceptée", "Acceptez la licence (note de service du menu principal) : rien n'est envoyé à Athena avant.", []] };
+        // Note de service ouverte d'ici (fn_licenceOpen de l'ATAK natif) : licence acceptée, la liste est relue toute seule.
+        case "licence": { ["Licence pas encore acceptée", "Acceptez la licence (note de service du menu principal) : rien n'est envoyé à Athena avant.",
+            [[], ["OUVRIR LA NOTE DE SERVICE" call _tr, compile "[{ params ['_ok']; if (_ok && {['isOpen'] call comspec_sse_fnc_idCoverAthena}) then { ['retry'] call comspec_sse_fnc_idCoverAthena; }; }, 'IDCOVER'] call comspec_atak_native_fnc_licenceOpen;"]] select (!isNil "comspec_atak_native_fnc_licenceOpen")] };
         case "notready": { ["Liaison Athena pas encore autorisée", "Ce poste n'est pas encore autorisé par Athena (connexion en cours). Attendez quelques secondes, puis réessayez.", _retry] };
         case "unlinked": { ["Compte Athena non lié", "Liez votre compte Athena à ce téléphone pour retrouver vos couvertures : app Athena du téléphone.", ["LIER MON COMPTE" call _tr, compile "['close'] call comspec_sse_fnc_idCoverAthena; ['ATHENA'] call comspec_sse_fnc_openApp;"]] };
         case "nodll": { ["COMSPEC Link absent ou trop ancien", "La synchronisation passe par COMSPEC Link 2.0.118 ou plus. Sans lui : téléchargez le fichier sur Athena, puis touchez Importer un fichier.", []] };

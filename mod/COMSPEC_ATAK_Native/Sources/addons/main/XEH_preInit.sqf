@@ -32,6 +32,15 @@ _athCfg pushBack ["atak_realism",
     { true },
     { params ["_parent"]; ["open", _parent] call comspec_atak_native_fnc_netConfig; },
     20, "child"];
+// Licence pas encore acceptée : la note de service s'ouvre d'ici (fn_licenceOpen), puis la fenêtre revient.
+_athCfg = _athCfg select { (_x select 0) isNotEqualTo "atak_licence" };
+_athCfg pushBack ["atak_licence",
+    { "Ouvrir la note de service" call comspec_atak_native_fnc_tr },
+    { "Licence pas encore acceptée : rien n'est envoyé à Athena avant. Lisez et acceptez la note de service." call comspec_atak_native_fnc_tr },
+    "\z\comspec_atak_native\addons\main\data\app_settings.paa",
+    { !(["ok"] call comspec_atak_native_fnc_licenceOpen) && {["can"] call comspec_atak_native_fnc_licenceOpen} },
+    { [{ if (!isNull findDisplay 49) then { ["open", findDisplay 49] call comspec_atak_native_fnc_athenaConfig; }; }, ""] call comspec_atak_native_fnc_licenceOpen; },
+    5, "close"];
 missionNamespace setVariable ["comspec_athena_config_entries", _athCfg];
 // Versions compilées dans ce code : fn_integrityCheck les compare à la config chargée, à la DLL et au site.
 missionNamespace setVariable ["COMSPEC_ATAK_CodeVersion", VERSION_STR];

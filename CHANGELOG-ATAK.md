@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : note de service à portée de main, versions justes au Centre Zeus (ATAK natif et SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : La licence s'accepte depuis le téléphone, et le Zeus voit la vraie version de chacun
+- Partout où le téléphone dit « Licence pas encore acceptée » (Mes couvertures sur Athena, Ma couverture, Fichiers, ORBAT du BFT, Téléphones, Configuration ATHENA du menu Échap), un bouton « Ouvrir la note de service » l'affiche tout de suite ; une fois acceptée, vous revenez à la même page et la liste de vos couvertures se recharge seule. Rien n'est envoyé à Athena avant.
+- Au Centre Zeus, chaque étiquette montre la version du mod réellement installée par le joueur, comparée à celle du serveur : « à jour », « pas à jour » seulement s'il est plus ancien, et une note bleue « plus récent que le serveur » s'il a une version plus récente.
+EN : The licence can be accepted from the phone, and the Zeus sees everyone's real version
+- Wherever the phone says "Licence not accepted yet" (My covers on Athena, My cover, Files, BFT ORBAT, Phones, ATHENA Configuration in the Escape menu), an "Open the service note" button shows it right away; once accepted, you come back to the same page and your cover list reloads by itself. Nothing is sent to Athena before that.
+- In the Zeus Centre, each label shows the mod version the player really has installed, compared to the server's: "up to date", "outdated" only when it is older, and a blue "newer than the server" note when it is newer.
+
+### Détail technique
+- `fn_licenceOpen` (ATAK, ui) : point d'entrée commun de la note de service d'Overwatch connect (`fn_showBetaAccessNote [true]`, texte de `fn_ndaTexts` inchangé). Téléphone en main rangé le temps de la note puis rouvert sur la page d'appel (`fn_openApp`), rappel `[acceptée]` à la fermeture ; `["ok"]` / `["can"]`. Aucun appel réseau : l'acceptation reste celle de `fn_ndaAccept` (lecture jusqu'à la fin).
+- Boutons : `fn_idCoverAthena` état `licence` (acceptée : `retry` automatique, la garde `_gate` reste devant `GetIdentityPack`), `fn_idCoverPage`, `fn_filePage` (nouvel état Athena `licence` posé par `fn_fileClient`, consultation relancée après acceptation), `fn_bftOrbat` « notice » WAIT (`réessayer` = « licence ») + `fn_pageBft`, `fn_pagePhones`, entrée `atak_licence` de la Configuration ATHENA (`XEH_preInit`, affichée seulement licence en attente, fenêtre rouverte ensuite). `RELIRE LA LICENCE` (Réglages) passe par le même chemin.
+- Étiquettes « Version du mod » (`fn_zeusCentre`) : la version lue était celle de la fiche relayée par le serveur (`fn_zeusState` « row »). Un serveur ATAK 4.2.1 ou plus ancien refuse les fiches de 14 champs envoyées depuis 4.2.2 et garde la dernière acceptée (session précédente du joueur), renvoyée à chaque envoi complet et tenue pour fraîche côté Zeus ; la référence retombait sur la version du Zeus lui-même tant que l'onglet SERVEUR n'était pas ouvert. Désormais : version publiée par chaque poste sur son unité (`COMSPEC_ATAK_ModVer`, `XEH_postInitClient`), fiche en repli ; référence = `COMSPEC_ATAK_ServerVersion` publiée par le serveur (`XEH_postInitServer`), sinon l'onglet SERVEUR (demandé toutes les 2 min au plus), sinon la plus récente vue en jeu.
+- `fn_verCmp` (ATAK, core) : lecture et comparaison MAJEUR.MINEUR.CORRECTIF nombre par nombre, `["max", …]`, `["selfTest"]` (4.4.0 contre 4.2.1, égales, plus récente, illisible, incomplète, vide). Test `AtakLicenceOpenVersionTagAssetTest`.
+- Overwatch connect : lit seulement sa propre version (`CfgPatches`), rien à corriger. Non vu en jeu.
+
 ## SSE 1.9.0 : IA qui réagissent naturellement, émotions réglables, papiers de 45 pays, une seule identité par IA, outils Zeus refaits (SSE 1.9.0)
 
 ### Résumé joueur
