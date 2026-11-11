@@ -265,9 +265,9 @@ while { _z > _zFull && {_miss > 0} && {_z > _zMin} } do {
 };
 // Tuiles déjà chargées par le jeu (dessinées depuis moins de 5 min) : fichier -> heure du dernier dessin. Pour la mission
 // seulement (missionNamespace) : après un redémarrage, rien n'est supposé encore en mémoire.
-private _seen = missionNamespace getVariable ["COMSPEC_ATAK_PhotoSeen", createHashMap];
-if ((count _seen) > 20000) then { _seen = createHashMap; };
-missionNamespace setVariable ["COMSPEC_ATAK_PhotoSeen", _seen];
+private _seen = missionNamespace getVariable ["COMSPEC_ATAK_PhotoTileSeen", createHashMap];
+if (!(_seen isEqualType createHashMap) || {(count _seen) > 20000}) then { _seen = createHashMap; };
+missionNamespace setVariable ["COMSPEC_ATAK_PhotoTileSeen", _seen];
 private _isUp = { (_now - (_seen getOrDefault [_this call _file, -1e9])) < 300 };
 private _draw = {
     params ["_zz", "_tx", "_ty", ["_a", 1], ["_f", ""]];
