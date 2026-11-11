@@ -54,6 +54,33 @@ class SseCoverExportRepository
         ));
     }
 
+    /**
+     * Couvertures d'un membre avec le texte du fichier (synchronisation depuis le téléphone), la plus récente d'abord.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listFilesForUser(int $tenantId, int $userId, int $limit = 20): array
+    {
+        return array_values($this->db->fetchAll(
+            'SELECT id, ref, country_code, cover_name, content_sha, payload_json, created_by_user_id, created_at, downloaded_at
+               FROM sse_cover_exports WHERE tenant_id = :t AND user_id = :u ORDER BY id DESC LIMIT ' . max(1, min(50, $limit)),
+            ['t' => $tenantId, 'u' => $userId]
+        ));
+    }
+
+    /**
+     * Couverture d'une référence, seulement si elle est de ce membre et de cette communauté.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findForUserByRef(int $tenantId, int $userId, string $ref): ?array
+    {
+        return $this->db->fetchOne(
+            'SELECT * FROM sse_cover_exports WHERE tenant_id = :t AND user_id = :u AND ref = :r ORDER BY id DESC LIMIT 1',
+            ['t' => $tenantId, 'u' => $userId, 'r' => $ref]
+        );
+    }
+
     public function countSince(int $tenantId, int $userId, string $since): int
     {
         $row = $this->db->fetchOne(

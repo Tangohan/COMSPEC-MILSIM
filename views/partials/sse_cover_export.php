@@ -19,11 +19,12 @@ $coverTag = in_array($coverHeadingTag ?? 'h2', ['h2', 'h3'], true) ? ($coverHead
 <section class="idm-cover" id="couverture" aria-labelledby="idm-cover-gen-title">
     <<?= $coverTag ?> id="idm-cover-gen-title" class="idm-cover__title"><?= $coverSelf ? 'Télécharger ma couverture pour le jeu' : 'Télécharger une couverture pour ce membre' ?></<?= $coverTag ?>>
     <p class="idm-sim"><strong>SIMULATION</strong> Le fichier contient l’identité Athena du membre (identité principale et ses papiers émis), ou une personne fictive tirée au hasard, jamais une personne réelle.</p>
+    <p>Dans le jeu : téléphone › Ma couverture › Importer ma couverture › Synchroniser avec Athena. La couverture générée ici s’y récupère sans fichier ; le téléchargement ci-dessous reste possible pour jouer sans connexion.</p>
     <ol class="idm-cover__steps">
         <li>Choisissez le contenu, puis cliquez <b>Générer</b>. Avec l’identité Athena, le joueur a ses vrais papiers de jeu même si le serveur n’a pas reçu le paquet d’Athena.</li>
         <li>Cliquez <b>Télécharger</b> : vous obtenez un petit fichier .json.</li>
         <li>Déposez-le, sans changer son nom, dans le dossier <code>Documents\Arma 3 - COMSPEC</code> du PC qui lance Arma. Exemple : <code>C:\Users\Jake\Documents\Arma 3 - COMSPEC\comspec-couverture-CVR-1A2B3C4D.json</code></li>
-        <li>En jeu, sur le téléphone ATAK : <b>Ma couverture › Importer ma couverture</b>. Aucune connexion à Athena n’est nécessaire en jeu ; Oublier l’import revient à l’identité d’avant.</li>
+        <li>En jeu, sur le téléphone ATAK : <b>Ma couverture › Importer ma couverture › Importer un fichier</b>. Aucune connexion à Athena n’est nécessaire en jeu ; Oublier l’import revient à l’identité d’avant.</li>
     </ol>
     <?php if ($coverPanel['countries'] === []): ?>
         <p>Aucun pays n’est actif dans cette communauté : les responsables doivent en activer un dans le registre des papiers.</p>

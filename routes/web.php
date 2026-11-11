@@ -3029,6 +3029,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/academy/courses', [\App\Controllers\Api\AcademyGameApiController::class, 'courses']);
     $router->get('/api/atak/academy/lesson', [\App\Controllers\Api\AcademyGameApiController::class, 'lesson']);
     $router->post('/api/atak/academy/seen', [\App\Controllers\Api\AcademyGameApiController::class, 'seen']);
+    // App Ma couverture du téléphone : couvertures du compte relié (aussi relayées par /api/sse/identity/pack?op=~covers).
+    $router->get('/api/atak/covers', [\App\Controllers\Api\AtakCoverSyncApiController::class, 'index']);
+    $router->get('/api/atak/covers/files', [\App\Controllers\Api\AtakCoverSyncApiController::class, 'files']);
     $router->post('/api/atak/beta-register', [AtakApiController::class, 'betaRegister']);
     $router->post('/api/atak/mod-report', [AtakApiController::class, 'modReport']);
     $router->post('/api/atak/device-logs', [AtakApiController::class, 'deviceLogsStore']);
