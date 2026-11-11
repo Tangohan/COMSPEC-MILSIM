@@ -23030,5 +23030,15 @@
 ["Athena est occupé : réessayez dans une minute.", "", "Athena is busy: try again in a minute."],
 ["Liaison Athena coupée : rien n'est envoyé.", "", "Athena link off: nothing is sent."],
 ["Athena ne répond pas : réessayez plus tard.", "", "Athena is not answering: try again later."],
-["Synchronisation refusée par Athena (%1).", "", "Sync refused by Athena (%1)."]
+["Synchronisation refusée par Athena (%1).", "", "Sync refused by Athena (%1)."],
+["Utiliser comme écran TOC", "", "Use as a TOC screen"],
+["Écran TOC : utiliser cet objet", "", "TOC screen: use this object"],
+["Cet objet n'a aucune surface d'image (aucune sélection cachée dans sa config) : il ne peut pas devenir un écran TOC. Choisissez un autre écran, ou lâchez le module sur le sol pour poser un écran COMSPEC.", "", "This object has no picture surface (no hidden selection in its config): it cannot become a TOC screen. Pick another screen, or drop the module on the ground to place a COMSPEC screen."],
+["Tester l'image (8 s), puis revenir ici", "", "Test the picture (8 s), then come back here"],
+["Surface de l'image", "", "Picture surface"],
+["Format de l'image", "", "Picture format"],
+["16:9 (écran, TV, mur d'images)", "", "16:9 (screen, TV, video wall)"],
+["Bandeau 4:1 (horloge, plaque de nom)", "", "4:1 strip (clock, name plate)"],
+["Matière d'écran COMSPEC, lumineuse jour et nuit", "", "COMSPEC screen material, bright day and night"],
+["L'objet affiche le réseau ATAK du camp ou un affichage de la salle TOC pour chaque joueur à moins de 150 m. ★ : surface proposée. Image absente ou mal placée : choisissez une autre surface et testez l'image.", "", "The object shows the side's ATAK network or a TOC room display to every player within 150 m. ★: suggested surface. Picture missing or misplaced: pick another surface and test the picture."]
 ]

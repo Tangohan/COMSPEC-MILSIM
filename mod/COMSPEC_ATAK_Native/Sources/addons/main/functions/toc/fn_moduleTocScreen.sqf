@@ -31,7 +31,12 @@ private _exApply = {
     private _lines = ((_txt splitString "|") apply { ((_x splitString ";") apply { trim _x }) }) select { (count _x) >= 1 && {(_x select 0) isNotEqualTo ""} };
     { ["do", [_x, "exSet", _lines, "Mission", ""]] call comspec_atak_native_fnc_tocRoom; } forEach ([[_s], ["WEST", "EAST", "GUER", "CIV"]] select (_s isEqualTo ""));
 };
-if !(_ctx get "zeus") exitWith {
+// Attributs Eden jamais posés (le module vient d'un Zeus ou d'un script, pas d'Eden) : jamais les valeurs par défaut,
+// la fenêtre de choix s'ouvre. Avant, un module Zeus pris pour un module Eden posait toujours le grand écran sur
+// trépied, en carte et flux, nommé « TOC » (les défauts ci-dessus), quel que soit le choix (journal de TTRD, 11/11).
+// Module de la mission (Eden) : exécuté au démarrage (time 0), jamais pris pour un module Zeus.
+private _zeus = (_ctx get "zeus") || {hasInterface && {time > 1} && {isNil { _logic getVariable "Class" }} && {!isNull (getAssignedCuratorLogic player)}};
+if (!_zeus) exitWith {
     // PC de TOC synchronisés avec le module : une salle TOC à son nom, dont ces PC sont les postes maîtres et ces
     // écrans les écrans liés (fn_tocHall).
     private _pcs = _targets select { _x isKindOf "COMSPEC_ATAK_TocLaptop" || {_x getVariable ["COMSPEC_ATAK_Toc", false]} || {((toLower (typeOf _x)) find "laptop") >= 0} || {((toLower (typeOf _x)) find "computer") >= 0} };
@@ -80,7 +85,8 @@ private _exApplyZ = {
 };
 missionNamespace setVariable ["COMSPEC_ATAK_TocExZ", _exApplyZ];
 if (isNull _obj) exitWith {
-    private _classes = (["classes"] call comspec_atak_native_fnc_tocScreen) apply { [_x select 0, _x select 1] };
+    // Tous les écrans posables (COMSPEC, jeu, autres mods), avec leur aperçu Eden : la classe choisie part telle quelle.
+    private _classes = ["classes"] call comspec_atak_native_fnc_tocScreen;
     if ((count _classes) isEqualTo 0) exitWith { ["feedback", ["ATAK : aucun écran du jeu disponible"]] call comspec_atak_native_fnc_zeusMenu; true };
     ["Poser un écran TOC", [
         ["COMBO", "Écran posé", _classes, (_classes select 0) select 1],
@@ -102,27 +108,53 @@ if (isNull _obj) exitWith {
     }, _pos, "Un grand écran du jeu qui affiche le réseau ATAK du camp tel que le serveur le voit, ou un affichage de la salle TOC (satellite, horloge, escouade, registres du poste). Liste d'exécution : Franchissement LD ; ROMEO ; ALPHA ; 22:30 | Objectif pris ; TANGO ; BRAVO ; 23:10. Gardé pour la partie suivante."] call comspec_atak_native_fnc_zeusForm;
     true
 };
+// « Écran TOC : utiliser cet objet » (lâché sur n'importe quel objet, écran d'un autre mod compris) : surface de l'image
+// choisie dans la liste des sélections de l'objet (proposée : surface connue de CfgComspecTocScreens, sinon nom
+// d'écran), format, matière d'écran, et « Tester l'image » (8 s, puis la fenêtre revient avec les mêmes choix).
 private _cur = _obj getVariable ["COMSPEC_ATAK_TocScr", []];
-if ((count _cur) >= 8) then { _name = _cur select 0; _side = _cur select 1; _sel = _cur select 2; _view = _cur select 3; _toc = _cur select 6; _slot = _cur param [8, 0]; _squad = _cur param [9, ""]; };
-["Poser un écran TOC", [
-    ["COMBO", "Action", [["Désigner comme écran TOC", "add"], ["Retirer l'écran TOC", "remove"]], ["add", "remove"] select ((count _cur) >= 8)],
-    ["EDIT", "Nom", [_name, "TOC"] select (_name isEqualTo "")],
-    ["COMBO", "Camp affiché", _sides, _side],
-    ["COMBO", "Affichage", _views, _view],
-    ["CHECK", "Sert aussi de poste TOC (PC du poste, carte en grand)", _toc],
-    ["SLIDER", "Texture (index de sélection)", [0, 5, _sel]],
-    ["COMBO", "Satellite montré (vue satellite)", _sats, _slot],
-    ["COMBO", "Escouade montrée (écran d'escouade)", _grps, _squad],
-    ["EDIT", _exHelp, ""]
-], {
-    params ["_v", "_obj"];
-    _v params ["_act", "_name", "_side", "_view", "_toc", "_sel", "_slot", "_squad", "_ex"];
-    if (_act isEqualTo "remove") exitWith {
-        ["remove", _obj] call comspec_atak_native_fnc_tocScreen;
-        ["feedback", ["ATAK : écran TOC retiré"]] call comspec_atak_native_fnc_zeusMenu;
+if ((count _cur) >= 8) then { _name = _cur select 0; _side = _cur select 1; _sel = _cur select 2; _view = _cur select 3; _toc = _cur select 6; _slot = _cur param [8, 0]; _squad = _cur param [9, ""]; } else { _sel = -1; };
+private _forced = _obj getVariable ["COMSPEC_ATAK_TocSurf", []];
+missionNamespace setVariable ["COMSPEC_ATAK_TocUseLists", [_sides, _views, _sats, _grps, _exHelp]];
+missionNamespace setVariable ["COMSPEC_ATAK_TocUseForm", {
+    params ["_obj", "_st"];
+    _st params ["_act", "_name", "_side", "_view", "_toc", "_sel", "_ratio", "_mat", "_slot", "_squad", "_ex"];
+    (missionNamespace getVariable ["COMSPEC_ATAK_TocUseLists", []]) params ["_sides", "_views", "_sats", "_grps", "_exHelp"];
+    (["surfaces", _obj] call comspec_atak_native_fnc_tocScreen) params ["_surfs", "_auto"];
+    // Aucune surface d'image : la fenêtre le dit, rien à régler (pas de message par-dessus le jeu).
+    if (_surfs isEqualTo []) exitWith {
+        ["Écran TOC : utiliser cet objet", [], {}, _obj, "Cet objet n'a aucune surface d'image (aucune sélection cachée dans sa config) : il ne peut pas devenir un écran TOC. Choisissez un autre écran, ou lâchez le module sur le sol pour poser un écran COMSPEC."] call comspec_atak_native_fnc_zeusForm;
     };
-    ["add", [_obj, _name, _side, round _sel, _view, _toc, true, _slot, _squad]] call comspec_atak_native_fnc_tocScreen;
-    [_ex, _side] call COMSPEC_ATAK_TocExZ;
-    ["feedback", [format ["ATAK : écran TOC « %1 » prêt", [_name, "TOC"] select (_name isEqualTo "")]]] call comspec_atak_native_fnc_zeusMenu;
-}, _obj, "L'objet affiche le réseau ATAK du camp (carte, nœuds, comptes rendus, messages) ou un affichage de la salle TOC pour chaque joueur à moins de 150 m. Image noire ou mal placée : essayez un autre index de texture."] call comspec_atak_native_fnc_zeusForm;
+    if (_sel < 0) then { _sel = _auto; };
+    private _surfOpts = _surfs apply { [format ["%1 · %2%3", _x select 1, _x select 0, ["", "  ★"] select ((_x select 1) isEqualTo _auto)], _x select 1] };
+    ["Écran TOC : utiliser cet objet", [
+        ["COMBO", "Action", [["Désigner comme écran TOC", "add"], ["Tester l'image (8 s), puis revenir ici", "test"], ["Retirer l'écran TOC", "remove"]], _act],
+        ["COMBO", "Surface de l'image", _surfOpts, _sel],
+        ["COMBO", "Format de l'image", [["16:9 (écran, TV, mur d'images)", 0], ["Bandeau 4:1 (horloge, plaque de nom)", 4]], _ratio],
+        ["CHECK", "Matière d'écran COMSPEC, lumineuse jour et nuit", _mat],
+        ["EDIT", "Nom", [_name, "TOC"] select (_name isEqualTo "")],
+        ["COMBO", "Camp affiché", _sides, _side],
+        ["COMBO", "Affichage", _views, _view],
+        ["CHECK", "Sert aussi de poste TOC (PC du poste, carte en grand)", _toc],
+        ["COMBO", "Satellite montré (vue satellite)", _sats, _slot],
+        ["COMBO", "Escouade montrée (écran d'escouade)", _grps, _squad],
+        ["EDIT", _exHelp, _ex]
+    ], {
+        params ["_v", "_obj"];
+        _v params ["_act", "_sel", "_ratio", "_mat", "_name", "_side", "_view", "_toc", "_slot", "_squad", "_ex"];
+        if (_act isEqualTo "remove") exitWith {
+            ["remove", _obj] call comspec_atak_native_fnc_tocScreen;
+            ["feedback", ["ATAK : écran TOC retiré"]] call comspec_atak_native_fnc_zeusMenu;
+        };
+        if (_act isEqualTo "test") exitWith {
+            ["test", [_obj, _sel]] call comspec_atak_native_fnc_tocScreen;
+            [{ _this call COMSPEC_ATAK_TocUseForm; }, [_obj, ["add", _name, _side, _view, _toc, _sel, _ratio, _mat, _slot, _squad, _ex]], 0.2] call comspec_atak_native_fnc_waitAndExec;
+        };
+        // Surface, format et matière choisis : posés avant la désignation, gardés avec l'écran (fn_tocPersist).
+        _obj setVariable ["COMSPEC_ATAK_TocSurf", [_sel, _ratio, _mat], true];
+        ["add", [_obj, _name, _side, _sel, _view, _toc, true, _slot, _squad]] call comspec_atak_native_fnc_tocScreen;
+        [_ex, _side] call COMSPEC_ATAK_TocExZ;
+        ["feedback", [format ["ATAK : écran TOC « %1 » prêt", [_name, "TOC"] select (_name isEqualTo "")]]] call comspec_atak_native_fnc_zeusMenu;
+    }, _obj, "L'objet affiche le réseau ATAK du camp ou un affichage de la salle TOC pour chaque joueur à moins de 150 m. ★ : surface proposée. Image absente ou mal placée : choisissez une autre surface et testez l'image."] call comspec_atak_native_fnc_zeusForm;
+}];
+[_obj, [["add", "remove"] select ((count _cur) >= 8), _name, _side, _view, _toc, _forced param [0, _sel], _forced param [1, 0], _forced param [2, true], _slot, _squad, ""]] call COMSPEC_ATAK_TocUseForm;
 true

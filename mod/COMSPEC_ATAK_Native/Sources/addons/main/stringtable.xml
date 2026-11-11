@@ -1632,6 +1632,16 @@
             <English>Computer set</English>
             <French>Poste informatique</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_BRIEF">
+            <Original>Briefing room screen</Original>
+            <English>Briefing room screen</English>
+            <French>Écran de salle de briefing</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_MULTI">
+            <Original>Rugged multi-screen computer (black)</Original>
+            <English>Rugged multi-screen computer (black)</English>
+            <French>Ordinateur multi-écran renforcé (noir)</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TOCSCR_C_PROJ">
             <Original>Projector screen</Original>
             <English>Projector screen</English>

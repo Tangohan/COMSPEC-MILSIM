@@ -36,7 +36,12 @@
       ["view", [objet, clé, valeur]]       "mode" affichage | "zoom" demi-largeur | "center" position | "auto"
                                            | "sat" 0 ou 1 | "squad" nom du groupe | "cam" netId de la caméra
       ["squads", camp]                     groupes proposés pour l'affichage SQUAD (noms, camp du joueur si "")
-      ["classes"]                          écrans du jeu proposés à la pose [[libellé, classe]...] (classes présentes)
+      ["classes"]                          écrans proposés à la pose [[nom, classe, aperçu]...] (classes présentes) :
+                                           écrans COMSPEC puis CfgComspecTocScreens (jeu et autres mods)
+      ["surfaces", objet]                  surfaces d'image d'un objet [[[nom, index]...], index proposé] ([[], -1] : aucune)
+      ["test", [objet, dalle]]             client : image de test 8 s sur la dalle (fenêtre Zeus « Tester l'image »)
+    Écran d'un autre mod : CfgComspecTocScreens (toc_screens_tiers.hpp) donne sa surface, ses dalles recopiées, son
+    format et sa matière ; COMSPEC_ATAK_TocSurf [index, format, matière] (fenêtre Zeus) l'emporte sur tout.
       ["tick"]                             client, chaque seconde (XEH_postInitClient) : textures et rafraîchissement
       ["surface", [objet, dalle, active]]  client : prépare la dalle pour une image (matière d'écran, dalles superposées
                                            masquées) ou remet tout (aussi pour fn_screenCast et fn_tocCam)
@@ -70,8 +75,45 @@ private _boards = ["SAT", "CLOCK", "LOG", "EXCHECK", "KILLS", "REQ", "STRIP", "P
 // Dalle d'un mur multi-écrans : objet relais (fn_tocScreen « panels ») qui porte son propre affichage ; l'image va
 // sur la dalle de l'écran hôte (COMSPEC_ATAK_TocHost), à l'index de la dalle.
 private _hostOf = { params ["_o"]; private _h = _o getVariable ["COMSPEC_ATAK_TocHost", objNull]; [_o, _h] select (!isNull _h) };
-// Face 4:1 (bandeau horloge, plaque de nom) : texture 2048 x 512.
-private _ratioOf = { params ["_o"]; getNumber (configOf ([_o] call _hostOf) >> "comspec_screenRatio") };
+// Écran du jeu ou d'un autre mod déclaré dans CfgComspecTocScreens (toc_screens_tiers.hpp) : entrée de sa classe ou de
+// la classe parente la plus proche (variantes d'Eden Expansion, etc.) ; configNull sinon. Objet ou nom de classe.
+private _entryOf = {
+    params ["_o"];
+    private _c = [configOf _o, configFile >> "CfgVehicles" >> _o] select (_o isEqualType "");
+    private _e = configNull;
+    for "_i" from 0 to 8 do {
+        if (isNull _c || {!isNull _e}) exitWith {};
+        private _t = configFile >> "CfgComspecTocScreens" >> configName _c;
+        if (isClass _t) then { _e = _t; } else { _c = inheritsFrom _c; };
+    };
+    _e
+};
+// Index d'une sélection cachée par son nom (-1 : absente).
+private _selIdx = { params ["_o", "_n"]; (getArray (configOf _o >> "hiddenSelections")) findIf { (toLower _x) isEqualTo (toLower _n) } };
+// Surface imposée à la désignation (fenêtre Zeus sur un objet) : COMSPEC_ATAK_TocSurf [index, format, matière d'écran].
+// Face 4:1 (bandeau horloge, plaque de nom, ou format « bandeau » choisi) : texture 2048 x 512.
+private _ratioOf = {
+    params ["_o"];
+    private _h = [_o] call _hostOf;
+    (getNumber (configOf _h >> "comspec_screenRatio")) max ((_h getVariable ["COMSPEC_ATAK_TocSurf", []]) param [1, 0]) max (getNumber (([_h] call _entryOf) >> "ratio"))
+};
+// Dalles qui recopient l'image : config de l'écran COMSPEC (index), sinon entrée CfgComspecTocScreens (noms).
+private _mirrorOf = {
+    params ["_o"];
+    private _m = getArray (configOf _o >> "comspec_screenMirror");
+    if (_m isNotEqualTo [] || {(count (_o getVariable ["COMSPEC_ATAK_TocSurf", []])) >= 1}) exitWith { _m };
+    ((getArray (([_o] call _entryOf) >> "mirror")) apply { [_o, _x] call _selIdx }) select { _x >= 0 }
+};
+// Matière d'écran du mod (jour / nuit) sur la dalle : oui, sauf si la désignation ou l'entrée demande la matière d'origine.
+private _matOn = {
+    params ["_o"];
+    private _f = _o getVariable ["COMSPEC_ATAK_TocSurf", []];
+    if ((count _f) >= 3) exitWith { _f select 2 };
+    private _e = [_o] call _entryOf;
+    isNull _e || {!isNumber (_e >> "material")} || {(getNumber (_e >> "material")) > 0}
+};
+// Nom de sélection qui évoque un écran (proposition automatique de la surface).
+private _screenish = { params ["_n"]; _n = toLower _n; (["screen", "display", "monitor", "lcd", "ecran", "écran"] findIf { (_n find _x) >= 0 }) >= 0 || {_n in ["tv", "tv_1", "tv1"]} };
 // [nom, camp, index, affichage, demi-largeur, centre, poste TOC, posé en jeu, satellite, groupe]
 private _cfgOf = {
     params ["_o"];
@@ -85,12 +127,16 @@ private _sideOk = {
     _s isEqualTo "" || {_s isEqualTo str side group _u}
 };
 // Dalle visible : même logique que fn_screenCast (souvent « screen » / « display », pas la sélection 0 du châssis).
+// Ordre : surface choisie à la désignation, puis surface connue (CfgComspecTocScreens), puis nom évoquant un écran.
 private _face = {
     params ["_o", "_sel"];
+    private _forced = _o getVariable ["COMSPEC_ATAK_TocSurf", []];
+    if ((count _forced) >= 1) exitWith { _forced select 0 };
+    private _known = [_o, getText (([_o] call _entryOf) >> "selection")] call _selIdx;
+    if (_known >= 0) exitWith { _known };
     private _names = getArray (configOf _o >> "hiddenSelections");
-    private _named = _names findIf { (toLower _x) in ["screen", "display", "lcd", "monitor"] };
-    private _curName = toLower (_names param [_sel, ""]);
-    if (_named >= 0 && {!(_curName in ["screen", "display", "lcd", "monitor"])}) then { _named } else { _sel }
+    private _named = _names findIf { [_x] call _screenish };
+    if (_named >= 0 && {!([_names param [_sel, ""]] call _screenish)}) then { _named } else { _sel }
 };
 // Diapositives en cours sur cet objet : le TOC cède la dalle (fn_screenCast).
 private _casting = {
@@ -115,35 +161,49 @@ switch (_mode) do {
         true
     };
     case "classes": {
-        // Écrans COMSPEC en tête (modèles du jeu réglés pour l'image, fiables jour et nuit), puis les écrans du jeu.
-        ([
-            ["Mur d'images 2x2, image unique (COMSPEC)", "COMSPEC_ATAK_Screen_Wall2x2"],
-            ["Mur d'images 2x2, 4 dalles (COMSPEC)", "COMSPEC_ATAK_Screen_Wall2x2_Quad"],
-            ["Grand mur d'images 3x2, 6 dalles (COMSPEC)", "COMSPEC_ATAK_Screen_Wall3x2"],
-            ["Grand mur d'images 3x2, image et 2 dalles (COMSPEC)", "COMSPEC_ATAK_Screen_Wall3x2_Mixed"],
-            ["Écran géant 98 pouces mural (COMSPEC)", "COMSPEC_ATAK_Screen_98"],
-            ["Écran géant 98 pouces sur pied roulant (COMSPEC)", "COMSPEC_ATAK_Screen_98_Stand"],
-            ["Écran 65 pouces suspendu (COMSPEC)", "COMSPEC_ATAK_Screen_65_Ceiling"],
-            ["Bandeau horloge ZULU / LOCAL (COMSPEC)", "COMSPEC_ATAK_Screen_ClockStrip"],
-            ["Plaque de nom d'élément (COMSPEC)", "COMSPEC_ATAK_Screen_NamePlate"],
-            ["Grand écran TOC sur trépied (COMSPEC)", "COMSPEC_ATAK_Screen_Tripod"],
-            ["Double écran TOC sur trépied (COMSPEC)", "COMSPEC_ATAK_Screen_Dual"],
-            ["Téléviseur TOC (COMSPEC)", "COMSPEC_ATAK_Screen_Wall"],
-            ["Moniteur TOC de bureau (COMSPEC)", "COMSPEC_ATAK_Screen_Desk"],
-            ["Grand écran sur trépied", "Land_TripodScreen_01_large_F"],
-            ["Grand écran sur trépied (noir)", "Land_TripodScreen_01_large_black_F"],
-            ["Grand écran sur trépied (sable)", "Land_TripodScreen_01_large_sand_F"],
-            ["Double écran sur trépied", "Land_TripodScreen_01_dual_v1_F"],
-            ["Double écran sur trépied (noir)", "Land_TripodScreen_01_dual_v1_black_F"],
-            ["Double écran sur trépied (sable)", "Land_TripodScreen_01_dual_v1_sand_F"],
-            ["Double écran incliné sur trépied", "Land_TripodScreen_01_dual_v2_F"],
-            ["Double écran incliné sur trépied (noir)", "Land_TripodScreen_01_dual_v2_black_F"],
-            ["Double écran incliné sur trépied (sable)", "Land_TripodScreen_01_dual_v2_sand_F"],
-            ["TV à écran plat", "Land_FlatTV_01_F"],
-            ["Écran de projection", "Land_ProjectorScreen_01_F"],
-            ["Poste informatique", "Land_PCSet_01_screen_F"],
-            ["Ordinateur portable", "Land_Laptop_unfolded_F"]
-        ]) select { isClass (configFile >> "CfgVehicles" >> (_x select 1)) }
+        // Écrans COMSPEC en tête (modèles réglés pour l'image, fiables jour et nuit), puis les écrans du jeu et des mods
+        // déclarés dans CfgComspecTocScreens (toc_screens_tiers.hpp et ceux des autres mods), seulement les classes
+        // présentes. [nom de l'objet (langue du joueur), classe, aperçu Eden ("" sans)] : la classe passe telle quelle
+        // jusqu'à la pose (« spawn »).
+        private _out = [];
+        private _add = {
+            params ["_c"];
+            private _cfg = configFile >> "CfgVehicles" >> _c;
+            if (!isClass _cfg || {(getNumber (_cfg >> "scope")) < 1} || {(_out findIf { (_x select 1) isEqualTo _c }) >= 0}) exitWith {};
+            private _n = getText (_cfg >> "displayName");
+            _out pushBack [[_n, _c] select (_n isEqualTo ""), _c, getText (_cfg >> "editorPreview")];
+        };
+        {
+            [_x] call _add;
+        } forEach ["COMSPEC_ATAK_Screen_Wall2x2", "COMSPEC_ATAK_Screen_Wall2x2_Quad", "COMSPEC_ATAK_Screen_Wall3x2", "COMSPEC_ATAK_Screen_Wall3x2_Mixed",
+            "COMSPEC_ATAK_Screen_98", "COMSPEC_ATAK_Screen_98_Stand", "COMSPEC_ATAK_Screen_65_Ceiling", "COMSPEC_ATAK_Screen_ClockStrip",
+            "COMSPEC_ATAK_Screen_NamePlate", "COMSPEC_ATAK_Screen_Tripod", "COMSPEC_ATAK_Screen_Dual", "COMSPEC_ATAK_Screen_Wall", "COMSPEC_ATAK_Screen_Desk"];
+        { [configName _x] call _add; } forEach ("true" configClasses (configFile >> "CfgComspecTocScreens"));
+        _out
+    };
+    case "surfaces": {
+        // Surfaces possibles d'un objet (fenêtre Zeus « Écran TOC » sur un objet) : [[[nom, index]...], index proposé].
+        // Proposé : surface déjà choisie, sinon surface connue (CfgComspecTocScreens), sinon nom évoquant un écran, sinon 0.
+        // Aucune sélection cachée : [[], -1] (l'objet ne peut pas recevoir d'image).
+        private _o = _a;
+        if (isNull _o) exitWith { [[], -1] };
+        private _names = getArray (configOf _o >> "hiddenSelections");
+        if (_names isEqualTo []) exitWith { [[], -1] };
+        private _list = [];
+        { _list pushBack [_x, _forEachIndex]; } forEach _names;
+        [_list, (([_o, 0] call _face) max 0) min ((count _names) - 1)]
+    };
+    case "test": {
+        // « Tester l'image » : fond COMSPEC (orientation lisible) sur la surface choisie, 8 s, sur ce poste seulement,
+        // puis texture d'avant remise. L'objet n'est pas désigné.
+        _a params [["_o", objNull], ["_sel", 0]];
+        if (isNull _o || {!hasInterface}) exitWith { false };
+        private _old = (getObjectTextures _o) param [_sel, ""];
+        _o setObjectTexture [_sel, "\z\comspec_atak_native\addons\main\data\wall_athena_land.paa"];
+        // Remise seulement si l'image de test est toujours là (une image TOC posée entre-temps n'est pas écrasée).
+        [{ params ["_o", "_sel", "_old"]; if (!isNull _o && {((toLower ((getObjectTextures _o) param [_sel, ""])) find "wall_athena_land") >= 0}) then { _o setObjectTexture [_sel, _old]; }; }, [_o, _sel, _old], 8] call comspec_atak_native_fnc_waitAndExec;
+        ["INFO", "TOC", format ["Écran TOC : test de l'image sur %1, surface %2 (%3)", typeOf _o, _sel, (getArray (configOf _o >> "hiddenSelections")) param [_sel, "?"]]] call comspec_atak_native_fnc_log;
+        true
     };
     case "squads": {
         // Groupes du camp à montrer sur un écran d'escouade : ceux qui ont un joueur ou un nœud ATAK (jamais l'ennemi).
@@ -161,7 +221,10 @@ switch (_mode) do {
         if (!isServer) exitWith { ["comspec_atak_native_tocScreen", ["add", _a]] call CBA_fnc_serverEvent; true };
         if (_name isEqualTo "") then { _name = "TOC"; };
         private _old = [_o] call _cfgOf;
-        if !(_view in _views) then { _view = "SPLIT"; };
+        if !(_view in _views) then {
+            ["WARNING", "TOC", format ["Écran TOC %1 : affichage « %2 » inconnu de ce serveur, carte et flux à la place", typeOf _o, _view]] call comspec_atak_native_fnc_log;
+            _view = "SPLIT";
+        };
         // Face 4:1 : bandeau horloge ou plaque de nom seulement ; un écran 16:9 ne prend pas ces deux affichages.
         if (([_o] call _ratioOf) >= 4) then {
             if !(_view in ["STRIP", "PLATE"]) then { _view = ["STRIP", "PLATE"] select (((typeOf _o) find "NamePlate") >= 0); };
@@ -267,6 +330,7 @@ switch (_mode) do {
         _a setVariable ["COMSPEC_ATAK_TocPanels", nil, true];
         _a setVariable ["COMSPEC_ATAK_TocScr", nil, true];
         _a setVariable ["COMSPEC_ATAK_Toc", nil, true];
+        _a setVariable ["COMSPEC_ATAK_TocSurf", nil, true];
         missionNamespace setVariable ["COMSPEC_ATAK_TocScreens", (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x && {_x isNotEqualTo _a} }, true];
         // Écran créé par le module (ou recréé par la sauvegarde) : l'objet part avec lui.
         if (_owned) then { deleteVehicle _a; };
@@ -276,8 +340,17 @@ switch (_mode) do {
     case "spawn": {
         _a params [["_pos", [0, 0, 0]], ["_dir", 0], ["_cls", ""], ["_name", ""], ["_side", ""], ["_view", "SPLIT"], ["_toc", true], ["_slot", 0], ["_squad", ""], ["_pans", ""]];
         if (!isServer) exitWith { ["comspec_atak_native_tocScreen", ["spawn", _a]] call CBA_fnc_serverEvent; objNull };
+        // La classe choisie (module Eden, fenêtre Zeus, salle complète) passe telle quelle jusqu'à createVehicle : écran de
+        // la liste, écran COMSPEC ou écran déclaré dans CfgComspecTocScreens. Classe inconnue de ce serveur (mod du serveur
+        // plus ancien que celui du Zeus) : premier écran de la liste, et le journal le dit. Avant, ce repli était muet et
+        // posait toujours le même grand écran sur trépied, quel que soit le choix (journal de TTRD, 11/11).
         private _cands = (["classes"] call _fn) apply { _x select 1 };
-        if !(_cls in _cands) then { _cls = _cands param [0, ""]; };
+        private _want = _cls;
+        if !(_cls isEqualType "" && {_cls isNotEqualTo ""} && {isClass (configFile >> "CfgVehicles" >> _cls)}
+            && {(_cls in _cands) || {(getNumber (configFile >> "CfgVehicles" >> _cls >> "comspec_screen")) > 0} || {!isNull ([_cls] call _entryOf)}}) then {
+            _cls = _cands param [0, ""];
+            ["WARNING", "TOC", format ["Écran TOC : écran « %1 » inconnu de ce serveur (mod du serveur pas à jour ?), « %2 » posé à la place", _want, _cls]] call comspec_atak_native_fnc_log;
+        };
         if (_cls isEqualTo "") exitWith {
             ["WARNING", "TOC", "Écran TOC : aucun écran du jeu disponible pour la pose."] call comspec_atak_native_fnc_log;
             objNull
@@ -288,6 +361,8 @@ switch (_mode) do {
         _o setVariable ["COMSPEC_ATAK_TocOwned", true, true];
         if (_pans isNotEqualTo "") then { _o setVariable ["COMSPEC_ATAK_TocPanelCfg", ["panelSpec", _pans] call _fn]; };
         ["add", [_o, _name, _side, 0, _view, _toc, true, _slot, _squad]] call _fn;
+        // Trace de la pose : la classe réellement créée et l'affichage demandé (vérifiable dans le journal du serveur).
+        ["INFO", "TOC", format ["Écran TOC posé : %1 (%2), affichage %3, nom « %4 »", _cls, getText (configOf _o >> "displayName"), _view, [_name, "TOC"] select (_name isEqualTo "")]] call comspec_atak_native_fnc_log;
         // Zeus : l'écran créé se manipule comme un objet posé à la main.
         { _x addCuratorEditableObjects [[_o], false]; } forEach allCurators;
         _o
@@ -338,7 +413,7 @@ switch (_mode) do {
             { _o setObjectTexture _x; } forEach _sibs;
             // Dalles recopiées (double écran) : matière de la config remise.
             private _mats = getArray (configOf _o >> "hiddenSelectionsMaterials");
-            { _o setObjectMaterial [_x, _mats param [_x, ""]]; } forEach (getArray (configOf _o >> "comspec_screenMirror"));
+            { if ((_mats param [_x, ""]) isNotEqualTo "") then { _o setObjectMaterial [_x, _mats select _x]; }; } forEach ([_o] call _mirrorOf);
             _o setVariable [_pv, nil];
             true
         };
@@ -355,9 +430,11 @@ switch (_mode) do {
             private _panes = [];
             { if ((_x select [0, 7]) isEqualTo "screen_") then { _panes pushBack _forEachIndex; }; } forEach _names;
             // Plus de deux dalles « screen_ » : mur d'images superposé (pas deux moniteurs côte à côte).
+            // Dalles recopiées (poste à trois moniteurs) : gardées, elles montrent la même image.
             private _sibs = [];
+            private _mirs = [_o] call _mirrorOf;
             if ((count _panes) > 2 && {_sel in _panes}) then {
-                { if (_x isNotEqualTo _sel) then { _sibs pushBack [_x, _texs param [_x, ""]]; _o setObjectTexture [_x, ""]; }; } forEach _panes;
+                { if (_x isNotEqualTo _sel && {!(_x in _mirs)}) then { _sibs pushBack [_x, _texs param [_x, ""]]; _o setObjectTexture [_x, ""]; }; } forEach _panes;
             };
             _prep = [_sel, (getObjectMaterials _o) param [_sel, ""], _sibs, ""];
             _o setVariable [_pv, _prep];
@@ -370,10 +447,11 @@ switch (_mode) do {
         // Matière réimposée aussi quand l'objet ne la porte plus (dalle d'index > 0 restée noire de jour, 11/11).
         private _norm = { private _t = toLower _this; if ((_t select [0, 1]) isEqualTo "\") then { _t = _t select [1]; }; _t };
         private _cur = ((getObjectMaterials _o) param [_sel, ""]) call _norm;
-        if ((_prep select 3) isNotEqualTo _mat || {_cur isNotEqualTo "" && {_cur isNotEqualTo (_mat call _norm)}}) then {
+        // Matière d'origine demandée (écran d'un autre mod déjà lumineux) : rien n'est imposé.
+        if ([_o] call _matOn && {(_prep select 3) isNotEqualTo _mat || {_cur isNotEqualTo "" && {_cur isNotEqualTo (_mat call _norm)}}}) then {
             _prep set [3, _mat];
             _o setObjectMaterial [_sel, _mat];
-            { _o setObjectMaterial [_x, _mat]; } forEach (getArray (configOf _o >> "comspec_screenMirror"));
+            { _o setObjectMaterial [_x, _mat]; } forEach ([_o] call _mirrorOf);
         };
         true
     };
@@ -391,7 +469,7 @@ switch (_mode) do {
             true
         };
         _o setObjectTexture [_sel, _tex];
-        private _mir = getArray (configOf _o >> "comspec_screenMirror");
+        private _mir = [_o] call _mirrorOf;
         if (_mir isNotEqualTo []) then {
             private _def = getArray (configOf _o >> "hiddenSelectionsTextures");
             private _back = _tex isEqualTo (_def param [_sel, ""]);
@@ -1329,7 +1407,8 @@ switch (_mode) do {
             _diff pushBack (["Pip", "Montrer ce que voit le PC du poste (PIP)", "pip"] call _mk);
             private _out = [];
             if (!_has) then {
-                _out pushBack (["Split", "Afficher le réseau TOC", "split"] call _mk);
+                // Écran du jeu ou d'un autre mod (CfgComspecTocScreens) : il devient un écran TOC, image sur sa surface connue.
+                _out pushBack (["Split", "Utiliser comme écran TOC", "split"] call _mk);
             } else {
                 private _show = [];
                 if (_ratio4) then {

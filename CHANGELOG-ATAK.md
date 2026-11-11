@@ -55,6 +55,21 @@ EN : Phone map: the CLASSIC background is the real Arma map
 - Non vérifié en jeu : ACE retouche aussi `CA_Map` seul (arbres masqués, assombrissement de nuit), non repris sur le téléphone.
 
 ---
+## À venir : écrans TOC posables partout, écran choisi bien posé, écrans des autres mods (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Tous les écrans TOC se posent, et c'est le bon écran qui apparaît
+- Les murs d'images, les écrans 98 et 65 pouces, le bandeau horloge et la plaque de nom apparaissent enfin dans Eden et dans Zeus (COMSPEC › Écrans TOC et projection), et l'écran choisi dans le module Écran TOC est bien celui qui est posé, avec l'affichage choisi.
+- Les écrans des autres mods servent d'écran TOC : l'écran blanc de salle de briefing, les écrans renforcés, l'ordinateur multi-écran et l'écran tactique sont reconnus (menu ACE « Utiliser comme écran TOC ») ; pour tout autre objet, le module Zeus lâché dessus laisse choisir la surface de l'image et la tester.
+EN : Every TOC screen can be placed, and the right screen appears
+- Video walls, the 98 and 65 inch screens, the clock strip and the name plate finally show up in Eden and Zeus (COMSPEC › TOC and projection screens), and the screen picked in the TOC screen module is the one placed, with the chosen display.
+- Screens from other mods work as TOC screens: the white briefing room screen, the rugged screens, the multi-screen computer and the tactical screen are recognised (ACE menu "Use as a TOC screen"); for any other object, the Zeus module dropped on it lets you pick the picture surface and test it.
+
+### Détail technique
+- `toc_screens3d.hpp` : `COMSPEC_ATAK_Screen_Base3D` héritait de `Static` sans `side` (camp 4, inconnu) : Eden et Zeus ne listaient aucun des neuf nouveaux écrans. `side=3`.
+- `fn_moduleTocScreen` : module lâché au Zeus pris pour un module Eden (attributs jamais posés) : défauts trépied / SPLIT / « TOC ». Fenêtre ouverte dès que `Class` n'est pas posé et que le joueur est Zeus. `fn_tocScreen` « spawn » : la classe choisie passe telle quelle ; repli journalisé (classe inconnue du serveur) ; journal « Écran TOC posé : classe ».
+- `CfgComspecTocScreens` (`toc_screens_tiers.hpp`, extensible) : surface, dalles recopiées, format, matière par classe (ou parente). Fenêtre Zeus sur un objet : surface (liste des sélections, proposée), format 16:9 / 4:1, matière, « Tester l'image » ; `COMSPEC_ATAK_TocSurf` gardé par `fn_tocPersist`. Liste de pose avec aperçus Eden.
 
 ## SSE 1.9.0 : IA qui réagissent naturellement, émotions réglables, papiers de 45 pays, une seule identité par IA, outils Zeus refaits (SSE 1.9.0)
 
