@@ -100,7 +100,8 @@ final class AtakTocScreensPlacementAssetTest extends TestCase
         self::assertNotFalse($at);
         $cls = strpos($mod, 'property = "COMSPEC_ATAK_Module_TocScreen_Class"', $at);
         self::assertNotFalse($cls);
-        $end = strpos($mod, 'class Index', $cls);
+        // Fin de l'attribut « Écran posé » : l'attribut suivant (les attributs sont rangés du plus courant au plus rare).
+        $end = strpos($mod, 'property = "COMSPEC_ATAK_Module_TocScreen_', $cls + 10);
         preg_match_all('/value = "([^"]+)"/', substr($mod, $cls, $end - $cls), $m);
 
         return $m[1];
@@ -185,7 +186,7 @@ final class AtakTocScreensPlacementAssetTest extends TestCase
         self::assertStringContainsString("expression = \"_this setVariable ['Class',_value,true];\";", $hpp);
         self::assertStringContainsString('_logic getVariable ["Class", "COMSPEC_ATAK_Screen_Tripod"]', $mod);
         self::assertStringContainsString('["spawn", [getPosATL _logic, getDir _logic, _cls, _name, _side, _view, _toc, _slot, _squad, _pans, _extra]]', $mod);
-        self::assertStringContainsString('_v params ["_cls", "_name", "_side", "_view", "_toc", "_slot", "_squad", "_ex", "_pans"];', $mod);
+        self::assertStringContainsString('_v params ["_act", "_cls", "_name", "_side", "_view", "_toc", "_slot", "_squad", "_ex", "_pans"];', $mod);
         self::assertStringContainsString('["spawn", [_pos, _pos getDir _cam, _cls, _name, _side, _view, _toc, _slot, _squad, _pans, ', $mod);
         self::assertStringContainsString('["COMBO", "Écran posé", _classes, (_classes select 0) select 1]', $mod);
         // Module lâché au Zeus sans attributs Eden : jamais les défauts (trépied, carte et flux), la fenêtre s'ouvre.
@@ -229,7 +230,7 @@ final class AtakTocScreensPlacementAssetTest extends TestCase
         self::assertStringContainsString('case "surfaces": {', $toc);
         self::assertStringContainsString('case "test": {', $toc);
         // ACE sur les écrans connus : « Utiliser comme écran TOC ».
-        self::assertStringContainsString('["Split", "Utiliser comme écran TOC", "split"]', $toc);
+        self::assertStringContainsString('"Utiliser comme écran TOC"', self::read(self::MAIN . 'functions/toc/fn_tocMenu.sqf'));
         self::assertStringContainsString('forEach _classes;', $toc);
 
         // Fenêtre Zeus sur un objet : surface, format, matière, test ; aucun choix possible : dit dans la fenêtre.

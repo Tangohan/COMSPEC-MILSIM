@@ -394,37 +394,19 @@ window.TocLayers = (function () {
         var calls = {};
         tracks.forEach(function (t) { if (t.fresh !== 'lost') calls[t.callsign.toUpperCase()] = true; });
         (Array.isArray(rows) ? rows : []).forEach(function (r) {
-          if (String(r.id).indexOf('del:') === 0) return;
-          var d = r.markerData;
-          if (typeof d === 'string') { try { d = JSON.parse(d); } catch (e) { d = null; } }
-          if (!d || d.suppressed || d.type === 'comspec_del') return;
-          var p = T.markerPos(d);
-          var shape = String(d.shape || 'ICON').toUpperCase();
-          var path = shape === 'POLYLINE' ? T.markerPath(d) : [];
-          if (!p && path.length) p = path[0];
-          if (!p) return;
-          var label = String(d.text || d.label || d.name || '').trim();
+          var rec = T.markerRecord(r, sym, G);
+          if (!rec) return;
+          var d = rec.d, p = rec.pos, shape = rec.shape, label = rec.label, col = rec.color, size = rec.size, dir = rec.dir;
           // Marqueur du jeu qui porte l'indicatif d'une piste en liaison : la piste fait foi (pas de doublon).
           if (shape === 'ICON' && label && calls[label.toUpperCase()]) return;
-          var col = T.markerColor(d.color, '#f2d36b');
-          var src = d.source === 'web' ? 'web' : 'jeu';
+          var src = rec.source;
           var meta = { type: 'marker', id: r.id, d: d, own: !!(opts.userId && Number(d.owner_user_id) === Number(opts.userId)), web: src === 'web' };
           var lines = ['<span>Type</span> : ' + esc(d.type || '—'), gridHtml(p), '<span>' + SOURCE_LABEL[src] + '</span>' + (r.updated_at ? ' · ' + hhmm(r.updated_at) : '')];
-          var size = Array.isArray(d.size) ? [Math.max(1, Number(d.size[0]) || 1), Math.max(1, Number(d.size[1]) || 1)] : [Math.max(1, Number(d.size) || 1), Math.max(1, Number(d.size) || 1)];
-          var dir = Number(d.dir != null ? d.dir : d.heading) || 0;
           var item = { pts: [p], side: T.side(d.side), ts: r.updated_at, title: label || 'Marqueur', lines: lines };
-          if (shape === 'ELLIPSE' || shape === 'RECTANGLE') {
-            var br = T.brush(d.brush, d.alpha);
-            var props = { color: col, width: 2, fill: br.fill, label: label, rotation: -dir };
-            item.el = shape === 'ELLIPSE'
-              ? { geom: 'ellipse', kind: 'ellipse', pts: [p], props: L.extend(props, { rx: size[0], ry: size[1] }) }
-              : G.rotate({ geom: 'rect', kind: 'rect', pts: [[p[0] - size[0], p[1] - size[1]], [p[0] + size[0], p[1] + size[1]]], props: props }, dir);
-            if (item.el.geom === 'area') item.el.kind = 'polygon';
-            item.hatch = br.hatch;
-            item.pts = item.el.pts;
-          } else if (shape === 'POLYLINE' && path.length >= 2) {
-            item.el = { geom: 'line', kind: 'line', pts: path, props: { color: col, width: 3, label: label, arrow: /arrow/i.test(String(d.type || '')) ? 'end' : 'none' } };
-            item.pts = path;
+          if (shape !== 'ICON') {
+            item.el = rec.el;
+            item.hatch = rec.hatch;
+            item.pts = rec.el.pts;
           } else {
             var spec = T.markerSpec(sym, d.type || d.icon);
             var symb = spec.nato ? window.TocOverlay.natoSymbol(sym, spec.nato, spec.affil, { size: 18 }) : iconSymbol(spec.icon, col, Math.round(22 * Math.max(0.8, Math.min(1.6, size[0]))));

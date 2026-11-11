@@ -1,0 +1,755 @@
+{
+ "format": "athena-plan",
+ "version": 1,
+ "title": "Opération Trident",
+ "world": "essai",
+ "meta": {
+  "layers": [
+   {
+    "uid": "base",
+    "name": "Manœuvre",
+    "visible": true,
+    "locked": false,
+    "opacity": 1
+   },
+   {
+    "uid": "feux",
+    "name": "Appuis feux",
+    "visible": true,
+    "locked": false,
+    "opacity": 1
+   }
+  ],
+  "notes": {
+   "situation": "Section ennemie retranchée sur OBJ ACIER.",
+   "mission": "S’emparer de OBJ ACIER pour H+1:10."
+  },
+  "legend": [],
+  "side": "WEST",
+  "dtg": "120500ZNOV26",
+  "view": {
+   "x": 4400,
+   "y": 4250,
+   "z": 5
+  },
+  "timeline": {
+   "h": "2026-11-12T05:00",
+   "dur": 90,
+   "start": -10,
+   "zulu": false,
+   "phases": {
+    "p1": 0,
+    "p2": 30,
+    "p3": 55
+   },
+   "events": [
+    {
+     "uid": "v1",
+     "t": 0,
+     "label": "Heure H",
+     "kind": "h",
+     "ref": ""
+    },
+    {
+     "uid": "v2",
+     "t": 25,
+     "label": "MERLE · posé",
+     "kind": "excheck",
+     "ref": "E2"
+    },
+    {
+     "uid": "v3",
+     "t": 50,
+     "label": "Tirs d’appui",
+     "kind": "event",
+     "ref": ""
+    }
+   ]
+  }
+ },
+ "phases": [
+  {
+   "uid": "p1",
+   "ord": 0,
+   "name": "Infiltration",
+   "note": "Mise en place sur la ligne de débouché, discrétion maximale.",
+   "time_label": "H"
+  },
+  {
+   "uid": "p2",
+   "ord": 1,
+   "name": "Appui",
+   "note": "ALPHA 3 en appui par le feu depuis le mouvement de terrain au sud-ouest de l’objectif.",
+   "time_label": "H+00:30"
+  },
+  {
+   "uid": "p3",
+   "ord": 2,
+   "name": "Assaut",
+   "note": "ALPHA 1 et ALPHA 2 s’emparent de OBJ ACIER.",
+   "time_label": "H+00:55"
+  }
+ ],
+ "elements": [
+  {
+   "uid": "ao",
+   "kind": "ao",
+   "geom": "area",
+   "pts": [
+    [
+     2300,
+     2500
+    ],
+    [
+     6400,
+     2400
+    ],
+    [
+     6600,
+     5900
+    ],
+    [
+     2500,
+     6000
+    ]
+   ],
+   "props": {
+    "label": "AO TRIDENT",
+    "dash": "dash"
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 1
+  },
+  {
+   "uid": "obj",
+   "kind": "objective",
+   "geom": "circle",
+   "pts": [
+    [
+     5250,
+     4950
+    ]
+   ],
+   "props": {
+    "radius": 330,
+    "color": "#f24d47",
+    "fill": 0.14,
+    "label": "OBJ ACIER"
+   },
+   "phases": [
+    "p2",
+    "p3"
+   ],
+   "layer": "base",
+   "z": 2
+  },
+  {
+   "uid": "pl1",
+   "kind": "phase_line",
+   "geom": "line",
+   "pts": [
+    [
+     3700,
+     5600
+    ],
+    [
+     3850,
+     4600
+    ],
+    [
+     3650,
+     3600
+    ],
+    [
+     3800,
+     2800
+    ]
+   ],
+   "props": {
+    "label": "PL BLEU",
+    "color": "#62b0f5"
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 3
+  },
+  {
+   "uid": "pl2",
+   "kind": "phase_line",
+   "geom": "line",
+   "pts": [
+    [
+     4600,
+     5700
+    ],
+    [
+     4700,
+     4700
+    ],
+    [
+     4520,
+     3700
+    ],
+    [
+     4640,
+     2900
+    ]
+   ],
+   "props": {
+    "label": "PL ROUGE",
+    "color": "#f24d47"
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 4
+  },
+  {
+   "uid": "axe",
+   "kind": "axis",
+   "geom": "line",
+   "pts": [
+    [
+     2900,
+     3500
+    ],
+    [
+     3800,
+     3900
+    ],
+    [
+     4600,
+     4500
+    ],
+    [
+     5050,
+     4850
+    ]
+   ],
+   "props": {
+    "color": "#5999ff",
+    "arrow": "end",
+    "awidth": 260,
+    "label": "AXE NORD"
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 5
+  },
+  {
+   "uid": "rte",
+   "kind": "route",
+   "geom": "line",
+   "pts": [
+    [
+     2750,
+     4700
+    ],
+    [
+     3300,
+     4950
+    ],
+    [
+     4000,
+     5150
+    ],
+    [
+     4700,
+     5250
+    ],
+    [
+     5150,
+     5100
+    ]
+   ],
+   "props": {
+    "color": "#fae04d",
+    "arrow": "end",
+    "label": "ITI JAUNE",
+    "cp": true,
+    "speed": 12
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 6
+  },
+  {
+   "uid": "sbf",
+   "kind": "sbf",
+   "geom": "line",
+   "pts": [
+    [
+     4350,
+     3650
+    ],
+    [
+     5100,
+     4700
+    ]
+   ],
+   "props": {
+    "color": "#5999ff",
+    "arrow": "end",
+    "label": "SBF 1"
+   },
+   "phases": [
+    "p2"
+   ],
+   "layer": "base",
+   "z": 7
+  },
+  {
+   "uid": "fan",
+   "kind": "fan",
+   "geom": "point",
+   "pts": [
+    [
+     4350,
+     3650
+    ]
+   ],
+   "props": {
+    "color": "#ff9433",
+    "radius": 1300,
+    "bearing": 38,
+    "arc": 50,
+    "minRange": 0,
+    "fill": 0.1,
+    "label": "MAG",
+    "mask": true
+   },
+   "phases": [
+    "p2"
+   ],
+   "layer": "base",
+   "z": 8
+  },
+  {
+   "uid": "nai",
+   "kind": "nai",
+   "geom": "area",
+   "pts": [
+    [
+     5600,
+     3900
+    ],
+    [
+     6200,
+     3950
+    ],
+    [
+     6150,
+     4450
+    ],
+    [
+     5650,
+     4400
+    ]
+   ],
+   "props": {
+    "color": "#fae04d",
+    "fill": 0.08,
+    "label": "NAI 3"
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 9
+  },
+  {
+   "uid": "hlz",
+   "kind": "lz",
+   "geom": "circle",
+   "pts": [
+    [
+     2950,
+     2950
+    ]
+   ],
+   "props": {
+    "radius": 180,
+    "color": "#73d973",
+    "fill": 0.1,
+    "label": "HLZ MERLE"
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 10
+  },
+  {
+   "uid": "mines",
+   "kind": "minefield",
+   "geom": "rect",
+   "pts": [
+    [
+     5500,
+     5350
+    ],
+    [
+     6050,
+     5600
+    ]
+   ],
+   "props": {
+    "color": "#ff9433",
+    "fill": 0.12,
+    "dash": "dash",
+    "label": "MINES"
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 11
+  },
+  {
+   "uid": "ring",
+   "kind": "ring",
+   "geom": "circle",
+   "pts": [
+    [
+     2950,
+     3900
+    ]
+   ],
+   "props": {
+    "radius": 900,
+    "rings": 3,
+    "color": "#ff9433",
+    "label": "MO 81"
+   },
+   "phases": [],
+   "layer": "feux",
+   "z": 12
+  },
+  {
+   "uid": "cp1",
+   "kind": "checkpoint",
+   "geom": "point",
+   "pts": [
+    [
+     3800,
+     3900
+    ]
+   ],
+   "props": {
+    "color": "#f2f2f2",
+    "label": "CP 1"
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 13
+  },
+  {
+   "uid": "med",
+   "kind": "medevac",
+   "geom": "point",
+   "pts": [
+    [
+     3050,
+     3050
+    ]
+   ],
+   "props": {
+    "color": "#f24d47",
+    "label": "MEDEVAC"
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 14
+  },
+  {
+   "uid": "txt",
+   "kind": "textbox",
+   "geom": "line",
+   "pts": [
+    [
+     5250,
+     5280
+    ],
+    [
+     5800,
+     6050
+    ]
+   ],
+   "props": {
+    "color": "#f2f2f2",
+    "label": "Assaut à H+0:50"
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 15
+  },
+  {
+   "uid": "cdu",
+   "kind": "unit",
+   "geom": "point",
+   "pts": [
+    [
+     2950,
+     3600
+    ]
+   ],
+   "props": {
+    "affil": "F",
+    "unitType": "hq",
+    "echelon": "company",
+    "callsign": "ALPHA 6",
+    "size": 26,
+    "hq": true,
+    "higher": "2 REI",
+    "ord": 0
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 16
+  },
+  {
+   "uid": "a1",
+   "kind": "unit",
+   "geom": "point",
+   "pts": [
+    [
+     3050,
+     3450
+    ]
+   ],
+   "props": {
+    "affil": "F",
+    "unitType": "infantry",
+    "echelon": "section",
+    "callsign": "ALPHA 1",
+    "size": 26,
+    "parent": "cdu",
+    "ord": 0,
+    "track": [
+     {
+      "t": 0,
+      "p": [
+       3050,
+       3450
+      ]
+     },
+     {
+      "t": 30,
+      "p": [
+       3900,
+       3950
+      ]
+     },
+     {
+      "t": 55,
+      "p": [
+       4900,
+       4750
+      ]
+     },
+     {
+      "t": 70,
+      "p": [
+       5200,
+       4900
+      ]
+     }
+    ]
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 17
+  },
+  {
+   "uid": "a2",
+   "kind": "unit",
+   "geom": "point",
+   "pts": [
+    [
+     2750,
+     4700
+    ]
+   ],
+   "props": {
+    "affil": "F",
+    "unitType": "infantry",
+    "echelon": "section",
+    "callsign": "ALPHA 2",
+    "size": 26,
+    "parent": "cdu",
+    "ord": 1,
+    "route": "rte",
+    "track": [
+     {
+      "t": 0,
+      "p": [
+       2750,
+       4700
+      ]
+     },
+     {
+      "t": 60,
+      "p": [
+       5150,
+       5100
+      ]
+     }
+    ]
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 18
+  },
+  {
+   "uid": "a3",
+   "kind": "unit",
+   "geom": "point",
+   "pts": [
+    [
+     3200,
+     3300
+    ]
+   ],
+   "props": {
+    "affil": "F",
+    "unitType": "mech",
+    "echelon": "section",
+    "callsign": "ALPHA 3",
+    "size": 26,
+    "parent": "cdu",
+    "ord": 2,
+    "mod": "reinforced",
+    "track": [
+     {
+      "t": 0,
+      "p": [
+       3200,
+       3300
+      ]
+     },
+     {
+      "t": 25,
+      "p": [
+       4350,
+       3650
+      ]
+     }
+    ]
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 19
+  },
+  {
+   "uid": "mo",
+   "kind": "unit",
+   "geom": "point",
+   "pts": [
+    [
+     2950,
+     3900
+    ]
+   ],
+   "props": {
+    "affil": "F",
+    "unitType": "mortar",
+    "echelon": "squad",
+    "callsign": "MORTIERS",
+    "size": 26,
+    "parent": "cdu",
+    "ord": 3,
+    "info": "2 x 81"
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 20
+  },
+  {
+   "uid": "res",
+   "kind": "unit",
+   "geom": "point",
+   "pts": [
+    [
+     0,
+     0
+    ]
+   ],
+   "props": {
+    "affil": "F",
+    "unitType": "infantry",
+    "echelon": "section",
+    "callsign": "RÉSERVE",
+    "size": 26,
+    "parent": "cdu",
+    "ord": 4,
+    "placed": false,
+    "status": "planned"
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 21
+  },
+  {
+   "uid": "eni1",
+   "kind": "unit",
+   "geom": "point",
+   "pts": [
+    [
+     5300,
+     5000
+    ]
+   ],
+   "props": {
+    "affil": "H",
+    "unitType": "infantry",
+    "echelon": "platoon",
+    "callsign": "ENI 1",
+    "size": 26,
+    "ord": 0
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 22
+  },
+  {
+   "uid": "eni2",
+   "kind": "unit",
+   "geom": "point",
+   "pts": [
+    [
+     5900,
+     4200
+    ]
+   ],
+   "props": {
+    "affil": "H",
+    "unitType": "recon",
+    "echelon": "squad",
+    "callsign": "ENI 2",
+    "size": 26,
+    "ord": 1,
+    "status": "planned"
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 23
+  },
+  {
+   "uid": "ch",
+   "kind": "unit",
+   "geom": "point",
+   "pts": [
+    [
+     5450,
+     4750
+    ]
+   ],
+   "props": {
+    "affil": "H",
+    "unitType": "unknown",
+    "echelon": "",
+    "callsign": "CHAR",
+    "size": 26,
+    "sidc": "S*G*EVAT--",
+    "ord": 2
+   },
+   "phases": [],
+   "layer": "base",
+   "z": 24
+  }
+ ]
+}

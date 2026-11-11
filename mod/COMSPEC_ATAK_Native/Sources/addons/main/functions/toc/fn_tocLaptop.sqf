@@ -90,9 +90,6 @@ private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; {
 // structuré écrit avec color='@jeton', traduit puis coloré.
 private _tcol = { params ["_k", ["_al", 1]]; ["rgba", [_k, _al]] call comspec_atak_native_fnc_tocTheme };
 private _tink = { ["ink", _this call comspec_atak_native_fnc_tr] call comspec_atak_native_fnc_tocTheme };
-// Couleur des symboles amis de la carte (jeton « friend »). En 4.7.1 « draw » lisait _sideRgb sans le déclarer : le
-// symbole du poste et les nœuds en direct n'étaient jamais dessinés (audit du 11/2026).
-private _sideRgb = (["friend"] call _tcol) select [0, 3];
 // Calques de la carte (onglet CARTE, fn_tocApp) : gardés tant que le jeu tourne.
 if !("ly" in _st) then { _st set ["ly", createHashMapFromArray [["PL", true], ["AI", true], ["DIR", true], ["VEH", true], ["AIR", true], ["EV", true], ["PLAN", true], ["REL", false], ["COV", false]]]; };
 private _ly = _st get "ly";
@@ -184,6 +181,7 @@ private _relabel = {
 // le contrôle voisin, ex. ZOOM + sur « SUIVRE UN GROUPE »).
 private _tipOf = {
     params ["_c", "_t", ["_raw", false]];
+    if !(_c isEqualType controlNull) exitWith {};
     _c setVariable ["tip", _t];
     _c setVariable ["tipRaw", _raw];
     if (_c getVariable ["tipEh", false]) exitWith {};
@@ -235,7 +233,10 @@ private _place = {
     } forEach _rows;
 };
 
-switch (_mode) do {
+// Modes qui rendent une valeur : le contrôle créé (« mk ») et la liste des défauts (« audit »). Le fichier finit par
+// « true » : sans cette variable, « mk » rendait true à fn_tocDraw et fn_tocHallUi, qui le passaient à « tip »
+// (setVariable sur un booléen : erreur, et l'ouverture du PC s'arrêtait là, journal de TTRD, 4.7.1).
+private _ret = switch (_mode) do {
     case "open": {
         if (!hasInterface || {isNull player} || {!alive player}) exitWith { false };
         if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_TocLapDisp", displayNull])) exitWith { true };
@@ -2079,6 +2080,11 @@ switch (_mode) do {
         private _ts = (0.032 * (safeZoneH / 1.2)) max (((profileNamespace getVariable ["COMSPEC_ATAK_MapTextMinPx", 14]) max 12) * 1.1 * pixelH);
         private _selG = _st getOrDefault ["selG", ""];
         private _selU = _st getOrDefault ["selU", ""];
+        // Couleur du camp sur la carte : jeton « friend » du thème TOC, comme la console ISR (fn_tocSat). La refonte du
+        // thème (4.5.0) avait retiré la définition de _sideRgb du fichier sans retirer ses trois lectures d'ici : une
+        // variable jamais définie vaut « rien », drawIcon sortait « 0 éléments fournis, 4 attendus » à chaque image.
+        private _sideRgb = (["rgba", ["friend"]] call comspec_atak_native_fnc_tocTheme) select [0, 3];
+        if !(_sideRgb isEqualType [] && {(count _sideRgb) isEqualTo 3}) then { _sideRgb = [0.28, 0.62, 1]; };
         // Poste TOC.
         private _o = _st getOrDefault ["obj", objNull];
         private _clear = "#(argb,8,8,3)color(0,0,0,0)";
@@ -2182,4 +2188,5 @@ switch (_mode) do {
         };
     };
 };
+if (_mode in ["mk", "audit"] && {!isNil "_ret"}) exitWith { _ret };
 true

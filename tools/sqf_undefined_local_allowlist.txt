@@ -1,0 +1,4 @@
+# Exceptions de tools/sqf_undefined_local_check.py et tests/Unit/SqfUndefinedLocalAssetTest.php
+# Une ligne par cas : chemin/relatif.sqf:_nom  # raison (obligatoire)
+# Seulement pour un fichier exécuté dans la portée d'un autre (variables de l'appelant). Mieux vaut passer la
+# variable en paramètre que l'ajouter ici.

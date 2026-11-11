@@ -69,14 +69,26 @@ dalle ; 16:9 sans indication). Table `_formats` de `fn_tocScreen.sqf` (`["format
 
 | Rapport | Format | Texture | Affichages |
 | --- | --- | --- | --- |
-| moins de 1,3 (colonne 8:9 d'un écran incurvé) | `COL` | 1024 x 1024 | `COLA` (horloge et chronos), `COLB` (réseau et flux), `TEXT` |
+| moins de 1,3 (colonne 8:9 d'un écran incurvé) | `COL` | 1024 x 1024 | `COLA` (horloge et chronos), `COLB` (réseau et flux), `COLC` (caméras), `COLD` (main courante), `COLE` (exécution), `COLF` (demandes et pertes), `TEXT` |
 | moins de 3 (16:9) | `STD` | 2048 x 1024 (1024 x 512 pour les dalles 55" d'un mur de 7 zones ou plus) | tous sauf bandeau, plaque et colonnes |
 | moins de 6 (4:1) | `STRIP` | 2048 x 512 | `STRIP`, `PLATE`, `TEXT` |
 | moins de 12 (8:1) | `LED` | 2048 x 256 | `TEXT` |
 | au-delà (16:1) | `LED` | 4096 x 256 (2048 x 128 si elle n'est pas chargée) | `TEXT` |
 
 Une texture procédurale n'est acceptée qu'en puissances de 2 : un bandeau de 12:1 serait tassé ou étiré, d'où le 16:1.
-Colonnes `COLA` / `COLB` : 800 x 900 pixels virtuels, régions dans `_walls`, ni en-tête ni pied.
+Colonnes `COLA` à `COLF` : 800 x 900 pixels virtuels, régions dans `_walls`, ni en-tête ni pied.
+
+| Colonne | Contenu | Régions (`_walls`) | Colonnes (`_cols`) |
+| --- | --- | --- | --- |
+| `COLC` | deux vignettes caméra 16:9 (688 x 387, jamais étirées), sources et réglage de la mosaïque, pages de deux | `camHead`, `camSub`, `camRule`, `cam1`, `cam2` | aucune |
+| `COLD` | main courante, entrée sur deux lignes de 84 px (heure, type, auteur ; texte) | `logHead`, `logSub`, `logRule`, `logArea` | `LOG_C` |
+| `COLE` | prochaine ligne d'exécution et temps restant, puis la liste avec sa barre d'avancement | `nxHead` à `nxAt`, `exHead`, `exSub`, `exRule`, `exProg`, `exCols`, `exArea` | `EXCHECK_C` |
+| `COLF` | dernières demandes des éléments, puis pertes et résultats (quatre cases, tableau par élément) | `reqHead`, `reqSub`, `reqRule`, `reqArea`, `killHead`, `killSub`, `killRule`, `killTiles`, `killCols`, `killArea` | `REQ_C`, `KILLS_C` |
+
+Dispositions d'un écran à plusieurs dalles (`fn_tocLayout.sqf`, table `_catalog`) : liste ordonnée du contenu des
+dalles ; un contenu que le format d'une dalle ne permet pas prend son jumeau (table `_twins` : sur une colonne,
+`CLOCK` devient `COLA`, `FEED` / `NET` / `SPLIT` `COLB`, `MOSAIC` / `CAM` `COLC`, `LOG` `COLD`, `EXCHECK` `COLE`,
+`REQ` / `KILLS` `COLF`), sinon l'affichage par défaut de la dalle. Une image 16:9 n'est jamais étirée sur une colonne.
 
 Affichage `TEXT` (`fn_tocText.sqf`, maquettes `bandeau_texte`, `bandeau_texte_long`, `mur_texte`) : panneau `bg0`,
 caractères à chasse fixe gras, couleur du message (`accent`, `amber`, `red`, `text`), bordure fine atténuée. Longueurs en

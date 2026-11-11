@@ -575,7 +575,7 @@ switch (_op) do {
         ["textes d'Eden convertis", _edn isEqualTo ["TOC Bravo", "WEST", "SPLIT", true, 1, "Alpha 1-1", "CAM:Entrée nord", [3, ""], true, 40, 150, "Salle A", "SAT1, CLOCK"]] call _t;
         ["réglage stable (make de make)", (["make", _edn] call _fn) isEqualTo _edn] call _t;
         private _vl = (["viewList", objNull] call _fn) apply { _x select 1 };
-        ["tous les affichages 16:9 proposés", ((["views"] call _ts) - ["STRIP", "PLATE", "COLA", "COLB"]) isEqualTo _vl && {"TEXT" in _vl}] call _t;
+        ["tous les affichages 16:9 proposés", ((["views"] call _ts) - ["STRIP", "PLATE", "COLA", "COLB", "COLC", "COLD", "COLE", "COLF"]) isEqualTo _vl && {"TEXT" in _vl}] call _t;
         private _sp = ["panelSpec", "SAT2, OFF, SQ:Alpha 1-1"] call _ts;
         ["dalles lues", (count _sp) isEqualTo 3 && {((_sp select 0) select [0, 2]) isEqualTo ["SAT", 1]} && {((_sp select 1) param [5, false]) isEqualTo true} && {((_sp select 2) select 2) isEqualTo "Alpha 1-1"}] call _t;
         private _keep = [missionNamespace getVariable "COMSPEC_ATAK_ServerVersion", missionNamespace getVariable "COMSPEC_ATAK_TocForceFallback"];

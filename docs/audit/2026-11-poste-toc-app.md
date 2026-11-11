@@ -21,7 +21,8 @@ un raccourci facultatif, la console n'en dépend pas.
 
 1. **Unités invisibles sur la carte** : `_sideRgb` est lu dans « draw » (symbole du poste, nœuds en direct et anciens)
    sans jamais être déclaré dans `fn_tocLaptop.sqf` (resté dans `fn_tocHallUi.sqf` à la refonte du 11/11). Chaque image
-   lève « variable indéfinie » : seuls les nœuds perdus ou hors ligne (gris) étaient dessinés. Ni le contrôle de casse ni
+   lève « variable indéfinie » : seuls les nœuds perdus ou hors ligne (gris) étaient dessinés (corrigé entre-temps par la
+   4.7.2, avec « mk » qui rendait `true` et arrêtait l'ouverture du PC). Ni le contrôle de casse ni
    les tests statiques ne le voyaient.
 2. **Dépendances au téléphone** (contraires au principe) :
    - carte, GROUPES, recherche, suivi SAT, centrage : uniquement les nœuds ATAK ; un groupe sans téléphone est

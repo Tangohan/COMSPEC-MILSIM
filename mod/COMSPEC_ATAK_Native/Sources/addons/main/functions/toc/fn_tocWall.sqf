@@ -79,7 +79,9 @@ switch (_mode) do {
                 private _sc = _ui get "wSrc";
                 private _src = objectFromNetId (_sc lbData ((lbCurSel _sc) max 0));
                 if (isNull _src) exitWith { "Choisissez l'écran source de la diffusion" call _status; };
-                ["start", [_src, "hall", _hid, []]] call comspec_atak_native_fnc_tocBroadcast;
+                private _n = ["start", [_src, "hall", _hid, []]] call comspec_atak_native_fnc_tocBroadcast;
+                // « start » rend le nombre d'écrans servis (0 : source sans identifiant encore, ou aucun autre écran 16:9 lié).
+                if (!isNil "_n" && {_n isEqualType 0} && {_n <= 0}) exitWith { "Diffusion refusée : aucun autre écran 16:9 lié à la salle, ou écran source pas encore prêt" call _status; };
                 (format ["%1 est diffusé sur les écrans 16:9 de la salle", [_src] call _nameOf]) call _status;
             };
             case "wBcStop": {

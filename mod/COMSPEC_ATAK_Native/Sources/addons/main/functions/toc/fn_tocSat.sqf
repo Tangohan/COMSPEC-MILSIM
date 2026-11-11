@@ -206,7 +206,7 @@ switch (_mode) do {
         _cam camSetFov _fov;
         _cam camCommit 0;
         _cam setVariable ["COMSPEC_ATAK_Fov", _fov];
-        _cam cameraEffect ["Internal", "Back", _rt];
+        ["open", [_cam, _rt]] call comspec_atak_native_fnc_tocRtt;
         // [caméra, cible, bail, capteur rendu, résolution, sol de référence (relief non suivi), fov courant, bail du PC]
         _e = [_cam, _rt, _e select 2, "", _q, _gz, _fov, _e param [7, 0]];
         _cams set [_k, _e];
@@ -267,8 +267,7 @@ switch (_mode) do {
         if ((count _e) < 8 || {isNull (_e select 0)} || {(_e select 4) isEqualTo _q}) exitWith { false };
         private _p = _k splitString "|";
         private _rt = [_p select 0, parseNumber (_p select 1), _q] call _rtOf;
-        (_e select 0) cameraEffect ["Terminate", "Back", _e select 1];
-        (_e select 0) cameraEffect ["Internal", "Back", _rt];
+        ["swap", [_e select 0, _e select 1, _rt]] call comspec_atak_native_fnc_tocRtt;
         _e set [1, _rt];
         _e set [3, ""];
         _e set [4, _q];
@@ -278,8 +277,7 @@ switch (_mode) do {
         private _k = _a call _keyOf;
         private _e = _cams getOrDefault [_k, []];
         if ((count _e) < 2 || {isNull (_e select 0)}) exitWith { _cams deleteAt _k; false };
-        (_e select 0) cameraEffect ["Terminate", "Back", _e select 1];
-        camDestroy (_e select 0);
+        ["close", [_e select 0, _e select 1]] call comspec_atak_native_fnc_tocRtt;
         _cams deleteAt _k;
         ["INFO", "TOC", format ["Satellite %1 : rendu arrêté sur ce poste", _k]] call comspec_atak_native_fnc_log;
         true
@@ -400,10 +398,13 @@ switch (_mode) do {
             _c ctrlShow false;
             _c
         };
-        private _ln = { private _c = ["RscText"] call _mkc; _c ctrlSetText ""; _c };
+        // Trait : sa couleur est posée dès la création (un contrôle montré avant d'être peint sortait en bloc clair).
+        private _ln = { private _c = ["RscText"] call _mkc; _c ctrlSetText ""; _c ctrlSetBackgroundColor [0, 0, 0, 0]; _c ctrlSetPosition [0, 0, 0, 0]; _c ctrlCommit 0; _c };
         private _tx = {
             params [["_f", _pf get "fH"]];
             private _c = ["RscText"] call _mkc;
+            _c ctrlSetPosition [0, 0, 0, 0];
+            _c ctrlCommit 0;
             _c ctrlSetFont "EtelkaMonospacePro";
             _c ctrlSetFontHeight _f;
             _c setVariable ["COMSPEC_ATAK_F", _f];
@@ -412,7 +413,7 @@ switch (_mode) do {
             _c ctrlSetTextColor (["rgba", ["text"]] call comspec_atak_native_fnc_tocTheme);
             _c
         };
-        private _seg = { private _c = ["RscPicture"] call _mkc; _c ctrlSetText "#(argb,8,8,3)color(1,1,1,1)"; _c };
+        private _seg = { private _c = ["RscPicture"] call _mkc; _c ctrlSetText "#(argb,8,8,3)color(1,1,1,1)"; _c ctrlSetTextColor [0, 0, 0, 0]; _c ctrlSetPosition [0, 0, 0, 0]; _c ctrlCommit 0; _c };
         private _hud = createHashMapFromArray [["prof", _pf], ["wall", _wall], ["all", []]];
         private _all = _hud get "all";
         private _put = { params ["_k", "_v"]; _hud set [_k, _v]; if (_v isEqualType controlNull) then { _all pushBack _v; } else { { if (_x isEqualType []) then { _all append _x; } else { _all pushBack _x; }; } forEach _v; }; };
@@ -662,12 +663,21 @@ switch (_mode) do {
         {
             private _o = _x;
             private _c = _o getVariable ["COMSPEC_ATAK_TocScr", []];
+            // Diffusion (fn_tocBroadcast) d'un écran satellite : la dalle qui le recopie demande le même rendu que lui.
+            if ((_c param [3, ""]) isEqualTo "BROADCAST") then {
+                private _bs = ["source", _o] call comspec_atak_native_fnc_tocBroadcast;
+                if (!isNull _bs) then { _c = _bs getVariable ["COMSPEC_ATAK_TocScr", []]; };
+            };
             if ((count _c) >= 8 && {(_c select 3) isEqualTo "SAT"} && {alive _o} && {!(_o getVariable ["COMSPEC_ATAK_TocOff", false])} && {(_eye distance _o) < _range}
                 && {(_c select 1) in ["", _me]}
                 && {(getNumber (configOf _o >> "comspec_projBoard")) < 1 || {_o getVariable ["COMSPEC_ATAK_ProjLit", false]}}
                 && {call {
-                    if ((worldToScreen (ASLToAGL getPosASL _o)) isNotEqualTo []) then { _o setVariable ["COMSPEC_ATAK_TocSatSeen", diag_tickTime]; };
-                    diag_tickTime - (_o getVariable ["COMSPEC_ATAK_TocSatSeen", -1e9]) < 3
+                    // Centre de l'image (pas l'origine du modèle, au sol ou au plafond). Rendu gardé 12 s après le dernier
+                    // regard : avant (3 s), la caméra du satellite était détruite puis recréée à chaque coup d'œil ailleurs,
+                    // l'image passait par « en attente » au centre de l'écran, et le journal alternait « rendu sur ce
+                    // poste » / « rendu arrêté » (retour de TTRD : « on voit bien le clignotement »).
+                    if ((worldToScreen (ASLToAGL (["center", _o] call comspec_atak_native_fnc_tocScreen))) isNotEqualTo []) then { _o setVariable ["COMSPEC_ATAK_TocSatSeen", diag_tickTime]; };
+                    diag_tickTime - (_o getVariable ["COMSPEC_ATAK_TocSatSeen", -1e9]) < 12
                 }}) then {
                 private _k = [[_c select 1, _me] select ((_c select 1) isEqualTo ""), (_c param [8, 0]) min 1 max 0] call _keyOf;
                 private _d = _eye distance _o;

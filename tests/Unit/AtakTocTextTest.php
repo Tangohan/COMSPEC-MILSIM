@@ -53,7 +53,7 @@ final class AtakTocTextTest extends TestCase
         $scr = self::read(self::TOC . 'fn_tocScreen.sqf');
         $txt = self::read(self::TOC . 'fn_tocText.sqf');
         self::assertStringContainsString('class tocText {};', self::read(self::MAIN . 'config.cpp'));
-        self::assertMatchesRegularExpression('/private _views = \[[^\]]*"TEXT", "COLA", "COLB"\];/', $scr);
+        self::assertMatchesRegularExpression('/private _views = \[[^\]]*"TEXT",[^\]]*"COLA", "COLB"[^\]]*\];/', $scr);
         self::assertStringContainsString('["TEXT", ["TEXTE", "texte à LED"]]', $scr);
         // Liste centrale des affichages : « params » donne les paramètres de l'affichage (fenêtres de réglage génériques).
         self::assertStringContainsString('[[], ["schema"] call comspec_atak_native_fnc_tocText] select (_a isEqualTo "TEXT")', $scr);
@@ -134,7 +134,7 @@ final class AtakTocTextTest extends TestCase
         self::assertStringContainsString('[_est, _m] select (_m > 0.5 * _est && {_m < 2 * _est})', $txt);
         // Redessin chaque seconde (variables d'heure, tour de rôle, FLASH), budget de huit images par tour.
         $scr = self::read(self::TOC . 'fn_tocScreen.sqf');
-        self::assertStringContainsString('in ["CLOCK", "SAT", "STRIP", "MOSAIC", "TEXT", "COLA"]', $scr);
+        self::assertMatchesRegularExpression('/in \["CLOCK", "SAT", "STRIP", "MOSAIC", "TEXT",[^\]]*"COLA"[^\]]*\]/', $scr);
         self::assertStringContainsString('if (_due && {_drawn < 8 || {_last < 0}}) then {', $scr);
     }
 
@@ -208,7 +208,7 @@ final class AtakTocTextTest extends TestCase
         $thm = self::read(self::TOC . 'fn_tocTheme.sqf');
         $brd = self::read(self::TOC . 'fn_tocBoard.sqf');
         $walls = array_column(self::table($thm, '_walls'), 1, 0);
-        foreach (['COLA', 'COLB'] as $view) {
+        foreach (['COLA', 'COLB', 'COLC', 'COLD', 'COLE', 'COLF'] as $view) {
             self::assertArrayHasKey($view, $walls);
             self::assertMatchesRegularExpression('/case "' . $view . '": \{/', $brd);
             foreach ($walls[$view] as [$name, $x, $y, $w, $h]) {
@@ -225,10 +225,12 @@ final class AtakTocTextTest extends TestCase
     {
         $scr = self::read(self::TOC . 'fn_tocScreen.sqf');
         $txt = self::read(self::TOC . 'fn_tocText.sqf');
-        // ACE : « Afficher un texte… » ouvre la fenêtre de saisie (écran et chaque dalle d'un mur).
-        self::assertStringContainsString('["Txt", "Afficher un texte…", "text"] call _mk', $scr);
+        // ACE : « Texte à LED… » ouvre la fenêtre de saisie (écran et chaque dalle d'un mur) ; arbre dans fn_tocMenu (4.8.0).
+        $menu = self::read(self::TOC . 'fn_tocMenu.sqf');
+        self::assertStringContainsString('["TEXT", ["text", "Texte à LED…", ', $menu);
         self::assertStringContainsString('case "text": { [{ ["edit", _this] call comspec_atak_native_fnc_tocText; }, _o] call comspec_atak_native_fnc_nextFrame; };', $scr);
-        self::assertStringContainsString('"COMSPEC_ATAK_WallPnTxt" + str _k', $scr);
+        self::assertStringContainsString('format ["pntxt|%1", _i]] call _leaf', $menu);
+        self::assertStringContainsString('case "pntxt": {', $menu);
         // PC du poste (onglet SALLE), app Poste TOC, module Eden / Zeus.
         $hall = self::read(self::TOC . 'fn_tocHallUi.sqf');
         self::assertStringContainsString('["Texte (panneau à LED)…", "TEXT"]', $hall);
@@ -257,7 +259,7 @@ final class AtakTocTextTest extends TestCase
         // Français et anglais : libellés des paramètres et de l'éditeur.
         $en = self::read(self::MAIN . 'i18n/en.txt');
         $xx = self::read('mod/COMSPEC_ATAK_Native/localisation/template/xx.txt');
-        $labels = ['Afficher un texte…', 'Texte de l\'écran', 'AFFICHER SUR L\'ÉCRAN', 'AJOUTER UN MESSAGE', 'Toujours défiler', 'Si le texte dépasse', 'Clignotant (alerte)',
+        $labels = ['Afficher un texte…', 'Texte à LED…', 'Modifier le texte LED…','Texte de l\'écran', 'AFFICHER SUR L\'ÉCRAN', 'AJOUTER UN MESSAGE', 'Toujours défiler', 'Si le texte dépasse', 'Clignotant (alerte)',
             'Texte (panneau à LED)…', 'Colonne horloge et chronos', 'Colonne réseau et flux', 'texte à LED', 'Texte envoyé à l\'écran'];
         foreach (self::table($txt, '_schema') as [, $label, , , $choices]) {
             $labels[] = $label;
