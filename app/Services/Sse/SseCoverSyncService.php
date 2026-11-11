@@ -47,7 +47,12 @@ final class SseCoverSyncService
         $now ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $nowIso = $now->format('Y-m-d\TH:i:s\Z');
         $out = [];
+        // Couvertures révoquées par le membre (Outils opérateur) : absentes de la liste du téléphone.
+        $revoked = \App\Repositories\OperatorHubRepository::revokedCoverIds($tenantId, $userId);
         foreach ($this->exports->listFilesForUser($tenantId, $userId, self::LIST_LIMIT) as $row) {
+            if (isset($revoked[(int) $row['id']])) {
+                continue;
+            }
             $json = (string) ($row['payload_json'] ?? '');
             // Lecture sans contrôle de date (epoch) : une couverture expirée reste listée, marquée « expired ».
             $parsed = SseCoverExportService::parse($json, new \DateTimeImmutable('@0'));
