@@ -68,7 +68,7 @@ private _moodCol = {
     params ["_k"];
     switch (_k) do {
         case "calme": { [0.45, 0.8, 0.5] };
-        case "attentif"; case "coopere": { [0.45, 0.78, 0.74] };
+        case "attentif"; case "coopere"; case "follow": { [0.45, 0.78, 0.74] };
         case "tendu"; case "refuse"; case "ment": { [0.95, 0.72, 0.28] };
         case "nerveux": { [1, 0.55, 0.25] };
         case "fuit"; case "agressif"; case "renforts": { [0.9, 0.32, 0.27] };

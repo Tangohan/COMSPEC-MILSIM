@@ -263,6 +263,37 @@ missionNamespace setVariable ["comspec_sse_iarpZenQa", {
     }] call comspec_sse_iarpZenWithProfile;
 }, _has, [_root, _root + "_profile"], 83] call _mk;
 
+// Agressivité de ces IA envers les joueurs (fn_iarpAggro) : niveau (jamais, verbale, physique), trait de caractère,
+// intensité des dégâts, mortel, rayon (toutes les IA autour de la première : réglage par zone), ordre immédiat.
+["_aggro", "STR_COMSPEC_IARP_Z_Aggro", _ip + "mod_person.paa", {
+    private _units = _this call comspec_sse_iarpZenTargets;
+    if (_units isEqualTo []) exitWith {};
+    private _u = _units select 0;
+    private _modes = ["auto", "off", "verbal", "physical"];
+    private _traits = ["auto", "none", "hostile", "irritable", "drunk", "fanatic", "resentful", "proud", "bluff"];
+    private _acts = ["", "attack", "calm", "calmOn", "calmOff", "safe", "safeClear"];
+    private _dmg = _u getVariable ["comspec_sse_aggroDmg", -1];
+    private _lethal = _u getVariable ["comspec_sse_aggroLethal", -1];
+    [["STR_COMSPEC_IARP_Z_Aggro", _units, ""] call comspec_sse_iarpZenTitle, [
+        ["LIST", [localize "STR_COMSPEC_IARP_Z_AggroMode", localize "STR_COMSPEC_IARP_Z_AggroMode_D"],
+            [_modes, [localize "STR_COMSPEC_IARP_Z_Aggro_auto", localize "STR_COMSPEC_IARP_S_Aggro_off", localize "STR_COMSPEC_IARP_S_Aggro_verbal", localize "STR_COMSPEC_IARP_S_Aggro_physical"],
+                (_modes find (_u getVariable ["comspec_sse_aggroMode", "auto"])) max 0, 4]],
+        ["LIST", [localize "STR_COMSPEC_IARP_Z_AggroTrait", localize "STR_COMSPEC_IARP_Z_AggroTrait_D"],
+            [_traits, _traits apply { localize ("STR_COMSPEC_IARP_Z_AggroTrait_" + _x) }, (_traits find (_u getVariable ["comspec_sse_aggroTrait", "auto"])) max 0, 6]],
+        ["CHECKBOX", [localize "STR_COMSPEC_IARP_Z_AggroDmgOwn", localize "STR_COMSPEC_IARP_Z_AggroDmgOwn_D"], _dmg >= 0],
+        ["SLIDER", [localize "STR_COMSPEC_IARP_Z_AggroDmg", localize "STR_COMSPEC_IARP_Z_AggroDmg_D"], [0, 100, [_dmg, missionNamespace getVariable ["comspec_sse_iarp_aggroDamage", 50]] select (_dmg < 0), 0]],
+        ["LIST", [localize "STR_COMSPEC_IARP_Z_AggroLethal", localize "STR_COMSPEC_IARP_Z_AggroLethal_D"],
+            [[-1, 0, 1], [localize "STR_COMSPEC_IARP_Z_Aggro_auto", localize "STR_COMSPEC_IARP_Z_Aggro_no", localize "STR_COMSPEC_IARP_Z_Aggro_yes"], ([-1, 0, 1] find _lethal) max 0, 3]],
+        ["SLIDER", [localize "STR_COMSPEC_IARP_Z_AggroRadius", localize "STR_COMSPEC_IARP_Z_AggroRadius_D"], [0, 300, 0, 0]],
+        ["LIST", [localize "STR_COMSPEC_IARP_Z_AggroAct", localize "STR_COMSPEC_IARP_Z_AggroAct_D"],
+            [_acts, ["none", "attack", "calm", "calmOn", "calmOff", "safe", "safeClear"] apply { localize ("STR_COMSPEC_IARP_Z_AggroAct_" + _x) }, 0, 7]]
+    ], {
+        params ["_v", "_args"];
+        _v params ["_mode", "_trait", "_own", "_dmg", "_lethal", "_radius", "_act"];
+        ["aggroSet", [_mode, _trait, [-1, round _dmg] select (_own isEqualTo true), _lethal, round _radius, _act], _args select 0] call comspec_sse_iarpZenSend;
+    }, {}, [_units]] call zen_dialog_fnc_create;
+}, _has, [_root, _root + "_profile"], 82] call _mk;
+
 // --- Identité et papiers (addon identity : mêmes opérations serveur que ses modules « Donner des papiers », « Voir les
 // vrais papiers » et que la page « IA de la zone » de l'éditeur SSE) --------------------------------------------------
 private _idIcon = "\z\comspec_sse\addons\identity\data\icon_card_ca.paa";
