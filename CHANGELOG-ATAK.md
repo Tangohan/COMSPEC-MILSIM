@@ -38,6 +38,21 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : zoom de la carte du téléphone porté qui reste centré sur vous (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Le zoom de la carte du téléphone porté reste centré sur vous
+- Téléphone en petit (ou « Suivre ma position »), zoomer ou dézoomer ne fait plus glisser la carte vers un autre point avant de revenir sur vous : elle reste sur votre position pendant tout le zoom, même en véhicule.
+- Sans suivi, le zoom garde le centre de la carte, sans saut à la fin.
+EN : The worn phone map zoom stays centred on you
+- With the phone in its small view (or "Follow my position"), zooming in or out no longer slides the map towards another point before coming back to you: it stays on your position during the whole zoom, even in a vehicle.
+- Without following, the zoom keeps the map centre, with no jump at the end.
+
+### Détail technique
+- `fn_mapZoom` : centre recalculé à chaque image (position GPS du moment, unité suivie, ou centre visible fixe), cible par la fonction pure `fn_mapZoomAim` (décalage centre interne / visible normalisé par l'échelle, gardé d'un cran à l'autre), `comspec_lastAim` tenu à jour ; plus de `fn_mapCenter` final quand on suit (il visait avec l'ancien décalage).
+- `comspec_zoomUntil` : le suivi image par image (`fn_mapOnDraw`) et le recentrage de `fn_statusUpdate` se taisent pendant le zoom. Auto-contrôle `["check"] call comspec_atak_native_fnc_mapZoomAim`. Test : `AtakMapMiniZoomFollowAssetTest`.
+
 ## Pack 4.5.0 Washington : rendu professionnel des écrans TOC et du PC du poste, satellite devenu console ISR (ATAK natif 4.5.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 
 ### Résumé joueur
