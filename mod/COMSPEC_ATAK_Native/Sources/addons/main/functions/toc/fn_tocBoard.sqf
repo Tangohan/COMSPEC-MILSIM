@@ -43,14 +43,15 @@ switch (_mode) do {
     case "overlay": {
         _a params ["_o", "_d"];
         private _ui = _d getVariable ["COMSPEC_ATAK_TocBoardUi", createHashMap];
-        if ((count _ui) isEqualTo 0) exitWith {};
+        if ((count _ui) isEqualTo 0) exitWith { false };
         private _c = _o getVariable ["COMSPEC_ATAK_TocScr", []];
         private _side = [_c param [1, ""], str side group player] select ((_c param [1, ""]) isEqualTo "");
         private _n = ((_c param [8, 0]) max 0) min 1;
         private _rgb = (createHashMapFromArray [["WEST", [0.35, 0.68, 1]], ["EAST", [1, 0.38, 0.32]], ["GUER", [0.4, 0.9, 0.45]], ["CIV", [0.8, 0.55, 1]]]) getOrDefault [_side, [0.35, 0.68, 1]];
         private _boxes = _ui get "boxes";
         private _used = 0;
-        if ((["rt", [_side, _n]] call comspec_atak_native_fnc_tocSat) isNotEqualTo "") then {
+        private _rendered = (["rt", [_side, _n]] call comspec_atak_native_fnc_tocSat) isNotEqualTo "";
+        if (_rendered) then {
             {
                 _x params ["", "_cs", "_fr", "_kind", "_pos", "_size"];
                 if (_used >= (count _boxes)) exitWith {};
@@ -83,6 +84,7 @@ switch (_mode) do {
             } forEach (["targets", _side] call comspec_atak_native_fnc_tocSat);
         };
         for "_i" from _used to ((count _boxes) - 1) do { { _x ctrlShow false; } forEach (_boxes select _i); };
+        _rendered
     };
     case "draw": {
         _a params ["_o", "_d", "_view"];
@@ -171,26 +173,24 @@ switch (_mode) do {
                 };
                 ["overlay", [_o, _d]] call _fn;
                 // Cadres de suivi 5 fois par seconde tant que l'image est rendue (la carte de fond, elle, reste à 1 s).
-                private _live = missionNamespace getVariable ["COMSPEC_ATAK_TocBoardLive", []];
+                private _live = uiNamespace getVariable ["COMSPEC_ATAK_TocBoardLive", []];
                 if (_tex isNotEqualTo "" && {(_live findIf { (_x select 0) isEqualTo _o }) < 0}) then {
                     _live pushBack [_o, _d];
-                    missionNamespace setVariable ["COMSPEC_ATAK_TocBoardLive", _live];
+                    uiNamespace setVariable ["COMSPEC_ATAK_TocBoardLive", _live];
                     if (isNil { missionNamespace getVariable "COMSPEC_ATAK_TocBoardPfh" }) then {
                         missionNamespace setVariable ["COMSPEC_ATAK_TocBoardPfh", [{
-                            private _l = (missionNamespace getVariable ["COMSPEC_ATAK_TocBoardLive", []]) select {
+                            private _l = (uiNamespace getVariable ["COMSPEC_ATAK_TocBoardLive", []]) select {
                                 _x params ["_o", "_d"];
                                 !isNull _o && {!isNull _d} && {((_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isEqualTo "SAT"}
                                     && {(_o getVariable ["COMSPEC_ATAK_TocTex", ""]) isNotEqualTo ""}
                             };
-                            missionNamespace setVariable ["COMSPEC_ATAK_TocBoardLive", _l];
+                            uiNamespace setVariable ["COMSPEC_ATAK_TocBoardLive", _l];
                             if ((count _l) isEqualTo 0) exitWith {
                                 [missionNamespace getVariable "COMSPEC_ATAK_TocBoardPfh"] call CBA_fnc_removePerFrameHandler;
                                 missionNamespace setVariable ["COMSPEC_ATAK_TocBoardPfh", nil];
                             };
-                            {
-                                ["overlay", _x] call comspec_atak_native_fnc_tocBoard;
-                                displayUpdate (_x select 1);
-                            } forEach _l;
+                            // Image rendue sur ce poste seulement : sinon rien à redessiner.
+                            { if (["overlay", _x] call comspec_atak_native_fnc_tocBoard) then { displayUpdate (_x select 1); }; } forEach _l;
                         }, 0.2] call CBA_fnc_addPerFrameHandler];
                     };
                 };
