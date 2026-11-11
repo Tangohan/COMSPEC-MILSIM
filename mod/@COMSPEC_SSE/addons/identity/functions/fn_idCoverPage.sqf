@@ -9,6 +9,7 @@
       ZEUS       (curateur seulement) les infiltrés et leur cohérence ; un clic ouvre la fiche de l'un d'eux
     Rendu : [page, rectangle] (fn_pageRender de l'ATAK). Actions : ["act", action, argument] call comspec_sse_fnc_idCoverPage
       refresh · tab · answer [qid, index] · open netId (Zeus) · back · fold clé · pull (paquet Athena)
+      import (fichier) · forget · sync (fenêtre Mes couvertures sur Athena, fn_idCoverAthena, dessinée à la place de la page)
       received [ancienne fiche, nouvelle] · synced   réponses du serveur et d'Athena ; même fiche : page laissée telle quelle,
                  seule la note change sur place s'il n'y a que ça de nouveau
       ask [unité, complète] · dirty ("" | "server")   demande de fiche ; fiche périmée par un évènement (XEH_postInitClient)
@@ -82,6 +83,8 @@ if (_page isEqualTo "act") exitWith {
             call _render;
         };
         case "import": { ["run"] call comspec_sse_fnc_idCoverImport; };
+        // Mes couvertures sur Athena : fenêtre dessinée à la place de la page (fn_idCoverAthena).
+        case "sync": { ["open"] call comspec_sse_fnc_idCoverAthena; };
         case "forget": { ["forget"] call comspec_sse_fnc_idCoverImport; };
         case "pull": {
             ["send", ["coverPull", [player]]] call comspec_sse_fnc_idClient;
@@ -128,6 +131,11 @@ disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 if ((count _rect) isEqualTo 4) then { _bw = _rect select 2; _bh = _rect select 3; };
+// Fenêtre Mes couvertures sur Athena ouverte : elle occupe toute la page, rien d'autre dessous (comme la fiche d'un cliché
+// de l'app Drone). FERMER ou retour la referme.
+if (["isOpen"] call comspec_sse_fnc_idCoverAthena) exitWith {
+    [["rows"] call comspec_sse_fnc_idCoverAthena, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+};
 private _th = [] call comspec_atak_native_fnc_theme;
 private _hDim = _th get "hexTextDim";
 private _hOk = _th get "hexOk";
@@ -318,24 +326,22 @@ private _sheetRows = {
             };
         };
 
-        // Importer ma couverture : fichier généré sur Athena, lu sur ce poste. Aucune connexion à Athena, aucune requête réseau.
+        // Importer ma couverture : depuis Athena (fenêtre Mes couvertures sur Athena, par COMSPEC Link, derrière la licence)
+        // ou d'un fichier généré sur Athena et lu sur ce poste (sans connexion, aucune requête réseau).
         private _imp = missionNamespace getVariable ["comspec_sse_idCoverImportSt", createHashMap];
         private _isImported = _s getOrDefault ["imported", false];
         private _impOpen = (_st getOrDefault ["folds", createHashMap]) getOrDefault ["import", !_isImported];
-        _rows pushBack ["fold", "Importer ma couverture" call _tr, (["Aucun fichier importé", "Couverture importée"] select _isImported) call _tr, _impOpen, ["fold", ["import", !_isImported]] call _act];
+        _rows pushBack ["fold", "Importer ma couverture" call _tr, (["Aucune couverture importée", "Couverture importée"] select _isImported) call _tr, _impOpen, ["fold", ["import", !_isImported]] call _act];
         if (_impOpen) then {
-            private _steps = [
-                "1. Sur Athena > Ma couverture, cliquez Générer puis Télécharger.",
-                "2. Déposez le fichier dans Documents\Arma 3 - COMSPEC.",
-                "3. Ici, cliquez Importer."
-            ] apply { [_x call _tr] call _esc };
-            _rows pushBack ["text", format ["<t size='0.9' color='%2'>%1</t>", _steps joinString "<br/>", _hText]];
+            _rows pushBack ["text", format ["<t size='0.9' color='%2'>%1</t>", [("Récupérez vos couvertures Athena directement ici : touchez Synchroniser avec Athena, choisissez-les, puis importez. Celle que vous jouez est l'active." call _tr)] call _esc, _hText]];
             if ((_imp getOrDefault ["text", ""]) isNotEqualTo "") then {
                 _rows pushBack ["text", format ["<t color='%1'>%2</t>", [_hAlert, _hOk] select ((_imp getOrDefault ["kind", ""]) isEqualTo "ok"), [(_imp get "text") call _tr] call _esc]];
             };
-            private _b = [["IMPORTER MA COUVERTURE" call _tr, ["import"] call _act, false, true, "Lit le fichier déposé dans Documents\Arma 3 - COMSPEC. Rien n'est envoyé à Athena." call _tr]];
+            _rows pushBack ["buttons", [["SYNCHRONISER AVEC ATHENA" call _tr, ["sync"] call _act, true, true, "Liste vos couvertures sur Athena et importe celles que vous choisissez (compte Athena lié, licence acceptée)." call _tr]]];
+            private _b = [["IMPORTER UN FICHIER" call _tr, ["import"] call _act, false, true, "Lit le fichier déposé dans Documents\Arma 3 - COMSPEC. Rien n'est envoyé à Athena." call _tr]];
             if (_isImported) then { _b pushBack ["Oublier l'import" call _tr, ["forget"] call _act, false, true, "Revient à la légende d'avant, sans toucher à vos papiers." call _tr]; };
             _rows pushBack ["buttons", _b];
+            _rows pushBack ["text", format ["<t size='0.8' color='%2'>%1</t>", [("Sans connexion : sur Athena › Ma couverture, téléchargez le fichier, déposez-le dans Documents\Arma 3 - COMSPEC, puis touchez Importer un fichier." call _tr)] call _esc, _hDim]];
         };
     };
 

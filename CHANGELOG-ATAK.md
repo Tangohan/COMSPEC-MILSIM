@@ -38,6 +38,26 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : Récupérez vos couvertures Athena directement depuis le téléphone (SSE et site, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Récupérez vos couvertures Athena directement depuis le téléphone
+- Dans l'app Ma couverture, touchez « Synchroniser avec Athena » : la liste de vos couvertures Athena s'ouvre, cochez celles que vous voulez et importez-les, sans fichier à télécharger ni à déplacer.
+- La plus récente devient votre couverture active ; les autres restent sur le téléphone et s'activent d'un geste. Sans connexion, « Importer un fichier » marche toujours comme avant.
+EN : Get your Athena covers right from the phone
+- In the My cover app, tap "Sync with Athena": the list of your Athena covers opens, tick the ones you want and import them, with no file to download or move.
+- The most recent one becomes your active cover; the others stay on the phone and can be activated with one tap. Without a connection, "Import a file" still works as before.
+
+### Détail technique
+- SSE, app Ma couverture (`fn_idCoverPage`) : section Importer ma couverture refaite : bouton principal SYNCHRONISER AVEC ATHENA, IMPORTER UN FICHIER (ancienne lecture du fichier `Documents\Arma 3 - COMSPEC`, inchangée), Oublier l'import, rappel de la voie sans connexion. Les trois étapes manuelles disparaissent.
+- Nouvelle fenêtre « Mes couvertures sur Athena » (`fn_idCoverAthena`, dessinée à la place de la page avec les composants `fn_formRender` : header, text, empty, skeleton, buttons, person) : ligne d'état, CHOISIR / CHOISIE par couverture, TOUT SÉLECTIONNER, IMPORTER LA SÉLECTION (n), ACTIVER, RÉESSAYER, FERMER. États vides : service coupé, licence non acceptée, liaison pas encore autorisée, compte non lié (LIER MON COMPTE ouvre l'app Athena), COMSPEC Link absent ou ancien, site pas à jour, Athena muette, aucune couverture. Aucune alerte hors du téléphone.
+- Garde avant toute requête (licence `fn_licenceStatus`, `COMSPEC_AthenaReady`, `athenaStatus` logged, service Athena, `["has"] fn_idAthenaPack`) : rien ne part sans elle.
+- Réseau sans nouvelle commande DLL : `GetIdentityPack` (COMSPEC Link 2.0.118+) avec l'opération `~covers` (liste) ou `~cover:CVR-…,…` (5 fichiers au plus), `since` = `v=1`, réponse dans `settings` (`covers_api` 1), appel non bloquant puis `GetIdentityPackChunk`. Verrou `comspec_sse_idPackBusy` partagé avec `fn_idAthenaPack « fetch »` (même tampon de la DLL) et contrôle de l'opération lue.
+- Couvertures reçues revalidées par `fn_idCoverImport « clean »`, gardées dans le profil (`comspec_sse_idCoverLib`, 10 au plus, jamais l'active en moins) ; nouvelle action `fn_idCoverImport « use »` (profil, envoi au serveur, légende), aussi utilisée par l'import d'un fichier. Le serveur, la légende (`fn_idLegend`) et les papiers sont inchangés.
+- Site : `GET /api/atak/covers`, `GET /api/atak/covers/files`, relais `op=~covers` / `~cover:` de `/api/sse/identity/pack` (PR site séparée). Contrat : `docs/ATAK_COUVERTURE_IMPORT.md`.
+- Guides SSE `ma_couverture.md` / `.en.md`, i18n `en.txt`, `localisation/template/xx.txt`, `tools/i18n_identity_en.tsv`.
+
 ## SSE 1.9.0 : fenêtre « Réponses de l'IA » simple, peur d'une arme braquée de près, champs des documents (SSE 1.9.0)
 
 ### Résumé joueur

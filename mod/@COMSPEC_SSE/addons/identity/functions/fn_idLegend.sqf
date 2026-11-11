@@ -375,7 +375,7 @@ switch (_op) do {
                     default { "Le serveur n'a pas encore reçu le paquet d'identité d'Athena (chargement en cours, ou serveur sans COMSPEC Link en attente d'un poste relié). Nouvel essai automatique ; touchez Demander la mise à jour." };
                 };
                 _diag pushBack ["ko", "Paquet Athena non chargé", _why];
-                _diag pushBack ["warn", "En attendant", "Sur Athena : fiche membre › Identité & papiers › Télécharger ma couverture (identité Athena), puis ici Importer ma couverture. Aucune connexion n'est nécessaire en jeu."];
+                _diag pushBack ["warn", "En attendant", "Générez votre couverture sur Athena (Ma couverture, identité Athena), puis ici Importer ma couverture › Synchroniser avec Athena. Sans connexion : téléchargez le fichier et touchez Importer un fichier."];
             };
             case (_kit isEqualTo []): {
                 _diag pushBack ["ko", "Aucun papier Athena pour votre compte", "Le paquet ne contient rien pour votre Steam ID : compte Steam non lié sur Athena, aucun papier émis pour votre identité, ou papier réservé à une autre carte ou opération."];

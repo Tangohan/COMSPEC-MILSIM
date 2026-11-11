@@ -96,6 +96,7 @@ class CfgFunctions {
             class idCoverPage {};
             class idCoverSync {};
             class idCoverImport {};
+            class idCoverAthena {};
             class idBio {};
             class idHvt {};
             class idAiConfig {};

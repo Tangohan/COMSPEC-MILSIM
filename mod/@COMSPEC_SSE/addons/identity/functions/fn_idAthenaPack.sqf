@@ -126,8 +126,17 @@ switch (_op) do {
         private _opKey = missionNamespace getVariable ["comspec_sse_id_opKey", ""];
         private _since = if (_self) then { "" } else { missionNamespace getVariable ["comspec_sse_idPackTs", ""] };
         if (_self) then { _opKey = ["~self", "~self:" + _opKey] select (_opKey isNotEqualTo ""); };
+        // Tampon du paquet partagé avec la fenêtre Mes couvertures sur Athena (fn_idCoverAthena, même commande) : une
+        // lecture à la fois. Hors tâche planifiée, l'appel se fait d'un bloc et ne peut pas être interrompu.
+        private _lock = canSuspend;
+        if (_lock) then {
+            private _t = diag_tickTime;
+            waitUntil { sleep 0.1; !(missionNamespace getVariable ["comspec_sse_idPackBusy", false]) || {(diag_tickTime - _t) > 30} };
+            missionNamespace setVariable ["comspec_sse_idPackBusy", true];
+        };
         private _head = ["GetIdentityPack", [str (missionNamespace getVariable ["COMSPEC_MapId", 1]), _opKey, _since]] call comspec_sse_fnc_extensionCall;
         if ((_head select [0, 3]) isNotEqualTo "OK|") exitWith {
+            if (_lock) then { missionNamespace setVariable ["comspec_sse_idPackBusy", false]; };
             private _err = (_head splitString "|") param [1, ""];
             if (_head isEqualTo "") then { _err = "no_answer"; };
             missionNamespace setVariable ["comspec_sse_idPackErr", _err select [0, 24]];
@@ -144,6 +153,7 @@ switch (_op) do {
             if ((_c select [0, 3]) isNotEqualTo "OK|") exitWith { _ok = false; };
             _buf = _buf + (_c select [3]);
         };
+        if (_lock) then { missionNamespace setVariable ["comspec_sse_idPackBusy", false]; };
         if (!_ok) then { missionNamespace setVariable ["comspec_sse_idPackErr", "chunk"]; };
         [_buf, ""] select !_ok
     };
