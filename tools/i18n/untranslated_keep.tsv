@@ -1352,3 +1352,6 @@ En-tête de la colonne	fragment du modèle traduit « En-tête de la colonne %1 
 data-cl-isub="caption" data-placeholder="Légende"	fragment d'attributs : le texte est traduit (Légende)	views/community/partials/page_block.php
 data-cl-isub="hint" data-placeholder="Précision"	fragment d'attributs : le texte est traduit (Précision)	views/community/partials/page_block.php
 data-cl-prop="meta" data-placeholder="Rôle ou contexte"	fragment d'attributs : le texte est traduit (Rôle ou contexte)	views/community/partials/page_block.php
+700 14px "Roboto Condensed", "Arial Narrow", Arial, sans-serif	police du canvas (CSS), pas un texte	public/assets/js/toc/toc-plan-render.js
+px "Roboto Condensed", "Arial Narrow", Arial, sans-serif	police du canvas (CSS), pas un texte	public/assets/js/toc/toc-plan-render.js
+px Arial, sans-serif	police du canvas (CSS), pas un texte	public/assets/js/toc/toc-plan-render.js
