@@ -1,5 +1,8 @@
 # TOC : données et saisies sans téléphone (ATAK natif 4.10.0)
 
+Numéro : la feuille de route prévoyait 4.9.0 pour ce lot ; la refonte de la console du poste a pris la 4.9.0, ce lot
+sort donc en 4.10.0.
+
 Lot 1 de `docs/audit/2026-11-toc-feuille-de-route.md`. Principe posé par TTRD : **tout le TOC doit être utilisable
 sans téléphone**. Cette page est le contrat entre la couche données (cette branche) et ceux qui affichent : la
 console du PC du poste (`fn_tocLaptop`, `fn_tocBoard`) et les écrans (`fn_tocScreen`, `fn_tocSat`, `fn_tocDraw`).
@@ -200,7 +203,13 @@ Rien n'a été changé dans leurs fichiers. À faire chez elles, une fois chacun
 | `fn_tocSat.sqf` | rien à changer : les pistes amies viennent du flux, qui contient maintenant tout le camp (D10) |
 | `fn_tocDraw.sqf` | état de dessin encore lu dans `COMSPEC_ATAK_State` : à vérifier en jeu sans téléphone (D15) |
 
-Seul ajout hors du dossier `toc` : trois lignes dans `functions/ui/fn_notify.sqf` (retour sans téléphone).
+Ajouts d'une ligne dans des fichiers d'autres branches (les seuls) :
+
+- `functions/ui/fn_notify.sqf` : téléphone rangé ou absent, le retour part à `fn_tocInbox` « feedback ».
+- `functions/toc/fn_tocAppData.sqf` (console refaite, 4.9.0) : un nœud du flux de source « J » garde le libellé
+  « source directe » de la console au lieu d'être pris pour un téléphone. La console lisait déjà le jeu sur le poste
+  de l'opérateur ; depuis ce lot le serveur publie les mêmes unités à tous les lecteurs, écrans compris, et la lecture
+  locale de la console ne sert plus que de repli (serveur plus ancien, réglage « Réseau ATAK »).
 
 D16, COMSPEC Link : `XEH_postInitClient.sqf` l. 296-304 règle `comspec_overwatch_require_item` sur `fn_hasDevice`.
 Sans téléphone, Link garde ses boucles en attente (« Pas de terminal ATAK »). Rien de ce lot ne lit ces boucles. À
