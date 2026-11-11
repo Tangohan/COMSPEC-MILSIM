@@ -108,4 +108,5 @@ return [
     ['id' => 'atak_toc_permissions', 'label' => 'Poste TOC web : droits « tenir le poste TOC web » et « configurer le poste TOC web », donnés aux rôles de commandement', 'group' => 'schema', 'file' => '4380_atak_toc_permissions.php', 'rerun' => true],
     ['id' => 'operator_hub', 'label' => 'Outils opérateur : outils épinglés par membre, identités d’emprunt archivées et couvertures actives, révoquées ou modifiées par le membre', 'group' => 'schema', 'file' => '4390_operator_hub.php', 'rerun' => true],
     ['id' => 'operator_hub_announcement', 'label' => 'Annonce « Nouveau : vos outils opérateur » aux membres connectés, refermable, visible deux semaines', 'group' => 'schema', 'file' => '4400_operator_hub_announcement.php', 'rerun' => true],
+    ['id' => 'sse_cover_export_links', 'label' => 'Couvertures liées : chaque couverture référence l’identité du membre sur laquelle elle est bâtie et les papiers qu’elle emporte ; couvertures existantes rattachées quand c’est sans ambiguïté', 'group' => 'schema', 'file' => '4440_sse_cover_export_links.php', 'rerun' => true],
 ];
