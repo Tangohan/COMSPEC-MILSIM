@@ -1,4 +1,5 @@
 #include "script_component.hpp"
+#include "ui_macros.hpp"
 
 /*
     COMSPEC IDENTITY : documents d'identité fictifs, contrôle par ACE et par l'app « Contrôle ID » de l'ATAK.
@@ -100,6 +101,10 @@ class CfgFunctions {
             class idBio {};
             class idHvt {};
             class idAiConfig {};
+            // Fenêtre « Papiers de l'IA » du Zeus : document tel que le voit un joueur, analyse (vraie identité, qualité, défauts).
+            class idZeusPapers {};
+            class idZeusPapersData {};
+            class idZeusAnalysis {};
             // API publique des papiers en jeu (mods et scripts, serveur) : identité Athena liée, propriétaire, suivi.
             class idPaperOf {};
             class idPaperOwner {};
@@ -182,5 +187,20 @@ class RscCombo;
 class RscXSliderH;
 class RscCheckBox;
 
+// Classes de la charte SSE (addon comspec_sse_ui, dans requiredAddons).
+class COMSPEC_SSE_RscText;
+class COMSPEC_SSE_RscLabel;
+class COMSPEC_SSE_RscDim;
+class COMSPEC_SSE_RscBackground;
+class COMSPEC_SSE_RscPanel;
+class COMSPEC_SSE_RscAccentLineZeus;
+class COMSPEC_SSE_RscStructuredText;
+class COMSPEC_SSE_RscCombo;
+class COMSPEC_SSE_RscButtonNav;
+class COMSPEC_SSE_RscButtonZeus;
+class COMSPEC_SSE_RscButtonClose;
+class COMSPEC_SSE_RscControlsGroup;
+
 #include "dialogs\idViewer.hpp"
 #include "dialogs\docPicker.hpp"
+#include "dialogs\idZeusPapers.hpp"

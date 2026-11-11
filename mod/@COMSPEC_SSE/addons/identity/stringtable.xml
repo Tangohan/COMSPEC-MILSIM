@@ -1,0 +1,626 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- COMSPEC SSE, addon identity : fenêtre « Papiers de l'IA » du Zeus (anglais, français). Clés STR_COMSPEC_SSE_ZP_*, écrites à la main. -->
+<Project name="COMSPEC_SSE">
+    <Package name="identity">
+        <Key ID="STR_COMSPEC_SSE_ZP_Title">
+            <Original>SSE / AI PAPERS</Original>
+            <English>SSE / AI PAPERS</English>
+            <French>SSE / PAPIERS DE L'IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Refresh">
+            <Original>Refresh</Original>
+            <English>Refresh</English>
+            <French>Actualiser</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Refresh_D">
+            <Original>Reads the papers again on the server (after a change made elsewhere).</Original>
+            <English>Reads the papers again on the server (after a change made elsewhere).</English>
+            <French>Relit les papiers sur le serveur (après un changement fait ailleurs).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Close">
+            <Original>CLOSE</Original>
+            <English>CLOSE</English>
+            <French>FERMER</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_DocLbl">
+            <Original>Document</Original>
+            <English>Document</English>
+            <French>Document</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_DocItem">
+            <Original>%1 no. %2</Original>
+            <English>%1 no. %2</English>
+            <French>%1 n° %2</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Side">
+            <Original>FRONT / BACK</Original>
+            <English>FRONT / BACK</English>
+            <French>RECTO / VERSO</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Analysis">
+            <Original>Analysis (Zeus only)</Original>
+            <English>Analysis (Zeus only)</English>
+            <French>Analyse (Zeus seulement)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_UnitAs">
+            <Original>%1 · Arma unit %2</Original>
+            <English>%1 · Arma unit %2</English>
+            <French>%1 · unité Arma %2</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Loading">
+            <Original>Reading the papers on the server…</Original>
+            <English>Reading the papers on the server…</English>
+            <French>Lecture des papiers sur le serveur…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Refreshing">
+            <Original>Reading the papers again…</Original>
+            <English>Reading the papers again…</English>
+            <French>Relecture des papiers…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Updated">
+            <Original>Papers read at %1.</Original>
+            <English>Papers read at %1.</English>
+            <French>Papiers lus à %1.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_NoReply">
+            <Original>No answer from the server: press Refresh.</Original>
+            <English>No answer from the server: press Refresh.</English>
+            <French>Pas de réponse du serveur : appuyez sur Actualiser.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Gone">
+            <Original>This person or object no longer exists.</Original>
+            <English>This person or object no longer exists.</English>
+            <French>Cette personne ou cet objet n'existe plus.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_NoPapersAi">
+            <Original>This AI has no papers: create some?</Original>
+            <English>This AI has no papers: create some?</English>
+            <French>Cette IA n'a pas de papiers : en créer ?</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_NoPapersPerson">
+            <Original>This person has no papers: create some?</Original>
+            <English>This person has no papers: create some?</English>
+            <French>Cette personne n'a pas de papiers : en créer ?</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_NoPapersObj">
+            <Original>No identity paper in this object: place one here?</Original>
+            <English>No identity paper in this object: place one here?</English>
+            <French>Aucun papier d'identité dans cet objet : en poser un ici ?</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Foreign">
+            <Original>not theirs</Original>
+            <English>not theirs</English>
+            <French>pas à lui</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_ForeignOf">
+            <Original>Paper of %1 found on this person.</Original>
+            <English>Paper of %1 found on this person.</English>
+            <French>Papier de %1 trouvé sur cette personne.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_HIdentity">
+            <Original>Identity</Original>
+            <English>Identity</English>
+            <French>Identité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_HQuality">
+            <Original>Quality</Original>
+            <English>Quality</English>
+            <French>Qualité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_HFlaws">
+            <Original>Flaws on the document</Original>
+            <English>Flaws on the document</English>
+            <French>Défauts du document</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_HChecks">
+            <Original>What a check will find</Original>
+            <English>What a check will find</English>
+            <French>Ce que trouvera un contrôle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_HPerson">
+            <Original>The person</Original>
+            <English>The person</English>
+            <French>La personne</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Printed">
+            <Original>Printed name</Original>
+            <English>Printed name</English>
+            <French>Nom imprimé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_True">
+            <Original>True identity</Original>
+            <English>True identity</English>
+            <French>Vraie identité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Same">
+            <Original>same</Original>
+            <English>same</English>
+            <French>identique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Differs">
+            <Original>different: false name</Original>
+            <English>different: false name</English>
+            <French>différente : faux nom</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Kind">
+            <Original>Nature</Original>
+            <English>Nature</English>
+            <French>Nature</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Type">
+            <Original>Document</Original>
+            <English>Document</English>
+            <French>Document</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Born">
+            <Original>Born</Original>
+            <English>Born</English>
+            <French>Né(e) le</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Issued">
+            <Original>Issued</Original>
+            <English>Issued</English>
+            <French>Délivré le</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Expires">
+            <Original>Expires</Original>
+            <English>Expires</English>
+            <French>Expire le</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Expired">
+            <Original>expired</Original>
+            <English>expired</English>
+            <French>périmé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_NoFlaw">
+            <Original>No flaw on the document.</Original>
+            <English>No flaw on the document.</English>
+            <French>Aucun défaut sur le document.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Virtual">
+            <Original>Virtual paper: the inventory item appears when someone asks for it.</Original>
+            <English>Virtual paper: the inventory item appears when someone asks for it.</English>
+            <French>Papier virtuel : l'objet apparaît dans l'inventaire quand on le lui demande.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Object">
+            <Original>Inventory item: the paper physically exists.</Original>
+            <English>Inventory item: the paper physically exists.</English>
+            <French>Objet d'inventaire : le papier existe vraiment.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BoloDoc">
+            <Original>Document number on a BOLO (%1, %2).</Original>
+            <English>Document number on a BOLO (%1, %2).</English>
+            <French>Numéro du document sur un BOLO (%1, %2).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BoloFace">
+            <Original>Face on a BOLO (%1, %2).</Original>
+            <English>Face on a BOLO (%1, %2).</English>
+            <French>Visage sur un BOLO (%1, %2).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Given">
+            <Original>Name given</Original>
+            <English>Name given</English>
+            <French>Nom donné</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_TrueName">
+            <Original>Real name</Original>
+            <English>Real name</English>
+            <French>Vrai nom</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Unit">
+            <Original>Arma unit</Original>
+            <English>Arma unit</English>
+            <French>Unité Arma</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Cover">
+            <Original>Undercover: cover %1, consistency %2/100%3, suspicion %4.</Original>
+            <English>Undercover: cover %1, consistency %2/100%3, suspicion %4.</English>
+            <French>Infiltré : couverture %1, cohérence %2/100%3, soupçons %4.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_CoverOn">
+            <Original>intact</Original>
+            <English>intact</English>
+            <French>intacte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_CoverOff">
+            <Original>lifted</Original>
+            <English>lifted</English>
+            <French>levée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_CoverBurnt">
+            <Original>burnt (%1)</Original>
+            <English>burnt (%1)</English>
+            <French>brûlée (%1)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Hvt">
+            <Original>HVT %1: %2, stage %3.</Original>
+            <English>HVT %1: %2, stage %3.</English>
+            <French>HVT %1 : %2, étape %3.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Kind_civil">
+            <Original>Genuine papers</Original>
+            <English>Genuine papers</English>
+            <French>Vrais papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Kind_generated">
+            <Original>Genuine papers (generated)</Original>
+            <English>Genuine papers (generated)</English>
+            <French>Vrais papiers (générés)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Kind_alias">
+            <Original>Genuine paper under another name</Original>
+            <English>Genuine paper under another name</English>
+            <French>Papier vrai à un autre nom</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Kind_cover">
+            <Original>Prepared cover</Original>
+            <English>Prepared cover</English>
+            <French>Couverture préparée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Kind_forged">
+            <Original>Forged papers</Original>
+            <English>Forged papers</English>
+            <French>Faux papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Fk_counterfeit">
+            <Original>full counterfeit</Original>
+            <English>full counterfeit</English>
+            <French>contrefaçon complète</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Fk_altered">
+            <Original>altered genuine document</Original>
+            <English>altered genuine document</English>
+            <French>vrai document modifié</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Fk_photo_swap">
+            <Original>swapped photo</Original>
+            <English>swapped photo</English>
+            <French>photo substituée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Fk_stolen_blank">
+            <Original>stolen blank</Original>
+            <English>stolen blank</English>
+            <French>vierge volé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Fk_none">
+            <Original>unknown process</Original>
+            <English>unknown process</English>
+            <French>procédé inconnu</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_V_true">
+            <Original>Genuine papers: nothing to hide.</Original>
+            <English>Genuine papers: nothing to hide.</English>
+            <French>Vrais papiers : rien à cacher.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_V_otherName">
+            <Original>Genuine paper, but not in their name: they lie about who they are.</Original>
+            <English>Genuine paper, but not in their name: they lie about who they are.</English>
+            <French>Papier vrai, mais pas à son nom : il ment sur son identité.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_V_cover">
+            <Original>Prepared cover: everything passes except biometrics (N4).</Original>
+            <English>Prepared cover: everything passes except biometrics (N4).</English>
+            <French>Couverture préparée : tout passe sauf la biométrie (N4).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_V_forged">
+            <Original>Forged papers (%1, quality %2): %3 flaw(s) on the document.</Original>
+            <English>Forged papers (%1, quality %2): %3 flaw(s) on the document.</English>
+            <French>Faux papiers (%1, qualité %2) : %3 défaut(s) sur le document.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_V_blank">
+            <Original>Blank document: no holder, nothing printed.</Original>
+            <English>Blank document: no holder, nothing printed.</English>
+            <French>Document vierge : aucun titulaire, rien d'imprimé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Q_na">
+            <Original>%1/100: does not matter for genuine papers (only for a forgery).</Original>
+            <English>%1/100: does not matter for genuine papers (only for a forgery).</English>
+            <French>%1/100 : ne compte pas pour de vrais papiers (seulement pour un faux).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Q_cover">
+            <Original>%1/100: does not matter for a cover, the document is flawless.</Original>
+            <English>%1/100: does not matter for a cover, the document is flawless.</English>
+            <French>%1/100 : ne compte pas pour une couverture, le document est parfait.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Q_head">
+            <Original>%1/100 (%2). What this score gives:</Original>
+            <English>%1/100 (%2). What this score gives:</English>
+            <French>%1/100 (%2). Ce que donne ce score :</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Q_missing">
+            <Original>%1: on this forgery (%2 or more was needed to avoid it).</Original>
+            <English>%1: on this forgery (%2 or more was needed to avoid it).</English>
+            <French>%1 : présent sur ce faux (il fallait %2 ou plus pour l'éviter).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Q_avoided">
+            <Original>%1: avoided (%2 or more).</Original>
+            <English>%1: avoided (%2 or more).</English>
+            <French>%1 : évité (%2 ou plus).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Q_eye">
+            <Original>By eye (N0), flaws show more when quality is low: factor %1 (1.25 for a crude fake, 0.25 for a perfect one).</Original>
+            <English>By eye (N0), flaws show more when quality is low: factor %1 (1.25 for a crude fake, 0.25 for a perfect one).</English>
+            <French>À l'œil (N0), les défauts se voient d'autant plus que la qualité est basse : facteur %1 (1,25 pour un faux grossier, 0,25 pour un faux parfait).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_Q_free">
+            <Original>Unknown process: no flaw drawn from the quality.</Original>
+            <English>Unknown process: no flaw drawn from the quality.</English>
+            <French>Procédé inconnu : aucun défaut tiré de la qualité.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_F_holo_T">
+            <Original>Hologram missing</Original>
+            <English>Hologram missing</English>
+            <French>Hologramme absent</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_F_holo_D">
+            <Original>the security hologram is not there; seen by eye (N0), better in daylight or with a torch.</Original>
+            <English>the security hologram is not there; seen by eye (N0), better in daylight or with a torch.</English>
+            <French>le motif holographique de sécurité manque ; visible à l'œil (N0), mieux de jour ou à la lampe.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_F_font_T">
+            <Original>Different font</Original>
+            <English>Different font</English>
+            <French>Police différente</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_F_font_D">
+            <Original>the name is not printed with the same characters as the rest: printed or retouched separately (N0).</Original>
+            <English>the name is not printed with the same characters as the rest: printed or retouched separately (N0).</English>
+            <French>le nom n'est pas imprimé avec les mêmes caractères que le reste : imprimé ou retouché à part (N0).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_F_mrz_T">
+            <Original>Wrong MRZ</Original>
+            <English>Wrong MRZ</English>
+            <French>Bande MRZ fausse</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_F_mrz_D">
+            <Original>a check digit of the MRZ strip is wrong: the scanner (N1) always sees it.</Original>
+            <English>a check digit of the MRZ strip is wrong: the scanner (N1) always sees it.</English>
+            <French>un chiffre de contrôle de la bande MRZ est faux : le scanner (N1) le voit à coup sûr.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_F_mrzdata_T">
+            <Original>MRZ with another name</Original>
+            <English>MRZ with another name</English>
+            <French>MRZ à un autre nom</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_F_mrzdata_D">
+            <Original>the MRZ strip still carries the old name: the front was retouched (N1).</Original>
+            <English>the MRZ strip still carries the old name: the front was retouched (N1).</English>
+            <French>la bande MRZ garde l'ancien nom : le recto a été retouché (N1).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_F_photo_T">
+            <Original>Replaced photo</Original>
+            <English>Replaced photo</English>
+            <French>Photo remplacée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_F_photo_D">
+            <Original>the photo was peeled off and replaced: lifted edge, redone lamination (N0).</Original>
+            <English>the photo was peeled off and replaced: lifted edge, redone lamination (N0).</English>
+            <French>la photo a été décollée et remplacée : bord relevé, plastification reprise (N0).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_F_other_T">
+            <Original>Flaw « %1 »</Original>
+            <English>Flaw « %1 »</English>
+            <French>Défaut « %1 »</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_F_other_D">
+            <Original>flaw added by a mission or an extension.</Original>
+            <English>flaw added by a mission or an extension.</English>
+            <French>défaut ajouté par une mission ou une extension.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N0_none">
+            <Original>N0 by eye: nothing visible.</Original>
+            <English>N0 by eye: nothing visible.</English>
+            <French>N0 à l'œil : rien de visible.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N0_flaws">
+            <Original>N0 by eye: %1 (depends on light and on the checker).</Original>
+            <English>N0 by eye: %1 (depends on light and on the checker).</English>
+            <French>N0 à l'œil : %1 (selon la lumière et le contrôleur).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N0_expired">
+            <Original>Expired since %1: doubt at every level.</Original>
+            <English>Expired since %1: doubt at every level.</English>
+            <French>Périmé depuis le %1 : doute à chaque niveau.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N1_na">
+            <Original>N1 MRZ: no MRZ strip on this document.</Original>
+            <English>N1 MRZ: no MRZ strip on this document.</English>
+            <French>N1 MRZ : pas de bande MRZ sur ce document.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N1_ok">
+            <Original>N1 MRZ: correct.</Original>
+            <English>N1 MRZ: correct.</English>
+            <French>N1 MRZ : conforme.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N1_bad">
+            <Original>N1 MRZ: wrong check digit (forgery).</Original>
+            <English>N1 MRZ: wrong check digit (forgery).</English>
+            <French>N1 MRZ : chiffre de contrôle faux (faux).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N1_name">
+            <Original>N1 MRZ: name different from the front (forgery).</Original>
+            <English>N1 MRZ: name different from the front (forgery).</English>
+            <French>N1 MRZ : nom différent du recto (faux).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N2_na">
+            <Original>N2 chip: this document has none.</Original>
+            <English>N2 chip: this document has none.</English>
+            <French>N2 puce : ce document n'en a pas.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N2_ok">
+            <Original>N2 chip: correct.</Original>
+            <English>N2 chip: correct.</English>
+            <French>N2 puce : conforme.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N2_absent">
+            <Original>N2 chip: missing on a document that needs one (doubt).</Original>
+            <English>N2 chip: missing on a document that needs one (doubt).</English>
+            <French>N2 puce : absente alors qu'il en faut une (doute).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N2_defect">
+            <Original>N2 chip: unreadable (doubt).</Original>
+            <English>N2 chip: unreadable (doubt).</English>
+            <French>N2 puce : illisible (doute).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N2_mismatch">
+            <Original>N2 chip: data different from the document (forgery).</Original>
+            <English>N2 chip: data different from the document (forgery).</English>
+            <French>N2 puce : données différentes du document (faux).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N2_photo">
+            <Original>N2 chip: the stored photo is not the printed one (forgery).</Original>
+            <English>N2 chip: the stored photo is not the printed one (forgery).</English>
+            <French>N2 puce : la photo enregistrée n'est pas celle imprimée (faux).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N3_unknown">
+            <Original>N3 database: number never issued (forgery).</Original>
+            <English>N3 database: number never issued (forgery).</English>
+            <French>N3 base : numéro jamais délivré (faux).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N3_other">
+            <Original>N3 database: number issued to %1 (forgery).</Original>
+            <English>N3 database: number issued to %1 (forgery).</English>
+            <French>N3 base : numéro délivré à %1 (faux).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N3_ok">
+            <Original>N3 database: issued in this name.</Original>
+            <English>N3 database: issued in this name.</English>
+            <French>N3 base : délivré à ce nom.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N3_vole">
+            <Original>N3 database: reported STOLEN (alert).</Original>
+            <English>N3 database: reported STOLEN (alert).</English>
+            <French>N3 base : signalé VOLÉ (alerte).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N3_perdu">
+            <Original>N3 database: reported lost.</Original>
+            <English>N3 database: reported lost.</English>
+            <French>N3 base : déclaré perdu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N3_revoque">
+            <Original>N3 database: REVOKED (alert).</Original>
+            <English>N3 database: REVOKED (alert).</English>
+            <French>N3 base : RÉVOQUÉ (alerte).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N4_ok">
+            <Original>N4 face: matches.</Original>
+            <English>N4 face: matches.</English>
+            <French>N4 visage : correspond.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_N4_bad">
+            <Original>N4 face: this is not %1 (true identity: %2).</Original>
+            <English>N4 face: this is not %1 (true identity: %2).</English>
+            <French>N4 visage : ce n'est pas %1 (vraie identité : %2).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BtnCreate">
+            <Original>Create papers…</Original>
+            <English>Create papers…</English>
+            <French>Créer ses papiers…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BtnCreate_D">
+            <Original>Opens the Choose a document window for this person (or this place).</Original>
+            <English>Opens the Choose a document window for this person (or this place).</English>
+            <French>Ouvre la fenêtre Choisir un document pour cette personne (ou cet endroit).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BtnOther">
+            <Original>Other papers…</Original>
+            <English>Other papers…</English>
+            <French>Autres papiers…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BtnOther_D">
+            <Original>Opens the Choose a document window: type, country, nature, forgery quality, printed name.</Original>
+            <English>Opens the Choose a document window: type, country, nature, forgery quality, printed name.</English>
+            <French>Ouvre la fenêtre Choisir un document : type, pays, nature, qualité du faux, nom imprimé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BtnTrue">
+            <Original>Make it genuine</Original>
+            <English>Make it genuine</English>
+            <French>Le rendre vrai</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BtnTrue_D">
+            <Original>Remakes this paper as genuine, same name.</Original>
+            <English>Remakes this paper as genuine, same name.</English>
+            <French>Refait ce papier en vrai, même nom.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BtnForged">
+            <Original>Make it forged</Original>
+            <English>Make it forged</English>
+            <French>Le rendre faux</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BtnForged_D">
+            <Original>Remakes this paper as a forgery (quality 50), same name: flaws drawn from the quality.</Original>
+            <English>Remakes this paper as a forgery (quality 50), same name: flaws drawn from the quality.</English>
+            <French>Refait ce papier en faux (qualité 50), même nom : défauts tirés selon la qualité.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BtnReport">
+            <Original>Report stolen</Original>
+            <English>Report stolen</English>
+            <French>Signaler volé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BtnReport_D">
+            <Original>All papers of this person reported stolen: seen at the N3 check.</Original>
+            <English>All papers of this person reported stolen: seen at the N3 check.</English>
+            <French>Tous les papiers de la personne signalés volés : vu au contrôle N3.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BtnUnreport">
+            <Original>Lift report</Original>
+            <English>Lift report</English>
+            <French>Lever signalement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BtnUnreport_D">
+            <Original>Lifts the stolen / lost / revoked report on all papers of this person.</Original>
+            <English>Lifts the stolen / lost / revoked report on all papers of this person.</English>
+            <French>Lève le signalement (volé, perdu, révoqué) de tous les papiers de la personne.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BtnStrip">
+            <Original>Remove papers</Original>
+            <English>Remove papers</English>
+            <French>Retirer papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BtnStrip_D">
+            <Original>This AI no longer carries any paper.</Original>
+            <English>This AI no longer carries any paper.</English>
+            <French>Cette IA ne porte plus aucun papier.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BtnSheet">
+            <Original>AI sheet</Original>
+            <English>AI sheet</English>
+            <French>Fiche de l'IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_BtnSheet_D">
+            <Original>Opens the Area AI page of the SSE editor on this AI.</Original>
+            <English>Opens the Area AI page of the SSE editor on this AI.</English>
+            <French>Ouvre la page IA de la zone de l'éditeur SSE sur cette IA.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_StPicker">
+            <Original>Choose the document in the other window; this one reads again after.</Original>
+            <English>Choose the document in the other window; this one reads again after.</English>
+            <French>Choisissez le document dans l'autre fenêtre ; celle-ci se relit ensuite.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_StMarkTrue">
+            <Original>Paper remade as genuine.</Original>
+            <English>Paper remade as genuine.</English>
+            <French>Papier refait en vrai.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_StMarkForged">
+            <Original>Paper remade as a forgery (quality 50).</Original>
+            <English>Paper remade as a forgery (quality 50).</English>
+            <French>Papier refait en faux (qualité 50).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_StReport">
+            <Original>Papers reported stolen.</Original>
+            <English>Papers reported stolen.</English>
+            <French>Papiers signalés volés.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_StUnreport">
+            <Original>Report lifted.</Original>
+            <English>Report lifted.</English>
+            <French>Signalement levé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_ZP_StStrip">
+            <Original>Papers removed.</Original>
+            <English>Papers removed.</English>
+            <French>Papiers retirés.</French>
+        </Key>
+    </Package>
+</Project>

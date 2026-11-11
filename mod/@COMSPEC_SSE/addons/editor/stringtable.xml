@@ -648,9 +648,9 @@
             <French>Voir le papier</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_ED_DocOpen_D">
-            <Original>Opens the paper as a player will see it (never the truth).</Original>
-            <English>Opens the paper as a player will see it (never the truth).</English>
-            <French>Ouvre le papier tel que le verra un joueur (jamais la vérité).</French>
+            <Original>Opens the paper as a player will see it, with the Zeus analysis beside it (true identity, quality, flaws).</Original>
+            <English>Opens the paper as a player will see it, with the Zeus analysis beside it (true identity, quality, flaws).</English>
+            <French>Ouvre le papier tel que le verra un joueur, avec l'analyse du Zeus à côté (vraie identité, qualité, défauts).</French>
         </Key>
         <Key ID="STR_COMSPEC_SSE_ED_DocTrue">
             <Original>Make it genuine</Original>

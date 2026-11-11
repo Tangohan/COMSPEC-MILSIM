@@ -20,21 +20,25 @@ private _st = uiNamespace getVariable ["comspec_sse_idView", createHashMap];
 if (isNull _d || {(count _st) isEqualTo 0}) exitWith {};
 private _doc = _st get "doc";
 private _type = toLower (_doc getOrDefault ["type", "id_card"]);
+// Fenêtre « Papiers de l'IA » du Zeus (fn_idZeusPapers) : même rendu, dans la zone qu'elle réserve (box), unité de hauteur
+// de sa grille (vh), sans zoom, scanner, relevé ni bouton fermer (elle a les siens).
+private _zeus = _st getOrDefault ["zeus", false];
+private _vh = _st getOrDefault ["vh", safezoneH];
 private _esc = { private _t = _this; if !(_t isEqualType "") then { _t = str _t; }; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
 
 // --- Boutons : affichés seulement, côte à côte et de même largeur ; Relever explicite quand c'est impossible --------
 private _buttons = {
     (_st getOrDefault ["geo", [0.2, 0.2, 0.6, 0.4]]) params ["_cx", "_cy", "_cw", "_ch"];
-    private _by = _cy + _ch + safezoneH * 0.075;
+    private _by = _cy + _ch + _vh * 0.075;
     private _own = _st get "own";
-    private _btns = [[93710, (_st getOrDefault ["sides", 2]) > 1], [93711, true], [93712, !_own], [93714, !_own], [93713, true]];
+    private _btns = [[93710, (_st getOrDefault ["sides", 2]) > 1], [93711, !_zeus], [93712, !_own && {!_zeus}], [93714, !_own && {!_zeus}], [93713, !_zeus]];
     { (_d displayCtrl (_x select 0)) ctrlShow (_x select 1); } forEach _btns;
     _btns = _btns select { _x select 1 };
     private _nb = count _btns;
     private _bw = (_cw - 0.01 * (_nb - 1)) / _nb;
     {
         private _b = _d displayCtrl (_x select 0);
-        _b ctrlSetPosition [_cx + _forEachIndex * (_bw + 0.01), _by, _bw, safezoneH * 0.045];
+        _b ctrlSetPosition [_cx + _forEachIndex * (_bw + 0.01), _by, _bw, _vh * 0.045];
         _b ctrlCommit 0;
     } forEach _btns;
     // Relever : texte et activation selon l'état (fn_idPhoto « can »).
@@ -101,6 +105,15 @@ private _cw = _ch * _ratio * 0.75;
 if (_cw > safezoneW * 0.94) then { _cw = safezoneW * 0.94; _ch = _cw / (_ratio * 0.75); };
 private _cx = 0.5 - _cw / 2;
 private _cy = safezoneY + (safezoneH - _ch) / 2 - safezoneH * 0.03;
+private _box = _st getOrDefault ["box", []];
+if (_box isNotEqualTo []) then {
+    _box params ["_bx", "_by", "_bw", "_bh"];
+    _ch = _bh;
+    _cw = _ch * _ratio * 0.75;
+    if (_cw > _bw) then { _cw = _bw; _ch = _cw / (_ratio * 0.75); };
+    _cx = _bx + (_bw - _cw) / 2;
+    _cy = _by + (_bh - _ch) / 2;
+};
 _st set ["geo", [_cx, _cy, _cw, _ch]];
 private _card = _d displayCtrl 93720;
 _card ctrlSetText _tpl;
@@ -221,26 +234,26 @@ private _title = format ["<t align='center' size='1.1' font='PuristaSemibold'>%1
     ["", " · " + (_sub call comspec_sse_fnc_tr)] select (_sub isNotEqualTo ""),
     ["", " · " + (_extName call _esc)] select (_extName isNotEqualTo "")];
 (_d displayCtrl 93704) ctrlSetStructuredText parseText _title;
-(_d displayCtrl 93704) ctrlSetPosition [_cx, _cy - safezoneH * 0.075, _cw, safezoneH * 0.07];
+(_d displayCtrl 93704) ctrlSetPosition [_cx, _cy - _vh * 0.075, _cw, _vh * 0.07];
 (_d displayCtrl 93704) ctrlCommit 0;
 private _n0 = _st getOrDefault ["n0", createHashMap];
 private _rem = if ((count _n0) > 0) then {
     format ["<t color='%1'>%2</t>", ["#cfe8cf", "#f2c94c"] select ((_n0 getOrDefault ["state", "ok"]) isNotEqualTo "ok"), (((_n0 getOrDefault ["lines", []]) apply { _x call comspec_sse_fnc_tr }) joinString " · ") call _esc]
 } else { "" };
 (_d displayCtrl 93705) ctrlSetStructuredText parseText _rem;
-(_d displayCtrl 93705) ctrlSetPosition [_cx, _cy + _ch + safezoneH * 0.012, _cw, safezoneH * 0.03];
+(_d displayCtrl 93705) ctrlSetPosition [_cx, _cy + _ch + _vh * 0.012, _cw, _vh * 0.03];
 (_d displayCtrl 93705) ctrlShow (_rem isNotEqualTo "");
 (_d displayCtrl 93705) ctrlCommit 0;
 // Ligne d'état (relevé, erreurs) : sous le constat, gardée d'un rendu à l'autre.
 private _status = _d displayCtrl 93706;
-_status ctrlSetPosition [_cx, _cy + _ch + safezoneH * 0.044, _cw, safezoneH * 0.028];
+_status ctrlSetPosition [_cx, _cy + _ch + _vh * 0.044, _cw, _vh * 0.028];
 _status ctrlCommit 0;
 ["status", _st getOrDefault ["status", ""], _st getOrDefault ["statusColor", ""]] call comspec_sse_fnc_idViewerOnLoad;
 // Bouton « ? » du manuel (chapitre Documents), en haut à droite de la fenêtre.
 if (!isNil "comspec_sse_fnc_guideButton") then {
     private _hb = _d getVariable ["comspec_sse_guideBtn", controlNull];
-    if (isNull _hb) then { _hb = [_d, "IdCheck", _cx + _cw - safezoneH * 0.035, _cy - safezoneH * 0.075, safezoneH * 0.035] call comspec_sse_fnc_guideButton; _d setVariable ["comspec_sse_guideBtn", _hb]; } else {
-        _hb ctrlSetPosition [_cx + _cw - safezoneH * 0.035, _cy - safezoneH * 0.075, safezoneH * 0.035, safezoneH * 0.035];
+    if (isNull _hb) then { _hb = [_d, "IdCheck", _cx + _cw - _vh * 0.035, _cy - _vh * 0.075, _vh * 0.035] call comspec_sse_fnc_guideButton; _d setVariable ["comspec_sse_guideBtn", _hb]; } else {
+        _hb ctrlSetPosition [_cx + _cw - _vh * 0.035, _cy - _vh * 0.075, _vh * 0.035, _vh * 0.035];
         _hb ctrlCommit 0;
     };
 };

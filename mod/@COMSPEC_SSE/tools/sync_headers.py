@@ -6,7 +6,7 @@ vers un autre PBO (\\z\\comspec_sse\\addons\\main\\script_mod.hpp) peut alors
 échouer avec « Include file ... not found » si ce PBO n'est pas encore monté.
 Chaque addon embarque donc sa propre copie :
   - main/script_mod.hpp  -> <addon>/script_mod.hpp   (tous les addons)
-  - ui/ui_macros.hpp     -> <addon>/ui_macros.hpp    (zeus, analysis, editor, ia_rp, extensions)
+  - ui/ui_macros.hpp     -> <addon>/ui_macros.hpp    (zeus, analysis, editor, ia_rp, extensions, identity)
 
 Modifier uniquement les originaux (main/script_mod.hpp, ui/ui_macros.hpp),
 puis lancer : python tools/sync_headers.py   (--check : échoue si une copie diffère)
@@ -17,7 +17,7 @@ import sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "addons")
 SHARED = [
     ("main/script_mod.hpp", None),
-    ("ui/ui_macros.hpp", ["zeus", "analysis", "editor", "ia_rp", "extensions"]),
+    ("ui/ui_macros.hpp", ["zeus", "analysis", "editor", "ia_rp", "extensions", "identity"]),
 ]
 HEADER = "// COPIE GÉNÉRÉE de addons/{src} par tools/sync_headers.py : ne pas modifier ici.\n"
 
