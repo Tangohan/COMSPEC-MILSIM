@@ -335,10 +335,7 @@ private _map = [
     // Réglettes de 80 à 220 % (lues par fn_mapOnDraw, fn_pageMap et fn_planDraw, bornées à 0,8-2,2).
     ["slider", "Textes de la carte", round (100 * (profileNamespace getVariable ["COMSPEC_ATAK_MapTextScale", 1.25])), { profileNamespace setVariable ["COMSPEC_ATAK_MapTextScale", (_this select 0) / 100]; }, "Indicatifs, coordonnées, étiquettes, panneaux d'info", false, "", {}, "", [80, 220]],
     ["slider", "Icônes de la carte", round (100 * (profileNamespace getVariable ["COMSPEC_ATAK_MapIconScale", 1.25])), { profileNamespace setVariable ["COMSPEC_ATAK_MapIconScale", (_this select 0) / 100]; }, "Unités, marqueurs, charges, points de passage", false, "", {}, "", [80, 220]],
-    // Fonds de fn_mapStyle (même liste que la carte) : TOPO, CLAIR, SOMBRE, NUIT puis ARDOISE, CLASSIQUE (carte d'origine
-    // d'Arma 3), HYBRIDE et SATELLITE (seulement avec la photo de la carte en cours).
-    ["COMSPEC_ATAK_MapStyle", [] call comspec_atak_native_fnc_mapStyle, "Fond de carte", ((["LIST"] call comspec_atak_native_fnc_mapStyle) select [0, 4]) apply { [_x select 0, _x select 1] }, ""] call _profSegment,
-    ["COMSPEC_ATAK_MapStyle", [] call comspec_atak_native_fnc_mapStyle, "", (((["LIST"] call comspec_atak_native_fnc_mapStyle) select [4, 4]) select { _x select 3 }) apply { [_x select 0, _x select 1] }, "Carte topo d'Arma, version claire, sombre, bleu nuit, ardoise (bleu-gris sombre, routes turquoise), classique (la carte d'origine d'Arma 3, comme avec la touche M), hybride (vue satellite du terrain d'Arma avec routes et pistes), ou satellite (la vraie photo de la carte, nécessite le mod COMSPEC ATAK Photo)"] call _profSegment,
+    // Fond de carte : rangées de _bgRows (plus bas), insérées juste avant « Relief des bâtiments ».
     ["COMSPEC_ATAK_PhotoRelief", true, "Relief des bâtiments", [["OUI", true], ["NON", false]], "Fond SATELLITE : ombre portée et contour de chaque bâtiment aux zooms proches"] call _profSegment,
     // Réglages de la carte gardés dans le profil, remis par défaut en deux appuis (les réglages CBA et mon icône, vue
     // par les autres, ne bougent pas).
@@ -359,6 +356,23 @@ private _map = [
 ];
 // Fond des noms (niveau, couleur, opacité) juste sous les réglettes de taille des textes et des icônes.
 _map insert [(_map findIf { (_x param [1, ""]) isEqualTo "Icônes de la carte" }) + 1, ["rows", "names"] call comspec_atak_native_fnc_mapPrefs];
+// Fond de carte : même liste que la carte (fn_mapStyle « LIST », CLASSIQUE en premier), deux boutons par rangée (quatre
+// rangées de hauteur fixe : rien ne déborde ni n'est coupé, quelle que soit la taille de l'interface), le fond en service
+// en vert (valeur relue par fn_mapStyle : un ancien « SAT » enregistré allume bien CLASSIQUE), puis sa description.
+// Au choix : fn_mapStyle (enregistre, oublie l'ancien calque nuit) et page redessinée pour la description.
+private _bgNow = [] call comspec_atak_native_fnc_mapStyle;
+private _bgList = (["LIST"] call comspec_atak_native_fnc_mapStyle) select { _x select 3 };
+private _bgRows = [];
+for "_i" from 0 to ((count _bgList) - 1) step 2 do {
+    _bgRows pushBack ["segment", ["", "Fond de carte"] select (_i isEqualTo 0), (_bgList select [_i, 2]) apply {
+        _x params ["_t", "_v"];
+        [_t, compile format ["[%1] call comspec_atak_native_fnc_mapStyle; [{ [] call comspec_atak_native_fnc_layoutApply; ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", str _v], _v isEqualTo _bgNow]
+    }];
+};
+private _bgCur = _bgList param [(_bgList findIf { (_x select 1) isEqualTo _bgNow }) max 0, []];
+if ((count _bgCur) > 2) then { _bgRows pushBack ["text", format ["<t size='0.85' color='%1'>%2</t>", COMSPEC_ATAK_Th get "hexTextMuted", _bgCur select 2]]; };
+if (({ (_x select 1) isEqualTo "PHOTO" } count _bgList) isEqualTo 0) then { _bgRows pushBack ["text", format ["<t size='0.75' color='%1'>SATELLITE : nécessite le mod COMSPEC ATAK Photo</t>", COMSPEC_ATAK_Th get "hexTextMuted"]]; };
+_map insert [(_map findIf { (_x param [1, ""]) isEqualTo "Relief des bâtiments" }) max 0, _bgRows];
 // Cartes hors ligne : fond PHOTO de la carte en cours téléchargé depuis Athena (état, téléchargement, effacement).
 _map append (["rows"] call comspec_atak_native_fnc_photoMap);
 // Bandeaux coupés par type (profil COMSPEC_ATAK_NotifMuted, aussi réglable depuis le web) : gardés dans le centre seulement.

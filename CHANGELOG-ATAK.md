@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : fond de carte CLASSIQUE identique à la carte M (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Carte du téléphone : le fond CLASSIQUE est la vraie carte d'Arma
+- Le fond CLASSIQUE montre maintenant la carte du jeu exactement comme avec la touche M : mêmes couleurs, courbes et altitudes, noms des villes, numéros de grille et marqueurs du jeu, avec vos repères ATAK par-dessus. C'est le fond par défaut pour les nouveaux joueurs ; votre choix déjà enregistré est gardé.
+- CLASSIQUE est le premier bouton de « Fond de carte », dans le volet de la carte comme dans Réglages > Carte : les fonds sont rangés deux par deux, rien n'est coupé, et la ligne sous les boutons dit quel fond est affiché.
+EN : Phone map: the CLASSIC background is the real Arma map
+- The CLASSIC background now shows the game map exactly as with the M key: same colours, contour lines and heights, town names, grid numbers and game markers, with your ATAK markers on top. It is the default for new players; your saved choice is kept.
+- CLASSIC is the first button of "Map background", in the map panel and in Settings > Map: backgrounds are laid out two by two, nothing is cut off, and the line under the buttons says which background is shown.
+
+### Détail technique
+- `COMSPEC_RscMapAtakClassic: RscMapControl {}` sans aucun attribut (la carte M, `RscDisplayMainMap >> CA_Map`, est un RscMapControl sans réglage de rendu) ; sur ce contrôle (idc 88532), `fn_mapOnDraw` ne redessine plus marqueurs du jeu, leurs noms, noms de lieux ni numéros de grille (`_engineTxt`).
+- `fn_mapStyle` : CLASSIC en tête de « LIST » et défaut ; `fn_pageMap` (volet) et `fn_pageSettings` (Réglages) : deux boutons par rangée, fond relu par `fn_mapStyle` (un ancien « SAT » allume CLASSIQUE), description sous les boutons.
+- Non vérifié en jeu : ACE retouche aussi `CA_Map` seul (arbres masqués, assombrissement de nuit), non repris sur le téléphone.
+
+---
+
 ## SSE 1.9.0 : IA qui réagissent naturellement, émotions réglables, papiers de 45 pays, une seule identité par IA, outils Zeus refaits (SSE 1.9.0)
 
 ### Résumé joueur
