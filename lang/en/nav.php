@@ -799,4 +799,8 @@ return [
     'fichiers_controles_d_identite_seek_ii_et_telephones' => 'Records, identity checks, SEEK II and phones',
     'fichiers_sse' => 'SSE records',
     'fiches_fusion_des_doublons_extractions_de_telephones_journal_et_reglages_des_fichiers' => 'Records, duplicate merging, phone extractions, log and records settings',
+    'outils_operateur' => 'Operator tools',
+    'identite_papiers_couverture_fichiers' => 'Identity, papers, cover, records',
+    'tous_mes_outils' => 'All my tools',
+    'la_page_des_outils_operateur_identite_papiers_couverture_fichiers_materiel' => 'The operator tools page: identity, papers, cover, records, equipment',
 ];
