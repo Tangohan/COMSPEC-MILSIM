@@ -66,6 +66,26 @@ EN : AIs understand three times more questions, and the game master can write th
 - **Fichiers hors `ia_rp`** : `editor/dialogs/editor.hpp` (bouton `AiAnswers`, IDC 94586, « IA cochées » raccourci), `editor/functions/fn_editorAi.sqf` (« answers »), `editor/functions/fn_editorAiServer.sqf` (garder), `editor/stringtable.xml`, `identity/functions/fn_idAiConfig.sqf` (3 lignes), `main/stringtable.xml` (chapitre « IA de la zone »), guides `docs/guides/ia_de_la_zone*.md` (réécrits), `reponses_ia*.md` (nouveaux), `index*.md`, mission d'autotest `scripts/ia_rp.sqf`. Manuel en jeu : `CfgHints COMSPEC_SSE >> IaRpAnswers` (nouveau), `IaRpTalk` (thèmes). Aucun fichier ATAK.
 - **Non vu en jeu** (autotest non lancé sur consigne) : rendu de la fenêtre « Réponses de l'IA » et du bouton de l'atelier, enregistrement Eden par `set3DENAttribute`, nouveaux ordres (recul, approche, arme posée), coût réel en jeu ; étapes écrites dans `scripts/ia_rp.sqf` (« ia_rp_reponse_perso_attribut », « ia_rp_reponse_perso_zeus », « ia_rp_question_perso », « ia_rp_cadre_civil ») et dans `fn_iarpSelfTest`.
 
+## À venir : synchroniser le téléphone avec le web (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Synchronisez votre téléphone avec les fichiers d'Athena
+- Nouvelle action « Synchroniser avec le web » dans le menu ACE du téléphone : le contenu du téléphone de votre personnage (contacts, messages, notes, photos, apps, positions, repères) rejoint les fichiers d'Athena.
+- Rien ne part sans votre accord : cochez « Autoriser la synchronisation du téléphone avec Athena » dans les options du mod. Le maître du jeu peut l'interdire pour une mission.
+- Le téléphone saisi sur une IA peut aussi être synchronisé depuis sa page de lecture. Le résultat et sa référence s'affichent dans le téléphone.
+EN : Sync your phone with the Athena files
+- New "Sync with the web" action in the phone's ACE menu: your character's phone content (contacts, messages, notes, photos, apps, positions, markers) joins the Athena files.
+- Nothing leaves without your consent: tick "Allow phone sync with Athena" in the mod options. The game master can forbid it for a mission.
+- A phone seized from an AI can also be synced from its reading page. The result and its reference show in the phone.
+
+### Détail technique
+- `fn_phoneSync` (core) : `kind` `phone_extraction` par `SubmitIdCheck` de COMSPEC Link (aucune nouvelle commande de DLL), contrat ICD-SSE-PHONE-001. JSON par `fn_json`, découpé en morceaux de 4 000 caractères (`forceUnicode`), corps de 240 000 octets au plus (60 morceaux : la DLL accepte 64 arguments, `Async` et ticket compris), 300 éléments par catégorie et par partie, 20 parties au plus ; `extraction_key` commune, `idempotency_key` par partie. Envoi par `fn_extAwait` (45 s), retour `OK|id|ref` dans le téléphone (`fn_notify`) et le RPT (`fn_log`).
+- Portes, revérifiées à chaque envoi : licence (`licenceStatus`), `uplinkOff`, `fn_athenaMode` = `on`, `COMSPEC_AthenaReady`, réglage client `comspec_atak_native_phone_sync` (décoché, `isGlobal` 2 : aucune mission ne peut le cocher), réglage de mission `comspec_atak_native_phone_sync_off`, variable Zeus `COMSPEC_ATAK_PhoneSyncDisabled`, une synchro par 60 s, `SubmitIdCheck` présent dans `GetAtakFeatures`.
+- Téléphone saisi : IA seulement (clé `AI_…` et `ai_uid` renvoyé par le serveur). `fn_phoneServer` « adopt » pose la variable publique `comspec_sse_aiUid` si absente (`mission.monde.nomDeVariable`, sinon identifiant de la session). Boutons : menu ACE (« Synchroniser avec le web », « Synchroniser le téléphone saisi ») et page Téléphones (« SYNCHRONISER AVEC LE WEB »).
+- Limite DLL connue : `IdentityHttpError` rend tout 403 en `unauthorized` ; `unlinked`, `consent_revoked`, `extractions_disabled` ne remontent pas tels quels (message commun dans le téléphone). Les 422 (`too_large`, `consent_required`…) remontent.
+- **À tester en jeu** : action ACE visible seulement avec un téléphone et Athena en « on » ; refus avec le réglage décoché, avec la licence non acceptée, avec `COMSPEC_ATAK_PhoneSyncDisabled` ; envoi réussi et référence EXT-… dans le téléphone ; second clic avant 60 s refusé ; téléphone d'IA saisi (avec et sans `COMSPEC_ATAK_PhoneData`) : bouton de la page et `comspec_sse_aiUid` posé ; téléphone d'un joueur saisi : aucun bouton ; un téléphone avec beaucoup de messages (plusieurs parties).
+
 ## Pack 4.3.0 Washington : apps à l'horizontale, carte lisible, drones armés, centre Zeus, IA qui répondent juste, vrais papiers et passage aux fichiers (ATAK natif 4.3.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.7.0)
 
 ### Résumé joueur
