@@ -79,6 +79,10 @@ private _lockCtrl = uiNamespace getVariable ["COMSPEC_ATAK_LockCtrl", controlNul
 if (!isNull _lockCtrl) then {
     private _lockTt = (format ["%1 : %2", (_lockLong) call comspec_atak_native_fnc_tr, (_lockWhy) call comspec_atak_native_fnc_tr]);
     if (_lockEx isNotEqualTo "") then { _lockTt = format ["%1. %2 %3", _lockTt, ("Ex." call comspec_atak_native_fnc_tr), (_lockEx) call comspec_atak_native_fnc_tr]; };
+    // Chemin de la voix (fn_voicePath "bar") : pendant une émission et 3 s après, le libellé dit par où passe la voix (VOIX ATAK,
+    // VOIX ACRE, VOIX TFAR, VOIX DIR.) et le cadenas en prend la couleur ; ensuite le cadenas revient tel quel.
+    (uiNamespace getVariable ["COMSPEC_ATAK_VoiceBar", []]) params [["_vbLab", ""], ["_vbCol", [1, 1, 1, 1]], ["_vbTip", ""], ["_vbUntil", 0]];
+    if (_vbLab isNotEqualTo "" && {diag_tickTime < _vbUntil}) then { _lockShort = _vbLab; _lockCol = _vbCol; _lockTt = _vbTip; };
     [_lockCtrl, "cs_t", _lockImg] call _put;
     [_lockCtrl, "cs_c", _lockCol] call _put;
     [_lockCtrl, "cs_tt", _lockTt] call _put;

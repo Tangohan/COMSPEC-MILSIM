@@ -5,7 +5,7 @@
       ["offer"]       -> lignes de la proposition, ou [] si elle n'a pas lieu d'être
       ["set", écran]  (-1 : fermer)
     Chaque phrase a été vérifiée dans le code (fn_linkQuality, fn_waveRelayAction, fn_mpuLink, fn_mpuVoice, fn_antenna, fn_antennaKit) et les valeurs sont lues
-    dans les réglages à l'affichage. Pas de chiffre sur les bâtiments : ils sont fixés dans fn_linkQuality et MON NŒUD montre la valeur du moment.
+    dans les réglages à l'affichage. Pas de chiffre sur les bâtiments : ils sont fixés dans fn_linkQuality et ÉTAT montre la valeur du moment.
 */
 params [["_act", "rows"], ["_arg", 0]];
 private _render = { [{ ["WAVERELAY"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; };
@@ -62,14 +62,14 @@ switch (_act) do {
             ["Améliorer le signal", [
                 "Hauteur : le relief coupe la liaison. Montez, ou contournez ce qui vous sépare du relais.",
                 "Bâtiment : toit et murs réduisent le débit, jusqu'à plus aucun signal au cœur du bâtiment ou en sous-sol. Sortez, ou approchez d'une ouverture.",
-                switch (true) do { case (_real): { "Radio : seule une MPU5 relie le téléphone sur ce serveur, par câble EUD ou Wi-Fi." }; case (_radioOn): { format ["Radio branchée, depuis MON NŒUD : elle relaie vos données et celles de l'équipe. Portée longue portée : %1, portative : %2.", _lrR, _swR] }; default { "Radio : le branchement est désactivé sur ce serveur." }; },
+                switch (true) do { case (_real): { "Radio : seule une MPU5 relie le téléphone sur ce serveur, par câble EUD ou Wi-Fi." }; case (_radioOn): { format ["Radio branchée, depuis ÉTAT : elle relaie vos données et celles de l'équipe. Portée longue portée : %1, portative : %2.", _lrR, _swR] }; default { "Radio : le branchement est désactivé sur ce serveur." }; },
                 format ["MPU5 : +%1 dB sur la liaison.", _mpuG],
                 ["Antenne : une antenne d'extension montée sur le téléphone augmente le débit et atténue les pertes.", ""] select _real,
                 ["", "Antenne transportable : une fois posée, c'est un relais."] select ((missionNamespace getVariable ["comspec_atak_native_antkit_max", 12]) > 0),
                 ["Mât : indisponible sur ce serveur.", "Mât : une MPU5 posée et reliée en Wi-Fi peut déployer un mât, visible de loin."] select _mast
             ]],
             ["Quand c'est coupé", [
-                "Regardez MON NŒUD : la carte d'état donne la cause principale et l'action à faire.",
+                "Regardez ÉTAT : la carte d'état donne la cause principale et l'action à faire.",
                 ["", format ["Vérifiez l'objet requis : %1. Le réseau repart dès qu'il est équipé.", _req]] select (_req isNotEqualTo ""),
                 "Mode avion : aucun réseau tant qu'il est actif.",
                 "Sortez du bâtiment, montez sur un point haut, éloignez-vous d'une zone brouillée.",
@@ -77,9 +77,9 @@ switch (_act) do {
                 "Vos envois attendent en file. File pleine : les plus anciens non urgents sont abandonnés, les urgents jamais."
             ]],
             ["Les onglets", [
-                "MON NŒUD : votre état, ce qui change votre débit, votre radio et vos voisins directs.",
+                "ÉTAT : votre état, ce qui change votre débit, votre radio et vos voisins directs.",
                 "RÉSEAU : tous les nœuds, leurs sauts, et LOCALISER pour retrouver un équipier par triangulation.",
-                "COUVERTURE : calcule le débit reçu autour de vous, et liste les relais.",
+                "RELAIS : calcule le débit reçu autour de vous, et liste les relais.",
                 ["TALKGROUPS : vos groupes de conversation.", "VOIX : qui émet sur vos fréquences, vos radios ACRE2 et leur canal, les équipiers connectés."] select (!isNil "acre_api_fnc_getCurrentRadioList"),
                 ["", "Case RELAIS ATAK : affichée près du cadre d'émission quand votre voix passe réellement par le réseau. Elle se masque ou se déplace dans les réglages d'addons."] select _voice
             ]]

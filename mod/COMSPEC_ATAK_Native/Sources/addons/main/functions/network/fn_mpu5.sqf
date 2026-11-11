@@ -399,7 +399,7 @@ switch (_act) do {
     };
     case "tick": {
         ["tick"] call comspec_atak_native_fnc_netRequire;
-        // Carte d'état de l'app Wave Relay ouverte sur MON NŒUD : chiffres à jour sans redessiner la page.
+        // Carte d'état de l'app Wave Relay ouverte sur ÉTAT : chiffres à jour sans redessiner la page.
         ["live"] call comspec_atak_native_fnc_waveRelayStatus;
         private _src = ["source"] call comspec_atak_native_fnc_mpu5;
         private _has = _src isNotEqualTo [];

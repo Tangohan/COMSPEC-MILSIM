@@ -270,7 +270,9 @@ switch (_act) do {
         ];
         private _tblTools = [
             ["CONFIGURER L'OBJET", "CONFIGURER", "Fenêtre de l'objet sélectionné dans Zeus : écran, preuve, caisse (aussi par double-clic).", "['request', [((curatorSelected param [0, []]) select { !(_x isKindOf 'CAManBase') }) param [0, objNull]]] call comspec_atak_native_fnc_zeusObject;", true],
-            ["ASSISTANT ATAK", "ASSISTANT", "Assistant de configuration du réalisme et du réseau, un choix expliqué à la fois.", "['open'] call comspec_atak_native_fnc_setupWizard;", true]
+            ["ASSISTANT ATAK", "ASSISTANT", "Assistant de configuration du réalisme et du réseau, un choix expliqué à la fois.", "['open'] call comspec_atak_native_fnc_setupWizard;", true],
+            ["RELAIS DU RÉSEAU", "RELAIS", "Tous les relais et pylônes : état, alimentation, charge, canal, brouillage ; allumer, couper, réparer, changer de canal.", "['overview'] call comspec_atak_native_fnc_relayZeus;", true],
+            ["RÉSEAU DU CAMP", "RÉSEAU", "Graphe du réseau d'un camp : relais, radios, téléphones, liens colorés par qualité, nœuds hors réseau avec la raison.", "['open', [str side group player]] call comspec_atak_native_fnc_meshGraphView;", true]
         ];
         if (!isNil "comspec_sse_fnc_aiConfigOpen") then { _tblTools pushBack ["IA DE LA ZONE (SSE)", "IA (SSE)", "Configuration des IA : profil Athena, identité, papiers, comportement, camp.", "[(curatorSelected param [0, []]) select { _x isKindOf 'CAManBase' && {!isPlayer _x} }, screenToWorld [0.5, 0.5]] call comspec_sse_fnc_aiConfigOpen;", true]; };
         if (!isNil "comspec_sse_fnc_editor") then { _tblTools pushBack ["ÉDITEUR SSE", "ÉDITEUR", "Éditeur de renseignement au centre de l'écran : sites, preuves, entités.", "['open', [screenToWorld [0.5, 0.5], objNull]] call comspec_sse_fnc_editor;", true]; };

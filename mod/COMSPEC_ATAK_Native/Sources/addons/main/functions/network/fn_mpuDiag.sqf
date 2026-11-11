@@ -4,7 +4,7 @@
     Lecture seule et locale : aucune écriture chez ACRE2 ou TFAR, aucune requête réseau (ni Athena ni serveur), aucun remoteExec.
     ACRE2 et TFAR ne sont lus que par fn_radioGuard ("api", "has", "compat", "voice"), et seulement si le lien radio n'est pas coupé ("read").
     Étapes, dans l'ordre de la chaîne de la voix : [id, état "OK" | "KO" | "ATTENTION" | "INCONNU", titre, explication avec exemple, action, valeur, correction]
-      setting  réglage serveur « Voix relayée par le maillage » (comspec_atak_native_mpu_voice, décoché par défaut)
+      setting  réglage serveur « Voix relayée par le maillage » (comspec_atak_native_mpu_voice, coché par défaut depuis la 4.8)
       real     liaison réaliste (comspec_atak_native_mpu_real, coupée par le profil Arcade : fn_mpuLink "active")
       radio    ACRE2 / TFAR chargé, version connue, coupe-circuit, radio portée
       ts       TeamSpeak et plugin radio : ACRE2 2.14 acre_api_fnc_isVOIPConnected, acre_api_fnc_getVOIPChannelName (API publique, lue dans

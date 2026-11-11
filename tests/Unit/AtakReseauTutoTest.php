@@ -66,7 +66,8 @@ final class AtakReseauTutoTest extends TestCase
 
         $page = $this->read('functions/pages/fn_pageWaveRelay.sqf');
         self::assertStringContainsString('"COMSPEC_ATAK_WrStatusCtl"', $page);
-        self::assertLessThan(strpos($page, '_rows pushBack ["section", "Mon nœud"'), strpos($page, 'Ce qui change votre débit'));
+        // 4.8 : cartes repliables, le débit avant « Mon nœud ».
+        self::assertLessThan(strpos($page, '["wrFoldNode", "Mon nœud"'), strpos($page, '["wrFoldRate", "Ce qui change votre débit"'));
         self::assertStringNotContainsString('aucun relais reçu, rien à relayer', $page);
     }
 

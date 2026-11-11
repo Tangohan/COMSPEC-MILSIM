@@ -79,6 +79,35 @@ EN : IP cameras placed in the editor finally show up
 - `comspec_atak_native_fnc_camList` : `[] call` → `[[id, nom, type, état, position ASL, ptz], …]` des caméras visibles ; `["visible", […]]` : règle de visibilité, fonction pure.
 - Journal serveur, une ligne par caméra : `[COMSPEC CAM] caméra | classe=… nom=… camp=… lives=oui/non toc=oui/non raison=…`.
 - Test : `AtakCameraRegistryAssetTest`.
+## À venir : l'app WAVE RELAY et les relais refaits (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : L'app WAVE RELAY et les relais refaits
+- L'app Wave Relay dit d'abord où vous en êtes : « Réseau relié, via Pylône 150179, 1 saut, signal excellent, portée 20 km », puis un petit schéma de votre réseau, vos voisins avec une barre de qualité, et des boutons clairs : Actualiser, Carte, Tester, Passerelle, Signaler un problème.
+- Les longs textes ont disparu : un bouton « Comment l'activer » ouvre une fiche étape par étape, qui coche ce qui est déjà fait et montre la prochaine chose à faire.
+- Le maillage et la MPU5 sont actifs par défaut : la voix de votre radio peut passer par le réseau sans qu'un admin ait à cocher quoi que ce soit.
+- Le réseau MPU/radio ne fonctionne qu'avec un relais en service à portée. Aucun relais, relais détruit, éteint, brouillé ou trop loin : pas de réseau, et l'app dit lequel et pourquoi (« Relais hors de portée : Pylône 150179 à 1.8 km, portée 1.2 km »). Un admin peut revenir au réseau libre dans Échap > Réalisme.
+- Onglet VOIX : vous voyez par où passe votre voix quand vous émettez (réseau ATAK, radio ACRE2 ou TFAR classique, voix directe), avec la raison, la qualité et les dernières émissions. La barre du haut du téléphone l'affiche aussi pendant que vous parlez.
+- La voix relayée par le maillage se dégrade avec la distance, les sauts et les obstacles : Excellent, Bon, Moyen, Mauvais, Perdu. L'app donne le maillon faible et quoi faire.
+- Zeus : « Voir le réseau de ce camp » ouvre un vrai schéma lisible (relais en haut, un étage par saut, liens colorés, nœuds hors réseau à part avec la raison), et une vue d'ensemble de tous les relais permet d'allumer, couper, réparer ou changer de canal.
+- Sur un relais ou un pylône, l'action ACE « Voir l'état du relais » ouvre sa fiche sur le téléphone.
+EN : The WAVE RELAY app and the relays, redone
+- The Wave Relay app tells you where you stand first: "Network connected, via Tower 150179, 1 hop, excellent signal, range 20 km", then a small diagram of your network, your neighbours with a quality bar, and clear buttons: Refresh, Map, Test, Gateway, Report a problem.
+- The long texts are gone: a "How to turn it on" button opens a step-by-step sheet that ticks what is already done and shows the next thing to do.
+- The mesh and the MPU5 are on by default: your radio's voice can go over the network without an admin ticking anything.
+- The MPU/radio network only works with a working relay in range. No relay, or a relay destroyed, off, jammed or too far: no network, and the app says which one and why ("Relay out of range: Tower 150179 at 1.8 km, range 1.2 km"). An admin can go back to a free network in Esc > Realism.
+- VOICE tab: you see which path your voice takes when you transmit (ATAK network, regular ACRE2 or TFAR radio, direct voice), with the reason, the quality and the last transmissions. The phone's top bar shows it too while you talk.
+- Voice relayed over the mesh degrades with distance, hops and obstacles: Excellent, Good, Fair, Poor, Lost. The app names the weakest link and what to do.
+- Zeus: "View this side's network" opens a proper readable diagram (relays on top, one row per hop, coloured links, off-network nodes set apart with the reason), and an overview of all relays lets you power on, power off, repair or change channel.
+- On a relay or a tower, the ACE action "View relay status" opens its sheet on the phone.
+
+### Détail technique
+- Règle « pas de relais, pas de réseau » décidée en un seul endroit : `fn_relayNet` (`gateOn`, `gate`, `gateEval`), lue par `fn_meshGraph` (`view` : plus de maillage d'équipe ni autonome sans relais), `fn_waveRelayAction`, `fn_linkQuality` (par `only`), `fn_mpuVoice`. Réglage serveur `comspec_atak_native_relay_gate` (coché), sans effet en profil Arcade. La liaison vers Athena n'en dépend pas.
+- Défaut changé : `comspec_atak_native_mpu_voice` coché. Nouveaux réglages : `mesh_voice_degrade` (réaliste = valeurs d'avant), `mesh_voice_cut`, `mesh_voice_policy`.
+- `fn_voicePath` : `["get"]` -> [chemin, raison, route, réseau, depuis, [palier, %, latence, nom], en émission] ; événement local `comspec_atak_native_voicePath` ; `["quality", [sauts, niveau, mode, ms par saut, seuil]]`. Piloté par les événements d'émission, aucune boucle.
+- `fn_meshGraphView` : `layout`, `geo`, `model`, `draw` (dans un groupe de contrôles, à tout format), `open` (fenêtre Zeus). `fn_waveRelaySheet` : fiches. `fn_formRender` : lignes `meter` et `graph`.
+- Audit : `docs/audit/2026-11-relais-ux.md`. Tests : `tests/Unit/AtakRelaisUxTest.php`.
 
 ## À venir : poste TOC web et plans d'opération sur Athena (site Athena, version à attribuer)
 

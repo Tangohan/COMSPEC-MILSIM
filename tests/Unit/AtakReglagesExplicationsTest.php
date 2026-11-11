@@ -117,7 +117,7 @@ final class AtakReglagesExplicationsTest extends TestCase
         $pre = $this->read(self::MAIN . '/XEH_preInit.sqf');
         $i = strpos($pre, '["comspec_atak_native_mpu_voice"');
         self::assertNotFalse($i);
-        self::assertMatchesRegularExpression('/^\s+_mpuCat, false, 1\]/m', substr($pre, $i, strpos($pre, 'addSetting', $i) - $i + 20), 'défaut inchangé : désactivé');
+        self::assertMatchesRegularExpression('/^\s+_mpuCat, true, 1\]/m', substr($pre, $i, strpos($pre, 'addSetting', $i) - $i + 20), 'défaut 4.8 : activé');
         $voice = $this->read(self::MAIN . '/functions/network/fn_mpuVoice.sqf');
         self::assertStringContainsString('Échap > Réalisme', $voice);
     }

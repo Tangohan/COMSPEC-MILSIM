@@ -2,7 +2,7 @@
     État du réseau d'un coup d'œil pour l'app Wave Relay, tiré de fn_linkQuality : bon, dégradé ou coupé, cause principale et action à faire.
       ["read", qualité]  -> HashMap : level ("ok" | "warn" | "ko"), title, cause, action, rows (facteurs, du plus gênant au moins gênant, lignes "check"),
                             text (texte structuré de la carte d'état), sig (change seulement si l'état, la cause ou l'action changent)
-      ["live"] (appelé par fn_mpu5 "tick", toutes les 2 s, seulement l'app ouverte sur MON NŒUD) : état changé, page redessinée ;
+      ["live"] (appelé par fn_mpu5 "tick", toutes les 2 s, seulement l'app ouverte sur ÉTAT) : état changé, page redessinée ;
                             sinon seuls les chiffres de la carte changent, sans redessiner la page.
     Aucun chiffre écrit ici : gains et pertes viennent des facteurs de fn_linkQuality.
 */
@@ -92,18 +92,23 @@ if (_sev > 0 && {_level isNotEqualTo "ok"}) then {
     private _lb = _worst select 1;
     { if ((_lb select [0, count (_x select 0)]) isEqualTo (_x select 0)) exitWith { _action = _x select 1; }; } forEach _actions;
 };
+// Relais exigé (fn_relayNet "gate") : sans relais en service à portée, la raison exacte et le remède, avant toute autre cause.
+private _gate = ["gate"] call comspec_atak_native_fnc_relayNet;
+if (!(_gate select 0)) then { _level = "ko"; _cause = _gate select 2; _action = _gate select 3; };
+// Résumé posé par la page (fn_pageWaveRelay) : par quel relais, en combien de sauts, quel signal, quelle portée.
+private _sum = uiNamespace getVariable ["COMSPEC_ATAK_WrSum", ""];
 private _title = switch (true) do {
     case (_q getOrDefault ["airplane", false]): { "Mode avion" };
     case (_level isEqualTo "ko"): { "Réseau coupé" };
     case (_level isEqualTo "warn"): { "Réseau dégradé" };
-    default { "Réseau bon" };
+    default { "Réseau relié" };
 };
 private _col = createHashMapFromArray [["ok", "hexOk"], ["warn", "hexWarn"], ["ko", "hexAlert"]] get _level;
 private _rate2 = [format ["%1 kbit/s", _kbps], format ["%1 Mbit/s", (_kbps / 1000) toFixed 1]] select (_kbps >= 1000);
-private _txt = format ["<t size='1.25' font='COMSPEC_BarlowBold' color='%1'>● %2</t>%3<br/><t size='0.85' color='%4'>Latence %5 ms · perte %6 %%</t>%7%8",
-    _col call _hex, _title, ["", format ["  <t size='1.1'>%1</t>", _rate2]] select (_kbps > 0), "hexTextMuted" call _hex, _q getOrDefault ["latency", 0], _loss,
+private _txt = format ["<t size='1.25' font='COMSPEC_BarlowBold' color='%1'>● %2</t>%3<br/><t size='0.9'>%9</t><br/><t size='0.85' color='%4'>Latence %5 ms · perte %6 %%</t>%7%8",
+    _col call _hex, _title, ["", format ["<t align='right' size='1.1' font='COMSPEC_BarlowBold'>%1</t>", _rate2]] select (_kbps > 0), "hexTextMuted" call _hex, _q getOrDefault ["latency", 0], _loss,
     ["", format ["<br/><t size='0.95'>%1</t>", _cause]] select (_cause isNotEqualTo ""),
-    ["", format ["<br/><t size='0.95' color='%1'>%2</t>", "hexWarn" call _hex, _action]] select (_action isNotEqualTo "")];
+    ["", format ["<br/><t size='0.95' color='%1'>%2</t>", "hexWarn" call _hex, _action]] select (_action isNotEqualTo ""), _sum];
 createHashMapFromArray [
     ["level", _level], ["title", _title], ["cause", _cause], ["action", _action], ["text", _txt], ["sig", [_level, _title, _cause, _action]],
     ["rows", _rated apply { ["check", _x select 3, _x select 1, _x select 2] }]
