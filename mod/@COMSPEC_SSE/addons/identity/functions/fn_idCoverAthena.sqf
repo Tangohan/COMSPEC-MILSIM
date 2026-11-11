@@ -13,12 +13,20 @@
     est active à la fois (celle de la légende, fn_idLegend) : la plus récente de la sélection devient active, les autres
     restent sur ce poste (profil : comspec_sse_idCoverLib, ref -> [couverture, empreinte, date], 10 au plus), prêtes à
     activer depuis la fenêtre.
+    Couverture active sur le site (champ « active » de la liste, /operateur/identite/couverture) : marquée « Active sur
+    Athena », présélectionnée à l'ouverture si elle n'est pas déjà l'active à jour de ce poste, et c'est elle qui devient
+    active à l'import quand elle est dans la sélection. Site ancien (champ absent) : rien de tout cela, comportement d'avant.
+    Couverture révoquée sur le site : le site ne la liste plus. Sa copie est retirée de ce poste à la lecture de la liste
+    (site récent seulement), sauf si c'est la couverture en cours : celle-ci n'est jamais effacée d'office, la fenêtre dit
+    seulement qu'elle n'est plus sur Athena. Une couverture absente de la liste ne s'active plus d'ici.
+    Textes de ces ajouts : stringtable de l'addon (STR_COMSPEC_SSE_ID_Cover*), français et anglais.
     Actions : ["open"] · ["close"] · ["retry"] · ["toggle", ref] · ["all"] · ["import"] · ["activate", ref]
               ["isOpen"] -> Boolean · ["rows"] -> lignes fn_formRender de la fenêtre
     Tâches de fond : ["pull", opération] -> [code ("" : réussi), settings] · ["download", couvertures] -> [importées,
               déjà à jour, échecs (ref -> code)] · ["listed", …] · ["fetched", …] (résultats)
     État (uiNamespace comspec_sse_idCoverSyncUi) : open, state (idle | loading | ready | empty | importing | off |
-    licence | notready | unlinked | nodll | oldsite | error), err, covers (HashMaps reçues), sel (ref -> true), msg, kind.
+    licence | notready | unlinked | nodll | oldsite | error), err, covers (HashMaps reçues), sel (ref -> true), msg, kind,
+    presel (présélection à faire à la prochaine liste reçue), knows (la liste reçue porte le champ « active »).
 */
 params [["_op", ""], ["_arg", ""]];
 if (!hasInterface) exitWith { false };
@@ -39,6 +47,13 @@ private _activeRef = {
     if (_c isEqualType createHashMap) then { _c getOrDefault ["ref", ""] } else { "" }
 };
 private _isRef = { params ["_r"]; _r isEqualType "" && {(count _r) isEqualTo 12} && {(_r select [0, 4]) isEqualTo "CVR-"} };
+// Couverture que le membre a marquée active sur le site : sa référence ; "" sans elle (site ancien sans le champ « active »,
+// aucune active, ou active expirée ou illisible).
+private _siteActive = {
+    params ["_list"];
+    private _i = _list findIf { ((_x getOrDefault ["active", false]) isEqualTo true) && {(_x getOrDefault ["status", ""]) isEqualTo "valid"} };
+    if (_i < 0) then { "" } else { (_list select _i) get "ref" }
+};
 // Paires [["clé", valeur]…] (objet JSON converti par la DLL) -> HashMap.
 private _h = {
     params ["_a"];
@@ -201,8 +216,19 @@ if (_op isEqualTo "rows") exitWith {
         _rows pushBack ["skeleton", 3, "Recherche de vos couvertures sur Athena…" call _tr];
         _rows
     };
-    // Une seule couverture active : le dire avant d'importer.
-    _rows pushBack ["text", format ["<t size='0.85' color='%1'>%2</t>", _th get "hexTextDim", [("Choisissez une ou plusieurs couvertures. La plus récente de la sélection devient votre couverture active et remplace celle d'avant ; les autres restent sur ce poste, prêtes à activer ici." call _tr)] call _esc]];
+    // Une seule couverture active : le dire avant d'importer. Site récent avec une active choisie là-bas : c'est elle.
+    private _onSite = [_covers] call _siteActive;
+    private _lead = if (_onSite isEqualTo "") then {
+        "Choisissez une ou plusieurs couvertures. La plus récente de la sélection devient votre couverture active et remplace celle d'avant ; les autres restent sur ce poste, prêtes à activer ici." call _tr
+    } else {
+        localize "STR_COMSPEC_SSE_ID_CoverSiteActiveHint"
+    };
+    _rows pushBack ["text", format ["<t size='0.85' color='%1'>%2</t>", _th get "hexTextDim", [_lead] call _esc]];
+    // Couverture en cours absente de la liste d'un site récent (révoquée ou retirée) : gardée, mais dite.
+    private _current = call _activeRef;
+    if ((_ui getOrDefault ["knows", false]) && {_current isNotEqualTo ""} && {_current in (call _libGet)} && {(_covers findIf { (_x get "ref") isEqualTo _current }) < 0}) then {
+        _rows pushBack ["text", format ["<t size='0.85' color='%1'>%2</t>", _th get "hexWarn", [localize "STR_COMSPEC_SSE_ID_CoverGoneHint"] call _esc], _th get "surface"];
+    };
     private _valid = _covers select { (_x getOrDefault ["status", ""]) isEqualTo "valid" };
     private _allOn = _valid isNotEqualTo [] && {(_valid findIf { !((_x get "ref") in _sel) }) < 0};
     private _n = count (_valid select { (_x get "ref") in _sel });
@@ -232,9 +258,11 @@ if (_op isEqualTo "rows") exitWith {
         ];
         if (_c getOrDefault ["has_photo", false]) then { _line pushBack ("photo sur Athena" call _tr); };
         if (_c getOrDefault ["by_manager", false]) then { _line pushBack ("faite par un responsable" call _tr); };
-        private _text = format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t><br/><t size='0.85' color='%3'>%4</t><br/><t size='0.85' font='COMSPEC_BarlowBold' color='%5'>%6</t><t size='0.8' color='%3'> · %7</t>",
+        // Marque de la couverture choisie sur le site, à côté du nom.
+        private _tag = if (_ref isEqualTo _onSite) then { format ["  <t size='0.8' font='COMSPEC_BarlowBold' color='%1'>%2</t>", _th get "hexOk", [localize "STR_COMSPEC_SSE_ID_CoverSiteActive"] call _esc] } else { "" };
+        private _text = format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>%8<br/><t size='0.85' color='%3'>%4</t><br/><t size='0.85' font='COMSPEC_BarlowBold' color='%5'>%6</t><t size='0.8' color='%3'> · %7</t>",
             _th get "hexText", [_c getOrDefault ["name", "?"]] call _esc, _th get "hexTextDim", [_c getOrDefault ["summary", ""]] call _esc,
-            _hex, [_word call _tr] call _esc, (_line select { _x isNotEqualTo "" }) joinString " · "];
+            _hex, [_word call _tr] call _esc, (_line select { _x isNotEqualTo "" }) joinString " · ", _tag];
         private _on = _ref in _sel;
         private _btns = [[(["CHOISIR", "CHOISIE"] select _on) call _tr, ["toggle", _ref] call _act, _on, _status isEqualTo "valid" && {!_busy}, "Ajoute ou retire cette couverture de la sélection." call _tr]];
         if (_have isNotEqualTo [] && {_ref isNotEqualTo _active}) then {
@@ -251,6 +279,8 @@ switch (_op) do {
         _ui set ["open", true];
         _ui set ["sel", createHashMap];
         _ui set ["msg", ""];
+        // Présélection de la couverture active sur le site : une fois, à la première liste reçue après l'ouverture.
+        _ui set ["presel", true];
         ["retry"] call comspec_sse_fnc_idCoverAthena;
     };
     case "close": {
@@ -276,6 +306,8 @@ switch (_op) do {
     case "activate": {
         private _entry = (call _libGet) getOrDefault [_arg, []];
         if (_entry isEqualTo []) exitWith {};
+        // Seulement une couverture de la liste lue sur Athena : une couverture révoquée ou retirée ne s'active plus d'ici.
+        if (((_ui getOrDefault ["covers", []]) findIf { (_x get "ref") isEqualTo _arg }) < 0) exitWith {};
         ["use", [_entry select 0]] call comspec_sse_fnc_idCoverImport;
         _ui set ["kind", "ok"];
         _ui set ["msg", format [("« %1 » est maintenant votre couverture active." call _tr), (_entry select 0) getOrDefault ["name", ""]]];
@@ -316,6 +348,32 @@ switch (_op) do {
         private _sel = _ui getOrDefault ["sel", createHashMap];
         private _refs = _covers apply { _x get "ref" };
         { if !(_x in _refs) then { _sel deleteAt _x; }; } forEach (keys _sel);
+        // Site récent : chaque entrée porte « active ». Site ancien (champ absent) : rien de ce qui suit ne s'applique.
+        private _knows = (_covers findIf { "active" in _x }) >= 0;
+        _ui set ["knows", _knows];
+        if (_knows) then {
+            // Copies gardées sur ce poste de couvertures qui ne sont plus sur Athena (révoquées, retirées) : retirées,
+            // jamais la couverture en cours (elle reste jouée tant que le joueur n'en change pas).
+            private _lib = call _libGet;
+            private _current = call _activeRef;
+            private _gone = (keys _lib) select { !(_x in _refs) && {_x isNotEqualTo _current} };
+            if (_gone isNotEqualTo []) then {
+                { _lib deleteAt _x; } forEach _gone;
+                profileNamespace setVariable ["comspec_sse_idCoverLib", _lib];
+                saveProfileNamespace;
+            };
+            // Couverture active sur le site présélectionnée, sauf si elle est déjà l'active à jour de ce poste.
+            if (_ui getOrDefault ["presel", false]) then {
+                private _onSite = [_covers] call _siteActive;
+                if (_onSite isNotEqualTo "" && {(count _sel) isEqualTo 0}) then {
+                    private _have = _lib getOrDefault [_onSite, []];
+                    private _i = _covers findIf { (_x get "ref") isEqualTo _onSite };
+                    private _same = _onSite isEqualTo _current && {_have isNotEqualTo []} && {(_have select 1) isEqualTo ((_covers select _i) getOrDefault ["sha", ""])};
+                    if (!_same) then { _sel set [_onSite, true]; _ui set ["sel", _sel]; };
+                };
+            };
+        };
+        _ui set ["presel", false];
         call _redraw;
     };
     case "import": {
@@ -340,8 +398,11 @@ switch (_op) do {
         _arg params ["_chosen", "_res"];
         _res params [["_imported", []], ["_upToDate", []], ["_failed", createHashMap]];
         private _lib = call _libGet;
-        // La plus récente de la sélection présente sur ce poste devient active.
-        private _first = ((_chosen apply { _x get "ref" }) select { _x in _lib }) param [0, ""];
+        // Devient active : la couverture active sur le site si elle est dans la sélection et sur ce poste, sinon la plus
+        // récente de la sélection présente sur ce poste.
+        private _here = (_chosen apply { _x get "ref" }) select { _x in _lib };
+        private _onSite = [_chosen] call _siteActive;
+        private _first = if (_onSite in _here) then { _onSite } else { _here param [0, ""] };
         if (_first isNotEqualTo "") then { ["use", [(_lib get _first) select 0]] call comspec_sse_fnc_idCoverImport; };
         private _parts = [];
         if (_imported isNotEqualTo []) then { _parts pushBack format [("%1 importée(s)" call _tr), count _imported]; };
