@@ -21,6 +21,8 @@
       paliers      savoir d'une phrase (comme avant) et par paliers avec lieu, palier débloqué selon confiance et pression
       redite       même question 10 fois à la même personne : moins de 3 répliques identiques
       cohérence    10 réponses « origine » d'une personne honnête : toutes citent la ville de sa couverture
+      hors sujet   data\iarp_ottests.sqf (fn_iarpOffTopic « selfTest ») : 60 messages hors sujet sans demande à effet, 120 questions
+                   légitimes (tu, vous, court, SMS) comprises, guide, dialogues (relance, incompris, provocation), phrases
     Repris par l'autotest (scripts\ia_rp.sqf) ; rien n'est envoyé ni enregistré.
 */
 private _ko = [];
@@ -441,4 +443,8 @@ _info pushBack format ["question / réponse : déclencheurs %1", _qaE param [2, 
 private _t1 = diag_tickTime;
 for "_i" from 1 to 20 do { ["Bonjour, vous avez vu des hommes armés ou des pick-up cette nuit ? Où sont-ils partis ? Combien étaient-ils, et qui commande ici ?"] call comspec_sse_fnc_iarpIntent; };
 _info pushBack format ["interprète : %1 ms par message de quatre questions", round (((diag_tickTime - _t1) / 20) * 10000) / 10];
+// Couche hors sujet (fn_iarpOffTopic « selfTest ») : grossièretés, insultes, charabia, relance, tutoiement, formes courtes.
+(["selfTest"] call comspec_sse_fnc_iarpOffTopic) params [["_koO", []], ["_infoO", []]];
+_ko append _koO;
+_info append _infoO;
 [_ko, _info]

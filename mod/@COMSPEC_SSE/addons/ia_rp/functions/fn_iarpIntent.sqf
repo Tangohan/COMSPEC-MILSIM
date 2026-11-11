@@ -2,7 +2,7 @@
     Interprète d'intentions (pur, toute machine, Eden compris) : rattache une phrase libre, en français ou en anglais,
     à une intention connue. Aucune IA générative ni requête réseau : mots-clés et synonymes du lexique
     (data\iarp_lexicon.sqf), texte normalisé (accents, ponctuation : fn_iarpNorm).
-    [texte] call comspec_sse_fnc_iarpIntent -> [intention, score, [motifs trouvés], [[intention, score]…]]
+    [texte] call comspec_sse_fnc_iarpIntent -> [intention, score, [motifs trouvés], [[intention, score]…], confiance 0-1]
       intention : une des 120 du lexique (identité, couverture, présence, fouille, ordres, pression, pot-de-vin,
                   confrontation, renseignement précis, situation locale, relations, personnel, règles du jeu de rôle,
                   hors sujet, oui / non ; + celles d'une mission) ; rien de reconnu : "unknown".
@@ -287,4 +287,25 @@ private _nReq = 0;
 } forEach _cands;
 // L'intention principale est toujours dans la liste (sinon : elle seule).
 if ((_list findIf { (_x select 0) isEqualTo (_top select 1) }) < 0) then { _list = [[_top select 1, round ((_top select 0) * 10) / 10]]; };
-[_top select 1, round ((_top select 0) * 10) / 10, _top select 3, _list]
+// Confiance (0 à 1) : score de l'intention et part des mots du message que ses motifs couvrent (mots outils exclus).
+// Sous 0,4, une demande à effet (papiers, ordre, aveu…) n'est pas déclenchée (fn_iarpOffTopic « filter »).
+private _stop = ["le", "la", "les", "l", "de", "du", "des", "d", "un", "une", "et", "ou", "a", "au", "aux", "vous", "tu", "te", "t", "toi", "ton", "ta", "tes",
+    "votre", "vos", "moi", "me", "m", "mon", "ma", "mes", "je", "j", "il", "elle", "on", "nous", "ils", "elles", "est", "es", "suis", "c", "ce", "cet", "cette", "ca",
+    "qui", "que", "qu", "quoi", "ne", "n", "pas", "plus", "s", "svp", "stp", "plait", "si", "y", "en", "sur", "dans", "pour", "par", "avec", "the", "an", "you", "your",
+    "u", "i", "is", "are", "to", "of", "do", "my", "it", "in", "and", "or", "be", "please", "sir", "monsieur", "madame", "hein", "oui", "non", "bien", "tres"];
+private _toksAll = (_segs joinString " ") splitString " ";
+private _cov = [];
+{
+    private _p = _x;
+    if ((_p find "+") >= 0 || {(_p select [0, 1]) isNotEqualTo " "}) then {
+        {
+            private _q = [_x, "*", ""] call CBA_fnc_replace;
+            private _pre = (_x select [(count _x) - 1]) isEqualTo "*";
+            { if ((_pre && {(_x select [0, count _q]) isEqualTo _q}) || {_x isEqualTo _q}) then { _cov pushBackUnique _x; }; } forEach _toksAll;
+        } forEach (_p splitString "+");
+    } else { { _cov pushBackUnique _x; } forEach (_p splitString " "); };
+} forEach (_top select 3);
+private _content = _toksAll select { !(_x in _stop) && {(count _x) >= 2} };
+private _part = if (_content isEqualTo []) then { 1 } else { ({ _x in _cov } count _content) / (count _content) };
+private _conf = round ((((_top select 0) / 8) min 1) * (0.4 + 0.6 * _part) * 100) / 100;
+[_top select 1, round ((_top select 0) * 10) / 10, _top select 3, _list, _conf]

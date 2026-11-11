@@ -32,7 +32,9 @@ L'onglet **GUIDE** de la fenêtre « Parler à » liste tout, par thème, avec d
 | Relations | Tu connais cet homme ? · Vos voisins ? · Le chef du village ? · Que pensez-vous de l'armée ? |
 | Personnel | Vous avez peur ? · Vous êtes blessé ? · Tu as faim ? · Tu veux de l'eau ? |
 | Règles du jeu de rôle | Vous voulez un avocat ? · Un interprète ? · Vous allez coopérer ? · Patientez · Je vous promets |
-| Hors sujet | insultes, blagues, « T'es un robot ? », l'heure, la politique : elle reste en personnage |
+| Hors sujet | insultes, grossièretés, blagues, « T'es un robot ? », l'heure, la politique : elle reste en personnage (choquée, vexée, méfiante), ne fait jamais ce qu'on ne lui a pas demandé, et coupe la conversation un moment si on insiste |
+
+Tutoiement, vouvoiement et questions courtes sont compris de la même façon (« Ton prénom ? », « Tes papiers. », « Où tu vas ? »). « Et alors ? », « Pourquoi ? » : elle développe sa dernière réponse, sans rien inventer. Quand elle ne comprend pas, elle le dit autrement à chaque fois ; après deux échecs de suite, une astuce s'affiche sous la ligne de saisie.
 
 Une IA se souvient : à « Tu as un téléphone ? », elle répond la même chose la deuxième fois ; « Répète » redit sa dernière phrase. Avec un fait dans son histoire (ligne « Téléphone : 06 12 34 », « Depuis : ce matin », « Avec : mon frère », « Hier soir : au café de la place », « Transporte : des oranges »), elle le donne.
 

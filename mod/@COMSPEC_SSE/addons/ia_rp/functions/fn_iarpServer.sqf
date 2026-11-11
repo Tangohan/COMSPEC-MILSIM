@@ -169,6 +169,8 @@ switch (_op) do {
     case "hello": {
         _args params ["", ["_t", objNull, [objNull]]];
         if (isNull _t || {isPlayer _t}) exitWith {};
+        // Fenêtre ouverte sur elle : conversation en cours (ses phrases d'état « Oui ? », « D'accord, voilà. » se taisent, fn_idAiSay).
+        _t setVariable ["comspec_sse_iarpTalkAt", time];
         // Nom présenté décidé et diffusé ici (comspec_sse_idName) ; au poste, seulement s'il l'a appris.
         private _nm = [_t] call _nameOf;
         ["who", [_t, [_nm, ""] select !(["known", [_t, _me]] call comspec_sse_fnc_iarpName), [_t] call _moodOf]] call _reply;
@@ -177,6 +179,8 @@ switch (_op) do {
     case "mood": {
         _args params ["", ["_t", objNull, [objNull]]];
         if (isNull _t || {isPlayer _t}) exitWith {};
+        // Fenêtre toujours ouverte (humeur demandée toutes les 2,5 s) : la conversation continue, même sans message.
+        _t setVariable ["comspec_sse_iarpTalkAt", time];
         ["mood", [_t, [_t] call _moodOf]] call _reply;
     };
 
@@ -465,8 +469,11 @@ switch (_op) do {
         } else {
             // /todo : la parole (avant « * ») est comprise comme un message.
             private _speech = if (_cmd isEqualTo "todo") then { (_text splitString "*") param [0, ""] } else { _text };
-            ([_speech] call comspec_sse_fnc_iarpIntent) params ["_i", "", "", ["_l", []]];
-            if (_i isNotEqualTo "unknown") then { _main = _i; _list = _l apply { _x select 0 }; } else { _main = "unknown"; _list = ["unknown"]; };
+            // Couche hors sujet AVANT les demandes à effet (fn_iarpOffTopic « filter ») : grossièreté, insulte, absurde, charabia ;
+            // une demande à effet sous le seuil de confiance de l'interprète n'est pas comprise.
+            (["filter", [_speech, [_speech] call comspec_sse_fnc_iarpIntent]] call comspec_sse_fnc_iarpOffTopic) params ["_i", ["_l", []]];
+            _main = _i;
+            _list = +_l;
         };
         private _p = ["get", _t] call comspec_sse_fnc_iarpProfile;
         private _sens = ((_p get "sensitive") apply { trim (_x call comspec_sse_fnc_iarpNorm) }) select { _x isNotEqualTo "" };
@@ -492,6 +499,7 @@ switch (_op) do {
         // Sujet déjà raconté à un autre joueur : « Je l'ai déjà dit à votre collègue. » (une fois par sujet et par joueur).
         private _told = { params ["_topic"]; ["told", [_mem, _uid, side group _me, _topic, random 1]] call comspec_sse_fnc_iarpMem };
         _pm set ["turns", (_pm getOrDefault ["turns", 0]) + 1];
+        if !(_main in ["unknown", "otGibberish"]) then { _pm set ["miss", 0]; };
         // Question de l'IA encore ouverte (moins de 60 s) : le oui / non qui suit y répond, même glissé dans une phrase.
         private _askOpen = ((_pm get "ask") isNotEqualTo []) && {(time - ((_pm get "ask") param [1, -100])) < 60};
         if (!_askOpen) then { _pm set ["ask", []]; };
@@ -776,7 +784,9 @@ switch (_op) do {
                         _veh = _near param [0, objNull];
                     };
                     if (_intent isEqualTo "trunk" && {isNull _veh}) exitWith { _gi = "trunkNone"; _outcome = "aucun véhicule"; };
-                    if !(["order"] call _obeys) exitWith { _gi = "noComply"; _outcome = "refuse l'ordre"; [5, "refuse un ordre"] call _tense; };
+                    // « Partez » : on le laisse partir, il part (menotté, il ne peut pas) ; seuls l'agressif et le fuyard l'ignorent.
+                    if (_intent isEqualTo "leave" && {_t getVariable ["ace_captives_isHandcuffed", false]}) exitWith { _gi = "leaveCuffed"; _outcome = "menotté : ne peut pas partir"; };
+                    if (!(_intent isEqualTo "leave" && {!(_st in ["agressif", "renforts", "fuit"])}) && {!(["order"] call _obeys)}) exitWith { _gi = "noComply"; _outcome = "refuse l'ordre"; [5, "refuse un ordre"] call _tense; };
                     _gi = "comply";
                     _outcome = "obéit";
                     switch (_intent) do {
@@ -805,6 +815,23 @@ switch (_op) do {
                     };
                 };
                 if (_quiet) exitWith { _gi = "silent"; _outcome = "ne répond pas (" + _st + ")"; };
+                // Hors sujet, incompris, relance, conversation coupée (fn_iarpOffTopic « react ») : réplique, confiance, tension.
+                private _ot = ["react", [_intent, _pm, _p, _st, (_t getVariable ["comspec_sse_idActive", false]) || {_ctx get "checkpoint"}, time]] call comspec_sse_fnc_iarpOffTopic;
+                if (_ot isNotEqualTo []) exitWith {
+                    _ot params ["_og", ["_odT", 0], ["_odP", 0], ["_oo", ""], ["_oEnd", false]];
+                    _gi = _og;
+                    _outcome = _oo;
+                    if (_odT isNotEqualTo 0) then { [_odT] call _trust; };
+                    if (_odP isNotEqualTo 0) then { [_odP, _oo] call _tense; };
+                    // Conversation coupée : en plein contrôle il se ferme (refus) ; sinon il s'éloigne, s'il le peut.
+                    if (_oEnd) then {
+                        if (_fsm && {_st in ["interpelle", "coopere", "ment", "nerveux"]}) then { ["refuse"] call _want; } else {
+                            if (isNull objectParent _t && {!(_t getVariable ["ace_captives_isSurrendering", false])} && {!(_t getVariable ["ace_captives_isHandcuffed", false])}) then {
+                                ["back", [(getPosATL _t) getPos [12, _me getDir _t]]] call _do;
+                            };
+                        };
+                    };
+                };
                 // Thème interdit par le maître du jeu : réponse neutre, réponse perso comprise.
                 private _top = _topics getOrDefault [_intent, ""];
                 if (_top in _banned) exitWith { _gi = ["offLimits", "intelNo"] select (_intent in _intelSubs); _noCust = true; _outcome = format ["thème interdit (%1)", _top]; };
@@ -1044,6 +1071,8 @@ switch (_op) do {
         private _dd = [];
         { if (_dd isEqualTo [] || {((_dd select -1) select 0) isNotEqualTo (_x select 0)}) then { _dd pushBack _x; }; } forEach _parts;
         _parts = _dd;
+        // Dernière réplique retenue pour une relance (« Et alors ? ») ; small talk qui dure : retour au sujet (fn_iarpOffTopic).
+        _parts = ["after", [_pm, _parts, time]] call comspec_sse_fnc_iarpOffTopic;
         private _outcome = ((_parts apply { _x select 2 }) select { _x isNotEqualTo "" }) joinString " · ";
         if (_ace isNotEqualTo "") then { _outcome = _outcome + ([" · ", ""] select (_outcome isEqualTo "")) + (["demande des papiers (action ACE)", "fouille des papiers (action ACE)"] select (_ace isEqualTo "search")); };
         private _logI = ((_list + ([[], [_ace]] select (_ace isNotEqualTo ""))) select { _x isNotEqualTo "" }) joinString "+";
@@ -1083,6 +1112,7 @@ switch (_op) do {
         private _stable = ["phone", "nation", "speak", "since", "with", "lateHour", "alibi", "often", "stayLong", "waitingFor", "house", "cargo", "declare", "hungry",
             "hobbies", "cigarette", "neighbors", "police", "army", "politics", "rebelsView"];
         private _custNote = [];
+        private _mineOk = ["data", "mineOk"] call comspec_sse_fnc_iarpOffTopic;
         {
             _x params ["_gi1", "_tone1", "", ["_int1", ""], ["_told1", ""], ["_noC1", false]];
             private _c1 = +_ctx;
@@ -1090,6 +1120,8 @@ switch (_op) do {
             if (_told1 isNotEqualTo "") then { _c1 set ["told", _told1]; };
             if (_forEachIndex isNotEqualTo _mainI) then { _c1 set ["plain", true]; };
             if (_int1 in _factI) then { _c1 set ["preferFact", true]; };
+            // Phrase type de la personne (atelier IA) : après une réplique de conversation, jamais après un ordre ou un refus.
+            if !(_gi1 in _mineOk) then { _c1 set ["noMine", true]; };
             // Variante propre à la question quand la banque en a une (« intelNo.seenArmed », « comply.stepBack »).
             private _giGen = [_gi1, "repeat"] select (_gi1 isEqualTo "repeatLast");
             // Question perso sans texte pour cette situation : « Je ne sais pas » (jamais une invention).

@@ -32,7 +32,9 @@ The **GUIDE** tab of the "Talk to" window lists everything, by theme, with click
 | Relations | Do you know this man? · Your neighbours? · The village elder? · What do you think of the army? |
 | Personal | Are you scared? · Are you hurt? · Are you hungry? · Want some water? |
 | Roleplay rules | Do you want a lawyer? · An interpreter? · Will you cooperate? · Hold on · I promise |
-| Off topic | insults, jokes, "Are you a robot?", the time, politics: it stays in character |
+| Off topic | insults, crude remarks, jokes, "Are you a robot?", the time, politics: it stays in character (shocked, offended, wary), never does what you did not ask, and ends the conversation for a while if you keep going |
+
+Informal and formal address and short questions are understood the same way ("Your name?", "Your papers.", "Where are you going?"). "So what?", "Why?": it develops its last answer, without inventing anything. When it does not understand, it says so in other words each time; after two misses in a row, a tip shows under the input line.
 
 An AI remembers: asked "Do you have a phone?" twice, it says the same thing; "Say again" repeats its last line. With a fact in its story ("Phone: 06 12 34", "Since: this morning", "With: my brother", "Last night: at the café", "Cargo: oranges"), it gives it.
 

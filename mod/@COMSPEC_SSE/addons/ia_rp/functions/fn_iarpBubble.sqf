@@ -71,6 +71,8 @@ switch (_act) do {
         private _cur = [];
         {
             private _w = toArray _x;
+            // Didascalie « (Il hoche la tête.) » : sur sa propre ligne, jamais collée à la parole.
+            if ((_w param [0, 0]) isEqualTo 40 && {_cur isNotEqualTo []}) then { _lines pushBack (toString _cur); _cur = []; };
             while { (count _w) > 42 } do {
                 if (_cur isNotEqualTo []) then { _lines pushBack (toString _cur); _cur = []; };
                 _lines pushBack (toString (_w select [0, 42]));
@@ -79,6 +81,7 @@ switch (_act) do {
             if (_cur isEqualTo []) then { _cur = _w; } else {
                 if (((count _cur) + 1 + (count _w)) <= 42) then { _cur = _cur + [32] + _w; } else { _lines pushBack (toString _cur); _cur = _w; };
             };
+            if ((_w param [(count _w) - 1, 0]) isEqualTo 41 && {_cur isNotEqualTo []}) then { _lines pushBack (toString _cur); _cur = []; };
         } forEach _words;
         if (_cur isNotEqualTo []) then { _lines pushBack (toString _cur); };
         if ((count _lines) > 6) then { _lines resize 6; _lines set [5, (_lines select 5) + "…"]; };
