@@ -9,8 +9,9 @@
     ["stock", clé]      -> nombre d'exemplaires déclarés (<item>_001…)
     ["texture", [clé, côté, codePays, zone]]  -> chemin PAA (repli zone eu/am/ot, puis alt, puis sans %1)
     ["side", [clé, côté]]  -> HashMap de mise en page : texture, photo [x,y,w,h] ou [], holo [x,y,w] ou [], fields [...]
-    ["extensions"]      -> [[classe, nom, auteur, version, description, [clés…], aperçu, active, intégrée]…]
+    ["extensions"]      -> [[classe, nom, auteur, version, description, [clés…], aperçu, active, intégrée, coupée par défaut]…]
     ["enabled", classe d'extension]  -> Boolean (liste des extensions coupées : comspec_sse_docExtOff, serveur, diffusée)
+    ["defaultOff"]      -> classes (minuscules) des extensions déclarées defaultOff = 1 (coupées tant qu'on ne les active pas)
     ["refresh"]         -> vide le cache (après activation / désactivation d'une extension)
     Type (HashMap) : key, name, nameEn, category, item, icon, ratio, sides, countries, mrz, mrzSide, mrzY, mrzStep,
     extension, inputs [[clé, libellé, défaut]…], recto / verso (HashMap de mise en page ; champ : key, x, y, w, h,
@@ -75,7 +76,9 @@ private _enabledExt = {
     // Liste coupée : variable diffusée par le serveur (fenêtre Extensions), sinon réglage CBA (serveur) au lancement.
     private _off = missionNamespace getVariable "comspec_sse_docExtOff";
     if (isNil "_off") then {
-        _off = ((missionNamespace getVariable ["comspec_sse_docExt_off", ""]) splitString ",; ") apply { toLower (trim _x) };
+        // Avant la diffusion du serveur : réglage CBA, plus les extensions coupées par défaut (defaultOff = 1).
+        _off = (((missionNamespace getVariable ["comspec_sse_docExt_off", ""]) splitString ",; ") apply { toLower (trim _x) })
+            + (("getNumber (_x >> 'defaultOff') isEqualTo 1" configClasses (configFile >> "CfgComspecDocumentExtensions")) apply { toLower (configName _x) });
     };
     !((toLower _ext) in _off)
 };
@@ -107,6 +110,7 @@ switch (_op) do {
         _n
     };
     case "enabled": { [_a] call _enabledExt };
+    case "defaultOff": { ("getNumber (_x >> 'defaultOff') isEqualTo 1" configClasses (configFile >> "CfgComspecDocumentExtensions")) apply { toLower (configName _x) } };
     case "list": {
         _a params [["_country", "", [""]], ["_withOff", false, [false]]];
         private _keys = keys _all;
@@ -151,7 +155,7 @@ switch (_op) do {
             _docs = _docs arrayIntersect _docs;
             _docs = _docs select { _x in _all };
             _out pushBack [_cls, getText (_x >> "name"), getText (_x >> "author"), getText (_x >> "version"), getText (_x >> "description"), _docs,
-                getText (_x >> "preview"), [_cls] call _enabledExt, (getNumber (_x >> "builtin")) isEqualTo 1];
+                getText (_x >> "preview"), [_cls] call _enabledExt, (getNumber (_x >> "builtin")) isEqualTo 1, (getNumber (_x >> "defaultOff")) isEqualTo 1];
         } forEach ("true" configClasses (configFile >> "CfgComspecDocumentExtensions"));
         _out
     };

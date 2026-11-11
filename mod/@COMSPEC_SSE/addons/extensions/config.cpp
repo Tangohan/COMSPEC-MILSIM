@@ -1,4 +1,5 @@
 #include "script_component.hpp"
+#include "ui_macros.hpp"
 
 /*
     COMSPEC SSE — Extensions de documents (fenêtre « SSE ROLEPLAY · Extensions »).
@@ -6,7 +7,9 @@
     CfgComspecDocumentExtensions (voir addons/identity/CfgComspecDocuments.hpp et extensions/example_documents/README.md).
     Ici : réglages CBA (SSE ROLEPLAY › Extensions), liste des extensions coupées calculée par le serveur et diffusée
     (comspec_sse_docExtOff + évènement CBA comspec_sse_docExtOffChanged, lue par comspec_sse_fnc_idDocTypes), fenêtre
-    d'activation (Zeus, Configuration ATHENA du menu Échap, Eden via comspec_sse_fnc_docExtOpen).
+    d'activation (Zeus, Configuration ATHENA du menu Échap, Eden via comspec_sse_fnc_docExtOpen) avec son tuto intégré
+    « Comment ça marche ». L'extension d'exemple (extensions/example_documents) est livrée dans le pack SSE, coupée par
+    défaut (defaultOff = 1).
     Sans l'ATAK natif, le SSE porte aussi le bouton « ATHENA Configuration » du menu Échap (fn_athenaConfig, copie
     identique de celle de l'ATAK natif ; avec l'ATAK natif, c'est l'ATAK qui l'affiche et le SSE n'y ajoute que son entrée).
 */
@@ -16,7 +19,7 @@ class CfgPatches {
         units[] = {};
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
-        requiredAddons[] = {"comspec_sse_identity", "comspec_sse_zeus", "comspec_sse_core", "comspec_sse_main", "cba_main", "cba_xeh"};
+        requiredAddons[] = {"comspec_sse_identity", "comspec_sse_zeus", "comspec_sse_core", "comspec_sse_main", "comspec_sse_ui", "cba_main", "cba_xeh"};
         author = "COMSPEC";
         VERSION_CONFIG;
     };
@@ -66,11 +69,21 @@ class Extended_DisplayLoad_EventHandlers {
     };
 };
 
-class RscText;
-class RscButton;
-class RscStructuredText;
+// Charte UI du SSE (addons/ui/dialogs/base.hpp) : classes déclarées par comspec_sse_ui.
 class RscPicture;
-class RscListBox;
+class RscButton; // base de COMSPEC_SSE_AthenaCfgRow (Configuration ATHENA)
+class COMSPEC_SSE_RscDim;
+class COMSPEC_SSE_RscBackground;
+class COMSPEC_SSE_RscPanel;
+class COMSPEC_SSE_RscHeader;
+class COMSPEC_SSE_RscAccentLine;
+class COMSPEC_SSE_RscText;
+class COMSPEC_SSE_RscStructuredText;
+class COMSPEC_SSE_RscControlsGroup;
+class COMSPEC_SSE_RscListBox;
+class COMSPEC_SSE_RscButton;
+class COMSPEC_SSE_RscButtonNav;
+class COMSPEC_SSE_RscButtonClose;
 
 // Ligne et bouton de la Configuration ATHENA (fn_athenaConfig) : transparent, survol et focus clavier en vert Athena.
 class COMSPEC_SSE_AthenaCfgRow: RscButton {

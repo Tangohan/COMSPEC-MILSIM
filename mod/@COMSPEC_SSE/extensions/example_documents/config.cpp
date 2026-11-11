@@ -110,6 +110,10 @@ class CfgComspecDocumentExtensions {
         version = "1.0";
         description = "Carte de presse et laissez-passer : exemple d'extension de documents.";
         documents[] = {"press_card", "laissez_passer"};
+        // Livrée dans le pack SSE (build_pbo.bat) : marquée intégrée, et coupée tant qu'un Zeus ne l'active pas dans
+        // la fenêtre (choix gardé sur le serveur). Une extension tierce n'a besoin d'aucun des deux.
+        builtin = 1;
+        defaultOff = 1;
         preview = "\z\comspec_sse_ext\addons\example_documents\data\tpl_press_card_recto_co.paa";
     };
 };

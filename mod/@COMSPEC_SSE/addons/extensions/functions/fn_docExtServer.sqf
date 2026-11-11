@@ -6,7 +6,8 @@
       ["set", [classe, actif]]  -> choix du Zeus / administrateur (remoteExec depuis la fenêtre ; demandeur vérifié par
                                    comspec_sse_fnc_isAuthority sur remoteExecutedOwner) : garde, recalcule, diffuse
       ["saved"]                 -> choix gardés [[classe, actif]…] (profil du serveur, comspec_sse_docExtOffSaved)
-    Liste coupée = réglage comspec_sse_docExt_off, corrigé par les choix gardés ; toutes les extensions si
+    Liste coupée = extensions coupées par défaut (defaultOff = 1, ex. l'extension d'exemple livrée avec le SSE) et
+    réglage comspec_sse_docExt_off, corrigés par les choix gardés ; toutes les extensions si
     comspec_sse_docExt_enabled est décoché. Renvoie la liste diffusée (init, set) ; false si refusé ou hors serveur.
 */
 params [["_op", "init", [""]], ["_a", [], [[]]]];
@@ -22,7 +23,7 @@ private _publish = {
     private _off = [];
     if (missionNamespace getVariable ["comspec_sse_docExt_enabled", true]) then {
         _off = ((missionNamespace getVariable ["comspec_sse_docExt_off", ""]) splitString ",; ") apply { toLower (trim _x) };
-        _off = _off select { _x isNotEqualTo "" };
+        _off = (_off select { _x isNotEqualTo "" }) + (["defaultOff"] call comspec_sse_fnc_idDocTypes);
         // Choix faits dans la fenêtre (gardés d'une partie à l'autre) : ils l'emportent sur le réglage.
         {
             _x params [["_cls", "", [""]], ["_on", true, [true]]];

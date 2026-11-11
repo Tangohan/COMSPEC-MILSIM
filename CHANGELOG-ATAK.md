@@ -109,6 +109,26 @@ EN : The Esc menu is tidied up: one ATHENA Configuration button
 - Cause du blocage « Service Athéna » : le gestionnaire du bouton fermait le menu Échap auquel il appartenait (`closeDisplay` dans son propre `ButtonClick`) puis sortait le téléphone sur Réglages. Désormais toute action part à l'image suivante (`CBA_fnc_execNextFrame`) et la question Oui / Non s'ouvre par-dessus le menu Échap, sans le fermer.
 - Logo du bouton : `athena_config_ca.paa`, `athena_config_hover_ca.paa` (256 px, aigle blanc / vert), pastille `athena_dot_ca.paa`. Textes : `i18n/en.txt`, `localisation/template/xx.txt`, stringtable de l'addon SSE `extensions` (`STR_COMSPEC_SSE_ATHCFG_*`). `$PBOPREFIX$` de l'addon SSE `extensions` réparé (caractères de contrôle à la place des barres obliques).
 
+## À venir : fenêtre des extensions de documents lisible, exemple livré et tuto intégré (SSE, version à attribuer)
+
+### À annoncer (Résumé joueur)
+Type : correctif
+FR : Extensions de documents : une fenêtre claire et un tuto intégré
+- La fenêtre « SSE ROLEPLAY · Extensions » n'est plus vide : elle montre l'extension d'exemple (carte de presse, laissez-passer), coupée par défaut, et plus aucun texte n'est coupé.
+- Le bouton « Aide » explique pas à pas ce qu'est une extension, comment l'activer et comment créer la vôtre, avec un exemple à copier.
+EN : Document extensions: a clear window and a built-in tutorial
+- The "SSE ROLEPLAY · Extensions" window is no longer empty: it shows the example extension (press card, pass), off by default, and no text is cut any more.
+- The "Help" button explains step by step what an extension is, how to enable it and how to make your own, with an example to copy.
+
+### Détail technique
+- **Cause des « 0 extension(s) »** : voulu côté code, faux côté livraison. `fn_idDocTypes` « extensions » ne lit que `configFile >> CfgComspecDocumentExtensions` ; le SSE n'en déclare aucune (`identity/CfgComspecDocuments.hpp`, classe vide) et l'extension d'exemple n'était construite qu'en mod séparé (`extensions/example_documents/build_extension.bat` → `@COMSPEC_SSE_ExampleDocuments`), absent de `build_pbo.bat` et de `workshop-pack.ps1`. Un joueur du Workshop n'avait donc jamais d'extension, et la fenêtre gardait ses deux volets vides.
+- **Exemple livré** : `build_pbo.bat` empaquette `extensions/example_documents` en `addons/comspec_sse_ext_example_documents.pbo` (préfixe d'origine, README / tools / scripts hors PBO), exigé par `workshop-pack.ps1`. Nouveaux champs de `CfgComspecDocumentExtensions` : `defaultOff = 1` (coupée tant qu'un Zeus ne l'active pas : `fn_docExtServer` et repli client de `fn_idDocTypes`, nouvelle op « defaultOff », 10e colonne de « extensions ») et `builtin = 1`. Annonce ATAK du Zeus : exemple intégré coupé non annoncé.
+- **Fenêtre** (`extensions/dialogs/extensions.hpp`, `fn_docExtWindow`) : refaite sur la grille 40 x 25 (`ui_macros.hpp` copié par `tools/sync_headers.py`, classes `COMSPEC_SSE_Rsc*`, `comspec_sse_ui` requis) au lieu de coordonnées 0..1 et polices fixes (cause du texte coupé : ligne d'état de 0,04 d'une ligne sous laquelle la 2e ligne passait sous les boutons). Ligne d'état deux lignes au plus, police réduite par paliers ; libellés réduits puis « … » ; liste coupée avec « … » (nom entier en bulle) ; fiche et modèles dans un groupe défilant. Vue « aucune extension » (explication + « Ouvrir le tuto ») à la place des volets vides.
+- **Tuto intégré** : bouton « Aide » de l'en-tête (devient « Extensions » pour revenir), 10 étapes (STR_COMSPEC_SSE_EXT_T1..T10, FR / EN), lecture défilante, étape 5 : `config.cpp` minimal commenté (type « Permis de port d'arme ») et « Copier l'exemple » (`copyToClipboard`, confirmation sur la ligne d'état). Textes de la fenêtre passés au stringtable de l'addon (langue du jeu). Même contenu dans le manuel SSE (`STR_COMSPEC_SSE_GUIDE_EXTENSIONS_DESC` / `_TIP`), guides `docs/guides/extensions_documents*.md`, `menu_extensions*.md` (réglages CBA corrigés), README de l'exemple, `docs/guide/Guide_COMSPEC_SSE.html`.
+- **`$PBOPREFIX$` corrompus** : `addons/extensions` et `extensions/example_documents` contenaient des caractères de contrôle (`\a`, `\e` interprétés à l'écriture) ; réécrits. Sans effet sur `build_pbo.bat` (préfixe passé en argument), mais faux pour hemtt et Addon Builder sans `-prefix`.
+- **Autotest** (`scripts/sse.sqf`) : `sse_extension_exemple` active puis recoupe l'exemple ; nouvelle étape `sse_extensions_fenetre` (vues liste, vide forcée par `comspec_sse_docExtTestEmpty`, tuto et ses 10 étapes : textes qui tiennent, aucun chevauchement, presse-papiers égal à l'exemple en solo).
+- **Non vu en jeu** : rendu réel de la fenêtre, du tuto et de l'état vide, copie dans le presse-papiers en multijoueur (client non hôte), PBO de l'exemple produit par `build_pbo.bat`.
+
 ## SSE 1.9.0 : fenêtre « Réponses de l'IA » simple, peur d'une arme braquée de près, champs des documents (SSE 1.9.0)
 
 ### Résumé joueur

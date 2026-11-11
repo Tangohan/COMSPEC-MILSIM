@@ -6,7 +6,9 @@ Version anglaise : [extensions_documents.en.md](extensions_documents.en.md). Som
 
 Une **extension de documents** est un petit addon tiers qui dépend du SSE et **ajoute des types de documents** (carte de presse, laissez-passer de zone, carte d'accès, badge d'ONG…) sans toucher au mod : ses textures PAA, ses champs, sa mise en page, ses pays. Une fois chargée, ses types apparaissent partout où le SSE propose un type : fenêtre **Choisir un document** (Zeus, Eden), attribut Eden **Papiers**, éditeur SSE (type Papier), page IA de la zone (AJOUTER CE PAPIER), visionneuse et contrôle.
 
-Exemple livré : `mod/@COMSPEC_SSE/extensions/example_documents/` (config.cpp, textures, README) avec une **carte de presse** et un **laissez-passer**.
+Exemple livré : `mod/@COMSPEC_SSE/extensions/example_documents/` (config.cpp, textures, README) avec une **carte de presse** et un **laissez-passer**. Il est **inclus dans le pack SSE** (`comspec_sse_ext_example_documents.pbo`) et **coupé par défaut** : activez « Documents d'exemple » dans la fenêtre **SSE ROLEPLAY · Extensions** pour l'essayer.
+
+**Tuto intégré** : la même fenêtre a un bouton **Aide** (« Comment ça marche », 10 étapes, FR / EN) qui reprend ce guide en jeu et donne un `config.cpp` minimal commenté à copier dans le presse-papiers (« Copier l'exemple »).
 
 ## Structure d'une extension
 
@@ -78,6 +80,8 @@ Une classe par type de document.
 | `description` | Une phrase | `"Carte de presse et laissez-passer de zone."` |
 | `documents[]` | Les classes de `CfgComspecDocuments` de l'extension | `{"press_card", "zone_pass"}` |
 | `preview` | Texture d'aperçu du menu Extensions | `"\z\mon_ext\...\preview.paa"` |
+| `defaultOff` | `1` : extension coupée tant qu'un Zeus ne l'active pas dans la fenêtre (facultatif, utilisé par l'exemple livré) | `defaultOff = 1;` |
+| `builtin` | `1` : affichée « livrée avec le SSE » (réservé aux extensions du pack SSE) | `builtin = 1;` |
 
 ## Exemple complet (carte de presse)
 
@@ -159,6 +163,8 @@ class CfgComspecDocuments {
 6. Faites-vous contrôler : sans MRZ ni puce, seuls N0 (visuel), N3 (base) et N4 (visage) s'appliquent.
 
 ## Pièges fréquents
+
+- **La fenêtre affiche « Aucune extension de documents chargée »** : aucun addon ne déclare `CfgComspecDocumentExtensions` (PBO non chargé, ou SSE ancien sans l'exemple intégré). Les papiers intégrés restent disponibles ; le bouton **Ouvrir le tuto** explique la suite.
 
 - **`requiredAddons[]` doit contenir `comspec_sse_identity`** : sinon vos classes peuvent être lues avant celles du SSE (héritage `COMSPEC_ID_Card` introuvable).
 - **Instances `_001`…** : prévoyez-en assez ; au-delà du stock, le document reste virtuel (journalisé au RPT).
