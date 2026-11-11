@@ -28,6 +28,15 @@ $contentPath = base_path('views/' . str_replace('.', '/', (string) ($content ?? 
 $athena_header_section = (string) ($athena_header_section ?? 'Outils opérateur');
 $athena_header_current = 'operateur';
 $activeDashNav = 'operateur';
+// Variables que les partiels du tableau de bord (rail, en-tête, bandeaux) lisent sans valeur par défaut : le tableau
+// de bord les reçoit de son contrôleur, cette page les pose ici. Une variable absente est un avertissement PHP, que le
+// site transforme en erreur 500 (App\Core\ExceptionHandler).
+$dashboard_tenant_label = isset($dashboard_tenant_label) && is_string($dashboard_tenant_label) && $dashboard_tenant_label !== ''
+    ? $dashboard_tenant_label
+    : (isset($hubUnit) && is_string($hubUnit) && $hubUnit !== '' ? $hubUnit : null);
+$show_staff_enlistments = !empty($show_staff_enlistments);
+$currentUser = isset($currentUser) && is_array($currentUser) ? $currentUser : null;
+$headerCurrentUser = isset($headerCurrentUser) && is_array($headerCurrentUser) ? $headerCurrentUser : $currentUser;
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars($htmlLang, ENT_QUOTES, 'UTF-8') ?>" class="scroll-smooth">
