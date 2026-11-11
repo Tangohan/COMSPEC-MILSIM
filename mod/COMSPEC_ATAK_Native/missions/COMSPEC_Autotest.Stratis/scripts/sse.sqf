@@ -363,10 +363,8 @@ AT_fnc_ia = {
     private _min = _gh * 0.78 * 0.99;
     private _ouvert = { !isNull (uiNamespace getVariable ["comspec_sse_editorDisplay", displayNull]) };
     private _etat = { uiNamespace getVariable ["comspec_sse_editorAi", createHashMap] };
-    // Posés par-dessus d'autres à dessein : fonds, invites sous un champ, icônes d'en-tête, repère d'onglet, groupes (papier,
-    // texte « au contrôle »), phrase d'attente du papier, panneau d'état vide et phrase « pas encore de papier » sur leur liste
-    // (leur propre disposition est vérifiée sans le jeu : tests/Unit/SseAiZoneWindowAssetTest.php).
-    private _dessous = [95000, 95007, 95008, 95013, 95015, 95018, 95019, 95020, 95021, 95022, 95036, 95037, 95113, 95114, 95502, 95503, 95504, 95507, 95600, 95700, 95701, 95800, 95801, 95209];
+    // Chevauchements et contrôles hors de leur propriétaire : audit de la fenêtre (fn_editorAi « audit », même registre et
+    // mêmes contrôles posés dessous à dessein que tests/Unit/SseAiZoneWindowAssetTest.php).
     private _verifie = {
         params ["_nom"];
         private _d = uiNamespace getVariable ["comspec_sse_editorDisplay", displayNull];
@@ -391,32 +389,26 @@ AT_fnc_ia = {
             };
         } forEach _vus;
         ctrlDelete _m;
-        // Chevauchements : contrôles visibles d'une même couche (un volet ouvert est une couche à part, posée au-dessus).
-        private _volet = ((["idcs"] call comspec_sse_fnc_editorAi) select { _x >= 95700 && {_x < 95900} }) apply { _d displayCtrl _x };
-        private _couches = [_vus - _volet, _vus arrayIntersect _volet];
-        {
-            private _l = _x select { !((ctrlIDC _x) in _dessous) };
-            for "_i" from 0 to ((count _l) - 2) do {
-                for "_j" from (_i + 1) to ((count _l) - 1) do {
-                    (ctrlPosition (_l select _i)) params ["_x1", "_y1", "_w1", "_h1"];
-                    (ctrlPosition (_l select _j)) params ["_x2", "_y2", "_w2", "_h2"];
-                    private _e = _gh * 0.02;
-                    private _sur = (_x1 + _w1 - _e) > _x2 && {(_x2 + _w2 - _e) > _x1} && {(_y1 + _h1 - _e) > _y2} && {(_y2 + _h2 - _e) > _y1};
-                    [!_sur, format ["%1 : %2 chevauche %3", _nom, ctrlIDC (_l select _i), ctrlIDC (_l select _j)]] call AT_fnc_check;
-                };
-            };
-        } forEach _couches;
+        // Registre : rien d'affiché hors des propriétaires visibles, aucun chevauchement dans une couche (page, volet ouvert),
+        // un volet au plus.
+        private _au = ["audit"] call comspec_sse_fnc_editorAi;
+        [(_au getOrDefault ["orphans", [0]]) isEqualTo [], format ["%1 : contrôles affichés hors de leur propriétaire %2", _nom, _au getOrDefault ["orphans", []]]] call AT_fnc_check;
+        [(_au getOrDefault ["overlaps", [0]]) isEqualTo [], format ["%1 : chevauchements %2", _nom, _au getOrDefault ["overlaps", []]]] call AT_fnc_check;
+        [(count (_au getOrDefault ["volets", []])) <= 1, format ["%1 : plusieurs volets ouverts %2", _nom, _au getOrDefault ["volets", []]]] call AT_fnc_check;
     };
-    // 1. Liste vide (aucune unité donnée, point loin de tout) : panneau d'aide et ses deux boutons.
+    // 1. Liste vide (aucune unité donnée, point loin de tout) : panneau d'aide (il renvoie aux boutons du haut).
     uiNamespace setVariable ["comspec_sse_editorAiUnits", []];
     ["open", [[0, 0, 0], objNull, "ai"]] call comspec_sse_fnc_editor;
     if !([[_ouvert, 6] call AT_fnc_wait, "fenêtre IA de la zone non ouverte"] call AT_fnc_check) exitWith { call AT_fnc_done; };
     ["stop"] call comspec_sse_fnc_editorCoach;
+    // À l'ouverture : aucun volet ouvert, rien d'affiché hors du registre (« Bug » de la 1.9.0).
+    "ouverture" call _verifie;
+    [((call _etat) getOrDefault ["volet", "?"]) isEqualTo "", "un volet est ouvert à l'ouverture de la fenêtre"] call AT_fnc_check;
     [[{ (call _etat) getOrDefault ["scanned", false] }, 8] call AT_fnc_wait, "réponse du serveur non reçue"] call AT_fnc_check;
     uiSleep 0.5;
     private _d = uiNamespace getVariable ["comspec_sse_editorDisplay", displayNull];
     if ((count ((call _etat) getOrDefault ["rows", []])) isEqualTo 0) then {
-        [ctrlShown (_d displayCtrl 95019) && {ctrlShown (_d displayCtrl 95021)}, "état vide sans son panneau d'aide"] call AT_fnc_check;
+        [ctrlShown (_d displayCtrl 95019) && {ctrlShown (_d displayCtrl 95020)} && {!ctrlShown (_d displayCtrl 95017)}, "état vide sans son panneau d'aide"] call AT_fnc_check;
         "liste vide" call _verifie;
         ["ia_zone_vide"] call AT_fnc_shot;
     } else { "IA autour de [0,0] : état vide non vérifié" call AT_fnc_info; };
@@ -450,7 +442,12 @@ AT_fnc_ia = {
     ["memory"] call comspec_sse_fnc_editorAi;
     uiSleep 0.3;
     "volet Mémoire de la carte" call _verifie;
-    ["memory"] call comspec_sse_fnc_editorAi;
+    // Un seul volet : en ouvrir un autre ferme le premier ; Échap le ferme sans fermer la fenêtre.
+    ["filters"] call comspec_sse_fnc_editorAi;
+    [((call _etat) getOrDefault ["volet", ""]) isEqualTo "filt", "volet Filtres non ouvert à la place de la Mémoire"] call AT_fnc_check;
+    "deux volets demandés" call _verifie;
+    [["escape"] call comspec_sse_fnc_editorAi, "Échap n'a pas fermé le volet"] call AT_fnc_check;
+    [((call _etat) getOrDefault ["volet", "?"]) isEqualTo "" && {call _ouvert}, "Échap : volet resté ouvert ou fenêtre fermée"] call AT_fnc_check;
     // Visite guidée : bulle à côté de sa cible (jamais dessus), texte et boutons entiers, aucun voile.
     ["coach"] call comspec_sse_fnc_editorAi;
     for "_s" from 1 to 3 do {

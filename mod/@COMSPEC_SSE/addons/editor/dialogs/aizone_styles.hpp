@@ -30,3 +30,13 @@ class COMSPEC_SSE_AzEditClear: COMSPEC_SSE_AzEdit { colorBackground[] = {0, 0, 0
 class COMSPEC_SSE_AzList: COMSPEC_SSE_EdList { rowHeight = SSE_Q(SSE_GH * 1.25); ED_TXT(0.8); };
 class COMSPEC_SSE_AzPopup: COMSPEC_SSE_EdText { colorBackground[] = AZ_POPUP; };
 class COMSPEC_SSE_AzAccent: COMSPEC_SSE_EdText { colorBackground[] = ED_GREEN; };
+// Voile sous un volet ouvert : assombrit la page autour du volet et le ferme d'un clic à côté (fn_editorAi « voletClose »).
+#define AZ_SCRIM    {0.012,0.02,0.016,0.62}
+class COMSPEC_SSE_AzScrim: COMSPEC_SSE_EdButton {
+    text = "";
+    colorText[] = {0, 0, 0, 0};
+    colorBackground[] = AZ_SCRIM;
+    colorBackgroundActive[] = AZ_SCRIM;
+    colorBackgroundDisabled[] = AZ_SCRIM;
+    colorFocused[] = AZ_SCRIM;
+};

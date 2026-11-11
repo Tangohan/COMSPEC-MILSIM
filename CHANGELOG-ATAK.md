@@ -172,6 +172,24 @@ EN : The Extensions window and its tutorial show again
 - Contrôle interne `["audit"]` (textes FR / EN des 10 étapes, texte structuré lisible, IDC, liste remplie, étape choisie, lecture non vide ; liste des extensions remplie) lancé à chaque ouverture, résultat au RPT seulement ; repris par l'autotest `sse_extensions_fenetre` avec Étape précédente / suivante.
 - Test PHP `SseExtensionsTutoAssetTest` : clés FR / EN non vides, clés uniques dans les stringtables SSE, corps en texte structuré valide, IDC de la fenêtre utilisés par la fonction, étape 1 choisie, aucune variable SQF identique à la casse près.
 - Non vu en jeu (autotest non lancé sur consigne).
+## À venir : fenêtre « IA de la zone » réparée, volets un par un (COMSPEC SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : La fenêtre « IA de la zone » du Zeus s'affiche de nouveau correctement
+- Plus de panneaux empilés ni de textes superposés : la fenêtre montre la liste, l'onglet choisi et l'aperçu du papier, rien d'autre.
+- « Filtres », « Importer depuis Athena » et « Mémoire de la carte » s'ouvrent un à la fois, par-dessus la fenêtre assombrie ; un clic à côté ou Échap les ferme. Après « Actualiser », la ligne du bas dit quand la liste est relue.
+EN : The Zeus "Area AI" window displays correctly again
+- No more stacked panels or overlapping text: the window shows the list, the chosen tab and the paper preview, nothing else.
+- "Filters", "Import from Athena" and "Map memory" open one at a time over the dimmed window; a click beside them or Esc closes them. After "Refresh", the bottom line says when the list has been read again.
+
+### Détail technique
+- Cause (RPT du 11 novembre, 13 h 44) : en SQF la casse des noms ne compte pas. Dans `editor/functions/fn_editorAi.sqf`, `_render` déclarait `private _l` (la liste) qui écrasait l'aide de traduction `_L` : `"Filters" call _L` sur un contrôle, script arrêté ; `_layout` déclarait `private _empty` qui écrasait la liste d'idc `_EMPTY` : `forEach _idcs` sur un booléen. Rien n'était jamais caché : volets, quatre onglets et boutons d'état vide restaient affichés ensemble. Même piège latent : `_all`/`_ALL`, `_gH`/`_gh`, `_sides`.
+- Registre `_OWN` : chaque idc de `aizone.hpp` a un propriétaire (cadre, liste, état vide, en-tête, un par onglet, aperçu, barre, voile, un par volet) ; `_showOnly` cache tout propriétaire non visible à chaque changement d'état, au début et à la fin de « load ». Contrôles sous condition (`_showIf`) jamais hors de leur propriétaire. Aide de traduction renommée `_loc`.
+- Volets : une seule clé d'état `volet` (« ath », « filt », « mem »), fermés au départ ; voile `AzScrim` (95850, clic à côté = « voletClose »), Échap par `KeyDown` (« escape ») ; « Importer depuis Athena » devient un volet (fond 95115, liseré 95116). Boutons en double de l'état vide (95021, 95022) retirés : le texte renvoie aux boutons du haut.
+- Op « audit » : contrôles affichés hors de leur propriétaire, chevauchements par couche, textes coupés, volets ouverts ; la visite guidée ne s'ouvre pas si l'audit trouve une fenêtre cassée (journal seulement). « Actualiser » se termine dans la ligne d'état (`AZ_RefreshDone`, ou `AZ_RefreshLate` au bout de 25 s).
+- `tests/Unit/SseAiZoneWindowAssetTest.php` : aucun nom local qui reprend (casse ignorée) un nom du premier niveau dans `fn_editorAi`, `fn_editor`, `fn_editorAiCard`, `fn_editorCoach` ; chaque contrôle a un seul propriétaire ; volets fermés au départ et au-dessus du voile ; aucun chevauchement pour chaque onglet × liste remplie / vide × volet. Autotest `sse_ia_zone_etats` passé à l'audit (non exécuté).
+- Même motif repéré dans le RPT hors de cette fenêtre : `extensions/functions/fn_docExtWindow.sqf` ligne 299 (`call _L` sur un contrôle), laissé à la branche des extensions.
 
 ## SSE 1.9.0 : IA qui réagissent naturellement, émotions réglables, papiers de 45 pays, une seule identité par IA, outils Zeus refaits (SSE 1.9.0)
 
