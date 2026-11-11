@@ -4,7 +4,7 @@
     Réponses : request [contrôleur] · token [porteur, docId, libellé, fin] · answer [cible, réponse, texte]
       docs [cible, [[poignée, classe, libellé]…]] · doc [document imprimé, N0, sujet, mien, clé] · blank [poignée]
       result [docId, niveau, résultat] · checkFail [docId, niveau, code, texte] · seized / returned [cible, classe…] · vehicle [véhicule, op, occupants]
-      notify [texte, type] · zeus [texte, genre] · packFetch [full | self] (relais du paquet Athena, fn_idAthenaPack)
+      notify [texte, type] · zeus [texte, genre] · zeusPapers [données] (fenêtre du Zeus) · packFetch [full | self] (relais du paquet Athena, fn_idAthenaPack)
       say [nom, phrase, type, indice]   phrase courte d'une IA contrôlée (IA réalistes), traduite ici
     Lot 4 et 5 : question [demandeur, [[qid, question, réponses]…], délai] · questionEnd [qid, juste, évasif]
       coverSheet [netId, fiche] · coverSame [netId, empreinte, état et cohérence] (fiche en cache inchangée)
@@ -51,6 +51,8 @@ switch (_op) do {
     case "aiCfg": { ["aiReply", _a] call comspec_sse_fnc_editorAi; };
     case "notify": { _a params [["_t", ""], ["_type", "INFO"]]; [_t, _type] call _say; };
     case "zeus": { _a params [["_t", ""], ["_k", "info"]]; [_t, _k] call comspec_sse_fnc_zeusNotify; };
+    // Papiers vus par le Zeus (fn_idServer « truth ») : fenêtre « Papiers de l'IA », jamais un bandeau.
+    case "zeusPapers": { ["data", [_a param [0, createHashMap]]] call comspec_sse_fnc_idZeusPapers; };
     case "request": { _a params [["_c", objNull]]; ["request", [_c]] call comspec_sse_fnc_idPresentPrompt; };
     case "token": {
         _a params [["_holder", objNull], ["_id", ""], ["_label", ""], ["_end", 0]];

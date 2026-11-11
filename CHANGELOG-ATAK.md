@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : papiers d'une IA en vraie carte pour le Zeus, plus de bandeau de texte (SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : En Zeus, les papiers d'une IA s'affichent enfin comme une vraie carte, avec leur analyse
+- « Voir les vrais papiers » ouvre une fenêtre : le document exactement comme le voit un joueur (photo, champs, bande MRZ, recto et verso) et, à côté, ce que seul le maître du jeu sait : vrai nom, qualité du faux expliquée, défauts et ce qu'un contrôle trouvera.
+- Fini la longue ligne de texte coupée en haut de l'écran : les messages du SSE au maître du jeu vont dans la fenêtre ouverte ou dans le téléphone.
+EN : In Zeus, an AI's papers finally show as a real card, with their analysis
+- "See the real papers" opens a window: the document exactly as a player sees it (photo, fields, MRZ strip, front and back) and, beside it, what only the game master knows: real name, forgery quality explained, flaws and what a check will find.
+- No more long line of text cut off at the top of the screen: SSE messages to the game master go to the open window or to the phone.
+
+### Détail technique
+- `identity` : fenêtre `COMSPEC_SSE_IdZeusPapers` (`dialogs/idZeusPapers.hpp`, grille SSE 40 x 25, `ui_macros.hpp` copié par `tools/sync_headers.py`) pilotée par `fn_idZeusPapers` ; le document est rendu par la visionneuse (`fn_idViewerOnLoad`, nouveaux paramètres d'état `zeus`, `box`, `vh`, sans changement pour les joueurs). Données : `fn_idServer` « truth » répond `zeusPapers` au seul poste du Zeus (`fn_idZeusPapersData`, demandeur vérifié par `fn_isAuthority`) ; analyse pure `fn_idZeusAnalysis` (seuils de `fn_idIssue`, clés `STR_COMSPEC_SSE_ZP_*` de `identity/stringtable.xml`, français et anglais).
+- Entrées : module ZEN « Voir les vrais papiers » (personne, ou objet qui contient des papiers), clic droit « SSE · Roleplay de l'IA › Identité et papiers », bouton « Voir le papier » de la page IA de la zone (sans ZEN). Actions de la fenêtre : sélecteur de document, vrai / faux (`aiCfg docMark`), signalement (`report`), retirer les papiers (`papersOff`), fiche de l'IA ; ligne d'état dans la fenêtre.
+- `fn_zeusNotify` n'utilise plus le bandeau de ZEN (`zen_common_fnc_showMessage`) : téléphone et RPT ; « Poser un exercice » (guide) passe par lui. Tests : `IdZeusPapersAssetTest`, `SseNoAlertChannelAssetTest` (liste blanche justifiée : aide « ? » de l'éditeur, notifications d'Eden) ; en jeu : `mod/@COMSPEC_SSE/tools/test_id_zeus_analysis.sqf`.
+
+---
+
 ## SSE 1.9.0 : fenêtre « Réponses de l'IA » simple, peur d'une arme braquée de près, champs des documents (SSE 1.9.0)
 
 ### Résumé joueur

@@ -16,7 +16,8 @@
       vehicle  [moi, véhicule]           contrôle des occupants        dismount [moi, véhicule]  faire descendre
       kit      [moi, ancien corps | objNull]   papiers du kit Athena (connexion, JIP, respawn ; Steam ID lu ici)
       paperMoved [moi, classe, conteneur, take | put]   j'ai pris / posé un papier (fn_idPaperTrack, sans anti-flood)
-      give / report / truth              Zeus (curateur) : donner des papiers, signaler, vraie identité
+      give / report / truth              Zeus (curateur) : donner des papiers, signaler, papiers vus par le Zeus
+                                         (truth [moi, personne | objet] -> zeusPapers, fenêtre fn_idZeusPapers)
       pack     [moi, texte, full | self] paquet Athena relayé (complet : Zeus ; sinon ses seuls papiers)
       packFail [moi, full | self, code]  relais impossible (raison montrée dans Ma couverture)
       aiCfg    [moi, sous-op, args]      Zeus : fenêtre de configuration des IA (fn_idAiConfig, éditeur SSE › IA)
@@ -478,26 +479,9 @@ switch (_op) do {
                 ["zeus", [format ["%1 document(s) de %2 : %3.", _n, name _u, ["signalement levé", format ["signalé « %1 »", _mode]] select (_mode isNotEqualTo "")], "info"]] call _reply;
             };
             default {
-                private _lines = [format ["Vrais papiers de %1 :", name _u]];
-                {
-                    private _d = ["doc", [_x]] call comspec_sse_fnc_idRegistry;
-                    _lines pushBack format ["%1 n° %2 · imprimé %3 %4 · vrai %5 %6 · %7%8 · qualité %9", _d get "type", _d get "number",
-                        toUpper (_d get "last"), _d get "first", toUpper (_d get "trueLast"), _d get "trueFirst", _d get "kind",
-                        ["", format [" (%1)", _d get "forgeryKind"]] select ((_d get "forgeryKind") isNotEqualTo ""), _d get "quality"];
-                    _lines pushBack format ["   défauts : %1 · puce : %2 · signalement : %3 · %4", [(_d get "flaws") joinString ", ", "aucun"] select ((_d get "flaws") isEqualTo []),
-                        _d get "chip", [_d get "report", "aucun"] select ((_d get "report") isEqualTo ""), ["virtuel", "objet " + (_d get "cls")] select ((_d get "cls") isNotEqualTo "")];
-                } forEach (["unitDocs", [_u]] call comspec_sse_fnc_idRegistry);
-                if ((count _lines) isEqualTo 1) then { _lines pushBack "aucun document."; };
-                private _cs = ["state", [_u]] call comspec_sse_fnc_idCover;
-                if ((count _cs) > 0) then {
-                    (["score", [_u]] call comspec_sse_fnc_idCover) params ["_sc", "_why"];
-                    private _stt = if (_cs get "burnt") then { format ["brûlée (%1)", _cs get "burnWhy"] } else { ["levée", "intacte"] select (_cs get "on") };
-                    _lines pushBack format ["Infiltré : couverture %1, cohérence %2/100%3, soupçons %4.", _stt, _sc,
-                        ["", format [" (%1)", _why joinString ", "]] select (_why isNotEqualTo []), round (_cs get "susp")];
-                };
-                private _hv = ["of", [_u]] call comspec_sse_fnc_idHvt;
-                if ((count _hv) > 0) then { _lines pushBack format ["HVT %1 : %2 %3, étape %4.", _hv get "ref", toUpper (_hv get "last"), _hv get "first", _hv get "stage"]; };
-                ["zeus", [_lines joinString endl, "info"]] call _reply;
+                // Fenêtre « Papiers de l'IA » du Zeus (fn_idZeusPapers) : document imprimé et analyse, au seul poste demandeur.
+                // Avant : une ligne de texte dans le bandeau de ZEN, coupée aux bords de l'écran.
+                ["zeusPapers", [[_u, _pub] call comspec_sse_fnc_idZeusPapersData]] call _reply;
             };
         };
     };

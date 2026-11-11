@@ -197,7 +197,8 @@ private _idIcon = "\z\comspec_sse\addons\identity\data\icon_card_ca.paa";
 ["_id", "STR_COMSPEC_IARP_Z_MId", _idIcon, {}, _hasId, [_root], 80] call _mk;
 ["_truth", "STR_COMSPEC_IARP_Z_Truth", _ip + "mod_evidence.paa", {
     private _u = (_this call comspec_sse_iarpZenTargets) param [0, objNull];
-    if (!isNull _u) then { ["send", ["truth", [player, _u]]] call comspec_sse_fnc_idClient; };
+    // Fenêtre « Papiers de l'IA » (identity, fn_idZeusPapers) : le document et son analyse, plus de bandeau de texte.
+    if (!isNull _u) then { ["open", [_u]] call comspec_sse_fnc_idZeusPapers; };
 }, _hasId, [_root, _root + "_id"], 79] call _mk;
 ["_give", "STR_COMSPEC_IARP_Z_Give", _idIcon, {
     private _u = _this call comspec_sse_iarpZenTargets;

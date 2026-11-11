@@ -34,7 +34,7 @@ if (!hasInterface) exitWith {};
     ["COMSPEC_Cat_Sse", "Poser un exercice", {
         params ["_pos"];
         [ASLToAGL _pos, player] call comspec_sse_fnc_guideExercise;
-        // Retour immédiat dans Zeus ; la consigne complète arrive quand le serveur a posé la cellule.
-        if (!isNil "zen_common_fnc_showMessage") then { [("Exercice en cours de pose : 5 civils, téléphone, documents et caisse.") call comspec_sse_fnc_tr] call zen_common_fnc_showMessage; };
+        // Retour immédiat (téléphone et RPT, jamais un bandeau) ; la consigne complète arrive quand le serveur a posé la cellule.
+        ["Exercice en cours de pose : 5 civils, téléphone, documents et caisse.", "info"] call comspec_sse_fnc_zeusNotify;
     }, "\z\comspec_sse\addons\zeus\data\mod_check.paa"] call comspec_sse_fnc_zenModule;
 }, [], 45] call CBA_fnc_waitUntilAndExecute;

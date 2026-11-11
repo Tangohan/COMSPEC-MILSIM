@@ -238,7 +238,7 @@ camps choisis sur Athena) et les **briefs de couverture** des joueurs (app Ma co
 Catégorie « COMSPEC SSE · Identité » :
 - **Donner des papiers** : type, pays, nature, procédé et qualité du faux, nom imprimé, ou numéro d'un document Athena.
 - **Signaler volé / révoquer** : visible au contrôle N3.
-- **Voir les vrais papiers** : vraie identité, nature, qualité, défauts (Zeus seulement).
+- **Voir les vrais papiers** : fenêtre Papiers de l'IA (Zeus seulement) : le document tel que le voit un joueur et, à côté, vraie identité, nature, qualité expliquée, défauts, ce que trouvera chaque contrôle.
 - **Checkpoint IA** / **Retirer un checkpoint IA**.
 - **Déclencher un contrôle** sur une personne : par le checkpoint qui la couvre, sinon par l'IA armée la plus proche
   (80 m, poste provisoire, équipement et sévérité au choix).

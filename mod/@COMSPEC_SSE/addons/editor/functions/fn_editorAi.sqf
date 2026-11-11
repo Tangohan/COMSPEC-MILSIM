@@ -401,6 +401,9 @@ switch (_op) do {
     case "docOpen": {
         private _id = call _selDoc;
         if (_id isEqualTo "") exitWith {};
+        // Fenêtre « Papiers de l'IA » (identity) : ce papier tel qu'un joueur le voit, l'analyse du Zeus à côté.
+        private _u = objectFromNetId (_st getOrDefault ["cur", ""]);
+        if (!isNull _u && {!isNil "comspec_sse_fnc_idZeusPapers"}) exitWith { ["open", [_u, _id]] call comspec_sse_fnc_idZeusPapers; };
         ["docOpen", [_id]] call _sendId;
     };
     case "docTrue";
