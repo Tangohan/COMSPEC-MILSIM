@@ -547,6 +547,8 @@ if (["on"] call comspec_atak_native_fnc_fireSupport) then { ["scan"] call comspe
 ["initClient"] call comspec_atak_native_fnc_tocHall;
 // Écrans TOC : version du mod du serveur contre celle de ce poste, une ligne au journal à la connexion (fn_tocConfig).
 ["initClient"] call comspec_atak_native_fnc_tocConfig;
+// Écran ou poste PC posé : il se règle tout seul (fn_tocAuto). Le serveur le fait ; serveur plus ancien ou sans le mod : ce poste.
+["init"] call comspec_atak_native_fnc_tocAuto;
 // Configuration locale (config.json, fn_localCfg) : mes numéros publiés aux autres joueurs, aussi après une réapparition
 // ou un changement du service Athéna.
 [{ !isNull player }, { ["apply"] call comspec_atak_native_fnc_localCfg; }] call CBA_fnc_waitUntilAndExecute;

@@ -216,10 +216,10 @@ final class AtakTocHallRoomAssetTest extends TestCase
         $build = self::sqfCase($src, 'build');
         // Extérieur, mur absent, objet manquant, repli : dits dans le résumé rendu au Zeus et dans le journal.
         foreach (['"OUT"', '"NOWALL"', '"FAIL"', '"LOCAL"'] as $flag) {
-            self::assertStringContainsString('_flags pushBack ' . $flag, $build);
+            self::assertMatchesRegularExpression('/_flags pushBack(Unique)? ' . $flag . '/', $src);
             self::assertStringContainsString('[' . $flag . ', "', self::sqfCase($src, 'done'));
         }
-        self::assertStringContainsString('non posé classe=%1 : pas de %2 à cet endroit', $build);
+        self::assertStringContainsString('non posé classe=%1 : pas de %2 à cet endroit', self::sqfCase($src, 'finish'));
     }
 
     public function testOneGuardedStepPerObjectAndNoEarlyExitInTheLoop(): void
@@ -231,19 +231,22 @@ final class AtakTocHallRoomAssetTest extends TestCase
         self::assertNotFalse($start);
         self::assertNotFalse($end);
         $loop = substr($build, (int) $start, (int) $end - (int) $start);
-        // La boucle des objets ne sort jamais avant la fin : un pas raté est noté, les suivants continuent.
+        // La boucle ne pose rien elle-même : un rappel par objet (4.7.0 : une erreur dans la boucle arrêtait toute la pose).
         self::assertStringNotContainsString('exitWith', $loop);
-        self::assertStringNotContainsString('breakOut', $loop);
-        self::assertStringContainsString('private _res = [_row] call _step;', $loop);
-        self::assertStringContainsString('if (isNil "_res" || {!(_res isEqualType [])}) then { _res = [objNull, "erreur de script', $loop);
-        self::assertStringContainsString('[COMSPEC TOC] salle | objet %1/%2 classe=%3 ok', $loop);
-        self::assertStringContainsString('[COMSPEC TOC] salle | objet %1/%2 classe=%3 échec %4', $loop);
-        // Salle inscrite avant la pose (les écrans s'y lient), mobilier inscrit après ; résumé final.
-        self::assertLessThan($start, (int) strpos($build, '[[]] call _register;'));
-        self::assertGreaterThan($end, (int) strpos($build, '[_props] call _register;'));
-        self::assertStringContainsString('posée : %3 objet(s) sur %4', $build);
-        self::assertStringContainsString('_o setVariable ["COMSPEC_ATAK_TocHall", _id, true];', $build);
-        self::assertStringContainsString('COMSPEC_ATAK_TocHallMaster', $build);
+        self::assertStringNotContainsString('createVehicle', $loop);
+        self::assertStringContainsString('[{ ["step", _this] call comspec_atak_native_fnc_tocHallBuild; }, [_ctx, _x, _forEachIndex],', $loop);
+        $step = self::sqfCase($src, 'step');
+        self::assertStringContainsString('if (isNil "_res" || {!(_res isEqualType [])}) then { _res = [objNull, "erreur de script', $step);
+        self::assertStringContainsString('salle | objet %1/%2 classe=%3 ok', $step);
+        self::assertStringContainsString('salle | objet %1/%2 classe=%3 échec %4', $step);
+        self::assertStringContainsString('diag_log text ("[COMSPEC TOC] " + _txt);', $src);
+        // Salle inscrite avant la pose (les écrans s'y lient), mobilier inscrit au bilan ; résumé final.
+        self::assertLessThan($start, (int) strpos($build, '[_id, _nm, _sd, [], "LOCAL" in _flags] call _register;'));
+        $finish = self::sqfCase($src, 'finish');
+        self::assertStringContainsString('[_id, _nm, _sd, _props, "LOCAL" in _flags] call _register;', $finish);
+        self::assertStringContainsString('posée : %3 objet(s) sur %4', $finish);
+        self::assertStringContainsString('_o setVariable ["COMSPEC_ATAK_TocHall", _id, true];', $step);
+        self::assertStringContainsString('COMSPEC_ATAK_TocHallMaster', $finish);
     }
 
     public function testPositionsUseTheFloorFoundUnderTheModule(): void
@@ -256,16 +259,19 @@ final class AtakTocHallRoomAssetTest extends TestCase
         self::assertStringContainsString('[_p vectorAdd [0, 0, 1.2], _p vectorAdd [0, 0, -40]] call _hit', $build);
         self::assertStringContainsString('[_org vectorAdd [0, 0, 0.5], _org vectorAdd [0, 0, 12]] call _hit', $build);
         self::assertStringContainsString('getTerrainHeightASL', $build);
-        self::assertStringContainsString('_o setPosASL _at;', $build);
-        self::assertStringContainsString('_o setVectorDirAndUp [[sin _d, cos _d, 0], [0, 0, 1]];', $build);
-        self::assertLessThan(strpos($build, '_o setVectorDirAndUp'), strpos($build, '_o setPosASL _at;'));
+        $step = self::sqfCase($src, 'step');
+        self::assertStringContainsString('_o setPosASL _at;', $step);
+        self::assertStringContainsString('_o setVectorDirAndUp [[sin _d, cos _d, 0], [0, 0, 1]];', $step);
+        self::assertLessThan(strpos($step, '_o setVectorDirAndUp'), strpos($step, '_o setPosASL _at;'));
+        self::assertStringNotContainsString('getPos [', $step);
+        self::assertStringNotContainsString('setPosATL', $step);
         // Plus de position prise telle quelle à la hauteur du module (ancienne pose : _pos getPos […], setPosATL).
         self::assertStringNotContainsString('getPos [', $build);
         self::assertStringNotContainsString('setPosATL', $build);
         // Tout le plan est calculé avant la première pose : un objet déjà posé ne fausse aucune mesure.
         self::assertLessThan(strpos($build, 'private _n = count _plan;'), strpos($build, 'private _plan = _rows apply {'));
-        // Mobilier figé une fois posé, chaise libre.
-        self::assertStringContainsString('if (_role in ["desk", "pc"]) then { if (isServer) then { _o enableSimulationGlobal false; } else { _o enableSimulation false; }; };', $build);
+        // Bureau figé une fois posé ; écrans, PC et chaise gardent leur simulation (menu ACE).
+        self::assertStringContainsString('if (_role isEqualTo "desk") then { if (isServer) then { _o enableSimulationGlobal false; } else { _o enableSimulation false; }; };', $step);
     }
 
     public function testEdenAndZeusCallTheSameBuilder(): void
@@ -284,7 +290,7 @@ final class AtakTocHallRoomAssetTest extends TestCase
         // Les trois chemins (Eden, Zeus sur ce poste ou en repli, Zeus par le serveur) : « build ».
         self::assertStringContainsString('["build", [_pos, _dir, _size, _nm, _sd, _id, _post, false, false]] call _fn', self::sqfCase($src, 'eden'));
         self::assertSame(2, substr_count(self::sqfCase($src, 'zeus'), '["build", [_pos, _dir, _size, _nm, _sd, _id, _post, true, '));
-        self::assertStringContainsString('["build", [_pos, _dir, _size, _nm, _sd, _id, _post, _snap, false]] call comspec_atak_native_fnc_tocHallBuild', $hall);
+        self::assertStringContainsString('["build", [_pos, _dir, _size, _nm, _sd, _id, _post, _snap, false, _by]] call comspec_atak_native_fnc_tocHallBuild', $hall);
         self::assertStringContainsString('["build", [_pos, _dir, _size, _nm, _sd, _id, _post, false, false]] call comspec_atak_native_fnc_tocHallBuild', self::sqfCase($hall, 'spawnRoom'));
         // Un seul endroit crée les objets : plus de pose dans fn_tocHall.
         self::assertStringNotContainsString('createVehicle', self::sqfCase($hall, 'spawnRoom'));
@@ -296,7 +302,7 @@ final class AtakTocHallRoomAssetTest extends TestCase
         self::assertStringContainsString('["do", ["spawn", [_pos, _dir, _size, _nm, _sd, _id, _post, player, true]]] call comspec_atak_native_fnc_tocHall;', $zeus);
         self::assertStringContainsString('if (!isServer && {!(["local", objNull] call comspec_atak_native_fnc_tocConfig)}) exitWith {', self::sqfCase($src, 'build'));
         // Résultat rendu au Zeus par sa ligne de retour, jamais une alerte du jeu.
-        self::assertStringContainsString('["comspec_atak_native_tocHallDone", [_res], _by] call CBA_fnc_targetEvent;', $hall);
+        self::assertStringContainsString('["comspec_atak_native_tocHallDone", [_res], _by] call CBA_fnc_targetEvent;', self::sqfCase($src, 'finish'));
         self::assertStringContainsString('["comspec_atak_native_tocHallDone", { ["done", _this] call comspec_atak_native_fnc_tocHallBuild; }] call CBA_fnc_addEventHandler;', $hall);
         self::assertStringContainsString('["feedback", [_t]] call comspec_atak_native_fnc_zeusMenu;', self::sqfCase($src, 'done'));
         foreach ([$src, $mod] as $code) {

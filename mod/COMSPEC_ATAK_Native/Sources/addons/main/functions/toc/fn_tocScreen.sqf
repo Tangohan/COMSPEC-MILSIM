@@ -111,7 +111,10 @@ private _hostOf = { params ["_o"]; private _h = _o getVariable ["COMSPEC_ATAK_To
 // la classe parente la plus proche (variantes d'Eden Expansion, etc.) ; configNull sinon. Objet ou nom de classe.
 private _entryOf = {
     params ["_o"];
-    private _c = [configOf _o, configFile >> "CfgVehicles" >> _o] select (_o isEqualType "");
+    // Jamais les deux lectures dans un même tableau : les deux y sont évaluées, et « config >> objet » (comme « configOf
+    // texte ») est une erreur qui arrête tout le script appelant (menu ACE de l'écran vide, pose d'une salle arrêtée au
+    // premier écran : journal de TTRD, 4.7.0, « Type Objet, Chaîne attendu »).
+    private _c = if (_o isEqualType "") then { configFile >> "CfgVehicles" >> _o } else { configOf _o };
     private _e = configNull;
     for "_i" from 0 to 8 do {
         if (isNull _c || {!isNull _e}) exitWith {};
@@ -274,6 +277,8 @@ switch (_mode) do {
         ["init"] call comspec_atak_native_fnc_tocRoom;
         ["init"] call comspec_atak_native_fnc_tocHall;
         ["initServer"] call comspec_atak_native_fnc_tocConfig;
+        // Écrans et postes PC réglés tout seuls à la pose (fn_tocAuto), sans attendre un joueur.
+        ["init"] call comspec_atak_native_fnc_tocAuto;
         // Écrans gardés de la partie précédente : remis une fois les modules Eden passés.
         [{ ["restore"] call comspec_atak_native_fnc_tocPersist; }, [], 3] call comspec_atak_native_fnc_waitAndExec;
         true
