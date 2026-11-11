@@ -107,6 +107,12 @@ if !("ecrans3d" call AT_fnc_groupe) exitWith {};
     // Jour.
     setDate [2035, 6, 4, 12, 0];
     0 setOvercast 0.2; forceWeatherChange;
+    [{ sunOrMoon > 0.5 }, 15] call AT_fnc_wait;
+    (format ["jour : sunOrMoon %1", sunOrMoon]) call AT_fnc_info;
+    // Matière jour / nuit : celui qui pose une image redemande « surface » quand le soleil passe l'horizon (le TOC le fait à chaque image).
+    { _x params ["_o", "_n"]; for "_i" from 1 to _n do { ["surface", [_o, _i, true]] call comspec_atak_native_fnc_tocScreen; }; } forEach [[_w22q, 3], [_w32, 5], [_w32m, 2]];
+    { ["surface", [_x, 0, true]] call comspec_atak_native_fnc_tocScreen; } forEach [_clk, _plt];
+    (format ["jour : matières 3x2 %1, horloge %2", getObjectMaterials _w32, getObjectMaterials _clk]) call AT_fnc_info;
     uiSleep 3;
     ["jour_ensemble", [9.5, 15, 1.8], [9.5, 0, 1.6], 0.9] call _vue;
     ["jour_2x2_accoles", [2.4, 4.6, 1.75], [1.23, 0, 1.75]] call _vue;
