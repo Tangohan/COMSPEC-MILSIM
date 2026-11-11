@@ -337,7 +337,12 @@ private _sheetRows = {
             if ((_imp getOrDefault ["text", ""]) isNotEqualTo "") then {
                 _rows pushBack ["text", format ["<t color='%1'>%2</t>", [_hAlert, _hOk] select ((_imp getOrDefault ["kind", ""]) isEqualTo "ok"), [(_imp get "text") call _tr] call _esc]];
             };
-            _rows pushBack ["buttons", [["SYNCHRONISER AVEC ATHENA" call _tr, ["sync"] call _act, true, true, "Liste vos couvertures sur Athena et importe celles que vous choisissez (compte Athena lié, licence acceptée)." call _tr]]];
+            private _sync = [["SYNCHRONISER AVEC ATHENA" call _tr, ["sync"] call _act, true, true, "Liste vos couvertures sur Athena et importe celles que vous choisissez (compte Athena lié, licence acceptée)." call _tr]];
+            // Licence pas encore acceptée : la note de service s'ouvre d'ici (fn_licenceOpen de l'ATAK natif), retour sur cette page.
+            if (!isNil "comspec_atak_native_fnc_licenceOpen" && {!(["ok"] call comspec_atak_native_fnc_licenceOpen)}) then {
+                _sync pushBack ["OUVRIR LA NOTE DE SERVICE" call _tr, { [{}, "IDCOVER"] call comspec_atak_native_fnc_licenceOpen; }, false, true, "Lisez et acceptez la licence : rien n'est envoyé à Athena avant." call _tr];
+            };
+            _rows pushBack ["buttons", _sync];
             private _b = [["IMPORTER UN FICHIER" call _tr, ["import"] call _act, false, true, "Lit le fichier déposé dans Documents\Arma 3 - COMSPEC. Rien n'est envoyé à Athena." call _tr]];
             if (_isImported) then { _b pushBack ["Oublier l'import" call _tr, ["forget"] call _act, false, true, "Revient à la légende d'avant, sans toucher à vos papiers." call _tr]; };
             _rows pushBack ["buttons", _b];

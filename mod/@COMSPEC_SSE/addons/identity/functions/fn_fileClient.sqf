@@ -9,7 +9,7 @@
       result [étiquette, résultat]   consultation (fn_fileServer « query ») : posée TOUT DE SUITE dans l'app (réponse
           locale), puis, licence acceptée et liaison présente, complétée par la requête Athena du poste (COMSPEC Link
           QueryIdDocument, déjà dans la DLL) en tâche de fond, 15 s au plus ; sans Athena, notée en file hors ligne
-          (genre file_query). État « athenaState » du résultat : pending | ok | none | offline | unlinked | timeout.
+          (genre file_query). État « athenaState » du résultat : pending | ok | none | offline | unlinked | licence | timeout.
           Puis évènement CBA local comspec_sse_fileResult [étiquette, résultat] (après l'étape Athena, comme avant).
       fail [étiquette, motif]        consultation refusée par le serveur : résultat d'erreur (motif lisible).
       seekStored [REC, heure] -> évènement comspec_sse_fileSeekStored     recorded [clé, docId] -> comspec_sse_fileRecorded
@@ -61,7 +61,7 @@ private _athena = {
     params ["_tag", "_res", ["_rescue", false]];
     private _lic = isNil "comspec_overwatch_connect_fnc_licenceStatus" || {([] call comspec_overwatch_connect_fnc_licenceStatus) param [1, false]};
     if (!_lic) exitWith {
-        _res set ["athenaState", "unlinked"];
+        _res set ["athenaState", "licence"];
         call _render;
         ["comspec_sse_fileResult", [_tag, [_res, createHashMap] select ((_res getOrDefault ["error", ""]) isNotEqualTo "")]] call CBA_fnc_localEvent;
     };

@@ -21,7 +21,7 @@
                             lignes : ["p", clé, poste, "commander" | "deputy" | ""] personne, ["v", clé, poste, nombre] poste vacant
                             people : clé -> [libellé, nom, grade, indicatif, genre (0 personne, 1 anonymisée, 2 vacant), [[unité, poste]...]]
       "presence"          [instant, clé de personne -> joueur de mon camp, joueurs de mon camp absents de l'ORBAT] (relu toutes les 2 s)
-      "notice"            [texte, ton (ok | info | warn | alert | muted), réessayer] du bandeau de l'onglet (info, warn, alert :
+      "notice"            [texte, ton (ok | info | warn | alert | muted), réessayer (true, ou « licence » : note de service)] du bandeau de l'onglet (info, warn, alert :
                             au-dessus du tableau, en entier ; muted : une ligne du tableau)
       "sig"               signature pour fn_statusUpdate
 */
@@ -268,7 +268,11 @@ switch (_act) do {
         switch (_store get "state") do {
             // État normal (ORBAT pas encore saisi sur le site) : dire ce que l'on voit à la place.
             case "EMPTY": { ["Aucun ORBAT défini sur Athena pour votre unité. Les unités s'affichent par groupe de jeu à la place.", "info", false] };
-            case "WAIT": { ["Liaison Athena pas encore autorisée (compte non relié ou licence en attente). L'ORBAT du site sera lu dès qu'elle le sera ; en attendant, les unités s'affichent par groupe de jeu.", "warn", false] };
+            // Licence pas encore acceptée : le bouton du bandeau ouvre la note de service (« licence » au lieu de réessayer, fn_pageBft).
+            case "WAIT": { [
+                ["Liaison Athena pas encore autorisée (compte non relié ou licence en attente). L'ORBAT du site sera lu dès qu'elle le sera ; en attendant, les unités s'affichent par groupe de jeu.", "warn", false],
+                ["Licence COMSPEC pas encore acceptée : rien n'est demandé à Athena avant. En attendant, les unités s'affichent par groupe de jeu.", "warn", [false, "licence"] select (["can"] call comspec_atak_native_fnc_licenceOpen)]
+            ] select !(["ok"] call comspec_atak_native_fnc_licenceOpen) };
             // Erreur : une ligne, sa raison et le bouton Réessayer ; le dernier ORBAT reçu reste affiché dessous.
             case "DOWN": {
                 private _why = _store getOrDefault ["why", ""];

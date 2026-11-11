@@ -23178,5 +23178,15 @@
 ["Jour le jour, vision nocturne la nuit", "", "Day by day, night vision at night"],
 ["RETARD", "", "LATE"],
 ["EN DIRECT", "", "LIVE"],
-["SANS RADIO", "", "NO RADIO"]
+["SANS RADIO", "", "NO RADIO"],
+["OUVRIR LA NOTE DE SERVICE", "", "OPEN THE SERVICE NOTE"],
+["Ouvrir la note de service", "", "Open the service note"],
+["Lisez et acceptez la licence : rien n'est envoyé à Athena avant.", "", "Read and accept the licence: nothing is sent to Athena before that."],
+["licence pas encore acceptée", "", "licence not accepted yet"],
+["Licence COMSPEC pas encore acceptée : rien n'est demandé à Athena avant. En attendant, les unités s'affichent par groupe de jeu.", "", "COMSPEC licence not accepted yet: nothing is asked of Athena before that. Meanwhile, units are shown by game group."],
+["Licence pas encore acceptée : rien n'est envoyé à Athena avant. Lisez et acceptez la note de service.", "", "Licence not accepted yet: nothing is sent to Athena before that. Read and accept the service note."],
+["PLUS RÉCENT QUE LE SERVEUR", "", "NEWER THAN THE SERVER"],
+["MOD %1 PLUS RÉCENT QUE LE SERVEUR", "", "MOD %1 NEWER THAN THE SERVER"],
+["pas à jour (la plus récente en jeu : %1)", "", "outdated (newest in game: %1)"],
+["plus récent que le serveur (%1)", "", "newer than the server (%1)"]
 ]

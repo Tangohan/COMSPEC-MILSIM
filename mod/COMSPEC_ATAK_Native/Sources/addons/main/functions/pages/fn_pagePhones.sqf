@@ -108,8 +108,14 @@ switch (_status) do {
         };
         // Téléphone d'une IA : envoi de son contenu aux fichiers d'Athena (fn_phoneSync vérifie licence, liaison et accord).
         if (["seizedOk"] call comspec_atak_native_fnc_phoneSync) then {
-            _rows pushBack ["buttons", [["SYNCHRONISER AVEC LE WEB", { ["seized"] call comspec_atak_native_fnc_phoneSync; }, false, true,
-                "Envoie le contenu de ce téléphone saisi aux fichiers d'Athena (à autoriser dans vos réglages)"]]];
+            private _sync = [["SYNCHRONISER AVEC LE WEB", { ["seized"] call comspec_atak_native_fnc_phoneSync; }, false, true,
+                "Envoie le contenu de ce téléphone saisi aux fichiers d'Athena (à autoriser dans vos réglages)"]];
+            // Licence pas encore acceptée : note de service ouverte d'ici (fn_licenceOpen), retour sur cette page.
+            if (!(["ok"] call comspec_atak_native_fnc_licenceOpen) && {["can"] call comspec_atak_native_fnc_licenceOpen}) then {
+                _sync pushBack ["OUVRIR LA NOTE DE SERVICE", { [{}, "PHONES"] call comspec_atak_native_fnc_licenceOpen; }, false, true,
+                    "Lisez et acceptez la licence : rien n'est envoyé à Athena avant."];
+            };
+            _rows pushBack ["buttons", _sync];
         };
         // Effacer pour le garder : sinon un joueur sans autre téléphone ne pourrait pas s'en servir.
         private _armed = _view getOrDefault ["confirm", false];
