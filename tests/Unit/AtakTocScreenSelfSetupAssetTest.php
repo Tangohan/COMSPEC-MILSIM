@@ -132,12 +132,16 @@ final class AtakTocScreenSelfSetupAssetTest extends TestCase
         $ace = self::sqfCase($scr, 'aceInit');
         self::assertStringContainsString('private _classes = (["classes"] call _fn) apply { _x select 1 };', $ace);
         self::assertStringContainsString('{ [_x, 0, ["ACE_MainActions"], _root] call ace_interact_menu_fnc_addActionToClass; } forEach _classes;', $ace);
-        self::assertStringContainsString('private _kind = (["format", _o] call comspec_atak_native_fnc_tocScreen) select 3;', $ace);
+        // Arbre du menu : décrit dans fn_tocMenu depuis la 4.8.0 (même arbre pour ACE et pour la molette).
+        $menu = self::read(self::TOC . 'fn_tocMenu.sqf');
+        self::assertStringContainsString('private _kids = { ["ace", _target] call comspec_atak_native_fnc_tocMenu };', $ace);
+        self::assertStringContainsString('private _kind = (["format", _o] call comspec_atak_native_fnc_tocScreen) select 3;', self::sqfCase($menu, 'tree'));
         // Sans ACE : actions de la molette, posées par la boucle de chaque joueur sur tout écran désigné.
         $act = self::sqfCase($scr, 'actions');
         self::assertStringContainsString('if (!isNil "ace_interact_menu_fnc_createAction") exitWith { ["aceObj", _o] call _fn };', $act);
-        self::assertStringContainsString('_o addAction [', $act);
-        self::assertStringContainsString('["Écran TOC : ouvrir le PC du poste", "big", 1.41]', $act);
+        self::assertStringContainsString('["wheel", [_o, []]] call comspec_atak_native_fnc_tocMenu', $act);
+        self::assertStringContainsString('_o addAction [', self::sqfCase($menu, 'wheel'));
+        self::assertStringContainsString('"Ouvrir le PC du poste"', self::sqfCase($menu, 'tree'));
         self::assertStringContainsString('["actions", _o] call _fn;', self::sqfCase($scr, 'tick'));
     }
 

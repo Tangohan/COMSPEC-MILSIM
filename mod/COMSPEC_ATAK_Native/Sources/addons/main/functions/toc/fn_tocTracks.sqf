@@ -1,11 +1,11 @@
 /*
-    Pistes du jeu pour le TOC (4.9.0, principe posé par TTRD : « tout le TOC doit être utilisable sans téléphone »).
+    Pistes du jeu pour le TOC (4.10.0, principe posé par TTRD : « tout le TOC doit être utilisable sans téléphone »).
     Avant, un nœud n'existait que si l'unité portait un ATAK (fn_tocFeed) : sans téléphone, carte, GROUPES, RÉSEAU et
     ORBAT étaient vides. Ici le serveur lit le jeu lui-même (unités, véhicules, aéronefs, drones du camp) et fusionne
     avec ce que les téléphones rapportent. Réglage « Source des positions du TOC » (comspec_atak_native_toc_source) :
       mix  (défaut) tout le monde est vu à sa vraie position ; un porteur d'ATAK garde en plus l'état de sa liaison
       game          tout le monde est vu, les téléphones ne sont pas lus
-      atak          comme avant la 4.9.0 : seuls les porteurs, à leur dernier point
+      atak          comme avant la 4.10.0 : seuls les porteurs, à leur dernier point
     Coût serveur : aucune boucle ici. fn_tocFeed « tick » appelle « nodes » pour les seuls camps qui ont un lecteur
     (PC du poste ouvert ou joueur près d'un écran) ; le relevé est gardé entre deux appels et son intervalle s'allonge
     avec le nombre de pistes (« interval ») ; au plus comspec_atak_native_toc_tracks_max pistes (« cap »), les joueurs
@@ -15,7 +15,7 @@
     (un seul nœud, occupants comptés), chefs des groupes d'IA ; toutes les IA si comspec_atak_native_toc_tracks_ai
     vaut "all", aucune IA hors groupe de joueurs si "none".
 
-    Nœud publié dans COMSPEC_ATAK_TocFeed_<camp> (champs 0 à 8 inchangés depuis la 4.4, 9 à 15 ajoutés en 4.9.0) :
+    Nœud publié dans COMSPEC_ATAK_TocFeed_<camp> (champs 0 à 8 inchangés depuis la 4.4, 9 à 15 ajoutés en 4.10.0) :
       0 clé (netId de l'unité, du chef de bord pour un véhicule)   1 indicatif   2 [x, y]   3 cap
       4 état (fn_tocNodeStatus : 0 en direct, 1 ancien, 2 perdu, 3 hors ligne, 4 source inconnue)
       5 genre "inf" | "veh" | "armor" | "air" | "boat"   6 IA   7 groupe   8 occupants
@@ -89,7 +89,7 @@ switch (_mode) do {
     };
     case "merge": {
         _a params [["_phone", []], ["_tracks", []], ["_m", "MIX"], ["_max", 150]];
-        // Nœud d'un téléphone complété aux champs de la 4.9.0 (copie : le nœud reçu n'est pas modifié).
+        // Nœud d'un téléphone complété aux champs de la 4.10.0 (copie : le nœud reçu n'est pas modifié).
         private _pad = {
             params ["_n"];
             private _o = +_n;

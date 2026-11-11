@@ -1,5 +1,5 @@
 /*
-    Registre des panneaux du TOC (4.9.0, préalable posé par la feuille de route). Avant, chaque tableau lisait lui-même
+    Registre des panneaux du TOC (4.10.0, préalable posé par la feuille de route). Avant, chaque tableau lisait lui-même
     l'état du téléphone ou les variables du serveur, dans fn_tocLaptop, fn_tocBoard et fn_tocScreen à la fois. Ici une
     seule entrée : le PC du poste et les écrans demandent un panneau par son nom et reçoivent ses lignes, le texte à
     montrer quand il est vide et la note de plafond. Aucun panneau ne lit le téléphone. Un panneau d'un lot suivant

@@ -7,7 +7,7 @@ namespace Tests\Unit;
 use PHPUnit\Framework\TestCase;
 
 /**
- * ATAK natif 4.9.0, « le TOC fonctionne sans téléphone » (lot 1 de docs/audit/2026-11-toc-feuille-de-route.md).
+ * ATAK natif 4.10.0, « le TOC fonctionne sans téléphone » (lot 1 de docs/audit/2026-11-toc-feuille-de-route.md).
  * Les règles pures du SQF portent leurs tables de cas entre « ---- … (JSON) » et « ---- FIN … » : elles sont rejouées
  * ici par les mêmes règles écrites en PHP (état d'une piste, fusion téléphone et jeu, plafond, intervalle du relevé,
  * validation des saisies du poste, doublons). Le reste est lu dans les sources : contrôle de l'émetteur par le
@@ -127,6 +127,11 @@ final class AtakTocAutonomyAssetTest extends TestCase
     {
         $src = self::read(self::TOC . 'fn_tocNodeStatus.sqf');
         $rules = self::tables($src, 'TABLES');
+        // Téléphone seul : la règle de fn_tocStatus (4.8.0) est appelée, pas recopiée ; sa table est lue chez elle.
+        self::assertStringContainsString('["node", [_age, _rate, _beacon, _local, _has]] call comspec_atak_native_fnc_tocStatus', $src);
+        self::assertStringNotContainsString('_ruleAtak', $src);
+        self::assertSame(1, preg_match('~private _rule = (\[[^\]]+\]);~', self::read(self::TOC . 'fn_tocStatus.sqf'), $ra));
+        $rules['_ruleAtak'] = json_decode($ra[1], true);
         $cases = self::tables($src, 'CAS')['_cases'];
         self::assertGreaterThanOrEqual(16, count($cases));
         foreach ($cases as [$name, $args, $want]) {
@@ -139,8 +144,7 @@ final class AtakTocAutonomyAssetTest extends TestCase
                 self::assertSame(0, self::nodeStatus(['M', $local, $age, 3, $beacon, false], $rules['_ruleGame'], $rules['_ruleAtak']));
             }
         }
-        // Table du téléphone : mêmes nombres que la règle d'affichage de la branche des écrans (fn_tocStatus).
-        self::assertSame([1.6, 2, 6, 1.3, 10], $rules['_ruleAtak']);
+        self::assertCount(5, $rules['_ruleAtak']);
         // Source inconnue : état neutre, jamais en rouge.
         self::assertStringContainsString('["source inconnue", "text2"]', $src);
         self::assertStringContainsString('if ((["node", _args] call _fn) isEqualTo _want)', $src, 'selfTest absent');
@@ -576,10 +580,10 @@ final class AtakTocAutonomyAssetTest extends TestCase
             self::assertStringContainsString($word, $doc);
         }
         $log = self::read('CHANGELOG-ATAK.md');
-        self::assertStringContainsString('## Pack 4.9.0 Washington : le TOC fonctionne sans téléphone (ATAK natif 4.9.0.AG - Washington', $log);
-        self::assertStringContainsString('FR : ATAK 4.9.0 : le TOC fonctionne sans téléphone', $log);
-        self::assertStringContainsString('EN : ATAK 4.9.0: the TOC works without a phone', $log);
-        self::assertStringContainsString('[h1]COMSPEC ATAK 4.9.0 Washington', self::read('mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt'));
-        self::assertStringContainsString('#define VERSION_STR "4.9.0"', self::read(self::MAIN . 'script_component.hpp'));
+        self::assertStringContainsString('## Pack 4.10.0 Washington : le TOC fonctionne sans téléphone (ATAK natif 4.10.0.AG - Washington', $log);
+        self::assertStringContainsString('FR : ATAK 4.10.0 : le TOC fonctionne sans téléphone', $log);
+        self::assertStringContainsString('EN : ATAK 4.10.0: the TOC works without a phone', $log);
+        self::assertStringContainsString('[h1]COMSPEC ATAK 4.10.0 Washington', self::read('mod/COMSPEC_ATAK_Native/publisher/STEAM_CHANGELOG.txt'));
+        self::assertStringContainsString('#define VERSION_STR "4.10.0"', self::read(self::MAIN . 'script_component.hpp'));
     }
 }

@@ -15,7 +15,7 @@
       3 main courante [[heure ZULU, genre, auteur, texte]...] (les plus récentes à la fin, 150 au plus)
       4 exécution    [[id, n°, événement, mot de code, élément, heure prévue, heure réelle ZULU ("" : pas encore)]...]
       5 demandes     [[id, heure ZULU, genre, demandeur, UID du demandeur, grille, texte, statut, réponse, [x, y],
-                       détail [[libellé, valeur]...] (4.9.0 : lignes de la saisie du poste, 9 lignes MEDEVAC)]...]
+                       détail [[libellé, valeur]...] (4.10.0 : lignes de la saisie du poste, 9 lignes MEDEVAC)]...]
       6 FLASH        [texte, auteur, heure ZULU, serverTime] ou []
       7 postes       [[poste, opérateur, UID, heure ZULU de prise]...]
       8 pertes       [[élément, blessés amis, tués amis, ennemis déclarés neutralisés, ennemis déclarés blessés ou capturés]...]
@@ -23,13 +23,13 @@
     Modes :
       ["init"]                            serveur (fn_tocScreen initServer) : aussi les entrées automatiques (comptes rendus,
                                           alertes, BDA en main courante ; MEDEVAC, appels de feu, ravitaillements en demandes ;
-                                          homme à terre, toute unité du camp tuée (4.9.0 : plus seulement les porteurs
+                                          homme à terre, toute unité du camp tuée (4.10.0 : plus seulement les porteurs
                                           d'ATAK), ennemis neutralisés déclarés par BDA en pertes)
       ["initClient"]                      client : réponse du poste à une demande, dans le téléphone du demandeur et dans
                                           sa boîte du TOC (fn_tocInbox, lisible sans téléphone)
       ["state", camp]                     partout : état publié (vide si rien)
       ["send", [action, args]]            client : demande au serveur pour son camp
-      ["req", [action, args, indicatif du poste]]   serveur, reçu d'un joueur (4.9.0) : le serveur retrouve lui-même le
+      ["req", [action, args, indicatif du poste]]   serveur, reçu d'un joueur (4.10.0) : le serveur retrouve lui-même le
                                           joueur (remoteExecutedOwner), son camp, son nom et son UID ; rien de cela ne vient
                                           plus du client. Action « entry » : saisie du poste (fn_tocEntry « apply »)
       ["do", [camp, action, args, libellé, UID]]   serveur seulement (mission, modules, fn_tocWeb, fn_tocEntry) ; appelé
@@ -97,7 +97,7 @@ switch (_mode) do {
     case "send": {
         _a params [["_act", ""], ["_args", []]];
         if (!hasInterface || {isNull player}) exitWith { false };
-        // Serveur 4.9.0 ou plus : il retrouve lui-même qui demande. Serveur plus ancien : ancien envoi (repli).
+        // Serveur 4.10.0 ou plus : il retrouve lui-même qui demande. Serveur plus ancien : ancien envoi (repli).
         if (missionNamespace getVariable ["COMSPEC_ATAK_TocSrvAuth", false]) then {
             ["req", [_act, _args, ["callsign"] call comspec_atak_native_fnc_tocPost]] remoteExecCall ["comspec_atak_native_fnc_tocRoom", 2];
         } else {
@@ -142,9 +142,9 @@ switch (_mode) do {
         if (!isServer) exitWith {};
         if (missionNamespace getVariable ["COMSPEC_ATAK_TocRoomInit", false]) exitWith {};
         missionNamespace setVariable ["COMSPEC_ATAK_TocRoomInit", true];
-        // 4.9.0 : les demandes des joueurs arrivent par « req » (remoteExecCall), où le serveur lit lui-même l'émetteur.
+        // 4.10.0 : les demandes des joueurs arrivent par « req » (remoteExecCall), où le serveur lit lui-même l'émetteur.
         // L'ancien événement comspec_atak_native_tocRoom, qui croyait le camp et l'UID écrits par le client, n'est plus
-        // écouté : un client resté en 4.8 ou moins ne peut plus écrire dans la salle (il doit mettre le mod à jour).
+        // écouté : un client resté en 4.9 ou moins ne peut plus écrire dans la salle (il doit mettre le mod à jour).
         missionNamespace setVariable ["COMSPEC_ATAK_TocSrvAuth", true, true];
         // Tableau des ordres du camp et accusés (fn_tocInbox), lisibles sans l'app Tâches.
         ["initServer"] call comspec_atak_native_fnc_tocInbox;
@@ -209,7 +209,7 @@ switch (_mode) do {
             // Ennemis déclarés neutralisés par compte rendu (BDA) : comptés à l'élément de l'auteur.
             if (_e > 0) then { ["do", [_side, "kill", [[_side, "", _by] call COMSPEC_ATAK_TocElOf, "ekia", _e], "Réseau ATAK", ""]] call comspec_atak_native_fnc_tocRoom; };
         }] call CBA_fnc_addEventHandler;
-        // Toute unité du camp tuée est comptée à son élément (4.9.0 ; avant : seulement un porteur d'ATAK). Seulement
+        // Toute unité du camp tuée est comptée à son élément (4.10.0 ; avant : seulement un porteur d'ATAK). Seulement
         // pour un camp qui a un TOC, et regroupé : une écriture de la salle toutes les 5 s au plus (fn_tocTracks « killed »).
         addMissionEventHandler ["EntityKilled", {
             params ["_u"];

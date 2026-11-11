@@ -1,5 +1,5 @@
 /*
-    Saisies du poste TOC (4.9.0, « le TOC sans téléphone »). Avant, le flux, la main courante, les demandes et les
+    Saisies du poste TOC (4.10.0, « le TOC sans téléphone »). Avant, le flux, la main courante, les demandes et les
     pertes n'étaient alimentés que par les téléphones du camp. Ici l'opérateur transcrit au poste ce qu'il entend à la
     radio, au nom d'un élément : MEDEVAC 9 lignes, demande de tir, ravitaillement, comptes rendus (contact, SITREP,
     SALUTE), pertes, ordre (FRAGO…), message au camp, accusé d'un ordre au nom d'un élément.

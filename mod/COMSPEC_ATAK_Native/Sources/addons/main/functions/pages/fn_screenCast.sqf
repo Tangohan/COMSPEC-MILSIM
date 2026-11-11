@@ -7,8 +7,9 @@
     Arma refuse toute image hors d'un PBO (journal de TTRD du 26/10 : texture [-1,-1], écran noir) : comme dans l'app
     Briefing, la copie JPEG du site est lue en base64 par COMSPEC Link (ImageDataChunk, 2.0.96+) et montrée par un
     navigateur intégré (CT_WEBBROWSER) dans une texture UI posée sur l'objet
-    (#(rgb,2048,1024,1)ui("COMSPEC_RscScreenSlideTexture", nom unique)). Le chemin direct reste utilisé quand Arma le lit
-    (-filePatching).
+    (#(rgb,2048,1024,1)ui("COMSPEC_RscScreenSlideTexture", nom unique)). Le chemin direct ne sert plus que pour une image
+    d'un PBO (diapositive de la mission), validée avant la pose (_objTex) : un fichier du cache téléchargé, même lisible
+    avec -filePatching, laissait la dalle noire (11/11). Rien d'affichable : carte « Diapositive indisponible » et sa raison.
 
     Variables publiques de l'objet :
       COMSPEC_ATAK_Screen     [nom, portée m, camp ("" = tous), index de texture, contrôle ACE]
@@ -67,6 +68,22 @@ private _face = {
     private _named = _names findIf { (toLower _x) in ["screen", "display", "lcd", "monitor"] };
     private _curName = toLower (_names param [_sel, ""]);
     if (_named >= 0 && {!(_curName in ["screen", "display", "lcd", "monitor"])}) then { _named } else { _sel }
+};
+// Fichier image posable tel quel sur un objet (setObjectTexture) ? Renvoie le chemin à poser, ou "" (navigateur intégré).
+// Un fichier du cache de COMSPEC Link (comspec_cache, hors PBO) n'est jamais posé sur un objet : getTextureInfo le dit
+// lisible et le téléphone l'affiche (image d'interface), mais la dalle restait noire (journal du 11/11, 4.7.1, poste PC
+// incurvé : « image posée : comspec_cache\briefing\… » puis dalle noire). Même règle que fn_patchAthena : aperçu
+// téléchargé != texture 3D. Reste posable : une image d'un PBO (mission, addon), dont Arma lit la taille.
+private _objTex = {
+    params ["_file"];
+    private _lf = toLower _file;
+    if !((_lf select [((count _lf) - 4) max 0]) in [".jpg", "jpeg", ".paa"]) exitWith { "" };
+    if ((_lf find "comspec_cache") >= 0) exitWith { "" };
+    private _usable = [_file] call comspec_atak_native_fnc_texUsable;
+    if (_usable isEqualTo "") exitWith { "" };
+    private _info = getTextureInfo _usable;
+    if !(_info isEqualType [] && {((_info param [0, -1]) max 0) > 0} && {((_info param [1, -1]) max 0) > 0}) exitWith { "" };
+    _usable
 };
 
 switch (_mode) do {
@@ -302,6 +319,13 @@ switch (_mode) do {
                         private _p = _cache getOrDefault [_key, -1e9];
                         // Image évincée du magasin base64 (vidé au-delà de 12) : « WEB:<clé> » périmé, image relue.
                         if (_p isEqualType "" && {(_p select [0, 4]) isEqualTo "WEB:"} && {!(_key in (uiNamespace getVariable ["COMSPEC_ATAK_ScreenWeb", createHashMap]))}) then { _cache deleteAt _key; _p = -1e9; };
+                        // Chemin de fichier gardé d'avant : revérifié avant d'être posé (une fois, tant qu'il n'est pas sur la
+                        // dalle). Non posable : entrée abandonnée, la diapositive repart par le navigateur intégré.
+                        if (_p isEqualType "" && {_p isNotEqualTo ""} && {(_p select [0, 4]) isNotEqualTo "WEB:"} && {_p isNotEqualTo (_o getVariable ["COMSPEC_ATAK_ScreenCur", ""])} && {([_p] call _objTex) isEqualTo ""}) then {
+                            ["WARNING", "SCREEN", format ["Écran %1 : image %2 non posable sur un objet, diapositive reprise par le navigateur intégré", typeOf _o, _p]] call comspec_atak_native_fnc_log;
+                            _cache deleteAt _key;
+                            _p = -1e9;
+                        };
                         _status = "Chargement de la diapositive…";
                         if (_p isEqualType "" && {_p isNotEqualTo ""}) then {
                             _want = _p;
@@ -309,14 +333,14 @@ switch (_mode) do {
                         } else {
                             if !(_p isEqualType 0) then { _p = -1e9; };
                             if (diag_tickTime - _p < 60) then {
-                                _status = format ["Diapositive illisible : %1. Nouvel essai dans une minute. Elle reste visible dans l'app Briefing du téléphone.", (uiNamespace getVariable ["COMSPEC_ATAK_ScreenWhy", createHashMap]) getOrDefault [_key, "image refusée par le jeu"]];
+                                _status = format ["Diapositive indisponible : %1. Nouvel essai dans une minute. Elle reste visible dans l'app Briefing du téléphone.", (uiNamespace getVariable ["COMSPEC_ATAK_ScreenWhy", createHashMap]) getOrDefault [_key, "image refusée par le jeu"]];
                             };
                             // Téléchargement hors de l'image en cours, un à la fois (fn_extAwait : sans figer le jeu).
                             // Verrou horodaté : libre après 30 s même si le script de téléchargement s'est arrêté.
                             if (diag_tickTime - _p > 60 && {diag_tickTime - (missionNamespace getVariable ["COMSPEC_ATAK_ScreenDl", -1e9]) > 30} && {!isNil "comspec_overwatch_connect_fnc_extResult"}) then {
                                 missionNamespace setVariable ["COMSPEC_ATAK_ScreenDl", diag_tickTime];
-                                [_key, _id, _cache] spawn {
-                                    params ["_key", "_id", "_cache"];
+                                [_key, _id, _cache, _objTex] spawn {
+                                    params ["_key", "_id", "_cache", "_objTex"];
                                     private _local = (_key select [0, 6]) isEqualTo "local:";
                                     private _url = [_key, ""] select _local;
                                     private _p = "";
@@ -338,10 +362,10 @@ switch (_mode) do {
                                         _p = if ((_dl param [0, ""]) isEqualTo "OK") then { ((_dl param [1, ""]) splitString (toString [92])) joinString "/" } else { "" };
                                       };
                                     };
-                                    private _lp = toLower _p;
-                                    // Arma ne lit que JPEG et PAA sur un objet, et aucune image hors d'un PBO sans -filePatching
-                                    // (journal de TTRD du 26/10 : texture [-1,-1], écran noir) : chemin gardé seulement s'il est lisible.
-                                    private _use = if ((_lp select [((count _lp) - 4) max 0]) in [".jpg", "jpeg", ".paa"]) then { [_p] call comspec_atak_native_fnc_texUsable } else { "" };
+                                    // Validation avant la pose (_objTex) : JPEG ou PAA d'un PBO dont Arma lit la taille. Tout le reste
+                                    // (fichier du cache hors PBO, texture [-1,-1] du journal de TTRD du 26/10) passe par le navigateur
+                                    // intégré ; l'écran garde entre-temps sa texture UI (message de chargement), jamais une dalle noire.
+                                    private _use = [_p] call _objTex;
                                     private _how = "image posée sur l'objet";
                                     if (_use isEqualTo "" && {(count _phWeb) >= 2}) then {
                                         private _store = uiNamespace getVariable ["COMSPEC_ATAK_ScreenWeb", createHashMap];
@@ -360,9 +384,9 @@ switch (_mode) do {
                                             _store set [_key, [_mime, _b64]];
                                             uiNamespace setVariable ["COMSPEC_ATAK_ScreenWeb", _store];
                                             _use = "WEB:" + _key;
-                                            _how = "affichée par le navigateur intégré (texture refusée par Arma)";
+                                            _how = "affichée par le navigateur intégré (fichier hors PBO, non posable sur un objet)";
                                         } else {
-                                            _how = format ["écran noir : Arma refuse l'image (hors PBO) et %1", _why];
+                                            _how = format ["carte « Diapositive indisponible » sur l'écran : %1", _why];
                                             private _whyMap = uiNamespace getVariable ["COMSPEC_ATAK_ScreenWhy", createHashMap];
                                             _whyMap set [_key, _why];
                                             uiNamespace setVariable ["COMSPEC_ATAK_ScreenWhy", _whyMap];

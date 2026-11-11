@@ -12,7 +12,11 @@ declare(strict_types=1);
  * @var list<array{label: string, value: string, hint: string, tone: string, href: string}> $hubFigures
  * @var int $hubToolCount
  * @var string $csrfToken
+ * @var list<array{slug: string, label: string, help: string, tools: list<string>}> $hubAccessRights droits demandables
+ * @var string|null $success
+ * @var string|null $error
  */
+$hubAccessRights = is_array($hubAccessRights ?? null) ? $hubAccessRights : [];
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 require __DIR__ . '/_icons.php';
 $favUrl = url('operateur/favoris');
@@ -24,6 +28,9 @@ $tile = static function (array $tool) use ($h, $opxIcon, $favUrl, $csrfToken, $b
     $locked = !empty($tool['locked']);
     $search = mb_strtolower($tool['label'] . ' ' . $tool['desc'] . ' ' . ($tool['keywords'] ?? ''));
     $pinned = !empty($tool['favorite']);
+    // Demande d'accès du membre pour le droit de la tuile grisée : none (à demander), pending, refused, unavailable.
+    $access = $locked && is_array($tool['access'] ?? null) ? (string) $tool['access']['state'] : 'unavailable';
+    $accessDate = static fn (mixed $sql): string => preg_match('/^(\d{4})-(\d{2})-(\d{2})/', (string) $sql, $m) === 1 ? $m[3] . '/' . $m[2] . '/' . $m[1] : '';
     ob_start(); ?>
     <li class="opx-tile<?= $locked ? ' is-locked' : '' ?>" data-opx-tool="<?= $h($tool['key']) ?>" data-opx-search="<?= $h($search) ?>">
         <?php if ($locked): ?>
@@ -34,6 +41,30 @@ $tile = static function (array $tool) use ($h, $opxIcon, $favUrl, $csrfToken, $b
                     <em><?= $h($tool['desc']) ?></em>
                 </span>
                 <span class="opx-tile__lock"><?= $opxIcon('lock', '') ?> Accès réservé : <?= $h($tool['needs_label']) ?></span>
+                <?php if ($access === 'pending'): ?>
+                    <form class="opx-tile__ask" method="post" action="<?= $h(url('operateur/acces/annuler')) ?>">
+                        <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                        <input type="hidden" name="tool" value="<?= $h($tool['key']) ?>">
+                        <span class="cc-badge cc-badge--amber"><?php if ($accessDate($tool['access']['at']) !== ''): ?>Demande envoyée le <?= $h($accessDate($tool['access']['at'])) ?><?php else: ?>Demande envoyée<?php endif; ?></span>
+                        <button type="submit" class="opx-tile__askbtn">Annuler <span class="sr-only">la demande : <?= $h($tool['label']) ?></span></button>
+                    </form>
+                <?php elseif ($access === 'refused'): ?>
+                    <span class="opx-tile__ask">
+                        <span class="cc-badge cc-badge--rose"><?php if ($accessDate($tool['access']['at']) !== ''): ?>Refusée le <?= $h($accessDate($tool['access']['at'])) ?><?php else: ?>Refusée<?php endif; ?></span>
+                        <?php if (!empty($tool['access']['can_retry'])): ?>
+                            <button type="button" class="opx-tile__askbtn" data-opx-open="opx-acces" data-opx-check="<?= $h($tool['needs']) ?>">Redemander <span class="sr-only">l’accès : <?= $h($tool['label']) ?></span></button>
+                        <?php else: ?>
+                            <span class="opx-tile__asknote">Nouvelle demande possible le <?= $h($accessDate($tool['access']['retry_at'])) ?></span>
+                        <?php endif; ?>
+                    </span>
+                    <?php if ((string) $tool['access']['note'] !== ''): ?>
+                        <span class="opx-tile__asknote">Motif : <?= $h($tool['access']['note']) ?></span>
+                    <?php endif; ?>
+                <?php elseif ($access === 'none'): ?>
+                    <span class="opx-tile__ask">
+                        <button type="button" class="opx-tile__askbtn" data-opx-open="opx-acces" data-opx-check="<?= $h($tool['needs']) ?>">Demander l’accès <span class="sr-only">: <?= $h($tool['label']) ?></span></button>
+                    </span>
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <a class="dash-quick__item" href="<?= $h(url($tool['path'])) ?>">
@@ -86,6 +117,19 @@ $tile = static function (array $tool) use ($h, $opxIcon, $favUrl, $csrfToken, $b
         </div>
     </header>
 
+    <?php if ((is_string($success ?? null) && $success !== '') || (is_string($error ?? null) && $error !== '')): ?>
+        <section class="dash-zone dash-zone--actions">
+            <div class="dash-zone__inner dash-zone__inner--tight">
+                <?php if (is_string($success ?? null) && $success !== ''): ?>
+                    <p class="opx-flash opx-flash--ok" role="status"><?= $h($success) ?></p>
+                <?php endif; ?>
+                <?php if (is_string($error ?? null) && $error !== ''): ?>
+                    <p class="opx-flash opx-flash--err" role="alert"><?= $h($error) ?></p>
+                <?php endif; ?>
+            </div>
+        </section>
+    <?php endif; ?>
+
     <?php if ($hubToolCount === 0): ?>
         <section class="dash-zone dash-zone--actions">
             <div class="dash-zone__inner">
@@ -137,5 +181,41 @@ $tile = static function (array $tool) use ($h, $opxIcon, $favUrl, $csrfToken, $b
             </div>
         </section>
         <p class="opx-pinhint" data-opx-favempty<?php if ($hubLayout['favorites'] !== []): ?> hidden<?php endif; ?>>Astuce : l’étoile d’une tuile l’épingle en haut de cette page.</p>
+    <?php endif; ?>
+
+    <?php if ($hubAccessRights !== []): ?>
+        <dialog class="opx-dialog" id="opx-acces" aria-labelledby="opx-acces-t">
+            <div class="opx-dialog__head">
+                <div>
+                    <h2 id="opx-acces-t">Demander l’accès</h2>
+                    <p>Un responsable de votre communauté décide. Vous êtes prévenu de sa réponse.</p>
+                </div>
+                <button type="button" class="opx-dialog__close" data-opx-close aria-label="Fermer"><?= $opxIcon('close', '') ?></button>
+            </div>
+            <form class="opx-dialog__body" method="post" action="<?= $h(url('operateur/acces/demander')) ?>">
+                <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                <div class="opx-choices">
+                    <?php foreach ($hubAccessRights as $right): ?>
+                        <label class="opx-choice">
+                            <input type="checkbox" name="droits[]" value="<?= $h($right['slug']) ?>"<?= count($hubAccessRights) === 1 ? ' checked' : '' ?>>
+                            <span>
+                                <strong><?= $h($right['label']) ?></strong>
+                                <?php if ($right['help'] !== ''): ?><em><?= $h($right['help']) ?></em><?php endif; ?>
+                                <em>Outils ouverts : <?= $h(implode(', ', $right['tools'])) ?>.</em>
+                            </span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+                <div class="opx-fields">
+                    <label class="opx-fields__wide">Motif (facultatif)
+                        <input type="text" name="motif" maxlength="300" autocomplete="off" placeholder="Exemple : je tiens le poste renseignement samedi">
+                    </label>
+                </div>
+                <div class="opx-dialog__foot">
+                    <button type="button" class="cc-btn cc-btn-ghost" data-opx-close>Fermer</button>
+                    <button type="submit" class="cc-btn cc-btn-primary">Envoyer la demande</button>
+                </div>
+            </form>
+        </dialog>
     <?php endif; ?>
 </div>

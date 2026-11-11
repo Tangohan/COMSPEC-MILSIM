@@ -1,4 +1,4 @@
-[h1]COMSPEC ATAK 4.9.0 Washington — le TOC fonctionne sans téléphone / the TOC works without a phone[/h1]
+[h1]COMSPEC ATAK 4.10.0 Washington — le TOC fonctionne sans téléphone / the TOC works without a phone[/h1]
 
 [h2]Français[/h2]
 [list]
@@ -20,6 +20,50 @@
 [*] [b]Helmet camera[/b]: the camera of a player without a phone can go on a screen (server setting, on by default).
 [*] [b]“TOC position source” setting[/b]: Mixed (default), Game or ATAK network. Pick ATAK network to keep the previous behaviour.
 [*] [b]Better protected room[/b]: a player can no longer write into another side's room.
+[/list]
+
+[h1]COMSPEC ATAK 4.8.0 Washington — tableau des écrans du TOC, diffusion et mire, écrans qui ne clignotent plus / TOC screens table, broadcast and test card, screens that no longer flicker[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Tableau des écrans[/b] : une fenêtre liste tous les écrans du TOC, dalle par dalle, dans l'éditeur, au Zeus et en jeu.
+[*] [b]Choisir la source[/b] : pour chaque dalle, vous choisissez ce qu'elle montre : carte, satellite, caméras, escouade, horloge, texte, mire.
+[*] [b]Tout générer d'un coup[/b] : un bouton pose une salle complète, un autre donne un flux standard à chaque écran de la salle.
+[*] [b]Dispositions[/b] : les murs d'images et l'écran incurvé ont douze dispositions prêtes (carte et caméras, quatre vues, surveillance…).
+[*] [b]Diffusion[/b] : un écran peut être recopié sur toute la salle en même temps, avec un témoin EN DIRECT.
+[*] [b]Mire[/b] : un écran sans source affiche une mire de barres de couleur avec son titre et l'heure.
+[*] [b]Aucun signal[/b] : un écran sans données affiche une carte fixe AUCUN SIGNAL au lieu d'un contenu à moitié vide.
+[*] [b]Écrans qui ne clignotent plus[/b] : la vue satellite, les caméras et les écrans à moitié cachés ne s'éteignent plus et ne se rallument plus sans arrêt.
+[*] [b]Zeus[/b] : poser un module TOC en Zeus ne vous ramène plus à la vue de votre personnage.
+[*] [b]Module Écran TOC[/b] : chaque usage pose un nouvel écran ; « Retirer » est un choix à part, jamais proposé d'office.
+[*] [b]Textes des bandeaux[/b] : les lettres ne sont plus étirées ni coupées ; un texte court reste centré, un texte long défile.
+[*] [b]Écrire un texte[/b] : vous pouvez enfin écrire le texte des bandeaux et écrans, avec le nouveau module « Afficher un texte » et des messages tout prêts.
+[*] [b]Connecté, pas « perdu »[/b] : un joueur connecté et immobile n'est plus marqué « perdu » sur les écrans.
+[*] [b]En-tête des écrans[/b] : l'écran affiche ce qu'il montre (Satellite, Horloge…), plus le nom anglais du modèle.
+[*] [b]Diapositives[/b] : une diapositive du Briefing ne laisse plus l'écran noir.
+[*] [b]Menu des écrans[/b] : le menu ACE est rangé par thèmes (Afficher, Disposition, Source, Écran, Salle) et montre l'état en cours.
+[*] [b]Écrans éloignés[/b] : les écrans éloignés ou cachés ne consomment plus de ressources à s'allumer et s'éteindre.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Screens table[/b]: one window lists every TOC screen, panel by panel, in the editor, in Zeus and in game.
+[*] [b]Choose the source[/b]: for each panel, choose what it shows: map, satellite, cameras, squad, clock, text, test card.
+[*] [b]Generate everything at once[/b]: one button places a complete room, another gives every screen of the room a standard feed.
+[*] [b]Layouts[/b]: video walls and the curved screen have twelve ready layouts (map and cameras, four views, surveillance…).
+[*] [b]Broadcast[/b]: one screen can be copied to the whole room at the same time, with a LIVE tally.
+[*] [b]Test card[/b]: a screen without a source shows a colour-bar test card with its title and the time.
+[*] [b]No signal[/b]: a screen without data shows a steady NO SIGNAL card instead of half-empty content.
+[*] [b]Screens no longer flicker[/b]: the satellite view, cameras and half-hidden screens no longer switch off and on endlessly.
+[*] [b]Zeus[/b]: placing a TOC module in Zeus no longer throws you back to your character's view.
+[*] [b]TOC Screen module[/b]: every use places a new screen; "Remove" is a separate choice, never offered by default.
+[*] [b]Strip texts[/b]: letters are no longer stretched or cut; a short text stays centred, a long text scrolls.
+[*] [b]Write a text[/b]: you can finally write the text of strips and screens, with the new "Show a text" module and ready-made messages.
+[*] [b]Connected, not "lost"[/b]: a connected player standing still is no longer shown as "lost" on the screens.
+[*] [b]Screen header[/b]: the screen displays what it shows (Satellite, Clock…), no longer the English name of the model.
+[*] [b]Slides[/b]: a Briefing slide no longer leaves the screen black.
+[*] [b]Screen menu[/b]: the ACE menu is sorted by theme (Show, Layout, Source, Screen, Room) and shows the current state.
+[*] [b]Distant screens[/b]: distant or hidden screens no longer use resources switching on and off.
 [/list]
 
 [h1]COMSPEC ATAK 4.7.2 Washington — le poste TOC sur le PC s'affiche de nouveau / the TOC post shows on the PC again[/h1]

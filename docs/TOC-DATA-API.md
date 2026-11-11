@@ -1,4 +1,4 @@
-# TOC : données et saisies sans téléphone (ATAK natif 4.9.0)
+# TOC : données et saisies sans téléphone (ATAK natif 4.10.0)
 
 Lot 1 de `docs/audit/2026-11-toc-feuille-de-route.md`. Principe posé par TTRD : **tout le TOC doit être utilisable
 sans téléphone**. Cette page est le contrat entre la couche données (cette branche) et ceux qui affichent : la
@@ -102,15 +102,14 @@ L'état vient de la meilleure source vivante.
 ["source", "M"] call comspec_atak_native_fnc_tocNodeStatus;                            // "jeu et ATAK"
 ```
 
-La branche des écrans a sa propre fonction d'affichage (`fn_tocStatus`, non poussée au moment de ce lot). Les codes
-0 à 4 sont les mêmes, et la table du téléphone (`_ruleAtak`) reprend ses nombres : à la fusion, `fn_tocStatus` peut
-appeler `fn_tocNodeStatus` ou l'inverse sans changer un seul écran.
+Pour un téléphone seul, `fn_tocNodeStatus` appelle la règle de `fn_tocStatus` (4.8.0, branche des écrans) sans la
+recopier : une seule table de seuils pour le téléphone, mêmes codes 0 à 4, mêmes libellés à l'écran.
 
 ### Réglages (serveur)
 
 | Réglage | Défaut | Effet |
 |---|---|---|
-| `comspec_atak_native_toc_source` | `mix` | `mix` : tout le monde est vu, un porteur garde en plus l'état de sa liaison. `game` : tout le monde est vu, les téléphones ne sont pas lus. `atak` : comme avant la 4.9.0 |
+| `comspec_atak_native_toc_source` | `mix` | `mix` : tout le monde est vu, un porteur garde en plus l'état de sa liaison. `game` : tout le monde est vu, les téléphones ne sont pas lus. `atak` : comme avant la 4.10.0 |
 | `comspec_atak_native_toc_tracks_ai` | `leaders` | IA suivies hors groupes de joueurs : chefs et véhicules, toutes, aucune |
 | `comspec_atak_native_toc_tracks_max` | 150 | plafond de pistes par camp (20 à 400) |
 | `comspec_atak_native_toc_headcam` | coché | caméra de casque d'un joueur sans téléphone |
@@ -181,7 +180,7 @@ saisie nettoyée]` sans rien envoyer ; `submit` écrit la première erreur dans 
 part en `remoteExecCall` vers le mode `req` : le serveur lit `remoteExecutedOwner`, retrouve le joueur, son camp
 (`side group`), son nom et son UID (`getPlayerUID`). Ce que le client écrivait (camp, libellé, UID) n'est plus lu.
 
-- L'ancien événement `comspec_atak_native_tocRoom` n'est plus écouté par un serveur 4.9.0. Un client plus ancien que
+- L'ancien événement `comspec_atak_native_tocRoom` n'est plus écouté par un serveur 4.10.0. Un client plus ancien que
   le serveur ne peut plus écrire dans la salle.
 - Serveur plus ancien que le client : le client garde l'ancien envoi (le serveur publie `COMSPEC_ATAK_TocSrvAuth`).
 - Un `remoteExec` direct d'un client vers `fn_tocRoom` « do », `fn_tocEntry` « apply », `fn_tocInbox` « ackFor »,

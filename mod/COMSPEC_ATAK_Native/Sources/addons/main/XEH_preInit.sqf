@@ -1204,7 +1204,7 @@ private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_toc_cam_range", "SLIDER",
     ["Distance d'activation des caméras d'écran (m)", "Un écran TOC en affichage caméra ne montre l'image en direct qu'aux joueurs plus proches que cette distance et qui le regardent. Plus loin, il montre la carte et le flux du poste."],
     _loc, [10, 150, 40, 0], 1] call comspec_atak_native_fnc_addSetting;
-// Le TOC sans téléphone (4.9.0, fn_tocTracks, fn_tocCam) : réglages du serveur.
+// Le TOC sans téléphone (4.10.0, fn_tocTracks, fn_tocCam) : réglages du serveur.
 ["comspec_atak_native_toc_source", "LIST",
     ["Source des positions du TOC", "D'où viennent les unités montrées sur les écrans TOC et le PC du poste. Mixte : toute unité du camp est vue à sa vraie position, et un porteur d'ATAK garde en plus l'état de sa liaison ; exemple : une section sans téléphone apparaît sur le mur à côté d'une section équipée. Jeu : toute unité du camp est vue, les téléphones ne sont pas lus ; exemple : un téléphone éteint ne change rien au mur. Réseau ATAK : seuls les porteurs d'ATAK sont vus, à leur dernier point ; exemple : un groupe qui perd ses téléphones disparaît du mur."],
     _loc, [["mix", "game", "atak"], ["Mixte (jeu et réseau ATAK)", "Jeu (toute unité du camp)", "Réseau ATAK (porteurs seulement)"], 0], 1] call comspec_atak_native_fnc_addSetting;

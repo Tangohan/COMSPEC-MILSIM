@@ -1,5 +1,5 @@
 /*
-    Boîte de réception du TOC sans téléphone (4.9.0). Avant, un message du poste était jeté si le destinataire n'avait
+    Boîte de réception du TOC sans téléphone (4.10.0). Avant, un message du poste était jeté si le destinataire n'avait
     pas de téléphone (fn_tocAction « recv »), un ordre n'arrivait que dans l'app Tâches, la réponse du poste à une
     demande et les retours des actions n'étaient qu'un bandeau du téléphone. Ici tout est gardé sur le poste du joueur,
     lisible dans une fenêtre (action ACE sur soi « Messages et ordres du TOC », ou touche à choisir dans

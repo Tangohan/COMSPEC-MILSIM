@@ -1,5 +1,5 @@
 /*
-    État d'une piste du TOC, tiré de la meilleure source vivante (4.9.0, « le TOC sans téléphone »). Avant, l'état ne
+    État d'une piste du TOC, tiré de la meilleure source vivante (4.10.0, « le TOC sans téléphone »). Avant, l'état ne
     venait que du dernier point PLI du téléphone : une unité vivante et visible, sans téléphone ou dont le téléphone ne
     balisait pas, était « perdue » ou « hors ligne ». Fonction pure, mêmes codes que les écrans et le PC du poste :
       0 en direct | 1 ancien | 2 perdu | 3 hors ligne | 4 source inconnue (neutre, jamais en rouge)
@@ -9,13 +9,9 @@
           sinon, âge du dernier relevé < 2 intervalles + 3 s             -> 0 en direct
           âge < 6 intervalles + 10 s                                     -> 1 ancien
           au-delà                                                        -> 2 perdu
-      - source « A » (téléphone ATAK seul, réglage « Réseau ATAK ») :
-          balise éteinte (téléphone éteint ou cassé)                     -> 3 hors ligne
-          unité simulée sur la machine qui calcule                       -> 0 en direct
-          aucun point jamais reçu                                        -> 4 source inconnue
-          âge du point < 1,6 intervalle + 2 s                            -> 0 en direct
-          âge < plus long silence normal (6 intervalles) x 1,3 + 10 s    -> 1 ancien
-          au-delà                                                        -> 2 perdu
+      - source « A » (téléphone ATAK seul, réglage « Réseau ATAK ») : règle unique de fn_tocStatus « node » (4.8.0),
+          appelée telle quelle, jamais recopiée : balise éteinte -> 3 hors ligne ; unité locale -> 0 en direct ;
+          aucun point reçu -> 4 source inconnue ; puis l'âge du point -> 0 en direct, 1 ancien, 2 perdu
       - source vide ou autre                                             -> 4 source inconnue
     Modes :
       ["node", [source, locale, âge en s, intervalle en s, balise allumée, point reçu]]  -> 0 | 1 | 2 | 3 | 4
@@ -30,7 +26,6 @@ params [["_mode", "node"], ["_a", []]];
 private _fn = comspec_atak_native_fnc_tocNodeStatus;
 // ---- TABLES (JSON) : [facteur « en direct », marge s, intervalles du plus long silence normal, facteur, marge s].
 private _ruleGame = [2, 3, 6, 1, 10];
-private _ruleAtak = [1.6, 2, 6, 1.3, 10];
 // ---- FIN TABLES
 switch (_mode) do {
     case "node": {
@@ -47,12 +42,8 @@ switch (_mode) do {
             2
         };
         if (_src isNotEqualTo "A") exitWith { 4 };
-        if (!_beacon) exitWith { 3 };
-        if (_local) exitWith { 0 };
-        if (!_has || {_age < 0}) exitWith { 4 };
-        if (_age < _rate * (_ruleAtak select 0) + (_ruleAtak select 1)) exitWith { 0 };
-        if (_age < _rate * (_ruleAtak select 2) * (_ruleAtak select 3) + (_ruleAtak select 4)) exitWith { 1 };
-        2
+        // Téléphone seul : la règle de la branche des écrans, sans la recopier.
+        ["node", [_age, _rate, _beacon, _local, _has]] call comspec_atak_native_fnc_tocStatus
     };
     case "best": {
         private _best = 4;
