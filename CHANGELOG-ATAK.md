@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : un seul bouton « ATHENA Configuration » dans le menu Échap (ATAK natif et SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Le menu Échap est rangé : un seul bouton ATHENA Configuration
+- Les boutons COMSPEC du menu Échap sont regroupés dans un seul bouton « ATHENA Configuration », avec le logo Athena et une pastille verte, orange ou rouge selon l'état de la liaison. Il se place là où il ne cache aucun autre bouton.
+- Il ouvre une fenêtre avec l'état de la liaison et du service Athéna, puis Diagnostic et dépannage de la liaison, Réalisme et réseau, Service Athéna et SSE · Roleplay et extensions. Le clic sur « Service Athéna » ne bloque plus le menu.
+EN : The Esc menu is tidied up: one ATHENA Configuration button
+- The COMSPEC buttons of the Esc menu are grouped into a single "ATHENA Configuration" button, with the Athena logo and a green, orange or red dot for the link state. It places itself where it hides no other button.
+- It opens a window with the link and Athena service state, then Link diagnostics and troubleshooting, Realism and network, Athena service and SSE · Roleplay and extensions. Clicking "Athena service" no longer locks up the menu.
+
+### Détail technique
+- Nouveau `fn_athenaConfig` (ATAK natif `main/functions/ui`, copie identique dans le SSE `extensions/functions`) : bouton du menu Échap (`RscDisplayInterrupt`, `RscDisplayMPInterrupt`, idc 93960) et fenêtre « Configuration ATHENA » (`RscDisplayEmpty` enfant du menu Échap). Place du bouton calculée sur les contrôles visibles du menu (vanilla, ACE, CBA, autres mods), revue pendant la première seconde ; hauteur bornée en pixels (24 à 44 px), largeur mesurée sur le texte.
+- Registre `comspec_athena_config_entries` (contrat dans l'en-tête de `fn_athenaConfig`) : ATAK `atak_realism` (Réalisme et réseau), Overwatch connect `ow_diag` (Dépannage liaison) et `ow_athena` (Service Athéna), SSE `sse_extensions`. État `comspec_athena_config_status` posé par Overwatch connect. Hôte `comspec_athena_config_host` : l'ATAK natif ; le SSE seulement sans lui (un seul bouton).
+- Retirés du menu Échap : barre d'Overwatch connect (`fn_onInterruptLoad`, devenu `fn_athenaConfigEntries`), bouton `["button"]` de `fn_netConfig`, `fn_docExtMenu` du SSE. Fenêtres d'origine inchangées.
+- Cause du blocage « Service Athéna » : le gestionnaire du bouton fermait le menu Échap auquel il appartenait (`closeDisplay` dans son propre `ButtonClick`) puis sortait le téléphone sur Réglages. Désormais toute action part à l'image suivante (`CBA_fnc_execNextFrame`) et la question Oui / Non s'ouvre par-dessus le menu Échap, sans le fermer.
+- Logo du bouton : `athena_config_ca.paa`, `athena_config_hover_ca.paa` (256 px, aigle blanc / vert), pastille `athena_dot_ca.paa`. Textes : `i18n/en.txt`, `localisation/template/xx.txt`, stringtable de l'addon SSE `extensions` (`STR_COMSPEC_SSE_ATHCFG_*`). `$PBOPREFIX$` de l'addon SSE `extensions` réparé (caractères de contrôle à la place des barres obliques).
+
 ## SSE 1.9.0 : fenêtre « Réponses de l'IA » simple, peur d'une arme braquée de près, champs des documents (SSE 1.9.0)
 
 ### Résumé joueur

@@ -15,7 +15,7 @@ switch (_act) do {
         if !([player] call comspec_atak_native_fnc_adminAllowed) exitWith {};
         profileNamespace setVariable ["COMSPEC_ATAK_WizardOffered", true];
         [] call comspec_atak_native_fnc_saveProfile;
-        ["INFO", "Assistant de configuration du réalisme disponible : menu Échap, Réalisme et réseau", 12, 40] call comspec_atak_native_fnc_notify;
+        ["INFO", "Assistant de configuration du réalisme disponible : menu Échap, ATHENA Configuration, Réalisme et réseau", 12, 40] call comspec_atak_native_fnc_notify;
     };
     case "fields": {
         private _acre = isClass (configFile >> "CfgPatches" >> "acre_main");

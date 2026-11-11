@@ -22,12 +22,12 @@ if (([] call comspec_overwatch_connect_fnc_athenaMode) isEqualTo "off") then {
             ["notify"] call comspec_atak_native_fnc_athenaChoice;
         };
         // Sans ATAK natif : pas de fenêtre ouverte d'office par-dessus le jeu ; alerte dans le journal du téléphone,
-        // la question s'ouvre sur action du joueur (menu Échap › Service Athéna).
+        // la question s'ouvre sur action du joueur (menu Échap › ATHENA Configuration › Service Athéna).
         [
             format [
                 "%1 (%2)",
                 ("Votre unité utilise-t-elle le service Athéna ?" call comspec_overwatch_connect_fnc_tr),
-                ("menu Échap › Service Athéna" call comspec_overwatch_connect_fnc_tr)
+                ("menu Échap › ATHENA Configuration › Service Athéna" call comspec_overwatch_connect_fnc_tr)
             ],
             "link",
             "warn"

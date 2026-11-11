@@ -13,6 +13,26 @@ COMSPEC_ATAK_FontBody = 0; // taille de base du texte structuré des pages (fn_l
 // renvoyait les deux valeurs à tous les joueurs et à la file JIP.
 missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION];
 missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", VERSION_STR];
+// Configuration ATHENA (menu Échap, fn_athenaConfig) : l'ATAK natif est l'hôte du bouton unique et de la fenêtre, même
+// si le SSE est chargé (le SSE ne l'est que sans l'ATAK natif). Contrat du registre : en-tête de fn_athenaConfig.
+missionNamespace setVariable ["comspec_athena_config_host", createHashMapFromArray [
+    ["fn", comspec_atak_native_fnc_athenaConfig],
+    ["tr", { _this call comspec_atak_native_fnc_tr }],
+    ["logo", "\z\comspec_atak_native\addons\main\data\logo_athena.paa"],
+    ["icon", "\z\comspec_atak_native\addons\main\data\athena_config_ca.paa"],
+    ["iconHover", "\z\comspec_atak_native\addons\main\data\athena_config_hover_ca.paa"],
+    ["dot", "\z\comspec_atak_native\addons\main\data\athena_dot_ca.paa"],
+    ["row", "COMSPEC_ATAK_AthenaCfgRow"]
+]];
+private _athCfg = (missionNamespace getVariable ["comspec_athena_config_entries", []]) select { (_x select 0) isNotEqualTo "atak_realism" };
+_athCfg pushBack ["atak_realism",
+    { "Réalisme et réseau" call comspec_atak_native_fnc_tr },
+    { "Conditions réseau et réalisme du serveur : chacun les voit, un admin ou un Zeus les règle pour tous." call comspec_atak_native_fnc_tr },
+    "\z\comspec_atak_native\addons\main\data\app_network.paa",
+    { true },
+    { params ["_parent"]; ["open", _parent] call comspec_atak_native_fnc_netConfig; },
+    20, "child"];
+missionNamespace setVariable ["comspec_athena_config_entries", _athCfg];
 // Versions compilées dans ce code : fn_integrityCheck les compare à la config chargée, à la DLL et au site.
 missionNamespace setVariable ["COMSPEC_ATAK_CodeVersion", VERSION_STR];
 missionNamespace setVariable ["COMSPEC_ATAK_LinkExpected", LINK_VERSION_STR];
@@ -734,7 +754,7 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
     _mpuCat, false, 1, { if (_this && {hasInterface}) then { [{ ["applyCut"] call comspec_atak_native_fnc_radioGuard; }] call comspec_atak_native_fnc_nextFrame; }; }] call comspec_atak_native_fnc_addSetting;
 // Assistant de configuration (fn_setupWizard) : proposé une fois à l'admin.
 ["comspec_atak_native_wizard_offer", "CHECKBOX",
-    ["Proposer l'assistant de configuration", "Une seule fois, à un admin ou un Zeus. L'assistant reste dans le menu Échap, Réalisme et réseau."],
+    ["Proposer l'assistant de configuration", "Une seule fois, à un admin ou un Zeus. L'assistant reste dans le menu Échap : ATHENA Configuration, Réalisme et réseau."],
     _mpuCat, true, 0] call comspec_atak_native_fnc_addSetting;
 // Voix ACRE2 / TFAR relayée par le maillage MPU5 (fn_mpuVoice) : passerelle radio sur IP. Reste décochée par défaut : jamais jouée, et la voix des joueurs passe avant (voir fn_radioGuard).
 ["comspec_atak_native_mpu_voice", "CHECKBOX",
