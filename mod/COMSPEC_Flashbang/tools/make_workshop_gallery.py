@@ -195,10 +195,12 @@ T = {
         "en": ("COMSPEC FLASHBANG", "Stun grenades for Arma 3: 1 to 9 flashes, realistic effects.",
                ["1 TO 9 FLASHES", "DRILL GRENADE", "ONLY CBA_A3 REQUIRED"])},
     "grenades": {
-        "fr": ("DIX GRENADES", "De 1 à 9 flashs : le chiffre sur le corps est le nombre de flashs. La Drill bleue "
-               "sert à l'entraînement : un pop, aucun effet.", ["CAISSE DE 10 PAR MODÈLE", "ARSENAL", "G / CTRL+G"]),
-        "en": ("TEN GRENADES", "From 1 to 9 flashes: the number on the body is the number of flashes. The blue Drill "
-               "is for training: a pop, no effect.", ["CRATE, 10 PER MODEL", "ARSENAL", "G / CTRL+G"])},
+        "fr": ("1 À 9 FLASHS ET DRILL", "Le chiffre sur le corps est le nombre de flashs. Drill bleue : entraînement, "
+               "aucun effet. Chaque modèle existe aussi en mèche 3 s et 8 s.",
+               ["CAISSE FLASH", "CAISSE DÉLAIS", "MÈCHE 3 S / 8 S", "ARSENAL"]),
+        "en": ("1 TO 9 FLASHES AND DRILL", "The number on the body is the number of flashes. The blue Drill is for "
+               "training: a pop, no effect. Every model also comes with a 3 s and 8 s fuse.",
+               ["FLASH CRATE", "DELAY CRATE", "3 S / 8 S FUSE", "ARSENAL"])},
     "timeline": {
         "fr": ("UN BANG PAR FLASH", "Une grenade à 5 flashs fait exactement 5 flashs et 5 bangs, environ toutes les demi-secondes, "
                "pareil chez tous les joueurs. Un seul sifflement, relancé à chaque flash."),
@@ -213,8 +215,8 @@ T = {
         "fr": ("DEDANS OU DEHORS", "Le mod regarde où la grenade éclate : murs, plafond, taille de la pièce."),
         "en": ("INDOORS OR OUTDOORS", "The mod checks where the grenade goes off: walls, ceiling, room size.")},
     "reglages": {
-        "fr": ("VOTRE DOSAGE", "28 réglages CBA, chacun avec un exemple. Trois préréglages pour commencer."),
-        "en": ("YOUR OWN DOSE", "28 CBA settings, each with an example. Three presets to start with.")},
+        "fr": ("VOTRE DOSAGE", "32 réglages CBA, chacun avec un exemple. Trois préréglages pour commencer."),
+        "en": ("YOUR OWN DOSE", "32 CBA settings, each with an example. Three presets to start with.")},
     "compat": {
         "fr": ("COMPATIBLE AVEC VOS MODS", "Seul CBA_A3 est obligatoire. Le reste est reconnu s'il est chargé."),
         "en": ("WORKS WITH YOUR MODS", "Only CBA_A3 is required. The rest is detected when loaded.")},
