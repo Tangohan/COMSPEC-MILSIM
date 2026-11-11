@@ -24314,7 +24314,7 @@
 ["Préréglage enregistré : %1", "", "Preset saved: %1"],
 ["Préréglage posé : %1 écran(s), %2 remplacé(s) faute de modèle", "", "Preset placed: %1 screen(s), %2 replaced for lack of the model"],
 ["Refusé : ce texte n'est pas un préréglage de salle TOC", "", "Refused: this text is not a TOC room preset"],
-["Préréglage importé : %1", "", "Preset imported: %1"]
+["Préréglage importé : %1", "", "Preset imported: %1"],
 ["SCHÉMA", "", "DIAGRAM"],
 ["PASSERELLE", "", "GATEWAY"],
 ["SIGNALER UN PROBLÈME", "", "REPORT A PROBLEM"],
