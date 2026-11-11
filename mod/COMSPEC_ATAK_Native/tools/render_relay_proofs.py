@@ -20,6 +20,7 @@ from PIL import Image, ImageDraw
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import model_relay_kits as kits  # noqa: E402
 import model_relay_towers as towers  # noqa: E402
+import model_relay_trees as trees  # noqa: E402
 import relay3d as r3  # noqa: E402
 import relay_tex  # noqa: E402
 
@@ -119,6 +120,11 @@ def export_all(work):
                 r3.export_obj(m2, os.path.join(work, "%s__%s.obj" % (name, label)), png)
     for name, (fn, _, ds) in kits.MODELS.items():
         r3.export_obj(towers.finish(fn(0)), os.path.join(work, name + ".obj"), png)
+    png = dict(png)
+    png.update(trees.build_textures(os.path.join(work, "tex"), None, convert=False))
+    for name, (fn, _) in trees.MODELS.items():
+        r3.export_obj(towers.finish(fn(0)), os.path.join(work, name + ".obj"), png)
+        r3.export_obj(towers.finish(fn(1, ruin=True)), os.path.join(work, name + "_ruin.obj"), png)
 
 
 def label(path, text):
@@ -205,15 +211,30 @@ def main():
         if n == "relay_pole_node":
             sc["pole"] = {"r": 0.08, "h": 6.0}
         scenes.append(sc)
+    # pylônes déguisés en arbre : seuls, gros plan du houppier (antennes), pied, ruine
+    for n, H, out_name in (("relay_tree_pine_28", 28.0, "arbre_pin"), ("relay_tree_palm_22", 22.0, "arbre_palmier"), ("relay_tree_pine_15", 15.0, "arbre_pin_15")):
+        prev = "%s/prev_%s.png" % (W, n)
+        previews.append((prev, n))
+        shots = [{"out": prev, "az": -60, "el": 5, "res": [910, 512], "mode": "day"}]
+        if only != "previews":
+            shots.append({"out": "%s/%s.png" % (O, out_name), "az": -62, "el": 5, "res": [900, 1400], "mode": "day"})
+            labels["%s/%s.png" % (O, out_name)] = {"arbre_pin": "Faux pin 28 m", "arbre_palmier": "Faux palmier 22 m", "arbre_pin_15": "Faux pin 15 m"}[out_name]
+            shots.append({"out": "%s/det_%s_tete.png" % (W, n), "az": -40, "el": -4, "target": [0, 0, H - (5.5 if "pine" in n else 3.0)], "span": 7.5 if H > 20 else 6.0, "res": [1000, 1000], "mode": "day"})
+            shots.append({"out": "%s/det_%s_pied.png" % (W, n), "az": -50, "el": 10, "target": [1.2, 0, 1.6], "span": 8.0, "res": [1000, 1000], "mode": "day"})
+        scenes.append({"objs": [{"obj": obj(n)}], "soldiers": [[2.0, -4.6]], "shots": shots})
+        if only != "previews":
+            scenes.append({"objs": [{"obj": obj(n + "_ruin")}], "soldiers": [[2.0, -4.6]],
+                           "shots": [{"out": "%s/det_%s_ruine.png" % (W, n), "az": -30, "el": 16, "res": [1000, 1000], "mode": "day"}]})
     if only != "previews":
         # tableau des tailles : tous les pylônes côte à côte, silhouette de 1,80 m
         xs, x = [], 0.0
         gaps = {"relay_tower_m12": 9, "relay_tower_m20": 12, "relay_rooftop_8": 9, "relay_tower_30": 12, "relay_monopole_30": 13, "relay_tower_40": 17, "relay_tower_50": 20, "relay_guyed_60": 12}
-        for n in TOWERS:
+        gaps.update({"relay_tree_pine_15": 11, "relay_tree_palm_22": 13, "relay_tree_pine_28": 14})
+        for n in TOWERS[:4] + ["relay_tree_pine_15", "relay_tree_palm_22", "relay_tree_pine_28"] + TOWERS[4:]:
             xs.append({"obj": obj(n), "loc": [x, 0, 0], "rot": 0})
             x += gaps[n]
         scenes.append({"objs": xs, "soldiers": [[-4.0, -2.0]] + [[o["loc"][0] + 2.5, -5.0] for o in xs],
-                       "shots": [{"out": "%s/_tailles.png" % O, "az": -90, "el": 3, "res": [2400, 1300], "fov": 18, "target": [x / 2 - 6, 0, 31], "span": 68, "mode": "day"}]})
+                       "shots": [{"out": "%s/_tailles.png" % O, "az": -90, "el": 3, "res": [3000, 1300], "fov": 18, "target": [x / 2 - 6, 0, 31], "span": 68, "mode": "day"}]})
         # variantes de peinture et d'équipement
         scenes.append({"objs": [{"obj": obj("relay_tower_30" + s), "loc": [i * 9.0, 0, 0]} for i, s in enumerate(("", "__rw", "__olive", "__sand"))], "soldiers": [[-3, -3]],
                        "shots": [{"out": "%s/variantes_peinture.png" % O, "az": -75, "el": 5, "res": [1800, 1300], "mode": "day"}]})
@@ -257,6 +278,9 @@ def main():
         order = ["%s/%s_jour.png" % (O, n) for n in TOWERS] + ["%s/%s_crepuscule.png" % (O, n) for n in TOWERS] + ["%s/%s_ruine.png" % (O, n) for n in TOWERS]
         sheet(os.path.join(out, "_planche.png"), order[:16], 8, 620)
         sheet(os.path.join(out, "_planche_details.png"), ["%s/%s_pied.png" % (O, n) for n in TOWERS] + ["%s/%s_tete.png" % (O, n) for n in TOWERS] + order[16:], 4, 520)
+        det = ["%s/det_%s_%s.png" % (W, n, k) for n in ("relay_tree_pine_28", "relay_tree_palm_22") for k in ("tete", "pied", "ruine")]
+        if all(os.path.exists(f) for f in det):
+            sheet(os.path.join(out, "arbre_details.png"), det, 3, 760)
         sheet(os.path.join(out, "_planche_antennes.png"), ["%s/%s.png" % (O, n) for n in list(GROUND) + list(WALL)], 5, 620)
     print("rendus :", out)
 

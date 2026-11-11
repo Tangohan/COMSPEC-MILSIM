@@ -3,6 +3,7 @@
 [h2]Français[/h2]
 [list]
 [*] [b]Pylônes et mâts[/b] : les relais sont redessinés comme de vrais sites (treillis, échelle, plates-formes, câbles, clôture, feux rouges la nuit), avec de nouveaux modèles : monopôle 30 m, pylône haubané 60 m, pylône de toit, mât sur trépied et mât sur remorque. Peinture au choix.
+[*] [b]Relais déguisés en arbre[/b] : un faux pin (28 m et 15 m) et un faux palmier (22 m) : un arbre de loin, des antennes entre les branches de près.
 [*] [b]Antennes murales[/b] : des antennes à fixer sur un mur, un poteau ou un toit ; ce sont de vrais relais.
 [*] [b]Caméras IP[/b] : une famille de caméras à poser (dôme, tube infrarouge, thermique, mini-dôme…).
 [*] [b]Salle serveur[/b] : baies, coffrets, chemins de câbles et climatiseur à poser dans l'éditeur et en Zeus.
@@ -27,6 +28,7 @@
 [h2]English[/h2]
 [list]
 [*] [b]Towers and masts[/b]: relays are redrawn as real sites (lattice, ladder, platforms, cables, fence, red lights at night), with new models: 30 m monopole, 60 m guyed mast, rooftop tower, tripod mast and trailer mast. Pick the paint.
+[*] [b]Tree-disguised relays[/b]: a fake pine (28 m and 15 m) and a fake palm (22 m): a tree from afar, antennas among the branches up close.
 [*] [b]Wall antennas[/b]: antennas to fix on a wall, a pole or a roof; they are real relays.
 [*] [b]IP cameras[/b]: a family of cameras to place (dome, infrared bullet, thermal, mini dome…).
 [*] [b]Server room[/b]: racks, cabinets, cable trays and an AC unit to place in the editor and in Zeus.

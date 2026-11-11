@@ -21,6 +21,8 @@ final class AtakRelayModels3dAssetTest extends TestCase
         'relay_tower_40' => ['light_top', 'light_mid1', 'light_mid2'], 'relay_tower_50' => ['light_top', 'light_mid1', 'light_mid2'],
         'relay_monopole_30' => ['light_top', 'light_mid1', 'light_mid2'], 'relay_guyed_60' => ['light_top', 'light_mid1', 'light_mid2'],
         'relay_rooftop_8' => ['light_top'],
+        // Relais déguisés en arbre (tools/model_relay_trees.py) : mêmes exigences que les autres pylônes.
+        'relay_tree_pine_28' => ['light_top'], 'relay_tree_pine_15' => ['light_top'], 'relay_tree_palm_22' => ['light_top'],
     ];
 
     private const SMALL = ['relay_kit_sat', 'relay_kit_field', 'relay_kit_mini', 'relay_wall_sector', 'relay_wall_omni', 'relay_wall_dish',
@@ -203,7 +205,7 @@ final class AtakRelayModels3dAssetTest extends TestCase
         // Textures et matières nommées par les modèles : toutes présentes.
         foreach (['relay_steel_co.paa', 'relay_steel_rw_co.paa', 'relay_steel_olive_co.paa', 'relay_steel_sand_co.paa', 'relay_steel_nohq.paa',
             'relay_steel_smdi.paa', 'relay_equip_co.paa', 'relay_equip_nohq.paa', 'relay_equip_smdi.paa', 'relay_equip_as.paa', 'relay_mesh_ca.paa',
-            'relay_steel.rvmat', 'relay_equip.rvmat', 'relay_mesh.rvmat', 'relay_glow.rvmat', 'relay_glass.rvmat'] as $f) {
+            'relay_tree_ca.paa', 'relay_tree.rvmat', 'relay_steel.rvmat', 'relay_equip.rvmat', 'relay_mesh.rvmat', 'relay_glow.rvmat', 'relay_glass.rvmat'] as $f) {
             self::assertFileExists($this->root() . self::TOWERS . '/data/' . $f);
         }
         foreach ($this->mlod(self::TOWERS . '/data/relay_tower_50.p3d')[0]['tex'] as $pair => $count) {
@@ -237,7 +239,7 @@ final class AtakRelayModels3dAssetTest extends TestCase
         foreach ($it as $f) {
             $total += $f->getSize();
         }
-        // 89 Mo avant la refonte (5 pylônes) ; 26 modèles aujourd'hui. Plafond : 60 Mo.
+        // 89 Mo avant la refonte (5 pylônes) ; 29 modèles aujourd'hui (56 Mo). Plafond : 60 Mo.
         self::assertLessThan(60 * 1024 * 1024, $total, sprintf('towers : %.1f Mo', $total / 1048576));
     }
 }

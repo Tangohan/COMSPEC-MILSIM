@@ -13,7 +13,7 @@ from xml.sax.saxutils import escape
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "Sources", "addons", "towers")
 P = "\\z\\comspec_atak_native\\addons\\towers\\data\\"
-PAINT = {"galva": P + "relay_steel_co.paa", "rw": P + "relay_steel_rw_co.paa", "olive": P + "relay_steel_olive_co.paa", "sand": P + "relay_steel_sand_co.paa"}
+PAINT = {"tree": P + "relay_steel_co.paa", "galva": P + "relay_steel_co.paa", "rw": P + "relay_steel_rw_co.paa", "olive": P + "relay_steel_olive_co.paa", "sand": P + "relay_steel_sand_co.paa"}
 LED_OFF = "#(argb,8,8,3)color(0.02,0.02,0.02,1,co)"
 
 # classe, modèle, français, anglais, portée m, hauteur m, Mbit/s, places, blindage, taille carte, feux de mi-hauteur, peinture
@@ -25,6 +25,9 @@ TOWERS = [
     ("COMSPEC_ATAK_RelayTower_50", "relay_tower_50", "Pylône relais lourd 50 m", "Heavy relay tower 50 m", 12000, 48, 40, 128, 900, 6, True, "galva"),
     ("COMSPEC_ATAK_RelayTower_Mono30", "relay_monopole_30", "Monopôle relais 30 m", "Relay monopole 30 m", 7000, 28, 25, 80, 600, 4, True, "galva"),
     ("COMSPEC_ATAK_RelayTower_Guyed60", "relay_guyed_60", "Pylône relais haubané 60 m", "Guyed relay mast 60 m", 15000, 58, 40, 128, 500, 8, True, "galva"),
+    ("COMSPEC_ATAK_RelayTower_Pine28", "relay_tree_pine_28", "Relais faux pin 28 m", "Pine tree relay 28 m", 7000, 22, 25, 80, 600, 4, False, "tree"),
+    ("COMSPEC_ATAK_RelayTower_Pine15", "relay_tree_pine_15", "Relais faux pin 15 m", "Pine tree relay 15 m", 4000, 11, 15, 48, 450, 3, False, "tree"),
+    ("COMSPEC_ATAK_RelayTower_Palm22", "relay_tree_palm_22", "Relais faux palmier 22 m", "Palm tree relay 22 m", 6000, 18, 20, 64, 550, 4, False, "tree"),
     ("COMSPEC_ATAK_RelayTower_Roof8", "relay_rooftop_8", "Pylône relais de toit 8 m", "Rooftop relay tower 8 m", 3500, 8, 15, 48, 250, 2, False, "galva"),
 ]
 PAINT_NAMES = {"galva": ("galvanisé", "galvanised"), "rw": ("rouge-blanc", "red-white"), "olive": ("vert OTAN", "NATO green"), "sand": ("sable", "sand")}
@@ -104,7 +107,7 @@ def main():
         A("};")
         A("class %s_ruins: Ruins_F { scope=1; scopeCurator=0; author=\"COMSPEC\"; displayName=\"$%s\"; model=\"%s%s_ruin.p3d\"; };" % (cls, key(cls, "_RUIN"), P, model))
         for pv in ("galva", "rw", "olive", "sand"):
-            if pv == paint:
+            if pv == paint or paint == "tree":      # un arbre n'a pas de variante de peinture
                 continue
             vc = "%s_%s" % (cls, PAINT_SUFFIX[pv])
             strings.append((key(vc), "%s (%s)" % (fr, PAINT_NAMES[pv][0]), "%s (%s)" % (en, PAINT_NAMES[pv][1])))

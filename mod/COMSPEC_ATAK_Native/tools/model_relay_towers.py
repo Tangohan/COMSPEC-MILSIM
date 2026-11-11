@@ -870,6 +870,7 @@ MODELS = {
 }
 KIT_NAMES = ("relay_kit_sat", "relay_kit_field", "relay_kit_mini", "relay_wall_sector", "relay_wall_omni", "relay_wall_dish",
              "relay_wall_yagi", "relay_wall_radio", "relay_pole_node", "relay_roof_mast")   # model_relay_kits.py
+TREE_NAMES = ("relay_tree_pine_28", "relay_tree_pine_15", "relay_tree_palm_22")   # model_relay_trees.py
 BONES = ("eq1", "eq2")
 SECTIONS = ("camo", "led", "lights")
 
@@ -886,6 +887,7 @@ def finish(m):
 
 
 def write_model_cfg(path, names, bones=BONES, sections=SECTIONS, extra=""):
+    names = list(names) + [n for n in TREE_NAMES if n not in names]
     lines = ["// Modèles relais (tools/model_relay_towers.py) : sections retexturables et équipements masquables.",
              "class CfgSkeletons {", "    class Default { isDiscrete=1; skeletonInherit=\"\"; skeletonBones[]={}; };",
              "    class comspec_relay_skel: Default { skeletonBones[]={%s}; };" % ",".join('"%s",""' % b for b in bones), "};",

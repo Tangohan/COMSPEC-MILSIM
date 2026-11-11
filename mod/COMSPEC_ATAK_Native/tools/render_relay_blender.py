@@ -104,8 +104,8 @@ def make_material(name, spec, mode):
         nt.links.new(tr.outputs[0], mix.inputs[1])
         nt.links.new(bsdf.outputs[0], mix.inputs[2])
         nt.links.new(mix.outputs[0], out.inputs[0])
-        bsdf.inputs["Metallic"].default_value = 0.9
-        bsdf.inputs["Roughness"].default_value = 0.45
+        bsdf.inputs["Metallic"].default_value = 0.0 if spec.get("foliage") else 0.9
+        bsdf.inputs["Roughness"].default_value = 0.85 if spec.get("foliage") else 0.45
         return mat
     if spec.get("rm"):
         rm = nt.nodes.new("ShaderNodeTexImage")
