@@ -9,7 +9,7 @@ $h = $h ?? static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUO
 $r = $result['report'];
 $answer = $result['answer'];
 $canManage = !empty($filesCanManage);
-$back = 'atak/sse/fichiers/requete?' . (string) parse_url((string) ($replayUrl ?? ''), PHP_URL_QUERY);
+$back = 'atak/sse/fichiers?' . (string) ($_SERVER['QUERY_STRING'] ?? '');
 $mentionCodes = array_map(static fn (array $m): string => (string) $m['mention'], $r['mentions']);
 $armed = in_array('armed_dangerous', $mentionCodes, true);
 $tone = !$r['hit'] ? 'nohit' : (in_array($r['verdict'], ['hvt', 'recherche', 'vole', 'revoque'], true) ? 'alert' : (in_array($r['verdict'], ['signale', 'expire'], true) ? 'signale' : 'ok'));
@@ -105,7 +105,7 @@ $mentionForm = static function (string $type, int $id) use ($h, $back, $csrfToke
                     <div><dt>Lieu de naissance</dt><dd translate="no"><?= $h($i['birth_place'] ?? '—') ?></dd></div>
                     <div><dt>Nationalité</dt><dd><?= $h($i['nationality'] ?? '—') ?></dd></div>
                     <div><dt>Profession</dt><dd translate="no"><?= $h($i['profession'] ?? '—') ?></dd></div>
-                    <div><dt>Fiche</dt><dd><a class="link" href="<?= $h(url('atak/sse/papiers/identites/' . (int) $i['id'])) ?>"><?= $h($i['ref']) ?></a></dd></div>
+                    <div><dt>Fiche</dt><dd><a class="link" href="<?= $h(url('atak/sse/fichiers/sujet/' . (int) $i['id'])) ?>">Ouvrir la fiche <?= $h($i['ref']) ?></a></dd></div>
                 </dl>
                 <?php if ($canManage): ?>
                     <div class="fq-actions"><?= $mentionForm('identity', (int) $i['id']) ?></div>
