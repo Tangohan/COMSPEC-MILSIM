@@ -35,7 +35,7 @@ Contraste vérifié : tout texte ≥ 4,5:1 sur `bg0`, `bg1`, `bg2`, `redDim`, su
 Libellés en Roboto Condensed du jeu (`RobotoCondensed`, `RobotoCondensedBold` : vrai gras), données (heures, grilles,
 nombres) en `EtelkaMonospacePro`. Écran mural, jamais sous 28 px : `display` 132 (ZULU de l'horloge), `hero` 72, `num` 48
 (cases à gros chiffre, chronos), `squadName` 56, `title` 40, `heading` 32, `body` / `bodyBold` / `data` / `caption` 28.
-PC : grille de `fn_tocLaptop` (`font` 0,019, plancher `fontMin` 0,0145 x hauteur d'écran).
+PC : grille de `fn_tocLaptop` (`font` 0,019, plancher `fontMin` 0,0145 x hauteur d'écran : 21 et 16 px en 1080p).
 
 ## Composants
 
@@ -55,9 +55,12 @@ PC : grille de `fn_tocLaptop` (`font` 0,019, plancher `fontMin` 0,0145 x hauteur
 - **Image en direct** (mosaïque, caméra du chef, satellite) : coins de visée 28 px, pastille DIRECT, bandeau bas
   (indicatif, 4 barres de liaison, heure ZULU) ; sans image : PAS DE SIGNAL en rouge, case libre en sourdine.
 - **État vide** : une phrase, puis ce qu'il faut faire. Pas d'icône.
-- **PC** : barre du haut (poste, ZULU, LOCAL, liaison, FLASH, prise du poste, fermer), deux rangées d'onglets pleine
-  largeur (choisi : `bg2`, texte accent, filet accent), panneau de l'onglet (titre et état, filet), ligne d'aide, ligne
-  d'état. Boutons : normal `bg2`, survol `bg3`, désactivé texte atténué, principal en accent.
+- **PC** (console plein écran, 4.9.0) : en-tête (poste, salle, alertes, ZULU, LOCAL, liaisons, FLASH, prise du poste,
+  fermer), rail des quatre rubriques à gauche (choisie : `bg2`, texte accent, filet accent vertical), une rangée
+  d'onglets par rubrique (choisi : `bg2`, texte accent, filet accent), panneau de l'onglet (titre et état, filet),
+  ligne d'aide, ligne d'état. Boutons : normal `bg2`, survol `bg3`, désactivé texte atténué, principal en accent (un
+  seul par panneau). Calque : pastille pleine et texte accent s'il est affiché, pastille vide et texte atténué sinon.
+  Maquettes des rubriques : `_toc_maquettes/app_poste/`.
 
 ## Formats d'image et affichage TEXTE
 

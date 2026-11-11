@@ -1,3 +1,49 @@
+[h1]COMSPEC ATAK 4.9.0 Washington — console du poste TOC refaite, tout le TOC sans téléphone / TOC station console rebuilt, the whole TOC without a phone[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Console refaite[/b] : la console du poste TOC prend tout l'écran.
+[*] [b]Quatre rubriques[/b] : Situation, Conduite, Plans et Salle, à gauche, comme sur la console web.
+[*] [b]Sans téléphone[/b] : la console marche sans aucun téléphone ATAK.
+[*] [b]Toutes les unités[/b] : la carte montre aussi les unités qui n'ont pas de téléphone.
+[*] [b]Zoom[/b] : deux boutons, la molette et le pavé numérique.
+[*] [b]Échelle et nord[/b] : ils sont dessinés sur la carte.
+[*] [b]Calques[/b] : joueurs, IA, véhicules, aéronefs, comptes rendus, plan, relais et couverture se cochent un par un.
+[*] [b]Fiche d'unité[/b] : un clic sur une unité donne sa grille, sa vitesse, sa santé et ses munitions.
+[*] [b]Suivre et tracer[/b] : la carte peut rester centrée sur une unité et dessiner son chemin.
+[*] [b]Demandes au poste[/b] : une MEDEVAC, un appui ou un ravitaillement s'inscrit depuis la console.
+[*] [b]Comptes rendus au poste[/b] : l'opérateur envoie un compte rendu au camp depuis la console.
+[*] [b]Main courante[/b] : quatre boutons inscrivent une entrée en un clic.
+[*] [b]Plans[/b] : les outils de dessin ont leur rubrique, avec la liste des éléments du plan.
+[*] [b]Mur d'images[/b] : un bouton met tous les écrans de la salle sur la situation.
+[*] [b]Diffusion[/b] : un écran peut être recopié sur tous les autres.
+[*] [b]Raccourcis[/b] : F1 à F4 changent de rubrique.
+[*] [b]Recherche[/b] : taper une grille centre de nouveau la carte.
+[*] [b]Unités visibles[/b] : les unités en direct s'affichent de nouveau sur la carte de la console.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Rebuilt console[/b]: the TOC station console takes the whole screen.
+[*] [b]Four sections[/b]: Situation, Operations, Plans and Room, on the left, like the web console.
+[*] [b]No phone needed[/b]: the console works without any ATAK phone.
+[*] [b]Every unit[/b]: the map also shows units that carry no phone.
+[*] [b]Zoom[/b]: two buttons, the wheel and the numpad.
+[*] [b]Scale and north[/b]: they are drawn on the map.
+[*] [b]Layers[/b]: players, AI, vehicles, aircraft, reports, plan, relays and coverage are ticked one by one.
+[*] [b]Unit card[/b]: a click on a unit gives its grid, speed, health and ammunition.
+[*] [b]Follow and trail[/b]: the map can stay centred on a unit and draw its path.
+[*] [b]Requests at the station[/b]: a MEDEVAC, fire support or resupply is logged from the console.
+[*] [b]Reports at the station[/b]: the operator sends a report to the side from the console.
+[*] [b]Log[/b]: four buttons write an entry in one click.
+[*] [b]Plans[/b]: the drawing tools have their own section, with the list of plan items.
+[*] [b]Video wall[/b]: one button puts every screen of the room on the situation.
+[*] [b]Broadcast[/b]: one screen can be copied to all the others.
+[*] [b]Shortcuts[/b]: F1 to F4 switch section.
+[*] [b]Search[/b]: typing a grid centres the map again.
+[*] [b]Visible units[/b]: live units show again on the console map.
+[/list]
+
 [h1]COMSPEC ATAK 4.7.1 Washington — menu ACE des écrans du TOC réparé, écran qui se règle tout seul / ACE menu of TOC screens fixed, screens set themselves up[/h1]
 
 [h2]Français[/h2]
