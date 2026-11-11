@@ -157,6 +157,45 @@ class COMSPEC_ATAK_RelayTower_Guyed60_Light: COMSPEC_ATAK_RelayTower_Guyed60 { d
 class COMSPEC_ATAK_RelayTower_Guyed60_Bare: COMSPEC_ATAK_RelayTower_Guyed60 { displayName="$STR_COMSPEC_ATAK_REL_TOWERGUYED60BARE"; editorSubcategory="COMSPEC_ATAK_EdSubcat_RelayVariants";
     class AnimationSources: AnimationSources { class eq1: eq1 { initPhase=1; }; class eq2: eq2 { initPhase=1; }; };
 };
+class COMSPEC_ATAK_RelayTower_Pine28: COMSPEC_ATAK_RelayTower_Base {
+    scope=2; scopeCurator=2;
+    displayName="$STR_COMSPEC_ATAK_REL_TOWERPINE28";
+    model="\z\comspec_atak_native\addons\towers\data\relay_tree_pine_28.p3d";
+    editorPreview="\z\comspec_atak_native\addons\towers\data\relay_tree_pine_28_preview.jpg";
+    comspec_atak_relayRange=7000; comspec_atak_relayHeight=22; comspec_atak_relayThroughput=25; comspec_atak_relaySlots=80;
+    armor=600; mapSize=4;
+    hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\towers\data\relay_steel_co.paa","#(argb,8,8,3)color(0.02,0.02,0.02,1,co)"};
+    class DestructionEffects: DestructionEffects {
+        class Ruin1 { simulation="ruin"; type="\z\comspec_atak_native\addons\towers\data\relay_tree_pine_28_ruin.p3d"; position=""; intensity=1; interval=1; lifeTime=1; };
+    };
+};
+class COMSPEC_ATAK_RelayTower_Pine28_ruins: Ruins_F { scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_REL_TOWERPINE28_RUIN"; model="\z\comspec_atak_native\addons\towers\data\relay_tree_pine_28_ruin.p3d"; };
+class COMSPEC_ATAK_RelayTower_Pine15: COMSPEC_ATAK_RelayTower_Base {
+    scope=2; scopeCurator=2;
+    displayName="$STR_COMSPEC_ATAK_REL_TOWERPINE15";
+    model="\z\comspec_atak_native\addons\towers\data\relay_tree_pine_15.p3d";
+    editorPreview="\z\comspec_atak_native\addons\towers\data\relay_tree_pine_15_preview.jpg";
+    comspec_atak_relayRange=4000; comspec_atak_relayHeight=11; comspec_atak_relayThroughput=15; comspec_atak_relaySlots=48;
+    armor=450; mapSize=3;
+    hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\towers\data\relay_steel_co.paa","#(argb,8,8,3)color(0.02,0.02,0.02,1,co)"};
+    class DestructionEffects: DestructionEffects {
+        class Ruin1 { simulation="ruin"; type="\z\comspec_atak_native\addons\towers\data\relay_tree_pine_15_ruin.p3d"; position=""; intensity=1; interval=1; lifeTime=1; };
+    };
+};
+class COMSPEC_ATAK_RelayTower_Pine15_ruins: Ruins_F { scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_REL_TOWERPINE15_RUIN"; model="\z\comspec_atak_native\addons\towers\data\relay_tree_pine_15_ruin.p3d"; };
+class COMSPEC_ATAK_RelayTower_Palm22: COMSPEC_ATAK_RelayTower_Base {
+    scope=2; scopeCurator=2;
+    displayName="$STR_COMSPEC_ATAK_REL_TOWERPALM22";
+    model="\z\comspec_atak_native\addons\towers\data\relay_tree_palm_22.p3d";
+    editorPreview="\z\comspec_atak_native\addons\towers\data\relay_tree_palm_22_preview.jpg";
+    comspec_atak_relayRange=6000; comspec_atak_relayHeight=18; comspec_atak_relayThroughput=20; comspec_atak_relaySlots=64;
+    armor=550; mapSize=4;
+    hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\towers\data\relay_steel_co.paa","#(argb,8,8,3)color(0.02,0.02,0.02,1,co)"};
+    class DestructionEffects: DestructionEffects {
+        class Ruin1 { simulation="ruin"; type="\z\comspec_atak_native\addons\towers\data\relay_tree_palm_22_ruin.p3d"; position=""; intensity=1; interval=1; lifeTime=1; };
+    };
+};
+class COMSPEC_ATAK_RelayTower_Palm22_ruins: Ruins_F { scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_REL_TOWERPALM22_RUIN"; model="\z\comspec_atak_native\addons\towers\data\relay_tree_palm_22_ruin.p3d"; };
 class COMSPEC_ATAK_RelayTower_Roof8: COMSPEC_ATAK_RelayTower_Base {
     scope=2; scopeCurator=2;
     displayName="$STR_COMSPEC_ATAK_REL_TOWERROOF8";

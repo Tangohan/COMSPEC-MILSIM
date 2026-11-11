@@ -605,10 +605,12 @@ Aucune nouvelle DLL (COMSPEC Link 2.0.123 inchangé). Migration 4330 (passage au
 Type : nouveauté
 FR : Des relais refaits de la tête au pied, des antennes murales, des caméras et une salle serveur
 - **Pylônes et mâts** : les relais sont redessinés comme de vrais sites (treillis boulonné, échelle à crinoline, plates-formes, câbles jusqu'aux armoires, clôture, feux rouges la nuit), avec de nouveaux modèles : monopôle 30 m, pylône haubané 60 m, pylône de toit, mât tactique sur trépied et mât sur remorque. Peinture au choix : galvanisé, rouge-blanc, vert, sable.
+- **Relais déguisés en arbre** : un faux pin (28 m et 15 m) et un faux palmier (22 m), comme les antennes camouflées des opérateurs : un arbre de loin, des antennes entre les branches de près.
 - **Antennes murales, caméras, baies** : de nouveaux objets à poser dans l'éditeur et en Zeus : antennes à fixer sur un mur, un poteau ou un toit (ce sont de vrais relais), une famille de caméras IP (dôme, tube infrarouge, thermique, mini-dôme…) et de quoi monter une salle serveur (baies, coffrets, chemins de câbles, climatiseur).
 - **Voyants et destruction** : un voyant montre l'état réel de chaque relais (en service, dégradé, brouillé, éteint) ; un pylône détruit se plie et tombe, avec étincelles et fumée. Le tout pèse moins lourd qu'avant et la carte de couverture se recalcule bien plus vite.
 EN : Relays rebuilt from top to bottom, wall antennas, cameras and a server room
 - **Towers and masts**: relays are redrawn as real sites (bolted lattice, caged ladder, platforms, cables down to the cabinets, fence, red lights at night), with new models: 30 m monopole, 60 m guyed mast, rooftop tower, tactical tripod mast and trailer mast. Pick the paint: galvanised, red-white, green, sand.
+- **Tree-disguised relays**: a fake pine (28 m and 15 m) and a fake palm (22 m), like the operators' disguised masts: a tree from afar, antennas among the branches up close.
 - **Wall antennas, cameras, racks**: new objects to place in the editor and in Zeus: antennas for a wall, a pole or a roof (they are real relays), a family of IP cameras (dome, infrared bullet, thermal, mini dome…) and everything for a server room (racks, cabinets, cable trays, AC unit).
 - **Status lights and destruction**: a light shows the real state of each relay (running, degraded, jammed, off); a destroyed tower bends and falls, with sparks and smoke. The whole set is lighter than before and the coverage map recomputes much faster.
 

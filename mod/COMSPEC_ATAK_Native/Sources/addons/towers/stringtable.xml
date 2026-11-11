@@ -527,6 +527,36 @@
             <English>Guyed relay mast 60 m (bare)</English>
             <French>Pylône relais haubané 60 m (nu)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERPINE28">
+            <Original>Pine tree relay 28 m</Original>
+            <English>Pine tree relay 28 m</English>
+            <French>Relais faux pin 28 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERPINE28_RUIN">
+            <Original>Pine tree relay 28 m (ruin)</Original>
+            <English>Pine tree relay 28 m (ruin)</English>
+            <French>Relais faux pin 28 m (ruine)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERPINE15">
+            <Original>Pine tree relay 15 m</Original>
+            <English>Pine tree relay 15 m</English>
+            <French>Relais faux pin 15 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERPINE15_RUIN">
+            <Original>Pine tree relay 15 m (ruin)</Original>
+            <English>Pine tree relay 15 m (ruin)</English>
+            <French>Relais faux pin 15 m (ruine)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERPALM22">
+            <Original>Palm tree relay 22 m</Original>
+            <English>Palm tree relay 22 m</English>
+            <French>Relais faux palmier 22 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_REL_TOWERPALM22_RUIN">
+            <Original>Palm tree relay 22 m (ruin)</Original>
+            <English>Palm tree relay 22 m (ruin)</English>
+            <French>Relais faux palmier 22 m (ruine)</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_REL_TOWERROOF8">
             <Original>Rooftop relay tower 8 m</Original>
             <English>Rooftop relay tower 8 m</English>
