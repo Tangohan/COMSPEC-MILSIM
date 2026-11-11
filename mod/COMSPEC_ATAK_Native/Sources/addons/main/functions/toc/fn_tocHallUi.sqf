@@ -73,8 +73,9 @@ switch (_mode) do {
     case "aim": {
         // Viser un écran : PC refermé, l'écran du camp regardé (20 s au plus) est lié, puis le PC se rouvre.
         if (_hid isEqualTo "") exitWith { "Créez d'abord la salle de ce PC" call _status; };
+        // Aucun message hors de la console (ni téléphone ni fenêtre du jeu) : le résultat s'écrit sur la ligne d'état à
+        // la réouverture du PC.
         closeDialog 0;
-        ["INFO", "Regardez l'écran à lier à la salle (20 s)", 4, 30] call comspec_atak_native_fnc_notify;
         [{
             params ["_args", "_h"];
             _args params ["_pc", "_hid", "_end"];
@@ -84,11 +85,15 @@ switch (_mode) do {
             private _ok = !isNull _t && {(count (_t getVariable ["COMSPEC_ATAK_TocScr", []])) >= 8} && {(player distance _t) < 60};
             if (_ok || {diag_tickTime > _end}) then {
                 [_h] call CBA_fnc_removePerFrameHandler;
-                if (_ok) then {
-                    ["do", ["link", [_hid, _t]]] call comspec_atak_native_fnc_tocHall;
-                    ["INFO", format ["Écran %1 lié à la salle", (_t getVariable ["COMSPEC_ATAK_TocScr", []]) param [0, "TOC"]], 3, 30] call comspec_atak_native_fnc_notify;
+                if (_ok) then { ["do", ["link", [_hid, _t]]] call comspec_atak_native_fnc_tocHall; };
+                private _msg = if (_ok) then { format ["Écran %1 lié à la salle", (_t getVariable ["COMSPEC_ATAK_TocScr", []]) param [0, "TOC"]] } else { "Aucun écran visé en 20 s : rien n'est lié" };
+                if (alive player && {(player distance _pc) < 6}) then {
+                    [{
+                        params ["_pc", "_msg"];
+                        ["open", _pc] call comspec_atak_native_fnc_tocPost;
+                        [{ ["tab", "SALLE"] call comspec_atak_native_fnc_tocLaptop; ["status", _this] call comspec_atak_native_fnc_tocLaptop; }, _msg, 0.3] call comspec_atak_native_fnc_waitAndExec;
+                    }, [_pc, _msg], 0.5] call comspec_atak_native_fnc_waitAndExec;
                 };
-                if (alive player && {(player distance _pc) < 6}) then { [{ ["open", _this] call comspec_atak_native_fnc_tocPost; }, _pc, 0.5] call comspec_atak_native_fnc_waitAndExec; };
             };
         }, 0.25, [_pc, _hid, diag_tickTime + 20]] call CBA_fnc_addPerFrameHandler;
     };
@@ -195,7 +200,7 @@ switch (_mode) do {
         [{ ["refresh"] call comspec_atak_native_fnc_tocHallUi; }, [], 0.4] call comspec_atak_native_fnc_waitAndExec;
     };
     case "refresh": {
-        if ((count _ui) isEqualTo 0 || {(_st getOrDefault ["tab", ""]) isNotEqualTo "SALLE"}) exitWith {};
+        if ((count _ui) isEqualTo 0 || {!((_st getOrDefault ["tab", ""]) in ["SALLE", "MUR"])}) exitWith {};
         private _hall = ["get", _hid] call comspec_atak_native_fnc_tocHall;
         private _linked = if (_hid isEqualTo "") then { [] } else { ["screens", _hid] call comspec_atak_native_fnc_tocHall };
         // Écrans du camp proches du poste, liés ailleurs ou à personne : montrés en pâle pour pouvoir les lier.
@@ -230,7 +235,8 @@ switch (_mode) do {
         private _tiles = _st getOrDefault ["hallTiles", []];
         private _used = 0;
         private _sel = _st getOrDefault ["selH", ""];
-        private _sideRgb = (createHashMapFromArray [["WEST", [0.16, 0.36, 0.62]], ["EAST", [0.55, 0.18, 0.15]], ["GUER", [0.2, 0.45, 0.25]], ["CIV", [0.4, 0.28, 0.52]]]) getOrDefault [_side, [0.16, 0.36, 0.62]];
+        // Couleurs du plan : jetons du thème (avant la 4.9.0 : couleurs de camp écrites à la main).
+        private _tk = { params ["_k", ["_al", 1]]; ["rgba", [_k, _al]] call comspec_atak_native_fnc_tocTheme };
         {
             private _o = _x;
             private _isLinked = _o in _linked;
@@ -286,10 +292,10 @@ switch (_mode) do {
                 _b setVariable ["COMSPEC_ATAK_Id", _id];
                 private _off = _po getVariable ["COMSPEC_ATAK_TocOff", false];
                 _b ctrlSetBackgroundColor (switch (true) do {
-                    case (_id isEqualTo _sel): { [0.78, 0.55, 0.12, 1] };
-                    case (!_isLinked): { [0.16, 0.17, 0.17, 0.85] };
-                    case (_off): { [0.08, 0.08, 0.08, 1] };
-                    default { _sideRgb + [1] };
+                    case (_id isEqualTo _sel): { ["accentDim"] call _tk };
+                    case (!_isLinked): { ["bg1", 0.85] call _tk };
+                    case (_off): { ["bg0"] call _tk };
+                    default { ["bg3"] call _tk };
                 });
                 // Libellé court (le contenu) ; nom, contenu et distance dans l'infobulle.
                 _b ctrlSetText ((if (_np > 1) then { format ["%1 · %2", _k + 1, [_po] call _contentOf] } else {
@@ -297,12 +303,13 @@ switch (_mode) do {
                 }) call comspec_atak_native_fnc_tr);
                 // Nom, contenu et distance sur la ligne d'aide du PC au survol (pas d'infobulle sur le plan).
                 ["tip", [_b, (format ["%1 · %2 · %3 m", (_po getVariable ["COMSPEC_ATAK_TocScr", []]) param [0, "TOC"], [_po] call _contentOf, round (_pc distance _o)]) call comspec_atak_native_fnc_tr, true]] call comspec_atak_native_fnc_tocLaptop;
+                _b ctrlSetTextColor (switch (true) do { case (_id isEqualTo _sel): { ["accent"] call _tk }; case (!_isLinked || {_off}): { ["muted"] call _tk }; default { ["text"] call _tk }; });
                 _b ctrlShow true;
                 _used = _used + 1;
             } forEach _cells;
         } forEach (_linked + _near);
         for "_i" from _used to ((count _tiles) - 1) do { (_tiles select _i) ctrlShow false; };
-        (_ui get "hPlanTitle") ctrlSetStructuredText parseText (["ink", ((format ["<t size='0.85'>  Mur vu depuis ce poste · %1 lié(s) · %2 proche(s) non lié(s) · cliquez un écran ou une dalle</t>", count _linked, count _near]) call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
+        (_ui get "hPlanTitle") ctrlSetStructuredText parseText (["ink", ((format ["<t size='0.85'>  Mur vu depuis ce poste · %1 lié(s) · %2 proche(s) non lié(s) (en sombre) · cliquez un écran ou une dalle</t>", count _linked, count _near]) call comspec_atak_native_fnc_tr)] call comspec_atak_native_fnc_tocTheme);
         // Écran choisi.
         private _o = call _selObj;
         private _has = !isNull _o;
@@ -349,7 +356,7 @@ switch (_mode) do {
         };
         // Mosaïque : réglages montrés seulement si l'écran choisi est en mosaïque.
         private _isMos = _has && {((_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isEqualTo "MOSAIC"};
-        { (_ui get _x) ctrlShow _isMos; } forEach ["hMosRot", "hMosCase", "hMosSrc", "hMosPut"];
+        { (_ui get _x) ctrlShow (_isMos && {(_st getOrDefault ["tab", ""]) isEqualTo "SALLE"}); } forEach ["hMosRot", "hMosCase", "hMosSrc", "hMosPut"];
         { (_ui get _x) setVariable ["why", "Créez d'abord la salle de ce PC"]; } forEach ["hLinkAll", "hAim", "hSceneGo", "hSceneDel", "hSceneSave", "hAllOn", "hAllOff"];
         if (_isMos) then {
             private _ms = _ui get "hMosSrc";

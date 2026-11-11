@@ -3,7 +3,7 @@
 
 Les nombres ne sont PAS recopiés ici : couleurs, tailles de texte, polices, régions et colonnes viennent des tables JSON
 de functions/toc/fn_tocTheme.sqf (écrans muraux) ; grille, mise en page et boutons du PC viennent des tables _grid,
-_layout et _btnDefs de functions/toc/fn_tocLaptop.sqf, posées par le même calcul que _place. Seules les données
+_layout, _btnDefs et _sections de functions/toc/fn_tocLaptop.sqf, posées par le même calcul que _place. Seules les données
 (indicatifs, heures, lignes) sont des exemples.
 
 Polices : Roboto Condensed (public/assets/fonts/patch-studio, la police du jeu) ; la monospace du jeu (Etelka Monospace
@@ -929,34 +929,47 @@ def pc_place(rows, rx, ry, rw, rh):
     return out
 
 
+SECTIONS = json.loads(re.search(r"private _sections = (\[\n.*?\n\]);", LAP_SRC.replace("\r\n", "\n"), re.S).group(1))
+
+
+def sec_of(tab):
+    return next((s for s, tabs in SECTIONS if tab in tabs), SECTIONS[0][0])
+
+
 def pc_regions(aspect):
-    """Même calcul que « load » (fn_tocLaptop), en hauteurs d'écran."""
+    """Même calcul que « load » (fn_tocLaptop, console plein écran de la 4.9.0), en hauteurs d'écran."""
     g = GRID
     gap = g["gap"]
-    x0, y0, w0, h0 = 0.025 * aspect, 0.022, 0.95 * aspect, 0.956
-    xi, yi, wi, hi = x0 + g["pad"], y0 + g["pad"], w0 - 2 * g["pad"], h0 - 2 * g["pad"] - g["brand"]
-    tabsH = 2 * g["tab"] + gap
-    topH = g["title"] + tabsH + 2 * gap
-    by = yi + topH + 2 * gap
-    bh = hi - topH - g["bar"] - 3 * gap
+    xi, yi, wi, hi = 0.0, 0.0, aspect, 1.0
+    topH = g["title"] + 2 * gap
+    bodyY = yi + topH + 2 * gap
+    bodyH = (yi + hi - g["bar"] - gap) - bodyY
+    bx = xi + g["rail"] + 2 * gap
+    by = bodyY + g["tab"] + 2 * gap
+    bh = (yi + hi - g["bar"] - gap) - by
     pw = min(max(wi * g["panel"], g["panelMin"]), g["panelMax"])
     px = xi + wi - pw
     cx, cw = px + 2 * gap, pw - 4 * gap
     cy = by + gap
     return {
-        "shell": (x0, y0, w0, h0), "inner": (xi, yi, wi, hi), "top": (xi, yi, wi, topH), "panel": (px, by, pw, bh),
-        "rTitle": (xi + 2 * gap, yi + 0.001, wi - 4 * gap, g["title"] - 0.005),
-        "rTabs": (xi + 2 * gap, yi + g["title"] + gap, wi - 4 * gap, tabsH),
+        "inner": (xi, yi, wi, hi), "top": (xi, yi, wi, topH), "panel": (px, by, pw, bh),
+        "railBg": (xi, yi + topH + g["hair"], g["rail"], hi - topH - g["bar"] - g["hair"]),
+        "rTitle": (xi + 2 * gap, yi + gap, wi - 4 * gap, g["title"]),
+        "rRail": (xi + gap, bodyY, g["rail"] - 2 * gap, bodyH),
+        "rTabs": (bx, bodyY, (xi + wi - 2 * gap) - bx, g["tab"]),
         "rBar": (xi, yi + hi - g["bar"], wi, g["bar"]),
-        "rLeft": (xi + gap, by, (px - gap) - (xi + gap), bh),
+        "rLeft": (bx, by, (px - gap) - bx, bh),
         "rHelp": (cx, by + bh - gap - g["help"], cw, g["help"]),
         "rRight": (cx, cy, cw, (by + bh - gap - g["help"] - 2 * gap) - cy),
     }
 
 
 SAMPLE = {
-    "gList": [("ALPHA 1-1 · 4 joueur(s) · 4 nœud(s) ATAK", "accent"), ("ALPHA 1-2 · 4 joueur(s) · 4 nœud(s) ATAK", "accent"), ("BRAVO 2 · 3 joueur(s) · 3 nœud(s) ATAK", "amber"),
-              ("CHARLIE 3 · 5 joueur(s) · 5 nœud(s) ATAK", "accent"), ("DELTA 4 · 4 IA · 4 nœud(s) ATAK", "lost"), ("ECHO 5 · 2 joueur(s) · 2 nœud(s) ATAK", "accent"), ("VIPER 1 · 1 joueur(s) · 1 nœud(s) ATAK", "accent")],
+    "gList": [("ALPHA 1-1 · 4 joueur(s)", "accent"), ("ALPHA 1-2 · 4 joueur(s)", "accent"), ("BRAVO 2 · 3 joueur(s)", "amber"), ("CHARLIE 3 · 5 joueur(s)", "accent"),
+              ("DELTA 4 · 4 IA", "text"), ("ECHO 5 · 2 joueur(s)", "accent"), ("VIPER 1 · 1 joueur(s)", "accent")],
+    "uList": [("ALPHA 1-1 · Alpha 1-1", "accent"), ("ALPHA 1-2 · Alpha 1-2", "accent"), ("BRAVO 2 · Bravo 2 · 3 à bord", "amber"), ("CHARLIE 3 · Charlie 3", "accent"),
+              ("DELTA 4 · Delta 4", "text2"), ("ECHO 5 · Echo 5 · 2 à bord", "accent"), ("VIPER 1 · Viper 1", "accent"), ("Sdt Garnier · Alpha 1-1", "text2"),
+              ("Cpl Lefèvre · Alpha 1-2", "text2"), ("GOLF 7 · Golf 7", "lost"), ("HOTEL 8 · Hotel 8", "muted")],
     "fList": [(f"{t}  {k}{'' if p == 'ROUTINE' else ' ' + p} · {w}{' · ' + g if g else ''}", PRIO_TOK[p] if p != "ROUTINE" else "text") for t, k, p, w, g, x in EVENTS[:12]],
     "bList": [("1re SECTION (1SEC)", "blue"), ("   Chef : Lt Moreau", "accent"), ("   Adjoint : Sgt Dubois", "accent"), ("   Cpl Lefèvre", "text2"), ("   Sdt Garnier", "accent"),
               ("2e SECTION (2SEC)", "blue"), ("   Chef : Sgt Bernard", "accent"), ("   Cpl Petit", "text2"), ("   poste vacant", "muted")],
@@ -964,167 +977,282 @@ SAMPLE = {
     "lList": [(f"{t}Z  {k}  {x}", {"FLASH": "red", "CR": "amber", "DEMANDE": "amber", "EXCHECK": "accent", "POSTE": "blue"}.get(k, "text")) for t, k, x in
               [("12:35:02", "FLASH", "CONTACT NORD, TOUS AUX ABRIS"), ("12:34:10", "CR", "TIC ALPHA 1-1 grille 042 116"), ("12:31:44", "DEMANDE", "MEDEVAC CHARLIE 3"),
                ("12:30:00", "EXCHECK", "3 · TANGO passé"), ("12:27:15", "CR", "SITREP BRAVO 2 : en position"), ("12:20:02", "POSTE", "Poste pris par Adj Mercier"),
-               ("12:18:40", "MAIN", "BRAVO signale le pont nord détruit"), ("12:11:09", "CR", "CONTACT DELTA 4")]],
+               ("12:18:40", "NOTE", "RAS : relève faite au poste nord"), ("12:11:09", "CR", "CONTACT DELTA 4")]],
     "xList": [("1. QUEBEC · Départ de la base · TOUS", "accent"), ("2. SIERRA · H-HOUR · TOUS", "accent"), ("3. TANGO · Ligne de départ · ALPHA", "accent"),
               ("4. ROMEO · Franchissement LD · ALPHA", "text"), ("5. UNIFORM · Appui feu en place · VIPER", "text"), ("6. VICTOR · Assaut RAVEN · ALPHA", "text")],
-    "qList": [("12:31Z  MEDEVAC · CHARLIE 3 · 048 117", "amber"), ("12:29Z  APPUI FEU · ALPHA 1-1 · 044 118", "blue"), ("12:20Z  RAVITAILLEMENT · BRAVO 2", "amber"),
-              ("12:02Z  APPUI FEU · DELTA 4 · 039 111", "accent"), ("11:30Z  APPUI AÉRIEN · ALPHA 1-2", "red")],
+    "qList": [("12:31Z  MEDEVAC · CHARLIE 3 · 048 117", "amber"), ("12:29Z  APPUI FEU · ALPHA 1-1 · 044 118", "blue"), ("12:20Z  RAVITAILLEMENT · TOC BRAVO-6", "amber"),
+              ("12:02Z  APPUI FEU · DELTA 4 · 039 111", "accent"), ("11:30Z  RENFORT · ALPHA 1-2", "red")],
+    "pList": [("Objectif · OBJ RAVEN", "text"), ("Ligne de phase · PL BLUE", "text"), ("Ligne de phase · PL RED", "text"), ("Axe d'attaque · AXE NORD", "text"),
+              ("Zone d'opération · AO BRAVO", "text"), ("Point de contrôle · CP 1", "text"), ("Zone de poser · HLZ SUD", "text")],
 }
 RIGHT = {"tList": ["H+00:35:42", "-00:04:12", "-00:20:00", "+00:03:51"], "xList": ["passé 11:16", "passé 12:00", "passé 12:30", "prévu 12:45", "prévu 12:50", "prévu 13:05"],
-         "qList": ["REÇUE", "PRISE EN COMPTE", "REÇUE", "TERMINÉE", "REFUSÉE"], "bList": ["", "en jeu", "en jeu", "hors ligne", "en jeu", "", "en jeu", "hors ligne", "poste vacant"]}
+         "qList": ["REÇUE", "PRISE EN COMPTE", "REÇUE", "TERMINÉE", "REFUSÉE"], "bList": ["", "en jeu", "en jeu", "hors ligne", "en jeu", "", "en jeu", "hors ligne", "poste vacant"],
+         "gList": ["téléphone", "téléphone", "téléphone", "téléphone", "source directe", "téléphone", "téléphone"],
+         "uList": ["en direct", "en direct", "point ancien", "en direct", "sans téléphone · source directe", "en direct", "en direct", "sans téléphone · source directe",
+                   "sans téléphone · source directe", "liaison perdue", "téléphone éteint"],
+         "pList": ["Adj Mercier", "Adj Mercier", "Adj Mercier", "Cne Martin", "le site", "Sgt Dubois", "Sgt Dubois"]}
 INFO = {
-    "gInfo": [("ALPHA 1-1", "heading"), ("Chef Sgt Dubois · n° 6", "body"), ("4 vivant(s) dont 4 joueur(s) · 4 nœud(s) ATAK", "body"), ("Grille 042 116 · en direct", "body")],
+    "gInfo": [("ALPHA 1-1", "heading"), ("Chef Sgt Dubois · n° 6", "body"), ("4 vivant(s) dont 4 joueur(s) · téléphone sur le réseau", "body"), ("Grille 042 116 · en direct", "body")],
+    "uInfo": [("DELTA 4   Fusilier · groupe Delta 4", "heading"), ("Grille 0391 1112 · 6 km/h · hauteur 0 m", "body"), ("Santé : indemne · 6 chargeur(s) de rechange", "body"),
+              ("Liaison : sans téléphone · source directe", "body")],
     "fInfo": [("TIC  12:34 · ALPHA 1-1 · grille 042 116", "heading"), ("Contact NE 300 m, 2 PAX armés, demande appui mortier", "body")],
     "bInfo": [("Sgt Dubois", "heading"), ("Adjoint · 1re SECTION", "body"), ("En jeu", "accent")],
     "oInfo": [("ORDRES ÉMIS  2", "heading"), ("12:18 TENIR → ALPHA 1-1 · IMPORTANT", "body"), ("   vu 4 · reçu 4 · en cours 1 · terminé 0", "muted"), ("12:02 DÉPLACER → BRAVO 2 · ROUTINE", "body"), ("   vu 3 · reçu 3 · en cours 0 · terminé 3", "muted")],
     "cInfo": [("MESSAGES DU POSTE", "heading"), ("11:51 ROUTINE · Cne Martin", "body"), ("   Fréquence de repli 47.300", "muted")],
-    "rInfo": [("18 en ligne · 3 anciens · 1 perdu · 2 hors ligne", "body"), ("14 joueurs · 6 IA · 2 relais · 0 brouilleur", "body"), ("", "body"), ("MÉTÉO", "heading"), ("Nuages 30 % · pluie 0 % · brouillard 5 %", "body"), ("Vent 4 m/s du 270°", "body")],
+    "rInfo": [("RÉSEAU", "heading"), ("18 en ligne · 3 anciens · 1 perdu · 2 hors ligne", "body"), ("14 joueurs · 6 IA", "body"), ("2 relais · 0 brouilleur actif", "body"), ("", "body"),
+              ("MÉTÉO", "heading"), ("Nuages 30 % · pluie 0 % · brouillard 5 %", "body"), ("Vent 4 m/s du 270°", "body"), ("", "body"),
+              ("Relais et portée sur la carte : SITUATION, onglet CARTE, calques RELAIS et COUVERTURE.", "muted"), ("Unités sans téléphone lues dans le jeu : 11", "body")],
     "tInfo": [("Chrono : temps écoulé depuis le lancement. Compte à rebours : temps restant,", "muted"), ("rouge une fois dépassé. Heure H : temps jusqu'à une heure ZULU.", "muted")],
     "kInfo": [("AN/PRC-152  canal 3 · ALPHA NET", "heading"), ("● RX   ● TX   47.300 MHz · alternat 1 · radio active", "body"), ("", "body"), ("AN/PRC-117F  canal 1 · CMD NET", "heading"), ("● RX   ● TX   32.500 MHz · alternat 2", "body"), ("", "body"), ("EN ÉMISSION", "heading"), ("● ALPHA 1-1 · 47.300 MHz · 4 s", "body")],
     "lInfo": [("Heures en ZULU. S'inscrivent seuls : comptes rendus, demandes, prises de poste, FLASH.", "muted")],
     "xInfo": [("PASSÉ inscrit l'heure ZULU réelle et une entrée à la main courante.", "muted")],
     "kcInfo": [("ÉLÉMENT                 AMIS BL. · TUÉS    ENN. NEUTR. · BL.", "muted"), ("ALPHA 1-1                    1 · 0              4 · 1", "body"), ("BRAVO 2                        1 · 1              1 · 2", "body"), ("VIPER 1                        0 · 0              4 · 1", "body")],
     "qInfo": [("MEDEVAC  12:31Z · CHARLIE 3 · grille 048 117 · REÇUE", "heading"), ("1 urgence A, HLZ sud, fumée verte", "body")],
-    "hInfo": [("SALLE TOC BRAVO · ce PC est le poste maître", "heading"), ("6 écrans liés · 2 dalles de mur", "muted")],
-    "hSel": [("MUR 3x2 · dalle 2 · carte et flux", "heading"), ("allumé · lié à la salle", "muted")],
+    "hInfo": [("TOC BRAVO", "heading"), ("6 écran(s) lié(s) · 2 scène(s)", "muted")],
+    "hSel": [("MUR CENTRE · dalle 2 · carte et flux", "heading"), ("lié à la salle", "muted")],
     "sInfo": [("SAT 1 · vous avez la main", "heading"), ("800 m de large · grille 042 116", "body")],
     "sZoom": [("0.50X", "heading")],
+    "pInfo": [("PL BLUE   Ligne de phase", "heading"), ("4 point(s) · grille 043 115 · posé par Adj Mercier", "body")],
+    "pHow": [("Les outils sont sous la carte ; leurs réglages apparaissent sur la ligne du dessous.", "body"), ("", "body"),
+             ("MARQUEUR : un symbole avec son nom et sa durée. Exemple : CP NORD, 30 min.", "text"),
+             ("TRAIT : clic sur A, Ctrl+clic pour chaque étape, clic sur B. ROUTES suit les routes.", "text"),
+             ("DESSIN : clic gauche maintenu, à main levée. FERMÉ referme la forme en zone.", "text"),
+             ("PLAN : zones, lignes de phase, limites, axes et points. Exemple : PL BLUE, OBJ RAVEN.", "text"),
+             ("EFFACER : clic sur un marqueur, un trait ou un élément du plan. ANNULER : mon dernier geste.", "text"), ("", "body"),
+             ("Tout ce qui est dessiné ici est partagé en direct : cartes des joueurs, écrans de la salle en carte, console web. Aucun téléphone n'est nécessaire.", "muted")],
+    "wInfo": [("TOC BRAVO   8 écran(s) ou dalle(s) 16:9 · 2 en diffusion", "heading"),
+              ("TOUT SUR SITUATION : carte et flux partout. MUR DE CONDUITE : carte, main courante, exécution, demandes, horloge et flux, dans l'ordre des écrans. TOUT SUR CARTE : carte seule partout.", "body"),
+              ("Un écran précis, son texte, sa mise en page ou sa luminosité : onglet SALLE, en cliquant l'écran sur le plan.", "body")],
 }
-PANEL_HEAD = {"GROUPES": ("GROUPES", "9 groupes · 18 en ligne"), "ORBAT": ("ORBAT DU SITE", "31 membres · 19 en jeu"), "FLUX": ("FLUX", "15 entrées · 3 alertes"),
-              "ORDRES": ("ORDRES", "2 émis"), "CAMP": ("CAMP", "messages et caméras"), "RÉSEAU": ("RÉSEAU", "en direct"), "CHRONOS": ("CHRONOS", "4 chronos"),
-              "RADIO": ("RADIO", "ACRE2 · 2 radios"), "SALLE": ("SALLE", "6 écrans"), "MAIN COURANTE": ("MAIN COURANTE", "38 entrées"), "EXCHECK": ("EXCHECK", "3 / 9 passés"),
-              "PERTES": ("PERTES ET RÉSULTATS", "5 éléments"), "DEMANDES": ("DEMANDES", "2 reçues")}
+PANEL_HEAD = {"CARTE": ("UNITÉS DU CAMP", "42 sur la carte · 11 sans téléphone"), "GROUPES": ("GROUPES", "9 groupes · 29 en ligne"), "ORBAT": ("ORBAT DU SITE", "31 membres"),
+              "FLUX": ("FLUX", "15 entrées · 3 alertes"), "ORDRES": ("ORDRES", "2 émis"), "CAMP": ("MESSAGES AU CAMP", ""), "RÉSEAU": ("RÉSEAU", "14 joueurs · 6 IA · 2 relais"),
+              "CHRONOS": ("CHRONOS", "4 chronos"), "RADIO": ("RADIOS DE L'OPÉRATEUR", ""), "SALLE": ("SALLE TOC", ""), "MUR": ("MUR D'IMAGES", ""),
+              "MAIN COURANTE": ("MAIN COURANTE", "38 entrées · ZULU"), "EXCHECK": ("EXCHECK", "3 / 9 passés"), "PERTES": ("PERTES ET RÉSULTATS", "5 éléments"),
+              "DEMANDES": ("DEMANDES", "2 reçues"), "DESSIN": ("DESSINER SUR LA CARTE", "7 éléments au plan"), "PLAN": ("PLAN DU CAMP", "7 éléments au plan")}
+TAB_HELP = dict(re.findall(r'\["([^"]+)", "([^"]+)"\]', re.search(r"private _tabHelp = createHashMapFromArray \[(.*?)\n            \];", LAP_SRC.replace("\r\n", "\n"), re.S).group(1)))
+COMBO = {"oKind": "DÉPLACER", "oPrio": "ROUTINE", "oTarget": "Groupe ALPHA 1-1", "cDest": "Tout le camp", "cPrio": "ROUTINE", "fFilter": "Tout le flux",
+         "gAi": "Aller au point", "rShow": "Carte et flux", "cCam": "Caméra · ALPHA 1-1 (casque)", "tKind": "Compte à rebours", "kcEl": "ALPHA 1-1",
+         "kcKind": "Ami blessé", "hRad": "20 m", "hWhat": "Carte et flux", "hMosRot": "Rotation 10 s", "hMosCase": "Case 1", "hMosSrc": "ALPHA 1-1",
+         "hScene": "OPÉRATION", "dColor": "Rouge", "dWidth": "Moyen", "dKind": "Ligne · Ligne de phase", "mAff": "Ami", "mType": "Objectif", "mColor": "Bleu", "mTtl": "Permanent", "mChan": "Camp",
+         "fKindNew": "SITREP", "qKind": "MEDEVAC", "wSrc": "MUR CENTRE · carte et flux", "wLayout": "Situation + Réseau", "wLum": "Luminosité 75 %", "sFollow": "Groupe ALPHA 1-1", "sScr": "Tous les écrans du poste"}
+EDIT = {"search": "Grille, groupe, indicatif ou marqueur…", "flashTxt": "Texte du FLASH…", "oText": "Tenir le carrefour jusqu'à la relève", "oGrid": "0441 1183",
+        "cText": "", "cCs": "BRAVO-6", "tName": "EXFIL", "tVal": "30:00", "lText": "Entrée à la main…", "xEv": "Événement…", "xCw": "Mot de code", "xEl": "Élément",
+        "xAt": "12:45", "qAns": "Hélico décolle, ETA 8 min", "hName": "TOC BRAVO", "hScrName": "MUR CENTRE", "hSceneName": "Nom de la scène…", "dPlanTxt": "PL BLUE", "mText": "CP NORD",
+        "fText": "Pont nord détruit, itinéraire BLEU fermé", "fGrid": "0441 1183", "qGrid": "0481 1172", "qText": "1 blessé urgent, zone de poser au sud…", "sGrid": "042 116", "sNote": "Note…"}
+LAYERS_ON = {"lyPL": True, "lyAI": True, "lyDIR": True, "lyVEH": True, "lyAIR": True, "lyEV": True, "lyPLAN": True, "lyREL": False, "lyCOV": False}
+PC_NODES = [n if n[2] != "DELTA 4" else (n[0], n[1], n[2], "direct", n[4]) for n in NODES] + [(300, 420, "Sdt Garnier", "direct", "inf"), (470, 520, "Cpl Lefèvre", "direct", "inf"), (860, 300, "GOLF 7", "direct", "veh")]
+
+
+def wrap(s, name, px, w):
+    out, cur = [], ""
+    for word in s.split(" "):
+        t = (cur + " " + word).strip()
+        if text_w(t, name, px) > w - 8 and cur:
+            out.append(cur)
+            cur = word
+        else:
+            cur = t
+    return out + ([cur] if cur else [])
+
+
+def pc_map(cv, x, y, w, h, u, plan=False, sel=None):
+    """Carte de la console : unités au téléphone et en source directe, plan du camp, échelle et nord dessinés sur la carte."""
+    cv.img.paste(terrain(int(w), int(h), 9), (int(x), int(y)))
+    for gx in range(1, 8):
+        cv.rect(x + gx * w / 8, y, 1, h, rgb("lineStrong", 0.35))
+    for gy in range(1, 6):
+        cv.rect(x, y + gy * h / 6, w, 1, rgb("lineStrong", 0.35))
+    fp = 0.019 * u
+    if plan:
+        cv.line([(x + w * 0.18, y + h * 0.2), (x + w * 0.3, y + h * 0.42), (x + w * 0.26, y + h * 0.7), (x + w * 0.34, y + h * 0.9)], rgb("blue"), 3)
+        cv.text(x + w * 0.3, y + h * 0.4, 160, 26, "PL BLUE", None, "blue", "L", px=fp, fname=FONTS["sansBold"], fit=False)
+        cv.line([(x + w * 0.5, y + h * 0.15), (x + w * 0.56, y + h * 0.45), (x + w * 0.52, y + h * 0.85)], rgb("red"), 3)
+        cv.text(x + w * 0.56, y + h * 0.43, 160, 26, "PL RED", None, "red", "L", px=fp, fname=FONTS["sansBold"], fit=False)
+        ox, oy = x + w * 0.74, y + h * 0.2
+        cv.line([(ox - 70, oy - 45), (ox + 70, oy - 45), (ox + 70, oy + 45), (ox - 70, oy + 45), (ox - 70, oy - 45)], rgb("amber"), 3)
+        cv.text(ox - 70, oy - 14, 140, 28, "OBJ RAVEN", None, "amber", "C", px=fp, fname=FONTS["sansBold"], fit=False)
+        cv.line([(x + w * 0.22, y + h * 0.56), (x + w * 0.62, y + h * 0.42)], rgb("accent"), 4)
+        cv.line([(x + w * 0.62, y + h * 0.42), (x + w * 0.60, y + h * 0.455)], rgb("accent"), 4)
+        cv.line([(x + w * 0.62, y + h * 0.42), (x + w * 0.595, y + h * 0.41)], rgb("accent"), 4)
+        cv.text(x + w * 0.36, y + h * 0.5, 160, 26, "AXE NORD", None, "accent", "L", px=fp, fname=FONTS["sansBold"], fit=False)
+    for nx, ny, cs, st, k in PC_NODES:
+        X, Y = x + nx / 1040 * w, y + ny / 774 * h
+        if cs == sel:
+            cv.line([(X - 30, Y - 22), (X + 30, Y - 22), (X + 30, Y + 22), (X - 30, Y + 22), (X - 30, Y - 22)], rgb("accent"), 2)
+        nato(cv, X, Y, "lost" if st == "lost" else "friend", 1.0 if st in ("live", "direct") else 0.6, k)
+        lbl = cs + {"old": " · ancien", "lost": " · perdu"}.get(st, "")
+        cv.text(X + 22, Y - 14, 240, 28, lbl, None, "text", "L", px=fp, fname=FONTS["sansBold"], fit=False)
+    # échelle (bas gauche) et nord (haut droite), dessinés sur la carte comme en jeu
+    sx, sy = x + w * 0.02, y + h - 0.03 * u
+    bar = w * 0.14
+    cv.rect(sx - 8, sy - 0.018 * u, bar + 0.09 * u, 0.036 * u, rgb("bg0", 0.8))
+    cv.rect(sx, sy - 2, bar, 4, rgb("text"))
+    cv.rect(sx, sy - 8, 3, 16, rgb("text"))
+    cv.rect(sx + bar - 3, sy - 8, 3, 16, rgb("text"))
+    cv.text(sx + bar + 6, sy - 0.015 * u, 0.08 * u, 0.03 * u, "500 m", None, "text", "L", px=0.02 * u, fname=FONTS["monoBold"], fit=False)
+    nx, ny = x + w - 0.045 * u, y + 0.035 * u
+    cv.line([(nx, ny - 12), (nx + 10, ny + 10), (nx - 10, ny + 10), (nx, ny - 12)], rgb("text"), 3)
+    cv.text(nx + 12, ny - 14, 30, 28, "N", None, "text", "L", px=0.022 * u, fname=FONTS["sansBold"], fit=False)
 
 
 def pc(tab, out, aspect=16 / 9, H=1080, tool="SELECT"):
     W = round(H * aspect)
     cv = Canvas(W, H)
-    cv.img = Image.new("RGBA", (W, H), (20, 22, 24, 255))
     u = H
     R = lambda r: (r[0] * u, r[1] * u, r[2] * u, r[3] * u)
     reg = pc_regions(aspect)
     g = GRID
     fpx = lambda k: g[k] * u
-    cv.rect(*R(reg["shell"]), (22, 23, 24, 255))
-    x0, y0, w0, h0 = reg["shell"]
-    cv.rect(*R((x0 + g["pad"] * 0.4, y0 + g["pad"] * 0.4, w0 - g["pad"] * 0.8, h0 - g["pad"] * 0.8)), (31, 32, 33, 255))
-    cv.rect(*R(reg["inner"]), rgb("bg0"))
-    xi, yi, wi, hi = reg["inner"]
-    cv.text(*R((x0, yi + hi + 0.001, w0, g["brand"])), "COMSPEC · POSTE DE COMMANDEMENT", None, "muted", "C", px=fpx("fontMin"), fname=FONTS["sans"])
+    sec = sec_of(tab)
     cv.rect(*R(reg["top"]), rgb("bg1"))
     tx, ty, tw, th = reg["top"]
     cv.rect(*R((tx, ty + th, tw, g["hair"])), rgb("line"))
+    cv.rect(*R(reg["railBg"]), rgb("bg1"))
     cv.rect(*R(reg["panel"]), rgb("bg1"))
-    left = "L:SAT" if tab == "SAT" else ("L:SALLE" if tab == "SALLE" else ("L:MAP:" + tool if tool in ("LINE", "DRAW", "PLAN", "MARKER") else "L:MAP:OTHER"))
-    zones = [("F:TITLE", "rTitle"), ("F:TABS", "rTabs"), ("F:HELP", "rHelp"), ("F:BAR", "rBar"), (left, "rLeft"), ("R:" + tab, "rRight")]
+    if tab == "SAT":
+        left = "L:SAT"
+    elif tab in ("SALLE", "MUR"):
+        left = "L:SALLE"
+    elif sec == "PLANS":
+        left = "L:MAP:" + (tool if tool in ("LINE", "DRAW", "PLAN", "MARKER", "ERASE") else "SELECT")
+    else:
+        left = "L:MAP:NAV"
+    zones = [("F:TITLE", "rTitle"), ("F:RAIL", "rRail"), ("F:TABS:" + sec, "rTabs"), ("F:HELP", "rHelp"), ("F:BAR", "rBar"), (left, "rLeft"), ("R:" + tab, "rRight")]
     rects = {}
     for lk, rk in zones:
         rects.update(pc_place(LAYOUT[lk], *reg[rk]))
     body = fpx("font")
     sb = 0.024 * u  # base du texte structuré du PC (COMSPEC_RscStructuredText)
+    hair = max(1, 0.001 * u)
+
+    def fit_label(b, w, f0):
+        lbl, ft = b[2], f0
+        while text_w(lbl, FONTS["sansBold"], ft) > 0.92 * w and ft > fpx("fontMin"):
+            ft -= 0.0005 * u
+        if text_w(lbl, FONTS["sansBold"], ft) > 0.92 * w and b[3]:
+            lbl, ft = b[3], f0
+            while text_w(lbl, FONTS["sansBold"], ft) > 0.92 * w and ft > fpx("fontMin"):
+                ft -= 0.0005 * u
+        return lbl, ft
+
     for key, r in rects.items():
         x, y, w, h = R(r)
         kind = KIND.get(key, "stx")
         if key in BTNS:
             b = BTNS[key]
-            if b[1] == "T":
+            if b[1] == "S":
+                on = key == "sec" + sec
+                cv.rect(x, y, w, h, rgb("bg2" if on else "bg1"))
+                if on:
+                    cv.rect(x, y, 0.004 * u, h, rgb("accent"))
+                lbl, ft = fit_label(b, w, body)
+                cv.text(x, y, w, h, lbl, None, "accent" if on else "text2", "C", px=ft, fname=FONTS["sansBold"], fit=False)
+            elif b[1] == "T":
                 on = key == "tab" + tab
                 cv.rect(x, y, w, h, rgb("bg2" if on else "bg1"))
                 if on:
                     cv.rect(x, y + h - 0.003 * u, w, 0.003 * u, rgb("accent"))
-                lbl = b[2]
-                ft = fpx("fontTab")
-                while text_w(lbl, FONTS["sansBold"], ft) > 0.92 * w and ft > fpx("fontMin"):
-                    ft -= 0.0005 * u
-                if text_w(lbl, FONTS["sansBold"], ft) > 0.92 * w and b[3]:
-                    lbl = b[3]
+                cnt = {"tabGROUPES": " (9)", "tabORBAT": " (31)", "tabFLUX": " (15)", "tabORDRES": " (2)", "tabDEMANDES": " (2)", "tabCHRONOS": " (4)"}.get(key, "")
+                lbl, ft = fit_label([b[0], b[1], b[2] + cnt, b[3] + cnt if b[3] else ""], w, fpx("fontTab"))
                 cv.text(x, y, w, h, lbl, None, "accent" if on else "text2", "C", px=ft, fname=FONTS["sansBold"], fit=False)
+            elif key == "alertsGo":
+                cv.rect(x, y, w, h, rgb("redDim"))
+                cv.text(x, y, w, h, "ALERTES (3)", None, "red", "C", px=body, fname=FONTS["sansBold"], fit=False)
+            elif key in LAYERS_ON:
+                on = LAYERS_ON[key]
+                cv.rect(x, y, w, h, rgb("bg2"))
+                cv.rect(x, y, w, hair, rgb("line"))
+                lbl, ft = fit_label([b[0], b[1], ("● " if on else "○ ") + b[2], (("● " if on else "○ ") + b[3]) if b[3] else ""], w, body)
+                cv.text(x, y, w, h, lbl, None, "accent" if on else "muted", "C", px=ft, fname=FONTS["sansBold"], fit=False)
             else:
                 prim = b[5] == 1
-                dis = tab == "SAT" and False
-                cv.rect(x, y, w, h, rgb("accent" if prim else "bg2"))
+                active = key == "tool" + tool
+                cv.rect(x, y, w, h, rgb("accent" if prim else ("accentDim" if active else "bg2")))
                 if not prim:
-                    cv.rect(x, y, w, max(1, 0.001 * u), rgb("line"))
-                lbl = b[2]
-                ft = body
-                while text_w(lbl, FONTS["sansBold"], ft) > 0.92 * w and ft > fpx("fontMin"):
-                    ft -= 0.0005 * u
-                if text_w(lbl, FONTS["sansBold"], ft) > 0.92 * w and b[3]:
-                    lbl, ft = b[3], body
-                    while text_w(lbl, FONTS["sansBold"], ft) > 0.92 * w and ft > fpx("fontMin"):
-                        ft -= 0.0005 * u
-                cv.text(x, y, w, h, lbl, None, "bg0" if prim else "text", "C", px=ft, fname=FONTS["sansBold"], fit=False)
+                    cv.rect(x, y, w, hair, rgb("line"))
+                lbl, ft = fit_label(b, w, body)
+                cv.text(x, y, w, h, lbl, None, "bg0" if prim else ("accent" if active else "text"), "C", px=ft, fname=FONTS["sansBold"], fit=False)
             continue
         if isinstance(kind, tuple):
             cv.text(x, y, w, h, kind[1], None, "muted", "L", px=0.017 * u, fname=FONTS["sansBold"])
             continue
         if key == "map":
-            img = terrain(int(w), int(h), 9)
-            cv.img.paste(img, (int(x), int(y)))
-            map_view_small = Canvas(1, 1)
-            for i, (nx, ny, cs, st, k) in enumerate(NODES):
-                X, Y = x + nx / 1040 * w, y + ny / 774 * h
-                nato(cv, X, Y, "friend" if st != "lost" else "lost", 1.0 if st == "live" else 0.6, k)
-                cv.text(X + 22, Y - 14, 200, 28, cs, None, "text", "L", px=0.019 * u, fname=FONTS["sansBold"], fit=False)
+            pc_map(cv, x, y, w, h, u, plan=True, sel="DELTA 4" if tab == "CARTE" else None)
             continue
-        if key in ("pHead",):
+        if key == "pHead":
             title, stat = PANEL_HEAD.get(tab, (tab, ""))
             cv.text(x, y, w, h, title, None, "text", "L", px=0.95 * sb, fname=FONTS["sansBold"])
             cv.text(x, y, w, h, stat, None, "muted", "R", px=0.8 * sb, fname=FONTS["sans"])
             continue
         if key == "pRule":
-            cv.rect(x, y + h / 2 - 0.0005 * u, w, max(1, 0.001 * u), rgb("line"))
+            cv.rect(x, y + h / 2 - 0.0005 * u, w, hair, rgb("line"))
             cv.rect(x, y + h / 2 - 0.001 * u, 0.04 * u, 0.002 * u, rgb("accent"))
             continue
         if key == "title":
-            cv.text(x, y, w, h * 0.55, "POSTE TOC · BRAVO-6", None, "text", "L", px=1.05 * sb, fname=FONTS["sansBold"])
-            cv.text(x, y + h * 0.5, w, h * 0.45, "BLUFOR · poste pris par Adj Mercier à 12:20Z", None, "accent", "L", px=0.8 * sb, fname=FONTS["sans"])
+            cv.text(x, y, w, h * 0.55, "POSTE TOC · BRAVO-6", None, "text", "L", px=1.1 * sb, fname=FONTS["sansBold"])
+            cv.text(x, y + h * 0.5, w, h * 0.45, "TOC BRAVO · poste pris par Adj Mercier à 12:20Z", None, "accent", "L", px=0.8 * sb, fname=FONTS["sans"])
             continue
         if key == "clock":
             cv.text(x, y, w, h * 0.55, "12:35:42 ZULU   13:35:42 LOCAL", None, "text", "R", px=0.9 * sb, fname=FONTS["monoBold"], fit=False)
-            cv.text(x, y + h * 0.5, w, h * 0.45, "■ ACRE2 · ● EN DIRECT", None, "accent", "R", px=0.75 * sb, fname=FONTS["sans"], fit=False)
+            cv.text(x, y + h * 0.5, w, h * 0.45, "ACRE2 · • SERVEUR EN DIRECT · • ATHENA", None, "accent", "R", px=0.75 * sb, fname=FONTS["sans"], fit=False)
             continue
         if key == "bar":
             cv.rect(x, y, w, h, rgb("bg1"))
-            cv.rect(x, y, w, max(1, 0.001 * u), rgb("line"))
-            s = "   RÉSEAU   18 en ligne · 3 anciens · 1 perdu · 2 hors ligne      14 joueurs · 6 IA · 2 relais · 0 brouilleur      3 alerte(s) sur 20 min"
-            cv.text(x, y, w, h, s, None, "text2", "L", px=0.8 * sb, fname=FONTS["sans"])
+            cv.rect(x, y, w, hair, rgb("line"))
+            xx = x + 0.012 * u
+            for s, tok in [("TÉLÉPHONES  ", "text"), ("26 en ligne", "accent"), (" · ", "muted"), ("3 anciens", "amber"), (" · ", "muted"), ("1 sans liaison", "lost"), (" · ", "muted"), ("1 éteint", "muted"),
+                           ("     SOURCE DIRECTE  ", "text"), ("11 sans téléphone", "text2"), ("     2 relais · 0 brouilleur", "muted"), ("     3 alerte(s) sur 20 min", "red")]:
+                xx += cv.text(xx, y, w, h, s, None, tok, "L", px=0.85 * sb, fname=FONTS["sans"], fit=False)
             continue
         if key == "help":
             cv.rect(x, y, w, h, rgb("bg0"))
-            cv.text(x + 0.004 * u, y, w, h, "Choisissez un groupe : la carte se centre sur lui. Clic droit : point de l'ORDRE IA.", None, "muted", "L", px=0.8 * sb, fname=FONTS["sans"])
+            yy = y + 0.004 * u
+            for ln in wrap(TAB_HELP.get(tab, ""), FONTS["sans"], 0.8 * sb, w - 0.01 * u)[:2]:
+                cv.text(x + 0.004 * u, yy, w, 0.8 * sb * 1.15, ln, None, "muted", "L", px=0.8 * sb, fname=FONTS["sans"], fit=False)
+                yy += 0.8 * sb * 1.15
+            continue
+        if key == "railInfo":
+            cv.text(x, y + 0.01 * u, w, 0.04 * u, "42", None, "text", "L", px=1.3 * sb, fname=FONTS["monoBold"], fit=False)
+            yy = y + 0.05 * u
+            for s, tok in [("unités du camp", "text2"), ("31 au téléphone", "accent"), ("11 sans téléphone", "text2")]:
+                cv.text(x, yy, w, 0.022 * u, s, None, tok, "L", px=0.75 * sb, fname=FONTS["sans"], fit=False)
+                yy += 0.022 * u
+            yy += 0.02 * u
+            for s in ["F1 à F4 : rubriques", "Page préc. / suiv. :", "onglets", "+ et − : zoom", "Ctrl+F : chercher", "Échap : fermer"]:
+                cv.text(x, yy, w, 0.02 * u, s, None, "muted", "L", px=0.7 * sb, fname=FONTS["sans"], fit=False)
+                yy += 0.02 * u
+            continue
+        if key == "mapInfo":
+            xx = x + 0.004 * u
+            for s, tok, fn in [("Curseur ", "text2", "sans"), ("0441 1183", "text", "mono"), (" · carte large de 2.6 km · ", "text2", "sans"),
+                               ("clic droit : point désigné", "muted", "sans")]:
+                xx += cv.text(xx, y, w, h, s, None, tok, "L", px=0.8 * sb, fname=FONTS[fn], fit=False) + (6 if fn == "mono" else 0)
             continue
         if kind in ("COMSPEC_RscTocList",):
             cv.rect(x, y, w, h, rgb("bg0"))
             rh = 0.027 * u
+            pick = {"uList": 4}.get(key, 1)
             for i, (s, tok) in enumerate(SAMPLE.get(key, [])):
                 if (i + 1) * rh > h:
                     break
-                if i == 1:
+                if i == pick:
                     cv.rect(x, y + i * rh, w, rh, rgb("accentDim"))
-                cv.text(x, y + i * rh, w * 0.72, rh, s, None, tok, "L", px=0.021 * u, fname=FONTS["sans"])
+                cv.text(x, y + i * rh, w * 0.62, rh, s, None, tok, "L", px=0.021 * u, fname=FONTS["sans"])
                 rs = RIGHT.get(key, [])
                 if i < len(rs) and rs[i]:
-                    cv.text(x + w * 0.6, y + i * rh, w * 0.4, rh, rs[i], None, "text2", "R", px=0.021 * u, fname=FONTS["mono"] if key == "tList" else FONTS["sans"])
+                    cv.text(x + w * 0.5, y + i * rh, w * 0.5, rh, rs[i], None, tok if key == "uList" else "text2", "R", px=0.021 * u, fname=FONTS["mono"] if key == "tList" else FONTS["sans"])
             continue
         if kind in ("combo", "COMSPEC_RscTocCombo"):
             cv.rect(x, y, w, h, rgb("bg0"))
-            cv.rect(x, y + h - max(1, 0.001 * u), w, max(1, 0.001 * u), rgb("line"))
-            sample = {"oKind": "DÉPLACER", "oPrio": "ROUTINE", "oTarget": "Groupe ALPHA 1-1", "cDest": "Tout le camp", "cPrio": "ROUTINE", "fFilter": "Tout le flux",
-                      "gAi": "Aller au point", "rShow": "Carte et flux", "cCam": "Carte et flux du poste", "tKind": "Compte à rebours", "kcEl": "ALPHA 1-1",
-                      "kcKind": "Ami blessé", "hRad": "20 m", "hWhat": "Carte et flux", "hMosRot": "Rotation 10 s", "hMosCase": "Case 1", "hMosSrc": "ALPHA 1-1",
-                      "hScene": "OPÉRATION", "dColor": "Rouge", "dWidth": "Moyen", "dKind": "Zone", "mAff": "Ami", "mType": "Objectif", "mColor": "Bleu", "mTtl": "Permanent", "mChan": "Camp"}.get(key, "")
-            cv.text(x, y, w - 0.02 * u, h, sample, None, "text", "L", px=0.024 * u * 0.85, fname=FONTS["sans"])
+            cv.rect(x, y + h - hair, w, hair, rgb("line"))
+            cv.text(x, y, w - 0.02 * u, h, COMBO.get(key, ""), None, "text", "L", px=0.024 * u * 0.85, fname=FONTS["sans"])
             cv.text(x + w - 0.022 * u, y, 0.02 * u, h, "▾", None, "muted", "C", px=0.02 * u, fname=FONTS["sans"], fit=False)
             continue
         if kind in ("edit", "COMSPEC_RscTocEdit", "COMSPEC_RscTocEditMulti"):
             cv.rect(x, y, w, h, rgb("bg0"))
-            cv.rect(x, y + h - max(1, 0.001 * u), w, max(1, 0.001 * u), rgb("line"))
-            sample = {"search": "Grille, groupe ou indicatif…", "flashTxt": "Texte du FLASH…", "oText": "Tenir le carrefour jusqu'à la relève", "oGrid": "044 118",
-                      "cText": "", "cCs": "BRAVO-6", "tName": "EXFIL", "tVal": "30:00", "lText": "Entrée à la main…", "xEv": "Événement…", "xCw": "Mot de code", "xEl": "Élément",
-                      "xAt": "12:45", "qAns": "Hélico décolle, ETA 8 min", "hName": "TOC BRAVO", "hScrName": "MUR CENTRE", "hSceneName": "Nom de la scène…", "dPlanTxt": "OBJ RAVEN", "mText": "CP NORD"}.get(key, "")
-            ph = sample.endswith("…")
-            cv.text(x, y, w, min(h, 0.034 * u), sample, None, "muted" if ph else "text", "L", px=0.024 * u * 0.85, fname=FONTS["sans"])
+            cv.rect(x, y + h - hair, w, hair, rgb("line"))
+            sample = EDIT.get(key, "")
+            cv.text(x, y, w, min(h, 0.034 * u), sample, None, "muted" if sample.endswith("…") else "text", "L", px=0.024 * u * 0.85, fname=FONTS["sans"])
             continue
         if key == "sBack":
             cv.img.paste(isr_image(int(w), int(h), 33), (int(x), int(y)))
@@ -1135,32 +1263,42 @@ def pc(tab, out, aspect=16 / 9, H=1080, tool="SELECT"):
             cv.text(x, y, w, h, "  Vous avez la main · SAT 1 · BLANC CHAUD · 0.50X", None, "accent", "L", px=0.85 * sb, fname=FONTS["sans"])
             continue
         if key == "hPlanBg":
-            cv.rect(x, y, w, h, rgb("bg1"))
+            # Plan du mur vu depuis le poste : bandeau LED, mur de 6 dalles, deux écrans latéraux, un écran proche non lié.
+            cv.rect(x, y, w, h, rgb("bg0"))
+            tiles_ = [(0.2, 0.1, 0.6, 0.07, "TEXTE · OPÉRATION HORIZON · H-00:42", "std"), (0.02, 0.3, 0.15, 0.2, "HORLOGE", "std"), (0.83, 0.3, 0.15, 0.2, "○ PIP DU POSTE", "free")]
+            names = ["SAT 1", "CARTE ET FLUX", "MOSAÏQUE", "MAIN COURANTE", "EXÉCUTION", "DIFFUSION DE 2"]
             for i in range(6):
-                bx = x + w * 0.08 + (i % 3) * w * 0.29
-                by = y + h * 0.18 + (i // 3) * h * 0.33
-                on = i == 1
-                cv.rect(bx, by, w * 0.26, h * 0.28, rgb("accentDim" if on else "bg2"))
-                cv.rect(bx, by, w * 0.26, max(1, 0.002 * u), rgb("accent" if on else "line"))
-                cv.text(bx, by, w * 0.26, h * 0.28, ["SAT 1", "CARTE ET FLUX", "HORLOGE", "MOSAÏQUE", "MAIN COURANTE", "EXCHECK"][i], None, "accent" if on else "text2", "C", px=0.017 * u, fname=FONTS["sansBold"])
+                tiles_.append((0.2 + (i % 3) * 0.2, 0.22 + (i // 3) * 0.2, 0.2, 0.2, f"{i + 1} · {names[i]}", "sel" if i == 1 else "std"))
+            tiles_ += [(0.3, 0.72, 0.18, 0.14, "1 · SITUATION", "std"), (0.48, 0.72, 0.18, 0.14, "2 · RÉSEAU", "std")]
+            for fx, fy, fw, fh, lbl, stt in tiles_:
+                bx_, by_, bw_, bh_ = x + w * fx + 1, y + h * fy + 1, w * fw - 2, h * fh - 2
+                cv.rect(bx_, by_, bw_, bh_, rgb({"sel": "accentDim", "free": "bg1"}.get(stt, "bg3"), 0.85 if stt == "free" else 1))
+                if stt == "sel":
+                    cv.rect(bx_, by_, bw_, max(2, 0.002 * u), rgb("accent"))
+                cv.text(bx_, by_, bw_, bh_, lbl, None, {"sel": "accent", "free": "muted"}.get(stt, "text"), "C", px=0.0155 * u, fname=FONTS["sansBold"])
+            cv.text(x + w * 0.3, y + h * 0.87, w * 0.36, 0.03 * u, "ÉCRAN INCURVÉ DU POSTE", None, "muted", "C", px=0.0145 * u, fname=FONTS["sans"])
             continue
         if key == "hPlanTitle":
-            cv.text(x, y, w, h, "Mur vu depuis ce poste · 6 lié(s) · 1 proche(s) non lié(s)", None, "text2", "L", px=0.85 * sb, fname=FONTS["sans"])
+            cv.rect(x, y, w, h, rgb("bg0", 0.5))
+            cv.text(x, y, w, h, "  Mur vu depuis ce poste · 6 lié(s) · 1 proche(s) non lié(s) (en sombre) · cliquez un écran ou une dalle", None, "text2", "L", px=0.85 * sb, fname=FONTS["sans"])
             continue
         if key in INFO:
             yy = y
-            for s, st in INFO[key]:
+            for s0, st in INFO[key]:
                 big = st == "heading"
                 lh = (1.05 if big else 0.85) * sb * 1.15
-                if yy + lh > y + h:
-                    break
-                cv.text(x, yy, w, lh, s, None, {"heading": "text", "body": "text2"}.get(st, st), "L", px=(1.05 if big else 0.85) * sb, fname=FONTS["sansBold" if big else "sans"])
-                yy += lh
+                for s in (wrap(s0, FONTS["sansBold" if big else "sans"], (1.05 if big else 0.85) * sb, w) or [""]):
+                    if yy + lh > y + h:
+                        break
+                    cv.text(x, yy, w, lh, s, None, {"heading": "text", "body": "text2"}.get(st, st), "L", px=(1.05 if big else 0.85) * sb, fname=FONTS["sansBold" if big else "sans"], fit=False)
+                    yy += lh
             continue
-        if key in ("toolHint", "dInfo", "sStrip", "sLegend", "sInfo"):
-            msg = {"toolHint": "Outil SÉLECTION : clic gauche sur un groupe pour sa fiche · clic droit : objectif de l'ordre",
-                   "dInfo": "Réglages de l'outil : choisissez TRAIT, DESSIN, PLAN ou MARQUEUR."}.get(key, "")
-            cv.text(x, y, w, h, msg, None, "muted", "L", px=0.8 * sb, fname=FONTS["sans"])
+        if key in ("toolHint", "dInfo"):
+            hints = {"SELECT": "Choisissez un outil ci-dessus : MARQUEUR, TRAIT, DESSIN, PLAN ou EFFACER. Sans outil : clic gauche sur une unité pour sa fiche.",
+                     "PLAN": "PLAN : choisissez le graphisme, cliquez ses points, puis clic droit ou TERMINER · 2 clics pour une zone = rectangle",
+                     "LINE": "TRAIT : clic sur A, Ctrl+clic pour chaque étape, clic sur B · ROUTES : le trait suit les routes"}
+            msg = {"toolHint": hints.get(tool, hints["SELECT"]), "dInfo": "Réglages de l'outil : choisissez TRAIT, DESSIN, PLAN ou MARQUEUR."}[key]
+            cv.text(x, y, w, h, msg, None, "text2" if key == "toolHint" else "muted", "L", px=0.8 * sb, fname=FONTS["sans"])
             continue
     save(cv.img, out)
 
@@ -1172,6 +1310,7 @@ SAVED = []
 def save(img, name):
     OUT.mkdir(parents=True, exist_ok=True)
     p = OUT / f"{name}.png"
+    p.parent.mkdir(parents=True, exist_ok=True)
     img.convert("RGB").save(p, optimize=True)
     SAVED.append(p)
 
@@ -1408,14 +1547,21 @@ def main():
     plate(cv)
     save(cv.img, "plaque_nom")
     text_mockups()
-    for tab, n in [("GROUPES", "pc_groupes"), ("ORBAT", "pc_orbat"), ("FLUX", "pc_flux"), ("ORDRES", "pc_ordres"), ("CAMP", "pc_camp"), ("RÉSEAU", "pc_reseau"),
-                   ("RADIO", "pc_radio"), ("SALLE", "pc_salle"), ("CHRONOS", "pc_chronos"), ("MAIN COURANTE", "pc_main_courante"), ("EXCHECK", "pc_excheck"),
-                   ("PERTES", "pc_pertes"), ("DEMANDES", "pc_demandes")]:
+    # Console du poste (refonte 4.9.0) : chaque onglet, puis les quatre rubriques dans app_poste/ (maquettes, pas des captures du jeu).
+    for tab, n in [("CARTE", "pc_carte"), ("GROUPES", "pc_groupes"), ("ORBAT", "pc_orbat"), ("RÉSEAU", "pc_reseau"), ("FLUX", "pc_flux"), ("ORDRES", "pc_ordres"), ("CAMP", "pc_camp"),
+                   ("DEMANDES", "pc_demandes"), ("CHRONOS", "pc_chronos"), ("EXCHECK", "pc_excheck"), ("MAIN COURANTE", "pc_main_courante"), ("PERTES", "pc_pertes"),
+                   ("PLAN", "pc_plan"), ("SALLE", "pc_salle"), ("MUR", "pc_mur"), ("RADIO", "pc_radio"), ("SAT", "pc_sat")]:
         pc(tab, n)
-    pc("SAT", "pc_sat")
-    pc("GROUPES", "pc_carte_dessin", tool="LINE")
-    pc("GROUPES", "pc_groupes_4x3", aspect=4 / 3, H=1080)
-    pc("GROUPES", "pc_groupes_21x9", aspect=21 / 9, H=1080)
+    pc("DESSIN", "pc_carte_dessin", tool="PLAN")
+    pc("CARTE", "pc_groupes_4x3", aspect=4 / 3, H=1080)
+    pc("CARTE", "pc_groupes_21x9", aspect=21 / 9, H=1080)
+    pc("CARTE", "app_poste/situation")
+    pc("MAIN COURANTE", "app_poste/conduite")
+    pc("DESSIN", "app_poste/plans", tool="PLAN")
+    pc("MUR", "app_poste/salle")
+    pc("SALLE", "app_poste/salle_ecran")
+    pc("DEMANDES", "app_poste/conduite_demandes")
+    pc("CARTE", "app_poste/situation_1440p", H=1440)
     tailles_ecrans()
     contact_sheet()
     print("\n".join(str(p) for p in SAVED))

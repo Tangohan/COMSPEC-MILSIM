@@ -125,7 +125,7 @@ $icon = static function (string $path): string {
         <button type="button" data-ow-compact>Carte seule</button>
         <button type="button" data-command>Palette de commandes <kbd>⌘K</kbd></button>
         <button type="button" data-ow-help>Aide et raccourcis <kbd>?</kbd></button>
-        <?php // Outils opérateur (identité, papiers, couverture, fichiers, matériel) : formulaire GET, stylé comme les autres entrées. ?>
+        <?php // Outils opérateur (identités, papiers, fichiers, matériel) : formulaire GET, stylé comme les autres entrées. ?>
         <form method="get" action="<?= $h($base) ?>/operateur"><button type="submit">Mes outils opérateur</button></form>
       </div>
     </div>

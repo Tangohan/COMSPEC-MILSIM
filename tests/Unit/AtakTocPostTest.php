@@ -73,7 +73,9 @@ final class AtakTocPostTest extends TestCase
         self::assertStringContainsString('call comspec_atak_native_fnc_tocDraw', $lap);
         self::assertStringContainsString('call comspec_atak_native_fnc_gridParse', $lap);
         self::assertStringContainsString('["load"] call comspec_atak_native_fnc_bftOrbat', $lap);
-        foreach (['case "tool":', 'case "search":', 'case "left":', 'case "layer":', 'case "RÉSEAU":', 'case "ORBAT":'] as $needle) {
+        // Calques : onglet CARTE de la console (fn_tocApp, 4.9.0), plus les deux boutons IA / ALERTES de la barre de la carte.
+        self::assertStringContainsString('case ((_k select [0, 2]) isEqualTo "ly"): {', self::read(self::DIR . 'toc/fn_tocApp.sqf'));
+        foreach (['case "tool":', 'case "search":', 'case "left":', 'case "section":', 'case "RÉSEAU":', 'case "ORBAT":'] as $needle) {
             self::assertStringContainsString($needle, $lap);
         }
         // Plaques : texte blanc cerné de noir, TOC et OBJECTIF passent par le placement sans chevauchement.

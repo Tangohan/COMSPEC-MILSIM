@@ -23,7 +23,7 @@ final class OperatorHubCatalog
 
     public const GROUPS = [
         'operation' => ['label' => 'En opération', 'desc' => 'Ce qui sert pendant la mission.'],
-        'identite' => ['label' => 'Mon identité', 'desc' => 'Qui vous êtes en jeu : identités, papiers et couvertures.'],
+        'identite' => ['label' => 'Mon identité', 'desc' => 'Qui vous êtes en jeu : vos identités et leurs papiers.'],
         'materiel' => ['label' => 'Mon matériel', 'desc' => 'Ce que vous portez.'],
         'preparation' => ['label' => 'Préparation', 'desc' => 'Avant de partir.'],
         'comptes_rendus' => ['label' => 'Comptes rendus', 'desc' => 'Ce que vous rapportez du terrain.'],
@@ -37,11 +37,12 @@ final class OperatorHubCatalog
         ['key' => 'seek', 'group' => 'operation', 'label' => 'Fiches SEEK II', 'desc' => 'Relevés biométriques faits en jeu.', 'path' => 'atak/sse/fichiers/seek', 'icon' => 'fingerprint', 'any_permissions' => self::SSE, 'keywords' => 'biométrie empreinte'],
         ['key' => 'telephones', 'group' => 'operation', 'label' => 'Téléphones du jeu', 'desc' => 'Extractions des téléphones synchronisés, les vôtres et celles de l’équipe.', 'path' => 'atak/sse/fichiers/telephones', 'icon' => 'phone', 'any_permissions' => self::SSE, 'keywords' => 'extraction'],
         ['key' => 'photos', 'group' => 'operation', 'label' => 'Photothèque', 'desc' => 'Photos signalétiques filtrées par signalement.', 'path' => 'atak/sse/fichiers/photos', 'icon' => 'camera', 'any_permissions' => self::SSE, 'keywords' => 'photo signalement'],
+        ['key' => 'bureau_sse', 'group' => 'operation', 'label' => 'Bureau SSE', 'desc' => 'L’accueil du renseignement : dossiers, personnes, lieux et recherche.', 'path' => 'atak/sse/accueil', 'icon' => 'files', 'any_permissions' => self::SSE, 'keywords' => 'renseignement dossiers sse accueil'],
+        ['key' => 'appareils', 'group' => 'operation', 'label' => 'Appareils ATAK', 'desc' => 'Vos téléphones du jeu reliés et vos codes de sécurité.', 'path' => 'account/security/devices', 'icon' => 'lock', 'keywords' => 'codes sécurité terminal appareil'],
         ['key' => 'terrain', 'group' => 'operation', 'label' => 'Mode terrain', 'desc' => 'Page allégée pour le téléphone : liens de la mission, sans menus.', 'path' => 'operateur/terrain', 'icon' => 'smartphone', 'keywords' => 'mobile'],
 
-        ['key' => 'identites', 'group' => 'identite', 'label' => 'Mes identités', 'desc' => 'Identité principale, alias, photo et signalement.', 'path' => 'operateur/identite', 'icon' => 'user', 'keywords' => 'nom photo nationalité alias'],
+        ['key' => 'identites', 'group' => 'identite', 'label' => 'Mes identités', 'desc' => 'Votre personnage et vos identités d’emprunt : état civil, photo, signalement, histoire, identité active en jeu.', 'path' => 'operateur/identite', 'icon' => 'user', 'keywords' => 'nom photo nationalité alias emprunt personnage histoire'],
         ['key' => 'documents', 'group' => 'identite', 'label' => 'Mes papiers', 'desc' => 'Carte, passeport, permis : aperçu, demande, perte ou vol.', 'path' => 'operateur/identite/documents', 'icon' => 'id', 'keywords' => 'documents passeport carte permis'],
-        ['key' => 'couverture', 'group' => 'identite', 'label' => 'Mes couvertures', 'desc' => 'Légendes à jouer : créer, modifier, télécharger pour le jeu.', 'path' => 'operateur/identite/couverture', 'icon' => 'mask', 'keywords' => 'légende cover infiltration'],
 
         ['key' => 'materiel', 'group' => 'materiel', 'label' => 'Mon matériel', 'desc' => 'Vos fiches matériel et ce qui vous est attribué.', 'path' => 'equipment?espace=materiel', 'icon' => 'box', 'keywords' => 'équipement arsenal'],
         ['key' => 'kits', 'group' => 'materiel', 'label' => 'Tenues et kits', 'desc' => 'Composer et retrouver vos tenues.', 'path' => 'equipment?espace=kits', 'icon' => 'shirt', 'keywords' => 'tenue kit loadout'],
@@ -100,7 +101,28 @@ final class OperatorHubCatalog
      */
     public const PERMISSION_LABELS = [
         'atak.sse.access' => 'Bureau SSE',
+        'atak.sse.case.manage' => 'Dossiers du Bureau SSE',
+        'atak.sse.grant' => 'Codes d’accès au Bureau SSE',
+        'atak.sse.export' => 'Export des dossiers SSE',
+        'atak.sse.files.admin' => 'Gestion des fichiers SSE',
+        'atak.sse.lore.manage' => 'Lore des sessions',
         'atak.toc.use' => 'Poste TOC',
+        'atak.toc.manage' => 'Réglages du poste TOC',
+    ];
+
+    /**
+     * Ce que chaque droit des outils opérateur permet, en une ligne avec un exemple. Montré dans la fenêtre de demande
+     * d'accès et, pour le responsable, à côté de la case du droit dans « Demandes d'élévation ».
+     */
+    public const PERMISSION_HELP = [
+        'atak.sse.access' => 'Ouvrir le Bureau SSE et ses fichiers. Exemple : contrôler une plaque, lire une fiche SEEK II, rédiger une fiche de renseignement.',
+        'atak.sse.case.manage' => 'Créer et tenir les dossiers de renseignement. Exemple : ouvrir un dossier sur une cellule et y rattacher des personnes.',
+        'atak.sse.grant' => 'Donner un code d’accès temporaire au Bureau SSE. Exemple : ouvrir le bureau à un invité le temps d’une mission.',
+        'atak.sse.export' => 'Sortir un dossier de renseignement en PDF. Exemple : imprimer le dossier d’une cible pour le briefing.',
+        'atak.sse.files.admin' => 'Gérer les fichiers SSE depuis le back-office. Exemple : fusionner deux fiches de la même personne, lire le journal des consultations.',
+        'atak.sse.lore.manage' => 'Préparer le lore d’une session comme maître du jeu. Exemple : choisir ce que les joueurs savent d’une personne au début de la mission.',
+        'atak.toc.use' => 'Tenir le poste TOC web et préparer des plans d’opération. Exemple : suivre la carte commune et briefer un plan par phases.',
+        'atak.toc.manage' => 'Régler le poste TOC web. Exemple : envoyer un plan en jeu, modifier les modèles de la communauté.',
     ];
 
     /**
@@ -188,7 +210,7 @@ final class OperatorHubCatalog
         return [[
             'abbr' => 'OPR',
             'label' => 'Outils opérateur',
-            'desc' => 'Identité, papiers, couverture, fichiers',
+            'desc' => 'Identités, papiers, fichiers',
             'href' => function_exists('url') ? url('operateur') : '/operateur',
             'path' => 'operateur',
             'tone' => 'blue',

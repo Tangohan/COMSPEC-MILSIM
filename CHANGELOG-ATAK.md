@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : les réglages d'icônes marchent sur le petit téléphone (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Les réglages d'icônes s'appliquent aussi au petit téléphone
+- Les réglages d'icônes s'appliquent aussi au petit téléphone : forme, taille de ma forme, taille des alliés et des contacts, réglette « Icônes de la carte ». Avant, ils ne se voyaient que téléphone en main, en grand.
+- Sur la miniature, les symboles gardent une taille lisible (à peu près celle du téléphone en main) et le pion garde sa lettre d'équipe.
+- Les repères des outils de la carte (mesure, ligne de vue, zone de pose, point de pose d'un marqueur) suivent eux aussi la réglette « Icônes de la carte ».
+- Les symboles 2525D ne provoquent plus d'erreur et affichent de nouveau l'échelon et le poste de commandement tirés de l'ORBAT du site.
+EN : Icon settings now apply to the small phone too
+- Icon settings now apply to the small phone too: shape, size of my shape, size of allies and contacts, and the "Map symbols" slider. Before, they only showed with the phone in hand, in large.
+- On the miniature, symbols keep a readable size (about the same as the phone in hand) and the pawn keeps its team letter.
+- The markers of the map tools (measure, line of sight, landing zone, marker drop point) also follow the "Map symbols" slider.
+- 2525D symbols no longer raise an error and show the echelon and command post from the site ORBAT again.
+
+### Détail technique
+- Cause : `fn_mapOnDraw` multipliait chaque taille de symbole par la hauteur de la carte avec un plancher à 0,35 (0,54 en miniature verticale, 0,35 en horizontale, contre 0,65 en main) : symboles de 9 px, lettre du pion masquée sous 14 px, réglages sans effet visible. Une douzaine de repères d'outil gardaient une taille fixe, hors réglette.
+- `fn_mapIconScale` : seule source des tailles (facteur de vue borné de 0,6 à 1,35, réglette de 0,8 à 2,2, tailles des alliés et des contacts de 0,5 à 2,5), lue une fois par image par `fn_mapOnDraw` et par `fn_planDraw` ; auto-contrôle `["check"]`. Rien ne change téléphone en main au réglage par défaut.
+- `fn_milSym` : la table de l'ORBAT avait des objets pour clés (interdit dans une HashMap, erreur de script à chaque symbole 2525D et dans l'aperçu « Mon point GPS ») ; clés `hashValue`.
+- Tests : `AtakMapIconScaleTest` (table réglage × taille de la vue, bornes, chemins de dessin sans taille fixe ni lecture directe du réglage).
+
+---
 ## À venir : le TOC voit qui parle sur quelle fréquence (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -77,6 +99,32 @@ EN : A TOC console and operation plans on Athena
 ### Détail technique
 - Pages `/atak/toc` et `/atak/toc/plans`, droits `atak.toc.use` et `atak.toc.manage`, étapes 4370 et 4380. Détail : `docs/TOC-WEB.md`.
 - Lien avec le jeu par les canaux existants (BriefingPlan.Push canal `toc_room`, commandes web genre `toc`) : branche du mod `feat/atak-toc-web-sync`, sans changement de COMSPEC Link.
+
+## Pack 4.9.0 Washington : console du poste TOC refaite, tout le TOC sans téléphone (ATAK natif 4.9.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.9.0 : la console du poste TOC est refaite, et elle marche sans téléphone
+- **Quatre rubriques** : Situation, Conduite, Plans et Salle, à gauche de l'écran, comme sur la console web. Touches F1 à F4.
+- **Sans téléphone** : la console montre toutes les unités du camp, même celles qui n'ont pas d'ATAK. Demandes, comptes rendus et ordres se créent au poste.
+- **Carte** : boutons de zoom, échelle, nord, calques à cocher, fiche de l'unité cliquée avec suivi et trace.
+- **Mur d'images** : un bouton met tout le mur sur la situation ; un écran peut être diffusé sur tous les autres.
+EN : ATAK 4.9.0: the TOC station console is rebuilt, and it works without a phone
+- **Four sections**: Situation, Operations, Plans and Room, on the left of the screen, like the web console. F1 to F4 keys.
+- **No phone needed**: the console shows every friendly unit, even those without an ATAK. Requests, reports and orders are created at the station.
+- **Map**: zoom buttons, scale, north, layers to tick, card of the clicked unit with follow and trail.
+- **Video wall**: one button puts the whole wall on the situation; one screen can be broadcast to all the others.
+
+### Détail technique
+- Audit : `docs/audit/2026-11-poste-toc-app.md`. Défauts prouvés par lecture du code de la 4.7.1 : recherche d'une grille sans effet (`fn_gridParse` rend `[[x, y, 0], taille, grille]`, la console lisait `[x, y]`) ; tri des nœuds refait à chaque image. (`_sideRgb` non déclaré et « mk » qui rendait `true` : trouvés aussi, déjà corrigés par la 4.7.2.)
+- `fn_tocLaptop` : console plein écran (plus de coque de PC), en-tête (poste, salle, opérateur, alertes, ZULU / LOCAL, liaisons serveur, Athena et radio), rail des rubriques (table `_sections`, la même que la console web), une rangée d'onglets par rubrique, 18 onglets. Moteur gardé : `_grid`, `_layout`, `_btnDefs`, `_place`, « audit ». Clic droit : point désigné commun (ordre, ordre IA, demande, compte rendu), l'onglet ne change plus.
+- `fn_tocAppData` (nouveau) : source directe. Unités du camp lues dans le jeu et fusionnées avec `COMSPEC_ATAK_TocFeed_<camp>` (par `fn_tocStatus` « feed » quand la 4.8.0 est là) ; nœud à 10 champs, le dixième `"P"` (téléphone) ou `"D"` (source directe). Une unité au téléphone garde son dernier point reçu (le brouillage garde son effet). Calcul côté client, console ouverte, gardé 2 s. Réglage `comspec_atak_native_toc_direct`.
+- `fn_tocApp` (nouveau) : onglets CARTE (9 calques, liste des unités, fiche, SUIVRE, TRACE), DESSIN, PLAN ; compte rendu du poste (`comspec_atak_native_report` par `sideEvent`), demande du poste (`reqAdd`), entrées rapides de main courante ; zoom, échelle et nord dessinés dans « Draw » ; raccourcis clavier.
+- `fn_tocWall` (nouveau) : onglets MUR et SALLE. Appelle le modèle de la 4.8.0 sans le dupliquer : `fn_tocBroadcast` (« start », « stop », « do » bars), `fn_tocLayout` (« list », « apply », « current »), `fn_tocScreen` « view » clé « opt », `fn_tocManager` « open ». Chaque appel est gardé par `isNil` : bouton grisé et raison sur la ligne d'aide avec un PBO plus ancien. Les actions « sur les écrans » visent les dalles 16:9 de la salle du poste (avant : toujours les écrans à 30 m).
+- `fn_tocHallUi` : couleurs du plan par les jetons du thème ; « VISER UN ÉCRAN » n'écrit plus dans le téléphone (résultat sur la ligne d'état à la réouverture).
+- Maquettes : `python -I mod/COMSPEC_ATAK_Native/tools/toc_mockups.py` écrit aussi `app_poste/` (situation, conduite, plans, salle). Ce sont des maquettes tirées des tables du code, pas des captures du jeu.
+- Tests : `AtakTocLaptopLayoutTest` (zones du nouveau cadre, rubriques, raccourcis, aucun appel au téléphone, gardes de la 4.8.0), `AtakTocPostTest`.
+- Non vérifié en jeu : tout le rendu de la console, les raccourcis clavier, le zoom par boutons, l'échelle et le nord, le suivi et la trace, le compte rendu et la demande créés au poste, les commandes du mur avec la 4.8.0.
 
 ## Pack 4.8.0 Washington : tableau des écrans TOC (Eden, Zeus, en jeu), mode BROADCAST et mire, écrans qui ne clignotent plus, textes des bandeaux lisibles, menu des écrans refait (ATAK natif 4.8.0.AG - Washington, COMSPEC Link 2.0.123)
 

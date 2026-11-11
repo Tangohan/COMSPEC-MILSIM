@@ -802,6 +802,8 @@ return [
     'outils_operateur' => 'Operator tools',
     'identite_papiers_couverture_fichiers' => 'Identity, papers, cover, records',
     'tous_mes_outils' => 'All my tools',
+    'identites_papiers_fichiers' => 'Identities, papers, records',
+    'la_page_des_outils_operateur_identites_papiers_fichiers_materiel' => 'The operator tools page: identities, papers, records, equipment',
     'la_page_des_outils_operateur_identite_papiers_couverture_fichiers_materiel' => 'The operator tools page: identity, papers, cover, records, equipment',
     'toc' => 'TOC',
     'poste_toc' => 'TOC console',

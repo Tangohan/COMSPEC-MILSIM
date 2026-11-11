@@ -5,14 +5,11 @@ declare(strict_types=1);
 use App\Support\Migrations\SchemaInspector;
 
 /**
- * Couvertures bâties sur une identité et ses papiers (Outils opérateur › Mon identité › Couvertures) :
- *  - sse_cover_export_links : pour une couverture générée (sse_cover_exports), l'identité du membre sur laquelle elle est
- *    bâtie (sse_identities) et les papiers de cette identité qu'elle emporte (identifiants de sse_id_documents, en JSON).
- *
- * Une couverture sans ligne ici est « non rattachée » (personne fictive tirée au hasard, couverture d'avant ce lien).
- * Le fichier « comspec-cover » ne change pas : le lien ne vit que sur Athena. Table à part : sse_cover_exports n'est
- * pas modifiée. Idempotente ; MySQL, MariaDB et sqlite (tests). Le rétro-remplissage des couvertures existantes est
- * fait par l'étape database/steps/4440 (App\Support\SseCoverLinkMatcher::backfill), pas ici.
+ * Table dépréciée, gardée pour ne rien perdre : sse_cover_export_links liait une couverture générée (sse_cover_exports) à
+ * l'identité du membre (sse_identities) et aux papiers qu'elle emportait. Le site n'a plus de couverture à part : l'étape
+ * 4450 (bootstrap/sse_identities_unified_migration.php) lit ces liens une dernière fois pour fondre chaque couverture dans
+ * son identité. Plus aucun code ne lit ni n'écrit cette table ; elle sera supprimée par une étape ultérieure.
+ * Idempotente ; MySQL, MariaDB et sqlite (tests).
  */
 return static function (PDO $pdo, ?callable $log = null): void {
     $log ??= static function (string $msg): void {
