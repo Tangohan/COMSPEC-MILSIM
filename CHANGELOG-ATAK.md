@@ -97,6 +97,42 @@ EN : A TOC console and operation plans on Athena
 - Pages `/atak/toc` et `/atak/toc/plans`, droits `atak.toc.use` et `atak.toc.manage`, étapes 4370 et 4380. Détail : `docs/TOC-WEB.md`.
 - Lien avec le jeu par les canaux existants (BriefingPlan.Push canal `toc_room`, commandes web genre `toc`) : branche du mod `feat/atak-toc-web-sync`, sans changement de COMSPEC Link.
 
+## Pack 4.11.0 Washington : le TOC fonctionne sans téléphone (ATAK natif 4.11.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.11.0 : le TOC fonctionne sans téléphone
+- Les écrans du TOC et le PC du poste montrent toute la force du camp, joueurs, véhicules, hélicoptères et drones, même si personne n'a de téléphone ATAK. Une unité vivante n'est plus marquée « perdu ».
+- Sans téléphone, tu lis les messages du poste, tes ordres et les réponses à tes demandes dans une fenêtre : menu ACE sur soi, « Messages et ordres du TOC ». Tu accuses un ordre d'un clic.
+- Les pertes comptent maintenant toute unité du camp, et la caméra de casque d'un joueur sans téléphone peut passer sur un écran.
+- Le TOC écrit ton indicatif Athena, plus ton pseudo Steam. Sans indicatif, tu apparais par ton groupe et ton rang, par exemple « Alpha 1-1 · 2 ».
+- Réglage du serveur « Source des positions du TOC » : Mixte (par défaut), Jeu ou Réseau ATAK, pour garder le réalisme si tu le veux.
+EN : ATAK 4.11.0: the TOC works without a phone
+- TOC screens and the post PC show the whole force of the side, players, vehicles, helicopters and drones, even if nobody carries an ATAK phone. A living unit is no longer marked “lost”.
+- Without a phone, you read the post's messages, your orders and the answers to your requests in a window: ACE self menu, “TOC messages and orders”. You acknowledge an order in one click.
+- Casualties now count every unit of the side, and the helmet camera of a player without a phone can go on a screen.
+- The TOC writes your Athena callsign, no longer your Steam name. Without a callsign, you appear by your group and rank in it, for example “Alpha 1-1 · 2”.
+- Server setting “TOC position source”: Mixed (default), Game or ATAK network, to keep realism if you want it.
+
+### Détail technique
+- Lot 1 de `docs/audit/2026-11-toc-feuille-de-route.md` (« autonomie sans téléphone »), couche données et logique. Mode d'emploi pour la console et les écrans : `docs/TOC-DATA-API.md` (fonctions, formats, liste d'essai « mission à zéro téléphone » en 14 cas).
+- `fn_tocTracks` (nouveau) : pistes du jeu lues par le serveur (joueurs, leurs groupes, unités désignées, véhicules et aéronefs avec équipage, chefs des groupes d'IA), fusionnées avec les nœuds des téléphones (une unité et son téléphone : un seul nœud). Nœud étendu aux champs 9 à 15 (source, santé, altitude et vitesse, intégrité, munitions, liaison du téléphone, sous-genre) ; les champs 0 à 8 ne changent pas. ORBAT du jeu et ordres du camp publiés aux seuls lecteurs, sur changement (`COMSPEC_ATAK_TocOrbat_<camp>`).
+- Coût serveur : aucune boucle nouvelle (le relevé est demandé par le tour de `fn_tocFeed`, qui ne tourne que pour les camps qui ont un lecteur) ; intervalle de 3 s jusqu'à 50 pistes, 5 s à 100, 8 s à 200, 12 s au-delà ; plafond réglable (150 par défaut, joueurs d'abord) ; munitions lues pour 25 unités par relevé au plus, une fois toutes les 30 s par unité ; pertes regroupées en une écriture de la salle toutes les 5 s.
+- `fn_tocNodeStatus` (nouveau, fonction pure) : état d'une piste tiré de la meilleure source vivante. Source jeu : en direct si l'unité est simulée sur le serveur ou si le relevé est frais ; téléphone seul : âge du point ; source inconnue : état neutre. Mêmes codes 0 à 4 que les écrans.
+- `fn_tocEntry` (nouveau) : saisies du poste (MEDEVAC 9 lignes, tir, ravitaillement, contact, SITREP, SALUTE, pertes, ordre, message, accusé au nom d'un élément), validées sur le poste puis de nouveau par le serveur ; doublon avec une demande venue d'un téléphone rapproché par genre, élément et heure (3 minutes).
+- `fn_tocInbox` (nouveau) : boîte du TOC sans téléphone (messages du poste, ordres, réponses, retours d'action), fenêtre ouverte par ACE sur soi ou par une touche, tableau des ordres du camp tenu par le serveur avec les accusés.
+- `fn_tocPanels` (nouveau) : registre des panneaux (16 fournis). La console et les écrans demandent un panneau par son nom ; l'état vide, l'attente du serveur et le plafond atteint sont rendus avec les lignes.
+- `fn_tocDisplayName` (nouveau) : nom affiché d'une unité pour tout le TOC, `[unité]` rend le texte. Indicatif Athena, sinon groupe et rang (« non lié » si le compte n'est pas relié), sinon rôle ; pseudo Steam seulement si le réglage `comspec_atak_native_toc_show_steam` est coché (décoché par défaut). Appliqué aux nœuds, à l'ORBAT, aux auteurs des lignes de la salle et à la caméra de casque ; les appels à basculer dans la console sont listés dans `docs/TOC-DATA-API.md`.
+- `fn_tocRoster` (nouveau) : données du tableau EFFECTIF (indicatif, rôle, nom et prénom du personnage tirés de l'identité SSE, unité, état, grille), pour un écran (pages, groupé par unité) et pour le PC (recherche, tri, export texte, suivre, message, ordre). Réglage `comspec_atak_native_toc_roster_names` : PC seulement par défaut. Les deux vues elles-mêmes restent à écrire dans les fichiers du tableau des écrans et de la console.
+- `fn_tocRoom` : le serveur retrouve lui-même le joueur qui demande (`remoteExecutedOwner`), son camp, son nom et son UID ; l'ancien événement qui croyait le client n'est plus écouté, et un appel direct d'un client aux modes du serveur est refusé. Détail gardé avec une demande (9 lignes). Toute unité du camp tuée est comptée, plus seulement un porteur d'ATAK.
+- `fn_tocCam` : caméra de casque d'un joueur sans téléphone, qualité fixe, selon le réglage `comspec_atak_native_toc_headcam` (coché par défaut).
+- `fn_notify` : téléphone rangé ou absent, le retour d'une action va à la ligne d'état du PC du poste, à une ligne en bas de l'interface Zeus et au journal de la boîte du TOC. Aucune alerte du jeu.
+- Réglages CBA (serveur) : `comspec_atak_native_toc_source` (mix par défaut), `…_toc_tracks_ai`, `…_toc_tracks_max`, `…_toc_headcam`.
+- Tests : `AtakTocAutonomyAssetTest` (table d'états, fusion et plafond, intervalles, validation des saisies, doublons, contrôle de l'émetteur, absence d'alerte du jeu, textes anglais).
+- Numéro : la feuille de route donnait 4.9.0 à ce lot ; la refonte de la console du poste a pris la 4.9.0, et la 4.10.0 est prise par la branche « salle tenue » : ce lot sort en 4.11.0. Il contient la 4.8.0 (tableau des écrans) et la 4.9.0 (console refaite), fusionnées ici.
+- État d'un téléphone seul : `fn_tocNodeStatus` appelle la règle de `fn_tocStatus` (4.8.0), sans la recopier. Console 4.9.0 : une ligne dans `fn_tocAppData` pour qu'une piste du jeu publiée par le serveur garde son libellé « source directe ».
+- Reste à brancher dans les fichiers de la console et des écrans : formulaires de saisie et tableau des ordres à l'écran, pied d'écran, escouades proposées (tous les groupes), diapositives choisies au poste, ORBAT du jeu dans l'onglet ORBAT. Non vérifié en jeu.
+
 ## Pack 4.9.0 Washington : console du poste TOC refaite, tout le TOC sans téléphone (ATAK natif 4.9.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 
 ### Résumé joueur

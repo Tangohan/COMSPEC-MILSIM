@@ -1,3 +1,29 @@
+[h1]COMSPEC ATAK 4.11.0 Washington — le TOC fonctionne sans téléphone / the TOC works without a phone[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Toute la force sur le mur[/b] : les écrans du TOC et le PC du poste montrent les joueurs, véhicules, hélicoptères et drones du camp, même si personne n'a de téléphone ATAK.
+[*] [b]Plus de « perdu » à tort[/b] : une unité vivante et vue par le jeu est en direct. L'état d'un téléphone ne compte que pour ce téléphone.
+[*] [b]Messages et ordres sans téléphone[/b] : menu ACE sur soi, « Messages et ordres du TOC ». Vous lisez les messages du poste, vos ordres et les réponses à vos demandes, et vous accusez un ordre d'un clic.
+[*] [b]Pertes[/b] : toute unité du camp tuée est comptée, plus seulement les porteurs d'un téléphone.
+[*] [b]Caméra de casque[/b] : la caméra d'un joueur sans téléphone peut passer sur un écran (réglage du serveur, activé par défaut).
+[*] [b]Réglage « Source des positions du TOC »[/b] : Mixte (par défaut), Jeu ou Réseau ATAK. Choisissez Réseau ATAK pour garder le comportement d'avant.
+[*] [b]Indicatifs, pas pseudos[/b] : le TOC écrit l'indicatif Athena du joueur, sinon son groupe et son rang (« Alpha 1-1 · 2 »). Le pseudo Steam n'apparaît que si le serveur coche « Afficher le pseudo Steam ».
+[*] [b]Salle mieux protégée[/b] : un joueur ne peut plus écrire dans la salle d'un autre camp.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]The whole force on the wall[/b]: TOC screens and the post PC show the side's players, vehicles, helicopters and drones, even if nobody carries an ATAK phone.
+[*] [b]No more wrong “lost”[/b]: a living unit seen by the game is live. A phone's state only matters for that phone.
+[*] [b]Messages and orders without a phone[/b]: ACE self menu, “TOC messages and orders”. You read the post's messages, your orders and the answers to your requests, and you acknowledge an order in one click.
+[*] [b]Casualties[/b]: every unit of the side that is killed is counted, not only phone carriers.
+[*] [b]Helmet camera[/b]: the camera of a player without a phone can go on a screen (server setting, on by default).
+[*] [b]“TOC position source” setting[/b]: Mixed (default), Game or ATAK network. Pick ATAK network to keep the previous behaviour.
+[*] [b]Callsigns, not Steam names[/b]: the TOC writes the player's Athena callsign, otherwise his group and rank in it (“Alpha 1-1 · 2”). The Steam name only shows if the server checks “Show the Steam name”.
+[*] [b]Better protected room[/b]: a player can no longer write into another side's room.
+[/list]
+
 [h1]COMSPEC ATAK 4.9.0 Washington — console du poste TOC refaite, tout le TOC sans téléphone / TOC station console rebuilt, the whole TOC without a phone[/h1]
 
 [h2]Français[/h2]
