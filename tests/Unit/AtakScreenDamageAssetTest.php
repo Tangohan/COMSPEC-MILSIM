@@ -23,7 +23,8 @@ final class AtakScreenDamageAssetTest extends TestCase
 
     private function read(string $path): string
     {
-        return (string) file_get_contents(self::MAIN . '/' . $path);
+        // Fins de ligne normalisées : sous Windows le dépôt est extrait en CRLF, et « $ » ne s'arrête que devant « \n ».
+        return str_replace("\r\n", "\n", (string) file_get_contents(self::MAIN . '/' . $path));
     }
 
     /** @return list<array{id:string,family:string,label:string,desc:string,repair:string,template:string,variants:int}> */

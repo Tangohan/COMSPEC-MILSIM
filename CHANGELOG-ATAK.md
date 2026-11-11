@@ -55,18 +55,18 @@ EN : A TOC console and operation plans on Athena
 - Pages `/atak/toc` et `/atak/toc/plans`, droits `atak.toc.use` et `atak.toc.manage`, étapes 4370 et 4380. Détail : `docs/TOC-WEB.md`.
 - Lien avec le jeu par les canaux existants (BriefingPlan.Push canal `toc_room`, commandes web genre `toc`) : branche du mod `feat/atak-toc-web-sync`, sans changement de COMSPEC Link.
 
-## Pack 4.7.0 Washington : salle TOC complète posée en entier, texte à LED et écrans géants, bris d'écran réalistes, poste TOC relié à Athena (ATAK natif 4.7.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+## Pack 4.7.0 Washington : relais, antennes et caméras refaits en 3D, salle TOC complète posée en entier, texte à LED et écrans géants, bris d'écran réalistes, poste TOC relié à Athena (ATAK natif 4.7.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 
 ### Résumé joueur
 Type : nouveauté
-FR : ATAK 4.7.0 : la salle TOC se pose en entier, des écrans géants, un téléphone qui casse comme un vrai
-- **Salle TOC complète** : le module pose enfin toute la salle sur le sol, dans Eden comme dans Zeus. En extérieur, elle se monte avec des écrans sur pied.
-- **Écrans du TOC** : un affichage « Texte » où tu écris tes messages, qui défilent s'ils sont trop longs, et de nouveaux écrans géants, incurvés et suspendus, avec des postes PC complets.
+FR : ATAK 4.7.0 : des relais refaits en 3D, une salle TOC qui se pose en entier, un téléphone qui casse comme un vrai
+- **Relais, antennes, caméras** : pylônes et mâts redessinés comme de vrais sites, nouveaux modèles, antennes murales, caméras IP et objets de salle serveur à poser dans l'éditeur et en Zeus. Le mod pèse environ 40 Mo de moins.
+- **Salle et écrans du TOC** : le module « Salle TOC complète » pose enfin toute la salle sur le sol, dans Eden comme dans Zeus. Nouvel affichage « Texte » qui défile, écrans géants, incurvés et suspendus, postes PC complets.
 - **Écran du téléphone** : le verre casse de treize façons, la dalle peut tomber en panne et le sang est plus crédible ; tout se règle ou se coupe dans les options.
 - **Poste TOC et Athena** : ce que fait le poste en jeu se voit en direct sur le poste TOC web d'Athena, et un plan préparé sur le site s'envoie en jeu.
-EN : ATAK 4.7.0: the TOC room is placed in full, giant screens, a phone that breaks like a real one
-- **Complete TOC room**: the module finally places the whole room on the ground, in Eden and in Zeus. Outdoors, it is built with screens on stands.
-- **TOC screens**: a "Text" display where you write your messages, which scroll when they are too long, and new giant, curved and hanging screens, with complete PC stations.
+EN : ATAK 4.7.0: relays rebuilt in 3D, a TOC room placed in full, a phone that breaks like a real one
+- **Relays, antennas, cameras**: towers and masts redrawn as real sites, new models, wall antennas, IP cameras and server-room objects to place in the editor and in Zeus. The mod is about 40 MB lighter.
+- **TOC room and screens**: the "Complete TOC room" module finally places the whole room on the ground, in Eden and in Zeus. New scrolling "Text" display, giant, curved and hanging screens, complete PC stations.
 - **Phone screen**: the glass breaks in thirteen ways, the panel can fail and blood looks more believable; everything can be tuned or turned off in the options.
 - **TOC and Athena**: what the in-game post does shows live on Athena's web TOC, and a plan prepared on the site can be sent into the game.
 
@@ -106,6 +106,18 @@ COMSPEC Link inchangé (2.0.123) : aucune source de la DLL n'a changé depuis la
 - `fn_tocScreen.sqf` : table `_formats` (rapports 8:9, 16:9, 4:1, 8:1, 16:1), modes `format` et `params`, `comspec_screenPanelRatio[]` et `comspec_screenPanelViews[]` par dalle, budget de huit redessins par tour, dalles 55" des grands murs en 1024 x 512, affichages `COLA` / `COLB` (colonnes de l'écran incurvé, `fn_tocBoard.sqf`).
 - Modèles : `tools/model_toc_screens.py` (géants, murs, suspendus, incurvé, bandeaux LED), `tools/model_toc_legacy.py` (anciens écrans, mêmes noms de classes), `tools/model_toc_pc.py` (postes PC, `comspec_tocPost=1`). Zones des grands murs et dimensions : `mod/docs/MODELS.md`.
 - Non vérifié en jeu : rendu des textures 2048 x 256 et 4096 x 256, mesure `ctrlTextWidth` dans une texture UI, hauteur et orientation des anciens écrans refaits par rapport aux objets déjà posés (le téléviseur est maintenant mural, sans pied).
+
+**Relais, antennes, caméras et baies réseau refaits en 3D**
+
+- Audit complet : `docs/audit/2026-11-relais.md` (mesures avant / après, logique, limites, suite proposée).
+- Pipeline en pur Python, sans Blender : `tools/relay3d.py` (maillage, LOD, MLOD, atlas), `relay_tex.py`, `relay_parts.py`, `model_relay_towers.py` (8 pylônes et ruines), `model_relay_kits.py` (3 kits, 7 antennes murales ou de toit), `model_ip_cameras.py` (14 caméras), `model_net_infra.py` (14 objets), `gen_relay_config.py` (classes, `units[]`, stringtable de l'addon). Rendus de contrôle facultatifs : `render_relay_blender.py`, `render_relay_proofs.py`. Retirés : `gen_tower_textures.py`, `strip_tower_cables.py`.
+- `towers.pbo` : 89,4 Mo → 48,5 Mo avec 26 modèles au lieu de 10 (les cinq pylônes d'origine et leurs ruines : 76,4 → 27,0 Mo). Trois atlas (4,9 Mo) au lieu de dix matières (12 Mo) ; 3 à 5 passes de rendu par pylône au lieu de 10 à 12 ; cinq LOD, la dernière de 89 à 787 triangles ; ombres en prismes fermés (2 100 triangles au plus, 15 216 avant) ; collision de 8 à 39 pièces (jusqu'à 338 avant).
+- Classes historiques inchangées (`COMSPEC_ATAK_RelayTower_M12 / M20 / 30 / 40 / 50`, leurs `_ruins`, `COMSPEC_ATAK_DeployedAntenna_Sat / Mini / Omni`, `COMSPEC_ATAK_CameraObj`), mêmes chemins de modèle. Nouvelles : `RelayTower_Mono30`, `_Guyed60`, `_Roof8`, variantes `_RW`, `_Olive`, `_Sand`, `_Galva`, `_Light`, `_Bare`, `COMSPEC_ATAK_RelayAntenna_*`, `COMSPEC_ATAK_Cam_*`, `COMSPEC_ATAK_Infra_*`.
+- Sélections `camo` (peinture par `hiddenSelections`, attribut Eden « Peinture »), `led` (voyant d'état, `fn_relayLed`, client, relais à moins de 250 m, 3 s), `eq1` / `eq2` (équipement nu, léger, complet : animations `hide`, attribut Eden « Équipement »), destruction `fn_relayFx`.
+- Logique : couverture incrémentale par signature, recherche sous le curseur par index (9 cases au lieu de 1 313), bandes de dessin fusionnées, chaîne des répéteurs en cache 15 s, liste des relais diffusée une fois au lancement ; correction : les brouilleurs GPS seuls ne creusent plus de zone blanche. `fn_relayTower` : hauteur d'antenne minimale 1 m (4 m avant ; aucune classe existante n'est sous 8 m), nom par défaut selon la classe (`comspec_atak_relayNoun`).
+- Caméras : `fn_camAction` accepte les classes dérivées, `fn_camView` lit l'œil du flux dans la config. Infrastructure : `fn_infra`, réglage CBA « Le TOC dépend d'un serveur » décoché par défaut.
+- Tests : `AtakRelayModels3dAssetTest`, `AtakRelayCoverageCacheTest`, cas « couverture » de `fn_devMeshTest`.
+- Non vérifié en jeu (voir le chapitre 3 de l'audit) : `model.cfg` sur modèles non binarisés (sections, animations), alpha test, distances de LOD, particules.
 
 ## Pack 4.6.0 Washington : écrans TOC réglables dans Eden et Zeus, écrans allumés avec un serveur plus ancien, carte photo fluide, zoom de la carte mini centré (ATAK natif 4.6.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 

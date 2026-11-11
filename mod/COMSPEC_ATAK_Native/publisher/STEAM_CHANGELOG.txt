@@ -1,7 +1,15 @@
-[h1]COMSPEC ATAK 4.7.0 Washington — salle TOC posée en entier, écrans géants et texte à LED, bris d'écran réalistes / TOC room placed in full, giant screens and LED text, realistic screen damage[/h1]
+[h1]COMSPEC ATAK 4.7.0 Washington — relais refaits en 3D, salle TOC posée en entier, écrans géants, bris d'écran réalistes / relays rebuilt in 3D, TOC room placed in full, giant screens, realistic screen damage[/h1]
 
 [h2]Français[/h2]
 [list]
+[*] [b]Pylônes et mâts[/b] : les relais sont redessinés comme de vrais sites (treillis, échelle, plates-formes, câbles, clôture, feux rouges la nuit), avec de nouveaux modèles : monopôle 30 m, pylône haubané 60 m, pylône de toit, mât sur trépied et mât sur remorque. Peinture au choix.
+[*] [b]Antennes murales[/b] : des antennes à fixer sur un mur, un poteau ou un toit ; ce sont de vrais relais.
+[*] [b]Caméras IP[/b] : une famille de caméras à poser (dôme, tube infrarouge, thermique, mini-dôme…).
+[*] [b]Salle serveur[/b] : baies, coffrets, chemins de câbles et climatiseur à poser dans l'éditeur et en Zeus.
+[*] [b]Voyants et destruction[/b] : un voyant montre l'état de chaque relais (en service, dégradé, brouillé, éteint) ; un pylône détruit se plie et tombe.
+[*] [b]Téléchargement plus léger[/b] : environ 40 Mo de moins, et la carte de couverture se recalcule bien plus vite.
+[*] [b]Changement : brouilleur GPS[/b] : un brouilleur GPS seul ne crée plus de zone blanche sur la couverture du réseau.
+[*] [b]Changement : relais M12 et M20[/b] : ce sont maintenant des mâts tactiques verts ; les missions existantes les gardent à leur place.
 [*] [b]Salle TOC complète[/b] : le module pose enfin toute la salle sur le sol, dans Eden comme dans Zeus : mur d'images, grands écrans, bandeaux, plaques de nom, bureaux, chaises et PC, tous liés à la même salle.
 [*] [b]Dedans ou dehors[/b] : contre un mur et sous un plafond, la salle utilise les écrans muraux et suspendus ; en extérieur, des écrans sur pied les remplacent.
 [*] [b]Taille annoncée[/b] : la place que prend chaque salle (petite, moyenne, grande) est écrite dans le module, et le Zeus lit le résultat de la pose dans sa ligne de retour.
@@ -18,6 +26,14 @@
 
 [h2]English[/h2]
 [list]
+[*] [b]Towers and masts[/b]: relays are redrawn as real sites (lattice, ladder, platforms, cables, fence, red lights at night), with new models: 30 m monopole, 60 m guyed mast, rooftop tower, tripod mast and trailer mast. Pick the paint.
+[*] [b]Wall antennas[/b]: antennas to fix on a wall, a pole or a roof; they are real relays.
+[*] [b]IP cameras[/b]: a family of cameras to place (dome, infrared bullet, thermal, mini dome…).
+[*] [b]Server room[/b]: racks, cabinets, cable trays and an AC unit to place in the editor and in Zeus.
+[*] [b]Status lights and destruction[/b]: a light shows the state of each relay (running, degraded, jammed, off); a destroyed tower bends and falls.
+[*] [b]Lighter download[/b]: about 40 MB less, and the coverage map recomputes much faster.
+[*] [b]Change: GPS jammer[/b]: a GPS jammer alone no longer creates a dead zone in the network coverage.
+[*] [b]Change: M12 and M20 relays[/b]: they are now green tactical masts; existing missions keep them in place.
 [*] [b]Complete TOC room[/b]: the module finally places the whole room on the ground, in Eden and in Zeus: video wall, big screens, strips, name plates, desks, chairs and computers, all linked to the same room.
 [*] [b]Indoors or outdoors[/b]: against a wall and under a ceiling, the room uses the wall and hanging screens; outdoors, screens on stands replace them.
 [*] [b]Stated size[/b]: the space each room takes (small, medium, large) is written in the module, and the Zeus reads the result of the placement in the feedback line.
