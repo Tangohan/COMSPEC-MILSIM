@@ -23,7 +23,8 @@
       profileGet [moi, ia] · profileSet [moi, [ia…], profil texte, "apply" | "generate"] · puppet [moi, ia, texte]
                                             Zeus (atelier IA) : lire, appliquer, générer, faire parler une IA
       Menu ZEN « SSE · Roleplay de l'IA » (fn_iarpZen), Zeus ou administrateur, en lot sur les IA données :
-      profileTweak [moi, [ia…], [[champ, valeur]…]]   champs du profil changés, le reste gardé (« react » : fusionné)
+      profileTweak [moi, [ia…], [[champ, valeur]…]]   champs du profil changés, le reste gardé (« react » : fusionné ;
+                                            « raise » [[curseur, minimum]…] : relevé ; « emotionsOn », « emotions » : émotions)
       zenState [moi, [ia…], stop | free | surrender | flee | aggressive | calm | fsm:<état>]   automate des IA réalistes
                                             (fn_idAiFsm « force ») quand identity est chargé, sinon ordres simples
       memGet [moi, ia] · memClear [moi, [ia…], identifiant joueur | ""]   mémoire de l'IA (fn_iarpMem), lue ou effacée
@@ -92,6 +93,9 @@ private _moodOf = {
     if (isNil "_st" || {!(_st isEqualType "")}) then { _st = ""; };
     private _ten = if (_st in ["", "calme"]) then { ["level", _u] call comspec_sse_fnc_iarpReact } else { _u getVariable ["comspec_sse_idTension", 0] };
     if (isNil "_ten" || {!(_ten isEqualType 0)}) then { _ten = 0; };
+    // Ni peur ni nervosité (émotions de l'IA) : jamais « tendu » ni « nerveux » à l'en-tête, seulement ses états réels.
+    private _em = ["emoActive", _u] call comspec_sse_fnc_iarpProfile;
+    if !("peur" in _em || {"nervosite" in _em}) then { _ten = 0; };
     private _k = call {
         if (_u getVariable ["ace_captives_isHandcuffed", false]) exitWith { "cuffed" };
         if ((_u getVariable ["ace_captives_isSurrendering", false]) || {_st isEqualTo "rendu"}) exitWith { "rendu" };
@@ -220,6 +224,13 @@ switch (_op) do {
                 private _p = ["normalize", ["get", _u] call comspec_sse_fnc_iarpProfile] call comspec_sse_fnc_iarpProfile;
                 {
                     _x params [["_k", "", [""]], ["_v", ""]];
+                    // « raise » : curseurs relevés au minimum donné, chacun garde le sien s'il est plus haut (« Très émotif »).
+                    if (_k isEqualTo "raise") then {
+                        if (_v isEqualType []) then {
+                            { if (_x isEqualType [] && {(count _x) isEqualTo 2} && {(_p getOrDefault [_x select 0, ""]) isEqualType 0}) then { _p set [_x select 0, (_p get (_x select 0)) max (_x select 1)]; }; } forEach _v;
+                        };
+                        _k = "";
+                    };
                     if (_k isEqualTo "react" && {_v isEqualType []}) then {
                         private _r = _p get "react";
                         { if (_x isEqualType [] && {(count _x) isEqualTo 2}) then { _r set [_x select 0, _x select 1]; }; } forEach _v;
@@ -227,7 +238,8 @@ switch (_op) do {
                         if (_k isNotEqualTo "") then { _p set [_k, _v]; };
                     };
                 } forEach _rows;
-                if (["apply", [_u, _p]] call comspec_sse_fnc_iarpProfile) then { _n = _n + 1; };
+                // Parti du profil de l'IA : les émotions écrites ici (menu « Émotions… ») valent telles quelles.
+                if (["apply", [_u, _p, false]] call comspec_sse_fnc_iarpProfile) then { _n = _n + 1; };
             };
         } forEach _units;
         ["notice", ["STR_COMSPEC_IARP_N_Applied", _n]] call _reply;
@@ -580,11 +592,19 @@ switch (_op) do {
         // Armes braquées sur elle : arme levée, à 25 m au plus, canon vers son buste (fn_iarpReact « aimedAt ») ; une arme
         // portée ou baissée ne compte pas.
         private _aimed = (["aimedAt", [_t]] call comspec_sse_fnc_iarpReact) param [0, 0];
+        // Émotions de cette IA (fn_iarpProfile « emoActive ») : sans peur des armes, elle VOIT l'arme (didascalie, contexte
+        // « aimed » du générateur) mais aucune décision n'en tient compte (_aimedF : ordres, menace, aveu, fuite, savoir).
+        // Peur décochée : son curseur « peur » ne joue plus (valeur neutre 50) ; colère décochée : jamais « nie et s'énerve ».
+        private _emo = ["emoActive", _t] call comspec_sse_fnc_iarpProfile;
+        private _aimedF = [0, _aimed] select ("armes" in _emo);
+        private _scared = "peur" in _emo;
+        private _fearV = [50, _p get "fear"] select _scared;
         private _civ = (side group _me) isEqualTo civilian;
         // Peur : celle de l'automate s'il la suit, sinon pression, choc et arme braquée, sans valeur de départ cachée.
         private _tenNow = if (_st in ["", "calme"]) then { ["level", _t] call comspec_sse_fnc_iarpReact } else { _t getVariable ["comspec_sse_idTension", 0] };
+        if !(_scared || {"nervosite" in _emo}) then { _tenNow = 0; };
         private _ctx = createHashMapFromArray [
-            ["state", _st], ["tension", _tenNow], ["aimed", _aimed],
+            ["state", _st], ["tension", _tenNow], ["aimed", _aimed], ["emo", _emo],
             ["wounded", (damage _t) > 0.3 || {(_t getVariable ["ace_medical_woundBleeding", 0]) > 0.02}],
             ["tired", (getFatigue _t) > 0.6], ["vehicle", !isNull objectParent _t], ["night", sunOrMoon < 0.5],
             ["checkpoint", !isNil "comspec_sse_fnc_idCheckpoint" && {["inZone", [_t]] call comspec_sse_fnc_idCheckpoint}],
@@ -606,7 +626,7 @@ switch (_op) do {
             if (_x1 in ["coopere", "rendu"]) exitWith { true };
             if (_x1 in ["refuse", "fuit", "agressif"]) exitWith { false };
             if (_st isEqualTo "rendu") exitWith { true };
-            private _c = 0.45 + 0.004 * (_p get "fear") - 0.004 * (_p get "aggro") + 0.2 * (_aimed min 2) + 0.003 * ((_pm get "trust") - 30);
+            private _c = 0.45 + 0.004 * _fearV - 0.004 * (_p get "aggro") + 0.2 * (_aimedF min 2) + 0.003 * ((_pm get "trust") - 30);
             if ((time - (_pm get "badge")) < 90) then { _c = _c + 0.15; };
             if (_st isEqualTo "refuse") then { _c = _c - 0.3; };
             if (_st in ["fuit", "agressif", "renforts"]) then { _c = _c - 0.35; };
@@ -635,7 +655,7 @@ switch (_op) do {
             // mot-clé, la pression, un aveu (« intelLevel ») ou une réponse perso du maître du jeu (palier débloqué). Savoir
             // d'une seule phrase : palier précis. Photo montrée : même savoir, sinon « Je ne connais pas cette personne ».
             (["knowTiers", _p get "know"] call comspec_sse_fnc_iarpProfile) params ["_tiers", "_kpos", "_klabel"];
-            private _lvl = ["intelLevel", [_p, _pm get "trust", _pm get "bribed", _pm get "bribes", _pm get "word", _mem get "confessed", _st, _aimed,
+            private _lvl = ["intelLevel", [_p, _pm get "trust", _pm get "bribed", _pm get "bribes", _pm get "word", _mem get "confessed", _st, _aimedF,
                 _tenNow]] call comspec_sse_fnc_iarpProfile;
             _lvl = _lvl max (_pm getOrDefault ["unlock", 0]);
             private _give = 0;
@@ -685,7 +705,7 @@ switch (_op) do {
                             [15, "on lui annonce son arrestation"] call _tense;
                             _outcome = "craint d'être arrêté";
                             private _onFoot = isNull objectParent _t && {!(_t getVariable ["ace_captives_isSurrendering", false])} && {!(_t getVariable ["ace_captives_isHandcuffed", false])};
-                            if ((_p get "fear") >= 60 && {(_p get "nerve") >= 60} && {_aimed isEqualTo 0} && {_onFoot} && {(random 1) < 0.35}) then {
+                            if (_scared && {(_p get "fear") >= 60} && {(_p get "nerve") >= 60} && {_aimedF isEqualTo 0} && {_onFoot} && {(random 1) < 0.35}) then {
                                 _gi = "confrontFlee"; _outcome = "s'enfuit plutôt que d'être arrêté";
                                 if (_fsm && {_st isNotEqualTo ""}) then { ["fuit"] call _want; } else { ["flee", [(getPosATL _t) getPos [150, _me getDir _t]]] call _do; };
                             };
@@ -756,12 +776,16 @@ switch (_op) do {
                 switch (_intent) do {
                     case "threat": {
                         [-20] call _trust;
-                        [22, ["menace", "arme braquée (geste)"] select (_cmd in ["me", "do"])] call _tense;
+                        // Geste (/me, /do : « braque son arme ») : sans peur des armes, la menace ne lui fait rien.
+                        private _byGun = _cmd in ["me", "do"];
+                        private _felt = !_byGun || {"armes" in _emo};
+                        if (_felt) then { [22, ["menace", "arme braquée (geste)"] select _byGun] call _tense; };
                         private _x1 = _r getOrDefault ["threat", "auto"];
                         if (_x1 isEqualTo "auto") then {
                             _x1 = call {
-                                if (((_p get "fear") >= 70 || {_aimed > 0}) && {(random 1) < 0.5}) exitWith { "rendu" };
-                                if ((_p get "aggro") >= 75 && {(random 1) < 0.3}) exitWith { "refuse" };
+                                if (!_felt) exitWith { "" };
+                                if (_scared && {(_p get "fear") >= 70 || {_aimedF > 0}} && {(random 1) < 0.5}) exitWith { "rendu" };
+                                if ("colere" in _emo && {(_p get "aggro") >= 75} && {(random 1) < 0.3}) exitWith { "refuse" };
                                 ""
                             };
                         };
@@ -797,7 +821,7 @@ switch (_op) do {
                         };
                         if (_mem get "confessed") exitWith { _gi = "confessed"; _outcome = "a déjà avoué"; };
                         // Craque : peur, armes pointées, faux découvert, mensonges, insistance ; bon menteur, HVT, agent : moins.
-                        private _crack = 0.1 + 0.004 * (_p get "fear") + 0.15 * (_aimed min 2) - 0.003 * (_p get "aggro") + 0.002 * _honest
+                        private _crack = 0.1 + 0.004 * _fearV + 0.15 * (_aimedF min 2) - 0.003 * (_p get "aggro") + 0.002 * _honest
                             + 0.08 * ((count _lies) min 2) + 0.08 * (((_pm get "pressed") - 1) min 3);
                         if ((_t getVariable ["comspec_sse_idBust", 0]) > 0) then { _crack = _crack + 0.25; };
                         if (_st isEqualTo "rendu") then { _crack = _crack + 0.2; };
@@ -832,11 +856,11 @@ switch (_op) do {
                         // Elle ment vraiment et tient bon : l'automate le sait (faux découvert : la tension monte).
                         if (_fsm) then { ["bust", [_t, _me]] call comspec_sse_fnc_idAiFsm; };
                         private _onFoot = isNull objectParent _t && {!(_t getVariable ["ace_captives_isSurrendering", false])} && {!(_t getVariable ["ace_captives_isHandcuffed", false])};
-                        if ((_p get "fear") >= 60 && {(_p get "nerve") >= 50} && {_aimed isEqualTo 0} && {_onFoot} && {(random 1) < 0.5}) exitWith {
+                        if (_scared && {(_p get "fear") >= 60} && {(_p get "nerve") >= 50} && {_aimedF isEqualTo 0} && {_onFoot} && {(random 1) < 0.5}) exitWith {
                             _gi = "confrontFlee"; _outcome = "nie puis s'enfuit"; [20, "démasquée"] call _tense;
                             if (_fsm && {_st isNotEqualTo ""}) then { ["fuit"] call _want; } else { ["flee", [(getPosATL _t) getPos [150, _me getDir _t]]] call _do; };
                         };
-                        if ((_p get "aggro") >= 60) exitWith {
+                        if ((_p get "aggro") >= 60 && {"colere" in _emo}) exitWith {
                             _gi = "confrontAngry"; _tone = "agressif"; _outcome = "nie et s'énerve"; [20, "accusée, s'énerve"] call _tense; [-10] call _trust;
                             if (_st in ["interpelle", "coopere", "ment", "nerveux"]) then { ["refuse"] call _want; };
                         };
@@ -854,7 +878,7 @@ switch (_op) do {
                         private _yes = call {
                             if (_x1 in ["coopere", "rendu"]) exitWith { true };
                             if (_x1 in ["refuse", "fuit", "agressif"]) exitWith { false };
-                            (random 100) < (((_p get "fear") + _honest) / 2 - ([0, 25] select ((_p get "role") in ["insurge", "hvt"])))
+                            (random 100) < ((_fearV + _honest) / 2 - ([0, 25] select ((_p get "role") in ["insurge", "hvt"])))
                         };
                         [-5] call _trust;
                         // Accord : il lève les bras (reddition ACE), la fouille ACE devient possible ; sinon il refuse.
@@ -889,7 +913,7 @@ switch (_op) do {
                         if (isNull _veh) then { _gi = "trunkNone"; _outcome = "aucun véhicule"; } else { _outcome = "parle de son véhicule"; };
                     };
                     case "afraid": {
-                        _gi = ["afraidNo", "afraidYes"] select (_tenNow >= 40 || {_aimed > 0} || {_st in ["nerveux", "rendu", "fuit"]});
+                        _gi = ["afraidNo", "afraidYes"] select ((_scared || {"nervosite" in _emo}) && {_tenNow >= 40 || {_aimedF > 0} || {_st in ["nerveux", "rendu", "fuit"]}});
                         [2] call _trust; _outcome = ["dit ne pas avoir peur", "avoue avoir peur"] select (_gi isEqualTo "afraidYes");
                     };
                     case "hurt": { _gi = ["hurtNo", "hurtYes"] select (_ctx get "wounded"); [3] call _trust; _outcome = ["pas blessé", "blessé"] select (_ctx get "wounded"); };
@@ -974,7 +998,8 @@ switch (_op) do {
             };
         };
         // Civil menacé ou braqué : les IA proches qui voient la scène sont choquées (fn_iarpReact « witness »).
-        if ((side group _t) isEqualTo civilian && {(_list findIf { _x isEqualTo "threat" }) >= 0 || {_aimed > 0}}) then { ["witness", [_t, _me]] call comspec_sse_fnc_iarpReact; };
+        // Arme seule (sans menace dite) : seuls les témoins qui ont peur des armes s'en émeuvent.
+        if ((side group _t) isEqualTo civilian && {(_list findIf { _x isEqualTo "threat" }) >= 0 || {_aimed > 0}}) then { ["witness", [_t, _me, !("threat" in _list)]] call comspec_sse_fnc_iarpReact; };
         // Deux fois la même réplique de suite (silence, refus) : une seule.
         private _dd = [];
         { if (_dd isEqualTo [] || {((_dd select -1) select 0) isNotEqualTo (_x select 0)}) then { _dd pushBack _x; }; } forEach _parts;
@@ -1006,9 +1031,10 @@ switch (_op) do {
         private _refuseGi = ["noComply", "searchNo", "bribeNo", "cooperateNo", "offerNo", "refuse", "intelNo", "photoNo", "confrontDeny", "confrontAngry", "cuffNo", "dunno"];
         private _acceptGi = ["comply", "searchYes", "bribeYes", "cooperateYes", "offerYes", "intelVague", "intelYes", "intelFull", "intelAgain", "confess", "confessTruth",
             "confessVague", "cuffYes", "papersWait", "searchWait", "heardShots"];
-        private _fearNow = _tenNow >= 55 || {_aimed > 0} || {_st in ["nerveux", "rendu", "fuit"]};
+        // Situation « S'il a peur » des réponses perso : seulement si elle peut avoir peur ; arme seule : si elle en a peur.
+        private _fearNow = (_scared || {"nervosite" in _emo}) && {_tenNow >= 55 || {_aimedF > 0} || {_st in ["nerveux", "rendu", "fuit"]}};
         private _onBase = [];
-        if (("threat" in _list) || {_aimed > 0}) then { _onBase pushBack "threat"; };
+        if (("threat" in _list) || {_aimedF > 0}) then { _onBase pushBack "threat"; };
         if (("confront" in _list) || {(_pm getOrDefault ["pressed", 0]) > 0}) then { _onBase pushBack "confront"; };
         if (_fearNow) then { _onBase pushBack "fear"; } else { if !("threat" in _onBase) then { _onBase pushBack "calm"; }; };
         // Faits facultatifs de la couverture (Téléphone, Depuis, Avec…) : la phrase qui les cite passe d'abord. Réponses sans fait

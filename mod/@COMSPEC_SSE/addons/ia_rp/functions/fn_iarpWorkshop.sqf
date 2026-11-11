@@ -52,6 +52,9 @@ private _read = {
     // Réponses du maître du jeu et cadre (fenêtre « Réponses de l'IA ») : pas de case ici, gardés à côté.
     (uiNamespace getVariable ["comspec_sse_iarpWsExtra", [[], "auto", []]]) params [["_ea", []], ["_ee", "auto"], ["_eb", []]];
     _p set ["answers", _ea]; _p set ["evoke", _ee]; _p set ["banned", _eb];
+    // Émotions (attributs Eden « Émotions », menu Zeus « Émotions… ») : pas de case ici, gardées telles quelles.
+    (uiNamespace getVariable ["comspec_sse_iarpWsEmo", [true, "auto"]]) params [["_eo", true], ["_el", "auto"]];
+    _p set ["emotionsOn", _eo]; _p set ["emotions", _el];
     ["normalize", _p] call comspec_sse_fnc_iarpProfile
 };
 // Profil -> fenêtre.
@@ -71,6 +74,7 @@ private _write = {
     { _x params ["_k", "_idc"]; (_idc call _ctl) cbSetChecked (_k in (_p get "locks")); } forEach _locks;
     uiNamespace setVariable ["comspec_sse_iarpWsPreset", _p get "preset"];
     uiNamespace setVariable ["comspec_sse_iarpWsExtra", [_p get "answers", _p get "evoke", _p get "banned"]];
+    uiNamespace setVariable ["comspec_sse_iarpWsEmo", [_p get "emotionsOn", _p get "emotions"]];
     call _answersNote;
 };
 private _status = { (94702 call _ctl) ctrlSetText _this; };
@@ -183,6 +187,8 @@ switch (_op) do {
         // Champs verrouillés : gardés ; le reste vient du profil de bibliothèque.
         { if (_x in (_cur get "locks")) then { _pre set [_x, _cur get _x]; }; } forEach (keys _cur);
         _pre set ["locks", _cur get "locks"];
+        // Émotions réglées à part (Eden, Zeus) : un profil de bibliothèque ne les change pas.
+        _pre set ["emotionsOn", _cur get "emotionsOn"]; _pre set ["emotions", _cur get "emotions"];
         uiNamespace setVariable ["comspec_sse_iarpWsPreset", _id];
         [_pre] call _write;
         (format [localize "STR_COMSPEC_IARP_W_PresetDone", _pc lbText (lbCurSel _pc)]) call _status;

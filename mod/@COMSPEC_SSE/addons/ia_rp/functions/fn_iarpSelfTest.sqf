@@ -15,6 +15,8 @@
       guide        chaque exemple du guide (lexique) compris comme son intention ; menu « Faire une action » : chaque
                    geste FR et EN reconnu ; ton : un peureux sans menace répond calmement ; faits absents jamais cités
       banque       au moins 50 intentions, 6 phrases de base au moins chacune (FR et EN) ; variantes (base × décors)
+      émotions     réglage global, réglage de l'IA qui l'emporte, IA neutre jamais effrayée, nerveuse, agressive ni
+                   méfiante ; sans peur des armes, un peureux braqué reste calme ; émotions et noWeaponFear sérialisés
       mémoire      fiche par joueur (fn_iarpMem), « déjà dit à votre collègue », mémoire d'avant reprise
       paliers      savoir d'une phrase (comme avant) et par paliers avec lieu, palier débloqué selon confiance et pression
       redite       même question 10 fois à la même personne : moins de 3 répliques identiques
@@ -170,6 +172,42 @@ private _calmTone = (["howareyou", _fearful, createHashMapFromArray [["tension",
 private _scaredTone = (["howareyou", _fearful, createHashMapFromArray [["tension", 70], ["aimed", 1]], []] call comspec_sse_fnc_iarpGen) select 3;
 if (_calmTone in ["effraye", "nerveux"]) then { _ko pushBack format ["peur : un peureux sans menace répond « %1 »", _calmTone]; };
 if !(_scaredTone in ["effraye", "nerveux"]) then { _ko pushBack format ["peur : un peureux braqué répond « %1 »", _scaredTone]; };
+// Émotions (fn_iarpProfile « emoActive ») : réglage global, réglage de l'IA qui l'emporte, tons écartés, profil sérialisé.
+// Réglages globaux posés le temps du contrôle (sur cette machine seulement), puis remis.
+private _gVars = ["comspec_sse_iarp_emoOn"] + ((["emoIds"] call comspec_sse_fnc_iarpProfile) apply { format ["comspec_sse_iarp_emo_%1", _x] });
+private _gOld = _gVars apply { missionNamespace getVariable [_x, true] };
+{ missionNamespace setVariable [_x, true]; } forEach _gVars;
+private _pAuto = ["defaults"] call comspec_sse_fnc_iarpProfile;
+if ((count (["emoActive", _pAuto] call comspec_sse_fnc_iarpProfile)) isNotEqualTo 6) then { _ko pushBack "émotions : un profil « auto » n'a pas les 6 émotions du réglage global"; };
+missionNamespace setVariable ["comspec_sse_iarp_emo_armes", false];
+if (["emoHas", [_pAuto, "armes"]] call comspec_sse_fnc_iarpProfile) then { _ko pushBack "émotions : peur des armes décochée au global, toujours active"; };
+private _pCop = ["normalize", createHashMapFromArray [["emotions", ["peur", "armes", "mefiance"]]]] call comspec_sse_fnc_iarpProfile;
+if !(["emoHas", [_pCop, "armes"]] call comspec_sse_fnc_iarpProfile) then { _ko pushBack "émotions : le réglage de l'IA ne l'emporte pas sur le global"; };
+missionNamespace setVariable ["comspec_sse_iarp_emo_armes", true];
+missionNamespace setVariable ["comspec_sse_iarp_emoOn", false];
+if ((["emoActive", _pAuto] call comspec_sse_fnc_iarpProfile) isNotEqualTo []) then { _ko pushBack "émotions : interrupteur global coupé, émotions toujours actives"; };
+if ((["emoActive", _pCop] call comspec_sse_fnc_iarpProfile) isNotEqualTo ["peur", "armes", "mefiance"]) then { _ko pushBack "émotions : interrupteur global coupé, réglage de l'IA perdu"; };
+missionNamespace setVariable ["comspec_sse_iarp_emoOn", true];
+private _pNeutral = ["normalize", createHashMapFromArray [["fear", 95], ["nerve", 90], ["aggro", 90], ["honesty", 10], ["emotionsOn", false]]] call comspec_sse_fnc_iarpProfile;
+private _toneN = (["howareyou", _pNeutral, createHashMapFromArray [["tension", 90], ["aimed", 2], ["state", "rendu"], ["tone", "agressif"]], []] call comspec_sse_fnc_iarpGen) select 3;
+if (_toneN in ["effraye", "nerveux", "agressif", "mefiant"]) then { _ko pushBack format ["émotions : IA neutre au ton « %1 »", _toneN]; };
+// Sans peur des armes : braquée sans autre menace, un peureux reste calme ; braqué avec la peur des armes, il a peur.
+private _pNoGun = ["normalize", createHashMapFromArray [["fear", 95], ["nerve", 80], ["aggro", 0], ["emotions", ["peur", "nervosite", "colere", "mefiance", "soulagement"]]]] call comspec_sse_fnc_iarpProfile;
+private _toneG = (["howareyou", _pNoGun, createHashMapFromArray [["tension", 5], ["aimed", 1]], []] call comspec_sse_fnc_iarpGen) select 3;
+if (_toneG in ["effraye", "nerveux"]) then { _ko pushBack format ["émotions : sans peur des armes, un peureux braqué répond « %1 »", _toneG]; };
+private _pGun = ["normalize", createHashMapFromArray [["fear", 95], ["nerve", 80], ["aggro", 0]]] call comspec_sse_fnc_iarpProfile;
+private _toneG2 = (["howareyou", _pGun, createHashMapFromArray [["tension", 5], ["aimed", 1]], []] call comspec_sse_fnc_iarpGen) select 3;
+if !(_toneG2 in ["effraye", "nerveux"]) then { _ko pushBack format ["émotions : avec la peur des armes, un peureux braqué répond « %1 »", _toneG2]; };
+// Profil : émotions gardées à la sérialisation ; noWeaponFear écrit (synchro web) et relu.
+private _rawE = ["serialize", _pNoGun] call comspec_sse_fnc_iarpProfile;
+private _pE = ["parse", _rawE] call comspec_sse_fnc_iarpProfile;
+if ((_pE get "emotions") isNotEqualTo (_pNoGun get "emotions") || {(_rawE find """noWeaponFear"",true") < 0}) then { _ko pushBack format ["émotions : perdues à la sérialisation (%1)", _pE get "emotions"]; };
+private _pN2 = ["parse", ["serialize", _pNeutral] call comspec_sse_fnc_iarpProfile] call comspec_sse_fnc_iarpProfile;
+if (_pN2 get "emotionsOn") then { _ko pushBack "émotions : interrupteur « Émotions » perdu à la sérialisation"; };
+private _pW = ["normalize", createHashMapFromArray [["noWeaponFear", true]]] call comspec_sse_fnc_iarpProfile;
+if ((_pW get "emotions") isNotEqualTo ["peur", "nervosite", "colere", "mefiance", "soulagement"]) then { _ko pushBack format ["émotions : noWeaponFear importé mal lu %1", _pW get "emotions"]; };
+{ missionNamespace setVariable [_x, _gOld select _forEachIndex]; } forEach _gVars;
+_info pushBack format ["émotions : neutre « %1 », sans peur des armes « %2 », avec « %3 »", _toneN, _toneG, _toneG2];
 // Faits absents : une phrase qui cite {job} n'est pas choisie sans métier.
 for "_i" from 1 to 12 do {
     private _g = ["howareyou", ["defaults"] call comspec_sse_fnc_iarpProfile, createHashMap, [], createHashMapFromArray [["sir", ["monsieur", "sir"]]]] call comspec_sse_fnc_iarpGen;

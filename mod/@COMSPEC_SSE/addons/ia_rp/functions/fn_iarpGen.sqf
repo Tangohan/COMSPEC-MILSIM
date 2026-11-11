@@ -8,7 +8,8 @@
                 (banc d'essai : aucune ne doit citer un élément de scénario que l'IA ignore)
       profil    HashMap (fn_iarpProfile) : nerve, talk, aggro, honesty, bribe, fear, drunk (0-100), lang, country, phrases
       contexte  HashMap : state (automate des IA : nerveux, refuse, rendu…), tension (0-100), tone (ton imposé), aimed
-                (armes pointées), wounded, tired, vehicle, night, checkpoint (booléens), country (pays des papiers),
+                (armes pointées, vues même sans peur des armes), emo (émotions actives ; absent : lues dans le profil,
+                fn_iarpProfile « emoActive »), wounded, tired, vehicle, night, checkpoint (booléens), country (pays des papiers),
                 plain (vrai : phrase de base seule, sans habillage ; réplique suivie d'une autre dans la même bulle),
                 told (colleague | other : sujet déjà raconté à un autre joueur, « Je l'ai déjà dit à votre collègue. »),
                 forbid (étiquettes interdites : « hint », armed, explosives, military, wanted, drugs, politics ; cadre fixé par
@@ -34,18 +35,25 @@ private _drunk = ["drunk", 0] call _num;
 private _st = _ctx getOrDefault ["state", ""];
 private _tension = _ctx getOrDefault ["tension", 0];
 
+// Émotions actives de cette IA (fn_iarpProfile « emoActive ») : un ton dont l'émotion est décochée n'est jamais pris
+// (effrayé : peur ; nerveux : nervosité ; agressif : colère ; méfiant : méfiance), même imposé par une règle.
+private _emo = _ctx getOrDefault ["emo", ["emoActive", _p] call comspec_sse_fnc_iarpProfile];
+private _toneEmo = createHashMapFromArray [["effraye", "peur"], ["nerveux", "nervosite"], ["agressif", "colere"], ["mefiant", "mefiance"]];
+private _toneOk = { params ["_t"]; private _e = _toneEmo getOrDefault [_t, ""]; _e isEqualTo "" || {_e in _emo} };
 private _tone = _ctx getOrDefault ["tone", ""];
+if !([_tone] call _toneOk) then { _tone = ""; };
 if (_tone isEqualTo "") then {
     _tone = call {
-        if (_st isEqualTo "nerveux" || {_tension >= 60}) exitWith { "nerveux" };
-        if (_st isEqualTo "refuse") exitWith { "mefiant" };
-        if (_st isEqualTo "rendu") exitWith { "effraye" };
-        if (_aggro >= 65) exitWith { "agressif" };
-        // Peur et nerfs : un caractère, pas un état ; ils colorent la réponse quand quelque chose les réveille.
-        private _stir = _tension >= 25 || {(_ctx getOrDefault ["aimed", 0]) > 0} || {_st in ["ment", "refuse", "fuit", "agressif", "renforts", "nerveux", "rendu"]};
-        if (_fear >= 75 && {_stir}) exitWith { "effraye" };
-        if (_nerve >= 65 && {_stir}) exitWith { "nerveux" };
-        if (_honesty <= 30) exitWith { "mefiant" };
+        if ((_st isEqualTo "nerveux" || {_tension >= 60}) && {"nervosite" in _emo}) exitWith { "nerveux" };
+        if (_st isEqualTo "refuse" && {"mefiance" in _emo}) exitWith { "mefiant" };
+        if (_st isEqualTo "rendu" && {"peur" in _emo}) exitWith { "effraye" };
+        if (_aggro >= 65 && {"colere" in _emo}) exitWith { "agressif" };
+        // Peur et nerfs : un caractère, pas un état ; ils colorent la réponse quand quelque chose les réveille. Une arme
+        // braquée ne réveille rien chez une IA sans peur des armes (elle la voit : didascalie « aimed » gardée).
+        private _stir = _tension >= 25 || {(_ctx getOrDefault ["aimed", 0]) > 0 && {"armes" in _emo}} || {_st in ["ment", "refuse", "fuit", "agressif", "renforts", "nerveux", "rendu"]};
+        if (_fear >= 75 && {_stir} && {"peur" in _emo}) exitWith { "effraye" };
+        if (_nerve >= 65 && {_stir} && {"nervosite" in _emo}) exitWith { "nerveux" };
+        if (_honesty <= 30 && {"mefiance" in _emo}) exitWith { "mefiant" };
         if (_talk >= 70) exitWith { "bavard" };
         if (_talk <= 30) exitWith { "laconique" };
         if (_bribe >= 75) exitWith { "corrompu" };

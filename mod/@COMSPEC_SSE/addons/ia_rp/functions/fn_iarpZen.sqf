@@ -191,6 +191,47 @@ private _ip = "\z\comspec_sse\addons\zeus\data\";
     }] call comspec_sse_iarpZenWithProfile;
 }, _has, [_root, _root + "_profile"], 84] call _mk;
 
+// Émotions de ces IA : préréglage (réglage de la mission, personnalisé, tout cocher, impassible, très émotif, tout
+// décocher), une case par émotion, « tout son groupe ». Le réglage de l'IA l'emporte sur le réglage global.
+["_emotions", "STR_COMSPEC_IARP_Z_Emo", _ip + "mod_person.paa", {
+    [_this call comspec_sse_iarpZenTargets, {
+        params ["_t", "_p", "_who", "_units"];
+        private _ids = ["emoIds"] call comspec_sse_fnc_iarpProfile;
+        private _modes = ["auto", "custom", "normal", "impassible", "emotif", "neutre"];
+        private _cur = call {
+            if !(_p getOrDefault ["emotionsOn", true]) exitWith { "neutre" };
+            if ((_p getOrDefault ["emotions", "auto"]) isEqualType []) exitWith { "custom" };
+            "auto"
+        };
+        private _on = ["emoActive", _p] call comspec_sse_fnc_iarpProfile;
+        private _rows = [["LIST", [localize "STR_COMSPEC_IARP_Z_EmoMode", localize "STR_COMSPEC_IARP_Z_EmoMode_D"],
+            [_modes, _modes apply { localize ("STR_COMSPEC_IARP_Z_EmoMode_" + _x) }, (_modes find _cur) max 0, 6]]];
+        { _rows pushBack ["CHECKBOX", [localize ("STR_COMSPEC_IARP_S_Emo_" + _x + "_T"), localize ("STR_COMSPEC_IARP_S_Emo_" + _x + "_D")], _x in _on]; } forEach _ids;
+        _rows pushBack ["CHECKBOX", [localize "STR_COMSPEC_IARP_Z_EmoGroup", localize "STR_COMSPEC_IARP_Z_EmoGroup_D"], false];
+        [["STR_COMSPEC_IARP_Z_Emo", _units, _who] call comspec_sse_iarpZenTitle, _rows, {
+            params ["_v", "_args"];
+            private _ids = ["emoIds"] call comspec_sse_fnc_iarpProfile;
+            private _mode = _v select 0;
+            private _checked = [];
+            { if ((_v select (_forEachIndex + 1)) isEqualTo true) then { _checked pushBack _x; }; } forEach _ids;
+            private _rows = call {
+                if (_mode isEqualTo "auto") exitWith { [["emotionsOn", true], ["emotions", "auto"]] };
+                if (_mode isEqualTo "custom") exitWith { [["emotionsOn", true], ["emotions", _checked]] };
+                private _pr = ((["emoPresets"] call comspec_sse_fnc_iarpProfile) select { (_x select 0) isEqualTo _mode }) param [0, ["", _ids, []]];
+                [["emotionsOn", _mode isNotEqualTo "neutre"], ["emotions", _pr select 1], ["raise", _pr select 2]]
+            };
+            private _units = _args select 0;
+            // Tout son groupe : les IA vivantes des groupes des IA visées.
+            if ((_v select ((count _ids) + 1)) isEqualTo true) then {
+                private _all = [];
+                { { if (alive _x && {!isPlayer _x}) then { _all pushBackUnique _x; }; } forEach (units group _x); } forEach _units;
+                _units = _all;
+            };
+            ["profileTweak", [_rows], _units] call comspec_sse_iarpZenSend;
+        }, {}, [_units]] call zen_dialog_fnc_create;
+    }] call comspec_sse_iarpZenWithProfile;
+}, _has, [_root, _root + "_profile"], 83] call _mk;
+
 // --- Identité et papiers (addon identity : mêmes opérations serveur que ses modules « Donner des papiers », « Voir les
 // vrais papiers » et que la page « IA de la zone » de l'éditeur SSE) --------------------------------------------------
 private _idIcon = "\z\comspec_sse\addons\identity\data\icon_card_ca.paa";

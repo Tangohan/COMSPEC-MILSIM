@@ -93,6 +93,10 @@ Missing fact: "…" (the preview flags it).
 
 The other market civilians, with no knowledge, stay on **Automatic answer**: to "Any insurgents here?", "No. I'm just going to the market."
 
+## AI emotions (fear of weapons included)
+
+Six emotions, each one a box to tick: **fear** (trembles, drops to the ground, surrenders or runs away), **fear of weapons** (raised weapon aimed at her, soldiers with raised weapons, nearby shots, "/me aims his rifle"), **nervousness** (hesitates, gets nervous, refuses her papers), **anger** (aggressive tone, denies and gets angry, fights back), **distrust** (wary tone) and **relief** (relaxes when reassured). Global setting: Addon options › COMSPEC SSE › AI roleplay (can be saved in the mission). Per AI: Eden attributes **AI emotions** (preset, one box per emotion, **Whole group**); Zeus: SSE · AI roleplay menu › AI profile › **Emotions…** (Mission setting, Custom, Tick all, Stoic, Very emotional, Untick all). The AI's own setting wins over the global one. An unticked emotion no longer rises, no longer changes the tone and no longer triggers anything; with everything unticked the AI stays neutral but still talks normally. Example: untick **Fear of weapons** for a police officer or a veteran: he sees your rifle ("He stares at your gun barrel.") but stays calm; a spoken threat, forged papers found or violence seen still get to him.
+
 ## Common pitfalls
 
 - Your answer **only replaces the line**: a refused order stays refused, a liar can still be caught, papers still go through the ACE check. For an order, a search or a bribe, "Always" applies when he obeys; if he refuses only "If he refuses" is said.
