@@ -102,6 +102,10 @@ Fait absent : « … » (l'aperçu le signale).
 
 Les autres civils du marché, sans savoir, restent en **Réponse automatique** : à « Il y a des insurgés ici ? », « Non. Je vais juste au marché, moi. »
 
+## Émotions des IA (peur des armes comprise)
+
+Six émotions, chacune à cocher : **peur** (tremble, se jette au sol, se rend ou fuit), **peur des armes** (arme levée braquée sur elle, soldats arme levée, tirs proches, « /me braque son arme »), **nervosité** (hésite, devient nerveuse, refuse ses papiers), **colère** (ton agressif, nie et s'énerve, riposte), **méfiance** (ton méfiant) et **soulagement** (se détend quand on la rassure). Réglage global : Options des addons › COMSPEC SSE › IA RP (enregistrable dans la mission). Par IA : attributs Eden **Émotions de l'IA** (préréglage, une case par émotion, **Tout son groupe**) ; Zeus : menu SSE · Roleplay de l'IA › Profil d'IA › **Émotions…** (Réglage de la mission, Personnalisé, Tout cocher, Impassible, Très émotif, Tout décocher). Le réglage de l'IA l'emporte sur le réglage global. Une émotion décochée ne monte plus, ne change plus le ton et ne déclenche plus rien ; tout décoché, l'IA reste neutre mais parle normalement. Exemple : décochez **Peur des armes** pour un policier ou un vétéran : il voit votre fusil (« Il fixe le canon de votre arme. ») mais reste calme ; une menace dite, un faux découvert ou une violence vue le touchent toujours.
+
 ## Pièges fréquents
 
 - Votre réponse **ne remplace que la phrase** : un ordre refusé reste refusé, un menteur reste démasquable, les papiers passent toujours par le contrôle ACE. Pour un ordre, une fouille ou un pot-de-vin, « Toujours » vaut quand il obéit ; s'il refuse, seul « S'il refuse » est dit.

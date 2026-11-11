@@ -643,3 +643,69 @@ if (AT_iarpSeul) exitWith {};
     deleteVehicle _u;
     call AT_fnc_done;
 }, 120] call AT_fnc_run;
+
+// À venir : émotions des IA (peur des armes). Contrôle au niveau du code, sans attendre l'automate : arme braquée à 3 m,
+// peur (fn_iarpReact « level ») qui monte avec la peur des armes, nulle sans elle (réglage global, puis réglage de l'IA
+// qui l'emporte) alors que l'IA voit toujours l'arme ; une autre cause (menace dite, « press ») fait toujours monter la peur.
+["ia_rp_peur_armes", {
+    if (["comspec_sse_fnc_iarpReact", "comspec_sse_fnc_iarpProfile"] call AT_fnc_nil) exitWith {};
+    if ((primaryWeapon player) isEqualTo "") then { player addWeapon "arifle_MX_F"; player addMagazine "30Rnd_65x39_caseless_mag"; };
+    private _u = call AT_fnc_iarpIa;
+    _u setPosATL (player getPos [3, getDir player]);
+    _u setDir ((getDir player) + 180);
+    private _gVars = ["comspec_sse_iarp_emoOn"] + ((["emoIds"] call comspec_sse_fnc_iarpProfile) apply { format ["comspec_sse_iarp_emo_%1", _x] });
+    private _gOld = _gVars apply { missionNamespace getVariable [_x, true] };
+    { missionNamespace setVariable [_x, true]; } forEach _gVars;
+    player action ["WeaponInHand", player];
+    player setDir (player getDir _u);
+    uiSleep 3;
+    private _lvl = { _u setVariable ["comspec_sse_iarpPress", nil]; _u setVariable ["comspec_sse_idShock", nil]; ["level", _u] call comspec_sse_fnc_iarpReact };
+    private _aim = (["aimedAt", [_u]] call comspec_sse_fnc_iarpReact) select 0;
+    private _l1 = call _lvl;
+    [_aim > 0 && {_l1 > 0}, format ["peur des armes active : braquée à 3 m, peur %1 (%2 arme(s) vue(s))", _l1, _aim]] call AT_fnc_check;
+    missionNamespace setVariable ["comspec_sse_iarp_emo_armes", false];
+    private _l2 = call _lvl;
+    private _aim2 = (["aimedAt", [_u]] call comspec_sse_fnc_iarpReact) select 0;
+    [_l2 isEqualTo 0 && {_aim2 > 0}, format ["peur des armes décochée (global) : peur %1, arme toujours vue %2", _l2, _aim2]] call AT_fnc_check;
+    _u setVariable ["comspec_sse_iarpPress", nil];
+    ["press", [_u, 20, "menace (autotest)", player]] call comspec_sse_fnc_iarpReact;
+    private _l3 = ["level", _u] call comspec_sse_fnc_iarpReact;
+    [_l3 > 0, format ["peur des armes décochée : une menace dite fait toujours monter la peur (%1)", _l3]] call AT_fnc_check;
+    missionNamespace setVariable ["comspec_sse_iarp_emo_armes", true];
+    // Réglage de l'IA (menu Zeus « Émotions… ») : sans « armes », alors que le global la garde.
+    ["profileTweak", [player, [_u], [["emotionsOn", true], ["emotions", ["peur", "nervosite", "colere", "mefiance", "soulagement"]]]]] call comspec_sse_fnc_iarpServer;
+    uiSleep 1;
+    private _l4 = call _lvl;
+    [_l4 isEqualTo 0, format ["peur des armes décochée pour cette IA (global coché) : peur %1", _l4]] call AT_fnc_check;
+    // Et l'inverse : l'IA garde la peur des armes alors que le global la décoche.
+    missionNamespace setVariable ["comspec_sse_iarp_emo_armes", false];
+    ["profileTweak", [player, [_u], [["emotions", ["peur", "armes"]]]]] call comspec_sse_fnc_iarpServer;
+    uiSleep 1;
+    private _l5 = call _lvl;
+    [_l5 > 0, format ["réglage de l'IA prioritaire sur le global : peur %1", _l5]] call AT_fnc_check;
+    // Automate des IA réalistes (identité SSE) : tension sans peur des armes plus basse qu'avec.
+    if (!isNil "comspec_sse_fnc_idAiBrain") then {
+        ["profileTweak", [player, [_u], [["emotions", ["peur", "nervosite", "colere", "mefiance", "soulagement"]]]]] call comspec_sse_fnc_iarpServer;
+        uiSleep 1;
+        _u setVariable ["comspec_sse_idTension", 0];
+        for "_i" from 1 to 4 do { ["decide", [_u, "interpelle", true]] call comspec_sse_fnc_idAiBrain; };
+        private _tNo = _u getVariable ["comspec_sse_idTension", 0];
+        ["profileTweak", [player, [_u], [["emotions", "auto"]]]] call comspec_sse_fnc_iarpServer;
+        missionNamespace setVariable ["comspec_sse_iarp_emo_armes", true];
+        uiSleep 1;
+        _u setVariable ["comspec_sse_idTension", 0];
+        for "_i" from 1 to 4 do { ["decide", [_u, "interpelle", true]] call comspec_sse_fnc_idAiBrain; };
+        private _tYes = _u getVariable ["comspec_sse_idTension", 0];
+        [_tYes > _tNo + 5, format ["automate : tension braquée %1 avec la peur des armes, %2 sans", round _tYes, round _tNo]] call AT_fnc_check;
+    };
+    // IA neutre (« Tout décocher ») : peur nulle même braquée et menacée.
+    ["profileTweak", [player, [_u], [["emotionsOn", false]]]] call comspec_sse_fnc_iarpServer;
+    uiSleep 1;
+    ["press", [_u, 20, "menace (autotest)", player]] call comspec_sse_fnc_iarpReact;
+    private _l6 = ["level", _u] call comspec_sse_fnc_iarpReact;
+    [_l6 isEqualTo 0, format ["IA neutre : peur %1 braquée et menacée", _l6]] call AT_fnc_check;
+    { missionNamespace setVariable [_x, _gOld select _forEachIndex]; } forEach _gVars;
+    player action ["WeaponOnBack", player];
+    deleteVehicle _u;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;

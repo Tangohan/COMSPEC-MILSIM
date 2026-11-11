@@ -93,6 +93,28 @@ EN : The Zeus Centre is fixed: readable tabs, no more empty buttons or overlappi
 
 ## À venir : un seul bouton « ATHENA Configuration » dans le menu Échap (ATAK natif et SSE, version à attribuer)
 
+## À venir : émotions des IA réglables, peur des armes comprise (SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Émotions des IA réglables
+- Le maître du jeu choisit les émotions de chaque IA (peur, peur des armes, nervosité, colère, méfiance, soulagement) : une IA sans « peur des armes », comme un policier ou un vétéran, voit votre arme mais reste calme.
+- Préréglages Impassible, Normal, Très émotif ou neutre, pour une IA, tout son groupe ou toute la mission ; une IA neutre répond toujours normalement.
+EN : Adjustable AI emotions
+- The game master picks each AI's emotions (fear, fear of weapons, nervousness, anger, distrust, relief): an AI without "fear of weapons", like a police officer or a veteran, sees your weapon but stays calm.
+- Stoic, Normal, Very emotional or neutral presets, for one AI, their whole group or the whole mission; a neutral AI still answers normally.
+
+### Détail technique
+- `fn_iarpProfile` : champs de profil `emotionsOn` (interrupteur) et `emotions` (`"auto"` ou liste parmi `peur`, `armes`, `nervosite`, `colere`, `mefiance`, `soulagement`) ; `noWeaponFear` écrit à la sérialisation et dans `keepOf` (dérivé : vrai quand `armes` manque), lu à l'import ; opérations `emoIds`, `emoPresets`, `emoActive`, `emoHas`, `edenEmo` / `edenEmoApply` ; `apply` garde les émotions de l'IA quand le profil appliqué ne les règle pas (bibliothèque, module « Atelier IA ») ; `keepOf` / `keepApply` portent les émotions (« Garder pour les prochaines parties »). Priorité : réglage de l'IA, sinon réglage global.
+- Réglages CBA `comspec_sse_iarp_emoOn` et `comspec_sse_iarp_emo_<émotion>` (COMSPEC SSE › IA RP, enregistrables dans la mission) ; attributs Eden `comspec_sse_iarpEmoMode`, `comspec_sse_iarpEmo_<émotion>`, `comspec_sse_iarpEmoGroup` (catégorie IA RP des unités) ; menu ZEN « Profil d'IA › Émotions… » (préréglage, cases, tout son groupe ; `profileTweak` accepte `raise`).
+- Sans `armes` : `fn_iarpReact` « fired » (tir entendu seulement), « level » et `fn_idAiBrain` (armes braquées et soldats arme levée à zéro), `fn_iarpServer` (`_aimedF` pour obéissance, menace, aveu, fuite, palier de renseignement, situation « peur »), témoin d'une arme seule, geste « /me braque son arme ». Sans `peur` / `nervosite` / `colere` : états fuit et rendu sous la menace, nerveux et refus par nervosité, agressif et renforts non choisis ; tension et peur nulles sans aucune des trois ; tons `effraye` / `nerveux` / `agressif` / `mefiant` écartés par `fn_iarpGen`, même imposés ; pression positive ignorée sans elles, apaisement ignoré sans `soulagement`.
+- Gardé volontairement : menottes et reddition ACE déjà faites, état imposé par le Zeus ou l'attribut « Comportement au contrôle », aveu par la confrontation (puis reddition d'un suspect sérieux), fuite d'un insurgé laissé seul après sa reddition, refus de papiers tiré par « Civils qui présentent leurs papiers ».
+- Manuel en jeu (« Émotions des IA »), guides `reponses_ia.md` / `.en.md`, auto-contrôle `fn_iarpSelfTest` (bloc émotions), autotest `ia_rp_peur_armes` (groupe `ia_rp`), non lancés en jeu.
+
+---
+
+## À venir : fenêtre des réponses de l'IA plus simple (SSE, version à attribuer)
+
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : nouveauté
 FR : Le menu Échap est rangé : un seul bouton ATHENA Configuration

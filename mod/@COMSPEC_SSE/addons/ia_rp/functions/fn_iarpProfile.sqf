@@ -18,6 +18,10 @@
       answers     réponses écrites par le maître du jeu, par question (fn_iarpAnswers : texte, situation, palier, lieu)
       evoke       ce qu'elle peut évoquer : auto | none (rien de sensible) | known (ce qu'elle sait) | free (libre)
       banned      thèmes interdits : armed, explosives, military, wanted, drugs, politics (fn_iarpAnswers « frame »)
+      emotionsOn  interrupteur « Émotions » (faux : IA neutre, aucune émotion, elle répond normalement)
+      emotions    "auto" (réglage global CBA, enregistrable dans la mission) ou liste des émotions ACTIVES parmi
+                  peur, armes (peur des armes), nervosite, colere, mefiance, soulagement ; le réglage de l'IA l'emporte
+                  sur le global. Export : noWeaponFear (vrai quand « armes » n'est pas dans la liste), lu à l'import.
       Faits de l'histoire (en plus) : Téléphone, Nationalité, Langues, Depuis, Avec, Hier soir (alibi), Transporte,
       Attend, Habitudes : repris par les questions de présence ({phone} {nation} {langs} {since} {with} {alibi}
       {cargo} {waiting} {often})
@@ -29,20 +33,27 @@
       SERVEUR : ["get", unité] -> profil (enregistré, sinon défauts) · ["apply", [unité, profil]] · ["applyRaw", [unité, texte]]
                ["keepOf", unité] -> texte des réponses du maître du jeu et du cadre (« [réponses, evoke, banned] »), "" sans rien
                ["keepApply", [unité, texte]] : remet ce texte dans son profil (« Garder pour les prochaines parties »)
+      Émotions : ["emoIds"] -> identifiants · ["emoPresets"] -> [[id, liste, curseurs minimum]…] (Impassible, Normal,
+               Très émotif, Neutre) · ["emoActive", unité | profil] -> émotions actives (profil, sinon réglage global) ·
+               ["emoHas", [unité | profil, id]] -> booléen · SERVEUR : ["edenEmo", [unité, clé, valeur]] (attributs Eden
+               « Émotions », composés à l'image suivante, « tout son groupe » compris)
     Vérité côté serveur : le profil (secrets, renseignement) reste une variable d'unité non diffusée ; seuls le nom (identité
     unique, fn_idIdentityOf « set » : COMSPEC_SSE_FirstName / LastName, comspec_sse_idName) et le profil au contrôle
     (COMSPEC_ID_Profile, IA réalistes) en sortent.
 */
 params [["_op", "", [""]], ["_a", nil]];
 private _keys = ["name", "role", "nerve", "talk", "aggro", "honesty", "bribe", "fear", "drunk", "lang", "country", "story",
-    "phrases", "sensitive", "secrets", "know", "unlock", "unlockWord", "react", "locks", "preset", "answers", "evoke", "banned"];
+    "phrases", "sensitive", "secrets", "know", "unlock", "unlockWord", "react", "locks", "preset", "answers", "evoke", "banned",
+    "emotionsOn", "emotions"];
+// Émotions qu'une IA peut exprimer (une case par émotion : Eden, Zeus, réglage global).
+private _emoIds = ["peur", "armes", "nervosite", "colere", "mefiance", "soulagement"];
 private _defaults = {
     createHashMapFromArray [
         ["name", ""], ["role", "auto"], ["nerve", 50], ["talk", 50], ["aggro", 30], ["honesty", 60], ["bribe", 30], ["fear", 50],
         ["drunk", 0], ["lang", "common"], ["country", "auto"], ["story", ""], ["phrases", []], ["sensitive", []], ["secrets", []],
         ["know", ""], ["unlock", "trust"], ["unlockWord", ""],
         ["react", createHashMapFromArray [["search", "auto"], ["threat", "auto"], ["bribe", "auto"], ["order", "auto"]]],
-        ["locks", []], ["preset", ""], ["answers", []], ["evoke", "auto"], ["banned", []]
+        ["locks", []], ["preset", ""], ["answers", []], ["evoke", "auto"], ["banned", []], ["emotionsOn", true], ["emotions", "auto"]
     ]
 };
 private _nl = toString [10];
@@ -57,6 +68,16 @@ private _normalize = {
             call {
                 // Réponses du maître du jeu : validées entrée par entrée (fn_iarpAnswers).
                 if (_x isEqualTo "answers") exitWith { if (_v isEqualType []) then { _p set [_x, ["normalize", _v] call comspec_sse_fnc_iarpAnswers]; }; };
+                // Émotions : "auto" ou liste d'identifiants connus (ordre canonique, sans doublon).
+                if (_x isEqualTo "emotions") exitWith {
+                    if (_v isEqualType "" && {(toLower trim _v) isEqualTo "auto"}) exitWith { _p set [_x, "auto"]; };
+                    if (_v isEqualType "") then { _v = (_v splitString ",; ") apply { toLower trim _x }; };
+                    if (_v isEqualType []) then { private _given = _v; _p set [_x, _emoIds select { _x in _given }]; };
+                };
+                if (_x isEqualTo "emotionsOn") exitWith {
+                    if (_v isEqualType true) then { _p set [_x, _v]; };
+                    if (_v isEqualType 0) then { _p set [_x, _v > 0]; };
+                };
                 if (_d isEqualType 0) exitWith { if (_v isEqualType 0) then { _p set [_x, round ((_v max 0) min 100)]; }; };
                 if (_d isEqualType "") exitWith { if (_v isEqualType "") then { _p set [_x, _v]; }; };
                 if (_d isEqualType []) exitWith {
@@ -72,6 +93,12 @@ private _normalize = {
             };
         };
     } forEach _keys;
+    // Import (synchro web, export d'un autre poste) : noWeaponFear vrai retire « armes » ; "auto" devient la liste complète.
+    if ((_in getOrDefault ["noWeaponFear", false]) isEqualTo true) then {
+        private _l = _p get "emotions";
+        if !(_l isEqualType []) then { _l = +_emoIds; };
+        _p set ["emotions", _l - ["armes"]];
+    };
     if !((_p get "role") in ["auto", "civil", "insurge", "hvt", "agent", "policier"]) then { _p set ["role", "auto"]; };
     if !((_p get "lang") in ["common", "local"]) then { _p set ["lang", "common"]; };
     // Pays : « auto » ou un code du registre (identité SSE chargée) ; sans elle, un code de trois lettres est gardé.
@@ -107,6 +134,8 @@ switch (_op) do {
             if (_v isEqualType [] && {_x in ["phrases", "sensitive", "secrets", "locks"]}) then { _v = _v apply { [_x, _nl, " "] call CBA_fnc_replace }; };
             [_x, _v]
         };
+        // Champ dérivé pour la synchro web et les exports : vrai quand la peur des armes est décochée pour cette IA.
+        _rows pushBack ["noWeaponFear", (_p get "emotions") isEqualType [] && {!("armes" in (_p get "emotions"))}];
         str _rows
     };
     case "parse": {
@@ -229,10 +258,16 @@ switch (_op) do {
     };
     case "summary": {
         private _p = [_a] call _normalize;
-        format ["%1 · %2 · N%3 L%4 A%5 H%6 C%7 P%8%9",
+        // Émotions réglées pour cette IA : « É0/6 » (neutre) à « É6/6 » ; rien quand elle suit le réglage global.
+        private _e = call {
+            if !(_p get "emotionsOn") exitWith { " · É0/6" };
+            if ((_p get "emotions") isEqualType []) exitWith { format [" · É%1/%2", count (_p get "emotions"), count _emoIds] };
+            ""
+        };
+        format ["%1 · %2 · N%3 L%4 A%5 H%6 C%7 P%8%9%10",
             [_p get "name", "—"] select ((_p get "name") isEqualTo ""), _p get "role",
             _p get "nerve", _p get "talk", _p get "aggro", _p get "honesty", _p get "bribe", _p get "fear",
-            ["", " · " + (_p get "preset")] select ((_p get "preset") isNotEqualTo "")]
+            ["", " · " + (_p get "preset")] select ((_p get "preset") isNotEqualTo ""), _e]
     };
     case "presets": {
         private _fr = language isEqualTo "French";
@@ -296,7 +331,7 @@ switch (_op) do {
     };
     case "apply": {
         if (!isServer) exitWith { false };
-        _a params [["_u", objNull, [objNull]], ["_in", createHashMap]];
+        _a params [["_u", objNull, [objNull]], ["_in", createHashMap], ["_keepEmo", true, [true]]];
         if (isNull _u || {isPlayer _u}) exitWith { false };
         private _p = [_in] call _normalize;
         // Mémoire de l'échange (fn_iarpMem) gardée quand le Zeus retouche la même personne (curseurs, réactions, savoir) ;
@@ -304,6 +339,12 @@ switch (_op) do {
         private _old = _u getVariable ["comspec_sse_iarpProfile", createHashMap];
         // Nom laissé vide : son identité actuelle est gardée (même personne, même mémoire).
         if ((_p get "name") isEqualTo "" && {!isNil "comspec_sse_fnc_idIdentityOf"}) then { _p set ["name", ["full", [_u]] call comspec_sse_fnc_idIdentityOf]; };
+        // Émotions réglées pour cette IA (Eden, Zeus) : un profil qui ne les règle pas (bibliothèque, module « Atelier IA »)
+        // ne les efface pas. Le menu « Émotions… » du Zeus (profileTweak) les remplace toujours.
+        if (_keepEmo && {(count _old) > 0} && {(_p get "emotionsOn") && {(_p get "emotions") isEqualTo "auto"}}) then {
+            _p set ["emotionsOn", _old getOrDefault ["emotionsOn", true]];
+            _p set ["emotions", _old getOrDefault ["emotions", "auto"]];
+        };
         if ((count _old) isEqualTo 0 || {[_old get "name", _old get "story", _old get "role"] isNotEqualTo [_p get "name", _p get "story", _p get "role"]}) then {
             _u setVariable ["comspec_sse_iarpMem", nil];
         };
@@ -331,8 +372,11 @@ switch (_op) do {
     case "keepOf": {
         if (!isServer || {!(_a isEqualType objNull)} || {isNull _a}) exitWith { "" };
         private _p = ["normalize", _a getVariable ["comspec_sse_iarpProfile", createHashMap]] call comspec_sse_fnc_iarpProfile;
-        if ((_p get "answers") isEqualTo [] && {(_p get "evoke") isEqualTo "auto"} && {(_p get "banned") isEqualTo []}) exitWith { "" };
-        str [_p get "answers", _p get "evoke", _p get "banned"]
+        private _emoSet = !(_p get "emotionsOn") || {(_p get "emotions") isEqualType []};
+        if ((_p get "answers") isEqualTo [] && {(_p get "evoke") isEqualTo "auto"} && {(_p get "banned") isEqualTo []} && {!_emoSet}) exitWith { "" };
+        // 4e et 5e éléments : émotions de l'IA (interrupteur, liste ou "auto") ; 6e : noWeaponFear (dérivé, synchro web).
+        str [_p get "answers", _p get "evoke", _p get "banned", _p get "emotionsOn", _p get "emotions",
+            (_p get "emotions") isEqualType [] && {!("armes" in (_p get "emotions"))}]
     };
     case "keepApply": {
         _a params [["_u", objNull, [objNull]], ["_raw", "", [""]]];
@@ -343,7 +387,73 @@ switch (_op) do {
         _p set ["answers", _v select 0];
         _p set ["evoke", _v select 1];
         _p set ["banned", _v select 2];
-        ["apply", [_u, _p]] call comspec_sse_fnc_iarpProfile
+        // Émotions gardées avec l'IA (absentes des enregistrements d'avant : rien ne change).
+        if ((count _v) >= 5) then { _p set ["emotionsOn", _v select 3]; _p set ["emotions", _v select 4]; };
+        if ((_v param [5, false]) isEqualTo true) then { _p set ["noWeaponFear", true]; };
+        ["apply", [_u, _p, (count _v) < 5]] call comspec_sse_fnc_iarpProfile
+    };
+    case "emoIds": { +_emoIds };
+    // Préréglages : [id, émotions actives, curseurs relevés au minimum].
+    case "emoPresets": {
+        [
+            ["impassible", ["mefiance"], []],
+            ["normal", +_emoIds, []],
+            ["emotif", +_emoIds, [["nerve", 75], ["fear", 75]]],
+            ["neutre", [], []]
+        ]
+    };
+    // Émotions actives d'une IA (unité, côté serveur : son profil) ou d'un profil : interrupteur, liste de l'IA, sinon
+    // réglage global (COMSPEC SSE › IA RP, enregistrable dans la mission). Le réglage de l'IA l'emporte toujours.
+    case "emoActive": {
+        private _p = if (_a isEqualType objNull) then {
+            if (isNull _a) then { createHashMap } else { _a getVariable ["comspec_sse_iarpProfile", createHashMap] }
+        } else { [createHashMap, _a] select (_a isEqualType createHashMap) };
+        if ((_p getOrDefault ["emotionsOn", true]) isEqualTo false) exitWith { [] };
+        private _l = _p getOrDefault ["emotions", "auto"];
+        if (_l isEqualType []) exitWith { _emoIds select { _x in _l } };
+        if !(missionNamespace getVariable ["comspec_sse_iarp_emoOn", true]) exitWith { [] };
+        _emoIds select { missionNamespace getVariable [format ["comspec_sse_iarp_emo_%1", _x], true] }
+    };
+    case "emoHas": {
+        _a params [["_w", objNull], ["_id", "", [""]]];
+        _id in (["emoActive", _w] call comspec_sse_fnc_iarpProfile)
+    };
+    // Attributs Eden « Émotions » (une expression par attribut, ordre non garanti) : valeurs notées sur l'unité, puis
+    // composées une fois à l'image suivante (« edenEmoApply »), quand toutes les expressions de la mission sont passées.
+    case "edenEmo": {
+        if (!isServer) exitWith {};
+        _a params [["_u", objNull, [objNull]], ["_k", "", [""]], ["_v", ""]];
+        if (isNull _u || {isPlayer _u}) exitWith {};
+        private _e = _u getVariable ["comspec_sse_iarpEmoEden", createHashMap];
+        _e set [_k, _v];
+        _u setVariable ["comspec_sse_iarpEmoEden", _e];
+        if (_u getVariable ["comspec_sse_iarpEmoEdenPend", false]) exitWith {};
+        _u setVariable ["comspec_sse_iarpEmoEdenPend", true];
+        [{ ["edenEmoApply", _this] call comspec_sse_fnc_iarpProfile }, _u] call CBA_fnc_execNextFrame;
+    };
+    case "edenEmoApply": {
+        if (!isServer || {!(_a isEqualType objNull)} || {isNull _a}) exitWith {};
+        private _u = _a;
+        private _e = _u getVariable ["comspec_sse_iarpEmoEden", createHashMap];
+        private _mode = _e getOrDefault ["mode", "auto"];
+        private _offs = _emoIds select { (_e getOrDefault [_x, true]) isEqualTo false };
+        // Mode « Réglage de la mission » et une case décochée : c'est un réglage personnalisé.
+        if (_mode isEqualTo "auto" && {_offs isNotEqualTo []}) then { _mode = "custom"; };
+        if (_mode isEqualTo "auto") exitWith {};
+        private _row = ((["emoPresets"] call comspec_sse_fnc_iarpProfile) select { (_x select 0) isEqualTo _mode }) param [0, ["custom", _emoIds - _offs, []]];
+        _row params ["", "_list", "_mins"];
+        private _targets = [_u];
+        if ((_e getOrDefault ["group", false]) isEqualTo true) then {
+            // Tout son groupe : les IA du groupe sans réglage Eden d'émotions à elles.
+            { if (!isPlayer _x && {_x isNotEqualTo _u} && {isNil { _x getVariable "comspec_sse_iarpEmoEden" }}) then { _targets pushBack _x; }; } forEach (units group _u);
+        };
+        {
+            private _p = ["normalize", ["get", _x] call comspec_sse_fnc_iarpProfile] call comspec_sse_fnc_iarpProfile;
+            _p set ["emotionsOn", _mode isNotEqualTo "neutre"];
+            _p set ["emotions", +_list];
+            { _x params ["_k", "_m"]; _p set [_k, (_p get _k) max _m]; } forEach _mins;
+            ["apply", [_x, _p, false]] call comspec_sse_fnc_iarpProfile;
+        } forEach _targets;
     };
     case "applyRaw": {
         _a params [["_u", objNull, [objNull]], ["_raw", "", [""]]];

@@ -67,6 +67,9 @@ private _read = {
     // Question / réponse de la vue par défaut : la 1re question perso de ces réponses.
     _ea = ["qaSet", [_ea, uiNamespace getVariable ["comspec_sse_iarpWsQaKey", ""], ctrlText (94793 call _ctl), ctrlText (94796 call _ctl)]] call comspec_sse_fnc_iarpAnswers;
     _p set ["answers", _ea]; _p set ["evoke", _ee]; _p set ["banned", _eb];
+    // Émotions (attributs Eden « Émotions », menu Zeus « Émotions… ») : pas de case ici, gardées telles quelles.
+    (uiNamespace getVariable ["comspec_sse_iarpWsEmo", [true, "auto"]]) params [["_eo", true], ["_el", "auto"]];
+    _p set ["emotionsOn", _eo]; _p set ["emotions", _el];
     ["normalize", _p] call comspec_sse_fnc_iarpProfile
 };
 // Profil -> fenêtre.
@@ -86,6 +89,7 @@ private _write = {
     { _x params ["_k", "_idc"]; (_idc call _ctl) cbSetChecked (_k in (_p get "locks")); } forEach _locks;
     uiNamespace setVariable ["comspec_sse_iarpWsPreset", _p get "preset"];
     uiNamespace setVariable ["comspec_sse_iarpWsExtra", [_p get "answers", _p get "evoke", _p get "banned"]];
+    uiNamespace setVariable ["comspec_sse_iarpWsEmo", [_p get "emotionsOn", _p get "emotions"]];
     call _answersNote;
     call _qaLoad;
     call _advShow;
@@ -274,6 +278,8 @@ switch (_op) do {
         _pre set ["locks", _cur get "locks"];
         // Profil de bibliothèque sans réponses : les questions et réponses déjà écrites restent.
         if ((_pre get "answers") isEqualTo []) then { _pre set ["answers", _cur get "answers"]; };
+        // Émotions réglées à part (Eden, Zeus) : un profil de bibliothèque ne les change pas.
+        _pre set ["emotionsOn", _cur get "emotionsOn"]; _pre set ["emotions", _cur get "emotions"];
         uiNamespace setVariable ["comspec_sse_iarpWsPreset", _id];
         [_pre] call _write;
         (format [localize "STR_COMSPEC_IARP_W_PresetDone", _pc lbText (lbCurSel _pc)]) call _status;

@@ -96,6 +96,16 @@ class CfgHints {
             image = "\a3\ui_f\data\igui\cfg\simpleTasks\types\talk_ca.paa";
             noImage = 0;
         };
+        // Pour le maître du jeu : émotions des IA (peur des armes comprise), réglage global, par IA et par groupe.
+        class IaRpEmotions {
+            displayName = "$STR_COMSPEC_IARP_ManE_T";
+            displayNameShort = "$STR_COMSPEC_IARP_ManE_T";
+            description = "$STR_COMSPEC_IARP_ManE_D";
+            tip = "$STR_COMSPEC_IARP_ManE_Tip";
+            arguments[] = {};
+            image = "\a3\ui_f\data\igui\cfg\simpleTasks\types\talk_ca.paa";
+            noImage = 0;
+        };
     };
 };
 
@@ -263,6 +273,96 @@ class Cfg3DEN {
                         expression = "if (isServer && {_value isNotEqualTo ''}) then { ['applyRaw', [_this, _value]] call comspec_sse_fnc_iarpProfile; };";
                         defaultValue = "''";
                         typeName = "STRING";
+                        condition = "objectBrain";
+                    };
+                    // Émotions de cette IA (fn_iarpProfile « edenEmo », serveur) : préréglage, une case par émotion, tout son
+                    // groupe ; composées à l'image suivante dans son profil (champs « emotionsOn », « emotions »).
+                    class comspec_sse_iarpEmoMode {
+                        displayName = "$STR_COMSPEC_IARP_Z_EmoMode";
+                        tooltip = "$STR_COMSPEC_IARP_E_EmoMode_D";
+                        property = "comspec_sse_iarpEmoMode";
+                        control = "Combo";
+                        expression = "if (isServer && {_value isNotEqualTo 'auto'}) then { ['edenEmo', [_this, 'mode', _value]] call comspec_sse_fnc_iarpProfile; };";
+                        defaultValue = "'auto'";
+                        typeName = "STRING";
+                        condition = "objectBrain";
+                        class values {
+                            class Auto { name = "$STR_COMSPEC_IARP_Z_EmoMode_auto"; value = "auto"; default = 1; };
+                            class Custom { name = "$STR_COMSPEC_IARP_Z_EmoMode_custom"; value = "custom"; };
+                            class Normal { name = "$STR_COMSPEC_IARP_Z_EmoMode_normal"; value = "normal"; };
+                            class Impassible { name = "$STR_COMSPEC_IARP_Z_EmoMode_impassible"; value = "impassible"; };
+                            class Emotif { name = "$STR_COMSPEC_IARP_Z_EmoMode_emotif"; value = "emotif"; };
+                            class Neutre { name = "$STR_COMSPEC_IARP_Z_EmoMode_neutre"; value = "neutre"; };
+                        };
+                    };
+                    class comspec_sse_iarpEmo_peur {
+                        displayName = "$STR_COMSPEC_IARP_S_Emo_peur_T";
+                        tooltip = "$STR_COMSPEC_IARP_S_Emo_peur_D";
+                        property = "comspec_sse_iarpEmo_peur";
+                        control = "Checkbox";
+                        expression = "if (isServer && {!_value}) then { ['edenEmo', [_this, 'peur', false]] call comspec_sse_fnc_iarpProfile; };";
+                        defaultValue = "true";
+                        typeName = "BOOL";
+                        condition = "objectBrain";
+                    };
+                    class comspec_sse_iarpEmo_armes {
+                        displayName = "$STR_COMSPEC_IARP_S_Emo_armes_T";
+                        tooltip = "$STR_COMSPEC_IARP_S_Emo_armes_D";
+                        property = "comspec_sse_iarpEmo_armes";
+                        control = "Checkbox";
+                        expression = "if (isServer && {!_value}) then { ['edenEmo', [_this, 'armes', false]] call comspec_sse_fnc_iarpProfile; };";
+                        defaultValue = "true";
+                        typeName = "BOOL";
+                        condition = "objectBrain";
+                    };
+                    class comspec_sse_iarpEmo_nervosite {
+                        displayName = "$STR_COMSPEC_IARP_S_Emo_nervosite_T";
+                        tooltip = "$STR_COMSPEC_IARP_S_Emo_nervosite_D";
+                        property = "comspec_sse_iarpEmo_nervosite";
+                        control = "Checkbox";
+                        expression = "if (isServer && {!_value}) then { ['edenEmo', [_this, 'nervosite', false]] call comspec_sse_fnc_iarpProfile; };";
+                        defaultValue = "true";
+                        typeName = "BOOL";
+                        condition = "objectBrain";
+                    };
+                    class comspec_sse_iarpEmo_colere {
+                        displayName = "$STR_COMSPEC_IARP_S_Emo_colere_T";
+                        tooltip = "$STR_COMSPEC_IARP_S_Emo_colere_D";
+                        property = "comspec_sse_iarpEmo_colere";
+                        control = "Checkbox";
+                        expression = "if (isServer && {!_value}) then { ['edenEmo', [_this, 'colere', false]] call comspec_sse_fnc_iarpProfile; };";
+                        defaultValue = "true";
+                        typeName = "BOOL";
+                        condition = "objectBrain";
+                    };
+                    class comspec_sse_iarpEmo_mefiance {
+                        displayName = "$STR_COMSPEC_IARP_S_Emo_mefiance_T";
+                        tooltip = "$STR_COMSPEC_IARP_S_Emo_mefiance_D";
+                        property = "comspec_sse_iarpEmo_mefiance";
+                        control = "Checkbox";
+                        expression = "if (isServer && {!_value}) then { ['edenEmo', [_this, 'mefiance', false]] call comspec_sse_fnc_iarpProfile; };";
+                        defaultValue = "true";
+                        typeName = "BOOL";
+                        condition = "objectBrain";
+                    };
+                    class comspec_sse_iarpEmo_soulagement {
+                        displayName = "$STR_COMSPEC_IARP_S_Emo_soulagement_T";
+                        tooltip = "$STR_COMSPEC_IARP_S_Emo_soulagement_D";
+                        property = "comspec_sse_iarpEmo_soulagement";
+                        control = "Checkbox";
+                        expression = "if (isServer && {!_value}) then { ['edenEmo', [_this, 'soulagement', false]] call comspec_sse_fnc_iarpProfile; };";
+                        defaultValue = "true";
+                        typeName = "BOOL";
+                        condition = "objectBrain";
+                    };
+                    class comspec_sse_iarpEmoGroup {
+                        displayName = "$STR_COMSPEC_IARP_Z_EmoGroup";
+                        tooltip = "$STR_COMSPEC_IARP_E_EmoGroup_D";
+                        property = "comspec_sse_iarpEmoGroup";
+                        control = "Checkbox";
+                        expression = "if (isServer && {_value}) then { ['edenEmo', [_this, 'group', true]] call comspec_sse_fnc_iarpProfile; };";
+                        defaultValue = "false";
+                        typeName = "BOOL";
                         condition = "objectBrain";
                     };
                 };

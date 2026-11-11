@@ -2530,5 +2530,155 @@
             <English>No country set: this name is common in %1. Pick it under Country if it is its country.</English>
             <French>Pays non précisé : ce nom est courant en %1. Choisissez-le dans Pays si c'est le sien.</French>
         </Key>
+        <Key ID="STR_COMSPEC_IARP_S_EmoOn_T">
+            <Original>AI emotions</Original>
+            <English>AI emotions</English>
+            <French>Émotions des IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_EmoOn_D">
+            <Original>Master switch. Unticked: every AI stays neutral (always calm tone, no fear, nervousness or anger, no fleeing or surrender caused by emotions) and still answers normally. An AI set in Eden or by the Zeus (« Emotions… ») keeps its own setting, which always wins over this one. Can be saved for one mission only: Eden › CBA settings › Mission. Example: a training mission where players only practise questioning.</Original>
+            <English>Master switch. Unticked: every AI stays neutral (always calm tone, no fear, nervousness or anger, no fleeing or surrender caused by emotions) and still answers normally. An AI set in Eden or by the Zeus (« Emotions… ») keeps its own setting, which always wins over this one. Can be saved for one mission only: Eden › CBA settings › Mission. Example: a training mission where players only practise questioning.</English>
+            <French>Interrupteur général. Décoché : toutes les IA restent neutres (ton calme constant, ni peur, ni nervosité, ni colère, pas de fuite ni de reddition dues aux émotions) et répondent normalement. Une IA réglée dans Eden ou par le Zeus (« Émotions… ») garde son propre réglage, qui l'emporte toujours sur celui-ci. Enregistrable pour une seule mission : Eden › Paramètres CBA › Mission. Exemple : une mission d'entraînement où l'on ne travaille que les questions.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Emo_peur_T">
+            <Original>Fear</Original>
+            <English>Fear</English>
+            <French>Peur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Emo_peur_D">
+            <Original>Fear: trembles, stammers, may drop to the ground, surrender or run away when threatened, when shots are fired nearby or when she sees violence. Unticked: none of these reactions, never a frightened tone. Example: an old shepherd who does not let himself be impressed.</Original>
+            <English>Fear: trembles, stammers, may drop to the ground, surrender or run away when threatened, when shots are fired nearby or when she sees violence. Unticked: none of these reactions, never a frightened tone. Example: an old shepherd who does not let himself be impressed.</English>
+            <French>Peur : tremble, bafouille, peut se jeter au sol, se rendre ou fuir si on la menace, si on tire près d'elle ou si elle voit une violence. Décochée : aucune de ces réactions, jamais de ton effrayé. Exemple : un vieux berger qui ne se laisse pas impressionner.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Emo_armes_T">
+            <Original>Fear of weapons</Original>
+            <English>Fear of weapons</English>
+            <French>Peur des armes</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Emo_armes_D">
+            <Original>A raised weapon aimed at her (25 m, close range included), soldiers with raised weapons around, nearby shots or a « /me aims his rifle » raise her fear and can make her obey, surrender or confess. Unticked: she sees the weapon (« He stares at your gun barrel. ») but stays calm; other causes (spoken threat, forged papers found, violence seen) still work. Example: a police officer, a soldier, a mercenary or a veteran who does not flinch when you aim at him.</Original>
+            <English>A raised weapon aimed at her (25 m, close range included), soldiers with raised weapons around, nearby shots or a « /me aims his rifle » raise her fear and can make her obey, surrender or confess. Unticked: she sees the weapon (« He stares at your gun barrel. ») but stays calm; other causes (spoken threat, forged papers found, violence seen) still work. Example: a police officer, a soldier, a mercenary or a veteran who does not flinch when you aim at him.</English>
+            <French>Une arme levée braquée sur elle (25 m, de près compris), des soldats arme levée autour, des tirs proches ou un « /me braque son arme » font monter sa peur et peuvent la faire obéir, se rendre ou avouer. Décochée : elle voit l'arme (« Il fixe le canon de votre arme. ») mais reste calme ; les autres causes (menace dite, faux découvert, violence vue) jouent toujours. Exemple : un policier, un soldat, un mercenaire ou un vétéran qui ne bronche pas quand on le braque.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Emo_nervosite_T">
+            <Original>Nervousness</Original>
+            <English>Nervousness</English>
+            <French>Nervosité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Emo_nervosite_D">
+            <Original>Nervousness: hesitates, glances around, answers « I… I'm from Kavala », may become nervous then refuse her papers when tension rises. Unticked: never nervous, steady tone. Example: a well-trained agent who recites her cover without blinking.</Original>
+            <English>Nervousness: hesitates, glances around, answers « I… I'm from Kavala », may become nervous then refuse her papers when tension rises. Unticked: never nervous, steady tone. Example: a well-trained agent who recites her cover without blinking.</English>
+            <French>Nervosité : hésite, regarde autour d'elle, répond « Je… je viens de Kavala », peut devenir nerveuse puis refuser ses papiers quand la tension monte. Décochée : jamais nerveuse, ton posé. Exemple : un agent bien entraîné qui récite sa couverture sans ciller.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Emo_colere_T">
+            <Original>Anger</Original>
+            <English>Anger</English>
+            <French>Colère</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Emo_colere_D">
+            <Original>Anger: aggressive tone, « denies and gets angry » when accused, may refuse under threat, fight back or call for reinforcements (armed insurgent). Unticked: never aggressive. Example: an insurgent you want to stay silent rather than fight.</Original>
+            <English>Anger: aggressive tone, « denies and gets angry » when accused, may refuse under threat, fight back or call for reinforcements (armed insurgent). Unticked: never aggressive. Example: an insurgent you want to stay silent rather than fight.</English>
+            <French>Colère : ton agressif, « nie et s'énerve » quand on l'accuse, peut refuser sous la menace, riposter ou appeler des renforts (insurgé armé). Décochée : jamais agressive. Exemple : un insurgé qu'on veut voir se taire plutôt que se battre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Emo_mefiance_T">
+            <Original>Distrust</Original>
+            <English>Distrust</English>
+            <French>Méfiance</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Emo_mefiance_D">
+            <Original>Distrust: wary tone (« Why do you want to know? »), mostly when she refuses or is not very honest. Unticked: she answers without suspicion. Example: a welcoming shopkeeper.</Original>
+            <English>Distrust: wary tone (« Why do you want to know? »), mostly when she refuses or is not very honest. Unticked: she answers without suspicion. Example: a welcoming shopkeeper.</English>
+            <French>Méfiance : ton méfiant (« Pourquoi vous voulez savoir ? »), surtout quand elle refuse ou qu'elle est peu honnête. Décochée : elle répond sans soupçon. Exemple : un commerçant accueillant.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Emo_soulagement_T">
+            <Original>Relief</Original>
+            <English>Relief</English>
+            <French>Soulagement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_S_Emo_soulagement_D">
+            <Original>Relief: relaxes when reassured, given her papers back, promised help, or after confessing (her fear drops faster). Unticked: kind words change nothing, her fear only drops with time. Example: a stubborn suspect nothing can calm down.</Original>
+            <English>Relief: relaxes when reassured, given her papers back, promised help, or after confessing (her fear drops faster). Unticked: kind words change nothing, her fear only drops with time. Example: a stubborn suspect nothing can calm down.</English>
+            <French>Soulagement : se détend quand on la rassure, qu'on lui rend ses papiers, qu'on lui promet de l'aide ou après un aveu (la peur redescend plus vite). Décochée : les paroles rassurantes ne changent rien, la peur ne redescend qu'avec le temps. Exemple : un suspect buté que rien n'apaise.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_Emo">
+            <Original>Emotions…</Original>
+            <English>Emotions…</English>
+            <French>Émotions…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_EmoMode">
+            <Original>AI emotions</Original>
+            <English>AI emotions</English>
+            <French>Émotions de l'IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_EmoMode_D">
+            <Original>Mission setting: follows the boxes of the global setting (COMSPEC SSE › AI roleplay). Custom: the boxes below. Tick all (normal): every emotion, usual behaviour. Stoic: distrust only. Very emotional: every emotion, nervousness and fear raised to 75 at least. Untick all (neutral): no emotion, she answers calmly. The AI's own setting wins over the global one. Example: Stoic for a bodyguard.</Original>
+            <English>Mission setting: follows the boxes of the global setting (COMSPEC SSE › AI roleplay). Custom: the boxes below. Tick all (normal): every emotion, usual behaviour. Stoic: distrust only. Very emotional: every emotion, nervousness and fear raised to 75 at least. Untick all (neutral): no emotion, she answers calmly. The AI's own setting wins over the global one. Example: Stoic for a bodyguard.</English>
+            <French>Réglage de la mission : suit les cases du réglage global (COMSPEC SSE › IA RP). Personnalisé : les cases ci-dessous. Tout cocher (normal) : toutes les émotions, comportement habituel. Impassible : la méfiance seule. Très émotif : toutes les émotions, nervosité et peur portées à 75 au moins. Tout décocher (neutre) : aucune émotion, elle répond calmement. Le réglage de l'IA l'emporte sur le réglage global. Exemple : Impassible pour un garde du corps.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_EmoMode_auto">
+            <Original>Mission setting</Original>
+            <English>Mission setting</English>
+            <French>Réglage de la mission</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_EmoMode_custom">
+            <Original>Custom (boxes below)</Original>
+            <English>Custom (boxes below)</English>
+            <French>Personnalisé (cases ci-dessous)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_EmoMode_normal">
+            <Original>Tick all (normal)</Original>
+            <English>Tick all (normal)</English>
+            <French>Tout cocher (normal)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_EmoMode_impassible">
+            <Original>Stoic</Original>
+            <English>Stoic</English>
+            <French>Impassible</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_EmoMode_emotif">
+            <Original>Very emotional</Original>
+            <English>Very emotional</English>
+            <French>Très émotif</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_EmoMode_neutre">
+            <Original>Untick all (neutral)</Original>
+            <English>Untick all (neutral)</English>
+            <French>Tout décocher (neutre)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_EmoGroup">
+            <Original>Whole group</Original>
+            <English>Whole group</English>
+            <French>Tout son groupe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_Z_EmoGroup_D">
+            <Original>Applies this setting to every AI of their group. Example: a police patrol that is not afraid of weapons.</Original>
+            <English>Applies this setting to every AI of their group. Example: a police patrol that is not afraid of weapons.</English>
+            <French>Applique ce réglage à toutes les IA de son groupe. Exemple : une patrouille de policiers qui ne craint pas les armes.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_E_EmoMode_D">
+            <Original>Mission setting: follows the global setting (COMSPEC SSE › AI roleplay, can be saved in the mission). Custom: the boxes below (unticking one box is enough). Tick all (normal), Stoic (distrust only), Very emotional (nervousness and fear at least 75), Untick all (neutral: no emotion, she still talks). This AI's setting wins over the global one; it is saved in her AI roleplay profile. Example: Stoic for a bodyguard, untick « Fear of weapons » for a police officer.</Original>
+            <English>Mission setting: follows the global setting (COMSPEC SSE › AI roleplay, can be saved in the mission). Custom: the boxes below (unticking one box is enough). Tick all (normal), Stoic (distrust only), Very emotional (nervousness and fear at least 75), Untick all (neutral: no emotion, she still talks). This AI's setting wins over the global one; it is saved in her AI roleplay profile. Example: Stoic for a bodyguard, untick « Fear of weapons » for a police officer.</English>
+            <French>Réglage de la mission : suit le réglage global (COMSPEC SSE › IA RP, enregistrable dans la mission). Personnalisé : les cases ci-dessous (décocher une case suffit). Tout cocher (normal), Impassible (méfiance seule), Très émotif (nervosité et peur à 75 au moins), Tout décocher (neutre : aucune émotion, elle parle quand même). Le réglage de cette IA l'emporte sur le global ; il est gardé dans son profil IA RP. Exemple : Impassible pour un garde du corps, « Peur des armes » décochée pour un policier.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_E_EmoGroup_D">
+            <Original>Gives this AI's emotion setting to the AIs of her group that have none of their own. Example: the leader of a police patrol set to Stoic, the whole patrol follows.</Original>
+            <English>Gives this AI's emotion setting to the AIs of her group that have none of their own. Example: the leader of a police patrol set to Stoic, the whole patrol follows.</English>
+            <French>Donne le réglage d'émotions de cette IA aux IA de son groupe qui n'ont pas le leur. Exemple : le chef d'une patrouille de policiers réglé Impassible, toute la patrouille suit.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_ManE_T">
+            <Original>AI emotions</Original>
+            <English>AI emotions</English>
+            <French>Émotions des IA</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_ManE_D">
+            <Original>Each AI can feel six emotions: fear, fear of weapons, nervousness, anger, distrust, relief.%1%2Global setting: Options › Addon options › COMSPEC SSE › AI roleplay (AI emotions, one box per emotion), can be saved in the mission.%1%2Per AI: Eden attributes (COMSPEC SSE · AI roleplay › AI emotions, one box per emotion, Whole group); Zeus: SSE · AI roleplay menu › AI profile › Emotions….%1%2The AI's own setting wins over the global one. An unticked emotion no longer rises, no longer changes her tone and no longer triggers anything (fleeing, surrender, refusal, anger).%1%2Example: a police officer without fear of weapons sees your rifle but stays calm; a spoken threat or forged papers found still get to him.</Original>
+            <English>Each AI can feel six emotions: fear, fear of weapons, nervousness, anger, distrust, relief.%1%2Global setting: Options › Addon options › COMSPEC SSE › AI roleplay (AI emotions, one box per emotion), can be saved in the mission.%1%2Per AI: Eden attributes (COMSPEC SSE · AI roleplay › AI emotions, one box per emotion, Whole group); Zeus: SSE · AI roleplay menu › AI profile › Emotions….%1%2The AI's own setting wins over the global one. An unticked emotion no longer rises, no longer changes her tone and no longer triggers anything (fleeing, surrender, refusal, anger).%1%2Example: a police officer without fear of weapons sees your rifle but stays calm; a spoken threat or forged papers found still get to him.</English>
+            <French>Chaque IA peut ressentir six émotions : peur, peur des armes, nervosité, colère, méfiance, soulagement.%1%2Réglage global : Options › Options des addons › COMSPEC SSE › IA RP (Émotions des IA, une case par émotion), enregistrable dans la mission.%1%2Par IA : attributs Eden (COMSPEC SSE · IA RP › Émotions de l'IA, une case par émotion, Tout son groupe) ; Zeus : menu SSE · Roleplay de l'IA › Profil d'IA › Émotions….%1%2Le réglage de l'IA l'emporte sur le réglage global. Une émotion décochée ne monte plus, ne change plus son ton et ne déclenche plus rien (fuite, reddition, refus, colère).%1%2Exemple : un policier sans peur des armes voit votre fusil mais reste calme ; une menace dite ou un faux découvert le touchent toujours.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_IARP_ManE_Tip">
+            <Original>Untick all: the AI never changes emotion but still talks normally.</Original>
+            <English>Untick all: the AI never changes emotion but still talks normally.</English>
+            <French>Tout décocher : l'IA ne change jamais d'émotion mais parle normalement.</French>
+        </Key>
     </Package>
 </Project>
