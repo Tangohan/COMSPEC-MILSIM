@@ -138,6 +138,23 @@ EN : The licence can be accepted from the phone, and the Zeus sees everyone's re
 - Étiquettes « Version du mod » (`fn_zeusCentre`) : la version lue était celle de la fiche relayée par le serveur (`fn_zeusState` « row »). Un serveur ATAK 4.2.1 ou plus ancien refuse les fiches de 14 champs envoyées depuis 4.2.2 et garde la dernière acceptée (session précédente du joueur), renvoyée à chaque envoi complet et tenue pour fraîche côté Zeus ; la référence retombait sur la version du Zeus lui-même tant que l'onglet SERVEUR n'était pas ouvert. Désormais : version publiée par chaque poste sur son unité (`COMSPEC_ATAK_ModVer`, `XEH_postInitClient`), fiche en repli ; référence = `COMSPEC_ATAK_ServerVersion` publiée par le serveur (`XEH_postInitServer`), sinon l'onglet SERVEUR (demandé toutes les 2 min au plus), sinon la plus récente vue en jeu.
 - `fn_verCmp` (ATAK, core) : lecture et comparaison MAJEUR.MINEUR.CORRECTIF nombre par nombre, `["max", …]`, `["selfTest"]` (4.4.0 contre 4.2.1, égales, plus récente, illisible, incomplète, vide). Test `AtakLicenceOpenVersionTagAssetTest`.
 - Overwatch connect : lit seulement sa propre version (`CfgPatches`), rien à corriger. Non vu en jeu.
+## À venir : page MPU5 (Radio de données) plus claire (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Radio de données (MPU5) plus claire
+- En haut, l'état en trois lignes (radio, téléphone, maillage) et ce qu'il faut faire ; les réglages sont rangés par thème, le choix en cours en surbrillance (puissance Faible / Moyenne / Forte, canal − 3 +).
+- La voix par le maillage tient sur une ligne ; le bouton GUIDE explique les étapes, DÉPANNAGE MPU reste à côté.
+EN : Clearer data radio (MPU5)
+- At the top, the status in three lines (radio, phone, mesh) and what to do; settings are grouped by theme, with the current choice highlighted (power Low / Medium / High, channel − 3 +).
+- Voice over the mesh fits on one line; the GUIDE button explains the steps, MPU TROUBLESHOOTING stays next to it.
+
+### Détail technique
+- `fn_pageNetwork` : section « Radio de données » refaite (état en 3 lignes à pastilles, ligne « à faire » avec la raison des boutons grisés, rangées `_ctlRow` : libellé à gauche, cases de même hauteur et de même largeur, `fn_textFit`). Section voix repliée par défaut (`_openDef` sans « voice »), volet `netGuide` (étapes numérotées, retour du téléphone par `backSub`).
+- `fn_mpuLink` : `"txpower"` et `"width"` acceptent un cran 0-2 (sans cran : le suivant, comme avant, pour le menu ACE).
+- Textes ajoutés à `i18n/en.txt` et `localisation/template/xx.txt` ; test `AtakMpu5PageAssetTest`.
+
+---
 
 ## SSE 1.9.0 : IA qui réagissent naturellement, émotions réglables, papiers de 45 pays, une seule identité par IA, outils Zeus refaits (SSE 1.9.0)
 

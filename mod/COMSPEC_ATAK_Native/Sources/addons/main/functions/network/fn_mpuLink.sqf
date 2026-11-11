@@ -29,7 +29,7 @@
       "noDirect" -> vrai si le téléphone ne parle plus directement aux relais (fn_relayNet "best")
       "view"     -> HashMap pour l'app Réseau (état de la radio et "status")
       "link"     [mode "cable" | "wifi"] ; "unlink"
-      "power" ; "chan" [+1 | -1] ; "txpower" ; "width" ; "mast" ; "battery" ; "info"
+      "power" ; "chan" [+1 | -1] ; "txpower" [cran 0-2, sinon suivant] ; "width" [cran 0-2, sinon suivant] ; "mast" ; "battery" ; "info"
       "tick", "mesh" (planifié), "aceInit"
 */
 params [["_act", "status"], ["_arg", []]];
@@ -207,7 +207,8 @@ switch (_act) do {
     };
     case "txpower": {
         private _st = call _state;
-        private _p = ((_st get "pwr") + 1) mod 3;
+        // Cran choisi (app Réseau, sélecteur Faible / Moyenne / Forte) ; sans cran : le suivant (menu ACE, ancien bouton).
+        private _p = [((_st get "pwr") + 1) mod 3, ((_arg param [0, -1]) max 0) min 2] select ((_arg param [0, -1]) >= 0);
         _st set ["pwr", _p];
         ["INFO", format ["MPU5 : puissance %1, portée %2 m", ["faible (1 W)", "moyenne (3 W)", "max (6 W)"] select _p,
             round ((missionNamespace getVariable ["comspec_atak_native_mpu5_range", 6000]) * (_pwrK select _p))]] call _say;
@@ -216,7 +217,7 @@ switch (_act) do {
     };
     case "width": {
         private _st = call _state;
-        private _w = ((_st getOrDefault ["width", 1]) + 1) mod 3;
+        private _w = [((_st getOrDefault ["width", 1]) + 1) mod 3, ((_arg param [0, -1]) max 0) min 2] select ((_arg param [0, -1]) >= 0);
         _st set ["width", _w];
         ["INFO", format ["MPU5 : canal %1 (%2)", ["étroit", "normal", "large"] select _w, ["plus de portée, moins de débit", "réglage de base", "plus de débit, moins de portée"] select _w]] call _say;
         call _kick;
