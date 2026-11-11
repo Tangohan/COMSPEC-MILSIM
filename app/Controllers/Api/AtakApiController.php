@@ -7251,6 +7251,21 @@ class AtakApiController
             return $actor;
         }
         $body = $this->jsonBody($request);
+        // Même appel COMSPEC Link (« BriefingPlan.Push ») pour la salle TOC du camp (fn_tocWeb du mod) : pas de
+        // nouvelle commande dans la DLL. Canal « toc_room » : instantané de la salle (docs/TOC-WEB.md).
+        if (($body['channel'] ?? '') === 'toc_room') {
+            try {
+                $res = (new \App\Services\AtakToc\TocRoomService())->ingestFromGame(
+                    $tenantId,
+                    (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID),
+                    $body
+                );
+            } catch (\Throwable) {
+                return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+            }
+
+            return Response::json(['ok' => $res['ok'], 'reason' => $res['reason']], $res['reason'] === 'invalid' ? 400 : 200);
+        }
         $side = strtoupper(trim((string) ($body['side'] ?? '')));
         if (!in_array($side, \App\Repositories\AtakBriefingPlanRepository::SIDES, true)) {
             return Response::json(['ok' => false, 'error' => 'invalid_side'], 400);
