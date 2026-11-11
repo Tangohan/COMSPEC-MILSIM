@@ -1,7 +1,7 @@
 @echo off
 setlocal
 :: COMSPEC Flashbang : mod independant (seule dependance CBA_A3). Build HEMTT (config rapifiee, p3d binarises),
-:: copie dans @COMSPEC_Flashbang, signature avec la cle propre au mod (signing\, hors Git, creee au premier build).
+:: copie dans @COMSPEC_Flashbang, signature avec la cle propre au mod (hors depot : %APPDATA%\COMSPEC\signing\flashbang, creee une fois puis reutilisee : a garder).
 :: Lancer depuis PowerShell : cmd /c "<chemin>\mod\COMSPEC_Flashbang\build_mod.bat"
 set "ROOT=%~dp0"
 set "SRC=%ROOT%Sources"

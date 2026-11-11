@@ -1,8 +1,13 @@
 ﻿# Signe le PBO de COMSPEC Flashbang (DSSignFile) et pose la clé publique dans @COMSPEC_Flashbang\keys.
-# Même mécanisme que mod\COMSPEC_ATAK_Native\tools\sign_pbos.ps1, avec une clé propre au mod :
-# la clé privée reste dans mod\COMSPEC_Flashbang\signing\ (ignorée par Git) ; première exécution : la paire est créée.
+# Même mécanisme que mod\COMSPEC_ATAK_Native\tools\sign_pbos.ps1, avec une clé propre au mod.
+# Clé STABLE : la même clé privée doit servir à toutes les versions, sinon les serveurs doivent changer de .bikey.
+# Elle vit HORS du dépôt (un worktree supprimé ne l'emporte pas) :
+#   -SigningDir, sinon $env:COMSPEC_FB_SIGNING_DIR, sinon %APPDATA%\COMSPEC\signing\flashbang.
+# Ancien emplacement (mod\COMSPEC_Flashbang\signing\, ignoré par Git) : utilisé s'il contient déjà la clé.
+# Première exécution sans clé : la paire est créée une seule fois. Le script ne lit ni n'affiche jamais la clé privée.
 param(
-    [string]$ModRoot = (Split-Path $PSScriptRoot -Parent)
+    [string]$ModRoot = (Split-Path $PSScriptRoot -Parent),
+    [string]$SigningDir = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -20,8 +25,13 @@ $sign = Join-Path $tools "DSSignFile\DSSignFile.exe"
 $out = Join-Path $ModRoot "@COMSPEC_Flashbang"
 $addons = Join-Path $out "addons"
 $keysDir = Join-Path $out "keys"
-$signingDir = Join-Path $ModRoot "signing"
 $keyName = "comspec_flashbang"
+$legacyDir = Join-Path $ModRoot "signing"
+if ($SigningDir) { $signingDir = $SigningDir }
+elseif ($env:COMSPEC_FB_SIGNING_DIR) { $signingDir = $env:COMSPEC_FB_SIGNING_DIR }
+elseif (Test-Path (Join-Path $legacyDir "$keyName.biprivatekey")) { $signingDir = $legacyDir }
+else { $signingDir = Join-Path $env:APPDATA "COMSPEC\signing\flashbang" }
+Write-Host "[INFO] Dossier de la clé : $signingDir"
 $priv = Join-Path $signingDir "$keyName.biprivatekey"
 $pub = Join-Path $signingDir "$keyName.bikey"
 
