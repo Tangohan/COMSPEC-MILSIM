@@ -27,7 +27,7 @@ class CfgVehicles {
     };
 #include "CfgVehicles_devices.hpp"
 
-    // Caisse de grenades : tous les modèles, 10 de chaque (Eden et Zeus).
+    // Caisse de grenades standard : les 10 modèles à mèche réglable, 10 de chaque (Eden et Zeus).
     class Box_NATO_Grenades_F;
     class COMSPEC_FB_Box: Box_NATO_Grenades_F {
         author = "COMSPEC";
@@ -42,6 +42,13 @@ class CfgVehicles {
         class TransportItems {};
         class TransportWeapons {};
         class TransportBackpacks {};
+    };
+    // Caisse des grenades à délai : les 20 variantes 3 s et 8 s, 5 de chaque (100 grenades, 1300 de masse).
+    class COMSPEC_FB_Box_Delay: COMSPEC_FB_Box {
+        displayName = "$STR_COMSPEC_FB_Box_Delay";
+        class TransportMagazines {
+#include "CfgVehicles_boxDelay.hpp"
+        };
     };
 
     // Module Eden (et Zeus vanilla, valeurs par défaut) : grenade à N flashs, effet de zone ou grenade d'entraînement.
@@ -96,6 +103,45 @@ class CfgVehicles {
                 tooltip = "$STR_COMSPEC_FB_Module_Delay_Tip";
                 typeName = "NUMBER";
                 defaultValue = "0";
+            };
+            // Mèche (tous les modes) : ajoutée au délai ci-dessus. « Par défaut » = aucune mèche, comme avant.
+            class FuseMode: Combo {
+                property = "COMSPEC_FB_Module_FuseMode";
+                displayName = "$STR_COMSPEC_FB_Module_FuseMode";
+                tooltip = "$STR_COMSPEC_FB_Module_FuseMode_Tip";
+                typeName = "STRING";
+                defaultValue = """default""";
+                class Values {
+                    class Default { name = "$STR_COMSPEC_FB_Fuse_DefaultEden"; value = "default"; };
+                    class D3 { name = "$STR_COMSPEC_FB_Fuse_3"; value = "3"; };
+                    class D8 { name = "$STR_COMSPEC_FB_Fuse_8"; value = "8"; };
+                    class Custom { name = "$STR_COMSPEC_FB_Fuse_Custom"; value = "custom"; };
+                };
+            };
+            class FuseCustom: Edit {
+                property = "COMSPEC_FB_Module_FuseCustom";
+                displayName = "$STR_COMSPEC_FB_Module_FuseCustom";
+                tooltip = "$STR_COMSPEC_FB_Module_FuseCustom_Tip";
+                typeName = "NUMBER";
+                defaultValue = "1.5";
+            };
+            class DrillSound: Combo {
+                property = "COMSPEC_FB_Module_DrillSound";
+                displayName = "$STR_COMSPEC_FB_Module_DrillSound";
+                tooltip = "$STR_COMSPEC_FB_Module_DrillSound_Tip";
+                typeName = "STRING";
+                defaultValue = """setting""";
+                class Values {
+                    class Setting { name = "$STR_COMSPEC_FB_DrillSound_Setting"; value = "setting"; };
+                    class Pop { name = "$STR_COMSPEC_FB_DrillSound_Pop"; value = "Pop"; };
+                    class PopSourd { name = "$STR_COMSPEC_FB_DrillSound_PopSourd"; value = "PopSourd"; };
+                    class BangLeger { name = "$STR_COMSPEC_FB_DrillSound_BangLeger"; value = "BangLeger"; };
+                    class BangReel { name = "$STR_COMSPEC_FB_DrillSound_BangReel"; value = "BangReel"; };
+                    class Rafale { name = "$STR_COMSPEC_FB_DrillSound_Rafale"; value = "Rafale"; };
+                    class Sifflet { name = "$STR_COMSPEC_FB_DrillSound_Sifflet"; value = "Sifflet"; };
+                    class Cloche { name = "$STR_COMSPEC_FB_DrillSound_Cloche"; value = "Cloche"; };
+                    class Aucun { name = "$STR_COMSPEC_FB_DrillSound_Aucun"; value = "Aucun"; };
+                };
             };
             class Radius: Edit {
                 property = "COMSPEC_FB_Module_Radius";

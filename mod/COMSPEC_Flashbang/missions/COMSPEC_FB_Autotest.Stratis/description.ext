@@ -1,0 +1,13 @@
+author = "COMSPEC";
+onLoadName = "COMSPEC Flashbang - autotest";
+onLoadMission = "Test automatique du mod COMSPEC Flashbang (tools\ingame_test.ps1) : lancers vanilla et ACE, grenades à délai, DRILL. Résultats dans le RPT (lignes AUTOTEST).";
+briefing = 0;
+debriefing = 0;
+saving = 0;
+enableDebugConsole = 1;
+respawn = 0;
+class Header {
+    gameType = "Sandbox";
+    minPlayers = 1;
+    maxPlayers = 1;
+};

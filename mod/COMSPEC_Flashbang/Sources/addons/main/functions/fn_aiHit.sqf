@@ -55,7 +55,7 @@ if (_first) then {
         if (local _unit) then {
             [_unit, _orig] call comspec_fb_fnc_aiRestore;
         } else {
-            [_unit, _orig] remoteExecCall ["comspec_fb_fnc_aiRestore", _unit];
+            ["comspec_fb_aiRestore", [_unit, _orig], _unit] call CBA_fnc_targetEvent;
             { _unit setVariable [_x, nil] } forEach ["comspec_fb_aiSkills", "comspec_fb_aiPeak", "comspec_fb_aiEnd"];
         };
     }, [_unit]] call CBA_fnc_waitUntilAndExecute;

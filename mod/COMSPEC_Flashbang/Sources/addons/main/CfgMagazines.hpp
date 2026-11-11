@@ -1,4 +1,6 @@
 // Grenades d'inventaire (lancer normal : muzzles ajoutés à Throw dans CfgWeapons.hpp).
+// Noms courts (liste d'inventaire et Arsenal coupées vers 20 caractères) : la valeur qui distingue vient en premier
+// (« Flash ×5 », « Flash ×5 · 3 s », « Drill · 8 s ») ; le texte explicatif est dans descriptionShort (info-bulle).
 class CfgMagazines {
     class HandGrenade;
     class COMSPEC_FB_Flash_Base: HandGrenade {
@@ -124,4 +126,26 @@ class CfgMagazines {
         model = QPATHTOF(data\fb_drill.p3d);
         ammo = "COMSPEC_FB_Ammo_Drill";
     };
+
+    // Variantes à délai : COMSPEC_FB_Flash_<N>_D3 / _D8 et COMSPEC_FB_Drill_D3 / _D8 (mèche fixe 3 s / 8 s, CfgAmmo.hpp).
+    // FB_MAG_DELAY(classe, munition, fichier, délai) : modèle data\fb_<fichier>_d<délai>.p3d, icône ui\fb_icon_<fichier>_d<délai>_ca.paa.
+#define FB_MAG_DELAY(C,A,F,D) class COMSPEC_FB_##C##_D##D: COMSPEC_FB_##C { \
+        displayName = QUOTE($STR_COMSPEC_FB_##C##_D##D##_Name); \
+        displayNameShort = QUOTE($STR_COMSPEC_FB_##C##_D##D##_Short); \
+        descriptionShort = QUOTE($STR_COMSPEC_FB_##C##_D##D##_Desc); \
+        picture = QPATHTOF(ui\fb_icon_##F##_d##D##_ca.paa); \
+        model = QPATHTOF(data\fb_##F##_d##D##.p3d); \
+        ammo = QUOTE(COMSPEC_FB_Ammo_##A##_D##D); \
+    }
+#define FB_MAG_DELAYS(C,A,F) FB_MAG_DELAY(C,A,F,3); FB_MAG_DELAY(C,A,F,8)
+    FB_MAG_DELAYS(Flash_1,1,1);
+    FB_MAG_DELAYS(Flash_2,2,2);
+    FB_MAG_DELAYS(Flash_3,3,3);
+    FB_MAG_DELAYS(Flash_4,4,4);
+    FB_MAG_DELAYS(Flash_5,5,5);
+    FB_MAG_DELAYS(Flash_6,6,6);
+    FB_MAG_DELAYS(Flash_7,7,7);
+    FB_MAG_DELAYS(Flash_8,8,8);
+    FB_MAG_DELAYS(Flash_9,9,9);
+    FB_MAG_DELAYS(Drill,Drill,drill);
 };

@@ -25,7 +25,7 @@ if (_kind != "area") then {
         _ctx set ["cancelled", true];
         if (isServer) then {
             private _owners = (comspec_fb_owners getOrDefault [_id, []]) - [2];
-            if (isMultiplayer && {_owners isNotEqualTo []}) then { [_id] remoteExecCall ["comspec_fb_fnc_cancel", _owners] };
+            if (isMultiplayer) then { { ["comspec_fb_cancel", [_id], _x] call CBA_fnc_ownerEvent } forEach _owners };
         };
     };
 };
@@ -60,7 +60,11 @@ if (hasInterface && _showFx) then {
     private _gain = missionNamespace getVariable ["comspec_fb_bangVolume", 1];
     private _wall = (lineIntersectsSurfaces [_pos vectorAdd [0, 0, 0.3], _cam, _device, vehicle (call CBA_fnc_currentUnit), true, 1, "GEOM", "VIEW"]) isNotEqualTo [];
     if (_kind == "drill") then {
-        ["PopDrill", _pos, _delay, _wall, _gain] call comspec_fb_fnc_playBang;
+        // Son choisi pour la DRILL (réglage d'addon ou module), décidé par le serveur : une lecture par pop.
+        _extra params [["_snd", "Pop", [""]], ["_vol", 1, [0]]];
+        if (_snd != "Aucun") then {
+            [format ["Drill_%1", _snd], _pos, _delay, _wall, _gain * _vol] call comspec_fb_fnc_playBang;
+        };
     } else {
         switch (true) do {
             case (_dc > 150 && {!_wall}): { ["BangLointain", _pos, _delay, false, _gain] call comspec_fb_fnc_playBang };
@@ -71,6 +75,8 @@ if (hasInterface && _showFx) then {
             };
         };
     };
+    ["fx", format ["%1 : lumière et particules créées, son à %2 m (retard %3 s, %4)", _id, round _dc, _delay toFixed 2,
+        ["direct", "derrière un mur"] select _wall]] call comspec_fb_fnc_log;
 };
 
 // ------------------------------------------------------------------ effets sur les unités locales
@@ -95,12 +101,32 @@ private _friendly = missionNamespace getVariable ["comspec_fb_friendly", true];
 private _side = _ctx get "side";
 private _aiOn = missionNamespace getVariable ["comspec_fb_aiAffected", true];
 private _meHit = false;
+private _dbg = call comspec_fb_fnc_logOn;
+if (_dbg) then {
+    ["burst", format ["%1 : %2 unité(s) dans %3 m ; joueur local %4", _id, count _units, round _radius,
+        switch (true) do {
+            case (isNull _me): { "absent (serveur ou headless)" };
+            case (!alive _me): { "mort : pas d'effet, éblouissement de spectateur seulement" };
+            case (!isNull curatorCamera): { "en Zeus : pas d'effet, éblouissement de spectateur seulement" };
+            case !(_me in _units): { format ["hors rayon (%1 m)", round (_me distance _center)] };
+            default { "dans le rayon" };
+        }]] call comspec_fb_fnc_log;
+};
 {
     private _u = _x;
     private _isMe = _meInGame && {_u == _me};
     private _concerned = local _u && {alive _u}
         && {_friendly || {_side isEqualTo sideUnknown} || {side group _u != _side}}
         && {_isMe || {!isPlayer _u && _aiOn}};
+    if (_dbg && {local _u} && {!_concerned}) then {
+        ["unité", format ["%1 %2 m : ignorée (%3)", _u, round (_u distance _center), switch (true) do {
+            case (!alive _u): { "morte" };
+            case (!_friendly && {side group _u == _side}): { "même camp que le lanceur, réglage « Effet sur son camp » coupé" };
+            case (isPlayer _u && {!_isMe}): { "joueur en Zeus ou spectateur" };
+            case (!_aiOn): { "réglage « IA affectée » coupé" };
+            default { "?" };
+        }]] call comspec_fb_fnc_log;
+    };
     if (_concerned) then {
         private _exp = if (_area) then {
             private _s = (_extra param [1, 0.8]) * (parseNumber ((_u distance _center) <= (_extra param [0, 10])));
@@ -109,6 +135,13 @@ private _meHit = false;
             [_u, _ctx, _pos, _env, _isMe] call comspec_fb_fnc_exposure
         };
         _exp params ["_vis", "_aud", "_info"];
+        if (_dbg) then {
+            ["unité", format ["%1 %2 : %3 m, angle %4°, vue %5, %6, vision %7, audition %8 -> %9", _u, ["IA", "JOUEUR"] select _isMe,
+                (_info getOrDefault ["dist", 0]) toFixed 1, round (_info getOrDefault ["angle", -1]),
+                ["directe", "bloquée"] select (_info getOrDefault ["blocked", false]), _env getOrDefault ["class", "?"],
+                _vis toFixed 2, _aud toFixed 2,
+                ["aucun effet (trop faible : distance, mur ou dos tourné)", "effets appliqués"] select (_vis > 0.02 || {_aud > 0.02})]] call comspec_fb_fnc_log;
+        };
         if (_vis > 0.02 || {_aud > 0.02}) then {
             if (_isMe) then {
                 _meHit = true;

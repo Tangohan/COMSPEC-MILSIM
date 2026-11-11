@@ -4,6 +4,7 @@ class CfgFunctions {
         class lancer {
             file = "\z\comspec_flashbang\addons\main\functions";
             class fired {};
+            class projectileCreated {};
             class fuseEnd {};
             class serverDetonate {};
             class serverArea {};
@@ -37,6 +38,8 @@ class CfgFunctions {
             class moduleEden {};
             class zenRegister {};
             class log {};
+            class logOn {};
+            class debugTest {};
         };
     };
 };

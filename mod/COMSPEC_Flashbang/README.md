@@ -1,37 +1,72 @@
 # COMSPEC Flashbang
 
 Mod indépendant de grenades assourdissantes pour Arma 3 : grenades de 1 à 9 détonations consécutives et grenade
-d'entraînement DRILL. Seule dépendance : **CBA_A3**. Il ne dépend d'aucun autre mod COMSPEC (ni ATAK, ni SSE, ni
+d'entraînement DRILL, chacune en mèche standard (réglable) et en mèche à délai 3 s ou 8 s. Seule dépendance : **CBA_A3**. Il ne dépend d'aucun autre mod COMSPEC (ni ATAK, ni SSE, ni
 Overwatch, ni Athena). ACE3, ACRE2, TFAR et ZEN sont reconnus s'ils sont chargés, mais ne sont pas obligatoires.
 
 *English version below.*
 
 ## Contenu
 
-| Classe | Objet |
-|---|---|
-| `COMSPEC_FB_Flash_1` … `COMSPEC_FB_Flash_9` | Grenade assourdissante FB-N : N détonations (flash + bang) |
-| `COMSPEC_FB_Drill` | Grenade d'entraînement bleue « DRILL » : petit pop et bouffée de fumée, aucun effet |
-| `COMSPEC_FB_Box` | Caisse de grenades : 10 de chaque modèle (Eden, Zeus) |
-| `COMSPEC_FB_Module` | Module Eden (et Zeus vanilla) : grenade à N flashs, effet sur une zone, ou grenade DRILL |
+| Classe | Nom affiché (FR / EN) | Objet |
+|---|---|---|
+| `COMSPEC_FB_Flash_1` … `COMSPEC_FB_Flash_9` | « Flash ×1 » … « Flash ×9 » | Grenade assourdissante FB-N : N détonations (flash + bang), mèche du réglage « Mèche » |
+| `COMSPEC_FB_Flash_<N>_D3` | « Flash ×N · 3 s » | Même grenade, mèche fixe 3 s |
+| `COMSPEC_FB_Flash_<N>_D8` | « Flash ×N · 8 s » | Même grenade, mèche fixe 8 s |
+| `COMSPEC_FB_Drill`, `_D3`, `_D8` | « Drill », « Drill · 3 s », « Drill · 8 s » | Grenade d'entraînement bleue : pop (son au choix) et fumée, aucun effet |
+| `COMSPEC_FB_Box` | « Caisse Flash » / « Flash crate » | Caisse des 10 grenades standard, 10 de chaque (Eden, Zeus) |
+| `COMSPEC_FB_Box_Delay` | « Caisse délais » / « Delay crate » | Caisse des 20 grenades à délai, 5 de chaque |
+| `COMSPEC_FB_Module` | « Flashbang » | Module Eden (et Zeus vanilla) : grenade à N flashs, effet sur une zone, ou grenade DRILL |
 
-- **Lancer** : comme une grenade vanilla. G pour lancer, Ctrl+G pour changer de grenade. Chaque modèle a son
-  « muzzle » de lancer, donc on passe de l'une à l'autre comme entre les fumigènes.
+Noms courts : la liste d'inventaire et l'Arsenal coupent vers 20 caractères. Le nom commence donc par ce qui distingue
+(« Flash ×5 · 3 s ») ; le texte explicatif est dans l'info-bulle (`descriptionShort`).
+
+### Grenades à délai (3 s et 8 s)
+
+Schéma des classes : suffixe `_D3` / `_D8` sur le magasin (`COMSPEC_FB_Flash_5_D8`), la munition
+(`COMSPEC_FB_Ammo_5_D8`), le muzzle de lancer (`COMSPEC_FB_Muzzle_5_D8`) et l'engin au sol (`COMSPEC_FB_Device_5_D8`).
+Les 40 classes sont générées par des macros (`FB_AMMO_DELAYS`, `FB_MAG_DELAYS`, `FB_MUZZLE_DELAYS`, `FB_DEVICE_DELAYS`,
+`FB_D2`) : une ligne par variante de base, rien n'est recopié à la main.
+
+| Mèche | Classes | Usage |
+|---|---|---|
+| standard (réglage « Mèche », 1,5 s) | `COMSPEC_FB_Flash_1` … `_9`, `COMSPEC_FB_Drill` | entrée classique : lancer puis entrer |
+| 3 s | `COMSPEC_FB_Flash_1_D3` … `_9_D3`, `COMSPEC_FB_Drill_D3` | lancer, laisser rebondir ou rouler jusqu'à la pièce, détonation 3 s après le lancer |
+| 8 s | `COMSPEC_FB_Flash_1_D8` … `_9_D8`, `COMSPEC_FB_Drill_D8` | 8 s : pour lancer à l'avance depuis une position sûre, ou synchroniser une entrée sur un décompte |
+
+- La mèche démarre quand la grenade quitte la main (lancer vanilla) ou au dégoupillage (lancer avancé ACE).
+- La mèche des variantes à délai est fixe : le réglage « Mèche » ne s'y applique pas. Le réglage « Irrégularité »
+  s'y ajoute (± 0,12 s par défaut).
+- Pas de détonation à l'impact : la grenade rebondit, roule et explose à l'heure prévue.
+- Reconnaissance : 2e bande sous la bande marron (jaune = 3 s, rouge = 8 s) avec « 3s » / « 8s » tout autour,
+  cartouche « 3s » / « 8s » à côté du chiffre sur les deux flancs et en grand au dos. La DRILL garde son bleu et sa
+  bande blanche et reçoit la même bande et le même cartouche. Icônes : pastille horloge « 3s » / « 8s » en haut à
+  droite, en plus du badge du nombre.
+
+- **Lancer** : comme une grenade vanilla. G pour lancer, Ctrl+G pour changer de grenade. Chaque modèle (délais
+  compris) a son « muzzle » de lancer, donc on passe de l'une à l'autre comme entre les fumigènes. Le lancer avancé
+  d'ACE (Maj+G) marche aussi.
 - **Reconnaître une grenade** : le grand chiffre N et les N pastilles sont imprimés sur deux faces du corps, et le
   chiffre est répété autour de la bande marron. La DRILL est bleue, marquée « DRILL », sans évents.
 - **Arsenal** : toutes les grenades apparaissent dans l'Arsenal virtuel (vanilla et ACE), avec les objets à lancer.
-- **Zeus** : la caisse se pose comme un objet normal. Avec ZEN, la catégorie « COMSPEC Flashbang » propose deux
-  modules :
-  - « Lancer un flashbang » : nombre de détonations, DRILL, délai ;
-  - « Effet de flashbang sur une zone » : rayon, force, nombre, flash visible ou non.
-- **Eden** : module « Flashbang (COMSPEC) » (Modules > COMSPEC Flashbang). Il a trois modes :
+- **Zeus** : les caisses se posent comme des objets normaux. Avec ZEN, la catégorie « COMSPEC Flashbang » propose
+  deux modules :
+  - « Lancer flash » : nombre de détonations, DRILL, délai de mèche (par défaut = réglage « Mèche », 3 s, 8 s ou
+    personnalisé de 0,5 à 20 s), son de la DRILL ;
+  - « Effet de zone » : rayon, force, nombre, flash visible ou non, délai.
+- **Eden** : module « Flashbang » (Modules > COMSPEC Flashbang). Il a trois modes :
   - grenade posée à la position du module ;
   - effet sur une zone ;
   - DRILL.
 
-  Il se déclenche au début de la mission après le délai, ou par un déclencheur synchronisé.
+  Il se déclenche au début de la mission ou par un déclencheur synchronisé, après le délai puis le « Délai de mèche »
+  (par défaut : aucune mèche, comme avant ; 3 s ; 8 s ; personnalisé 0,5-20 s, champ « Mèche personnalisée »).
+  En mode grenade et DRILL, 3 s / 8 s posent l'engin marqué 3s / 8s. Champ « Son de la DRILL » : selon le réglage de
+  l'addon, ou un son imposé.
 - **En script** (serveur) :
   - `["COMSPEC_FB_Ammo_7", getPosASL _obj] call comspec_fb_fnc_serverDetonate` : 7 détonations à la position ;
+  - `["COMSPEC_FB_Ammo_Drill", getPosASL _obj, nil, nil, nil, nil, 3, 0, -1, "Sifflet"] call comspec_fb_fnc_serverDetonate` :
+    DRILL à 3 pops, son « Sifflet d'exercice » ;
   - `[getPosASL _obj, 8, 0.9, 3, true] call comspec_fb_fnc_serverArea` : effet de zone de 8 m, force 0,9, 3 fois ;
   - `_unit setVariable ["comspec_fb_eyeProtection", 0.5]` : protection des yeux de 50 % (masque, visière…).
 
@@ -134,15 +169,17 @@ Les réglages « client » sont propres à chaque poste ; tous les autres sont i
 | Protection auditive (dB) | 25 | Réduction pour bouchons ou casque ACE | 30 |
 | IA affectée | oui | IA éblouie : vise et repère mal, hésite | non |
 | Effet sur son camp | oui | Non : le camp du lanceur n'est pas affecté | non pour un entraînement |
-| Mèche (s) | 1.5 | Délai avant la première détonation | 2.3 (M84 lent) |
+| Mèche (s) | 1.5 | Délai avant la première détonation des grenades standard (pas des grenades 3 s / 8 s) | 2.3 (M84 lent) |
 | Intervalle entre détonations (s) | 0.5 | Temps moyen entre deux bangs | 0.3 |
-| Irrégularité (s) | 0.12 | Écart aléatoire de chaque intervalle | 0 = régulier |
+| Irrégularité (s) | 0.12 | Écart aléatoire de chaque intervalle et de la mèche fixe 3 s / 8 s | 0 = régulier |
 | Pops de la grenade DRILL | 1 | Nombre de pops de la DRILL | 3 |
 | Lueur de la DRILL | non | Petite lueur brève, aucun autre effet | oui |
+| Son de la grenade d'entraînement | Pop | Son de chaque pop de la DRILL : Pop, Pop sourd, Bang léger, Bang réel, Rafale courte, Sifflet d'exercice, Cloche d'exercice, Aucun son | « Pop » pour un exercice discret, « Bang réel » pour s'entraîner au bruit d'une vraie détonation |
+| Volume du son d'entraînement | 100 % | Volume du son de la DRILL pour tous (20 à 150 %) | 60 % la nuit près des habitations |
 | Qualité des effets visuels (client) | Moyenne | Nombre de particules | Basse sur un petit PC |
 | Volume du bang (client) | 1 | Volume des détonations sur ce poste | 0.6 au casque |
 | Acouphène : son (client) | Enregistrement | Son enregistré par TTRD ou synthèse | Synthèse |
-| Journal de débogage (client) | non | Écrit chaque étape dans le RPT, rien à l'écran | oui pour un test |
+| Journal de diagnostic (RPT) (client) | non | Écrit chaque étape d'une grenade dans le RPT de ce poste (lignes `[COMSPEC FB]`), rien à l'écran, aucun coût quand décoché | active-le, lance une grenade, puis envoie ton RPT |
 
 **Sans CBA** : le mod ne se charge pas, car CBA est requis. CBA fournit les réglages, les événements des grenades
 et l'horloge commune des détonations. Il n'existe pas de réglage par `description.ext`. En mission, on peut forcer
@@ -162,15 +199,31 @@ Suffixe `_synth` : synthétisé pour le mod.
 | Bang lointain | `bang_lointain_enreg.ogg` | enregistrement + échos synthétiques | 3,8 s | dehors, au-delà de 150 m |
 | Acouphène | `acouphene_decroissance_enreg.ogg` | enregistrement + enveloppe calculée | 60 s | joué 1 fois par joueur, prolongé par chaque flash |
 | Acouphène (variante) | `acouphene_decroissance_synth.ogg` | synthèse | 60 s | réglage « Acouphène : son » |
-| Pop DRILL | `pop_drill_synth.ogg` | synthèse | 0,5 s | 1 par détonation DRILL |
 | Cuillère | `levier_cuillere_synth.ogg` | synthèse | 0,4 s | au lancer |
-| (réserve) | `acouphene_boucle_enreg.ogg`, `bang_rafale_enreg.ogg` | enregistrement | 3 / 3,1 s | non utilisés |
+| (réserve) | `acouphene_boucle_enreg.ogg` | enregistrement | 3 s | non utilisé |
+
+Sons de la DRILL (réglage « Son de la grenade d'entraînement », ou champ « Son de la DRILL » des modules, qui l'emporte
+pour cette grenade). Un son par pop (1 à 9), lectures indépendantes et superposées, hauteur ±5 % et volume ±1,5 dB
+comme les bangs. « Aucun son » : fumée seule.
+
+| Choix | Entrée de `CfgSons.hpp` | Fichier | Origine | Durée |
+|---|---|---|---|---|
+| Pop (défaut) | `Drill_Pop` | `pop_drill_synth.ogg` | synthèse | 0,5 s |
+| Pop sourd | `Drill_PopSourd` | `pop_sourd_synth.ogg` | synthèse (étouffé, petite pièce) | 0,7 s |
+| Bang léger | `Drill_BangLeger` | `bang_leger_enreg.ogg` | enregistrement raccourci, grave allégé | 0,8 s |
+| Bang réel | `Drill_BangReel` | `bang_unique_a/b/c_enreg.ogg` | enregistrement (vrai bang, aucun effet) | 2,4 / 2,4 / 1,2 s |
+| Rafale courte | `Drill_Rafale` | `bang_rafale_enreg.ogg` | enregistrement | 3,1 s |
+| Sifflet d'exercice | `Drill_Sifflet` | `sifflet_exercice_synth.ogg` | synthèse (sifflet à bille) | 0,8 s |
+| Cloche d'exercice | `Drill_Cloche` | `cloche_exercice_synth.ogg` | synthèse | 1,6 s |
+| Aucun son | (aucune) | - | - | - |
+
+Les fichiers d'écoute sont copiés dans `H:\StreamLabs\ogg\` (tableau dans `LISEZ-MOI.txt`).
 
 Détails des bangs :
 - Chaque bang est une lecture indépendante (`playSound3D` local). Les bangs se superposent sans se couper.
 - Hauteur ±5 %, volume ±1,5 dB, tirage parmi les 3 bangs sans répéter deux fois de suite le même.
 - Tous les fichiers sont en OGG Vorbis 44,1 kHz, sans écrêtage (crête ≤ -1 dBTP).
-- Régénération : `tools/gen_fb_sounds.py`.
+- Régénération : `tools/gen_fb_sounds.py` (`--drill` : seulement les sons au choix de la DRILL).
 
 ## Réalisme et sources
 
@@ -187,7 +240,7 @@ signalés.
 | Éblouissement | plein blanc ~1,2 s, récupération ~6 s, image rémanente jusqu'à 25 s | récupération de 5 s à 2 min selon l'intensité et la tâche ([HFES 2023, Flash Blindness Recovery for Pilots in the Modern Cockpit](https://katalog.lib.cas.cz/KNAV/EdsRecord/edo,ejs64963113)) | durées fixes x exposition^0,6 |
 | Adaptation | jour 0,65, nuit 1,3 | la récupération dépend de la taille de la pupille et de l'adaptation (rapports DTIC, ex. [AD0627332](https://apps.dtic.mil/sti/pdfs/AD0627332.pdf)) | `sunOrMoon` et toit au-dessus de la tête au lieu d'une vraie luminance |
 | Regarder ailleurs | 100 % à < 25°, 35 % à 90°, 10 % de dos | l'éblouissement dépend de l'éclairement de la rétine | courbe linéaire par morceaux |
-| Mèche | 1,5 s | M84 : 1 à 2,3 s ; Rheinmetall : 1,0 s ; NonLethal Technologies MP-FB-2 : 1,5 s | réglable 0,5-4 s |
+| Mèche | 1,5 s | M84 : 1 à 2,3 s ; Rheinmetall : 1,0 s ; NonLethal Technologies MP-FB-2 : 1,5 s | réglable 0,5-4 s ; variantes fixes 3 s et 8 s (choix de jeu, pour les entrées synchronisées) |
 | Multi-coups | 0,5 s ± 0,12 s, 1 à 9 coups | MP-FB-2 : 2e coup 0,5 s après le 1er ; Combined Systems 7290 : familles 2 à 9 coups | irrégularité aléatoire uniforme |
 | Empilement | chaque coup relance et prolonge, plafond 15 s | « chaque détonation relance la désorientation » | +50 % de la durée restante par coup |
 | Corps | Ø40 mm, 114 mm, 0,56 kg, évents en bas, bande marron | Rheinmetall 6 Bang Ø40 x 112 mm, 563 g ; Primetake Ø40 x 115 mm, 600 g | évents en texture et relief |
@@ -207,14 +260,24 @@ signalés.
 ## Conception technique
 
 - **Nombre exact de détonations** :
-  1. La machine du lanceur compte la mèche sur SA grenade.
-  2. Si la grenade a disparu entre-temps (véhicule, Zeus, script), rien ne se passe.
-  3. Sinon, le serveur pose un engin synchronisé (ThingX, poussé par les explosions, supprimable par Zeus). Il tire
-     une fois les instants des N détonations, puis envoie UN seul message aux machines concernées : serveur,
-     headless, joueurs à moins de 2,5 km, morts et Zeus.
-  4. Chaque machine programme exactement N exécutions sur l'horloge commune `CBA_missionTime`. Un message en retard
-     rattrape les détonations passées sans en sauter.
+  1. La machine du lanceur reçoit le tir (XEH « fired » de CBA ; le lancer avancé d'ACE rejoue ce même événement au
+     dégoupillage, avec la grenade qu'il a créée). Elle fixe l'heure de la 1re détonation sur l'horloge commune
+     `CBA_missionTime` : lancer + mèche (réglage, ou 3 s / 8 s fixes).
+  2. Elle compte la mèche sur SA grenade. Si la grenade a disparu entre-temps (véhicule, Zeus, script), rien ne se
+     passe.
+  3. Sinon, 0,25 s avant l'heure prévue, le serveur pose un engin synchronisé (ThingX, poussé par les explosions,
+     supprimable par Zeus). Il tire une fois les instants des N détonations à partir de l'heure prévue, puis envoie
+     UN seul message aux machines concernées : serveur, headless, joueurs à moins de 2,5 km, morts et Zeus.
+  4. Chaque machine programme exactement N exécutions sur `CBA_missionTime`. Un message en retard rattrape les
+     détonations passées sans en sauter. La 1re détonation tombe donc à lancer + 3 s (ou 8 s) sur toutes les machines,
+     sans dérive due au réseau.
   5. Si l'engin disparaît, les détonations restantes sont annulées partout, sans détonation fantôme.
+- **Pas de détonation à l'impact, grenade qui vit assez longtemps** (vérifié dans la référence CfgAmmo du wiki
+  Bohemia et dans ACE3) : les munitions héritent de `SmokeShell` (simulation `shotSmokeX`, comme la M84 d'ACE).
+  `explosionTime` y est le début de la fumée, placé à 30 s (au-delà de la durée de vie) avec un effet de fumée vide :
+  le moteur ne fait rien exploser, ni au contact ni au bout d'un temps ; `fuseDistance` (armement des projectiles à
+  impact) ne s'applique pas. `timeToLive` (« durée avant que la munition disparaisse ») vaut 6 s pour la mèche
+  réglable (4 s max), 10 s pour 3 s et 15 s pour 8 s. `deflecting = 15` garde les rebonds de la fumigène.
 - **Localité** :
   - lumière, particules et sons sont créés localement par chaque client ;
   - les effets s'appliquent aux unités locales (le joueur sur son poste, les IA sur le serveur ou le headless) ;
@@ -232,9 +295,25 @@ signalés.
     - aucun effet médical ACE.
   - **ACRE2 et TFAR** : volume global baissé puis rendu (sans ACE).
   - **ZEN** : modules Zeus.
-- **Liste blanche `remoteExec`** : si la mission a sa propre liste blanche `CfgRemoteExec`, il faut y ajouter :
-  - `comspec_fb_fnc_serverDetonate` et `comspec_fb_fnc_serverArea` (serveur) ;
-  - `comspec_fb_fnc_timeline`, `comspec_fb_fnc_cancel` et `comspec_fb_fnc_aiRestore`.
+- **Messages réseau** : événements CBA (`CBA_fnc_serverEvent`, `CBA_fnc_ownerEvent`, `CBA_fnc_targetEvent`, transport
+  par `publicVariable`), aucun `remoteExec`. Une liste blanche `CfgRemoteExec` de mission ou un filtre BattlEye
+  `remoteexec.txt` ne peuvent donc pas bloquer le mod. Événements : `comspec_fb_serverDetonate`, `comspec_fb_serverArea`
+  (serveur), `comspec_fb_timeline`, `comspec_fb_cancel`, `comspec_fb_aiRestore`.
+
+## Diagnostic
+
+- Au chargement, une ligne RPT est toujours écrite : `[COMSPEC FB] chargé 1.0.0 · CBA ok · ACE=… ACRE=… TFAR=… ZEN=…
+  · autres flashbang: tsp=…/dka=…`.
+- Réglage « Journal de diagnostic (RPT) » (client, décoché par défaut, actif dans la mission de test) : une ligne
+  `[COMSPEC FB]` par étape (lancer, mèche, serveur, détonation, son et lumière, chaque unité : distance, angle, vue,
+  intérieur / extérieur, intensités, effets appliqués ou raison du refus).
+- Test intégré, depuis la console de débogage (n'importe quelle mission, Eden compris) :
+  `[3] call comspec_fb_fnc_debugTest;` (Flash ×3), `[5, "D8"] call comspec_fb_fnc_debugTest;` (Flash ×5 · 8 s),
+  `[1, "", true] call comspec_fb_fnc_debugTest;` (DRILL). La grenade est posée à 4 m devant le joueur et passe par la
+  vraie chaîne ; le rapport (réglages, XEH, étapes, intensité pour le joueur) va dans le RPT et le presse-papiers.
+- Test automatique en jeu (développeur) : `tools/ingame_test.ps1` lance Arma (profil `COMSPECTest`, CBA + ACE + le
+  build) sur `missions/COMSPEC_FB_Autotest.Stratis` : lancers vanilla et ACE ×1, ×3, ×9, délais 3 s / 8 s, DRILL, puis
+  lignes `AUTOTEST|OK|…` / `AUTOTEST|KO|…`.
 
 ## Limites connues
 
@@ -248,6 +327,8 @@ signalés.
 - **Détection intérieur / extérieur** : par rayons, donc approximative. Un auvent ou un arbre au-dessus de la tête
   compte comme un toit pour l'adaptation de l'œil.
 - **Acouphène** : un flash plus fort relance l'acouphène plus tôt dans le fichier. La reprise est masquée par le bang.
+- **Noms** : « × » et « · » des noms courts sont des caractères Latin-1 ; ils doivent s'afficher avec les polices du
+  jeu (« · » est déjà utilisé par d'autres mods COMSPEC), à vérifier une fois dans l'inventaire.
 
 ## Construire
 
@@ -266,9 +347,10 @@ Le dossier `@COMSPEC_Flashbang` se charge avec `-mod=` (avec CBA_A3).
 
 Régénérer les ressources (dossier `tools\`) :
 - textures : `py -3 gen_fb_textures.py` ;
-- modèles : `blender -b --factory-startup -P model_flashbang.py` (extension Arma 3 Object Builder) ;
-- icônes et logo : `py -3 make_fb_icons.py` ;
-- sons : `py -3 gen_fb_sounds.py` ;
+- modèles : `blender -b -P model_flashbang.py` (extension Arma 3 Object Builder ; `DELAYED_ONLY=1` : seulement les
+  variantes à délai) ;
+- icônes et logo : `py -3 make_fb_icons.py` (`--delai` : ne convertit que les textures et icônes à délai) ;
+- sons : `py -3 gen_fb_sounds.py` (`--drill --ecoute H:\StreamLabs\ogg` : sons de la DRILL et dossier d'écoute) ;
 - panneau de la mission : `py -3 gen_range_sign.py`.
 
 ## Liste de test
@@ -291,13 +373,23 @@ carte (onglet Flashbang) et sur le panneau.
 6. Zones D et E : comparer couloir et hangar. Avec le réglage « Journal de débogage », le RPT affiche la classe du
    local (lignes `COMSPEC_FB|env`).
 7. FB-DRILL : pop et fumée seulement, aucun effet. Avec « Pops de la grenade DRILL » = 3, trois pops. Avec « Lueur
-   de la DRILL », lueur brève.
+   de la DRILL », lueur brève. Essayer chaque « Son de la grenade d'entraînement » (Pop, Pop sourd, Bang léger, Bang
+   réel, Rafale courte, Sifflet, Cloche, Aucun son) et le volume ; puis le champ « Son de la DRILL » du module Eden et
+   de « Lancer flash » (ZEN), qui doit l'emporter sur le réglage.
 8. Lancer une FB-9 puis la supprimer en Zeus pendant les détonations : les bangs s'arrêtent, sans erreur.
 9. Mourir ou passer en Zeus pendant un effet : tout disparaît tout de suite (image, son, volume, visée).
 10. Multijoueur (serveur dédié + 2 clients) : même nombre de bangs chez tous, sons synchronisés, effets seulement sur
     les joueurs concernés.
 11. Avec ACE : bouchons mis (effet auditif réduit), puis retirés. Avec ACRE2 ou TFAR : radio étouffée puis rendue.
-12. Avec ZEN : modules « Lancer un flashbang » et « Effet de flashbang sur une zone ».
+12. Avec ZEN : modules « Lancer flash » (mèche par défaut, 3 s, 8 s, personnalisée 12 s) et « Effet de zone ».
+13. Couloir « délais » (caisse « Caisse délais ») : lancer une « Flash ×3 » standard, une « Flash ×3 · 3 s » et une
+    « Flash ×3 · 8 s » vers la pièce. La grenade 8 s explose-t-elle bien 8 s après le lancer, sans exploser à
+    l'impact ? Même question pour 3 s. Elle doit rebondir et rouler sans détoner avant l'heure.
+14. Lancer avancé ACE (Maj+G) d'une Flash ×3 puis d'une Flash ×1 · 8 s : même nombre de bangs et même mèche qu'au
+    lancer vanilla.
+15. Module Eden en mode grenade, « Délai de mèche » = 8 s : détonation 8 s après l'activation ; par défaut : comme
+    avant (aucune mèche).
+16. Noms dans l'inventaire et l'Arsenal : « Flash ×5 · 3 s » lisible en entier, « × » et « · » bien affichés.
 
 ## Crédits
 
@@ -317,10 +409,17 @@ dependency is **CBA_A3**. It does not depend on any other COMSPEC mod. ACE3, ACR
 loaded but not required.
 
 **Content**
-- `COMSPEC_FB_Flash_1` … `_9` (N bangs) and `COMSPEC_FB_Drill` (blue, pop and smoke only, no effect);
-- crate `COMSPEC_FB_Box` (10 of each);
-- Eden module `COMSPEC_FB_Module` with three modes: grenade, area effect, drill;
-- ZEN modules « Throw a flashbang » and « Flashbang area effect ».
+- `COMSPEC_FB_Flash_1` … `_9` (« Flash ×1 » … « Flash ×9 », N bangs) and `COMSPEC_FB_Drill` (« Drill », blue, pop and
+  smoke only, no effect), standard fuse (« Fuse » setting);
+- delayed versions with a fixed fuse: `_D3` (3 s) and `_D8` (8 s) on every class, e.g. `COMSPEC_FB_Flash_5_D8`
+  (« Flash ×5 · 8 s »), `COMSPEC_FB_Drill_D3`. 8 s: to throw ahead from a safe position. No detonation on impact; the
+  first bang comes at throw + 3 s / 8 s on every machine. Yellow (3 s) or red (8 s) second band, « 3s » / « 8s »
+  stamps, clock badge on the icon;
+- crates `COMSPEC_FB_Box` (« Flash crate », 10 of each standard grenade) and `COMSPEC_FB_Box_Delay` (« Delay crate »,
+  5 of each delayed grenade);
+- Eden module `COMSPEC_FB_Module` (« Flashbang ») with three modes (grenade, area effect, drill), a « Fuse delay » field
+  (default = none as before, 3 s, 8 s, custom 0.5-20 s) and a « DRILL sound » field;
+- ZEN modules « Throw flash » (fuse: default setting, 3 s, 8 s, custom; DRILL sound) and « Area effect ».
 
 Grenades are thrown like vanilla ones (G to throw, Ctrl+G to switch) and appear in the Arsenal.
 
@@ -358,7 +457,16 @@ hangar (under 0.1 ms per grenade).
 There is no per-frame cost when idle, and every post-process effect is destroyed at the end.
 
 **Settings**: see the French table above. Every setting has a tooltip with an example. The presets are Realistic
-(default), Arcade and Light.
+(default), Arcade and Light. New: « Training grenade sound » (Pop, Muffled pop, Light bang, Real bang, Short burst,
+Drill whistle, Drill bell, No sound) and « Training sound volume » (20-150 %). The « Fuse » setting only applies to
+standard grenades; « Irregularity » also applies to the fixed 3 s / 8 s fuse.
+
+**Network**: CBA events only (no `remoteExec`), so mission `CfgRemoteExec` whitelists and BattlEye filters cannot
+block the mod.
+
+**Diagnostics**: one `[COMSPEC FB] chargé …` RPT line at load; « Diagnostic log (RPT) » setting (`[COMSPEC FB]` lines
+for every step); console test `[3] call comspec_fb_fnc_debugTest;` (report to RPT and clipboard); automatic in-game
+test `tools/ingame_test.ps1`.
 
 **Sounds**: the single effect → file table is in `CfgSons.hpp`.
 - `_enreg`: recordings by TTRD (COMSPEC).

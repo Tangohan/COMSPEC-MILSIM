@@ -29,3 +29,18 @@
     class COMSPEC_FB_Device_Drill: COMSPEC_FB_Device_Base {
         model = QPATHTOF(data\fb_drill_spent.p3d);
     };
+    // Variantes à délai : même engin, corps à marquage de délai (modèle fb_<V>_d<délai>_spent.p3d).
+#define FB_DEVICE_DELAY(V,F,D) class COMSPEC_FB_Device_##V##_D##D: COMSPEC_FB_Device_Base { \
+        model = QPATHTOF(data\fb_##F##_d##D##_spent.p3d); \
+    }
+#define FB_DEVICE_DELAYS(V,F) FB_DEVICE_DELAY(V,F,3); FB_DEVICE_DELAY(V,F,8)
+    FB_DEVICE_DELAYS(1,1);
+    FB_DEVICE_DELAYS(2,2);
+    FB_DEVICE_DELAYS(3,3);
+    FB_DEVICE_DELAYS(4,4);
+    FB_DEVICE_DELAYS(5,5);
+    FB_DEVICE_DELAYS(6,6);
+    FB_DEVICE_DELAYS(7,7);
+    FB_DEVICE_DELAYS(8,8);
+    FB_DEVICE_DELAYS(9,9);
+    FB_DEVICE_DELAYS(Drill,drill);
