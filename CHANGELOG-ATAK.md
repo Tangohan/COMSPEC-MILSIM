@@ -38,35 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## À venir : zoom de la carte du téléphone porté qui reste centré sur vous (ATAK natif, version à attribuer)
+## Pack 4.6.0 Washington : écrans TOC réglables dans Eden et Zeus, écrans allumés avec un serveur plus ancien, carte photo fluide, zoom de la carte mini centré (ATAK natif 4.6.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : Le zoom de la carte du téléphone porté reste centré sur vous
-- Téléphone en petit (ou « Suivre ma position »), zoomer ou dézoomer ne fait plus glisser la carte vers un autre point avant de revenir sur vous : elle reste sur votre position pendant tout le zoom, même en véhicule.
-- Sans suivi, le zoom garde le centre de la carte, sans saut à la fin.
-EN : The worn phone map zoom stays centred on you
-- With the phone in its small view (or "Follow my position"), zooming in or out no longer slides the map towards another point before coming back to you: it stays on your position during the whole zoom, even in a vehicle.
-- Without following, the zoom keeps the map centre, with no jump at the end.
-
-### Détail technique
-- `fn_mapZoom` : centre recalculé à chaque image (position GPS du moment, unité suivie, ou centre visible fixe), cible par la fonction pure `fn_mapZoomAim` (décalage centre interne / visible normalisé par l'échelle, gardé d'un cran à l'autre), `comspec_lastAim` tenu à jour ; plus de `fn_mapCenter` final quand on suit (il visait avec l'ancien décalage).
-- `comspec_zoomUntil` : le suivi image par image (`fn_mapOnDraw`) et le recentrage de `fn_statusUpdate` se taisent pendant le zoom. Auto-contrôle `["check"] call comspec_atak_native_fnc_mapZoomAim`. Test : `AtakMapMiniZoomFollowAssetTest`.
-
-## À venir : écrans TOC allumés même avec un serveur plus ancien, réglage complet dans Eden et Zeus (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : Les écrans TOC s'allument même si le serveur n'a pas la même version du mod
-- **Plus d'écran noir** : si le serveur a une version plus ancienne du mod, l'écran est géré par les joueurs et s'allume quand même. Le téléphone dit pourquoi, avec la version du serveur et la tienne, et prévient que l'écran n'est pas sauvegardé par le serveur.
-- **Ouvrir le PC du poste** : l'action est toujours là, en tête du menu ACE de l'écran, à la molette, dans l'app Poste TOC du téléphone et au clic droit du Zeus.
-- **Réglage complet** : chaque écran se règle dans Eden (attributs de l'objet) et dans Zeus (double-clic, fenêtre « Configurer l'écran ») : nom, camp, affichage, dalles d'un mur, luminosité, salle, distance d'affichage, test de l'image, copie vers d'autres écrans.
-EN : TOC screens light up even when the server runs another version of the mod
-- **No more black screen**: when the server runs an older version of the mod, the screen is handled by the players and lights up anyway. The phone says why, with the server's version and yours, and warns that the screen is not saved by the server.
-- **Open the post PC**: the action is always there, at the top of the screen's ACE menu, on the scroll wheel, in the phone's TOC Post app and in the Zeus right-click menu.
-- **Full settings**: every screen is set up in Eden (object attributes) and in Zeus (double-click, "Configure the screen" window): name, side, display, wall panels, brightness, room, display distance, picture test, copy to other screens.
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.6.0 : des écrans TOC réglables dans Eden et Zeus, et qui s'allument partout
+- **Réglage des écrans** : chaque écran du TOC se règle dans Eden (attributs de l'objet) et dans Zeus (double-clic, fenêtre « Configurer l'écran ») : nom, camp, affichage, dalles d'un mur, luminosité, salle, distance d'affichage.
+- **Serveur plus ancien** : les écrans TOC s'allument même si le serveur a une version plus ancienne du mod, avec un message clair qui donne les deux versions ; l'action « Ouvrir le PC du poste » est toujours là.
+- **Carte photo** : la carte en photo satellite ne saccade plus.
+- **Zoom de la carte mini** : zoomer ou dézoomer le téléphone en petit garde la carte centrée sur vous, même en véhicule.
+EN : ATAK 4.6.0: TOC screens you can set up in Eden and Zeus, and that light up everywhere
+- **Screen settings**: every TOC screen is set up in Eden (object attributes) and in Zeus (double-click, "Configure the screen" window): name, side, display, wall panels, brightness, room, display distance.
+- **Older server**: TOC screens light up even when the server runs an older version of the mod, with a clear message giving both versions; the "Open the post PC" action is always there.
+- **Photo map**: the satellite photo map no longer stutters.
+- **Mini map zoom**: zooming the phone in its small view in or out keeps the map centred on you, even in a vehicle.
 
 ### Détail technique
+
+**Écrans TOC allumés même avec un serveur plus ancien, réglage complet dans Eden et Zeus**
 
 Retour de TTRD du 11/11 (4.5.0, serveur dédié plus ancien) : mur d'images noir alors que le téléphone annonçait « Écran TOC : carte et flux », « L'écran n'a pas répondu » après 8 s, pas d'action « Ouvrir le PC du poste ».
 
@@ -78,6 +67,15 @@ Retour de TTRD du 11/11 (4.5.0, serveur dédié plus ancien) : mur d'images noir
 - **Nouveaux réglages d'écran** : `COMSPEC_ATAK_TocOpt` [luminosité, distance d'affichage], lus par « tick » (voile sombre, distance par écran), gardés par `fn_tocPersist`. Dalle « OFF » dans l'écriture des dalles d'un mur.
 - Tests : `tests/Unit/AtakTocScreenConfigAssetTest.php` ; en jeu : `["selfTest"] call comspec_atak_native_fnc_tocConfig`.
 - Limites : en repli, rien n'est gardé d'une partie à l'autre, les salles TOC restent tenues par le serveur, et un objet dont la classe est inconnue du serveur n'existe que chez le joueur qui l'a posé.
+
+**Carte photo : rafale d'erreurs `fn_photoMap:277` corrigée**
+
+- La mémoire des tuiles déjà dessinées (`COMSPEC_ATAK_PhotoSeen`) partageait son nom avec un autre compteur (nombre) : `count` / `getOrDefault` sur un nombre à chaque image, rafale d'erreurs au RPT et carte qui saccade. Renommée `COMSPEC_ATAK_PhotoTileSeen`, et remise à neuf si la valeur trouvée n'est pas une table.
+
+**Zoom de la carte du téléphone porté qui reste centré sur vous**
+
+- `fn_mapZoom` : centre recalculé à chaque image (position GPS du moment, unité suivie, ou centre visible fixe), cible par la fonction pure `fn_mapZoomAim` (décalage centre interne / visible normalisé par l'échelle, gardé d'un cran à l'autre), `comspec_lastAim` tenu à jour ; plus de `fn_mapCenter` final quand on suit (il visait avec l'ancien décalage).
+- `comspec_zoomUntil` : le suivi image par image (`fn_mapOnDraw`) et le recentrage de `fn_statusUpdate` se taisent pendant le zoom. Auto-contrôle `["check"] call comspec_atak_native_fnc_mapZoomAim`. Test : `AtakMapMiniZoomFollowAssetTest`.
 
 ## Pack 4.5.0 Washington : rendu professionnel des écrans TOC et du PC du poste, satellite devenu console ISR (ATAK natif 4.5.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 
