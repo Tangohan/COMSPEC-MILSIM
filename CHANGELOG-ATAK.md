@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : page MPU5 (Radio de données) plus claire (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Radio de données (MPU5) plus claire
+- En haut, l'état en trois lignes (radio, téléphone, maillage) et ce qu'il faut faire ; les réglages sont rangés par thème, le choix en cours en surbrillance (puissance Faible / Moyenne / Forte, canal − 3 +).
+- La voix par le maillage tient sur une ligne ; le bouton GUIDE explique les étapes, DÉPANNAGE MPU reste à côté.
+EN : Clearer data radio (MPU5)
+- At the top, the status in three lines (radio, phone, mesh) and what to do; settings are grouped by theme, with the current choice highlighted (power Low / Medium / High, channel − 3 +).
+- Voice over the mesh fits on one line; the GUIDE button explains the steps, MPU TROUBLESHOOTING stays next to it.
+
+### Détail technique
+- `fn_pageNetwork` : section « Radio de données » refaite (état en 3 lignes à pastilles, ligne « à faire » avec la raison des boutons grisés, rangées `_ctlRow` : libellé à gauche, cases de même hauteur et de même largeur, `fn_textFit`). Section voix repliée par défaut (`_openDef` sans « voice »), volet `netGuide` (étapes numérotées, retour du téléphone par `backSub`).
+- `fn_mpuLink` : `"txpower"` et `"width"` acceptent un cran 0-2 (sans cran : le suivant, comme avant, pour le menu ACE).
+- Textes ajoutés à `i18n/en.txt` et `localisation/template/xx.txt` ; test `AtakMpu5PageAssetTest`.
+
+---
+
 ## SSE 1.9.0 : IA qui réagissent naturellement, émotions réglables, papiers de 45 pays, une seule identité par IA, outils Zeus refaits (SSE 1.9.0)
 
 ### Résumé joueur

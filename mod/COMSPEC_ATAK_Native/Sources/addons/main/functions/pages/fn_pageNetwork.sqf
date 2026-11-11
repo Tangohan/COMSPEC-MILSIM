@@ -6,18 +6,21 @@
     fn_vehicleTerminal, fn_waveRelayAction (maillage), fn_antenna, état du câble DL-7 et de la
     Liaison allié. Rafraîchie toutes les 5 s tant qu'elle est affichée (défilement gardé par fn_pageRender).
     Liaison réaliste téléphone <-> radio (fn_mpuLink, réglage comspec_atak_native_mpu_real) : le porteur est la radio de
-    données ; section « Radio de données » (radio, liaison au téléphone, canal, puissance, batterie, maillage, nœuds,
-    débit et latence estimés) avec ses boutons (allumer, canal, puissance, câble EUD, Wi-Fi, débrancher). Sans MPU5 :
-    pas de réseau de données.
-    Voix ACRE2 / TFAR par le maillage (fn_mpuVoice, réglage comspec_atak_native_mpu_voice) : section « Voix radio par le
-    maillage » (radio pontée, état, correspondants pontés joignables) avec les boutons pour relier ou débrancher une radio.
-    Elle reste affichée réglage décoché (raison en clair) ; son bouton DÉPANNAGE MPU ouvre l'assistant fn_mpuDiag à la place de la page.
+    données ; section « Radio de données » (4.4.x, retour de jeu « à améliorer ») : état en 3 lignes à pastilles (radio,
+    canal et portée ; téléphone et batterie ; maillage, nœuds et débit), une ligne « à faire » (raison d'un bouton grisé
+    comprise), puis les réglages rangés par sens sur une même grille (libellé à gauche, boutons de même hauteur et de même
+    largeur dans la rangée, choix en cours en bouton plein) : Alimentation, Puissance (3 crans), Émission, Canal (− n +),
+    Largeur, Liaison (câble EUD, Wi-Fi, débrancher), Plus (mât, batterie, imposer au groupe). Sans MPU5 : pas de réseau de données.
+    Voix ACRE2 / TFAR par le maillage (fn_mpuVoice, réglage comspec_atak_native_mpu_voice) : section « Voix par le
+    maillage », repliée par défaut (une ligne d'état). Ouverte : une phrase (raison et quoi faire), radio pontée et
+    correspondants, boutons pour relier ou débrancher une radio, puis GUIDE (volet « netGuide » : étapes numérotées pour les
+    joueurs, à la place de la page) et DÉPANNAGE MPU (assistant fn_mpuDiag, à la place de la page).
     Lisibilité (2.9.34, retour de jeu : « le texte est trop petit, c'est illisible ») : le texte structuré a pour base le
     corps du téléphone (layoutGet "font", posé sur chaque contrôle, comme l'app Garmin) ; les tailles relatives restent
     entre 0,88 et 1,2 de ce corps (avant : multipliées en plus par fontSmall / (0.024 * safeZoneH), soit des légendes
     à 0,4 du corps, sous le plancher COMSPEC_ATAK_FontMin). Une information par ligne (libellé à gauche, valeur à droite),
     cartes et lignes à la hauteur de leur texte, boutons plus hauts (2 par rangée en portrait). Sections repliables
-    (chevron, état gardé dans le profil : COMSPEC_ATAK_NetOpen), seules les quatre premières ouvertes par défaut.
+    (chevron, état gardé dans le profil : COMSPEC_ATAK_NetOpen), ouvertes par défaut : chemin, radio de données, indicateurs.
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -38,6 +41,34 @@ private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 if ((_s getOrDefault ["netDiag", false]) isEqualTo true) exitWith {
     [["rows"] call comspec_atak_native_fnc_mpuDiag, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
     ["arm"] call comspec_atak_native_fnc_mpuDiag;
+    true
+};
+// Volet « GUIDE » de la voix par le maillage : les étapes pour les joueurs, chacune cochée quand elle est faite.
+if ((_s getOrDefault ["netGuide", false]) isEqualTo true) exitWith {
+    private _gClose = { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["netGuide", false]; playSound "ClickSoft"; ["NETWORK"] call comspec_atak_native_fnc_pageRender; };
+    _s set ["backSub", ["NETWORK", _gClose]];
+    private _gOn = (missionNamespace getVariable ["comspec_atak_native_mpu_voice", false]) isEqualTo true;
+    private _gBr = (missionNamespace getVariable ["COMSPEC_ATAK_VoiceBridge", []]) isNotEqualTo [];
+    private _gMu = COMSPEC_ATAK_Th get "hexTextMuted";
+    private _gStep = {
+        params ["_n", "_done", "_title", "_how"];
+        ["text", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t><br/><t size='0.9' color='%3'>%4</t>",
+            [COMSPEC_ATAK_Th get "hexText", COMSPEC_ATAK_Th get "hexOk"] select _done, format ["%1. %2%3", _n, _title call comspec_atak_native_fnc_tr, ["", " ✓"] select _done], _gMu, _how]]
+    };
+    private _gRows = [
+        ["header", "Voix par le maillage", "Votre radio ACRE2 / TFAR passe par la MPU5", [], _gClose],
+        [1, _gOn, "L'admin active la voix", "Échap > Réalisme > Maillage : « Voix relayée par le maillage », puis Appliquer au serveur."] call _gStep,
+        [2, _gBr, "Reliez votre radio à votre MPU5", "App Réseau, section Voix par le maillage : RELIER. Ou menu ACE Téléphone ATAK > Radio de données."] call _gStep,
+        [3, false, "Testez avec un camarade", "Même fréquence, radio reliée des deux côtés. La case RELAIS ATAK s'affiche quand votre voix passe."] call _gStep,
+        ["text", format ["<t size='0.9' color='%1'>%2</t>", _gMu, "Personne ne vous entend ? DÉPANNAGE MPU vérifie chaque maillon."]],
+        ["gap"],
+        ["buttons", [
+            ["DÉPANNAGE MPU", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["netGuide", false]; ["open"] call comspec_atak_native_fnc_mpuDiag; }, true],
+            [["VOIR LES RÉGLAGES DU SERVEUR", "OUVRIR LES RÉGLAGES DE L'ADMIN"] select (([player] call comspec_atak_native_fnc_adminAllowed) isEqualTo true), { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["netGuide", false]; ["fix", ["settings"]] call comspec_atak_native_fnc_mpuDiag; }],
+            ["FERMER", _gClose]
+        ]]
+    ];
+    [_gRows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
     true
 };
 ([] call comspec_atak_native_fnc_accent) params ["_acc", "_accHex"];
@@ -109,8 +140,9 @@ private _qBars = { params ["_q"]; switch (true) do { case (_q <= 0): { 0 }; case
 // Fond de page, allongé à la fin à la hauteur du contenu.
 private _bgc = [[0, 0, _bw, _bh], [0.035, 0.045, 0.04, 0.96]] call _rect;
 private _y = _pad * 0.6;
-// Sections repliables : ouvertes = identifiants rangés dans le profil (par défaut les quatre premières).
-private _openDef = ["path", "mpu", "voice", "ind"];
+// Sections repliables : ouvertes = identifiants rangés dans le profil (par défaut : chemin, radio de données, indicateurs).
+// « voice » repliée par défaut (4.4.x) : une ligne d'état suffit tant que le joueur ne l'ouvre pas.
+private _openDef = ["path", "mpu", "ind"];
 private _openIds = profileNamespace getVariable ["COMSPEC_ATAK_NetOpen", _openDef];
 if !(_openIds isEqualType []) then { _openIds = _openDef; };
 // En-tête de section repliable (même allure que les sections repliables des formulaires) : titre à gauche, résumé à
@@ -198,6 +230,43 @@ private _buttons = {
         } forEach _row;
         _y = _y + _btnH + _pad * 0.5;
     };
+};
+// Rangée de réglage (Radio de données) : libellé du groupe à gauche (colonne de même largeur pour toutes les rangées),
+// puis 1 à 3 cases de même largeur et de même hauteur (_btnH). Case : [libellé, code, choisie, active, infobulle].
+// Choisie : bouton plein, non cliquable (c'est l'état en cours). Inactive : grisée (la raison est dans la ligne « à faire »).
+// Code {} : valeur seule (le numéro du canal entre − et +). Libellé trop long : police réduite (fn_textFit), jamais coupé.
+private _lblW = (_cw - 2 * _pad) * ([0.3, 0.2] select (_perRow > 2));
+private _ctlRow = {
+    params ["_label", "_items"];
+    private _x0 = _pad + _lblW;
+    private _gap = _pad * 0.4;
+    private _n = (count _items) max 1;
+    private _w1 = (((_cw - 2 * _pad) - _lblW) - (_n - 1) * _gap) / _n;
+    private _lt = [[_pad, _y, _lblW - _gap, _btnH], format ["<t size='%1' color='%2'>%3</t>", _zL, _greyL, _label]] call _txt;
+    private _lth = ctrlTextHeight _lt;
+    _lt ctrlSetPosition [_pad, _y + (((_btnH - _lth) / 2) max 0), _lblW - _gap, _lth max _font];
+    _lt ctrlCommit 0;
+    {
+        _x params ["_bl", "_code", ["_on", false], ["_en", true], ["_tip", ""]];
+        private _pos = [_x0 + _forEachIndex * (_w1 + _gap), _y, _w1, _btnH];
+        if (_code isEqualTo {}) then {
+            [_pos, [0.12, 0.145, 0.132, 1]] call _rect;
+            private _vt = [+_pos, format ["<t align='center' size='%1' font='COMSPEC_BarlowBold' color='#f2f6f3'>%2</t>", _zT, _bl]] call _txt;
+            private _vh = ctrlTextHeight _vt;
+            _vt ctrlSetPosition [_pos select 0, _y + (((_btnH - _vh) / 2) max 0), _w1, _vh max _font];
+            _vt ctrlCommit 0;
+        } else {
+            private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _on, _pos, _bl] call _mk;
+            [_b, (_font * 0.92) max COMSPEC_ATAK_FontMin, true, 0.7] call comspec_atak_native_fnc_textFit;
+            if (_tip isNotEqualTo "") then { _b ctrlSetTooltip (_tip call comspec_atak_native_fnc_tr); };
+            switch (true) do {
+                case (_on): {};
+                case (_en): { [_b, _code] call _click; };
+                default { _b ctrlEnable false; _b ctrlSetTextColor [0.55, 0.6, 0.57, 0.75]; _b ctrlSetBackgroundColor [0.09, 0.105, 0.098, 1]; };
+            };
+        };
+    } forEach _items;
+    _y = _y + _btnH + _pad * 0.5;
 };
 // Ajuste à la hauteur finale les fonds d'une carte (créés avant son texte : l'ordre de création fait l'empilement).
 // Éléments : [contrôle, "h" (hauteur) | "bot" (filet du bas) | "gauge" (jauge en bas)].
@@ -412,110 +481,158 @@ if (["path", "Chemin de la liaison", _pathSum, "Du téléphone à Athena : chaqu
 };
 
 // --- Radio de données (liaison réaliste téléphone <-> radio, fn_mpuLink) : état, réglages et maillage ---
+// 4.4.x (retour de jeu « à améliorer ») : état en 3 lignes à pastilles, une ligne « à faire », puis les réglages par sens
+// sur une même grille (_ctlRow). Les mêmes actions qu'avant (fn_mpuLink, fn_meshEW) ; puissance et largeur choisies
+// directement (fn_mpuLink "txpower" / "width" [cran]) au lieu de tourner en boucle.
 if (_mpuOn) then {
     private _v = ["view"] call comspec_atak_native_fnc_mpuLink;
     private _lk = _v get "link";
-    private _mpuSum = if (_mpuS get "ok") then { format ["<t color='#5cc76b'>%1</t>", [_mpuS get "kbps"] call _kbTxt] } else { format ["<t color='#f2ab33'>%1</t>", [_mpuS get "why"] call _esc] };
-    if (["mpu", "Radio de données", _mpuSum, ["MPU5 Wave Relay : elle améliore le réseau du téléphone", "MPU5 Wave Relay : le téléphone n'a de réseau qu'à travers elle. Sans MPU5 : pas de réseau de données"] select _mpuReq] call _fold) then {
-        ["Radio", switch (true) do {
-            case (_v get "carried"): { format ["MPU5 sur vous · <t color='%1'>%2</t>", ["#e5483a", "#5cc76b"] select (_v get "on"), ["éteinte", "allumée"] select (_v get "on")] };
-            case (_v get "posed"): { format ["MPU5 posée à %1 m · <t color='%2'>%3</t>", _v get "posedD", ["#e5483a", "#5cc76b"] select (_v get "on"), ["éteinte", "allumée"] select (_v get "on")] };
-            default { "<t color='#e5483a'>aucune MPU5 sur vous</t>" };
-        }] call _info;
-        ["Liaison au téléphone", switch (_lk) do {
-            case "cable": { "<t color='#5cc76b'>câble EUD branché</t>" };
-            case "wifi": { private _d = _mpuS get "wifiD"; format ["<t color='%1'>Wi-Fi</t> · %2 m / %3 m", ["#e5483a", "#5cc76b"] select ((_mpuS get "wifiQ") > 0), round (_d max 0), round (_v get "wifiR")] };
-            default { "<t color='#e5483a'>non reliée</t>" };
-        }] call _info;
-        if (_lk isEqualTo "wifi") then { ["Qualité du Wi-Fi", format ["%1 %%", round (100 * (_mpuS get "wifiQ"))]] call _info; };
-        if (_lk isEqualTo "" && {_v get "cableReq"} && {!(_v get "cable")}) then { ["Câble EUD", "<t color='#f2ab33'>absent</t>"] call _info; };
-        ["Canal du maillage", format ["Canal %1 · %2 MHz", _v get "chan", _v get "freq"]] call _info;
-        ["Puissance", format ["%1 · portée %2", _v get "pwrLabel", [_v get "range"] call _dist]] call _info;
-        ["Batterie de la radio", format ["<t color='%1'>%2 %%</t> · environ %3 h %4", switch (true) do { case ((_v get "batt") <= 5): { "#e5483a" }; case ((_v get "batt") <= 20): { "#f2ab33" }; default { "#5cc76b" }; },
-            _v get "batt", floor ((_v get "left") / 60), (_v get "left") mod 60]] call _info;
-        ["Batterie de rechange", ["aucune", "sur vous"] select (_v get "spare")] call _info;
-        ["Maillage", if (_mpuS get "ok") then {
-            format ["<t color='#5cc76b'>%1</t>", switch (_mpuS get "mode") do {
-                case "self": { "maillage autonome" };
-                case "lead": { format ["%1 saut(s) jusqu'au chef de groupe %2", _mpuS get "hops", [_mpuS get "gw"] call _esc] };
-                default { format ["%1 saut(s) jusqu'à %2", _mpuS get "hops", [_mpuS get "gw"] call _esc] };
-            }]
-        } else { format ["<t color='%1'>%2</t>", ["#e5483a", "#f2ab33"] select ((_mpuS get "why") isEqualTo "connexion au maillage en cours"), [_mpuS get "why"] call _esc] }] call _info;
-        if (_mpuS get "ok") then {
-            if ((_mpuS get "via") isNotEqualTo "" && {(_mpuS get "hops") > 1}) then { ["Par", [_mpuS get "via"] call _esc] call _info; };
-            ["Débit estimé", [_mpuS get "kbps"] call _kbTxt] call _info;
-            ["Latence · perte", format ["%1 ms · %2 %%", _mpuS get "lat", _mpuS get "loss"]] call _info;
+    private _ms = uiNamespace getVariable ["COMSPEC_ATAK_MpuSt", createHashMap];
+    private _mode = _ms getOrDefault ["mode", 0];
+    private _has = (_v get "carried") || {_v get "posed"};
+    private _on = _v get "on";
+    private _ok = _mpuS get "ok";
+    private _nl = _mpuS getOrDefault ["nodes", []];
+    private _mpuSum = if (_ok) then { format ["<t color='#5cc76b'>%1</t>", [_mpuS get "kbps"] call _kbTxt] } else { format ["<t color='#f2ab33'>%1</t>", [_mpuS get "why"] call _esc] };
+    if (["mpu", "Radio de données", _mpuSum, ["MPU5 Wave Relay : elle améliore le réseau du téléphone", "MPU5 Wave Relay : sans elle, pas de réseau de données"] select _mpuReq] call _fold) then {
+        // État : une ligne par maillon (radio, téléphone, maillage), pastille de couleur en tête.
+        private _dot = { params ["_st", "_t"]; format ["<t color='%1'>●</t> %2", _hex get _st, _t] };
+        private _l1 = switch (true) do {
+            case (!_has): { ["bad", "Aucune MPU5 sur vous"] call _dot };
+            case (!_on): { ["bad", [format ["MPU5 posée à %1 m : éteinte", _v get "posedD"], "MPU5 sur vous : éteinte"] select (_v get "carried")] call _dot };
+            default { ["ok", format ["%1 · canal %2 (%3 MHz) · portée %4", [format ["MPU5 posée à %1 m : allumée", _v get "posedD"], "MPU5 sur vous : allumée"] select (_v get "carried"),
+                _v get "chan", _v get "freq", [_v get "range"] call _dist]] call _dot };
         };
-        [format ["Même canal = même maillage.%1", ["", " Aucun relais dans la mission : les MPU5 forment leur propre maillage."] select ((_mpuS get "mode") isEqualTo "self")]] call _para;
+        private _battHex = switch (true) do { case ((_v get "batt") <= 5): { "#e5483a" }; case ((_v get "batt") <= 20): { "#f2ab33" }; default { "#5cc76b" }; };
+        private _batt = format ["batterie <t color='%1'>%2 %%</t> (%3 h %4)%5", _battHex, _v get "batt", floor ((_v get "left") / 60), (_v get "left") mod 60, ["", " · rechange sur vous"] select (_v get "spare")];
+        private _l2 = switch (_lk) do {
+            case "cable": { ["ok", format ["Téléphone relié par câble EUD · %1", _batt]] call _dot };
+            case "wifi": { [["bad", "ok"] select ((_mpuS get "wifiQ") > 0), format ["Téléphone relié en Wi-Fi (%1 m / %2 m) · %3", round ((_mpuS get "wifiD") max 0), round (_v get "wifiR"), _batt]] call _dot };
+            default { ["bad", format ["Téléphone non relié · %1", _batt]] call _dot };
+        };
+        private _l3 = if (_ok) then {
+            ["ok", format ["Maillage : %1 · %2 nœud(s) · %3 · %4 ms", switch (_mpuS get "mode") do {
+                case "self": { "autonome" };
+                case "lead": { format ["chef de groupe %1 (%2 saut(s))", [_mpuS get "gw"] call _esc, _mpuS get "hops"] };
+                default { format ["%1 (%2 saut(s))", [_mpuS get "gw"] call _esc, _mpuS get "hops"] };
+            }, count _nl, [_mpuS get "kbps"] call _kbTxt, _mpuS get "lat"]] call _dot
+        } else {
+            [["bad", "warn"] select ((_mpuS get "why") isEqualTo "connexion au maillage en cours"), format ["Maillage : %1", [_mpuS get "why"] call _esc]] call _dot
+        };
+        private _y0 = _y;
+        private _card = [[_pad, _y, _cw - 2 * _pad, _font * 3], [0.07, 0.085, 0.078, 0.96]] call _rect;
+        private _bar = [[_pad, _y, _lw * 2, _font * 3], _col get (["bad", ["warn", "ok"] select _ok] select (_has && {_on} && {_lk isNotEqualTo ""}))] call _rect;
+        private _st = [[_pad + _pad * 0.8, _y + _pad * 0.35, _cw - 3.2 * _pad, _font], format ["<t size='%1'>%2<br/>%3<br/>%4</t>", _zV, _l1, _l2, _l3], true] call _txt;
+        private _hc = ((ctrlPosition _st) select 3) + _pad * 0.7;
+        [[[_card, "h"], [_bar, "h"]], _y0, _hc] call _fixH;
+        _y = _y + _hc + _pad * 0.4;
+        // À faire : la première chose qui bloque, puis la raison des boutons grisés. Rien à faire : rien d'écrit.
+        private _todo = switch (true) do {
+            case (!_has): { "Prenez une MPU5 (arsenal) ou approchez-vous d'une MPU5 posée." };
+            case (!_on): { "Allumez la radio pour rejoindre le maillage." };
+            case (_lk isEqualTo ""): { "Reliez le téléphone : câble EUD ou Wi-Fi ci-dessous." };
+            case (!_ok): { "" };
+            case (_nl isEqualTo []): { format ["Aucun autre nœud sur le canal %1 : montez sur un point haut ou rapprochez-vous d'une MPU5 ou d'un relais.", _v get "chan"] };
+            default { "" };
+        };
+        private _radioMod = ((_v get "gear") isEqualType []) && {((_v get "gear") param [7, ""]) isNotEqualTo ""};
+        private _cableOk = (_v get "carried") && {!(_v get "cableReq") || {_v get "cable"} || {_radioMod}};
+        private _why = [];
+        if (_has && {_mode isEqualTo 1}) then { _why pushBack "puissance faible imposée par l'émission discrète"; };
+        if (_has && {_lk isNotEqualTo "cable"} && {!_cableOk}) then { _why pushBack (["câble EUD : seulement sur une MPU5 portée", "câble EUD absent de l'inventaire"] select (_v get "carried")); };
+        if !(_v get "wifi") then { _why pushBack "Wi-Fi coupé sur ce serveur"; };
+        private _parts = [];
+        if (_todo isNotEqualTo "") then { _parts pushBack format ["<t color='#f2ab33'>%1</t>", _todo]; };
+        if (_why isNotEqualTo []) then { _parts pushBack format ["<t size='%1' color='%2'>Grisé : %3</t>", _zS, _greyS, _why joinString " · "]; };
+        if (_parts isNotEqualTo []) then { [_parts joinString "<br/>", false] call _para; };
+        _y = _y + _pad * 0.2;
+        // Réglages : une rangée par sens, choix en cours en bouton plein.
+        if (_has) then {
+            ["Alimentation", [
+                ["ALLUMÉE", { ["power"] call comspec_atak_native_fnc_mpuLink; }, _on],
+                ["ÉTEINTE", { ["power"] call comspec_atak_native_fnc_mpuLink; }, !_on]
+            ]] call _ctlRow;
+            private _pw = _v get "pwr";
+            ["Puissance", [
+                ["FAIBLE", { ["txpower", [0]] call comspec_atak_native_fnc_mpuLink; }, _pw isEqualTo 0, true, "1 W : moins de portée, batterie plus longue"],
+                ["MOYENNE", { ["txpower", [1]] call comspec_atak_native_fnc_mpuLink; }, _pw isEqualTo 1, _mode isNotEqualTo 1, "3 W"],
+                ["FORTE", { ["txpower", [2]] call comspec_atak_native_fnc_mpuLink; }, _pw isEqualTo 2, _mode isNotEqualTo 1, "6 W : portée maximale"]
+            ]] call _ctlRow;
+            ["Émission", [
+                ["NORMALE", { ["mode", [0]] call comspec_atak_native_fnc_meshEW; [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, _mode isEqualTo 0],
+                ["DISCRÈTE", { ["mode", [1]] call comspec_atak_native_fnc_meshEW; [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, _mode isEqualTo 1, true, "Puissance réduite : moins repérable"],
+                ["ÉCOUTE", { ["mode", [2]] call comspec_atak_native_fnc_meshEW; [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }, _mode isEqualTo 2, true, "Écoute seule : ne relaie plus et n'émet plus"]
+            ]] call _ctlRow;
+            ["Canal", [
+                ["−", { ["chan", [-1]] call comspec_atak_native_fnc_mpuLink; }, false, true, "Canal précédent"],
+                [format ["%1", _v get "chan"], {}],
+                ["+", { ["chan", [1]] call comspec_atak_native_fnc_mpuLink; }, false, true, "Canal suivant"]
+            ]] call _ctlRow;
+            private _wd = _ms getOrDefault ["width", 1];
+            ["Largeur", [
+                ["ÉTROIT", { ["width", [0]] call comspec_atak_native_fnc_mpuLink; }, _wd isEqualTo 0, true, "Plus de portée, moins de débit"],
+                ["NORMAL", { ["width", [1]] call comspec_atak_native_fnc_mpuLink; }, _wd isEqualTo 1],
+                ["LARGE", { ["width", [2]] call comspec_atak_native_fnc_mpuLink; }, _wd isEqualTo 2, true, "Plus de débit, moins de portée"]
+            ]] call _ctlRow;
+        };
+        ["Liaison", [
+            ["CÂBLE EUD", { ["link", ["cable"]] call comspec_atak_native_fnc_mpuLink; }, _lk isEqualTo "cable", _cableOk],
+            ["WI-FI", { ["link", ["wifi"]] call comspec_atak_native_fnc_mpuLink; }, _lk isEqualTo "wifi", _v get "wifi"],
+            ["DÉBRANCHER", { ["unlink"] call comspec_atak_native_fnc_mpuLink; }, false, _lk isNotEqualTo ""]
+        ]] call _ctlRow;
+        private _more = [];
+        if ((_v get "posed") && {missionNamespace getVariable ["comspec_atak_native_mesh_mast", true]}) then {
+            _more pushBack [["MÂT", "REPLIER LE MÂT"] select (!isNull (_ms getOrDefault ["mast", objNull])), { ["mast"] call comspec_atak_native_fnc_mpuLink; }, false, true, "Mât d'antenne sur la MPU5 posée : plus de portée"];
+        };
+        if ((_v get "spare") && {(_v get "batt") < 95}) then { _more pushBack ["BATTERIE", { ["battery"] call comspec_atak_native_fnc_mpuLink; }, false, true, "Changer la batterie de la MPU5"]; };
+        if ((leader group player) isEqualTo player && {(count units group player) > 1}) then { _more pushBack ["IMPOSER AU GROUPE", { ["impose"] call comspec_atak_native_fnc_meshEW; }, false, true, "Imposer votre mode d'émission à tout le groupe"]; };
+        if (_more isNotEqualTo []) then { ["Plus", _more] call _ctlRow; };
         // Nœuds du maillage (MPU5 du même canal, radios posées, relais), les plus proches en sauts d'abord.
-        private _nl = _mpuS getOrDefault ["nodes", []];
         if (_nl isNotEqualTo []) then {
-            [format ["<t font='COMSPEC_BarlowBold' color='#e8eadf'>Nœuds du maillage (%1)</t>", count _nl], false] call _para;
+            _y = _y + _pad * 0.3;
+            [format ["<t font='COMSPEC_BarlowBold' color='#e8eadf'>Nœuds du maillage (%1)</t> <t size='%2' color='%3'>même canal = même maillage</t>", count _nl, _zS, _greyS], false] call _para;
             {
                 _x params ["_nm", "_nk", "_nh", "_nd", "_nb"];
                 [format ["<t color='%1'>●</t> %2", ["#e5483a", "#5cc76b"] select (_nh >= 0), [_nm] call _esc],
                     format ["%1 · %2<br/><t size='%3' color='%4'>%5</t>", createHashMapFromArray [["node", "MPU5"], ["posed", "MPU5 posée"], ["gw", "relais"]] getOrDefault [_nk, "MPU5"], [_nd] call _dist, _zS, _greyS,
                         [format ["%1 saut(s) · %2", _nh, [_nb] call _kbTxt], "<t color='#e5483a'>hors maillage</t>"] select (_nh < 0)]] call _info;
             } forEach _nl;
-        } else {
-            if (_lk in ["cable", "wifi"] && {_mpuS get "ok"}) then { ["Aucun autre nœud sur ce canal : montez sur un point haut ou rapprochez-vous d'une MPU5 ou d'un relais."] call _para; };
         };
-        _y = _y + _pad * 0.3;
-        if (_v get "carried" || {_v get "posed"}) then {
-            [[
-                [["ALLUMER", "ÉTEINDRE"] select (_v get "on"), { ["power"] call comspec_atak_native_fnc_mpuLink; }, !(_v get "on")],
-                ["PUISSANCE", { ["txpower"] call comspec_atak_native_fnc_mpuLink; }],
-                [["ÉMISSION NORMALE", "PUISSANCE RÉDUITE", "ÉCOUTE SEULE"] select ((uiNamespace getVariable ["COMSPEC_ATAK_MpuSt", createHashMap]) getOrDefault ["mode", 0]), {
-                    ["mode", [(((uiNamespace getVariable ["COMSPEC_ATAK_MpuSt", createHashMap]) getOrDefault ["mode", 0]) + 1) mod 3]] call comspec_atak_native_fnc_meshEW;
-                    [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
-                }],
-                [format ["CANAL %1", toUpper (_v getOrDefault ["width", "Normal"])], { ["width"] call comspec_atak_native_fnc_mpuLink; }],
-                ["CANAL −", { ["chan", [-1]] call comspec_atak_native_fnc_mpuLink; }],
-                ["CANAL +", { ["chan", [1]] call comspec_atak_native_fnc_mpuLink; }]
-            ]] call _buttons;
-        };
-        private _btn = [];
-        if (_lk isNotEqualTo "cable" && {_v get "carried"}) then { _btn pushBack ["CÂBLE EUD", { ["link", ["cable"]] call comspec_atak_native_fnc_mpuLink; }, _lk isEqualTo ""]; };
-        if (_lk isNotEqualTo "wifi" && {_v get "wifi"}) then { _btn pushBack ["WI-FI", { ["link", ["wifi"]] call comspec_atak_native_fnc_mpuLink; }]; };
-        if (_lk isNotEqualTo "") then { _btn pushBack ["DÉBRANCHER", { ["unlink"] call comspec_atak_native_fnc_mpuLink; }]; };
-        if ((leader group player) isEqualTo player && {(count units group player) > 1}) then { _btn pushBack ["IMPOSER LE MODE AU GROUPE", { ["impose"] call comspec_atak_native_fnc_meshEW; }]; };
-        if ((_v get "posed") && {missionNamespace getVariable ["comspec_atak_native_mesh_mast", true]}) then { _btn pushBack ["MÂT", { ["mast"] call comspec_atak_native_fnc_mpuLink; }]; };
-        if ((_v get "spare") && {(_v get "batt") < 95}) then { _btn pushBack ["BATTERIE", { ["battery"] call comspec_atak_native_fnc_mpuLink; }]; };
-        if (_btn isNotEqualTo []) then { [_btn] call _buttons; };
     };
 };
 
-// --- Voix ACRE2 / TFAR relayée par le maillage MPU5 (fn_mpuVoice) : pont radio, état, correspondants joignables ---
+// --- Voix ACRE2 / TFAR relayée par le maillage MPU5 (fn_mpuVoice) : repliée par défaut, une ligne d'état ---
+// Ouverte : une phrase (raison et quoi faire), le pont radio, puis GUIDE (étapes, volet « netGuide ») et DÉPANNAGE MPU (fn_mpuDiag).
+private _guideBtn = ["GUIDE", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["netGuide", true]; playSound "ClickSoft"; ["NETWORK"] call comspec_atak_native_fnc_pageRender; }];
+private _diagBtn = ["DÉPANNAGE MPU", { ["open"] call comspec_atak_native_fnc_mpuDiag; }];
 if ((_mpuS get "active") && {missionNamespace getVariable ["comspec_atak_native_mpu_voice", false]}) then {
     private _vv = ["view"] call comspec_atak_native_fnc_mpuVoice;
     private _vb = _vv get "bridge";
     private _vSum = switch (true) do {
-        case (_vb isEqualTo []): { "aucune radio reliée" };
+        case (_vb isEqualTo []): { "<t color='#f2ab33'>radio non reliée</t>" };
         case (_vv get "ok"): { "<t color='#5cc76b'>voix relayée</t>" };
         default { "<t color='#f2ab33'>portée radio normale</t>" };
     };
-    if (["voice", "Voix radio par le maillage", _vSum, "Radio ACRE2 / TFAR reliée à la MPU5 par câble audio : la voix passe par le maillage jusqu'aux radios reliées des équipiers, sur la même fréquence"] call _fold) then {
+    if (["voice", "Voix par le maillage", _vSum, "Votre radio ACRE2 / TFAR passe par la MPU5"] call _fold) then {
         if (_vb isEqualTo []) then {
-            ["Pont radio", format ["<t color='%1'>aucune radio reliée à la MPU5</t>", _greyS]] call _info;
+            [["Reliez votre radio à la MPU5 (RELIER ci-dessous), puis parlez sur la même fréquence qu'un camarade relié.", "Portez une MPU5 pour y relier votre radio."] select !(_vv get "carried")] call _para;
         } else {
-            ["Radio pontée", [_vb select 2] call _esc] call _info;
+            ["Radio reliée", [_vb select 2] call _esc] call _info;
             if (_vv get "ok") then {
                 ["Voix", format ["<t color='#5cc76b'>relayée par le maillage</t> · %1 relais", _vv get "hops"]] call _info;
-            } else {
-                ["Voix", format ["<t color='#f2ab33'>%1 : portée radio normale</t>", [_vv get "why"] call _esc]] call _info;
-            };
-            if (_vv get "ok") then {
                 private _pl = _vv get "peers";
                 if (_pl isEqualTo []) then {
-                    ["Aucun correspondant ponté joignable pour l'instant : il faut une radio reliée à une MPU5 de l'autre côté aussi."] call _para;
+                    ["Aucun camarade relié joignable : il lui faut aussi une radio reliée à une MPU5."] call _para;
                 } else {
-                    [format ["<t font='COMSPEC_BarlowBold' color='#e8eadf'>Correspondants pontés joignables (%1)</t>", count _pl], false] call _para;
+                    [format ["<t font='COMSPEC_BarlowBold' color='#e8eadf'>Correspondants reliés joignables (%1)</t>", count _pl], false] call _para;
                     {
                         _x params ["_pn", "_ph", "_pd", "_ps"];
                         [format ["<t color='#5cc76b'>●</t> %1", [_pn] call _esc], format ["%1 saut(s) · %2%3", _ph, [_pd] call _dist, ["", "<br/><t color='#f2ab33'>autre fréquence</t>"] select !_ps]] call _info;
                     } forEach (_pl select [0, 8]);
                     if ((_vv get "tfMult") > 0) then { ["Portée TFAR", format ["réception allongée %1 fois", round (1 / ((_vv get "tfMult") max 0.01))]] call _info; };
                 };
+            } else {
+                ["Voix", format ["<t color='#f2ab33'>%1 : portée radio normale</t>", [_vv get "why"] call _esc]] call _info;
             };
         };
         _y = _y + _pad * 0.3;
@@ -529,18 +646,16 @@ if ((_mpuS get "active") && {missionNamespace getVariable ["comspec_atak_native_
             } forEach ((_vv get "radios") select [0, 3]);
         };
         if (_vb isNotEqualTo []) then { _vbt pushBack ["DÉBRANCHER LA RADIO", { ["unbridge"] call comspec_atak_native_fnc_mpuVoice; }]; };
-        if (!(_vv get "carried") && {_vb isEqualTo []}) then { ["Portez une MPU5 pour y relier votre radio."] call _para; };
         if (_vbt isNotEqualTo []) then { [_vbt] call _buttons; };
-        ["Personne ne vous entend ? DÉPANNAGE MPU vérifie chaque maillon (réglage, radio, TeamSpeak, MPU5, pont, maillage, camarade) et dit quoi faire."] call _para;
-        [[["DÉPANNAGE MPU", { ["open"] call comspec_atak_native_fnc_mpuDiag; }, _vb isNotEqualTo []]]] call _buttons;
+        [[_guideBtn, _diagBtn]] call _buttons;
     };
 } else {
-    // Voix relayée indisponible (réglage décoché, liaison réaliste ou lien radio coupés) : la section reste, pour dire pourquoi et ouvrir le dépannage.
-    (["summary"] call comspec_atak_native_fnc_mpuVoice) params ["", ["_vs1", ""], ["_vs2", ""]];
-    if (["voice", "Voix radio par le maillage", format ["<t color='%1'>%2</t>", COMSPEC_ATAK_Th get "hexWarn", [_vs1] call _esc], "Radio ACRE2 / TFAR reliée à la MPU5 par câble audio : la voix passe par le maillage jusqu'aux radios reliées des équipiers, sur la même fréquence"] call _fold) then {
-        [[_vs2] call _esc] call _para;
-        ["Personne ne vous entend ? DÉPANNAGE MPU vérifie chaque maillon (réglage, radio, TeamSpeak, MPU5, pont, maillage, camarade) et dit quoi faire."] call _para;
-        [[["DÉPANNAGE MPU", { ["open"] call comspec_atak_native_fnc_mpuDiag; }, true]]] call _buttons;
+    // Voix relayée indisponible (réglage décoché, liaison réaliste ou lien radio coupés) : une ligne d'état, la raison et quoi faire.
+    (["summary"] call comspec_atak_native_fnc_mpuVoice) params [["_vc", ""], ["_vs1", ""], ["_vs2", ""]];
+    private _off = _vc isEqualTo "off";
+    if (["voice", "Voix par le maillage", format ["<t color='%1'>%2</t>", COMSPEC_ATAK_Th get "hexWarn", [[_vs1] call _esc, "désactivée par l'admin"] select _off], "Votre radio ACRE2 / TFAR passe par la MPU5"] call _fold) then {
+        [[[_vs2] call _esc, "Un admin l'active dans Échap > Réalisme > Maillage. Les étapes : GUIDE."] select _off] call _para;
+        [[_guideBtn, _diagBtn]] call _buttons;
     };
 };
 
