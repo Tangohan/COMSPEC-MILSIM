@@ -106,7 +106,7 @@ Rendus « 3D oblique » et « Plan » : mosaïque par hauteur (sans `--no-mosaic
 - Sans Arma 3 Tools (Linux ou Windows) : `hemtt build` depuis `Sources/`, puis copier
   `Sources/.hemttout/build/addons/comspec_atak_native_main.pbo` vers `@COMSPEC_ATAK_Native/addons/main.pbo`.
   Les pylônes relais 3D sont dans un PBO à part : `comspec_atak_native_towers.pbo` vers `@COMSPEC_ATAK_Native/addons/towers.pbo`
-  (modèles et textures : `tools/gen_tower_textures.py`, `tools/model_relay_towers.py`).
+  (modèles et textures : `tools/relay_tex.py`, `tools/model_relay_towers.py`, `tools/model_relay_kits.py`).
   Les objets d'inventaire 3D aussi : `comspec_atak_native_items.pbo` vers `@COMSPEC_ATAK_Native/addons/items.pbo`
   (`tools/gen_item_textures.py`, `tools/model_items.py`).
   `hemtt check` vérifie la config et le SQF.

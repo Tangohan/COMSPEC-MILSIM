@@ -599,6 +599,30 @@ EN : ATAK 4.3.0: armed drones, landscape apps, a readable map, AIs that answer r
 
 Aucune nouvelle DLL (COMSPEC Link 2.0.123 inchangé). Migration 4330 (passage aux fichiers). Non vu en jeu : aucune passe de l'autotest n'a tourné pour ce pack.
 
+## À venir : relais, antennes, caméras et baies réseau refaits en 3D (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Des relais refaits de la tête au pied, des antennes murales, des caméras et une salle serveur
+- **Pylônes et mâts** : les relais sont redessinés comme de vrais sites (treillis boulonné, échelle à crinoline, plates-formes, câbles jusqu'aux armoires, clôture, feux rouges la nuit), avec de nouveaux modèles : monopôle 30 m, pylône haubané 60 m, pylône de toit, mât tactique sur trépied et mât sur remorque. Peinture au choix : galvanisé, rouge-blanc, vert, sable.
+- **Antennes murales, caméras, baies** : de nouveaux objets à poser dans l'éditeur et en Zeus : antennes à fixer sur un mur, un poteau ou un toit (ce sont de vrais relais), une famille de caméras IP (dôme, tube infrarouge, thermique, mini-dôme…) et de quoi monter une salle serveur (baies, coffrets, chemins de câbles, climatiseur).
+- **Voyants et destruction** : un voyant montre l'état réel de chaque relais (en service, dégradé, brouillé, éteint) ; un pylône détruit se plie et tombe, avec étincelles et fumée. Le tout pèse moins lourd qu'avant et la carte de couverture se recalcule bien plus vite.
+EN : Relays rebuilt from top to bottom, wall antennas, cameras and a server room
+- **Towers and masts**: relays are redrawn as real sites (bolted lattice, caged ladder, platforms, cables down to the cabinets, fence, red lights at night), with new models: 30 m monopole, 60 m guyed mast, rooftop tower, tactical tripod mast and trailer mast. Pick the paint: galvanised, red-white, green, sand.
+- **Wall antennas, cameras, racks**: new objects to place in the editor and in Zeus: antennas for a wall, a pole or a roof (they are real relays), a family of IP cameras (dome, infrared bullet, thermal, mini dome…) and everything for a server room (racks, cabinets, cable trays, AC unit).
+- **Status lights and destruction**: a light shows the real state of each relay (running, degraded, jammed, off); a destroyed tower bends and falls, with sparks and smoke. The whole set is lighter than before and the coverage map recomputes much faster.
+
+### Détail technique
+- Audit complet : `docs/audit/2026-11-relais.md` (mesures avant / après, logique, limites, suite proposée).
+- Pipeline en pur Python, sans Blender : `tools/relay3d.py` (maillage, LOD, MLOD, atlas), `relay_tex.py`, `relay_parts.py`, `model_relay_towers.py` (8 pylônes et ruines), `model_relay_kits.py` (3 kits, 7 antennes murales ou de toit), `model_ip_cameras.py` (14 caméras), `model_net_infra.py` (14 objets), `gen_relay_config.py` (classes, `units[]`, stringtable de l'addon). Rendus de contrôle facultatifs : `render_relay_blender.py`, `render_relay_proofs.py`. Retirés : `gen_tower_textures.py`, `strip_tower_cables.py`.
+- `towers.pbo` : 89,4 Mo → 48,5 Mo avec 26 modèles au lieu de 10 (les cinq pylônes d'origine et leurs ruines : 76,4 → 27,0 Mo). Trois atlas (4,9 Mo) au lieu de dix matières (12 Mo) ; 3 à 5 passes de rendu par pylône au lieu de 10 à 12 ; cinq LOD, la dernière de 89 à 787 triangles ; ombres en prismes fermés (2 100 triangles au plus, 15 216 avant) ; collision de 8 à 39 pièces (jusqu'à 338 avant).
+- Classes historiques inchangées (`COMSPEC_ATAK_RelayTower_M12 / M20 / 30 / 40 / 50`, leurs `_ruins`, `COMSPEC_ATAK_DeployedAntenna_Sat / Mini / Omni`, `COMSPEC_ATAK_CameraObj`), mêmes chemins de modèle. Nouvelles : `RelayTower_Mono30`, `_Guyed60`, `_Roof8`, variantes `_RW`, `_Olive`, `_Sand`, `_Galva`, `_Light`, `_Bare`, `COMSPEC_ATAK_RelayAntenna_*`, `COMSPEC_ATAK_Cam_*`, `COMSPEC_ATAK_Infra_*`.
+- Sélections `camo` (peinture par `hiddenSelections`, attribut Eden « Peinture »), `led` (voyant d'état, `fn_relayLed`, client, relais à moins de 250 m, 3 s), `eq1` / `eq2` (équipement nu, léger, complet : animations `hide`, attribut Eden « Équipement »), destruction `fn_relayFx`.
+- Logique : couverture incrémentale par signature, recherche sous le curseur par index (9 cases au lieu de 1 313), bandes de dessin fusionnées, chaîne des répéteurs en cache 15 s, liste des relais diffusée une fois au lancement ; correction : les brouilleurs GPS seuls ne creusent plus de zone blanche. `fn_relayTower` : hauteur d'antenne minimale 1 m (4 m avant ; aucune classe existante n'est sous 8 m), nom par défaut selon la classe (`comspec_atak_relayNoun`).
+- Caméras : `fn_camAction` accepte les classes dérivées, `fn_camView` lit l'œil du flux dans la config. Infrastructure : `fn_infra`, réglage CBA « Le TOC dépend d'un serveur » décoché par défaut.
+- Tests : `AtakRelayModels3dAssetTest`, `AtakRelayCoverageCacheTest`, cas « couverture » de `fn_devMeshTest`.
+- Non vérifié en jeu (voir le chapitre 3 de l'audit) : `model.cfg` sur modèles non binarisés (sections, animations), alpha test, distances de LOD, particules.
+
 ## À venir : configurateur d'équipement, favoris, tendances, pré-kits et poids (site, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

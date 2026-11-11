@@ -6060,6 +6060,8 @@
 ["Couverture autour", "", "Coverage around"],
 ["COUVERTURE BRÛLÉE", "", "COVER BLOWN"],
 ["Couverture calculée : %1 %% du terrain reçoit le réseau sur %2 km", "", "Coverage computed: %1 %% of the ground gets the network over %2 km"],
+["Couverture déjà à jour : aucun relais n'a changé", "", "Coverage already up to date: no relay has changed"],
+["Antenne %1", "", "Antenna %1"],
 ["couverture civile", "", "civilian cover"],
 ["Couverture civile et alias uniquement — pas de confirmation d’identité.", "", "Civilian cover and aliases only — no identity confirmation."],
 ["Couverture de %1 brûlée (%2) : %3 groupe(s) ennemi(s) alerté(s).", "", "%1's cover blown (%2): %3 enemy group(s) alerted."],
@@ -23334,5 +23336,15 @@
 ["PLUS RÉCENT QUE LE SERVEUR", "", "NEWER THAN THE SERVER"],
 ["MOD %1 PLUS RÉCENT QUE LE SERVEUR", "", "MOD %1 NEWER THAN THE SERVER"],
 ["pas à jour (la plus récente en jeu : %1)", "", "outdated (newest in game: %1)"],
-["plus récent que le serveur (%1)", "", "newer than the server (%1)"]
+["plus récent que le serveur (%1)", "", "newer than the server (%1)"],
+["Le TOC dépend d'un serveur", "", "TOC depends on a server"],
+["Décoché par défaut : les baies et serveurs COMSPEC sont un décor. Coché : un écran TOC qui a une baie serveur ou un serveur tour à moins de 80 m s'éteint quand plus aucun de ces serveurs ne tourne (éteint, en panne ou détruit), et se rallume avec eux.", "", "Unchecked by default: COMSPEC racks and servers are scenery. Checked: a TOC screen with a server rack or tower server within 80 m turns off when none of these servers is running (off, faulty or destroyed), and comes back on with them."],
+["ATAK · Infrastructure réseau", "", "ATAK · Network infrastructure"],
+["Infrastructure réseau", "", "Network infrastructure"],
+["Infrastructure : allumer / éteindre", "", "Infrastructure: power on / off"],
+["Infrastructure : état", "", "Infrastructure: status"],
+["en panne", "", "faulty"],
+["endommagé, tourne encore", "", "damaged, still running"],
+["énergie", "", "power"],
+["climatisation", "", "cooling"]
 ]

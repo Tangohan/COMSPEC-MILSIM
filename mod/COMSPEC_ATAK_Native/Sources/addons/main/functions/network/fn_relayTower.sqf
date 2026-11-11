@@ -26,7 +26,10 @@ if !(_o getVariable ["COMSPEC_TowerKilledEh", false]) then {
     private _cfg = configOf _o;
     private _p = getPosATL _o;
     private _n = _o getVariable ["COMSPEC_TowerName", ""];
-    if (_n isEqualTo "") then { _n = format ["Pylône %1", mapGridPosition _o]; };
+    // Nom par défaut : « Pylône <carroyage> », ou le nom de famille de la classe (comspec_atak_relayNoun : antennes murales).
+    private _noun = getText (_cfg >> "comspec_atak_relayNoun");
+    if (_noun isEqualTo "") then { _noun = "Pylône"; };
+    if (_n isEqualTo "") then { _n = format ["%1 %2", _noun, mapGridPosition _o]; };
     _o setVariable ["COMSPEC_AtakRelay", true, true];
     _o setVariable ["COMSPEC_AtakRelayName", _n, true];
     _o setVariable ["COMSPEC_AtakRelayIdentity", _n, true];
@@ -34,7 +37,7 @@ if !(_o getVariable ["COMSPEC_TowerKilledEh", false]) then {
     _o setVariable ["COMSPEC_AtakRelayKind", "tour", true];
     _o setVariable ["COMSPEC_AtakRelayRange", getNumber (_cfg >> "comspec_atak_relayRange") max 1000, true];
     _o setVariable ["COMSPEC_AtakRelayThroughput", getNumber (_cfg >> "comspec_atak_relayThroughput") max 1, true];
-    _o setVariable ["COMSPEC_AtakRelayHeight", getNumber (_cfg >> "comspec_atak_relayHeight") max 4, true];
+    _o setVariable ["COMSPEC_AtakRelayHeight", getNumber (_cfg >> "comspec_atak_relayHeight") max 1, true];
     _o setVariable ["COMSPEC_AtakRelaySlots", getNumber (_cfg >> "comspec_atak_relaySlots"), true];
     _o setVariable ["COMSPEC_AtakRelaySide", _o getVariable ["COMSPEC_TowerSide", ""], true];
     _o setVariable ["COMSPEC_AtakRelayRoot", (_o getVariable ["COMSPEC_TowerUplink", "root"]) isNotEqualTo "repeater", true];
