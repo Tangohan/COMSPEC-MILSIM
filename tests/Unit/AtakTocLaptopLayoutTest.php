@@ -13,14 +13,24 @@ use PHPUnit\Framework\TestCase;
  * _H : police à un demi-pixel), positions écrites à la main dans chaque onglet, image « jour » rendue de nuit, bail de 3 s.
  * Ces vérifications l'auraient vu : noms qui ne diffèrent que par la casse, contrôle sans mise en page, bouton sans libellé
  * ou sans anglais, rectangles qui se chevauchent ou sortent de leur zone. Le contrôle en jeu (« audit ») complète.
+ * Refonte 4.9.0 (« l'APP POSTE TOC est totalement à refaire », « tout le TOC doit être utilisable sans téléphone ») : console
+ * plein écran, rail des quatre rubriques de la console web, une rangée d'onglets par rubrique, source directe (fn_tocAppData),
+ * onglets CARTE, DESSIN, PLAN (fn_tocApp) et MUR (fn_tocWall, modèle d'écrans de la 4.8.0).
  */
 final class AtakTocLaptopLayoutTest extends TestCase
 {
     private const TOC = __DIR__ . '/../../mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/toc/';
     private const EN = __DIR__ . '/../../mod/COMSPEC_ATAK_Native/Sources/addons/main/i18n/en.txt';
-    private const FILES = ['fn_tocLaptop.sqf', 'fn_tocDraw.sqf', 'fn_tocHallUi.sqf'];
+    private const FILES = ['fn_tocLaptop.sqf', 'fn_tocDraw.sqf', 'fn_tocHallUi.sqf', 'fn_tocApp.sqf', 'fn_tocWall.sqf', 'fn_tocAppData.sqf'];
     /** Fonds et contrôles posés hors des lignes (image satellite, son groupe de découpe et message d'attente : posés sur sBack). */
-    private const UNLAID = ['shellOut', 'shellIn', 'screen', 'brand', 'titleBg', 'titleLine', 'rBg', 'tabMark', 'sClip', 'sPic', 'sWait'];
+    private const UNLAID = ['screen', 'titleBg', 'titleLine', 'railBg', 'rBg', 'tabMark', 'secMark', 'sClip', 'sPic', 'sWait'];
+    /** Rubriques de la console et leurs onglets (les mêmes que la console web, docs/TOC-WEB.md). */
+    private const SECTIONS = [
+        'SITUATION' => ['CARTE', 'GROUPES', 'ORBAT', 'RÉSEAU', 'FLUX'],
+        'CONDUITE' => ['ORDRES', 'CAMP', 'DEMANDES', 'CHRONOS', 'EXCHECK', 'MAIN COURANTE', 'PERTES'],
+        'PLANS' => ['DESSIN', 'PLAN'],
+        'SALLE' => ['SALLE', 'MUR', 'SAT', 'RADIO'],
+    ];
 
     private function src(string $file): string
     {
@@ -115,7 +125,7 @@ final class AtakTocLaptopLayoutTest extends TestCase
         // Créations : _mk du chargement, « mk » pour fn_tocDraw / fn_tocHallUi, et l'image satellite dans son groupe de
         // découpe (le HUD du capteur est créé par fn_tocSat « hudMake »).
         self::assertSame(3, substr_count($lap, 'ctrlCreate ['));
-        foreach (['fn_tocDraw.sqf', 'fn_tocHallUi.sqf'] as $f) {
+        foreach (['fn_tocDraw.sqf', 'fn_tocHallUi.sqf', 'fn_tocApp.sqf', 'fn_tocWall.sqf', 'fn_tocAppData.sqf'] as $f) {
             self::assertStringNotContainsString('ctrlCreate', $this->src($f), "{$f} crée ses contrôles hors du registre du PC");
             self::assertStringNotContainsString('ctrlSetPosition [_x0', $this->src($f));
         }
@@ -150,14 +160,14 @@ final class AtakTocLaptopLayoutTest extends TestCase
         // Montré seulement si la mise en page en cours le nomme ; seule _place pose (plus de positions à la main par onglet).
         self::assertStringContainsString('{ (_ui get _x) ctrlShow (_x in _on); } forEach (_st getOrDefault ["keys", []]);', $lap);
         preg_match('/case "load": \{(.*?)\n    case "mk": \{/s', $lap, $load);
-        self::assertSame(7, substr_count($load[1], 'ctrlSetPosition'), 'au chargement, seuls les fonds sont posés à la main');
+        self::assertSame(5, substr_count($load[1], 'ctrlSetPosition'), 'au chargement, seuls les fonds sont posés à la main');
     }
 
     public function testEveryButtonHasACaptionAndEnglish(): void
     {
         $en = $this->english();
         foreach ($this->buttons() as [$key, $to, $long, $short, $tip, $prim]) {
-            self::assertContains($to, ['L', 'T', 'D', 'H'], $key);
+            self::assertContains($to, ['L', 'T', 'D', 'H', 'S', 'A', 'W'], $key);
             self::assertNotSame('', trim($long), "{$key} : bouton sans libellé");
             self::assertNotSame('', trim($tip), "{$key} : bouton sans aide");
             foreach (array_filter([$long, $short, $tip]) as $s) {
@@ -165,6 +175,10 @@ final class AtakTocLaptopLayoutTest extends TestCase
             }
             if ($to === 'T') {
                 self::assertSame('tab' . $long, $key);
+            }
+            if ($to === 'S') {
+                self::assertSame('sec' . $long, $key);
+                self::assertArrayHasKey($long, self::SECTIONS);
             }
         }
         // Libellés, aides des champs et aides des onglets : FR + EN.
@@ -180,7 +194,7 @@ final class AtakTocLaptopLayoutTest extends TestCase
             $texts = array_merge($texts, $t[1]);
         }
         self::assertGreaterThan(40, count($texts));
-        self::assertCount(14, $h[1], 'aide de chaque onglet');
+        self::assertCount(18, $h[1], 'aide de chaque onglet');
         foreach ($texts as $s) {
             self::assertArrayHasKey($s, $en, "« {$s} » sans anglais dans i18n/en.txt");
         }
@@ -224,19 +238,17 @@ final class AtakTocLaptopLayoutTest extends TestCase
     {
         $g = $this->grid();
         $gap = $g['gap'];
-        $x0 = 0.025 * $aspect;
-        $y0 = 0.022;
-        $w0 = 0.95 * $aspect;
-        $h0 = 0.956;
-        $xi = $x0 + $g['pad'];
-        $yi = $y0 + $g['pad'];
-        $wi = $w0 - 2 * $g['pad'];
-        $hi = $h0 - 2 * $g['pad'] - $g['brand'];
-        // Barre du haut puis deux rangées d'onglets pleine largeur (refonte 11/11), filet, corps, ligne d'état.
-        $tabsH = 2 * $g['tab'] + $gap;
-        $topH = $g['title'] + $tabsH + 2 * $gap;
-        $by = $yi + $topH + 2 * $gap;
-        $bh = $hi - $topH - $g['bar'] - 3 * $gap;
+        // Console plein écran : en-tête, rail des rubriques, onglets de la rubrique, corps (gauche et panneau), ligne d'état.
+        $xi = 0.0;
+        $yi = 0.0;
+        $wi = $aspect;
+        $hi = 1.0;
+        $topH = $g['title'] + 2 * $gap;
+        $bodyY = $yi + $topH + 2 * $gap;
+        $bodyH = ($yi + $hi - $g['bar'] - $gap) - $bodyY;
+        $bx = $xi + $g['rail'] + 2 * $gap;
+        $by = $bodyY + $g['tab'] + 2 * $gap;
+        $bh = ($yi + $hi - $g['bar'] - $gap) - $by;
         $pw = min(max($wi * $g['panel'], $g['panelMin']), $g['panelMax']);
         $px = $xi + $wi - $pw;
         $cx = $px + 2 * $gap;
@@ -245,10 +257,11 @@ final class AtakTocLaptopLayoutTest extends TestCase
 
         return [
             'inner' => [$xi, $yi, $wi, $hi],
-            'rTitle' => [$xi + 2 * $gap, $yi + 0.001, $wi - 4 * $gap, $g['title'] - 0.005],
+            'rTitle' => [$xi + 2 * $gap, $yi + $gap, $wi - 4 * $gap, $g['title']],
+            'rRail' => [$xi + $gap, $bodyY, $g['rail'] - 2 * $gap, $bodyH],
+            'rTabs' => [$bx, $bodyY, ($xi + $wi - 2 * $gap) - $bx, $g['tab']],
             'rBar' => [$xi, $yi + $hi - $g['bar'], $wi, $g['bar']],
-            'rLeft' => [$xi + $gap, $by, ($px - $gap) - ($xi + $gap), $bh],
-            'rTabs' => [$xi + 2 * $gap, $yi + $g['title'] + $gap, $wi - 4 * $gap, $tabsH],
+            'rLeft' => [$bx, $by, ($px - $gap) - $bx, $bh],
             'rHelp' => [$cx, $by + $bh - $gap - $g['help'], $cw, $g['help']],
             'rRight' => [$cx, $cy, $cw, ($by + $bh - $gap - $g['help'] - 2 * $gap) - $cy],
         ];
@@ -320,7 +333,7 @@ final class AtakTocLaptopLayoutTest extends TestCase
         $reg = $this->regions($aspect);
         self::assertGreaterThan(0, $scale);
         // Zones : titre au-dessus du corps, gauche et panneau côte à côte, aide et ligne d'état en bas, tout dans l'écran du PC.
-        foreach (['rTitle', 'rBar', 'rLeft', 'rTabs', 'rHelp', 'rRight'] as $k) {
+        foreach (['rTitle', 'rBar', 'rRail', 'rLeft', 'rTabs', 'rHelp', 'rRight'] as $k) {
             self::assertTrue(self::inside($reg[$k], $reg['inner']), "{$k} hors de l'écran du PC");
             self::assertGreaterThan(0.05, $reg[$k][2], "{$k} trop étroit");
         }
@@ -330,8 +343,12 @@ final class AtakTocLaptopLayoutTest extends TestCase
         self::assertFalse(self::overlap($reg['rRight'], $reg['rHelp']));
         self::assertFalse(self::overlap($reg['rTitle'], $reg['rLeft']));
         self::assertFalse(self::overlap($reg['rBar'], $reg['rLeft']));
+        foreach (['rTitle', 'rTabs', 'rLeft', 'rRight', 'rHelp', 'rBar'] as $k) {
+            self::assertFalse(self::overlap($reg['rRail'], $reg[$k]), "rail des rubriques sous {$k}");
+        }
+        self::assertGreaterThan(0.6, $reg['rLeft'][2], 'carte trop étroite');
         $zone = static fn (string $k): string => match (true) {
-            $k === 'F:TITLE' => 'rTitle', $k === 'F:TABS' => 'rTabs', $k === 'F:HELP' => 'rHelp', $k === 'F:BAR' => 'rBar',
+            $k === 'F:TITLE' => 'rTitle', $k === 'F:RAIL' => 'rRail', str_starts_with($k, 'F:TABS:') => 'rTabs', $k === 'F:HELP' => 'rHelp', $k === 'F:BAR' => 'rBar',
             str_starts_with($k, 'L:') => 'rLeft', default => 'rRight',
         };
         $buttons = [];
@@ -344,8 +361,13 @@ final class AtakTocLaptopLayoutTest extends TestCase
             $labels[$m[1]] = $m[2];
         }
         $layouts = $this->layouts();
-        foreach (['GROUPES', 'ORBAT', 'FLUX', 'ORDRES', 'CAMP', 'RÉSEAU', 'SAT', 'CHRONOS', 'RADIO', 'SALLE', 'MAIN COURANTE', 'EXCHECK', 'PERTES', 'DEMANDES'] as $tab) {
-            self::assertArrayHasKey('R:' . $tab, $layouts, "onglet {$tab} sans mise en page");
+        foreach (self::SECTIONS as $sec => $tabs) {
+            self::assertArrayHasKey('F:TABS:' . $sec, $layouts, "rubrique {$sec} sans rangée d'onglets");
+            $row = array_values(array_filter(array_map(self::cellKey(...), $layouts['F:TABS:' . $sec][0][2])));
+            self::assertSame(array_map(static fn (string $t): string => 'tab' . $t, $tabs), $row, "onglets de {$sec}");
+            foreach ($tabs as $tab) {
+                self::assertArrayHasKey('R:' . $tab, $layouts, "onglet {$tab} sans mise en page");
+            }
         }
         foreach ($layouts as $name => $rows) {
             $rects = $this->place($rows, $reg[$zone($name)], $g);
@@ -480,5 +502,77 @@ final class AtakTocLaptopLayoutTest extends TestCase
         self::assertStringContainsString('case "audit": {', $lap);
         $auto = (string) file_get_contents(__DIR__ . '/../../mod/COMSPEC_ATAK_Native/missions/COMSPEC_Autotest.Stratis/scripts/toc.sqf');
         self::assertStringContainsString('["audit"] call comspec_atak_native_fnc_tocLaptop', $auto);
+    }
+
+    /** Rubriques : la table _sections du jeu est celle du test (et de la console web), chaque onglet a son aide. */
+    public function testFourSectionsMirrorTheWebConsole(): void
+    {
+        $lap = $this->src('fn_tocLaptop.sqf');
+        preg_match('/private _sections = (\[\n.*?\n\]);/s', $lap, $m);
+        self::assertNotEmpty($m, 'table _sections introuvable');
+        $rows = json_decode($m[1], true);
+        self::assertIsArray($rows);
+        self::assertSame(self::SECTIONS, array_combine(array_column($rows, 0), array_column($rows, 1)));
+        preg_match('/private _tabHelp = createHashMapFromArray \[(.*?)\n            \];/s', $lap, $th);
+        preg_match_all('/\["([^"]+)", "[^"]+"\]/', $th[1] ?? '', $h);
+        self::assertEqualsCanonicalizing(array_merge(...array_values(self::SECTIONS)), $h[1]);
+        // Raccourcis : F1 à F4, onglet précédent / suivant, zoom au clavier ; boutons de zoom toujours montrés avec la carte.
+        self::assertStringContainsString('_d displayAddEventHandler ["KeyDown", { ["key", _this] call comspec_atak_native_fnc_tocApp }];', $lap);
+        $app = $this->src('fn_tocApp.sqf');
+        self::assertStringContainsString('case (_dik in [59, 60, 61, 62]): { ["section", ["SITUATION", "CONDUITE", "PLANS", "SALLE"] select (_dik - 59)] call _lap; true };', $app);
+        foreach ($this->layouts() as $name => $rows) {
+            if (str_starts_with($name, 'L:MAP:')) {
+                $keys = array_map(self::cellKey(...), $rows[0][2]);
+                self::assertContains('zoomIn', $keys, "{$name} sans ZOOM +");
+                self::assertContains('zoomOut', $keys, "{$name} sans ZOOM −");
+            }
+        }
+    }
+
+    /**
+     * « Il faut que tout le TOC soit utilisable sans téléphone » : la console lit le jeu (fn_tocAppData), n'appelle ni le
+     * centre de notifications du téléphone ni sa navigation, et dessine les unités avec une couleur déclarée (en 4.7.1
+     * « draw » lisait _sideRgb sans le déclarer : les nœuds en direct n'étaient jamais dessinés).
+     */
+    public function testConsoleWorksWithoutAnyPhone(): void
+    {
+        foreach (self::FILES as $f) {
+            $src = $this->src($f);
+            self::assertStringNotContainsString('comspec_atak_native_fnc_notify', $src, "{$f} : message envoyé au téléphone");
+            self::assertStringNotContainsString('comspec_atak_native_fnc_navigate', $src, "{$f} : navigation du téléphone");
+            self::assertStringNotContainsString('comspec_atak_native_fnc_netSend', $src, "{$f} : file d'envoi du téléphone");
+        }
+        $lap = $this->src('fn_tocLaptop.sqf');
+        self::assertStringContainsString('private _feedOf = { ["feed", _side] call comspec_atak_native_fnc_tocAppData };', $lap);
+        self::assertSame(1, preg_match_all('/private _sideRgb = /', $lap));
+        self::assertStringNotContainsString('hasDevice', $lap);
+        self::assertStringNotContainsString('du téléphone', (string) preg_replace('/téléphone du demandeur|file d\'envoi du téléphone/', '', $lap), 'renvoi au téléphone dans la console');
+        $data = $this->src('fn_tocAppData.sqf');
+        self::assertStringContainsString('missionNamespace getVariable ["comspec_atak_native_toc_direct", true]', $data);
+        self::assertStringContainsString('if (_src isEqualTo "D") exitWith { ["sans téléphone · source directe", "text2"] };', $data);
+        self::assertStringNotContainsString('"perdu"', $data);
+        // Demande, compte rendu et entrée de main courante créés au poste.
+        $app = $this->src('fn_tocApp.sqf');
+        self::assertStringContainsString('["send", ["reqAdd", [_kind, ["me"] call comspec_atak_native_fnc_tocRoom, getPlayerUID player, _grid, _t, _p]]] call comspec_atak_native_fnc_tocRoom;', $app);
+        self::assertStringContainsString('["comspec_atak_native_sideEvent", ["comspec_atak_native_report", [_r, _side], _side]] call CBA_fnc_serverEvent;', $app);
+        // Rien ne tourne console fermée.
+        self::assertStringContainsString('if ((count _ui) isEqualTo 0) exitWith { false };', $app);
+    }
+
+    /** Mur : la console appelle le modèle de la 4.8.0 (diffusion, mire, mises en page, luminosité, tableau), gardé par isNil. */
+    public function testWallUsesThe480ScreenModelBehindGuards(): void
+    {
+        $wall = $this->src('fn_tocWall.sqf');
+        foreach (['tocBroadcast' => 4, 'tocLayout' => 3, 'tocManager' => 2] as $fn => $min) {
+            self::assertGreaterThanOrEqual($min, substr_count($wall, 'comspec_atak_native_fnc_' . $fn), $fn);
+            self::assertStringContainsString('"' . $fn . '" call _has48', $wall);
+        }
+        self::assertStringContainsString('private _has48 = { !isNil (format ["comspec_atak_native_fnc_%1", _this]) };', $wall);
+        self::assertStringContainsString('["start", [_src, "hall", _hid, []]] call comspec_atak_native_fnc_tocBroadcast;', $wall);
+        self::assertStringContainsString('["do", [_o, "bars"]] call comspec_atak_native_fnc_tocBroadcast;', $wall);
+        self::assertStringNotContainsString('COMSPEC_ATAK_TocBc', $wall, 'la console ne réécrit pas le réglage de diffusion');
+        self::assertStringNotContainsString('setVariable ["COMSPEC_ATAK_TocScr"', $wall);
+        // Recherche d'une grille : fn_gridParse rend [[x, y, 0], taille, grille] (la 4.7.1 lisait [x, y]).
+        self::assertStringContainsString('_pos = [(_gp select 0) select 0, (_gp select 0) select 1];', $this->src('fn_tocLaptop.sqf'));
     }
 }

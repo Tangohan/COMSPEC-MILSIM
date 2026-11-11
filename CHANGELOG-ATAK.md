@@ -38,6 +38,47 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## À venir : les réglages d'icônes marchent sur le petit téléphone (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Les réglages d'icônes s'appliquent aussi au petit téléphone
+- Les réglages d'icônes s'appliquent aussi au petit téléphone : forme, taille de ma forme, taille des alliés et des contacts, réglette « Icônes de la carte ». Avant, ils ne se voyaient que téléphone en main, en grand.
+- Sur la miniature, les symboles gardent une taille lisible (à peu près celle du téléphone en main) et le pion garde sa lettre d'équipe.
+- Les repères des outils de la carte (mesure, ligne de vue, zone de pose, point de pose d'un marqueur) suivent eux aussi la réglette « Icônes de la carte ».
+- Les symboles 2525D ne provoquent plus d'erreur et affichent de nouveau l'échelon et le poste de commandement tirés de l'ORBAT du site.
+EN : Icon settings now apply to the small phone too
+- Icon settings now apply to the small phone too: shape, size of my shape, size of allies and contacts, and the "Map symbols" slider. Before, they only showed with the phone in hand, in large.
+- On the miniature, symbols keep a readable size (about the same as the phone in hand) and the pawn keeps its team letter.
+- The markers of the map tools (measure, line of sight, landing zone, marker drop point) also follow the "Map symbols" slider.
+- 2525D symbols no longer raise an error and show the echelon and command post from the site ORBAT again.
+
+### Détail technique
+- Cause : `fn_mapOnDraw` multipliait chaque taille de symbole par la hauteur de la carte avec un plancher à 0,35 (0,54 en miniature verticale, 0,35 en horizontale, contre 0,65 en main) : symboles de 9 px, lettre du pion masquée sous 14 px, réglages sans effet visible. Une douzaine de repères d'outil gardaient une taille fixe, hors réglette.
+- `fn_mapIconScale` : seule source des tailles (facteur de vue borné de 0,6 à 1,35, réglette de 0,8 à 2,2, tailles des alliés et des contacts de 0,5 à 2,5), lue une fois par image par `fn_mapOnDraw` et par `fn_planDraw` ; auto-contrôle `["check"]`. Rien ne change téléphone en main au réglage par défaut.
+- `fn_milSym` : la table de l'ORBAT avait des objets pour clés (interdit dans une HashMap, erreur de script à chaque symbole 2525D et dans l'aperçu « Mon point GPS ») ; clés `hashValue`.
+- Tests : `AtakMapIconScaleTest` (table réglage × taille de la vue, bornes, chemins de dessin sans taille fixe ni lecture directe du réglage).
+
+---
+## À venir : les caméras IP apparaissent dans Vidéo live et dans le TOC (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Les caméras IP posées dans l'éditeur apparaissent enfin
+- Les nouvelles caméras (dôme, tube infrarouge, thermique, mini-dôme…) posées dans l'éditeur ou en Zeus apparaissent dans l'app Vidéo live et dans les sources du TOC, pour tout leur camp, sans rien avoir à partager.
+- Une caméra posée en Zeus prend le camp du joueur le plus proche ; dans l'éditeur, c'est le camp choisi dans ses attributs.
+- Ces caméras de site sont câblées : elles restent en ligne même sans téléphone à côté.
+EN : IP cameras placed in the editor finally show up
+- The new cameras (dome, infrared bullet, thermal, mini dome…) placed in the editor or in Zeus now appear in the Live Feed app and in the TOC sources, for their whole side, with nothing to share.
+- A camera placed in Zeus takes the side of the nearest player; in the editor, it is the side picked in its attributes.
+- These site cameras are wired: they stay online even with no phone nearby.
+
+### Détail technique
+- Cause : `fn_camProp` enregistre une caméra d'éditeur sans poseur ; avec le partage obligatoire (réglage par défaut), `fn_camShare « can »` ne l'accordait qu'au poseur ou aux accès partagés, donc à personne. Vidéo live (`fn_pageLivecam`) et le TOC (`fn_tocCam « sources »`) lisent tous deux `fn_camAction « list »`, filtrée par cette règle. Les 16 classes `COMSPEC_ATAK_Cam_*` étaient touchées ; la caméra posée par un joueur ne l'était pas.
+- Correction : marque publique `COMSPEC_ATAK_CamPublic` posée par `fn_camProp` avant l'inscription ; `fn_camShare « can »` l'accorde au camp ; `fn_camAction « status »` ne demande plus d'ATAK à portée de Wi-Fi pour ces caméras. Balayage de secours au postInit du serveur (`allMissionObjects`), une seule inscription par caméra. Camp d'une caméra posée en Zeus : celui du joueur le plus proche.
+- `comspec_atak_native_fnc_camList` : `[] call` → `[[id, nom, type, état, position ASL, ptz], …]` des caméras visibles ; `["visible", […]]` : règle de visibilité, fonction pure.
+- Journal serveur, une ligne par caméra : `[COMSPEC CAM] caméra | classe=… nom=… camp=… lives=oui/non toc=oui/non raison=…`.
+- Test : `AtakCameraRegistryAssetTest`.
 ## À venir : l'app WAVE RELAY et les relais refaits (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -84,6 +125,98 @@ EN : A TOC console and operation plans on Athena
 ### Détail technique
 - Pages `/atak/toc` et `/atak/toc/plans`, droits `atak.toc.use` et `atak.toc.manage`, étapes 4370 et 4380. Détail : `docs/TOC-WEB.md`.
 - Lien avec le jeu par les canaux existants (BriefingPlan.Push canal `toc_room`, commandes web genre `toc`) : branche du mod `feat/atak-toc-web-sync`, sans changement de COMSPEC Link.
+
+## Pack 4.12.0 Washington : postes, droits et journal de la salle TOC, TOC pilotable par script (ATAK natif 4.12.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.12.0 : postes, droits et journal de la salle TOC
+- Postes, droits et journal de la salle TOC : chaque PC du TOC devient un poste (chef de quart, opérations, renseignement, feux, logistique, transmissions). Seuls le chef de quart et le Zeus changent les écrans et la salle, et chaque action est notée dans un journal que le chef de quart et le Zeus peuvent lire.
+- Verrou et relève : le chef de quart verrouille la salle le temps d'un briefing, et passe son poste par une relève signée, avec un résumé de la situation.
+- Vous pouvez piloter le TOC par script : les créateurs de mission créent des salles et des écrans, changent les affichages, verrouillent la salle et suivent ce qui s'y passe, sans téléphone.
+- Salle mieux gardée : copie de secours de la sauvegarde, dispositions de salle réutilisables d'une mission à l'autre, export de diagnostic pour le support, couleurs de nuit pour les fenêtres du TOC.
+EN : ATAK 4.12.0: stations, rights and journal of the TOC room
+- Stations, rights and journal of the TOC room: every TOC PC becomes a station (watch chief, operations, intelligence, fires, logistics, signals). Only the watch chief and Zeus change the screens and the room, and every action is noted in a journal that the watch chief and Zeus can read.
+- Lock and handover: the watch chief locks the room for the time of a briefing, and hands the station over with a signed handover and a summary of the situation.
+- You can drive the TOC by script: mission makers create rooms and screens, change the displays, lock the room and follow what happens in it, with no phone.
+- A better kept room: backup copy of the save, room layouts reusable from one mission to the next, diagnostic export for support, night colours for the TOC windows.
+
+### Détail technique
+- Feuille de route TOC (`docs/audit/2026-11-toc-feuille-de-route.md`), parts des lots 2 et 4 qui ne touchent ni la console ni les écrans : n° 10, 13 à 17, 35, Z2, Z3 (couche de données), Z4. Numéro 4.12.0 : main porte déjà 4.8.0 (tableau des écrans), 4.9.0 (console) et 4.11.0 (TOC sans téléphone) ; ce lot, préparé sous le numéro 4.10.0, prend le numéro libre suivant.
+- `fn_tocAccess.sqf` (nouveau) : rôles opérateur, chef de poste, administrateur Zeus ; table des droits par mode (réglage « Droits de la salle TOC » : rôles par défaut, ouvert, administrateurs) ; verrou de salle. Le serveur retrouve l'émetteur par `remoteExecutedOwner`, lit son camp et son UID lui-même ; l'état qui fait foi est dans `localNamespace` du serveur. Demandes d'écran (« view », « remove ») et de salle par `remoteExecCall` (« gate ») ; l'ancien événement CBA n'a plus que les droits d'un opérateur (« legacy »).
+- `fn_tocJournal.sqf` (nouveau) : journal des actions en anneau par camp (500 lignes, réglable), envoyé à la demande au chef de poste et au Zeus, une ligne par action dans le journal COMSPEC, 200 lignes gardées avec la salle.
+- `fn_tocStation.sqf`, `fn_tocHandover.sqf` (nouveaux) : postes nommés (CDQ, OPS, RENS, FEUX, LOG, TRANS), un chef de quart par salle, poste gardé 5 minutes après une déconnexion ; relève proposée, résumée par le serveur, signée par l'entrant, exportée en texte. Actions ACE sur soi « Poste TOC ».
+- `fn_tocPersist.sqf` : format 3. Rangs 0 à 6 du format 2 inchangés, nouveaux champs à la fin (journal, postes, relèves, méta), migration à la lecture, copies de secours `_bak` et `_v2`, export, import et retour arrière en texte, champs d'un format plus récent recopiés tels quels.
+- `fn_tocTheme.sqf` : table `_tokensNight` (mêmes jetons, pour la nuit), modes `variant`, `tokens`, variante facultative sur `rgba`, `hex`, `ink`. Aucun jeton du jour changé. Réglage « Thème des écrans TOC » ; adopté pour l'instant par la seule fenêtre du journal, du diagnostic et des relèves.
+- `fn_tocDiag.sqf` (nouveau) : relevé du TOC (salles, écrans, flux, postes, sauvegarde, performances, versions) sans nom ni identifiant de joueur, écrit au journal COMSPEC, copié et montré dans une fenêtre ; action Zeus « ATAK · TOC », touche CBA, action ACE sur soi.
+- `fn_tocApi.sqf` (nouveau), `docs/TOC-API.md` : API 1.0, 35 verbes, 15 événements `comspec_atak_toc_*`, arguments contrôlés, jamais d'erreur de script. `fn_tocPresets.sqf` (nouveau) : préréglages de salle dans le profil du serveur ou la mission, texte d'échange.
+- Accroches d'une ligne dans les fichiers des autres branches : `fn_tocHall.sqf` (envoi et ancien événement), `fn_tocScreen.sqf` (envoi de « view » et « remove », ancien événement), `XEH_postInitServer.sqf`, `XEH_postInitClient.sqf`, `config.cpp`, `XEH_preInit.sqf` (six réglages, chacun avec un exemple). `docs/TOC-ACCESS.md` décrit les points d'accroche. `fn_tocRoom.sqf` n'est pas touché (contrôle des demandes du lot 1).
+- Noms montrés par ce lot (journal, postes, relèves, verrou) : jamais le pseudo Steam. `fn_tocAccess` « nameOf » appelle le résolveur commun `comspec_atak_native_fnc_tocDisplayName` quand il est chargé (lot « sans téléphone »), sinon écrit le groupe et le rang du jeu (« Alpha 1-1 · 2 »).
+- Aucune alerte du jeu, aucune requête vers Athena, `fn_radioGuard` non touché.
+- Tests : `AtakTocAccessMatrixTest`, `AtakTocPersistFormatTest`, `AtakTocJournalTest`, `AtakTocApiContractTest`, `AtakTocThemeNightTest`.
+- Non vérifié en jeu.
+
+## Pack 4.11.0 Washington : le TOC fonctionne sans téléphone (ATAK natif 4.11.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.11.0 : le TOC fonctionne sans téléphone
+- Les écrans du TOC et le PC du poste montrent toute la force du camp, joueurs, véhicules, hélicoptères et drones, même si personne n'a de téléphone ATAK. Une unité vivante n'est plus marquée « perdu ».
+- Sans téléphone, tu lis les messages du poste, tes ordres et les réponses à tes demandes dans une fenêtre : menu ACE sur soi, « Messages et ordres du TOC ». Tu accuses un ordre d'un clic.
+- Les pertes comptent maintenant toute unité du camp, et la caméra de casque d'un joueur sans téléphone peut passer sur un écran.
+- Le TOC écrit ton indicatif Athena, plus ton pseudo Steam. Sans indicatif, tu apparais par ton groupe et ton rang, par exemple « Alpha 1-1 · 2 ».
+- Réglage du serveur « Source des positions du TOC » : Mixte (par défaut), Jeu ou Réseau ATAK, pour garder le réalisme si tu le veux.
+EN : ATAK 4.11.0: the TOC works without a phone
+- TOC screens and the post PC show the whole force of the side, players, vehicles, helicopters and drones, even if nobody carries an ATAK phone. A living unit is no longer marked “lost”.
+- Without a phone, you read the post's messages, your orders and the answers to your requests in a window: ACE self menu, “TOC messages and orders”. You acknowledge an order in one click.
+- Casualties now count every unit of the side, and the helmet camera of a player without a phone can go on a screen.
+- The TOC writes your Athena callsign, no longer your Steam name. Without a callsign, you appear by your group and rank in it, for example “Alpha 1-1 · 2”.
+- Server setting “TOC position source”: Mixed (default), Game or ATAK network, to keep realism if you want it.
+
+### Détail technique
+- Lot 1 de `docs/audit/2026-11-toc-feuille-de-route.md` (« autonomie sans téléphone »), couche données et logique. Mode d'emploi pour la console et les écrans : `docs/TOC-DATA-API.md` (fonctions, formats, liste d'essai « mission à zéro téléphone » en 14 cas).
+- `fn_tocTracks` (nouveau) : pistes du jeu lues par le serveur (joueurs, leurs groupes, unités désignées, véhicules et aéronefs avec équipage, chefs des groupes d'IA), fusionnées avec les nœuds des téléphones (une unité et son téléphone : un seul nœud). Nœud étendu aux champs 9 à 15 (source, santé, altitude et vitesse, intégrité, munitions, liaison du téléphone, sous-genre) ; les champs 0 à 8 ne changent pas. ORBAT du jeu et ordres du camp publiés aux seuls lecteurs, sur changement (`COMSPEC_ATAK_TocOrbat_<camp>`).
+- Coût serveur : aucune boucle nouvelle (le relevé est demandé par le tour de `fn_tocFeed`, qui ne tourne que pour les camps qui ont un lecteur) ; intervalle de 3 s jusqu'à 50 pistes, 5 s à 100, 8 s à 200, 12 s au-delà ; plafond réglable (150 par défaut, joueurs d'abord) ; munitions lues pour 25 unités par relevé au plus, une fois toutes les 30 s par unité ; pertes regroupées en une écriture de la salle toutes les 5 s.
+- `fn_tocNodeStatus` (nouveau, fonction pure) : état d'une piste tiré de la meilleure source vivante. Source jeu : en direct si l'unité est simulée sur le serveur ou si le relevé est frais ; téléphone seul : âge du point ; source inconnue : état neutre. Mêmes codes 0 à 4 que les écrans.
+- `fn_tocEntry` (nouveau) : saisies du poste (MEDEVAC 9 lignes, tir, ravitaillement, contact, SITREP, SALUTE, pertes, ordre, message, accusé au nom d'un élément), validées sur le poste puis de nouveau par le serveur ; doublon avec une demande venue d'un téléphone rapproché par genre, élément et heure (3 minutes).
+- `fn_tocInbox` (nouveau) : boîte du TOC sans téléphone (messages du poste, ordres, réponses, retours d'action), fenêtre ouverte par ACE sur soi ou par une touche, tableau des ordres du camp tenu par le serveur avec les accusés.
+- `fn_tocPanels` (nouveau) : registre des panneaux (16 fournis). La console et les écrans demandent un panneau par son nom ; l'état vide, l'attente du serveur et le plafond atteint sont rendus avec les lignes.
+- `fn_tocDisplayName` (nouveau) : nom affiché d'une unité pour tout le TOC, `[unité]` rend le texte. Indicatif Athena, sinon groupe et rang (« non lié » si le compte n'est pas relié), sinon rôle ; pseudo Steam seulement si le réglage `comspec_atak_native_toc_show_steam` est coché (décoché par défaut). Appliqué aux nœuds, à l'ORBAT, aux auteurs des lignes de la salle et à la caméra de casque ; les appels à basculer dans la console sont listés dans `docs/TOC-DATA-API.md`.
+- `fn_tocRoster` (nouveau) : données du tableau EFFECTIF (indicatif, rôle, nom et prénom du personnage tirés de l'identité SSE, unité, état, grille), pour un écran (pages, groupé par unité) et pour le PC (recherche, tri, export texte, suivre, message, ordre). Réglage `comspec_atak_native_toc_roster_names` : PC seulement par défaut. Les deux vues elles-mêmes restent à écrire dans les fichiers du tableau des écrans et de la console.
+- `fn_tocRoom` : le serveur retrouve lui-même le joueur qui demande (`remoteExecutedOwner`), son camp, son nom et son UID ; l'ancien événement qui croyait le client n'est plus écouté, et un appel direct d'un client aux modes du serveur est refusé. Détail gardé avec une demande (9 lignes). Toute unité du camp tuée est comptée, plus seulement un porteur d'ATAK.
+- `fn_tocCam` : caméra de casque d'un joueur sans téléphone, qualité fixe, selon le réglage `comspec_atak_native_toc_headcam` (coché par défaut).
+- `fn_notify` : téléphone rangé ou absent, le retour d'une action va à la ligne d'état du PC du poste, à une ligne en bas de l'interface Zeus et au journal de la boîte du TOC. Aucune alerte du jeu.
+- Réglages CBA (serveur) : `comspec_atak_native_toc_source` (mix par défaut), `…_toc_tracks_ai`, `…_toc_tracks_max`, `…_toc_headcam`.
+- Tests : `AtakTocAutonomyAssetTest` (table d'états, fusion et plafond, intervalles, validation des saisies, doublons, contrôle de l'émetteur, absence d'alerte du jeu, textes anglais).
+- Numéro : la feuille de route donnait 4.9.0 à ce lot ; la refonte de la console du poste a pris la 4.9.0, et la 4.10.0 est prise par la branche « salle tenue » : ce lot sort en 4.11.0. Il contient la 4.8.0 (tableau des écrans) et la 4.9.0 (console refaite), fusionnées ici.
+- État d'un téléphone seul : `fn_tocNodeStatus` appelle la règle de `fn_tocStatus` (4.8.0), sans la recopier. Console 4.9.0 : une ligne dans `fn_tocAppData` pour qu'une piste du jeu publiée par le serveur garde son libellé « source directe ».
+- Reste à brancher dans les fichiers de la console et des écrans : formulaires de saisie et tableau des ordres à l'écran, pied d'écran, escouades proposées (tous les groupes), diapositives choisies au poste, ORBAT du jeu dans l'onglet ORBAT. Non vérifié en jeu.
+
+## Pack 4.9.0 Washington : console du poste TOC refaite, tout le TOC sans téléphone (ATAK natif 4.9.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.9.0 : la console du poste TOC est refaite, et elle marche sans téléphone
+- **Quatre rubriques** : Situation, Conduite, Plans et Salle, à gauche de l'écran, comme sur la console web. Touches F1 à F4.
+- **Sans téléphone** : la console montre toutes les unités du camp, même celles qui n'ont pas d'ATAK. Demandes, comptes rendus et ordres se créent au poste.
+- **Carte** : boutons de zoom, échelle, nord, calques à cocher, fiche de l'unité cliquée avec suivi et trace.
+- **Mur d'images** : un bouton met tout le mur sur la situation ; un écran peut être diffusé sur tous les autres.
+EN : ATAK 4.9.0: the TOC station console is rebuilt, and it works without a phone
+- **Four sections**: Situation, Operations, Plans and Room, on the left of the screen, like the web console. F1 to F4 keys.
+- **No phone needed**: the console shows every friendly unit, even those without an ATAK. Requests, reports and orders are created at the station.
+- **Map**: zoom buttons, scale, north, layers to tick, card of the clicked unit with follow and trail.
+- **Video wall**: one button puts the whole wall on the situation; one screen can be broadcast to all the others.
+
+### Détail technique
+- Audit : `docs/audit/2026-11-poste-toc-app.md`. Défauts prouvés par lecture du code de la 4.7.1 : recherche d'une grille sans effet (`fn_gridParse` rend `[[x, y, 0], taille, grille]`, la console lisait `[x, y]`) ; tri des nœuds refait à chaque image. (`_sideRgb` non déclaré et « mk » qui rendait `true` : trouvés aussi, déjà corrigés par la 4.7.2.)
+- `fn_tocLaptop` : console plein écran (plus de coque de PC), en-tête (poste, salle, opérateur, alertes, ZULU / LOCAL, liaisons serveur, Athena et radio), rail des rubriques (table `_sections`, la même que la console web), une rangée d'onglets par rubrique, 18 onglets. Moteur gardé : `_grid`, `_layout`, `_btnDefs`, `_place`, « audit ». Clic droit : point désigné commun (ordre, ordre IA, demande, compte rendu), l'onglet ne change plus.
+- `fn_tocAppData` (nouveau) : source directe. Unités du camp lues dans le jeu et fusionnées avec `COMSPEC_ATAK_TocFeed_<camp>` (par `fn_tocStatus` « feed » quand la 4.8.0 est là) ; nœud à 10 champs, le dixième `"P"` (téléphone) ou `"D"` (source directe). Une unité au téléphone garde son dernier point reçu (le brouillage garde son effet). Calcul côté client, console ouverte, gardé 2 s. Réglage `comspec_atak_native_toc_direct`.
+- `fn_tocApp` (nouveau) : onglets CARTE (9 calques, liste des unités, fiche, SUIVRE, TRACE), DESSIN, PLAN ; compte rendu du poste (`comspec_atak_native_report` par `sideEvent`), demande du poste (`reqAdd`), entrées rapides de main courante ; zoom, échelle et nord dessinés dans « Draw » ; raccourcis clavier.
+- `fn_tocWall` (nouveau) : onglets MUR et SALLE. Appelle le modèle de la 4.8.0 sans le dupliquer : `fn_tocBroadcast` (« start », « stop », « do » bars), `fn_tocLayout` (« list », « apply », « current »), `fn_tocScreen` « view » clé « opt », `fn_tocManager` « open ». Chaque appel est gardé par `isNil` : bouton grisé et raison sur la ligne d'aide avec un PBO plus ancien. Les actions « sur les écrans » visent les dalles 16:9 de la salle du poste (avant : toujours les écrans à 30 m).
+- `fn_tocHallUi` : couleurs du plan par les jetons du thème ; « VISER UN ÉCRAN » n'écrit plus dans le téléphone (résultat sur la ligne d'état à la réouverture).
+- Maquettes : `python -I mod/COMSPEC_ATAK_Native/tools/toc_mockups.py` écrit aussi `app_poste/` (situation, conduite, plans, salle). Ce sont des maquettes tirées des tables du code, pas des captures du jeu.
+- Tests : `AtakTocLaptopLayoutTest` (zones du nouveau cadre, rubriques, raccourcis, aucun appel au téléphone, gardes de la 4.8.0), `AtakTocPostTest`.
+- Non vérifié en jeu : tout le rendu de la console, les raccourcis clavier, le zoom par boutons, l'échelle et le nord, le suivi et la trace, le compte rendu et la demande créés au poste, les commandes du mur avec la 4.8.0.
 
 ## Pack 4.8.0 Washington : tableau des écrans TOC (Eden, Zeus, en jeu), mode BROADCAST et mire, écrans qui ne clignotent plus, textes des bandeaux lisibles, menu des écrans refait (ATAK natif 4.8.0.AG - Washington, COMSPEC Link 2.0.123)
 

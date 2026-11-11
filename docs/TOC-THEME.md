@@ -30,12 +30,28 @@ par le test). Écrans muraux : pixels virtuels 1600 x 900 (faces 4:1 : 1600 x 40
 
 Contraste vérifié : tout texte ≥ 4,5:1 sur `bg0`, `bg1`, `bg2`, `redDim`, sur les pastilles et les plaques de carte.
 
+## Jeu de couleurs « nuit » (4.12.0)
+
+Table `_tokensNight` de `fn_tocTheme.sqf` : les mêmes noms de jetons, pour la nuit et la faible lumière. Fonds plus
+noirs, textes et couleurs assombris, mêmes contrastes minimaux que le jour (test `AtakTocThemeNightTest`). Aucun jeton
+du jour n'est changé, et sans variante demandée tout rend les couleurs du jour.
+
+| Appel | Rend |
+|---|---|
+| `["variant"] call comspec_atak_native_fnc_tocTheme` | `"jour"` ou `"nuit"` selon le réglage « Thème des écrans TOC » (automatique : nuit quand le soleil est couché) |
+| `["rgba", [jeton, alpha, "auto"]]` | couleur du jeton dans la variante du joueur (`"jour"`, `"nuit"` ou `"auto"`) |
+| `["hex", [jeton, "auto"]]`, `["ink", [texte, "auto"]]` | idem pour `#rrggbb` et pour un texte structuré |
+| `["tokens", "nuit"]` | table jeton vers `#rrggbb` |
+
+Pour adopter le thème dans un écran ou une console : ajouter `"auto"` aux appels `rgba`, `hex` et `ink`, et redessiner
+quand `["variant"]` change. À la 4.12.0 seules les fenêtres du journal, du diagnostic et des relèves le font.
+
 ## Texte
 
 Libellés en Roboto Condensed du jeu (`RobotoCondensed`, `RobotoCondensedBold` : vrai gras), données (heures, grilles,
 nombres) en `EtelkaMonospacePro`. Écran mural, jamais sous 28 px : `display` 132 (ZULU de l'horloge), `hero` 72, `num` 48
 (cases à gros chiffre, chronos), `squadName` 56, `title` 40, `heading` 32, `body` / `bodyBold` / `data` / `caption` 28.
-PC : grille de `fn_tocLaptop` (`font` 0,019, plancher `fontMin` 0,0145 x hauteur d'écran).
+PC : grille de `fn_tocLaptop` (`font` 0,019, plancher `fontMin` 0,0145 x hauteur d'écran : 21 et 16 px en 1080p).
 
 ## Composants
 
@@ -55,9 +71,12 @@ PC : grille de `fn_tocLaptop` (`font` 0,019, plancher `fontMin` 0,0145 x hauteur
 - **Image en direct** (mosaïque, caméra du chef, satellite) : coins de visée 28 px, pastille DIRECT, bandeau bas
   (indicatif, 4 barres de liaison, heure ZULU) ; sans image : PAS DE SIGNAL en rouge, case libre en sourdine.
 - **État vide** : une phrase, puis ce qu'il faut faire. Pas d'icône.
-- **PC** : barre du haut (poste, ZULU, LOCAL, liaison, FLASH, prise du poste, fermer), deux rangées d'onglets pleine
-  largeur (choisi : `bg2`, texte accent, filet accent), panneau de l'onglet (titre et état, filet), ligne d'aide, ligne
-  d'état. Boutons : normal `bg2`, survol `bg3`, désactivé texte atténué, principal en accent.
+- **PC** (console plein écran, 4.9.0) : en-tête (poste, salle, alertes, ZULU, LOCAL, liaisons, FLASH, prise du poste,
+  fermer), rail des quatre rubriques à gauche (choisie : `bg2`, texte accent, filet accent vertical), une rangée
+  d'onglets par rubrique (choisi : `bg2`, texte accent, filet accent), panneau de l'onglet (titre et état, filet),
+  ligne d'aide, ligne d'état. Boutons : normal `bg2`, survol `bg3`, désactivé texte atténué, principal en accent (un
+  seul par panneau). Calque : pastille pleine et texte accent s'il est affiché, pastille vide et texte atténué sinon.
+  Maquettes des rubriques : `_toc_maquettes/app_poste/`.
 
 ## Formats d'image et affichage TEXTE
 
