@@ -767,6 +767,8 @@ class COMSPEC_ATAK_Module_TocScreen: COMSPEC_ATAK_Module_DataBase {
                 class V8 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_EXCHECK"; value = "EXCHECK"; };
                 class V9 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_KILLS"; value = "KILLS"; };
                 class V10 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_REQ"; value = "REQ"; };
+                class V11 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_STRIP"; value = "STRIP"; };
+                class V12 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_PLATE"; value = "PLATE"; };
             };
         };
         // Salle TOC : satellite et escouade montrés, liste d'exécution préparée.
@@ -789,6 +791,15 @@ class COMSPEC_ATAK_Module_TocScreen: COMSPEC_ATAK_Module_DataBase {
             property = "COMSPEC_ATAK_Module_TocScreen_Squad";
             control = "Edit";
             expression = "_this setVariable ['Squad',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
+        class Panels {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_PN_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_PN_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_Panels";
+            control = "Edit";
+            expression = "_this setVariable ['Panels',_value,true];";
             defaultValue = "''";
             typeName = "STRING";
         };

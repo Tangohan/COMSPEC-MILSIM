@@ -155,7 +155,7 @@ switch (_mode) do {
             [_ui get "flash", format ["<t size='1.45' font='COMSPEC_BarlowBold'>  FLASH · %1</t> <t size='1.1' color='#ffd0c8'>· %2 · %3Z</t>", [_fl select 0] call _esc, [_fl select 1] call _esc, _fl select 2]] call _setTxt;
         };
         private _y0 = [0.1, 0.15] select ((count _fl) > 0);
-        { (_ui get _x) ctrlSetPosition [0.02, _y0, 0.96, 0.98 - _y0]; (_ui get _x) ctrlCommit 0; } forEach ["main", "main2"];
+        { (_ui get _x) ctrlSetPosition [0.02, _y0, 0.96, 0.98 - _y0]; (_ui get _x) ctrlCommit 0; (_ui get _x) ctrlSetBackgroundColor [0, 0, 0, 0]; } forEach ["main", "main2"];
         switch (_view) do {
             case "SAT": {
                 private _n = ((_cfg param [8, 0]) max 0) min 1;
@@ -208,6 +208,39 @@ switch (_mode) do {
                 };
                 (_ui get "main2") ctrlShow false;
                 [_ui get "main", _s] call _setTxt;
+            };
+            // Faces 4:1 (texture 2048 x 512) : texte plein cadre, sur fond opaque par-dessus l'en-tête.
+            case "STRIP";
+            case "PLATE": {
+                private _m = _ui get "main";
+                (_ui get "main2") ctrlShow false;
+                (_ui get "flash") ctrlShow false;
+                _m ctrlSetBackgroundColor [0.02, 0.025, 0.022, 1];
+                _m ctrlSetPosition [0, 0, 1, 1];
+                _m ctrlCommit 0;
+                private _s = if (_view isEqualTo "STRIP") then {
+                    // Bandeau : ZULU et LOCAL, puis le premier chrono du poste s'il y en a un.
+                    private _t = (_room select 1) param [0, []];
+                    private _tt = "";
+                    if ((count _t) > 0) then {
+                        (["timerText", _t] call comspec_atak_native_fnc_tocRoom) params ["_x1", "", "", "_hx"];
+                        _tt = format ["   <t size='4.5' color='#8a9a93'>%1</t> <t size='6' font='COMSPEC_BarlowBold' color='%2'>%3</t>", [_t select 1] call _esc, _hx, _x1];
+                    };
+                    format ["<t align='center'><t size='9' font='COMSPEC_BarlowBold' color='#ff5a4a'>%1</t><t size='4.5' color='#8a9a93'> Z</t>   <t size='7' font='COMSPEC_BarlowBold' color='#e0b040'>%2</t><t size='4.5' color='#8a9a93'> LOCAL</t>%3</t>",
+                        _zulu, _local, _tt]
+                } else {
+                    // Plaque : nom du groupe lié (écran d'escouade choisi), sinon le nom de l'écran ; état ATAK du groupe dessous.
+                    private _g = _cfg param [9, ""];
+                    private _txt = toUpper ([_g, _name] select (_g isEqualTo ""));
+                    private _sub = "";
+                    if (_g isNotEqualTo "") then {
+                        private _nodes = ((missionNamespace getVariable [format ["COMSPEC_ATAK_TocFeed_%1", _side], []]) param [1, []]) select { (_x param [7, ""]) isEqualTo _g };
+                        _sub = format ["<br/><t size='4.5' color='%1'>%2</t>", ["#6f7773", "#5cc76b"] select ((count _nodes) > 0),
+                            [format ["%1 nœud(s) ATAK", count _nodes], "hors réseau"] select ((count _nodes) isEqualTo 0)];
+                    };
+                    format ["<t align='center'><t size='9' font='COMSPEC_BarlowBold'>%1</t>%2</t>", [_txt select [0, 18]] call _esc, _sub]
+                };
+                [_m, _s] call _setTxt;
             };
             default {
                 (["boardText", [_view, _room, _side]] call _fn) params [["_l", ""], ["_r", ""]];

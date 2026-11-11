@@ -911,12 +911,8 @@ switch (_mode) do {
                 if (isNull _o) exitWith { ["Choisissez d'abord un écran dans la liste"] call _setStatus; };
                 private _pw = _ui get "pWhat";
                 private _k = _pw lbData (lbCurSel _pw);
-                switch (true) do {
-                    case (_k in ["SAT1", "SAT2"]): { [_o, toLower _k] call COMSPEC_ATAK_TocDo; };
-                    case ((_k select [0, 3]) isEqualTo "SQ|"): { [_o, "sq|" + (_k select [3])] call COMSPEC_ATAK_TocDo; };
-                    case ((_k select [0, 4]) isEqualTo "CAM|"): { ["set", [_o, _k select [4]]] call comspec_atak_native_fnc_tocCam; };
-                    case (_k isNotEqualTo ""): { ["show", [_o, _k]] call comspec_atak_native_fnc_tocScreen; };
-                };
+                // Écran ou dalle d'un mur (relais) : même chemin que le menu ACE et le téléphone.
+                ["apply", [_o, _k]] call comspec_atak_native_fnc_tocScreen;
                 [format ["%1 : %2", (_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [0, "écran"], _pw lbText (lbCurSel _pw)]] call _setStatus;
             };
             case "pRen": {
@@ -1284,7 +1280,8 @@ switch (_mode) do {
                     private _v = _c param [3, "SPLIT"];
                     private _what = (createHashMapFromArray [["SPLIT", "carte et flux"], ["MAP", "carte seule"], ["FEED", "flux seul"], ["NET", "réseau"], ["ORBAT", "ORBAT du site"], ["TOC", "PIP du poste"],
                         ["CAM", "caméra : " + (["label", _x] call comspec_atak_native_fnc_tocCam)], ["SAT", format ["vue satellite SAT %1", (_c param [8, 0]) + 1]], ["CLOCK", "horloge et chronos"],
-                        ["SQUAD", "escouade " + (_c param [9, ""])], ["LOG", "main courante"], ["EXCHECK", "liste d'exécution"], ["KILLS", "pertes et résultats"], ["REQ", "demandes"]]) getOrDefault [_v, _v];
+                        ["SQUAD", "escouade " + (_c param [9, ""])], ["LOG", "main courante"], ["EXCHECK", "liste d'exécution"], ["KILLS", "pertes et résultats"], ["REQ", "demandes"],
+                        ["STRIP", "bandeau horloge"], ["PLATE", "plaque " + ([_c param [0, ""], _c param [9, ""]] select ((_c param [9, ""]) isNotEqualTo ""))]]) getOrDefault [_v, _v];
                     if ((count (_x getVariable ["COMSPEC_ATAK_ScreenCast", []])) >= 5) then { _what = "diapositives"; };
                     [netId _x, format ["%1 · %2", _c param [0, "TOC"], _what], format ["%1 m", round (player distance _x)]]
                 };
@@ -1298,7 +1295,8 @@ switch (_mode) do {
                 private _pw = _ui get "pWhat";
                 private _opts = [["Carte et flux", "SPLIT"], ["Carte seule", "MAP"], ["Flux seul", "FEED"], ["Réseau", "NET"], ["ORBAT du site", "ORBAT"], ["PIP du poste", "TOC"],
                     ["Vue satellite SAT 1", "SAT1"], ["Vue satellite SAT 2", "SAT2"], ["Horloge et chronos", "CLOCK"], ["Main courante", "LOG"], ["Liste d'exécution", "EXCHECK"],
-                    ["Pertes et résultats", "KILLS"], ["Demandes des éléments", "REQ"], ["Diapositive du Briefing", "SLIDES"]];
+                    ["Pertes et résultats", "KILLS"], ["Demandes des éléments", "REQ"], ["Diapositive du Briefing", "SLIDES"],
+                    ["Bandeau horloge (écran 4:1)", "STRIP"], ["Plaque de nom (écran 4:1)", "PLATE"]];
                 { _opts pushBack [format ["Escouade %1", _x], "SQ|" + _x]; } forEach (["squads", _side] call comspec_atak_native_fnc_tocScreen);
                 { _opts pushBack [_x select 0, "CAM|" + (_x select 1)]; } forEach (["sources"] call comspec_atak_native_fnc_tocCam);
                 if ((_pw getVariable ["COMSPEC_ATAK_Sig", []]) isNotEqualTo _opts) then {

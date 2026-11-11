@@ -8,7 +8,8 @@
     Attributs : Nom, Camp affiché (vide : celui de chaque joueur), Affichage (dont « PIP du poste » : l'écran recopie
     ce que l'opérateur a sous les yeux sur le PC du poste ; salle TOC : vue satellite, horloge et chronos, écran
     d'escouade, main courante, liste d'exécution, pertes et résultats, demandes), Satellite montré (SAT 1 / SAT 2),
-    Escouade montrée (nom du groupe), Liste d'exécution préparée (étapes séparées par |, champs par ;), Poste TOC,
+    Escouade montrée (nom du groupe), Liste d'exécution préparée (étapes séparées par |, champs par ;), Dalles du mur
+    (contenu des dalles 2 et suivantes d'un mur multi-écrans : « SAT1, CLOCK, SQ:Alpha 1-1, LOG »), Poste TOC,
     Écran posé, Texture (index).
 */
 params [["_logic", objNull, [objNull]], ["_units", [], [[]]], ["_activated", true, [true]]];
@@ -18,9 +19,9 @@ private _targets = _ctx get "targets";
 private _vals = [
     _logic getVariable ["Name", ""], _logic getVariable ["Side", ""], _logic getVariable ["View", "SPLIT"],
     _logic getVariable ["Toc", true], _logic getVariable ["Class", "COMSPEC_ATAK_Screen_Tripod"], _logic getVariable ["Index", 0],
-    _logic getVariable ["Sat", 0], _logic getVariable ["Squad", ""], _logic getVariable ["Excheck", ""]
+    _logic getVariable ["Sat", 0], _logic getVariable ["Squad", ""], _logic getVariable ["Excheck", ""], _logic getVariable ["Panels", ""]
 ];
-_vals params ["_name", "_side", "_view", "_toc", "_cls", "_sel", "_slot", "_squad", "_ex"];
+_vals params ["_name", "_side", "_view", "_toc", "_cls", "_sel", "_slot", "_squad", "_ex", "_pans"];
 // Liste d'exécution préparée : « événement ; mot de code ; élément ; heure | … » pour le camp de l'écran (tous si vide).
 private _exApply = {
     params ["_txt", "_s"];
@@ -30,9 +31,10 @@ private _exApply = {
 };
 if !(_ctx get "zeus") exitWith {
     if ((count _targets) isEqualTo 0) then {
-        ["spawn", [getPosATL _logic, getDir _logic, _cls, _name, _side, _view, _toc, _slot, _squad]] call comspec_atak_native_fnc_tocScreen;
+        ["spawn", [getPosATL _logic, getDir _logic, _cls, _name, _side, _view, _toc, _slot, _squad, _pans]] call comspec_atak_native_fnc_tocScreen;
     } else {
         {
+            if (_pans isNotEqualTo "") then { _x setVariable ["COMSPEC_ATAK_TocPanelCfg", ["panelSpec", _pans] call comspec_atak_native_fnc_tocScreen]; };
             ["add", [_x, [_name, format ["%1 %2", _name, _forEachIndex + 1]] select (_name isNotEqualTo "" && {(count _targets) > 1}), _side, _sel, _view, _toc, false, _slot, _squad]] call comspec_atak_native_fnc_tocScreen;
         } forEach _targets;
     };
@@ -56,6 +58,7 @@ private _grps = [["Aucune", ""]];
     };
 } forEach allGroups;
 private _exHelp = "Liste d'exécution préparée (étapes séparées par |, champs par ;)";
+private _panHelp = "Mur à plusieurs dalles : dalles 2 et suivantes (exemple : SAT1, CLOCK, SQ:Alpha 1-1, LOG)";
 private _exApplyZ = {
     params ["_ex", "_side"];
     if (_ex isEqualTo "") exitWith {};
@@ -74,12 +77,13 @@ if (isNull _obj) exitWith {
         ["CHECK", "Sert aussi de poste TOC (PC du poste, carte en grand)", true],
         ["COMBO", "Satellite montré (vue satellite)", _sats, 0],
         ["COMBO", "Escouade montrée (écran d'escouade)", _grps, ""],
-        ["EDIT", _exHelp, ""]
+        ["EDIT", _exHelp, ""],
+        ["EDIT", _panHelp, ""]
     ], {
         params ["_v", "_pos"];
-        _v params ["_cls", "_name", "_side", "_view", "_toc", "_slot", "_squad", "_ex"];
+        _v params ["_cls", "_name", "_side", "_view", "_toc", "_slot", "_squad", "_ex", "_pans"];
         private _cam = getPosATL curatorCamera;
-        ["spawn", [_pos, _pos getDir _cam, _cls, _name, _side, _view, _toc, _slot, _squad]] call comspec_atak_native_fnc_tocScreen;
+        ["spawn", [_pos, _pos getDir _cam, _cls, _name, _side, _view, _toc, _slot, _squad, _pans]] call comspec_atak_native_fnc_tocScreen;
         [_ex, _side] call COMSPEC_ATAK_TocExZ;
         ["feedback", [format ["ATAK : écran TOC « %1 » posé", [_name, "TOC"] select (_name isEqualTo "")]]] call comspec_atak_native_fnc_zeusMenu;
     }, _pos, "Un grand écran du jeu qui affiche le réseau ATAK du camp tel que le serveur le voit, ou un affichage de la salle TOC (satellite, horloge, escouade, registres du poste). Liste d'exécution : Franchissement LD ; ROMEO ; ALPHA ; 22:30 | Objectif pris ; TANGO ; BRAVO ; 23:10. Gardé pour la partie suivante."] call comspec_atak_native_fnc_zeusForm;

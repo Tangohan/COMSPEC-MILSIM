@@ -99,3 +99,62 @@ if !("toc" call AT_fnc_groupe) exitWith {};
     player setDir _dir;
     call AT_fnc_done;
 }, 240] call AT_fnc_run;
+
+// Murs à plusieurs dalles (un affichage par dalle), bandeau horloge 4:1 et plaque de nom 4:1, de jour puis de nuit :
+// les dalles d'index > 0 doivent montrer leur image de jour comme de nuit.
+["toc_murs", {
+    if (["comspec_atak_native_fnc_tocBoard"] call AT_fnc_nil) exitWith {};
+    if !(isClass (configFile >> "CfgVehicles" >> "COMSPEC_ATAK_Screen_Wall2x2_Quad")) exitWith { "murs 3D absents de ce build" call AT_fnc_skip; };
+    private _base = getPosATL player;
+    private _dir = getDir player;
+    private _date = date;
+    private _open = [getPos player, 0, 150, 14, 0, 0.15, 0] call BIS_fnc_findSafePos;
+    player setPosATL [_open select 0, _open select 1, 0];
+    private _g = createGroup [side group player, true];
+    { private _u = _g createUnit ["B_Soldier_F", player getPos [60 + _x, _dir], [], 0, "NONE"]; _u addItem "COMSPEC_ATAK_Phone"; _u disableAI "PATH"; } forEach [0, 4];
+    _g setGroupIdGlobal ["BRAVO TOC"];
+    private _put = {
+        params ["_cls", "_off", "_dist", "_view", "_squad", ["_pans", ""]];
+        private _p = player getPos [_dist, _dir + _off];
+        ["spawn", [[_p select 0, _p select 1, 0], (_p getDir player), _cls, "MUR", "", _view, false, 0, _squad, _pans]] call comspec_atak_native_fnc_tocScreen
+    };
+    private _wall = ["COMSPEC_ATAK_Screen_Wall2x2_Quad", 0, 7, "SPLIT", "", "SAT1, CLOCK, SQ:BRAVO TOC"] call _put;
+    private _strip = ["COMSPEC_ATAK_Screen_ClockStrip", -40, 5, "STRIP", ""] call _put;
+    private _plate = ["COMSPEC_ATAK_Screen_NamePlate", 40, 5, "PLATE", "BRAVO TOC"] call _put;
+    uiSleep 2;
+    private _px = _wall getVariable ["COMSPEC_ATAK_TocPanels", []];
+    [(count _px) isEqualTo 3, format ["relais des dalles : %1 au lieu de 3", count _px]] call AT_fnc_check;
+    format ["dalles : %1", _px apply { [_x getVariable ["COMSPEC_ATAK_TocPanel", -1], (_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]] }] call AT_fnc_info;
+    [((_strip getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isEqualTo "STRIP", "bandeau sans affichage STRIP"] call AT_fnc_check;
+    [((_plate getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isEqualTo "PLATE", "plaque sans affichage PLATE"] call AT_fnc_check;
+    ["do", [str side group player, "sat", [0, "center", getPos (leader _g)], "Autotest", getPlayerUID player]] call comspec_atak_native_fnc_tocRoom;
+    ["do", [str side group player, "sat", [0, "zoom", 0.25], "Autotest", getPlayerUID player]] call comspec_atak_native_fnc_tocRoom;
+    private _look = { params ["_o"]; player setDir (player getDir _o); uiSleep 8; };
+    [_wall] call _look;
+    format ["matières des dalles (jour) : %1", getObjectMaterials _wall] call AT_fnc_info;
+    format ["textures des dalles (jour) : %1", getObjectTextures _wall] call AT_fnc_info;
+    "mur 2x2 de jour : dalle 1 carte et flux, dalle 2 satellite, dalle 3 horloge, dalle 4 escouade BRAVO TOC, toutes allumées" call AT_fnc_visuel;
+    ["toc_mur_jour"] call AT_fnc_shot;
+    [_strip] call _look;
+    "bandeau 4:1 : heure ZULU en rouge et heure locale en jaune, lisibles" call AT_fnc_visuel;
+    ["toc_bandeau"] call AT_fnc_shot;
+    [_plate] call _look;
+    "plaque 4:1 : BRAVO TOC en grand, nœuds ATAK dessous" call AT_fnc_visuel;
+    ["toc_plaque"] call AT_fnc_shot;
+    // Nuit : matière de nuit sur chaque dalle.
+    setDate [_date select 0, _date select 1, _date select 2, 23, 0];
+    [_wall] call _look;
+    uiSleep 4;
+    format ["matières des dalles (nuit) : %1", getObjectMaterials _wall] call AT_fnc_info;
+    "mur 2x2 de nuit : les quatre dalles allumées" call AT_fnc_visuel;
+    ["toc_mur_nuit"] call AT_fnc_shot;
+    setDate _date;
+    uiSleep 1;
+    { ["remove", _x] call comspec_atak_native_fnc_tocScreen; } forEach [_wall, _strip, _plate];
+    { deleteVehicle _x; } forEach (units _g);
+    deleteGroup _g;
+    missionNamespace setVariable [format ["COMSPEC_ATAK_TocRoom_%1", str side group player], nil, true];
+    player setPosATL _base;
+    player setDir _dir;
+    call AT_fnc_done;
+}, 200] call AT_fnc_run;

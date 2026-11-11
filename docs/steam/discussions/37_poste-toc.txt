@@ -75,6 +75,8 @@ Une salle TOC, c'est un PC du poste et un mur d'écrans. Trois façons de poser 
 [*][b]En jeu[/b] : menu ACE de n'importe quel écran du jeu, [b]Écran COMSPEC › Affichage TOC › Afficher le réseau TOC[/b].
 [/list]
 Chaque écran garde un affichage. Il se change au menu ACE de l'écran ([b]Salle TOC[/b] et [b]Affichage TOC[/b]), au PC du poste ou dans l'app Poste TOC.
+Murs d'images à plusieurs dalles (2x2 à 4 dalles, 3x2 à 6 dalles, 3x2 mixte) : [b]chaque dalle a son propre affichage[/b] (dalle 1 en haut à gauche, dans l'ordre de lecture). Choisissez-le au menu ACE [b]Dalles du mur[/b], dans l'onglet DIFFUSER du PC (chaque dalle y est un écran), ou dans l'attribut [b]Dalles du mur[/b] du module, par exemple « SAT1, CLOCK, SQ:Alpha 1-1 ».
+Bandeau horloge et plaque de nom (écrans 4:1) : le bandeau affiche l'heure ZULU, l'heure locale et le premier chrono ; la plaque affiche en grand le nom du groupe choisi (menu ACE Salle TOC › Écran d'escouade), sinon le nom de l'écran.
 
 [h3]Les affichages[/h3]
 [list]
@@ -209,6 +211,8 @@ A TOC room is a post laptop and a wall of screens. Three ways to place a screen:
 [*][b]In game[/b]: ACE menu of any game screen, [b]COMSPEC screen › TOC display › Show the TOC network[/b].
 [/list]
 Each screen keeps one display. Change it from the screen's ACE menu ([b]TOC room[/b] and [b]TOC display[/b]), from the post laptop or from the TOC post app.
+Multi-panel video walls (2x2 with 4 panels, 3x2 with 6 panels, mixed 3x2): [b]each panel has its own display[/b] (panel 1 top left, in reading order). Choose it from the [b]Wall panels[/b] ACE menu, in the CAST tab of the laptop (each panel is a screen there), or in the module's [b]Wall panels[/b] attribute, for example « SAT1, CLOCK, SQ:Alpha 1-1 ».
+Clock strip and name plate (4:1 screens): the strip shows ZULU time, local time and the first timer; the plate shows the chosen group's name in large letters (ACE menu TOC room › Squad screen), otherwise the screen's name.
 
 [h3]The displays[/h3]
 [list]

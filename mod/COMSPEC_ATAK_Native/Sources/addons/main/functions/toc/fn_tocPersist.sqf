@@ -43,8 +43,14 @@ switch (_mode) do {
     case "write": {
         missionNamespace setVariable ["COMSPEC_ATAK_TocSaveQueued", false];
         if (!_on || {!(missionNamespace getVariable ["COMSPEC_ATAK_TocRestored", false])}) exitWith {};
-        private _scr = ((missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x && {alive _x} }) apply {
-            [typeOf _x, getPosASL _x, vectorDir _x, vectorUp _x, _x getVariable ["COMSPEC_ATAK_TocScr", []], [_x] call _camWant]
+        // Relais des dalles d'un mur : gardés dans l'écran hôte (un réglage par dalle), jamais comme écrans à part.
+        private _scr = ((missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x && {alive _x} && {isNull (_x getVariable ["COMSPEC_ATAK_TocHost", objNull])} }) apply {
+            private _pans = ((_x getVariable ["COMSPEC_ATAK_TocPanels", []]) select { !isNull _x }) apply {
+                private _c = _x getVariable ["COMSPEC_ATAK_TocScr", []];
+                [_x getVariable ["COMSPEC_ATAK_TocPanel", 0], [_c param [3, "SPLIT"], _c param [8, 0], _c param [9, ""], [_x] call _camWant]]
+            };
+            _pans sort true;
+            [typeOf _x, getPosASL _x, vectorDir _x, vectorUp _x, _x getVariable ["COMSPEC_ATAK_TocScr", []], [_x] call _camWant, _pans apply { _x select 1 }]
         };
         // Flux de la partie en cours seulement (celui de la partie précédente a déjà été gardé une fois).
         private _ev = [];
@@ -96,7 +102,7 @@ switch (_mode) do {
         _data params ["", "", ["_scr", []], ["_ev", []], ["_room", []]];
         private _n = 0;
         {
-            _x params [["_cls", ""], ["_pos", [0, 0, 0]], ["_vd", [0, 1, 0]], ["_vu", [0, 0, 1]], ["_cfg", []], ["_cam", []]];
+            _x params [["_cls", ""], ["_pos", [0, 0, 0]], ["_vd", [0, 1, 0]], ["_vu", [0, 0, 1]], ["_cfg", []], ["_cam", []], ["_pans", []]];
             if (!(isClass (configFile >> "CfgVehicles" >> _cls)) || {(count _cfg) < 8}) then { continue };
             private _o = ((nearestObjects [ASLToAGL _pos, [_cls], 1.5]) select { alive _x }) param [0, objNull];
             if (isNull _o) then {
@@ -111,6 +117,8 @@ switch (_mode) do {
                 // Écran de la mission déplacé au Zeus à la partie précédente : remis où il était.
                 if ((_o distance2D (ASLToAGL _pos)) > 0.05 || {(vectorDir _o) vectorDistance _vd > 0.02}) then { _o setPosASL _pos; _o setVectorDirAndUp [_vd, _vu]; };
             };
+            // Mur à plusieurs dalles : contenu de chaque dalle remis à la création de ses relais.
+            if (_pans isEqualType [] && {(count _pans) > 0}) then { _o setVariable ["COMSPEC_ATAK_TocPanelCfg", _pans]; };
             ["add", [_o, _cfg select 0, _cfg select 1, _cfg select 2, _cfg select 3, _cfg select 6, _cfg select 7, _cfg param [8, 0], _cfg param [9, ""]]] call comspec_atak_native_fnc_tocScreen;
             // Cadrage gardé (demi-largeur, centre).
             private _c = +(_o getVariable ["COMSPEC_ATAK_TocScr", []]);
