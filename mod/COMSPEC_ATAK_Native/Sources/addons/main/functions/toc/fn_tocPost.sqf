@@ -14,6 +14,10 @@
       "open" objet    ouvre le PC du poste (fn_tocLaptop), indépendant du téléphone
       "callsign"      -> indicatif du poste (config.json, toc.callsign)
       "menu"          actions ACE / molette (appelé une fois par XEH_postInitClient) ; "action" : action de la molette
+    Action de la molette « Ouvrir le PC du poste » (demande de TTRD, 11/11) : proposée devant tout poste qui n'a pas
+    l'action dans un menu ACE (ACE absent, écran d'une classe sans menu ACE, écran d'un autre mod désigné en jeu,
+    joueur arrivé en cours de partie), sur le poste le plus proche (COMSPEC_ATAK_TocActObj, cherché chaque seconde,
+    distance au centre de l'écran : l'origine des modèles est au sol ou au plafond).
 */
 params [["_act", "near"], ["_arg", objNull]];
 private _laptops = ["Land_Laptop_unfolded_F", "Land_Laptop_device_F", "Land_Laptop_F", "Land_Laptop_02_unfolded_F", "Land_Laptop_03_black_F", "Land_Laptop_03_olive_F", "Land_Laptop_03_sand_F", "Land_MultiScreenComputer_01_black_F", "Land_MultiScreenComputer_01_olive_F", "Land_MultiScreenComputer_01_sand_F", "Land_PCSet_01_screen_F"];
@@ -32,7 +36,10 @@ switch (_act) do {
     case "isToc": { [_arg] call _isToc };
     case "near": {
         private _o = missionNamespace getVariable ["COMSPEC_ATAK_TocNear", objNull];
-        [objNull, _o] select (!isNull _o && {alive player} && {isNull objectParent player} && {(player distance _o) < ([3.5, 5.5] select !isNil { _o getVariable "COMSPEC_ATAK_TocScr" })})
+        // Écran : distance à son centre (mur d'images, écran suspendu), comme « tick ».
+        private _scr = !isNull _o && {!isNil { _o getVariable "COMSPEC_ATAK_TocScr" }};
+        [objNull, _o] select (!isNull _o && {alive player} && {isNull objectParent player}
+            && {(if (_scr) then { (eyePos player) distance (["center", _o] call comspec_atak_native_fnc_tocScreen) } else { player distance _o }) < ([3.5, 5.5] select _scr)})
     };
     case "callsign": { ((["get"] call comspec_atak_native_fnc_localCfg) get "toc") get "callsign" };
     case "tick": {
@@ -40,9 +47,23 @@ switch (_act) do {
         private _near = objNull;
         if (alive player && {isNull objectParent player} && {missionNamespace getVariable ["comspec_atak_native_toc_enabled", true]}) then {
             // Écran TOC (fn_tocScreen) : grand objet, poste à 4,5 m de son centre ; PC portable à 2,5 m.
-            private _cands = (nearestObjects [player, [], 4.5, true]) select { (player distance _x) < ([2.5, 4.5] select !isNil { _x getVariable "COMSPEC_ATAK_TocScr" }) && {[_x] call _isToc} };
+            // Mur d'images, écran suspendu : l'origine du modèle est loin de l'image, la distance se prend à son centre.
+            private _cands = (nearestObjects [player, [], 7, true]) select {
+                private _scr = !isNil { _x getVariable "COMSPEC_ATAK_TocScr" };
+                (if (_scr) then { (eyePos player) distance (["center", _x] call comspec_atak_native_fnc_tocScreen) } else { player distance _x }) < ([2.5, 4.5] select _scr) && {[_x] call _isToc}
+            };
             if (_cands isNotEqualTo []) then { _near = _cands select 0; };
         };
+        // Poste pour l'action de la molette : aucun quand ACE porte déjà l'action sur cet objet (classe au menu ACE des
+        // écrans ou des PC, objet qui a reçu le menu), pour ne pas la montrer deux fois.
+        private _act = _near;
+        if (!isNull _act && {!isNil "ace_interact_menu_fnc_createAction"}) then {
+            private _cls = typeOf _act;
+            if (_act isKindOf "COMSPEC_ATAK_TocLaptop" || {_cls in (missionNamespace getVariable ["COMSPEC_ATAK_TocLaptops", []])}
+                || {_act getVariable ["COMSPEC_ATAK_WallObj", false]}
+                || {_cls in (missionNamespace getVariable ["COMSPEC_ATAK_WallClasses", []]) && {isClass (configOf _act >> "ACE_Actions" >> "ACE_MainActions")}}) then { _act = objNull; };
+        };
+        missionNamespace setVariable ["COMSPEC_ATAK_TocActObj", _act];
         private _was = missionNamespace getVariable ["COMSPEC_ATAK_TocNear", objNull];
         missionNamespace setVariable ["COMSPEC_ATAK_TocNear", _near];
         private _cs = ["", ["callsign"] call comspec_atak_native_fnc_tocPost] select !isNull _near;
@@ -82,7 +103,9 @@ switch (_act) do {
         player addEventHandler ["Respawn", { [{ ["action"] call comspec_atak_native_fnc_tocPost; }, [], 1] call comspec_atak_native_fnc_waitAndExec; }];
     };
     case "action": {
-        player addAction ["<t color='#7fd0b0'>PC du poste TOC</t>", { ["open", cursorObject] call comspec_atak_native_fnc_tocPost; }, nil, 1.3, false, true, "",
-            "isNull objectParent _this && {(_this distance cursorObject) < 4.5} && {['isToc', cursorObject] call comspec_atak_native_fnc_tocPost} && {isNil 'ace_interact_menu_fnc_createAction' || {!(cursorObject isKindOf 'COMSPEC_ATAK_TocLaptop') && {!((typeOf cursorObject) in (missionNamespace getVariable ['COMSPEC_ATAK_TocLaptops', []]))}}}"];
+        // Poste trouvé par « tick » (une variable lue par image, aucun calcul dans la condition). Avant : objet sous le
+        // viseur seulement, à 4,5 m de son origine (jamais vrai devant un mur d'images ou un écran suspendu).
+        player addAction [format ["<t color='#7fd0b0'>%1</t>", ("Ouvrir le PC du poste") call comspec_atak_native_fnc_tr], { ["open", missionNamespace getVariable ["COMSPEC_ATAK_TocActObj", objNull]] call comspec_atak_native_fnc_tocPost; }, nil, 1.3, false, true, "",
+            "isNull objectParent _this && {!isNull (missionNamespace getVariable ['COMSPEC_ATAK_TocActObj', objNull])}"];
     };
 };

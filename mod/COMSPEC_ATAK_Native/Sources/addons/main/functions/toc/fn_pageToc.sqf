@@ -22,7 +22,9 @@ private _rows = [
     ["memo", "tocMsg", "Message", _draft getOrDefault ["msg", ""], 2],
     ["segment", "Priorité", ["ROUTINE", "URGENT", "FLASH"] apply { [_x, ["prio", _x] call _act, _prio isEqualTo _x] }],
     ["buttons", [["ENVOYER AU CAMP", ["send"] call _act, true, true, "Diffuse le message à tous les joueurs de votre camp"],
-        ["NOUVEL ORDRE", ["order", ""] call _act, false, true, "Ouvre le rédacteur d'ordre (app Tâches)"]]]
+        ["NOUVEL ORDRE", ["order", ""] call _act, false, true, "Ouvre le rédacteur d'ordre (app Tâches)"]]],
+    // PC du poste depuis le téléphone, sans passer par l'action de l'objet (fn_tocConfig « openPc »).
+    ["buttons", [["OUVRIR LE PC", ["pc"] call _act, false, true, "Ouvre le PC du poste en grand : carte, groupes, ordres, écrans de la salle"]]]
 ];
 // Écrans TOC du poste (à 30 m) : caméra du camp à afficher en direct (fn_tocCam), ou retour à la carte et au flux.
 private _scr = (missionNamespace getVariable ["COMSPEC_ATAK_TocScreens", []]) select { !isNull _x && {alive _x} && {(player distance _x) < 30} && {((_x getVariable ["COMSPEC_ATAK_TocScr", []]) param [1, ""]) in ["", str side group player]} };
