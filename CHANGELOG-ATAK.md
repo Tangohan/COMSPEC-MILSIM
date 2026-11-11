@@ -38,28 +38,91 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## À venir : fenêtre des réponses de l'IA plus simple (SSE, version à attribuer)
+## SSE 1.9.0 : fenêtre « Réponses de l'IA » simple, peur d'une arme braquée de près, champs des documents (SSE 1.9.0)
 
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
+### Résumé joueur
 Type : nouveauté
-FR : La fenêtre « Réponses de l'IA » devient simple à prendre en main
-- Elle s'ouvre en mode simple : choisissez une question à gauche, cliquez sur « Ma réponse », écrivez ce que l'IA répond (une réponse par ligne) et regardez ce qu'elle dira juste en dessous, puis « Enregistrer ».
-- « Insérer une variable » ajoute son prénom, sa ville ou le nom du joueur là où est le curseur, avec un exemple de ce qui sera dit.
-- En haut, une seule ligne règle ce que cette IA peut évoquer : Rien de sensible, Ce qu'elle sait ou Libre.
-- Les réglages plus fins (réponse selon la situation, ordre, renseignement révélé, repère sur la carte, thèmes interdits, vos propres questions) sont rangés dans « Options avancées », qui indique combien sont utilisés.
-EN : The "AI answers" window is now easy to pick up
-- It opens in simple mode: pick a question on the left, click "My answer", write what the AI says (one answer per line) and see right below what she will say, then "Save".
-- "Insert a variable" adds her first name, her town or the player's name at the cursor, with a sample of what will be said.
-- At the top, one line sets what this AI may bring up: Nothing sensitive, What she knows or Free.
-- Finer settings (answer per situation, order, intel revealed, map marker, forbidden themes, your own questions) are under "Advanced options", which shows how many are in use.
+FR : SSE 1.9.0 : la fenêtre « Réponses de l'IA » devient simple à prendre en main
+- **Réponses de l'IA** : la fenêtre s'ouvre en mode simple. Choisissez une question, cliquez sur « Ma réponse », écrivez ce que l'IA répond et lisez juste en dessous ce qu'elle dira.
+- **Variables et options** : « Insérer une variable » ajoute son prénom, sa ville ou le nom du joueur. Les réglages plus fins sont rangés dans « Options avancées ».
+- **Arme braquée de près** : une IA a de nouveau peur quand vous la braquez à quelques mètres, même en visant la tête.
+- **Papiers** : les champs à remplir d'un type de document, extensions comprises, sont de nouveau proposés quand vous donnez des papiers.
+EN : SSE 1.9.0: the "AI answers" window is now easy to pick up
+- **AI answers**: the window opens in simple mode. Pick a question, click "My answer", write what the AI says and read right below what it will say.
+- **Variables and options**: "Insert a variable" adds its first name, its town or the player's name. Finer settings are under "Advanced options".
+- **Weapon aimed up close**: an AI is scared again when you aim at it from a few metres, even at the head.
+- **Papers**: the fields to fill in for a document type, extensions included, are offered again when you hand out papers.
 
 ### Détail technique
+
+**Fenêtre « Réponses de l'IA » en mode simple (SSE)**
+
 - `ia_rp/dialogs/iarp_answers.hpp` (IDD 94800) refait : mode simple par défaut, choix « Réponse automatique / Ma réponse » en `RscToolbox` (IDC 94831), bouton « Insérer une variable » (94847) et liste des variables (94880, 94881), ligne d'exemple (94848), bouton « Options avancées » (94870) ; thèmes interdits, situation, ordre, palier, lieu et « Ajouter ma propre question » n'apparaissent qu'avec les options avancées (état gardé dans `uiNamespace` `comspec_sse_iarpAnsAdv`).
 - `fn_iarpAnswersUi` : opération `layout` (positions calculées sur la grille SSE selon le mode, la question perso et la réponse ; libellés mesurés par `ctrlTextWidth`), `mode`, `advanced`, `vars`, `varPick` (insertion au curseur via `ctrlTextSelection`, en caractères), aperçu « L'IA dira : » qui retire des répliques plutôt que de couper le texte, lignes de la liste raccourcies avec « … » et info-bulle quand l'état (« Ma réponse », « Interdit ») les recouvrirait, titre sans la vérité du nom, info-bulle retirée du champ de texte (elle cachait la saisie). « Ce que cette IA peut évoquer » montre le niveau résolu d'un profil « auto » et n'écrit un niveau que si le maître du jeu le change.
 - Format des réponses (`answers`, `evoke`, `banned` du profil) et interprète inchangés. Chaînes `STR_COMSPEC_IARP_A_*` réécrites (aides d'une phrase avec exemple), manuel en jeu (`STR_COMSPEC_IARP_ManA_D`) et guides `reponses_ia.md` / `.en.md` à jour.
 - Autotest : étape `ia_rp_reponses_fenetre` (groupe `ia_rp`, ou `ia_rp_reponses` seule) qui ouvre la fenêtre sur une IA, déroule mode simple, ma réponse, variables, options avancées et question perso, vérifie qu'aucun texte n'est coupé ni superposé, puis l'enregistrement sur l'IA.
 
----
+**Correctifs (SSE)**
+- Arme braquée (`fn_iarpReact` « aimedAt », `fn_idAiBrain`) : canon à 8° du buste ou, de près, à moins de 0,6 m de la personne (même règle aux deux endroits). À 3 m, viser la tête donnait 0,988 (< 0,99) : la peur ne montait pas et l'IA RP ne voyait aucune arme.
+- Champs à saisir des types de documents (`fn_idDocTypes`) : la boucle lisait `_y` hors de son contexte (variable indéfinie) ; les `inputs` de chaque type sont de nouveau remplis (recto et verso).
+- Bancs `fn_iarpSelfTest` / mission d'autotest `scripts/ia_rp.sqf` : contrôle « Libre » au bon ton, confrontation arme braquée dans `ia_rp_dialogue_421`, état, peur et distance notés dans `ia_rp_peur`.
+- Non vu en jeu (autotest non lancé sur consigne).
+
+
+## Pack 4.4.0 Washington : salle TOC en jeu, vue satellite, vrais grands écrans, sang sur l'écran (ATAK natif 4.4.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.4.0 : une vraie salle d'opérations en jeu et du sang sur l'écran du téléphone
+- **Salle TOC prête** : le module « Salle TOC complète » pose une salle déjà câblée, avec murs d'images, grands écrans, horloge, bureaux et PC. Les écrans se posent aussi un par un dans Eden et en Zeus (catégorie « Écrans TOC et projection »).
+- **Vue satellite** : un écran de la salle montre une vue aérienne en direct, de jour, en vision nocturne ou en thermique, et chaque allié équipé d'un ATAK y est encadré avec son indicatif.
+- **Piloter la salle au PC** : dans l'onglet SALLE, cliquez un écran pour choisir ce qu'il montre (horloge ZULU, escouade, caméras, main courante, demandes), puis dessinez sur la carte : vos traits arrivent aussi sur les téléphones.
+- **Sang sur l'écran** : le téléphone se salit selon la gravité, de quelques gouttes à un écran presque rouge. Le sang sèche en quelques minutes et s'essuie mal ; réglez la quantité avec « Sang sur l'écran : quantité maximale ».
+EN : ATAK 4.4.0: a real operations room in game and blood on the phone screen
+- **Ready TOC room**: the "Complete TOC room" module places a room already wired up, with video walls, big screens, a clock, desks and laptops. Screens can also be placed one by one in Eden and in Zeus ("TOC screens and projection" category).
+- **Satellite view**: a room screen shows a live aerial view, by day, in night vision or in thermal, and every ally carrying an ATAK is framed on it with their callsign.
+- **Run the room from the laptop**: in the ROOM tab, click a screen to choose what it shows (ZULU clock, squad, cameras, duty log, requests), then draw on the map: your lines also reach the phones.
+- **Blood on the screen**: the phone gets dirty according to how bad things are, from a few drops to an almost red screen. Blood dries within a few minutes and is hard to wipe off; set the amount with "Blood on the screen: maximum amount".
+
+### Détail technique
+
+**Salle TOC en jeu : vue satellite, horloge, écrans d'escouade, mosaïque, salles et PC maître, dessin au PC, salle gardée (ATAK natif)**
+
+- `fn_tocRoom` (nouveau) : état du poste par camp tenu par le serveur, variable publique `COMSPEC_ATAK_TocRoom_<camp>` (chronos, satellites, main courante, liste d'exécution, demandes, FLASH, postes, pertes) ; événement `comspec_atak_native_tocRoom`, libération des satellites et du poste à la déconnexion.
+- `fn_tocSat` (nouveau) : une caméra et une cible de rendu par satellite et par poste (`comspec_tocsat_<camp>_<n>`), seulement pour l'onglet SAT ouvert ou les écrans SAT regardés à moins de `toc_cam_range`, dans la limite `toc_cam_max` (caméras de `fn_tocCam` comprises). Projection verticale (demi-largeur = hauteur × fov, comme `fn_jpcMap`). Suivi : nœuds de `fn_tocFeed` seulement (position vue en direct, dernier PLI sinon).
+- `fn_tocBoard` (nouveau) : affichages SAT, CLOCK, LOG, EXCHECK, KILLS, REQ dans la texture UI des écrans ; image r2t dans la texture UI, cadres de suivi redessinés 5 fois par seconde. Affichage SQUAD dans `fn_tocScreen` (carte cadrée sur le groupe, panneau du groupe).
+- `fn_tocScreen` : `COMSPEC_ATAK_TocScr` passe à 10 champs (satellite, escouade), écran désigné en cours de partie marqué à recréer, menu ACE « Salle TOC », FLASH en tête des écrans. `fn_tocLaptop` : onglets SAT et CHRONOS, heures ZULU et locale, liaison radio, FLASH, prise du poste. `fn_pageToc` / `fn_tocAction` : satellites et contenu des écrans depuis le téléphone.
+- `fn_tocPersist` : format 2 (écrans avec satellite, escouade, source caméra décrite ; état du poste par camp), écriture 3 s après chaque changement au lieu de 10 s, relevé des positions toutes les 15 s (écran déplacé au Zeus), caméra reprise dès que sa source revient. Module Écran TOC : affichages, satellite, escouade, liste d'exécution préparée (Eden et Zeus).
+- Console du PC (lot « Je veux tout ») : onglets RADIO (radios ACRE2 de l'opérateur par `fn_mpu5`, voyants RX / TX, alternat affiché ; pas de bouton PTT, aucune API publique d'ACRE2 ni de TFAR), DIFFUSER (tous les écrans du camp, contenu et nom), MAIN COURANTE, EXCHECK, PERTES, DEMANDES. Entrées automatiques côté serveur : comptes rendus, alertes et BDA en main courante ; MEDEVAC, appels de feu (`fsState` NEW) et ravitaillements (`logi` NEW) en demandes ; homme à terre (alerte MAN DOWN), porteur d'ATAK tué et ennemis neutralisés déclarés par BDA en pertes. Réponse à une demande : événement `comspec_atak_native_tocReqAnswer` vers le seul demandeur, notification du téléphone.
+- Murs d'images (branche des écrans 3D fusionnée) : une dalle = un affichage. Les dalles 2 à N d'un mur `comspec_screenPanels` sont des relais (objet invisible accroché au mur, `COMSPEC_ATAK_TocHost` / `COMSPEC_ATAK_TocPanel`) inscrits au registre comme des écrans ; `paint`, `surface` et `orig` passent à l'hôte sur l'index de la dalle. Réglage par dalle : menu ACE « Dalles du mur », onglet DIFFUSER, attribut « Dalles du mur » du module (`SAT1, CLOCK, SQ:groupe`), sauvegardé dans l'écran hôte. Faces 4:1 (`comspec_screenRatio=4`) : affichages STRIP (horloge) et PLATE (nom du groupe lié ou de l'écran), texture 2048 x 512 ; bandeau et plaque ajoutés à la liste des écrans. Matière d'une dalle réimposée quand l'objet ne la porte plus (dalle d'index > 0 noire de jour).
+- Mosaïque (`fn_tocMosaic`, affichage MOSAIC) : grille 2x2 / 3x3 des sources de `fn_tocCam`, choix automatique (camp, groupe) ou case par case, rotation des pages ; une caméra r2t 64 à 256 px par source vue, plafond par poste = 4 vignettes par caméra d'écran restant libre sous `toc_cam_max`, vignettes en trop à tour de rôle (2 s). Caméra poitrine du chef sur l'écran d'escouade quand il la partage (même code).
+- Salles (`fn_tocHall`, `fn_tocHallUi`, `fn_moduleTocHall`) : salle = PC maître + écrans liés (`COMSPEC_ATAK_TocHall`, `COMSPEC_ATAK_TocUid`), onglet SALLE du PC à la place de DIFFUSER (plan du mur vu depuis le poste, dalles cliquables, contenu, nom, allumer / éteindre `COMSPEC_ATAK_TocOff`, identifier (clignotement 2 s chez tous), lier / délier, viser un écran, scènes, tout allumer / éteindre) ; ACE « Gérer l'écran › Lier à la salle … » ; Eden : PC synchronisés au module Écran TOC = salle ; module « Salle TOC complète » S / M / L (mobilier du jeu de base, PC, contenus par défaut, pas de double pose si la salle est gardée).
+- Menu ACE des écrans réorganisé : Afficher sur l'écran (Carte et réseau, Satellite, Horloge, Tableau du poste, Escouade, Caméras) · Régler les dalles du mur · Diffuser · Régler la carte · Gérer l'écran ; écrans 4:1 : bandeau ou plaque seulement.
+- Dessin au PC (`fn_tocDraw`) : outils TRAIT, DESSIN, MARQUEUR (palette du téléphone : camp, type, couleur, nom, durée, canal), PLAN (graphismes de `fn_planCatalog`, envoyés à `fn_planServer`), EFFACER, ANNULER ; carte du PC prêtée aux outils du téléphone (`COMSPEC_ATAK_MapCtrlOverride` dans `fn_mapCtrl`), dessin par `fn_strokeDraw`, `fn_planDraw`, `fn_zoneDraw`. Écrans muraux : traits, rectangles, ellipses et plan du camp tracés en segments épaissis. Sauvegarde : marqueurs de joueur (canal « arma ») avec leur style et plan de chaque camp, écriture à chaque marqueur posé, changé ou effacé.
+- À tester en jeu : image satellite dans la texture UI des écrans, alignement des cadres sur les unités, prise de main à deux PC, reprise de la salle après redémarrage du serveur.
+
+**Vrais grands écrans pour la salle d'opérations (ATAK natif)**
+
+- `tools/model_toc_screens.py` (pur Python, sans Blender) : 9 modèles MLOD dans `addons/main/data/toc/` (LOD 0 / 2 / 6, ombre, géométrie avec masse et `autocenter=0`, géométrie de tir et de vue), textures PAA du cadre (alu brossé, plastique, acier, ouïes), rvmat Super, verre éteint brillant, aperçus Eden rendus par le script. Passés par Binarize (hemtt build) sans avertissement.
+- Classes `COMSPEC_ATAK_Screen_Wall2x2`, `_Wall2x2_Quad`, `_Wall3x2`, `_Wall3x2_Mixed`, `_98`, `_98_Stand`, `_65_Ceiling`, `_ClockStrip`, `_NamePlate` (`toc_screens3d.hpp`), dans la liste des écrans TOC (`fn_tocScreen` « classes ») et du module (sauf horloge et plaque, en 4:1, `comspec_screenRatio=4`).
+- Murs à plusieurs dalles (`comspec_screenPanels`) : sélections `panel1`… en ordre de lecture vu de face, index = numéro - 1 ; `fn_tocScreen` « surface » garde une préparation par dalle (variable `COMSPEC_ATAK_SurfPrep<index>`), chaque dalle garde sa matière d'écran. Mur 3x2 « image et 2 dalles » : `panel1` = bloc 2x2 de gauche (16:9), `panel2` / `panel3` = colonne de droite (une image unique 3x2 serait en 8:3).
+- Largeurs hors tout pour accoler : 2x2 2,4572 m, 3x2 3,6738 m, 98" 2,1935 m (origine au sol, dos au mur). Test en jeu : groupe `ecrans3d` de la mission d'autotest.
+
+**Sang sur l'écran du téléphone selon la situation (ATAK natif)**
+
+- `fn_screenDirt` : niveaux 1-4 (`_burst`, cibles de couverture 6 / 20 / 45 / 85 %), causes : débit ACE `ace_medical_woundBleeding`, `ace_medical_bloodVolume` (< 5 L : lourd, < 4 L : extrême), inconscience, plaies aux bras (téléphone en main : +1), sans ACE `isBleeding` + `damage` + `lifeState` ; blessé porté ou traîné qui saigne (`ace_dragging_carriedObject` / `draggedObject`) ; coup reçu (`hit`, niveau selon les dégâts et le nombre de blessures) ; mort à moins de 1,2 / 2 / 2,8 m (`nearby` : 4 / 3 / 2, téléphone sorti ou sur le gilet). Exposition : en main plein niveau, miniature ou gilet un de moins, sac rien. Nouveaux modes `force`, `age`, `residue`, `maxLevel` ; tache : + orientation (la tache tourne avec le verre) et débit (coulures en segments chaînés vers le bas de l'orientation actuelle, un par passage de 5 s tant que le sang a moins de 150 s). Au plus 48 taches (les moins visibles partent). Taille en part du petit côté de l'écran (plus d'écart portrait / paysage).
+- `fn_screenSurface` : ordre voile, couche continue, nappes, essuyages, reste, coulures ; texture séchée `bloodd_*` posée par `ctrlSetText` au passage de 4 min (sans recréer le contrôle), teinte qui fonce de 0 à 6 min ; plein écran tourné d'un quart si l'orientation a changé.
+- Nettoyage (`fn_screenClean`, `clean`) : chiffon = sang frais × 0,3 + traînée `wipe` (5 au plus par passage), séché × 0,72 ; complet sans kit = frais retiré, séché × 0,3 ; kit = tout ; eau et pluie remouillent le sang.
+- Réglage serveur `comspec_atak_native_blood_max` (0 selon le profil, 1-4) ; style Discret : au plus Normal.
+- Textures (`tools/gen_screen_fx.py --sang`) : 40 fraîches + 40 séchées (nouvelles : `pool_2-3`, `splat_2-3`, `hand_2-3`, `spatter_2`, `run_0-2`, `arterial_0-1`, `drag_0-1`, `wipe_0-2`, `cover_0-1_land/port`, `veil_0_land/port`), fondu sur les bords, reflets atténués.
+- Autotest `sang_niveaux` (`scripts/sang.sqf`, groupe `sang`) : non lancé (pas vu en jeu).
+
+**Intégration du pack (fusion des chantiers)**
+- Branches fusionnées sur `release/atak-4.4.0` : salle TOC (avec les écrans 3D), sang sur l'écran, fenêtre « Réponses de l'IA » simple (SSE 1.9.0), descriptions Steam.
+- Mission d'autotest : groupes `ecrans3d`, `toc` et `sang` tous gardés (`init.sqf`, `tools/INGAME_TEST.md`). `localisation/template/xx.txt`, `stringtable.json` et `categories.json` régénérés (`tools/i18n.py community`) : 22 718 phrases (18 051 avant, 19 textes disparus du code retirés), 267 clés de stringtable en plus (écrans, modules et objets absents du gabarit), aucune retirée.
+
+Aucune nouvelle DLL (COMSPEC Link 2.0.123 inchangé), aucune migration. Non vu en jeu : aucune passe de l'autotest n'a tourné pour ce pack.
+
 
 ## SSE 1.8.0 : IA qui répondent à beaucoup plus de questions, réponses écrites par le maître du jeu (SSE 1.8.0)
 
@@ -88,34 +151,6 @@ EN : AIs understand three times more questions, and the game master can write th
 - **Garder pour les prochaines parties** : `fn_editorAiServer` ajoute `iarp_answers` (« [réponses, evoke, banned] », `fn_iarpProfile` « keepOf ») à la configuration gardée ; `fn_idAiConfig` « apply » (identity) la remet (`fn_iarpProfile` « keepApply »), au démarrage comme depuis le paquet Athena. Profils IA d'Athena (`settings.ai_profiles`) : inchangés ; pour les y porter, il faudrait côté site un champ texte libre `iarp` par profil (même format que `iarp_answers`), repris par `fn_idAiConfig` « ingest ».
 - **Fichiers hors `ia_rp`** : `editor/dialogs/editor.hpp` (bouton `AiAnswers`, IDC 94586, « IA cochées » raccourci), `editor/functions/fn_editorAi.sqf` (« answers »), `editor/functions/fn_editorAiServer.sqf` (garder), `editor/stringtable.xml`, `identity/functions/fn_idAiConfig.sqf` (3 lignes), `main/stringtable.xml` (chapitre « IA de la zone »), guides `docs/guides/ia_de_la_zone*.md` (réécrits), `reponses_ia*.md` (nouveaux), `index*.md`, mission d'autotest `scripts/ia_rp.sqf`. Manuel en jeu : `CfgHints COMSPEC_SSE >> IaRpAnswers` (nouveau), `IaRpTalk` (thèmes). Aucun fichier ATAK.
 - **Non vu en jeu** (autotest non lancé sur consigne) : rendu de la fenêtre « Réponses de l'IA » et du bouton de l'atelier, enregistrement Eden par `set3DENAttribute`, nouveaux ordres (recul, approche, arme posée), coût réel en jeu ; étapes écrites dans `scripts/ia_rp.sqf` (« ia_rp_reponse_perso_attribut », « ia_rp_reponse_perso_zeus », « ia_rp_question_perso », « ia_rp_cadre_civil ») et dans `fn_iarpSelfTest`.
-## À venir : salle TOC en jeu, vue satellite avec suivi des alliés, horloge, écrans d'escouade et salle sauvegardée (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Une vraie salle d'opérations en jeu
-- **Vue satellite** : un écran TOC montre une vue aérienne en direct (jour, vision nocturne ou thermique), chaque allié équipé d'un ATAK encadré avec son indicatif. Pilotez SAT 1 ou SAT 2 depuis l'onglet SAT du PC du poste ou l'app Poste TOC.
-- **Salle prête et PC maître** : le module Salle TOC complète pose une salle déjà câblée (mur d'images, grands écrans, horloge, plaques, bureaux, PC). Dans l'onglet SALLE d'un PC, cliquez un écran sur le plan du mur pour choisir ce qu'il montre, enregistrez des scènes et éteignez tout d'un clic.
-- **Écrans du mur** : horloge ZULU et chronos, écran d'escouade, mosaïque des caméras du camp, main courante, liste d'exécution, pertes et demandes (votre réponse part sur le téléphone du demandeur).
-- **Dessiner et planifier** : au PC, mêmes traits, marqueurs et graphismes de plan que sur l'ATAK ; ils apparaissent sur les téléphones et sur les écrans du mur. Toute la salle et ses dessins sont gardés d'une partie à l'autre.
-EN : A real operations room in game
-- **Satellite view**: a TOC screen shows a live aerial view (day, night vision or thermal), every ally carrying an ATAK framed with their callsign. Steer SAT 1 or SAT 2 from the SAT tab of the post laptop or the TOC post app.
-- **Ready room and master laptop**: the Complete TOC room module places a room already wired up (video wall, big screens, clock, plates, desks, laptops). In the ROOM tab of a laptop, click a screen on the wall plan to choose what it shows, save scenes and switch everything off in one click.
-- **Wall screens**: ZULU clock and timers, squad screen, mosaic of the side's cameras, duty log, execution checklist, casualties and requests (your answer goes to the requester's phone).
-- **Draw and plan**: on the laptop, the same lines, markers and plan graphics as on the ATAK; they appear on the phones and on the wall screens. The whole room and its drawings are kept from one session to the next.
-
-### Détail technique
-- `fn_tocRoom` (nouveau) : état du poste par camp tenu par le serveur, variable publique `COMSPEC_ATAK_TocRoom_<camp>` (chronos, satellites, main courante, liste d'exécution, demandes, FLASH, postes, pertes) ; événement `comspec_atak_native_tocRoom`, libération des satellites et du poste à la déconnexion.
-- `fn_tocSat` (nouveau) : une caméra et une cible de rendu par satellite et par poste (`comspec_tocsat_<camp>_<n>`), seulement pour l'onglet SAT ouvert ou les écrans SAT regardés à moins de `toc_cam_range`, dans la limite `toc_cam_max` (caméras de `fn_tocCam` comprises). Projection verticale (demi-largeur = hauteur × fov, comme `fn_jpcMap`). Suivi : nœuds de `fn_tocFeed` seulement (position vue en direct, dernier PLI sinon).
-- `fn_tocBoard` (nouveau) : affichages SAT, CLOCK, LOG, EXCHECK, KILLS, REQ dans la texture UI des écrans ; image r2t dans la texture UI, cadres de suivi redessinés 5 fois par seconde. Affichage SQUAD dans `fn_tocScreen` (carte cadrée sur le groupe, panneau du groupe).
-- `fn_tocScreen` : `COMSPEC_ATAK_TocScr` passe à 10 champs (satellite, escouade), écran désigné en cours de partie marqué à recréer, menu ACE « Salle TOC », FLASH en tête des écrans. `fn_tocLaptop` : onglets SAT et CHRONOS, heures ZULU et locale, liaison radio, FLASH, prise du poste. `fn_pageToc` / `fn_tocAction` : satellites et contenu des écrans depuis le téléphone.
-- `fn_tocPersist` : format 2 (écrans avec satellite, escouade, source caméra décrite ; état du poste par camp), écriture 3 s après chaque changement au lieu de 10 s, relevé des positions toutes les 15 s (écran déplacé au Zeus), caméra reprise dès que sa source revient. Module Écran TOC : affichages, satellite, escouade, liste d'exécution préparée (Eden et Zeus).
-- Console du PC (lot « Je veux tout ») : onglets RADIO (radios ACRE2 de l'opérateur par `fn_mpu5`, voyants RX / TX, alternat affiché ; pas de bouton PTT, aucune API publique d'ACRE2 ni de TFAR), DIFFUSER (tous les écrans du camp, contenu et nom), MAIN COURANTE, EXCHECK, PERTES, DEMANDES. Entrées automatiques côté serveur : comptes rendus, alertes et BDA en main courante ; MEDEVAC, appels de feu (`fsState` NEW) et ravitaillements (`logi` NEW) en demandes ; homme à terre (alerte MAN DOWN), porteur d'ATAK tué et ennemis neutralisés déclarés par BDA en pertes. Réponse à une demande : événement `comspec_atak_native_tocReqAnswer` vers le seul demandeur, notification du téléphone.
-- Murs d'images (branche des écrans 3D fusionnée) : une dalle = un affichage. Les dalles 2 à N d'un mur `comspec_screenPanels` sont des relais (objet invisible accroché au mur, `COMSPEC_ATAK_TocHost` / `COMSPEC_ATAK_TocPanel`) inscrits au registre comme des écrans ; `paint`, `surface` et `orig` passent à l'hôte sur l'index de la dalle. Réglage par dalle : menu ACE « Dalles du mur », onglet DIFFUSER, attribut « Dalles du mur » du module (`SAT1, CLOCK, SQ:groupe`), sauvegardé dans l'écran hôte. Faces 4:1 (`comspec_screenRatio=4`) : affichages STRIP (horloge) et PLATE (nom du groupe lié ou de l'écran), texture 2048 x 512 ; bandeau et plaque ajoutés à la liste des écrans. Matière d'une dalle réimposée quand l'objet ne la porte plus (dalle d'index > 0 noire de jour).
-- Mosaïque (`fn_tocMosaic`, affichage MOSAIC) : grille 2x2 / 3x3 des sources de `fn_tocCam`, choix automatique (camp, groupe) ou case par case, rotation des pages ; une caméra r2t 64 à 256 px par source vue, plafond par poste = 4 vignettes par caméra d'écran restant libre sous `toc_cam_max`, vignettes en trop à tour de rôle (2 s). Caméra poitrine du chef sur l'écran d'escouade quand il la partage (même code).
-- Salles (`fn_tocHall`, `fn_tocHallUi`, `fn_moduleTocHall`) : salle = PC maître + écrans liés (`COMSPEC_ATAK_TocHall`, `COMSPEC_ATAK_TocUid`), onglet SALLE du PC à la place de DIFFUSER (plan du mur vu depuis le poste, dalles cliquables, contenu, nom, allumer / éteindre `COMSPEC_ATAK_TocOff`, identifier (clignotement 2 s chez tous), lier / délier, viser un écran, scènes, tout allumer / éteindre) ; ACE « Gérer l'écran › Lier à la salle … » ; Eden : PC synchronisés au module Écran TOC = salle ; module « Salle TOC complète » S / M / L (mobilier du jeu de base, PC, contenus par défaut, pas de double pose si la salle est gardée).
-- Menu ACE des écrans réorganisé : Afficher sur l'écran (Carte et réseau, Satellite, Horloge, Tableau du poste, Escouade, Caméras) · Régler les dalles du mur · Diffuser · Régler la carte · Gérer l'écran ; écrans 4:1 : bandeau ou plaque seulement.
-- Dessin au PC (`fn_tocDraw`) : outils TRAIT, DESSIN, MARQUEUR (palette du téléphone : camp, type, couleur, nom, durée, canal), PLAN (graphismes de `fn_planCatalog`, envoyés à `fn_planServer`), EFFACER, ANNULER ; carte du PC prêtée aux outils du téléphone (`COMSPEC_ATAK_MapCtrlOverride` dans `fn_mapCtrl`), dessin par `fn_strokeDraw`, `fn_planDraw`, `fn_zoneDraw`. Écrans muraux : traits, rectangles, ellipses et plan du camp tracés en segments épaissis. Sauvegarde : marqueurs de joueur (canal « arma ») avec leur style et plan de chaque camp, écriture à chaque marqueur posé, changé ou effacé.
-- À tester en jeu : image satellite dans la texture UI des écrans, alignement des cadres sur les unités, prise de main à deux PC, reprise de la salle après redémarrage du serveur.
 
 ## Pack 4.3.0 Washington : apps à l'horizontale, carte lisible, drones armés, centre Zeus, IA qui répondent juste, vrais papiers et passage aux fichiers (ATAK natif 4.3.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.7.0)
 
@@ -243,25 +278,6 @@ EN : ATAK 4.3.0: armed drones, landscape apps, a readable map, AIs that answer r
 
 Aucune nouvelle DLL (COMSPEC Link 2.0.123 inchangé). Migration 4330 (passage aux fichiers). Non vu en jeu : aucune passe de l'autotest n'a tourné pour ce pack.
 
-## À venir : vrais grands écrans pour la salle d'opérations (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : De vrais grands écrans pour votre salle d'opérations
-- Murs d'images de 4 et 6 écrans, écran géant de 98 pouces (au mur ou sur pied roulant), écran de 65 pouces suspendu au plafond : de vrais modèles 3D à taille réelle, bords fins, lisibles même dans une salle sombre.
-- Un mur affiche une grande image sur tous ses écrans, ou une image différente par écran (carte, caméra, tableau d'escouades).
-- Bandeau horloge LED et plaque de nom d'élément à accrocher au-dessus des écrans. Tout se pose dans Eden et en Zeus (catégorie Écrans), et deux murs posés côte à côte se touchent sans jour.
-EN : Real big screens for your operations room
-- Video walls of 4 and 6 screens, a 98-inch giant screen (on the wall or on a rolling stand), a 65-inch screen hung from the ceiling: real full-size 3D models with thin bezels, readable even in a dark room.
-- A wall shows one big picture across all its screens, or a different picture on each screen (map, camera, squad board).
-- LED clock strip and element name plate to hang above the screens. Everything can be placed in Eden and in Zeus (Screens category), and two walls placed side by side meet without a gap.
-
-### Détail technique
-- `tools/model_toc_screens.py` (pur Python, sans Blender) : 9 modèles MLOD dans `addons/main/data/toc/` (LOD 0 / 2 / 6, ombre, géométrie avec masse et `autocenter=0`, géométrie de tir et de vue), textures PAA du cadre (alu brossé, plastique, acier, ouïes), rvmat Super, verre éteint brillant, aperçus Eden rendus par le script. Passés par Binarize (hemtt build) sans avertissement.
-- Classes `COMSPEC_ATAK_Screen_Wall2x2`, `_Wall2x2_Quad`, `_Wall3x2`, `_Wall3x2_Mixed`, `_98`, `_98_Stand`, `_65_Ceiling`, `_ClockStrip`, `_NamePlate` (`toc_screens3d.hpp`), dans la liste des écrans TOC (`fn_tocScreen` « classes ») et du module (sauf horloge et plaque, en 4:1, `comspec_screenRatio=4`).
-- Murs à plusieurs dalles (`comspec_screenPanels`) : sélections `panel1`… en ordre de lecture vu de face, index = numéro - 1 ; `fn_tocScreen` « surface » garde une préparation par dalle (variable `COMSPEC_ATAK_SurfPrep<index>`), chaque dalle garde sa matière d'écran. Mur 3x2 « image et 2 dalles » : `panel1` = bloc 2x2 de gauche (16:9), `panel2` / `panel3` = colonne de droite (une image unique 3x2 serait en 8:3).
-- Largeurs hors tout pour accoler : 2x2 2,4572 m, 3x2 3,6738 m, 98" 2,1935 m (origine au sol, dos au mur). Test en jeu : groupe `ecrans3d` de la mission d'autotest.
-
 ## À venir : configurateur d'équipement, favoris, tendances, pré-kits et poids (site, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -381,29 +397,6 @@ EN : ATAK 4.2.1: smoother phone, clearer apps, a relay network that explains its
 - Langue : le téléphone en anglais sur les captures de l'autotest est voulu (`comspec_atak_native_language`, anglais par défaut depuis 2.1.0, profil de test sans réglage) ; les vérifications passent par `fn_tr` et ne dépendent pas de la langue.
 - Rien de ce lot n'a été vu en jeu avant la publication de ce bloc : autotest et essai en partie à faire.
 
-## À venir : beaucoup plus de sang sur l'écran du téléphone, selon la situation (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Le sang sur l'écran du téléphone suit la gravité de la situation
-- Quelques gouttes pour une petite blessure, des traînées quand vous saignez ou soignez, de grandes nappes, des paumes et des coulures pour une hémorragie, et un écran presque entièrement rouge quand vous êtes à l'agonie ou qu'un homme est tué à bout portant.
-- Le sang frais est rouge vif et brillant, il coule vers le bas de l'écran, puis sèche en quelques minutes : brun, mat et craquelé.
-- Un coup de chiffon étale le sang frais en traînées et le sang séché tient : il faut plusieurs passages, un nettoyage complet ou un kit.
-- Nouveau réglage « Sang sur l'écran : quantité maximale » (Léger, Normal, Fort, Extrême ; par défaut Extrême en Milsim, Fort sinon).
-EN : Blood on the phone screen follows how bad things are
-- A few drops for a small wound, smears when you bleed or treat someone, large pools, palm prints and runs for heavy bleeding, and a screen almost entirely red when you are dying or a man is killed at point-blank range.
-- Fresh blood is bright red and glossy, runs down the screen, then dries within a few minutes: brown, matte and cracked.
-- A wipe smears fresh blood into streaks and dried blood sticks: it takes several passes, a full cleaning or a kit.
-- New setting "Blood on the screen: maximum amount" (Light, Normal, Heavy, Extreme; Extreme in Milsim by default, Heavy otherwise).
-
-### Détail technique
-- `fn_screenDirt` : niveaux 1-4 (`_burst`, cibles de couverture 6 / 20 / 45 / 85 %), causes : débit ACE `ace_medical_woundBleeding`, `ace_medical_bloodVolume` (< 5 L : lourd, < 4 L : extrême), inconscience, plaies aux bras (téléphone en main : +1), sans ACE `isBleeding` + `damage` + `lifeState` ; blessé porté ou traîné qui saigne (`ace_dragging_carriedObject` / `draggedObject`) ; coup reçu (`hit`, niveau selon les dégâts et le nombre de blessures) ; mort à moins de 1,2 / 2 / 2,8 m (`nearby` : 4 / 3 / 2, téléphone sorti ou sur le gilet). Exposition : en main plein niveau, miniature ou gilet un de moins, sac rien. Nouveaux modes `force`, `age`, `residue`, `maxLevel` ; tache : + orientation (la tache tourne avec le verre) et débit (coulures en segments chaînés vers le bas de l'orientation actuelle, un par passage de 5 s tant que le sang a moins de 150 s). Au plus 48 taches (les moins visibles partent). Taille en part du petit côté de l'écran (plus d'écart portrait / paysage).
-- `fn_screenSurface` : ordre voile, couche continue, nappes, essuyages, reste, coulures ; texture séchée `bloodd_*` posée par `ctrlSetText` au passage de 4 min (sans recréer le contrôle), teinte qui fonce de 0 à 6 min ; plein écran tourné d'un quart si l'orientation a changé.
-- Nettoyage (`fn_screenClean`, `clean`) : chiffon = sang frais × 0,3 + traînée `wipe` (5 au plus par passage), séché × 0,72 ; complet sans kit = frais retiré, séché × 0,3 ; kit = tout ; eau et pluie remouillent le sang.
-- Réglage serveur `comspec_atak_native_blood_max` (0 selon le profil, 1-4) ; style Discret : au plus Normal.
-- Textures (`tools/gen_screen_fx.py --sang`) : 40 fraîches + 40 séchées (nouvelles : `pool_2-3`, `splat_2-3`, `hand_2-3`, `spatter_2`, `run_0-2`, `arterial_0-1`, `drag_0-1`, `wipe_0-2`, `cover_0-1_land/port`, `veil_0_land/port`), fondu sur les bords, reflets atténués.
-- Autotest `sang_niveaux` (`scripts/sang.sqf`, groupe `sang`) : non lancé (pas vu en jeu).
-
 ## À venir : moins de sondages et de relectures inutiles (ATAK natif et SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -476,6 +469,7 @@ EN : Talk to AIs in free text, and tune their personality in the AI workshop
 - Atelier IA : `fn_iarpWorkshop` (même dialog en Eden par `createDisplay` au-dessus des attributs, et en Zeus), `fn_iarpEden` (attribut `COMSPEC_SSE_IarpProfileAttr`, catégorie « COMSPEC SSE · IA RP » des unités), module Eden `COMSPEC_SSE_Module_IarpWorkshop` (`fn_iarpModule`, unités synchronisées, une personnalité par IA en option), modules ZEN `fn_iarpZen` (Atelier IA, Faire parler une IA, Journal des échanges). Profil appliqué sur le serveur seulement (`comspec_sse_iarpProfile`), `comspec_sse_idName` et `COMSPEC_ID_Profile` repris par l'identité.
 - Autotest `scripts\ia_rp.sqf` : `ia_rp_interprete` (`fn_iarpSelfTest` : 38 phrases, banque, redite, cohérence), `ia_rp_texte_libre` (captures `ia_texte_libre`, `ia_journal`, `ia_bulle`), `ia_rp_atelier` (capture `ia_atelier_zeus`), non exécutés. `hemtt check` de l'addon : aucune erreur.
 - À tester en jeu : terminal (Entrée, Maj+Entrée, flèches, Échap et brouillon), bulles et « … » à deux joueurs, /try commun, ordres sur une IA locale au serveur et à un HC, attribut et module en Eden (fenêtre par-dessus les attributs, valeur gardée à la sauvegarde), modules ZEN, journal du Zeus, textes en anglais.
+
 ## À venir : sa propre carte d'identité en jeu, reliée à Athena (SSE et site, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -631,6 +625,7 @@ EN : Found documents finally look like real paper
 - Autotest : étape `sse_papiers`, une capture par papier.
 
 ---
+
 ## Pack 4.1.0 Washington : verrouillage et code, carte tactique, mode pilote, réseau réaliste, profils IA, licence (ATAK natif 4.1.0.AG - Washington, COMSPEC Link 2.0.121, SSE 1.5.0)
 
 ### Résumé joueur
@@ -777,6 +772,7 @@ EN : Phone crashing in a loop, and back on the network after a compromise
 - **App Admin** : plus de relevé ni de redessin sur les onglets ATHENA et APPS, un redessin par seconde au plus ailleurs, une action à la fois, `&` échappé, fiches illisibles écartées, actions REMPLACER L'APPAREIL et RÉPARER SES DONNÉES ; son propre ATAK ne se déclare plus compromis depuis le jeu. Avis de compromission sans terminal : ne verrouille plus le téléphone qui le reçoit.
 - **Pas de migration** : `atak_admin_messages.kind` est un `varchar(24)`. Pas de changement de version.
 - **Non testé en jeu** : rien ne peut l'être ici. Étapes `tel_garde_fou` et `tel_nouvel_appareil` dans l'autotest. Notes : `docs/bugs/2026-11-08-atak-plantage-camera-ip-boucle.md`, `docs/bugs/2026-11-08-atak-compromission-nouvel-appareil.md`.
+
 ## À venir : mode pilote, FIRES court, apps regroupées et profils de rôle (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -800,6 +796,7 @@ EN : Pilot mode, short FIRES and grouped apps
 - À tester en jeu : voir le corps de la PR. Rien n'a pu être testé en jeu.
 
 ---
+
 ## À venir : profils d'IA, éditeur SSE en Zeus, réponses des IA au-dessus de la tête (SSE, ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -843,6 +840,7 @@ EN : Realistic network by default, on your real radios
 - Rien de tout cela n'a tourné en jeu.
 
 ---
+
 ## À venir : tracé de routes et de zones, suppression, formes de la carte (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -908,6 +906,7 @@ EN : Zeus gets a Zeus Centre and a readable module list
 ### Détail technique
 - Centre : fn_zeusCentre (vue), fn_zeusState (relevé à la demande, serveur seul destinataire et seul expéditeur), fn_zeusObject (fenêtre d'objet qui rappelle les formulaires des modules). Aucune nouvelle variable publique.
 - Modules : classes inchangées ; catégories COMSPEC_Cat_Atak, COMSPEC_Cat_Sse, COMSPEC_Cat_Identite, COMSPEC_Cat_Mission. COMSPEC_Module_AtakRelay masqué dans Eden (scope 1). Icônes : tools/gen_module_icons.py.
+
 ## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
 
 ## À venir : fiche joueur unique, carte, Groupe et BFT plus directs (ATAK natif, version à attribuer)
@@ -936,6 +935,7 @@ EN : One player card everywhere, and the map no longer jumps when you touch a te
 - `fn_squadBar` : réglette d'effectif (primitives communes, cases en contrôles), signature à 1 Hz sur la carte, rendu texte dans l'ORBAT.
 - `fn_pageBft` : `COMSPEC_RscListNBox` (lignes réécrites par signature, sans vider le tableau), état en image, en-tête compact ; messages d'ORBAT importants au-dessus du tableau.
 - Coût par image : une lecture de table seulement pendant le suivi d'une unité ; aucun autre ajout.
+
 ## À venir : fond de carte ARDOISE et style tactique des marqueurs et traits (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -971,6 +971,7 @@ EN : Map: new SLATE background and tactical marker style
 - Polygones des plans de zones sans hachure, polylignes de mission à un pixel : inchangés, pour le coût de dessin et faute de test en jeu de `drawTriangle` texturé.
 
 ---
+
 ## BFT : l'ORBAT du site et les joueurs hors ligne ; écran et PC du poste TOC (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -996,6 +997,7 @@ EN : The BFT shows your community ORBAT, offline members included
 - DLL : `GetCommunityOrbat` (Async seulement, une requête à la fois) et `GetCommunityOrbatChunk`.
 - Écran TOC : `fn_screenCast` attend la désignation de l'écran (`castWait`) au lieu de refuser, message sur l'écran (`COMSPEC_ATAK_ScreenMsg`), recopie aussi après le repli `data:` ; `fn_tocScreen` : regroupement et placement des plaques, table par pages, affichages `NET` et `ORBAT`, mode `show`. PC du poste : `fn_tocLaptop` (outils, onglets, `fn_markerDrop` et `fn_bftOrbat` réutilisés).
 - Mod : `fn_bftOrbat` (lecture toutes les 5 min au plus, dernier ORBAT gardé en mémoire), `fn_pageBft` (arbre, états, filtres, compteurs, boutons sur deux rangées, lignes réécrites seulement si elles changent), `fn_bftAction` (SMS et vibreur pour un joueur en jeu sans piste). Rapprochement par empreinte du Steam ID, jamais par le nom ; camp adverse jamais rapproché.
+
 ## App Réseau : état d'un coup d'œil, tutoriel, objet obligatoire, case RELAIS ATAK (version attribuée à la publication)
 
 À la publication : ajouter le numéro de version au titre et passer le texte ci-dessous en « Résumé joueur ».
@@ -1018,6 +1020,7 @@ EN : The Wave Relay app says what is wrong and what to do
 - `fn_netRequire`, réglage serveur `comspec_atak_native_net_required_items` (vide par défaut) ; `fn_waveRelayStatus`, `fn_waveRelayTuto`, `fn_relayTxBadge` et réglages joueur `comspec_atak_native_relay_tx_badge`, `_badge_pos`, `comspec_atak_native_wr_tuto_offer`.
 - Bandeau de notification : le titre de l'app est masqué le temps de son affichage. Interrupteurs des formulaires : la pastille est le bouton, plus de bouton transparent sur la ligne.
 - Rien n'a été testé en jeu.
+
 ## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
 
 À la publication : ajouter le numéro de version au titre et passer le texte ci-dessous en « Résumé joueur ».
@@ -1043,6 +1046,7 @@ EN : My cover is clearer and linked to Athena
 - Fiche (`fn_idLegend « sheet »`) : papiers imprimés et portés, source (`athena` ou `local`), date ; le brief brut, la nature et la qualité ne partent plus chez le joueur.
 - Remontée (`fn_idCoverSync`, `kind = cover_report`, ICD-SSE-COVER-001) sur le compte du jeton de jeu, sans nouvelle DLL. Bureau SSE : attribution d'un contenu de la bibliothèque de l'éditeur à un joueur (identité masquée, papiers émis, kit et brief). Mes papiers : état de la couverture. Migration 4110.
 - Sans habilitation Confidentiel, les briefs reliés à une identité n'apparaissent plus dans le Bureau SSE.
+
 ## Écran de verrouillage et code, fonds d'écran du site, Bloc-notes, Bluetooth, onglets lisibles, dégâts variés (version attribuée à la publication)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -1067,6 +1071,7 @@ EN : New lock screen, phone code and wallpapers from the website
 - Bluetooth : téléphones détectés (`near`, `scan` toutes les 3 s, redessin seulement si la liste change), progression sur place (`btx_`).
 - Dégâts : 23 calques tirés par `fn_deviceDamage` selon la cause, gardés dans l'état de l'appareil, oubliés à la réparation, dessinés par `fn_screenFx` ; aperçu dans Debug > DÉGÂTS.
 - Test : `tests/Unit/AtakLockscreenUiAssetTest.php`, contrastes calculés depuis `fn_theme`.
+
 ## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -1197,6 +1202,7 @@ EN : ATAK 4.0.0 Washington: wrist GPS, deployable antennas, redesigned interface
 - **Maillage, lot 11 : guerre électronique** (`fn_meshEW`, `mesh_ew`, `mesh_ew_role`, décision 14) : activité d'émission arrondie (6e élément du nœud), goniomètre `COMSPEC_ATAK_Goniometer` (classe minimale, modèle de la batterie), croisement de deux relevés, analyseur de 16 canaux sans camp ni contenu, brouilleurs par canal, large bande et GPS seul (8e et 9e éléments de `COMSPEC_ATAK_Jammers`, sans effet sur le lien du téléphone hors MPU5), modes normal, puissance réduite et écoute seule, imposés par le chef, canal de secours (`mesh_backup_channel`, désactivé). L'écoute seule reçoit mais ne relaie pas.
 - **Maillage, lot 12 : outils** (`fn_meshTools`, `fn_moduleMesh`, `mesh_tools`) : clic droit Zeus (brouilleurs, couper un nœud, clés, météo radio, graphe d'un camp en lecture seule, journal), module Eden `COMSPEC_ATAK_Module_Mesh` (clés, groupes, fréquences, canal de secours, profil), journal de réseau serveur (200 lignes, RPT à la demande), topologie, ping et prévision dans l'app Wave Relay. Ping : marge du maillon faible, pas son nom. Prévision : relief seul.
 - **Maillage, lot 8 : nettoyage** (`fn_meshRead`, `fn_mpu5`, `fn_mpuLink`, `fn_mpuVoice`, `fn_meshGroups`, `fn_devMeshSim`) : une seule variable publique par joueur, `COMSPEC_ATAK_MeshNode`, sur changement et au plus toutes les 2 s, à la place de `MpuNode`, `Mpu5`, `MpuVoice`, `VoiceNet` et `Talkgroup` (ces dernières restent locales au joueur). Liaison réaliste décochée : `Mpu5` et `VoiceNet` passent aussi par cette variable. Notice : `docs/technical/reseau-mesh-notice-joueur.md`. Aucun test en jeu sur l'ensemble des lots : à faire en une seule fois.
+
 ## Pack 3.0.5 : optimisation de COMSPEC Link, temps des DLL mesurés dans Debug › PERFS (ATAK natif 3.0.5.AG - Austin, COMSPEC Link 2.0.119)
 
 ### Résumé joueur
@@ -1239,6 +1245,7 @@ EN : ATAK 3.0.5: the Athena link does less work and can be measured
 - **Non fait, volontairement** : regroupement des boucles de 1 et 2 s (≈ 30 réveils/s, chacune sort tôt) ; `fn_tocPost` (`nearestObjects` à 4,5 m chaque seconde : requête spatiale bon marché) ; HTTP/2 (multipart PHP) ; `AutomaticDecompression` (gzip déjà géré par `SendTimed` avec comptage des octets) ; `LocalGet` / `ClipGet` / `BtFileRead` restent synchrones (lectures locales de quelques Ko, à la demande du joueur).
 - **Tests** : `ComspecLinkWorkflowOptTest` et `AtakReleaseInfoTest` (ExtensionVersion = csproj = `LINK_VERSION_STR` = 2.0.119, `VERSION_NAME` 3.0.5.) ; `hemtt check` : 2 erreurs connues, inchangées.
 - **À tester en jeu** : Debug › PERFS après quelques instants (sections DLL native et COMSPEC Link, appels / moy / p95 / pire, bouton RAZ DLL ; téléphone en anglais : RESET DLL) ; app Recherchés « Actualiser » (liste fraîche) et terminal SEEK / biométrie du SSE (liste servie sans attente, à jour en 5 min) ; journal COMSPEC_*.log toujours écrit (lignes horodatées) ; tenue Athena volumineuse (morceaux) ; notification reçue puis expirée (toast affiché puis retiré) ; Réglages › contrôle d'intégrité (versions, « DLL d'une autre version » absent).
+
 ## Pack 3.1.0 (suite) : interface du téléphone refaite, un seul système de design, thèmes sombre / jour / nuit JVN (ATAK natif 3.1.0.AG - Austin)
 
 ### Résumé joueur
@@ -2618,6 +2625,7 @@ EN : GPS stays accurate inside buildings
 ### Détail technique
 - `fn_gpsFix` : bâtiment = 5 à 8 satellites (fix gardé) au lieu de 2 à 6, reflets 3 à 10 au lieu de 12 à 35 ; erreurs de base resserrées (7+ satellites 4-6 m, 5-6 : 6-9 m, 4 : 9-13 m). Le test « rue étroite » (8 rayons à 60 m) et la forêt ne s'appliquent plus à l'intérieur : mes propres murs le déclenchaient (−5 satellites, +32 m), d'où la perte du fix et le point à ~40 m. Dérive du point bornée à 0,5 × rayon annoncé (0,8 avant). Position réseau : 60 → 15 m (1 à 4 barres), décalage 0,35 × rayon (0,6). Sauts multitrajets 6-20 m (15-60).
 - `fn_ewDraw` : le cercle de précision est centré sur la position de mon icône de la même image (`COMSPEC_ATAK_SelfGpsPos`).
+
 ## Nouveau téléphone : iPhone 17 Pro en coque durcie olive (partie du regroupement 2.5.0)
 
 ### Résumé joueur
@@ -2664,6 +2672,7 @@ EN : The unit's medical records in the Medical app
 - COMSPEC Link 2.0.96 : `MedicalRoster` [ligne, cache|refresh] (pages comme `ListWardrobes`) et `MedicalRosterInfo` ; copie dans `Documents\Arma 3 - COMSPEC\Sync\medical_roster.json`, propre au site + communauté + Steam ; un 403 `forbidden` efface la copie. Ajouté au projet de la DLL native.
 - ATAK natif : `fn_medRoster` (lecture paginée, cache, recherche, portée EN JEU / TOUTE L'UNITÉ), onglet DOSSIERS dans `fn_pageMedical`, `_medIdent` complète groupe sanguin et poids depuis le dossier. Debug > DLL vérifie `MedicalRoster`.
 - Numéro ATAK natif attribué par le regroupement (docs/VERSIONING.md).
+
 ## CR de fin d'opération imposé dans le téléphone, à remplir ou à lire (partie du regroupement 2.5.0)
 
 ### Résumé joueur
@@ -2749,6 +2758,7 @@ Correctif seul de la 2.4.0 publiée (audit d'ingénierie, SEC-001, DLL-003, DLL-
 - Connu, hors de ce correctif (lots séparés) : la clé de la communauté reste rangée dans le profil Arma, lisible par une mission (SEC-009) ; une mission peut toujours faire télécharger une image depuis l'hôte de son choix (adresse IP du joueur visible par cet hôte, aucun secret envoyé).
 
 ---
+
 ## Regroupement : app Admin et mode local dans le téléphone, écrans du briefing en jeu, montre Garmin, arsenal ACE sûr, nouvelle adresse athena-comspec.eu, jeu plus fluide (ATAK natif 2.4.0.AB - Denver, COMSPEC Link 2.0.95)
 
 ### Résumé joueur
@@ -2795,6 +2805,7 @@ EN : Fewer freezes and no more error in vehicles
 - **Arsenal ACE** : `ace_arsenal_fnc_addRightPanelButton` recevait un texte en 4e paramètre (numéro de bouton attendu) : erreur `Params` et pas de bouton COMSPEC.
 - **fn_tr** ligne 64 : `[_x, ""] select (isNil "_x")` plantait sur un argument absent (« Undefined variable _x »).
 - Vérifié avec HEMTT 1.17.2 (`hemtt check` natif : 0 erreur ; connect : les 6 erreurs de syntaxe ont disparu, restent les faux positifs `ctrlWebBrowserAction` inconnus de HEMTT). main.pbo et `comspec_overwatch_connect.pbo` à reconstruire au regroupement.
+
 ## Marqueurs par le seul réseau ATAK, heure de pose sur chaque marqueur, relais actif seulement mât déployé (ATAK natif : numéro donné au regroupement)
 
 ### Résumé joueur
@@ -2815,6 +2826,7 @@ EN : Confidential ATAK markers and conditional radio relays
 - `fn_relayCond` (nouveau) : `COMSPEC_AtakRelayCond` sur un relais ou une passerelle de véhicule (`mast` : sources d'animation dont le nom contient mast/antenna/antena/telescop/aerial/pole/rod au-delà de 90 % ; `stopped` ; `engineoff` ; ou code SQF, `_this` = l'objet). `fn_relayNet` liste le relais hors service avec la raison (« mât replié »…). Module « ATAK · Relais » : attributs Eden `Cond` + `CondCode`, liste « Actif seulement si » dans le formulaire Zeus.
 - À tester en jeu : noms des sources d'animation du mât du GAZ-66 R-142 de RHS reconnus par `mast` (sinon condition en code) ; `createMarkerLocal` + `setMarkerText` global sur un marqueur local (doit rester local) ; marqueurs reçus hors réseau puis au retour du signal ; JIP.
 - Réglage `comspec_atak_native_marker_channel` inchangé (Global par défaut) : en mode carte d'Arma, Global reste visible par tous les camps.
+
 ## Refus d'Athena : plus de demandes en boucle, Dépannage liaison qui donne la bonne correction (Overwatch connect 1.6.17)
 
 ### Résumé joueur
@@ -2839,6 +2851,7 @@ EN : When Athena refuses you, the game stops insisting and tells you what to do
 - Contexte : rotation de la clé plateforme du 2026-10-26. Depuis #1052 la liaison renvoie une clé de communauté ; un profil qui gardait l'ancienne clé plateforme reçoit maintenant `unauthorized`, et seule une nouvelle liaison enregistre une clé valide.
 - `comspec_overwatch_connect.pbo` repaqueté seul (AddonBuilder, préfixe `z\comspec_overwatch\addons\connect`) ; main.pbo et la version de l'ATAK natif ne changent pas. Nouveaux textes en français seulement (repli de `fn_tr`), à ajouter à `en.txt` au prochain regroupement de main.pbo.
 - Non testé en jeu. À tester : profil avec une clé invalide → Échap › Dépannage liaison affiche « clé d'accès refusée » et le bouton ouvre Lier mon compte ; après liaison, Revérifier → Liaison OK.
+
 ## Retours des contributeurs : téléphone en anglais, SEEK II, accueil qui garde sa place (ATAK natif : numéro donné au regroupement)
 
 ### Résumé joueur
@@ -2892,6 +2905,7 @@ EN : Athena is now translated with the community
 - Site : `/contribuer` (ContributorController), `/traduire-site` (SiteTranslationController, SiteTranslationService), `/admin/system/contributeurs` (SystemContributorsController). Migration `20261025000001_site_contributors_translation.sql` (run-migrations sur le VPS). Les langues publiées et leurs dictionnaires sont compilés dans `storage/i18n/community/` (CommunityLanguages) : `LocaleService` accepte leurs codes, une langue de la communauté se comporte comme l'anglais (`locale()` = en, `site_lang()` = son code) avec son dictionnaire par-dessus (HtmlTranslator, Translator, dictionnaire JavaScript `/traduire-site/dico/{code}.js`).
 - Discord : script `tools/discord/comspec_discord_contributors.py` (lancé sur le PC de TTRD, jeton du bot jamais sur le site) : rôles Translator / Content creator, salons translation / contributors, question de choix des rôles dans l'accueil du serveur (Onboarding), conditions des rôles liés déclarées à l'application et rôle Athena verified.
 - Rôles liés Discord (Linked Roles) : `DiscordLinkedRoles` (OAuth `identify role_connections.write`, conditions compte Athena / membre d'une communauté / nombre de communautés / ancienneté, nom des communautés sur le profil), `/discord/roles-lies` (adresse de vérification) et retour, panneau Discord dans Mon compte › Préférences, réglages Application ID + secret client chiffré dans Intégrations › Plateforme, tâche automatique quotidienne `discord_linked_roles_sync`. Migration `20261025000002_user_discord_links.sql`. Dans le portail des développeurs Discord : OAuth2 › Redirects = `/discord/roles-lies/retour` ; puis la condition « Compte Athena » sur le rôle Athena verified (Paramètres du serveur › Rôles › Liens).
+
 ## App Admin dans le téléphone : parc ATAK de la communauté, ATAK de la partie et debug de l'IA, pour la gestion et les Zeus (regroupé dans ATAK natif 2.4.0.AB - Denver, COMSPEC Link 2.0.95)
 
 ### Résumé joueur
@@ -2916,6 +2930,7 @@ EN : New Admin app for community managers and Zeus
 - Boutons à conséquence en deux temps (CONFIRMER). `i18n/en.txt` : 143 textes.
 - Version 2.3.11, COMSPEC Link 2.0.94 (DLL à recompiler). main.pbo non reconstruit dans cette PR (regroupement).
 - À tester en jeu : app visible en Zeus et invisible pour un joueur ; relevé EN JEU avec plusieurs joueurs ; effets Zeus depuis l'app ; parc ATHENA avec un compte gestionnaire relié (bloquer puis lever, message reçu, compromission puis levée) ; DEBUG IA après qu'une IA ennemie a ramassé un téléphone (traque visible, ARRÊTER LA TRAQUE, REPRENDRE LE TÉLÉPHONE).
+
 ## Nouveaux logos ATHENA sur le site et dans le téléphone (regroupé dans ATAK natif 2.4.0.AB - Denver)
 
 ### Résumé joueur
@@ -2933,6 +2948,7 @@ EN : New ATHENA identity: the eagle
 - Logos vectorisés (potrace, tracé à 6x avec lissage) à partir des PNG fournis ; colonne blanche des 3 premiers pixels du logo complet retirée. Sources : `public/assets/brand/*.svg` (blanc / noir), `mod/COMSPEC_ATAK_Native/tools/src/athena_logo.svg` et `athena_embleme.svg`.
 - Site : `athena-header__brand-mark`, `dash-rail__brand-mark` et le pied de page portail utilisent l'emblème / le logo en masque CSS (couleur du thème) ; en-tête d'accès public et accueil (`hi-wordmark`, pied) en `<img>` ; `athena-192/512.png` carrés (étaient 520x240 et 1200x480), nouveaux `athena-180/32.png`, `athena-maskable-512.png`, `favicon.ico` ; manifeste PWA et cache `sw.js` (v11) à jour ; `atak-eagle-logo.png` (ATAK web, porte SSE) remplacé par l'emblème.
 - Mod : `gen_assets.py <hemtt> athenalogo` régénère `app_athena.paa` (emblème) et le nouveau `logo_athena.paa` (logo complet) ; `fn_pageAthena` et le repli de la ligne « status » de `fn_formRender` l'utilisent. Version 2.3.11, main.pbo reconstruit (HEMTT), verify_build OK. Link inchangé (2.0.93).
+
 ## Indicatif perso, marqueurs nommés et modifiables, recherche par grille, outils JTAC (cap magnétique, 9-LINE sur un autre écran), jumelles sans marquage ENI par défaut (ATAK natif, version fixée au regroupement)
 
 ### Résumé joueur
@@ -2956,6 +2972,7 @@ EN : Your own callsign, named markers and JTAC tools
 - GPS : soi-même (icône, anneaux, étiquettes, trait de distance) dessiné à la position GPS simulée (`COMSPEC_ATAK_SelfGpsPos`).
 - Clic gauche de la carte : armé à l'appui (`mapLc`), exécuté au relâchement s'il n'y a pas eu de glisser (`fn_mapMouseButtonUp` rappelle `fn_mapMouseButtonDown` avec `_click`) ; TRAIT et DESSIN démarrent toujours à l'appui. Menu OUTILS en sections (NAVIGATION, MESURER, DESSINER, AFFICHAGE), bandeau d'outil actif avec icône et bouton ✕.
 - JTAC : `fn_magBearing` (réglage serveur `comspec_atak_native_mag_decl`), outil carte IPTGT `fn_jtacTool` (VERS LE 9-LINE remplit l'app JTAC), ligne 2 du 9-LINE en cap magnétique ; page site `/9-line` (flux des 9-LINE de la communauté toutes les 5 s, calculateur IP → cible), QR `data\nineline_qr_ca.paa`.
+
 ## Mode full local : PC portable de TOC, app Numéros, configuration locale config.json (ATAK natif, version attribuée au regroupement ; COMSPEC Link : DLL native modifiée)
 
 ### Résumé joueur
@@ -4206,6 +4223,7 @@ EN : Athena no longer cuts your sends during an update
 - `deploy-vps.yml` : règle une fois `process_control_timeout = 10s` dans `/etc/php/8.4/fpm/php-fpm.conf` (sauvegarde `.bak-deploy`, `php-fpm -t` avant, restauration si refusé) puis reload.
 - `AtakDeviceLogRepository` : COMSPEC Link envoie `logged_at` en heure locale sans fuseau ; l'écart entre la ligne la plus récente du lot et l'heure serveur, arrondi au quart d'heure (15 min à 14 h), est retiré des heures sans fuseau.
 - Le volet mod (502/504 en alerte, ligne ZEN, dump) est dans une PR à part, livrée avec le regroupement ATAK.
+
 ## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
 
 ### Résumé joueur

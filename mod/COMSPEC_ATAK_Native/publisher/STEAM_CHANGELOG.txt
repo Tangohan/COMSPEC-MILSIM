@@ -1,3 +1,29 @@
+[h1]COMSPEC ATAK 4.4.0 Washington — salle TOC en jeu, vue satellite, grands écrans, sang sur l'écran / TOC room in game, satellite view, big screens, blood on the screen[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Salle TOC prête[/b] : le module « Salle TOC complète » pose une salle déjà câblée : murs d'images, grands écrans, horloge, bureaux et PC.
+[*] [b]Grands écrans[/b] : murs de 4 et 6 écrans, écran de 98 pouces au mur ou sur pied, écran de 65 pouces au plafond, bandeau horloge et plaque de nom, à poser dans Eden et en Zeus (catégorie « Écrans TOC et projection »).
+[*] [b]Vue satellite[/b] : un écran montre une vue aérienne en direct (jour, vision nocturne ou thermique), chaque allié équipé d'un ATAK encadré avec son indicatif.
+[*] [b]Écrans du mur[/b] : horloge ZULU et chronos, écran d'escouade, mosaïque des caméras du camp, main courante, pertes et demandes (votre réponse part sur le téléphone du demandeur).
+[*] [b]PC du poste[/b] : dans l'onglet SALLE, cliquez un écran sur le plan du mur pour choisir ce qu'il montre, enregistrez des scènes, éteignez tout d'un clic.
+[*] [b]Dessiner au PC[/b] : mêmes traits, marqueurs et graphismes de plan que sur l'ATAK ; ils apparaissent sur les téléphones et sur les écrans du mur.
+[*] [b]Salle gardée[/b] : la salle et ses dessins sont gardés d'une partie à l'autre.
+[*] [b]Sang sur l'écran[/b] : de quelques gouttes à un écran presque rouge selon la gravité ; le sang sèche en quelques minutes et s'essuie mal. Nouveau réglage « Sang sur l'écran : quantité maximale ».
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Ready TOC room[/b]: the "Complete TOC room" module places a room already wired up: video walls, big screens, a clock, desks and laptops.
+[*] [b]Big screens[/b]: walls of 4 and 6 screens, a 98-inch screen on the wall or on a stand, a 65-inch ceiling screen, a clock strip and a name plate, to place in Eden and in Zeus ("TOC screens and projection" category).
+[*] [b]Satellite view[/b]: a screen shows a live aerial view (day, night vision or thermal), every ally carrying an ATAK framed with their callsign.
+[*] [b]Wall screens[/b]: ZULU clock and timers, squad screen, mosaic of the side's cameras, duty log, casualties and requests (your answer goes to the requester's phone).
+[*] [b]Post laptop[/b]: in the ROOM tab, click a screen on the wall plan to choose what it shows, save scenes, switch everything off in one click.
+[*] [b]Draw on the laptop[/b]: the same lines, markers and plan graphics as on the ATAK; they appear on the phones and on the wall screens.
+[*] [b]Room kept[/b]: the room and its drawings are kept from one session to the next.
+[*] [b]Blood on the screen[/b]: from a few drops to an almost red screen depending on how bad things are; blood dries within a few minutes and is hard to wipe off. New setting "Blood on the screen: maximum amount".
+[/list]
+
 [h1]COMSPEC ATAK 4.3.0 Washington — drones armés, apps à l'horizontale, carte lisible, centre Zeus, app Fichiers / armed drones, landscape apps, readable map, Zeus centre, Records app[/h1]
 
 [h2]Français[/h2]

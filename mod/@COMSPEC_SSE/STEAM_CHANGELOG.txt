@@ -1,3 +1,24 @@
+[h1]COMSPEC SSE 1.9.0 — fenêtre « Réponses de l'IA » simple, peur d'une arme braquée de près, champs des papiers / simple "AI answers" window, fear of a weapon aimed up close, paper fields (11/11/2026)[/h1]
+[b]Relance Arma complètement. Demande COMSPEC ATAK 4.4.0.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.4.0.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Réponses de l'IA[/b] : la fenêtre s'ouvre en mode simple. Choisissez une question, cliquez sur « Ma réponse », écrivez ce que l'IA répond et lisez juste en dessous ce qu'elle dira.
+[*] [b]Variables[/b] : « Insérer une variable » ajoute son prénom, sa ville ou le nom du joueur, avec un exemple.
+[*] [b]Options avancées[/b] : réponse selon la situation, ordre, renseignement révélé, repère sur la carte, thèmes interdits et vos propres questions y sont rangés.
+[*] [b]Arme braquée de près[/b] : une IA a de nouveau peur quand vous la braquez à quelques mètres, même en visant la tête.
+[*] [b]Papiers[/b] : les champs à remplir d'un type de document, extensions comprises, sont de nouveau proposés.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]AI answers[/b]: the window opens in simple mode. Pick a question, click "My answer", write what the AI says and read right below what it will say.
+[*] [b]Variables[/b]: "Insert a variable" adds its first name, its town or the player's name, with a sample.
+[*] [b]Advanced options[/b]: answer per situation, order, intel revealed, map marker, forbidden themes and your own questions are kept there.
+[*] [b]Weapon aimed up close[/b]: an AI is scared again when you aim at it from a few metres, even at the head.
+[*] [b]Papers[/b]: the fields to fill in for a document type, extensions included, are offered again.
+[/list]
+
 [h1]COMSPEC SSE 1.8.0 — IA qui répondent à beaucoup plus de questions, réponses du maître du jeu / AIs answer far more questions, game master answers (10/11/2026)[/h1]
 [b]Relance Arma complètement. Demande COMSPEC ATAK 4.3.0.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.3.0.[/b]
 
