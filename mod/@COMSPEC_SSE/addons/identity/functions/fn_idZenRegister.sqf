@@ -5,7 +5,7 @@
     « Voir les vrais papiers » : réservé au Zeus (vraie identité, nature, qualité, défauts), jamais aux joueurs.
     IA réalistes (Lot 3) : Checkpoint IA (zone, camp, équipement, sévérité), Retirer un checkpoint IA, Déclencher un
     contrôle (checkpoint qui couvre la personne, sinon l'IA la plus proche), Forcer un état IA, Couvre-feu
-    (fn_idServer cpCreate / cpRemove / cpTrigger / fsmForce / curfew).
+    (fn_idServer cpCreate / cpRemove / cpTrigger / fsmForce / curfew). Papiers entre joueurs (fn_idServer p2pZeus).
     Couvertures et HVT (Lots 4 et 5) : Couverture (infiltrer, brûler, lever), Zone interdite (couvertures), Désigner HVT,
     BOLO (liste à surveiller, visage joint si posé sur une personne), Lever un BOLO (fn_idServer cover / zone / hvt /
     bolo / boloRemove).
@@ -112,6 +112,15 @@ if (!hasInterface) exitWith {};
             "Couvre-feu",
             [["LIST", ["Couvre-feu", "En vigueur : les civils contrôlés dehors sont plus nerveux."], [[true, false], ["En vigueur", "Levé"], [1, 0] select (missionNamespace getVariable ["comspec_sse_idCurfewZeus", missionNamespace getVariable ["comspec_sse_id_curfew", false]])]]],
             { params ["_v"]; ["send", ["curfew", [player, _v select 0]]] call comspec_sse_fnc_idClient; }, {}, []
+        ] call comspec_sse_fnc_zenDialog;
+    }, "\z\comspec_sse\addons\zeus\data\mod_flag.paa"] call comspec_sse_fnc_zenModule;
+    // Papiers entre joueurs : le Zeus suit le réglage de la mission, les autorise ou les interdit (fn_idP2pServer « zeus »).
+    [_cat, localize "STR_COMSPEC_SSE_P2P_ZeusModule", {
+        [
+            localize "STR_COMSPEC_SSE_P2P_ZeusModule",
+            [["LIST", [localize "STR_COMSPEC_SSE_P2P_ZeusChoice", localize "STR_COMSPEC_SSE_P2P_ZeusChoice_D"],
+                [[0, 1, 2], [localize "STR_COMSPEC_SSE_P2P_ZeusOpt0", localize "STR_COMSPEC_SSE_P2P_ZeusOpt1", localize "STR_COMSPEC_SSE_P2P_ZeusOpt2"], ((missionNamespace getVariable ["comspec_sse_idP2pZeus", 0]) max 0) min 2]]],
+            { params ["_v"]; ["send", ["p2pZeus", [player, _v select 0]]] call comspec_sse_fnc_idClient; }, {}, []
         ] call comspec_sse_fnc_zenDialog;
     }, "\z\comspec_sse\addons\zeus\data\mod_flag.paa"] call comspec_sse_fnc_zenModule;
     // --- Couvertures et infiltrés (Lot 4) --------------------------------------------------------------------------

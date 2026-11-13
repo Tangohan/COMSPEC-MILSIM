@@ -37,6 +37,9 @@ class CfgFunctions {
             class iarpProfile {};
             class iarpServer {};
             class iarpReact {};
+            class iarpFollow {};
+            class iarpAggro {};
+            class iarpMelee {};
             class iarpMem {};
             class iarpClient {};
             class iarpBubble {};
@@ -365,6 +368,78 @@ class Cfg3DEN {
                         defaultValue = "false";
                         typeName = "BOOL";
                         condition = "objectBrain";
+                    };
+                    // Agressivité de cette IA envers les joueurs (fn_iarpAggro) : niveau, trait de caractère, intensité des
+                    // dégâts, mortel. « Réglage de la mission » : le réglage CBA décide. Variables d'unité diffusées.
+                    class comspec_sse_iarpAggroMode {
+                        displayName = "$STR_COMSPEC_IARP_Z_AggroMode";
+                        tooltip = "$STR_COMSPEC_IARP_E_AggroMode_D";
+                        property = "comspec_sse_iarpAggroMode";
+                        control = "Combo";
+                        expression = "if (isServer && {_value isNotEqualTo 'auto'}) then { _this setVariable ['comspec_sse_aggroMode', _value, true]; };";
+                        defaultValue = "'auto'";
+                        typeName = "STRING";
+                        condition = "objectBrain";
+                        class values {
+                            class Auto { name = "$STR_COMSPEC_IARP_Z_Aggro_auto"; value = "auto"; default = 1; };
+                            class Off { name = "$STR_COMSPEC_IARP_S_Aggro_off"; value = "off"; };
+                            class Verbal { name = "$STR_COMSPEC_IARP_S_Aggro_verbal"; value = "verbal"; };
+                            class Physical { name = "$STR_COMSPEC_IARP_S_Aggro_physical"; value = "physical"; };
+                        };
+                    };
+                    class comspec_sse_iarpAggroTrait {
+                        displayName = "$STR_COMSPEC_IARP_Z_AggroTrait";
+                        tooltip = "$STR_COMSPEC_IARP_E_AggroTrait_D";
+                        property = "comspec_sse_iarpAggroTrait";
+                        control = "Combo";
+                        expression = "if (isServer && {_value isNotEqualTo 'auto'}) then { _this setVariable ['comspec_sse_aggroTrait', _value, true]; };";
+                        defaultValue = "'auto'";
+                        typeName = "STRING";
+                        condition = "objectBrain";
+                        class values {
+                            class Auto { name = "$STR_COMSPEC_IARP_Z_AggroTrait_auto"; value = "auto"; default = 1; };
+                            class None { name = "$STR_COMSPEC_IARP_Z_AggroTrait_none"; value = "none"; };
+                            class Hostile { name = "$STR_COMSPEC_IARP_Z_AggroTrait_hostile"; value = "hostile"; };
+                            class Irritable { name = "$STR_COMSPEC_IARP_Z_AggroTrait_irritable"; value = "irritable"; };
+                            class Drunk { name = "$STR_COMSPEC_IARP_Z_AggroTrait_drunk"; value = "drunk"; };
+                            class Fanatic { name = "$STR_COMSPEC_IARP_Z_AggroTrait_fanatic"; value = "fanatic"; };
+                            class Resentful { name = "$STR_COMSPEC_IARP_Z_AggroTrait_resentful"; value = "resentful"; };
+                            class Proud { name = "$STR_COMSPEC_IARP_Z_AggroTrait_proud"; value = "proud"; };
+                            class Bluff { name = "$STR_COMSPEC_IARP_Z_AggroTrait_bluff"; value = "bluff"; };
+                        };
+                    };
+                    class comspec_sse_iarpAggroDmg {
+                        displayName = "$STR_COMSPEC_IARP_Z_AggroDmg";
+                        tooltip = "$STR_COMSPEC_IARP_E_AggroDmg_D";
+                        property = "comspec_sse_iarpAggroDmg";
+                        control = "Combo";
+                        expression = "if (isServer && {_value >= 0}) then { _this setVariable ['comspec_sse_aggroDmg', _value, true]; };";
+                        defaultValue = "-1";
+                        typeName = "NUMBER";
+                        condition = "objectBrain";
+                        class values {
+                            class Auto { name = "$STR_COMSPEC_IARP_Z_Aggro_auto"; value = -1; default = 1; };
+                            class D0 { name = "$STR_COMSPEC_IARP_Z_AggroDmg_0"; value = 0; };
+                            class D25 { name = "$STR_COMSPEC_IARP_Z_AggroDmg_25"; value = 25; };
+                            class D50 { name = "$STR_COMSPEC_IARP_Z_AggroDmg_50"; value = 50; };
+                            class D75 { name = "$STR_COMSPEC_IARP_Z_AggroDmg_75"; value = 75; };
+                            class D100 { name = "$STR_COMSPEC_IARP_Z_AggroDmg_100"; value = 100; };
+                        };
+                    };
+                    class comspec_sse_iarpAggroLethal {
+                        displayName = "$STR_COMSPEC_IARP_Z_AggroLethal";
+                        tooltip = "$STR_COMSPEC_IARP_E_AggroLethal_D";
+                        property = "comspec_sse_iarpAggroLethal";
+                        control = "Combo";
+                        expression = "if (isServer && {_value >= 0}) then { _this setVariable ['comspec_sse_aggroLethal', _value, true]; };";
+                        defaultValue = "-1";
+                        typeName = "NUMBER";
+                        condition = "objectBrain";
+                        class values {
+                            class Auto { name = "$STR_COMSPEC_IARP_Z_Aggro_auto"; value = -1; default = 1; };
+                            class No { name = "$STR_COMSPEC_IARP_Z_Aggro_no"; value = 0; };
+                            class Yes { name = "$STR_COMSPEC_IARP_Z_Aggro_yes"; value = 1; };
+                        };
                     };
                 };
             };

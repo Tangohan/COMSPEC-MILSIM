@@ -4,6 +4,8 @@
         Demander les papiers (2 s) · Contrôler l'identité (documents présentés) · Fouiller les papiers (6 s vivant,
         4 s corps) · Documents trouvés · Rendre un document · Poser une question (PNJ : questions de légende, 1 s)
       soi (ACE_SelfActions) › Mes papiers : Présenter mes papiers (présenter / remettre) · Refuser · Consulter
+        · Demander les papiers (personne visée) · Répondre à la demande (joueur) ; clic sur « Présenter mes papiers » :
+        fenêtre fn_idP2pUi (plusieurs papiers, destinataire, montrer ou remettre en main)
         · Répondre (question d'un contrôleur en attente : réponses au choix)
       véhicule terrestre (LandVehicle) › Contrôle d'identité : Contrôler les occupants · Faire descendre
     ACE obligatoire (comme tout le SSE) : pas de repli sans ACE.
@@ -35,7 +37,7 @@ private _path = ["ACE_MainActions", "COMSPEC_ID_Root"];
         params ["_t", "_p"];
         ["send", ["begin", [_p, "ask", _t]]] call comspec_sse_fnc_idClient;
         [2, "Papiers, s'il vous plaît…", { params ["_t"]; ["send", ["ask", [player, _t]]] call comspec_sse_fnc_idClient; }, [_t], _t] call comspec_sse_fnc_progressAction;
-    }, { params ["_t", "_p"]; alive _t && {isNull objectParent _t} && {(_p distance _t) <= 3} }],
+    }, { params ["_t", "_p"]; alive _t && {isNull objectParent _t} && {(_p distance _t) <= 3} && {!isPlayer _t || {["on"] call comspec_sse_fnc_idP2pClient}} }],
 
     ["COMSPEC_ID_Check", "Contrôler l'identité", "", {}, {
         params ["_t"];
@@ -71,14 +73,23 @@ private _path = ["ACE_MainActions", "COMSPEC_ID_Root"];
 // --- Soi ---------------------------------------------------------------------------------------------------------
 private _self = ["COMSPEC_ID_Self", "Mes papiers", _icon, {}, {
     (missionNamespace getVariable ["comspec_sse_id_enabled", true])
-        && {((["pending"] call comspec_sse_fnc_idPresentPrompt) isNotEqualTo []) || {([player, 0] call comspec_sse_fnc_idDocsOf) isNotEqualTo []}
+        && {!isNull (["target"] call comspec_sse_fnc_idP2pClient) || {(["pending"] call comspec_sse_fnc_idPresentPrompt) isNotEqualTo []} || {([player, 0] call comspec_sse_fnc_idDocsOf) isNotEqualTo []}
+            || {(["pending"] call comspec_sse_fnc_idP2pClient) isNotEqualTo []}
             || {(missionNamespace getVariable ["comspec_sse_idQuestion", []]) isNotEqualTo []}}
 }] call _new;
 ["CAManBase", 1, ["ACE_SelfActions"], _self] call _addClass;
 {
     ["CAManBase", 1, ["ACE_SelfActions", "COMSPEC_ID_Self"], _x call _new] call _addClass;
 } forEach [
-    ["COMSPEC_ID_Present", "Présenter mes papiers", "", {}, { ([player, 0] call comspec_sse_fnc_idDocsOf) isNotEqualTo [] },
+    // Sans passer par le menu de la personne : « Papiers, s'il vous plaît » à celle que je vise, à portée (aussi en raccourci clavier).
+    ["COMSPEC_ID_P2pAsk", localize "STR_COMSPEC_SSE_P2P_AceAsk", "", { ["ask", []] call comspec_sse_fnc_idP2pClient }, {
+        private _t = ["target"] call comspec_sse_fnc_idP2pClient;
+        !isNull _t && {isNull objectParent player} && {!isPlayer _t || {["on"] call comspec_sse_fnc_idP2pClient}}
+    }],
+    // Demande d'un joueur en attente : la fenêtre (accepter, refuser) se rouvre d'ici si elle a été fermée ou n'a pas pu s'ouvrir.
+    ["COMSPEC_ID_P2pAnswer", localize "STR_COMSPEC_SSE_P2P_AceAnswer", "", { ["answerOpen"] call comspec_sse_fnc_idP2pClient }, { (["pending"] call comspec_sse_fnc_idP2pClient) isNotEqualTo [] }],
+    // Clic sur l'entrée : fenêtre (plusieurs papiers, destinataire, montrer ou remettre). Sous-menu : un seul papier, comme avant.
+    ["COMSPEC_ID_Present", "Présenter mes papiers", "", { ["present", []] call comspec_sse_fnc_idP2pClient }, { ([player, 0] call comspec_sse_fnc_idDocsOf) isNotEqualTo [] },
         { ["present", _this select 0, _this select 1] call comspec_sse_fnc_idActionChildren }],
     ["COMSPEC_ID_Refuse", "Refuser", "", { ["refuse"] call comspec_sse_fnc_idPresentPrompt }, { (["pending"] call comspec_sse_fnc_idPresentPrompt) isNotEqualTo [] }],
     ["COMSPEC_ID_Answer", "Répondre", "\a3\ui_f\data\igui\cfg\simpleTasks\types\talk_ca.paa", {}, {

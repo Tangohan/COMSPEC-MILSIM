@@ -1,3 +1,55 @@
+[h1]COMSPEC ATAK 4.12.0 Washington — postes, droits et journal de la salle TOC, TOC pilotable par script / stations, rights and journal of the TOC room, TOC driven by script[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Postes, droits et journal de la salle TOC[/b] : chaque PC du TOC devient un poste (chef de quart, opérations, renseignement, feux, logistique, transmissions). Seuls le chef de quart et le Zeus changent les écrans et la salle ; les autres joueurs du camp lisent, tiennent un poste et écrivent dans les registres.
+[*] [b]Journal des actions[/b] : chaque changement d'écran, de salle ou de poste est noté avec son auteur. Le chef de quart et le Zeus le lisent dans une fenêtre à copier.
+[*] [b]Verrou de salle[/b] : le chef de quart verrouille la salle le temps d'un briefing. Le verrou se lève tout seul à la relève ou au départ de son auteur.
+[*] [b]Relève[/b] : le sortant propose la relève, l'entrant la signe près du PC et reçoit un résumé (demandes ouvertes, pertes, prochaines lignes de la liste d'exécution).
+[*] [b]Vous pouvez piloter le TOC par script[/b] : les créateurs de mission créent des salles et des écrans, changent les affichages et les textes, verrouillent la salle et suivent ce qui s'y passe, sans téléphone ni Athena.
+[*] [b]Salle mieux gardée[/b] : copie de secours de la sauvegarde, dispositions de salle réutilisables d'une mission à l'autre, export de diagnostic pour le support.
+[*] [b]Couleurs de nuit[/b] : les fenêtres du TOC s'assombrissent quand le soleil est couché (réglage « Thème des écrans TOC »). Les écrans muraux suivront.
+[*] [b]Réglages[/b] : « Droits de la salle TOC » permet de revenir à l'ancien fonctionnement, où tout le camp règle la salle.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Stations, rights and journal of the TOC room[/b]: every TOC PC becomes a station (watch chief, operations, intelligence, fires, logistics, signals). Only the watch chief and Zeus change the screens and the room; the other players of the side read, hold a station and write in the logs.
+[*] [b]Action journal[/b]: every screen, room or station change is noted with its author. The watch chief and Zeus read it in a window you can copy from.
+[*] [b]Room lock[/b]: the watch chief locks the room for the time of a briefing. The lock lifts by itself at the handover or when its author leaves.
+[*] [b]Handover[/b]: the outgoing player offers the handover, the incoming player signs it near the PC and gets a summary (open requests, casualties, next lines of the execution checklist).
+[*] [b]You can drive the TOC by script[/b]: mission makers create rooms and screens, change displays and texts, lock the room and follow what happens in it, with no phone and no Athena.
+[*] [b]A better kept room[/b]: backup copy of the save, room layouts reusable from one mission to the next, diagnostic export for support.
+[*] [b]Night colours[/b]: the TOC windows dim when the sun has set ("TOC screen theme" setting). Wall screens will follow.
+[*] [b]Settings[/b]: "TOC room rights" lets you go back to the previous behaviour, where the whole side sets up the room.
+[/list]
+
+[h1]COMSPEC ATAK 4.11.0 Washington — le TOC fonctionne sans téléphone / the TOC works without a phone[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Toute la force sur le mur[/b] : les écrans du TOC et le PC du poste montrent les joueurs, véhicules, hélicoptères et drones du camp, même si personne n'a de téléphone ATAK.
+[*] [b]Plus de « perdu » à tort[/b] : une unité vivante et vue par le jeu est en direct. L'état d'un téléphone ne compte que pour ce téléphone.
+[*] [b]Messages et ordres sans téléphone[/b] : menu ACE sur soi, « Messages et ordres du TOC ». Vous lisez les messages du poste, vos ordres et les réponses à vos demandes, et vous accusez un ordre d'un clic.
+[*] [b]Pertes[/b] : toute unité du camp tuée est comptée, plus seulement les porteurs d'un téléphone.
+[*] [b]Caméra de casque[/b] : la caméra d'un joueur sans téléphone peut passer sur un écran (réglage du serveur, activé par défaut).
+[*] [b]Réglage « Source des positions du TOC »[/b] : Mixte (par défaut), Jeu ou Réseau ATAK. Choisissez Réseau ATAK pour garder le comportement d'avant.
+[*] [b]Indicatifs, pas pseudos[/b] : le TOC écrit l'indicatif Athena du joueur, sinon son groupe et son rang (« Alpha 1-1 · 2 »). Le pseudo Steam n'apparaît que si le serveur coche « Afficher le pseudo Steam ».
+[*] [b]Salle mieux protégée[/b] : un joueur ne peut plus écrire dans la salle d'un autre camp.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]The whole force on the wall[/b]: TOC screens and the post PC show the side's players, vehicles, helicopters and drones, even if nobody carries an ATAK phone.
+[*] [b]No more wrong “lost”[/b]: a living unit seen by the game is live. A phone's state only matters for that phone.
+[*] [b]Messages and orders without a phone[/b]: ACE self menu, “TOC messages and orders”. You read the post's messages, your orders and the answers to your requests, and you acknowledge an order in one click.
+[*] [b]Casualties[/b]: every unit of the side that is killed is counted, not only phone carriers.
+[*] [b]Helmet camera[/b]: the camera of a player without a phone can go on a screen (server setting, on by default).
+[*] [b]“TOC position source” setting[/b]: Mixed (default), Game or ATAK network. Pick ATAK network to keep the previous behaviour.
+[*] [b]Callsigns, not Steam names[/b]: the TOC writes the player's Athena callsign, otherwise his group and rank in it (“Alpha 1-1 · 2”). The Steam name only shows if the server checks “Show the Steam name”.
+[*] [b]Better protected room[/b]: a player can no longer write into another side's room.
+[/list]
+
 [h1]COMSPEC ATAK 4.9.0 Washington — console du poste TOC refaite, tout le TOC sans téléphone / TOC station console rebuilt, the whole TOC without a phone[/h1]
 
 [h2]Français[/h2]
@@ -54,6 +106,7 @@
 [*] [b]Mire[/b] : un écran sans source affiche une mire de barres de couleur avec son titre et l'heure.
 [*] [b]Aucun signal[/b] : un écran sans données affiche une carte fixe AUCUN SIGNAL au lieu d'un contenu à moitié vide.
 [*] [b]Écrans qui ne clignotent plus[/b] : la vue satellite, les caméras et les écrans à moitié cachés ne s'éteignent plus et ne se rallument plus sans arrêt.
+[*] [b]Vue satellite plus légère[/b] : la vue satellite ne fait plus saccader le jeu, et un réglage « Qualité de la vue satellite » (Désactivée, Basse, Moyenne, Haute) permet de l'alléger encore.
 [*] [b]Zeus[/b] : poser un module TOC en Zeus ne vous ramène plus à la vue de votre personnage.
 [*] [b]Module Écran TOC[/b] : chaque usage pose un nouvel écran ; « Retirer » est un choix à part, jamais proposé d'office.
 [*] [b]Textes des bandeaux[/b] : les lettres ne sont plus étirées ni coupées ; un texte court reste centré, un texte long défile.
@@ -75,6 +128,7 @@
 [*] [b]Test card[/b]: a screen without a source shows a colour-bar test card with its title and the time.
 [*] [b]No signal[/b]: a screen without data shows a steady NO SIGNAL card instead of half-empty content.
 [*] [b]Screens no longer flicker[/b]: the satellite view, cameras and half-hidden screens no longer switch off and on endlessly.
+[*] [b]Lighter satellite view[/b]: the satellite view no longer makes the game stutter, and a "Satellite view quality" setting (Disabled, Low, Medium, High) lets you lighten it further.
 [*] [b]Zeus[/b]: placing a TOC module in Zeus no longer throws you back to your character's view.
 [*] [b]TOC Screen module[/b]: every use places a new screen; "Remove" is a separate choice, never offered by default.
 [*] [b]Strip texts[/b]: letters are no longer stretched or cut; a short text stays centred, a long text scrolls.

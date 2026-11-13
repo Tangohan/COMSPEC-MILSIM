@@ -168,6 +168,13 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            // Demande d'accès à un outil opérateur : au responsable (à décider), puis au membre (décision).
+            \App\Services\Operator\OperatorAccessRequestService::NOTIFY_REQUEST,
+            \App\Services\Operator\OperatorAccessRequestService::NOTIFY_DECISION => (static function () use ($type, $payload, $unread, $at): array {
+                $text = \App\Services\Operator\OperatorAccessRequestService::notificationText($type, $payload, self::fr());
+
+                return ['title' => $text['title'], 'detail' => mb_substr($text['detail'], 0, 400), 'href' => url($text['path']), 'unread' => $unread, 'at' => $at];
+            })(),
             default => [
                 'title' => 'Notification',
                 'detail' => '',

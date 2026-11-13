@@ -69,7 +69,7 @@
     // Relance : groupe d'après la dernière réplique de l'IA (sans dernière réplique : « none »).
     ["more", [
         ["refuse", ["noComply", "refuse", "searchNo", "bribeNo", "cooperateNo", "cuffNo", "offerNo", "noComply.leave", "noComply.halt", "noComply.follow", "noComply.handsup",
-            "noComply.kneel", "noComply.sit", "noComply.comeHere", "noComply.stepBack", "leaveCuffed"]],
+            "noComply.kneel", "noComply.sit", "noComply.comeHere", "noComply.stepBack", "leaveCuffed", "followCuffed"]],
         ["deny", ["confrontDeny", "confrontInnocent", "confrontAngry", "weaponsNo", "drugs", "sensitive"]],
         ["nothing", ["intelNo", "dunno", "photoNo", "offLimits", "otWorld", "whyUs", "reward"]],
         ["intel", ["intelVague", "intelYes", "intelFull", "intelAgain", "heardShots", "confess", "confessTruth", "confessVague", "confessed"]],
@@ -444,7 +444,14 @@
             ["*", [["Pourquoi je m'arrêterais ? Je n'ai rien fait.", "Why would I stop? I haven't done anything."], ["J'ai le droit de marcher.", "I have the right to walk."], ["Je suis pressé.", "I'm in a hurry."],
                 ["(Il ne s'arrête pas.)", "(He doesn't stop.)"], ["Laissez-moi passer.", "Let me through."], ["Je n'ai pas le temps.", "I don't have time."]]]
         ]],
+        ["followCuffed", [
+            ["*", [["Avec les menottes ? Emmenez-moi, alors.", "With the cuffs on? Take me, then."], ["(Il montre ses poignets attachés.) Je ne peux pas marcher comme ça.", "(He shows his bound wrists.) I can't walk like this."],
+                ["Tenez-moi par le bras, je vous suis.", "Hold my arm and I'll come."], ["Menotté, je n'irai pas loin tout seul.", "Cuffed, I won't get far on my own."],
+                ["C'est vous qui me conduisez, non ?", "You're the one leading me, aren't you?"], ["(Il attend qu'on l'escorte.)", "(He waits to be escorted.)"]]]
+        ]],
         ["noComply.follow", [
+            ["effraye", [["Non… non, je ne vais nulle part avec vous.", "No… no, I'm not going anywhere with you."], ["(Il recule d'un pas.) Laissez-moi ici, s'il vous plaît.", "(He takes a step back.) Leave me here, please."],
+                ["Pour m'emmener où ? Non, j'ai trop peur.", "To take me where? No, I'm too scared."], ["Je ne bouge pas. Je vous en prie.", "I'm not moving. I beg you."]]],
             ["*", [["Je ne vous suis nulle part.", "I'm not following you anywhere."], ["Où ça ? Pourquoi ?", "Where? Why?"], ["Je ne bouge pas d'ici.", "I'm not moving from here."],
                 ["(Il reste planté là.)", "(He stays rooted there.)"], ["Pas sans savoir pourquoi.", "Not without knowing why."], ["Non. Dites-moi d'abord ce qui se passe.", "No. Tell me first what's going on."]]]
         ]],

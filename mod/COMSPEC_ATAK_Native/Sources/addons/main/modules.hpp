@@ -834,6 +834,7 @@ class COMSPEC_ATAK_Module_TocScreen: COMSPEC_ATAK_Module_DataBase {
                 class V13 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_MOSAIC"; value = "MOSAIC"; };
                 class V14 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_TEXT"; value = "TEXT"; };
                 class V15 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_BROADCAST"; value = "BROADCAST"; };
+                class V16 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_RADIO"; value = "RADIO"; };
             };
         };
         class Toc {
@@ -1042,6 +1043,46 @@ class COMSPEC_ATAK_Module_TocManager: COMSPEC_ATAK_Module_DataBase {
     function = "comspec_atak_native_fnc_moduleTocManager";
     class ModuleDescription {
         description = "$STR_COMSPEC_ATAK_CFG_TOCMGR_DESC";
+    };
+};
+// Activité radio (fn_moduleTocRadio, fn_tocRadio, fn_tocRadioUi) : au Zeus, ouvre le tableau « qui parle, sur quelle
+// fréquence » ; dans Eden, pose la liste de veille d'un camp au lancement de la mission.
+class COMSPEC_ATAK_Module_TocRadio: COMSPEC_ATAK_Module_DataBase {
+    scope = 2;
+    scopeCurator = 2;
+    category = "COMSPEC_Cat_Atak";
+    displayName = "$STR_COMSPEC_ATAK_CFG_TOCRADIO_NAME";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_net.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_net.paa";
+    function = "comspec_atak_native_fnc_moduleTocRadio";
+    class Attributes {
+        class RadioSide {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCRADIO_S_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCRADIO_S_TIP";
+            property = "COMSPEC_ATAK_Module_TocRadio_Side";
+            control = "Combo";
+            expression = "_this setVariable ['RadioSide',_value,true];";
+            defaultValue = "'WEST'";
+            typeName = "STRING";
+            class values {
+                class W { name = "BLUFOR"; value = "WEST"; default = 1; };
+                class E { name = "OPFOR"; value = "EAST"; };
+                class G { name = "$STR_COMSPEC_ATAK_CFG_TOCRADIO_S_GUER"; value = "GUER"; };
+                class C { name = "$STR_COMSPEC_ATAK_CFG_TOCRADIO_S_CIV"; value = "CIV"; };
+            };
+        };
+        class RadioNets {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCRADIO_N_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCRADIO_N_TIP";
+            property = "COMSPEC_ATAK_Module_TocRadio_Nets";
+            control = "Edit";
+            expression = "_this setVariable ['RadioNets',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
+    };
+    class ModuleDescription {
+        description = "$STR_COMSPEC_ATAK_CFG_TOCRADIO_DESC";
     };
 };
 // Poste opérateur (fn_moduleTocPc, fn_tocPc) : bureau, chaise, téléphone de table et poste PC fixe, prêt à servir.

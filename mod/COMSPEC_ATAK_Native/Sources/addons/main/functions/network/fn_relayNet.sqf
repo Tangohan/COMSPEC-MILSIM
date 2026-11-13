@@ -351,6 +351,65 @@ switch (_act) do {
         (["relayOnly"] call comspec_atak_native_fnc_netCond)
             || {missionNamespace getVariable ["COMSPEC_ATAK_RelayOnly", false]}
             || {missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]}
+            || {["gateOn"] call comspec_atak_native_fnc_relayNet}
+    };
+    // Règle « pas de relais, pas de réseau MPU / radio » : le seul endroit où elle est décidée. Lue par le graphe du maillage
+    // (fn_meshGraph "view" : plus de maillage d'équipe sans relais), l'ancien maillage de l'app (fn_waveRelayAction), la liaison du
+    // téléphone (fn_linkQuality, par "only"), la voix relayée (fn_mpuVoice), l'app Wave Relay, le graphe du camp et le TOC.
+    // Ne concerne que le réseau du jeu : la liaison internet vers Athena (app Athena, COMSPEC Link) n'en dépend pas, ni la voix
+    // directe, ni une radio ACRE2 / TFAR utilisée hors du maillage.
+    case "gateOn": {
+        ((missionNamespace getVariable ["comspec_atak_native_relay_gate", true]) isEqualTo true) && {(["profile"] call comspec_atak_native_fnc_netCond) isNotEqualTo 1}
+    };
+    case "gateEval": {
+        // Sans effet (table testée) : [règle active, [[nom, en service, état, distance m, portée m]...], accroché à un relais en service]
+        // -> [réseau possible, code ("free" | "ok" | "none" | "down" | "range" | "chain"), raison, remède]
+        _arg params [["_on", true], ["_relays", []], ["_attached", false]];
+        if (!_on) exitWith { [true, "free", "", ""] };
+        if (_relays isEqualTo []) exitWith { [false, "none", "Aucun relais sur le serveur", "Posez un relais : pylône, antenne, kit ou véhicule relais."] };
+        private _byDist = { private _b = _this select 0; { if ((_x select 3) < (_b select 3)) then { _b = _x; }; } forEach _this; _b };
+        private _up = _relays select { _x select 1 };
+        if (_up isEqualTo []) exitWith {
+            (_relays call _byDist) params ["_n", "", "_st"];
+            [false, "down", format ["Relais hors service : %1 %2", _n, [_st, "inactif"] select (_st isEqualTo "")], "Réparez ou rallumez un relais à portée."]
+        };
+        if (_attached) exitWith { [true, "ok", "", ""] };
+        (_up call _byDist) params ["_n", "", "", "_d", "_r"];
+        private _km = { params ["_m"]; [format ["%1 m", round _m], format ["%1 km", (_m / 1000) toFixed 1]] select (_m >= 1000) };
+        if (_d > _r) exitWith { [false, "range", format ["Relais hors de portée : %1 à %2, portée %3", _n, [_d] call _km, [_r] call _km], "Posez ou réparez un relais à portée, ou rapprochez-vous."] };
+        [false, "chain", format ["Chaîne coupée vers %1 : aucun chemin jusqu'à ce relais", _n], "Montez sur un point haut, ou rapprochez-vous d'un équipier relié au relais."]
+    };
+    case "gate": {
+        // ["gate", [camp ("" : le mien), sans regarder mon accrochage]] -> même tableau que "gateEval". Cache 2 s pour mon camp.
+        private _a = [[], _arg] select (_arg isEqualType []);
+        _a params [["_gSide", ""], ["_skip", false]];
+        if (!(_gSide isEqualType "")) then { _gSide = str _gSide; };
+        private _mine = _gSide isEqualTo "";
+        private _gc = uiNamespace getVariable ["COMSPEC_ATAK_GateCache", []];
+        if (_mine && {!_skip} && {(count _gc) isEqualTo 2} && {diag_tickTime - (_gc select 0) < 2}) exitWith { _gc select 1 };
+        private _on = ["gateOn"] call comspec_atak_native_fnc_relayNet;
+        if (!_on) exitWith { [true, "free", "", ""] };
+        private _here = if (hasInterface && {!isNull player}) then { getPosASL player } else { [0, 0, 0] };
+        private _facts = ((if (_mine) then { ["list"] call comspec_atak_native_fnc_relayNet } else { ["list", [_gSide]] call comspec_atak_native_fnc_relayNet }) select { (_x select 3) isNotEqualTo "mpu5" }) apply {
+            [_x select 2, (_x select 6) isEqualTo true, _x select 7, _here distance2D (_x select 1), _x select 4]
+        };
+        private _att = !_mine || {_skip};
+        if (!_att) then {
+            private _ms = ["status"] call comspec_atak_native_fnc_mpuLink;
+            _att = ((_ms getOrDefault ["ok", false]) && {(_ms getOrDefault ["kind", ""]) isEqualTo "mpu"}) || {(["best"] call comspec_atak_native_fnc_relayNet) isNotEqualTo []};
+        };
+        private _res = ["gateEval", [true, _facts, _att]] call comspec_atak_native_fnc_relayNet;
+        if (_mine && {!_skip}) then { uiNamespace setVariable ["COMSPEC_ATAK_GateCache", [diag_tickTime, _res]]; };
+        _res
+    };
+    case "deadZone": {
+        // Zone sans réseau la plus proche, d'après la dernière couverture calculée : [distance m, cap °] ou [].
+        private _cv = missionNamespace getVariable ["COMSPEC_ATAK_Coverage", []];
+        if ((count _cv) < 8) exitWith { [] };
+        private _near = [1e9, 0];
+        { _x params ["_p", "_mb"]; if (_mb <= 0) then { private _dd = player distance2D _p; if (_dd < (_near select 0)) then { _near = [_dd, player getDir _p]; }; }; } forEach (_cv select 2);
+        if ((_near select 0) >= 1e9) exitWith { [] };
+        _near
     };
     case "required": {
         (["only"] call comspec_atak_native_fnc_relayNet) || {missionNamespace getVariable ["COMSPEC_ATAK_RelaysRequired", false]}
@@ -368,8 +427,10 @@ switch (_act) do {
         !isNull _o
     };
     case "info": {
-        // [relais] : fiche du relais en notification (action ACE « État du relais »).
+        // [relais] : action ACE « Voir l'état du relais ». Avec un téléphone : la fiche du relais s'ouvre dans l'app Wave Relay
+        // (fn_waveRelaySheet "relay" : alimentation, structure, charge, qualité, canal, liaison). Sans téléphone : résumé d'ACE.
         private _o = _arg;
+        if ([player] call comspec_atak_native_fnc_hasDevice) exitWith { ["open", ["relay", _o]] call comspec_atak_native_fnc_waveRelaySheet; };
         private _e = ((["list", "force"] call comspec_atak_native_fnc_relayNet) select { (_x select 0) isEqualTo _o }) param [0, []];
         if (_e isEqualTo []) exitWith { ["INFO", "Relais d'un autre réseau : aucune information", 3, 20] call comspec_atak_native_fnc_notify; };
         _e params ["", "", "_n", "", "_r", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "_root", "", "_fq", "_auto", "_loss", "_hp", "_hl"];

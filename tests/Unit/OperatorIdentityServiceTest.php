@@ -5,18 +5,15 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Repositories\OperatorHubRepository;
-use App\Repositories\SseCoverExportRepository;
 use App\Services\Operator\OperatorIdentityService;
 use App\Services\Sse\MemberIdentityPapersService;
-use App\Services\Sse\SseCoverExportService;
-use App\Services\Sse\SseCoverSyncService;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\SseIdentitySqlite;
 
 /**
- * Mon identité (outils opérateur) : complétude d'une identité, propriété (ni autre membre, ni autre communauté),
- * transitions d'état des papiers, couverture active, retouche et aller-retour du fichier, révocation, journal.
+ * Mes identités (outils opérateur) : complétude d'une identité, propriété (ni autre membre, ni autre communauté),
+ * transitions d'état des papiers, type et histoire d'une identité, synthèse de l'accueil, journal.
  */
 final class OperatorIdentityServiceTest extends TestCase
 {
@@ -56,9 +53,7 @@ final class OperatorIdentityServiceTest extends TestCase
 
     private function service(): OperatorIdentityService
     {
-        $exports = new SseCoverExportRepository();
-
-        return new OperatorIdentityService(null, null, null, null, null, null, $exports, new SseCoverExportService($exports, null, null, $this->audit(), 'test-key'), $this->audit());
+        return new OperatorIdentityService(null, null, null, null, null, null, $this->audit());
     }
 
     private function papers(): MemberIdentityPapersService
@@ -250,130 +245,71 @@ final class OperatorIdentityServiceTest extends TestCase
 
     // ------------------------------------------------------------------ Couvertures
 
-    public function testCoverActiveSwitchEditAndExportRoundTrip(): void
+    // ------------------------------------------------------------------ Type, histoire, synthèse
+
+    public function testTypeIsOnlyCharacterOrBorrowedAndStoryNeedsItsStep(): void
     {
         $s = $this->service();
-        $a = $s->generateCover(1, 10, 'random', 'ALT', 'F', 'fr', null, $this->now);
-        self::assertTrue($a['ok'], (string) ($a['error'] ?? ''));
-        $b = $s->generateCover(1, 10, 'random', 'ALT', 'M', 'fr', null, $this->now);
-        self::assertTrue($b['ok']);
-
-        $covers = array_column($s->covers(1, 10, $this->now), null, 'id');
-        self::assertTrue($covers[$a['id']]['active'], 'la première couverture devient active');
-        self::assertFalse($covers[$b['id']]['active']);
-        self::assertSame('never', $covers[$a['id']]['sync']);
-
-        // Bascule : une seule active.
-        self::assertTrue($s->activateCover(1, 10, (int) $b['id'], $this->now)['ok']);
-        $covers = array_column($s->covers(1, 10, $this->now), null, 'id');
-        self::assertFalse($covers[$a['id']]['active']);
-        self::assertTrue($covers[$b['id']]['active']);
-        self::assertSame((int) $b['id'], $s->covers(1, 10, $this->now)[0]['id'], 'l’active en tête');
-
-        // Téléchargement, puis retouche : le fichier reste valable, sous la même référence, et une mise à jour est signalée.
-        $dl = $s->downloadCover(1, 10, (int) $b['id'], $this->now);
-        self::assertNotNull($dl);
-        self::assertSame('synced', array_column($s->covers(1, 10, $this->now), 'sync', 'id')[$b['id']]);
-        $edit = $s->editCover(1, 10, (int) $b['id'], ['profession' => 'Photographe de presse', 'history' => "A grandi à Kavala.\nCouvre la région depuis deux ans."], $this->now->modify('+1 hour'));
-        self::assertTrue($edit['ok'], (string) ($edit['error'] ?? ''));
-        $after = array_column($s->covers(1, 10, $this->now->modify('+1 hour')), null, 'id')[$b['id']];
-        self::assertSame('Photographe de presse', $after['profession']);
-        self::assertSame(['A grandi à Kavala.', 'Couvre la région depuis deux ans.'], $after['history']);
-        self::assertSame('update', $after['sync']);
-        self::assertSame($covers[$b['id']]['name'], $after['name'], 'le nom ne change pas');
-        self::assertSame($covers[$b['id']]['expires_at'], $after['expires_at'], 'la date d’expiration ne bouge pas');
-
-        $file = $s->downloadCover(1, 10, (int) $b['id'], $this->now->modify('+2 hours'));
-        self::assertNotNull($file);
-        $parsed = SseCoverExportService::parse($file['json'], $this->now);
-        self::assertTrue($parsed['ok'], 'aller-retour : le fichier retouché est relu par le contrat commun au site et au mod');
-        self::assertSame('Photographe de presse', $parsed['cover']['profession']);
-        self::assertSame($b['ref'], $parsed['file']['ref']);
-        $export = new SseCoverExportService(new SseCoverExportRepository(), null, null, $this->audit(), 'test-key');
-        self::assertTrue($export->verifySignature($parsed['file']), 'signature du serveur valable après retouche');
-        // Le téléphone reçoit le même contenu.
-        $sync = (new SseCoverSyncService(new SseCoverExportRepository(), $export))->filesFor(1, 10, [$b['ref']], $this->now);
-        self::assertSame('Photographe de presse', $sync['files'][0]['cover']['profession']);
-
-        // Refus : texte trop long, caractères de contrôle, trop de lignes.
-        self::assertFalse($s->editCover(1, 10, (int) $b['id'], ['profession' => str_repeat('x', 121)])['ok']);
-        self::assertFalse($s->editCover(1, 10, (int) $b['id'], ['city' => "Kav\x07ala"])['ok']);
-        self::assertFalse($s->editCover(1, 10, (int) $b['id'], ['history' => implode("\n", array_fill(0, 9, 'ligne'))])['ok']);
-    }
-
-    public function testCoversAreNeverReachableByAnotherMemberOrCommunity(): void
-    {
-        $s = $this->service();
-        $mine = $s->generateCover(1, 10, 'random', 'ALT', 'F', 'fr', null, $this->now);
-        self::assertTrue($mine['ok']);
-        $id = (int) $mine['id'];
-        foreach ([[1, 11], [2, 10], [2, 20]] as [$tenant, $user]) {
-            self::assertSame([], $s->covers($tenant, $user, $this->now));
-            self::assertNull($s->downloadCover($tenant, $user, $id, $this->now));
-            self::assertFalse($s->editCover($tenant, $user, $id, ['profession' => 'Espion'])['ok']);
-            self::assertFalse($s->activateCover($tenant, $user, $id)['ok']);
-            self::assertFalse($s->duplicateCover($tenant, $user, $id, $this->now)['ok']);
-            self::assertFalse($s->revokeCover($tenant, $user, $id)['ok']);
+        $primary = (int) $s->saveIdentity(1, 10, null, $this->jake() + ['story' => 'Né à Kavala.'], $this->now)['id'];
+        $alias = (int) $s->saveIdentity(1, 10, null, $this->jake(['last_name' => 'Kostas', 'first_name' => 'Nikos']), $this->now)['id'];
+        // Identité montée par un responsable (falsifiée) : le membre la voit comme une identité d'emprunt, rien de plus.
+        $forged = $this->papers()->createAlias(1, 10, ['kind' => 'cover', 'last_name' => 'Petrov', 'first_name' => 'Ivan'], true, 99);
+        $this->pdo->exec("UPDATE sse_identities SET kind = 'forged' WHERE id = " . (int) $forged['id']);
+        $list = $s->identities(1, 10);
+        self::assertSame(['personnage', 'emprunt', 'emprunt'], array_column($list, 'type'));
+        self::assertSame(['Personnage', 'D’emprunt', 'D’emprunt'], array_column($list, 'type_label'));
+        foreach ($list as $i) {
+            self::assertArrayNotHasKey('kind', $i, 'jamais la nature exacte');
+            self::assertArrayNotHasKey('kind_label', $i);
         }
-        self::assertSame('valid', $s->covers(1, 10, $this->now)[0]['status']);
-    }
+        // Étape 4450 pas passée : pas de champ histoire, rien n'est écrit, aucune erreur.
+        self::assertFalse($s->storyAvailable());
+        self::assertSame('', $list[0]['story']);
+        self::assertNull($list[0]['game_synced_at']);
 
-    public function testRevokedCoverIsNoLongerServedAndManagerCoversAreReadOnly(): void
-    {
+        (require dirname(__DIR__, 2) . '/bootstrap/sse_identities_unified_migration.php')($this->pdo);
         $s = $this->service();
-        $exports = new SseCoverExportRepository();
-        $export = new SseCoverExportService($exports, null, null, $this->audit(), 'test-key');
-        $sync = new SseCoverSyncService($exports, $export);
-        $mine = $s->generateCover(1, 10, 'random', 'ALT', 'F', 'fr', null, $this->now);
-        $byManager = $export->generate(1, 10, 99, 'ALT', 'M', 'fr', null, true, $this->now);
-        self::assertTrue($byManager['ok']);
-
-        $view = array_column($s->covers(1, 10, $this->now), null, 'id');
-        self::assertTrue($view[$byManager['id']]['by_manager']);
-        self::assertFalse($view[$byManager['id']]['editable']);
-        self::assertFalse($s->editCover(1, 10, (int) $byManager['id'], ['profession' => 'Autre'])['ok'], 'préparée par un responsable : lecture seule');
-
-        self::assertCount(2, $sync->listFor(1, 10, $this->now));
-        self::assertTrue($s->revokeCover(1, 10, (int) $mine['id'], $this->now)['ok']);
-        $view = array_column($s->covers(1, 10, $this->now), null, 'id');
-        self::assertSame('revoked', $view[$mine['id']]['status']);
-        self::assertFalse($view[$mine['id']]['active']);
-        self::assertNull($s->downloadCover(1, 10, (int) $mine['id'], $this->now), 'site : plus téléchargeable');
-        self::assertSame([$byManager['ref']], array_column($sync->listFor(1, 10, $this->now), 'ref'), 'téléphone : absente de la liste');
-        self::assertSame('not_found', $sync->filesFor(1, 10, [$mine['ref']], $this->now)['errors'][0]['error']);
-        self::assertFalse($s->activateCover(1, 10, (int) $mine['id'], $this->now)['ok']);
-        // La révocation d'un membre ne touche pas les couvertures d'un autre.
-        self::assertSame([], OperatorHubRepository::revokedCoverIds(1, 11));
+        self::assertTrue($s->storyAvailable());
+        self::assertTrue($s->saveIdentity(1, 10, $primary, $this->jake() + ['story' => "Né à Kavala.\nMécanicien."], $this->now)['ok']);
+        self::assertSame("Né à Kavala.\nMécanicien.", $s->identities(1, 10)[0]['story']);
+        // Clé absente : histoire inchangée ; histoire trop longue : refusée.
+        self::assertTrue($s->saveIdentity(1, 10, $primary, $this->jake(), $this->now)['ok']);
+        self::assertSame("Né à Kavala.\nMécanicien.", $s->identities(1, 10)[0]['story']);
+        self::assertFalse($s->saveIdentity(1, 10, $primary, $this->jake() + ['story' => str_repeat('a', OperatorIdentityService::STORY_MAX + 1)], $this->now)['ok']);
+        // L'histoire d'une identité ne s'écrit pas par un autre membre ni depuis une autre communauté.
+        self::assertFalse($s->saveIdentity(1, 11, $alias, $this->jake() + ['story' => 'Volée'], $this->now)['ok']);
+        self::assertFalse($s->saveIdentity(2, 10, $alias, $this->jake() + ['story' => 'Volée'], $this->now)['ok']);
+        self::assertSame(1, (int) $this->pdo->query('SELECT COUNT(*) FROM sse_identity_stories')->fetchColumn());
     }
 
-    public function testDuplicateCountsInTheDailyLimitAndSummaryFeedsTheHub(): void
+    public function testSummaryFeedsTheHubAndEveryWriteIsLogged(): void
     {
         $s = $this->service();
         $primary = (int) $s->saveIdentity(1, 10, null, $this->jake(), $this->now)['id'];
-        $first = $s->generateCover(1, 10, 'random', 'ALT', 'F', 'fr', null, $this->now);
-        $copy = $s->duplicateCover(1, 10, (int) $first['id'], $this->now);
-        self::assertTrue($copy['ok'], (string) ($copy['error'] ?? ''));
-        self::assertNotSame($first['id'], $copy['id']);
-        self::assertSame(1, $s->coverQuota(1, 10, $this->now));
-        self::assertTrue($s->duplicateCover(1, 10, (int) $first['id'], $this->now)['ok']);
-        self::assertFalse($s->duplicateCover(1, 10, (int) $first['id'], $this->now)['ok'], 'limite sur 24 heures');
-        self::assertFalse($s->generateCover(1, 10, 'random', 'ALT', 'F', 'fr', null, $this->now)['ok']);
-
+        $s->saveIdentity(1, 10, null, $this->jake(['last_name' => 'Kostas', 'first_name' => 'Nikos']), $this->now);
         $s->requestDocument(1, 10, $primary, 'id_card', 'ALT');
         $sum = $s->summary(1, 10);
         self::assertTrue($sum['has_primary']);
         self::assertSame(1, $sum['identity_missing']);
+        self::assertSame(2, $sum['identities']);
+        self::assertSame('Jake GYLLEN', $sum['active_name']);
         self::assertSame(1, $sum['papers_pending']);
         self::assertSame(0, $sum['papers_valid']);
-        self::assertSame(3, $sum['covers']);
-        self::assertNotNull($sum['cover_active']);
-        self::assertSame(['identity_missing' => 0, 'has_primary' => false, 'papers_valid' => 0, 'papers_attention' => 0, 'papers_pending' => 0, 'cover_active' => null, 'covers' => 0], $s->summary(1, 11));
+        self::assertSame(['identity_missing' => 0, 'has_primary' => false, 'identities' => 0, 'active_name' => null, 'papers_valid' => 0, 'papers_attention' => 0, 'papers_pending' => 0], $s->summary(1, 11));
+
+        // Papiers habituels que l'identité n'a pas encore : celui déjà demandé n'est plus proposé.
+        $countries = [];
+        foreach ($s->countries(1) as $c) {
+            $countries[(string) $c['code']] = $c;
+        }
+        $missing = OperatorIdentityService::missingPapers($s->identities(1, 10)[0], $s->documents(1, 10), $countries);
+        self::assertNotContains('id_card', array_column($missing, 'type'));
 
         // Chaque écriture est journalisée au nom du membre.
         foreach ($this->audit as $e) {
             self::assertSame(1, $e['tenant_id']);
         }
-        self::assertContains('op_identity.cover_duplicate', array_column($this->audit, 'action'));
+        self::assertContains('op_identity.identity_create', array_column($this->audit, 'action'));
         self::assertContains('op_identity.document_request', array_column($this->audit, 'action'));
     }
 }

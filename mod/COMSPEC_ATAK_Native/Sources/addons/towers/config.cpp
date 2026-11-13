@@ -171,5 +171,6 @@ class Extended_PreInit_EventHandlers {
 };
 class Extended_PostInit_EventHandlers {
     class comspec_atak_native_infra { init="['postInit'] call comspec_atak_native_fnc_infra"; };
+    class comspec_atak_native_cams { serverInit="{ [_x] call comspec_atak_native_fnc_camProp; } forEach (allMissionObjects 'COMSPEC_ATAK_Cam_Base')"; };
     class comspec_atak_native_towers { clientInit="['init'] call comspec_atak_native_fnc_relayLed; [] call comspec_atak_native_fnc_camLed;"; };
 };

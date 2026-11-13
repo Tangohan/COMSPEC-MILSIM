@@ -16,6 +16,7 @@ declare(strict_types=1);
  */
 
 use App\Services\Effectifs\ElevationApprovalService;
+use App\Services\Operator\OperatorHubCatalog;
 use App\Support\OrganizationRoleLabels;
 
 $requests = is_array($elevationRequests ?? null) ? $elevationRequests : [];
@@ -348,13 +349,34 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
         </div>
 
         <?php if ($permissions !== []): ?>
+        <?php
+        // Droits demandés en tête, cochés d'avance et signalés ; le responsable décoche ou ajoute avant de décider.
+        $panelPermissions = $permissions;
+        usort($panelPermissions, static fn (array $a, array $b): int => in_array((int) ($b['id'] ?? 0), $proposedPermissionIds, true) <=> in_array((int) ($a['id'] ?? 0), $proposedPermissionIds, true));
+        ?>
         <fieldset class="eff-elev-mode">
             <legend>Droits d’accès spécifiques à accorder</legend>
-            <?php foreach ($permissions as $permission): ?>
-                <?php $permissionId = (int) ($permission['id'] ?? 0); if ($permissionId < 1) continue; ?>
-                <label class="eff-elev-mode__option">
-                    <input type="checkbox" name="proposed_permission_ids[]" value="<?= $permissionId ?>" <?= in_array($permissionId, $proposedPermissionIds, true) ? 'checked' : '' ?>>
-                    <span><strong><?= htmlspecialchars((string) ($permission['name'] ?? $permission['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong><em><?= htmlspecialchars((string) ($permission['module'] ?? ''), ENT_QUOTES, 'UTF-8') ?></em></span>
+            <?php if ($proposedPermissionIds !== []): ?>
+                <p class="eff-elev-panel__action-help">Les droits demandés sont cochés d’avance. Décochez pour n’en accorder qu’une partie, cochez-en d’autres pour en ajouter.</p>
+            <?php endif; ?>
+            <?php foreach ($panelPermissions as $permission): ?>
+                <?php
+                $permissionId = (int) ($permission['id'] ?? 0);
+                if ($permissionId < 1) continue;
+                $permissionSlug = (string) ($permission['slug'] ?? '');
+                $permissionAsked = in_array($permissionId, $proposedPermissionIds, true);
+                $permissionClear = OperatorHubCatalog::PERMISSION_LABELS[$permissionSlug] ?? '';
+                $permissionHelp = OperatorHubCatalog::PERMISSION_HELP[$permissionSlug] ?? '';
+                ?>
+                <label class="eff-elev-mode__option<?= $permissionAsked ? ' is-requested' : '' ?>">
+                    <input type="checkbox" name="proposed_permission_ids[]" value="<?= $permissionId ?>" <?= $permissionAsked ? 'checked' : '' ?>>
+                    <span>
+                        <strong><?= htmlspecialchars($permissionClear !== '' ? $permissionClear : (string) ($permission['name'] ?? $permissionSlug), ENT_QUOTES, 'UTF-8') ?></strong>
+                        <em><?= htmlspecialchars($permissionHelp !== '' ? $permissionHelp : (string) ($permission['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></em>
+                        <?php if ($permissionAsked): ?>
+                            <em class="eff-elev-mode__asked">Demandé le <?= htmlspecialchars($createdFmt, ENT_QUOTES, 'UTF-8') ?><?= $note !== '' ? ' : ' . htmlspecialchars($note, ENT_QUOTES, 'UTF-8') : '' ?></em>
+                        <?php endif; ?>
+                    </span>
                 </label>
             <?php endforeach; ?>
         </fieldset>
@@ -424,7 +446,7 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
         </div>
 
         <div class="eff-elev-panel__note-field">
-            <label for="elev-note-<?= $id ?>">Note de traitement (optionnel)</label>
+            <label for="elev-note-<?= $id ?>">Note de traitement ou motif du refus (optionnel)</label>
             <input type="text" id="elev-note-<?= $id ?>" name="resolution_note" maxlength="500" placeholder="Visible par le demandeur et la personne concernée" class="eff-elev-select">
         </div>
 

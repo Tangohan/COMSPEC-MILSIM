@@ -30,6 +30,22 @@ par le test). Écrans muraux : pixels virtuels 1600 x 900 (faces 4:1 : 1600 x 40
 
 Contraste vérifié : tout texte ≥ 4,5:1 sur `bg0`, `bg1`, `bg2`, `redDim`, sur les pastilles et les plaques de carte.
 
+## Jeu de couleurs « nuit » (4.12.0)
+
+Table `_tokensNight` de `fn_tocTheme.sqf` : les mêmes noms de jetons, pour la nuit et la faible lumière. Fonds plus
+noirs, textes et couleurs assombris, mêmes contrastes minimaux que le jour (test `AtakTocThemeNightTest`). Aucun jeton
+du jour n'est changé, et sans variante demandée tout rend les couleurs du jour.
+
+| Appel | Rend |
+|---|---|
+| `["variant"] call comspec_atak_native_fnc_tocTheme` | `"jour"` ou `"nuit"` selon le réglage « Thème des écrans TOC » (automatique : nuit quand le soleil est couché) |
+| `["rgba", [jeton, alpha, "auto"]]` | couleur du jeton dans la variante du joueur (`"jour"`, `"nuit"` ou `"auto"`) |
+| `["hex", [jeton, "auto"]]`, `["ink", [texte, "auto"]]` | idem pour `#rrggbb` et pour un texte structuré |
+| `["tokens", "nuit"]` | table jeton vers `#rrggbb` |
+
+Pour adopter le thème dans un écran ou une console : ajouter `"auto"` aux appels `rgba`, `hex` et `ink`, et redessiner
+quand `["variant"]` change. À la 4.12.0 seules les fenêtres du journal, du diagnostic et des relèves le font.
+
 ## Texte
 
 Libellés en Roboto Condensed du jeu (`RobotoCondensed`, `RobotoCondensedBold` : vrai gras), données (heures, grilles,
@@ -76,6 +92,9 @@ dalle ; 16:9 sans indication). Table `_formats` de `fn_tocScreen.sqf` (`["format
 | au-delà (16:1) | `LED` | 4096 x 256 (2048 x 128 si elle n'est pas chargée) | `TEXT` |
 
 Une texture procédurale n'est acceptée qu'en puissances de 2 : un bandeau de 12:1 serait tassé ou étiré, d'où le 16:1.
+Affichage `RADIO` (activité radio, `fn_tocRadioUi` « wall ») : régions `kpi`, `live` (émission en cours, indicatif et
+fréquence en grand), `head`, `sub`, `rule`, `cols`, `area` dans `_walls` ; colonnes `RADIO` dans `_cols`. Audit :
+`docs/audit/2026-11-radio-ptt.md`.
 Colonnes `COLA` à `COLF` : 800 x 900 pixels virtuels, régions dans `_walls`, ni en-tête ni pied.
 
 | Colonne | Contenu | Régions (`_walls`) | Colonnes (`_cols`) |

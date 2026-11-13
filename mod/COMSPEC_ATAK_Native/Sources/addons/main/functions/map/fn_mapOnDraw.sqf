@@ -69,29 +69,21 @@ private _lblStyle = profileNamespace getVariable ["COMSPEC_ATAK_LabelStyle", "FU
 private _lblOn = _labels && {_lblStyle isNotEqualTo "NONE"};
 // Volet CONFIGURATION de la carte (Étiquettes) : contacts ENI et numéros de grille masquables, comme les indicatifs.
 private _eniOn = profileNamespace getVariable ["COMSPEC_ATAK_LblEni", true];
-// Symboles proportionnels à la taille de l'écran de l'ATAK (mini, porté, plein écran, portrait ou paysage) ;
-// textes proportionnels aussi mais jamais sous une taille lisible.
-private _kRaw = ((ctrlPosition _map) select 3) / (safeZoneH * 0.7);
-private _k = (_kRaw max 0.35) min 1.35;
+// Tailles des symboles (fn_mapIconScale) : facteur de vue de l'écran de l'ATAK (mini, porté, plein écran) et réglages du
+// joueur, relus à chaque image, les mêmes en main (grand) et en miniature ; _tk suit la réglette pour les repères
+// d'outil (1 au réglage par défaut) ; _mk : marqueurs de la mission (fn_mapGameMarkers, fn_mapMarkerText).
+(["frame", _map] call comspec_atak_native_fnc_mapIconScale) params ["_k", "_is", "_mk", "_tk", "_kRaw", "_allyK", "_contactK"];
 // Textes : plancher relevé de 0,8 à 0,95 (petite carte du téléphone porté : étiquettes illisibles sinon).
 private _kt = (_kRaw max 0.95) min 1.25;
 // Étiquettes : blanc cerné de noir (ombre 2), lisible sur tous les fonds de carte.
 private _clear = "#(argb,8,8,3)color(0,0,0,0)";
-// Réglages > Carte : taille des textes (indicatifs, grilles, libellés) et des symboles. Défaut 1.25 (plus grand qu'avant).
+// Réglages > Carte : taille des textes (indicatifs, grilles, libellés). Défaut 1.25 (plus grand qu'avant).
 private _ts = ((profileNamespace getVariable ["COMSPEC_ATAK_MapTextScale", 1.25]) max 0.8) min 2.2;
-private _is = ((profileNamespace getVariable ["COMSPEC_ATAK_MapIconScale", 1.25]) max 0.8) min 2.2;
 // Étiquettes (cartouches, noms des repères) : jamais réduites en vue moyenne ou large (avant : jusqu'à 0,88, texte
 // illisible à mi-zoom) ; un peu plus grandes en zoom rapproché, par paliers de 5 % (taille stable pendant le zoom).
 private _labK = ((profileNamespace getVariable ["COMSPEC_ATAK_LabelScale", 1]) max 0.5) min 2.5;
 private _tsL = (round (_ts * _labK * (((1.06 - _scale * 0.7) max 1) min 1.06) * 20)) / 20;
-private _allyK = ((profileNamespace getVariable ["COMSPEC_ATAK_AllyScale", 1]) max 0.5) min 2.5;
-private _contactK = ((profileNamespace getVariable ["COMSPEC_ATAK_ContactScale", 1]) max 0.5) min 2.5;
 uiNamespace setVariable ["COMSPEC_ATAK_MapTs", _ts];
-uiNamespace setVariable ["COMSPEC_ATAK_MapIs", _is];
-// Marqueurs de la mission (fn_mapGameMarkers) : symbole Arma (32 px pour l'OTAN) ramené à l'échelle de l'écran de l'ATAK,
-// comme les unités ; gardé pour fn_mapMarkerText, qui décolle les noms du symbole.
-private _mk = 0.62 * ((_kRaw max 0.45) min 1.2) * _is;
-uiNamespace setVariable ["COMSPEC_ATAK_MkScale", _mk];
 private _bgStyle = [] call comspec_atak_native_fnc_mapStyle;
 // Carte CLASSIQUE (contrôle 88532, COMSPEC_RscMapAtakClassic = carte M sans retouche) : le moteur écrit lui-même noms de
 // lieux, numéros de grille, marqueurs de la mission et leurs noms. Pas de second dessin ici (doublons). Écran sans ce
@@ -443,7 +435,7 @@ if (_selfCfg select 4) then {
         };
         if ((count _ms) > 0) then {
             // Désignation (code d'unité de l'ORBAT, sinon groupe Arma) et unité supérieure (ORBAT) : données réelles seulement.
-            private _orb = (["orbat"] call comspec_atak_native_fnc_milSym) getOrDefault [_lo, []];
+            private _orb = if (isNull _lo) then { [] } else { (["orbat"] call comspec_atak_native_fnc_milSym) getOrDefault [hashValue _lo, []] };
             _ms pushBack [[_orb param [3, ""], groupId group _lo] select ((_orb param [3, ""]) isEqualTo "" && {!isNull _lo}), _orb param [4, ""]];
         };
         _dc = [diag_tickTime + 1, _sIcon, _sColor, _ci, _nt, _ne, _symMode, ["cut", _entity getOrDefault ["callsign", ""], 16] call comspec_atak_native_fnc_mapFmt, toUpper (toString ((toArray _ls) select [0, 1])), _ms];
@@ -797,10 +789,10 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true]) then {
         if (_kind isEqualTo "azimuth") then {
             private _end = _pp vectorAdd [3000 * sin _brg,3000 * cos _brg,0];
             [_pp,_end,_sc] call _dashed;
-            _map drawIcon [_dot,_sc,_pp,8,8,0,format ["%1 · %2°",_cs,round _brg],2,_fsZ,(COMSPEC_ATAK_FontSet select 0),"right"];
+            _map drawIcon [_dot,_sc,_pp,8 * _tk,8 * _tk,0,format ["%1 · %2°",_cs,round _brg],2,_fsZ,(COMSPEC_ATAK_FontSet select 0),"right"];
         } else {
             _map drawEllipse [_pp,_r,_r,0,_sc,""];
-            _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa",_sc,_pp,18,18,0,(format ["Émetteur probable %1 · ±%2 m · %3 relevés",_cs,round _r,_n]) call comspec_atak_native_fnc_tr,2,_fsZ,(COMSPEC_ATAK_FontSet select 1),"right"];
+            _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa",_sc,_pp,18 * _tk,18 * _tk,0,(format ["Émetteur probable %1 · ±%2 m · %3 relevés",_cs,round _r,_n]) call comspec_atak_native_fnc_tr,2,_fsZ,(COMSPEC_ATAK_FontSet select 1),"right"];
         };
     } forEach (uiNamespace getVariable ["COMSPEC_ATAK_Sigint",[]]);
 };
@@ -814,7 +806,7 @@ if ((_state getOrDefault ["interactive",false]) && {_state getOrDefault ["mapDis
     // Étiquette posée après les autres (fn_mapLbl « now ») : côté libre du curseur, jamais sur une étiquette ni un symbole
     // (une cible suivie et sa plaque restent lisibles quand le curseur est dessus).
     _curLbls pushBack [_c, [_me, _c] call _measTxt, _yellow, 6];
-    _map drawIcon [_dot,_yellow,_c,10,10,0,"",0];
+    _map drawIcon [_dot,_yellow,_c,10 * _tk,10 * _tk,0,"",0];
 };
 
 // Point de pose choisi d'un clic droit en mode MARQUEUR (fn_markerPlace) : aperçu du type choisi dans un anneau qui pulse.
@@ -829,7 +821,7 @@ if ((count _anchor) >= 2 && {(_state getOrDefault ["mapMode","SELECT"]) isEqualT
     private _ic = _mkIconCache getOrDefault [_apT, "§"];
     if (_ic isEqualTo "§") then { _ic = getText (configFile >> "CfgMarkers" >> (_apT select [1]) >> "icon"); _mkIconCache set [_apT, _ic]; };
     if (_ic isNotEqualTo "") then { _map drawIcon [_ic, [1, 1, 1, 0.75], _ap, 20 * _is, 20 * _is, 0, "", 0]; };
-    _map drawIcon [_dot, [0.36, 0.78, 0.42, 1], _ap, 6, 6, 0, "  " + (("POINT DE POSE · VALIDER") call comspec_atak_native_fnc_tr), 2, _fsZ, (COMSPEC_ATAK_FontSet select 1), "right"];
+    _map drawIcon [_dot, [0.36, 0.78, 0.42, 1], _ap, 6 * _tk, 6 * _tk, 0, "  " + (("POINT DE POSE · VALIDER") call comspec_atak_native_fnc_tr), 2, _fsZ, (COMSPEC_ATAK_FontSet select 1), "right"];
 };
 
 // App Zones : plans affichés (bascule « Zones sur la carte ATAK »), dans la vue seulement, sous les routes (fn_zoneDraw).
@@ -865,8 +857,8 @@ if ((count _measure) >= 2) then {
     } else {
         _map drawLine [_a,_b,_amber];
     };
-    _map drawIcon [_dot,_mc,_a,14,14,0,"",0];
-    _map drawIcon [_dot,_mc,_b,14,14,0,"",0];
+    _map drawIcon [_dot,_mc,_a,14 * _tk,14 * _tk,0,"",0];
+    _map drawIcon [_dot,_mc,_b,14 * _tk,14 * _tk,0,"",0];
     _curLbls pushBack [_a, "A", _mc, 7];
     _curLbls pushBack [_b, [_a, _b] call _measTxt, _mc, 7];
 };
@@ -883,13 +875,13 @@ if ((count _measure) >= 2) then {
 // Hauteurs relevées
 {
     _x params ["_p","_alt","_delta"];
-    _map drawIcon ["\A3\ui_f\data\map\markers\military\triangle_CA.paa",[0.85,0.85,0.85,1],_p,14,14,0,format ["%1 m (%2%3)",round _alt,["","+"] select (_delta >= 0),round _delta],2,_fsZ,(COMSPEC_ATAK_FontSet select 1),"right"];
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\triangle_CA.paa",[0.85,0.85,0.85,1],_p,14 * _tk,14 * _tk,0,format ["%1 m (%2%3)",round _alt,["","+"] select (_delta >= 0),round _delta],2,_fsZ,(COMSPEC_ATAK_FontSet select 1),"right"];
 } forEach (_state getOrDefault ["mapHeights",[]]);
 
 // Zones plates
 {
     _map drawEllipse [_x,12,12,0,[0.36,0.78,0.42,0.9],""];
-    _map drawIcon [_dot,[0.36,0.78,0.42,1],_x,10,10,0,format ["LZ %1",_forEachIndex + 1],2,_fsZ,(COMSPEC_ATAK_FontSet select 1),"right"];
+    _map drawIcon [_dot,[0.36,0.78,0.42,1],_x,10 * _tk,10 * _tk,0,format ["LZ %1",_forEachIndex + 1],2,_fsZ,(COMSPEC_ATAK_FontSet select 1),"right"];
 } forEach (_state getOrDefault ["mapFlat",[]]);
 
 // Ligne de vue
@@ -899,10 +891,10 @@ if ((count _los) >= 3) then {
     if ((count _block) > 0) then {
         _map drawLine [_from,ASLToAGL _block,[0.36,0.78,0.42,1]];
         _map drawLine [ASLToAGL _block,_to,[0.90,0.25,0.22,1]];
-        _map drawIcon [_dot,[0.90,0.25,0.22,1],ASLToAGL _block,12,12,0,("BLOQUÉ") call comspec_atak_native_fnc_tr,2,_fsZ,(COMSPEC_ATAK_FontSet select 1),"right"];
+        _map drawIcon [_dot,[0.90,0.25,0.22,1],ASLToAGL _block,12 * _tk,12 * _tk,0,("BLOQUÉ") call comspec_atak_native_fnc_tr,2,_fsZ,(COMSPEC_ATAK_FontSet select 1),"right"];
     } else {
         _map drawLine [_from,_to,[0.36,0.78,0.42,1]];
-        _map drawIcon [_dot,[0.36,0.78,0.42,1],_to,12,12,0,("VUE OK") call comspec_atak_native_fnc_tr,2,_fsZ,(COMSPEC_ATAK_FontSet select 1),"right"];
+        _map drawIcon [_dot,[0.36,0.78,0.42,1],_to,12 * _tk,12 * _tk,0,("VUE OK") call comspec_atak_native_fnc_tr,2,_fsZ,(COMSPEC_ATAK_FontSet select 1),"right"];
     };
 };
 
@@ -923,12 +915,12 @@ if ((count _ft) >= 2) then {
     private _red = [0.90, 0.25, 0.22, 1];
     private _rr = (_scale * 700) max 10;
     _map drawEllipse [_ft, _rr, _rr, 0, _red, ""];
-    _map drawIcon ["\A3\ui_f\data\map\markers\military\destroy_CA.paa", _red, _ft, 22, 22, 0, "TGT", 2, _fsZ, (COMSPEC_ATAK_FontSet select 1), "right"];
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\destroy_CA.paa", _red, _ft, 22 * _tk, 22 * _tk, 0, "TGT", 2, _fsZ, (COMSPEC_ATAK_FontSet select 1), "right"];
     private _gid = _fires getOrDefault ["gun", "MAN"];
     private _g = if (_gid isEqualTo "MAN") then { objNull } else { objectFromNetId _gid };
     if (!isNull _g) then {
         _map drawLine [getPosATL _g, _ft, [0.90, 0.25, 0.22, 0.7]];
-        _map drawIcon ["\A3\ui_f\data\map\markers\nato\b_mortar.paa", [0.30, 0.70, 1, 1], getPosATL _g, 22, 22, 0, "GUN", 2, _fsZ, (COMSPEC_ATAK_FontSet select 1), "right"];
+        _map drawIcon ["\A3\ui_f\data\map\markers\nato\b_mortar.paa", [0.30, 0.70, 1, 1], getPosATL _g, 22 * _tk, 22 * _tk, 0, "GUN", 2, _fsZ, (COMSPEC_ATAK_FontSet select 1), "right"];
     };
 };
 
@@ -937,7 +929,7 @@ if ((count _ft) >= 2) then {
 private _pool = uiNamespace getVariable ["COMSPEC_ATAK_MarkerTagPool", []];
 private _used = 0;
 private _tagged = [];
-if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_native_fnc_pref) select 0) && {_k > 0.75} && {_scale < 0.12}) then {
+if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_native_fnc_pref) select 0) && {_kRaw > 0.75} && {_scale < 0.12}) then {
     private _disp = ctrlParent _map;
     private _mp = ctrlPosition _map;
     private _gridCache = uiNamespace getVariable ["COMSPEC_ATAK_TagGridCache", createHashMap];
@@ -1101,7 +1093,7 @@ private _spanX = (_gBr select 0) - (_gTl select 0);
 private _spanY = (_gTl select 1) - (_gBr select 1);
 // Carte CLASSIQUE : numéros de grille du moteur (carte M), pas de seconde série.
 if (!_engineTxt && {_spanX > 1} && {_spanY > 1} && {profileNamespace getVariable ["COMSPEC_ATAK_LblGrid", true]}) then {
-    private _maxN = [6, 10] select (_k > 0.75);
+    private _maxN = [6, 10] select (_kRaw > 0.75);
     private _steps = [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000];
     private _si = _steps findIf { ((_spanX max _spanY) / _x) <= _maxN };
     if (_si < 0) then { _si = (count _steps) - 1; };

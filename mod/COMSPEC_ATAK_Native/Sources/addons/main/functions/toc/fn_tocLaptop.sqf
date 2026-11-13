@@ -809,6 +809,8 @@ private _ret = switch (_mode) do {
         private _left = switch (true) do {
             case (_tab isEqualTo "SAT"): { ["L:SAT", "L:SATMAP"] select (_st getOrDefault ["satMap", false]) };
             case (_tab in ["SALLE", "MUR"]): { "L:SALLE" };
+            // RADIO : la console radio (fn_tocRadioUi « dock ») prend la place de la carte ; aucun contrôle d'ici à gauche.
+            case (_tab isEqualTo "RADIO" && {!isNil "comspec_atak_native_fnc_tocRadioUi"}): { "L:RADIO" };
             case (_sec isEqualTo "PLANS"): { "L:MAP:" + (["SELECT", _tool] select (_tool in ["LINE", "DRAW", "PLAN", "MARKER", "ERASE"])) };
             default { "L:MAP:NAV" };
         };
@@ -897,6 +899,8 @@ private _ret = switch (_mode) do {
         } else {
             { _x ctrlShow false; } forEach (_st getOrDefault ["hallTiles", []]);
         };
+        // Activité radio du camp (qui parle, sur quelle fréquence) : panneau monté à gauche sur l'onglet RADIO, masqué ailleurs.
+        if (!isNil "comspec_atak_native_fnc_tocRadioUi") then { ["dock", [ctrlParent (_ui get "screen"), _st get "rLeft", _tab isEqualTo "RADIO"]] call comspec_atak_native_fnc_tocRadioUi; };
         _st set ["layoutKey", [_left, _tab]];
     };
     case "press": {

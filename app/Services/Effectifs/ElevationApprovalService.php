@@ -364,6 +364,14 @@ class ElevationApprovalService
         array $proposal,
         ?int $actorUserId = null
     ): array {
+        // Personne ne s'accorde un rôle ou un droit à soi-même : un autre responsable doit décider.
+        if (\App\Services\Operator\OperatorAccessRequestService::grantsToSelf($targetUserId, $actorUserId, $proposal)) {
+            return [
+                'ok' => false,
+                'message' => 'Vous ne pouvez pas vous accorder un rôle ou un droit à vous-même. Un autre responsable doit traiter cette demande.',
+                'applied' => [],
+            ];
+        }
         $user = $this->userRepository->findById($targetUserId, $tenantId);
         if (!$user) {
             return ['ok' => false, 'message' => 'Membre introuvable.', 'applied' => []];

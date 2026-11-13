@@ -189,7 +189,7 @@ $espaceLinks = [
     ['abbr' => 'OPS', 'label' => 'Manœuvres', 'desc' => 'Calendrier opérationnel', 'href' => url('evenements'), 'path' => 'evenements'],
     ['abbr' => 'ORB', 'label' => 'ORBAT', 'desc' => 'Structure et effectifs', 'href' => url('orbat'), 'path' => 'orbat'],
     ['abbr' => 'ATK', 'label' => 'ATAK', 'desc' => 'Carte tactique', 'href' => url('atak'), 'path' => 'atak'],
-    // Outils de chaque membre (identité, papiers, couverture, fichiers, matériel) : tuile bleue pour la distinguer des
+    // Outils de chaque membre (identités, papiers, fichiers, matériel) : tuile bleue pour la distinguer des
     // espaces ; seulement pour un membre connecté d'une communauté.
     ...\App\Services\Operator\OperatorHubCatalog::spaceTiles((int) (\App\Core\Session::get('user_id') ?? 0) > 0 && (int) (\App\Core\Session::get('tenant_id') ?? 0) > 0),
     ['abbr' => 'FRM', 'label' => 'Formations', 'desc' => 'Catalogue et parcours', 'href' => url('academy/catalogue'), 'path' => 'academy/formations'],

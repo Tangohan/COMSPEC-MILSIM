@@ -51,7 +51,7 @@ switch (_act) do {
             _db set [_id, [_slots, _place, _now]];
         } forEach (profileNamespace getVariable ["COMSPEC_ATAK_DockDb_v1", []]);
         // Socles posés avec le kit sur cette carte : recréés à leur place.
-        if (missionNamespace getVariable ["comspec_atak_native_dock_persist", true]) then {
+        if (missionNamespace getVariable ["comspec_atak_native_dock_persist", false]) then {
             {
                 private _rec = _db get _x;
                 (_rec select 1) params [["_world", ""], ["_pos", []], ["_dir", [0, 1, 0]], ["_up", [0, 0, 1]]];
@@ -161,7 +161,7 @@ switch (_act) do {
     };
     case "save": {
         missionNamespace setVariable ["COMSPEC_ATAK_DockSaved", serverTime];
-        private _keep = missionNamespace getVariable ["comspec_atak_native_dock_persist", true];
+        private _keep = missionNamespace getVariable ["comspec_atak_native_dock_persist", false];
         private _out = [];
         {
             private _rec = _y;

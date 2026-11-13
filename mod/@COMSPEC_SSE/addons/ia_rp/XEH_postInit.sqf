@@ -1,7 +1,7 @@
 /*
     IA RP : ordres suivis par une IA à qui l'on parle (fn_iarpServer), exécutés là où elle est locale (serveur, hôte, HC).
       surrender  reddition (ACE, sinon geste du jeu)       stop  s'arrête et attend       free  repart (circulez)
-      pos [UP | MIDDLE | DOWN]  à genoux, couché           follow [joueur]  suit le joueur (4 min, 80 m au plus)
+      pos [UP | MIDDLE | DOWN]  à genoux, couché           follow [joueur]  suit le joueur jusqu'à ce qu'on la relâche (fn_iarpFollow)
       out  descend du véhicule                             unlock  (véhicule) déverrouillé pour la fouille
       flee [position]  s'enfuit vers ce point (confrontation, tirs, témoin)
       unhalt  fin d'un stop (temporisation, joueur parti : fn_iarpReact « halt ») : elle reprend sa route
@@ -10,18 +10,23 @@
       drop  pose son arme au sol (« Lâchez votre arme »), dans un conteneur au sol que tout le monde peut ramasser
     Tirs proches (fn_iarpReact « watch ») : IA locale ailleurs que sur le serveur (client sans tête, hôte) : FiredNear posé
     là où elle est locale, qui prévient le serveur (comspec_sse_iarpFired).
+    Suivi en cours (fn_iarpFollow) : seul un ordre qui la déplace ou l'immobilise y met fin ; un regard (look), un demi-tour
+    (turn) ou une arme posée (drop) ne l'annulent plus. « Reculez » et « Approchez » ne laissent plus l'IA bridée au pas :
+    free, unhalt et follow lui rendent son allure (forceSpeed -1).
 */
 ["comspec_sse_iarpAiDo", {
     params [["_u", objNull], ["_cmd", ""], ["_a", []]];
     if (isNull _u || {!local _u} || {!alive _u}) exitWith {};
     if (_cmd isEqualTo "unlock") exitWith { _u lock 0; };
-    _u setVariable ["comspec_sse_iarpFollow", objNull];
+    if !(_cmd in ["follow", "look", "turn", "drop"]) then { ["stop", [_u, _cmd]] call comspec_sse_fnc_iarpFollow; };
+    // Bagarre en cours (fn_iarpMelee) : un ordre qui l'immobilise, la rend ou la fait partir y met fin.
+    if (_cmd in ["stop", "surrender", "free", "flee", "pos", "out", "follow"]) then { ["stop", [_u, "order"]] call comspec_sse_fnc_iarpMelee; };
     switch (_cmd) do {
         case "surrender": {
             if (isClass (configFile >> "CfgPatches" >> "ace_captives")) then { ["ace_captives_setSurrendered", [_u, true], _u] call CBA_fnc_targetEvent; } else { _u action ["Surrender", _u]; };
         };
         case "stop": { doStop _u; _u disableAI "PATH"; };
-        case "free": { _u enableAI "PATH"; _u setUnitPos "AUTO"; _u doFollow (leader group _u); };
+        case "free": { _u enableAI "PATH"; _u forceSpeed -1; _u setUnitPos "AUTO"; _u doFollow (leader group _u); };
         // S'enfuit vers un point (confrontation, tirs proches, témoin effrayé : fn_iarpServer, fn_iarpReact).
         case "flee": {
             if ((_u getVariable ["ace_captives_isHandcuffed", false]) || {_u getVariable ["ace_captives_isSurrendering", false]}) exitWith {};
@@ -31,7 +36,7 @@
         case "unhalt": {
             // Menotté ou rendu (ACE) : il reste où il est.
             if ((_u getVariable ["ace_captives_isHandcuffed", false]) || {_u getVariable ["ace_captives_isSurrendering", false]}) exitWith {};
-            _u enableAI "PATH"; _u doWatch objNull; _u setUnitPos "AUTO"; _u doFollow (leader group _u);
+            _u enableAI "PATH"; _u forceSpeed -1; _u doWatch objNull; _u setUnitPos "AUTO"; _u doFollow (leader group _u);
         };
         case "pos": { _u setUnitPos (_a param [0, "MIDDLE"]); };
         case "prone": {
@@ -59,22 +64,7 @@
             private _h = createVehicle ["GroundWeaponHolder", getPosATL _u, [], 0.5, "CAN_COLLIDE"];
             _u action ["DropWeapon", _h, _w];
         };
-        case "follow": {
-            private _l = _a param [0, objNull];
-            if (isNull _l) exitWith {};
-            _u enableAI "PATH";
-            _u setUnitPos "UP";
-            _u setVariable ["comspec_sse_iarpFollow", _l];
-            [{
-                params ["_args", "_h"];
-                _args params ["_u", "_l", "_end"];
-                if (!alive _u || {isNull _l} || {time > _end} || {(_u getVariable ["comspec_sse_iarpFollow", objNull]) isNotEqualTo _l} || {(_u distance _l) > 80}) exitWith {
-                    [_h] call CBA_fnc_removePerFrameHandler;
-                    if ((_u getVariable ["comspec_sse_iarpFollow", objNull]) isEqualTo _l) then { _u setVariable ["comspec_sse_iarpFollow", objNull]; doStop _u; };
-                };
-                if ((_u distance _l) > 3) then { _u doMove ((getPosATL _l) getPos [2, _l getDir _u]); };
-            }, 2, [_u, _l, time + 240]] call CBA_fnc_addPerFrameHandler;
-        };
+        case "follow": { ["start", [_u, _a param [0, objNull]]] call comspec_sse_fnc_iarpFollow; };
     };
 }] call CBA_fnc_addEventHandler;
 
@@ -92,4 +82,20 @@
 }] call CBA_fnc_addEventHandler;
 if (isServer) then {
     ["comspec_sse_iarpFired", { ["fired", _this] call comspec_sse_fnc_iarpReact; }] call CBA_fnc_addEventHandler;
+};
+
+// Agressivité des IA (fn_iarpAggro, serveur) : bagarre et gestes là où l'IA est locale, coup reçu chez le joueur touché,
+// comptes rendus au serveur ; un contrôle de papiers par l'action du menu (identity : comspec_sse_idAsked) compte
+// comme le même contrôle demandé en texte.
+["comspec_sse_iarpMelee", { _this call comspec_sse_fnc_iarpMelee; }] call CBA_fnc_addEventHandler;
+["comspec_sse_iarpMeleeHit", { ["hit", _this] call comspec_sse_fnc_iarpMelee; }] call CBA_fnc_addEventHandler;
+if (isServer) then {
+    ["comspec_sse_iarpAggroEv", { _this call comspec_sse_fnc_iarpAggro; }] call CBA_fnc_addEventHandler;
+    ["comspec_sse_idAsked", {
+        params [["_t", objNull], ["_me", objNull]];
+        if (!isNull _t && {!isPlayer _t} && {!isNull _me}) then {
+            private _r = ["trigger", [_t, _me, "papers"]] call comspec_sse_fnc_iarpAggro;
+            if ((_r param [2, false]) && {(_r param [1, ""]) in ["irritated", "hostile"]}) then { ["speak", [_t, _r select 1, "papers"]] call comspec_sse_fnc_iarpAggro; };
+        };
+    }] call CBA_fnc_addEventHandler;
 };

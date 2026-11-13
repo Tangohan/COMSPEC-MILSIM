@@ -211,7 +211,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
         _x params ["_id", "_name", "_code", "_cond"];
         [_cls, 0, _path, [_id, _name, "", _code, _cond] call comspec_atak_native_fnc_aceAction, true] call ace_interact_menu_fnc_addActionToClass;
     } forEach [
-        ["COMSPEC_ATAK_RelayInfo", "État du relais", { ["info", _target] call comspec_atak_native_fnc_relayNet; }, { true }],
+        ["COMSPEC_ATAK_RelayInfo", "Voir l'état du relais", { ["info", _target] call comspec_atak_native_fnc_relayNet; }, { true }],
         ["COMSPEC_ATAK_RelayOff", "Couper le relais", { ["power", [_target, "off"]] call comspec_atak_native_fnc_relayNet; }, { _target getVariable ["COMSPEC_AtakRelayOn", true] }],
         ["COMSPEC_ATAK_RelayOn", "Allumer le relais", { ["power", [_target, "on"]] call comspec_atak_native_fnc_relayNet; }, { !(_target getVariable ["COMSPEC_AtakRelayOn", true]) }],
         ["COMSPEC_ATAK_RelayBatt", "Changer la batterie", {

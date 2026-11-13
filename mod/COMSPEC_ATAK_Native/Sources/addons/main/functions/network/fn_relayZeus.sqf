@@ -6,6 +6,7 @@
                                      sur un relais, « Poser un relais » : fiche, allumer / couper, recharger la batterie,
                                      réseau exclusivement par relais (toute la mission).
       ["set", [relais, clé, valeur]] : écrit une variable du relais pour tous (COMSPEC_AtakRelay<clé>) et recalcule la liste.
+      ["overview"]                : ouvre le téléphone sur la vue d'ensemble des relais (app Wave Relay, onglet RELAIS)
       ["only", vrai | faux]       : réseau exclusivement par relais dans toute la mission (COMSPEC_ATAK_RelayOnly).
     Sans ZEN : le module « Poser un relais » lâché sur un relais existant ouvre le même formulaire prérempli (fn_moduleRelay).
 */
@@ -22,6 +23,15 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_RelayOnly", _arg isEqualTo true, true];
         ["feedback", [["Réseau exclusivement par relais : désactivé (le téléphone garde du réseau sans relais)", "Réseau exclusivement par relais : activé (sans relais, aucun réseau)"] select (_arg isEqualTo true)]] call comspec_atak_native_fnc_zeusMenu;
         true
+    };
+    case "overview": {
+        // Vue d'ensemble des relais pour Zeus : l'app Wave Relay, onglet RELAIS, section « Gestion des relais » (tous les camps).
+        if (isNull ([] call comspec_atak_native_fnc_display)) then { [true] call comspec_atak_native_fnc_open; };
+        private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        _st set ["wrTab", "COV"];
+        _st set ["wrSheet", ""];
+        _st set ["wrTuto", -1];
+        ["WAVERELAY"] call comspec_atak_native_fnc_navigate;
     };
     case "register": {
         if (!hasInterface || {isNil "zen_attributes_fnc_addAttribute"} || {missionNamespace getVariable ["COMSPEC_ATAK_RelayZeusOn", false]}) exitWith {};
@@ -75,6 +85,9 @@ switch (_act) do {
             private _a = [format ["comspec_atak_relay_%1", _id], _label, "", _code, _cond] call comspec_atak_native_fnc_zenAction;
             [_a, ["comspec_atak_relay"], 50 - _forEachIndex] call zen_context_menu_fnc_addAction;
         } forEach [
+            ["sheet", "État du relais (fiche)", { ["open", ["relay", _this call (missionNamespace getVariable "COMSPEC_ATAK_RelayZeusOf")]] call comspec_atak_native_fnc_waveRelaySheet; }],
+            ["all", "Tous les relais (vue d'ensemble)", { ["overview"] call comspec_atak_native_fnc_relayZeus; }],
+            ["graph", "Réseau du camp (graphe)", { private _o = _this call (missionNamespace getVariable "COMSPEC_ATAK_RelayZeusOf"); private _sd = _o getVariable ["COMSPEC_AtakRelaySide", ""]; ["open", [[_sd, str side group player] select (_sd isEqualTo "")]] call comspec_atak_native_fnc_meshGraphView; }],
             ["info", "Fiche du relais", {
                 private _o = _this call (missionNamespace getVariable "COMSPEC_ATAK_RelayZeusOf");
                 private _e = ["entry", _o] call comspec_atak_native_fnc_relayNet;

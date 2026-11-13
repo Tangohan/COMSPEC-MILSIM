@@ -18,7 +18,8 @@ _this params ["", "", ["_rx", ""], ["_tx", ""]];
 if (_e isEqualType createHashMap && {_rx isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_VoiceRx", ""])}) then {
     private _p = _e getOrDefault [_tx, []];
     if (_p isNotEqualTo []) then {
-        private _m = ["sigMap", [_r select 0, _r select 1, _p select 0, _p select 1, (missionNamespace getVariable ["comspec_atak_native_mesh_gravity", true]) isEqualTo true]] call comspec_atak_native_fnc_mpuVoice;
+        private _m = ["sigMap", [_r select 0, _r select 1, _p select 0, _p select 1, (missionNamespace getVariable ["comspec_atak_native_mesh_gravity", true]) isEqualTo true,
+            missionNamespace getVariable ["comspec_atak_native_mesh_voice_degrade", 2], missionNamespace getVariable ["comspec_atak_native_mesh_voice_cut", 0], missionNamespace getVariable ["COMSPEC_ATAK_VoicePolicy", 0]]] call comspec_atak_native_fnc_mpuVoice;
         if (!isNil "_m" && {_m isEqualTypeArray [0, 0]} && {finite (_m select 0)} && {finite (_m select 1)}) then {
             _out = _m;
             // Le maillage bat le signal direct : accusé envoyé par le tick, jamais d'ici. -992 : ACRE2 n'a pas encore de résultat.

@@ -4684,3 +4684,9 @@ fieldset.eff-role-grid input { width: auto; }
     background: #fff;
     color: #0f172a;
 }
+
+/* Demandes d'élévation : droit demandé par le membre (coché d'avance, signalé). */
+.eff-elev-mode__option.is-requested { border-color: #b45309; background: #fffbeb; }
+.eff-elev-mode__option .eff-elev-mode__asked { color: #92400e; font-weight: 700; }
+html[data-bo-theme="dark"] .eff-elev-mode__option.is-requested { border-color: #f59e0b; background: rgba(245, 158, 11, 0.12); }
+html[data-bo-theme="dark"] .eff-elev-mode__option .eff-elev-mode__asked { color: #fbbf24; }

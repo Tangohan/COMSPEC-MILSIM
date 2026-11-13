@@ -33,6 +33,12 @@ private _names = _codes apply {
 ["comspec_sse_id_autoTransmit", "CHECKBOX", ["Transmission automatique à Athena", "Chaque contrôle terminé part tout seul vers Athena (file d'attente sans liaison). Décoché : bouton Transmettre de l'app Contrôle ID. Le réglage de votre communauté sur Athena (Bureau SSE, Contrôles), reçu avec le paquet, l'emporte."], true] call _add;
 ["comspec_sse_id_athenaPack", "CHECKBOX", ["Documents et avis d'Athena", "Avec la liaison, les documents délivrés et les personnes signalées de votre communauté sont chargés au début de la mission."], true] call _add;
 ["comspec_sse_id_opKey", "EDITBOX", ["Opération Athena", "Facultatif : clé de l'opération Athena dont on charge les documents. Vide : documents de la carte seulement."], ""] call _add;
+// Papiers entre joueurs (fn_idP2pServer) : demande, refus, présentation d'initiative. Textes : stringtable (STR_COMSPEC_SSE_P2P_Set*).
+["comspec_sse_id_p2pEnabled", "CHECKBOX", [localize "STR_COMSPEC_SSE_P2P_SetEnabled", localize "STR_COMSPEC_SSE_P2P_SetEnabled_D"], true] call _add;
+["comspec_sse_id_p2pTimeout", "SLIDER", [localize "STR_COMSPEC_SSE_P2P_SetTimeout", localize "STR_COMSPEC_SSE_P2P_SetTimeout_D"], [5, 120, 20, 0]] call _add;
+["comspec_sse_id_p2pDistance", "SLIDER", [localize "STR_COMSPEC_SSE_P2P_SetDistance", localize "STR_COMSPEC_SSE_P2P_SetDistance_D"], [2, 4, 3, 1]] call _add;
+["comspec_sse_id_p2pRefuse", "CHECKBOX", [localize "STR_COMSPEC_SSE_P2P_SetRefuse", localize "STR_COMSPEC_SSE_P2P_SetRefuse_D"], true] call _add;
+["comspec_sse_id_p2pPresent", "CHECKBOX", [localize "STR_COMSPEC_SSE_P2P_SetPresent", localize "STR_COMSPEC_SSE_P2P_SetPresent_D"], true] call _add;
 // IA réalistes et checkpoints IA (Lot 3).
 ["comspec_sse_id_aiFsm", "CHECKBOX", ["IA réalistes au contrôle", "Une IA contrôlée réagit selon son profil, son état et la situation : elle coopère, ment, devient nerveuse, refuse, s'enfuit, se rend, menace ou appelle des renforts. Décoché : réponses simples."], true] call _add;
 ["comspec_sse_id_aiAggro", "SLIDER", ["Agressivité des IA (%)", "Plus haut : les suspects contrôlés sont plus tendus, fuient, menacent et appellent des renforts plus souvent. 50 : réaliste."], [0, 100, 50, 0]] call _add;

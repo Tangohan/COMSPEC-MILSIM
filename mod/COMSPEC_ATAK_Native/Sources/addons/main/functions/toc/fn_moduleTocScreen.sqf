@@ -77,7 +77,7 @@ private _obj = _targets param [0, objNull];
 private _sides = [["Celui de chaque joueur", ""], ["BLUFOR", "WEST"], ["OPFOR", "EAST"], ["Indépendant", "GUER"], ["Civil", "CIV"]];
 private _views = [["Carte et flux", "SPLIT"], ["Carte seule (carte en grand)", "MAP"], ["Flux seul", "FEED"], ["PIP du poste (ce que voit l'opérateur)", "TOC"],
     ["Vue satellite (suivi des alliés)", "SAT"], ["Horloge ZULU et chronos", "CLOCK"], ["Écran d'escouade (un groupe)", "SQUAD"], ["Main courante du poste", "LOG"],
-    ["Liste d'exécution (EXCHECK)", "EXCHECK"], ["Pertes et résultats", "KILLS"], ["Demandes des éléments", "REQ"], ["Texte à LED (message libre, défilant)", "TEXT"], ["Diffusion et mire (BROADCAST)", "BROADCAST"]];
+    ["Liste d'exécution (EXCHECK)", "EXCHECK"], ["Pertes et résultats", "KILLS"], ["Demandes des éléments", "REQ"], ["Texte à LED (message libre, défilant)", "TEXT"], ["Diffusion et mire (BROADCAST)", "BROADCAST"], ["Activité radio (qui parle, sur quelle fréquence)", "RADIO"]];
 private _sats = [["SAT 1", 0], ["SAT 2", 1]];
 // Groupes avec un joueur ou un porteur d'ATAK, tous camps (le Zeus choisit) : « nom (camp) ».
 private _grps = [["Aucune", ""]];

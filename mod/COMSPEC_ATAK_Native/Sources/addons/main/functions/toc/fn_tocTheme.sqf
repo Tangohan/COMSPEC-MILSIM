@@ -14,6 +14,11 @@
       ["region", [affichage, nom, FLASH]]   région, descendue ou raccourcie sous un FLASH (table _flashRule)
       ["cols", table]               colonnes d'un tableau : [[clé, en-tête, x, l, alignement L|R|C|P (pastille), style]...]
       ["style", [contrôle, style, jeton, hauteur]]   police, taille (px virtuels sur la hauteur donnée, 900 par défaut), couleur
+    Jeu de couleurs « nuit » (4.12.0, feuille de route TOC n° 35) : table _tokensNight, mêmes noms de jetons, pour la
+    nuit et la faible lumière. Ajout pur : sans variante demandée, tout rend les couleurs du jour comme avant.
+      ["variant"]                   "jour" | "nuit" : réglage « Thème des écrans TOC » (auto : nuit quand le soleil est couché)
+      ["rgba", [jeton, alpha, variante]]   variante "jour" (défaut) | "nuit" | "auto" (suit le réglage)
+      ["hex", [jeton, variante]]    idem ; ["ink", [texte, variante]] idem ; ["tokens", variante] table jeton -> "#rrggbb"
 */
 params [["_mode", "get"], ["_a", ""]];
 private _thm = missionNamespace getVariable ["COMSPEC_ATAK_TocTheme", createHashMap];
@@ -26,6 +31,17 @@ if ((count _thm) isEqualTo 0) then {
 ["accent", "#34d399"], ["accentDim", "#0e3a2b"], ["amber", "#f5b841"], ["red", "#ff5f56"], ["redDim", "#3a1110"], ["blue", "#62b0f5"],
 ["friend", "#6cb8ff"], ["hostile", "#ff6b6b"], ["neutral", "#7ee08a"], ["unknown", "#f2d36b"], ["lost", "#98a4ae"],
 ["mapTint", "#a3a8ab"], ["mapTintPic", "#6b7175"]
+];
+    // ---- FIN
+    // ---- TABLE _tokensNight (JSON) : mêmes jetons pour la nuit et la faible lumière. Fonds plus noirs, textes et couleurs
+    // assombris : l'écran n'éblouit plus et ne se voit plus de loin. Aucun jeton du jour n'est changé.
+    private _tokensNight = [
+["bg0", "#030405"], ["bg1", "#07090b"], ["bg2", "#0b0f12"], ["bg3", "#10161a"],
+["line", "#151c22"], ["lineStrong", "#232d35"],
+["text", "#9aa3a8"], ["text2", "#808a90"], ["muted", "#828e96"],
+["accent", "#1f9a6e"], ["accentDim", "#082119"], ["amber", "#b0842c"], ["red", "#de655d"], ["redDim", "#220a09"], ["blue", "#5a98cd"],
+["friend", "#5490c8"], ["hostile", "#c25050"], ["neutral", "#5ea868"], ["unknown", "#b39c4e"], ["lost", "#828e96"],
+["mapTint", "#5d6062"], ["mapTintPic", "#3d4144"]
 ];
     // ---- FIN
     // ---- TABLE _type (JSON) : [style, px virtuels sur 900, police]. Écran mural : rien sous 28 px (texte courant).
@@ -59,6 +75,7 @@ if ((count _thm) isEqualTo 0) then {
 ["KILLS", [["kpi", 24, 90, 1552, 72], ["head", 24, 178, 700, 40], ["sub", 724, 182, 852, 36], ["rule", 24, 222, 1552, 1], ["groups", 24, 230, 1552, 36], ["cols", 24, 266, 1552, 36], ["area", 24, 306, 1552, 520]]],
 ["REQ", [["kpi", 24, 90, 1552, 72], ["head", 24, 178, 700, 40], ["sub", 724, 182, 852, 36], ["rule", 24, 222, 1552, 1], ["cols", 24, 230, 1552, 36], ["area", 24, 268, 1552, 560]]],
 ["MOSAIC", [["area", 24, 90, 1552, 746]]],
+["RADIO", [["kpi", 24, 90, 1552, 72], ["live", 24, 174, 1552, 144], ["head", 24, 330, 700, 40], ["sub", 724, 334, 852, 36], ["rule", 24, 374, 1552, 1], ["cols", 24, 382, 1552, 36], ["area", 24, 420, 1552, 400]]],
 ["STRIP", [["zLbl", 48, 40, 640, 48], ["zDig", 48, 100, 660, 160], ["zSub", 48, 284, 640, 48], ["div1", 720, 48, 2, 304], ["lLbl", 760, 40, 350, 48], ["lDig", 760, 112, 360, 136], ["lSub", 760, 284, 350, 48], ["div2", 1140, 48, 2, 304], ["cLbl", 1176, 40, 400, 48], ["cDig", 1176, 120, 400, 100], ["cSub", 1176, 284, 400, 48]]],
 ["PLATE", [["bar", 0, 0, 20, 400], ["name", 72, 40, 1480, 220], ["sub", 72, 280, 1480, 72]]],
 ["COLA", [["zLbl", 24, 24, 752, 36], ["zDig", 24, 64, 752, 150], ["dtg", 24, 222, 752, 36], ["lRule", 24, 274, 752, 1], ["lLbl", 24, 290, 752, 36], ["lDig", 24, 330, 752, 84], ["lDate", 24, 422, 752, 36], ["tHead", 24, 490, 300, 40], ["tSub", 324, 494, 452, 36], ["tRule", 24, 534, 752, 1], ["tArea", 24, 546, 752, 330]]],
@@ -75,7 +92,7 @@ if ((count _thm) isEqualTo 0) then {
 ["SPLIT", ["flux"], ["map", "divider", "grpArea"]], ["TOC", ["flux"], ["map", "divider", "grpArea"]], ["MAP", [], ["map"]],
 ["SQUAD", ["cr", "cam"], ["map", "divider", "memArea", "memAreaCam"]], ["FEED", [], ["area"]], ["NET", [], ["area", "area2"]],
 ["ORBAT", [], ["col1", "col2", "col3"]], ["CLOCK", [], ["divider", "tArea"]], ["LOG", [], ["area"]], ["EXCHECK", [], ["area"]],
-["KILLS", [], ["area"]], ["REQ", [], ["area"]], ["MOSAIC", [], ["area"]]
+["KILLS", [], ["area"]], ["REQ", [], ["area"]], ["MOSAIC", [], ["area"]], ["RADIO", [], ["area"]]
 ];
     // ---- FIN
     // ---- TABLE _cols (JSON) : colonnes [clé, en-tête, x dans le tableau, largeur, L | R | C | P (pastille), style].
@@ -91,6 +108,7 @@ if ((count _thm) isEqualTo 0) then {
 ["KILLS", [["el", "ÉLÉMENT", 0, 600, "L", "bodyBold"], ["wia", "BLESSÉS", 620, 200, "R", "dataBold"], ["kia", "TUÉS", 832, 200, "R", "dataBold"], ["ekia", "NEUTRALISÉS", 1044, 240, "R", "dataBold"], ["ewia", "BLESSÉS / CAPTURÉS", 1296, 256, "R", "dataBold"]]],
 ["KILLS_G", [["f", "AMIS", 620, 412, "R", "caption"], ["e", "ENNEMIS", 1044, 508, "R", "caption"]]],
 ["REQ", [["time", "HEURE", 0, 100, "L", "data"], ["kind", "TYPE", 112, 200, "L", "bodyBold"], ["by", "DEMANDEUR", 324, 230, "L", "body"], ["grid", "GRILLE", 566, 140, "R", "data"], ["text", "DÉTAIL", 724, 640, "L", "body"], ["st", "STATUT", 1376, 176, "P", "body"]]],
+["RADIO", [["dot", "", 0, 16, "C", "body"], ["net", "RÉSEAU", 28, 330, "L", "bodyBold"], ["freq", "FRÉQUENCE", 366, 170, "R", "data"], ["st", "ÉTAT", 556, 200, "P", "body"], ["who", "DERNIER ÉMETTEUR", 776, 330, "L", "body"], ["last", "ENTENDU", 1114, 150, "R", "data"], ["n", "ÉMISSIONS", 1272, 130, "R", "data"], ["occ", "OCCUPATION", 1410, 142, "R", "data"]]],
 ["TIMER", [["name", "", 0, 360, "L", "heading"], ["sub", "", 0, 360, "L", "caption"], ["val", "", 368, 256, "R", "num"]]],
 ["LOG_C", [["time", "", 0, 120, "L", "data"], ["kind", "", 132, 170, "P", "body"], ["who", "", 314, 438, "R", "body"]]],
 ["EXCHECK_C", [["n", "N°", 0, 56, "R", "data"], ["cw", "MOT DE CODE", 72, 268, "L", "bodyBold"], ["at", "PRÉVU", 352, 120, "R", "data"], ["st", "ÉTAT", 488, 264, "P", "body"]]],
@@ -108,28 +126,48 @@ if ((count _thm) isEqualTo 0) then {
     private _c = createHashMap;
     private _hx = createHashMap;
     { _c set [_x select 0, [_x select 1] call _hexTo]; _hx set [_x select 0, _x select 1]; } forEach _tokens;
+    private _cN = createHashMap;
+    private _hxN = createHashMap;
+    { _cN set [_x select 0, [_x select 1] call _hexTo]; _hxN set [_x select 0, _x select 1]; } forEach _tokensNight;
     private _ty = createHashMap;
     private _fm = createHashMapFromArray _fonts;
     { _ty set [_x select 0, [_x select 1, _fm getOrDefault [_x select 2, "RobotoCondensed"]]]; } forEach _type;
     private _lay = createHashMap;
     { private _r = createHashMap; { _r set [_x select 0, [_x select 1, _x select 2, _x select 3, _x select 4]]; } forEach (_x select 1); _lay set [_x select 0, _r]; } forEach _walls;
-    _thm = createHashMapFromArray [["c", _c], ["hex", _hx], ["type", _ty], ["font", _fm], ["lay", _lay], ["cols", createHashMapFromArray _cols], ["sp", createHashMapFromArray _space],
+    _thm = createHashMapFromArray [["c", _c], ["hex", _hx], ["cNight", _cN], ["hexNight", _hxN], ["type", _ty], ["font", _fm], ["lay", _lay], ["cols", createHashMapFromArray _cols], ["sp", createHashMapFromArray _space],
         ["flash", createHashMapFromArray (_flashRule apply { [_x select 0, [_x select 1, _x select 2]] })]];
     missionNamespace setVariable ["COMSPEC_ATAK_TocTheme", _thm];
 };
+// Variante du jeu de couleurs : « jour » sauf demande ; « auto » suit le réglage du joueur (nuit quand le soleil est couché).
+private _variant = {
+    private _set = missionNamespace getVariable ["comspec_atak_native_toc_theme", "auto"];
+    if (_set in ["jour", "nuit"]) exitWith { _set };
+    ["jour", "nuit"] select (sunOrMoon < 0.5)
+};
+private _nightOf = {
+    params [["_var", "jour"]];
+    if (_var isEqualTo "auto") then { _var = call _variant; };
+    _var isEqualTo "nuit"
+};
 switch (_mode) do {
     case "get": { _thm };
+    case "variant": { call _variant };
+    case "tokens": { +(_thm get (["hex", "hexNight"] select ([_a] call _nightOf))) };
     case "rgba": {
-        _a params [["_k", "text"], ["_al", 1]];
-        private _v = +((_thm get "c") getOrDefault [_k, [1, 0, 1, 1]]);
+        _a params [["_k", "text"], ["_al", 1], ["_var", "jour"]];
+        private _v = +((_thm get (["c", "cNight"] select ([_var] call _nightOf))) getOrDefault [_k, [1, 0, 1, 1]]);
         _v set [3, _al];
         _v
     };
-    case "hex": { (_thm get "hex") getOrDefault [_a, "#ff00ff"] };
+    case "hex": {
+        if (_a isEqualType []) exitWith { _a params [["_k", "text"], ["_var", "jour"]]; (_thm get (["hex", "hexNight"] select ([_var] call _nightOf))) getOrDefault [_k, "#ff00ff"] };
+        (_thm get "hex") getOrDefault [_a, "#ff00ff"]
+    };
     case "ink": {
         // color='@jeton' -> color='#rrggbb' (jeton inconnu : magenta, visible tout de suite).
         private _s = _a;
         private _hx = _thm get "hex";
+        if (_a isEqualType []) then { _s = _a param [0, ""]; _hx = _thm get (["hex", "hexNight"] select ([_a param [1, "jour"]] call _nightOf)); };
         private _out = "";
         private _i = _s find "'@";
         while { _i >= 0 } do {

@@ -76,6 +76,8 @@ private _alerts = [];
 {
     private _u = _x;
     if (!alive _u || {!(_u isKindOf "Air")} || {(count crew _u) isEqualTo 0}) then { continue; };
+    // OPFOR : jamais détecté, sauf si le réglage « Détecter les drones OPFOR » est coché (décoché par défaut).
+    if ((side group _u) isEqualTo east && {!(missionNamespace getVariable ["comspec_atak_native_drone_opfor", false])}) then { continue; };
     // Pas de liaison active au sol moteur coupé.
     if (!(isEngineOn _u) && {isTouchingGround _u}) then { continue; };
     private _plane = _u isKindOf "Plane";

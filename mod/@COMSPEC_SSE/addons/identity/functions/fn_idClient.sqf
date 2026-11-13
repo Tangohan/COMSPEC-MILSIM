@@ -6,6 +6,7 @@
       result [docId, niveau, résultat] · checkFail [docId, niveau, code, texte] · seized / returned [cible, classe…] · vehicle [véhicule, op, occupants]
       notify [texte, type] · zeus [texte, genre] · zeusPapers [données] (fenêtre du Zeus) · packFetch [full | self] (relais du paquet Athena, fn_idAthenaPack)
       say [nom, phrase, type, indice]   phrase courte d'une IA contrôlée (IA réalistes), traduite ici
+      p2p [message, données]            contrôle et présentation des papiers entre joueurs (fn_idP2pClient)
     Lot 4 et 5 : question [demandeur, [[qid, question, réponses]…], délai] · questionEnd [qid, juste, évasif]
       coverSheet [netId, fiche] · coverSame [netId, empreinte, état et cohérence] (fiche en cache inchangée)
       coverList [infiltrés] · coverState [on | off | burnt | warn, motif]
@@ -54,6 +55,8 @@ switch (_op) do {
     // Papiers vus par le Zeus (fn_idServer « truth ») : fenêtre « Papiers de l'IA », jamais un bandeau.
     case "zeusPapers": { ["data", [_a param [0, createHashMap]]] call comspec_sse_fnc_idZeusPapers; };
     case "request": { _a params [["_c", objNull]]; ["request", [_c]] call comspec_sse_fnc_idPresentPrompt; };
+    // Contrôle et présentation des papiers entre joueurs : [message, données] (fn_idP2pServer -> fn_idP2pClient).
+    case "p2p": { _a params [["_sub", "", [""]], ["_data", [], [[]]]]; [_sub, _data] call comspec_sse_fnc_idP2pClient; };
     case "token": {
         _a params [["_holder", objNull], ["_id", ""], ["_label", ""], ["_end", 0]];
         // Fin de validité en temps serveur ramenée à l'horloge locale (time diffère d'un poste à l'autre).

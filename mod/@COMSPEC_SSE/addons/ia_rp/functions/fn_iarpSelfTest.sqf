@@ -23,6 +23,13 @@
       cohérence    10 réponses « origine » d'une personne honnête : toutes citent la ville de sa couverture
       hors sujet   data\iarp_ottests.sqf (fn_iarpOffTopic « selfTest ») : 60 messages hors sujet sans demande à effet, 120 questions
                    légitimes (tu, vous, court, SMS) comprises, guide, dialogues (relance, incompris, provocation), phrases
+      suivi        « Suivez-moi » (fn_iarpFollow « step », table data\iarp_follow.sqf) : à l'arrêt entre 2,5 et 4 m, repart
+                   au-delà de 4 m, s'arrête à 2,5 m, marche près d'un joueur lent, court derrière un joueur qui court ou
+                   loin devant ; « Suivez-moi. », « Reste ici. », « Va-t'en. » compris ; répliques d'une IA menottée
+      agressivité  fn_iarpAggro (pur) : paliers selon la colère, le niveau et le trait (jamais au-delà de « hostile » en
+                   verbal ou pour un lâche qui bluffe), dégâts plafonnés par minute et jamais mortels sans le réglage,
+                   moteur de corps à corps (TSP Melee ou intégré), répliques hostiles : 3 au moins par palier et par
+                   caractère, en français et en anglais, sans redite sur 6 tirages
     Repris par l'autotest (scripts\ia_rp.sqf) ; rien n'est envoyé ni enregistré.
 */
 private _ko = [];
@@ -443,6 +450,69 @@ _info pushBack format ["question / réponse : déclencheurs %1", _qaE param [2, 
 private _t1 = diag_tickTime;
 for "_i" from 1 to 20 do { ["Bonjour, vous avez vu des hommes armés ou des pick-up cette nuit ? Où sont-ils partis ? Combien étaient-ils, et qui commande ici ?"] call comspec_sse_fnc_iarpIntent; };
 _info pushBack format ["interprète : %1 ms par message de quatre questions", round (((diag_tickTime - _t1) / 20) * 10000) / 10];
+// Suivi d'un joueur : table de décision (pure), ordres qui le lancent et le terminent, répliques.
+{
+    _x params ["_d", "_ls", "_mov", "_wMv", "_wPace"];
+    private _r = ["step", [_d, _ls, _mov]] call comspec_sse_fnc_iarpFollow;
+    if (_r isNotEqualTo [_wMv, _wPace]) then { _ko pushBack format ["suivi : à %1 m, joueur à %2 km/h, %3 -> %4 au lieu de %5", _d, _ls, ["à l'arrêt", "en mouvement"] select _mov, _r, [_wMv, _wPace]]; };
+} forEach [
+    [1.5, 0, false, false, "walk"], [3, 0, false, false, "walk"], [3, 0, true, true, "walk"], [2.4, 0, true, false, "walk"], [4.5, 0, false, true, "walk"],
+    [5, 5, true, true, "walk"], [5, 10, true, true, "jog"], [8, 0, false, true, "jog"], [5, 18, true, true, "run"], [20, 0, false, true, "run"], [3.5, 18, false, false, "run"]
+];
+{
+    _x params ["_txt", "_want"];
+    private _got = ([_txt] call comspec_sse_fnc_iarpIntent) select 0;
+    if (_got isNotEqualTo _want) then { _ko pushBack format ["suivi : « %1 » compris %2 au lieu de %3", _txt, _got, _want]; };
+} forEach [["Suivez-moi.", "follow"], ["Suis-moi", "follow"], ["Follow me.", "follow"], ["Reste ici.", "halt"], ["Restez ici.", "halt"], ["Stay here.", "halt"], ["Va-t'en.", "leave"], ["Circulez.", "leave"]];
+{ if !(_x in _bank) then { _ko pushBack format ["suivi : répliques « %1 » absentes de la banque", _x]; }; } forEach ["comply.follow", "noComply.follow", "followCuffed"];
+if ((["block", objNull] call comspec_sse_fnc_iarpFollow) isNotEqualTo "dead") then { _ko pushBack "suivi : une IA absente n'est pas refusée"; };
+// Agressivité : paliers, plafonds de dégâts, moteur de corps à corps, répliques (pur, tables data\iarp_aggro.sqf).
+{
+    _x params ["_anger", "_mode", "_trait", "_want"];
+    private _got = ["stage", [_anger, _mode, _trait]] call comspec_sse_fnc_iarpAggro;
+    if (_got isNotEqualTo _want) then { _ko pushBack format ["agressivité : colère %1, niveau %2, trait %3 -> %4 au lieu de %5", _anger, _mode, _trait, _got, _want]; };
+} forEach [
+    [100, "off", "hostile", "calm"], [10, "physical", "none", "calm"], [25, "verbal", "none", "irritated"], [45, "verbal", "none", "hostile"],
+    [95, "verbal", "hostile", "hostile"], [65, "physical", "none", "shove"], [85, "physical", "none", "punch"], [100, "physical", "bluff", "hostile"]
+];
+{
+    _x params ["_args", "_want"];
+    private _got = ["damage", _args] call comspec_sse_fnc_iarpAggro;
+    if ((abs (_got - _want)) > 0.0005) then { _ko pushBack format ["agressivité : dégâts %1 -> %2 au lieu de %3", _args, _got, _want]; };
+} forEach [
+    [["punch", 50, false, 0, 0], 0.08], [["punch", 100, false, 0, 0], 0.16], [["punch", 50, false, 0.28, 0], 0.02], [["punch", 50, false, 0, 0.58], 0.02],
+    [["punch", 50, true, 0, 0.58], 0.08], [["punch", 0, false, 0, 0], 0], [["shove", 50, false, 0.3, 0], 0], [["punch", 100, false, 0, 0.6], 0]
+];
+{
+    _x params ["_args", "_want"];
+    if ((["backend", _args] call comspec_sse_fnc_iarpAggro) isNotEqualTo _want) then { _ko pushBack format ["agressivité : moteur %1 -> pas %2", _args, _want]; };
+} forEach [[["auto", true], "tsp"], [["auto", false], "sse"], [["sse", true], "sse"], [["tsp", false], "sse"], [["tsp", true], "tsp"]];
+if ((abs ((["gain", ["insulted", "hostile"]] call comspec_sse_fnc_iarpAggro) - 37.5)) > 0.01) then { _ko pushBack "agressivité : une insulte à un hostile ne vaut pas 37,5"; };
+if ((["decay", [50, 60, "none"]] call comspec_sse_fnc_iarpAggro) isNotEqualTo 30) then { _ko pushBack "agressivité : la colère ne retombe pas de 20 par minute"; };
+private _hl = ["lines"] call comspec_sse_fnc_iarpAggro;
+private _hCells = 0;
+{
+    private _lv = _x;
+    {
+        private _pe = _x;
+        private _n = 0;
+        {
+            if ((_x select 0) isEqualTo _lv && {(_x select 1) isEqualTo _pe}) then {
+                { if ((_x param [0, ""]) isEqualTo "" || {(_x param [1, ""]) isEqualTo ""}) then { _ko pushBack format ["agressivité : réplique sans français ou sans anglais (%1, %2)", _lv, _pe]; }; } forEach (_x select 2);
+                _n = _n + count (_x select 2);
+            };
+        } forEach (_hl getOrDefault ["lines", []]);
+        _hCells = _hCells + 1;
+        if (_n < 3) then { _ko pushBack format ["agressivité : %1 réplique(s) seulement pour %2 / %3 (3 attendues)", _n, _lv, _pe]; };
+    } forEach (_hl getOrDefault ["personas", []]);
+} forEach (_hl getOrDefault ["levels", []]);
+if (_hCells < 42) then { _ko pushBack format ["agressivité : %1 cases palier × caractère (42 attendues)", _hCells]; };
+private _hSaid = [];
+for "_i" from 1 to 6 do {
+    private _l = ["pick", ["hostile", "irritable", "insulted", "street", "FRA", _hSaid]] call comspec_sse_fnc_iarpAggro;
+    if (_l isEqualTo [] || {(_l select 0) in _hSaid}) then { _ko pushBack "agressivité : réplique redite ou absente en 6 tirages"; } else { _hSaid pushBack (_l select 0); };
+};
+_info pushBack format ["agressivité : %1 cases de répliques, %2 répliques tirées sans redite", _hCells, count _hSaid];
 // Couche hors sujet (fn_iarpOffTopic « selfTest ») : grossièretés, insultes, charabia, relance, tutoiement, formes courtes.
 (["selfTest"] call comspec_sse_fnc_iarpOffTopic) params [["_koO", []], ["_infoO", []]];
 _ko append _koO;

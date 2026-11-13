@@ -64,6 +64,27 @@ private _sensors = [
 // Résolution de la cible de rendu (puissances de 2, image 16:9 par le rapport du r2t).
 private _res = createHashMapFromArray [["H", [2048, 1024]], ["M", [1024, 512]], ["L", [512, 256]]];
 private _rtOf = { params ["_s", "_n", "_q"]; format ["comspec_tocsat_%1_%2_%3", toLower _s, _n, toLower _q] };
+// Qualité de la vue satellite (réglage du joueur) : 0 désactivée, 1 basse (défaut), 2 moyenne, 3 haute. Retour de TTRD
+// (4.8.0) : « ça freeze de fou, la vue SAT ». Le rendu coûtait trop : image 1024 x 512 (2048 x 1024 au PC) redessinée
+// à chaque image du jeu, visée recalculée à chaque image, texture de l'écran refaite 6 à 7 fois par seconde.
+private _qual = {
+    private _q = missionNamespace getVariable ["comspec_atak_native_toc_sat_quality", 1];
+    if !(_q isEqualType 0) then { _q = 1; };
+    (round _q) max 0 min 3
+};
+// ---- TABLE _budget (JSON) : par qualité [résolution du PC, résolution d'un écran proche, d'un écran loin, secondes
+// entre deux images d'un écran du mur, secondes pour l'écran regardé de près]. "" : aucun rendu.
+private _budget = [["", "", "", 999, 999], ["M", "L", "L", 0.5, 0.2], ["H", "M", "L", 0.33, 0.2], ["H", "M", "M", 0.2, 0.15]];
+// ---- FIN
+// Résolution d'un rendu : PC du poste, écran proche (8 m au plus), écran loin (au-delà de 10 m ; entre les deux : inchangée).
+private _resFor = {
+    params ["_pc", ["_d", 0], ["_cur", ""]];
+    (_budget select (call _qual)) params ["_rp", "_rn", "_rf"];
+    if (_pc) exitWith { _rp };
+    if (_d <= 8) exitWith { _rn };
+    if (_d > 10) exitWith { _rf };
+    [_cur, _rn] select (_cur in ["", "H"])
+};
 switch (_mode) do {
     case "sensors": { _sensors };
     case "modes": { ["AUTO", "DAY", "NV", "WHOT", "BHOT", "FUSW", "FUSB"] };
@@ -104,9 +125,44 @@ switch (_mode) do {
             forEach [["DAY", [0]], ["NV", [1]], ["WHOT", [2]], ["BHOT", [7]], ["FUSW", [2]], ["FUSB", [7]]];
         _bad
     };
+    case "quality": { call _qual };
+    case "budget": { +_budget };
+    case "interval": {
+        // Secondes entre deux images de la texture d'un écran satellite : selon la qualité, plus court pour l'écran
+        // regardé de près (son centre à l'écran, à 10 m au plus), allongé quand une image coûte trop (« cost »).
+        private _o = _a;
+        (_budget select (call _qual)) params ["", "", "", "_far", "_near"];
+        private _iv = _far;
+        if (!isNull _o) then {
+            private _ctr = ["center", _o] call comspec_atak_native_fnc_tocScreen;
+            if (((positionCameraToWorld [0, 0, 0]) distance (ASLToAGL _ctr)) < 10 && {(worldToScreen (ASLToAGL _ctr)) isNotEqualTo []}) then { _iv = _near; };
+        };
+        (uiNamespace getVariable ["COMSPEC_ATAK_TocSatSlow", [1, -1]]) params ["_k", "_until"];
+        if (diag_tickTime > _until) then { _k = 1; };
+        _iv * _k
+    };
+    case "cost": {
+        // Soupape : une image du HUD et de la texture qui dépasse 4 ms double l'intervalle (4 fois au plus) pendant 30 s.
+        if !(_a isEqualType 0) exitWith { false };
+        (uiNamespace getVariable ["COMSPEC_ATAK_TocSatSlow", [1, -1]]) params ["_k", "_until"];
+        if (diag_tickTime > _until) then { _k = 1; };
+        if (_a <= 0.004) exitWith { false };
+        uiNamespace setVariable ["COMSPEC_ATAK_TocSatSlow", [(_k * 2) min 4, diag_tickTime + 30]];
+        if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_TocSatSlowLog", -1e9]) > 60) then {
+            uiNamespace setVariable ["COMSPEC_ATAK_TocSatSlowLog", diag_tickTime];
+            ["WARNING", "TOC", format ["Vue satellite : une image a pris %1 ms, cadence réduite pendant 30 s (réglage Qualité de la vue satellite)", round (_a * 1000)]] call comspec_atak_native_fnc_log;
+        };
+        true
+    };
     case "targets": {
+        // Gardé 0,3 s par camp : la visée du satellite, le HUD de chaque écran et le libellé le lisaient chacun de
+        // leur côté, la visée à chaque image du jeu.
+        private _tgc = uiNamespace getVariable ["COMSPEC_ATAK_TocSatTg", createHashMap];
+        uiNamespace setVariable ["COMSPEC_ATAK_TocSatTg", _tgc];
+        private _tgh = _tgc getOrDefault [_a, [-1e9, []]];
+        if (diag_tickTime - (_tgh select 0) < 0.3) exitWith { _tgh select 1 };
         private _feed = missionNamespace getVariable [format ["COMSPEC_ATAK_TocFeed_%1", _a], []];
-        (_feed param [1, []]) apply {
+        private _tgo = (_feed param [1, []]) apply {
             _x params ["_k", "_cs", "_p", "", "_fr", "_kind", "", ["_g", ""], ["_n", 1]];
             private _o = objectFromNetId _k;
             private _v = vehicle _o;
@@ -117,7 +173,9 @@ switch (_mode) do {
             };
             private _size = if (_kind isEqualTo "inf" || {isNull _o}) then { [2.5, 8] select (_kind isNotEqualTo "inf") } else { ((sizeOf typeOf _v) * 0.7) max 4 };
             [_k, _cs + (["", format [" +%1", _n - 1]] select (_n > 1)), _fr, _kind, _pos, _size, _g]
-        }
+        };
+        _tgc set [_a, [diag_tickTime, _tgo]];
+        _tgo
     };
     case "aim": {
         _a params ["_side", "_n"];
@@ -183,8 +241,9 @@ switch (_mode) do {
         // Bail du rendu : jamais raccourci (l'onglet SAT quitté garde 30 s, le rafraîchissement suivant n'en remet pas 3).
         _e set [2, (_e select 2) max (diag_tickTime + _secs)];
         if (_pc) then { _e set [7, (_e select 7) max (diag_tickTime + _secs)]; };
-        if (isNull (_e select 0)) then { ["make", [_side, _n, ["M", "H"] select _pc]] call _fn; } else {
-            if (_pc && {(_e select 4) isNotEqualTo "H"}) then { ["retarget", [_k, "H"]] call _fn; };
+        private _rq = [_pc] call _resFor;
+        if (isNull (_e select 0)) then { ["make", [_side, _n, _rq]] call _fn; } else {
+            if (_pc && {_rq isNotEqualTo ""} && {(_e select 4) isNotEqualTo _rq}) then { ["retarget", [_k, _rq]] call _fn; };
         };
         true
     };
@@ -193,6 +252,8 @@ switch (_mode) do {
         private _k = [_side, _n] call _keyOf;
         private _e = _cams getOrDefault [_k, [objNull, "", 0, "", "", 0, 0, 0]];
         if (!isNull (_e select 0)) exitWith { true };
+        // Vue satellite désactivée (réglage du joueur) : aucune caméra, l'écran le dit.
+        if ((call _qual) isEqualTo 0 || {!(_q in ["H", "M", "L"])}) exitWith { false };
         ["check", "SATELLITE"] call comspec_atak_native_fnc_pipCheck;
         private _rt = [_side, _n, _q] call _rtOf;
         private _aim = ["aim", [_side, _n]] call _fn;
@@ -221,21 +282,31 @@ switch (_mode) do {
                 {
                     _y params ["_cam", "_rt", "", "_img", "", "_base", "_fc"];
                     if (isNull _cam) then { continue };
-                    private _p = _x splitString "|";
-                    private _side = _p select 0;
-                    private _n = parseNumber (_p select 1);
-                    private _st = ((["state", _side] call comspec_atak_native_fnc_tocRoom) select 2) param [_n, []];
-                    // Capteur rendu (AUTO et JOUR suivent la nuit) ; effet changé seulement quand il change.
-                    private _m = ["effect", _st param [3, "AUTO"]] call comspec_atak_native_fnc_tocSat;
-                    if (_m isNotEqualTo _img) then {
-                        _y set [3, _m];
-                        _rt setPiPEffect (["pip", _m] call comspec_atak_native_fnc_tocSat);
+                    // Visée, capteur et réglages : relus 5 fois par seconde au plus (avant : à chaque image du jeu, avec
+                    // tous les nœuds du camp parcourus). Chaque image ne fait plus que glisser la caméra vers ce but.
+                    private _goals = uiNamespace getVariable ["COMSPEC_ATAK_TocSatGoal", createHashMap];
+                    private _goal = _goals getOrDefault [_x, [-1e9]];
+                    if (diag_tickTime - (_goal select 0) > 0.2) then {
+                        private _p = _x splitString "|";
+                        private _side = _p select 0;
+                        private _n = parseNumber (_p select 1);
+                        private _st = ((["state", _side] call comspec_atak_native_fnc_tocRoom) select 2) param [_n, []];
+                        // Capteur rendu (AUTO et JOUR suivent la nuit) ; effet changé seulement quand il change.
+                        private _m = ["effect", _st param [3, "AUTO"]] call comspec_atak_native_fnc_tocSat;
+                        if (_m isNotEqualTo _img) then {
+                            _y set [3, _m];
+                            _rt setPiPEffect (["pip", _m] call comspec_atak_native_fnc_tocSat);
+                        };
+                        private _aim0 = ["aim", [_side, _n]] call comspec_atak_native_fnc_tocSat;
+                        _goal = [diag_tickTime, _aim0, _st param [8, [false, true]]];
+                        _goals set [_x, _goal];
+                        uiNamespace setVariable ["COMSPEC_ATAK_TocSatGoal", _goals];
                     };
-                    private _aim = ["aim", [_side, _n]] call comspec_atak_native_fnc_tocSat;
+                    private _aim = _goal param [1, []];
                     if ((count _aim) < 2) then { continue };
                     (_aim select 0) params ["_tx", "_ty"];
                     (["altFov", _aim select 1] call comspec_atak_native_fnc_tocSat) params ["_alt", "_fov"];
-                    (_st param [8, [false, true]]) params [["_jit", false], ["_terr", true]];
+                    (_goal param [2, [false, true]]) params [["_jit", false], ["_terr", true]];
                     private _gz = getTerrainHeightASL [_tx, _ty];
                     // Relief non suivi : altitude constante au-dessus du sol de référence, jamais sous le relief.
                     if (!_terr) then { _gz = _base max (_gz - _alt + 60); };
@@ -318,19 +389,17 @@ switch (_mode) do {
     };
     case "marks": {
         // Marqueurs de la carte que ce joueur voit (canal compris) et tâches de sa mission, dans la vue : [[pos ASL, icône,
-        // couleur, texte]...]. Relevé refait seulement quand la vue a bougé de façon notable (règle de « edges ») ; la marge
-        // de 25 % garde dans le relevé tout ce qui entre dans l'image entre deux relevés.
+        // couleur, texte]...]. Gardés 1 s par satellite.
         _a params ["_side", "_n"];
         private _cache = uiNamespace getVariable ["COMSPEC_ATAK_TocSatMk", createHashMap];
         uiNamespace setVariable ["COMSPEC_ATAK_TocSatMk", _cache];
         private _k = [_side, _n] call _keyOf;
+        private _hit = _cache getOrDefault [_k, [-1e9, []]];
+        if (diag_tickTime - (_hit select 0) < 1) exitWith { _hit select 1 };
         private _pose = ["pose", [_side, _n]] call _fn;
         if ((count _pose) < 2) exitWith { [] };
         _pose params ["_c", "_fov"];
-        private _hw0 = ((_c select 2) - (getTerrainHeightASL [_c select 0, _c select 1])) * _fov;
-        _cache getOrDefault [_k, [[0, 0], 0, []]] params ["_c0", "_h0", "_l0"];
-        if ((_c distance2D _c0) < _hw0 * 0.1 && {abs (_hw0 - _h0) < _hw0 * 0.1}) exitWith { _l0 };
-        private _hw = _hw0 * 1.25;
+        private _hw = (((_c select 2) - (getTerrainHeightASL [_c select 0, _c select 1])) * _fov) * 1.1;
         private _hh = _hw / _aspect;
         private _rgbOf = {
             params ["_arr"];
@@ -354,13 +423,11 @@ switch (_mode) do {
                 || {abs ((_tp select 0) - (_c select 0)) > _hw} || {abs ((_tp select 1) - (_c select 1)) > _hh}) then { continue };
             _out pushBack [[_tp select 0, _tp select 1, getTerrainHeightASL _tp], getText (configFile >> "CfgMarkers" >> "mil_objective" >> "icon"), [0.95, 0.3, 0.22, 1], (taskDescription _x) param [1, ""]];
         } forEach (simpleTasks player);
-        _cache set [_k, [[_c select 0, _c select 1], _hw0, _out]];
+        _cache set [_k, [diag_tickTime, _out]];
         _out
     };
     case "edges": {
-        // Fusion : contours des bâtiments vus (toits), 40 au plus. Le relevé lourd n'est refait que si la vue a bougé de
-        // façon notable (centre à plus de 10 % de la demi-largeur, ou zoom changé de plus de 10 %), pas à intervalle fixe.
-        // Les coins sont en coordonnées du monde : « hudPaint » les reprojette à chaque passage avec la pose courante.
+        // Fusion : contours des bâtiments vus (toits), 40 au plus, recalculés toutes les 1,5 s ou quand la vue bouge.
         // [[coin 1, coin 2, coin 3, coin 4] (ASL)...] ; rien au-delà de 760 m de large (traits illisibles).
         _a params ["_side", "_n"];
         private _pose = ["pose", [_side, _n]] call _fn;
@@ -371,8 +438,8 @@ switch (_mode) do {
         private _cache = uiNamespace getVariable ["COMSPEC_ATAK_TocSatEdge", createHashMap];
         uiNamespace setVariable ["COMSPEC_ATAK_TocSatEdge", _cache];
         private _k = [_side, _n] call _keyOf;
-        _cache getOrDefault [_k, [[0, 0], 0, []]] params ["_c0", "_h0", "_l0"];
-        if ((_c distance2D _c0) < _hw * 0.1 && {abs (_hw - _h0) < _hw * 0.1}) exitWith { _l0 };
+        _cache getOrDefault [_k, [-1e9, [0, 0], 0, []]] params ["_t0", "_c0", "_h0", "_l0"];
+        if (diag_tickTime - _t0 < 1.5 && {(_c distance2D _c0) < _hw * 0.2} && {abs (_hw - _h0) < _hw * 0.15}) exitWith { _l0 };
         private _out = [];
         {
             if ((count _out) >= 40) exitWith {};
@@ -381,8 +448,8 @@ switch (_mode) do {
             private _b = _x;
             private _z = (_p2 select 2) * 0.8;
             _out pushBack ([[_p1 select 0, _p1 select 1], [_p2 select 0, _p1 select 1], [_p2 select 0, _p2 select 1], [_p1 select 0, _p2 select 1]] apply { _b modelToWorldWorld [_x select 0, _x select 1, _z] });
-        } forEach (nearestObjects [[_c select 0, _c select 1], ["House"], _hw * 1.25, true]);
-        _cache set [_k, [[_c select 0, _c select 1], _hw, _out]];
+        } forEach (nearestObjects [[_c select 0, _c select 1], ["House"], _hw * 1.15, true]);
+        _cache set [_k, [diag_tickTime, [_c select 0, _c select 1], _hw, _out]];
         _out
     };
     case "hudMake": {
@@ -689,11 +756,13 @@ switch (_mode) do {
                 if (_i < 0) then { _want pushBack [_k, _d]; } else { (_want select _i) set [1, (((_want select _i) select 1) min _d)]; };
             };
         } forEach _reg;
+        // Vue satellite désactivée : plus aucun rendu demandé par les écrans (les caméras en cours sont libérées plus bas).
+        if ((call _qual) isEqualTo 0) then { _max = 0; };
         _want = ([_want, [], { _x select 1 }, "ASCEND"] call BIS_fnc_sortBy) select [0, _max];
         private _dist = createHashMapFromArray _want;
         private _keep = _want apply { _x select 0 };
         // Demandé par le PC du poste (onglet SAT) : toujours rendu, c'est la console de l'opérateur.
-        { if ((_y select 2) > diag_tickTime) then { _keep pushBackUnique _x; }; } forEach _cams;
+        { if ((_y select 2) > diag_tickTime && {(call _qual) > 0}) then { _keep pushBackUnique _x; }; } forEach _cams;
         {
             if !(_x in _keep) then { private _p = _x splitString "|"; ["free", [_p select 0, parseNumber (_p select 1)]] call _fn; };
         } forEach (keys _cams);
@@ -703,15 +772,8 @@ switch (_mode) do {
             // Résolution : PC du poste H ; écran à 8 m au plus M, au-delà de 10 m L (entre les deux : inchangée).
             private _d = _dist getOrDefault [_x, 1e9];
             private _cur = _e param [4, ""];
-            private _q = switch (true) do {
-                case ((_e param [7, 0]) > diag_tickTime): { "H" };
-                case (_d <= 8): { "M" };
-                case (_d > 10): { "L" };
-                default { [_cur, "M"] select (_cur in ["", "H"]) };
-            };
-            // Réglage « Qualité de l'image SAT » : une valeur fixe (H, M, L) remplace le choix automatique.
-            private _forced = missionNamespace getVariable ["comspec_atak_native_sat_quality", "AUTO"];
-            if (_forced in ["H", "M", "L"]) then { _q = _forced; };
+            private _q = [(_e param [7, 0]) > diag_tickTime, _d, _cur] call _resFor;
+            if (_q isEqualTo "") then { continue };
             if ((count _e) < 8 || {isNull (_e select 0)}) then { ["make", [_p select 0, parseNumber (_p select 1), _q]] call _fn; } else { ["retarget", [_x, _q]] call _fn; };
         } forEach _keep;
         _keep

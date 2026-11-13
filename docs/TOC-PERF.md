@@ -28,6 +28,19 @@ registre change), un contrôle de visibilité par écran toutes les 3 s au plus.
 | Contenu ↔ carte AUCUN SIGNAL | (pas de carte) | contenu après 2 images avec flux, carte après 3 sans |
 | Source d'une diffusion | (nouveau) | prise après 2 images, rendue après 3 |
 
+## Vue satellite (4.8.0, réglage « Qualité de la vue satellite »)
+
+| Qualité | Image du PC | Écran à 8 m au plus | Écran au-delà de 10 m | Texture d'un écran du mur | Écran regardé de près |
+|---|---|---|---|---|---|
+| Désactivée | aucune | aucune | aucune | — | — |
+| Basse (défaut) | 1024 x 512 | 512 x 256 | 512 x 256 | 2 par seconde | 5 par seconde |
+| Moyenne | 2048 x 1024 | 1024 x 512 | 512 x 256 | 3 par seconde | 5 par seconde |
+| Haute | 2048 x 1024 | 1024 x 512 | 1024 x 512 | 5 par seconde | 6 à 7 par seconde |
+
+Une caméra par satellite et par camp, quel que soit le nombre d'écrans. Visée relue 5 fois par seconde, cibles gardées
+0,3 s. Une image de plus de 4 ms double l'intervalle (4 fois au plus) pendant 30 s. Le moteur rend la caméra à chaque
+image du jeu : seule la résolution en réduit le coût.
+
 ## Serveur
 
 | Travail | Rythme | Condition |

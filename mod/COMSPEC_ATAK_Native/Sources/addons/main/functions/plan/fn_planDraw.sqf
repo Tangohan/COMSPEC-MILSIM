@@ -13,7 +13,7 @@ private _mpx = ["mpx", _map] call comspec_atak_native_fnc_planGfx;
 if (_mpx <= 0) exitWith {};
 // Symboles proportionnels à l'écran de l'ATAK ; textes jamais sous une taille lisible.
 private _kRaw = ((ctrlPosition _map) select 3) / (safeZoneH * 0.7);
-private _k = (_kRaw max 0.35) min 1.35;
+private _k = ["view", _kRaw] call comspec_atak_native_fnc_mapIconScale;
 private _ts = ((profileNamespace getVariable ["COMSPEC_ATAK_MapTextScale", 1.25]) max 0.8) min 2.2;
 private _tsz = 0.026 * ((_kRaw max 0.8) min 1.25) * _ts;
 private _gfx = comspec_atak_native_fnc_planGfx;
