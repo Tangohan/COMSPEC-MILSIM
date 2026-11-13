@@ -1,0 +1,49 @@
+[h1]COMSPEC Flashbang -BetterFlash- 1.0.0 — première version / first release[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Grenades[/b] : [AT.NA] 1-BANG BF à [AT.NA] 9-BANG BF, de 1 à 9 flashs à la suite, exactement autant de bangs chez tous les joueurs.
+[*] [b]Drill[/b] : grenade d'entraînement bleue, un pop et un peu de fumée, aucun effet ; son au choix parmi 8.
+[*] [b]Grenades à délai[/b] : [AT.NA] N-BANG 3s / 8s et [AT.NA] DRILL 3s / 8s, et la « Caisse délais BF ».
+[*] [b]Sons[/b] : bangs forts et réalistes, entendus jusqu'à 250 m (réglable) ; volumes des bangs et de l'acouphène réglables.
+[*] [b]Effets[/b] : écran blanc, tache rémanente, sons étouffés et sifflement qui s'éteint, visée instable ; JVN et lunettes renforcent l'effet.
+[*] [b]Intérieur / extérieur[/b] : plus fort en pièce fermée, bang sourd derrière un mur, aucun éblouissement sans ligne de vue.
+[*] [b]IA[/b] : elle vise mal, hésite et se couvre, puis se reprend.
+[*] [b][AT.NA] GANG BANG BF[/b] : 50 flashs en 15 à 20 s, rafales et pauses, très éprouvant : à utiliser avec parcimonie (réglage « Autoriser les grenades à plus de 9 flashs »).
+[*] [b]Rafales R[/b] : « [AT.NA] 2-BANG R » … « [AT.NA] 9-BANG R » et « [AT.NA] GANG BANG R », flashs hyper rapides (effet stroboscopique) ; réglage « Cadence des flashs » (Normal, Rapide, Hyper rapide, Aléatoire).
+[*] [b]BANG spéciaux[/b] : « [AT.NA] JAPAN BANG », « [AT.NA] WOMEN BANG », « [AT.NA] SUPRISE BANG », « [AT.NA] GERMAN BANG », corps multicolore, chacun joue son propre son à la place du bang ; « Caisse BANG spéciaux ».
+[*] [b]Préfixe [AT.NA][/b] : toutes les grenades sont regroupées dans l'Arsenal et l'inventaire.
+[*] [b]Variation aléatoire[/b] : chaque détonation et chaque victime est un peu différente (lumière, son, blanc, flou, IA), moyenne inchangée.
+[*] [b]Son beaucoup plus fort[/b] : volume 500 % par défaut (jusqu'à 1000 %), couche proche, un seul acouphène continu ; baissez votre casque avant de tester.
+[*] [b]Flammes légères[/b] aux évents (réglable), sans feu ni dégât.
+[*] [b]Rafales R[/b] : un bang et un éclat par coup (« tatatatat »), même à 20 images/s ; halos et teintes qui varient à chaque flash (8 modèles).
+[*] [b]Effet par camp[/b] : BLUFOR, OPFOR, Indépendants, Civils sur Normal, Réduit, Aucun effet visuel ou Immunisé ; « Mes propres grenades m'affectent » et « Les grenades de mon camp m'affectent ».
+[*] [b]Extérieur[/b] : éblouissement plus court dehors (rien au-delà de 19 m) et réduit de jour (plein soleil x0,45) ; lumière et halo plus discrets de jour.
+[*] [b]Réglages[/b] : 45 réglages CBA, préréglages Réaliste, Arcade et Léger ; journal de diagnostic actif par défaut (lignes [COMSPEC FB] dans le RPT, rien à l'écran).
+[*] [b]Serveur[/b] : mod obligatoire chez les joueurs ; sur le serveur, recommandé (Zeus, module Eden, IA du serveur) mais pas obligatoire pour lancer des grenades.
+[*] [b]Missions[/b] : caisse, Arsenal, module Eden, modules Zeus avec ZEN, avec « Délai de mèche » (aucun, 3 s, 8 s, personnalisé). Seul CBA_A3 est requis.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Grenades[/b]: [AT.NA] 1-BANG BF to [AT.NA] 9-BANG BF, 1 to 9 flashes in a row, exactly as many bangs for every player.
+[*] [b]Drill[/b]: blue training grenade, a pop and a puff of smoke, no effect; choice of 8 sounds.
+[*] [b]Delayed grenades[/b]: [AT.NA] N-BANG 3s / 8s and [AT.NA] DRILL 3s / 8s, and the "BF delay crate".
+[*] [b]Sounds[/b]: loud, realistic bangs, heard up to 250 m (adjustable); bang and tinnitus volume settings.
+[*] [b]Effects[/b]: white screen, afterimage, muffled sound and fading ringing, unsteady aim; NVG and scopes make it stronger.
+[*] [b]Indoor / outdoor[/b]: stronger in a closed room, dull bang behind a wall, no dazzle without line of sight.
+[*] [b]AI[/b]: it aims badly, hesitates and takes cover, then recovers.
+[*] [b][AT.NA] GANG BANG BF[/b]: 50 flashes over 15 to 20 s, bursts and pauses, very harsh: use sparingly (« Allow grenades with more than 9 flashes » setting).
+[*] [b]R bursts[/b]: « [AT.NA] 2-BANG R » … « [AT.NA] 9-BANG R » and « [AT.NA] GANG BANG R », hyper fast flashes (strobe effect); « Flash rate » setting (Normal, Fast, Hyper fast, Random).
+[*] [b]Special BANGs[/b]: « [AT.NA] JAPAN BANG », « [AT.NA] WOMEN BANG », « [AT.NA] SUPRISE BANG », « [AT.NA] GERMAN BANG », multicoloured body, each plays its own sound instead of the bang; "Special BANG crate".
+[*] [b][AT.NA] prefix[/b]: every grenade is grouped together in the Arsenal and the inventory.
+[*] [b]Random variation[/b]: every detonation and every victim is a little different (light, sound, white-out, blur, AI), same average.
+[*] [b]Much louder sound[/b]: 500 % volume by default (up to 1000 %), close layer, one continuous tinnitus; turn your headset down before testing.
+[*] [b]Light flames[/b] from the vents (adjustable), no fire or damage.
+[*] [b]R bursts[/b]: one bang and one flash per shot, even at 20 FPS; halos and tints vary with every flash (8 sprites).
+[*] [b]Per-side effect[/b]: BLUFOR, OPFOR, Independent, Civilians on Normal, Reduced, No visual effect or Immune; "My own grenades affect me" and "My side's grenades affect me".
+[*] [b]Outdoors[/b]: shorter dazzle range in open ground (nothing beyond 19 m), reduced by day (full sun x0.45); world light and halo more discreet by day.
+[*] [b]Settings[/b]: 45 CBA settings, Realistic, Arcade and Light presets; diagnostic log on by default ([COMSPEC FB] lines in the RPT, nothing on screen).
+[*] [b]Server[/b]: the mod is required on players' games; on the server it is recommended (Zeus, Eden module, server AI) but not required for thrown grenades.
+[*] [b]Missions[/b]: crate, Arsenal, Eden module, Zeus modules with ZEN, with "Fuse delay" (none, 3 s, 8 s, custom). Only CBA_A3 is required.
+[/list]

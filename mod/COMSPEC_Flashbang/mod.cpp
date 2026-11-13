@@ -1,0 +1,12 @@
+name = "COMSPEC Flashbang";
+author = "COMSPEC";
+actionName = "Website";
+action = "https://athena-comspec.eu/public";
+logo = "logo.paa";
+logoOver = "logo.paa";
+logoSmall = "logo.paa";
+picture = "logo.paa";
+tooltip = "COMSPEC Flashbang";
+overview = "Grenades assourdissantes réalistes de 1 à 9 détonations et grenade d'entraînement DRILL : éblouissement, image rémanente, acouphène, ouïe étouffée, intérieur / extérieur, JVN, IA. Dépendance : CBA_A3.";
+hideName = 0;
+hidePicture = 0;

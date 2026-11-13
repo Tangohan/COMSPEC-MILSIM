@@ -1,0 +1,114 @@
+[img]https://athena-comspec.eu/assets/workshop/flashbang/fr/banniere.png[/img]
+
+[h1]FRANÇAIS[/h1]
+[b]COMSPEC Flashbang -BetterFlash- (BF)[/b] : des grenades assourdissantes réalistes pour Arma 3, de 1 à 9 flashs.
+
+[h2]Les grenades[/h2]
+[list]
+[*][b][AT.NA] 1-BANG BF à 9-BANG BF[/b] : 1 à 9 flashs à la suite, toutes les demi-secondes environ.
+[*][b]Drill[/b] : grenade d'entraînement bleue, un pop et un peu de fumée, aucun effet. Son au choix parmi 8.
+[*][b]Nouveau[/b] : GANG BANG BF de 50 flashs (avec parcimonie), rafales hyper rapides « R » (un bang et un éclat par coup), cadence et hasard réglables, halos et teintes qui varient à chaque flash.
+[*][b]Grenades à délai[/b] : « [AT.NA] N-BANG 3s » / « 8s », « DRILL 3s » / « 8s » : mèche marquée sur l'engin.
+[*][b]BANG spéciaux[/b] multicolores, chacun avec son propre son : JAPAN, WOMEN, SUPRISE et GERMAN BANG.
+[*]« Caisse BF », « Caisse délais BF », « Caisse BANG spéciaux » ; Arsenal : toutes les grenades sous le préfixe [AT.NA].
+[*]Se lancent comme une grenade normale (G, Ctrl+G pour changer).
+[/list]
+
+[h2]Ce que vous ressentez[/h2]
+[list]
+[*]Écran blanc d'un coup, puis la vue revient doucement.
+[*]Une tache reste là où était le flash et suit votre regard.
+[*]Bang fort et réaliste, entendu au loin (250 m par défaut), sourd derrière un mur. Sons, voix et radio étouffés, puis un sifflement qui s'éteint.
+[*]Visée instable quelques secondes ; pas de chute, pas de dégâts.
+[*]JVN allumées : l'image sature. Lunette pointée sur le flash : halo et effet plus fort.
+[*]En pièce fermée, le flash remplit la pièce, même de dos. Derrière un mur : bang sourd, pas d'éblouissement.
+[*]Distance, ligne de vue et regard détourné changent tout. Dehors de jour, l'effet est plus faible.
+[*]Chaque flash relance l'effet, avec un plafond.
+[*]L'IA est touchée aussi : elle vise mal, hésite et se couvre, puis se reprend.
+[/list]
+
+[h2]Réalisme[/h2]
+Une flashbang désoriente, elle ne tue pas. Durées et distances suivent des fiches techniques publiques. Pas de flou psychédélique ni de joueur figé. Trois préréglages : [b]Réaliste[/b] (défaut), [b]Arcade[/b] (plus fort, plus long), [b]Léger[/b].
+
+[h2]Réglages[/h2]
+45 réglages CBA (Options › Options des addons › COMSPEC Flashbang), chacun avec un exemple :
+[list]
+[*]Volume des flashbangs et de l'acouphène sur votre poste (sons forts par défaut : baissez le casque avant de tester).
+[*]Portée du son : 250 m, moins pour un petit terrain.
+[*]Son et volume de la Drill pour tous.
+[*]Rayon maximal : 25 m, 15 m pour un effet plus local.
+[*]Effet par camp (BLUFOR, OPFOR…) : Normal, Réduit, Aucun effet visuel ou Immunisé ; vos propres grenades aussi.
+[/list]
+
+[h2]Compatibilité[/h2]
+[list]
+[*][b]Obligatoire :[/b] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=450814997]CBA_A3[/url].
+[*][b]Optionnels, détectés seuls :[/b] ACE3 (les bouchons protègent), ACRE2 ou TFAR (radio étouffée), ZEN (modules Zeus).
+[/list]
+
+[h2]Créateurs de missions[/h2]
+Module Eden « Flashbang (COMSPEC) » : grenade posée, effet sur une zone ou Drill, au départ ou par déclencheur. Avec ZEN : « Lancer un flashbang » et « Effet de flashbang sur une zone ». Les deux ont un « Délai de mèche » : aucun, 3 s, 8 s ou personnalisé (0,5 à 20 s).
+
+[h2]Installation[/h2]
+Abonnez-vous à CBA_A3 et à ce mod. Chargez-les chez tous les joueurs (obligatoire). Sur le serveur, le mod est recommandé (Zeus, module Eden, IA du serveur) mais pas obligatoire pour lancer des grenades ; s'il vérifie les signatures, ajoutez la clé [b]keys\comspec_flashbang.bikey[/b] au dossier keys du serveur. En multijoueur, chacun voit et entend les mêmes flashs ; les effets ne touchent que les joueurs exposés.
+
+[h2]Support et licence[/h2]
+Bug ou idée : [url=https://discord.gg/CCpJA6Nks]Discord COMSPEC[/url]. © 2026 COMSPEC, licence COMSPEC : usage personnel depuis ce Workshop ; copie, modification et redistribution interdites. Sons enregistrés : licence acquise par COMSPEC ; BANG spéciaux : sons voicy.network, usage non commercial ; autres synthétisés.
+
+[hr][/hr]
+[img]https://athena-comspec.eu/assets/workshop/flashbang/en/banniere.png[/img]
+
+[h1]ENGLISH[/h1]
+[b]COMSPEC Flashbang -BetterFlash- (BF)[/b]: realistic stun grenades for Arma 3, from 1 to 9 flashes.
+
+[h2]The grenades[/h2]
+[list]
+[*][b][AT.NA] 1-BANG BF to 9-BANG BF[/b]: 1 to 9 flashes in a row, about every half second.
+[*][b]Drill[/b]: blue training grenade, a pop and a puff of smoke, no effect. Choice of 8 sounds.
+[*][b]New[/b]: 50-flash GANG BANG BF (use sparingly), hyper fast « R » bursts (one bang and one flash per shot), adjustable rate and randomness, halos and tints that vary with every flash.
+[*][b]Delayed grenades[/b]: "[AT.NA] N-BANG 3s" / "8s", "DRILL 3s" / "8s": fuse stamped on the device.
+[*][b]Special BANGs[/b], multicoloured, each with its own sound: JAPAN, WOMEN, SUPRISE and GERMAN BANG.
+[*]"BF crate", "BF delay crate", "Special BANG crate"; Arsenal: every grenade under the [AT.NA] prefix.
+[*]Thrown like a normal grenade (G, Ctrl+G to switch).
+[/list]
+
+[h2]What you feel[/h2]
+[list]
+[*]Sudden white screen, then your sight slowly comes back.
+[*]A spot stays where the flash was and follows your gaze.
+[*]Loud, realistic bang, heard far away (250 m by default), dull behind a wall. Sounds, voices and radio muffled, then a ringing that fades.
+[*]Unsteady aim for a few seconds; no falling, no damage.
+[*]NVG on: the image saturates. Scope aimed at the flash: halo and a stronger effect.
+[*]In a closed room the flash fills the room, even with your back turned. Behind a wall: a dull bang, no dazzle.
+[*]Distance, line of sight and looking away change everything. Outdoors by day the effect is weaker.
+[*]Each flash renews the effect, up to a cap.
+[*]AI is affected too: it aims badly, hesitates and takes cover, then recovers.
+[/list]
+
+[h2]Realism[/h2]
+A flashbang disorients, it does not kill. Durations and distances follow public data sheets. No psychedelic blur, no frozen player. Three presets: [b]Realistic[/b] (default), [b]Arcade[/b] (stronger, longer), [b]Light[/b].
+
+[h2]Settings[/h2]
+45 CBA settings (Options › Addon Options › COMSPEC Flashbang), each with an example:
+[list]
+[*]Flashbang and tinnitus volume on your computer (loud by default: turn your headset down before testing).
+[*]Sound range: 250 m, less for a small area.
+[*]Drill sound and volume for everyone.
+[*]Maximum radius: 25 m, 15 m for a more local effect.
+[*]Per-side effect (BLUFOR, OPFOR…): Normal, Reduced, No visual effect or Immune; your own grenades too.
+[/list]
+
+[h2]Compatibility[/h2]
+[list]
+[*][b]Required:[/b] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=450814997]CBA_A3[/url].
+[*][b]Optional, auto-detected:[/b] ACE3 (earplugs protect you), ACRE2 or TFAR (muffled radio), ZEN (Zeus modules).
+[/list]
+
+[h2]Mission makers[/h2]
+Eden module "Flashbang (COMSPEC)": placed grenade, area effect or Drill, at start or from a trigger. With ZEN: "Throw a flashbang" and "Flashbang area effect". Both have a "Fuse delay": none, 3 s, 8 s or custom (0.5 to 20 s).
+
+[h2]Installation[/h2]
+Subscribe to CBA_A3 and this mod. Load them on every player's game (required). On the server the mod is recommended (Zeus, Eden module, server AI) but not required for thrown grenades; if it checks signatures, add the [b]keys\comspec_flashbang.bikey[/b] key to the server keys folder. In multiplayer everyone sees and hears the same flashes; the effects only hit exposed players.
+
+[h2]Support and license[/h2]
+Bug or idea: [url=https://discord.gg/CCpJA6Nks]COMSPEC Discord[/url]. © 2026 COMSPEC, COMSPEC license: personal use from this Workshop page; copying, modifying and redistributing are forbidden. Recorded sounds: licensed by COMSPEC; Special BANGs: sounds from voicy.network, non-commercial use; others synthesised.

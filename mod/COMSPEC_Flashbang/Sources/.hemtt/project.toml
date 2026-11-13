@@ -1,0 +1,20 @@
+# COMSPEC Flashbang : mod indépendant (dépendance unique : CBA_A3). Build : ..\build_mod.bat (Windows, PowerShell).
+# `hemtt check` puis `hemtt build` depuis mod/COMSPEC_Flashbang/Sources ; le PBO sort dans .hemttout/build/addons.
+name = "COMSPEC Flashbang"
+author = "COMSPEC"
+prefix = "comspec_flashbang"
+mainprefix = "z"
+
+[version]
+major = 1
+minor = 0
+patch = 0
+git_hash = 0
+
+[files]
+include = []
+exclude = []
+
+[hemtt.build]
+# Les p3d sont des MLOD (Arma 3 Object Builder) comme dans les autres mods COMSPEC : le jeu les charge tels quels.
+optional_mod_folders = false
