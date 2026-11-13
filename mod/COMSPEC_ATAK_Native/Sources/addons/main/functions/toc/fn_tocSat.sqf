@@ -318,17 +318,19 @@ switch (_mode) do {
     };
     case "marks": {
         // Marqueurs de la carte que ce joueur voit (canal compris) et tâches de sa mission, dans la vue : [[pos ASL, icône,
-        // couleur, texte]...]. Gardés 1 s par satellite.
+        // couleur, texte]...]. Relevé refait seulement quand la vue a bougé de façon notable (règle de « edges ») ; la marge
+        // de 25 % garde dans le relevé tout ce qui entre dans l'image entre deux relevés.
         _a params ["_side", "_n"];
         private _cache = uiNamespace getVariable ["COMSPEC_ATAK_TocSatMk", createHashMap];
         uiNamespace setVariable ["COMSPEC_ATAK_TocSatMk", _cache];
         private _k = [_side, _n] call _keyOf;
-        private _hit = _cache getOrDefault [_k, [-1e9, []]];
-        if (diag_tickTime - (_hit select 0) < 1) exitWith { _hit select 1 };
         private _pose = ["pose", [_side, _n]] call _fn;
         if ((count _pose) < 2) exitWith { [] };
         _pose params ["_c", "_fov"];
-        private _hw = (((_c select 2) - (getTerrainHeightASL [_c select 0, _c select 1])) * _fov) * 1.1;
+        private _hw0 = ((_c select 2) - (getTerrainHeightASL [_c select 0, _c select 1])) * _fov;
+        _cache getOrDefault [_k, [[0, 0], 0, []]] params ["_c0", "_h0", "_l0"];
+        if ((_c distance2D _c0) < _hw0 * 0.1 && {abs (_hw0 - _h0) < _hw0 * 0.1}) exitWith { _l0 };
+        private _hw = _hw0 * 1.25;
         private _hh = _hw / _aspect;
         private _rgbOf = {
             params ["_arr"];
@@ -352,11 +354,13 @@ switch (_mode) do {
                 || {abs ((_tp select 0) - (_c select 0)) > _hw} || {abs ((_tp select 1) - (_c select 1)) > _hh}) then { continue };
             _out pushBack [[_tp select 0, _tp select 1, getTerrainHeightASL _tp], getText (configFile >> "CfgMarkers" >> "mil_objective" >> "icon"), [0.95, 0.3, 0.22, 1], (taskDescription _x) param [1, ""]];
         } forEach (simpleTasks player);
-        _cache set [_k, [diag_tickTime, _out]];
+        _cache set [_k, [[_c select 0, _c select 1], _hw0, _out]];
         _out
     };
     case "edges": {
-        // Fusion : contours des bâtiments vus (toits), 40 au plus, recalculés toutes les 1,5 s ou quand la vue bouge.
+        // Fusion : contours des bâtiments vus (toits), 40 au plus. Le relevé lourd n'est refait que si la vue a bougé de
+        // façon notable (centre à plus de 10 % de la demi-largeur, ou zoom changé de plus de 10 %), pas à intervalle fixe.
+        // Les coins sont en coordonnées du monde : « hudPaint » les reprojette à chaque passage avec la pose courante.
         // [[coin 1, coin 2, coin 3, coin 4] (ASL)...] ; rien au-delà de 760 m de large (traits illisibles).
         _a params ["_side", "_n"];
         private _pose = ["pose", [_side, _n]] call _fn;
@@ -367,8 +371,8 @@ switch (_mode) do {
         private _cache = uiNamespace getVariable ["COMSPEC_ATAK_TocSatEdge", createHashMap];
         uiNamespace setVariable ["COMSPEC_ATAK_TocSatEdge", _cache];
         private _k = [_side, _n] call _keyOf;
-        _cache getOrDefault [_k, [-1e9, [0, 0], 0, []]] params ["_t0", "_c0", "_h0", "_l0"];
-        if (diag_tickTime - _t0 < 1.5 && {(_c distance2D _c0) < _hw * 0.2} && {abs (_hw - _h0) < _hw * 0.15}) exitWith { _l0 };
+        _cache getOrDefault [_k, [[0, 0], 0, []]] params ["_c0", "_h0", "_l0"];
+        if ((_c distance2D _c0) < _hw * 0.1 && {abs (_hw - _h0) < _hw * 0.1}) exitWith { _l0 };
         private _out = [];
         {
             if ((count _out) >= 40) exitWith {};
@@ -377,8 +381,8 @@ switch (_mode) do {
             private _b = _x;
             private _z = (_p2 select 2) * 0.8;
             _out pushBack ([[_p1 select 0, _p1 select 1], [_p2 select 0, _p1 select 1], [_p2 select 0, _p2 select 1], [_p1 select 0, _p2 select 1]] apply { _b modelToWorldWorld [_x select 0, _x select 1, _z] });
-        } forEach (nearestObjects [[_c select 0, _c select 1], ["House"], _hw * 1.15, true]);
-        _cache set [_k, [diag_tickTime, [_c select 0, _c select 1], _hw, _out]];
+        } forEach (nearestObjects [[_c select 0, _c select 1], ["House"], _hw * 1.25, true]);
+        _cache set [_k, [[_c select 0, _c select 1], _hw, _out]];
         _out
     };
     case "hudMake": {
@@ -705,6 +709,9 @@ switch (_mode) do {
                 case (_d > 10): { "L" };
                 default { [_cur, "M"] select (_cur in ["", "H"]) };
             };
+            // Réglage « Qualité de l'image SAT » : une valeur fixe (H, M, L) remplace le choix automatique.
+            private _forced = missionNamespace getVariable ["comspec_atak_native_sat_quality", "AUTO"];
+            if (_forced in ["H", "M", "L"]) then { _q = _forced; };
             if ((count _e) < 8 || {isNull (_e select 0)}) then { ["make", [_p select 0, parseNumber (_p select 1), _q]] call _fn; } else { ["retarget", [_x, _q]] call _fn; };
         } forEach _keep;
         _keep

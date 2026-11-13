@@ -24,8 +24,8 @@
     Modes :
       ["draw", [écran, display, affichage, contexte]]   image complète (fn_tocScreen, toutes les 1 à 2 s, écran allumé) ;
                                               contexte des affichages à carte : [["op", vue PIP], ["squad", groupe], ["sqNodes", nœuds]]
-      ["overlay", [écran, display]]           SAT : HUD du capteur seul (fn_tocSat « hudPaint »), 4 fois par seconde au plus
-      ["live", [écran, display]]              image vivante (satellite, mosaïque, caméra du chef) redessinée 6 à 7 fois par seconde
+      ["overlay", [écran, display]]           SAT : HUD du capteur seul (fn_tocSat « hudPaint »), à chaque image
+      ["live", [écran, display]]              image vivante : SAT à chaque image, mosaïque et caméra du chef 6 à 7 fois par seconde
       ["hide", display]                       rien à faire (tout est repris à chaque image), gardé pour les appels existants
       ["flash", camp]                         FLASH en cours : [texte, auteur, heure] ou []
       ["boardText", [affichage, état, camp]]  texte structuré LOG, EXCHECK, KILLS, REQ (le PC du poste lit KILLS)
@@ -78,11 +78,19 @@ switch (_mode) do {
                 [missionNamespace getVariable "COMSPEC_ATAK_TocBoardPfh"] call CBA_fnc_removePerFrameHandler;
                 missionNamespace setVariable ["COMSPEC_ATAK_TocBoardPfh", nil];
             };
+            // Satellite : cadres et image à chaque image (la phase suit le panoramique) ; mosaïque et vidéo : 6 à 7 fois par seconde.
+            private _now = diag_tickTime;
+            private _slow = _now >= (uiNamespace getVariable ["COMSPEC_ATAK_TocBoardNext", 0]);
+            if (_slow) then { uiNamespace setVariable ["COMSPEC_ATAK_TocBoardNext", _now + 0.15]; };
             {
-                // Satellite : cadres repris, redessin seulement si l'image est rendue ici ; vidéo : redessin simple.
-                if (((((_x select 0) getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isNotEqualTo "SAT") || {["overlay", _x] call comspec_atak_native_fnc_tocBoard}) then { displayUpdate (_x select 1); };
+                // Satellite : redessin seulement si l'image est rendue ici (sinon « overlay » masque le HUD).
+                if ((((_x select 0) getVariable ["COMSPEC_ATAK_TocScr", []]) param [3, ""]) isEqualTo "SAT") then {
+                    if (["overlay", _x] call comspec_atak_native_fnc_tocBoard) then { displayUpdate (_x select 1); };
+                } else {
+                    if (_slow) then { displayUpdate (_x select 1); };
+                };
             } forEach _l;
-        }, 0.15] call CBA_fnc_addPerFrameHandler];
+        }, 0] call CBA_fnc_addPerFrameHandler];
     };
     case "hide": {};
     case "overlay": {
@@ -95,9 +103,6 @@ switch (_mode) do {
         private _hud = _ui get "hud";
         private _rendered = (["rt", [_side, _n]] call comspec_atak_native_fnc_tocSat) isNotEqualTo "";
         if (!_rendered) exitWith { ["hudHide", _hud] call comspec_atak_native_fnc_tocSat; false };
-        // HUD reposé 4 fois par seconde au plus (l'image, elle, suit la boucle de l'écran).
-        if (diag_tickTime - (_d getVariable ["COMSPEC_ATAK_HudAt", -1]) < 0.24) exitWith { true };
-        _d setVariable ["COMSPEC_ATAK_HudAt", diag_tickTime];
         // Zone visible : sous un FLASH (52 px en haut), au-dessus du bandeau de lecture seule. Calques d'un écran du mur :
         // marqueurs, pistes, cadres et données ; pas de quadrillage.
         private _y0 = [0, 52 / _texH] select ((count (["flash", _side] call _fn)) > 0);

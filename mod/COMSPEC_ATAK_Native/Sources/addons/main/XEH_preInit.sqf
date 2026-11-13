@@ -1181,6 +1181,10 @@ private _dock = ["COMSPEC", "ATAK · Socle de recharge"];
 ["comspec_atak_native_dock_persist", "CHECKBOX",
     ["Garder les socles posés", "Les socles posés par les joueurs reviennent à leur place, avec leurs téléphones, à la prochaine partie sur la même carte. Pour les socles de la mission (Eden, Zeus), les téléphones sont toujours gardés."],
     _dock, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_sat_quality", "LIST",
+    ["Qualité de l'image SAT", "Résolution de la vue satellite sur les écrans et le PC. Auto : selon la distance (recommandé). Haute, moyenne ou basse : fixe partout, plus lourd en haute."],
+    ["COMSPEC", ""], [["AUTO", "H", "M", "L"], ["Auto (selon la distance)", "Haute (2048)", "Moyenne (1024)", "Basse (512)"], 0], 0,
+    {}] call CBA_fnc_addSetting;
 ["comspec_atak_native_dock_anyone", "CHECKBOX",
     ["Tout le monde peut reprendre n'importe quel téléphone", "Décoché : seul le propriétaire (compte Steam) peut reprendre son téléphone. Zeus et l'admin peuvent toujours."],
     _dock, false, 1] call comspec_atak_native_fnc_addSetting;
