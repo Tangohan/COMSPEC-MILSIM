@@ -63,7 +63,7 @@
       ["layout"]        pose la mise en page en cours (onglet, outil de la carte)     ["audit"] -> défauts de l'onglet affiché
       ["mk", [classe, clé]] contrôle créé pour fn_tocDraw / fn_tocHallUi (même registre)   ["tip", [contrôle, aide, brut]]
       ["label", [clé, long, court, brut]] libellé d'un bouton changé (mesuré de nouveau)     ["press", clé] boutons du PC
-      ["satClick", [u, v]] centre le satellite (clic sur l'image)   ["satOverlay"] HUD du capteur (4 fois par seconde)
+      ["satClick", [u, v]] centre le satellite (clic sur l'image)   ["satOverlay"] HUD du capteur (à chaque image, onglet SAT seulement)
       ["satDown"|"satUp", [x, y]] glisser sur l'image : déplace la vue     ["satWheel", z] molette sur l'image : zoom
       ["tool", nom]     "SELECT" | "MEASURE" | "MARKER"     ["layer", clé] "ai" | "ev"     ["search"]     ["left", [x, y]]
       ["frame", quoi]   "net" (tout le réseau) | "me" | "post" | [x, y]
@@ -1053,11 +1053,11 @@ private _ret = switch (_mode) do {
         ["layout"] call _fn;
         if (_t in ["SALLE", "MUR"]) then { ["refresh"] call comspec_atak_native_fnc_tocHallUi; };
         if !(_t in ["SAT", "SALLE", "MUR"]) then { ["show"] call comspec_atak_native_fnc_tocDraw; };
-        // SAT : HUD du capteur reposé 4 fois par seconde (texte et symboles), rien quand l'onglet est fermé.
+        // SAT : HUD du capteur reposé à chaque image (texte et symboles), rien quand l'onglet est fermé ni PC refermé (« unload »).
         private _sat = _t isEqualTo "SAT";
         if (!_sat) then { _st set ["satMap", false]; };
         if (_sat && {(_st getOrDefault ["satPfh", -1]) < 0}) then {
-            _st set ["satPfh", [{ ["satOverlay"] call comspec_atak_native_fnc_tocLaptop; }, 0.25] call CBA_fnc_addPerFrameHandler];
+            _st set ["satPfh", [{ ["satOverlay"] call comspec_atak_native_fnc_tocLaptop; }, 0] call CBA_fnc_addPerFrameHandler];
         };
         if (!_sat && {(_st getOrDefault ["satPfh", -1]) >= 0}) then { [_st get "satPfh"] call CBA_fnc_removePerFrameHandler; _st set ["satPfh", -1]; };
         _st set ["sig", ""];
