@@ -71,7 +71,7 @@ switch (_tab) do {
             if (_missing isEqualTo []) then {
                 _rows pushBack ["banner", "Kit complet", [0.13, 0.42, 0.22, 1]];
             } else {
-                _rows pushBack ["banner", format ["%1 objet(s) manquant(s)", count _missing], [0.55, 0.12, 0.08, 1]];
+                _rows pushBack ["banner", format ["<t size='0.8'>%1 objet(s) manquant(s)</t>", count _missing], [0.55, 0.12, 0.08, 1]];
                 { _x params ["_name", "_n"]; _rows pushBack ["info", _name, format ["manque %1", _n]]; } forEach _missing;
             };
             _rows pushBack ["section", "Objets obligatoires", "Comparés à ce que vous portez : équipé, sur vous, dans le sac"];

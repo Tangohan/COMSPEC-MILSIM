@@ -301,9 +301,16 @@ private _label = ["Aucun signal", "Très faible", "Faible", "Bon", "Excellent"] 
 // Réception seule : une barre au plus, rien ne part.
 if (!_tx && {_bars > 0}) then { _bars = 1; _label = "Réception seule"; };
 if (_bars isEqualTo 0) then { _tx = false; };
+// Type de liaison affiché dans la barre d'état (fn_statusUpdate) : radio MPU, relais, passerelle ou PC ; SAT = Athena
+// raccordé directement, sans relais ni maillage.
+private _netT = "";
+if (_mesh) then { _netT = "MPU"; } else {
+    if (_best isNotEqualTo []) then { _netT = createHashMapFromArray [["relay", "RELAIS"], ["gw", "PASSERELLE"], ["cp", "PC"], ["mpu5", "MPU"]] getOrDefault [_best select 5, "RELAIS"]; }
+    else { if (_bridge && {(toLower (missionNamespace getVariable ["COMSPEC_LinkState", "offline"])) isEqualTo "linked"}) then { _netT = "SAT"; }; };
+};
 _q = createHashMapFromArray [
     ["bars", _bars], ["kbps", _kbps], ["latency", _lat], ["loss", _loss min 100], ["factors", _f], ["sim", true],
-    ["label", _label], ["tx", _tx], ["margin", _margin], ["jitter", _jit]
+    ["label", _label], ["tx", _tx], ["margin", _margin], ["jitter", _jit], ["net", _netT]
 ];
 uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", [diag_tickTime, _q]];
 _q

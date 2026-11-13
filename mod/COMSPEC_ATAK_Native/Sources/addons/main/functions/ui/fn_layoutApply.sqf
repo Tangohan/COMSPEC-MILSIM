@@ -79,8 +79,18 @@ if (isNull _ram || {(ctrlParent _ram) isNotEqualTo _d}) then {
     _ram ctrlSetTextColor [0.62, 0.70, 0.66, 1];
     uiNamespace setVariable ["COMSPEC_ATAK_RamCtrl", _ram];
 };
+// Type de liaison (SAT, MPU, relais, passerelle, PC ; fn_statusUpdate) : juste à gauche de la barre de signal, la RAM s'écarte.
+private _netCtl = uiNamespace getVariable ["COMSPEC_ATAK_NetTypeCtrl", controlNull];
+if (isNull _netCtl || {(ctrlParent _netCtl) isNotEqualTo _d}) then {
+    _netCtl = _d ctrlCreate ["COMSPEC_RscTextRight", -1];
+    uiNamespace setVariable ["COMSPEC_ATAK_NetTypeCtrl", _netCtl];
+};
+private _netW = _iw * 2.6;
+_netCtl ctrlSetFontHeight (_fontS * 0.8);
+_netCtl ctrlSetPosition [_dx + _dw - _pad - _iw - _pad * 0.5 - _netW, _sy, _netW, _sh];
+_netCtl ctrlCommit 0;
 private _rx0 = _dx + _dw * 0.58 + _pad * 2 + 2 * _ih / _ratio;
-private _rx1 = _dx + _dw - _pad * 3 - _iw - ([0, _ih / _ratio] select _interactive);
+private _rx1 = _dx + _dw - _pad * 3 - _iw - ([0, _ih / _ratio] select _interactive) - _netW;
 // Cadenas et libellé du chiffrement (fn_meshKeys "link", mis à jour par fn_statusUpdate) : après le logo de liaison. Le libellé passe avant la mémoire vive.
 private _lock = uiNamespace getVariable ["COMSPEC_ATAK_LockCtrl", controlNull];
 private _lockTxt = uiNamespace getVariable ["COMSPEC_ATAK_LockTxt", controlNull];

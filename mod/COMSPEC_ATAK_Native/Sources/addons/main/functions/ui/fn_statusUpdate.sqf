@@ -46,6 +46,14 @@ if (_lq getOrDefault ["airplane", false]) then {
     _sigC = [0.95, 0.67, 0.20, 1];
     _sigTt = ("Mode avion : réseau coupé (Bluetooth disponible)") call comspec_atak_native_fnc_tr;
 };
+// Type de liaison (fn_linkQuality "net") : SAT sans relais en bleu ; libellé à gauche de la barre (fn_layoutApply).
+private _netT = _lq getOrDefault ["net", ""];
+if (_netT isEqualTo "SAT") then { _sigC = [0.25, 0.55, 1, 1]; };
+private _netCtl = uiNamespace getVariable ["COMSPEC_ATAK_NetTypeCtrl", controlNull];
+if (!isNull _netCtl) then {
+    [_netCtl, "cs_t", _netT] call _put;
+    [_netCtl, "cs_c", _sigC] call _put;
+};
 [_sig, "cs_t", _sigT] call _put;
 [_sig, "cs_c", _sigC] call _put;
 [_sig, "cs_tt", _sigTt] call _put;
