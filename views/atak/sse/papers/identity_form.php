@@ -17,15 +17,12 @@ if (!$canSeeTruth) {
 $val = static fn (string $k): string => (string) ($draft[$k] ?? '');
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers/identites')) ?>">Identités</a> / <strong>Nouvelle</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Référentiel // Nouvelle identité</div>
         <h1>Nouvelle identité</h1>
         <p>Saisissez l’identité à la main, ou tirez-en une au sort, cohérente avec le pays choisi : même tirage que le générateur du mod SSE, une graine donne toujours la même personne.</p>
     </div>
-    <div class="page-reference"><strong>Formulaire</strong> Réf. ATH-SSE-IDENT-NEW</div>
 </div>
 
 <form class="panel" method="get" action="<?= $h(url('atak/sse/papiers/identites/nouvelle')) ?>">

@@ -7,10 +7,11 @@ params [["_tab", "scan", [""]]];
 if (!hasInterface) exitWith {};
 
 if !(isClass (configFile >> "CfgPatches" >> "BII_Identifi") || {!isNil "BII_fnc_identifi_open"}) exitWith {
+    // Notification Overwatch (téléphone ATAK ou RPT) ; sans elle, RPT. Jamais le hint d'Arma.
     if (!isNil "comspec_overwatch_connect_fnc_showNotification") then {
         ["COMSPEC_Warning", ["BII Identifi n’est pas chargé — activez le pack S.O.A.R (BII-10)."]] call comspec_overwatch_connect_fnc_showNotification;
     } else {
-        hint "BII Identifi non chargé.";
+        diag_log text "[COMSPEC Overwatch][WARN] BII Identifi non chargé.";
     };
 };
 
@@ -19,7 +20,11 @@ if (!isNil "comspec_sse_fnc_biiOpen") exitWith {
 };
 
 if (isNil "BII_fnc_identifi_open") exitWith {
-    hint "BII Identifi indisponible.";
+    if (!isNil "comspec_overwatch_connect_fnc_showNotification") then {
+        ["COMSPEC_Warning", ["BII Identifi indisponible."]] call comspec_overwatch_connect_fnc_showNotification;
+    } else {
+        diag_log text "[COMSPEC Overwatch][WARN] BII Identifi indisponible.";
+    };
 };
 
 if (!isNil "BII_fnc_identifi_getState") then {

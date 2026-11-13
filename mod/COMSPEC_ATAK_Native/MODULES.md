@@ -201,6 +201,58 @@ tableau blanc. Attribut Eden « Allumé au lancement ».
 ["ensure", [tableau1, "MAP"]] call comspec_atak_native_fnc_tocScreen;   // carte du TOC sur le tableau
 ```
 
+### Menu ACE des écrans TOC
+
+Un seul arbre (`fn_tocMenu`, mode `tree`) sert au menu ACE « Écran COMSPEC » de chaque écran, aux actions de la
+molette sans ACE (un niveau à la fois : « Écran TOC · Afficher · Carte et flux », « Retour » pour remonter) et au
+tableau des écrans. Libellés courts, verbe d'abord ; l'état courant est écrit dans le libellé (« Luminosité : 75 % »,
+« Salle : TOC 1 ») et la vue en cours est cochée (« Carte et flux ✓ ») ; 7 entrées au plus par niveau (au-delà :
+« Suite… ») ; une entrée qui ne s'applique pas à l'écran n'est pas montrée (un bandeau 4:1 ne propose que bandeau,
+plaque et texte ; « Disposition… » seulement sur un écran à plusieurs dalles). Les retours passent par le téléphone,
+jamais par une fenêtre du jeu.
+
+| Entrée | Aide (une ligne, avec un exemple) |
+| --- | --- |
+| **Ouvrir le PC du poste** | Ouvre le PC du poste TOC : carte, groupes, flux, ordres. Exemple : donner un ordre à Alpha depuis la salle. |
+| **Afficher…** | Choisit ce que montre l'écran ; la vue en cours est cochée. Exemple : Carte et réseau, puis Carte seule. |
+| Afficher › Carte et réseau… | Carte et flux, Carte seule, Flux seul, Réseau, ORBAT du site, PIP du poste, Vue suivante. Exemple : carte et flux pour l'écran principal. |
+| Afficher › Tableaux du poste… | Horloge et chronos, Main courante, Liste d'exécution, Pertes et résultats, Demandes des éléments. Exemple : la main courante sur l'écran de droite. |
+| Afficher › Diffusion et mire (BROADCAST) | Montre un autre écran ou, sans source, la mire. Exemple : le même écran recopié dans toute la salle. |
+| Afficher › Texte à LED… | Ouvre la saisie du texte de l'écran. Exemple : « BRIEFING 21:00 ZULU » sur le bandeau. |
+| Afficher › Bandeau horloge ZULU / LOCAL (bandeau 4:1) | Bandeau avec les deux heures. Exemple : au-dessus du mur d'écrans. |
+| Afficher › Plaque au nom d'un groupe… (bandeau 4:1) | Plaque de nom d'un groupe du camp. Exemple : nommer l'écran d'une escouade. |
+| Afficher › Colonne… (écran incurvé) | Colonne étroite : heures et chronos, ou réseau et derniers comptes rendus. Exemple : la colonne gauche d'un écran incurvé. |
+| Afficher › Diapositives… | Diffuser mes diapositives, puis Diapositive suivante / précédente, Arrêter la diffusion. Exemple : briefing avant le départ. |
+| Afficher › Cadrer la carte… | Zoomer, Dézoomer, Centrer sur ma position, Cadrer tout le réseau. Exemple : zoomer sur l'objectif. |
+| Afficher › Sur une dalle du mur… | Choisit le contenu d'une seule dalle du mur (Dalle 1, Dalle 2…). Exemple : l'horloge sur la dalle 4. |
+| **Disposition…** | Répartit les contenus sur les dalles du mur en une fois (`fn_tocLayout`) ; la disposition en cours est cochée. Exemple : une disposition de briefing. |
+| **Source / caméra…** | Choisit la source montrée : satellite, escouade, caméra, mosaïque. Exemple : la caméra d'un drone. |
+| Source › Satellite SAT 1 / SAT 2 | Vue satellite et suivi des alliés. Exemple : SAT 1 sur l'objectif, SAT 2 sur l'itinéraire. |
+| Source › Escouade… | Écran consacré à un groupe du camp. Exemple : un écran par escouade engagée. |
+| Source › Caméra en direct… | Caméra suivante, ou une source de la liste (drone, caméra fixe, caméra partagée). Exemple : la caméra de l'entrée nord. |
+| Source › Mosaïque de caméras… | Plusieurs caméras sur le même écran. Exemple : 2x2 de tout le camp. |
+| **Écran…** | Réglages de cet écran : luminosité, texte, diffusion, diagnostic, retrait. Exemple : baisser la luminosité. |
+| Écran › Luminosité : n % | 100 %, 75 %, 50 %, 25 % ; valeur en cours dans le libellé. Exemple : 25 % pour une opération de nuit. |
+| Écran › Modifier le texte LED… (vue texte) | Ouvre la saisie du texte affiché. Exemple : changer « ALERTE » en « FIN D'ALERTE ». |
+| Écran › Diffusion (BROADCAST)… | Recopie un écran sur d'autres, ou affiche la mire (`fn_tocBroadcast`). Exemple : le même écran dans toute la salle. |
+| Écran › Diagnostic… | Image de test (8 s), « Tenu par : le serveur » ou « les joueurs (repli) », nom, vue et salle de l'écran. Exemple : un écran resté noir. |
+| Écran › Retirer l'écran TOC | L'objet n'est plus un écran TOC et reprend son image d'origine. Exemple : libérer la TV pour un briefing. |
+| **Salle : nom** | Salle TOC de l'écran, nom en cours dans le libellé (« Salle : aucune » sans salle). Exemple : lier l'écran à la salle la plus proche. |
+| Salle › Lier à la salle la plus proche : nom | Lie l'écran à la salle de l'écran ou du PC le plus proche (30 m). Exemple : un écran ajouté dans la salle TOC 1. |
+| Salle › Lier à une (autre) salle… | Liste des salles du camp. Exemple : choisir la salle du PC maître. |
+| Salle › Délier de la salle nom | L'écran n'appartient plus à cette salle. Exemple : un écran déplacé dans une autre pièce. |
+| Salle › Identifier (clignote 2 s) | L'écran clignote 2 s chez les joueurs proches. Exemple : retrouver la dalle 3 du mur. |
+| Salle › Éteindre l'écran / Allumer l'écran | Met l'écran en veille (réglage gardé) ou l'en sort. Exemple : salle vide, puis avant le briefing. |
+| **Gérer les écrans (tableau)…** | Ouvre le tableau de tous les écrans TOC (`fn_tocManager`). Exemple : changer la vue de dix écrans d'un coup. |
+| Utiliser comme écran TOC (objet pas encore désigné) | Fait de cet objet un écran TOC (carte et flux). Exemple : la TV de la salle de briefing. |
+
+```sqf
+// Arbre d'un écran : [[identifiant, libellé, aide, icône, clé ("" : groupe), enfants, coché]...]
+private _arbre = ["tree", cursorObject] call comspec_atak_native_fnc_tocMenu;
+// Exécuter une entrée par sa clé (les mêmes clés pour ACE, la molette et le tableau des écrans)
+[cursorObject, "bright|50"] call COMSPEC_ATAK_TocDo;
+```
+
 **English.** The "ATAK · TOC screen" Eden/Zeus module shows a side's live ATAK network, as computed by the mission
 server (`fn_tocFeed`), on a game TV or screen: map with nodes, mission markers, geolocated reports, network panel and
 feed. ACE/scroll actions change the display (map and feed, map, feed, post PIP), zoom and open the post laptop. The
@@ -210,6 +262,76 @@ persist across sessions (`fn_tocPersist`, setting "Keep TOC screens").
 COMSPEC screens are the game's own screens (tripod, dual, TV, desk monitor) set up to show one image day and night. The
 COMSPEC video projector (`fn_projector`, the game's projector) projects slides, TOC display, map or camera onto a game
 whiteboard within 15 m when switched on, intact, aimed and in line of sight; otherwise the board stays white.
+
+### Afficher un texte
+
+Tout écran capable de l'affichage « Texte » montre un message à LED : bandeaux LED 8:1 et 16:1 (`COMSPEC_ATAK_Screen_LedText8`,
+`COMSPEC_ATAK_Screen_LedText16`), mur LED, écrans et dalles 16:9, bandeau 4:1, colonnes d'un écran incurvé. Une plaque de nom
+ne le peut pas. Le texte s'écrit à quatre endroits, tous par le même chemin (`fn_tocScreen` « view », clé « text », réglage
+gardé d'une partie à l'autre) :
+
+- **Module « ATAK · Afficher un texte »** (Eden et Zeus, `fn_moduleTocText`). Eden : attributs Message affiché, Couleur du
+  texte, Vitesse, Défilement, Écrans visés (écrans synchronisés ; écran texte le plus proche ; toute la salle la plus proche ;
+  tous les écrans texte dans le rayon) et Rayon. Le message est posé par le serveur au lancement, après la reprise de la
+  partie précédente : celui du module l'emporte. Rien de synchronisé : l'écran texte le plus proche. Zeus : posé sur un écran
+  ou au sol, il ouvre la fenêtre de saisie pour cet écran, sinon pour l'écran texte le plus proche de l'endroit visé. Le
+  module se repose autant de fois que voulu, la fenêtre revient avec le texte en cours.
+- **Menu de l'écran** (ACE ou molette) : « Afficher un texte… » ouvre l'éditeur de l'écran (`fn_tocText` « edit » : liste
+  des messages, aperçu au format de l'écran).
+- **Gestionnaire d'écrans et PC du poste** : même fenêtre de saisie, pour l'écran choisi.
+- **Module « ATAK · Écran TOC »** : affichage « Texte à LED » et attribut Texte, pour l'écran que le module pose ou désigne.
+
+**Fenêtre de saisie** (`fn_tocTextTool` « dialog ») : modèle de message, message (un par ligne), couleur, vitesse,
+défilement, écrans visés (cet écran ; tous les écrans texte de la salle ; tous les écrans texte à moins de 50 m) et action
+(Afficher, Effacer le message). Le résultat s'écrit dans la fenêtre (« Texte affiché sur 6 écran(s) »), qui reste ouverte
+pour l'envoi suivant. Un écran visé qui montrait autre chose passe en affichage Texte ; « Effacer le message » rend le
+texte par défaut de l'affichage (le nom de l'écran).
+
+**Écriture.** `message ; couleur ; durée ; clignotant`, messages séparés par `|` (ou un par ligne dans la fenêtre), huit au
+plus, 300 caractères chacun, montrés à tour de rôle. Couleur : `G` vert, `A` ambre, `R` rouge, `W` blanc (ou le mot : vert,
+ambre, rouge, blanc). Durée en secondes (10 sans indication). Un texte plus large que l'écran défile.
+
+```
+Bienvenue au TOC ; G ; 8 | ALERTE ; R ; 5 ; clignotant
+HEURE H {h} ; A ; 10
+SITUATION : RAS ; G ; 10 | {dtg} ; W ; 5
+```
+
+**Variables** (remplacées à chaque image) :
+
+| Variable | Remplacée par | Exemple |
+|---|---|---|
+| `{zulu}` | heure Zulu, heures et minutes | 14:32 |
+| `{zulus}` | heure Zulu avec les secondes | 14:32:07 |
+| `{local}` | heure de la mission | 06:15 |
+| `{date}` | date de la mission | 11 NOV 2035 |
+| `{dtg}` | groupe date-heure Zulu | 111432Z NOV 26 |
+| `{h}` | chrono « heure H » du poste (sinon le premier chrono) | H-00:12:30 |
+| `{camp}` | camp de l'écran | BLUFOR |
+| `{poste}` | nom de l'écran | TOC BRAVO |
+| `{groupe}` | escouade liée à l'écran | Alpha 1-1 |
+
+**Modèles** proposés par la fenêtre : Bienvenue, Alerte, Exercice en cours, Heure H, Situation, Briefing en cours, Silence
+radio, Heure et date, Accès réservé, Fin d'exercice. Le modèle choisi remplace le message, qui se corrige avant de valider.
+
+```sqf
+// Écrans capables de texte : "object" (l'objet), "nearest", "near" (rayon en m), "hall" (même salle), "all".
+private _ecrans = ["targets", ["hall", ecran1]] call comspec_atak_native_fnc_tocTextTool;
+// [écrans, texte, couleur des messages sans couleur, vitesse (0 lent, 1 normal, 2 rapide), défilement (1 : toujours)]
+["send", [_ecrans, "ALERTE ; R ; 5 ; clignotant | {dtg}", "G", 1, 0]] call comspec_atak_native_fnc_tocTextTool;
+["clear", _ecrans] call comspec_atak_native_fnc_tocTextTool;
+// Fenêtre de saisie pour un écran (joueur ou Zeus) ; ["presets"] et ["variables"] rendent les deux tables ci-dessus.
+["dialog", [ecran1]] call comspec_atak_native_fnc_tocTextTool;
+```
+
+**English.** Any screen able to run the "Text" display (LED strips, LED wall, 16:9 screens and wall panels, columns) shows
+an LED message. Write it with the "ATAK · Show a text" module (Editor: message set at mission start on the synchronized
+screens, the nearest text screen, the whole nearest room or every text screen within the radius; Zeus: opens the text
+window for the screen under the module or the nearest text screen), the screen's ACE menu ("Show a text…"), the screen
+manager, or the Text attribute of the "ATAK · TOC screen" module. Writing: `message ; colour ; duration ; blinking`,
+messages separated by `|`; colours `G` `A` `R` `W`; variables `{zulu}` `{zulus}` `{local}` `{date}` `{dtg}` `{h}` `{camp}`
+`{poste}` `{groupe}`. The window offers ready-made messages and sends to one screen, its whole room or every text screen
+within 50 m; the result is written inside the window.
 
 ## 8. IA équipées d'un ATAK
 

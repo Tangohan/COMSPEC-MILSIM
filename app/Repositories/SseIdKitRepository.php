@@ -140,6 +140,75 @@ final class SseIdKitRepository
         return $out;
     }
 
+    /**
+     * Kit automatique (portée « auto ») des membres qui n'ont aucun kit composé : sans lui, un membre dont l'identité et
+     * les papiers sont émis sur Athena arrivait en jeu sans papier, et la fiche du jeu montrait l'identité générée par le
+     * mod (cause du décalage Athena / jeu). Règles, toutes nécessaires :
+     *  - compte lié à Steam, aucune ligne dans sse_id_kits (un kit composé, même pour une autre portée, l'emporte) ;
+     *  - identité : celle de la fiche de couverture du membre pour cette carte / opération ($coverIdentityByUser, si elle
+     *    est à lui et a des papiers retenus), sinon l'identité principale (civile la plus ancienne, comme la fiche) ;
+     *  - papiers émis, valables (ni révoqués, ni suspendus), non déclarés volés ou perdus, de cette carte et de cette
+     *    opération ; un seul papier par type (le plus récent).
+     *
+     * @param list<int> $exceptUserIds membres déjà servis par un kit composé
+     * @param array<int, int> $coverIdentityByUser user_id → identité de couverture (briefs du pack)
+     * @return list<array{uid: string, user_id: int, scope: string, documents: list<int>}>
+     */
+    public function autoForPack(int $tenantId, int $mapId, ?string $opKey, array $exceptUserIds = [], array $coverIdentityByUser = []): array
+    {
+        $params = ['t' => $tenantId, 't2' => $tenantId, 'map' => $mapId];
+        $docOpSql = 'd.op_key IS NULL';
+        if ($opKey !== null && $opKey !== '') {
+            $docOpSql = '(d.op_key IS NULL OR d.op_key = :op)';
+            $params['op'] = $opKey;
+        }
+        $rows = $this->db->fetchAll(
+            "SELECT i.user_id, i.id AS identity_id, i.kind, d.id AS document_id, d.doc_type, u.steam_id
+             FROM sse_identities i
+             JOIN sse_id_documents d ON d.identity_id = i.id AND d.tenant_id = i.tenant_id
+             JOIN users u ON u.id = i.user_id
+             WHERE i.tenant_id = :t AND i.user_id IS NOT NULL AND d.workflow = 'issued'
+               AND COALESCE(d.st_validity, 'valid') NOT IN ('revoked', 'suspended')
+               AND COALESCE(d.st_report, 'none') NOT IN ('stolen', 'lost')
+               AND (d.context_id IS NULL OR d.context_id = :map) AND {$docOpSql}
+               AND NOT EXISTS (SELECT 1 FROM sse_id_kits k WHERE k.tenant_id = :t2 AND k.user_id = i.user_id)
+             ORDER BY i.user_id, i.id, d.id",
+            $params
+        );
+        $except = array_flip(array_map('intval', $exceptUserIds));
+        // Identité principale = civile la plus ancienne du membre (même règle que SseIdentityRepository::listForUser).
+        $primaryByUser = [];
+        foreach ($this->db->fetchAll(
+            "SELECT user_id, MIN(id) AS id FROM sse_identities WHERE tenant_id = :t AND kind = 'civil' AND user_id IS NOT NULL GROUP BY user_id",
+            ['t' => $tenantId]
+        ) as $r) {
+            $primaryByUser[(int) $r['user_id']] = (int) $r['id'];
+        }
+        $byUser = [];
+        foreach ($rows as $r) {
+            $userId = (int) $r['user_id'];
+            $uid = (string) preg_replace('/\D/', '', (string) ($r['steam_id'] ?? ''));
+            if ($uid === '' || isset($except[$userId])) {
+                continue;
+            }
+            $byUser[$userId]['uid'] = $uid;
+            // Le plus récent par type écrase le précédent (ORDER BY d.id).
+            $byUser[$userId]['ids'][(int) $r['identity_id']][(string) $r['doc_type']] = (int) $r['document_id'];
+        }
+        $out = [];
+        foreach ($byUser as $userId => $u) {
+            $cover = (int) ($coverIdentityByUser[$userId] ?? 0);
+            $identityId = $cover > 0 && isset($u['ids'][$cover]) ? $cover : ($primaryByUser[$userId] ?? 0);
+            $docs = $u['ids'][$identityId] ?? [];
+            if ($docs === []) {
+                continue;
+            }
+            $out[] = ['uid' => $u['uid'], 'user_id' => $userId, 'scope' => 'auto', 'documents' => array_values($docs)];
+        }
+
+        return $out;
+    }
+
     public static function scopeName(?int $contextId, ?string $opKey): string
     {
         if ($opKey !== null && $opKey !== '') {

@@ -1,15 +1,21 @@
 /*
     App « Ma couverture » du téléphone ATAK (page IDCOVER, déclarée dans COMSPEC_ATAK_Apps du SSE, main.pbo intact).
       MA FICHE   fiche RP du seul joueur concerné, du plus urgent au détail : question d'un contrôleur (réponses au choix),
-                 état de l'infiltration, cohérence (note et actions pour la corriger), ce que disent ses papiers, légende à
+                 état de l'infiltration, cohérence (note et actions pour la corriger), ce que disent ses papiers et pourquoi
+                 l'identité d'Athena n'a pas pu être utilisée (paquet non chargé, aucun papier pour ce compte…), légende à
                  retenir (ce qu'un contrôleur demande), liaison Athena (compte, couverture reçue ou locale, date, quoi
                  faire), puis sections repliables : contacts, documents complémentaires, histoire, phrases types, sujets
                  sensibles, secrets, consignes
       ZEUS       (curateur seulement) les infiltrés et leur cohérence ; un clic ouvre la fiche de l'un d'eux
     Rendu : [page, rectangle] (fn_pageRender de l'ATAK). Actions : ["act", action, argument] call comspec_sse_fnc_idCoverPage
       refresh · tab · answer [qid, index] · open netId (Zeus) · back · fold clé · pull (paquet Athena)
+      import (fichier) · forget · sync (fenêtre Mes couvertures sur Athena, fn_idCoverAthena, dessinée à la place de la page)
       received [ancienne fiche, nouvelle] · synced   réponses du serveur et d'Athena ; même fiche : page laissée telle quelle,
                  seule la note change sur place s'il n'y a que ça de nouveau
+      ask [unité, complète] · dirty ("" | "server")   demande de fiche ; fiche périmée par un évènement (XEH_postInitClient)
+    Fiche en cache, jamais relue en boucle : demandée si elle manque, si un évènement l'a périmée (équipement, papiers,
+    réponse, paquet Athena rechargé) ou si elle a plus de 10 min (1 min en infiltration) ; Actualiser et Demander la mise à
+    jour la relisent toujours. Le serveur ne renvoie pas une fiche inchangée (empreinte « rev », réponse coverSame).
     État local (jamais diffusé) : comspec_sse_idCoverSheets (netId -> fiche reçue du serveur), comspec_sse_idQuestion,
     comspec_sse_idCoverSync (fn_idCoverSync). Couleurs : jetons de fn_theme, lisibles dans les trois thèmes. Texte structuré :
     0,8 au moins (fn_theme, docs/ui/atak-design-system.md : jamais sous 14 px).
@@ -25,6 +31,20 @@ private _sheets = missionNamespace getVariable ["comspec_sse_idCoverSheets", cre
 missionNamespace setVariable ["comspec_sse_idCoverSheets", _sheets];
 private _zeus = !isNull (getAssignedCuratorLogic player);
 private _tr = { _this call comspec_sse_fnc_tr };
+// Fiche en cache (empreinte « rev » posée par le serveur) : la demande joint l'empreinte connue, le serveur ne renvoie alors
+// que l'état et la cohérence (coverSame). _force : fiche complète (Actualiser, cache douteux).
+// Compteur comspec_sse_idCoverAsks (demandes de fiche envoyées) : relevé par l'autotest, rien d'autre ne le lit.
+private _ask = {
+    params [["_u", objNull], ["_force", false]];
+    if (isNull _u) then { _u = player; };
+    if (_u isEqualTo player) then {
+        missionNamespace setVariable ["comspec_sse_idCoverAskAt", time];
+        missionNamespace setVariable ["comspec_sse_idCoverDirty", false];
+    };
+    missionNamespace setVariable ["comspec_sse_idCoverAsks", (missionNamespace getVariable ["comspec_sse_idCoverAsks", 0]) + 1];
+    private _rev = if (_force) then { "" } else { (_sheets getOrDefault [netId _u, createHashMap]) getOrDefault ["rev", ""] };
+    ["send", ["coverSheet", [player, _u, _rev]]] call comspec_sse_fnc_idClient;
+};
 // Note de cohérence (texte structuré) : aussi posée sur place, sans redessiner la page.
 private _scoreText = {
     params ["_score", "_th"];
@@ -40,13 +60,21 @@ private _scoreText = {
 if (_page isEqualTo "act") exitWith {
     switch (_rect) do {
         case "refresh": {
+            // Actualiser : relecture complète, toujours (jamais servie par le cache).
             _st set ["force", true];
-            _st set ["asked", time];
-            ["send", ["coverSheet", [player, [player, objectFromNetId (_st getOrDefault ["open", ""])] select ((_st getOrDefault ["open", ""]) isNotEqualTo "")]]] call comspec_sse_fnc_idClient;
+            [[player, objectFromNetId (_st getOrDefault ["open", ""])] select ((_st getOrDefault ["open", ""]) isNotEqualTo ""), true] call _ask;
             if (_zeus) then { ["send", ["coverList", [player]]] call comspec_sse_fnc_idClient; };
         };
         case "tab": { _st set ["tab", _arg]; _st set ["open", ""]; if (_arg isEqualTo "zeus") then { ["send", ["coverList", [player]]] call comspec_sse_fnc_idClient; }; call _render; };
-        case "open": { _st set ["open", _arg]; ["send", ["coverSheet", [player, objectFromNetId _arg]]] call comspec_sse_fnc_idClient; call _render; };
+        case "open": { _st set ["open", _arg]; [objectFromNetId _arg] call _ask; call _render; };
+        // Demande venue d'ailleurs (fn_idClient : cache vidé entre-temps) : [unité, complète].
+        case "ask": { _arg params [["_u", player], ["_f", false]]; [_u, _f] call _ask; };
+        // Fiche périmée (évènement : équipement, papiers, paquet Athena rechargé par le serveur) : relue à la prochaine
+        // ouverture de la page, tout de suite si elle est ouverte et que l'évènement vient du serveur (_arg « server »).
+        case "dirty": {
+            missionNamespace setVariable ["comspec_sse_idCoverDirty", true];
+            if (_arg isEqualTo "server" && {call _isOpen}) then { call _render; };
+        };
         case "back": { _st set ["open", ""]; call _render; };
         case "fold": {
             private _f = _st getOrDefault ["folds", createHashMap];
@@ -55,10 +83,16 @@ if (_page isEqualTo "act") exitWith {
             call _render;
         };
         case "import": { ["run"] call comspec_sse_fnc_idCoverImport; };
+        // Mes couvertures sur Athena : fenêtre dessinée à la place de la page (fn_idCoverAthena).
+        case "sync": { ["open"] call comspec_sse_fnc_idCoverAthena; };
         case "forget": { ["forget"] call comspec_sse_fnc_idCoverImport; };
         case "pull": {
             ["send", ["coverPull", [player]]] call comspec_sse_fnc_idClient;
             _st set ["pulled", time];
+            // Relecture forcée de la fiche ; une fois le paquet rechargé (et seulement s'il a changé), le serveur prévient
+            // tous les postes (comspec_sse_idCoverDirty) et la page ouverte se relit d'elle-même.
+            _st set ["force", true];
+            [player, true] call _ask;
             call _render;
         };
         case "answer": {
@@ -67,6 +101,8 @@ if (_page isEqualTo "act") exitWith {
             if (_q isEqualTo []) exitWith {};
             (_q select 3) set [_qid, _i];
             ["send", ["answer", [player, _qid, _i]]] call comspec_sse_fnc_idClient;
+            // La réponse change la cohérence : fiche relue au rendu qui suit.
+            missionNamespace setVariable ["comspec_sse_idCoverDirty", true];
             call _render;
         };
         case "received": {
@@ -95,6 +131,11 @@ disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 if ((count _rect) isEqualTo 4) then { _bw = _rect select 2; _bh = _rect select 3; };
+// Fenêtre Mes couvertures sur Athena ouverte : elle occupe toute la page, rien d'autre dessous (comme la fiche d'un cliché
+// de l'app Drone). FERMER ou retour la referme.
+if (["isOpen"] call comspec_sse_fnc_idCoverAthena) exitWith {
+    [["rows"] call comspec_sse_fnc_idCoverAthena, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+};
 private _th = [] call comspec_atak_native_fnc_theme;
 private _hDim = _th get "hexTextDim";
 private _hOk = _th get "hexOk";
@@ -181,6 +222,12 @@ private _sheetRows = {
     if (_carried isEqualTo []) then {
         _rows pushBack ["text", format ["<t color='%1'>%2</t>", _hWarn, ([["Aucun papier sur vous : rien ne prouve encore l'identité ci-dessous à un contrôle.", "Vos papiers ne sont pas sur vous : rien ne prouve l'identité ci-dessous à un contrôle."] select (_docs isNotEqualTo []) call _tr] call _esc)], _surface];
     };
+    // Pourquoi cette identité (et pas celle d'Athena) : étape où la transmission s'est arrêtée (fn_idLegend « sheet », diag).
+    {
+        _x params [["_lv", "warn"], ["_t", ""], ["_why", ""]];
+        if (_lv isNotEqualTo "ok" || {_carried isNotEqualTo []}) then { _rows pushBack ["check", _lv, _t call _tr, "", _why call _tr]; };
+    } forEach (_s getOrDefault ["diag", []]);
+    if ((_s getOrDefault ["athenaRef", ""]) isNotEqualTo "") then { _rows pushBack ["info", "Identité Athena" call _tr, ([_s get "athenaRef"] call _esc) call _ink]; };
     _rows pushBack ["person", "\z\comspec_sse\addons\identity\data\silhouette_co.paa",
         format ["<t size='1.1' font='COMSPEC_BarlowBold' color='%5'>%1</t><br/><t size='0.85' color='%4'>%2 · %3</t>", [_s getOrDefault ["name", "?"]] call _esc,
             [_s getOrDefault ["dob", ""]] call _esc, [_s getOrDefault ["pob", ""]] call _esc, _hDim, _hText], [], [1, 1, 1, 1]];
@@ -211,12 +258,17 @@ private _sheetRows = {
     if ((_s getOrDefault ["title", ""]) isNotEqualTo "") then { _rows pushBack ["info", "Brief" call _tr, ([_s get "title"] call _esc) call _ink]; };
 
     private _fold = {
-        params ["_key", "_title", "_items", ["_def", false], ["_summary", ""]];
+        params ["_key", "_title", "_items", ["_def", false], ["_summary", ""], ["_help", ""]];
         if (_items isEqualTo []) exitWith {};
         private _isOpen = (_st getOrDefault ["folds", createHashMap]) getOrDefault [_key, _def];
         _rows pushBack ["fold", _title call _tr, [_summary, str (count _items)] select (_summary isEqualTo ""), _isOpen, ["fold", [_key, _def]] call _act];
-        if (_isOpen) then { { _rows pushBack ["text", format ["<t size='0.9' color='%2'>%1</t>", _x, _hText]]; } forEach _items; };
+        if (_isOpen) then {
+            // Ce que contient la rubrique, avec un exemple : sans cela, les titres seuls ne disent pas à quoi elles servent.
+            if (_help isNotEqualTo "") then { _rows pushBack ["text", format ["<t size='0.8' color='%1'>%2</t>", _hDim, [_help call _tr] call _esc]]; };
+            { _rows pushBack ["text", format ["<t size='0.9' color='%2'>%1</t>", _x, _hText]]; } forEach _items;
+        };
     };
+    _rows pushBack ["text", format ["<t size='0.85' color='%1'>%2</t>", _hDim, [("Votre couverture est l'identité fictive que vous jouez. Ouvrez chaque rubrique pour la relire avant un contrôle ; le chiffre à droite est le nombre d'éléments qu'elle contient." call _tr)] call _esc]];
 
     // Liaison Athena : seulement sur sa propre fiche (le Zeus n'a pas à voir le compte d'un autre).
     if (_mine) then {
@@ -267,40 +319,45 @@ private _sheetRows = {
         if (_isOpen) then {
             { _rows pushBack (["check"] + _x); } forEach _lines;
             if (_source isNotEqualTo "athena") then {
-                private _wait = (time - (_st getOrDefault ["pulled", -1000])) < 120;
+                // État de l'app gardé dans uiNamespace (survit à la mission) : une date d'une partie précédente ne bloque pas le bouton.
+                private _pulled = _st getOrDefault ["pulled", -1000];
+                private _wait = _pulled <= time && {(time - _pulled) < 120};
                 _rows pushBack ["buttons", [["Demander la mise à jour" call _tr, ["pull"] call _act, false, !_wait, "Recharge le paquet d'identité du serveur (au plus une fois toutes les 2 minutes)." call _tr]]];
             };
         };
 
-        // Importer ma couverture : fichier généré sur Athena, lu sur ce poste. Aucune connexion à Athena, aucune requête réseau.
+        // Importer ma couverture : depuis Athena (fenêtre Mes couvertures sur Athena, par COMSPEC Link, derrière la licence)
+        // ou d'un fichier généré sur Athena et lu sur ce poste (sans connexion, aucune requête réseau).
         private _imp = missionNamespace getVariable ["comspec_sse_idCoverImportSt", createHashMap];
         private _isImported = _s getOrDefault ["imported", false];
         private _impOpen = (_st getOrDefault ["folds", createHashMap]) getOrDefault ["import", !_isImported];
-        _rows pushBack ["fold", "Importer ma couverture" call _tr, (["Aucun fichier importé", "Couverture importée"] select _isImported) call _tr, _impOpen, ["fold", ["import", !_isImported]] call _act];
+        _rows pushBack ["fold", "Importer ma couverture" call _tr, (["Aucune couverture importée", "Couverture importée"] select _isImported) call _tr, _impOpen, ["fold", ["import", !_isImported]] call _act];
         if (_impOpen) then {
-            private _steps = [
-                "1. Sur Athena > Ma couverture, cliquez Générer puis Télécharger.",
-                "2. Déposez le fichier dans Documents\Arma 3 - COMSPEC.",
-                "3. Ici, cliquez Importer."
-            ] apply { [_x call _tr] call _esc };
-            _rows pushBack ["text", format ["<t size='0.9' color='%2'>%1</t>", _steps joinString "<br/>", _hText]];
+            _rows pushBack ["text", format ["<t size='0.9' color='%2'>%1</t>", [("Récupérez vos couvertures Athena directement ici : touchez Synchroniser avec Athena, choisissez-les, puis importez. Celle que vous jouez est l'active." call _tr)] call _esc, _hText]];
             if ((_imp getOrDefault ["text", ""]) isNotEqualTo "") then {
                 _rows pushBack ["text", format ["<t color='%1'>%2</t>", [_hAlert, _hOk] select ((_imp getOrDefault ["kind", ""]) isEqualTo "ok"), [(_imp get "text") call _tr] call _esc]];
             };
-            private _b = [["IMPORTER MA COUVERTURE" call _tr, ["import"] call _act, false, true, "Lit le fichier déposé dans Documents\Arma 3 - COMSPEC. Rien n'est envoyé à Athena." call _tr]];
+            private _sync = [["SYNCHRONISER AVEC ATHENA" call _tr, ["sync"] call _act, true, true, "Liste vos couvertures sur Athena et importe celles que vous choisissez (compte Athena lié, licence acceptée)." call _tr]];
+            // Licence pas encore acceptée : la note de service s'ouvre d'ici (fn_licenceOpen de l'ATAK natif), retour sur cette page.
+            if (!isNil "comspec_atak_native_fnc_licenceOpen" && {!(["ok"] call comspec_atak_native_fnc_licenceOpen)}) then {
+                _sync pushBack ["OUVRIR LA NOTE DE SERVICE" call _tr, { [{}, "IDCOVER"] call comspec_atak_native_fnc_licenceOpen; }, false, true, "Lisez et acceptez la licence : rien n'est envoyé à Athena avant." call _tr];
+            };
+            _rows pushBack ["buttons", _sync];
+            private _b = [["IMPORTER UN FICHIER" call _tr, ["import"] call _act, false, true, "Lit le fichier déposé dans Documents\Arma 3 - COMSPEC. Rien n'est envoyé à Athena." call _tr]];
             if (_isImported) then { _b pushBack ["Oublier l'import" call _tr, ["forget"] call _act, false, true, "Revient à la légende d'avant, sans toucher à vos papiers." call _tr]; };
             _rows pushBack ["buttons", _b];
+            _rows pushBack ["text", format ["<t size='0.8' color='%2'>%1</t>", [("Sans connexion : sur Athena › Ma couverture, téléchargez le fichier, déposez-le dans Documents\Arma 3 - COMSPEC, puis touchez Importer un fichier." call _tr)] call _esc, _hDim]];
         };
     };
 
-    ["contacts", "Contacts", (_s getOrDefault ["contacts", []]) apply { _x params [["_n", ""], ["_r", ""], ["_p", ""]]; [trim format ["%1%2%3", _n, ["", format [" (%1)", _r call _tr]] select (_r isNotEqualTo ""), ["", format [" · %1", _p]] select (_p isNotEqualTo "")]] call _esc }] call _fold;
-    ["extraDocs", "Documents complémentaires", (_s getOrDefault ["extraDocs", []]) apply { [_x call _tr] call _esc }] call _fold;
+    ["contacts", "Contacts", (_s getOrDefault ["contacts", []]) apply { _x params [["_n", ""], ["_r", ""], ["_p", ""]]; [trim format ["%1%2%3", _n, ["", format [" (%1)", _r call _tr]] select (_r isNotEqualTo ""), ["", format [" · %1", _p]] select (_p isNotEqualTo "")]] call _esc }, false, "", "Personnes qui peuvent confirmer votre histoire. Ex. : « Marc (collègue) · 06 12 34 56 78 »."] call _fold;
+    ["extraDocs", "Documents complémentaires", (_s getOrDefault ["extraDocs", []]) apply { [_x call _tr] call _esc }, false, "", "Papiers en plus de votre pièce d'identité. Ex. : permis, carte de presse, ordre de mission."] call _fold;
     private _story = [];
     { if (_x isNotEqualTo "") then { _story pushBack ([_x call _tr] call _esc); }; } forEach ([_s getOrDefault ["biography", ""], _s getOrDefault ["family", ""]] + (_s getOrDefault ["history", []]) + (_s getOrDefault ["languages", []]));
-    ["story", "Mon histoire", _story] call _fold;
-    ["phrases", "Phrases types", (_s getOrDefault ["phrases", []]) apply { format ["« %1 »", [_x call _tr] call _esc] }] call _fold;
-    ["sensitive", "Sujets sensibles", (_s getOrDefault ["sensitive", []]) apply { [_x call _tr] call _esc }] call _fold;
-    ["secrets", "Secrets", (_s getOrDefault ["secrets", []]) apply { [_x call _tr] call _esc }] call _fold;
+    ["story", "Mon histoire", _story, false, "", "Votre passé en bref, à relire pour ne pas vous contredire. Ex. : né à Lyon, ingénieur, parle anglais."] call _fold;
+    ["phrases", "Phrases types", (_s getOrDefault ["phrases", []]) apply { format ["« %1 »", [_x call _tr] call _esc] }, false, "", "Réponses toutes prêtes à dire à voix haute. Ex. : « Je livre du matériel médical pour mon employeur. »"] call _fold;
+    ["sensitive", "Sujets sensibles", (_s getOrDefault ["sensitive", []]) apply { [_x call _tr] call _esc }, false, "", "Questions à éviter ou qui vous mettent mal à l'aise. Ex. : votre ancien employeur."] call _fold;
+    ["secrets", "Secrets", (_s getOrDefault ["secrets", []]) apply { [_x call _tr] call _esc }, false, "", "Ce que vous cachez et ne devez jamais révéler, même sous pression. Ex. : votre vraie mission."] call _fold;
     ["orders", "Consignes", ([_s getOrDefault ["instructions", ""]] select { _x isNotEqualTo "" }) apply { [_x] call _esc }, true] call _fold;
 };
 
@@ -322,11 +379,16 @@ if (_tab isEqualTo "zeus") then {
     } forEach _lst;
 } else {
     private _s = _sheets getOrDefault [netId player, createHashMap];
-    // Fiche relue en arrivant sur la page, au plus toutes les 15 s : même contenu, rien n'est redessiné (« received »).
-    if ((time - (_st getOrDefault ["asked", -100])) > ([15, 10] select ((count _s) isEqualTo 0))) then {
-        _st set ["asked", time];
-        ["send", ["coverSheet", [player, player]]] call comspec_sse_fnc_idClient;
-    };
+    // Fiche en cache : redemandée en arrivant sur la page seulement si elle manque (nouvel essai toutes les 10 s), si un
+    // évènement l'a rendue périmée (équipement, papiers, paquet Athena rechargé) ou si elle a plus de 10 min (1 min pendant
+    // une infiltration : la cohérence suit les soupçons et la position). Avant : relue à chaque arrivée, au plus toutes les
+    // 15 s. Même contenu : le serveur ne renvoie que l'état et la cohérence, rien n'est redessiné (« received »).
+    private _age = time - ((missionNamespace getVariable ["comspec_sse_idCoverAt", createHashMap]) getOrDefault [netId player, -1e6]);
+    private _askAt = missionNamespace getVariable ["comspec_sse_idCoverAskAt", -100];
+    private _empty = (count _s) isEqualTo 0;
+    private _stale = _empty || {missionNamespace getVariable ["comspec_sse_idCoverDirty", false]}
+        || {_age > ([600, 60] select ((_s getOrDefault ["state", "off"]) isEqualTo "on"))};
+    if (_stale && {(time - _askAt) > ([5, 10] select _empty)}) then { [player] call _ask; };
     if ((count _s) isEqualTo 0) exitWith {
         _rows pushBack ["empty", _icon, "Fiche en chargement" call _tr, "Votre fiche est demandée au serveur." call _tr];
     };

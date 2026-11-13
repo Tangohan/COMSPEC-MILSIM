@@ -126,7 +126,7 @@ switch (_op) do {
         private _lvl = ["recherche", "hvt"] select ((_spec getOrDefault ["level", "hvt"]) isEqualTo "hvt");
         // Vrai nom : saisi, sinon celui de ses papiers (ou de son identité générée).
         private _docs = (["unitDocs", [_u]] call comspec_sse_fnc_idRegistry) apply { ["doc", [_x]] call comspec_sse_fnc_idRegistry };
-        private _own = [_u, _key] call comspec_sse_fnc_idGenerate;
+        private _own = ["get", [_u, _key]] call comspec_sse_fnc_idIdentityOf;
         private _tl = trim (_spec getOrDefault ["last", ""]);
         private _tf = trim (_spec getOrDefault ["first", ""]);
         if (_tl isEqualTo "") then { _tl = ((_docs select { (_x get "kind") isEqualTo "civil" }) param [0, createHashMap]) getOrDefault ["trueLast", _own get "last"]; };

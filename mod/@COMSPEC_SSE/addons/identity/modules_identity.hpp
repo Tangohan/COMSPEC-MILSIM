@@ -87,3 +87,77 @@ class COMSPEC_SSE_Module_IdCheckpoint: COMSPEC_SSE_Module_Base {
         sync[] = {"AnyBrain"};
     };
 };
+
+/*
+    Module « Synchroniser les IA avec Athena » (lore de session, ICD-SSE-LORE-001), Eden et Zeus : fn_loreModule.
+    Eden : exécuté sur le serveur au lancement (envoi, récupération, rafraîchissement selon les réglages ci-dessous).
+    Zeus : fenêtre du module (action, portée, code d'opération, intervalle, état de la dernière synchro).
+*/
+class COMSPEC_SSE_Module_LoreSync: COMSPEC_SSE_Module_Base {
+    scope = 2;
+    scopeCurator = 2;
+    displayName = "$STR_COMSPEC_SSE_LORE_Module";
+    category = "COMSPEC_Cat_Identite";
+    function = "comspec_sse_fnc_loreModule";
+    icon = "\z\comspec_sse\addons\zeus\data\mod_person.paa";
+    portrait = "\z\comspec_sse\addons\zeus\data\mod_person.paa";
+
+    class Attributes {
+        class Scope {
+            displayName = "$STR_COMSPEC_SSE_LORE_Scope";
+            tooltip = "$STR_COMSPEC_SSE_LORE_ScopeTip";
+            property = "COMSPEC_SSE_Module_LoreSync_Scope";
+            control = "Combo";
+            expression = "_this setVariable ['Scope',_value,true];";
+            defaultValue = "'all'";
+            typeName = "STRING";
+            class values {
+                class All { name = "$STR_COMSPEC_SSE_LORE_ScopeAll"; value = "all"; default = 1; };
+                class Synced { name = "$STR_COMSPEC_SSE_LORE_ScopeSynced"; value = "synced"; };
+                class Sse { name = "$STR_COMSPEC_SSE_LORE_ScopeSse"; value = "sse"; };
+            };
+        };
+        class OpKey {
+            displayName = "$STR_COMSPEC_SSE_LORE_Op";
+            tooltip = "$STR_COMSPEC_SSE_LORE_OpTip";
+            property = "COMSPEC_SSE_Module_LoreSync_Op";
+            control = "Edit";
+            expression = "_this setVariable ['OpKey',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
+        class PushStart {
+            displayName = "$STR_COMSPEC_SSE_LORE_PushStart";
+            tooltip = "$STR_COMSPEC_SSE_LORE_PushStartTip";
+            property = "COMSPEC_SSE_Module_LoreSync_PushStart";
+            control = "Checkbox";
+            expression = "_this setVariable ['PushStart',_value,true];";
+            defaultValue = "true";
+            typeName = "BOOL";
+        };
+        class PullStart {
+            displayName = "$STR_COMSPEC_SSE_LORE_PullStart";
+            tooltip = "$STR_COMSPEC_SSE_LORE_PullStartTip";
+            property = "COMSPEC_SSE_Module_LoreSync_PullStart";
+            control = "Checkbox";
+            expression = "_this setVariable ['PullStart',_value,true];";
+            defaultValue = "true";
+            typeName = "BOOL";
+        };
+        class Refresh {
+            displayName = "$STR_COMSPEC_SSE_LORE_Refresh";
+            tooltip = "$STR_COMSPEC_SSE_LORE_RefreshTip";
+            property = "COMSPEC_SSE_Module_LoreSync_Refresh";
+            control = "Edit";
+            expression = "_this setVariable ['Refresh',_value,true];";
+            defaultValue = "0";
+            validate = "number";
+            typeName = "NUMBER";
+        };
+    };
+
+    class ModuleDescription {
+        description = "$STR_COMSPEC_SSE_LORE_ModuleDesc";
+        sync[] = {"AnyBrain"};
+    };
+};

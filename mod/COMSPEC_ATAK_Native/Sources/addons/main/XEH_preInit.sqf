@@ -13,14 +13,42 @@ COMSPEC_ATAK_FontBody = 0; // taille de base du texte structuré des pages (fn_l
 // renvoyait les deux valeurs à tous les joueurs et à la file JIP.
 missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION];
 missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", VERSION_STR];
+// Configuration ATHENA (menu Échap, fn_athenaConfig) : l'ATAK natif est l'hôte du bouton unique et de la fenêtre, même
+// si le SSE est chargé (le SSE ne l'est que sans l'ATAK natif). Contrat du registre : en-tête de fn_athenaConfig.
+missionNamespace setVariable ["comspec_athena_config_host", createHashMapFromArray [
+    ["fn", comspec_atak_native_fnc_athenaConfig],
+    ["tr", { _this call comspec_atak_native_fnc_tr }],
+    ["logo", "\z\comspec_atak_native\addons\main\data\logo_athena.paa"],
+    ["icon", "\z\comspec_atak_native\addons\main\data\athena_config_ca.paa"],
+    ["iconHover", "\z\comspec_atak_native\addons\main\data\athena_config_hover_ca.paa"],
+    ["dot", "\z\comspec_atak_native\addons\main\data\athena_dot_ca.paa"],
+    ["row", "COMSPEC_ATAK_AthenaCfgRow"]
+]];
+private _athCfg = (missionNamespace getVariable ["comspec_athena_config_entries", []]) select { (_x select 0) isNotEqualTo "atak_realism" };
+_athCfg pushBack ["atak_realism",
+    { "Réalisme et réseau" call comspec_atak_native_fnc_tr },
+    { "Conditions réseau et réalisme du serveur : chacun les voit, un admin ou un Zeus les règle pour tous." call comspec_atak_native_fnc_tr },
+    "\z\comspec_atak_native\addons\main\data\app_network.paa",
+    { true },
+    { params ["_parent"]; ["open", _parent] call comspec_atak_native_fnc_netConfig; },
+    20, "child"];
+// Licence pas encore acceptée : la note de service s'ouvre d'ici (fn_licenceOpen), puis la fenêtre revient.
+_athCfg = _athCfg select { (_x select 0) isNotEqualTo "atak_licence" };
+_athCfg pushBack ["atak_licence",
+    { "Ouvrir la note de service" call comspec_atak_native_fnc_tr },
+    { "Licence pas encore acceptée : rien n'est envoyé à Athena avant. Lisez et acceptez la note de service." call comspec_atak_native_fnc_tr },
+    "\z\comspec_atak_native\addons\main\data\app_settings.paa",
+    { !(["ok"] call comspec_atak_native_fnc_licenceOpen) && {["can"] call comspec_atak_native_fnc_licenceOpen} },
+    { [{ if (!isNull findDisplay 49) then { ["open", findDisplay 49] call comspec_atak_native_fnc_athenaConfig; }; }, ""] call comspec_atak_native_fnc_licenceOpen; },
+    5, "close"];
+missionNamespace setVariable ["comspec_athena_config_entries", _athCfg];
 // Versions compilées dans ce code : fn_integrityCheck les compare à la config chargée, à la DLL et au site.
 missionNamespace setVariable ["COMSPEC_ATAK_CodeVersion", VERSION_STR];
 missionNamespace setVariable ["COMSPEC_ATAK_LinkExpected", LINK_VERSION_STR];
 // Version complète pour les humains (Réglages, Debug, journal, support) : « 2.0.1.AB - Denver · 2026.10.18 a1b2c3d ».
 // Les comparaisons de versions n'utilisent que COMSPEC_ATAK_NativeVersion (MAJEUR.MINEUR.CORRECTIF).
 missionNamespace setVariable ["COMSPEC_ATAK_NativeName", VERSION_NAME];
-missionNamespace setVariable ["COMSPEC_ATAK_NativeBuild", VERSION_NAME + " · " + ([BUILD_STAMP, "dev"] select (BUILD_STAMP isEqualTo ""))];
-diag_log format ["[COMSPEC ATAK NATIVE][INFO][BOOT] COMSPEC ATAK %1 (COMSPEC Link attendu %2)", missionNamespace getVariable "COMSPEC_ATAK_NativeBuild", LINK_VERSION_STR];
+missionNamespace setVariable ["COMSPEC_ATAK_NativeBuild", VERSION_NAME + " · " + ([BUILD_STAMP, "dev"] select (BUILD_STAMP isEqualTo ""))];diag_log format ["[COMSPEC ATAK NATIVE][INFO][BOOT] COMSPEC ATAK %1 (COMSPEC Link attendu %2)", missionNamespace getVariable "COMSPEC_ATAK_NativeBuild", LINK_VERSION_STR];
 diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;
@@ -95,6 +123,15 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
         if (!hasInterface) exitWith {};
         [{ time > 0 }, { [["stop", "start"] select _this] call comspec_atak_native_fnc_profiler; }, _this isEqualTo true] call CBA_fnc_waitUntilAndExecute;
     }] call comspec_atak_native_fnc_addSetting;
+// Mesure des performances (fn_perfLog, 4.4.0), par joueur, décochée par défaut : lignes [COMSPEC perf] dans le RPT
+// (ouverture du téléphone et des apps, dessin de la carte, bilan toutes les 10 s). Rien à l'écran ; aucun coût décochée.
+["comspec_atak_native_perf_log", "CHECKBOX",
+    ["Mesure des performances (journal)", "Décoché par défaut. Coché : le journal du jeu (fichier RPT) note le temps d'ouverture du téléphone et de chaque app, le coût du dessin de la carte toutes les 5 s, un bilan toutes les 10 s et les appels lents à la DLL. Rien ne s'affiche à l'écran. Exemple : active-le, ouvre le téléphone puis la carte, puis envoie ton journal avec Envoyer_mes_logs.bat. Décoche-le ensuite."],
+    ["COMSPEC", "ATAK · Debug"], false, 0,
+    {
+        if (!hasInterface) exitWith {};
+        [{ time > 0 }, { [["stop", "start"] select _this] call comspec_atak_native_fnc_perfLog; }, _this isEqualTo true] call CBA_fnc_waitUntilAndExecute;
+    }] call comspec_atak_native_fnc_addSetting;
 
 // Liaison Athena proposée à la première sortie du téléphone sans compte (fn_displayLoad), par joueur.
 ["comspec_atak_native_link_offer", "CHECKBOX",
@@ -106,6 +143,17 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["Taille du téléphone en main", "Taille du téléphone quand vous l'avez en main (plein écran). 100 % = taille normale ; en dessous, il rétrécit en restant centré, texte et boutons compris."],
     ["COMSPEC", "ATAK · Affichage"], [0.6, 1, 1, 0, true], 0,
     { if !(isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; }; }] call comspec_atak_native_fnc_addSetting;
+// Reflet du verre de l'écran (4.2.1, fn_screenSurface) : par joueur, activé par défaut ; aussi dans Réglages > Thème et écran.
+["comspec_atak_native_glass_glare", "CHECKBOX",
+    ["Reflet du verre de l'écran", "Léger reflet de la vitre sur l'écran du téléphone, plus faible la nuit ; il ne gêne ni la lecture ni la carte. Désactivé : écran sans reflet. Exemple : en plein jour, une bande claire très discrète traverse le haut gauche de l'écran. Aussi dans Réglages > Thème et écran."],
+    ["COMSPEC", "ATAK · Affichage"], true, 0,
+    { if !(isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_deviceOverlay; }; }] call comspec_atak_native_fnc_addSetting;
+
+// Animation de sortie et de rangement du téléphone en main (par joueur, 4.2.1, fn_fx « phoneIn » / « phoneOut »).
+// Aussi dans Réglages > Animations et sons du téléphone.
+["comspec_atak_native_phone_anim", "CHECKBOX",
+    ["Animation de sortie et de rangement", "Coché par défaut. Le téléphone en main monte en fondu quand vous le sortez et redescend en s'effaçant quand vous le rangez, en 0,2 s. Exemple : Ctrl+Maj+U depuis le jeu, le téléphone glisse de quelques centimètres vers le haut en apparaissant. Décochez pour qu'il apparaisse et disparaisse d'un coup. La miniature portée n'est jamais animée ; Échap, la mort, l'inconscience ou un changement de véhicule le rangent toujours tout de suite."],
+    ["COMSPEC", "ATAK · Affichage"], true, 0] call comspec_atak_native_fnc_addSetting;
 
 // HUD des autres mods (boussole F-PANO / ECOTI, température, heure...) masqué sous le téléphone (par joueur, fn_foreignHud).
 // Heure des alertes (fn_clockFmt) : heure de la mission, du PC, UTC, ou PC et UTC. Par joueur.
@@ -389,6 +437,30 @@ private _sim = ["COMSPEC", "ATAK · Simulation"];
 ["comspec_atak_native_blood_style", "LIST",
     ["Sang sur l'écran", "Discret : quelques taches pâles. Réaliste : éclaboussures, traces de doigts, coulures, marques de paume. Gore : taches plus grandes et plus nombreuses, flaques épaisses, mains entières."],
     _sim, [[0, 1, 2], ["Discret", "Réaliste", "Gore"], 1], 1] call comspec_atak_native_fnc_addSetting;
+// Sang sur l'écran, niveau maximal (fn_screenDirt) : 0 selon le profil (Extrême en Milsim, Fort sinon).
+["comspec_atak_native_blood_max", "LIST",
+    ["Sang sur l'écran : quantité maximale", "Jusqu'où le sang peut couvrir l'écran du téléphone dans les pires moments. Léger : quelques gouttes et traces de doigts. Normal : traînées et projections en plus. Fort : grandes nappes, paumes et coulures sur une bonne partie de l'écran. Extrême : écran presque entièrement rouge, on lit à peine entre les taches. Selon le profil : Extrême en Milsim, Fort sinon. Exemple : blessé grave qui saigne, téléphone en main ; réglé sur Extrême, l'écran est couvert en une vingtaine de secondes ; réglé sur Normal, il garde quelques traînées."],
+    _sim, [[0, 1, 2, 3, 4], ["Selon le profil", "Léger", "Normal", "Fort", "Extrême"], 0], 1] call comspec_atak_native_fnc_addSetting;
+// Bris d'écran réalistes (fn_screenDamage, fn_screenFaults, fn_screenGlitch) : impacts posés sur le verre, pannes de dalle
+// sans verre cassé, bugs d'affichage passagers. « Désactivé » rend l'ancien rendu (toile plein écran).
+["comspec_atak_native_screen_fx_level", "LIST",
+    ["Bris d'écran : réalisme", "Rendu des dégâts de l'écran du téléphone. Désactivé : ancien rendu, une toile de fêlures sur tout l'écran. Discret : impacts posés là où le téléphone a été touché, jamais au pire niveau, bugs rares. Normal : tous les bris (fêlure fine, toile, coin écrasé, balle, dalle écrasée…) et les pannes de dalle. Réaliste : en plus, usure lente de l'écran et bugs plus fréquents. Exemple : une chute sur un coin ; en Normal, un éventail de fêlures part de ce coin et reste au même endroit du verre quand vous tournez le téléphone. Suit le réglage « Dégâts du téléphone » : coupé, il n'y a aucun dégât d'écran."],
+    _sim, [[0, 1, 2, 3], ["Désactivé", "Discret", "Normal", "Réaliste"], 2], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_panel_faults", "CHECKBOX",
+    ["Bris d'écran : pannes de dalle", "La dalle peut tomber en panne sans que le verre soit cassé : pixels morts ou bloqués, ligne de couleur, tache d'encre qui grandit, image fantôme, zone sombre, zone tactile morte. Exemple : un choc encaissé par le gilet ne fêle rien, mais laisse trois pixels verts allumés en permanence. Décoché : seul le verre s'abîme."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_screen_glitch", "CHECKBOX",
+    ["Bris d'écran : bugs d'affichage", "Bugs passagers de moins de trois secondes : image déchirée, neige, couleurs décalées, écran noir puis logo. Ils viennent des chocs, de l'eau, d'une batterie presque vide, du froid et du brouillage. Exemple : une explosion proche, l'image se déchire un quart de seconde puis revient. Décoché : aucun bug."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_screen_impact", "LIST",
+    ["Bris d'écran : gêne en jeu", "Ce que les dégâts d'écran changent pour le joueur. Visuel seulement : rien ne bloque jamais un appui. Gêne légère : une zone tactile morte n'accepte plus les appuis, une image figée les ignore une demi-seconde. Milsim : pareil, et la zone morte n'est plus signalée par un léger voile. Exemple : en Visuel seulement, un bouton placé sous une zone morte marche toujours ; en Gêne légère, il faut tourner le téléphone pour l'atteindre. Les appuis fantômes ne déclenchent jamais rien, dans aucun mode."],
+    _sim, [[0, 1, 2], ["Visuel seulement", "Gêne légère", "Milsim"], 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_screen_fault_rate", "SLIDER",
+    ["Bris d'écran : fréquence des pannes", "Multiplie la chance qu'un choc laisse une panne de dalle ou une rayure. 1 = normal, 0 = jamais, 3 = trois fois plus souvent. Exemple : à 2, un choc encaissé sur deux environ laisse un pixel mort ; à 1, un sur quatre."],
+    _sim, [0, 3, 1, 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_screen_glitch_rate", "SLIDER",
+    ["Bris d'écran : fréquence des bugs", "Multiplie la fréquence des bugs d'affichage de fond. 1 = normal, 0 = seulement juste après un choc, 3 = trois fois plus souvent. Exemple : écran fêlé, à 1 l'image saute environ une fois par minute ; à 3, toutes les vingt secondes."],
+    _sim, [0, 3, 1, 1], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_clean_items", "EDITBOX",
     ["Kits de nettoyage (optionnel)", "On peut toujours nettoyer l'écran sans rien. Avec un de ces items sur soi (noms de classe exacts, séparés par des virgules), c'est deux fois plus rapide et tout part, sang compris. L'item n'est pas consommé. Vide : aucun kit."],
     _sim, "ACE_fieldDressing,ACE_elasticBandage,ACE_packingBandage,ACE_quikclot", 1] call comspec_atak_native_fnc_addSetting;
@@ -424,7 +496,7 @@ missionNamespace setVariable ["COMSPEC_ZeusAtakPlayerActionsRegistered", true];
 { missionNamespace setVariable [_x, true]; } forEach ["COMSPEC_ZenAtakPlayerModulesRegistered", "COMSPEC_AceAtakPlayerModulesRegistered", "COMSPEC_AceTrackActionsRegistered", "COMSPEC_AceTheaterSurveyRegistered"];
 private _geo = ["COMSPEC", "ATAK · Géolocalisation"];
 ["comspec_atak_native_geoloc_enabled", "CHECKBOX",
-    ["Géolocalisation des téléphones", "App GE (guerre électronique), onglet GÉOLOC : localiser un téléphone avec son numéro, son IMEI ou son adresse MAC (roleplay)."],
+    ["Géolocalisation des téléphones", "App GE (guerre électronique), onglet TRAÇAGE : tracer un téléphone, de joueur ou d'IA, avec son numéro, son IMEI ou son adresse MAC (roleplay). Ex. : numéro lu sur un papier saisi, position approchée sur la carte."],
     _geo, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_geoloc_ew_only", "CHECKBOX",
     ["Réservé aux opérateurs GE", "Coché : seuls les joueurs qui ont accès à la guerre électronique (voir ATAK · Simulation) peuvent géolocaliser."],
@@ -449,6 +521,34 @@ private _geo = ["COMSPEC", "ATAK · Géolocalisation"];
     _geo, [10, 300, 30, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_geoloc_warn", "CHECKBOX",
     ["Prévenir la cible", "Le joueur géolocalisé reçoit une alerte discrète « activité réseau anormale »."],
+    _geo, false, 1] call comspec_atak_native_fnc_addSetting;
+// Traçage d'un numéro (onglet TRAÇAGE de l'app GE, fn_traceServer) : délai, attente, suivi, précision, réseau civil, droits.
+["comspec_atak_native_trace_delay", "SLIDER",
+    ["Traçage : durée de la requête (s)", "Temps entre TRACER et la réponse de l'opérateur (±20 %). Le suivi continu répond deux fois plus vite. Ex. : 8 s, la position arrive 6 à 10 s après la demande."],
+    _geo, [1, 60, 8, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_cooldown", "SLIDER",
+    ["Traçage : attente entre deux requêtes (s)", "Temps minimum entre deux traçages lancés à la main par un même joueur. Ex. : 20 s, un opérateur ne trace pas plus de trois numéros par minute."],
+    _geo, [0, 300, 20, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_max", "SLIDER",
+    ["Traçage : numéros suivis en même temps", "Nombre de numéros qu'un joueur peut suivre en continu à la fois. Ex. : 3, un quatrième suivi est refusé tant qu'un autre n'est pas arrêté."],
+    _geo, [1, 10, 3, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_rad_multi", "SLIDER",
+    ["Traçage : précision avec plusieurs antennes (m)", "Rayon du cercle quand trois antennes ou plus captent le téléphone (le double avec deux), à ±25 %. Ex. : 100 m, cercle de 75 à 125 m en ville."],
+    _geo, [10, 500, 100, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_rad_single", "SLIDER",
+    ["Traçage : précision avec une seule antenne (m)", "Rayon du cercle quand une seule antenne capte le téléphone, plus grand loin de l'antenne (0,4 à 1,9 fois). Ex. : 800 m, cercle de 300 à 1 500 m en campagne."],
+    _geo, [50, 3000, 800, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_grow", "SLIDER",
+    ["Traçage : dernière position, croissance du cercle (m/s)", "Un téléphone éteint, brouillé ou hors couverture ne donne que sa dernière position : son cercle grandit avec le temps, la cible a pu bouger. Ex. : 1,5 m/s, +90 m par minute (une marche)."],
+    _geo, [0, 10, 1.5, 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_civnet", "CHECKBOX",
+    ["Traçage : réseau mobile civil", "Coché : les villes et villages ont des antennes civiles (ville : précis, campagne : large, plus de 6 km de toute localité : hors couverture), en plus des relais ATAK. Décoché : seuls les relais captent les téléphones. Ex. : désert sans relais décoché, personne n'est traçable."],
+    _geo, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_link", "LIST",
+    ["Traçage : liaison ATAK exigée", "Le téléphone qui trace doit avoir du réseau (hors brouillage) pour joindre l'opérateur. Selon le profil : oui en Milsim et Standard, non en Arcade. Ex. : sans réseau, « Pas de liaison avec l'opérateur »."],
+    _geo, [[0, 1, 2], ["Selon le profil de réalisme", "Toujours", "Jamais"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_trace_warrant", "CHECKBOX",
+    ["Traçage : mandat du Zeus exigé", "Coché : l'opérateur refuse toute requête tant que le Zeus n'a pas accordé le mandat (clic droit > ATAK · Traçage des numéros). Ex. : enquête où le traçage s'obtient en cours de mission."],
     _geo, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_sim_sos", "CHECKBOX",
     ["Carte SIM localisable téléphone éteint", "Quand la batterie est vide, le téléphone s'éteint mais sa carte SIM continue d'être captée par les relais. On peut alors le retrouver par son numéro ou son IMEI (onglet GÉOLOC de l'app GE, RECHERCHER sur la carte), plus ou moins précisément selon le nombre de relais qui le captent."],
@@ -681,6 +781,17 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_relay_tx_badge_pos", "LIST",
     ["Position de la case RELAIS ATAK", "Le cadre d'ACRE2 se déplace dans la disposition de l'interface d'Arma : les deux premiers choix le suivent."],
     _mpuCat, [[0, 1, 2, 3], ["À gauche du cadre ACRE", "Au-dessus du cadre ACRE", "En haut à droite de l'écran", "En bas à gauche de l'écran"], 0], 0] call comspec_atak_native_fnc_addSetting;
+// Notification MPU à l'écran pendant l'alternat (fn_mpuHud), juste au-dessus du cadre ACRE : choix du joueur, même valeur que l'interrupteur
+// du téléphone (Réglages > Matériel et réseau).
+["comspec_atak_native_mpu_hud", "CHECKBOX",
+    ["Notification MPU à l'écran (alternat)", "Pendant que vous parlez à la radio (alternat ACRE2 ou TFAR), un petit encadré juste au-dessus du cadre ACRE, en bas à droite de l'écran, dit si votre voix passe par le maillage MPU5, et qui vous entendez par lui. Exemple : « MPU · voix par le maillage », puis « 2 sauts · 3 correspondants » ; en réception : « DUPONT via MPU », puis « 3 sauts ». Rien ne s'affiche quand la voix ne passe pas par la MPU5. Aussi dans le téléphone : Réglages > Matériel et réseau."],
+    _mpuCat, true, 0, { if (!(_this isEqualTo true) && {hasInterface}) then { ["stop"] call comspec_atak_native_fnc_mpuHud; }; }] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_hud_why", "CHECKBOX",
+    ["Dire pourquoi la MPU n'est pas utilisée", "Coché : pendant l'alternat, quand votre voix ne passe pas par la MPU5, l'encadré le dit en une ligne grise. Exemple : « MPU : non utilisée (aucun relais) ». Décoché (par défaut) : rien ne s'affiche dans ce cas."],
+    _mpuCat, false, 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mpu_hud_dy", "SLIDER",
+    ["Notification MPU : décalage vertical (%)", "Monte (valeur positive) ou descend (valeur négative) l'encadré, en pourcentage de la hauteur de l'écran, s'il gêne un autre affichage. Exemple : 5 le monte d'un vingtième de l'écran. 0 : juste au-dessus du cadre ACRE."],
+    _mpuCat, [-20, 60, 0, 0], 0] call comspec_atak_native_fnc_addSetting;
 // Tutoriel de l'app Wave Relay (fn_waveRelayTuto) : le bouton « ? » reste toujours là.
 ["comspec_atak_native_wr_tuto_offer", "CHECKBOX",
     ["Proposer le tutoriel du réseau", "Une seule fois, à la première ouverture de l'app Wave Relay. Le bouton « ? » de l'app l'ouvre à tout moment."],
@@ -709,12 +820,30 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
     _mpuCat, false, 1, { if (_this && {hasInterface}) then { [{ ["applyCut"] call comspec_atak_native_fnc_radioGuard; }] call comspec_atak_native_fnc_nextFrame; }; }] call comspec_atak_native_fnc_addSetting;
 // Assistant de configuration (fn_setupWizard) : proposé une fois à l'admin.
 ["comspec_atak_native_wizard_offer", "CHECKBOX",
-    ["Proposer l'assistant de configuration", "Une seule fois, à un admin ou un Zeus. L'assistant reste dans le menu Échap, Réalisme et réseau."],
+    ["Proposer l'assistant de configuration", "Une seule fois, à un admin ou un Zeus. L'assistant reste dans le menu Échap : ATHENA Configuration, Réalisme et réseau."],
     _mpuCat, true, 0] call comspec_atak_native_fnc_addSetting;
-// Voix ACRE2 / TFAR relayée par le maillage MPU5 (fn_mpuVoice) : passerelle radio sur IP. Reste décochée par défaut : jamais jouée, et la voix des joueurs passe avant (voir fn_radioGuard).
+// Voix ACRE2 / TFAR relayée par le maillage MPU5 (fn_mpuVoice) : passerelle radio sur IP. Cochée par défaut depuis la 4.8 (demande du propriétaire : maillage et MPU5 actifs sans réglage) ; la voix des joueurs passe toujours avant (voir fn_radioGuard).
 ["comspec_atak_native_mpu_voice", "CHECKBOX",
-    ["Voix ACRE/TFAR relayée par le maillage MPU5", "Comme une passerelle radio sur IP : un joueur relie sa radio ACRE2 ou TFAR à sa MPU5 par câble audio (menu ACE Téléphone ATAK > Radio de données, ou app Réseau). Entre deux radios ainsi reliées, réglées sur la même fréquence, la voix passe par le maillage (MPU5, relais, pylônes, véhicules) : la distance et le relief ne la coupent plus. Hors maillage : portée radio normale. Nécessite la liaison téléphone-radio réaliste. TFAR : la portée de réception de la radio reliée s'allonge jusqu'au correspondant relié le plus lointain."],
-    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
+    ["Voix ACRE/TFAR relayée par le maillage MPU5", "Comme une passerelle radio sur IP : un joueur relie sa radio ACRE2 ou TFAR à sa MPU5 par câble audio (menu ACE Téléphone ATAK > Radio de données, ou app Réseau). Entre deux radios ainsi reliées, réglées sur la même fréquence, la voix passe par le maillage (MPU5, relais, pylônes, véhicules) : la distance et le relief ne la coupent plus. Hors maillage : portée radio normale. Nécessite la liaison téléphone-radio réaliste. TFAR : la portée de réception de la radio reliée s'allonge jusqu'au correspondant relié le plus lointain. Coché par défaut ; exemple : deux joueurs reliés à 8 km l'un de l'autre s'entendent par un pylône. Décoché : portée radio normale pour tous."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+// Règle « pas de relais, pas de réseau MPU / radio » (fn_relayNet "gateOn", "gate") : cochée par défaut, le profil Arcade garde un réseau libre.
+["comspec_atak_native_relay_gate", "CHECKBOX",
+    ["Exiger un relais pour le réseau MPU/radio", "Coché : le réseau du téléphone, de la MPU5 et la voix relayée ne marchent que si un relais en service est à portée (pylône, antenne, kit, véhicule relais), directement ou par une chaîne de radios qui y mène. Aucun relais, relais détruit, éteint, brouillé ou hors de portée : aucun réseau, et l'app Wave Relay dit lequel et pourquoi. Exemple : mission sans relais, deux joueurs avec une MPU5 chacun : pas de réseau entre eux tant qu'aucun relais n'est posé. Décoché (réseau libre) : comme avant, les téléphones et les MPU5 se joignent sans relais. Ne concerne ni la liaison internet vers Athena, ni la voix directe, ni une radio ACRE2 / TFAR utilisée seule."],
+    _mpuCat, true, 1, { uiNamespace setVariable ["COMSPEC_ATAK_GateCache", []]; uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", nil]; }] call comspec_atak_native_fnc_addSetting;
+// Qualité de la voix relayée (fn_voicePath "quality", appliquée par fn_mpuVoice "sigMap") : réaliste par défaut, ce sont les valeurs d'avant.
+["comspec_atak_native_mesh_voice_degrade", "LIST",
+    ["Dégradation de la voix par le maillage", "La voix qui passe par le maillage perd en qualité avec le nombre de radios traversées et le pire lien du chemin. Réaliste : exemple, 1 saut sur un bon lien = 96 % (Excellent), lien à la limite = 45 % (Mauvais, grésillement et coupures d'ACRE2). Légère : jamais sous 65 %. Aucune : toujours 95 %. Ne touche ni la voix directe ni une radio utilisée hors du maillage. TFAR n'a pas de signal par paire de radios : seule la portée y change."],
+    _mpuCat, [[0, 1, 2], ["Aucune", "Légère", "Réaliste"], 2], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_voice_cut", "SLIDER",
+    ["Seuil de coupure de la voix relayée (%)", "Sous cette qualité, la voix ne passe plus par le maillage : la radio garde sa portée normale. Exemple : 50 coupe les liens Mauvais (45 %). 0 : jamais coupée avant la limite du maillage."],
+    _mpuCat, [0, 90, 0, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_voice_policy", "LIST",
+    ["Priorité de la voix : maillage ou radio", "Au choix du joueur (app Wave Relay, onglet VOIX), ou imposée à tous. Les deux : le meilleur des deux signaux est gardé, si l'un tombe l'autre prend le relais. Radio classique d'abord : le maillage ne sert que si la radio seule ne porte pas. Maillage d'abord : la voix suit le maillage dès qu'il joint le correspondant, sans jamais affaiblir la radio. S'applique à ce que chaque joueur entend (ACRE2)."],
+    _mpuCat, [[0, 1, 2, 3], ["Au choix du joueur", "Les deux (le meilleur)", "Radio classique d'abord", "Maillage d'abord"], 0], 1, { if (hasInterface) then { ["applyPolicy"] call comspec_atak_native_fnc_voicePath; }; }] call comspec_atak_native_fnc_addSetting;
+// Voix par le maillage : exige au moins un relais en service dans la mission (fn_mpuVoice « _relayOk »).
+["comspec_atak_native_mpu_voice_needRelay", "CHECKBOX",
+    ["Voix par le maillage : au moins un relais", "Coché : la voix ne passe par les MPU5 que si la mission a au moins un relais en service pour votre camp (module « Poser un relais », pylône, véhicule passerelle, poste de commandement). Exemple : carte sans aucun relais, deux joueurs avec une MPU5 chacun : leurs radios gardent leur portée normale. Décoché : le maillage d'équipe du chef de groupe et les MPU5 voisines suffisent."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 // Graphe unique du maillage (fn_meshGraph) : calculé sur le serveur par défaut, plafond de sauts réglable.
 ["comspec_atak_native_mesh_server", "CHECKBOX",
     ["Graphe du maillage calculé sur le serveur", "Coché : une seule vérité pour tous, calculée par le serveur et diffusée sur changement, au plus toutes les 2 s. Décoché : chaque client calcule le graphe de son camp, sans diffusion mais avec des écarts possibles. N'agit qu'avec la liaison réaliste."],
@@ -745,6 +874,16 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_mesh_traffic_power", "CHECKBOX",
     ["Batterie selon le trafic relayé", "Un nœud qui relaie beaucoup se vide plus vite, jusqu'à deux fois."],
+    _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
+// Réseau relais plus réaliste (4.2.1, fn_meshGraph) : bâtiments entre deux radios, reconvergence après la perte d'un relais, lien manquant sur la carte.
+["comspec_atak_native_mesh_buildings", "SLIDER",
+    ["Bâtiments dans le maillage (%)", "Liaison réaliste : chaque bâtiment traversé entre deux radios du maillage coûte du signal (relief seul avant). 0 : comportement d'avant. À 50 %, quatre maisons entre deux équipiers à 300 m dégradent le lien sans le couper ; à 100 %, il faut un relais sur un toit."],
+    _mpuCat, [0, 100, 50, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_reconverge_s", "SLIDER",
+    ["Reconvergence après la perte d'un relais (s)", "Liaison réaliste : quand un relais de votre route tombe (détruit, ramassé, batterie vide), le réseau se coupe ce temps-là avant de repasser par un autre chemin. 0 : bascule immédiate, comme avant."],
+    _mpuCat, [0, 15, 3, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_miss_map", "CHECKBOX",
+    ["Lien manquant sur la carte", "Liaison réaliste, hors maillage : un trait rouge en tirets relie votre groupe au nœud le plus proche à joindre, avec la cause (relief, distance, bâtiments, canal). Calque Wave Relay de la carte."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_mesh_stale_s", "SLIDER",
     ["Position périmée : gris après (s)", "Liaison réaliste : un ami sans nouvelle position passe en gris. 0 : comportement d'avant."],
@@ -788,6 +927,22 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_mesh_backup_delay", "SLIDER",
     ["Délai avant le canal de secours (s)", "Temps de brouillage subi avant la bascule."],
     _mpuCat, [2, 60, 10, 0], 1] call comspec_atak_native_fnc_addSetting;
+// Chiffrement plus réaliste (fn_meshKeys) : sans effet tant que « Clés du maillage » est décoché ; nouveaux réglages décochés, sauf le coût discret. Le profil Arcade les coupe.
+["comspec_atak_native_mesh_keys_fill", "CHECKBOX",
+    ["Chargeur de clés : chargement manuel", "Coché : CHARGER LES CLÉS (app Wave Relay ou menu ACE Téléphone ATAK > Radio de données) demande un chargeur de clés dans l'inventaire ou le poste de commandement, et dure 6 s. Le chargement au démarrage suit toujours « Clés chargées automatiquement ». Décoché : comportement d'avant."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_keys_period", "LIST",
+    ["Période cryptographique", "Durée de vie d'une clé chargée. Alerte 10 min avant ; ensuite le cadenas passe en PÉRIMÉE, les messages partent en clair et la MPU5 quitte le maillage chiffré jusqu'au rechargement (chargeur, poste de commandement ou OTAR). Aucune : une clé ne périme jamais, comme avant."],
+    _mpuCat, [[0, 30, 60, 120, 240, 480], ["Aucune", "30 min", "1 h", "2 h", "4 h", "8 h"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_keys_otar", "CHECKBOX",
+    ["Rechargement à distance (OTAR)", "Coché : le chef de groupe (ou le poste de commandement), avec une clé valide, renouvelle les clés des équipiers joints par le maillage : bouton RENOUVELER LE GROUPE (OTAR) de l'app Wave Relay. Un équipier hors maillage passe au chargeur."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_crypto_cost", "LIST",
+    ["Coût du chiffrement", "Tant que la liaison est chiffrée : un peu de débit en moins, de délai et de batterie en plus. Visible dans l'app Réseau, Débit du téléphone. Sans clés du maillage : sans effet."],
+    _mpuCat, [[0, 1, 2], ["Aucun", "Discret (-5 % de débit, +20 ms)", "Marqué (-15 % de débit, +60 ms)"], 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_mesh_intercept", "CHECKBOX",
+    ["Interception du trafic en clair", "Coché : un spécialiste ennemi avec un goniomètre intercepte les messages de groupe émis à portée. En clair : position de l'émetteur à 100 m près et une partie du texte. Chiffré : une émission et sa direction, jamais le contenu. App Guerre électronique, onglet GONIO."],
+    _mpuCat, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_mesh_tools", "CHECKBOX",
     ["Outils du maillage (Zeus et joueurs)", "Clic droit Zeus « ATAK · Maillage » ; topologie, ping et prévision de couverture dans l'app Wave Relay."],
     _mpuCat, true, 1] call comspec_atak_native_fnc_addSetting;
@@ -884,6 +1039,14 @@ private _phones = ["COMSPEC", "ATAK · Téléphones personnels"];
 ["comspec_atak_native_pin_block", "SLIDER",
     ["Code du téléphone : blocage (s)", "Durée du blocage après le dernier essai. Elle n'est jamais définitive."],
     _phones, [10, 1800, 120, 0], 1] call comspec_atak_native_fnc_addSetting;
+// Synchroniser le téléphone avec le web (fn_phoneSync, ICD-SSE-PHONE-001). Accord du joueur : réglage du joueur seul (2),
+// qu'aucun serveur ni aucune mission ne peut cocher à sa place. Le MJ peut l'interdire pour la mission.
+["comspec_atak_native_phone_sync", "CHECKBOX",
+    ["Autoriser la synchronisation du téléphone avec Athena", "Décoché par défaut : rien n'est envoyé. Coché : l'action Synchroniser avec le web envoie aux fichiers d'Athena le contenu du téléphone de votre personnage (contacts, messages, notes, noms des photos, apps, positions, repères, numéro et IMEI du jeu), jamais rien de votre PC. Une fois par minute au plus. Exemple : cochez, puis menu ACE, Téléphone ATAK, Synchroniser avec le web : la référence EXT-000123 s'affiche dans le téléphone."],
+    _phones, false, 2] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_phone_sync_off", "CHECKBOX",
+    ["Interdire la synchronisation des téléphones pendant cette mission", "Coché : aucun téléphone n'est envoyé au web pendant cette mission, même si le joueur l'a autorisé. Exemple : cochez pour une mission d'entraînement dont les téléphones ne doivent pas remplir les fichiers d'Athena. Un Zeus peut aussi l'interdire en cours de partie avec la variable de mission COMSPEC_ATAK_PhoneSyncDisabled à true."],
+    _phones, false, 1] call comspec_atak_native_fnc_addSetting;
 // Tinder : chasse aux HVT (fn_hvtIntel). Chaque cible peut aussi être réglée à part (module Eden / Zeus « Tinder : profil HVT / SSE »).
 private _hvt = ["COMSPEC", "ATAK · Tinder : chasse aux HVT"];
 // Traces civiles (fn_hvtTrace) : décochées par défaut, jamais de position exacte ni de suivi en direct.
@@ -1005,6 +1168,8 @@ if (hasInterface) then {
     ["comspec_atak_native_zeusStateData", { ["data", _this select 0] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;
     ["comspec_atak_native_zeusObjectOpen", { ["open", _this] call comspec_atak_native_fnc_zeusObject; }] call CBA_fnc_addEventHandler;
     ["comspec_atak_native_zeusStateDenied", { ["denied"] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;
+    // État du serveur (onglet SERVEUR du Centre Zeus) : réponse du serveur au seul Zeus demandeur.
+    ["comspec_atak_native_zeusSrvData", { ["srvData", _this select 0] call comspec_atak_native_fnc_zeusState; }] call CBA_fnc_addEventHandler;
 };
 // App Admin : un admin demande l'état de la partie, chaque joueur lui répond directement (fn_adminClient).
 if (hasInterface) then {
@@ -1047,6 +1212,9 @@ private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_toc_anylaptop", "CHECKBOX",
     ["Tous les ordinateurs portables servent de PC de TOC", "Coché : les ordinateurs portables et postes informatiques du jeu posés dans la mission deviennent des PC de TOC (pour tous les camps). Décoché : seulement l'objet PC portable de TOC et les objets désignés par la mission (this setVariable [""COMSPEC_ATAK_Toc"", true, true])."],
     _loc, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_direct", "CHECKBOX",
+    ["Poste TOC : unités sans téléphone", "Coché : la console du poste TOC montre toutes les unités du camp, y compris celles qui n'ont pas de téléphone ATAK (position lue dans le jeu, état « sans téléphone · source directe »). Décoché : seulement les porteurs d'un téléphone, à leur dernier point reçu. Exemple : décochez pour une mission où le poste ne doit voir que le réseau ATAK."],
+    _loc, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_toc_persist", "CHECKBOX",
     ["Garder les écrans TOC", "Les écrans TOC (module Écran TOC) sont gardés par le serveur d'une partie à l'autre sur la même mission : écrans posés au Zeus recréés à leur place, affichage et cadrage des écrans de la mission remis, flux des comptes rendus repris."],
     _loc, true, 1] call comspec_atak_native_fnc_addSetting;
@@ -1056,6 +1224,73 @@ private _loc = ["COMSPEC", "ATAK · Mode local et poste TOC"];
 ["comspec_atak_native_toc_cam_range", "SLIDER",
     ["Distance d'activation des caméras d'écran (m)", "Un écran TOC en affichage caméra ne montre l'image en direct qu'aux joueurs plus proches que cette distance et qui le regardent. Plus loin, il montre la carte et le flux du poste."],
     _loc, [10, 150, 40, 0], 1] call comspec_atak_native_fnc_addSetting;
+// Le TOC sans téléphone (4.11.0, fn_tocTracks, fn_tocCam) : réglages du serveur.
+["comspec_atak_native_toc_source", "LIST",
+    ["Source des positions du TOC", "D'où viennent les unités montrées sur les écrans TOC et le PC du poste. Mixte : toute unité du camp est vue à sa vraie position, et un porteur d'ATAK garde en plus l'état de sa liaison ; exemple : une section sans téléphone apparaît sur le mur à côté d'une section équipée. Jeu : toute unité du camp est vue, les téléphones ne sont pas lus ; exemple : un téléphone éteint ne change rien au mur. Réseau ATAK : seuls les porteurs d'ATAK sont vus, à leur dernier point ; exemple : un groupe qui perd ses téléphones disparaît du mur."],
+    _loc, [["mix", "game", "atak"], ["Mixte (jeu et réseau ATAK)", "Jeu (toute unité du camp)", "Réseau ATAK (porteurs seulement)"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_tracks_ai", "LIST",
+    ["IA suivies par le TOC", "Quelles IA du camp deviennent des pistes quand la source des positions lit le jeu. Les joueurs, les IA de leurs groupes, les véhicules et aéronefs avec équipage et les unités désignées par la mission sont toujours suivis. Exemple : « Chefs de groupe » montre un point par groupe d'IA au lieu de huit."],
+    _loc, [["leaders", "all", "none"], ["Chefs de groupe et véhicules", "Toutes les IA", "Aucune IA hors groupe de joueurs"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_tracks_max", "SLIDER",
+    ["Pistes du TOC par camp (plafond)", "Nombre le plus haut d'unités montrées par camp sur les écrans TOC et le PC du poste. Au-delà, les joueurs passent d'abord, puis leurs groupes, les véhicules, enfin les IA ; le nombre écarté est dit à l'écran. Plus il y a de pistes, plus le serveur espace ses relevés (3 s jusqu'à 50 pistes, 12 s au-delà de 200)."],
+    _loc, [20, 400, 150, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_headcam", "CHECKBOX",
+    ["Caméra de casque sans téléphone", "Coché : la caméra de casque de tout joueur du camp peut être affichée sur un écran TOC ou en mosaïque, même s'il n'a pas de téléphone ATAK. Décoché : seuls les porteurs d'un ATAK qui partagent leur caméra sont proposés. Exemple : coché, le poste suit l'entrée d'une équipe sans téléphone dans un bâtiment."],
+    _loc, true, 1] call comspec_atak_native_fnc_addSetting;
+// Qui est qui dans le TOC (fn_tocDisplayName, fn_tocRoster) : réglages du serveur.
+["comspec_atak_native_toc_show_steam", "CHECKBOX",
+    ["Afficher le pseudo Steam", "Décoché : les écrans TOC et le PC du poste montrent l'indicatif Athena du joueur, sinon son groupe et son rang, jamais son pseudo. Coché : le pseudo est ajouté entre parenthèses. Exemple : décoché « VIPER 2 », coché « VIPER 2 (Tetar) » ; un joueur sans compte relié apparaît comme « Alpha 1-1 · 2 (non lié) »."],
+    _loc, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_roster_names", "LIST",
+    ["Afficher nom et prénom sur les écrans du TOC", "Nom et prénom du personnage (identité SSE du joueur) dans le tableau EFFECTIF. PC du poste seulement : les écrans du mur montrent indicatif et rôle, l'opérateur voit aussi nom et prénom ; exemple : un visiteur dans la salle ne lit pas les identités au mur. Nulle part : jamais affichés. Partout : aussi sur les écrans du mur ; exemple : un appel en début de mission devant le mur."],
+    _loc, [["console", "off", "all"], ["PC du poste seulement", "Nulle part", "Partout (écrans du mur compris)"], 0], 1] call comspec_atak_native_fnc_addSetting;
+// Vue satellite des écrans TOC et du PC du poste (fn_tocSat) : réglage de chaque joueur.
+["comspec_atak_native_toc_sat_quality", "LIST",
+    ["Qualité de la vue satellite", "Coût de la vue satellite des écrans TOC et du PC du poste sur votre PC. Basse (par défaut) : petite image, 2 images par seconde sur un écran du mur, 5 sur l'écran que vous regardez de près. Moyenne : image plus fine de près. Haute : image fine partout, plus fluide. Désactivée : aucune image satellite, l'écran l'indique. Exemple : passez en Basse ou Désactivée si le jeu saccade dans la salle TOC."],
+    _loc, [[0, 1, 2, 3], ["Désactivée", "Basse", "Moyenne", "Haute"], 1], 0] call comspec_atak_native_fnc_addSetting;
+// Écrans TOC posés dans le monde (fn_tocScreen « tick ») : réglage de chaque joueur (son PC, ses images par seconde).
+["comspec_atak_native_toc_view_range", "SLIDER",
+    ["Distance d'affichage des écrans TOC (m)", "Un écran TOC n'est dessiné et rafraîchi que si vous êtes plus près que cette distance, à peu près face à lui et sans mur entre vous. Un peu plus loin, il garde sa dernière image ; au-delà, il se met en veille : ni calcul ni caméra. Les caméras d'écran suivent aussi cette distance. Exemple : 25 m pour une salle d'opérations, 60 m pour un grand écran dehors."],
+    _loc, [10, 100, 25, 0], 0] call comspec_atak_native_fnc_addSetting;
+// Salle TOC tenue (4.12.0) : droits, chef de poste, journal des actions, thème de nuit (fn_tocAccess, fn_tocStation, fn_tocJournal, fn_tocTheme).
+private _tocHeld = ["COMSPEC", "ATAK · Salle TOC : postes, droits et journal"];
+["comspec_atak_native_toc_access_mode", "LIST",
+    ["Droits de la salle TOC", "Qui peut changer les écrans et régler la salle. Rôles : seuls le chef de poste (le joueur qui tient le poste « chef de quart » de la salle) et l'administrateur Zeus les changent ; les autres joueurs du camp lisent, tiennent un poste et écrivent dans les registres. Ouvert : tout joueur du camp change tout, comme avant la 4.12.0. Administrateurs : seuls le Zeus et les administrateurs du serveur. Exemple : en « Rôles », un joueur de passage ouvre le PC et lit la carte, mais son changement d'affichage est refusé et écrit au journal."],
+    _tocHeld, [["roles", "open", "admin"], ["Rôles (chef de poste et Zeus)", "Ouvert (tout le camp)", "Administrateurs seulement"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_chief_rank", "LIST",
+    ["Grade minimal du chef de quart", "Grade du jeu à partir duquel un joueur peut prendre le poste « chef de quart » d'une salle (action ACE sur soi, Poste TOC) et devenir ainsi chef de poste. Exemple : avec « Sergent », un caporal peut tenir le poste Opérations, pas celui de chef de quart."],
+    _tocHeld, [[0, 1, 2, 3, 4, 5, 6], ["Soldat (tout le monde)", "Caporal", "Sergent", "Lieutenant", "Capitaine", "Commandant", "Colonel"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_chief_uids", "EDITBOX",
+    ["Chefs de poste désignés", "Identifiants Steam (17 chiffres) séparés par des virgules : ces joueurs sont chefs de poste dans toutes les salles de leur camp, sans avoir à tenir un poste. Exemple : 76561198000000001, 76561198000000002."],
+    _tocHeld, "", 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_journal_max", "SLIDER",
+    ["Lignes gardées au journal du TOC", "Nombre de lignes du journal des actions gardées pour chaque camp ; les plus anciennes sortent. Les 200 dernières sont gardées d'une partie à l'autre avec la salle. Exemple : 500 lignes couvrent une soirée d'opération."],
+    _tocHeld, [50, 2000, 500, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_journal_log", "CHECKBOX",
+    ["Journal du TOC dans le journal COMSPEC", "Chaque action de la salle (écran changé, salle verrouillée, poste pris, relève, refus) est aussi écrite une fois dans le journal COMSPEC du serveur. Exemple : « Journal du TOC n° 12 · 21:04:10Z WEST Dupont (chief) Salle verrouillée »."],
+    _tocHeld, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_theme", "LIST",
+    ["Thème des écrans TOC", "Couleurs du TOC pour vous seul. Nuit : fonds plus noirs et textes assombris, pour ne pas être ébloui dans une salle sombre. S'applique aujourd'hui aux fenêtres du journal, du diagnostic et des relèves ; les écrans muraux et la console du poste l'adopteront dans une prochaine version. Exemple : « Automatique » passe en nuit quand le soleil de la mission est couché."],
+    _tocHeld, [["auto", "jour", "nuit"], ["Automatique (nuit quand le soleil est couché)", "Jour", "Nuit"], 0], 0] call comspec_atak_native_fnc_addSetting;
+// Activité radio au poste TOC (fn_tocRadio, fn_tocRadioUi) : qui parle, sur quelle fréquence.
+["comspec_atak_native_toc_radio_enabled", "CHECKBOX",
+    ["Activité radio au poste TOC", "Coché : le poste TOC voit qui parle à la radio, sur quel réseau et quelle fréquence (console radio, écran mural RADIO, encadré « Qui parle »). ACRE2, TFAR ou, sans mod radio, les canaux du jeu. Rien ne circule tant que personne ne regarde. Décoché : aucune émission n'est signalée. Exemple : décochez pour une mission où le poste ne doit rien savoir des radios."],
+    _loc, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_radio_nets", "EDITBOX",
+    ["Réseaux surveillés par défaut", "Liste de veille des postes TOC tant que personne ne l'a changée (console radio, module Activité radio). Réseaux séparés par des virgules : nom=fréquence en MHz, ou la fréquence seule ; une étoile à la fin demande un contrôle radio régulier. Exemple : CMD NET=31.000*, AIR=40.500, 152.250. Sans mod radio : VON-CAMP, VON-CMDT."],
+    _loc, "", 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_radio_see_all", "CHECKBOX",
+    ["Le TOC voit tous les réseaux du camp", "Décoché (par défaut) : le poste ne voit que les réseaux de sa liste de veille. Coché : il voit toutes les émissions de son camp, même sur une fréquence qu'il ne veille pas. Exemple : cochez pour une partie d'entraînement, décochez pour qu'une équipe puisse parler sur une fréquence discrète."],
+    _loc, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_radio_silence", "SLIDER",
+    ["Silence d'un réseau (min)", "Un réseau marqué « contrôle radio attendu » est signalé quand personne n'y a parlé depuis ce nombre de minutes. 0 : jamais d'alerte. Exemple : 10 affiche « silence 12 min » sur le réseau de commandement resté muet 12 minutes."],
+    _loc, [0, 60, 10, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_radio_hud", "CHECKBOX",
+    ["Encadré « Qui parle » à l'écran", "Réglage personnel, décoché par défaut. Coché : un petit encadré à droite de l'écran liste qui émet en ce moment sur les réseaux de vos radios, avec le réseau, la fréquence et la durée. Il disparaît quand personne ne parle. Exemple : « ● ALPHA 1-1 CMD NET 31.000 0:07 »."],
+    _loc, false, 0, { if (hasInterface && {!isNil "comspec_atak_native_fnc_tocRadioUi"}) then { ["hudSync"] call comspec_atak_native_fnc_tocRadioUi; }; }] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_toc_radio_hud_zeus", "CHECKBOX",
+    ["Encadré « Qui parle » au Zeus", "Réglage personnel, coché par défaut. Dans l'interface du Zeus, l'encadré liste les émissions de tous les camps et de tous les réseaux. Exemple : vérifier d'un coup d'œil que les deux camps se parlent."],
+    _loc, true, 0, { if (hasInterface && {!isNil "comspec_atak_native_fnc_tocRadioUi"}) then { ["hudSync"] call comspec_atak_native_fnc_tocRadioUi; }; }] call comspec_atak_native_fnc_addSetting;
 // IA et ATAK (fn_aiAtak).
 private _ai = ["COMSPEC", "ATAK · IA"];
 ["comspec_atak_native_ai_atak", "LIST",
@@ -1067,6 +1302,10 @@ private _ai = ["COMSPEC", "ATAK · IA"];
 ["comspec_atak_native_ai_atak_item", "EDITBOX",
     ["Objet donné aux IA", "Classe de l'objet ATAK mis dans l'inventaire des IA équipées (COMSPEC_ATAK_Phone par défaut)."],
     _ai, "COMSPEC_ATAK_Phone", 1] call comspec_atak_native_fnc_addSetting;
+// Ordres aux IA (fn_aiOrder « contact ») : compte rendu de contact d'un groupe IA commandé, une fois par minute au plus.
+["comspec_atak_native_ai_contact", "CHECKBOX",
+    ["Compte rendu de contact des groupes IA", "Un groupe IA à qui l'on a donné un ordre (téléphone, PC du poste TOC) signale lui-même ses contacts : direction, distance, ennemis repérés et blessés du groupe, au plus une fois par minute, dans une bulle au-dessus de son chef et une notification au donneur d'ordre. Décoché : il se tait. Exemple : « Alpha 1-2 : Contact nord-est à 250 m, 3 ennemis repérés, 1 blessés »."],
+    _ai, true, 1] call comspec_atak_native_fnc_addSetting;
 // Appui feu typé (fn_fireSupport) : complète l'app CAS (APPEL DE FEU), la carte, Tâches, le poste TOC et l'app JTAC.
 // Réglages serveur (forçables par la mission), sauf l'affichage des cercles (réglage personnel).
 private _fs = ["COMSPEC", "ATAK · Appui feu"];
@@ -1090,6 +1329,29 @@ private _fs = ["COMSPEC", "ATAK · Appui feu"];
 ["comspec_atak_native_fs_rings", "CHECKBOX",
     ["Cercles de portée et zone dangereuse", "Réglage personnel : sur la carte du téléphone et du poste TOC, portées min et max de la pièce choisie et distance de sécurité (danger close) autour de la cible. Les missions de tir en cours restent affichées."],
     _fs, true, 0] call comspec_atak_native_fnc_addSetting;
+// UCAV commandés depuis le téléphone (fn_ucav, fn_ucavCmd, vue UCAV de l'app Drone) : réglages serveur, puis événements.
+private _ucavCat = ["COMSPEC", "ATAK · UCAV"];
+["comspec_atak_native_ucav", "CHECKBOX",
+    ["Frappes d'UCAV depuis le téléphone", "Coché : un drone armé du camp (Greyhawk, Fenghuang, Ababil, Sentinel, drones armés des mods) se prend en main depuis l'app Drone, sans terminal ni poste du servant : orbite, Rechercher et tuer, frappes sur des cibles marquées avec ses propres armes guidées. Ex. : le JTAC met le Greyhawk en orbite à 1 000 m au-dessus du village, marque un blindé, l'UCAV tire seul son missile. Décoché : rien de tout cela, le terminal UAV reste le seul moyen."],
+    _ucavCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_ucav_who", "LIST",
+    ["Qui peut commander un UCAV", "Vérifié par le serveur à chaque ordre. Ex. : « Chefs, JTAC, opérateurs de drone, TOC et Zeus » laisse un chef de groupe ou un joueur au rôle JTAC prendre le Greyhawk, mais pas un fusilier ; « Tout le camp » le permet à tous ; « Poste TOC et Zeus » le réserve au poste de commandement."],
+    _ucavCat, [[0, 1, 2], ["Chefs, JTAC, opérateurs de drone, TOC et Zeus", "Tout le camp", "Poste TOC et Zeus"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_ucav_free", "CHECKBOX",
+    ["Rechercher et tuer : engagement libre autorisé", "Coché : le contrôleur peut choisir « Engager librement » ; l'UCAV frappe alors seul les ennemis identifiés de la zone, jamais une cible à moins de la distance de sécurité de l'appui aérien (1 000 m par défaut) d'un allié ou d'un civil : celle-là lui est proposée. Ex. : un blindé ennemi seul dans la vallée est frappé sans attendre ; une patrouille ennemie à 300 m d'un groupe allié attend la validation. Décoché : toute cible est proposée au téléphone."],
+    _ucavCat, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_ucav_terminal", "CHECKBOX",
+    ["UCAV : terminal UAV requis", "Coché : il faut un terminal UAV dans l'inventaire (en plus du téléphone) pour prendre la main sur un UCAV ; le poste TOC et Zeus en sont dispensés. Ex. : le JTAC qui a laissé son terminal dans le véhicule ne peut plus commander le Greyhawk avant de l'avoir repris. Décoché : le téléphone suffit."],
+    _ucavCat, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_ucav_range", "SLIDER",
+    ["Portée de la liaison UCAV (m)", "Distance maximale entre le téléphone et l'UCAV, divisée par deux si le relief les sépare ; les relais de la mission l'allongent comme pour les petits drones. Hors liaison, l'UCAV poursuit seul son orbite ou sa recherche, mais aucun ordre ne part. Ex. : à 15 000 m, un JTAC à 12 km de l'orbite commande encore l'UCAV ; derrière une crête, plus au-delà de 7,5 km. Le poste TOC et Zeus sont toujours en liaison."],
+    _ucavCat, [2000, 40000, 15000, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_ucavExec", { _this call comspec_atak_native_fnc_ucavCmd; }] call CBA_fnc_addEventHandler;
+if (isServer) then {
+    ["comspec_atak_native_ucavSrv", { ["srv", _this] call comspec_atak_native_fnc_ucav; }] call CBA_fnc_addEventHandler;
+    missionNamespace setVariable ["COMSPEC_ATAK_SrvUcavV", 1, true];
+};
+if (hasInterface) then { ["comspec_atak_native_ucavEvt", { ["evt", _this] call comspec_atak_native_fnc_ucav; }] call CBA_fnc_addEventHandler; };
 private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 // Rôle affiché (fn_displayRole) : le joueur le choisit dans l'app Profil, sauf si le serveur impose la fonction Athena.
 ["comspec_atak_native_role_force_community", "CHECKBOX",

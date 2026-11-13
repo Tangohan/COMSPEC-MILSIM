@@ -33,6 +33,7 @@ foreach ($mineWardrobes as $mw) {
     }
 }
 $canManageCatalog = !empty($canManageCatalog);
+$eqBase = is_array($eqBase ?? null) ? $eqBase : null;
 $canManageDotation = !empty($canManageDotation);
 $equipmentKindLabels = is_array($equipmentKindLabels ?? null) ? $equipmentKindLabels : \App\Support\ArsenalLoadoutItems::kindLabels();
 $migrationMissing = !empty($migrationMissing);
@@ -164,7 +165,7 @@ if ($catalogCount > 0) {
 ?>
 <div class="eq-hub eqx" id="eq-catalog" data-eq-catalog data-eq-space="<?= $h($space) ?>">
     <noscript><style>.eq-hub__img { opacity: 1; } .eq-hub__skeleton { display: none; }</style></noscript>
-    <header class="eqx-hero eqx-hero--kit<?= $eqLanding ? '' : ' eqx-hero--short' ?>">
+    <header class="eqx-hero eqx-hero--kit<?= $eqLanding ? ' eqx-hero--compact' : ' eqx-hero--short' ?>">
         <div class="eqx-hero__inner">
             <div class="eqx-hero__copy">
                 <p class="eqx-hero__kicker"><i aria-hidden="true"></i>Communauté · Équipement</p>
@@ -173,7 +174,8 @@ if ($catalogCount > 0) {
                 <p class="eqx-hero__lead">Composez une tenue une fois, retrouvez-la à chaque opération. Enfilez-la depuis l’arsenal en jeu, partagez-la avec votre communauté ou exportez-la pour ACE.</p>
                 <?php endif; ?>
                 <div class="eqx-hero__actions">
-                    <a class="eqx-btn eqx-btn--primary" href="<?= $h(url('equipment/assistant')) ?>" data-ath-modal>
+                    <a class="eqx-btn eqx-btn--primary" href="<?= $h(url('equipment/configurateur')) ?>">Configurateur</a>
+                    <a class="eqx-btn" href="<?= $h(url('equipment/assistant')) ?>" data-ath-modal>
                         Assistant de création<?= $kitsAllowed ? '' : ' <span class="eqx-pill">Pro</span>' ?>
                     </a>
                     <?php if ($myGameKit !== null): ?>
@@ -186,13 +188,6 @@ if ($catalogCount > 0) {
                     <button type="button" class="eqx-btn eqx-btn--quiet" data-eq-open="tenue-help">Ajouter une tenue ?</button>
                 </div>
             </div>
-            <?php if ($eqLanding): ?>
-            <ol class="eqx-how">
-                <li><span aria-hidden="true">01</span><div><strong>Composez</strong><p>Depuis l’arsenal en jeu, ou avec l’assistant pas à pas sur le site.</p></div></li>
-                <li><span aria-hidden="true">02</span><div><strong>Rangez et partagez</strong><p>Collections par thème, favoris, et partage à toute la communauté.</p></div></li>
-                <li><span aria-hidden="true">03</span><div><strong>Enfilez en jeu</strong><p>Dans l’arsenal, ouvrez le panneau Tenues d’Athena, choisissez la tenue et cliquez sur Enfiler.</p></div></li>
-            </ol>
-            <?php endif; ?>
         </div>
         <?php if ($eqStats !== []): ?>
         <div class="eqx-stats__wrap">
@@ -223,6 +218,7 @@ if ($catalogCount > 0) {
                 </a>
             </li>
             <?php endforeach; ?>
+            <li><a href="<?= $h(url('equipment/configurateur')) ?>">Configurateur</a></li>
         </ul>
     </nav>
 
@@ -234,6 +230,8 @@ if ($catalogCount > 0) {
         <?php if ($migrationMissing): ?>
         <p class="eq-hub__empty">Cette page n’est pas encore prête sur cette instance. Demandez à l’administration d’appliquer la mise à jour, puis rechargez.</p>
         <?php else: ?>
+
+        <?php if ($eqLanding && $detail === null) { require __DIR__ . '/_overview.php'; } ?>
 
         <?php if ($detail !== null): ?>
         <section class="eqx-detail" data-eq-detail-fallback aria-labelledby="eqx-detail-title">
@@ -288,3 +286,6 @@ if ($catalogCount > 0) {
     <script type="application/json" id="eq-catalog-data"><?= json_encode($catalogPayload, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_INVALID_UTF8_SUBSTITUTE) ?></script>
     <script type="application/json" id="eq-mine-data"><?= json_encode($mineCatalog, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_INVALID_UTF8_SUBSTITUTE) ?></script>
 </div>
+<?php if ($eqLanding && !$migrationMissing): ?>
+<script src="<?= $h(asset_url('assets/js/equipment-base-catalog.js')) ?>" defer></script>
+<?php endif; ?>

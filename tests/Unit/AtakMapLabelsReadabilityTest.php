@@ -22,13 +22,15 @@ final class AtakMapLabelsReadabilityTest extends TestCase
     public function testHelpersAreRegisteredAndUsed(): void
     {
         self::assertStringContainsString('class mapColors {}; class mapFmt {}; class mapLblGrid {};', $this->read('config.cpp'));
+        // 4.3.0 : placement commun par fn_mapLbl (grille fn_mapLblGrid partagée, priorités : unités, repères, lieux).
         foreach (['fn_mapLabels', 'fn_mapMarkerText', 'fn_mapPlaceText'] as $f) {
-            self::assertStringContainsString('call comspec_atak_native_fnc_mapLblGrid', $this->read('functions/map/' . $f . '.sqf'), $f);
+            self::assertStringContainsString('call comspec_atak_native_fnc_mapLbl;', $this->read('functions/map/' . $f . '.sqf'), $f);
             self::assertStringContainsString('call comspec_atak_native_fnc_mapColors', $this->read('functions/map/' . $f . '.sqf'), $f);
         }
+        $lbl = $this->read('functions/map/fn_mapLbl.sqf');
+        self::assertStringContainsString('call comspec_atak_native_fnc_mapLblGrid', $lbl);
         // Les cartouches des unités passent avant les noms des repères, qui passent avant les lieux.
-        self::assertStringContainsString('uiNamespace setVariable ["COMSPEC_ATAK_LblRectsU", _placed];', $this->read('functions/map/fn_mapLabels.sqf'));
-        self::assertStringContainsString('(uiNamespace getVariable ["COMSPEC_ATAK_LblRectsU", []])', $this->read('functions/map/fn_mapMarkerText.sqf'));
+        self::assertStringContainsString('_req pushBack [_prio * 1e6 + (count _req)', $lbl);
     }
 
     public function testColoursFollowApp6AndBearingsHaveThreeDigits(): void

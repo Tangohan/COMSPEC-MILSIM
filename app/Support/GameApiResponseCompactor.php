@@ -55,7 +55,10 @@ final class GameApiResponseCompactor
             return;
         }
 
-        $etag = self::etagFor($body);
+        // Empreinte posée par la route (révision du contenu, sans horodatage de génération : paquet d'identité) :
+        // gardée telle quelle, sinon un champ « generated_at » rendrait chaque corps différent et le 304 impossible.
+        $preset = trim((string) ($response->headerValue('ETag') ?? ''));
+        $etag = $preset !== '' ? $preset : self::etagFor($body);
         $response->header('ETag', $etag);
         $response->header('Vary', 'Accept-Encoding');
         if (self::matches($request->header('If-None-Match'), $etag)) {

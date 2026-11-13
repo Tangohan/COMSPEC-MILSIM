@@ -2,7 +2,8 @@
     Choix du téléphone et lecture du téléphone d'un autre. Seule page permise tant qu'un téléphone d'autrui est affiché
     (fn_navigate, COMSPEC_ATAK_PhoneActive) : ni lanceur, ni dock, ni app. Elle ne montre que la fiche et les données
     renvoyées par le serveur (fn_phoneServer), en lecture seule, et n'appelle jamais Athena : le compte du lecteur
-    n'est jamais utilisé sous un autre nom.
+    n'est jamais utilisé sous un autre nom. Seule exception : SYNCHRONISER AVEC LE WEB sur le téléphone d'une IA
+    (fn_phoneSync, avec l'accord du lecteur dans ses réglages) ; jamais sur celui d'un joueur.
       "*PICK*" : mon téléphone (si j'en ai un) et ceux d'autrui.
       id       : code demandé si ce téléphone en a un (fn_phonePad), sinon son contenu.
 */
@@ -104,6 +105,17 @@ switch (_status) do {
                     if ((count _data) isEqualTo 0) then { _rows pushBack ["text", "Mémoire non lue : son propriétaire a quitté la partie sans qu'elle soit écrite."]; };
                 };
             };
+        };
+        // Téléphone d'une IA : envoi de son contenu aux fichiers d'Athena (fn_phoneSync vérifie licence, liaison et accord).
+        if (["seizedOk"] call comspec_atak_native_fnc_phoneSync) then {
+            private _sync = [["SYNCHRONISER AVEC LE WEB", { ["seized"] call comspec_atak_native_fnc_phoneSync; }, false, true,
+                "Envoie le contenu de ce téléphone saisi aux fichiers d'Athena (à autoriser dans vos réglages)"]];
+            // Licence pas encore acceptée : note de service ouverte d'ici (fn_licenceOpen), retour sur cette page.
+            if (!(["ok"] call comspec_atak_native_fnc_licenceOpen) && {["can"] call comspec_atak_native_fnc_licenceOpen}) then {
+                _sync pushBack ["OUVRIR LA NOTE DE SERVICE", { [{}, "PHONES"] call comspec_atak_native_fnc_licenceOpen; }, false, true,
+                    "Lisez et acceptez la licence : rien n'est envoyé à Athena avant."];
+            };
+            _rows pushBack ["buttons", _sync];
         };
         // Effacer pour le garder : sinon un joueur sans autre téléphone ne pourrait pas s'en servir.
         private _armed = _view getOrDefault ["confirm", false];

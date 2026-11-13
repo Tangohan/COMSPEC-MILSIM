@@ -24,6 +24,19 @@ private _mode = toUpper (_entity getVariable ["comspec_sse_identityMode", "AUTO"
 
 private _full = trim (format ["%1 %2", _first, _last]);
 private _fromUnit = false;
+// Identité unique déjà décidée (addon identity, fn_idIdentityOf : papiers, discussion) : le dossier la reprend, jamais un
+// autre nom tiré. Elle n'est pas « écrite à la main » pour autant (pas de COMSPEC_SSE_NameAuthored).
+private _fromId = false;
+if (_full isEqualTo "") then {
+    private _known = _entity getVariable ["comspec_sse_identity", []];
+    if (_known isEqualType [] && {_known isNotEqualTo []}) then {
+        private _h = createHashMapFromArray (_known select { _x isEqualType [] && {(count _x) isEqualTo 2} });
+        _first = _h getOrDefault ["first", ""];
+        _last = _h getOrDefault ["last", ""];
+        _full = trim (format ["%1 %2", _first, _last]);
+        _fromId = _full isNotEqualTo "";
+    };
+};
 // Identité écrite à la main : attachIntelLayers ne la remplacera pas par « UNKNOWN ».
 if (_full isNotEqualTo "" || {_alias isNotEqualTo ""}) then {
     _entity setVariable ["comspec_sse_identityAuthored", true, true];
@@ -55,7 +68,7 @@ if (_full isNotEqualTo "") then {
     _cluster set ["authoredFirst", _first];
     _cluster set ["authoredLast", _last];
     _cluster set ["authoredFromUnit", _fromUnit];
-    if (!_fromUnit) then {
+    if (!_fromUnit && {!_fromId}) then {
         _entity setVariable ["COMSPEC_SSE_NameAuthored", true, true];
     };
 };

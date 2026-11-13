@@ -236,7 +236,17 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
 
 <?php require __DIR__ . '/partials/roster_toolbar.php'; ?>
 
-    <?php if ($rows === []): ?>
+    <?php if ($rows === [] && !$hasActiveFilters && $total === 0): ?>
+        <div class="eff-catalog__empty">
+            <strong>Votre registre est vide</strong>
+            Commencez par ajouter une première fiche ou importer votre tableur : les membres n’ont pas besoin de compte.
+            <div class="eff-catalog__empty-actions">
+                <a class="eff-catalog__btn eff-catalog__btn--primary" href="<?= htmlspecialchars(effectifs_workspace_url('nouveau'), ENT_QUOTES, 'UTF-8') ?>">Ajouter une fiche</a>
+                <a class="eff-catalog__btn" href="<?= htmlspecialchars(effectifs_workspace_url('sans-comptes'), ENT_QUOTES, 'UTF-8') ?>">Voir les fiches sans compte</a>
+                <a class="eff-catalog__btn" href="<?= htmlspecialchars(effectifs_workspace_url('tableaux'), ENT_QUOTES, 'UTF-8') ?>">Construire un tableau de données</a>
+            </div>
+        </div>
+    <?php elseif ($rows === []): ?>
         <div class="eff-catalog__empty">
             <strong>Aucun membre ne correspond</strong>
             Élargissez la recherche ou retirez un filtre.

@@ -12,7 +12,7 @@ private _i = (floor (_p getOrDefault ["idx", 0])) min ((count _log) - 1);
 // Vue gardée d'un rendu à l'autre (la page se redessine à chaque bouton).
 private _cp = ctrlPosition _map;
 uiNamespace setVariable ["COMSPEC_ATAK_AarView", [ctrlMapScale _map, _map ctrlMapScreenToWorld [(_cp select 0) + (_cp select 2) / 2, (_cp select 1) + (_cp select 3) / 2]]];
-private _palette = createHashMapFromArray [["BLUE",[0.28,0.70,1,1]],["CYAN",[0.20,0.90,0.95,1]],["GREEN",[0.36,0.85,0.42,1]],["WHITE",[0.95,0.95,0.95,1]],["YELLOW",[1,0.85,0.15,1]],["ORANGE",[1,0.55,0.15,1]],["PINK",[1,0.45,0.75,1]]];
+private _palette = createHashMapFromArray [["BLUE",[0.28,0.70,1,1]],["CYAN",[0.20,0.90,0.95,1]],["GREEN",[0.36,0.85,0.42,1]],["WHITE",[0.95,0.95,0.95,1]],["YELLOW",[1,0.85,0.15,1]],["ORANGE",[1,0.55,0.15,1]],["PINK",[1,0.45,0.75,1]],["FUCHSIA",[1,0.12,0.80,1]],["LIME",[0.62,1,0.05,1]],["VIOLET",[0.74,0.40,1,1]],["TURQ",[0.10,1,0.88,1]],["NEON",[1,1,0.20,1]]];
 private _ally = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_AllyColor","BLUE"],[0.28,0.70,1,1]];
 private _self = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_SelfColor","CYAN"],[0.20,0.90,0.95,1]];
 private _labels = (ctrlMapScale _map) < 0.12;

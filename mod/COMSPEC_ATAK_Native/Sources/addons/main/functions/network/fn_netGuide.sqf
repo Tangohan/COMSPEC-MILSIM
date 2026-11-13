@@ -97,7 +97,7 @@ private _sections = [
     ]],
     ["En jeu : voir le réseau", "", [
         "Page Réseau du téléphone : barres, débit, latence, pertes, relais utilisé et chaque cause qui coûte du signal, en dB.",
-        "App Wave Relay : MON NŒUD, RÉSEAU (nœuds, LOCALISER), COUVERTURE (carte de débit des relais), TALKGROUPS.",
+        "App Wave Relay : ÉTAT, RÉSEAU (nœuds, LOCALISER), RELAIS (carte de débit, liste et état des relais), VOIX.",
         "Carte : calque Relais (portée, débit, places, canal, santé) ; clic sur un relais : sa fiche, et le choisir comme relais préféré.",
         "ACE sur un relais : état, allumer, couper, changer la batterie. App Debug : journal des transferts (envoi, livré, perdu, remis en file)."
     ]]

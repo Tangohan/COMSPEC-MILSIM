@@ -141,6 +141,11 @@ class Application
             \App\Support\GameApiResponseCompactor::apply($this->request, $response);
         } catch (\Throwable) {
         }
+        // Écriture réussie du registre d'identité (portail SSE, papiers, couverture) : paquet du jeu recalculé.
+        try {
+            \App\Support\SseIdentityPackCache::invalidateAfter($this->request, $response);
+        } catch (\Throwable) {
+        }
         $response->send();
         // Mesure de charge et détecteurs : une ligne de tampon par requête, regroupement après la réponse.
         \App\Services\Watch\WatchRecorder::finish($this->request, $response);

@@ -1,15 +1,28 @@
 # ATAK : import d'une couverture générée sur Athena
 
+> Mise à jour (identités unifiées, étape 4450) : le site n'a plus d'onglet ni d'assistant « Couvertures ». Le membre gère des identités (`/operateur/identite`) ; le téléphone reçoit par « Synchroniser avec Athena » une entrée par identité, dans le même fichier `comspec-cover` v1 (voir `docs/technical/IDENTITES-UNIFIEES.md`). Le fichier à importer hors ligne reste généré par un responsable depuis la fiche du membre. Le mod ne change pas.
+
 But : donner à un joueur une couverture complète et cohérente, générée sur Athena, qu'il importe dans le jeu sans connexion à Athena. Personnes fictives seulement.
 
-Règle de licence : le mod ne fait aucune requête réseau pour importer. La DLL lit un fichier local de `Documents\Arma 3 - COMSPEC` ; le bouton « Demander la mise à jour » (paquet Athena) ne change pas.
+Deux voies, même contenu : la synchronisation depuis le téléphone (réseau, derrière la licence) ou le fichier (aucune requête réseau, la DLL lit un fichier local de `Documents\Arma 3 - COMSPEC`). Le bouton « Demander la mise à jour » (paquet Athena) ne change pas.
 
 ## Parcours
 
 1. Athena › Ma situation › Mes papiers › Générer ma couverture pour le jeu : pays, sexe, langue des textes, photo fictive facultative. Limite : 3 générations par 24 h (20 pour un gestionnaire qui génère pour un autre).
-2. Télécharger : fichier `comspec-couverture-CVR-XXXXXXXX.json`.
-3. Le déposer dans `Documents\Arma 3 - COMSPEC`.
-4. Téléphone ATAK › Ma couverture › Importer ma couverture.
+2. Téléphone ATAK › Ma couverture › Importer ma couverture › **Synchroniser avec Athena** : fenêtre « Mes couvertures sur Athena », choix, Importer la sélection.
+3. Sans connexion : Télécharger (fichier `comspec-couverture-CVR-XXXXXXXX.json`), le déposer dans `Documents\Arma 3 - COMSPEC`, puis Importer un fichier.
+
+## Synchronisation depuis le téléphone (`fn_idCoverAthena`)
+
+- Garde, avant toute requête : service Athena allumé, licence acceptée, liaison Athena autorisée (`COMSPEC_AthenaReady`), compte lié (`athenaStatus` logged), COMSPEC Link 2.0.118 ou plus. Sinon la fenêtre dit pourquoi, sans appel réseau.
+- Canal : commande existante `GetIdentityPack` de COMSPEC Link (DLL inchangée), dans une tâche de fond, puis `GetIdentityPackChunk`. Opération `~covers` (liste) ou `~cover:CVR-…,CVR-…` (5 fichiers au plus), `since` = `v=1` (version du protocole côté mod). Réponse au format du paquet, tout dans `settings` : `covers_api` (1), `covers` ou `files` + `errors`.
+- Site : `SseCoverSyncService`, `AtakCoverSyncApiController` (aussi `GET /api/atak/covers` et `GET /api/atak/covers/files?refs=`). Compte et communauté lus dans le jeton de jeu, jamais dans la requête ; une référence d'un autre membre répond `not_found`. Limites : 12 listes par minute, 10 téléchargements par 10 minutes, par compte.
+- Liste : `ref`, `name`, `summary` (métier · ville), `country`, `country_code`, `status` (valid, expired, invalid), `has_photo`, `generated_at`, `expires_at`, `updated_at`, `size` (octets du fichier), `sha` (`content_sha256`), `by_manager`, `downloaded`, `active` (vrai sur la couverture que le membre a marquée active sur le site, listée en premier ; les révoquées ne sont pas listées).
+- Fichiers : le fichier `comspec-cover` v1 tel que généré, relu par `SseCoverExportService::parse`, sauf `cover.photo` mis à null (le jeu ne l'affiche pas). Chaque fichier servi est marqué téléchargé et journalisé.
+- Mod : champs revalidés par `fn_idCoverImport` « clean », gardés dans le profil (`comspec_sse_idCoverLib`, 10 au plus) ; la plus récente de la sélection devient l'active (`fn_idCoverImport` « use », même chemin que le fichier : profil, serveur, légende). États d'une ligne : Nouvelle, Déjà importée, Mise à jour disponible (empreinte différente), Active, Expirée.
+- Couverture active sur le site (champ `active` de la liste, SSE 1.10.0) : marquée « Active sur Athena », présélectionnée à l'ouverture de la fenêtre (sauf si elle est déjà l'active à jour du poste) ; dans la sélection, c'est elle qui devient l'active, avant la plus récente. Site ancien sans le champ : comportement d'avant, sans marque ni présélection.
+- Couverture révoquée sur le site : absente de la liste, donc plus proposée. Sa copie du profil est retirée à la lecture de la liste (site récent seulement), sauf la couverture en cours, jamais effacée d'office : la fenêtre dit qu'elle n'est plus sur Athena. Une couverture hors de la liste ne s'active plus depuis la fenêtre.
+- Le tampon du paquet de la DLL est partagé avec `fn_idAthenaPack` « fetch » : verrou `comspec_sse_idPackBusy` et contrôle de l'opération lue dans la réponse.
 
 ## Fichier `comspec-cover` v1
 

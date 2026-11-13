@@ -34,7 +34,6 @@ $statuses = is_array($statuses ?? null) ? $statuses : [];
         <?= \App\Core\Csrf::field() ?>
         <header class="sse-modal__head">
             <div>
-                <p class="sse-modal__kicker">Dossier</p>
                 <h2>Synthèse et classification</h2>
             </div>
             <button type="button" class="sse-modal__close" data-sse-modal-close aria-label="Fermer">×</button>
@@ -74,7 +73,6 @@ $statuses = is_array($statuses ?? null) ? $statuses : [];
     <div class="sse-modal__card">
         <header class="sse-modal__head">
             <div>
-                <p class="sse-modal__kicker">Identités</p>
                 <h2>Ajouter au dossier</h2>
             </div>
             <button type="button" class="sse-modal__close" data-sse-modal-close aria-label="Fermer">×</button>
@@ -196,7 +194,6 @@ $statuses = is_array($statuses ?? null) ? $statuses : [];
     <div class="sse-modal__card">
         <header class="sse-modal__head">
             <div>
-                <p class="sse-modal__kicker">Pièces</p>
                 <h2>Verser au dossier</h2>
             </div>
             <button type="button" class="sse-modal__close" data-sse-modal-close aria-label="Fermer">×</button>

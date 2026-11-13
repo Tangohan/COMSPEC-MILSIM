@@ -36,11 +36,13 @@ private _build = {
     // Papier remis depuis l'éditeur avec son texte (le plus récent) : c'est lui, la légende voulue.
     { if ((_x getOrDefault ["legendText", ""]) isNotEqualTo "") then { _main = _x; }; } forEach _docs;
     if ((count _main) isEqualTo 0) then { { if ((_x getOrDefault ["kind", ""]) isEqualTo "cover") exitWith { _main = _x; }; } forEach _docs; };
+    // Pièce d'Athena (kit du compte) avant une pièce tirée par le mod : c'est l'identité Athena que la fiche montre.
+    if ((count _main) isEqualTo 0) then { { if ((_x getOrDefault ["type", ""]) in ["id_card", "passport"] && {(_x getOrDefault ["athenaId", ""]) isNotEqualTo ""}) exitWith { _main = _x; }; } forEach _docs; };
     if ((count _main) isEqualTo 0) then { { if ((_x getOrDefault ["type", ""]) in ["id_card", "passport"]) exitWith { _main = _x; }; } forEach _docs; };
     if ((count _main) isEqualTo 0 && {_docs isNotEqualTo []}) then { _main = _docs select 0; };
     private _country = _main getOrDefault ["country", ["default"] call comspec_sse_fnc_idCountries];
     private _c = ([] call comspec_sse_fnc_idCountries) getOrDefault [_country, createHashMap];
-    private _printed = if ((count _main) > 0) then { _main } else { [_u, _key, "", _country] call comspec_sse_fnc_idGenerate };
+    private _printed = if ((count _main) > 0) then { _main } else { ["get", [_u, _key, _country]] call comspec_sse_fnc_idIdentityOf };
     private _seed = [_key + "|legend"] call comspec_sse_fnc_bioHash;
     private _h = { [_seed, _this] call comspec_sse_fnc_hash };
     private _pick = { params ["_list", "_s"]; if (_list isEqualTo []) exitWith { "" }; _list select ((_s call _h) mod (count _list)) };
@@ -55,6 +57,8 @@ private _build = {
     // Adresse imprimée (« 12 RUE DU PORT, Kavala ») : la ville est la dernière partie.
     private _addr = _printed getOrDefault ["address", ""];
     private _city = trim (((_addr splitString ",") param [1, ""]));
+    // Pays réel : la ville est gardée à part sur le papier (adresse au format du pays, code postal compris).
+    if ((_printed getOrDefault ["city", ""]) isNotEqualTo "") then { _city = _printed get "city"; };
     if (_city isEqualTo "") then { _city = [_cities, "city"] call _pick; };
     if (_addr isEqualTo "") then {
         _addr = format ["%1 %2, %3", 1 + (("no" call _h) mod 120), ["RUE DU PORT", "AV. CENTRALE", "RUE HAUTE", "PL. DU MARCHÉ", "CH. DES OLIVIERS"] select (("st" call _h) mod 5), _city];
@@ -76,6 +80,11 @@ private _build = {
     // Téléphone simulé (même générateur que les téléphones fouillés par le SSE) : indicatif fictif du pays.
     private _prefix = (createHashMapFromArray [["ALT", "+031"], ["TNA", "+067"], ["LVN", "+037"], ["MLD", "+035"]]) getOrDefault [_country, "+099"];
     private _num = { format ["%1 %2 %3", _prefix, [_seed, _this + "a", 4] call comspec_sse_fnc_idToken, [_seed, _this + "b", 4] call comspec_sse_fnc_idToken] };
+    // Pays réel : numéro au format du pays, dans une plage réservée à la fiction quand elle existe (registre « phone »).
+    if ((_c getOrDefault ["phone", ""]) isNotEqualTo "") then {
+        private _area = (["region", [_country, _printed getOrDefault ["region", ""]]] call comspec_sse_fnc_idCountries) getOrDefault ["area", "555"];
+        _num = { ["make", [_c get "phone", _seed, "tel" + _this, createHashMapFromArray [["region", _printed getOrDefault ["region", ""]], ["area", _area]]]] call comspec_sse_fnc_idNumbers };
+    };
     private _myNum = "me" call _num;
     private _rel = ["Frère", "Cousine", "Employeur", "Voisin", "Ami d'enfance", "Mère", "Collègue"];
     private _contacts = [];
@@ -211,7 +220,7 @@ private _build = {
         private _kinds = if (_en) then { ["ID card", "Passport", "Driving licence", "Military ID"] } else { ["Carte d'identité", "Passeport", "Permis de conduire", "Carte militaire"] };
         private _paper = (_imp getOrDefault ["docs", []]) apply {
             _x params [["_t", ""], ["_c", ""], ["_n", ""], ["_i", ""], ["_e", ""]];
-            format [["%1 n° %2 (%3, valable jusqu'au %4)", "%1 no. %2 (%3, valid until %4)"] select _en, _kinds select ((["id_card", "passport", "driving_license", "military_id"] find _t) max 0), _n, _c, _e]
+            format [["%1 n° %2 (%3, valable jusqu'au %4)", "%1 no. %2 (%3, valid until %4)"] select _en, (["label", _t] call comspec_sse_fnc_idDocTypes), _n, _c, _e]
         };
         if (_paper isNotEqualTo []) then { _L set ["extraDocs", _paper]; };
         private _hist = _imp getOrDefault ["history", []];
@@ -300,19 +309,103 @@ switch (_op) do {
         if ((_L getOrDefault ["imported", false]) && {(_L get "source") isEqualTo "local"}) then { _L set ["source", "import"]; };
         private _at = _brief getOrDefault ["updated_at", ""];
         if !(_at isEqualType "") then { _at = ""; };
-        _L set ["athenaAt", [_at, _reg getOrDefault ["packAt", ""]] select (_at isEqualTo "")];
+        private _packAtS = _reg getOrDefault ["packAt", ""];
+        if (_packAtS isEqualTo "") then { _packAtS = (_reg getOrDefault ["selfPacks", createHashMap]) getOrDefault [_uid, ""]; };
+        _L set ["athenaAt", [_at, _packAtS] select (_at isEqualTo "")];
         _L deleteAt "brief";
         // Papiers : ce qui est imprimé et s'ils sont sur lui, jamais la nature ni le vrai nom.
         private _countries = [] call comspec_sse_fnc_idCountries;
         private _onHim = ([_u, 0] call comspec_sse_fnc_idDocsOf) apply { _x select 0 };
         _L set ["docs", ((["unitDocs", [_u]] call comspec_sse_fnc_idRegistry) apply { ["doc", [_x]] call comspec_sse_fnc_idRegistry }) apply {
             [
-                ["Carte d'identité", "Passeport", "Permis de conduire", "Carte militaire"] select ((["id_card", "passport", "driving_license", "military_id"] find (_x getOrDefault ["type", ""])) max 0),
+                ["label", _x getOrDefault ["type", ""]] call comspec_sse_fnc_idDocTypes,
                 (_countries getOrDefault [_x getOrDefault ["country", ""], createHashMap]) getOrDefault ["name", _x getOrDefault ["country", ""]],
                 _x getOrDefault ["number", ""], _x getOrDefault ["expires", ""],
                 ((_x getOrDefault ["cls", ""]) isNotEqualTo "") && {(_x getOrDefault ["cls", ""]) in _onHim}
             ]
         }];
+        // Origine de l'identité montrée et pourquoi Athena n'a pas pu la fournir (diag : [niveau ok | warn | ko, titre, phrase]).
+        // Cause du décalage Athena / jeu : sans papier Athena remis, la fiche montre l'identité générée par le mod (clé
+        // biométrique), jamais celle d'Athena. Ce qui suit dit à quelle étape la chaîne s'est arrêtée.
+        private _main = ["doc", [_L getOrDefault ["docId", ""]]] call comspec_sse_fnc_idRegistry;
+        private _aIdent = _main getOrDefault ["athenaIdentity", ""];
+        private _origin = switch (true) do {
+            case ((_main getOrDefault ["athenaId", ""]) isNotEqualTo ""): { "athena" };
+            case (_L getOrDefault ["imported", false]): { "import" };
+            case ((count _main) isEqualTo 0 || {(_main getOrDefault ["kind", ""]) isEqualTo "generated"}): { "generated" };
+            // Couverture : le joueur la connaît. Faux ou alias : la nature reste cachée (« game »), comme kind plus bas.
+            case ((_main getOrDefault ["kind", ""]) isEqualTo "cover"): { "cover" };
+            default { "game" };
+        };
+        _L set ["origin", _origin];
+        _L set ["athenaRef", if (_aIdent isEqualTo "") then { "" } else { private _s = _aIdent; while { count _s < 6 } do { _s = "0" + _s; }; "IDT-" + _s }];
+        private _diag = [];
+        private _byIdK = _reg getOrDefault ["athenaById", createHashMap];
+        private _packAt = _reg getOrDefault ["packAt", ""];
+        // Paquet « self » : ses papiers relayés par son propre téléphone (serveur sans COMSPEC Link).
+        private _selfAt = (_reg getOrDefault ["selfPacks", createHashMap]) getOrDefault [_uid, ""];
+        private _pst = _reg getOrDefault ["packState", createHashMap];
+        // État de la chaîne, remonté à Athena avec la fiche (fn_idCoverSync) : où elle s'est arrêtée, par qui elle est passée.
+        _L set ["packAt", [_packAt, _selfAt] select (_packAt isEqualTo "")];
+        _L set ["packVia", if (_packAt isNotEqualTo "") then { _pst getOrDefault ["via", "server"] } else { ["", "self"] select (_selfAt isNotEqualTo "") }];
+        _L set ["packStep", if (_packAt isNotEqualTo "" || {_selfAt isNotEqualTo ""}) then { "ok" } else { _pst getOrDefault ["step", "wait"] }];
+        _L set ["packCode", _pst getOrDefault ["code", ""]];
+        switch (true) do {
+            case (_uid isEqualTo "" || {_uid isEqualTo "_SP_PLAYER_"}): {
+                _diag pushBack ["warn", "Partie solo ou éditeur", "Pas de Steam ID : Athena ne peut pas vous reconnaître ni vous remettre vos papiers."];
+            };
+            case (_packAt isEqualTo "" && {_selfAt isEqualTo ""}): {
+                // Étape exacte où la chaîne s'est arrêtée (fn_idAthenaPack « state »), puis quoi faire. Textes fixes (traduits).
+                private _step = _pst getOrDefault ["step", ""];
+                private _code = _pst getOrDefault ["code", ""];
+                private _mine = (_reg getOrDefault ["selfFails", createHashMap]) getOrDefault [_uid, ""];
+                if (_mine isNotEqualTo "") then { _step = "relay_fail"; _code = _mine; };
+                private _why = switch (_step) do {
+                    case "server_fetch": {
+                        switch (true) do {
+                            case (_code in ["unauthorized", "forbidden"]): { "Le serveur de jeu a COMSPEC Link, mais Athena refuse sa clé d'accès. Le responsable du serveur doit y renseigner la clé de communauté d'Athena. Nouvel essai automatique toutes les 5 minutes." };
+                            case (_code isEqualTo "no_tenant"): { "Le serveur de jeu a COMSPEC Link, mais Athena ne sait pas à quelle communauté il appartient (clé de communauté absente). Le responsable du serveur doit la renseigner. Nouvel essai automatique toutes les 5 minutes." };
+                            default { "Le serveur de jeu a COMSPEC Link, mais Athena n'a pas répondu (coupure, maintenance ou liaison du serveur pas encore prête). Nouvel essai automatique toutes les 5 minutes." };
+                        };
+                    };
+                    case "relay_zeus": { "Le serveur de jeu n'a pas COMSPEC Link : il a demandé le paquet au poste du Zeus, sans réponse pour l'instant. Nouvel essai automatique ; le Zeus doit être relié à Athena." };
+                    case "relay_self": { "Le serveur de jeu n'a pas COMSPEC Link : il a demandé vos papiers à votre téléphone, sans réponse pour l'instant. Restez relié à Athena (service Athena sur Oui) ; nouvel essai automatique." };
+                    case "relay_fail": {
+                        switch (true) do {
+                            case (_code isEqualTo "uplink_off"): { "Votre téléphone n'a pas pu lire vos papiers : la liaison Athena est coupée sur votre poste (service Athena sur Non). Remettez-la sur Oui, puis touchez Demander la mise à jour." };
+                            case (_code in ["unauthorized", "forbidden", "unlinked", "no_tenant"]): { "Votre téléphone n'a pas pu lire vos papiers : votre compte Athena n'est pas relié en jeu. Reliez-le, puis touchez Demander la mise à jour." };
+                            case (_code in ["not_ready", "no_link"]): { "Votre téléphone n'a pas pu lire vos papiers : pas encore connecté à Athena (licence, connexion en cours ou COMSPEC Link absent). Nouvel essai automatique ; vous pouvez toucher Demander la mise à jour." };
+                            default { "Votre téléphone n'a pas pu lire vos papiers sur Athena (pas de réponse). Nouvel essai automatique ; vous pouvez toucher Demander la mise à jour." };
+                        };
+                    };
+                    case "no_relay": { "Le serveur de jeu n'a pas COMSPEC Link et aucun poste relié à Athena n'est connecté pour lui relayer le paquet. Nouvel essai automatique toutes les 5 minutes." };
+                    default { "Le serveur n'a pas encore reçu le paquet d'identité d'Athena (chargement en cours, ou serveur sans COMSPEC Link en attente d'un poste relié). Nouvel essai automatique ; touchez Demander la mise à jour." };
+                };
+                _diag pushBack ["ko", "Paquet Athena non chargé", _why];
+                _diag pushBack ["warn", "En attendant", "Générez votre couverture sur Athena (Ma couverture, identité Athena), puis ici Importer ma couverture › Synchroniser avec Athena. Sans connexion : téléchargez le fichier et touchez Importer un fichier."];
+            };
+            case (_kit isEqualTo []): {
+                _diag pushBack ["ko", "Aucun papier Athena pour votre compte", "Le paquet ne contient rien pour votre Steam ID : compte Steam non lié sur Athena, aucun papier émis pour votre identité, ou papier réservé à une autre carte ou opération."];
+            };
+            case ((_kit findIf { (_byIdK getOrDefault [[str _x, _x] select (_x isEqualType ""), ""]) isNotEqualTo "" }) < 0): {
+                _diag pushBack ["ko", "Papiers du kit absents du paquet", "Les papiers prévus pour vous ne sont pas dans le paquet de cette carte (brouillon, révoqué ou réservé à une autre carte)."];
+            };
+            default {};
+        };
+        {
+            private _k = _byIdK getOrDefault [[str _x, _x] select (_x isEqualType ""), ""];
+            private _base = (_reg getOrDefault ["issued", createHashMap]) getOrDefault [_k, []];
+            if ((_base param [3, ""]) in ["revoque", "vole", "perdu"]) then {
+                _diag pushBack ["warn", "Papier signalé sur Athena", format ["Le papier n° %1 est déclaré %2 sur Athena : un contrôle le signalera.", (_k splitString "|") param [2, "?"], ["révoqué", "volé", "perdu"] select ((["revoque", "vole", "perdu"] find (_base select 3)) max 0)]];
+            };
+        } forEach _kit;
+        if (_origin isEqualTo "generated") then {
+            _diag pushBack ["warn", "Identité générée par le mod", "Faute de papier Athena remis, cette identité a été tirée par le mod : ce n'est pas votre identité Athena. Sur Athena : fiche membre › Identité & papiers › Transmission en jeu."];
+        };
+        if (_origin isEqualTo "athena") then {
+            _diag pushBack ["ok", "Identité reçue d'Athena", format ["Vos papiers viennent d'Athena%1.", ["", format [" (identité %1)", _L get "athenaRef"]] select ((_L get "athenaRef") isNotEqualTo "")]];
+        };
+        _L set ["diag", _diag];
         // Zeus : la vérité en plus (nature des papiers, vrai nom, cohérence). Joueur : sa propre fiche seulement, sans la nature.
         if (_x1 isNotEqualTo true) then { _L deleteAt "kind"; _L deleteAt "quality"; };
         if (_x1 isEqualTo true) then {

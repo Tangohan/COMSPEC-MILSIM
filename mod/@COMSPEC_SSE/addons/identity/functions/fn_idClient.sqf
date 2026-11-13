@@ -3,11 +3,13 @@
     ["send", [op, args]]                        demande au serveur (fn_idServer ; appel direct en solo / hôte)
     Réponses : request [contrôleur] · token [porteur, docId, libellé, fin] · answer [cible, réponse, texte]
       docs [cible, [[poignée, classe, libellé]…]] · doc [document imprimé, N0, sujet, mien, clé] · blank [poignée]
-      result [docId, niveau, résultat] · seized / returned [cible, classe…] · vehicle [véhicule, op, occupants]
-      notify [texte, type] · zeus [texte, genre] · packFetch []
+      result [docId, niveau, résultat] · checkFail [docId, niveau, code, texte] · seized / returned [cible, classe…] · vehicle [véhicule, op, occupants]
+      notify [texte, type] · zeus [texte, genre] · zeusPapers [données] (fenêtre du Zeus) · packFetch [full | self] (relais du paquet Athena, fn_idAthenaPack)
       say [nom, phrase, type, indice]   phrase courte d'une IA contrôlée (IA réalistes), traduite ici
+      p2p [message, données]            contrôle et présentation des papiers entre joueurs (fn_idP2pClient)
     Lot 4 et 5 : question [demandeur, [[qid, question, réponses]…], délai] · questionEnd [qid, juste, évasif]
-      coverSheet [netId, fiche] · coverList [infiltrés] · coverState [on | off | burnt | warn, motif]
+      coverSheet [netId, fiche] · coverSame [netId, empreinte, état et cohérence] (fiche en cache inchangée)
+      coverList [infiltrés] · coverState [on | off | burnt | warn, motif]
       talk [ia, clé, réponse, indice] (réponse d'un PNJ à ma question) · hvtTip [netId, sources, position, texte, par]
       athenaWatch [charge]   envoi d'un BOLO / d'une HVT à Athena par la DLL de ce poste (serveur dédié compris)
     État local (jamais diffusé) : comspec_sse_idTokens (documents présentés), comspec_sse_idSearch (dernière fouille),
@@ -50,17 +52,32 @@ switch (_op) do {
     case "aiCfg": { ["aiReply", _a] call comspec_sse_fnc_editorAi; };
     case "notify": { _a params [["_t", ""], ["_type", "INFO"]]; [_t, _type] call _say; };
     case "zeus": { _a params [["_t", ""], ["_k", "info"]]; [_t, _k] call comspec_sse_fnc_zeusNotify; };
+    // Papiers vus par le Zeus (fn_idServer « truth ») : fenêtre « Papiers de l'IA », jamais un bandeau.
+    case "zeusPapers": { ["data", [_a param [0, createHashMap]]] call comspec_sse_fnc_idZeusPapers; };
     case "request": { _a params [["_c", objNull]]; ["request", [_c]] call comspec_sse_fnc_idPresentPrompt; };
+    // Contrôle et présentation des papiers entre joueurs : [message, données] (fn_idP2pServer -> fn_idP2pClient).
+    case "p2p": { _a params [["_sub", "", [""]], ["_data", [], [[]]]]; [_sub, _data] call comspec_sse_fnc_idP2pClient; };
     case "token": {
         _a params [["_holder", objNull], ["_id", ""], ["_label", ""], ["_end", 0]];
         // Fin de validité en temps serveur ramenée à l'horloge locale (time diffère d'un poste à l'autre).
         _tokens set [_id, [_holder, _label, time + ((missionNamespace getVariable ["comspec_sse_id_tokenTime", 120]) - 1)]];
-        ["", "INFO", objNull, format [("Papiers de %1 : %2. Menu ACE › Contrôle d'identité › Contrôler l'identité." call comspec_sse_fnc_tr), [name _holder, "?"] select (isNull _holder), _label]] call comspec_sse_fnc_toast;
+        // Papiers tendus : le document s'ouvre à l'écran (la visionneuse), comme l'« Examiner » du menu ACE, sans y aller à la main.
+        private _auto = (missionNamespace getVariable ["comspec_sse_id_autoView", true]) isEqualTo true;
+        if (_auto) then {
+            [format [("Papiers de %1 : %2.") call comspec_sse_fnc_tr, [name _holder, "?"] select (isNull _holder), _label], "INFO"] call comspec_sse_fnc_toast;
+            ["send", ["begin", [player, "view", _id]]] call comspec_sse_fnc_idClient;
+            // 60 % de la durée d'examen (2 s) exigés par le serveur, plus la latence.
+            [{ ["send", ["view", [player, _this]]] call comspec_sse_fnc_idClient; }, _id, 1.5] call CBA_fnc_waitAndExecute;
+        } else {
+            ["", "INFO", objNull, format [("Papiers de %1 : %2. Menu ACE › Contrôle d'identité › Contrôler l'identité." call comspec_sse_fnc_tr), [name _holder, "?"] select (isNull _holder), _label]] call comspec_sse_fnc_toast;
+        };
     };
     case "say": {
         _a params [["_n", ""], ["_t", ""], ["_type", "INFO"], ["_hint", ""], ["_u", objNull]];
         // Bulle au-dessus de sa tête, sinon toast : ce que dit une IA n'a rien à faire dans le centre de notifications.
-        [_t, _type, _u, _hint] call comspec_sse_fnc_toast;
+        // Témoin à moins de 15 m : la bulle seulement (jamais de toast quand l'IA n'est pas à l'écran) ; la réponse faite à celui qui
+        // l'interroge arrive par « answer », toast compris.
+        [_t, _type, _u, _hint, true] call comspec_sse_fnc_toast;
     };
     case "answer": {
         _a params [["_t", objNull], ["_ans", ""], ["_text", ""]];
@@ -83,7 +100,7 @@ switch (_op) do {
     case "doc": {
         _a params [["_pub", createHashMap], ["_res", createHashMap], ["_subj", objNull], ["_own", false], ["_key", ""]];
         if (!_own) then { ["start", [_pub, _subj, _key, _res]] call comspec_sse_fnc_idHistory; };
-        [_pub, _own] call comspec_sse_fnc_idViewerOpen;
+        [_pub, _own, false, _subj] call comspec_sse_fnc_idViewerOpen;
     };
     case "result": {
         _a params [["_id", ""], ["_lvl", 1], ["_res", createHashMap]];
@@ -98,6 +115,8 @@ switch (_op) do {
         };
         ["level", [_id, _lvl, _res]] call comspec_sse_fnc_idHistory;
     };
+    // Niveau refusé par le serveur (document plus présenté, trop loin…) : état porté par la fiche du contrôle.
+    case "checkFail": { ["fail", _a] call comspec_sse_fnc_idHistory; };
     case "seized": {
         _a params [["_t", objNull], ["_cls", ""]];
         private _s = missionNamespace getVariable ["comspec_sse_idSeized", createHashMap];
@@ -130,6 +149,8 @@ switch (_op) do {
         if !(_qid in (_q select 3)) then { (_q select 3) set [_qid, -1]; };
         // Plus aucune question ouverte : la fenêtre se ferme.
         if (((_q select 1) findIf { !((_x select 0) in (_q select 3)) }) < 0) then { missionNamespace setVariable ["comspec_sse_idQuestion", []]; };
+        // Question close (juste, fausse, sans réponse) : la cohérence a bougé, la fiche de Ma couverture est relue au rendu.
+        missionNamespace setVariable ["comspec_sse_idCoverDirty", true];
         [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "IDCOVER") then { ["IDCOVER"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
     };
     case "coverSheet": {
@@ -138,9 +159,34 @@ switch (_op) do {
         missionNamespace setVariable ["comspec_sse_idCoverSheets", _all];
         private _old = _all getOrDefault [_net, createHashMap];
         _all set [_net, _sheet];
+        // Âge de la fiche en cache (fn_idCoverPage ne la redemande pas tant qu'elle est fraîche).
+        private _at = missionNamespace getVariable ["comspec_sse_idCoverAt", createHashMap];
+        missionNamespace setVariable ["comspec_sse_idCoverAt", _at];
+        _at set [_net, time];
         // Couverture née en jeu : remontée à Athena par le compte relié de ce poste (fn_idCoverSync).
         if (_net isEqualTo netId player) then { ["push", _sheet] call comspec_sse_fnc_idCoverSync; };
         ["act", "received", [_old, _sheet]] call comspec_sse_fnc_idCoverPage;
+    };
+    // Fiche inchangée sur le serveur (même empreinte que celle du cache) : seuls l'état et la cohérence arrivent.
+    case "coverSame": {
+        _a params [["_net", ""], ["_fp", ""], ["_live", createHashMap]];
+        private _all = missionNamespace getVariable ["comspec_sse_idCoverSheets", createHashMap];
+        missionNamespace setVariable ["comspec_sse_idCoverSheets", _all];
+        private _old = _all getOrDefault [_net, createHashMap];
+        // Cache vidé entre-temps (couverture levée, respawn) : la fiche complète est redemandée.
+        if ((count _old) isEqualTo 0 || {(_old getOrDefault ["rev", ""]) isNotEqualTo _fp}) exitWith {
+            private _u = objectFromNetId _net;
+            if (!isNull _u) then { ["act", "ask", [_u, true]] call comspec_sse_fnc_idCoverPage; };
+        };
+        private _new = +_old;
+        if (_live isEqualType createHashMap) then { _new merge [_live, true]; };
+        _all set [_net, _new];
+        private _at = missionNamespace getVariable ["comspec_sse_idCoverAt", createHashMap];
+        missionNamespace setVariable ["comspec_sse_idCoverAt", _at];
+        _at set [_net, time];
+        // Même fiche : fn_idCoverSync ne renvoie rien si elle est déjà partie (nouvel essai après une erreur, comme avant).
+        if (_net isEqualTo netId player) then { ["push", _new] call comspec_sse_fnc_idCoverSync; };
+        ["act", "received", [_old, _new]] call comspec_sse_fnc_idCoverPage;
     };
     case "coverList": {
         _a params [["_l", []]];
@@ -200,9 +246,29 @@ switch (_op) do {
         [format ["HVT : %1 (chasse HVT de l'ATAK : FIX).", _text], "SUCCESS", "", "DATING"] call comspec_sse_fnc_notify;
     };
     case "packFetch": {
-        [] spawn {
-            private _raw = ["fetch"] call comspec_sse_fnc_idAthenaPack;
-            if (_raw isNotEqualTo "") then { ["send", ["pack", [player, _raw]]] call comspec_sse_fnc_idClient; };
+        // Relais du paquet pour un serveur sans COMSPEC Link : « full » (Zeus, tout le paquet) ou « self » (ses papiers).
+        // Rien ne part vers Athena avant que la liaison de ce poste soit établie (licence, poignée de main) : 2 min au plus.
+        // Échec : le serveur reçoit la raison (packFail) pour l'afficher au joueur, puis réessaie de lui-même.
+        _a params [["_mode", "full", [""]]];
+        if (missionNamespace getVariable ["comspec_sse_idPackFetching", false]) exitWith {};
+        missionNamespace setVariable ["comspec_sse_idPackFetching", true];
+        [_mode] spawn {
+            params ["_mode"];
+            private _t0 = diag_tickTime;
+            waitUntil { sleep 2; (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) || {(diag_tickTime - _t0) > 120} };
+            private _raw = "";
+            private _err = "not_ready";
+            if (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) then {
+                _raw = ["fetch", ["", "self"] select (_mode isEqualTo "self")] call comspec_sse_fnc_idAthenaPack;
+                _err = missionNamespace getVariable ["comspec_sse_idPackErr", ""];
+            };
+            if (!isNil "comspec_overwatch_connect_fnc_uplinkOff" && {[] call comspec_overwatch_connect_fnc_uplinkOff}) then { _err = "uplink_off"; };
+            if (_raw isNotEqualTo "") then {
+                ["send", ["pack", [player, _raw, _mode]]] call comspec_sse_fnc_idClient;
+            } else {
+                ["send", ["packFail", [player, _mode, _err]]] call comspec_sse_fnc_idClient;
+            };
+            missionNamespace setVariable ["comspec_sse_idPackFetching", false];
         };
     };
 };

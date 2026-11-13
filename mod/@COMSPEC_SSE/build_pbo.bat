@@ -33,9 +33,9 @@ if exist "%ABTMP%" rd /s /q "%ABTMP%"
 REM Copies locales des en-tetes partages (pas d'#include entre PBO dans les config.cpp)
 where python >nul 2>&1 && python "%PROJECT_DIR%tools\sync_headers.py"
 
-set "COMPONENTS=main core generator evidence intel interaction zeus eden ui network digital biometrics identity editor analysis campaign guide compat_bii compat_ace compat_atak"
+set "COMPONENTS=main core generator evidence intel interaction zeus eden ui network digital biometrics identity extensions loadout ia_rp editor analysis campaign guide compat_bii compat_ace compat_atak"
 REM debug optionnel : build_pbo.bat debug
-if /I "%~1"=="debug" set "COMPONENTS=main debug core generator evidence intel interaction zeus eden ui network digital biometrics identity editor analysis campaign guide compat_bii compat_ace compat_atak"
+if /I "%~1"=="debug" set "COMPONENTS=main debug core generator evidence intel interaction zeus eden ui network digital biometrics identity extensions loadout ia_rp editor analysis campaign guide compat_bii compat_ace compat_atak"
 set "FAILED=0"
 
 for %%C in (%COMPONENTS%) do (
@@ -63,6 +63,34 @@ for %%C in (%COMPONENTS%) do (
             )
         )
     )
+)
+
+REM Extension d'exemple (carte de presse, laissez-passer) livree dans le pack SSE, coupee par defaut (defaultOff = 1) :
+REM la fenetre SSE ROLEPLAY - Extensions la montre toujours. Sources : extensions\example_documents (README, tools et
+REM scripts laisses hors du PBO) ; prefixe d'origine garde (chemins des textures du config.cpp).
+set "EXT_SRC=%PROJECT_DIR%extensions\example_documents"
+set "EXT_STAGE=%TEMP%\comspec_sse_ext_stage\example_documents"
+if not exist "%EXT_SRC%\config.cpp" (
+    echo [ERREUR] Source manquante: extensions\example_documents
+    echo [ERREUR] Source manquante: extensions\example_documents >> "%BUILD_LOG%"
+    set "FAILED=1"
+) else (
+    if exist "%EXT_STAGE%" rd /s /q "%EXT_STAGE%"
+    mkdir "%EXT_STAGE%"
+    robocopy "%EXT_SRC%" "%EXT_STAGE%" /E /NFL /NDL /NJH /NJS /XD tools /XF README.md mod.cpp *.bat *.md *.py >nul
+    echo [BUILD] comspec_sse_ext_example_documents ...
+    echo [BUILD] comspec_sse_ext_example_documents ... >> "%BUILD_LOG%"
+    "%BUILDER_PATH%" "%EXT_STAGE%" "%TMP_DIR%" -packonly -clear -temp="%ABTMP%\example_documents" -prefix=z\comspec_sse_ext\addons\example_documents >> "%BUILD_LOG%" 2>&1
+    if exist "%TMP_DIR%\example_documents.pbo" (
+        copy /Y "%TMP_DIR%\example_documents.pbo" "%ADDONS_DIR%\comspec_sse_ext_example_documents.pbo" >> "%BUILD_LOG%" 2>&1
+        echo [OK] addons\comspec_sse_ext_example_documents.pbo
+        echo [OK] addons\comspec_sse_ext_example_documents.pbo >> "%BUILD_LOG%"
+    ) else (
+        echo [ERREUR] PBO non produit pour example_documents
+        echo [ERREUR] PBO non produit pour example_documents >> "%BUILD_LOG%"
+        set "FAILED=1"
+    )
+    rd /s /q "%EXT_STAGE%" 2>nul
 )
 
 if exist "%TMP_DIR%" rd /s /q "%TMP_DIR%"

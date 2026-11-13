@@ -2,6 +2,19 @@
 if (!hasInterface) exitWith {};
 [] call comspec_sse_fnc_initAceIdentity;
 [] call comspec_sse_fnc_idZenRegister;
+// Papiers entre joueurs : raccourcis clavier (aucune touche par défaut, Options › Commandes › Modules › COMSPEC SSE).
+if (!isNil "CBA_fnc_addKeybind") then {
+    ["COMSPEC SSE", "comspec_sse_id_keyAsk", [localize "STR_COMSPEC_SSE_P2P_KeyAsk", localize "STR_COMSPEC_SSE_P2P_KeyAsk_D"], {
+        if (dialog) exitWith { false };
+        ["ask", []] call comspec_sse_fnc_idP2pClient;
+        true
+    }, {}, [0, [false, false, false]]] call CBA_fnc_addKeybind;
+    ["COMSPEC SSE", "comspec_sse_id_keyPresent", [localize "STR_COMSPEC_SSE_P2P_KeyPresent", localize "STR_COMSPEC_SSE_P2P_KeyPresent_D"], {
+        if (dialog) exitWith { false };
+        ["present", []] call comspec_sse_fnc_idP2pClient;
+        true
+    }, {}, [0, [false, false, false]]] call CBA_fnc_addKeybind;
+};
 // BOLO / HVT diffusé par le commandement (fn_idHvt) : notification ATAK, onglet BOLO de Contrôle ID, app Recherchés.
 ["comspec_sse_idBoloNew", {
     params [["_t", ""]];
@@ -15,7 +28,24 @@ if (!hasInterface) exitWith {};
     ["send", ["kit", [player, objNull]]] call comspec_sse_fnc_idClient;
     // Couverture importée d'un fichier (app Ma couverture) : le registre du serveur ne garde rien d'une mission à l'autre.
     ["resend"] call comspec_sse_fnc_idCoverImport;
+    // Lore de session Athena : licence acceptée sur ce poste, signalée au serveur dédié (qui n'a pas d'écran pour l'accepter).
+    ["licence"] call comspec_sse_fnc_loreClient;
 }, [], 300] call CBA_fnc_waitUntilAndExecute;
+// Papier pris ou posé par ce joueur (corps, sol, caisse) : le serveur tient le porteur et la chaîne de possession, puis
+// diffuse comspec_sse_identity_paperPicked / paperDropped (fn_idPaperTrack). Seulement les exemplaires (« …_007 »).
+comspec_sse_idPaperMovedLocal = {
+    params ["_how", "_u", "_box", "_item"];
+    if (_u isNotEqualTo player || {!(_item isEqualType "")} || {(_item select [0, 11]) isNotEqualTo "COMSPEC_ID_"}) exitWith {};
+    if !(((_item splitString "_") select -1) regexMatch "[0-9]+") exitWith {};
+    ["send", ["paperMoved", [player, _item, _box, _how]]] call comspec_sse_fnc_idClient;
+};
+["CAManBase", "Take", { (["take"] + _this) call comspec_sse_idPaperMovedLocal; }] call CBA_fnc_addClassEventHandler;
+["CAManBase", "Put", { (["put"] + _this) call comspec_sse_idPaperMovedLocal; }] call CBA_fnc_addClassEventHandler;
+// App Ma couverture : fiche gardée en cache, marquée périmée sur évènement au lieu d'être relue en boucle (fn_idCoverPage).
+// Équipement, arme en main, véhicule et unité changent la cohérence ou les papiers portés : drapeau seulement, la fiche
+// est relue à la prochaine ouverture de la page. Paquet Athena rechargé par le serveur : la page ouverte se relit.
+{ [_x, { missionNamespace setVariable ["comspec_sse_idCoverDirty", true]; }] call CBA_fnc_addPlayerEventHandler; } forEach ["loadout", "weapon", "vehicle", "unit"];
+["comspec_sse_idCoverDirty", { ["act", "dirty", "server"] call comspec_sse_fnc_idCoverPage; }] call CBA_fnc_addEventHandler;
 ["CAManBase", "Respawn", {
     params ["_new", "_old"];
     if (!local _new) exitWith {};
@@ -24,3 +54,5 @@ if (!hasInterface) exitWith {};
         if (_new isEqualTo player && {alive _new}) then { ["send", ["kit", [_new, _old]]] call comspec_sse_fnc_idClient; missionNamespace setVariable ["comspec_sse_idCoverImportSent", false]; ["resend"] call comspec_sse_fnc_idCoverImport; };
     }, [_new, _old], 2] call CBA_fnc_waitAndExecute;
 }] call CBA_fnc_addClassEventHandler;
+// Fichiers et SEEK II (fn_fileClient « init ») : verdict du SEEK II porté au niveau N4 du contrôle en cours.
+["init"] call comspec_sse_fnc_fileClient;

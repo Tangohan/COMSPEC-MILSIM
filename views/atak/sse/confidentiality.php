@@ -65,8 +65,7 @@ $eagleSrc = asset_url('assets/img/atak-eagle-logo.png');
                 </div>
             </div>
 
-            <p class="sse-gate-hub__kicker">Sas d’entrée</p>
-            <h1 class="sse-gate-hub__title" data-scramble>Engagement de confidentialité</h1>
+            <h1 class="sse-gate-hub__title">Engagement de confidentialité</h1>
             <p class="sse-gate-hub__lead">
                 Avant d’ouvrir le bureau de renseignement interpersonnel, vous devez
                 reconnaître les règles de conservation, de diffusion et de traçabilité
@@ -106,7 +105,7 @@ $eagleSrc = asset_url('assets/img/atak-eagle-logo.png');
                 </ol>
             </div>
 
-            <form method="post" action="<?= $h(url('atak/sse/confidentialite')) ?>" id="sse-ack-form" class="sse-ack-form" data-curtain-submit>
+            <form method="post" action="<?= $h(url('atak/sse/confidentialite')) ?>" id="sse-ack-form" class="sse-ack-form">
                 <?= \App\Core\Csrf::field() ?>
 
                 <label class="sse-ack-check" for="sse-ack-box">

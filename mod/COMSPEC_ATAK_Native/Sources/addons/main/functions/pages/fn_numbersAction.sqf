@@ -3,7 +3,7 @@
     ("num" / "ct" = index édité, -1 nouveau, absent = liste ; champs gardés à chaque redessin).
       "tab" onglet | "edit" i | "cancel" | "save" | "del" i (deux appuis) | "primary" i | "flip" clé | "gen" | "plan" code
       "ctEdit" i | "ctCancel" | "ctSave" | "ctDel" i | "ctFrom" [nom, numéro] (annuaire -> carnet) | "sms" nom
-      "open" | "reload" | "write"
+      "open" | "reload" | "write" | "search" (annuaire, champ numQ) | "clearQ"
 */
 params [["_a", ""], ["_v", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -102,6 +102,9 @@ switch (_a) do {
         _s set ["chatPick", false];
         [{ ["CHAT"] call comspec_atak_native_fnc_navigate; }] call comspec_atak_native_fnc_nextFrame;
     };
+    // Annuaire : recherche par nom, groupe ou numéro (champ numQ, appliquée sur OK ou Entrée) ; « clearQ » l'efface.
+    case "search": { _s set ["numQ", trim (["numQ"] call comspec_atak_native_fnc_formValue)]; };
+    case "clearQ": { _s set ["numQ", ""]; };
     case "open": { ["open"] call comspec_atak_native_fnc_localCfg; };
     case "reload": { ["reload"] call comspec_atak_native_fnc_localCfg; };
     case "write": {

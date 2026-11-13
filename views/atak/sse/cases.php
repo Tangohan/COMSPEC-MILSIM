@@ -56,15 +56,9 @@ $folders = array_values(array_filter($cases, static fn (array $c): bool => !empt
 $affairs = array_values(array_filter($cases, static fn (array $c): bool => empty($c['is_folder'])));
 $viewStatus = (string) ($filters['status'] ?? '');
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/operations')) ?>">Opérations</a> /
-    <strong>Dossiers</strong>
-</div>
 
 <header class="sse-cases-hero">
     <div>
-        <p class="sse-cases-hero__kicker">Exploitation // Registre</p>
         <h1>Dossiers d’affaire</h1>
         <p class="sse-cases-hero__lead">
             Affaires du périmètre de votre session. Chaque consultation et chaque modification sont journalisées.
@@ -75,7 +69,6 @@ $viewStatus = (string) ($filters['status'] ?? '');
             <a class="btn" href="<?= $h(url('atak/sse/dossiers/nouveau')) ?>">Ouvrir une affaire</a>
             <a class="btn btn--ghost" href="<?= $h(url('atak/sse/dossiers/importer')) ?>">Importer un scénario</a>
         <?php endif; ?>
-        <span class="sse-cases-hero__ref">ATH-SSE-DOSSIERS</span>
     </div>
 </header>
 

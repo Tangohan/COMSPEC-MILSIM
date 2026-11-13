@@ -8,6 +8,8 @@
     Résultat gardé 4 s par unité : aucune lecture de config à chaque image.
 */
 params [["_e", createHashMap]];
+// Téléphone tracé (fn_pollUnits) : un émetteur, jamais un cadre d'infanterie (ni ami ni hostile).
+if ((_e getOrDefault ["type", ""]) isEqualTo "phone") exitWith { ["\A3\ui_f\data\map\mapcontrol\transmitter_CA.paa", ""] };
 private _cache = uiNamespace getVariable "COMSPEC_ATAK_NatoCache";
 if (isNil "_cache") then { _cache = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_NatoCache", _cache]; };
 private _o = _e getOrDefault ["object", objNull];

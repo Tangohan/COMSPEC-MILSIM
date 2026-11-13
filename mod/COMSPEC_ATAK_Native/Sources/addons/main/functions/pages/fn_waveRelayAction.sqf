@@ -82,7 +82,9 @@ switch (_act) do {
             _nodes pushBack [_o, _ap, _n, "gw", _r];
             if (_gw < 0) then { _gw = (count _nodes) - 1; _gwLabel = [format ["%1 %2", ["Passerelle", "PC mobile"] select (_k isEqualTo "cp"), _n], _n] select (_k isEqualTo "relay"); };
         } forEach _rl;
-        if (_gw < 0) then {
+        // Relais exigé (fn_relayNet "gateOn") : sans relais en service, ni passerelle de secours ni lien entre téléphones.
+        private _gateOn = ["gateOn"] call comspec_atak_native_fnc_relayNet;
+        if (_gw < 0 && {!_gateOn}) then {
             private _lead = leader group player;
             _gw = _nodes findIf { (_x select 0) isEqualTo _lead };
             if (_gw >= 0) then { _gwLabel = format ["Chef de groupe (%1)", (_nodes select _gw) select 2]; };
@@ -91,7 +93,7 @@ switch (_act) do {
         private _real = (["realism"] call comspec_atak_native_fnc_netCond);
         private _links = [];
         private _adj = _nodes apply { [] };
-        private _n = count _nodes;
+        private _n = [count _nodes, 0] select (_gateOn && {_gw < 0});
         for "_i" from 0 to (_n - 2) do {
             for "_j" from (_i + 1) to (_n - 1) do {
                 private _a = _nodes select _i;

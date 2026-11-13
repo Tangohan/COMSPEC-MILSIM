@@ -270,7 +270,7 @@ foreach ($qualifications as $qi => $q) {
     }
 }
 $civilMissing = count($civilFields) - $civilFilled;
-$fileTitle = $fileScore >= 100 ? 'Dossier complet' : ($fileScore >= 60 ? 'Presque complet' : 'À compléter');
+$fileTitle = $fileScore >= 100 ? 'Dossier complet' : ($fileScore >= 60 ? 'Dossier presque complet' : 'Dossier à compléter');
 $primaryAssignment = null;
 foreach ($assignments as $a) {
     if (!empty($a['is_primary'])) {
@@ -342,9 +342,11 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
             <?php endif; ?>
         </div>
         <div class="eff-fm-who">
-            <p class="eff-fm-kicker">Fiche membre<?php if ($gradeLong !== '' || $grade !== ''): ?> · <?= $h($gradeLong !== '' ? $gradeLong : $grade) ?><?php endif; ?></p>
             <h1 class="eff-fm-who__name"><?= staff_name($name, $id, true) ?></h1>
             <p class="eff-fm-meta">
+                <?php if ($gradeLong !== '' || $grade !== ''): ?>
+                    <span><?= $ico('up') ?>Grade <strong><?= $h($gradeLong !== '' ? $gradeLong : $grade) ?></strong></span>
+                <?php endif; ?>
                 <?php if ($callsign !== ''): ?>
                     <span><?= $ico('id') ?>Indicatif <strong><?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?></strong></span>
                 <?php endif; ?>
@@ -393,7 +395,6 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
             <div class="eff-fm-complete__row">
                 <span class="eff-fm-ring" style="--p:<?= $fileScore ?>" role="img" aria-label="Dossier rempli à <?= $fileScore ?> %"><b><?= $fileScore ?> %</b></span>
                 <div>
-                    <p class="eff-fm-k">Dossier</p>
                     <h2 class="eff-fm-complete__title"><?= $h($fileTitle) ?></h2>
                     <p class="eff-fm-complete__lead"><?= $missing === [] ? 'Tout est renseigné.' : count($missing) . ' élément' . (count($missing) > 1 ? 's' : '') . ' à compléter.' ?></p>
                 </div>
@@ -976,8 +977,8 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
                         <?php if ($qCountry !== '' || $qIssuer !== '' || trim((string) ($q['category_name'] ?? '')) !== ''): ?>
                         <small class="eff-fm-q__meta">
                             <?php if ($qCountry !== ''): ?><?= \App\Support\QualificationCatalog\CatalogCountry::flag($qCountry) ?> <span translate="no"><?= $h(\App\Support\QualificationCatalog\QualificationCatalog::countryLabel($qCountry, function_exists('locale') ? (string) locale() : 'fr')) ?></span><?php endif; ?>
-                            <?php if (trim((string) ($q['category_name'] ?? '')) !== ''): ?><span>· <?= $h($q['category_name']) ?></span><?php endif; ?>
-                            <?php if ($qIssuer !== ''): ?><span>· <span>émise par</span> <span translate="no"><?= $h($qIssuer) ?></span></span><?php endif; ?>
+                            <?php if (trim((string) ($q['category_name'] ?? '')) !== ''): ?><span><?= $qCountry !== '' ? '· ' : '' ?><?= $h($q['category_name']) ?></span><?php endif; ?>
+                            <?php if ($qIssuer !== ''): ?><span><?= $qCountry !== '' || trim((string) ($q['category_name'] ?? '')) !== '' ? '· ' : '' ?><span>émise par</span> <span translate="no"><?= $h($qIssuer) ?></span></span><?php endif; ?>
                         </small>
                         <?php endif; ?>
                         <div class="eff-fm-q__acts">
@@ -1013,7 +1014,7 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
             <?php require base_path('views/partials/qualification_progress.php'); ?>
         <?php endif; ?>
         <div class="eff-fm-row">
-            <a class="eff-btn" href="<?= htmlspecialchars(url('back-office/referentiels/qualifications/attribuer') . '?user_id=' . (int) $id, ENT_QUOTES, 'UTF-8') ?>">Attribuer une qualification</a>
+            <a class="eff-btn eff-btn--primary" href="<?= htmlspecialchars(url('back-office/referentiels/qualifications/attribuer') . '?user_id=' . (int) $id, ENT_QUOTES, 'UTF-8') ?>">Attribuer une qualification</a>
             <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(effectifs_workspace_url('qualifications'), ENT_QUOTES, 'UTF-8') ?>">Matrice des qualifications</a>
             <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(url('back-office/referentiels/qualifications'), ENT_QUOTES, 'UTF-8') ?>">Référentiel</a>
         </div>
@@ -1184,11 +1185,21 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
             <h3>Absences</h3>
         </div>
         <?php $renderRhRows($absences, static function (array $a) use ($fmtDate, $absenceReasonLabels): array {
-            $reason = (string) ($a['reason'] ?? 'other');
-            $start = $fmtDate((string) ($a['starts_at'] ?? $a['start_date'] ?? ''));
-            $end = $fmtDate((string) ($a['ends_at'] ?? $a['end_date'] ?? ''));
+            // Colonnes de personnel_absences : starts_on (obligatoire) et ends_on (vide = absence sans date de fin).
+            $reason = (string) ($a['reason'] ?? 'autre');
+            $start = $fmtDate((string) ($a['starts_on'] ?? ''));
+            $end = $fmtDate((string) ($a['ends_on'] ?? ''));
+            $period = match (true) {
+                $start !== '' && $end !== '' => $start === $end ? 'Le ' . $start : 'Du ' . $start . ' au ' . $end,
+                $start !== '' => 'Depuis le ' . $start . ', sans date de fin',
+                default => 'Dates non renseignées',
+            };
+            if (($a['status'] ?? 'active') === 'cancelled') {
+                $period .= ' · annulée';
+            }
+            $note = trim((string) ($a['note'] ?? ''));
 
-            return [$start, $absenceReasonLabels[$reason] ?? $reason, 'Du ' . ($start !== '' ? $start : '—') . ' au ' . ($end !== '' ? $end : '—')];
+            return [$start, $absenceReasonLabels[$reason] ?? $reason, $period . ($note !== '' ? ' · ' . $note : '')];
         }); ?>
     </article>
     <?php if ($canViewSanctions): ?>
@@ -1235,7 +1246,10 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
                     <button type="submit" class="eff-btn eff-btn--primary">Enregistrer l’avertissement</button>
                 </form>
             </details>
-            <p class="eff-fm-hint"><a href="<?= $h(url('back-office/moderation')) ?>">Restreindre l’activité du membre (formations, documents…)</a></p>
+            <div class="eff-fm-row">
+                <a class="eff-fm-btn is-sm" href="<?= $h(url('back-office/moderation')) ?>">Restreindre l’activité du membre</a>
+            </div>
+            <p class="eff-fm-hint">Formations, documents, messages : depuis la modération.</p>
         <?php endif; ?>
     </article>
     <?php endif; ?>
@@ -1259,8 +1273,10 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
         <?php $renderRhRows($mobilityRequests, static function (array $r) use ($mobilityTypeLabels, $fmtDate): array {
             $type = (string) ($r['request_type'] ?? 'career_wish');
             $status = trim((string) ($r['status'] ?? 'pending'));
+            $statusText = ['pending' => 'En attente', 'approved' => 'Acceptée', 'rejected' => 'Refusée', 'cancelled' => 'Annulée', 'applied' => 'Appliquée'][$status] ?? $status;
+            $target = trim((string) ($r['target_label'] ?? ''));
 
-            return [$fmtDate((string) ($r['created_at'] ?? '')), $mobilityTypeLabels[$type] ?? $type, $status];
+            return [$fmtDate((string) ($r['created_at'] ?? '')), $mobilityTypeLabels[$type] ?? $type, ($target !== '' ? $target . ' · ' : '') . $statusText];
         }); ?>
     </article>
         </div>
@@ -1280,7 +1296,12 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
         <div class="eff-fm-card__head">
             <h3>Historique RH et bilans</h3>
         </div>
-        <?php $combinedHistory = array_merge($orgHistory, $serviceHistory, $stageBilans); ?>
+        <?php
+        // Trois sources mêlées : remises dans l'ordre annoncé, du plus récent au plus ancien.
+        $combinedHistory = array_merge($orgHistory, $serviceHistory, $stageBilans);
+        $historyDate = static fn (array $e): string => (string) ($e['event_date'] ?? $e['occurred_at'] ?? $e['created_at'] ?? '');
+        usort($combinedHistory, static fn (array $a, array $b): int => strcmp($historyDate($b), $historyDate($a)));
+        ?>
         <?php $renderRhRows($combinedHistory, static function (array $h) use ($fmtDate): array {
             $label = trim((string) ($h['title'] ?? $h['event_label'] ?? $h['event_type'] ?? $h['stage_label'] ?? $h['summary'] ?? 'Événement RH'));
             $date = $fmtDate((string) ($h['event_date'] ?? $h['occurred_at'] ?? $h['created_at'] ?? ''));

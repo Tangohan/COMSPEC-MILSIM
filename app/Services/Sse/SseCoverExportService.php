@@ -112,6 +112,191 @@ final class SseCoverExportService
     }
 
     /**
+     * Couverture bâtie sur une identité Athena du membre et sur ses papiers, pour la jouer sans attendre le paquet du
+     * serveur de jeu : même fichier, même limite par 24 h que generate(). Le reste de la légende (adresse, métier s'il
+     * manque, téléphone, famille, contacts) est tiré une fois pour toutes de l'identité, sauf ce que donne $legend.
+     *
+     * Sans $identityId : l'identité principale et tous ses papiers émis valables (au moins un). Avec $identityId : cette
+     * identité du membre (principale ou d'emprunt) et, si $documentIds est donné, exactement ces papiers. La propriété
+     * est revérifiée ici : identité du membre dans sa communauté, papiers de CETTE identité, émis et valables
+     * (eligibleDocs) ; un seul papier hors de cet ensemble refuse toute la couverture.
+     *
+     * @param list<int>|null $documentIds papiers emportés ; null = tous les papiers émis valables de l'identité
+     * @param array<string, mixed> $legend valeurs imposées de la légende (profession, employer, city, address, travel,
+     *                                     family : texte ; history : liste de lignes), déjà contrôlées par l'appelant
+     * @return array{ok: true, id: int, ref: string, name: string, identity_id: int, document_ids: list<int>}|array{ok: false, error: string}
+     */
+    public function generateFromIdentity(
+        int $tenantId,
+        int $subjectId,
+        ?int $actorId,
+        string $lang,
+        bool $manager,
+        ?\DateTimeImmutable $now = null,
+        ?\App\Repositories\SseIdentityRepository $identities = null,
+        ?\App\Repositories\SseIdDocumentRepository $documents = null,
+        ?int $identityId = null,
+        ?array $documentIds = null,
+        array $legend = [],
+    ): array {
+        $now ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $lang = in_array($lang, SseCoverGeneratorService::LANGS, true) ? $lang : 'fr';
+        $limit = $manager && $actorId !== $subjectId ? self::LIMIT_MANAGER : self::LIMIT_SELF;
+        if ($this->exports->countSince($tenantId, $subjectId, $now->modify('-24 hours')->format('Y-m-d H:i:s')) >= $limit) {
+            return ['ok' => false, 'error' => 'limit'];
+        }
+        $primary = null;
+        foreach (($identities ?? new \App\Repositories\SseIdentityRepository())->listForUser($tenantId, $subjectId) as $i) {
+            if ($identityId !== null ? (int) $i['id'] === $identityId : !empty($i['is_primary'])) {
+                $primary = $i;
+            }
+        }
+        if ($primary === null || trim((string) ($primary['last_name'] ?? '')) === '' || trim((string) ($primary['first_name'] ?? '')) === '') {
+            return ['ok' => false, 'error' => 'no_identity'];
+        }
+        $country = $this->countries->findByCode($tenantId, (string) ($primary['nationality'] ?? ''));
+        if ($country === null) {
+            $country = $this->countries->listForTenant($tenantId, true)[0] ?? null;
+        }
+        if ($country === null) {
+            return ['ok' => false, 'error' => 'country'];
+        }
+        $eligible = $this->eligibleDocs($tenantId, $subjectId, (int) $primary['id'], $now, $documents);
+        if ($documentIds === null) {
+            $chosen = array_slice($eligible, 0, 10, true);
+            // Sans choix explicite (ancien appel) : une couverture « identité Athena » sans aucun papier n'a pas de sens.
+            if ($chosen === [] && $identityId === null) {
+                return ['ok' => false, 'error' => 'no_paper'];
+            }
+        } else {
+            $chosen = [];
+            foreach (array_values(array_unique(array_map('intval', $documentIds))) as $docId) {
+                if (!isset($eligible[$docId])) {
+                    return ['ok' => false, 'error' => 'paper'];
+                }
+                $chosen[$docId] = $eligible[$docId];
+            }
+            if (count($chosen) > 10) {
+                return ['ok' => false, 'error' => 'too_many'];
+            }
+        }
+        $docs = array_values($chosen);
+        $cover = $this->coverFromIdentity($tenantId, $primary, $country, $docs, $lang, $now, $legend);
+        $ref = 'CVR-' . strtoupper(bin2hex(random_bytes(4)));
+        try {
+            $file = $this->buildFile($cover, $tenantId, $subjectId, $ref, $now);
+        } catch (\Throwable) {
+            return ['ok' => false, 'error' => 'legend'];
+        }
+        // Même contrôle que le mod avant d'enregistrer : une légende saisie trop longue ne produit jamais un fichier refusé en jeu.
+        if (strlen($file['json']) > self::MAX_BYTES || !self::parse($file['json'], new \DateTimeImmutable('@0'))['ok']) {
+            return ['ok' => false, 'error' => 'legend'];
+        }
+        $id = $this->exports->insert($tenantId, $subjectId, $actorId, [
+            'ref' => $ref, 'seed' => $cover['seed'], 'country_code' => (string) $cover['country_code'], 'cover_name' => $cover['name'],
+            'doc_number' => (string) ($docs[0]['number'] ?? ''), 'content_sha' => $file['sha'], 'payload_json' => $file['json'],
+        ], $now->format('Y-m-d H:i:s'));
+        ($this->audit)([
+            'tenant_id' => $tenantId, 'actor_user_id' => $actorId, 'actor_label' => 'Ma couverture', 'action' => 'id_cover.export_athena',
+            'object_type' => 'sse_cover_export', 'object_id' => $id, 'after' => ['member_user_id' => $subjectId, 'ref' => $ref, 'identity_id' => (int) $primary['id']],
+        ]);
+
+        return ['ok' => true, 'id' => $id, 'ref' => $ref, 'name' => $cover['name'], 'identity_id' => (int) $primary['id'], 'document_ids' => array_keys($chosen)];
+    }
+
+    /**
+     * Contenu « cover » du fichier pour une identité Athena : état civil et papiers de l'identité ; le reste (adresse,
+     * métier s'il manque, téléphone, famille, contacts, histoire) est tiré une fois pour toutes de l'identité (graine
+     * fixe), sauf ce que donne $legend. Même contenu pour generateFromIdentity() et pour les identités servies au
+     * téléphone (SseIdentityCoverFeedService).
+     *
+     * @param array<string, mixed> $identity ligne de sse_identities (id, last_name, first_name, sex, birth_date, birth_place, profession)
+     * @param array<string, mixed> $country pays du registre
+     * @param list<array{type: string, country: string, number: string, issued: string, expires: string}> $docs
+     * @param array<string, mixed> $legend profession, employer, city, address, travel, family (texte), history (liste de lignes)
+     * @return array<string, mixed>
+     */
+    public function coverFromIdentity(int $tenantId, array $identity, array $country, array $docs, string $lang, \DateTimeImmutable $now, array $legend = []): array
+    {
+        $primary = $identity;
+        $sex = in_array($primary['sex'] ?? '', ['M', 'F'], true) ? (string) $primary['sex'] : null;
+        $seed = (int) (abs(crc32('athena|' . $tenantId . '|' . (int) $primary['id'])) % (SseIdentityGeneratorService::MAX_SEED + 1));
+        $cover = $this->generator->generate($country, $seed, $sex, $lang, $now);
+        $last = trim((string) $primary['last_name']);
+        $first = trim((string) $primary['first_name']);
+        $swap = static fn (string $v): string => str_replace((string) $cover['last_name'], $last, $v);
+        $pob = trim((string) ($primary['birth_place'] ?? '')) !== '' ? trim((string) $primary['birth_place']) : (string) $cover['pob'];
+        $dob = preg_match('/^\d{4}-\d{2}-\d{2}/', (string) ($primary['birth_date'] ?? '')) === 1 ? substr((string) $primary['birth_date'], 0, 10) : (string) $cover['dob'];
+        $cover = array_merge($cover, [
+            'name' => mb_substr($first . ' ' . $last, 0, 160), 'first_name' => mb_substr($first, 0, 80), 'last_name' => mb_substr($last, 0, 80),
+            'sex' => $sex ?? '', 'dob' => $dob, 'pob' => mb_substr($pob, 0, 120),
+            'country' => (string) ($country['name'] ?? $country['code']), 'country_code' => (string) $country['code'],
+            'profession' => trim((string) ($primary['profession'] ?? '')) !== '' ? mb_substr(trim((string) $primary['profession']), 0, 120) : (string) $cover['profession'],
+            'family' => mb_substr($swap((string) $cover['family']), 0, 190),
+            'contacts' => array_map(static fn (array $c): array => [mb_substr($swap((string) $c[0]), 0, 160), $c[1], $c[2]], $cover['contacts']),
+            'history' => array_map($swap, array_replace($cover['history'], [0 => $lang === 'en'
+                ? sprintf('Born in %s, grew up in %s.', $pob, $cover['city']) : sprintf('Né(e) à %s, a grandi à %s.', $pob, $cover['city'])])),
+            'docs' => $docs,
+            'photo' => null,
+        ]);
+        foreach (['profession', 'employer', 'city', 'address', 'travel', 'family'] as $k) {
+            if (is_string($legend[$k] ?? null) && trim($legend[$k]) !== '') {
+                $cover[$k] = trim($legend[$k]);
+            }
+        }
+        if (is_array($legend['history'] ?? null) && $legend['history'] !== []) {
+            $cover['history'] = array_values(array_map('strval', $legend['history']));
+        }
+
+        return $cover;
+    }
+
+    /** Référence stable « CVR-XXXXXXXX » d'une identité servie au téléphone : la même à chaque appel, propre à ce serveur. */
+    public function identityRef(int $tenantId, int $identityId): string
+    {
+        return 'CVR-' . strtoupper(substr(hash_hmac('sha256', 'cover-identity|' . $tenantId . '|' . $identityId, $this->key()), 0, 8));
+    }
+
+    /**
+     * Papiers d'une identité du membre qui peuvent entrer dans un fichier de couverture, tels qu'ils y sont écrits, par
+     * identifiant de papier (le plus récent d'abord) : émis, ni annulés, ni suspendus, ni déclarés perdus ou volés, ni
+     * expirés. La requête est bornée à la communauté et au membre : le papier d'un autre membre, d'une autre communauté
+     * ou d'une autre identité n'y est jamais.
+     *
+     * @return array<int, array{type: string, country: string, number: string, issued: string, expires: string}>
+     */
+    public function eligibleDocs(int $tenantId, int $subjectId, int $identityId, ?\DateTimeImmutable $now = null, ?\App\Repositories\SseIdDocumentRepository $documents = null): array
+    {
+        $now ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $today = $now->format('Y-m-d');
+        $countries = [];
+        foreach ($this->countries->listForTenant($tenantId, false) as $c) {
+            $countries[(string) $c['code']] = $c;
+        }
+        $out = [];
+        foreach (($documents ?? new \App\Repositories\SseIdDocumentRepository())->list($tenantId, ['user_id' => $subjectId, 'limit' => 200]) as $d) {
+            if ($identityId < 1 || (int) $d['identity_id'] !== $identityId || ($d['workflow'] ?? '') !== 'issued'
+                || in_array($d['st_validity'] ?? 'valid', ['revoked', 'suspended', 'expired'], true) || in_array($d['st_report'] ?? 'none', ['stolen', 'lost'], true)
+                || trim((string) ($d['doc_number'] ?? '')) === '') {
+                continue;
+            }
+            $country = $countries[(string) $d['country_code']] ?? [];
+            $issued = preg_match('/^\d{4}-\d{2}-\d{2}/', (string) ($d['issued_on'] ?? '')) === 1 ? substr((string) $d['issued_on'], 0, 10) : $now->modify('-1 year')->format('Y-m-d');
+            $expires = preg_match('/^\d{4}-\d{2}-\d{2}/', (string) ($d['expires_on'] ?? '')) === 1 ? substr((string) $d['expires_on'], 0, 10)
+                : (new \DateTimeImmutable($issued))->modify('+' . SseIdCountryRepository::validityFor($country, (string) $d['doc_type']) . ' years')->format('Y-m-d');
+            if ($expires < $today) {
+                continue;
+            }
+            $out[(int) $d['id']] = [
+                'type' => (string) $d['doc_type'], 'country' => (string) ($country['name'] ?? $d['country_code']),
+                'number' => (string) $d['doc_number'], 'issued' => $issued, 'expires' => $expires,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * Texte du fichier d'une couverture générée (à servir en téléchargement), null si elle n'est pas de cette communauté
      * ou, hors gestionnaire, pas de ce membre.
      *
@@ -121,6 +306,10 @@ final class SseCoverExportService
     {
         $row = $this->exports->find($tenantId, $exportId);
         if ($row === null || (!$manager && (int) $row['user_id'] !== $viewerId) || ($onlyUser !== null && (int) $row['user_id'] !== $onlyUser)) {
+            return null;
+        }
+        // Couverture révoquée par le membre (Outils opérateur) : plus servie, ni au site ni au téléphone.
+        if (isset(\App\Repositories\OperatorHubRepository::revokedCoverIds($tenantId, (int) $row['user_id'])[$exportId])) {
             return null;
         }
         $this->exports->markDownloaded($tenantId, $exportId, ($now ?? new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s'));
@@ -137,10 +326,11 @@ final class SseCoverExportService
      *
      * @return array{history: list<array<string, mixed>>, remaining: int, limit: int, countries: list<array<string, mixed>>}
      */
-    public function panel(int $tenantId, int $subjectId, bool $manager, bool $self): array
+    public function panel(int $tenantId, int $subjectId, bool $manager, bool $self, ?\DateTimeImmutable $now = null): array
     {
         $limit = $manager && !$self ? self::LIMIT_MANAGER : self::LIMIT_SELF;
-        $used = $this->exports->countSince($tenantId, $subjectId, gmdate('Y-m-d H:i:s', time() - 86400));
+        $now ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $used = $this->exports->countSince($tenantId, $subjectId, $now->modify('-24 hours')->format('Y-m-d H:i:s'));
 
         return [
             'history' => $this->exports->listForUser($tenantId, $subjectId, 10),

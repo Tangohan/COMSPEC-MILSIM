@@ -86,6 +86,13 @@ class CfgFunctions {
             class sseApplyProfile {};
             class sseProfilePreset {};
             class sseEdenWriteField {};
+            // SEEK II : contrôle rapide, verdict, enrôlement, signer et envoyer, batterie.
+            class seekQuick {};
+            class seekVerdict {};
+            class seekState {};
+            class seekEnroll {};
+            class seekSend {};
+            class seekBattery {};
             // Fiches de renseignement simplifiées (rédacteur plein cadre ATAK)
             class intelNoteCatalog {};
             class intelNoteCache {};
@@ -198,7 +205,7 @@ class CfgFunctions {
             class aceAddSelfAction {};
             class aceSweepPlayerSelfActions {};
             class acePadAction {};
-            class onInterruptLoad {};
+            class athenaConfigEntries {};
             class log {};
             class logAtakEvent {};
             class logAtakStateChange {};
@@ -891,8 +898,8 @@ class CfgFactionClasses
 #include "display_diag_isolate.hpp"
 #include "display_theater_survey.hpp"
 
-// Bouton menu Échap : injecté en SQF (DisplayLoad), pas via héritage RscDisplayInterrupt
-// — l’héritage config casse le démarrage Arma (Undefined base / Member already defined).
+// Menu Échap : plus aucun contrôle d'Overwatch connect. Ses entrées (état de la liaison, Dépannage liaison, Service Athéna)
+// rejoignent la Configuration ATHENA de l'ATAK natif (fn_athenaConfigEntries, appelé au preInit).
 
 // Modules Zeus/Eden — un seul CfgVehicles (deux class CfgVehicles = Member already defined)
 class CfgVehicles

@@ -21,6 +21,8 @@ class CfgFunctions {
             class edenWriteField {};
             class edenInitEntity {};
             class edenAiProfiles {};
+            class edenDocTypes {};
+            class edenCountries {};
             class domexGetNode {};
             class domexApplyObject {};
         };
@@ -55,6 +57,18 @@ class Cfg3DEN {
             attributeSave = "['save', _this controlsGroupCtrl 100] call comspec_sse_fnc_edenAiProfiles";
             class Controls: Controls { class Title: Title {}; class Value: Value {}; };
         };
+        // Types de documents du registre (CfgComspecDocuments, extensions comprises) : comspec_sse_fnc_edenDocTypes.
+        class COMSPEC_SSE_DocTypeCombo: Combo {
+            attributeLoad = "['load', [_this controlsGroupCtrl 100, _value]] call comspec_sse_fnc_edenDocTypes";
+            attributeSave = "['save', _this controlsGroupCtrl 100] call comspec_sse_fnc_edenDocTypes";
+            class Controls: Controls { class Title: Title {}; class Value: Value {}; };
+        };
+        // Pays des papiers (registre CfgComspecCountries : pays réels, puis pays fictifs d'Arma) : comspec_sse_fnc_edenCountries.
+        class COMSPEC_SSE_CountryCombo: Combo {
+            attributeLoad = "['load', [_this controlsGroupCtrl 100, _value]] call comspec_sse_fnc_edenCountries";
+            attributeSave = "['save', _this controlsGroupCtrl 100] call comspec_sse_fnc_edenCountries";
+            class Controls: Controls { class Title: Title {}; class Value: Value {}; };
+        };
     };
     // Groupe entier : même réglage pour chaque unité, repris à son apparition (fn_idRegistry « kit »).
     class Group {
@@ -72,21 +86,25 @@ class Cfg3DEN {
                         defaultValue = "''";
                         typeName = "STRING";
                     };
+                    // Valeur : auto | none | alias (card, passport, license, card_license, card_passport, military) | clé du
+                    // registre (id_card, press_card…) | liste « clé1,clé2 » (fn_edenDocTypes).
                     class COMSPEC_ID_GroupCarry {
                         displayName = "Papiers";
-                        tooltip = "Automatique : selon le camp de chaque IA.";
+                        tooltip = "Automatique : selon le camp de chaque IA. Sinon un papier intégré, ou un type d'une extension de documents (entre parenthèses : le nom de l'extension).";
                         property = "COMSPEC_ID_GroupCarry";
-                        control = "Combo";
+                        control = "COMSPEC_SSE_DocTypeCombo";
                         expression = "if (isServer && {_value isNotEqualTo 'auto'}) then { _this setVariable ['COMSPEC_ID_GroupCarry', _value]; };";
                         defaultValue = "'auto'";
                         typeName = "STRING";
-                        class values {
-                            class Auto { name = "Automatique"; value = "auto"; default = 1; };
-                            class None { name = "Aucun"; value = "none"; };
-                            class Card { name = "Carte d'identité"; value = "card"; };
-                            class Passport { name = "Passeport"; value = "passport"; };
-                            class Military { name = "Carte militaire"; value = "military"; };
-                        };
+                    };
+                    class COMSPEC_ID_GroupCountry {
+                        displayName = "$STR_COMSPEC_SSE_ID_SetCountry";
+                        tooltip = "$STR_COMSPEC_SSE_ID_GroupCountryTip";
+                        property = "COMSPEC_ID_GroupCountry";
+                        control = "COMSPEC_SSE_CountryCombo";
+                        expression = "if (isServer && {_value isNotEqualTo 'auto'}) then { _this setVariable ['COMSPEC_ID_GroupCountry', _value]; };";
+                        defaultValue = "'auto'";
+                        typeName = "STRING";
                     };
                     class COMSPEC_ID_GroupBehaviour {
                         displayName = "Comportement au contrôle";

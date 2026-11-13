@@ -5,7 +5,9 @@
     de l'action (« begin » envoyé au début de la barre de progression).
     Poignée de document (_h) : docId (« ID0007 », document présenté ou trouvé) ou classe d'un exemplaire porté.
       begin    [moi, op, cible]          début d'une action à durée
-      ask      [moi, cible]              « Papiers, s'il vous plaît » (IA : fn_idAiAnswer ; joueur : demande 60 s)
+      ask      [moi, cible]              « Papiers, s'il vous plaît » (IA : fn_idAiAnswer ; joueur : fn_idP2pServer « ask »)
+      p2pAnswer [moi, contrôleur, accept | refuse, classes, show | give, motif] · p2pPresent [moi, destinataire, classes,
+                show | give] · p2pZeus [moi, 0 | 1 | 2]   contrôle et présentation entre joueurs (fn_idP2pServer)
       present  [moi, classe, contrôleur | objNull, "present" | "give"]   je tends (ou remets) un de mes documents
       refuse   [moi]                     je refuse de présenter mes papiers
       docs     [moi, cible]              fouille des papiers (mort, menotté, rendu, inconscient)
@@ -15,7 +17,11 @@
       return   [moi, cible, classe]      je rends un document saisi
       vehicle  [moi, véhicule]           contrôle des occupants        dismount [moi, véhicule]  faire descendre
       kit      [moi, ancien corps | objNull]   papiers du kit Athena (connexion, JIP, respawn ; Steam ID lu ici)
-      give / report / truth / pack       Zeus (curateur) : donner des papiers, signaler, vraie identité, paquet Athena
+      paperMoved [moi, classe, conteneur, take | put]   j'ai pris / posé un papier (fn_idPaperTrack, sans anti-flood)
+      give / report / truth              Zeus (curateur) : donner des papiers, signaler, papiers vus par le Zeus
+                                         (truth [moi, personne | objet] -> zeusPapers, fenêtre fn_idZeusPapers)
+      pack     [moi, texte, full | self] paquet Athena relayé (complet : Zeus ; sinon ses seuls papiers)
+      packFail [moi, full | self, code]  relais impossible (raison montrée dans Ma couverture)
       aiCfg    [moi, sous-op, args]      Zeus : fenêtre de configuration des IA (fn_idAiConfig, éditeur SSE › IA)
       fsmForce [moi, ia, état]           Zeus : impose un état à une IA (automate des IA réalistes, fn_idAiFsm)
       cpCreate [moi, position, réglages] · cpTrigger [moi, personne, réglages] · cpRemove [moi, position]
@@ -23,7 +29,8 @@
       curfew   [moi, vrai | faux]        Zeus : couvre-feu (les civils dehors sont plus nerveux)
     Lot 4 (couvertures) et Lot 5 (HVT) :
       check    [moi, _h, 4]              N4 : comparaison du visage (fn_idBio ; durée réglable, matériel « face »)
-      coverSheet [moi, personne]         fiche RP (la sienne ; le Zeus : celle de tous) · coverList [moi]  infiltrés (Zeus)
+      coverSheet [moi, personne, empreinte]   fiche RP (la sienne ; le Zeus : celle de tous) ; empreinte de la fiche en
+                                         cache égale : réponse coverSame (état et cohérence seuls) · coverList [moi]  infiltrés (Zeus)
       coverFired [moi]                   tir d'un infiltré (FiredMan de son poste)
       coverImport [moi, couverture] · coverForget [moi]   couverture importée d'un fichier Athena, ou oubliée (fn_idCoverImport)
       coverPull [moi]                    recharge le paquet Athena (app Ma couverture, au plus une fois par 2 min, tous postes)
@@ -51,7 +58,7 @@ if (isMultiplayer && {isRemoteExecuted} && {(owner _me) isNotEqualTo _owner}) ex
 private _floodKey = format ["%1|%2", _owner, _op];
 // Anti-flood des postes distants seulement : les appels internes du serveur (checkpoints IA) passent tous.
 // La fenêtre du Zeus enchaîne ses demandes (liste, puis papiers de la ligne choisie) : réservée au Zeus, elle n'est pas bridée.
-if (isRemoteExecuted && {!(_op in ["begin", "aiCfg"])} && {(time - ((_reg get "flood") getOrDefault [_floodKey, -10])) < 0.5}) exitWith {};
+if (isRemoteExecuted && {!(_op in ["begin", "aiCfg", "paperMoved"])} && {(time - ((_reg get "flood") getOrDefault [_floodKey, -10])) < 0.5}) exitWith {};
 (_reg get "flood") set [_floodKey, time];
 
 private _reply = {
@@ -84,7 +91,7 @@ private _grant = {
 private _label = {
     params ["_d"];
     if ((count _d) isEqualTo 0) exitWith { "Document vierge" };
-    format ["%1 %2 · %3 %4", ["Carte d'identité", "Passeport", "Permis", "Carte militaire"] select ((["id_card", "passport", "driving_license", "military_id"] find (_d get "type")) max 0),
+    format ["%1 %2 · %3 %4", ["label", _d get "type"] call comspec_sse_fnc_idDocTypes,
         _d get "country", toUpper (_d get "last"), _d get "first"]
 };
 // Document imprimé (ce que voit celui qui le tient) : jamais la vérité.
@@ -93,10 +100,18 @@ private _pub = {
     private _c = ([] call comspec_sse_fnc_idCountries) getOrDefault [_d get "country", createHashMap];
     private _p = createHashMap;
     { _p set [_x, _d getOrDefault [_x, ""]]; } forEach ["id", "type", "country", "number", "last", "first", "sex", "dob", "pob", "nat", "profession", "issued", "expires", "authority", "address", "rank", "force"];
+    // Champs propres au type (extensions : média, zone autorisée…), imprimés tels quels.
+    { _p set [_x select 0, _d getOrDefault [_x select 0, ""]]; } forEach ((["get", _d getOrDefault ["type", ""]] call comspec_sse_fnc_idDocTypes) getOrDefault ["inputs", []]);
     _p set ["countryName", _c getOrDefault ["name", _d get "country"]];
     _p set ["countryNameEn", _c getOrDefault ["nameEn", ""]];
-    // Pays réel stylisé : gabarit générique de sa zone (europe | americas | other), jamais un vrai modèle.
+    // Pays réel stylisé d'un paquet Athena : gabarit générique de sa zone (europe | americas | other), jamais un vrai
+    // modèle. Pays réel du registre : « bare » (gabarit du pays ou gabarit neutre, titre et étiquettes posés en jeu).
     _p set ["zone", [_c getOrDefault ["zone", ""], ""] select !(_c getOrDefault ["realSim", false])];
+    if ((_c getOrDefault ["tier", ""]) in ["full", "generic"]) then {
+        _p set ["zone", "bare"];
+        { _p set [_x, _d getOrDefault [_x, ""]]; } forEach ["natText", "height", "state", "permit", "plate", "vehicle", "vin", "holder", "firstReg", "city", "postal", "region"];
+        _p set ["personal", ["", _d getOrDefault ["personal", ""]] select (_d getOrDefault ["personalPrint", false])];
+    };
     _p set ["chipLogo", _d getOrDefault ["chipExpected", false]];
     _p set ["mrz", [_d] call comspec_sse_fnc_idMrz];
     // Défauts physiques : visibles par qui regarde bien (le constat N0, lui, dépend du tirage).
@@ -177,14 +192,8 @@ switch (_op) do {
             [_me, "Demande interrompue : recommencez sans bouger."] call _tell;
         };
         ["comspec_sse_idAsked", [_t, _me]] call CBA_fnc_localEvent;
-        if (isPlayer _t) exitWith {
-            private _req = _reg get "requests";
-            private _list = (_req getOrDefault [netId _t, []]) select { (_x select 2) > time && {(_x select 1) isNotEqualTo (netId _me)} };
-            _list pushBack [_owner, netId _me, time + 60];
-            _req set [netId _t, _list];
-            ["request", [_me], owner _t] call _reply;
-            ["answer", [_t, "wait", format ["Demande faite à %1 : il doit présenter ses papiers (Mes papiers).", name _t]]] call _reply;
-        };
+        // Joueur : fenêtre de demande chez lui (accepter, refuser, laisser sans réponse), jamais d'accord automatique.
+        if (isPlayer _t) exitWith { ["ask", [_me, _t]] call comspec_sse_fnc_idP2pServer; };
         private _ans = [_t, _me] call comspec_sse_fnc_idAiAnswer;
         private _ctl = _reg getOrDefault ["controlled", createHashMap];
         _reg set ["controlled", _ctl];
@@ -232,6 +241,8 @@ switch (_op) do {
         if ((count _d) isEqualTo 0) exitWith {
             [_to, format ["%1 vous présente un document vierge (aucun titulaire).", name _me], "WARNING"] call _tell;
         };
+        // Vers un joueur : réglages des contrôles entre joueurs (une demande de sa part en attente est close « acceptée »).
+        if !(["legacy", [_me, _to]] call comspec_sse_fnc_idP2pServer) exitWith { ["p2p", ["denied", [_to, "noPresent"]]] call _reply; };
         private _toOwner = owner _to;
         [_d get "id", _me, _toOwner] call _grant;
         if (_mode isEqualTo "give") then { [_cls, _me, _to] call comspec_sse_fnc_idTransfer; };
@@ -251,6 +262,12 @@ switch (_op) do {
             ["comspec_sse_idRefused", [_me, _c]] call CBA_fnc_localEvent;
         } forEach _pend;
     };
+
+    // Contrôle et présentation des papiers entre joueurs (fn_idP2pServer) : réponse à une demande, présentation
+    // d'initiative de plusieurs papiers, choix du Zeus pour la mission.
+    case "p2pAnswer": { ["answer", _args] call comspec_sse_fnc_idP2pServer; };
+    case "p2pPresent": { ["present", _args] call comspec_sse_fnc_idP2pServer; };
+    case "p2pZeus": { ["zeus", _args] call comspec_sse_fnc_idP2pServer; };
 
     case "docs": {
         _args params ["", ["_t", objNull, [objNull]]];
@@ -310,6 +327,9 @@ switch (_op) do {
             ["comspec_sse_idChecked", [_me, _d get "id", 0, _res]] call CBA_fnc_localEvent;
         };
         if (!_ok) exitWith {};
+        // Nom lu sur ses papiers : le joueur le connaît désormais (en-tête et bulles de « Parler à », fn_iarpName).
+        private _bearer = ["owner", _d getOrDefault ["holderKey", ""]] call comspec_sse_fnc_bioRegistry;
+        if (!isNil "comspec_sse_fnc_iarpName" && {_bearer isEqualType objNull} && {!isNull _bearer} && {!isPlayer _bearer}) then { ["learn", [_bearer, [_me]]] call comspec_sse_fnc_iarpName; };
         ["doc", [[_d] call _pub, _res, _subj, _own, [_subj] call comspec_sse_fnc_bioPersonKey]] call _reply;
     };
 
@@ -317,15 +337,18 @@ switch (_op) do {
         _args params ["", ["_h", ""], ["_lvl", 1, [0]]];
         _lvl = (round _lvl max 1) min 4;
         ([_h] call _resolve) params ["_d", "_holder", "_ok", "_subj"];
-        if (!_ok || {(count _d) isEqualTo 0}) exitWith { [_me, "Document introuvable ou plus présenté.", "WARNING"] call _tell; };
-        if !([format ["check%1", _lvl], _h] call _took) exitWith {};
+        // Échec d'un niveau : une seule source d'état, la fiche du contrôle (fn_idHistory « fail ») ; la notification du
+        // téléphone porte exactement le même texte que l'écran du contrôle.
+        private _fail = { params ["_code", "_text"]; ["checkFail", [_h, _lvl, _code, _text]] call _reply; };
+        if (!_ok || {(count _d) isEqualTo 0}) exitWith { ["gone", "Document introuvable ou plus présenté."] call _fail; };
+        if !([format ["check%1", _lvl], _h] call _took) exitWith { ["short", "Lecture interrompue : relancez l'analyse."] call _fail; };
         // Lecteur NFC : 1,5 m du document (sauf s'il est dans mes mains). MRZ et base : 3 m.
         if (!(_holder isEqualTo _me) && {!isNull _holder} && {!([_me, _holder, [4, 2] select (_lvl isEqualTo 2)] call _near)}) exitWith {
-            [_me, ["Approchez-vous du document.", "Lecteur NFC : approchez-vous à moins de 1,5 m du document."] select (_lvl isEqualTo 2), "WARNING"] call _tell;
+            ["far", ["Approchez-vous du document.", "Lecteur NFC : approchez-vous à moins de 1,5 m du document."] select (_lvl isEqualTo 2)] call _fail;
         };
-        if (_lvl isEqualTo 4 && {!(missionNamespace getVariable ["comspec_sse_id_bio", true])}) exitWith { [_me, "Comparaison biométrique désactivée sur cette mission.", "WARNING"] call _tell; };
-        if (_lvl isEqualTo 4 && {!([_me, "face"] call comspec_sse_fnc_hasEquipment)}) exitWith { [_me, "Comparaison du visage : téléphone ATAK ou terminal SEEK requis.", "WARNING"] call _tell; };
-        if (_lvl isEqualTo 4 && {isNull _subj || {!([_me, _subj, 4] call _near)}}) exitWith { [_me, "Comparaison du visage : la personne doit être devant vous (3 m).", "WARNING"] call _tell; };
+        if (_lvl isEqualTo 4 && {!(missionNamespace getVariable ["comspec_sse_id_bio", true])}) exitWith { ["off", "Comparaison biométrique désactivée sur cette mission."] call _fail; };
+        if (_lvl isEqualTo 4 && {!([_me, "face"] call comspec_sse_fnc_hasEquipment)}) exitWith { ["gear", "Comparaison du visage : téléphone ATAK ou terminal SEEK requis."] call _fail; };
+        if (_lvl isEqualTo 4 && {isNull _subj || {!([_me, _subj, 4] call _near)}}) exitWith { ["far", "Comparaison du visage : la personne doit être devant vous (3 m)."] call _fail; };
         private _res = if (_lvl isEqualTo 4) then { [_d, _me, _subj] call comspec_sse_fnc_idBio } else { [_d, _me, _lvl, _subj] call comspec_sse_fnc_idEvaluate };
         if (_lvl isEqualTo 3) then {
             // Requête Athena faite par le joueur (DLL du poste) : champs imprimés seulement.
@@ -428,6 +451,8 @@ switch (_op) do {
     case "kit": {
         _args params ["", ["_old", objNull, [objNull]]];
         [_me, _old] call comspec_sse_fnc_idKit;
+        // Paquet Athena pas encore là pour ce joueur (serveur sans liaison, Zeus absent, mission déjà lancée) : relancé.
+        ["want", [_me]] call comspec_sse_fnc_idAthenaPack;
         // Kit d'infiltré (papier « couverture », brief de couverture d'Athena) : infiltration ouverte une fois les papiers remis.
         [{ ["auto", [_this]] call comspec_sse_fnc_idCover; }, _me, 3] call CBA_fnc_waitAndExecute;
     };
@@ -438,12 +463,20 @@ switch (_op) do {
         if !([_me] call comspec_sse_fnc_isAuthority) exitWith {
             diag_log text format ["[COMSPEC SSE] Identité : « %1 » réservé au Zeus, refusé au poste %2.", _op, _owner];
         };
-        _args params ["", ["_u", objNull, [objNull]], ["_x1", createHashMap]];
+        _args params ["", ["_u", objNull, [objNull, []]], ["_x1", createHashMap]];
+        // « Poser au sol » (sélecteur) : la cible est une position [x, y].
+        if (_u isEqualType [] && {_op isEqualTo "give"} && {(count _u) >= 2}) exitWith {
+            _x1 set ["groundPos", _u select [0, 2]];
+            _x1 set ["materialize", true];
+            private _id = [objNull, _x1] call comspec_sse_fnc_idIssue;
+            ["zeus", [[format ["Document posé au sol en %1 : %2.", mapGridPosition (_u select [0, 2]), [["doc", [_id]] call comspec_sse_fnc_idRegistry] call _label], "Échec : document non délivré."] select (_id isEqualTo ""), ["info", "warn"] select (_id isEqualTo "")]] call _reply;
+        };
+        if !(_u isEqualType objNull) exitWith {};
         if (isNull _u) exitWith {};
         switch (_op) do {
             case "give": {
                 private _id = [_u, _x1] call comspec_sse_fnc_idModuleGive;
-                ["zeus", [[format ["Papiers donnés à %1 : %2.", name _u, [["doc", [_id]] call comspec_sse_fnc_idRegistry] call _label], "Échec : papiers non délivrés."] select (_id isEqualTo ""), ["info", "warn"] select (_id isEqualTo "")]] call _reply;
+                ["zeus", [[format ["Papiers donnés à %1 : %2.", ["full", [_u]] call comspec_sse_fnc_idIdentityOf, [["doc", [_id]] call comspec_sse_fnc_idRegistry] call _label], "Échec : papiers non délivrés."] select (_id isEqualTo ""), ["info", "warn"] select (_id isEqualTo "")]] call _reply;
             };
             case "report": {
                 private _mode = [_x1, ""] select !(_x1 isEqualType "");
@@ -456,29 +489,12 @@ switch (_op) do {
                     if (_b isNotEqualTo []) then { _b set [3, _mode]; };
                     _n = _n + 1;
                 } forEach (["unitDocs", [_u]] call comspec_sse_fnc_idRegistry);
-                ["zeus", [format ["%1 document(s) de %2 : %3.", _n, name _u, ["signalement levé", format ["signalé « %1 »", _mode]] select (_mode isNotEqualTo "")], "info"]] call _reply;
+                ["zeus", [format ["%1 document(s) de %2 : %3.", _n, ["full", [_u]] call comspec_sse_fnc_idIdentityOf, ["signalement levé", format ["signalé « %1 »", _mode]] select (_mode isNotEqualTo "")], "info"]] call _reply;
             };
             default {
-                private _lines = [format ["Vrais papiers de %1 :", name _u]];
-                {
-                    private _d = ["doc", [_x]] call comspec_sse_fnc_idRegistry;
-                    _lines pushBack format ["%1 n° %2 · imprimé %3 %4 · vrai %5 %6 · %7%8 · qualité %9", _d get "type", _d get "number",
-                        toUpper (_d get "last"), _d get "first", toUpper (_d get "trueLast"), _d get "trueFirst", _d get "kind",
-                        ["", format [" (%1)", _d get "forgeryKind"]] select ((_d get "forgeryKind") isNotEqualTo ""), _d get "quality"];
-                    _lines pushBack format ["   défauts : %1 · puce : %2 · signalement : %3 · %4", [(_d get "flaws") joinString ", ", "aucun"] select ((_d get "flaws") isEqualTo []),
-                        _d get "chip", [_d get "report", "aucun"] select ((_d get "report") isEqualTo ""), ["virtuel", "objet " + (_d get "cls")] select ((_d get "cls") isNotEqualTo "")];
-                } forEach (["unitDocs", [_u]] call comspec_sse_fnc_idRegistry);
-                if ((count _lines) isEqualTo 1) then { _lines pushBack "aucun document."; };
-                private _cs = ["state", [_u]] call comspec_sse_fnc_idCover;
-                if ((count _cs) > 0) then {
-                    (["score", [_u]] call comspec_sse_fnc_idCover) params ["_sc", "_why"];
-                    private _stt = if (_cs get "burnt") then { format ["brûlée (%1)", _cs get "burnWhy"] } else { ["levée", "intacte"] select (_cs get "on") };
-                    _lines pushBack format ["Infiltré : couverture %1, cohérence %2/100%3, soupçons %4.", _stt, _sc,
-                        ["", format [" (%1)", _why joinString ", "]] select (_why isNotEqualTo []), round (_cs get "susp")];
-                };
-                private _hv = ["of", [_u]] call comspec_sse_fnc_idHvt;
-                if ((count _hv) > 0) then { _lines pushBack format ["HVT %1 : %2 %3, étape %4.", _hv get "ref", toUpper (_hv get "last"), _hv get "first", _hv get "stage"]; };
-                ["zeus", [_lines joinString endl, "info"]] call _reply;
+                // Fenêtre « Papiers de l'IA » du Zeus (fn_idZeusPapers) : document imprimé et analyse, au seul poste demandeur.
+                // Avant : une ligne de texte dans le bandeau de ZEN, coupée aux bords de l'écran.
+                ["zeusPapers", [[_u, _pub] call comspec_sse_fnc_idZeusPapersData]] call _reply;
             };
         };
     };
@@ -509,18 +525,28 @@ switch (_op) do {
     };
 
     case "coverSheet": {
-        _args params ["", ["_t", objNull, [objNull]]];
+        // 3e argument (facultatif) : empreinte de la fiche que le poste a déjà en cache (« rev », posée ici).
+        _args params ["", ["_t", objNull, [objNull]], ["_known", ""]];
         if (isNull _t) then { _t = _me; };
         private _auth = [_me] call comspec_sse_fnc_isAuthority;
         if (_t isNotEqualTo _me && {!_auth}) exitWith {};
         private _sheet = ["sheet", [_t, _auth && {_t isNotEqualTo _me}]] call comspec_sse_fnc_idLegend;
+        // Empreinte du contenu stable (légende, papiers, liaison Athena) : sans l'état et la cohérence, qui bougent en jeu.
+        // Clés triées : même fiche, même empreinte, quel que soit l'ordre interne de la table.
+        private _keys = keys _sheet;
+        _keys sort true;
+        private _fp = hashValue str (_keys apply { [_x, _sheet get _x] });
         private _cs = ["state", [_t]] call comspec_sse_fnc_idCover;
-        _sheet set ["state", ["off", ["on", "burnt"] select (_cs getOrDefault ["burnt", false])] select ((count _cs) > 0)];
-        _sheet set ["burnWhy", _cs getOrDefault ["burnWhy", ""]];
         (["score", [_t]] call comspec_sse_fnc_idCover) params ["_sc", "_why", ["_todo", []]];
-        _sheet set ["score", _sc];
-        _sheet set ["why", _why];
-        _sheet set ["todo", _todo];
+        private _live = createHashMapFromArray [
+            ["state", ["off", ["on", "burnt"] select (_cs getOrDefault ["burnt", false])] select ((count _cs) > 0)],
+            ["burnWhy", _cs getOrDefault ["burnWhy", ""]], ["score", _sc], ["why", _why], ["todo", _todo]
+        ];
+        // Le poste a déjà cette fiche : seuls l'état et la cohérence repartent (quelques octets au lieu de toute la fiche).
+        // Poste plus ancien (pas d'empreinte envoyée) : fiche complète, comme avant.
+        if (_known isEqualTo _fp) exitWith { ["coverSame", [netId _t, _fp, _live]] call _reply; };
+        _sheet merge [_live, true];
+        _sheet set ["rev", _fp];
         ["coverSheet", [netId _t, _sheet]] call _reply;
     };
     case "coverList": {
@@ -543,6 +569,17 @@ switch (_op) do {
     };
     case "coverForget": { ["serverForget", [_me]] call comspec_sse_fnc_idCoverImport; };
     case "coverPull": {
+        // Demander la mise à jour : sans paquet pour lui, son téléphone peut relayer ses papiers tout de suite (une fois
+        // par minute) ; le rechargement complet reste limité à une fois par 2 min, tous postes.
+        private _uid = getPlayerUID _me;
+        if ((_reg getOrDefault ["packAt", ""]) isEqualTo "" && {_uid isNotEqualTo ""} && {!(["has"] call comspec_sse_fnc_idAthenaPack)}
+            && {(time - ((_reg getOrDefault ["selfPullAt", createHashMap]) getOrDefault [_uid, -1000])) >= 60}) then {
+            private _sp = _reg getOrDefault ["selfPullAt", createHashMap];
+            _reg set ["selfPullAt", _sp];
+            _sp set [_uid, time];
+            (_reg getOrDefault ["selfPacks", createHashMap]) deleteAt _uid;
+            ["packFetch", [["self", "full"] select ([_me] call comspec_sse_fnc_isAuthority)]] remoteExecCall ["comspec_sse_fnc_idClient", owner _me];
+        };
         if ((time - (_reg getOrDefault ["packPullAt", -1000])) < 120) exitWith {};
         _reg set ["packPullAt", time];
         ["load"] call comspec_sse_fnc_idAthenaPack;
@@ -625,6 +662,8 @@ switch (_op) do {
             };
             case "reload": {
                 _reg set ["aiKeptDone", createHashMap];
+                // Rechargement demandé par le Zeus : le paquet est réappliqué même s'il n'a pas changé (éléments gardés remis).
+                _reg set ["packFp", ""];
                 ["load"] call comspec_sse_fnc_idAthenaPack;
                 ["zeus", ["Éléments gardés : rechargement demandé à Athena.", "info"]] call _reply;
             };
@@ -635,9 +674,32 @@ switch (_op) do {
         };
     };
 
+    // Papier pris ou posé (évènements Take / Put du poste du joueur) : porteur, chaîne de possession, évènements CBA.
+    case "paperMoved": {
+        _args params ["", ["_cls", "", [""]], ["_box", objNull, [objNull]], ["_how", "take", [""]]];
+        if !(_how in ["take", "put"]) exitWith {};
+        [_how, [_me, _cls, _box]] call comspec_sse_fnc_idPaperTrack;
+    };
+
+    // Paquet relayé par un poste relié (serveur sans COMSPEC Link). Zeus, admin, hôte : paquet complet. Autre joueur :
+    // seulement ses propres papiers (fn_idAthenaPack « applySelf » refiltre tout, quoi que le poste envoie).
     case "pack": {
-        if !([_me] call comspec_sse_fnc_isAuthority) exitWith {};
-        _args params ["", ["_raw", ""]];
-        ["apply", _raw] call comspec_sse_fnc_idAthenaPack;
+        _args params ["", ["_raw", "", [""]], ["_mode", "full", [""]]];
+        if (_mode isEqualTo "full" && {[_me] call comspec_sse_fnc_isAuthority}) exitWith {
+            ["apply", _raw] call comspec_sse_fnc_idAthenaPack;
+            if ((_reg getOrDefault ["packAt", ""]) isNotEqualTo "") then { ["state", ["ok", "zeus", "", "zeus"]] call comspec_sse_fnc_idAthenaPack; };
+        };
+        ["applySelf", [_me, _raw]] call comspec_sse_fnc_idAthenaPack;
+    };
+    // Relais impossible : la raison est gardée pour la fiche Ma couverture du joueur (fn_idLegend « sheet »).
+    case "packFail": {
+        _args params ["", ["_mode", "full", [""]], ["_err", "", [""]]];
+        _err = _err select [0, 24];
+        if (_mode isEqualTo "self") then {
+            private _f = _reg getOrDefault ["selfFails", createHashMap];
+            _reg set ["selfFails", _f];
+            _f set [getPlayerUID _me, _err];
+        };
+        if ((_reg getOrDefault ["packAt", ""]) isEqualTo "") then { ["state", ["fail", "relay_fail", _err, ["zeus", "self"] select (_mode isEqualTo "self")]] call comspec_sse_fnc_idAthenaPack; };
     };
 };

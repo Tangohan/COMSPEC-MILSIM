@@ -26,7 +26,9 @@ final class AtakTocPostTest extends TestCase
         self::assertStringContainsString('["castWait", [_a, 0]] call _fn', $cast);
         self::assertStringContainsString('case "castWait":', $cast);
         self::assertStringContainsString("Cet objet n'est pas encore un écran", $cast);
-        self::assertStringContainsString("L'écran n'a pas répondu", $cast);
+        // Délai dépassé : la vraie raison (versions du mod du serveur et du joueur, fn_tocConfig), plus un message vague.
+        self::assertStringContainsString('("Diffusion annulée") call comspec_atak_native_fnc_tr, _why]', $cast);
+        self::assertStringContainsString('private _why = ["reason"] call comspec_atak_native_fnc_tocConfig;', $cast);
         // Écran noir muet remplacé par la raison, écrite sur l'écran.
         self::assertStringContainsString('COMSPEC_ATAK_ScreenMsg', $cast);
         self::assertStringContainsString('COMSPEC_ATAK_ScreenWhy', $cast);
@@ -39,12 +41,14 @@ final class AtakTocPostTest extends TestCase
         $scr = self::read(self::DIR . 'toc/fn_tocScreen.sqf');
         self::assertStringContainsString('private _place = {', $scr);
         self::assertStringContainsString('private _clusters =', $scr);
-        self::assertStringContainsString('private _setTxt = {', $scr);
-        self::assertStringContainsString('(floor (diag_tickTime / 8)) mod _nPg', $scr);
         self::assertStringContainsString('"ORBAT", "TOC", "CAM"', $scr);
-        // Titre et heure ne se recouvrent plus.
-        self::assertStringContainsString('_title ctrlSetPosition [0.012, 0.012, 0.5, 0.06]', $scr);
-        self::assertStringContainsString('_clock ctrlSetPosition [0.515, 0.016, 0.475, 0.056]', $scr);
+        // ORBAT en pages automatiques (fn_tocBoard, refonte 11/11) ; groupes limités à leur hauteur avec « + N autres ».
+        $brd = self::read(self::DIR . 'toc/fn_tocBoard.sqf');
+        self::assertStringContainsString('(floor (diag_tickTime / 10)) mod _nPg', $brd);
+        self::assertStringContainsString('"+ %1 autres"', $brd);
+        // Titre et heure ne se recouvrent plus (thème fn_tocTheme : titre jusqu'à 1024, heure de 1024 à 1576).
+        $thm = self::read(self::DIR . 'toc/fn_tocTheme.sqf');
+        self::assertStringContainsString('["title", 24, 12, 1000, 48], ["clock", 1024, 16, 552, 40]', $thm);
         self::assertStringNotContainsString('} forEach _nodes;
             // PIP : objectif', $scr);
     }
@@ -60,10 +64,18 @@ final class AtakTocPostTest extends TestCase
     public function testOutilsDuPosteReutilisentLeTelephone(): void
     {
         $lap = self::read(self::DIR . 'toc/fn_tocLaptop.sqf');
-        self::assertStringContainsString('call comspec_atak_native_fnc_markerDrop', $lap);
+        // Outils de dessin du PC (fn_tocDraw) : ceux du téléphone, sans copie (marqueur, trait, plan, carte prêtée).
+        $draw = self::read(self::DIR . 'toc/fn_tocDraw.sqf');
+        self::assertStringContainsString('call comspec_atak_native_fnc_markerDrop', $draw);
+        self::assertStringContainsString('call comspec_atak_native_fnc_markerStroke', $draw);
+        self::assertStringContainsString('call comspec_atak_native_fnc_planServer', $draw);
+        self::assertStringContainsString('COMSPEC_ATAK_MapCtrlOverride', self::read(self::DIR . 'map/fn_mapCtrl.sqf'));
+        self::assertStringContainsString('call comspec_atak_native_fnc_tocDraw', $lap);
         self::assertStringContainsString('call comspec_atak_native_fnc_gridParse', $lap);
         self::assertStringContainsString('["load"] call comspec_atak_native_fnc_bftOrbat', $lap);
-        foreach (['case "tool":', 'case "search":', 'case "left":', 'case "layer":', 'case "RÉSEAU":', 'case "ORBAT":'] as $needle) {
+        // Calques : onglet CARTE de la console (fn_tocApp, 4.9.0), plus les deux boutons IA / ALERTES de la barre de la carte.
+        self::assertStringContainsString('case ((_k select [0, 2]) isEqualTo "ly"): {', self::read(self::DIR . 'toc/fn_tocApp.sqf'));
+        foreach (['case "tool":', 'case "search":', 'case "left":', 'case "section":', 'case "RÉSEAU":', 'case "ORBAT":'] as $needle) {
             self::assertStringContainsString($needle, $lap);
         }
         // Plaques : texte blanc cerné de noir, TOC et OBJECTIF passent par le placement sans chevauchement.

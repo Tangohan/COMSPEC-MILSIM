@@ -118,7 +118,8 @@ final class CommunityModReportRelay
             $lines[] = '> ' . $message;
         }
         $versions = array_filter([
-            ($mod = $clean($report['mod_version'] ?? '', 24)) !== '' ? 'ATAK ' . $mod : null,
+            // mod_version : liaison Overwatch connect (fn_getModVersion), pas l'ATAK natif.
+            ($mod = $clean($report['mod_version'] ?? '', 24)) !== '' ? 'Overwatch connect ' . $mod : null,
             ($ext = $clean($report['extension_version'] ?? '', 24)) !== '' ? 'Link ' . $ext : null,
         ]);
         if ($versions !== []) {

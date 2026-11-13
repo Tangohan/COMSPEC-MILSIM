@@ -25,6 +25,9 @@ params [["_mode", ""]];
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
+// Deux pixels de marge en bas : un contenu qui touche le bord exact faisait parfois paraître la barre de défilement de la
+// zone de contenu, qui rognait alors la colonne de droite (bouton « … » coupé, capture 4.2.0).
+_bh = _bh - pixelH * 2;
 private _pad = (_l get "pad") * 2;
 private _font = _l get "font";
 private _fs = _l get "fontSmall";
@@ -252,18 +255,48 @@ _y = _y + _font * 1.4 + _pad / 2;
 // Message important de l'ORBAT du site (compte non lié, Athena injoignable…) : sur plusieurs lignes au-dessus du tableau, où
 // une cellule le couperait. Touché, il relit l'ORBAT quand c'est possible. Un autre message : rendu complet.
 (if (_view isEqualTo "ORBAT") then { ["notice"] call comspec_atak_native_fnc_bftOrbat } else { ["", "muted", false] }) params ["_nTxt", "_nTone", "_nRetry"];
-private _noteOn = _view isEqualTo "ORBAT" && {!_filtersOpen} && {_nTone in ["warn", "alert"]};
+// Licence pas encore acceptée (« licence ») : le bouton du bandeau ouvre la note de service (fn_licenceOpen) au lieu de relire.
+private _nLic = _nRetry isEqualTo "licence";
+_nRetry = _nLic || {_nRetry isEqualTo true};
+// Hauteur d'un texte structuré de _n caractères à la taille relative _sz sur la largeur _w (texte condensé : un caractère
+// fait au plus la moitié de sa hauteur) : le nombre de lignes est prévu, le texte n'est jamais coupé.
+private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+private _bodyFh = missionNamespace getVariable ["COMSPEC_ATAK_FontBody", _l get "fontBody"];
+private _textH = {
+    params ["_n", "_w", ["_sz", 0.9]];
+    private _lines = (ceil (_n * _bodyFh * _sz * 0.5 / _ratio / (_w max 0.01))) max 1;
+    _lines * _bodyFh * _sz * 1.2 + _pad / 2
+};
+// Information sans gravité (pas d'ORBAT sur le site : l'arbre est fait des groupes de jeu) : au-dessus du tableau elle aussi,
+// en entier, pour qu'elle explique ce que l'on voit dessous.
+private _noteOn = _view isEqualTo "ORBAT" && {!_filtersOpen} && {_nTone in ["warn", "alert", "info"]};
 private _noteTxt = ["", _nTxt] select _noteOn;
 if (_upd && {_noteTxt isNotEqualTo (_live getOrDefault ["note", ""])}) exitWith { false };
 if (_noteOn) then {
-    private _noteH = _fs * 2.5;
+    private _noteW = ([_bw, _bw * 0.58] select _land) - _pad;
+    // Erreur : bouton RÉESSAYER à droite du message (relit l'ORBAT tout de suite, au plus toutes les 10 s).
+    private _rbW = [0, (_noteW * ([0.26, 0.4] select _nLic)) max (_font * 4)] select _nRetry;
+    private _noteTr = (_nTxt) call comspec_atak_native_fnc_tr;
+    private _noteH = ([count _noteTr, _noteW - _rbW] call _textH) max ([0, _font * 1.3] select _nRetry);
     if (!_upd) then {
-        private _nc = ["COMSPEC_RscStructuredText", [_pad, _y, ([_bw, _bw * 0.58] select _land) - _pad, _noteH]] call comspec_atak_native_fnc_pageCtrl;
-        _nc ctrlSetStructuredText parseText (format ["<t size='0.9' color='%1'>%2</t>", COMSPEC_ATAK_Th get (["hexWarn", "hexAlert"] select (_nTone isEqualTo "alert")), [(_nTxt) call comspec_atak_native_fnc_tr] call _esc]); // i18n:brut
-        if (_nRetry) then {
-            private _nb = ["COMSPEC_RscButtonOverlay", [_pad, _y, ([_bw, _bw * 0.58] select _land) - _pad, _noteH]] call comspec_atak_native_fnc_pageCtrl;
+        private _nc = ["COMSPEC_RscStructuredText", [_pad, _y, _noteW - _rbW, _noteH]] call comspec_atak_native_fnc_pageCtrl;
+        _nc ctrlSetStructuredText parseText (format ["<t size='0.9' color='%1'>%2</t>", COMSPEC_ATAK_Th get (switch (_nTone) do { case "alert": { "hexAlert" }; case "info": { "hexInfo" }; default { "hexWarn" }; }), [_noteTr] call _esc]); // i18n:brut
+        if (_nLic) then {
+            private _nb = ["COMSPEC_RscButton", [_pad + _noteW - _rbW + _pad / 2, _y, _rbW - _pad / 2, _font * 1.3], "OUVRIR LA NOTE DE SERVICE"] call comspec_atak_native_fnc_pageCtrl;
+            _nb ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin);
+            _nb ctrlSetTooltip (("Lisez et acceptez la licence : rien n'est envoyé à Athena avant.") call comspec_atak_native_fnc_tr);
+            _nb ctrlAddEventHandler ["ButtonClick", {
+                [{}, "BFT"] call comspec_atak_native_fnc_licenceOpen;
+            }];
+        };
+        if (_nRetry && {!_nLic}) then {
+            private _nb = ["COMSPEC_RscButton", [_pad + _noteW - _rbW + _pad / 2, _y, _rbW - _pad / 2, _font * 1.3], "RÉESSAYER"] call comspec_atak_native_fnc_pageCtrl;
+            _nb ctrlSetFontHeight ((_fs * 0.9) max COMSPEC_ATAK_FontMin);
             _nb ctrlSetTooltip (("Clic : relire l'ORBAT du site") call comspec_atak_native_fnc_tr);
-            _nb ctrlAddEventHandler ["ButtonClick", { ["load", true] call comspec_atak_native_fnc_bftOrbat; }];
+            _nb ctrlAddEventHandler ["ButtonClick", {
+                ["load", true] call comspec_atak_native_fnc_bftOrbat;
+                [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
+            }];
         };
     };
     _y = _y + _noteH;
@@ -273,24 +306,63 @@ if (_noteOn) then {
 private _detailH = [_bh * 0.36, 0] select _land;
 private _listW = [_bw, _bw * 0.58] select _land;
 private _listH = _bh - _y - _detailH - _pad / 2;
-// Colonnes du tableau, en fraction de sa largeur : portrait et paysage ; trois colonnes de niveau dans l'arbre, une seule dans la liste.
-private _colPos = if (_view isEqualTo "ORBAT") then { [[0, 0.05, 0.10, 0.15, 0.60, 0.68, 0.88, 0.995], [0, 0.035, 0.07, 0.105, 0.56, 0.63, 0.79, 0.89]] select _land } else { [[0, 0.075, 0.076, 0.077, 0.56, 0.65, 0.85, 0.995], [0, 0.05, 0.051, 0.052, 0.52, 0.59, 0.76, 0.87]] select _land };
+// Colonnes du tableau, en fraction de sa largeur : 0 à 2 niveaux de l'arbre (chevron ou symbole), 3 texte, 4 état,
+// 5 distance (à droite), 6 azimut, 7 âge (masqué en portrait). Une image de cellule est dessinée à la hauteur de ligne de la
+// classe (0,040 × safeZoneH) et le symbole MIL-STD est plus large que haut : sa case fait 1,15 hauteur de ligne, convertie en
+// largeur, quelle que soit la taille du téléphone. Retour de jeu 4.2.0 : avec des colonnes fixes (3,5 % de la largeur), le
+// symbole recouvrait le début de l'indicatif (« VB1 ») et le chevron d'un groupe débordait sur son nom.
+// ORBAT : chaque niveau décale l'image d'une demi-case ; le texte commence après la case du niveau le plus profond.
+// Mesuré sur la capture : symbole ≈ 0,87 hauteur de ligne de large, décalé de 0,17 ; case de 1,15 (marge comprise).
+// Tableau étroit (portrait, téléphone en HUD) : le retrait des niveaux est réduit pour laisser au texte au moins 30 %.
+private _slot = (0.040 * safeZoneH) * 1.15 / _ratio / (_listW max 0.01);
+private _step = if (_view isEqualTo "ORBAT") then { ((_slot * 0.5) min ((0.30 - _slot) / 2)) max 0.001 } else { 0.001 };
+private _stW = 0.08 max (_slot * 0.6);
+private _stEnd = [0.72, 0.70] select _land;
+private _colPos = [0, _step, _step * 2, _step * 2 + _slot + 0.01, _stEnd - _stW, _stEnd] + ([[0.86, 0.995], [0.82, 0.91]] select _land);
+uiNamespace setVariable ["COMSPEC_ATAK_BftCols", [_colPos, _slot]];
+// Légende des états, toujours visible sous le tableau (une image seule ne dit rien) : chaque forme et son sens.
+private _legend = "";
+private _legendH = 0;
+if (!_filtersOpen) then {
+    private _dirL = "\z\comspec_atak_native\addons\main\data\";
+    private _nChar = 0;
+    _legend = (([
+        ["ui_check", "hexOk", "apte"], ["ui_warning", "hexWarn", "blessé"], ["ui_close", "hexAlert", "hors de combat"],
+        ["ui_dot", "hexTextMuted", "hors ligne"], ["ui_clock", "hexWarn", "position ancienne"]
+    ]) apply {
+        _x params ["_img", "_hex", "_word"];
+        private _w = (_word) call comspec_atak_native_fnc_tr;
+        _nChar = _nChar + (count _w) + 5;
+        format ["<img image='%1%2.paa' color='%3'/> %4", _dirL, _img, COMSPEC_ATAK_Th get _hex, [_w] call _esc]
+    }) joinString "   ";
+    _legendH = [_nChar, _listW - _pad, 0.85] call _textH;
+};
 if (!_upd) then {
-// En-têtes alignés sur les colonnes du tableau (une seule ligne de filtres quand le tiroir est ouvert).
+// En-têtes alignés sur les colonnes du tableau (une seule ligne de filtres quand le tiroir est ouvert). La distance est
+// alignée à droite comme ses valeurs ; chaque en-tête explique sa colonne, avec un exemple, au survol.
 {
-    _x params ["_ht", "_hx", "_hw"];
-    private _cols = ["COMSPEC_RscText", [_hx, _y, _hw, _fs * 1.2], _ht] call comspec_atak_native_fnc_pageCtrl;
+    _x params ["_ht", "_hx", "_hw", ["_hTip", ""], ["_hRight", false]];
+    if (_hw < _listW * 0.02) then { continue };
+    private _cols = [["COMSPEC_RscText", "COMSPEC_RscTextRight"] select _hRight, [_hx, _y, _hw, _fs * 1.2], _ht] call comspec_atak_native_fnc_pageCtrl;
     _cols ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin);
     _cols ctrlSetTextColor (COMSPEC_ATAK_Th get "textMuted");
+    if (_hTip isNotEqualTo "") then { _cols ctrlSetTooltip ((_hTip) call comspec_atak_native_fnc_tr); };
 } forEach (if (_filtersOpen) then { [["FILTRES DU BFT (aussi appliqués à la carte)", _pad, _listW - _pad]] } else {
-    [[["INDICATIF", "UNITÉ › POSTE › MEMBRE"] select (_view isEqualTo "ORBAT"), _listW * (_colPos select 3), _listW * ((_colPos select 4) - (_colPos select 3))],
-     ["ÉTAT", _listW * (_colPos select 4), _listW * ((_colPos select 5) - (_colPos select 4))],
-     ["DIST", _listW * (_colPos select 5), _listW * ((_colPos select 6) - (_colPos select 5))],
-     ["AZ", _listW * (_colPos select 6), _listW * ((_colPos select 7) - (_colPos select 6))],
-     ["ÂGE", _listW * (_colPos select 7), _listW * (1 - (_colPos select 7))]]
+    [[["INDICATIF", "UNITÉ › POSTE › MEMBRE"] select (_view isEqualTo "ORBAT"), _listW * (_colPos select 3), _listW * ((_colPos select 4) - (_colPos select 3)),
+        ["Indicatif de la piste, par exemple Alpha 1-2. Touchez une ligne pour voir sa fiche.", "Unité, puis poste et membre. Touchez un chevron pour replier ou déplier une unité."] select (_view isEqualTo "ORBAT")],
+     ["ÉTAT", _listW * (_colPos select 4), _listW * ((_colPos select 5) - (_colPos select 4)), "État de santé et de la piste : légende sous le tableau."],
+     ["DIST", _listW * (_colPos select 5), _listW * ((_colPos select 6) - (_colPos select 5)) - _pad / 2, "Distance depuis vous, par exemple 1.0 km. Sur une ligne d'unité : membres en jeu sur le total.", true],
+     ["AZ", _listW * (_colPos select 6), _listW * ((_colPos select 7) - (_colPos select 6)), "Azimut depuis vous, par exemple 209° (vers le sud-sud-ouest)."],
+     ["ÂGE", _listW * (_colPos select 7), _listW * (1 - (_colPos select 7)), "Âge du dernier signal reçu, par exemple 6 s."]]
 });
+// Légende des états sous le tableau.
+if (_legendH > 0) then {
+    private _lc = ["COMSPEC_RscStructuredText", [_pad, _bh - _detailH - _pad / 2 - _legendH, _listW - _pad, _legendH]] call comspec_atak_native_fnc_pageCtrl;
+    _lc ctrlSetStructuredText parseText (format ["<t size='0.85' color='%1'>%2</t>", COMSPEC_ATAK_Th get "hexTextMuted", _legend]); // i18n:brut
+};
 };
 _y = _y + _fs * 1.2;
+_listH = _listH - _legendH;
 _listH = _listH - _fs * 1.2;
 private _ids = [];
 private _rows = [];
@@ -420,7 +492,8 @@ private _put = {
         _list lnbSetPictureColorSelected [[_i, _pc], _cRow];
     };
     _list lnbSetPicture [[_i, 4], _stPic];
-    if (_stPic isNotEqualTo "") then { _list lnbSetPictureColor [[_i, 4], _stRgba]; _list lnbSetPictureColorSelected [[_i, 4], _stRgba]; };
+    // Sur la ligne choisie (fond vert), l'image d'état reprend la couleur du texte : une coche verte y disparaissait.
+    if (_stPic isNotEqualTo "") then { _list lnbSetPictureColor [[_i, 4], _stRgba]; _list lnbSetPictureColorSelected [[_i, 4], _cRow]; };
     _list lnbSetColor [[_i, 3], _rgba];
     _list lnbSetTextRight [[_i, 5], (_right) call comspec_atak_native_fnc_tr];
     _list lnbSetText [[_i, 6], _az];
@@ -479,7 +552,8 @@ private _addMember = {
 private _addHead = {
     params ["_key", "_text", "_right", "_rgba", ["_depth", 0], ["_more", ""]];
     private _on = (uiNamespace getVariable ["COMSPEC_ATAK_BftOrbatOpen", createHashMap]) getOrDefault [_key, true];
-    [_text, _right, _rgba, _dirI + (["ui_chevron_right", "ui_chevron_down"] select _on) + ".paa", _rgba,
+    // Chevron en gris atténué : il dessine l'arbre sans écraser le nom de l'unité (il est à la hauteur de ligne, épais).
+    [_text, _right, _rgba, _dirI + (["ui_chevron_right", "ui_chevron_down"] select _on) + ".paa", _cMute,
         [(("Clic : replier / déplier") call comspec_atak_native_fnc_tr), format ["%1 · %2", (_more) call comspec_atak_native_fnc_tr, (("Clic : replier / déplier") call comspec_atak_native_fnc_tr)]] select (_more isNotEqualTo ""), _depth] call _put;
     _rows pushBack ["h", _key];
     _ids pushBack "";
@@ -554,7 +628,7 @@ if (_view isEqualTo "ORBAT") then {
             private _inGame = (_uRows select { (_x select 0) isNotEqualTo "v" }) apply { _onKey getOrDefault [_x select 1, objNull] };
             _inGame = _inGame select { !isNull _x };
             [_uk, format ["%1%2%3%4", _uName, ["", format ["  (%1)", _uCode]] select (_uCode isNotEqualTo ""), ["", "  · restreinte"] select _uRestricted, ["", "  " + ([_inGame] call _ruler)] select ((count _inGame) > 0)],
-                format ["%1/%2", _on, _tot], COMSPEC_ATAK_Th get (["text", "info"] select (_d isEqualTo 0)), _d min 2,
+                format ["%1/%2 en jeu", _on, _tot], COMSPEC_ATAK_Th get (["text", "info"] select (_d isEqualTo 0)), _d min 2,
                 format ["%1 / %2 en jeu%3", _on, _tot, ["", format [" · %1 vacant(s)", _vac]] select (_vac > 0)]] call _addHead;
             if (!_isOpen) then { _skip = _d; continue };
             {
@@ -562,13 +636,19 @@ if (_view isEqualTo "ORBAT") then {
             } forEach _uRows;
         } forEach _oUnits;
     };
+    // ORBAT du site pas encore lu (lecture, erreur, liaison) : l'arbre vient des groupes de jeu, et le tableau le dit.
+    if (!_hasOrb && {!((_orb get "state") in ["EMPTY", "OK"])} && {(count _tracks) > 0}) then {
+        ["Groupes de jeu, en attendant l'ORBAT du site", "", _cMute, "", _cMute, "Arbre fait des groupes de jeu : l'ORBAT du site n'est pas encore lu."] call _put;
+        _rows pushBack ["", ""];
+        _ids pushBack "";
+    };
     // Tout ce qui n'est pas dans l'ORBAT du site : pistes (IA comprises) et joueurs de mon camp sans piste.
     private _others = if (_hasOrb) then { _tracks select { !((_x select 1) in _trackKey) } } else { _tracks };
     private _strayShown = (keys _strayKey) select { ([_x] call _stOf) call _passes };
     private _outOpen = true;
     if (_hasOrb && {(count _others) > 0 || {(count _strayShown) > 0}}) then {
         _outOpen = _open getOrDefault ["o:hors", true];
-        ["o:hors", "HORS ORBAT DU SITE", str ((count _others) + (count _strayShown)), COMSPEC_ATAK_Th get "info", 0, format ["%1 joueur(s) ou piste(s)", (count _others) + (count _strayShown)]] call _addHead;
+        ["o:hors", "HORS ORBAT DU SITE", format ["%1 au total", (count _others) + (count _strayShown)], COMSPEC_ATAK_Th get "info", 0, format ["%1 joueur(s) ou piste(s)", (count _others) + (count _strayShown)]] call _addHead;
     };
     if (!_outOpen) then { _others = []; _strayShown = []; };
     // Préfixe d'un indicatif de groupe : « Star 4 » → « Star », « Shadow 2-1 » → « Shadow ».
@@ -596,7 +676,8 @@ if (_view isEqualTo "ORBAT") then {
         private _fk = "f:" + _form;
         private _nf = 0;
         { _nf = _nf + count ((_groups get _x) select 2); } forEach (keys _groups);
-        [_fk, _form, str _nf, COMSPEC_ATAK_Th get "info", 0, format ["%1 piste(s)", _nf]] call _addHead;
+        // Compteurs en toutes lettres (« 1 piste », « 3/4 aptes », « 2 membres ») : un nombre seul dans la colonne DIST se lisait comme une distance.
+        [_fk, _form, format [["%1 pistes", "%1 piste"] select (_nf isEqualTo 1), _nf], COMSPEC_ATAK_Th get "info", 0, format ["%1 piste(s)", _nf]] call _addHead;
         if (_open getOrDefault [_fk, true]) then {
             private _gKeys = (keys _groups) apply { [toLower ((_groups get _x) select 0), _x] };
             _gKeys sort true;
@@ -618,7 +699,7 @@ if (_view isEqualTo "ORBAT") then {
                 private _gCells = if (isNull _grp) then { [] } else { ["cells", _grp] call comspec_atak_native_fnc_squadBar };
                 private _gCnt = if (isNull _grp) then { [_n, _n] } else { ["count", _gCells] call comspec_atak_native_fnc_squadBar };
                 [_gKey2, format ["%1  ·  %2%3%4", _gName, _ech, ["", "  (mon groupe)"] select (_grp isEqualTo group player), ["", "  " + (["text", _gCells] call comspec_atak_native_fnc_squadBar)] select ((count _gCells) > 0)],
-                    format ["%1/%2", _gCnt select 0, _gCnt select 1], _cRow, 1,
+                    format ["%1/%2 aptes", _gCnt select 0, _gCnt select 1], _cRow, 1,
                     format ["%1 membre(s)%2", _n, ["", "  ·  " + _ldrTxt] select (_ldrTxt isNotEqualTo "")]] call _addHead;
                 if (_open getOrDefault [_gKey2, true]) then {
                     // Chef d'abord, puis par distance.
@@ -649,7 +730,7 @@ if (_view isEqualTo "ORBAT") then {
                     {
                         (_teams get _x) params ["_tName", "_tRgba", "_tMem"];
                         private _tk = "t:" + _gk + "|" + _x;
-                        [_tk, _tName, format ["%1", count _tMem], _tRgba, 2] call _addHead;
+                        [_tk, _tName, format [["%1 membres", "%1 membre"] select ((count _tMem) isEqualTo 1), count _tMem], _tRgba, 2] call _addHead;
                         if (_open getOrDefault [_tk, true]) then { { [_x, 2, [_x] call _tag] call _addMember; } forEach _tMem; };
                     } forEach _tIds;
                     { [_x, 2, [_x] call _tag] call _addMember; } forEach _free;
@@ -755,20 +836,23 @@ if ((count _sel) isEqualTo 0) then {
     _sel params ["_dist", "_id", "_e", "_obj", "_pos"];
     private _f = _e getOrDefault ["freshness", "LIVE"];
     (_fresh getOrDefault [_f, [_f, (COMSPEC_ATAK_Th get "hexTextMuted")]]) params ["_ft", "_fc"];
-    private _type = switch (_e getOrDefault ["type", "infantry"]) do { case "air": { "Aérien" }; case "armor": { "Blindé" }; case "vehicle": { "Véhicule" }; default { "Infanterie" }; };
+    private _type = switch (_e getOrDefault ["type", "infantry"]) do { case "air": { "Aérien" }; case "armor": { "Blindé" }; case "vehicle": { "Véhicule" }; case "phone": { "Téléphone" }; default { "Infanterie" }; };
     private _isLive = _f isEqualTo "LIVE";
     private _speed = if (isNull _obj || {!_isLive}) then { "—" } else { format ["%1 km/h", round (vectorMagnitude velocity vehicle _obj * 3.6)] };
     private _age = round (diag_tickTime - (_e getOrDefault ["updated", diag_tickTime]));
     private _ageTxt = [format ["%1 s", _age], format ["%1 min", floor (_age / 60)]] select (_age >= 60);
     // Trajet : à pied, à ma vitesse, et rapprochement mutuel (vitesse relative le long de l'axe).
-    private _eta = format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Trajet</t> %1 à pied", [_dist, _walk] call _etaTxt];
-    if (_mySpd > _walk) then { _eta = _eta + format [" · %1 à ma vitesse", [_dist, _mySpd] call _etaTxt]; };
+    // Durées échappées : « < 1 min » (piste rapide, aéronef) cassait tout le texte structuré et la fiche restait vide
+    // (capture 4.2.0 : A-10C choisi, panneau de droite noir).
+    private _etaS = { [_this call _etaTxt] call _esc };
+    private _eta = format ["<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Trajet</t> %1 à pied", [_dist, _walk] call _etaS];
+    if (_mySpd > _walk) then { _eta = _eta + format [" · %1 à ma vitesse", [_dist, _mySpd] call _etaS]; };
     private _close = "";
     if (_isLive && {!isNull _obj} && {_dist > 5}) then {
         private _ax = vectorNormalized ((getPosASL _obj) vectorDiff (getPosASL player));
         private _vc = ((velocity vehicle player) vectorDiff (velocity vehicle _obj)) vectorDotProduct _ax;
         _close = switch (true) do {
-            case (_vc > 0.4): { format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>Se rapproche</t> à %1 km/h · jonction dans %2", round (_vc * 3.6), [_dist, _vc] call _etaTxt] };
+            case (_vc > 0.4): { format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>Se rapproche</t> à %1 km/h · jonction dans %2", round (_vc * 3.6), [_dist, _vc] call _etaS] };
             case (_vc < -0.4): { format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>S'éloigne</t> à %1 km/h", round (abs _vc * 3.6)] };
             default { "<br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Distance stable</t>" };
         };
@@ -779,20 +863,20 @@ if ((count _sel) isEqualTo 0) then {
         // Reste calculé sur le dernier point suivi par le guidage (sans relancer le guidage lui-même).
         private _ri = _rt getOrDefault ["idx", 0];
         private _left = ((_rt get "total") - (((_rt get "cum") select _ri) + (((_rt get "pts") select _ri) distance2D (_rt getOrDefault ["proj", (_rt get "pts") select _ri])))) max 0;
-        _close = _close + format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexInfo") + "'>GPS</t> %1 par la route · arrivée dans %2", [_left] call _distTxt, [_left, _mySpd max _walk] call _etaTxt];
+        _close = _close + format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexInfo") + "'>GPS</t> %1 par la route · arrivée dans %2", [_left] call _distTxt, [_left, _mySpd max _walk] call _etaS];
     };
     private _offTxt = switch (true) do {
         case (_f isEqualTo "OFFLINE"): { format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>Hors ligne</t> <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>(téléphone éteint, cassé ou sans signal) · dernière position il y a %1</t>", _ageTxt] };
         case (!_isLive): { format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>Dernière position il y a %1</t>", _ageTxt] };
-        default { "" };
+        default { format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Dernier signal</t> il y a %1", _ageTxt] };
     };
     private _hs = ["state", _e] call comspec_atak_native_fnc_unitCard;
     private _health = format ["<t color='%1'>%2</t>", _hs select 2, _hs select 1];
     private _grp = if (isNull _obj) then { "Athena" } else { groupId group _obj };
     private _ftI = if (isNull _obj) then { createHashMap } else { [_obj] call comspec_atak_native_fnc_ftInfo };
     private _ftTxt = switch (true) do {
-        case ((_ftI getOrDefault ["name", ""]) isNotEqualTo ""): { format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Équipe</t> <t color='%1' font='COMSPEC_BarlowBold'>● %2</t>%3", _ftI get "hex", [_ftI get "name"] call _esc, ["", format [" · %1", _ftI get "roleLabel"]] select ((_ftI get "roleLabel") isNotEqualTo "")] };
-        case ((_ftI getOrDefault ["roleLabel", ""]) isNotEqualTo ""): { format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Rôle</t> %1", _ftI get "roleLabel"] };
+        case ((_ftI getOrDefault ["name", ""]) isNotEqualTo ""): { format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Équipe</t> <t color='%1' font='COMSPEC_BarlowBold'>● %2</t>%3", _ftI get "hex", [_ftI get "name"] call _esc, ["", format [" · %1", [_ftI get "roleLabel"] call _esc]] select ((_ftI get "roleLabel") isNotEqualTo "")] };
+        case ((_ftI getOrDefault ["roleLabel", ""]) isNotEqualTo ""): { format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Rôle</t> %1", [_ftI get "roleLabel"] call _esc] };
         default { "" };
     };
     // Fiche de l'ORBAT du site du joueur de cette piste.
@@ -803,7 +887,7 @@ if ((count _sel) isEqualTo 0) then {
             format ["<br/><t color='" + _hxMute + "'>Unité</t> %1%2", [_x select 0] call _esc, ["", format ["  ·  <t color='" + _hxMute + "'>Poste</t> %1", [_x select 1] call _esc]] select ((_x select 1) isNotEqualTo "")]
         } joinString "") + _ftTxt;
     };
-    private _crew = if (!isNull _obj && {vehicle _obj isNotEqualTo _obj}) then { format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Dans</t> %1", getText (configOf vehicle _obj >> "displayName")] } else { "" };
+    private _crew = if (!isNull _obj && {vehicle _obj isNotEqualTo _obj}) then { format ["<br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Dans</t> %1", [getText (configOf vehicle _obj >> "displayName")] call _esc] } else { "" };
     _det ctrlSetStructuredText parseText ((format [
         "<t size='1.15' font='COMSPEC_BarlowBold'>%1</t>  <t size='0.8' color='%2'>● %3</t><br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4 · %5</t>%6%18<br/><t font='EtelkaMonospacePro'>%7</t><br/>%8 · %9° %10<br/>%15%16<br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Vitesse</t> %11  <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Cap</t> %12°  <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Alt</t> %13 m<br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>État</t> %14%17",
         [[_id, _e] call _labelOf] call _esc, _fc, _ft, _type, [_grp] call _esc, _crew,

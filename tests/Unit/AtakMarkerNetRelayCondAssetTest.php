@@ -58,10 +58,15 @@ final class AtakMarkerNetRelayCondAssetTest extends TestCase
 
     public function testMarkerCardShowsPlacementTime(): void
     {
-        $map = $this->read(self::MAIN . '/functions/pages/fn_pageMap.sqf');
+        // La fiche du marqueur est dans fn_contactCard (appelée par fn_pageMap) : heure de pose, puis âge (fn_contactStyle « age »).
+        $map = $this->read(self::MAIN . '/functions/map/fn_contactCard.sqf');
         self::assertStringContainsString('COMSPEC_ATAK_MarkerMeta', $map);
-        self::assertStringContainsString('Posé à %1:%2 · il y a %3 min', $map);
-        self::assertStringContainsString('["Posé à %1:%2 · il y a %3 min", "Placed at %1:%2 · %3 min ago"]', $this->read(self::MAIN . '/i18n/en.txt'));
+        self::assertStringContainsString('Posé à %1:%2', $map);
+        self::assertStringContainsString('["age", _ageS]', $map);
+        $en = $this->read(self::MAIN . '/i18n/en.txt');
+        self::assertStringContainsString('["Posé à %1:%2", "Placed at %1:%2"]', $en);
+        self::assertStringContainsString('["il y a %1 min", "%1 min ago"]', $en);
+        self::assertStringContainsString('comspec_atak_native_fnc_contactCard', $this->read(self::MAIN . '/functions/pages/fn_pageMap.sqf'));
     }
 
     public function testRelayConditionIsWiredToRelaysGatewaysAndModule(): void

@@ -14,6 +14,9 @@ $owStamp = (string) max(
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-gotak.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-aerial.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-tools.js'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-theme.css'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-replay.css'),
+    (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-replay.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-ops.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-tracks.js'),
     (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-telemetry.js'),
@@ -57,6 +60,8 @@ $icon = static function (string $path): string {
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-commands.css?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-commands.css')) ?>">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-intel.css?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-intel.css')) ?>">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-refresh.css?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-refresh.css')) ?>">
+  <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-theme.css?v=<?= $h($owAsset) ?>">
+  <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-replay.css?v=<?= $h($owAsset) ?>">
   <style>.ow-map-tools{display:none!important}</style>
   <script>
     window.ATAK_OVERWATCH_BETA = true;
@@ -94,6 +99,11 @@ $icon = static function (string $path): string {
       <button type="button" class="ow-nav-secondary" data-view="iff" title="Identification ami / ennemi des contacts">Identification</button>
       <button type="button" class="ow-nav-secondary" data-view="pings" title="Les signalements rapides posés sur la carte">Pings</button>
       <button type="button" data-view="tools" title="Mesure, visée, relief et autres outils de carte">Outils</button>
+      <?php $owCanToc = function_exists('can') && (can('atak.toc.use') || can('atak.toc.manage') || can('admin.organization')); ?>
+      <?php if ($owCanToc): ?>
+      <a class="ow-nav-link" href="<?= $h(url('atak/toc')) ?>" title="Poste TOC web : la console du poste de commandement, comme le PC du poste en jeu">TOC</a>
+      <a class="ow-nav-link" href="<?= $h(url('atak/toc/plans')) ?>" title="Plans d’opération : préparer sur la carte, briefer par phases, envoyer en jeu">Plans</a>
+      <?php endif; ?>
     </nav>
     <div class="ow-more">
       <button type="button" data-ow-more aria-haspopup="true" aria-expanded="false" aria-controls="ow-more-menu">Plus</button>
@@ -104,6 +114,7 @@ $icon = static function (string $path): string {
         <button type="button" class="ow-more-secondary" data-view="radio">Radio</button>
         <button type="button" class="ow-more-secondary" data-view="iff">Identification</button>
         <button type="button" class="ow-more-secondary" data-view="pings">Pings</button>
+        <?php if (!empty($owCanToc)): ?><a class="ow-more-link" href="<?= $h(url('atak/toc')) ?>">Poste TOC</a><a class="ow-more-link" href="<?= $h(url('atak/toc/plans')) ?>">Plans d’opération</a><?php endif; ?>
         <button type="button" data-ow-replay>Rejouer la mission</button>
         <button type="button" data-ow-debrief>Exporter le bilan</button>
         <button type="button" data-ow-notes>Bloc-notes</button>
@@ -114,6 +125,8 @@ $icon = static function (string $path): string {
         <button type="button" data-ow-compact>Carte seule</button>
         <button type="button" data-command>Palette de commandes <kbd>⌘K</kbd></button>
         <button type="button" data-ow-help>Aide et raccourcis <kbd>?</kbd></button>
+        <?php // Outils opérateur (identités, papiers, fichiers, matériel) : formulaire GET, stylé comme les autres entrées. ?>
+        <form method="get" action="<?= $h($base) ?>/operateur"><button type="submit">Mes outils opérateur</button></form>
       </div>
     </div>
     <button type="button" class="ow-help-btn" data-ow-help title="Aide et raccourcis clavier (touche ?)" aria-label="Ouvrir l’aide">?</button>
@@ -809,12 +822,15 @@ $icon = static function (string $path): string {
           <option value="1">1×</option>
           <option value="2">2×</option>
           <option value="4">4×</option>
+          <option value="8">8×</option>
         </select></span>
-        <span class="ow-select"><select id="ow-replay-source" aria-label="Source">
+        <button type="button" class="ow-replay-play ow-replay-change" id="ow-replay-change" data-ow-replay aria-haspopup="dialog" title="Choisir et charger un enregistrement">Choisir un replay…</button>
+        <span class="ow-replay-current" id="ow-replay-current" aria-live="polite">Session en cours</span>
+        <span class="ow-select owr-legacy"><select id="ow-replay-source" aria-label="Source">
           <option value="session">Session en cours</option>
           <option value="mission">Mission enregistrée</option>
         </select></span>
-        <span class="ow-select" id="ow-replay-session-wrap" hidden><select id="ow-replay-session" aria-label="Session jouée">
+        <span class="ow-select owr-legacy" id="ow-replay-session-wrap" hidden><select id="ow-replay-session" aria-label="Session jouée">
           <option value="">Toutes les sessions</option>
         </select></span>
         <span class="ow-green" id="ow-replay-live">Direct</span>
@@ -1194,6 +1210,7 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-beta.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-intel.js?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-intel.js')) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-orbat.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-overwatch-replay.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-support-auto.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-unit-dossier.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-motion-map.js?v=<?= $h($assetVer) ?>"></script>
@@ -1214,6 +1231,7 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/overwatch-gl/OverwatchGlTactics.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-geo-network.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-gotak.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-map-clear.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-ops.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-tracks.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-telemetry.js?v=<?= $h($owAsset) ?>"></script>

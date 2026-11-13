@@ -33,39 +33,54 @@ class COMSPEC_SSE_IdViewer {
             x = 0.2; y = 0.65; w = 0.6; h = 0.06;
             colorBackground[] = {0, 0, 0, 0.4};
         };
+        // Ligne d'état de la fenêtre (relevé noté, téléphone absent…) : jamais une alerte Arma.
+        class Status: RscStructuredText {
+            idc = 93706;
+            x = 0.2; y = 0.71; w = 0.6; h = 0.03;
+            colorBackground[] = {0, 0, 0, 0.4};
+        };
         class BtnSide: RscButton {
             idc = 93710;
             text = "RECTO / VERSO";
-            x = 0.2; y = 0.75; w = 0.14; h = 0.045;
+            x = 0.2; y = 0.75; w = 0.12; h = 0.045;
             action = "['side'] call comspec_sse_fnc_idViewerOnLoad";
             colorBackground[] = {0.12, 0.16, 0.22, 1};
         };
         class BtnZoom: RscButton {
             idc = 93711;
             text = "ZOOM";
-            x = 0.35; y = 0.75; w = 0.1; h = 0.045;
+            x = 0.33; y = 0.75; w = 0.09; h = 0.045;
             action = "['zoom'] call comspec_sse_fnc_idViewerOnLoad";
             colorBackground[] = {0.12, 0.16, 0.22, 1};
         };
         class BtnScan: RscButton {
             idc = 93712;
             text = "SCANNER (ATAK)";
-            x = 0.46; y = 0.75; w = 0.2; h = 0.045;
+            x = 0.43; y = 0.75; w = 0.15; h = 0.045;
             action = "['scan'] call comspec_sse_fnc_idViewerOnLoad";
             colorBackground[] = {0.1, 0.3, 0.5, 1};
         };
         class BtnPhoto: RscButton {
             idc = 93714;
             text = "RELEVER";
-            tooltip = "Champs imprimés et bande MRZ ajoutés à la fiche FRM (app FRS de l'ATAK)";
-            x = 0.6; y = 0.75; w = 0.12; h = 0.045;
+            tooltip = "Champs du document notés au relevé de contrôle (téléphone › Contrôles)";
+            x = 0.59; y = 0.75; w = 0.1; h = 0.045;
             action = "['shoot'] call comspec_sse_fnc_idPhoto";
+            colorBackground[] = {0.16, 0.28, 0.2, 1};
+        };
+        // Mon propre papier : le présenter à quelqu'un (fenêtre « Présenter mes papiers », fn_idP2pClient).
+        class BtnPresent: RscButton {
+            idc = 93715;
+            text = "$STR_COMSPEC_SSE_P2P_BtnPresent";
+            tooltip = "$STR_COMSPEC_SSE_P2P_ViewerPresent_D";
+            x = 0.43; y = 0.75; w = 0.15; h = 0.045;
+            action = "['fromViewer'] call comspec_sse_fnc_idP2pClient";
             colorBackground[] = {0.16, 0.28, 0.2, 1};
         };
         class BtnClose: RscButton {
             idc = 93713;
             text = "FERMER";
-            x = 0.67; y = 0.75; w = 0.13; h = 0.045;
+            x = 0.7; y = 0.75; w = 0.1; h = 0.045;
             action = "closeDialog 2";
             colorBackground[] = {0.3, 0.1, 0.1, 1};
         };

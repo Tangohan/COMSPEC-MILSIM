@@ -138,6 +138,7 @@ final class SseFieldNoteService
         $note['attachments'] = [];
 
         $this->publish($tenantId, $note);
+        SseFileXrefService::indexQuietly($tenantId, 'field_note', $noteId);
 
         return ['note' => $note, 'created' => true];
     }

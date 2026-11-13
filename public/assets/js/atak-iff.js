@@ -403,8 +403,9 @@ window.ATAKIFF = (function () {
     });
     refresh();
     if (refreshTimer) clearInterval(refreshTimer);
+    // Onglet caché : aucune requête.
     refreshTimer = setInterval(function () {
-      refresh();
+      if (!document.hidden) refresh();
     }, 15000);
   }
 

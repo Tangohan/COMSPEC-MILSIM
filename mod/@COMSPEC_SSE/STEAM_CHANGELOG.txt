@@ -1,3 +1,137 @@
+[h1]COMSPEC SSE 1.9.1 — tuto des extensions, fenêtre « IA de la zone », fenêtres qui s'affichaient à moitié / extensions tutorial, Area AI window, half-shown windows (11/11/2026)[/h1]
+[b]Relance Arma complètement. Demande COMSPEC ATAK 4.4.1.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.4.1.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Tuto des extensions[/b] : dans SSE ROLEPLAY · Extensions, la liste et le tuto « Comment ça marche » ne sont plus vides ; Étape précédente et Étape suivante font défiler les 10 étapes.
+[*] [b]IA de la zone[/b] : la fenêtre du Zeus n'empile plus ses panneaux ; Filtres, Importer depuis Athena et Mémoire de la carte s'ouvrent un à la fois et se ferment d'un clic à côté ou avec Échap.
+[*] [b]Fenêtres à moitié affichées[/b] : les fenêtres qui s'arrêtaient en cours d'affichage marchent de nouveau ; dans une discussion avec une IA, vos messages se calent de nouveau à droite.
+[*] [b]Licence[/b] : Ma couverture et Fichiers proposent « Ouvrir la note de service » tant que la licence n'est pas acceptée.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Extensions tutorial[/b]: in SSE ROLEPLAY · Extensions, the list and the "How it works" tutorial are no longer empty; Previous step and Next step move through the 10 steps.
+[*] [b]Area AI[/b]: the Zeus window no longer stacks its panels; Filters, Import from Athena and Map memory open one at a time and close with a click beside them or with Esc.
+[*] [b]Half-shown windows[/b]: windows that stopped halfway while opening work again; in a chat with an AI, your own messages line up on the right again.
+[*] [b]Licence[/b]: My cover and Files offer "Open the service note" while the licence is not accepted.
+[/list]
+
+[h1]COMSPEC SSE 1.9.0 — IA plus naturelles, émotions réglables, papiers de 45 pays, outils Zeus refaits / more natural AIs, adjustable emotions, papers from 45 countries, redone Zeus tools (11/11/2026)[/h1]
+[b]Relance Arma complètement. Demande COMSPEC ATAK 4.4.0.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.4.0.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Messages hors sujet[/b] : une insulte, une grossièreté ou une question absurde n'est plus prise pour une demande. L'IA est choquée, vexée ou méfiante selon son caractère, et coupe la conversation si vous insistez.
+[*] [b]Mieux comprise[/b] : tutoiement et questions courtes (« Ton prénom ? », « Tes papiers. »), « Et alors ? » après sa réponse ; quand elle ne comprend pas, elle le dit sans se répéter.
+[*] [b]Émotions réglables[/b] : peur, peur des armes, nervosité, colère, méfiance, soulagement, pour une IA, son groupe ou toute la mission. Sans « peur des armes », elle voit votre arme mais reste calme.
+[*] [b]Une question, une réponse[/b] : dans Eden, deux cases sur l'IA, la question et ce qu'elle répond ; elle comprend aussi la question posée autrement. Mêmes cases dans l'atelier IA et en Zeus.
+[*] [b]Réponses de l'IA[/b] : la fenêtre s'ouvre en mode simple, avec « Insérer une variable » et l'aperçu de ce qu'elle dira.
+[*] [b]Une seule identité[/b] : le nom donné à une IA est celui de ses papiers ; dans « Parler à… », il s'affiche une fois appris, sinon « Inconnu ». Plus de photo bleue sur les cartes.
+[*] [b]Papiers de 45 pays réels[/b] : carte d'identité, passeport, permis, titre de séjour et carte grise, avec noms, adresses et numéros du pays, marqués SPÉCIMEN. Altis, Tanoa, Livonie et Malden restent.
+[*] [b]Zeus[/b] : bouton SSE dans la fenêtre d'édition d'une IA ; « Voir les vrais papiers » montre la vraie carte et son analyse, sans bandeau de texte.
+[*] [b]IA de la zone[/b] : fenêtre refaite en trois étapes (choisir, régler dans des onglets, appliquer), avec l'aperçu du papier et une courte visite guidée.
+[*] [b]Extensions de documents[/b] : la fenêtre montre l'extension d'exemple (coupée par défaut) et un tuto pas à pas pour créer la vôtre.
+[*] [b]Synchroniser les IA avec Athena[/b] : nouveau module Eden et Zeus qui envoie et reçoit ce qu'on sait des IA de la session. Arme braquée de près et champs des papiers corrigés.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Off-topic messages[/b]: an insult, a rude remark or an absurd question is no longer taken as a request. The AI is shocked, offended or wary depending on its character, and ends the talk if you insist.
+[*] [b]Better understood[/b]: casual speech and short questions ("Your name?", "Papers."), "So what?" after its answer; when it does not understand, it says so without repeating itself.
+[*] [b]Adjustable emotions[/b]: fear, fear of weapons, nervousness, anger, distrust, relief, for one AI, its group or the whole mission. Without "fear of weapons", it sees your weapon but stays calm.
+[*] [b]One question, one answer[/b]: in Eden, two boxes on the AI, the question and what it answers; it also understands the question asked another way. Same boxes in the AI workshop and in Zeus.
+[*] [b]AI answers[/b]: the window opens in simple mode, with "Insert a variable" and a preview of what it will say.
+[*] [b]One identity[/b]: the name given to an AI is the one on its papers; in "Talk to…", it shows once learnt, otherwise "Unknown". No more blue photo on cards.
+[*] [b]Papers from 45 real countries[/b]: ID card, passport, driving licence, residence permit and vehicle registration, with the country's names, addresses and numbers, marked SPECIMEN. Altis, Tanoa, Livonia and Malden remain.
+[*] [b]Zeus[/b]: SSE button in an AI's edit window; "See the real papers" shows the real card and its analysis, with no text banner.
+[*] [b]Area AI[/b]: window redone in three steps (pick, set up in tabs, apply), with a preview of the paper and a short guided tour.
+[*] [b]Document extensions[/b]: the window shows the sample extension (off by default) and a step-by-step guide to make your own.
+[*] [b]Sync AIs with Athena[/b]: new Eden and Zeus module that sends and receives what is known about the session's AIs. Weapon aimed up close and paper fields fixed.
+[/list]
+
+[h1]COMSPEC SSE 1.8.0 — IA qui répondent à beaucoup plus de questions, réponses du maître du jeu / AIs answer far more questions, game master answers (10/11/2026)[/h1]
+[b]Relance Arma complètement. Demande COMSPEC ATAK 4.3.0.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.3.0.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Parler aux IA[/b] : trois fois plus de questions comprises (depuis quand, avec qui, où étiez-vous hier soir, avez-vous vu des véhicules ou des étrangers, comment va le village…). L'onglet GUIDE de la fenêtre « Parler à » les montre toutes.
+[*] [b]Ordres[/b] : « Lâchez votre arme », « Reculez », « Approchez », « Retournez-vous », « Asseyez-vous », « Ouvrez votre sac » : l'IA obéit ou refuse selon son caractère.
+[*] [b]Pas d'invention[/b] : une IA ne parle que de ce qu'elle sait ; un passant qui n'a rien vu le dit simplement.
+[*] [b]Maître du jeu[/b] : dans Eden ou Zeus, écrivez la réponse d'une IA à une question (selon qu'elle est calme, a peur ou est menacée), limitez ce qu'elle peut évoquer, ajoutez vos propres questions (un mot de passe, par exemple).
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Talking to AIs[/b]: three times more questions understood (how long, who with, where were you last night, did you see vehicles or strangers, how is the village…). The GUIDE tab of the "Talk to" window shows them all.
+[*] [b]Orders[/b]: "Drop your weapon", "Step back", "Come here", "Turn around", "Sit down", "Open your bag": the AI obeys or refuses depending on its character.
+[*] [b]No made-up stories[/b]: an AI only talks about what it knows; a passer-by who saw nothing simply says so.
+[*] [b]Game master[/b]: in Eden or Zeus, write an AI's answer to a question (calm, scared or threatened), limit what it may bring up, add your own questions (a password, for example).
+[/list]
+
+[h1]COMSPEC SSE 1.7.0 — IA qui répondent juste, vrais papiers, passage aux fichiers / AIs that answer right, real papers, records checks (10/11/2026)[/h1]
+[b]Relance Arma complètement. Demande COMSPEC ATAK 4.3.0.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.3.0.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Parler aux IA[/b] : une IA ne répond plus qu'une fois, sous le nom écrit sur ses papiers ; l'onglet GUIDE de la fenêtre « Parler à » donne des phrases à essayer.
+[*] [b]Civils[/b] : ils n'ont plus peur sans raison ; seuls une arme braquée sur eux, des tirs proches ou une scène violente les effraient, et ils se calment avec le temps.
+[*] [b]Papiers[/b] : cartes d'identité, passeports et permis ont un nouveau dessin proche des vrais, avec une vraie photo d'identité.
+[*] [b]Fichiers et SEEK II[/b] : vérifiez une personne ou un document dans l'app Fichiers du téléphone ; le lecteur biométrique donne un verdict clair.
+[*] [b]Zeus[/b] : clic droit sur une ou plusieurs IA, puis « SSE · Roleplay de l'IA », pour changer leur caractère, leurs papiers ou leur attitude.
+[*] [b]Identité Athena[/b] : votre identité Athena arrive en jeu même sans Zeus connecté.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Talking to AIs[/b]: an AI answers only once, under the name on its papers; the GUIDE tab of the "Talk to" window gives phrases to try.
+[*] [b]Civilians[/b]: they are no longer scared for no reason; only a weapon aimed at them, nearby shots or a violent scene frighten them, and they calm down over time.
+[*] [b]Papers[/b]: ID cards, passports and licences have a new design close to real ones, with a real ID photo.
+[*] [b]Records and SEEK II[/b]: check a person or a document in the phone's Records app; the biometric reader gives a clear verdict.
+[*] [b]Zeus[/b]: right-click one or more AIs, then "SSE · AI roleplay", to change their character, papers or attitude.
+[*] [b]Athena identity[/b]: your Athena identity reaches the game even with no Zeus online.
+[/list]
+
+[h1]COMSPEC SSE 1.6.1 — IA qui comprennent mieux, avouent, réagissent aux tirs / AIs that understand better, confess, react to gunfire (10/11/2026)[/h1]
+[b]Relance Arma complètement. Demande COMSPEC ATAK 4.2.1.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.2.1.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Parler aux IA[/b] : fautes de frappe, accents oubliés et négations (« je ne veux pas d'argent ») compris ; deux demandes dans un message (« Bonjour, vos papiers ») reçoivent une seule réponse dans l'ordre. Une IA arrêtée par « Stop ! » repart seule au bout de deux minutes ou quand vous vous éloignez.
+[*] [b]Confrontation[/b] : « Vos papiers sont faux », « Tu mens » : une IA qui ment vraiment peut avouer son secret, nier, s'énerver ou s'enfuir.
+[*] [b]Mémoire[/b] : l'IA se souvient de chaque joueur (« Je l'ai déjà dit à votre collègue. »), pose ses propres questions (« Vous allez m'arrêter ? ») et comprend votre oui ou votre non.
+[*] [b]Renseignement par étapes[/b] : une rumeur, puis le détail, puis tout ; un renseignement précis peut placer le lieu sur votre carte, à vous seul.
+[*] [b]Tirs et témoins[/b] : une IA interrogée se jette au sol, se rend ou fuit quand on tire près d'elle ; les civils qui vous voient braquer quelqu'un s'inquiètent. Réglages dans les options du mod.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Talking to AIs[/b]: typos, missing accents and negations ("I don't want your money") are understood; two requests in one message ("Hello, your papers") get a single answer in order. An AI stopped with "Stop!" moves on by itself after two minutes or when you walk away.
+[*] [b]Confrontation[/b]: "Your papers are fake", "You're lying": an AI that really lies may confess its secret, deny, get angry or run away.
+[*] [b]Memory[/b]: the AI remembers each player ("I already told your colleague."), asks its own questions ("Are you going to arrest me?") and understands your yes or no.
+[*] [b]Intelligence in steps[/b]: a rumour, then the details, then everything; precise intel can put the place on your map, for you only.
+[*] [b]Gunfire and witnesses[/b]: an AI you are questioning drops to the ground, surrenders or runs when someone fires nearby; civilians who see you aim at someone get worried. Settings in the mod options.
+[/list]
+
+[h1]COMSPEC SSE 1.6.0 — papiers plus clairs, couverture expliquée / clearer papers, explained cover (09/11/2026)[/h1]
+[b]Relance Arma complètement. Demande COMSPEC ATAK 4.2.0.[/b] / [b]Fully restart Arma. Requires COMSPEC ATAK 4.2.0.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Papiers[/b] : « Ouvrir mes papiers » (menu ACE) ouvre directement le document, sans barre de progression ni message d'interruption. « Présenter » reste une action séparée.
+[*] [b]IA[/b] : leurs messages n'ont plus de bip et portent le nom de l'IA (« Anonyme » sans identité).
+[*] [b]Ma couverture[/b] : chaque rubrique (Contacts, Mon histoire, Phrases types, Secrets…) est expliquée avec un exemple.
+[*] [b]Papiers trouvés[/b] : quinze papiers variés (carreaux, carnet, ticket, formulaire, feuilles sales ou brûlées).
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Papers[/b]: "Open my papers" (ACE menu) opens the document straight away, with no progress bar or interruption message. "Present" stays a separate action.
+[*] [b]AI[/b]: their messages no longer beep and carry the AI's name ("Anonymous" without an identity).
+[*] [b]My cover[/b]: each section (Contacts, My story, Stock phrases, Secrets…) is explained with an example.
+[*] [b]Found papers[/b]: fifteen varied papers (squared, notebook, receipt, form, dirty or burnt sheets).
+[/list]
+
 ================================================================================
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================

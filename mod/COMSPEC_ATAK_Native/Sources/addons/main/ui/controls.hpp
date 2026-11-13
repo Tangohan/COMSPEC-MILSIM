@@ -41,6 +41,13 @@ class COMSPEC_RscStructuredText: RscStructuredText { shadow=0; colorText[]=ATAK_
     // Police des balises <t> sans font=… (Roboto Condensed dans la classe du jeu).
     class Attributes: Attributes { font=ATAK_FONT; };
 };
+// Écrans TOC posés dans le monde (texture UI, fn_tocScreen / fn_tocBoard) : tailles fixes en part de la hauteur de la
+// texture, jamais selon la taille d'interface du joueur qui regarde (safeZoneH). Mise en page 1600 x 900 virtuels :
+// 0.0311 = 28 px, le texte courant (size='1' des balises <t>).
+class COMSPEC_RscTocText: COMSPEC_RscStructuredText { size=0.0311; };
+class COMSPEC_RscTocLabel: COMSPEC_RscText { sizeEx=0.0311; };
+class COMSPEC_RscTocLabelRight: COMSPEC_RscTocLabel { style=1; };
+class COMSPEC_RscTocLabelCenter: COMSPEC_RscTocLabel { style=2; };
 class COMSPEC_RscButton: RscButton {
     // Désactivé (ctrlEnable false) : texte nettement atténué et fond quasi transparent, bien distinct d'un bouton
     // disponible non choisi (fond BG2, texte clair).
@@ -64,6 +71,8 @@ class COMSPEC_RscButtonOverlay: COMSPEC_RscButton { colorBackground[]={0,0,0,0};
 class COMSPEC_RscButtonFlat: COMSPEC_RscButtonOverlay { colorDisabled[]={0.42,0.46,0.44,0.7}; colorBackgroundActive[]={1,1,1,0.10}; };
 // Touches physiques de la coque : aucune surbrillance (la texture du téléphone suffit).
 class COMSPEC_RscButtonInvisible: COMSPEC_RscButtonOverlay { colorBackgroundActive[]={0,0,0,0}; colorBackgroundDisabled[]={0,0,0,0}; colorDisabled[]={0,0,0,0}; colorShadow[]={0,0,0,0}; };
+// Ligne et bouton de la Configuration ATHENA (fn_athenaConfig, menu Échap) : transparent, survol et focus clavier en vert Athena.
+class COMSPEC_ATAK_AthenaCfgRow: COMSPEC_RscButtonOverlay { colorBackgroundActive[]={0.204,0.827,0.6,0.14}; colorFocused[]={0.204,0.827,0.6,0.10}; colorBackground2[]={0.204,0.827,0.6,0.10}; };
 class COMSPEC_RscEdit: RscEdit { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]=ATAK_BG0; colorSelection[]=ATAK_GREEN_DIM; sizeEx="0.024 * safeZoneH"; };
 class COMSPEC_RscEditMulti: COMSPEC_RscEdit { style=16; lineSpacing=1; };
 class COMSPEC_RscCombo: RscCombo { font=ATAK_FONT; colorText[]=ATAK_TEXT; colorBackground[]=ATAK_BG0; colorSelect[]=ATAK_TEXT; colorSelectBackground[]=ATAK_GREEN_DIM; sizeEx="0.024 * safeZoneH"; };
@@ -89,12 +98,26 @@ class COMSPEC_RscMap: RscMapControl { colorBackground[]={0.045,0.055,0.048,1}; c
 // (taille minuscule) car redessinés par l'ATAK : fn_mapMarkerText et fn_mapPlaceText (style et calques au choix),
 // fn_mapOnDraw pour la grille. Marqueurs de la mission non dessinés (showMarkers=0) : Arma les dessine à taille fixe
 // en pixels, énormes sur le petit écran ; fn_mapGameMarkers les redessine à l'échelle de l'écran de l'ATAK.
-class COMSPEC_RscMapAtak: COMSPEC_RscMap { showMarkers=0; sizeExLabel="0.0005"; sizeExGrid="0.0005"; sizeExNames="0.0005"; sizeExInfo="0.021 * safeZoneH"; sizeEx="0.021 * safeZoneH"; };
+// Noms de lieux : une seule source, les nôtres (fn_mapPlaceText, taille en pixels et anti-chevauchement de fn_mapLbl). La taille
+// minuscule ne suffisait pas : le moteur écrivait encore certains noms à la taille de leur type de lieu (CfgLocationTypes),
+// à côté des nôtres (« GRAVIA » doublé de « Gravia », « Athira » seul en orange). Densité de noms nulle (ptsPerSquareTxt) et
+// couleur transparente, comme la carte de la montre.
+class COMSPEC_RscMapAtak: COMSPEC_RscMap { showMarkers=0; sizeExLabel="0.0005"; sizeExGrid="0.0005"; sizeExNames="0.0005"; sizeExInfo="0.021 * safeZoneH"; sizeEx="0.021 * safeZoneH";
+    ptsPerSquareTxt=100000; colorNames[]={0,0,0,0}; };
+// Fond CLASSIQUE du téléphone (fn_mapStyle, fn_mapCtrl) : la carte d'origine d'Arma 3, celle de la touche M. La carte M
+// (RscDisplayMainMap >> controlsBackground >> CA_Map) est un RscMapControl sans autre réglage de rendu : cette classe en
+// hérite telle quelle, AUCUN attribut redéfini (couleurs, courbes et altitudes, texture satellite, noms de lieux, numéros
+// de grille, marqueurs de la mission et leurs textes, tailles). Les mods qui retouchent RscMapControl (ACE...) s'y
+// appliquent comme sur la carte M. fn_mapOnDraw ne redessine sur ce contrôle ni les noms de lieux, ni les numéros de
+// grille, ni les marqueurs de la mission et leurs noms (le moteur les écrit déjà) : seulement les couches de l'ATAK.
+// Avant 4.4.x : textes et marqueurs du moteur masqués puis redessinés au style tactique, la carte ne ressemblait pas à M.
+class COMSPEC_RscMapAtakClassic: RscMapControl {};
 // Carte de l'app JTAC (dessin à part, fn_jtacDraw) : textes Arma des repères et des lieux gardés.
-// Fonds SATELLITE et HYBRIDE du téléphone (fn_mapStyle, fn_mapCtrl) : la texture satellite du terrain à toutes les
+// Fond HYBRIDE du téléphone (fn_mapStyle, fn_mapCtrl) : la texture satellite du terrain à toutes les
 // échelles (maxSatelliteAlpha 1, jamais estompée), sans les aplats de forêt, rochers, courbes de niveau ni mer.
 // HYBRIDE garde les routes et pistes par-dessus, comme la vue « Satellite + routes » d'une appli de cartes.
-// Même principe que cTab (carte SAT / TOPO = deux contrôles carte, un seul affiché).
+// Même principe que cTab (carte SAT / TOPO = deux contrôles carte, un seul affiché). COMSPEC_RscMapAtakSat n'est plus
+// que la base d'HYBRIDE (son contrôle sert désormais au fond CLASSIQUE).
 #define ATAK_NOCOL {0,0,0,0}
 class COMSPEC_RscMapAtakSat: COMSPEC_RscMapAtak { maxSatelliteAlpha=1; alphaFadeStartScale=100; alphaFadeEndScale=100; showCountourInterval=0;
     colorSea[]=ATAK_NOCOL; colorForest[]=ATAK_NOCOL; colorForestBorder[]=ATAK_NOCOL; colorRocks[]=ATAK_NOCOL; colorRocksBorder[]=ATAK_NOCOL;
@@ -119,7 +142,7 @@ class COMSPEC_RscMapAtakSlate: COMSPEC_RscMapAtak {
     colorRoads[]={0.16,0.32,0.30,0.9}; colorRoadsFill[]={0.24,0.48,0.45,1};
     colorMainRoads[]={0.18,0.36,0.34,1}; colorMainRoadsFill[]={0.30,0.61,0.57,1};
     colorGrid[]={0.20,0.42,0.40,0.45}; colorGridMap[]={0.20,0.42,0.40,0.45};
-    colorTrails[]={0.20,0.38,0.36,0.3}; colorTrailsFill[]={0.20,0.38,0.36,0.5}; colorNames[]={0.72,0.88,0.84,0.9};
+    colorTrails[]={0.20,0.38,0.36,0.3}; colorTrailsFill[]={0.20,0.38,0.36,0.5}; colorNames[]={0,0,0,0};
     class Legend: Legend { colorBackground[]={0.035,0.05,0.055,0.8}; color[]={0.72,0.88,0.84,1}; };
     ATAK_SLATE_ICON(Bush,0.20,0.33,0.32,0.4); ATAK_SLATE_ICON(Tree,0.20,0.33,0.32,0.4); ATAK_SLATE_ICON(SmallTree,0.20,0.33,0.32,0.4); ATAK_SLATE_ICON(Rock,0.36,0.44,0.46,0.7);
     ATAK_SLATE_ICON(Cross,0.55,0.68,0.66,0.8); ATAK_SLATE_ICON(Chapel,0.55,0.68,0.66,0.8); ATAK_SLATE_ICON(Shipwreck,0.55,0.68,0.66,0.8); ATAK_SLATE_ICON(Bunker,0.55,0.68,0.66,0.8);
@@ -132,7 +155,8 @@ class COMSPEC_RscMapAtakSlate: COMSPEC_RscMapAtak {
 // dessinés par fn_watchMapDraw.
 class COMSPEC_RscMapWatch: COMSPEC_RscMapAtak { ptsPerSquareTxt=100000; colorNames[]={0,0,0,0}; colorLevels[]={0,0,0,0};
     sizeExUnits="0.0005"; sizeExInfo="0.0005"; sizeExLevel="0.0005"; sizeEx="0.0005"; };
-class COMSPEC_RscMapJtac: COMSPEC_RscMapAtak { showMarkers=1; sizeExLabel="0.022 * safeZoneH"; sizeExNames="0.030 * safeZoneH"; };
+// Carte JTAC : noms de lieux du moteur gardés (densité et couleur d'Arma remises, COMSPEC_RscMapAtak les retire).
+class COMSPEC_RscMapJtac: COMSPEC_RscMapAtak { showMarkers=1; sizeExLabel="0.022 * safeZoneH"; sizeExNames="0.030 * safeZoneH"; ptsPerSquareTxt=20; colorNames[]={0.1,0.1,0.1,0.9}; };
 // Carte du PC portable du poste TOC (fn_tocLaptop) : vraie carte d'Arma en grand, marqueurs de la mission compris,
 // textes à la taille d'un écran d'ordinateur (le PC n'est pas un téléphone).
 // PC du poste TOC : noms de lieux et textes des marqueurs plus petits (un gros libellé orange barrait la carte).
@@ -166,3 +190,5 @@ class COMSPEC_RscWebBrowser { type=106; idc=-1; style=0; x=0; y=0; w=0.3; h=0.3;
 class COMSPEC_RscWebBrowserExt: COMSPEC_RscWebBrowser { allowExternalURL=1; };
 class COMSPEC_RscSlider: RscXSliderH { color[]={0.36,0.78,0.42,0.9}; colorActive[]={0.46,0.88,0.52,1}; colorDisabled[]={0.4,0.45,0.42,0.6}; };
 class COMSPEC_RscMapPanel: COMSPEC_RscStructuredText { colorBackground[]={0.025,0.030,0.027,0.78}; };
+// Thème des écrans TOC et du PC du poste (fn_tocTheme) : couleurs et classes du PC.
+#include "toc_theme.hpp"

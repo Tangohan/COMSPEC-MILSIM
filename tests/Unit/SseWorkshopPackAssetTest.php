@@ -65,7 +65,7 @@ final class SseWorkshopPackAssetTest extends TestCase
         foreach ([
             'main', 'core', 'generator', 'evidence', 'intel', 'interaction',
             'zeus', 'eden', 'ui', 'network', 'digital', 'biometrics',
-            'compat_ace', 'compat_bii',
+            'compat_ace', 'compat_bii', 'ia_rp',
         ] as $component) {
             self::assertFileExists($addons . DIRECTORY_SEPARATOR . $component . DIRECTORY_SEPARATOR . 'config.cpp');
             self::assertFileExists($addons . DIRECTORY_SEPARATOR . $component . DIRECTORY_SEPARATOR . '$PBOPREFIX$');

@@ -606,6 +606,31 @@ body.layout-light .athena-header,
     0 0 8px rgba(52, 211, 153, 0.2);
 }
 
+/* Tuile « Outils opérateur » : bleu du portail (#60a5fa sur sombre), pour la distinguer des espaces en vert. */
+.athena-header__espace-item--blue {
+  border-color: rgba(96, 165, 250, 0.32);
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.1), rgba(96, 165, 250, 0.03));
+}
+.athena-header__espace-item--blue:hover,
+.athena-header__espace-item--blue:focus-visible,
+.athena-header__espace-item--blue.is-active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(59, 130, 246, 0.1));
+  border-color: rgba(96, 165, 250, 0.7);
+  box-shadow:
+    0 0 12px rgba(96, 165, 250, 0.2),
+    var(--athena-shadow);
+}
+.athena-header__espace-item--blue.is-active { box-shadow: inset 3px 0 0 #60a5fa, var(--athena-shadow); }
+.athena-header__espace-item--blue .athena-header__espace-abbr {
+  border-color: rgba(96, 165, 250, 0.6);
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(96, 165, 250, 0.08));
+  color: #93c5fd;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 0 8px rgba(96, 165, 250, 0.25);
+}
+.athena-header__espace-item--blue:focus-visible { outline-color: #60a5fa; }
+
 .athena-header__espace-meta {
   min-width: 0;
 }

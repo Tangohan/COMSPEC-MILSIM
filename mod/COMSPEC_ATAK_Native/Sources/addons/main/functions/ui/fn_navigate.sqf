@@ -1,4 +1,5 @@
-params [["_page", "LAUNCHER"], ["_push", true]];
+// _defer : appui du joueur, page dessinée à l'image suivante (voir plus bas). _fxKind : mouvement imposé ("back" pour fn_back).
+params [["_page", "LAUNCHER"], ["_push", true], ["_defer", false], ["_fxKind", ""]];
 _page = toUpper _page;
 // Téléphone d'un autre à l'écran (fn_phoneOwn) : aucune app, aucun compte du lecteur ; rien d'autre ne s'ouvre.
 if ((missionNamespace getVariable ["COMSPEC_ATAK_PhoneActive", ""]) isNotEqualTo "") then { _page = "PHONES"; } else { if (_page isEqualTo "PHONES") then { _page = "LAUNCHER"; }; };
@@ -97,9 +98,41 @@ if (_push && {!(_page in ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES", "VIEW3D", 
     if (_seen isEqualType [] && {!(_page in _seen)}) then { _seen pushBack _page; profileNamespace setVariable ["COMSPEC_ATAK_AppSeen", _seen]; };
 };
 
-[_page] call comspec_atak_native_fnc_pageRender;
+// Jeton de navigation (4.2.1) : un dessin différé d'un appui précédent est abandonné quand une autre navigation a suivi
+// (deux appuis rapides, code qui change de page entre-temps).
+private _tok = (uiNamespace getVariable ["COMSPEC_ATAK_NavTok", 0]) + 1;
+uiNamespace setVariable ["COMSPEC_ATAK_NavTok", _tok];
 // Mouvement (fn_fx) : l'app s'ouvre en grandissant depuis le point touché ; l'accueil revient en fondu.
-// Retour arrière : glissé joué par fn_back. Redessin de la même page : rien.
-if (_push && {_page isNotEqualTo _prevPage}) then { [["open", "home"] select (_page isEqualTo "LAUNCHER")] call comspec_atak_native_fnc_fx; };
+// Retour arrière : glissé joué par fn_back (ou ici, appui différé de fn_back). Redessin de la même page : rien.
+private _fxAct = if (_fxKind isNotEqualTo "") then { [_fxKind, ""] select (_page isEqualTo _prevPage) } else {
+    if (_push && {_page isNotEqualTo _prevPage}) then { ["open", "home"] select (_page isEqualTo "LAUNCHER") } else { "" }
+};
+// Appui du joueur (_defer, 4.2.1 : tuiles du lanceur et du dock, touches accueil, apps récentes et retour) : le titre
+// change et le fondu démarre dans l'image de l'appui ; la page est dessinée à l'image suivante, puis le mouvement
+// reprend là où il en est. Avant, tout le dessin passait avant le premier signe de l'appui.
+if (_defer && {!isNull ([] call comspec_atak_native_fnc_display)}) exitWith {
+    private _t0 = diag_tickTime;
+    [_page, true] call comspec_atak_native_fnc_pageRender;
+    private _fxOn = _fxAct isNotEqualTo "" && {[_fxAct, ["press"]] call comspec_atak_native_fnc_fx};
+    ["navigation : réponse à l'appui", _t0] call comspec_atak_native_fnc_perfAcc;
+    [{
+        params ["_page", "_tok", "_fxAct", "_fxOn", "_t0"];
+        // Téléphone fermé, autre navigation ou page quittée entre-temps : rien à dessiner.
+        if (isNull ([] call comspec_atak_native_fnc_display)) exitWith {};
+        if ((uiNamespace getVariable ["COMSPEC_ATAK_NavTok", 0]) isNotEqualTo _tok) exitWith {};
+        if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo _page) exitWith {};
+        [_page] call comspec_atak_native_fnc_pageRender;
+        if (_fxOn) then { [_fxAct, ["resume", _t0]] call comspec_atak_native_fnc_fx; };
+        ["navigation : appui jusqu'à la page dessinée", _t0] call comspec_atak_native_fnc_perfAcc;
+        // Mesure des performances (fn_perfLog) : ouverture d'une app, de l'appui à l'image affichée.
+        if (missionNamespace getVariable ["COMSPEC_ATAK_PerfLog", false]) then { ["app", [_page, _t0]] call comspec_atak_native_fnc_perfLog; };
+    }, [_page, _tok, _fxAct, _fxOn, _t0]] call comspec_atak_native_fnc_nextFrame;
+    ["INFO", "UI", format ["Navigate %1", _page]] call comspec_atak_native_fnc_log;
+    true
+};
+private _perfT = diag_tickTime;
+[_page] call comspec_atak_native_fnc_pageRender;
+if (_fxAct isNotEqualTo "") then { [_fxAct] call comspec_atak_native_fnc_fx; };
+if (missionNamespace getVariable ["COMSPEC_ATAK_PerfLog", false]) then { ["app", [_page, _perfT]] call comspec_atak_native_fnc_perfLog; };
 ["INFO", "UI", format ["Navigate %1", _page]] call comspec_atak_native_fnc_log;
 true

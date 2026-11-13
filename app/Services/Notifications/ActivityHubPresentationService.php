@@ -58,6 +58,14 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            'sse_file_watch' => [
+                'title' => 'Surveillance des fichiers : ' . mb_substr(trim((string) ($payload['label'] ?? 'nouvelle mention')), 0, 80),
+                'detail' => mb_substr(trim((string) ($payload['detail'] ?? 'Un nouveau document cite ce que vous surveillez.')), 0, 240),
+                'href' => is_string($payload['path'] ?? null) && preg_match('#^atak/sse/fichiers[A-Za-z0-9/_\-?=&]*$#', (string) $payload['path']) === 1
+                    ? url((string) $payload['path']) : url('atak/sse/fichiers'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
             'steam_removed_by_owner' => [
                 'title' => 'Compte Steam retiré de votre compte',
                 'detail' => 'Ce compte Steam était aussi relié à un autre compte Athena, dont le titulaire a prouvé qu’il lui appartient en se connectant à Steam. S’il est bien à vous, reliez-le de nouveau avec « Se connecter avec Steam ».',
@@ -160,6 +168,13 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            // Demande d'accès à un outil opérateur : au responsable (à décider), puis au membre (décision).
+            \App\Services\Operator\OperatorAccessRequestService::NOTIFY_REQUEST,
+            \App\Services\Operator\OperatorAccessRequestService::NOTIFY_DECISION => (static function () use ($type, $payload, $unread, $at): array {
+                $text = \App\Services\Operator\OperatorAccessRequestService::notificationText($type, $payload, self::fr());
+
+                return ['title' => $text['title'], 'detail' => mb_substr($text['detail'], 0, 400), 'href' => url($text['path']), 'unread' => $unread, 'at' => $at];
+            })(),
             default => [
                 'title' => 'Notification',
                 'detail' => '',

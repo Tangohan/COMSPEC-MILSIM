@@ -6,7 +6,8 @@
       Variable publique COMSPEC_ATAK_PhoneForeign (unité) : nombre de téléphones d'autrui sur elle (fn_hasDevice).
     Lue par _read : type et bornes vérifiés, le contenu n'est pas prouvé (mécanique de jeu).
     Le code et les données restent sur le serveur (fn_phoneServer) : lire un téléphone donne ses données, figées quand
-    il a quitté son propriétaire (mort, Put, Take). Jamais d'appel à Athena avec le compte du lecteur.
+    il a quitté son propriétaire (mort, Put, Take). Jamais d'appel à Athena avec le compte du lecteur, sauf la
+    synchronisation web demandée par le lecteur pour le téléphone d'une IA (fn_phoneSync, jamais celui d'un joueur).
     Limites : deux téléphones de même classe : en posant, celui d'autrui part d'abord. Un téléphone déplacé dans un
     uniforme ou un sac ne déclenche aucun événement : sa fiche est perdue, il devient celui de son nouveau porteur.
     Un joueur parti sans mourir n'a pas écrit ses données : seule la fiche reste.

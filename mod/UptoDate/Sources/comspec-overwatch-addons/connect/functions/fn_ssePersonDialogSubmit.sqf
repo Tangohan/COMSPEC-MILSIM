@@ -2,6 +2,7 @@
     Soumet la fiche SSE (identité + armes) puis photo / biométrie optionnelles.
 */
 if (!hasInterface) exitWith {};
+if !(["can"] call comspec_overwatch_connect_fnc_seekBattery) exitWith { ["render"] call comspec_overwatch_connect_fnc_seekBattery; };
 // Bouton = contexte non planifié : SubmitSsePerson est un POST synchrone (jusqu'à 8 s), on passe en
 // spawn pour que extAwait ne fige pas le jeu. Le verrou évite une fiche en double si le bouton est
 // recliqué pendant l'attente.

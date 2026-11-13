@@ -1,0 +1,126 @@
+/* Overwatch — fenêtre « Charger un replay ». Jetons de atak-overwatch-theme.css (nuit, jour). */
+.owr-legacy{display:none!important}
+.ow-replay-current{font-size:12px;color:var(--athena-muted);max-width:22ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ow-replay-change{white-space:nowrap}
+
+.owr-back{
+  --owr-bg:var(--ow-menu-bg,#0d1110);
+  --owr-panel:var(--ow-field-bg,#0e1211);
+  --owr-line:var(--ow-field-line,#27302d);
+  --owr-fg:var(--ow-field-fg,#e4e8e8);
+  --owr-mute:var(--athena-muted,#7d8883);
+  --owr-acc:var(--athena-green-2,#00b884);
+  position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:16px;
+  background:var(--ow-overlay,rgba(0,0,0,.72));color:var(--owr-fg);
+  font-family:var(--ow-sans,system-ui,sans-serif);font-size:13px;line-height:1.45;color-scheme:dark;
+}
+body.ow-theme-day .owr-back{
+  --owr-bg:#ffffff;--owr-panel:#f4f7f5;--owr-line:#b9c6bf;--owr-fg:#14201c;--owr-mute:#4a5853;--owr-acc:#00805c;color-scheme:light;
+  --athena-text:#14201c;--athena-soft:#2a3833;--athena-muted:#4a5853;--athena-line:#c3cdc8;--athena-line-2:#aab8b1;
+  --ow-field-bg:#ffffff;--ow-field-fg:#14201c;--ow-field-line:#aab8b1;--ow-field-hover:#f1f5f3;--ow-field-ph:#5d6b65;
+  --ow-field-off-bg:#e7ece9;--ow-field-off-fg:#7a8781;--ow-btn-bg:#e9efec;--ow-btn-hover:#dbe4df;--ow-btn-fg:#14201c;
+  --ow-btn-line:#aab8b1;--ow-menu-bg:#ffffff;--ow-menu-sel:#cdeee2;--ow-menu-sel-fg:#0b2a21;--ow-focus:#00805c;
+}
+.owr-back[hidden]{display:none}
+.owr{
+  width:min(1040px,100%);max-height:min(720px,100%);display:flex;flex-direction:column;
+  background:var(--owr-bg);border:1px solid var(--owr-line);border-radius:8px;box-shadow:0 24px 70px rgba(0,0,0,.55);overflow:hidden;
+}
+.owr-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 16px 10px;border-bottom:1px solid var(--owr-line)}
+.owr-head h2{margin:0;font-size:17px;font-weight:700;color:var(--owr-fg)}
+.owr-head p{margin:2px 0 0;color:var(--owr-mute);font-size:12px}
+.owr-x{flex:0 0 auto;width:36px;height:36px;border:1px solid var(--owr-line);border-radius:6px;background:var(--ow-btn-bg,#161b19);color:var(--ow-btn-fg,#e4e8e8);font-size:22px;line-height:1;cursor:pointer}
+.owr-x:hover{background:var(--ow-btn-hover,#1d2421)}
+.owr-body{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:0;min-height:0;flex:1}
+.owr-col{min-width:0;min-height:0;display:flex;flex-direction:column;padding:12px 16px}
+.owr-col--list{border-right:1px solid var(--owr-line)}
+.owr-col--detail{overflow:auto;gap:10px}
+.owr-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.owr-search input{width:100%;height:36px;padding:0 10px}
+.owr-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:8px}
+.owr-filters label,.owr-field{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--owr-mute)}
+.owr-filters select,.owr-field select{height:32px;padding:0 8px;width:100%}
+.owr-count{margin:8px 0 6px;font-size:11px;color:var(--owr-mute)}
+.owr-listwrap{position:relative;flex:1;min-height:180px;display:flex;flex-direction:column}
+.owr-list{list-style:none;margin:0;padding:0;overflow:auto;flex:1;border:1px solid var(--owr-line);border-radius:6px;background:var(--owr-panel)}
+.owr-list[hidden]{display:none}
+.owr-item{display:flex;flex-direction:column;gap:3px;padding:9px 12px;border-bottom:1px solid var(--owr-line);cursor:pointer;color:var(--owr-fg)}
+.owr-item:last-child{border-bottom:0}
+.owr-item:hover{background:var(--ow-field-hover,#131917)}
+.owr-item.is-sel{background:var(--ow-menu-sel,#12312a);box-shadow:inset 3px 0 0 var(--owr-acc);color:var(--ow-menu-sel-fg,#e4e8e8)}
+.owr-item-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.owr-item-name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.owr-item-meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--owr-mute)}
+.owr-item.is-sel .owr-item-meta{color:inherit;opacity:.85}
+.owr-badge{font-style:normal;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border:1px solid var(--owr-line);border-radius:10px;color:var(--owr-mute);flex:0 0 auto}
+.owr-badge--live{color:var(--owr-acc);border-color:var(--owr-acc)}
+.owr-state{border:1px dashed var(--owr-line);border-radius:6px;padding:22px 16px;text-align:center;color:var(--owr-mute);display:flex;flex-direction:column;align-items:center;gap:8px}
+.owr-state[hidden]{display:none}
+.owr-empty-title{margin:0;font-weight:700;color:var(--owr-fg);font-size:14px}
+.owr-state p,.owr-pick p{margin:0}
+.owr-pick{padding:40px 8px;text-align:center;color:var(--owr-mute)}
+.owr-d-head h3{margin:0;font-size:15px;color:var(--owr-fg);overflow-wrap:anywhere}
+.owr-d-head p{margin:2px 0 0;color:var(--owr-mute);font-size:12px;overflow-wrap:anywhere}
+.owr-dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 12px;margin:0}
+.owr-dl div{min-width:0}
+.owr-dl dt{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--owr-mute)}
+.owr-dl dd{margin:0;font-weight:600;color:var(--owr-fg);overflow-wrap:anywhere}
+.owr-label{margin:0 0 4px;font-size:11px;color:var(--owr-mute)}
+.owr-tl{position:relative;height:30px;border:1px solid var(--owr-line);border-radius:4px;background:var(--owr-panel);cursor:pointer;overflow:hidden}
+.owr-tl::before{content:"";position:absolute;left:0;right:0;top:50%;height:2px;margin-top:-1px;background:var(--owr-line)}
+.owr-tl i{position:absolute;top:6px;bottom:6px;width:3px;margin-left:-1px;border-radius:2px;opacity:.9}
+.owr-cursor{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--owr-acc)}
+.owr-tl-ends{display:flex;justify-content:space-between;font-size:10px;color:var(--owr-mute);margin-top:2px;font-variant-numeric:tabular-nums}
+.owr-legend{margin:4px 0 0;display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--owr-mute)}
+.owr-legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
+.owr-note{margin:4px 0 0;font-size:12px;color:var(--owr-mute)}
+.owr-note--err{color:#ff9aa1;font-weight:600}
+body.ow-theme-day .owr-note--err{color:#a3202b}
+.owr-fs{border:1px solid var(--owr-line);border-radius:6px;margin:0;padding:8px 12px 10px;min-width:0}
+.owr-fs legend{padding:0 6px;font-size:11px;color:var(--owr-mute)}
+.owr-fs:disabled{opacity:.6}
+.owr-radio,.owr-check{display:flex;align-items:center;gap:8px;min-height:30px;cursor:pointer}
+.owr-radio input,.owr-check input{width:16px;height:16px;flex:0 0 auto}
+.owr-time{display:flex;gap:10px;align-items:center;margin-top:4px}
+.owr-time input[type=range]{flex:1;min-width:0}
+.owr-time input[type=time]{height:32px;padding:0 6px;width:118px}
+.owr-grid2{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.owr-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-top:1px solid var(--owr-line);background:var(--owr-panel)}
+.owr-status{flex:1;min-width:0;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--owr-mute)}
+.owr-status.is-err{color:#ff9aa1;font-weight:600}
+body.ow-theme-day .owr-status.is-err{color:#a3202b}
+.owr-status.is-busy{color:var(--owr-fg)}
+.owr-actions{display:flex;gap:8px;flex:0 0 auto}
+.owr-btn{min-height:36px;padding:0 16px;border:1px solid var(--ow-btn-line,#2b3531);border-radius:6px;background:var(--ow-btn-bg,#161b19);color:var(--ow-btn-fg,#e4e8e8);font:600 13px/1 var(--ow-sans,system-ui);cursor:pointer}
+.owr-btn:hover:not(:disabled){background:var(--ow-btn-hover,#1d2421)}
+.owr-btn:disabled{opacity:.45;cursor:not-allowed}
+.owr-btn--go{background:var(--owr-acc);border-color:var(--owr-acc);color:#04130e}
+body.ow-theme-day .owr-btn--go{color:#ffffff}
+.owr-btn--go:hover:not(:disabled){filter:brightness(1.1);background:var(--owr-acc)}
+.owr-prog{width:120px;height:8px;accent-color:var(--owr-acc)}
+.owr :focus-visible{outline:2px solid var(--ow-focus,#00d69a);outline-offset:2px}
+body.owr-open{overflow:hidden}
+
+@media (max-width:760px){
+  .owr-back{padding:0;align-items:stretch}
+  .owr{width:100%;max-height:none;height:100%;border-radius:0;border:0}
+  .owr-body{grid-template-columns:minmax(0,1fr);overflow:auto;display:block}
+  .owr-col--list{border-right:0;border-bottom:1px solid var(--owr-line)}
+  .owr-listwrap{min-height:150px;max-height:36vh}
+  .owr-col--detail{overflow:visible}
+  .owr-dl{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .owr-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .owr-foot{flex-direction:column;align-items:stretch;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+  .owr-actions .owr-btn{flex:1;min-height:44px}
+  .owr-x{width:44px;height:44px}
+  .owr-radio,.owr-check{min-height:44px}
+}
+@media (prefers-reduced-motion:reduce){.owr-back *{transition:none!important;animation:none!important}}
+
+/* Barre de relecture : au-dessus du dock de la carte, boutons d'événements lisibles en nuit. */
+.ow-timeline{bottom:96px}
+.ow-replay-events{top:64px;bottom:auto;max-height:min(220px,40vh)}
+button.ow-replay-ev{background:transparent;color:var(--athena-text);border:0;border-bottom:1px solid var(--athena-line);border-radius:0;font:inherit;padding:6px 2px;cursor:pointer}
+button.ow-replay-ev:hover{background:var(--ow-field-hover,#131917)}
+button.ow-replay-ev:focus-visible{outline:2px solid var(--ow-focus,#00d69a);outline-offset:-2px}
+body.ow-theme-day .ow-replay-events,body.ow-theme-day .ow-timeline{background:#f4f7f5;color:#14201c;border-color:#aab8b1}

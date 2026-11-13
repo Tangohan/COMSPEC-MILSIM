@@ -1447,6 +1447,33 @@ def _night(img):
     return out
 
 
+def _bleed(img, radii=(2, 6)):
+    """Couleur du bord prolongée sous les pixels transparents (alpha inchangé) : le filtrage de la texture et ses
+    mipmaps mêlaient le noir des zones vides au bord de la coque, un liseré sombre en jeu (surtout en mode mini).
+    Une bande de quelques pixels suffit (deux premiers mipmaps) ; plus large, le PAA grossit pour rien."""
+    import numpy as np
+    a = np.asarray(img.getchannel("A")).astype(float)
+    rgb = np.asarray(img.convert("RGB")).astype(float)
+    out = rgb.copy()
+    todo = a == 0
+    pm = Image.fromarray(np.clip(rgb * a[..., None] / 255, 0, 255).round().astype("uint8"), "RGB")
+    al = img.getchannel("A")
+    for r in radii:
+        pb = np.asarray(pm.filter(ImageFilter.GaussianBlur(r))).astype(float)
+        ab = np.asarray(al.filter(ImageFilter.GaussianBlur(r))).astype(float)
+        hit = todo & (ab > 2)
+        out[hit] = np.clip(pb[hit] * 255 / ab[hit][:, None], 0, 255)
+        todo &= ~hit
+    res = Image.fromarray(out.round().astype("uint8"), "RGB").convert("RGBA")
+    res.putalpha(al)
+    return res
+
+
+# Modèles sans coque 2D propre : « keys » (tablette à touches) affiche les coques de « tablet », identiques octet pour
+# octet (fn_layoutGet) ; seuls son dos et sa poussière restent à lui.
+SHELL_ALIAS = {"keys": "tablet"}
+
+
 def model_assets(tmp, only=None):
     for m in PHONE_MODELS:
         if only and m not in only:
@@ -1454,8 +1481,10 @@ def model_assets(tmp, only=None):
         f = os.path.join(RENDER_DIR, f"phone_{m}_front.png")
         if not os.path.exists(f):
             continue
-        land = Image.open(f).convert("RGBA")
+        land = _bleed(Image.open(f).convert("RGBA"))
         for key, img in (("", land), ("_night", _night(land))):
+            if m in SHELL_ALIAS:
+                break
             convert(img, f"phone_landscape_{m}{key}", tmp)
             convert(img.rotate(-90, expand=True), f"phone_portrait_{m}{key}", tmp)
         b = os.path.join(RENDER_DIR, f"phone_{m}_back.png")

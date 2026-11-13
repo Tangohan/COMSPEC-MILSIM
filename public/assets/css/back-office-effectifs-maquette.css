@@ -2574,3 +2574,15 @@ html[data-bo-theme="dark"] .eff-ut__grade {
 html[data-bo-theme="dark"] .eff-ut__unit {
   box-shadow: none;
 }
+
+/* Téléphone : les raccourcis passent sur deux lignes au lieu de se chevaucher (recherche sur toute la largeur). */
+@media (max-width: 520px) {
+  .bo-eff-quick {
+    flex-wrap: wrap;
+  }
+
+  .bo-eff-quick__search {
+    order: 3;
+    flex: 1 1 100%;
+  }
+}

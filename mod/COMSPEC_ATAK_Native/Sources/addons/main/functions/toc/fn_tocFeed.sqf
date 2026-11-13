@@ -9,12 +9,20 @@
                  "armor" | "air" | "boat", IA, groupe, occupants (équipage d'un véhicule regroupé en un nœud)]
         flux  : 30 derniers [heure, sorte, priorité, auteur, grille, texte, [x, y] ou [], serverTime, partie précédente]
                 (comptes rendus, alertes, SALUTE, MEDEVAC, BDA, ordres, messages du poste TOC)
-        état  : [brouilleurs actifs, relais, joueurs, IA]
+        état  : [brouilleurs actifs, relais, joueurs du camp, IA du camp, [joueurs sur le réseau ATAK, IA sur le réseau
+                 ATAK, pistes affichées, pistes en tout, réglage "MIX" | "GAME" | "ATAK", plafond]]
+    4.11.0, « le TOC sans téléphone » : les nœuds ne sont plus réservés aux porteurs d'ATAK. Le serveur lit aussi le jeu
+    (fn_tocTracks : unités, véhicules, aéronefs, drones du camp) et fusionne les deux selon le réglage « Source des
+    positions du TOC » ; chaque nœud porte sa source, sa santé, ses munitions (champs 9 à 15, décrits dans fn_tocTracks)
+    et son état vient de la meilleure source vivante (fn_tocNodeStatus). ORBAT du jeu et ordres du camp : publiés aux
+    mêmes lecteurs, sur changement (fn_tocTracks « publish », COMSPEC_ATAK_TocOrbat_<camp>).
     Modes : ["init"] (serveur) | ["tick"] | ["push", [camp, entrée]] | ["events"] -> HashMap camp -> flux (fn_tocPersist)
             ["setEvents", HashMap] (fn_tocPersist : flux de la partie précédente)
 */
 params [["_mode", "tick"], ["_a", []]];
 if (!isServer) exitWith {};
+// Appel direct d'un joueur par remoteExec : refusé (les saisies du poste passent par fn_tocRoom « req »).
+if (isRemoteExecuted && {!(remoteExecutedOwner in [0, 2])} && {isNil "_tocTrusted"}) exitWith {};
 private _fn = comspec_atak_native_fnc_tocFeed;
 switch (_mode) do {
     case "init": {
@@ -116,8 +124,9 @@ switch (_mode) do {
         _sides = (_sides arrayIntersect _sides) select { _x in ["WEST", "EAST", "GUER", "CIV"] };
         private _pli = ["pli"] call comspec_atak_native_fnc_netCond;
         private _rate = (["pliRate"] call comspec_atak_native_fnc_netCond) max 1;
-        private _liveAge = [5, _rate * 1.6 + 2] select _pli;
-        private _staleAge = [20, _rate * 4 + 10] select _pli;
+        // Seuils « en direct / ancien / perdu » : règle unique de fn_tocStatus (le plus long silence normal d'un
+        // téléphone à l'arrêt y est compté ; avant, un joueur immobile et connecté passait « perdu » à 50 s).
+        if (isNil "COMSPEC_ATAK_TocSeen") then { COMSPEC_ATAK_TocSeen = createHashMap; };
         private _now = serverTime;
         private _jam = { _x isEqualType [] && {(_x param [4, 1e9]) >= _now} } count (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]);
         private _relays = { _x isEqualType objNull && {!isNull _x} && {alive _x} && {_x getVariable ["COMSPEC_AtakRelayOn", true]} } count (missionNamespace getVariable ["COMSPEC_AtakRelays", []]);
@@ -143,9 +152,11 @@ switch (_mode) do {
             private _nodes = [];
             private _byVeh = createHashMap;
             private _nP = 0; private _nAi = 0;
+            // Réglage « Source des positions du TOC » : en « jeu » seul, les téléphones ne sont pas lus (ni inventaire, ni PLI).
+            private _srcMode = ["mode"] call comspec_atak_native_fnc_tocTracks;
             {
                 private _u = _x;
-                if (!alive _u || {(str side group _u) isNotEqualTo _side} || {!([_u] call _has)}) then { continue };
+                if (_srcMode isEqualTo "GAME" || {!alive _u} || {(str side group _u) isNotEqualTo _side} || {!([_u] call _has)}) then { continue };
                 private _isAi = !isPlayer _u;
                 if (_isAi) then { _nAi = _nAi + 1; } else { _nP = _nP + 1; };
                 private _key = netId _u;
@@ -154,8 +165,15 @@ switch (_mode) do {
                 private _p = _u getVariable ["COMSPEC_ATAK_Pli", []];
                 if (_pli && {_p isEqualType []} && {(count _p) >= 3}) then {
                     _pos = _p select 0; _dir = _p select 1;
-                    private _age = (_now - (_p select 2)) max 0;
-                    _fr = switch (true) do { case (_age < _liveAge): { 0 }; case (_age < _staleAge): { 1 }; default { 2 }; };
+                    // Âge du point : temps écoulé depuis que CE serveur l'a vu changer (son horloge seule). L'heure écrite
+                    // par le téléphone ne sert qu'à reconnaître un nouveau point, et à dater le premier vu.
+                    private _seen = COMSPEC_ATAK_TocSeen getOrDefault [_key, []];
+                    if ((_seen param [0, -1]) isNotEqualTo (_p select 2)) then {
+                        private _first = _seen isEqualTo [];
+                        _seen = [_p select 2, diag_tickTime - ([0, ((_now - (_p select 2)) max 0) min 600] select _first)];
+                        COMSPEC_ATAK_TocSeen set [_key, _seen];
+                    };
+                    _fr = ["node", [diag_tickTime - (_seen select 1), _rate, true, local _u && {isPlayer _u}, true]] call comspec_atak_native_fnc_tocStatus;
                 };
                 if (!_on) then {
                     _fr = 3;
@@ -171,7 +189,7 @@ switch (_mode) do {
                     default { "veh" };
                 };
                 private _cs = [_u, true] call comspec_atak_native_fnc_unitCallsign;
-                if (_cs isEqualTo "") then { _cs = [name _u, groupId group _u] select _isAi; };
+                if (_cs isEqualTo "") then { _cs = [[_u] call comspec_atak_native_fnc_tocDisplayName, groupId group _u] select _isAi; };
                 // Équipage d'un véhicule : un seul nœud (le meilleur état), occupants comptés.
                 if (_v isNotEqualTo _u) then {
                     private _vk = netId _v;
@@ -189,9 +207,13 @@ switch (_mode) do {
                     _nodes pushBack [_key, _cs select [0, 28], [round (_pos select 0), round (_pos select 1)], round _dir, _fr, _kind, _isAi, groupId group _u, 1];
                 };
             } forEach allUnits;
+            // Pistes du jeu fusionnées avec les nœuds des téléphones (une unité et son téléphone : un seul nœud), plafond
+            // de pistes, effectif réel du camp. Relevé gardé et espacé par fn_tocTracks : rien n'est relu ici à chaque tour.
+            (["nodes", [_side, _nodes, _nP, _nAi]] call comspec_atak_native_fnc_tocTracks) params ["_merged", "_ext", "_strength"];
+            _nodes = _merged;
             // Envoyé aux seuls joueurs du camp (seuls lecteurs : fn_tocScreen / fn_tocLaptop), pas de file JIP ; l'hôte lit la valeur locale.
             private _var = format ["COMSPEC_ATAK_TocFeed_%1", _side];
-            private _feed = [_now, _nodes, +(COMSPEC_ATAK_TocEvents getOrDefault [_side, []]), [_jam, _relays, _nP, _nAi]];
+            private _feed = [_now, _nodes, +(COMSPEC_ATAK_TocEvents getOrDefault [_side, []]), [_jam, _relays, _strength select 0, _strength select 1, _ext]];
             missionNamespace setVariable [_var, _feed];
             // Renvoi à tous les lecteurs si le contenu change, sinon toutes les 9 s (l'écran passe en « RETARD » à 12 s) ;
             // un nouveau lecteur le reçoit tout de suite.
@@ -201,10 +223,12 @@ switch (_mode) do {
             private _all = _h isNotEqualTo (_st select 0) || {(diag_tickTime - (_st select 1)) > 9};
             private _to = [_owners - (_st select 2), _owners] select _all;
             { _x publicVariableClient _var; } forEach _to;
+            // ORBAT du jeu et ordres du camp : aux mêmes lecteurs, seulement quand ils changent.
+            ["publish", [_side, _owners]] call comspec_atak_native_fnc_tocTracks;
             COMSPEC_ATAK_TocSent set [_side, [[_st select 0, _h] select _all, [_st select 1, diag_tickTime] select _all, [(_st select 2) + _to, _owners] select _all]];
         } forEach _sides;
         // Ménage : unités disparues.
-        if ((count COMSPEC_ATAK_TocDev) > 600) then { COMSPEC_ATAK_TocDev = createHashMap; COMSPEC_ATAK_TocLast = createHashMap; };
+        if ((count COMSPEC_ATAK_TocDev) > 600) then { COMSPEC_ATAK_TocDev = createHashMap; COMSPEC_ATAK_TocLast = createHashMap; COMSPEC_ATAK_TocSeen = createHashMap; };
     };
 };
 true

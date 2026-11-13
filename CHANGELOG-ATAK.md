@@ -38,111 +38,1259 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## À venir : FIRES court (destinataires) et app CAS lisible (ATAK natif, version à attribuer)
+## À venir : contrôle et présentation des papiers entre joueurs (COMSPEC SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Contrôler les papiers d'un autre joueur, et présenter les siens
+- Demandez ses papiers à un joueur (menu ACE sur lui › Contrôle d'identité › Demander les papiers, menu ACE personnel › Mes papiers, ou un raccourci clavier à régler) : une fenêtre s'ouvre chez lui, il coche les papiers qu'il accepte de présenter, ou il refuse, avec ou sans motif. Rien n'est jamais accepté à sa place.
+- Vous lisez sa réponse dans une fenêtre : ses papiers s'ouvrent à l'écran, ou « Le sujet refuse de présenter ses papiers », ou « Pas de réponse » passé le délai (20 s par défaut).
+- Présentez vos papiers sans attendre qu'on vous les demande (menu ACE personnel › Mes papiers › Présenter mes papiers, ou le bouton PRÉSENTER quand vous lisez un de vos papiers) : choisissez les papiers, la personne en face, et si vous les montrez ou les remettez en main.
+- Il faut être à pied, face à face et à quelques mètres. Réglages : COMSPEC SSE › Identité (activer, délai, distance, refus permis, présentation permise) ; un Zeus peut l'autoriser ou l'interdire pour la mission.
+EN : Check another player's papers, and present your own
+- Ask a player for their papers (ACE menu on them › Identity check › Ask for papers, ACE self menu › My papers, or a key you bind): a window opens on their side, they tick the papers they agree to present, or refuse, with or without a reason. Nothing is ever accepted on their behalf.
+- You read their answer in a window: their papers open on screen, or "The subject refuses to present their papers", or "No answer" once the time is up (20 s by default).
+- Present your papers without being asked (ACE self menu › My papers › Present my papers, or the PRESENT button while reading one of your papers): pick the papers, the person in front of you, and whether you show them or hand them over.
+- Both players must be on foot, face to face and a few metres apart. Settings: COMSPEC SSE › Identité (enable, time to answer, distance, refusal allowed, presenting allowed); a Zeus can allow or forbid it for the mission.
+
+### Détail technique
+- Addon `identity` : `fn_idP2pRules` (règles pures : automate pending → accepted / refused / timeout, distance et vue, sous-ensemble de papiers, anti-spam), `fn_idP2pServer`, `fn_idP2pClient`, `fn_idP2pUi`, fenêtre `COMSPEC_SSE_IdP2p`. Relais par `fn_idServer` / `fn_idClient` (aucune nouvelle fonction appelable à distance), poste demandeur vérifié par `remoteExecutedOwner`, messages au seul poste concerné.
+- Le flux des IA (réponse d'une IA, checkpoints IA, menu « Présenter › un papier ») n'est pas changé. Personne en véhicule : non pris en charge (« Contrôler les occupants » et « Faire descendre » restent).
+- Journal Athena : même forme qu'un contrôle d'identité (POST /api/sse/identity/checks, niveau N0 « non fait », constats `p2p`, `p2p_accepted` | `p2p_refused` | `p2p_no_answer` | `p2p_presented`, `p2p_show` | `p2p_give`, `p2p_docs:n`), par `fn_fileSubmit` (licence acceptée, file hors ligne), si la transmission automatique est active.
+- Essais hors jeu : `python mod/@COMSPEC_SSE/tools/test_id_p2p.py`, `tests/Unit/SseIdentityP2pAssetTest.php`. En jeu : `mod/@COMSPEC_SSE/tools/test_id_p2p.sqf`.
+
+## À venir : les réglages d'icônes marchent sur le petit téléphone (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : correctif
-FR : FIRES court : choisir l'unité à appeler, et l'app CAS enfin lisible
-- FIRES court : un bouton « Destinataires » ouvre la liste des pilotes et JTAC en ligne, avec recherche. Touchez un nom, ou une unité sur la carte, pour l'appeler seule ; rien de choisi, tous sont appelés comme avant.
-- Si personne n'est en ligne, un message l'explique avec un exemple.
-- App CAS (9-LINE, 5-LINE, APPEL DE FEU, COURT) : textes, champs et boutons suivent le thème sombre, jour ou nuit JVN, avec un contraste lisible. Le bouton choisi est entouré de crochets en plus de sa couleur.
-- Des aides courtes avec exemple (AZ, DIST, X), des messages explicites quand la solution de tir ou le journal sont vides, et un journal en plus grosse police.
-EN : FIRES quick: pick the unit to call, and a readable CAS app
-- FIRES quick: a "Recipients" button opens the list of online pilots and JTACs, with search. Tap a name, or a unit on the map, to call only that one; with nothing picked, everyone is called as before.
-- When nobody is online, a message explains it with an example.
-- CAS app (9-LINE, 5-LINE, CALL FOR FIRE, QUICK): texts, fields and buttons follow the dark, day or NVG theme with readable contrast. The chosen button is wrapped in brackets as well as coloured.
-- Short help lines with examples (AZ, DIST, X), explicit messages when the fire solution or the log is empty, and a larger log font.
+FR : Les réglages d'icônes s'appliquent aussi au petit téléphone
+- Les réglages d'icônes s'appliquent aussi au petit téléphone : forme, taille de ma forme, taille des alliés et des contacts, réglette « Icônes de la carte ». Avant, ils ne se voyaient que téléphone en main, en grand.
+- Sur la miniature, les symboles gardent une taille lisible (à peu près celle du téléphone en main) et le pion garde sa lettre d'équipe.
+- Les repères des outils de la carte (mesure, ligne de vue, zone de pose, point de pose d'un marqueur) suivent eux aussi la réglette « Icônes de la carte ».
+- Les symboles 2525D ne provoquent plus d'erreur et affichent de nouveau l'échelon et le poste de commandement tirés de l'ORBAT du site.
+EN : Icon settings now apply to the small phone too
+- Icon settings now apply to the small phone too: shape, size of my shape, size of allies and contacts, and the "Map symbols" slider. Before, they only showed with the phone in hand, in large.
+- On the miniature, symbols keep a readable size (about the same as the phone in hand) and the pawn keeps its team letter.
+- The markers of the map tools (measure, line of sight, landing zone, marker drop point) also follow the "Map symbols" slider.
+- 2525D symbols no longer raise an error and show the echelon and command post from the site ORBAT again.
 
 ### Détail technique
+- Cause : `fn_mapOnDraw` multipliait chaque taille de symbole par la hauteur de la carte avec un plancher à 0,35 (0,54 en miniature verticale, 0,35 en horizontale, contre 0,65 en main) : symboles de 9 px, lettre du pion masquée sous 14 px, réglages sans effet visible. Une douzaine de repères d'outil gardaient une taille fixe, hors réglette.
+- `fn_mapIconScale` : seule source des tailles (facteur de vue borné de 0,6 à 1,35, réglette de 0,8 à 2,2, tailles des alliés et des contacts de 0,5 à 2,5), lue une fois par image par `fn_mapOnDraw` et par `fn_planDraw` ; auto-contrôle `["check"]`. Rien ne change téléphone en main au réglage par défaut.
+- `fn_milSym` : la table de l'ORBAT avait des objets pour clés (interdit dans une HashMap, erreur de script à chaque symbole 2525D et dans l'aperçu « Mon point GPS ») ; clés `hashValue`.
+- Tests : `AtakMapIconScaleTest` (table réglage × taille de la vue, bornes, chemins de dessin sans taille fixe ni lecture directe du réglage).
+
+---
+## À venir : le TOC voit qui parle sur quelle fréquence (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Le TOC voit qui parle à la radio, et sur quelle fréquence
+- Nouvel affichage « Activité radio » pour les écrans du TOC : l'indicatif de celui qui parle et sa fréquence en grand, puis chaque réseau avec son dernier émetteur, depuis quand il est silencieux et son occupation.
+- Nouvelle console radio (menu d'un écran TOC › Activité radio, ou module Zeus « Activité radio ») : qui émet en ce moment, liste des réseaux à surveiller que vous nommez vous-même (par exemple CMD NET sur 31.000), historique des 50 dernières émissions.
+- Le TOC est prévenu quand deux personnes parlent en même temps sur le même réseau, et quand un réseau de commandement reste muet trop longtemps.
+- Fonctionne avec ACRE2, avec TFAR, et sans mod radio (canaux du jeu). Aucun téléphone ni Athena requis.
+- En option dans les réglages du mod : un petit encadré « Qui parle » à l'écran, pour vos propres réseaux ; les Zeus l'ont d'office.
+EN : The TOC sees who is talking on the radio, and on which frequency
+- New "Radio activity" display for the TOC screens: the callsign of whoever is talking and their frequency in large type, then each net with its last talker, how long it has been silent and how busy it is.
+- New radio console (menu of a TOC screen › Radio activity, or the "Radio activity" Zeus module): who is transmitting right now, a list of nets to watch that you name yourself (for example CMD NET on 31.000), history of the last 50 transmissions.
+- The TOC is told when two people talk at the same time on the same net, and when a command net stays quiet for too long.
+- Works with ACRE2, with TFAR, and without a radio mod (game channels). No phone and no Athena needed.
+- Optional in the mod settings: a small "Who is talking" box on screen, for your own nets; Zeus players get it by default.
+
+### Détail technique
+- Audit : `docs/audit/2026-11-radio-ptt.md`. Modèle `fn_tocRadio` (événements seulement, collecte éteinte tant que personne ne regarde, envois regroupés, état complet à l'abonnement), affichages `fn_tocRadioUi` (affichage `RADIO` des écrans, panneau « mount » pour la console du poste, calque `COMSPEC_RscTitleTocRadioHud`), module `COMSPEC_ATAK_Module_TocRadio`.
+- ACRE2 et TFAR lus par `fn_radioGuard` seulement, aucune dépendance ajoutée. Six réglages CBA (« ATAK · Mode local et poste TOC »).
+- Tests : `tests/Unit/AtakTocRadioAssetTest.php` (calculs rejoués sur la table `_vectors`, branchements, traductions).
+- Non vu en jeu : voir la fin de l'audit.
+
+## À venir : les caméras IP apparaissent dans Vidéo live et dans le TOC (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Les caméras IP posées dans l'éditeur apparaissent enfin
+- Les nouvelles caméras (dôme, tube infrarouge, thermique, mini-dôme…) posées dans l'éditeur ou en Zeus apparaissent dans l'app Vidéo live et dans les sources du TOC, pour tout leur camp, sans rien avoir à partager.
+- Une caméra posée en Zeus prend le camp du joueur le plus proche ; dans l'éditeur, c'est le camp choisi dans ses attributs.
+- Ces caméras de site sont câblées : elles restent en ligne même sans téléphone à côté.
+EN : IP cameras placed in the editor finally show up
+- The new cameras (dome, infrared bullet, thermal, mini dome…) placed in the editor or in Zeus now appear in the Live Feed app and in the TOC sources, for their whole side, with nothing to share.
+- A camera placed in Zeus takes the side of the nearest player; in the editor, it is the side picked in its attributes.
+- These site cameras are wired: they stay online even with no phone nearby.
+
+### Détail technique
+- Cause : `fn_camProp` enregistre une caméra d'éditeur sans poseur ; avec le partage obligatoire (réglage par défaut), `fn_camShare « can »` ne l'accordait qu'au poseur ou aux accès partagés, donc à personne. Vidéo live (`fn_pageLivecam`) et le TOC (`fn_tocCam « sources »`) lisent tous deux `fn_camAction « list »`, filtrée par cette règle. Les 16 classes `COMSPEC_ATAK_Cam_*` étaient touchées ; la caméra posée par un joueur ne l'était pas.
+- Correction : marque publique `COMSPEC_ATAK_CamPublic` posée par `fn_camProp` avant l'inscription ; `fn_camShare « can »` l'accorde au camp ; `fn_camAction « status »` ne demande plus d'ATAK à portée de Wi-Fi pour ces caméras. Balayage de secours au postInit du serveur (`allMissionObjects`), une seule inscription par caméra. Camp d'une caméra posée en Zeus : celui du joueur le plus proche.
+- `comspec_atak_native_fnc_camList` : `[] call` → `[[id, nom, type, état, position ASL, ptz], …]` des caméras visibles ; `["visible", […]]` : règle de visibilité, fonction pure.
+- Journal serveur, une ligne par caméra : `[COMSPEC CAM] caméra | classe=… nom=… camp=… lives=oui/non toc=oui/non raison=…`.
+- Test : `AtakCameraRegistryAssetTest`.
+## À venir : l'app WAVE RELAY et les relais refaits (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : L'app WAVE RELAY et les relais refaits
+- L'app Wave Relay dit d'abord où vous en êtes : « Réseau relié, via Pylône 150179, 1 saut, signal excellent, portée 20 km », puis un petit schéma de votre réseau, vos voisins avec une barre de qualité, et des boutons clairs : Actualiser, Carte, Tester, Passerelle, Signaler un problème.
+- Les longs textes ont disparu : un bouton « Comment l'activer » ouvre une fiche étape par étape, qui coche ce qui est déjà fait et montre la prochaine chose à faire.
+- Le maillage et la MPU5 sont actifs par défaut : la voix de votre radio peut passer par le réseau sans qu'un admin ait à cocher quoi que ce soit.
+- Le réseau MPU/radio ne fonctionne qu'avec un relais en service à portée. Aucun relais, relais détruit, éteint, brouillé ou trop loin : pas de réseau, et l'app dit lequel et pourquoi (« Relais hors de portée : Pylône 150179 à 1.8 km, portée 1.2 km »). Un admin peut revenir au réseau libre dans Échap > Réalisme.
+- Onglet VOIX : vous voyez par où passe votre voix quand vous émettez (réseau ATAK, radio ACRE2 ou TFAR classique, voix directe), avec la raison, la qualité et les dernières émissions. La barre du haut du téléphone l'affiche aussi pendant que vous parlez.
+- La voix relayée par le maillage se dégrade avec la distance, les sauts et les obstacles : Excellent, Bon, Moyen, Mauvais, Perdu. L'app donne le maillon faible et quoi faire.
+- Zeus : « Voir le réseau de ce camp » ouvre un vrai schéma lisible (relais en haut, un étage par saut, liens colorés, nœuds hors réseau à part avec la raison), et une vue d'ensemble de tous les relais permet d'allumer, couper, réparer ou changer de canal.
+- Sur un relais ou un pylône, l'action ACE « Voir l'état du relais » ouvre sa fiche sur le téléphone.
+EN : The WAVE RELAY app and the relays, redone
+- The Wave Relay app tells you where you stand first: "Network connected, via Tower 150179, 1 hop, excellent signal, range 20 km", then a small diagram of your network, your neighbours with a quality bar, and clear buttons: Refresh, Map, Test, Gateway, Report a problem.
+- The long texts are gone: a "How to turn it on" button opens a step-by-step sheet that ticks what is already done and shows the next thing to do.
+- The mesh and the MPU5 are on by default: your radio's voice can go over the network without an admin ticking anything.
+- The MPU/radio network only works with a working relay in range. No relay, or a relay destroyed, off, jammed or too far: no network, and the app says which one and why ("Relay out of range: Tower 150179 at 1.8 km, range 1.2 km"). An admin can go back to a free network in Esc > Realism.
+- VOICE tab: you see which path your voice takes when you transmit (ATAK network, regular ACRE2 or TFAR radio, direct voice), with the reason, the quality and the last transmissions. The phone's top bar shows it too while you talk.
+- Voice relayed over the mesh degrades with distance, hops and obstacles: Excellent, Good, Fair, Poor, Lost. The app names the weakest link and what to do.
+- Zeus: "View this side's network" opens a proper readable diagram (relays on top, one row per hop, coloured links, off-network nodes set apart with the reason), and an overview of all relays lets you power on, power off, repair or change channel.
+- On a relay or a tower, the ACE action "View relay status" opens its sheet on the phone.
+
+### Détail technique
+- Règle « pas de relais, pas de réseau » décidée en un seul endroit : `fn_relayNet` (`gateOn`, `gate`, `gateEval`), lue par `fn_meshGraph` (`view` : plus de maillage d'équipe ni autonome sans relais), `fn_waveRelayAction`, `fn_linkQuality` (par `only`), `fn_mpuVoice`. Réglage serveur `comspec_atak_native_relay_gate` (coché), sans effet en profil Arcade. La liaison vers Athena n'en dépend pas.
+- Défaut changé : `comspec_atak_native_mpu_voice` coché. Nouveaux réglages : `mesh_voice_degrade` (réaliste = valeurs d'avant), `mesh_voice_cut`, `mesh_voice_policy`.
+- `fn_voicePath` : `["get"]` -> [chemin, raison, route, réseau, depuis, [palier, %, latence, nom], en émission] ; événement local `comspec_atak_native_voicePath` ; `["quality", [sauts, niveau, mode, ms par saut, seuil]]`. Piloté par les événements d'émission, aucune boucle.
+- `fn_meshGraphView` : `layout`, `geo`, `model`, `draw` (dans un groupe de contrôles, à tout format), `open` (fenêtre Zeus). `fn_waveRelaySheet` : fiches. `fn_formRender` : lignes `meter` et `graph`.
+- Audit : `docs/audit/2026-11-relais-ux.md`. Tests : `tests/Unit/AtakRelaisUxTest.php`.
+
+## À venir : poste TOC web et plans d'opération sur Athena (site Athena, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Le poste TOC et des plans d'opération sur Athena
+- Nouveau poste TOC web (menu Opérateur › Poste TOC, ou TOC dans la barre d'ATAK web) : la même console que le PC du poste en jeu, avec la carte commune sur notre fond satellite, les groupes, le flux, les chronos, la main courante, la liste d'exécution, les pertes et les demandes.
+- Nouveaux plans d'opération : dessinez sur la carte du terrain avec les symboles OTAN et les graphismes tactiques, découpez le plan en phases, briefez pas à pas, travaillez à plusieurs, exportez en image, en PDF ou en fichier.
+- Un plan s'envoie en jeu en un clic et apparaît dans l'app Plan des téléphones et sur le PC du poste ; le plan dessiné en jeu se récupère sur Athena.
+EN : A TOC console and operation plans on Athena
+- New web TOC (Operator menu › TOC console, or TOC in the ATAK web bar): the same console as the in-game post laptop, with the common map on our satellite background, groups, feed, timers, duty log, execution checklist, casualties and requests.
+- New operation plans: draw on the terrain map with NATO symbols and tactical graphics, split the plan into phases, brief step by step, work together, export as an image, a PDF or a file.
+- A plan is sent into the game in one click and appears in the phones' Plan app and on the post laptop; the plan drawn in game can be brought back to Athena.
+
+### Détail technique
+- Pages `/atak/toc` et `/atak/toc/plans`, droits `atak.toc.use` et `atak.toc.manage`, étapes 4370 et 4380. Détail : `docs/TOC-WEB.md`.
+- Lien avec le jeu par les canaux existants (BriefingPlan.Push canal `toc_room`, commandes web genre `toc`) : branche du mod `feat/atak-toc-web-sync`, sans changement de COMSPEC Link.
+
+## Pack 4.12.0 Washington : postes, droits et journal de la salle TOC, TOC pilotable par script (ATAK natif 4.12.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.12.0 : postes, droits et journal de la salle TOC
+- Postes, droits et journal de la salle TOC : chaque PC du TOC devient un poste (chef de quart, opérations, renseignement, feux, logistique, transmissions). Seuls le chef de quart et le Zeus changent les écrans et la salle, et chaque action est notée dans un journal que le chef de quart et le Zeus peuvent lire.
+- Verrou et relève : le chef de quart verrouille la salle le temps d'un briefing, et passe son poste par une relève signée, avec un résumé de la situation.
+- Vous pouvez piloter le TOC par script : les créateurs de mission créent des salles et des écrans, changent les affichages, verrouillent la salle et suivent ce qui s'y passe, sans téléphone.
+- Salle mieux gardée : copie de secours de la sauvegarde, dispositions de salle réutilisables d'une mission à l'autre, export de diagnostic pour le support, couleurs de nuit pour les fenêtres du TOC.
+EN : ATAK 4.12.0: stations, rights and journal of the TOC room
+- Stations, rights and journal of the TOC room: every TOC PC becomes a station (watch chief, operations, intelligence, fires, logistics, signals). Only the watch chief and Zeus change the screens and the room, and every action is noted in a journal that the watch chief and Zeus can read.
+- Lock and handover: the watch chief locks the room for the time of a briefing, and hands the station over with a signed handover and a summary of the situation.
+- You can drive the TOC by script: mission makers create rooms and screens, change the displays, lock the room and follow what happens in it, with no phone.
+- A better kept room: backup copy of the save, room layouts reusable from one mission to the next, diagnostic export for support, night colours for the TOC windows.
+
+### Détail technique
+- Feuille de route TOC (`docs/audit/2026-11-toc-feuille-de-route.md`), parts des lots 2 et 4 qui ne touchent ni la console ni les écrans : n° 10, 13 à 17, 35, Z2, Z3 (couche de données), Z4. Numéro 4.12.0 : main porte déjà 4.8.0 (tableau des écrans), 4.9.0 (console) et 4.11.0 (TOC sans téléphone) ; ce lot, préparé sous le numéro 4.10.0, prend le numéro libre suivant.
+- `fn_tocAccess.sqf` (nouveau) : rôles opérateur, chef de poste, administrateur Zeus ; table des droits par mode (réglage « Droits de la salle TOC » : rôles par défaut, ouvert, administrateurs) ; verrou de salle. Le serveur retrouve l'émetteur par `remoteExecutedOwner`, lit son camp et son UID lui-même ; l'état qui fait foi est dans `localNamespace` du serveur. Demandes d'écran (« view », « remove ») et de salle par `remoteExecCall` (« gate ») ; l'ancien événement CBA n'a plus que les droits d'un opérateur (« legacy »).
+- `fn_tocJournal.sqf` (nouveau) : journal des actions en anneau par camp (500 lignes, réglable), envoyé à la demande au chef de poste et au Zeus, une ligne par action dans le journal COMSPEC, 200 lignes gardées avec la salle.
+- `fn_tocStation.sqf`, `fn_tocHandover.sqf` (nouveaux) : postes nommés (CDQ, OPS, RENS, FEUX, LOG, TRANS), un chef de quart par salle, poste gardé 5 minutes après une déconnexion ; relève proposée, résumée par le serveur, signée par l'entrant, exportée en texte. Actions ACE sur soi « Poste TOC ».
+- `fn_tocPersist.sqf` : format 3. Rangs 0 à 6 du format 2 inchangés, nouveaux champs à la fin (journal, postes, relèves, méta), migration à la lecture, copies de secours `_bak` et `_v2`, export, import et retour arrière en texte, champs d'un format plus récent recopiés tels quels.
+- `fn_tocTheme.sqf` : table `_tokensNight` (mêmes jetons, pour la nuit), modes `variant`, `tokens`, variante facultative sur `rgba`, `hex`, `ink`. Aucun jeton du jour changé. Réglage « Thème des écrans TOC » ; adopté pour l'instant par la seule fenêtre du journal, du diagnostic et des relèves.
+- `fn_tocDiag.sqf` (nouveau) : relevé du TOC (salles, écrans, flux, postes, sauvegarde, performances, versions) sans nom ni identifiant de joueur, écrit au journal COMSPEC, copié et montré dans une fenêtre ; action Zeus « ATAK · TOC », touche CBA, action ACE sur soi.
+- `fn_tocApi.sqf` (nouveau), `docs/TOC-API.md` : API 1.0, 35 verbes, 15 événements `comspec_atak_toc_*`, arguments contrôlés, jamais d'erreur de script. `fn_tocPresets.sqf` (nouveau) : préréglages de salle dans le profil du serveur ou la mission, texte d'échange.
+- Accroches d'une ligne dans les fichiers des autres branches : `fn_tocHall.sqf` (envoi et ancien événement), `fn_tocScreen.sqf` (envoi de « view » et « remove », ancien événement), `XEH_postInitServer.sqf`, `XEH_postInitClient.sqf`, `config.cpp`, `XEH_preInit.sqf` (six réglages, chacun avec un exemple). `docs/TOC-ACCESS.md` décrit les points d'accroche. `fn_tocRoom.sqf` n'est pas touché (contrôle des demandes du lot 1).
+- Noms montrés par ce lot (journal, postes, relèves, verrou) : jamais le pseudo Steam. `fn_tocAccess` « nameOf » appelle le résolveur commun `comspec_atak_native_fnc_tocDisplayName` quand il est chargé (lot « sans téléphone »), sinon écrit le groupe et le rang du jeu (« Alpha 1-1 · 2 »).
+- Aucune alerte du jeu, aucune requête vers Athena, `fn_radioGuard` non touché.
+- Tests : `AtakTocAccessMatrixTest`, `AtakTocPersistFormatTest`, `AtakTocJournalTest`, `AtakTocApiContractTest`, `AtakTocThemeNightTest`.
+- Non vérifié en jeu.
+
+## Pack 4.11.0 Washington : le TOC fonctionne sans téléphone (ATAK natif 4.11.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.11.0 : le TOC fonctionne sans téléphone
+- Les écrans du TOC et le PC du poste montrent toute la force du camp, joueurs, véhicules, hélicoptères et drones, même si personne n'a de téléphone ATAK. Une unité vivante n'est plus marquée « perdu ».
+- Sans téléphone, tu lis les messages du poste, tes ordres et les réponses à tes demandes dans une fenêtre : menu ACE sur soi, « Messages et ordres du TOC ». Tu accuses un ordre d'un clic.
+- Les pertes comptent maintenant toute unité du camp, et la caméra de casque d'un joueur sans téléphone peut passer sur un écran.
+- Le TOC écrit ton indicatif Athena, plus ton pseudo Steam. Sans indicatif, tu apparais par ton groupe et ton rang, par exemple « Alpha 1-1 · 2 ».
+- Réglage du serveur « Source des positions du TOC » : Mixte (par défaut), Jeu ou Réseau ATAK, pour garder le réalisme si tu le veux.
+EN : ATAK 4.11.0: the TOC works without a phone
+- TOC screens and the post PC show the whole force of the side, players, vehicles, helicopters and drones, even if nobody carries an ATAK phone. A living unit is no longer marked “lost”.
+- Without a phone, you read the post's messages, your orders and the answers to your requests in a window: ACE self menu, “TOC messages and orders”. You acknowledge an order in one click.
+- Casualties now count every unit of the side, and the helmet camera of a player without a phone can go on a screen.
+- The TOC writes your Athena callsign, no longer your Steam name. Without a callsign, you appear by your group and rank in it, for example “Alpha 1-1 · 2”.
+- Server setting “TOC position source”: Mixed (default), Game or ATAK network, to keep realism if you want it.
+
+### Détail technique
+- Lot 1 de `docs/audit/2026-11-toc-feuille-de-route.md` (« autonomie sans téléphone »), couche données et logique. Mode d'emploi pour la console et les écrans : `docs/TOC-DATA-API.md` (fonctions, formats, liste d'essai « mission à zéro téléphone » en 14 cas).
+- `fn_tocTracks` (nouveau) : pistes du jeu lues par le serveur (joueurs, leurs groupes, unités désignées, véhicules et aéronefs avec équipage, chefs des groupes d'IA), fusionnées avec les nœuds des téléphones (une unité et son téléphone : un seul nœud). Nœud étendu aux champs 9 à 15 (source, santé, altitude et vitesse, intégrité, munitions, liaison du téléphone, sous-genre) ; les champs 0 à 8 ne changent pas. ORBAT du jeu et ordres du camp publiés aux seuls lecteurs, sur changement (`COMSPEC_ATAK_TocOrbat_<camp>`).
+- Coût serveur : aucune boucle nouvelle (le relevé est demandé par le tour de `fn_tocFeed`, qui ne tourne que pour les camps qui ont un lecteur) ; intervalle de 3 s jusqu'à 50 pistes, 5 s à 100, 8 s à 200, 12 s au-delà ; plafond réglable (150 par défaut, joueurs d'abord) ; munitions lues pour 25 unités par relevé au plus, une fois toutes les 30 s par unité ; pertes regroupées en une écriture de la salle toutes les 5 s.
+- `fn_tocNodeStatus` (nouveau, fonction pure) : état d'une piste tiré de la meilleure source vivante. Source jeu : en direct si l'unité est simulée sur le serveur ou si le relevé est frais ; téléphone seul : âge du point ; source inconnue : état neutre. Mêmes codes 0 à 4 que les écrans.
+- `fn_tocEntry` (nouveau) : saisies du poste (MEDEVAC 9 lignes, tir, ravitaillement, contact, SITREP, SALUTE, pertes, ordre, message, accusé au nom d'un élément), validées sur le poste puis de nouveau par le serveur ; doublon avec une demande venue d'un téléphone rapproché par genre, élément et heure (3 minutes).
+- `fn_tocInbox` (nouveau) : boîte du TOC sans téléphone (messages du poste, ordres, réponses, retours d'action), fenêtre ouverte par ACE sur soi ou par une touche, tableau des ordres du camp tenu par le serveur avec les accusés.
+- `fn_tocPanels` (nouveau) : registre des panneaux (16 fournis). La console et les écrans demandent un panneau par son nom ; l'état vide, l'attente du serveur et le plafond atteint sont rendus avec les lignes.
+- `fn_tocDisplayName` (nouveau) : nom affiché d'une unité pour tout le TOC, `[unité]` rend le texte. Indicatif Athena, sinon groupe et rang (« non lié » si le compte n'est pas relié), sinon rôle ; pseudo Steam seulement si le réglage `comspec_atak_native_toc_show_steam` est coché (décoché par défaut). Appliqué aux nœuds, à l'ORBAT, aux auteurs des lignes de la salle et à la caméra de casque ; les appels à basculer dans la console sont listés dans `docs/TOC-DATA-API.md`.
+- `fn_tocRoster` (nouveau) : données du tableau EFFECTIF (indicatif, rôle, nom et prénom du personnage tirés de l'identité SSE, unité, état, grille), pour un écran (pages, groupé par unité) et pour le PC (recherche, tri, export texte, suivre, message, ordre). Réglage `comspec_atak_native_toc_roster_names` : PC seulement par défaut. Les deux vues elles-mêmes restent à écrire dans les fichiers du tableau des écrans et de la console.
+- `fn_tocRoom` : le serveur retrouve lui-même le joueur qui demande (`remoteExecutedOwner`), son camp, son nom et son UID ; l'ancien événement qui croyait le client n'est plus écouté, et un appel direct d'un client aux modes du serveur est refusé. Détail gardé avec une demande (9 lignes). Toute unité du camp tuée est comptée, plus seulement un porteur d'ATAK.
+- `fn_tocCam` : caméra de casque d'un joueur sans téléphone, qualité fixe, selon le réglage `comspec_atak_native_toc_headcam` (coché par défaut).
+- `fn_notify` : téléphone rangé ou absent, le retour d'une action va à la ligne d'état du PC du poste, à une ligne en bas de l'interface Zeus et au journal de la boîte du TOC. Aucune alerte du jeu.
+- Réglages CBA (serveur) : `comspec_atak_native_toc_source` (mix par défaut), `…_toc_tracks_ai`, `…_toc_tracks_max`, `…_toc_headcam`.
+- Tests : `AtakTocAutonomyAssetTest` (table d'états, fusion et plafond, intervalles, validation des saisies, doublons, contrôle de l'émetteur, absence d'alerte du jeu, textes anglais).
+- Numéro : la feuille de route donnait 4.9.0 à ce lot ; la refonte de la console du poste a pris la 4.9.0, et la 4.10.0 est prise par la branche « salle tenue » : ce lot sort en 4.11.0. Il contient la 4.8.0 (tableau des écrans) et la 4.9.0 (console refaite), fusionnées ici.
+- État d'un téléphone seul : `fn_tocNodeStatus` appelle la règle de `fn_tocStatus` (4.8.0), sans la recopier. Console 4.9.0 : une ligne dans `fn_tocAppData` pour qu'une piste du jeu publiée par le serveur garde son libellé « source directe ».
+- Reste à brancher dans les fichiers de la console et des écrans : formulaires de saisie et tableau des ordres à l'écran, pied d'écran, escouades proposées (tous les groupes), diapositives choisies au poste, ORBAT du jeu dans l'onglet ORBAT. Non vérifié en jeu.
+
+## Pack 4.9.0 Washington : console du poste TOC refaite, tout le TOC sans téléphone (ATAK natif 4.9.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.9.0 : la console du poste TOC est refaite, et elle marche sans téléphone
+- **Quatre rubriques** : Situation, Conduite, Plans et Salle, à gauche de l'écran, comme sur la console web. Touches F1 à F4.
+- **Sans téléphone** : la console montre toutes les unités du camp, même celles qui n'ont pas d'ATAK. Demandes, comptes rendus et ordres se créent au poste.
+- **Carte** : boutons de zoom, échelle, nord, calques à cocher, fiche de l'unité cliquée avec suivi et trace.
+- **Mur d'images** : un bouton met tout le mur sur la situation ; un écran peut être diffusé sur tous les autres.
+EN : ATAK 4.9.0: the TOC station console is rebuilt, and it works without a phone
+- **Four sections**: Situation, Operations, Plans and Room, on the left of the screen, like the web console. F1 to F4 keys.
+- **No phone needed**: the console shows every friendly unit, even those without an ATAK. Requests, reports and orders are created at the station.
+- **Map**: zoom buttons, scale, north, layers to tick, card of the clicked unit with follow and trail.
+- **Video wall**: one button puts the whole wall on the situation; one screen can be broadcast to all the others.
+
+### Détail technique
+- Audit : `docs/audit/2026-11-poste-toc-app.md`. Défauts prouvés par lecture du code de la 4.7.1 : recherche d'une grille sans effet (`fn_gridParse` rend `[[x, y, 0], taille, grille]`, la console lisait `[x, y]`) ; tri des nœuds refait à chaque image. (`_sideRgb` non déclaré et « mk » qui rendait `true` : trouvés aussi, déjà corrigés par la 4.7.2.)
+- `fn_tocLaptop` : console plein écran (plus de coque de PC), en-tête (poste, salle, opérateur, alertes, ZULU / LOCAL, liaisons serveur, Athena et radio), rail des rubriques (table `_sections`, la même que la console web), une rangée d'onglets par rubrique, 18 onglets. Moteur gardé : `_grid`, `_layout`, `_btnDefs`, `_place`, « audit ». Clic droit : point désigné commun (ordre, ordre IA, demande, compte rendu), l'onglet ne change plus.
+- `fn_tocAppData` (nouveau) : source directe. Unités du camp lues dans le jeu et fusionnées avec `COMSPEC_ATAK_TocFeed_<camp>` (par `fn_tocStatus` « feed » quand la 4.8.0 est là) ; nœud à 10 champs, le dixième `"P"` (téléphone) ou `"D"` (source directe). Une unité au téléphone garde son dernier point reçu (le brouillage garde son effet). Calcul côté client, console ouverte, gardé 2 s. Réglage `comspec_atak_native_toc_direct`.
+- `fn_tocApp` (nouveau) : onglets CARTE (9 calques, liste des unités, fiche, SUIVRE, TRACE), DESSIN, PLAN ; compte rendu du poste (`comspec_atak_native_report` par `sideEvent`), demande du poste (`reqAdd`), entrées rapides de main courante ; zoom, échelle et nord dessinés dans « Draw » ; raccourcis clavier.
+- `fn_tocWall` (nouveau) : onglets MUR et SALLE. Appelle le modèle de la 4.8.0 sans le dupliquer : `fn_tocBroadcast` (« start », « stop », « do » bars), `fn_tocLayout` (« list », « apply », « current »), `fn_tocScreen` « view » clé « opt », `fn_tocManager` « open ». Chaque appel est gardé par `isNil` : bouton grisé et raison sur la ligne d'aide avec un PBO plus ancien. Les actions « sur les écrans » visent les dalles 16:9 de la salle du poste (avant : toujours les écrans à 30 m).
+- `fn_tocHallUi` : couleurs du plan par les jetons du thème ; « VISER UN ÉCRAN » n'écrit plus dans le téléphone (résultat sur la ligne d'état à la réouverture).
+- Maquettes : `python -I mod/COMSPEC_ATAK_Native/tools/toc_mockups.py` écrit aussi `app_poste/` (situation, conduite, plans, salle). Ce sont des maquettes tirées des tables du code, pas des captures du jeu.
+- Tests : `AtakTocLaptopLayoutTest` (zones du nouveau cadre, rubriques, raccourcis, aucun appel au téléphone, gardes de la 4.8.0), `AtakTocPostTest`.
+- Non vérifié en jeu : tout le rendu de la console, les raccourcis clavier, le zoom par boutons, l'échelle et le nord, le suivi et la trace, le compte rendu et la demande créés au poste, les commandes du mur avec la 4.8.0.
+
+## Pack 4.8.0 Washington : tableau des écrans TOC (Eden, Zeus, en jeu), mode BROADCAST et mire, écrans qui ne clignotent plus, textes des bandeaux lisibles, menu des écrans refait (ATAK natif 4.8.0.AG - Washington, COMSPEC Link 2.0.123)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.8.0 : un tableau pour régler tous les écrans du TOC, un mode diffusion avec mire, et des écrans qui ne clignotent plus
+- **Tableau des écrans** : une seule fenêtre, dans l'éditeur, au Zeus et en jeu, liste chaque dalle de chaque écran. Vous y choisissez ce que chacune montre, vous posez, dupliquez, générez une salle et tous ses flux d'un coup.
+- **Diffusion (BROADCAST)** : un écran peut être recopié sur toute la salle en même temps, avec un témoin EN DIRECT, et une mire de barres de couleur quand il n'y a pas de source.
+- **Écrans stables et lisibles** : les écrans ne clignotent plus, les textes des bandeaux ne sont plus étirés ni coupés, un joueur connecté n'est plus marqué « perdu », et vous pouvez écrire le texte des bandeaux avec le module « Afficher un texte ».
+- **Zeus et menus** : poser un module TOC en Zeus ne vous ramène plus à la vue de votre personnage, le module Écran TOC pose un nouvel écran à chaque usage, et le menu des écrans est rangé par thèmes avec l'état en clair.
+EN : ATAK 4.8.0: one table to set up every TOC screen, a broadcast mode with a test card, and screens that no longer flicker
+- **Screens table**: a single window, in the editor, in Zeus and in game, lists every panel of every screen. Choose what each one shows, place, duplicate, generate a room and all its feeds in one go.
+- **Broadcast**: one screen can be copied to the whole room at the same time, with a LIVE tally, and a colour-bar test card when there is no source.
+- **Stable, readable screens**: screens no longer flicker, strip texts are no longer stretched or cut, a connected player is no longer shown as "lost", and you can write the strip text with the "Show a text" module.
+- **Zeus and menus**: placing a TOC module in Zeus no longer throws you back to your character's view, the TOC Screen module places a new screen on every use, and the screen menu is sorted by theme with the current state in plain words.
+
+### Détail technique
+- **Clignotement** (lecture du code, non reproduit en jeu). Trois bascules sans retenue, toutes dans la boucle des écrans : (1) `fn_tocSat.sqf` « tick » : la caméra du satellite était libérée 3 s après le dernier regard, et « vu » se mesurait sur l'origine du modèle (au sol ou au plafond), d'où « rendu sur ce poste » / « rendu arrêté » en boucle au journal et l'image qui passait par « en attente » au centre ; bail porté à 12 s, mesuré sur le centre de l'image (10 s pour `fn_tocCam`, 8 s pour `fn_tocMosaic`). (2) `fn_tocScreen.sqf` « tick » : un seul contrôle de visibilité raté éteignait l'écran ; il en faut deux de suite. (3) Image jamais chargée : nouvel essai toutes les 10 s sans fin, maintenant 4, 8, 16, 32, 60 s. En plus : une dalle ne peut plus être dessinée par deux inscriptions (`_claimed`), relais en double retirés (« panels »), contrôles du HUD satellite créés hors cadre et sans couleur (`hudMake`).
+- **Vue satellite qui fait saccader le jeu** (lecture du code, non mesuré en jeu) : `fn_tocSat.sqf`, boucle par image du rendu (« make ») : à chaque image du jeu et pour chaque satellite, la visée était recalculée en parcourant tous les nœuds du camp (`aim` puis `targets`, avec une lecture de config par véhicule) ; la scène était rendue une seconde fois en 1024 x 512 (2048 x 1024 pour le PC) ; et `fn_tocBoard.sqf` (« live ») refaisait la texture 2048 x 1024 de chaque écran satellite 6 à 7 fois par seconde avec tout son HUD. Avant la 4.8.0 s'y ajoutait la caméra détruite et recréée à chaque regard. Maintenant : réglage du joueur « Qualité de la vue satellite » (Désactivée, Basse par défaut, Moyenne, Haute ; table `_budget`), image 512 x 256 en Basse, texture de l'écran refaite 2 fois par seconde (5 pour l'écran regardé de près), visée relue 5 fois par seconde, cibles gardées 0,3 s, et une soupape qui double l'intervalle (4 fois au plus, 30 s) quand une image dépasse 4 ms. Le rendu de la caméra elle-même reste fait par le moteur à chaque image : seule sa résolution baisse.
+- **Carte AUCUN SIGNAL** (`fn_tocBroadcast` « signal », « nosig ») : tant que le serveur n'a publié aucun flux pour le camp, carte fixe à la place du contenu ; bascule après 2 images avec flux, 3 sans.
+- **Module réutilisé** : `fn_moduleTocScreen.sqf` prenait pour objet visé l'objet le plus proche à moins de 3 m (`fn_moduleContext` « near »), donc l'écran posé juste avant, et ouvrait la fenêtre sur « Retirer » (`["add", "remove"] select …`). L'objet visé est maintenant celui sous le module seulement, l'action proposée est toujours « désigner ou régler », « Retirer » se choisit, et une action pose un nouvel écran à côté. Noms rendus uniques (`fn_tocManager` « uniqueName », « uniqueHall »).
+- **Tableau des écrans** (`fn_tocManager`, module `COMSPEC_ATAK_Module_TocManager`, menu Eden COMSPEC ATAK > TBE) : même fenêtre sur les displays 313, 312 et 46 ; une ligne par dalle ; plan du mur cliquable ; sources par format de dalle ; portée d'application (dalle, lignes cochées, salle, tout) ; génération de salle et de flux ; dispositions (`fn_tocLayout`, 12 dispositions, colonnes COLC à COLF pour l'écran incurvé) ; préréglages dans le profil. Dans Eden, il écrit les attributs des objets.
+- **BROADCAST** (`fn_tocBroadcast`, vue « BROADCAST », variable `COMSPEC_ATAK_TocBc`) : mire dessinée contrôle par contrôle (table `_smpte`), recopie d'un écran source par son identifiant, témoin fixe, mire ou AUCUN SIGNAL si la source est perdue ; `start` / `stop` par salle ou par groupe ; gardé par `fn_tocPersist` (champ ajouté en fin de tableau).
+- **Zeus ramené à la première personne** : `fn_tocSat.sqf`, `fn_tocCam.sqf` et `fn_tocMosaic.sqf` lançaient `cameraEffect ["Internal", "Back", cible]` puis `"Terminate"` pendant que la caméra du Zeus tenait la vue, à chaque création et libération de caméra d'écran. Tout passe par `fn_tocRtt`, qui rend la vue principale à la caméra du Zeus si son interface est ouverte. Cause déduite du code, non vérifiée en jeu.
+- **« Perdu » alors que connecté** : `fn_tocFeed.sqf` déclarait perdu tout point de plus de 4 intervalles + 10 s, alors que `fn_pli.sqf` espace les points jusqu'à 6 intervalles à l'arrêt, et comparait l'heure du joueur à celle du serveur. Règle unique dans `fn_tocStatus` (âge à la réception par le serveur, silence normal compté, joueur local toujours en direct, « source inconnue » en neutre).
+- **Textes étirés** : dans une texture d'interface, le moteur dessine le texte comme pour un écran 4:3 ; sur un bandeau 8:1 il sortait 6 fois trop large. `fn_tocText.sqf` dessine maintenant une image par caractère (`data/toc/led/`), à la taille de la dalle réelle : centré s'il tient, réduit, puis défilant. Plaques et bandeau horloge de même. Sur les écrans 16:9 (étirés 1,33 fois) les largeurs estimées sont corrigées et la mesure du jeu fait foi : plus de texte coupé sans « … ».
+- **Liste des membres vide** sur l'écran d'escouade : `fn_tocBoard.sqf` passait un tableau au lieu d'un nom de région.
+- **En-tête et pied** : le nom du modèle (« 98-inch giant… ») n'est plus écrit sur l'image ; l'en-tête dit ce que l'écran montre, puis le nom donné par quelqu'un s'il y en a un. Horloge de l'en-tête masquée sur l'affichage Horloge.
+- **Diapositive noire** : `fn_screenCast.sqf` posait sur l'objet le fichier du cache du téléphone, que le jeu lit pour l'interface mais rend noir sur un objet. Un fichier n'est posé que s'il est vérifié et hors du cache ; sinon la diapositive reste montrée par le navigateur intégré, ou une carte « Diapositive indisponible » en donne la raison. Confiance de 75 % environ, non vérifié en jeu.
+- **Texte des bandeaux** : module « Afficher un texte » (`fn_moduleTocText`, `fn_tocTextTool`), modèles de messages, envoi à un écran, une salle ou un rayon.
+- **Menu des écrans** (`fn_tocMenu`) : un seul arbre pour ACE et la molette, 7 entrées au plus par niveau, état dans le libellé.
+- **Charge** : voir `docs/TOC-PERF.md` (ce qui tourne selon la distance, retenues ajoutées, ce qui n'est pas fait).
+- Tests : `AtakTocManagerBroadcastAssetTest`, `AtakTocLayoutAssetTest`, `AtakTocAceMenuAssetTest`, `AtakTocTextAspectTest`, `AtakTocTextModuleAssetTest`, `AtakScreenCastSlideValidAssetTest`.
+- Non vérifié en jeu : tout ce qui précède. En particulier la fin du clignotement et du retour à la première personne au Zeus, la fenêtre du tableau (mise en page, Eden), la recopie d'un écran, le rendu des caractères en images.
+- Contient la 4.7.2 (PC du poste qui s'affiche de nouveau) : `origin/main` fusionnée, version gardée à 4.8.0.
+- Diffusion d'un écran satellite : la dalle qui recopie demande le même rendu satellite que sa source (`fn_tocSat.sqf` « tick ») ; image rafraîchie une fois par seconde quand la source elle-même n'est pas regardée. Une source en vue caméra est recopiée en carte et flux, pas en vidéo.
+- Module Écran TOC : attributs rangés du plus courant au plus rare (écran posé, nom, camp, affichage, poste, puis les réglages propres à un affichage).
+- Non fait : aperçus en direct et glisser-déposer dans le tableau, vue de suivi 3D, zoom et calques propres à chaque dalle d'une disposition, vidéo d'une caméra recopiée par une diffusion, blocs blancs sur la carte du PC du poste (`fn_tocLaptop.sqf`, tenu par la branche de l'app du poste), rectangle clair en haut à gauche de la vue satellite (cause non trouvée : les contrôles du HUD sont seulement créés hors cadre et sans couleur), paliers de qualité par distance et audit de charge du reste du mod.
+
+## Pack 4.7.2 Washington : le poste TOC sur le PC s'affiche de nouveau (ATAK natif 4.7.2.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : correctif
+FR : ATAK 4.7.2 : le poste TOC sur le PC s'affiche de nouveau
+- Le PC du poste TOC s'ouvre de nouveau avec ses onglets, ses boutons et sa barre de dessin.
+- La carte du PC montre de nouveau le poste et les groupes du camp, sans message d'erreur à l'écran.
+EN : ATAK 4.7.2: the TOC post shows on the PC again
+- The TOC post PC opens again with its tabs, its buttons and its drawing bar.
+- The PC map shows the post and the side's groups again, with no error message on screen.
+
+### Détail technique
+- Journal de TTRD (4.7.1) : 216 fois « 0 éléments fournis, 4 attendus » à `fn_tocLaptop.sqf` ligne 1942, et à chaque ouverture du PC « setVariable : Type Booléen » ligne 166, sans la ligne « PC du poste … ouvert ».
+- Carte : `_sideRgb` lue aux lignes 1942, 1961 et 1962 du mode `draw` sans être définie. Sa définition, en tête du fichier, avait été retirée par la refonte du thème (4.5.0, `bfc4ca42c`) ; elle est remise dans `draw`, tirée du jeton `friend` du thème comme dans `fn_tocSat`.
+- Ouverture : le fichier finit par `true`, donc le mode `mk` rendait `true` au lieu du contrôle créé ; `fn_tocDraw` (ligne 38) le passait à `tip`, l'erreur arrêtait l'ouverture du PC. `mk` et `audit` rendent maintenant leur valeur (`_ret`), et `tip` ignore ce qui n'est pas un contrôle.
+- `tools/sqf_undefined_local_check.py` (nouveau) : variables locales lues sans définition dans leur fichier, casse ignorée, variables du moteur exclues. Sur les 2 134 fichiers des mods : un seul cas, celui-ci. Test `SqfUndefinedLocalAssetTest` (même règle en PHP).
+- Non vérifié en jeu.
+
+## Pack 4.7.1 Washington : menu ACE des écrans du TOC réparé, écran qui se règle tout seul à la pose, salle TOC posée en entier (ATAK natif 4.7.1.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : correctif
+FR : ATAK 4.7.1 : le menu ACE des écrans du TOC est de retour, et un écran posé se règle tout seul
+- **Menu ACE des écrans** : l'interaction ACE revient sur tous les écrans et postes PC du TOC (elle avait disparu en 4.7.0).
+- **Écran posé, écran prêt** : un écran posé s'allume et se configure tout seul, quel que soit le moyen (éditeur, Zeus, module, script) : bon affichage selon l'écran, relié à la salle la plus proche, ou à une nouvelle salle « TOC 1 ».
+- **Salle TOC complète** : le module pose de nouveau toute la salle, y compris quand le serveur n'a pas le mod à jour.
+EN : ATAK 4.7.1: the ACE menu of TOC screens is back, and a placed screen sets itself up
+- **Screen ACE menu**: ACE interaction is back on every TOC screen and PC station (it had disappeared in 4.7.0).
+- **Placed screen, ready screen**: a placed screen lights up and configures itself, whatever the way it was placed (editor, Zeus, module, script): the right display for the screen, linked to the nearest room, or to a new "TOC 1" room.
+- **Complete TOC room**: the module places the whole room again, including when the server does not run the up-to-date mod.
+
+### Détail technique
+- Cause prouvée (journal de TTRD, 4.7.0, 45 fois « Type Objet, Chaîne attendu », `fn_tocScreen.sqf` ligne 114) : `_entryOf` écrivait `[configOf _o, configFile >> "CfgVehicles" >> _o] select (_o isEqualType "")`. Les deux éléments du tableau sont évalués : l'un des deux est toujours une erreur de type, qui arrête le script appelant. Depuis la 4.7.0, les enfants du menu ACE de l'écran lisent le format de la dalle (`["format", _o]`, donc `_ratioOf` puis `_entryOf`) : menu vide, donc aucune interaction. La même erreur arrêtait la désignation (« add ») et donc la pose d'une salle après le premier écran ; la ligne existe depuis la 4.4.1, ce qui explique très probablement le retour « un seul écran » de la 4.6.0. Corrigé par un `if` / `else`.
+- Ce n'est pas le chemin sans serveur qui cassait : l'erreur est la même sur le serveur. Dans la session de TTRD (serveur sans les fonctions TOC), la salle s'est arrêtée au premier écran pour cette raison.
+- `fn_tocHallBuild` : un rappel par objet (`step`, file `fn_waitAndExec`) puis un bilan (`finish`) ; une erreur dans un pas n'arrête plus que ce pas (une boucle ne suffisait pas : la première erreur arrêtait tout). Lignes `[COMSPEC TOC] salle | …` écrites aussi dans le journal COMSPEC. Seul le bureau reste figé : plus aucun écran ni PC sans simulation.
+- `fn_tocAuto` (nouveau) : événement de création sur `COMSPEC_ATAK_Screen_Base3D` (écrans, murs, bandeaux, postes PC) et `COMSPEC_ATAK_TocLaptop`, sur chaque machine, objets déjà présents compris, plus un passage toutes les 30 s. Réglage une seule fois par objet, 2 s après la pose (9 s au lancement) : désignation si personne ne l'a faite, affichage par défaut du format (16:9 carte et flux, bandeau horloge, plaque, texte à LED, colonne, poste PC en console), salle la plus proche à 30 m ou nouvelle salle « TOC n » (`fn_tocHall` « auto »). Le serveur règle ; serveur plus ancien ou sans le mod : le poste où l'objet est local, sinon le premier joueur. Une ligne par écran : `[COMSPEC TOC] écran | classe=… salle=… vue=… ok`.
+- Tests : `AtakTocScreenSelfSetupAssetTest` (aucun tableau qui mêle les deux lectures de config, action ACE principale et menu sur chaque classe posable, aucun objet simple, lignée du réglage automatique), `AtakTocHallRoomAssetTest` mis à jour.
+- Non vérifié en jeu : menu ACE revenu sur chaque modèle, réglage automatique (Eden, Zeus, serveur dédié, serveur sans le mod, joueur arrivé en cours de partie), salle complète posée objet par objet.
+
+## Pack 4.7.0 Washington : relais, antennes et caméras refaits en 3D, salle TOC complète posée en entier, texte à LED et écrans géants, bris d'écran réalistes, poste TOC relié à Athena (ATAK natif 4.7.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.7.0 : des relais refaits en 3D, une salle TOC qui se pose en entier, un téléphone qui casse comme un vrai
+- **Relais, antennes, caméras** : pylônes et mâts redessinés comme de vrais sites, nouveaux modèles dont des relais déguisés en arbre (faux pin, faux palmier), antennes murales, caméras IP et objets de salle serveur à poser dans l'éditeur et en Zeus.
+- **Salle et écrans du TOC** : le module « Salle TOC complète » pose enfin toute la salle sur le sol, dans Eden comme dans Zeus. Nouvel affichage « Texte » qui défile, écrans géants, incurvés et suspendus, postes PC complets.
+- **Écran du téléphone** : le verre casse de treize façons, la dalle peut tomber en panne et le sang est plus crédible ; tout se règle ou se coupe dans les options.
+- **Poste TOC et Athena** : ce que fait le poste en jeu se voit en direct sur le poste TOC web d'Athena, et un plan préparé sur le site s'envoie en jeu.
+EN : ATAK 4.7.0: relays rebuilt in 3D, a TOC room placed in full, a phone that breaks like a real one
+- **Relays, antennas, cameras**: towers and masts redrawn as real sites, new models including tree-disguised relays (fake pine, fake palm), wall antennas, IP cameras and server-room objects to place in the editor and in Zeus.
+- **TOC room and screens**: the "Complete TOC room" module finally places the whole room on the ground, in Eden and in Zeus. New scrolling "Text" display, giant, curved and hanging screens, complete PC stations.
+- **Phone screen**: the glass breaks in thirteen ways, the panel can fail and blood looks more believable; everything can be tuned or turned off in the options.
+- **TOC and Athena**: what the in-game post does shows live on Athena's web TOC, and a plan prepared on the site can be sent into the game.
+
+### Détail technique
+
+COMSPEC Link inchangé (2.0.123) : aucune source de la DLL n'a changé depuis la 4.6.0. PBO construits (octets) : main 125 616 679 (95 535 630 en 4.6.0 : écrans TOC et bris d'écran), towers 56 197 915 (89 380 262), items 29 649 104 (22 254 547), comspec_overwatch_connect 48 463 549, comspec_overwatch_main 178 077 ; le pack pèse environ 4 Mo de plus qu'en 4.6.0, les relais seuls 33 Mo de moins.
+
+**Bris d'écran réalistes, pannes de dalle, bugs d'affichage et sang plus crédible**
+
+- Modèle unique par appareil dans `COMSPEC_ATAK_Device` (`scr`, `scrSeed`, `scrN`) : `fn_screenDamage` (catalogue de 13 bris de verre, 13 pannes de dalle, 11 bugs ; causes balle, éclat, chute, accident, souffle, choc encaissé, eau, chaleur, IEM, brouillage, usure, froid, batterie faible, pression ; tirages reproductibles par appareil ; export / import ; diagnostic en clair dans le rapport de l'appareil ; `selftest`).
+- Rendu : `fn_screenFaults` (repère du verre en portrait, quart de tour en paysage, gabarits point / coin / bande / libre, jamais d'étirement, seconde passe décalée qui suit la lumière et le reflet, 90 contrôles au plus), appelé par `fn_screenSurface` dans l'ordre dalle, verre, saleté, sang, pluie, reflet, coins. `fn_screenGlitch` : un bug à la fois, 4 contrôles au plus, un seul gestionnaire `EachFrame` posé pendant le bug.
+- L'ancienne toile plein écran et ses traits ne restent que pour l'écran en morceaux ou sans impact enregistré ; réglage « Bris d'écran : réalisme » sur Désactivé = ancien rendu.
+- Réparation : kit (verre et dalle), nettoyage complet ou kit de nettoyage (film décollé, boue), redémarrage (bugs, un pixel bloqué sur deux), l'eau sous le verre sèche seule. Zeus : une entrée par bris, panne et bug, et « Retirer tous les bris et pannes ».
+- Réglages CBA (ATAK · Simulation) : `screen_fx_level`, `panel_faults`, `screen_glitch`, `screen_impact`, `screen_fault_rate`, `screen_glitch_rate` ; aussi dans le panneau de réalisme.
+- Sang : `gen_screen_fx.py` (film rouge profond sans liseré clair, ménisque rosé au lieu des reflets ronds, craquelures aux cellules inégales, grandes taches en 512 px), genres `seep` et `puddle`, voile rosé sous la pluie (`wetUntil`), boue (`mud`), gouttes de pluie refaites. Textures : `gen_screen_damage.py` (dessins d'origine) ; maquettes : `gen_screen_mockups.py`. Données de l'addon : +7,5 Mo.
+- Pas d'attribut Eden (il n'existe pas d'attribut d'appareil ; les textes d'Eden passent par les stringtables). Tests : `AtakScreenDamageAssetTest`.
+
+**La salle TOC complète se pose en entier, au sol, dans Eden comme dans Zeus**
+
+- Retour d'un testeur (4.6.0) : « pas de salle, dans Eden comme dans Zeus, seulement un grand écran qui flotte en l'air ». Ancienne pose (`fn_tocHall` « spawnRoom ») : écrans muraux (mur d'images, 98 pouces, bandeau, plaques, origine au sol et dos au mur) et écran suspendu (à 3,2 m) posés à la hauteur du module, sans mur, sans plafond, sans recherche du sol ; salle sautée en entier dès qu'une salle du même nom figurait dans la sauvegarde de la carte (`saved`, clé carte + mission, la même pour toute mission d'essai non enregistrée) ; module Zeus sans le garde-fou du module Écran TOC ; rien n'est dessiné dans l'éditeur (seule l'icône du module, un écran, y apparaît).
+- `fn_tocHallBuild` (nouveau), seul constructeur pour Eden, Zeus et le repli : tables `_rooms` (S, M, L), `_dims`, `_furniture` ; sol sous le module puis sous chaque objet (`lineIntersectsSurfaces`), mur devant (à 1,5 m et 2,4 m du sol) et plafond (3 à 4,5 m) seulement sur un bâtiment ; sinon remplaçant sur pied de la table, ou objet non posé et dit au journal. Un pas par objet (`[COMSPEC TOC] salle | objet k/N classe=… ok | échec raison`), résumé final, résultat rendu au Zeus (`comspec_atak_native_tocHallDone`).
+- Petite : mur 2x2, bandeau horloge, 2 plaques, 2 postes. Moyenne : mur 3x2, deux 98 pouces, bandeaux horloge et texte à LED, 4 plaques, écran double suspendu, 3 postes. Grande : mur 4x3, deux 98 pouces, deux 136 pouces sur pied, bandeaux, 4 plaques, écran triple suspendu, 4 postes. Sans mur : 136 pouces sur pied (petite) ou mur LED 220 pouces sur portique, 98 pouces sur pied, horloge sur un écran sur trépied.
+- Reprise : la salle d'un module Eden est reconnue à ses écrans en place (même nom, à moins de 40 m, même carte), plus à son nom dans la sauvegarde ; reprise incomplète : retirée puis reposée. Attribut « Supprimer la salle avec le module ». Serveur plus ancien ou muet 8 s : le poste du Zeus pose la salle, non gardée.
+- Tests : `tests/Unit/AtakTocHallRoomAssetTest.php` ; en jeu : `["selfTest"] call comspec_atak_native_fnc_tocHallBuild`. Non vérifié en jeu : pose réelle dans Eden et Zeus, détection du mur et du plafond selon les bâtiments, hauteur des plateaux de bureau, serveur dédié, repli.
+
+**Le poste TOC du jeu relié au poste TOC web d'Athena, plans envoyés du site**
+
+- `fn_tocWeb` (nouveau) : instantané de la salle vers Athena par la commande COMSPEC Link existante `BriefingPlan.Push` (canal `toc_room`, sans UID de joueur), au plus toutes les 3 s quand la salle change, 60 s sinon ; un seul joueur du camp envoie (celui qui tient le poste, sinon le plus petit UID ; relais après 90 s). Rien ne part avant la licence acceptée ni en mode local.
+- Commandes du site : genre `toc` du fil WC1 (`fn_webCmdDispatch`, poll des charges existant) ; chaque client du camp les remet au serveur (`comspec_atak_native_tocWeb`), qui ne les applique qu'une fois (id de commande) par `fn_tocRoom` « do » et les cite dans l'instantané suivant (`wc`). Lignes nées sur le web (id W…) reliées à leur id du jeu.
+- `fn_planServer` : opération serveur `webPatch` [camp, ids à retirer, éléments] pour les plans envoyés du site (droits vérifiés par Athena, éléments gardant leur id W<plan>_n, remplacés à chaque nouvel envoi).
+- Aucune nouvelle commande dans la DLL : COMSPEC Link inchangé.
+- À tester en jeu : poste web et PC du poste ouverts ensemble (chrono lancé d'un côté, vu de l'autre en moins de 10 s), réponse à une demande reçue sur le téléphone du demandeur, plan envoyé du site visible dans l'app Plan et sur la carte du PC, deux joueurs du camp reliés (une seule application de chaque commande), serveur sans joueur du camp (commande en attente puis expirée).
+
+**Texte à LED défilant, écrans géants, écran incurvé, postes PC et anciens écrans refaits**
+
+- `fn_tocText.sqf` : affichage `TEXT` (table `_schema` des paramètres, nettoyage serveur, défilement tiré de `serverTime`, une seule boucle à 30 images par seconde au plus pour les écrans allumés, éditeur avec aperçu). Réglage `COMSPEC_ATAK_TocText`, gardé par `fn_tocPersist`.
+- `fn_tocScreen.sqf` : table `_formats` (rapports 8:9, 16:9, 4:1, 8:1, 16:1), modes `format` et `params`, `comspec_screenPanelRatio[]` et `comspec_screenPanelViews[]` par dalle, budget de huit redessins par tour, dalles 55" des grands murs en 1024 x 512, affichages `COLA` / `COLB` (colonnes de l'écran incurvé, `fn_tocBoard.sqf`).
+- Modèles : `tools/model_toc_screens.py` (géants, murs, suspendus, incurvé, bandeaux LED), `tools/model_toc_legacy.py` (anciens écrans, mêmes noms de classes), `tools/model_toc_pc.py` (postes PC, `comspec_tocPost=1`). Zones des grands murs et dimensions : `mod/docs/MODELS.md`.
+- Non vérifié en jeu : rendu des textures 2048 x 256 et 4096 x 256, mesure `ctrlTextWidth` dans une texture UI, hauteur et orientation des anciens écrans refaits par rapport aux objets déjà posés (le téléviseur est maintenant mural, sans pied).
+
+**Relais, antennes, caméras et baies réseau refaits en 3D**
+
+- Audit complet : `docs/audit/2026-11-relais.md` (mesures avant / après, logique, limites, suite proposée).
+- Pipeline en pur Python, sans Blender : `tools/relay3d.py` (maillage, LOD, MLOD, atlas), `relay_tex.py`, `relay_parts.py`, `model_relay_towers.py` (8 pylônes et ruines), `model_relay_kits.py` (3 kits, 7 antennes murales ou de toit), `model_ip_cameras.py` (14 caméras), `model_net_infra.py` (14 objets), `gen_relay_config.py` (classes, `units[]`, stringtable de l'addon). Rendus de contrôle facultatifs : `render_relay_blender.py`, `render_relay_proofs.py`. Retirés : `gen_tower_textures.py`, `strip_tower_cables.py`.
+- `towers.pbo` : 89,4 Mo → 48,5 Mo avec 26 modèles au lieu de 10 (les cinq pylônes d'origine et leurs ruines : 76,4 → 27,0 Mo). Trois atlas (4,9 Mo) au lieu de dix matières (12 Mo) ; 3 à 5 passes de rendu par pylône au lieu de 10 à 12 ; cinq LOD, la dernière de 89 à 787 triangles ; ombres en prismes fermés (2 100 triangles au plus, 15 216 avant) ; collision de 8 à 39 pièces (jusqu'à 338 avant).
+- Classes historiques inchangées (`COMSPEC_ATAK_RelayTower_M12 / M20 / 30 / 40 / 50`, leurs `_ruins`, `COMSPEC_ATAK_DeployedAntenna_Sat / Mini / Omni`, `COMSPEC_ATAK_CameraObj`), mêmes chemins de modèle. Nouvelles : `RelayTower_Mono30`, `_Guyed60`, `_Roof8`, variantes `_RW`, `_Olive`, `_Sand`, `_Galva`, `_Light`, `_Bare`, `COMSPEC_ATAK_RelayAntenna_*`, `COMSPEC_ATAK_Cam_*`, `COMSPEC_ATAK_Infra_*`.
+- Relais déguisés en arbre : `COMSPEC_ATAK_RelayTower_Pine28`, `_Pine15`, `_Palm22` (faux pin 28 m et 15 m, faux palmier 22 m).
+- Sélections `camo` (peinture par `hiddenSelections`, attribut Eden « Peinture »), `led` (voyant d'état, `fn_relayLed`, client, relais à moins de 250 m, 3 s), `eq1` / `eq2` (équipement nu, léger, complet : animations `hide`, attribut Eden « Équipement »), destruction `fn_relayFx`.
+- Logique : couverture incrémentale par signature, recherche sous le curseur par index (9 cases au lieu de 1 313), bandes de dessin fusionnées, chaîne des répéteurs en cache 15 s, liste des relais diffusée une fois au lancement ; correction : les brouilleurs GPS seuls ne creusent plus de zone blanche. `fn_relayTower` : hauteur d'antenne minimale 1 m (4 m avant ; aucune classe existante n'est sous 8 m), nom par défaut selon la classe (`comspec_atak_relayNoun`).
+- Caméras : `fn_camAction` accepte les classes dérivées, `fn_camView` lit l'œil du flux dans la config. Infrastructure : `fn_infra`, réglage CBA « Le TOC dépend d'un serveur » décoché par défaut.
+- Tests : `AtakRelayModels3dAssetTest`, `AtakRelayCoverageCacheTest`, cas « couverture » de `fn_devMeshTest`.
+- Non vérifié en jeu (voir le chapitre 3 de l'audit) : `model.cfg` sur modèles non binarisés (sections, animations), alpha test, distances de LOD, particules.
+
+## Pack 4.6.0 Washington : écrans TOC réglables dans Eden et Zeus, écrans allumés avec un serveur plus ancien, carte photo fluide, zoom de la carte mini centré (ATAK natif 4.6.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.6.0 : des écrans TOC réglables dans Eden et Zeus, et qui s'allument partout
+- **Réglage des écrans** : chaque écran du TOC se règle dans Eden (attributs de l'objet) et dans Zeus (double-clic, fenêtre « Configurer l'écran ») : nom, camp, affichage, dalles d'un mur, luminosité, salle, distance d'affichage.
+- **Serveur plus ancien** : les écrans TOC s'allument même si le serveur a une version plus ancienne du mod, avec un message clair qui donne les deux versions ; l'action « Ouvrir le PC du poste » est toujours là.
+- **Carte photo** : la carte en photo satellite ne saccade plus.
+- **Zoom de la carte mini** : zoomer ou dézoomer le téléphone en petit garde la carte centrée sur vous, même en véhicule.
+EN : ATAK 4.6.0: TOC screens you can set up in Eden and Zeus, and that light up everywhere
+- **Screen settings**: every TOC screen is set up in Eden (object attributes) and in Zeus (double-click, "Configure the screen" window): name, side, display, wall panels, brightness, room, display distance.
+- **Older server**: TOC screens light up even when the server runs an older version of the mod, with a clear message giving both versions; the "Open the post PC" action is always there.
+- **Photo map**: the satellite photo map no longer stutters.
+- **Mini map zoom**: zooming the phone in its small view in or out keeps the map centred on you, even in a vehicle.
+
+### Détail technique
+
+**Écrans TOC allumés même avec un serveur plus ancien, réglage complet dans Eden et Zeus**
+
+Retour de TTRD du 11/11 (4.5.0, serveur dédié plus ancien) : mur d'images noir alors que le téléphone annonçait « Écran TOC : carte et flux », « L'écran n'a pas répondu » après 8 s, pas d'action « Ouvrir le PC du poste ».
+
+- **Cause** : `fn_tocScreen` « add » envoyait toujours la désignation au serveur, sans réponse attendue ; un serveur plus ancien ne connaît pas la classe de l'objet (objet nul chez lui, sortie muette) ; « ensure » annonçait quand même le succès ; `fn_screenCast` attendait 8 s puis donnait un message vague. L'action « Ouvrir le PC du poste » n'existait que sur un écran déjà désigné par le serveur.
+- **`fn_tocConfig` (nouveau)** : « mode » compare `COMSPEC_ATAK_ServerVersion` à la version du joueur (absente ou plus ancienne en MAJEUR.MINEUR : repli) ; « local » fait exécuter « add », « panels », « remove », « spawn », « view » (et `fn_screenCast` « add » / « remove ») sur le poste du joueur, par les mêmes variables publiques ; « ack » vérifie 3 s après une demande au serveur et bascule l'objet en repli (`COMSPEC_ATAK_TocFb`) ; message avec les deux versions ; une ligne au journal à la connexion (version du serveur, du poste, fonctions TOC du serveur, par demande / réponse `tocPing` / `tocPong`). Essai sur un serveur à jour : `COMSPEC_ATAK_TocForceFallback = true`.
+- **Ouvrir le PC du poste** : en tête du menu ACE (écran COMSPEC pas encore désigné : il le devient), action de la molette sur le poste le plus proche (distance au centre de l'écran, `COMSPEC_ATAK_TocActObj`), bouton OUVRIR LE PC de l'app Poste TOC, entrée du clic droit ZEN. Point ACE des modèles du mod au centre de la boîte (`acePos`), bandeau horloge et plaque de nom compris.
+- **Eden** : macro `COMSPEC_SCREEN_ATTRIBUTES` étendue (usage, nom, camp, affichage dont Éteint, escouade, satellite, caméra, mosaïque, dalles du mur, luminosité, poste TOC, salle, distance d'affichage), aide et exemple pour chacun ; « eden » applique sur le serveur, ou par un joueur si le serveur est ancien.
+- **Zeus** : fenêtre « Configurer l'écran » (ZEN s'il est chargé, sinon `fn_zeusForm`), mêmes champs, mêmes valeurs (« make » / « apply ») : appliquer, tester l'image, identifier, copier vers d'autres écrans, surface de l'image, retirer, supprimer ; résultat écrit dans la fenêtre. Double-clic, clic droit « Configurer l'objet » (aussi sur les écrans du jeu déclarés dans `CfgComspecTocScreens`), bouton CONFIGURER du Centre Zeus.
+- **Nouveaux réglages d'écran** : `COMSPEC_ATAK_TocOpt` [luminosité, distance d'affichage], lus par « tick » (voile sombre, distance par écran), gardés par `fn_tocPersist`. Dalle « OFF » dans l'écriture des dalles d'un mur.
+- Tests : `tests/Unit/AtakTocScreenConfigAssetTest.php` ; en jeu : `["selfTest"] call comspec_atak_native_fnc_tocConfig`.
+- Limites : en repli, rien n'est gardé d'une partie à l'autre, les salles TOC restent tenues par le serveur, et un objet dont la classe est inconnue du serveur n'existe que chez le joueur qui l'a posé.
+
+**Carte photo : rafale d'erreurs `fn_photoMap:277` corrigée**
+
+- La mémoire des tuiles déjà dessinées (`COMSPEC_ATAK_PhotoSeen`) partageait son nom avec un autre compteur (nombre) : `count` / `getOrDefault` sur un nombre à chaque image, rafale d'erreurs au RPT et carte qui saccade. Renommée `COMSPEC_ATAK_PhotoTileSeen`, et remise à neuf si la valeur trouvée n'est pas une table.
+
+**Zoom de la carte du téléphone porté qui reste centré sur vous**
+
+- `fn_mapZoom` : centre recalculé à chaque image (position GPS du moment, unité suivie, ou centre visible fixe), cible par la fonction pure `fn_mapZoomAim` (décalage centre interne / visible normalisé par l'échelle, gardé d'un cran à l'autre), `comspec_lastAim` tenu à jour ; plus de `fn_mapCenter` final quand on suit (il visait avec l'ancien décalage).
+- `comspec_zoomUntil` : le suivi image par image (`fn_mapOnDraw`) et le recentrage de `fn_statusUpdate` se taisent pendant le zoom. Auto-contrôle `["check"] call comspec_atak_native_fnc_mapZoomAim`. Test : `AtakMapMiniZoomFollowAssetTest`.
+
+## Pack 4.5.0 Washington : rendu professionnel des écrans TOC et du PC du poste, satellite devenu console ISR (ATAK natif 4.5.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.5.0 : un TOC au look professionnel et un satellite devenu console ISR
+- **Nouveau look** : tous les écrans du TOC et le PC du poste ont le rendu d'une vraie salle d'opérations, lisible de loin, avec des tableaux nets et plus aucun texte coupé.
+- **Console ISR** : le satellite montre une image thermique blanc chaud (et d'autres capteurs au choix) sous un vrai HUD de capteur : réticule, échelle, grille et heure ZULU. La nuit, l'image n'est plus noire.
+- **Pointage et zoom** : visez une grille, cliquez sur la carte ou suivez un groupe, et zoomez à la molette.
+- **Sur le mur** : envoyez l'image du satellite sur l'écran mural de votre choix.
+EN : ATAK 4.5.0: a professional-looking TOC and a satellite that becomes an ISR console
+- **New look**: every TOC screen and the post laptop look like a real operations room, readable from a distance, with clean tables and no more clipped text.
+- **ISR console**: the satellite shows a white-hot thermal image (and other sensors to choose from) under a real sensor HUD: reticle, scale, grid and ZULU time. At night the image is no longer black.
+- **Tasking and zoom**: aim at a grid, click on the map or follow a group, and zoom with the mouse wheel.
+- **On the wall**: send the satellite image to the wall screen of your choice.
+
+### Détail technique
+
+**Écrans du TOC et PC du poste refaits, rendu de salle d'opérations**
+
+- Thème unique `fn_tocTheme` (jetons de couleur, échelle de texte, polices RobotoCondensed / EtelkaMonospacePro, espacements, régions de chaque affichage en 1600 x 900 et 1600 x 400, colonnes des tableaux, règle sous FLASH), tables JSON lues aussi par `tools/toc_mockups.py` (maquettes PNG) et `AtakTocThemeTest` ; `ui/toc_theme.hpp` (classes du PC). Doc : `docs/TOC-THEME.md`.
+- `fn_tocBoard` réécrit en rendu « immédiat » par calques (fonds, filets et pastilles, images, satellite, cadres, textes) : en-tête, FLASH et pied communs, panneaux SPLIT / TOC / SQUAD, et FEED, NET, ORBAT, CLOCK, LOG, EXCHECK, KILLS, REQ, MOSAIC, STRIP, PLATE en tableaux à colonnes fixes ; SAT (console ISR) gardé, aligné sur les jetons (`fn_tocSat` : encre, pistes, plaques).
+- `fn_tocScreen` : la carte seule (fond teinté puis voilé, quadrillage sur plaques, plaques à liseré d'état et filet de rappel, légende) ; FEED, NET et ORBAT passent en tableaux ; tout le reste par `fn_tocBoard`.
+- `fn_tocLaptop` : onglets sur deux rangées pleine largeur (filet accent sous l'onglet choisi), titre et état du panneau de chaque onglet, couleurs et classes du thème (boutons à trois états, champs, listes), heures en monospace.
+- Tests : `AtakTocThemeTest` (contraste ≥ 4,5:1, texte mural ≥ 28 px, régions dans le cadre et sans chevauchement avec et sans FLASH, colonnes, aucune couleur hors du thème, anglais), `AtakTocLaptopLayoutTest` et `AtakTocScreenDisplaysAssetTest` mis à jour.
+- À juger en jeu : rendu réel des polices du jeu (largeur d'Etelka), lisibilité à 3-6 m, teinte de la carte selon la photo du terrain, coût de la réserve de contrôles.
+
+**Le satellite du TOC devient une console ISR**
+
+- `fn_tocSat` : table des capteurs (`_sensors`) et effet `setPiPEffect` (wiki BI : 0 normal, 1 vision nocturne, 2 thermique blanc chaud, 3 correction de couleur, 7 thermique de remplacement « inversé » = noir chaud). DAY `[0]` (nuit : DAYN, correction de couleur ×3,5), NV `[1]`, WHOT `[2]`, BHOT `[7]`, FUSW `[2]`, FUSB `[7]` + contours des bâtiments (`nearestObjects House`, 40 au plus, recalculés toutes les 1,5 s, seulement sous 760 m de large) dessinés en traits tournés (`ctrlSetAngle`) : un r2t n'accepte qu'un effet à la fois. AUTO : DAY le jour, WHOT la nuit (avant : vision nocturne). « TI » de la 4.4 lu comme WHOT.
+- Zoom : 1× = 500 m de large, demi-largeur `250 / zoom`, bornée de 0,25× à 8× (31,25 à 1000 m ; avant 40 à 2500 m) ; actions `zoomTo` et `opt` (`jit` dérive, `terr` suivi du relief) dans `fn_tocRoom`, état du satellite à 9 champs (options). Modes purs `zoomOf`, `halfOf`, `altFov`, `fovDeg`, `scale` (largeur = 2 · hauteur · tan(fov / 2)), `bar` (barre d'échelle), `selfTest`.
+- Caméra : zoom et position glissés (fov lissé), dérive optionnelle (éteinte), relief non suivi en option ; résolution de la cible par poste : H 2048 x 1024 (PC du poste), M 1024 x 512 (écran à 8 m au plus), L 512 x 256 (plus loin), changée par `retarget` (même caméra, nouvelle cible). Une caméra par satellite et par poste, seulement si regardée (logique et plafond `toc_cam_max` / `toc_cam_range` inchangés).
+- HUD (`hudMake` / `hudPaint` / `hudHide`) : contrôles de la même texture, jamais `drawIcon3D` ; coins, réticule, barre d'échelle, 6 lignes de données (police à chasse fixe, textes traduits et mesurés seulement quand ils changent), quadrillage, contours, marqueurs et tâches (`allMapMarkers` visibles du joueur, `simpleTasks`), pistes amies du réseau ATAK seulement (cadre, symbole, indicatif, groupe, état). PC : 4 fois par seconde, onglet SAT ouvert seulement ; mur : 4 fois par seconde au plus.
+- `fn_tocLaptop` : console SAT refaite sur la grille du PC (POINTAGE, zoom, CAPTEUR, DÉPLACER, CALQUES, options, ÉCRAN ISR), image 16:9 rognée dans un groupe (`sClip`) pour couvrir sa zone, pointage sur la carte (`satMap`), INSCRIRE (main courante), MARQUER (marqueur du canal Camp via `fn_markerNet`), ENVOYER / EFFACER par écran ou dalle de la salle (`fn_tocHall`, `panelOf`, `apply`).
+- `fn_tocBoard` : SAT plein cadre (texture 16:9), en-tête masqué, bandeau « Lecture seule » en bas, FLASH en haut ; correction d'une variable inconnue (`_rv`) dans la mise en page des tableaux à deux colonnes.
+- `fn_pageToc` : capteurs WHOT, BHOT, FUS W, FUS B au téléphone.
+- Tests : `AtakTocSatIsrTest` (capteurs, zoom, échelle comparée au `selfTest`, HUD, mur, anglais), `AtakTocLaptopLayoutTest` (console SAT en 4:3, 16:10, 16:9 et 21:9, image sans bande). Guide Steam 37 (poste TOC) mis à jour.
+- À tester en jeu : rendu des capteurs (BHOT `[7]`, fusions), lisibilité du HUD sur image claire et sombre, traits tournés des contours, molette et glisser dans le groupe de découpe, écrans muraux à 3-6 m, ENVOYER sur une dalle.
+
+## SSE 1.9.1 : tuto des extensions lisible, fenêtre « IA de la zone » réparée, fenêtres qui s'arrêtaient à moitié (SSE 1.9.1)
+
+### Résumé joueur
+Type : correctif
+FR : SSE 1.9.1 : des fenêtres qui s'affichent de nouveau en entier
+- **Tuto des extensions** : dans SSE ROLEPLAY · Extensions, la liste et le tuto « Comment ça marche » ne sont plus vides ; Étape précédente et Étape suivante font défiler les 10 étapes.
+- **IA de la zone** : la fenêtre du Zeus n'empile plus ses panneaux ; Filtres, Importer depuis Athena et Mémoire de la carte s'ouvrent un à la fois et se ferment d'un clic à côté ou avec Échap.
+- **Fenêtres à moitié affichées** : les fenêtres qui s'arrêtaient en cours d'affichage marchent de nouveau, et dans une discussion avec une IA vos messages se calent de nouveau à droite.
+EN : SSE 1.9.1: windows that show in full again
+- **Extensions tutorial**: in SSE ROLEPLAY · Extensions, the list and the "How it works" tutorial are no longer empty; Previous step and Next step move through the 10 steps.
+- **Area AI**: the Zeus window no longer stacks its panels; Filters, Import from Athena and Map memory open one at a time and close with a click beside them or with Esc.
+- **Half-shown windows**: windows that stopped halfway while opening work again, and in a chat with an AI your own messages line up on the right again.
+
+### Détail technique
+
+**Tuto des extensions de documents de nouveau lisible**
+
+- Cause (`extensions/functions/fn_docExtWindow.sqf`, SSE 1.9.0, l. 20 / 272 / 292) : en SQF les noms de variables ignorent la casse. Le raccourci de traduction `_L` était écrasé par `private _l = <liste>` dans `_fillTuto` et `_fill` ; l'appel `call _L` suivant échouait (contrôle au lieu de code) avant le premier `lbAdd`. Liste des étapes, lecture et ligne d'état restaient vides dans le tuto ; la liste des extensions et sa fiche aussi. La vue vide n'était pas touchée.
+- Correctif : `_loc` (traduction, clé absente → nom de la clé affiché et ligne au RPT, jamais de ligne vide) et `_lst` (listes). Étape 1 choisie à l'ouverture, focus sur la liste (flèches haut / bas), boutons `BtnPrev` / `BtnNext` (IDC 93965 / 93966, opérations `prev` / `next`, grisés aux extrémités), exemple de config.cpp à la taille de texte de la charte (0,78 case).
+- Contrôle interne `["audit"]` (textes FR / EN des 10 étapes, texte structuré lisible, IDC, liste remplie, étape choisie, lecture non vide ; liste des extensions remplie) lancé à chaque ouverture, résultat au RPT seulement ; repris par l'autotest `sse_extensions_fenetre` avec Étape précédente / suivante.
+- Test PHP `SseExtensionsTutoAssetTest` : clés FR / EN non vides, clés uniques dans les stringtables SSE, corps en texte structuré valide, IDC de la fenêtre utilisés par la fonction, étape 1 choisie, aucune variable SQF identique à la casse près.
+- Non vu en jeu (autotest non lancé sur consigne).
+
+**Fenêtre « IA de la zone » réparée, volets un par un**
+
+- Cause (RPT du 11 novembre, 13 h 44) : en SQF la casse des noms ne compte pas. Dans `editor/functions/fn_editorAi.sqf`, `_render` déclarait `private _l` (la liste) qui écrasait l'aide de traduction `_L` : `"Filters" call _L` sur un contrôle, script arrêté ; `_layout` déclarait `private _empty` qui écrasait la liste d'idc `_EMPTY` : `forEach _idcs` sur un booléen. Rien n'était jamais caché : volets, quatre onglets et boutons d'état vide restaient affichés ensemble. Même piège latent : `_all`/`_ALL`, `_gH`/`_gh`, `_sides`.
+- Registre `_OWN` : chaque idc de `aizone.hpp` a un propriétaire (cadre, liste, état vide, en-tête, un par onglet, aperçu, barre, voile, un par volet) ; `_showOnly` cache tout propriétaire non visible à chaque changement d'état, au début et à la fin de « load ». Contrôles sous condition (`_showIf`) jamais hors de leur propriétaire. Aide de traduction renommée `_loc`.
+- Volets : une seule clé d'état `volet` (« ath », « filt », « mem »), fermés au départ ; voile `AzScrim` (95850, clic à côté = « voletClose »), Échap par `KeyDown` (« escape ») ; « Importer depuis Athena » devient un volet (fond 95115, liseré 95116). Boutons en double de l'état vide (95021, 95022) retirés : le texte renvoie aux boutons du haut.
+- Op « audit » : contrôles affichés hors de leur propriétaire, chevauchements par couche, textes coupés, volets ouverts ; la visite guidée ne s'ouvre pas si l'audit trouve une fenêtre cassée (journal seulement). « Actualiser » se termine dans la ligne d'état (`AZ_RefreshDone`, ou `AZ_RefreshLate` au bout de 25 s).
+- `tests/Unit/SseAiZoneWindowAssetTest.php` : aucun nom local qui reprend (casse ignorée) un nom du premier niveau dans `fn_editorAi`, `fn_editor`, `fn_editorAiCard`, `fn_editorCoach` ; chaque contrôle a un seul propriétaire ; volets fermés au départ et au-dessus du voile ; aucun chevauchement pour chaque onglet × liste remplie / vide × volet. Autotest `sse_ia_zone_etats` passé à l'audit (non exécuté).
+- Même motif repéré dans le RPT hors de cette fenêtre : `extensions/functions/fn_docExtWindow.sqf` ligne 299 (`call _L` sur un contrôle), laissé à la branche des extensions.
+
+**Fenêtres qui s'arrêtaient à moitié**
+
+- Cause commune : en SQF les variables locales ignorent la casse (`_L` = `_l`). Nouveau détecteur `tools/sqf_case_shadow_check.py` (portées, `params`, `for`, helpers appelés depuis une portée qui masque le nom ; verdict BREAKS / RISK / OK), note `docs/SQF-VARIABLES-CASSE.md`, test PHP `SqfCaseInsensitiveShadowAssetTest` (règle sans Python, exceptions dans `tools/sqf_case_shadow_allowlist.txt`).
+- `editor/fn_editorAi.sqf` (BREAKS) : la liste `private _l` des volets écrasait la traduction `_L` ; `_empty` (booléen) masquait la liste d'IDC `_EMPTY` passée à `_vis`. À la fusion, version de la fenêtre « IA de la zone » refaite gardée (`_loc`, `_isEmpty`).
+- `toc/fn_tocDraw.sqf` (RISK, ATAK) : `private _h` écrasait `_H` (hauteur d'écran, police des boutons minuscule) et `_W` écrasait la largeur `_w` reçue (fond trop large). À la fusion, barre refaite par le PC du poste TOC gardée (pose par la grille du PC, sans ces noms).
+- `ia_rp/fn_iarpUi.sqf` (RISK) : la largeur de bulle `_w` masquait la largeur du fil `_W` lue par `_add` (bulles « moi » mal placées) ; `_bubW`.
+- `extensions/fn_docExtWindow.sqf` (BREAKS) : corrigé par la branche des extensions (même lot), exception retirée à la fusion.
+- Renommages seuls, aucun autre changement. Non vu en jeu (analyse statique, `hemtt check` ATAK et SSE sans nouvelle erreur).
+
+## Pack 4.4.1 Washington : écrans TOC visibles et bien rendus, PC du poste lisible, carte CLASSIQUE, page MPU5, note de service et versions au Centre Zeus (ATAK natif 4.4.1.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : correctif
+FR : ATAK 4.4.1 : des écrans TOC qui s'affichent, un PC lisible et une carte CLASSIQUE fidèle
+- **Écrans TOC posés** : les nouveaux écrans TOC (murs d'images, écrans 98 et 65 pouces, horloge, plaque de nom) apparaissent dans Eden et Zeus, et c'est bien l'écran choisi qui est posé. L'écran blanc de salle de briefing, les écrans sur trépied, l'ordinateur multi-écran et l'écran tactique servent aussi d'écran TOC.
+- **Écrans TOC affichés** : tous les affichages se dessinent, en texte lisible, et seulement quand vous êtes près de l'écran et face à lui (réglage « Distance d'affichage des écrans TOC », 25 m par défaut).
+- **PC du poste TOC** : boutons rangés et lisibles, vue satellite visible la nuit, zoom à la molette et image qui se déplace à la souris.
+- **Téléphone et Zeus** : le fond CLASSIQUE est la carte du jeu et le premier de la liste, la page Radio de données (MPU5) est plus claire, un bouton « Ouvrir la note de service » apparaît partout où la licence manque, et le Centre Zeus montre la vraie version de chaque joueur.
+EN : ATAK 4.4.1: TOC screens that show up, a readable laptop and a faithful CLASSIC map
+- **Placed TOC screens**: the new TOC screens (video walls, 98 and 65 inch screens, clock, name plate) show up in Eden and Zeus, and the screen you picked is the one placed. The white briefing room screen, tripod screens, the multi-screen computer and the tactical screen also work as TOC screens.
+- **Displayed TOC screens**: every display is drawn, with readable text, and only when you are close to the screen and facing it ("TOC screen display distance" setting, 25 m by default).
+- **TOC post laptop**: tidy, readable buttons, a satellite view you can see at night, mouse wheel zoom and an image you drag with the mouse.
+- **Phone and Zeus**: the CLASSIC background is the game map and first in the list, the data radio page (MPU5) is clearer, an "Open the service note" button shows wherever the licence is missing, and the Zeus Centre shows each player's real version.
+
+### Détail technique
+
+**Fond de carte CLASSIQUE identique à la carte M**
+
+- `COMSPEC_RscMapAtakClassic: RscMapControl {}` sans aucun attribut (la carte M, `RscDisplayMainMap >> CA_Map`, est un RscMapControl sans réglage de rendu) ; sur ce contrôle (idc 88532), `fn_mapOnDraw` ne redessine plus marqueurs du jeu, leurs noms, noms de lieux ni numéros de grille (`_engineTxt`).
+- `fn_mapStyle` : CLASSIC en tête de « LIST » et défaut ; `fn_pageMap` (volet) et `fn_pageSettings` (Réglages) : deux boutons par rangée, fond relu par `fn_mapStyle` (un ancien « SAT » allume CLASSIQUE), description sous les boutons.
+- Non vérifié en jeu : ACE retouche aussi `CA_Map` seul (arbres masqués, assombrissement de nuit), non repris sur le téléphone.
+
+**Écrans TOC posables partout, écran choisi bien posé, écrans des autres mods**
+
+- `toc_screens3d.hpp` : `COMSPEC_ATAK_Screen_Base3D` héritait de `Static` sans `side` (camp 4, inconnu) : Eden et Zeus ne listaient aucun des neuf nouveaux écrans. `side=3`.
+- `fn_moduleTocScreen` : module lâché au Zeus pris pour un module Eden (attributs jamais posés) : défauts trépied / SPLIT / « TOC ». Fenêtre ouverte dès que `Class` n'est pas posé et que le joueur est Zeus. `fn_tocScreen` « spawn » : la classe choisie passe telle quelle ; repli journalisé (classe inconnue du serveur) ; journal « Écran TOC posé : classe ».
+- `CfgComspecTocScreens` (`toc_screens_tiers.hpp`, extensible) : surface, dalles recopiées, format, matière par classe (ou parente). Fenêtre Zeus sur un objet : surface (liste des sélections, proposée), format 16:9 / 4:1, matière, « Tester l'image » ; `COMSPEC_ATAK_TocSurf` gardé par `fn_tocPersist`. Liste de pose avec aperçus Eden.
+
+**Écrans TOC lisibles, tous les affichages qui marchent, rien de calculé de loin**
+
+**Pourquoi seuls certains écrans s'affichaient (4.4.0)**
+- `fn_tocScreen` « load » : le display d'une texture UI allait à l'écran « en attente », pas à celui dont la texture venait de se charger ; une texture ancienne vue après coup donnait son display au mauvais écran (deux écrans sur une image, l'autre noir). Désormais `displayUniqueName` → écran (`COMSPEC_ATAK_TocTexObj`), texture abandonnée ignorée.
+- `fn_tocScreen` « tick » : une seule texture en attente à la fois ; un écran jamais dessiné par le jeu (derrière soi, dalle d'un mur, bandeau) la reprenait toutes les 4 s et bloquait tous les autres. Désormais une texture par écran allumé, demandées ensemble ; échec au bout de 6 s : trace une fois, nouvel essai 4 s plus tard sans bloquer personne.
+- « Écran vu » testé sur l'origine du modèle (`worldToScreen getPosASL`) : au sol pour le trépied, les murs d'images et le 98 pouces, au plafond pour le 65 pouces suspendu ; devant l'image, ce point est hors champ : plus aucun redessin après les 3 premières images (changement d'affichage jamais visible), caméras et satellite jamais lancés. Désormais centre de la boîte du modèle (op « center », aussi pour `fn_tocCam`, et `COMSPEC_ATAK_TocSatSeen` posé par le tick pour `fn_tocSat`).
+- Texte des écrans à la taille d'interface du joueur (`COMSPEC_RscStructuredText` : `0.024 * safeZoneH`) dans des cases de hauteur fixe : RÉSEAU sur trois lignes qui passait sous le tableau, échelle coupée. Nouvelles classes `COMSPEC_RscTocText` / `COMSPEC_RscTocLabel*` à taille fixe (0,0311 = 28 px sur 900).
+
+**Distance d'affichage et coût**
+- Réglage joueur `comspec_atak_native_toc_view_range` (10 à 100 m, 25 par défaut). Allumé : plus près que la distance, à 100° au plus de l'axe de la caméra, pas derrière un mur (`checkVisibility` toutes les 3 s, point à 15 cm devant la dalle, jamais à moins de 5 m) → texture UI, dessin toutes les 1 à 2 s, caméras. Figé (pas regardé, ou jusqu'à distance + 50 %, 10 m au moins) : dernière image gardée, aucun dessin. Veille au-delà : texture d'origine, display abandonné. Retour devant l'écran : image tout de suite (`TocAt` remis, dessin à l'image suivante du chargement).
+- Tick O(écrans proches) : index par cases de 100 m (`COMSPEC_ATAK_TocGrid`), refait quand le nombre d'écrans change ou toutes les 10 s ; seuls les écrans des cases voisines et ceux qui gardent une texture sont parcourus.
+- Caméras d'écran (`fn_tocCam`), satellites (`fn_tocSat`) : seulement les écrans allumés (dans la distance d'affichage et dans `toc_cam_range`, au plus `toc_cam_max`) ; boucle par image des tableaux vivants (`fn_tocBoard` « live ») arrêtée dès que l'écran est figé (`COMSPEC_ATAK_TocOn`).
+
+**Mise en page (pixels virtuels 1600 x 900, texte courant 28 px, ligne 38 à 40 px ; largeur estimée 0,46 x police par caractère, 0,52 en gras)**
+- En-tête : titre 24 → 1084 (44 px, 40 caractères au plus : 40 x 0,5 x 44 = 880), heure 1100 → 1576 (« 12:35Z  01:27  ● RETARD 999 s » : 29 x 0,46 x 32 = 427 px sur 476).
+- CARTE ET FLUX : carte 0 → 1000 x 84 → 900 ; panneau 1012 → 1592. RÉSEAU 92 → 138, quatre compteurs 142 → 226 ((556 - 24) / 4 = 133 px, « hors ligne » 10 x 0,46 x 28 = 129), GROUPES 236 → 278, en-têtes 280 → 314, lignes de 40 px de 318 à 598 (7 lignes, 6 avec le PIP), FLUX 640 → 892 (titre 648, 5 lignes de 38 px de 692 à 882). Colonnes : élément 322 px (23 caractères en 30 px), nœuds 66, grille 156 (6 chiffres : 83 px).
+- FLUX seul : RÉSEAU puis FLUX 240 → 884 (15 lignes, 118 caractères). RÉSEAU seul : 14 lignes de 318 à 878. ORBAT : 2 colonnes de 20 lignes de 34 px (680 sur 744). ESCOUADE : nom 2,2 x 28 = 62 px (17 caractères), compteurs, 12 membres x 34 = 408 + compte rendu 139 = 547 sur 616 ; avec la caméra du chef (556 → 882) : 7 membres (238 sur 280).
+- Carte : symboles 40 px, regroupés par cases de 64 px (110 px au-delà de 3,5 km de demi-largeur) ; plaques posées après les symboles et les puces fixes (échelle, nord, numéros du quadrillage), huit places autour du point, jamais hors du cadre ; en vue d'ensemble ni plaques de marqueurs ni villages. Cadrage automatique : centre médian du réseau, 85 % des nœuds, entre 700 m et 4 km de demi-largeur. Fond : photo `@COMSPEC_ATAK_Photo`, sinon carte d'ensemble assombrie (teinte 0,74 et voile 22 %). Échelle : barre de 80 à 200 px (1, 2 ou 5 x 10ⁿ m) et « 500 m · quadrillage 1 km ». Villes (et villages de près) par `nearestLocations`, gardées tant que le cadrage ne bouge pas.
+- Tableaux (`fn_tocBoard`) : HORLOGE ZULU 168 px, LOCAL 95 px, chronos 60 px (7 sous l'heure, « + n autres » au-delà) ; MAIN COURANTE 20 lignes d'une colonne coupées à 118 caractères ; EXÉCUTION 18 lignes ; PERTES 15 éléments ; DEMANDES 2 x 8 ; bandeau 4:1 (ZULU 8, LOCAL 6, chrono 3,6 / 5 : environ 1 700 px sur 2 048) ; vignettes de mosaïque à 28 px (502 px sur 517 en 3x3).
+
+**Contrôles**
+- Op `["audit"]` (console, joueur ou Zeus) : chaque affichage dessiné dans un display d'essai, chacun dans son propre script ; résultat OK / ERREUR / VIDE / SANS TITRE au journal et dans `uiNamespace` `COMSPEC_ATAK_TocAudit`.
+- Op `["title", affichage]` : titres et libellés communs (en-têtes, menus, notifications du téléphone).
+- Tests : `AtakTocScreenDisplaysAssetTest` (chaque affichage des menus Eden / Zeus / ACE a sa branche de dessin et un titre FR + EN ; distance, index, caméras ; texture rendue à son écran ; tailles fixes), `AtakTocPostTest` mis à jour. Non vérifié en jeu (aucun lancement d'Arma) : rendu réel des tailles, `ctrlTextWidth` dans une texture UI, `displayUniqueName` au chargement.
+
+**PC du poste TOC remis d'aplomb, satellite visible la nuit**
+
+- Causes (retour de TTRD, 11/11, build 4.4.0) : `fn_tocDraw` « build » déclarait `_h = _H * 0.03` et `_W = safeZoneW` à côté du paramètre `_w` : le SQF ne distingue pas la casse, la hauteur d'écran devenait 0,03 (libellés de la barre de dessin à un demi-pixel) et le fond prenait toute la largeur de l'écran ; barre d'outils de la carte posée à la main sur la carte, « CHERCHER » sous les onglets ; infobulles d'Arma ouvertes sur le bouton voisin ; image satellite en mode `DAY` (défaut) dans une mission de nuit (01:26) : `setPiPEffect [0]` presque noir ; bail de rendu de 3 s renouvelé seulement par l'onglet SAT (`rendu arrêté` 3 s après le changement d'onglet).
+- `fn_tocLaptop` : une seule grille (`_grid`), une seule routine de pose (`_place`), mises en page par zone dans `_layout` (titre, onglets, gauche carte / SAT / salle, panneau de l'onglet, aide, ligne d'état), un registre de contrôles (`keys`) : seul ce que la mise en page en cours nomme est montré. Boutons dans une table `_btnDefs` (libellé long, court, aide) mesurés par `_fitC`. Ligne d'aide au survol (`hover`, `help`), raison d'un bouton grisé (`why`). Mode `audit` (bouton sans texte, texte coupé, chevauchement, hors de l'écran) appelé par l'autotest `toc.sqf` pour chaque onglet.
+- `fn_tocDraw` et `fn_tocHallUi` créent leurs contrôles dans le registre du PC (`["mk", …]`, `["tip", …]`, `["label", …]`) ; positions posées par la grille du PC.
+- SAT : mode `AUTO` (défaut, `fn_tocRoom`), `fn_tocSat` « effect » (nuit : `AUTO` → vision nocturne, `DAY` → correction de couleur ×3,5) ; `need` accepte une durée, jamais raccourcie (30 s en quittant l'onglet SAT) ; molette (`MouseZChanged`), glisser (`satDown` / `satUp` → `pan`), image 16:9 en haut de sa zone, légende dessous. App Poste TOC du téléphone : bouton AUTO.
+- Tests : `AtakTocLaptopLayoutTest` (noms qui ne diffèrent que par la casse, registre et mise en page, libellés FR + EN, aucun chevauchement ni débordement en 4:3, 16:10, 16:9 et 21:9, satellite de nuit). i18n : 126 phrases dans `i18n/en.txt` et `localisation/template/xx.txt`.
+
+**Note de service à portée de main, versions justes au Centre Zeus**
+
+- `fn_licenceOpen` (ATAK, ui) : point d'entrée commun de la note de service d'Overwatch connect (`fn_showBetaAccessNote [true]`, texte de `fn_ndaTexts` inchangé). Téléphone en main rangé le temps de la note puis rouvert sur la page d'appel (`fn_openApp`), rappel `[acceptée]` à la fermeture ; `["ok"]` / `["can"]`. Aucun appel réseau : l'acceptation reste celle de `fn_ndaAccept` (lecture jusqu'à la fin).
+- Boutons : `fn_idCoverAthena` état `licence` (acceptée : `retry` automatique, la garde `_gate` reste devant `GetIdentityPack`), `fn_idCoverPage`, `fn_filePage` (nouvel état Athena `licence` posé par `fn_fileClient`, consultation relancée après acceptation), `fn_bftOrbat` « notice » WAIT (`réessayer` = « licence ») + `fn_pageBft`, `fn_pagePhones`, entrée `atak_licence` de la Configuration ATHENA (`XEH_preInit`, affichée seulement licence en attente, fenêtre rouverte ensuite). `RELIRE LA LICENCE` (Réglages) passe par le même chemin.
+- Étiquettes « Version du mod » (`fn_zeusCentre`) : la version lue était celle de la fiche relayée par le serveur (`fn_zeusState` « row »). Un serveur ATAK 4.2.1 ou plus ancien refuse les fiches de 14 champs envoyées depuis 4.2.2 et garde la dernière acceptée (session précédente du joueur), renvoyée à chaque envoi complet et tenue pour fraîche côté Zeus ; la référence retombait sur la version du Zeus lui-même tant que l'onglet SERVEUR n'était pas ouvert. Désormais : version publiée par chaque poste sur son unité (`COMSPEC_ATAK_ModVer`, `XEH_postInitClient`), fiche en repli ; référence = `COMSPEC_ATAK_ServerVersion` publiée par le serveur (`XEH_postInitServer`), sinon l'onglet SERVEUR (demandé toutes les 2 min au plus), sinon la plus récente vue en jeu.
+- `fn_verCmp` (ATAK, core) : lecture et comparaison MAJEUR.MINEUR.CORRECTIF nombre par nombre, `["max", …]`, `["selfTest"]` (4.4.0 contre 4.2.1, égales, plus récente, illisible, incomplète, vide). Test `AtakLicenceOpenVersionTagAssetTest`.
+- Overwatch connect : lit seulement sa propre version (`CfgPatches`), rien à corriger. Non vu en jeu.
+
+**Page MPU5 (Radio de données) plus claire**
+
+- `fn_pageNetwork` : section « Radio de données » refaite (état en 3 lignes à pastilles, ligne « à faire » avec la raison des boutons grisés, rangées `_ctlRow` : libellé à gauche, cases de même hauteur et de même largeur, `fn_textFit`). Section voix repliée par défaut (`_openDef` sans « voice »), volet `netGuide` (étapes numérotées, retour du téléphone par `backSub`).
+- `fn_mpuLink` : `"txpower"` et `"width"` acceptent un cran 0-2 (sans cran : le suivant, comme avant, pour le menu ACE).
+- Textes ajoutés à `i18n/en.txt` et `localisation/template/xx.txt` ; test `AtakMpu5PageAssetTest`.
+
+**Fusion du lot (release/atak-4.4.1)**
+
+- Branches fusionnées : `fix/atak-carte-classique-reglages`, `fix/toc-ecrans-visibles`, `fix/toc-ecrans-rendu`, `fix/toc-pc-ui`, `fix/atak-licence-ouvrir-version`, `fix/atak-mpu5-ui`, `fix/sse-extensions-tuto-vide`, `fix/sse-ia-zone-volets`, `fix/sqf-variables-casse`. Correctifs seuls : CORRECTIF +1 (ATAK natif 4.4.0 → 4.4.1, SSE 1.9.0 → 1.9.1). Link inchangé (2.0.123) : aucune DLL modifiée.
+- `fn_editorAi.sqf` et `fn_tocDraw.sqf` : versions de `fix/sse-ia-zone-volets` et `fix/toc-pc-ui` gardées (les doublons de casse y étaient déjà retirés). Détecteur `tools/sqf_case_shadow_check.py --all` relancé après fusion : `_r` (valeur) écrasait l'aide `_R` dans `fn_tocBoard` (texte gauche / droite, renommés `_txtL` / `_txtR`) et dans `fn_tocScreen` `_place2` (`_rect`) ; 0 BREAKS. Pour la règle du test `SqfCaseInsensitiveShadowAssetTest` (fichier entier), les autres valeurs `_r` de ces deux fichiers sont devenues `_rv`. Exception temporaire `fn_docExtWindow.sqf` retirée de `tools/sqf_case_shadow_allowlist.txt`.
+
+## SSE 1.9.0 : IA qui réagissent naturellement, émotions réglables, papiers de 45 pays, une seule identité par IA, outils Zeus refaits (SSE 1.9.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : SSE 1.9.0 : des IA plus naturelles, de vrais papiers et des outils Zeus refaits
+- **Parler aux IA** : une IA réagit normalement à une insulte ou une question absurde, comprend le tutoiement et les questions courtes (« Ton prénom ? », « Tes papiers. ») et ne parle que de ce qu'elle sait. Le maître du jeu choisit ses émotions : sans « peur des armes », un policier reste calme devant votre arme.
+- **Écrire ce qu'elle répond** : dans Eden, deux cases sur l'IA suffisent, la question et sa réponse (aussi en tête de l'atelier IA et dans son menu Zeus). La fenêtre « Réponses de l'IA » s'ouvre en mode simple, avec un aperçu de ce qu'elle dira.
+- **Papiers** : le nom donné à une IA est celui de ses papiers, et vous le voyez une fois qu'elle vous l'a dit. Les papiers existent pour 45 pays réels (France, Allemagne, États-Unis…), avec leurs noms, numéros et bande de lecture, marqués SPÉCIMEN.
+- **Pour le Zeus** : un bouton SSE dans la fenêtre d'édition d'une IA, « Voir les vrais papiers » qui montre la vraie carte et son analyse, et une fenêtre « IA de la zone » refaite : choisir, régler dans des onglets, appliquer, avec l'aperçu du papier.
+EN : SSE 1.9.0: more natural AIs, real papers and redone Zeus tools
+- **Talking to AIs**: an AI reacts normally to an insult or an absurd question, understands casual speech and short questions ("Your name?", "Papers.") and only talks about what it knows. The game master picks its emotions: without "fear of weapons", a police officer stays calm in front of your weapon.
+- **Writing what it answers**: in Eden, two boxes on the AI are enough, the question and its answer (also at the top of the AI workshop and in its Zeus menu). The "AI answers" window opens in simple mode, with a preview of what it will say.
+- **Papers**: the name given to an AI is the one on its papers, and you see it once it has told you. Papers exist for 45 real countries (France, Germany, United States…), with their names, numbers and machine-readable strip, marked SPECIMEN.
+- **For the Zeus**: an SSE button in an AI's edit window, "See the real papers" which shows the real card and its analysis, and a redone "Area AI" window: pick, set up in tabs, apply, with a preview of the paper.
+
+### Détail technique
+
+**Fenêtre « Réponses de l'IA » en mode simple (SSE)**
+
+- `ia_rp/dialogs/iarp_answers.hpp` (IDD 94800) refait : mode simple par défaut, choix « Réponse automatique / Ma réponse » en `RscToolbox` (IDC 94831), bouton « Insérer une variable » (94847) et liste des variables (94880, 94881), ligne d'exemple (94848), bouton « Options avancées » (94870) ; thèmes interdits, situation, ordre, palier, lieu et « Ajouter ma propre question » n'apparaissent qu'avec les options avancées (état gardé dans `uiNamespace` `comspec_sse_iarpAnsAdv`).
+- `fn_iarpAnswersUi` : opération `layout` (positions calculées sur la grille SSE selon le mode, la question perso et la réponse ; libellés mesurés par `ctrlTextWidth`), `mode`, `advanced`, `vars`, `varPick` (insertion au curseur via `ctrlTextSelection`, en caractères), aperçu « L'IA dira : » qui retire des répliques plutôt que de couper le texte, lignes de la liste raccourcies avec « … » et info-bulle quand l'état (« Ma réponse », « Interdit ») les recouvrirait, titre sans la vérité du nom, info-bulle retirée du champ de texte (elle cachait la saisie). « Ce que cette IA peut évoquer » montre le niveau résolu d'un profil « auto » et n'écrit un niveau que si le maître du jeu le change.
+- Format des réponses (`answers`, `evoke`, `banned` du profil) et interprète inchangés. Chaînes `STR_COMSPEC_IARP_A_*` réécrites (aides d'une phrase avec exemple), manuel en jeu (`STR_COMSPEC_IARP_ManA_D`) et guides `reponses_ia.md` / `.en.md` à jour.
+- Autotest : étape `ia_rp_reponses_fenetre` (groupe `ia_rp`, ou `ia_rp_reponses` seule) qui ouvre la fenêtre sur une IA, déroule mode simple, ma réponse, variables, options avancées et question perso, vérifie qu'aucun texte n'est coupé ni superposé, puis l'enregistrement sur l'IA.
+
+**Correctifs (SSE)**
+- Arme braquée (`fn_iarpReact` « aimedAt », `fn_idAiBrain`) : canon à 8° du buste ou, de près, à moins de 0,6 m de la personne (même règle aux deux endroits). À 3 m, viser la tête donnait 0,988 (< 0,99) : la peur ne montait pas et l'IA RP ne voyait aucune arme.
+- Champs à saisir des types de documents (`fn_idDocTypes`) : la boucle lisait `_y` hors de son contexte (variable indéfinie) ; les `inputs` de chaque type sont de nouveau remplis (recto et verso).
+- Bancs `fn_iarpSelfTest` / mission d'autotest `scripts/ia_rp.sqf` : contrôle « Libre » au bon ton, confrontation arme braquée dans `ia_rp_dialogue_421`, état, peur et distance notés dans `ia_rp_peur`.
+- Non vu en jeu (autotest non lancé sur consigne).
+
+**Des IA qui réagissent normalement aux messages hors sujet (SSE)**
+
+- Cause des répliques incohérentes de la capture (« Oui ? », « Pardon ? », « D'accord, voilà. ») : build antérieur à 7137ffdd3. « Tu aimes le cul ? » n'y était pas reconnu (« unknown », réplique « Pardon ? » de la banque), le rappel « Pas compris… GUIDE » partait dans le fil (`fn_iarpClient` « ack »), et les phrases d'entrée d'état de l'automate (`fn_idAiEnter` : « Oui ? » à « interpelle », « D'accord, voilà. » à « coopere ») s'affichaient dans la conversation. Dans la base 4.4.0, `fn_idAiSay` les tait pendant une conversation, mais « Tu aimes le cul ? » était compris « hobbies » (motif « tu aimes »).
+- Nouveau `fn_iarpOffTopic` + `data\iarp_offtopic.sqf` (sections sms, cats, not, junk, actions, mineOk, more, lexicon, bank) et `data\iarp_ottests.sqf` : couche hors sujet AVANT les demandes à effet (grossièreté, insulte, avances, question personnelle, hors du monde, absurde, charabia) ; `fn_iarpIntent` renvoie une confiance (5e élément) : demande à effet sous 0,4 non déclenchée. Provocation cumulée (retombe de 1 par minute) : confiance −10 à −20, tension +6 à +12, à 3 conversation coupée 90 s (refus en plein contrôle, sinon il s'éloigne), excuses acceptées. Incompris : otMiss1 / otMiss2 / otLost, jamais la même tournure deux fois de suite ; relance par la dernière réplique (otMore.*). Didascalies sur leur propre ligne (fil, bulle 3D) ; phrase type de l'atelier jamais après un ordre ou un refus ; « Partez » : il part.
+- Points d'accroche courts dans `fn_iarpServer` (filtre, réaction, relance, « hello », « Partez »), `fn_iarpGen` (noMine, pas de redite sur les 5 dernières), `fn_iarpData`, `fn_iarpNorm` (écriture SMS), `fn_iarpClient` / `fn_iarpUi` (astuce sous la saisie, bulles alignées à gauche avec marge), `fn_iarpBubble`, `fn_iarpSelfTest`, `config.cpp`, `stringtable.xml`.
+- Banc hors jeu `mod/@COMSPEC_SSE/tools/iarp_harness.py` (même batterie que l'autotest) : 74 messages hors sujet, 138 légitimes, 514 exemples du guide, 28 tours de dialogue, corpus inchangé. Non testé en jeu.
+
+**Émotions des IA réglables, peur des armes comprise (SSE)**
+
+- `fn_iarpProfile` : champs de profil `emotionsOn` (interrupteur) et `emotions` (`"auto"` ou liste parmi `peur`, `armes`, `nervosite`, `colere`, `mefiance`, `soulagement`) ; `noWeaponFear` écrit à la sérialisation et dans `keepOf` (dérivé : vrai quand `armes` manque), lu à l'import ; opérations `emoIds`, `emoPresets`, `emoActive`, `emoHas`, `edenEmo` / `edenEmoApply` ; `apply` garde les émotions de l'IA quand le profil appliqué ne les règle pas (bibliothèque, module « Atelier IA ») ; `keepOf` / `keepApply` portent les émotions (« Garder pour les prochaines parties »). Priorité : réglage de l'IA, sinon réglage global.
+- Réglages CBA `comspec_sse_iarp_emoOn` et `comspec_sse_iarp_emo_<émotion>` (COMSPEC SSE › IA RP, enregistrables dans la mission) ; attributs Eden `comspec_sse_iarpEmoMode`, `comspec_sse_iarpEmo_<émotion>`, `comspec_sse_iarpEmoGroup` (catégorie IA RP des unités) ; menu ZEN « Profil d'IA › Émotions… » (préréglage, cases, tout son groupe ; `profileTweak` accepte `raise`).
+- Sans `armes` : `fn_iarpReact` « fired » (tir entendu seulement), « level » et `fn_idAiBrain` (armes braquées et soldats arme levée à zéro), `fn_iarpServer` (`_aimedF` pour obéissance, menace, aveu, fuite, palier de renseignement, situation « peur »), témoin d'une arme seule, geste « /me braque son arme ». Sans `peur` / `nervosite` / `colere` : états fuit et rendu sous la menace, nerveux et refus par nervosité, agressif et renforts non choisis ; tension et peur nulles sans aucune des trois ; tons `effraye` / `nerveux` / `agressif` / `mefiant` écartés par `fn_iarpGen`, même imposés ; pression positive ignorée sans elles, apaisement ignoré sans `soulagement`.
+- Gardé volontairement : menottes et reddition ACE déjà faites, état imposé par le Zeus ou l'attribut « Comportement au contrôle », aveu par la confrontation (puis reddition d'un suspect sérieux), fuite d'un insurgé laissé seul après sa reddition, refus de papiers tiré par « Civils qui présentent leurs papiers ».
+- Manuel en jeu (« Émotions des IA »), guides `reponses_ia.md` / `.en.md`, auto-contrôle `fn_iarpSelfTest` (bloc émotions), autotest `ia_rp_peur_armes` (groupe `ia_rp`), non lancés en jeu.
+
+**Faire parler une IA, une question et une réponse (SSE)**
+
+- `fn_iarpAnswers` : `qaGet` / `qaSet` / `qaTriggers` (pur). La paire question / réponse est la 1re question perso (`cN`) des réponses du profil, même format que la fenêtre « Réponses de l'IA » : libellé = la question, déclencheurs = la question entière et ses deux mots importants les plus longs (`chef+village`), textes = situation `*` ; situations, ordre, palier et lieu déjà réglés gardés, place dans la liste gardée.
+- Attribut Eden `comspec_sse_iarpProfile` (même propriété, même valeur texte) : contrôle `COMSPEC_SSE_IarpProfileAttr` avec cases Question et Réponse ; valeur relue telle quelle tant qu'elles ne changent pas (`fn_iarpEden`).
+- Atelier IA (`iarp_workshop.hpp`, `fn_iarpWorkshop`) : Question, Réponse de l'IA, « + Variable », bouton « Options avancées » (Ce qu'elle sait, Quand elle le dit : champs `know`, `unlock`, `unlockWord` inchangés) ; zone de test : la question perso reconnue d'abord ; une bibliothèque sans réponses garde les réponses écrites ; question sans réponse : rien n'est appliqué, la ligne d'état le dit.
+- Zeus : menu ZEN « Profil d'IA › Question et réponse… » (`profileTweak` des réponses). Libellés en clair : « Face à un ordre », « Toutes les questions et réponses… ». Clés `stringtable.xml` d'avant gardées (textes changés), nouvelles clés FR / EN.
+- Tests : `fn_iarpSelfTest` (aller-retour, paraphrases, anciennes valeurs), `tests/Unit/SseIarpQuestionReponseAssetTest.php`. À tester en jeu : attribut Eden (hauteur, saisie, enregistrement), atelier (vue simple / avancée, « + Variable »), menu ZEN.
+
+**Le nom donné à une IA est enfin celui de ses papiers (SSE)**
+
+- `identity/fn_idIdentityOf.sqf` (nouveau) : identité unique d'une personne, variable diffusée `comspec_sse_identity`. Priorité : 1. explicite (`COMSPEC_SSE_FirstName` / `LastName`, `COMSPEC_SSE_Sex`, `BirthDate`, `BirthPlace`, pays `COMSPEC_SSE_Country` / `COMSPEC_ID_Country`), 2. nom Arma s'il n'est pas tiré des listes `CfgWorlds › GenericNames`, 3. tirage `fn_idGenerate` fait une fois et gardé. Opérations `get`, `full`, `presented`, `set`, `suggest`, `heldByPlayer`, `selfTest` (tableau de priorité rejoué en jeu).
+- Cause : l'atelier IA écrivait le nom dans `comspec_sse_idName` (discussion) mais `fn_idGenerate` (papiers) ne lisait que `COMSPEC_SSE_FirstName` / `LastName` ; l'analyse du Zeus affichait `name _u` (nom d'unité Arma). Désormais `fn_idIssue`, `fn_idRegistry`, `fn_idAiConfig` (`sync`, `issue`, `apply`, éléments gardés), `fn_idHvt`, `fn_idLegend`, `fn_idServer`, `fn_aiWho`, `fn_iarpName`, `fn_iarpProfile` passent par le résolveur ; `fn_idGenerate` sel vide = résolveur, tirage brut seulement pour lui. L'atelier IA ne tire plus de nom au hasard.
+- Renommage : papiers vrais refaits (réglage `comspec_sse_id_papersFollowName`, coché), papier remis à un joueur gardé tel quel et signalé dans la ligne d'état de l'atelier ; faux tiré par les règles automatiques (`autoKind`) redevient vrai pour une IA nommée ; « Le rendre faux » garde imprimé ≠ vrai.
+- Nom montré : `fn_iarpName` `known` / `learn` (`comspec_sse_nameKnownBy`), « Inconnu » dans l'en-tête, les bulles et le journal tant que le joueur ne l'a pas appris ; Zeus, administrateur et hôte le voient.
+- Photo : le conteneur du studio (`fn_idFace`) était posé sans tenir compte de l'axe du modèle, la caméra filmait sa paroi bleue. Orientation et centrage par la boîte englobante, conteneur gris, caméra vérifiée dans le studio, rendu montré seulement une fois vérifié (4 essais), sinon silhouette.
+- Guide SSE : chapitre « Nom des IA et papiers » (FR + EN). Test : `SseIdentityUniqueTest`.
+
+**Papiers de vrais pays (SSE)**
+
+- Registre `CfgComspecCountries` (`addons/identity/CfgComspecCountries.hpp`, généré par `tools/countries/gen_countries.py` depuis `tools/countries/countries.json`) : 49 pays, codes ISO 3166 alpha-3 / alpha-2 stables (repris par le site et `feat/sse-synchro-web`), 11 pays complets, 34 génériques, 4 fictifs. `fn_idCountries` lit le registre (modes `ordered`, `label`, `resolve`, `auto`, `region`) ; les pays réels ne demandent plus `comspec_sse_id_realSim` (réglage retiré) ; nouveau réglage `comspec_sse_id_countryFallback`.
+- `fn_idNumbers` : motifs et numéros à clé (NIR, registre national belge, BSN, AVS, SVNR, codice fiscale, DNI, NIE, PESEL, dowód, permis britannique, SSN 9xx), VIN. `fn_idMrz` : code document du pays (« IDD<< », « IR », « AR »), numéro long en débordement OACI, données facultatives (Belgique, Espagne). `fn_idIssue` : type remplacé par la pièce courante du pays (Royaume-Uni, États-Unis), adresse, autorité, taille, numéro personnel, titre de séjour, certificat d'immatriculation.
+- Nouveaux types `residence_permit` et `vehicle_registration` (objets `COMSPEC_ID_ResidencePermit`, `COMSPEC_ID_VehicleRegistration`, 128 exemplaires chacun). `fn_idCountryChrome` pose bandeau, drapeau, titre et étiquettes dans la langue du pays sur les gabarits sans texte (`tools/countries/gen_country_assets.py`, ImageToPAA : 22 gabarits de pays, 6 gabarits neutres, 2 icônes, environ +3,5 Mo).
+- Atelier IA : liste dynamique, séparateur des pays fictifs, `recountry` (papiers déjà délivrés refaits dans le pays choisi, papiers d'Athena gardés, ligne d'état de la fenêtre). Eden : `COMSPEC_SSE_CountryCombo` (unité et groupe).
+- Essais : `tools/countries/test_countries.py`, `tests/Unit/SseCountryRegistryTest.php`, `fn_idCountrySelfTest` (autotest `sse_pays_reels`). Non testé en jeu.
+
+**Papiers d'une IA en vraie carte pour le Zeus, plus de bandeau de texte (SSE)**
+
+- `identity` : fenêtre `COMSPEC_SSE_IdZeusPapers` (`dialogs/idZeusPapers.hpp`, grille SSE 40 x 25, `ui_macros.hpp` copié par `tools/sync_headers.py`) pilotée par `fn_idZeusPapers` ; le document est rendu par la visionneuse (`fn_idViewerOnLoad`, nouveaux paramètres d'état `zeus`, `box`, `vh`, sans changement pour les joueurs). Données : `fn_idServer` « truth » répond `zeusPapers` au seul poste du Zeus (`fn_idZeusPapersData`, demandeur vérifié par `fn_isAuthority`) ; analyse pure `fn_idZeusAnalysis` (seuils de `fn_idIssue`, clés `STR_COMSPEC_SSE_ZP_*` de `identity/stringtable.xml`, français et anglais).
+- Entrées : module ZEN « Voir les vrais papiers » (personne, ou objet qui contient des papiers), clic droit « SSE · Roleplay de l'IA › Identité et papiers », bouton « Voir le papier » de la page IA de la zone (sans ZEN). Actions de la fenêtre : sélecteur de document, vrai / faux (`aiCfg docMark`), signalement (`report`), retirer les papiers (`papersOff`), fiche de l'IA ; ligne d'état dans la fenêtre.
+- `fn_zeusNotify` n'utilise plus le bandeau de ZEN (`zen_common_fnc_showMessage`) : téléphone et RPT ; « Poser un exercice » (guide) passe par lui. Tests : `IdZeusPapersAssetTest`, `SseNoAlertChannelAssetTest` (liste blanche justifiée : aide « ? » de l'éditeur, notifications d'Eden) ; en jeu : `mod/@COMSPEC_SSE/tools/test_id_zeus_analysis.sqf`.
+
+**Un bouton SSE dans la fenêtre d'édition d'une IA en Zeus (SSE)**
+
+- La fenêtre « ÉDITER … » est celle de ZEN (`zen_attributes`, type d'affichage `Object`, boîte `zen_common_RscDisplayScrollbars`) ; les boutons TALENT, COMPÉTENCES, ARSENAL et ceux des autres mods (DÉTECTION, CARACTÉRISTIQUES) y sont posés par `zen_attributes_fnc_addButton`. Le SSE passe par la même porte (`ia_rp/fn_iarpZenHub` « register », depuis `XEH_postInitClient`), aucun fichier d'un autre mod touché. Visible pour une IA vivante seulement (`CAManBase`, pas un joueur), et seulement si le menu ZEN « SSE · Roleplay de l'IA » est posé.
+- Placement par ZEN : grille de 3 colonnes, pas de 5,1 × 1,1 cases pour des boutons de 5 × 1 : écart de 0,1 case dans les deux sens à toute taille d'interface et tout format, aucun chevauchement. Avec les 5 boutons de la capture, le bouton SSE est le 6e : 2e rangée, sous TALENT, à gauche de DÉTECTION.
+- Bouton sans fermeture (`closeDisplay` = false) : la fenêtre « SSE · <nom> » (`COMSPEC_SSE_IarpHub`, IDD 94900, `ia_rp/dialogs/iarp_hub.hpp`) s'empile par-dessus, comme les fenêtres COMPÉTENCES et TALENT de ZEN ; les saisies en attente restent, OK ou ANNULER de ZEN décident ensuite.
+- Entrées : les actions du menu ZEN `fn_iarpZen`, désormais rangées par identifiant dans `comspec_sse_iarpZenActs` (fiche « IA de la zone », vrais papiers, atelier IA, réponses, émotions quand la version les a, rôle et caractère, savoir et secrets) ; mêmes fenêtres et mêmes vérifications serveur, multijoueur compris. Une entrée sans action (addon identity absent…) n'est pas affichée. Sans ZEN : rien (la fenêtre est celle de ZEN). Eden : la fenêtre des attributs n'a pas de rangée de boutons, la catégorie « IA RP » garde son bouton « Atelier IA… ».
+- Chaînes `STR_COMSPEC_IARP_H_*` (FR, EN), manuel en jeu chapitre Zeus (`STR_COMSPEC_SSE_CFG_6E79CF4CEF`). Test : `SseZeusEditButtonAssetTest`. Non vu en jeu.
+
+**Fenêtre « IA de la zone » simple à comprendre (SSE)**
+
+- Page « IA de la zone » de l'éditeur SSE refaite dans de nouveaux fichiers : `editor/dialogs/aizone.hpp` (contrôles, IDC 95000 à 95809), `aizone_styles.hpp` (classes, `AZ_TXT_MIN` 0.78 case = `SSE_TXT_S` de la charte), `coach.hpp` (visite guidée). `editor.hpp` les inclut ; l'ancien bloc Ai* (IDC 945xx) et la modale `GuideDim` / `GuideBox` sont retirés ; titre et état de l'en-tête passent à 0.8 case.
+- `fn_editorAi` réécrit (même nom, mêmes ops appelées par le serveur et l'autotest : `load`, `scan`, `scanUnits`, `rescan`, `click`, `checkAll`, `checkNone`, `sheet`, `applyChecked`, `applyGroup`, `keepChecked`, `keptReload`, `keptForget`, `answers`, `aiReply`, `athenaDone`, `keepItem`, `post`) : colonnes, onglets, volets Filtres et Mémoire de la carte, tri, état vide, ligne d'état sans alerte (plus de `comspec_sse_fnc_toast`), indicateur « Modifié, pas encore appliqué », sélection gardée après Appliquer. Libellés ajustés par `ctrlTextWidth` sans descendre sous 0.78 case, puis « … » et info-bulle.
+- Nouveaux : `fn_editorAiCard` (papier imprimé dessiné dans un groupe, mêmes coordonnées que la visionneuse : gabarit, champs, MRZ, hologramme ; photo en silhouette) et `fn_editorCoach` (bulles ancrées : à côté de la cible, cadre vert, pointe, aucun voile ; 3 étapes ; Suivant / Passer / Ne plus afficher ; `profileNamespace` « comspec_sse_aiZoneCoach » pour la page, « comspec_sse_editorGuided » pour l'éditeur, dont la visite passe aussi en bulles).
+- `fn_editorAiServer` : op `docView` (document imprimé, jamais la vérité, mêmes champs que `_pub` de `fn_idServer`), réglage `country` (pays des papiers, posé sur `COMSPEC_ID_Country` avant que les papiers soient refaits, gardé avec l'IA et remis par la mémoire locale), 16e colonne de ligne (pays). Données gardées inchangées (`comspec_sse_editorAiKept`, `comspec_sse_editorAiKeptSeq`).
+- Textes : 166 clés `STR_COMSPEC_SSE_AZ_*` (FR, EN) dans `editor/stringtable.xml` ; anciennes `STR_COMSPEC_SSE_ED_*` gardées. Vocabulaire : « Vérité » → badge Vrai / Faux, « Nature » → Authenticité, « Gardés pour les prochaines parties » → Mémoire de la carte (anciens noms dans les info-bulles). Manuel en jeu (`STR_COMSPEC_SSE_GUIDE_AIZONE_DESC`) et `docs/guides/ia_de_la_zone(.en).md` en trois étapes.
+- Tests : `tests/Unit/SseAiZoneWindowAssetTest.php` (clés FR / EN de chaque contrôle, aucune taille sous 0.78, libellés et listes qui tiennent en FR et EN, aucun chevauchement par onglet et par volet, visite ancrée et notée, aucune alerte Arma) ; autotest `sse_ia_zone` mis à jour et `sse_ia_zone_etats` (liste vide, remplie, chaque onglet, volets, visite : `AT_fnc_tient`, police minimale, listes déroulantes, rectangles).
+- Non vu en jeu : autotest non lancé (à faire : rendu du papier dans l'aperçu, bulles de la visite, 4:3 et 21:9, tailles d'interface très petite et très grande, Appliquer en multijoueur).
+
+**Fenêtre des extensions de documents lisible, exemple livré et tuto intégré (SSE)**
+
+- **Cause des « 0 extension(s) »** : voulu côté code, faux côté livraison. `fn_idDocTypes` « extensions » ne lit que `configFile >> CfgComspecDocumentExtensions` ; le SSE n'en déclare aucune (`identity/CfgComspecDocuments.hpp`, classe vide) et l'extension d'exemple n'était construite qu'en mod séparé (`extensions/example_documents/build_extension.bat` → `@COMSPEC_SSE_ExampleDocuments`), absent de `build_pbo.bat` et de `workshop-pack.ps1`. Un joueur du Workshop n'avait donc jamais d'extension, et la fenêtre gardait ses deux volets vides.
+- **Exemple livré** : `build_pbo.bat` empaquette `extensions/example_documents` en `addons/comspec_sse_ext_example_documents.pbo` (préfixe d'origine, README / tools / scripts hors PBO), exigé par `workshop-pack.ps1`. Nouveaux champs de `CfgComspecDocumentExtensions` : `defaultOff = 1` (coupée tant qu'un Zeus ne l'active pas : `fn_docExtServer` et repli client de `fn_idDocTypes`, nouvelle op « defaultOff », 10e colonne de « extensions ») et `builtin = 1`. Annonce ATAK du Zeus : exemple intégré coupé non annoncé.
+- **Fenêtre** (`extensions/dialogs/extensions.hpp`, `fn_docExtWindow`) : refaite sur la grille 40 x 25 (`ui_macros.hpp` copié par `tools/sync_headers.py`, classes `COMSPEC_SSE_Rsc*`, `comspec_sse_ui` requis) au lieu de coordonnées 0..1 et polices fixes (cause du texte coupé : ligne d'état de 0,04 d'une ligne sous laquelle la 2e ligne passait sous les boutons). Ligne d'état deux lignes au plus, police réduite par paliers ; libellés réduits puis « … » ; liste coupée avec « … » (nom entier en bulle) ; fiche et modèles dans un groupe défilant. Vue « aucune extension » (explication + « Ouvrir le tuto ») à la place des volets vides.
+- **Tuto intégré** : bouton « Aide » de l'en-tête (devient « Extensions » pour revenir), 10 étapes (STR_COMSPEC_SSE_EXT_T1..T10, FR / EN), lecture défilante, étape 5 : `config.cpp` minimal commenté (type « Permis de port d'arme ») et « Copier l'exemple » (`copyToClipboard`, confirmation sur la ligne d'état). Textes de la fenêtre passés au stringtable de l'addon (langue du jeu). Même contenu dans le manuel SSE (`STR_COMSPEC_SSE_GUIDE_EXTENSIONS_DESC` / `_TIP`), guides `docs/guides/extensions_documents*.md`, `menu_extensions*.md` (réglages CBA corrigés), README de l'exemple, `docs/guide/Guide_COMSPEC_SSE.html`.
+- **`$PBOPREFIX$` corrompus** : `addons/extensions` et `extensions/example_documents` contenaient des caractères de contrôle (`\a`, `\e` interprétés à l'écriture) ; réécrits. Sans effet sur `build_pbo.bat` (préfixe passé en argument), mais faux pour hemtt et Addon Builder sans `-prefix`.
+- **Autotest** (`scripts/sse.sqf`) : `sse_extension_exemple` active puis recoupe l'exemple ; nouvelle étape `sse_extensions_fenetre` (vues liste, vide forcée par `comspec_sse_docExtTestEmpty`, tuto et ses 10 étapes : textes qui tiennent, aucun chevauchement, presse-papiers égal à l'exemple en solo).
+- **Non vu en jeu** : rendu réel de la fenêtre, du tuto et de l'état vide, copie dans le presse-papiers en multijoueur (client non hôte), PBO de l'exemple produit par `build_pbo.bat`.
+
+**Lore de session avec Athena : les IA remontent et redescendent (SSE)**
+
+- Identifiant stable par IA (`comspec_sse_aiUid`, public) : attribut Eden `COMSPEC_ID_AiUid`, sinon BioId, nom de variable, nom déclaré, position (`fn_loreUid`). Le téléphone saisi sur une IA (ATAK, synchro du téléphone) reprend le même identifiant.
+- Module Eden et Zeus « Synchroniser les IA avec Athena » (`fn_loreModule`, `fn_loreServer`, `fn_loreClient`) : `lore_push` par lots (25 personnes, 150 000 caractères au plus, fiche `fn_lorePerson`), `lore_pull` paginé et validé, rafraîchissement automatique (désactivé, 60 s minimum).
+- Données connues sur l'IA (`comspec_sse_lore`, `comspec_sse_loreAt`), réponses et caché MJ côté serveur seulement, réponses branchées sur le profil RP ; registre `comspec_sse_loreReg` ; IA créée après la synchro rattachée à l'InitPost.
+- Fichiers, SEEK II et contrôle d'identité : fiches personne tirées des données connues (`fn_loreFile` dans `fn_fileServer`).
+- Licence : rien ne part avant son acceptation (serveur dédié : signalée par un joueur connecté). Page du guide en jeu et clés FR / EN. Fusion : `fn_lorePerson` lit l'identité unique de l'IA (`fn_idIdentityOf`), le même nom que ses papiers.
+- Pas d'entrée de changelog dans la branche (rédigée à la fusion) ; non testé en jeu.
+
+
+## Pack 4.4.0 Washington : salle TOC en jeu, sang sur l'écran, carte Classique, traçage d'un numéro, ATHENA Configuration (ATAK natif 4.4.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.4.0 : une salle d'opérations en jeu, du sang sur l'écran et une carte qui ne rame plus
+- **Salle TOC et sang** : le module « Salle TOC complète » pose une salle déjà câblée (murs d'images, vue satellite en direct, horloge, PC qui choisit ce que montre chaque écran). Le téléphone se salit de sang selon vos blessures ; réglez la quantité avec « Sang sur l'écran : quantité maximale ».
+- **Carte et BFT** : le fond CLASSIQUE est maintenant la vraie carte du jeu, la même qu'avec la touche M, et le fond photo ne fige plus le jeu quand vous zoomez. Le BFT affiche de nouveau l'ORBAT d'Athena de votre unité.
+- **Enquêter au téléphone** : app GE, onglet TRAÇAGE, « Tracer le numéro » place une zone sur la carte, téléphones des IA compris. L'app Fichiers répond toujours, Ma couverture récupère vos couvertures Athena sans fichier, et « Synchroniser avec le web » (menu ACE, à autoriser dans les options) envoie votre téléphone à Athena.
+- **Menu Échap et Zeus** : un seul bouton « ATHENA Configuration » regroupe la liaison, le dépannage, le réalisme et les extensions du SSE. Le Centre Zeus est remis d'aplomb : onglets lisibles, plus de boutons vides.
+EN : ATAK 4.4.0: an operations room in game, blood on the screen and a map that no longer stutters
+- **TOC room and blood**: the "Complete TOC room" module places a room already wired up (video walls, live satellite view, clock, a laptop that picks what each screen shows). The phone gets bloody according to your wounds; set the amount with "Blood on the screen: maximum amount".
+- **Map and BFT**: the CLASSIC background is now the real game map, the same as with the M key, and the photo background no longer freezes the game when you zoom. The BFT shows your unit's Athena ORBAT again.
+- **Investigating with the phone**: EW app, TRACE tab, "TRACE THE NUMBER" puts an area on the map, AI phones included. The Files app always answers, My cover fetches your Athena covers without a file, and "Sync with the web" (ACE menu, to allow in the options) sends your phone to Athena.
+- **Esc menu and Zeus**: a single "ATHENA Configuration" button gathers the link, troubleshooting, realism and SSE extensions. The Zeus Centre is fixed: readable tabs, no more empty buttons.
+
+### Détail technique
+
+**Salle TOC en jeu : vue satellite, horloge, écrans d'escouade, mosaïque, salles et PC maître, dessin au PC, salle gardée (ATAK natif)**
+
+- `fn_tocRoom` (nouveau) : état du poste par camp tenu par le serveur, variable publique `COMSPEC_ATAK_TocRoom_<camp>` (chronos, satellites, main courante, liste d'exécution, demandes, FLASH, postes, pertes) ; événement `comspec_atak_native_tocRoom`, libération des satellites et du poste à la déconnexion.
+- `fn_tocSat` (nouveau) : une caméra et une cible de rendu par satellite et par poste (`comspec_tocsat_<camp>_<n>`), seulement pour l'onglet SAT ouvert ou les écrans SAT regardés à moins de `toc_cam_range`, dans la limite `toc_cam_max` (caméras de `fn_tocCam` comprises). Projection verticale (demi-largeur = hauteur × fov, comme `fn_jpcMap`). Suivi : nœuds de `fn_tocFeed` seulement (position vue en direct, dernier PLI sinon).
+- `fn_tocBoard` (nouveau) : affichages SAT, CLOCK, LOG, EXCHECK, KILLS, REQ dans la texture UI des écrans ; image r2t dans la texture UI, cadres de suivi redessinés 5 fois par seconde. Affichage SQUAD dans `fn_tocScreen` (carte cadrée sur le groupe, panneau du groupe).
+- `fn_tocScreen` : `COMSPEC_ATAK_TocScr` passe à 10 champs (satellite, escouade), écran désigné en cours de partie marqué à recréer, menu ACE « Salle TOC », FLASH en tête des écrans. `fn_tocLaptop` : onglets SAT et CHRONOS, heures ZULU et locale, liaison radio, FLASH, prise du poste. `fn_pageToc` / `fn_tocAction` : satellites et contenu des écrans depuis le téléphone.
+- `fn_tocPersist` : format 2 (écrans avec satellite, escouade, source caméra décrite ; état du poste par camp), écriture 3 s après chaque changement au lieu de 10 s, relevé des positions toutes les 15 s (écran déplacé au Zeus), caméra reprise dès que sa source revient. Module Écran TOC : affichages, satellite, escouade, liste d'exécution préparée (Eden et Zeus).
+- Console du PC (lot « Je veux tout ») : onglets RADIO (radios ACRE2 de l'opérateur par `fn_mpu5`, voyants RX / TX, alternat affiché ; pas de bouton PTT, aucune API publique d'ACRE2 ni de TFAR), DIFFUSER (tous les écrans du camp, contenu et nom), MAIN COURANTE, EXCHECK, PERTES, DEMANDES. Entrées automatiques côté serveur : comptes rendus, alertes et BDA en main courante ; MEDEVAC, appels de feu (`fsState` NEW) et ravitaillements (`logi` NEW) en demandes ; homme à terre (alerte MAN DOWN), porteur d'ATAK tué et ennemis neutralisés déclarés par BDA en pertes. Réponse à une demande : événement `comspec_atak_native_tocReqAnswer` vers le seul demandeur, notification du téléphone.
+- Murs d'images (branche des écrans 3D fusionnée) : une dalle = un affichage. Les dalles 2 à N d'un mur `comspec_screenPanels` sont des relais (objet invisible accroché au mur, `COMSPEC_ATAK_TocHost` / `COMSPEC_ATAK_TocPanel`) inscrits au registre comme des écrans ; `paint`, `surface` et `orig` passent à l'hôte sur l'index de la dalle. Réglage par dalle : menu ACE « Dalles du mur », onglet DIFFUSER, attribut « Dalles du mur » du module (`SAT1, CLOCK, SQ:groupe`), sauvegardé dans l'écran hôte. Faces 4:1 (`comspec_screenRatio=4`) : affichages STRIP (horloge) et PLATE (nom du groupe lié ou de l'écran), texture 2048 x 512 ; bandeau et plaque ajoutés à la liste des écrans. Matière d'une dalle réimposée quand l'objet ne la porte plus (dalle d'index > 0 noire de jour).
+- Mosaïque (`fn_tocMosaic`, affichage MOSAIC) : grille 2x2 / 3x3 des sources de `fn_tocCam`, choix automatique (camp, groupe) ou case par case, rotation des pages ; une caméra r2t 64 à 256 px par source vue, plafond par poste = 4 vignettes par caméra d'écran restant libre sous `toc_cam_max`, vignettes en trop à tour de rôle (2 s). Caméra poitrine du chef sur l'écran d'escouade quand il la partage (même code).
+- Salles (`fn_tocHall`, `fn_tocHallUi`, `fn_moduleTocHall`) : salle = PC maître + écrans liés (`COMSPEC_ATAK_TocHall`, `COMSPEC_ATAK_TocUid`), onglet SALLE du PC à la place de DIFFUSER (plan du mur vu depuis le poste, dalles cliquables, contenu, nom, allumer / éteindre `COMSPEC_ATAK_TocOff`, identifier (clignotement 2 s chez tous), lier / délier, viser un écran, scènes, tout allumer / éteindre) ; ACE « Gérer l'écran › Lier à la salle … » ; Eden : PC synchronisés au module Écran TOC = salle ; module « Salle TOC complète » S / M / L (mobilier du jeu de base, PC, contenus par défaut, pas de double pose si la salle est gardée).
+- Menu ACE des écrans réorganisé : Afficher sur l'écran (Carte et réseau, Satellite, Horloge, Tableau du poste, Escouade, Caméras) · Régler les dalles du mur · Diffuser · Régler la carte · Gérer l'écran ; écrans 4:1 : bandeau ou plaque seulement.
+- Dessin au PC (`fn_tocDraw`) : outils TRAIT, DESSIN, MARQUEUR (palette du téléphone : camp, type, couleur, nom, durée, canal), PLAN (graphismes de `fn_planCatalog`, envoyés à `fn_planServer`), EFFACER, ANNULER ; carte du PC prêtée aux outils du téléphone (`COMSPEC_ATAK_MapCtrlOverride` dans `fn_mapCtrl`), dessin par `fn_strokeDraw`, `fn_planDraw`, `fn_zoneDraw`. Écrans muraux : traits, rectangles, ellipses et plan du camp tracés en segments épaissis. Sauvegarde : marqueurs de joueur (canal « arma ») avec leur style et plan de chaque camp, écriture à chaque marqueur posé, changé ou effacé.
+- À tester en jeu : image satellite dans la texture UI des écrans, alignement des cadres sur les unités, prise de main à deux PC, reprise de la salle après redémarrage du serveur.
+
+**Vrais grands écrans pour la salle d'opérations (ATAK natif)**
+
+- `tools/model_toc_screens.py` (pur Python, sans Blender) : 9 modèles MLOD dans `addons/main/data/toc/` (LOD 0 / 2 / 6, ombre, géométrie avec masse et `autocenter=0`, géométrie de tir et de vue), textures PAA du cadre (alu brossé, plastique, acier, ouïes), rvmat Super, verre éteint brillant, aperçus Eden rendus par le script. Passés par Binarize (hemtt build) sans avertissement.
+- Classes `COMSPEC_ATAK_Screen_Wall2x2`, `_Wall2x2_Quad`, `_Wall3x2`, `_Wall3x2_Mixed`, `_98`, `_98_Stand`, `_65_Ceiling`, `_ClockStrip`, `_NamePlate` (`toc_screens3d.hpp`), dans la liste des écrans TOC (`fn_tocScreen` « classes ») et du module (sauf horloge et plaque, en 4:1, `comspec_screenRatio=4`).
+- Murs à plusieurs dalles (`comspec_screenPanels`) : sélections `panel1`… en ordre de lecture vu de face, index = numéro - 1 ; `fn_tocScreen` « surface » garde une préparation par dalle (variable `COMSPEC_ATAK_SurfPrep<index>`), chaque dalle garde sa matière d'écran. Mur 3x2 « image et 2 dalles » : `panel1` = bloc 2x2 de gauche (16:9), `panel2` / `panel3` = colonne de droite (une image unique 3x2 serait en 8:3).
+- Largeurs hors tout pour accoler : 2x2 2,4572 m, 3x2 3,6738 m, 98" 2,1935 m (origine au sol, dos au mur). Test en jeu : groupe `ecrans3d` de la mission d'autotest.
+
+**Sang sur l'écran du téléphone selon la situation (ATAK natif)**
+
+- `fn_screenDirt` : niveaux 1-4 (`_burst`, cibles de couverture 6 / 20 / 45 / 85 %), causes : débit ACE `ace_medical_woundBleeding`, `ace_medical_bloodVolume` (< 5 L : lourd, < 4 L : extrême), inconscience, plaies aux bras (téléphone en main : +1), sans ACE `isBleeding` + `damage` + `lifeState` ; blessé porté ou traîné qui saigne (`ace_dragging_carriedObject` / `draggedObject`) ; coup reçu (`hit`, niveau selon les dégâts et le nombre de blessures) ; mort à moins de 1,2 / 2 / 2,8 m (`nearby` : 4 / 3 / 2, téléphone sorti ou sur le gilet). Exposition : en main plein niveau, miniature ou gilet un de moins, sac rien. Nouveaux modes `force`, `age`, `residue`, `maxLevel` ; tache : + orientation (la tache tourne avec le verre) et débit (coulures en segments chaînés vers le bas de l'orientation actuelle, un par passage de 5 s tant que le sang a moins de 150 s). Au plus 48 taches (les moins visibles partent). Taille en part du petit côté de l'écran (plus d'écart portrait / paysage).
+- `fn_screenSurface` : ordre voile, couche continue, nappes, essuyages, reste, coulures ; texture séchée `bloodd_*` posée par `ctrlSetText` au passage de 4 min (sans recréer le contrôle), teinte qui fonce de 0 à 6 min ; plein écran tourné d'un quart si l'orientation a changé.
+- Nettoyage (`fn_screenClean`, `clean`) : chiffon = sang frais × 0,3 + traînée `wipe` (5 au plus par passage), séché × 0,72 ; complet sans kit = frais retiré, séché × 0,3 ; kit = tout ; eau et pluie remouillent le sang.
+- Réglage serveur `comspec_atak_native_blood_max` (0 selon le profil, 1-4) ; style Discret : au plus Normal.
+- Textures (`tools/gen_screen_fx.py --sang`) : 40 fraîches + 40 séchées (nouvelles : `pool_2-3`, `splat_2-3`, `hand_2-3`, `spatter_2`, `run_0-2`, `arterial_0-1`, `drag_0-1`, `wipe_0-2`, `cover_0-1_land/port`, `veil_0_land/port`), fondu sur les bords, reflets atténués.
+- Autotest `sang_niveaux` (`scripts/sang.sqf`, groupe `sang`) : non lancé (pas vu en jeu).
+
+**Fond de carte Classique = la carte d'origine d'Arma 3 (ATAK natif)**
+
+- `fn_mapStyle` : nouvelle valeur `CLASSIC` (bouton CLASSIQUE, avant branché sur `SAT`, texture satellite seule) ; `SAT` enregistré relu comme `CLASSIC` ; `PHOTO` sans photo de la carte → `CLASSIC` (avant `TOPO`) ; défaut inchangé (`TOPO`). `["LIST"]` rend la liste [libellé, valeur, description, disponible] partagée par `fn_pageMap` et `fn_pageSettings`.
+- `COMSPEC_RscMapAtakClassic` (`ui/controls.hpp`) tirée directement de `RscMapControl` : couleurs et rendu du jeu, seuls les textes redessinés par l'ATAK et les marqueurs de mission masqués comme sur les autres fonds. Le contrôle 88532 (`MapSat` → `MapClassic`, `COMSPEC_ATAK_IDC_MAP_SAT` → `COMSPEC_ATAK_IDC_MAP_CLASSIC`) la porte ; `COMSPEC_RscMapAtakSat` reste la base d'HYBRIDE.
+- Volet CONFIGURATION de la carte : description du fond choisi sous les boutons (texte qui passe à la ligne), description de chaque fond en infobulle, ligne grise « SATELLITE : nécessite le mod COMSPEC ATAK Photo » quand la photo manque.
+- i18n en.txt et xx.txt (18 phrases, aide des Réglages réécrite), `docs/steam/discussions/01_carte.txt`. Test : `AtakMapClassicAssetTest`, `AtakRealismProfileTest` mis à jour.
+
+**Le téléphone s'ouvre plus vite et ne fait plus ramer le jeu (ATAK natif)**
+
+- Constat (RPT de TTRD du 11/11, ATAK 4.4.0.AG, fond PHOTO, pack photo Altis en tuiles JPG) : 9 images figées téléphone ouvert sur la carte, dont 1,3 à 1,9 s « dans les boucles du mod » au zoom (`carte (image)` max 1860 ms alors que toutes les sous-mesures restaient sous 3 ms), puis plus rien une fois les tuiles vues (carte à 2,2 ms par image). Cause : chaque tuile neuve du fond photo (`fn_photoMap`, JPEG lu dans la PBO et décodé par le jeu au premier `drawIcon`) ; un nouveau niveau de zoom en demandait jusqu'à 64 d'un coup. Présent avant 4.4.0 (`fn_photoMap` inchangé depuis 4.3.0) : pas une régression de la salle TOC ni du sang.
+- `fn_photoMap` : tuiles chargées notées (`COMSPEC_ATAK_PhotoSeen`, dessinées depuis moins de 5 min) ; 2 tuiles neuves au plus par image (1 si l'image précédente a dépassé 100 ms), posées à 1 % d'opacité pour être chargées sans se voir. En attendant, la vue garde le niveau le plus fin déjà chargé en entier (un seul niveau à l'écran, comme avant) ; le niveau deux crans plus grossier est chargé d'abord quand rien n'est prêt. Vue chargée : dessin identique à avant, noms de fichiers faits une fois par image. Relevé `COMSPEC_ATAK_PhotoLast` pour la mesure.
+- `fn_mapOnDraw` : nouvelles clés `[PERF]` `carte fond photo (image)`, `carte unités (image)`, `carte noms des repères (image)` (parties du dessin jusque-là sans mesure).
+- `fn_perfLog` (nouveau) et réglage CBA `comspec_atak_native_perf_log` « Mesure des performances (journal) » (ATAK · Debug, décoché) : lignes `[COMSPEC perf]` dans le RPT seulement (ouverture du téléphone de l'appui à la première image avec ses étapes ; ouverture des apps ; carte toutes les 5 s : moyenne et pire par image, unités, marqueurs, étiquettes, tuiles ; bilan 10 s : img/s, ms/s du mod, boucles CBA chronométrées par `fn_profiler`, contrôles du téléphone, boucles et scripts en file, plus coûteux ; appels de DLL de plus de 5 ms, appels directs du mod et relevé `Perf.Stats` des deux DLL). Décoché : une lecture de variable dans `fn_perfAcc`, `fn_open`, `fn_displayLoad`, `fn_navigate`, `fn_hudToggle`, `fn_interactToggle`, `fn_extensionCall`, `fn_extAwait`.
+- `fn_zeusCentre` : la traduction `_T` était écrasée par des variables `_t` (SQF ne distingue pas la casse) : erreur « call : Type Chaîne » à chaque outil de l'onglet Outils (6 dans le RPT) et même piège dans la fiche joueur et l'état du serveur. Fusion 4.4.0 : corrigé une seule fois, par la refonte du Centre Zeus ci-dessous (traduction `_tr`).
+- Vu dans le RPT, hors COMSPEC : 91 erreurs ACE `fnc_determineMapLight` / `fnc_simulateMapLight` (carte principale de nuit au briefing), avertissements de config d'autres mods au chargement.
+- À vérifier en jeu : zoom et dézoom rapides sur le fond PHOTO (plus d'image figée, net en moins d'une seconde), première ouverture du téléphone en main sur la carte, réglage coché puis journal relu.
+
+**L'ORBAT d'Athena s'affiche de nouveau dans le BFT (ATAK natif)**
+
+- `fn_bftOrbat` : l'état IDLE servait à la fois de « jamais demandé » et de « en cours », sans limite de temps ; la réponse `ERR|busy` de COMSPEC Link ne changeait pas l'état, et une lecture perdue (réponse jamais traitée, tâche de fond arrêtée, partie relancée avec l'état gardé dans uiNamespace) laissait « Lecture de l'ORBAT du site… » pour toujours. Nouveaux états LOADING (heure de départ), EMPTY (aucun ORBAT sur le site), WAIT (liaison non autorisée : aucune requête) ; réponse attendue 15 s (`fn_extAwait`), garde-fou de 20 s relu au chargement, au bandeau et à la signature de la page ; DOWN avec une raison courte et nouvel essai 15 s, 30 s, 1 min, 2 min puis 5 min ; relu toutes les 5 min une fois lu.
+- RPT : une ligne `[COMSPEC orbat] ancien -> nouveau : raison (code, durée)` par changement d'état (codes d'erreur seuls, jamais de jeton).
+- `fn_pageBft` : bouton RÉESSAYER à droite du message d'erreur ; ligne « Groupes de jeu, en attendant l'ORBAT du site » au-dessus de l'arbre de repli.
+- `fn_extAwait` (natif) : ticket et table d'attente pris dans un bloc `isNil` (comme `fn_extAwait` de connect) : deux appels simultanés pouvaient partager un ticket ou perdre leur table, d'où une réponse jamais reçue.
+- Aucune nouvelle DLL, aucun changement du site. Non vu en jeu.
+
+**Tracer un numéro de téléphone depuis l'ATAK, IA comprises (ATAK natif et SSE)**
+
+- Onglet GÉOLOC de l'app GE devenu TRAÇAGE (`fn_pageEw` clé `GEO` gardée) : nouveau dossier `functions/trace` : `fn_traceCalc` (calculs purs : normalisation du numéro, rayon selon les antennes, cercle qui grandit avec l'âge, état par priorité, attente, extraction des numéros d'un texte, `selfTest`), `fn_traceServer` (serveur seul : index des numéros, couverture, état du téléphone, dernière position connue, limites, réponse au seul demandeur par `comspec_atak_native_traceRes`), `fn_traceAction` (téléphone : requête `remoteExecCall`, onglet, journal, suivi, partage en marqueur, fiche SSE FRO, lien profond `open`, boutons `numRows`, menu ZEN).
+- Avant : la GÉOLOC calculait la position sur le client, seulement pour les unités qui portaient un ATAK, à précision fixe. Après : le serveur répond après la requête opérateur (réglage, ±20 %), position décalée dans un rayon tiré des antennes qui captent le téléphone (relais ATAK du camp ou sans camp, relief compris, puis antennes civiles des localités si le réseau mobile civil est actif), aucune position d'unité non tracée ne quitte le serveur.
+- Numéros connus du réseau : téléphones ATAK (numéro, IMEI, MAC), profils SSE (identité, appareils, champs Eden `comspec_sse_personPhone` / `comspec_sse_phoneNumber`, registre `comspec_sse_logicalEntities`), attribut Eden ATAK `COMSPEC_ATAK_PhoneNumber`, IA réglée « Téléphone » sans numéro : numéro de `fn_phoneIdent` (déterministe). Numéro inconnu, ligne jetable ou camp fermé : « Numéro inconnu du réseau ».
+- Contre-mesures : brouilleur (`COMSPEC_ATAK_Jammers`, filtrage ami respecté), téléphone éteint, mode avion, hors couverture : dernière position connue gardée sur le serveur (`COMSPEC_ATAK_TraceLast`, jamais publique). Attribut Eden et menu ZEN « Téléphone traçable » (`COMSPEC_ATAK_PhoneTrace` : on / off / burner). Zeus : suspendre le traçage (`COMSPEC_ATAK_TraceOff`), mandat (`COMSPEC_ATAK_TraceWarrant`), réseau mobile civil (`COMSPEC_ATAK_TraceCivNet`).
+- Réglages CBA « ATAK · Géolocalisation » : `trace_delay`, `trace_cooldown`, `trace_max`, `trace_rad_multi`, `trace_rad_single`, `trace_grow`, `trace_civnet`, `trace_link` (selon le profil : Milsim et Standard oui, Arcade non), `trace_warrant`. Les réglages GÉOLOC existants (camps traçables, propre camp, IA, suivi, prévenir la cible, secours SIM) s'appliquent toujours.
+- Entrées : app Extraction (fichier texte ouvert : un bouton « TRACER » par numéro), app SSE terrain (résultat Approfondir et Chronologie). Manuel de terrain : page « Tracer un numéro ». Guide web : `docs/steam/discussions/24_ge-guerre-electronique.txt`.
+- Tests : `tests/Unit/AtakTraceNumeroTest.php` (lecture du code : aucun canal d'alerte Arma, appelant vérifié au serveur, réponse ciblée, réglages avec exemple, cas de `selfTest`). Rien de ce lot n'a été vu en jeu.
+
+**L'app Fichiers répond toujours (SSE et ATAK natif)**
+
+- Cause de l'attente sans fin : en multijoueur (poste client sur serveur dédié), `fn_fileClient « send »` part en `remoteExecCall ["comspec_sse_fnc_fileServer", 2]` et l'app posait `pending` (`fn_fileAction` « run ») sans aucun minuteur ; seul `fn_fileClient « result »` l'effaçait. Toute réponse perdue (serveur avec un SSE plus ancien sans `fn_fileServer`, `CfgRemoteExec` du serveur ou de la mission, sorties muettes de `fn_fileServer` sur unité nulle ou d'un autre poste) laissait « Réponse du fichier en attente… » pour toujours, sans bouton. De plus la réponse locale n'était posée qu'après l'appel Athena (`QueryIdDocument`, jusqu'à 20 s), et un état `pending` ou une animation restés dans `uiNamespace` d'une mission précédente bloquaient l'app.
+- Machine d'états : `fn_fileQuery` inscrit chaque demande (`comspec_sse_filePending`) et arme 8 s ; `fn_fileClient « timeout »` / « fail » (refus motivé du serveur) posent un résultat d'erreur (motif, « Réessayer ») ; « result » pose la réponse locale tout de suite, puis l'étape Athena en tâche de fond (`athenaState` pending | ok | none | offline | unlinked | timeout, 15 s au plus, aucune requête sans licence acceptée) ; une réponse tardive remplace l'erreur de même étiquette ; « cancel » (bouton « Annuler »). Évènements : `comspec_sse_fileResult` inchangé (HashMap vide en cas d'erreur), nouveau `comspec_sse_fileError`.
+- `fn_fileNorm` (nouveau) : numéro et plaque en capitales sans séparateurs, pays ALT/TNA/LVN/MLD (alias TAN, LIV, MAL, AL, LV, noms) et ISO alpha-2 → alpha-3, appliqué sur le poste et sur le serveur.
+- `fn_fileServer` : QA sur le registre `issued` (chaque papier délivré ou généré, IA comprises) par numéro normalisé, titulaire inscrit à la base, mention « Document douteux » (titulaire différent, volé, révoqué, fiche SEEK II discordante), même numéro sous un autre pays = correspondance possible, fiches SEEK II du numéro, contrôles subis gardés aussi sous le numéro (`numChecks`) ; champ `match` (hit | possible | none) ; jamais de silence (`fail`).
+- `fn_filePage` : carte de réponse (HIT, CORRESPONDANCE POSSIBLE, AUCUN ENREGISTREMENT, ERREUR), sources LOCAL / ATHENA, état d'Athena en une ligne, « Copier le numéro », « Annuler », journal avec les erreurs ; messages dans l'app (plus de toast du téléphone sur ces chemins).
+
+**Récupérez vos couvertures Athena directement depuis le téléphone (SSE)**
+
+- SSE, app Ma couverture (`fn_idCoverPage`) : section Importer ma couverture refaite : bouton principal SYNCHRONISER AVEC ATHENA, IMPORTER UN FICHIER (ancienne lecture du fichier `Documents\Arma 3 - COMSPEC`, inchangée), Oublier l'import, rappel de la voie sans connexion. Les trois étapes manuelles disparaissent.
+- Nouvelle fenêtre « Mes couvertures sur Athena » (`fn_idCoverAthena`, dessinée à la place de la page avec les composants `fn_formRender` : header, text, empty, skeleton, buttons, person) : ligne d'état, CHOISIR / CHOISIE par couverture, TOUT SÉLECTIONNER, IMPORTER LA SÉLECTION (n), ACTIVER, RÉESSAYER, FERMER. États vides : service coupé, licence non acceptée, liaison pas encore autorisée, compte non lié (LIER MON COMPTE ouvre l'app Athena), COMSPEC Link absent ou ancien, site pas à jour, Athena muette, aucune couverture. Aucune alerte hors du téléphone.
+- Garde avant toute requête (licence `fn_licenceStatus`, `COMSPEC_AthenaReady`, `athenaStatus` logged, service Athena, `["has"] fn_idAthenaPack`) : rien ne part sans elle.
+- Réseau sans nouvelle commande DLL : `GetIdentityPack` (COMSPEC Link 2.0.118+) avec l'opération `~covers` (liste) ou `~cover:CVR-…,…` (5 fichiers au plus), `since` = `v=1`, réponse dans `settings` (`covers_api` 1), appel non bloquant puis `GetIdentityPackChunk`. Verrou `comspec_sse_idPackBusy` partagé avec `fn_idAthenaPack « fetch »` (même tampon de la DLL) et contrôle de l'opération lue.
+- Couvertures reçues revalidées par `fn_idCoverImport « clean »`, gardées dans le profil (`comspec_sse_idCoverLib`, 10 au plus, jamais l'active en moins) ; nouvelle action `fn_idCoverImport « use »` (profil, envoi au serveur, légende), aussi utilisée par l'import d'un fichier. Le serveur, la légende (`fn_idLegend`) et les papiers sont inchangés.
+- Site : `GET /api/atak/covers`, `GET /api/atak/covers/files`, relais `op=~covers` / `~cover:` de `/api/sse/identity/pack` (PR site séparée). Contrat : `docs/ATAK_COUVERTURE_IMPORT.md`.
+- Guides SSE `ma_couverture.md` / `.en.md`, i18n `en.txt`, `localisation/template/xx.txt`, `tools/i18n_identity_en.tsv`.
+
+**Synchroniser le téléphone avec le web (ATAK natif)**
+
+- `fn_phoneSync` (core) : `kind` `phone_extraction` par `SubmitIdCheck` de COMSPEC Link (aucune nouvelle commande de DLL), contrat ICD-SSE-PHONE-001. JSON par `fn_json`, découpé en morceaux de 4 000 caractères (`forceUnicode`), corps de 240 000 octets au plus (60 morceaux : la DLL accepte 64 arguments, `Async` et ticket compris), 300 éléments par catégorie et par partie, 20 parties au plus ; `extraction_key` commune, `idempotency_key` par partie. Envoi par `fn_extAwait` (45 s), retour `OK|id|ref` dans le téléphone (`fn_notify`) et le RPT (`fn_log`).
+- Portes, revérifiées à chaque envoi : licence (`licenceStatus`), `uplinkOff`, `fn_athenaMode` = `on`, `COMSPEC_AthenaReady`, réglage client `comspec_atak_native_phone_sync` (décoché, `isGlobal` 2 : aucune mission ne peut le cocher), réglage de mission `comspec_atak_native_phone_sync_off`, variable Zeus `COMSPEC_ATAK_PhoneSyncDisabled`, une synchro par 60 s, `SubmitIdCheck` présent dans `GetAtakFeatures`.
+- Téléphone saisi : IA seulement (clé `AI_…` et `ai_uid` renvoyé par le serveur). `fn_phoneServer` « adopt » pose la variable publique `comspec_sse_aiUid` si absente (`mission.monde.nomDeVariable`, sinon identifiant de la session). Boutons : menu ACE (« Synchroniser avec le web », « Synchroniser le téléphone saisi ») et page Téléphones (« SYNCHRONISER AVEC LE WEB »).
+- Limite DLL connue : `IdentityHttpError` rend tout 403 en `unauthorized` ; `unlinked`, `consent_revoked`, `extractions_disabled` ne remontent pas tels quels (message commun dans le téléphone). Les 422 (`too_large`, `consent_required`…) remontent.
+- **À tester en jeu** : action ACE visible seulement avec un téléphone et Athena en « on » ; refus avec le réglage décoché, avec la licence non acceptée, avec `COMSPEC_ATAK_PhoneSyncDisabled` ; envoi réussi et référence EXT-… dans le téléphone ; second clic avant 60 s refusé ; téléphone d'IA saisi (avec et sans `COMSPEC_ATAK_PhoneData`) : bouton de la page et `comspec_sse_aiUid` posé ; téléphone d'un joueur saisi : aucun bouton ; un téléphone avec beaucoup de messages (plusieurs parties).
+
+**Un seul bouton « ATHENA Configuration » dans le menu Échap (ATAK natif et SSE)**
+
+- Nouveau `fn_athenaConfig` (ATAK natif `main/functions/ui`, copie identique dans le SSE `extensions/functions`) : bouton du menu Échap (`RscDisplayInterrupt`, `RscDisplayMPInterrupt`, idc 93960) et fenêtre « Configuration ATHENA » (`RscDisplayEmpty` enfant du menu Échap). Place du bouton calculée sur les contrôles visibles du menu (vanilla, ACE, CBA, autres mods), revue pendant la première seconde ; hauteur bornée en pixels (24 à 44 px), largeur mesurée sur le texte.
+- Registre `comspec_athena_config_entries` (contrat dans l'en-tête de `fn_athenaConfig`) : ATAK `atak_realism` (Réalisme et réseau), Overwatch connect `ow_diag` (Dépannage liaison) et `ow_athena` (Service Athéna), SSE `sse_extensions`. État `comspec_athena_config_status` posé par Overwatch connect. Hôte `comspec_athena_config_host` : l'ATAK natif ; le SSE seulement sans lui (un seul bouton).
+- Retirés du menu Échap : barre d'Overwatch connect (`fn_onInterruptLoad`, devenu `fn_athenaConfigEntries`), bouton `["button"]` de `fn_netConfig`, `fn_docExtMenu` du SSE. Fenêtres d'origine inchangées.
+- Cause du blocage « Service Athéna » : le gestionnaire du bouton fermait le menu Échap auquel il appartenait (`closeDisplay` dans son propre `ButtonClick`) puis sortait le téléphone sur Réglages. Désormais toute action part à l'image suivante (`CBA_fnc_execNextFrame`) et la question Oui / Non s'ouvre par-dessus le menu Échap, sans le fermer.
+- Logo du bouton : `athena_config_ca.paa`, `athena_config_hover_ca.paa` (256 px, aigle blanc / vert), pastille `athena_dot_ca.paa`. Textes : `i18n/en.txt`, `localisation/template/xx.txt`, stringtable de l'addon SSE `extensions` (`STR_COMSPEC_SSE_ATHCFG_*`). `$PBOPREFIX$` de l'addon SSE `extensions` réparé (caractères de contrôle à la place des barres obliques).
+
+**Centre Zeus remis d'aplomb (ATAK natif)**
+
+- Cause (commit bc1d45278, 4.3.0) : le SQF ne distingue pas la casse des variables. `private _T = { … fnc_tr }` était masquée par `_x params ["_t", …]` (outils, actions) et `private _t = call _ui` (onglets, rafraîchissement, fiche, serveur). « toggle » s'arrêtait au premier `call _T` de l'onglet OUTILS : registre jamais enregistré, onglets jamais cachés, libellés des étiquettes jamais écrits (neuf boutons vides), titre vide ; rafraîchissement, fiche et état du serveur en erreur à chaque appel. La hauteur calculée oubliait en plus la rangée des onglets (rappel ZEN sous le fond).
+- `fn_zeusCentre` : traduction `_tr`, registre `_st` ; grille unique `_grid` (fractions de safeZoneH) et pose unique `_place` / « flow » (lignes, colonnes à poids, marges, corps qui défile, pied fixe, fond à la hauteur de l'onglet) ; `_mk` enregistre chaque contrôle chez son propriétaire, `_btn` impose un libellé (long, court, infobulle) ; ÉTIQUETTES en cases à cocher (`COMSPEC_RscCheckbox`) avec exemple, champs grisés en mode compact ; filtres sur deux rangées ; boutons d'action grisés sans cible ; ligne d'état « say » (retours de `fn_zeusMenu` « feedback » quand le Centre est ouvert) ; « audit » pour l'autotest (bouton vide, chevauchement, texte coupé, hors du panneau).
+- Test `AtakZeusCentreLayoutTest` (noms masqués quelle que soit la casse, propriétaire de chaque contrôle, libellés et anglais, tenue à 3 tailles d'interface × 3 formats), étape d'autotest zeus_centre (audit par onglet, non exécutée), i18n en.txt / xx.txt.
+
+**Intégration du pack (fusion des chantiers)**
+- Branches fusionnées sur `release/atak-4.4.0` : salle TOC (avec les écrans 3D), sang sur l'écran, fenêtre « Réponses de l'IA » simple (SSE 1.9.0), descriptions Steam.
+- Second lot fusionné sur `release/atak-4.4.0` (même numéro, pas encore publié) : ATAK `fix/atak-map-classique`, `fix/atak-perf-ouverture`, `fix/atak-bft-orbat`, `fix/atak-zeus-centre-ui`, `feat/atak-athena-config`, `feat/atak-couvertures-sync`, `fix/atak-fichiers-requete`, `feat/atak-tracage-numero`, `feat/atak-sync-telephone` ; SSE `fix/sse-extensions-tuto`, `feat/sse-zeus-acces-edition`, `fix/sse-zeus-papiers`, `feat/sse-pays-reels`, `fix/sse-identite-unique`, `feat/sse-ia-zone-ui`, `feat/sse-eden-question-reponse`, `feat/sse-peur-armes-option`, `fix/sse-dialogue-hors-sujet`, `feat/sse-synchro-web`.
+- Points de fusion : `fn_extAwait` (mesure des performances et ticket en bloc `isNil` gardés ensemble) ; `fn_zeusCentre` (refonte gardée, un seul renommage de la traduction) ; `extensions/config.cpp` (charte UI du tuto et ligne de la Configuration ATHENA) ; papiers : `fn_idIssue` (pays demandé, sinon celui de l'identité unique, résolu par le registre des pays ; titre de séjour : une personne garde son identité, sa nationalité est celle de son identité quand elle vient d'un autre pays), `fn_idGenerate` (noms au féminin du registre et garde de l'identité unique), fenêtre Papiers de l'IA du Zeus à la place de la liste en texte, nom du papier selon son pays ; atelier IA : plus de nom tiré, notes de l'identité et papiers refaits sur une seule ligne d'état, émotions et réponses gardées au choix d'un profil ; « Parler à… » : conversation notée et nom montré une fois appris ; IA de la zone refaite : « Ouvrir le papier » ouvre la fenêtre Papiers de l'IA.
+- Tests mis au comportement fusionné : `AtakPerfLogAssetTest`, `AtakMapClassicAssetTest`, `AtakCoverImportAssetTest`, `SseIdentityUniqueTest`, `SseNoAlertChannelAssetTest`.
+- Mission d'autotest : groupes `ecrans3d`, `toc` et `sang` tous gardés (`init.sqf`, `tools/INGAME_TEST.md`). `localisation/template/xx.txt`, `stringtable.json` et `categories.json` régénérés (`tools/i18n.py community`) : 22 718 phrases (18 051 avant, 19 textes disparus du code retirés), 267 clés de stringtable en plus (écrans, modules et objets absents du gabarit), aucune retirée.
+
+Aucune nouvelle DLL (COMSPEC Link 2.0.123 inchangé), aucune migration. Non vu en jeu : aucune passe de l'autotest n'a tourné pour ce pack.
+
+
+## SSE 1.8.0 : IA qui répondent à beaucoup plus de questions, réponses écrites par le maître du jeu (SSE 1.8.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Les IA comprennent trois fois plus de questions, et le maître du jeu peut écrire leurs réponses
+- **Parler aux IA** : demandez-leur depuis quand elles sont là, avec qui, où elles étaient hier soir, ce qu'elles transportent, si elles ont vu des véhicules, des étrangers ou des mines, comment va le village, s'il y a de l'eau ou un médecin. L'onglet GUIDE de la fenêtre « Parler à » montre toutes les questions par thème.
+- **Ordres** : « Lâchez votre arme », « Reculez », « Approchez », « Retournez-vous », « Asseyez-vous », « Taisez-vous », « Ouvrez votre sac » sont compris, et l'IA obéit ou refuse selon son caractère.
+- **Une IA ne parle que de ce qu'elle sait** : un passant qui n'a rien vu le dit simplement, sans inventer d'hommes armés ni de caches ; le maître du jeu choisit ce qu'elle peut évoquer et peut interdire des thèmes.
+- **Pour le maître du jeu** : dans Eden (Atelier IA › Réponses et limites…) ou en Zeus (clic droit › SSE · Roleplay de l'IA › Réponses de l'IA…, ou IA de la zone › Réponses…), écrivez la réponse à une question, selon qu'elle est calme, a peur ou est menacée, avec son prénom ou sa ville ; ajoutez une question à vous, comme un mot de passe.
+EN : AIs understand three times more questions, and the game master can write their answers
+- **Talking to AIs**: ask them how long they have been here, who with, where they were last night, what they carry, whether they saw vehicles, strangers or mines, how the village is doing, whether there is water or a doctor. The GUIDE tab of the "Talk to" window shows every question by theme.
+- **Orders**: "Drop your weapon", "Step back", "Come here", "Turn around", "Sit down", "Be quiet", "Open your bag" are understood, and the AI obeys or refuses depending on its character.
+- **An AI only talks about what it knows**: a passer-by who saw nothing simply says so, without inventing armed men or caches; the game master chooses what it may bring up and can forbid themes.
+- **For the game master**: in Eden (AI workshop › Answers and limits…) or in Zeus (right-click › SSE · AI roleplay › AI answers…, or Area AI › Answers…), write the answer to a question, depending on whether it is calm, scared or threatened, with its first name or town; add a question of your own, such as a password.
+
+### Détail technique
+- **Interprète** (`fn_iarpIntent`, `data/iarp_lexicon.sqf`) : 122 intentions (38 en 4.3.0), 2 301 motifs et 1 136 mots-clés (777 et 435). Nouveaux thèmes du guide (`fn_iarpData` « guide ») : présence (`since`, `with`, `lateHour`, `alibi`, `often`, `stayLong`, `waitingFor`, `house`, `cargo`, `declare`), renseignement précis (`seenArmed`, `seenVehicles`, `strangers`, `explosives`, `mines`, `whereIs`, `leader`, `howMany`, `whenPassed`, `happened`, `heard`, `whereWent`, `describe`, `cache`, `base`, `checkpoints`), situation locale (`safety`, `problems`, `roadSafe`, `village`, `water`, `food`, `medical`, `needs`, `directions`, `whereHere`), relations (`knowPerson`, `neighbors`, `chief`, `police`, `army`, `rebelsView`, `trustUs`, `threatened`), personnel (`afraid`, `hurt`, `hungry`, `tired`, `offer`, `cigarette`), ordres (`dropWeapon`, `stepBack`, `comeHere`, `turnAround`, `sit`, `quiet`, `hurry`, `handsDown`, `bag`), règles du jeu de rôle (`lawyer`, `interpreter`, `cooperate`, `rights`, `wait`, `promise`, `protect`, `reward`, `whyUs`), hors sujet (`insult`, `mock`, `joke`, `laugh`, `bot`, `absurd`, `hobbies`, `flirt`, `compliment`, `time`, `politics`), plus `phone`, `nation`, `speak`, `repeat`, `understand`. « Blessé » passe de `help` à `hurt`, les sujets précis de `intel` à leur intention. 6e élément du lexique : thème de scénario (`fn_iarpData` « topics »).
+- **Coût** : motifs et mots-clés indexés une fois par les trois premières lettres de leur premier mot (`comspec_sse_iarpData_pidx`) ; un morceau de phrase ne cherche que ceux dont un mot commence pareil. Même résultat que la recherche complète sur 2 007 phrases (copie Python de l'interprète, hors jeu) ; 0,038 ms par phrase contre 0,324 sans index et 0,129 pour le lexique de la 4.3.0 (mesure Python ; l'autotest mesure en jeu). Rien par image, rien sans message.
+- **Banc d'essai** : `data/iarp_corpus.sqf` 1 097 phrases FR et 555 EN (384 et 236), reconnues à 99,9 % et 99,8 % ; `data/iarp_unseen.sqf` (nouveau, `fn_iarpData` « unseen ») : 234 FR et 121 EN écrites avant la mise au point et jamais utilisées pour la régler : 31,2 % FR et 28,9 % EN avec le lexique 4.3.0, 92,7 % et 95,9 % maintenant (91,5 % et 93,4 % à la première mesure, avant l'élargissement du banc d'essai) ; sur les seules intentions qui existaient déjà : 91,2 / 97,2 % avant, 90,0 / 94,4 % après. Aucun pot-de-vin, menace ni aveu sorti d'une phrase qui ne le demande pas.
+- **Réponses** (`data/iarp_bank.sqf`) : 171 répliques et 1 168 phrases de base (78 et 588 en 4.3.0), 6 phrases au moins chacune ; variantes « réplique.intention » (`intelNo.seenArmed`, `comply.stepBack`) ; `heardShots` seulement si l'IA a vraiment entendu des tirs (`comspec_sse_iarpShotAt`, 10 min) ; réponses sans fait de présence redites à l'identique ensuite (mémoire `gen`, décor `_again`) ; « Répète » redit sa dernière réplique (`_pm` « last », décor `_repeat`) ; faits facultatifs de l'histoire (Téléphone, Nationalité, Langues, Depuis, Avec, Hier soir, Transporte, Attend, Habitudes) préférés quand ils existent (`fn_iarpGen` « preferFact ») ; `{time}`, `{here}` (lieu le plus proche, cherché seulement s'il est cité).
+- **Cadre** (`fn_iarpAnswers` « frame », profil `evoke` / `banned`) : phrases étiquetées `hint` ou thème (`armed`, `explosives`, `military`, `wanted`, `drugs`, `politics`, 3e élément d'une phrase de la banque) écartées par `fn_iarpGen` (contexte `forbid`, 6e paramètre facultatif « pool » pour le banc d'essai). Auto : « none » pour un civil sans savoir ni secret. Thème interdit : `offLimits` ou `intelNo` neutre, réponse perso comprise. Question d'argent de l'IA (`askMoney`) seulement si elle sait quelque chose. Banc : 394 questions de renseignement d'un civil sans savoir, aucune phrase candidate avec un terme surveillé (arme, armés, pick-up, mine, explosif, insurgé, cache, technique…) ; civil avec « Précis : » et « Lieu : » : palier 2 à confiance 70, position lue.
+- **Réponses du maître du jeu** (`fn_iarpAnswers`, nouveau, pur) : entrées `[clé, libellé, déclencheurs, ordre, [[situation, textes]…], palier, lieu]` dans le profil (`answers`), validées (300 caractères, 8 textes par situation, 100 entrées, 20 questions perso, caractères de contrôle retirés), variables FR / EN ramenées aux clés de la banque (`{prenom}` → `{first}`), situation la plus précise (threat, confront, fear, refuse, accept, again, first, calm, *), « dans l'ordre » par joueur (`cseq`), question perso par déclencheurs (`match`). `fn_iarpServer` « say » : remplace la réplique, jamais la décision (« * » ne vaut pas pour un ordre, une fouille, un pot-de-vin ou des papiers refusés) ; question perso : intentions de conversation remplacées, ordres, menace, pot-de-vin, aveu, papiers et politesse gardés ; palier débloqué (`_pm` « unlock », repris par `_doIntel`) et lieu posé une fois (`cmarks`). Journal : « réponse du maître du jeu (situation, palier) ».
+- **Fenêtre « Réponses de l'IA »** (`fn_iarpAnswersUi`, `dialogs/iarp_answers.hpp`, IDD 94800) : cadre, liste des questions du guide par thème avec recherche et état (Auto / Perso (n) / Interdit), questions perso, réponse, ordre, situation, textes, palier, lieu, aperçu rendu (variables, inconnues signalées, `< > &` échappés), aide par champ. Atelier IA : bouton « Réponses et limites… » (`fn_iarpWorkshop` « answers », « current », « extra ») ; menu ZEN : « Réponses de l'IA… », « Ce qu'elle peut évoquer… » ; serveur : `profileTweak` (champs `answers`, `evoke`, `banned`). Eden : attribut `comspec_sse_iarpProfile` (unité, `set3DENAttribute` depuis « IA de la zone » sous Eden).
+- **Ordres** (`XEH_postInit` `comspec_sse_iarpAiDo`) : `back`, `come`, `turn`, `drop` (arme posée dans un `GroundWeaponHolder`) ; « baissez les mains » lève la reddition ACE.
+- **Garder pour les prochaines parties** : `fn_editorAiServer` ajoute `iarp_answers` (« [réponses, evoke, banned] », `fn_iarpProfile` « keepOf ») à la configuration gardée ; `fn_idAiConfig` « apply » (identity) la remet (`fn_iarpProfile` « keepApply »), au démarrage comme depuis le paquet Athena. Profils IA d'Athena (`settings.ai_profiles`) : inchangés ; pour les y porter, il faudrait côté site un champ texte libre `iarp` par profil (même format que `iarp_answers`), repris par `fn_idAiConfig` « ingest ».
+- **Fichiers hors `ia_rp`** : `editor/dialogs/editor.hpp` (bouton `AiAnswers`, IDC 94586, « IA cochées » raccourci), `editor/functions/fn_editorAi.sqf` (« answers »), `editor/functions/fn_editorAiServer.sqf` (garder), `editor/stringtable.xml`, `identity/functions/fn_idAiConfig.sqf` (3 lignes), `main/stringtable.xml` (chapitre « IA de la zone »), guides `docs/guides/ia_de_la_zone*.md` (réécrits), `reponses_ia*.md` (nouveaux), `index*.md`, mission d'autotest `scripts/ia_rp.sqf`. Manuel en jeu : `CfgHints COMSPEC_SSE >> IaRpAnswers` (nouveau), `IaRpTalk` (thèmes). Aucun fichier ATAK.
+- **Non vu en jeu** (autotest non lancé sur consigne) : rendu de la fenêtre « Réponses de l'IA » et du bouton de l'atelier, enregistrement Eden par `set3DENAttribute`, nouveaux ordres (recul, approche, arme posée), coût réel en jeu ; étapes écrites dans `scripts/ia_rp.sqf` (« ia_rp_reponse_perso_attribut », « ia_rp_reponse_perso_zeus », « ia_rp_question_perso », « ia_rp_cadre_civil ») et dans `fn_iarpSelfTest`.
+
+## Pack 4.3.0 Washington : apps à l'horizontale, carte lisible, drones armés, centre Zeus, IA qui répondent juste, vrais papiers et passage aux fichiers (ATAK natif 4.3.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.7.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.3.0 : drones armés, apps à l'horizontale, carte lisible, IA qui répondent juste, vrais papiers et app Fichiers
+- **Carte** : les noms des unités, des repères et des villes restent lisibles à tous les zooms et ne se chevauchent plus. Réglez-les dans Réglages > Carte.
+- **Drones armés** : prenez la main d'un drone armé depuis l'app Drone, mettez-le en orbite, marquez une cible et il tire seul sous vos yeux. Le mode Rechercher et tuer vous propose les cibles qu'il repère.
+- **Horizontale** : téléphone en main à l'horizontale, les apps s'affichent sur deux colonnes au lieu d'une longue liste.
+- **Parler aux IA** : une IA ne répond plus qu'une fois, sous le nom écrit sur ses papiers. L'onglet GUIDE de la fenêtre « Parler à » donne des phrases à essayer.
+- **Fichiers** : nouvelle app Fichiers pour vérifier une personne, un document ou une plaque. Le bouton SCANNER d'un document y mène avec le numéro déjà rempli.
+- **Papiers** : cartes d'identité, passeports et permis ont un nouveau dessin proche des vrais, avec une vraie photo d'identité.
+- **Civils** : ils n'ont plus peur sans raison. Seuls une arme braquée sur eux, des tirs proches ou une scène violente les effraient, et ils se calment avec le temps.
+- **Biométrie** : le lecteur SEEK II (empreintes, iris, visage) donne un verdict clair : concordant, discordant, inconnu ou signalé.
+- **Zeus** : le centre Zeus ne cache plus la liste de droite. Son onglet SERVEUR montre l'état de la partie, et des étiquettes au-dessus des joueurs signalent ce qui ne va pas.
+- **IA en Zeus** : clic droit sur une ou plusieurs IA, puis « SSE · Roleplay de l'IA », pour changer leur caractère, leurs papiers ou leur attitude.
+- **Véhicules** : sur la carte, une unité à bord d'un hélicoptère ou d'un véhicule apparaît avec la silhouette de son engin, et l'équipage n'est compté qu'une fois.
+- **Identité Athena** : votre identité Athena arrive en jeu même sans Zeus connecté. Les messages des mods ne s'affichent plus par-dessus le jeu : ils arrivent dans le téléphone.
+EN : ATAK 4.3.0: armed drones, landscape apps, a readable map, AIs that answer right, real papers and a Records app
+- **Map**: unit, marker and town names stay readable at every zoom and no longer overlap. Adjust them in Settings > Map.
+- **Armed drones**: take control of an armed drone from the Drone app, put it in orbit, mark a target and it fires on its own while you watch. Hunter-killer mode proposes the targets it spots.
+- **Landscape**: with the phone in hand and held sideways, apps show two columns instead of one long list.
+- **Talking to AIs**: an AI answers only once, under the name on its papers. The GUIDE tab of the "Talk to" window gives phrases to try.
+- **Records**: a new Records app to check a person, a document or a plate. A document's SCANNER button leads there with the number already filled in.
+- **Papers**: ID cards, passports and licences have a new design close to real ones, with a real ID photo.
+- **Civilians**: they are no longer scared for no reason. Only a weapon aimed at them, nearby shots or a violent scene frighten them, and they calm down over time.
+- **Biometrics**: the SEEK II reader (fingerprints, irises, face) gives a clear verdict: match, mismatch, unknown or flagged.
+- **Zeus**: the Zeus centre no longer hides the right-hand list. Its SERVER tab shows the state of the game, and labels above players flag what is wrong.
+- **AI in Zeus**: right-click one or more AIs, then "SSE · AI roleplay", to change their character, papers or attitude.
+- **Vehicles**: on the map, a unit aboard a helicopter or a vehicle shows with its vehicle's silhouette, and the crew is counted only once.
+- **Athena identity**: your Athena identity reaches the game even with no Zeus online. Mod messages no longer pop up over the game: they arrive in the phone.
+
+### Détail technique
+
+**Reflet et vibration de l'écran sans clignotement (ATAK natif)**
+- Cause du clignotement au clic : le moteur donne le focus au bouton dès l'enfoncement, et dessine le contrôle focalisé (et la zone de contenu 88531 qui le contient) devant tous les autres ; `fn_overlayFront` ne rendait le focus au puits 88543 qu'à l'image qui suit le relâchement (`MouseButtonUp` de `fn_displayLoad`). Pendant tout l'appui, la page passait devant le reflet (`fn_screenSurface`, calque `glass` posé sur tout l'écran depuis la 4.2.1), d'où un reflet qui disparaît puis revient à chaque clic. Désormais `MouseButtonDown` pose un `EachFrame` à usage unique qui appelle `[true] call fn_overlayFront` (3 images au plus) : focus rendu avant le dessin, seulement pris aux contrôles qui se cliquent sans se glisser (types 0, 1, 6, 7, 11, 13, 16, 41, 77) ; carte, listes, curseurs, groupes et champs de saisie le gardent jusqu'au relâchement comme avant.
+- Calques recréés (`fn_overlayRaise`, `fn_pageRender` hors « gardés », `fn_fx` « front », changement de signature de `fn_screenSurface`) : les nouveaux contrôles sont créés avant la suppression des anciens, dans la même image (avant : suppression puis création, texture libérée puis rechargée).
+- Vibration (`fn_vibrate`) et sursaut d'un appui (`fn_fx` « tap ») : nouvelle `fn_phoneShake`, même décalage posé à chaque pas sur tous les contrôles de premier niveau affichés qui touchent la coque (coque 88509, écran, page, barre d'état, dock, calques, touches physiques, carte), sans recréer de contrôle ; repos gardé par contrôle (`cs_vibBase`), contrôle déplacé par la mise en page pendant la secousse repris à sa nouvelle place, contrôle en cours d'animation (`ctrlCommitted` faux) laissé tranquille, défilement des groupes remis après chaque déplacement, retour exact à la fin. Avant : seule la coque bougeait. Réglage Vibration toujours respecté (`fn_vibrate` sort avant).
+- Autotest (`telephone.sqf`) : `tel_reflet_toucher` (vrais clics de souris envoyés par `tools/ingame_test.ps1`, ligne `AUTOTEST|CLICK|nom|x|y|ms`, capture pendant l'appui ; surveillance `EachFrame` du reflet, des calques et du focus), `tel_vibration_bloc` (écart coque / écran / reflet constant à chaque image, retour exact, réglage coupé, appui sur une page défilée), `tel_mini_defilement` (miniature, carte qui suit une marche simulée puis l'arrêt : pas de saut, écart qui ne remonte pas, calques présents à chaque image, capture en fin de défilement).
+- Défilement en miniature (« clignotement à la fin du défilement ») : aucun défilement animé du contenu trouvé dans le code (ni `ctrlSetScrollValues` animé, ni `ctrlCommit` avec durée sur un groupe) ; le seul défilement automatique en miniature est le suivi de la carte image par image (`fn_mapOnDraw`, recentrage de secours `fn_statusUpdate` / `fn_mapCenter`). Non modifié faute de preuve : `tel_mini_defilement` le mesure (sauts, écart qui remonte, calques recréés) à la prochaine passe en jeu.
+- Non vu en jeu : aucune passe de l'autotest n'a tourné pour ce lot.
+
+**Apps pensées pour le téléphone tenu à l'horizontale (ATAK natif)**
+- `fn_layoutCols` (nouveau) : le seul endroit des règles de colonnes. Seuils en caractères du texte courant (`layoutGet` « colChar », largeur moyenne d'un caractère de `fontSmall`, qui suit la police, la taille du texte et le plancher de 15 px), pas en orientation : sections 34 caractères par colonne, info 26, interrupteurs 36, lignes de liste 32, personnes 44, notifications et cartes d'état 40 ; 1 à 3 colonnes. « split » : maître-détail (liste 38 %, au moins 30 caractères, fiche au moins 40 caractères), `[]` si trop étroit. Plein écran paysage du téléphone : environ 98 caractères, deux colonnes ; tablette : trois ; mode petit paysage : environ 54 caractères, une colonne (grilles info en deux) ; portrait : une colonne.
+- `fn_formRender` : le dessin d'une ligne devient `_renderRow` (inchangé) et la disposition passe par un placement en colonnes. Les sections (`section`, et `fold` hors d'une section) et ce qui les suit forment des blocs rangés dans la colonne la plus courte ; une suite d'au moins trois lignes de même genre (`info`, `switch`, `toggle`, `row`, `person`, `notif`, `check`, `status`, `slider`) se range en grille dans l'ordre de lecture ; `header`, `tabs`, `strip`, `banner`, `steps`, `squad`, `empty`, `skeleton`, `image`, `qr`, `bar`, `big`, `title`, `hero` restent sur toute la largeur et ferment la rangée de colonnes. Chaque ligne est dessinée à x = 0 dans la largeur de sa colonne, puis ses contrôles sont décalés (`_flMade`, relevé dans `_mk`). Lignes de pilotage : `["flow", false]` (pas de colonnes) et `["break"]` (fin de rangée). Une seule colonne : même dessin qu'avant.
+- `fn_pageReports` : maître-détail dans ENVOYÉS / REÇUS. `fn_pageStatus` : barre RESYNCH / ATHENA / DEBUG sur toute la largeur (`break`). `fn_pageAlerts` (dessinée à la main) : deux colonnes quand `fn_layoutCols` en donne deux (actions à gauche, journal à droite, x d'origine `_jx`). Carte : pas de colonnes automatiques dans ses formulaires (page MAP exclue).
+- `fn_layoutGet` : barre d'app de `1,5 × font` en mode petit porté (titre seul), 0 sur la carte en mode petit porté (ni titre ni bouton) ; la clé du cache couvre déjà le mode, l'état en main et la page carte. `fn_layoutApply` et `fn_notificationsRender` : pastille « main + touche » et bandeau de notification posés sur le haut de la carte quand la barre est à 0.
+- Autotest `tel_paysage_apps` (groupe telephone, écrit mais pas encore lancé en jeu) : les apps prioritaires en plein écran, en mode petit paysage et portrait aux tailles 0,7 et 1,3, textes coupés (`AT_fnc_formTient`), éléments superposés ou hors cadre (`AT_fnc_formChevauche`), captures ; mode petit porté sur la carte : écart barre d'état / contenu au plus 3 px.
+
+**Étiquettes de la carte lisibles à tous les zooms (ATAK natif)**
+- `fn_mapLbl` (nouveau) : moteur commun des étiquettes. « frame » : tailles par rôle en pixels réels (`pixelH`), nominales (indicatif 17 px, repère 16, ville 19, village 17, lieu-dit 15, mesure 15, grille 13) × taille des textes × taille des étiquettes, plancher `COMSPEC_ATAK_MapTextMinPx` (14 px, secondes lignes à 86 %), plafond 30 px, arrondies au pixel ; niveau de détail selon les mètres par pixel (LOIN ≥ 7, PRÈS < 2, seuils × 0,6 / 1 / 1,6 selon `COMSPEC_ATAK_LblDensity`). « add » / « sym » / « layout » : demandes et symboles relevés pendant une image de calcul, placement par priorité (moi 0, sélection 1, cibles suivies et contacts 2, équipiers 3, autres alliés 4, repères 5, lieux 6), 8 places autour du symbole + centre / dessus pour les lieux, grille `fn_mapLblGrid` partagée (bandeau, symboles, étiquettes). « draw » : liste gardée redessinée par additions, ancres des unités relues à l'image. Image de calcul quand la vue change (au plus 15 Hz), toutes les 0,25 s sinon. « now » : étiquettes au curseur (distance, point B) posées à chaque image sur une place libre.
+- Cause de l'illisibilité à mi-zoom : le moteur rapetisse les textes de `drawIcon` quand la carte est dézoomée (facteur racine(0,0375 / `ctrlMapScale`) au-delà de 0,0375, relevé sur les captures de l'autotest : 0,80 à 0,06, 0,685 à 0,08, rien sous 0,02), alors que les fonds gardaient la taille demandée. `fn_mapLbl` « frame » donne la correction `tk` (taille demandée × 1/facteur), appliquée à toutes les étiquettes et aux textes des zones, routes, outils et grille. Chasse fixe Etelka mesurée × 0,9 (écrite 10 % plus serrée que le texte caché qui la mesure).
+- `fn_mapOnDraw` : indicatifs simples regroupés par case de 70 × 22 px (« +N »), cartouches (`fn_mapLabels`), noms des repères (`fn_mapMarkerText`) et des lieux (`fn_mapPlaceText`, déplacé à la fin) convertis en demandes ; textes des zones, routes, points de passage, explosifs, goniométrie, outils et grille à la taille du rôle « z » / « g » ; boîtes E / N des repères à largeur mesurée et exclues du placement.
+- Fond à la taille du texte : largeur mesurée à la taille exacte arrondie au pixel (`fn_mapTextW`), marge de 3 px ; réglages du fond des noms (`COMSPEC_ATAK_NameBgNow`, NON / LÉGER / NORMAL / OPAQUE, clair / sombre) inchangés.
+- Noms de lieux : la carte Arma n'en écrit plus (`COMSPEC_RscMapAtak` : `ptsPerSquareTxt` 100000, `colorNames` transparent, aussi sur ARDOISE ; JTAC les garde) ; `NameMarine` rejoint nos lieux-dits.
+- Engins : `fn_vehIcon` (nouveau, partagé avec `fn_unitCard`) ; `fn_localDataRefresh` pose `veh`, `crewOf`, `crewN` (représentant : moi à bord, sinon `effectiveCommander`) ; silhouette orientée (`getDirVisual`) sur détour sombre en style tactique et pions, symbole OTAN de l'engin en Classique, MIL-STD inchangé.
+- Cible suivie (`fn_mapSearch`) : étiquette hors de l'anneau de précision (rayon en pixels), pulsation ramenée à 44 px ; distance au curseur placée hors de la cible et de son étiquette.
+- Bandeau : en mini, COMPACT d'une ligne (26 caractères, grille seule : la rose donne le cap), masqué si la carte est trop étroite ; style NOUVEAU : hauteur ajustée au nombre de lignes affichées (plus de fond vide sous « CURSEUR »). PC du poste TOC : texte jamais sous le plancher en pixels.
+- Suivi de la carte en mini (« le défilement clignote à la fin ») : une seule source pendant le suivi. `fn_mapCenter` arrête ses corrections (qui visaient la position du moment de l'appel et tiraient la carte en arrière) dès que le suivi image par image est actif (`comspec_follow`) ; attente réduite de 0,6 à 0,15 s ; déplacement envoyé seulement une fois le précédent affiché (pas d'écart compté deux fois) ; seuil d'un dixième de pixel au lieu de 0,25 m ; `fn_statusUpdate` ne relance un centrage complet qu'à un changement d'échelle d'au moins 2 %.
+- Autotest `carte_etiquettes` (groupe carte) : ~25 étiquettes serrées, paysage à trois zooms, mini porté et mini en main ; tailles ≥ 12 px réels, aucun chevauchement ni débordement, fond à la taille du texte, pas de nom de lieu en double, équipage d'hélicoptère en silhouette avec « +1 », cible suivie et distance au curseur séparées, coût par image relevé.
+
+**Centre Zeus plus clair, avec l'état du serveur (ATAK natif, SSE)**
+- SSE `editor` : page IA de `editor.hpp` réécrite (IDC 94500–94584, classes `COMSPEC_SSE_EdHeading/EdRule/EdHelp/EdColHead/EdList`), `fn_editorAi` (client), `fn_editorAiServer` (nouveau, remoteExec serveur, `fn_isAuthority`), `fn_aiWho` (nouveau, serveur : given / true / truth / label / unitName / role), `XEH_postInitServer` (IA gardées remises en place à +15 s depuis le `profileNamespace` du serveur, clé `worldName|opKey`, copie Athena par la DLL du serveur sinon du poste du Zeus, `local_id` contre les doublons), `stringtable.xml` de l'addon (`STR_COMSPEC_SSE_ED_*`). Profils d'IA Athena : voie existante du paquet d'identité (`settings.ai_profiles`, `fn_idAiConfig` « list » / « ingest »), « Actualiser » = `aiCfg reload` côté serveur. Chapitre du manuel `CfgHints COMSPEC_SSE >> AiZone` : un seul, celui du manuel SSE (`guide/config.cpp`, `STR_COMSPEC_SSE_GUIDE_AIZONE_*`), décrit la fenêtre refaite. Autotest `sse` : `sse_ia_zone`.
+- SSE `ia_rp` : `fn_iarpZen` (menu contextuel ZEN `comspec_sse_iarp`, cibles `comspec_sse_iarpZenTargets`, lot), `fn_iarpName` (« shown » / « truth » / « for » / « label » : nom des papiers, vrai nom et nature true | lies | forged | cover pour le Zeus), opérations serveur `profileTweak`, `papersOff`, `zenState`, `memGet`, `memClear`, `reactSet` dans `fn_iarpServer` (droits `comspec_sse_fnc_isAuthority`) ; module `COMSPEC_SSE_Module_IarpWorkshop` en `COMSPEC_Cat_Sse`, classe `COMSPEC_Cat_IaRp` retirée (test `testOnlyFourCategoriesAndNoLeftover` de nouveau au vert). Autotest `sse` : `ia_rp_zeus_actions`, `ia_rp_zeus_menu` (SKIP sans ZEN).
+- `fn_zeusCentre` : panneau adossé au bord gauche de la liste de droite de Zeus (« edge » : arbres et listes affichés dans le tiers droit, groupes compris ; défaut 0,30 h × kw), fond opaque, hauteur = contenu avec liste de 3 à 10 lignes, plafond 0,81 h (au-dessus des panneaux ZEN du bas). Onglets JOUEURS / SERVEUR / ÉTIQUETTES / OUTILS ; « fit » mesure chaque bouton (`ctrlTextWidth`, police réduite jusqu'à 0,0145 h, puis libellé court et infobulle longue). Cible des actions : joueur choisi, sélection Zeus (`curatorSelected`) ou joueurs affichés (filtre et recherche). « tool » : replie le centre, exécute, guette un nouvel affichage (`allDisplays`) jusqu'à 2 s et revient à son Unload. « camera » : `curatorCamera setPosASL` + `setVectorDirAndUp`.
+- `fn_zeusState` : fiche à 14 éléments (compte Athena relié, 13 accepté encore) ; demande « full » quand une fiche a plus de 45 s (au plus toutes les 30 s) ; fraîcheur 90 s ; état du serveur `srvScan` (événement `comspec_atak_native_zeusSrv`, droits `fn_adminAllowed`, une lecture toutes les 3 s par Zeus, réponse `comspec_atak_native_zeusSrvData` au seul demandeur) : FPS, joueurs, IA, versions (`CfgPatches`, `COMSPEC_ATAK_LinkExpected`, DLL du serveur), variables d'Overwatch connect (`comspec_overwatch_auth_state`, `COMSPEC_LinkState`, `COMSPEC_AthenaReady`, `COMSPEC_LastHealthOk`, `COMSPEC_ServerQueue`), registre d'identité (`comspec_sse_idReg` : packAt, documents, pays, population, avis), `COMSPEC_ATAK_MeshRef`, `COMSPEC_ATAK_SrvAiOrd`, journal `COMSPEC_ATAK_Log` (12 dernières alertes, suites de 17 chiffres masquées). Aucun jeton, adresse ni UID.
+- Étiquettes 3D : réglages dans le profil (`COMSPEC_ATAK_ZeusLabelCfg`), lignes empilées le long du vecteur haut de la caméra (pas de l'écran constant), fond sombre, 40 étiquettes au plus, point seul au-delà de 400 m.
+- `fn_zeusClient` « noise » : `A3\Sounds_F\sfx\alarmCar.wss` (2,0 s) relancé toutes les 2,0 s, coupé à la mort, sans téléphone ou téléphone inutilisable (`fn_canUse`).
+- Autotest `zeus` : position du panneau, textes des boutons, onglet SERVEUR rempli, fenêtres ouvertes devant le centre replié, étiquettes 3D, caméra.
+
+**Parler aux IA sans doublon, avec un guide de conversation (SSE)**
+- **Double bulle et double nom (cause)** : `fn_iarpServer` « say » engageait l'automate (`fn_idAiFsm` « engage » → « interpelle », puis `fn_idAiBrain` → « coopere ») ; `fn_idAiEnter` disait alors sa phrase d'état (« Tenez, monsieur. ») par `fn_idAiSay` → `fn_idClient` « say » → `fn_toast` → bulle de l'ATAK (`fn_aiBubble`), nommée `comspec_sse_idName` sinon `name _unit` (le nom Arma, « Andrey Afanasyev »), pendant que l'IA RP dessinait sa propre bulle (`fn_iarpBubble`) au nom « Anonyme » (`comspec_sse_idName` vide : papiers « à la demande » pas encore décidés). Deux systèmes de bulles, deux noms, une réplique hors sujet.
+- **Correctifs** : `fn_idAiSay` (identity) se tait pendant une conversation écrite (90 s) pour les états verbaux (interpelle, coopere, ment, nerveux, refuse, calme ; reddition si l'IA vient de répondre) ; `fn_toast` (core) fait parler une IA dans la bulle du SSE et dans le fil (`fn_iarpClient` « aiLine ») quand l'IA RP est chargée ; nom unique `_nameOf` (papiers décidés par `fn_idRegistry` « ensure », sinon légende) diffusé dans `comspec_sse_idName`, repris par bulle, fil, journal, toasts (`fn_iarpClient` « name ») ; réplique à l'émetteur par « reply » seulement (bulle et fil), bulles aux autres sans doublon.
+- **Autres doublons** : fils, brouillons, messages envoyés et journal passés de `uiNamespace` à `missionNamespace` (une autre mission aux mêmes netId reprenait l'ancien fil et l'ancien journal) ; journal Zeus dédoublonné par numéro (Zeus relié à deux curateurs) ; deux Entrée rapprochées (0,9 s) : la seconde attend, et un message refusé par l'anti-flood est signalé dans le fil (« dropped ») ; rappel ↑ sans doublon consécutif ; papiers et fouille : l'IA répond d'abord (« Une seconde… », ou « Approchez » au-delà de 3 m), puis l'action ACE part.
+- **Interprète** : lexique étendu (small talk, présentation, drogue, argent sur soi, véhicule…), mots-clés « _kw » (mot entier, début de mot, combinaisons « ou+viens »), fautes sur les deux premières lettres inversées, négation « nobody / personne » ; pot-de-vin et menace seulement sur une offre ou une menace explicite (« Vous avez de l'argent sur vous ? » = question « money »). Banc d'essai `data/iarp_corpus.sqf` (384 phrases FR, 236 EN) : 60,7 % FR et 66,9 % EN reconnues avec le lexique 4.2.1, 100 % avec le nouveau (portage Python de l'interprète, hors jeu), aucun faux positif pot-de-vin / menace ; phrases non vues pendant la mise au point : 63 % puis 97 % après ajout des mots-clés manquants.
+- **Réponses** : `fn_iarpGen` écarte une phrase qui cite un fait absent de la couverture (5e paramètre facultatif `_vars`) ; tons peur / nerfs seulement s'il y a une raison ; nouvelles banques (smalltalk, introduce, greetAgain, firstName, drugs, money, vehicle, papersWait, papersCloser, searchWait, cuffYes, cuffNo, givePapers, photoNo, watchMe) ; incompris : piste « Vous voulez voir mes papiers ? » qui devient la question de l'IA (« oui » = demande de papiers) et rappel du GUIDE une fois par IA.
+- **Gestes** : /me et /do compris par règles de mots (lexique « _gesture », « lève lentement les mains » compris) ; /todo : la parole avant « * » est interprétée ; menu « Faire une action » (lexique « _actions ») : lever les mains, baisser / braquer son arme (l'arme du joueur suit), badge, argent, fouille, menottes (ACE), prendre / rendre les papiers, photo, texte libre.
+- **Guide** : `fn_iarpData` « guide » tiré du lexique (exemples et thème par intention) ; onglet GUIDE (thèmes, explication, exemples cliquables qui remplissent la saisie) ; chapitre « Parler aux IA » du manuel SSE (CfgHints). `fn_iarpSelfTest` vérifie que chaque exemple du guide est compris comme son intention.
+- **Fenêtre** : refonte (en-tête avatar à initiales, nom, état coloré, peur, distance ; onglets DISCUSSION / GUIDE / JOURNAL ; fil en bulles moi à droite / IA à gauche, actions au centre, « … répond » ; journal en cartes, filtre cette IA / tout) ; le téléphone ATAK ouvert est rangé à l'ouverture.
+- **Peur des civils (cause)** : « arme pointée » comptait toute arme non baissée dans un cône de 10° à 40 m (le joueur qui parle face à l'IA, arme à l'épaule) dans `fn_idAiBrain` et `fn_iarpServer`, et chaque message déclenchait alors les témoins ; soldats armés comptés arme baissée ; tirs `FiredNear` comptés quelle que soit leur direction (entraînement à 40 m) ; tension écrite directement par l'IA RP et jamais redescendue hors automate ; faux découvert (+30) qui ne retombait jamais ; tons « effrayé » / « nerveux » tirés du seul caractère. Corrigé : arme levée, 25 m, 8°, poids selon la distance (10 / 18 / 26) × nerfs de l'atelier ; soldats arme levée seulement ; tirs à 15 m ou dirigés vers l'IA, Zeus à distance exclu ; pression de conversation décroissante (`fn_iarpReact` « press », « level », « aimedAt ») ; montée rapide, descente lente et visible ; faux découvert qui retombe en une minute ; chaque variation (8 points) notée au journal avec sa raison (lignes « PEUR »).
+- **Fichiers hors `ia_rp`** : `identity/functions/fn_idAiSay.sqf`, `identity/functions/fn_idAiBrain.sqf`, `core/functions/fn_toast.sqf`, mission d'autotest `scripts/ia_rp.sqf`. Aucun fichier ATAK.
+- **Non vu en jeu** (autotest non lancé sur consigne) : rendu de la fenêtre et des bulles du fil, menu d'actions, effets réels (menottes ACE, arme baissée par `WeaponOnBack`), scénario de peur ; nouvelles étapes écrites dans `scripts/ia_rp.sqf` (« ia_rp_une_reponse », « ia_rp_actions », « ia_rp_peur ») et dans `fn_iarpSelfTest`.
+
+**Papiers d'identité plus réalistes, photos nettes, types de documents et extensions, aucune alerte Arma (SSE, ATAK natif, Overwatch)**
+- `addons/identity/CfgComspecDocuments.hpp` : registre déclaratif des types de documents (`CfgComspecDocuments` : displayName, category, item, ratio, sides, mrz, recto/verso { texture `%1` = pays, photo, holo, fields { key, x, y, w, h, transform, font, color, text, input, default } }) et `CfgComspecDocumentExtensions`. `fn_idDocTypes` (get, list, label, item, ofItem, stock, texture, side, extensions, enabled, refresh). La visionneuse (`fn_idViewerOnLoad`) pose les champs d'après le registre ; `fn_idIssue`, `fn_idRegistry` (stock et objet par type, attribut Eden = clés de types), `fn_idMrz` (td1/td3 des extensions), `fn_idServer` (champs propres au type dans le document public, « Poser au sol » avec une position) acceptent tout type du registre.
+- Photo (`fn_idFace`) : studio fermé (conteneur local au-dessus de la mer), mannequin en haut sombre, panneau de fond clair, trois lumières, caméra à 1,6 m à focale longue (visage ≈ 70 % de la hauteur, r2t au rapport du cadre), exposition fixée (`setAperture`) tant que la visionneuse est ouverte ; voile « photo imprimée » (`photo_paper_ca.paa`). Cause de la photo ratée : mannequin à l'air libre à 2000 m (soleil, ciel), exposition automatique du jeu (brûlée la nuit), focale trop large, polo blanc, sphère de fond non texturée.
+- Gabarits (`tools/gen_id_assets.py`) redessinés (ICAO 9303 / ID-1, guilloches fines, puce, hologramme discret, pill SIMULATION, pied) aux coordonnées du registre ; helpers importables (`render(spec)`) pour les extensions.
+- Alertes : `core/fn_toast` (plus de BIS_fnc_showNotification ni hintSilent : bulle ATAK, sinon notification du téléphone + RPT), `zeus/fn_zeusNotify` (ZEN sinon téléphone), `loadout/*` (plus de systemChat/hint), `guide/*`, `ia_rp/fn_iarpClient` ; ATAK natif `fn_aiOrder` « toast » → `fn_notify`, `fn_shotDir`, `fn_devLinkInspect`, `fn_antennaKit`, `fn_meshTools`, `fn_dataInit`, `fn_zeusMenu` ; Overwatch `fn_showNotification`, `fn_ambientHint`, `fn_zeusFeedback`, `fn_athena_openBiiTab`, `realism_config/*`. Test `tests/Unit/OverwatchVanillaChatSilentAssetTest.php` étendu (notifications, hint, titleText, cutText avec texte, curator feedback) sur SSE, ATAK natif et Overwatch.
+- Relever (`fn_idPhoto`) : `["can"]` (possible, motif, texte du bouton), ligne d'état de la visionneuse (idc 93706, `["status", texte, couleur] call fn_idViewerOnLoad`), fiche ouverte au besoin sur le document affiché, évènement CBA local `comspec_sse_controlRecord` [paires, fiche] et `comspec_sse_fnc_controlRecord` si définie (paires : kind, docId, type, typeLabel, country, countryName, number, last, first, sex, dob, pob, issued, expires, authority, mrz, holder, holderNetId, holderUid, clock, date, grid, pos, controller, controllerUid, callsign, verdict, n0, case, idem).
+- Sélecteur (`fn_idDocPicker`, `dialogs/docPicker.hpp`, idd 93800) : Zeus (module ZEN « Donner des papiers », personne ou position), Eden (attributs COMSPEC_ID_Carry/Country/Kind/Quality des unités sélectionnées).
+- Addon `extensions` : réglages CBA « SSE ROLEPLAY › Extensions », fenêtre des extensions (Zeus, Eden, menu Échap), liste coupée `comspec_sse_docExtOff` (serveur, diffusée). Extension d'exemple `mod/@COMSPEC_SSE/extensions/example_documents/` (carte de presse, laissez-passer, README).
+- Guide : pages `CfgHints › COMSPEC_SSE` par outil, fenêtre du manuel avec sommaire et recherche (`fn_openGuide`), bouton « ? » (`fn_guideButton`), guides Markdown `mod/@COMSPEC_SSE/docs/guides/` (FR + EN).
+- Autotest (`missions/COMSPEC_Autotest.Stratis/scripts/sse.sqf`) : `sse_documents_types` (chaque type, jour et nuit, recto/verso/zoom, aucune BIS_fnc_showNotification), `sse_relever`, `sse_selecteur_document` (personne et au sol), `sse_extension_exemple` ; `ingame_test.ps1 -ModsEnPlus`.
+
+**Passage aux fichiers, SEEK II et liens directs vers les apps (site, ATAK natif, SSE)**
+- ATAK natif : `comspec_atak_native_fnc_openApp` [page, contexte, préparation, après] (lien profond commun, ouverture reportée au déverrouillage par `COMSPEC_ATAK_LockAfter`, `["take", page]` pour lire le contexte) ; repris par caméra (renommer), extraction DL-7, drone, compte rendu, liaison Athena, choix Athena, mode pilote, photo de l'app SSE. Le centre Zeus n'est pas touché.
+- SSE core : `comspec_sse_fnc_openApp` (repli pour un ATAK plus ancien). Identity : app FICHIERS (`fn_filePage`, `fn_fileAction`), fichier de la mission côté serveur (`fn_fileServer` : query QW/QA/QB/QV, seekStore, record, contrôles subis notés par `comspec_sse_idChecked`), `fn_fileClient` (complément Athena par QueryIdDocument, journal hors ligne `file_query`), `fn_fileMerge`, `fn_fileQuery`, `fn_fileSubmit` (SubmitIdCheck, file hors ligne, licence respectée), `fn_controlRecord` (point d'entrée des relevés, `id_record`), `fn_scanAnim` (animation des analyses, mise à jour ciblée d'une ligne `text`).
+- Contrôle ID : refus du serveur renvoyés en `checkFail` et portés par la fiche (`notice`), bandeaux IDCHECK périmés retirés, bandeau « N0 seulement » / « RAS aux niveaux lus », N1 à N3 animés sans barre ACE, N4 au SEEK II (`comspec_sse_seekVerdict`), « Voir aux fichiers » après N3.
+- SEEK II (Overwatch connect embarqué) : `fn_seekQuick`, `fn_seekVerdict`, `fn_seekState`, `fn_seekEnroll`, `fn_seekSend`, `fn_seekBattery` ; page CONTRÔLE ; touches A1/QUERY/SIGN/flèches ; `comspec_sse_fnc_openSeek` ouvre sur la cible.
+- Site : `SseFileController`, `SseFileQueryService`, `SseFileRepository`, `SseFileCatalog`, vues `views/atak/sse/files/`, migration 4330 (`sse_file_queries`, `sse_file_mentions`, `sse_seek_records`), `lookup` étendu (type QW/QB/QV, flags `qrn:`, `doc:`, `dob:`, `checks:`, `seek:`, mentions), kinds `file_query`, `seek_record`, `id_record`. Aucune nouvelle commande de DLL.
+- Autotest : `missions/COMSPEC_Autotest.Stratis/scripts/fichiers.sqf` (groupe sse).
+
+**Identité Athena qui arrive vraiment en jeu, synchro et couverture à télécharger (site, SSE)**
+- Cause du « Paquet Athena non chargé » : serveur dédié sans COMSPEC Link ; `fn_idAthenaPack` « load » ne demandait le paquet qu'à un Zeus connecté, 5 fois à 1 min d'intervalle après le début de la mission, puis abandonnait (joueurs arrivés plus tard : jamais de paquet). Un échec de `GetIdentityPack` sur un serveur relié n'était jamais réessayé, et « has » gardait un « non » pris pendant une liaison coupée.
+- SSE `identity` : `fn_idAthenaPack` « load » (un seul à la fois, nouvel essai 1 à 5 min tant qu'il manque, Zeus puis relais « self » par joueur), « fetch » mode `self` (op `~self`, erreur dans `comspec_sse_idPackErr`), « applySelf » (serveur : kit du Steam ID lu par le serveur, ses papiers, son brief, pays inconnus seulement ; avis, recherchés, population, réglages ignorés), « state » (reg `packState`), « want » (relance à la demande de kit). `fn_idClient` « packFetch » attend `COMSPEC_AthenaReady` (2 min au plus), renvoie `pack` ou `packFail`. `fn_idServer` : `pack` [moi, texte, full | self], `packFail`, `coverPull` relaie tout de suite ses papiers (1/min). `fn_idLegend` « sheet » : diag par étape et code, pièce Athena préférée à une pièce tirée, `packStep` / `packCode` / `packVia` / `packAt`. `fn_idCoverSync` : ces champs et `serverName` partent avec la remontée `cover_report` (nouveau : état de livraison et nom du serveur de jeu, aucune donnée personnelle de plus).
+- Site : `GET /api/sse/identity/pack?op=~self[:OP]` → `SseIdentityPackService::buildSelf` (compte du jeton de jeu seulement, faux sans nature, sans cache partagé ; clé de communauté seule : 403 `unlinked`). `SseIdGameCoverService` garde `pack`, `pack_code`, `pack_via`, `pack_at`, `server` (hors empreinte : une différence examinée ne se rouvre pas). `MemberIdentitySyncService::delivery` / `withDelivery` : « Prévu pour le jeu » au lieu de « Part en jeu / Utilisée en jeu », remplacé par « Reçue en jeu le … » / « Remis en jeu le … » seulement d'après le jeu.
+- Fiche membre › Identité & papiers : bloc « Arrivée réelle en jeu », carte « Télécharger ma couverture » (routes `POST …/effectifs/membres/{id}/papiers/couverture`, `GET …/couverture/{exportId}/telecharger`, `MemberCoverExportController::generateForMember` / `downloadForMember` : le membre lui-même `LIMIT_SELF`, un responsable qui gère les papiers `LIMIT_MANAGER`). `SseCoverExportService::generateFromIdentity` : fichier `comspec-cover` v1 avec l'identité principale et ses papiers émis valables (contenu « Identité Athena » du formulaire, aussi dans Mes papiers et au bureau SSE).
+- Correctif : `member_papers_sync.php` écrasait `$h` de la fiche membre (boucle de l'historique) : page cassée après « Appliquer les choix » / « Garder les deux ».
+- Aucune nouvelle DLL, aucune migration. Traductions : `lang/en/site_auto.php`, `i18n/en.txt`, `localisation/template/xx.txt`, `tools/i18n_identity_en.tsv`.
+
+**Drones armés (UCAV) commandés depuis le téléphone : orbite, Rechercher et tuer, frappes sur cible marquée (ATAK natif)**
+- `functions/drone/fn_ucav.sqf` (nouveau) : reconnaissance des UCAV (`unitIsUAV`, avion ou hélicoptère, au moins une munition guidée air-sol d'après `CfgAmmo` : `laserLock`, `irLock`, `manualControl`, `autoSeekTarget`, `SensorsManagerComponent`, missiles air-air exclus ; bombe si `thrust`/`thrustTime` nuls ou `BombCore` ; forçage mission `COMSPEC_ATAK_Ucav`), liste des armes par `magazinesAllTurrets` (+ `pylonWeapon` / `compatibleMagazines`), droits (`can`), liaison (`comspec_atak_native_ucav_range`, relief, relais par `fn_videoLink`, TOC et Zeus toujours en liaison), contrôle serveur (`srv` : réglage, camp, droits, contrôleur unique, opérateur au terminal, cible amie ou civile refusée, allié à moins de 40 m du point refusé, engagement libre interdit forcé en « Proposer »), actions du téléphone (deux appuis pour frapper, annuler et rendre), lignes et actions du clic droit, dessin de la carte, retours (`evt`), surveillance (`tick`, 1 s).
+- `functions/drone/fn_ucavCmd.sqf` (nouveau) : exécution là où l'UCAV est local. Orbite par point de passage `LOITER` (`CIRCLE_L`, `flyInHeight`), équipage `CARELESS` / `BLUE`, `setAutonomous false`, `AUTOTARGET` coupé. File de frappes (script unique) : approche par `doMove` jusqu'à l'enveloppe (missile : `missileLockMinDistance`..`missileLockMaxDistance`, nez à moins de 40°, vue dégagée ; bombe : point de largage calculé sur hauteur et vitesse, nez à moins de 20°, dégagement à 3 km si mal aligné), puis `reveal`, `reportRemoteTarget`, `confirmSensorTarget`, `doWatch`/`doTarget`, `selectWeaponTurret`, tir `fireAtTarget` → `BIS_fnc_fire` → `forceWeaponFire` (2 s chacun), munition capturée par `Fired` et accrochée à la cible (`setMissileTarget` objet, `setMissileTargetPos` point, cible laser posée sur un point sans objet). Suivi jusqu'à l'impact, BDA proposé (détruit, endommagé, neutralisé, sans effet). Rechercher et tuer : `nearTargets` + `getSensorTargets` dans la zone toutes les 3 s, identification par le camp perçu ; « Engager librement » seulement ennemi identifié sans allié ni civil dans la distance de sécurité de l'appui aérien (`fn_fireSupport` `type CAS` → `dc`), deux frappes automatiques au plus, sinon proposition.
+- `functions/drone/fn_pageUcav.sqf` (nouveau) : vue UCAV de l'app Drone (paysage : onglets à gauche, image et état à droite). Image de la nacelle par la caméra de Vidéo Live (`fn_livecamUav`, hôte du flux = contrôleur par `COMSPEC_DroneOwner`), onglets MISSION, CIBLES, FILE, JOURNAL, compte rendu BDA pré-rempli (`fn_reportAction` `prefill BDA`).
+- Fichiers partagés, lignes ajoutées seulement : `fn_mapCtxMenu.sqf` (2 lignes : lignes UCAV du menu principal, action `UCAV_…`), `fn_tocLaptop.sqf` (1 ligne : dessin des UCAV), `XEH_preInit.sqf` (5 réglages CBA serveur ATAK · UCAV et 3 événements `comspec_atak_native_ucavSrv`, `ucavExec`, `ucavEvt`, `COMSPEC_ATAK_SrvUcavV`), `config.cpp` (3 fonctions). Dans `functions/drone/` : vue UCAV et entrées UCAV ARMÉS de `fn_pageDrone`, point choisi sur la carte et zones UCAV de l'outil DRONE (`fn_droneAction`), dessin (`fn_droneDraw`), ordres de petit drone ignorés sur un UCAV commandé et terminal UAV du contrôleur (`fn_droneCmd` « manual » / « release »).
+- Réglages : `comspec_atak_native_ucav` (activé), `_ucav_who` (chefs, JTAC, opérateurs de drone, TOC et Zeus / tout le camp / TOC et Zeus), `_ucav_free` (engagement libre autorisé), `_ucav_terminal` (terminal UAV requis, non), `_ucav_range` (15 000 m).
+- Mission d'autotest : `scripts/ucav.sqf`, groupe `ucav` (Greyhawk armé en orbite, Ifrit ennemi marqué puis frappé, tir et impact vérifiés ; Rechercher et tuer en « Proposer », aucune frappe sans validation). Non jouée : tests en jeu sautés.
+- Traductions : `i18n/en.txt` et `localisation/template/xx.txt` (240 phrases).
+
+**Intégration du pack (fusion des chantiers)**
+- Une seule règle pour le nom affiché d'une IA (bulles, fil, journal, toasts, fenêtre « Parler à ») : `fn_iarpName` « ensure » (serveur : nom des papiers SSE, décidés par `fn_idRegistry` « ensure » au besoin, sinon de la légende, diffusé dans `comspec_sse_idName`), « shown » (sinon « Anonyme »), « for » / « label » (le Zeus voit le vrai nom et la nature). `_nameOf` de `fn_iarpServer` et `fn_iarpClient` « name » y délèguent ; réplique « reply » : bulle et fil au nom de `fn_iarpName` « label », bulles aux autres joueurs sans l'émetteur.
+- `core/fn_toast` : IA RP chargée → bulle et fil de l'IA RP ; sinon bulle de l'ATAK (nom : même règle, plus jamais `name _unit`) ; sinon notification du téléphone + RPT ; jamais d'alerte Arma. `fn_iarpClient` « mem » sans ZEN : RPT au lieu de `hintSilent`.
+- Éditeur SSE « IA de la zone » : papiers à porter = alias de l'éditeur + types du registre (extensions comprises), liste « Ajouter un papier » et libellés des papiers tirés de `fn_idDocTypes`.
+- Relever (`fn_idPhoto`) : fiche locale puis `comspec_sse_fnc_controlRecord` (fichier de la mission, Athena) ; « SCANNER (ATAK) » de la visionneuse ouvre l'app Fichiers.
+
+Aucune nouvelle DLL (COMSPEC Link 2.0.123 inchangé). Migration 4330 (passage aux fichiers). Non vu en jeu : aucune passe de l'autotest n'a tourné pour ce pack.
+
+## À venir : configurateur d'équipement, favoris, tendances, pré-kits et poids (site, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Configurateur d'équipement : favoris, pré-kits et poids en kg
+- Seuls les accessoires et chargeurs qui vont sur votre arme sont proposés ; changer d'arme garde ce qui est compatible et retire le reste, en le disant.
+- Une étoile sur n'importe quel objet : retrouvez vos favoris avec le filtre « Favoris ».
+- « Tendances 30 j » : les objets les plus portés en jeu, ajoutés aux tenues ou mis en favori dans votre communauté.
+- Pré-kits : un lot d'objets (ex. garrot, pansements, radio, carte) inséré en un clic dans l'uniforme, le gilet ou le sac, avec la place vérifiée.
+- Poids en kg de chaque objet, de chaque contenant (rempli / capacité) et de toute la tenue.
+- « Récupérer une tenue » : aperçu du contenu et du poids, filtres, et choix de ce que vous prenez (arme, uniforme, gilet, sac) : remplacer, fusionner ou ouvrir à côté.
+EN : Equipment configurator: favourites, pre-kits and weight in kg
+- Only the attachments and magazines that fit your weapon are offered; switching weapon keeps what fits and removes the rest, telling you so.
+- A star on any item: find your favourites with the "Favourites" filter.
+- "Trends 30 d": the items most worn in game, added to loadouts or starred in your community.
+- Pre-kits: a set of items (e.g. tourniquet, bandages, radio, map) inserted in one click into the uniform, vest or backpack, with the space checked.
+- Weight in kg of each item, each container (filled / capacity) and the whole loadout.
+- "Retrieve a loadout": preview of the content and weight, filters, and choice of what you take (weapon, uniform, vest, backpack): replace, merge or open alongside.
+
+### Détail technique
+- Migration `database/steps/4300_equipment_configurator_social.php` (étape `equipment_configurator_social`) : tables `game_item_favorites` (tenant, membre, classe) et `game_item_prekits` (contenu JSON contrôlé par `PrekitDocument`, `shared` réservé aux responsables des kits).
+- `EquipmentConfiguratorController` : `memberData` (GET `/equipment/configurateur/membre`), `favorite`, `savePrekit`, `deletePrekit` (POST, CSRF, formule, communauté en session, audit `equipment.prekit.*`). `sources` : favori, collection, rôle et camp (convention `U_B_`/`U_O_`/`U_I_`/`U_C_` des uniformes du jeu de base).
+- Tendances (`EquipmentTrends`, `EquipmentConfiguratorSocialRepository::trends`) : 30 jours, `game_item_usage` (joueurs distincts), tenues enregistrées ou modifiées, favoris ; seuil de 2 membres distincts, seulement des classes et des tenues visibles de la communauté, aucun propriétaire.
+- `LoadoutValidator::orphanMagazines` : avertissement pour un chargeur (balles, roquettes) rangé qui ne va dans aucune arme de la tenue (pas pour les grenades à main ni les explosifs, rien si une arme n'a pas de liste connue).
+
+## Pack 4.2.1 Washington : téléphone plus fluide, apps plus claires, réseau relais qui explique ses coupures, coques plus nettes, IA qui comprennent mieux (ATAK natif 4.2.1.AG - Washington, COMSPEC Link 2.0.123, SSE 1.6.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.2.1 : téléphone plus fluide, apps plus claires, réseau relais qui explique ses coupures, coques plus nettes, IA qui comprennent mieux
+- **Fluidité** : toucher une app, la touche Accueil ou Retour fait réagir l'écran tout de suite ; changer de page ne refait plus les fêlures ni la saleté de l'écran ; dans Messages et SMS, un message reçu s'ajoute au fil sans redessiner la page. Le téléphone monte en fondu quand vous le sortez (à couper dans Réglages > Animations et sons).
+- **Tâches** : les ordres à traiter sont en tête, les terminés en bas, avec un filtre À traiter / Terminés / Tous ; une consigne longue se déplie au lieu d'être coupée.
+- **Annulation** : TOUT EFFACER dans Itinéraire et VIDER LE JOURNAL dans Alertes s'annulent pendant 8 secondes.
+- **Médical, Recherchés, Numéros** : les blessés graves non soignés sont en tête, avec la distance et le cap ; Recherchés et l'annuaire de Numéros se fouillent par nom.
+- **Navigation** : la touche retour ferme l'écran ouvert au lieu de quitter l'app ; Statut et Itinéraire se mettent à jour seuls ; un écran vide dit quoi faire.
+- **Réseau relais** : hors maillage, le téléphone nomme le lien qui manque et sa cause (relief, distance, bâtiments) avec un conseil, et la carte le montre par un trait rouge en tirets. Les bâtiments comptent entre deux radios ; quand un relais tombe, le réseau se coupe environ 3 secondes avant de repasser par un autre. Tout se règle dans Échap > Réalisme.
+- **Coques** : iPhone 17 Pro sans liseré noir, V2 Enhanced totalement opaque, écran aux coins arrondis avec un léger reflet de vitre (Réglages > Thème et écran > Reflet du verre), touches de la coque à leur vraie place sur chaque téléphone.
+- **IA (SSE)** : elles comprennent les fautes de frappe, les accents oubliés et les négations, répondent à deux demandes d'un même message, se souviennent de chaque joueur et posent leurs propres questions. « Vos papiers sont faux », « Tu mens » : une IA qui ment peut avouer, nier, s'énerver ou fuir. Le renseignement vient par étapes (rumeur, détail, tout) et peut placer le lieu sur votre carte. Elles réagissent aux tirs proches, les civils s'inquiètent quand vous braquez quelqu'un, et une IA arrêtée par « Stop ! » repart seule au bout de deux minutes.
+- **Ordres aux IA** : « Ensuite… » met un ordre en file derrière l'ordre en cours, règle de tir (tir libre, riposte seulement, halte au feu), occuper un bâtiment, depuis la carte du téléphone et le PC du poste TOC ; le groupe signale lui-même ses contacts (« Contact nord-est à 250 m, 3 ennemis repérés »).
+- **Fiche d'une unité sur la carte** : à bord d'un engin, sa silhouette (avion, hélicoptère, véhicule, navire), son nom et des tuiles PLACE, ALT. SOL, VITESSE, CAP, CARBURANT, À BORD ; à pied, GRILLE, DISTANCE, AZIMUT et DERNIER SIGNAL ; pastilles APTE / EN VOL. Plus rien de coupé, même sur le petit téléphone en portrait.
+EN : ATAK 4.2.1: smoother phone, clearer apps, a relay network that explains its drops, cleaner phone cases, AIs that understand you better
+- **Smoothness**: tapping an app, the Home or Back key makes the screen react at once; changing page no longer rebuilds the screen's cracks or dirt; in Messages and SMS, an incoming message is added to the thread without redrawing the page. The phone fades in when you take it out (turn it off in Settings > Animations and sounds).
+- **Tasks**: orders to handle come first, finished ones at the bottom, with a To do / Done / All filter; a long order expands instead of being cut off.
+- **Undo**: CLEAR ALL in Route and CLEAR LOG in Alerts can be cancelled for 8 seconds.
+- **Medical, Target Deck, Numbers**: untreated serious casualties come first, with distance and heading; Target Deck and the Numbers directory can be searched by name.
+- **Navigation**: the back key closes the open screen instead of leaving the app; Status and Route update on their own; an empty screen says what to do.
+- **Relay network**: out of the mesh, the phone names the missing link and its cause (terrain, distance, buildings) with advice, and the map shows it as a dashed red line. Buildings count between two radios; when a relay goes down, the network drops for about 3 seconds before switching to another. Everything is set in Esc > Realism.
+- **Phone cases**: iPhone 17 Pro without the black outline, V2 Enhanced fully opaque, screen with rounded corners and a light glass reflection (Settings > Theme and screen > Glass reflection), case keys at their real place on each phone.
+- **AI (SSE)**: they understand typos, missing accents and negations, answer two requests in one message, remember each player and ask their own questions. "Your papers are fake", "You're lying": an AI that lies may confess, deny, get angry or run. Intelligence comes in steps (rumour, details, everything) and can put the place on your map. They react to nearby gunfire, civilians get worried when you aim at someone, and an AI stopped with "Stop!" moves on by itself after two minutes.
+- **AI orders**: "Then…" queues an order behind the current one, rules of engagement (weapons free, return fire only, hold fire), garrison a building, from the phone map and the TOC station PC; the group reports its own contacts ("Contact north-east at 250 m, 3 enemies spotted").
+- **Unit card on the map**: aboard a vehicle, its silhouette (plane, helicopter, vehicle, ship), its name and SEAT, ALT. AGL, SPEED, HEADING, FUEL, ON BOARD tiles; on foot, GRID, DISTANCE, BEARING and LAST SIGNAL; FIT / AIRBORNE pills. Nothing cut off any more, even on the small phone in portrait.
+
+### Détail technique
+
+**Tâches triées, annulation, recherche et écrans vides qui guident**
+- Tâches (`fn_pageTasks`) : ordres triés par [terminé, rang de priorité FLASH / URGENT / HIGH-PRIORITY-IMPORTANT / reste, `-stamp`, clé] au lieu de l'ordre de la HashMap de `fn_tasksAll` ; filtre « segment » À TRAITER / TERMINÉS / TOUS (état `taskFilter`, ordres et tâches de mission ; segment plutôt que « tabs » : ses libellés rétrécissent ou passent à la ligne en mini) ; consigne de plus de 220 caractères (200 pour une tâche de mission) coupée à la fin d'un mot avec « … » et une ligne « fold » TEXTE COMPLET (état `taskTxtOpen`) ; tâches de mission : suivie, en cours, terminées ; `backSub` replie « QUI ? ».
+- Annulation (`fn_undoSnack`) : `fn_wpAction « clear »` garde `COMSPEC_ATAK_WpUndo` = [n°, étapes, étape active, nav, auteur, à renvoyer] et n'appelle plus `_changed` : envoi groupé (`syncNow`) différé de 8 s, envoi en attente (`COMSPEC_ATAK_WpSyncPending`) retenu puis renvoyé à l'annulation ; `undoClear` ; toute modification (`_changed`) ou réception (`receive`) rend l'annulation caduque. `fn_alertsAction « clearLog »` / `undoClearLog` (`COMSPEC_ATAK_AlertLogUndo`, entrées reçues entre-temps gardées, 25 au plus).
+- Médical (`fn_pageMedical`) : alertes triées [triage à secourir / en cours / traité / KIA, gravité, ancienneté], ancienneté calculée de `created_at` (date Athena ou Unix) en minutes depuis 2020 (précision des flottants 32 bits) ; carte « notif » (titre, ancienneté, état · triage · distance et cap du patient en jeu · grille) au lieu d'un bouton ; `backSub` : alerte dépliée, moniteur (`medMon`, retour à DOSSIERS par `medMonFrom`).
+- Touche retour : `backSub` déclaré dans `fn_pageOrderCompose` (→ `orderAction cancel`) et `fn_pageBluetooth` (fiche CONTRÔLE ID, envoi à un appareil, élément reçu déplié) ; « ‹ RETOUR » dans Recherchés.
+- Recherche : `fn_wantedAction « search » / « clearQ »` (état `wantedQ` : nom, alias, référence), `fn_numbersAction « search » / « clearQ »` (état `numQ` : nom, groupe, numéros) ; ligne « field » avec OK, comme les autres recherches du mod.
+- Pages vivantes : `fn_pageWaypoints` et `fn_pageStatus` acceptent `["live"]` (textes réécrits sans redessiner) ; minuterie CBA d'une seconde propre à chaque page (`COMSPEC_ATAK_WpLive`, `COMSPEC_ATAK_StatusLive`), arrêtée hors de la page ou téléphone fermé. `fn_formRender` : ligne « info » avec id facultatif (4e élément) ; `fn_formSet « info »`.
+- États vides par le composant « empty » : Tâches, Alertes, Médical, Logistique, Recherchés (squelette pendant le chargement), Discord, Marquer tracking, Reco, SALUTE, Itinéraire, Sniper ; dans les pages dessinées à la main (Alertes, Reco, SALUTE), formulaire d'une ligne à la hauteur de son contenu. Alertes : journal au-delà de 12 (VOIR LA SUITE, `alertsLogN`) ; Logistique au-delà de 15 / 20 (`logiNMine`, `logiNIn`). Titres en double retirés dans Recherchés et Discord.
+- Autotest (`missions/COMSPEC_Autotest.Stratis/scripts/telephone.sqf`, groupe `telephone`) : `tel_taches_triees`, `tel_etats_vides`, `tel_recherche_nom`, `tel_annulation`, `tel_pages_vivantes` ; `AT_fnc_formTient` vérifie que boutons et textes des formulaires tiennent dans leur case.
+
+**Réseau relais plus réaliste, cause de coupure visible**
+- `fn_meshGraph` « pass » (serveur par défaut, `mesh_server`) : `_marginOf` rend [marge, cause] ; cause = plus forte perte de `fn_radioLink` au-delà de 3 dB (« lossCode » : 2 relief et zone de Fresnel, 3 bâtiments, 4 météo, 8 feuillage), sinon 1 distance ; puis 4 météo forcée par Zeus, 6 posture ou masque du corps, 5 brouillage, 7 autre canal. Cache par paire `[heure, marge, cause]` (30 s), clé augmentée du réglage bâtiments.
+- Bâtiments (`mesh_buildings`, 0 à 100 %, 50 par défaut) : un `lineIntersectsSurfaces` par paire de moins de 3 km, dans le même cache que le bilan, compté dans la tranche ; mêmes pertes que `fn_radioLink` « full » (12 dB par bâtiment, x 0,6 en Réaliste, 30 dB au plus) multipliées par le réglage ; bâtiments à moins de 15 m d'une antenne ignorés ; sans effet en réalisme Simplifié.
+- Format diffusé de `COMSPEC_ATAK_MeshRef` : 5e élément par camp, causes des liens de marge < 9 dB (par 2 : paire, cause) ; 6e, liens manqués (par 3 : A + 64 x B, cause, marge arrondie à 2 dB), 3 par nœud au plus (trop loin jusqu'à 3 fois la portée, en espace libre seulement ; autre canal à portée ; bilan raté). Aucun bilan radio de plus. Lus seulement s'ils sont là, bornés (4 032 et 576 nombres) : un serveur plus ancien reste lisible.
+- « view » (client, sans bilan radio) : clés `cause`, `fix`, `miss` [antenne A, antenne B, étiquette, cause], `reconv` ; lien manqué choisi dans tout mon îlot, vers un nœud relié à la passerelle d'abord ; `why` enrichi (toasts, app Réseau, `fn_linkQuality`) ; maillon faible du chemin vers la passerelle avec sa cause. Liens de l'écran : 4e élément, la cause.
+- Reconvergence (`mesh_reconverge_s`, 0 à 15 s, 3 par défaut) : un nœud de ma route précédente absent du graphe ou mort, la vue passe hors service ce délai (débit 0, rallonge voix retirée, niveau 3), « every » relit le graphe dès la fin du délai. Client seulement, à partir du graphe partagé.
+- `fn_meshDraw` : trait rouge en tirets « miss » (une paire, dédoublonnée avec les autres traits), étiquette traduite, réglage `mesh_miss_map` (coché). `fn_pageWaveRelay` : Qualité du chemin, Cause, conseil, cause des voisins faibles. `fn_mpuDiag` : faits `meshCause`, `meshFix`, `meshReconv`, `relayDown` (relais du camp hors service le plus proche, liste locale de `fn_relayNet`) ; étapes « relay » et « mesh » enrichies, même nombre d'étapes.
+- Réglages rangés dans `fn_realismCatalog` (Maillage) et expliqués dans `fn_realismHelp` ; traductions `i18n/en.txt`, modèle `localisation/template/xx.txt`. Autotest `relais` (`scripts/relais.sqf`). Rien n'a tourné en jeu.
+
+**Un téléphone plus fluide**
+- `fn_layoutGet` : résultat mémorisé par combinaison d'entrées (état du téléphone, réglages de mise en page du profil et du menu CBA, police, résolution, safeZone) ; équipement (modèle porté, terminal de bord, droit à l'appareil) relu au plus toutes les 0,5 s et tout de suite sur les évènements CBA `loadout`, `vehicle`, `unit`. Cache en enveloppe (appel interne `["#calcul"]`), corps inchangé ; `COMSPEC_ATAK_FontMin` et `FontBody` remis à chaque lecture. Mesures `disposition du téléphone (mémoire)` et `(calcul)`.
+- `fn_navigate` `[page, empiler, différé, mouvement]` : appui du joueur (tuiles du lanceur et du dock, touches Applications, Accueil, Apps récentes, Retour : `ui/displays.hpp`, `fn_tileCreate`, `fn_back [true]`) : titre (`fn_pageRender [page, true]`) et début du fondu (`fn_fx [..., ["press"]]`) dans l'image de l'appui, page dessinée à l'image suivante puis mouvement repris (`["resume", t0]`). Garde : jeton `COMSPEC_ATAK_NavTok`, écran fermé, page active changée. Les autres appels restent synchrones. Mesures `navigation : réponse à l'appui` et `navigation : appui jusqu'à la page dessinée`.
+- Calques d'écran gardés d'une page à l'autre (`fn_pageRender`, `fn_pageClear` ne les touche plus) ; recréés seulement si la place de l'écran change (cadre, orientation, modèle, format) ou si un calque est visible et qu'un contrôle hors groupe est plus récent qu'eux (tampon `cs_ov` posé sur tous les contrôles à chaque création des calques ; `cs_ovSkip` pour les contrôles en attente de suppression et éphémères). Dock et rail dans un groupe créé une fois (`COMSPEC_ATAK_DockGroup`), suivi au glisser. Calques restés sous un contrôle plus récent sans rien de visible : remontés au premier effet (`COMSPEC_ATAK_OvStale`, `fn_deviceOverlay` -> `fn_overlayRaise`). Mesures `page : calques d'écran gardés` et `recréés`.
+- `fn_schedulerTick` : une tâche lourde par passage de 0,2 s (barre d'état, sondages Athena, état de la liaison, COMSPEC Link) ; sondages des 3 s répartis sur quatre passages (`fn_remoteSync [étape]`, sans étape : les quatre d'un coup comme avant). `GetAuthState` partagé (`fn_extensionCall`, paramètre `_maxAge`) : app Athena 0,9 s, `fn_athenaStatus` 0,9 s / 3 s, rappel de connexion 5 s, étapes 1 à 3 des sondages 1,5 s ; l'étape 0 relit toujours la DLL avant de sonder. Mesures `Athena : sondage des unités / marqueurs / ordres / messages`, `DLL native GetAuthState`.
+- Messages et SMS : `fn_statusUpdate` passe par le fil seul de `fn_pageChat [true, true]` (repli sur le rendu complet, pas pendant la saisie) ; nouveaux messages en fin de fil ajoutés au fil affiché (`COMSPEC_ATAK_ChatAppend` : position, jour, auteur, repère NON LUS), défilement gardé, molette mise à jour ; rien de changé : rien refait. Fil refait dès qu'un message déjà affiché, la place, la taille de texte, le jour, le tri ou l'aide diffèrent. Mesure `page messages (fil seul)`.
+- Sortie et rangement animés du téléphone en main (`fn_fx « phoneIn » / « phoneOut »`, 0,2 s), réglage CBA `comspec_atak_native_phone_anim` (coché par défaut), aussi dans Réglages > Animations et sons. Seules les touches « prendre en main » et « porter » demandent le rangement animé (`fn_close [true]`) ; tout le reste ferme tout de suite, même pendant une descente. Rien d'animé entre miniature et en main en mode PETIT. Mesure `téléphone : animation de sortie`.
+- Fermeture : écriture du profil déjà regroupée (`fn_saveProfile`, 60 s) ; retour de la miniature mesuré (`téléphone : fermeture (nettoyage)`, `téléphone : retour de la miniature`).
+- Laissé volontairement : fusion des deux gestionnaires `KeyDown` (ordre et double passage de `fn_keybinds` / `fn_keyBlock` à revoir en jeu), préférences de `fn_mapOnDraw` (lectures de profil de l'ordre de la microseconde, gain négligeable), miniature gardée sous le téléphone en main (un seul écran du téléphone dans tout le mod).
+- Rien de cela n'a tourné en jeu : relu, `hemtt check` (2 erreurs connues seulement) et tests de format.
+
+**Coques plus propres, verre de l'écran et touches de chaque téléphone**
+- `tools/cut_ip17.py` : détourage anticrénelé. Sur le fond noir de la photo, un pixel du bord vaut C = alpha × F (F : couleur de la coque 2 px plus à l'intérieur, prolongée par `spread`) ; alpha = C / F sur 2 px de part et d'autre du contour et le bord prend la couleur F (avant : seuil de noir, pixels sombres du bord gardés opaques, liseré de 1 à 2 px). Support et câble (F presque noir) : contour flouté. Fentes de dragonne (`SLOT_ZONE`) : trous fermés rendus transparents. Ouverture de l'écran dessinée 4 fois plus grande puis réduite (coins arrondis anticrénelés).
+- `tools/frame_photos.py` : corps d'une photo pas tout à fait opaque (V2 Enhanced : alpha 253, de 240 à 255) remis à 255 dans `clean` (photos à corps opaque : inchangées) ; `frame_photos.py ip17 iphone` ne refait que ces modèles et garde les mesures des autres.
+- `tools/gen_assets.py` : `_bleed` prolonge la couleur du bord sous les pixels transparents des coques (alpha inchangé) : le filtrage et les mipmaps ne mêlent plus le noir des zones vides au bord. `SHELL_ALIAS` : la tablette à touches n'a plus de coques 2D propres.
+- Régénérés : `phone_<landscape|portrait>_ip17[_night]`, `phone_back_ip17`, `phone_<landscape|portrait>_iphone[_night]`, `phone_back_iphone`, `dirt_case_ip17_*`, `dirt_case_iphone_*`. `fn_layoutGet` : écran et boîte visible de l'ip17 remesurés (`[0.2219, 0.3805, 0.7551, 0.6204]`, `[0.1177, 0.3169, 0.8745, 0.7866]`, écart de 1 à 2 px).
+- Verre (`fn_screenSurface`) : calque `glass` (`screen_glass.paa`, 128 px, blanc, l'alpha dessine une bande en biais en haut à gauche ; opacité 0,22 × (0,45 + 0,55 × sunOrMoon)) et quatre coins `corner` (`screen_corner_<tl|tr|br|bl>.paa`, quart de disque évidé, teint au gris du cadre). Rayon et gris de jour / nuit par modèle et par coin, mesurés sur les PAA (S7 : coins droits, rien posé). Le coin part du bord débordant de l'écran (0.003) : arrondi décalé d'autant, comme les bords droits. Créés après la saleté, donc devant ; signature du calque complétée par le réglage et la texture de la coque (jour / nuit, orientation). Écran 3D du JPC : rien. Textures générées par `tools/gen_glass.py` (14 485 octets en tout). Comme tout calque de surface, ils mettent `COMSPEC_ATAK_DevFront` : le focus revient au bouton hors écran chaque seconde (sauf saisie et liste déroulante), désormais en permanence (reflet activé, ou coque à coins arrondis : tous les modèles sauf le S7) ; et `fn_overlayRaise` les recrée quand une app ajoute des contrôles hors de la zone de contenu.
+- Réglage CBA `comspec_atak_native_glass_glare` (case à cocher, par joueur, activé par défaut, ATAK · Affichage), aussi dans Réglages > Thème et écran (`_cbaSwitch`).
+- Touches physiques (`fn_layoutApply`) : table par modèle (retour, accueil, apps récentes, marche/arrêt), mesurée par analyse d'image (icône ou bouton repéré dans le cadre, bouton latéral à la bosse de la silhouette), cible minimale 0,045 × 0,07 ou 0,06 × 0,03 ; `[]` masque la zone. Sonim : apps récentes en haut, retour en bas. Xiaomi X3D, tablette et iPhone 17 Pro : marche/arrêt seulement.
+- Place dans `main.pbo` : 7 829 984 octets de moins. `tools/paa_lzo.py` compresse en LZO les mipmaps des PAA écrits sans compression (blocs DXT gardés octet pour octet, relecture vérifiée ; `hemtt utils paa compress` réencode les blocs : écarts d'alpha jusqu'à 29) : 59 fichiers, 7 162 595 octets (`gw_frame*` 4 328 337, `fx_*`, `bloodc_*`, icônes). Coques `keys` (copies de `tablet`) et `dirt_case_keys_*` retirées : 1 355 551 octets ; `fn_layoutGet` et `fn_screenSurface` prennent celles de la tablette. Coques ip17 et V2 Enhanced régénérées, avec leur poussière : 673 677 octets de plus (encodeur HEMTT actuel, couleur prolongée au bord), verre 14 485.
+- Non vu en jeu : coins, reflet, zones des touches et coques régénérées sont vérifiés sur des compositions Pillow seulement.
+
+**IA qui comprennent mieux, avouent, réagissent aux tirs ; ordres aux IA enrichis**
+- SSE, addon `ia_rp` (aucun modèle de langage, aucune requête réseau, rien vers Athena ; profils, secrets et mémoire restent des variables d'unité du serveur, jamais diffusées ; faits, mensonge et obéissance calculés par le serveur) :
+  - « Stop » : `fn_iarpReact « halt »` (nouvelle fonction serveur) suit chaque IA arrêtée (fonction CBA de 2 s, retirée à la relâche) : relâche au bout de `comspec_sse_iarp_haltTime` (120 s), quand le joueur est à plus de `comspec_sse_iarp_haltDist` (25 m) ou quand l'automate la reprend (fuit, agressif, renforts, rendu : il donne ses ordres ; calme : relâche). Ordres locaux `unhalt`, `flee`, `prone`, `look` dans `XEH_postInit`.
+  - Interprète `fn_iarpIntent` : dictionnaire précalculé `fn_iarpData « dict »` (mots de 5 lettres et plus des motifs, clés « deux premières lettres + longueur »), comparaison sans lettres doublées puis distance d'édition (transposition = 1) de 1, 2 à partir de 8 lettres, correction unique, 12 mots rapprochés au plus par message, mots courants protégés (`_keep` du lexique) ; négation dans les 4 mots avant le motif, sans franchir la ponctuation (pot-de-vin et fouille annulés, menace changée en apaisement, ordres inchangés) ; 4e élément du résultat : demandes du message dans l'ordre (une politesse ou un oui / non, deux demandes). `fn_iarpServer « say »` traite chaque demande et assemble une seule bulle (contexte `plain` de `fn_iarpGen` pour les répliques qui précèdent) ; papiers ou fouille ACE après la réponse. Résultats vérifiés hors jeu sur un portage Python de l'interprète (86 phrases).
+  - Mémoire `fn_iarpMem` (pure) : couverture affirmée commune, `told` (premier joueur à qui un sujet a été dit), une fiche par joueur (identifiant Steam, 24 au plus) : confiance, déjà-dit, pot-de-vin, mot-clé, badge, palier de renseignement, question ouverte ; ancienne mémoire reprise ; `fn_iarpProfile « apply »` n'efface plus la mémoire si nom, histoire et rôle sont inchangés.
+  - Confrontation : intention `confront` (poids 1,3) ; coupable si mensonge affirmé, `comspec_sse_idLiar` (faux papiers, couverture), secret, rôle insurgé / HVT / agent ou légende non civile ; chance de craquer selon peur, armes pointées, faux découvert (`comspec_sse_idBust`), mensonges, insistance, moins pour HVT et agent ; aveu = secret, ligne libre de l'histoire ou vérité sur un mensonge (`said` corrigé pour tous), reddition des profils sérieux ; sinon déni, colère (`refuse`) ou fuite, et `fn_idAiFsm « bust »`.
+  - Savoir par paliers sans nouveau champ : lignes `Vague :`, `Précis :`, `Complet :`, `Lieu :` dans `know` (`fn_iarpProfile « knowTiers »`, carroyage `BIS_fnc_gridToPos`, coordonnées ou marqueur de mission) ; `« intelLevel »` (pression -> vague, débloqué -> précis, confiance 80 / aveu / deux pots-de-vin -> complet). Savoir d'une phrase = palier précis, comportement inchangé ; format enregistré (Eden, Zeus, bibliothèque) inchangé. Marqueur `createMarkerLocal` envoyé au seul poste du demandeur (`fn_iarpClient « mark »`), une fois par joueur et par IA.
+  - Initiative : questions `askArrest`, `askGo`, `askMoney`, `askHelp` (une à la fois, 30 s d'écart), suite du oui / non pendant 60 s (`askMoney` + oui = pot-de-vin). Banque : 63 intentions, 6 phrases de base au moins chacune en FR et EN ; lexique enrichi (tournures familières).
+  - Tirs proches : `fn_iarpReact « watch »` pose `FiredNear` sur l'IA en conversation ou engagée par l'automate (serveur, et là où elle est locale si ailleurs : évènement `comspec_sse_iarpFired`), retiré après 5 min sans échange ; `« fired »` : au sol, reddition, fuite ou combat selon le profil, 8 s d'écart ; réglages `comspec_sse_iarp_shots` (oui), `comspec_sse_iarp_shotRange` (40 m).
+  - Témoins : `fn_iarpReact « witness »` (menace ou arme pointée sur un civil) : 8 civils au plus dans `comspec_sse_iarp_witnessRange` (30 m), 5 au plus qui voient la scène (`checkVisibility`), 20 s par victime ; choc `comspec_sse_idShock` (-30 par minute) ajouté à la tension de `fn_idAiBrain` ; hors automate : regarde ou s'enfuit. Réglage `comspec_sse_iarp_witness` (oui).
+  - Autotest `fn_iarpSelfTest` : fautes de frappe, faux positifs, négation, deux demandes, confrontation, coût mesuré, mémoire par joueur, paliers et lieu, 6 phrases par intention.
+- ATAK, `fn_aiOrder` (ajouts, les 20 ordres d'avant inchangés) : `THEN_MOVE`, `THEN_PATROL`, `THEN_HOLD`, `THEN_WITHDRAW` (file de 5 sur la machine du groupe, `COMSPEC_ATAK_AiOrdQueue`, ordre en cours `COMSPEC_ATAK_AiOrdBusy`, suivant lancé à la fin « terminé » du suivi ; pas de NEW serveur pour un ordre mis en file) ; `ROE_FREE` / `ROE_RETURN` / `ROE_HOLD` (YELLOW / GREEN / BLUE, posture gardée `COMSPEC_ATAK_AiRoe`, remplacée par Attaquer et Supprimer) ; `GARRISON` (bâtiment à 60 m, `buildingPos`, `doMove` puis `doStop`) ; mode `contact` : gestionnaire de groupe `EnemyDetected`, compte rendu par l'état du camp (`contact` : direction, distance, ennemis `nearTargets`, blessés), bulle et toast au donneur, une fois par minute ; réglage `comspec_atak_native_ai_contact` (coché). Nouveaux ordres listés dans ORDRE IA du PC du poste TOC (`kinds`).
+- Banc en jeu (`missions/COMSPEC_Autotest.Stratis/scripts/ia_rp.sqf`, groupe sse) : `ia_rp_stop_relache`, `ia_rp_dialogue_421`, `ia_rp_tirs_temoins`, non exécutés. `hemtt check` ATAK : seulement les 2 erreurs connues (`fn_screenCast`, `fn_slideWebShow`) ; SSE (ia_rp et identity dans un projet hemtt temporaire) : aucune erreur, mêmes avertissements qu'avant.
+- À tester en jeu : rien n'a été vu en jeu. « Stop » puis attente ou départ du joueur (IA locale au serveur et à un client sans tête) ; « Bonjour, vos papiers » (réponse puis action ACE) ; fautes de frappe courantes ; confrontation d'un insurgé aux faux papiers et d'un civil honnête ; savoir par paliers avec `Lieu :` (marqueur vu par le seul joueur concerné, à deux joueurs) ; « Je l'ai déjà dit à votre collègue » à deux joueurs ; questions de l'IA et réponse oui / non ; tir près d'une IA interrogée (serveur et client sans tête) ; civil braqué devant d'autres civils ; PC du poste TOC : Ensuite, règles de tir, Occuper le bâtiment, compte rendu de contact (groupe local au serveur et à un client sans tête), traductions en anglais.
+- Carte du téléphone (`fn_mapCtxMenu`) : « Occuper le bâtiment », sous-menu « Ensuite… » (`AITHEN` : aller, patrouiller, tenir, se replier) et règle de tir dans Posture (ligne « actuel » lue dans `roe` de l'état du groupe) ; un menu plus haut que la carte resserre ses lignes (plancher 1,05 × la taille du texte). Compte rendu de contact accordé au singulier (« 1 ennemi repéré », « 1 blessé »).
+
+- Onglets (`fn_formRender`, composant « tabs ») : libellé réduit jusqu'à la taille plancher quand il dépasse l'onglet (la répartition comptait à la taille plancher, le dessin se faisait à la taille normale).
+- Dépannage MPU : le cas d'exemple de l'autotest porte `relayNeed` et `relays` ; `mpu_diag_etats` attend 12 étapes et couvre « aucun relais en service ».
+- Fiche d'unité de la carte (`fn_unitCard « mapCard » / « tick »`) refaite telle que décrite par les bulles d'aide déjà traduites en 4.2.0 (`i18n/en.txt`) et attendue par l'autotest `carte_fiche_unite`, mais jamais livrée dans le code : pastille à la silhouette générique de l'engin (`CfgVehicleIcons` : iconPlane, iconHelicopter, iconShip, iconTank, iconCar), indicatif sur une ligne, pastilles état médical et état de l'engin (EN VOL, AU SOL, EN APPROCHE, DÉCOLLAGE, STATIONNAIRE ; EN ROUTE, À L'ARRÊT ; À PIED ou affiliation d'un contact), bloc ENGIN (nom et genre), tuiles par ordre d'importance, autant par rangée que la largeur le permet. Textes simples sur une ligne, réduits jusqu'à `COMSPEC_ATAK_FontMin` puis abrégés « … » (plus de texte structuré coupé par sa hauteur). Carte trop basse pour l'essentiel : la fiche couvre le bandeau et RECHERCHER ; PRÉCÉDENT / SUIVANT masqués si l'indicatif n'aurait plus de place. Clés exposées : `title`, `role`, `head`, `pills`, `tiles`, `aboard`, `icon`, `texts`.
+- Boutons de fiche (`fn_unitCard « bar »`) : libellés mesurés sur un bouton caché (`ctrlTextWidth`) au lieu d'une estimation au nombre de lettres, une colonne si besoin, police réduite si le libellé dépasse encore (« GO THERE » coupé en paysage, `tel_bft_colonnes`) ; même mesure à chaque changement de libellé (`barUpdate`).
+- En-tête d'app (`fn_formRender « header »`) : dans une colonne étroite (titre réduit à moins de 55 % de la largeur), les actions passent sous le titre, à droite, et le titre est réduit jusqu'à ce que son mot le plus long tienne (dépannage MPU en petit portrait : titre « Dépannage MPU » une syllabe par ligne à côté de RETOUR et ACTUALISER).
+- Langue : le téléphone en anglais sur les captures de l'autotest est voulu (`comspec_atak_native_language`, anglais par défaut depuis 2.1.0, profil de test sans réglage) ; les vérifications passent par `fn_tr` et ne dépendent pas de la langue.
+- Rien de ce lot n'a été vu en jeu avant la publication de ce bloc : autotest et essai en partie à faire.
+
+## À venir : moins de sondages et de relectures inutiles (ATAK natif et SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Ma couverture ne relit plus sa fiche sans raison
+- L'app Ma couverture garde votre fiche : la rouvrir ne la redemande plus au serveur, sauf si quelque chose a changé (tenue, arme, papiers, réponse à un contrôleur, paquet Athena rechargé) ou si elle date de plus de 10 minutes (1 minute pendant une infiltration).
+- Quand rien n'a changé, le serveur ne renvoie que la note de cohérence et l'état de l'infiltration, pas toute la fiche.
+- Actualiser et Demander la mise à jour relisent toujours la fiche, comme avant.
+- Téléphone rangé, les avis de l'administration Athena sont relevés une fois par minute au lieu de deux.
+EN : My cover no longer re-reads its sheet for nothing
+- The My cover app keeps your sheet: reopening it no longer asks the server again, unless something changed (clothes, weapon, papers, an answer to a controller, Athena pack reloaded) or it is more than 10 minutes old (1 minute while undercover).
+- When nothing changed, the server only sends back the coherence score and the undercover state, not the whole sheet.
+- Refresh and Request the update still always re-read the sheet, as before.
+- With the phone put away, Athena administration notices are checked once a minute instead of twice.
+
+### Détail technique
+- `fn_idCoverPage` (SSE, app Ma couverture) : avant, chaque rendu de la page (ouverture, repli d'une rubrique, réponse) redemandait la fiche au serveur dès que la dernière demande avait plus de 15 s (10 s fiche vide), soit un `remoteExecCall` + `fn_idLegend « sheet »` + `fn_idCover « score »` côté serveur et toute la fiche renvoyée. Après : cache client `comspec_sse_idCoverSheets` daté (`comspec_sse_idCoverAt`), redemandé seulement si vide (nouvel essai 10 s), périmé par évènement (`comspec_sse_idCoverDirty`) ou plus vieux que 600 s (60 s si l'état est « on »), au plus une demande par 5 s. Actualiser (`refresh`) et Demander la mise à jour (`pull`) forcent une relecture complète. Nouvelles actions `ask [unité, complète]` et `dirty`. Compteur `comspec_sse_idCoverAsks` (demandes envoyées, lu par l'autotest).
+- Évènements qui périment la fiche (drapeau seulement, aucune requête) : CBA player events `loadout`, `weapon`, `vehicle`, `unit` (identity `XEH_postInitClient`), réponse à une question (`answer`, `questionEnd` de `fn_idClient`), évènement global `comspec_sse_idCoverDirty` émis par le serveur 6 s après un paquet Athena appliqué (la page ouverte se relit alors tout de suite).
+- `fn_idServer « coverSheet »` : 3e argument facultatif, empreinte de la fiche en cache. Empreinte serveur `hashValue str` des champs stables triés (tout sauf `state`, `burnWhy`, `score`, `why`, `todo`), posée dans la fiche (`rev`). Même empreinte : réponse `coverSame [netId, empreinte, champs vivants]` (quelques octets) au lieu de la fiche complète ; `fn_idClient « coverSame »` fusionne dans une copie du cache, ou redemande la fiche complète si le cache a disparu. Poste ou serveur plus ancien : fiche complète, comme avant.
+- `fn_idAthenaPack « apply »` : empreinte du paquet (`packFp`, hors `generated_at` et `since`) ; paquet identique au dernier appliqué : ignoré (avant : toutes les tables reprises, kit remis et couvertures rouvertes chez tous les joueurs à chaque Demander la mise à jour, même sans changement). Rechargement « Éléments gardés » du Zeus (`aiCfg reload`) : empreinte effacée, paquet toujours réappliqué.
+- `fn_idCoverPage` : la date du dernier « Demander la mise à jour » (gardée dans `uiNamespace`, qui survit à la mission) ne bloque plus le bouton dans la partie suivante.
+- `fn_adminNotices « check »` (ATAK, `AdminControl.Poll`, requête HTTP par joueur relié) : 30 s → 55 s (un passage de 30 s sur deux) téléphone rangé et terminal non compromis ; 30 s téléphone ouvert ou terminal compromis ; 10 s avec le vrai téléphone ouvert, inchangé.
+- `fn_schedulerTick` : compteurs `fn_perfAcc` (onglet PERFS du Debug, `[PERF]` du RPT) autour de `fn_remoteSync`, `fn_athenaPulse` et `fn_importLegacyData`, jusque-là comptés seulement dans le passage de 0,2 s.
+- Autotest `sse_couverture_cache` (`scripts/sse.sqf`) : réouverture de Ma couverture dans la minute sans nouvelle demande, fiche inchangée servie en `coverSame`, Actualiser et Demander la mise à jour qui redemandent, fiche périmée relue à l'ouverture.
+- Laissé volontairement (temps réel ou déjà sous cache) : positions BFT (`fn_pli`, `fn_localDataRefresh` 0,25 s carte et BFT, `fn_remoteSync` à l'intervalle BFT), messages et alertes (`fn_pollChat`, `fn_pollOrders`), `fn_lockAction` 0,5 s, `fn_mpu5` 2 s (publie seulement sur changement), `fn_mpuVoice`, `fn_athenaPulse` 5 s et `fn_syncStats` (mémoire de la DLL, cache 2 s), `fn_markerWebSweep` 15 s (GetMarkers servi par le cache de la DLL, passage complet seulement après un changement de marqueur), `fn_tenantAction` (brief relu 5 min au plus), `fn_bftOrbat` (5 min), `fn_serverPresence` (10 min), `fn_idCover « tick »` 2 s (serveur, infiltrés seulement), `fn_photoWatch` 0,05 s (deux lectures de variable par passage).
+
+## À venir : un seul trait entre deux alliés et fond des noms sur la carte (ATAK natif, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : correctif
+FR : Athena répond plus vite pendant les parties
+- Les alertes médicales et tactiques, les repères et les canaux du tchat demandent beaucoup moins de travail au site : la carte et le téléphone restent fluides quand beaucoup de joueurs sont connectés.
+- Votre paquet d'identité (papiers, kits, fiches de couverture) n'est plus renvoyé en entier quand rien n'a changé depuis la dernière lecture.
+- Les pages ATAK et Overwatch laissées dans un onglet en arrière-plan ne sondent plus Athena : elles se remettent à jour dès que vous revenez sur l'onglet.
+EN : Athena answers faster during games
+- Medical and tactical alerts, markers and chat channels need far less work from the site: the map and the phone stay smooth when many players are connected.
+- Your identity pack (papers, kits, cover sheets) is no longer sent again in full when nothing has changed since the last read.
+- ATAK and Overwatch pages left in a background tab no longer poll Athena: they refresh as soon as you come back to the tab.
+
+### Détail technique
+- `GET /api/sse/identity/pack` : champ `revision` (empreinte du contenu sans `generated_at`) et `ETag` `W/"idp-…"` ; `since_rev` identique → `{"unchanged":true,…}` sans charge, `If-None-Match` identique → 304. Sans révision envoyée : paquet complet comme avant (+ `revision`). Contrat : `docs/technical/ICD-ATHENA-ATAK.md`, ICD-SSE-PACK-REV-001. COMSPEC Link publié profite déjà du 304 quand l'URL se répète ; le prochain pourra envoyer `since_rev`.
+- `SseIdentityPackCache` : paquet et révision 5 min dans `ShortCache`, clé par communauté, carte, opération, `since`, page ; vidé après toute écriture réussie du registre (hook dans `Application`, chemins `/atak/sse/`, `/api/sse/`, `/papiers`, `/couverture`, `/renseignement`, `identit`). `GameApiResponseCompactor` garde l'`ETag` posé par la route.
+- `RateLimitMiddleware` : 60 pages de paquet par minute et par appelant, 240 `documents/lookup` ; 429 + `Retry-After`.
+- `TenantAtakConfigRepository::getByTenantId` gardé le temps de la requête (jamais en CLI ni avec une PDO injectée, vidé à chaque écriture, `forgetMemo()` pour les écritures de `ReconPhotoHudService` et `AtakMarkerIconsService`) : 2 à 4 `SELECT *` de moins par sondage (effets roleplay, brouillage, vue renseignement).
+- `GET /api/atak/medical-alerts` : partie commune (chat, télémétrie, triage, unités, réconciliation) 3 s par communauté et carte, vidée au triage ; brouillage, droits et vue renseignement par appelant. `GET /api/atak/tactical-alerts` : lecture du chat 3 s.
+- `GET /api/atak/markers` : règles de détection 10 s, repères publiés d'Athena et marqueurs retirés 2 s (génération `markers:`, fenêtre de 15 s gardée).
+- `ensureSystemChatChannels` : drapeau partagé 1 h par communauté et carte (`ShortCache::get` / `put`), plus d'`INSERT IGNORE` à chaque sondage de `/api/chat/channels`.
+- Pages web : 19 sondages ne lisent plus rien quand l'onglet est caché (`document.hidden`) et relisent au retour (`visibilitychange`) ; calques de champ de vision : 8 s puis attente doublée jusqu'à 60 s tant que rien ne change.
+- Aucune migration. Tests : `SseIdentityPackRevisionTest`, `AtakHiddenTabPollingAssetTest`, ajouts à `GameApiResponseCompactorTest`, `RateLimitMiddlewareTest`, `ShortCacheTest`.
+
+## À venir : parler aux IA en texte libre et atelier IA en Eden et en Zeus (COMSPEC SSE, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Parlez aux IA en texte libre, et réglez leur personnalité dans l'atelier IA
+- Menu ACE d'une IA à moins de 5 m > « Parler à… » (ou Ctrl+T) : écrivez ce que vous voulez, Entrée pour envoyer. L'IA répond d'après sa propre couverture (origine, métier, motif du déplacement…), selon son caractère et son état, dans une bulle au-dessus de sa tête. Une IA qui ment peut se contredire si vous la relancez.
+- Commandes RP en couleur : /me (action), /do (décor), /try (tentative, même résultat pour tous les joueurs proches), /todo (parole et geste). Lever les mains, braquer, tendre de l'argent ou montrer un badge en /me est vu par l'IA. Ordres simples : mains en l'air, stop, suivez-moi, à genoux, descendez, ouvrez le coffre, circulez.
+- Les joueurs proches voient vos messages au-dessus de votre tête, et « … » quand vous écrivez. Onglet JOURNAL : chaque échange avec l'heure, les noms et l'identité de l'IA, à copier pour le compte rendu ; le Zeus voit tout en direct.
+- Atelier IA (attribut Eden d'une unité, module Eden et module Zeus) : nom, profil, curseurs de caractère, langue du pays, histoire, phrases types, sujets sensibles, secrets, réactions, ce qu'elle sait et comment la faire parler. Bibliothèque de profils, Générer avec verrous, zone de test sans lancer la mission, « Faire parler une IA » pour le Zeus.
+EN : Talk to AIs in free text, and tune their personality in the AI workshop
+- ACE menu of an AI within 5 m > "Talk to…" (or Ctrl+T): type anything, Enter to send. The AI answers from its own cover story (origin, job, reason for travelling…), according to its character and state, in a bubble above its head. A lying AI may contradict itself if you ask again.
+- Coloured RP commands: /me (action), /do (scene), /try (attempt, same result for every nearby player), /todo (words and gesture). Raising your hands, aiming, holding out money or showing a badge with /me is seen by the AI. Simple orders: hands up, stop, follow me, kneel, get out, open the trunk, move along.
+- Nearby players see your messages above your head, and "…" while you type. LOG tab: every exchange with the time, names and the AI's identity, ready to copy for the report; Zeus sees everything live.
+- AI workshop (Eden unit attribute, Eden module and Zeus module): name, role, character sliders, country language, story, typical lines, sensitive subjects, secrets, reactions, what it knows and how to make it talk. Profile library, Generate with locks, test area without starting the mission, "Make an AI talk" for Zeus.
+
+### Détail technique
+- Nouvel addon `comspec_sse_ia_rp` (mod SSE ; `build_pbo.bat`, `workshop-pack.ps1`, `tools/sync_headers.py`) : ne requiert pas l'ATAK (bulles `drawIcon3D` du SSE, dialogs SSE, `stringtable.xml` FR / EN, réglages CBA « COMSPEC SSE › IA RP »). L'identité SSE (légende, automate des IA réalistes, checkpoints) est utilisée si elle est chargée (`!isNil`), sans dépendance de config. `aiBubble` de l'ATAK n'est pas touché (main.pbo partagé) : la bulle SSE gère couleurs par commande, 6 lignes, indicateur d'écriture.
+- `fn_iarpIntent` (pur) : lexique `data\iarp_lexicon.sqf` (32 intentions et « inconnu », FR et EN, accents et ponctuation normalisés par `fn_iarpNorm`). `fn_iarpGen` (pur) : grammaire procédurale, `data\iarp_bank.sqf` (38 intentions, 272 phrases de base, ouvertures, hésitations, didascalies selon armes pointées, blessure, ivresse, fatigue, véhicule, nuit, checkpoint ; tons calme, nerveux, agressif, méfiant, bavard, laconique, corrompu, effrayé ; langue du pays entre crochets), mémoire courte sans redite. Extensible par fichiers de mission `iarp_bank.sqf`, `iarp_lexicon.sqf`, `iarp_presets.sqf`. Pas de modèle de langage : point d'accroche réservé `comspec_sse_iarpGenHook` (code serveur), non posé, aucune requête.
+- `fn_iarpServer` : propriétaire vérifié (`remoteExecutedOwner`), anti-flood, 5 m à pied ; faits = légende `fn_idLegend` puis histoire de l'atelier ; cohérence = règle de `fn_idLegend` « aiAnswer » corrigée par l'honnêteté (90 et plus : jamais de mensonge), version retenue par clé, menteur qui se trahit ; une réponse fausse augmente `comspec_sse_idAsks` comme une question ACE ; états `fuit` / `agressif` / `renforts` : silence, `refuse` : refus. Papiers et fouille : l'action ACE habituelle (`begin`, barre de progression, distances) part du poste. Ordres par l'évènement `comspec_sse_iarpAiDo` là où l'IA est locale ; reddition ACE. Journal serveur plafonné (réglage), envoyé en direct aux curateurs, jamais à Athena.
+- Atelier IA : `fn_iarpWorkshop` (même dialog en Eden par `createDisplay` au-dessus des attributs, et en Zeus), `fn_iarpEden` (attribut `COMSPEC_SSE_IarpProfileAttr`, catégorie « COMSPEC SSE · IA RP » des unités), module Eden `COMSPEC_SSE_Module_IarpWorkshop` (`fn_iarpModule`, unités synchronisées, une personnalité par IA en option), modules ZEN `fn_iarpZen` (Atelier IA, Faire parler une IA, Journal des échanges). Profil appliqué sur le serveur seulement (`comspec_sse_iarpProfile`), `comspec_sse_idName` et `COMSPEC_ID_Profile` repris par l'identité.
+- Autotest `scripts\ia_rp.sqf` : `ia_rp_interprete` (`fn_iarpSelfTest` : 38 phrases, banque, redite, cohérence), `ia_rp_texte_libre` (captures `ia_texte_libre`, `ia_journal`, `ia_bulle`), `ia_rp_atelier` (capture `ia_atelier_zeus`), non exécutés. `hemtt check` de l'addon : aucune erreur.
+- À tester en jeu : terminal (Entrée, Maj+Entrée, flèches, Échap et brouillon), bulles et « … » à deux joueurs, /try commun, ordres sur une IA locale au serveur et à un HC, attribut et module en Eden (fenêtre par-dessus les attributs, valeur gardée à la sauvegarde), modules ZEN, journal du Zeus, textes en anglais.
+
+## À venir : sa propre carte d'identité en jeu, reliée à Athena (SSE et site, version à attribuer)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Votre carte d'identité en jeu est celle d'Athena, et le site explique ce qui coince
+- Sans kit composé par vos responsables, vous recevez en jeu les papiers émis de votre identité principale d'Athena (ou ceux de votre couverture si une fiche de couverture vous l'attribue) : plus d'identité tirée au hasard.
+- Les objets s'appellent simplement « Carte d'identité », « Passeport », « Permis de conduire », « Carte militaire » : la mention SIMULATION reste imprimée sur le papier.
+- Votre carte peut être ramassée sur votre corps ou au sol : un contrôle montre toujours l'identité de la carte, pas celle de celui qui la porte.
+- Ma couverture dit pourquoi votre identité d'Athena n'a pas été utilisée (paquet non chargé, aucun papier pour votre compte Steam…). Sur la fiche membre, « Transmission en jeu » liste ce qui manque, et « Différence avec le jeu » se règle champ par champ, sans rien écraser.
+EN : Your in-game ID card is your Athena one, and the site explains what is wrong
+- Without a kit put together by your leaders, you receive in game the issued papers of your main Athena identity (or those of your cover if a cover sheet assigns it to you): no more randomly drawn identity.
+- The items are simply called "ID card", "Passport", "Driving licence", "Military ID": the SIMULATION mark stays printed on the paper.
+- Your card can be picked up from your body or from the ground: a check always shows the card's identity, not the identity of whoever carries it.
+- My cover tells you why your Athena identity was not used (pack not loaded, no paper for your Steam account…). On the member sheet, "Transmission to the game" lists what is missing, and "Difference with the game" is settled field by field, without overwriting anything.
+
+### Détail technique
+- Cause du décalage Athena / jeu : un papier émis ne partait en jeu que s'il était dans un kit composé (`sse_id_kits`) ; sans kit, le paquet ne contenait rien pour le Steam ID du joueur, `fn_idLegend` montrait alors l'identité générée par `fn_idGenerate` (clé biométrique : « PAPADOPOULOS Panagiotis, Telos ») sous « Identité prévue, sans papier ». Correctif : kit automatique `SseIdKitRepository::autoForPack` (portée « auto ») pour tout membre lié à Steam sans aucun kit composé : papiers émis, valables, non volés ni perdus, de l'identité principale ou de la couverture du brief. **Changement de comportement** : ces membres reçoivent désormais leurs papiers sans action d'un responsable.
+- Objets : `displayName` / `descriptionShort` des cartes et papiers sans « (simulation) » (stringtable FR/EN, nouvelle clé `STR_COMSPEC_SSE_CFG_ID_MILITARYCARD`).
+- API publique (serveur) : `comspec_sse_fnc_idPaperOf`, `idPaperOwner`, `idPaperLink`, `idPaperGive` ; suivi `idPaperTrack` (Take / Put du joueur relayés par `fn_idServer` « paperMoved », poste vérifié) ; évènements CBA globaux `comspec_sse_identity_paperPicked`, `paperDropped`, `paperLinked`. Liaison objet ↔ identité : classe d'exemplaire libre (`CfgWeapons_instances.hpp`) reliée au document par le registre du serveur (`athenaIdentity`, `ownerUid`, `holder`, `custody`). Guide : `mod/@COMSPEC_SSE/docs/guide/Controle_identite.md`.
+- Ma couverture : diagnostic `diag` (paquet non chargé, aucun papier pour ce compte, kit absent du paquet, papier signalé, identité générée), origine de l'identité et référence IDT. `fn_idCoverSync` remonte l'identité utilisée quelle que soit son origine (champs `last`, `first`, `sex`, `origin`, `identity_ref`), seulement si la transmission automatique est permise (réglage de la communauté prioritaire).
+- Site : `MemberIdentitySyncService` (états Prêt / Incomplet / Erroné / Bloqué par compte, identité et papier ; différence champ par champ ; reprise explicite ; « Garder les deux » ; restauration ; « Envoyer la version Athena vers le jeu »), bloc « Transmission en jeu » de la fiche membre, journal d'audit `id_member.sync_*`. Étape de migration 4250 (`sse_identity_history`, `sse_id_game_covers.reviewed_hash`).
+- Non vérifié : rendu en jeu, multijoueur (Take / Put d'un client distant, ramassage sur un corps), DLL. Autotest `sse_papier_lie` (sse.sqf), non exécuté.
+
+## Pack 4.2.0 Washington : carte tactique, contacts, SMS, bilan de l'année, YouTube, couverture importée, réglages expliqués (ATAK natif 4.2.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.6.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : ATAK 4.2.0 : carte tactique, contacts redessinés, app SMS, bilan de l'année, couverture importée et réglages expliqués
+- **Carte** : style tactique par défaut (pions à anneau, plaques de nom, routes à flèche, zones hachurées, mesure avec distance) et contacts reconnaissables à leur forme : losange pour un ennemi, carré pour un neutre, cercle pour un ami. Position ancienne estompée avec son âge, fiche de contact refaite avec MARQUER, PARTAGER, Y ALLER.
+- **Messages** : nouvelle app SMS, les conversations de joueur à joueur dans l'interface de Messages ; sans réseau, le SMS part au retour du signal.
+- **Barre du téléphone** : une icône pour la radio MPU (reliée par câble ou Wi-Fi, en transmission, coupée).
+- **Bilan de l'année** et **Vidéo YouTube** (désactivée par défaut, activée par l'administrateur du serveur) dans le téléphone.
+- **Ma couverture** : générez-la sur Athena, téléchargez le fichier, importez-le dans le téléphone sans connexion.
+- **FIRES court et CAS** : choisissez l'unité à appeler ; l'app CAS est lisible dans les trois thèmes.
+- **Réglages du serveur** : chaque réglage de Échap > Réalisme est expliqué avec un exemple, la voix relayée par le maillage s'y règle, l'onglet VOIX de Wave Relay est clarifié.
+- **SSE** : quinze papiers variés pour les documents trouvés (carreaux, carnet, ticket, formulaire, feuilles sales ou brûlées).
+- **Dépannage MPU** : personne ne vous entend par la MPU5 ? App Réseau, Voix radio par le maillage, DÉPANNAGE MPU : l'assistant vérifie le réglage du serveur, votre radio, TeamSpeak, la MPU5, le pont radio, le maillage et la fréquence d'un camarade, montre le maillon cassé, propose la correction et copie un rapport à coller sur Discord. Il répond aussi à « faut-il un relais ? » : non dans votre groupe ou entre voisins directs, oui au-delà.
+- **Correctif important** : après un retour au menu puis une nouvelle partie, des textes et des couleurs disparaissaient dans les apps (lignes vides dans Comptes rendus, ligne distance / cap / altitude manquante sous la carte). Corrigé.
+- **Téléphones tracés** : un téléphone localisé n'apparaît plus comme « infanterie amie » sur la carte (icône d'émetteur, mention « téléphone »).
+- **Équipe (BFT)** : symboles qui ne recouvrent plus les indicatifs, légendes sous le tableau, fiche de droite qui ne disparaît plus.
+- **SSE** : « Ouvrir mes papiers » ouvre directement le document (plus de barre ni de message d'interruption), messages des IA sans bip et titrés du nom de l'IA, fiche « Ma couverture » expliquée avec des exemples.
+- **Retiré** : l'action « Mesurer tension et SpO2 » (brassard, oxymètre) du menu ACE.
+EN : ATAK 4.2.0: tactical map, redrawn contacts, SMS app, year in review, imported cover and explained settings
+- **Map**: tactical style by default (ring pawns, name plates, routes with an arrow, hatched zones, measure with distance) and contacts told apart by shape: diamond for an enemy, square for a neutral, circle for a friend. Old positions are dimmed and show their age; the contact card is redone with MARK, SHARE, GO THERE.
+- **Messages**: new SMS app, player-to-player conversations in the Messages interface; with no network, the SMS goes out when the signal returns.
+- **Phone status bar**: an icon for the MPU radio (linked by cable or Wi-Fi, transmitting, lost).
+- **Year in review** and **YouTube video** (off by default, turned on by the server admin) in the phone.
+- **My cover**: generate it on Athena, download the file, import it in the phone offline.
+- **FIRES quick and CAS**: pick the unit to call; the CAS app is readable in all three themes.
+- **Server settings**: every Esc > Realism setting is explained with an example, voice relayed by the mesh is set there, the Wave Relay VOICE tab is clearer.
+- **SSE**: fifteen varied papers for found documents (squared, notebook, receipt, form, dirty or burnt sheets).
+- **MPU troubleshooting**: nobody hears you through the MPU5? Network app, Radio voice over the mesh, MPU TROUBLESHOOTING: the assistant checks the server setting, your radio, TeamSpeak, the MPU5, the radio bridge, the mesh and a teammate's frequency, shows the broken link, offers the fix and copies a report to paste on Discord. It also answers “do I need a relay?”: no within your group or between direct neighbours, yes beyond.
+- **Important fix**: after going back to the menu and starting a new game, texts and colours vanished in the apps (empty rows in Reports, missing distance / heading / altitude line under the map). Fixed.
+- **Traced phones**: a located phone no longer shows as "friendly infantry" on the map (transmitter icon, "phone" label).
+- **Team (BFT)**: symbols no longer cover callsigns, legends under the table, the right-hand card no longer disappears.
+- **SSE**: "Open my papers" opens the document straight away (no progress bar or interruption message), AI messages have no beep and carry the AI's name, the "My cover" sheet is explained with examples.
+- **Removed**: the "Measure blood pressure and SpO2" action (cuff, oximeter) from the ACE menu.
+
+### Détail technique
+- Le style tactique de la carte existait déjà dans le mod (`fn_mapColors` « tac », pions, plaques, routes, zones, mesure) ; cette PR le rend par défaut (`COMSPEC_ATAK_MapDrawStyle` TACTICAL, AUTO conservé, STANDARD affiché CLASSIQUE) et ajoute ce qui manquait par rapport au web (`atak-m-tactique.js`) : formes d'affiliation, âge, fiche.
+- `fn_contactStyle` (nouveau) : table des couches par affiliation (liseré + fond, textures de `data\` déjà livrées, aucun PAA nouveau), `aff`, `markerAff`, `rgb`, `ink`, `hex`, `label`, `age`, `ageShort`, `scaleK` (taille par paliers de 5 % selon le zoom), `mark`. `fn_mapOnDraw` : contacts non amis en forme d'affiliation (80 au plus par image, taille suivant le zoom, cap seulement s'il est connu, âge sous une piste périmée), `fn_mapGameMarkers` : forme sous les repères o_ n_ u_ b_ c_ en zoom rapproché (60 au plus, cache invalidé au changement de style), `fn_mapLabels` : âge dans la ligne 2 des contacts ENI.
+- `fn_contactCard` (nouveau, sorti de `fn_pageMap`) : fiche du marqueur sélectionné, jetons `mapCard`, `mapCardEdge`, `mapFriend`… de `fn_theme` (4,5 sur le fond de fiche dans les 3 thèmes, `AtakThemeContrastTest`). `fn_unitCard` : pastille à la forme de l'affiliation, MARQUER sur une piste non amie.
+- Non vérifié en jeu : rendu des formes (`map_shape_cross` en carré à bras), tailles, fiche dans les 6 combinaisons thème x orientation. Autotest `carte_style_contacts` (carte.sqf), non exécuté. Le côté web (carte Athena) n'est pas touché : la fiche et les formes demandent un travail propre côté `atak-overwatch-mapkit.js`.
 - Cause (code, non vérifiée en jeu) : `fn_firesQuick` "recipients" calculait la liste (pilotes et JTAC avec téléphone et espace d'app) sans aucun choix, et l'écran n'affichait que « N pilote(s) ou JTAC en ligne ». Aucun sélecteur, et liste vide sans explication si le filtre (téléphone, espace d'app) écartait tout le monde.
 - `fn_firesQuick` : "cands", "dest", "destToggle", "destAll", "picker", "search" ; "recipients" renvoie les choisis encore en ligne, sinon tous ; "target" avec le sélecteur ouvert choisit l'unité à moins de 150 m du toucher. `fn_pageQuickMap` : bouton, panneau de sélection (aide, recherche, 5 lignes).
 - `fn_firesCff`, `fn_pageFires` : plus de couleur fixe, jetons de `fn_theme` ; cause de l'illisible : `onState` (encre sombre) utilisé comme texte des champs et boutons sombres, `accent` + encre 0,03 sur l'état actif, gris pâles. Actif : `accentSoftHi` + `onAccentSoft` (testés à 4,5 dans AtakThemeContrastTest) et crochets. Libellés réduits par `fn_textFit` (plancher 80 %).
 - Autotest : `fires_court_destinataires` (pilote.sqf), `cas_lisibilite_themes` (telephone.sqf), non exécutés.
-## À venir : réglages du serveur expliqués et onglet VOIX clarifié (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : correctif
-FR : Chaque réglage du réalisme est expliqué, avec un exemple
-- Échap > Réalisme et réseau : sous chaque réglage, une phrase dit ce que ça change en jeu, un exemple chiffré l'illustre, et la valeur par défaut est rappelée. L'assistant de configuration reprend les mêmes explications.
-- La voix relayée par le maillage se règle maintenant depuis cette fenêtre (section Maillage), avec Appliquer au serveur. Elle reste désactivée par défaut.
-- App Wave Relay, onglet VOIX : un encadré explique à quoi il sert, l'état dit le prochain pas à faire (avec le chemin exact), chaque section est expliquée, et les boutons ÉCOUTER sont plus sobres : l'état s'affiche par une case cochée ou vide, pas seulement par la couleur.
-EN : Every realism setting is explained, with an example
-- Esc > Realism and network: under each setting, a sentence says what it changes in game, a worked example illustrates it, and the default value is shown. The setup assistant uses the same explanations.
-- Voice relayed by the mesh can now be set from this window (Mesh section), with Apply to server. It stays off by default.
-- Wave Relay app, VOICE tab: a box explains what it is for, the status tells you the next step (with the exact path), every section is explained, and the LISTEN buttons are calmer: state is shown by a ticked or empty box, not only by color.
-
-### Détail technique
 - Nouveau `fn_realismHelp` (77 réglages : explication et exemple FR, EN dans `i18n/en.txt` et `localisation/template/xx.txt`). `fn_netConfig` : ligne qui grandit avec le texte (`ctrlTextHeight`), valeur d'usine lue (`fn_realismCatalog` "state", CBA "default", ou défauts de `fn_netCond`). `fn_setupWizard` : mêmes textes.
 - `mpu_voice` déplacé de « Radio et voix » à « Maillage » dans le catalogue (même circuit serveur, `realismSet`). Défaut inchangé (désactivé). `fn_mpuVoice` "summary" cite Échap > Réalisme.
 - `fn_pageWaveRelay` (VOIX) et `fn_meshGroups` "rows" : encadré d'aide, prochain pas, états vides, boutons `[ ] / [x]`. `fn_radioGuard`, ACRE2 / TFAR et valeurs par défaut non touchés. Rien n'a tourné en jeu.
 - Test : `AtakReglagesExplicationsTest`.
-## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)
-
-## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)
-## À venir : icône de la radio MPU dans la barre d'état (ATAK natif, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Une icône pour la radio MPU dans la barre du téléphone
-- Quand une radio MPU-5 est reliée au téléphone, une petite icône de radio apparaît en haut, à côté du cadenas : radio vide (allumée, pas reliée), radio + câble (câble EUD), radio + ondes (Wi-Fi), radio barrée (liaison coupée).
-- Pendant que le téléphone envoie vraiment quelque chose par la radio (position, message, photo, voix relayée), l'icône devient une radio avec une flèche montante.
-- Survolez l'icône pour lire ce qu'elle veut dire, avec un exemple. Le logo hexagonal vert à maillon reste celui de COMSPEC Link (compte Athena), il n'a rien à voir avec la radio.
-- Quand la barre est trop étroite, l'icône passe avant le libellé du cadenas et la mémoire vive.
-EN : An icon for the MPU radio in the phone status bar
-- When an MPU-5 radio is linked to the phone, a small radio icon shows at the top next to the padlock: empty radio (on, not linked), radio + cable (EUD cable), radio + waves (Wi-Fi), crossed-out radio (link lost).
-- While the phone is really sending something through the radio (position, message, photo, relayed voice), the icon becomes a radio with an up arrow.
-- Hover the icon to read what it means, with an example. The green hexagon logo with a link is still COMSPEC Link (Athena account); it has nothing to do with the radio.
-- When the bar is too narrow, the icon is kept before the padlock label and the RAM.
-
-### Détail technique
 - `fn_mpuLink` : actions `badge` (code `off`/`idle`/`cable`/`wifi`/`tx`/`cut`, texture, couleur du thème pour `idle`, infobulle ; ne lit que `status` en cache et `COMSPEC_ATAK_MpuNode`) et `txMark` (pose `COMSPEC_ATAK_MpuTxUntil`, 1,5 à 6 s, seulement si le téléphone est relié et le réseau en service). Appelée par `fn_netSend` (envois réellement partis) et `fn_relayTxBadge` (voix relayée, événements ACRE2 déjà écoutés ; aucun appel ACRE2 / TFAR de plus).
 - `fn_layoutApply` : nouveau contrôle `COMSPEC_ATAK_MpuCtrl` après le cadenas ; priorité d'affichage cadenas > icône MPU > libellé du cadenas > RAM, chacun seulement s'il tient en entier. `fn_statusUpdate` : écritures seulement si la valeur change.
 - `tools/gen_mpu_status_icons.py` : 5 PAA 64 px (`mpu_idle`, `mpu_cable`, `mpu_wifi`, `mpu_tx`, `mpu_cut`) dans `main/data`, blancs sur transparent, ancien fichier supprimé avant conversion. Formes distinctes : la couleur n'est jamais seule.
 - Autotest : étape `tel_icone_mpu`. Chaînes anglaises dans `i18n/en.txt`.
-
-## À venir : importer sa couverture générée sur Athena (SSE et COMSPEC Link, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Importez votre couverture générée sur Athena, sans connexion
-- Sur Athena, Ma couverture (Mes papiers), cliquez Générer puis Télécharger : vous obtenez un fichier de couverture complet (nom, famille, métier, employeur, motif du déplacement, adresse, téléphone, personnes qui peuvent confirmer, papier).
-- Déposez-le dans Documents\Arma 3 - COMSPEC, ouvrez Ma couverture sur le téléphone et cliquez IMPORTER MA COUVERTURE. Le jeu n'a pas besoin d'être connecté à Athena : le fichier est lu sur votre PC.
-- Votre fiche, « À retenir » et les questions des contrôleurs suivent cette couverture. « Oublier l'import » revient à la légende d'avant. Vos papiers ne changent pas.
-- Demande une mise à jour de COMSPEC Link (nouvelle commande de lecture du fichier).
-EN : Import the cover you generated on Athena, offline
-- On Athena, My cover (My papers), click Generate then Download: you get a complete cover file (name, family, job, employer, reason for travel, address, phone, people who can vouch, paper).
-- Drop it in Documents\Arma 3 - COMSPEC, open My cover on the phone and click IMPORT MY COVER. The game does not need to be connected to Athena: the file is read on your PC.
-- Your sheet, "To remember" and the controllers' questions follow this cover. "Forget the import" goes back to the previous legend. Your papers do not change.
-- Needs an update of COMSPEC Link (new command that reads the file).
-
-### Détail technique
 - Site : PR feat/identite-couverture-export (fichier `comspec-couverture-CVR-XXXXXXXX.json`, format `comspec-cover` v1, migration 4230). Contrat de lecture : `docs/ATAK_COUVERTURE_IMPORT.md`.
 - DLL (`Extension_CoverImport.cs`, aussi compilée par la DLL ATAK native) : `ReadCoverFile` / `ReadCoverFileChunk`, lecture locale seulement, aucune requête réseau ni autorisation d'Athena. Fichier de forme `comspec-couverture-CVR-XXXXXXXX.json` dans `Documents\Arma 3 - COMSPEC`, 256 Kio au plus, JSON UTF-8 de profondeur 6, clés connues et uniques, aucun caractère de contrôle, SHA-256 du texte de `cover`, date de fin, photo JPEG vérifiée mais non affichée. Annoncée dans `GetAtakFeatures`.
 - SSE : `fn_idCoverImport` (lecture, nettoyage une seconde fois, profil du joueur, envoi au serveur `coverImport` / `coverForget`), `fn_idLegend` (la couverture importée l'emporte champ par champ sur la légende, après le brief Athena et le texte de l'éditeur), `fn_idCoverSync` (une couverture importée ne repart pas vers Athena), `fn_idCoverPage` (zone Importer ma couverture, ligne Couverture de la liaison Athena). Ni `fn_radioGuard`, ni les profils d'identité du registre SSE, ni les papiers ne sont touchés ; la couverture importée n'ouvre pas l'infiltration.
 - Limite connue : la photo du fichier n'est pas affichée en jeu (Arma ne lit pas une image hors de ses dossiers) ; elle reste dans le fichier.
 - `i18n/en.txt` et `tools/i18n_identity_en.tsv` : 27 textes.
-## À venir : Bilan de l'année sur le téléphone et vidéos YouTube (ATAK natif et COMSPEC Link, version à attribuer)
-
-### À annoncer (devient « Résumé joueur » avec le numéro de version)
-Type : nouveauté
-FR : Votre bilan de l'année sur le téléphone, et des vidéos YouTube
-- Nouvelle app « Bilan de l'année » (espace Mission) : la rétrospective du site, écran par écran : heures de jeu, kilomètres, blessures, SSE, comptes rendus, et le bilan de l'unité quand la formule de votre communauté le comprend. Il faut que votre compte Athena soit relié.
-- Nouvelle app « Vidéo YouTube » (espace Civil) : collez un lien YouTube et lancez la lecture dans le téléphone. Désactivée par défaut : l'administrateur du serveur l'active dans les réglages CBA. YouTube n'est contacté que lorsque vous lancez une lecture, et votre lien n'est partagé avec personne.
-EN : Your year in review on the phone, and YouTube videos
-- New "Year in review" app (Mission space): the site's year review, screen by screen: play time, distance, injuries, SSE, reports, and your unit's review when your community's plan includes it. Your Athena account must be linked.
-- New "YouTube video" app (Civil space): paste a YouTube link and play it in the phone. Off by default: the server admin turns it on in the CBA settings. YouTube is only contacted when you start playback, and your link is shared with nobody.
-
-### Détail technique
 - Site : `GET /api/atak/year-review` (`AtakApiController::yearReview`, `AtakYearReviewService`) : mêmes écrans que `/retrospective` (`YearReviewStory`), mêmes droits (calendrier publié, `YearReviewAccess::collectiveAllowed`), joueur relié par la clé du jeu (`matchedUserId`), jamais d'identifiant en paramètre. Lecture seule, écrans payants omis, texte nettoyé et borné. Les textes restent en français (le téléphone ne les traduit pas).
 - COMSPEC Link : `GetYearReview` (Async seulement) et `GetYearReviewChunk` (`Extension_YearReview.cs`), même circuit que `GetCommunityOrbat`. **La DLL doit être recompilée** (non faite dans cette PR) ; sans elle l'app dit « COMSPEC Link trop ancienne ».
 - Mod : `fn_yearReview` (aucune lecture avant `COMSPEC_AthenaReady`, règle de licence), `fn_pageYearReview`, app `YearReview` (`short="Bilan"`, icône `app_reports` existante, aucun nouveau binaire).
 - YouTube : `fn_youtube` (identifiant de 11 caractères `[A-Za-z0-9_-]` validé strictement ; hôtes `youtube.com`, `youtube-nocookie.com`, `youtu.be` ; watch, embed, shorts, live, v), `fn_pageYoutube`, classe `COMSPEC_RscWebBrowserExt` (`allowExternalURL=1`, seulement cette app), réglage `comspec_atak_native_youtube` (décoché, imposé par le serveur). Repli `openYoutubeVideo` (surcouche Steam). Pas de lecture sur les écrans 3D du jeu (voir la PR).
 - Non vérifié sans Arma : le navigateur intégré charge-t-il une adresse externe et lit-il la vidéo, avec le son.
 - Tests : `AtakYearReviewTest`. Autotest : étape `tel_bilan_youtube`.
+- Téléphones tracés : cause `fn_pollUnits`, qui rangeait toute piste Athena en « ami / infanterie » ; la position d'un téléphone suivi (COMSPEC Link `fn_reportPhonePosition`, rôle « Téléphone », indicatif « Tél. … » ou « TEL-… ») sortait donc en allié (symbole bleu, BFT « Infanterie », comptée parmi les alliés, sur la montre et dans FIRES). Elle est maintenant `affiliation` « unknown », `type` « phone », `phone` vrai ; `fn_symbology` et `fn_natoSymbol` donnent l'émetteur (`transmitter_CA`), `fn_mapOnDraw` ne lui met ni pion tactique, ni cadre MIL-STD, ni cap ; fiche (`fn_unitCard`, `fn_inspectorUpdate`) « TÉLÉPHONE », BFT « Téléphone ». Autotest `carte_telephone_trace` (carte.sqf, capture `telephone_trace_carte`), non exécuté ; rôle renvoyé par `/api/units` non vérifié contre un serveur.
+- Dépannage MPU : `fn_mpuDiag` (nouveau, CfgFunctions network) lit l'état sans rien écrire ni envoyer (cache 1 s, mesuré par l'autotest) et rend 11 étapes `[id, OK | KO | ATTENTION | INCONNU, titre, explication, action, valeur, correction]` : réglage `mpu_voice`, liaison réaliste, ACRE2 / TFAR (`fn_radioGuard` seulement), TeamSpeak (ACRE2 2.14 `acre_api_fnc_isVOIPConnected` et `getVOIPChannelName`, lus dans son code ; TFAR `TFAR_fnc_isTeamSpeakPluginEnabled`, non vérifié), MPU5, pont, maillage (`COMSPEC_ATAK_MpuMesh`), camarade (même règle que `_linked` de `fn_mpuVoice`), fréquence, TFAR, licence. `fn_pageNetwork` : section voix toujours affichée avec le bouton DÉPANNAGE MPU, volet en `fn_formRender` (chaîne, première étape en échec et sa correction, camarade, « Faut-il un relais ? », COPIER LE RAPPORT). `fn_realismHelp` : `mpu_voice` réexpliqué. Autotest `mpudiag` (`mpu_diag_etats`, `mpu_diag_volet`, captures `mpu_depannage` et `mpu_depannage_ko`), non exécuté ; rien n'a tourné en jeu ni avec ACRE2 / TFAR réels.
 
-## À venir : vrais symboles militaires MIL-STD-2525D / APP-6D et curseurs GPS (ATAK natif, version à attribuer)
+---
 
-### À annoncer
+## Pack 4.1.1 Washington : photos, radio ACRE2, verrouillage, titres, vrais symboles militaires (ATAK natif 4.1.1.AG - Washington, COMSPEC Link 2.0.122)
+
+
+### Résumé joueur
 Type : correctif
 FR : ATAK 4.1.1 : photos réparées, radio ACRE2 reconnue, écran de verrouillage sobre et vrais symboles militaires
 - **Photos** : une ancienne photo effacée ne bloque plus l'envoi des nouvelles ; les photos envoyées sont gardées dans Documents\Arma 3 - COMSPEC\Captures et le dossier Screenshots du jeu ne se remplit plus.
@@ -179,6 +1327,8 @@ EN : ATAK 4.1.1: photos fixed, ACRE2 radio recognised, cleaner lock screen and r
 
 ---
 
+---
+
 ## À venir : papiers variés pour les documents SSE (SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -201,6 +1351,7 @@ EN : Found documents finally look like real paper
 - Autotest : étape `sse_papiers`, une capture par papier.
 
 ---
+
 ## Pack 4.1.0 Washington : verrouillage et code, carte tactique, mode pilote, réseau réaliste, profils IA, licence (ATAK natif 4.1.0.AG - Washington, COMSPEC Link 2.0.121, SSE 1.5.0)
 
 ### Résumé joueur
@@ -347,6 +1498,7 @@ EN : Phone crashing in a loop, and back on the network after a compromise
 - **App Admin** : plus de relevé ni de redessin sur les onglets ATHENA et APPS, un redessin par seconde au plus ailleurs, une action à la fois, `&` échappé, fiches illisibles écartées, actions REMPLACER L'APPAREIL et RÉPARER SES DONNÉES ; son propre ATAK ne se déclare plus compromis depuis le jeu. Avis de compromission sans terminal : ne verrouille plus le téléphone qui le reçoit.
 - **Pas de migration** : `atak_admin_messages.kind` est un `varchar(24)`. Pas de changement de version.
 - **Non testé en jeu** : rien ne peut l'être ici. Étapes `tel_garde_fou` et `tel_nouvel_appareil` dans l'autotest. Notes : `docs/bugs/2026-11-08-atak-plantage-camera-ip-boucle.md`, `docs/bugs/2026-11-08-atak-compromission-nouvel-appareil.md`.
+
 ## À venir : mode pilote, FIRES court, apps regroupées et profils de rôle (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -370,6 +1522,7 @@ EN : Pilot mode, short FIRES and grouped apps
 - À tester en jeu : voir le corps de la PR. Rien n'a pu être testé en jeu.
 
 ---
+
 ## À venir : profils d'IA, éditeur SSE en Zeus, réponses des IA au-dessus de la tête (SSE, ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -413,6 +1566,7 @@ EN : Realistic network by default, on your real radios
 - Rien de tout cela n'a tourné en jeu.
 
 ---
+
 ## À venir : tracé de routes et de zones, suppression, formes de la carte (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -478,6 +1632,7 @@ EN : Zeus gets a Zeus Centre and a readable module list
 ### Détail technique
 - Centre : fn_zeusCentre (vue), fn_zeusState (relevé à la demande, serveur seul destinataire et seul expéditeur), fn_zeusObject (fenêtre d'objet qui rappelle les formulaires des modules). Aucune nouvelle variable publique.
 - Modules : classes inchangées ; catégories COMSPEC_Cat_Atak, COMSPEC_Cat_Sse, COMSPEC_Cat_Identite, COMSPEC_Cat_Mission. COMSPEC_Module_AtakRelay masqué dans Eden (scope 1). Icônes : tools/gen_module_icons.py.
+
 ## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
 
 ## À venir : fiche joueur unique, carte, Groupe et BFT plus directs (ATAK natif, version à attribuer)
@@ -506,6 +1661,7 @@ EN : One player card everywhere, and the map no longer jumps when you touch a te
 - `fn_squadBar` : réglette d'effectif (primitives communes, cases en contrôles), signature à 1 Hz sur la carte, rendu texte dans l'ORBAT.
 - `fn_pageBft` : `COMSPEC_RscListNBox` (lignes réécrites par signature, sans vider le tableau), état en image, en-tête compact ; messages d'ORBAT importants au-dessus du tableau.
 - Coût par image : une lecture de table seulement pendant le suivi d'une unité ; aucun autre ajout.
+
 ## À venir : fond de carte ARDOISE et style tactique des marqueurs et traits (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -541,6 +1697,7 @@ EN : Map: new SLATE background and tactical marker style
 - Polygones des plans de zones sans hachure, polylignes de mission à un pixel : inchangés, pour le coût de dessin et faute de test en jeu de `drawTriangle` texturé.
 
 ---
+
 ## BFT : l'ORBAT du site et les joueurs hors ligne ; écran et PC du poste TOC (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -566,6 +1723,7 @@ EN : The BFT shows your community ORBAT, offline members included
 - DLL : `GetCommunityOrbat` (Async seulement, une requête à la fois) et `GetCommunityOrbatChunk`.
 - Écran TOC : `fn_screenCast` attend la désignation de l'écran (`castWait`) au lieu de refuser, message sur l'écran (`COMSPEC_ATAK_ScreenMsg`), recopie aussi après le repli `data:` ; `fn_tocScreen` : regroupement et placement des plaques, table par pages, affichages `NET` et `ORBAT`, mode `show`. PC du poste : `fn_tocLaptop` (outils, onglets, `fn_markerDrop` et `fn_bftOrbat` réutilisés).
 - Mod : `fn_bftOrbat` (lecture toutes les 5 min au plus, dernier ORBAT gardé en mémoire), `fn_pageBft` (arbre, états, filtres, compteurs, boutons sur deux rangées, lignes réécrites seulement si elles changent), `fn_bftAction` (SMS et vibreur pour un joueur en jeu sans piste). Rapprochement par empreinte du Steam ID, jamais par le nom ; camp adverse jamais rapproché.
+
 ## App Réseau : état d'un coup d'œil, tutoriel, objet obligatoire, case RELAIS ATAK (version attribuée à la publication)
 
 À la publication : ajouter le numéro de version au titre et passer le texte ci-dessous en « Résumé joueur ».
@@ -588,6 +1746,7 @@ EN : The Wave Relay app says what is wrong and what to do
 - `fn_netRequire`, réglage serveur `comspec_atak_native_net_required_items` (vide par défaut) ; `fn_waveRelayStatus`, `fn_waveRelayTuto`, `fn_relayTxBadge` et réglages joueur `comspec_atak_native_relay_tx_badge`, `_badge_pos`, `comspec_atak_native_wr_tuto_offer`.
 - Bandeau de notification : le titre de l'app est masqué le temps de son affichage. Interrupteurs des formulaires : la pastille est le bouton, plus de bouton transparent sur la ligne.
 - Rien n'a été testé en jeu.
+
 ## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
 
 À la publication : ajouter le numéro de version au titre et passer le texte ci-dessous en « Résumé joueur ».
@@ -613,6 +1772,7 @@ EN : My cover is clearer and linked to Athena
 - Fiche (`fn_idLegend « sheet »`) : papiers imprimés et portés, source (`athena` ou `local`), date ; le brief brut, la nature et la qualité ne partent plus chez le joueur.
 - Remontée (`fn_idCoverSync`, `kind = cover_report`, ICD-SSE-COVER-001) sur le compte du jeton de jeu, sans nouvelle DLL. Bureau SSE : attribution d'un contenu de la bibliothèque de l'éditeur à un joueur (identité masquée, papiers émis, kit et brief). Mes papiers : état de la couverture. Migration 4110.
 - Sans habilitation Confidentiel, les briefs reliés à une identité n'apparaissent plus dans le Bureau SSE.
+
 ## Écran de verrouillage et code, fonds d'écran du site, Bloc-notes, Bluetooth, onglets lisibles, dégâts variés (version attribuée à la publication)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -637,6 +1797,7 @@ EN : New lock screen, phone code and wallpapers from the website
 - Bluetooth : téléphones détectés (`near`, `scan` toutes les 3 s, redessin seulement si la liste change), progression sur place (`btx_`).
 - Dégâts : 23 calques tirés par `fn_deviceDamage` selon la cause, gardés dans l'état de l'appareil, oubliés à la réparation, dessinés par `fn_screenFx` ; aperçu dans Debug > DÉGÂTS.
 - Test : `tests/Unit/AtakLockscreenUiAssetTest.php`, contrastes calculés depuis `fn_theme`.
+
 ## App Explosifs refaite, déclencheur réseau (ATAK natif, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -767,6 +1928,7 @@ EN : ATAK 4.0.0 Washington: wrist GPS, deployable antennas, redesigned interface
 - **Maillage, lot 11 : guerre électronique** (`fn_meshEW`, `mesh_ew`, `mesh_ew_role`, décision 14) : activité d'émission arrondie (6e élément du nœud), goniomètre `COMSPEC_ATAK_Goniometer` (classe minimale, modèle de la batterie), croisement de deux relevés, analyseur de 16 canaux sans camp ni contenu, brouilleurs par canal, large bande et GPS seul (8e et 9e éléments de `COMSPEC_ATAK_Jammers`, sans effet sur le lien du téléphone hors MPU5), modes normal, puissance réduite et écoute seule, imposés par le chef, canal de secours (`mesh_backup_channel`, désactivé). L'écoute seule reçoit mais ne relaie pas.
 - **Maillage, lot 12 : outils** (`fn_meshTools`, `fn_moduleMesh`, `mesh_tools`) : clic droit Zeus (brouilleurs, couper un nœud, clés, météo radio, graphe d'un camp en lecture seule, journal), module Eden `COMSPEC_ATAK_Module_Mesh` (clés, groupes, fréquences, canal de secours, profil), journal de réseau serveur (200 lignes, RPT à la demande), topologie, ping et prévision dans l'app Wave Relay. Ping : marge du maillon faible, pas son nom. Prévision : relief seul.
 - **Maillage, lot 8 : nettoyage** (`fn_meshRead`, `fn_mpu5`, `fn_mpuLink`, `fn_mpuVoice`, `fn_meshGroups`, `fn_devMeshSim`) : une seule variable publique par joueur, `COMSPEC_ATAK_MeshNode`, sur changement et au plus toutes les 2 s, à la place de `MpuNode`, `Mpu5`, `MpuVoice`, `VoiceNet` et `Talkgroup` (ces dernières restent locales au joueur). Liaison réaliste décochée : `Mpu5` et `VoiceNet` passent aussi par cette variable. Notice : `docs/technical/reseau-mesh-notice-joueur.md`. Aucun test en jeu sur l'ensemble des lots : à faire en une seule fois.
+
 ## Pack 3.0.5 : optimisation de COMSPEC Link, temps des DLL mesurés dans Debug › PERFS (ATAK natif 3.0.5.AG - Austin, COMSPEC Link 2.0.119)
 
 ### Résumé joueur
@@ -809,6 +1971,7 @@ EN : ATAK 3.0.5: the Athena link does less work and can be measured
 - **Non fait, volontairement** : regroupement des boucles de 1 et 2 s (≈ 30 réveils/s, chacune sort tôt) ; `fn_tocPost` (`nearestObjects` à 4,5 m chaque seconde : requête spatiale bon marché) ; HTTP/2 (multipart PHP) ; `AutomaticDecompression` (gzip déjà géré par `SendTimed` avec comptage des octets) ; `LocalGet` / `ClipGet` / `BtFileRead` restent synchrones (lectures locales de quelques Ko, à la demande du joueur).
 - **Tests** : `ComspecLinkWorkflowOptTest` et `AtakReleaseInfoTest` (ExtensionVersion = csproj = `LINK_VERSION_STR` = 2.0.119, `VERSION_NAME` 3.0.5.) ; `hemtt check` : 2 erreurs connues, inchangées.
 - **À tester en jeu** : Debug › PERFS après quelques instants (sections DLL native et COMSPEC Link, appels / moy / p95 / pire, bouton RAZ DLL ; téléphone en anglais : RESET DLL) ; app Recherchés « Actualiser » (liste fraîche) et terminal SEEK / biométrie du SSE (liste servie sans attente, à jour en 5 min) ; journal COMSPEC_*.log toujours écrit (lignes horodatées) ; tenue Athena volumineuse (morceaux) ; notification reçue puis expirée (toast affiché puis retiré) ; Réglages › contrôle d'intégrité (versions, « DLL d'une autre version » absent).
+
 ## Pack 3.1.0 (suite) : interface du téléphone refaite, un seul système de design, thèmes sombre / jour / nuit JVN (ATAK natif 3.1.0.AG - Austin)
 
 ### Résumé joueur
@@ -2188,6 +3351,7 @@ EN : GPS stays accurate inside buildings
 ### Détail technique
 - `fn_gpsFix` : bâtiment = 5 à 8 satellites (fix gardé) au lieu de 2 à 6, reflets 3 à 10 au lieu de 12 à 35 ; erreurs de base resserrées (7+ satellites 4-6 m, 5-6 : 6-9 m, 4 : 9-13 m). Le test « rue étroite » (8 rayons à 60 m) et la forêt ne s'appliquent plus à l'intérieur : mes propres murs le déclenchaient (−5 satellites, +32 m), d'où la perte du fix et le point à ~40 m. Dérive du point bornée à 0,5 × rayon annoncé (0,8 avant). Position réseau : 60 → 15 m (1 à 4 barres), décalage 0,35 × rayon (0,6). Sauts multitrajets 6-20 m (15-60).
 - `fn_ewDraw` : le cercle de précision est centré sur la position de mon icône de la même image (`COMSPEC_ATAK_SelfGpsPos`).
+
 ## Nouveau téléphone : iPhone 17 Pro en coque durcie olive (partie du regroupement 2.5.0)
 
 ### Résumé joueur
@@ -2234,6 +3398,7 @@ EN : The unit's medical records in the Medical app
 - COMSPEC Link 2.0.96 : `MedicalRoster` [ligne, cache|refresh] (pages comme `ListWardrobes`) et `MedicalRosterInfo` ; copie dans `Documents\Arma 3 - COMSPEC\Sync\medical_roster.json`, propre au site + communauté + Steam ; un 403 `forbidden` efface la copie. Ajouté au projet de la DLL native.
 - ATAK natif : `fn_medRoster` (lecture paginée, cache, recherche, portée EN JEU / TOUTE L'UNITÉ), onglet DOSSIERS dans `fn_pageMedical`, `_medIdent` complète groupe sanguin et poids depuis le dossier. Debug > DLL vérifie `MedicalRoster`.
 - Numéro ATAK natif attribué par le regroupement (docs/VERSIONING.md).
+
 ## CR de fin d'opération imposé dans le téléphone, à remplir ou à lire (partie du regroupement 2.5.0)
 
 ### Résumé joueur
@@ -2319,6 +3484,7 @@ Correctif seul de la 2.4.0 publiée (audit d'ingénierie, SEC-001, DLL-003, DLL-
 - Connu, hors de ce correctif (lots séparés) : la clé de la communauté reste rangée dans le profil Arma, lisible par une mission (SEC-009) ; une mission peut toujours faire télécharger une image depuis l'hôte de son choix (adresse IP du joueur visible par cet hôte, aucun secret envoyé).
 
 ---
+
 ## Regroupement : app Admin et mode local dans le téléphone, écrans du briefing en jeu, montre Garmin, arsenal ACE sûr, nouvelle adresse athena-comspec.eu, jeu plus fluide (ATAK natif 2.4.0.AB - Denver, COMSPEC Link 2.0.95)
 
 ### Résumé joueur
@@ -2365,6 +3531,7 @@ EN : Fewer freezes and no more error in vehicles
 - **Arsenal ACE** : `ace_arsenal_fnc_addRightPanelButton` recevait un texte en 4e paramètre (numéro de bouton attendu) : erreur `Params` et pas de bouton COMSPEC.
 - **fn_tr** ligne 64 : `[_x, ""] select (isNil "_x")` plantait sur un argument absent (« Undefined variable _x »).
 - Vérifié avec HEMTT 1.17.2 (`hemtt check` natif : 0 erreur ; connect : les 6 erreurs de syntaxe ont disparu, restent les faux positifs `ctrlWebBrowserAction` inconnus de HEMTT). main.pbo et `comspec_overwatch_connect.pbo` à reconstruire au regroupement.
+
 ## Marqueurs par le seul réseau ATAK, heure de pose sur chaque marqueur, relais actif seulement mât déployé (ATAK natif : numéro donné au regroupement)
 
 ### Résumé joueur
@@ -2385,6 +3552,7 @@ EN : Confidential ATAK markers and conditional radio relays
 - `fn_relayCond` (nouveau) : `COMSPEC_AtakRelayCond` sur un relais ou une passerelle de véhicule (`mast` : sources d'animation dont le nom contient mast/antenna/antena/telescop/aerial/pole/rod au-delà de 90 % ; `stopped` ; `engineoff` ; ou code SQF, `_this` = l'objet). `fn_relayNet` liste le relais hors service avec la raison (« mât replié »…). Module « ATAK · Relais » : attributs Eden `Cond` + `CondCode`, liste « Actif seulement si » dans le formulaire Zeus.
 - À tester en jeu : noms des sources d'animation du mât du GAZ-66 R-142 de RHS reconnus par `mast` (sinon condition en code) ; `createMarkerLocal` + `setMarkerText` global sur un marqueur local (doit rester local) ; marqueurs reçus hors réseau puis au retour du signal ; JIP.
 - Réglage `comspec_atak_native_marker_channel` inchangé (Global par défaut) : en mode carte d'Arma, Global reste visible par tous les camps.
+
 ## Refus d'Athena : plus de demandes en boucle, Dépannage liaison qui donne la bonne correction (Overwatch connect 1.6.17)
 
 ### Résumé joueur
@@ -2409,6 +3577,7 @@ EN : When Athena refuses you, the game stops insisting and tells you what to do
 - Contexte : rotation de la clé plateforme du 2026-10-26. Depuis #1052 la liaison renvoie une clé de communauté ; un profil qui gardait l'ancienne clé plateforme reçoit maintenant `unauthorized`, et seule une nouvelle liaison enregistre une clé valide.
 - `comspec_overwatch_connect.pbo` repaqueté seul (AddonBuilder, préfixe `z\comspec_overwatch\addons\connect`) ; main.pbo et la version de l'ATAK natif ne changent pas. Nouveaux textes en français seulement (repli de `fn_tr`), à ajouter à `en.txt` au prochain regroupement de main.pbo.
 - Non testé en jeu. À tester : profil avec une clé invalide → Échap › Dépannage liaison affiche « clé d'accès refusée » et le bouton ouvre Lier mon compte ; après liaison, Revérifier → Liaison OK.
+
 ## Retours des contributeurs : téléphone en anglais, SEEK II, accueil qui garde sa place (ATAK natif : numéro donné au regroupement)
 
 ### Résumé joueur
@@ -2462,6 +3631,7 @@ EN : Athena is now translated with the community
 - Site : `/contribuer` (ContributorController), `/traduire-site` (SiteTranslationController, SiteTranslationService), `/admin/system/contributeurs` (SystemContributorsController). Migration `20261025000001_site_contributors_translation.sql` (run-migrations sur le VPS). Les langues publiées et leurs dictionnaires sont compilés dans `storage/i18n/community/` (CommunityLanguages) : `LocaleService` accepte leurs codes, une langue de la communauté se comporte comme l'anglais (`locale()` = en, `site_lang()` = son code) avec son dictionnaire par-dessus (HtmlTranslator, Translator, dictionnaire JavaScript `/traduire-site/dico/{code}.js`).
 - Discord : script `tools/discord/comspec_discord_contributors.py` (lancé sur le PC de TTRD, jeton du bot jamais sur le site) : rôles Translator / Content creator, salons translation / contributors, question de choix des rôles dans l'accueil du serveur (Onboarding), conditions des rôles liés déclarées à l'application et rôle Athena verified.
 - Rôles liés Discord (Linked Roles) : `DiscordLinkedRoles` (OAuth `identify role_connections.write`, conditions compte Athena / membre d'une communauté / nombre de communautés / ancienneté, nom des communautés sur le profil), `/discord/roles-lies` (adresse de vérification) et retour, panneau Discord dans Mon compte › Préférences, réglages Application ID + secret client chiffré dans Intégrations › Plateforme, tâche automatique quotidienne `discord_linked_roles_sync`. Migration `20261025000002_user_discord_links.sql`. Dans le portail des développeurs Discord : OAuth2 › Redirects = `/discord/roles-lies/retour` ; puis la condition « Compte Athena » sur le rôle Athena verified (Paramètres du serveur › Rôles › Liens).
+
 ## App Admin dans le téléphone : parc ATAK de la communauté, ATAK de la partie et debug de l'IA, pour la gestion et les Zeus (regroupé dans ATAK natif 2.4.0.AB - Denver, COMSPEC Link 2.0.95)
 
 ### Résumé joueur
@@ -2486,6 +3656,7 @@ EN : New Admin app for community managers and Zeus
 - Boutons à conséquence en deux temps (CONFIRMER). `i18n/en.txt` : 143 textes.
 - Version 2.3.11, COMSPEC Link 2.0.94 (DLL à recompiler). main.pbo non reconstruit dans cette PR (regroupement).
 - À tester en jeu : app visible en Zeus et invisible pour un joueur ; relevé EN JEU avec plusieurs joueurs ; effets Zeus depuis l'app ; parc ATHENA avec un compte gestionnaire relié (bloquer puis lever, message reçu, compromission puis levée) ; DEBUG IA après qu'une IA ennemie a ramassé un téléphone (traque visible, ARRÊTER LA TRAQUE, REPRENDRE LE TÉLÉPHONE).
+
 ## Nouveaux logos ATHENA sur le site et dans le téléphone (regroupé dans ATAK natif 2.4.0.AB - Denver)
 
 ### Résumé joueur
@@ -2503,6 +3674,7 @@ EN : New ATHENA identity: the eagle
 - Logos vectorisés (potrace, tracé à 6x avec lissage) à partir des PNG fournis ; colonne blanche des 3 premiers pixels du logo complet retirée. Sources : `public/assets/brand/*.svg` (blanc / noir), `mod/COMSPEC_ATAK_Native/tools/src/athena_logo.svg` et `athena_embleme.svg`.
 - Site : `athena-header__brand-mark`, `dash-rail__brand-mark` et le pied de page portail utilisent l'emblème / le logo en masque CSS (couleur du thème) ; en-tête d'accès public et accueil (`hi-wordmark`, pied) en `<img>` ; `athena-192/512.png` carrés (étaient 520x240 et 1200x480), nouveaux `athena-180/32.png`, `athena-maskable-512.png`, `favicon.ico` ; manifeste PWA et cache `sw.js` (v11) à jour ; `atak-eagle-logo.png` (ATAK web, porte SSE) remplacé par l'emblème.
 - Mod : `gen_assets.py <hemtt> athenalogo` régénère `app_athena.paa` (emblème) et le nouveau `logo_athena.paa` (logo complet) ; `fn_pageAthena` et le repli de la ligne « status » de `fn_formRender` l'utilisent. Version 2.3.11, main.pbo reconstruit (HEMTT), verify_build OK. Link inchangé (2.0.93).
+
 ## Indicatif perso, marqueurs nommés et modifiables, recherche par grille, outils JTAC (cap magnétique, 9-LINE sur un autre écran), jumelles sans marquage ENI par défaut (ATAK natif, version fixée au regroupement)
 
 ### Résumé joueur
@@ -2526,6 +3698,7 @@ EN : Your own callsign, named markers and JTAC tools
 - GPS : soi-même (icône, anneaux, étiquettes, trait de distance) dessiné à la position GPS simulée (`COMSPEC_ATAK_SelfGpsPos`).
 - Clic gauche de la carte : armé à l'appui (`mapLc`), exécuté au relâchement s'il n'y a pas eu de glisser (`fn_mapMouseButtonUp` rappelle `fn_mapMouseButtonDown` avec `_click`) ; TRAIT et DESSIN démarrent toujours à l'appui. Menu OUTILS en sections (NAVIGATION, MESURER, DESSINER, AFFICHAGE), bandeau d'outil actif avec icône et bouton ✕.
 - JTAC : `fn_magBearing` (réglage serveur `comspec_atak_native_mag_decl`), outil carte IPTGT `fn_jtacTool` (VERS LE 9-LINE remplit l'app JTAC), ligne 2 du 9-LINE en cap magnétique ; page site `/9-line` (flux des 9-LINE de la communauté toutes les 5 s, calculateur IP → cible), QR `data\nineline_qr_ca.paa`.
+
 ## Mode full local : PC portable de TOC, app Numéros, configuration locale config.json (ATAK natif, version attribuée au regroupement ; COMSPEC Link : DLL native modifiée)
 
 ### Résumé joueur
@@ -3776,6 +4949,7 @@ EN : Athena no longer cuts your sends during an update
 - `deploy-vps.yml` : règle une fois `process_control_timeout = 10s` dans `/etc/php/8.4/fpm/php-fpm.conf` (sauvegarde `.bak-deploy`, `php-fpm -t` avant, restauration si refusé) puis reload.
 - `AtakDeviceLogRepository` : COMSPEC Link envoie `logged_at` en heure locale sans fuseau ; l'écart entre la ligne la plus récente du lot et l'heure serveur, arrondi au quart d'heure (15 min à 14 h), est retiré des heures sans fuseau.
 - Le volet mod (502/504 en alerte, ligne ZEN, dump) est dans une PR à part, livrée avec le regroupement ATAK.
+
 ## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
 
 ### Résumé joueur

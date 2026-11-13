@@ -1,0 +1,42 @@
+# clé<TAB>français<TAB>anglais : noms des caméras IP et de l'infrastructure réseau (tools/gen_relay_config.py)
+STR_COMSPEC_ATAK_CFG_CAM_SUBCAT	Caméras IP	IP cameras
+STR_COMSPEC_ATAK_CFG_CAM_PTZ_WALL	Caméra dôme PTZ (mur)	PTZ dome camera (wall)
+STR_COMSPEC_ATAK_CFG_CAM_PTZ_WALL_DARK	Caméra dôme PTZ noire (mur)	PTZ dome camera, black (wall)
+STR_COMSPEC_ATAK_CFG_CAM_PTZ_POLE	Caméra dôme PTZ (poteau)	PTZ dome camera (pole)
+STR_COMSPEC_ATAK_CFG_CAM_BULLET_WALL	Caméra tube IR (mur)	IR bullet camera (wall)
+STR_COMSPEC_ATAK_CFG_CAM_BULLET_WALL_DARK	Caméra tube IR noire (mur)	IR bullet camera, black (wall)
+STR_COMSPEC_ATAK_CFG_CAM_BULLET_CEIL	Caméra tube IR (plafond)	IR bullet camera (ceiling)
+STR_COMSPEC_ATAK_CFG_CAM_BULLET_POLE	Caméra tube IR (poteau)	IR bullet camera (pole)
+STR_COMSPEC_ATAK_CFG_CAM_BULLET_CORNER	Caméra tube IR (angle)	IR bullet camera (corner)
+STR_COMSPEC_ATAK_CFG_CAM_THERMAL_WALL	Caméra thermique bi-spectre (mur)	Dual-spectrum thermal camera (wall)
+STR_COMSPEC_ATAK_CFG_CAM_THERMAL_WALL_DARK	Caméra thermique noire (mur)	Thermal camera, black (wall)
+STR_COMSPEC_ATAK_CFG_CAM_THERMAL_POLE	Caméra thermique bi-spectre (poteau)	Dual-spectrum thermal camera (pole)
+STR_COMSPEC_ATAK_CFG_CAM_MINIDOME	Mini-dôme (plafond)	Mini dome camera (ceiling)
+STR_COMSPEC_ATAK_CFG_CAM_MINIDOME_WALL	Mini-dôme (mur)	Mini dome camera (wall)
+STR_COMSPEC_ATAK_CFG_CAM_FISHEYE	Caméra 360° (plafond)	360° fisheye camera (ceiling)
+STR_COMSPEC_ATAK_CFG_CAM_TACTICAL	Caméra tactique sur trépied	Tactical tripod camera
+STR_COMSPEC_ATAK_CFG_CAM_COVERT	Caméra dissimulée	Covert camera
+STR_COMSPEC_ATAK_CFG_CAM_ATTR_NAME	Nom de la caméra	Camera name
+STR_COMSPEC_ATAK_CFG_CAM_ATTR_NAME_TIP	Nom affiché dans l'app Vidéo live (16 caractères, vide : CAM-1, CAM-2…)	Name shown in the Live video app (16 characters, empty: CAM-1, CAM-2…)
+STR_COMSPEC_ATAK_CFG_CAM_ATTR_SIDE	Camp	Side
+STR_COMSPEC_ATAK_CFG_CAM_ATTR_SIDE_TIP	Camp qui voit cette caméra dans son téléphone	Side that sees this camera on its phone
+STR_COMSPEC_ATAK_CFG_INFRA_SUBCAT	Infrastructure réseau	Network infrastructure
+STR_COMSPEC_ATAK_CFG_INFRA_ACE	Infrastructure réseau	Network infrastructure
+STR_COMSPEC_ATAK_CFG_INFRA_RACK_PATCH	Baie de brassage 42U	Patch rack 42U
+STR_COMSPEC_ATAK_CFG_INFRA_RACK_SERVER	Baie serveur 42U	Server rack 42U
+STR_COMSPEC_ATAK_CFG_INFRA_WALL_9U	Coffret mural 9U	Wall cabinet 9U
+STR_COMSPEC_ATAK_CFG_INFRA_WALL_12U	Coffret mural 12U	Wall cabinet 12U
+STR_COMSPEC_ATAK_CFG_INFRA_SERVER_TOWER	Serveur tour	Tower server
+STR_COMSPEC_ATAK_CFG_INFRA_UPS	Onduleur	UPS
+STR_COMSPEC_ATAK_CFG_INFRA_SWITCH_DESK	Switch de table	Desktop switch
+STR_COMSPEC_ATAK_CFG_INFRA_CRAC	Climatiseur de salle	Server room AC unit
+STR_COMSPEC_ATAK_CFG_INFRA_ELEC	Armoire électrique	Electrical cabinet
+STR_COMSPEC_ATAK_CFG_INFRA_TRAY_STRAIGHT	Chemin de câbles 2 m	Cable tray 2 m
+STR_COMSPEC_ATAK_CFG_INFRA_TRAY_CORNER	Chemin de câbles, angle	Cable tray, corner
+STR_COMSPEC_ATAK_CFG_INFRA_TRAY_TEE	Chemin de câbles, té	Cable tray, tee
+STR_COMSPEC_ATAK_CFG_INFRA_TRUNK_STRAIGHT	Goulotte 2 m	Cable trunking 2 m
+STR_COMSPEC_ATAK_CFG_INFRA_TRUNK_CORNER	Goulotte, angle	Cable trunking, corner
+STR_COMSPEC_ATAK_CFG_INFRA_ATTR_NAME	Nom	Name
+STR_COMSPEC_ATAK_CFG_INFRA_ATTR_NAME_TIP	Nom affiché dans l'état de l'équipement.	Name shown in the equipment status.
+STR_COMSPEC_ATAK_CFG_INFRA_ATTR_ON	Allumé au départ	Powered on at start
+STR_COMSPEC_ATAK_CFG_INFRA_ATTR_ON_TIP	Décoché : l'équipement démarre éteint (voyants éteints).	Unchecked: the equipment starts powered off (LEDs off).

@@ -19,11 +19,13 @@ param(
     [string]$AcreDir = '',
     # Liste complète des mods : remplace CBA, ACE, ACRE, ATAK, SSE.
     [string[]]$Mods = @(),
+    # Mods chargés en plus (dossiers @Mod) : extensions de documents du SSE, par exemple.
+    [string[]]$ModsEnPlus = @(),
     [switch]$SansAcre,
     [switch]$SansSse,
     # MPU-5 d'ACRE (ACRE_MPU5.pbo seul, tiré du pack 3026491672) pour l'étape acre_radio_detectee : retiré avec ce paramètre.
     [switch]$SansAcreMpu5,
-    # Groupes de la mission (vide : tous) : fonctions telephone carte antennes gps explo sse zeus acre reseau
+    # Groupes de la mission (vide : tous) : fonctions telephone carte antennes gps explo sse equipement zeus acre reseau mpudiag mpuhud chiffrement relais
     [string[]]$Groupes = @(),
     [int]$DureeMaxMinutes = 45,
     # Attente de la première ligne AUTOTEST avant de passer au plan suivant.
@@ -100,6 +102,8 @@ if ($Mods.Count -gt 0) {
         $listeMods += $SseDir
     }
 }
+$ModsEnPlus = @($ModsEnPlus | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
+foreach ($m in $ModsEnPlus) { $listeMods += $m }
 foreach ($m in $listeMods) { if (-not (Test-Path -LiteralPath $m)) { Sortir 4 "Mod introuvable : $m" } }
 
 # Build périmé : le test porterait sur d'anciens PBO. Un PBO refait en local (modifié pour Git) est à jour.
@@ -185,7 +189,24 @@ public static class AtCap {
     [DllImport("user32.dll")] static extern bool AttachThreadInput(uint a, uint b, bool f);
     [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
     [DllImport("kernel32.dll")] static extern uint GetCurrentThreadId();
+    [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
+    [DllImport("user32.dll")] static extern void mouse_event(uint f, uint dx, uint dy, uint d, UIntPtr e);
     public static void Init() { SetProcessDPIAware(); }
+    // Vrai clic de souris (autotest du toucher) : curseur posé au point de la fenêtre (fractions de la zone cliente),
+    // bouton gauche enfoncé, capture au milieu de l'appui, puis relâché. La mission pose aussi son curseur (setMousePosition).
+    public static string Clic(IntPtr h, double fx, double fy, int holdMs, string path, int maxW) {
+        if (!Front(h)) return "ECHEC|fenêtre pas au premier plan";
+        RECT r; GetClientRect(h, out r);
+        POINT o = new POINT(); ClientToScreen(h, ref o);
+        SetCursorPos(o.X + (int)((r.R - r.L) * fx), o.Y + (int)((r.B - r.T) * fy));
+        System.Threading.Thread.Sleep(60);
+        mouse_event(0x0002, 0, 0, 0, UIntPtr.Zero);
+        System.Threading.Thread.Sleep(Math.Max(0, holdMs / 2 - 100));
+        string cap = path == "" ? "" : Capture(h, path, maxW);
+        System.Threading.Thread.Sleep(Math.Max(0, holdMs / 2));
+        mouse_event(0x0004, 0, 0, 0, UIntPtr.Zero);
+        return "clic|" + cap;
+    }
     public static bool Front(IntPtr h) {
         if (GetForegroundWindow() == h) return true;
         if (IsIconic(h)) ShowWindow(h, 9);
@@ -261,6 +282,19 @@ function Invoke-Capture($P, [string]$Nom) {
 }
 
 # ---------- Lancement ----------
+# Vrai clic (AUTOTEST|CLICK|nom|x|y|durée en ms, x et y en fractions de la fenêtre) : capture pendant l'appui.
+function Invoke-Clic($P, [string]$Nom, [double]$Fx, [double]$Fy, [int]$Ms) {
+    $propre = $Nom -replace '[^\w\-]', '_'
+    $chemin = Join-Path $dossierCaptures "$propre.jpg"
+    $h = $P.MainWindowHandle
+    if ($h -eq [IntPtr]::Zero) { $P.Refresh(); $h = $P.MainWindowHandle }
+    $info = 'ECHEC|pas de fenêtre'
+    if ($h -ne [IntPtr]::Zero) {
+        try { $info = [AtCap]::Clic($h, $Fx, $Fy, $Ms, $chemin, $LargeurCapture) } catch { $info = "ECHEC|$($_.Exception.Message)" }
+    }
+    [void]$journalCaptures.Add("$Nom|$info")
+}
+
 function Get-ArgsArma([string]$Plan, [string]$AutotestCfg) {
     $a = New-Object System.Collections.ArrayList
     [void]$a.Add('-skipIntro'); [void]$a.Add('-noSplash'); [void]$a.Add('-world=empty'); [void]$a.Add('-showScriptErrors')
@@ -391,7 +425,8 @@ function Invoke-Plan([string]$Plan) {
                 if ($i -ge 0) {
                     $reste = $tout.Substring($i + 1)
                     foreach ($ligne in $tout.Substring(0, $i).Split("`n")) {
-                        if ($ligne -match 'AUTOTEST\|SHOT\|([^"\r]+)') { if ($p) { Invoke-Capture $p $Matches[1] } }
+                        if ($ligne -match 'AUTOTEST\|CLICK\|([^|"\r]+)\|([0-9.]+)\|([0-9.]+)\|([0-9]+)') { if ($p) { Invoke-Clic $p $Matches[1] ([double]::Parse($Matches[2], [Globalization.CultureInfo]::InvariantCulture)) ([double]::Parse($Matches[3], [Globalization.CultureInfo]::InvariantCulture)) ([int]$Matches[4]) } }
+                        elseif ($ligne -match 'AUTOTEST\|SHOT\|([^"\r]+)') { if ($p) { Invoke-Capture $p $Matches[1] } }
                         elseif ($ligne -match 'AUTOTEST\|DEBUT') { if (-not $vuDebut) { $vuDebut = $true; Write-Host 'Mission démarrée.'; if ($p) { [void][AtCap]::Front($p.MainWindowHandle) } } }
                         elseif ($ligne -match 'AUTOTEST\|FIN') { $vuFin = $true }
                     }

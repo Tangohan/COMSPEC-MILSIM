@@ -49,6 +49,24 @@ final class ShortCache
         return $value;
     }
 
+    /** Valeur gardée (null : absente, expirée ou cache désactivé). Ne jamais garder null comme valeur. */
+    public static function get(string $key): mixed
+    {
+        if (!self::enabled()) {
+            return null;
+        }
+
+        return self::fetch($key)[0] ?? null;
+    }
+
+    public static function put(string $key, mixed $value, int $ttl): void
+    {
+        if (!self::enabled() || $ttl < 1 || $value === null) {
+            return;
+        }
+        self::store($key, [$value], $ttl);
+    }
+
     /** Numéro de génération courant d'un espace de clés (0 tant que rien n'a été écrit). */
     public static function gen(string $ns): int
     {

@@ -3,7 +3,9 @@
     Usage identique à BIS_fnc_showNotification :
       ["COMSPEC_Info", ["Message"]] call comspec_overwatch_connect_fnc_showNotification;
 
-    Bandeau BIS uniquement si « Afficher les notifications à l’écran » (et hors mode discret / milsim).
+    Plus jamais le bandeau BIS (BIS_fnc_showNotification : alerte de l'interface d'Arma, proscrite). Si « Afficher les
+    notifications à l’écran » (et hors mode discret / milsim) : notification du téléphone ATAK natif (centre de
+    notifications, bandeau si le téléphone est affiché) ; sans ATAK natif, RPT.
     Le journal tablette HTML et le son restent actifs selon leurs réglages.
 */
 params ["_template", ["_args", []]];
@@ -41,8 +43,12 @@ if (!(_msg isEqualTo "")) then {
     [_type, _title, _msg, _priority] call comspec_overwatch_connect_fnc_pushHtmlAlert;
 };
 
-if ([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) then {
-    [_template, _args] call BIS_fnc_showNotification;
+if (!(_msg isEqualTo "") && {[] call comspec_overwatch_connect_fnc_shouldShowScreenNotification}) then {
+    if (!isNil "comspec_atak_native_fnc_notify") then {
+        [["INFO", "WARNING"] select _isWarn, _msg, 6, [20, 40] select _isWarn, "ATHENA"] call comspec_atak_native_fnc_notify;
+    } else {
+        diag_log text format ["[COMSPEC Overwatch][%1] %2", ["INFO", "WARN"] select _isWarn, _msg];
+    };
 };
 
 // Son dédié pour l’urgence médicale (mort / inconscient), ordres, sinon bip de préférence.

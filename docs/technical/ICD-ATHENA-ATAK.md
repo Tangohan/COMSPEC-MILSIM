@@ -568,12 +568,90 @@ Jeu vers site : `SubmitIdCheck` de COMSPEC Link (2.0.118 et plus, aucune nouvell
 |---|---|
 | `map`, `op` | portée (carte, code d'opération) |
 | `cover` | `name`, `dob`, `pob`, `country`, `address`, `city`, `profession`, `employer`, `phone`, `travel`, `family`, `contacts` `[[nom, lien, téléphone]…]`, `docs` `[[type, pays, numéro]…]` |
+| `cover` (livraison, facultatif) | `pack` étape (`ok`, `wait`, `server_fetch`, `relay_zeus`, `relay_self`, `relay_fail`, `no_relay`), `pack_code` (`unauthorized`, `no_tenant`, `uplink_off`, `not_ready`…), `pack_via` (`server`, `zeus`, `self`), `pack_at` (date du paquet reçu), `server` (nom du serveur de jeu). Hors de l'empreinte de l'identité : un changement de livraison ne rouvre pas une différence examinée. |
 
 Compte : celui du jeton de jeu (Bearer), jamais une donnée du corps ; communauté : celle du jeton. Une clé de communauté seule ne dit pas qui appelle : rien n'est écrit.
 
 Réponse `{"id": nombre, "ref": texte}` : `saved;AAAA-MM-JJ HH:MM`, `unchanged;AAAA-MM-JJ HH:MM` (même contenu, date du dernier changement, UTC), `unlinked` (`id` = 0, aucun compte relié). Erreurs : 422 `invalid_cover` (sans nom), 503 `unavailable`. Le corps n'a pas de `idempotency_key` : un site antérieur le refuse en 422 au lieu d'y voir un contrôle. Le mod garde alors la couverture sur le poste et réessaie plus tard.
 
 Confidentialité : ces lignes (`sse_id_game_covers`) ne rejoignent ni le registre des identités, ni les listes de surveillance, ni le paquet. Lecture : le joueur dans Mes papiers, l'habilitation Confidentiel sur la fiche du membre.
+
+## ICD-SSE-COVER-SYNC-001 — Couvertures d'Athena récupérées par le téléphone
+
+> Depuis l'étape 4450 (identités unifiées, voir `docs/technical/IDENTITES-UNIFIEES.md`), ces points d'accès sont hérités et en lecture seule : le contrat ci-dessous ne change pas, mais chaque entrée est une **identité** du membre (son personnage et ses identités d'emprunt non archivées), bâtie à la demande. `ref` est stable par identité, `status` vaut toujours `valid`, `has_photo` et `by_manager` sont faux, `active` désigne l'identité « Active en jeu » (celle dont les papiers partent en mission), `downloaded` dit qu'elle a déjà été envoyée au téléphone. L'adresse `/operateur/identite/couverture` n'existe plus (redirection vers `/operateur/identite`). Tant que l'étape n'est pas passée, le comportement décrit ci-dessous s'applique tel quel.
+
+Site vers jeu : `GET /api/sse/identity/pack?op=~covers` (liste) ou `op=~cover:CVR-…,CVR-…` (5 fichiers au plus), `since` = `v=1`, relayés par `GetIdentityPack` de COMSPEC Link (DLL inchangée) ; aussi `GET /api/atak/covers` et `GET /api/atak/covers/files?refs=`. Réponse au format du paquet, tout dans `settings` : `covers_api` (1), `covers` ou `files` + `errors`. Compte et communauté : ceux du jeton de jeu.
+
+Entrée de `covers` : `ref`, `name`, `summary`, `country`, `country_code`, `status` (`valid`, `expired`, `invalid`), `has_photo`, `generated_at`, `expires_at`, `updated_at`, `size`, `sha`, `by_manager`, `downloaded`, `active`.
+
+- `active` (booléen, ajouté sans changer `covers_api`) : vrai sur la seule couverture que le membre a marquée active dans `/operateur/identite/couverture` (`operator_identity_states`, `item_kind` = `cover`, `is_active` = 1, borné à la communauté et au membre). Aucune active, ou table absente : faux partout. Un mod plus ancien ignore le champ ; un mod récent face à un site sans ce champ garde son choix habituel.
+- Ordre : la couverture active d'abord, puis de la plus récente à la plus ancienne.
+- Une couverture révoquée par le membre n'est plus listée (et n'est jamais `active`).
+
+## ICD-SSE-PACK-SELF-001 — Paquet d'un seul compte, relayé par le téléphone du joueur
+
+Serveur de jeu sans COMSPEC Link et sans Zeus relié : le serveur demande à chaque joueur (`packFetch self`) de lire ses propres papiers, une fois sa liaison Athena établie. `GetIdentityPack [carte, "~self" | "~self:OPÉRATION", ""]` (DLL inchangée : l'opération part dans `op`) → `GET /api/sse/identity/pack?op=~self…` → même forme que le paquet, réduite au compte du jeton de jeu : son kit, ses papiers (sans `forgery_kind` ni `forgery_quality`), les identités qu'ils portent, son brief, les pays ; `watch`, `wanted`, `population` vides ; jamais servi par le cache partagé. Clé de communauté seule : 403 `unlinked`. Le serveur de jeu refiltre : kit du Steam ID qu'il lit lui-même, pays inconnus seulement, rien d'autre.
+
+## ICD-SSE-PACK-REV-001 — Révision du paquet d'identité (304 / unchanged)
+
+`GET /api/sse/identity/pack` porte une révision par page : empreinte du contenu de la page (pays, identités, papiers, avis, kits, population, recherchés, briefs, réglages, pagination), sans `generated_at`. Même contenu = même révision. Rétrocompatible : sans révision envoyée, la réponse est le paquet de toujours, plus un champ `revision` que la DLL publiée ignore (elle ne recopie que `version`, `generated_at`, `map`, `op`, `since`, `settings`).
+
+| Sens | Champ | Contenu |
+|---|---|---|
+| Site → jeu | `revision` (corps) | 24 caractères hexadécimaux |
+| Site → jeu | en-tête `ETag` | `W/"idp-<revision>"` |
+| Jeu → site | `since_rev=<revision>` (paramètre, facultatif) | réponse 200 `{"version":1,"unchanged":true,"revision":…,"generated_at":…,"map":…,"op":…,"paging":{…}}`, sans aucun bloc de données |
+| Jeu → site | en-tête `If-None-Match: W/"idp-<revision>"` (facultatif) | réponse 304 sans corps, même `ETag` |
+
+- Révision par page (`offset`, `limit`) : le client garde celle de chaque page et la renvoie avec la même URL (`map`, `op`, `since`, `offset`, `limit`). La page 0 inchangée ne dit rien des suivantes : un client qui lit plusieurs pages envoie `since_rev` à chacune et suit `paging.next_offset` de la réponse `unchanged`.
+- COMSPEC Link publié (2.0.118 et plus) : il envoie déjà `If-None-Match` avec l'empreinte reçue pour la même URL et ressert sa copie sur un 304 (GameApiResponseCompactor garde l'`ETag` posé par la route au lieu de l'empreinte du corps). Comme `since` = le `generated_at` de la dernière réponse, l'URL change dès qu'un nouveau paquet arrive : le 304 joue quand l'URL se répète (même `since`, ou rechargement sans `since`).
+- Prochain COMSPEC Link : garder `revision` par page et l'envoyer en `since_rev` (ou garder l'URL et l'`ETag`) ; sur `unchanged`, ne rien reconvertir ni rejouer côté SQF (`fn_idAthenaPack` « apply »), garder le paquet en mémoire.
+- Cache serveur : paquet et révision gardés 5 min par communauté (clé : communauté, carte, opération, `since`, page ; jamais partagés entre communautés, droits vérifiés avant chaque lecture). Toute écriture réussie du registre (portail SSE, papiers et kit d'un membre, couverture, identité, envois du jeu vers `/api/sse/`) le vide. `generated_at` d'une réponse servie par le cache = heure du calcul : l'utiliser comme `since` relit au pire un peu plus de papiers, jamais moins.
+- Débit : 60 pages par minute et par appelant (compte du jeton de jeu, sinon communauté de la clé et IP), 240 contrôles `documents/lookup` par minute ; au-delà 429 `too_many_requests` avec `Retry-After`. Usage normal : 5 pages au début de la mission, puis au plus un paquet toutes les 2 min.
+
+## ICD-SSE-PHONE-001 — Synchroniser un téléphone du jeu avec le web (extraction)
+
+Canal : `SubmitIdCheck` de COMSPEC Link (aucune nouvelle DLL) → `POST /api/sse/identity/checks`, `kind` = `phone_extraction`. Données du téléphone du **personnage** (jeu) seulement : rien du vrai appareil du joueur. Aucun envoi avant l'autorisation de la licence (`comspec_overwatch_connect_fnc_licenceStatus`) ni quand la liaison est coupée (`uplinkOff`).
+
+| Champ | Contenu |
+|---|---|
+| `idempotency_key` | 4 à 80 caractères, une clé par partie envoyée |
+| `extraction_key` | 4 à 80 caractères : même valeur pour toutes les parties d'une même extraction |
+| `part` | `[index, total]` (1 ≤ index ≤ total ≤ 20) ; absent = une seule partie |
+| `consent` | `true` obligatoire (réglage du joueur, désactivé par défaut ; le MJ peut l'interdire pour la mission) |
+| `device` | `uid` (identifiant stable du téléphone du jeu), `label`, `model`, `number`, `imei` |
+| `owner` | `kind` (`player` ou `ai`), `label` (nom du personnage), `ai_uid` (IA : identifiant stable, voir ICD-SSE-LORE-001) |
+| `op`, `grid`, `game_time` | portée et lieu de l'extraction |
+| `data` | `contacts` `[{name, number, note}]`, `calls` `[{at, number, name, dir: in/out/missed, duration_s}]`, `messages` `[{at, from, to, body, channel}]`, `notes` `[{at, title, body}]`, `photos` `[{at, file, caption, grid}]`, `apps` `[{name, version}]`, `positions` `[{at, grid, note}]`, `places` `[{name, grid, note}]`, `network` `{carrier, number, imei, mac, wifi: [noms]}` |
+
+Limites : 300 éléments par catégorie et par partie, 2 000 par extraction, 1 000 caractères par texte, 256 Ko par corps ; au-delà 422 `too_large`. Compte : celui du jeton de jeu (Bearer) ; clé de communauté seule : 403 `unlinked`. Le membre peut retirer son accord pour un téléphone depuis le site : 422 `consent_revoked`. Fonction coupée par la communauté : 422 `extractions_disabled` (422 et non 403 : COMSPEC Link rend tout 403 au jeu sous `unauthorized`). Réponse `{"id": n, "ref": "EXT-000123", "duplicate": bool}`.
+
+## ICD-SSE-LORE-001 — Lore de session : remontée des IA et redescente des données décidées sur le web
+
+Canal : `SubmitIdCheck` (aucune nouvelle DLL) → `POST /api/sse/identity/checks`. Une session = une communauté + un code d'opération (`op`) : une mission ne lit jamais une autre session. Aucun envoi avant l'autorisation de la licence.
+
+**Remontée (`kind` = `lore_push`)**, par lots de 25 personnes au plus (500 par session) :
+
+| Champ | Contenu |
+|---|---|
+| `idempotency_key` | une clé par lot |
+| `op` | code d'opération (2 à 64 caractères `A-Z a-z 0-9 _ . : -`) |
+| `mission` | `title`, `world`, `country` (pays par défaut des IA, ISO alpha-3) |
+| `batch` | `[index, total]` |
+| `persons[]` | `uid` (identifiant stable de l'IA, gardé d'une session à l'autre), `country`, `last`, `first`, `sex` (M/F), `dob` (AAAA-MM-JJ), `birth_place`, `nationality`, `profession`, `aliases` [textes], `height_cm`, `weight_kg`, `build`, `hair`, `eyes`, `marks`, `addresses` [textes], `vehicles` `[{plate, make, model, color}]`, `phones` [textes], `links` `[{uid, relation}]`, `status` `{wanted, bolo, hvt, watchlist, armed}` (booléens), `knowledge` (ce qu'elle sait, MJ), `answers` `{answers: [textes], evoke: texte, banned: [textes]}`, `cover`, `side`, `faction`, `group`, `class` |
+
+Personne nouvelle : créée (identité du registre + fiche). Personne connue (même `uid`) : seules les données vides sur le web sont complétées ; ce que le MJ a écrit sur le web n'est jamais écrasé. Session verrouillée : rien n'est modifié, la date de remontée est notée. Réponse `ref` : `ok;créées;complétées;ignorées;verrou(0/1)`.
+
+**Redescente (`kind` = `lore_pull`)** : `op`, `page` (0, 1, …). Réponse `ref` (7 400 octets au plus) au format `parseSimpleArray` :
+
+`[[session, phase, verrou, heure_serveur, modifié_le, rafraîchissement_s, titre], [[uid, réf, [[clé, valeur]…], [[clé, valeur]…], [[clé, valeur]…]]…], page_suivante]`
+
+- 1er tableau de paires : données **connues des fichiers** et déjà révélées (phase ≤ phase en cours) : `last`, `first`, `sex`, `dob`, `birth_place`, `nationality`, `profession`, `aliases`, `height_cm`, `weight_kg`, `build`, `hair`, `eyes`, `marks`, `addresses`, `vehicles`, `phones`, `cautions`, `flags`, `affiliation`, `country`, `in_files`.
+- 2e : réponses de l'IA (`answers`, `evoke`, `banned`) : servies au serveur de jeu pour que l'IA réponde ; à garder côté serveur.
+- 3e : données **cachées (MJ)** : seulement pour un compte relié qui a le droit « Préparer le lore des sessions » ; vide sinon (clé de communauté seule, joueur).
+- `page_suivante` : 0 à la dernière page. Textes : `""` pour un guillemet, `\n` pour un retour à la ligne, `\p` pour `|`.
+
+Variables posées en jeu (mod SSE) : voir le guide « Préparer une session : lore et synchro Athena ».
 
 ## Web Tacmap poll frequencies (implementation)
 
@@ -658,3 +736,9 @@ Lecture par clé de jeu (`requireTenant`), limitée au tenant de la clé. Le con
 - Écriture par la gestion de la communauté ; texte brut, sans HTML. Plafonds côté site et côté jeu : 40 notes, titre de 60 et texte de 600 caractères, 40 lignes de kit.
 - Côté jeu : commande `GetCommunityBrief` de COMSPEC Link, appelée par `fn_tenantAction` « briefLoad » avec `extAwait`, 5 min au plus entre deux lectures. Réponse : `OK|` puis une ligne par entrée, `N\tgenre\ttitre\ttexte` ou `K\tclasses,séparées\tnombre\tlibellé`.
 - Priorité du kit : mission (`COMSPEC_ATAK_RequiredKit`), puis Athena, puis le réglage `comspec_atak_native_kit_required`.
+
+## Poste TOC web : salle du camp et plans (`POST /api/atak/briefing-plan`, canal `toc_room` ; commandes web genre `toc`)
+
+- Jeu vers site : le mod (`fn_tocWeb`) envoie l'instantané de la salle TOC d'un camp par la commande COMSPEC Link existante `BriefingPlan.Push`, avec `"channel": "toc_room"`, `side`, `mapId`, `mission_key`, `world`, `rev`, `wc` (ids des commandes web appliquées) et `room` (chronos, main courante, EXCHECK, demandes, FLASH, postes, pertes, satellites, écrans, heure locale). Sans UID de joueur. Une révision plus ancienne de la même mission est ignorée.
+- Site vers jeu : file `atak_web_commands`, genre `toc`, cible `*`, argument `s` = camp ; commandes `timeradd`, `timerstart`, `timerstop`, `timerreset`, `timerdel`, `log`, `flash`, `flashclear`, `exadd`, `exdone`, `exundo`, `exdel`, `reqset`, `kill`, `plnclr`, `plnadd`. Fil ASCII de 480 caractères au plus.
+- Détail, règle d'autorité et correspondance des types de plan : `docs/TOC-WEB.md`.

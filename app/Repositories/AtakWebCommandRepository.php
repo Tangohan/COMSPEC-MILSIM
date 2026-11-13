@@ -22,7 +22,8 @@ class AtakWebCommandRepository
 {
     use LazyDatabaseConnection;
 
-    public const KINDS = ['uav', 'explo', 'notif'];
+    /** toc : salle TOC et plans du poste TOC web (fn_webCmdToc du mod, docs/TOC-WEB.md). */
+    public const KINDS = ['uav', 'explo', 'notif', 'toc'];
 
     /** Statuts : pending (en file) → accepted (pris par le téléphone) → done | failed ; expired | cancelled. */
     public const FINAL_STATUSES = ['done', 'failed', 'expired', 'cancelled'];

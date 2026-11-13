@@ -5,6 +5,14 @@
 */
 params [["_u", objNull, [objNull]], ["_text", "", [""]], ["_type", "INFO", [""]], ["_st", "", [""]]];
 if (!isServer || {isNull _u} || {_text isEqualTo ""}) exitWith { false };
+// Conversation écrite en cours (IA RP, fenêtre « Parler à », 90 s) : la réponse écrite parle pour elle. Les phrases
+// d'entrée d'état (« Oui ? », « Tenez, monsieur. »…) répondraient à côté et doubleraient sa bulle ; seuls restent ce qu'on
+// voit (fuite, cri, appel) et la reddition, si elle n'a pas déjà répondu à l'instant.
+if (!isNil "comspec_sse_fnc_iarpServer" && {(time - (_u getVariable ["comspec_sse_iarpTalkAt", -1e9])) < 90}) then {
+    if (_st in ["interpelle", "coopere", "ment", "nerveux", "refuse", "calme"]) exitWith { _text = ""; };
+    if (_st isEqualTo "rendu" && {(time - (_u getVariable ["comspec_sse_iarpSaidAt", -1e9])) < 5}) exitWith { _text = ""; };
+};
+if (_text isEqualTo "") exitWith { false };
 private _hint = "";
 if ((missionNamespace getVariable ["comspec_sse_id_difficulty", 1]) isEqualTo 0) then {
     _hint = (createHashMapFromArray [

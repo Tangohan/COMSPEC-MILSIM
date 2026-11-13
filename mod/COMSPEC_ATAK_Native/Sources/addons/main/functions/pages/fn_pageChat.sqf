@@ -14,9 +14,12 @@
     suppression de canal. Les apps qui ouvrent une conversation posent chatPeer et chatView = "CONV".
     Fil seul ([true] call fn_pageChat) : message envoyé ou reçu, conversation ouverte sans liste à côté : seul le fil est
     refait ; en-tête, barre de saisie, focus et texte en cours ne bougent pas. Sinon, rendu complet de la page.
+    4.2.1 : fil seul et nouveaux messages arrivés à la fin : leurs bulles sont ajoutées au fil affiché (rien n'est
+    recréé, défilement gardé, en bas si on y était) ; rien de changé : rien n'est refait. Fil seul impossible (liste,
+    vue côte à côte, aide, autre conversation) : rendu complet, ou false sans rien faire avec _noFallback (fn_statusUpdate).
 */
 disableSerialization;
-params [["_threadOnly", false]];
+params [["_threadOnly", false], ["_noFallback", false]];
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 private _pad = (_l get "pad") * 2;
@@ -92,7 +95,7 @@ private _smsEmpty = _smsApp && {_peer isEqualTo ""};
 if (_smsEmpty) then { _view = "LIST"; };
 private _isChannel = _peer isEqualTo "ATHENA" || {(_peer select [0, 3]) isEqualTo "CH:"};
 if (_threadOnly && {_split || {_view isNotEqualTo "CONV"} || {_s getOrDefault ["chatWiki", false]} || {isNull (uiNamespace getVariable ["COMSPEC_ATAK_ChatThread", controlNull])} || {(uiNamespace getVariable ["COMSPEC_ATAK_ChatThreadPeer", ""]) isNotEqualTo _peer} || {(_s getOrDefault ["pageDrawn", ""]) isNotEqualTo _pg}}) exitWith {
-    [_pg] call comspec_atak_native_fnc_pageRender;
+    if (_noFallback) then { false } else { [_pg] call comspec_atak_native_fnc_pageRender }
 };
 _s set ["chatChannel", [_peer select [3], ""] select (_peer isEqualTo "ATHENA")];
 _s set ["chatPeer", _peer];
@@ -596,7 +599,27 @@ private _drawConv = {
     private _threadH = _bh - _threadY - ([0, _barH + _prevH] select _interactive);
     if (_wiki) then { _items = []; };
     _mk = _mkReal;
-    if (_threadOnly) then {
+    private _tw = _cw - 0.012 - 2 * _pad;
+    // Ajout au fil affiché (4.2.1) : même conversation, même fil vivant, même place et même taille de texte, et les messages
+    // déjà dessinés inchangés (état, texte, ordre ; « non lu » mis à part : ils viennent d'être lus). Un nouveau non-lu
+    // alors que le repère NON LUS est déjà posé plus haut : fil refait (le repère doit passer devant lui).
+    private _cmp = _items apply { private _k = +_x; _k set [8, false]; _k };
+    private _geo = [_cx, _cw, _threadY, _threadH, _font, _fs, _tw, _today];
+    private _ap = uiNamespace getVariable ["COMSPEC_ATAK_ChatAppend", []];
+    private _from = 0;
+    private _append = false;
+    if (_threadOnly && {!_wiki} && {!_desc} && {(count _ap) isEqualTo 9}) then {
+        _ap params ["_aPeer", "_aThread", "_aItems", "", "", "", "_aUnread", "_aMeas", "_aGeo"];
+        private _n0 = count _aItems;
+        if (_aPeer isEqualTo _peer && {!isNull _aThread} && {_aThread isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_ChatThread", controlNull])}
+            && {!isNull _aMeas} && {_aGeo isEqualTo _geo} && {_n0 > 0} && {(count _cmp) >= _n0} && {(_cmp select [0, _n0]) isEqualTo _aItems}
+            && {!(_aUnread && {((_items select [_n0]) findIf { _x select 8 }) >= 0})}) then {
+            _append = true;
+            _from = _n0;
+        };
+    };
+    if (_append && {_from isEqualTo (count _items)}) exitWith {};
+    if (_threadOnly && {!_append}) then {
         // Ancien fil : position relevée, masqué tout de suite, supprimé à l'image suivante (fn_pageClear).
         private _oldT = uiNamespace getVariable ["COMSPEC_ATAK_ChatThread", controlNull];
         _scrollMem set ["chatThread:" + _peer, ctrlScrollValues _oldT];
@@ -604,11 +627,12 @@ private _drawConv = {
         _oldT ctrlEnable false;
         [{ ctrlDelete _this; }, _oldT] call comspec_atak_native_fnc_nextFrame;
     };
-    private _thread = ["COMSPEC_RscControlsGroup", [_cx, _threadY, _cw, _threadH]] call _mk;
+    private _thread = if (_append) then { _ap select 1 } else { ["COMSPEC_RscControlsGroup", [_cx, _threadY, _cw, _threadH]] call _mk };
     uiNamespace setVariable ["COMSPEC_ATAK_ChatThread", _thread];
     uiNamespace setVariable ["COMSPEC_ATAK_ChatThreadPeer", _peer];
-    private _tw = _cw - 0.012 - 2 * _pad;
-    private _y = _pad * 0.6;
+    // Ajout : position relevée avant (en bas : y reste), dessin repris où le fil s'était arrêté.
+    if (_append) then { _scrollMem set ["chatThread:" + _peer, ctrlScrollValues _thread]; };
+    private _y = if (_append) then { _ap select 3 } else { _pad * 0.6 };
     if (_wiki) then {
         // Mini wiki du tchat
         private _t = [_thread, "COMSPEC_RscStructuredText", [_pad, _y, _tw, _threadH]] call _gmk;
@@ -658,7 +682,7 @@ private _drawConv = {
     private _avW = _avH / _ratio;
     private _sms = !_isChannel;
     private _bodyFh = _font * 0.88;
-    private _meas = [_thread, "COMSPEC_RscText", [0, 0, _tw, _bodyFh]] call _gmk;
+    private _meas = if (_append) then { _ap select 7 } else { [_thread, "COMSPEC_RscText", [0, 0, _tw, _bodyFh]] call _gmk };
     _meas ctrlSetTextColor [0, 0, 0, 0];
     _meas ctrlSetFontHeight ((_bodyFh) max COMSPEC_ATAK_FontMin);
     private _dayLabel = {
@@ -668,9 +692,9 @@ private _drawConv = {
         if ((count _p) < 3) exitWith { _dt };
         format ["%1/%2/%3", _p select 2, _p select 1, _p select 0]
     };
-    private _lastDay = "";
-    private _lastAuthor = "";
-    private _unreadShown = false;
+    private _lastDay = if (_append) then { _ap select 4 } else { "" };
+    private _lastAuthor = if (_append) then { _ap select 5 } else { "" };
+    private _unreadShown = if (_append) then { _ap select 6 } else { false };
     {
         _x params ["_mine", "_author", "_time", "_date", "_body", "_chips", "", "_status", "_unread", "_urgent", "_raw", ["_retry", ""]];
         // Séparateur de jour : pastille centrée.
@@ -705,7 +729,7 @@ private _drawConv = {
         private _who = format ["%1|%2", _mine, _author];
         private _first = _who isNotEqualTo _lastAuthor;
         _lastAuthor = _who;
-        if (_first && {!(_forEachIndex isEqualTo 0)}) then { _y = _y + _font * 0.3; };
+        if (_first && {!((_forEachIndex + _from) isEqualTo 0)}) then { _y = _y + _font * 0.3; };
         private _aCol = [_author] call _authorCol;
         private _showAv = !_mine && {!_sms};
         private _indent = [0, _avW + _pad * 0.6] select _showAv;
@@ -755,9 +779,13 @@ private _drawConv = {
                 %2", str _retry, _rr], "Renvoyer ce SMS", _thread] call _hit;
         };
         _y = _y + (_h max ([0, _avH] select (_showAv && {_first}))) + _font * 0.18;
-    } forEach _items;
+    } forEach (_items select [_from]);
+    // Fil dessiné jusqu'ici : de quoi y ajouter les prochains messages (aide et tri inverse : jamais d'ajout).
+    uiNamespace setVariable ["COMSPEC_ATAK_ChatAppend", [[_peer, _thread, _cmp, _y, _lastDay, _lastAuthor, _unreadShown, _meas, _geo], []] select (_wiki || _desc)];
     _y = _y + _pad;
     [[0, _y, _tw, pixelH], [0, 0, 0, 0], _thread] call _box;
+    // Ajout : hauteur du fil remplacée pour la molette (une seule entrée par groupe).
+    if (_append) then { uiNamespace setVariable ["COMSPEC_ATAK_WheelGroups", (uiNamespace getVariable ["COMSPEC_ATAK_WheelGroups", []]) select { (_x select 0) isNotEqualTo _thread }]; };
     [_thread, _y + pixelH] call _wheel;
     // Fil : en bas (derniers messages) sauf si on était remonté lire plus haut ; en haut pour l'aide ou le tri inverse.
     private _was = ((_scrollMem getOrDefault ["chatThread:" + _peer, []]) param [0, -1]);

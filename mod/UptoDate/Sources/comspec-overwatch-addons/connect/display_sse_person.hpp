@@ -28,10 +28,11 @@
 //   onglets du flux       SUJET · EMPR. · IRIS · VISAGE · REVUE · ENVOI
 //   page courante
 //   barre d'état          Hors liaison · Local DB · sync 14:02 | dossier | REC | éch.
-//   touches logicielles   <<  A1 EMPR.  A2 IRIS  QUERY  SIGN  >>
+//   touches logicielles   <<  A1 CTRL  A2 ENROLL  QUERY  SIGN  >>
 //
 // Pages (fn_sseTerminalPage) : 0 accueil · 1 sujet · 2 contexte · 3 empreintes
 //   4 constat · 5 visage · 6 envoi (dossier) · 7 terrain · 8 iris · 9 revue (watchlist)
+//   10 contrôle rapide (verdict, fn_seekQuick)
 //   Les numéros 0 à 7 sont appelés de l'extérieur (ATAK, @COMSPEC_SSE) : ne pas les décaler.
 //
 // IDC :
@@ -65,6 +66,12 @@
 //   9640 bandeau watchlist (fond)  9641 bandeau watchlist (texte)  9642 score / source
 //   9650-9655 onglets SUJET EMPR. IRIS VISAGE REVUE ENVOI   9656 fond des onglets
 //   9657 fond touches logicielles   9660-9663 touches logicielles A1 A2 QUERY SIGN
+//   9558 bascule « identité inconnue » (page sujet)   9670-9675 coches des tuiles d'accueil
+//   9676 bouton CONTRÔLE RAPIDE (accueil)
+//   9680-9689 page 10 CONTRÔLE : 9680/9681 bandeau verdict, 9682 panneau (étapes, comparaison,
+//             accusé), 9683/9684 progression, 9686 contrôle rapide, 9687 fiche (app Fichiers),
+//             9688 enroll, 9689 signer et envoyer
+//   9690/9691 écran éteint (batterie vide)
 //   Tout libellé doit porter un IDC : sans cela il ne peut pas être masqué et se
 //   superpose d'une page à l'autre.
 
@@ -282,7 +289,7 @@ class COMSPEC_SsePerson_Dialog {
     idd = 9991;
     movingEnable = 1;
     onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_SsePerson_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_ssePersonDialogOnLoad; ['on'] call comspec_overwatch_connect_fnc_sseTerminalGuard;";
-    onUnload = "uiNamespace setVariable ['COMSPEC_SsePerson_Display', displayNull]; ['off'] call comspec_overwatch_connect_fnc_sseTerminalGuard; ['stop'] call comspec_overwatch_connect_fnc_sseFaceViewfinder; if (uiNamespace getVariable ['COMSPEC_SsePerson_SuspendUnload', false]) then { uiNamespace setVariable ['COMSPEC_SsePerson_SuspendUnload', false]; } else { uiNamespace setVariable ['COMSPEC_SsePerson_Target', objNull]; uiNamespace setVariable ['COMSPEC_SsePerson_Samples', []]; uiNamespace setVariable ['COMSPEC_SsePerson_Signature', []]; uiNamespace setVariable ['COMSPEC_SsePerson_Query', []]; uiNamespace setVariable ['COMSPEC_SsePerson_IdentityCache', []]; ['reset'] call comspec_overwatch_connect_fnc_sseFaceViewfinder; };";
+    onUnload = "uiNamespace setVariable ['COMSPEC_SsePerson_Display', displayNull]; ['off'] call comspec_overwatch_connect_fnc_sseTerminalGuard; ['stop'] call comspec_overwatch_connect_fnc_sseFaceViewfinder; if (uiNamespace getVariable ['COMSPEC_SsePerson_SuspendUnload', false]) then { uiNamespace setVariable ['COMSPEC_SsePerson_SuspendUnload', false]; } else { uiNamespace setVariable ['COMSPEC_SsePerson_Target', objNull]; uiNamespace setVariable ['COMSPEC_SsePerson_Samples', []]; uiNamespace setVariable ['COMSPEC_SsePerson_Signature', []]; uiNamespace setVariable ['COMSPEC_SsePerson_Query', []]; uiNamespace setVariable ['COMSPEC_SsePerson_IdentityCache', []]; uiNamespace setVariable ['COMSPEC_SeekQuick', createHashMap]; uiNamespace setVariable ['COMSPEC_SeekVerdict', createHashMap]; uiNamespace setVariable ['COMSPEC_SeekSend', createHashMap]; uiNamespace setVariable ['COMSPEC_SeekUnknown', false]; uiNamespace setVariable ['COMSPEC_SeekDob', '']; ['reset'] call comspec_overwatch_connect_fnc_sseFaceViewfinder; };";
 
     class Controls {
         // ================= APPAREIL =================
@@ -386,6 +393,17 @@ class COMSPEC_SsePerson_Dialog {
         class TileArt3: TileArt0 { idc = 9548; text = "\z\comspec_overwatch\addons\connect\img\device\seek_tile_terrain_ca.paa"; y = TILE_Y(1); };
         class TileArt4: TileArt0 { idc = 9549; text = "\z\comspec_overwatch\addons\connect\img\device\seek_tile_photo_ca.paa"; x = TILE_X(1); y = TILE_Y(1); };
         class TileArt5: TileArt0 { idc = 9550; text = "\z\comspec_overwatch\addons\connect\img\device\seek_tile_dossier_ca.paa"; x = TILE_X(2); y = TILE_Y(1); };
+        // Coche d'étape faite (posée par fn_ssePersonRefreshPanels), sous le bouton transparent.
+        class TileDone0: COMSPEC_SeekText {
+            idc = 9670;
+            text = "";
+            x = (TILE_X(0) + TILE_W * 0.74); y = (TILE_Y(0) + SEEK_U(0.003)); w = (TILE_W * 0.23); h = SEEK_U(0.0135);
+        };
+        class TileDone1: TileDone0 { idc = 9671; x = (TILE_X(1) + TILE_W * 0.74); };
+        class TileDone2: TileDone0 { idc = 9672; x = (TILE_X(2) + TILE_W * 0.74); };
+        class TileDone3: TileDone0 { idc = 9673; y = (TILE_Y(1) + SEEK_U(0.003)); };
+        class TileDone4: TileDone0 { idc = 9674; x = (TILE_X(1) + TILE_W * 0.74); y = (TILE_Y(1) + SEEK_U(0.003)); };
+        class TileDone5: TileDone0 { idc = 9675; x = (TILE_X(2) + TILE_W * 0.74); y = (TILE_Y(1) + SEEK_U(0.003)); };
         class Tile0: RscButton {
             idc = 9530;
             text = "";
@@ -413,7 +431,15 @@ class COMSPEC_SsePerson_Dialog {
         class Hint: COMSPEC_SeekText {
             idc = 9500;
             text = "<t size='0.5' align='center' color='#33414c'>Prêt.</t>";
-            x = IN_X; y = (STAT_Y - SEEK_U(0.019)); w = IN_W; h = SEEK_U(0.018);
+            x = IN_X; y = (STAT_Y - SEEK_U(0.019)); w = (IN_W * 0.56); h = SEEK_U(0.018);
+        };
+        // Action principale de l'appareil : vérifier la personne en face.
+        class BtnQuickHome: COMSPEC_SeekBtnPrimary {
+            idc = 9676;
+            text = "CONTRÔLE RAPIDE (A1)";
+            x = (IN_X + IN_W * 0.56 + SP); y = (STAT_Y - SEEK_U(0.0195)); w = (IN_W * 0.44 - SP); h = SEEK_U(0.018);
+            tooltip = "Empreintes, iris et visage, puis interrogation et verdict";
+            action = "['start'] call comspec_overwatch_connect_fnc_seekQuick;";
         };
 
         // ================= PAGE 1 — SUJET (Demographics) =================
@@ -439,8 +465,17 @@ class COMSPEC_SsePerson_Dialog {
         class TextWeapons: COMSPEC_SeekText {
             idc = 9511;
             text = "<t size='0.56' color='#33414c'>Aucun inventaire détecté.</t>";
-            x = IN_X; y = (ROW(3) + SEEK_U(0.002)); w = IN_W; h = (BODY_B - ROW(3) - SEEK_U(0.002));
+            x = IN_X; y = (ROW(3) + SEEK_U(0.002)); w = (IN_W * 0.70); h = (BODY_B - ROW(3) - SEEK_U(0.002));
             colorBackground[] = {0.97, 0.97, 0.96, 1};
+        };
+
+        // Sans nom : la fiche part comme « identité inconnue » (minimum d'envoi).
+        class BtnUnknown: COMSPEC_SeekBtn {
+            idc = 9558;
+            text = "INCONNU : NON";
+            x = (IN_X + IN_W * 0.70 + SP); y = (ROW(3) + SEEK_U(0.002)); w = (IN_W * 0.30 - SP); h = BTN_H;
+            tooltip = "Identité inconnue : signer et envoyer sans nom";
+            action = "['unknown'] call comspec_overwatch_connect_fnc_seekEnroll;";
         };
 
         // ================= PAGE 2 — CONTEXTE (Encounter) =================
@@ -615,8 +650,8 @@ class COMSPEC_SsePerson_Dialog {
             text = "QUERY";
             x = RV_X2; y = (BODY_Y + BEWL_H + SEEK_U(0.0175)); w = RV_W2; h = SEEK_U(0.030);
             sizeEx = SEEK_FONT;
-            tooltip = "Interroger la watchlist (locale hors liaison)";
-            action = "[] call comspec_overwatch_connect_fnc_sseIdentityQuery;";
+            tooltip = "Interroger biométrie et fichiers (base locale hors liaison)";
+            action = "['query'] call comspec_overwatch_connect_fnc_seekQuick;";
         };
         class BtnDna: COMSPEC_SeekBtn {
             idc = 9524;
@@ -624,6 +659,64 @@ class COMSPEC_SsePerson_Dialog {
             x = RV_X2; y = (BODY_Y + BEWL_H + SEEK_U(0.052)); w = RV_W2; h = BTN_H;
             tooltip = "Prélèvement ADN (écouvillon du coffret)";
             action = "['adn'] call comspec_overwatch_connect_fnc_sseBiometricSample;";
+        };
+
+        // ================= PAGE 10 — CONTRÔLE RAPIDE (verdict) =================
+        // Bandeau verdict (CONCORDANT vert, DISCORDANT orange, INCONNU bleu ardoise, SIGNALÉ rouge),
+        // progression des trois captures, panneau détaillé à gauche, actions à droite.
+        class QcBanner: RscText {
+            idc = 9680;
+            x = IN_X; y = BODY_Y; w = IN_W; h = BEWL_H;
+            colorBackground[] = {0.42, 0.43, 0.45, 1};
+        };
+        class QcBannerText: COMSPEC_SeekText {
+            idc = 9681;
+            text = "";
+            x = (IN_X + SP); y = (BODY_Y + SEEK_U(0.001)); w = (IN_W - 2 * SP); h = (BEWL_H - SEEK_U(0.002));
+        };
+        class QcBarBg: RscText {
+            idc = 9683;
+            x = IN_X; y = (BODY_Y + BEWL_H + SEEK_U(0.002)); w = RV_W; h = SEEK_U(0.006);
+            colorBackground[] = {0.70, 0.70, 0.68, 1};
+        };
+        class QcBar: QcBarBg {
+            idc = 9684;
+            w = 0.001;
+            colorBackground[] = {0.08, 0.30, 0.78, 1};
+        };
+        class QcPanel: COMSPEC_SeekText {
+            idc = 9682;
+            text = "";
+            x = IN_X; y = (BODY_Y + BEWL_H + SEEK_U(0.010)); w = RV_W; h = (BODY_B - (BODY_Y + BEWL_H + SEEK_U(0.010)));
+            colorBackground[] = {0.97, 0.97, 0.96, 1};
+        };
+        class QcBtnRun: COMSPEC_SeekBtnPrimary {
+            idc = 9686;
+            text = "CONTRÔLE RAPIDE";
+            x = RV_X2; y = (BODY_Y + BEWL_H + SEEK_U(0.002)); w = RV_W2; h = BTN_H;
+            tooltip = "A1 : empreintes, iris, visage puis QUERY";
+            action = "['start'] call comspec_overwatch_connect_fnc_seekQuick;";
+        };
+        class QcBtnFile: COMSPEC_SeekBtn {
+            idc = 9687;
+            text = "FICHE";
+            x = RV_X2; y = (BODY_Y + BEWL_H + BTN_H + SEEK_U(0.005)); w = RV_W2; h = BTN_H;
+            tooltip = "Ouvrir la fiche dans l'app Fichiers du téléphone";
+            action = "[{ private _t = uiNamespace getVariable ['COMSPEC_SsePerson_Target', objNull]; if (isNull _t || {isNil 'comspec_sse_fnc_openApp'}) exitWith {}; private _k = [_t] call comspec_sse_fnc_bioPersonKey; private _d = uiNamespace getVariable ['COMSPEC_SsePerson_Display', displayNull]; if (!isNull _d) then { _d closeDisplay 2; }; [{ ['FICHIERS', createHashMapFromArray [['type', 'QB'], ['bioKey', _this], ['run', true]]] call comspec_sse_fnc_openApp; }, _k] call CBA_fnc_execNextFrame; }] call CBA_fnc_execNextFrame;";
+        };
+        class QcBtnEnroll: QcBtnFile {
+            idc = 9688;
+            text = "ENROLL (A2)";
+            y = (BODY_Y + BEWL_H + 2 * BTN_H + SEEK_U(0.008));
+            tooltip = "Enregistrer la personne : sujet prérempli, contexte, biométrie";
+            action = "['start'] call comspec_overwatch_connect_fnc_seekEnroll;";
+        };
+        class QcBtnSign: COMSPEC_SeekBtnPrimary {
+            idc = 9689;
+            text = "SIGNER ET ENVOYER";
+            x = RV_X2; y = (BODY_B - BTN_H); w = RV_W2; h = BTN_H;
+            tooltip = "SIGN : signe à votre nom et envoie au fichier (file hors ligne)";
+            action = "['send'] call comspec_overwatch_connect_fnc_seekSend;";
         };
 
         // ================= PAGE 4 — CONSTAT =================
@@ -848,31 +941,31 @@ class COMSPEC_SsePerson_Dialog {
         };
         class SoftA1: BtnPrev {
             idc = 9660;
-            text = "A1 EMPR.";
+            text = "A1 CTRL";
             x = SK_X(1);
-            tooltip = "A1 : relevé d’empreintes";
-            action = "['empreintes'] call comspec_overwatch_connect_fnc_sseBiometricSample;";
+            tooltip = "A1 : contrôle rapide (empreintes, iris, visage, QUERY) · F1";
+            action = "['start'] call comspec_overwatch_connect_fnc_seekQuick;";
         };
         class SoftA2: BtnPrev {
             idc = 9661;
-            text = "A2 IRIS";
+            text = "A2 ENROLL";
             x = SK_X(2);
-            tooltip = "A2 : relevé iris";
-            action = "['iris'] call comspec_overwatch_connect_fnc_sseBiometricSample;";
+            tooltip = "A2 : enregistrer la personne (sujet prérempli) · F2";
+            action = "['start'] call comspec_overwatch_connect_fnc_seekEnroll;";
         };
         class SoftQuery: BtnPrev {
             idc = 9662;
             text = "QUERY";
             x = SK_X(3);
-            tooltip = "Interroger la watchlist (affiche la page Revue)";
-            action = "[9] call comspec_overwatch_connect_fnc_sseTerminalPage; [] call comspec_overwatch_connect_fnc_sseIdentityQuery;";
+            tooltip = "Interroger biométrie et fichiers sur les relevés pris · F3";
+            action = "['query'] call comspec_overwatch_connect_fnc_seekQuick;";
         };
         class SoftSign: BtnPrev {
             idc = 9663;
             text = "SIGN";
             x = SK_X(4);
-            tooltip = "Signer par l’ATAK";
-            action = "[] call comspec_overwatch_connect_fnc_sseSignAtak;";
+            tooltip = "Signer et envoyer au fichier · F4";
+            action = "['send'] call comspec_overwatch_connect_fnc_seekSend;";
         };
         class BtnNext: BtnPrev {
             idc = 9542;
@@ -880,6 +973,18 @@ class COMSPEC_SsePerson_Dialog {
             x = SK_X(5);
             tooltip = "Étape suivante";
             action = "[1, true] call comspec_overwatch_connect_fnc_sseTerminalPage;";
+        };
+
+        // ================= ÉCRAN ÉTEINT (batterie vide, fn_seekBattery) =================
+        class ScreenOff: RscText {
+            idc = 9690;
+            x = SCR_X; y = SCR_Y; w = SCR_W; h = SCR_H;
+            colorBackground[] = {0.02, 0.02, 0.025, 1};
+        };
+        class ScreenOffText: COMSPEC_SeekText {
+            idc = 9691;
+            text = "";
+            x = SCR_X; y = (SCR_Y + SCR_H * 0.45); w = SCR_W; h = SEEK_U(0.020);
         };
 
         // ================= TOUCHES PHYSIQUES (bloc gauche sous l'écran) =================
@@ -895,29 +1000,29 @@ class COMSPEC_SsePerson_Dialog {
             colorFocused[] = {0, 0, 0, 0};
             colorShadow[] = {0, 0, 0, 0};
             colorBorder[] = {0, 0, 0, 0};
-            tooltip = "A1 : relevé d’empreintes";
-            action = "['empreintes'] call comspec_overwatch_connect_fnc_sseBiometricSample;";
+            tooltip = "A1 : contrôle rapide";
+            action = "['start'] call comspec_overwatch_connect_fnc_seekQuick;";
         };
         class KeyA2: KeyA1 {
             idc = 9571;
             text = "";
             KEY_BOX(0.355,0.395,0.395,0.432);
-            tooltip = "Objectif — A2 : relevé iris";
-            action = "['iris'] call comspec_overwatch_connect_fnc_sseBiometricSample;";
+            tooltip = "A2 : enregistrer la personne";
+            action = "['start'] call comspec_overwatch_connect_fnc_seekEnroll;";
         };
         class KeyQuery: KeyA1 {
             idc = 9572;
             text = "QUERY";
             KEY_BOX(0.422,0.395,0.476,0.437);
-            tooltip = "Requête d’identité (watchlist)";
-            action = "[9] call comspec_overwatch_connect_fnc_sseTerminalPage; [] call comspec_overwatch_connect_fnc_sseIdentityQuery;";
+            tooltip = "Interroger biométrie et fichiers";
+            action = "['query'] call comspec_overwatch_connect_fnc_seekQuick;";
         };
         class KeySign: KeyA1 {
             idc = 9573;
             text = "SIGN";
             KEY_BOX(0.420,0.446,0.476,0.477);
-            tooltip = "Signer par l’ATAK";
-            action = "[] call comspec_overwatch_connect_fnc_sseSignAtak;";
+            tooltip = "Signer et envoyer au fichier";
+            action = "['send'] call comspec_overwatch_connect_fnc_seekSend;";
         };
     };
 };

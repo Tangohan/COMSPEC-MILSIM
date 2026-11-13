@@ -89,6 +89,17 @@ switch (_act) do {
                 ["broken"] call comspec_atak_native_fnc_powerFx;
                 call _redraw;
             };
+            // Bris d'écran, pannes de dalle et bugs au choix (fn_screenDamage) : [genre, gravité 1-3] ; « clear » : tout retirer.
+            case "sfault": {
+                _a params [["_fid", ""], ["_fsev", 2]];
+                if (_fid isEqualTo "clear") then {
+                    ["repair", ["all"]] call comspec_atak_native_fnc_screenDamage;
+                    ["stop"] call comspec_atak_native_fnc_screenGlitch;
+                } else {
+                    ["add", [_fid, _fsev]] call comspec_atak_native_fnc_screenDamage;
+                };
+                call _redraw;
+            };
             case "destroy": { [1, "Défaillance totale", 0, createHashMapFromArray [["destroy", true]]] call comspec_atak_native_fnc_deviceDamage; };
             case "repair": {
                 uiNamespace setVariable ["COMSPEC_ATAK_ZeusGlitch", 0];
@@ -101,7 +112,8 @@ switch (_act) do {
             case "clean": {
                 // Nettoyage forcé, même si le joueur a coupé la saleté de son côté (fn_screenDirt ne l'aurait pas fait).
                 private _n = missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap];
-                { _n set [_x, 0]; } forEach ["dust", "drops", "prints", "frameBlood", "blood"];
+                { _n set [_x, 0]; } forEach ["dust", "drops", "prints", "frameBlood", "blood", "mud"];
+                ["repair", ["film"]] call comspec_atak_native_fnc_screenDamage;
                 _n set ["stains", []];
                 missionNamespace setVariable ["COMSPEC_ATAK_Device", _n];
                 missionNamespace setVariable ["COMSPEC_ATAK_HandsBlood", 0];
@@ -120,11 +132,16 @@ switch (_act) do {
     case "tick": {
         // Écran Zeus ouvert : bouton et infobulles du Centre Zeus (fn_zeusCentre) ; rien d'autre ici, écran Zeus ou non.
         if (!isNull (findDisplay 312)) then { ["hook"] call comspec_atak_native_fnc_zeusCentre; };
-        // Alarme de punition : bip strident toutes les 2 s, entendu autour du joueur (jusqu'à 60 m).
-        if ((uiNamespace getVariable ["COMSPEC_ATAK_ZeusNoise", 0]) > diag_tickTime && {alive player}) then {
-            if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_ZeusNoiseAt", -10]) >= 1.9) then {
+        // Alarme de punition (4.2.2) : la sirène d'alarme du jeu (A3\Sounds_F\sfx\alarmCar.wss, 2,0 s, celle que le jeu
+        // boucle pour l'alarme des véhicules), relancée toutes les 2,0 s sans chevauchement, entendue autour du joueur
+        // (jusqu'à 60 m). Avant : alarm_independent (6,6 s) relancée toutes les 1,9 s, trois copies superposées, bip strident.
+        // Elle se tait si le joueur meurt, s'il n'a plus de téléphone, s'il est éteint (batterie vide, désactivé, surchauffe)
+        // ou détruit ; le compte à rebours continue sans elle.
+        if ((uiNamespace getVariable ["COMSPEC_ATAK_ZeusNoise", 0]) > diag_tickTime) then {
+            private _can = alive player && {[player, true] call comspec_atak_native_fnc_hasDevice} && {([] call comspec_atak_native_fnc_canUse) isEqualTo ""};
+            if (_can && {diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_ZeusNoiseAt", -10]) >= 2.0}) then {
                 uiNamespace setVariable ["COMSPEC_ATAK_ZeusNoiseAt", diag_tickTime];
-                playSound3D ["A3\Sounds_F\sfx\alarm_independent.wss", player, false, getPosASL player, 1.5, 1.5, 60];
+                playSound3D ["A3\Sounds_F\sfx\alarmCar.wss", player, false, getPosASL player, 1.6, 1, 60];
                 [] call comspec_atak_native_fnc_vibrate;
             };
         };

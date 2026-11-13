@@ -143,18 +143,31 @@ if (_ck isNotEqualTo _key) then {
     _th set ["mapWarn", [[0.95, 0.67, 0.20, 1], [0.75, 0.78, 0.30, 1]] select _nvg];
     _th set ["mapAlert", [[0.90, 0.28, 0.23, 1], [0.88, 0.30, 0.22, 1]] select _nvg];
     _th set ["mapInfo", [[0.44, 0.71, 0.91, 1], [0.40, 0.70, 0.62, 1]] select _nvg];
+    // Fiche de contact et affiliations sur la carte (fn_contactStyle, fn_contactCard) : fond de fiche et filet, puis une encre
+    // par affiliation, toutes lisibles (4,5) sur le fond de fiche dans les trois thèmes (AtakThemeContrastTest). Même jeu
+    // pour le thème jour : la fiche est un calque sombre posé sur la carte, pas une surface de page.
+    _th set ["mapCard", [[0.035, 0.042, 0.038, 0.97], [0, 0.020, 0.008, 0.97]] select _nvg];
+    _th set ["mapCardEdge", [[0.30, 0.36, 0.32, 0.9], [0.20, 0.45, 0.25, 0.9]] select _nvg];
+    _th set ["mapFriend", [[0.30, 0.62, 0.98, 1], [0.35, 0.62, 0.85, 1]] select _nvg];
+    _th set ["mapHostile", [[0.90, 0.28, 0.23, 1], [0.88, 0.30, 0.22, 1]] select _nvg];
+    _th set ["mapNeutral", [[0.36, 0.78, 0.42, 1], [0.36, 0.78, 0.42, 1]] select _nvg];
+    _th set ["mapUnknown", [[0.95, 0.79, 0.30, 1], [0.80, 0.72, 0.30, 1]] select _nvg];
+    _th set ["mapCivil", [[0.85, 0.42, 0.76, 1], [0.70, 0.40, 0.62, 1]] select _nvg];
     {
         _th set ["hexMap" + _x, [_th get ("map" + _x)] call _hex];
-    } forEach ["Text", "Dim", "Ok", "Warn", "Alert", "Info"];
+    } forEach ["Text", "Dim", "Ok", "Warn", "Alert", "Info", "Friend", "Hostile", "Neutral", "Unknown", "Civil"];
     {
         _th set ["hex" + (toUpper (_x select [0, 1])) + (_x select [1]), [_th get _x] call _hex];
     } forEach ["text", "textDim", "textMuted", "onAccent", "ok", "warn", "alert", "info", "off", "friend", "hostile", "neutral", "unknown", "civil"];
     _th set ["hexAccent", [_accInk] call _hex];
     uiNamespace setVariable ["COMSPEC_ATAK_ThemeCache", [_key, _th]];
-    // Jetons lisibles de partout (pages, codes compilés plus tard, boucles rangées en uiNamespace) : COMSPEC_ATAK_Th,
-    // refait à chaque changement de thème ou d'accent ; posé au preInit.
-    missionNamespace setVariable ["COMSPEC_ATAK_Th", _th];
 };
+// Jetons lisibles de partout (pages, codes compilés plus tard, boucles rangées en uiNamespace) : COMSPEC_ATAK_Th, posé au
+// preInit puis à chaque appel. Hors du calcul : le cache vit dans uiNamespace (gardé d'une mission à l'autre), alors que
+// missionNamespace repart à zéro. Posé seulement au calcul (3.1.0 à 4.1.1), il restait indéfini dès la deuxième mission de
+// la session (menu principal puis partie) : tous les textes bâtis sur COMSPEC_ATAK_Th get … devenaient vides, sans erreur
+// (lignes des Comptes rendus sans titre, deuxième ligne du bandeau de la carte, « Wrong color format any » au journal).
+missionNamespace setVariable ["COMSPEC_ATAK_Th", _th];
 switch (_act) do {
     case "state": {
         switch (toLower _arg) do {

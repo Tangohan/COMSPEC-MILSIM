@@ -49,11 +49,11 @@ private _aimAt = {
 private _defOf = { params ["_kit"]; _defs param [_defs findIf { (_x select 1) isEqualTo _kit }, []] };
 private _set = { params ["_id", "_key", "_def"]; missionNamespace getVariable [format ["comspec_atak_native_antkit_%1_%2", _id, _key], _def] };
 private _log = { params ["_txt"]; ["INFO", "ANTENNE", _txt] call comspec_atak_native_fnc_log; };
-// À l'écran de jeu : une notification du téléphone ne se voit que téléphone ouvert. Gardée aussi au centre de notifications.
+// À l'écran de jeu : bulle d'ACE (interface du mod ACE) quand il est là ; sans ACE, rien par-dessus l'écran (jamais le hint
+// d'Arma). Dans tous les cas la notification du téléphone (bandeau si le téléphone est affiché, gardée au centre de notifications).
 private _say = {
     params ["_type", "_msg"];
-    private _shown = _msg call comspec_atak_native_fnc_tr;
-    if (isNil "ace_common_fnc_displayTextStructured") then { hintSilent _shown; } else { [_shown, 1.5, player, 14] call ace_common_fnc_displayTextStructured; };
+    if (!isNil "ace_common_fnc_displayTextStructured") then { [_msg call comspec_atak_native_fnc_tr, 1.5, player, 14] call ace_common_fnc_displayTextStructured; };
     [_type, _msg, 5, 30] call comspec_atak_native_fnc_notify;
 };
 private _answer = { params ["_unit", "_what", "_kit", "_msg"]; ["comspec_atak_native_antKitResult", [_what, _kit, _msg], _unit] call CBA_fnc_targetEvent; };

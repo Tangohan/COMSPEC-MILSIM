@@ -143,11 +143,17 @@ $compColors = ['#f4f4f0', '#34d399', '#60a5fa', '#fbbf24', '#a78bfa', '#38bdf8']
                 </ul>
             </div>
             <?php endif; ?>
+            <?php $kpi = is_array($effKpi ?? null) ? $effKpi : []; ?>
             <nav class="bo-eff-hero__sum" aria-label="Synthèse des effectifs">
                 <a class="bo-eff-sv<?= $statusFilterNow === '' && empty($rosterFilters['sans_affectation']) && empty($rosterFilters['sans_role']) ? ' is-on' : '' ?>" href="<?= $h(effectifs_workspace_url()) ?>">
-                    <span class="bo-eff-sv__t">Tous les membres</span>
+                    <span class="bo-eff-sv__t">Effectifs</span>
                     <span class="bo-eff-sv__v"><?= $total ?></span>
-                    <span class="bo-eff-sv__h"><?= $activeCount ?> actif<?= $activeCount > 1 ? 's' : '' ?></span>
+                    <span class="bo-eff-sv__h"><?= $activeCount ?> actif<?= $activeCount > 1 ? 's' : '' ?> · <?= $inactiveCount ?> inactif<?= $inactiveCount > 1 ? 's' : '' ?></span>
+                </a>
+                <a class="bo-eff-sv" href="<?= $h(effectifs_workspace_url('sans-comptes')) ?>">
+                    <span class="bo-eff-sv__t">Sans compte<i style="background:#0284c7"></i></span>
+                    <span class="bo-eff-sv__v"><?= (int) ($kpi['no_account'] ?? 0) ?></span>
+                    <span class="bo-eff-sv__h">fiches à inviter ou rattacher</span>
                 </a>
                 <a class="bo-eff-sv" href="<?= $h(effectifs_workspace_url('a-traiter')) ?>">
                     <span class="bo-eff-sv__t">À traiter<i style="background:#d97706"></i></span>
@@ -159,15 +165,15 @@ $compColors = ['#f4f4f0', '#34d399', '#60a5fa', '#fbbf24', '#a78bfa', '#38bdf8']
                     <span class="bo-eff-sv__v"><?= (int) ($integrationOpenCount ?? 0) ?></span>
                     <span class="bo-eff-sv__h">parcours d’intégration ouverts</span>
                 </a>
-                <a class="bo-eff-sv" href="<?= $h(effectifs_workspace_url('a-traiter?onglet=surveiller')) ?>">
-                    <span class="bo-eff-sv__t">Absences<i style="background:#d97706"></i></span>
-                    <span class="bo-eff-sv__v"><?= (int) ($hero['absent_today'] ?? 0) ?></span>
-                    <span class="bo-eff-sv__h">absents aujourd’hui</span>
+                <a class="bo-eff-sv" href="<?= $h(effectifs_workspace_url('departs')) ?>">
+                    <span class="bo-eff-sv__t">Arrivées / départs<i style="background:#34d399"></i></span>
+                    <span class="bo-eff-sv__v"><?= (int) ($kpi['arrivals'] ?? 0) ?> / <?= (int) ($kpi['departures'] ?? 0) ?></span>
+                    <span class="bo-eff-sv__h">sur les 30 derniers jours</span>
                 </a>
-                <a class="bo-eff-sv<?= $statusFilterNow === 'inactive' ? ' is-on' : '' ?>" href="<?= $h(effectifs_workspace_url() . '?status=inactive&groupe=liste') ?>">
-                    <span class="bo-eff-sv__t">Inactifs<i style="background:#94a3b8"></i></span>
-                    <span class="bo-eff-sv__v"><?= $inactiveCount ?></span>
-                    <span class="bo-eff-sv__h">comptes inactifs</span>
+                <a class="bo-eff-sv" href="<?= $h(effectifs_workspace_url('qualifications')) ?>">
+                    <span class="bo-eff-sv__t">Qualifications<i style="background:#a78bfa"></i></span>
+                    <span class="bo-eff-sv__v"><?= (int) ($qualificationsExpiringCount ?? 0) ?></span>
+                    <span class="bo-eff-sv__h">expirées ou bientôt échues</span>
                 </a>
             </nav>
         <?php endif; ?>

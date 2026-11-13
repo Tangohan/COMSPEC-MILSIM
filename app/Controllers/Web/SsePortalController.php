@@ -2511,7 +2511,7 @@ final class SsePortalController
         $nav = (string) ($params['_nav'] ?? 'identites');
 
         return $this->portalView('atak.sse.persons', [
-            'title' => 'Identités — objets SSE',
+            'title' => 'Personnes',
             'persons' => $list,
             'screensRedacted' => $this->clearance->workingRedactionEnabled($tenantId),
             'myClearance' => $this->clearance->maxLevel(),
@@ -3821,6 +3821,17 @@ final class SsePortalController
             'message' => $saved === 1
                 ? 'Disposition enregistrée (1 entité).'
                 : sprintf('Disposition enregistrée (%d entités).', $saved),
+        ]);
+    }
+
+    /** Accueil du bureau : chaque espace en une phrase, avec ses pages (selon les droits de la session). */
+    public function home(Request $request, array $params = []): Response
+    {
+        return $this->portalView('atak.sse.home', [
+            'title' => 'Bureau SSE',
+            'canManage' => $this->canManage(),
+            'canGrant' => $this->canGrant(),
+            'activeNav' => 'accueil',
         ]);
     }
 

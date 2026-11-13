@@ -8,6 +8,7 @@
       Accessoires ▸ batterie externe, filtre d'écran JVN
       Passerelle du véhicule ▸ relais, poste de commandement, couper (équipage) ; aussi sur les véhicules (dehors)
       Relais ATAK (sur l'objet relais) ▸ état, couper, allumer, changer la batterie
+      Synchroniser avec le web (mon téléphone) / Synchroniser le téléphone saisi (IA), fn_phoneSync
       Effacement d'urgence
       Débrancher le câble DL-7 (pendant une extraction)
       Radio de données (liaison réaliste, fn_mpuLink) ▸ relier à la MPU5 (câble / Wi-Fi), batterie
@@ -210,7 +211,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
         _x params ["_id", "_name", "_code", "_cond"];
         [_cls, 0, _path, [_id, _name, "", _code, _cond] call comspec_atak_native_fnc_aceAction, true] call ace_interact_menu_fnc_addActionToClass;
     } forEach [
-        ["COMSPEC_ATAK_RelayInfo", "État du relais", { ["info", _target] call comspec_atak_native_fnc_relayNet; }, { true }],
+        ["COMSPEC_ATAK_RelayInfo", "Voir l'état du relais", { ["info", _target] call comspec_atak_native_fnc_relayNet; }, { true }],
         ["COMSPEC_ATAK_RelayOff", "Couper le relais", { ["power", [_target, "off"]] call comspec_atak_native_fnc_relayNet; }, { _target getVariable ["COMSPEC_AtakRelayOn", true] }],
         ["COMSPEC_ATAK_RelayOn", "Allumer le relais", { ["power", [_target, "on"]] call comspec_atak_native_fnc_relayNet; }, { !(_target getVariable ["COMSPEC_AtakRelayOn", true]) }],
         ["COMSPEC_ATAK_RelayBatt", "Changer la batterie", {
@@ -218,6 +219,15 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
         }, { private _b = _target getVariable ["COMSPEC_AtakRelayBatt", -1]; _b isEqualType 0 && {_b >= 0} && {_b < 95} }]
     ];
 } forEach ["Static", "Thing", "LandVehicle", "Ship", "Air"];
+
+// Synchroniser avec le web (fn_phoneSync) : mon téléphone, ou le téléphone d'IA saisi ouvert. Masqué en ATAK local ;
+// licence, liaison, accord du joueur et interdiction de la mission sont revérifiés au clic (refus expliqué dans le téléphone).
+[_root, "COMSPEC_ATAK_SyncWeb", "Synchroniser avec le web", "\z\comspec_atak_native\addons\main\data\logo_atak.paa",
+    { ["own"] call comspec_atak_native_fnc_phoneSync; },
+    { ([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "off" && {[_player, true] call comspec_atak_native_fnc_hasDevice} }] call _add;
+[_root, "COMSPEC_ATAK_SyncSeized", "Synchroniser le téléphone saisi", "\z\comspec_atak_native\addons\main\data\logo_atak.paa",
+    { ["seized"] call comspec_atak_native_fnc_phoneSync; },
+    { ([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "off" && {["seizedOk"] call comspec_atak_native_fnc_phoneSync} }] call _add;
 
 [_root, "COMSPEC_ATAK_Wipe", "<t color='#e5483a'>Effacement d'urgence</t>", "", { ["wipe"] call comspec_atak_native_fnc_phoneSecurity; },
     { !(["wiped"] call comspec_atak_native_fnc_phoneSecurity) }] call _add;
@@ -228,6 +238,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
 
 // Radio de données (liaison réaliste, fn_mpuLink) : relier le téléphone à la MPU5, batterie.
 ["aceInit"] call comspec_atak_native_fnc_mpuLink;
+// Clés du maillage (fn_meshKeys) : charger les clés, effacement d'urgence, rechargement à distance, sous « Radio de données ».
+["aceInit"] call comspec_atak_native_fnc_meshKeys;
 // Caméras IP fixes : « Caméras > Poser une caméra » et actions sur la caméra posée (fn_camAction).
 ["aceInit"] call comspec_atak_native_fnc_camAction;
 // Antennes transportables : « Équipement > Déployer » et « Replier l'antenne » sur l'objet posé (fn_antennaKit).

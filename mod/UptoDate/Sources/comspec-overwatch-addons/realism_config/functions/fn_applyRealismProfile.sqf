@@ -24,17 +24,20 @@ params [
     ["_profileKey", "", [""]]
 ];
 
+// Retour à l'opérateur : notification du téléphone ATAK natif si présent, sinon RPT (jamais le hint d'Arma).
+private _say = { params ["_t"]; if (!isNil "comspec_atak_native_fnc_notify") then { ["INFO", _t, 6, 20, "ATHENA"] call comspec_atak_native_fnc_notify; } else { diag_log text format ["[ATHENA] %1", _t]; }; };
+
 // Vérifier argument
 if (_profileKey isEqualTo "") exitWith {
     diag_log "[ATHENA] applyRealismProfile: clé profil vide";
-    hint "❌ Erreur : profil vide";
+    ["❌ Erreur : profil vide"] call _say;
     false
 };
 
 // Vérifier exécution serveur
 if (!isServer) exitWith {
     diag_log "[ATHENA] applyRealismProfile: fonction serveur uniquement";
-    hint "❌ Cette commande doit être exécutée côté serveur";
+    ["❌ Cette commande doit être exécutée côté serveur"] call _say;
     false
 };
 
@@ -67,11 +70,11 @@ if (_code isEqualTo 0) then {
         default {"Profil custom"};
     };
     
-    hint format ["✅ Profil appliqué : %1", _profileLabel];
+    [format ["✅ Profil appliqué : %1", _profileLabel]] call _say;
     
     true
 } else {
     diag_log format ["[ATHENA] applyRealismProfile: ERREUR (code %1): %2", _code, _result];
-    hint format ["❌ Erreur application profil : %1", _result];
+    [format ["❌ Erreur application profil : %1", _result]] call _say;
     false
 };

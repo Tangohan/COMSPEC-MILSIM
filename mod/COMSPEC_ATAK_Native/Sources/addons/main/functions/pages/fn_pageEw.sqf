@@ -1,6 +1,7 @@
 /*
     App Guerre électronique : onglets BROUILLAGE (brouilleur à ma position), GONIO (relèvements d'émissions ennemies),
-    GÉOLOC (localiser un téléphone par numéro, IMEI ou MAC) et ÉTAT (effets du brouillage subi : GPS, suivi des forces, débit).
+    TRAÇAGE (tracer un numéro, un IMEI ou une MAC : requête au serveur, fn_traceAction et fn_traceServer) et ÉTAT
+    (effets du brouillage subi : GPS, suivi des forces, débit). Clé d'onglet de TRAÇAGE : "GEO" (ancien nom GÉOLOC).
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -15,7 +16,7 @@ private _active = (count _mine) > 0 && {(_mine select 4) >= _now};
 private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
 private _km = { params ["_m"]; [format ["%1 m", round _m], format ["%1 km", (_m / 1000) toFixed 1]] select (_m >= 1000) };
 private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['ewTab', '%1']; [{ ['EW'] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;", _k], _tab isEqualTo _k] };
-private _rows = [["segment", "", [["BROUILLAGE", "JAM"] call _tabBtn, ["GONIO", "DF"] call _tabBtn, ["GÉOLOC", "GEO"] call _tabBtn, ["ÉTAT", "FX"] call _tabBtn]], ["gap"]];
+private _rows = [["segment", "", [["BROUILLAGE", "JAM"] call _tabBtn, ["GONIO", "DF"] call _tabBtn, ["TRAÇAGE", "GEO"] call _tabBtn, ["ÉTAT", "FX"] call _tabBtn]], ["gap"]];
 private _seg = {
     params ["_label", "_key", "_def", "_opts"];
     private _v = _f getOrDefault [_key, _def];
@@ -45,41 +46,8 @@ switch (_tab) do {
         if ((count _b) isEqualTo 0) then { _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Aucun relèvement.</t>"]; };
     };
     case "GEO": {
-        _rows pushBack ["section", "Géolocalisation", "Numéro, IMEI ou adresse MAC"];
-        (["geoAllowed"] call comspec_atak_native_fnc_ewAction) params ["_ok", "_why"];
-        if !(_ok) exitWith { _rows pushBack ["text", format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>", _why]]; };
-        _rows append [
-            ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Requête à l'opérateur : position par triangulation des antennes, avec une marge d'erreur. Un téléphone éteint, sans réseau ou changé ne répond plus. Batterie vide : sa carte SIM passe en mode secours et reste localisable par les relais, même pour un allié.</t>"],
-            ["edit", "geoq", "Numéro (06 12 34 56 78), IMEI (35-…) ou MAC (A4:5E:…)", _f getOrDefault ["geoq", ""]],
-            ["buttons", [["LOCALISER", { ['geoLocate'] call comspec_atak_native_fnc_ewAction; }, true]]]
-        ];
-        private _every = round ((missionNamespace getVariable ["comspec_atak_native_geoloc_refresh", 30]) max 10);
-        private _list = missionNamespace getVariable ["COMSPEC_ATAK_GeoTracks", []];
-        if ((count _list) > 0) then { _rows pushBack ["section", "Résultats", format ["Suivi actif : nouvelle position toutes les %1 s", _every]]; };
-        for "_i" from ((count _list) - 1) to 0 step -1 do {
-            private _e = _list select _i;
-            private _p = _e getOrDefault ["pos", []];
-            private _st = _e getOrDefault ["status", ""];
-            private _stTxt = switch (_st) do {
-                case "OK": { "<t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>en ligne</t>" };
-                case "OFF": { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>éteint ou hors réseau</t>" };
-                case "SOS": { format ["<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>batterie vide · secours SIM (%1)</t>", [format ["%1 relais", _e getOrDefault ["relays", 0]], "antennes"] select ((_e getOrDefault ["relays", 0]) isEqualTo 0)] };
-                case "SOSNOREL": { "<t color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>batterie vide · aucun relais ne l'entend</t>" };
-                default { "<t color='" + (COMSPEC_ATAK_Th get "hexAlert") + "'>abonné introuvable</t>" };
-            };
-            private _where = if ((count _p) < 2) then { "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>aucune position</t>" } else {
-                format ["%1 · à %2 m près · %3 · <t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>relevé à %4, il y a %5 min</t>", [_p, 8] call comspec_atak_native_fnc_gridRef, _e get "rad",
-                    [format ["%1 m", round (player distance2D _p)], format ["%1 km", ((player distance2D _p) / 1000) toFixed 1]] select ((player distance2D _p) >= 1000),
-                    _e get "hour", floor ((time - (_e get "t")) / 60)]
-            };
-            _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='" + (COMSPEC_ATAK_Th get "hexWarn") + "'>%1</t>  <t size='1.05'>%2</t>  %3%4<br/><t size='0.85'>%5</t>",
-                _e get "kind", _e get "q", _stTxt, ["", "  <t color='" + (COMSPEC_ATAK_Th get "hexOk") + "'>● SUIVI</t>"] select (_e getOrDefault ["track", false]), _where]];
-            _rows pushBack ["buttons", [
-                ["CARTE", compile format ["['geoMap', %1] call comspec_atak_native_fnc_ewAction;", _i]],
-                [["SUIVRE", "ARRÊTER LE SUIVI"] select (_e getOrDefault ["track", false]), compile format ["['geoTrack', %1] call comspec_atak_native_fnc_ewAction;", _i]],
-                ["EFFACER", compile format ["['geoDel', %1] call comspec_atak_native_fnc_ewAction;", _i]]
-            ]];
-        };
+        // Traçage de numéro : formulaire, numéros tracés et journal (fn_traceAction) ; la position vient du serveur.
+        _rows append (["rows"] call comspec_atak_native_fnc_traceAction);
         ([player] call comspec_atak_native_fnc_phoneIdent) params ["_num", "_imei", "_mac"];
         _rows append [
             ["section", "Mon téléphone", "À donner (ou à cacher) en roleplay"],
@@ -131,6 +99,8 @@ switch (_tab) do {
         };
     };
 };
+// GONIO : interceptions du trafic du maillage (fn_meshKeys, réglage « Interception du trafic en clair ») sous les relèvements.
+if (_tab isEqualTo "DF") then { _rows append (["interceptRows"] call comspec_atak_native_fnc_meshKeys); };
 // GONIO : spectre et boussole en tête, le formulaire dessous.
 if (_tab isEqualTo "DF" && {_allowed}) then {
     private _vh = _bh * 0.42;

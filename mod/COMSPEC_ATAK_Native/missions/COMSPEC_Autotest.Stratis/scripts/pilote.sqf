@@ -138,11 +138,14 @@ if !("pilote" call AT_fnc_groupe) exitWith {};
     [(damage _h) isEqualTo 0 && {((getAllHitPointsDamage _h) param [2, []]) findIf { _x > 0 } < 0}, "appareil endommagé à l'apparition"] call AT_fnc_check;
     [(fuel _h) isEqualTo 1, "appareil pas plein"] call AT_fnc_check;
     AT_Heli = _h;
+    call AT_fnc_nettoie;
+    uiSleep 1;
     player moveInDriver _h;
     [[{ (objectParent player) isEqualTo AT_Heli }, 8] call AT_fnc_wait, "pas monté à bord"] call AT_fnc_check;
     uiSleep 2.5;
     [missionNamespace getVariable ["COMSPEC_ATAK_PilotIn", false], "entrée dans l'aéronef non vue"] call AT_fnc_check;
-    [!isNull (uiNamespace getVariable ["COMSPEC_ATAK_PilotHud", controlNull]), "HUD absent à bord"] call AT_fnc_check;
+    // Le HUD est retiré tant que le téléphone est en main : attendre qu'il apparaisse au lieu de tester tout de suite.
+    [[{ !isNull (uiNamespace getVariable ["COMSPEC_ATAK_PilotHud", controlNull]) }, 6] call AT_fnc_wait, "HUD absent à bord"] call AT_fnc_check;
     ["pilote_hud"] call AT_fnc_shot;
     moveOut player;
     uiSleep 2.5;

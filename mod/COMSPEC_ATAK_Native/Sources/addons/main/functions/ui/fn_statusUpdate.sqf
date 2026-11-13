@@ -80,10 +80,17 @@ if (!isNull _ramCtrl) then {
 };
 
 // Cadenas et libellé du chiffrement : état réel de ma liaison (fn_meshKeys "link"), ouvert tant qu'elle n'est pas chiffrée.
-(["link"] call comspec_atak_native_fnc_meshKeys) params ["_lockCode", "_lockShort", "_lockLong", "_lockWhy", "_lockImg", "_lockCol"];
+// États : EN CLAIR, CHIFFRÉ, RENOUVELER (clé bientôt périmée), PÉRIMÉE (époque changée ou période écoulée), COMPROMISE. Infobulle : état, raison, exemple.
+// Libellés courts au plus aussi larges que « COMPROMISE », la mesure de fn_layoutApply : le libellé garde sa place devant la RAM.
+(["link"] call comspec_atak_native_fnc_meshKeys) params ["_lockCode", "_lockShort", "_lockLong", "_lockWhy", "_lockImg", "_lockCol", "", ["_lockEx", ""]];
 private _lockCtrl = uiNamespace getVariable ["COMSPEC_ATAK_LockCtrl", controlNull];
 if (!isNull _lockCtrl) then {
     private _lockTt = (format ["%1 : %2", (_lockLong) call comspec_atak_native_fnc_tr, (_lockWhy) call comspec_atak_native_fnc_tr]);
+    if (_lockEx isNotEqualTo "") then { _lockTt = format ["%1. %2 %3", _lockTt, ("Ex." call comspec_atak_native_fnc_tr), (_lockEx) call comspec_atak_native_fnc_tr]; };
+    // Chemin de la voix (fn_voicePath "bar") : pendant une émission et 3 s après, le libellé dit par où passe la voix (VOIX ATAK,
+    // VOIX ACRE, VOIX TFAR, VOIX DIR.) et le cadenas en prend la couleur ; ensuite le cadenas revient tel quel.
+    (uiNamespace getVariable ["COMSPEC_ATAK_VoiceBar", []]) params [["_vbLab", ""], ["_vbCol", [1, 1, 1, 1]], ["_vbTip", ""], ["_vbUntil", 0]];
+    if (_vbLab isNotEqualTo "" && {diag_tickTime < _vbUntil}) then { _lockShort = _vbLab; _lockCol = _vbCol; _lockTt = _vbTip; };
     [_lockCtrl, "cs_t", _lockImg] call _put;
     [_lockCtrl, "cs_c", _lockCol] call _put;
     [_lockCtrl, "cs_tt", _lockTt] call _put;
@@ -146,7 +153,8 @@ if (_page isEqualTo "ATHENA") then {
     private _sig = if ([] call comspec_atak_native_fnc_bridge) then {
         [["comspec_overwatch_auth_state", "—"] call _str, toLower (["COMSPEC_LinkState", "offline"] call _str), missionNamespace getVariable ["COMSPEC_AthenaReady", false]]
     } else {
-        private _cells = (["GetAuthState", []] call comspec_atak_native_fnc_extensionCall) splitString (toString [9]);
+        // État partagé (fn_extensionCall, 4.2.1) : relu au plus une fois par seconde sur cette page.
+        private _cells = (["GetAuthState", [], 0.9] call comspec_atak_native_fnc_extensionCall) splitString (toString [9]);
         private _st = _cells param [1, "—"];
         [_st, ["offline", "linked"] select (_st isEqualTo "READY"), _st isEqualTo "READY"]
     };
@@ -166,7 +174,8 @@ if (_page isNotEqualTo "ATHENA" && {diag_tickTime >= (missionNamespace getVariab
         private _a = missionNamespace getVariable ["comspec_overwatch_auth_state", ""];
         if (_a isEqualType "") then { _a } else { str _a }
     } else {
-        ((["GetAuthState", []] call comspec_atak_native_fnc_extensionCall) splitString (toString [9])) param [1, ""]
+        // Hors de l'app Athena : la dernière lecture de moins de 5 s suffit (celle des sondages, toutes les 3 s).
+        ((["GetAuthState", [], 5] call comspec_atak_native_fnc_extensionCall) splitString (toString [9])) param [1, ""]
     };
     if (_auth isEqualTo "READY") exitWith { missionNamespace setVariable ["COMSPEC_ATAK_LoginSince", -1]; };
     private _since = missionNamespace getVariable ["COMSPEC_ATAK_LoginSince", -1];
@@ -184,7 +193,9 @@ if (_page isEqualTo "MAP") then {
     ["tick"] call comspec_atak_native_fnc_unitCard;
     ["mapTick"] call comspec_atak_native_fnc_squadBar;
     // Porté (HUD) ou suivi activé : la carte reste centrée sur le joueur.
-    if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]}) then {
+    // Pas pendant un zoom progressif (fn_mapZoom, comspec_zoomUntil) : l'échelle qui bouge relançait un fn_mapCenter au
+    // milieu de l'animation, avec l'ancien décalage (la carte filait vers un autre point puis revenait sur moi).
+    if ((!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]}) && {diag_tickTime >= (([] call comspec_atak_native_fnc_mapCtrl) getVariable ["comspec_zoomUntil", -1])}) then {
         // Le suivi image par image (fn_mapOnDraw) prend le relais dès le premier centrage : ici, seulement au besoin
         // (premier affichage, zoom changé) ou en secours s'il a décroché (centre visible à plus de 30 m de mon point).
         // Avant : recentrage complet tous les 30 m parcourus, même quand le suivi tenait ; chaque recentrage coupe le
@@ -196,7 +207,9 @@ if (_page isEqualTo "MAP") then {
         private _fl = uiNamespace getVariable ["COMSPEC_ATAK_FollowLast", [0, 0, 0]];
         private _fFar = ((count (_fMap getVariable ["comspec_lastAim", []])) isNotEqualTo 2)
             || {ctrlMapAnimDone _fMap && {diag_tickTime - (_fMap getVariable ["comspec_centerAt", -1]) > 2} && {(([] call comspec_atak_native_fnc_gpsPos) distance2D _fVis) > 30}};
-        if (_fFar || {(_fk select 2) isNotEqualTo (_fl select 2)}) then {
+        // Zoom changé : écart d'au moins 2 % (avant : la moindre différence de l'échelle relançait un centrage complet, qui
+        // coupait le suivi image par image et faisait sauter la carte).
+        if (_fFar || {(abs ((_fk select 2) - (_fl select 2))) > ((_fl select 2) * 0.02)}) then {
             uiNamespace setVariable ["COMSPEC_ATAK_FollowLast", _fk];
             [player] call comspec_atak_native_fnc_mapCenter;
         };
@@ -253,6 +266,10 @@ private _sigWait = _page in ["BFT", "GPS"] && {diag_tickTime - (_state getOrDefa
 private _fc = focusedCtrl _d;
 if (!isNull _fc && {(ctrlType _fc) isEqualTo 2}) then { _sigWait = true; };
 if ((_state getOrDefault ["pageSigPage", ""]) isEqualTo _page && {_pageSig isNotEqualTo (_state getOrDefault ["pageSig", []])}) then {
+    // Messages et SMS (4.2.1) : bulles ajoutées au fil affiché (fn_pageChat fil seul), sans toucher à la saisie en cours ;
+    // sinon (liste, vue côte à côte, aide) rendu complet comme avant, pas pendant la saisie.
+    private _ptc = diag_tickTime;
+    if (_page in ["CHAT", "SMS"] && {[true, true] call comspec_atak_native_fnc_pageChat}) exitWith { ["page messages (fil seul)", _ptc] call comspec_atak_native_fnc_perfAcc; };
     if (_sigWait) exitWith { _pageSig = _state getOrDefault ["pageSig", []]; };
     _state set ["sigRenderAt", diag_tickTime];
     // BFT : lignes, en-tête et fiche réécrites sur place quand c'est possible (aucun contrôle recréé, défilement gardé).

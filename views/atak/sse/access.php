@@ -29,23 +29,14 @@ $fmtLogTime = static function (array $row): string {
     return $ts ? date('d/m H:i', $ts) : $raw;
 };
 ?>
-<div class="breadcrumb">
-    Athena / SSE / Renseignement /
-    <strong>Codes d’accès</strong>
-</div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Commandement // Habilitation</div>
         <h1>Codes d’accès temporaires</h1>
         <p>
             Réservé au commandement. Communiquez chaque code par un canal sécurisé.
             Le code en clair n’est affiché qu’une seule fois à la génération.
         </p>
-    </div>
-    <div class="page-reference">
-        <strong>Vue // Gestion des codes</strong>
-        Réf. ATH-SSE-ACCES
     </div>
 </div>
 

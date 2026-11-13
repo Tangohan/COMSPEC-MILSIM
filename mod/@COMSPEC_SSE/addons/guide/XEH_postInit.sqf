@@ -22,7 +22,8 @@ if (!hasInterface) exitWith {};
     ["COMSPEC_Cat_Sse", "Ouvrir le manuel", { ["Zeus"] call comspec_sse_fnc_openGuide }, "\z\comspec_sse\addons\zeus\data\mod_doc.paa"] call comspec_sse_fnc_zenModule;
     ["COMSPEC_Cat_Sse", "Choisir un chapitre du manuel", {
         if (isNil "zen_dialog_fnc_create") exitWith { ["Zeus"] call comspec_sse_fnc_openGuide; };
-        private _ids = ["Zeus", "ModTools", "ModMission", "ModPeople", "ModDigital", "Datasets", "CaseRef", "Campaigns", "Documents", "Items", "Models", "Eden"];
+        // Tous les chapitres du MANUEL SSE, dans l'ordre de config (pages des outils d'abord).
+        private _ids = ("true" configClasses (configFile >> "CfgHints" >> "COMSPEC_SSE")) apply { configName _x };
         private _lbls = _ids apply { getText (configFile >> "CfgHints" >> "COMSPEC_SSE" >> _x >> "displayName") };
         [
             ("Manuel SSE") call comspec_sse_fnc_tr,
@@ -33,7 +34,7 @@ if (!hasInterface) exitWith {};
     ["COMSPEC_Cat_Sse", "Poser un exercice", {
         params ["_pos"];
         [ASLToAGL _pos, player] call comspec_sse_fnc_guideExercise;
-        // Retour immédiat dans Zeus ; la consigne complète arrive quand le serveur a posé la cellule.
-        if (!isNil "zen_common_fnc_showMessage") then { [("Exercice en cours de pose : 5 civils, téléphone, documents et caisse.") call comspec_sse_fnc_tr] call zen_common_fnc_showMessage; };
+        // Retour immédiat (téléphone et RPT, jamais un bandeau) ; la consigne complète arrive quand le serveur a posé la cellule.
+        ["Exercice en cours de pose : 5 civils, téléphone, documents et caisse.", "info"] call comspec_sse_fnc_zeusNotify;
     }, "\z\comspec_sse\addons\zeus\data\mod_check.paa"] call comspec_sse_fnc_zenModule;
 }, [], 45] call CBA_fnc_waitUntilAndExecute;

@@ -15,7 +15,6 @@ $levelLabel = static function (string $level): string {
 ?>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Analyse // Anomalies</div>
         <h1>Anomalies</h1>
         <p>
             Incohérences chronologiques, biométrie partagée, contradictions documentaires

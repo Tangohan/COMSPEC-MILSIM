@@ -12,6 +12,9 @@
       "back"   : retour arrière : fondu court, titre qui arrive de la gauche.
       "raise"  : après un rendu de page : écran de verrouillage, volet rapide, effets d'écran et toast remis devant.
       "front"  : effets d'écran (fn_deviceOverlay) recréés au premier plan.
+      "phoneIn" / "phoneOut" (4.2.1) : téléphone en main qui monte en fondu à la sortie, redescend en s'effaçant au
+                 rangement (0,2 s, réglage CBA comspec_atak_native_phone_anim, aussi dans Réglages > Animations et sons).
+                 Renvoie false si rien n'est animé (réglage coupé, animations coupées, pas d'écran) : l'appelant agit tout de suite.
     Tout passe par ctrlSetPosition / ctrlSetFade + ctrlCommit (animé par le moteur), sans boucle par image.
 */
 params [["_act", "anim"], ["_arg", []]];
@@ -46,6 +49,8 @@ switch (_act) do {
             _c ctrlSetText (("\a3\ui_f\data\map\markers\military\dot_ca.paa") call comspec_atak_native_fnc_tr);
             _c ctrlSetTextColor _col;
             _c ctrlEnable false;
+            // Onde éphémère : ne compte pas pour l'ordre des calques d'écran (fn_pageRender).
+            _c setVariable ["cs_ovSkip", true];
             _c ctrlSetPosition [_mx - _r0, _my - _r0 * _ratio, _r0 * 2, _r0 * 2 * _ratio];
             _c ctrlCommit 0;
             _c ctrlSetPosition [_mx - _r1, _my - _r1 * _ratio, _r1 * 2, _r1 * 2 * _ratio];
@@ -55,15 +60,9 @@ switch (_act) do {
         };
         if (["tapFx"] call comspec_atak_native_fnc_fx) then {
             if !((profileNamespace getVariable ["COMSPEC_ATAK_Silent", false]) || {["mute", false] call comspec_atak_native_fnc_zeusFx}) then { playSound "ClickSoft"; };
-            // Vibration légère : la coque descend d'un pixel et revient (pas pendant la vibration d'un message).
-            if ((uiNamespace getVariable ["COMSPEC_ATAK_Vibrating", -1]) < 0) then {
-                private _ph = _d displayCtrl 88509;
-                (_l get "phone") params ["_px", "_py", "_pw", "_phh"];
-                _ph ctrlSetPosition [_px + pixelW, _py + pixelH * 1.5, _pw, _phh];
-                _ph ctrlCommit 0;
-                _ph ctrlSetPosition [_px, _py, _pw, _phh];
-                _ph ctrlCommit 0.06;
-            };
+            // Vibration légère : tout le téléphone (coque et écran d'un bloc, fn_phoneShake) descend d'un pixel 60 ms
+            // puis revient (pas pendant la vibration d'un message). Avant : la coque seule, l'écran restait en place.
+            [0.06, 1, 1.5, true] call comspec_atak_native_fnc_phoneShake;
         };
         true
     };
@@ -78,28 +77,36 @@ switch (_act) do {
         if (isNull _d) exitWith { false };
         private _l = [] call comspec_atak_native_fnc_layoutGet;
         (_l get "body") params ["_bx", "_by", "_bw", "_bh"];
+        // Appui différé (4.2.1, fn_navigate) : ["press"] dans l'image de l'appui, avant le dessin de la page ;
+        // ["resume", t0] juste après le dessin (sa mise en page a figé les contrôles à leur place) : le mouvement
+        // repart du point où il en serait depuis l'appui, sans recréer l'icône. Sans argument : comme avant.
+        private _fxMode = _arg param [0, ""];
+        private _el = if (_fxMode isEqualTo "resume") then { (diag_tickTime - (_arg param [1, diag_tickTime])) max 0 } else { 0 };
         // Zone de contenu (défilante) ou carte : seul le fondu est animé, la déplacer remettrait le défilement en haut.
+        private _cDur = [0.26, 0.16] select (_act isEqualTo "back");
+        private _cK = (1 - _el / _cDur) max 0;
         {
             if (!isNull _x && {ctrlShown _x}) then {
-                _x ctrlSetFade ([0.85, 0.55] select (_act isEqualTo "back"));
+                _x ctrlSetFade (([0.85, 0.55] select (_act isEqualTo "back")) * _cK);
                 _x ctrlCommit 0;
                 _x ctrlSetFade 0;
-                _x ctrlCommit ([0.26, 0.16] select (_act isEqualTo "back"));
+                _x ctrlCommit ((_cDur - _el) max 0);
             };
         } forEach [_d displayCtrl 88531, [_d] call comspec_atak_native_fnc_mapCtrl];
         // Titre de la barre d'app : arrive de la droite (ouverture) ou de la gauche (retour). Réglage à part.
         if (_act isNotEqualTo "home" && {profileNamespace getVariable ["COMSPEC_ATAK_TitleSlide", true]}) then {
+            private _tK = (1 - _el / 0.2) max 0;
             private _t = _d displayCtrl 88518;
             private _tp = ctrlPosition _t;
-            _t ctrlSetPosition [(_tp select 0) + _bw * ([0.06, -0.06] select (_act isEqualTo "back")), _tp select 1, _tp select 2, _tp select 3];
-            _t ctrlSetFade 1;
+            _t ctrlSetPosition [(_tp select 0) + _bw * ([0.06, -0.06] select (_act isEqualTo "back")) * _tK, _tp select 1, _tp select 2, _tp select 3];
+            _t ctrlSetFade _tK;
             _t ctrlCommit 0;
             _t ctrlSetPosition _tp;
             _t ctrlSetFade 0;
-            _t ctrlCommit 0.2;
+            _t ctrlCommit ((0.2 - _el) max 0);
         };
         // Icône qui grandit : réglage à part (Réglages > Animations et sons > Ouverture depuis l'icône).
-        if (_act isEqualTo "open" && {["on"] call comspec_atak_native_fnc_iconTint} && {profileNamespace getVariable ["COMSPEC_ATAK_OpenSplash", true]}) then {
+        if (_fxMode isNotEqualTo "resume" && {_act isEqualTo "open"} && {["on"] call comspec_atak_native_fnc_iconTint} && {profileNamespace getVariable ["COMSPEC_ATAK_OpenSplash", true]}) then {
             private _page = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""];
             private _app = (([] call comspec_atak_native_fnc_appList) select { (_x get "page") isEqualTo _page }) param [0, createHashMap];
             if ((count _app) isEqualTo 0) exitWith {};
@@ -126,7 +133,7 @@ switch (_act) do {
             private _gl = _d ctrlCreate ["COMSPEC_RscPicture", -1];
             _gl ctrlSetText (((_app get "icon")) call comspec_atak_native_fnc_tr);
             _gl ctrlSetTextColor [1, 1, 1, 1];
-            { _x ctrlEnable false; } forEach [_sq, _gl];
+            { _x ctrlEnable false; _x setVariable ["cs_ovSkip", true]; } forEach [_sq, _gl];
             [_sq, _m select 0, _m select 1, _s0, 1.25, 0.48] call _place;
             [_gl, _m select 0, _m select 1, _s0, 0.58, 0.5] call _place;
             _sq ctrlCommit 0;
@@ -151,15 +158,17 @@ switch (_act) do {
                 };
             } forEach _this;
         };
-        (uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []]) call _kill;
-        (((uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []]) apply { _x param [1, controlNull] }) call _kill;
-        (((uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []]) apply { _x param [1, controlNull] }) call _kill;
-        (uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]) call _kill;
+        // Anciens calques supprimés après la création des nouveaux, dans la même image (fn_overlayRaise).
+        private _old = [uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []],
+            ((uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []]) apply { _x param [1, controlNull] },
+            ((uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []]) apply { _x param [1, controlNull] },
+            uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]];
         uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
         uiNamespace setVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]];
         uiNamespace setVariable ["COMSPEC_ATAK_ScreenFx", ["", []]];
         uiNamespace setVariable ["COMSPEC_ATAK_ZeusOv", []];
         [] call comspec_atak_native_fnc_deviceOverlay;
+        _old call _kill;
         true
     };
     case "raise": {
@@ -173,6 +182,38 @@ switch (_act) do {
         [] call comspec_atak_native_fnc_toast;
         ["draw"] call comspec_atak_native_fnc_buzzAlert;
         ["draw"] call comspec_atak_native_fnc_fullAlert;
+        true
+    };
+    case "phoneIn";
+    case "phoneOut": {
+        if !(call _animOn && {(missionNamespace getVariable ["comspec_atak_native_phone_anim", true]) isEqualTo true}) exitWith { false };
+        private _d = [] call comspec_atak_native_fnc_display;
+        if (isNull _d) exitWith { false };
+        private _in = _act isEqualTo "phoneIn";
+        private _dur = 0.2;
+        private _dy = safeZoneH * 0.035;
+        // Contrôles posés sur l'écran (les enfants suivent leur groupe). Groupes et carte : fondu seul (déplacer la zone de
+        // contenu remettrait son défilement en haut). Chacun revient à son propre fondu (calques déjà effacés compris).
+        {
+            if (isNull (ctrlParentControlsGroup _x) && {ctrlShown _x}) then {
+                private _fadeOnly = (ctrlType _x) in [15, 100, 101];
+                private _p = ctrlPosition _x;
+                private _low = [_p select 0, (_p select 1) + _dy, _p select 2, _p select 3];
+                if (_in) then {
+                    private _f = ctrlFade _x;
+                    if (!_fadeOnly) then { _x ctrlSetPosition _low; };
+                    _x ctrlSetFade 1;
+                    _x ctrlCommit 0;
+                    if (!_fadeOnly) then { _x ctrlSetPosition _p; };
+                    _x ctrlSetFade _f;
+                    _x ctrlCommit _dur;
+                } else {
+                    if (!_fadeOnly) then { _x ctrlSetPosition _low; };
+                    _x ctrlSetFade 1;
+                    _x ctrlCommit _dur;
+                };
+            };
+        } forEach (allControls _d);
         true
     };
     default { false };

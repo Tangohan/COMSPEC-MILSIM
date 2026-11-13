@@ -57,7 +57,6 @@ $renderOrg = static function (string $id, int $depth) use (&$renderOrg, $orgs, $
 <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_campaigns.css')) ?>">
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline"><a href="<?= $h(url('atak/sse/campagnes')) ?>">Campagnes</a> // <?= $h($row['campaign_key']) ?></div>
         <h1><?= $h($row['name'] ?: $row['campaign_key']) ?></h1>
         <p>
             <span class="badge <?= $row['type'] === 'temporaire' ? 'badge--amber' : ($row['type'] === 'recurrente' ? 'badge--gray' : '') ?>"><?= $h($types[$row['type']] ?? $row['type']) ?></span>

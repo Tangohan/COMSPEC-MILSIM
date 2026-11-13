@@ -1,6 +1,6 @@
 // Premier lancement : « Votre unité utilise-t-elle le service Athéna ? » (idd 9990, FR / EN).
 // Oui : COMSPEC Link, synchro et liaison du compte. Non : ATAK local, aucune connexion ni donnée envoyée.
-// Rouvert depuis Échap > Service Athéna ou téléphone ATAK > Réglages > Service Athéna.
+// Rouvert depuis Échap > ATHENA Configuration > Service Athéna ou téléphone ATAK > Réglages > Service Athéna.
 // Images : img\athena_choice (aigle et fond de l'ATAK natif, icônes COMSPEC Link / hors ligne / réglages).
 
 // Carte entière cliquable : léger éclaircissement au survol.

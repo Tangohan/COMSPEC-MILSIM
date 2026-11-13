@@ -230,6 +230,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 [{ ["offer"] call comspec_atak_native_fnc_setupWizard; }, [], 30] call comspec_atak_native_fnc_waitAndExec;
 // Case « RELAIS ATAK » pendant une émission ACRE2 (fn_relayTxBadge) : événements seulement, rien ne tourne hors émission.
 ["init"] call comspec_atak_native_fnc_relayTxBadge;
+// Chemin de la voix (fn_voicePath) : mêmes événements d'émission, pour l'app Wave Relay, la barre d'état et le TOC.
+["init"] call comspec_atak_native_fnc_voicePath;
+// Notification MPU à l'écran pendant l'alternat (fn_mpuHud) : événements seulement, une boucle de 0,25 s tant que quelqu'un émet.
+["init"] call comspec_atak_native_fnc_mpuHud;
 // Messages des groupes de conversation (fn_meshGroups).
 ["init"] call comspec_atak_native_fnc_meshGroups;
 // Mode de discrétion imposé par le chef (fn_meshEW).
@@ -357,6 +361,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     if ((player getVariable ["COMSPEC_ATAK_IdentDb", []]) isNotEqualTo _ph) then { player setVariable ["COMSPEC_ATAK_IdentDb", _ph, true]; };
     private _icon = profileNamespace getVariable ["COMSPEC_ATAK_SelfIcon", ""];
     if ((player getVariable ["COMSPEC_ATAK_Icon", ""]) isNotEqualTo _icon) then { player setVariable ["COMSPEC_ATAK_Icon", _icon, true]; };
+    // Version du mod de CE poste, sur son unité (Centre Zeus, « Version du mod ») : diffusée seulement quand elle manque
+    // (arrivée, réapparition, unité changée). Jamais relayée par la fiche du serveur, qui pouvait garder une ancienne version.
+    private _modV = missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""];
+    if ((player getVariable ["COMSPEC_ATAK_ModVer", ""]) isNotEqualTo _modV) then { player setVariable ["COMSPEC_ATAK_ModVer", _modV, true]; };
     // Balise BFT : en ligne si j'ai un téléphone allumé avec du signal (diffusée seulement quand elle change).
     // Équipage d'aéronef : tablette de bord, même téléphone éteint ou cassé.
     private _on = (([player] call comspec_atak_native_fnc_aircrewTerminal) || {([player] call comspec_atak_native_fnc_hasDevice)
@@ -536,6 +544,18 @@ if (["on"] call comspec_atak_native_fnc_fireSupport) then { ["scan"] call comspe
 // proche, et un moniteur COMSPEC de ces classes n'avait alors aucune action.
 ["aceInit"] call comspec_atak_native_fnc_tocScreen;
 [{ ["tick"] call comspec_atak_native_fnc_tocPost; }, 1] call COMSPEC_ATAK_PfhSpread;
+// Salle TOC : réponse du poste à une demande (téléphone du demandeur, fn_tocRoom).
+["initClient"] call comspec_atak_native_fnc_tocRoom;
+["initClient"] call comspec_atak_native_fnc_tocHall;
+// Salle TOC tenue (4.12.0) : retours des demandes, actions ACE « Poste TOC », diagnostic (fn_tocAccess).
+["initClient"] call comspec_atak_native_fnc_tocAccess;
+// Activité radio (fn_tocRadio, fn_tocRadioUi) : mon alternat signalé au poste, encadré « Qui parle ». Événements seulement.
+["initClient"] call comspec_atak_native_fnc_tocRadio;
+["initClient"] call comspec_atak_native_fnc_tocRadioUi;
+// Écrans TOC : version du mod du serveur contre celle de ce poste, une ligne au journal à la connexion (fn_tocConfig).
+["initClient"] call comspec_atak_native_fnc_tocConfig;
+// Écran ou poste PC posé : il se règle tout seul (fn_tocAuto). Le serveur le fait ; serveur plus ancien ou sans le mod : ce poste.
+["init"] call comspec_atak_native_fnc_tocAuto;
 // Configuration locale (config.json, fn_localCfg) : mes numéros publiés aux autres joueurs, aussi après une réapparition
 // ou un changement du service Athéna.
 [{ !isNull player }, { ["apply"] call comspec_atak_native_fnc_localCfg; }] call CBA_fnc_waitUntilAndExecute;
@@ -546,6 +566,8 @@ player addEventHandler ["Respawn", { [{ ["apply"] call comspec_atak_native_fnc_l
 [{ ["tick"] call comspec_atak_native_fnc_tenantAction; }, 30] call COMSPEC_ATAK_PfhSpread;
 // Traces civiles des HVT : alerte à la publication d'une trace (fn_hvtTrace).
 ["init"] call comspec_atak_native_fnc_hvtTrace;
+// Traçage d'un numéro : réponses du serveur et menu Zeus des téléphones d'IA (fn_traceAction).
+["init"] call comspec_atak_native_fnc_traceAction;
 // Téléphones personnels : fiches à jour, relevé sans coût par image (fn_phoneOwn).
 ["init"] call comspec_atak_native_fnc_phoneOwn;
 [{ ["tick"] call comspec_atak_native_fnc_vestMount; ["tick"] call comspec_atak_native_fnc_jpcScreen; ["tick"] call comspec_atak_native_fnc_phoneSecurity; ["tick"] call comspec_atak_native_fnc_phoneOwn; }, 2] call COMSPEC_ATAK_PfhSpread;
@@ -884,6 +906,8 @@ player addEventHandler ["Respawn", { missionNamespace setVariable ["COMSPEC_ATAK
 
 // Saleté de l'écran (fn_screenDirt, rendu fn_screenSurface) : poussière, pluie, traces de doigts, sang après un soin.
 [{ ["tick"] call comspec_atak_native_fnc_screenDirt; }, 5] call COMSPEC_ATAK_PfhSpread;
+// Bris d'écran réalistes (fn_screenDamage) : l'eau sous le verre sèche, usure lente en « réaliste ».
+[{ ["tick"] call comspec_atak_native_fnc_screenDamage; }, 10] call COMSPEC_ATAK_PfhSpread;
 ["ace_treatmentSucceded", {
     params [["_medic", objNull], ["_patient", objNull]];
     if (_medic isEqualTo player && {_patient isNotEqualTo player || {(player getVariable ["ace_medical_woundBleeding", 0]) > 0}}) then { ["treat", _patient] call comspec_atak_native_fnc_screenDirt; };
@@ -902,21 +926,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         ["can"] call comspec_atak_native_fnc_screenClean
     }] call comspec_atak_native_fnc_aceAction;
     ["CAManBase", 1, ["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"], _deep, true] call ace_interact_menu_fnc_addActionToClass;
-    // Tension et SpO2 : brassard et oxymètre posés par un soignant sur un blessé (8 s) ; l'app Médical et la liaison NFC
-    // n'affichent ces valeurs qu'après cette mesure (fn_medVitals « measure »). Pas d'action sur soi.
-    private _measure = {
-        params ["_target"];
-        private _go = { params ["_t"]; [_t, "measure"] call comspec_atak_native_fnc_medVitals;
-            ["SUCCESS", format ["Tension et SpO2 mesurées : %1", [_t, true] call comspec_atak_native_fnc_unitCallsign], 4, 30] call comspec_atak_native_fnc_notify; };
-        if (isNil "ace_common_fnc_progressBar") exitWith { [_target] call _go; };
-        [8, [_target, _go], { (_this select 0) params ["_t", "_go"]; [_t] call _go; }, {}, ("Brassard et oxymètre…" call comspec_atak_native_fnc_tr),
-            { (_this select 0) params ["_t"]; alive _t && {(player distance _t) < 3} }] call ace_common_fnc_progressBar;
-        player playActionNow "Medic";
-    };
-    private _bp = ["COMSPEC_ATAK_MeasureBp", "Mesurer tension et SpO2", "", { [_this select 0] call (_this select 2) }, {
-        alive (_this select 0) && {isNull objectParent (_this select 1)}
-    }, {}, _measure] call comspec_atak_native_fnc_aceAction;
-    ["CAManBase", 0, ["ACE_MainActions"], _bp, true] call ace_interact_menu_fnc_addActionToClass;
+    // Action ACE « Mesurer tension et SpO2 » (brassard, oxymètre) retirée en 4.2.0 à la demande : l'app Médical garde « --- » pour ces deux valeurs.
 };
 // Sang projeté sur le téléphone sorti quand un homme est tué à moins de 3,5 m (fn_screenDirt « nearby »).
 addMissionEventHandler ["EntityKilled", {
@@ -997,6 +1007,8 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 [{ [] call comspec_atak_native_fnc_squadSync; }, 30] call COMSPEC_ATAK_PfhSpread;
 // Plan de briefing partagé vers la carte du site (auteur de la modification, sinon un autre téléphone relié).
 [{ ["tick"] call comspec_atak_native_fnc_planWeb; }, 5] call COMSPEC_ATAK_PfhSpread;
+// Salle TOC du camp vers le poste TOC web d'Athena (fn_tocWeb) : un seul joueur du camp envoie.
+[{ ["tick"] call comspec_atak_native_fnc_tocWeb; }, 3] call COMSPEC_ATAK_PfhSpread;
 // Temps d'écran et temps par rôle (envoi à Athena toutes les 5 min et en fin de mission).
 [{ ["tick"] call comspec_atak_native_fnc_screenTime; }, 5] call COMSPEC_ATAK_PfhSpread;
 // Montre Garmin : pas, fréquence cardiaque, stress, Body Battery, sommeil et activités, gardés dans le profil du joueur.

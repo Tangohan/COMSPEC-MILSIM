@@ -5,14 +5,11 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var list<array<string,mixed>> $acquisitions */
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/exploitation-numerique')) ?>">Exploitation numérique</a> / <strong>Acquisitions</strong></div>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Laboratoire // Acquisitions</div>
         <h1>Acquisitions numériques</h1>
         <p>Copies et extractions liées aux supports — distinctes des fiches matérielles.</p>
     </div>
-    <div class="page-reference"><strong>Vue // Acquisitions</strong> ATH-SSE-LABNUM-ACQ</div>
 </div>
 <form class="toolbar" method="get">
     <div class="toolbar-field">

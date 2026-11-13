@@ -95,4 +95,23 @@ final class GameApiResponseCompactorTest extends TestCase
         GameApiResponseCompactor::apply($this->request('/api/chat'), $resp4);
         self::assertNull($resp4->headerValue('ETag'));
     }
+
+    /** Empreinte posée par la route (révision sans horodatage) : gardée, et le 304 la compare. */
+    public function testRoutePresetEtagIsKeptAndMatched(): void
+    {
+        $first = Response::json(['generated_at' => '2026-11-09T10:00:00Z', 'documents' => []])->header('ETag', 'W/"idp-abc"');
+        GameApiResponseCompactor::apply($this->request('/api/sse/identity/pack'), $first);
+        self::assertSame('W/"idp-abc"', $first->headerValue('ETag'));
+        self::assertSame(200, $first->statusCode());
+
+        $second = Response::json(['generated_at' => '2026-11-09T10:02:00Z', 'documents' => []])->header('ETag', 'W/"idp-abc"');
+        GameApiResponseCompactor::apply($this->request('/api/sse/identity/pack', inm: 'W/"idp-abc"'), $second);
+        self::assertSame(304, $second->statusCode());
+        self::assertSame('', $second->body());
+
+        // Sans empreinte de la route : empreinte du corps, comme avant.
+        $plain = Response::json(['a' => 1]);
+        GameApiResponseCompactor::apply($this->request('/api/chat'), $plain);
+        self::assertSame(GameApiResponseCompactor::etagFor((string) json_encode(['a' => 1])), $plain->headerValue('ETag'));
+    }
 }

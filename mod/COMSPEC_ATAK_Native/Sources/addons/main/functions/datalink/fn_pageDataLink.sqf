@@ -172,6 +172,8 @@ if (_view isEqualType 0 && {_view >= 0} && {(count _e) >= 5}) exitWith {
             _rows pushBack ["text", [_content] call _esc];
         };
     };
+    // Numéros de téléphone lus dans le fichier (contacts, messages, journal d'appels…) : bouton TRACER (fn_traceAction).
+    if (_ft in ["texte", "document", "identifiants"]) then { _rows append (["numRows", [[_content], format ["Fichier %1", _fn]]] call comspec_atak_native_fnc_traceAction); };
     _rows pushBack ["text", format ["<t size='0.8' color='%1'>Récupéré à %2, carroyage %3</t>", _grey, _clock, _grid]];
     (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["DATALINK", { ["view", -1] call comspec_atak_native_fnc_dataAction; }]];
     _rows pushBack ["buttons", [

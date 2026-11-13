@@ -537,21 +537,89 @@ class AtakDataRepository
      */
     public function recentlySuppressedGameMarkers(int $tenantId, int $mapId, int $minutes = 15, int $limit = 20): array
     {
+        $limit = max(1, min(50, $limit));
         $stmt = $this->pdo()->prepare(
             "SELECT id, arma_name, marker_data FROM atak_markers
              WHERE tenant_id = ? AND map_id = ? AND arma_name IS NOT NULL AND arma_name <> ''
                AND marker_data LIKE '%\"suppressed\":true%' AND updated_at >= DATE_SUB(NOW(), INTERVAL ? MINUTE)
-             ORDER BY updated_at DESC LIMIT " . max(1, min(50, $limit))
+             ORDER BY updated_at DESC, id DESC LIMIT 300"
         );
         $stmt->execute([$tenantId, $mapId, max(1, $minutes)]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Effacement en masse : plus de lignes que la réponse n'en porte (8 Ko côté jeu). Fenêtre glissante, une par
+        // relevé de 15 s : le relais (qui note les noms déjà traités) finit par les voir toutes.
+        if (count($rows) > $limit) {
+            $offset = (intdiv(time(), 15) * $limit) % count($rows);
+            $rows = array_merge(array_slice($rows, $offset), array_slice($rows, 0, $offset));
+            $rows = array_slice($rows, 0, $limit);
+        }
         $out = [];
-        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        foreach ($rows as $row) {
             $decoded = json_decode((string) ($row['marker_data'] ?? ''), true);
             $pos = is_array($decoded) ? $this->markerPosPair($decoded) : null;
             $out[] = ['id' => (int) $row['id'], 'arma_name' => (string) $row['arma_name'], 'pos' => $pos ?? [1.0, 1.0]];
         }
 
         return $out;
+    }
+
+    /**
+     * Marqueurs vivants d'une carte (retirés du site ou non marqués « suppressed » exclus), pour l'effacement en masse.
+     *
+     * @return list<array{id:int, layer_id:int, marker_data:string, arma_name:?string}>
+     */
+    public function listLiveMarkerRows(int $tenantId, int $mapId): array
+    {
+        $stmt = $this->pdo()->prepare('SELECT id, layer_id, marker_data, arma_name FROM atak_markers WHERE tenant_id = ? AND map_id = ? ORDER BY id');
+        $stmt->execute([$tenantId, $mapId]);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $data = (string) ($row['marker_data'] ?? '');
+            if ($this->markerDataIsSuppressed($data)) {
+                continue;
+            }
+            $out[] = [
+                'id' => (int) $row['id'],
+                'layer_id' => (int) $row['layer_id'],
+                'marker_data' => $data,
+                'arma_name' => isset($row['arma_name']) ? (string) $row['arma_name'] : null,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Remet un marqueur effacé en masse (annulation) : la ligne retirée est recréée sous son numéro, la ligne seulement
+     * masquée (marqueur du jeu) retrouve sa donnée d'origine. Toujours dans la communauté et la carte d'origine.
+     *
+     * @param array{id:int, layer_id:int, marker_data:string, arma_name:?string} $row
+     */
+    public function restoreMarkerRow(int $tenantId, int $mapId, array $row): bool
+    {
+        $id = (int) $row['id'];
+        $pdo = $this->pdo();
+        $upd = $pdo->prepare('UPDATE atak_markers SET marker_data = ?, layer_id = ?, updated_at = NOW() WHERE tenant_id = ? AND map_id = ? AND id = ?');
+        $upd->execute([$row['marker_data'], (int) $row['layer_id'], $tenantId, $mapId, $id]);
+        if ($upd->rowCount() > 0) {
+            ShortCache::bump('markers:' . $tenantId);
+
+            return true;
+        }
+        $exists = $pdo->prepare('SELECT 1 FROM atak_markers WHERE id = ?');
+        $exists->execute([$id]);
+        if ($exists->fetchColumn() !== false) {
+            // Ligne existante inchangée (même contenu) ou d'une autre communauté : jamais écrasée.
+            $own = $pdo->prepare('SELECT 1 FROM atak_markers WHERE id = ? AND tenant_id = ? AND map_id = ?');
+            $own->execute([$id, $tenantId, $mapId]);
+
+            return $own->fetchColumn() !== false;
+        }
+        $ins = $pdo->prepare('INSERT INTO atak_markers (id, tenant_id, map_id, layer_id, marker_data, arma_name) VALUES (?, ?, ?, ?, ?, ?)');
+        $ins->execute([$id, $tenantId, $mapId, (int) $row['layer_id'], $row['marker_data'], $row['arma_name']]);
+        ShortCache::bump('markers:' . $tenantId);
+
+        return true;
     }
 
     /**
@@ -2018,6 +2086,16 @@ class AtakDataRepository
         if (isset($seeded[$cacheKey])) {
             return;
         }
+        // Entre les requêtes aussi : chaque sondage de /api/chat/channels refaisait une écriture INSERT IGNORE par canal
+        // système. Les canaux système ne se suppriment pas ; la liste des clés entre dans la clé (nouveau canal livré :
+        // semé au sondage suivant).
+        $sharedKey = 'chatsys:' . $tenantId . ':' . $mapId . ':'
+            . substr(sha1(implode(',', array_column(\App\Support\AtakChatChannel::systemRows(), 'channel_key'))), 0, 12);
+        if (ShortCache::get($sharedKey) === true) {
+            $seeded[$cacheKey] = true;
+
+            return;
+        }
         try {
             $ins = $this->pdo()->prepare(
                 'INSERT IGNORE INTO atak_chat_channels
@@ -2034,6 +2112,7 @@ class AtakDataRepository
                 ]);
             }
             $seeded[$cacheKey] = true;
+            ShortCache::put($sharedKey, true, 3600);
         } catch (\Throwable) {
             // Table absente avant migration : ignorer.
         }

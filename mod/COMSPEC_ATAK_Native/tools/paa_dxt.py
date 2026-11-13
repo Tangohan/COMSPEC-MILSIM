@@ -20,7 +20,19 @@ from PIL import Image
 try:
     import lzo
 except ImportError:
-    lzo = None
+    # Sans python-lzo (pas de paquet Windows récent) : lzallright, même flux LZO1X-1 (pip install lzallright).
+    # Sans les deux, les PAA sortent sans compression : passer ensuite tools/paa_lzo.py dessus (4.2.1).
+    try:
+        import lzallright
+
+        class lzo:  # noqa: N801 - même nom et même appel que python-lzo
+            _c = lzallright.LZOCompressor()
+
+            @staticmethod
+            def compress(data, _level=1, _header=False):
+                return lzo._c.compress(data)
+    except ImportError:
+        lzo = None
 
 
 def _565(c):

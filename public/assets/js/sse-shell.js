@@ -3,10 +3,9 @@
  *  - tiroir de navigation (mobile) et sections repliables mémorisées ;
  *  - palette de commandes (Ctrl+K / ⌘K) ;
  *  - heure Zulu et temps de session restant, en direct ;
- *  - texte brouillé puis « déchiffré » sur les titres ([data-scramble], titre de page) ;
- *  - rideaux de transition entre les pages du bureau ;
  *  - galerie 3D des pièces (photos de dossier, pièces jointes de fiche).
- * Tout est désactivé ou simplifié si l'utilisateur demande moins d'animations.
+ * Navigation instantanée : aucun effet n'est joué au chargement ni entre les pages.
+ * La galerie se passe d'animation si l'utilisateur demande moins de mouvement.
  */
 (function () {
     'use strict';
@@ -25,76 +24,38 @@
         return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     }
 
-    /* ---------------------------------------------------------------- Texte brouillé */
-    var GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&/<>=+';
-    function scramble(el, opts) {
-        if (!el || reduce) return;
-        var target = el.getAttribute('data-scramble-text') || el.textContent;
-        if (!target || target.trim() === '' || el.children.length > 0) return;
-        el.setAttribute('data-scramble-text', target);
-        if (!el.hasAttribute('aria-label')) el.setAttribute('aria-label', target.trim());
-        var duration = (opts && opts.duration) || Math.min(900, 260 + target.length * 22);
-        var t0 = null;
-        var chars = target.split('');
-        var order = chars.map(function (_, i) { return (i / Math.max(1, chars.length - 1)) * 0.75 + Math.random() * 0.25; });
-        function frame(ts) {
-            if (t0 === null) t0 = ts;
-            var p = Math.min(1, (ts - t0) / duration);
-            var out = '';
-            for (var i = 0; i < chars.length; i++) {
-                var c = chars[i];
-                if (c === ' ' || p >= order[i]) {
-                    out += c;
-                } else {
-                    out += GLYPHS.charAt(Math.floor(Math.random() * GLYPHS.length));
-                }
-            }
-            el.textContent = out;
-            if (p < 1) {
-                window.requestAnimationFrame(frame);
-            } else {
-                el.textContent = target;
-            }
-        }
-        window.requestAnimationFrame(frame);
-    }
-    window.SseScramble = scramble;
-
-    function scrambleOnLoad() {
-        Array.prototype.forEach.call(document.querySelectorAll('[data-scramble]'), function (el) { scramble(el); });
-        // Titre principal de la page : premier h1 sans balisage interne.
-        var main = document.querySelector('.iw-main');
-        var h1 = main ? main.querySelector('h1') : null;
-        if (h1 && h1.children.length === 0 && h1.textContent.trim().length <= 60) scramble(h1);
-    }
-
     /* ---------------------------------------------------------------- Navigation */
     function initNav() {
         if (!app) return;
         var toggle = app.querySelector('[data-sx-nav-toggle]');
-        var scrim = app.querySelector('[data-sx-nav-close]');
+        var scrim = app.querySelector('.sx-scrim');
         function setOpen(open) {
             app.classList.toggle('is-nav-open', open);
             if (toggle) toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
             if (scrim) scrim.hidden = !open;
         }
         if (toggle) toggle.addEventListener('click', function () { setOpen(!app.classList.contains('is-nav-open')); });
-        if (scrim) scrim.addEventListener('click', function () { setOpen(false); });
+        Array.prototype.forEach.call(app.querySelectorAll('[data-sx-nav-close]'), function (el) {
+            el.addEventListener('click', function () { setOpen(false); if (toggle) toggle.focus(); });
+        });
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && app.classList.contains('is-nav-open')) setOpen(false);
         });
-        // Sections repliables : l'état choisi par l'utilisateur est mémorisé.
+        // Sections repliables : l'état choisi est mémorisé (appliqué avant l'affichage par la coque).
         var saved = {};
         try { saved = JSON.parse(store.get('sse.nav.groups') || '{}') || {}; } catch (e) { saved = {}; }
         Array.prototype.forEach.call(app.querySelectorAll('[data-sx-group]'), function (g) {
             var id = g.getAttribute('data-sx-group');
-            var hasActive = !!g.querySelector('.is-active');
-            if (!hasActive && Object.prototype.hasOwnProperty.call(saved, id)) g.open = !!saved[id];
             g.addEventListener('toggle', function () {
                 saved[id] = g.open;
                 store.set('sse.nav.groups', JSON.stringify(saved));
             });
         });
+        // Défilement de la barre latérale gardé d'une page à l'autre.
+        var nav = document.getElementById('sx-nav');
+        if (nav) {
+            window.addEventListener('pagehide', function () { store.sset('sse.nav.scroll', String(nav.scrollTop)); });
+        }
         // Menu « Nouveau » : se ferme au clic dehors.
         document.addEventListener('click', function (e) {
             Array.prototype.forEach.call(document.querySelectorAll('.sx-new[open]'), function (d) {
@@ -128,104 +89,6 @@
         tick();
         window.setInterval(tick, 1000);
     }
-
-    /* ---------------------------------------------------------------- Rideaux */
-    var CURTAIN_KEY = 'sse.curtain';
-    function makeCurtains(held) {
-        var n = Math.max(6, Math.min(14, Math.round(window.innerWidth / 120)));
-        var wrap = document.createElement('div');
-        wrap.className = 'sx-curtains' + (held ? ' is-held is-active' : '');
-        wrap.setAttribute('aria-hidden', 'true');
-        for (var i = 0; i < n; i++) {
-            var c = document.createElement('span');
-            c.className = 'sx-curtain';
-            c.style.setProperty('--i', String(i));
-            wrap.appendChild(c);
-        }
-        var label = document.createElement('span');
-        label.className = 'sx-curtains__label';
-        label.textContent = 'DÉCHIFFREMENT';
-        document.body.appendChild(wrap);
-        document.body.appendChild(label);
-        return { wrap: wrap, label: label, n: n };
-    }
-    function eligible(a, e) {
-        if (!a || reduce) return false;
-        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return false;
-        if (a.target && a.target !== '_self') return false;
-        if (a.hasAttribute('download') || a.hasAttribute('data-no-curtain') || a.closest('[data-no-curtain]')) return false;
-        var href = a.getAttribute('href') || '';
-        if (href === '' || href.charAt(0) === '#' || /^(mailto:|tel:|javascript:)/i.test(href)) return false;
-        var url;
-        try { url = new URL(a.href, window.location.href); } catch (err) { return false; }
-        if (url.origin !== window.location.origin) return false;
-        if (url.pathname.indexOf('/atak/sse') === -1) return false;
-        if (/\/(pdf|flux|emport|export|texte)(\/|$)|\.pdf$/i.test(url.pathname)) return false;
-        if (url.pathname === window.location.pathname && url.search === window.location.search && url.hash) return false;
-        return true;
-    }
-    function coverThen(go) {
-        var c = makeCurtains(false);
-        c.wrap.classList.add('is-active');
-        // Force le recalcul avant d'animer.
-        void c.wrap.offsetWidth;
-        c.wrap.classList.add('is-cover');
-        var total = 340 + c.n * 32;
-        store.sset(CURTAIN_KEY, String(Date.now()));
-        window.setTimeout(go, total);
-        // Si la page ne change pas (téléchargement, refus serveur…), on relève le rideau.
-        window.setTimeout(function () {
-            if (document.visibilityState === 'visible' && c.wrap.isConnected) {
-                store.sdel(CURTAIN_KEY);
-                reveal(c);
-            }
-        }, 6000);
-    }
-    function reveal(c) {
-        c.wrap.classList.remove('is-cover', 'is-held');
-        void c.wrap.offsetWidth;
-        c.wrap.classList.add('is-reveal');
-        window.setTimeout(function () {
-            if (c.wrap.parentNode) c.wrap.parentNode.removeChild(c.wrap);
-            if (c.label.parentNode) c.label.parentNode.removeChild(c.label);
-        }, 460 + c.n * 32);
-    }
-    function initCurtains() {
-        // Arrivée après une transition : le rideau posé au chargement (script en tête de page) se lève.
-        var held = document.querySelector('.sx-curtains.is-held');
-        var label = document.querySelector('.sx-curtains__label');
-        store.sdel(CURTAIN_KEY);
-        if (held) {
-            var n = held.children.length;
-            window.requestAnimationFrame(function () {
-                window.requestAnimationFrame(function () { reveal({ wrap: held, label: label || document.createElement('span'), n: n }); });
-            });
-        }
-        if (reduce) return;
-        document.addEventListener('click', function (e) {
-            var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
-            if (!eligible(a, e)) return;
-            e.preventDefault();
-            var href = a.href;
-            coverThen(function () { window.location.href = href; });
-        });
-        // Formulaires d'entrée (sas, engagement) : le rideau tombe, puis le formulaire part.
-        Array.prototype.forEach.call(document.querySelectorAll('form[data-curtain-submit]'), function (form) {
-            form.addEventListener('submit', function (e) {
-                if (form.__sxSending || e.defaultPrevented || (form.checkValidity && !form.checkValidity())) return;
-                e.preventDefault();
-                form.__sxSending = true;
-                coverThen(function () { HTMLFormElement.prototype.submit.call(form); });
-            });
-        });
-        // Retour arrière (cache du navigateur) : aucun rideau ne doit rester posé.
-        window.addEventListener('pageshow', function (ev) {
-            if (ev.persisted) {
-                Array.prototype.forEach.call(document.querySelectorAll('.sx-curtains, .sx-curtains__label'), function (el) { el.remove(); });
-            }
-        });
-    }
-    window.SseCurtains = { go: function (href) { if (reduce) { window.location.href = href; return; } coverThen(function () { window.location.href = href; }); } };
 
     /* ---------------------------------------------------------------- Palette */
     function initPalette() {
@@ -292,7 +155,7 @@
         }
         function go(href) {
             dlg.close();
-            if (window.SseCurtains) window.SseCurtains.go(href); else window.location.href = href;
+            window.location.href = href;
         }
         document.addEventListener('keydown', function (e) {
             if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
@@ -471,9 +334,6 @@
         det.querySelector('strong').textContent = it.ref || ('PIÈCE ' + (this.index < 9 ? '0' : '') + (this.index + 1));
         var cap = det.querySelector('span');
         cap.textContent = it.caption || '';
-        cap.removeAttribute('data-scramble-text');
-        cap.removeAttribute('aria-label');
-        scramble(cap, { duration: 420 });
         this.root.querySelector('.sx-gal__count').textContent = (this.index + 1) + ' / ' + this.items.length;
         var active = this.thumbs[this.index];
         if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest', inline: 'center' });
@@ -534,9 +394,7 @@
         initNav();
         initClock();
         initPalette();
-        initCurtains();
         initGalleries();
-        scrambleOnLoad();
     }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', boot);

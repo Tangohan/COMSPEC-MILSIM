@@ -33,6 +33,8 @@ final class SseIdentityPackService
     public const VERSION = 1;
     public const DEFAULT_LIMIT = 200;
     public const MAX_WATCH = 300;
+    /** Paramètre op du paquet d'un seul compte (buildSelf), suivi au besoin de « :OPÉRATION ». */
+    public const SELF_OP = '~self';
 
     public function __construct(
         private ?SseIdDocumentRepository $documents = null,
@@ -44,6 +46,7 @@ final class SseIdentityPackService
         private ?SseIdOperationRepository $operations = null,
         private ?SseIdSettingsRepository $settings = null,
         private ?SseAiProfileRepository $aiProfiles = null,
+        private ?\App\Services\GameEquipment\Configurator\LoadoutPackBuilder $loadouts = null,
     ) {
         $this->documents ??= new SseIdDocumentRepository();
         $this->identities ??= new SseIdentityRepository();
@@ -134,6 +137,8 @@ final class SseIdentityPackService
         }
 
         $next = $offset + count($docs);
+        $briefs = $offset === 0 ? $this->operations->briefsForPack($tenantId, $mapId, $opKey) : [];
+        $kits = $offset === 0 ? $this->kitsWithAuto($tenantId, $mapId, $opKey, $briefs) : [];
         $pack = [
             'version' => self::VERSION,
             'generated_at' => gmdate('Y-m-d\TH:i:s\Z'),
@@ -143,13 +148,16 @@ final class SseIdentityPackService
             'identities' => $identities,
             'documents' => $documents,
             'watch' => $offset === 0 ? $this->watch($tenantId, $mapId) : [],
-            'kits' => $offset === 0 ? $this->kits->forPack($tenantId, $mapId, $opKey) : [],
+            'kits' => $kits,
             'population' => $offset === 0 ? $this->operations->populationForPack($tenantId, $mapId, $opKey) : [],
             'wanted' => $offset === 0 ? $this->wanted($tenantId, $mapId, $opKey) : [],
-            'briefs' => $offset === 0 ? $this->operations->briefsForPack($tenantId, $mapId, $opKey) : [],
+            'briefs' => $briefs,
             // Réglage de la communauté, ignoré par un ancien mod.
             // Profils d'IA et éléments gardés : dans « settings », seul bloc libre que la DLL publiée transmet sans le connaître.
-            'settings' => ['auto_transmit' => $this->settings->autoTransmit($tenantId)] + ($offset === 0 ? $this->aiBlocks($tenantId, $mapId, $opKey) : []),
+            // Kits d'équipement (« Prendre mon kit » d'une caisse, addon loadout du SSE) : aussi dans « settings ».
+            'settings' => ['auto_transmit' => $this->settings->autoTransmit($tenantId)]
+                + ($offset === 0 ? $this->aiBlocks($tenantId, $mapId, $opKey) : [])
+                + ($offset === 0 ? $this->loadoutBlock($tenantId) : []),
             'paging' => [
                 'offset' => $offset,
                 'limit' => $limit,
@@ -166,6 +174,75 @@ final class SseIdentityPackService
     }
 
     /**
+     * Paquet « self » d'un seul compte (op « ~self ») : relayé par le téléphone du joueur quand le serveur de jeu n'a pas
+     * COMSPEC Link. Même forme que build(), réduite à ce compte : son kit, ses papiers, les identités qu'ils portent et son
+     * brief ; pays de la communauté (impression des papiers). Ni avis, ni recherchés, ni population, ni papiers des
+     * autres, ni la nature d'un faux (forgery_kind / forgery_quality vides). Le serveur de jeu refiltre de son côté.
+     *
+     * @return array<string, mixed>
+     */
+    public function buildSelf(int $tenantId, int $mapId, int $userId, ?string $opKey = null): array
+    {
+        $full = $this->build($tenantId, $mapId, $opKey, null, 0, SseIdDocumentRepository::PACK_MAX_PER_MAP);
+        $kits = array_values(array_filter($full['kits'], static fn (array $k): bool => (int) ($k['user_id'] ?? 0) === $userId));
+        $wanted = [];
+        foreach ($kits as $k) {
+            foreach ($k['documents'] ?? [] as $d) {
+                $wanted[(int) $d] = true;
+            }
+        }
+        $documents = [];
+        $identityIds = [];
+        foreach ($full['documents'] as $d) {
+            if (isset($wanted[(int) $d['id']])) {
+                $d['forgery_kind'] = null;
+                $d['forgery_quality'] = null;
+                $documents[] = $d;
+                $identityIds[(int) $d['identity_id']] = true;
+            }
+        }
+
+        return [
+            'version' => self::VERSION,
+            'generated_at' => $full['generated_at'],
+            'map' => $mapId,
+            'op' => self::SELF_OP,
+            'countries' => $full['countries'],
+            'identities' => array_values(array_filter($full['identities'], static fn (array $i): bool => isset($identityIds[(int) $i['id']]))),
+            'documents' => $documents,
+            'watch' => [],
+            'kits' => $kits,
+            'population' => [],
+            'wanted' => [],
+            'briefs' => array_values(array_filter($full['briefs'], static fn (array $b): bool => (int) ($b['user_id'] ?? 0) === $userId)),
+            'settings' => ['auto_transmit' => $full['settings']['auto_transmit'] ?? true],
+            'paging' => ['offset' => 0, 'limit' => count($documents), 'total' => count($documents), 'next_offset' => null],
+        ];
+    }
+
+    /**
+     * Kits composés, puis kit automatique (portée « auto ») des membres qui n'en ont aucun : chaque membre reçoit les
+     * papiers émis de son identité principale, ou ceux de son identité de couverture si une fiche de couverture la lui
+     * attribue pour cette carte / opération (SseIdKitRepository::autoForPack). Les papiers sont tous dans le pack.
+     *
+     * @param list<array<string, mixed>> $briefs
+     * @return list<array{uid: string, user_id: int, scope: string, documents: list<int>}>
+     */
+    private function kitsWithAuto(int $tenantId, int $mapId, ?string $opKey, array $briefs): array
+    {
+        $kits = $this->kits->forPack($tenantId, $mapId, $opKey);
+        $covers = [];
+        foreach ($briefs as $b) {
+            if ((int) ($b['identity_id'] ?? 0) > 0) {
+                $covers[(int) $b['user_id']] = (int) $b['identity_id'];
+            }
+        }
+        $auto = $this->kits->autoForPack($tenantId, $mapId, $opKey, array_map(static fn (array $k): int => (int) $k['user_id'], $kits), $covers);
+
+        return array_merge($kits, $auto);
+    }
+
+    /**
      * Profils d'IA et éléments gardés ; tables pas encore créées : blocs vides, le paquet reste bon.
      *
      * @return array<string, list<array<string, mixed>>>
@@ -179,6 +256,22 @@ final class SseIdentityPackService
         } catch (\Throwable) {
             return [];
         }
+    }
+
+    /**
+     * Kits d'équipement de la communauté et kits proposés à chaque joueur (LoadoutPackBuilder) ; absent sans kit.
+     *
+     * @return array<string, mixed>
+     */
+    private function loadoutBlock(int $tenantId): array
+    {
+        try {
+            $block = ($this->loadouts ?? new \App\Services\GameEquipment\Configurator\LoadoutPackBuilder())->build($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return $block === null ? [] : ['loadouts' => $block];
     }
 
     /**
@@ -255,6 +348,17 @@ final class SseIdentityPackService
         }
 
         return $out;
+    }
+
+    /**
+     * Révision d'une page du paquet : empreinte de son contenu, sans l'heure de génération (qui change à chaque appel).
+     * Même contenu = même révision ; un papier, un pays, un kit, un brief, un avis ou un réglage modifié la change.
+     */
+    public static function revisionOf(array $pack): string
+    {
+        unset($pack['generated_at'], $pack['revision'], $pack['unchanged']);
+
+        return substr(hash('sha256', (string) json_encode($pack, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR)), 0, 24);
     }
 
     /** « since » accepté en ISO 8601 ou AAAA-MM-JJ HH:MM:SS, ramené en UTC base de données ; sinon ignoré. */

@@ -55,7 +55,8 @@ switch (_act) do {
         ["comspec_atak_native_meshLogRx", {
             params [["_l", []]];
             { diag_log format ["[COMSPEC ATAK NATIVE][MESH] Journal t=%1 %2 : %3", _x select 0, _x select 1, _x select 2]; } forEach _l;
-            hintSilent ((_l apply { format ["%1 %2", _x select 0, _x select 2] }) joinString "\n");
+            // Journal au RPT ci-dessus ; résumé dans le centre de notifications du téléphone (jamais le hint d'Arma).
+            ["INFO", (_l apply { format ["%1 %2", _x select 0, _x select 2] }) joinString " · ", 10, 20, "WAVERELAY"] call comspec_atak_native_fnc_notify;
         }] call CBA_fnc_addEventHandler;
         if (isNil "zen_context_menu_fnc_addAction" || {!((missionNamespace getVariable ["comspec_atak_native_mesh_tools", true]) isEqualTo true)}) exitWith {};
         private _icon = "\z\comspec_atak_native\addons\main\data\app_waverelay.paa";
@@ -76,7 +77,12 @@ switch (_act) do {
             ["cmp", "Compromettre la clé de son camp", { ["key", [str side group (_this call (missionNamespace getVariable "COMSPEC_ATAK_MeshZeusHover")), "compromise"]] call (missionNamespace getVariable "COMSPEC_ATAK_MeshZeusAsk"); }, { ["on"] call comspec_atak_native_fnc_meshKeys && {!isNull (_this call (missionNamespace getVariable "COMSPEC_ATAK_MeshZeusHover"))} }],
             ["rek", "Renouveler la clé de son camp", { ["key", [str side group (_this call (missionNamespace getVariable "COMSPEC_ATAK_MeshZeusHover")), "rekey"]] call (missionNamespace getVariable "COMSPEC_ATAK_MeshZeusAsk"); }, { ["on"] call comspec_atak_native_fnc_meshKeys && {!isNull (_this call (missionNamespace getVariable "COMSPEC_ATAK_MeshZeusHover"))} }],
             ["wx", "Météo radio : -10 dB oui / non", { ["wx", [[10, 0] select ((missionNamespace getVariable ["COMSPEC_ATAK_MeshWxForce", 0]) > 0)]] call (missionNamespace getVariable "COMSPEC_ATAK_MeshZeusAsk"); }],
-            ["see", "Voir le graphe de ce camp (3D)", {
+            ["see", "Voir le réseau de ce camp (graphe)", {
+                // Fenêtre lisible (fn_meshGraphView) à la place de l'ancienne superposition 3D, gardée en dessous pour qui la préfère.
+                private _u = _this call (missionNamespace getVariable "COMSPEC_ATAK_MeshZeusHover");
+                ["open", [[str side group player, str side group _u] select (!isNull _u)]] call comspec_atak_native_fnc_meshGraphView;
+            }],
+            ["see3d", "Liens du camp en 3D sur le terrain", {
                 private _u = _this call (missionNamespace getVariable "COMSPEC_ATAK_MeshZeusHover");
                 uiNamespace setVariable ["COMSPEC_ATAK_MeshZeusSide", [str side group player, str side group _u] select (!isNull _u)];
                 ["toggle"] call comspec_atak_native_fnc_devMeshOverlay;

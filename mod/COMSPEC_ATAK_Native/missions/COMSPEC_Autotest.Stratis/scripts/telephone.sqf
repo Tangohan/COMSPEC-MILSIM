@@ -201,8 +201,8 @@ if !("telephone" call AT_fnc_groupe) exitWith {};
     [(["deviceStatus"] call comspec_atak_native_fnc_compromise) isNotEqualTo [], "aucun message au joueur"] call AT_fnc_check;
     ["identifiant : " + _uid + " -> " + _new] call AT_fnc_info;
     profileNamespace setVariable ["comspec_overwatch_terminal_uid", _uid];
-    profileNamespace setVariable ["comspec_overwatch_terminal_gen", _gen];
-    profileNamespace setVariable ["COMSPEC_ATAK_NewDevice", _kept];
+    profileNamespace setVariable ["comspec_overwatch_terminal_gen", if (isNil "_gen") then { nil } else { _gen }];
+    profileNamespace setVariable ["COMSPEC_ATAK_NewDevice", if (isNil "_kept") then { nil } else { _kept }];
     call AT_fnc_done;
 }, 30] call AT_fnc_run;
 
@@ -240,7 +240,7 @@ if !("telephone" call AT_fnc_groupe) exitWith {};
         ["https://www.youtube.com/watch?v=dQw4w9WgXc", ""], ["https://www.youtube.com/watch?v=dQw4w9WgXcQ%22", ""], ["https://www.youtube.com/watch?v=dQw4w9WgXc'", ""], ["", ""]
     ];
     [(["embed", _id] call comspec_atak_native_fnc_youtube) isEqualTo "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0&playsinline=1", "adresse du lecteur"] call AT_fnc_check;
-    [(["embed", "x\"><script>"] call comspec_atak_native_fnc_youtube) isEqualTo "", "identifiant invalide accepté pour le lecteur"] call AT_fnc_check;
+    [(["embed", "x""><script>"] call comspec_atak_native_fnc_youtube) isEqualTo "", "identifiant invalide accepté pour le lecteur"] call AT_fnc_check;
     [!(["enabled"] call comspec_atak_native_fnc_youtube), "lecture YouTube active par défaut (doit être coupée)"] call AT_fnc_check;
     [true] call comspec_atak_native_fnc_open;
     [[{ !isNull ([] call comspec_atak_native_fnc_display) }, 8] call AT_fnc_wait, "le téléphone ne s'ouvre pas"] call AT_fnc_check;
@@ -254,3 +254,666 @@ if !("telephone" call AT_fnc_groupe) exitWith {};
     ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
     call AT_fnc_done;
 }, 60] call AT_fnc_run;
+
+// Comptes rendus, onglet NOUVEAU (retour de jeu 4.1.1) : les lignes « person » (icône + titre + bouton RÉDIGER) n'avaient plus
+// de texte. Cause : COMSPEC_ATAK_Th (jetons du thème) n'était posé qu'au calcul du thème, mis en cache dans uiNamespace ;
+// à la deuxième mission de la session (menu principal puis partie), le cache servait et COMSPEC_ATAK_Th restait indéfini.
+// L'étape refait cet état (variable effacée, cache chaud, preInit rejoué) puis vérifie chaque texte structuré de la page.
+["tel_comptes_rendus_textes", {
+    if (["comspec_atak_native_fnc_theme", "comspec_atak_native_fnc_pageReports", "comspec_atak_native_fnc_reportTypes"] call AT_fnc_nil) exitWith {};
+    [] call comspec_atak_native_fnc_theme;
+    missionNamespace setVariable ["COMSPEC_ATAK_Th", nil];
+    [] call comspec_atak_native_fnc_theme; // ce que fait le preInit d'une deuxième mission (cache uiNamespace déjà rempli)
+    private _thOk = !isNil "COMSPEC_ATAK_Th" && {(COMSPEC_ATAK_Th getOrDefault ["hexTextMuted", ""]) isNotEqualTo ""};
+    [_thOk, "COMSPEC_ATAK_Th indéfini quand le cache du thème est déjà rempli (deuxième mission de la session)"] call AT_fnc_check;
+    private _ui = uiNamespace getVariable ["COMSPEC_ATAK_RepUi", createHashMap];
+    _ui set ["tab", "NEW"];
+    _ui set ["type", ""];
+    uiNamespace setVariable ["COMSPEC_ATAK_RepUi", _ui];
+    private _ok = ["REPORTS", 2] call AT_fnc_page;
+    [_ok, "app Comptes rendus non ouverte"] call AT_fnc_check;
+    private _d = [] call comspec_atak_native_fnc_display;
+    private _grp = controlNull;
+    {
+        _x params ["_n", "_c"];
+        if ((_n find "form|REPORTS|") isEqualTo 0 && {!isNull _c}) exitWith { _grp = _c; };
+    } forEach (uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []]);
+    [!isNull _grp, "liste des comptes rendus introuvable (groupe form|REPORTS)"] call AT_fnc_check;
+    // Tous les textes structurés de la liste (titres de section, lignes « person ») : affichés et non vides.
+    private _txts = if (isNull _d || {isNull _grp}) then { [] } else {
+        (allControls _d) select { (ctrlParentControlsGroup _x) isEqualTo _grp && {(ctrlType _x) isEqualTo 13} && {ctrlShown _x} }
+    };
+    private _vides = _txts select { (ctrlTextHeight _x) <= 0 };
+    private _nTypes = count (([] call comspec_atak_native_fnc_reportTypes) select { (_x select 3) isNotEqualTo "" });
+    (format ["%1 texte(s) structuré(s) dans la liste, %2 vide(s), %3 type(s) de C.R. à fiche", count _txts, count _vides, _nTypes]) call AT_fnc_info;
+    [(count _txts) >= _nTypes, format ["%1 texte(s) structuré(s) seulement pour %2 type(s) de C.R.", count _txts, _nTypes]] call AT_fnc_check;
+    [(count _vides) isEqualTo 0, format ["%1 ligne(s) de la liste sans texte (titre, étiquette et aide invisibles)", count _vides]] call AT_fnc_check;
+    ["reports_nouveau"] call AT_fnc_shot;
+    if (!isNull _grp) then { _grp ctrlSetScrollValues [1, -1]; };
+    uiSleep 0.5;
+    ["reports_nouveau_bas"] call AT_fnc_shot;
+    "Comptes rendus > NOUVEAU : chaque ligne a son titre (« Bilan des dégâts (BDA) »…), son étiquette colorée et son aide grisée" call AT_fnc_visuel;
+    // Build sans le correctif : thème recalculé pour que les étapes suivantes ne se heurtent pas au même défaut.
+    if (isNil "COMSPEC_ATAK_Th") then {
+        uiNamespace setVariable ["COMSPEC_ATAK_ThemeCache", ["", createHashMap]];
+        [] call comspec_atak_native_fnc_theme;
+    };
+    ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;
+
+// BFT, capture 4.2.0 : en vue ORBAT, le symbole MIL-STD de la ligne choisie recouvrait le début de l'indicatif (« VB1 »), la
+// fiche de droite restait vide (« < 1 min » non échappé cassait son texte structuré). Une image de cellule du tableau est
+// dessinée à la hauteur de ligne (0,040 × safeZoneH) : la case de chaque niveau (colonnes 0 à 2) doit finir avant la colonne
+// du texte (3). Aucun texte de la page (message, en-têtes, légende) ne doit chevaucher le tableau ; la fiche a du texte ;
+// les boutons d'action ne coupent pas leur libellé. Vue ORBAT dans les deux orientations, puis vue groupe (filtre GROUPE) et vue LISTE.
+["tel_bft_colonnes", {
+    if (["comspec_atak_native_fnc_pageBft", "comspec_atak_native_fnc_bftOrbat", "comspec_atak_native_fnc_orientationToggle"] call AT_fnc_nil) exitWith {};
+    private _view0 = profileNamespace getVariable ["COMSPEC_ATAK_BftView", "LIST"];
+    private _orient0 = profileNamespace getVariable ["COMSPEC_ATAK_Orientation", "PORTRAIT"];
+    private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+    private _filt0 = _st getOrDefault ["bftFilter", "ALL"];
+    private _verifie = {
+        params ["_nom"];
+        private _live = uiNamespace getVariable ["COMSPEC_ATAK_BftLive", createHashMap];
+        (_live getOrDefault ["ctrls", []]) params [["_head", controlNull], ["_list", controlNull], ["_det", controlNull]];
+        [!isNull _list, format ["%1 : tableau du BFT introuvable", _nom]] call AT_fnc_check;
+        if (isNull _list) exitWith {};
+        // Cases des images (chevron, symbole) avant la colonne du texte.
+        private _cols = lnbGetColumnsPosition _list;
+        (ctrlPosition _list) params ["_lx", "_ly", "_lw", "_lh"];
+        private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+        private _iconW = (0.040 * safeZoneH) * 1.04 / _ratio; // mesuré sur la capture : décalage 0,17 + largeur 0,87 hauteur de ligne
+        private _txtX = _lx + _lw * (_cols param [3, 0]);
+        {
+            private _fin = _lx + _lw * (_cols param [_x, 0]) + _iconW;
+            [_fin <= _txtX + pixelW, format ["%1 : l'image du niveau %2 finit à %3, le texte commence à %4 (chevauchement)", _nom, _x, _fin toFixed 4, _txtX toFixed 4]] call AT_fnc_check;
+        } forEach [0, 1, 2];
+        // Colonnes dans l'ordre et dans le tableau.
+        private _tri = +_cols;
+        _tri sort true;
+        [(_cols isEqualTo _tri) && {(_cols param [6, 2]) < 1}, format ["%1 : colonnes en désordre ou hors du tableau %2", _nom, _cols]] call AT_fnc_check;
+        // Textes de la page (message, en-têtes, légende) : aucun ne chevauche le tableau.
+        private _grp = ctrlParentControlsGroup _list;
+        private _d = [] call comspec_atak_native_fnc_display;
+        private _txts = (allControls _d) select { (ctrlParentControlsGroup _x) isEqualTo _grp && {ctrlShown _x} && {(ctrlType _x) in [0, 13]} && {_x isNotEqualTo _det} && {_x isNotEqualTo _head} };
+        {
+            (ctrlPosition _x) params ["_x2", "_y2", "_w2", "_h2"];
+            private _sur = _x2 < (_lx + _lw - pixelW) && {(_x2 + _w2) > (_lx + pixelW)} && {_y2 < (_ly + _lh - pixelH)} && {(_y2 + _h2) > (_ly + pixelH)};
+            [!_sur, format ["%1 : le texte « %2 » chevauche le tableau", _nom, (ctrlText _x) select [0, 40]]] call AT_fnc_check;
+        } forEach _txts;
+        // Fiche de la ligne choisie : jamais vide.
+        [!isNull _det && {(ctrlTextHeight _det) > 0}, format ["%1 : fiche de droite vide", _nom]] call AT_fnc_check;
+        // Boutons d'action : libellé entier.
+        { if (ctrlShown _x) then { [_x, format ["%1 : bouton", _nom]] call AT_fnc_tient; }; } forEach (((_live getOrDefault ["bar", createHashMap]) getOrDefault ["btns", []]) + [((_live getOrDefault ["bar", createHashMap]) getOrDefault ["more", controlNull])]);
+    };
+    {
+        _x params ["_view", "_filter", "_shot", ["_flip", false]];
+        if (_flip) then { [] call comspec_atak_native_fnc_orientationToggle; uiSleep 1; };
+        profileNamespace setVariable ["COMSPEC_ATAK_BftView", _view];
+        _st set ["bftFilter", _filter];
+        _st set ["bftFiltersOpen", false];
+        _st set ["bftBuzz", ""];
+        private _ok = ["BFT", 2] call AT_fnc_page;
+        [_ok, format ["app BFT non ouverte (%1)", _shot]] call AT_fnc_check;
+        if (_ok) then {
+            ["BFT"] call comspec_atak_native_fnc_pageRender;
+            uiSleep 0.8;
+            [_shot] call _verifie;
+            [_shot] call AT_fnc_shot;
+        };
+    } forEach [["ORBAT", "ALL", "bft_orbat"], ["ORBAT", "ALL", "bft_orbat_autre_orientation", true], ["ORBAT", "GROUP", "bft_equipe", true], ["LIST", "ALL", "bft_liste"]];
+    profileNamespace setVariable ["COMSPEC_ATAK_BftView", _view0];
+    _st set ["bftFilter", _filt0];
+    if ((toUpper (profileNamespace getVariable ["COMSPEC_ATAK_Orientation", "PORTRAIT"])) isNotEqualTo (toUpper _orient0)) then { [] call comspec_atak_native_fnc_orientationToggle; };
+    "BFT : symbole et indicatif côte à côte, chevrons gris, compteurs en toutes lettres (« 1 piste », « 1/1 aptes »), légende des états sous le tableau, fiche remplie à droite (ou dessous en portrait), bouton PLUS au lieu de « … »" call AT_fnc_visuel;
+    ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+    call AT_fnc_done;
+}, 90] call AT_fnc_run;
+
+// ATAK 4.2.1, apps : contrôles d'une page en formulaire (fn_formRender) qui doivent tenir dans leur case : boutons
+// (largeur du libellé) et textes structurés (hauteur du texte). Groupes relevés dans COMSPEC_ATAK_ScrollGroups.
+AT_fnc_formTient = {
+    params ["_nom"];
+    private _d = [] call comspec_atak_native_fnc_display;
+    if (isNull _d) exitWith {};
+    private _grps = (uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []]) apply { _x select 1 };
+    { if ((ctrlParentControlsGroup _x) in _grps && {(ctrlType _x) in [1, 13]}) then { [_x, _nom] call AT_fnc_tient; }; } forEach (allControls _d);
+};
+
+// Tâches 4.2.1 : ordres triés (à traiter et prioritaires en tête, terminés en bas), filtre À TRAITER / TERMINÉS / TOUS,
+// consigne longue coupée avec « … » et section TEXTE COMPLET. Trois ordres locaux injectés, rendus aux trois filtres.
+["tel_taches_triees", {
+    if (["comspec_atak_native_fnc_pageTasks", "comspec_atak_native_fnc_tasksAll"] call AT_fnc_nil) exitWith {};
+    private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
+    uiNamespace setVariable ["COMSPEC_ATAK_Data", _data];
+    private _old = _data getOrDefault ["localTasks", createHashMap];
+    private _mk = {
+        params ["_id", "_lbl", "_prio", "_stat", "_stamp", ["_pay", ""]];
+        createHashMapFromArray [["id", _id], ["type", "MOVE"], ["typeLabel", _lbl], ["priority", _prio], ["status", _stat], ["issuer", "AUTOTEST"],
+            ["target", ""], ["targetType", "all"], ["payload", _pay], ["stamp", _stamp], ["source", "local"]]
+    };
+    private _long = "";
+    for "_i" from 1 to 14 do { _long = _long + format ["Phrase %1 de la consigne longue de l'autotest. ", _i]; };
+    _data set ["localTasks", createHashMapFromArray [
+        ["AT-1", ["AT-1", "AT ROUTINE", "ROUTINE", "NEW", 10] call _mk],
+        ["AT-2", ["AT-2", "AT TERMINE", "FLASH", "DONE", 30] call _mk],
+        ["AT-3", ["AT-3", "AT URGENT", "URGENT", "NEW", 5, _long] call _mk]
+    ]];
+    private _st = call AT_fnc_etat;
+    private _f0 = _st getOrDefault ["taskFilter", "OPEN"];
+    _st set ["orderCompose", false];
+    _st set ["taskTxtOpen", []];
+    {
+        _x params ["_filt", "_open", "_shot"];
+        _st set ["taskFilter", _filt];
+        _st set ["taskTxtOpen", _open];
+        private _ok = ["TASK", 1.5] call AT_fnc_page;
+        [_ok, format ["app Tâches non ouverte (%1)", _shot]] call AT_fnc_check;
+        if (_ok) then {
+            ["TASK"] call comspec_atak_native_fnc_pageRender;
+            uiSleep 0.6;
+            [_shot] call AT_fnc_formTient;
+            [_shot] call AT_fnc_shot;
+        };
+    } forEach [["ALL", [], "taches_tous"], ["ALL", ["AT-3"], "taches_texte_deplie"], ["OPEN", [], "taches_a_traiter"], ["DONE", [], "taches_terminees"]];
+    "Tâches > TOUS : AT URGENT (PRIORITAIRE) en tête, puis AT ROUTINE, AT TERMINE en bas ; consigne d'AT URGENT coupée par « … » avec une section TEXTE COMPLET (dépliée : texte entier, REPLIER). À TRAITER : sans AT TERMINE. TERMINÉS : AT TERMINE seul" call AT_fnc_visuel;
+    _data set ["localTasks", _old];
+    _st set ["taskFilter", _f0];
+    _st set ["taskTxtOpen", []];
+    ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;
+
+// États vides 4.2.1 : composant « empty » (icône, titre, quoi faire) sur les apps sans données, en portrait puis dans
+// l'autre orientation ; aucun libellé ni texte coupé.
+["tel_etats_vides", {
+    if (["comspec_atak_native_fnc_pageWaypoints", "comspec_atak_native_fnc_orientationToggle"] call AT_fnc_nil) exitWith {};
+    private _st = call AT_fnc_etat;
+    private _log0 = +(missionNamespace getVariable ["COMSPEC_ATAK_AlertLog", []]);
+    private _wp0 = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
+    private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
+    private _loc0 = _data getOrDefault ["localTasks", createHashMap];
+    missionNamespace setVariable ["COMSPEC_ATAK_AlertLog", []];
+    missionNamespace setVariable ["COMSPEC_ATAK_Waypoints", createHashMapFromArray [["pts", []], ["idx", 0], ["nav", false], ["from", ""]]];
+    _data set ["localTasks", createHashMap];
+    _st set ["taskFilter", "OPEN"];
+    _st set ["logiTab", "MINE"];
+    _st set ["trkFilter", "ALL"];
+    private _apps = ([] call comspec_atak_native_fnc_appList) apply { _x get "page" };
+    {
+        private _flip = _x;
+        if (_flip) then { [] call comspec_atak_native_fnc_orientationToggle; uiSleep 1; };
+        {
+            if !(_x in _apps) then { (format ["%1 absente de ce téléphone", _x]) call AT_fnc_info; continue };
+            private _ok = [_x, 1.5] call AT_fnc_page;
+            [_ok, format ["app %1 non ouverte", _x]] call AT_fnc_check;
+            if (_ok) then {
+                private _nom = format ["vide_%1%2", toLower _x, ["", "_autre_orientation"] select _flip];
+                [_nom] call AT_fnc_formTient;
+                [_nom] call AT_fnc_shot;
+            };
+        } forEach ["TASK", "WAYPOINTS", "ALERTS", "RECO", "SALUTE", "LOGI", "TRACKING", "DISCORD", "MEDICAL"];
+    } forEach [false, true];
+    [] call comspec_atak_native_fnc_orientationToggle;
+    "États vides : chaque app montre une grande icône pâle, un titre et une phrase qui dit quoi faire (Tâches « Aucun ordre reçu », Itinéraire « Aucune étape », Alertes et SALUTE en bas de page, Logistique avec NOUVELLE DEMANDE…), rien de coupé dans les deux orientations" call AT_fnc_visuel;
+    missionNamespace setVariable ["COMSPEC_ATAK_AlertLog", _log0];
+    missionNamespace setVariable ["COMSPEC_ATAK_Waypoints", _wp0];
+    _data set ["localTasks", _loc0];
+    ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+    call AT_fnc_done;
+}, 150] call AT_fnc_run;
+
+// Recherche par nom 4.2.1 (Numéros > ANNUAIRE, Recherchés) : appliquée sur OK, effaçable, état vide « Aucun résultat pour … ».
+["tel_recherche_nom", {
+    if (["comspec_atak_native_fnc_pageNumbers", "comspec_atak_native_fnc_numbersAction"] call AT_fnc_nil) exitWith {};
+    private _st = call AT_fnc_etat;
+    _st set ["numTab", "DIR"];
+    _st set ["numQ", ""];
+    private _ok = ["NUMBERS", 1.5] call AT_fnc_page;
+    [_ok, "app Numéros non ouverte"] call AT_fnc_check;
+    if (_ok) then {
+        private _e = (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) getOrDefault ["numQ", controlNull];
+        if (isNull _e) then {
+            "annuaire vide (partie seule) : pas de champ de recherche, seulement l'état vide" call AT_fnc_info;
+        } else {
+            // Saisie puis OK : la recherche vient du champ, pas de la frappe.
+            _e ctrlSetText "zzzz-autotest";
+            ["search"] call comspec_atak_native_fnc_numbersAction;
+            uiSleep 0.8;
+            [(_st getOrDefault ["numQ", ""]) isEqualTo "zzzz-autotest", format ["recherche non prise du champ : « %1 »", _st getOrDefault ["numQ", ""]]] call AT_fnc_check;
+            ["recherche_annuaire"] call AT_fnc_formTient;
+            ["recherche_annuaire_aucun"] call AT_fnc_shot;
+            ["clearQ"] call comspec_atak_native_fnc_numbersAction;
+            uiSleep 0.8;
+            [(_st getOrDefault ["numQ", "x"]) isEqualTo "", "EFFACER LA RECHERCHE n'efface pas le filtre"] call AT_fnc_check;
+        };
+        ["recherche_annuaire"] call AT_fnc_shot;
+    };
+    if (!isNil "comspec_atak_native_fnc_wantedAction" && {[] call comspec_atak_native_fnc_bridge}) then {
+        _st set ["wantedOpen", ""];
+        _st set ["wantedQ", "zzzz-autotest"];
+        if (["WANTED", 1.5] call AT_fnc_page) then {
+            ["WANTED"] call comspec_atak_native_fnc_pageRender;
+            uiSleep 0.6;
+            ["recherche_recherches"] call AT_fnc_formTient;
+            ["recherche_recherches_aucun"] call AT_fnc_shot;
+        };
+        ["clearQ"] call comspec_atak_native_fnc_wantedAction;
+        uiSleep 0.6;
+        [(_st getOrDefault ["wantedQ", "x"]) isEqualTo "", "Recherchés : filtre non effacé"] call AT_fnc_check;
+    } else { "Recherchés : sans COMSPEC Overwatch, pas de liste à filtrer" call AT_fnc_info; };
+    "Recherche : champ « Rechercher un nom… » avec OK, bouton EFFACER LA RECHERCHE, état vide « Aucun résultat pour « zzzz-autotest » » avec TOUT AFFICHER" call AT_fnc_visuel;
+    _st set ["numTab", "MINE"];
+    ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;
+
+// Annulation 4.2.1 : TOUT EFFACER (Itinéraire) et VIDER LE JOURNAL (Alertes) laissent 8 s pour ANNULER ; l'effacement de
+// l'itinéraire n'est envoyé au groupe qu'à la fin des 8 s (copie marquée « envoyée » ensuite).
+["tel_annulation", {
+    if (["comspec_atak_native_fnc_wpAction", "comspec_atak_native_fnc_alertsAction", "comspec_atak_native_fnc_undoSnack"] call AT_fnc_nil) exitWith {};
+    private _wp0 = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
+    private _share0 = profileNamespace getVariable ["COMSPEC_ATAK_WpShare", 1];
+    profileNamespace setVariable ["COMSPEC_ATAK_WpShare", 1];
+    private _p = getPosATL player;
+    private _pts = [[[(_p select 0) + 300, (_p select 1), 0], "AT 1", "CP"], [[(_p select 0) + 600, (_p select 1) + 200, 0], "AT 2", "OBJ"]];
+    missionNamespace setVariable ["COMSPEC_ATAK_Waypoints", createHashMapFromArray [["pts", +_pts], ["idx", 1], ["nav", true], ["from", ""]]];
+    [["WAYPOINTS", 1.5] call AT_fnc_page, "app Itinéraire non ouverte"] call AT_fnc_check;
+    ["clear"] call comspec_atak_native_fnc_wpAction;
+    uiSleep 0.5;
+    private _w = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
+    private _u = missionNamespace getVariable ["COMSPEC_ATAK_WpUndo", []];
+    [(count (_w getOrDefault ["pts", [0]])) isEqualTo 0, "TOUT EFFACER : étapes encore là"] call AT_fnc_check;
+    [(count _u) >= 6 && {!(_u select 5)}, format ["copie d'annulation absente ou déjà envoyée au groupe : %1", _u]] call AT_fnc_check;
+    [(count (uiNamespace getVariable ["COMSPEC_ATAK_UndoSnack", []])) > 0, "bandeau « Étapes effacées · ANNULER » absent"] call AT_fnc_check;
+    ["annulation_itineraire_bandeau"] call AT_fnc_shot;
+    ["undoClear", _u param [0, -1]] call comspec_atak_native_fnc_wpAction;
+    uiSleep 0.5;
+    _w = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
+    [(count (_w getOrDefault ["pts", []])) isEqualTo 2 && {(_w getOrDefault ["idx", 0]) isEqualTo 1} && {_w getOrDefault ["nav", false]}, "ANNULER : itinéraire, étape active ou navigation non rendus"] call AT_fnc_check;
+    ["annulation_itineraire_rendu"] call AT_fnc_shot;
+    // Sans annulation : l'effacement part au groupe au bout de 8 s, la copie est marquée envoyée puis oubliée.
+    ["clear"] call comspec_atak_native_fnc_wpAction;
+    uiSleep 9;
+    _u = missionNamespace getVariable ["COMSPEC_ATAK_WpUndo", []];
+    [(count _u) isEqualTo 0 || {_u select 5}, "fin des 8 s : effacement pas envoyé au groupe"] call AT_fnc_check;
+    [(count (uiNamespace getVariable ["COMSPEC_ATAK_UndoSnack", []])) isEqualTo 0, "bandeau encore affiché après 8 s"] call AT_fnc_check;
+    // Journal des alertes.
+    private _log0 = +(missionNamespace getVariable ["COMSPEC_ATAK_AlertLog", []]);
+    missionNamespace setVariable ["COMSPEC_ATAK_AlertLog", [["TIC", "AT", getPosASL player, "000000", "autotest 1", "12:00"], ["TIC_CLEAR", "AT", getPosASL player, "000000", "autotest 2", "12:05"]]];
+    [["ALERTS", 1.5] call AT_fnc_page, "app Alertes non ouverte"] call AT_fnc_check;
+    ["clearLog"] call comspec_atak_native_fnc_alertsAction;
+    uiSleep 0.5;
+    [(count (missionNamespace getVariable ["COMSPEC_ATAK_AlertLog", [0]])) isEqualTo 0, "VIDER LE JOURNAL : journal pas vidé"] call AT_fnc_check;
+    ["annulation_journal_bandeau"] call AT_fnc_shot;
+    ["undoClearLog", (missionNamespace getVariable ["COMSPEC_ATAK_AlertLogUndo", []]) param [0, -1]] call comspec_atak_native_fnc_alertsAction;
+    uiSleep 0.5;
+    [(count (missionNamespace getVariable ["COMSPEC_ATAK_AlertLog", []])) isEqualTo 2, "ANNULER : journal non rendu"] call AT_fnc_check;
+    "Bandeau ambre « Étapes effacées » puis « Journal vidé » avec ANNULER en haut de l'écran, disparu au bout de 8 s ; après ANNULER l'itinéraire et le journal sont revenus" call AT_fnc_visuel;
+    missionNamespace setVariable ["COMSPEC_ATAK_AlertLog", _log0];
+    missionNamespace setVariable ["COMSPEC_ATAK_Waypoints", _wp0];
+    profileNamespace setVariable ["COMSPEC_ATAK_WpShare", _share0];
+    ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;
+
+// Statut et Itinéraire vivants 4.2.1 : minuterie de la page en route sur la page, arrêtée en la quittant.
+["tel_pages_vivantes", {
+    if (["comspec_atak_native_fnc_pageStatus", "comspec_atak_native_fnc_pageWaypoints"] call AT_fnc_nil) exitWith {};
+    private _wp0 = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
+    private _p = getPosATL player;
+    missionNamespace setVariable ["COMSPEC_ATAK_Waypoints", createHashMapFromArray [["pts", [[[(_p select 0) + 400, (_p select 1) + 400, 0], "AT 1", "CP"]]], ["idx", 0], ["nav", true], ["from", ""]]];
+    {
+        _x params ["_page", "_var"];
+        [[_page, 2.5] call AT_fnc_page, format ["app %1 non ouverte", _page]] call AT_fnc_check;
+        [!isNil { uiNamespace getVariable _var }, format ["%1 : minuterie de mise à jour absente", _page]] call AT_fnc_check;
+        [format ["vivant_%1", toLower _page]] call AT_fnc_shot;
+        ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+        uiSleep 2.5;
+        [isNil { uiNamespace getVariable _var }, format ["%1 : minuterie encore active hors de la page", _page]] call AT_fnc_check;
+    } forEach [["WAYPOINTS", "COMSPEC_ATAK_WpLive"], ["STATUS", "COMSPEC_ATAK_StatusLive"]];
+    "Itinéraire et Statut : distance, cap, « il y a X s » et signal changent seuls sur la page (à vérifier en marchant), sans clignotement de la page" call AT_fnc_visuel;
+    missionNamespace setVariable ["COMSPEC_ATAK_Waypoints", _wp0];
+    call AT_fnc_done;
+}, 40] call AT_fnc_run;
+
+// Calques du verre sans clignotement (4.2.2) : surveillance image par image pendant de vrais clics (tools/ingame_test.ps1,
+// AUTOTEST|CLICK), une vibration, et le suivi de la carte en miniature.
+// AT_RfMon : [images, reflet absent, reflet recréé, autre calque absent, images focus devant, types focalisés, dernier reflet]
+AT_fnc_rfStart = {
+    AT_RfMon = [0, 0, 0, 0, 0, [], controlNull];
+    if (!isNil "AT_RfEh") then { removeMissionEventHandler ["EachFrame", AT_RfEh]; };
+    AT_RfEh = addMissionEventHandler ["EachFrame", {
+        private _d = [] call comspec_atak_native_fnc_display;
+        if (isNull _d) exitWith {};
+        AT_RfMon set [0, (AT_RfMon select 0) + 1];
+        private _surf = (uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []];
+        private _g = (_surf select { (_x select 0) isEqualTo "glass" }) apply { _x select 1 };
+        private _gl = _g param [0, controlNull];
+        if (isNull _gl || {!ctrlShown _gl} || {ctrlFade _gl > 0.5}) then { AT_RfMon set [1, (AT_RfMon select 1) + 1]; };
+        if (!isNull _gl && {!(_gl isEqualTo (AT_RfMon select 6))}) then {
+            if (!isNull (AT_RfMon select 6) || {(AT_RfMon select 0) > 1}) then { AT_RfMon set [2, (AT_RfMon select 2) + 1]; };
+            AT_RfMon set [6, _gl];
+        };
+        if ((count _surf) isEqualTo 0 || {(_surf findIf { isNull (_x select 1) }) >= 0}) then { AT_RfMon set [3, (AT_RfMon select 3) + 1]; };
+        // Focus sur un contrôle de premier niveau plus ancien que les calques (ou son groupe) : dessiné devant eux.
+        private _f = focusedCtrl _d;
+        if (!isNull _f && {!(_f isEqualTo (_d displayCtrl 88543))} && {!((ctrlType _f) in [2, 4, 44])}) then {
+            AT_RfMon set [4, (AT_RfMon select 4) + 1];
+            (AT_RfMon select 5) pushBackUnique (ctrlType _f);
+        };
+    }];
+};
+AT_fnc_rfStop = {
+    if (!isNil "AT_RfEh") then { removeMissionEventHandler ["EachFrame", AT_RfEh]; AT_RfEh = nil; };
+    +AT_RfMon
+};
+// Position absolue (écran) d'un contrôle, en remontant ses groupes (défilement supposé en haut).
+AT_fnc_absPos = {
+    params ["_c"];
+    (ctrlPosition _c) params ["_x0", "_y0", "_w", "_h"];
+    private _p = ctrlParentControlsGroup _c;
+    while { !isNull _p } do {
+        (ctrlPosition _p) params ["_gx", "_gy"];
+        _x0 = _x0 + _gx;
+        _y0 = _y0 + _gy;
+        _p = ctrlParentControlsGroup _p;
+    };
+    [_x0, _y0, _w, _h]
+};
+// Vrai clic au centre d'un point de l'écran (coordonnées de l'interface), maintenu _ms millisecondes.
+AT_fnc_vraiClic = {
+    params ["_nom", "_ux", "_uy", ["_ms", 600]];
+    setMousePosition [_ux, _uy];
+    uiSleep 0.15;
+    AT_Shots = AT_Shots + 1;
+    diag_log format ["AUTOTEST|CLICK|%1_%2|%3|%4|%5", [AT_Shots, 3] call CBA_fnc_formatNumber, _nom,
+        ((_ux - safeZoneX) / safeZoneW) toFixed 4, ((_uy - safeZoneY) / safeZoneH) toFixed 4, _ms];
+    uiSleep (_ms / 1000 + 1.5);
+};
+
+["tel_reflet_toucher", {
+    if (["comspec_atak_native_fnc_overlayFront", "comspec_atak_native_fnc_screenSurface"] call AT_fnc_nil) exitWith {};
+    missionNamespace setVariable ["comspec_atak_native_glass_glare", true];
+    [["LAUNCHER", 2] call AT_fnc_page, "lanceur non ouvert"] call AT_fnc_check;
+    private _d = [] call comspec_atak_native_fnc_display;
+    (_d displayCtrl 88531) ctrlSetScrollValues [0, -1];
+    uiSleep 1.5;
+    [uiNamespace getVariable ["COMSPEC_ATAK_DevFront", false], "DevFront faux avec le reflet du verre"] call AT_fnc_check;
+    private _surf = (uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []];
+    [(_surf findIf { (_x select 0) isEqualTo "glass" }) >= 0, "pas de calque de reflet sur le lanceur"] call AT_fnc_check;
+    (([] call comspec_atak_native_fnc_layoutGet) get "device") params ["_sx", "_sy", "_sw", "_sh"];
+    // Tuiles du lanceur : boutons de la zone de contenu, entièrement dans l'écran.
+    private _tuiles = {
+        private _d = [] call comspec_atak_native_fnc_display;
+        ((allControls _d) select {
+            (ctrlType _x) in [1, 16] && {ctrlShown _x} && {ctrlEnabled _x} && {!isNull (ctrlParentControlsGroup _x)}
+        }) apply { [_x, [_x] call AT_fnc_absPos] } select {
+            (_x select 1) params ["_x0", "_y0", "_w", "_h"];
+            _w > 0.01 && {_x0 > _sx} && {_y0 > _sy + _sh * 0.1} && {_x0 + _w < _sx + _sw} && {_y0 + _h < _sy + _sh * 0.85}
+        }
+    };
+    private _t = call _tuiles;
+    [(count _t) >= 3, format ["moins de 3 tuiles cliquables sur le lanceur (%1)", count _t]] call AT_fnc_check;
+    call AT_fnc_rfStart;
+    private _ouvertes = 0;
+    {
+        if (_forEachIndex > 2) then { break };
+        ["LAUNCHER", 1.5] call AT_fnc_page;
+        private _tt = call _tuiles;
+        if (_forEachIndex >= (count _tt)) then { break };
+        ((_tt select _forEachIndex) select 1) params ["_x0", "_y0", "_w", "_h"];
+        private _avant = (call AT_fnc_etat) getOrDefault ["activePage", ""];
+        [format ["reflet_appui_tuile%1", _forEachIndex + 1], _x0 + _w / 2, _y0 + _h / 2, [600, 1500] select (_forEachIndex isEqualTo 1)] call AT_fnc_vraiClic;
+        private _apres = (call AT_fnc_etat) getOrDefault ["activePage", ""];
+        if (_apres isNotEqualTo _avant) then { _ouvertes = _ouvertes + 1; };
+        format ["tuile %1 : %2 -> %3", _forEachIndex + 1, _avant, _apres] call AT_fnc_info;
+    } forEach _t;
+    // Appui sur une zone vide de l'écran (le groupe de contenu prend le focus) et retour à l'accueil.
+    ["LAUNCHER", 1.5] call AT_fnc_page;
+    ["reflet_appui_vide", _sx + _sw * 0.5, _sy + _sh * 0.93, 600] call AT_fnc_vraiClic;
+    private _m = call AT_fnc_rfStop;
+    format ["images %1, reflet absent %2, reflet recréé %3, calque absent %4, images focus devant %5 (types %6), apps ouvertes par clic %7",
+        _m select 0, _m select 1, _m select 2, _m select 3, _m select 4, _m select 5, _ouvertes] call AT_fnc_info;
+    [(_m select 0) > 100, "surveillance image par image sans images"] call AT_fnc_check;
+    [(_m select 1) isEqualTo 0, format ["reflet absent ou caché sur %1 images", _m select 1]] call AT_fnc_check;
+    [(_m select 3) isEqualTo 0, format ["calque d'écran absent sur %1 images", _m select 3]] call AT_fnc_check;
+    [_ouvertes >= 2, format ["vrais clics sur les tuiles : %1 app(s) ouverte(s) sur 3 (clic perdu ?)", _ouvertes]] call AT_fnc_check;
+    // Focus d'un bouton : au plus une image par appui (le moteur le donne à l'enfoncement).
+    [(_m select 4) <= 5, format ["focus devant les calques pendant %1 images (types %2)", _m select 4, _m select 5]] call AT_fnc_check;
+    "Captures reflet_appui_* : prises pendant l'appui, le reflet du verre (bande claire en haut à gauche) et les coins sont visibles" call AT_fnc_visuel;
+    call AT_fnc_done;
+}, 120] call AT_fnc_run;
+
+["tel_vibration_bloc", {
+    if (["comspec_atak_native_fnc_vibrate", "comspec_atak_native_fnc_phoneShake"] call AT_fnc_nil) exitWith {};
+    [["LAUNCHER", 2] call AT_fnc_page, "lanceur non ouvert"] call AT_fnc_check;
+    private _d = [] call comspec_atak_native_fnc_display;
+    private _surf = (uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []];
+    private _gl = ((_surf select { (_x select 0) isEqualTo "glass" }) apply { _x select 1 }) param [0, controlNull];
+    private _suivis = [_d displayCtrl 88509, _d displayCtrl 88531, _gl];
+    private _p0 = _suivis apply { ctrlPosition _x };
+    AT_VibEcarts = [];
+    AT_VibSuivis = _suivis;
+    private _eh = addMissionEventHandler ["EachFrame", {
+        private _ps = AT_VibSuivis apply { if (isNull _x) then { [0, 0] } else { ctrlPosition _x } };
+        private _c = _ps select 0;
+        AT_VibEcarts pushBack [((_ps select 1) select 0) - (_c select 0), ((_ps select 1) select 1) - (_c select 1),
+            ((_ps select 2) select 0) - (_c select 0), ((_ps select 2) select 1) - (_c select 1), _c select 0];
+    }];
+    private _pref0 = profileNamespace getVariable ["COMSPEC_ATAK_Vibrate", true];
+    profileNamespace setVariable ["COMSPEC_ATAK_Vibrate", true];
+    [[] call comspec_atak_native_fnc_vibrate, "vibration refusée avec le réglage allumé"] call AT_fnc_check;
+    uiSleep 0.3;
+    ["vibration_en_cours"] call AT_fnc_shot;
+    uiSleep 0.5;
+    removeMissionEventHandler ["EachFrame", _eh];
+    private _e0 = [((_p0 select 1) select 0) - ((_p0 select 0) select 0), ((_p0 select 1) select 1) - ((_p0 select 0) select 1),
+        ((_p0 select 2) select 0) - ((_p0 select 0) select 0), ((_p0 select 2) select 1) - ((_p0 select 0) select 1), (_p0 select 0) select 0];
+    private _bouge = { (abs ((_x select 4) - (_e0 select 4))) > 0.00001 } count AT_VibEcarts;
+    private _decolle = { (abs ((_x select 0) - (_e0 select 0))) + (abs ((_x select 1) - (_e0 select 1))) + (abs ((_x select 2) - (_e0 select 2))) + (abs ((_x select 3) - (_e0 select 3))) > 0.00001 } count AT_VibEcarts;
+    format ["vibration : %1 images, coque déplacée sur %2, écran décollé de la coque sur %3", count AT_VibEcarts, _bouge, _decolle] call AT_fnc_info;
+    [_bouge > 3, "la coque n'a pas tremblé"] call AT_fnc_check;
+    [_decolle isEqualTo 0, format ["écran ou reflet décollé de la coque sur %1 images", _decolle]] call AT_fnc_check;
+    [(_suivis apply { ctrlPosition _x }) isEqualTo _p0, "coque, écran ou reflet pas revenus exactement à leur place"] call AT_fnc_check;
+    // Réglage coupé : rien ne bouge.
+    profileNamespace setVariable ["COMSPEC_ATAK_Vibrate", false];
+    private _r = [] call comspec_atak_native_fnc_vibrate;
+    uiSleep 0.3;
+    [!(_r isEqualTo true) && {(uiNamespace getVariable ["COMSPEC_ATAK_Vibrating", -1]) < 0}, "vibration jouée avec le réglage coupé"] call AT_fnc_check;
+    profileNamespace setVariable ["COMSPEC_ATAK_Vibrate", _pref0];
+    // Sursaut d'un appui (fn_fx « tap ») sur une page défilée : tout bouge d'un pixel puis revient, défilement gardé.
+    if ([["SETTINGS", 2] call AT_fnc_page, "Réglages non ouverts"] call AT_fnc_check) then {
+        private _d2 = [] call comspec_atak_native_fnc_display;
+        private _cg = _d2 displayCtrl 88531;
+        _cg ctrlSetScrollValues [0.5, -1];
+        uiSleep 0.5;
+        private _sv = ctrlScrollValues _cg;
+        private _pc = ctrlPosition (_d2 displayCtrl 88509);
+        private _pg = ctrlPosition _cg;
+        (([] call comspec_atak_native_fnc_layoutGet) get "device") params ["_sx", "_sy", "_sw", "_sh"];
+        ["tap", [_sx + _sw / 2, _sy + _sh / 2]] call comspec_atak_native_fnc_fx;
+        uiSleep 0.4;
+        format ["appui : défilement %1 -> %2", _sv, ctrlScrollValues _cg] call AT_fnc_info;
+        [(abs (((ctrlScrollValues _cg) select 0) - (_sv select 0))) < 0.002, format ["défilement perdu après l'appui (%1 -> %2)", _sv, ctrlScrollValues _cg]] call AT_fnc_check;
+        [(ctrlPosition (_d2 displayCtrl 88509)) isEqualTo _pc && {(ctrlPosition _cg) isEqualTo _pg}, "coque ou écran pas revenus à leur place après l'appui"] call AT_fnc_check;
+    };
+    call AT_fnc_done;
+}, 40] call AT_fnc_run;
+
+// Miniature (porté, sans souris) : la carte suit le joueur à chaque image ; à l'arrêt, aucun saut ni calque manquant.
+["tel_mini_defilement", {
+    if (["comspec_atak_native_fnc_mapCtrl"] call AT_fnc_nil) exitWith {};
+    if !("COMSPEC_ATAK_Phone" in (items player)) then { player addItem "COMSPEC_ATAK_Phone"; };
+    [] call comspec_atak_native_fnc_close;
+    uiSleep 0.5;
+    [false] call comspec_atak_native_fnc_open;
+    [[{ !isNull ([] call comspec_atak_native_fnc_display) }, 6] call AT_fnc_wait, "miniature non ouverte"] call AT_fnc_check;
+    uiSleep 1;
+    ["MAP"] call comspec_atak_native_fnc_navigate;
+    uiSleep 3;
+    private _map = [[] call comspec_atak_native_fnc_display] call comspec_atak_native_fnc_mapCtrl;
+    [!isNull _map, "pas de carte en miniature"] call AT_fnc_check;
+    call AT_fnc_rfStart;
+    AT_MiniTrace = [];
+    AT_MiniMap = _map;
+    private _eh = addMissionEventHandler ["EachFrame", {
+        if (isNull AT_MiniMap) exitWith {};
+        (ctrlPosition AT_MiniMap) params ["_x", "_y", "_w", "_h"];
+        private _c = AT_MiniMap ctrlMapScreenToWorld [_x + _w / 2, _y + _h / 2];
+        private _g = [] call comspec_atak_native_fnc_gpsPos;
+        AT_MiniTrace pushBack [diag_tickTime, _c distance2D _g, _c, count (allControls ([] call comspec_atak_native_fnc_display))];
+    }];
+    // Marche simulée : 3 m/s vers le nord pendant 3 s, puis arrêt net.
+    private _p = getPosASL player;
+    private _t0 = diag_tickTime;
+    while { diag_tickTime - _t0 < 3 } do {
+        player setPosASL (_p vectorAdd [0, 3 * (diag_tickTime - _t0), 0]);
+        uiSleep 0.01;
+    };
+    private _tStop = diag_tickTime;
+    uiSleep 2.5;
+    removeMissionEventHandler ["EachFrame", _eh];
+    ["mini_fin_defilement"] call AT_fnc_shot;
+    private _m = call AT_fnc_rfStop;
+    private _apres = AT_MiniTrace select { (_x select 0) > _tStop + 0.1 };
+    private _sauts = 0;
+    private _rebonds = 0;
+    {
+        if (_forEachIndex > 0) then {
+            private _prev = _apres select (_forEachIndex - 1);
+            if (((_x select 2) distance2D (_prev select 2)) > 2) then { _sauts = _sauts + 1; };
+            if ((_x select 1) > (_prev select 1) + 0.3) then { _rebonds = _rebonds + 1; };
+        };
+    } forEach _apres;
+    private _crees = { (_x select 3) isNotEqualTo ((AT_MiniTrace select 0) select 3) } count AT_MiniTrace;
+    private _fin = (_apres param [(count _apres) - 1, [0, 999]]) select 1;
+    format ["mini : %1 images, écart final %2 m, sauts après l'arrêt %3, écart qui remonte %4, images où le nombre de contrôles change %5, reflet absent %6, recréé %7, calque absent %8",
+        count AT_MiniTrace, _fin toFixed 2, _sauts, _rebonds, _crees, _m select 1, _m select 2, _m select 3] call AT_fnc_info;
+    [_sauts isEqualTo 0, format ["carte en miniature : %1 sauts après l'arrêt", _sauts]] call AT_fnc_check;
+    [_rebonds isEqualTo 0, format ["carte en miniature : l'écart au joueur remonte %1 fois après l'arrêt", _rebonds]] call AT_fnc_check;
+    [_fin < 3, format ["carte en miniature pas recentrée sur le joueur (%1 m)", _fin toFixed 1]] call AT_fnc_check;
+    [(_m select 1) isEqualTo 0 && {(_m select 3) isEqualTo 0}, format ["calques absents en miniature (reflet %1, autres %2 images)", _m select 1, _m select 3]] call AT_fnc_check;
+    [(_m select 2) isEqualTo 0, format ["reflet recréé %1 fois pendant le suivi", _m select 2]] call AT_fnc_check;
+    player setPosASL _p;
+    call AT_fnc_done;
+}, 60] call AT_fnc_run;
+// ATAK 4.2.2, apps pensées pour le téléphone tenu à l'horizontale : textes et boutons d'un formulaire ni l'un sur
+// l'autre ni hors du cadre (colonnes de fn_formRender, fn_layoutCols). Paires voisines seulement (triées par hauteur).
+AT_fnc_formChevauche = {
+    params ["_nom"];
+    private _d = [] call comspec_atak_native_fnc_display;
+    if (isNull _d) exitWith {};
+    private _grps = (uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []]) apply { _x select 1 };
+    private _nKo = 0;
+    {
+        private _g = _x;
+        private _gw = (ctrlPosition _g) select 2;
+        private _els = [];
+        {
+            if ((ctrlParentControlsGroup _x) isEqualTo _g && {ctrlShown _x} && {(ctrlType _x) in [1, 13]}
+                && {!((ctrlClassName _x) in ["COMSPEC_RscButtonOverlay", "COMSPEC_RscButtonInvisible"])}) then {
+                (ctrlPosition _x) params ["_x0", "_y0", "_w0", "_h0"];
+                if (_w0 > pixelW * 2 && {_h0 > pixelH * 2}) then { _els pushBack [_y0, _x0, _w0, _h0, _x]; };
+            };
+        } forEach (allControls _d);
+        _els sort true;
+        {
+            _x params ["_y0", "_x0", "_w0", "_h0"];
+            if (_x0 + _w0 > _gw + pixelW * 3 && {_nKo < 6}) then {
+                _nKo = _nKo + 1;
+                [false, format ["%1 : hors du cadre à droite (x %2 + %3 > %4)", _nom, _x0, _w0, _gw]] call AT_fnc_check;
+            };
+            for "_j" from (_forEachIndex + 1) to ((count _els) - 1) do {
+                (_els select _j) params ["_y1", "_x1", "_w1", "_h1", "_c1"];
+                if (_y1 >= _y0 + _h0) exitWith {};
+                private _iw = ((_x0 + _w0) min (_x1 + _w1)) - (_x0 max _x1);
+                private _ih = ((_y0 + _h0) min (_y1 + _h1)) - (_y0 max _y1);
+                if (_iw > pixelW * 3 && {_ih > pixelH * 3} && {(_iw * _ih) > 0.3 * ((_w0 * _h0) min (_w1 * _h1))} && {_nKo < 6}) then {
+                    _nKo = _nKo + 1;
+                    [false, format ["%1 : deux éléments l'un sur l'autre (%2 / %3, y %4)", _nom, ctrlClassName (_x select 4), ctrlClassName _c1, _y0]] call AT_fnc_check;
+                };
+            };
+        } forEach _els;
+    } forEach _grps;
+};
+
+["tel_paysage_apps", {
+    if (["comspec_atak_native_fnc_layoutCols"] call AT_fnc_nil) exitWith {};
+    private _mode0 = profileNamespace getVariable ["COMSPEC_ATAK_Mode", "MINI"];
+    private _orient0 = profileNamespace getVariable ["COMSPEC_ATAK_Orientation", "PORTRAIT"];
+    private _scale0 = profileNamespace getVariable ["COMSPEC_ATAK_MiniScale", 1];
+    private _apps = ["CHAT", "BFT", "TASK", "ALERTS", "MEDICAL", "REPORTS", "NETWORK", "STATUS", "WAYPOINTS", "SETTINGS", "PROFILE", "WANTED", "NUMBERS", "LOGI"];
+    private _st = call AT_fnc_etat;
+    {
+        _x params ["_mode", "_orient", "_scale", "_nom"];
+        profileNamespace setVariable ["COMSPEC_ATAK_Mode", _mode];
+        profileNamespace setVariable ["COMSPEC_ATAK_Orientation", _orient];
+        profileNamespace setVariable ["COMSPEC_ATAK_MiniScale", _scale];
+        [true] call comspec_atak_native_fnc_open;
+        [[{ !isNull ([] call comspec_atak_native_fnc_display) }, 8] call AT_fnc_wait, format ["téléphone non ouvert (%1)", _nom]] call AT_fnc_check;
+        uiSleep 1.2;
+        private _l = [] call comspec_atak_native_fnc_layoutGet;
+        private _bw = ((_l get "body") select 2);
+        format ["%1 : corps %2 px de large, %3 caractère(s), colonnes section %4, info %5, maître-détail %6", _nom, round (_bw / pixelW), round (_bw / (_l get "colChar")),
+            [_bw, "section"] call comspec_atak_native_fnc_layoutCols, [_bw, "info"] call comspec_atak_native_fnc_layoutCols, ([_bw, "split"] call comspec_atak_native_fnc_layoutCols) isNotEqualTo []] call AT_fnc_info;
+        {
+            private _pg = _x;
+            _st set ["netDiag", false];
+            private _ok = [_pg, 1.2] call AT_fnc_page;
+            [_ok, format ["app %1 non ouverte (%2)", _pg, _nom]] call AT_fnc_check;
+            if (_ok) then {
+                [_pg] call comspec_atak_native_fnc_pageRender;
+                uiSleep 0.5;
+                private _n = format ["paysage_%1_%2", toLower _pg, _nom];
+                [_n] call AT_fnc_formTient;
+                [_n] call AT_fnc_formChevauche;
+                [_n] call AT_fnc_shot;
+            };
+        } forEach _apps;
+        // Dépannage MPU (volet de l'app Réseau).
+        _st set ["netDiag", true];
+        ["NETWORK"] call comspec_atak_native_fnc_pageRender;
+        uiSleep 0.6;
+        [format ["paysage_mpudiag_%1", _nom]] call AT_fnc_formTient;
+        [format ["paysage_mpudiag_%1", _nom]] call AT_fnc_formChevauche;
+        [format ["paysage_mpudiag_%1", _nom]] call AT_fnc_shot;
+        _st set ["netDiag", false];
+    } forEach [
+        ["FULL", "LANDSCAPE", 1, "plein"],
+        ["MINI", "LANDSCAPE", 1.3, "mini_paysage_grand"],
+        ["MINI", "LANDSCAPE", 0.7, "mini_paysage_petit"],
+        ["MINI", "PORTRAIT", 1.3, "mini_portrait_grand"],
+        ["MINI", "PORTRAIT", 0.7, "mini_portrait_petit"]
+    ];
+    // Mode petit porté (pas en main) : barre d'app sans titre ni bouton sur la carte, la carte touche la barre d'état.
+    {
+        _x params ["_orient", "_scale"];
+        profileNamespace setVariable ["COMSPEC_ATAK_Mode", "MINI"];
+        profileNamespace setVariable ["COMSPEC_ATAK_Orientation", _orient];
+        profileNamespace setVariable ["COMSPEC_ATAK_MiniScale", _scale];
+        [true] call comspec_atak_native_fnc_open;
+        uiSleep 0.8;
+        ["MAP"] call comspec_atak_native_fnc_navigate;
+        uiSleep 0.8;
+        [false] call comspec_atak_native_fnc_open;
+        [[{ !isNull ([] call comspec_atak_native_fnc_display) }, 8] call AT_fnc_wait, "téléphone porté non affiché"] call AT_fnc_check;
+        uiSleep 1.5;
+        private _l = [] call comspec_atak_native_fnc_layoutGet;
+        private _gap = ((_l get "body") select 1) - (((_l get "status") select 1) + ((_l get "status") select 3));
+        format ["mini porté %1 %2 : page %3, écart barre d'état / contenu %4 px", _orient, _scale, (call AT_fnc_etat) getOrDefault ["activePage", ""], round (_gap / pixelH)] call AT_fnc_info;
+        if (((call AT_fnc_etat) getOrDefault ["activePage", ""]) isEqualTo "MAP") then {
+            [_gap <= pixelH * 3, format ["mini porté %1 : bande vide de %2 px entre la barre d'état et la carte", _orient, round (_gap / pixelH)]] call AT_fnc_check;
+        };
+        [format ["paysage_mini_porte_carte_%1_%2", toLower _orient, _scale]] call AT_fnc_shot;
+        [] call comspec_atak_native_fnc_close;
+        uiSleep 0.5;
+    } forEach [["LANDSCAPE", 1], ["LANDSCAPE", 0.7], ["PORTRAIT", 1]];
+    "apps en paysage : sections et tuiles en deux colonnes (plein écran), une colonne en portrait et sur le petit téléphone, rien de coupé ni superposé ; mode petit porté sur la carte : pas de bande noire sous la barre d'état" call AT_fnc_visuel;
+    profileNamespace setVariable ["COMSPEC_ATAK_Mode", _mode0];
+    profileNamespace setVariable ["COMSPEC_ATAK_Orientation", _orient0];
+    profileNamespace setVariable ["COMSPEC_ATAK_MiniScale", _scale0];
+    ["LAUNCHER"] call comspec_atak_native_fnc_navigate;
+    call AT_fnc_done;
+}, 900] call AT_fnc_run;

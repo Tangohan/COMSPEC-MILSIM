@@ -2668,6 +2668,9 @@ class AtakApiController
                 'mod_version' => $modVersion !== '' ? $modVersion : null,
                 'extension_version' => $extVersion !== '' ? $extVersion : null,
                 'arma_build' => $armaBuild !== '' ? $armaBuild : null,
+                // Preuve du module officiel (en-têtes X-Comspec-Client-* de la DLL), affichée dans le ticket Discord.
+                'client_attest' => \App\Support\OfficialClientAttestation::secretState() === 'off'
+                    ? 'off' : \App\Support\OfficialClientAttestation::presentedStatus(),
             ]);
         } catch (\InvalidArgumentException $e) {
             return Response::json([
@@ -4523,7 +4526,12 @@ class AtakApiController
         }
         $out = array_map(fn ($r) => ['id' => $r['id'], 'layerId' => $r['layerId'], 'markerData' => $r['markerData'], 'updated_at' => $r['updated_at']], $rows);
         try {
-            $detectRules = $this->markerDetectionService()->enabledRules($tenantId);
+            // Règles de la communauté (réglage rare) : lues une fois toutes les 10 s, pas à chaque sondage des marqueurs.
+            $detectRules = ShortCache::remember(
+                'markerrules:' . $tenantId,
+                10,
+                fn (): array => $this->markerDetectionService()->enabledRules($tenantId)
+            );
             if ($detectRules !== []) {
                 $out = array_map(
                     fn (array $row): array => $this->markerDetectionService()->decorateRow($row, $detectRules),
@@ -4537,7 +4545,12 @@ class AtakApiController
         $world = preg_replace('/[^A-Za-z0-9_.-]/', '', (string) $request->query('world_name', ''));
         if ($world !== '') {
             try {
-                $authoritative = (new \App\Repositories\AthenaTacticalRepository())->markers($tenantId, $world, false);
+                // Repères publiés d'Athena : même lecture pour tous les joueurs du théâtre, 2 s comme la liste des marqueurs.
+                $authoritative = ShortCache::remember(
+                    'athena_markers:' . $tenantId . ':' . sha1($world) . ':' . ShortCache::gen('markers:' . $tenantId),
+                    2,
+                    static fn (): array => (new \App\Repositories\AthenaTacticalRepository())->markers($tenantId, $world, false)
+                );
                 foreach ($authoritative as $marker) {
                     if (($marker['geometry_type'] ?? '') !== 'POINT') {
                         continue;
@@ -4571,7 +4584,12 @@ class AtakApiController
                         'pos' => $g['pos'], 'type' => 'comspec_del', 'text' => $g['arma_name'], 'color' => '', 'source' => 'game_del',
                     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                     'updated_at' => null,
-                ], $this->atak->recentlySuppressedGameMarkers($tenantId, $mapId));
+                ], ShortCache::remember(
+                    // Balayage LIKE des marqueurs retirés : 2 s par carte ; la fenêtre de 15 s entre dans la clé.
+                    'suppressed_markers:' . $tenantId . ':' . $mapId . ':' . intdiv(time(), 15) . ':' . ShortCache::gen('markers:' . $tenantId),
+                    2,
+                    fn (): array => $this->atak->recentlySuppressedGameMarkers($tenantId, $mapId)
+                ));
                 $out = array_merge($gone, $out);
             } catch (\Throwable) {
                 // La liste des marqueurs reste servie sans ce complément.
@@ -4630,6 +4648,11 @@ class AtakApiController
         }
         if (empty($decoded['source'])) {
             $decoded['source'] = 'web';
+        }
+        // Auteur prouvé par la session : base de « seulement mes marqueurs » (effacer la carte).
+        unset($decoded['owner_user_id']);
+        if ((int) (Session::get('user_id') ?? 0) > 0) {
+            $decoded['owner_user_id'] = (int) Session::get('user_id');
         }
         if (empty($decoded['type']) || $decoded['type'] === 'manual') {
             $decoded['type'] = 'mil_dot';
@@ -4813,6 +4836,96 @@ class AtakApiController
         }
 
         return Response::json(['ok' => true]);
+    }
+
+    /**
+     * Effacer la carte (Overwatch) : POST {mapId, mode: preview|clear, scope: all|mine, types[], confirm}.
+     * Membre connecté de la communauté, jeton CSRF ; « all » exige la gestion de la carte.
+     */
+    public function mapClear(Request $request, array $params = []): Response
+    {
+        $guard = $this->mapClearGuard($request);
+        if ($guard instanceof Response) {
+            return $guard;
+        }
+        [$tenantId, $mapId, $actor, $body] = $guard;
+        $service = $this->mapClearService();
+        if (($body['mode'] ?? 'preview') !== 'clear') {
+            return Response::json(['ok' => true] + $service->preview($tenantId, $mapId, $actor));
+        }
+        $types = is_array($body['types'] ?? null) ? $body['types'] : [];
+        $result = $service->clear($tenantId, $mapId, $actor, (string) ($body['scope'] ?? ''), $types, (string) ($body['confirm'] ?? ''));
+        if (!$result['ok']) {
+            $err = (string) ($result['error'] ?? 'invalid');
+
+            return Response::json(['ok' => false, 'error' => $err], $err === 'forbidden' ? 403 : 422);
+        }
+
+        return Response::json($result);
+    }
+
+    public function mapClearUndo(Request $request, array $params = []): Response
+    {
+        $guard = $this->mapClearGuard($request);
+        if ($guard instanceof Response) {
+            return $guard;
+        }
+        [$tenantId, $mapId, $actor, $body] = $guard;
+        $result = $this->mapClearService()->undo($tenantId, $mapId, $actor, (string) ($body['batch'] ?? ''));
+        if (!$result['ok']) {
+            $err = (string) ($result['error'] ?? 'invalid');
+
+            return Response::json(['ok' => false, 'error' => $err], $err === 'forbidden' ? 403 : 410);
+        }
+
+        return Response::json($result);
+    }
+
+    private function mapClearService(): \App\Services\Atak\AtakMapClearService
+    {
+        return new \App\Services\Atak\AtakMapClearService($this->atak, $this->mapShapeRepo, $this->activityLog);
+    }
+
+    /** @return array{0:int, 1:int, 2:array{userId:int, aliases:list<string>, canManage:bool}, 3:array<string,mixed>}|Response */
+    private function mapClearGuard(Request $request): array|Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        if (ComspecApiKeyAuth::extractPresentedKey() !== '') {
+            return Response::json(['error' => 'web_session_required'], 403);
+        }
+        if ($resp = $this->requireReconOperatorSession($tenantId)) {
+            return $resp;
+        }
+        if (!\App\Core\Csrf::verify($request)) {
+            return Response::json(['ok' => false, 'error' => 'csrf'], 419);
+        }
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+        $brief = $this->sessionUserBrief() ?? ['displayName' => '', 'callsign' => '', 'userId' => 0];
+        $aliases = array_values(array_filter([(string) $brief['callsign'], (string) $brief['displayName']], static fn (string $a): bool => trim($a) !== ''));
+        // can() lit la porte (Gate) que seul AuthMiddleware remplit : sur /api/… elle est vide, donc toujours fausse.
+        // Même règle que le parc ATAK du jeu : admin plateforme ou gestion de la communauté, relue en base.
+        $canManage = false;
+        if ((int) $brief['userId'] > 0) {
+            try {
+                $admin = new \App\Services\Atak\AtakGameAdminService();
+                $canManage = \App\Services\Atak\AtakMapClearService::managerFromRole(
+                    $admin->role($tenantId, (int) $brief['userId']),
+                    $admin->can($tenantId, (int) $brief['userId'], ['atak.mission_cycle.manage'])
+                );
+            } catch (\Throwable) {
+                $canManage = false;
+            }
+        }
+
+        return [$tenantId, $mapId, ['userId' => (int) $brief['userId'], 'aliases' => $aliases, 'canManage' => $canManage], $body];
     }
 
     public function markerUpsert(Request $request, array $params = []): Response
@@ -5218,6 +5331,10 @@ class AtakApiController
         try {
             $rows = $this->applyIntelScramble($request, $tenantId, $mapId, 'unit', $rows);
         } catch (\Throwable) {
+        }
+        // Poste TOC web (opt-in) : une ligne par joueur ou nœud, genre du symbole et âge (après le brouillage).
+        if ($request->query('toc') === '1') {
+            $rows = \App\Services\AtakToc\TocTracks::units(array_values(array_filter($rows, 'is_array')));
         }
 
         return Response::json($rows);
@@ -6456,7 +6573,17 @@ class AtakApiController
 
         $http = 200;
         if (($result['accepted'] ?? 0) === 0 && ($result['rejected'] ?? 0) > 0) {
-            $http = 422;
+            // Position hors carte ou pas encore disponible (menu, spectateur, caméra Zeus, téléportation) :
+            // écartée sans erreur HTTP, sinon le jeu ouvre un ticket « ÉCHEC HTTP POST 422 » pour un point ignoré.
+            $benign = ['coords_out_of_bounds', 'invalid_coords'];
+            $onlyBenign = true;
+            foreach (is_array($result['results'] ?? null) ? $result['results'] : [] as $r) {
+                if (is_array($r) && empty($r['ok']) && !in_array((string) ($r['error'] ?? ''), $benign, true)) {
+                    $onlyBenign = false;
+                    break;
+                }
+            }
+            $http = $onlyBenign && is_array($result['results'] ?? null) && $result['results'] !== [] ? 200 : 422;
         }
         (new \App\Repositories\AtakIngestPlayerStatsRepository())->recordBatchOutcome(
             $tenantId,
@@ -7128,6 +7255,21 @@ class AtakApiController
             return $actor;
         }
         $body = $this->jsonBody($request);
+        // Même appel COMSPEC Link (« BriefingPlan.Push ») pour la salle TOC du camp (fn_tocWeb du mod) : pas de
+        // nouvelle commande dans la DLL. Canal « toc_room » : instantané de la salle (docs/TOC-WEB.md).
+        if (($body['channel'] ?? '') === 'toc_room') {
+            try {
+                $res = (new \App\Services\AtakToc\TocRoomService())->ingestFromGame(
+                    $tenantId,
+                    (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID),
+                    $body
+                );
+            } catch (\Throwable) {
+                return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+            }
+
+            return Response::json(['ok' => $res['ok'], 'reason' => $res['reason']], $res['reason'] === 'invalid' ? 400 : 200);
+        }
         $side = strtoupper(trim((string) ($body['side'] ?? '')));
         if (!in_array($side, \App\Repositories\AtakBriefingPlanRepository::SIDES, true)) {
             return Response::json(['ok' => false, 'error' => 'invalid_side'], 400);
@@ -8159,7 +8301,49 @@ class AtakApiController
         $mapId = $this->mapId($request);
         $limit = (int) ($request->query('limit') ?: 40);
         $this->logStaleUnitDisconnects($tenantId, $mapId);
-        $alerts = $this->atak->getMedicalAlertsFromChat($tenantId, $mapId, min($limit, 100));
+        // Partie commune à tous les joueurs de la carte (chat, télémétrie, triage, unités, réconciliation) : calculée
+        // une fois toutes les 3 s au plus, par communauté et carte (une quinzaine de requêtes SQL, sondée toutes les
+        // 8 s par chaque joueur). Brouillage, droits de triage et vue renseignement restent propres à l'appelant.
+        $limit = max(1, min($limit, 100));
+        [$alerts, $criticalUnits, $emergencyCount] = ShortCache::remember(
+            'medalerts:' . $tenantId . ':' . $mapId . ':' . $limit . ':' . ShortCache::gen('medalerts:' . $tenantId),
+            3,
+            fn (): array => $this->computeMedicalAlerts($tenantId, $mapId, $limit)
+        );
+
+        $alerts = $this->applyIntelScramble($request, $tenantId, $mapId, 'alert', $alerts);
+        $criticalUnits = $this->applyIntelScramble($request, $tenantId, $mapId, 'unit', $criticalUnits);
+
+        return Response::json([
+            'mapId' => $mapId,
+            'alerts' => $alerts,
+            'criticalUnits' => $criticalUnits,
+            'counts' => [
+                'alerts' => count($alerts),
+                'criticalUnits' => count($criticalUnits),
+                'emergency' => $emergencyCount,
+            ],
+            'active_window_seconds' => MedicalAlertParser::ACTIVE_WINDOW_SECONDS,
+            'can_triage' => $this->canTriageMedicalAlerts(),
+            'triage_statuses' => array_map(
+                static fn (string $s): array => [
+                    'value' => $s,
+                    'label' => MedicalAlertParser::triageLabelFr($s),
+                ],
+                MedicalAlertParser::TRIAGE_STATUSES
+            ),
+            'intel_view' => $this->resolveIntelView($request, $tenantId, $mapId),
+        ]);
+    }
+
+    /**
+     * Alertes médicales d'une carte, avant brouillage : [alertes, unités critiques, urgences].
+     *
+     * @return array{0: array<array-key, mixed>, 1: array<array-key, mixed>, 2: int}
+     */
+    private function computeMedicalAlerts(int $tenantId, int $mapId, int $limit): array
+    {
+        $alerts = $this->atak->getMedicalAlertsFromChat($tenantId, $mapId, $limit);
         try {
             $structured = (new \App\Services\Tactical\AtakTelemetryMedicalStore())->listActive($tenantId, $mapId, min($limit, 100));
             if ($structured !== []) {
@@ -8201,29 +8385,7 @@ class AtakApiController
             }
         }
 
-        $alerts = $this->applyIntelScramble($request, $tenantId, $mapId, 'alert', $alerts);
-        $criticalUnits = $this->applyIntelScramble($request, $tenantId, $mapId, 'unit', $criticalUnits);
-
-        return Response::json([
-            'mapId' => $mapId,
-            'alerts' => $alerts,
-            'criticalUnits' => $criticalUnits,
-            'counts' => [
-                'alerts' => count($alerts),
-                'criticalUnits' => count($criticalUnits),
-                'emergency' => $emergencyCount,
-            ],
-            'active_window_seconds' => MedicalAlertParser::ACTIVE_WINDOW_SECONDS,
-            'can_triage' => $this->canTriageMedicalAlerts(),
-            'triage_statuses' => array_map(
-                static fn (string $s): array => [
-                    'value' => $s,
-                    'label' => MedicalAlertParser::triageLabelFr($s),
-                ],
-                MedicalAlertParser::TRIAGE_STATUSES
-            ),
-            'intel_view' => $this->resolveIntelView($request, $tenantId, $mapId),
-        ]);
+        return [$alerts, $criticalUnits, $emergencyCount];
     }
 
     /**
@@ -8237,8 +8399,13 @@ class AtakApiController
         }
         $tenantId = $r;
         $mapId = $this->mapId($request);
-        $limit = (int) ($request->query('limit') ?: 40);
-        $alerts = $this->atak->getTacticalAlertsFromChat($tenantId, $mapId, min($limit, 100));
+        $limit = min((int) ($request->query('limit') ?: 40), 100);
+        // Lecture du chat (jusqu'à 1 000 lignes quand il n'y a aucune alerte) commune à la carte : 3 s au plus.
+        $alerts = ShortCache::remember(
+            'tacalerts:' . $tenantId . ':' . $mapId . ':' . $limit,
+            3,
+            fn (): array => $this->atak->getTacticalAlertsFromChat($tenantId, $mapId, $limit)
+        );
         $alerts = $this->applyIntelScramble($request, $tenantId, $mapId, 'alert', $alerts);
 
         return Response::json([
@@ -8712,6 +8879,8 @@ class AtakApiController
         }
 
         $triage = $this->medicalTriageRepository->upsert($tenantId, $mapId, $chatId, $status, $by, $note);
+        // Liste des alertes médicales gardée 3 s (medicalAlertsIndex) : le triage se voit au sondage suivant.
+        ShortCache::bump('medalerts:' . $tenantId);
         if ($triage === null) {
             return Response::json([
                 'error' => 'save_failed',
@@ -13895,6 +14064,12 @@ class AtakApiController
         $tenantId = $r;
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        if ((int) (Session::get('user_id') ?? 0) > 0) {
+            $meta = $body['meta'] ?? [];
+            $meta = is_string($meta) ? (json_decode($meta, true) ?: []) : (is_array($meta) ? $meta : []);
+            $meta['owner_user_id'] = (int) Session::get('user_id');
+            $body['meta'] = $meta;
+        }
         $row = $this->mapShapeRepo->create($tenantId, $mapId, $body);
         return Response::json($row, 201);
     }
@@ -14041,6 +14216,10 @@ class AtakApiController
             $out = $this->motionService()->attachToAir($tenantId, $mapId, $out);
         } catch (\Throwable) {
         }
+        if ($request->query('toc') === '1') {
+            $out = \App\Services\AtakToc\TocTracks::air(array_values(array_filter($out, 'is_array')));
+        }
+
         return Response::json($out);
     }
 
@@ -15341,6 +15520,9 @@ class AtakApiController
             $vehicles = $repo->listActive($tenantId, $mapId, array_filter($filters, fn($v) => $v !== null));
         } catch (\Throwable) {
             $vehicles = [];
+        }
+        if ($request->get('toc') === '1') {
+            $vehicles = \App\Services\AtakToc\TocTracks::vehicles(array_values(array_filter($vehicles, 'is_array')));
         }
 
         return Response::json([

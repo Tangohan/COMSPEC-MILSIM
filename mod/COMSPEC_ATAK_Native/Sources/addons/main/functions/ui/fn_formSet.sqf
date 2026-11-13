@@ -12,6 +12,7 @@
       btnrow : valeur = visible (booléen), ou [[libellé ("" : inchangé), actif, style ("" | "main" | "red"), infobulle]...] un par bouton
                (ligne « buttons » déclarée avec un id, 3e élément)
       segment : valeur = l'option choisie (ligne « segment » déclarée avec un id, 5e élément des options)
+      info   : valeur = texte structuré de la valeur, à droite (ligne « info » déclarée avec un id, 4e élément)
     Retour : true si la ligne est affichée et a été mise à jour.
 */
 params [["_id", ""], ["_v", false]];
@@ -76,6 +77,12 @@ switch (_e get "kind") do {
             };
         } forEach (_e get "btns");
         _shown
+    };
+    case "info": {
+        private _t = _e get "value";
+        if (isNull _t) exitWith { false };
+        _t ctrlSetStructuredText parseText ((format ["<t size='0.85' align='right'>%1</t>", _v]) call comspec_atak_native_fnc_tr);
+        true
     };
     case "fold": {
         private _t = _e get "text";

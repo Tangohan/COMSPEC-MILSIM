@@ -17,6 +17,12 @@
     Format diffusé : [numéro, [[camp, nœuds, liens, total des nœuds trouvés]...]] ; nœuds à plat par 5 : antenne, porteur, type x 100 +
     canal, + 1000 en écoute seule (type : 0 joueur, 1 radio posée, 2 passerelle ; canal 0 pour une passerelle), portée (10 m), débit max (100 kbit/s) ;
     liens à plat par 3 : A + 64 x B, marge (2 dB, -1 si gardé par l'hystérésis), débit (100 kbit/s).
+    Ajouts 4.2.1, lus seulement s'ils sont là (un serveur plus ancien ne les envoie pas) :
+      causes à plat par 2 : A + 64 x B, cause du lien de marge inférieure à 9 dB (codes "causeTxt") ;
+      liens manqués à plat par 3 : A + 64 x B (A : le nœud qui manque B), cause, marge (2 dB) ; 3 au plus par nœud, les plus proches de passer.
+    Bâtiments (réglage mesh_buildings, 50 % par défaut) : un seul rayon par paire de moins de 3 km, en cache avec le bilan (30 s).
+    Reconvergence (réglage mesh_reconverge_s, 3 s par défaut, côté client) : un nœud de ma route vers la passerelle disparaît du graphe
+    partagé, la nouvelle route n'est prise qu'après ce délai (ni données ni rallonge voix pendant ce temps).
 
     Lecture ("view", client) : aucun bilan radio. Plus large chemin sous plafond de sauts (comspec_atak_native_mesh_hops, 6 par défaut,
     décision 3), résultat dans COMSPEC_ATAK_MpuMesh pour fn_mpuLink, fn_mpuVoice et fn_waveRelayAction "scan".
@@ -34,9 +40,49 @@
       "weakest" [liens] -> le lien de plus faible marge, ou []
       "curve" -> part du débit gardée selon les sauts (décision 12)
       "gravity" [marge, sauts, plafond] -> niveau 0 à 3            "hyst" [lien bon, marge, débit, état précédent] -> [garder, état, marge, débit]
+      "lossCode" [[cause, dB]...] (fn_radioLink) -> code de la plus forte perte au-delà de 3 dB, 0 sinon
+      "causeTxt" [code] -> cause en clair ; "causeFix" [code, distance à gagner m] -> conseil au joueur
 */
 params [["_act", ""], ["_arg", []]];
 switch (_act) do {
+    case "lossCode": {
+        private _best = 3;
+        private _c = 0;
+        {
+            _x params [["_n", ""], ["_db", 0]];
+            if (_n isEqualType "" && {_db isEqualType 0} && {_db > _best}) then {
+                _best = _db;
+                _c = switch (true) do {
+                    case ((_n find "Relief") >= 0 || {(_n find "Fresnel") >= 0}): { 2 };
+                    case ((_n find "Bâtiments") >= 0): { 3 };
+                    case ((_n find "Feuillage") >= 0): { 8 };
+                    default { 4 };
+                };
+            };
+        } forEach _arg;
+        _c
+    };
+    case "causeTxt": {
+        // 1 distance, 2 relief, 3 bâtiments, 4 météo, 5 brouillage, 6 posture du porteur, 7 autre canal, 8 feuillage.
+        ["la distance", "la distance", "le relief", "les bâtiments", "la météo", "un brouillage", "la posture du porteur", "un autre canal", "le feuillage"] param [_arg param [0, 1], "la distance"]
+    };
+    case "causeFix": {
+        _arg params [["_c", 1], ["_gain", 0]];
+        switch (_c) do {
+            case 2: { "Montez sur un point haut, ou posez un relais sur la crête : une antenne plus haute passe au-dessus du relief." };
+            case 3: { "Sortez des rues, ou posez un relais sur un toit : il voit par-dessus les bâtiments." };
+            case 4: { "Pluie forte ou orage : rapprochez les radios, ou posez un relais de plus." };
+            case 5: { "Éloignez-vous du brouilleur, ou changez de canal (app Wave Relay)." };
+            case 6: { "Relevez-vous, ou sortez de derrière l'obstacle : couché, l'antenne est trop basse." };
+            case 7: { "Mettez votre MPU5 sur le canal de l'équipe (app Wave Relay)." };
+            case 8: { "Sortez du sous-bois, ou posez le relais en lisière." };
+            default {
+                if (_gain >= 50) then {
+                    format ["Rapprochez-vous d'environ %1, ou posez un relais à mi-chemin.", [format ["%1 m", 50 * round (_gain / 50)], format ["%1 km", (_gain / 1000) toFixed 1]] select (_gain >= 1000)]
+                } else { "Rapprochez-vous, ou posez un relais à mi-chemin." }
+            };
+        }
+    };
     case "serverBuilt": {
         ((missionNamespace getVariable ["comspec_atak_native_mesh_server", true]) isEqualTo true) && {!isNil "COMSPEC_ATAK_MeshSrvOn"}
     };
@@ -216,12 +262,15 @@ switch (_act) do {
         private _i = _ref findIf { (_x isEqualType []) && {(_x param [0, ""]) isEqualTo _side} };
         private _out = [];
         if (_i >= 0) then {
-            (_ref select _i) params ["", ["_nf", [], [[]]], ["_lf", [], [[]]], ["_total", 0, [0]]];
+            (_ref select _i) params ["", ["_nf", [], [[]]], ["_lf", [], [[]]], ["_total", 0, [0]], ["_cf", [], [[]]], ["_mf", [], [[]]]];
             // Tailles : 64 nœuds et 2 016 liens au plus, comme le constructeur. Au-delà, ou type faux : graphe ignoré.
             if ((count _nf) > 320 || {(count _lf) > 6048} || {(_lf findIf { !(_x isEqualType 0) }) >= 0}) then {
                 _nf = [];
                 _lf = [];
             };
+            // Causes et liens manqués (4.2.1) : simple explication, ignorée si la taille ou le type est faux.
+            if ((count _cf) > 4032 || {(_cf findIf { !(_x isEqualType 0) || {!finite _x} }) >= 0}) then { _cf = []; };
+            if ((count _mf) > 576 || {(_mf findIf { !(_x isEqualType 0) || {!finite _x} }) >= 0}) then { _mf = []; };
             private _nodes = [];
             for "_j" from 0 to ((count _nf) - 5) step 5 do {
                 if (!((_nf select _j) isEqualType objNull) || {!((_nf select (_j + 1)) isEqualType objNull)} || {!((_nf select [_j + 2, 3]) isEqualTypeAll 0)}) then { _nf = []; _lf = []; _nodes = []; break };
@@ -232,6 +281,8 @@ switch (_act) do {
                 _nodes pushBack [_nf select _j, _nf select (_j + 1), _type, _tc mod 100, (_nf select (_j + 3)) * 10, (_nf select (_j + 4)) * 100, _tc >= 1000];
             };
             private _adj = _nodes apply { [] };
+            private _causes = createHashMap;
+            for "_j" from 0 to ((count _cf) - 2) step 2 do { _causes set [_cf select _j, ((round (_cf select (_j + 1))) max 0) min 8]; };
             private _links = [];
             for "_j" from 0 to ((count _lf) - 3) step 3 do {
                 private _p = _lf select _j;
@@ -240,11 +291,21 @@ switch (_act) do {
                 private _m = _lf select (_j + 1);
                 private _kb = (_lf select (_j + 2)) * 100;
                 if (_a < 0 || {_b < 0} || {_a >= (count _nodes)} || {_b >= (count _nodes)} || {!finite _m} || {!finite _kb}) then { continue };
-                _links pushBack [_a, _b, _m, _kb];
+                // 5e élément : cause du lien faible (0 : rien à signaler).
+                _links pushBack [_a, _b, _m, _kb, _causes getOrDefault [_p, 0]];
                 (_adj select _a) pushBack [_b, _m, _kb];
                 (_adj select _b) pushBack [_a, _m, _kb];
             };
-            _out = [_nodes, _adj, _links, _total];
+            // Liens manqués par nœud : [[marge, autre nœud, cause]...], les plus proches de passer d'abord.
+            private _miss = _nodes apply { [] };
+            for "_j" from 0 to ((count _mf) - 3) step 3 do {
+                private _p = _mf select _j;
+                private _a = _p mod 64;
+                private _b = floor (_p / 64);
+                if (_p < 0 || {_a >= (count _nodes)} || {_b >= (count _nodes)} || {_a isEqualTo _b}) then { continue };
+                (_miss select _a) pushBack [_mf select (_j + 2), _b, ((round (_mf select (_j + 1))) max 0) min 8];
+            };
+            _out = [_nodes, _adj, _links, _total, _causes, _miss];
         };
         uiNamespace setVariable ["COMSPEC_ATAK_MeshDec", [_seq, _side, _var, _out]];
         _out
@@ -278,6 +339,10 @@ switch (_act) do {
     case "every": {
         private _n = (uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap]) getOrDefault ["count", 0];
         private _normal = [4, 8] select (_n > 40);
+        // Reconvergence en cours dans la dernière lecture : relue dès la fin du délai, pas 4 s plus tard.
+        if (((uiNamespace getVariable ["COMSPEC_ATAK_MpuMesh", createHashMap]) getOrDefault ["reconv", 0]) > 0) then {
+            _normal = _normal min ((((uiNamespace getVariable ["COMSPEC_ATAK_MeshReconv", [-1, ""]]) param [0, -1]) - diag_tickTime) max 0);
+        };
         if (["serverBuilt"] call comspec_atak_native_fnc_meshGraph) exitWith {
             [_normal, 0] select (((missionNamespace getVariable ["COMSPEC_ATAK_MeshRef", []]) param [0, -1]) isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_MeshViewSeq", -2]))
         };
@@ -354,22 +419,60 @@ switch (_act) do {
             _l
         };
         private _jamAt = { ["jamAt", _this] call comspec_atak_native_fnc_meshGraph };
-        // Marge d'une paire : bilan radio en cache 30 s par paire de positions arrondies (15 m).
+        // Bâtiments entre deux radios du maillage (4.2.1, réglage mesh_buildings) : le profil grossier ne voit que le relief. Un seul rayon par
+        // paire de moins de 3 km, calculé avec le bilan et gardé avec lui ; mêmes pertes que fn_radioLink "full" (12 dB par bâtiment,
+        // x 0,6 en Réaliste, 30 dB au plus), multipliées par le réglage. Bâtiments à moins de 15 m d'une antenne : abri ou support, non comptés.
+        private _bldK = missionNamespace getVariable ["comspec_atak_native_mesh_buildings", 50];
+        if (!(_bldK isEqualType 0) || {!finite _bldK}) then { _bldK = 50; };
+        _bldK = ((_bldK max 0) min 100) / 100;
+        private _realLvl = ["realism"] call comspec_atak_native_fnc_netCond;
+        if !(_realLvl isEqualType 0) then { _realLvl = 1; };
+        private _bldOn = _bldK > 0 && {_realLvl > 0};
+        private _bldEnv = [0.6, 1] select (_realLvl >= 2);
+        // Marge d'une paire et cause de la plus forte perte : bilan radio en cache 30 s par paire de positions arrondies (15 m).
         private _marginOf = {
-            params ["_pa", "_pb", "_r", "_cache", "_c"];
-            private _ka = [round ((_pa select 0) / 15), round ((_pa select 1) / 15), round (_pa select 2)];
-            private _kb = [round ((_pb select 0) / 15), round ((_pb select 1) / 15), round (_pb select 2)];
-            private _k = str ([[_kb, _ka, round _r], [_ka, _kb, round _r]] select ((_ka select 0) < (_kb select 0) || {(_ka select 0) isEqualTo (_kb select 0) && {(_ka select 1) <= (_kb select 1)}}));
+            // _ka, _kb : clés de position des deux nœuds ([x / 15, y / 15, z, texte]), calculées une fois par nœud et par passe
+            // ("_posKey") ; avant, six arrondis, deux tableaux et un str imbriqué par paire, 2 016 fois par passe à 64 nœuds.
+            params ["_pa", "_pb", "_r", "_cache", "_c", "_ka", "_kb"];
+            private _k = (if ((_ka select 0) < (_kb select 0) || {(_ka select 0) isEqualTo (_kb select 0) && {(_ka select 1) <= (_kb select 1)}}) then { (_ka select 3) + (_kb select 3) } else { (_kb select 3) + (_ka select 3) }) + _kTail + str (round _r);
             private _hit = _cache getOrDefault [_k, []];
-            if ((count _hit) isEqualTo 2 && {diag_tickTime - (_hit select 0) < 30}) exitWith {
+            if ((count _hit) >= 2 && {diag_tickTime - (_hit select 0) < 30}) exitWith {
                 _c set [1, (_c select 1) + 1];
-                _hit select 1
+                [_hit select 1, _hit param [2, 1]]
             };
             _c set [0, (_c select 0) + 1];
             _c set [7, (_c select 7) + 1];
-            private _m = ([_pa, _pb, _r, "coarse"] call comspec_atak_native_fnc_radioLink) select 0;
-            _cache set [_k, [diag_tickTime, _m]];
-            _m
+            ([_pa, _pb, _r, "coarse"] call comspec_atak_native_fnc_radioLink) params ["_m", "_losses", "_d"];
+            if (_bldOn && {_d <= 3000} && {_m > -30}) then {
+                private _blds = [];
+                {
+                    private _o = _x select 2;
+                    if (isNull _o || {_o in _blds} || {typeOf _o isEqualTo ""} || {_o isKindOf "AllVehicles"}) then { continue };
+                    private _ip = _x select 0;
+                    if ((_ip distance _pa) < 15 || {(_ip distance _pb) < 15}) then { continue };
+                    _blds pushBack _o;
+                } forEach (lineIntersectsSurfaces [_pa, _pb, objNull, objNull, true, 8, "GEOM", "NONE"]);
+                if (_blds isNotEqualTo []) then {
+                    private _bl = (((count _blds) * 12 * _bldEnv) min 30) * _bldK;
+                    _m = _m - _bl;
+                    _losses pushBack ["Bâtiments sur le trajet", _bl];
+                };
+                // Rayon compté comme un bilan de plus : la tranche reste bornée.
+                _c set [7, (_c select 7) + 1];
+            };
+            // Rien au-delà de 3 dB : la marge n'est limitée que par la distance.
+            private _code = ["lossCode", _losses] call comspec_atak_native_fnc_meshGraph;
+            if (_code isEqualTo 0) then { _code = 1; };
+            _cache set [_k, [diag_tickTime, _m, _code]];
+            [_m, _code]
+        };
+        private _kTail = format ["b%1r", round (_bldK * 100)];
+        private _posKey = {
+            params ["_p"];
+            private _kx = round ((_p select 0) / 15);
+            private _ky = round ((_p select 1) / 15);
+            private _kz = round (_p select 2);
+            [_kx, _ky, _kz, format ["%1,%2,%3;", _kx, _ky, _kz]]
         };
         private _cache = missionNamespace getVariable ["COMSPEC_ATAK_MeshLos", createHashMap];
         // 64 nœuds font 2 016 paires : la remise à zéro ne doit jamais tomber au milieu d'une passe normale.
@@ -403,35 +506,64 @@ switch (_act) do {
             _nodeN = _nodeN + _n;
             private _jams = (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) select { ((_x param [4, 1e9]) >= _tNow) && {!((_x param [5, false]) && {(_x param [3, ""]) isEqualTo _side})} };
             private _jf = _nodes apply { [_x select 6, _jams, _x select 3] call _jamAt };
+            private _pk = _nodes apply { [_x select 6] call _posKey };
             // Hystérésis : état de la passe précédente, retrouvé par objet (les index changent d'une passe à l'autre).
             (_hystAll getOrDefault [_side, [[], createHashMap]]) params ["_oldObjs", "_oldState"];
             private _oldIdx = _nodes apply { _oldObjs find (_x select 0) };
             private _state = createHashMap;
             private _lf = [];
+            // Explication (4.2.1) : cause des liens faibles, et par nœud les 3 liens manqués les plus proches de passer. Aucun bilan de plus.
+            private _cf = [];
+            private _miss = _nodes apply { [] };
+            private _missAdd = {
+                params ["_p", "_q", "_mm", "_cc"];
+                {
+                    _x params ["_s", "_t"];
+                    private _l = _miss select _s;
+                    _l pushBack [_mm, _t, _cc];
+                    if ((count _l) > 3) then { _l sort false; _l resize 3; };
+                } forEach [[_p, _q], [_q, _p]];
+            };
             for "_i" from 0 to (_n - 2) do {
                 private _a = _nodes select _i;
                 for "_j" from (_i + 1) to (_n - 1) do {
                     private _b = _nodes select _j;
                     if (((_a select 2) isEqualTo 2) && {(_b select 2) isEqualTo 2}) then { continue };
-                    if (((_a select 3) isNotEqualTo (_b select 3)) && {(_a select 2) isNotEqualTo 2} && {(_b select 2) isNotEqualTo 2}) then { continue };
+                    if (((_a select 3) isNotEqualTo (_b select 3)) && {(_a select 2) isNotEqualTo 2} && {(_b select 2) isNotEqualTo 2}) then {
+                        // Autre canal à portée : l'erreur la plus simple à corriger, gardée comme lien manqué (marge 0).
+                        if (((_a select 6) distance (_b select 6)) <= ((_a select 4) min (_b select 4))) then { [_i, _j, 0, 7] call _missAdd; };
+                        continue
+                    };
                     private _r = (_a select 4) min (_b select 4);
                     private _m = -99;
                     private _kb = 0;
                     private _ok = false;
-                    if (((_a select 6) distance (_b select 6)) > _r) then {
+                    private _code = 1;
+                    private _dAB = (_a select 6) distance (_b select 6);
+                    if (_dAB > _r) then {
                         _ct set [2, (_ct select 2) + 1];
+                        // Trop loin : marge en espace libre seulement (aucun calcul de relief), jusqu'à 3 fois la portée.
+                        if (_dAB < 3 * _r) then { [_i, _j, 20 * log ((_r max 1) / _dAB), 1] call _missAdd; };
                     } else {
-                        _m = [_a select 6, _b select 6, _r, _cache, _ct] call _marginOf;
+                        ([_a select 6, _b select 6, _r, _cache, _ct, _pk select _i, _pk select _j] call _marginOf) params ["_m0", "_c0"];
+                        _code = _c0;
                         // Météo radio forcée par Zeus (fn_meshTools).
-                        _m = _m - _wxForce;
+                        _m = _m0 - _wxForce;
+                        if (_wxForce >= 3 && {_m < 9} && {_m0 >= 9 || {_m < 0 && {_m0 >= 0}}}) then { _code = 4; };
                         if (_bodyOn || {_proneOn}) then {
-                            _m = _m - ([_a select 0, _a select 6, _b select 6, _proneOn, _bodyOn] call _pairLoss) - ([_b select 0, _b select 6, _a select 6, _proneOn, _bodyOn] call _pairLoss);
+                            private _pl = ([_a select 0, _a select 6, _b select 6, _proneOn, _bodyOn] call _pairLoss) + ([_b select 0, _b select 6, _a select 6, _proneOn, _bodyOn] call _pairLoss);
+                            _m = _m - _pl;
+                            if (_pl >= 6 && {_m < 9}) then { _code = 6; };
                         };
                         private _jam = (_jf select _i) min (_jf select _j);
                         if (_m >= 0 && {_jam >= 0.1}) then {
                             private _f = [0.06, 0.12, 0.25, 0.4, 0.55, 0.7, 0.85, 1] select (((({ _m >= _x } count [0, 2, 4, 6, 9, 12, 16, 20]) - 1) max 0) min 7);
                             _kb = (((_a select 5) min (_b select 5)) * _f * _jam);
                             _ok = true;
+                            if (_jam < 0.7) then { _code = 5; };
+                        } else {
+                            if (_m >= 0) then { _code = 5; };
+                            [_i, _j, _m min 0, _code] call _missAdd;
                         };
                     };
                     private _ia = _oldIdx select _i;
@@ -447,6 +579,8 @@ switch (_act) do {
                         if (_keep) then {
                             _state set [_i + 64 * _j, _st];
                             _lf append [_i + 64 * _j, [2 * round (_lm / 2), -1] select (_lm < 0), round (_lk / 100)];
+                            // Lien dégradé, limite ou gardé par l'hystérésis : sa cause voyage avec lui.
+                            if (_lm < 9) then { _cf append [_i + 64 * _j, _code]; };
                         };
                     };
                     // Paires en cache comptées aussi : une passe sans aucun bilan à calculer reste découpée.
@@ -477,7 +611,13 @@ switch (_act) do {
             _linkN = _linkN + (count _lf) / 3;
             private _nf = [];
             { _nf append [_x select 0, _x select 1, ([0, 1000] select (_x param [7, false])) + 100 * (_x select 2) + (_x select 3), round ((_x select 4) / 10), round ((_x select 5) / 100)]; } forEach _nodes;
-            _ref pushBack [_side, _nf, _lf, _total];
+            // Liens manqués, marge arrondie à 2 dB comme les liens : le graphe ne se rediffuse pas à chaque pas d'un joueur.
+            private _mf = [];
+            {
+                private _s = _forEachIndex;
+                { _x params ["_mm", "_t", "_cc"]; if (_mm > -40) then { _mf append [_s + 64 * _t, _cc, 2 * round (_mm / 2)]; }; } forEach _x;
+            } forEach _miss;
+            _ref pushBack [_side, _nf, _lf, _total, _cf, _mf];
         } forEach _sides;
         if (_aborted) exitWith { false };
         missionNamespace setVariable ["COMSPEC_ATAK_MeshHyst", _hystAll];
@@ -528,7 +668,7 @@ switch (_act) do {
         private _res = createHashMapFromArray [["key", _key], ["at", diag_tickTime], ["mode", ""], ["ok", false], ["reach", createHashMap], ["vkey", ""],
             ["kbps", 0], ["hops", -1], ["gw", ""], ["via", ""], ["lat", 0], ["loss", 100], ["why", "connexion au maillage en cours"], ["nodes", []], ["count", 0], ["level", 3], ["voice", createHashMap]];
         if (_dec isEqualTo []) exitWith { _res };
-        _dec params ["_nodes", "_adj", "_links", "_total"];
+        _dec params ["_nodes", "_adj", "_links", "_total", ["_causes", createHashMap], ["_miss", []]];
         private _chan = parseNumber (_key select [1]);
         private _me = _nodes findIf { (_x select 0) isEqualTo _ant };
         if (_me < 0 && {_total > (count _nodes)}) then { _res set ["why", format ["maillage saturé : %1 nœuds pour %2 places", _total, count _nodes]]; };
@@ -539,6 +679,15 @@ switch (_act) do {
         { if ((_x select 2) isEqualTo 2 && {!isNull (_x select 0)}) then { _gws pushBack _forEachIndex; }; } forEach _nodes;
         private _mode = "relay";
         private _lead = leader group player;
+        // Relais exigé (fn_relayNet "gateOn", coché par défaut) : sans passerelle en service dans le graphe, aucun réseau. Ni maillage d'équipe
+        // autour du chef de groupe, ni maillage autonome : la raison exacte vient de fn_relayNet "gate" (aucun relais, détruit, éteint, brouillé).
+        if (_gws isEqualTo [] && {["gateOn"] call comspec_atak_native_fnc_relayNet}) exitWith {
+            private _gate = ["gate", ["", true]] call comspec_atak_native_fnc_relayNet;
+            _res set ["why", [_gate select 2, "Aucun relais en service à portée"] select ((_gate select 2) isEqualTo "")];
+            _res set ["fix", _gate select 3];
+            _res set ["gate", _gate select 1];
+            _res
+        };
         if (_gws isEqualTo []) then {
             private _li = _nodes findIf { (_x select 1) isEqualTo _lead && {(_x select 3) isEqualTo _chan} };
             if (_lead isNotEqualTo player && {_li >= 0}) then { _gws = [_li]; _mode = "lead"; } else { _gws = [_me]; _mode = "self"; };
@@ -641,6 +790,97 @@ switch (_act) do {
                 format ["aucune passerelle du maillage à portée, au plus %1 sauts (relais, pylônes, MPU5 du canal)", _maxH]] select (_mode isEqualTo "relay")];
         };
         _res set ["level", ["gravity", [_mgG select _me, _h, _maxH]] call comspec_atak_native_fnc_meshGraph];
+        // Pourquoi ça ne passe pas (4.2.1) : lu dans le graphe partagé (causes et liens manqués du constructeur), aucun bilan radio ici.
+        //   "cause" texte, "fix" conseil, "miss" [antenne A, antenne B, étiquette de carte, cause] : le lien qui relierait mon îlot au maillage.
+        private _nameAny = {
+            params ["_i"];
+            private _nm = _names param [_i, ""];
+            if (_nm isNotEqualTo "") exitWith { _nm };
+            [_nodes select _i, _i isEqualTo _me, _relays] call _nameOf
+        };
+        private _distTxt = { params ["_d"]; if (_d >= 1000) then { format ["%1 km", (_d / 1000) toFixed 1] } else { format ["%1 m", round _d] } };
+        private _cause = "";
+        private _fix = "";
+        private _missOut = [];
+        if (!_ok && {_mode isNotEqualTo "self"}) then {
+            // Mon îlot : les nœuds que je joins (moi compris). Le lien manqué vers un nœud déjà relié à la passerelle passe devant.
+            private _pick = [];
+            {
+                private _ia = _forEachIndex;
+                if (_ia isNotEqualTo _me && {(_hopM select _ia) < 0}) then { continue };
+                {
+                    _x params ["_mm", "_jb", "_cc"];
+                    if (_jb >= (count _nodes) || {_jb isEqualTo _me} || {(_hopM select _jb) >= 0} || {isNull ((_nodes select _jb) select 0)}) then { continue };
+                    private _score = _mm + ([0, 100] select ((_hopG select _jb) >= 0));
+                    if (_pick isEqualTo [] || {_score > (_pick select 4)}) then { _pick = [_mm, _ia, _jb, _cc, _score]; };
+                } forEach (_miss param [_ia, []]);
+            } forEach _nodes;
+            if (_pick isNotEqualTo []) then {
+                _pick params ["_mm", "_ia", "_jb", "_cc"];
+                private _d = (_poss select _ia) distance (_poss select _jb);
+                private _na = [_ia] call _nameAny;
+                private _nb = [_jb] call _nameAny;
+                if (_cc isEqualTo 7) then {
+                    _cause = format ["%1 est à %2, mais sur le canal %3 et %4 sur le canal %5", _nb, [_d] call _distTxt, (_nodes select _jb) select 3, _na, (_nodes select _ia) select 3];
+                } else {
+                    _cause = format ["lien %1 › %2 (%3) coupé par %4", _na, _nb, [_d] call _distTxt, ["causeTxt", [_cc]] call comspec_atak_native_fnc_meshGraph];
+                    if (_mm < 0 && {_cc isNotEqualTo 5}) then { _cause = _cause + format [" : il manque %1 dB", round (-_mm)]; };
+                };
+                // Distance : en espace libre, -6 dB quand la distance double ; ce qu'il faut gagner pour revenir à 0 dB.
+                _fix = ["causeFix", [_cc, [0, _d * (1 - 10 ^ ((_mm min 0) / 20))] select (_cc isEqualTo 1)]] call comspec_atak_native_fnc_meshGraph;
+                private _lbl = [format ["lien coupé (%1)", ["causeTxt", [_cc]] call comspec_atak_native_fnc_meshGraph], "autre canal"] select (_cc isEqualTo 7);
+                _missOut = [(_nodes select _ia) select 0, (_nodes select _jb) select 0, _lbl, _cc];
+                _res set ["why", format ["hors du maillage : %1", _cause]];
+            };
+        };
+        if (_ok && {(_res get "level") >= 1}) then {
+            // Chemin bon mais fragile : le maillon le plus faible vers la passerelle, et ce qui le limite.
+            private _w = ["weakest", [["chain", [_adj, _viaG, _me]] call comspec_atak_native_fnc_meshGraph]] call comspec_atak_native_fnc_meshGraph;
+            if (_w isNotEqualTo [] && {(_w select 2) < 9}) then {
+                _w params ["_wa", "_wb", "_wm"];
+                private _wc = _causes getOrDefault [(_wa min _wb) + 64 * (_wa max _wb), 1];
+                _cause = format ["maillon faible %1 › %2 : marge %3 dB, limitée par %4", [_wa] call _nameAny, [_wb] call _nameAny, (round _wm) max 0, ["causeTxt", [_wc]] call comspec_atak_native_fnc_meshGraph];
+                _fix = ["causeFix", [_wc, 0]] call comspec_atak_native_fnc_meshGraph;
+            } else {
+                if (_h >= _maxH - 1) then {
+                    _cause = format ["%1 sauts pour %2 au plus : chaque saut coûte du débit et du délai", _h, _maxH];
+                    _fix = "Posez un relais plus près, ou rapprochez-vous de la passerelle.";
+                };
+            };
+        };
+        _res set ["cause", _cause];
+        _res set ["fix", _fix];
+        _res set ["miss", _missOut];
+        // Reconvergence (4.2.1, réglage mesh_reconverge_s) : un nœud de ma route vers la passerelle a quitté le graphe (relais détruit, ramassé,
+        // batterie vide, porteur tombé) ; comme un vrai maillage, la nouvelle route ne sert qu'après quelques secondes. Rien n'est diffusé.
+        private _rcS = missionNamespace getVariable ["comspec_atak_native_mesh_reconverge_s", 3];
+        if (!(_rcS isEqualType 0) || {!finite _rcS}) then { _rcS = 3; };
+        _rcS = (_rcS max 0) min 15;
+        private _route = [];
+        if (_ok) then { { _route pushBack [(_nodes select (_x select 0)) select 0, [_x select 0] call _nameAny]; } forEach (["chain", [_adj, _viaG, _me]] call comspec_atak_native_fnc_meshGraph); };
+        (uiNamespace getVariable ["COMSPEC_ATAK_MeshRoute", [false, [], ""]]) params [["_wasOk", false], ["_oldRoute", []], ["_oldKey", ""]];
+        if (_rcS > 0 && {_wasOk} && {_oldKey isEqualTo _key}) then {
+            private _present = _nodes apply { _x select 0 };
+            private _lost = _oldRoute findIf { isNull (_x select 0) || {!alive (_x select 0)} || {!((_x select 0) in _present)} };
+            if (_lost >= 0) then { uiNamespace setVariable ["COMSPEC_ATAK_MeshReconv", [diag_tickTime + _rcS, (_oldRoute select _lost) select 1]]; };
+        };
+        uiNamespace setVariable ["COMSPEC_ATAK_MeshRoute", [_ok, _route, _key]];
+        (uiNamespace getVariable ["COMSPEC_ATAK_MeshReconv", [-1, ""]]) params [["_rcUntil", -1], ["_rcName", ""]];
+        private _rcLeft = _rcUntil - diag_tickTime;
+        _res set ["reconv", 0];
+        if (_rcLeft > 0 && {_rcS > 0}) then {
+            _res set ["reconv", _rcLeft];
+            if (_ok) then {
+                _res set ["ok", false];
+                _res set ["kbps", 0];
+                _res set ["vkey", ""];
+                _res set ["voice", createHashMap];
+                _res set ["level", 3];
+                _res set ["why", format ["reconvergence du maillage : %1 perdu, nouvelle route dans %2 s", _rcName, ceil _rcLeft]];
+                _res set ["cause", format ["%1 a quitté le maillage : les radios recalculent leurs routes", _rcName]];
+                _res set ["fix", "Patientez quelques secondes : le réseau repasse par un autre chemin s'il en existe un."];
+            };
+        };
         // Liste de l'app Réseau : [nom, type, sauts depuis moi (-1 hors maillage), distance m, débit kbit/s], les plus proches d'abord.
         private _myPos = _poss select _me;
         private _list = [];
@@ -659,8 +899,9 @@ switch (_act) do {
         { _rank set [_x, _forEachIndex]; } forEach _order;
         private _scrLinks = [];
         {
-            _x params ["_a", "_b", "_m"];
-            if ((_rank select _a) >= 0 && {(_rank select _b) >= 0}) then { _scrLinks pushBack [_rank select _a, _rank select _b, ((round (100 * ((_m / 20) min 1))) max 1) min 100]; };
+            _x params ["_a", "_b", "_m", "", ["_lc", 0]];
+            // 4e élément (4.2.1) : cause du lien faible (codes "causeTxt", 0 si rien à signaler).
+            if ((_rank select _a) >= 0 && {(_rank select _b) >= 0}) then { _scrLinks pushBack [_rank select _a, _rank select _b, ((round (100 * ((_m / 20) min 1))) max 1) min 100, _lc]; };
         } forEach _links;
         private _meGw = [_gws select 0, _meG] select _ok;
         private _gwNode = _nodes select _meGw;

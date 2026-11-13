@@ -16,11 +16,9 @@ $dis = $rights['manage'] ? '' : ' disabled';
 $sseExtraStyles = ($sseExtraStyles ?? '') . '<link rel="stylesheet" href="' . $h(asset_url('assets/css/sse-id-workshop.css')) . '">';
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers')) ?>">Identités &amp; documents</a> / <a class="link" href="<?= $h(url('atak/sse/papiers/kits-types')) ?>">Kits types</a> / <strong><?= $h($id > 0 ? $t['name'] : 'Nouveau kit') ?></strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Kit documentaire type // <?= $h(W::label(W::KIT_CATEGORIES, (string) $t['category'])) ?></div>
         <h1><?= $h($id > 0 ? $t['name'] : 'Nouveau kit type') ?></h1>
         <p>Le contenu du kit sert de point de départ : chaque membre équipé reçoit ses propres papiers, que l’on peut ensuite retoucher dans l’atelier.</p>
     </div>

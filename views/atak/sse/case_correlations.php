@@ -85,16 +85,9 @@ foreach ($edges as $e) {
 }
 arsort($degree);
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/dossiers')) ?>">Dossiers</a> /
-    <a class="link" href="<?= $h(url('atak/sse/dossiers/' . $caseId)) ?>"><?= $h($case['reference_code'] ?? '') ?></a> /
-    <strong>Corrélations</strong>
-</div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Exploitation // Mise en relation</div>
         <h1>Corrélations du dossier</h1>
         <p>
             Ce qui relie les personnes, les sites, les pièces, les saisies, les pièces à

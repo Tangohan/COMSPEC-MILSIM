@@ -400,6 +400,14 @@ class TenantRepository
         $this->forgetCache();
     }
 
+    /** Fuseau horaire par défaut de la communauté (colonne default_timezone ; valeur déjà validée par l'appelant). */
+    public function updateTimezone(int $tenantId, string $timezone): void
+    {
+        $stmt = $this->pdo()->prepare('UPDATE tenants SET default_timezone = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([substr($timezone, 0, 64), $tenantId]);
+        $this->forgetCache();
+    }
+
     /** Retire explicitement le logo (contrairement à updateLogoUrl(), qui ignore les valeurs vides). */
     public function clearLogoUrl(int $tenantId): void
     {
@@ -700,7 +708,8 @@ class TenantRepository
      */
     public function listOverviewForPlatform(): array
     {
-        $humanUsers = UserRepository::sqlLiteralExcludeTechnicalInternalEmails('u');
+        // Même définition que la liste cliquée (UserRepository::listPlatformAccounts).
+        $humanUsers = UserRepository::sqlPlatformAccountFilter('u', 'all');
         $humanLogin = UserRepository::sqlLiteralExcludeTechnicalInternalEmails('u2');
         $typeSelect = $this->hasTenantTypeColumn() ? 't.tenant_type,' : "'full' AS tenant_type,";
         $lastLogin = $this->scalarIfTable('users', "SELECT MAX(u2.last_login_at) FROM users u2 WHERE u2.tenant_id = t.id AND {$humanLogin}", 'NULL');

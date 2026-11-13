@@ -111,7 +111,13 @@ private _stripW = 0;
 private _px0 = _bx + _pad;
 private _py0 = _by + _pad;
 private _hud = [];
+// Mini (téléphone porté petit) : bandeau compact d'une ligne, plus étroit (la case « MOI · ALT · TA1 » sur deux lignes prenait
+// près de la moitié de la largeur et recouvrait des étiquettes) ; masqué si la carte est trop étroite. Sa place est exclue
+// pour les étiquettes (fn_mapHudRects, fn_mapLbl).
+if (_mini && {_bStyle in ["NEW", "CLASSIC"]}) then { _bStyle = "COMPACT"; };
+if (_mini && {_bStyle isEqualTo "COMPACT"} && {_avail < (16 * _chW)}) then { _bStyle = "HIDDEN"; };
 _ov set ["bandStyle", _bStyle];
+_ov set ["bandMini", _mini];
 private _txtCtl = {
     params ["_x0", "_y0", "_w", "_h", "_fh"];
     private _t = ["COMSPEC_RscStructuredText", [_x0, _y0, _w, _h]] call _mk;
@@ -127,16 +133,18 @@ private _place = {
     _bg ctrlSetBackgroundColor [0.02, 0.025, 0.022, [_bc get "alpha", _defAlpha] select ((_bc get "alpha") < 0)];
     private _edge = ["COMSPEC_RscText", [_px0, _py0, pixelW * 3, _bandH]] call _mk;
     _edge ctrlSetBackgroundColor (((COMSPEC_ATAK_Th get "accent") select [0, 3]) + [0.9]);
+    private _sep = controlNull;
     if (_sepX > 0) then {
-        private _sep = ["COMSPEC_RscText", [_px0 + _sepX, _py0 + _panIn, pixelW, _bandH - _panIn * 2]] call _mk;
+        _sep = ["COMSPEC_RscText", [_px0 + _sepX, _py0 + _panIn, pixelW, _bandH - _panIn * 2]] call _mk;
         _sep ctrlSetBackgroundColor [0.55, 0.62, 0.58, 0.35];
     };
+    _ov set ["bandBox", [_bg, _edge, _sep]];
 };
 switch (_bStyle) do {
     case "HIDDEN": {};
     case "COMPACT": {
         // Une ligne : « 33T XE 1513 1736 · 94 m 317° NO · ALT 17 m · CAP 042° · B-04 ».
-        _stripW = _avail min ((([52, 40] select _mini) * _chW) + _cellIn * 2);
+        _stripW = _avail min ((([52, 26] select _mini) * _chW) + _cellIn * 2);
         _bandH = _panFs * 1.3 + _panIn;
         [0, 0.86] call _place;
         private _cur = [_px0 + pixelW * 3 + _cellIn, _py0 + _panIn / 2, _stripW - pixelW * 3 - _cellIn * 1.6, _panFs * 1.3, _panFs] call _txtCtl;
@@ -208,6 +216,10 @@ switch (_bStyle) do {
             _ov set ["me", [_cx2, _ly1, _cw2, _l1H, _panFs] call _txtCtl];
             _ov set ["me2", [_cx2, _ly2, _cw2, _l2H, _panFs * 0.9] call _txtCtl];
         };
+        // Hauteur ajustée au contenu par fn_mapOverlayUpdate (pas de fond vide sous « CURSEUR survolez la carte » ni sous
+        // une ligne 3 absente) : géométrie d'origine gardée, la pastille rétrécit vers le bord où elle est posée.
+        _ov set ["bandFit", [_bandH, _l2H * ([1, 2] select _curWrap), _l2H, _bTop, [_ov getOrDefault ["cursor", controlNull], _ov getOrDefault ["cursor2", controlNull], _ov getOrDefault ["cursorArrow", controlNull], _ov getOrDefault ["me", controlNull], _ov getOrDefault ["me2", controlNull]] apply { [_x, ctrlPosition _x] }]];
+        _ov set ["bandShrink", 0];
     };
 };
 // Hauteur prise en bas de la carte par le bandeau (boutons OUTILS / RECHERCHER, fiches et panneaux posés au-dessus).
@@ -224,6 +236,18 @@ if (!(_interactive && {(_s getOrDefault ["mapToolsOpen", false]) || {_searchOpen
     private _sqY = if (!isNull _hdC) then { (ctrlPosition _hdC) params ["", "_hy", "", "_hh"]; _hy + _hh + pixelH * 3 } else { _by + _pad + ([0, _fs * 1.6] select (!isNull (_ov getOrDefault ["compassTape", controlNull]))) };
     _sqRect = [_bx + _pad, _sqY, ((_mw - _toolCol - 2 * _pad) min (_mw * 0.6)) max (_font * 6 / _ratio), _fs * 1.2];
     if ((count units group player) > 1) then { _hud pushBack [(_sqRect select 0) - _bx, _sqY - _by, (_sqRect select 0) + (_sqRect select 2) - _bx, _sqY + (_sqRect select 3) - _by]; };
+};
+// Rose ou bandeau du cap, barre d'outils de droite, bouton des calques en haut à droite et RECHERCHER : les étiquettes
+// (fn_mapLbl) ne passent jamais dessous (avant, « TOUR DE CONTRÔLE » était coupé par la rose).
+{
+    private _c = _ov getOrDefault [_x, controlNull];
+    if (!isNull _c) then { (ctrlPosition _c) params ["_cx", "_cy", "_cw2", "_ch2"]; _hud pushBack [_cx - _bx, _cy - _by, _cx + _cw2 - _bx, _cy + _ch2 - _by]; };
+} forEach ["needle", "compassCard", "compassTape"];
+if (_interactive) then {
+    private _sth = _fs * 1.9;
+    _hud pushBack [_mw - _toolCol, 0, _mw, _mh];
+    _hud pushBack [_mw - _toolCol - _pad * 2 - _sth / _ratio, 0, _mw - _toolCol, _pad * 2 + _sth];
+    _hud pushBack [0, _mh - _panH - _pad * 3 - _sth, _pad * 2 + (((_sth / _ratio) + _fs * 5.8 / _ratio) min _panW), _mh - _panH - _pad];
 };
 uiNamespace setVariable ["COMSPEC_ATAK_SquadRect", _sqRect];
 uiNamespace setVariable ["COMSPEC_ATAK_SquadSig", [[], []]];
@@ -382,6 +406,11 @@ if (_interactive) then {
         (uiNamespace getVariable ["COMSPEC_ATAK_MapSearch", createHashMap]) set ["open", false];
         [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame;
     }];
+    // Raccourci « Sur mon téléphone » : le logo Athena de la barre donne le QR code de la carte sur le vrai téléphone
+    // (retiré de la barre par la refonte « barre d'outils par usage » ; l'outil du menu OUTILS reste).
+    if !(_l get "mini") then {
+        _tools pushBack ["phoneqr", "\z\comspec_atak_native\addons\main\data\app_athena.paa", "Sur mon téléphone : QR code de la carte", { ["PHONE"] call comspec_atak_native_fnc_mapToolMenu; }];
+    };
     // Drone appairé : bascule carte / vue drone plein écran / vue incrustée.
     if (alive (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])) then {
         _tools pushBack ["droneview", "app_drone", "Vue drone : carte, plein écran ou incrustée", { ["view"] call comspec_atak_native_fnc_droneAction; }];
@@ -541,19 +570,26 @@ if (_interactive) then {
                     ["VOIR MON GROUPE", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["grpTab", "MINE"]; ["GROUP"] call comspec_atak_native_fnc_navigate; }, false, true, "Ouvre l'app Groupe"]
                 ]];
             };
-            // Fond de carte : boutons sur deux rangées au-delà de trois (TOPO CLAIR SOMBRE / NUIT SATELLITE HYBRIDE, PHOTO en plus).
+            // Fond de carte (liste de fn_mapStyle, CLASSIQUE en premier) : grille fixe de deux colonnes, une rangée de
+            // hauteur fixe par paire (quatre rangées), dans le volet défilant : aucun bouton rejeté hors de la vue ni coupé,
+            // quelle que soit la taille de l'interface (avant : deux rangées de quatre, CLASSIQUE sixième). Le fond choisi
+            // est en vert ; dessous, sa description (texte qui passe à la ligne). SATELLITE sans la photo de cette carte :
+            // pas de bouton, une ligne grise dit pourquoi.
             private _style = [] call comspec_atak_native_fnc_mapStyle;
-            private _styles = [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"], ["ARDOISE", "SLATE"], ["CLASSIQUE", "SAT"], ["HYBRIDE", "HYBRID"]];
-            if ((["info"] call comspec_atak_native_fnc_photoMap) isNotEqualTo []) then { _styles pushBack ["SATELLITE", "PHOTO"]; };
+            private _bgAll = ["LIST"] call comspec_atak_native_fnc_mapStyle;
+            private _styles = _bgAll select { _x select 3 };
             private _bgOpen = !("bg" in _folds);
             _rows pushBack ["fold", "Fond de carte", (_styles select ((_styles findIf { (_x select 1) isEqualTo _style }) max 0)) select 0, _bgOpen, "bg" call _foldCode];
             if (_bgOpen) then {
                 private _opts = _styles apply {
-                    _x params ["_t", "_k"];
-                    [_t, format ["[%1] call comspec_atak_native_fnc_mapStyle; ['MAP'] call comspec_atak_native_fnc_pageRender;", str _k], _k isEqualTo _style, "Fond de carte (aussi dans Réglages > Carte)"]
+                    _x params ["_t", "_k", "_desc"];
+                    [_t, format ["[%1] call comspec_atak_native_fnc_mapStyle; ['MAP'] call comspec_atak_native_fnc_pageRender;", str _k], _k isEqualTo _style, _desc]
                 };
-                private _per = [count _opts, ceil ((count _opts) / 2)] select ((count _opts) > 3);
-                for "_i" from 0 to ((count _opts) - 1) step _per do { _rows pushBack ["segment", "", _opts select [_i, _per]]; };
+                for "_i" from 0 to ((count _opts) - 1) step 2 do { _rows pushBack ["segment", "", _opts select [_i, 2]]; };
+                private _hDim = COMSPEC_ATAK_Th get "hexMapDim";
+                private _cur = _styles param [(_styles findIf { (_x select 1) isEqualTo _style }) max 0, []];
+                if ((count _cur) > 2) then { _rows pushBack ["text", format ["<t size='0.8' color='%1'>%2</t>", _hDim, _cur select 2]]; };
+                if (({ (_x select 1) isEqualTo "PHOTO" } count _styles) isEqualTo 0) then { _rows pushBack ["text", format ["<t size='0.75' color='%1'>SATELLITE : nécessite le mod COMSPEC ATAK Photo</t>", _hDim]]; };
             };
             // Bandeau du curseur et mon point GPS : choix du joueur (profil), préparés au changement (fn_mapPrefs).
             private _bcNow = ["band"] call comspec_atak_native_fnc_mapPrefs;
@@ -637,6 +673,8 @@ if (_interactive) then {
                             ["", "Indicatifs, noms et coordonnées ; réglage fin dans Réglages > Carte"] select _full];
                         _rows pushBack ["segment", "Fond des étiquettes", ["COMSPEC_ATAK_LblBgAlpha", _baNow, [["LÉGER", 0.55], ["NORMAL", 0.8], ["OPAQUE", 0.95]]] call _lblSeg,
                             ["", "Plaque sombre derrière les noms : plus opaque, plus lisible sur une carte chargée"] select _full];
+                        // Fond des noms sans plaque (indicatifs simples, repères, lieux, distances) : mêmes lignes que Réglages > Carte.
+                        _rows append (["rows", "names"] call comspec_atak_native_fnc_mapPrefs);
                     };
                 };
             } forEach _groups;
@@ -767,95 +805,10 @@ if (_interactive && {(count (_search getOrDefault ["hit", createHashMap])) > 0} 
         ["card", [_bx + (_mw - _cw) / 2, _by + _mh - _panH - _pad * 2 - _fs * 2 - _chh - _selUp, _cw, _chh]] call comspec_atak_native_fnc_jtacTool;
     };
 };
-// Marqueur sélectionné (clic gauche sur une étiquette) : fiche au-dessus du panneau curseur. Liseré et pastille de la
-// couleur du marqueur, titre, nature (alerte, joueur, mission), grille · distance · azimut, note, puis une rangée
-// d'actions qui ne chevauche jamais le texte : Y ALLER, CENTRER, MODIFIER (marqueur de joueur), SUPPRIMER / EFFACER.
-private _sel = _s getOrDefault ["selectedMarker", ""];
-if (_interactive && {_sel isNotEqualTo ""} && {(markerShape _sel) isNotEqualTo ""} && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {
-    private _note = ((missionNamespace getVariable ["COMSPEC_ATAK_MarkerNotes", createHashMap]) getOrDefault [_sel, ["", ""]]) select 0;
-    private _kind = [_sel] call comspec_atak_native_fnc_markerDeletable;
-    // Horodatage : heure de pose (heure du jeu), âge et auteur (COMSPEC_ATAK_MarkerMeta : EH MarkerCreated, ou heure de la
-    // pose transmise avec le marqueur en mode réseau ATAK, fn_markerNet). Inconnu pour un marqueur posé avant mon arrivée.
-    private _stamp = "";
-    private _mt = (missionNamespace getVariable ["COMSPEC_ATAK_MarkerMeta", createHashMap]) getOrDefault [_sel, []];
-    if ((count _mt) > 0 && {(_mt select 0) isEqualType ""} && {(count (_mt select 0)) >= 6}) then {
-        private _h = _mt select 0;
-        private _age = floor (((dayTime * 3600 - ((parseNumber (_h select [0, 2])) * 3600 + (parseNumber (_h select [2, 2])) * 60 + parseNumber (_h select [4, 2]))) + 86400) mod 86400 / 60);
-        _stamp = format [[("Posé à %1:%2 · il y a %3 min") call comspec_atak_native_fnc_tr, ("Posé à %1:%2 · à l'instant") call comspec_atak_native_fnc_tr] select (_age < 1), _h select [0, 2], _h select [2, 2], _age];
-        if ((_mt param [1, ""]) isEqualType "" && {(_mt param [1, ""]) isNotEqualTo ""}) then { _stamp = format ["%1 · %2", _stamp, toUpper (_mt select 1)]; };
-    };
-    private _pw = ((_mw * 0.46) max (_font * 12 / _ratio)) min (_mw - 2 * _pad);
-    private _px = _bx + (_mw - _pw) / 2;
-    private _lineH = _fs * 1.05;
-    private _btnH = _fs * 1.5;
-    private _in = _pad * 0.8;
-    private _ph = _in + _fs * 1.3 + _lineH + ([0, _lineH] select (_stamp isNotEqualTo "")) + ([0, _lineH] select (_note isNotEqualTo "")) + _in * 0.6 + _btnH + _in;
-    private _py = _by + _mh - _panH - _pad * 2 - _ph;
-    // Couleur du marqueur (CfgMarkerColors), claire par défaut (marqueur sans couleur ou noir sur fond sombre).
-    private _rgba = (getArray (configFile >> "CfgMarkerColors" >> (markerColor _sel) >> "color")) apply { if (_x isEqualType "") then { call compile _x } else { _x } };
-    if ((count _rgba) isNotEqualTo 4 || {((_rgba select 0) + (_rgba select 1) + (_rgba select 2)) < 0.3}) then { _rgba = (COMSPEC_ATAK_Th get "mapText"); };
-    _rgba = [_rgba select 0, _rgba select 1, _rgba select 2, 1];
-    { private _o = ["COMSPEC_RscText", [_px + pixelW * _x, _py + pixelH * _x, _pw, _ph]] call _mk; _o ctrlSetBackgroundColor [0, 0, 0, 0.22]; } forEach [2, 4];
-    private _brd = ["COMSPEC_RscText", [_px - pixelW, _py - pixelH, _pw + pixelW * 2, _ph + pixelH * 2]] call _mk;
-    _brd ctrlSetBackgroundColor [0.30, 0.36, 0.32, 0.9];
-    private _cbg = ["COMSPEC_RscText", [_px, _py, _pw, _ph]] call _mk;
-    _cbg ctrlSetBackgroundColor [0.035, 0.042, 0.038, 0.97];
-    private _edge = ["COMSPEC_RscText", [_px, _py, pixelW * 4, _ph]] call _mk;
-    _edge ctrlSetBackgroundColor _rgba;
-    // Pastille : l'icône du marqueur dans sa couleur.
-    private _tH = _fs * 1.3 + _lineH;
-    private _tW = _tH / _ratio;
-    private _tx0 = _px + pixelW * 4 + _in / _ratio * 0.6;
-    private _chip = ["COMSPEC_RscText", [_tx0, _py + _in, _tW, _tH]] call _mk;
-    _chip ctrlSetBackgroundColor [_rgba select 0, _rgba select 1, _rgba select 2, 0.16];
-    private _ic = ["COMSPEC_RscIcon", [_tx0 + _tW * 0.15, _py + _in + _tH * 0.15, _tW * 0.7, _tH * 0.7], getText (configFile >> "CfgMarkers" >> (markerType _sel) >> "icon")] call _mk;
-    _ic ctrlSetTextColor _rgba;
-    // Fermer (en haut à droite).
-    private _cw = _fs * 1.2;
-    private _cx = _px + _pw - _cw / _ratio - _in / _ratio * 0.6;
-    private _cl = ["COMSPEC_RscIcon", [_cx, _py + _in, _cw / _ratio, _cw], "\z\comspec_atak_native\addons\main\data\ui_close.paa"] call _mk;
-    _cl ctrlSetTextColor [0.55, 0.62, 0.58, 1];
-    private _clb = ["COMSPEC_RscButtonOverlay", [_cx, _py + _in, _cw / _ratio, _cw]] call _mk;
-    _clb ctrlSetTooltip (("Fermer la fiche") call comspec_atak_native_fnc_tr);
-    _clb ctrlAddEventHandler ["ButtonClick", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["selectedMarker", ""]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call comspec_atak_native_fnc_nextFrame; }];
-    // Titre, nature, position ; note s'il y en a une.
-    private _mp = getMarkerPos _sel;
-    private _dd = player distance2D _mp;
-    private _kindTxt = ["MISSION", "JOUEUR", "ALERTE"] select _kind;
-    private _kindCol = [(COMSPEC_ATAK_Th get "hexMapDim"), (COMSPEC_ATAK_Th get "hexMapOk"), "#f2a33a"] select _kind;
-    private _txX = _tx0 + _tW + _in / _ratio * 0.6;
-    private _txt = ["COMSPEC_RscStructuredText", [_txX, _py + _in - _fs * 0.1, _cx - _txX - _in / _ratio * 0.4, _tH + ([0, _lineH] select (_stamp isNotEqualTo "")) + ([0, _lineH] select (_note isNotEqualTo "")) + _fs * 0.2]] call _mk;
-    _txt ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='1.15' color='#e6efe9'>%1</t>  <t size='0.72' color='%2'>%3</t><br/><t font='EtelkaMonospacePro' size='0.82' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%4 · %5 · %6°</t>%7%8",
-        ([([markerText _sel] call comspec_atak_native_fnc_markerAutoName), "(sans titre)"] select ((markerText _sel) isEqualTo "")) regexReplace ["[<>&]", ""], _kindCol, _kindTxt,
-        [_mp, 8] call comspec_atak_native_fnc_gridRef, [format ["%1 m", round _dd], format ["%1 km", (_dd / 1000) toFixed 1]] select (_dd >= 1000), round (player getDir _mp),
-        ["", format ["<br/><t size='0.78' color='" + (COMSPEC_ATAK_Th get "hexMapDim") + "'>%1</t>", _stamp regexReplace ["[<>&]", ""]]] select (_stamp isNotEqualTo ""),
-        ["", format ["<br/><t size='0.85' color='#c9d3cd'>%1</t>", (_note regexReplace ["[<>&]", ""]) select [0, 90]]] select (_note isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
-    _txt ctrlSetFontHeight _fs;
-    // Actions : une rangée en bas de la fiche.
-    private _acts = [
-        ["Y ALLER", "COMSPEC_RscButtonPrimary", { private _m = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]; private _p = getMarkerPos _m; [[_p select 0, _p select 1, 0], [([markerText _m] call comspec_atak_native_fnc_markerAutoName), "Marqueur"] select ((markerText _m) isEqualTo "")] spawn comspec_atak_native_fnc_routeCompute; }],
-        ["CENTRER", "COMSPEC_RscButton", { private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["mapFollow", false]; [getMarkerPos (_s getOrDefault ["selectedMarker", ""])] call comspec_atak_native_fnc_mapCenter; }]
-    ];
-    if (_kind isEqualTo 1) then {
-        _acts pushBack ["MODIFIER", "COMSPEC_RscButton", { [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]] call comspec_atak_native_fnc_markerEditOpen; }];
-    };
-    if (_kind > 0) then {
-        _acts pushBack [["", "SUPPRIMER", "EFFACER"] select _kind, "COMSPEC_RscButton", { [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]] call comspec_atak_native_fnc_markerDelete; }];
-    };
-    private _ay = _py + _ph - _in - _btnH;
-    private _ax0 = _px + pixelW * 4 + _in / _ratio * 0.6;
-    private _aw = ((_px + _pw - _in / _ratio * 0.6) - _ax0 - _pad * 0.5 * ((count _acts) - 1)) / (count _acts);
-    {
-        _x params ["_lbl", "_cls", "_code"];
-        private _b = [_cls, [_ax0 + _forEachIndex * (_aw + _pad * 0.5), _ay, _aw, _btnH], _lbl] call _mk;
-        _b ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
-        _b ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
-        if (_lbl in ["SUPPRIMER", "EFFACER"]) then { _b ctrlSetTextColor (COMSPEC_ATAK_Th get "mapAlert"); };
-        _b ctrlAddEventHandler ["ButtonClick", _code];
-    } forEach _acts;
-    if (_kind > 0) then {
-        _txt ctrlSetTooltip ((["", "Double clic : modifier · Suppr : effacer", "Suppr : effacer cette alerte de la carte"] select _kind) call comspec_atak_native_fnc_tr);
-    };
+// Marqueur sélectionné (clic gauche sur un repère, un contact ou une alerte) : fiche au-dessus du panneau curseur
+// (fn_contactCard : pastille à la forme de l'affiliation, grille · distance · azimut, âge et auteur, note, actions).
+if (_interactive && {(_s getOrDefault ["selectedMarker", ""]) isNotEqualTo ""} && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {
+    [_mk, _bx, _by, _mw, _mh, _panH, _pad, _fs, _font, _ratio] call comspec_atak_native_fnc_contactCard;
 };
 
 // Éditeur de marqueur. La carte est figée pendant l'édition : sinon elle garde la molette (zoom)

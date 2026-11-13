@@ -69,9 +69,10 @@
   <li><span class="n">12</span><a href="#c12">Personnalisation</a></li>
   <li><span class="n">13</span><a href="#c13">Exemple complet : drill SOT</a></li>
   <li><span class="n">14</span><a href="#c14">Dépannage</a></li>
+  <li><span class="n">15</span><a href="#c15">Guides des outils</a></li>
   <li><span class="n">A</span><a href="#ca">Glossaire</a></li>
 </ol>
-<div class="box"><b>Dans le jeu.</b> Ce guide existe aussi dans le manuel de terrain d'Arma (catégorie COMSPEC SSE) : menu ACE personnel, COMSPEC SSE, « Guide SSE », ou menu COMSPEC SSE de la barre d'Eden, ou module Zeus « Tutoriel : manuel du Zeus ».</div>
+<div class="box"><b>Dans le jeu.</b> Ce guide existe aussi dans le jeu : <b>MANUEL SSE</b> (Échap › Manuel de terrain › COMSPEC SSE ; téléphone ATAK › app SSE terrain › JOURNAL › « Guide SSE » ; menu COMSPEC SSE de la barre d'Eden ; module Zeus « Ouvrir le manuel » ; bouton « ? » des fenêtres SSE), avec un sommaire et un champ de recherche. Une page par outil : voir le chapitre 15.</div>
 
 <h1 id="c1">1. Présentation</h1>
 <p>Le SSE (<i>Sensitive Site Exploitation</i>) regroupe tout ce qu'une équipe fait sur un objectif une fois la zone tenue : identifier les personnes, relever les corps, fouiller, saisir et sceller les preuves, exploiter les téléphones et les ordinateurs, puis transmettre. COMSPEC SSE reproduit ce travail dans Arma 3 avec une logique de bout en bout : ce que vous trouvez sur le terrain alimente une base biométrique, un registre des scellés et un tableau des liens qui se remplit au fil des missions.</p>
@@ -330,6 +331,26 @@
   <tr><td>Envoi à Athena refusé (clé d'accès)</td><td>Le serveur doit être relié à la communauté (clé d'accès Athena dans les réglages du serveur)</td></tr>
   <tr><td>Pas d'extraction DL-7</td><td>ATAK natif chargé, câble DL-7 équipé, objet rendu extractible</td></tr>
 </table>
+
+<h1 id="c15">15. Guides des outils</h1>
+<p>Chaque outil du SSE roleplay a son guide complet dans le dossier <span class="k">docs/guides/</span> du mod (français, et version anglaise <span class="k">.en.md</span>) : à quoi il sert, où le trouver (Zeus, Eden, ACE, téléphone ATAK, menu Échap), pas à pas sur un exemple de jeu, chaque champ et réglage, pièges fréquents, lien avec Athena. Le même contenu, en plus court, est la page correspondante du <b>MANUEL SSE</b> en jeu.</p>
+<table>
+  <tr><th>Outil</th><th>En une phrase</th><th>Où</th><th>Guide</th></tr>
+  <tr><td>Éditeur SSE</td><td>Fabriquer un renseignement, une identité, un papier, un dossier ou un kit et le remettre aux joueurs (à ramasser, en fouille, au téléphone ; au sol, sur quelqu'un, annonce) ; bibliothèque versionnée</td><td>Zeus « Ouvrir l'éditeur » / module « Éditeur SSE » ; Eden › COMSPEC SSE › Éditeur SSE</td><td><a href="../guides/editeur_sse.md">editeur_sse.md</a></td></tr>
+  <tr><td>Documents d'identité et types</td><td>Carte d'identité, passeport, permis, carte militaire et types des extensions ; fenêtre « Choisir un document » (pays, type, aperçu, nature, procédé, qualité, nom imprimé, champs, cible ou « Poser au sol ») ; photo d'identité en direct</td><td>Zeus « Donner des papiers » ; Eden « Donner un document » et attribut Papiers</td><td><a href="../guides/documents_et_types.md">documents_et_types.md</a></td></tr>
+  <tr><td>Extensions de documents</td><td>Addon tiers qui déclare ses types dans <span class="k">CfgComspecDocuments</span> (champ par champ) et se présente dans <span class="k">CfgComspecDocumentExtensions</span> ; exemple livré dans le pack SSE, coupé par défaut</td><td><span class="k">extensions/example_documents/</span></td><td><a href="../guides/extensions_documents.md">extensions_documents.md</a></td></tr>
+  <tr><td>Menu « SSE ROLEPLAY · Extensions »</td><td>Extensions détectées (nom, auteur, version, modèles, aperçu), Activer / Désactiver (serveur), tuto intégré « Comment ça marche » (bouton Aide, config.cpp à copier)</td><td>Échap, Zeus, Eden, réglages CBA</td><td><a href="../guides/menu_extensions.md">menu_extensions.md</a></td></tr>
+  <tr><td>Contrôle d'identité</td><td>Demander, examiner (visionneuse : RECTO / VERSO, ZOOM, SCANNER (ATAK), RELEVER, FERMER), niveaux N0 à N4, fouille et saisie, checkpoints IA, app Contrôle ID, réglages</td><td>Menu ACE « Contrôle d'identité » ; téléphone › Contrôle ID</td><td><a href="../guides/controle_identite.md">controle_identite.md</a></td></tr>
+  <tr><td>IA de la zone</td><td>Trois étapes : choisir les IA (liste), les régler (onglets Identité, Papiers, Comportement, Camp ; leur papier dessiné à droite), appliquer ou garder en mémoire de la carte</td><td>Zeus « Configurer une IA » ; éditeur › IA DE LA ZONE</td><td><a href="../guides/ia_de_la_zone.md">ia_de_la_zone.md</a></td></tr>
+  <tr><td>Couvertures et « Ma couverture »</td><td>Infiltrer, légende, cohérence, questions des gardes, ce qui brûle une couverture</td><td>Zeus « Donner une couverture » ; téléphone › Ma couverture</td><td><a href="../guides/ma_couverture.md">ma_couverture.md</a></td></tr>
+  <tr><td>Tableau des liens</td><td>GRAPHE / ORBAT, filtres, DÉTAIL, vue Zeus et RÉVÉLER</td><td>Téléphone › SSE terrain › SITE ; Zeus « Ouvrir le tableau des liens »</td><td><a href="../guides/tableau_des_liens.md">tableau_des_liens.md</a></td></tr>
+  <tr><td>Modules Zeus et Eden</td><td>Catégories COMSPEC · Identité, Renseignement (SSE), Mission ; attributs Eden ; noms exacts</td><td>ZEN ; Eden › Systèmes › Modules et attributs</td><td><a href="../guides/modules_zeus_eden.md">modules_zeus_eden.md</a></td></tr>
+  <tr><td>Biométrie et SEEK II</td><td>Relevés, IDENTIFIER, lecture des résultats, réglages du personnage</td><td>Ctrl+Maj+S ; SSE terrain › CIBLE › SEEK II</td><td><a href="../guides/biometrie.md">biometrie.md</a></td></tr>
+  <tr><td>Preuves, scellés et renseignement</td><td>Fouiller, mettre sous scellé, chaîne de possession, paliers d'exploitation, DL-7</td><td>Menu ACE « SSE » sur un objet ; SSE terrain</td><td><a href="../guides/preuves.md">preuves.md</a></td></tr>
+  <tr><td>Générateur SSE</td><td>Profils, sites, modèles, brief, datasets et niveaux de révélation</td><td>Modules Eden et Zeus</td><td><a href="../guides/generateur.md">generateur.md</a></td></tr>
+  <tr><td>Téléphone ATAK : scanner, apps SSE, fouille</td><td>Apps SSE terrain et Contrôle ID, scanner par niveaux, notifications, toutes les fouilles</td><td>Téléphone ATAK ; menu ACE</td><td><a href="../guides/scanner_atak_fouille.md">scanner_atak_fouille.md</a></td></tr>
+</table>
+<p class="small">Sommaire des guides : <a href="../guides/index.md">docs/guides/index.md</a> (anglais : <a href="../guides/index.en.md">index.en.md</a>).</p>
 
 <h1 id="ca">A. Glossaire</h1>
 <table>

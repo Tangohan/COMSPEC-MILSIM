@@ -2,10 +2,14 @@
 
 /*
     Tutoriels du SSE :
-      - manuel de terrain (Field Manual, catégorie COMSPEC SSE), lisible dans Eden, en jeu et au Zeus ;
+      - MANUEL SSE : CfgHints › COMSPEC_SSE, une page par outil (clés STR_COMSPEC_SSE_GUIDE_*, FR + EN, Package « guide »
+        du stringtable) puis les chapitres de mise en place ; fenêtre maison avec sommaire et recherche
+        (comspec_sse_fnc_openGuide, Eden / Zeus / en jeu), bouton « ? » posable sur toute fenêtre SSE
+        (comspec_sse_fnc_guideButton) ; le manuel de terrain d'Arma (catégorie COMSPEC SSE) reste accessible ;
       - menu « COMSPEC SSE » dans la barre de menus d'Eden, avec le tableau de bord SSE de la mission ouverte ;
       - Zeus : manuel et exercice complet posé en un clic ;
-      - ACE : « Guide SSE (manuel) ».
+      - téléphone ATAK : bouton « Guide SSE » de l'onglet JOURNAL de l'app SSE terrain.
+    Guides complets (Markdown, FR et EN) : docs/guides/.
 */
 class CfgPatches {
     class comspec_sse_guide {
@@ -26,6 +30,7 @@ class CfgFunctions {
             file = "z\comspec_sse\addons\guide\functions";
             class guideExercise {};
             class openGuide {};
+            class guideButton {};
             class openDashboard {};
             class dashCollect {};
             class dashSite {};
@@ -55,19 +60,111 @@ class CfgHints {
         displayName = "$STR_COMSPEC_SSE_CFG_25ECDF92AF";
         logicalOrder = 90;
         class Start {
-            displayName = "$STR_COMSPEC_SSE_CFG_7549FAA67C";
-            displayNameShort = "$STR_COMSPEC_SSE_CFG_7549FAA67C";
-            description = "$STR_COMSPEC_SSE_CFG_9A715CB0F1";
-            tip = "$STR_COMSPEC_SSE_CFG_3646C2D826";
+            displayName = "$STR_COMSPEC_SSE_GUIDE_START_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_START_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_START_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_START_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class Editor {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_EDITOR_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_EDITOR_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_EDITOR_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_EDITOR_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class Documents {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_DOCUMENTS_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_DOCUMENTS_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_DOCUMENTS_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_DOCUMENTS_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class Countries {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_COUNTRIES_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_COUNTRIES_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_COUNTRIES_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_COUNTRIES_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class Extensions {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_EXTENSIONS_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_EXTENSIONS_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_EXTENSIONS_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_EXTENSIONS_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class IdCheck {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_IDCHECK_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_IDCHECK_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_IDCHECK_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_IDCHECK_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        // Nom des IA : le nom donné est celui de ses papiers (identité unique, fn_idIdentityOf), faux papiers, « Inconnu ».
+        class IdName {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_IDNAME_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_IDNAME_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_IDNAME_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_IDNAME_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class AiZone {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_AIZONE_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_AIZONE_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_AIZONE_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_AIZONE_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        // Lore de session Athena (module Identité › Synchroniser les IA avec Athena, fn_loreServer).
+        class Lore {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_LORE_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_LORE_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_LORE_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_LORE_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class Cover {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_COVER_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_COVER_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_COVER_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_COVER_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class Atak {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_ATAK_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_ATAK_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_ATAK_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_ATAK_TIP";
             arguments[] = {};
             image = HINT_IMG;
             noImage = 0;
         };
         class Bio {
-            displayName = "$STR_COMSPEC_SSE_CFG_B2EF3D8634";
-            displayNameShort = "$STR_COMSPEC_SSE_CFG_5427FD158C";
-            description = "$STR_COMSPEC_SSE_CFG_ACDEF74322";
-            tip = "$STR_COMSPEC_SSE_CFG_61CCF4C126";
+            displayName = "$STR_COMSPEC_SSE_GUIDE_BIO_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_BIO_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_BIO_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_BIO_TIP";
             arguments[] = {};
             image = HINT_IMG;
             noImage = 0;
@@ -82,19 +179,37 @@ class CfgHints {
             noImage = 0;
         };
         class Evidence {
-            displayName = "$STR_COMSPEC_SSE_CFG_B80CA83E9F";
-            displayNameShort = "$STR_COMSPEC_SSE_CFG_F4F05DEBDE";
-            description = "$STR_COMSPEC_SSE_CFG_B59B00E2C9";
-            tip = "$STR_COMSPEC_SSE_CFG_8D04FF3E4A";
+            displayName = "$STR_COMSPEC_SSE_GUIDE_EVIDENCE_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_EVIDENCE_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_EVIDENCE_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_EVIDENCE_TIP";
             arguments[] = {};
             image = HINT_IMG;
             noImage = 0;
         };
         class Links {
-            displayName = "$STR_COMSPEC_SSE_CFG_DB6388D385";
-            displayNameShort = "$STR_COMSPEC_SSE_CFG_3343043971";
-            description = "$STR_COMSPEC_SSE_CFG_54F61CC779";
-            tip = "$STR_COMSPEC_SSE_CFG_9F02B44AA2";
+            displayName = "$STR_COMSPEC_SSE_GUIDE_LINKS_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_LINKS_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_LINKS_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_LINKS_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class Generator {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_GENERATOR_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_GENERATOR_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_GENERATOR_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_GENERATOR_TIP";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class IdModules {
+            displayName = "$STR_COMSPEC_SSE_GUIDE_IDMODULES_TITLE";
+            displayNameShort = "$STR_COMSPEC_SSE_GUIDE_IDMODULES_TITLE";
+            description = "$STR_COMSPEC_SSE_GUIDE_IDMODULES_DESC";
+            tip = "$STR_COMSPEC_SSE_GUIDE_IDMODULES_TIP";
             arguments[] = {};
             image = HINT_IMG;
             noImage = 0;
@@ -198,7 +313,7 @@ class CfgHints {
             image = HINT_IMG;
             noImage = 0;
         };
-        class Documents {
+        class Presentation {
             displayName = "$STR_COMSPEC_SSE_CFG_DF90578A65";
             displayNameShort = "$STR_COMSPEC_SSE_CFG_C513967CEA";
             description = "$STR_COMSPEC_SSE_CFG_EAFF9C49E6";
@@ -237,12 +352,16 @@ class Display3DEN {
                 items[] += {"COMSPEC_SSE_Menu"};
                 class COMSPEC_SSE_Menu {
                     text = "COMSPEC SSE";
-                    items[] = {"COMSPEC_SSE_MenuAthena", "COMSPEC_SSE_MenuEditor", "COMSPEC_SSE_MenuDashboard", "COMSPEC_SSE_MenuEden", "COMSPEC_SSE_MenuStart", "COMSPEC_SSE_MenuLinks", "COMSPEC_SSE_MenuCampaigns", "COMSPEC_SSE_MenuZeus", "COMSPEC_SSE_MenuDatasets", "COMSPEC_SSE_MenuCaseRef", "COMSPEC_SSE_MenuModMission", "COMSPEC_SSE_MenuModPeople", "COMSPEC_SSE_MenuModDigital", "COMSPEC_SSE_MenuModTools", "COMSPEC_SSE_MenuDocuments", "COMSPEC_SSE_MenuItems", "COMSPEC_SSE_MenuModels", "COMSPEC_SSE_MenuCustom"};
+                    items[] = {"COMSPEC_SSE_MenuAthena", "COMSPEC_SSE_MenuEditor", "COMSPEC_SSE_MenuGiveDoc", "COMSPEC_SSE_MenuExtensions", "COMSPEC_SSE_MenuDashboard", "COMSPEC_SSE_MenuEden", "COMSPEC_SSE_MenuStart", "COMSPEC_SSE_MenuGuides", "COMSPEC_SSE_MenuLinks", "COMSPEC_SSE_MenuCampaigns", "COMSPEC_SSE_MenuZeus", "COMSPEC_SSE_MenuDatasets", "COMSPEC_SSE_MenuCaseRef", "COMSPEC_SSE_MenuModMission", "COMSPEC_SSE_MenuModPeople", "COMSPEC_SSE_MenuModDigital", "COMSPEC_SSE_MenuModTools", "COMSPEC_SSE_MenuPresentation", "COMSPEC_SSE_MenuItems", "COMSPEC_SSE_MenuModels", "COMSPEC_SSE_MenuCustom"};
                 };
                 class COMSPEC_SSE_MenuAthena { text = "$STR_COMSPEC_SSE_CFG_79E31EE88D"; action = "['open'] call comspec_sse_fnc_athenaEden"; };
                 class COMSPEC_SSE_MenuEditor { text = "$STR_COMSPEC_SSE_CFG_EDITOR_OPEN"; action = "['open', [[], objNull]] call comspec_sse_fnc_editor"; };
+                // Sélecteur de document (attributs « Papiers » des unités sélectionnées) et fenêtre des extensions de documents.
+                class COMSPEC_SSE_MenuGiveDoc { text = "$STR_COMSPEC_SSE_MENU_GIVEDOC"; action = "['open', [objNull, []]] call comspec_sse_fnc_idDocPicker"; };
+                class COMSPEC_SSE_MenuExtensions { text = "$STR_COMSPEC_SSE_MENU_EXTENSIONS"; action = "[] call comspec_sse_fnc_docExtOpen"; };
                 class COMSPEC_SSE_MenuDashboard { text = "$STR_COMSPEC_SSE_CFG_519542D0B0"; action = "[] call comspec_sse_fnc_openDashboard"; };
                 class COMSPEC_SSE_MenuEden { text = "$STR_COMSPEC_SSE_CFG_D2BC59B49C"; action = "['Eden'] call comspec_sse_fnc_openGuide"; };
+                class COMSPEC_SSE_MenuGuides { text = "$STR_COMSPEC_SSE_GUIDE_MENU_TOOLS"; action = "['Editor'] call comspec_sse_fnc_openGuide"; };
                 class COMSPEC_SSE_MenuStart { text = "$STR_COMSPEC_SSE_CFG_20FDBBF21A"; action = "['Start'] call comspec_sse_fnc_openGuide"; };
                 class COMSPEC_SSE_MenuLinks { text = "$STR_COMSPEC_SSE_CFG_DB6388D385"; action = "['Links'] call comspec_sse_fnc_openGuide"; };
                 class COMSPEC_SSE_MenuCampaigns { text = "$STR_COMSPEC_SSE_CFG_EF527E85F0"; action = "['Campaigns'] call comspec_sse_fnc_openGuide"; };
@@ -253,7 +372,7 @@ class Display3DEN {
                 class COMSPEC_SSE_MenuModPeople { text = "$STR_COMSPEC_SSE_CFG_F6800D38C9"; action = "['ModPeople'] call comspec_sse_fnc_openGuide"; };
                 class COMSPEC_SSE_MenuModDigital { text = "$STR_COMSPEC_SSE_CFG_C3B4425DDB"; action = "['ModDigital'] call comspec_sse_fnc_openGuide"; };
                 class COMSPEC_SSE_MenuModTools { text = "$STR_COMSPEC_SSE_CFG_F7CD61CB3B"; action = "['ModTools'] call comspec_sse_fnc_openGuide"; };
-                class COMSPEC_SSE_MenuDocuments { text = "$STR_COMSPEC_SSE_CFG_DF90578A65"; action = "['Documents'] call comspec_sse_fnc_openGuide"; };
+                class COMSPEC_SSE_MenuPresentation { text = "$STR_COMSPEC_SSE_CFG_DF90578A65"; action = "['Presentation'] call comspec_sse_fnc_openGuide"; };
                 class COMSPEC_SSE_MenuItems { text = "$STR_COMSPEC_SSE_CFG_0266B57201"; action = "['Items'] call comspec_sse_fnc_openGuide"; };
                 class COMSPEC_SSE_MenuModels { text = "$STR_COMSPEC_SSE_CFG_144B2D2353"; action = "['Models'] call comspec_sse_fnc_openGuide"; };
                 class COMSPEC_SSE_MenuCustom { text = "$STR_COMSPEC_SSE_CFG_385FD78DF8"; action = "['Custom'] call comspec_sse_fnc_openGuide"; };

@@ -30,7 +30,7 @@ private _person = [
     ["COMSPEC_SSE_KitGsr", "Test de résidus de tir", "\a3\ui_f\data\igui\cfg\simpleTasks\types\target_ca.paa",
         { [_this select 0, _this select 1] call comspec_sse_fnc_gsrTest },
         { params ["_t", "_player"]; ["COMSPEC_SSE_SwabKit"] call _has }],
-    ["COMSPEC_SSE_KitSeek", "Enrôlement biométrique (SEEK II)", "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa",
+    ["COMSPEC_SSE_KitSeek", "Contrôle biométrique (SEEK II)", "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa",
         { [_this select 0] call comspec_sse_fnc_openSeek },
         { params ["_t", "_player"]; ["COMSPEC_SSE_SEEKII"] call _has }]
 ];

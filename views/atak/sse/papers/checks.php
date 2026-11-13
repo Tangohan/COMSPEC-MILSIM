@@ -8,15 +8,12 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var array<string,string> $filters */
 require __DIR__ . '/_subnav.php';
 ?>
-<div class="breadcrumb">Athena / SSE / <a class="link" href="<?= $h(url('atak/sse/papiers')) ?>">Identités &amp; documents</a> / <strong>Contrôles reçus</strong></div>
 
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Collecte // Contrôles d’identité</div>
         <h1>Contrôles reçus</h1>
         <p>Contrôles transmis depuis le jeu : examen visuel, lecture de la bande, de la puce et interrogation des fichiers, avec le verdict donné sur place.</p>
     </div>
-    <div class="page-reference"><strong>Vue // Registre</strong> Réf. ATH-SSE-IDENT-CTRL</div>
 </div>
 
 <?php if (!empty($canManageSettings)): ?>

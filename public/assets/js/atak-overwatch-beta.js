@@ -7186,7 +7186,10 @@
     ['Préparer un SITREP', 'Mission', function () { setTool('cursor'); toast('Clic droit sur la carte → compte rendu géolocalisé.'); }],
     ['Préparer un SALUTE', 'Mission', function () { openView('mission'); toast('Clic droit sur la carte pour préremplir la grille, puis remplissez le compte rendu.'); }],
     ['Tracer une route', 'Carte', function () { setTool('route'); toast('Cliquez les points, double-clic pour terminer.'); }],
-    ['Ouvrir le replay', 'Outils', function () { document.getElementById('ow-timeline').hidden = !document.getElementById('ow-timeline').hidden; }],
+    ['Ouvrir le replay', 'Outils', function () {
+      if (window.OverwatchReplayPicker) window.OverwatchReplayPicker.open();
+      else document.getElementById('ow-timeline').hidden = !document.getElementById('ow-timeline').hidden;
+    }],
     ['Afficher les paramètres', 'Calques', function () { openView('layers'); }],
     ['Ouvrir le renseignement', 'Renseignement', function () { openView('intel'); }],
     ['Mesurer une distance', 'Carte', function () { setTool('measure'); }],

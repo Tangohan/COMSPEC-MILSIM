@@ -56,11 +56,6 @@ $cd = static function (string $key) use ($cooldowns): array {
 $cdBlocked = static fn (string $key): bool => !empty($cd($key)['blocked']);
 $cdHuman = static fn (string $key): string => (string) ($cd($key)['human'] ?? '');
 ?>
-<div class="breadcrumb">
-    Athena / SSE /
-    <a class="link" href="<?= $h(url('atak/sse/interet')) ?>">Dossiers d’intérêt</a> /
-    <strong><?= $h($c['reference_code'] ?? '') ?></strong>
-</div>
 
 <header class="interest-hero interest-hero--enriched">
     <div class="interest-hero__main">

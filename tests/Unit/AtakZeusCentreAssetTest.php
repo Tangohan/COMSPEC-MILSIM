@@ -60,8 +60,27 @@ final class AtakZeusCentreAssetTest extends TestCase
     {
         $c = $this->read(self::MAIN . 'functions/zeus/fn_zeusCentre.sqf');
         self::assertStringContainsString('["catalog"] call comspec_atak_native_fnc_zeusMenu', $c);
-        self::assertStringContainsString('["apply", [_arg param [0, ""], [allPlayers select _i]]] call comspec_atak_native_fnc_zeusMenu', $c);
+        self::assertStringContainsString('["apply", [_arg param [0, ""], _units]] call comspec_atak_native_fnc_zeusMenu', $c);
         self::assertStringContainsString('if (!isNil "comspec_sse_fnc_aiConfigOpen")', $c);
+        // Fenêtres ouvertes depuis le centre : le centre se replie (« tool ») et revient à la fermeture (Unload).
+        self::assertStringContainsString('case "tool"', $c);
+        self::assertStringContainsString('displayAddEventHandler ["Unload", { [{ ["show"] call comspec_atak_native_fnc_zeusCentre; }]', $c);
+    }
+
+    public function testServerStatusIsCheckedOnTheServerAndHidesIdentifiers(): void
+    {
+        $state = $this->read(self::MAIN . 'functions/zeus/fn_zeusState.sqf');
+        // Demande d'état du serveur : droits vérifiés sur le serveur, réponse au seul demandeur, UID masqués, rien en continu.
+        self::assertStringContainsString('["comspec_atak_native_zeusSrv", {', $state);
+        self::assertStringContainsString('["comspec_atak_native_zeusSrvData", [_out], _caller] call CBA_fnc_targetEvent', $state);
+        self::assertStringContainsString('regexReplace ["[0-9]{17}", "UID"]', $state);
+        self::assertStringContainsString('COMSPEC_ATAK_ZeusSrvAt', $state);
+        foreach (['comspec_overwatch_auth_token', 'COMSPEC_ApiKey', 'profileNamespace', 'getPlayerUID _caller'] as $private) {
+            self::assertStringNotContainsString($private, $state);
+        }
+        $c = $this->read(self::MAIN . 'functions/zeus/fn_zeusCentre.sqf');
+        // L'état n'est demandé que l'onglet SERVEUR ouvert.
+        self::assertStringContainsString('isEqualTo "server" && {_now - (missionNamespace getVariable ["COMSPEC_ATAK_ZeusSrvAsked", -100]) >= 5}', $c);
     }
 
     public function testOnlyFourCategoriesAndNoLeftover(): void
@@ -134,7 +153,9 @@ final class AtakZeusCentreAssetTest extends TestCase
         }
         $cfg = $this->read(self::MAIN . 'config.cpp');
         self::assertStringContainsString('#define COMSPEC_SCREEN_ATTRIBUTES', $cfg);
-        self::assertSame(7, substr_count($cfg, 'COMSPEC_SCREEN_ATTRIBUTES'));
+        // Écrans refaits avec les modèles du mod : leurs classes sont dans toc_screens_legacy.hpp et toc_screens3d.hpp.
+        self::assertGreaterThanOrEqual(3, substr_count($this->read(self::MAIN . 'toc_screens_legacy.hpp'), 'COMSPEC_SCREEN_ATTRIBUTES;'));
+        self::assertGreaterThanOrEqual(20, substr_count($this->read(self::MAIN . 'toc_screens3d.hpp'), 'COMSPEC_SCREEN_ATTRIBUTES;'));
     }
 
     public function testEveryIconExists(): void

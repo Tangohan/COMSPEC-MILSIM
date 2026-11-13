@@ -66,16 +66,48 @@ final class AtakCoverImportAssetTest extends TestCase
         self::assertStringContainsString('(_reg getOrDefault ["imports", createHashMap])', $legend);
         self::assertStringContainsString('_L set ["imported", true];', $legend);
 
-        self::assertStringContainsString('["athena", "import"]', self::read($dir . 'functions/fn_idCoverSync.sqf'));
+        // Identité utilisée en jeu remontée quelle que soit son origine (athena, import compris), seulement si la transmission
+        // automatique est permise : le site la compare sans l'écrire (MemberIdentitySyncService).
+        $sync = self::read($dir . 'functions/fn_idCoverSync.sqf');
+        self::assertStringContainsString('["origin", _origin]', $sync);
+        self::assertStringContainsString('comspec_sse_id_autoTransmitCommunity', $sync);
         self::assertStringContainsString('["resend"] call comspec_sse_fnc_idCoverImport;', self::read($dir . 'XEH_postInitClient.sqf'));
 
         $page = self::read($dir . 'functions/fn_idCoverPage.sqf');
-        self::assertStringContainsString('"IMPORTER MA COUVERTURE" call _tr', $page);
-        self::assertStringContainsString('1. Sur Athena > Ma couverture, cliquez Générer puis Télécharger.', $page);
-        self::assertStringContainsString('2. Déposez le fichier dans Documents\Arma 3 - COMSPEC.', $page);
-        self::assertStringContainsString('3. Ici, cliquez Importer.', $page);
+        // Depuis feat/atak-couvertures-sync (4.4.0) : import d'abord depuis Athena (fenêtre Mes couvertures sur Athena),
+        // le fichier reste possible (IMPORTER UN FICHIER) avec une seule ligne d'aide.
+        self::assertStringContainsString('"IMPORTER UN FICHIER" call _tr', $page);
+        self::assertStringContainsString('Sans connexion : sur Athena › Ma couverture, téléchargez le fichier, déposez-le dans Documents\Arma 3 - COMSPEC, puis touchez Importer un fichier.', $page);
+        self::assertStringContainsString('fn_idCoverAthena', $page);
         // Le bouton « Demander la mise à jour » existant ne change pas.
         self::assertStringContainsString('["pull"] call _act, false, !_wait', $page);
+    }
+
+    public function testSyncWindowFollowsTheCoverActiveOnTheSite(): void
+    {
+        $dir = 'mod/@COMSPEC_SSE/addons/identity/';
+        $sqf = self::read($dir . 'functions/fn_idCoverAthena.sqf');
+        // Champ « active » de la liste du site (SseCoverSyncService::listFor) : marque, présélection, priorité à l'import.
+        self::assertStringContainsString('(_x getOrDefault ["active", false]) isEqualTo true', $sqf);
+        self::assertStringContainsString('private _first = if (_onSite in _here) then { _onSite } else { _here param [0, ""] };', $sqf);
+        // Site ancien (champ absent) : ni retrait des copies du poste, ni présélection.
+        self::assertStringContainsString('private _knows = (_covers findIf { "active" in _x }) >= 0;', $sqf);
+        // Couverture révoquée : copie retirée du poste, jamais la couverture en cours ; hors de la liste, plus d'activation.
+        self::assertStringContainsString('(keys _lib) select { !(_x in _refs) && {_x isNotEqualTo _current} }', $sqf);
+        self::assertStringContainsString('if (((_ui getOrDefault ["covers", []]) findIf { (_x get "ref") isEqualTo _arg }) < 0) exitWith {};', $sqf);
+        self::assertStringNotContainsString('["forget"] call comspec_sse_fnc_idCoverImport', $sqf);
+        // Aucune alerte Arma, aucune nouvelle requête : seules « ~covers » et « ~cover: » partent, derrière la garde.
+        foreach (['hint ', 'hintSilent', 'systemChat', 'BIS_fnc_showNotification', 'cutText', 'comspec_sse_fnc_radioGuard', 'callExtension'] as $forbidden) {
+            self::assertStringNotContainsString($forbidden, $sqf, $forbidden);
+        }
+        self::assertSame(2, substr_count($sqf, 'private _g = call _gate;'));
+        self::assertSame(1, substr_count($sqf, '["pull", "~covers"] call comspec_sse_fnc_idCoverAthena'));
+        // Textes des ajouts : stringtable de l'addon, anglais et français.
+        $st = self::read($dir . 'stringtable.xml');
+        foreach (['STR_COMSPEC_SSE_ID_CoverSiteActive', 'STR_COMSPEC_SSE_ID_CoverSiteActiveHint', 'STR_COMSPEC_SSE_ID_CoverGoneHint'] as $key) {
+            self::assertStringContainsString('localize "' . $key . '"', $sqf, $key);
+            self::assertMatchesRegularExpression('/<Key ID="' . $key . '">\s*<Original>[^<]+<\/Original>\s*<English>[^<]+<\/English>\s*<French>[^<]+<\/French>/', $st, $key);
+        }
     }
 
     public function testEveryNewTextIsTranslated(): void
@@ -102,11 +134,23 @@ final class AtakCoverImportAssetTest extends TestCase
 
     public function testChangelogAnnouncesItWithBothLanguages(): void
     {
-        $log = self::read('CHANGELOG-ATAK.md');
+        $log = str_replace("\r\n", "\n", self::read('CHANGELOG-ATAK.md'));
         $i = strpos($log, '## À venir : importer sa couverture générée sur Athena');
+        if ($i !== false) {
+            // Avant la sortie : entrée non versionnée.
+            $block = substr($log, $i, 3000);
+            self::assertStringContainsString("### À annoncer (devient « Résumé joueur » avec le numéro de version)\nType : nouveauté\nFR : ", $block);
+            self::assertStringContainsString("\nEN : ", $block);
+            return;
+        }
+        // Après la sortie : l'import de la couverture est annoncé dans le « Résumé joueur » du pack, en français et en anglais.
+        $i = strpos($log, '## Pack 4.2.0 Washington');
         self::assertNotFalse($i);
-        $block = substr($log, $i, 3000);
-        self::assertStringContainsString("### À annoncer (devient « Résumé joueur » avec le numéro de version)\nType : nouveauté\nFR : ", $block);
+        $end = strpos($log, "\n## ", $i + 1);
+        $block = substr($log, $i, $end === false ? null : $end - $i);
+        self::assertStringContainsString("### Résumé joueur\nType : nouveauté\nFR : ", $block);
         self::assertStringContainsString("\nEN : ", $block);
+        self::assertStringContainsString('couverture', $block);
+        self::assertStringContainsString('cover', $block);
     }
 }

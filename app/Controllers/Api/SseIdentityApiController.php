@@ -12,6 +12,7 @@ use App\Repositories\TenantAtakConfigRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseEditorLibraryService;
+use App\Services\Sse\SseFileQueryService;
 use App\Services\Sse\SseIdCheckService;
 use App\Services\Sse\SseIdDocumentLookupService;
 use App\Services\Sse\SseIdentityPackService;
@@ -19,16 +20,20 @@ use App\Services\Sse\SseIdGameCoverService;
 use App\Services\Sse\SseIdWatchFromGameService;
 use App\Support\ComspecApiKeyAuth;
 use App\Support\HttpJsonBody;
+use App\Support\ShortCache;
+use App\Support\SseIdentityPackCache;
 
 /**
  * API COMSPEC IDENTITY (Lot 1) — lue par COMSPEC Link pour le mod SSE.
  *
- * - GET  /api/sse/identity/pack               → pack du serveur de jeu (vérité de jeu comprise)
+ * - GET  /api/sse/identity/pack               → pack du serveur de jeu (vérité de jeu comprise) ; op « ~covers » ou
+ *                                                 « ~cover:… » : couvertures du compte relié (AtakCoverSyncApiController)
  * - GET  /api/sse/identity/documents/lookup   → contrôle N3 en ligne d'un papier présenté
  * - POST /api/sse/identity/checks             → contrôle remonté du terrain (idempotent) ; avec kind = bolo | hvt :
  *                                                 avis né en jeu (BOLO, HVT désignée), créé ou mis à jour (lots 4 et 5) ;
  *                                                 avec kind = editor_… : bibliothèque de l'éditeur SSE (SseEditorLibraryService) ;
- *                                                 avec kind = cover_report : couverture née en jeu (SseIdGameCoverService)
+ *                                                 avec kind = cover_report : couverture née en jeu (SseIdGameCoverService) ;
+ *                                                 avec kind = file_query | seek_record | id_record : passage aux fichiers (SseFileQueryService)
  *
  * Accès : clé de jeu valable (communauté ou plateforme) — le serveur de jeu garde la vérité pour lui —, ou session du
  * portail avec l'habilitation SSE voulue (Confidentiel pour le pack, Encadrement pour le reste). Sans clé ni session :
@@ -52,6 +57,7 @@ final class SseIdentityApiController
         private ?SseIdWatchFromGameService $gameWatch = null,
         private ?SseEditorLibraryService $editorLibrary = null,
         private ?SseIdGameCoverService $gameCovers = null,
+        private ?SseFileQueryService $files = null,
     ) {
         $this->gameWatch ??= new SseIdWatchFromGameService();
         $this->pack ??= new SseIdentityPackService();
@@ -71,15 +77,66 @@ final class SseIdentityApiController
         }
         $offset = (int) ($request->query('offset') ?? 0);
         $limit = (int) ($request->query('limit') ?? SseIdentityPackService::DEFAULT_LIMIT);
+        $limit = $limit > 0 ? $limit : SseIdentityPackService::DEFAULT_LIMIT;
+        $mapId = $this->mapId($request);
+        $op = self::queryText($request, 'op');
+        $since = self::queryText($request, 'since');
 
-        return Response::json($this->pack->build(
-            $tenantId,
-            $this->mapId($request),
-            self::queryText($request, 'op'),
-            self::queryText($request, 'since'),
-            $offset,
-            $limit > 0 ? $limit : SseIdentityPackService::DEFAULT_LIMIT
-        ));
+        // Couvertures du membre (op « ~covers » ou « ~cover:CVR-…,… ») : app Ma couverture › Synchroniser avec Athena, par
+        // la commande GetIdentityPack de COMSPEC Link (sans nouvelle DLL). Compte du jeton de jeu seulement.
+        if (str_starts_with($op, '~cover')) {
+            return (new AtakCoverSyncApiController())->packResponse($op, $since, $mapId);
+        }
+
+        // Paquet « self » (op « ~self » ou « ~self:OPÉRATION ») : relayé par le téléphone d'un joueur pour un serveur de jeu
+        // sans COMSPEC Link. Seuls les papiers, l'identité et le brief du compte relié (jeton de jeu) partent ; une clé de
+        // communauté seule ne dit pas qui appelle : rien.
+        if (str_starts_with($op, SseIdentityPackService::SELF_OP)) {
+            $gameUser = ComspecApiKeyAuth::matchedUserId();
+            if ($gameUser === null || $gameUser < 1) {
+                return Response::json(['error' => 'unlinked', 'message' => 'Compte Athena non relié en jeu : vos papiers ne peuvent pas être lus.'], 403);
+            }
+            $selfOp = substr($op, strlen(SseIdentityPackService::SELF_OP));
+            $selfOp = str_starts_with($selfOp, ':') ? substr($selfOp, 1) : '';
+
+            return Response::json($this->pack->buildSelf($tenantId, $mapId, $gameUser, $selfOp !== '' ? $selfOp : null))
+                ->header('Cache-Control', 'private, no-store');
+        }
+
+        // Paquet et révision gardés quelques minutes par communauté (invalidés à chaque écriture du registre).
+        $entry = ShortCache::remember(
+            SseIdentityPackCache::key($tenantId, $mapId, $op, $since, $offset, $limit),
+            SseIdentityPackCache::TTL,
+            function () use ($tenantId, $mapId, $op, $since, $offset, $limit): array {
+                $pack = $this->pack->build($tenantId, $mapId, $op, $since, $offset, $limit);
+
+                return ['pack' => $pack, 'revision' => SseIdentityPackService::revisionOf($pack)];
+            }
+        );
+        $pack = $entry['pack'];
+        $revision = (string) $entry['revision'];
+        $etag = SseIdentityPackCache::etag($revision);
+
+        // Révision déjà connue du client (paramètre since_rev ou en-tête If-None-Match) : rien à renvoyer.
+        // Sans l'un ni l'autre, la réponse est le paquet complet, comme avant (plus le champ « revision »).
+        if (self::queryText($request, 'since_rev') === $revision) {
+            return Response::json([
+                'version' => $pack['version'] ?? SseIdentityPackService::VERSION,
+                'unchanged' => true,
+                'revision' => $revision,
+                'generated_at' => $pack['generated_at'] ?? null,
+                'map' => $pack['map'] ?? $mapId,
+                'op' => $pack['op'] ?? null,
+                'paging' => $pack['paging'] ?? null,
+            ])->header('ETag', $etag)->header('Cache-Control', 'private, no-cache');
+        }
+        if (SseIdentityPackCache::ifNoneMatchHits($request->header('If-None-Match'), $etag)) {
+            return (new Response())->setStatusCode(304)->header('ETag', $etag)->header('Cache-Control', 'private, no-cache');
+        }
+
+        $pack['revision'] = $revision;
+
+        return Response::json($pack)->header('ETag', $etag)->header('Cache-Control', 'private, no-cache');
     }
 
     /** GET /api/sse/identity/documents/lookup?country=&type=&number=&last=&first=&dob= */
@@ -90,14 +147,25 @@ final class SseIdentityApiController
             return $tenantId;
         }
 
-        return Response::json($this->lookup->lookup($tenantId, [
+        $q = [
             'country' => self::queryText($request, 'country'),
             'type' => self::queryText($request, 'type'),
             'number' => self::queryText($request, 'number'),
             'last' => self::queryText($request, 'last'),
             'first' => self::queryText($request, 'first'),
             'dob' => self::queryText($request, 'dob'),
-        ]));
+        ];
+        // Passage aux fichiers (QW, QV, QA, QB), journalisé ; même forme de réponse que le contrôle N3.
+        try {
+            $source = ComspecApiKeyAuth::extractPresentedKey() === '' && (int) (Session::get('user_id') ?? 0) > 0 ? 'web' : 'game';
+            $userId = ComspecApiKeyAuth::matchedUserId() ?? ($source === 'web' ? (int) Session::get('user_id') : null);
+
+            return Response::json(($this->files ??= new SseFileQueryService(null, $this->lookup))->gameLookup($tenantId, $q, $userId, $source));
+        } catch (\Throwable $e) {
+            error_log('Passage aux fichiers indisponible, contrôle N3 seul : ' . $e->getMessage());
+        }
+
+        return Response::json($this->lookup->lookup($tenantId, $q));
     }
 
     /** POST /api/sse/identity/checks */
@@ -119,6 +187,17 @@ final class SseIdentityApiController
         }
         if (in_array($body['kind'] ?? null, \App\Services\Sse\SseAiProfileService::KINDS, true)) {
             return $this->aiProfileResponse($tenantId, $mapId, $body);
+        }
+
+        // Fichiers SSE : extraction d'un téléphone du jeu (ICD-SSE-PHONE-001), lore de session (ICD-SSE-LORE-001).
+        if (($body['kind'] ?? null) === \App\Services\Sse\SsePhoneExtractionService::KIND
+            || in_array($body['kind'] ?? null, \App\Services\Sse\SseLoreService::KINDS, true)) {
+            return $this->filesGameResponse($tenantId, $mapId, $body);
+        }
+
+        // Passage aux fichiers : consultation faite hors liaison, fiche biométrique SEEK II (réponse id + ref).
+        if (in_array($body['kind'] ?? null, SseFileQueryService::KINDS, true)) {
+            return $this->fileResponse($tenantId, $mapId, $body);
         }
 
         if (($body['kind'] ?? null) === SseIdGameCoverService::KIND) {
@@ -218,6 +297,83 @@ final class SseIdentityApiController
         }
 
         return Response::json($result);
+    }
+
+    /**
+     * Passage aux fichiers : kind file_query (journal, idempotent), seek_record (fiche SEEK II et contrôle N4) ou id_record
+     * (relevé d'un papier : contrôle N0 et ligne de journal QA).
+     *
+     * @param array<string, mixed> $body
+     */
+    private function fileResponse(int $tenantId, int $mapId, array $body): Response
+    {
+        try {
+            $files = $this->files ??= new SseFileQueryService(null, $this->lookup);
+            $result = match ($body['kind'] ?? '') {
+                SseFileQueryService::KIND_SEEK => $files->storeSeek($tenantId, $mapId, $body),
+                SseFileQueryService::KIND_RECORD => $files->storeRecord($tenantId, $mapId, $body, ComspecApiKeyAuth::matchedUserId()),
+                default => $files->storeDeferred($tenantId, $body, ComspecApiKeyAuth::matchedUserId()),
+            };
+        } catch (\PDOException $e) {
+            // Étape de migration 4330 pas encore passée, base indisponible : le mod garde l'envoi sur le poste.
+            error_log('Passage aux fichiers : envoi du jeu non enregistré : ' . $e->getMessage());
+
+            return Response::json(['error' => 'unavailable', 'message' => 'Envoi non enregistré pour le moment.'], 503);
+        }
+        if (isset($result['error'])) {
+            return Response::json(['error' => $result['error'], 'message' => 'Clé d’envoi manquante ou invalide : rien n’a été enregistré.'], 422);
+        }
+
+        return Response::json($result, $result['duplicate'] ? 200 : 201);
+    }
+
+    /**
+     * Fichiers SSE envoyés par le jeu : extraction de téléphone (compte du jeton de jeu obligatoire), remontée et
+     * redescente du lore de session (clé de la communauté ; le caché MJ seulement pour un compte qui a le droit).
+     * Débit borné par communauté et par compte (FileRateLimiter) en plus de la règle générale de la route.
+     *
+     * @param array<string, mixed> $body
+     */
+    private function filesGameResponse(int $tenantId, int $mapId, array $body): Response
+    {
+        $kind = (string) $body['kind'];
+        $gameUser = ComspecApiKeyAuth::matchedUserId();
+        [$max, $window] = match ($kind) {
+            \App\Services\Sse\SsePhoneExtractionService::KIND => [40, 600],
+            default => [240, 60],
+        };
+        $limiter = new \App\Services\Security\FileRateLimiter();
+        if ($limiter->tooManyAttempts('sse_files_game|' . $kind . '|' . $tenantId . '|' . (int) $gameUser, $max, $window)) {
+            return Response::json(['error' => 'too_many_requests', 'message' => 'Trop d’envois : réessayez dans un moment.', 'retry_after' => $window], 429)
+                ->header('Retry-After', (string) $window);
+        }
+        try {
+            $result = match ($kind) {
+                \App\Services\Sse\SsePhoneExtractionService::KIND => (new \App\Services\Sse\SsePhoneExtractionService())
+                    ->ingest($tenantId, $gameUser, $body, strlen((string) json_encode($body, JSON_UNESCAPED_UNICODE))),
+                \App\Services\Sse\SseLoreService::KIND_PUSH => (new \App\Services\Sse\SseLoreService())->push($tenantId, $mapId, $body, $gameUser),
+                default => (new \App\Services\Sse\SseLoreService())->pull($tenantId, $body, $gameUser),
+            };
+        } catch (\PDOException $e) {
+            error_log('Fichiers SSE : envoi du jeu non enregistré : ' . $e->getMessage());
+
+            return Response::json(['error' => 'unavailable', 'message' => 'Envoi non enregistré pour le moment.'], 503);
+        }
+        if (isset($result['error'])) {
+            $messages = [
+                'unlinked' => 'Compte Athena non relié en jeu : rien n’a été envoyé.',
+                'consent_required' => 'Synchronisation non autorisée par le joueur.',
+                'consent_revoked' => 'Vous avez retiré votre accord pour ce téléphone sur le site.',
+                'extractions_disabled' => 'La communauté a désactivé la synchronisation des téléphones.',
+                'too_large' => 'Envoi trop volumineux : découpez-le en parties plus petites.',
+                'unknown_session' => 'Aucune session de lore pour ce code d’opération.',
+                'invalid_op' => 'Code d’opération invalide.',
+            ];
+
+            return Response::json(['error' => $result['error'], 'message' => $messages[$result['error']] ?? 'Envoi refusé : rien n’a été enregistré.'], (int) ($result['status'] ?? 422));
+        }
+
+        return Response::json($result, !empty($result['duplicate']) ? 200 : 201);
     }
 
     /**

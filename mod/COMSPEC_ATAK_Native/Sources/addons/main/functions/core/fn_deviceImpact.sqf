@@ -90,6 +90,8 @@ private _apply = {
     } forEach (_outs select { _x isNotEqualTo "none" });
     if (_scr <= 0 && {_off <= 0} && {(count _p) isEqualTo 0}) exitWith {
         ["INFO", format ["%1 (%2) : le téléphone a encaissé, rien de cassé", _why, _where], 3, 15] call comspec_atak_native_fnc_notify;
+        // Choc sous le seuil de casse : le verre tient, mais la dalle peut garder un pixel mort ou buguer un instant.
+        ["cause", ["shock", 0.05 + 0.05 * _e]] call comspec_atak_native_fnc_screenDamage;
         false
     };
     [_scr, _why, _off, _p, _where] call comspec_atak_native_fnc_deviceDamage
@@ -109,6 +111,11 @@ switch (_kind) do {
             case (!isClass _cfg): { "bullet" };
             case ((getNumber (_cfg >> "explosive")) > 0.3): { "frag" };
             default { "bullet" };
+        };
+        // Feu : pas de casse, mais la chaleur jaunit la dalle et décolle le film (au plus un tirage toutes les 20 s).
+        if (_al isEqualTo "burning" && {time > (missionNamespace getVariable ["COMSPEC_ATAK_HeatAt", -1])}) then {
+            missionNamespace setVariable ["COMSPEC_ATAK_HeatAt", time + 20];
+            ["cause", ["heat", 0.1]] call comspec_atak_native_fnc_screenDamage;
         };
         if (_type isEqualTo "skip") exitWith {};
         private _total = 0;

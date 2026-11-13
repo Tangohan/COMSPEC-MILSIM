@@ -39,9 +39,15 @@ private _clearDocs = {
 };
 private _shownName = {
     params ["_u"];
-    private _d = ["doc", [((_reg get "units") getOrDefault [[_u] call comspec_sse_fnc_bioPersonKey, []]) param [0, ""]]] call comspec_sse_fnc_idRegistry;
-    // Nom imprimé (public : c'est ce que lit un contrôleur), repris par la bulle et les fenêtres.
-    if ((count _d) > 0) then { _u setVariable ["comspec_sse_idName", format ["%1 %2", _d get "first", _d get "last"], true]; };
+    // Nom présenté (identité unique, sinon nom imprimé d'un faux ou d'une couverture), repris par la bulle et les fenêtres.
+    ["presented", [_u, false]] call comspec_sse_fnc_idIdentityOf;
+};
+// Identité donnée par un profil Athena (« Prénom NOM ») ou par un élément gardé (champ « identity ») : identité unique.
+private _nameFrom = {
+    params ["_u", "_name", "_src"];
+    if !(_name isEqualType "") exitWith {};
+    if ((trim _name) isEqualTo "") exitWith {};
+    ["set", [_u, createHashMapFromArray [["name", _name]], _src]] call comspec_sse_fnc_idIdentityOf;
 };
 
 switch (_op) do {
@@ -72,7 +78,9 @@ switch (_op) do {
         private _state = if !((_reg get "decided") getOrDefault [_key, false]) then { "à la demande" } else {
             if (_docs isEqualTo []) then { "aucun" } else { str (count _docs) }
         };
-        [netId _u, _u getVariable ["comspec_sse_idName", name _u], (side group _u) call _sideKey, _prof getOrDefault ["ref", ["généré", "?"] select (_pid isNotEqualTo "")], _state, _u getVariable ["COMSPEC_ID_Behaviour", "auto"], groupId (group _u)]
+        private _nm = _u getVariable ["comspec_sse_idName", ""];
+        if (_nm isEqualTo "") then { _nm = ["full", [_u]] call comspec_sse_fnc_idIdentityOf; };
+        [netId _u, _nm, (side group _u) call _sideKey, _prof getOrDefault ["ref", ["généré", "?"] select (_pid isNotEqualTo "")], _state, _u getVariable ["COMSPEC_ID_Behaviour", "auto"], groupId (group _u)]
     };
     case "scan": {
         _a params [["_pos", []], ["_radius", 50], ["_list", []]];
@@ -86,6 +94,8 @@ switch (_op) do {
             diag_log text format ["[COMSPEC SSE] Identité : profil Athena %1 absent du paquet, papiers générés pour %2.", _pid, name _u];
             0
         };
+        // Le nom du profil devient son identité, sauf si la mission lui en a déjà donné une (Zeus, Eden, atelier IA).
+        if !(_u getVariable ["COMSPEC_SSE_NameAuthored", false]) then { [_u, _p getOrDefault ["name", ""], "athena"] call _nameFrom; };
         if ((_p getOrDefault ["papers", "identity"]) isEqualTo "none") exitWith { -1 };
         if ((_u getVariable ["COMSPEC_ID_Behaviour", "auto"]) isEqualTo "auto") then { _u setVariable ["COMSPEC_ID_Behaviour", _p getOrDefault ["behaviour", "auto"]]; };
         private _byId = _reg getOrDefault ["athenaById", createHashMap];
@@ -127,8 +137,23 @@ switch (_op) do {
             _u setVariable ["COMSPEC_ID_Carry", _spec getOrDefault ["papers", "auto"]];
             _u setVariable ["COMSPEC_ID_Kind", _spec getOrDefault ["kind", "civil"]];
             _u setVariable ["comspec_sse_idProfile", nil];
+            // Identité choisie ici (profil Athena) ou gardée avec l'élément (champ « identity » : [prénom, nom, sexe,
+            // naissance, lieu, pays]) : posée avant les papiers, qui la portent. Ancien élément gardé sans ce champ : rien.
+            private _keptId = _spec getOrDefault ["identity", ""];
+            if (_keptId isEqualType "" && {_keptId isNotEqualTo ""}) then {
+                private _v = parseSimpleArray _keptId;
+                if (_v isEqualType [] && {(count _v) >= 2}) then {
+                    _v params [["_kf", ""], ["_kl", ""], ["_ks", ""], ["_kd", ""], ["_kp", ""], ["_kc", ""]];
+                    ["set", [_u, createHashMapFromArray [["first", _kf], ["last", _kl], ["sex", _ks], ["dob", _kd], ["pob", _kp], ["country", _kc]], "saved"]] call comspec_sse_fnc_idIdentityOf;
+                };
+            } else {
+                if (_pid isNotEqualTo "") then { [_u, ((_reg getOrDefault ["aiProfiles", createHashMap]) getOrDefault [_pid, createHashMap]) getOrDefault ["name", ""], "athena"] call _nameFrom; };
+            };
             ["ensure", [_u]] call comspec_sse_fnc_idRegistry;
             [_u] call _shownName;
+            // Réponses du maître du jeu et cadre de l'IA gardés avec elle (« Garder pour les prochaines parties », addon ia_rp).
+            private _ia = _spec getOrDefault ["iarp_answers", ""];
+            if (_ia isEqualType "" && {_ia isNotEqualTo ""} && {!isNil "comspec_sse_fnc_iarpProfile"}) then { ["keepApply", [_u, _ia]] call comspec_sse_fnc_iarpProfile; };
         } forEach _units;
         // Camp : un groupe neuf pour les unités qui en changent, ensemble.
         if (_sideNew isNotEqualTo sideUnknown) then {
@@ -143,31 +168,79 @@ switch (_op) do {
     case "sync": {
         // Le profil d'identité SSE reste la seule source : nom, date et lieu de naissance suivent sur les papiers ;
         // un papier de couverture ou un faux garde son nom imprimé, seule sa vraie identité change (il reste détectable).
+        // Identité unique (fn_idIdentityOf) : nom, sexe, naissance ; papier d'un autre pays que le sien : refait par son
+        // pays (numéro, MRZ, autorité). Réglage « Mettre à jour ses papiers quand son identité change » décoché : seule
+        // la vraie identité change. Papier déjà remis à un joueur (ou passé par ses mains) : ce qui y est imprimé reste.
         _a params [["_u", objNull]];
         if (isNull _u) exitWith { 0 };
+        if (_u getVariable ["comspec_sse_idSyncing", false]) exitWith { 0 };
+        _u setVariable ["comspec_sse_idSyncing", true];
         private _key = [_u] call comspec_sse_fnc_bioPersonKey;
-        private _sec = [_u, "identity"] call comspec_sse_fnc_getSection;
-        if (isNil "_sec" || {!(_sec isEqualType createHashMap)}) then { _sec = createHashMap; };
+        private _own = ["get", [_u, _key]] call comspec_sse_fnc_idIdentityOf;
+        private _follow = missionNamespace getVariable ["comspec_sse_id_papersFollowName", true];
         private _n = 0;
+        private _redo = [];
         {
             private _d = (_reg get "docs") getOrDefault [_x, createHashMap];
             if ((count _d) > 0) then {
-                private _own = [_u, _key, "", _d get "country"] call comspec_sse_fnc_idGenerate;
                 _d set ["trueLast", _own get "last"];
                 _d set ["trueFirst", _own get "first"];
-                if ((_d get "kind") in ["civil", "generated"]) then {
-                    _d set ["last", _own get "last"];
-                    _d set ["first", _own get "first"];
-                    { _x params ["_field", "_k"]; private _v = _sec getOrDefault [_k, ""]; if (_v isEqualType "" && {_v isNotEqualTo ""}) then { _d set [_field, _v]; }; } forEach [["dob", "birth_date"], ["pob", "birth_place"]];
-                    private _bk = format ["%1|%2|%3", _d get "country", _d get "type", _d get "number"];
-                    private _b = (_reg get "issued") getOrDefault [_bk, []];
-                    if (_b isNotEqualTo []) then { _b set [1, _d get "last"]; _b set [2, _d get "first"]; };
+                private _free = _follow && {!(["heldByPlayer", [_d]] call comspec_sse_fnc_idIdentityOf)} && {(_d getOrDefault ["athenaId", ""]) isEqualTo ""};
+                // Faux tiré au hasard par les règles (pas un choix) d'une IA que la mission vient de nommer : vrai, à son nom.
+                if (_free && {(_d get "kind") isEqualTo "forged"} && {_d getOrDefault ["autoKind", false]} && {_u getVariable ["COMSPEC_SSE_NameAuthored", false]}) then {
+                    _redo pushBack [_x, "civil"];
+                };
+                if ((_d get "kind") in ["civil", "generated"] && {_free}) then {
+                    if ((_d get "country") isNotEqualTo (_own getOrDefault ["country", _d get "country"]) && {(_own getOrDefault ["country", ""]) in ([] call comspec_sse_fnc_idCountries)}) then {
+                        _redo pushBack [_x, _d get "kind"];
+                    } else {
+                        { _d set [_x, _own getOrDefault [_x, _d get _x]]; } forEach ["last", "first", "sex", "dob", "pob"];
+                        private _bk = format ["%1|%2|%3", _d get "country", _d get "type", _d get "number"];
+                        private _b = (_reg get "issued") getOrDefault [_bk, []];
+                        if (_b isNotEqualTo []) then { _b set [1, _d get "last"]; _b set [2, _d get "first"]; };
+                    };
                 };
                 _n = _n + 1;
             };
         } forEach ((_reg get "units") getOrDefault [_key, []]);
+        // Pays changé : même type, même nature, délivré à nouveau par le pays de son identité (objet remplacé s'il en avait un).
+        {
+            _x params ["_rid", "_rkind"];
+            private _d = (_reg get "docs") getOrDefault [_rid, createHashMap];
+            private _cls = _d getOrDefault ["cls", ""];
+            if (_cls isNotEqualTo "") then {
+                ["comspec_sse_idLocalRemove", [_u, _cls], _u] call CBA_fnc_targetEvent;
+                ["release", [_cls]] call comspec_sse_fnc_idRegistry;
+            };
+            (_reg get "issued") deleteAt format ["%1|%2|%3", _d get "country", _d get "type", _d get "number"];
+            (_reg get "docs") deleteAt _rid;
+            (_reg get "units") set [_key, ((_reg get "units") getOrDefault [_key, []]) - [_rid]];
+            [_u, createHashMapFromArray [["type", _d get "type"], ["kind", _rkind], ["quality", _d getOrDefault ["quality", 60]],
+                ["country", _own get "country"], ["materialize", _cls isNotEqualTo ""]]] call comspec_sse_fnc_idIssue;
+        } forEach _redo;
+        _u setVariable ["comspec_sse_idSyncing", false];
         if (_n > 0) then { ["reset", [_u]] call comspec_sse_fnc_idLegend; [_u] call _shownName; };
         _n
+    };
+    case "recountry": {
+        // Pays des papiers choisi pour l'IA (atelier IA, Eden, Zeus ; « Tout son groupe » : appelé pour chaque unité).
+        // Papiers pas encore décidés : ils suivront au premier contrôle. Déjà délivrés dans un autre pays : refaits dans
+        // celui-ci (mêmes types et même nature, nom et numéros du nouveau pays) -> nombre ; papiers d'Athena : gardés -> -1.
+        _a params [["_u", objNull], ["_code", "auto"]];
+        if (isNull _u || {isPlayer _u}) exitWith { 0 };
+        _u setVariable ["COMSPEC_ID_Country", _code];
+        private _key = [_u] call comspec_sse_fnc_bioPersonKey;
+        if !((_reg get "decided") getOrDefault [_key, false]) exitWith { 0 };
+        private _want = ["resolve", _code] call comspec_sse_fnc_idCountries;
+        private _docs = (((_reg get "units") getOrDefault [_key, []]) apply { (_reg get "docs") getOrDefault [_x, createHashMap] }) select { (count _x) > 0 };
+        if (_docs isEqualTo [] || {(_docs findIf { (_x getOrDefault ["country", ""]) isNotEqualTo _want }) < 0}) exitWith { 0 };
+        if ((_docs findIf { (_x getOrDefault ["athenaId", ""]) isNotEqualTo "" }) >= 0) exitWith { -1 };
+        private _specs = _docs apply { createHashMapFromArray [["type", _x get "type"], ["kind", _x getOrDefault ["kind", "civil"]], ["quality", _x getOrDefault ["quality", 60]], ["country", _want]] };
+        [_u] call _clearDocs;
+        (_reg get "decided") set [_key, true];
+        { _x set ["materialize", false]; [_u, _x] call comspec_sse_fnc_idIssue; } forEach _specs;
+        [_u] call _shownName;
+        count _specs
     };
     case "docs": {
         _a params [["_u", objNull]];
@@ -180,7 +253,7 @@ switch (_op) do {
         ["ensure", [_u]] call comspec_sse_fnc_idRegistry;
         private _first = (["docs", [_u]] call comspec_sse_fnc_idAiConfig) param [0, []];
         // Mêmes nom et prénom que les papiers déjà portés.
-        private _spec = createHashMapFromArray [["type", _type], ["kind", _first param [5, "civil"]]];
+        private _spec = createHashMapFromArray [["type", _type], ["kind", _first param [5, "civil"]], ["country", _u getVariable ["COMSPEC_ID_Country", "auto"]]];
         if (_first isNotEqualTo []) then { _spec set ["last", _first select 3]; _spec set ["first", _first select 4]; };
         [_u, _spec] call comspec_sse_fnc_idIssue
     };

@@ -1,32 +1,142 @@
 <?php
 declare(strict_types=1);
 /**
- * Espace Matériel : fiches matériel et dotation de la communauté (onglets internes, recherche instantanée).
- * Anciennes adresses ?tab=fiches|dotation, ?fiche=ID, ?dotation=ID conservées (fenêtres ouvertes par le script).
+ * Espace Matériel : trois onglets.
+ * - Catalogue des objets (par défaut) : tout ce que la communauté peut porter en jeu (jeu de base d'Arma 3, configuration
+ *   importée du jeu, objets vus en jeu). Recherche instantanée, familles, source (mod), tri, favoris, tendances, grille
+ *   ou liste, fiche détaillée (poids, capacité, compatibilités, configurateur, pré-kit). Dessiné par
+ *   public/assets/js/equipment-materiel.js à partir du catalogue du configurateur (JSON mis en cache par le navigateur) ;
+ *   la page ne porte que la structure, les états et la configuration ($materielBoot).
+ * - Fiches matériel et Dotation : contenus rédigés par la communauté (fenêtres de _dialogs.php).
+ * Anciennes adresses ?tab=fiches|dotation, ?fiche=ID, ?dotation=ID conservées ; ?objet=CLASSE ouvre la fiche d'un objet.
  */
-$tabNow = (string) ($eqNav['tab'] ?? 'fiches') === 'dotation' ? 'dotation' : 'fiches';
+$tabNow = (string) ($eqNav['tab'] ?? 'catalogue');
+$tabNow = isset(\App\Support\EquipmentMateriel::TABS[$tabNow]) ? $tabNow : 'catalogue';
+$canSharePrekits = !empty($canSharePrekits);
+$materielBoot = \App\Support\EquipmentMateriel::boot(
+    [
+        'catalogue' => url('equipment/configurateur/catalogue'),
+        'social' => url('equipment/configurateur/membre'),
+        'favorite' => url('equipment/configurateur/favori'),
+        'prekits' => url('equipment/configurateur/pre-kits'),
+        'icons' => url('equipment/icones/'),
+        'configurator' => url('equipment/configurateur'),
+        'base' => url('equipment/configurateur/catalogue/base'),
+    ],
+    $csrfToken,
+    ['sharePrekits' => $canSharePrekits, 'catalog' => $canManageCatalog],
+    $eqBase
+);
+$tabCounts = ['fiches' => count($equipmentClasses), 'dotation' => count($dotationItems)];
 ?>
+<link href="<?= $h(asset_url('assets/css/equipment-materiel.css')) ?>" rel="stylesheet">
 <div class="eqx-spacehead">
     <div>
         <h2><?= $h($tabLabels[$space] ?? '') ?></h2>
-        <p class="eqx-intro">Les fiches matériel et la dotation de la communauté.</p>
+        <p class="eqx-intro">Tous les objets que votre communauté peut porter en jeu, avec leur poids, leur capacité et leurs compatibilités. Trouvez un objet, puis envoyez-le au configurateur ou dans un pré-kit.</p>
     </div>
     <div class="eqx-collhead__actions">
+        <a class="eq-hub__btn eq-hub__btn--outline" href="<?= $h(url('equipment/configurateur')) ?>">Ouvrir le configurateur</a>
         <?php if ($canManageCatalog): ?>
-        <a class="eq-hub__btn eq-hub__btn--outline" href="<?= $h(url('equipment') . '?espace=materiel') ?>" data-eq-open="fiche-new">Nouvelle fiche</a>
+        <a class="eq-hub__btn eq-hub__btn--outline" href="<?= $h(\App\Support\EquipmentSpaces::url(['espace' => 'materiel', 'tab' => 'fiches'])) ?>" data-eq-open="fiche-new">Nouvelle fiche</a>
         <?php endif; ?>
         <?php if ($canManageDotation): ?>
-        <a class="eq-hub__btn eq-hub__btn--outline" href="<?= $h(url('equipment') . '?espace=materiel&tab=dotation') ?>" data-eq-open="dotation-new">Nouvel article</a>
+        <a class="eq-hub__btn eq-hub__btn--outline" href="<?= $h(\App\Support\EquipmentSpaces::url(['espace' => 'materiel', 'tab' => 'dotation'])) ?>" data-eq-open="dotation-new">Nouvel article</a>
         <?php endif; ?>
     </div>
 </div>
 
-<nav class="eq-hub__tabs" aria-label="Fiches matériel et dotation" data-eq-tabs>
-    <a class="eq-hub__tab<?= $tabNow === 'fiches' ? ' is-active' : '' ?>" href="<?= $h(\App\Support\EquipmentSpaces::url(['espace' => 'materiel'])) ?>" data-eq-tab="fiches" aria-selected="<?= $tabNow === 'fiches' ? 'true' : 'false' ?>">Fiches matériel <em><?= count($equipmentClasses) ?></em></a>
-    <a class="eq-hub__tab<?= $tabNow === 'dotation' ? ' is-active' : '' ?>" href="<?= $h(\App\Support\EquipmentSpaces::url(['espace' => 'materiel', 'tab' => 'dotation'])) ?>" data-eq-tab="dotation" aria-selected="<?= $tabNow === 'dotation' ? 'true' : 'false' ?>">Dotation <em><?= count($dotationItems) ?></em></a>
+<nav class="eq-hub__tabs eqm-tabs" aria-label="Catalogue, fiches matériel et dotation" data-eq-tabs>
+    <?php foreach (\App\Support\EquipmentMateriel::TABS as $tabKey => $tabLabel): ?>
+    <a class="eq-hub__tab<?= $tabNow === $tabKey ? ' is-active' : '' ?>" href="<?= $h(\App\Support\EquipmentSpaces::url(['espace' => 'materiel', 'tab' => $tabKey])) ?>" data-eq-tab="<?= $h($tabKey) ?>" aria-selected="<?= $tabNow === $tabKey ? 'true' : 'false' ?>"><?= $h($tabLabel) ?><?php if (isset($tabCounts[$tabKey])): ?> <em><?= (int) $tabCounts[$tabKey] ?></em><?php else: ?> <em data-eqm-total hidden></em><?php endif; ?></a>
+    <?php endforeach; ?>
 </nav>
 
+<div data-eq-panel="catalogue"<?= $tabNow === 'catalogue' ? '' : ' hidden' ?>>
+    <div class="eqm" data-eqm>
+        <noscript><p class="eqm-state">La recherche et les filtres du catalogue ont besoin de JavaScript. Activez-le, ou ouvrez le configurateur.</p></noscript>
+        <form class="eqm-bar" role="search" method="get" action="<?= $h(url('equipment')) ?>" data-eqm-form>
+            <input type="hidden" name="espace" value="materiel">
+            <label class="eqm-search">
+                <span class="visually-hidden">Rechercher un objet</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 4a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zM15.5 15.5 20 20"/></svg>
+                <input type="search" name="q" placeholder="Nom, classe ou mod : MX, 6.5, carryall, ACE…" autocomplete="off" spellcheck="false" value="<?= $h((string) ($eqNav['q'] ?? '')) ?>" data-eqm-q>
+            </label>
+            <label class="eqm-field">
+                <span>Source</span>
+                <select name="source" data-eqm-source>
+                    <option value="">Toutes les sources</option>
+                </select>
+            </label>
+            <label class="eqm-field">
+                <span>Trier par</span>
+                <select name="tri" data-eqm-sort>
+                    <?php foreach (\App\Support\EquipmentMateriel::SORTS as $sortKey => $sortLabel): ?>
+                    <option value="<?= $h($sortKey) ?>"><?= $h($sortLabel) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <div class="eqm-toggles">
+                <button type="button" class="eqm-toggle" aria-pressed="false" data-eqm-only="fav">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>
+                    Mes favoris <span class="eqm-toggle__n" data-eqm-fav-count>0</span>
+                </button>
+                <button type="button" class="eqm-toggle" aria-pressed="false" data-eqm-only="trend" title="Objets portés en jeu, ajoutés aux tenues ou mis en favori par plusieurs membres ces 30 derniers jours">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>
+                    Tendances
+                </button>
+            </div>
+            <div class="eqm-view" role="group" aria-label="Affichage des objets">
+                <button type="button" aria-pressed="true" data-eqm-view="grid" title="Grille">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg><span class="visually-hidden">Grille</span>
+                </button>
+                <button type="button" aria-pressed="false" data-eqm-view="list" title="Liste">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16"/></svg><span class="visually-hidden">Liste</span>
+                </button>
+            </div>
+        </form>
+
+        <div class="eqm-families" role="group" aria-label="Familles d’objets" data-eqm-families></div>
+        <div class="eqm-subcats" role="group" aria-label="Catégories de la famille" data-eqm-cats hidden></div>
+        <div class="eqm-active" data-eqm-active hidden></div>
+
+        <p class="eqm-count" role="status" data-eqm-count>Chargement du catalogue…</p>
+
+        <div class="eqm-base" data-eqm-base hidden>
+            <span data-eqm-base-text>Préparation du catalogue de base d’Arma 3…</span>
+            <span class="eqm-base__bar" role="progressbar" aria-label="Catalogue de base" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i data-eqm-base-bar></i></span>
+        </div>
+
+        <ul class="eqm-results eqm-results--grid" data-eqm-results aria-busy="true">
+            <?php for ($sk = 0; $sk < 8; $sk++): ?>
+            <li class="eqm-card eqm-card--skeleton" aria-hidden="true"><span class="eqm-card__ico"></span><span class="eqm-card__body"><i></i><i></i><i></i></span></li>
+            <?php endfor; ?>
+        </ul>
+        <div class="eqm-state" data-eqm-state hidden></div>
+        <div class="eqm-more" data-eqm-more hidden>
+            <p data-eqm-more-text></p>
+            <button type="button" class="eq-hub__btn eq-hub__btn--outline" data-eqm-more-btn>Afficher plus d’objets</button>
+        </div>
+        <span class="eqm-sentinel" data-eqm-sentinel aria-hidden="true"></span>
+        <p class="visually-hidden" aria-live="polite" data-eqm-live></p>
+    </div>
+
+    <dialog class="eqm-sheet" id="eqm-sheet" aria-labelledby="eqm-sheet-title">
+        <div class="eqm-sheet__shell">
+            <div class="eqm-sheet__top">
+                <button type="button" class="eqm-sheet__back" data-eqm-back hidden>Retour</button>
+                <button type="button" class="eqm-sheet__close" data-eqm-close aria-label="Fermer la fiche">×</button>
+            </div>
+            <div class="eqm-sheet__body" data-eqm-sheet-body>
+                <h2 id="eqm-sheet-title">Fiche de l’objet</h2>
+            </div>
+        </div>
+    </dialog>
+    <script type="application/json" id="eqm-boot"><?= json_encode($materielBoot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_INVALID_UTF8_SUBSTITUTE) ?></script>
+</div>
+
 <div data-eq-panel="fiches"<?= $tabNow === 'fiches' ? '' : ' hidden' ?>>
+    <p class="eq-hub__hint">Fiches rédigées par la communauté : présentation d’un équipement, règles d’emploi, photos.</p>
     <div class="eq-hub__toolbar">
         <label class="eq-hub__search">
             <span class="visually-hidden">Rechercher une fiche</span>
@@ -63,6 +173,7 @@ $tabNow = (string) ($eqNav['tab'] ?? 'fiches') === 'dotation' ? 'dotation' : 'fi
 </div>
 
 <div data-eq-panel="dotation"<?= $tabNow === 'dotation' ? '' : ' hidden' ?>>
+    <p class="eq-hub__hint">Articles remis aux membres par la communauté, avec le nombre en circulation.</p>
     <div class="eq-hub__toolbar">
         <label class="eq-hub__search">
             <span class="visually-hidden">Rechercher un article</span>
@@ -97,3 +208,5 @@ $tabNow = (string) ($eqNav['tab'] ?? 'fiches') === 'dotation' ? 'dotation' : 'fi
     </ul>
     <?php endif; ?>
 </div>
+<script src="<?= $h(asset_url('assets/js/equipment-base-catalog.js')) ?>" defer></script>
+<script src="<?= $h(asset_url('assets/js/equipment-materiel.js')) ?>" defer></script>

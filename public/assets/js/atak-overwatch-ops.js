@@ -1205,6 +1205,7 @@
     var markers = window.__owArmaRows || [];
     var html = '<label class="ow-search ow-layers-search"><span>⌕</span><input id="ow-layers-q" type="search" placeholder="Rechercher un calque, un libellé…" value="' + esc(q) + '"></label>';
     html += '<p class="ow-help">Recherchez, recentrez ou retirez. Un retrait demande confirmation.</p>';
+    html += '<div class="ow-form-actions"><button type="button" class="ow-ctx-danger" id="ow-clear-map">Effacer la carte…</button></div>';
     if (recents.length) {
       html += '<p class="ow-kicker">Récents</p>';
       recents.forEach(function (row) {
@@ -1252,6 +1253,8 @@
       if (api) api.openDrawer('Cartographie', 'Calques', layersHtml());
       bindLayers();
     });
+    var clearBtn = document.getElementById('ow-clear-map');
+    if (clearBtn) clearBtn.addEventListener('click', openClearMap);
     document.querySelectorAll('[data-ow-focus]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var parts = String(btn.getAttribute('data-ow-focus') || '').split(':');
@@ -1274,6 +1277,24 @@
       btn.addEventListener('click', function () {
         confirmDelete('relay', btn.getAttribute('data-del-relay'), 'ce relais');
       });
+    });
+  }
+
+  function openClearMap() {
+    var api = ow();
+    if (!api || !window.AtakMapClear) return;
+    window.AtakMapClear.open({
+      previewPath: '/api/atak/map/clear',
+      undoPath: '/api/atak/map/clear/undo',
+      call: function (path, payload) {
+        return api.api(path, { method: 'POST', body: Object.assign({ mapId: api.mapId }, payload) })
+          .catch(function (err) { return { ok: false, error: String(err && err.message) === '403' ? 'forbidden' : (String(err && err.message) === '419' ? 'csrf' : 'failed') }; });
+      },
+      onChange: function () {
+        if (api.loadShapes) api.loadShapes();
+        if (api.loadArmaMarkers) api.loadArmaMarkers();
+        api.openView('layers');
+      }
     });
   }
 
@@ -1765,6 +1786,7 @@
         missionFrames = [];
         missionEvents = [];
         clearMissionGhosts();
+        clearMissionOverlays();
         paintReplayEvents(null);
         toast('Replay de la session en cours.');
       }
@@ -1844,6 +1866,7 @@
     api.api('/api/replay/events/' + encodeURIComponent(missionId()) + replayQuery()).then(function (payload) {
       missionEvents = Array.isArray(payload && payload.events) ? payload.events : [];
       paintReplayEvents(missionFrames.length ? missionFrames[0].timestamp : null);
+      drawEventMarkers();
     }).catch(function () { missionEvents = []; paintReplayEvents(null); });
   }
   function replayMs(ts) {
@@ -1857,7 +1880,7 @@
   function paintReplayEvents(frameTs) {
     var box = document.getElementById('ow-replay-events');
     if (!box) return;
-    if (!missionEvents.length) { box.hidden = true; box.innerHTML = ''; return; }
+    if (!missionEvents.length || !replayOpts.events) { box.hidden = true; box.innerHTML = ''; return; }
     var t = replayMs(frameTs);
     var list = isFinite(t)
       ? missionEvents.filter(function (ev) { var et = replayMs(ev.timestamp); return isFinite(et) && Math.abs(et - t) <= 120000; }).slice(0, 6)
@@ -1881,6 +1904,7 @@
     loadReplayEvents();
     api.api('/api/replay/mission/' + encodeURIComponent(missionId()) + replayQuery()).then(function (payload) {
       missionFrames = (payload && payload.timeline) || [];
+      drawMissionTrails();
       if (!missionFrames.length) {
         toast('Aucune mission enregistrée pour rejouer.');
         return;
@@ -1888,6 +1912,117 @@
       toast('Replay de mission chargé (' + missionFrames.length + ' instants).');
       applyMissionFrame(0);
     }).catch(function () { toast('Replay de mission indisponible.'); });
+  }
+
+  /* Options du replay chargé depuis la fenêtre de sélection (trajectoires, marqueurs d'événements, étiquettes). */
+  var replayOpts = { trails: false, events: true, labels: true };
+  var missionTrails = [];
+  var missionEventLayers = [];
+  function clearMissionOverlays() {
+    var api = ow();
+    missionTrails.concat(missionEventLayers).forEach(function (layer) { if (api) try { api.map.removeLayer(layer); } catch (e) {} });
+    missionTrails = [];
+    missionEventLayers = [];
+  }
+  function drawMissionTrails() {
+    var api = ow();
+    missionTrails.forEach(function (layer) { if (api) try { api.map.removeLayer(layer); } catch (e) {} });
+    missionTrails = [];
+    if (!api || !replayOpts.trails) return;
+    var paths = {};
+    missionFrames.forEach(function (frame) {
+      (frame.units || []).forEach(function (u) {
+        var id = String(u.unitId || u.callsign || '');
+        var x = Number(u.pos_x != null ? u.pos_x : u.x);
+        var y = Number(u.pos_y != null ? u.pos_y : u.y);
+        if (!id || !isFinite(x) || !isFinite(y)) return;
+        (paths[id] = paths[id] || []).push(api.worldToLatLng(x, y));
+      });
+    });
+    Object.keys(paths).forEach(function (id) {
+      if (paths[id].length < 2) return;
+      missionTrails.push(L.polyline(paths[id], { color: '#8b8bf0', weight: 2, opacity: 0.55, dashArray: '4 4', interactive: false }).addTo(api.map));
+    });
+  }
+  function drawEventMarkers() {
+    var api = ow();
+    missionEventLayers.forEach(function (layer) { if (api) try { api.map.removeLayer(layer); } catch (e) {} });
+    missionEventLayers = [];
+    if (!api || !replayOpts.events || !missionFrames.length) return;
+    missionEvents.slice(0, 300).forEach(function (ev) {
+      var x = Number(ev.x);
+      var y = Number(ev.y);
+      if (!isFinite(x) || !isFinite(y)) return;
+      var marker = L.circleMarker(api.worldToLatLng(x, y), { radius: 4, color: '#e7b14d', weight: 2, fillOpacity: 0.7 });
+      if (marker.bindTooltip) marker.bindTooltip(String(ev.label || ev.type || 'Événement'), { direction: 'top' });
+      missionEventLayers.push(marker.addTo(api.map));
+    });
+  }
+  function frameIndexForTs(ts) {
+    var target = Number(ts);
+    var best = 0;
+    var bestGap = Infinity;
+    missionFrames.forEach(function (frame, i) {
+      var gap = Math.abs(replayMs(frame.timestamp) - target);
+      if (gap < bestGap) { bestGap = gap; best = i; }
+    });
+    return best;
+  }
+
+  /* Chargement d'un replay choisi dans la fenêtre « Charger un replay » ; même API que la barre. */
+  function replayLoad(opts) {
+    opts = opts || {};
+    var api = ow();
+    if (!api) return Promise.reject(new Error('unavailable'));
+    var source = document.getElementById('ow-replay-source');
+    var wrap = document.getElementById('ow-replay-session-wrap');
+    var speed = document.getElementById('ow-replay-speed');
+    var scrub = document.getElementById('ow-replay-scrub');
+    var bar = document.getElementById('ow-timeline');
+    var play = document.getElementById('ow-replay-play');
+    replayOpts = { trails: !!opts.trails, events: opts.events !== false, labels: opts.labels !== false };
+    replayPlaying = false;
+    if (replayTimer) { window.clearTimeout(replayTimer); replayTimer = null; }
+    if (play) play.textContent = 'Lecture';
+    if (speed && opts.speed) speed.value = String(opts.speed);
+    if (bar) bar.hidden = false;
+    clearMissionOverlays();
+    if (opts.kind === 'live' || opts.kind === 'clip') {
+      if (source) {
+        source.value = opts.kind === 'clip' ? String(opts.value || '') : 'session';
+        if (wrap) wrap.hidden = true;
+        source.dispatchEvent(new Event('change'));
+      }
+      if (scrub) {
+        scrub.value = opts.kind === 'clip' ? '0' : '100';
+        scrub.dispatchEvent(new Event('input'));
+      }
+      return Promise.resolve({ kind: opts.kind, frames: 0 });
+    }
+    replayMissionKey = String(opts.key || '');
+    if (source) source.value = 'mission';
+    if (wrap) wrap.hidden = false;
+    loadReplaySessions();
+    clearMissionGhosts();
+    missionFrames = [];
+    missionEvents = [];
+    return api.api('/api/replay/mission/' + encodeURIComponent(missionId()) + replayQuery()).then(function (payload) {
+      var frames = (payload && payload.timeline) || [];
+      if (!frames.length) throw new Error('empty');
+      missionFrames = frames;
+      loadReplayEvents();
+      drawMissionTrails();
+      var idx = isFinite(opts.startTs) ? frameIndexForTs(opts.startTs) : 0;
+      var pct = frames.length > 1 ? (idx / (frames.length - 1)) * 100 : 0;
+      if (scrub) scrub.value = String(pct);
+      applyMissionFrame(pct);
+      if (opts.autoplay) {
+        replayPlaying = true;
+        if (play) play.textContent = 'Pause';
+        tickReplay();
+      }
+      return { kind: 'server', frames: frames.length };
+    });
   }
 
   function clearMissionGhosts() {
@@ -1918,7 +2053,7 @@
       var ll = api.worldToLatLng(x, y);
       if (!missionGhosts[id]) {
         missionGhosts[id] = L.circleMarker(ll, { radius: 5, color: '#8b8bf0', weight: 2 }).addTo(api.map);
-        if (missionGhosts[id].bindTooltip) missionGhosts[id].bindTooltip(String(u.callsign || id), { permanent: true, direction: 'right' });
+        if (missionGhosts[id].bindTooltip) missionGhosts[id].bindTooltip(String(u.callsign || id), { permanent: replayOpts.labels !== false, direction: 'right' });
       } else {
         missionGhosts[id].setLatLng(ll);
       }
@@ -1943,12 +2078,15 @@
     loadTraffic();
     loadRelays();
     loadSitreps();
-    window.setInterval(loadTraffic, 10000);
-    window.setInterval(loadRelays, 15000);
+    // Onglet caché : aucune requête, une lecture au retour.
+    window.setInterval(function () { if (!document.hidden) loadTraffic(); }, 10000);
+    window.setInterval(function () { if (!document.hidden) loadRelays(); }, 15000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) { loadTraffic(); loadRelays(); } });
     window.setInterval(renderMarkerIntel, 15000);
   }
 
   window.OverwatchOps = {
+    replayLoad: replayLoad,
     promptShape: promptShape,
     promptMarker: promptMarker,
     openSitrep: openSitrep,

@@ -11,16 +11,21 @@ private _add = {
 
 ["comspec_sse_id_enabled", "CHECKBOX", ["Contrôle d'identité", "Papiers d'identité fictifs, contrôle par le menu ACE et l'app Contrôle ID du téléphone."], true] call _add;
 ["comspec_sse_id_difficulty", "LIST", ["Difficulté des contrôles", "Arcade : les anomalies se voient facilement. Réaliste : un bon faux passe souvent l'examen visuel, la nuit tout est plus dur."], [[0, 1, 2], ["Arcade", "Standard", "Réaliste"], 1]] call _add;
-["comspec_sse_id_realSim", "CHECKBOX", ["Univers réaliste-simulation (pays réels stylisés)", "Ajoute des pays réels STYLISÉS (Royaume-Uni, Grèce, États-Unis, Allemagne, Autriche, Colombie, France, Irak, Syrie, Afghanistan, Russie, Ukraine, Pologne…). Papiers de jeu : gabarit générique, mention SIMULATION — DOCUMENT DE JEU, aucun vrai modèle ni emblème. Décoché : pays fictifs seulement (sauf pays ajoutés par votre communauté sur Athena)."], false] call _add;
 ["comspec_sse_id_zeusAutoConfig", "CHECKBOX", ["Configurer une IA à sa pose (Zeus)", "Ouvre la fenêtre de configuration (éditeur SSE, IA de la zone) dès qu'un Zeus pose une IA."], false] call _add;
 ["comspec_sse_id_noPapers", "SLIDER", ["IA sans papiers (%)", "Part des IA qui n'ont vraiment aucun papier sur elles et l'affirment au contrôle. 0 : toute IA a au moins une identité générée."], [0, 100, 0, 0]] call _add;
 ["comspec_sse_id_livePhoto", "CHECKBOX", ["Photo d'identité en direct", "Portrait de la personne rendu en direct sur les papiers. Décoché : portrait de repli, pour les postes modestes ou un PiP coupé."], true] call _add;
-// Pays réels stylisés de la liste : utilisés seulement si l'univers réaliste-simulation est coché (sinon selon la carte).
-private _realCodes = keys ([] call comspec_sse_fnc_idRealCountries);
-_realCodes sort true;
-private _realNames = _realCodes apply { format ["%1 (simulation)", (([] call comspec_sse_fnc_idRealCountries) get _x) get "name"] };
-["comspec_sse_id_country", "LIST", ["Pays des papiers", "Pays des papiers délivrés. Selon la carte : Altis et Stratis → Altis, Tanoa → Tanoa, Livonia → Livonie, Malden → Malden. Un pays réel (simulation) demande l'univers réaliste-simulation coché."], [["auto", "ALT", "TNA", "LVN", "MLD"] + _realCodes, ["Selon la carte", "République d'Altis", "Fédération de Tanoa", "République de Livonie", "République de Malden"] + _realNames, 0]] call _add;
+// Pays des papiers : pays réels d'abord (registre CfgComspecCountries, ordre des listes), puis les pays fictifs d'Arma.
+private _codes = ["ordered"] call comspec_sse_fnc_idCountries;
+private _names = _codes apply {
+    private _c = ([] call comspec_sse_fnc_idCountries) get _x;
+    private _n = ["label", [_x]] call comspec_sse_fnc_idCountries;
+    [format ["%1 (%2)", _n, _x], format [localize "STR_COMSPEC_SSE_ID_FictionalTag", _n]] select (_c getOrDefault ["fictional", false])
+};
+["comspec_sse_id_country", "LIST", [localize "STR_COMSPEC_SSE_ID_SetCountry", localize "STR_COMSPEC_SSE_ID_SetCountryTip"], [["auto"] + _codes, [localize "STR_COMSPEC_SSE_ID_CountryAuto"] + _names, 0]] call _add;
+// Carte que le registre ne connaît pas (VR, carte de la communauté) : pays pris par « Auto ». Altis par défaut, comme avant.
+["comspec_sse_id_countryFallback", "LIST", [localize "STR_COMSPEC_SSE_ID_SetFallback", localize "STR_COMSPEC_SSE_ID_SetFallbackTip"], [_codes, _names, (_codes find "ALT") max 0]] call _add;
 ["comspec_sse_id_aiPapers", "CHECKBOX", ["Papiers des IA", "Les IA ont des papiers selon leur camp (civils, insurgés, cibles). Les joueurs n'en ont que par l'attribut Eden, le kit ou le module Zeus."], true] call _add;
+["comspec_sse_id_papersFollowName", "CHECKBOX", ["Mettre à jour ses papiers quand son identité change", "Une IA renommée (Zeus, atelier IA, IA de la zone) garde des papiers à son nouveau nom. Un papier déjà remis à un joueur garde ce qui y est imprimé (la fenêtre du Zeus le signale). Décoché : ses papiers gardent l'ancien nom."], true] call _add;
 ["comspec_sse_id_kitRespawn", "CHECKBOX", ["Rendre les papiers du kit au respawn", "Les joueurs qui ont un kit de papiers sur Athena (fiche membre) le retrouvent à chaque réapparition. Décoché : seulement à l'arrivée en mission."], true] call _add;
 ["comspec_sse_id_civComply", "SLIDER", ["Civils qui présentent leurs papiers (%)", "Part des civils qui tendent leurs papiers quand on les leur demande."], [0, 100, 90, 0]] call _add;
 ["comspec_sse_id_forgedRate", "SLIDER", ["Insurgés porteurs de faux papiers (%)", "Part des combattants ennemis qui ont de faux papiers. Les autres n'en ont pas."], [0, 100, 60, 0]] call _add;
@@ -28,10 +33,17 @@ private _realNames = _realCodes apply { format ["%1 (simulation)", (([] call com
 ["comspec_sse_id_autoTransmit", "CHECKBOX", ["Transmission automatique à Athena", "Chaque contrôle terminé part tout seul vers Athena (file d'attente sans liaison). Décoché : bouton Transmettre de l'app Contrôle ID. Le réglage de votre communauté sur Athena (Bureau SSE, Contrôles), reçu avec le paquet, l'emporte."], true] call _add;
 ["comspec_sse_id_athenaPack", "CHECKBOX", ["Documents et avis d'Athena", "Avec la liaison, les documents délivrés et les personnes signalées de votre communauté sont chargés au début de la mission."], true] call _add;
 ["comspec_sse_id_opKey", "EDITBOX", ["Opération Athena", "Facultatif : clé de l'opération Athena dont on charge les documents. Vide : documents de la carte seulement."], ""] call _add;
+// Papiers entre joueurs (fn_idP2pServer) : demande, refus, présentation d'initiative. Textes : stringtable (STR_COMSPEC_SSE_P2P_Set*).
+["comspec_sse_id_p2pEnabled", "CHECKBOX", [localize "STR_COMSPEC_SSE_P2P_SetEnabled", localize "STR_COMSPEC_SSE_P2P_SetEnabled_D"], true] call _add;
+["comspec_sse_id_p2pTimeout", "SLIDER", [localize "STR_COMSPEC_SSE_P2P_SetTimeout", localize "STR_COMSPEC_SSE_P2P_SetTimeout_D"], [5, 120, 20, 0]] call _add;
+["comspec_sse_id_p2pDistance", "SLIDER", [localize "STR_COMSPEC_SSE_P2P_SetDistance", localize "STR_COMSPEC_SSE_P2P_SetDistance_D"], [2, 4, 3, 1]] call _add;
+["comspec_sse_id_p2pRefuse", "CHECKBOX", [localize "STR_COMSPEC_SSE_P2P_SetRefuse", localize "STR_COMSPEC_SSE_P2P_SetRefuse_D"], true] call _add;
+["comspec_sse_id_p2pPresent", "CHECKBOX", [localize "STR_COMSPEC_SSE_P2P_SetPresent", localize "STR_COMSPEC_SSE_P2P_SetPresent_D"], true] call _add;
 // IA réalistes et checkpoints IA (Lot 3).
 ["comspec_sse_id_aiFsm", "CHECKBOX", ["IA réalistes au contrôle", "Une IA contrôlée réagit selon son profil, son état et la situation : elle coopère, ment, devient nerveuse, refuse, s'enfuit, se rend, menace ou appelle des renforts. Décoché : réponses simples."], true] call _add;
 ["comspec_sse_id_aiAggro", "SLIDER", ["Agressivité des IA (%)", "Plus haut : les suspects contrôlés sont plus tendus, fuient, menacent et appellent des renforts plus souvent. 50 : réaliste."], [0, 100, 50, 0]] call _add;
 ["comspec_sse_id_cpRadius", "SLIDER", ["Distance des checkpoints (m)", "Rayon de la zone contrôlée par un checkpoint IA quand le module n'en impose pas."], [10, 100, 25, 0]] call _add;
+["comspec_sse_id_autoView", "CHECKBOX", ["Ouvrir les papiers tendus à l'écran", "Quand une IA ou un joueur vous tend ses papiers, le document s'ouvre tout de suite en grand (recto, verso, zoom). Décoché : il faut passer par le menu ACE › Contrôle d'identité › Examiner."], true] call _add;
 ["comspec_sse_id_cpDelay", "SLIDER", ["Délai pour présenter ses papiers (s)", "Temps laissé à un joueur arrêté par un checkpoint IA pour présenter ses papiers (menu ACE personnel › Mes papiers)."], [15, 60, 45, 0]] call _add;
 ["comspec_sse_id_cpAmbient", "CHECKBOX", ["Les checkpoints contrôlent aussi les IA", "Ambiance : de temps en temps, les gardes arrêtent une IA qui passe, lisent ses papiers, puis la laissent partir ou la retiennent."], true] call _add;
 ["comspec_sse_id_curfew", "CHECKBOX", ["Couvre-feu", "Les civils dehors sont plus nerveux quand on les contrôle. Le Zeus peut aussi l'imposer ou le lever en cours de mission."], false] call _add;

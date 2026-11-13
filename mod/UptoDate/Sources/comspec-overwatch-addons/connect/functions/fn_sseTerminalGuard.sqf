@@ -4,6 +4,7 @@
       "on"  (onLoad) : arme rangée, clavier gardé (fn_sseKeyBlock) sur le SEEK et sur le jeu (46),
                        barre d'état rafraîchie quand la liaison change (le SEEK ne se repeignait
                        qu'à la prochaine action : ouvert hors liaison, il le restait à l'écran) ;
+                       batterie déchargée toutes les 2 s (fn_seekBattery) ;
       "off" (onUnload) : retire les gestionnaires posés sur le jeu.
 */
 params [["_mode", "on"]];
@@ -45,8 +46,11 @@ if ((uiNamespace getVariable ["COMSPEC_SseLinkPfh", -1]) < 0) then {
             [_id] call CBA_fnc_removePerFrameHandler;
             uiNamespace setVariable ["COMSPEC_SseLinkPfh", -1];
         };
+        // Écran allumé : la batterie du SEEK se décharge (fn_seekBattery), heure et BAT repeintes.
+        private _wasOn = ["can"] call comspec_overwatch_connect_fnc_seekBattery;
+        ["tick"] call comspec_overwatch_connect_fnc_seekBattery;
         private _now = [] call comspec_overwatch_connect_fnc_sseLinkState;
-        if (_now isNotEqualTo (uiNamespace getVariable ["COMSPEC_SsePerson_LinkShown", ""])) then {
+        if (_wasOn isNotEqualTo (["can"] call comspec_overwatch_connect_fnc_seekBattery) || {_now isNotEqualTo (uiNamespace getVariable ["COMSPEC_SsePerson_LinkShown", ""])}) then {
             [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;
         };
     }, 2] call CBA_fnc_addPerFrameHandler];

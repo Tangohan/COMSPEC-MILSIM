@@ -61,6 +61,17 @@ final class AtakReleaseInfo
         );
     }
 
+    /** Version publiée de COMSPEC SSE (versionStr de VERSION_CONFIG dans mod/@COMSPEC_SSE/addons/main/script_mod.hpp). */
+    public static function sseVersion(?string $root = null): ?string
+    {
+        $base = rtrim($root ?? base_path(), '/');
+
+        return self::match(
+            '/versionStr\s*=\s*"([0-9]+(?:\.[0-9]+){1,3})"/',
+            self::read($base . '/mod/@COMSPEC_SSE/addons/main/script_mod.hpp')
+        );
+    }
+
     /**
      * « Résumé joueur » de l'entrée du changelog dont le titre porte « ATAK natif <version> » : titre puis puces,
      * en une ligne par langue (notification « mise à jour disponible » du téléphone). Vide si l'entrée n'en a pas.

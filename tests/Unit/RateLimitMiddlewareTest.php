@@ -99,6 +99,27 @@ final class RateLimitMiddlewareTest extends TestCase
         self::assertSame('42', $response->headerValue('Retry-After'));
     }
 
+    /** Paquet d'identité : plafond propre, large (60 pages par minute), 429 avec Retry-After. */
+    public function testIdentityPackHasItsOwnWideCeiling(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/api/sse/identity/pack?map=1&offset=0';
+        $_SERVER['SCRIPT_NAME'] = '/index.php';
+        $_SERVER['REMOTE_ADDR'] = '203.0.113.13';
+
+        $limiter = $this->createMock(FileRateLimiter::class);
+        $limiter->expects($this->once())
+            ->method('tooManyAttempts')
+            ->with('rl:sse_idpack:ip:203.0.113.13', RateLimitMiddleware::IDENTITY_PACK_MAX_PER_MIN, 60)
+            ->willReturn(true);
+        $limiter->method('secondsUntilReset')->willReturn(12);
+        $response = (new RateLimitMiddleware($limiter))(new Request(), static fn () => self::fail('next must not run'));
+
+        self::assertSame(429, $response->statusCode());
+        self::assertSame('12', $response->headerValue('Retry-After'));
+        self::assertGreaterThanOrEqual(60, RateLimitMiddleware::IDENTITY_PACK_MAX_PER_MIN, '5 pages toutes les 2 min en usage normal');
+    }
+
     public function testReconUploadsAreNotGuestScrapeLimited(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'GET';

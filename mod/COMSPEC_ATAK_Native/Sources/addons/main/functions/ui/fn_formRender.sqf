@@ -19,7 +19,8 @@
       ["slider", libellé, valeur 0-100, code, aide, actif, icône, code de l'icône, aide de l'icône, [min, max], id]
           curseur 0-100 (ou [min, max], valeur affichée en %) au cran de 1 : code appelé avec [valeur] pendant le glissé (sans redessiner la page) ; icône
           (data\nom) cliquable à gauche, valeur à droite (0 = MUET) ; actif = liseré et icône en couleur d'accent
-      ["segment", libellé, [[texte, code, actif, aide]...], aide]   ["info", libellé, valeur]   ["image", chemin]
+      ["segment", libellé, [[texte, code, actif, aide]...], aide]   ["info", libellé, valeur, id]   ["image", chemin]
+          (id de « info », facultatif : valeur réécrite sur place par fn_formSet)
       ["line", numéro, libellé, valeur, genre, clé, aide]   ligne de formulaire type 9-LINE, hauteur fixe :
           numéro en pastille, libellé à gauche, valeur à droite. genre "auto" (valeur calculée, en couleur d'accent ;
           vide ou "-" : l'aide en gris), "warn" (valeur en rouge), "edit" (champ de saisie clé dans la colonne valeur,
@@ -55,6 +56,8 @@
           code (facultatif) : clic sur la carte
       ["check", niveau, libellé, valeur, aide]   étape d'une chaîne (liaison) : pastille d'icône (niveau "ok" | "now" |
           "warn" | "ko" | "todo" | "off"), libellé à gauche, valeur à droite, aide en petit dessous ; hauteur au contenu
+      ["meter", titre, détail, pourcentage (-1 : sans jauge), [étiquettes], code, choisie]   ligne à jauge de qualité (app Wave Relay)
+      ["graph", modèle (fn_meshGraphView "model"), options, hauteur en rangées]   graphe du réseau dessiné dans le formulaire
     Composants partagés 3.1.0 (système de design, docs/ui/atak-design-system.md) :
       ["header", titre, sous-titre, [[libellé, code, principal]...], code retour]   en-tête d'app : grand titre, actions à
           droite, bouton « retour » quand un sous-écran est ouvert
@@ -140,9 +143,12 @@ private _click = {
         }, [_c, _c getVariable ["comspec_click", {}], [false]]] call comspec_atak_native_fnc_nextFrame;
     }];
 };
+// Contrôles créés par la ligne en cours de dessin : décalés ensuite vers leur colonne (mise en page en colonnes, plus bas).
+private _flMade = [];
 private _mk = {
     params ["_class", "_pos", ["_text", ""]];
     private _c = _d ctrlCreate [_class, -1, _grp];
+    _flMade pushBack _c;
     [_c, _class] call comspec_atak_native_fnc_fontApply;
     _c ctrlSetPosition _pos;
     if (_text isNotEqualTo "") then { _c ctrlSetText ((_text) call comspec_atak_native_fnc_tr); };
@@ -189,8 +195,9 @@ private _estH = {
 // paraissaient minuscules et empâtés à côté du texte de la page ; presque la taille du corps, rétrécis par _fit si trop longs.
 private _btnFs = _font * 0.92;
 private _lineIdx = 0; // lignes "line" : fond alterné
-{
-    private _row = _x;
+// Dessin d'une ligne à la place courante : de _pad à _pad + _w, à partir de _y (avancé de sa hauteur).
+private _renderRow = {
+    private _row = _this;
     switch (_row select 0) do {
         case "title": {
             private _t = ["COMSPEC_RscText", [_pad, _y, _w, _rowH], toUpper (_row select 1)] call _mk;
@@ -447,9 +454,18 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 private _bt = _badge;
                 if (_bt isEqualType 0) then { _bt = [str _bt, ""] select (_bt <= 0); };
                 private _lbl = ["COMSPEC_RscStructuredText", [_tx, _ty, _tw - pixelW, _tabH]] call _mk;
-                _lbl ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' color='%1'>%2</t>%3",
+                // 4.2.1 : libellé réduit jusqu'à la taille plancher quand il dépasse l'onglet. La répartition ci-dessus
+                // compte à la taille plancher, le dessin se faisait à la taille normale : un libellé long passait sur
+                // deux lignes, coupé par la hauteur de l'onglet.
+                private _fh = ctrlFontHeight _lbl;
+                if (_fh <= 0) then { _fh = _font; };
+                private _chars = (count (((_text call comspec_atak_native_fnc_tr) splitString ""))) + ([0, 1 + 0.78 * (count (str _bt))] select (_bt isNotEqualTo ""));
+                private _drawW = _chars * _fh * 0.55 * pixelW / pixelH;
+                private _sz = 1;
+                if (_drawW > _tw * 0.9) then { _sz = ((_tw * 0.9) / _drawW) max (_minF / _fh) min 1; };
+                _lbl ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' size='%4' color='%1'>%2</t>%3",
                     [_hTD, _accHex] select _active, toUpper _text,
-                    ["", format [" <t size='0.78' color='%1'>%2</t>", [_hTM, _hWA] select _active, _bt]] select (_bt isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+                    ["", format [" <t size='%3' color='%1'>%2</t>", [_hTM, _hWA] select _active, _bt, 0.78 * _sz]] select (_bt isNotEqualTo ""), _sz]) call comspec_atak_native_fnc_tr);
                 private _lh = (ctrlTextHeight _lbl) min _tabH;
                 _lbl ctrlSetPosition [_tx, _ty + (_tabH - _lh) / 2 - pixelH, _tw - pixelW, _lh];
                 _lbl ctrlCommit 0;
@@ -588,31 +604,56 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 _bx = _pad + _bw0 + _pad * 0.6;
             };
             // Actions à droite : largeur au texte, de droite à gauche.
-            private _ax = _pad + _w;
             private _m = ["COMSPEC_RscTextCenter", [0, 0, _w, _hh]] call _mk;
             _m ctrlSetFontHeight (_fs * 0.9);
             _m ctrlShow false;
+            private _aws = _acts apply {
+                _m ctrlSetText ((_x select 0) call comspec_atak_native_fnc_tr); // i18n:brut (déjà traduit)
+                ((ctrlTextWidth _m) + _pad * 1.6) max (_font * 1.7 * _ratioG)
+            };
+            ctrlDelete _m;
+            private _awAll = 0;
+            { _awAll = _awAll + _x + _pad * 0.4; } forEach _aws;
+            // 4.2.1 : colonne étroite (petit téléphone en portrait) : le titre garde toute la largeur et les actions passent
+            // dessous, à droite ; avant, le titre se serrait entre le retour et les actions, un mot (ou une syllabe) par ligne.
+            private _stack = _acts isNotEqualTo [] && {(_pad + _w - _bx - _awAll) < (_w * 0.55)};
+            private _tw = [((_pad + _w - _awAll) - _bx) max (_w * 0.3), _pad + _w - _bx] select _stack;
+            private _t = ["COMSPEC_RscStructuredText", [_bx, _y, _tw, _hh]] call _mk;
+            // Colonne étroite : titre réduit jusqu'à ce que son mot le plus long tienne (« troubleshooting » coupé en deux).
+            private _tsz = 1.25;
+            if (_stack) then {
+                // Taille de base des balises <t> : celle du contrôle, au moins celle de sa classe (0,024 × safeZoneH).
+                private _fh0 = (ctrlFontHeight _t) max (0.024 * safeZoneH);
+                private _mw = ["COMSPEC_RscText", [0, 0, _w, _hh]] call _mk;
+                _mw ctrlSetFont "COMSPEC_BarlowBold";
+                _mw ctrlSetFontHeight (_fh0 * 1.25);
+                _mw ctrlShow false;
+                private _lw = 0;
+                { _mw ctrlSetText _x; _lw = _lw max (ctrlTextWidth _mw); } forEach (((_title) call comspec_atak_native_fnc_tr) splitString " "); // i18n:brut
+                ctrlDelete _mw;
+                // Marge large : le texte structuré coupe un mot avant la largeur mesurée par ctrlTextWidth.
+                if (_lw > _tw * 0.8) then { _tsz = ((1.25 * _tw * 0.8 / _lw) max 0.7) min 1.25; };
+            };
+            _t ctrlSetStructuredText parseText ((format ["<t size='%3' font='COMSPEC_BarlowBold' color='" + _hT + "'>%1</t>%2", _title,
+                ["", format ["<br/><t size='0.82' color='" + _hTD + "'>%1</t>", _sub]] select (_sub isNotEqualTo ""), _tsz]) call comspec_atak_native_fnc_tr);
+            private _h = (ctrlTextHeight _t) max _hh;
+            _t ctrlSetPosition [_bx, _y + ((_hh - (ctrlTextHeight _t)) / 2) max 0, _tw, ctrlTextHeight _t];
+            _t ctrlCommit 0;
+            private _ay = [_y + (_hh - _font * 1.7) / 2, _y + _h + _pad * 0.3] select _stack;
+            if (_stack) then { _h = _h + _font * 1.7 + _pad * 0.3; };
+            private _ax = _pad + _w;
             {
                 _x params ["_label", "_code", ["_pri", false]];
                 private _tr = (_label) call comspec_atak_native_fnc_tr;
-                _m ctrlSetText _tr; // i18n:brut (déjà traduit)
-                private _aw = ((ctrlTextWidth _m) + _pad * 1.6) max (_font * 1.7 * _ratioG);
+                private _aw = _aws select _forEachIndex;
                 _ax = _ax - _aw;
-                private _ab = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _pri, [_ax, _y + (_hh - _font * 1.7) / 2, _aw, _font * 1.7]] call _mk;
+                private _ab = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _pri, [_ax, _ay, _aw, _font * 1.7]] call _mk;
                 _ab ctrlSetText _tr; // i18n:brut (déjà traduit)
                 _ab ctrlSetFontHeight (_fs * 0.9);
                 if (!_pri) then { _ab ctrlSetBackgroundColor (_th get "surface2"); _ab ctrlSetTextColor (_th get "text"); };
                 [_ab, _code] call _click;
                 _ax = _ax - _pad * 0.4;
             } forEach _acts;
-            ctrlDelete _m;
-            private _tw = (_ax - _bx - _pad * 0.4) max (_w * 0.3);
-            private _t = ["COMSPEC_RscStructuredText", [_bx, _y, _tw, _hh]] call _mk;
-            _t ctrlSetStructuredText parseText ((format ["<t size='1.25' font='COMSPEC_BarlowBold' color='" + _hT + "'>%1</t>%2", _title,
-                ["", format ["<br/><t size='0.82' color='" + _hTD + "'>%1</t>", _sub]] select (_sub isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
-            private _h = (ctrlTextHeight _t) max _hh;
-            _t ctrlSetPosition [_bx, _y + ((_hh - (ctrlTextHeight _t)) / 2) max 0, _tw, ctrlTextHeight _t];
-            _t ctrlCommit 0;
             private _ln = ["COMSPEC_RscText", [_pad, _y + _h + _pad * 0.3, _w, pixelH]] call _mk;
             _ln ctrlSetBackgroundColor (_th get "border");
             _y = _y + _h + _pad * 0.8;
@@ -806,12 +847,14 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _y = _y + _segRows * _rowH * 0.9 + (_segRows - 1) * _pad / 4 + _pad / 2;
         };
         case "info": {
-            _row params ["", "_label", "_value"];
+            // 4e élément (facultatif, 4.2.1) : id, pour réécrire la valeur sur place (fn_formSet « info » : distance, « il y a X s »).
+            _row params ["", "_label", "_value", ["_iid", ""]];
             // Libellé à gauche (62 %, retour à la ligne), valeur à droite (38 %) : les deux colonnes ne se recouvrent plus.
             private _a = ["COMSPEC_RscStructuredText", [_pad, _y, _w * 0.62 - _pad * 0.5, _fs * 1.3]] call _mk;
             _a ctrlSetStructuredText parseText ((format ["<t size='0.85' color='" + _hTD + "'>%1</t>", _label]) call comspec_atak_native_fnc_tr);
             private _b = ["COMSPEC_RscStructuredText", [_pad + _w * 0.62, _y, _w * 0.38 - _pad * 0.5, _fs * 1.3]] call _mk;
             _b ctrlSetStructuredText parseText ((format ["<t size='0.85' align='right'>%1</t>", _value]) call comspec_atak_native_fnc_tr);
+            if (_iid isEqualType "" && {_iid isNotEqualTo ""}) then { _ids set [_iid, createHashMapFromArray [["kind", "info"], ["value", _b]]]; };
             private _ih2 = ((ctrlTextHeight _a) max (ctrlTextHeight _b)) max (_fs * 1.45);
             if (_ih2 > _fs * 1.3) then {
                 _a ctrlSetPosition [_pad, _y, _w * 0.62 - _pad * 0.5, _ih2]; _a ctrlCommit 0;
@@ -1175,6 +1218,40 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _ln ctrlSetBackgroundColor [1, 1, 1, 0.07];
             _y = _y + pixelH * 6;
         };
+        case "meter": {
+            // Ligne à jauge (voisins du maillage, relais) : nom en gras, pourcentage et barre à droite, détail dessous, étiquettes
+            // (ce qui limite le lien) en ambre à droite du détail. Carte cliquable si un code est donné ; choisie : liseré d'accent.
+            _row params ["", ["_mTitle", ""], ["_mSub", ""], ["_mPct", 0], ["_mTags", []], ["_mCode", {}], ["_mSel", false]];
+            private _mCol = [(_th get "alert"), (_th get "warn"), (_th get "ok")] select (([0, 1] select (_mPct >= 30)) + ([0, 1] select (_mPct >= 60)));
+            private _mHex = [_hAL, _hWA, _hOK] select (([0, 1] select (_mPct >= 30)) + ([0, 1] select (_mPct >= 60)));
+            private _mH = _fs * 2.75;
+            private _mCard = ["COMSPEC_RscText", [_pad, _y, _w, _mH]] call _mk;
+            _mCard ctrlSetBackgroundColor ([(_th get "surface"), (_th get "surfaceHi")] select _mSel);
+            if (_mSel) then { (["COMSPEC_RscText", [_pad, _y, pixelW * 6, _mH]] call _mk) ctrlSetBackgroundColor _acc; };
+            private _mPw = _fs * 3.2 * pixelW / pixelH;
+            private _mBw = (_w * 0.26) min (_fs * 9 * pixelW / pixelH);
+            private _mT = ["COMSPEC_RscStructuredText", [_pad * 1.8, _y + _fs * 0.15, _w - _pad * 1.6, _fs * 1.3]] call _mk;
+            _mT ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='" + _hT + "'>%1</t><t align='right' font='COMSPEC_BarlowBold' color='%2'>%3</t>", _mTitle, _mHex,
+                [format ["%1 %%", _mPct], "-"] select (_mPct < 0)]) call comspec_atak_native_fnc_tr);
+            if (_mPct >= 0) then {
+                private _mBx = _pad + _w - _pad * 0.8 - _mPw - _mBw;
+                (["COMSPEC_RscText", [_mBx, _y + _fs * 0.62, _mBw, pixelH * 5]] call _mk) ctrlSetBackgroundColor (_th get "surface2");
+                (["COMSPEC_RscText", [_mBx, _y + _fs * 0.62, _mBw * ((_mPct max 2) min 100) / 100, pixelH * 5]] call _mk) ctrlSetBackgroundColor _mCol;
+            };
+            private _mS = ["COMSPEC_RscStructuredText", [_pad * 1.8, _y + _fs * 1.42, _w - _pad * 1.6, _fs * 1.2]] call _mk;
+            _mS ctrlSetStructuredText parseText ((format ["<t size='0.82' color='" + _hTD + "'>%1</t>%2", _mSub,
+                ["", format ["<t align='right' size='0.74' font='COMSPEC_BarlowBold' color='" + _hWA + "'>%1</t>", (_mTags apply { toUpper (_x call comspec_atak_native_fnc_tr) }) joinString " · "]] select (_mTags isNotEqualTo [])]) call comspec_atak_native_fnc_tr);
+            if (_mCode isNotEqualTo {}) then { [["COMSPEC_RscButtonInvisible", [_pad, _y, _w, _mH]] call _mk, _mCode] call _click; };
+            _y = _y + _mH + pixelH * 3;
+        };
+        case "graph": {
+            // Graphe du réseau (fn_meshGraphView "draw") : même mise en page et même dessin que la fenêtre de Zeus et le TOC.
+            _row params ["", ["_gModel", createHashMap], ["_gOpt", createHashMap], ["_gRows", 5]];
+            private _gH = _rowH * _gRows;
+            _gOpt set ["fs", _fs];
+            ["draw", [_d, _grp, [_pad, _y, _w, _gH], _gModel, _gOpt]] call comspec_atak_native_fnc_meshGraphView;
+            _y = _y + _gH + _pad / 2;
+        };
         case "gap": { _y = _y + _pad; };
         case "person": {
             // 6e paramètre : lettre montrée dans une pastille teintée (_picColor) quand il n'y a pas d'image (_pic "") :
@@ -1488,7 +1565,117 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             } forEach _lines;
         };
     };
-} forEach _rows;
+};
+// 4.2.2 : mise en page « paysage d'abord ». Le téléphone est surtout tenu à l'horizontale ; avant, chaque app était
+// une seule colonne pleine largeur (lignes de 90 caractères, grands vides, réglages et fiches les uns sous les autres).
+// Quand la largeur tient deux colonnes lisibles (trois sur une tablette), d'après fn_layoutCols (le seul endroit des
+// seuils, en caractères du texte courant), le formulaire se dispose de lui-même :
+//   - les sections (« section » et ce qui la suit ; « fold » hors d'une section) se rangent en colonnes, chacune dans
+//     la plus courte ;
+//   - une suite d'au moins trois lignes de même genre (info, switch, toggle, row, person, notif, check, status,
+//     slider) se range en grille, dans l'ordre de lecture (gauche à droite, puis rangée suivante) ;
+//   - en-têtes, onglets, bandeaux, frises, états vides, barres de boutons groupés et gros boutons restent sur toute la
+//     largeur et ferment la rangée de colonnes en cours.
+// Portrait, petit téléphone, colonne étroite d'un volet : une colonne, comme avant (même dessin, mêmes hauteurs).
+// Lignes de pilotage (pas dessinées) : ["flow", false] n'importe où : pas de colonnes dans ce formulaire (fil de
+// messages, fiche à lire dans l'ordre) ; ["break"] : fin de la rangée de colonnes, la suite sur toute la largeur.
+private _flW0 = _w;
+// Carte : volets et menus déjà pensés pour le paysage (functions/map), laissés tels quels.
+private _flOn = (_rows findIf { (_x param [0, ""]) isEqualTo "flow" && {!(_x param [1, true])} }) < 0
+    && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "MAP"};
+private _flBarrier = ["header", "tabs", "strip", "banner", "steps", "squad", "empty", "skeleton", "image", "qr", "bar", "big", "title", "break", "hero"];
+private _flTiles = ["info", "switch", "toggle", "row", "person", "notif", "check", "status", "slider"];
+// Une ligne dessinée en (_flX, _flY), largeur _flW ; renvoie le bas de la ligne.
+private _flPut = {
+    params ["_flR", "_flX", "_flW", "_flY"];
+    _w = _flW;
+    _y = _flY;
+    _flMade = [];
+    _flR call _renderRow;
+    if (_flX isNotEqualTo 0) then {
+        { _x ctrlSetPositionX ((ctrlPosition _x select 0) + _flX); _x ctrlCommit 0; } forEach _flMade;
+    };
+    _y
+};
+// Suite de lignes dans une colonne : grilles des suites de lignes de même genre quand la colonne est assez large.
+private _flSeq = {
+    params ["_flList", "_flX", "_flW", "_flY"];
+    private _flI = 0;
+    private _flN = count _flList;
+    while { _flI < _flN } do {
+        private _flR = _flList select _flI;
+        private _flK = _flR select 0;
+        private _flJ = _flI + 1;
+        if (_flOn && {_flK in _flTiles}) then { while { _flJ < _flN && {((_flList select _flJ) select 0) isEqualTo _flK} } do { _flJ = _flJ + 1; }; };
+        private _flRun = _flJ - _flI;
+        private _flNc = if (_flRun >= 3) then { ([_flW, _flK] call comspec_atak_native_fnc_layoutCols) min _flRun } else { 1 };
+        if (_flNc >= 2) then {
+            private _flCw = (_flW - (_flNc - 1) * _pad) / _flNc;
+            private _flRowY = _flY;
+            private _flEnd = _flY;
+            for "_flQ" from 0 to (_flRun - 1) do {
+                if (_flQ > 0 && {(_flQ mod _flNc) isEqualTo 0}) then { _flRowY = _flEnd; };
+                _flEnd = _flEnd max ([_flList select (_flI + _flQ), _flX + (_flQ mod _flNc) * (_flCw + _pad), _flCw, _flRowY] call _flPut);
+            };
+            _flY = _flEnd;
+        } else {
+            for "_flQ" from 0 to (_flRun - 1) do { _flY = [_flList select (_flI + _flQ), _flX, _flW, _flY] call _flPut; };
+        };
+        _flI = _flJ;
+    };
+    _flY
+};
+if (!_flOn) then {
+    { if !((_x param [0, ""]) in ["flow", "break"]) then { _y = [_x, 0, _flW0, _y] call _flPut; }; } forEach _rows;
+} else {
+    // Rangées : lignes de tête (avant la première section), puis blocs (une section et ce qui la suit).
+    private _flLead = [];
+    private _flBlocks = [];
+    private _flCur = [];
+    private _flFlush = {
+        if ((count _flCur) > 0) then { _flBlocks pushBack _flCur; _flCur = []; };
+        private _flYY = [_flLead, 0, _flW0, _y] call _flSeq;
+        _flLead = [];
+        private _flNc = ([_flW0, "section"] call comspec_atak_native_fnc_layoutCols) min (count _flBlocks);
+        if (_flNc >= 2) then {
+            private _flCw = (_flW0 - (_flNc - 1) * _pad) / _flNc;
+            private _flCols = [];
+            for "_flQ" from 1 to _flNc do { _flCols pushBack _flYY; };
+            {
+                // Colonne la plus courte (la plus à gauche à égalité).
+                private _flC = 0;
+                { if (_x < (_flCols select _flC) - pixelH) then { _flC = _forEachIndex; }; } forEach _flCols;
+                _flCols set [_flC, [_x, _flC * (_flCw + _pad), _flCw, _flCols select _flC] call _flSeq];
+            } forEach _flBlocks;
+            { _flYY = _flYY max _x; } forEach _flCols;
+        } else {
+            { _flYY = [_x, 0, _flW0, _flYY] call _flSeq; } forEach _flBlocks;
+        };
+        _flBlocks = [];
+        _y = _flYY;
+    };
+    {
+        private _flK = _x param [0, ""];
+        switch (true) do {
+            case (_flK isEqualTo "flow"): {};
+            case (_flK in _flBarrier): {
+                call _flFlush;
+                if (_flK isNotEqualTo "break") then { _y = [_x, 0, _flW0, _y] call _flPut; };
+            };
+            // Section repliable : nouveau bloc seulement entre sections repliables (sous-menus des Réglages) ; dans une
+            // section ou une carte (« Texte complet » d'un ordre de l'app Tâches), elle reste avec ce qui la précède.
+            case (_flK isEqualTo "section" || {_flK isEqualTo "fold" && {(count _flCur) isEqualTo 0 || {((_flCur select 0) select 0) isEqualTo "fold"}}}): {
+                if ((count _flCur) > 0) then { _flBlocks pushBack _flCur; };
+                _flCur = [_x];
+            };
+            default {
+                if ((count _flCur) > 0) then { _flCur pushBack _x; } else { _flLead pushBack _x; };
+            };
+        };
+    } forEach _rows;
+    call _flFlush;
+};
+_w = _flW0;
 uiNamespace setVariable ["COMSPEC_ATAK_Form", _fields];
 uiNamespace setVariable ["COMSPEC_ATAK_FormH", _y + _pad];
 // Défilement gardé quand la même page se redessine (retour de jeu 2.9.27 : un clic sur un réglage ramenait la liste en

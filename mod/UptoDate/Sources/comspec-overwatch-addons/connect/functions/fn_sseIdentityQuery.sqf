@@ -14,6 +14,7 @@
     Aucune reconnaissance réelle : on compare des identifiants de scénario.
 */
 if (!hasInterface) exitWith {};
+if !(["use", 0.5] call comspec_overwatch_connect_fnc_seekBattery) exitWith { ["render"] call comspec_overwatch_connect_fnc_seekBattery; };
 
 private _disp = uiNamespace getVariable ["COMSPEC_SsePerson_Display", displayNull];
 if (isNull _disp) then { _disp = findDisplay 9991; };

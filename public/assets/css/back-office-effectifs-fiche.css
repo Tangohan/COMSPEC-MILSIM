@@ -64,11 +64,11 @@
 
 .eff-fm-k {
   margin: 0;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--fm-muted);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--fm-text);
 }
 
 .eff-fm-mono {
@@ -478,9 +478,24 @@
 }
 
 .eff-fm-kpi {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   padding: 14px 20px;
   border-right: 1px solid var(--fm-border);
+}
+
+.eff-fm-kpi > dt {
+  order: 2;
+  margin-top: 2px;
+}
+
+.eff-fm-kpi > .eff-fm-kpi__v {
+  order: 1;
+}
+
+.eff-fm-kpi > .eff-fm-kpi__s {
+  order: 3;
 }
 
 .eff-fm-kpi:last-child {
@@ -492,7 +507,7 @@
 }
 
 .eff-fm-kpi__v {
-  margin-top: 4px !important;
+  margin-top: 0 !important;
   color: var(--fm-text);
   font-size: 20px;
   font-weight: 800;
@@ -660,16 +675,15 @@
 
 .eff-fm-lead,
 .eff-fm-hint {
-  max-width: 72ch;
   margin: 0 0 10px;
   color: var(--fm-muted);
-  font-size: 12.5px;
-  line-height: 1.5;
+  font-size: 13.5px;
+  line-height: 1.55;
 }
 
 .eff-fm-hint {
   margin: 10px 0 0;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .eff-fm-lead strong {
@@ -702,37 +716,44 @@
 /* Champs : autant de colonnes que la carte le permet. */
 .eff-fm-fields {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.5rem), 1fr));
-  gap: 0 20px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  gap: 0 28px;
   margin: 0;
 }
 
 .eff-fm-fields--3 {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
 }
 
 .eff-fm-f {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 42%) minmax(0, 1fr);
+  align-items: baseline;
+  gap: 12px;
   min-width: 0;
-  padding: 10px 0;
+  padding: 9px 0;
   border-bottom: 1px solid var(--fm-row);
 }
 
 .eff-fm-f--wide {
   grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
 }
 
 .eff-fm-f dt {
-  margin-bottom: 3px;
+  margin: 0;
   color: var(--fm-muted);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .eff-fm-f dd {
   margin: 0;
   color: var(--fm-text);
+  font-size: 14px;
   font-weight: 500;
   overflow-wrap: anywhere;
 }
@@ -893,7 +914,7 @@
 
 /* Carrière : frise et qualifications */
 .eff-fm-tl {
-  margin: 0 0 12px;
+  margin: 16px 0 12px 6px;
   padding: 0 0 0 18px;
   border-left: 2px solid var(--fm-border);
   list-style: none;
@@ -1086,8 +1107,8 @@
 }
 
 .eff-fm-list li > div {
+  flex: 1 1 auto;
   min-width: 0;
-  max-width: 72ch;
 }
 
 .eff-fm-list b {
@@ -1097,7 +1118,7 @@
 .eff-fm-list p {
   margin: 2px 0 0;
   color: var(--fm-muted);
-  font-size: 12.5px;
+  font-size: 13px;
 }
 
 /* ——— Colonne latérale ——— */
@@ -1321,6 +1342,14 @@
   .eff-fm-kpi:first-child,
   .eff-fm-kpi:nth-child(2) {
     border-top: 0;
+  }
+
+  .eff-fm-kpi__s {
+    white-space: normal;
+  }
+
+  .eff-fm-f {
+    grid-template-columns: minmax(6.5rem, 40%) minmax(0, 1fr);
   }
 
   .eff-fm-card {
@@ -1635,4 +1664,119 @@ html[data-bo-theme="dark"] .eff-fm-pres__legend i.is-absent {
 html[data-bo-theme="dark"] .eff-fm-pres__sum b.is-bad,
 html[data-bo-theme="dark"] .eff-fm-elig__list li.is-no .eff-fm-elig__mark {
   color: #fca5a5;
+}
+
+/* ——— Lisibilité (2026-11) : aides, formulaires repliés, boutons ———
+ * Textes d'aide à taille de lecture et sur toute la largeur de la carte ; libellés de formulaire
+ * en casse normale (pas de petites capitales grises) ; boutons de même hauteur. */
+.bo-eff-content--member .eff-fm .eff-card__hint,
+.eff-fm .eff-card__hint {
+  display: block;
+  margin: 8px 0 0;
+  color: var(--fm-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.bo-eff-content--member .eff-fm .eff-card__form label,
+.eff-fm .eff-card__form label,
+.eff-fm .eff-dialog__grid label {
+  color: var(--fm-text);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.eff-fm .eff-card__form {
+  gap: 10px;
+}
+
+.eff-fm .eff-card__form input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.eff-fm .eff-card__form select,
+.eff-fm .eff-card__form textarea {
+  min-height: 38px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.bo-eff-content--member .eff-fm .eff-card__check,
+.eff-fm .eff-card__check {
+  gap: 8px;
+  color: var(--fm-text) !important;
+  font-size: 13.5px;
+  font-weight: 500 !important;
+}
+
+.eff-fm .eff-card__check input {
+  width: 18px !important;
+  height: 18px;
+  flex: none;
+  accent-color: var(--fm-primary);
+}
+
+.eff-fm .eff-card__edit > summary {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.eff-fm .eff-btn {
+  min-height: 34px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.eff-fm label.eff-fm-btn {
+  user-select: none;
+}
+
+.eff-fm .eff-fm-btn.is-danger {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.eff-fm .eff-fm-btn.is-danger:hover {
+  border-color: #b91c1c;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+html[data-bo-theme="dark"] .eff-fm .eff-fm-btn.is-danger {
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+html[data-bo-theme="dark"] .eff-fm .eff-fm-btn.is-danger:hover {
+  background: #2a1414;
+  color: #fecaca;
+}
+
+/* Qualifications : statut et motif alignés, bouton de validation visible. */
+.eff-fm .eff-fm-q__acts .eff-fm-q__status button {
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--fm-border-strong);
+  border-radius: 6px;
+  background: var(--fm-surface);
+  color: var(--fm-text);
+  text-decoration: none;
+}
+
+.eff-fm .eff-fm-q__acts a,
+.eff-fm .eff-fm-q__acts form:not(.eff-fm-q__status) button {
+  text-decoration: none;
+}
+
+.eff-fm .eff-fm-q__acts a:hover,
+.eff-fm .eff-fm-q__acts form:not(.eff-fm-q__status) button:hover {
+  text-decoration: underline;
+}
+
+.eff-fm .eff-fm-row .eff-btn {
+  display: inline-flex;
+  align-items: center;
 }

@@ -1,4 +1,4 @@
-params [["_page", "LAUNCHER"]];
+params [["_page", "LAUNCHER"], ["_titleOnly", false]];
 private _perfT = diag_tickTime;
 disableSerialization;
 private _d = ([] call comspec_atak_native_fnc_display);
@@ -11,6 +11,49 @@ if (_act isNotEqualTo "" && {_act isNotEqualTo _page}) exitWith {
     diag_log format ["[COMSPEC ATAK][UI] rendu périmé de %1 abandonné (page active : %2)", _page, _act];
     false
 };
+// Titre de la barre d'app (texte complet, abréviation, icône : fn_titleFit). 4.2.1 : aussi seul ([page, true]),
+// par fn_navigate dans l'image de l'appui, avant le dessin de la page à l'image suivante.
+private _titleDo = {
+    private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+    private _title = "APPLICATIONS";
+    // Abréviation et icône : utilisées seulement quand le titre complet ne tient pas à 14 px (fn_titleFit).
+    private _short = "APPS";
+    private _tIcon = "";
+    if (_page isNotEqualTo "LAUNCHER") then {
+        private _app = ([] call comspec_atak_native_fnc_appList) select { (_x get "page") isEqualTo _page };
+        _title = if ((count _app) > 0) then { toUpper ((_app select 0) get "name") } else { _page };
+        _short = if ((count _app) > 0) then { toUpper ((_app select 0) getOrDefault ["short", ""]) } else { "" };
+        _tIcon = if ((count _app) > 0) then { (_app select 0) get "icon" } else { "" };
+    };
+    if (_page isEqualTo "RECENTS") then { _title = "APPS RÉCENTES"; _short = "RÉCENTES"; };
+    if (_page isEqualTo "NOTIFS") then { _title = "NOTIFICATIONS"; _short = "NOTIFS"; };
+    if (_page isEqualTo "PATCHES") then { _title = "PATCH AU DOS"; _short = "PATCH"; };
+    if (_page isEqualTo "MOBILEQR") then { _title = "SUR MON TÉLÉPHONE"; _short = "MOBILE"; };
+    if (_page isEqualTo "MAP") then {
+        private _qv = _st getOrDefault ["quickView", ""];
+        if (_qv isNotEqualTo "") then { _title = ["FIRES COURT", "MODE PILOTE"] select (_qv isEqualTo "PILOT"); };
+    };
+    if (_page isEqualTo "SPACE") then {
+        private _id = uiNamespace getVariable ["COMSPEC_ATAK_SpaceId", ""];
+        _title = toUpper ((((["spaces"] call comspec_atak_native_fnc_appSpaces) select { (_x select 0) isEqualTo _id }) param [0, ["", "Applications"]]) select 1);
+    };
+    if (_page isEqualTo "FOLDER") then {
+        private _f = ["get", uiNamespace getVariable ["COMSPEC_ATAK_FolderId", ""]] call comspec_atak_native_fnc_appFolders;
+        _title = toUpper ([_f param [1, "Groupe"], "GROUPE"] select ((count _f) isEqualTo 0));
+    };
+    // Carte ouverte depuis BFT ou Groupe : le titre dit où ramène le retour (« ‹ BFT · CARTE »).
+    private _titleTxt = (_title) call comspec_atak_native_fnc_tr;
+    if (_page isEqualTo "MAP") then {
+        private _hist = _st getOrDefault ["history", []];
+        private _from = _hist param [(count _hist) - 2, ""];
+        if (_from in ["BFT", "GROUP"]) then { _titleTxt = format ["‹ %1 · %2", (["BFT", "GROUPE"] select (_from isEqualTo "GROUP")) call comspec_atak_native_fnc_tr, _titleTxt]; };
+    };
+    if (_titleTxt isNotEqualTo ((_title) call comspec_atak_native_fnc_tr)) then { _short = ""; }; // « ‹ BFT · CARTE » : pas d'abréviation
+    // Titre plus long que sa place (traduction, petit format, texte agrandi) : police réduite jusqu'à 14 px, puis bouton de
+    // rotation masqué, abréviation, icône de l'app (fn_titleFit). Jamais coupé (« SHORT FI », « DISTANCES » en 4.1.0).
+    [([] call comspec_atak_native_fnc_layoutGet) get "font", _titleTxt, [(_short) call comspec_atak_native_fnc_tr, ""] select (_short isEqualTo ""), _tIcon] call comspec_atak_native_fnc_titleFit;
+};
+if (_titleOnly) exitWith { call _titleDo; true };
 // Rendus comptés : fn_layoutApply (mise en page seule) ne redessine pas la page si un rendu a suivi.
 uiNamespace setVariable ["COMSPEC_ATAK_RenderSeq", (uiNamespace getVariable ["COMSPEC_ATAK_RenderSeq", 0]) + 1];
 // Rendus par page sur la fenêtre de 30 s (onglet PERFS du Debug, remis à zéro par fn_perfAcc « report »).
@@ -72,43 +115,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_FormIds", createHashMap];
 // Calques hors zone de contenu : recréés plus bas, après la page.
 [createHashMap, false] call comspec_atak_native_fnc_layoutApply;
 
-private _title = "APPLICATIONS";
-// Abréviation et icône : utilisées seulement quand le titre complet ne tient pas à 14 px (fn_titleFit).
-private _short = "APPS";
-private _tIcon = "";
-if (_page isNotEqualTo "LAUNCHER") then {
-    private _app = ([] call comspec_atak_native_fnc_appList) select { (_x get "page") isEqualTo _page };
-    _title = if ((count _app) > 0) then { toUpper ((_app select 0) get "name") } else { _page };
-    _short = if ((count _app) > 0) then { toUpper ((_app select 0) getOrDefault ["short", ""]) } else { "" };
-    _tIcon = if ((count _app) > 0) then { (_app select 0) get "icon" } else { "" };
-};
-if (_page isEqualTo "RECENTS") then { _title = "APPS RÉCENTES"; _short = "RÉCENTES"; };
-if (_page isEqualTo "NOTIFS") then { _title = "NOTIFICATIONS"; _short = "NOTIFS"; };
-if (_page isEqualTo "PATCHES") then { _title = "PATCH AU DOS"; _short = "PATCH"; };
-if (_page isEqualTo "MOBILEQR") then { _title = "SUR MON TÉLÉPHONE"; _short = "MOBILE"; };
-if (_page isEqualTo "MAP") then {
-    private _qv = _st getOrDefault ["quickView", ""];
-    if (_qv isNotEqualTo "") then { _title = ["FIRES COURT", "MODE PILOTE"] select (_qv isEqualTo "PILOT"); };
-};
-if (_page isEqualTo "SPACE") then {
-    private _id = uiNamespace getVariable ["COMSPEC_ATAK_SpaceId", ""];
-    _title = toUpper ((((["spaces"] call comspec_atak_native_fnc_appSpaces) select { (_x select 0) isEqualTo _id }) param [0, ["", "Applications"]]) select 1);
-};
-if (_page isEqualTo "FOLDER") then {
-    private _f = ["get", uiNamespace getVariable ["COMSPEC_ATAK_FolderId", ""]] call comspec_atak_native_fnc_appFolders;
-    _title = toUpper ([_f param [1, "Groupe"], "GROUPE"] select ((count _f) isEqualTo 0));
-};
-// Carte ouverte depuis BFT ou Groupe : le titre dit où ramène le retour (« ‹ BFT · CARTE »).
-private _titleTxt = (_title) call comspec_atak_native_fnc_tr;
-if (_page isEqualTo "MAP") then {
-    private _hist = _st getOrDefault ["history", []];
-    private _from = _hist param [(count _hist) - 2, ""];
-    if (_from in ["BFT", "GROUP"]) then { _titleTxt = format ["‹ %1 · %2", (["BFT", "GROUPE"] select (_from isEqualTo "GROUP")) call comspec_atak_native_fnc_tr, _titleTxt]; };
-};
-if (_titleTxt isNotEqualTo ((_title) call comspec_atak_native_fnc_tr)) then { _short = ""; }; // « ‹ BFT · CARTE » : pas d'abréviation
-// Titre plus long que sa place (traduction, petit format, texte agrandi) : police réduite jusqu'à 14 px, puis bouton de
-// rotation masqué, abréviation, icône de l'app (fn_titleFit). Jamais coupé (« SHORT FI », « DISTANCES » en 4.1.0).
-[([] call comspec_atak_native_fnc_layoutGet) get "font", _titleTxt, [(_short) call comspec_atak_native_fnc_tr, ""] select (_short isEqualTo ""), _tIcon] call comspec_atak_native_fnc_titleFit;
+call _titleDo;
 
 switch (_page) do {
     case "LAUNCHER": { [] call comspec_atak_native_fnc_launcherRender; };
@@ -182,27 +189,61 @@ switch (_page) do {
 };
 // Événement pour les modules : une app vient de s'afficher.
 ["comspec_atak_native_pageOpened", [_page]] call CBA_fnc_localEvent;
-// Dégâts de l'écran par-dessus la page. Surface du verre, effets d'écran et calque Zeus aussi recréés : fn_pageClear
-// vient de masquer et désactiver leurs contrôles (supprimés à l'image suivante) ; gardés tels quels (même signature),
-// saleté, brouillage et verrouillage Zeus disparaissaient jusqu'au prochain fn_statusUpdate.
-private _killOv = {
-    {
-        if (_x isEqualType controlNull) then { ctrlDelete _x; } else {
-            if (_x isEqualType []) then { _x call _killOv; };
-        };
-    } forEach _this;
+private _perfT2 = diag_tickTime;
+// Calques d'écran (dégâts, filtre de nuit et luminosité, surface du verre, effets d'écran, calque Zeus) par-dessus la page.
+// Arma dessine les contrôles dans leur ordre de création ; ceux d'un groupe à la place du groupe. La page se dessine dans
+// la zone de contenu (88531, créée avec l'écran) et le dock dans son groupe (fn_dockRender) : tous deux restent dessous.
+// 4.2.1 : calques gardés d'une page à l'autre (fn_pageClear ne les touche plus) et seulement remis à jour, sauf si
+//   - la place de l'écran a changé (cadre, orientation, modèle, format : leurs contrôles sont posés à l'ancienne place) ;
+//   - un calque est visible et un contrôle a été posé sur l'écran (hors groupe) depuis leur création : il passerait
+//     devant. Repéré sans hypothèse sur l'ordre : à chaque création des calques, tous les contrôles de l'écran reçoivent
+//     un tampon (cs_ov) ; un contrôle sans le tampon du jour est plus récent qu'eux.
+// Dans ces cas, recréés après la page comme avant (au moins 12 contrôles, jusqu'à 150 avec les fêlures).
+private _ovL = [] call comspec_atak_native_fnc_layoutGet;
+private _ovSig = str [_ovL get "device", _ovL get "landscape", _ovL get "model", _ovL get "mode", _ovL get "texture"];
+private _ovFx = (uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []];
+private _ovSurf = (uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []];
+private _ovVisible = (uiNamespace getVariable ["COMSPEC_ATAK_DevFront", false]) || {(count _ovSurf) > 0} || {(count _ovFx) > 0}
+    || {(["lock", ""] call comspec_atak_native_fnc_zeusFx) isNotEqualTo ""}
+    || {((uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]) findIf { _x isEqualType controlNull && {!isNull _x} && {ctrlShown _x} }) >= 0};
+private _ovStamp = uiNamespace getVariable ["COMSPEC_ATAK_OvStamp", 0];
+// Contrôles temporaires marqués cs_ovSkip (onde du toucher, icône d'ouverture : fn_fx) : sans effet sur la décision.
+private _ovCovered = ((allControls _d) findIf { isNull (ctrlParentControlsGroup _x) && {(_x getVariable ["cs_ov", -1]) isNotEqualTo _ovStamp} && {!(_x getVariable ["cs_ovSkip", false])} }) >= 0;
+private _ovKeep = (uiNamespace getVariable ["COMSPEC_ATAK_OvSig", ""]) isEqualTo _ovSig
+    && {!isNull ((uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []]) param [0, controlNull])}
+    && {!_ovVisible || {!_ovCovered}};
+if (_ovKeep) then {
+    // Rien de visible mais un contrôle est passé devant : noté, fn_deviceOverlay les remonte dès qu'un effet apparaît.
+    if (_ovCovered) then { uiNamespace setVariable ["COMSPEC_ATAK_OvStale", true]; };
+    [] call comspec_atak_native_fnc_deviceOverlay;
+    uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
+    ["page : calques d'écran gardés", _perfT2] call comspec_atak_native_fnc_perfAcc;
+} else {
+    private _killOv = {
+        {
+            if (_x isEqualType controlNull) then { ctrlDelete _x; } else {
+                if (_x isEqualType []) then { _x call _killOv; };
+            };
+        } forEach _this;
+    };
+    // Anciens calques supprimés après la création des nouveaux, dans la même image (fn_overlayRaise).
+    private _ovOld = [uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []], _ovSurf apply { _x param [1, controlNull] },
+        _ovFx apply { _x param [1, controlNull] }, uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]];
+    uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
+    uiNamespace setVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]];
+    uiNamespace setVariable ["COMSPEC_ATAK_ScreenFx", ["", []]];
+    uiNamespace setVariable ["COMSPEC_ATAK_ZeusOv", []];
+    uiNamespace setVariable ["COMSPEC_ATAK_OvStale", false];
+    [] call comspec_atak_native_fnc_deviceOverlay;
+    _ovOld call _killOv;
+    // Effets recréés après la page : déjà au-dessus de tout ce qu'elle vient de créer (fn_overlayRaise n'a rien à faire).
+    uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
+    uiNamespace setVariable ["COMSPEC_ATAK_OvSig", _ovSig];
+    _ovStamp = _ovStamp + 1;
+    uiNamespace setVariable ["COMSPEC_ATAK_OvStamp", _ovStamp];
+    { if (isNull (ctrlParentControlsGroup _x)) then { _x setVariable ["cs_ov", _ovStamp]; }; } forEach (allControls _d);
+    ["page : calques d'écran recréés", _perfT2] call comspec_atak_native_fnc_perfAcc;
 };
-(uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []]) call _killOv;
-(((uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) param [1, []]) apply { _x param [1, controlNull] }) call _killOv;
-(((uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []]) apply { _x param [1, controlNull] }) call _killOv;
-(uiNamespace getVariable ["COMSPEC_ATAK_ZeusOv", []]) call _killOv;
-uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
-uiNamespace setVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]];
-uiNamespace setVariable ["COMSPEC_ATAK_ScreenFx", ["", []]];
-uiNamespace setVariable ["COMSPEC_ATAK_ZeusOv", []];
-[] call comspec_atak_native_fnc_deviceOverlay;
-// Effets recréés après la page : déjà au-dessus de tout ce qu'elle vient de créer (fn_overlayRaise n'a rien à faire).
-uiNamespace setVariable ["COMSPEC_ATAK_OvSeq", uiNamespace getVariable ["COMSPEC_ATAK_CtrlSeq", 0]];
 // Défilement retrouvé (et encore à l'image suivante, quand la hauteur du contenu est connue).
 private _sv = _scrollMem getOrDefault [_page, []];
 if (_restore && {_sv isEqualType []} && {(count _sv) isEqualTo 2} && {(_sv select 0) > 0}) then {

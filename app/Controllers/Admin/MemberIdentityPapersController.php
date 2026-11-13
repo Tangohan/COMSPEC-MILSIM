@@ -16,6 +16,7 @@ use App\Repositories\SseIdCountryRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Services\Sse\MemberIdentityPapersService;
+use App\Services\Sse\MemberIdentitySyncService;
 use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseIdentityGeneratorService;
 use App\Support\EffectifsLmsAccess;
@@ -115,6 +116,25 @@ final class MemberIdentityPapersController
                     error_log('Fiche membre : couvertures du jeu indisponibles : ' . $e->getMessage());
                 }
             }
+            $data['sync'] = self::syncFor($tenantId, $userId, $data, $rights['truth']);
+            // Télécharger la couverture (fichier importé hors ligne par Ma couverture) : le membre lui-même, ou un
+            // responsable qui gère les papiers. Le bureau SSE (« Papiers des membres ») a déjà son propre panneau.
+            $data['cover'] = null;
+            $viewer = (int) Session::get('user_id');
+            if (!$sse && ($viewer === $userId || $rights['manage'])) {
+                try {
+                    $self = $viewer === $userId;
+                    $data['cover'] = [
+                        'panel' => (new \App\Services\Sse\SseCoverExportService())->panel($tenantId, $userId, !$self, $self),
+                        'post' => effectifs_workspace_url('membres/' . $userId . '/papiers/couverture'),
+                        'download' => effectifs_workspace_url('membres/' . $userId . '/papiers/couverture'),
+                        'self' => $self,
+                        'has_primary' => array_filter($data['identities'] ?? [], static fn (array $i): bool => !empty($i['is_primary'])) !== [],
+                    ];
+                } catch (\Throwable $e) {
+                    error_log('Fiche membre : couvertures générées indisponibles : ' . $e->getMessage());
+                }
+            }
 
             return $data;
         } catch (\Throwable $e) {
@@ -122,6 +142,99 @@ final class MemberIdentityPapersController
 
             return null;
         }
+    }
+
+    /**
+     * Transmission en jeu (état par identité et par papier), différence avec le jeu et historique des valeurs écartées.
+     * Indisponible (étape 4250 pas encore passée) : diagnostic seul.
+     *
+     * @param array<string, mixed> $section
+     * @return array{diag: array<string, mixed>, reports: list<array<string, mixed>>, history: list<array<string, mixed>>}
+     */
+    public static function syncFor(int $tenantId, int $userId, array $section, bool $truth): array
+    {
+        $diag = MemberIdentitySyncService::diagnose($section, (new SseIdCountryRepository())->listForTenant($tenantId, false));
+        $reports = [];
+        $history = [];
+        try {
+            // État réel : ce que le téléphone du joueur a remonté de sa dernière mission (origine, livraison du paquet).
+            $diag = MemberIdentitySyncService::withDelivery(
+                $diag,
+                MemberIdentitySyncService::delivery((new \App\Services\Sse\SseIdGameCoverService())->forUser($tenantId, $userId), $truth),
+                $section['documents'] ?? []
+            );
+        } catch (\Throwable $e) {
+            error_log('Fiche membre : état réel en jeu indisponible : ' . $e->getMessage());
+            $diag['delivery'] = MemberIdentitySyncService::delivery([], $truth);
+        }
+        try {
+            $sync = new MemberIdentitySyncService();
+            $reports = $sync->gameReports($tenantId, $userId, $section['identities'], $truth);
+            $history = $sync->historyFor($tenantId, $userId, $section['identities']);
+        } catch (\Throwable $e) {
+            error_log('Fiche membre : différence avec le jeu indisponible : ' . $e->getMessage());
+        }
+
+        return ['diag' => $diag, 'reports' => $reports, 'history' => $history];
+    }
+
+    /** « Différence avec le jeu » : reprise champ par champ, ou « Garder les deux ». */
+    public function syncResolve(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guard($request, $params);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId, $rights] = $ctx;
+        $raw = $request->input('choice', []);
+        $choices = [];
+        if (is_array($raw)) {
+            foreach ($raw as $field => $choice) {
+                if (is_string($field) && isset(MemberIdentitySyncService::FIELDS[$field]) && in_array($choice, ['athena', 'game'], true)) {
+                    $choices[$field] = $choice;
+                }
+            }
+        }
+        $res = (new MemberIdentitySyncService())->resolve(
+            $tenantId,
+            $userId,
+            (int) $request->input('game_cover_id', 0),
+            $choices,
+            $request->inputString('keep_both') === '1',
+            $rights['truth'],
+            $this->actorId()
+        );
+        Session::flash($res['ok'] ? 'success' : 'error', $res['message']);
+
+        return Response::redirect($this->back($userId) . '-synchro');
+    }
+
+    /** Historique : remettre une valeur écartée. */
+    public function syncRestore(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guard($request, $params);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId, $rights] = $ctx;
+        $res = (new MemberIdentitySyncService())->restore($tenantId, $userId, (int) ($params['hid'] ?? 0), $rights['truth'], $this->actorId());
+        Session::flash($res['ok'] ? 'success' : 'error', $res['message']);
+
+        return Response::redirect($this->back($userId) . '-synchro');
+    }
+
+    /** « Envoyer la version Athena vers le jeu » : kit par défaut composé des papiers valables de l'identité. */
+    public function syncSend(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guard($request, $params);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId, $rights] = $ctx;
+        $res = (new MemberIdentitySyncService())->sendToGame($tenantId, $userId, (int) $request->input('identity_id', 0), $rights['truth'], $this->actorId());
+        Session::flash($res['ok'] ? 'success' : 'error', $res['message']);
+
+        return Response::redirect($this->back($userId) . '-synchro');
     }
 
     public function savePrimary(Request $request, array $params = []): Response
@@ -156,6 +269,39 @@ final class MemberIdentityPapersController
         }
         $res = $this->papers->createAlias($tenantId, $userId, $input, $rights['truth'], $this->actorId());
         Session::flash($res['ok'] ? 'success' : 'error', $res['ok'] ? 'Identité d’emprunt créée. Ajoutez-lui un papier.' : (string) $res['error']);
+
+        return Response::redirect($this->back($userId));
+    }
+
+    /**
+     * Photo d'identité d'une identité du membre (principale ou d'emprunt) : imprimée sur ses papiers d'Athena.
+     * Même traitement que l'atelier des papiers (SseIdImageService : type vérifié, recadrée, métadonnées retirées).
+     */
+    public function identityPhoto(Request $request, array $params = []): Response
+    {
+        $ctx = $this->guard($request, $params);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId, $rights] = $ctx;
+        $identity = $this->papers->ownedIdentity($tenantId, $userId, (int) ($params['identityId'] ?? 0), $rights['truth']);
+        if ($identity === null) {
+            Session::flash('error', 'Identité introuvable.');
+
+            return Response::redirect($this->back($userId));
+        }
+        $remove = $request->inputString('photo_remove') === '1';
+        $photo = (new \App\Services\Sse\SseIdImageService())->storeUpload($_FILES['photo'] ?? null, 'photo', $tenantId);
+        if (!$photo['ok'] && !(!empty($photo['none']) && $remove)) {
+            Session::flash('error', !empty($photo['none']) ? 'Choisissez une photo à envoyer.' : 'Photo : ' . ($photo['error'] ?? 'image refusée.'));
+
+            return Response::redirect($this->back($userId));
+        }
+        (new \App\Repositories\SseIdentityRepository())->setImages((int) $identity['id'], $tenantId, ['photo_path' => $photo['path'] ?? null]);
+        \App\Services\Sse\SseIdMassGeneratorService::audit($tenantId, $this->actorId(), 'id_member.photo', 'sse_identity', (int) $identity['id'], ['member_user_id' => $userId, 'removed' => !isset($photo['path'])]);
+        Session::flash('success', isset($photo['path'])
+            ? 'Photo d’identité enregistrée : elle apparaît sur les papiers de cette identité.'
+            : 'Photo d’identité retirée.');
 
         return Response::redirect($this->back($userId));
     }

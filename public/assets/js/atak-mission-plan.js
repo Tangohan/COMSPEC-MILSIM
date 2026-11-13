@@ -400,7 +400,9 @@ window.ATAKMissionPlan = (function () {
   function start() {
     if (timer) return;
     fetchSnap();
-    timer = setInterval(fetchSnap, 8000);
+    // Onglet caché : pas de lecture (l'horloge tourne en local), une lecture au retour.
+    timer = setInterval(function () { if (!document.hidden) fetchSnap(); }, 8000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) fetchSnap(); });
     clockTimer = setInterval(tickClock, 1000);
   }
 

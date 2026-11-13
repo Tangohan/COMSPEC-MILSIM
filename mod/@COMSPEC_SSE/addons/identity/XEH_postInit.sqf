@@ -150,3 +150,7 @@ addMissionEventHandler ["EntityKilled", {
         { [_x, _u] call comspec_sse_fnc_idMaterialize; } forEach (["unitDocs", [_u]] call comspec_sse_fnc_idRegistry);
     }, [_u], 1] call CBA_fnc_waitAndExecute;
 }];
+// Fichiers de la mission (fn_fileServer) : contrôles subis notés au fichier du document.
+["init"] call comspec_sse_fnc_fileServer;
+// Lore de session Athena (fn_loreServer) : état de la dernière synchro de l'opération publié pour la fenêtre du module.
+["init"] call comspec_sse_fnc_loreServer;

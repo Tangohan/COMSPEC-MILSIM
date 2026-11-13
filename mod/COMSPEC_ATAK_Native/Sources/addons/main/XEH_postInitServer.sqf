@@ -16,6 +16,8 @@ if (missionNamespace getVariable ["COMSPEC_ATAK_ServerInitDone", false]) exitWit
 missionNamespace setVariable ["COMSPEC_ATAK_ServerInitDone", true];
 // Le serveur a le mod : il écrit le plan partagé de l'app Plan (sinon les clients gardent leurs tracés en brouillon).
 missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
+// Version du mod du serveur, une fois : référence des étiquettes « Version du mod » du Centre Zeus (fn_zeusCentre, fn_verCmp).
+missionNamespace setVariable ["COMSPEC_ATAK_ServerVersion", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""], true];
 // Téléphones de joueurs ramassés par l'IA ennemie, exploitation du BFT et compromissions (fn_captureServer).
 ["init"] call comspec_atak_native_fnc_captureServer;
 // Socles de recharge CS-10 : mémoire, recharge et emplacements (fn_dockServer).
@@ -41,6 +43,10 @@ if (!hasInterface) then { ["init"] call comspec_atak_native_fnc_radioGuard; };
 ["initServer"] call comspec_atak_native_fnc_screenCast;
 // Écrans TOC : registre, données du réseau calculées ici pour tous (fn_tocFeed), écrans gardés d'une partie à l'autre.
 ["initServer"] call comspec_atak_native_fnc_tocScreen;
+// Salle TOC tenue (4.12.0) : droits, verrou, journal des actions, postes nommés, relève (fn_tocAccess).
+["init"] call comspec_atak_native_fnc_tocAccess;
+// Activité radio du camp (fn_tocRadio) : événements seulement, collecte éteinte tant que personne ne regarde.
+["initServer"] call comspec_atak_native_fnc_tocRadio;
 // IA et ATAK : IA équipées par le réglage ou la mission, leurs points PLI envoyés par le serveur (fn_aiAtak).
 ["init"] call comspec_atak_native_fnc_aiAtak;
 // Graphe de référence du maillage (fn_meshGraph) : une seconde entre deux regards, rien sans la liaison réaliste. La variable dit

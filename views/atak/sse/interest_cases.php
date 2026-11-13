@@ -7,14 +7,11 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 /** @var array<string,string> $statuses */
 /** @var bool $canManage */
 ?>
-<div class="breadcrumb">Athena / SSE / <strong>Dossiers d’intérêt</strong></div>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Pilotage // Investigation préparatoire</div>
         <h1>Dossiers d’intérêt</h1>
         <p>Qualification, collecte et consolidation des sujets d’intérêt. Une hypothèse de travail n’est jamais une identité confirmée.</p>
     </div>
-    <div class="page-reference"><strong>Vue // File opérateur</strong>Réf. ATH-SSE-INTERET</div>
 </div>
 <div class="security-notice">
     <div class="security-notice-code">HITL</div>

@@ -238,7 +238,7 @@ camps choisis sur Athena) et les **briefs de couverture** des joueurs (app Ma co
 Catégorie « COMSPEC SSE · Identité » :
 - **Donner des papiers** : type, pays, nature, procédé et qualité du faux, nom imprimé, ou numéro d'un document Athena.
 - **Signaler volé / révoquer** : visible au contrôle N3.
-- **Voir les vrais papiers** : vraie identité, nature, qualité, défauts (Zeus seulement).
+- **Voir les vrais papiers** : fenêtre Papiers de l'IA (Zeus seulement) : le document tel que le voit un joueur et, à côté, vraie identité, nature, qualité expliquée, défauts, ce que trouvera chaque contrôle.
 - **Checkpoint IA** / **Retirer un checkpoint IA**.
 - **Déclencher un contrôle** sur une personne : par le checkpoint qui la couvre, sinon par l'IA armée la plus proche
   (80 m, poste provisoire, équipement et sévérité au choix).
@@ -282,6 +282,43 @@ Joueur formé au contrôle (meilleur examen visuel) : `_unit setVariable ["COMSP
   `alias`, `last`, `first`, `docs`, `level`, `cover`) ; `["bolo", [réglages, objNull, unité | objNull]]` : BOLO.
 - Évènements CBA serveur : `comspec_sse_idAnswered` [joueur, demandeur, juste, clé, contexte, évasif],
   `comspec_sse_idCoverBurnt` [unité, motif] ; client : `comspec_sse_idBoloNew` [texte].
+
+### Papiers reliés à Athena (API pour les mods et les scripts)
+
+Chaque membre reçoit **sa** carte : celle de son identité Athena principale, ou de sa couverture si une fiche de
+couverture la lui attribue (kit composé sur Athena, sinon kit automatique). Un autre joueur peut la ramasser sur le corps
+ou au sol : au contrôle, c'est l'identité Athena liée à la carte qui s'affiche (photo : le visage du propriétaire), jamais
+celle du porteur. Les papiers volés, perdus ou révoqués sur Athena sont signalés au contrôle (base locale, N3).
+
+- `[classe | docId] call comspec_sse_fnc_idPaperOf` (serveur) -> HashMap : imprimé (`last`, `first`, `dob`, `pob`,
+  `number`…), `athenaDocId`, `athenaIdentityId`, `athenaRef` (« IDT-000001 »), `ownerUid`, `ownerName`, `holder`,
+  `holderUid`, `foreign` (porté par un autre que le propriétaire), `report`, `validity`, `kind` (vérité, serveur seulement),
+  `custody` (chaîne de possession).
+- `[classe | docId] call comspec_sse_fnc_idPaperOwner` (serveur) -> `[ownerUid, ownerName, holder, holderUid, foreign]`.
+- `[classe | docId, HashMap] call comspec_sse_fnc_idPaperLink` (serveur) : relie un papier à une identité Athena et à un
+  membre (`athenaDocId` : reprend l'imprimé du papier Athena de même type ; `athenaIdentity` ; `owner` (unité) ou
+  `ownerUid` / `ownerName`).
+- `[unité, id Athena | numéro] call comspec_sse_fnc_idPaperGive` (serveur) : remet à une personne son papier Athena.
+- Évènements CBA globaux : `comspec_sse_identity_paperPicked` / `comspec_sse_identity_paperDropped` [unité, classe,
+  conteneur], `comspec_sse_identity_paperLinked` [classe, docId].
+
+**Méthode et limites.** Arma n'a pas de variable par objet d'inventaire (un objet d'un sac n'est qu'un nom de classe).
+Chaque exemplaire est donc une **classe libre** (`COMSPEC_ID_Card_001`…, `CfgWeapons_instances.hpp` : 512 cartes,
+256 passeports, permis et cartes militaires) reliée au document par le registre du serveur ; la classe suit l'objet
+partout (inventaire, corps, sol, caisse) sans rien poser sur l'objet. Limites : stock fini (au-delà, le papier reste
+virtuel, journalisé) ; une classe du catalogue prise à l'Arsenal est vierge (aucun lien) ; le porteur est connu par les
+évènements Take / Put du joueur et par les gestes du contrôle (saisie, remise) : un transfert fait par un autre script
+(addItem / removeItem directs) n'est pas vu tant qu'il n'appelle pas `["take", [unité, classe, conteneur]] call
+comspec_sse_fnc_idPaperTrack` ; le registre vit le temps de la mission (rien n'est gardé d'une partie à l'autre, le kit
+Athena est remis à chaque arrivée).
+
+### Identité Athena ↔ jeu
+
+Sans papier Athena remis, l'app « Ma couverture » montre une identité tirée par le mod (clé biométrique) : elle dit
+pourquoi (paquet non chargé, aucun papier pour ce compte Steam, papiers du kit absents, papier signalé). Si la
+transmission automatique est permise (réglage, celui de la communauté l'emporte), l'identité utilisée en jeu remonte à
+Athena ; la fiche membre la compare champ par champ et ne l'écrit qu'au choix du responsable (valeur écartée historisée,
+restaurable).
 
 ## Vérifier la MRZ
 

@@ -29,6 +29,10 @@ class CfgFunctions {
             class editorLibrary {};
             class editorFound {};
             class editorAi {};
+            class editorAiServer {};
+            class editorAiCard {};
+            class editorCoach {};
+            class aiWho {};
             class aiConfigOpen {};
             class editorModule {};
         };
@@ -39,12 +43,16 @@ class CfgRemoteExec {
     class Functions {
         class comspec_sse_fnc_editorServer { allowedTargets = 2; };
         class comspec_sse_fnc_editor { allowedTargets = 1; };
+        // Fenêtre « IA de la zone » : demandes au serveur, réponses au seul poste demandeur.
+        class comspec_sse_fnc_editorAiServer { allowedTargets = 2; jip = 0; };
+        class comspec_sse_fnc_editorAi { allowedTargets = 1; jip = 0; };
     };
 };
 
 class Extended_PostInit_EventHandlers {
     class comspec_sse_editor {
         clientInit = "call compile preprocessFileLineNumbers 'z\comspec_sse\addons\editor\XEH_postInitClient.sqf'";
+        serverInit = "call compile preprocessFileLineNumbers 'z\comspec_sse\addons\editor\XEH_postInitServer.sqf'";
     };
 };
 
@@ -69,5 +77,6 @@ class RscPicture;
 class RscEdit;
 class RscCombo;
 class RscListNBox;
+class COMSPEC_SSE_RscControlsGroup;
 
 #include "dialogs\editor.hpp"

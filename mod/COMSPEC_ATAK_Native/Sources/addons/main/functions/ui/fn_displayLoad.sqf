@@ -134,6 +134,16 @@ if (_interactive) then {
     _display displayAddEventHandler ["MouseButtonDown", {
         params ["", "_button", "_mx", "_my"];
         if (_button isEqualTo 0) then { uiNamespace setVariable ["COMSPEC_ATAK_TapDown", [_mx, _my, diag_tickTime]]; };
+        // Le bouton enfoncé prend le focus, et sa zone de contenu passe devant les calques du verre (reflet, coins,
+        // fêlures) jusqu'au relâchement : focus rendu avant le dessin de l'image (fn_overlayFront, appui en cours), par
+        // un EachFrame à usage unique (la file de l'image suivante attendait une image de plus) ; essayé 3 images au plus.
+        if (uiNamespace getVariable ["COMSPEC_ATAK_DevFront", false]) then {
+            addMissionEventHandler ["EachFrame", {
+                if (([true] call comspec_atak_native_fnc_overlayFront) || {diag_frameNo > (_thisArgs select 0)}) then {
+                    removeMissionEventHandler ["EachFrame", _thisEventHandler];
+                };
+            }, [diag_frameNo + 3]];
+        };
         false
     }];
     _display displayAddEventHandler ["MouseButtonUp", {
@@ -185,11 +195,16 @@ if (_interactive && {missionNamespace getVariable ["comspec_atak_native_link_off
 };
 private _guardT0 = diag_tickTime;
 [_page] call comspec_atak_native_fnc_navigate;
+// Mesure des performances (fn_perfLog) : étapes de l'ouverture.
+private _perfLog = missionNamespace getVariable ["COMSPEC_ATAK_PerfLog", false];
+if (_perfLog) then { ["phase", [format ["première page %1", _page], _guardT0]] call comspec_atak_native_fnc_perfLog; };
 // Dessin d'arrivée chronométré ; trop long deux fois : page en quarantaine (fn_deviceGuard).
 ["opened", [_page, _guardT0]] call comspec_atak_native_fnc_deviceGuard;
 // Écran de verrouillage : première sortie de la mission, après une minute rangé ou un redémarrage (fn_lockScreen).
 // Avant fn_statusUpdate, qui note l'heure du dernier affichage.
+private _perfS = diag_tickTime;
 ["check"] call comspec_atak_native_fnc_lockScreen;
 [] call comspec_atak_native_fnc_statusUpdate;
+if (_perfLog) then { ["phase", ["écran de verrouillage et barre d'état", _perfS]] call comspec_atak_native_fnc_perfLog; };
 
 ["INFO", "UI", format ["display_created (%1)", [["HUD", "écran JPC"] select _texture, "en main"] select _interactive]] call comspec_atak_native_fnc_log;

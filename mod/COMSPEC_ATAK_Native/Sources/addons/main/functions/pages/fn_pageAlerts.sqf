@@ -70,6 +70,15 @@ private _fit = {
 };
 
 private _bg = [[0, 0, _bw, _bh], _cBg] call _box;
+// État vide partagé (composant « empty » de fn_formRender) posé dans la page dessinée à la main : formulaire d'une ligne
+// à la hauteur de son contenu. Renvoie le y sous l'état vide.
+private _emptyAt = {
+    params ["_y0", "_icon", "_title", "_sub", ["_ex", 0], ["_ew", _bw]];
+    private _g = [[["empty", _icon, _title, _sub]], [_ex, _y0, _ew, _bh], true, _cBg] call comspec_atak_native_fnc_formRender;
+    private _h = uiNamespace getVariable ["COMSPEC_ATAK_FormH", _font * 8];
+    { if (!isNull _x) then { _x ctrlSetPositionH _h; _x ctrlCommit 0; }; } forEach [_g, _g getVariable ["bg", controlNull]];
+    _y0 + _h
+};
 
 // ---------- En-tête ----------
 private _hdrH = _font * 2.7;
@@ -90,7 +99,11 @@ _chip ctrlSetTooltip ((["Athena hors ligne : l'alerte part aux téléphones du c
 
 // ---------- ADMINISTRATION ATHENA ----------
 // Avis non validés (compromission, levée, données réinitialisées, certificat, numéro, message imposé) : en tête, COMPRIS pour fermer.
-private _w = _bw - 2 * _pad;
+// 4.2.2 : téléphone tenu à l'horizontale (largeur de deux colonnes, fn_layoutCols) : actions à gauche (avis, PANIQUE,
+// alertes rapides, compromissions), journal à droite, au lieu d'une seule colonne étirée sur toute la largeur.
+private _two = ([_bw - 2 * _pad, "section"] call comspec_atak_native_fnc_layoutCols) >= 2;
+private _w = [_bw - 2 * _pad, (_bw - 3 * _pad) / 2] select _two;
+private _jx = [_pad, _pad * 2 + _w] select _two;
 private _y = _hdrH + _pad;
 private _notices = ["list"] call comspec_atak_native_fnc_adminNotices;
 if ((count _notices) > 0) then {
@@ -249,7 +262,7 @@ if ((count _caps) > 0) then {
         } forEach _btns;
         _y = _y + _ch2 + _pad * 0.4;
     } forEach (_caps select [0, 5]);
-    ["COMSPEC_RscText", [_pad, _y, _w, _fs * 1.2], "Retrouver un ATAK volé : app GE > GÉOLOC, avec son IMEI ou son numéro.", _fs * 0.75, _cDim] call _lbl;
+    ["COMSPEC_RscText", [_pad, _y, _w, _fs * 1.2], "Retrouver un ATAK volé : app GE > TRAÇAGE, avec son IMEI ou son numéro.", _fs * 0.75, _cDim] call _lbl;
     _y = _y + _fs * 1.2 + _pad;
 };
 
@@ -260,40 +273,55 @@ private _lab = createHashMapFromArray [
     ["TIC_CLEAR", ["FIN DE CONTACT", [0.36, 0.78, 0.42, 1], "alert_clear"]], ["EAGLE_DOWN", ["APPAREIL ABATTU", [0.90, 0.28, 0.23, 1], "alert_eagle"]],
     ["SALUTE", ["SALUTE", [0.30, 0.62, 0.98, 1], "app_salute"]], ["COMPROMISE", ["COMPROMISSION", [0.95, 0.55, 0.15, 1], "app_ew"]]
 ];
-_y = [_pad, _y, _w, "Journal", str (count _log)] call _sec;
+// Colonne de droite : le journal repart du haut de la page.
+private _yLeft = _y;
+if (_two) then { _y = _hdrH + _pad; };
+_y = [_jx, _y, _w, "Journal", str (count _log)] call _sec;
 if ((count _log) isEqualTo 0) then {
-    ["COMSPEC_RscText", [_pad, _y, _w, _fs * 1.4], "Aucune alerte depuis le début de la mission.", _fs * 0.85, _cDim] call _lbl;
-    _y = _y + _fs * 1.4 + _pad;
+    _y = [_y, _dir + "app_alerts.paa", "Aucune alerte depuis le début de la mission", "Les alertes du camp et les vôtres s'affichent ici avec leur grille. CONTACT, plus haut, en envoie une.", _jx - _pad, _w + 2 * _pad] call _emptyAt;
 };
 private _ch = _fs * 2.9;
 private _bwMap = (_font * 3.6) min (_w * 0.25);
-for "_i" from ((count _log) - 1) to (((count _log) - 12) max 0) step -1 do {
+// 12 alertes, puis 12 de plus à chaque « VOIR LA SUITE » (le journal en garde 25, fn_alertsLog).
+private _logN = (_s getOrDefault ["alertsLogN", 12]) max 12;
+for "_i" from ((count _log) - 1) to (((count _log) - _logN) max 0) step -1 do {
     (_log select _i) params ["_type", "_who", "_pos", "_lg", "_text", "_hour"];
     (_lab getOrDefault [_type, [_type, [0.62, 0.67, 0.64, 1], "app_alerts"]]) params ["_t", "_col", "_icon"];
-    [[_pad, _y, _w, _ch], _cTile] call _box;
-    [[_pad, _y, pixelW * 4, _ch], _col] call _box;
-    private _ci = ["COMSPEC_RscPicture", [_pad * 1.6, _y + _ch * 0.22, _ch * 0.56 / _ratio, _ch * 0.56], _dir + _icon + ".paa"] call _mk;
+    [[_jx, _y, _w, _ch], _cTile] call _box;
+    [[_jx, _y, pixelW * 4, _ch], _col] call _box;
+    private _ci = ["COMSPEC_RscPicture", [_jx + _pad * 0.6, _y + _ch * 0.22, _ch * 0.56 / _ratio, _ch * 0.56], _dir + _icon + ".paa"] call _mk;
     _ci ctrlSetTextColor _col;
-    private _cx = _pad * 2.2 + _ch * 0.56 / _ratio;
-    private _c = ["COMSPEC_RscStructuredText", [_cx, _y + _ch * 0.08, _w - (_cx - _pad) - _bwMap - _pad, _ch * 0.9]] call _mk;
+    private _cx = _jx + _pad * 1.2 + _ch * 0.56 / _ratio;
+    private _c = ["COMSPEC_RscStructuredText", [_cx, _y + _ch * 0.08, _w - (_cx - _jx) - _bwMap - _pad, _ch * 0.9]] call _mk;
     _c ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t color='" + (COMSPEC_ATAK_Th get "hexText") + "'>%3</t>  <t font='EtelkaMonospacePro' size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%4 · %5</t><br/><t size='0.85'>%6</t>",
         (_col select [0, 3]) call BIS_fnc_colorRGBtoHTML, _t, [_who] call _esc, _hour, [_lg] call _esc, [[_text, "—"] select (_text isEqualTo "")] call _esc]) call comspec_atak_native_fnc_tr);
     _c ctrlSetFontHeight _fs;
     // CARTE : centre la carte sur l'alerte.
-    private _mx = _pad + _w - _bwMap - _pad * 0.4;
+    private _mx = _jx + _w - _bwMap - _pad * 0.4;
     [[_mx, _y + _ch * 0.22, _bwMap, _ch * 0.56], [0.10, 0.12, 0.11, 1]] call _box;
     ["COMSPEC_RscTextCenter", [_mx, _y + _ch * 0.22, _bwMap, _ch * 0.56], "CARTE", _fs * 0.8, _cText, true] call _lbl;
     [[_mx, _y + _ch * 0.22, _bwMap, _ch * 0.56], compile format ["['map', %1] call comspec_atak_native_fnc_alertsAction;", _i], "Centrer la carte sur l'alerte"] call _hit;
     _y = _y + _ch + _pad * 0.4;
 };
 if ((count _log) > 0) then {
-    private _vw = (_font * 6) min (_w * 0.4);
-    [[_pad + _w - _vw, _y, _vw, _font * 1.4], _cTile] call _box;
-    ["COMSPEC_RscTextCenter", [_pad + _w - _vw, _y, _vw, _font * 1.4], "VIDER LE JOURNAL", _fs * 0.8, _cDim, true] call _lbl;
-    [[_pad + _w - _vw, _y, _vw, _font * 1.4], { ["clearLog"] call comspec_atak_native_fnc_alertsAction; }] call _hit;
-    _y = _y + _font * 1.4 + _pad;
+    // Deux boutons sur la ligne, chacun la moitié de la largeur : « VIDER LE JOURNAL » (16 signes) tient en mini portrait
+    // à la police plancher (≈ 16 × 0,55 × police, sous la demi-largeur), libellé rétréci par _fit au besoin.
+    private _vw = (_w - _gap) / 2;
+    private _bh2 = _font * 1.4;
+    private _more = (count _log) - _logN;
+    if (_more > 0) then {
+        [[_jx, _y, _vw, _bh2], _cTile] call _box;
+        private _mc = ["COMSPEC_RscTextCenter", [_jx, _y, _vw, _bh2], "VOIR LA SUITE", _fs * 0.8, _cText, true] call _lbl;
+        [_mc, _vw * 0.92, _fs * 0.8] call _fit;
+        [[_jx, _y, _vw, _bh2], { ["logMore"] call comspec_atak_native_fnc_alertsAction; }, format ["%1 alerte(s) plus ancienne(s)", _more]] call _hit;
+    };
+    [[_jx + _w - _vw, _y, _vw, _bh2], _cTile] call _box;
+    private _vc = ["COMSPEC_RscTextCenter", [_jx + _w - _vw, _y, _vw, _bh2], "VIDER LE JOURNAL", _fs * 0.8, _cDim, true] call _lbl;
+    [_vc, _vw * 0.92, _fs * 0.8] call _fit;
+    [[_jx + _w - _vw, _y, _vw, _bh2], { ["clearLog"] call comspec_atak_native_fnc_alertsAction; }, "Efface le journal ; ANNULER le rend pendant 8 s"] call _hit;
+    _y = _y + _bh2 + _pad;
 };
-_y = _y + _pad;
+_y = (_y max _yLeft) + _pad;
 _bg ctrlSetPosition [0, 0, _bw, _bh max _y];
 _bg ctrlCommit 0;
 true

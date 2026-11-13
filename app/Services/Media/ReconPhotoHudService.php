@@ -647,6 +647,7 @@ final class ReconPhotoHudService
             }
         } catch (\Throwable) {
         }
+        \App\Repositories\TenantAtakConfigRepository::forgetMemo();
     }
 
     private function ensureSchema(): void

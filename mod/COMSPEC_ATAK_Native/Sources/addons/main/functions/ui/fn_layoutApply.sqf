@@ -26,29 +26,10 @@ private _set = {
 };
 
 private _phone = [88509, _l get "phone"] call _set;
-// Bordure à l'accent de l'interaction avec la miniature (Maj+U, fn_miniInteract) : exactement autour du cadre visible
-// du téléphone, suivie à chaque mise en page (glisser, position, orientation) ; retirée hors de cette interaction.
+// Bordure bleue de l'interaction avec la miniature (Maj+U, fn_miniInteract) : retirée à la demande (« contour bleu » trop grand, bien
+// au-delà du cadre du téléphone). Seul le nettoyage reste, pour une bordure créée par une mise en page d'avant.
 private _bord = _d getVariable ["COMSPEC_MiniBorder", []];
-if (_interactive && {_l get "mini"} && {(uiNamespace getVariable ["COMSPEC_ATAK_MiniPrevMode", ""]) isNotEqualTo ""}) then {
-    (_l get "visible") params ["_vx", "_vy", "_vw", "_vh"];
-    if ((count _bord) isNotEqualTo 4) then {
-        ([] call comspec_atak_native_fnc_accent) params ["_acc"];
-        _bord = [0, 1, 2, 3] apply {
-            private _c = _d ctrlCreate ["COMSPEC_RscText", -1];
-            _c ctrlSetBackgroundColor [_acc select 0, _acc select 1, _acc select 2, 0.85];
-            _c ctrlEnable false;
-            _c
-        };
-        _d setVariable ["COMSPEC_MiniBorder", _bord];
-    };
-    private _t = pixelH * 2; private _tw = pixelW * 2;
-    {
-        (_bord select _forEachIndex) ctrlSetPosition _x;
-        (_bord select _forEachIndex) ctrlCommit 0;
-    } forEach [[_vx - _tw, _vy - _t, _vw + _tw * 2, _t], [_vx - _tw, _vy + _vh, _vw + _tw * 2, _t], [_vx - _tw, _vy, _tw, _vh], [_vx + _vw, _vy, _tw, _vh]];
-} else {
-    if ((count _bord) > 0) then { { ctrlDelete _x; } forEach _bord; _d setVariable ["COMSPEC_MiniBorder", []]; };
-};
+if ((count _bord) > 0) then { { ctrlDelete _x; } forEach _bord; _d setVariable ["COMSPEC_MiniBorder", []]; };
 _phone ctrlSetText (((_l get "phoneTexture")) call comspec_atak_native_fnc_tr);
 (_l get "device") params ["_dx", "_dy", "_dw", "_dh"];
 (_l get "status") params ["", "_sy", "", "_sh"];
@@ -76,7 +57,10 @@ private _iy = _sy + (_sh - _ih) / 2;
 [88512, [_dx + _pad, _iy, _iw, _ih]] call _set;
 [88513, [_dx + _pad + _iw, _sy, _iw * 1.3, _sh]] call _set;
 private _wx = _dx + _pad * 2 + _iw * 2.3;
-private _ww = _iw * 3.6;
+// Largeur de la météo : celle d'origine, réduite pour ne pas toucher l'heure (42 % de l'écran) sur un écran étroit (mode petit).
+private _ww = (_iw * 3.6) min ((_dx + _dw * 0.41) - _wx);
+// Météo : affichée en mode petit aussi si elle tient (au moins la place d'une icône et de « 6°C ») ; avant, masquée d'office.
+private _weatherFits = _ww >= (_iw * 2.2);
 [88514, [_wx, _sy + _sh * 0.08, _ww, _sh * 0.84]] call _set;
 [88523, [_wx + _pad * 0.5, _iy, _ih / _ratio, _ih]] call _set;
 [88524, [_wx + _pad + _ih / _ratio, _sy, _ww - _ih / _ratio - _pad, _sh]] call _set;
@@ -145,9 +129,9 @@ _ram ctrlSetPosition [_rx0, _sy, (_rx1 - _rx0) max 0, _sh];
 _ram ctrlSetFontHeight (_fontS * 0.9);
 _ram ctrlCommit 0;
 if ((ctrlText _ram) isEqualTo "") then { _ram ctrlSetText (("RAM 00%") call comspec_atak_native_fnc_tr); };
-// Mode PETIT : barre d'état allégée (batterie, heure, notifications, réseau) ; météo et mémoire vive masquées.
+// Mode PETIT : barre d'état allégée (batterie, météo si elle tient, heure, notifications, réseau) ; mémoire vive masquée.
 private _slimBar = (_l get "mini") && {!(_l get "texture")};
-{ (_d displayCtrl _x) ctrlShow !_slimBar; } forEach [88514, 88523, 88524];
+{ (_d displayCtrl _x) ctrlShow (!_slimBar || _weatherFits); } forEach [88514, 88523, 88524];
 _ram ctrlShow (!_slimBar && {(ctrlTextWidth _ram) <= (_rx1 - _rx0)});
 _lockTxt ctrlShow (!_slimBar && {_lockFits});
 (_d displayCtrl 88525) ctrlSetFontHeight _font;
@@ -199,12 +183,14 @@ _hKey ctrlSetText ((["name", _hBind] call comspec_atak_native_fnc_keybinds) call
 if (isNil "cba_keybinding_actions") then { _hKey ctrlSetText (("Ctrl+Maj+U") call comspec_atak_native_fnc_tr); };
 private _hShow = !_interactive && {profileNamespace getVariable ["COMSPEC_ATAK_HandHint", true]};
 _hKey ctrlSetFontHeight ((_fontS * 0.8) max COMSPEC_ATAK_FontMin);
-private _hh = _ah * 0.58;
+// Barre d'app resserrée ou absente (mode petit porté, 4.2.2) : pastille à la taille qu'elle a dans une barre normale
+// (touche lisible), centrée dans la barre, ou sur le haut de la carte quand la barre est à 0.
+private _hh = (_ah max (_font * 1.9)) * 0.58;
 private _hIcH = _hh * 0.78;
 private _hKw = (ctrlTextWidth _hKey) + _pad * 2;
 private _hW = _pad * 3 + _hIcH / _ratio + _hKw;
 private _hX = _dx + _dw - _pad * 2 - _hW;
-private _hY = _ay + (_ah - _hh) / 2;
+private _hY = [_ay + (_ah - _hh) / 2, _ay + _pad] select (_ah <= 0);
 _hBg ctrlSetPosition [_hX, _hY, _hW, _hh];
 _hIc ctrlSetPosition [_hX + _pad, _hY + (_hh - _hIcH) / 2, _hIcH / _ratio, _hIcH];
 _hKey ctrlSetPosition [_hX + _pad * 2 + _hIcH / _ratio, _hY + _hh * 0.14, _hKw, _hh * 0.72];
@@ -219,15 +205,35 @@ uiNamespace setVariable ["COMSPEC_ATAK_TitleBox", [_tx, _ay, (_tEnd - _tx) max 0
 // Retour actif dans toute app (sans historique, il ramène à l'accueil) et sur un sous-écran (fn_back).
 (_d displayCtrl 88517) ctrlEnable ((count (_s getOrDefault ["history", []])) > 1 || {(_s getOrDefault ["activePage", "LAUNCHER"]) isNotEqualTo "LAUNCHER"});
 
-// Touches physiques de la coque (fractions mesurées sur tools/src/android_s7_ca.png, paysage ;
-// en portrait la texture est tournée d'un quart de tour horaire : (x, y) devient (1 - y, x)).
+// Touches physiques de la coque, propres à chaque modèle (4.2.1) : mesurées par analyse d'image sur sa texture
+// (tools/src/android_s7_ca.png, tools/render/phone_<modèle>_front.png) : icône ou bouton repéré dans le cadre, bouton
+// latéral repéré à la bosse de la silhouette ; zone agrandie à une cible tactile d'au moins 0,045 x 0,07 (touches de
+// navigation) ou 0,06 x 0,03 (bouton latéral). [centre x, centre y, largeur, hauteur] en fractions du paysage, dans
+// l'ordre retour, accueil, apps récentes, marche/arrêt ; [] : pas de touche sur ce modèle (zone masquée). Le Sonim a
+// ses touches dans l'ordre Android d'origine (apps récentes en haut, retour en bas). En portrait la texture est tournée
+// d'un quart de tour horaire : (x, y) devient (1 - y, x).
 (_l get "phone") params ["_px", "_py", "_pw", "_ph"];
+private _hwKeys = (createHashMapFromArray [
+    ["s7", [[0.783, 0.406, 0.045, 0.07], [0.785, 0.500, 0.045, 0.075], [0.783, 0.595, 0.045, 0.07], [0.400, 0.301, 0.085, 0.03]]],
+    ["iphone", [[0.786, 0.412, 0.045, 0.07], [0.787, 0.500, 0.045, 0.075], [0.786, 0.592, 0.045, 0.07], [0.394, 0.321, 0.069, 0.03]]],
+    ["s23", [[0.784, 0.398, 0.045, 0.07], [0.785, 0.500, 0.045, 0.075], [0.784, 0.599, 0.045, 0.07], [0.373, 0.305, 0.069, 0.03]]],
+    ["sonim", [[0.811, 0.587, 0.045, 0.07], [0.811, 0.499, 0.045, 0.07], [0.811, 0.410, 0.045, 0.07], [0.461, 0.300, 0.06, 0.03]]],
+    ["rugged", [[], [], [], [0.421, 0.368, 0.06, 0.03]]],
+    ["tablet", [[], [], [], [0.797, 0.433, 0.03, 0.06]]],
+    ["keys", [[], [], [], [0.797, 0.433, 0.03, 0.06]]],
+    ["ip17", [[], [], [], [0.385, 0.333, 0.06, 0.03]]]
+]) getOrDefault [_l getOrDefault ["model", "s7"], []];
+if (_hwKeys isEqualTo []) then { _hwKeys = [[0.783, 0.406, 0.045, 0.07], [0.785, 0.500, 0.045, 0.075], [0.783, 0.595, 0.045, 0.07], [0.400, 0.301, 0.085, 0.03]]; };
 {
-    _x params ["_idc", "_fx", "_fy", "_fw", "_fh"];
-    if !(_l get "landscape") then { private _t = _fx; _fx = 1 - _fy; _fy = _t; _t = _fw; _fw = _fh; _fh = _t; };
-    private _c = [_idc, [_px + _pw * (_fx - _fw / 2), _py + _ph * (_fy - _fh / 2), _pw * _fw, _ph * _fh]] call _set;
-    _c ctrlShow _interactive;
-} forEach [[88544, 0.782, 0.405, 0.045, 0.07], [88545, 0.783, 0.500, 0.045, 0.075], [88546, 0.782, 0.594, 0.045, 0.07], [88547, 0.396, 0.298, 0.06, 0.03]];
+    private _c = _d displayCtrl ([88544, 88545, 88546, 88547] select _forEachIndex);
+    if (_x isEqualTo []) then { _c ctrlShow false; } else {
+        _x params ["_fx", "_fy", "_fw", "_fh"];
+        if !(_l get "landscape") then { private _t = _fx; _fx = 1 - _fy; _fy = _t; _t = _fw; _fw = _fh; _fh = _t; };
+        _c ctrlSetPosition [_px + _pw * (_fx - _fw / 2), _py + _ph * (_fy - _fh / 2), _pw * _fw, _ph * _fh];
+        _c ctrlCommit 0;
+        _c ctrlShow _interactive;
+    };
+} forEach _hwKeys;
 
 [88516, _l get "dockRect"] call _set;
 [88520, _l get "rail"] call _set;
@@ -287,6 +293,8 @@ if (_dragging) then {
     private _sfx = (uiNamespace getVariable ["COMSPEC_ATAK_ScreenFx", ["", []]]) param [1, []];
     private _all = ([
         uiNamespace getVariable ["COMSPEC_ATAK_DockControls", []],
+        // Groupe du dock (4.2.1, fn_dockRender) : ses tuiles suivent avec lui.
+        [uiNamespace getVariable ["COMSPEC_ATAK_DockGroup", controlNull]],
         uiNamespace getVariable ["COMSPEC_ATAK_DevOverlay", []],
         _surf apply { _x param [1, controlNull] },
         _sfx apply { _x param [1, controlNull] },

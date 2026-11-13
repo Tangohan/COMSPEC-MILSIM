@@ -77,6 +77,61 @@ final class MemberCoverExportController
         return $this->download($tenantId, (int) ($params['exportId'] ?? 0), $viewer, true, $back, $subject);
     }
 
+    /** POST /back-office/ressources/effectifs/membres/{id}/papiers/couverture (fiche membre › Identité & papiers) */
+    public function generateForMember(Request $request, array $params = []): Response
+    {
+        $ctx = $this->memberContext($params);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $viewer, $subject, $back, $manager] = $ctx;
+
+        return $this->generate($request, $tenantId, $subject, $viewer, $manager, $back);
+    }
+
+    /** GET /back-office/ressources/effectifs/membres/{id}/papiers/couverture/{exportId}/telecharger */
+    public function downloadForMember(Request $request, array $params = []): Response
+    {
+        $ctx = $this->memberContext($params);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $viewer, $subject, $back, $manager] = $ctx;
+
+        return $this->download($tenantId, (int) ($params['exportId'] ?? 0), $viewer, $manager, $back, $subject);
+    }
+
+    /**
+     * Fiche membre : le membre lui-même (limite LIMIT_SELF), ou un responsable qui gère ses papiers (LIMIT_MANAGER).
+     *
+     * @return array{0: int, 1: int, 2: int, 3: string, 4: bool}|Response
+     */
+    private function memberContext(array $params): array|Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $viewer = (int) Session::get('user_id');
+        if ($viewer < 1 || $tenantId < 1) {
+            return Response::redirect(url('login'));
+        }
+        $subject = (int) ($params['id'] ?? 0);
+        if ($subject < 1 || $this->users->findById($subject, $tenantId) === null) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(effectifs_workspace_url('membres'));
+        }
+        $back = effectifs_workspace_url('membres/' . $subject) . '#couverture';
+        if ($viewer === $subject) {
+            return [$tenantId, $viewer, $subject, $back, false];
+        }
+        if (!MemberIdentityPapersController::currentRights()['manage']) {
+            Session::flash('error', 'Vous n’êtes pas habilité à gérer les couvertures des membres.');
+
+            return Response::redirect($back);
+        }
+
+        return [$tenantId, $viewer, $subject, $back, true];
+    }
+
     /** @return array{0: int, 1: int, 2: int, 3: string}|Response */
     private function managerContext(array $params): array|Response
     {
@@ -106,6 +161,20 @@ final class MemberCoverExportController
     {
         if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        // « Mon identité Athena » : l'identité principale et ses papiers, pour jouer sans attendre le paquet du serveur.
+        if ($request->inputString('source') === 'athena') {
+            $res = $this->service->generateFromIdentity($tenantId, $subject, $actor, $request->inputString('lang', 'fr'), $manager);
+            Session::flash($res['ok'] ? 'success' : 'error', $res['ok']
+                ? 'Couverture prête avec l’identité Athena ' . $res['name'] . '. Téléchargez le fichier, puis importez-le dans le jeu.'
+                : match ($res['error']) {
+                    'limit' => 'Limite de générations atteinte pour aujourd’hui. Réessayez dans 24 heures.',
+                    'no_identity' => 'Pas d’identité principale complète (nom et prénom) : créez-la d’abord.',
+                    'no_paper' => 'Aucun papier émis et valable pour l’identité principale : émettez-en un d’abord.',
+                    default => 'Aucun pays actif dans cette communauté.',
+                });
 
             return Response::redirect($back);
         }

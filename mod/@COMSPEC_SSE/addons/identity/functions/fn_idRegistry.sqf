@@ -27,9 +27,13 @@ if (!isServer) exitWith { nil };
 if (_op isEqualTo "init") exitWith {
     if (!isNil "comspec_sse_idReg") exitWith { comspec_sse_idReg };
     private _free = createHashMap;
-    // Stock : même nombre que tools/gen_id_instances.py (512 cartes, 256 passeports, 256 permis, 256 cartes militaires).
-    { _x params ["_cls", "_n"]; private _a = []; for "_i" from 1 to _n do { _a pushBack _i; }; _free set [_cls, _a]; }
-        forEach [["COMSPEC_ID_Card", 512], ["COMSPEC_ID_Passport", 256], ["COMSPEC_ID_DrivingLicense", 256], ["COMSPEC_ID_MilitaryCard", 256]];
+    // Stock par objet vierge : exemplaires <item>_001… déclarés (tools/gen_id_instances.py : 512 cartes, 256 passeports,
+    // 256 permis, 256 cartes militaires ; extensions : leurs propres exemplaires), lus dans CfgComspecDocuments.
+    {
+        private _cls = ["item", _x] call comspec_sse_fnc_idDocTypes;
+        private _n = ["stock", _x] call comspec_sse_fnc_idDocTypes;
+        if (_cls isNotEqualTo "" && {_n > 0} && {!(_cls in _free)}) then { private _a = []; for "_i" from 1 to _n do { _a pushBack _i; }; _free set [_cls, _a]; };
+    } forEach (keys ([] call comspec_sse_fnc_idDocTypes));
     comspec_sse_idReg = createHashMapFromArray [
         ["docs", createHashMap], ["byClass", createHashMap], ["free", _free], ["units", createHashMap],
         ["decided", createHashMap], ["issued", createHashMap], ["watch", []], ["athena", createHashMap],
@@ -41,7 +45,7 @@ if (_op isEqualTo "init") exitWith {
 };
 private _reg = missionNamespace getVariable ["comspec_sse_idReg", createHashMap];
 if ((count _reg) isEqualTo 0) then { _reg = ["init"] call comspec_sse_fnc_idRegistry; };
-private _catOf = { switch (_this) do { case "passport": { "COMSPEC_ID_Passport" }; case "driving_license": { "COMSPEC_ID_DrivingLicense" }; case "military_id": { "COMSPEC_ID_MilitaryCard" }; default { "COMSPEC_ID_Card" }; } };
+private _catOf = { private _c = ["item", _this] call comspec_sse_fnc_idDocTypes; [_c, "COMSPEC_ID_Card"] select (_c isEqualTo "") };
 
 switch (_op) do {
     case "key": {
@@ -80,15 +84,16 @@ switch (_op) do {
         if (isNull _u || {!alive _u} || {!(missionNamespace getVariable ["comspec_sse_id_enabled", true])}) exitWith { false };
         if ((_u getVariable ["COMSPEC_ID_Carry", "auto"]) isNotEqualTo "auto") then { ["ensure", [_u]] call comspec_sse_fnc_idRegistry; };
         // Attribut Eden de groupe : le groupe porte le réglage, chaque unité le reprend à son apparition.
-        { _x params ["_gv", "_uv"]; private _gval = (group _u) getVariable [_gv, ""]; if (_gval isNotEqualTo "" && {(_u getVariable [_uv, ""]) in ["", "auto"]}) then { _u setVariable [_uv, _gval]; }; } forEach [["COMSPEC_ID_GroupProfile", "COMSPEC_ID_AiProfile"], ["COMSPEC_ID_GroupBehaviour", "COMSPEC_ID_Behaviour"], ["COMSPEC_ID_GroupCarry", "COMSPEC_ID_Carry"]];
+        { _x params ["_gv", "_uv"]; private _gval = (group _u) getVariable [_gv, ""]; if (_gval isNotEqualTo "" && {(_u getVariable [_uv, ""]) in ["", "auto"]}) then { _u setVariable [_uv, _gval]; }; } forEach [["COMSPEC_ID_GroupProfile", "COMSPEC_ID_AiProfile"], ["COMSPEC_ID_GroupBehaviour", "COMSPEC_ID_Behaviour"], ["COMSPEC_ID_GroupCarry", "COMSPEC_ID_Carry"], ["COMSPEC_ID_GroupCountry", "COMSPEC_ID_Country"]];
         // Attribut Eden « Infiltré (couverture) » : infiltration ouverte une fois les papiers posés.
         if (_u getVariable ["COMSPEC_ID_Undercover", false]) then { [{ ["start", [_this, createHashMap]] call comspec_sse_fnc_idCover; }, _u, 2] call CBA_fnc_waitAndExecute; };
-        private _types = createHashMapFromArray [["COMSPEC_ID_Card", "id_card"], ["COMSPEC_ID_Passport", "passport"], ["COMSPEC_ID_MilitaryCard", "military_id"], ["COMSPEC_ID_DrivingLicense", "driving_license"]];
         {
             private _cls = _x select 0;
-            if (_cls in _types) then {
+            // Objet vierge du catalogue (classe de l'objet, pas un exemplaire) : délivré au nom de la personne.
+            private _tk = ["ofItem", _cls] call comspec_sse_fnc_idDocTypes;
+            if (_tk isNotEqualTo "" && {(toLower (["item", _tk] call comspec_sse_fnc_idDocTypes)) isEqualTo (toLower _cls)}) then {
                 ["comspec_sse_idLocalRemove", [_u, _cls], _u] call CBA_fnc_targetEvent;
-                [_u, createHashMapFromArray [["type", _types get _cls], ["kind", "civil"], ["materialize", true]]] call comspec_sse_fnc_idIssue;
+                [_u, createHashMapFromArray [["type", _tk], ["kind", "civil"], ["materialize", true]]] call comspec_sse_fnc_idIssue;
             };
         } forEach ([_u, 0] call comspec_sse_fnc_idDocsOf);
         true
@@ -200,7 +205,8 @@ switch (_op) do {
                 case "card_license": { ["id_card", "driving_license"] };
                 case "card_passport": { ["id_card", "passport"] };
                 case "military": { ["military_id"] };
-                default { [] };
+                // Clé(s) de CfgComspecDocuments (sélecteur Eden : « press_card », « id_card,press_card »…).
+                default { ((_carry splitString ",; ") apply { toLower (trim _x) }) select { (count (["get", _x] call comspec_sse_fnc_idDocTypes)) > 0 } };
             };
         };
         // IA sans papiers à l'issue des règles (uniforme civil d'un militaire, tirage) : une identité générée par défaut,
@@ -217,8 +223,19 @@ switch (_op) do {
             private _prof = [_u, _key] call comspec_sse_fnc_bioProfile;
             if (_prof getOrDefault ["falsePapers", false]) then { _kind = "forged"; _quality = 70; };
         };
+        // IA nommée par la mission (Zeus, Eden, atelier IA, profil, élément gardé) : ses papiers portent ce nom. Un faux tiré
+        // par les règles automatiques (taux d'insurgés faussaires, biométrie « auto ») ne le remplace pas ; seuls un choix
+        // explicite (attribut « Faux papiers », Zeus « Le rendre faux », biométrie « faux papiers : oui ») le rendent faux.
+        if (_kind isEqualTo "forged" && {_carry isEqualTo "auto"} && {_u getVariable ["COMSPEC_SSE_NameAuthored", false]}
+            && {(_u getVariable ["COMSPEC_ID_Kind", "civil"]) isNotEqualTo "forged"} && {(_u getVariable ["COMSPEC_SSE_BioFalsePapers", "auto"]) isNotEqualTo "oui"}) then {
+            _kind = "civil";
+        };
+        // Faux tiré par les règles automatiques (pas un choix de la mission) : noté sur le papier ; si l'IA est nommée plus
+        // tard, ses papiers redeviennent vrais à son nom (fn_idAiConfig « sync »).
+        private _autoKind = _kind isEqualTo "forged" && {_carry isEqualTo "auto"} && {(_u getVariable ["COMSPEC_ID_Kind", "civil"]) isNotEqualTo "forged"}
+            && {(_u getVariable ["COMSPEC_SSE_BioFalsePapers", "auto"]) isNotEqualTo "oui"};
         {
-            private _spec = createHashMapFromArray [["type", _x], ["kind", _kind], ["quality", _quality], ["country", _country]];
+            private _spec = createHashMapFromArray [["type", _x], ["kind", _kind], ["quality", _quality], ["country", _country], ["autoKind", _autoKind]];
             // Le permis suit la carte : vrais papiers (le faux ne porte que sur la pièce d'identité).
             if (_x isEqualTo "driving_license" && {_forEachIndex > 0}) then { _spec set ["kind", "civil"]; };
             // Matérialisation tout de suite pour les joueurs (objet dans l'inventaire), paresseuse pour les IA.
@@ -227,7 +244,7 @@ switch (_op) do {
         } forEach _types;
         // Avis local : la personne recherchée est fichée sous son vrai nom (base N3 hors ligne).
         if (_wanted isNotEqualTo "") then {
-            private _own = [_u, _key] call comspec_sse_fnc_idGenerate;
+            private _own = ["get", [_u, _key]] call comspec_sse_fnc_idIdentityOf;
             private _true = trim (_u getVariable ["COMSPEC_SSE_BioTrueName", ""]);
             private _tl = _own get "last";
             private _tf = _own get "first";

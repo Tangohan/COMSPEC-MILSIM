@@ -67,6 +67,12 @@ if (_cmd isEqualTo "relocal") exitWith {
     [{ ["comspec_atak_native_droneCmd", [_this select 0, "force", _this select 1], _this select 0] call CBA_fnc_targetEvent; }, [_d, _args], 1.5] call comspec_atak_native_fnc_waitAndExec;
 };
 if (isNull _d || {!alive _d} || {!local _d}) exitWith {};
+// UCAV commandé depuis un téléphone (fn_ucav) : terminal UAV connecté par son contrôleur ("manual") ou contrôleur parti de
+// la partie ("release", verrou de XEH_postInitClient) ; aucun ordre de petit drone ne s'y applique.
+if ((_d getVariable ["COMSPEC_UcavCtl", []]) isNotEqualTo []) exitWith {
+    if (_cmd isEqualTo "release") then { _d setVariable ["COMSPEC_UcavCtl", nil, true]; };
+    if (_cmd in ["manual", "release"]) then { [_d, _cmd, []] call comspec_atak_native_fnc_ucavCmd; };
+};
 // Accusé de réception pour la surveillance du téléphone (ordre resté sans effet → reprise).
 _d setVariable ["COMSPEC_DroneAckN", (_d getVariable ["COMSPEC_DroneAckN", 0]) + 1, true];
 private _alt = _d getVariable ["COMSPEC_DroneAlt", 40];

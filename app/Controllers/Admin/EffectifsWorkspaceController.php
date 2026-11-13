@@ -4256,6 +4256,18 @@ class EffectifsWorkspaceController
             return Response::redirect(url('back-office/ressources/effectifs/elevations'));
         }
         $proposal = $validated['proposal'];
+        // Droits demandés à l'origine : pour dire au membre ce qui est accordé et ce qui ne l'est pas.
+        $requestedPermissionIds = json_decode((string) ($existing['proposed_permission_ids'] ?? ''), true);
+        $requestedPermissionIds = is_array($requestedPermissionIds) ? array_values(array_map('intval', $requestedPermissionIds)) : [];
+        $afterDecision = static function (string $decided, array $grantedIds) use ($tenantId, $existing, $requestedPermissionIds, $note): void {
+            try {
+                (new \App\Services\Operator\OperatorAccessRequestService())->afterDecision(
+                    $tenantId, $existing, $decided, $requestedPermissionIds, $grantedIds, $note, (int) Session::get('user_id')
+                );
+            } catch (\Throwable $e) {
+                error_log('Demande d’élévation : journal ou notification de la décision impossible : ' . $e->getMessage());
+            }
+        };
 
         if ($status === 'approved') {
             if ($request->input('confirm_apply') !== '1') {
@@ -4290,6 +4302,7 @@ class EffectifsWorkspaceController
                 $ok ? $apply['message'] : 'Statut invalide ou mise à jour impossible.'
             );
             if ($ok) {
+                $afterDecision('approved', is_array($proposal['permission_ids'] ?? null) ? $proposal['permission_ids'] : []);
                 $targetId = (int) ($existing['target_user_id'] ?? 0);
                 if ($targetId > 0) {
                     (new \App\Support\PersonnelHrPdfService())->maybeAutoIssue(
@@ -4322,6 +4335,9 @@ class EffectifsWorkspaceController
             (int) Session::get('user_id'),
             $note
         );
+        if ($ok && $status === 'rejected') {
+            $afterDecision('rejected', []);
+        }
         Session::flash(
             $ok ? 'success' : 'error',
             $ok ? 'Le statut de la demande a été mis à jour.' : 'Statut invalide ou mise à jour impossible.'
@@ -4428,6 +4444,16 @@ class EffectifsWorkspaceController
                 $chainMissing = 0;
             }
         }
+        $kpi = ['no_account' => 0, 'arrivals' => 0, 'departures' => 0];
+        if (!$referenceOnly) {
+            $since = date('Y-m-d H:i:s', strtotime('-30 days'));
+            try {
+                $kpi['no_account'] = count((new \App\Services\Effectifs\NoAccountDirectory($this->userRepository))->list($tenantId));
+                $kpi['arrivals'] = $this->userRepository->countJoinedSince($tenantId, $since);
+                $kpi['departures'] = $this->memberDepartureRepository->countSince($tenantId, $since);
+            } catch (\Throwable) {
+            }
+        }
         $extras = $referenceOnly ? ['roleplayDueCount'=>0, 'integrationOpenCount'=>0, 'phaseGateCount'=>0, 'phaseAutoErrorCount'=>0]
             : \App\Support\EffectifsWorkspaceShellExtras::counts($tenantId);
 
@@ -4441,6 +4467,7 @@ class EffectifsWorkspaceController
             'backOfficePageCss' => ['effectifs_lms.css', 'personnel-dossier.css', 'back-office-effectifs-workspace.css', 'back-office-effectifs-refonte.css', 'back-office-effectifs-roster.css', 'effectifs-pages.css', 'back-office-effectifs-maquette.css', 'back-office-effectifs-invitations.css', 'back-office-effectifs-sanscompte.css', 'back-office-tableaux.css', 'effectifs-kit.css'],
             'showPortalFooter' => false,
             'rosterCounts' => $counts,
+            'effKpi' => $kpi,
             'elevationOpenCount' => $elevationOpen,
             'qualificationsExpiringCount' => $qualifExpiring,
             'personnelDuplicateScan' => $dupScan,

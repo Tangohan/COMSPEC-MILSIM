@@ -7,7 +7,6 @@ $events = is_array($events ?? null) ? $events : [];
 ?>
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Analyse // Chronologie</div>
         <h1>Chronologie unifiée</h1>
         <p>
             Contrôles, observations, corrélations et décisions — consolidés pour le périmètre

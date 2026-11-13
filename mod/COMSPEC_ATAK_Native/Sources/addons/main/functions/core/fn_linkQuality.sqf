@@ -281,6 +281,13 @@ if (_ext isNotEqualTo [] && {_mul > 0} && {!_mesh}) then {
 _kbps = round (_kbps * _mul);
 _lat = round (_lat + (1 - _mul) * 600);
 _loss = round (_loss max ((1 - _mul) * 35));
+// Coût du chiffrement (fn_meshKeys "cost", réglage mesh_crypto_cost) tant que la liaison est chiffrée : en-têtes et contrôle d'intégrité.
+(["cost"] call comspec_atak_native_fnc_meshKeys) params [["_cryK", 0], ["_cryL", 0]];
+if (_cryK > 0 && {_kbps > 0}) then {
+    _kbps = round (_kbps * (1 - _cryK));
+    _lat = _lat + _cryL;
+    _f pushBack ["Chiffrement de la liaison", format ["-%1 %% · +%2 ms", round (_cryK * 100), _cryL]];
+};
 // Conditions du serveur : perte minimale et latence ajoutée (zone dégradée, liaison satellite) ; pertes coupées.
 private _lf = ["lossFloor"] call comspec_atak_native_fnc_netCond;
 if (_lf > 0 && {_loss < _lf}) then { _loss = _lf; _f pushBack ["Perte minimale imposée par le serveur", format ["%1 %%", _lf]]; };

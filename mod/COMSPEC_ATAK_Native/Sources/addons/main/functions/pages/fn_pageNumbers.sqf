@@ -40,9 +40,24 @@ switch (_tab) do {
     case "DIR": {
         // Annuaire de la partie : joueurs de mon camp, numéro du téléphone et numéros qu'ils ont rendus visibles.
         private _ppl = (allPlayers select { side group _x isEqualTo side group player && {alive _x} }) - [player];
-        _rows pushBack ["section", "Annuaire de la partie", format ["%1 joueur(s) de mon camp", count _ppl]];
+        // Recherche par nom, groupe ou numéro : appliquée sur OK (ou Entrée), comme les autres champs de recherche du mod
+        // (chaque rendu reconstruit la page). État « numQ ».
+        private _q = _s getOrDefault ["numQ", ""];
+        private _qLow = toLower _q;
+        private _hit = _ppl select {
+            private _u = _x;
+            _qLow isEqualTo "" || {((toLower format ["%1 %2 %3 %4", name _u, groupId group _u, ([_u] call comspec_atak_native_fnc_phoneIdent) select 0,
+                ((_u getVariable ["COMSPEC_ATAK_Numbers", []]) select { _x isEqualType [] }) apply { _x param [0, ""] }]) find _qLow) >= 0}
+        };
+        _rows pushBack ["section", "Annuaire de la partie", [format ["%1 joueur(s) de mon camp", count _ppl], format ["%1 sur %2 joueur(s)", count _hit, count _ppl]] select (_q isNotEqualTo "")];
         if (_ppl isEqualTo []) then {
-            _rows pushBack ["empty", _d + "app_numbers.paa", "Personne d'autre dans votre camp", "Les numéros des autres joueurs s'afficheront ici."];
+            _rows pushBack ["empty", _d + "app_numbers.paa", "Personne d'autre dans votre camp", "Les numéros des autres joueurs s'afficheront ici dès qu'ils rejoignent votre camp. Votre carnet reste dans l'onglet CARNET."];
+        } else {
+            _rows pushBack ["field", "numQ", "Rechercher un nom, un groupe ou un numéro", _q, "OK", ["search"] call _act];
+            if (_q isNotEqualTo "") then { _rows pushBack ["buttons", [["EFFACER LA RECHERCHE", ["clearQ"] call _act]]]; };
+            if (_hit isEqualTo []) then {
+                _rows pushBack ["empty", _d + "ui_search.paa", format ["Aucun résultat pour « %1 »", (_q regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"]], "Vérifiez l'orthographe, ou cherchez par groupe ou par numéro.", ["TOUT AFFICHER", ["clearQ"] call _act]];
+            };
         };
         {
             private _u = _x;
@@ -60,7 +75,7 @@ switch (_tab) do {
                     ["", "<br/><t size='0.78'>" + (_lines joinString "<br/>") + "</t>"] select (_lines isNotEqualTo [])],
                 [["SMS", ["sms", name _u] call _act, true, true, "Ouvre la conversation dans Messages"],
                  ["+ CARNET", ["ctFrom", [name _u, _main]] call _act, false, true, "Ajoute ce joueur à mon carnet"]]];
-        } forEach _ppl;
+        } forEach _hit;
     };
     case "BOOK": {
         private _ct = _cfg get "contacts";

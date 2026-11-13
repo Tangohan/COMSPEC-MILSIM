@@ -5,8 +5,22 @@
                               GetAtakFeatures ; sinon sonde GetIdentityPackChunk « -1 », locale ; « ERR|unknown » = absente)
     ["fetch"]              -> texte du paquet ("" si échec) : GetIdentityPack [carte, opération, depuis] = OK|n|horodatage,
                               puis GetIdentityPackChunk [i] = OK|morceau i, recollés (contexte planifié : spawn)
-    ["apply", texte]       SERVEUR : paquet -> registre (pays, documents délivrés, identités, avis de recherche)
-    ["load"]               SERVEUR : charge le paquet au début de la mission (DLL du serveur, sinon celle d'un Zeus)
+    ["apply", texte]       SERVEUR : paquet -> registre (pays, documents délivrés, identités, avis de recherche) ; paquet
+                              identique au dernier appliqué (empreinte reg « packFp », date de génération exclue) : ignoré.
+                              Appliqué : évènement CBA global comspec_sse_idCoverDirty (fiches Ma couverture périmées)
+    ["load"]               SERVEUR : charge le paquet (début de mission, arrivée d'un joueur, Demander la mise à jour).
+                              DLL du serveur ; sinon relais : le poste d'un Zeus (paquet complet), puis le téléphone de
+                              chaque joueur (paquet « self » : ses seuls papiers). Pas de paquet complet : nouvel essai
+                              de plus en plus espacé (1 à 5 min) tant que dure la mission. État : reg « packState ».
+    ["fetch", mode]        mode "" (complet) ou "self" (papiers du compte relié de ce poste : op « ~self »). Erreur :
+                              missionNamespace comspec_sse_idPackErr (unauthorized, no_tenant, unlinked, uplink_off,
+                              no_answer…), "" si réussi
+    ["applySelf", [unité, texte]]  SERVEUR : paquet « self » relayé par un joueur sans droit Zeus. Seuls son kit (Steam ID
+                              lu par le serveur), ses papiers, son brief et les pays inconnus sont repris ; avis, recherchés,
+                              population et réglages ignorés. Puis remise du kit (fn_idKit). reg « selfPacks » uid -> date
+    ["state", [état, étape, code, par]]  SERVEUR : reg « packState » (état ok | pending | fail ; étape server_fetch |
+                              relay_zeus | relay_self | relay_fail | no_relay | server | zeus | self)
+    ["want", [unité]]      SERVEUR : joueur arrivé (demande de kit) : paquet relancé s'il manque encore pour lui
     ["merge", [N3, brut]]  JOUEUR : réponse QueryIdDocument = OK|[trouvé, verdict, réf, niveau, drapeaux, mis à jour]
                               ajoutée au résultat local du niveau N3
     Paquet (COMSPEC Link 2.0.118, CONTRACT-CHANGES) : JSON converti pour parseSimpleArray, objet = paires
@@ -28,10 +42,61 @@
       wanted     ref (OPW-n), identity_id, person_id, last_name, first_name, alias, level (surveillance | recherche |
                  hvt), sides (camps qui y ont accès, vide = tous), zone, documents (ids), has_photo : recherchés de
                  l'opération, avis locaux (N3 hors ligne, checkpoints) limités à ces camps ; papiers connus = BOLO
+    Dans « settings » (comme ai_profiles) : loadouts { kits [{id, name, loadout (texte JSON du getUnitLoadout)}],
+      players [{uid, kits [ids], default}] } : kits du configurateur d'équipement, remis au registre de l'addon
+      loadout (fn_loadoutRegistry, caisses de kits) s'il est chargé.
 */
 params [["_op", ""], ["_a", []]];
+// Fiche en paires ou dans l'ordre des champs -> HashMap.
+private _rec = {
+    params ["_r", "_fields"];
+    if !(_r isEqualType []) exitWith { createHashMap };
+    if (_r isNotEqualTo [] && {(_r select 0) isEqualType []} && {count (_r select 0) == 2} && {((_r select 0) select 0) isEqualType ""}) exitWith { createHashMapFromArray _r };
+    private _m = createHashMap;
+    { _m set [_x, _r param [_forEachIndex, ""]]; } forEach _fields;
+    _m
+};
+private _docFields = ["id", "identity_id", "holder_person_id", "type", "country", "number", "issued_on", "expires_on", "authority", "chip", "origin", "integrity", "validity", "report", "forgery_kind", "forgery_quality"];
+private _idFields = ["id", "person_id", "kind", "last_name", "first_name", "sex", "birth_date", "birth_place", "nationality", "arma_key", "profession"];
+// Papier du paquet -> registre (base Athena, base locale N3, clé biométrique). [_d, _ids, _reg] call _addDoc.
+private _addDoc = {
+    params ["_d", "_ids", "_reg"];
+    private _idn = _ids getOrDefault [str (_d getOrDefault ["identity_id", ""]), createHashMap];
+    _d set ["identity", _idn];
+    private _k = format ["%1|%2|%3", _d getOrDefault ["country", ""], _d getOrDefault ["type", ""], _d getOrDefault ["number", ""]];
+    (_reg get "athena") set [_k, _d];
+    (_reg getOrDefault ["athenaById", createHashMap]) set [str (_d getOrDefault ["id", ""]), _k];
+    // Base locale (N3 hors ligne) : le document est connu, à ce nom, avec son signalement. Un faux
+    // (origin forged) est inconnu des fichiers, comme sur le site ; une couverture est en règle.
+    private _rep = ["stolen", "lost"] find (_d getOrDefault ["report", ""]);
+    _rep = ["", "vole", "perdu"] select (_rep + 1);
+    if ((_d getOrDefault ["validity", ""]) in ["revoked", "suspended"]) then { _rep = "revoque"; };
+    if ((_d getOrDefault ["origin", ""]) isNotEqualTo "forged") then {
+        (_reg get "issued") set [_k, ["", _idn getOrDefault ["last_name", ""], _idn getOrDefault ["first_name", ""], _rep]];
+    };
+    // Personne de la mission reliée par sa clé biométrique : ses papiers seront ceux d'Athena.
+    private _ak = _idn getOrDefault ["arma_key", ""];
+    if (_ak isEqualType "" && {_ak isNotEqualTo ""}) then {
+        private _byKey = _reg getOrDefault ["athenaByKey", createHashMap];
+        private _l = _byKey getOrDefault [_ak, []];
+        _l pushBackUnique _k;
+        _byKey set [_ak, _l];
+    };
+    _k
+};
 switch (_op) do {
+    case "state": {
+        if (!isServer) exitWith {};
+        _a params [["_st", ""], ["_step", ""], ["_code", ""], ["_via", ""]];
+        private _reg = ["init"] call comspec_sse_fnc_idRegistry;
+        private _s = _reg getOrDefault ["packState", createHashMap];
+        _reg set ["packState", _s];
+        _s set ["state", _st]; _s set ["step", _step]; _s set ["code", _code]; _s set ["via", _via]; _s set ["time", time];
+        diag_log text format ["[COMSPEC SSE] Identité : paquet Athena %1 (étape %2%3).", _st, _step, ["", format [", %1", _code]] select (_code isNotEqualTo "")];
+    };
     case "has": {
+        // Liaison coupée sur ce poste (service Athena sur Non, mode local) : réponse non gardée, elle peut revenir.
+        if (!isNil "comspec_overwatch_connect_fnc_uplinkOff" && {[] call comspec_overwatch_connect_fnc_uplinkOff}) exitWith { false };
         private _have = missionNamespace getVariable "comspec_sse_idDll";
         if (!isNil "_have") exitWith { _have };
         private _call = {
@@ -53,13 +118,34 @@ switch (_op) do {
         _have
     };
     case "fetch": {
-        if !(["has"] call comspec_sse_fnc_idAthenaPack) exitWith { "" };
-        private _since = missionNamespace getVariable ["comspec_sse_idPackTs", ""];
-        private _head = ["GetIdentityPack", [str (missionNamespace getVariable ["COMSPEC_MapId", 1]), missionNamespace getVariable ["comspec_sse_id_opKey", ""], _since]] call comspec_sse_fnc_extensionCall;
-        if ((_head select [0, 3]) isNotEqualTo "OK|") exitWith { diag_log text format ["[COMSPEC SSE] Identité : paquet Athena indisponible (%1).", _head select [0, 80]]; "" };
+        private _self = _a isEqualTo "self";
+        missionNamespace setVariable ["comspec_sse_idPackErr", ""];
+        if (!isNil "comspec_overwatch_connect_fnc_uplinkOff" && {[] call comspec_overwatch_connect_fnc_uplinkOff}) exitWith { missionNamespace setVariable ["comspec_sse_idPackErr", "uplink_off"]; "" };
+        if !(["has"] call comspec_sse_fnc_idAthenaPack) exitWith { missionNamespace setVariable ["comspec_sse_idPackErr", "no_link"]; "" };
+        // Paquet « self » : le site ne renvoie que les papiers du compte relié à ce poste (op « ~self », DLL inchangée).
+        private _opKey = missionNamespace getVariable ["comspec_sse_id_opKey", ""];
+        private _since = if (_self) then { "" } else { missionNamespace getVariable ["comspec_sse_idPackTs", ""] };
+        if (_self) then { _opKey = ["~self", "~self:" + _opKey] select (_opKey isNotEqualTo ""); };
+        // Tampon du paquet partagé avec la fenêtre Mes couvertures sur Athena (fn_idCoverAthena, même commande) : une
+        // lecture à la fois. Hors tâche planifiée, l'appel se fait d'un bloc et ne peut pas être interrompu.
+        private _lock = canSuspend;
+        if (_lock) then {
+            private _t = diag_tickTime;
+            waitUntil { sleep 0.1; !(missionNamespace getVariable ["comspec_sse_idPackBusy", false]) || {(diag_tickTime - _t) > 30} };
+            missionNamespace setVariable ["comspec_sse_idPackBusy", true];
+        };
+        private _head = ["GetIdentityPack", [str (missionNamespace getVariable ["COMSPEC_MapId", 1]), _opKey, _since]] call comspec_sse_fnc_extensionCall;
+        if ((_head select [0, 3]) isNotEqualTo "OK|") exitWith {
+            if (_lock) then { missionNamespace setVariable ["comspec_sse_idPackBusy", false]; };
+            private _err = (_head splitString "|") param [1, ""];
+            if (_head isEqualTo "") then { _err = "no_answer"; };
+            missionNamespace setVariable ["comspec_sse_idPackErr", _err select [0, 24]];
+            diag_log text format ["[COMSPEC SSE] Identité : paquet Athena%1 indisponible (%2).", [""," (vos papiers)"] select _self, [_head select [0, 80], "pas de réponse"] select (_head isEqualTo "")];
+            ""
+        };
         private _p = _head splitString "|";
         private _n = parseNumber (_p param [1, "0"]);
-        missionNamespace setVariable ["comspec_sse_idPackTs", _p param [2, ""]];
+        if (!_self) then { missionNamespace setVariable ["comspec_sse_idPackTs", _p param [2, ""]]; };
         private _buf = "";
         private _ok = true;
         for "_i" from 0 to (_n - 1) do {
@@ -67,7 +153,89 @@ switch (_op) do {
             if ((_c select [0, 3]) isNotEqualTo "OK|") exitWith { _ok = false; };
             _buf = _buf + (_c select [3]);
         };
+        if (_lock) then { missionNamespace setVariable ["comspec_sse_idPackBusy", false]; };
+        if (!_ok) then { missionNamespace setVariable ["comspec_sse_idPackErr", "chunk"]; };
         [_buf, ""] select !_ok
+    };
+    case "applySelf": {
+        if (!isServer) exitWith {};
+        _a params [["_u", objNull, [objNull]], ["_raw", "", [""]]];
+        private _uid = getPlayerUID _u;
+        if (isNull _u || {_uid isEqualTo ""} || {_raw isEqualTo ""}) exitWith {};
+        private _root = parseSimpleArray _raw;
+        if !(_root isEqualType []) exitWith { diag_log text "[COMSPEC SSE] Identité : paquet relayé par un joueur illisible."; };
+        private _top = [_root, ["version", "generated_at", "map", "op", "countries", "identities", "documents", "watch", "kits"]] call _rec;
+        private _reg = ["init"] call comspec_sse_fnc_idRegistry;
+        _reg set ["athenaById", _reg getOrDefault ["athenaById", createHashMap]];
+        _reg set ["athenaByKey", _reg getOrDefault ["athenaByKey", createHashMap]];
+        // Son kit seulement : Steam ID lu par le serveur, jamais celui écrit dans le paquet d'un autre.
+        private _kit = [];
+        {
+            private _kt = [_x, ["uid", "user_id", "scope", "documents"]] call _rec;
+            private _ku = _kt getOrDefault ["uid", ""];
+            if !(_ku isEqualType "") then { _ku = str _ku; };
+            private _list = _kt getOrDefault ["documents", []];
+            if (_ku isEqualTo _uid && {_list isEqualType []}) then { _kit = _list apply { [str _x, _x] select (_x isEqualType "") }; };
+        } forEach (_top getOrDefault ["kits", []]);
+        // Pays : seulement ceux que le serveur ne connaît pas encore (jamais une définition remplacée par un joueur).
+        {
+            private _c = [_x, ["code", "name", "mrz_code", "number_format", "fictional"]] call _rec;
+            private _code = _c getOrDefault ["code", ""];
+            if (_code isEqualType "" && {_code isNotEqualTo ""} && {!(_code in (_reg get "countries"))}) then {
+                (_reg get "countries") set [_code, createHashMapFromArray [
+                    ["code", _code], ["name", _c getOrDefault ["name", _code]], ["nameEn", ""], ["mrz", _c getOrDefault ["mrz_code", _code]],
+                    ["number_format", _c getOrDefault ["number_format", ""]], ["fictional", _c getOrDefault ["fictional", true]], ["authority", ""],
+                    ["theme", ""], ["languages", []], ["docTypes", []], ["colors", []], ["active", true], ["realSim", false], ["zone", ""],
+                    ["nameNative", ""], ["validity", ""]
+                ]];
+            };
+        } forEach (_top getOrDefault ["countries", []]);
+        private _ids = createHashMap;
+        { private _i = [_x, _idFields] call _rec; _ids set [str (_i getOrDefault ["id", ""]), _i]; } forEach (_top getOrDefault ["identities", []]);
+        private _kept = [];
+        {
+            private _d = [_x, _docFields] call _rec;
+            private _did = str (_d getOrDefault ["id", ""]);
+            private _known = (_reg get "athenaById") getOrDefault [_did, ""];
+            // Papier du kit seulement ; déjà connu par le paquet complet du serveur : celui-ci l'emporte.
+            if (_did in _kit) then {
+                if (_known isEqualTo "") then { [_d, _ids, _reg] call _addDoc; };
+                _kept pushBack _did;
+            };
+        } forEach (_top getOrDefault ["documents", []]);
+        private _kits = _reg getOrDefault ["kits", createHashMap];
+        _reg set ["kits", _kits];
+        if (_kept isNotEqualTo []) then { _kits set [_uid, _kept]; };
+        {
+            private _b = [_x, ["uid", "user_id", "scope", "identity_id", "title", "cover_name", "biography", "legend", "contacts", "instructions", "phone", "address"]] call _rec;
+            private _bu = _b getOrDefault ["uid", ""];
+            if !(_bu isEqualType "") then { _bu = str _bu; };
+            if (_bu isEqualTo _uid) then { private _br = _reg getOrDefault ["briefs", createHashMap]; _reg set ["briefs", _br]; _br set [_uid, _b]; };
+        } forEach (_top getOrDefault ["briefs", []]);
+        private _self = _reg getOrDefault ["selfPacks", createHashMap];
+        _reg set ["selfPacks", _self];
+        private _at = _top getOrDefault ["generated_at", ""];
+        _self set [_uid, [_at, "self"] select (_at isEqualTo "" || {!(_at isEqualType "")})];
+        (_reg getOrDefault ["selfFails", createHashMap]) deleteAt _uid;
+        diag_log text format ["[COMSPEC SSE] Identité : papiers Athena de %1 reçus par son téléphone (%2 papier(s) du kit).", name _u, count _kept];
+        ["reset", [_u]] call comspec_sse_fnc_idLegend;
+        [_u] call comspec_sse_fnc_idKit;
+        [{ ["auto", [_this]] call comspec_sse_fnc_idCover; }, _u, 3] call CBA_fnc_waitAndExecute;
+        // Sa fiche Ma couverture en cache est périmée : relue (sa page ouverte se redessine).
+        [{ ["comspec_sse_idCoverDirty", [], _this] call CBA_fnc_targetEvent; }, _u, 4] call CBA_fnc_waitAndExecute;
+        if (_kept isEqualTo []) then {
+            private _t = "Athena ne prévoit aucun papier pour votre compte sur cette carte : rien à vous remettre.";
+            if (isPlayer _u) then { ["notify", [_t, "WARNING"]] remoteExecCall ["comspec_sse_fnc_idClient", owner _u]; };
+        };
+    };
+    case "want": {
+        if (!isServer) exitWith {};
+        _a params [["_u", objNull, [objNull]]];
+        private _reg = ["init"] call comspec_sse_fnc_idRegistry;
+        private _uid = getPlayerUID _u;
+        if (isNull _u || {_uid isEqualTo ""} || {(_reg getOrDefault ["packAt", ""]) isNotEqualTo ""} || {_uid in (_reg getOrDefault ["selfPacks", createHashMap])}) exitWith {};
+        // Laisse au téléphone le temps de se relier à Athena, puis relance (une seule fois à la fois, fn « load »).
+        [{ ["load"] call comspec_sse_fnc_idAthenaPack; }, [], 45] call CBA_fnc_waitAndExecute;
     };
     case "apply": {
         if (!isServer) exitWith {};
@@ -75,17 +243,18 @@ switch (_op) do {
         if !(_raw isEqualType "") exitWith {};
         private _root = parseSimpleArray _raw;
         if !(_root isEqualType []) exitWith { diag_log text "[COMSPEC SSE] Identité : paquet Athena illisible."; };
-        // Fiche en paires ou dans l'ordre des champs -> HashMap.
-        private _rec = {
-            params ["_r", "_fields"];
-            if !(_r isEqualType []) exitWith { createHashMap };
-            if (_r isNotEqualTo [] && {(_r select 0) isEqualType []} && {count (_r select 0) == 2} && {((_r select 0) select 0) isEqualType ""}) exitWith { createHashMapFromArray _r };
-            private _m = createHashMap;
-            { _m set [_x, _r param [_forEachIndex, ""]]; } forEach _fields;
-            _m
-        };
         private _top = [_root, ["version", "generated_at", "map", "op", "countries", "identities", "documents", "watch", "kits"]] call _rec;
         private _reg = ["init"] call comspec_sse_fnc_idRegistry;
+        // Paquet identique au dernier appliqué (hors date de génération et « since », qui changent à chaque lecture) :
+        // rien à refaire. Avant, chaque rechargement (Demander la mise à jour, fenêtre IA du Zeus) reprenait toutes les
+        // tables, remettait le kit et rouvrait les couvertures de tous les joueurs, même sans aucun changement sur Athena.
+        private _fpKeys = (keys _top) - ["generated_at", "since"];
+        _fpKeys sort true;
+        private _fp = hashValue str (_fpKeys apply { [_x, _top get _x] });
+        if (_fp isEqualTo (_reg getOrDefault ["packFp", ""])) exitWith {
+            diag_log text "[COMSPEC SSE] Identité : paquet Athena inchangé depuis le dernier chargement, rien à refaire.";
+        };
+        _reg set ["packFp", _fp];
         // Date du paquet, montrée au joueur dont le kit n'a pas de brief daté (app Ma couverture).
         _reg set ["packAt", _top getOrDefault ["generated_at", ""]];
         // Réglage de la communauté (Bureau SSE d'Athena) : l'emporte sur le réglage CBA, diffusé aux postes des contrôleurs.
@@ -96,6 +265,8 @@ switch (_op) do {
         };
         // Profils d'IA et éléments gardés : dans « settings » (la DLL publiée le transmet sans connaître ces blocs).
         if ("ai_profiles" in _settings) then { ["ingest", [_settings get "ai_profiles", _settings getOrDefault ["ai_placements", []]]] call comspec_sse_fnc_idAiConfig; };
+        // Kits du configurateur d'équipement (addon loadout, peut être absent) : registre serveur des caisses de kits.
+        if ("loadouts" in _settings && {!isNil "comspec_sse_fnc_loadoutRegistry"}) then { ["ingest", [_settings get "loadouts"]] call comspec_sse_fnc_loadoutRegistry; };
         private _nC = 0; private _nD = 0; private _nW = 0;
         {
             private _c = [_x, ["code", "name", "mrz_code", "number_format", "fictional", "name_en", "authority", "theme", "languages", "doc_types", "colors", "active", "real_sim", "zone", "name_native", "validity"]] call _rec;
@@ -256,6 +427,9 @@ switch (_op) do {
         } forEach (_top getOrDefault ["kits", []]);
         if ("kits" in _top) then { _reg set ["kits", _kits]; };
         diag_log text format ["[COMSPEC SSE] Identité : paquet Athena chargé (%1 pays, %2 documents, %3 avis, %4 kits, %5 briefs, %6 identités de population).", _nC, _nD, _nW, count _kits, count _briefs, count _pop];
+        // Fiches « Ma couverture » en cache sur les postes : périmées (liaison Athena, papiers, brief). Une page ouverte se
+        // relit après la remise du kit ; les autres attendent leur prochaine ouverture (aucune relecture en boucle).
+        [{ ["comspec_sse_idCoverDirty", []] call CBA_fnc_globalEvent; }, [], 6] call CBA_fnc_waitAndExecute;
         // Brief de couverture d'un joueur déjà là : son infiltration s'ouvre (après la remise du kit).
         if ((count _briefs) > 0) then {
             [{ { ["auto", [_x]] call comspec_sse_fnc_idCover; } forEach (allPlayers select { alive _x && {!(_x isKindOf "HeadlessClient_F")} }); }, [], 4] call CBA_fnc_waitAndExecute;
@@ -268,18 +442,50 @@ switch (_op) do {
     };
     case "load": {
         if (!isServer || {!(missionNamespace getVariable ["comspec_sse_id_athenaPack", true])}) exitWith {};
-        [] spawn {
-            if (["has"] call comspec_sse_fnc_idAthenaPack) exitWith {
+        private _reg = ["init"] call comspec_sse_fnc_idRegistry;
+        // Un seul chargement à la fois (début de mission, arrivée d'un joueur, Demander la mise à jour, nouvel essai).
+        if (_reg getOrDefault ["packLoading", false]) exitWith {};
+        _reg set ["packLoading", true];
+        [_reg] spawn {
+            params ["_reg"];
+            private _tries = (_reg getOrDefault ["packTries", 0]) + 1;
+            _reg set ["packTries", _tries];
+            if (["has"] call comspec_sse_fnc_idAthenaPack) then {
+                // Serveur relié (dédié avec COMSPEC Link, partie hébergée : DLL de l'hôte).
                 private _raw = ["fetch"] call comspec_sse_fnc_idAthenaPack;
-                if (_raw isNotEqualTo "") then { ["apply", _raw] call comspec_sse_fnc_idAthenaPack; };
+                if (_raw isNotEqualTo "") then {
+                    ["apply", _raw] call comspec_sse_fnc_idAthenaPack;
+                    ["state", ["ok", "server", "", "server"]] call comspec_sse_fnc_idAthenaPack;
+                } else {
+                    ["state", ["fail", "server_fetch", missionNamespace getVariable ["comspec_sse_idPackErr", ""], "server"]] call comspec_sse_fnc_idAthenaPack;
+                };
+            } else {
+                // Serveur sans COMSPEC Link : relais par un poste relié. D'abord un Zeus (paquet complet) ; sans Zeus, ou
+                // si le Zeus n'a rien rendu au tour d'avant, chaque joueur lit ses propres papiers (paquet « self »).
+                private _players = allPlayers select { !(_x isKindOf "HeadlessClient_F") && {(owner _x) isNotEqualTo clientOwner} };
+                private _auth = _players select { [_x] call comspec_sse_fnc_isAuthority };
+                private _asked = false;
+                if (_auth isNotEqualTo []) then {
+                    ["packFetch", ["full"]] remoteExecCall ["comspec_sse_fnc_idClient", owner (_auth select (_tries mod (count _auth)))];
+                    ["state", ["pending", "relay_zeus", "", "zeus"]] call comspec_sse_fnc_idAthenaPack;
+                    _asked = true;
+                };
+                if (_auth isEqualTo [] || {_tries > 1}) then {
+                    private _done = _reg getOrDefault ["selfPacks", createHashMap];
+                    private _todo = (_players - _auth) select { (getPlayerUID _x) isNotEqualTo "" && {!((getPlayerUID _x) in _done)} };
+                    { ["packFetch", ["self"]] remoteExecCall ["comspec_sse_fnc_idClient", owner _x]; } forEach _todo;
+                    if (_todo isNotEqualTo [] && {!_asked}) then { ["state", ["pending", "relay_self", "", "self"]] call comspec_sse_fnc_idAthenaPack; };
+                    _asked = _asked || {_todo isNotEqualTo []};
+                };
+                if (!_asked && {_players isEqualTo []}) then { ["state", ["fail", "no_relay", "", ""]] call comspec_sse_fnc_idAthenaPack; };
             };
-            // Serveur dédié sans liaison : le premier Zeus dont la DLL connaît le paquet le télécharge pour lui.
-            private _zeus = (allPlayers select { !isNull (getAssignedCuratorLogic _x) && {(owner _x) isNotEqualTo clientOwner} }) param [0, objNull];
-            if (!isNull _zeus) exitWith { ["packFetch", []] remoteExecCall ["comspec_sse_fnc_idClient", owner _zeus]; };
-            // Pas encore de Zeus connecté : nouvel essai dans une minute (5 fois au plus).
-            private _n = (missionNamespace getVariable ["comspec_sse_idPackTries", 0]) + 1;
-            missionNamespace setVariable ["comspec_sse_idPackTries", _n];
-            if (_n < 5) then { [{ ["load"] call comspec_sse_fnc_idAthenaPack; }, [], 60] call CBA_fnc_waitAndExecute; };
+            _reg set ["packLoading", false];
+            // Pas encore de paquet complet : nouvel essai, de plus en plus espacé (1, 2… 5 min), tant que dure la mission.
+            // Un seul essai planifié à la fois (« packRetry ») ; Demander la mise à jour reste possible entre deux.
+            if ((_reg getOrDefault ["packAt", ""]) isEqualTo "" && {!(_reg getOrDefault ["packRetry", false])}) then {
+                _reg set ["packRetry", true];
+                [{ (_this select 0) set ["packRetry", false]; ["load"] call comspec_sse_fnc_idAthenaPack; }, [_reg], 60 * (_tries min 5)] call CBA_fnc_waitAndExecute;
+            };
         };
     };
     case "merge": {

@@ -100,7 +100,11 @@ class AtakTacticalReportRepository
                 : null;
         }
 
-        return (int) $this->db->insert($sql, $params);
+        $id = (int) $this->db->insert($sql, $params);
+        // Recoupements des fichiers SSE : le compte rendu est indexé tout de suite (surveillances prévenues).
+        \App\Services\Sse\SseFileXrefService::indexQuietly((int) ($data['tenant_id'] ?? 0), 'tactical', $id);
+
+        return $id;
     }
 
     /**

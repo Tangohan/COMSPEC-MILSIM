@@ -124,6 +124,49 @@ return [
             ],
         ],
         [
+            // « Opérateur » : les outils de chaque membre sur le terrain (pas ceux de l'encadrement ni de l'administration).
+            // Affiché à tout membre connecté qui a au moins un lien accessible ; les liens du Bureau SSE suivent ses droits.
+            'label' => 'Opérateur',
+            'type' => 'mega',
+            'auth_only' => true,
+            'icon' => 'crosshair',
+            'accent' => 'emerald',
+            'variant' => 'operations',
+            'sections' => [
+                [
+                    'title' => 'Terrain',
+                    'slot' => 'primary',
+                    'links' => [
+                        ['label' => 'Tous mes outils', 'path' => 'operateur', 'active_match' => 'exact', 'description' => 'La page des outils opérateur : identités, papiers, fichiers, matériel'],
+                        ['label' => 'Situation tactique (ATAK web)', 'path' => 'atak', 'active_match' => 'exact', 'description' => 'Carte, positions et comptes rendus de la mission, comme sur le téléphone'],
+                        ['label' => 'Poste TOC', 'path' => 'atak/toc', 'active_match' => 'exact', 'any_permissions' => ['atak.toc.use', 'atak.toc.manage', 'admin.organization'], 'description' => 'La console du poste de commandement, comme le PC du poste en jeu'],
+                        ['label' => 'Plans d’opération', 'path' => 'atak/toc/plans', 'any_permissions' => ['atak.toc.use', 'atak.toc.manage', 'admin.organization'], 'description' => 'Préparer un plan sur la carte, le briefer par phases, l’envoyer en jeu'],
+                        ['label' => 'Lier mon ATAK', 'path' => 'lier', 'description' => 'Relier le téléphone du jeu à votre compte Athena'],
+                        ['label' => 'Mon matériel', 'path' => 'equipment?espace=materiel', 'description' => 'Vos tenues, kits et fiches matériel'],
+                    ],
+                ],
+                [
+                    'title' => 'Fichiers et renseignement',
+                    'slot' => 'center',
+                    'links' => [
+                        ['label' => 'Passage aux fichiers', 'path' => 'atak/sse/fichiers', 'active_match' => 'exact', 'any_permissions' => ['atak.sse.access', 'atak.sse.grant', 'atak.sse.case.manage', 'admin.access', 'admin.organization'], 'description' => 'Interroger les fichiers : nom, alias, plaque, papier, téléphone'],
+                        ['label' => 'Photothèque', 'path' => 'atak/sse/fichiers/photos', 'any_permissions' => ['atak.sse.access', 'atak.sse.grant', 'atak.sse.case.manage', 'admin.access', 'admin.organization'], 'description' => 'Photos signalétiques filtrées par signalement'],
+                        ['label' => 'Téléphones du jeu', 'path' => 'atak/sse/fichiers/telephones', 'any_permissions' => ['atak.sse.access', 'atak.sse.grant', 'atak.sse.case.manage', 'admin.access', 'admin.organization'], 'description' => 'Extractions des téléphones synchronisés, les vôtres et celles de l’équipe'],
+                        ['label' => 'Fiches SEEK II', 'path' => 'atak/sse/fichiers/seek', 'any_permissions' => ['atak.sse.access', 'atak.sse.grant', 'atak.sse.case.manage', 'admin.access', 'admin.organization'], 'description' => 'Relevés biométriques faits en jeu'],
+                        ['label' => 'Rédiger une fiche de renseignement', 'path' => 'atak/sse/fiches/nouvelle', 'any_permissions' => ['atak.sse.access', 'atak.sse.grant', 'atak.sse.case.manage', 'admin.access', 'admin.organization'], 'description' => 'Ce que vous avez vu ou appris sur le terrain'],
+                    ],
+                ],
+                [
+                    'title' => 'Aide',
+                    'slot' => 'secondary',
+                    'links' => [
+                        ['label' => 'Guides', 'path' => 'documentation', 'description' => 'Mode d’emploi du portail, de l’ATAK et des fichiers'],
+                        ['label' => 'Guide du Bureau SSE', 'path' => 'atak/sse/guide', 'any_permissions' => ['atak.sse.access', 'atak.sse.grant', 'atak.sse.case.manage', 'admin.access', 'admin.organization'], 'description' => 'Fichiers, contrôles d’identité, SEEK II et téléphones'],
+                    ],
+                ],
+            ],
+        ],
+        [
             'label' => 'Doctrine',
             'type' => 'mega',
             'auth_only' => true,
@@ -356,6 +399,7 @@ return [
                         ['label' => 'Configuration ATAK', 'path' => 'back-office/ressources/atak-config', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
                         ['label' => 'Consignes et kit ATAK', 'path' => 'back-office/ressources/atak-consignes', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Consignes, ordres, tips et kit obligatoire de l’app Communauté du téléphone'],
                         ['label' => 'Renseignement — codes d’accès', 'path' => 'back-office/renseignement/codes', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access', 'atak.sse.grant'], 'description' => 'Délivrer des codes temporaires au portail de renseignement classifié'],
+                        ['label' => 'Fichiers SSE', 'path' => 'back-office/renseignement/fichiers', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access', 'atak.sse.files.admin'], 'description' => 'Fiches, fusion des doublons, extractions de téléphones, journal et réglages des fichiers'],
                         ['label' => 'Cycle de mission', 'path' => 'back-office/atak/cycle-mission', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Créer, ouvrir et clôturer une mission (briefing → carte → après-action)'],
                         ['label' => 'Comptes rendus (AAR)', 'path' => 'back-office/atak/comptes-rendus', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Rapports post-opération, points relevés et actions de suivi'],
                         ['label' => 'Suivi des CR de fin d’op', 'path' => 'back-office/atak/suivi-cr', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Imposer le CR de fin d’opération sur les ATAK et suivre les réponses'],
@@ -490,6 +534,7 @@ return [
                         ['label' => 'Édition avancée de fiche', 'path' => 'admin/system/advanced-fiche-edit', 'permission' => 'admin.system', 'description' => 'Autoriser une modification exceptionnelle d’une fiche'],
                         ['label' => 'Paramètres système', 'path' => 'admin/settings', 'permission' => 'admin.system'],
                         ['label' => 'Alertes plateforme', 'path' => 'admin/system/alerts', 'permission' => 'admin.system'],
+                        ['label' => 'Messages aux communautés', 'path' => 'admin/system/messages-communautes', 'permission' => 'admin.system', 'description' => 'Écrire aux back-offices des communautés : invitation Discord, consigne, annonce'],
                         ['label' => 'Maintenance des données', 'path' => 'admin/maintenance', 'permission' => 'admin.system'],
                         ['label' => 'Tâches automatiques', 'path' => 'admin/system/cron', 'permission' => 'admin.system', 'description' => 'Planification et historique des travaux récurrents'],
                         ['label' => 'Charge et surcharge', 'path' => 'admin/system/surcharge', 'permission' => 'admin.system', 'description' => 'Requêtes par route et par communauté, erreurs, seuils d’alerte, priorité des formules payantes sous charge'],

@@ -25,6 +25,10 @@ W, H = photo.size
 
 # Fond : pixels presque noirs reliés aux bords (seuil bas : le support JPC est noir lui aussi).
 BG_DARK = 20
+# Niveau du fond (par canal) : la somme RVB du fond va de 0 à 3.
+BG_LEVEL = 1
+# Fentes de dragonne (coins gauches de la coque, px de la photo) : trous fermés où l'on voit le fond.
+SLOT_ZONE = (200, 100, 300, 670)
 # Écran (px de la photo) : à droite de la Dynamic Island (x 302..357), dans le verre (x 283..1313, y 168..601) ;
 # x1 en deçà de l'encoche du bouton de la coque (x 1306). Coins droits arrondis comme la dalle.
 SCREEN = (372, 176, 1302, 594)
@@ -71,23 +75,82 @@ def components(mask):
     return roots[lab]
 
 
+def _shift(a, dy, dx):
+    """Tableau décalé de (dy, dx), bords complétés par des zéros."""
+    out = np.zeros_like(a)
+    h, w = a.shape[:2]
+    out[max(dy, 0):h + min(dy, 0), max(dx, 0):w + min(dx, 0)] = a[max(-dy, 0):h + min(-dy, 0), max(-dx, 0):w + min(-dx, 0)]
+    return out
+
+
+NEIGH = [(dy, dx) for dy in (-1, 0, 1) for dx in (-1, 0, 1) if dy or dx]
+
+
+def erode(mask, n):
+    for _ in range(n):
+        m = mask.copy()
+        for dy, dx in NEIGH:
+            m &= _shift(mask, dy, dx)
+        mask = m
+    return mask
+
+
+def spread(rgb, known, steps):
+    """Couleur de l'objet prolongée hors de la zone connue : moyenne des voisins connus, pas à pas."""
+    col = np.where(known[..., None], rgb, 0).astype(float)
+    known = known.copy()
+    for _ in range(steps):
+        acc = np.zeros_like(col)
+        cnt = np.zeros(known.shape)
+        for dy, dx in NEIGH:
+            k = _shift(known, dy, dx)
+            acc += _shift(col, dy, dx) * k[..., None]
+            cnt += k
+        new = ~known & (cnt > 0)
+        col[new] = acc[new] / cnt[new][:, None]
+        known |= new
+    return col
+
+
 def front():
-    a = np.array(photo).astype(int).sum(2)
-    lab = components(a < BG_DARK)
+    rgb = np.array(photo).astype(float)
+    lab = components(rgb.sum(2) < BG_DARK)
     edge = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
     bg = np.isin(lab, list(edge))
-    A = Image.fromarray(np.where(bg, 0, 255).astype("uint8"), "L")
-    # Bord adouci (anti-crénelage) sans grignoter l'objet.
-    A = A.filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.GaussianBlur(0.8))
-    A = np.where(bg, np.array(A), 255)
-    # Écran : rectangle net, coins droits arrondis ; le bord gauche (côté île) reste droit.
-    r = Image.new("L", (W, H), 0)
+    # Fentes de dragonne : trous fermés dans la coque, où l'on voit le fond noir ; transparentes comme lui.
+    sx0, sy0, sx1, sy1 = SLOT_ZONE
+    for i in set(np.unique(lab[sy0:sy1, sx0:sx1])) - {0} - edge:
+        ys, xs = np.nonzero(lab == i)
+        if len(xs) >= 500 and xs.min() >= sx0 and xs.max() < sx1 and ys.min() >= sy0 and ys.max() < sy1:
+            bg |= lab == i
+    obj = ~bg
+    # Bord anticrénelé (4.2.1) : sur fond noir, un pixel du bord vaut C = alpha x F (F : couleur de l'objet juste à
+    # l'intérieur). L'ancien seuil gardait ces pixels sombres opaques : liseré noir de 1 à 2 px autour de la coque.
+    # Ici alpha = C / F sur 2 px de part et d'autre du contour, et le bord prend la couleur F (plus de frange sombre).
+    # Objet sombre (support, câble : F presque noir), rapport non fiable : contour flouté.
+    inner = erode(obj, 2)
+    F = spread(rgb, inner, 5)
+    lum_c = np.clip(rgb.max(2) - BG_LEVEL, 0, None)
+    lum_f = F.max(2) - BG_LEVEL
+    est = np.clip(lum_c / np.maximum(lum_f, 1), 0, 1) * 255
+    geo = np.array(Image.fromarray(np.where(obj, 255, 0).astype("uint8"), "L").filter(ImageFilter.GaussianBlur(0.7))).astype(float)
+    band = ~inner & ~erode(bg, 2)
+    soft = np.where(lum_f >= 40, est, geo)
+    # Dans l'objet, jamais plus transparent que la moitié du contour flouté (une ombre du rebord n'ouvre pas de trou).
+    soft = np.where(obj, np.maximum(soft, geo * 0.5), soft)
+    A = np.where(band, soft, np.where(inner, 255, 0)).astype("uint8")
+    rgb = np.where((band & (A < 250))[..., None], F, rgb)
+    # Écran : rectangle net, coins droits arrondis ; le bord gauche (côté île) reste droit. Dessiné 4 fois plus grand
+    # puis réduit : coins anticrénelés (ils sont redessinés par-dessus l'écran en jeu, fn_screenSurface).
+    k = 4
+    r = Image.new("L", (W * k, H * k), 0)
     d = ImageDraw.Draw(r)
     x0, y0, x1, y1 = SCREEN
-    d.rounded_rectangle([x0, y0, x1, y1], radius=SCREEN_R, fill=255)
-    d.rectangle([x0, y0, x0 + SCREEN_R * 2, y1], fill=255)
-    A = np.where(np.array(r) == 255, 0, A).astype("uint8")
-    out = photo.convert("RGBA")
+    d.rounded_rectangle([x0 * k, y0 * k, (x1 + 1) * k - 1, (y1 + 1) * k - 1], radius=SCREEN_R * k, fill=255)
+    d.rectangle([x0 * k, y0 * k, (x0 + SCREEN_R * 2) * k, (y1 + 1) * k - 1], fill=255)
+    hole = np.array(r.resize((W, H), Image.BOX)).astype(float)
+    A = (A * (1 - hole / 255)).round().astype("uint8")
+    out = Image.fromarray(np.clip(rgb, 0, 255).round().astype("uint8"), "RGB").convert("RGBA")
     out.putalpha(Image.fromarray(A, "L"))
     return out
 

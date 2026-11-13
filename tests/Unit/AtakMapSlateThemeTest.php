@@ -38,19 +38,21 @@ final class AtakMapSlateThemeTest extends TestCase
 
     public function testBackgroundIsOfferedInBothMenus(): void
     {
-        self::assertStringContainsString('["ARDOISE", "SLATE"]', $this->read('functions/pages/fn_pageSettings.sqf'));
-        self::assertStringContainsString('["ARDOISE", "SLATE"]', $this->read('functions/pages/fn_pageMap.sqf'));
+        // Une seule liste des fonds (fn_mapStyle ["LIST"]), lue par la carte et les Réglages.
+        self::assertStringContainsString('["ARDOISE", "SLATE", "ARDOISE : ', $this->read('functions/map/fn_mapStyle.sqf'));
+        self::assertStringContainsString('["LIST"] call comspec_atak_native_fnc_mapStyle', $this->read('functions/pages/fn_pageSettings.sqf'));
+        self::assertStringContainsString('["LIST"] call comspec_atak_native_fnc_mapStyle', $this->read('functions/pages/fn_pageMap.sqf'));
     }
 
     public function testTacticalStyleIsOnByDefaultOnlyWithSlate(): void
     {
         $col = $this->read('functions/map/fn_mapColors.sqf');
-        self::assertStringContainsString('profileNamespace getVariable ["COMSPEC_ATAK_MapDrawStyle", "AUTO"]', $col);
+        self::assertStringContainsString('profileNamespace getVariable ["COMSPEC_ATAK_MapDrawStyle", "TACTICAL"]', $col);
         self::assertStringContainsString('_drawStyle isEqualTo "TACTICAL" || {_drawStyle isNotEqualTo "STANDARD" && {_bg isEqualTo "SLATE"}}', $col);
         // Le style fait partie de la signature : pas de lecture supplémentaire dans les fonctions de dessin.
         self::assertStringContainsString('_bgA, _drawStyle];', $col);
         $settings = $this->read('functions/pages/fn_pageSettings.sqf');
-        self::assertStringContainsString('["COMSPEC_ATAK_MapDrawStyle", "AUTO", "Marqueurs et traits", [["AUTO", "AUTO"], ["TACTIQUE", "TACTICAL"], ["STANDARD", "STANDARD"]]', $settings);
+        self::assertStringContainsString('["COMSPEC_ATAK_MapDrawStyle", "TACTICAL", "Marqueurs et traits", [["AUTO", "AUTO"], ["TACTIQUE", "TACTICAL"], ["CLASSIQUE", "STANDARD"]]', $settings);
         self::assertStringContainsString('"COMSPEC_ATAK_MapStyle", "COMSPEC_ATAK_MapDrawStyle", "COMSPEC_ATAK_LblEni"', $settings);
     }
 
@@ -59,7 +61,7 @@ final class AtakMapSlateThemeTest extends TestCase
         $markers = $this->read('functions/map/fn_mapGameMarkers.sqf');
         self::assertStringContainsString('private _clustOn = (ctrlMapScale _map) >= 0.12;', $markers);
         self::assertStringContainsString('_map drawRectangle [_pos, _w, _h, _dir, _c, _tacTex];', $markers);
-        self::assertStringContainsString('if (_tac && {!_clustOn} && {(count _keyC) > 0})', $markers);
+        self::assertStringContainsString('if (_tac && {!_clustOn} && {!_framed} && {(count _keyC) > 0})', $markers);
         self::assertStringContainsString('markerbrushes\\bdiagonal_ca.paa', $this->read('functions/map/fn_mapColors.sqf'));
         $draw = $this->read('functions/map/fn_mapOnDraw.sqf');
         self::assertStringContainsString('_map drawIcon [_tacTick, [1, 1, 1, _pa], _pos, _ps * 1.5, _ps * 1.5, _entity get "heading", "", 0];', $draw);

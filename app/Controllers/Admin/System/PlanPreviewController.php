@@ -13,6 +13,9 @@ use App\Repositories\SubscriptionPlanRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Platform\EffectivePlan;
+use App\Services\Platform\EffectiveTenantType;
+use App\Services\Community\TenantTypeConfig;
+use App\Repositories\TenantRepository;
 
 /**
  * POST /admin/apercu-formule et /admin/apercu-formule/quitter : « Aperçu de la formule » (administrateur de la plateforme).
@@ -20,7 +23,7 @@ use App\Services\Platform\EffectivePlan;
  */
 final class PlanPreviewController
 {
-    public function __construct(private ?SubscriptionPlanRepository $plans = null)
+    public function __construct(private ?SubscriptionPlanRepository $plans = null, private ?TenantRepository $tenants = null)
     {
         $this->plans ??= Container::get(SubscriptionPlanRepository::class);
     }
@@ -51,12 +54,62 @@ final class PlanPreviewController
         return $this->back($request);
     }
 
+    /** POST /admin/apercu-formule/vue : « Aperçu de la vue » (Complet, Bureau des effectifs, Carte ATAK). Ne fait que restreindre. */
+    public function startView(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée, réessayez.');
+
+            return $this->back($request);
+        }
+        $tenantId = (int) Session::get('tenant_id', 0);
+        $type = strtolower(trim((string) $request->input('view_type', '')));
+        $current = EffectiveTenantType::current();
+        if ($type === '') {
+            return $this->stopView($current);
+        }
+        $tenant = $tenantId > 0 && TenantTypeConfig::isValidType($type) ? ($this->tenants ??= Container::get(TenantRepository::class))->findById($tenantId) : null;
+        $real = $tenant !== null ? TenantTypeConfig::normalizeType((string) ($tenant['tenant_type'] ?? 'full')) : null;
+        if ($real === null || !in_array($type, EffectiveTenantType::previewable($real), true)) {
+            Session::flash('error', 'Vue indisponible pour cette communauté : aperçu non activé.');
+
+            return $this->back($request);
+        }
+        if ($type === $real) {
+            return $this->stopView($current);
+        }
+        EffectiveTenantType::start($type, $tenantId);
+        $label = TenantTypeConfig::label($type);
+        AuditService::logPlatformAction(AuditAction::PLATFORM_VIEW_PREVIEW_STARTED, ['vue' => $type, 'nom' => $label, 'type_reel' => $real], $tenantId);
+        Session::flash('success', 'Aperçu de la vue ' . $label . ' : lecture seule, rien n’est modifié.');
+
+        return $this->back($request);
+    }
+
+    /** @param array{type: string, label: string, tenant_id: int}|null $current */
+    private function stopView(?array $current): Response
+    {
+        EffectiveTenantType::stop();
+        if ($current !== null) {
+            AuditService::logPlatformAction(AuditAction::PLATFORM_VIEW_PREVIEW_STOPPED, ['vue' => $current['type']], $current['tenant_id']);
+            Session::flash('success', 'Aperçu terminé : vue réelle de la communauté.');
+        }
+
+        return Response::redirect(url('back-office'));
+    }
+
     public function stop(Request $request, array $params = []): Response
     {
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée, réessayez.');
 
             return $this->back($request);
+        }
+        $view = EffectiveTenantType::current();
+        EffectiveTenantType::stop();
+        if ($view !== null) {
+            AuditService::logPlatformAction(AuditAction::PLATFORM_VIEW_PREVIEW_STOPPED, ['vue' => $view['type']], $view['tenant_id']);
+            Session::flash('success', 'Aperçu terminé : vue réelle de la communauté.');
         }
         $current = EffectivePlan::current();
         EffectivePlan::stop();

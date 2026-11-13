@@ -250,6 +250,7 @@ return [
         ['path' => 'back-office/atak/briefing-slides', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · TACTIQUE', 'title' => 'Diapositives de briefing', 'subtitle' => 'Images du briefing, ordre de passage et visibilité en jeu pour Arma et les téléphones ATAK.', 'quick' => [
             ['label' => 'Configuration ATAK', 'href' => 'back-office/ressources/atak-config'],
         ]],
+        ['path' => 'back-office/renseignement/fichiers', 'group' => 'Renseignement', 'title' => 'Fichiers SSE', 'subtitle' => 'Fiches, doublons et fusion, extractions de téléphones, journal des consultations, réglages.', 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/remontees', 'group' => 'Renseignement', 'kicker' => 'RENSEIGNEMENT · SUIVI', 'title' => 'Remontées', 'subtitle' => 'Comptes rendus et fiches de renseignement : fil de suivi, attribution, exploitation, caviardage.', 'css' => ['back-office-intel-intake.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/atak/escouades', 'group' => 'ATAK', 'kicker' => 'ATAK · EN JEU', 'title' => 'Escouades en jeu', 'subtitle' => 'Escouades et équipes de feu envoyées par les téléphones : couleurs, icônes, descriptions et rôles.', 'css' => ['back-office-atak-squads.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/partage', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · DOCUMENTS', 'title' => 'Fichiers partagés', 'subtitle' => 'Dossiers et fichiers de la communauté, privés par défaut et ouverts seulement sur partage.', 'flags' => ['boSkipPageHead' => true]],
@@ -294,6 +295,7 @@ return [
         // Messagerie interne (/messages) : le contrôleur charge aussi cette feuille, la page restant dans la coque portail.
         ['path' => 'messages', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGERIE', 'title' => 'Messagerie interne', 'subtitle' => 'Vos échanges avec l’encadrement de la communauté.', 'css' => ['back-office-messages.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/signalements', 'group' => 'Système', 'kicker' => 'SYSTÈME · SIGNALEMENTS', 'title' => 'Signalements membres', 'subtitle' => 'Les fiches, photos et contenus signalés par les membres, à instruire puis clore.'],
+        ['path' => 'back-office/messages-plateforme', 'group' => 'Système', 'kicker' => 'SYSTÈME', 'title' => 'Messages de la plateforme', 'subtitle' => 'Ce que l’équipe de la plateforme vous a écrit : annonces, invitations, consignes.', 'css' => ['platform-messages.css']],
         ['path' => 'back-office/courrier/traceabilite', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Traçabilité du courrier', 'subtitle' => 'Qui a reçu et lu chaque message officiel.'],
         ['path' => 'back-office/doctrine/referentiel', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · DOCTRINE', 'title' => 'Référentiel doctrinal', 'subtitle' => 'Les textes de référence sur lesquels s’appuient vos procédures.', 'quick' => [
             ['label' => 'Doctrine et SOP', 'href' => 'back-office/doctrine'],

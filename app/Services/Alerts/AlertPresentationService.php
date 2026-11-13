@@ -231,6 +231,17 @@ final class AlertPresentationService
             ? \App\Support\TenantAlertFeatures::decodeJson($row['features_json'] ?? null)
             : ['dismissible' => !isset($row['dismissible']) || (int) $row['dismissible'] === 1];
 
+        // Annonces de la plateforme : écrites en français, traduites à l'affichage quand le texte est connu du
+        // dictionnaire du site (lang/en/site_auto.php) ; un texte inconnu reste tel quel. Les bandeaux sont posés par
+        // du JavaScript, hors de portée du traducteur de pages.
+        if ($scope === 'platform' && function_exists('locale') && locale() !== 'fr') {
+            foreach (['title', 'body', 'cta_label'] as $textKey) {
+                if (isset($row[$textKey]) && is_string($row[$textKey]) && $row[$textKey] !== '') {
+                    $row[$textKey] = \App\Support\HtmlTranslator::translateText($row[$textKey]);
+                }
+            }
+        }
+
         return [
             'scope' => $scope,
             'id' => (int) $row['id'],

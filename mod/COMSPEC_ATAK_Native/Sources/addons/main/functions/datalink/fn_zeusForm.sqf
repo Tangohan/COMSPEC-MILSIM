@@ -1,7 +1,7 @@
 /*
     Formulaire vanilla ouvert par-dessus l'interface Zeus (sans ZEN), pour les modules COMSPEC ATAK.
     Params : [titre, champs, code, arguments, aide]
-      Champs : ["EDIT", libellé, valeur]  ["MEMO", libellé, valeur, lignes]  ["COMBO", libellé, [[texte, donnée]...], donnée]
+      Champs : ["EDIT", libellé, valeur]  ["MEMO", libellé, valeur, lignes]  ["COMBO", libellé, [[texte, donnée, image facultative]...], donnée]
                ["CHECK", libellé, valeur]  ["SLIDER", libellé, [min, max, valeur]]
       Code : appelé avec [[valeurs dans l'ordre des champs], arguments] à la validation.
 */
@@ -61,7 +61,8 @@ private _ctrls = [];
         case "COMBO": {
             _c = ["COMSPEC_RscCombo", [_ix, _gy, _iw, _rowH], _grp] call _mk;
             private _sel = 0;
-            { _x params ["_t", "_v"]; private _i = _c lbAdd ((_t) call comspec_atak_native_fnc_tr); _c lbSetData [_i, str _v]; if (_v isEqualTo _extra) then { _sel = _i; }; } forEach _val;
+            // Élément [texte, donnée, image] : image facultative (aperçu Eden d'un écran à poser).
+            { _x params ["_t", "_v", ["_pic", ""]]; private _i = _c lbAdd ((_t) call comspec_atak_native_fnc_tr); _c lbSetData [_i, str _v]; if (_pic isNotEqualTo "") then { _c lbSetPicture [_i, _pic]; }; if (_v isEqualTo _extra) then { _sel = _i; }; } forEach _val;
             _c lbSetCurSel _sel;
             _c setVariable ["values", _val apply { _x select 1 }];
         };

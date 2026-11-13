@@ -112,6 +112,36 @@ class MapShapeRepository
         return $stmt->rowCount() > 0;
     }
 
+    /**
+     * Remet un tracé effacé en masse (annulation) sous son numéro, dans sa communauté et sa carte d'origine.
+     *
+     * @param array<string, mixed> $row ligne telle que renvoyée par list()
+     */
+    public function restoreRow(int $tenantId, int $mapId, array $row): bool
+    {
+        $id = (int) ($row['id'] ?? 0);
+        $uid = substr(trim((string) ($row['shape_uid'] ?? '')), 0, 64);
+        if ($id < 1 || $uid === '') {
+            return false;
+        }
+        $check = $this->pdo()->prepare('SELECT tenant_id, map_id FROM atak_map_shapes WHERE id = ? OR (tenant_id = ? AND map_id = ? AND shape_uid = ?)');
+        $check->execute([$id, $tenantId, $mapId, $uid]);
+        $found = $check->fetch(PDO::FETCH_ASSOC);
+        if ($found) {
+            return (int) $found['tenant_id'] === $tenantId && (int) $found['map_id'] === $mapId;
+        }
+        $enc = static fn ($v): ?string => $v === null ? null : (is_string($v) ? $v : json_encode($v, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        $this->pdo()->prepare(
+            'INSERT INTO atak_map_shapes (id, tenant_id, map_id, mission_id, shape_uid, type, label, color, stroke, fill_opacity, created_by, visible_to, geometry, meta) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        )->execute([
+            $id, $tenantId, $mapId, $row['mission_id'] ?? null, $uid, (string) ($row['type'] ?? 'POINT'), $row['label'] ?? null,
+            (string) ($row['color'] ?? '#3388ff'), (int) ($row['stroke'] ?? 2), (float) ($row['fill_opacity'] ?? 0.15),
+            $row['created_by'] ?? null, $enc($row['visible_to'] ?? null), $enc($row['geometry'] ?? '{}') ?? '{}', $enc($row['meta'] ?? null),
+        ]);
+
+        return true;
+    }
+
     public function deleteByUid(int $tenantId, int $mapId, string $shapeUid): bool
     {
         $shapeUid = trim($shapeUid);

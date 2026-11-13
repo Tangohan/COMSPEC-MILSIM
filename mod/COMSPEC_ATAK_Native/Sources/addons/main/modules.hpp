@@ -722,6 +722,68 @@ class COMSPEC_ATAK_Module_TocScreen: COMSPEC_ATAK_Module_DataBase {
     portrait = "\z\comspec_atak_native\addons\main\data\mod_screen.paa";
     function = "comspec_atak_native_fnc_moduleTocScreen";
     class Attributes {
+        class Class {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_Class";
+            control = "Combo";
+            expression = "_this setVariable ['Class',_value,true];";
+            defaultValue = "'COMSPEC_ATAK_Screen_Tripod'";
+            typeName = "STRING";
+            class values {
+                class C0 { name = "$STR_COMSPEC_ATAK_CFG_D875FDECAE"; value = "COMSPEC_ATAK_Screen_Desk"; };
+                class C1 { name = "$STR_COMSPEC_ATAK_CFG_TOCOLD_DESK2"; value = "COMSPEC_ATAK_Screen_Desk2"; };
+                class C2 { name = "$STR_COMSPEC_ATAK_CFG_TOCOLD_DESK3"; value = "COMSPEC_ATAK_Screen_Desk3"; };
+                class C3 { name = "$STR_COMSPEC_ATAK_CFG_TOCPC_1"; value = "COMSPEC_ATAK_TocPC_1"; };
+                class C4 { name = "$STR_COMSPEC_ATAK_CFG_TOCPC_2"; value = "COMSPEC_ATAK_TocPC_2"; };
+                class C5 { name = "$STR_COMSPEC_ATAK_CFG_TOCPC_3"; value = "COMSPEC_ATAK_TocPC_3"; };
+                class C6 { name = "$STR_COMSPEC_ATAK_CFG_TOCPC_C"; value = "COMSPEC_ATAK_TocPC_Curved"; };
+                class C7 { name = "$STR_COMSPEC_ATAK_CFG_8C3886D686"; value = "COMSPEC_ATAK_Screen_Tripod"; default = 1; };
+                class C8 { name = "$STR_COMSPEC_ATAK_CFG_477D05DF6A"; value = "COMSPEC_ATAK_Screen_Dual"; };
+                class C9 { name = "$STR_COMSPEC_ATAK_CFG_BFF6157B7C"; value = "COMSPEC_ATAK_Screen_Wall"; };
+                class C10 { name = "$STR_COMSPEC_ATAK_CFG_TOCOLD_TV75"; value = "COMSPEC_ATAK_Screen_Wall75"; };
+                class C11 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_98"; value = "COMSPEC_ATAK_Screen_98"; };
+                class C12 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_98S"; value = "COMSPEC_ATAK_Screen_98_Stand"; };
+                class C13 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_65C"; value = "COMSPEC_ATAK_Screen_65_Ceiling"; };
+                class C14 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_65C2"; value = "COMSPEC_ATAK_Screen_65_Ceiling2"; };
+                class C15 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_65C3"; value = "COMSPEC_ATAK_Screen_65_Ceiling3"; };
+                class C16 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_65C3A"; value = "COMSPEC_ATAK_Screen_65_Ceiling3_Arc"; };
+                class C17 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_98C"; value = "COMSPEC_ATAK_Screen_98_Ceiling"; };
+                class C18 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_W22"; value = "COMSPEC_ATAK_Screen_Wall2x2"; };
+                class C19 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_W22Q"; value = "COMSPEC_ATAK_Screen_Wall2x2_Quad"; };
+                class C20 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_W32"; value = "COMSPEC_ATAK_Screen_Wall3x2"; };
+                class C21 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_W32M"; value = "COMSPEC_ATAK_Screen_Wall3x2_Mixed"; };
+                class C22 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_W43"; value = "COMSPEC_ATAK_Screen_Wall4x3"; };
+                class C23 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_W43P"; value = "COMSPEC_ATAK_Screen_Wall4x3_Panels"; };
+                class C24 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_W53"; value = "COMSPEC_ATAK_Screen_Wall5x3"; };
+                class C25 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_W53P"; value = "COMSPEC_ATAK_Screen_Wall5x3_Panels"; };
+                class C26 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_W64"; value = "COMSPEC_ATAK_Screen_Wall6x4"; };
+                class C27 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_W64Z"; value = "COMSPEC_ATAK_Screen_Wall6x4_Zones"; };
+                class C28 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_136"; value = "COMSPEC_ATAK_Screen_136"; };
+                class C29 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_136S"; value = "COMSPEC_ATAK_Screen_136_Stand"; };
+                class C30 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_L220"; value = "COMSPEC_ATAK_Screen_Led220"; };
+                class C31 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_L220T"; value = "COMSPEC_ATAK_Screen_Led220_Truss"; };
+                class C32 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_CRV"; value = "COMSPEC_ATAK_Screen_Curved"; };
+                class C33 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_CRVD"; value = "COMSPEC_ATAK_Screen_Curved_Duo"; };
+                class C34 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_CRVW"; value = "COMSPEC_ATAK_Screen_Curved_Wall"; };
+                class C35 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_CRVWD"; value = "COMSPEC_ATAK_Screen_Curved_Wall_Duo"; };
+                class C36 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_CLK"; value = "COMSPEC_ATAK_Screen_ClockStrip"; };
+                class C37 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_LT8"; value = "COMSPEC_ATAK_Screen_LedText8"; };
+                class C38 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_LT16"; value = "COMSPEC_ATAK_Screen_LedText16"; };
+                class C39 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_LT8C"; value = "COMSPEC_ATAK_Screen_LedText8_Ceiling"; };
+                class C40 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_LT16C"; value = "COMSPEC_ATAK_Screen_LedText16_Ceiling"; };
+                class C41 { name = "$STR_COMSPEC_ATAK_CFG_TOC3D_PLT"; value = "COMSPEC_ATAK_Screen_NamePlate"; };
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_LARGE"; value = "Land_TripodScreen_01_large_F"; };
+                class V1 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_LARGEB"; value = "Land_TripodScreen_01_large_black_F"; };
+                class V2 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_DUAL"; value = "Land_TripodScreen_01_dual_v1_F"; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_TV"; value = "Land_FlatTV_01_F"; };
+                // Ancien V4 : « Land_ProjectorScreen_01_F », classe absente du jeu (toujours remplacée à la pose).
+                // Écran de salle de briefing (blanc « OPSIS », DLC Jets) et ordinateur multi-écran renforcé (Contact).
+                class V4 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_BRIEF"; value = "Land_BriefingRoomScreen_01_F"; };
+                class V5 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_PC"; value = "Land_PCSet_01_screen_F"; };
+                class V6 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_MULTI"; value = "Land_MultiScreenComputer_01_black_F"; };
+            };
+        };
         class Name {
             displayName = "$STR_COMSPEC_ATAK_CFG_SCREEN_N_NAME";
             tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_N_TIP";
@@ -760,6 +822,19 @@ class COMSPEC_ATAK_Module_TocScreen: COMSPEC_ATAK_Module_DataBase {
                 class V1 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_MAP"; value = "MAP"; };
                 class V2 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_FEED"; value = "FEED"; };
                 class V3 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_PIP"; value = "TOC"; };
+                class V4 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_SAT"; value = "SAT"; };
+                class V5 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_CLOCK"; value = "CLOCK"; };
+                class V6 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_SQUAD"; value = "SQUAD"; };
+                class V7 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_LOG"; value = "LOG"; };
+                class V8 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_EXCHECK"; value = "EXCHECK"; };
+                class V9 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_KILLS"; value = "KILLS"; };
+                class V10 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_REQ"; value = "REQ"; };
+                class V11 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_STRIP"; value = "STRIP"; };
+                class V12 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_PLATE"; value = "PLATE"; };
+                class V13 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_MOSAIC"; value = "MOSAIC"; };
+                class V14 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_TEXT"; value = "TEXT"; };
+                class V15 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_BROADCAST"; value = "BROADCAST"; };
+                class V16 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_V_RADIO"; value = "RADIO"; };
             };
         };
         class Toc {
@@ -771,25 +846,98 @@ class COMSPEC_ATAK_Module_TocScreen: COMSPEC_ATAK_Module_DataBase {
             defaultValue = "true";
             typeName = "BOOL";
         };
-        class Class {
-            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_NAME";
-            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_TIP";
-            property = "COMSPEC_ATAK_Module_TocScreen_Class";
+        // Salle TOC : satellite et escouade montrés, liste d'exécution préparée.
+        class Sat {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_SAT_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_SAT_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_Sat";
             control = "Combo";
-            expression = "_this setVariable ['Class',_value,true];";
-            defaultValue = "'COMSPEC_ATAK_Screen_Tripod'";
+            expression = "_this setVariable ['Sat',_value,true];";
+            defaultValue = "0";
+            typeName = "NUMBER";
+            class values {
+                class S0 { name = "SAT 1"; value = 0; default = 1; };
+                class S1 { name = "SAT 2"; value = 1; };
+            };
+        };
+        class Squad {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_SQ_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_SQ_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_Squad";
+            control = "Edit";
+            expression = "_this setVariable ['Squad',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
+        class Panels {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_PN_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_PN_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_Panels";
+            control = "Edit";
+            expression = "_this setVariable ['Panels',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
+        // Affichage « Texte à LED » (fn_tocText) : messages, couleur, vitesse et défilement.
+        class Text {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TX_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TX_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_Text";
+            control = "Edit";
+            expression = "_this setVariable ['Text',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
+        class TextColor {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_TextColor";
+            control = "Combo";
+            expression = "_this setVariable ['TextColor',_value,true];";
+            defaultValue = "'G'";
             typeName = "STRING";
             class values {
-                class C0 { name = "$STR_COMSPEC_ATAK_CFG_8C3886D686"; value = "COMSPEC_ATAK_Screen_Tripod"; default = 1; };
-                class C1 { name = "$STR_COMSPEC_ATAK_CFG_477D05DF6A"; value = "COMSPEC_ATAK_Screen_Dual"; };
-                class C2 { name = "$STR_COMSPEC_ATAK_CFG_BFF6157B7C"; value = "COMSPEC_ATAK_Screen_Wall"; };
-                class V0 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_LARGE"; value = "Land_TripodScreen_01_large_F"; };
-                class V1 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_LARGEB"; value = "Land_TripodScreen_01_large_black_F"; };
-                class V2 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_DUAL"; value = "Land_TripodScreen_01_dual_v1_F"; };
-                class V3 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_TV"; value = "Land_FlatTV_01_F"; };
-                class V4 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_PROJ"; value = "Land_ProjectorScreen_01_F"; };
-                class V5 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_C_PC"; value = "Land_PCSet_01_screen_F"; };
+                class G { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_G"; value = "G"; default = 1; };
+                class A { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_A"; value = "A"; };
+                class R { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_R"; value = "R"; };
+                class W { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_W"; value = "W"; };
             };
+        };
+        class TextSpeed {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXS_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXS_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_TextSpeed";
+            control = "Combo";
+            expression = "_this setVariable ['TextSpeed',_value,true];";
+            defaultValue = "1";
+            typeName = "NUMBER";
+            class values {
+                class S0 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXS_0"; value = 0; };
+                class S1 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXS_1"; value = 1; default = 1; };
+                class S2 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXS_2"; value = 2; };
+            };
+        };
+        class TextScroll {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXM_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXM_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_TextScroll";
+            control = "Combo";
+            expression = "_this setVariable ['TextScroll',_value,true];";
+            defaultValue = "0";
+            typeName = "NUMBER";
+            class values {
+                class M0 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXM_0"; value = 0; default = 1; };
+                class M1 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXM_1"; value = 1; };
+            };
+        };
+        class Excheck {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_EX_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_EX_TIP";
+            property = "COMSPEC_ATAK_Module_TocScreen_Excheck";
+            control = "Edit";
+            expression = "_this setVariable ['Excheck',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
         };
         class Index {
             displayName = "$STR_COMSPEC_ATAK_CFG_SCREEN_I_NAME";
@@ -803,6 +951,283 @@ class COMSPEC_ATAK_Module_TocScreen: COMSPEC_ATAK_Module_DataBase {
     };
     class ModuleDescription {
         description = "$STR_COMSPEC_ATAK_CFG_TOCSCR_DESC";
+    };
+};
+// Salle TOC complète (fn_moduleTocHall, fn_tocHall) : salle d'opérations posée d'un coup, déjà liée à ses PC.
+class COMSPEC_ATAK_Module_TocHall: COMSPEC_ATAK_Module_DataBase {
+    scope = 2;
+    scopeCurator = 2;
+    category = "COMSPEC_Cat_Atak";
+    displayName = "$STR_COMSPEC_ATAK_CFG_TOCHALL_NAME";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_screen.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_screen.paa";
+    function = "comspec_atak_native_fnc_moduleTocHall";
+    class Attributes {
+        class Name {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCHALL_N_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCHALL_N_TIP";
+            property = "COMSPEC_ATAK_Module_TocHall_Name";
+            control = "Edit";
+            expression = "_this setVariable ['Name',_value,true];";
+            defaultValue = "'SALLE TOC'";
+            typeName = "STRING";
+        };
+        class Side {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCHALL_S_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCHALL_S_TIP";
+            property = "COMSPEC_ATAK_Module_TocHall_Side";
+            control = "Combo";
+            expression = "_this setVariable ['Side',_value,true];";
+            defaultValue = "'WEST'";
+            typeName = "STRING";
+            class values {
+                class V1 { name = "BLUFOR"; value = "WEST"; default = 1; };
+                class V2 { name = "OPFOR"; value = "EAST"; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_SCREEN_S_GUER"; value = "GUER"; };
+            };
+        };
+        class Size {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCHALL_Z_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCHALL_Z_TIP";
+            property = "COMSPEC_ATAK_Module_TocHall_Size";
+            control = "Combo";
+            expression = "_this setVariable ['Size',_value,true];";
+            defaultValue = "'M'";
+            typeName = "STRING";
+            class values {
+                class S { name = "$STR_COMSPEC_ATAK_CFG_TOCHALL_Z_S"; value = "S"; };
+                class M { name = "$STR_COMSPEC_ATAK_CFG_TOCHALL_Z_M"; value = "M"; default = 1; };
+                class L { name = "$STR_COMSPEC_ATAK_CFG_TOCHALL_Z_L"; value = "L"; };
+            };
+        };
+        // Postes des opérateurs : PC portable de TOC ou poste PC fixe (toc_pc.hpp, fn_tocPc).
+        class Post {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCHALL_P_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCHALL_P_TIP";
+            property = "COMSPEC_ATAK_Module_TocHall_Post";
+            control = "Combo";
+            expression = "_this setVariable ['Post',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+            class values {
+                class P0 { name = "$STR_COMSPEC_ATAK_CFG_TOCLAPTOP"; value = ""; default = 1; };
+                class P1 { name = "$STR_COMSPEC_ATAK_CFG_TOCPC_1"; value = "COMSPEC_ATAK_TocPC_1"; };
+                class P2 { name = "$STR_COMSPEC_ATAK_CFG_TOCPC_2"; value = "COMSPEC_ATAK_TocPC_2"; };
+                class P3 { name = "$STR_COMSPEC_ATAK_CFG_TOCPC_3"; value = "COMSPEC_ATAK_TocPC_3"; };
+                class P4 { name = "$STR_COMSPEC_ATAK_CFG_TOCPC_C"; value = "COMSPEC_ATAK_TocPC_Curved"; };
+            };
+        };
+        // Module supprimé en cours de partie (Zeus, script) : sa salle part avec lui (fn_tocHallBuild « remove »).
+        class Bind {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCHALL_B_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCHALL_B_TIP";
+            property = "COMSPEC_ATAK_Module_TocHall_Bind";
+            control = "Checkbox";
+            expression = "_this setVariable ['Bind',_value,true];";
+            defaultValue = "true";
+            typeName = "BOOL";
+        };
+    };
+    class ModuleDescription {
+        description = "$STR_COMSPEC_ATAK_CFG_TOCHALL_DESC";
+    };
+};
+// Tableau des écrans TOC (fn_moduleTocManager, fn_tocManager) : au Zeus, ouvre le tableau ; ne pose rien, sans attribut.
+class COMSPEC_ATAK_Module_TocManager: COMSPEC_ATAK_Module_DataBase {
+    scope = 2;
+    scopeCurator = 2;
+    category = "COMSPEC_Cat_Atak";
+    displayName = "$STR_COMSPEC_ATAK_CFG_TOCMGR_NAME";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_screen.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_screen.paa";
+    function = "comspec_atak_native_fnc_moduleTocManager";
+    class ModuleDescription {
+        description = "$STR_COMSPEC_ATAK_CFG_TOCMGR_DESC";
+    };
+};
+// Activité radio (fn_moduleTocRadio, fn_tocRadio, fn_tocRadioUi) : au Zeus, ouvre le tableau « qui parle, sur quelle
+// fréquence » ; dans Eden, pose la liste de veille d'un camp au lancement de la mission.
+class COMSPEC_ATAK_Module_TocRadio: COMSPEC_ATAK_Module_DataBase {
+    scope = 2;
+    scopeCurator = 2;
+    category = "COMSPEC_Cat_Atak";
+    displayName = "$STR_COMSPEC_ATAK_CFG_TOCRADIO_NAME";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_net.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_net.paa";
+    function = "comspec_atak_native_fnc_moduleTocRadio";
+    class Attributes {
+        class RadioSide {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCRADIO_S_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCRADIO_S_TIP";
+            property = "COMSPEC_ATAK_Module_TocRadio_Side";
+            control = "Combo";
+            expression = "_this setVariable ['RadioSide',_value,true];";
+            defaultValue = "'WEST'";
+            typeName = "STRING";
+            class values {
+                class W { name = "BLUFOR"; value = "WEST"; default = 1; };
+                class E { name = "OPFOR"; value = "EAST"; };
+                class G { name = "$STR_COMSPEC_ATAK_CFG_TOCRADIO_S_GUER"; value = "GUER"; };
+                class C { name = "$STR_COMSPEC_ATAK_CFG_TOCRADIO_S_CIV"; value = "CIV"; };
+            };
+        };
+        class RadioNets {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCRADIO_N_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCRADIO_N_TIP";
+            property = "COMSPEC_ATAK_Module_TocRadio_Nets";
+            control = "Edit";
+            expression = "_this setVariable ['RadioNets',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
+    };
+    class ModuleDescription {
+        description = "$STR_COMSPEC_ATAK_CFG_TOCRADIO_DESC";
+    };
+};
+// Poste opérateur (fn_moduleTocPc, fn_tocPc) : bureau, chaise, téléphone de table et poste PC fixe, prêt à servir.
+class COMSPEC_ATAK_Module_TocPc: COMSPEC_ATAK_Module_DataBase {
+    scope = 2;
+    scopeCurator = 2;
+    category = "COMSPEC_Cat_Atak";
+    displayName = "$STR_COMSPEC_ATAK_CFG_TOCPCMOD_NAME";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_screen.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_screen.paa";
+    function = "comspec_atak_native_fnc_moduleTocPc";
+    class Attributes {
+        class Class {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCPCMOD_C_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCPCMOD_C_TIP";
+            property = "COMSPEC_ATAK_Module_TocPc_Class";
+            control = "Combo";
+            expression = "_this setVariable ['Class',_value,true];";
+            defaultValue = "'COMSPEC_ATAK_TocPC_1'";
+            typeName = "STRING";
+            class values {
+                class P1 { name = "$STR_COMSPEC_ATAK_CFG_TOCPC_1"; value = "COMSPEC_ATAK_TocPC_1"; default = 1; };
+                class P2 { name = "$STR_COMSPEC_ATAK_CFG_TOCPC_2"; value = "COMSPEC_ATAK_TocPC_2"; };
+                class P3 { name = "$STR_COMSPEC_ATAK_CFG_TOCPC_3"; value = "COMSPEC_ATAK_TocPC_3"; };
+                class P4 { name = "$STR_COMSPEC_ATAK_CFG_TOCPC_C"; value = "COMSPEC_ATAK_TocPC_Curved"; };
+            };
+        };
+        class Name {
+            displayName = "$STR_COMSPEC_ATAK_CFG_SCREEN_N_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCPCMOD_N_TIP";
+            property = "COMSPEC_ATAK_Module_TocPc_Name";
+            control = "Edit";
+            expression = "_this setVariable ['Name',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
+        class Side {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSIDE";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSIDE_TIP";
+            property = "COMSPEC_ATAK_Module_TocPc_Side";
+            control = "Combo";
+            expression = "_this setVariable ['Side',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+            class values {
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_S_ALL"; value = ""; default = 1; };
+                class V1 { name = "BLUFOR"; value = "WEST"; };
+                class V2 { name = "OPFOR"; value = "EAST"; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_SCREEN_S_GUER"; value = "GUER"; };
+                class V4 { name = "$STR_COMSPEC_ATAK_CFG_SCREEN_S_CIV"; value = "CIV"; };
+            };
+        };
+    };
+    class ModuleDescription {
+        description = "$STR_COMSPEC_ATAK_CFG_TOCPCMOD_DESC";
+    };
+};
+// Afficher un texte (fn_moduleTocText, fn_tocTextTool) : message des écrans en affichage TEXTE, pour un écran ou une salle.
+class COMSPEC_ATAK_Module_TocText: COMSPEC_ATAK_Module_DataBase {
+    scope = 2;
+    scopeCurator = 2;
+    category = "COMSPEC_Cat_Atak";
+    displayName = "$STR_COMSPEC_ATAK_CFG_TOCTXT_NAME";
+    icon = "\z\comspec_atak_native\addons\main\data\mod_screen.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\mod_screen.paa";
+    function = "comspec_atak_native_fnc_moduleTocText";
+    class Attributes {
+        class Text {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCTXT_T_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCTXT_T_TIP";
+            property = "COMSPEC_ATAK_Module_TocText_Text";
+            control = "Edit";
+            expression = "_this setVariable ['Text',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
+        class Color {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_TIP";
+            property = "COMSPEC_ATAK_Module_TocText_Color";
+            control = "Combo";
+            expression = "_this setVariable ['Color',_value,true];";
+            defaultValue = "'G'";
+            typeName = "STRING";
+            class values {
+                class G { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_G"; value = "G"; default = 1; };
+                class A { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_A"; value = "A"; };
+                class R { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_R"; value = "R"; };
+                class W { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXC_W"; value = "W"; };
+            };
+        };
+        class Speed {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXS_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXS_TIP";
+            property = "COMSPEC_ATAK_Module_TocText_Speed";
+            control = "Combo";
+            expression = "_this setVariable ['Speed',_value,true];";
+            defaultValue = "1";
+            typeName = "NUMBER";
+            class values {
+                class S0 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXS_0"; value = 0; };
+                class S1 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXS_1"; value = 1; default = 1; };
+                class S2 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXS_2"; value = 2; };
+            };
+        };
+        class Scroll {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXM_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXM_TIP";
+            property = "COMSPEC_ATAK_Module_TocText_Scroll";
+            control = "Combo";
+            expression = "_this setVariable ['Scroll',_value,true];";
+            defaultValue = "0";
+            typeName = "NUMBER";
+            class values {
+                class M0 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXM_0"; value = 0; default = 1; };
+                class M1 { name = "$STR_COMSPEC_ATAK_CFG_TOCSCR_TXM_1"; value = 1; };
+            };
+        };
+        class TxtScope {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCTXT_S_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCTXT_S_TIP";
+            property = "COMSPEC_ATAK_Module_TocText_Scope";
+            control = "Combo";
+            expression = "_this setVariable ['TxtScope',_value,true];";
+            defaultValue = "'sync'";
+            typeName = "STRING";
+            class values {
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_TOCTXT_S_SYNC"; value = "sync"; default = 1; };
+                class V1 { name = "$STR_COMSPEC_ATAK_CFG_TOCTXT_S_NEAREST"; value = "nearest"; };
+                class V2 { name = "$STR_COMSPEC_ATAK_CFG_TOCTXT_S_HALL"; value = "hall"; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_TOCTXT_S_NEAR"; value = "near"; };
+            };
+        };
+        class Radius {
+            displayName = "$STR_COMSPEC_ATAK_CFG_TOCTXT_R_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_TOCTXT_R_TIP";
+            property = "COMSPEC_ATAK_Module_TocText_Radius";
+            control = "Edit";
+            expression = "_this setVariable ['Radius',_value,true];";
+            defaultValue = "50";
+            typeName = "NUMBER";
+        };
+    };
+    class ModuleDescription {
+        description = "$STR_COMSPEC_ATAK_CFG_TOCTXT_DESC";
     };
 };
 // IA équipées d'un ATAK (fn_moduleAiAtak, fn_aiAtak).

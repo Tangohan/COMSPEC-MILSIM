@@ -13,7 +13,6 @@ $typeTone = static fn (string $t): string => match ($t) { 'temporaire' => 'badge
 <link rel="stylesheet" href="<?= $h(asset_url('assets/css/sse_campaigns.css')) ?>">
 <div class="page-heading">
     <div>
-        <div class="page-heading-overline">Pilotage // Campagnes</div>
         <h1>Campagnes SSE</h1>
         <p>
             Les campagnes du mod COMSPEC SSE : personnages récurrents, organisations, ce que les joueurs

@@ -57,7 +57,7 @@ switch (_mode) do {
         if !(_raw isEqualType "") then { _raw = ""; };
         if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith {
             uiNamespace setVariable ["COMSPEC_ATAK_ShotDirInfo", []];
-            if (_show) then { hint (("Vérification du dossier des captures impossible : DLL du téléphone absente ou bloquée.") call comspec_atak_native_fnc_tr); };
+            if (_show) then { ["WARNING", "Vérification du dossier des captures impossible : DLL du téléphone absente ou bloquée.", 8, 40, "SETTINGS"] call comspec_atak_native_fnc_notify; };
             ""
         };
         (((_raw select [3]) splitString "|")) params [["_src", "none"], ["_dir", "-"], ["_ex", "0"], ["_rd", "0"], ["_n", "0"], ["_last", "-"], ["_age", "-1"], ["_uerr", "-"], ["_user", "-"], ["_dirs", "-"], ["_mb", "-1"], ["_cap", "?"]];
@@ -66,7 +66,7 @@ switch (_mode) do {
         private _txt = ["text"] call comspec_atak_native_fnc_shotDir;
         ["INFO", "PHOTO", format ["Dossier des captures : %1 (%2) existe=%3 lisible=%4 images=%5 dernière=%6 refus=%7 · ordre : %8", _dir, _src, _ex, _rd, _n, _last, _uerr, _dirs]] call comspec_atak_native_fnc_log;
         if (_show) then {
-            hint ((_txt) call comspec_atak_native_fnc_tr);
+            // Notification du téléphone seule (plus de hint d'Arma) ; le détail est au RPT ci-dessus.
             [["WARNING", "INFO"] select (_ex isEqualTo "1" && {_rd isEqualTo "1"} && {(parseNumber _mb) < 200} && {_cap isNotEqualTo "-"}), _txt, 10, 40, "SETTINGS"] call comspec_atak_native_fnc_notify;
         } else {
             // Dossier près de la limite d'Arma (250 Mo) : prévenir une fois par partie, même sans vérification demandée.

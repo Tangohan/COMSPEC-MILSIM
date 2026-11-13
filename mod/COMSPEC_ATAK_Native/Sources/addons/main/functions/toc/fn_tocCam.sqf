@@ -2,10 +2,14 @@
     Caméra en direct sur un écran TOC (demande de TTRD, 01/11) : affichage « CAMÉRA » (fn_tocScreen, vue CAM). L'écran
     montre en temps réel une caméra du camp choisie au téléphone (app Poste TOC) ou au menu ACE de l'écran : drone du
     camp (nacelle), caméra fixe (fn_camAction) ou caméra poitrine d'un porteur d'ATAK (comme la Live cam).
+    4.11.0, « le TOC sans téléphone » : caméra de casque de tout joueur du camp, même sans téléphone, si le réglage
+    « Caméra de casque sans téléphone » (comspec_atak_native_toc_headcam, coché par défaut) le permet ; image de
+    qualité fixe (256 px), la source n'ayant pas de liaison à mesurer. Genre "MAN" comme la caméra poitrine.
     Seul le choix circule en multijoueur : variable publique de l'écran COMSPEC_ATAK_TocCam = netId de la source
     (posée par le serveur, joueurs qui rejoignent compris). Chaque joueur crée lui-même sa caméra et sa cible de rendu
-    (comspec_toccam_<n>, une par écran), seulement pour les écrans qu'il regarde, à moins de
-    comspec_atak_native_toc_cam_range mètres, et au plus comspec_atak_native_toc_cam_max à la fois (les plus proches).
+    (comspec_toccam_<n>, une par écran), seulement pour les écrans allumés qu'il regarde (fn_tocScreen ne lui passe
+    que ceux-là : distance d'affichage, devant soi, pas derrière un mur), à moins de comspec_atak_native_toc_cam_range
+    mètres, et au plus comspec_atak_native_toc_cam_max à la fois (les plus proches).
     Ailleurs, l'écran montre la carte et le flux du poste (vue SPLIT), sans rendu. Qualité d'image selon la liaison
     montante de la source (fn_feedLink) : le poste est filaire, le téléphone de qui regarde n'y est pour rien.
     Modes :
@@ -21,6 +25,8 @@ private _fn = comspec_atak_native_fnc_tocCam;
 private _resOf = {
     params ["_src"];
     if (_src isKindOf "Man" && {_src isEqualTo player}) exitWith { 512 };
+    // Caméra de casque d'un joueur sans téléphone : pas de liaison à mesurer, qualité fixe.
+    if (_src isKindOf "Man" && {_src getVariable ["COMSPEC_ATAK_TocHeadCam", false]}) exitWith { 256 };
     ((["eval", _src] call comspec_atak_native_fnc_feedLink) getOrDefault ["up", [0, 100]]) params [["_k", 0], ["_l", 100]];
     switch (true) do {
         case (_k <= 0): { 0 };
@@ -36,7 +42,15 @@ switch (_mode) do {
         private _out = [];
         { _out pushBack [format ["Drone · %1", getText (configOf _x >> "displayName")], netId _x, "UAV"]; } forEach (allUnitsUAV select { alive _x && {(side group _x) isEqualTo _side} && {!isNull driver _x || {!isNull gunner _x}} });
         { _out pushBack [format ["Caméra fixe · %1", _x getVariable ["COMSPEC_ATAK_CamName", "caméra"]], netId _x, "CAM"]; } forEach (["list"] call comspec_atak_native_fnc_camAction);
-        { _out pushBack [format ["Caméra poitrine · %1", [_x, true] call comspec_atak_native_fnc_unitCallsign], netId _x, "MAN"]; } forEach (allPlayers select { alive _x && {(side group _x) isEqualTo _side} && {[_x] call comspec_atak_native_fnc_hasDevice} && {["can", _x] call comspec_atak_native_fnc_camShare} });
+        private _chest = allPlayers select { alive _x && {(side group _x) isEqualTo _side} && {[_x] call comspec_atak_native_fnc_hasDevice} && {["can", _x] call comspec_atak_native_fnc_camShare} };
+        { _out pushBack [format ["Caméra poitrine · %1", [_x, true] call comspec_atak_native_fnc_unitCallsign], netId _x, "MAN"]; } forEach _chest;
+        // Caméra de casque des joueurs du camp sans téléphone (réglage du serveur ; un joueur peut la refuser :
+        // player setVariable ["COMSPEC_ATAK_TocHeadCamOff", true, true]).
+        if ((missionNamespace getVariable ["comspec_atak_native_toc_headcam", true]) isEqualTo true) then {
+            {
+                _out pushBack [format ["Caméra de casque · %1", [_x] call comspec_atak_native_fnc_tocDisplayName], netId _x, "MAN"];
+            } forEach (allPlayers select { alive _x && {(side group _x) isEqualTo _side} && {!(_x in _chest)} && {!(_x getVariable ["COMSPEC_ATAK_TocHeadCamOff", false])} && {!([_x] call comspec_atak_native_fnc_hasDevice)} });
+        };
         _out
     };
     case "set": {
@@ -62,7 +76,7 @@ switch (_mode) do {
         private _i = _act findIf { (_x select 0) isEqualTo _a };
         if (_i < 0) exitWith { false };
         (_act select _i) params ["_o", "_cam", "_rt"];
-        if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", _rt]; camDestroy _cam; };
+        if (!isNull _cam) then { ["close", [_cam, _rt]] call comspec_atak_native_fnc_tocRtt; };
         // Diapositives lancées sur l'écran : fn_screenCast pose déjà son image, ne pas la recouvrir par l'origine.
         if (!isNull _o && {(count (_o getVariable ["COMSPEC_ATAK_ScreenCast", []])) < 5}) then {
             private _sel = ((_o getVariable ["COMSPEC_ATAK_TocScr", []]) param [2, 0]);
@@ -85,16 +99,17 @@ switch (_mode) do {
         private _cands = _reg select {
             private _c = _x getVariable ["COMSPEC_ATAK_TocScr", []];
             private _o = _x;
-            (count _c) >= 8 && {(_c select 3) isEqualTo "CAM"} && {alive _o} && {(_eye distance _o) < _range}
+            (count _c) >= 8 && {(_c select 3) isEqualTo "CAM"} && {alive _o} && {!(_o getVariable ["COMSPEC_ATAK_TocOff", false])} && {(_eye distance _o) < _range}
                 && {(_c select 1) isEqualTo "" || {(_c select 1) isEqualTo _side}}
                 && {(count (_o getVariable ["COMSPEC_ATAK_ScreenCast", []])) < 5}
                 // Toile de projection : seulement éclairée par un projecteur allumé (fn_projector).
                 && {(getNumber (configOf _o >> "comspec_projBoard")) < 1 || {_o getVariable ["COMSPEC_ATAK_ProjLit", false]}}
                 && {alive objectFromNetId (_o getVariable ["COMSPEC_ATAK_TocCam", ""])}
                 // Regardé il y a moins de 3 s : un coup d'œil ailleurs ne coupe pas l'image, personne devant = pas de rendu.
+                // Centre de l'image, pas l'origine du modèle (au sol ou au plafond : hors champ devant un écran mural).
                 && {call {
-                    if ((worldToScreen (ASLToAGL getPosASL _o)) isNotEqualTo []) then { _o setVariable ["COMSPEC_ATAK_TocCamSeen", diag_tickTime]; };
-                    diag_tickTime - (_o getVariable ["COMSPEC_ATAK_TocCamSeen", -1e9]) < 3
+                    if ((worldToScreen (ASLToAGL (["center", _o] call comspec_atak_native_fnc_tocScreen))) isNotEqualTo []) then { _o setVariable ["COMSPEC_ATAK_TocCamSeen", diag_tickTime]; };
+                    diag_tickTime - (_o getVariable ["COMSPEC_ATAK_TocCamSeen", -1e9]) < 10
                 }}
         };
         private _on = ([_cands, [], { _eye distance _x }, "ASCEND"] call BIS_fnc_sortBy) select [0, (round _max) max 0];
@@ -120,7 +135,13 @@ switch (_mode) do {
                 _cam camCommit 0;
                 switch (_kind) do {
                     // Caméra poitrine, comme la Live cam (fn_livecamStart).
-                    case "MAN": { _cam attachTo [_src, [0, 0.22, 0.05], "spine3", true]; _cam setVectorDirAndUp [[0, 1, 0], [0, 0, 1]]; };
+                    case "MAN": {
+                        // Sans téléphone : caméra de casque (tête), si le réglage le permet toujours ; sinon caméra poitrine.
+                        private _head = !([_src] call comspec_atak_native_fnc_hasDevice) && {(missionNamespace getVariable ["comspec_atak_native_toc_headcam", true]) isEqualTo true};
+                        _src setVariable ["COMSPEC_ATAK_TocHeadCam", _head];
+                        if (_head) then { _cam attachTo [_src, [0, 0.14, 0.12], "head", true]; } else { _cam attachTo [_src, [0, 0.22, 0.05], "spine3", true]; };
+                        _cam setVectorDirAndUp [[0, 1, 0], [0, 0, 1]];
+                    };
                     // Nacelle : orientée chaque image par la boucle ci-dessous.
                     case "UAV": {
                         private _p0 = _src selectionPosition ["uavCameraGunnerPos", "Memory"];
@@ -129,7 +150,7 @@ switch (_mode) do {
                     };
                     default { _cam attachTo [_src, [0, 0.12, 0.03]]; _cam setVectorDirAndUp [[0, 1, 0], [0, 0, 1]]; };
                 };
-                _cam cameraEffect ["Internal", "Back", _rt];
+                ["open", [_cam, _rt]] call comspec_atak_native_fnc_tocRtt;
                 _rt setPiPEffect [parseNumber (sunOrMoon < 0.3)];
                 _act pushBack [_o, _cam, _rt, _id, _kind, _src, -1e9, -1];
                 _i = (count _act) - 1;

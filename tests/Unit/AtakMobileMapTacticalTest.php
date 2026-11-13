@@ -67,6 +67,35 @@ final class AtakMobileMapTacticalTest extends TestCase
         self::assertFalse(AtakMobileOverwatchAccess::covers('DELETE', '/api/pings'));
     }
 
+    public function testIconsFollowTheZoomAndStacksShowOneLabel(): void
+    {
+        $js = self::read('public/assets/js/atak-m.js');
+        // Taille bornée : 100 % de près, 70 % au plus loin ; noms masqués au plus loin.
+        self::assertStringContainsString('Math.max(0.7, Math.min(1, 1 - 0.15 * (d - 3)))', $js);
+        self::assertStringContainsString("wrap.style.setProperty('--mm-k'", $js);
+        self::assertStringContainsString("wrap.classList.toggle('mm-z-far', k <= 0.7)", $js);
+        // Pile : un seul nom, « +N », plaques tactiques placées après.
+        self::assertStringContainsString("l.el.setAttribute('data-mm-more', '+' + l.n)", $js);
+        self::assertStringContainsString("it.el.classList.toggle('mm-grp-off', !!lead)", $js);
+        self::assertStringContainsString('tac.declutter(used)', $js);
+        self::assertStringContainsString("scale: iconScale", $js);
+        $tac = self::read('public/assets/js/atak-m-tactique.js');
+        self::assertStringContainsString('function declutter(taken)', $tac);
+        self::assertStringNotContainsString("map.on('moveend'", $tac);
+
+        $css = self::read('public/assets/css/atak-m.css');
+        self::assertStringContainsString('scale: var(--mm-k, 1)', $css);
+        self::assertStringContainsString('.mm-map .mmt--me .mmt__g { scale: max(.9, var(--mm-k, 1)); }', $css);
+        self::assertStringContainsString('content: attr(data-mm-more)', $css);
+        self::assertStringContainsString('.mm-map .leaflet-marker-icon.mm-grp-off { z-index: 1 !important; }', $css);
+        // Symboles de 32 px au plus (anneau), pion de 28 px : mon pion et son anneau orange restent sous 38 px.
+        self::assertMatchesRegularExpression('/\.mmt-ring \{[^}]*width: 32px; height: 32px;/', $css);
+        self::assertMatchesRegularExpression('/\.mmt-pawn \{[^}]*width: 28px; height: 28px;/', $css);
+        self::assertStringNotContainsString('width: 40px; height: 40px; border-radius: 50%', $css);
+        // Noms : blanc à contour sombre, sur une ligne.
+        self::assertMatchesRegularExpression('/\.mm-map \.nato-sidc-label \{[^}]*white-space: nowrap;[^}]*color: #fff;[^}]*text-shadow: 0 0 2px #000/s', $css);
+    }
+
     public function testArmaMarkerNameStaysOnTheServer(): void
     {
         $repo = self::read('app/Repositories/AtakDataRepository.php');

@@ -1,3 +1,422 @@
+[h1]COMSPEC ATAK 4.12.0 Washington — postes, droits et journal de la salle TOC, TOC pilotable par script / stations, rights and journal of the TOC room, TOC driven by script[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Postes, droits et journal de la salle TOC[/b] : chaque PC du TOC devient un poste (chef de quart, opérations, renseignement, feux, logistique, transmissions). Seuls le chef de quart et le Zeus changent les écrans et la salle ; les autres joueurs du camp lisent, tiennent un poste et écrivent dans les registres.
+[*] [b]Journal des actions[/b] : chaque changement d'écran, de salle ou de poste est noté avec son auteur. Le chef de quart et le Zeus le lisent dans une fenêtre à copier.
+[*] [b]Verrou de salle[/b] : le chef de quart verrouille la salle le temps d'un briefing. Le verrou se lève tout seul à la relève ou au départ de son auteur.
+[*] [b]Relève[/b] : le sortant propose la relève, l'entrant la signe près du PC et reçoit un résumé (demandes ouvertes, pertes, prochaines lignes de la liste d'exécution).
+[*] [b]Vous pouvez piloter le TOC par script[/b] : les créateurs de mission créent des salles et des écrans, changent les affichages et les textes, verrouillent la salle et suivent ce qui s'y passe, sans téléphone ni Athena.
+[*] [b]Salle mieux gardée[/b] : copie de secours de la sauvegarde, dispositions de salle réutilisables d'une mission à l'autre, export de diagnostic pour le support.
+[*] [b]Couleurs de nuit[/b] : les fenêtres du TOC s'assombrissent quand le soleil est couché (réglage « Thème des écrans TOC »). Les écrans muraux suivront.
+[*] [b]Réglages[/b] : « Droits de la salle TOC » permet de revenir à l'ancien fonctionnement, où tout le camp règle la salle.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Stations, rights and journal of the TOC room[/b]: every TOC PC becomes a station (watch chief, operations, intelligence, fires, logistics, signals). Only the watch chief and Zeus change the screens and the room; the other players of the side read, hold a station and write in the logs.
+[*] [b]Action journal[/b]: every screen, room or station change is noted with its author. The watch chief and Zeus read it in a window you can copy from.
+[*] [b]Room lock[/b]: the watch chief locks the room for the time of a briefing. The lock lifts by itself at the handover or when its author leaves.
+[*] [b]Handover[/b]: the outgoing player offers the handover, the incoming player signs it near the PC and gets a summary (open requests, casualties, next lines of the execution checklist).
+[*] [b]You can drive the TOC by script[/b]: mission makers create rooms and screens, change displays and texts, lock the room and follow what happens in it, with no phone and no Athena.
+[*] [b]A better kept room[/b]: backup copy of the save, room layouts reusable from one mission to the next, diagnostic export for support.
+[*] [b]Night colours[/b]: the TOC windows dim when the sun has set ("TOC screen theme" setting). Wall screens will follow.
+[*] [b]Settings[/b]: "TOC room rights" lets you go back to the previous behaviour, where the whole side sets up the room.
+[/list]
+
+[h1]COMSPEC ATAK 4.11.0 Washington — le TOC fonctionne sans téléphone / the TOC works without a phone[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Toute la force sur le mur[/b] : les écrans du TOC et le PC du poste montrent les joueurs, véhicules, hélicoptères et drones du camp, même si personne n'a de téléphone ATAK.
+[*] [b]Plus de « perdu » à tort[/b] : une unité vivante et vue par le jeu est en direct. L'état d'un téléphone ne compte que pour ce téléphone.
+[*] [b]Messages et ordres sans téléphone[/b] : menu ACE sur soi, « Messages et ordres du TOC ». Vous lisez les messages du poste, vos ordres et les réponses à vos demandes, et vous accusez un ordre d'un clic.
+[*] [b]Pertes[/b] : toute unité du camp tuée est comptée, plus seulement les porteurs d'un téléphone.
+[*] [b]Caméra de casque[/b] : la caméra d'un joueur sans téléphone peut passer sur un écran (réglage du serveur, activé par défaut).
+[*] [b]Réglage « Source des positions du TOC »[/b] : Mixte (par défaut), Jeu ou Réseau ATAK. Choisissez Réseau ATAK pour garder le comportement d'avant.
+[*] [b]Indicatifs, pas pseudos[/b] : le TOC écrit l'indicatif Athena du joueur, sinon son groupe et son rang (« Alpha 1-1 · 2 »). Le pseudo Steam n'apparaît que si le serveur coche « Afficher le pseudo Steam ».
+[*] [b]Salle mieux protégée[/b] : un joueur ne peut plus écrire dans la salle d'un autre camp.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]The whole force on the wall[/b]: TOC screens and the post PC show the side's players, vehicles, helicopters and drones, even if nobody carries an ATAK phone.
+[*] [b]No more wrong “lost”[/b]: a living unit seen by the game is live. A phone's state only matters for that phone.
+[*] [b]Messages and orders without a phone[/b]: ACE self menu, “TOC messages and orders”. You read the post's messages, your orders and the answers to your requests, and you acknowledge an order in one click.
+[*] [b]Casualties[/b]: every unit of the side that is killed is counted, not only phone carriers.
+[*] [b]Helmet camera[/b]: the camera of a player without a phone can go on a screen (server setting, on by default).
+[*] [b]“TOC position source” setting[/b]: Mixed (default), Game or ATAK network. Pick ATAK network to keep the previous behaviour.
+[*] [b]Callsigns, not Steam names[/b]: the TOC writes the player's Athena callsign, otherwise his group and rank in it (“Alpha 1-1 · 2”). The Steam name only shows if the server checks “Show the Steam name”.
+[*] [b]Better protected room[/b]: a player can no longer write into another side's room.
+[/list]
+
+[h1]COMSPEC ATAK 4.9.0 Washington — console du poste TOC refaite, tout le TOC sans téléphone / TOC station console rebuilt, the whole TOC without a phone[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Console refaite[/b] : la console du poste TOC prend tout l'écran.
+[*] [b]Quatre rubriques[/b] : Situation, Conduite, Plans et Salle, à gauche, comme sur la console web.
+[*] [b]Sans téléphone[/b] : la console marche sans aucun téléphone ATAK.
+[*] [b]Toutes les unités[/b] : la carte montre aussi les unités qui n'ont pas de téléphone.
+[*] [b]Zoom[/b] : deux boutons, la molette et le pavé numérique.
+[*] [b]Échelle et nord[/b] : ils sont dessinés sur la carte.
+[*] [b]Calques[/b] : joueurs, IA, véhicules, aéronefs, comptes rendus, plan, relais et couverture se cochent un par un.
+[*] [b]Fiche d'unité[/b] : un clic sur une unité donne sa grille, sa vitesse, sa santé et ses munitions.
+[*] [b]Suivre et tracer[/b] : la carte peut rester centrée sur une unité et dessiner son chemin.
+[*] [b]Demandes au poste[/b] : une MEDEVAC, un appui ou un ravitaillement s'inscrit depuis la console.
+[*] [b]Comptes rendus au poste[/b] : l'opérateur envoie un compte rendu au camp depuis la console.
+[*] [b]Main courante[/b] : quatre boutons inscrivent une entrée en un clic.
+[*] [b]Plans[/b] : les outils de dessin ont leur rubrique, avec la liste des éléments du plan.
+[*] [b]Mur d'images[/b] : un bouton met tous les écrans de la salle sur la situation.
+[*] [b]Diffusion[/b] : un écran peut être recopié sur tous les autres.
+[*] [b]Raccourcis[/b] : F1 à F4 changent de rubrique.
+[*] [b]Recherche[/b] : taper une grille centre de nouveau la carte.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Rebuilt console[/b]: the TOC station console takes the whole screen.
+[*] [b]Four sections[/b]: Situation, Operations, Plans and Room, on the left, like the web console.
+[*] [b]No phone needed[/b]: the console works without any ATAK phone.
+[*] [b]Every unit[/b]: the map also shows units that carry no phone.
+[*] [b]Zoom[/b]: two buttons, the wheel and the numpad.
+[*] [b]Scale and north[/b]: they are drawn on the map.
+[*] [b]Layers[/b]: players, AI, vehicles, aircraft, reports, plan, relays and coverage are ticked one by one.
+[*] [b]Unit card[/b]: a click on a unit gives its grid, speed, health and ammunition.
+[*] [b]Follow and trail[/b]: the map can stay centred on a unit and draw its path.
+[*] [b]Requests at the station[/b]: a MEDEVAC, fire support or resupply is logged from the console.
+[*] [b]Reports at the station[/b]: the operator sends a report to the side from the console.
+[*] [b]Log[/b]: four buttons write an entry in one click.
+[*] [b]Plans[/b]: the drawing tools have their own section, with the list of plan items.
+[*] [b]Video wall[/b]: one button puts every screen of the room on the situation.
+[*] [b]Broadcast[/b]: one screen can be copied to all the others.
+[*] [b]Shortcuts[/b]: F1 to F4 switch section.
+[*] [b]Search[/b]: typing a grid centres the map again.
+[/list]
+
+[h1]COMSPEC ATAK 4.8.0 Washington — tableau des écrans du TOC, diffusion et mire, écrans qui ne clignotent plus / TOC screens table, broadcast and test card, screens that no longer flicker[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Tableau des écrans[/b] : une fenêtre liste tous les écrans du TOC, dalle par dalle, dans l'éditeur, au Zeus et en jeu.
+[*] [b]Choisir la source[/b] : pour chaque dalle, vous choisissez ce qu'elle montre : carte, satellite, caméras, escouade, horloge, texte, mire.
+[*] [b]Tout générer d'un coup[/b] : un bouton pose une salle complète, un autre donne un flux standard à chaque écran de la salle.
+[*] [b]Dispositions[/b] : les murs d'images et l'écran incurvé ont douze dispositions prêtes (carte et caméras, quatre vues, surveillance…).
+[*] [b]Diffusion[/b] : un écran peut être recopié sur toute la salle en même temps, avec un témoin EN DIRECT.
+[*] [b]Mire[/b] : un écran sans source affiche une mire de barres de couleur avec son titre et l'heure.
+[*] [b]Aucun signal[/b] : un écran sans données affiche une carte fixe AUCUN SIGNAL au lieu d'un contenu à moitié vide.
+[*] [b]Écrans qui ne clignotent plus[/b] : la vue satellite, les caméras et les écrans à moitié cachés ne s'éteignent plus et ne se rallument plus sans arrêt.
+[*] [b]Vue satellite plus légère[/b] : la vue satellite ne fait plus saccader le jeu, et un réglage « Qualité de la vue satellite » (Désactivée, Basse, Moyenne, Haute) permet de l'alléger encore.
+[*] [b]Zeus[/b] : poser un module TOC en Zeus ne vous ramène plus à la vue de votre personnage.
+[*] [b]Module Écran TOC[/b] : chaque usage pose un nouvel écran ; « Retirer » est un choix à part, jamais proposé d'office.
+[*] [b]Textes des bandeaux[/b] : les lettres ne sont plus étirées ni coupées ; un texte court reste centré, un texte long défile.
+[*] [b]Écrire un texte[/b] : vous pouvez enfin écrire le texte des bandeaux et écrans, avec le nouveau module « Afficher un texte » et des messages tout prêts.
+[*] [b]Connecté, pas « perdu »[/b] : un joueur connecté et immobile n'est plus marqué « perdu » sur les écrans.
+[*] [b]En-tête des écrans[/b] : l'écran affiche ce qu'il montre (Satellite, Horloge…), plus le nom anglais du modèle.
+[*] [b]Diapositives[/b] : une diapositive du Briefing ne laisse plus l'écran noir.
+[*] [b]Menu des écrans[/b] : le menu ACE est rangé par thèmes (Afficher, Disposition, Source, Écran, Salle) et montre l'état en cours.
+[*] [b]Écrans éloignés[/b] : les écrans éloignés ou cachés ne consomment plus de ressources à s'allumer et s'éteindre.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Screens table[/b]: one window lists every TOC screen, panel by panel, in the editor, in Zeus and in game.
+[*] [b]Choose the source[/b]: for each panel, choose what it shows: map, satellite, cameras, squad, clock, text, test card.
+[*] [b]Generate everything at once[/b]: one button places a complete room, another gives every screen of the room a standard feed.
+[*] [b]Layouts[/b]: video walls and the curved screen have twelve ready layouts (map and cameras, four views, surveillance…).
+[*] [b]Broadcast[/b]: one screen can be copied to the whole room at the same time, with a LIVE tally.
+[*] [b]Test card[/b]: a screen without a source shows a colour-bar test card with its title and the time.
+[*] [b]No signal[/b]: a screen without data shows a steady NO SIGNAL card instead of half-empty content.
+[*] [b]Screens no longer flicker[/b]: the satellite view, cameras and half-hidden screens no longer switch off and on endlessly.
+[*] [b]Lighter satellite view[/b]: the satellite view no longer makes the game stutter, and a "Satellite view quality" setting (Disabled, Low, Medium, High) lets you lighten it further.
+[*] [b]Zeus[/b]: placing a TOC module in Zeus no longer throws you back to your character's view.
+[*] [b]TOC Screen module[/b]: every use places a new screen; "Remove" is a separate choice, never offered by default.
+[*] [b]Strip texts[/b]: letters are no longer stretched or cut; a short text stays centred, a long text scrolls.
+[*] [b]Write a text[/b]: you can finally write the text of strips and screens, with the new "Show a text" module and ready-made messages.
+[*] [b]Connected, not "lost"[/b]: a connected player standing still is no longer shown as "lost" on the screens.
+[*] [b]Screen header[/b]: the screen displays what it shows (Satellite, Clock…), no longer the English name of the model.
+[*] [b]Slides[/b]: a Briefing slide no longer leaves the screen black.
+[*] [b]Screen menu[/b]: the ACE menu is sorted by theme (Show, Layout, Source, Screen, Room) and shows the current state.
+[*] [b]Distant screens[/b]: distant or hidden screens no longer use resources switching on and off.
+[/list]
+
+[h1]COMSPEC ATAK 4.7.2 Washington — le poste TOC sur le PC s'affiche de nouveau / the TOC post shows on the PC again[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]PC du poste TOC[/b] : il s'ouvre de nouveau avec ses onglets, ses boutons et sa barre de dessin.
+[*] [b]Carte du PC[/b] : elle montre de nouveau le poste et les groupes du camp, sans message d'erreur à l'écran.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]TOC post PC[/b]: it opens again with its tabs, its buttons and its drawing bar.
+[*] [b]PC map[/b]: it shows the post and the side's groups again, with no error message on screen.
+[/list]
+
+[h1]COMSPEC ATAK 4.7.1 Washington — menu ACE des écrans du TOC réparé, écran qui se règle tout seul / ACE menu of TOC screens fixed, screens set themselves up[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Menu ACE des écrans[/b] : l'interaction ACE revient sur tous les écrans et postes PC du TOC. Elle avait disparu en 4.7.0.
+[*] [b]Écran posé, écran prêt[/b] : un écran posé s'allume et se configure tout seul, que vous le posiez dans l'éditeur, en Zeus, par un module ou par un script.
+[*] [b]Bon affichage d'office[/b] : carte et flux sur un écran, horloges sur le bandeau horloge, texte sur le bandeau LED, nom d'escouade sur la plaque, console sur un poste PC.
+[*] [b]Salle trouvée toute seule[/b] : l'écran se relie à la salle la plus proche ; s'il n'y en a pas, une salle « TOC 1 » est créée.
+[*] [b]Salle TOC complète[/b] : le module pose de nouveau toute la salle, y compris quand le serveur n'a pas le mod à jour.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Screen ACE menu[/b]: ACE interaction is back on every TOC screen and PC station. It had disappeared in 4.7.0.
+[*] [b]Placed screen, ready screen[/b]: a placed screen lights up and configures itself, whether you place it in the editor, in Zeus, with a module or with a script.
+[*] [b]Right display by default[/b]: map and feed on a screen, clocks on the clock strip, text on the LED strip, squad name on the name plate, console on a PC station.
+[*] [b]Room found by itself[/b]: the screen links to the nearest room; if there is none, a "TOC 1" room is created.
+[*] [b]Complete TOC room[/b]: the module places the whole room again, including when the server does not run the up-to-date mod.
+[/list]
+
+[h1]COMSPEC ATAK 4.7.0 Washington — relais refaits en 3D, salle TOC posée en entier, écrans géants, bris d'écran réalistes / relays rebuilt in 3D, TOC room placed in full, giant screens, realistic screen damage[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Pylônes et mâts[/b] : les relais sont redessinés comme de vrais sites (treillis, échelle, plates-formes, câbles, clôture, feux rouges la nuit), avec de nouveaux modèles : monopôle 30 m, pylône haubané 60 m, pylône de toit, mât sur trépied et mât sur remorque. Peinture au choix.
+[*] [b]Relais déguisés en arbre[/b] : un faux pin (28 m et 15 m) et un faux palmier (22 m) : un arbre de loin, des antennes entre les branches de près.
+[*] [b]Antennes murales[/b] : des antennes à fixer sur un mur, un poteau ou un toit ; ce sont de vrais relais.
+[*] [b]Caméras IP[/b] : une famille de caméras à poser (dôme, tube infrarouge, thermique, mini-dôme…).
+[*] [b]Salle serveur[/b] : baies, coffrets, chemins de câbles et climatiseur à poser dans l'éditeur et en Zeus.
+[*] [b]Voyants et destruction[/b] : un voyant montre l'état de chaque relais (en service, dégradé, brouillé, éteint) ; un pylône détruit se plie et tombe.
+[*] [b]Relais plus légers[/b] : les modèles des relais pèsent environ 33 Mo de moins, et la carte de couverture se recalcule bien plus vite.
+[*] [b]Changement : brouilleur GPS[/b] : un brouilleur GPS seul ne crée plus de zone blanche sur la couverture du réseau.
+[*] [b]Changement : relais M12 et M20[/b] : ce sont maintenant des mâts tactiques verts ; les missions existantes les gardent à leur place.
+[*] [b]Salle TOC complète[/b] : le module pose enfin toute la salle sur le sol, dans Eden comme dans Zeus : mur d'images, grands écrans, bandeaux, plaques de nom, bureaux, chaises et PC, tous liés à la même salle.
+[*] [b]Dedans ou dehors[/b] : contre un mur et sous un plafond, la salle utilise les écrans muraux et suspendus ; en extérieur, des écrans sur pied les remplacent.
+[*] [b]Taille annoncée[/b] : la place que prend chaque salle (petite, moyenne, grande) est écrite dans le module, et le Zeus lit le résultat de la pose dans sa ligne de retour.
+[*] [b]Texte sur les écrans[/b] : nouvel affichage « Texte » dans le style du bandeau horloge. Vous écrivez vos messages (couleur, durée, clignotement), ils passent à tour de rôle et défilent s'ils sont trop longs.
+[*] [b]Écrans géants[/b] : bandeaux LED de 2,4 m et 4,8 m, écran 136 pouces, mur LED 220 pouces, murs vidéo 4x3, 5x3 et 6x4, écrans suspendus doubles et triples, grand écran incurvé de 7 m.
+[*] [b]Postes PC[/b] : postes fixes complets (1, 2, 3 écrans ou écran incurvé) qui servent de PC du poste, et un module « Poste opérateur » qui pose bureau, chaise et poste d'un coup.
+[*] [b]Anciens écrans refaits[/b] : téléviseur, écrans sur trépied, moniteur, toiles de projection, vidéoprojecteur et PC portable ont de nouveaux modèles ; les missions existantes les gardent.
+[*] [b]Bris d'écran du téléphone[/b] : treize façons de casser le verre (fêlure fine, toile, coin écrasé, impact de balle, eau sous le verre…), posées là où le téléphone a été touché.
+[*] [b]Pannes et bugs d'affichage[/b] : pixels morts, lignes de couleur, tache d'encre qui grandit, zone tactile morte, et de courts bugs après un choc. Tout se règle ou se coupe dans les options.
+[*] [b]Sang plus crédible[/b] : plus sombre, il se dilue sous la pluie, s'accumule en bas de l'écran et reste dans les fêlures après un coup de chiffon.
+[*] [b]Poste TOC et Athena[/b] : chronos, main courante, liste d'exécution, pertes, demandes et FLASH du poste en jeu se voient en direct sur le poste TOC web d'Athena, et ce que fait l'opérateur web arrive en jeu.
+[*] [b]Plans d'opération[/b] : un plan préparé sur Athena s'envoie en jeu et apparaît dans l'app Plan des téléphones, sur le PC du poste et sur les écrans de la salle.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Towers and masts[/b]: relays are redrawn as real sites (lattice, ladder, platforms, cables, fence, red lights at night), with new models: 30 m monopole, 60 m guyed mast, rooftop tower, tripod mast and trailer mast. Pick the paint.
+[*] [b]Tree-disguised relays[/b]: a fake pine (28 m and 15 m) and a fake palm (22 m): a tree from afar, antennas among the branches up close.
+[*] [b]Wall antennas[/b]: antennas to fix on a wall, a pole or a roof; they are real relays.
+[*] [b]IP cameras[/b]: a family of cameras to place (dome, infrared bullet, thermal, mini dome…).
+[*] [b]Server room[/b]: racks, cabinets, cable trays and an AC unit to place in the editor and in Zeus.
+[*] [b]Status lights and destruction[/b]: a light shows the state of each relay (running, degraded, jammed, off); a destroyed tower bends and falls.
+[*] [b]Lighter relays[/b]: the relay models are about 33 MB lighter, and the coverage map recomputes much faster.
+[*] [b]Change: GPS jammer[/b]: a GPS jammer alone no longer creates a dead zone in the network coverage.
+[*] [b]Change: M12 and M20 relays[/b]: they are now green tactical masts; existing missions keep them in place.
+[*] [b]Complete TOC room[/b]: the module finally places the whole room on the ground, in Eden and in Zeus: video wall, big screens, strips, name plates, desks, chairs and computers, all linked to the same room.
+[*] [b]Indoors or outdoors[/b]: against a wall and under a ceiling, the room uses the wall and hanging screens; outdoors, screens on stands replace them.
+[*] [b]Stated size[/b]: the space each room takes (small, medium, large) is written in the module, and the Zeus reads the result of the placement in the feedback line.
+[*] [b]Text on screens[/b]: a new "Text" display in the look of the clock strip. You write your messages (colour, duration, blinking), they are shown in turn and scroll when they are too long.
+[*] [b]Giant screens[/b]: 2.4 m and 4.8 m LED strips, a 136-inch screen, a 220-inch LED wall, 4x3, 5x3 and 6x4 video walls, double and triple hanging screens, a 7 m curved screen.
+[*] [b]PC stations[/b]: complete desktop stations (1, 2, 3 screens or a curved screen) that work as the post PC, and an "Operator station" module that places desk, chair and station in one go.
+[*] [b]Older screens remade[/b]: the TV, tripod screens, monitor, projection screens, projector and laptop have new models; existing missions keep them.
+[*] [b]Phone screen damage[/b]: thirteen ways to break the glass (hairline crack, spider web, crushed corner, bullet impact, water under the glass…), placed where the phone was hit.
+[*] [b]Display faults and glitches[/b]: dead pixels, coloured lines, a growing ink blot, a dead touch zone, and short glitches after a shock. Everything can be tuned or turned off in the options.
+[*] [b]More believable blood[/b]: darker, it thins out in the rain, pools at the bottom of the screen and stays in the cracks after a wipe.
+[*] [b]TOC and Athena[/b]: the in-game post's timers, duty log, execution checklist, casualties, requests and FLASH show live on Athena's web TOC, and what the web operator does reaches the game.
+[*] [b]Operation plans[/b]: a plan prepared on Athena can be sent into the game and appears in the phones' Plan app, on the post PC and on the room screens.
+[/list]
+
+[h1]COMSPEC ATAK 4.6.0 Washington — écrans TOC réglables dans Eden et Zeus, allumés avec un serveur plus ancien / TOC screens set up in Eden and Zeus, lit with an older server[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Réglage des écrans[/b] : chaque écran du TOC se règle dans Eden (attributs de l'objet) et dans Zeus (double-clic, fenêtre « Configurer l'écran ») : nom, camp, affichage, dalles d'un mur, luminosité, salle, distance d'affichage, test de l'image et copie vers d'autres écrans.
+[*] [b]Serveur plus ancien[/b] : les écrans TOC s'allument même si le serveur a une version plus ancienne du mod. Le téléphone explique pourquoi, avec la version du serveur et la vôtre, et prévient que l'écran n'est pas sauvegardé par le serveur.
+[*] [b]Ouvrir le PC du poste[/b] : l'action est toujours là, en tête du menu ACE de l'écran, à la molette, dans l'app Poste TOC du téléphone et au clic droit du Zeus.
+[*] [b]Carte photo[/b] : la carte en photo satellite ne saccade plus.
+[*] [b]Zoom de la carte mini[/b] : zoomer ou dézoomer le téléphone en petit (ou avec « Suivre ma position ») garde la carte centrée sur vous, même en véhicule.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Screen settings[/b]: every TOC screen is set up in Eden (object attributes) and in Zeus (double-click, "Configure the screen" window): name, side, display, wall panels, brightness, room, display distance, picture test and copy to other screens.
+[*] [b]Older server[/b]: TOC screens light up even when the server runs an older version of the mod. The phone explains why, with the server's version and yours, and warns that the screen is not saved by the server.
+[*] [b]Open the post PC[/b]: the action is always there, at the top of the screen's ACE menu, on the scroll wheel, in the phone's TOC Post app and in the Zeus right-click menu.
+[*] [b]Photo map[/b]: the satellite photo map no longer stutters.
+[*] [b]Mini map zoom[/b]: zooming the phone in its small view (or with "Follow my position") in or out keeps the map centred on you, even in a vehicle.
+[/list]
+
+[h1]COMSPEC ATAK 4.5.0 Washington — TOC au look professionnel, satellite devenu console ISR / Professional-looking TOC, satellite becomes an ISR console[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Nouveau look du TOC[/b] : tous les écrans muraux et le PC du poste ont le rendu d'une vraie salle d'opérations, lisible de loin : en-tête avec heures ZULU et locale, tableaux en colonnes nettes, états en couleur, plus aucun texte coupé ni chevauché.
+[*] [b]Carte et horloge du poste[/b] : carte plus claire (quadrillage numéroté, noms des groupes qui ne se recouvrent plus, légende, échelle et nord), heure ZULU en très grand, mosaïque des caméras avec DIRECT et PAS DE SIGNAL.
+[*] [b]PC du poste[/b] : onglets sur deux rangées en haut, onglet choisi bien visible, un titre et un état par onglet, boutons et listes au même style.
+[*] [b]Satellite : console ISR[/b] : image plein cadre sous le HUD d'un vrai capteur (réticule, échelle, zoom, grille, altitude, heure ZULU). La nuit, l'image passe en thermique blanc chaud au lieu de rester noire.
+[*] [b]Capteurs[/b] : AUTO, JOUR, NUIT, thermique blanc chaud, noir chaud et deux fusions qui ajoutent les contours des bâtiments.
+[*] [b]Pointage et zoom[/b] : visez une grille tapée, cliquez sur la carte ou suivez un groupe ; zoom de 0,25× à 8× à la molette. Inscrivez la vue à la main courante ou posez un repère visible par tout le camp.
+[*] [b]Sur le mur[/b] : envoyez l'image du satellite sur l'écran mural de votre choix.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]New TOC look[/b]: every wall screen and the post laptop look like a real operations room, readable from a distance: a header with ZULU and local times, tables in clean columns, coloured statuses, no more clipped or overlapping text.
+[*] [b]Post map and clock[/b]: a clearer map (numbered grid, group labels that no longer overlap, legend, scale and north arrow), ZULU time in large print, a camera mosaic with LIVE and NO SIGNAL.
+[*] [b]Post laptop[/b]: tabs on two rows at the top, the chosen tab clearly shown, a title and status for every tab, buttons and lists in the same style.
+[*] [b]Satellite: ISR console[/b]: a full-frame image under the HUD of a real sensor (reticle, scale, zoom, grid, elevation, ZULU time). At night the image switches to white-hot thermal instead of staying black.
+[*] [b]Sensors[/b]: AUTO, DAY, NIGHT, white-hot thermal, black-hot and two fused modes that add building outlines.
+[*] [b]Tasking and zoom[/b]: aim at a typed grid, click on the map or follow a group; zoom from 0.25× to 8× with the mouse wheel. Log the view in the duty log or place a marker the whole side can see.
+[*] [b]On the wall[/b]: send the satellite image to the wall screen of your choice.
+[/list]
+
+[h1]COMSPEC ATAK 4.4.1 Washington — écrans TOC visibles, PC du poste lisible, carte Classique fidèle / TOC screens that show up, readable TOC laptop, faithful Classic map[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Écrans TOC posés[/b] : les nouveaux écrans TOC (murs d'images, écrans 98 et 65 pouces, horloge, plaque de nom) apparaissent dans Eden et Zeus, et c'est bien l'écran choisi qui est posé.
+[*] [b]Écrans d'autres objets[/b] : l'écran blanc de salle de briefing, les écrans sur trépied, l'ordinateur multi-écran et l'écran tactique servent d'écran TOC (menu ACE « Utiliser comme écran TOC »).
+[*] [b]Écrans TOC affichés[/b] : tous les affichages se dessinent, en texte lisible, et seulement quand vous êtes près de l'écran et face à lui. Réglage « Distance d'affichage des écrans TOC » (25 m par défaut).
+[*] [b]PC du poste TOC[/b] : boutons rangés et lisibles, vue satellite visible la nuit, zoom à la molette et image qui se déplace à la souris.
+[*] [b]Carte Classique[/b] : le fond CLASSIQUE est la carte du jeu, comme avec la touche M, et le premier de la liste.
+[*] [b]Radio de données (MPU5)[/b] : la page est plus claire, avec l'état en haut et les réglages rangés par thème.
+[*] [b]Licence[/b] : un bouton « Ouvrir la note de service » apparaît partout où la licence n'est pas encore acceptée.
+[*] [b]Centre Zeus[/b] : chaque joueur affiche sa vraie version du mod, comparée à celle du serveur.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Placed TOC screens[/b]: the new TOC screens (video walls, 98 and 65 inch screens, clock, name plate) show up in Eden and Zeus, and the screen you picked is the one placed.
+[*] [b]Screens from other objects[/b]: the white briefing room screen, tripod screens, the multi-screen computer and the tactical screen work as TOC screens (ACE menu "Use as a TOC screen").
+[*] [b]Displayed TOC screens[/b]: every display is drawn, with readable text, and only when you are close to the screen and facing it. Setting "TOC screen display distance" (25 m by default).
+[*] [b]TOC post laptop[/b]: tidy, readable buttons, a satellite view you can see at night, mouse wheel zoom and an image you drag with the mouse.
+[*] [b]Classic map[/b]: the CLASSIC background is the game map, as with the M key, and first in the list.
+[*] [b]Data radio (MPU5)[/b]: the page is clearer, with the status at the top and settings grouped by theme.
+[*] [b]Licence[/b]: an "Open the service note" button shows wherever the licence is not accepted yet.
+[*] [b]Zeus Centre[/b]: each player shows their real mod version, compared to the server's.
+[/list]
+
+[h1]COMSPEC ATAK 4.4.0 Washington — salle TOC en jeu, sang sur l'écran, carte Classique, traçage d'un numéro / TOC room in game, blood on the screen, Classic map, number tracing[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Salle TOC prête[/b] : le module « Salle TOC complète » pose une salle déjà câblée : murs d'images, grands écrans (98 et 65 pouces, murs de 4 et 6 écrans), horloge, bureaux et PC. Les écrans se posent aussi un par un dans Eden et en Zeus.
+[*] [b]Écrans de la salle[/b] : vue satellite en direct (jour, vision nocturne, thermique), horloge ZULU, escouade, mosaïque des caméras, main courante, pertes et demandes. Au PC, onglet SALLE, cliquez un écran pour choisir ce qu'il montre et dessinez sur la carte : vos traits arrivent sur les téléphones.
+[*] [b]Sang sur l'écran[/b] : le téléphone se salit selon vos blessures, de quelques gouttes à un écran presque rouge. Réglage « Sang sur l'écran : quantité maximale ».
+[*] [b]Carte Classique[/b] : le fond CLASSIQUE est la vraie carte du jeu, la même qu'avec la touche M. Chaque fond a sa description sous les boutons.
+[*] [b]Carte plus fluide[/b] : le fond photo ou satellite se charge petit à petit et ne fige plus le jeu au zoom. Nouveau réglage « Mesure des performances (journal) » si le téléphone rame.
+[*] [b]Tracer un numéro[/b] : app GE, onglet TRAÇAGE, « TRACER LE NUMÉRO » : une zone apparaît sur la carte, petite en ville, large en campagne, téléphones des IA compris. Suivez-le, partagez-le au groupe ou au TOC.
+[*] [b]BFT[/b] : l'ORBAT d'Athena de votre unité s'affiche de nouveau ; s'il ne peut pas être lu, le téléphone dit pourquoi et montre les groupes de jeu.
+[*] [b]Apps Fichiers et Ma couverture[/b] : une recherche répond toujours (fiche, « Aucun enregistrement » ou erreur avec « Réessayer ») ; « Synchroniser avec Athena » récupère vos couvertures sans fichier à déplacer.
+[*] [b]Synchroniser avec le web[/b] : action du menu ACE du téléphone qui envoie son contenu à Athena. Rien ne part sans la case « Autoriser la synchronisation du téléphone avec Athena » dans les options.
+[*] [b]ATHENA Configuration[/b] : un seul bouton dans le menu Échap regroupe l'état de la liaison, le dépannage, le réalisme et les extensions du SSE.
+[*] [b]Centre Zeus[/b] : onglets lisibles, plus de boutons vides ni de textes qui se chevauchent, étiquettes réglées par cases à cocher.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Ready TOC room[/b]: the "Complete TOC room" module places a room already wired up: video walls, big screens (98 and 65 inches, walls of 4 and 6 screens), a clock, desks and laptops. Screens can also be placed one by one in Eden and in Zeus.
+[*] [b]Room screens[/b]: live satellite view (day, night vision, thermal), ZULU clock, squad, camera mosaic, duty log, casualties and requests. On the laptop, ROOM tab, click a screen to choose what it shows and draw on the map: your lines reach the phones.
+[*] [b]Blood on the screen[/b]: the phone gets dirty according to your wounds, from a few drops to an almost red screen. Setting "Blood on the screen: maximum amount".
+[*] [b]Classic map[/b]: the CLASSIC background is the real game map, the same as with the M key. Each background has its description under the buttons.
+[*] [b]Smoother map[/b]: the photo or satellite background loads bit by bit and no longer freezes the game when zooming. New setting "Performance measurement (log)" if the phone stutters.
+[*] [b]Trace a number[/b]: EW app, TRACE tab, "TRACE THE NUMBER": an area appears on the map, small in town, large in the countryside, AI phones included. Follow it, share it with the group or the TOC.
+[*] [b]BFT[/b]: your unit's Athena ORBAT shows again; if it cannot be read, the phone says why and shows the game groups.
+[*] [b]Files and My cover apps[/b]: a search always answers (record, "No record" or an error with "Retry"); "Sync with Athena" fetches your covers without moving a file.
+[*] [b]Sync with the web[/b]: phone ACE menu action that sends its content to Athena. Nothing leaves without the "Allow phone sync with Athena" box in the options.
+[*] [b]ATHENA Configuration[/b]: a single button in the Esc menu gathers the link state, troubleshooting, realism and SSE extensions.
+[*] [b]Zeus Centre[/b]: readable tabs, no more empty buttons or overlapping text, labels set with checkboxes.
+[/list]
+
+[h1]COMSPEC ATAK 4.3.0 Washington — drones armés, apps à l'horizontale, carte lisible, centre Zeus, app Fichiers / armed drones, landscape apps, readable map, Zeus centre, Records app[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Carte[/b] : les noms des unités, des repères et des villes restent lisibles à tous les zooms et ne se chevauchent plus. Réglez-les dans Réglages > Carte.
+[*] [b]Drones armés[/b] : prenez la main d'un drone armé depuis l'app Drone, mettez-le en orbite, marquez une cible et il tire seul ; le mode Rechercher et tuer vous propose les cibles qu'il repère.
+[*] [b]Horizontale[/b] : téléphone en main à l'horizontale, les apps s'affichent sur deux colonnes au lieu d'une longue liste.
+[*] [b]Véhicules[/b] : une unité à bord d'un hélicoptère ou d'un véhicule apparaît avec la silhouette de son engin, et l'équipage n'est compté qu'une fois.
+[*] [b]Fichiers[/b] : nouvelle app pour vérifier une personne, un document ou une plaque ; le bouton SCANNER d'un document y mène avec le numéro déjà rempli.
+[*] [b]Écran[/b] : le reflet de la vitre ne clignote plus quand vous touchez l'écran, et le téléphone tremble d'un seul bloc quand il vibre.
+[*] [b]Zeus[/b] : le centre Zeus ne cache plus la liste de droite ; son onglet SERVEUR montre l'état de la partie, et des étiquettes au-dessus des joueurs signalent ce qui ne va pas.
+[*] [b]Messages[/b] : plus rien ne s'affiche par-dessus le jeu, tout arrive dans les notifications du téléphone.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Map[/b]: unit, marker and town names stay readable at every zoom and no longer overlap. Adjust them in Settings > Map.
+[*] [b]Armed drones[/b]: take control of an armed drone from the Drone app, put it in orbit, mark a target and it fires on its own; Hunter-killer mode proposes the targets it spots.
+[*] [b]Landscape[/b]: with the phone in hand and held sideways, apps show two columns instead of one long list.
+[*] [b]Vehicles[/b]: a unit aboard a helicopter or a vehicle shows with its vehicle's silhouette, and the crew is counted only once.
+[*] [b]Records[/b]: a new app to check a person, a document or a plate; a document's SCANNER button leads there with the number already filled in.
+[*] [b]Screen[/b]: the glass glare no longer flickers when you touch the screen, and the phone shakes as one piece when it vibrates.
+[*] [b]Zeus[/b]: the Zeus centre no longer hides the right-hand list; its SERVER tab shows the state of the game, and labels above players flag what is wrong.
+[*] [b]Messages[/b]: nothing pops up over the game any more, everything arrives in the phone notifications.
+[/list]
+
+[h1]COMSPEC ATAK 4.2.1 Washington — téléphone plus fluide, apps plus claires, réseau relais expliqué, ordres aux IA / smoother phone, clearer apps, explained relay network, AI orders[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Fluidité[/b] : toucher une app, Accueil ou Retour fait réagir l'écran tout de suite ; changer de page ne refait plus les fêlures ni la saleté ; dans Messages et SMS, un message reçu s'ajoute au fil sans redessiner la page. Le téléphone monte en fondu quand vous le sortez (Réglages > Animations et sons).
+[*] [b]Tâches[/b] : ordres à traiter en tête, terminés en bas, filtre À traiter / Terminés / Tous ; une consigne longue se déplie.
+[*] [b]Annulation[/b] : TOUT EFFACER (Itinéraire) et VIDER LE JOURNAL (Alertes) s'annulent pendant 8 secondes.
+[*] [b]Médical, Recherchés, Numéros[/b] : blessés graves non soignés en tête, avec distance et cap ; recherche par nom dans Recherchés et dans l'annuaire.
+[*] [b]Navigation[/b] : la touche retour ferme l'écran ouvert au lieu de quitter l'app ; Statut et Itinéraire se mettent à jour seuls ; un écran vide dit quoi faire.
+[*] [b]Réseau relais[/b] : hors maillage, le téléphone nomme le lien qui manque et sa cause (relief, distance, bâtiments) avec un conseil ; la carte le montre par un trait rouge en tirets. Les bâtiments comptent entre deux radios ; quand un relais tombe, le réseau se coupe environ 3 secondes avant de repasser par un autre. Tout se règle dans Échap > Réalisme.
+[*] [b]Coques[/b] : iPhone 17 Pro sans liseré noir, V2 Enhanced totalement opaque, écran aux coins arrondis avec un léger reflet de vitre (Réglages > Thème et écran > Reflet du verre), touches de la coque à leur vraie place.
+[*] [b]Ordres aux IA[/b] : « Ensuite… » met un ordre en file derrière l'ordre en cours, règle de tir (tir libre, riposte seulement, halte au feu), occuper un bâtiment, depuis la carte du téléphone et le PC du poste TOC ; le groupe signale lui-même ses contacts.
+[*] [b]Fiche d'une unité[/b] (carte) : à bord d'un engin, sa silhouette, son nom et ses tuiles place, altitude sol, vitesse, cap, carburant, à bord ; à pied, grille, distance, azimut, dernier signal ; pastilles APTE / EN VOL ; plus rien de coupé.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Smoothness[/b]: tapping an app, Home or Back makes the screen react at once; changing page no longer rebuilds the cracks or the dirt; in Messages and SMS, an incoming message is added to the thread without redrawing the page. The phone fades in when you take it out (Settings > Animations and sounds).
+[*] [b]Tasks[/b]: orders to handle first, finished ones at the bottom, To do / Done / All filter; a long order expands.
+[*] [b]Undo[/b]: CLEAR ALL (Route) and CLEAR LOG (Alerts) can be cancelled for 8 seconds.
+[*] [b]Medical, Target Deck, Numbers[/b]: untreated serious casualties first, with distance and heading; search by name in Target Deck and in the directory.
+[*] [b]Navigation[/b]: the back key closes the open screen instead of leaving the app; Status and Route update on their own; an empty screen says what to do.
+[*] [b]Relay network[/b]: out of the mesh, the phone names the missing link and its cause (terrain, distance, buildings) with advice; the map shows it as a dashed red line. Buildings count between two radios; when a relay goes down, the network drops for about 3 seconds before switching to another. Everything is set in Esc > Realism.
+[*] [b]Phone cases[/b]: iPhone 17 Pro without the black outline, V2 Enhanced fully opaque, screen with rounded corners and a light glass reflection (Settings > Theme and screen > Glass reflection), case keys at their real place.
+[*] [b]AI orders[/b]: "Then…" queues an order behind the current one, rules of engagement (weapons free, return fire only, hold fire), garrison a building, from the phone map and the TOC station PC; the group reports its own contacts.
+[*] [b]Unit card[/b] (map): aboard a vehicle, its silhouette, its name and seat, altitude above ground, speed, heading, fuel, on-board tiles; on foot, grid, distance, bearing, last signal; FIT / AIRBORNE pills; nothing cut off any more.
+[/list]
+
+[h1]COMSPEC ATAK 4.2.0 Washington — carte tactique, SMS, bilan de l'année, dépannage MPU / tactical map, SMS, year in review, MPU troubleshooting[/h1]
+[quote]
+[b]Important / Important :[/b] ce pack contient COMSPEC Link 2.0.123 : mettez à jour, quittez Arma 3 complètement, puis relancez. / This pack contains COMSPEC Link 2.0.123: update, fully quit Arma 3, then restart.
+[/quote]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Correctif important[/b] : après un retour au menu puis une nouvelle partie, des textes et des couleurs disparaissaient dans les apps (lignes vides dans Comptes rendus, ligne distance / cap / altitude manquante sous la carte). Corrigé.
+[*] [b]Carte[/b] : style tactique par défaut (pions à anneau, plaques de nom, routes à flèche, zones hachurées, mesure avec distance). Contacts reconnaissables à leur forme : losange ennemi, carré neutre, cercle ami. Position ancienne estompée avec son âge. Fiche de contact refaite (MARQUER, PARTAGER, Y ALLER).
+[*] [b]Téléphones tracés[/b] : plus d'étiquette « infanterie amie » ; icône d'émetteur et mention « téléphone ».
+[*] [b]Équipe (BFT)[/b] : symboles qui ne recouvrent plus les indicatifs, légendes sous le tableau, fiche de droite qui ne disparaît plus.
+[*] [b]Messages[/b] : nouvelle app SMS de joueur à joueur ; sans réseau, le SMS part au retour du signal.
+[*] [b]Radio MPU[/b] : icône dans la barre du téléphone. Nouveau [b]DÉPANNAGE MPU[/b] (app Réseau) : l'assistant vérifie le réglage serveur, votre radio, TeamSpeak, la MPU5, le pont radio, le maillage et la fréquence d'un camarade, montre le maillon cassé et copie un rapport pour Discord.
+[*] [b]Bilan de l'année[/b] et [b]Vidéo YouTube[/b] (désactivée par défaut, activée par l'administrateur).
+[*] [b]Ma couverture[/b] : générez-la sur Athena, téléchargez le fichier, importez-la sans connexion. Raccourci QR « Sur mon téléphone » de retour dans la barre de la carte.
+[*] [b]FIRES court et CAS[/b] : choix de l'unité à appeler ; CAS lisible dans les trois thèmes.
+[*] [b]Réglages du serveur[/b] : chaque réglage de Échap > Réalisme est expliqué avec un exemple.
+[*] [b]Retiré[/b] : l'action ACE « Mesurer tension et SpO2 ».
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Important fix[/b]: after going back to the menu and starting a new game, texts and colours vanished in the apps (empty rows in Reports, missing distance / heading / altitude line under the map). Fixed.
+[*] [b]Map[/b]: tactical style by default (ring pawns, name plates, routes with an arrow, hatched zones, measure with distance). Contacts told apart by shape: diamond enemy, square neutral, circle friend. Old positions dimmed with their age. Contact card redone (MARK, SHARE, GO THERE).
+[*] [b]Traced phones[/b]: no more "friendly infantry" label; transmitter icon and "phone" label.
+[*] [b]Team (BFT)[/b]: symbols no longer cover callsigns, legends under the table, the right-hand card no longer disappears.
+[*] [b]Messages[/b]: new player-to-player SMS app; with no network, the SMS goes out when the signal returns.
+[*] [b]MPU radio[/b]: icon in the phone status bar. New [b]MPU TROUBLESHOOTING[/b] (Network app): the assistant checks the server setting, your radio, TeamSpeak, the MPU5, the radio bridge, the mesh and a teammate's frequency, shows the broken link and copies a report for Discord.
+[*] [b]Year in review[/b] and [b]YouTube video[/b] (off by default, turned on by the admin).
+[*] [b]My cover[/b]: generate it on Athena, download the file, import it offline. The "On my phone" QR shortcut is back in the map toolbar.
+[*] [b]Quick FIRES and CAS[/b]: pick the unit to call; CAS readable in all three themes.
+[*] [b]Server settings[/b]: every Esc > Realism setting is explained with an example.
+[*] [b]Removed[/b]: the ACE action "Measure blood pressure and SpO2".
+[/list]
+
 [h1]COMSPEC ATAK — Mise à jour 4.1.1.AG - Washington[/h1]
 [b]Publication : 09/11/2026[/b]
 [quote]

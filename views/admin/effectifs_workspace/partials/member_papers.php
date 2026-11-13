@@ -73,6 +73,43 @@ $identityFields = static function (array $v, bool $withKind) use ($ph, $countrie
     </div>
     <?php
 };
+$photoMaxMb = \App\Services\Sse\SseIdImageService::maxMb('photo');
+// Photo d'identité d'une identité : aperçu, puis dépôt ou choix d'un fichier (member-papers.js) et envoi.
+$photoField = static function (array $i) use ($ph, $manage, $base, $csrfToken, $photoMaxMb): void {
+    $iid = (int) $i['id'];
+    $photo = (string) ($i['photo_path'] ?? '');
+    $photoUrl = $photo !== '' ? (preg_match('#^https?://#', $photo) === 1 ? $photo : url($photo)) : '';
+    ?>
+    <div class="idm-photo" id="papiers-photo-<?= $iid ?>">
+        <span class="idm-photo__frame" data-photo-frame>
+            <?php if ($photoUrl !== ''): ?>
+                <img src="<?= $ph($photoUrl) ?>" alt="Photo d’identité de <?= $ph(P::displayName($i)) ?>" loading="lazy">
+            <?php else: ?>
+                <svg viewBox="0 0 35 45" aria-hidden="true"><circle cx="17.5" cy="16" r="7"/><path d="M4 45c1.5-9 6.8-14 13.5-14S29.5 36 31 45"/></svg>
+            <?php endif; ?>
+        </span>
+        <?php if ($manage): ?>
+            <form method="post" action="<?= $ph($base . '/identites/' . $iid . '/photo') ?>" enctype="multipart/form-data" class="idm-photo__form" data-photo-form>
+                <input type="hidden" name="_csrf_token" value="<?= $ph($csrfToken) ?>">
+                <label class="idm-drop" data-drop>
+                    <input type="file" id="idm-photo-<?= $iid ?>" name="photo" accept="image/png,image/jpeg,image/webp" required class="idm-drop__input" data-drop-input>
+                    <span class="idm-drop__btn"><?= $photoUrl !== '' ? 'Remplacer la photo d’identité' : 'Ajouter la photo d’identité' ?></span>
+                    <span class="idm-drop__name" data-drop-name>ou glissez une image ici</span>
+                </label>
+                <p class="idm-photo__help">Portrait de face, tête et haut des épaules, fond neutre. PNG, JPG ou WebP, <?= (int) $photoMaxMb ?> Mo au plus.</p>
+                <div class="idm-photo__acts">
+                    <button type="submit" class="eff-fm-btn is-sm is-dark" data-drop-submit>Enregistrer la photo</button>
+                    <?php if ($photoUrl !== ''): ?>
+                        <button type="submit" name="photo_remove" value="1" class="eff-fm-btn is-sm is-ghost" formnovalidate>Retirer la photo</button>
+                    <?php endif; ?>
+                </div>
+            </form>
+        <?php elseif ($photoUrl === ''): ?>
+            <p class="idm-photo__help">Pas de photo d’identité.</p>
+        <?php endif; ?>
+    </div>
+    <?php
+};
 ?>
 <section class="eff-fm-sec" id="papiers" aria-labelledby="papiers-titre">
     <header class="eff-fm-sec__head">
@@ -81,18 +118,40 @@ $identityFields = static function (array $v, bool $withKind) use ($ph, $countrie
     </header>
     <div class="eff-fm-cards">
 
+    <?php require __DIR__ . '/member_papers_sync.php'; ?>
+
+    <?php if (is_array($pp['cover'] ?? null)): ?>
+        <article class="eff-fm-card eff-fm-card--wide" id="papiers-couverture">
+            <?php
+            $coverPanel = $pp['cover']['panel'];
+            $coverPostUrl = (string) $pp['cover']['post'];
+            $coverDownloadBase = (string) $pp['cover']['download'];
+            $coverCsrf = $csrfToken;
+            $coverSelf = (bool) $pp['cover']['self'];
+            $coverHasPrimary = (bool) $pp['cover']['has_primary'];
+            $coverHeadingTag = 'h3';
+            require dirname(__DIR__, 3) . '/partials/sse_cover_export.php';
+            ?>
+        </article>
+    <?php endif; ?>
+
     <article class="eff-fm-card" id="papiers-identite">
         <div class="eff-fm-card__head">
             <h3>Identité principale</h3>
             <?php if ($primary !== null): ?><span class="eff-fm-chip"><?= $ph($primary['ref']) ?></span><?php endif; ?>
         </div>
         <?php if ($primary !== null): ?>
-            <dl class="eff-fm-fields">
-                <div class="eff-fm-f"><dt>Nom</dt><dd><?= $ph(P::displayName($primary)) ?></dd></div>
+            <dl class="eff-fm-fields idm-fields">
+                <div class="eff-fm-f"><dt>Nom</dt><dd translate="no"><?= $ph(P::displayName($primary)) ?></dd></div>
                 <div class="eff-fm-f"><dt>Né(e) le</dt><dd><?= $ph(\App\Support\SseIdentityCatalog::birthDateLabel($primary['birth_date'] ?? null)) ?></dd></div>
-                <div class="eff-fm-f"><dt>Lieu de naissance</dt><dd><?= $ph($primary['birth_place'] ?? '—') ?></dd></div>
+                <div class="eff-fm-f"><dt>Lieu de naissance</dt><dd translate="no"><?= $ph(($primary['birth_place'] ?? '') !== '' ? $primary['birth_place'] : '—') ?></dd></div>
                 <div class="eff-fm-f"><dt>Nationalité</dt><dd><?= $ph($countryLabel($primary['nationality'] ?? null)) ?></dd></div>
+                <div class="eff-fm-f"><dt>Sexe</dt><dd><?= $ph(C::SEXES[$primary['sex'] ?? 'X'] ?? '—') ?></dd></div>
+                <?php if (($primary['profession'] ?? '') !== ''): ?>
+                    <div class="eff-fm-f"><dt>Profession</dt><dd><?= $ph($primary['profession']) ?></dd></div>
+                <?php endif; ?>
             </dl>
+            <?php $photoField($primary); ?>
         <?php else: ?>
             <p class="eff-fm-lead">Pas encore d’identité de jeu. Elle reprend la fiche du personnage (nom, prénom, naissance, nationalité).</p>
         <?php endif; ?>
@@ -130,14 +189,16 @@ $identityFields = static function (array $v, bool $withKind) use ($ph, $countrie
         <?php if ($pp['aliases'] === []): ?>
             <p class="eff-fm-lead"><?= $truth ? 'Aucun alias ni identité de couverture.' : 'Aucune identité d’emprunt visible.' ?></p>
         <?php else: ?>
-            <ul class="eff-fm-list">
+            <ul class="idm-aliases">
                 <?php foreach ($pp['aliases'] as $a): ?>
                     <li>
-                        <span class="eff-fm-list__dt"><?= $ph($a['ref']) ?></span>
-                        <div><b><?= $ph(P::displayName($a)) ?></b>
-                            <?php if ($truth): ?> <span class="eff-fm-chip<?= in_array($a['kind'], P::SECRET, true) ? ' is-warn' : '' ?>"><?= $ph($a['kind_label']) ?></span><?php endif; ?>
-                            <p><?= $ph((\App\Support\SseIdentityCatalog::birthDateLabel($a['birth_date'] ?? null)) . ' · ' . $countryLabel($a['nationality'] ?? null)) ?> · <?= (int) $a['documents_count'] ?> papier(s)</p>
+                        <div class="idm-aliases__head">
+                            <b translate="no"><?= $ph(P::displayName($a)) ?></b>
+                            <span class="idm-doc__num" translate="no"><?= $ph($a['ref']) ?></span>
+                            <?php if ($truth): ?><span class="eff-fm-chip<?= in_array($a['kind'], P::SECRET, true) ? ' is-warn' : '' ?>"><?= $ph($a['kind_label']) ?></span><?php endif; ?>
                         </div>
+                        <p class="idm-sync__note"><?= $ph((\App\Support\SseIdentityCatalog::birthDateLabel($a['birth_date'] ?? null)) . ' · ' . $countryLabel($a['nationality'] ?? null)) ?> · <?= (int) $a['documents_count'] ?> papier(s)</p>
+                        <?php $photoField($a); ?>
                     </li>
                 <?php endforeach; ?>
             </ul>
@@ -250,7 +311,7 @@ $identityFields = static function (array $v, bool $withKind) use ($ph, $countrie
                                 }
                                 ?>
                                 <?php foreach ($buttons as $do => $label): ?>
-                                    <form method="post" action="<?= $ph($act) ?>">
+                                    <form method="post" action="<?= $ph($act) ?>"<?= $do === 'delete' ? ' data-idm-confirm="' . $ph('Supprimer ce brouillon de papier ?') . '"' : '' ?>>
                                         <input type="hidden" name="_csrf_token" value="<?= $ph($csrfToken) ?>">
                                         <input type="hidden" name="do" value="<?= $ph($do) ?>">
                                         <button type="submit" class="eff-fm-btn is-sm<?= $do === 'delete' ? ' is-danger' : '' ?>"><?= $ph($label) ?></button>
@@ -306,7 +367,7 @@ $identityFields = static function (array $v, bool $withKind) use ($ph, $countrie
             <p class="eff-card__hint">Le compte de ce membre n’est pas lié à Steam : le serveur de jeu ne peut pas lui remettre son kit.</p>
         <?php endif; ?>
         <?php if ($pp['kits'] === []): ?>
-            <p class="eff-fm-lead">Aucun kit : le joueur arrive sans papiers.</p>
+            <p class="eff-fm-lead">Aucun kit composé : le joueur reçoit automatiquement les papiers émis et valables de son identité principale (ou de sa couverture si une fiche de couverture la lui attribue).</p>
         <?php else: ?>
             <ul class="eff-fm-list">
                 <?php foreach ($pp['kits'] as $kit): ?>
@@ -386,3 +447,4 @@ $identityFields = static function (array $v, bool $withKind) use ($ph, $countrie
     </article>
     </div>
 </section>
+<script src="<?= $ph(asset_url('assets/js/member-papers.js')) ?>" defer></script>

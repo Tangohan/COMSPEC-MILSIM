@@ -54,6 +54,33 @@ class SseCoverExportRepository
         ));
     }
 
+    /**
+     * Couvertures d'un membre avec le texte du fichier (synchronisation depuis le téléphone), la plus récente d'abord.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listFilesForUser(int $tenantId, int $userId, int $limit = 20): array
+    {
+        return array_values($this->db->fetchAll(
+            'SELECT id, ref, country_code, cover_name, content_sha, payload_json, created_by_user_id, created_at, downloaded_at
+               FROM sse_cover_exports WHERE tenant_id = :t AND user_id = :u ORDER BY id DESC LIMIT ' . max(1, min(50, $limit)),
+            ['t' => $tenantId, 'u' => $userId]
+        ));
+    }
+
+    /**
+     * Couverture d'une référence, seulement si elle est de ce membre et de cette communauté.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findForUserByRef(int $tenantId, int $userId, string $ref): ?array
+    {
+        return $this->db->fetchOne(
+            'SELECT * FROM sse_cover_exports WHERE tenant_id = :t AND user_id = :u AND ref = :r ORDER BY id DESC LIMIT 1',
+            ['t' => $tenantId, 'u' => $userId, 'r' => $ref]
+        );
+    }
+
     public function countSince(int $tenantId, int $userId, string $since): int
     {
         $row = $this->db->fetchOne(
@@ -62,6 +89,22 @@ class SseCoverExportRepository
         );
 
         return (int) ($row['n'] ?? 0);
+    }
+
+    /**
+     * Remplace le fichier d'une couverture du membre (légende modifiée) : même référence, nouveau contenu signé.
+     *
+     * @param array{cover_name: string, doc_number: string, content_sha: string, payload_json: string} $row
+     */
+    public function updatePayload(int $tenantId, int $userId, int $id, array $row): bool
+    {
+        return $this->db->execute(
+            'UPDATE sse_cover_exports SET cover_name = :name, doc_number = :num, content_sha = :sha, payload_json = :json WHERE id = :id AND tenant_id = :t AND user_id = :u',
+            [
+                'name' => mb_substr((string) $row['cover_name'], 0, 190), 'num' => mb_substr((string) $row['doc_number'], 0, 60),
+                'sha' => (string) $row['content_sha'], 'json' => (string) $row['payload_json'], 'id' => $id, 't' => $tenantId, 'u' => $userId,
+            ]
+        ) > 0;
     }
 
     public function markDownloaded(int $tenantId, int $id, string $now): void

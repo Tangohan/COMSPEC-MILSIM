@@ -1079,3 +1079,46 @@ details.eqx-mykit { border-left-color: var(--eqx-mint); border-radius: 0.65rem; 
 @media (prefers-reduced-motion: reduce) {
   .eqx-tcard:hover, .eqx-collcard:hover { transform: none; }
 }
+
+/* ---- Vue d'ensemble de la page Équipement (hub) */
+.eqo { margin: 0 0 1.6rem; }
+.eqo__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.5rem 1rem; margin: 0 0 0.8rem; }
+.eqo__head h2 { margin: 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; color: #0f172a; }
+.eqo__head p { margin: 0.2rem 0 0; color: #566477; font-size: 0.92rem; }
+.eqo__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.85rem; }
+.eqo-card {
+  position: relative; display: grid; grid-template-rows: auto auto 1fr auto; gap: 0.55rem; padding: 1rem; border: 1px solid #dfe6e2; border-radius: 0.9rem;
+  background: #ffffff; color: #0f172a; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+.eqo-card--main { border-color: rgba(31, 122, 85, 0.45); background: linear-gradient(180deg, rgba(52, 211, 153, 0.09), #ffffff 60%); }
+.eqo-card__top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.eqo-card__icon { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 0.7rem; background: #050505; color: #34d399; }
+.eqo-card__icon svg { width: 1.45rem; height: 1.45rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.eqo-card__count { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: #0f172a; }
+.eqo-card__count small { font-size: 0.78rem; font-weight: 600; color: #566477; letter-spacing: 0; }
+.eqo-card h3 { margin: 0; font-size: 1.02rem; font-weight: 760; }
+.eqo-card p { margin: 0; font-size: 0.86rem; line-height: 1.5; color: #475569; }
+.eqo-card__ex { font-size: 0.8rem !important; color: #566477 !important; border-left: 3px solid #34d399; padding-left: 0.55rem; }
+.eqo-card__empty { padding: 0.55rem 0.65rem; border-radius: 0.55rem; background: #f4f7f5; border: 1px dashed #c6d3cc; font-size: 0.84rem !important; }
+.eqo-card__acts { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.eqo-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; min-height: 2.5rem; padding: 0.45rem 0.9rem; border-radius: 0.55rem;
+  border: 1px solid #1f7a55; background: #1f7a55; color: #ffffff; font: inherit; font-weight: 680; font-size: 0.9rem; text-decoration: none; cursor: pointer;
+}
+.eqo-btn:hover { background: #165a3f; border-color: #165a3f; color: #ffffff; }
+.eqo-btn--ghost { background: transparent; color: #1f7a55; border-color: transparent; text-decoration: underline; text-underline-offset: 3px; padding-left: 0.3rem; padding-right: 0.3rem; }
+.eqo-btn--ghost:hover { background: rgba(31, 122, 85, 0.08); color: #165a3f; border-color: transparent; }
+.eqo-btn:focus-visible { outline: 3px solid #34d399; outline-offset: 2px; }
+.eqo-base { display: grid; gap: 0.3rem; font-size: 0.8rem; color: #566477; }
+.eqo-base__bar { height: 0.4rem; border-radius: 999px; background: #e6ece9; overflow: hidden; }
+.eqo-base__bar i { display: block; height: 100%; width: 0; background: #1f7a55; border-radius: inherit; transition: width 0.25s ease; }
+html[data-bo-theme="dark"] .eqo-card { background: #121916; border-color: #25322b; color: #e8efe9; }
+html[data-bo-theme="dark"] .eqo-card p, html[data-bo-theme="dark"] .eqo__head p { color: #9fb2a8; }
+html[data-bo-theme="dark"] .eqo-card__count, html[data-bo-theme="dark"] .eqo__head h2 { color: #e8efe9; }
+@media (max-width: 1360px) { .eqo__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .eqo__grid { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .eqo-base__bar i { transition: none; } }
+/* Arrivée : bandeau resserré, la vue d'ensemble (Par où commencer) reste visible sans défiler. */
+.eqx-hero--kit.eqx-hero--compact .eqx-hero__inner { padding-top: 1.6rem; padding-bottom: 1.2rem; }
+.eqx-hero--kit.eqx-hero--compact h1 { margin: 0.6rem 0; font-size: clamp(2.1rem, 3.8vw, 3.3rem); }
+.eqx-hero--kit.eqx-hero--compact .eqx-hero__actions { margin-top: 1.1rem; }

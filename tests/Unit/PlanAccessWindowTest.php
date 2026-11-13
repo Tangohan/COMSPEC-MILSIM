@@ -147,4 +147,44 @@ final class PlanAccessWindowTest extends TestCase
         self::assertFalse(PlanAccessWindow::alreadyWarned($tenant, 'paid', $end, 'last'));
         self::assertSame('trial|' . $end, PlanAccessWindow::warningFingerprint('trial', $end));
     }
+
+    public function testNewTrialLastsSevenDaysByDefault(): void
+    {
+        self::assertSame(7, PlanAccessWindow::DEFAULT_TRIAL_DAYS);
+        self::assertSame(7, PlanAccessWindow::normalizeTrialDays(''));
+        self::assertSame(7, PlanAccessWindow::normalizeTrialDays(null));
+        self::assertSame(1, PlanAccessWindow::normalizeTrialDays('0'));
+        self::assertSame(14, PlanAccessWindow::normalizeTrialDays('14'));
+
+        $end = PlanAccessWindow::trialEndsAtFor(PlanAccessWindow::DEFAULT_TRIAL_DAYS, self::NOW);
+        self::assertSame(self::NOW + 7 * 86400, strtotime($end));
+    }
+
+    public function testExistingTrialEndIsNeverRecomputed(): void
+    {
+        $oldEnd = self::at(25);
+        $tenant = ['plan_slug' => 'free', 'subscription_status' => 'none', 'settings' => json_encode(['founder_trial_ends_at' => $oldEnd])];
+
+        self::assertSame($oldEnd, PlanAccessWindow::trialEndsAt($tenant));
+        $src = PlanAccessWindow::source($tenant, self::NOW);
+        self::assertSame('trial', $src['kind']);
+        self::assertSame($oldEnd, $src['ends_at']);
+    }
+
+    public function testRemindersFitSevenDayTrial(): void
+    {
+        $warn = PlanAccessWindow::DEFAULT_WARNING_DAYS;
+        self::assertSame(3, $warn);
+        $fresh = ['plan_slug' => 'free', 'subscription_status' => 'none', 'settings' => ['founder_trial_ends_at' => PlanAccessWindow::trialEndsAtFor(7, self::NOW)]];
+        $day4 = self::NOW + 4 * 86400;
+
+        // Jour 0 et jour 3 : pas de rappel ; à J-3 le rappel apparaît, à J-1 il est toujours là.
+        self::assertSame(7, PlanAccessWindow::endingSoon($fresh, 7, self::NOW)['days_left']);
+        self::assertGreaterThan($warn, PlanAccessWindow::endingSoon($fresh, 7, self::NOW)['days_left']);
+        self::assertSame(3, PlanAccessWindow::endingSoon($fresh, $warn, $day4)['days_left']);
+        self::assertNull(PlanAccessWindow::endingSoon($fresh, $warn, self::NOW + 86400));
+        self::assertSame(1, PlanAccessWindow::endingSoon($fresh, $warn, self::NOW + 6 * 86400)['days_left']);
+        // Les rappels de formule payée gardent 7 jours quand l'avertissement est à 0.
+        self::assertSame(7, PlanAccessWindow::paidReminderDays(0));
+    }
 }

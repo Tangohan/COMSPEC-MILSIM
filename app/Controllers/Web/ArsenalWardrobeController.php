@@ -139,7 +139,8 @@ class ArsenalWardrobeController
                 'collections' => count($collections),
                 'communaute' => count($community),
                 'kits' => $kitsAllowed ? $kitCount : null,
-                'materiel' => count($classes) + count($dotation),
+                // Matériel : le catalogue des objets se compte dans l'espace (chargé par le navigateur), pas de compteur partiel ici.
+                'materiel' => null,
             ],
             'detail' => $this->detailFor($request, $tenantId, $userId),
             'creer' => (string) $request->query('creer', '') === 'kit',
@@ -388,6 +389,9 @@ class ArsenalWardrobeController
             return Response::redirect($back);
         }
         $result = $this->kitService()->updateAudience($tenantId, $userId, (int) ($params['id'] ?? 0), $request->input('audience', 'all'));
+        if ($result['ok']) {
+            \App\Services\GameEquipment\Configurator\EquipmentAudit::log('equipment.kit.audience', $tenantId, $userId, (int) ($params['id'] ?? 0), ['audience' => $request->inputString('audience', 'all')]);
+        }
         Session::flash($result['ok'] ? 'success' : 'error', $result['ok'] ? 'Destinataire du kit mis à jour.' : (string) ($result['error'] ?? 'Mise à jour impossible.'));
 
         return Response::redirect($back);
@@ -416,6 +420,9 @@ class ArsenalWardrobeController
         }
         // Suppression permise même si la formule a baissé : on ne garde pas un kit que l'on ne peut plus gérer.
         $ok = $this->kitService()->delete($tenantId, (int) ($params['id'] ?? 0));
+        if ($ok) {
+            \App\Services\GameEquipment\Configurator\EquipmentAudit::log('equipment.kit.delete', $tenantId, (int) Session::get('user_id'), (int) ($params['id'] ?? 0), []);
+        }
         Session::flash($ok ? 'success' : 'error', $ok ? 'Kit supprimé. Les copies des membres restent dans leurs tenues.' : 'Ce kit n’existe plus.');
 
         return Response::redirect($back);
@@ -1521,6 +1528,8 @@ class ArsenalWardrobeController
         $catalogCount = 0;
         $kitUnits = [];
         $kitRoles = [];
+        $kitMembers = [];
+        $kitQualifications = [];
         $unitsReady = false;
         if (!$migrationMissing) {
             try {
@@ -1533,6 +1542,11 @@ class ArsenalWardrobeController
                 $kitUnits = $service->unitOptions((int) Session::get('tenant_id'));
                 $kitRoles = $service->roleOptions((int) Session::get('tenant_id'));
                 $unitsReady = $service->unitsReady();
+                // Kits : la liste des membres ne sert qu'à l'espace Kits (fiche « Gérer ce kit »).
+                if (($nav['espace'] ?? '') === 'kits') {
+                    $kitMembers = $service->memberOptions((int) Session::get('tenant_id'));
+                    $kitQualifications = $service->qualificationOptions((int) Session::get('tenant_id'));
+                }
             }
         }
 
@@ -1552,19 +1566,37 @@ class ArsenalWardrobeController
             'canManageKits' => $canManageKits,
             'kitUnitOptions' => $kitUnits,
             'kitRoleOptions' => $kitRoles,
+            'kitMemberOptions' => $kitMembers,
+            'kitQualificationOptions' => $kitQualifications,
             'kitUnitsReady' => $unitsReady,
             'catalogCount' => $catalogCount,
             'upgradeUrl' => url('platform/upgrade') . '?from=equipment_kits&feature=equipment_kits',
             'myGameKit' => $myGameKit,
-            'eqNav' => $nav + ['espace' => 'mes-tenues', 'collection' => 0, 'tab' => 'fiches', 'q' => '', 'type' => '', 'sort' => 'name', 'paged' => null, 'collection_row' => null, 'counts' => [], 'detail' => null, 'creer' => false],
+            // Catalogue de base d'Arma 3 : état du chargement (la vue d'ensemble le lance au premier accès).
+            'eqBase' => $migrationMissing ? null : $this->vanillaStatus(),
+            'eqNav' => $nav + ['espace' => 'mes-tenues', 'collection' => 0, 'tab' => 'catalogue', 'q' => '', 'type' => '', 'sort' => 'name', 'paged' => null, 'collection_row' => null, 'counts' => [], 'detail' => null, 'creer' => false],
             'canManageCatalog' => $this->canManageCatalog(),
             'canManageDotation' => $this->canManageDotation(),
+            // Pré-kit partagé à la communauté : mêmes droits que le configurateur (EquipmentConfiguratorController::savePrekit).
+            'canSharePrekits' => $this->canManageKits(),
             'equipmentKindLabels' => ArsenalLoadoutItems::kindLabels(),
             'csrfToken' => Csrf::token(),
             'flash_success' => Session::getFlash('success'),
             'flash_error' => Session::getFlash('error'),
             'coverHint' => EquipmentCoverStorage::hintText(),
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function vanillaStatus(): ?array
+    {
+        try {
+            return (new \App\Services\GameEquipment\Configurator\VanillaCatalogLoader())->status((int) Session::get('tenant_id'));
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /** Responsables des kits de départ : organisation, accès, ou gestion de l'équipement (droit déjà utilisé par les fiches). */
