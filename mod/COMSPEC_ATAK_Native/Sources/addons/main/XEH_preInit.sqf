@@ -996,6 +996,9 @@ private _mpuCat = ["COMSPEC", "ATAK · Radio de données (MPU5)"];
 ["comspec_atak_native_drone_sensor", "CHECKBOX",
     ["Anti-drone : capteur dédié", "Coché par défaut : l'app Anti-drone a un vrai capteur radio, portée normale. Décoché : elle n'a que l'antenne du téléphone, portée divisée par deux. Une mission peut aussi le régler par joueur (variable COMSPEC_ATAK_DroneSensor)."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_drone_opfor", "CHECKBOX",
+    ["Détecter les drones OPFOR", "Décoché par défaut : l'anti-drone et les cartes ne détectent jamais les drones ennemis (OPFOR). Coché : les drones OPFOR apparaissent comme les autres. Réglage à réserver aux missions qui le demandent."],
+    _sim, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_drone_strike", "CHECKBOX",
     ["Drones armés", "Permet d'accrocher une charge sous un drone (roquette de RPG, charge de démolition, grenade) et de l'envoyer frapper : sur une cible désignée (tire et oublie) ou en patrouille qui attaque ce qu'elle trouve (recherche et frappe)."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
@@ -1193,8 +1196,8 @@ private _dock = ["COMSPEC", "ATAK · Socle de recharge"];
     ["La charge continue entre deux parties", "Un téléphone laissé sur un socle continue de charger pendant que le serveur est éteint (selon le temps réel écoulé)."],
     _dock, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_dock_persist", "CHECKBOX",
-    ["Garder les socles posés", "Les socles posés par les joueurs reviennent à leur place, avec leurs téléphones, à la prochaine partie sur la même carte. Pour les socles de la mission (Eden, Zeus), les téléphones sont toujours gardés."],
-    _dock, true, 1] call comspec_atak_native_fnc_addSetting;
+    ["Garder les socles posés", "Désactivé par défaut : un socle posé par un joueur en partie disparaît à la fin de la partie. Activé, il revient à sa place, avec ses téléphones, à la prochaine partie sur la même carte. Les socles de la mission (Eden, Zeus) gardent toujours leurs téléphones."],
+    _dock, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_dock_anyone", "CHECKBOX",
     ["Tout le monde peut reprendre n'importe quel téléphone", "Décoché : seul le propriétaire (compte Steam) peut reprendre son téléphone. Zeus et l'admin peuvent toujours."],
     _dock, false, 1] call comspec_atak_native_fnc_addSetting;
