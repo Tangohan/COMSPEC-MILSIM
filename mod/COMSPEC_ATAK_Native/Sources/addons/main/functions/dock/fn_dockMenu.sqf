@@ -20,6 +20,10 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
             _out pushBack [["COMSPEC_ATAK_DockPut", format ["Poser mon téléphone (emplacement %1)", _free + 1], "\z\comspec_atak_native\addons\main\data\item_dock.paa",
                 { ["put", [_target, -1]] call comspec_atak_native_fnc_dockClient; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
         };
+        if (_free >= 0 && {(["phone"] call comspec_atak_native_fnc_dockClient) isEqualTo ""}) then {
+            _out pushBack [["COMSPEC_ATAK_DockNoPhone", "Poser mon téléphone : il faut en avoir un sur toi", "\z\comspec_atak_native\addons\main\data\item_dock.paa",
+                {}, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
+        };
         private _all = call (missionNamespace getVariable "COMSPEC_ATAK_DockStaff");
         {
             if ((count _x) > 3 && {_all || {(_x select 0) isEqualTo _uid}}) then {
