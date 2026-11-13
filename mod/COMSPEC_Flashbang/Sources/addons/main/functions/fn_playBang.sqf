@@ -10,6 +10,7 @@
       _gain      : multiplicateur de volume (réglage « Volume des flashbangs », limiteur des bangs en série, atténuations)
       _portee    : portée d'audibilité (m, réglage « Portée du son ») ; -1 = distance de la table
       _distance  : distance de l'auditeur (m) ; -1 = inconnue (pas de couche proche)
+      _stretch   : vitesse de lecture de ce bang (1 = normal) : durée et hauteur variables par bang
 
     Niveau (version 1.0.0) :
       - couche 3D (playSound3D) : plafonnée à 5 par lecture ; au-delà, 2 à 4 lectures identiques au même instant ;
@@ -25,7 +26,7 @@
     Retour : nombre de lectures lancées (3D + couche 2D) ; 0 = rien joué (fusionné par le budget ou entrée vide).
 */
 params [["_entry", "", [""]], ["_posASL", [0, 0, 0], [[]], 3], ["_delay", 0, [0]], ["_inside", false, [false]], ["_gain", 1, [0]],
-    ["_range", -1, [0]], ["_dc", -1, [0]], ["_maxCopies", 4, [0]]];
+    ["_range", -1, [0]], ["_dc", -1, [0]], ["_maxCopies", 4, [0]], ["_stretch", 1, [0]]];
 private _cfg = configFile >> "COMSPEC_FB_Sons" >> _entry;
 private _files = getArray (_cfg >> "fichiers");
 if (_files isEqualTo [] || {_gain <= 0}) exitWith { 0 };
@@ -49,7 +50,8 @@ private _vr = (missionNamespace getVariable ["comspec_fb_variation", 0.6]) / 0.6
 private _pv = getNumber (_cfg >> "pitchVar") * _vr;
 private _dbv = getNumber (_cfg >> "volumeVarDb") * _vr;
 private _vol = getNumber (_cfg >> "volume") * _gain * (10 ^ (((random 2) - 1) * _dbv / 20));
-private _pitch = 1 + ((random 2) - 1) * _pv;
+// _stretch (fn_burst) : vitesse de lecture propre à ce bang ; la durée du son varie avec elle (et la hauteur).
+private _pitch = (1 + ((random 2) - 1) * _pv) * _stretch;
 private _copies = [_busy, ceil (_vol / 5), _maxCopies] call comspec_fb_fnc_sndBudget;
 private _dist = getNumber (_cfg >> "distance");
 if (_range > 0) then { _dist = _dist min _range };

@@ -1042,6 +1042,16 @@
                 <English>Light blur that fades: loss of sharpness from the dazzle.  Example: ticked.</English>
                 <French>Flou léger qui se dissipe : perte de netteté due à l'éblouissement.  Exemple : coché.</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Vignette">
+                <Original>Vignette sombre</Original>
+                <English>Dark vignette</English>
+                <French>Vignette sombre</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Vignette_Tip">
+                <Original>Bords sombres autour de l'écran pendant l'éblouissement : le champ se resserre et s'assombrit, puis se relâche.  Exemple : coché.</Original>
+                <English>Dark edges around the screen during the dazzle: the view narrows and darkens, then relaxes.  Example: ticked.</English>
+                <French>Bords sombres autour de l'écran pendant l'éblouissement : le champ se resserre et s'assombrit, puis se relâche.  Exemple : coché.</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Set_Damage">
                 <Original>Blessure à bout portant</Original>
                 <English>Point-blank injury</English>
@@ -1172,6 +1182,16 @@
                 <English>Scans the room around the grenade (11 rays over 4 frames): stronger effect in a closed room. Untick to save CPU.  Example: ticked.</English>
                 <French>Analyse la pièce autour de la grenade (11 rayons répartis sur 4 images) : effet plus fort en local fermé. Décocher pour économiser le processeur.  Exemple : coché.</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Set_RoomEcho">
+                <Original>Écho de pièce (expérimental)</Original>
+                <English>Room echo (experimental)</English>
+                <French>Écho de pièce (expérimental)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_RoomEcho_Tip">
+                <Original>Dans un local fermé, ajoute une seconde réflexion courte et atténuée du bang (60 à 110 ms après). Désactivé par défaut.</Original>
+                <English>In an enclosed room, adds a second short, quieter reflection of the bang (60 to 110 ms later). Off by default.</English>
+                <French>Dans un local fermé, ajoute une seconde réflexion courte et atténuée du bang (60 à 110 ms après). Désactivé par défaut.</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Set_IndoorMult">
                 <Original>Multiplicateur intérieur</Original>
                 <English>Indoor multiplier</English>
@@ -1201,6 +1221,26 @@
                 <Original>Temps moyen entre deux flashs en cadence Normale, de 0,03 à 1,5 s.  Exemple : 0.5 ; 0.1 pour une rafale.</Original>
                 <English>Average time between two flashes at Normal rate, 0.03 to 1.5 s.  Example: 0.5; 0.1 for a burst.</English>
                 <French>Temps moyen entre deux flashs en cadence Normale, de 0,03 à 1,5 s.  Exemple : 0.5 ; 0.1 pour une rafale.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_GapMin">
+                <Original>Écart minimum entre bangs (s)</Original>
+                <English>Minimum gap between bangs (s)</English>
+                <French>Écart minimum entre bangs (s)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_GapMin_Tip">
+                <Original>Plus petit écart entre deux bangs consécutifs en cadence Normale (9 bangs et moins), de 0,01 à 0,50 s. Avec l'écart maximum et la variation : plage de tirage.  Exemple : 0.05.</Original>
+                <English>Smallest gap between two consecutive bangs at Normal rate (9 bangs or fewer), 0.01 to 0.50 s. With the maximum gap and the variation: the draw range.  Example: 0.05.</English>
+                <French>Plus petit écart entre deux bangs consécutifs en cadence Normale (9 bangs et moins), de 0,01 à 0,50 s. Avec l'écart maximum et la variation : plage de tirage.  Exemple : 0.05.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_GapMax">
+                <Original>Écart maximum entre bangs (s)</Original>
+                <English>Maximum gap between bangs (s)</English>
+                <French>Écart maximum entre bangs (s)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_GapMax_Tip">
+                <Original>Plus grand écart entre deux bangs consécutifs en cadence Normale (9 bangs et moins), de 0,02 à 1,00 s. Si le minimum est plus grand, les deux valeurs sont échangées. À variation 0 : écart fixe au milieu des deux.  Exemple : 0.15.</Original>
+                <English>Largest gap between two consecutive bangs at Normal rate (9 bangs or fewer), 0.02 to 1.00 s. If the minimum is larger, the two values are swapped. At variation 0: fixed gap, midway between the two.  Example: 0.15.</English>
+                <French>Plus grand écart entre deux bangs consécutifs en cadence Normale (9 bangs et moins), de 0,02 à 1,00 s. Si le minimum est plus grand, les deux valeurs sont échangées. À variation 0 : écart fixe au milieu des deux.  Exemple : 0.15.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_Jitter">
                 <Original>Irrégularité (s)</Original>

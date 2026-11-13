@@ -4,7 +4,7 @@
     instants partout, dans l'ordre, sans doublon).
 
     Cadence (réglage « Cadence des flashs », ou imposée par la grenade : classes _R = Hyper rapide, ou par le module) :
-      0 Normal       intervalle réglé (0,5 s) x facteur log-uniforme +/- irrégularité ; ~1 sur 8 quasi simultané
+      0 Normal       9 bangs et moins : écart entre comspec_fb_gapMin et comspec_fb_gapMax (défaut 0,05 - 0,15 s), milieu à variation 0
       1 Rapide       ~0,15 s (0,10 - 0,22 s)
       2 Hyper rapide ~0,065 s (0,045 - 0,09 s) : les 9 bangs partent en moins d'une demi-seconde
       3 Aléatoire    rafales rapides (0,05 - 0,15 s) et pauses (0,4 - 0,9 s) mélangées
@@ -18,8 +18,17 @@ params [["_n", 1, [0]], ["_mode", -1, [0]]];
 if (_mode < 0) then { _mode = missionNamespace getVariable ["comspec_fb_rateMode", 0] };
 _mode = ((round _mode) max 0) min 3;
 private _v = missionNamespace getVariable ["comspec_fb_variation", 0.6];
-private _interval = missionNamespace getVariable ["comspec_fb_interval", 0.5];
-private _jitter = missionNamespace getVariable ["comspec_fb_jitter", 0.12];
+// Tempo propre à cette grenade (lancer plus ou moins nerveux) : x0,78 à x1,28 à 100 % de variation, tiré une fois.
+private _tempo = exp ((random 2 - 1) * 0.25 * _v);
+// Écart court (cadence Normal, 9 bangs et moins) : plage réglée par CBA, minimum 0,01 s, bornes remises dans l'ordre.
+private _gapMin = missionNamespace getVariable ["comspec_fb_gapMin", 0.05];
+private _gapMax = missionNamespace getVariable ["comspec_fb_gapMax", 0.15];
+if (_gapMin > _gapMax) then { private _swap = _gapMin; _gapMin = _gapMax; _gapMax = _swap };
+_gapMin = _gapMin max 0.01;
+_gapMax = _gapMax max 0.01;
+// Centre et demi-plage : à variation 0 l'écart reste au milieu ; à 1 il tire dans toute la plage.
+private _gapMid = (_gapMin + _gapMax) / 2;
+private _gapHalf = (_gapMax - _gapMin) / 2;
 // Tirage autour d'un centre : _c x facteur dans [1 - _a v, 1 + _a v].
 private _around = { params ["_c", "_a"]; _c * (1 + (random 2 - 1) * _a * _v) };
 private _offsets = [];
@@ -41,14 +50,12 @@ for "_i" from 1 to _n do {
                     default { 0.22 + random 0.23 };
                 }
             } else {
-                if (random 1 < 0.2 * _v) then {
-                    0.06 + random 0.12
-                } else {
-                    _interval * exp ((random 2 - 1) * 0.55 * _v) + (random 2 - 1) * _jitter
-                }
+                // 9 bangs et moins : écart court entre bangs consécutifs, milieu de [gapMin, gapMax] à 0 de variation.
+                _gapMid + (random 2 - 1) * _gapHalf * ((_v max 0) min 1)
             }
         };
     };
-    _t = _t + ((_dt max 0.03) min 1.2);
+    // Écart court (cadence Normal, 9 bangs et moins) : pas de tempo, la plage 0,05 à 0,15 s reste exacte.
+    _t = _t + (if (_mode == 0 && _n <= 9) then { _dt } else { ((_dt * _tempo) max 0.03) min 1.2 });
 };
 [_offsets, _gains, _mode]

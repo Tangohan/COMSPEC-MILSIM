@@ -41,6 +41,16 @@ class RscTitles {
                 h = 0;
                 colorText[] = {1, 1, 1, 0};
             };
+            // Vignette (fn_playerLoop) : bords sombres, centre clair ; dernier contrôle, donc au-dessus du reste.
+            class Vignette: RscPicture {
+                idc = 131;
+                text = QPATHTOF(ui\fb_vignette_ca.paa);
+                x = 0;
+                y = 0;
+                w = 0;
+                h = 0;
+                colorText[] = {0, 0, 0, 0};
+            };
         };
     };
     // Halos des détonations (fn_halo) : 4 emplacements, chacun une couronne colorée (201-204, modèle tiré parmi

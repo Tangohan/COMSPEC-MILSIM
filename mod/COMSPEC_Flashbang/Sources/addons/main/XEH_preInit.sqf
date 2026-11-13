@@ -45,6 +45,7 @@ private _add = {
 // 2. Vision
 ["comspec_fb_flash", "CHECKBOX", "Flash", "Vision", true] call _add;
 ["comspec_fb_blur", "CHECKBOX", "Blur", "Vision", true] call _add;
+["comspec_fb_vignette", "CHECKBOX", "Vignette", "Vision", false] call _add;
 ["comspec_fb_nightMult", "SLIDER", "NightMult", "Vision", [1, 2, 1, 2]] call _add;
 // Extérieur dégagé : table à chute rapide (fn_visionTable), ajustable en portée et en intensité.
 ["comspec_fb_outdoorRange", "SLIDER", "OutdoorRange", "Vision", [0.5, 1.5, 1, 0, true]] call _add;
@@ -56,6 +57,8 @@ private _add = {
 ["comspec_fb_muffle", "CHECKBOX", "Muffle", "Hearing", true] call _add;
 ["comspec_fb_radioMuffle", "CHECKBOX", "RadioMuffle", "Hearing", true] call _add;
 ["comspec_fb_earProtectionDb", "SLIDER", "EarProtection", "Hearing", [0, 40, 25, 0]] call _add;
+// Écho de pièce (expérimental, désactivé par défaut) : dans un local fermé, une seconde réflexion courte et atténuée.
+["comspec_fb_roomEcho", "CHECKBOX", "RoomEcho", "Hearing", false] call _add;
 // 4. IA et équipe
 ["comspec_fb_aiAffected", "CHECKBOX", "AiAffected", "Ai", true] call _add;
 // Effet par camp (fn_sideRule, relu à chaque détonation ; le plus protecteur gagne) : 0 normal, 1 réduit,
@@ -78,6 +81,8 @@ private _ynLabels = [localize "STR_COMSPEC_FB_Affect_Yes", localize "STR_COMSPEC
 ], 0]] call _add;
 ["comspec_fb_jitter", "SLIDER", "Jitter", "Timing", [0, 0.3, 0.12, 2]] call _add;
 ["comspec_fb_variation", "SLIDER", "Variation", "Timing", [0, 1, 0.6, 0, true]] call _add;
+["comspec_fb_gapMin", "SLIDER", "GapMin", "Timing", [0.01, 0.5, 0.05, 2]] call _add;
+["comspec_fb_gapMax", "SLIDER", "GapMax", "Timing", [0.02, 1, 0.15, 2]] call _add;
 // 6. Entraînement
 ["comspec_fb_drillPops", "SLIDER", "DrillPops", "Drill", [1, 9, 1, 0]] call _add;
 ["comspec_fb_allowBig", "CHECKBOX", "AllowBig", "Timing", true] call _add;

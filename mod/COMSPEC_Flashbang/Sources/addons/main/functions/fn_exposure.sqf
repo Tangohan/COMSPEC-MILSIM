@@ -50,7 +50,7 @@ private _indoorUnit = [_eye, _unit, vehicle _unit] call comspec_fb_fnc_roofAbove
 private _sameRoom = _enclosed && {_indoorUnit} && {_d < ((_env getOrDefault ["maxAxis", 8]) max 4)};
 
 // ------------------------------------------------------------------ audition
-private _L = 170 - 20 * log (_d / 1.5);
+private _L = 170 - 20 * (log (_d / 1.5) / log 10); // SQF log = népérien : log10(x) = ln(x) / ln(10)
 _L = _L + (switch (_class) do { case "petite_piece": {6}; case "couloir": {5}; case "piece": {4}; case "hangar": {2}; default {0} });
 if (_blocked && {!_sameRoom}) then { _L = _L - 25 };
 private _protDb = missionNamespace getVariable ["comspec_fb_earProtectionDb", 25];

@@ -88,8 +88,15 @@ if (hasInterface && _showFx) then {
     [_ctx, _pos, _env, _g, (_gapNext min _gapPrev) < 0.12] call comspec_fb_fnc_fx;
     private _cam = AGLToASL (positionCameraToWorld [0, 0, 0]);
     private _dc = _cam vectorDistance _pos;
-    // Retard de propagation (343 m/s) + micro-décalage aléatoire (jusqu'à 30 ms à 100 % de variation).
-    private _delay = _dc / 343 + random (0.05 * (missionNamespace getVariable ["comspec_fb_variation", 0.6]));
+    private _vr = missionNamespace getVariable ["comspec_fb_variation", 0.6];
+    // Décalage propre à cette grenade sur ce poste (tiré au premier bang, gardé pour tous ses bangs) : 0 à 80 ms à 100 %.
+    if ((_ctx getOrDefault ["sndShift", -1]) < 0) then { _ctx set ["sndShift", random (0.08 * _vr)] };
+    // Retard de propagation (343 m/s) + décalage de la grenade + décalage propre à ce bang : 0 à 100 ms à 100 % de variation,
+    // mais au plus le quart de l'écart le plus court : deux bangs ne s'inversent ni ne coïncident (sinon ils se fondent).
+    private _jit = (0.1 * _vr) min (0.25 * (_gapNext min _gapPrev));
+    private _delay = _dc / 343 + (_ctx get "sndShift") + random _jit;
+    // Vitesse de lecture de ce bang : durée et hauteur varient (±12 % à 100 %).
+    private _stretch = 1 + (random 2 - 1) * 0.12 * _vr;
     // Volume des flashbangs (client, 500 % par défaut) ; limiteur : -1 dB par bang au-delà du 4e, au plus -8 dB (une
     // série ne sature pas, le premier bang garde tout son impact) ; en rafale au plus -3 dB : chaque coup reste net.
     private _gain = (missionNamespace getVariable ["comspec_fb_bangVolume", 5]) * (10 ^ (-(((_index - 3) max 0) min ([8, 3] select _close)) / 20)) * _g;
@@ -97,7 +104,32 @@ if (hasInterface && _showFx) then {
     _gain = _gain * linearConversion [30, 100, _dc, 1.6, 1, true];
     // Le bang n'est pas étouffé par l'ouïe déjà étouffée des flashs précédents : compensation de l'atténuation en cours.
     _gain = _gain / (((comspec_fb_state getOrDefault ["lastVol", 1]) max 0.25) min 1);
-    private _wall = (lineIntersectsSurfaces [_pos vectorAdd [0, 0, 0.3], _cam, _device, vehicle (call CBA_fnc_currentUnit), true, 1, "GEOM", "VIEW"]) isNotEqualTo [];
+    // Niveau propre à ce bang : ±2 dB à 100 % de variation.
+    _gain = _gain * (10 ^ (((random 2) - 1) * 2 * _vr / 20));
+    // Ouvertures (portes, fenêtres entrouvertes) : rayons vers un petit disque de 0,6 m autour du point d'écoute,
+    // centre compris (comspec_fb_rays, 9 par défaut ; 1 = rayon unique d'avant, repli si le coût pèse). Au-delà de
+    // la moitié des rayons bloqués, le bang est étouffé ; entre les deux, une partie passe (niveau au prorata).
+    private _nRays = missionNamespace getVariable ["comspec_fb_rays", 9];
+    private _src = _pos vectorAdd [0, 0, 0.3];
+    private _rays = [_cam];
+    private _nRing = ((_nRays - 1) max 0) min 8;
+    for "_k" from 0 to (_nRing - 1) do {
+        private _a = 360 * _k / _nRing;
+        _rays pushBack (_cam vectorAdd [0.6 * cos _a, 0.6 * sin _a, 0]);
+    };
+    private _nOpen = 0;
+    {
+        private _hit = lineIntersectsSurfaces [_src, _x, _device, vehicle (call CBA_fnc_currentUnit), true, 1, "GEOM", "VIEW"];
+        if (_hit isEqualTo []) then { _nOpen = _nOpen + 1 } else {
+            // Grille, grillage, clôture : élément fin et traversable, compté comme 0,3 d'obstacle (repli à 1 rayon inchangé).
+            private _cls = toLower typeOf ((_hit select 0) select 2);
+            private _thin = ["fence", "grille", "grill", "wire", "mesh", "net_"] select { (_cls find _x) >= 0 };
+            if (count _rays > 1 && {count _thin > 0}) then { _nOpen = _nOpen + 0.7 };
+        };
+    } forEach _rays;
+    private _open = _nOpen / count _rays;
+    private _wall = _open < 0.5;
+    if (count _rays > 1) then { _gain = _gain * (0.6 + 0.4 * _open) };
     // Portée d'audibilité (réglage « Portée du son », 250 m) : moitié à travers un mur ou depuis un local fermé.
     // Elle ne concerne que le son : les effets restent limités au rayon maximal (~25 m).
     private _range = missionNamespace getVariable ["comspec_fb_soundRange", 250];
@@ -115,6 +147,7 @@ if (hasInterface && _showFx) then {
     private _maxCopies = [4, 2] select _close;
     private _short = _index > 0 && {_gapNext < 0.25};
     private _voices = 0;
+    private _roomEcho = missionNamespace getVariable ["comspec_fb_roomEcho", false];
     if (_dc <= _range) then {
         if (_kind == "drill") then {
             // Son choisi pour la DRILL (réglage d'addon ou module), décidé par le serveur : une lecture par pop.
@@ -128,11 +161,16 @@ if (hasInterface && _showFx) then {
                 case (_theme != ""): {
                     if (!_themeMute) then { _voices = ["Theme_" + _theme, _pos, _delay, _wall, _gain, _range, _dc, _maxCopies] call comspec_fb_fnc_playBang } else { _voices = -1 };
                 };
-                case (_dc > 100 && {!_wall}): { _voices = ["BangLointain", _pos, _delay, false, _gain, _range, -1, _maxCopies] call comspec_fb_fnc_playBang };
-                case (_wall): { _voices = [["BangEtouffe", "BangCourt"] select _short, _pos, _delay, true, _gain, _range, -1, _maxCopies] call comspec_fb_fnc_playBang };
+                case (_dc > 100 && {!_wall}): { _voices = ["BangLointain", _pos, _delay, false, _gain, _range, -1, _maxCopies, _stretch] call comspec_fb_fnc_playBang };
+                case (_wall): { _voices = [["BangEtouffe", "BangCourt"] select _short, _pos, _delay, true, _gain, _range, -1, _maxCopies, _stretch] call comspec_fb_fnc_playBang };
                 default {
-                    _voices = [["BangUnique", "BangCourt"] select _short, _pos, _delay, false, _gain, _range, _dc, _maxCopies] call comspec_fb_fnc_playBang;
-                    if (_index == 0) then { ["BangGrave", _pos, _delay, false, _gain, _range, _dc, _maxCopies] call comspec_fb_fnc_playBang };
+                    _voices = [["BangUnique", "BangCourt"] select _short, _pos, _delay, false, _gain, _range, _dc, _maxCopies, _stretch] call comspec_fb_fnc_playBang;
+                    if (_index == 0) then { ["BangGrave", _pos, _delay, false, _gain, _range, _dc, _maxCopies, _stretch] call comspec_fb_fnc_playBang };
+                    // Écho de pièce (réglage, désactivé par défaut) : local fermé sans mur entre l'auditeur et le flash.
+                    // Une réflexion courte (BangCourt), 60 à 110 ms après, à 20 % du gain, une seule lecture, pas de couche 2D.
+                    if (_roomEcho && {_env getOrDefault ["enclosed", false]}) then {
+                        ["BangCourt", _pos, _delay + 0.06 + random 0.05, false, _gain * 0.2, _range, -1, 1] call comspec_fb_fnc_playBang;
+                    };
                 };
             };
         };
@@ -145,8 +183,8 @@ if (hasInterface && _showFx) then {
             _ctx set ["soundsFused", (_ctx getOrDefault ["soundsFused", 0]) + 1];
         };
     };
-    ["fx", format ["%1 : lumière et particules créées, son à %2 m (retard %3 s, %4, portée du son %5 m%6)", _id, round _dc, _delay toFixed 2,
-        ["direct", "derrière un mur"] select _wall, round _range, [" : trop loin, pas de son", ""] select (_dc <= _range)]] call comspec_fb_fnc_log;
+    ["fx", format ["%1 : lumière et particules créées, son à %2 m (retard %3 s, %4, ouvertures %7/%8, portée du son %5 m%6)", _id, round _dc, _delay toFixed 2,
+        ["direct", "derrière un mur"] select _wall, round _range, [" : trop loin, pas de son", ""] select (_dc <= _range), _nOpen, count _rays]] call comspec_fb_fnc_log;
 };
 
 // ------------------------------------------------------------------ effets sur les unités locales

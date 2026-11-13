@@ -132,6 +132,19 @@ if (!isNull _disp) then {
     } else {
         _flare ctrlSetTextColor [1, 1, 1, 0];
     };
+    // Vignette : bords sombres qui se resserrent et s'assombrissent avec l'éblouissement (blanc), puis se relâchent.
+    private _vig = _disp displayCtrl 131;
+    if (missionNamespace getVariable ["comspec_fb_vignette", true] && {_W > 0.01}) then {
+        private _vg = _W min 1;
+        private _vk = 1 + 0.35 * _vg;
+        private _vw = safeZoneW * _vk;
+        private _vh = safeZoneH * _vk;
+        _vig ctrlSetPosition [safeZoneX + safeZoneW / 2 - _vw / 2, safeZoneY + safeZoneH / 2 - _vh / 2, _vw, _vh];
+        _vig ctrlCommit 0;
+        _vig ctrlSetTextColor [0, 0, 0, 0.85 * (_vg ^ 0.8)];
+    } else {
+        _vig ctrlSetTextColor [0, 0, 0, 0];
+    };
 };
 
 // ------------------------------------------------------------------ visée et ouïe
