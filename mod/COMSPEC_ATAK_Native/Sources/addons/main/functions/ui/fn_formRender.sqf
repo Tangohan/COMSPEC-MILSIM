@@ -807,14 +807,15 @@ private _lineIdx = 0; // lignes "line" : fond alterné
         };
         case "info": {
             _row params ["", "_label", "_value"];
-            private _a = ["COMSPEC_RscStructuredText", [_pad, _y, _w * 0.5, _fs * 1.3]] call _mk;
+            // Libellé à gauche (62 %, retour à la ligne), valeur à droite (38 %) : les deux colonnes ne se recouvrent plus.
+            private _a = ["COMSPEC_RscStructuredText", [_pad, _y, _w * 0.62 - _pad * 0.5, _fs * 1.3]] call _mk;
             _a ctrlSetStructuredText parseText ((format ["<t size='0.85' color='" + _hTD + "'>%1</t>", _label]) call comspec_atak_native_fnc_tr);
-            private _b = ["COMSPEC_RscStructuredText", [_pad + _w * 0.4, _y, _w * 0.6, _fs * 1.3]] call _mk;
+            private _b = ["COMSPEC_RscStructuredText", [_pad + _w * 0.62, _y, _w * 0.38 - _pad * 0.5, _fs * 1.3]] call _mk;
             _b ctrlSetStructuredText parseText ((format ["<t size='0.85' align='right'>%1</t>", _value]) call comspec_atak_native_fnc_tr);
             private _ih2 = ((ctrlTextHeight _a) max (ctrlTextHeight _b)) max (_fs * 1.45);
             if (_ih2 > _fs * 1.3) then {
-                _a ctrlSetPosition [_pad, _y, _w * 0.5, _ih2]; _a ctrlCommit 0;
-                _b ctrlSetPosition [_pad + _w * 0.4, _y, _w * 0.6, _ih2]; _b ctrlCommit 0;
+                _a ctrlSetPosition [_pad, _y, _w * 0.62 - _pad * 0.5, _ih2]; _a ctrlCommit 0;
+                _b ctrlSetPosition [_pad + _w * 0.62, _y, _w * 0.38 - _pad * 0.5, _ih2]; _b ctrlCommit 0;
             };
             // Filet discret sous chaque ligne : les fiches denses (Profil, Réseau, Debug) se lisent ligne par ligne.
             private _ln = ["COMSPEC_RscText", [_pad, _y + _ih2 - pixelH, _w, pixelH]] call _mk;

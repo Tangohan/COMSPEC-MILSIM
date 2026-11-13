@@ -14333,6 +14333,8 @@
 ["Relais", "Relay"],
 ["relais", "relay"],
 ["RELAIS", "RELAY"],
+["PASSERELLE", "GATEWAY"],
+["PC", "CP"],
 ["Relais %1", "Relay %1"],
 ["Relais %1 (%2 MHz)", "Relay %1 (%2 MHz)"],
 ["Relais %1 : %2 · %3 MHz · perte %4 %% · structure %5 %% · portée %6 m · %7 Mbit/s · %8 téléphone(s)%9", "Relay %1: %2 · %3 MHz · loss %4 %% · structure %5 %% · range %6 m · %7 Mbit/s · %8 phone(s)%9"],
