@@ -1951,11 +1951,17 @@ class Container
             \App\Repositories\DutyRosterRepository::class => new \App\Repositories\DutyRosterRepository(),
             \App\Repositories\WorkflowRepository::class => new \App\Repositories\WorkflowRepository(),
             \App\Services\Workflow\ApproverResolver::class => new \App\Services\Workflow\ApproverResolver(),
+            \App\Repositories\WorkflowCircuitRepository::class => new \App\Repositories\WorkflowCircuitRepository(),
+            \App\Services\Workflow\WorkflowCircuits::class => new \App\Services\Workflow\WorkflowCircuits(
+                self::get(\App\Repositories\WorkflowCircuitRepository::class),
+            ),
             \App\Services\Workflow\WorkflowEngine::class => new \App\Services\Workflow\WorkflowEngine(
                 self::get(\App\Repositories\WorkflowRepository::class),
                 self::get(\App\Repositories\WorkTaskRepository::class),
                 self::get(\App\Services\Workflow\ApproverResolver::class),
                 self::get(\App\Repositories\MemberNotificationRepository::class),
+                null,
+                self::get(\App\Services\Workflow\WorkflowCircuits::class),
             ),
             \App\Services\Workflow\WorkTaskService::class => new \App\Services\Workflow\WorkTaskService(
                 self::get(\App\Repositories\WorkTaskRepository::class),

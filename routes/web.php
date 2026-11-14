@@ -2308,6 +2308,8 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/registre-droits/modifier', [\App\Controllers\Admin\AccessRegisterController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/registre-droits/retirer', [\App\Controllers\Admin\AccessRegisterController::class, 'revoke'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/registre-droits/revue', [\App\Controllers\Admin\AccessRegisterController::class, 'review'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/circuits', [EffectifsWorkspaceController::class, 'circuits'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/circuits', [\App\Controllers\Admin\WorkflowCircuitsController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/fonctions', [EffectifsWorkspaceController::class, 'fonctions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions', [EffectifsWorkspaceController::class, 'saveJobRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/fonctions/nouveau', [EffectifsWorkspaceController::class, 'createJobRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

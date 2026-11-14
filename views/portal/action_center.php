@@ -114,7 +114,7 @@ $csrf = \App\Core\Csrf::token();
                             <?php if ((string) ($task['type'] ?? '') === \App\Services\Workflow\WorkflowEngine::TASK_TYPE_OPINION && (int) ($task['linked_entity_id'] ?? 0) > 0): ?>
                             <form method="post" class="w-full space-y-2 sm:w-72" action="<?= htmlspecialchars(url('mon-service/circuit/' . (int) $task['linked_entity_id'] . '/avis'), ENT_QUOTES, 'UTF-8') ?>">
                                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
-                                <label class="block text-[11px] font-semibold text-slate-600" for="avis-<?= $taskId ?>">Votre avis de chef d’unité (obligatoire s’il est défavorable)</label>
+                                <label class="block text-[11px] font-semibold text-slate-600" for="avis-<?= $taskId ?>">Votre avis (obligatoire s’il est défavorable)</label>
                                 <textarea id="avis-<?= $taskId ?>" name="commentaire" rows="2" maxlength="500" class="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900"></textarea>
                                 <div class="flex flex-wrap gap-2">
                                     <button type="submit" name="avis" value="favorable" class="rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-800">Avis favorable</button>
