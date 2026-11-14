@@ -96,7 +96,7 @@ $roleNames = array_values(array_filter($roleNames, static function (string $n) u
         return false;
     }
 
-    return !in_array($trimmed, ['En formation', 'En service actif'], true);
+    return !in_array($trimmed, \App\Services\Personnel\PersonnelDutyPositionService::labels(), true);
 }));
 
 $accScore = (int) ($completenessAccount['score'] ?? 100);

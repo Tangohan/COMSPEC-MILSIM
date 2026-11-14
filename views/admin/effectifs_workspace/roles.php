@@ -36,6 +36,7 @@ foreach ($lockedIds as $lid) {
         Ressources humaines peut être masqué. Membre (le socle que tout le monde porte) et Gestionnaire (les clés de la communauté) restent toujours.
         Les emplois du dossier (radio, médic…) décrivent la fonction, pas les droits.
     </p>
+    <p class="eff-page-lead"><a href="<?= htmlspecialchars(effectifs_workspace_url('registre-droits'), ENT_QUOTES, 'UTF-8') ?>">Ouvrir le registre des droits</a> : qui détient chaque niveau, depuis quand, jusqu’à quand, avec l’historique.</p>
 </section>
 
 <div class="eff-access-layout">

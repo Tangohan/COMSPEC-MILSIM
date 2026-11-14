@@ -100,7 +100,7 @@ require base_path('views/partials/ath_kpis.php');
         <?= (int) $missingDutyCount === 1
             ? '1 membre actif n’a pas encore de position.'
             : (int) $missingDutyCount . ' membres actifs n’ont pas encore de position.' ?>
-        À l’arrivée, la position est « En formation ». Une fois l’accueil terminé, elle passe à « En service actif ». Vous pouvez les attribuer d’un clic pour les membres déjà présents.
+        À l’arrivée, la position est « En formation ». Une fois l’accueil terminé, elle passe à « En service actif ». Vous pouvez les attribuer d’un clic pour les membres déjà présents. Les positions « En service non actif » et « En service statutaire de renforcement » se choisissent depuis la fiche du membre.
     </p>
     <form method="post" action="<?= $h(url('back-office/users/duty-positions/backfill')) ?>" class="ath-member-show__inline-form">
         <?= \App\Core\Csrf::field() ?>

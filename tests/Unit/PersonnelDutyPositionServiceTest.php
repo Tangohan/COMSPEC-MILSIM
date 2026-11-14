@@ -79,6 +79,24 @@ final class PersonnelDutyPositionServiceTest extends TestCase
         self::assertSame('En service actif', PersonnelDutyPositionService::labelForSlug(PersonnelDutyPositionService::SLUG_ACTIVE));
     }
 
+    public function testAdministrativePositionsAreExplainedAndManualOnesAreKept(): void
+    {
+        self::assertSame(
+            ['En formation', 'En service actif', 'En service non actif', 'En service statutaire de renforcement'],
+            PersonnelDutyPositionService::labels()
+        );
+        foreach (PersonnelDutyPositionService::positions() as $slug => $position) {
+            self::assertTrue(PersonnelDutyPositionService::isPositionSlug($slug));
+            self::assertNotSame('', $position['help'], $slug);
+        }
+        self::assertFalse(PersonnelDutyPositionService::isPositionSlug('member'));
+        // Le rattrapage quotidien et l'arrivée ne remplacent pas une position posée par un responsable.
+        foreach ([PersonnelDutyPositionService::SLUG_INACTIVE, PersonnelDutyPositionService::SLUG_REINFORCEMENT] as $manual) {
+            self::assertSame($manual, PersonnelDutyPositionService::decideSlug($manual, false, false, false));
+            self::assertSame($manual, PersonnelDutyPositionService::decideSlug($manual, true, false, false));
+        }
+    }
+
     public function testMandatoryTrainingDurationIsComputedInWholeDays(): void
     {
         $start = 1_700_000_000;

@@ -24,7 +24,7 @@ final class CommunityAccessCollapseService
     ) {}
 
     /**
-     * Slugs conservés par communauté : trois accès + deux positions de service.
+     * Slugs conservés par communauté : trois accès + les positions administratives.
      *
      * @return list<string>
      */
@@ -32,10 +32,7 @@ final class CommunityAccessCollapseService
     {
         return array_values(array_unique(array_merge(
             CommunityAccessProfiles::slugs(),
-            [
-                PersonnelDutyPositionService::SLUG_TRAINING,
-                PersonnelDutyPositionService::SLUG_ACTIVE,
-            ]
+            PersonnelDutyPositionService::slugs()
         )));
     }
 

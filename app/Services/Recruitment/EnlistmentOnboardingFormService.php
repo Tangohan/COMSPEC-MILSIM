@@ -29,12 +29,6 @@ final class EnlistmentOnboardingFormService
     public const DUTY_TRAINING = 'training';
     public const DUTY_ACTIVE = 'active';
 
-    /** Rôles techniques qui ne sont pas des niveaux d’accès (position de service). */
-    private const NON_ACCESS_SLUGS = [
-        PersonnelDutyPositionService::SLUG_TRAINING,
-        PersonnelDutyPositionService::SLUG_ACTIVE,
-    ];
-
     public function __construct(
         private RoleRepository $roles,
         private UnitRepository $units,
@@ -168,7 +162,7 @@ final class EnlistmentOnboardingFormService
         $out = [];
         foreach ($rows as $r) {
             $slug = strtolower(trim((string) ($r['slug'] ?? '')));
-            if ((int) ($r['id'] ?? 0) < 1 || in_array($slug, self::NON_ACCESS_SLUGS, true)) {
+            if ((int) ($r['id'] ?? 0) < 1 || PersonnelDutyPositionService::isPositionSlug($slug)) {
                 continue;
             }
             $out[] = $r;

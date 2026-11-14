@@ -1139,14 +1139,30 @@ class UserRepository
             }
         }
         if ($this->hasTenantUserRolesTable()) {
-            $this->pdo()->prepare(
-                'DELETE FROM tenant_user_roles WHERE user_id = ? AND tenant_id = ? AND org_unit_id IS NULL'
-            )->execute([$userId, $tenantId]);
+            // Ne retirer que les rôles quittés : une attribution conservée garde sa date, son échéance
+            // et ses notes du registre des droits (metadata).
+            if ($valid === []) {
+                $this->pdo()->prepare(
+                    'DELETE FROM tenant_user_roles WHERE user_id = ? AND tenant_id = ? AND org_unit_id IS NULL'
+                )->execute([$userId, $tenantId]);
+            } else {
+                $keepPh = implode(',', array_fill(0, count($valid), '?'));
+                $this->pdo()->prepare(
+                    "DELETE FROM tenant_user_roles WHERE user_id = ? AND tenant_id = ? AND org_unit_id IS NULL AND role_id NOT IN ({$keepPh})"
+                )->execute(array_merge([$userId, $tenantId], $valid));
+            }
             if ($valid !== []) {
                 $insTur = $this->pdo()->prepare(
                     'INSERT INTO tenant_user_roles (tenant_id, user_id, role_id, org_unit_id, co_unit_id, created_at) VALUES (?, ?, ?, NULL, 0, NOW())'
                 );
+                $heldTur = $this->pdo()->prepare(
+                    'SELECT 1 FROM tenant_user_roles WHERE tenant_id = ? AND user_id = ? AND role_id = ? AND org_unit_id IS NULL LIMIT 1'
+                );
                 foreach ($valid as $rid) {
+                    $heldTur->execute([$tenantId, $userId, $rid]);
+                    if ($heldTur->fetchColumn()) {
+                        continue;
+                    }
                     try {
                         $insTur->execute([$tenantId, $userId, $rid]);
                     } catch (\PDOException) {
@@ -2742,14 +2758,8 @@ class UserRepository
         [$whereSql, $params] = $this->buildUserListWhere($tenantId, $search, $status, $roleId, $excludeServiceAccounts, $onlyWithoutUnit, $onlyWithoutRole);
         $extra = '';
         if ($this->hasUserRolesTable()) {
-            $dutySlugs = SqlText::inLiterals($this->pdo(), 'r3.slug', [
-                \App\Services\Personnel\PersonnelDutyPositionService::SLUG_TRAINING,
-                \App\Services\Personnel\PersonnelDutyPositionService::SLUG_ACTIVE,
-            ]);
-            $functionSlugs = SqlText::inLiterals($this->pdo(), 'r2.slug', [
-                \App\Services\Personnel\PersonnelDutyPositionService::SLUG_TRAINING,
-                \App\Services\Personnel\PersonnelDutyPositionService::SLUG_ACTIVE,
-            ]);
+            $dutySlugs = SqlText::inLiterals($this->pdo(), 'r3.slug', \App\Services\Personnel\PersonnelDutyPositionService::slugs());
+            $functionSlugs = SqlText::inLiterals($this->pdo(), 'r2.slug', \App\Services\Personnel\PersonnelDutyPositionService::slugs());
             $activeFirst = SqlText::equalsLiteral(
                 $this->pdo(),
                 'r3.slug',

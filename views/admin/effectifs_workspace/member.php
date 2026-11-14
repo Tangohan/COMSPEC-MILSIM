@@ -1067,6 +1067,25 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
         <?php endif; ?>
         <?php if ($canManageStatus): ?>
             <details class="eff-card__edit">
+                <summary>Changer la position administrative</summary>
+                <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/position-administrative'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <label for="eff-duty-position">Position</label>
+                    <select id="eff-duty-position" name="position">
+                        <?php foreach (\App\Services\Personnel\PersonnelDutyPositionService::positions() as $dpSlug => $dpPos): ?>
+                            <option value="<?= htmlspecialchars($dpSlug, ENT_QUOTES, 'UTF-8') ?>" <?= $dutyPosition === $dpPos['label'] ? 'selected' : '' ?>><?= htmlspecialchars($dpPos['label'], ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="submit" class="eff-btn eff-btn--ghost">Enregistrer la position</button>
+                </form>
+            </details>
+        <?php endif; ?>
+        <details class="eff-card__edit">
+            <summary>Comprendre les positions et les situations</summary>
+            <?php require __DIR__ . '/partials/duty_positions_help.php'; ?>
+        </details>
+        <?php if ($canManageStatus): ?>
+            <details class="eff-card__edit">
                 <summary>Changer l’état du compte</summary>
                 <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/statut'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">

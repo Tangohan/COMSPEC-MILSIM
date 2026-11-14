@@ -258,10 +258,13 @@ class RbacService
      */
     private function computeFlatAndUnitMapsFromTenantUserRoles(int $userId, int $tenantId): array
     {
+        // Registre des droits : une attribution bornée ne donne rien avant son début ni après son échéance.
+        $now = date('Y-m-d H:i:s');
         $stmt = $this->pdo->prepare(
-            'SELECT role_id, org_unit_id FROM tenant_user_roles WHERE user_id = ? AND tenant_id = ?'
+            'SELECT role_id, org_unit_id FROM tenant_user_roles WHERE user_id = ? AND tenant_id = ?
+               AND (valid_from IS NULL OR valid_from <= ?) AND (valid_until IS NULL OR valid_until > ?)'
         );
-        $stmt->execute([$userId, $tenantId]);
+        $stmt->execute([$userId, $tenantId, $now, $now]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         $flat = [];
