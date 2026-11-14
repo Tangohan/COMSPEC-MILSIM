@@ -271,6 +271,51 @@ final class JnetSpaceService
         return null;
     }
 
+    /** Le lecteur peut-il publier, et donc écrire dans les outils de l'espace (tâches, pages, réponses) ? */
+    public function canPost(int $tenantId, int $viewerUserId, int $spaceId): bool
+    {
+        $tree = $this->tree($tenantId, $viewerUserId);
+
+        return $tree->has($spaceId) && $tree->canPostIn($this->viewerUnitIds($tenantId, $viewerUserId), $spaceId, $this->isOrgWideWriter());
+    }
+
+    /**
+     * Relaie un ordre ou une consigne reçus aux sous-unités directes de l'espace : un nouvel échange part de l'espace,
+     * avec le texte d'origine, sans le modifier, et un mot du chef en tête. Mêmes contrôles que la publication.
+     *
+     * @param list<int> $subUnitIds
+     */
+    public function relay(int $tenantId, int $viewerUserId, int $spaceId, int $exchangeId, array $subUnitIds, string $note): ?string
+    {
+        if (!$this->exchangesReady()) {
+            return 'Les échanges ne sont pas encore activés (migration à appliquer).';
+        }
+        $tree = $this->tree($tenantId, $viewerUserId);
+        $row = $this->exchanges->find($tenantId, $exchangeId);
+        $viewerUnits = $this->viewerUnitIds($tenantId, $viewerUserId);
+        if ($row === null || !$tree->has($spaceId) || !$tree->canSeeExchange($viewerUnits, (int) $row['from_unit_id'], (array) $row['targets'], $this->isOrgWideReader())) {
+            return 'Échange introuvable.';
+        }
+        if ($tree->directionFor($spaceId, (int) $row['from_unit_id'], array_map('intval', (array) $row['targets'])) !== JnetSpaceTree::DIR_DOWN) {
+            return 'Seul un échange reçu du commandement se relaie.';
+        }
+        $children = $tree->childrenOf($spaceId);
+        $subUnitIds = array_values(array_filter(array_unique(array_map('intval', $subUnitIds)), static fn (int $id): bool => in_array($id, $children, true)));
+        if ($subUnitIds === []) {
+            return 'Choisissez au moins une sous-unité.';
+        }
+        $note = trim($note);
+        $origin = (string) ($tree->node((int) $row['from_unit_id'])['label'] ?? 'l’échelon supérieur');
+        $body = 'Relayé depuis ' . $origin . ($note !== '' ? ' — mot du chef : ' . $note : '') . "
+
+" . trim((string) ($row['body'] ?? ''));
+        $kind = isset(self::KINDS[(string) $row['kind']]) ? (string) $row['kind'] : 'info';
+
+        $link = trim((string) ($row['link_url'] ?? ''));
+
+        return $this->post($tenantId, $viewerUserId, $spaceId, $kind, (string) $row['title'], mb_substr(rtrim($body), 0, self::BODY_MAX), $link !== '' ? '/' . ltrim($link, '/') : '', $subUnitIds);
+    }
+
     /**
      * Effectif de chaque unité visible du lecteur (sous-unités comprises), pour le registre des espaces.
      *

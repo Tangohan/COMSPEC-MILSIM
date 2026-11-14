@@ -40,7 +40,7 @@ $audience = (int) ($ex['audience'] ?? 0);
 $ackComplete = $audience > 0 && $readCount >= $audience;
 $pending = max(0, $audience - $readCount);
 ?>
-<article class="jn-ex jn-ex--<?= $h($kind) ?> jn-ex--<?= $h($variant) ?><?= $source !== '' ? ' jn-ex--field' : '' ?>">
+<article id="ex-<?= (int) ($ex['id'] ?? 0) ?>" class="jn-ex jn-ex--<?= $h($kind) ?> jn-ex--<?= $h($variant) ?><?= $source !== '' ? ' jn-ex--field' : '' ?>">
     <?php if ($variant === 'row'): ?>
         <time class="jn-ex__clock" title="<?= $h((string) ($ex['when'] ?? '')) ?>"><?= $h((string) ($ex['stamp'] ?? '')) ?></time>
     <?php elseif ($variant === 'chat'): ?>

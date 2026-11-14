@@ -6,11 +6,14 @@ declare(strict_types=1);
  * coque ni le thème du back-office. Le thème de l'unité (JnetUnitSpaceSettings::look) fixe le fond, les panneaux, le
  * texte et la couleur ; jnet_unit_shell.css en tire tous les jetons, y compris ceux des composants d'échange existants.
  *
- * Rubriques (?vue=) : accueil, echanges, effectif, operations, sous-unites ; « personnaliser » pour le réglage de l'espace.
+ * Rubriques (?vue=) : accueil, echanges, effectif (avec le suivi des membres), taches, pages (page : une page ouverte), photos,
+ * documents, operations, sous-unites ; « personnaliser » pour le réglage de l'espace. Les données des outils arrivent dans $usw
+ * (JnetPortalController::workspaceData) ; les rubriques sont des partiels de views/jnet/unit/.
  *
  * @var array<string, mixed> $space
  * @var array<string, mixed> $spaceLook
  * @var string $usView
+ * @var array<string, mixed> $usw
  */
 use App\Services\Jnet\JnetUnitSpaceSettings as S;
 use App\Support\JnetUi;
@@ -42,16 +45,29 @@ $composeLabel = 'Partager avec ' . $label;
 $flashErr = \App\Core\Session::getFlash('error');
 $flashOk = \App\Core\Session::getFlash('success');
 
+$usw = is_array($usw ?? null) ? $usw : [];
+$wShown = is_array($usw['shown'] ?? null) ? $usw['shown'] : [];
+$wCanPost = !empty($usw['canPost']);
 $tabs = [
     'accueil' => ['Accueil', 0],
     'echanges' => ['Ordres et échanges', count($received) + count($internal) + count($sentUp)],
     'effectif' => ['Effectif', count($members)],
+    'taches' => ['Tâches', 0],
+    'pages' => ['Pages', 0],
+    'photos' => ['Photos', 0],
+    'documents' => ['Documents', 0],
     'operations' => ['Opérations', (int) ($spaceOpsTotal ?? count($spaceOps))],
     'sous-unites' => ['Sous-unités', count($subTree)],
 ];
+foreach (['taches', 'pages', 'photos', 'documents'] as $moduleKey) {
+    if (empty($wShown[$moduleKey])) {
+        unset($tabs[$moduleKey]);
+    }
+}
 if ($subTree === []) {
     unset($tabs['sous-unites']);
 }
+$activeTab = $view === 'page' ? 'pages' : $view;
 $tabUrl = static fn (string $key): string => $base . ($key === 'accueil' ? '?direct=1' : '?vue=' . $key . '&direct=1');
 $face = static function (array $p) use ($h): string {
     $photo = $p['photo'] ?? null;
@@ -66,7 +82,7 @@ $heroPhoto = $banner !== '' ? $banner : asset_url(JnetUi::genericPhoto($unitId))
 $kindLine = implode(' · ', array_filter([JnetUi::echelonLabel((string) ($space['echelon'] ?? '')), JnetUi::functionLabel((string) ($space['function'] ?? ''))]));
 $pad2 = static fn (int $n): string => str_pad((string) $n, 2, '0', STR_PAD_LEFT);
 $section = static function (string $title, string $moreHref = '', string $moreLabel = '') use ($h): string {
-    return '<header class="ja-sh"><h2 class="ja-disp ja-disp--sm">' . $h($title) . '</h2>' . ($moreHref !== '' ? '<a class="ja-sh__link" href="' . $h($moreHref) . '">' . $h($moreLabel) . ' →</a>' : '') . '</header>';
+    return '<header class="ja-sh"><h2 class="ja-disp ja-disp--sm">' . $h($title) . '</h2>' . ($moreHref !== '' && $moreLabel !== '' ? '<a class="ja-sh__link" href="' . $h($moreHref) . '">' . $h($moreLabel) . ' →</a>' : '') . '</header>';
 };
 ?>
 <!DOCTYPE html>
@@ -84,6 +100,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_spaces.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_unit_space.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_unit_shell.css')) ?>">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_unit_workspace.css')) ?>">
 </head>
 <body class="ja us us--<?= $h($look['theme']) ?>" style="<?= $h(S::cssVars($look)) ?>">
 <a class="ja-skip" href="#us-main">Aller au contenu</a>
@@ -95,7 +112,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
     </a>
     <nav class="ja-tabs" aria-label="Rubriques de l’espace">
         <?php $i = 0; foreach ($tabs as $key => [$tabLabel, $count]): ?>
-            <a class="ja-tab<?= $view === $key ? ' is-on' : '' ?>" href="<?= $h($tabUrl($key)) ?>"<?= $view === $key ? ' aria-current="page"' : '' ?>><span class="ja-mono"><?= $pad2($i++) ?></span><?= $h($tabLabel) ?><?php if ($key === 'echanges' && $toRead > 0): ?><em><?= min(99, $toRead) ?></em><?php elseif ($count > 0): ?><small class="us-count"><?= min(99, (int) $count) ?></small><?php endif; ?></a>
+            <a class="ja-tab<?= $activeTab === $key ? ' is-on' : '' ?>" href="<?= $h($tabUrl($key)) ?>"<?= $activeTab === $key ? ' aria-current="page"' : '' ?>><span class="ja-mono"><?= $pad2($i++) ?></span><?= $h($tabLabel) ?><?php if ($key === 'echanges' && $toRead > 0): ?><em><?= min(99, $toRead) ?></em><?php elseif ($count > 0): ?><small class="us-count"><?= min(99, (int) $count) ?></small><?php endif; ?></a>
         <?php endforeach; ?>
     </nav>
     <div class="ja-hd__r">
@@ -109,6 +126,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
             </ul>
         </details>
         <?php endif; ?>
+        <button class="ja-ib" type="button" data-uw-search-open aria-controls="uw-search" aria-expanded="false" title="Rechercher dans l’espace (touche /)"><svg class="ja-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="ja-ib__t">Rechercher</span></button>
         <span class="us-access"><?= $h((string) $look['access_label']) ?></span>
         <?php if (!empty($canCustomize)): ?>
             <a class="ja-ib<?= $view === 'personnaliser' ? ' is-on' : '' ?>" href="<?= $h((string) ($customizeUrl ?? '')) ?>"><?= JnetUi::icon('edit') ?><span class="ja-ib__t">Personnaliser</span></a>
@@ -117,6 +135,15 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
         <?= JnetUi::account($operator) ?>
     </div>
 </header>
+<form class="uw-search" id="uw-search" role="search" hidden data-uw-search data-url="<?= $h($base . '/recherche') ?>">
+    <label class="ja-sr" for="uw-search-q">Rechercher dans l’espace</label>
+    <div class="uw-search__bar">
+        <svg class="ja-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="uw-search-q" type="search" name="q" autocomplete="off" placeholder="Consigne, membre, tâche, page, document…" aria-controls="uw-search-results">
+        <button class="ja-b2 sm" type="button" data-uw-search-close>Fermer</button>
+    </div>
+    <ul class="uw-search__list" id="uw-search-results" aria-live="polite"></ul>
+</form>
 <main class="ja-main us-main jnet-embed" id="us-main">
     <?php if ($flashErr): ?><p class="us-flash is-bad" role="alert"><?= $h((string) $flashErr) ?></p><?php endif; ?>
     <?php if ($flashOk): ?><p class="us-flash" role="status"><?= $h((string) $flashOk) ?></p><?php endif; ?>
@@ -133,14 +160,16 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
         <div class="jn-empty"><p>Les échanges entre espaces ne sont pas encore activés. Un administrateur doit appliquer les migrations.</p></div>
     <?php else: ?>
         <?php if (empty($canPost)): ?><p class="us-note">Vous consultez cet espace sans en être membre : la publication est réservée à l’unité et à son encadrement.</p><?php endif; ?>
+        <?php
+        $subTargets = array_values(array_filter(is_array($postTargets ?? null) ? $postTargets : [], static fn (array $t): bool => ($t['relation'] ?? '') === 'Subordonné'));
+        $parentTarget = array_values(array_filter(is_array($postTargets ?? null) ? $postTargets : [], static fn (array $t): bool => ($t['relation'] ?? '') === 'Échelon supérieur'))[0] ?? null;
+        $columns = [
+            ['key' => 'down', 'icon' => '↓', 'title' => 'Reçu du commandement', 'lead' => 'Ordres et consignes descendus' . ($hasParentUnit ? ' de ' . $parentLabel . ' et au-dessus' : ''), 'items' => $received, 'empty' => 'Rien de reçu pour l’instant.', 'variant' => 'card', 'perspective' => 'down'],
+            ['key' => 'internal', 'icon' => '≡', 'title' => 'Dans l’unité', 'lead' => 'Le fil de ' . $label . ' et de ses sous-unités', 'items' => $internal, 'empty' => 'Aucun échange interne.', 'variant' => 'chat', 'perspective' => ''],
+            ['key' => 'up', 'icon' => '↑', 'title' => 'Remonté vers ' . ($hasParentUnit ? $parentLabel : 'l’échelon supérieur'), 'lead' => 'Comptes rendus et renseignement transmis', 'items' => $sentUp, 'empty' => 'Rien de remonté pour l’instant.', 'variant' => 'card', 'perspective' => 'up'],
+        ];
+        ?>
         <div class="jn-flows">
-            <?php
-            $columns = [
-                ['key' => 'down', 'icon' => '↓', 'title' => 'Reçu du commandement', 'lead' => 'Ordres et consignes descendus' . ($hasParentUnit ? ' de ' . $parentLabel . ' et au-dessus' : ''), 'items' => $received, 'empty' => 'Rien de reçu pour l’instant.', 'variant' => 'card', 'perspective' => 'down'],
-                ['key' => 'internal', 'icon' => '≡', 'title' => 'Dans l’unité', 'lead' => 'Le fil de ' . $label . ' et de ses sous-unités', 'items' => $internal, 'empty' => 'Aucun échange interne.', 'variant' => 'chat', 'perspective' => ''],
-                ['key' => 'up', 'icon' => '↑', 'title' => 'Remonté vers ' . ($hasParentUnit ? $parentLabel : 'l’échelon supérieur'), 'lead' => 'Comptes rendus et renseignement transmis', 'items' => $sentUp, 'empty' => 'Rien de remonté pour l’instant.', 'variant' => 'card', 'perspective' => 'up'],
-            ];
-            ?>
             <?php foreach ($columns as $col): ?>
                 <section class="jn-flow jn-flow--<?= $h($col['key']) ?>" aria-labelledby="us-col-<?= $h($col['key']) ?>">
                     <header class="jn-flow__head">
@@ -152,11 +181,31 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
                     </header>
                     <?php if ($col['key'] === 'internal' && !empty($canPost)): ?>
                         <?php require base_path('views/jnet/_exchange_composer.php'); ?>
+                    <?php elseif ($col['key'] === 'up' && !empty($canPost) && $parentTarget !== null): ?>
+                        <?php $composeLabel = 'Faire remonter vers ' . (string) $parentTarget['label']; $composeKind = 'compte_rendu'; $composeTarget = (int) $parentTarget['id']; $composeSuffix = '-up'; require base_path('views/jnet/_exchange_composer.php'); unset($composeKind, $composeTarget, $composeSuffix); $composeLabel = 'Partager avec ' . $label; ?>
                     <?php endif; ?>
                     <?php if ($col['items'] === []): ?><p class="jn-flow__empty"><?= $h($col['empty']) ?></p><?php endif; ?>
                     <?php $exVariant = $col['variant']; $exPerspective = $col['perspective']; ?>
                     <?php foreach ($col['items'] as $ex): ?>
                         <?php require base_path('views/jnet/_exchange.php'); ?>
+                        <?php if ($col['key'] === 'down' && !empty($canPost) && $subTargets !== []): ?>
+                            <details class="uw-relay">
+                                <summary>Relayer aux sous-unités</summary>
+                                <form method="post" action="<?= $h($base . '/echanges/' . (int) $ex['id'] . '/relayer') ?>">
+                                    <?= \App\Core\Csrf::field() ?>
+                                    <fieldset>
+                                        <legend>Sous-unités destinataires</legend>
+                                        <?php foreach ($subTargets as $t): ?>
+                                            <label class="jn-check"><input type="checkbox" name="subunits[]" value="<?= (int) $t['id'] ?>" checked><span><b><?= $h((string) $t['label']) ?></b></span></label>
+                                        <?php endforeach; ?>
+                                    </fieldset>
+                                    <label class="uw-field" for="uw-relay-note-<?= (int) $ex['id'] ?>">Mot du chef <small>(facultatif)</small></label>
+                                    <textarea id="uw-relay-note-<?= (int) $ex['id'] ?>" name="note" rows="2" maxlength="400" placeholder="Ce que la sous-unité doit retenir."></textarea>
+                                    <p class="uw-note">L’ordre d’origine est transmis sans modification, avec votre mot en tête.</p>
+                                    <button class="ja-b1 sm" type="submit">Relayer</button>
+                                </form>
+                            </details>
+                        <?php endif; ?>
                     <?php endforeach; ?>
                 </section>
             <?php endforeach; ?>
@@ -164,6 +213,9 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
     <?php endif; ?>
 
 <?php elseif ($view === 'effectif'): ?>
+    <?php if ($wCanPost): ?>
+        <?php require base_path('views/jnet/unit/_tracking.php'); ?>
+    <?php else: ?>
     <header class="us-page">
         <h1 class="ja-disp ja-disp--md">Effectif</h1>
         <p><?= (int) $strength['available'] ?> disponible<?= (int) $strength['available'] > 1 ? 's' : '' ?> sur <?= (int) $strength['total'] ?>, sous-unités comprises. <?= count($members) ?> membre<?= count($members) > 1 ? 's' : '' ?> affecté<?= count($members) > 1 ? 's' : '' ?> directement à <?= $h($label) ?>.</p>
@@ -187,6 +239,19 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
             <?php endforeach; ?>
         </ul>
     <?php endif; ?>
+    <?php endif; ?>
+
+<?php elseif ($view === 'taches' && !empty($wShown['taches'])): ?>
+    <?php require base_path('views/jnet/unit/_tasks.php'); ?>
+
+<?php elseif ($view === 'pages' && !empty($wShown['pages'])): ?>
+    <?php require base_path('views/jnet/unit/_pages.php'); ?>
+
+<?php elseif ($view === 'page' && !empty($wShown['pages'])): ?>
+    <?php require base_path('views/jnet/unit/_page.php'); ?>
+
+<?php elseif (($view === 'photos' || $view === 'documents') && !empty($wShown[$view])): ?>
+    <?php $usKind = $view; require base_path('views/jnet/unit/_files.php'); ?>
 
 <?php elseif ($view === 'operations'): ?>
     <header class="us-page">
@@ -218,111 +283,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
     <?php $viewNodes = $subTree; $viewId = 'us-sub-units'; $viewGrouped = false; require base_path('views/jnet/_unit_views.php'); ?>
 
 <?php else: ?>
-    <section class="us-hero" aria-labelledby="us-title">
-        <div class="us-hero__bg" style="background-image: url('<?= $h($heroPhoto) ?>')" aria-hidden="true"></div>
-        <div class="us-hero__in">
-            <?= $emblemHtml('ja-crest ja-crest--lg us-hero__crest') ?>
-            <h1 class="ja-disp ja-disp--lg" id="us-title"><?= $h($label) ?></h1>
-            <?php if ((string) $look['tagline'] !== ''): ?><p class="us-hero__tagline">« <?= $h((string) $look['tagline']) ?> »</p><?php endif; ?>
-            <p class="us-hero__lead">
-                <?php if ($kindLine !== ''): ?><span class="us-hero__kind"><?= $h($kindLine) ?></span><?php endif; ?>
-                <span>Chef : <b><?= $h((string) ($space['leader'] ?? '') !== '' ? (string) $space['leader'] : 'non désigné') ?></b> · Adjoint : <b><?= $h((string) ($space['deputy'] ?? '') !== '' ? (string) $space['deputy'] : 'non désigné') ?></b></span>
-            </p>
-            <?php if (count($chain) > 1): ?>
-            <nav class="us-hero__chain" aria-label="Échelons">
-                <?php foreach ($chain as $c): ?>
-                    <?php if ((int) $c['id'] === $unitId): ?><b><?= $h((string) $c['label']) ?></b><?php else: ?><a href="<?= $h((string) $c['href']) ?>"><?= $h((string) $c['label']) ?></a><span aria-hidden="true">›</span><?php endif; ?>
-                <?php endforeach; ?>
-            </nav>
-            <?php endif; ?>
-            <div class="us-hero__acts">
-                <a class="ja-b1" href="<?= $h($tabUrl('echanges')) ?>">Ordres et échanges <svg class="ja-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-                <a class="ja-b2" href="<?= $h($tabUrl('effectif')) ?>">Effectif</a>
-            </div>
-        </div>
-        <div class="ja-stats" style="--n: 4">
-            <a class="ja-stat" href="<?= $h($tabUrl('effectif')) ?>"><b><?= (int) $strength['available'] ?><small> / <?= (int) $strength['total'] ?></small></b><span>disponibles</span></a>
-            <a class="ja-stat" href="<?= $h($tabUrl('echanges')) ?>"><b><?= $toRead ?></b><span>à lire</span></a>
-            <a class="ja-stat" href="<?= $h($tabUrl('operations')) ?>"><b><?= (int) ($spaceOpsTotal ?? count($spaceOps)) ?></b><span>opération<?= (int) ($spaceOpsTotal ?? count($spaceOps)) > 1 ? 's' : '' ?></span></a>
-            <a class="ja-stat" href="<?= $h($tabUrl($subTree !== [] ? 'sous-unites' : 'accueil')) ?>"><b><?= count($subTree) ?></b><span>sous-unité<?= count($subTree) > 1 ? 's' : '' ?></span></a>
-        </div>
-    </section>
-
-    <?php if ((string) $look['welcome'] !== ''): ?>
-        <section class="us-welcome" aria-label="Mot du chef d’unité">
-            <h2>Mot d’accueil</h2>
-            <p><?= nl2br($h((string) $look['welcome'])) ?></p>
-        </section>
-    <?php endif; ?>
-
-    <div class="us-grid">
-        <div class="us-col">
-            <section class="us-sec">
-                <?= $section('Reçu du commandement', $tabUrl('echanges'), 'Tout voir') ?>
-                <?php if (empty($exchangesReady)): ?>
-                    <p class="us-empty">Les échanges ne sont pas encore activés.</p>
-                <?php elseif ($received === []): ?>
-                    <p class="us-empty">Aucun ordre ni consigne pour l’instant.</p>
-                <?php else: ?>
-                    <?php $exVariant = 'card'; $exPerspective = 'down'; foreach (array_slice($received, 0, 3) as $ex) { require base_path('views/jnet/_exchange.php'); } ?>
-                <?php endif; ?>
-            </section>
-            <section class="us-sec">
-                <?= $section('Fil de l’unité', $tabUrl('echanges'), 'Ouvrir le fil') ?>
-                <?php if (!empty($exchangesReady) && !empty($canPost)): ?>
-                    <?php require base_path('views/jnet/_exchange_composer.php'); ?>
-                <?php endif; ?>
-                <?php if ($internal === []): ?>
-                    <p class="us-empty">Aucun échange interne. <?= !empty($canPost) ? 'Publiez le premier.' : '' ?></p>
-                <?php else: ?>
-                    <?php $exVariant = 'chat'; $exPerspective = ''; foreach (array_slice($internal, 0, 4) as $ex) { require base_path('views/jnet/_exchange.php'); } ?>
-                <?php endif; ?>
-            </section>
-        </div>
-        <aside class="us-col us-col--side">
-            <section class="us-sec">
-                <?= $section('Opérations', $tabUrl('operations'), $spaceOps !== [] ? 'Toutes' : '') ?>
-                <?php if ($spaceOps === []): ?>
-                    <p class="us-empty">Aucune opération engagée.</p>
-                <?php else: ?>
-                    <ul class="us-ops us-ops--compact">
-                        <?php foreach (array_slice($spaceOps, 0, 3) as $op): ?>
-                            <li><a class="us-opcard" href="<?= $h(url('jnet/operations/' . (int) ($op['id'] ?? 0))) ?>">
-                                <span class="us-opcard__state<?= in_array($op['state_key'] ?? '', ['active', 'in_progress'], true) ? ' is-live' : '' ?>"><?= $h((string) ($op['state'] ?? '')) ?></span>
-                                <b><?= $h((string) ($op['title'] ?? '')) ?></b>
-                            </a></li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
-            </section>
-            <section class="us-sec">
-                <?= $section('Effectif', $tabUrl('effectif'), 'Voir tous') ?>
-                <?php if ($members === []): ?>
-                    <p class="us-empty">Aucun membre affecté directement.</p>
-                <?php else: ?>
-                    <ul class="us-faces">
-                        <?php foreach (array_slice($members, 0, 10) as $p): ?>
-                            <li><a class="us-member__face<?= ($p['duty'] ?? '') === 'off' ? ' is-off' : '' ?>" href="<?= $h((string) ($p['href'] ?? '#')) ?>" title="<?= $h((string) ($p['name'] ?? '')) ?>"><?= $face($p) ?></a></li>
-                        <?php endforeach; ?>
-                        <?php if (count($members) > 10): ?><li class="us-faces__more">+<?= count($members) - 10 ?></li><?php endif; ?>
-                    </ul>
-                <?php endif; ?>
-            </section>
-            <?php if ($subTree !== []): ?>
-            <section class="us-sec">
-                <?= $section('Sous-unités', $tabUrl('sous-unites'), 'Organigramme') ?>
-                <ul class="us-subs">
-                    <?php foreach (array_slice($subTree, 0, 6) as $sub): ?>
-                        <li><a href="<?= $h((string) $sub['href']) ?>"<?= (string) ($sub['accent'] ?? '') !== '' ? ' style="--sub: ' . $h((string) $sub['accent']) . '"' : '' ?>>
-                            <b><?= $h((string) $sub['label']) ?></b>
-                            <small><?= (int) ($sub['strength']['available'] ?? 0) ?>/<?= (int) ($sub['strength']['total'] ?? 0) ?> disponibles<?= (string) ($sub['leader'] ?? '') !== '' ? ' · ' . $h((string) $sub['leader']) : '' ?></small>
-                        </a></li>
-                    <?php endforeach; ?>
-                </ul>
-            </section>
-            <?php endif; ?>
-        </aside>
-    </div>
+    <?php require base_path('views/jnet/unit/_home.php'); ?>
 <?php endif; ?>
 </main>
 
@@ -333,5 +294,6 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
     <a href="<?= $h(url('dashboard')) ?>">Quitter JNET</a>
 </footer>
 <script src="<?= $h(asset_url('assets/js/jnet_spaces.js')) ?>" defer></script>
+<script src="<?= $h(asset_url('assets/js/jnet_unit_workspace.js')) ?>" defer></script>
 </body>
 </html>

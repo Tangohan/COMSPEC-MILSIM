@@ -6,6 +6,9 @@ declare(strict_types=1);
  * @var list<array{id:int,label:string,relation:string}> $postTargets
  * @var array<string, string> $exchangeKinds
  * @var string|null $composeLabel
+ * @var string|null $composeKind type présélectionné (ex. compte_rendu)
+ * @var int|null $composeTarget destinataire coché d'office (par défaut : l'espace lui-même)
+ * @var string|null $composeSuffix suffixe d'identifiant quand la page porte plusieurs composeurs
  */
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $spaceId = (int) ($space['id'] ?? 0);
@@ -13,15 +16,16 @@ $targets = is_array($postTargets ?? null) ? $postTargets : [];
 $kinds = is_array($exchangeKinds ?? null) ? $exchangeKinds : [];
 $draft = \App\Core\Session::getFlash('jnet_exchange_draft');
 $draft = is_array($draft) ? $draft : [];
-$draftKind = (string) ($draft['kind'] ?? 'info');
-$uid = 'jnc' . $spaceId;
+$draftKind = (string) ($draft['kind'] ?? ($composeKind ?? 'info'));
+$defaultTarget = (int) ($composeTarget ?? $spaceId);
+$uid = 'jnc' . $spaceId . (string) ($composeSuffix ?? '');
 $relationHelp = [
     'Cet espace' => 'les membres de l’unité et leur encadrement',
     'Échelon supérieur' => 'remonte à l’unité du dessus',
     'Subordonné' => 'descend vers cette sous-unité',
 ];
 ?>
-<details class="jn-compose"<?= $draft !== [] ? ' open' : '' ?>>
+<details class="jn-compose"<?= $draft !== [] && ($composeSuffix ?? '') === '' ? ' open' : '' ?>>
     <summary class="jn-compose__summary">
         <span class="jn-compose__plus" aria-hidden="true">+</span>
         <?= $h((string) ($composeLabel ?? 'Publier un échange')) ?>
@@ -57,7 +61,7 @@ $relationHelp = [
             <?php foreach ($targets as $t): ?>
                 <?php $rel = (string) $t['relation']; ?>
                 <label class="jn-check">
-                    <input type="checkbox" name="targets[]" value="<?= (int) $t['id'] ?>"<?= (int) $t['id'] === $spaceId ? ' checked' : '' ?>>
+                    <input type="checkbox" name="targets[]" value="<?= (int) $t['id'] ?>"<?= (int) $t['id'] === $defaultTarget ? ' checked' : '' ?>>
                     <span>
                         <b><?= $h((string) $t['label']) ?></b>
                         <small><?= $h($rel) ?><?= isset($relationHelp[$rel]) ? ' — ' . $h($relationHelp[$rel]) : '' ?></small>

@@ -16,6 +16,7 @@ use App\Services\Jnet\JnetMemberHub;
 use App\Services\Jnet\JnetMessagingService;
 use App\Services\Jnet\JnetSpaceService;
 use App\Services\Jnet\JnetUnitSpaceSettings;
+use App\Services\Jnet\JnetUnitWorkspaceService;
 use App\Services\Rbac\RbacService;
 use App\Support\JnetSpaceTree;
 use App\Support\PortalAccessChoice;
@@ -32,6 +33,7 @@ final class JnetPortalController
         private ?JnetMessagingService $messaging = null,
         private ?JnetSpaceService $spaces = null,
         private ?JnetUnitSpaceSettings $spaceSettings = null,
+        private ?JnetUnitWorkspaceService $workspace = null,
     ) {
         $this->authService ??= \App\Core\Container::get(AuthService::class);
         $this->rbacService ??= \App\Core\Container::get(RbacService::class);
@@ -42,6 +44,7 @@ final class JnetPortalController
         $this->messaging ??= new JnetMessagingService();
         $this->spaces ??= new JnetSpaceService($this->jnet);
         $this->spaceSettings ??= new JnetUnitSpaceSettings();
+        $this->workspace ??= new JnetUnitWorkspaceService();
     }
 
     /** Espaces déjà franchis dans cette session (écran d'entrée montré une fois par espace et par session). */
@@ -158,12 +161,106 @@ final class JnetPortalController
             return Response::redirect($this->homeUrl());
         }
         $vue = (string) $request->query('vue', 'accueil');
+        if ($vue === 'suivi') {
+            $vue = 'effectif';
+        }
+        $vue = in_array($vue, self::UNIT_VIEWS, true) ? $vue : 'accueil';
+        $extra = $this->workspaceData($ctx, $unitId, $space, $settings, $vue, $request, $tree);
 
-        return $this->unitShell($ctx, $unitId, $space, $look, in_array($vue, self::UNIT_VIEWS, true) ? $vue : 'accueil', $tree->chain($unitId));
+        return $this->unitShell($ctx, $unitId, $space, $look, $vue, $tree->chain($unitId), $extra);
     }
 
-    /** Rubriques de l'espace d'une unité (?vue=). */
-    private const UNIT_VIEWS = ['accueil', 'echanges', 'effectif', 'operations', 'sous-unites'];
+    /** Rubriques de l'espace d'une unité (?vue=). « page » est une page écrite, ouverte depuis la rubrique Pages. */
+    private const UNIT_VIEWS = ['accueil', 'echanges', 'effectif', 'taches', 'pages', 'page', 'photos', 'documents', 'operations', 'sous-unites'];
+
+    /**
+     * Données des outils de l'espace pour la rubrique demandée : seules les lectures utiles à cette rubrique sont faites.
+     *
+     * @param array{tenant_id:int,user_id:int} $ctx
+     * @param array<string, mixed> $space
+     * @param array<string, mixed> $settings
+     * @return array<string, mixed>
+     */
+    private function workspaceData(array $ctx, int $unitId, array $space, array $settings, string $view, Request $request, JnetSpaceTree $tree): array
+    {
+        $tenantId = $ctx['tenant_id'];
+        $userId = $ctx['user_id'];
+        $wsReady = $this->workspace->ready();
+        $hidden = is_array($settings['hidden_modules'] ?? null) ? $settings['hidden_modules'] : [];
+        $filesReady = false;
+        try {
+            $filesReady = (new \App\Repositories\FileShareRepository())->schemaReady();
+        } catch (\Throwable) {
+        }
+        $shown = [
+            'taches' => $wsReady && !in_array('taches', $hidden, true),
+            'pages' => $wsReady && !in_array('pages', $hidden, true),
+            'photos' => $filesReady && !in_array('photos', $hidden, true),
+            'documents' => $filesReady && !in_array('documents', $hidden, true),
+        ];
+        $canPost = $this->spaces->canPost($tenantId, $userId, $unitId);
+        $isChief = $this->canCustomize($tenantId, $userId, $tree->chain($unitId));
+        $memberCards = is_array($space['members'] ?? null) ? $space['members'] : [];
+        $memberIds = array_values(array_map('intval', (array) (($tree->node($unitId) ?? [])['members'] ?? [])));
+        $repo = $this->workspace->repo();
+        $w = [
+            'shown' => $shown,
+            'canPost' => $canPost,
+            'isChief' => $isChief,
+            'viewerId' => $userId,
+            'event' => null,
+            'tasks' => [],
+            'pages' => [],
+            'page' => null,
+            'files' => ['ready' => $filesReady, 'photos' => [], 'documents' => [], 'folders' => []],
+            'tracking' => [],
+            'assignees' => [],
+            'album' => trim((string) $request->query('album', '')),
+        ];
+
+        if (in_array($view, ['accueil', 'effectif'], true)) {
+            $w['event'] = $this->workspace->nextEvent($tenantId, $userId, $memberIds);
+        }
+        if ($view === 'effectif' && $canPost) {
+            $w['tracking'] = $this->workspace->tracking($tenantId, $userId, $memberCards, array_merge((array) ($space['received'] ?? []), (array) ($space['internal'] ?? [])), $w['event'], $isChief);
+        }
+        if (in_array($view, ['accueil', 'taches'], true) && $shown['taches']) {
+            $w['tasks'] = $repo->tasks($tenantId, $unitId);
+            foreach ($memberCards as $p) {
+                $w['assignees'][(int) $p['id']] = (string) (($p['callsign'] ?? '') !== '' ? $p['callsign'] : ($p['name'] ?? ''));
+            }
+        }
+        if (in_array($view, ['accueil', 'pages'], true) && $shown['pages']) {
+            $w['pages'] = $repo->pages($tenantId, $unitId);
+        }
+        if ($view === 'page' && $shown['pages']) {
+            $page = $repo->page($tenantId, $unitId, (int) $request->query('p', 0));
+            if ($page !== null) {
+                $pageId = (int) $page['id'];
+                $voters = [];
+                $votes = $repo->votes($pageId);
+                foreach ($votes as $options) {
+                    foreach ($options as $ids) {
+                        $voters = array_merge($voters, $ids);
+                    }
+                }
+                $w['page'] = $page + [
+                    'blocksList' => JnetUnitWorkspaceService::blocksFromJson((string) $page['blocks']),
+                    'votes' => $votes,
+                    'reactions' => $repo->reactions($pageId, $userId),
+                    'comments' => $repo->comments($pageId),
+                    'edit' => $canPost && (string) $request->query('edit', '') === '1',
+                    'event' => $this->workspace->nextEvent($tenantId, $userId, $memberIds),
+                    'voterLabels' => $repo->userLabels($tenantId, $voters),
+                ];
+            }
+        }
+        if (in_array($view, ['accueil', 'photos', 'documents'], true) && ($shown['photos'] || $shown['documents'])) {
+            $w['files'] = (new \App\Services\Jnet\JnetUnitFiles())->forUnit($tenantId, $userId, $unitId);
+        }
+
+        return ['usw' => $w];
+    }
 
     /**
      * Espace d'une unité dans son interface propre (views/jnet/unit_space.php) : page autonome au thème de l'unité,
@@ -191,6 +288,84 @@ final class JnetPortalController
             'usHome' => $this->homeUrl(),
             'usHomeLabel' => 'Mon extranet',
         ], $extra));
+    }
+
+    /**
+     * Recherche dans l'espace d'une unité (champ de l'en-tête, touche « / »). Lecture seule : ne renvoie que ce que
+     * l'espace montre déjà au lecteur (échanges, membres, sous-unités, opérations, tâches, pages, fichiers partagés).
+     */
+    public function unitSearch(Request $request, array $params = []): Response
+    {
+        $ctx = $this->ensureAuth();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $unitId = (int) ($params['id'] ?? 0);
+        $tree = $this->spaces->tree($ctx['tenant_id'], $ctx['user_id']);
+        $q = trim((string) $request->query('q', ''));
+        if ($unitId <= 0 || !$tree->has($unitId) || mb_strlen($q) < 2) {
+            return Response::json(['results' => []]);
+        }
+        $q = mb_substr($q, 0, 80);
+        $space = $this->spaces->buildSpace($ctx['tenant_id'], $ctx['user_id'], $unitId);
+        if ($space === null) {
+            return Response::json(['results' => []]);
+        }
+        $settings = $this->spaceSettings->find($ctx['tenant_id'], $unitId);
+        $hidden = is_array($settings['hidden_modules'] ?? null) ? $settings['hidden_modules'] : [];
+        $base = url('jnet/u/' . $unitId);
+        $pool = [];
+        foreach (['received' => 'Reçu', 'internal' => 'Fil de l’unité', 'sentUp' => 'Remonté'] as $key => $label) {
+            foreach ((array) ($space[$key] ?? []) as $e) {
+                $pool[] = [$label, (string) $e['title'], (string) $e['author'], $base . '?vue=echanges&direct=1#ex-' . (int) $e['id'], (string) ($e['body'] ?? '')];
+            }
+        }
+        foreach ((array) ($space['members'] ?? []) as $p) {
+            $pool[] = ['Membre', (string) $p['name'], trim((string) ($p['grade'] ?? '') . ' ' . (string) ($p['function'] ?? '')), (string) $p['href'], (string) ($p['callsign'] ?? '')];
+        }
+        foreach ((array) ($space['subUnits'] ?? []) as $u) {
+            $pool[] = ['Sous-unité', (string) $u['label'], (string) ($u['leader'] ?? ''), (string) $u['href'], ''];
+        }
+        foreach ((array) ($space['spaceOps'] ?? []) as $o) {
+            $pool[] = ['Opération', (string) $o['title'], (string) ($o['state'] ?? ''), url('jnet/operations/' . (int) $o['id']), ''];
+        }
+        if ($this->workspace->ready()) {
+            if (!in_array('taches', $hidden, true)) {
+                foreach ($this->workspace->repo()->tasks($ctx['tenant_id'], $unitId) as $t) {
+                    $pool[] = ['Tâche', (string) $t['title'], (string) (JnetUnitWorkspaceService::TASK_LABELS[(string) $t['status']] ?? ''), $base . '?vue=taches&direct=1', (string) ($t['assignee_label'] ?? '')];
+                }
+            }
+            if (!in_array('pages', $hidden, true)) {
+                foreach ($this->workspace->repo()->pages($ctx['tenant_id'], $unitId) as $pg) {
+                    $pool[] = ['Page', (string) ($pg['title'] !== '' ? $pg['title'] : 'Sans titre'), '', $base . '?vue=page&p=' . (int) $pg['id'] . '&direct=1', ''];
+                }
+            }
+        }
+        if (!in_array('photos', $hidden, true) || !in_array('documents', $hidden, true)) {
+            $files = (new \App\Services\Jnet\JnetUnitFiles())->forUnit($ctx['tenant_id'], $ctx['user_id'], $unitId);
+            foreach ($files['documents'] as $f) {
+                if (!in_array('documents', $hidden, true)) {
+                    $pool[] = ['Document', (string) $f['title'], (string) $f['album'], (string) $f['href'], ''];
+                }
+            }
+            foreach ($files['photos'] as $f) {
+                if (!in_array('photos', $hidden, true)) {
+                    $pool[] = ['Photo', (string) $f['title'], (string) $f['album'], (string) $f['preview'], ''];
+                }
+            }
+        }
+        $out = [];
+        foreach ($pool as [$type, $label, $detail, $href, $hay]) {
+            if (mb_stripos($label . ' ' . $detail . ' ' . $hay, $q) === false) {
+                continue;
+            }
+            $out[] = ['type' => $type, 'label' => $label, 'detail' => $detail, 'href' => $href];
+            if (count($out) >= 12) {
+                break;
+            }
+        }
+
+        return Response::json(['results' => $out]);
     }
 
     /**
@@ -286,6 +461,7 @@ final class JnetPortalController
             'customizeLook' => JnetUnitSpaceSettings::look($settings, $node),
             'customizeOrbat' => ['accent' => (string) ($node['accent'] ?? ''), 'motto' => (string) ($node['motto'] ?? ''), 'badge' => $node['badge'] ?? null],
             'customizeReady' => $this->spaceSettings->ready(),
+            'customizeModulesReady' => $this->spaceSettings->modulesReady(),
             'customizeAction' => url('jnet/u/' . $unitId . '/personnaliser'),
             'customizeBack' => url('jnet/u/' . $unitId . '?direct=1'),
             'customizePreview' => url('jnet/u/' . $unitId . '/entree'),
@@ -355,6 +531,9 @@ final class JnetPortalController
                 }
             }
             $this->spaceSettings->save($tenantId, $unitId, $values, $paths['emblem_path'], $paths['banner_path'], $ctx['user_id']);
+            if ((string) $request->input('modules_present', '') !== '') {
+                $this->spaceSettings->saveHiddenModules($tenantId, $unitId, JnetUnitWorkspaceService::hiddenFromShown($request->input('modules_shown', [])), $ctx['user_id']);
+            }
             foreach (['emblem_path', 'banner_path'] as $column) {
                 $old = (string) ($current[$column] ?? '');
                 if ($old !== '' && $old !== $paths[$column]) {
