@@ -332,9 +332,14 @@ switch (_act) do {
                 _light = "#lightpoint" createVehicleLocal (ASLToAGL _pos);
                 _light setPosASL _pos;
                 _light setLightColor [1, 0.97, 0.92];
-                _light setLightAmbient [0.12, 0.12, 0.11];
-                _light setLightBrightness ([0.9, 2.2] select (sunOrMoon < 0.5));
-                _light setLightAttenuation [0.5, 0, 0, 1.4, 8, 10];
+                // Flash doux (4.15.2) : l'ancien (luminosité 2,2 de nuit, lumière ambiante, intensité sans plafond de près)
+                // brûlait la photo, l'œil du jeu étant encore réglé pour le noir au moment de la capture. Plus de lumière
+                // ambiante (elle délavait toute l'image), intensité plafonnée de près, portée utile d'environ 6 m.
+                // Réglage par joueur « Puissance du flash » (100 % par défaut).
+                private _power = ((missionNamespace getVariable ["comspec_atak_native_photo_flash", 1]) max 0.25) min 2;
+                _light setLightAmbient [0, 0, 0];
+                _light setLightBrightness (([0.22, 0.5] select (sunOrMoon < 0.5)) * _power);
+                _light setLightAttenuation [0.4, 1, 0, 0.5, 7, 11];
                 _light setLightDayLight (sunOrMoon >= 0.5);
             };
             uiSleep 0.3;

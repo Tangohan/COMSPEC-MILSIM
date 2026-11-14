@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Appareil photo : le flash ne brûle plus les photos (ATAK natif 4.15.2.AG - Washington)
+
+### Résumé joueur
+Type : correctif
+FR : Le flash de l'appareil photo est beaucoup plus doux
+- Les photos prises au flash, surtout de nuit, ne sont plus toutes blanches : le flash éclaire le sujet sans délaver l'image.
+- Nouveau réglage « Puissance du flash » (Options, Réglages de l'addon, COMSPEC, ATAK · Affichage) pour l'ajuster à votre goût.
+- Le flash reste automatique la nuit et dans le noir ; la touche F le force ou le coupe.
+EN : The camera flash is much softer
+- Photos taken with the flash, especially at night, are no longer washed out: the flash lights the subject without bleaching the picture.
+- New "Flash power" setting (Options, Addon settings, COMSPEC, ATAK · Display) to tune it to your taste.
+- The flash is still automatic at night and in the dark; the F key forces it or turns it off.
+
+### Détail technique
+- **Flash** (`fn_photoMode`, `fn_photoCam`) : luminosité 2,2 → 0,5 de nuit et 0,9 → 0,22 de jour, lumière ambiante supprimée (elle éclairait toute la scène à plat), atténuation `[0.4, 1, 0, 0.5, 7, 11]` (intensité plafonnée de près, l'ancienne n'avait pas de terme constant). L'éclair blanc de l'écran passe de 0,9 à 0,6.
+- Réglage par joueur `comspec_atak_native_photo_flash` (25 à 200 %, 100 % par défaut).
+- Valeurs choisies par le calcul, non essayées en jeu : le réglage sert à les corriger sans nouvelle version. Test : `tests/Unit/AtakPhotoFlashAssetTest.php`.
+
 ## Sécurité : chaque version du mod a sa propre preuve (ATAK natif 4.15.1.AG - Washington, COMSPEC Link 2.0.125)
 
 ### Résumé joueur

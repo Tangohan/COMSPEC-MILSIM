@@ -1,3 +1,19 @@
+[h1]COMSPEC ATAK 4.15.2 Washington — flash de l'appareil photo adouci / softer camera flash[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Appareil photo[/b] : le flash ne brûle plus les photos, surtout de nuit.
+[*] Nouveau réglage « Puissance du flash » : Options, Réglages de l'addon, COMSPEC, ATAK · Affichage.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Camera[/b]: the flash no longer washes out photos, especially at night.
+[*] New "Flash power" setting: Options, Addon settings, COMSPEC, ATAK · Display.
+[/list]
+
 [h1]COMSPEC ATAK 4.15.1 Washington — mise à jour de sécurité / security update[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
