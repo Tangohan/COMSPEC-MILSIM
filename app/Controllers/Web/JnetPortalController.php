@@ -479,6 +479,7 @@ final class JnetPortalController
         return $this->render('targets', 'Cibles prioritaires', [
             'targets' => $targets,
             'targetsTotal' => count($targets),
+            'intelLocked' => !$this->jnet->mayReadIntelligence(),
         ], 'targets');
     }
 

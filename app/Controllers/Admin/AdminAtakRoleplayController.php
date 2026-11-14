@@ -311,6 +311,11 @@ class AdminAtakRoleplayController
             Session::flash('error', 'Communauté non identifiée');
             return Response::redirect(url('/'));
         }
+        // Écriture : POST avec jeton (avant, un simple lien GET remettait la configuration à zéro).
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+            return Response::redirect($this->roleplayUrl());
+        }
 
         $defaultConfig = [
             'network_enabled' => false,

@@ -274,7 +274,7 @@ $zoneRowHtml = static function (array $row, string $title) use ($h, $zoneEffectO
             <div class="bo-rp-actions">
                 <a class="bo-rp-link" href="<?= $h($atakHubUrl) ?>">Retour au poste ATAK</a>
                 <div class="bo-rp-actions__right">
-                    <button type="button" class="bo-rp-btn bo-rp-btn--ghost" data-reset-url="<?= $h($roleplayResetUrl) ?>" id="roleplay-reset">Tout désactiver</button>
+                    <button type="submit" class="bo-rp-btn bo-rp-btn--ghost" formaction="<?= $h($roleplayResetUrl) ?>" formmethod="post" formnovalidate id="roleplay-reset">Tout désactiver</button>
                     <button type="submit" class="bo-rp-btn bo-rp-btn--primary">Enregistrer</button>
                 </div>
             </div>
@@ -327,11 +327,10 @@ $zoneRowHtml = static function (array $row, string $title) use ($h, $zoneEffectO
     var tpl = document.getElementById('roleplay-zone-template');
     var resetBtn = document.getElementById('roleplay-reset');
 
+    // Le retour à zéro est une écriture : bouton d'envoi du formulaire (POST, jeton CSRF), jamais un lien.
     if (resetBtn) {
-        resetBtn.addEventListener('click', function () {
-            if (confirm('Désactiver tous les modules et effacer les zones ?')) {
-                window.location.href = resetBtn.getAttribute('data-reset-url');
-            }
+        resetBtn.addEventListener('click', function (e) {
+            if (!confirm('Désactiver tous les modules et effacer les zones ?')) e.preventDefault();
         });
     }
     if (!list || !addBtn || !tpl) return;

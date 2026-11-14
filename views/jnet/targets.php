@@ -18,8 +18,12 @@ $prioKey = static fn (array $t): string => strtolower((string) ($t['priority_key
     <div class="jnet-panel__body">
         <?php if ($targets === []): ?>
             <div class="jnet-empty">
+                <?php if (!empty($intelLocked)): ?>
+                <p>Les dossiers de renseignement sont réservés aux membres habilités au bureau SSE, après engagement de confidentialité.</p>
+                <?php else: ?>
                 <p>Aucun dossier ouvert pour le moment.</p>
                 <p>Les personnes et objectifs suivis par le bureau SSE apparaissent ici dès qu’un dossier est constitué.</p>
+                <?php endif; ?>
                 <p><a class="jnet-btn" href="<?= $h(url('atak/sse/interet')) ?>">Ouvrir le bureau SSE</a></p>
             </div>
         <?php else: ?>
