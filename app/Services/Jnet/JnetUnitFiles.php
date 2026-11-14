@@ -125,6 +125,44 @@ final class JnetUnitFiles
     }
 
     /**
+     * Un fichier du partage de fichiers tel que CE lecteur peut le voir (même droit que le partage : dossier ou fichier
+     * partagé avec lui, fichier non supprimé), ou null. Sert à décider d'un lien vers un document ou une photo.
+     *
+     * @return array{id: int, name: string, title: string, photo: bool, href: string}|null
+     */
+    public function fileForViewer(int $tenantId, int $viewerUserId, int $fileId): ?array
+    {
+        try {
+            if ($fileId <= 0 || !$this->repo->schemaReady()) {
+                return null;
+            }
+            $ws = new FileShareWorkspace($this->repo->allFolders($tenantId), $this->repo->allGrants($tenantId), [
+                'user_id' => $viewerUserId,
+                'role_ids' => $this->repo->roleIdsForUser($tenantId, $viewerUserId),
+                'unit_ids' => FileShareAccess::withAncestorUnits($this->repo->unitIdsForUser($tenantId, $viewerUserId), $this->repo->unitParents($tenantId)),
+            ], time());
+            foreach ($this->repo->filesByIds($tenantId, [$fileId]) as $f) {
+                if ((int) $f['id'] !== $fileId || !empty($f['deleted_at']) || $ws->fileLevel($f) < FileShareAccess::VIEW) {
+                    return null;
+                }
+                $name = (string) $f['name'];
+
+                return [
+                    'id' => $fileId,
+                    'name' => $name,
+                    'title' => (string) preg_replace('/\.[^.]+$/', '', $name),
+                    'photo' => self::isImage($name),
+                    'href' => url('partage/fichiers/' . $fileId),
+                ];
+            }
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return null;
+    }
+
+    /**
      * Ajoute aux fichiers partagés les autres sources réelles de l'unité (photos terrain et pièces jointes des échanges,
      * documents de la bibliothèque), les plus récents d'abord. Une rubrique n'est « prête » que si le partage de fichiers
      * est installé ou si une autre source a quelque chose à montrer.

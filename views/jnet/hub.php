@@ -60,8 +60,26 @@ $sub = static function (array $u) use ($h): string {
         . ($facts !== [] ? '<span class="hb-facts">' . $h(implode(' · ', $facts)) . '</span>' : '') . '</small>';
 };
 
+/** Liaisons actives de l'unité avec une unité que le lecteur voit : un marquage, qui n'ouvre aucun droit. */
+$linkMarks = static function (array $u) use ($h): string {
+    $marks = array_values((array) ($u['links'] ?? []));
+    if ($marks === []) {
+        return '';
+    }
+    $out = '<span class="hb-links">';
+    foreach (array_slice($marks, 0, 2) as $m) {
+        $out .= '<span class="hb-link hb-link--' . $h((string) $m['kind']) . '" title="' . $h((string) $m['sentence']) . '">' . $h((string) $m['kindLabel']) . ' · ' . $h((string) $m['other']) . '</span>';
+    }
+    if (count($marks) > 2) {
+        $out .= '<span class="hb-link hb-link--more">+' . (count($marks) - 2) . '</span>';
+    }
+
+    return $out . '</span>';
+};
+$anyLinked = count(array_filter($tree, static fn (array $u): bool => !empty($u['links']))) > 0;
+
 /** Une ligne du registre : l'ensemble est cliquable, « Demander » (autres unités) reste un lien à part. */
-$unitRow = static function (array $u, ?int $index, bool $ask, bool $inTree) use ($h, $pad, $pill, $arrow, $unreadText, $requestHref, $sub): string {
+$unitRow = static function (array $u, ?int $index, bool $ask, bool $inTree) use ($h, $pad, $pill, $arrow, $unreadText, $requestHref, $sub, $linkMarks): string {
     $right = (array) $u['right'];
     $accent = (string) ($u['accent'] ?? '');
     $depth = $inTree ? max(1, (int) ($u['depth'] ?? 1)) : 1;
@@ -72,12 +90,12 @@ $unitRow = static function (array $u, ?int $index, bool $ask, bool $inTree) use 
     $search = mb_strtolower(implode(' ', array_filter([(string) $u['label'], (string) ($u['kind'] ?? ''), implode(' ', (array) ($u['facts'] ?? [])), $fil])));
 
     $html = '<div class="hb-urow' . ($inTree ? ' hb-urow--tree' : '') . ($inTree && $depth > 1 ? ' is-sub' : '') . '" style="' . $style . '"'
-        . ($inTree ? ' data-hb-unit data-q="' . $h($search) . '" data-mine="' . (!empty($u['mine']) ? '1' : '0') . '" data-unread="' . (int) ($u['unread'] ?? 0) . '"' : '') . '>';
+        . ($inTree ? ' data-hb-unit data-q="' . $h($search) . '" data-mine="' . (!empty($u['mine']) ? '1' : '0') . '" data-unread="' . (int) ($u['unread'] ?? 0) . '" data-linked="' . (!empty($u['links']) ? '1' : '0') . '"' : '') . '>';
     $html .= '<a class="hb-urow__link" href="' . $h((string) $u['href']) . '"><span class="ja-sr">Entrer dans ' . $h((string) $u['label']) . '</span></a>';
     $html .= '<span class="hb-ph" style="--ph: url(\'' . $h($banner) . '\')" aria-hidden="true"></span>';
     $html .= '<span class="hb-n">' . ($index !== null ? $pad($index) : '') . '</span>';
     $html .= '<span class="hb-nm">' . JnetUi::crest((string) $u['monogram'], $emblem, 'ja-crest ja-crest--md')
-        . '<span class="hb-nm__t"><b>' . $h((string) $u['label']) . '</b>' . $sub($u)
+        . '<span class="hb-nm__t"><b>' . $h((string) $u['label']) . '</b>' . $sub($u) . $linkMarks($u)
         . ($fil !== '' ? '<span class="hb-fil">' . $h($fil) . '</span>' : '')
         . '<span class="hb-nr">' . $pill((string) $right['label'], (string) $right['key']) . '</span></span></span>';
     $html .= '<span class="hb-c">' . $pill((string) $right['label'], (string) $right['key']) . '</span>';
@@ -117,6 +135,7 @@ $itemRows = static function (array $section) use ($h, $pad, $arrow): string {
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_athena.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_hub.css')) ?>">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_links.css?r=202611150001')) ?>">
 </head>
 <body class="ja hb">
 <a class="ja-skip" href="#hb-main">Aller au contenu</a>
@@ -191,6 +210,7 @@ $itemRows = static function (array $section) use ($h, $pad, $arrow): string {
                     <button type="button" class="ja-chip is-on" data-hb-chip="all" aria-pressed="true">Toutes</button>
                     <button type="button" class="ja-chip" data-hb-chip="mine" aria-pressed="false">Mes unités</button>
                     <button type="button" class="ja-chip" data-hb-chip="unread" aria-pressed="false">Non lus</button>
+                    <?php if ($anyLinked): ?><button type="button" class="ja-chip" data-hb-chip="linked" aria-pressed="false">Unités liées</button><?php endif; ?>
                 </div>
             </div>
 

@@ -12,6 +12,9 @@ use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Jnet\JnetDashboardService;
+use App\Services\Jnet\JnetLinkAccess;
+use App\Services\Jnet\JnetLinkRules;
+use App\Services\Jnet\JnetLinkService;
 use App\Services\Jnet\JnetMemberHub;
 use App\Services\Jnet\JnetMessagingService;
 use App\Services\Jnet\JnetSpaceRules;
@@ -35,6 +38,7 @@ final class JnetPortalController
         private ?JnetSpaceService $spaces = null,
         private ?JnetUnitSpaceSettings $spaceSettings = null,
         private ?JnetUnitWorkspaceService $workspace = null,
+        private ?JnetLinkService $links = null,
     ) {
         $this->authService ??= \App\Core\Container::get(AuthService::class);
         $this->rbacService ??= \App\Core\Container::get(RbacService::class);
@@ -46,6 +50,7 @@ final class JnetPortalController
         $this->spaces ??= new JnetSpaceService($this->jnet);
         $this->spaceSettings ??= new JnetUnitSpaceSettings();
         $this->workspace ??= new JnetUnitWorkspaceService();
+        $this->links ??= new JnetLinkService();
     }
 
     /** Espaces déjà franchis dans cette session (écran d'entrée montré une fois par espace et par session). */
@@ -100,7 +105,8 @@ final class JnetPortalController
             $this->spaces->isOrgWideWriter(),
             $unread,
             $this->spaceSettings->findAll($tenantId),
-            $this->spaces->strengthByUnit($tenantId, $userId)
+            $this->spaces->strengthByUnit($tenantId, $userId),
+            $this->unitLinkMarks($tenantId, $userId)
         );
         $pilot = false;
         try {
@@ -179,7 +185,7 @@ final class JnetPortalController
     }
 
     /** Rubriques de l'espace d'une unité (?vue=). « page » est une page écrite, ouverte depuis la rubrique Pages. */
-    private const UNIT_VIEWS = ['accueil', 'echanges', 'effectif', 'taches', 'pages', 'page', 'photos', 'documents', 'operations', 'sous-unites', 'partager'];
+    private const UNIT_VIEWS = ['accueil', 'echanges', 'effectif', 'taches', 'pages', 'page', 'photos', 'documents', 'operations', 'sous-unites', 'partager', 'liaisons'];
 
     /**
      * Données des outils de l'espace pour la rubrique demandée : seules les lectures utiles à cette rubrique sont faites.
@@ -231,6 +237,7 @@ final class JnetPortalController
             'tracking' => [],
             'assignees' => [],
             'album' => trim((string) $request->query('album', '')),
+            'links' => ['ready' => false, 'unitReady' => false, 'canLink' => false, 'units' => [], 'partners' => [], 'exchanges' => [], 'tasks' => [], 'page' => [], 'mentions' => [], 'attached' => 0],
         ];
 
         if (in_array($view, ['accueil', 'effectif'], true)) {
@@ -288,7 +295,78 @@ final class JnetPortalController
             ];
         }
 
+        $this->linksData($w, $ctx, $unitId, $view, $space, $tree, $rights, $isChief);
+
         return ['usw' => $w];
+    }
+
+    /**
+     * Liaisons et liens que montre la rubrique demandée : seules les lectures utiles à cette rubrique sont faites, et
+     * chaque lien passe par le contrôle de droits du lecteur (JnetLinkService / JnetLinkAccess). Les écrans tolèrent
+     * l'absence des tables : « ready » reste faux et les blocs ne s'affichent pas.
+     *
+     * @param array<string, mixed> $w
+     * @param array{tenant_id:int,user_id:int} $ctx
+     * @param array<string, mixed> $space
+     * @param array{read: bool, write: bool, lead: bool, publish: bool, chief: bool} $rights
+     */
+    private function linksData(array &$w, array $ctx, int $unitId, string $view, array $space, JnetSpaceTree $tree, array $rights, bool $isChief): void
+    {
+        $links = ['ready' => $this->links->linksReady(), 'unitReady' => $this->links->unitLinksReady(), 'canLink' => $rights['write'], 'units' => [], 'partners' => [], 'exchanges' => [], 'tasks' => [], 'page' => [], 'mentions' => [], 'attached' => 0, 'viewerChief' => $isChief, 'hasAny' => false];
+        $viewer = JnetLinkAccess::forViewer($ctx['tenant_id'], $ctx['user_id'], $this->spaces);
+        if ($links['unitReady'] && in_array($view, ['accueil', 'liaisons', 'effectif', 'echanges'], true)) {
+            $links['units'] = $this->links->unitLinksOf($viewer, $unitId);
+            foreach ($links['units'] as $l) {
+                if ($l['kind'] === 'rattachement' && $l['status'] === 'active' && empty($l['hidden'])) {
+                    ++$links['attached'];
+                }
+            }
+        }
+        if ($links['unitReady'] && $view === 'liaisons' && $isChief) {
+            // Partenaires proposables : unités visibles du chef, hors espace lui-même et hors filiation (la hiérarchie règle déjà ces cas).
+            foreach ($tree->unitIds() as $uid) {
+                if ($uid !== $unitId && !$viewer->related($unitId, $uid)) {
+                    $links['partners'][] = ['id' => $uid, 'label' => (string) ($tree->node($uid)['label'] ?? 'Unité'), 'depth' => (int) ($tree->node($uid)['depth'] ?? 1)];
+                }
+            }
+        }
+        if ($links['ready']) {
+            if ($view === 'echanges') {
+                $ids = [];
+                foreach (['received', 'internal', 'sentUp', 'linked'] as $key) {
+                    foreach ((array) ($space[$key] ?? []) as $e) {
+                        $ids[] = (int) $e['id'];
+                    }
+                }
+                $links['exchanges'] = $this->links->linksOfMany($viewer, 'echange', $ids);
+            }
+            if ($view === 'taches') {
+                $links['tasks'] = $this->links->linksOfMany($viewer, 'tache', array_map(static fn (array $t): int => (int) $t['id'], (array) ($w['tasks'] ?? [])));
+            }
+            if ($view === 'page' && is_array($w['page'] ?? null)) {
+                $links['page'] = $this->links->linksOf($viewer, 'page', (string) (int) $w['page']['id']);
+            }
+        }
+        // Les citations d'une page sont du texte : elles se résolvent même si les tables de liens ne sont pas installées.
+        if ($view === 'page' && is_array($w['page'] ?? null)) {
+            $texts = array_map(static fn (array $b): string => (string) ($b['text'] ?? ''), (array) ($w['page']['blocksList'] ?? []));
+            $links['mentions'] = $this->links->resolveMentions($viewer, $texts);
+        }
+        $links['hasAny'] = $links['units'] !== [] || $links['ready'];
+        $w['links'] = $links;
+    }
+
+    /** Marquage des liaisons d'unités dans le registre du hub : jamais plus que ce que le lecteur voit déjà. @return array<int, list<array<string, mixed>>> */
+    private function unitLinkMarks(int $tenantId, int $userId): array
+    {
+        if (!$this->links->unitLinksReady()) {
+            return [];
+        }
+        try {
+            return $this->links->hubMarks(JnetLinkAccess::forViewer($tenantId, $userId, $this->spaces));
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**
@@ -821,7 +899,84 @@ final class JnetPortalController
 
         return $this->render('operation_show', (string) ($op['title'] ?? 'Opération'), [
             'operation' => $op,
-        ], 'operations');
+            'linkBlock' => $this->linkBlock($ctx, 'operation', (string) (int) $op['id'], true),
+        ], 'operations', ['jnet_links.css'], ['jnet_links.js']);
+    }
+
+    /**
+     * Bloc « Liés à » d'un contenu hors espace d'unité (fiche d'opération, dossier de cible) : liens vérifiés pour ce
+     * lecteur, et vue d'ensemble pour une opération. Null si les liens ne sont pas encore activés (migration).
+     *
+     * @param array{tenant_id:int,user_id:int} $ctx
+     * @return array<string, mixed>|null
+     */
+    private function linkBlock(array $ctx, string $type, string $id, bool $overview): ?array
+    {
+        if (!$this->links->linksReady()) {
+            return null;
+        }
+        $viewer = JnetLinkAccess::forViewer($ctx['tenant_id'], $ctx['user_id'], $this->spaces);
+        $ref = JnetLinkRules::ref($type, $id);
+        $items = $this->links->linksOf($viewer, $type, $id);
+
+        return [
+            'ref' => $ref,
+            'items' => $items,
+            'overview' => $overview ? $this->links->overview($viewer, $type, $id) : null,
+            'canAdd' => $viewer->inOwnUnits() || $viewer->isOrgManager(),
+            'space' => 0,
+            'newUrl' => url('jnet/liens/nouveau?src=' . rawurlencode($ref)),
+            'searchUrl' => url('jnet/liens/recherche'),
+            'createUrl' => url('jnet/liens'),
+            'removeBase' => url('jnet/liens'),
+            'types' => $type === 'operation' ? 'echange,page,tache,cible,document,unite,membre' : 'echange,page,tache,operation,document,unite,membre',
+        ];
+    }
+
+    /**
+     * Page « Lier à… » sans JavaScript : recherche dans ce que le lecteur voit déjà, puis un bouton par résultat (POST avec
+     * jeton). Avec JavaScript, la même recherche s'ouvre en fenêtre.
+     */
+    public function linkNew(Request $request, array $params = []): Response
+    {
+        $ctx = $this->ensureAuth();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $viewer = JnetLinkAccess::forViewer($ctx['tenant_id'], $ctx['user_id'], $this->spaces);
+        $src = JnetLinkRules::parseRef((string) $request->query('src', ''));
+        $seen = $src !== null ? $viewer->see($src['type'], $src['id']) : null;
+        if ($seen === null) {
+            Session::flash('error', 'Élément introuvable.');
+
+            return Response::redirect(url('jnet'));
+        }
+        $q = trim(mb_substr((string) $request->query('q', ''), 0, 80));
+        $space = max(0, (int) $request->query('space', 0));
+        $types = array_values(array_filter(array_map('trim', explode(',', (string) $request->query('types', ''))), static fn (string $t): bool => isset(JnetLinkRules::TYPES[$t])));
+        $results = [];
+        if (mb_strlen($q) >= 2) {
+            foreach ($viewer->search($q, $types, $space) as $r) {
+                if (JnetLinkRules::canPair($src['type'], $src['id'], $r['type'], $r['id'])) {
+                    $results[] = $r + ['ref' => JnetLinkRules::ref($r['type'], $r['id']), 'typeLabel' => JnetLinkRules::TYPES[$r['type']] ?? ''];
+                }
+            }
+        }
+
+        return $this->render('link_new', 'Lier à…', [
+            'linkNew' => [
+                'src' => JnetLinkRules::ref($src['type'], $src['id']),
+                'srcTitle' => $seen['title'],
+                'srcType' => JnetLinkRules::TYPES[$src['type']] ?? '',
+                'srcHref' => $seen['href'],
+                'q' => $q,
+                'space' => $space,
+                'types' => implode(',', $types),
+                'results' => $results,
+                'ready' => $this->links->linksReady(),
+                'createUrl' => url('jnet/liens'),
+            ],
+        ], $src['type'] === 'operation' ? 'operations' : null, ['jnet_links.css']);
     }
 
     public function intelligence(Request $request, array $params = []): Response
@@ -872,7 +1027,8 @@ final class JnetPortalController
         return $this->render('target_show', (string) ($target['name'] ?? 'Cible'), [
             'target' => $target,
             'targetTab' => $tab,
-        ], 'targets');
+            'linkBlock' => $this->linkBlock($ctx, 'cible', $id, false),
+        ], 'targets', ['jnet_links.css'], ['jnet_links.js']);
     }
 
     public function exploitation(Request $request, array $params = []): Response
@@ -1247,7 +1403,7 @@ final class JnetPortalController
     /**
      * @param array<string, mixed> $extra
      */
-    private function render(string $view, string $title, array $extra = [], ?string $activeNav = null, array $moreCss = []): Response
+    private function render(string $view, string $title, array $extra = [], ?string $activeNav = null, array $moreCss = [], array $moreJs = []): Response
     {
         $ctx = $this->ensureAuth();
         if ($ctx instanceof Response) {
@@ -1269,6 +1425,7 @@ final class JnetPortalController
                 'jnet_portal.css',
                 'jnet_spaces.css',
             ], $moreCss),
+            'jnetPageJs' => $moreJs,
             'activeNav' => $nav,
             'jnetTenantName' => $tenantName,
             'jnetDisplayName' => (string) Session::get('display_name', ''),

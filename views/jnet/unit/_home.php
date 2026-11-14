@@ -137,6 +137,7 @@ $flow = [
                     </ul>
                 <?php endif; ?>
             </section>
+            <?php $ulMode = 'block'; require base_path('views/jnet/unit/_unit_links.php'); ?>
             <?php if (!empty($wShown['taches'])): ?>
             <section class="us-sec">
                 <?= $section('Mes tâches', $tabUrl('taches'), 'Tableau') ?>

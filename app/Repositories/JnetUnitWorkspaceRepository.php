@@ -112,6 +112,71 @@ class JnetUnitWorkspaceRepository
             ->execute([$tenantId, $unitId, $taskId]);
     }
 
+    /**
+     * Une tâche de la communauté par son identifiant, avec son unité : pour relier une tâche, jamais pour la montrer sans
+     * que l'appelant ait contrôlé le droit de lire cette unité.
+     *
+     * @return array{id: int, unit_id: int, title: string, status: string}|null
+     */
+    public function taskById(int $tenantId, int $taskId): ?array
+    {
+        if (!$this->ready()) {
+            return null;
+        }
+        $st = $this->pdo()->prepare('SELECT id, unit_id, title, status FROM jnet_unit_tasks WHERE tenant_id = ? AND id = ?');
+        $st->execute([$tenantId, $taskId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? ['id' => (int) $row['id'], 'unit_id' => (int) $row['unit_id'], 'title' => (string) $row['title'], 'status' => (string) $row['status']] : null;
+    }
+
+    /** @return list<array{id: int, unit_id: int, title: string, status: string}> tâches dont le titre contient $q (à filtrer par droit de lecture) */
+    public function searchTasks(int $tenantId, string $q, int $limit = 40): array
+    {
+        if (!$this->ready() || $q === '') {
+            return [];
+        }
+        $st = $this->pdo()->prepare('SELECT id, unit_id, title, status FROM jnet_unit_tasks WHERE tenant_id = ? AND title LIKE ? ORDER BY id DESC LIMIT ' . max(1, min(100, $limit)));
+        $st->execute([$tenantId, '%' . self::likeEscape($q) . '%']);
+
+        return array_map(static fn (array $r): array => ['id' => (int) $r['id'], 'unit_id' => (int) $r['unit_id'], 'title' => (string) $r['title'], 'status' => (string) $r['status']], $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
+    }
+
+    /**
+     * Une page de la communauté par son identifiant, avec son unité (même réserve que taskById).
+     *
+     * @return array{id: int, unit_id: int, title: string}|null
+     */
+    public function pageById(int $tenantId, int $pageId): ?array
+    {
+        if (!$this->ready()) {
+            return null;
+        }
+        $st = $this->pdo()->prepare('SELECT id, unit_id, title FROM jnet_unit_pages WHERE tenant_id = ? AND id = ? AND deleted_at IS NULL');
+        $st->execute([$tenantId, $pageId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? ['id' => (int) $row['id'], 'unit_id' => (int) $row['unit_id'], 'title' => (string) $row['title']] : null;
+    }
+
+    /** @return list<array{id: int, unit_id: int, title: string}> pages dont le titre contient $q (à filtrer par droit de lecture) */
+    public function searchPages(int $tenantId, string $q, int $limit = 40): array
+    {
+        if (!$this->ready() || $q === '') {
+            return [];
+        }
+        $st = $this->pdo()->prepare('SELECT id, unit_id, title FROM jnet_unit_pages WHERE tenant_id = ? AND deleted_at IS NULL AND title LIKE ? ORDER BY id DESC LIMIT ' . max(1, min(100, $limit)));
+        $st->execute([$tenantId, '%' . self::likeEscape($q) . '%']);
+
+        return array_map(static fn (array $r): array => ['id' => (int) $r['id'], 'unit_id' => (int) $r['unit_id'], 'title' => (string) $r['title']], $st->fetchAll(PDO::FETCH_ASSOC) ?: []);
+    }
+
+    /** Texte à chercher dans un LIKE : les jokers saisis par le lecteur n'en sont pas. */
+    private static function likeEscape(string $q): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q);
+    }
+
     // ——— Pages ———
 
     /** @return list<array<string, mixed>> */

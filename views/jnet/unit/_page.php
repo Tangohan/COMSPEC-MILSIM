@@ -10,6 +10,7 @@ declare(strict_types=1);
  * @var array<string, mixed> $usw
  * @var string $base
  */
+use App\Services\Jnet\JnetLinkRules;
 use App\Services\Jnet\JnetSpaceService;
 use App\Services\Jnet\JnetUnitWorkspaceService as WS;
 
@@ -68,6 +69,9 @@ $title = (string) $page['title'];
 $canDelete = $canPost && ($chief || (int) $page['created_by'] === $me);
 $action = static fn (string $suffix): string => $h($base . '/pages/' . $pid . $suffix);
 $shareUrl = $base . '?vue=partager&kind=page&item=' . $pid . '&titre=' . rawurlencode(mb_substr($title !== '' ? $title : 'Page sans titre', 0, 120)) . '&direct=1';
+$mentions = is_array($usw['links']['mentions'] ?? null) ? $usw['links']['mentions'] : [];
+/** Texte d'un bloc avec ses citations résolues pour CE lecteur (lien vers l'objet, ou « Lien masqué »). */
+$rich = static fn (string $text): string => JnetLinkRules::renderMentions($text, $mentions);
 $byLine = 'Modifiée par ' . (string) ($page['updated_by_label'] ?? 'un membre') . ' · ' . JnetSpaceService::relativeTime((string) $page['updated_at']);
 ?>
 <article class="uw-page<?= $edit ? ' is-edit' : '' ?>" id="page">
@@ -143,7 +147,7 @@ $renderBlock = static function (int|string $i, array $b, int $total) use ($h, $s
 <?php
 };
 ?>
-    <form method="post" action="<?= $action('') ?>" class="uw-editor" data-uw-editor data-uw-read="<?= $h($self) ?>">
+    <form method="post" action="<?= $action('') ?>" class="uw-editor" data-uw-editor data-uw-read="<?= $h($self) ?>" data-uw-mention-search="<?= $h(url('jnet/liens/recherche')) ?>" data-uw-mention-space="<?= (int) ($unitId ?? 0) ?>">
         <?= \App\Core\Csrf::field() ?>
         <input type="hidden" name="version" value="<?= $h((string) $page['updated_at']) ?>">
         <button type="submit" name="act" value="save" class="ja-sr" tabindex="-1">Enregistrer</button>
@@ -194,13 +198,13 @@ $renderBlock = static function (int|string $i, array $b, int $total) use ($h, $s
             <?php if ($t === 'p' && (string) $b['text'] === ''): ?><?php continue; ?><?php endif; ?>
             <div class="uw-rb uw-rb--<?= $h($t) ?>" id="b-<?= $h($bid) ?>">
                 <?php if ($t === 'h'): ?>
-                    <h2><?= $h((string) $b['text']) ?></h2>
+                    <h2><?= $rich((string) $b['text']) ?></h2>
                 <?php elseif ($t === 'p'): ?>
-                    <p><?= nl2br($h((string) $b['text'])) ?></p>
+                    <p><?= $rich((string) $b['text']) ?></p>
                 <?php elseif ($t === 'div'): ?>
                     <hr>
                 <?php elseif ($t === 'call'): ?>
-                    <div class="uw-callout"><span class="uw-callout__i"><?= $svg('call') ?></span><p><?= nl2br($h((string) $b['text'])) ?></p></div>
+                    <div class="uw-callout"><span class="uw-callout__i"><?= $svg('call') ?></span><p><?= $rich((string) $b['text']) ?></p></div>
                 <?php elseif ($t === 'count'): ?>
                     <div class="uw-count">
                         <?php if ($event !== null && (string) $event['countdown'] !== ''): ?>
@@ -215,11 +219,11 @@ $renderBlock = static function (int|string $i, array $b, int $total) use ($h, $s
                         <form class="uw-todo" method="post" action="<?= $action('/case') ?>" data-uw-act="todo">
                             <?= \App\Core\Csrf::field() ?>
                             <input type="hidden" name="block" value="<?= $h($bid) ?>">
-                            <button type="submit" class="uw-tick<?= $done ? ' is-on' : '' ?>" role="checkbox" aria-checked="<?= $done ? 'true' : 'false' ?>" aria-label="<?= $done ? 'Marquer comme à faire' : 'Marquer comme fait' ?> : <?= $h((string) $b['text']) ?>"><?= $svg('check') ?></button>
-                            <span class="uw-todo__t<?= $done ? ' is-done' : '' ?>"><?= $h((string) $b['text']) ?></span>
+                            <button type="submit" class="uw-tick<?= $done ? ' is-on' : '' ?>" role="checkbox" aria-checked="<?= $done ? 'true' : 'false' ?>" aria-label="<?= $done ? 'Marquer comme à faire' : 'Marquer comme fait' ?> : <?= $h(JnetLinkRules::plain((string) $b['text'])) ?>"><?= $svg('check') ?></button>
+                            <span class="uw-todo__t<?= $done ? ' is-done' : '' ?>"><?= $rich((string) $b['text']) ?></span>
                         </form>
                     <?php else: ?>
-                        <p class="uw-todo"><span class="uw-tick<?= $done ? ' is-on' : '' ?>" aria-hidden="true"><?= $svg('check') ?></span><span class="uw-todo__t<?= $done ? ' is-done' : '' ?>"><?= $h((string) $b['text']) ?></span></p>
+                        <p class="uw-todo"><span class="uw-tick<?= $done ? ' is-on' : '' ?>" aria-hidden="true"><?= $svg('check') ?></span><span class="uw-todo__t<?= $done ? ' is-done' : '' ?>"><?= $rich((string) $b['text']) ?></span></p>
                     <?php endif; ?>
                 <?php elseif ($t === 'poll'): ?>
                     <?php
@@ -257,6 +261,15 @@ $renderBlock = static function (int|string $i, array $b, int $total) use ($h, $s
         <?php endforeach; ?>
     </div>
 
+    <?php
+    $pageLinkItems = is_array($usw['links']['page'] ?? null) ? $usw['links']['page'] : [];
+    if (!empty($usw['links']['ready']) && ($pageLinkItems !== [] || !empty($usw['links']['canLink']))) {
+        $linkBlock = $linkBlockFor('page', $pid, $pageLinkItems, 'echange,operation,tache,cible,document,unite,membre');
+        $linkMode = 'block';
+        $linkUid = 'page' . $pid;
+        require base_path('views/jnet/_linked.php');
+    }
+    ?>
     <div class="uw-rx" id="reactions" role="group" aria-label="Réactions">
         <?php foreach (WS::REACTIONS as $k => $name): ?>
             <?php $on = in_array($k, (array) $reactions['mine'], true); $n = (int) ($reactions['counts'][$k] ?? 0); ?>

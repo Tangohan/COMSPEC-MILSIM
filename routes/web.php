@@ -495,6 +495,12 @@ return function (Router $router) {
     $router->post('/jnet/u/{id}/pages/{pid}/vote', [\App\Controllers\Web\JnetUnitWorkspaceController::class, 'vote'], [AuthMiddleware::class]);
     $router->post('/jnet/u/{id}/pages/{pid}/reaction', [\App\Controllers\Web\JnetUnitWorkspaceController::class, 'react'], [AuthMiddleware::class]);
     $router->post('/jnet/u/{id}/pages/{pid}/commentaire', [\App\Controllers\Web\JnetUnitWorkspaceController::class, 'comment'], [AuthMiddleware::class]);
+    $router->get('/jnet/liens/recherche', [\App\Controllers\Web\JnetLinksController::class, 'search'], [AuthMiddleware::class]);
+    $router->get('/jnet/liens/nouveau', [JnetPortalController::class, 'linkNew'], [AuthMiddleware::class]);
+    $router->post('/jnet/liens', [\App\Controllers\Web\JnetLinksController::class, 'create'], [AuthMiddleware::class]);
+    $router->post('/jnet/liens/{id}/supprimer', [\App\Controllers\Web\JnetLinksController::class, 'remove'], [AuthMiddleware::class]);
+    $router->post('/jnet/u/{id}/liaisons', [\App\Controllers\Web\JnetLinksController::class, 'createUnitLink'], [AuthMiddleware::class]);
+    $router->post('/jnet/u/{id}/liaisons/{lid}/fin', [\App\Controllers\Web\JnetLinksController::class, 'endUnitLink'], [AuthMiddleware::class]);
     $router->get('/jnet/personnel', [JnetPortalController::class, 'personnel'], [AuthMiddleware::class]);
     $router->get('/jnet/personnel/{id}', [JnetPortalController::class, 'personnelShow'], [AuthMiddleware::class]);
     $router->get('/jnet/operations', [JnetPortalController::class, 'operations'], [AuthMiddleware::class]);
