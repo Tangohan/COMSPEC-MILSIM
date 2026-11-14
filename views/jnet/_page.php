@@ -17,6 +17,9 @@ declare(strict_types=1);
  * @var string $jnetPageTitle
  * @var list<string> $jnetPageCss
  */
+
+use App\Support\JnetUi;
+
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 // Les fiches et la messagerie allument la rubrique dont elles dépendent.
 $activeNav = (string) ($activeNav ?? 'home');
