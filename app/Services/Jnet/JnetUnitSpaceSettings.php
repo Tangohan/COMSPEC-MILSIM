@@ -21,6 +21,7 @@ final class JnetUnitSpaceSettings
 {
     /** Thèmes : fond, panneau, texte, accent par défaut. Clé courte, stockée en base. */
     public const THEMES = [
+        'athena' => ['label' => 'Athena (noir)', 'bg' => '#050505', 'panel' => '#0f1412', 'ink' => '#f4f4f0', 'accent' => '#34d399'],
         'operations' => ['label' => 'Opérations', 'bg' => '#06110c', 'panel' => '#0c1b14', 'ink' => '#e6f2ec', 'accent' => '#2fd08f'],
         'nuit' => ['label' => 'Nuit', 'bg' => '#050a14', 'panel' => '#0b1526', 'ink' => '#e5edf8', 'accent' => '#5aa9ff'],
         'desert' => ['label' => 'Désert', 'bg' => '#151009', 'panel' => '#231b10', 'ink' => '#f4eadb', 'accent' => '#e0a64a'],
@@ -29,7 +30,7 @@ final class JnetUnitSpaceSettings
         'garde' => ['label' => 'Garde', 'bg' => '#130707', 'panel' => '#220d0d', 'ink' => '#f6e9e9', 'accent' => '#e25555'],
     ];
 
-    public const DEFAULT_THEME = 'operations';
+    public const DEFAULT_THEME = 'athena';
 
     public const TAGLINE_MAX = 140;
     public const WELCOME_MAX = 600;
