@@ -109,7 +109,7 @@ final class CareerFileService
         }
 
         try {
-            foreach ($this->serviceHistory->listForUser($userId, 60) as $row) {
+            foreach ($this->serviceHistory->listForUser($userId, 60, $tenantId) as $row) {
                 if (!is_array($row)) {
                     continue;
                 }

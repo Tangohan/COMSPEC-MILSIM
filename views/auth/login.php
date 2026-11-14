@@ -82,6 +82,8 @@ $athena_header_current = 'login';
         </section>
     </form>
 
+    <?php $discordNext = null; $discordHrefOverride = null; require base_path('views/partials/auth/discord_button.php'); ?>
+
     <div class="au-divider"><span><?= $t('auth.login_new_here') ?></span></div>
     <div class="au-alt-actions">
         <a class="ds-btn ds-btn--secondary au-btn" href="<?= url('register') ?>"><?= $t('auth.login_create_cta') ?></a>

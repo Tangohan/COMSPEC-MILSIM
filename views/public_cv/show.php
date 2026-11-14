@@ -32,6 +32,11 @@ $otherJobs = $list('other_jobs');
 $post = $str('post');
 $since = $str('member_since');
 $career = $list('career');
+$evalRaw = is_array($cv['evaluations'] ?? null) ? $cv['evaluations'] : [];
+$evalItems = is_array($evalRaw['items'] ?? null) ? $evalRaw['items'] : [];
+$evalAvg = isset($evalRaw['average']) ? (float) $evalRaw['average'] : null;
+$mutations = $list('mutations');
+$discord = is_array($cv['discord'] ?? null) ? $cv['discord'] : null;
 $distanceModes = $list('distance_modes');
 $gameRoles = $list('game_roles');
 $pageUrl = (string) ($cv['page_url'] ?? '');
@@ -39,7 +44,7 @@ $slug = (string) ($cv['slug'] ?? '');
 $og = is_array($cv['og'] ?? null) ? $cv['og'] : [];
 
 $hasFiche = $grade !== null || $unit !== null || $community !== null || $job !== null || $post !== null || $since !== null;
-$hasMain = $bio !== null || $career !== [] || $trainings !== [] || $operations !== [] || $photos !== [];
+$hasMain = $bio !== null || $career !== [] || $evalItems !== [] || $mutations !== [] || $trainings !== [] || $operations !== [] || $photos !== [];
 $hasAside = $hasFiche || $qualifications !== [] || $decorations !== [] || $distanceModes !== [] || $gameRoles !== [];
 /* Pastille de fonction dans l’en-tête : l’emploi principal, sinon le poste tenu dans l’unité. */
 $jobChip = $job ?? $post;
@@ -168,6 +173,10 @@ $seo_json_ld = [
         .pcv-tl-d { font: 400 11px/1.4 var(--mono); letter-spacing: .08em; color: var(--ink-muted); }
         .pcv-tl-t { margin: 4px 0 2px; font-size: 17px; font-weight: 800; }
         .pcv-tl-u { font-size: 14px; color: var(--ink-muted); }
+        .pcv-eval-avg { margin: -8px 0 20px; font: 800 15px/1.4 var(--sans); }
+        .pcv-eval-avg small { color: var(--ink-muted); font-weight: 400; }
+        .pcv-stars { letter-spacing: .12em; color: #e8a33a; }
+        .pcv-eval-c { margin: 6px 0 0; font-size: 14px; line-height: 1.55; color: var(--ink); white-space: pre-line; }
 
         .pcv-ops { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--rule); }
         .pcv-op { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 20px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--rule); }
@@ -286,6 +295,9 @@ $seo_json_ld = [
                 <?php if ($communityUrl !== null): ?>
                 <a class="pcv-btn pcv-btn--pri" href="<?= $h($communityUrl) ?>">Découvrir la communauté</a>
                 <?php endif; ?>
+                <?php if ($discord !== null): ?>
+                <a class="pcv-btn" href="<?= $h($discord['url']) ?>" target="_blank" rel="noopener noreferrer nofollow">Discord · <?= $h($discord['name']) ?></a>
+                <?php endif; ?>
                 <button type="button" class="pcv-btn" data-pcv-share>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>
                     <span data-pcv-share-label aria-live="polite">Partager le profil</span>
@@ -331,6 +343,37 @@ $seo_json_ld = [
                             <?php if (!empty($c['date'])): ?><div class="pcv-tl-d"><?= $h($c['date']) ?></div><?php endif; ?>
                             <div class="pcv-tl-t"><?= $h($c['title'] ?? '') ?></div>
                             <?php if (!empty($c['subtitle'])): ?><div class="pcv-tl-u"><?= $h($c['subtitle']) ?></div><?php endif; ?>
+                        </li>
+                        <?php endforeach; ?>
+                    </ol>
+                </section>
+                <?php endif; ?>
+
+                <?php if ($mutations !== []): ?>
+                <section id="pcv-mutations" aria-labelledby="pcv-h-mutations">
+                    <h2 id="pcv-h-mutations" class="pcv-h2">Mutations</h2>
+                    <ol class="pcv-tl">
+                        <?php foreach ($mutations as $m): ?>
+                        <li>
+                            <?php if (!empty($m['date'])): ?><div class="pcv-tl-d"><?= $h($m['date']) ?></div><?php endif; ?>
+                            <div class="pcv-tl-t"><?= $h($m['text'] ?? '') ?></div>
+                        </li>
+                        <?php endforeach; ?>
+                    </ol>
+                </section>
+                <?php endif; ?>
+
+                <?php if ($evalItems !== []): ?>
+                <section id="pcv-evaluations" aria-labelledby="pcv-h-evaluations">
+                    <h2 id="pcv-h-evaluations" class="pcv-h2">Évaluations</h2>
+                    <?php if ($evalAvg !== null): ?><p class="pcv-eval-avg">Moyenne <?= $h(number_format($evalAvg, 1, ',', '')) ?> <small>sur 5</small></p><?php endif; ?>
+                    <ol class="pcv-tl">
+                        <?php foreach ($evalItems as $e): ?>
+                        <li>
+                            <?php if (!empty($e['date'])): ?><div class="pcv-tl-d"><?= $h($e['date']) ?><?= !empty($e['stage']) ? ' · ' . $h($e['stage']) : '' ?></div><?php endif; ?>
+                            <div class="pcv-tl-t"><?= $h($e['title'] ?? '') ?></div>
+                            <?php if (!empty($e['rating'])): ?><div class="pcv-tl-u"><span class="pcv-stars" role="img" aria-label="<?= (int) $e['rating'] ?> sur 5"><?= str_repeat('★', (int) $e['rating']) . str_repeat('☆', 5 - (int) $e['rating']) ?></span></div><?php endif; ?>
+                            <?php if (!empty($e['comment'])): ?><p class="pcv-eval-c"><?= $h($e['comment']) ?></p><?php endif; ?>
                         </li>
                         <?php endforeach; ?>
                     </ol>

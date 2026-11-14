@@ -1464,7 +1464,7 @@ class EffectifsWorkspaceController
             $qualificationBadge = \App\Core\Container::get(\App\Services\Personnel\QualificationBadgeStorageService::class);
         } catch (\Throwable) {
             $qualifications = $this->personnelQualificationRepository
-                ? $this->personnelQualificationRepository->listForUser($id)
+                ? $this->personnelQualificationRepository->listForUser($id, (int) $tenantId)
                 : [];
         }
         $absences = $this->personnelAbsenceRepository->tableExists()
@@ -1479,7 +1479,7 @@ class EffectifsWorkspaceController
         $orgHistory = $this->personnelOrgHistoryRepository->schemaReady()
             ? $this->personnelOrgHistoryRepository->listForUser($tenantId, $id, 30)
             : [];
-        $serviceHistory = $this->personnelServiceHistoryRepository->listForUser($id, 40);
+        $serviceHistory = $this->personnelServiceHistoryRepository->listForUser($id, 40, (int) $tenantId);
         $individualBilansOn = \App\Services\Personnel\RoleplayFollowupSettings::individualBilansEnabled(
             \App\Services\Personnel\RoleplayFollowupSettings::forTenant($tenantId)
         );

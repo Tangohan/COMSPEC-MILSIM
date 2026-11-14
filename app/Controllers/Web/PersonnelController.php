@@ -712,12 +712,12 @@ class PersonnelController
             $awardRepo = \App\Core\Container::get(\App\Repositories\QualificationAwardRepository::class);
             $qualifications = $awardRepo->listForUser($uid, (int) $tenantId);
         } catch (\Throwable) {
-            $qualifications = $this->personnelQualificationRepository->listForUser($uid);
+            $qualifications = $this->personnelQualificationRepository->listForUser($uid, (int) $tenantId);
         }
         if (!$isSelf) {
             $qualifications = $this->personnelQualificationRepository->filterForViewer($qualifications, $viewCaps);
         }
-        $serviceHistory = $this->personnelServiceHistoryRepository->listForUser($uid);
+        $serviceHistory = $this->personnelServiceHistoryRepository->listForUser($uid, 50, (int) $tenantId);
         $trainingCertificates = $this->trainingCertificateRepository->listByUserId($uid, (int) $tenantId);
         $lmsEnrollmentsForPersonnel = [];
         foreach ($this->trainingEnrollmentRepository->listByUserId($uid, (int) $tenantId) as $enr) {

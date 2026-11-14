@@ -11,32 +11,50 @@ $enlistmentContext = is_array($enlistmentContext ?? null) ? $enlistmentContext :
 $isAuthenticated = !empty($enlistmentContext['isAuthenticated']);
 $accountTheme = 'light';
 $accountNeedsDiscord = true;
+$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+$loginStepUrl = (string) ($enlistmentContext['loginStepUrl'] ?? url('login'));
+$registerStepUrl = (string) ($enlistmentContext['registerStepUrl'] ?? url('register'));
+$discordStepUrl = $loginStepUrl . (str_contains($loginStepUrl, '?') ? '&' : '?') . 'discord=1';
 ?>
-<div class="max-w-2xl mx-auto px-4 py-12">
-    <h1 class="text-2xl font-black uppercase tracking-tight text-slate-900 mb-2">Rejoindre <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?> sur Discord</h1>
-    <p class="text-sm text-slate-600 mb-6">Le recrutement de cette communauté se fait via un échange sur Discord. Ouvrez le serveur, puis répondez aux quelques questions ci-dessous pour créer votre fiche de candidature.</p>
+<link href="<?= $h(asset_url('assets/css/discord-recruitment.css')) ?>" rel="stylesheet">
+<div class="ed-page">
+    <h1 class="ed-title">Rejoindre <?= $h($tenantName) ?> sur Discord</h1>
+    <p class="ed-lead">Le recrutement de cette communauté se fait par un échange sur Discord. Ouvrez le serveur, puis remplissez la fiche ci-dessous : elle permet à l’équipe de caler un rendez-vous avec vous.</p>
 
-    <?php if ($discordInviteUrl !== ''): ?>
-    <div class="mb-6 rounded-2xl border border-indigo-200 bg-indigo-50 p-5">
-        <p class="text-[10px] font-black uppercase tracking-widest text-indigo-800 mb-2">Étape 1</p>
-        <p class="text-sm text-indigo-950 leading-relaxed mb-3">Ouvrez le Discord de la communauté pour vous présenter à l’équipe recrutement.</p>
-        <a href="<?= htmlspecialchars($discordInviteUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener" class="inline-flex items-center rounded-xl bg-indigo-700 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-sm transition hover:bg-indigo-800">Ouvrir le Discord →</a>
-    </div>
-    <?php else: ?>
-    <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-5">
-        <p class="text-sm text-amber-950 leading-relaxed">Le lien Discord de cette communauté n’est pas encore renseigné. Contactez l’équipe recrutement après avoir déposé votre candidature ci-dessous.</p>
-    </div>
-    <?php endif; ?>
-
-    <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-5">
-        <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Étape 2</p>
-        <p class="text-sm text-slate-700 leading-relaxed">Complétez la fiche ci-dessous. Elle nous permet de caler un rendez-vous Discord avec vous.</p>
-    </div>
+    <ol class="ed-steps">
+        <li class="ed-step ed-step--join">
+            <span class="ed-step__n" aria-hidden="true">1</span>
+            <div>
+                <h2 class="ed-step__title">Présentez-vous sur le Discord</h2>
+                <?php if ($discordInviteUrl !== ''): ?>
+                    <p class="ed-step__text">Ouvrez le serveur de la communauté pour vous présenter à l’équipe recrutement.</p>
+                    <a href="<?= $h($discordInviteUrl) ?>" target="_blank" rel="noopener noreferrer" class="ed-link-btn">Ouvrir le Discord</a>
+                <?php else: ?>
+                    <p class="ed-step__text">Le lien du Discord de cette communauté n’est pas encore renseigné. L’équipe recrutement vous contactera après le dépôt de votre fiche.</p>
+                <?php endif; ?>
+            </div>
+        </li>
+        <li class="ed-step">
+            <span class="ed-step__n" aria-hidden="true">2</span>
+            <div>
+                <h2 class="ed-step__title">Remplissez votre fiche de candidature</h2>
+                <p class="ed-step__text">Quelques questions suffisent. Votre fiche reste consultable depuis votre espace candidat.</p>
+            </div>
+        </li>
+    </ol>
 
     <?php if (!$isAuthenticated): ?>
-        <?php require base_path('views/enlistment/_account_gate.php'); ?>
+    <section class="ed-gate" aria-labelledby="ed-gate-title">
+        <h2 class="ed-gate__title" id="ed-gate-title">Connectez-vous pour candidater</h2>
+        <p class="ed-step__text">Votre candidature chez <strong><?= $h($tenantName) ?></strong> est rattachée à votre compte : votre nom et votre e-mail sont repris de votre profil. Après la connexion, vous revenez sur cette fiche.</p>
+        <div class="ed-gate__actions">
+            <a class="ed-btn ed-btn--primary" href="<?= $h($loginStepUrl) ?>">Se connecter</a>
+            <a class="ed-btn" href="<?= $h($registerStepUrl) ?>">Créer un compte</a>
+        </div>
+        <?php $discordNext = null; $discordHrefOverride = $discordStepUrl; require base_path('views/partials/auth/discord_button.php'); ?>
+    </section>
     <?php else: ?>
-    <form method="post" action="<?= htmlspecialchars($formAction, ENT_QUOTES, 'UTF-8') ?>" class="space-y-5 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+    <form method="post" action="<?= $h($formAction) ?>" class="ed-card">
         <?= \App\Core\Csrf::field() ?>
         <?php require base_path('views/enlistment/_invite_link.php'); ?>
 
@@ -49,50 +67,40 @@ $accountNeedsDiscord = true;
             $required = !empty($q['required']);
             $type = (string) ($q['type'] ?? 'open');
             ?>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1.5" for="<?= htmlspecialchars($fieldId, ENT_QUOTES, 'UTF-8') ?>">
-                    <?= htmlspecialchars((string) $q['label'], ENT_QUOTES, 'UTF-8') ?>
-                    <?php if ($required): ?><span class="text-rose-600">*</span><?php endif; ?>
-                </label>
-                <?php if ($type === 'select'): ?>
-                    <select id="<?= htmlspecialchars($fieldId, ENT_QUOTES, 'UTF-8') ?>" name="<?= htmlspecialchars($fieldName, ENT_QUOTES, 'UTF-8') ?>" <?= $required ? 'required' : '' ?> class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
-                        <option value="">— Sélectionnez —</option>
-                        <?php foreach ((array) ($q['options'] ?? []) as $opt): ?>
-                            <option value="<?= htmlspecialchars((string) $opt, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $opt, ENT_QUOTES, 'UTF-8') ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                <?php elseif ($type === 'closed'): ?>
-                    <div class="flex gap-4 pt-1">
-                        <label class="inline-flex items-center gap-2 text-sm text-slate-700"><input type="radio" name="<?= htmlspecialchars($fieldName, ENT_QUOTES, 'UTF-8') ?>" value="Oui" <?= $required ? 'required' : '' ?>> Oui</label>
-                        <label class="inline-flex items-center gap-2 text-sm text-slate-700"><input type="radio" name="<?= htmlspecialchars($fieldName, ENT_QUOTES, 'UTF-8') ?>" value="Non"> Non</label>
+            <div class="ed-field">
+                <?php if ($type === 'closed'): ?>
+                    <span class="ed-label" id="<?= $h($fieldId) ?>-label"><?= $h((string) $q['label']) ?><?php if ($required): ?> <span class="ed-req" aria-hidden="true">*</span><?php endif; ?></span>
+                    <div class="ed-choices" role="radiogroup" aria-labelledby="<?= $h($fieldId) ?>-label">
+                        <label><input type="radio" name="<?= $h($fieldName) ?>" value="Oui" <?= $required ? 'required' : '' ?>> Oui</label>
+                        <label><input type="radio" name="<?= $h($fieldName) ?>" value="Non"> Non</label>
                     </div>
-                <?php elseif ($type === 'open'): ?>
-                    <textarea id="<?= htmlspecialchars($fieldId, ENT_QUOTES, 'UTF-8') ?>" name="<?= htmlspecialchars($fieldName, ENT_QUOTES, 'UTF-8') ?>" rows="3" <?= $required ? 'required' : '' ?> class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"></textarea>
                 <?php else: ?>
-                    <input type="text" id="<?= htmlspecialchars($fieldId, ENT_QUOTES, 'UTF-8') ?>" name="<?= htmlspecialchars($fieldName, ENT_QUOTES, 'UTF-8') ?>" maxlength="4000" <?= $required ? 'required' : '' ?> class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+                    <label for="<?= $h($fieldId) ?>"><?= $h((string) $q['label']) ?><?php if ($required): ?> <span class="ed-req" aria-hidden="true">*</span><?php endif; ?></label>
+                    <?php if ($type === 'select'): ?>
+                        <select id="<?= $h($fieldId) ?>" name="<?= $h($fieldName) ?>" <?= $required ? 'required' : '' ?> class="ed-input">
+                            <option value="">Sélectionnez</option>
+                            <?php foreach ((array) ($q['options'] ?? []) as $opt): ?>
+                                <option value="<?= $h((string) $opt) ?>"><?= $h((string) $opt) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    <?php elseif ($type === 'open'): ?>
+                        <textarea id="<?= $h($fieldId) ?>" name="<?= $h($fieldName) ?>" rows="3" <?= $required ? 'required' : '' ?> class="ed-input"></textarea>
+                    <?php else: ?>
+                        <input type="text" id="<?= $h($fieldId) ?>" name="<?= $h($fieldName) ?>" maxlength="4000" <?= $required ? 'required' : '' ?> class="ed-input">
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
         <?php endforeach; ?>
 
-        <!-- Code d'invitation prioritaire (optionnel) -->
-        <div class="space-y-2">
-            <label for="invite-code" class="block text-sm font-semibold text-slate-900">
-                Code d'invitation prioritaire (optionnel)
-            </label>
-            <p class="text-xs text-slate-600">Si l’équipe vous a transmis un code prioritaire, saisissez-le ici pour accélérer votre candidature</p>
-            <input type="text" 
-                   name="invite_code" 
-                   id="invite-code" 
-                   maxlength="64"
-                   pattern="[A-Z0-9\-_]*"
-                   placeholder="Ex: MIGRATION2026"
-                   style="text-transform: uppercase;"
-                   class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-mono focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+        <div class="ed-field">
+            <label for="invite-code">Code d’invitation prioritaire (facultatif)</label>
+            <p class="ed-hint">Si l’équipe vous a transmis un code prioritaire, saisissez-le ici pour accélérer votre candidature.</p>
+            <input type="text" name="invite_code" id="invite-code" maxlength="64" pattern="[A-Z0-9\-_]*" placeholder="Ex : MIGRATION2026" class="ed-input ed-code">
         </div>
 
         <?php require base_path('views/enlistment/_account_consent.php'); ?>
 
-        <button type="submit" class="w-full py-3.5 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700">Envoyer ma candidature</button>
+        <button type="submit" class="ed-submit">Envoyer ma candidature</button>
     </form>
     <?php endif; ?>
 </div>

@@ -771,6 +771,9 @@ class EnlistmentController
             return Response::redirect($this->enlistmentFormUrl($tenant) . $formQuery);
         }
         PendingEnlistmentReturn::remember($slug, $opening, $invite);
+        if ((string) $request->query('discord', '') === '1') {
+            return Response::redirect(url('discord/connexion'));
+        }
         $wantsRegister = (string) $request->query('creer', '') === '1';
         Session::flash('info', 'Connectez-vous' . ($wantsRegister ? '' : ' ou créez un compte') . ' pour candidater : vous reviendrez ensuite sur le formulaire de ' . trim((string) ($tenant['name'] ?? 'la communauté')) . '.');
 

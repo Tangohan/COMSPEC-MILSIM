@@ -2183,3 +2183,14 @@
   border: 1px solid var(--ah-ok-line); background: var(--ah-ok-bg); color: var(--ah-ok-ink); font-size: 0.85rem; font-weight: 600;
 }
 .ah-wel-return .account-hub__btn { padding: 0.5rem 0.9rem; }
+
+.ah-quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0.85rem; margin: 0 0 1.25rem; }
+.ah-quick__card { display: flex; flex-direction: column; align-items: flex-start; gap: 0.6rem; padding: 1.1rem 1.25rem; border-radius: 18px; border: 1px solid var(--ah-line); background: var(--ah-surface); }
+.ah-quick__title { margin: 0; font-size: 1rem; font-weight: 800; color: var(--ah-ink); }
+.ah-quick__desc { margin: 0; flex: 1 1 auto; font-size: 0.8125rem; line-height: 1.5; color: var(--ah-muted); overflow-wrap: anywhere; }
+.ah-quick__char { display: flex; align-items: center; gap: 0.75rem; flex: 1 1 auto; }
+.ah-quick__portrait { width: 56px; height: 56px; border-radius: 14px; object-fit: cover; }
+.ah-char-form { display: grid; gap: 1rem; max-width: 30rem; }
+.ah-char-form label { display: grid; gap: 0.3rem; font-size: 0.85rem; font-weight: 700; color: var(--ah-ink); }
+.ah-char-form input { padding: 0.6rem 0.75rem; border-radius: 10px; border: 1px solid var(--ah-line); background: var(--ah-surface); color: var(--ah-ink); font: inherit; font-weight: 400; }
+.ah-char-form__actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }

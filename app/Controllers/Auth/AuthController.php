@@ -84,6 +84,39 @@ class AuthController
         return true;
     }
 
+    /**
+     * Fin de connexion pour une identité déjà prouvée par ailleurs (compte Discord relié) : mêmes garde-fous que le mot
+     * de passe (compte actif, liste de blocage, double vérification), puis la même sortie (session neuve, accueil).
+     *
+     * @param array<string, mixed> $user ligne users
+     */
+    public function completeVerifiedLogin(array $user, Request $request): Response
+    {
+        $row = $this->userRepository->findById((int) ($user['id'] ?? 0), (int) ($user['tenant_id'] ?? 0));
+        if (!$row || !empty($row['is_service_account'])) {
+            Session::flash('error', __('auth.flash_account_not_found'));
+            return Response::redirect(url('login'));
+        }
+        if (!$this->loginAllowedForTenantAndClient((int) $row['tenant_id'], strtolower(trim((string) ($row['email'] ?? ''))), $request)) {
+            Session::flash('error', __('auth.flash_access_restricted'));
+            return Response::redirect(url('login'));
+        }
+        if (($row['status'] ?? '') === 'pending_verification') {
+            Session::set('pending_verification_email', strtolower(trim((string) ($row['email'] ?? ''))));
+            Session::flash('error', __('auth.flash_confirm_email'));
+            return Response::redirect(url('login'));
+        }
+        if (($row['status'] ?? '') !== 'active') {
+            Session::flash('error', __('auth.flash_account_unavailable'));
+            return Response::redirect(url('login'));
+        }
+        if ($this->loginSecurityOtpService->needsChallengeNow($row)) {
+            return $this->loginSecurityOtpService->beginLoginChallenge($row);
+        }
+
+        return $this->redirectToDashboardAfterLogin($row, $request);
+    }
+
     private function redirectToDashboardAfterLogin(array $user, Request $request): Response
     {
         Session::forget('pending_verification_email');

@@ -530,33 +530,31 @@ $tailwindHead = (string) ob_get_clean();
                 }
                 $portalDiscordInterviewAt = trim((string) ($enlistment['discord_interview_at'] ?? ''));
             ?>
-            <section class="overflow-hidden rounded-2xl border border-indigo-200 bg-white shadow-sm ring-1 ring-slate-900/[0.04]" aria-labelledby="fiche-discord">
-                <div class="border-b border-indigo-100 bg-indigo-50 px-5 py-4 sm:px-6">
-                    <h2 id="fiche-discord" class="text-[11px] font-bold uppercase tracking-[0.28em] text-indigo-900/90">Votre fiche de candidature Discord</h2>
+            <link href="<?= htmlspecialchars(asset_url('assets/css/discord-recruitment.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+            <section class="ed-fiche" aria-labelledby="fiche-discord">
+                <div class="ed-fiche__head">
+                    <h2 id="fiche-discord" class="ed-fiche__title">Votre fiche de candidature Discord</h2>
                 </div>
-                <div class="space-y-4 p-5 sm:p-6">
+                <div class="ed-fiche__body">
                     <?php if ($portalDiscordInterviewAt !== ''): ?>
-                    <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4">
-                        <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-800">Rendez-vous Discord</p>
-                        <p class="mt-1 text-sm font-semibold text-indigo-950"><?= htmlspecialchars(date('d/m/Y à H:i', strtotime($portalDiscordInterviewAt) ?: time()), ENT_QUOTES, 'UTF-8') ?></p>
+                    <div class="ed-slot">
+                        <p>Rendez-vous Discord</p>
+                        <p class="ed-slot__when"><?= htmlspecialchars(date('d/m/Y à H:i', strtotime($portalDiscordInterviewAt) ?: time()), ENT_QUOTES, 'UTF-8') ?></p>
                     </div>
                     <?php else: ?>
-                    <p class="text-sm text-slate-600">Aucun rendez-vous Discord planifié pour le moment — l’équipe recrutement vous contactera.</p>
+                    <p class="ed-step__text">Aucun rendez-vous Discord planifié pour le moment : l’équipe recrutement vous contactera.</p>
                     <?php endif; ?>
 
                     <?php if ($portalDiscordAnswers !== []): ?>
-                    <div>
-                        <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 mb-2">Vos réponses</p>
-                        <dl class="space-y-3">
-                            <?php foreach ($portalDiscordAnswers as $portalAnswerRow): ?>
-                                <?php if (!is_array($portalAnswerRow)) { continue; } ?>
-                                <div>
-                                    <dt class="text-sm font-semibold text-slate-800"><?= htmlspecialchars((string) ($portalAnswerRow['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dt>
-                                    <dd class="mt-0.5 text-sm leading-relaxed text-slate-700 whitespace-pre-wrap"><?= htmlspecialchars((string) ($portalAnswerRow['answer'] ?? '—') ?: '—', ENT_QUOTES, 'UTF-8') ?></dd>
-                                </div>
-                            <?php endforeach; ?>
-                        </dl>
-                    </div>
+                    <dl class="ed-answers">
+                        <?php foreach ($portalDiscordAnswers as $portalAnswerRow): ?>
+                            <?php if (!is_array($portalAnswerRow)) { continue; } ?>
+                            <div>
+                                <dt><?= htmlspecialchars((string) ($portalAnswerRow['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dt>
+                                <dd><?= htmlspecialchars((string) ($portalAnswerRow['answer'] ?? '—') ?: '—', ENT_QUOTES, 'UTF-8') ?></dd>
+                            </div>
+                        <?php endforeach; ?>
+                    </dl>
                     <?php endif; ?>
                 </div>
             </section>
@@ -787,12 +785,12 @@ $tailwindHead = (string) ob_get_clean();
                                 </p>
                             </div>
                         <?php elseif ($discordCommsLocked): ?>
-                            <div class="rounded-xl border border-indigo-200 bg-indigo-50/90 px-5 py-5 text-center" role="status">
-                                <p class="text-xs font-black uppercase tracking-wider text-indigo-950">Recrutement via Discord</p>
-                                <p class="mt-1.5 text-sm leading-relaxed text-indigo-900/90">Les échanges pour ce dossier se font par défaut sur Discord. Vous pouvez activer ce fil pour discuter aussi ici, sur Athena.</p>
-                                <form method="post" action="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/activer-discord'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4">
+                            <div class="ed-callout" role="status">
+                                <h3>Recrutement via Discord</h3>
+                                <p>Les échanges pour ce dossier se font par défaut sur Discord. Vous pouvez activer ce fil pour discuter aussi ici, sur Athena.</p>
+                                <form method="post" action="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/activer-discord'), ENT_QUOTES, 'UTF-8') ?>">
                                     <?= \App\Core\Csrf::field() ?>
-                                    <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-indigo-700 px-6 text-xs font-black uppercase tracking-wide text-white shadow-md transition hover:bg-indigo-800">Activer la communication par Athena</button>
+                                    <button type="submit">Activer la communication par Athena</button>
                                 </form>
                             </div>
                         <?php else: ?>

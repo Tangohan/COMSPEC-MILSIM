@@ -345,6 +345,9 @@ return function (Router $router) {
     $router->get('/discord/roles-lies/retour', [\App\Controllers\Web\DiscordLinkedRolesController::class, 'callback'], [AuthMiddleware::class]);
     $router->post('/account/discord/actualiser', [\App\Controllers\Web\DiscordLinkedRolesController::class, 'sync'], [AuthMiddleware::class]);
     $router->post('/account/discord/delier', [\App\Controllers\Web\DiscordLinkedRolesController::class, 'unlink'], [AuthMiddleware::class]);
+    // « Continuer avec Discord » : connexion / départ d'inscription avec le compte Discord (sans session requise).
+    $router->get('/discord/connexion', [\App\Controllers\Web\DiscordLoginController::class, 'start']);
+    $router->get('/discord/connexion/retour', [\App\Controllers\Web\DiscordLoginController::class, 'callback']);
     $router->get('/traduire-site', [\App\Controllers\Web\SiteTranslationController::class, 'hub']);
     $router->get('/traduire-site/dico/{code}.js', [\App\Controllers\Web\SiteTranslationController::class, 'dictionary']);
     $router->post('/traduire-site/propositions/{id}', [\App\Controllers\Web\SiteTranslationController::class, 'decide']);
@@ -745,6 +748,8 @@ return function (Router $router) {
     $router->post('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->get('/account/banner', [AccountController::class, 'banner'], [AuthMiddleware::class]);
     $router->post('/account/banner', [AccountController::class, 'banner'], [AuthMiddleware::class]);
+    $router->get('/account/personnage', [\App\Controllers\Web\AccountCharacterController::class, 'edit'], [AuthMiddleware::class]);
+    $router->post('/account/personnage', [\App\Controllers\Web\AccountCharacterController::class, 'edit'], [AuthMiddleware::class]);
     $router->get('/account/portrait', [AccountController::class, 'portrait'], [AuthMiddleware::class]);
     $router->post('/account/portrait', [AccountController::class, 'portrait'], [AuthMiddleware::class]);
     $router->get('/account/password', [AccountController::class, 'password'], [AuthMiddleware::class]);

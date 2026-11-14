@@ -22,6 +22,9 @@ final class PublicCvSettings
         'activity' => ['Activité en jeu', 'Kilomètres parcourus (à pied, en véhicule, en vol, en mer, en chute libre), heures de jeu et rôles tenus en mission.'],
         'since' => ['Membre depuis', 'Le mois où vous avez rejoint la communauté.'],
         'career' => ['Parcours des grades', 'Vos promotions et leurs dates. Les motifs et commentaires du commandement n’y figurent jamais.'],
+        'evaluations' => ['Évaluations du commandement', 'Les notes (sur 5) et les commentaires des bilans du commandement dans cette communauté. Les bilans RH et de recrutement n’y figurent jamais.'],
+        'mutations' => ['Mutations', 'Vos changements d’unité, de poste et d’affectation dans cette communauté.'],
+        'discord' => ['Lien Discord', 'Un lien vers votre compte Discord, seulement si vous l’avez lié à Athena.'],
         'bio' => ['Présentation', 'Le court texte que vous écrivez ci-dessous.'],
         'decorations' => ['Décorations', 'Les distinctions qui vous ont été remises.'],
         'qualifications' => ['Qualifications', 'Vos qualifications en cours de validité.'],
@@ -34,7 +37,7 @@ final class PublicCvSettings
      * Sections ajoutées après coup qui restent masquées tant que le joueur ne les coche pas (y compris sur les pages
      * déjà ouvertes). Les autres sont visibles par défaut.
      */
-    public const OPT_IN = ['since', 'career'];
+    public const OPT_IN = ['since', 'career', 'evaluations', 'mutations', 'discord'];
 
     /** Adresses réservées : pages du site ou mots trompeurs. */
     private const RESERVED = [

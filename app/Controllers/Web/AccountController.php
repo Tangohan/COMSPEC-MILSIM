@@ -137,7 +137,26 @@ class AccountController
             $profileWelcome = null;
         }
 
+        $accountDiscordLinked = false;
+        try {
+            $discordLinks = new \App\Repositories\UserDiscordLinkRepository();
+            $accountDiscordLinked = $discordLinks->schemaReady() && $discordLinks->find($uid) !== null;
+        } catch (\Throwable) {
+        }
+        // Personnage de la communauté active uniquement (jamais celui d'une autre organisation).
+        $characterProfile = $tenantId > 0 ? ($this->personnelProfileRepository->getByUserId($uid, $tenantId) ?? []) : [];
+        if (isset($characterProfile['tenant_id']) && (int) $characterProfile['tenant_id'] !== $tenantId) {
+            $characterProfile = [];
+        }
+        $accountCharacter = [
+            'name' => trim((string) ($characterProfile['character_name'] ?? '')),
+            'callsign' => trim((string) ($characterProfile['callsign'] ?? '')),
+            'portrait_url' => !empty($characterProfile['character_portrait_path']) ? personnel_operator_portrait_url($characterProfile) : null,
+        ];
+
         return $this->accountView('account.index', 'Mon compte', [
+            'accountDiscordLinked' => $accountDiscordLinked,
+            'accountCharacter' => $accountCharacter,
             'profileWelcome' => $profileWelcome,
             'accountYearReview' => $this->yearReviewCard($tenantId, $uid),
             'accountUser' => $accountUser,
