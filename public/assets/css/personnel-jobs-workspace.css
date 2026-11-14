@@ -222,3 +222,13 @@
 :root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-catalog-callout { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem 1rem; margin: 0.25rem 0 1rem; padding: 0.75rem 1rem; border-left: 4px solid var(--pg-warn); background: var(--pg-warn-bg); color: var(--pg-ink); font-size: 0.8125rem; line-height: 1.5; }
 :root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-catalog-callout p { flex: 1 1 18rem; margin: 0; }
 :root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-catalog-callout strong { color: var(--pg-warn); }
+
+/* Référentiel : choix du pays (création) et équivalents dans les autres pays (emploi existant). */
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-detect__countries { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-detect__countries-label { color: var(--pg-muted); font-size: 0.75rem; font-weight: 600; margin-right: 0.15rem; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-detect__country { padding: 0.2rem 0.6rem; border: 1px solid var(--pg-line); border-radius: 999px; background: var(--pg-surface, #fff); color: var(--pg-ink); font: inherit; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-detect__country:hover { border-color: var(--pg-warn); }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-detect__country.is-on { border-color: var(--pg-warn); background: var(--pg-warn); color: #fff; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-catalog-other { flex-basis: 100%; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-catalog-other summary { color: var(--pg-warn); font-size: 0.8125rem; font-weight: 600; cursor: pointer; }
+:root .bo-eff-workspace .bo-eff-page .eff-jobs-workspace .eff-jobs-catalog-other .eff-jobs-detect__list { margin-top: 0.5rem; }
