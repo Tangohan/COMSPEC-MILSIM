@@ -86,23 +86,37 @@ final class AtakTerrainCartography
             if (!is_array($grid) || !is_string($grid['heights'] ?? null) || $grid['heights'] === '') {
                 return $meta;
             }
+            // Le relevé peut être lourd : mémoire et durée relevées pour cette seule génération, sans toucher aux autres requêtes.
+            $memLimit = trim((string) ini_get('memory_limit'));
+            if ($memLimit !== '-1' && self::bytes($memLimit) < 768 * 1048576) {
+                @ini_set('memory_limit', '768M');
+            }
+            @set_time_limit(180);
             foreach ($products as $name) {
+                // Génération des isolignes tombée (mémoire, durée) : le repère reste, aucune requête ne la relance avant
+                // une demi-heure (avant : chaque GET relançait le calcul, 7 incidents « mémoire épuisée » le 14/11).
+                $marker = $dir . '/contours.generating';
+                if ($name === 'contours') {
+                    if (is_file($marker) && (time() - (int) @filemtime($marker)) < 1800) {
+                        continue;
+                    }
+                    @file_put_contents($marker, (string) time());
+                }
                 try {
                     if ($name === 'hillshade') {
                         $this->writeHillshade($paths[$name], $grid);
                     } elseif ($name === 'slope') {
                         $this->writeSlope($paths[$name], $grid);
                     } else {
-                        $geo = AtakTerrainIsolines::geoJson($grid, 10, 50);
-                        $json = json_encode($geo, JSON_UNESCAPED_UNICODE);
-                        if (is_string($json)) {
-                            @file_put_contents($paths[$name], $json, LOCK_EX);
-                        }
+                        AtakTerrainIsolines::writeGeoJson($grid, $paths[$name], 10, 50);
                     }
                     if (is_file($paths[$name])) {
                         @file_put_contents($dir . '/stamp-' . $name . '.txt', $stamp, LOCK_EX);
                     }
                 } catch (Throwable) {
+                }
+                if ($name === 'contours') {
+                    @unlink($marker);
                 }
             }
 
@@ -111,6 +125,29 @@ final class AtakTerrainCartography
             @flock($lock, LOCK_UN);
             fclose($lock);
         }
+    }
+
+    /** Chemin du fichier des isolignes (généré au besoin), null s'il n'existe pas : le contrôleur le sert sans le relire en mémoire. */
+    public function contoursPath(int $tenantId, int $mapId): ?string
+    {
+        try {
+            $this->ensure($tenantId, $mapId, false, 'contours');
+        } catch (Throwable) {
+        }
+        $path = $this->dir($tenantId, $mapId) . '/contours.json';
+
+        return is_file($path) ? $path : null;
+    }
+
+    private static function bytes(string $v): int
+    {
+        $n = (int) $v;
+        return match (strtolower(substr(trim($v), -1))) {
+            'g' => $n * 1073741824,
+            'm' => $n * 1048576,
+            'k' => $n * 1024,
+            default => $n,
+        };
     }
 
     public function hillshadePath(int $tenantId, int $mapId): ?string
