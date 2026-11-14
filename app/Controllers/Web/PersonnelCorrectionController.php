@@ -309,13 +309,13 @@ final class PersonnelCorrectionController
         if (!$this->canBatch()) {
             Session::flash('error', 'Droits insuffisants pour traiter plusieurs demandes à la fois.');
 
-            return Response::redirect(url('back-office/personnel/corrections'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/personnel/corrections'));
         }
         [$tenantId, $viewer] = $ctx;
         if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('back-office/personnel/corrections'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/personnel/corrections'));
         }
         $ids = $request->input('ids', []);
         $result = $this->correctionService->decideBatch(
@@ -327,7 +327,7 @@ final class PersonnelCorrectionController
         );
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
-        return Response::redirect(url('back-office/personnel/corrections'));
+        return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/personnel/corrections'));
     }
 
     /** POST /back-office/personnel/corrections/appliquer */
@@ -346,7 +346,7 @@ final class PersonnelCorrectionController
         if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('back-office/personnel/corrections'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/personnel/corrections'));
         }
         $targetId = (int) $request->input('target_user_id', 0);
         $result = $this->correctionService->applyDirect(
@@ -359,7 +359,7 @@ final class PersonnelCorrectionController
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
         $suffix = $targetId > 0 ? ('?membre=' . $targetId) : '';
 
-        return Response::redirect(url('back-office/personnel/corrections') . $suffix);
+        return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/personnel/corrections', $suffix === '' ? [] : ['membre' => $targetId]));
     }
 
     /** POST /back-office/personnel/corrections/{id}/decide */
@@ -378,7 +378,7 @@ final class PersonnelCorrectionController
         if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('back-office/personnel/corrections'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/personnel/corrections'));
         }
         $requestId = (int) ($params['id'] ?? 0);
         $result = $this->correctionService->decide(
@@ -394,7 +394,7 @@ final class PersonnelCorrectionController
             return Response::redirect(effectifs_workspace_url('a-traiter'));
         }
 
-        return Response::redirect(url('back-office/personnel/corrections'));
+        return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/personnel/corrections'));
     }
 
     /** POST /personnel/{id}/correction/{requestId}/annuler — le membre annule sa demande. */

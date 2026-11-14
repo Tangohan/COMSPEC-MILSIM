@@ -2271,7 +2271,7 @@ class PersonnelController
     private function personnelPortraitEditUrl(array $target, bool $isSelf, bool $fromEffectifs, bool $fromCorrections = false): string
     {
         if ($fromCorrections) {
-            return url('back-office/personnel/corrections') . '?membre=' . (int) ($target['id'] ?? 0);
+            return \App\Support\BackOfficeTabs::urlFor('back-office/personnel/corrections', ['membre' => (int) ($target['id'] ?? 0)]);
         }
         if ($fromEffectifs) {
             return effectifs_workspace_url('membres/' . (int) ($target['id'] ?? 0)) . '#edit-portrait';

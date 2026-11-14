@@ -22,7 +22,7 @@ final class PersonnelCorrectionsQueueAssetTest extends TestCase
         self::assertStringContainsString('Valider', $view);
         self::assertStringContainsString('Confirmer le refus', $view);
         self::assertStringContainsString('required', $view, 'le motif d’un refus est obligatoire');
-        self::assertStringContainsString('?vue=historique', $view);
+        self::assertStringContainsString('&vue=historique', $view);
         self::assertStringContainsString('data-rh-batch', $view);
         self::assertStringContainsString('Refuser', $view);
         self::assertStringContainsString('Actuellement', $view);

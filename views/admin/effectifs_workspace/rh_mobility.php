@@ -49,7 +49,7 @@ $statusTone = [
                 File
                 <?php $rhTip('tip-mob-pending', 'À propos des demandes en attente', 'Ces demandes n’ont pas encore été approuvées ni refusées. Traitez-les pour débloquer le mouvement.'); ?>
             </span>
-            <a class="eff-rh-tile__hit" href="<?= $h(effectifs_workspace_url('mobilite') . '?statut=pending') ?>">
+            <a class="eff-rh-tile__hit" href="<?= $h(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/mobilite', ['statut' => 'pending'])) ?>">
                 <strong class="eff-rh-tile__value"><?= $pendingCount ?></strong>
                 <span class="eff-rh-tile__label">demande<?= $pendingCount > 1 ? 's' : '' ?> en attente</span>
             </a>
@@ -183,7 +183,7 @@ $statusTone = [
             </div>
         <div class="eff-rh-pills" role="tablist" aria-label="Filtrer les demandes">
         <?php foreach (['pending', 'approved', 'rejected', 'all'] as $st): ?>
-            <a href="<?= $h(effectifs_workspace_url('mobilite') . '?statut=' . rawurlencode($st)) ?>"
+            <a href="<?= $h(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/mobilite', ['statut' => $st])) ?>"
                class="eff-rh-pill <?= $statusFilter === $st ? 'is-on' : '' ?> <?= $st === 'pending' ? 'eff-rh-pill--warn' : '' ?>">
                 <?= $h($statusLabels[$st] ?? $st) ?>
             </a>

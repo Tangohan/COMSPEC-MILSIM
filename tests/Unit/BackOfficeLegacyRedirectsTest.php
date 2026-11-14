@@ -81,6 +81,10 @@ final class BackOfficeLegacyRedirectsTest extends TestCase
             ['/back-office/documents/types', ['onglet' => 'vieux'], '/back-office/doctrine?onglet=types'],
             ['/back-office/nouveautes-organisation', [], '/back-office/mise-a-niveau?onglet=nouveautes'],
             ['/back-office/ressources/effectifs/alertes', [], '/back-office/ressources/effectifs/a-traiter?onglet=alertes'],
+            // Demandes RH : les trois écrans de décision deviennent des filtres de la file unique (un seul saut).
+            ['/back-office/ressources/effectifs/elevations', ['all' => '1'], '/back-office/demandes-rh?all=1&onglet=elevations'],
+            ['/back-office/personnel/corrections', ['vue' => 'historique'], '/back-office/demandes-rh?vue=historique&onglet=corrections'],
+            ['/back-office/ressources/effectifs/mobilite', ['statut' => 'all'], '/back-office/demandes-rh?statut=all&onglet=mobilite'],
             ['/back-office/organisation/grades', [], '/back-office/referentiels/grades?onglet=avancement'],
             ['/back-office/referentiels/grades/catalogue', [], '/back-office/referentiels/grades?onglet=catalogue'],
         ];
@@ -148,6 +152,11 @@ final class BackOfficeLegacyRedirectsTest extends TestCase
             '/back-office/roleplay/regles-phases' => 'save',
             '/back-office/documents/types' => 'typesSave',
             '/back-office/documents/nomenclature' => 'nomenclatureSave',
+            // Demandes RH : les décisions gardent leurs adresses et leurs contrôleurs (droits inchangés).
+            '/back-office/ressources/effectifs/elevations/5/statut' => 'updateElevationRequestStatus',
+            '/back-office/personnel/corrections/5/decide' => 'decide',
+            '/back-office/personnel/corrections/lot' => 'decideBatch',
+            '/back-office/ressources/effectifs/mobilite/5/statut' => 'resolveMobility',
         ];
         foreach ($posts as $path => $action) {
             [$route] = $this->match('POST', $path);

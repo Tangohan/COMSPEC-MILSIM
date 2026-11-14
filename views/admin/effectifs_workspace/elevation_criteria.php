@@ -20,7 +20,7 @@ $disabled = $canEdit ? '' : ' disabled';
 ?>
 <section class="eff-page-head">
     <div class="eff-pg__actions">
-        <a href="<?= $h(effectifs_workspace_url('elevations')) ?>" class="eff-catalog__btn">Demandes d’élévation</a>
+        <a href="<?= $h(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/elevations')) ?>" class="eff-catalog__btn">Demandes d’élévation</a>
     </div>
     <p class="eff-page-kicker">Gouvernance</p>
     <h2 class="eff-page-title">Critères d’éligibilité à une élévation</h2>

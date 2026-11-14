@@ -34,6 +34,8 @@ $requests = is_array($requests ?? null) ? $requests : [];
 $history = is_array($history ?? null) ? $history : [];
 $csrf = (string) ($csrf ?? '');
 $base = url('back-office/personnel/corrections');
+// Écran de l'onglet « Corrections » de Demandes RH : les liens de lecture y restent ; les formulaires gardent l'adresse d'origine (POST).
+$tabBase = \App\Support\BackOfficeTabs::urlFor('back-office/personnel/corrections');
 $statusLabels = ['approved' => 'Acceptée', 'rejected' => 'Refusée', 'cancelled' => 'Annulée'];
 
 /** Valeur actuelle et valeur proposée, côte à côte. */
@@ -88,13 +90,13 @@ $waiting = static function (?int $days): void {
 ?>
 <div class="rh-corr">
   <nav class="rh-corr__tabs" aria-label="Sections des corrections">
-    <a class="rh-corr__tab<?= $vue === 'a-traiter' ? ' is-active' : '' ?>" href="<?= $h($base . '?vue=a-traiter') ?>"<?= $vue === 'a-traiter' ? ' aria-current="page"' : '' ?>>
+    <a class="rh-corr__tab<?= $vue === 'a-traiter' ? ' is-active' : '' ?>" href="<?= $h($tabBase . '&vue=a-traiter') ?>"<?= $vue === 'a-traiter' ? ' aria-current="page"' : '' ?>>
       À traiter <span class="rh-corr__tab-n<?= $pendingCount > 0 ? ' is-on' : '' ?>"><?= $pendingCount ?></span>
     </a>
-    <a class="rh-corr__tab<?= $vue === 'historique' ? ' is-active' : '' ?>" href="<?= $h($base . '?vue=historique') ?>"<?= $vue === 'historique' ? ' aria-current="page"' : '' ?>>
+    <a class="rh-corr__tab<?= $vue === 'historique' ? ' is-active' : '' ?>" href="<?= $h($tabBase . '&vue=historique') ?>"<?= $vue === 'historique' ? ' aria-current="page"' : '' ?>>
       Historique <span class="rh-corr__tab-n"><?= $resolvedCount ?></span>
     </a>
-    <a class="rh-corr__tab<?= $vue === 'corriger' ? ' is-active' : '' ?>" href="<?= $h($base . '?vue=corriger') ?>"<?= $vue === 'corriger' ? ' aria-current="page"' : '' ?>>
+    <a class="rh-corr__tab<?= $vue === 'corriger' ? ' is-active' : '' ?>" href="<?= $h($tabBase . '&vue=corriger') ?>"<?= $vue === 'corriger' ? ' aria-current="page"' : '' ?>>
       Corriger un dossier
     </a>
   </nav>
@@ -114,7 +116,7 @@ $waiting = static function (?int $days): void {
   <div class="rh-corr__empty" role="status">
     <p class="rh-corr__empty-title">File vide</p>
     <p class="rh-corr__empty-text">Quand un membre signale une anomalie sur sa fiche, la demande apparaît ici pour validation ou refus. Vous pouvez aussi corriger un dossier tout de suite, sans attendre de demande.</p>
-    <p><a class="rh-corr__btn" href="<?= $h($base . '?vue=corriger') ?>">Corriger un dossier sans demande</a></p>
+    <p><a class="rh-corr__btn" href="<?= $h($tabBase . '&vue=corriger') ?>">Corriger un dossier sans demande</a></p>
   </div>
   <?php else: ?>
     <?php if ($canBatch && count($requests) > 1): ?>
@@ -264,7 +266,8 @@ $waiting = static function (?int $days): void {
       Choisissez un membre : le dossier s’ouvre en entier (personnage, équipes, emplois, immersion, équipement, identifiants, notes et portrait).
       La fiche est mise à jour tout de suite. S’il restait une demande en attente pour ce dossier, elle est close.
     </p>
-    <form method="get" action="<?= $h($base) ?>" class="rh-corr__pick">
+    <form method="get" action="<?= $h(url('back-office/demandes-rh')) ?>" class="rh-corr__pick">
+      <input type="hidden" name="onglet" value="corrections">
       <input type="hidden" name="vue" value="corriger">
       <label class="rh-corr__comment" for="rh-corr-membre">
         Membre
