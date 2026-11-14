@@ -223,7 +223,13 @@ final class JnetPortalController
                 $chain[] = (string) (($tree->node($id) ?? [])['label'] ?? '');
             }
         }
-        $isMember = in_array($unitId, $this->spaces->viewerUnitIds($ctx['tenant_id'], $ctx['user_id']), true);
+        $viewerUnits = $this->spaces->viewerUnitIds($ctx['tenant_id'], $ctx['user_id']);
+        $isMember = in_array($unitId, $viewerUnits, true);
+        // Les lignes de la séquence d'entrée ne disent que ce que le lecteur sait déjà : son droit, ses non-lus, l'effectif.
+        $right = JnetMemberHub::rightFor($tree, $unitId, $viewerUnits, $this->spaceSettings->commandedUnitIds($ctx['tenant_id'], $ctx['user_id']), $this->spaces->isOrgWideWriter());
+        $unread = (int) ($this->spaces->unreadByUnit($ctx['tenant_id'], $ctx['user_id'])[$unitId] ?? 0);
+        $strength = $this->spaces->strengthByUnit($ctx['tenant_id'], $ctx['user_id'])[$unitId] ?? [];
+        $desc = JnetMemberHub::describe($node, (int) ($strength['available'] ?? 0), (int) ($strength['total'] ?? 0) ?: (int) ($node['strength'] ?? 0), $chain !== [] ? (string) end($chain) : '', $strength !== []);
 
         return Response::view('jnet.entry', [
             'title' => (string) ($node['label'] ?? 'Unité'),
@@ -233,6 +239,11 @@ final class JnetPortalController
             'entryCommunity' => is_array($tenant) ? community_display_name($tenant) : '',
             'entryOperator' => trim((string) Session::get('callsign', '')) !== '' ? (string) Session::get('callsign', '') : (string) Session::get('display_name', ''),
             'entryRole' => $isMember ? 'Membre de l’unité' : 'Visiteur autorisé',
+            'entryUnitId' => $unitId,
+            'entryRight' => $right['label'],
+            'entryUnread' => $unread,
+            'entryKind' => $desc['kind'],
+            'entryFacts' => $desc['facts'],
             'entryNext' => url('jnet/u/' . $unitId . '?direct=1'),
             'entryLeave' => $this->homeUrl(),
             'entryLeaveLabel' => 'Mon extranet',
