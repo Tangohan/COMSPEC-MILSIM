@@ -144,7 +144,11 @@ if ((_st getOrDefault ["pfh", -1]) < 0) then {
     private _orig = createHashMapFromArray [
         ["sound", soundVolume], ["radio", radioVolume], ["aim", getCustomAimCoef _unit], ["anim", getAnimSpeedCoef _unit]
     ];
-    if (!isNil "acre_api_fnc_getGlobalVolume") then { _orig set ["acre", call acre_api_fnc_getGlobalVolume] };
+    // ACRE2 : getGlobalVolume rend nil tant que personne n'a réglé le volume (source ACRE2) ; alors 1 au retour.
+    if (!isNil "acre_api_fnc_getGlobalVolume") then {
+        private _av = call acre_api_fnc_getGlobalVolume;
+        if (!isNil "_av" && {_av isEqualType 0}) then { _orig set ["acre", _av] };
+    };
     if (isClass (configFile >> "CfgPatches" >> "tfar_core") || {isClass (configFile >> "CfgPatches" >> "task_force_radio")}) then {
         _orig set ["tfar", _unit getVariable ["tf_globalVolume", 1]];
     };

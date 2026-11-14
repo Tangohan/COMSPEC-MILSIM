@@ -269,7 +269,7 @@ Les réglages « client » sont propres à chaque poste ; tous les autres sont i
 | Acouphène | oui | Sifflement qui décroît | non |
 | Durée max de l'acouphène (s) | 45 | Durée audible maximale | 20 |
 | Ouïe étouffée | oui | Sons, voix et radio baissent puis reviennent, en deux temps : fort et court (~35 s), puis léger et long (jusqu'à ~2 min 30) ; les voix et la radio baissent plus que les bruits | non |
-| Sursaut | oui | Réflexe au bang : secousse sèche de la vue, à-coup de visée, gestes freinés 0,2 à 0,5 s ; plus fort par surprise, 30 % dans une rafale, moitié pour le lanceur ; part même avec une protection auditive | non pour un entraînement calme |
+| Sursaut | oui | Réflexe au bang : secousse sèche de la vue, à-coup de visée, gestes freinés 0,2 à 0,5 s ; plus fort par surprise, 30 % dans une rafale, moitié pour le lanceur ; part même avec une protection auditive ; les IA à pied s'arrêtent aussi 0,3 à 0,6 s | non pour un entraînement calme |
 | Radio étouffée | oui | Sans ACE : radio vanilla, ACRE2, TFAR baissent aussi | non |
 | Protection auditive (dB) | 25 | Réduction pour bouchons ou casque ACE | 30 |
 | IA affectée | oui | IA éblouie : vise et repère mal, hésite | non |

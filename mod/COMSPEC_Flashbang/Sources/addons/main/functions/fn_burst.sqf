@@ -284,7 +284,7 @@ if (_dbg) then {
                 ["aucun effet (trop faible : distance, mur ou dos tourné)", "effets appliqués"] select (_vis > 0.02 || {_aud > 0.02}),
                 _rv toFixed 2, _ra toFixed 2, side group _u, _ruleName]] call comspec_fb_fnc_log;
         };
-        if (_vis > 0.02 || {_aud > 0.02} || {_isMe && {(_info getOrDefault ["startle", 0]) > 0.15}}) then {
+        if (_vis > 0.02 || {_aud > 0.02} || {(_info getOrDefault ["startle", 0]) > 0.15}) then {
             if (_isMe) then {
                 _meHit = true;
                 _info set ["tPlan", _tPlan];

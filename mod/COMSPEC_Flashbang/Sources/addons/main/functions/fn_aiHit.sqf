@@ -4,11 +4,21 @@
     réduites, suppression (l'IA hésite, cherche à se couvrir, tire moins), réflexe de détourner la tête si le flash est
     fort, cibles « oubliées » au-delà d'un fort éblouissement. Aucun disableAI, aucun changement de comportement.
     Durée : 3 s + 9 s x force (x préréglage), prolongée par les flashs suivants, plafonnée (réglage).
+    Sursaut (réglage « Sursaut », comme le joueur) : l'IA à pied s'arrête net 0,3 à 0,6 s (forceSpeed 0, rendu ensuite par
+    forceSpeed -1 : une vitesse imposée par une mission sur cette IA serait perdue), même si le bang ne l'éblouit ni ne
+    l'assourdit ; pas de nouveau sursaut avant 3 s.
     Compétences d'origine mémorisées une seule fois sur l'unité puis rendues exactement (fn_aiRestore) ;
     unité supprimée : rien à rendre ; unité passée sur une autre machine : restauration envoyée à sa machine.
     [_unit, _vis, _aud, _posASL, _info] call comspec_fb_fnc_aiHit
 */
 params ["_unit", "_vis", "_aud", "_pos", "_info"];
+private _startle = ((_info getOrDefault ["startle", 0]) min 1) * ([0, 1] select (isNull objectParent _unit));
+if (_startle > 0.15 && {alive _unit} && {missionNamespace getVariable ["comspec_fb_startle", true]} && {CBA_missionTime > (_unit getVariable ["comspec_fb_aiStartleEnd", 0])}) then {
+    private _hold = 0.3 + 0.3 * _startle;
+    _unit setVariable ["comspec_fb_aiStartleEnd", CBA_missionTime + _hold + 3];
+    _unit forceSpeed 0;
+    [{ if (alive _this) then { _this forceSpeed -1 } }, _unit, _hold] call CBA_fnc_waitAndExecute;
+};
 private _s = ((_vis max (0.7 * _aud)) min 1) max 0;
 if (_s < 0.08 || {!alive _unit}) exitWith {};
 private _now = CBA_missionTime;
