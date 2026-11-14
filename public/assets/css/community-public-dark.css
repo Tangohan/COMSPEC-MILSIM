@@ -373,3 +373,13 @@
     align-items: flex-start;
   }
 }
+
+/* Pages sombres (page de la communaute, recrutement par Discord) : le fond clair du site ne depasse plus autour du
+   panneau (bords blancs dans les coins arrondis et bande claire avant le pied de page, capture du 14/11). */
+body:has(.cp) {
+  background-color: #020617;
+}
+
+body:has(.cp) .cp {
+  border-radius: 0;
+}
