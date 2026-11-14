@@ -14,6 +14,7 @@ use App\Services\Auth\AuthService;
 use App\Services\Jnet\JnetDashboardService;
 use App\Services\Jnet\JnetMessagingService;
 use App\Services\Jnet\JnetSpaceService;
+use App\Services\Jnet\JnetUnitSpaceSettings;
 use App\Services\Rbac\RbacService;
 use App\Support\PortalAccessChoice;
 
@@ -28,6 +29,7 @@ final class JnetPortalController
         private ?JnetDashboardService $jnet = null,
         private ?JnetMessagingService $messaging = null,
         private ?JnetSpaceService $spaces = null,
+        private ?JnetUnitSpaceSettings $spaceSettings = null,
     ) {
         $this->authService ??= \App\Core\Container::get(AuthService::class);
         $this->rbacService ??= \App\Core\Container::get(RbacService::class);
@@ -37,13 +39,29 @@ final class JnetPortalController
         $this->jnet ??= new JnetDashboardService();
         $this->messaging ??= new JnetMessagingService();
         $this->spaces ??= new JnetSpaceService($this->jnet);
+        $this->spaceSettings ??= new JnetUnitSpaceSettings();
     }
+
+    /** Espaces déjà franchis dans cette session (écran d'entrée montré une fois par espace et par session). */
+    private const SESSION_ENTERED = 'jnet_spaces_entered';
+
+    /** Première arrivée sur le JNET dans la session : le membre est conduit à l'espace de son unité. */
+    private const SESSION_LANDED = 'jnet_landed';
 
     public function home(Request $request, array $params = []): Response
     {
         $ctx = $this->ensureAuth();
         if ($ctx instanceof Response) {
             return $ctx;
+        }
+        // Première arrivée de la session : un membre (pas l'encadrement de l'organisation) arrive dans l'espace de son
+        // unité, par son écran d'entrée. « Espace commun » (?commun=1) et les visites suivantes restent ici.
+        if (!Session::get(self::SESSION_LANDED) && (string) $request->query('commun', '') === '' && (string) $request->query('type', '') === '') {
+            Session::set(self::SESSION_LANDED, 1);
+            $own = $this->ownUnitId($ctx['tenant_id'], $ctx['user_id']);
+            if ($own > 0 && !$this->spaces->isOrgWideReader()) {
+                return Response::redirect(url('jnet/u/' . $own));
+            }
         }
         $dash = $this->jnet->buildHome($ctx['tenant_id'], $ctx['user_id']);
         $kind = (string) $request->query('type', '');
@@ -63,14 +81,222 @@ final class JnetPortalController
         if ($unitId <= 0) {
             return Response::redirect(url('jnet'));
         }
+        $tree = $this->spaces->tree($ctx['tenant_id'], $ctx['user_id']);
+        if (!$tree->has($unitId)) {
+            Session::flash('error', 'Cet espace n’existe pas ou ne vous est pas accessible.');
+
+            return Response::redirect(url('jnet?commun=1'));
+        }
+        $settings = $this->spaceSettings->find($ctx['tenant_id'], $unitId);
+        $look = JnetUnitSpaceSettings::look($settings, (array) $tree->node($unitId));
+        if ($look['entry_screen'] && !$this->hasEntered($unitId) && (string) $request->query('direct', '') === '') {
+            return Response::redirect(url('jnet/u/' . $unitId . '/entree'));
+        }
         $space = $this->spaces->buildSpace($ctx['tenant_id'], $ctx['user_id'], $unitId);
         if ($space === null) {
             Session::flash('error', 'Cet espace n’existe pas ou ne vous est pas accessible.');
 
-            return Response::redirect(url('jnet'));
+            return Response::redirect(url('jnet?commun=1'));
+        }
+        $space['spaceLook'] = $look;
+        $space['canCustomize'] = $this->canCustomize($ctx['tenant_id'], $ctx['user_id'], $tree->chain($unitId));
+        $space['customizeUrl'] = url('jnet/u/' . $unitId . '/personnaliser');
+
+        return $this->render('space', (string) ($space['space']['label'] ?? 'Unité'), $space, 'home', ['jnet_unit_space.css']);
+    }
+
+    /**
+     * Écran d'entrée d'un espace d'unité : page plein écran aux couleurs de l'unité (insigne, nom, devise, liaison),
+     * puis l'espace. Une fois par espace et par session ; l'unité peut le couper.
+     */
+    public function unitEntry(Request $request, array $params = []): Response
+    {
+        $ctx = $this->ensureAuth();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $unitId = (int) ($params['id'] ?? 0);
+        $tree = $this->spaces->tree($ctx['tenant_id'], $ctx['user_id']);
+        if ($unitId <= 0 || !$tree->has($unitId)) {
+            Session::flash('error', 'Cet espace n’existe pas ou ne vous est pas accessible.');
+
+            return Response::redirect(url('jnet?commun=1'));
+        }
+        $node = (array) $tree->node($unitId);
+        $look = JnetUnitSpaceSettings::look($this->spaceSettings->find($ctx['tenant_id'], $unitId), $node);
+        $entered = Session::get(self::SESSION_ENTERED, []);
+        $entered = is_array($entered) ? $entered : [];
+        $entered[$unitId] = time();
+        Session::set(self::SESSION_ENTERED, $entered);
+        $tenant = $this->tenantRepository->findById($ctx['tenant_id']);
+        $chain = [];
+        foreach ($tree->chain($unitId) as $id) {
+            if ($id > 0 && $id !== $unitId) {
+                $chain[] = (string) (($tree->node($id) ?? [])['label'] ?? '');
+            }
+        }
+        $isMember = in_array($unitId, $this->spaces->viewerUnitIds($ctx['tenant_id'], $ctx['user_id']), true);
+
+        return Response::view('jnet.entry', [
+            'title' => (string) ($node['label'] ?? 'Unité'),
+            'entryLook' => $look,
+            'entryUnit' => (string) ($node['label'] ?? 'Unité'),
+            'entryChain' => array_values(array_filter($chain)),
+            'entryCommunity' => is_array($tenant) ? community_display_name($tenant) : '',
+            'entryOperator' => trim((string) Session::get('callsign', '')) !== '' ? (string) Session::get('callsign', '') : (string) Session::get('display_name', ''),
+            'entryRole' => $isMember ? 'Membre de l’unité' : 'Visiteur autorisé',
+            'entryNext' => url('jnet/u/' . $unitId . '?direct=1'),
+            'entryLeave' => url('jnet?commun=1'),
+        ]);
+    }
+
+    /** Personnalisation d'un espace d'unité : chef de l'unité (ou au-dessus) et organisation. */
+    public function customizeSpace(Request $request, array $params = []): Response
+    {
+        $ctx = $this->ensureAuth();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $unitId = (int) ($params['id'] ?? 0);
+        $tree = $this->spaces->tree($ctx['tenant_id'], $ctx['user_id']);
+        if ($unitId <= 0 || !$tree->has($unitId)) {
+            return Response::redirect(url('jnet?commun=1'));
+        }
+        if (!$this->canCustomize($ctx['tenant_id'], $ctx['user_id'], $tree->chain($unitId))) {
+            Session::flash('error', 'Seuls le chef de l’unité et l’encadrement de l’organisation personnalisent cet espace.');
+
+            return Response::redirect(url('jnet/u/' . $unitId . '?direct=1'));
+        }
+        $node = (array) $tree->node($unitId);
+        $settings = $this->spaceSettings->find($ctx['tenant_id'], $unitId);
+        $draft = Session::getFlash('jnet_space_draft');
+        if (is_array($draft)) {
+            $settings = array_merge($settings, $draft);
         }
 
-        return $this->render('space', (string) ($space['space']['label'] ?? 'Unité'), $space, 'home');
+        return $this->render('customize', 'Personnaliser ' . (string) ($node['label'] ?? 'l’unité'), [
+            'customizeUnitId' => $unitId,
+            'customizeUnit' => (string) ($node['label'] ?? 'Unité'),
+            'customizeSettings' => $settings,
+            'customizeLook' => JnetUnitSpaceSettings::look($settings, $node),
+            'customizeOrbat' => ['accent' => (string) ($node['accent'] ?? ''), 'motto' => (string) ($node['motto'] ?? ''), 'badge' => $node['badge'] ?? null],
+            'customizeReady' => $this->spaceSettings->ready(),
+            'customizeAction' => url('jnet/u/' . $unitId . '/personnaliser'),
+            'customizeBack' => url('jnet/u/' . $unitId . '?direct=1'),
+            'customizePreview' => url('jnet/u/' . $unitId . '/entree'),
+        ], 'home', ['jnet_unit_space.css']);
+    }
+
+    public function customizeSpaceSave(Request $request, array $params = []): Response
+    {
+        $ctx = $this->ensureAuth();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        $unitId = (int) ($params['id'] ?? 0);
+        $tree = $this->spaces->tree($ctx['tenant_id'], $ctx['user_id']);
+        $back = url('jnet/u/' . $unitId . '/personnaliser');
+        if ($unitId <= 0 || !$tree->has($unitId)) {
+            return Response::redirect(url('jnet?commun=1'));
+        }
+        if (!\App\Core\Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Votre session a expiré, rien n’a été enregistré.');
+
+            return Response::redirect($back);
+        }
+        if (!$this->canCustomize($ctx['tenant_id'], $ctx['user_id'], $tree->chain($unitId))) {
+            Session::flash('error', 'Seuls le chef de l’unité et l’encadrement de l’organisation personnalisent cet espace.');
+
+            return Response::redirect(url('jnet/u/' . $unitId . '?direct=1'));
+        }
+        if (!$this->spaceSettings->ready()) {
+            Session::flash('error', 'La personnalisation des espaces arrive avec la prochaine mise à jour du site (étape jnet_unit_spaces).');
+
+            return Response::redirect($back);
+        }
+        $tenantId = $ctx['tenant_id'];
+        try {
+            if ((string) $request->input('action', '') === 'reset') {
+                $this->spaceSettings->reset($tenantId, $unitId);
+                Session::flash('success', 'Apparence par défaut rétablie.');
+
+                return Response::redirect($back);
+            }
+            $values = JnetUnitSpaceSettings::normalize([
+                'theme' => $request->input('theme', ''),
+                'accent_custom' => $request->input('accent_custom', ''),
+                'accent_color' => $request->input('accent_color', ''),
+                'tagline' => $request->input('tagline', ''),
+                'welcome_text' => $request->input('welcome_text', ''),
+                'access_label' => $request->input('access_label', ''),
+                'entry_screen' => $request->input('entry_screen', ''),
+            ]);
+            $current = $this->spaceSettings->find($tenantId, $unitId);
+            $paths = [];
+            foreach (['emblem' => 'emblem_path', 'banner' => 'banner_path'] as $kind => $column) {
+                $old = (string) ($current[$column] ?? '');
+                $paths[$column] = $old;
+                $upload = JnetUnitSpaceSettings::storeImage($tenantId, is_array($_FILES[$kind] ?? null) ? $_FILES[$kind] : null, $kind);
+                if ($upload['error'] !== '') {
+                    Session::flash('error', ($kind === 'banner' ? 'Bannière' : 'Insigne') . ' : ' . $upload['error']);
+                    Session::flash('jnet_space_draft', $values);
+
+                    return Response::redirect($back);
+                }
+                if ($upload['path'] !== '') {
+                    $paths[$column] = $upload['path'];
+                } elseif ((string) $request->input('remove_' . $kind, '') !== '') {
+                    $paths[$column] = '';
+                }
+            }
+            $this->spaceSettings->save($tenantId, $unitId, $values, $paths['emblem_path'], $paths['banner_path'], $ctx['user_id']);
+            foreach (['emblem_path', 'banner_path'] as $column) {
+                $old = (string) ($current[$column] ?? '');
+                if ($old !== '' && $old !== $paths[$column]) {
+                    JnetUnitSpaceSettings::deleteImage($old, $tenantId);
+                }
+            }
+            Session::flash('success', 'Espace enregistré. Les membres le voient à leur prochaine visite.');
+        } catch (\Throwable $e) {
+            error_log('[jnet] personnalisation espace ' . $unitId . ' : ' . $e->getMessage());
+            Session::flash('error', 'L’espace n’a pas pu être enregistré. Réessayez dans un instant.');
+        }
+
+        return Response::redirect($back);
+    }
+
+    private function hasEntered(int $unitId): bool
+    {
+        $entered = Session::get(self::SESSION_ENTERED, []);
+
+        return is_array($entered) && isset($entered[$unitId]);
+    }
+
+    /** Unité du membre dont l'espace l'accueille (la première, dans l'ordre de l'ORBAT) ; 0 sans unité. */
+    private function ownUnitId(int $tenantId, int $userId): int
+    {
+        try {
+            $tree = $this->spaces->tree($tenantId, $userId);
+            foreach ($tree->viewerSpaces($this->spaces->viewerUnitIds($tenantId, $userId)) as $id) {
+                $id = (int) (is_array($id) ? ($id['id'] ?? 0) : $id);
+                if ($id > 0 && in_array($id, $this->spaces->viewerUnitIds($tenantId, $userId), true)) {
+                    return $id;
+                }
+            }
+        } catch (\Throwable) {
+        }
+
+        return 0;
+    }
+
+    /** @param list<int> $chain de l'organisation à l'unité */
+    private function canCustomize(int $tenantId, int $userId, array $chain): bool
+    {
+        if ($this->spaces->isOrgWideWriter() || \App\Core\Gate::getInstance()->allows('organization.orbat.manage')) {
+            return true;
+        }
+
+        return $this->spaceSettings->commandsWithin($tenantId, $userId, $chain);
     }
 
     /** Publication d’un échange depuis un espace (0 = Organisation). */
@@ -649,7 +875,7 @@ final class JnetPortalController
     /**
      * @param array<string, mixed> $extra
      */
-    private function render(string $view, string $title, array $extra = [], ?string $activeNav = null): Response
+    private function render(string $view, string $title, array $extra = [], ?string $activeNav = null, array $moreCss = []): Response
     {
         $ctx = $this->ensureAuth();
         if ($ctx instanceof Response) {
@@ -672,11 +898,11 @@ final class JnetPortalController
             'boPageTitle' => $title,
             'boPageSubtitle' => 'Espace commun de l’organisation et de chaque unité : situation, échanges, opérations et renseignement.',
             'boPageQuick' => [],
-            'backOfficePageCss' => [
+            'backOfficePageCss' => array_merge([
                 'jnet_portal.css',
                 'jnet_bo_embed.css',
                 'jnet_spaces.css',
-            ],
+            ], $moreCss),
             'activeNav' => $nav,
             'jnetTenantName' => $tenantName,
             'jnetDisplayName' => (string) Session::get('display_name', ''),
