@@ -677,7 +677,7 @@ addMissionEventHandler ["Ended", { ["MusicStop"] call comspec_atak_native_fnc_ex
 [{ ["publish"] call comspec_atak_native_fnc_feedLink; }, 10] call COMSPEC_ATAK_PfhSpread;
 
 // Détecteur de drones : balayage automatique en fond (réglage de l'app).
-[{ if (profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false]) then { ["auto"] call comspec_atak_native_fnc_droneDetectScan; }; }, 5] call COMSPEC_ATAK_PfhSpread;
+[{ if (profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false]) then { private _perfT = diag_tickTime; ["auto"] call comspec_atak_native_fnc_droneDetectScan; ["drones : détection auto", _perfT] call comspec_atak_native_fnc_perfAcc; }; }, 5] call COMSPEC_ATAK_PfhSpread;
 // Drones pilotés au téléphone : une seule main sur le drone (COMSPEC_DroneLock, fn_droneAction).
 //   "" : le téléphone pilote ; les autres joueurs ne peuvent pas connecter de terminal UAV. Le pilote (COMSPEC_DroneOwner)
 //        le peut toujours : connecter son terminal (UAV Terminal vanilla, tablette OTAN...) passe le drone en pilotage

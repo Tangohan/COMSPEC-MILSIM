@@ -1007,7 +1007,10 @@ switch (_mode) do {
         if (_view in _boards) exitWith {
             private _mg = (_d getVariable ["COMSPEC_ATAK_TocUi", createHashMap]) getOrDefault ["grp", controlNull];
             if (!isNull _mg) then { _mg ctrlShow false; };
-            ["draw", [_o, _d, _view]] call comspec_atak_native_fnc_tocBoard
+            private _perfT = diag_tickTime;
+            private _perfR = ["draw", [_o, _d, _view]] call comspec_atak_native_fnc_tocBoard;
+            ["TOC tableau (dessin)", _perfT] call comspec_atak_native_fnc_perfAcc;
+            _perfR
         };
         private _squad = ["", _cfg param [9, ""]] select (_view isEqualTo "SQUAD");
         private _side = [_cside, str side group player] select (_cside isEqualTo "");
@@ -1526,7 +1529,9 @@ switch (_mode) do {
         };
 
         // ---- En-tête, pied, FLASH, panneau : fn_tocBoard (au-dessus de la carte) ----
+        private _perfT = diag_tickTime;
         ["draw", [_o, _d, _view, createHashMapFromArray [["op", _op], ["squad", _squad], ["sqNodes", _sqNodes]]]] call comspec_atak_native_fnc_tocBoard;
+        ["TOC en-tête et panneau (dessin)", _perfT] call comspec_atak_native_fnc_perfAcc;
         true
     };
     case "squadText": {

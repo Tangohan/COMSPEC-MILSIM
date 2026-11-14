@@ -32,6 +32,7 @@ private _cache = uiNamespace getVariable ["COMSPEC_ATAK_LinkQ", []];
 if ((count _cache) isEqualTo 2 && {diag_tickTime - (_cache select 0) < ([6, 2] select !isNull ([] call comspec_atak_native_fnc_display))}) exitWith { _cache select 1 };
 // Cache vidé exprès (antenne, dégâts, mode avion, brouillage, test de débit…) : le meilleur relais est recalculé aussi.
 if ((count _cache) isNotEqualTo 2) then { uiNamespace setVariable ["COMSPEC_ATAK_RelayBest", []]; };
+private _perfT = diag_tickTime;
 private _q = createHashMap;
 // Objet obligatoire pour le réseau (fn_netRequire) : aucun réseau sans lui, même simulation coupée ; les envois partent en file comme sans signal.
 private _den = ["denied"] call comspec_atak_native_fnc_netRequire;
@@ -313,4 +314,5 @@ _q = createHashMapFromArray [
     ["label", _label], ["tx", _tx], ["margin", _margin], ["jitter", _jit], ["net", _netT]
 ];
 uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", [diag_tickTime, _q]];
+["réseau : calcul de la liaison", _perfT] call comspec_atak_native_fnc_perfAcc;
 _q
