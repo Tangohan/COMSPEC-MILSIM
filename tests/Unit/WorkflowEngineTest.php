@@ -189,8 +189,8 @@ final class WorkflowEngineTest extends TestCase
     {
         $engine = $this->engine(self::commander());
 
-        self::assertSame(0, $engine->open(self::TENANT, 'courrier', 1, self::MEMBER, self::MEMBER));
-        $engine->recordStatus(self::TENANT, 'courrier', 1, 'sent', 2);
+        self::assertSame(0, $engine->open(self::TENANT, 'inconnu', 1, self::MEMBER, self::MEMBER));
+        $engine->recordStatus(self::TENANT, 'inconnu', 1, 'sent', 2);
 
         self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM workflow_instances')->fetchColumn());
     }
@@ -247,5 +247,28 @@ final class WorkflowEngineTest extends TestCase
         $notice = WorkflowEngine::decisionNotice($this->payloads[0], false);
         self::assertSame('Your transfer is done', $notice['title']);
         self::assertSame('personnel/mon-espace-rh', $notice['path']);
+    }
+
+    public function testCourrierCircuitFollowsItsStepsAndTellsTheAuthor(): void
+    {
+        $engine = $this->engine(self::commander());
+
+        $engine->recordStatus(self::TENANT, WorkflowEngine::SUBJECT_COURRIER, 21, 'pending_validation', self::MEMBER, '', self::MEMBER);
+        self::assertSame([], $this->createdTasks, 'pas d’avis du chef pour un courrier');
+        self::assertSame([], $this->notified, 'l’auteur qui soumet ne se notifie pas');
+
+        $engine->recordStatus(self::TENANT, WorkflowEngine::SUBJECT_COURRIER, 21, 'rejected', 2, 'Référence manquante', self::MEMBER);
+        self::assertSame(WorkflowEngine::STATE_DECISION, $engine->summaries(self::TENANT, WorkflowEngine::SUBJECT_COURRIER, [21])[21]['state']);
+        $notice = WorkflowEngine::decisionNotice($this->payloads[0]);
+        self::assertSame('Votre courrier est refusé', $notice['title']);
+        self::assertSame('Référence manquante', $notice['detail']);
+        self::assertSame('courrier/editor/21', $notice['path']);
+
+        foreach (['draft', 'pending_validation', 'validated', 'signed', 'sent'] as $status) {
+            $engine->recordStatus(self::TENANT, WorkflowEngine::SUBJECT_COURRIER, 21, $status, 2);
+        }
+        self::assertSame(WorkflowEngine::STATE_CLOSED, $engine->summaries(self::TENANT, WorkflowEngine::SUBJECT_COURRIER, [21])[21]['state']);
+        self::assertSame([[self::MEMBER, WorkflowEngine::NOTIFY_DECISION], [self::MEMBER, WorkflowEngine::NOTIFY_DECISION]], $this->notified);
+        self::assertSame('Votre courrier est validé', WorkflowEngine::decisionNotice($this->payloads[1])['title']);
     }
 }

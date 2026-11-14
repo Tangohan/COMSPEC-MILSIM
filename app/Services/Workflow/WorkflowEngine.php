@@ -9,10 +9,10 @@ use App\Repositories\WorkflowRepository;
 use App\Repositories\WorkTaskRepository;
 
 /**
- * Moteur de circuits unique des unités (lot 1 : élévations et mobilités).
+ * Moteur de circuits unique des unités : élévations, mobilités, corrections de dossier, comptes rendus et courrier.
  *
  * Il se greffe sur les tables existantes : la demande reste dans sa table (elevation_requests,
- * personnel_mobility_requests) avec son statut, et le moteur porte seulement l'état du circuit, le journal et la tâche
+ * personnel_mobility_requests, personnel_correction_requests, aar_reports, courrier_documents) avec son statut, et le moteur porte seulement l'état du circuit, le journal et la tâche
  * en attente (work_tasks, affichée dans Mon service).
  *
  * Circuit : à l'ouverture, le chef de l'unité du membre (chaîne de commandement) reçoit une tâche « avis » ; son avis
@@ -26,6 +26,7 @@ class WorkflowEngine
     public const SUBJECT_MOBILITY = 'mobility';
     public const SUBJECT_CORRECTION = 'correction';
     public const SUBJECT_AAR = 'aar';
+    public const SUBJECT_COURRIER = 'courrier';
 
     public const STATE_OPINION = 'opinion_pending';
     public const STATE_DECISION = 'decision_pending';
@@ -41,6 +42,8 @@ class WorkflowEngine
         self::SUBJECT_MOBILITY => ['approved', 'rejected', 'cancelled', 'applied'],
         self::SUBJECT_CORRECTION => ['approved', 'rejected', 'cancelled'],
         self::SUBJECT_AAR => ['validated'],
+        // Un courrier refusé repasse en brouillon : seuls l'envoi et l'archivage clôturent son circuit.
+        self::SUBJECT_COURRIER => ['sent', 'archived'],
     ];
 
     /** Objets qui passent par l'avis du chef d'unité avant la décision. Les autres sont seulement journalisés. */
@@ -53,6 +56,7 @@ class WorkflowEngine
     private const MEMBER_NOTICES = [
         self::SUBJECT_MOBILITY => ['approved', 'rejected', 'applied'],
         self::SUBJECT_AAR => ['validated', 'pending'],
+        self::SUBJECT_COURRIER => ['validated', 'rejected'],
     ];
 
     private const SUBJECT_LABELS = [
@@ -60,6 +64,7 @@ class WorkflowEngine
         self::SUBJECT_MOBILITY => ['fr' => 'Demande de mobilité', 'en' => 'Mobility request'],
         self::SUBJECT_CORRECTION => ['fr' => 'Correction de dossier', 'en' => 'Record correction'],
         self::SUBJECT_AAR => ['fr' => 'Compte rendu de mission', 'en' => 'After-action report'],
+        self::SUBJECT_COURRIER => ['fr' => 'Courrier', 'en' => 'Mail'],
     ];
 
     /** @var (callable(): string)|null */
@@ -276,9 +281,16 @@ class WorkflowEngine
             'mobility:rejected' => $fr ? 'Votre demande de mobilité est refusée' : 'Your mobility request was declined',
             'aar:validated' => $fr ? 'Votre compte rendu de mission est validé' : 'Your after-action report was approved',
             'aar:pending' => $fr ? 'Votre compte rendu de mission est à reprendre' : 'Your after-action report needs changes',
+            'courrier:validated' => $fr ? 'Votre courrier est validé' : 'Your mail item was approved',
+            'courrier:rejected' => $fr ? 'Votre courrier est refusé' : 'Your mail item was declined',
             default => self::subjectLabel($type, $fr),
         };
-        $path = $type === self::SUBJECT_AAR ? 'back-office/atak/comptes-rendus' : 'personnel/mon-espace-rh';
+        $subjectId = (int) ($payload['subject_id'] ?? 0);
+        $path = match ($type) {
+            self::SUBJECT_AAR => 'back-office/atak/comptes-rendus',
+            self::SUBJECT_COURRIER => $subjectId > 0 ? 'courrier/editor/' . $subjectId : 'courrier',
+            default => 'personnel/mon-espace-rh',
+        };
 
         return ['title' => $title, 'detail' => $comment, 'path' => $path];
     }
