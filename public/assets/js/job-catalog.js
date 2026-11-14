@@ -1178,7 +1178,16 @@
 
     document.addEventListener('click', event => {
         const trigger = event.target.closest('[data-job-catalog-open]');
-        if (trigger) { event.preventDefault(); open(trigger); return; }
+        if (trigger) {
+            event.preventDefault();
+            // « Voir dans le référentiel » (suggestion, note orange) : la fenêtre s’ouvre sur cet emploi.
+            const wanted = trigger.dataset.jobCatalogShow || '';
+            open(trigger).then(() => {
+                const entry = wanted && data ? data.entries.find(e => e.id === wanted) : null;
+                if (entry) show(entry);
+            });
+            return;
+        }
         const box = dialog();
         if (!box || !box.contains(event.target)) return;
         if (event.target === box) { close(); return; }

@@ -3494,10 +3494,60 @@ class EffectifsWorkspaceController
             'jobIconLibrary'=>\App\Support\JobRoleIconLibrary::all(),
             'jobHolderCount'=>$selected ? count($holders[(int)$selected['id']] ?? []) : 0,
             'jobCatalogAutoOpen'=>$creating && $request->queryString('catalogue', '0') === '1',
+            'jobCatalogHints'=>$this->jobCatalogHints($tenantId, $roles),
+            'jobCatalogDetectUrl'=>effectifs_workspace_url('fonctions/catalogue/detecter'),
         ];
         // Prérequis de l’emploi ouvert : critères, titulaires qui les remplissent, dérogations (JobPrerequisiteViewData).
         $data += \App\Services\Personnel\JobPrerequisiteViewData::forJobSheet($tenantId, $selected, $holders, $canManage, $selected ? $this->jobTenantSettings($tenantId) : []);
         return $this->jobWorkspaceResponse($request, $data);
+    }
+
+    /**
+     * Note orange des emplois créés par la communauté qui existent dans le référentiel (JobCatalogMatcher, seuil NOTE) :
+     * emploi id => suggestion. Un emploi déjà rempli depuis ce référentiel n'en a pas.
+     *
+     * @param list<array<string, mixed>> $roles
+     * @return array<int, array<string, mixed>>
+     */
+    private function jobCatalogHints(int $tenantId, array $roles): array
+    {
+        $community = array_values(array_filter($roles, static fn (array $r): bool => ($r['decoration']['origin'] ?? '') === JobRoleEnrichmentService::ORIGIN_COMMUNITY));
+        if ($community === []) {
+            return [];
+        }
+        try {
+            $lang = \App\Support\JobCatalog\JobCatalog::lang(function_exists('locale') ? locale() : 'fr');
+            $country = (new \App\Controllers\Admin\JobCatalogController())->tenantCountry($tenantId);
+            $units = [];
+            $stmt = Database::getPdo()->prepare('SELECT id, name FROM units WHERE tenant_id = ?');
+            $stmt->execute([$tenantId]);
+            foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $u) {
+                $units[(int) $u['id']] = (string) $u['name'];
+            }
+            $out = [];
+            foreach (array_slice($community, 0, 200) as $role) {
+                $decor = $role['decoration'] ?? [];
+                $meta = $role['structure'] ?? [];
+                $unitId = (int) ($meta['linked_unit_id'] ?? 0) ?: (int) ($role['source_unit_id'] ?? 0);
+                $hints = \App\Support\JobCatalog\JobCatalogHints::for([
+                    'name' => (string) $role['name'],
+                    'abbreviation' => (string) ($decor['abbreviation'] ?? ''),
+                    'code' => (string) ($meta['code'] ?? ''),
+                    'unit' => $units[$unitId] ?? '',
+                    'country' => $country,
+                ], $lang, 1, \App\Support\JobCatalog\JobCatalogMatcher::NOTE);
+                if ($hints === [] || \App\Support\JobCatalog\JobCatalogHints::alreadyImported((string) $role['name'], (string) ($decor['description'] ?? ''), (string) $hints[0]['id'], $lang)) {
+                    continue;
+                }
+                $out[(int) $role['id']] = $hints[0] + ['gains' => \App\Support\JobCatalog\JobCatalogHints::gains($hints[0]['counts'])];
+            }
+
+            return $out;
+        } catch (\Throwable $e) {
+            error_log('Effectifs jobs catalogue hints: ' . $e->getMessage());
+
+            return [];
+        }
     }
 
     /**
