@@ -121,9 +121,9 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
 
     <header class="pil-hello">
         <div class="pil-hello__copy">
-            <p class="pil-kicker"><?= $pilH((string) ($pilHello['date_label'] ?? '')) ?></p>
             <h1 class="pil-hello__title" id="ath-page-title"><?= $pilH((string) ($pilHello['greeting'] ?? 'Bonjour')) ?><?= ($pilHello['name'] ?? '') !== '' ? ', ' . $pilH((string) $pilHello['name']) : '' ?>.</h1>
             <p class="pil-hello__lead">
+                <?php if (($pilHello['date_label'] ?? '') !== ''): ?><span class="pil-hello__date"><?php $pilDate = mb_strtolower((string) $pilHello['date_label']); ?><?= $pilH(mb_strtoupper(mb_substr($pilDate, 0, 1)) . mb_substr($pilDate, 1)) ?></span> · <?php endif; ?>
                 <?= $pilH((string) ($pilHello['tenant'] ?? 'Votre communauté')) ?> compte
                 <b><?= $pilH($pilPlural((int) ($pilHello['active'] ?? 0), 'membre actif', 'membres actifs')) ?></b><?php if (isset($pilHello['total']) && $pilHello['total'] !== null && (int) $pilHello['total'] > (int) ($pilHello['active'] ?? 0)): ?> sur <?= (int) $pilHello['total'] ?><?php endif; ?>.
                 <?php $pilNextIn = $pilHello['next_in'] ?? null; ?>
@@ -133,13 +133,14 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
                     <?= $pilH((string) ($pilHello['next_noun'] ?? 'La prochaine activité')) ?> est dans <b><?= $pilH((string) $pilNextIn) ?></b><?php endif; ?><?php $pilDecN = (int) ($pilHello['decisions'] ?? 0); ?><?php if ($pilDecN > 0): ?>, et <b><?= $pilH($pilPlural($pilDecN, 'décision', 'décisions')) ?></b> <?= $pilDecN > 1 ? 'vous attendent.' : 'vous attend.' ?><?php else: ?>, et rien n’attend votre décision.<?php endif; ?>
             </p>
         </div>
-        <?php if (!empty($pilHello['actions'])): ?>
         <div class="pil-hello__actions">
-            <?php foreach ($pilHello['actions'] as $pilAct): ?>
+            <?php if (empty($home['customize'])): ?>
+            <a class="pil-btn pil-btn--ghost" href="<?= $pilH(url('back-office') . '?personnaliser=1#personnaliser') ?>">Personnaliser l’accueil</a>
+            <?php endif; ?>
+            <?php foreach (($pilHello['actions'] ?? []) as $pilAct): ?>
             <a class="pil-btn<?= !empty($pilAct['accent']) ? ' pil-btn--accent' : '' ?>" href="<?= $pilH((string) $pilAct['href']) ?>"><?= $pilH((string) $pilAct['label']) ?></a>
             <?php endforeach; ?>
         </div>
-        <?php endif; ?>
     </header>
 
     <?php
@@ -162,13 +163,9 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
     $homeShortcuts = isset($athMenu) && is_array($athMenu['favorites'] ?? null) ? $athMenu['favorites'] : [];
     $homeVisible = array_values(array_filter($homeItems, static fn (array $i): bool => empty($i['hidden'])));
     ?>
-    <div class="home-bar">
-        <?php if (!empty($home['customize'])): ?>
-        <span class="home-bar__state">Mode personnalisation</span>
-        <?php else: ?>
-        <a class="pil-btn pil-btn--sm" href="<?= $pilH(url('back-office') . '?personnaliser=1#personnaliser') ?>">Personnaliser</a>
-        <?php endif; ?>
-    </div>
+    <?php if (!empty($home['customize'])): ?>
+    <div class="home-bar"><span class="home-bar__state">Mode personnalisation</span></div>
+    <?php endif; ?>
     <?php if (!empty($home['customize'])): ?>
         <?php require base_path('views/admin/organization/_home_customize.php'); ?>
     <?php endif; ?>
@@ -190,8 +187,8 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
             <div class="pil-op__bg" style="background-image:url('<?= $pilH((string) $pilHero['cover_url']) ?>')" aria-hidden="true"></div>
             <?php endif; ?>
             <div class="pil-op__in">
-                <p class="pil-op__kicker"><i aria-hidden="true"></i><?= $pilH((string) $pilHero['kicker']) ?><?= $pilHero['campaign'] !== '' ? ' · ' . $pilH((string) $pilHero['campaign']) : '' ?></p>
                 <h2 class="pil-op__title" id="pil-op-title"><?= $pilH((string) $pilHero['title']) ?></h2>
+                <p class="pil-op__kicker"><i aria-hidden="true"></i><?= $pilH((string) $pilHero['kicker']) ?><?= $pilHero['campaign'] !== '' ? ' · ' . $pilH((string) $pilHero['campaign']) : '' ?></p>
                 <div class="pil-op__det">
                     <?php if ($pilHero['date_label'] !== ''): ?>
                     <span><?= $pilIcon('cal') ?><b><?= $pilH((string) $pilHero['date_label']) ?></b> <?= $pilH((string) $pilHero['time_label']) ?></span>
@@ -252,8 +249,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
         <section class="pil-card" aria-labelledby="pil-dec-title">
             <div class="pil-card__h">
                 <div>
-                    <p class="pil-kicker">À décider</p>
-                    <h2 class="pil-card__title" id="pil-dec-title">En attente de votre validation</h2>
+                    <h2 class="pil-card__title" id="pil-dec-title">À décider</h2>
                 </div>
                 <?php if ((int) $pilDecisions['total'] > 0): ?>
                 <span class="pil-count" aria-label="<?= (int) $pilDecisions['total'] ?> en attente"><?= (int) $pilDecisions['total'] ?></span>
@@ -308,8 +304,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
         <section class="pil-card" aria-labelledby="pil-part-title">
             <div class="pil-card__h">
                 <div>
-                    <p class="pil-kicker">Participation</p>
-                    <h2 class="pil-card__title" id="pil-part-title">Présents par activité<?= count($pilPart['bars']) > 1 ? ' · ' . count($pilPart['bars']) . ' dernières' : (count($pilPart['bars']) === 1 ? ' · dernière' : '') ?></h2>
+                    <h2 class="pil-card__title" id="pil-part-title">Participation<?= count($pilPart['bars']) > 1 ? ' · ' . count($pilPart['bars']) . ' dernières' : (count($pilPart['bars']) === 1 ? ' · dernière' : '') ?></h2>
                 </div>
                 <div class="pil-lg" aria-hidden="true">
                     <span><em class="pil-lg__present"></em>Présents</span>
@@ -345,7 +340,6 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
         <section class="pil-card" aria-labelledby="pil-units-title">
             <div class="pil-card__h">
                 <div>
-                    <p class="pil-kicker">Disponibilité</p>
                     <h2 class="pil-card__title" id="pil-units-title">État des unités</h2>
                 </div>
                 <?php if (($pilLinks['readiness'] ?? null) !== null): ?>
@@ -374,8 +368,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
         <section class="pil-card" aria-labelledby="pil-rec-title">
             <div class="pil-card__h">
                 <div>
-                    <p class="pil-kicker">Recrutement</p>
-                    <h2 class="pil-card__title" id="pil-rec-title">Parcours des recrues</h2>
+                    <h2 class="pil-card__title" id="pil-rec-title">Recrutement</h2>
                 </div>
                 <a class="pil-link" href="<?= $pilH((string) $pilLinks['recruitments']) ?>">Tout voir</a>
             </div>
@@ -404,8 +397,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
         <section class="pil-card" aria-labelledby="pil-ag-title">
             <div class="pil-card__h">
                 <div>
-                    <p class="pil-kicker">Agenda</p>
-                    <h2 class="pil-card__title" id="pil-ag-title"><?= $pilH((string) $pilAgenda['title']) ?></h2>
+                    <h2 class="pil-card__title" id="pil-ag-title">Agenda · <?= $pilH(mb_strtolower((string) $pilAgenda['title'])) ?></h2>
                 </div>
                 <?php if (($pilLinks['events'] ?? null) !== null): ?>
                 <a class="pil-link" href="<?= $pilH((string) $pilLinks['events']) ?>">Calendrier</a>
@@ -435,7 +427,6 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
         <section class="pil-card" aria-labelledby="pil-feed-title">
             <div class="pil-card__h">
                 <div>
-                    <p class="pil-kicker">Communauté</p>
                     <h2 class="pil-card__title" id="pil-feed-title">Ce qui a bougé</h2>
                 </div>
                 <?php if (($pilLinks['journal'] ?? null) !== null): ?>
@@ -459,8 +450,8 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
         <section class="pil-card" aria-labelledby="pil-use-title">
             <div class="pil-card__h">
                 <div>
-                    <p class="pil-kicker">Usage · <?= $pilPeriod ?> derniers jours</p>
-                    <h2 class="pil-card__title" id="pil-use-title">Connexions au site et téléphones ATAK</h2>
+                    <h2 class="pil-card__title" id="pil-use-title">Connexions sur <?= $pilPeriod ?> jours</h2>
+                    <p class="pil-card__sub">Site et téléphones ATAK</p>
                 </div>
                 <div class="pil-lg" aria-hidden="true">
                     <span><em class="pil-lg__portal"></em>Site</span>
@@ -488,7 +479,6 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
         <section class="pil-card" aria-labelledby="pil-msg-title">
             <div class="pil-card__h">
                 <div>
-                    <p class="pil-kicker">Messagerie</p>
                     <h2 class="pil-card__title" id="pil-msg-title">Derniers messages</h2>
                 </div>
                 <a class="pil-link" href="<?= $pilH((string) ($pilLinks['messages'] ?? url('messages'))) ?>">Ouvrir</a>
@@ -532,8 +522,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
         <section class="pil-card" aria-labelledby="pil-task-title">
             <div class="pil-card__h">
                 <div>
-                    <p class="pil-kicker">Tâches</p>
-                    <h2 class="pil-card__title" id="pil-task-title">En attente</h2>
+                    <h2 class="pil-card__title" id="pil-task-title">Tâches en attente</h2>
                 </div>
                 <?php if ($homeTaskTotal > 0): ?>
                 <span class="pil-count" aria-label="<?= (int) $homeTaskTotal ?> en attente"><?= $pilH(\App\Services\BackOffice\Menu\BackOfficeMenuBadges::format($homeTaskTotal)) ?></span>
@@ -562,8 +551,7 @@ $pilPlural = static fn (int $n, string $one, string $many): string => $n . ' ' .
         <section class="pil-card" aria-labelledby="pil-sc-title">
             <div class="pil-card__h">
                 <div>
-                    <p class="pil-kicker">Raccourcis</p>
-                    <h2 class="pil-card__title" id="pil-sc-title">Vos pages</h2>
+                    <h2 class="pil-card__title" id="pil-sc-title">Vos raccourcis</h2>
                 </div>
             </div>
             <?php if ($homeShortcuts === []): ?>

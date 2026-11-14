@@ -426,6 +426,8 @@ if ($isOperatorBoNav) {
             'label' => 'TABLEAU DE BORD ET SUIVI',
             'items' => [
                 ['label' => 'Tableau de bord', 'href' => url('back-office'), 'icon' => 'dash', 'active' => $boNavHome],
+                // Mon service (tâches, avis demandés par les circuits, agenda) : joignable depuis le back-office.
+                ['label' => 'Mon service', 'href' => url('mon-service'), 'icon' => 'pulse', 'active' => str_starts_with($p, 'mon-service')],
             ],
         ],
         [
@@ -544,6 +546,8 @@ if ($isOperatorBoNav) {
             'label' => 'TABLEAU DE BORD ET SUIVI',
             'items' => array_values(array_filter([
                 ['label' => 'Tableau de bord', 'href' => url('back-office'), 'icon' => 'dash', 'active' => $boNavHome],
+                // Mon service (tâches, avis demandés par les circuits, agenda) : joignable depuis le back-office.
+                ['label' => 'Mon service', 'href' => url('mon-service'), 'icon' => 'pulse', 'active' => str_starts_with($p, 'mon-service')],
                 $canMurOperationnel
                     ? ['label' => 'Tableau opérationnel', 'href' => url('back-office/tableau-operationnel'), 'icon' => 'wall', 'active' => $boNavOpsBoard || $boNavPortalOpsBoard]
                     : null,
