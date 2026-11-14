@@ -15,13 +15,15 @@ use PHPUnit\Framework\TestCase;
  */
 final class BackOfficeMenuTest extends TestCase
 {
-    public function testBadgeTextStopsAtNinePlus(): void
+    public function testBadgeTextStopsAtNinetyNinePlus(): void
     {
         self::assertSame('', BackOfficeMenuBadges::format(0));
         self::assertSame('1', BackOfficeMenuBadges::format(1));
         self::assertSame('9', BackOfficeMenuBadges::format(9));
-        self::assertSame('9+', BackOfficeMenuBadges::format(10));
-        self::assertSame('9+', BackOfficeMenuBadges::format(250));
+        self::assertSame('10', BackOfficeMenuBadges::format(10));
+        self::assertSame('99', BackOfficeMenuBadges::format(99));
+        self::assertSame('99+', BackOfficeMenuBadges::format(100));
+        self::assertSame('99+', BackOfficeMenuBadges::format(250));
         self::assertSame('3 candidature(s)', BackOfficeMenuBadges::title('%d candidature(s)', 3));
     }
 

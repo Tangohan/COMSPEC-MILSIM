@@ -39,7 +39,7 @@ final class DashboardWardrobePinsAdminController
         }
 
         return Response::view('layout.main', [
-            'title' => 'Tenues du tableau de bord',
+            'title' => 'Tenues mises en avant',
             'content' => 'admin.organization.dashboard_wardrobe_pins',
             'kitPins' => $cards,
             'maxPins' => TenantDashboardWardrobePinRepository::MAX_PINS,

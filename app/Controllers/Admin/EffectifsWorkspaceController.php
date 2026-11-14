@@ -283,38 +283,8 @@ class EffectifsWorkspaceController
                 $onlyWithoutRole
             );
             $allRows = $this->enrichRosterRows($tenantId, $baseUsers);
-            if ($languageFilter !== '') {
-                // Filtre « langue » : principale ou comprise, calculé après chargement (pas de colonne SQL dédiée).
-                $resolvedAll = $this->memberLanguages()->resolvedForUsers(
-                    $tenantId,
-                    array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $allRows),
-                    $languageCommunity
-                );
-                $allRows = array_values(array_filter($allRows, static function (array $r) use ($resolvedAll, $languageFilter): bool {
-                    $lang = $resolvedAll[(int) ($r['id'] ?? 0)] ?? null;
-
-                    return is_array($lang) && ($lang['primary'] === $languageFilter || in_array($languageFilter, $lang['others'], true));
-                }));
-                $total = count($allRows);
-            }
-            if ($jobFilter !== '') {
-                // Filtre « fonction » : la fonction principale commence par l'emploi choisi (ex. « Medic — CLS »).
-                $allRows = array_values(array_filter($allRows, static fn (array $r): bool => mb_stripos(trim((string) ($r['job_role_display'] ?? '')), $jobFilter, 0, 'UTF-8') === 0));
-                $total = count($allRows);
-            }
-            if ($jobTagFilter > 0) {
-                $taggedUsers = (new JobRoleEnrichmentService())->userIdsWithTag($tenantId, $jobTagFilter);
-                $allRows = array_values(array_filter($allRows, static fn (array $r): bool => isset($taggedUsers[(int) ($r['id'] ?? 0)])));
-                $total = count($allRows);
-            }
-            if ($unitFilter > 0) {
-                // Filtre « unité » : l'unité choisie et toutes ses sous-unités.
-                $unitScope = array_flip($this->unitRepository->expandUnitIdsWithDescendants($tenantId, [$unitFilter]));
-                $allRows = array_values(array_filter($allRows, static fn (array $r): bool => isset($unitScope[(int) ($r['unit_id'] ?? 0)])));
-                $total = count($allRows);
-            }
-            if ($gradeCategoryFilter !== '') {
-                $allRows = array_values(array_filter($allRows, static fn (array $r): bool => ($gradeCategories[(int) ($r['grade_id'] ?? 0)] ?? '') === $gradeCategoryFilter));
+            if ($languageFilter !== '' || $jobFilter !== '' || $jobTagFilter > 0 || $unitFilter > 0 || $gradeCategoryFilter !== '') {
+                $allRows = $this->applyRosterExtraFilters($tenantId, $allRows, $languageFilter, $jobFilter, $jobTagFilter, $unitFilter, $gradeCategoryFilter);
                 $total = count($allRows);
             }
             if (in_array($sort, ['heures_vol', 'temps_mission'], true)) {
@@ -653,6 +623,49 @@ class EffectifsWorkspaceController
         return Response::redirect(url('back-office/ressources/effectifs/doublons'));
     }
 
+    /**
+     * Filtres du tableur calculés après chargement (pas de colonne SQL dédiée) : langue, fonction, étiquette de fonction,
+     * unité (et sous-unités), catégorie de grade. Partagés par roster() et exportCsv() pour qu'ils restent identiques.
+     *
+     * @param list<array<string,mixed>> $rows
+     * @return list<array<string,mixed>>
+     */
+    private function applyRosterExtraFilters(int $tenantId, array $rows, string $languageFilter, string $jobFilter, int $jobTagFilter, int $unitFilter, string $gradeCategoryFilter): array
+    {
+        if ($languageFilter !== '') {
+            // Filtre « langue » : principale ou comprise.
+            $resolvedAll = $this->memberLanguages()->resolvedForUsers(
+                $tenantId,
+                array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows),
+                $this->communitySettingsFor($tenantId)
+            );
+            $rows = array_values(array_filter($rows, static function (array $r) use ($resolvedAll, $languageFilter): bool {
+                $lang = $resolvedAll[(int) ($r['id'] ?? 0)] ?? null;
+
+                return is_array($lang) && ($lang['primary'] === $languageFilter || in_array($languageFilter, $lang['others'], true));
+            }));
+        }
+        if ($jobFilter !== '') {
+            // Filtre « fonction » : la fonction principale commence par l'emploi choisi (ex. « Medic — CLS »).
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => mb_stripos(trim((string) ($r['job_role_display'] ?? '')), $jobFilter, 0, 'UTF-8') === 0));
+        }
+        if ($jobTagFilter > 0) {
+            $taggedUsers = (new JobRoleEnrichmentService())->userIdsWithTag($tenantId, $jobTagFilter);
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => isset($taggedUsers[(int) ($r['id'] ?? 0)])));
+        }
+        if ($unitFilter > 0) {
+            // Filtre « unité » : l'unité choisie et toutes ses sous-unités.
+            $unitScope = array_flip($this->unitRepository->expandUnitIdsWithDescendants($tenantId, [$unitFilter]));
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => isset($unitScope[(int) ($r['unit_id'] ?? 0)])));
+        }
+        if ($gradeCategoryFilter !== '') {
+            $gradeCategories = $this->gradeCategoriesById($tenantId);
+            $rows = array_values(array_filter($rows, static fn (array $r): bool => ($gradeCategories[(int) ($r['grade_id'] ?? 0)] ?? '') === $gradeCategoryFilter));
+        }
+
+        return $rows;
+    }
+
     /** Export CSV du tableur, avec les mêmes filtres que roster() mais sans pagination (borné à 5000 lignes). */
     public function exportCsv(Request $request, array $params = []): Response
     {
@@ -670,6 +683,15 @@ class EffectifsWorkspaceController
         $roleId = max(0, (int) $request->query('role_id', 0));
         $onlyNoUnit = $request->query('sans_affectation') === '1';
         $onlyNoRole = $request->query('sans_role') === '1';
+        // Mêmes filtres calculés après chargement que le tableur (langue, fonction, étiquette, unité, catégorie de grade).
+        $jobFilter = mb_substr(trim((string) $request->query('fonction', '')), 0, 120, 'UTF-8');
+        $jobTagFilter = max(0, (int) $request->query('etiquette_fonction', 0));
+        $unitFilter = max(0, (int) $request->query('unite', 0));
+        $gradeCategoryFilter = (string) $request->query('categorie', '');
+        if (!in_array($gradeCategoryFilter, ['off', 'nco', 'enl'], true)) {
+            $gradeCategoryFilter = '';
+        }
+        $languageFilter = CommunityLanguages::normalize($request->query('langue', '')) ?? '';
 
         $statusFilter = $status !== '' ? $status : null;
         $roleFilter = $roleId > 0 ? $roleId : null;
@@ -699,6 +721,7 @@ class EffectifsWorkspaceController
             $onlyWithoutRole
         );
         $rows = $this->enrichRosterRows($tenantId, $baseUsers);
+        $rows = $this->applyRosterExtraFilters($tenantId, $rows, $languageFilter, $jobFilter, $jobTagFilter, $unitFilter, $gradeCategoryFilter);
         $rows = $this->sortRosterRows($rows, 'nom');
         $csvLanguages = $this->memberLanguages()->resolvedForUsers(
             $tenantId,
@@ -1782,6 +1805,12 @@ class EffectifsWorkspaceController
             if (!$user) {
                 continue;
             }
+            // Même notification de changement de structure que l'affectation d'un seul membre.
+            $beforeSnap = null;
+            try {
+                $beforeSnap = $this->structureChangeNotification->snapshot($tenantId, $id);
+            } catch (\Throwable) {
+            }
             try {
                 // Affectation, effectif de l'unité et unité du dossier écrits ensemble (une transaction).
                 $this->personnelProfileRepository->ensureRecord($id);
@@ -1802,6 +1831,18 @@ class EffectifsWorkspaceController
                     $unitId > 0 ? ('unit:' . $unitId) : 'unit:none'
                 );
                 $updated++;
+                if ($beforeSnap !== null) {
+                    try {
+                        $this->structureChangeNotification->notifyFromSnapshots(
+                            $tenantId,
+                            $id,
+                            $actorId > 0 ? $actorId : null,
+                            $beforeSnap,
+                            $this->structureChangeNotification->snapshot($tenantId, $id)
+                        );
+                    } catch (\Throwable) {
+                    }
+                }
             } catch (\Throwable) {
                 continue;
             }

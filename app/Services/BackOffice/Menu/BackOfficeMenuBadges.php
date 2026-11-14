@@ -140,14 +140,14 @@ final class BackOfficeMenuBadges
         return $out;
     }
 
-    /** Texte d'une pastille : 1 à 9, puis « 9+ ». */
+    /** Texte d'une pastille : 1 à 99, puis « 99+ » (même format que les puces de la barre supérieure). */
     public static function format(int $n): string
     {
         if ($n < 1) {
             return '';
         }
 
-        return $n > 9 ? '9+' : (string) $n;
+        return $n > 99 ? '99+' : (string) $n;
     }
 
     public static function title(string $pattern, int $n): string

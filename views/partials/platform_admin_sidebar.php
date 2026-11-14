@@ -92,6 +92,7 @@ $platformNav = [
         ['path' => 'admin/system/advanced-fiche-edit', 'label' => 'Édition avancée de fiche', 'icon' => 'edit', 'access' => 'system', 'desc' => 'Autorisations temporaires de modification'],
         ['path' => 'admin/roles', 'label' => 'Rôles système', 'icon' => 'shield', 'access' => 'system', 'desc' => 'Rôles et droits de la plateforme'],
         ['path' => 'admin/site-roles', 'label' => 'Affectations rôles site', 'icon' => 'badge', 'access' => 'system', 'desc' => 'Qui porte quel rôle de site'],
+        ['path' => 'admin/steam-doublons', 'label' => 'Steam en double', 'icon' => 'key', 'access' => 'system', 'desc' => 'Un même Steam relié à plusieurs comptes : qui le garde'],
         ['path' => 'admin/system/recruitment-portal-tools', 'label' => 'Outils du portail candidatures', 'icon' => 'tool', 'access' => 'system', 'desc' => 'Diagnostic et réparation des candidatures'],
     ]],
     ['key' => 'moderation', 'label' => 'Modération & sécurité', 'items' => [
