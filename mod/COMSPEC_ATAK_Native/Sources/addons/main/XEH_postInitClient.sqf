@@ -558,8 +558,11 @@ if (["on"] call comspec_atak_native_fnc_fireSupport) then { ["scan"] call comspe
 ["init"] call comspec_atak_native_fnc_tocAuto;
 // Configuration locale (config.json, fn_localCfg) : mes numéros publiés aux autres joueurs, aussi après une réapparition
 // ou un changement du service Athéna.
-[{ !isNull player }, { ["apply"] call comspec_atak_native_fnc_localCfg; }] call CBA_fnc_waitUntilAndExecute;
-player addEventHandler ["Respawn", { [{ ["apply"] call comspec_atak_native_fnc_localCfg; }, [], 1] call comspec_atak_native_fnc_waitAndExec; }];
+// Joueur attendu (arrivée en cours de partie : player encore nul au postInit, addEventHandler ne poserait rien).
+[{ !isNull player }, {
+    ["apply"] call comspec_atak_native_fnc_localCfg;
+    player addEventHandler ["Respawn", { [{ ["apply"] call comspec_atak_native_fnc_localCfg; }, [], 1] call comspec_atak_native_fnc_waitAndExec; }];
+}] call CBA_fnc_waitUntilAndExecute;
 ["COMSPEC_AthenaModeChanged", { [{ ["apply"] call comspec_atak_native_fnc_localCfg; }] call comspec_atak_native_fnc_nextFrame; }] call CBA_fnc_addEventHandler;
 // Téléphone visible sur le gilet (fn_vestMount), téléphone extractible en cas de capture (fn_phoneSecurity).
 // App Communauté : kit obligatoire comparé toutes les 30 s, sans coût par image (fn_tenantAction).
@@ -611,8 +614,10 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
             "_this isEqualTo _target && {[_this] call comspec_atak_native_fnc_hasDevice} && {(missionNamespace getVariable ['COMSPEC_ATAK_Battery', 100]) < 95} && {([_this] call comspec_atak_native_fnc_batteryItem) isNotEqualTo ''}"];
     };
     missionNamespace setVariable ["COMSPEC_ATAK_BatterySwapAction", _add];
-    [player] call _add;
-    player addEventHandler ["Respawn", { params ["_u"]; [_u] call (missionNamespace getVariable ["COMSPEC_ATAK_BatterySwapAction", {}]); }];
+    [{ !isNull player }, {
+        [player] call (missionNamespace getVariable ["COMSPEC_ATAK_BatterySwapAction", {}]);
+        player addEventHandler ["Respawn", { params ["_u"]; [_u] call (missionNamespace getVariable ["COMSPEC_ATAK_BatterySwapAction", {}]); }];
+    }] call CBA_fnc_waitUntilAndExecute;
 };
 
 // Mission de tir reçue (servant d'une pièce) : notification, vibration, cible sur la carte du téléphone.
@@ -865,35 +870,39 @@ if (isClass (configFile >> "CfgPatches" >> "ace_medical_engine")) then {
     }] call CBA_fnc_addEventHandler;
 } else {
     // Sans ACE : chaque point de dégâts qui augmente (Dammaged ne change pas les dégâts, contrairement à HandleDamage).
-    player addEventHandler ["Dammaged", {
-        params ["_unit", "_sel", "_dmg", "", "_hp", "", ["_proj", ""]];
-        private _prev = missionNamespace getVariable ["COMSPEC_ATAK_HitPrev", createHashMap];
-        private _k = toLower ([_hp, _sel] select (_hp isEqualTo ""));
-        private _d = _dmg - (_prev getOrDefault [_k, 0]);
-        _prev set [_k, _dmg];
-        missionNamespace setVariable ["COMSPEC_ATAK_HitPrev", _prev];
-        if (_d < 0.03 || {_k isEqualTo ""}) exitWith {};
-        private _part = switch (true) do {
-            case ((_k find "head") >= 0 || {(_k find "face") >= 0} || {(_k find "neck") >= 0}): { "head" };
-            case ((_k find "hand") >= 0 || {(_k find "arm") >= 0}): { selectRandom ["leftarm", "rightarm"] };
-            case ((_k find "leg") >= 0): { selectRandom ["leftleg", "rightleg"] };
-            default { "body" };
-        };
-        if !(_proj isEqualType "") then { _proj = ""; };
-        [_part, _d, _d, _proj] call (missionNamespace getVariable ["COMSPEC_ATAK_HitPush", {}]);
-    }];
-    player addEventHandler ["HandleHeal", { missionNamespace setVariable ["COMSPEC_ATAK_HitPrev", createHashMap]; }];
+    [{ !isNull player }, {
+        player addEventHandler ["Dammaged", {
+            params ["_unit", "_sel", "_dmg", "", "_hp", "", ["_proj", ""]];
+            private _prev = missionNamespace getVariable ["COMSPEC_ATAK_HitPrev", createHashMap];
+            private _k = toLower ([_hp, _sel] select (_hp isEqualTo ""));
+            private _d = _dmg - (_prev getOrDefault [_k, 0]);
+            _prev set [_k, _dmg];
+            missionNamespace setVariable ["COMSPEC_ATAK_HitPrev", _prev];
+            if (_d < 0.03 || {_k isEqualTo ""}) exitWith {};
+            private _part = switch (true) do {
+                case ((_k find "head") >= 0 || {(_k find "face") >= 0} || {(_k find "neck") >= 0}): { "head" };
+                case ((_k find "hand") >= 0 || {(_k find "arm") >= 0}): { selectRandom ["leftarm", "rightarm"] };
+                case ((_k find "leg") >= 0): { selectRandom ["leftleg", "rightleg"] };
+                default { "body" };
+            };
+            if !(_proj isEqualType "") then { _proj = ""; };
+            [_part, _d, _d, _proj] call (missionNamespace getVariable ["COMSPEC_ATAK_HitPush", {}]);
+        }];
+        player addEventHandler ["HandleHeal", { missionNamespace setVariable ["COMSPEC_ATAK_HitPrev", createHashMap]; }];
+    }] call CBA_fnc_waitUntilAndExecute;
 };
-player addEventHandler ["Explosion", {
-    params ["", "_d", ["_src", objNull]];
-    if (_d < 0.02 || {diag_tickTime < (missionNamespace getVariable ["COMSPEC_ATAK_BlastAt", 0])}) exitWith {};
-    missionNamespace setVariable ["COMSPEC_ATAK_BlastAt", diag_tickTime + 0.5];
-    private _dist = [-1, player distance _src] select (!isNull _src);
-    ["blast", [_d, _dist]] call comspec_atak_native_fnc_deviceImpact;
-    ["blast", _d] call comspec_atak_native_fnc_screenDirt;
-}];
-// Réapparition : téléphone neuf (charge de départ du serveur comme fn_battery, données effacées oubliées) et plus de batterie externe fixée.
-player addEventHandler ["Respawn", { missionNamespace setVariable ["COMSPEC_ATAK_Device", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_Battery", 5 max (missionNamespace getVariable ["comspec_atak_native_battery_start", 100]) min 100]; missionNamespace setVariable ["COMSPEC_ATAK_HitPrev", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_HandsBlood", 0]; missionNamespace setVariable ["COMSPEC_ATAK_PowerBankOn", false]; missionNamespace setVariable ["COMSPEC_ATAK_PowerBankCharge", 100]; (_this select 0) setVariable ["COMSPEC_ATAK_PowerBank", false, true]; ["resync"] call comspec_atak_native_fnc_phoneSecurity; }];
+[{ !isNull player }, {
+    player addEventHandler ["Explosion", {
+        params ["", "_d", ["_src", objNull]];
+        if (_d < 0.02 || {diag_tickTime < (missionNamespace getVariable ["COMSPEC_ATAK_BlastAt", 0])}) exitWith {};
+        missionNamespace setVariable ["COMSPEC_ATAK_BlastAt", diag_tickTime + 0.5];
+        private _dist = [-1, player distance _src] select (!isNull _src);
+        ["blast", [_d, _dist]] call comspec_atak_native_fnc_deviceImpact;
+        ["blast", _d] call comspec_atak_native_fnc_screenDirt;
+    }];
+    // Réapparition : téléphone neuf (charge de départ du serveur comme fn_battery, données effacées oubliées) et plus de batterie externe fixée.
+    player addEventHandler ["Respawn", { missionNamespace setVariable ["COMSPEC_ATAK_Device", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_Battery", 5 max (missionNamespace getVariable ["comspec_atak_native_battery_start", 100]) min 100]; missionNamespace setVariable ["COMSPEC_ATAK_HitPrev", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_HandsBlood", 0]; missionNamespace setVariable ["COMSPEC_ATAK_PowerBankOn", false]; missionNamespace setVariable ["COMSPEC_ATAK_PowerBankCharge", 100]; (_this select 0) setVariable ["COMSPEC_ATAK_PowerBank", false, true]; ["resync"] call comspec_atak_native_fnc_phoneSecurity; }];
+}] call CBA_fnc_waitUntilAndExecute;
 // Eau : téléphone étanche quelques dizaines de secondes ; ensuite l'eau s'infiltre (haut-parleur, batterie, extinction…),
 // détruit seulement après une longue immersion. Dans le sac, l'eau entre deux fois moins vite. L'eau lave aussi l'écran.
 [{
@@ -1236,11 +1245,13 @@ addMissionEventHandler ["MarkerCreated", {
 }] call CBA_fnc_addEventHandler;
 // Déclencheur réseau (fn_exploNet) : réponses du serveur. Respawn : comme ACE vide les clackers, le joueur perd ses charges.
 ["clientInit"] call comspec_atak_native_fnc_exploNet;
-player addEventHandler ["Respawn", {
-    missionNamespace setVariable ["COMSPEC_ATAK_MyCharges", []];
-    ["cmd", ["release", []]] call comspec_atak_native_fnc_exploNet;
-    ["changed"] call comspec_atak_native_fnc_exploAction;
-}];
+[{ !isNull player }, {
+    player addEventHandler ["Respawn", {
+        missionNamespace setVariable ["COMSPEC_ATAK_MyCharges", []];
+        ["cmd", ["release", []]] call comspec_atak_native_fnc_exploNet;
+        ["changed"] call comspec_atak_native_fnc_exploAction;
+    }];
+}] call CBA_fnc_waitUntilAndExecute;
 // Signaux du poste (SMS, alerte plein écran, vibration) : Overwatch appelle ces crochets du module atak_athena,
 // absent avec le mod natif ; on les fournit seulement s'ils ne sont pas déjà définis.
 if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
