@@ -131,6 +131,14 @@ class RscDisplayMultiplayerSetup: RscStandardDisplay {
             text = "#(argb,8,8,3)color(0.04,0.06,0.05,1)";
             colorText[] = {1,1,1,1};
         };
+        // Portrait Athena téléchargé (hors PBO) : Arma le refuse en texture sans -filePatching, il passe alors par le
+        // navigateur intégré (CT_WEBBROWSER), page locale du PBO seulement. Caché tant qu'il ne sert pas (fn_lobbyOpen).
+        class PortraitWeb {
+            type = 106; idc = 9106; style = 0;
+            x = XS(DX + 0.3 * GW); y = XS(safezoneY + 6.95 * GH); w = XS(PORTW); h = XS(PORTH);
+            colorBackground[] = {0,0,0,1}; colorText[] = {1,1,1,1};
+            allowExternalURL = 0; url = "";
+        };
         // Coins marqués autour du portrait.
         DLINE(CornTLh, DX + 0.3 * GW, safezoneY + 6.95 * GH, 0.9 * GW, pixelH, COL_LINE);
         DLINE(CornTLv, DX + 0.3 * GW, safezoneY + 6.95 * GH, pixelW, 0.8 * GH, COL_LINE);

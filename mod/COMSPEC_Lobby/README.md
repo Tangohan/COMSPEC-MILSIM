@@ -1,6 +1,6 @@
 ﻿# COMSPEC Lobby
 
-Écran de sélection des rôles refait pour Arma 3 : le **dossier de l'opérateur** (portrait, nom, prénom, grade, unité, fonction, qualifications). Aucune dépendance autre que le jeu. Version 0.1.0 (essayée en jeu sur serveur dédié : voir « État »).
+Écran de sélection des rôles refait pour Arma 3 : le **dossier de l'opérateur** (portrait, nom, prénom, grade, unité, fonction, qualifications). Aucune dépendance autre que le jeu. Version 0.2.0 (essayée en jeu sur serveur dédié : voir « État »).
 
 Le système de postes d'Arma est gardé tel quel : liste des rôles, camps, pool de joueurs, paramètres de mission, verrou, expulsion, Workshop, chat. Le mod restyle l'écran (fond noir, filets fins, un accent ambre), remonte le pool de joueurs sous le dossier, et ajoute le dossier. Rien n'est remplacé ni piloté par script.
 
@@ -34,13 +34,22 @@ class ComspecLobby {
 };
 ```
 
-3. sinon, le texte du rôle sert de nom.
+3. votre carte Athena (voir « Athena ») ;
+4. sinon, le texte du rôle sert de nom.
 
 Tout le reste de la mission se règle comme d'habitude, dans Arma : l'écran garde le bouton **Paramètres** (paramètres de mission), le verrou, l'expulsion et les camps.
 
-## Athena
+## Athena : votre dossier et votre portrait
 
-Le mod est prêt à recevoir les cartes d'Athena, mais **ne les récupère pas encore** : il lui faut une route côté site et une commande de la DLL COMSPEC Link (qui change la version de la DLL, donc une nouvelle version d'ATAK). Contrat : un module pose, avant l'ouverture de l'écran, `uiNamespace COMSPEC_LOBBY_Cards` (HashMap étiquette vers HashMap aux clés `surname`, `given`, `rank`, `unit`, `role`, `quals`, `portrait`, `source`).
+Avec **COMSPEC ATAK** chargé et un compte Athena relié, le dossier montre **votre** identité Athena sur le poste que vous choisissez, quand la mission ne donne pas d'identité à ce poste : indicatif, nom, unité, qualifications et portrait opérateur (celui de Mon compte > Portrait). La fonction affichée est celle du poste.
+
+Comment ça marche : à chaque partie, COMSPEC ATAK garde votre carte dans le profil Arma (`profileNamespace COMSPEC_LOBBY_Self`) et le portrait téléchargé par COMSPEC Link. L'écran des rôles, qui s'ouvre avant toute mission et sans liaison, relit cette carte. Conséquences :
+
+- la toute première fois (aucune partie jouée avec ATAK 4.14.0 ou plus), le dossier montre seulement le texte du rôle ;
+- un changement de portrait ou d'indicatif sur le site apparaît à l'écran des rôles après la partie suivante ;
+- Arma refuse en texture une image hors d'un PBO : le portrait passe par le navigateur intégré du jeu (aucune adresse externe, image lue sur le disque par COMSPEC Link). Avec `-filePatching` il s'affiche en texture.
+
+Sans COMSPEC ATAK, rien ne change : le mod n'en dépend pas. Un autre module peut toujours poser des cartes par poste dans `uiNamespace COMSPEC_LOBBY_Cards` (HashMap étiquette vers HashMap aux clés `surname`, `given`, `rank`, `unit`, `role`, `quals`, `portrait`, `source`), prioritaires sur tout le reste.
 
 ## Installer
 
@@ -50,7 +59,6 @@ Charger `@COMSPEC_Lobby` sur **les clients** (l'écran des rôles est affiché p
 
 Essayé en jeu (2026-11-14, serveur dédié + client local) : l'écran s'ouvre, les étiquettes `[HQ-1]` sont lues dans les lignes de la liste, le dossier se remplit à chaque poste choisi, sans recouvrement. La config est aussi vérifiée hors du jeu (HEMTT, mêmes classes et identifiants que ui_f, pas de recouvrement à 16:9, 21:9, 16:10 et 5:4 : `tools\check_layout.py`) et les fichiers par `tests/Unit/LobbyModAssetTest.php`.
 
-Non essayé : le portrait venant d'Athena (pas encore branché).
 
 Si un contrôle attendu manque, le script de l'écran ne touche à rien et le jeu reste maître de l'écran. Le journal (RPT) le dit : `contrôles manquants`. Il écrit aussi la liste des rôles telle que le moteur la fournit (lignes `[COMSPEC LOBBY]`).
 

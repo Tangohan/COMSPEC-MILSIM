@@ -13,7 +13,13 @@
       2. configuration de la mission (description.ext) :
            class ComspecLobby { class Slots { class A1 { tag = "A-1"; surname = "Vasseur"; given = "Thomas"; rank = "Sergent-chef";
              unit = "ALPHA"; role = "Chef de groupe"; quals = "Chef de groupe"; portrait = "images\a1.paa"; }; }; };
-      3. le texte du rôle tel quel.
+      3. la carte Athena du joueur local, gardée dans le profil Arma par COMSPEC ATAK à chaque partie (profileNamespace
+         COMSPEC_LOBBY_Self : indicatif, nom, unité, qualifications, portrait) : c'est VOTRE dossier, montré sur le poste choisi
+         quand la mission ne donne pas d'identité à ce poste ;
+      4. le texte du rôle tel quel.
+    Portrait : image d'un PBO, ou image téléchargée par COMSPEC Link. Arma refuse en texture une image hors PBO (sauf
+    -filePatching) : elle passe alors par le navigateur intégré (idc 9106), lue par COMSPEC Link (ImageDataChunk « local: »,
+    sans réseau). Sans COMSPEC ATAK, pas de portrait Athena : le cadre reste vide.
     Clés d'une carte : surname, given, rank, unit, role, quals, portrait (chemin d'image lisible par le jeu), source (« ATHENA »...).
     Journal : lignes [COMSPEC LOBBY] au RPT, dont les premières lignes de la liste (texte, donnée, valeur, image).
 */
@@ -22,7 +28,7 @@ if (isNull _display) exitWith {};
 private _log = { diag_log ("[COMSPEC LOBBY] " + _this) };
 
 // ------------------------------------------------------------------ 1. contrôles indispensables
-private _need = [109, 114, 104, 118, 128, 1, 9100, 9101, 9102, 9103, 9104, 9105, 9110, 9111, 9112, 9113, 9114, 9115, 9116, 9117];
+private _need = [109, 114, 104, 118, 128, 1, 9100, 9101, 9102, 9103, 9104, 9105, 9110, 9111, 9112, 9106, 9113, 9114, 9115, 9116, 9117];
 private _missing = _need select { isNull (_display displayCtrl _x) };
 if (_missing isNotEqualTo []) exitWith { (format ["contrôles manquants %1 : l'écran du jeu est laissé tel quel", _missing]) call _log };
 ("écran ouvert, " + str (count _need) + " contrôles trouvés") call _log;
@@ -36,6 +42,16 @@ private _roles = 109 call _c;
 (9111 call _c) ctrlSetText (toUpper (localize "STR_COMSPEC_LOBBY_Unit"));
 (9112 call _c) ctrlSetText (toUpper (localize "STR_COMSPEC_LOBBY_Role"));
 (9113 call _c) ctrlSetText (toUpper (localize "STR_COMSPEC_LOBBY_Quals"));
+
+(9106 call _c) ctrlShow false;
+
+// Carte Athena du joueur local (posée par COMSPEC ATAK dans le profil) : tableau de paires [clé, valeur].
+private _self = createHashMap;
+{
+    if (_x isEqualType [] && {(count _x) >= 2} && {(_x select 0) isEqualType ""} && {(_x select 1) isEqualType ""}) then { _self set [_x select 0, _x select 1]; };
+} forEach (profileNamespace getVariable ["COMSPEC_LOBBY_Self", []]);
+if ((_self getOrDefault ["surname", ""]) isEqualTo "") then { _self = createHashMap; };
+(format ["carte Athena du joueur : %1", ["absente", "présente"] select ((count _self) > 0)]) call _log;
 
 // ------------------------------------------------------------------ 2. étiquette et identité d'un poste
 // _text -> étiquette ; « [A-1] Chef de groupe » -> "A-1"
@@ -70,12 +86,101 @@ private _identity = {
     if ((_h getOrDefault ["surname", ""]) isEqualTo "") then {
         private _rb = _text find "]";
         private _name = trim (((([_text, _text select [_rb + 1]] select (_rb >= 0)) splitString "@") select [0, 1]) joinString "");
-        _h set ["surname", [_name, "-"] select (_name isEqualTo "")];
+        if ((count _self) > 0) then {
+            // Poste sans identité donnée par la mission : le dossier est celui du joueur, la fonction celle du poste.
+            { _h set [_x, _y]; } forEach _self;
+            if ((_h getOrDefault ["role", ""]) isEqualTo "") then { _h set ["role", _name]; };
+        } else {
+            _h set ["surname", [_name, "-"] select (_name isEqualTo "")];
+        };
     };
     _h
 };
 
-// ------------------------------------------------------------------ 3. boucle de l'écran (suivi du poste choisi)
+// ------------------------------------------------------------------ 3. portrait
+// Image lisible en texture par Arma ? (PBO, texture procédurale, ou fichier lisible : -filePatching). Renvoie le chemin ou "".
+private _texOf = {
+    params [["_p", ""]];
+    if (_p isEqualTo "") exitWith { "" };
+    if ((_p select [0, 1]) isEqualTo "\" || {(_p select [0, 2]) isEqualTo "#("}) exitWith { _p };
+    private _cands = [_p];
+    private _i = (toLower _p) find "comspec_cache/";
+    if (_i >= 0) then { _cands pushBack (((_p select [_i]) splitString "/") joinString "\"); };
+    private _res = "";
+    { private _ti = getTextureInfo _x; if (_ti isEqualType [] && {((_ti param [0, -1]) max 0) > 0}) exitWith { _res = _x; }; } forEach _cands;
+    _res
+};
+// Image d'un fichier local en base64, par COMSPEC Link (aucun réseau). Renvoie [type MIME, base64] ou ["", raison].
+private _b64Of = {
+    params [["_p", ""]];
+    private _b64 = "";
+    private _mime = "jpeg";
+    private _off = 0;
+    private _err = "";
+    for "_n" from 0 to 60 do {
+        private _r = "COMSPECExtension" callExtension ["ImageDataChunk", ["local:" + _p, "lobby_portrait", _off toFixed 0]];
+        if (_r isEqualType []) then { _r = _r param [0, ""]; };
+        if !(_r isEqualType "") then { _r = ""; };
+        private _f = _r splitString "|";
+        if ((_f param [0, ""]) isNotEqualTo "OK") exitWith { _err = [_f param [1, "erreur"], "COMSPEC Link absent"] select (_r isEqualTo ""); };
+        _b64 = _b64 + (_f param [3, ""]);
+        _off = parseNumber (_f param [2, "0"]);
+        if ((count _f) > 4) then { _mime = _f select 4; };
+        if (_off >= parseNumber (_f param [1, "0"])) exitWith {};
+    };
+    if (_err isEqualTo "" && {_b64 isEqualTo ""}) then { _err = "image vide"; };
+    if (_err isEqualTo "") then { [_mime, _b64] } else { ["", _err] }
+};
+// Envoie l'image gardée sur le contrôle à la page (par morceaux : une très longue chaîne JavaScript passe mal d'un bloc).
+uiNamespace setVariable ["COMSPEC_LOBBY_webPush", {
+    params [["_wb", controlNull]];
+    if (isNull _wb) exitWith {};
+    (_wb getVariable ["COMSPEC_LOBBY_Img", ["", ""]]) params ["_m", "_b"];
+    _wb ctrlWebBrowserAction ["ExecJS", "if(window.cs){cs.reset();}"];
+    if (_b isEqualTo "") exitWith {};
+    for "_o" from 0 to ((count _b) - 1) step 100000 do {
+        _wb ctrlWebBrowserAction ["ExecJS", "if(window.cs){cs.add('" + (_b select [_o, 100000]) + "');}"];
+    };
+    _wb ctrlWebBrowserAction ["ExecJS", "if(window.cs){cs.show('" + _m + "');}"];
+}];
+private _webCache = createHashMap;
+private _blank = "#(argb,8,8,3)color(0.04,0.06,0.05,1)";
+private _portrait = {
+    params [["_pic", ""]];
+    private _pc = 9102 call _c;
+    private _wb = 9106 call _c;
+    private _tex = [_pic] call _texOf;
+    if (_pic isEqualTo "" || {_tex isNotEqualTo ""}) exitWith {
+        _wb ctrlShow false;
+        _pc ctrlSetText ([_tex, _blank] select (_tex isEqualTo ""));
+    };
+    // Image hors PBO refusée en texture : navigateur intégré.
+    _pc ctrlSetText _blank;
+    if !(_pic in _webCache) then {
+        private _r = [_pic] call _b64Of;
+        _webCache set [_pic, _r];
+        (if ((_r select 0) isEqualTo "") then { format ["portrait indisponible (%1)", _r select 1] } else { format ["portrait par le navigateur intégré (%1 caractères)", count (_r select 1)] }) call _log;
+    };
+    (_webCache get _pic) params ["_m", "_b"];
+    if (_m isEqualTo "") exitWith { _wb ctrlShow false; };
+    _wb setVariable ["COMSPEC_LOBBY_Img", [_m, _b]];
+    _wb ctrlShow true;
+    if (_wb getVariable ["COMSPEC_LOBBY_Ready", false]) then {
+        [_wb] call (uiNamespace getVariable "COMSPEC_LOBBY_webPush");
+    } else {
+        if !(_wb getVariable ["COMSPEC_LOBBY_Eh", false]) then {
+            _wb setVariable ["COMSPEC_LOBBY_Eh", true];
+            _wb ctrlAddEventHandler ["PageLoaded", {
+                params ["_wb"];
+                _wb setVariable ["COMSPEC_LOBBY_Ready", true];
+                [_wb] call (uiNamespace getVariable ["COMSPEC_LOBBY_webPush", {}]);
+            }];
+            _wb ctrlWebBrowserAction ["LoadFile", "z\comspec_lobby\addons\main\data\portrait.html"];
+        };
+    };
+};
+
+// ------------------------------------------------------------------ 4. boucle de l'écran (suivi du poste choisi)
 private _lastSig = "";
 private _dumped = false;
 while { !isNull _display } do {
@@ -106,11 +211,12 @@ while { !isNull _display } do {
         (9116 call _c) ctrlSetText (_card getOrDefault ["role", ""]);
         (9117 call _c) ctrlSetText (_card getOrDefault ["quals", ""]);
         private _pic = _card getOrDefault ["portrait", ""];
-        (9102 call _c) ctrlSetText ([_pic, "#(argb,8,8,3)color(0.04,0.06,0.05,1)"] select (_pic isEqualTo ""));
+        [_pic] call _portrait;
         (9103 call _c) ctrlSetText (toUpper (_card getOrDefault ["source", [localize "STR_COMSPEC_LOBBY_PortraitLocal", ""] select (_pic isEqualTo "")]));
     };
 
     uiSleep 0.12;
 };
 
+uiNamespace setVariable ["COMSPEC_LOBBY_webPush", nil];
 "écran fermé" call _log;

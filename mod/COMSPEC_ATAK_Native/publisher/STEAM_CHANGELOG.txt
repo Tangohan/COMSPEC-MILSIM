@@ -1,3 +1,19 @@
+[h1]COMSPEC ATAK 4.14.0 Washington — écran de chargement ATHENA, dossier Athena à l'écran des rôles / ATHENA loading screen, Athena dossier on the role screen[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Écran de chargement[/b] : le logo ATHENA en très grand sur fond sombre, sans texte ni son.
+[*] [b]Écran des rôles[/b] (avec le mod COMSPEC Lobby) : votre dossier Athena s'affiche sur le poste que vous prenez, avec indicatif, nom, unité, qualifications et portrait. Il apparaît à partir de la deuxième connexion.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Loading screen[/b]: the ATHENA logo very large on a dark background, with no text and no sound.
+[*] [b]Role screen[/b] (with the COMSPEC Lobby mod): your Athena dossier shows on the slot you take, with callsign, name, unit, qualifications and portrait. It appears from the second connection on.
+[/list]
+
 [h1]COMSPEC ATAK 4.13.0 Washington — goniométrie recoupée, relais refaits, vérification de la configuration / direction finding that locates, relays redone, configuration check[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]

@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Écran de chargement au logo ATHENA, votre dossier Athena à l'écran des rôles (ATAK natif 4.14.0.AG - Washington, COMSPEC Lobby 0.2.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Écran de chargement ATHENA et votre dossier à l'écran des rôles
+- Les écrans de chargement du jeu montrent maintenant le logo ATHENA en très grand sur fond sombre, sans texte ni son.
+- Avec le mod COMSPEC Lobby, l'écran de choix des rôles affiche votre dossier Athena sur le poste que vous prenez : indicatif, nom, unité, qualifications et portrait.
+- Votre dossier apparaît à partir de la deuxième connexion : il est gardé à la fin de chaque partie jouée avec COMSPEC ATAK.
+- COMSPEC Lobby n'a plus besoin d'aucun autre mod, et il n'y a pas de code à saisir pour prendre un poste.
+EN : ATHENA loading screen and your dossier on the role screen
+- The game's loading screens now show the ATHENA logo very large on a dark background, with no text and no sound.
+- With the COMSPEC Lobby mod, the role selection screen shows your Athena dossier on the slot you take: callsign, name, unit, qualifications and portrait.
+- Your dossier appears from the second connection on: it is saved at the end of each game played with COMSPEC ATAK.
+- COMSPEC Lobby no longer needs any other mod, and there is no code to enter to take a slot.
+
+### Détail technique
+- **Écran de chargement** (`fn_loadingLogo`, Extended_DisplayLoad sur `RscDisplayLoadMission` et `RscDisplayLoading`) : fond sombre plein écran et `data\loading_logo_ca.paa` (2048 x 2048, `tools/src/athena_logo.svg`) au centre, 86 % de la hauteur. Aucun fondu, aucun texte. L'ancien cartouche du coin (`fn_loadingBadge`) ne sert plus qu'à l'intro du démarrage, toujours désactivée par défaut. La barre de progression du jeu est recouverte.
+- **Carte du joueur pour COMSPEC Lobby** (`fn_avatarPath`) : pour le joueur local, indicatif, nom, unité, qualifications et chemin du portrait sont rangés dans `profileNamespace COMSPEC_LOBBY_Self` (tableau de paires). Le portrait du joueur est demandé 10 s après la liaison Athena prête (`XEH_postInitClient`), sans attendre l'ouverture d'une page du téléphone. Aucun changement de COMSPEC Link (2.0.123).
+- **COMSPEC Lobby 0.2.0** : relit cette carte à l'ouverture de l'écran des rôles (avant toute mission) et l'affiche sur le poste choisi quand la mission ne donne pas d'identité au poste. Portrait : texture si Arma peut lire le fichier (`getTextureInfo`, `-filePatching`), sinon navigateur intégré (idc 9106, `data\portrait.html`, image lue par `ImageDataChunk` « local: », sans réseau). Sans COMSPEC ATAK le mod se comporte comme avant. Le code de poste (PIN) reste hors de la version (branche `archive/lobby-avec-pin`).
+- Tests : `tests/Unit/LobbyModAssetTest.php`, `tests/Unit/AtakLoadingLogoAssetTest.php`.
+
 ## Goniométrie recoupée, plans diffusés par zone, vérification de la configuration, liaison faible (ATAK natif, regroupé dans 4.13.0)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)

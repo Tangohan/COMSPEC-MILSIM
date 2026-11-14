@@ -1303,6 +1303,11 @@ addMissionEventHandler ["MPEnded", { ["selfFlush"] call comspec_atak_native_fnc_
     // Bilan des boucles du téléphone (drone, marquage, carte, pages) et des images lentes, toutes les 30 s.
     [{ ["report"] call comspec_atak_native_fnc_perfAcc; }, 30] call COMSPEC_ATAK_PfhSpread;
 }] call CBA_fnc_waitUntilAndExecute;
+// Carte du joueur pour l'écran des rôles (mod COMSPEC Lobby) : son propre portrait est demandé dès la liaison prête, sans
+// attendre l'ouverture d'une page du téléphone (fn_avatarPath range la carte et le portrait dans le profil Arma).
+[{ (missionNamespace getVariable ["COMSPEC_AthenaReady", false]) && {!isNull player} }, {
+    [{ [player] call comspec_atak_native_fnc_avatarPath; }, [], 10] call comspec_atak_native_fnc_waitAndExec;
+}] call CBA_fnc_waitUntilAndExecute;
 // Canaux de la messagerie : liste complète d'Athena (canaux web compris) relue dès la liaison prête, sans attendre la
 // première ouverture de Messages (qui n'affichait d'abord que les canaux par défaut, les autres 20 s plus tard).
 // Nouvel essai toutes les 3 s tant qu'Athena n'a rien rendu, puis relecture toutes les 60 s.

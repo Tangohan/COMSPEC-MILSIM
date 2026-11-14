@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<!-- Portrait de l'opérateur dans le navigateur intégré (fn_lobbyOpen) : ouverte par LoadFile, image reçue par ExecJS (cs.add / cs.show). -->
+<html><head><meta charset="utf-8"><style>
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#0a0f0d}
+::-webkit-scrollbar{display:none;width:0;height:0}
+#s{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;object-position:center top;visibility:hidden}
+</style></head><body><img id="s" alt=""><script>
+var cs={p:[],reset:function(){cs.p=[];document.getElementById('s').style.visibility='hidden';},add:function(t){cs.p.push(t);},show:function(m){
+var b=cs.p.join(''),i=document.getElementById('s');cs.p=[];
+i.onload=function(){i.style.visibility='visible';};
+i.onerror=function(){i.onerror=null;try{var r=atob(b),a=new Uint8Array(r.length);for(var k=0;k<r.length;k++){a[k]=r.charCodeAt(k);}i.src=URL.createObjectURL(new Blob([a],{type:'image/'+m}));}catch(e){}};
+i.src='data:image/'+m+';base64,'+b;}};
+</script></body></html>

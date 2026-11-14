@@ -1111,15 +1111,15 @@ class Cfg3DEN {
 class Extended_PreStart_EventHandlers { class comspec_atak_native_main { init="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_preStart.sqf'"; }; };
 class Extended_PreInit_EventHandlers { class comspec_atak_native_main { init="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_preInit.sqf'"; }; };
 // Intro du mod sur l'écran de démarrage d'Arma (une fois par lancement du jeu), jamais sur le menu principal.
-// Marque COMSPEC (emblème, « OVERWATCH · ATAK NATIF », version) sur les chargements de mission.
+// Écran de chargement : fond sombre et logo ATHENA en très grand (fn_loadingLogo), sans texte ni son.
 class Extended_DisplayLoad_EventHandlers {
     // Menu Échap (solo et multijoueur) : un seul bouton « ATHENA Configuration » (fn_athenaConfig), qui ouvre la fenêtre
     // regroupant le diagnostic de la liaison, Réalisme et réseau, le SSE… L'ATAK natif en est l'hôte (XEH_preInit).
     class RscDisplayInterrupt { comspec_atak_native_athenacfg="['button', _this select 0] call comspec_atak_native_fnc_athenaConfig"; };
     class RscDisplayMPInterrupt { comspec_atak_native_athenacfg="['button', _this select 0] call comspec_atak_native_fnc_athenaConfig"; };
     class RscDisplayStart { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_introSplash.sqf'"; };
-    class RscDisplayLoadMission { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_loadingBadge.sqf'"; };
-    class RscDisplayLoading { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_loadingBadge.sqf'"; };
+    class RscDisplayLoadMission { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_loadingLogo.sqf'"; };
+    class RscDisplayLoading { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_loadingLogo.sqf'"; };
 };
 class Extended_PostInit_EventHandlers { class comspec_atak_native_main { clientInit="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_postInitClient.sqf'"; serverInit="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_postInitServer.sqf'"; }; };
 #include "gestures.hpp"
