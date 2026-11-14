@@ -199,6 +199,11 @@ final class AccessRegisterService
         if ($kind !== '' && ($row['kind'] ?? '') !== $kind) {
             return false;
         }
+        // Droits en vigueur, toutes natures : la position administrative est déjà dans sa colonne, sa ligne ferait doublon
+        // (« En service actif » deux fois pour chaque membre). Elle reste visible avec la nature « Position administrative ».
+        if ($kind === '' && !empty($filters['hide_positions']) && ($row['kind'] ?? '') === self::KIND_POSITION) {
+            return false;
+        }
         $state = (string) ($filters['state'] ?? '');
         if ($state !== '' && ($row['state'] ?? '') !== $state) {
             return false;

@@ -89,7 +89,22 @@ final class AccessRegisterServiceTest extends TestCase
         }
     }
 
-    public function testWiringAccessControlAndViews(): void
+    /** La position administrative a sa colonne : sa ligne de droit ne double pas chaque membre, sauf si on la demande. */
+    public function testPositionRowsAreHiddenUnlessAsked(): void
+    {
+        $position = ['kind' => AccessRegisterService::KIND_POSITION, 'state' => AccessRegisterService::STATE_ACTIVE, 'since' => '2026-10-29', 'member' => 'Liam Kaiser'];
+        $level = ['kind' => AccessRegisterService::KIND_ACCESS, 'state' => AccessRegisterService::STATE_ACTIVE, 'since' => '2026-10-29', 'member' => 'Liam Kaiser'];
+        $current = ['kind' => '', 'state' => '', 'year' => '', 'q' => '', 'hide_positions' => true];
+        self::assertFalse(AccessRegisterService::matches($position, $current));
+        self::assertTrue(AccessRegisterService::matches($level, $current));
+        self::assertTrue(AccessRegisterService::matches($position, ['kind' => AccessRegisterService::KIND_POSITION] + $current));
+        // Historique : les changements de position restent des mouvements.
+        self::assertTrue(AccessRegisterService::matches($position, ['hide_positions' => false] + $current));
+        $ctrl = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Admin/AccessRegisterController.php');
+        self::assertStringContainsString("'hide_positions' => \$view === self::VIEW_CURRENT", $ctrl);
+    }
+
+        public function testWiringAccessControlAndViews(): void
     {
         $root = dirname(__DIR__, 2);
         $routes = (string) file_get_contents($root . '/routes/web.php');
@@ -103,7 +118,7 @@ final class AccessRegisterServiceTest extends TestCase
         $users = (string) file_get_contents($root . '/app/Repositories/UserRepository.php');
         self::assertStringContainsString('org_unit_id IS NULL AND role_id NOT IN', $users);
         $view = (string) file_get_contents($root . '/views/admin/effectifs_workspace/registre_droits.php');
-        foreach (['Rafraîchir', 'Registre annuel', 'Colonnes activées', 'CSV (max.', 'Aide', 'Plein écran', 'Aucune donnée à afficher', 'Marquer comme revus'] as $label) {
+        foreach (['Droits en vigueur', 'Historique des mouvements', 'Par membre', 'Par droit', 'Colonnes', 'Exporter en CSV', 'Aide', 'Plein écran', 'Aucun droit ne correspond', 'Marquer comme revus', 'Attribuer un droit'] as $label) {
             self::assertStringContainsString($label, $view, $label);
         }
         $shell = (string) file_get_contents($root . '/views/admin/effectifs_workspace/shell.php');

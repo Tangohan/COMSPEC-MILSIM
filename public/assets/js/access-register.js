@@ -160,6 +160,21 @@
     });
   });
 
+  // Formulaire « Attribuer un droit » : ouvert depuis le bouton de l'en-tête (sans script, l'ancre #areg-grant l'ouvre via :target).
+  var grant = root.querySelector('[data-areg-grant]');
+  root.querySelectorAll('[data-areg-grant-open], [data-areg-grant-close]').forEach(function (link) {
+    link.addEventListener('click', function (e) {
+      if (!grant) return;
+      e.preventDefault();
+      var open = link.hasAttribute('data-areg-grant-open');
+      grant.classList.toggle('is-open', open);
+      if (open) {
+        var first = grant.querySelector('select, input:not([type=hidden])');
+        if (first) first.focus();
+      }
+    });
+  });
+
   // Plein écran
   var fs = root.querySelector('[data-areg-fullscreen]');
   if (fs && root.requestFullscreen) {
