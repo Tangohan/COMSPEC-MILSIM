@@ -353,7 +353,7 @@ final class FlashbangModAssetTest extends TestCase
     {
         $plan = self::read(self::MAIN . 'functions/fn_plan.sqf');
         foreach (['case 1: { [0.15, 0.45] call _around };', 'case 2: { [0.065, 0.45] call _around };',
-            '_t = _t + ((_dt max 0.03) min 1.2);'] as $needle) {
+            '_t = _t + (if (_mode == 0 && _n <= 9) then { _dt } else { ((_dt * _tempo) max 0.03) min 1.2 });'] as $needle) {
             self::assertStringContainsString($needle, $plan);
         }
         mt_srand(7);
@@ -548,7 +548,7 @@ final class FlashbangModAssetTest extends TestCase
         self::assertStringContainsString('[_busy, ceil (_vol / 5), _maxCopies] call comspec_fb_fnc_sndBudget', $play);
         $burst = self::read(self::MAIN . 'functions/fn_burst.sqf');
         self::assertStringContainsString('private _short = _index > 0 && {_gapNext < 0.25};', $burst);
-        self::assertStringContainsString('[["BangUnique", "BangCourt"] select _short, _pos, _delay, false, _gain, _range, _dc, _maxCopies] call comspec_fb_fnc_playBang', $burst);
+        self::assertStringContainsString('[["BangUnique", "BangCourt"] select _short, _pos, _delay, false, _gain, _range, _dc, _maxCopies, _stretch] call comspec_fb_fnc_playBang', $burst);
         self::assertStringContainsString('min ([8, 3] select _close)', $burst, 'Limiteur : -3 dB au plus en rafale.');
         $sons = self::read(self::MAIN . 'CfgSons.hpp');
         self::assertSame(1, preg_match('/class BangCourt \{\s*fichiers\[\] = \{([^}]*)\};/', $sons, $f));
@@ -645,7 +645,7 @@ final class FlashbangModAssetTest extends TestCase
             self::assertStringContainsString($needle, $tab);
         }
         $pupil = self::read(self::MAIN . 'functions/fn_pupil.sqf');
-        self::assertStringContainsString('linearConversion [0, 0.5, _lum, _night, 0.7, true] } else { linearConversion [0.5, 1, _lum, 0.7, 0.45, true] }', $pupil);
+        self::assertStringContainsString('linearConversion [0, 0.5, _lum, _night, 0.6, true] } else { linearConversion [0.5, 1, _lum, 0.6, 0.3, true] }', $pupil);
         self::assertStringContainsString('if (_p < 1) then { _p = linearConversion [2, 6, _d, 1, _p, true] };', $pupil);
         $exp = self::read(self::MAIN . 'functions/fn_exposure.sqf');
         self::assertStringContainsString('private _outdoor = !_enclosed;', $exp);
@@ -713,7 +713,7 @@ final class FlashbangModAssetTest extends TestCase
         self::assertStringContainsString('linearConversion [8, 25, _dc, 1, 0, true]', self::read(self::MAIN . 'functions/fn_playBang.sqf'));
         $readme = self::read('mod/COMSPEC_Flashbang/README.md');
         self::assertStringContainsString('| Regard ≤ 65° du flash | 1,00 | 0,60 | 0,25 | 0,08 | 0 |', $readme);
-        self::assertStringContainsString('| Facteur | 1,0 (multiplicateur nuit) | 0,70 | 0,45 |', $readme);
+        self::assertStringContainsString('| Facteur | 1,0 (multiplicateur nuit) | 0,60 | 0,30 |', $readme);
     }
 
     /** Réplique PHP de fn_sideRule : [niveau, kVision, kDurée, kAudition]. */
@@ -853,8 +853,8 @@ final class FlashbangModAssetTest extends TestCase
         self::assertStringContainsString('linearConversion [0, 0.06, _now - (_st getOrDefault ["lastHit", -10]), 1, 0.15, true]', self::read(self::MAIN . 'functions/fn_playerLoop.sqf'));
         $desc = (string) file_get_contents(self::path('mod/COMSPEC_Flashbang/workshop/STEAM_DESCRIPTION.txt'));
         self::assertLessThanOrEqual(7900, strlen($desc), 'Description Steam : 7 900 octets au plus.');
-        self::assertSame(45, substr_count(self::read(self::MAIN . 'XEH_preInit.sqf'), 'call _add;') + 3, '45 réglages (4 camps par une seule ligne).');
-        self::assertStringContainsString('45 réglages CBA', $desc);
-        self::assertStringContainsString('45 CBA settings', $desc);
+        self::assertSame(51, substr_count(self::read(self::MAIN . 'XEH_preInit.sqf'), 'call _add;') + 3, '51 réglages (4 camps par une seule ligne).');
+        self::assertStringContainsString('51 réglages CBA', $desc);
+        self::assertStringContainsString('51 CBA settings', $desc);
     }
 }
