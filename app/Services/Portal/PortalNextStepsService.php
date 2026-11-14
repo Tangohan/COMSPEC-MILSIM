@@ -16,44 +16,6 @@ final class PortalNextStepsService
     /**
      * @return list<Step>
      */
-    public static function forHub(Gate $gate): array
-    {
-        $steps = [];
-        $steps[] = [
-            'label' => 'Voir ce qui demande votre attention',
-            'description' => 'Synthèse des notifications et dossiers en attente, avec liens vers les écrans concernés.',
-            'href' => url('mon-service'),
-            'accent' => 'emerald',
-        ];
-        $steps[] = [
-            'label' => 'Consulter votre activité récente',
-            'description' => 'Notifications, courrier interne et fils de discussion récents.',
-            'href' => url('activite'),
-            'accent' => 'sky',
-        ];
-        if (! $gate->deny('documents.view')) {
-            $steps[] = [
-                'label' => 'Parcourir les documents publiés',
-                'description' => 'Doctrine, consignes et supports accessibles selon vos droits.',
-                'href' => url('documents'),
-                'accent' => 'teal',
-            ];
-        }
-        if ($gate->allows('courrier.view')) {
-            $steps[] = [
-                'label' => 'Ouvrir le bureau courrier',
-                'description' => 'Circuits de validation, signatures et documents officiels.',
-                'href' => url('courrier'),
-                'accent' => 'amber',
-            ];
-        }
-
-        return array_slice($steps, 0, 4);
-    }
-
-    /**
-     * @return list<Step>
-     */
     public static function forDashboard(
         Gate $gate,
         bool $hasMyPendingEnlistment,

@@ -261,7 +261,7 @@ class HomeController
             $allowsAtak = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashboardTenantType, 'atak');
 
             $showcaseTrainingFeature = $allowsTraining
-                && \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class)->allows($tid, 'training');
+                && (new \App\Services\Platform\ModuleAccessService())->isOpen($dashboardTenantType, 'training', $tid, 'training');
             if ($showcaseTrainingFeature) {
                 $rows = \App\Core\Container::get(\App\Repositories\TrainingCourseRepository::class)->listPublishedForDashboard($tid, 20);
                 $showcaseItems = self::buildTrainingShowcasePayload($rows);
@@ -270,8 +270,7 @@ class HomeController
             $showcaseKitFeature = false;
             $showcaseKitItems = [];
             $canManageKitPins = false;
-            $allowsEquipment = \App\Services\Community\TenantTypeConfig::uriAllowed($dashboardTenantType, 'equipment')
-                && \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class)->allows($tid, 'equipment');
+            $allowsEquipment = (new \App\Services\Platform\ModuleAccessService())->isOpen($dashboardTenantType, 'equipment', $tid, 'equipment');
             if ($allowsEquipment) {
                 try {
                     $showcaseKitItems = \App\Core\Container::get(\App\Services\Dashboard\DashboardWardrobeShowcaseService::class)
