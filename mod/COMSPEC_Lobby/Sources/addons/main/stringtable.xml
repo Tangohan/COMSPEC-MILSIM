@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project name="COMSPEC Lobby">
+    <Package name="main">
+        <Container name="main">
+            <Key ID="STR_COMSPEC_LOBBY_Grade">
+                <Original>Grade</Original>
+                <English>Rank</English>
+                <French>Grade</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_PortraitLocal">
+                <Original>Portrait</Original>
+                <English>Portrait</English>
+                <French>Portrait</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Quals">
+                <Original>Qualifications</Original>
+                <English>Qualifications</English>
+                <French>Qualifications</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Role">
+                <Original>Fonction</Original>
+                <English>Role</English>
+                <French>Fonction</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Unit">
+                <Original>Unité</Original>
+                <English>Unit</English>
+                <French>Unité</French>
+            </Key>
+        </Container>
+    </Package>
+</Project>
