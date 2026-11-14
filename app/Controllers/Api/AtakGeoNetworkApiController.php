@@ -128,6 +128,9 @@ final class AtakGeoNetworkApiController
         if (!$this->writeAllowed($request)) {
             return $this->writeRefused();
         }
+        if (($denied = \App\Support\TacticalMissionScope::denyUnlessKeyOrManager()) !== null) {
+            return $denied;
+        }
 
         $body = $this->body($request);
         $mapId = max(1, (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID));

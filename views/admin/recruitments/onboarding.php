@@ -37,6 +37,8 @@ $needsOnboarding = !empty($needsAcceptanceOnboarding);
 $pv = static fn (string $key): string => trim((string) ($prefill[$key] ?? ''));
 $accessRoleId = (int) ($prefill['access_role_id'] ?? 0);
 $gradeId = (int) ($prefill['grade_id'] ?? 0);
+$canChooseGrade = !isset($canChooseGrade) || (bool) $canChooseGrade;
+$canChooseAccessRole = !isset($canChooseAccessRole) || (bool) $canChooseAccessRole;
 $unitId = (int) ($prefill['unit_id'] ?? 0);
 $jobValue = (string) ((int) ($prefill['personnel_job_role_id'] ?? 0) ?: '');
 $referentId = (int) ($prefill['referent_user_id'] ?? 0);
@@ -272,7 +274,7 @@ $steps = [
                     $rdesc = trim((string) ($role['description'] ?? ''));
                     ?>
                 <label class="rec-onb__choice">
-                    <input type="radio" name="access_role_id" value="<?= $rid ?>"<?= $accessRoleId === $rid ? ' checked' : '' ?> data-rec-onb-watch="access">
+                    <input type="radio" name="access_role_id" value="<?= $rid ?>"<?= $accessRoleId === $rid ? ' checked' : '' ?><?= $canChooseAccessRole ? '' : ' disabled' ?> data-rec-onb-watch="access">
                     <span class="rec-onb__choice-body">
                         <span class="rec-onb__choice-name"><?= $h($rname) ?></span>
                         <?php if ($rdesc !== ''): ?>
@@ -282,6 +284,9 @@ $steps = [
                 </label>
                 <?php endforeach; ?>
             </fieldset>
+            <?php if (!$canChooseAccessRole): ?>
+            <p class="rec-onb__info">Le niveau d’accès se change avec le droit de gérer les accès : le compte garde son niveau actuel (Membre à défaut). Passez par une demande RH pour le modifier.</p>
+            <?php endif; ?>
             <?php endif; ?>
 
             <h3 class="rec-onb__section">Position de service</h3>
@@ -332,7 +337,7 @@ $steps = [
                 </label>
                 <label class="rec-onb__field">
                     <span class="rec-onb__label">Grade</span>
-                    <select name="grade_id" data-rec-onb-watch="grade">
+                    <select name="grade_id"<?= $canChooseGrade ? '' : ' disabled' ?> data-rec-onb-watch="grade">
                         <option value="0">Aucun grade</option>
                         <?php foreach ($gradeGroups as $group): ?>
                         <optgroup label="<?= $h((string) $group['label']) ?>">
@@ -343,7 +348,7 @@ $steps = [
                         </optgroup>
                         <?php endforeach; ?>
                     </select>
-                    <span class="rec-onb__hint">Grades de votre communauté, du plus élevé au plus bas. <a href="<?= $h(url('back-office/referentiels/grades')) ?>">Gérer les grades</a></span>
+                    <span class="rec-onb__hint"><?= $canChooseGrade ? 'Grades de votre communauté, du plus élevé au plus bas.' : 'Le grade se fixe avec le droit de gérer les grades : passez par une demande RH.' ?> <?php if ($canChooseGrade): ?><a href="<?= $h(url('back-office/referentiels/grades')) ?>">Gérer les grades</a><?php endif; ?></span>
                 </label>
                 <div class="rec-onb__field rec-onb__field--full">
                     <label class="rec-onb__label" for="rec-onb-job">Emploi</label>

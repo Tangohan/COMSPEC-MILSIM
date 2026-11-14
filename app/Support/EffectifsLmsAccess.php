@@ -35,6 +35,16 @@ final class EffectifsLmsAccess
             || $gate->allows('personnel.profile.update');
     }
 
+    /**
+     * Lire ou télécharger les pièces du coffre RH (contrats, certificats, justificatifs) : les droits de gestion du
+     * dossier, pas simplement l'accès au tableur des effectifs. Un responsable d'affectation ou de grades n'ouvre pas
+     * le coffre.
+     */
+    public static function canViewHrDocuments(Gate $gate): bool
+    {
+        return self::canEditProfiles($gate) || $gate->allows('personnel.status.manage');
+    }
+
     public static function canManageStatus(Gate $gate): bool
     {
         return $gate->allows('admin.organization')

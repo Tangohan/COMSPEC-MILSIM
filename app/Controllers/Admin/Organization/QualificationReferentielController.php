@@ -1163,7 +1163,7 @@ final class QualificationReferentielController
             }
             $level = (int) $request->input('qualification_level_id', 0);
             $this->referentiel->addPermissionGrant($tenantId, $id, $code, $level > 0 ? $level : null);
-            Session::flash('success', 'Droit lié à la qualification.');
+            Session::flash('success', 'Droit lié à la qualification (enregistré ; il ne donne pas encore d’accès automatiquement).');
 
             return Response::redirect(url('back-office/referentiels/qualifications/' . $id . '/edit') . '#droits');
         });

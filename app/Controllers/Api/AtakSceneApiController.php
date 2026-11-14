@@ -101,6 +101,9 @@ final class AtakSceneApiController
         if (ComspecApiKeyAuth::extractPresentedKey() === '' && !Csrf::validate($token)) {
             return Response::json(['ok' => false, 'error' => 'access_denied'], 419);
         }
+        if (($denied = \App\Support\TacticalMissionScope::denyUnlessKeyOrManager()) !== null) {
+            return $denied;
+        }
         $items = $body['objects'] ?? [];
         $schema = (string) ($body['schema'] ?? '');
         if ($schema !== 'athena.event.v1' && (!is_array($items) || $items === [])) {

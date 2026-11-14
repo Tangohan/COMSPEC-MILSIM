@@ -104,6 +104,9 @@ final class AtakTerrainApiController
         if (!$this->writeAllowed($request)) {
             return Response::json(['ok' => false, 'error' => 'Session expirée ou clé d’accès absente.'], 419);
         }
+        if (($denied = \App\Support\TacticalMissionScope::denyUnlessKeyOrManager()) !== null) {
+            return $denied;
+        }
         $body = $this->body($request);
         $mapId = $this->mapId($request);
         $heights = $body['heights'] ?? [];
@@ -135,6 +138,9 @@ final class AtakTerrainApiController
         }
         if (!$this->writeAllowed($request)) {
             return Response::json(['ok' => false, 'error' => 'Session expirée ou clé d’accès absente.'], 419);
+        }
+        if (($denied = \App\Support\TacticalMissionScope::denyUnlessKeyOrManager()) !== null) {
+            return $denied;
         }
         $body = $this->body($request);
         $mapId = $this->mapId($request);

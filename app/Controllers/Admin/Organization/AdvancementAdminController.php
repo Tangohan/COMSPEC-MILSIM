@@ -39,15 +39,8 @@ final class AdvancementAdminController
         if (!$this->repository->tablesReady()) {
             return $this->page('Grades', 'ORGANISATION · GRADES', 'L’échelle de grades n’est pas encore installée.', 'admin.advancement.unavailable', []);
         }
-        $before = count($this->repository->listGrades($tenantId, true));
-        $added = $this->templates->completeForTenant($tenantId);
-        if ($added > 0) {
-            $message = $before === 0
-                ? 'Référentiel de la communauté initialisé (' . $added . ' grades repris du catalogue).'
-                : $added . ' grade(s) du catalogue ajouté(s). Les grades déjà présents ont été réutilisés.';
-            Session::flash('success', $message);
-        }
-
+        // Afficher la page n'écrit plus rien : le catalogue s'importe avec le bouton (POST grades/importer) et une
+        // échelle vide est complétée par la tâche planifiée « tenant_data_upkeep ».
         return $this->page('Grades', 'ORGANISATION · GRADES', 'Référentiel de la communauté : catalogue partagé réutilisé, grades et règles d’avancement propres à vous.', 'admin.advancement.grades_index', [
             'grades' => $this->repository->listGrades($tenantId, true),
             'filieres' => $this->repository->listFilieres($tenantId),

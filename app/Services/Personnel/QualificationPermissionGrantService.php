@@ -13,6 +13,10 @@ use Throwable;
 /**
  * Lie une qualification obtenue à des permissions plateforme (allowlist stricte).
  * Jamais d’accès admin plateforme via ce mécanisme.
+ *
+ * Audit S8 : les tables cibles (user_direct_permissions, tenant_user_permissions) n'existent dans aucune migration et
+ * RbacService ne les lit pas. Tant que la décision produit n'est pas prise (rapport « droits qui seront accordés »
+ * avant activation), le mécanisme n'accorde rien et l'interface le dit.
  */
 final class QualificationPermissionGrantService
 {

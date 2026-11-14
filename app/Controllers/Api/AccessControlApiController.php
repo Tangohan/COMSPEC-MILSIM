@@ -32,6 +32,8 @@ final class AccessControlApiController
     /**
      * Écritures d’habilitations : réservées au gestionnaire de la communauté
      * (mêmes droits que TenantResourceAdminMiddleware), sinon 403 JSON.
+     * Les lectures (GET) sont réservées aux mêmes droits : rôles, règles et décisions d'accès des autres membres
+     * ne regardent pas un membre ordinaire.
      * Jeton CSRF exigé sur toute écriture : /api/ est exempté par CsrfPostMiddleware.
      */
     private function denyUnlessTenantAdmin(Request $request): ?Response
@@ -51,6 +53,9 @@ final class AccessControlApiController
     {
         $tenantId = (int) Session::get('tenant_id');
         if ($request->isGet()) {
+            if ($denied = $this->denyUnlessTenantAdmin($request)) {
+                return $denied;
+            }
             $st = $this->pdo->prepare('SELECT id, name, slug, level, is_system FROM roles WHERE tenant_id = ? ORDER BY name');
             $st->execute([$tenantId]);
 
@@ -71,6 +76,9 @@ final class AccessControlApiController
     {
         $tenantId = (int) Session::get('tenant_id');
         if ($request->isGet()) {
+            if ($denied = $this->denyUnlessTenantAdmin($request)) {
+                return $denied;
+            }
             $st = $this->pdo->prepare('SELECT id, code, label, category FROM permissions WHERE tenant_id = ? OR tenant_id IS NULL ORDER BY code');
             $st->execute([$tenantId]);
 
@@ -143,6 +151,9 @@ final class AccessControlApiController
     {
         $tenantId = (int) Session::get('tenant_id');
         if ($request->isGet()) {
+            if ($denied = $this->denyUnlessTenantAdmin($request)) {
+                return $denied;
+            }
             $st = $this->pdo->prepare('SELECT * FROM access_rules WHERE tenant_id = ? ORDER BY priority DESC, id DESC');
             $st->execute([$tenantId]);
 
@@ -195,6 +206,9 @@ final class AccessControlApiController
     {
         $tenantId = (int) Session::get('tenant_id');
         if ($request->isGet()) {
+            if ($denied = $this->denyUnlessTenantAdmin($request)) {
+                return $denied;
+            }
             $ruleId = (int) $request->query('rule_id', 0);
             // La règle doit appartenir à la communauté active : sinon on lirait les
             // scopes d’une autre communauté en faisant varier rule_id.
@@ -240,6 +254,9 @@ final class AccessControlApiController
 
     public function simulation(Request $request, array $params = []): Response
     {
+        if ($denied = $this->denyUnlessTenantAdmin($request)) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $user = $this->users->findById((int) ($request->query('user_id') ?? $request->input('user_id', 0)), $tenantId);
         if (!$user) {

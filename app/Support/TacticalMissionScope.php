@@ -30,6 +30,33 @@ final class TacticalMissionScope
         return $id > 0 ? $id : null;
     }
 
+    /**
+     * Écritures réservées au client de jeu (ingestion du relief, des routes, de la scène) : clé valide du mod, sinon un
+     * responsable ATAK ou l'administration de la communauté. Un membre connecté, ou un téléphone apparié, passe la
+     * porte des API tactiques pour lire et alimenter le tableau de situation, mais ne réécrit pas les données de carte.
+     * Null : autorisé.
+     */
+    public static function denyUnlessKeyOrManager(): ?Response
+    {
+        if (ComspecApiKeyAuth::requestPresentsValidKey()) {
+            return null;
+        }
+        if ((int) Session::get('user_id', 0) > 0 && (int) Session::get('tenant_id', 0) > 0) {
+            $gate = \App\Core\Gate::getInstance();
+            foreach (['atak.manage', 'atak.config.manage', 'atak.mission_cycle.manage', 'admin.access', 'admin.organization', 'admin.system'] as $permission) {
+                if ($gate->allows($permission)) {
+                    return null;
+                }
+            }
+        }
+
+        return Response::json([
+            'ok' => false,
+            'error' => 'forbidden',
+            'message' => 'Réservé au client de jeu ou aux responsables ATAK.',
+        ], 403);
+    }
+
     public static function tenantRequiredResponse(): Response
     {
         return Response::json([

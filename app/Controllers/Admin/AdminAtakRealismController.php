@@ -34,8 +34,7 @@ final class AdminAtakRealismController
             return $forbidden;
         }
 
-        $this->realismRepository->repairCorruptIdentitiesForTenant($tenantId);
-        $this->realismRepository->persistWebSessionClassification($tenantId);
+        // Réparation des identités et reclassement des sessions web : tâche « tenant_data_upkeep », plus à l'affichage.
         $split = AtakRealismRepository::partitionTerminals($this->realismRepository->listTerminals($tenantId));
         // Téléphones en jeu (numéro, IMEI, MAC, batterie) : volet « Téléphones des opérateurs ».
         try {
@@ -66,9 +65,8 @@ final class AdminAtakRealismController
             return $forbidden;
         }
 
-        $this->realismRepository->repairCorruptIdentitiesForTenant($tenantId);
-        $this->realismRepository->persistWebSessionClassification($tenantId);
-        $this->realismRepository->ensureDefaultCryptoDomain($tenantId);
+        // Réparation des identités, reclassement des sessions web et domaine de chiffrement par défaut : tâche
+        // « tenant_data_upkeep », plus à l'affichage.
 
         return Response::view('layout.main', [
             'content' => 'admin.atak_realism.certificates',
