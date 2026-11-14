@@ -38,26 +38,30 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
-## Pack 4.15.0 Washington : bouton Synchroniser à l'écran des rôles, images gardées sur le PC, correctifs (ATAK natif 4.15.0.AG - Washington, COMSPEC Link 2.0.124, COMSPEC Lobby 0.3.0)
+## Pack 4.15.0 Washington : messages, SMS et alertes depuis la carte, bouton Synchroniser à l'écran des rôles, images gardées sur le PC (ATAK natif 4.15.0.AG - Washington, COMSPEC Link 2.0.124, COMSPEC Lobby 0.3.0)
 
 ### Résumé joueur
 Type : nouveauté
-FR : Votre dossier se synchronise mieux, les images restent sur votre PC
+FR : Messages, SMS et alertes sans quitter la carte, dossier mieux synchronisé
+- Carte : le volet de droite a des onglets CANAL, SMS et ALERTE. Vous lisez et envoyez un message, un SMS ou une alerte sans quitter la carte.
 - Écran des rôles (mod COMSPEC Lobby) : un bouton Synchroniser redemande votre dossier Athena tout de suite. Il marche après une première partie dans la session de jeu.
 - Votre dossier et votre portrait sont maintenant bien gardés à chaque partie : avant, la demande échouait souvent au démarrage et n'était jamais refaite.
 - Les portraits et les diapositives téléchargés restent dans Documents, dossier Arma 3 - COMSPEC : ils ne sont plus retéléchargés après une mise à jour du mod.
 - Barre d'état du téléphone : le type de liaison (SAT, relais) ne s'écrit plus par-dessus l'icône GPS.
 - Compte rendu de fin d'opération : les réglages envoyés par le site sont de nouveau pris en compte.
-- L'écran de chargement ATHENA laisse la place à celui d'un autre mod (déjà dans la 4.14.1).
-EN : Your dossier syncs better, images stay on your PC
+- Écran de chargement : trois affiches ATHENA qui changent à chaque chargement, avec un vrai QR code vers le portail. Il laisse toujours la place à l'écran de chargement d'un autre mod.
+EN : Messages, SMS and alerts without leaving the map, dossier syncs better
+- Map: the right-hand panel has CHANNEL, SMS and ALERT tabs. You read and send a message, an SMS or an alert without leaving the map.
 - Role screen (COMSPEC Lobby mod): a Synchronise button asks Athena for your dossier right away. It works after a first game in the play session.
 - Your dossier and portrait are now properly saved every game: before, the request often failed at start and was never retried.
 - Downloaded portraits and slides stay in Documents, folder Arma 3 - COMSPEC: they are no longer downloaded again after a mod update.
 - Phone status bar: the link type (SAT, relay) is no longer written over the GPS icon.
 - End-of-operation report: the settings sent by the site are taken into account again.
-- The ATHENA loading screen yields to another mod's (already in 4.14.1).
+- Loading screen: three ATHENA posters that change at every loading, with a real QR code to the portal. It still yields to another mod's loading screen.
 
 ### Détail technique
+- **Volet de la carte** (`fn_pageMap`, nouveau `fn_mapQuickApp`) : onglets CARTE, CANAL, SMS, ALERTE en tête du volet (`COMSPEC_ATAK_MapTab`). CANAL : huit derniers messages du canal courant et envoi par `fn_chatSend` ; SMS : huit derniers SMS, destinataire parmi les joueurs du camp, envoi par `fn_p2pSend` ; ALERTE : contact, fin de contact, appareil abattu (`fn_alertsAction` « quick ») et six dernières alertes. Le volet se redessine à la réception, sauf pendant une saisie. Les apps complètes restent à un bouton. Le volet n'existe que téléphone en main, panneau ouvert.
+- **Écran de chargement** (`fn_loadingLogo`) : trois affiches en plein écran (`data\loading_1_co.paa` à `loading_3_co.paa`, 2048 x 1024, rendues en 16:9 et centrées), la première tirée au sort puis à la suite. Le logo seul (`loading_logo_ca.paa`) est retiré. `tools/gen_loading.py` remplace le QR décoratif de deux affiches par un vrai QR de https://athena.ttrd.fr (phpqrcode du dépôt, niveau M, plaque blanche) ; sources dans `tools/src/loading`. QR non relu par un lecteur ici.
 - **Carte du joueur** (`XEH_postInitClient`, `fn_avatarPath`) : la demande du portrait partait une fois, 10 s après la liaison, et échouait en `uplink_hold` tant que le joueur n'avait pas de téléphone (journal de TTRD du 14/11) ; elle est refaite toutes les 45 s (40 fois au plus) jusqu'à la réponse du site. Le SteamID et la communauté sont gardés dans le profil (`COMSPEC_LOBBY_Uid`, `COMSPEC_LOBBY_Tenant`) pour le bouton Synchroniser.
 - **COMSPEC Lobby 0.3.0** : bouton Synchroniser (idc 9108) et message (idc 9107). Il appelle `GetPlayerAvatarInfo` puis `DownloadBriefingSlideImage` par COMSPEC Link, range la carte dans le profil et redessine le dossier. Sans session Athena dans ce lancement du jeu, ou sans SteamID connu, un message dit quoi faire. L'appel bloque le jeu le temps de la réponse.
 - **COMSPEC Link 2.0.124** : le cache des images (portraits, diapositives, QR) passe d'abord par `Documents\Arma 3 - COMSPEC\Cache` (`PersistentCacheRoot`), avant le dossier du mod et TEMP ; ce dossier est accepté par `ImageDataChunk` « local: » et par la lecture des images locales. Les diapositives Google gardent leur dossier d'avant.

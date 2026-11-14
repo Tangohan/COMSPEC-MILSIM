@@ -44,6 +44,22 @@ final class AtakPack4150AssetTest extends TestCase
         self::assertSame(4, substr_count($e, 'PersistentCacheRoot()'));
     }
 
+    public function testMapPanelHasChannelSmsAndAlertTabs(): void
+    {
+        $m = self::read(self::MAIN . 'functions/pages/fn_pageMap.sqf');
+        self::assertStringContainsString('[_mapTab] call comspec_atak_native_fnc_mapQuickApp', $m);
+        self::assertStringContainsString('class mapQuickApp {};', self::read(self::MAIN . 'config.cpp'));
+        $q = self::read(self::MAIN . 'functions/pages/fn_mapQuickApp.sqf');
+        // Mêmes chemins d'envoi que les apps : rien de neuf côté réseau.
+        self::assertStringContainsString('[] call comspec_atak_native_fnc_chatSend;', $q);
+        self::assertStringContainsString('call comspec_atak_native_fnc_p2pSend', $q);
+        self::assertStringContainsString("['quick', '%1'] call comspec_atak_native_fnc_alertsAction;", $q);
+        // Le texte d'un joueur est neutralisé avant d'entrer dans un texte structuré.
+        self::assertStringContainsString('regexReplace ["<", "&lt;"]', $q);
+        // Pas de redessin pendant une saisie.
+        self::assertStringContainsString('if (!_force && {', $q);
+    }
+
     public function testLobbySyncButtonNeverLogsNorSendsAnythingElseThanTheProfileRequest(): void
     {
         $s = self::read('mod/COMSPEC_Lobby/Sources/addons/main/functions/fn_lobbyOpen.sqf');

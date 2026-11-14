@@ -1,13 +1,15 @@
 /*
-    Écran de chargement d'Arma (RscDisplayLoadMission, RscDisplayLoading : Extended_DisplayLoad de config.cpp) : fond
-    sombre plein écran et le logo ATHENA en très grand, au centre. Rien d'autre : pas de texte, pas de son, pas de vidéo,
-    pas d'animation (TTRD, 14/11).
+    Écran de chargement d'Arma (RscDisplayLoadMission, RscDisplayLoading : Extended_DisplayLoad de config.cpp) : une des
+    trois affiches ATHENA en plein écran (data\loading_1_co.paa à loading_3_co.paa), une différente à chaque chargement
+    (TTRD, 14/11 : « une rotation des images »). Rien d'autre : pas de son, pas de vidéo, pas d'animation.
+    Les affiches portent le logo, la devise et, pour deux d'entre elles, le QR de https://athena.ttrd.fr
+    (tools/gen_loading.py : le QR décoratif des affiches d'origine est remplacé par le vrai).
     Jamais par-dessus l'écran de chargement d'un autre mod (TTRD, 14/11 : « notre mod ne doit pas écraser les autres
     chargements ») : si un autre mod a retouché cet écran (sa classe d'écran, ou un gestionnaire Extended_DisplayLoad),
     rien n'est masqué ni recouvert ; seule la petite marque du coin (fn_loadingBadge, comme avant 4.14.0) est posée.
     Les contrôles sont créés par script (ctrlCreate) : ils passent devant ceux de l'écran du jeu, qui sont masqués, sans patcher ses classes.
     Appelée par chemin : sur ces écrans les CfgFunctions ne sont pas toujours compilées.
-    Texture : data\loading_logo_ca.paa (2048 x 2048, blanc sur transparent, tools/src/athena_logo.svg).
+    Textures en 2048 x 1024 (puissances de deux) : l'image d'origine est en 16:9, le contrôle lui rend ce rapport.
     Params : [display, nom de la classe de l'écran]
 */
 params [["_display", displayNull, [displayNull]], ["_class", "", [""]]];
@@ -34,23 +36,30 @@ if !(_class in _memo) then {
         } forEach (configProperties [configFile >> "Extended_DisplayLoad_EventHandlers" >> _class, "true", true]);
     };
     _memo set [_class, _foreign];
-    diag_log format ["[COMSPEC ATAK NATIVE][CHARGEMENT] %1 : %2", _class, if (_foreign isEqualTo []) then { "logo ATHENA plein écran" } else { format ["écran d'un autre mod respecté (%1), marque du coin seulement", _foreign joinString ", "] }];
+    diag_log format ["[COMSPEC ATAK NATIVE][CHARGEMENT] %1 : %2", _class, if (_foreign isEqualTo []) then { "affiche ATHENA plein écran" } else { format ["écran d'un autre mod respecté (%1), marque du coin seulement", _foreign joinString ", "] }];
 };
 if ((_memo get _class) isNotEqualTo []) exitWith {
     [_display] call compile preprocessFileLineNumbers "\z\comspec_atak_native\addons\main\functions\ui\fn_loadingBadge.sqf";
 };
 
-// Les contrôles de l'écran du jeu (image, titre, astuce du bas, barre) sont masqués : il ne reste que le logo.
+// Affiche suivante : la première est tirée au sort, puis elles se suivent.
+private _idx = uiNamespace getVariable ["COMSPEC_ATAK_LoadingIdx", -1];
+_idx = if (_idx < 0) then { floor (random 3) } else { (_idx + 1) mod 3 };
+uiNamespace setVariable ["COMSPEC_ATAK_LoadingIdx", _idx];
+
+// Les contrôles de l'écran du jeu (image, titre, astuce du bas, barre) sont masqués : il ne reste que l'affiche.
 { _x ctrlShow false; } forEach (allControls _display);
 private _bg = _display ctrlCreate ["RscText", -1];
 _bg ctrlSetBackgroundColor [0.02, 0.025, 0.022, 1];
 _bg ctrlSetPosition [safeZoneX, safeZoneY, safeZoneW, safeZoneH];
 _bg ctrlCommit 0;
-// Carré à l'écran : la largeur suit le rapport des pixels. 86 % de la hauteur, borné par la largeur (écrans étroits).
-private _h = (0.86 * safeZoneH) min (0.94 * safeZoneW * pixelH / pixelW);
-private _w = _h * pixelW / pixelH;
+// Image en 16:9 qui couvre tout l'écran : sur un écran plus large ou plus haut, elle déborde et reste centrée (jamais déformée).
+private _k = (16 / 9) * pixelW / pixelH;
+private _h = safeZoneH;
+private _w = _h * _k;
+if (_w < safeZoneW) then { _w = safeZoneW; _h = _w / _k; };
 private _logo = _display ctrlCreate ["RscPicture", -1];
-_logo ctrlSetText "\z\comspec_atak_native\addons\main\data\loading_logo_ca.paa"; // i18n:brut (image)
+_logo ctrlSetText format ["\z\comspec_atak_native\addons\main\data\loading_%1_co.paa", _idx + 1]; // i18n:brut (image)
 _logo ctrlSetTextColor [1, 1, 1, 1];
 _logo ctrlSetPosition [safeZoneX + (safeZoneW - _w) / 2, safeZoneY + (safeZoneH - _h) / 2, _w, _h];
 _logo ctrlCommit 0;

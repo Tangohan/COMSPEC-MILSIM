@@ -678,6 +678,14 @@ if (_interactive) then {
                     };
                 };
             } forEach _groups;
+            // Onglets du volet : CARTE (situation, fond, calques), puis CANAL, SMS et ALERTE sans quitter la carte (fn_mapQuickApp).
+            private _mapTab = missionNamespace getVariable ["COMSPEC_ATAK_MapTab", "SIT"];
+            if !(_mapTab in ["SIT", "CHAT", "SMS", "ALERT"]) then { _mapTab = "SIT"; };
+            private _tabRow = ["segment", "", [["CARTE", "SIT", "Situation, fond de carte et calques"], ["CANAL", "CHAT", "Messages du canal, sans quitter la carte"],
+                ["SMS", "SMS", "SMS de téléphone à téléphone, sans quitter la carte"], ["ALERTE", "ALERT", "Alertes au camp, sans quitter la carte"]] apply {
+                [_x select 0, format ["missionNamespace setVariable ['COMSPEC_ATAK_MapTab', '%1']; ['MAP'] call comspec_atak_native_fnc_pageRender;", _x select 1], _mapTab isEqualTo (_x select 1), _x select 2]
+            }, ""];
+            _rows = [_tabRow] + ([_rows, [_mapTab] call comspec_atak_native_fnc_mapQuickApp] select (_mapTab isNotEqualTo "SIT"));
             private _fy = _sy + _sh + _pad / 3;
             private _grp = [_rows, [_sx, _fy, _sw, (_by + _bh - _pad / 2) - _fy], false, [0, 0, 0, 0]] call comspec_atak_native_fnc_formRender;
             // Défilement gardé d'un rendu à l'autre (calque basculé, section repliée) : fn_pageRender relève les groupes nommés.

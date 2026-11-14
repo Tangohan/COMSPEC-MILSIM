@@ -31,6 +31,7 @@ if ((_this param [0, ""]) isEqualTo "recv") exitWith {
     if ([player] call comspec_atak_native_fnc_hasDevice) then {
         ["MESSAGE", format ["%1 : %2", _author, _body select [0, 80]], 5, 40, "CHAT"] call comspec_atak_native_fnc_notify;
     };
+    ["refresh"] call comspec_atak_native_fnc_mapQuickApp;
     [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { [true] call comspec_atak_native_fnc_pageChat; }; }] call comspec_atak_native_fnc_nextFrame;
     true
 };

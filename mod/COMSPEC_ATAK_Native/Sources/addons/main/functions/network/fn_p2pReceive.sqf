@@ -46,6 +46,8 @@ private _preview = [_body, (_body select [0, 60]) + "…"] select ((count _body)
 // Notification : ouvre l'app SMS si elle est installée, sinon Messages.
 private _smsOn = (([] call comspec_atak_native_fnc_appList) findIf { (_x get "page") isEqualTo "SMS" && {[_x] call comspec_atak_native_fnc_appVisible} }) >= 0;
 ["MESSAGE", format ["%1 : %2", _from, _preview], 5, 40, ["CHAT", "SMS"] select _smsOn] call comspec_atak_native_fnc_notify;
+// Volet de la carte sur l'onglet SMS : redessiné (fn_mapQuickApp).
+["refresh"] call comspec_atak_native_fnc_mapQuickApp;
 // Conversation ouverte sur ce fil : seul le fil est redessiné (fn_pageChat [true]). Liste des conversations : ligne du contact sur place, remontée en tête (fn_chatListRow), redessin complet s'il n'y est pas ; autre fil ouvert : seule la liste voisine (paysage) change.
 if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) in ["CHAT", "SMS"]) then {
     [{

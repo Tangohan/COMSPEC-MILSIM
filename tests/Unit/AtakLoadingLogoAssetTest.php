@@ -26,7 +26,9 @@ final class AtakLoadingLogoAssetTest extends TestCase
             self::assertMatchesRegularExpression('/class ' . $display . ' \{ comspec_atak_native_main="\[_this select 0, \'' . $display . '\'\] call [^"]*fn_loadingLogo\.sqf\'"; \};/', $cfg);
         }
         $s = self::read(self::MAIN . 'functions/ui/fn_loadingLogo.sqf');
-        self::assertStringContainsString('data\\loading_logo_ca.paa', $s);
+        // Trois affiches, une différente à chaque chargement.
+        self::assertStringContainsString('data\\loading_%1_co.paa", _idx + 1]', $s);
+        self::assertStringContainsString('(_idx + 1) mod 3', $s);
         // Le logo seul : ni son, ni vidéo, ni texte, ni fondu.
         // L'écran de chargement d'un autre mod n'est jamais recouvert : la marque du coin seulement.
         self::assertStringContainsString('configSourceAddonList (configFile >> _class)', $s);
@@ -36,7 +38,11 @@ final class AtakLoadingLogoAssetTest extends TestCase
         foreach (['playSound', 'playSoundUI', 'RscVideo', 'ctrlSetStructuredText', 'ctrlSetFade', 'spawn'] as $forbidden) {
             self::assertStringNotContainsString($forbidden, $s, "fn_loadingLogo ne doit pas utiliser {$forbidden}");
         }
-        self::assertTrue(is_file(dirname(__DIR__, 2) . '/' . self::MAIN . 'data/loading_logo_ca.paa'));
+        foreach ([1, 2, 3] as $n) {
+            self::assertTrue(is_file(dirname(__DIR__, 2) . '/' . self::MAIN . "data/loading_{$n}_co.paa"));
+        }
+        // Le QR des affiches est le vrai : fabriqué par la bibliothèque du dépôt, pour l'adresse du portail.
+        self::assertStringContainsString('URL = "https://athena.ttrd.fr"', self::read('mod/COMSPEC_ATAK_Native/tools/gen_loading.py'));
     }
 
     public function testOwnCardIsKeptInTheProfileForTheRoleScreen(): void
