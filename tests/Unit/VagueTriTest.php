@@ -268,6 +268,10 @@ final class VagueTriTest extends TestCase
         'public/assets/css/back-office-users.css' => 'back-office-users.css',
         // Ancienne interface ATAK web : AtakController::index rend atak-overwatch-beta, plus rien ne rendait cette vue.
         'views/atak.php' => 'views/atak.php',
+        // Classes sans aucun appelant (ni code, ni test, ni script, ni documentation).
+        'app/Services/Rbac/UserDisplayRoleService.php' => 'UserDisplayRoleService',
+        'app/Services/Cooperation/CooperationPhasePolicy.php' => 'CooperationPhasePolicy',
+        'app/Support/UxFeedbackAudit.php' => 'UxFeedbackAudit',
         // JNET n'est plus affiché dans la coque back-office (pages autonomes jnet._page) : sa feuille d'habillage n'était plus chargée.
         'public/assets/css/jnet_bo_embed.css' => 'jnet_bo_embed.css',
         // Feuilles et scripts dont le nom n'apparaissait plus nulle part (vues, contrôleurs, config, scripts, tests, mod).
