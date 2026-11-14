@@ -115,6 +115,8 @@ final class JnetSpaceService
             'isOrg' => $spaceId === JnetSpaceTree::ORG,
             'label' => (string) $node['label'],
             'code' => (string) $node['code'],
+            'echelon' => (string) ($node['echelon'] ?? ''),
+            'function' => (string) ($node['function'] ?? ''),
             'accent' => (string) $node['accent'],
             'badge' => $node['badge'],
             'motto' => (string) $node['motto'],

@@ -13,6 +13,7 @@ declare(strict_types=1);
  * @var string $usView
  */
 use App\Services\Jnet\JnetUnitSpaceSettings as S;
+use App\Support\JnetUi;
 
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $space = is_array($space ?? null) ? $space : [];
@@ -59,15 +60,13 @@ $face = static function (array $p) use ($h): string {
         ? '<img src="' . $h($photo) . '" alt="">'
         : '<span>' . $h((string) ($p['initials'] ?? '?')) . '</span>';
 };
-$emblemHtml = static function (string $class) use ($emblem, $look, $h, $label): string {
-    if ($emblem !== '') {
-        return '<img class="' . $class . ' is-img" src="' . $h($emblem) . '" alt="Insigne de ' . $h($label) . '">';
-    }
-
-    return '<span class="' . $class . '" aria-hidden="true"><svg viewBox="0 0 80 92"><path d="M40 3 76 15v27c0 22-15 38-36 47C19 80 4 64 4 42V15z" fill="var(--jn-space-panel)" stroke="var(--jn-unit)" stroke-width="4" stroke-linejoin="round"/></svg><b>' . $h((string) $look['monogram']) . '</b></span>';
-};
+$emblemHtml = static fn (string $class): string => JnetUi::crest((string) $look['monogram'], $emblem !== '' ? $emblem : null, $class);
+$toRead = count(array_filter($received, static fn (array $e): bool => !empty($e['requiresAck']) && empty($e['readByMe'])));
+$heroPhoto = $banner !== '' ? $banner : asset_url(JnetUi::genericPhoto($unitId));
+$kindLine = implode(' · ', array_filter([JnetUi::echelonLabel((string) ($space['echelon'] ?? '')), JnetUi::functionLabel((string) ($space['function'] ?? ''))]));
+$pad2 = static fn (int $n): string => str_pad((string) $n, 2, '0', STR_PAD_LEFT);
 $section = static function (string $title, string $moreHref = '', string $moreLabel = '') use ($h): string {
-    return '<header class="us-block__head"><h2>' . $h($title) . '</h2>' . ($moreHref !== '' ? '<a href="' . $h($moreHref) . '">' . $h($moreLabel) . '</a>' : '') . '</header>';
+    return '<header class="ja-sh"><h2 class="ja-disp ja-disp--sm">' . $h($title) . '</h2>' . ($moreHref !== '' ? '<a class="ja-sh__link" href="' . $h($moreHref) . '">' . $h($moreLabel) . ' →</a>' : '') . '</header>';
 };
 ?>
 <!DOCTYPE html>
@@ -80,48 +79,45 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
     <title><?= $h($label) ?> — JNET</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_athena.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_spaces.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_unit_space.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_unit_shell.css')) ?>">
 </head>
-<body class="us us--<?= $h($look['theme']) ?>" style="<?= $h(S::cssVars($look)) ?>">
-<a class="us-skip" href="#us-main">Aller au contenu</a>
+<body class="ja us us--<?= $h($look['theme']) ?>" style="<?= $h(S::cssVars($look)) ?>">
+<a class="ja-skip" href="#us-main">Aller au contenu</a>
 
-<header class="us-top">
-    <a class="us-top__net" href="<?= $h((string) ($usHome ?? url('jnet?commun=1'))) ?>" title="Retour : <?= $h((string) ($usHomeLabel ?? 'Espace commun')) ?>">
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="m14 6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        JNET
+<header class="ja-hd ja-hd--rows">
+    <a class="ja-unit" href="<?= $h($tabUrl('accueil')) ?>" title="<?= $h($label) ?>">
+        <?= $emblemHtml('ja-crest ja-crest--sm') ?>
+        <b><?= $h($label) ?></b>
     </a>
-    <a class="us-top__unit" href="<?= $h($tabUrl('accueil')) ?>">
-        <?= $emblemHtml('us-top__emblem') ?>
-        <span><?= $h($label) ?></span>
-    </a>
-    <?php if (count($rail) > 1): ?>
-    <details class="us-switch">
-        <summary>Changer d’espace</summary>
-        <ul>
-            <?php foreach ($rail as $s): ?>
-                <li><a href="<?= $h((string) $s['href']) ?>"<?= !empty($s['active']) ? ' aria-current="page"' : '' ?> style="--d: <?= min(5, max(0, (int) ($s['depth'] ?? 0))) ?>"><?= $h((string) $s['label']) ?><?= !empty($s['mine']) ? ' <small>votre unité</small>' : '' ?></a></li>
-            <?php endforeach; ?>
-        </ul>
-    </details>
-    <?php endif; ?>
-    <span class="us-top__spacer"></span>
-    <span class="us-top__access"><?= $h((string) $look['access_label']) ?></span>
-    <?php if ($operator !== ''): ?><span class="us-top__who" translate="no"><?= $h($operator) ?></span><?php endif; ?>
-    <?php if (!empty($canCustomize)): ?>
-        <a class="us-top__btn<?= $view === 'personnaliser' ? ' is-on' : '' ?>" href="<?= $h((string) ($customizeUrl ?? '')) ?>">Personnaliser</a>
-    <?php endif; ?>
+    <nav class="ja-tabs" aria-label="Rubriques de l’espace">
+        <?php $i = 0; foreach ($tabs as $key => [$tabLabel, $count]): ?>
+            <a class="ja-tab<?= $view === $key ? ' is-on' : '' ?>" href="<?= $h($tabUrl($key)) ?>"<?= $view === $key ? ' aria-current="page"' : '' ?>><span class="ja-mono"><?= $pad2($i++) ?></span><?= $h($tabLabel) ?><?php if ($key === 'echanges' && $toRead > 0): ?><em><?= min(99, $toRead) ?></em><?php elseif ($count > 0): ?><small class="us-count"><?= min(99, (int) $count) ?></small><?php endif; ?></a>
+        <?php endforeach; ?>
+    </nav>
+    <div class="ja-hd__r">
+        <?php if (count($rail) > 1): ?>
+        <details class="us-switch">
+            <summary class="ja-ib">Changer d’espace</summary>
+            <ul>
+                <?php foreach ($rail as $r): ?>
+                    <li><a href="<?= $h((string) $r['href']) ?>"<?= !empty($r['active']) ? ' aria-current="page"' : '' ?> style="--d: <?= min(5, max(0, (int) ($r['depth'] ?? 0))) ?>"><?= $h((string) $r['label']) ?><?= !empty($r['mine']) ? ' <small>votre unité</small>' : '' ?></a></li>
+                <?php endforeach; ?>
+            </ul>
+        </details>
+        <?php endif; ?>
+        <span class="us-access"><?= $h((string) $look['access_label']) ?></span>
+        <?php if ($operator !== ''): ?><span class="ja-who" translate="no"><?= $h($operator) ?></span><?php endif; ?>
+        <?php if (!empty($canCustomize)): ?>
+            <a class="ja-ib<?= $view === 'personnaliser' ? ' is-on' : '' ?>" href="<?= $h((string) ($customizeUrl ?? '')) ?>">Personnaliser</a>
+        <?php endif; ?>
+        <a class="ja-ib" href="<?= $h((string) ($usHome ?? url('jnet?commun=1'))) ?>" title="Retour : <?= $h((string) ($usHomeLabel ?? 'Espace commun')) ?>"><?= $h((string) ($usHomeLabel ?? 'Espace commun')) ?></a>
+    </div>
 </header>
-
-<nav class="us-tabs" aria-label="Rubriques de l’espace">
-    <?php foreach ($tabs as $key => [$tabLabel, $count]): ?>
-        <a class="us-tab<?= $view === $key ? ' is-on' : '' ?>" href="<?= $h($tabUrl($key)) ?>"<?= $view === $key ? ' aria-current="page"' : '' ?>><?= $h($tabLabel) ?><?php if ($count > 0): ?><i><?= min(99, (int) $count) ?></i><?php endif; ?></a>
-    <?php endforeach; ?>
-</nav>
-
-<main class="us-main jnet-embed" id="us-main">
+<main class="ja-main us-main jnet-embed" id="us-main">
     <?php if ($flashErr): ?><p class="us-flash is-bad" role="alert"><?= $h((string) $flashErr) ?></p><?php endif; ?>
     <?php if ($flashOk): ?><p class="us-flash" role="status"><?= $h((string) $flashOk) ?></p><?php endif; ?>
 
@@ -130,7 +126,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
 
 <?php elseif ($view === 'echanges'): ?>
     <header class="us-page">
-        <h1>Ordres et échanges</h1>
+        <h1 class="ja-disp ja-disp--md">Ordres et échanges</h1>
         <p>Ce que le commandement envoie à <?= $h($label) ?>, ce que l’unité se dit, et ce qu’elle fait remonter.</p>
     </header>
     <?php if (empty($exchangesReady)): ?>
@@ -169,7 +165,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
 
 <?php elseif ($view === 'effectif'): ?>
     <header class="us-page">
-        <h1>Effectif</h1>
+        <h1 class="ja-disp ja-disp--md">Effectif</h1>
         <p><?= (int) $strength['available'] ?> disponible<?= (int) $strength['available'] > 1 ? 's' : '' ?> sur <?= (int) $strength['total'] ?>, sous-unités comprises. <?= count($members) ?> membre<?= count($members) > 1 ? 's' : '' ?> affecté<?= count($members) > 1 ? 's' : '' ?> directement à <?= $h($label) ?>.</p>
         <a class="us-btn" href="<?= $h(url('jnet/personnel?filtre=' . rawurlencode($label))) ?>">Annuaire de l’organisation</a>
     </header>
@@ -194,7 +190,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
 
 <?php elseif ($view === 'operations'): ?>
     <header class="us-page">
-        <h1>Opérations</h1>
+        <h1 class="ja-disp ja-disp--md">Opérations</h1>
         <p>Les opérations où <?= $h($label) ?> ou une de ses sous-unités est engagée.</p>
         <a class="us-btn" href="<?= $h(url('jnet/operations')) ?>">Toutes les opérations</a>
     </header>
@@ -216,34 +212,40 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
 
 <?php elseif ($view === 'sous-unites'): ?>
     <header class="us-page">
-        <h1>Sous-unités</h1>
+        <h1 class="ja-disp ja-disp--md">Sous-unités</h1>
         <p>Chaque sous-unité a son propre espace. Ce qu’elle publie pour <?= $h($label) ?> arrive dans « Ordres et échanges ».</p>
     </header>
     <?php $viewNodes = $subTree; $viewId = 'us-sub-units'; $viewGrouped = false; require base_path('views/jnet/_unit_views.php'); ?>
 
 <?php else: ?>
-    <section class="us-hero<?= $banner !== '' ? ' has-banner' : '' ?>" aria-labelledby="us-title">
-        <?php if ($banner !== ''): ?><div class="us-hero__bg" style="background-image: url('<?= $h($banner) ?>')" aria-hidden="true"></div><?php endif; ?>
-        <div class="us-hero__id">
-            <?= $emblemHtml('us-hero__emblem') ?>
-            <div>
-                <?php if (count($chain) > 1): ?>
-                <nav class="us-hero__chain" aria-label="Échelons">
-                    <?php foreach ($chain as $i => $c): if ((int) $c['id'] === $unitId) { continue; } ?>
-                        <a href="<?= $h((string) $c['href']) ?>"><?= $h((string) $c['label']) ?></a><span aria-hidden="true">›</span>
-                    <?php endforeach; ?>
-                </nav>
-                <?php endif; ?>
-                <h1 id="us-title"><?= $h($label) ?></h1>
-                <?php if ((string) $look['tagline'] !== ''): ?><p class="us-hero__tagline">« <?= $h((string) $look['tagline']) ?> »</p><?php endif; ?>
-                <p class="us-hero__lead">Chef : <b><?= $h((string) ($space['leader'] ?? '') !== '' ? (string) $space['leader'] : 'non désigné') ?></b> · Adjoint : <b><?= $h((string) ($space['deputy'] ?? '') !== '' ? (string) $space['deputy'] : 'non désigné') ?></b></p>
+    <section class="us-hero" aria-labelledby="us-title">
+        <div class="us-hero__bg" style="background-image: url('<?= $h($heroPhoto) ?>')" aria-hidden="true"></div>
+        <div class="us-hero__in">
+            <?= $emblemHtml('ja-crest ja-crest--lg us-hero__crest') ?>
+            <h1 class="ja-disp ja-disp--lg" id="us-title"><?= $h($label) ?></h1>
+            <?php if ((string) $look['tagline'] !== ''): ?><p class="us-hero__tagline">« <?= $h((string) $look['tagline']) ?> »</p><?php endif; ?>
+            <p class="us-hero__lead">
+                <?php if ($kindLine !== ''): ?><span class="us-hero__kind"><?= $h($kindLine) ?></span><?php endif; ?>
+                <span>Chef : <b><?= $h((string) ($space['leader'] ?? '') !== '' ? (string) $space['leader'] : 'non désigné') ?></b> · Adjoint : <b><?= $h((string) ($space['deputy'] ?? '') !== '' ? (string) $space['deputy'] : 'non désigné') ?></b></span>
+            </p>
+            <?php if (count($chain) > 1): ?>
+            <nav class="us-hero__chain" aria-label="Échelons">
+                <?php foreach ($chain as $c): ?>
+                    <?php if ((int) $c['id'] === $unitId): ?><b><?= $h((string) $c['label']) ?></b><?php else: ?><a href="<?= $h((string) $c['href']) ?>"><?= $h((string) $c['label']) ?></a><span aria-hidden="true">›</span><?php endif; ?>
+                <?php endforeach; ?>
+            </nav>
+            <?php endif; ?>
+            <div class="us-hero__acts">
+                <a class="ja-b1" href="<?= $h($tabUrl('echanges')) ?>">Ordres et échanges <svg class="ja-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+                <a class="ja-b2" href="<?= $h($tabUrl('effectif')) ?>">Effectif</a>
             </div>
         </div>
-        <dl class="us-hero__figures">
-            <div><dt>Disponibles</dt><dd><?= (int) $strength['available'] ?><small>/<?= (int) $strength['total'] ?></small></dd></div>
-            <div><dt>Opérations</dt><dd><?= (int) ($spaceOpsTotal ?? count($spaceOps)) ?></dd></div>
-            <div><dt>Sous-unités</dt><dd><?= count($subTree) ?></dd></div>
-        </dl>
+        <div class="ja-stats" style="--n: 4">
+            <a class="ja-stat" href="<?= $h($tabUrl('effectif')) ?>"><b><?= (int) $strength['available'] ?><small> / <?= (int) $strength['total'] ?></small></b><span>disponibles</span></a>
+            <a class="ja-stat" href="<?= $h($tabUrl('echanges')) ?>"><b><?= $toRead ?></b><span>à lire</span></a>
+            <a class="ja-stat" href="<?= $h($tabUrl('operations')) ?>"><b><?= (int) ($spaceOpsTotal ?? count($spaceOps)) ?></b><span>opération<?= (int) ($spaceOpsTotal ?? count($spaceOps)) > 1 ? 's' : '' ?></span></a>
+            <a class="ja-stat" href="<?= $h($tabUrl($subTree !== [] ? 'sous-unites' : 'accueil')) ?>"><b><?= count($subTree) ?></b><span>sous-unité<?= count($subTree) > 1 ? 's' : '' ?></span></a>
+        </div>
     </section>
 
     <?php if ((string) $look['welcome'] !== ''): ?>
@@ -255,7 +257,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
 
     <div class="us-grid">
         <div class="us-col">
-            <section class="us-block">
+            <section class="us-sec">
                 <?= $section('Reçu du commandement', $tabUrl('echanges'), 'Tout voir') ?>
                 <?php if (empty($exchangesReady)): ?>
                     <p class="us-empty">Les échanges ne sont pas encore activés.</p>
@@ -265,7 +267,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
                     <?php $exVariant = 'card'; $exPerspective = 'down'; foreach (array_slice($received, 0, 3) as $ex) { require base_path('views/jnet/_exchange.php'); } ?>
                 <?php endif; ?>
             </section>
-            <section class="us-block">
+            <section class="us-sec">
                 <?= $section('Fil de l’unité', $tabUrl('echanges'), 'Ouvrir le fil') ?>
                 <?php if (!empty($exchangesReady) && !empty($canPost)): ?>
                     <?php require base_path('views/jnet/_exchange_composer.php'); ?>
@@ -278,7 +280,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
             </section>
         </div>
         <aside class="us-col us-col--side">
-            <section class="us-block">
+            <section class="us-sec">
                 <?= $section('Opérations', $tabUrl('operations'), $spaceOps !== [] ? 'Toutes' : '') ?>
                 <?php if ($spaceOps === []): ?>
                     <p class="us-empty">Aucune opération engagée.</p>
@@ -293,7 +295,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
                     </ul>
                 <?php endif; ?>
             </section>
-            <section class="us-block">
+            <section class="us-sec">
                 <?= $section('Effectif', $tabUrl('effectif'), 'Voir tous') ?>
                 <?php if ($members === []): ?>
                     <p class="us-empty">Aucun membre affecté directement.</p>
@@ -307,7 +309,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
                 <?php endif; ?>
             </section>
             <?php if ($subTree !== []): ?>
-            <section class="us-block">
+            <section class="us-sec">
                 <?= $section('Sous-unités', $tabUrl('sous-unites'), 'Organigramme') ?>
                 <ul class="us-subs">
                     <?php foreach (array_slice($subTree, 0, 6) as $sub): ?>
@@ -324,7 +326,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
 <?php endif; ?>
 </main>
 
-<footer class="us-foot">
+<footer class="ja-foot us-foot">
     <span>JNET<?= (string) ($usCommunity ?? '') !== '' ? ' · ' . $h((string) $usCommunity) : '' ?></span>
     <a href="<?= $h((string) ($usHome ?? url('jnet?commun=1'))) ?>"><?= $h((string) ($usHomeLabel ?? 'Espace commun')) ?></a>
     <a href="<?= $h(url('jnet/courrier')) ?>">Messagerie</a>
