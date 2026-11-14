@@ -138,6 +138,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["Proposer la liaison Athena à la sortie du téléphone", "Coché par défaut. Tant que votre jeu n'est pas relié à un compte Athena, la première sortie du téléphone de chaque mission ouvre l'app Athena avec un code à saisir sur le site. Décochez pour garder votre dernière app à l'ouverture."],
     ["COMSPEC", "ATAK · Interface"], true, 0] call comspec_atak_native_fnc_addSetting;
 
+// Flash de l'appareil photo (fn_photoMode, fn_photoCam), par joueur : 25 à 200 % de la puissance normale.
+["comspec_atak_native_photo_flash", "SLIDER",
+    ["Puissance du flash", "Force du flash de l'appareil photo du téléphone. 100 % : réglage normal. Baissez si vos photos de nuit sont trop claires, montez si elles sont trop sombres."],
+    ["COMSPEC", "ATAK · Affichage"], [0.25, 2, 1, 0, true], 0] call comspec_atak_native_fnc_addSetting;
 // Taille du téléphone en plein écran (par joueur) : 60 à 100 %, centré. Aussi dans Réglages > Emplacement du téléphone.
 ["comspec_atak_native_full_scale", "SLIDER",
     ["Taille du téléphone en main", "Taille du téléphone quand vous l'avez en main (plein écran). 100 % = taille normale ; en dessous, il rétrécit en restant centré, texte et boutons compris."],
