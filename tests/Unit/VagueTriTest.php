@@ -234,6 +234,26 @@ final class VagueTriTest extends TestCase
         self::assertContains('organization.effectifs.hub.view', $rule['any_permissions']);
     }
 
+    /** Demandes RH : une seule barre d'onglets par écran (Élévations et Mobilité ont déjà celle de la coque Effectifs). */
+    public function testHrRequestsTabsShowOneTabBar(): void
+    {
+        $base = 'back-office/demandes-rh';
+        foreach (['elevations', 'mobilite'] as $tab) {
+            self::assertNull(\App\Support\BackOfficeTabs::barFor($base, $tab), $tab . ' : la coque Effectifs porte déjà sa barre');
+        }
+        $shell = (string) file_get_contents(Map::root() . '/views/admin/effectifs_workspace/shell.php');
+        self::assertStringContainsString("['elevations', 'Élévations', 'elevations'", $shell);
+        self::assertStringContainsString("['rh_mobility', 'Mobilité', 'mobilite'", $shell);
+        // L'accueil et Corrections (hors coque Effectifs) gardent la barre commune, avec les quatre écrans.
+        foreach (['', 'corrections'] as $tab) {
+            $bar = \App\Support\BackOfficeTabs::barFor($base, $tab);
+            self::assertIsArray($bar, $tab);
+            self::assertSame(['Demandes RH', 'Élévations', 'Corrections', 'Mobilité'], array_column($bar, 'label'), $tab);
+        }
+        // Les autres familles ne changent pas.
+        self::assertCount(2, \App\Support\BackOfficeTabs::barFor('back-office/missions', 'planification'));
+    }
+
     /** Un cadre délégué ne voit « Overwatch » qu'une fois ; un simple membre le garde dans son espace. */
     public function testOverwatchAppearsOnceForEveryProfile(): void
     {
