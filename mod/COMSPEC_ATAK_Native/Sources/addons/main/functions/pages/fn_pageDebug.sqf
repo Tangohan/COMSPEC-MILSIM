@@ -208,8 +208,9 @@ switch (_tab) do {
             (_dbg || {_v isNotEqualTo "DEBUG"}) && {switch (_lvl) do {
                 case "WARN": { _v in ["WARN", "WARNING", "ERROR"] };
                 case "ERROR": { _v isEqualTo "ERROR" };
-                case "ATAK": { ((_x select 2) select [0, 5]) isEqualTo "ATAK·" };
-                case "OW": { ((_x select 2) select [0, 3]) isEqualTo "OW·" };
+                // find et non select [0, n] : « · » fait 2 octets, la coupe en octets ne trouvait jamais le préfixe.
+                case "ATAK": { ((_x select 2) find "ATAK·") isEqualTo 0 };
+                case "OW": { ((_x select 2) find "OW·") isEqualTo 0 };
                 default { true };
             }}
         };

@@ -974,7 +974,7 @@ if (_dv isNotEqualTo "OFF") then {
                 _b ctrlSetBackgroundColor (switch (_state) do { case "on": { (((COMSPEC_ATAK_Th get "accent") select [0, 3]) + [0.9]) }; case "red": { (COMSPEC_ATAK_Th get "mapAlert") }; default { [0.08, 0.1, 0.09, 0.9] }; });
                 _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
                 _b ctrlAddEventHandler ["ButtonClick", _code];
-                if ((_lbl select [0, 8]) isEqualTo "VIDÉO DU") then { uiNamespace setVariable ["COMSPEC_ATAK_DroneFeedBtn", _b]; };
+                if ((_lbl find "VIDÉO DU") isEqualTo 0) then { uiNamespace setVariable ["COMSPEC_ATAK_DroneFeedBtn", _b]; };
                 _made pushBack [_b, ctrlTextWidth _b, _forEachIndex];
             } forEach _btns;
             private _avail = _mw - _pad * 2 - _gap * ({ (count _x) isEqualTo 1 } count _btns) - (_pad / 3) * (count _made);

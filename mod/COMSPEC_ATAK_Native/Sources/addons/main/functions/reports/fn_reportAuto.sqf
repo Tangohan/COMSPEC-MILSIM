@@ -57,7 +57,8 @@ if ([["enemyGrid", "enemyDir", "enemyDist", "enemySize", "enemySizeClass", "enem
     private _first = _aim;
     if (isNull _first && {(count _all) > 0}) then {
         // Tri sur [distance, rang] : jamais d'objet comparé par sort.
-        private _s = _all apply { [player distance2D _x, _forEachIndex] };
+        private _s = [];
+        { _s pushBack [player distance2D _x, _forEachIndex]; } forEach _all;
         _s sort true;
         _first = _all select ((_s select 0) select 1);
     };
@@ -178,7 +179,9 @@ if ([["casualty", "casualtySigns"]] call _need) then {
     private _cands = ((player nearEntities ["CAManBase", 60]) + [player]) select {
         (side group _x) isEqualTo (side group player) && {(lifeState _x) isEqualTo "INCAPACITATED" || {(damage _x) > 0.1} || {!alive _x}}
     };
-    private _s = _cands apply { [player distance _x, _forEachIndex] };
+    // forEach et non apply : seul forEach définit _forEachIndex (sinon le rang est nil et le blessé proposé est le rédacteur).
+    private _s = [];
+    { _s pushBack [player distance _x, _forEachIndex]; } forEach _cands;
     _s sort true;
     if ((count _s) > 0) then {
         private _u = _cands select ((_s select 0) select 1);

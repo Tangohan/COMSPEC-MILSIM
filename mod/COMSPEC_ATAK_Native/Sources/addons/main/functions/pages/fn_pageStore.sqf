@@ -70,7 +70,7 @@ if (_query isNotEqualTo "") then {
     private _q = toLower _query;
     _list = _list select {
         private _t = toLower ([_x get "name", _x get "section", _x get "desc"] joinString " ");
-        (_t find _q) >= 0 || {((toLower ([_x get "name", _x get "section", _x get "desc"] call comspec_atak_native_fnc_tr) joinString " ") find _q) >= 0}
+        (_t find _q) >= 0 || {((toLower (([_x get "name", _x get "section", _x get "desc"] call comspec_atak_native_fnc_tr) joinString " ")) find _q) >= 0}
     };
 };
 
