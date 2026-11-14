@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project name="COMSPEC Lobby">
+    <Package name="main">
+        <Container name="main">
+            <Key ID="STR_COMSPEC_LOBBY_Dossier">
+                <Original>Dossier</Original>
+                <English>Dossier</English>
+                <French>Dossier</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Grade">
+                <Original>Grade</Original>
+                <English>Rank</English>
+                <French>Grade</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Locked">
+                <Original>Code</Original>
+                <English>Code</English>
+                <French>Code</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_NoPin">
+                <Original>Aucun code pour ce poste</Original>
+                <English>No code for this slot</English>
+                <French>Aucun code pour ce poste</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Pin">
+                <Original>Code du poste</Original>
+                <English>Slot code</English>
+                <French>Code du poste</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_PinDescription">
+                <Original>Ce poste est protégé par un code. Revenez à l'écran des rôles, choisissez le poste, saisissez le code au pavé du dossier, puis rejoignez la mission. Après plusieurs refus, le poste vous est fermé pendant dix minutes.</Original>
+                <English>This slot is protected by a code. Go back to the role screen, pick the slot, enter the code on the dossier keypad, then join the mission. After several refusals, the slot is closed to you for ten minutes.</English>
+                <French>Ce poste est protégé par un code. Revenez à l'écran des rôles, choisissez le poste, saisissez le code au pavé du dossier, puis rejoignez la mission. Après plusieurs refus, le poste vous est fermé pendant dix minutes.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_PinNeeded">
+                <Original>Poste protégé : saisissez le code</Original>
+                <English>Protected slot: enter the code</English>
+                <French>Poste protégé : saisissez le code</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_PinSaved">
+                <Original>Code gardé : le serveur le vérifiera à votre arrivée</Original>
+                <English>Code kept: the server will check it when you arrive</English>
+                <French>Code gardé : le serveur le vérifiera à votre arrivée</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_PinSubtitle">
+                <Original>Le serveur n'a pas accepté votre code</Original>
+                <English>The server did not accept your code</English>
+                <French>Le serveur n'a pas accepté votre code</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_PinTitle">
+                <Original>Code du poste refusé</Original>
+                <English>Slot code refused</English>
+                <French>Code du poste refusé</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_PortraitLocal">
+                <Original>Portrait</Original>
+                <English>Portrait</English>
+                <French>Portrait</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Quals">
+                <Original>Qualifications</Original>
+                <English>Qualifications</English>
+                <French>Qualifications</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Role">
+                <Original>Fonction</Original>
+                <English>Role</English>
+                <French>Fonction</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Set_Attempts">
+                <Original>Essais avant blocage</Original>
+                <English>Attempts before lockout</English>
+                <French>Essais avant blocage</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Set_Attempts_Tip">
+                <Original>Après ce nombre de codes faux, le joueur est bloqué dix minutes.  Exemple : 3.</Original>
+                <English>After this many wrong codes, the player is locked out for ten minutes.  Example: 3.</English>
+                <French>Après ce nombre de codes faux, le joueur est bloqué dix minutes.  Exemple : 3.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Set_Enabled">
+                <Original>Codes de poste actifs</Original>
+                <English>Slot codes enabled</English>
+                <French>Codes de poste actifs</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Set_Enabled_Tip">
+                <Original>Coché : le serveur vérifie le code des postes protégés.  Exemple : coché.</Original>
+                <English>Ticked: the server checks the code of protected slots.  Example: ticked.</English>
+                <French>Coché : le serveur vérifie le code des postes protégés.  Exemple : coché.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Set_Grace">
+                <Original>Délai pour saisir le code (s)</Original>
+                <English>Time to enter the code (s)</English>
+                <French>Délai pour saisir le code (s)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Set_Grace_Tip">
+                <Original>Un joueur arrivé sur un poste protégé sans avoir été déverrouillé dans ce délai est écarté.  Exemple : 45.</Original>
+                <English>A player on a protected slot who has not been unlocked within this time is removed.  Example: 45.</English>
+                <French>Un joueur arrivé sur un poste protégé sans avoir été déverrouillé dans ce délai est écarté.  Exemple : 45.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Set_Kick">
+                <Original>Expulser en cas d'échec</Original>
+                <English>Kick on failure</English>
+                <French>Expulser en cas d'échec</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Set_Kick_Tip">
+                <Original>Coché : un joueur qui n'a pas le code est expulsé (#kick) ; sinon son unité est gelée.  Exemple : coché.</Original>
+                <English>Ticked: a player without the code is kicked (#kick); otherwise their unit is frozen.  Example: ticked.</English>
+                <French>Coché : un joueur qui n'a pas le code est expulsé (#kick) ; sinon son unité est gelée.  Exemple : coché.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_Unit">
+                <Original>Unité</Original>
+                <English>Unit</English>
+                <French>Unité</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_ZenCategory">
+                <Original>COMSPEC Lobby</Original>
+                <English>COMSPEC Lobby</English>
+                <French>COMSPEC Lobby</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_ZenModule">
+                <Original>Code du poste</Original>
+                <English>Slot code</English>
+                <French>Code du poste</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_ZenPin">
+                <Original>Code (4 chiffres)</Original>
+                <English>Code (4 digits)</English>
+                <French>Code (4 chiffres)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_ZenPinTip">
+                <Original>Quatre chiffres. Vide : le poste n'a plus de code posé par Zeus.</Original>
+                <English>Four digits. Empty: the slot no longer has a code set by Zeus.</English>
+                <French>Quatre chiffres. Vide : le poste n'a plus de code posé par Zeus.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_ZenTag">
+                <Original>Poste (étiquette)</Original>
+                <English>Slot (tag)</English>
+                <French>Poste (étiquette)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_LOBBY_ZenTagTip">
+                <Original>L'étiquette entre crochets dans la description du rôle, par exemple A-1.</Original>
+                <English>The tag in square brackets in the role description, for example A-1.</English>
+                <French>L'étiquette entre crochets dans la description du rôle, par exemple A-1.</French>
+            </Key>
+        </Container>
+    </Package>
+</Project>

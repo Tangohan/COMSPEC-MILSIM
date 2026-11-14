@@ -1,0 +1,12 @@
+name = "COMSPEC Lobby";
+author = "COMSPEC";
+actionName = "Website";
+action = "https://athena-comspec.eu/public";
+logo = "logo.paa";
+logoOver = "logo.paa";
+logoSmall = "logo.paa";
+picture = "logo.paa";
+tooltip = "COMSPEC Lobby";
+overview = "Écran de sélection des rôles refait : dossier de l'opérateur (nom, prénom, grade, portrait) et code du poste vérifié par le serveur. Le système de postes d'Arma est gardé. Dépendance : CBA_A3.";
+hideName = 0;
+hidePicture = 0;

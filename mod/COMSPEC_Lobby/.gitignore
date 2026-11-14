@@ -1,0 +1,6 @@
+# Pack construit par build_mod.bat (la clé privée vit hors du dépôt : %APPDATA%\COMSPEC\signing\lobby)
+@COMSPEC_Lobby/
+signing/
+Sources/.hemttout/
+*.biprivatekey
+publisher/

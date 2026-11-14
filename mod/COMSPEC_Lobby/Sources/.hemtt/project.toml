@@ -1,0 +1,16 @@
+# COMSPEC Lobby : écran de sélection des rôles refait (dossier de l'opérateur, code du poste). Dépendance : CBA_A3.
+# `hemtt check` puis `hemtt build` depuis mod/COMSPEC_Lobby/Sources ; le PBO sort dans .hemttout/build/addons.
+name = "COMSPEC Lobby"
+author = "COMSPEC"
+prefix = "comspec_lobby"
+mainprefix = "z"
+
+[version]
+major = 0
+minor = 1
+patch = 0
+git_hash = 0
+
+[files]
+include = []
+exclude = []
