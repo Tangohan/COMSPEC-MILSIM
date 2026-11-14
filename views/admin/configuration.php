@@ -613,7 +613,7 @@ $renderItem = static function (array $item, string $sectionTitle) use ($h, $icon
                 <p class="bo-cfg-dev__text">
                     Met à jour les comptes liés aux <strong>candidatures acceptées</strong> :
                     statut <strong>membre actif</strong>, e-mail considéré comme vérifié,
-                    rôle <strong>Période d’essai</strong> (ou Visiteur, sinon Opérateur),
+                    rôle <strong>Période d’essai</strong> (ou Visiteur, sinon Membre),
                     et affectation comme <strong>Recrue</strong> sur la <strong>première unité</strong> de l’organigramme, s’il en existe une.
                 </p>
                 <form method="post" action="<?= $h(url('back-office/configuration/debug-recruit-sync')) ?>" class="bo-cfg-dev__form"

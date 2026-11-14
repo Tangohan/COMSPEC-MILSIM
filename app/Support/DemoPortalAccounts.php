@@ -41,7 +41,7 @@ final class DemoPortalAccounts
             ],
             [
                 'email' => 'operateur@demo.local',
-                'role_label' => 'Opérateur',
+                'role_label' => 'Membre',
                 'hint' => 'Compte membre : documents, formations selon affectation.',
             ],
         ];

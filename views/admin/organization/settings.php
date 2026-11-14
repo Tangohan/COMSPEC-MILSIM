@@ -907,7 +907,7 @@ $imagesNeedAddress = $slugHint === '';
                 <div class="bcs-card__head">
                     <div class="bcs-card__heading">
                         <h3 class="bcs-card__title">Cycle administratif des recrues</h3>
-                        <p class="bcs-card__desc">Ces durées indiquent où en est l’enrôlement d’un membre. Elles ne remplacent ni le rôle obligatoire Opérateur, ni les fonctions attribuées.</p>
+                        <p class="bcs-card__desc">Ces durées indiquent où en est l’enrôlement d’un membre. Elles ne remplacent ni le rôle obligatoire Membre, ni les fonctions attribuées.</p>
                     </div>
                 </div>
                 <div class="bcs-card__body">

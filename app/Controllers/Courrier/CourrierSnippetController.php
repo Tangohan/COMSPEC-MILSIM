@@ -7,6 +7,7 @@ namespace App\Controllers\Courrier;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Support\CourrierRightGuard;
 use App\Repositories\Courrier\CourrierDocumentRepository;
 use App\Services\Courrier\CourrierSnippetService;
 use App\Services\Courrier\TemplateRenderService;
@@ -25,6 +26,9 @@ class CourrierSnippetController
 
     public function list(Request $request, array $params = []): Response
     {
+        if (($denied = CourrierRightGuard::deniedUnless($request, CourrierRightGuard::EDITOR_READ)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         if (!$tenantId) {
             return Response::json(['error' => 'Non autorisé'], 403);

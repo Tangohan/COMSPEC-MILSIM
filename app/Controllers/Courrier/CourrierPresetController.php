@@ -7,6 +7,7 @@ namespace App\Controllers\Courrier;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Support\CourrierRightGuard;
 use App\Services\Courrier\DocumentPresetService;
 
 class CourrierPresetController
@@ -18,6 +19,9 @@ class CourrierPresetController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = CourrierRightGuard::deniedUnless($request, CourrierRightGuard::EDITOR_READ)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -33,6 +37,9 @@ class CourrierPresetController
 
     public function setDefault(Request $request, array $params = []): Response
     {
+        if (($denied = CourrierRightGuard::deniedUnless($request, CourrierRightGuard::WRITE)) !== null) {
+            return $denied;
+        }
         $id = (int) ($params['id'] ?? $request->input('id') ?? 0);
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         if (!$tenantId) {
