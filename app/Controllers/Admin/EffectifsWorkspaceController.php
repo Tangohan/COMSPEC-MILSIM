@@ -1340,6 +1340,25 @@ class EffectifsWorkspaceController
         ));
     }
 
+    /** Effectifs › Circuits de validation (module de formule « workflow_circuits »). */
+    public function circuits(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $controller = new WorkflowCircuitsController();
+        if (!\App\Core\Container::get(\App\Services\Workflow\WorkflowCircuits::class)->allowedByPlan($tenantId)) {
+            return PlanFeatureDenial::upgradeView(\App\Services\Workflow\WorkflowCircuits::FEATURE, 'Pro');
+        }
+
+        return $this->shell('admin.effectifs_workspace.circuits', array_merge(
+            ['title' => 'Circuits de validation', 'effectifsNav' => 'circuits'],
+            $controller->pageData($tenantId)
+        ));
+    }
+
     /**
      * Panneau « Invitations » de la fiche (liens, étapes faites, actions).
      *

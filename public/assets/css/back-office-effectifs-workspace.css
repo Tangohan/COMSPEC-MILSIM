@@ -655,6 +655,27 @@
   padding-left: 1.1rem;
 }
 
+/* Circuits de validation : messages et boutons de chaque circuit. */
+.bo-eff-settings__flash {
+  margin: 0 0 0.9rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid rgba(22, 128, 74, 0.35);
+  background: rgba(22, 128, 74, 0.08);
+  font-size: 0.875rem;
+}
+
+.bo-eff-settings__flash.is-bad {
+  border-color: rgba(185, 28, 28, 0.35);
+  background: rgba(185, 28, 28, 0.08);
+}
+
+.bo-eff-settings__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.9rem 0 0;
+}
+
 .bo-eff-workspace .eff-chain__unit {
   display: inline-block;
   padding-left: calc(var(--eff-chain-depth, 0) * 1.1rem);

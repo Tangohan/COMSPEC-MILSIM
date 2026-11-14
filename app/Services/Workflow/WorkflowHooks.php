@@ -76,7 +76,7 @@ final class WorkflowHooks
      * Avis du chef d'unité pour une liste de demandes (écrans du bureau des effectifs). Vide si le moteur manque.
      *
      * @param list<array<string, mixed>> $rows lignes de la table métier (colonne id)
-     * @return array<int, array{state: string, assignee_label: string, opinion: string, opinion_comment: string, opinion_at: string}>
+     * @return array<int, array<string, mixed>>
      */
     public static function summaries(int $tenantId, string $subjectType, array $rows): array
     {

@@ -350,6 +350,7 @@ final class TenantTypeConfig
             'back-office/ressources/effectifs/roles' => 'admin',
             'back-office/ressources/effectifs/droits' => 'admin',
             'back-office/ressources/effectifs/registre-droits' => 'admin',
+            'back-office/ressources/effectifs/circuits' => 'admin',
             'back-office/ressources/effectifs/doublons' => 'admin',
             'back-office/ressources/effectifs/departs' => 'admin',
             'back-office/organisation/structure' => 'personnel',

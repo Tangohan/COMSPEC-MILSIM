@@ -7,7 +7,9 @@ namespace Tests\Unit;
 use App\Repositories\MemberNotificationRepository;
 use App\Repositories\WorkflowRepository;
 use App\Repositories\WorkTaskRepository;
+use App\Repositories\WorkflowCircuitRepository;
 use App\Services\Workflow\ApproverResolver;
+use App\Services\Workflow\WorkflowCircuits;
 use App\Services\Workflow\WorkflowEngine;
 use PDO;
 use PHPUnit\Framework\TestCase;
@@ -43,6 +45,9 @@ final class WorkflowEngineTest extends TestCase
             id INTEGER PRIMARY KEY AUTOINCREMENT, tenant_id INTEGER NOT NULL, subject_type TEXT NOT NULL, subject_id INTEGER NOT NULL,
             state TEXT NOT NULL, member_user_id INTEGER, unit_id INTEGER, assignee_user_id INTEGER, task_id INTEGER,
             opened_by INTEGER, created_at TEXT, updated_at TEXT, closed_at TEXT, UNIQUE (tenant_id, subject_type, subject_id))');
+        $this->pdo->exec('CREATE TABLE workflow_circuits (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, tenant_id INTEGER NOT NULL, subject_type TEXT NOT NULL, steps_json TEXT NOT NULL,
+            updated_by INTEGER, created_at TEXT, updated_at TEXT, UNIQUE (tenant_id, subject_type))');
         $this->pdo->exec('CREATE TABLE workflow_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT, instance_id INTEGER NOT NULL, tenant_id INTEGER NOT NULL, action TEXT NOT NULL,
             from_state TEXT, to_state TEXT, actor_user_id INTEGER, comment TEXT, payload_json TEXT, created_at TEXT)');
@@ -52,7 +57,7 @@ final class WorkflowEngineTest extends TestCase
         $this->payloads = [];
     }
 
-    private function engine(?array $commander): WorkflowEngine
+    private function engine(?array $commander, ?WorkflowCircuits $circuits = null, ?callable $resolveStep = null): WorkflowEngine
     {
         $tasks = $this->createMock(WorkTaskRepository::class);
         $tasks->method('create')->willReturnCallback(function (int $tenantId, array $data): int {
@@ -67,6 +72,9 @@ final class WorkflowEngineTest extends TestCase
         });
         $resolver = $this->createMock(ApproverResolver::class);
         $resolver->method('commanderFor')->willReturn($commander);
+        if ($resolveStep !== null) {
+            $resolver->method('resolveStep')->willReturnCallback($resolveStep);
+        }
         $notifications = $this->createMock(MemberNotificationRepository::class);
         $notifications->method('create')->willReturnCallback(function (int $tenantId, int $userId, string $type, array $payload = []): int {
             $this->notified[] = [$userId, $type];
@@ -80,7 +88,8 @@ final class WorkflowEngineTest extends TestCase
             $tasks,
             $resolver,
             $notifications,
-            static fn (): string => '2026-11-14 12:00:00'
+            static fn (): string => '2026-11-14 12:00:00',
+            $circuits
         );
     }
 
@@ -270,5 +279,80 @@ final class WorkflowEngineTest extends TestCase
         self::assertSame(WorkflowEngine::STATE_CLOSED, $engine->summaries(self::TENANT, WorkflowEngine::SUBJECT_COURRIER, [21])[21]['state']);
         self::assertSame([[self::MEMBER, WorkflowEngine::NOTIFY_DECISION], [self::MEMBER, WorkflowEngine::NOTIFY_DECISION]], $this->notified);
         self::assertSame('Votre courrier est validé', WorkflowEngine::decisionNotice($this->payloads[1])['title']);
+    }
+
+    private function circuits(bool $paid): WorkflowCircuits
+    {
+        return new WorkflowCircuits(new WorkflowCircuitRepository($this->pdo), static fn (int $tenantId): bool => $paid);
+    }
+
+    public function testCustomCircuitAsksEachStepInTurnBeforeTheDecision(): void
+    {
+        $circuits = $this->circuits(true);
+        $circuits->save(self::TENANT, WorkflowEngine::SUBJECT_MOBILITY, [
+            ['kind' => WorkflowCircuits::KIND_COMMANDER],
+            ['kind' => WorkflowCircuits::KIND_USER, 'user_id' => 30],
+        ], 1, '2026-11-14 11:00:00');
+        $engine = $this->engine(self::commander(), $circuits, static function (int $tenantId, array $step, int $member, int $requester, array $asked): ?array {
+            return ($step['kind'] ?? '') === WorkflowCircuits::KIND_USER && !in_array(30, $asked, true)
+                ? ['user_id' => 30, 'label' => 'Adj S1', 'unit_id' => 3, 'member_label' => 'Sgt Durand']
+                : null;
+        });
+
+        $id = $engine->open(self::TENANT, WorkflowEngine::SUBJECT_MOBILITY, 9, self::MEMBER, self::MEMBER, 'Changement d’unité');
+        self::assertSame(self::COMMANDER, $this->createdTasks[0][1]['assigned_user_id']);
+
+        $first = $engine->giveOpinion(self::TENANT, $id, self::COMMANDER, true);
+        self::assertTrue($first['ok']);
+        self::assertStringContainsString('Adj S1', $first['message']);
+        self::assertCount(2, $this->createdTasks, 'la personne désignée reçoit sa tâche');
+        self::assertSame(30, $this->createdTasks[1][1]['assigned_user_id']);
+        self::assertSame('Avis demandé : demande de mobilité', $this->createdTasks[1][1]['title']);
+        self::assertFalse($engine->giveOpinion(self::TENANT, $id, self::COMMANDER, true)['ok'], 'le chef a déjà donné son avis');
+        $summary = $engine->summaries(self::TENANT, WorkflowEngine::SUBJECT_MOBILITY, [9])[9];
+        self::assertSame(WorkflowEngine::STATE_OPINION, $summary['state']);
+        self::assertSame('user', $summary['assignee_role']);
+
+        self::assertTrue($engine->giveOpinion(self::TENANT, $id, 30, false, 'Effectif trop juste.')['ok']);
+        $summary = $engine->summaries(self::TENANT, WorkflowEngine::SUBJECT_MOBILITY, [9])[9];
+        self::assertSame(WorkflowEngine::STATE_DECISION, $summary['state']);
+        self::assertSame(['favorable', 'unfavorable'], array_column($summary['opinions'], 'opinion'));
+        self::assertSame(['unit_commander', 'user'], array_column($summary['opinions'], 'role'));
+        self::assertSame([[501, 'completed'], [502, 'completed']], $this->taskStatuses);
+    }
+
+    public function testStepsWithoutAnyoneAreSkippedAndCustomCircuitCanAddAnOpinionToReports(): void
+    {
+        $circuits = $this->circuits(true);
+        $circuits->save(self::TENANT, WorkflowEngine::SUBJECT_AAR, [['kind' => WorkflowCircuits::KIND_UPPER], ['kind' => WorkflowCircuits::KIND_COMMANDER]], 1, '2026-11-14 11:00:00');
+        $engine = $this->engine(self::commander(), $circuits, static fn (): ?array => null);
+
+        $engine->open(self::TENANT, WorkflowEngine::SUBJECT_AAR, 8, self::MEMBER, self::MEMBER);
+
+        self::assertCount(1, $this->createdTasks, 'échelon supérieur vide : on passe au chef d’unité');
+        self::assertSame(self::COMMANDER, $this->createdTasks[0][1]['assigned_user_id']);
+    }
+
+    public function testWithoutThePlanTheDefaultCircuitApplies(): void
+    {
+        $circuits = $this->circuits(false);
+        $circuits->save(self::TENANT, WorkflowEngine::SUBJECT_ELEVATION, [], 1, '2026-11-14 11:00:00');
+        self::assertSame([['kind' => WorkflowCircuits::KIND_COMMANDER]], $circuits->stepsFor(self::TENANT, WorkflowEngine::SUBJECT_ELEVATION));
+
+        $paid = $this->circuits(true);
+        self::assertSame([], $paid->stepsFor(self::TENANT, WorkflowEngine::SUBJECT_ELEVATION), 'circuit vide choisi : aucune étape');
+        $paid->reset(self::TENANT, WorkflowEngine::SUBJECT_ELEVATION);
+        self::assertSame([['kind' => WorkflowCircuits::KIND_COMMANDER]], $paid->stepsFor(self::TENANT, WorkflowEngine::SUBJECT_ELEVATION));
+    }
+
+    public function testCircuitStepsAreCleanedUp(): void
+    {
+        self::assertSame(
+            [['kind' => 'commander'], ['kind' => 'user', 'user_id' => 5], ['kind' => 'upper'], ['kind' => 'commander']],
+            WorkflowCircuits::normalize([
+                ['kind' => 'commander'], ['kind' => 'nobody'], ['kind' => 'user', 'user_id' => 5], ['kind' => 'user', 'user_id' => 5],
+                ['kind' => 'user', 'user_id' => 0], ['kind' => 'upper'], 'x', ['kind' => 'commander'], ['kind' => 'upper'],
+            ])
+        );
     }
 }
