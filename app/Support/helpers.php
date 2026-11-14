@@ -1925,7 +1925,7 @@ if (!function_exists('training_lms_redirect_legacy_bo_training_to_formation')) {
         if ($qs !== '') {
             $target .= (str_contains($target, '?') ? '&' : '?') . $qs;
         }
-        $code = strtoupper($request->method()) === 'POST' ? 307 : 302;
+        $code = strtoupper($request->method()) === 'POST' ? 307 : 301;
 
         return \App\Core\Response::redirect($target, $code);
     }
@@ -1944,7 +1944,7 @@ if (!function_exists('training_lms_admin_redirect_from_legacy')) {
             $target .= (str_contains($target, '?') ? '&' : '?') . $qs;
         }
 
-        return \App\Core\Response::redirect($target);
+        return \App\Core\Response::redirect($target, 301);
     }
 }
 

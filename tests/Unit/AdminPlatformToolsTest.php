@@ -228,7 +228,7 @@ final class AdminPlatformToolsTest extends TestCase
     {
         $routes = (string) file_get_contents(self::root() . '/routes/web.php');
         // Anciennes adresses : renvoi vers la page de pilotage, toujours réservé à l'administrateur du site.
-        self::assertMatchesRegularExpression("#router->get\\('/admin/ops-center', fn \\([^)]*\\) => \\\\App\\\\Core\\\\Response::redirect\\(url\\('admin'\\)\\), \\[AuthMiddleware::class, SystemAdminMiddleware::class\\]\\);#", $routes);
+        self::assertMatchesRegularExpression("#router->get\\('/admin/ops-center', fn \\([^)]*\\) => \\\\App\\\\Core\\\\Response::redirect\\(url\\('admin'\\), 301\\), \\[AuthMiddleware::class, SystemAdminMiddleware::class\\]\\);#", $routes);
         self::assertMatchesRegularExpression("#router->get\\('/admin/system/exploitation', fn \\([^)]*\\) => \\\\App\\\\Core\\\\Response::redirect\\(url\\('admin'\\) \\. '\\?' \\. http_build_query\\(\\['onglet' => [^\\n]*\\[AuthMiddleware::class, SystemAdminMiddleware::class\\]\\);#", $routes);
         self::assertFileDoesNotExist(self::root() . '/app/Controllers/Admin/System/SystemOpsCenterController.php');
         self::assertFileDoesNotExist(self::root() . '/views/admin/system/ops_center.php');
