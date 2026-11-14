@@ -132,8 +132,12 @@ class OrganizationDashboardController
         }
         $missingMediaCount = 0;
         try {
-            $mediaScan = (new \App\Services\Media\MissingUserMediaScanner())->scanTenant($tenantId, 300);
-            $missingMediaCount = (int) ($mediaScan['total_users'] ?? 0);
+            // Le scan (300 membres) ne se refait plus à chaque affichage de l'accueil : dix minutes de cache (audit 1.20).
+            $missingMediaCount = (int) \App\Support\ShortCache::remember(
+                'bo-home:missing-media:' . $tenantId,
+                600,
+                static fn (): int => (int) ((new \App\Services\Media\MissingUserMediaScanner())->scanTenant($tenantId, 300)['total_users'] ?? 0)
+            );
         } catch (\Throwable) {
             $missingMediaCount = 0;
         }
@@ -302,7 +306,7 @@ class OrganizationDashboardController
             // L’en-tête (salutation, résumé du jour) est porté par la vue elle-même.
             'boSkipPageHead' => true,
             'boPageAction' => 'Publier une annonce',
-            'boPageActionUrl' => url('back-office/alerts/create'),
+            'boPageActionUrl' => url('back-office/alerts'),
             'backOfficePageCss' => array_merge(['back-office-dashboard.css', 'pilotage-dashboard.css', 'back-office-home.css', 'platform-messages.css'], isset($home['custom']) ? ['community-page-builder.css', 'back-office-blocks.css'] : []),
             'home' => $home,
             'platformMessages' => $platformMessages,
