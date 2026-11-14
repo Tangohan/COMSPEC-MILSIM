@@ -269,4 +269,149 @@ final class Atak4170WaveAssetTest extends TestCase
             self::assertSame(1, substr_count($en, "\n[\"" . $fr . '", '), $fr);
         }
     }
+
+    // ── Lot 3 : interface renforcée ─────────────────────────────────────────────────────────────────────────────
+
+    public function testMapToolbarStaysInsideTheMapAndReservesItsWidth(): void
+    {
+        $map = $this->read('functions/pages/fn_pageMap.sqf');
+        // La hauteur d'un bouton se calcule une fois la barre connue (6 à 9 boutons, un demi-bouton de marge en haut).
+        self::assertStringContainsString('private _ihMax = (_mh - 2 * _pad) / (((count _tools) + 0.5) max 8);', $map);
+        self::assertStringNotContainsString('private _ihMax = (_mh - 2 * _pad) / 8;', $map);
+        self::assertGreaterThan(strpos($map, '_tools pushBack ["droneview"'), strpos($map, 'private _ihMax = '), 'taille calculée après le dernier bouton');
+        // La taille choisie (petite, normale, grande) est lue une fois, avant la réserve des bandeaux et des fiches.
+        self::assertSame(1, substr_count($map, 'profileNamespace getVariable ["COMSPEC_ATAK_MapToolbarScale", 1]'));
+        self::assertStringContainsString('private _toolCol = [0, ((((_mh - 2 * _pad) / 7) min (_font * 2.1 * (_tbScale max 1))) / _ratio) + _pad] select _interactive;', $map);
+        self::assertLessThan(strpos($map, 'private _toolCol = '), strpos($map, 'private _tbScale = '));
+        // La vue drone incrustée reprend la même réserve au lieu de la recalculer.
+        self::assertStringContainsString('private _ix = _bx + _mw - _iw2 - _pad - _toolCol;', $map);
+        $this->assertBalanced('functions/pages/fn_pageMap.sqf');
+    }
+
+    public function testMapTextsKeepTheFontFloor(): void
+    {
+        $map = $this->read('functions/pages/fn_pageMap.sqf');
+        foreach (['_hd ctrlSetFontHeight ((_fs * 0.9) max COMSPEC_ATAK_FontMin);', '_h ctrlSetFontHeight ((_fs * 0.78) max COMSPEC_ATAK_FontMin);', '_txt ctrlSetFontHeight ((_fs * 0.92) max COMSPEC_ATAK_FontMin);'] as $line) {
+            self::assertStringContainsString($line, $map);
+        }
+    }
+
+    public function testTextsAreCutByTheSharedUnicodeHelper(): void
+    {
+        // fn_mapFmt "cut" compte en caractères (toArray) et pose « … » : plus de coupe en octets au milieu d'un accent.
+        self::assertStringContainsString('private _a = toArray _v;', $this->read('functions/map/fn_mapFmt.sqf'));
+        foreach ([
+            'functions/nav/fn_routeBanner.sqf' => ['_label = ["cut", _label, 16] call comspec_atak_native_fnc_mapFmt;', '_label select [0, 15]'],
+            'functions/map/fn_contactCard.sqf' => ['["cut", _note call _esc, 90] call comspec_atak_native_fnc_mapFmt', 'select [0, 90]'],
+            'functions/pages/fn_pageChat.sqf' => ['["cut", _prevTxt, 90] call comspec_atak_native_fnc_mapFmt', '_prevTxt select [0, 90]'],
+            'functions/pages/fn_chatListRow.sqf' => ['["cut", _last, 90] call comspec_atak_native_fnc_mapFmt', '_last select [0, 90]'],
+            'functions/map/fn_mapOverlayUpdate.sqf' => ['_cs = ["cut", _cs, 12] call comspec_atak_native_fnc_mapFmt;', '_cs select [0, 11]'],
+        ] as $path => [$new, $old]) {
+            $src = $this->read($path);
+            self::assertStringContainsString($new, $src, $path);
+            self::assertStringNotContainsString($old, $src, $path);
+            $this->assertBalanced($path);
+        }
+        $ov = $this->read('functions/map/fn_mapOverlayUpdate.sqf');
+        self::assertStringContainsString('_fn = ["cut", _fn, 8] call comspec_atak_native_fnc_mapFmt;', $ov);
+        self::assertStringNotContainsString('_fn select [0, 8]', $ov);
+    }
+
+    public function testStateColoursComeFromTheTheme(): void
+    {
+        // Ordres et missions de tir : pastille et texte par jetons ; annulé en encre de légende (« off » ne se lit pas en texte).
+        $tasks = $this->read('functions/pages/fn_pageTasks.sqf');
+        $fires = $this->read('functions/pages/fn_fireSupport.sqf');
+        foreach ([$tasks, $fires] as $src) {
+            foreach (['[_th get "ok", _th get "hexOk"]', '[_th get "off", _th get "hexTextMuted"]', '[_th get "warn", _th get "hexWarn"]', '[_th get "alert", _th get "hexAlert"]'] as $pair) {
+                self::assertStringContainsString($pair, $src, $pair);
+            }
+        }
+        self::assertStringContainsString('default { [_th get "info", _th get "hexInfo"] };', $fires);
+        self::assertSame(0, preg_match('~#[0-9a-fA-F]{6}~', $tasks), 'aucune couleur en dur dans Ordres');
+        // Lignes de l'app Ordres seulement : le journal JTAC et le tableau des missions gardent leurs couleurs.
+        foreach (['"#e04038"', '"#f2ab33"', '"#5cc76b"', '"#94a399"', '"#80bfff"', "'#e04038'", "'#d8f29e'", "color='#8a9a93'>%5"] as $hex) {
+            self::assertStringNotContainsString($hex, $fires, $hex);
+        }
+        // Messages : l'astuce de saisie suit le thème.
+        $chat = $this->read('functions/pages/fn_pageChat.sqf');
+        self::assertStringContainsString('color=\'" + (COMSPEC_ATAK_Th get "hexTextMuted") + "\'>Astuce : /urgent,', $chat);
+        self::assertStringNotContainsString('#5b6b63', $chat);
+        foreach (['functions/pages/fn_pageTasks.sqf', 'functions/pages/fn_fireSupport.sqf', 'functions/pages/fn_pageChat.sqf'] as $path) {
+            $this->assertBalanced($path);
+        }
+    }
+
+    public function testStatusBarIconsUseTheChromeInks(): void
+    {
+        $status = $this->read('functions/ui/fn_statusUpdate.sqf');
+        foreach ([
+            'case (_bars >= 3): { _th get "mapOk" }; case (_bars >= 1): { _th get "mapWarn" }; default { _th get "mapAlert" };',
+            '[_batCtrl, "cs_c", [_th get "onChrome", _th get "mapAlert"] select (_bat <= 12)] call _put;',
+            'default { _th get "onChromeDim" };',
+            '[_bell, "cs_c", [_th get "onChrome", _th get "mapWarn"] select (_unread > 0)] call _put;',
+            '[_logo, "cs_c", _th get "mapOk"] call _put;',
+        ] as $line) {
+            self::assertStringContainsString($line, $status, $line);
+        }
+        // Restent en dur, sans jeton : le bleu SAT et le rouge clignotant du terminal compromis.
+        foreach (['[0.90, 0.94, 0.91, 1]', '[0.95, 0.67, 0.20, 1]', '[0.88, 0.25, 0.22, 1]', '[0.36, 0.78, 0.42, 1]', '[0.62, 0.70, 0.66, 1]'] as $rgba) {
+            self::assertStringNotContainsString($rgba, $status, $rgba);
+        }
+        // Les jetons existent dans les trois thèmes (fn_theme).
+        $theme = $this->read('functions/ui/fn_theme.sqf');
+        foreach (['_th set ["onChrome", ', '_th set ["onChromeDim", ', '_th set ["mapOk", ', '_th set ["mapWarn", ', '_th set ["mapAlert", '] as $token) {
+            self::assertStringContainsString($token, $theme, $token);
+        }
+        $this->assertBalanced('functions/ui/fn_statusUpdate.sqf');
+    }
+
+    public function testMapPanelsUseThePaletteOfTheirBackground(): void
+    {
+        // Calques sombres posés sur la carte (consigne d'outil, guidage GPS, fiche de recherche) : encres « map… ».
+        $map = $this->read('functions/pages/fn_pageMap.sqf');
+        self::assertStringContainsString('<t color=\'" + (COMSPEC_ATAK_Th get "hexMapText") + "\'>%2</t>', $map);
+        $banner = $this->read('functions/nav/fn_routeBanner.sqf');
+        self::assertStringContainsString('_label, COMSPEC_ATAK_Th get "hexMapOk", COMSPEC_ATAK_Th get "hexMapDim"]', $banner);
+        $search = $this->read('functions/map/fn_mapSearch.sqf');
+        self::assertStringContainsString('private _col = [COMSPEC_ATAK_Th get "hexMapDim", [(COMSPEC_ATAK_Th get "hexMapOk"), (COMSPEC_ATAK_Th get "hexMapWarn")] select', $search);
+        self::assertStringContainsString('COMSPEC_ATAK_Th get "hexMapWarn", COMSPEC_ATAK_Th get "hexMapText"];', $search);
+        // Surfaces du thème (volet SITUATION, panneau RECHERCHER) : encres de page, lisibles en thème jour.
+        self::assertStringContainsString('[(COMSPEC_ATAK_Th get "hexTextMuted"), (COMSPEC_ATAK_Th get "hexAlert")] select (_ho > 0), COMSPEC_ATAK_Th get "hexFriend"]', $map);
+        self::assertStringContainsString('private _hDim = COMSPEC_ATAK_Th get "hexTextMuted";', $map);
+        self::assertStringContainsString('[(COMSPEC_ATAK_Th get "hexWarn"), (COMSPEC_ATAK_Th get "hexOk")] select (_msg param [1, false])', $search);
+        $insp = $this->read('functions/ui/fn_inspectorUpdate.sqf');
+        self::assertSame(2, substr_count($insp, 'COMSPEC_ATAK_Th get "hexFriend"'));
+        foreach ([[$map, ['#47b3ff', '#e6efe9']], [$banner, ['#5cc76b', '#8a9a93']], [$search, ['#9aa39e', '#e9a53a', '#cfd8d3']], [$insp, ['#47b3ff']]] as [$src, $hexes]) {
+            foreach ($hexes as $hex) {
+                self::assertStringNotContainsString($hex, $src, $hex);
+            }
+        }
+        foreach (['functions/nav/fn_routeBanner.sqf', 'functions/map/fn_mapSearch.sqf', 'functions/ui/fn_inspectorUpdate.sqf'] as $path) {
+            $this->assertBalanced($path);
+        }
+    }
+
+    public function testWindUsesTheSharedCardinalTable(): void
+    {
+        $weather = $this->read('functions/core/fn_weather.sqf');
+        self::assertStringContainsString('private _card = [_from, 8] call comspec_atak_native_fnc_cardinal;', $weather);
+        self::assertStringNotContainsString('"SO", "O", "NO"', $weather);
+        // fn_cardinal : O en français, W sinon, en 8 points.
+        $cardinal = $this->read('functions/map/fn_cardinal.sqf');
+        self::assertStringContainsString('["N", "NE", "E", "SE", "S", "SW", "W", "NW"], ["N", "NE", "E", "SE", "S", "SO", "O", "NO"]', $cardinal);
+    }
+
+    public function testPinnedAppsHelpSaysWhenTheyAreHidden(): void
+    {
+        $fr = ' ; touchez-le pour ouvrir l\'app ; masquées en petit format ou si la carte est trop petite"';
+        self::assertStringContainsString($fr, $this->read('functions/map/fn_mapPinnedApp.sqf'));
+        $cba = 'Masqué en petit format ou si la carte est trop petite. Aussi réglable dans Réglages > Carte."';
+        self::assertStringContainsString($cba, $this->read('XEH_preInit.sqf'));
+        $en = $this->read('i18n/en.txt');
+        self::assertStringContainsString($fr . ', "Three at most: ', $en);
+        self::assertStringContainsString('touch it to open the app; hidden in small format or when the map is too small"]', $en);
+        self::assertStringContainsString($cba . ', "None by default. ', $en);
+        self::assertStringContainsString('Hidden in small format or when the map is too small. Also available in Settings > Map."]', $en);
+    }
 }
