@@ -21,12 +21,27 @@ use App\Core\Response;
  * est refusée. Une session du portail (navigateur) reste acceptée : la carte du poste
  * n’est pas un module de jeu.
  *
- * Limite : quelqu’un qui extrait le secret du module publié peut le réutiliser. Changer le
- * secret et republier le pack coupe cette copie jusqu’à une nouvelle extraction.
+ * Depuis COMSPEC Link 2.0.125, un secret par version : HMAC(COMSPEC_CLIENT_ATTEST_MASTER, version). Le maître ne
+ * quitte jamais le serveur ni la machine de build ; le module publié ne porte que le secret de sa version et
+ * l’annonce (« v2:2.0.125 »). Le plancher de version (GameClientVersionGate, réglage d’administration) s’applique
+ * à cette version prouvée, plus seulement à celle du User-Agent : relever le plancher périme d’un coup les secrets
+ * de toutes les versions plus anciennes, sans toucher au serveur ni couper les joueurs à jour.
+ * L’ancien secret unique (COMSPEC_CLIENT_ATTEST_SECRET, « ow1 », Link 2.0.124 et avant) reste accepté tant que le
+ * plancher est sous 2.0.125.
+ *
+ * Limite : quelqu’un qui extrait le secret du module publié peut le réutiliser, jusqu’à ce que le plancher
+ * dépasse cette version. Il doit recommencer l’extraction à chaque version.
  */
 final class OfficialClientAttestation
 {
+    /** Ancien secret unique (Link 2.0.124 et avant). */
     public const KEY_ID = 'ow1';
+
+    /** Secret par version : identifiant « v2:<version> », en-têtes X-Comspec-Client-Key2 / -Proof2. */
+    public const KEY_PREFIX = 'v2:';
+
+    /** Première version de COMSPEC Link à secret par version : plancher à partir duquel « ow1 » est refusé. */
+    public const FIRST_VERSIONED = '2.0.125';
 
     public const SKEW_SECONDS = 180;
 
@@ -36,6 +51,20 @@ final class OfficialClientAttestation
     public static function setNowForTests(?int $unix): void
     {
         self::$nowForTests = $unix;
+    }
+
+    /** @var string|null Plancher figé (tests) ; null = réglage plateforme. */
+    private static ?string $floorForTests = null;
+
+    public static function setFloorForTests(?string $floor): void
+    {
+        self::$floorForTests = $floor;
+    }
+
+    /** Secret (32 octets) de la version donnée. Même calcul dans tools/embed-client-attest.php. */
+    public static function versionSecret(string $masterBinary, string $version): string
+    {
+        return hash_hmac('sha256', "COMSPEC-CLIENT-KEY-V2\n" . $version, $masterBinary, true);
     }
 
     /**
@@ -82,18 +111,26 @@ final class OfficialClientAttestation
             . $nonce . "\n";
     }
 
-    /** off : secret absent. ready : 32 octets. broken : valeur présente mais inutilisable (tout est refusé). */
+    /** off : ni maître ni ancien secret. ready : 32 octets. broken : une valeur présente mais inutilisable (tout est refusé). */
     public static function secretState(): string
     {
-        $hex = trim((string) (($_ENV['COMSPEC_CLIENT_ATTEST_SECRET'] ?? null) ?: (getenv('COMSPEC_CLIENT_ATTEST_SECRET') ?: '')));
-        if ($hex === '') {
+        $legacy = self::envHex('COMSPEC_CLIENT_ATTEST_SECRET');
+        $master = self::envHex('COMSPEC_CLIENT_ATTEST_MASTER');
+        if ($legacy === '' && $master === '') {
             return 'off';
         }
-        if (!preg_match('/^[0-9a-fA-F]{64}$/', $hex)) {
-            return 'broken';
+        foreach ([$legacy, $master] as $hex) {
+            if ($hex !== '' && !preg_match('/^[0-9a-fA-F]{64}$/', $hex)) {
+                return 'broken';
+            }
         }
 
         return 'ready';
+    }
+
+    private static function envHex(string $name): string
+    {
+        return trim((string) (($_ENV[$name] ?? null) ?: (getenv($name) ?: '')));
     }
 
     public static function pathRequiresProof(string $path): bool
@@ -123,23 +160,57 @@ final class OfficialClientAttestation
         $ts = trim((string) ($_SERVER['HTTP_X_COMSPEC_CLIENT_TS'] ?? ''));
         $nonce = trim((string) ($_SERVER['HTTP_X_COMSPEC_CLIENT_NONCE'] ?? ''));
         $proof = strtolower(trim((string) ($_SERVER['HTTP_X_COMSPEC_CLIENT_PROOF'] ?? '')));
-        if ($keyId === '' && $ts === '' && $nonce === '' && $proof === '') {
+        $keyId2 = trim((string) ($_SERVER['HTTP_X_COMSPEC_CLIENT_KEY2'] ?? ''));
+        $proof2 = strtolower(trim((string) ($_SERVER['HTTP_X_COMSPEC_CLIENT_PROOF2'] ?? '')));
+        if ($keyId === '' && $ts === '' && $nonce === '' && $proof === '' && $keyId2 === '' && $proof2 === '') {
             return 'absent';
         }
-        if ($keyId !== self::KEY_ID
-            || !preg_match('/^[0-9]{10,12}$/', $ts)
-            || !preg_match('/^[A-Za-z0-9]{16,128}$/', $nonce)
-            || !preg_match('/^[0-9a-f]{64}$/', $proof)) {
+        if (!preg_match('/^[0-9]{10,12}$/', $ts) || !preg_match('/^[A-Za-z0-9]{16,128}$/', $nonce)) {
             return 'invalid';
         }
         $now = self::$nowForTests ?? time();
         if (abs($now - (int) $ts) > self::SKEW_SECONDS) {
             return 'invalid';
         }
-        $secret = hex2bin((string) (($_ENV['COMSPEC_CLIENT_ATTEST_SECRET'] ?? null) ?: getenv('COMSPEC_CLIENT_ATTEST_SECRET')));
+        $master = @hex2bin(self::envHex('COMSPEC_CLIENT_ATTEST_MASTER'));
+        $hasMaster = is_string($master) && strlen($master) === 32;
+        $floor = $hasMaster ? self::floor() : '';
+
+        // Preuve par version : elle décide dès qu'elle est présentée et que le maître est posé. Sans maître, le
+        // serveur ne sait pas la vérifier : l'ancienne preuve, envoyée à côté par le module, décide comme avant.
+        if ($hasMaster && ($keyId2 !== '' || $proof2 !== '')) {
+            if (!preg_match('/^v2:(\d+(?:\.\d+){0,3})$/', $keyId2, $m) || !preg_match('/^[0-9a-f]{64}$/', $proof2)) {
+                return 'invalid';
+            }
+            $version = $m[1];
+            if (GameClientVersionGate::normalizeVersion($version) !== $version) {
+                return 'invalid';
+            }
+            // Plancher appliqué à la version prouvée : le secret d'une version retirée ne sert plus.
+            if ($floor !== '' && GameClientVersionGate::compareVersions($version, $floor) < 0) {
+                return 'invalid';
+            }
+
+            return self::proofMatches($keyId2, $ts, $nonce, $proof2, self::versionSecret($master, $version));
+        }
+
+        if ($keyId !== self::KEY_ID || !preg_match('/^[0-9a-f]{64}$/', $proof)) {
+            return 'invalid';
+        }
+        // Ancien secret unique : retiré dès que le plancher atteint la première version à secret par version.
+        if ($floor !== '' && GameClientVersionGate::compareVersions($floor, self::FIRST_VERSIONED) >= 0) {
+            return 'invalid';
+        }
+        $secret = @hex2bin(self::envHex('COMSPEC_CLIENT_ATTEST_SECRET'));
         if (!is_string($secret) || strlen($secret) !== 32) {
             return 'invalid';
         }
+
+        return self::proofMatches($keyId, $ts, $nonce, $proof, $secret);
+    }
+
+    private static function proofMatches(string $keyId, string $ts, string $nonce, string $proof, string $secret): string
+    {
         $expected = hash_hmac(
             'sha256',
             self::canonical(
@@ -153,6 +224,19 @@ final class OfficialClientAttestation
         );
 
         return hash_equals($expected, $proof) ? 'valid' : 'invalid';
+    }
+
+    /** Plancher de version des DLL (« » : aucun). Base injoignable : dernier plancher connu, sinon aucun. */
+    private static function floor(): string
+    {
+        if (self::$floorForTests !== null) {
+            return self::$floorForTests;
+        }
+        try {
+            return (string) (GameClientVersionGate::floor()['link'] ?? '');
+        } catch (\Throwable) {
+            return '';
+        }
     }
 
     public static function rejection(): Response

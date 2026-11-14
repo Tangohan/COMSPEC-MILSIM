@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Sécurité : chaque version du mod a sa propre preuve (ATAK natif 4.15.1.AG - Washington, COMSPEC Link 2.0.125)
+
+### Résumé joueur
+Type : patch
+FR : Mise à jour de sécurité, rien ne change en jeu
+- Le lien entre le mod et Athena est mieux protégé contre les copies du mod.
+- Rien à régler : mettez le mod à jour sur Steam et relancez Arma 3 complètement.
+- Les anciennes versions du mod finiront par être refusées : le téléphone affichera alors un message qui demande la mise à jour.
+EN : Security update, nothing changes in game
+- The link between the mod and Athena is better protected against copies of the mod.
+- Nothing to set up: update the mod on Steam and restart Arma 3 completely.
+- Older versions of the mod will eventually be refused: the phone will then show a message asking you to update.
+
+### Détail technique
+- **Preuve du module officiel par version** (`OfficialClientProof.cs`, `OfficialClientAttestation.php`) : la DLL ne porte plus seulement le secret unique, identique d'une version à l'autre, mais le secret de sa version, calculé à la compilation depuis un maître qui reste sur le serveur et la machine de build (`COMSPEC_CLIENT_ATTEST_MASTER`). Elle l'annonce par `X-Comspec-Client-Key2: v2:<version>` et `X-Comspec-Client-Proof2`, à côté de l'ancienne preuve « ow1 » (même heure, même nonce).
+- **Plancher sur la version prouvée** : la « version minimale des DLL du jeu » (administration) s'applique à la version de la preuve, plus seulement au User-Agent, qu'une copie pouvait écrire à sa guise. Plancher à 2.0.125 : l'ancien secret unique est refusé. Plancher à N : les secrets des versions avant N sont refusés. Aucun secret à changer sur le serveur, aucun pack à republier.
+- **Aucune coupure selon l'ordre de mise en place** : un serveur sans maître ignore la nouvelle preuve et accepte l'ancienne ; un serveur avec maître accepte encore les packs 2.0.124 et avant tant que le plancher est sous 2.0.125.
+- **Compilation** : `tools/embed-client-attest.php` lit la version dans `Extension.cs` et accepte `--env=` (worktree). Un matériel d'une autre version fait échouer la compilation (`ClientAttestVersionGuard`).
+- **DLL native** : `COMSPECATAKNativeExtension.csproj` annonçait encore 2.0.123 ; aligné sur 2.0.125, sinon un plancher à 2.0.125 l'aurait refusée. Un test garde les deux alignés.
+- Limite inchangée sur le fond : un secret livré dans un binaire se ressort du binaire. Il faut maintenant recommencer à chaque version, et le plancher le périme. Voir `docs/technique/module-officiel-seul.md`.
+- Tests : `tests/Unit/OfficialClientAttestationTest.php`, `tests/Unit/AtakReleaseInfoTest.php`. Non essayé contre le serveur de production.
+
 ## Pack 4.15.0 Washington : bouton Synchroniser à l'écran des rôles, images gardées sur le PC, correctifs (ATAK natif 4.15.0.AG - Washington, COMSPEC Link 2.0.124, COMSPEC Lobby 0.3.0)
 
 ### Résumé joueur

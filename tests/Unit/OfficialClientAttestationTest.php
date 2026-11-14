@@ -12,13 +12,15 @@ final class OfficialClientAttestationTest extends TestCase
 {
     private const SECRET = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
+    private const MASTER = 'fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210';
+
     /** @var array<string, array{in_env: bool, env: mixed, getenv: string|false}> */
     private array $savedEnv = [];
 
     protected function setUp(): void
     {
         parent::setUp();
-        foreach (['COMSPEC_CLIENT_ATTEST_SECRET', 'ATAK_DEFAULT_TENANT_ID', 'APP_ATAK_DEFAULT_TENANT_ID', 'TACTICAL_API_ALLOW_SESSION', 'APP_ENV', 'TACTICAL_API_STRICT', 'X_COMSPEC_KEY', 'ATAK_INTEL_SECRET'] as $key) {
+        foreach (['COMSPEC_CLIENT_ATTEST_SECRET', 'COMSPEC_CLIENT_ATTEST_MASTER', 'ATAK_DEFAULT_TENANT_ID', 'APP_ATAK_DEFAULT_TENANT_ID', 'TACTICAL_API_ALLOW_SESSION', 'APP_ENV', 'TACTICAL_API_STRICT', 'X_COMSPEC_KEY', 'ATAK_INTEL_SECRET'] as $key) {
             $this->savedEnv[$key] = [
                 'in_env' => array_key_exists($key, $_ENV),
                 'env' => $_ENV[$key] ?? null,
@@ -26,6 +28,8 @@ final class OfficialClientAttestationTest extends TestCase
             ];
         }
         $this->setEnv('COMSPEC_CLIENT_ATTEST_SECRET', self::SECRET);
+        $this->setEnv('COMSPEC_CLIENT_ATTEST_MASTER', null);
+        OfficialClientAttestation::setFloorForTests('');
         $this->setEnv('ATAK_DEFAULT_TENANT_ID', null);
         $this->setEnv('APP_ATAK_DEFAULT_TENANT_ID', null);
         $this->setEnv('TACTICAL_API_ALLOW_SESSION', 'false');
@@ -39,6 +43,8 @@ final class OfficialClientAttestationTest extends TestCase
             $_SERVER['HTTP_X_COMSPEC_CLIENT_TS'],
             $_SERVER['HTTP_X_COMSPEC_CLIENT_NONCE'],
             $_SERVER['HTTP_X_COMSPEC_CLIENT_PROOF'],
+            $_SERVER['HTTP_X_COMSPEC_CLIENT_KEY2'],
+            $_SERVER['HTTP_X_COMSPEC_CLIENT_PROOF2'],
             $_SERVER['HTTP_X_COMSPEC_KEY'],
             $_SERVER['HTTP_AUTHORIZATION']
         );
@@ -51,8 +57,11 @@ final class OfficialClientAttestationTest extends TestCase
     protected function tearDown(): void
     {
         OfficialClientAttestation::setNowForTests(null);
+        OfficialClientAttestation::setFloorForTests(null);
         ComspecApiKeyAuth::resetForTests();
         unset(
+            $_SERVER['HTTP_X_COMSPEC_CLIENT_KEY2'],
+            $_SERVER['HTTP_X_COMSPEC_CLIENT_PROOF2'],
             $_SERVER['HTTP_X_COMSPEC_CLIENT_KEY'],
             $_SERVER['HTTP_X_COMSPEC_CLIENT_TS'],
             $_SERVER['HTTP_X_COMSPEC_CLIENT_NONCE'],
@@ -165,6 +174,122 @@ final class OfficialClientAttestationTest extends TestCase
             $back .= chr($byte ^ $mask[$i % count($mask)]);
         }
         self::assertSame($secret, $back);
+    }
+
+    public function testVersionedProofIsAccepted(): void
+    {
+        $this->setEnv('COMSPEC_CLIENT_ATTEST_MASTER', self::MASTER);
+        $this->presentVersionedProof('POST', '/api/atak/client-init', '2.0.125');
+        self::assertSame('valid', OfficialClientAttestation::presentedStatus());
+        self::assertNull(ComspecApiKeyAuth::enforceForTacticalPath('/api/atak/client-init'));
+    }
+
+    public function testMasterAloneTurnsTheCheckOn(): void
+    {
+        $this->setEnv('COMSPEC_CLIENT_ATTEST_SECRET', null);
+        $this->setEnv('COMSPEC_CLIENT_ATTEST_MASTER', self::MASTER);
+        self::assertSame('ready', OfficialClientAttestation::secretState());
+        self::assertSame(401, ComspecApiKeyAuth::enforceForTacticalPath('/api/atak/client-init')?->statusCode());
+        $this->presentVersionedProof('POST', '/api/atak/client-init', '2.0.125');
+        self::assertSame('valid', OfficialClientAttestation::presentedStatus());
+    }
+
+    /** Le secret d'une version ne signe pas pour une autre : annoncer une version plus récente ne suffit pas. */
+    public function testVersionSecretDoesNotProveAnotherVersion(): void
+    {
+        $this->setEnv('COMSPEC_CLIENT_ATTEST_MASTER', self::MASTER);
+        $this->presentVersionedProof('POST', '/api/atak/client-init', '2.0.130', signedAs: '2.0.125');
+        self::assertSame('invalid', OfficialClientAttestation::presentedStatus());
+    }
+
+    /** Plancher relevé : le secret extrait d'une version plus ancienne ne sert plus, la version courante passe. */
+    public function testRaisingTheFloorRetiresOlderVersionSecrets(): void
+    {
+        $this->setEnv('COMSPEC_CLIENT_ATTEST_MASTER', self::MASTER);
+        OfficialClientAttestation::setFloorForTests('2.0.126');
+        $this->presentVersionedProof('POST', '/api/atak/client-init', '2.0.125');
+        self::assertSame('invalid', OfficialClientAttestation::presentedStatus());
+        $this->presentVersionedProof('POST', '/api/atak/client-init', '2.0.126');
+        self::assertSame('valid', OfficialClientAttestation::presentedStatus());
+        $this->presentVersionedProof('POST', '/api/atak/client-init', '2.1');
+        self::assertSame('valid', OfficialClientAttestation::presentedStatus());
+    }
+
+    /** L'ancien secret unique reste accepté sous le plancher 2.0.125, puis est refusé dès que le plancher l'atteint. */
+    public function testLegacySecretIsRetiredByTheFloor(): void
+    {
+        $this->setEnv('COMSPEC_CLIENT_ATTEST_MASTER', self::MASTER);
+        $this->presentProof('POST', '/api/atak/client-init');
+        self::assertSame('valid', OfficialClientAttestation::presentedStatus());
+        OfficialClientAttestation::setFloorForTests('2.0.124');
+        self::assertSame('valid', OfficialClientAttestation::presentedStatus());
+        OfficialClientAttestation::setFloorForTests(OfficialClientAttestation::FIRST_VERSIONED);
+        self::assertSame('invalid', OfficialClientAttestation::presentedStatus());
+        // Une copie qui joint l'ancienne preuve à une preuve par version fausse est jugée sur la preuve par version.
+        OfficialClientAttestation::setFloorForTests('');
+        $_SERVER['HTTP_X_COMSPEC_CLIENT_KEY2'] = 'v2:2.0.125';
+        $_SERVER['HTTP_X_COMSPEC_CLIENT_PROOF2'] = str_repeat('0', 64);
+        self::assertSame('invalid', OfficialClientAttestation::presentedStatus());
+    }
+
+    /** Pack publié avant que le serveur ait le maître : la preuve par version est ignorée, l'ancienne décide. */
+    public function testServerWithoutMasterKeepsAcceptingTheNewPack(): void
+    {
+        $this->presentProof('POST', '/api/atak/client-init');
+        $_SERVER['HTTP_X_COMSPEC_CLIENT_KEY2'] = 'v2:2.0.125';
+        $_SERVER['HTTP_X_COMSPEC_CLIENT_PROOF2'] = str_repeat('a', 64);
+        self::assertSame('valid', OfficialClientAttestation::presentedStatus());
+        self::assertNull(ComspecApiKeyAuth::enforceForTacticalPath('/api/atak/client-init'));
+    }
+
+    public function testMalformedVersionedKeyIsRejected(): void
+    {
+        $this->setEnv('COMSPEC_CLIENT_ATTEST_MASTER', self::MASTER);
+        foreach (['v2:', 'v2:02.0.125', 'v2:2.0.125-native', 'v3:2.0.125', 'ow1'] as $keyId) {
+            $this->presentVersionedProof('POST', '/api/atak/client-init', '2.0.125');
+            $_SERVER['HTTP_X_COMSPEC_CLIENT_KEY2'] = $keyId;
+            self::assertSame('invalid', OfficialClientAttestation::presentedStatus(), $keyId);
+        }
+        $this->setEnv('COMSPEC_CLIENT_ATTEST_MASTER', 'pas-un-maitre');
+        self::assertSame('broken', OfficialClientAttestation::secretState());
+        self::assertSame('invalid', OfficialClientAttestation::presentedStatus());
+    }
+
+    /** Le module et l'outil de compilation calculent la même preuve que le serveur. */
+    public function testModuleAndBuildToolMatchTheServer(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $cs = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/OfficialClientProof.cs');
+        self::assertStringContainsString('"' . OfficialClientAttestation::KEY_PREFIX . '" + ClientAttestMaterialLocal.Version', $cs);
+        self::assertStringContainsString('"X-Comspec-Client-Key2", "X-Comspec-Client-Proof2", method, path, ts, nonce', $cs);
+        // Matériel d'une autre version : la compilation échoue au lieu de publier une DLL que le serveur refuse.
+        self::assertStringContainsString('ClientAttestMaterialLocal.Version == ExtensionVersion ? 0 : -1', $cs);
+        $tool = (string) file_get_contents($root . '/tools/embed-client-attest.php');
+        self::assertStringContainsString('OfficialClientAttestation::versionSecret((string) hex2bin($master), $version)', $tool);
+        self::assertStringContainsString('internal const string Version = "{$version}";', $tool);
+        // La première version à secret par version est celle de la DLL de ce dépôt, ou une plus ancienne.
+        $link = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
+        self::assertSame(1, preg_match('/const string ExtensionVersion = "([0-9.]+)";/', $link, $m));
+        self::assertGreaterThanOrEqual(0, \App\Support\GameClientVersionGate::compareVersions($m[1], OfficialClientAttestation::FIRST_VERSIONED));
+    }
+
+    private function presentVersionedProof(string $method, string $path, string $version, ?string $signedAs = null, int $ts = 1_700_000_000): void
+    {
+        $nonce = 'abc123def456abc123def456abc123de';
+        $_SERVER['REQUEST_METHOD'] = $method;
+        $_SERVER['REQUEST_URI'] = '/public' . $path;
+        $_SERVER['SCRIPT_NAME'] = '/index.php';
+        $keyId = OfficialClientAttestation::KEY_PREFIX . $version;
+        $secret = OfficialClientAttestation::versionSecret((string) hex2bin(self::MASTER), $signedAs ?? $version);
+        unset($_SERVER['HTTP_X_COMSPEC_CLIENT_KEY'], $_SERVER['HTTP_X_COMSPEC_CLIENT_PROOF']);
+        $_SERVER['HTTP_X_COMSPEC_CLIENT_KEY2'] = $keyId;
+        $_SERVER['HTTP_X_COMSPEC_CLIENT_TS'] = (string) $ts;
+        $_SERVER['HTTP_X_COMSPEC_CLIENT_NONCE'] = $nonce;
+        $_SERVER['HTTP_X_COMSPEC_CLIENT_PROOF2'] = hash_hmac(
+            'sha256',
+            OfficialClientAttestation::canonical($method, $path, $keyId, (string) $ts, $nonce),
+            $secret
+        );
     }
 
     private function presentProof(string $method, string $path, int $ts = 1_700_000_000): void
