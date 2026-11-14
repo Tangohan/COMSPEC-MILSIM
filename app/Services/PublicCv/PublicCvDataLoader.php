@@ -10,10 +10,15 @@ use App\Repositories\AtakDistanceRepository;
 use App\Repositories\AtakScreenTimeRepository;
 use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelAwardRepository;
+use App\Repositories\PersonnelMobilityRequestRepository;
+use App\Repositories\PersonnelOrgHistoryRepository;
+use App\Repositories\PersonnelStageBilanRepository;
 use App\Repositories\PilotLogbookRepository;
 use App\Repositories\QualificationAwardRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\TrainingCertificateRepository;
+use App\Repositories\UserCommunityMembershipRepository;
+use App\Repositories\UserDiscordLinkRepository;
 use App\Repositories\UserRepository;
 use App\Services\Personnel\PilotLogbookService;
 use App\Support\CommunityMediaDetails;
@@ -79,6 +84,9 @@ class PublicCvDataLoader
             'game_roles' => $this->safe(fn () => (new AtakScreenTimeRepository($this->pdo()))->rolesForUser($tenantId, $userId)) ?? [],
             'member_since' => $this->memberSince($user, $tenantId),
             'promotions' => $this->promotions($userId, $tenantId),
+            'evaluations' => $this->evaluations($userId, $tenantId),
+            'mutations' => $this->mutations($userId, $tenantId),
+            'discord' => $this->discord($userId),
         ];
     }
 
@@ -94,6 +102,114 @@ class PublicCvDataLoader
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    /** Date (Y-m-d) d'arrivée dans le séjour en cours, null si inconnue. */
+    private function periodStart(int $userId, int $tenantId): ?string
+    {
+        $v = $this->safe(fn () => (new UserCommunityMembershipRepository($this->pdo()))->currentPeriodStart($userId, $tenantId));
+
+        return is_string($v) && $v !== '' ? substr($v, 0, 10) : null;
+    }
+
+    /**
+     * Notes et commentaires des bilans du commandement de CETTE communauté, séjour en cours.
+     * Les bilans RH et de recrutement restent privés. Vide si la communauté a coupé les bilans.
+     *
+     * @return array{average: ?float, items: list<array<string, mixed>>}
+     */
+    private function evaluations(int $userId, int $tenantId): array
+    {
+        $empty = ['average' => null, 'items' => []];
+        $on = $this->safe(static fn () => \App\Services\Personnel\RoleplayFollowupSettings::individualBilansEnabled(\App\Services\Personnel\RoleplayFollowupSettings::forTenant($tenantId)));
+        if ($on !== true) {
+            return $empty;
+        }
+        $since = $this->periodStart($userId, $tenantId);
+        $rows = $this->safe(static fn () => (new PersonnelStageBilanRepository())->listForUser($tenantId, $userId, 30)) ?? [];
+        $items = [];
+        $sum = 0;
+        $n = 0;
+        foreach ($rows as $r) {
+            if ((string) ($r['bilan_kind'] ?? '') !== PersonnelStageBilanRepository::KIND_COMMANDEMENT) {
+                continue;
+            }
+            $date = (string) ($r['event_date'] ?? '');
+            if ($since !== null && $date !== '' && $date < $since) {
+                continue;
+            }
+            $rating = isset($r['rating']) && $r['rating'] !== '' ? max(1, min(5, (int) $r['rating'])) : null;
+            if ($rating !== null) {
+                $sum += $rating;
+                ++$n;
+            }
+            $items[] = [
+                'date' => $date,
+                'stage' => (string) ($r['stage_label'] ?? ''),
+                'title' => (string) ($r['title'] ?? ''),
+                'rating' => $rating,
+                'comment' => mb_substr(trim((string) ($r['body'] ?? '')), 0, 400),
+            ];
+        }
+
+        return ['average' => $n > 0 ? round($sum / $n, 1) : null, 'items' => array_slice($items, 0, 10)];
+    }
+
+    /**
+     * Mutations de CETTE communauté, séjour en cours : changements d'unité, de poste ou d'affectation
+     * (historique du dossier + demandes de mobilité acceptées). Jamais les motifs ni les notes du commandement.
+     *
+     * @return list<array{date: string, text: string}>
+     */
+    private function mutations(int $userId, int $tenantId): array
+    {
+        $since = $this->periodStart($userId, $tenantId);
+        $out = [];
+        $hist = $this->safe(static fn () => (new PersonnelOrgHistoryRepository())->listForUser($tenantId, $userId, 60)) ?? [];
+        foreach ($hist as $h) {
+            $text = trim((string) ($h['summary'] ?? ''));
+            $date = substr((string) ($h['created_at'] ?? ''), 0, 10);
+            if ($text === '' || preg_match('/(?:^|·)\s*(?:Unité|Poste|Fonction|Affectation)\s*:/u', $text) !== 1) {
+                continue;
+            }
+            if ($since !== null && $date !== '' && $date < $since) {
+                continue;
+            }
+            $out[] = ['date' => $date, 'text' => $text];
+        }
+        $mob = $this->safe(static fn () => (new PersonnelMobilityRequestRepository())->listForUser($tenantId, $userId, 30)) ?? [];
+        foreach ($mob as $m) {
+            if (!in_array((string) ($m['status'] ?? ''), ['approved', 'applied'], true)) {
+                continue;
+            }
+            $type = (string) ($m['request_type'] ?? '');
+            if (!in_array($type, ['unit_change', 'specialty_change', 'assignment'], true)) {
+                continue;
+            }
+            $date = substr((string) ($m['created_at'] ?? ''), 0, 10);
+            if ($since !== null && $date !== '' && $date < $since) {
+                continue;
+            }
+            $label = PersonnelMobilityRequestRepository::TYPE_LABELS[$type] ?? $type;
+            $target = trim((string) ($m['target_label'] ?? ''));
+            $out[] = ['date' => $date, 'text' => $label . ($target !== '' ? ' : ' . $target : '')];
+        }
+        usort($out, static fn (array $a, array $b): int => strcmp($b['date'], $a['date']));
+
+        return array_slice($out, 0, 15);
+    }
+
+    /** @return array{name: string, url: string}|null seulement un compte Discord lié et vérifié par OAuth */
+    private function discord(int $userId): ?array
+    {
+        $row = $this->safe(fn () => (new UserDiscordLinkRepository($this->pdo()))->find($userId));
+        $id = is_array($row) ? trim((string) ($row['discord_user_id'] ?? '')) : '';
+        if ($id === '' || preg_match('/^\d{5,25}$/', $id) !== 1) {
+            return null;
+        }
+        $name = trim((string) ($row['discord_username'] ?? ''));
+
+        return ['name' => $name !== '' ? $name : 'Discord', 'url' => 'https://discord.com/users/' . $id];
     }
 
     /** @return list<array<string, mixed>> */
@@ -330,12 +446,15 @@ class PublicCvDataLoader
         if ($grades === []) {
             return [];
         }
-        $rows = $this->safe(function () use ($userId): array {
+        $since = $this->periodStart($userId, $tenantId);
+        $rows = $this->safe(function () use ($userId, $since): array {
+            // Seulement le séjour en cours : les promotions d'une présence précédente (ici ou ailleurs) ne reviennent pas.
             $st = $this->pdo()->prepare(
                 "SELECT event_date, description FROM personnel_service_history
-                 WHERE user_id = ? AND event_type = 'promotion' ORDER BY event_date DESC, id DESC LIMIT 20"
+                 WHERE user_id = ? AND event_type = 'promotion'" . ($since !== null ? ' AND event_date >= ?' : '') . "
+                 ORDER BY event_date DESC, id DESC LIMIT 20"
             );
-            $st->execute([$userId]);
+            $st->execute($since !== null ? [$userId, $since] : [$userId]);
 
             return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
         }) ?? [];

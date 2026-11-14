@@ -112,6 +112,34 @@ final class PublicCvPresenter
             }
         }
 
+        $evaluations = ['average' => null, 'items' => []];
+        if ($sections['evaluations']) {
+            $ev = is_array($raw['evaluations'] ?? null) ? $raw['evaluations'] : [];
+            foreach (is_array($ev['items'] ?? null) ? $ev['items'] : [] as $it) {
+                $evaluations['items'][] = [
+                    'date' => self::monthYear($it['date'] ?? null),
+                    'stage' => self::text($it['stage'] ?? null),
+                    'title' => self::text($it['title'] ?? null),
+                    'rating' => isset($it['rating']) ? (int) $it['rating'] : null,
+                    'comment' => self::text($it['comment'] ?? null),
+                ];
+            }
+            $evaluations['average'] = isset($ev['average']) ? (float) $ev['average'] : null;
+        }
+        $mutations = [];
+        if ($sections['mutations']) {
+            foreach (is_array($raw['mutations'] ?? null) ? $raw['mutations'] : [] as $mu) {
+                $text = self::text($mu['text'] ?? null);
+                if ($text !== null) {
+                    $mutations[] = ['date' => self::monthYear($mu['date'] ?? null), 'text' => $text];
+                }
+            }
+        }
+        $discord = null;
+        if ($sections['discord'] && is_array($raw['discord'] ?? null) && !empty($raw['discord']['url'])) {
+            $discord = ['name' => (string) ($raw['discord']['name'] ?? 'Discord'), 'url' => (string) $raw['discord']['url']];
+        }
+
         $badge = $env['badge_url'] ?? null;
         $decoUrl = $env['decoration_url'] ?? null;
         $photoUrl = $env['photo_url'] ?? null;
@@ -310,6 +338,9 @@ final class PublicCvPresenter
             'post' => $post,
             'member_since' => $since,
             'career' => $career,
+            'evaluations' => $evaluations,
+            'mutations' => $mutations,
+            'discord' => $discord,
             'counters' => $counters,
             'distance_modes' => $distanceModes,
             'game_roles' => $gameRoles,

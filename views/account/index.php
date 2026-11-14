@@ -110,6 +110,43 @@ require base_path('views/partials/account/shell_open.php');
 
 <div class="ah-ov">
 
+<?php
+$acChar = is_array($accountCharacter ?? null) ? $accountCharacter : ['name' => '', 'callsign' => '', 'portrait_url' => null];
+$acHasChar = trim((string) ($acChar['name'] ?? '')) !== '';
+$acDiscord = !empty($accountDiscordLinked);
+?>
+<div class="ah-quick">
+    <section class="ah-quick__card" aria-labelledby="quick-char-heading">
+        <h2 id="quick-char-heading" class="ah-quick__title">Mon personnage</h2>
+        <?php if ($acHasChar): ?>
+        <div class="ah-quick__char">
+            <?php if (!empty($acChar['portrait_url'])): ?><img src="<?= $h($acChar['portrait_url']) ?>" alt="" class="ah-quick__portrait" width="56" height="56"><?php endif; ?>
+            <p class="ah-quick__desc"><strong><?= $h($acChar['name']) ?></strong><?= ($acChar['callsign'] ?? '') !== '' ? '<br>Indicatif : ' . $h($acChar['callsign']) : '' ?></p>
+        </div>
+        <a href="<?= $h(url('account/personnage')) ?>" class="account-hub__btn">Modifier</a>
+        <?php else: ?>
+        <p class="ah-quick__desc">Vous n’avez pas encore de personnage. Prénom, nom et indicatif suffisent.</p>
+        <a href="<?= $h(url('account/personnage')) ?>" class="account-hub__btn account-hub__btn--ink">Créer mon personnage</a>
+        <?php endif; ?>
+    </section>
+    <section class="ah-quick__card" aria-labelledby="quick-public-heading">
+        <h2 id="quick-public-heading" class="ah-quick__title">Ma page publique</h2>
+        <p class="ah-quick__desc">
+            <?php if ($ovPublicCvUrl !== null): ?>
+            Ouverte : <a href="<?= $h($ovPublicCvUrl) ?>"><?= $h($ovPublicCvUrl) ?></a>
+            <?php else: ?>
+            Fermée pour le moment.
+            <?php endif; ?>
+        </p>
+        <a href="<?= $h(url('account/page-publique')) ?>" class="account-hub__btn<?= $ovPublicCvUrl === null ? ' account-hub__btn--ink' : '' ?>"><?= $ovPublicCvUrl === null ? 'Ouvrir ma page' : 'Gérer ma page' ?></a>
+    </section>
+    <section class="ah-quick__card" aria-labelledby="quick-links-heading">
+        <h2 id="quick-links-heading" class="ah-quick__title">Mes liens et Discord</h2>
+        <p class="ah-quick__desc"><?= $acDiscord ? 'Discord est lié à votre compte.' : 'Discord n’est pas encore lié.' ?></p>
+        <a href="<?= $h(url('discord/roles-lies')) ?>" class="account-hub__btn<?= $acDiscord ? '' : ' account-hub__btn--ink' ?>"><?= $acDiscord ? 'Gérer' : 'Lier Discord' ?></a>
+    </section>
+</div>
+
 <?php if ($accountDeletionScheduledAt !== ''): ?>
 <div class="account-hub__ov-alert account-hub__ov-alert--danger" role="alert">
     <div>

@@ -53,6 +53,16 @@ final class UserDiscordLinkRepository
         return is_array($row) ? $row : null;
     }
 
+    /** Compte du site relié à ce compte Discord (connexion « Continuer avec Discord »). */
+    public function findUserIdByDiscordId(string $discordUserId): ?int
+    {
+        $st = $this->pdo()->prepare('SELECT user_id FROM user_discord_links WHERE discord_user_id = ? LIMIT 1');
+        $st->execute([$discordUserId]);
+        $id = $st->fetchColumn();
+
+        return $id === false ? null : (int) $id;
+    }
+
     /**
      * @param array{discord_user_id:string, discord_username:string, access_token:string, refresh_token:string, expires_at:string} $row
      */

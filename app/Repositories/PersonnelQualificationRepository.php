@@ -53,12 +53,17 @@ class PersonnelQualificationRepository
     }
 
     /** @return list<array<string, mixed>> */
-    public function listForUser(int $userId): array
+    public function listForUser(int $userId, ?int $tenantId = null): array
     {
-        $stmt = $this->pdo->prepare(
-            'SELECT * FROM personnel_qualifications WHERE user_id = ? ORDER BY expires_at IS NULL DESC, expires_at DESC, obtained_at DESC'
-        );
-        $stmt->execute([$userId]);
+        $sql = 'SELECT * FROM personnel_qualifications WHERE user_id = ?';
+        $args = [$userId];
+        if ($tenantId !== null && $tenantId > 0 && $this->trainingLinkReady()) {
+            // Une qualification posée pour une autre communauté ne se lit pas ici (les anciennes, sans communauté, restent).
+            $sql .= ' AND (tenant_id = ? OR tenant_id IS NULL)';
+            $args[] = $tenantId;
+        }
+        $stmt = $this->pdo->prepare($sql . ' ORDER BY expires_at IS NULL DESC, expires_at DESC, obtained_at DESC');
+        $stmt->execute($args);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

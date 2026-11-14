@@ -56,13 +56,102 @@ final class UserCommunityMembershipRepository
         if ($userId < 1 || $tenantId < 1 || !$this->tablesExist()) {
             return;
         }
+        $st = $this->pdo()->prepare('SELECT status FROM user_community_memberships WHERE user_id = ? AND tenant_id = ? LIMIT 1');
+        $st->execute([$userId, $tenantId]);
+        $previous = $st->fetchColumn();
+        $returning = $previous !== false && (string) $previous === 'left';
+        if ($returning) {
+            // Retour après un départ : nouveau séjour, rien de l'ancien ne revient (rôles, grade, numéro, ancienneté).
+            $this->resetStayData($userId, $tenantId);
+            $this->dropTenantRoles($userId, $tenantId);
+        }
         $st = $this->pdo()->prepare(
             "INSERT INTO user_community_memberships (user_id, tenant_id, status, source_user_id, joined_at)
              VALUES (?, ?, 'active', ?, NOW())
-             ON DUPLICATE KEY UPDATE status = 'active', left_at = NULL, updated_at = NOW()"
+             ON DUPLICATE KEY UPDATE joined_at = IF(status = 'left', NOW(), joined_at),
+                 status = 'active', left_at = NULL, updated_at = NOW()"
         );
         $st->execute([$userId, $tenantId, $sourceUserId]);
+        if ($previous === false || $returning) {
+            $this->openPeriod($userId, $tenantId);
+        }
         $this->upsertProfile($userId, $tenantId, $profile);
+    }
+
+    /** Début du séjour en cours dans cette communauté (Y-m-d H:i:s), null si pas membre actif. */
+    public function currentPeriodStart(int $userId, int $tenantId): ?string
+    {
+        if ($userId < 1 || $tenantId < 1 || !$this->tablesExist()) {
+            return null;
+        }
+        $st = $this->pdo()->prepare("SELECT joined_at FROM user_community_memberships WHERE user_id = ? AND tenant_id = ? AND status = 'active' LIMIT 1");
+        $st->execute([$userId, $tenantId]);
+        $v = $st->fetchColumn();
+
+        return $v === false || $v === null || $v === '' ? null : (string) $v;
+    }
+
+    private function periodsReady(): bool
+    {
+        static $ready = null;
+        if ($ready === null) {
+            try {
+                $this->pdo()->exec(
+                    'CREATE TABLE IF NOT EXISTS user_community_membership_periods (
+                      id bigint unsigned NOT NULL AUTO_INCREMENT, user_id int unsigned NOT NULL, tenant_id int unsigned NOT NULL,
+                      joined_at datetime NOT NULL, left_at datetime DEFAULT NULL, PRIMARY KEY (id),
+                      KEY idx_ucmp_user_tenant (user_id, tenant_id, joined_at)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+                );
+                $ready = true;
+            } catch (\Throwable) {
+                $ready = false;
+            }
+        }
+
+        return $ready;
+    }
+
+    private function openPeriod(int $userId, int $tenantId): void
+    {
+        if (!$this->periodsReady()) {
+            return;
+        }
+        try {
+            $this->pdo()->prepare('INSERT INTO user_community_membership_periods (user_id, tenant_id, joined_at) VALUES (?, ?, NOW())')->execute([$userId, $tenantId]);
+        } catch (\Throwable) {
+        }
+    }
+
+    private function closePeriod(int $userId, int $tenantId): void
+    {
+        if (!$this->periodsReady()) {
+            return;
+        }
+        try {
+            $this->pdo()->prepare('UPDATE user_community_membership_periods SET left_at = NOW() WHERE user_id = ? AND tenant_id = ? AND left_at IS NULL')->execute([$userId, $tenantId]);
+        } catch (\Throwable) {
+        }
+    }
+
+    /** Retour après un départ : grade, fonction et numéro repartent de zéro ; le nom et l'indicatif de la personne restent. */
+    private function resetStayData(int $userId, int $tenantId): void
+    {
+        try {
+            $this->pdo()->prepare(
+                'UPDATE user_community_profiles SET role_id = NULL, grade_id = NULL, tenant_member_number = NULL, preferred_display_role_id = NULL, updated_at = NOW() WHERE user_id = ? AND tenant_id = ?'
+            )->execute([$userId, $tenantId]);
+        } catch (\Throwable) {
+        }
+    }
+
+    /** Un départ retire tout pouvoir dans cette communauté : plusieurs contrôles lisent tenant_user_roles sans regarder l'appartenance. */
+    private function dropTenantRoles(int $userId, int $tenantId): void
+    {
+        try {
+            $this->pdo()->prepare('DELETE FROM tenant_user_roles WHERE user_id = ? AND tenant_id = ?')->execute([$userId, $tenantId]);
+        } catch (\Throwable) {
+        }
     }
 
     /**
@@ -191,6 +280,12 @@ final class UserCommunityMembershipRepository
              SET status = 'left', left_at = NOW(), updated_at = NOW()
              WHERE user_id = ? AND tenant_id = ?"
         )->execute([$userId, $tenantId]);
+        $this->closePeriod($userId, $tenantId);
+        $this->dropTenantRoles($userId, $tenantId);
+        try {
+            $this->pdo()->prepare('UPDATE user_community_profiles SET role_id = NULL, preferred_display_role_id = NULL, updated_at = NOW() WHERE user_id = ? AND tenant_id = ?')->execute([$userId, $tenantId]);
+        } catch (\Throwable) {
+        }
     }
 
     /**

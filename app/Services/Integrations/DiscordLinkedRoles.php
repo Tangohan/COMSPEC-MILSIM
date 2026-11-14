@@ -140,16 +140,70 @@ final class DiscordLinkedRoles
         return url('discord/roles-lies/retour');
     }
 
-    public function authorizeUrl(string $state): string
+    /** Adresse de retour de « Continuer avec Discord » (à ajouter aux Redirects OAuth2 du portail Discord). */
+    public static function loginRedirectUri(): string
     {
-        return 'https://discord.com/oauth2/authorize?' . http_build_query([
+        return url('discord/connexion/retour');
+    }
+
+    public function authorizeUrl(string $state, ?string $redirectUri = null, ?string $scopes = null, ?string $codeChallenge = null): string
+    {
+        $query = [
             'client_id' => $this->clientId(),
-            'redirect_uri' => self::redirectUri(),
+            'redirect_uri' => $redirectUri ?? self::redirectUri(),
             'response_type' => 'code',
-            'scope' => self::SCOPES,
+            'scope' => $scopes ?? self::SCOPES,
             'state' => $state,
             'prompt' => 'consent',
-        ], '', '&', PHP_QUERY_RFC3986);
+        ];
+        if ($codeChallenge !== null && $codeChallenge !== '') {
+            $query['code_challenge'] = $codeChallenge;
+            $query['code_challenge_method'] = 'S256';
+        }
+
+        return 'https://discord.com/oauth2/authorize?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+    }
+
+    /** Adresse d'autorisation de « Continuer avec Discord » : identité et e-mail, sans rôles liés. */
+    public function loginAuthorizeUrl(string $state, string $codeChallenge): string
+    {
+        return $this->authorizeUrl($state, self::loginRedirectUri(), 'identify email', $codeChallenge);
+    }
+
+    /**
+     * Fin du parcours « Continuer avec Discord » : échange le code (PKCE) puis lit le compte Discord. Rien n'est
+     * enregistré : les jetons sont rendus à Discord (révocation) aussitôt.
+     *
+     * @return array{id:string, username:string, email:string, verified:bool}|null
+     */
+    public function loginIdentity(string $code, string $codeVerifier): ?array
+    {
+        if (!$this->configured()) {
+            return null;
+        }
+        $tokens = $this->token([
+            'grant_type' => 'authorization_code', 'code' => $code,
+            'redirect_uri' => self::loginRedirectUri(), 'code_verifier' => $codeVerifier,
+        ]);
+        if ($tokens === null) {
+            return null;
+        }
+        $me = $this->call('GET', '/users/@me', $tokens['access_token']);
+        $this->request('POST', self::API . '/oauth2/token/revoke', ['Content-Type' => 'application/x-www-form-urlencoded'], http_build_query([
+            'token' => $tokens['access_token'], 'token_type_hint' => 'access_token',
+            'client_id' => $this->clientId(), 'client_secret' => $this->clientSecret(),
+        ]));
+        $id = (string) ($me['id'] ?? '');
+        if (preg_match('/^\d{15,24}$/', $id) !== 1) {
+            return null;
+        }
+
+        return [
+            'id' => $id,
+            'username' => mb_substr((string) ($me['global_name'] ?? '') ?: (string) ($me['username'] ?? ''), 0, 64),
+            'email' => strtolower(trim((string) ($me['email'] ?? ''))),
+            'verified' => ($me['verified'] ?? false) === true,
+        ];
     }
 
     // ---- Ce que Discord reçoit ----------------------------------------------------------------------------------

@@ -1,0 +1,355 @@
+/**
+ * Recrutement par Discord : page candidat (formulaire, fiche du portail) et bouton « Continuer avec Discord ».
+ * Jetons --ds-* du site avec valeurs de repli (la page d'enrôlement n'est pas toujours dans le gabarit DSFR).
+ */
+
+.dc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 2.9rem;
+  padding: 0.65rem 1.1rem;
+  border: 1px solid #4752c4;
+  border-radius: 0.65rem;
+  background: #5865f2;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+.dc-btn:hover,
+.dc-btn:focus-visible {
+  background: #4752c4;
+  color: #fff;
+}
+.dc-btn:focus-visible {
+  outline: 3px solid rgba(88, 101, 242, 0.45);
+  outline-offset: 2px;
+}
+.dc-btn svg {
+  flex: none;
+}
+.dc-wrap {
+  margin: 1rem 0 0;
+}
+
+.ed-page {
+  --ed-primary: var(--ds-primary, #1d6f64);
+  --ed-text: var(--ds-text, #1b2320);
+  --ed-muted: var(--ds-text-alt, #55625d);
+  --ed-border: var(--ds-border, #dde3e0);
+  --ed-surface: var(--ds-surface, #fff);
+  --ed-soft: #eef0ff;
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 2.5rem 1rem 3.5rem;
+  color: var(--ed-text);
+}
+.ed-title {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.6rem, 4.5vw, 2.15rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.ed-lead {
+  margin: 0 0 1.75rem;
+  max-width: 38rem;
+  color: var(--ed-muted);
+  line-height: 1.6;
+}
+.ed-flash {
+  margin: 0 0 1.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #f1b5bd;
+  border-radius: 0.75rem;
+  background: #fdecee;
+  color: #6e1a24;
+  font-size: 0.925rem;
+}
+
+.ed-steps {
+  display: grid;
+  gap: 1rem;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+.ed-step {
+  display: grid;
+  grid-template-columns: 2.25rem 1fr;
+  gap: 0.9rem;
+  padding: 1.1rem 1.15rem;
+  border: 1px solid var(--ed-border);
+  border-radius: 1rem;
+  background: var(--ed-surface);
+  box-shadow: 0 1px 2px rgba(16, 24, 22, 0.04);
+}
+.ed-step--join {
+  border-color: #c9ceff;
+  background: var(--ed-soft);
+}
+.ed-step__n {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: #5865f2;
+  color: #fff;
+  font-weight: 800;
+}
+.ed-step__title {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.ed-step__text {
+  margin: 0 0 0.75rem;
+  color: var(--ed-muted);
+  font-size: 0.925rem;
+  line-height: 1.55;
+}
+.ed-step__text:last-child {
+  margin-bottom: 0;
+}
+
+.ed-card {
+  display: grid;
+  gap: 1.15rem;
+  padding: 1.35rem 1.25rem;
+  border: 1px solid var(--ed-border);
+  border-radius: 1rem;
+  background: var(--ed-surface);
+  box-shadow: 0 1px 2px rgba(16, 24, 22, 0.04), 0 12px 32px -20px rgba(11, 61, 56, 0.3);
+}
+.ed-field label,
+.ed-field .ed-label {
+  display: block;
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.ed-hint {
+  margin: 0 0 0.4rem;
+  color: var(--ed-muted);
+  font-size: 0.85rem;
+}
+.ed-req {
+  color: #b42318;
+}
+.ed-input {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid #b9c4bf;
+  border-radius: 0.65rem;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+.ed-input:focus {
+  border-color: var(--ed-primary);
+  outline: 3px solid rgba(29, 111, 100, 0.22);
+}
+textarea.ed-input {
+  min-height: 6rem;
+  resize: vertical;
+}
+.ed-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-transform: uppercase;
+}
+.ed-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+.ed-choices label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-weight: 400;
+}
+.ed-submit {
+  width: 100%;
+  min-height: 3rem;
+  border: 0;
+  border-radius: 0.7rem;
+  background: var(--ed-primary);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ed-submit:hover {
+  filter: brightness(1.08);
+}
+.ed-submit:focus-visible {
+  outline: 3px solid rgba(29, 111, 100, 0.4);
+  outline-offset: 2px;
+}
+.ed-link-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.6rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.65rem;
+  background: #5865f2;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+.ed-link-btn:hover {
+  background: #4752c4;
+  color: #fff;
+}
+.ed-notice {
+  margin: 0 0 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #f0d58a;
+  border-radius: 0.75rem;
+  background: #fff8e1;
+  color: #5b4300;
+  font-size: 0.925rem;
+  line-height: 1.5;
+}
+
+.ed-gate {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.35rem 1.25rem;
+  border: 1px solid var(--ed-border);
+  border-radius: 1rem;
+  background: var(--ed-surface);
+}
+.ed-gate__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.ed-gate__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+.ed-gate__actions .ed-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.9rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--ed-border);
+  border-radius: 0.65rem;
+  background: #fff;
+  color: var(--ed-text);
+  font-weight: 700;
+  text-decoration: none;
+}
+.ed-gate__actions .ed-btn--primary {
+  border-color: var(--ed-primary);
+  background: var(--ed-primary);
+  color: #fff;
+}
+
+/* Fiche du portail candidat */
+.ed-fiche {
+  overflow: hidden;
+  border: 1px solid #c9ceff;
+  border-radius: 1rem;
+  background: var(--ds-surface, #fff);
+  box-shadow: 0 1px 2px rgba(16, 24, 22, 0.04);
+}
+.ed-fiche__head {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #dfe2ff;
+  background: #eef0ff;
+}
+.ed-fiche__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #232a6b;
+}
+.ed-fiche__body {
+  display: grid;
+  gap: 1.1rem;
+  padding: 1.15rem 1.25rem;
+}
+.ed-slot {
+  padding: 0.85rem 1rem;
+  border: 1px solid #c9ceff;
+  border-radius: 0.75rem;
+  background: #f6f7ff;
+}
+.ed-slot p {
+  margin: 0;
+}
+.ed-slot__when {
+  margin-top: 0.15rem !important;
+  font-weight: 700;
+  color: #232a6b;
+}
+.ed-answers {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+}
+.ed-answers dt {
+  font-weight: 600;
+}
+.ed-answers dd {
+  margin: 0.15rem 0 0;
+  color: var(--ds-text-alt, #3d4945);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ed-callout {
+  padding: 1.15rem 1.25rem;
+  border: 1px solid #c9ceff;
+  border-radius: 0.9rem;
+  background: #f6f7ff;
+}
+.ed-callout h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.ed-callout p {
+  margin: 0 0 0.9rem;
+  color: #2c3270;
+  line-height: 1.55;
+}
+.ed-callout button {
+  min-height: 2.75rem;
+  padding: 0.5rem 1.25rem;
+  border: 0;
+  border-radius: 0.65rem;
+  background: #5865f2;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ed-callout button:hover {
+  background: #4752c4;
+}
+
+@media (max-width: 480px) {
+  .ed-gate__actions {
+    grid-template-columns: 1fr;
+  }
+  .ed-step {
+    grid-template-columns: 1fr;
+  }
+}
+html[data-bo-theme="dark"] .ed-page {
+  --ed-soft: #1f2447;
+  --ed-surface: #17201e;
+}
