@@ -1780,3 +1780,37 @@ html[data-bo-theme="dark"] .eff-fm .eff-fm-btn.is-danger:hover {
   display: inline-flex;
   align-items: center;
 }
+
+/* ——— Onglets de la fiche : un panneau à la fois quand le script est actif (.eff-fm--tabs) ; sans lui, tout reste affiché ——— */
+.eff-fm-panel {
+  scroll-margin-top: 80px;
+  min-width: 0;
+}
+
+.eff-fm--tabs .eff-fm-panel:not(.is-active) {
+  display: none;
+}
+
+/* Chronologie : filtre par type (liens) et renvoi vers la carte détaillée */
+.eff-fm-chrono__filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+
+.eff-fm-chrono__filter .eff-fm-chip,
+.eff-fm-chrono__type {
+  text-decoration: none;
+}
+
+.eff-fm-chrono__filter .eff-fm-chip:focus-visible,
+.eff-fm-chrono__type:focus-visible {
+  outline: 2px solid var(--fm-primary);
+  outline-offset: 2px;
+}
+
+.eff-fm-chrono__type {
+  margin-left: 6px;
+  vertical-align: middle;
+}

@@ -313,8 +313,23 @@ $isEligible = $eligibility !== null && $eligibilityStatus === \App\Services\Effe
 $attendanceRate = $attendance['rate_90'] ?? null;
 $attendanceDelta = $attendance['delta_points'] ?? null;
 $sanctionsActive = (int) ($sanctions['active'] ?? 0);
+
+// Onglets (MemberFicheTabs) : l'onglet demandé par ?onglet= est mis en avant côté serveur ; JavaScript n'ajoute que
+// l'affichage d'un onglet à la fois. Sans lui, tous les panneaux restent affichés à la suite.
+$ficheTabs = is_array($ficheTabs ?? null) && $ficheTabs !== [] ? array_values($ficheTabs) : \App\Support\MemberFicheTabs::slugs();
+$ficheTab = \App\Support\MemberFicheTabs::resolve((string) ($ficheTab ?? ''), $ficheTabs);
+$ficheBaseUrl = effectifs_workspace_url('membres/' . $id);
+$canViewHrDocuments = (bool) ($canViewHrDocuments ?? false);
+$canAwardDecorations = (bool) ($canAwardDecorations ?? false);
+$memberAwards = is_array($memberAwards ?? null) ? $memberAwards : [];
+$awardDefinitions = is_array($awardDefinitions ?? null) ? $awardDefinitions : [];
+$memberChronology = is_array($memberChronology ?? null) ? $memberChronology : [];
+$chronologyType = \App\Services\Effectifs\MemberChronology::sanitizeType((string) ($chronologyType ?? ''));
+$panelOpen = static fn (string $slug): string => '<div class="eff-fm-panel' . ($slug === $ficheTab ? ' is-active' : '') . '" id="onglet-' . $slug
+    . '" data-eff-fm-panel="' . $slug . '" aria-labelledby="tab-' . $slug . '">';
 ?>
 <div class="eff-fm">
+<script>document.currentScript.parentNode.classList.add('eff-fm--tabs');</script>
 <section class="eff-fiche-hero eff-fm-hero" aria-label="En-tête du dossier">
     <div class="eff-fm-hero__band<?= $bannerUrl !== '' ? ' has-image' : '' ?>"<?php if ($bannerUrl !== ''): ?> style="--eff-fm-band: url('<?= $h($bannerUrl) ?>')"<?php endif; ?>>
         <nav class="eff-fm-hero__nav" aria-label="Retour">
@@ -459,16 +474,14 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
 </section>
 
 <nav class="bo-eff-jump bo-eff-jump--v2 eff-fm-tabs" aria-label="Dossier RH complet : rubriques" data-eff-fm-tabs>
-    <a href="#identite">Identité<?php if ($civilMissing > 0): ?> <span class="eff-fm-tabs__n"><?= $civilMissing ?></span><?php endif; ?></a>
-    <a href="#poste">Poste</a>
-    <a href="#carriere">Carrière</a>
-    <a href="#suivi-rh">Suivi RH</a>
-    <?php if (is_array($memberPapers ?? null)): ?><a href="#papiers">Identité &amp; papiers</a><?php endif; ?>
-    <a href="#historique-rh">Historique</a>
+    <?php foreach ($ficheTabs as $tabSlug): ?>
+        <a href="<?= $h($ficheBaseUrl . '?onglet=' . $tabSlug . '#onglet-' . $tabSlug) ?>" id="tab-<?= $h($tabSlug) ?>" data-eff-fm-tab="<?= $h($tabSlug) ?>" aria-controls="onglet-<?= $h($tabSlug) ?>"<?= $tabSlug === $ficheTab ? ' class="is-active"' : '' ?>><?= $h(\App\Support\MemberFicheTabs::label($tabSlug)) ?><?php if ($tabSlug === 'identite' && $civilMissing > 0): ?> <span class="eff-fm-tabs__n"><?= $civilMissing ?></span><?php endif; ?></a>
+    <?php endforeach; ?>
 </nav>
 
 <div class="eff-fm-layout">
 <div class="eff-fm-main">
+    <?= $panelOpen('identite') ?>
     <section class="eff-fm-sec" id="identite" aria-labelledby="identite-titre">
         <header class="eff-fm-sec__head">
             <h2 id="identite-titre">Identité</h2>
@@ -583,11 +596,19 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
     })(is_array($memberInvitePanel ?? null) ? $memberInvitePanel : [], $id); ?>
         </div>
     </section>
+    </div>
 
+    <?php if (is_array($memberPapers ?? null)): ?>
+        <?= $panelOpen('papiers') ?>
+        <?php require __DIR__ . '/partials/member_papers.php'; ?>
+        </div>
+    <?php endif; ?>
+
+    <?= $panelOpen('poste') ?>
     <section class="eff-fm-sec" id="poste" aria-labelledby="poste-titre">
         <header class="eff-fm-sec__head">
-            <h2 id="poste-titre">Poste</h2>
-            <p>Où elle sert, ce qu’elle fait et ce qu’elle peut faire sur le site.</p>
+            <h2 id="poste-titre">Affectation et poste</h2>
+            <p>Où elle sert, ce qu’elle fait et qui commande.</p>
         </header>
         <div class="eff-fm-cards">
     <article class="eff-fm-card eff-fm-card--wide" id="unite">
@@ -693,6 +714,20 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
                 <button type="submit" class="eff-btn">Réparer l’affectation</button>
             </form>
         <?php endif; ?>
+        <?php if ($canManageAssignments && $assignments !== []): ?>
+            <?php $primaryRoleName = trim((string) ($primaryAssignment['role_name'] ?? '')); ?>
+            <details class="eff-card__edit" id="role-unite">
+                <summary>Modifier le rôle dans l’unité</summary>
+                <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/role-unite'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="return_to" value="member">
+                    <label for="eff-member-unit-role">Rôle tenu dans l’affectation principale</label>
+                    <input id="eff-member-unit-role" type="text" name="role_name" maxlength="100" required value="<?= $h($primaryRoleName) ?>" placeholder="Ex. chef de groupe, tireur, adjoint">
+                    <p class="eff-card__hint">Texte libre affiché sur la fiche et dans l’effectif de l’unité. Il ne donne aucun droit et ne change ni l’unité ni les fonctions.</p>
+                    <button type="submit" class="eff-btn eff-btn--primary">Enregistrer le rôle</button>
+                </form>
+            </details>
+        <?php endif; ?>
         <?php if ($canManageAssignments): ?>
             <details class="eff-card__edit">
                 <summary>Changer d’unité</summary>
@@ -753,6 +788,17 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
             <p class="eff-fm-hint">La gestion des fonctions sera disponible après application des migrations.</p>
         <?php endif; ?>
     </article>
+        </div>
+    </section>
+    </div>
+
+    <?= $panelOpen('acces') ?>
+    <section class="eff-fm-sec" id="acces-niveau" aria-labelledby="acces-titre">
+        <header class="eff-fm-sec__head">
+            <h2 id="acces-titre">Accès</h2>
+            <p>Ce qu’elle peut faire sur le site.</p>
+        </header>
+        <div class="eff-fm-cards">
     <article class="eff-fm-card" id="acces">
         <?php
         $currentAccessKey = (string) ($currentAccessKey ?? \App\Services\Rbac\CommunityAccessProfiles::MEMBER);
@@ -797,11 +843,13 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
     </article>
         </div>
     </section>
+    </div>
 
+    <?= $panelOpen('carriere') ?>
     <section class="eff-fm-sec" id="carriere" aria-labelledby="carriere-titre">
         <header class="eff-fm-sec__head">
             <h2 id="carriere-titre">Carrière</h2>
-            <p>Grades, ancienneté, qualifications, élévations et état du compte.</p>
+            <p>Grade, ancienneté et élévations.</p>
         </header>
         <div class="eff-fm-cards">
     <article class="eff-fm-card" id="grade">
@@ -930,6 +978,48 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
             </details>
         <?php endif; ?>
     </article>
+    <article class="eff-fm-card" id="elevation">
+        <div class="eff-fm-card__head">
+            <h3>Élévation</h3>
+        </div>
+        <?php if ($elevationHistory !== []): ?>
+            <ol class="eff-fm-tl">
+                <?php foreach ($elevationHistory as $ei => $eh): ?>
+                    <?php
+                    $ehStatus = (string) ($eh['status'] ?? 'pending');
+                    $ehRequester = trim((string) ($eh['requester_display_name'] ?? '')) ?: trim((string) ($eh['requester_email'] ?? '')) ?: 'Membre';
+                    $ehDateFmt = $fmtDate((string) ($eh['created_at'] ?? '')) ?: '—';
+                    ?>
+                    <li class="<?= $ehStatus === 'approved' && $ei === 0 ? 'is-now' : (in_array($ehStatus, ['pending', 'in_review'], true) ? 'is-next' : '') ?>">
+                        <span class="eff-fm-tl__d"><?= htmlspecialchars($ehDateFmt, ENT_QUOTES, 'UTF-8') ?></span>
+                        <b><?= htmlspecialchars($elevStatusLabel($ehStatus), ENT_QUOTES, 'UTF-8') ?></b>
+                        <small>Demandée par <?= htmlspecialchars($ehRequester, ENT_QUOTES, 'UTF-8') ?></small>
+                    </li>
+                <?php endforeach; ?>
+            </ol>
+        <?php endif; ?>
+        <?php if ($canRequestElevation && $elevationCooldownSeconds > 0): ?>
+            <p class="eff-fm-lead">Une demande a déjà été envoyée. Patientez <?= htmlspecialchars($elevationCooldownLabel($elevationCooldownSeconds), ENT_QUOTES, 'UTF-8') ?> avant d’en renvoyer une.</p>
+        <?php elseif ($canRequestElevation): ?>
+            <p class="eff-fm-lead">Demandez un changement de grade, de fonction, d’unité ou de droits à une personne habilitée.</p>
+            <button type="button" class="eff-btn eff-btn--warn" data-dialog-open="eff-dlg-elevation">Demander une élévation</button>
+        <?php elseif ($elevationNoRecipients ?? false): ?>
+            <p class="eff-fm-lead">Élévation indisponible : aucun autre membre n’est habilité à traiter la demande.</p>
+        <?php else: ?>
+            <p class="eff-fm-lead">Les changements de grade, de fonction ou d’affectation passent par une demande d’élévation.</p>
+        <?php endif; ?>
+    </article>
+        </div>
+    </section>
+    </div>
+
+    <?= $panelOpen('qualifications') ?>
+    <section class="eff-fm-sec" id="qualifications-distinctions" aria-labelledby="qualifications-titre">
+        <header class="eff-fm-sec__head">
+            <h2 id="qualifications-titre">Qualifications et distinctions</h2>
+            <p>Ce qu’elle sait faire et ce qui lui a été décerné.</p>
+        </header>
+        <div class="eff-fm-cards">
     <article class="eff-fm-card" id="qualifications">
         <div class="eff-fm-card__head">
             <h3>Qualifications</h3>
@@ -1023,37 +1113,75 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
             <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(url('back-office/referentiels/qualifications'), ENT_QUOTES, 'UTF-8') ?>">Référentiel</a>
         </div>
     </article>
-    <article class="eff-fm-card" id="elevation">
+    <article class="eff-fm-card" id="distinctions">
         <div class="eff-fm-card__head">
-            <h3>Élévation</h3>
+            <h3>Décorations</h3>
+            <?php if ($canAwardDecorations): ?>
+                <a class="eff-fm-btn is-sm" href="#decerner">Décerner une décoration</a>
+            <?php endif; ?>
         </div>
-        <?php if ($elevationHistory !== []): ?>
-            <ol class="eff-fm-tl">
-                <?php foreach ($elevationHistory as $ei => $eh): ?>
+        <?php if ($memberAwards === []): ?>
+            <p class="eff-fm-lead">Aucune décoration décernée.</p>
+        <?php else: ?>
+            <ul class="eff-fm-list">
+                <?php foreach ($memberAwards as $award): ?>
                     <?php
-                    $ehStatus = (string) ($eh['status'] ?? 'pending');
-                    $ehRequester = trim((string) ($eh['requester_display_name'] ?? '')) ?: trim((string) ($eh['requester_email'] ?? '')) ?: 'Membre';
-                    $ehDateFmt = $fmtDate((string) ($eh['created_at'] ?? '')) ?: '—';
+                    $awardGrade = trim((string) ($award['decoration_grade'] ?? ''));
+                    $awardAuthority = trim((string) ($award['authority'] ?? ''));
+                    $awardCitation = trim((string) ($award['citation_text'] ?? ''));
                     ?>
-                    <li class="<?= $ehStatus === 'approved' && $ei === 0 ? 'is-now' : (in_array($ehStatus, ['pending', 'in_review'], true) ? 'is-next' : '') ?>">
-                        <span class="eff-fm-tl__d"><?= htmlspecialchars($ehDateFmt, ENT_QUOTES, 'UTF-8') ?></span>
-                        <b><?= htmlspecialchars($elevStatusLabel($ehStatus), ENT_QUOTES, 'UTF-8') ?></b>
-                        <small>Demandée par <?= htmlspecialchars($ehRequester, ENT_QUOTES, 'UTF-8') ?></small>
+                    <li>
+                        <span class="eff-fm-list__dt"><?= $h($fmtDate((string) ($award['awarded_at'] ?? '')) ?: '—') ?></span>
+                        <div>
+                            <b><?= $h((string) ($award['definition_name'] ?? 'Décoration')) ?><?= $awardGrade !== '' ? ' — ' . $h($awardGrade) : '' ?></b>
+                            <?php if ($awardAuthority !== ''): ?><p>Décernée par <?= $h($awardAuthority) ?></p><?php endif; ?>
+                            <?php if ($canAwardDecorations && $awardCitation !== ''): ?><p><?= $h($awardCitation) ?></p><?php endif; ?>
+                        </div>
                     </li>
                 <?php endforeach; ?>
-            </ol>
+            </ul>
         <?php endif; ?>
-        <?php if ($canRequestElevation && $elevationCooldownSeconds > 0): ?>
-            <p class="eff-fm-lead">Une demande a déjà été envoyée. Patientez <?= htmlspecialchars($elevationCooldownLabel($elevationCooldownSeconds), ENT_QUOTES, 'UTF-8') ?> avant d’en renvoyer une.</p>
-        <?php elseif ($canRequestElevation): ?>
-            <p class="eff-fm-lead">Demandez un changement de grade, de fonction, d’unité ou de droits à une personne habilitée.</p>
-            <button type="button" class="eff-btn eff-btn--warn" data-dialog-open="eff-dlg-elevation">Demander une élévation</button>
-        <?php elseif ($elevationNoRecipients ?? false): ?>
-            <p class="eff-fm-lead">Élévation indisponible : aucun autre membre n’est habilité à traiter la demande.</p>
-        <?php else: ?>
-            <p class="eff-fm-lead">Les changements de grade, de fonction ou d’affectation passent par une demande d’élévation.</p>
+        <?php if ($canAwardDecorations): ?>
+            <?php if ($awardDefinitions === []): ?>
+                <p class="eff-fm-hint">Aucune décoration n’est définie pour la communauté. <a href="<?= $h(url('back-office/referentiels/decorations')) ?>">Créer une décoration</a></p>
+            <?php else: ?>
+                <details class="eff-card__edit">
+                    <summary id="decerner">Décerner une décoration</summary>
+                    <form method="post" action="<?= $h(url('back-office/referentiels/decorations/attribuer')) ?>" class="eff-card__form">
+                        <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                        <input type="hidden" name="personnel_id" value="<?= (int) $id ?>">
+                        <input type="hidden" name="return_to" value="member">
+                        <label for="eff-award-definition">Décoration</label>
+                        <select id="eff-award-definition" name="definition_id" required>
+                            <option value="">Choisir une décoration</option>
+                            <?php foreach ($awardDefinitions as $awardDef): ?>
+                                <option value="<?= (int) ($awardDef['id'] ?? 0) ?>"><?= $h((string) ($awardDef['name'] ?? '')) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <label for="eff-award-authority">Autorité</label>
+                        <input id="eff-award-authority" type="text" name="authority" maxlength="255" placeholder="Ex. Chef de corps">
+                        <label for="eff-award-date">Date</label>
+                        <input id="eff-award-date" type="date" name="awarded_at" value="<?= $h(date('Y-m-d')) ?>">
+                        <label for="eff-award-citation">Texte de citation</label>
+                        <textarea id="eff-award-citation" name="citation_text" rows="3" placeholder="Ex. Pour son sang-froid lors de l’opération Atlas…"></textarea>
+                        <p class="eff-card__hint">La décoration est inscrite au dossier et à l’historique du membre. <a href="<?= $h(url('back-office/referentiels/decorations')) ?>">Gérer le référentiel des décorations</a></p>
+                        <button type="submit" class="eff-btn eff-btn--primary">Décerner la décoration</button>
+                    </form>
+                </details>
+            <?php endif; ?>
         <?php endif; ?>
     </article>
+        </div>
+    </section>
+    </div>
+
+    <?= $panelOpen('statut') ?>
+    <section class="eff-fm-sec" id="statut-position" aria-labelledby="statut-titre">
+        <header class="eff-fm-sec__head">
+            <h2 id="statut-titre">Position et statut</h2>
+            <p>Position administrative, état du compte et départ.</p>
+        </header>
+        <div class="eff-fm-cards">
     <article class="eff-fm-card" id="statut">
         <div class="eff-fm-card__head">
             <h3>Statut du compte</h3>
@@ -1137,7 +1265,9 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
     <?php endif; ?>
         </div>
     </section>
+    </div>
 
+    <?= $panelOpen('suivi-rh') ?>
     <section class="eff-fm-sec" id="suivi-rh" aria-labelledby="suivi-rh-titre">
         <header class="eff-fm-sec__head">
             <h2 id="suivi-rh-titre">Suivi RH</h2>
@@ -1281,6 +1411,8 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
         <?php endif; ?>
     </article>
     <?php endif; ?>
+    <?php // Coffre RH : la liste et le lien exigent le droit de lecture des documents RH (comme la page elle-même). ?>
+    <?php if ($canViewHrDocuments): ?>
     <article class="eff-fm-card" id="documents-rh">
         <div class="eff-fm-card__head">
             <h3>Documents RH</h3>
@@ -1293,6 +1425,7 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
             return [$fmtDate((string) ($d['created_at'] ?? '')), $title, $hrDocumentTypeLabels[$type] ?? ''];
         }); ?>
     </article>
+    <?php endif; ?>
     <article class="eff-fm-card" id="mobilite">
         <div class="eff-fm-card__head">
             <h3>Mobilité et souhaits</h3>
@@ -1309,11 +1442,9 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
     </article>
         </div>
     </section>
+    </div>
 
-    <?php if (is_array($memberPapers ?? null)): ?>
-        <?php require __DIR__ . '/partials/member_papers.php'; ?>
-    <?php endif; ?>
-
+    <?= $panelOpen('historique') ?>
     <section class="eff-fm-sec" id="historique" aria-labelledby="historique-titre">
         <header class="eff-fm-sec__head">
             <h2 id="historique-titre">Historique</h2>
@@ -1322,25 +1453,41 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
         <div class="eff-fm-cards">
     <article class="eff-fm-card eff-fm-card--wide" id="historique-rh">
         <div class="eff-fm-card__head">
-            <h3>Historique RH et bilans</h3>
+            <h3 id="chronologie">Chronologie du dossier</h3>
         </div>
         <?php
-        // Trois sources mêlées : remises dans l'ordre annoncé, du plus récent au plus ancien.
-        $combinedHistory = array_merge($orgHistory, $serviceHistory, $stageBilans);
-        $historyDate = static fn (array $e): string => (string) ($e['event_date'] ?? $e['occurred_at'] ?? $e['created_at'] ?? '');
-        usort($combinedHistory, static fn (array $a, array $b): int => strcmp($historyDate($b), $historyDate($a)));
+        // Lecture seule : fusion de ce que la fiche affiche déjà (MemberChronology), sans rien écrire.
+        $chronoCounts = \App\Services\Effectifs\MemberChronology::counts($memberChronology);
+        $chronoShown = \App\Services\Effectifs\MemberChronology::filter($memberChronology, $chronologyType);
+        $chronoUrl = static fn (string $type): string => $ficheBaseUrl . '?onglet=historique' . ($type !== '' ? '&type=' . rawurlencode($type) : '') . '#chronologie';
         ?>
-        <?php $renderRhRows($combinedHistory, static function (array $h) use ($fmtDate): array {
-            $label = trim((string) ($h['title'] ?? $h['event_label'] ?? $h['event_type'] ?? $h['stage_label'] ?? $h['summary'] ?? 'Événement RH'));
-            $date = $fmtDate((string) ($h['event_date'] ?? $h['occurred_at'] ?? $h['created_at'] ?? ''));
-            // Libellé enregistré en français : traduit morceau par morceau avant d'être affiché.
-            $label = \App\Support\HrHistoryLabel::forPage($label);
-
-            return [$date, $label, ''];
-        }); ?>
+        <?php if ($memberChronology === []): ?>
+            <p class="eff-fm-lead">Aucun événement enregistré dans le dossier.</p>
+        <?php else: ?>
+            <nav class="eff-fm-chrono__filter" aria-label="Filtrer la chronologie par type">
+                <a class="eff-fm-chip<?= $chronologyType === '' ? ' is-info' : '' ?>" href="<?= $h($chronoUrl('')) ?>"<?= $chronologyType === '' ? ' aria-current="true"' : '' ?>>Tout (<?= count($memberChronology) ?>)</a>
+                <?php foreach ($chronoCounts as $chronoType => $chronoN): ?>
+                    <a class="eff-fm-chip<?= $chronologyType === $chronoType ? ' is-info' : '' ?>" href="<?= $h($chronoUrl($chronoType)) ?>"<?= $chronologyType === $chronoType ? ' aria-current="true"' : '' ?>><?= $h(\App\Services\Effectifs\MemberChronology::TYPES[$chronoType]) ?> (<?= (int) $chronoN ?>)</a>
+                <?php endforeach; ?>
+            </nav>
+            <ol class="eff-fm-list eff-fm-chrono">
+                <?php foreach ($chronoShown as $chronoEvent): ?>
+                    <?php $chronoTitle = $chronoEvent['stored'] ? \App\Support\HrHistoryLabel::forPage($chronoEvent['title']) : $chronoEvent['title']; ?>
+                    <li>
+                        <span class="eff-fm-list__dt"><?= $h($fmtDate($chronoEvent['date']) ?: '—') ?></span>
+                        <div>
+                            <b><?= $h($chronoTitle) ?> <a class="eff-fm-chip eff-fm-chrono__type" href="#<?= $h($chronoEvent['anchor']) ?>"><?= $h($chronoEvent['type_label']) ?></a></b>
+                            <?php if ($chronoEvent['detail'] !== ''): ?><p><?= $h($chronoEvent['detail']) ?></p><?php endif; ?>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
+            </ol>
+            <p class="eff-fm-hint">Lecture seule, du plus récent au plus ancien (200 événements au plus). Chaque type renvoie à la carte de la fiche qui le détaille ; les droits d’accès, les papiers et le parcours d’intégration se consultent dans leurs propres pages.</p>
+        <?php endif; ?>
     </article>
         </div>
     </section>
+    </div>
 </div>
 
 <aside class="eff-fm-rail" aria-label="Raccourcis du dossier">
@@ -1413,7 +1560,7 @@ $sanctionsActive = (int) ($sanctions['active'] ?? 0);
         <ul class="eff-fm-links">
             <li><a class="eff-fm-link" href="<?= htmlspecialchars(url('personnel/' . $id), ENT_QUOTES, 'UTF-8') ?>">Voir la fiche du membre</a></li>
             <li><a class="eff-fm-link" href="<?= htmlspecialchars(url('back-office/referentiels/qualifications/attribuer') . '?user_id=' . (int) $id, ENT_QUOTES, 'UTF-8') ?>">Attribuer une qualification</a></li>
-            <li><a class="eff-fm-link" href="<?= htmlspecialchars(effectifs_workspace_url('documents-rh?user_id=' . $id), ENT_QUOTES, 'UTF-8') ?>">Pièces du dossier RH</a></li>
+            <?php if ($canViewHrDocuments): ?><li><a class="eff-fm-link" href="<?= htmlspecialchars(effectifs_workspace_url('documents-rh?user_id=' . $id), ENT_QUOTES, 'UTF-8') ?>">Pièces du dossier RH</a></li><?php endif; ?>
             <li><a class="eff-fm-link" href="<?= htmlspecialchars(effectifs_workspace_url('mobilite?user_id=' . $id), ENT_QUOTES, 'UTF-8') ?>">Mobilité et souhaits</a></li>
         </ul>
     </section>
