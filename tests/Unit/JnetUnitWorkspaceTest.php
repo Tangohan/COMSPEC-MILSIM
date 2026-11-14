@@ -238,6 +238,23 @@ final class JnetUnitWorkspaceTest extends TestCase
         self::assertStringContainsString('canPost', $controller);
     }
 
+    public function testPagesAreWrittenAsADocumentButKeepTheStorageFormatAndFormFallback(): void
+    {
+        $page = $this->read('views/jnet/unit/_page.php');
+        // Format des blocs et gestes serveur inchangés : le formulaire marche sans JavaScript.
+        foreach (['name="<?= $name ?>[id]"', 'name="<?= $name ?>[t]"', '[text]', '[done]', '[opts][]', 'name="version"', 'value="del:<?= $i ?>"', 'value="add:<?= $h($type) ?>"'] as $needle) {
+            self::assertStringContainsString($needle, $page, $needle);
+        }
+        // Plus de cadre gris ni de libellé de type au-dessus du texte : le texte se modifie en place.
+        self::assertStringNotContainsString('uw-block__type', $page);
+        self::assertStringNotContainsString('<fieldset', $page);
+        self::assertStringContainsString('data-uw-editor', $page);
+        self::assertStringContainsString('data-uw-status', $page);
+        $pages = $this->read('views/jnet/unit/_pages.php');
+        self::assertStringContainsString('data-uw-reorder', $pages);
+        self::assertStringContainsString('uw-pages-empty', $pages);
+    }
+
     public function testFilesComeOnlyFromTheSharedFilesModuleWithItsOwnAccessControl(): void
     {
         $svc = $this->read('app/Services/Jnet/JnetUnitFiles.php');

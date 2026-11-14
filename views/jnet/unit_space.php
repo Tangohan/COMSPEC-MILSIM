@@ -101,7 +101,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_spaces.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_unit_space.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_unit_shell.css')) ?>">
-    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_unit_workspace.css?r=202611142100')) ?>">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_unit_workspace.css?r=202611142240')) ?>">
 </head>
 <body class="ja us us--<?= $h($look['theme']) ?>" style="<?= $h(S::cssVars($look)) ?>" data-uw-unit="<?= $unitId ?>" data-uw-label="<?= $h($label) ?>" data-uw-view="<?= $h($view) ?>">
 <a class="ja-skip" href="#us-main">Aller au contenu</a>
@@ -308,6 +308,6 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
 <?php endif; ?>
 <div class="uw-toasts" role="status" aria-live="polite" data-uw-toasts></div>
 <script src="<?= $h(asset_url('assets/js/jnet_spaces.js')) ?>" defer></script>
-<script src="<?= $h(asset_url('assets/js/jnet_unit_workspace.js?r=202611142100')) ?>" defer></script>
+<script src="<?= $h(asset_url('assets/js/jnet_unit_workspace.js?r=202611142240')) ?>" defer></script>
 </body>
 </html>
