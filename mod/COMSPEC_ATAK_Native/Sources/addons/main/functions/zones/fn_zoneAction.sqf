@@ -11,7 +11,9 @@
       arma, render (FILL surligné | LINE contour | POINT point centré), aff (type par défaut des zones), area (zone de
       travail [RECT [[x0, y0], [x1, y1]] | POLY [points] | CIRCLE [[x, y], rayon]]), gp (réglages du découpage, HashMap),
       zones, axes, cps, lines (contours et traits tracés), st (style du plan, HashMap), from (auteur d'un plan reçu),
-      side / grp / ft (destinataires de la situation), fence (diffusion à l'entrée dans la zone : chez un destinataire
+      side / grp / ft (destinataires de la situation), alert (prévenir le TOC : chaque porteur du plan partagé signale ses
+      entrées et sorties de zone au flux du TOC, "fenceTick", événement serveur comspec_atak_native_zoneMove, via fn_netSend),
+      fence (diffusion à l'entrée dans la zone : chez un destinataire
       hors de la zone de travail, le plan reçu reste en sommeil [dormant, mémoire seulement : masqué, sans annonce ni
       alerte de situation] et se réveille à son entrée, action "fenceTick" toutes les 5 s, avec un résumé de ce qu'il
       a manqué ; le rejeu du serveur fait de même pour qui arrive en cours de partie) ; en mémoire seulement : mk / mkz (marqueurs d'Arma et leur clé),
@@ -51,6 +53,30 @@ if (_act isEqualTo "inArea") exitWith {
 };
 if (_act isEqualTo "fenceTick") exitWith {
     if (isNull player || {!alive player}) exitWith {};
+    // Alerte au TOC : changement de zone du joueur, pour chaque plan partagé qui le demande. Le premier passage ne signale
+    // rien (le plan vient d'arriver : pas de fausse entrée).
+    private _lastZ = uiNamespace getVariable ["COMSPEC_ATAK_ZnAlertLast", createHashMap];
+    uiNamespace setVariable ["COMSPEC_ATAK_ZnAlertLast", _lastZ];
+    private _pp = getPosATL player;
+    {
+        private _pl = _x;
+        if !(_pl getOrDefault ["alert", false]) then { continue; };
+        if (_pl getOrDefault ["dormant", false] || {(_pl getOrDefault ["scope", 0]) isEqualTo 0}) then { continue; };
+        private _pid = _pl get "id";
+        private _zz = ["zoneIn", [_pl, _pp]] call comspec_atak_native_fnc_zoneAction;
+        private _zid = ""; private _zname = "";
+        if ((count _zz) > 0) then { _zid = _zz select 0; _zname = _zz select 1; };
+        if !(_pid in _lastZ) then { _lastZ set [_pid, [_zid, _zname]]; continue; };
+        (_lastZ get _pid) params ["_pzid", "_pzname"];
+        if (_zid isEqualTo _pzid) then { continue; };
+        _lastZ set [_pid, [_zid, _zname]];
+        private _what = switch (true) do {
+            case (_pzid isEqualTo ""): { format ["entre en %1", _zname] };
+            case (_zid isEqualTo ""): { format ["sort de %1", _pzname] };
+            default { format ["sort de %1, entre en %2", _pzname, _zname] };
+        };
+        [{ ["comspec_atak_native_zoneMove", _this] call CBA_fnc_serverEvent; }, [str side group player, [player] call comspec_atak_native_fnc_unitCallsign, _pl get "name", _what, getPosASL player, mapGridPosition player], "Zone", 1] call comspec_atak_native_fnc_netSend;
+    } forEach ((values (missionNamespace getVariable ["COMSPEC_ATAK_ZnMine", createHashMap])) + (values (missionNamespace getVariable ["COMSPEC_ATAK_ZnRx", createHashMap])));
     {
         private _b = _x;
         if ((_b getOrDefault ["dormant", false]) && {["inArea", [_b, getPosATL player]] call comspec_atak_native_fnc_zoneAction}) then {
@@ -474,7 +500,7 @@ switch (_act) do {
         if !(missionNamespace getVariable ["comspec_atak_native_zones_share", true]) then { _dsc = 0; };
         private _b = createHashMapFromArray [
             ["id", _id], ["name", [_name, 24] call _clean], ["owner", [player] call comspec_atak_native_fnc_unitCallsign], ["uid", getPlayerUID player],
-            ["rev", 1], ["scope", _dsc], ["live", _dsc > 0], ["vis", true], ["fence", false], ["arma", (missionNamespace getVariable ["comspec_atak_native_zones_arma", true]) && {_dsc > 0}], ["render", "FILL"], ["aff", "GEN"], ["area", []], ["gp", _gp],
+            ["rev", 1], ["scope", _dsc], ["live", _dsc > 0], ["vis", true], ["fence", false], ["alert", false], ["arma", (missionNamespace getVariable ["comspec_atak_native_zones_arma", true]) && {_dsc > 0}], ["render", "FILL"], ["aff", "GEN"], ["area", []], ["gp", _gp],
             ["zones", []], ["axes", []], ["cps", []], ["lines", []], ["st", call _stDef], ["from", ""], ["side", str side group player], ["grp", netId group player], ["ft", ""], ["mk", []]
         ];
         _mine set [_id, _b];

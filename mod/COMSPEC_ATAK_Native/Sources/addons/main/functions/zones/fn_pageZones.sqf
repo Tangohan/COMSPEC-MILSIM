@@ -765,6 +765,7 @@ private _panelRows = {
                     ["PRIVÉ", ["share", 0] call _ui1, _sc isEqualTo 0, "Personne d'autre"]
                 ], "Par le réseau ATAK : sans réseau, l'envoi part au retour du signal ; les états et signalements suivent"];
                 _rows pushBack ["switch", "Diffuser à l'entrée dans la zone", _b getOrDefault ["fence", false], ["toggle", ["fence", "znFence"]] call _ui1, "Chaque destinataire ne reçoit le plan, ses états et ses signalements qu'en entrant dans la zone de travail ; qui arrive plus tard est rattrapé à son entrée", false, "znFence"];
+                _rows pushBack ["switch", "Prévenir le TOC aux entrées et sorties", _b getOrDefault ["alert", false], ["toggle", ["alert", "znAlert"]] call _ui1, "Le flux du TOC indique quand un équipier entre ou sort d'une zone de ce plan (le plan doit être partagé)", false, "znAlert"];
                 _rows pushBack ["switch", "Carte d'Arma et Athena", _b get "arma", ["toggle", ["arma", "znArma"]] call _ui1, "Cases, contours, traits, étiquettes, axes et CP en marqueurs de la carte d'Arma (le camp pour un plan au camp), visibles sans appareil ; au site Athena si le plan est partagé", !(missionNamespace getVariable ["comspec_atak_native_zones_arma", true]), "znArma"];
                 private _cr = (_ui get "confirm") isEqualTo "reset";
                 private _cd = (_ui get "confirm") isEqualTo (_b get "id");

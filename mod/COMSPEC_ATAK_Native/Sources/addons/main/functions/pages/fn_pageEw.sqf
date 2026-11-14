@@ -39,10 +39,10 @@ switch (_tab) do {
         if ((count _fx) > 0) then {
             _rows pushBack ["section", "Points estimés", "Recoupement de relèvements pris depuis des points différents"];
             {
-                _x params ["_fp", "_fr", "_fk", "_ft", "_fn"];
+                _x params ["_fp", "_fr", "_fk", "_ft", "_fn", ["_fc", 0]];
                 private _fcol = createHashMapFromArray [["BROUILLEUR", "#d940f2"], ["GONIO", (COMSPEC_ATAK_Th get "hexAlert")]] getOrDefault [_fk, (COMSPEC_ATAK_Th get "hexWarn")];
                 _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t size='1.1'>%3</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>à %4 près · %5 recoupement(s) · il y a %6 min</t>",
-                    _fcol, _fk, mapGridPosition _fp, [_fr] call _km, _fn, floor ((time - _ft) / 60)]];
+                    _fcol, _fk + ([""] + [format [" n°%1", _fc]] select (_fc > 0)), mapGridPosition _fp, [_fr] call _km, _fn, floor ((time - _ft) / 60)]];
                 _rows pushBack ["buttons", [["VOIR LE POINT SUR LA CARTE", compile format ["['locateFix', %1] call comspec_atak_native_fnc_ewAction;", _forEachIndex], true]]];
             } forEach _fx;
             _rows pushBack ["section", "Relèvements", ""];

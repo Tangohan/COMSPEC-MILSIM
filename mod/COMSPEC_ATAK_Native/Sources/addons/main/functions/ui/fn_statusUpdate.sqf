@@ -49,6 +49,12 @@ if (_lq getOrDefault ["airplane", false]) then {
 // Type de liaison (fn_linkQuality "net") : SAT sans relais en bleu ; libellé à gauche de la barre (fn_layoutApply).
 private _netT = _lq getOrDefault ["net", ""];
 if (_netT isEqualTo "SAT") then { _sigC = [0.25, 0.55, 1, 1]; };
+// Liaison faible (fn_netSend) : de gros envois attendent une meilleure liaison ; le type de liaison le dit (« RELAIS · FAIBLE »).
+private _held = count ((missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []]) select { (_x param [3, 1]) >= 100 });
+if (_held > 0 && {missionNamespace getVariable ["comspec_atak_native_net_degraded", true]} && {(_lq get "bars") > 0}) then {
+    _netT = format ["%1 · %2", ([_netT, "SIGNAL"] select (_netT isEqualTo "")) call comspec_atak_native_fnc_tr, "FAIBLE" call comspec_atak_native_fnc_tr];
+    _sigTt = _sigTt + (format [" · %1 gros envoi(s) en attente d'une meilleure liaison" call comspec_atak_native_fnc_tr, _held]);
+};
 private _netCtl = uiNamespace getVariable ["COMSPEC_ATAK_NetTypeCtrl", controlNull];
 if (!isNull _netCtl) then {
     [_netCtl, "cs_t", _netT] call _put;
