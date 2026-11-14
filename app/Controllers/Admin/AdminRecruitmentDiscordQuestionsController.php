@@ -10,6 +10,8 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\RecruitmentDiscordQuestionRepository;
+use App\Support\BackOfficeRightGuard;
+use App\Support\GuardsBackOfficeRight;
 
 /**
  * Configuration, par tenant, des questions custom du formulaire de recrutement Discord
@@ -17,6 +19,14 @@ use App\Repositories\RecruitmentDiscordQuestionRepository;
  */
 class AdminRecruitmentDiscordQuestionsController
 {
+    use GuardsBackOfficeRight;
+
+    /** Recrutement : OrganizationAdminMiddleware ouvre /back-office/recruitments à ce droit (menu du bureau de recrutement). */
+    protected function backOfficeRights(): array
+    {
+        return [...BackOfficeRightGuard::MANAGERS, 'organization.recruitment.manage'];
+    }
+
     public function __construct(
         private RecruitmentDiscordQuestionRepository $questionRepository,
         private EnlistmentRepository $enlistmentRepository,
@@ -24,6 +34,9 @@ class AdminRecruitmentDiscordQuestionsController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -62,6 +75,9 @@ class AdminRecruitmentDiscordQuestionsController
 
     public function store(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = Session::get('tenant_id');
         if (!$tenantId || !$request->isPost()) {
             return Response::redirect(url('back-office/recruitments/discord-questions'));
@@ -93,6 +109,9 @@ class AdminRecruitmentDiscordQuestionsController
 
     public function update(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = Session::get('tenant_id');
         if (!$tenantId || !$request->isPost()) {
             return Response::redirect(url('back-office/recruitments/discord-questions'));
@@ -121,6 +140,9 @@ class AdminRecruitmentDiscordQuestionsController
 
     public function toggle(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = Session::get('tenant_id');
         if (!$tenantId || !$request->isPost()) {
             return Response::redirect(url('back-office/recruitments/discord-questions'));
@@ -143,6 +165,9 @@ class AdminRecruitmentDiscordQuestionsController
 
     public function delete(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = Session::get('tenant_id');
         if (!$tenantId || !$request->isPost()) {
             return Response::redirect(url('back-office/recruitments/discord-questions'));
@@ -164,6 +189,9 @@ class AdminRecruitmentDiscordQuestionsController
 
     public function reorder(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = Session::get('tenant_id');
         if (!$tenantId || !$request->isPost()) {
             return Response::redirect(url('back-office/recruitments/discord-questions'));

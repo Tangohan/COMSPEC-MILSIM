@@ -13,6 +13,7 @@ use App\Repositories\CompetencyLinkRepository;
 use App\Repositories\GradeRepository;
 use App\Services\Training\CompetencyCatalogService;
 use App\Services\Training\CompetencyPathwayGenerator;
+use App\Support\GuardsBackOfficeRight;
 
 /**
  * Référentiel des compétences : chaque compétence d'un palier de formation, le grade auquel elle est attendue,
@@ -21,6 +22,8 @@ use App\Services\Training\CompetencyPathwayGenerator;
  */
 class CompetencyMatrixController
 {
+    use GuardsBackOfficeRight;
+
     /** @var list<string> */
     public const ACQUISITION_LEVELS = ['Basique', 'Intermédiaire', 'Avancé', 'Spécifique'];
 
@@ -36,6 +39,9 @@ class CompetencyMatrixController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -68,6 +74,9 @@ class CompetencyMatrixController
 
     public function store(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -102,6 +111,9 @@ class CompetencyMatrixController
 
     public function update(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -141,6 +153,9 @@ class CompetencyMatrixController
 
     public function destroy(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));

@@ -8,12 +8,15 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Services\MissionsPortal\MissionsPortalService;
+use App\Support\GuardsBackOfficeRight;
 
 /**
  * Portail back-office : missions, participants, état ATAK et liaisons.
  */
 final class MissionsPortalController
 {
+    use GuardsBackOfficeRight;
+
     public function __construct(
         private MissionsPortalService $portal,
     ) {
@@ -21,6 +24,9 @@ final class MissionsPortalController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->tenantId();
         if ($tenantId <= 0) {
             return Response::redirect(url('login'));
@@ -37,6 +43,9 @@ final class MissionsPortalController
 
     public function show(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->tenantId();
         if ($tenantId <= 0) {
             return Response::redirect(url('login'));

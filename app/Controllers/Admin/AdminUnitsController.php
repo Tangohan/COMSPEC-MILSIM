@@ -9,9 +9,12 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
+use App\Support\GuardsBackOfficeRight;
 
 class AdminUnitsController
 {
+    use GuardsBackOfficeRight;
+
     public function __construct(
         private UnitRepository $unitRepository,
         private UserRepository $userRepository
@@ -19,6 +22,9 @@ class AdminUnitsController
 
     public function store(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -58,6 +64,9 @@ class AdminUnitsController
 
     public function update(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));
@@ -87,6 +96,9 @@ class AdminUnitsController
 
     public function delete(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = Session::get('tenant_id');
         if (!$tenantId) {
             return Response::redirect(url('login'));

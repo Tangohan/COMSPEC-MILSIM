@@ -19,9 +19,19 @@ use App\Support\DecorationCatalog;
 use App\Support\DecorationImageImport;
 use RuntimeException;
 use Throwable;
+use App\Support\BackOfficeRightGuard;
+use App\Support\GuardsBackOfficeRight;
 
 final class AwardReferentielController
 {
+    use GuardsBackOfficeRight;
+
+    /** Décorations : OrganizationAdminMiddleware ouvre /back-office/referentiels/decorations à ces droits fins. */
+    protected function backOfficeRights(): array
+    {
+        return [...BackOfficeRightGuard::MANAGERS, 'personnel.awards.manage', 'personnel.badges.manage'];
+    }
+
     public function __construct(
         private AwardDefinitionRepository $definitions,
         private PersonnelAwardRepository $awards,
@@ -38,6 +48,9 @@ final class AwardReferentielController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->tenant();
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -72,6 +85,9 @@ final class AwardReferentielController
 
     public function store(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -125,6 +141,9 @@ final class AwardReferentielController
      */
     public function update(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -192,6 +211,9 @@ final class AwardReferentielController
      */
     public function importImages(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -278,6 +300,9 @@ final class AwardReferentielController
 
     public function archive(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -290,6 +315,9 @@ final class AwardReferentielController
 
     public function grant(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -342,6 +370,9 @@ final class AwardReferentielController
 
     public function storeMotif(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -403,6 +434,9 @@ final class AwardReferentielController
 
     public function updateMotif(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;
@@ -476,6 +510,9 @@ final class AwardReferentielController
 
     public function archiveMotif(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = $this->post($request);
         if ($tenantId instanceof Response) {
             return $tenantId;

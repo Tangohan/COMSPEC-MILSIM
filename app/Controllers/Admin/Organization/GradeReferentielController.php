@@ -20,9 +20,12 @@ use App\Services\GradeDisplayService;
 use App\Support\CustomGradeTemplates;
 use App\Support\GradeSystemCatalog;
 use App\Support\OfficialGradeSystems;
+use App\Support\GuardsBackOfficeRight;
 
 class GradeReferentielController
 {
+    use GuardsBackOfficeRight;
+
     public function __construct(
         private GradeRepository $gradeRepository,
         private GradeCategoryRepository $gradeCategoryRepository,
@@ -38,6 +41,9 @@ class GradeReferentielController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return Response::redirect(url('login'));
@@ -109,6 +115,9 @@ class GradeReferentielController
      */
     public function setSystem(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return Response::redirect(url('login'));
@@ -184,6 +193,9 @@ class GradeReferentielController
 
     public function create(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         if (!(int) Session::get('tenant_id')) {
             return Response::redirect(url('login'));
         }
@@ -203,6 +215,9 @@ class GradeReferentielController
 
     public function store(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return Response::redirect(url('login'));
@@ -242,6 +257,9 @@ class GradeReferentielController
 
     public function edit(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return Response::redirect(url('login'));
@@ -283,6 +301,9 @@ class GradeReferentielController
 
     public function update(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return Response::redirect(url('login'));
@@ -319,6 +340,9 @@ class GradeReferentielController
 
     public function deactivate(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return Response::redirect(url('login'));
@@ -341,6 +365,9 @@ class GradeReferentielController
     /** Réaffiche un grade du catalogue masqué pour la communauté. */
     public function reactivate(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return Response::redirect(url('login'));

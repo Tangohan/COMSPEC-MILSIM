@@ -13,9 +13,12 @@ use App\Repositories\PersonnelPhaseRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Services\Personnel\PhaseRules\PhaseRuleEngine;
 use App\Services\Personnel\PhaseRules\PhaseTransitionService;
+use App\Support\GuardsBackOfficeRight;
 
 final class PersonnelPhaseAdminController
 {
+    use GuardsBackOfficeRight;
+
     public function __construct(
         private PersonnelPhaseRepository $phases,
         private PhaseRuleEngine $engine,
@@ -25,6 +28,9 @@ final class PersonnelPhaseAdminController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
             return Response::redirect(url('login'));
@@ -61,6 +67,9 @@ final class PersonnelPhaseAdminController
 
     public function save(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $redirect = url('back-office/roleplay/regles-phases');
         $tenantId = (int) Session::get('tenant_id');
         if ($tenantId < 1) {
@@ -139,6 +148,9 @@ final class PersonnelPhaseAdminController
 
     public function applyMember(Request $request, array $params = []): Response
     {
+        if (($denied = $this->guardBackOfficeRight($request)) !== null) {
+            return $denied;
+        }
         $uid = (int) ($params['id'] ?? 0);
         $tenantId = (int) Session::get('tenant_id');
         $redirect = url('personnel/' . $uid);
