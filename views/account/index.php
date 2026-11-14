@@ -346,6 +346,7 @@ $todoCount = count($todo);
                         <a href="<?= $h(url('account/security/devices')) ?>">Gérer</a>
                     </dd>
                 </div>
+                <div>
                     <dt>Membre depuis</dt>
                     <dd><?= $h($formatDay($accountMemberSince) ?? '—') ?></dd>
                 </div>
