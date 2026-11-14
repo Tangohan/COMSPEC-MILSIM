@@ -11,6 +11,8 @@ use App\Controllers\Admin\AdminAtakRealismController;
 use App\Controllers\Admin\AdminAtakSquadsController;
 use App\Controllers\Admin\AdminFireTeamsController;
 use App\Controllers\Admin\AdminPlayerMetricsController;
+use App\Controllers\Admin\EffectifsWorkspaceController;
+use App\Controllers\Admin\HrRequestsController;
 use App\Controllers\Admin\Organization\AdminDoctrineController;
 use App\Controllers\Admin\Organization\ConfigurationUpdateController;
 use App\Controllers\Admin\Organization\DoctrineAdminController;
@@ -19,6 +21,7 @@ use App\Controllers\Admin\Organization\MissionsPortalController;
 use App\Controllers\Admin\Organization\PersonnelPhaseAdminController;
 use App\Controllers\Admin\Organization\RoleplayFollowupAdminController;
 use App\Controllers\Admin\RhDossierWorkspaceController;
+use App\Controllers\Web\PersonnelCorrectionController;
 use App\Core\Container;
 use App\Core\Request;
 use App\Core\Response;
@@ -124,6 +127,19 @@ final class BackOfficeTabs
                 'nouveautes' => ['label' => 'Nouveautés', 'legacy' => 'back-office/nouveautes-organisation', 'handler' => [ConfigurationUpdateController::class, 'novelties'], 'middleware' => self::ORG],
             ],
         ],
+        // Demandes RH : la file unique (accueil) + les anciens écrans de décision, un par type. Les droits restent ceux
+        // de chaque ancien écran ; l'accueil ne liste que les types que la personne peut lire (HrRequestsDesk).
+        'back-office/demandes-rh' => [
+            'label' => 'Demandes RH',
+            'handler' => [HrRequestsController::class, 'index'],
+            'middleware' => [AuthMiddleware::class],
+            'bar' => true,
+            'tabs' => [
+                'elevations' => ['label' => 'Élévations', 'legacy' => 'back-office/ressources/effectifs/elevations', 'handler' => [EffectifsWorkspaceController::class, 'elevationRequests'], 'middleware' => self::ORG],
+                'corrections' => ['label' => 'Corrections', 'legacy' => 'back-office/personnel/corrections', 'handler' => [PersonnelCorrectionController::class, 'index'], 'middleware' => [AuthMiddleware::class]],
+                'mobilite' => ['label' => 'Mobilité', 'legacy' => 'back-office/ressources/effectifs/mobilite', 'handler' => [RhDossierWorkspaceController::class, 'mobility'], 'middleware' => self::ORG],
+            ],
+        ],
         // Effectifs : la barre d’onglets du bureau existe déjà (views/admin/effectifs_workspace/shell.php).
         'back-office/ressources/effectifs/a-traiter' => [
             'label' => 'À traiter',
@@ -160,14 +176,19 @@ final class BackOfficeTabs
     }
 
     /**
-     * Lien vers l’onglet qui remplace une ancienne page (ou url() inchangé si ce n’en est pas une).
+     * Lien vers l’onglet qui remplace une ancienne page (ou url() inchangé si ce n’en est pas une),
+     * avec des paramètres de requête en plus (filtres, page).
+     *
+     * @param array<string, scalar> $query
      */
-    public static function urlFor(string $legacyPath): string
+    public static function urlFor(string $legacyPath, array $query = []): string
     {
         $legacyPath = trim($legacyPath, '/');
         $map = self::legacyRedirects();
+        $target = $map[$legacyPath] ?? $legacyPath;
+        $qs = $query === [] ? '' : (str_contains($target, '?') ? '&' : '?') . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
 
-        return url($map[$legacyPath] ?? $legacyPath);
+        return url($target) . $qs;
     }
 
     /**

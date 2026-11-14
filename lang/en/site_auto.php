@@ -65250,4 +65250,13 @@ return [
     'Avis défavorable de l’échelon supérieur' => 'Unfavourable opinion from the next echelon up',
     'Avis favorable : %1' => 'Favourable opinion: %1',
     'Avis défavorable : %1' => 'Unfavourable opinion: %1',
+    'Demandes RH' => 'HR requests',
+    'Type' => 'Type',
+    'Avis du circuit' => 'Circuit opinion',
+    'Corrections' => 'Corrections',
+    'Correction' => 'Correction',
+    'Vous n’avez accès à aucune file de demandes RH.' => 'You do not have access to any HR request queue.',
+    'Correction de la fiche' => 'Record correction',
+    'Ce qui attend une décision, tous types confondus. Chaque type garde son écran de décision.' => 'Everything awaiting a decision, all types together. Each type keeps its own decision screen.',
+    'Liste limitée aux demandes les plus anciennes de chaque type : ouvrez le filtre d’un type pour voir toutes ses demandes.' => 'List limited to the oldest requests of each type: open a type’s filter to see all of its requests.',
 ];

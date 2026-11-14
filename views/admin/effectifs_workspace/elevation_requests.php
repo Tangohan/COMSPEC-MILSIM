@@ -31,7 +31,7 @@ $elevPageUrl = static function (int $p) use ($showAll): string {
         'page' => $p > 1 ? $p : null,
     ], static fn ($v) => $v !== null));
 
-    return effectifs_workspace_url('elevations') . ($q !== '' ? '?' . $q : '');
+    return \App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/elevations') . ($q !== '' ? '&' . $q : '');
 };
 $kindLabels = is_array($elevationKindLabels ?? null) ? $elevationKindLabels : [];
 $catalog = is_array($elevationCatalog ?? null) ? $elevationCatalog : [];
@@ -147,8 +147,8 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
             <p class="eff-catalog__lead">Les demandes envoyées depuis le tableur ou une fiche membre arrivent ici.</p>
         </div>
         <nav class="eff-seg" aria-label="Filtrer les demandes">
-            <a href="<?= htmlspecialchars(effectifs_workspace_url('elevations'), ENT_QUOTES, 'UTF-8') ?>" class="<?= $showAll ? '' : 'is-on' ?>">Ouvertes</a>
-            <a href="<?= htmlspecialchars(effectifs_workspace_url('elevations') . '?all=1', ENT_QUOTES, 'UTF-8') ?>" class="<?= $showAll ? 'is-on' : '' ?>">Tout l’historique</a>
+            <a href="<?= htmlspecialchars(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/elevations'), ENT_QUOTES, 'UTF-8') ?>" class="<?= $showAll ? '' : 'is-on' ?>">Ouvertes</a>
+            <a href="<?= htmlspecialchars(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/elevations', ['all' => '1']), ENT_QUOTES, 'UTF-8') ?>" class="<?= $showAll ? 'is-on' : '' ?>">Tout l’historique</a>
         </nav>
     </div>
 

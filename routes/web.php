@@ -771,7 +771,7 @@ return function (Router $router) {
     $router->get('/personnel/{id}/correction', [\App\Controllers\Web\PersonnelCorrectionController::class, 'form'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/correction', [\App\Controllers\Web\PersonnelCorrectionController::class, 'submit'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/correction/{requestId}/annuler', [\App\Controllers\Web\PersonnelCorrectionController::class, 'cancelOwn'], [AuthMiddleware::class]);
-    $router->get('/back-office/personnel/corrections', [\App\Controllers\Web\PersonnelCorrectionController::class, 'index'], [AuthMiddleware::class]);
+    // GET /back-office/personnel/corrections : onglet « Corrections » de Demandes RH (BackOfficeTabs), l'ancienne adresse répond 301.
     $router->post('/back-office/personnel/corrections/appliquer', [\App\Controllers\Web\PersonnelCorrectionController::class, 'applyDirect'], [AuthMiddleware::class]);
     $router->post('/back-office/personnel/corrections/lot', [\App\Controllers\Web\PersonnelCorrectionController::class, 'decideBatch'], [AuthMiddleware::class]);
     $router->post('/back-office/personnel/corrections/{id}/decide', [\App\Controllers\Web\PersonnelCorrectionController::class, 'decide'], [AuthMiddleware::class]);
@@ -2387,7 +2387,7 @@ return function (Router $router) {
     $router->get('/back-office/ressources/effectifs/departs', [EffectifsWorkspaceController::class, 'departures'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/departs/{id}/archiver', [EffectifsWorkspaceController::class, 'archiveDepartureDossier'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/departs/{id}/reintegrer', [EffectifsWorkspaceController::class, 'reinstateDeparture'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ressources/effectifs/elevations', [EffectifsWorkspaceController::class, 'elevationRequests'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // GET .../effectifs/elevations : onglet « Élévations » de Demandes RH (BackOfficeTabs), l'ancienne adresse répond 301.
     $router->get('/back-office/ressources/effectifs/elevations/criteres', [EffectifsWorkspaceController::class, 'elevationCriteria'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/elevations/criteres', [EffectifsWorkspaceController::class, 'saveElevationCriteria'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/elevations/{id}/statut', [EffectifsWorkspaceController::class, 'updateElevationRequestStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2395,7 +2395,7 @@ return function (Router $router) {
     $router->get('/back-office/ressources/effectifs/documents-rh', [RhDossierWorkspaceController::class, 'documents'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/documents-rh', [RhDossierWorkspaceController::class, 'storeDocument'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/documents-rh/etablir', [RhDossierWorkspaceController::class, 'generateDocument'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/ressources/effectifs/mobilite', [RhDossierWorkspaceController::class, 'mobility'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // GET .../effectifs/mobilite : onglet « Mobilité » de Demandes RH (BackOfficeTabs), l'ancienne adresse répond 301.
     $router->post('/back-office/ressources/effectifs/mobilite', [RhDossierWorkspaceController::class, 'storeMobility'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/mobilite/{id}/statut', [RhDossierWorkspaceController::class, 'resolveMobility'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/vivier', [RhDossierWorkspaceController::class, 'succession'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

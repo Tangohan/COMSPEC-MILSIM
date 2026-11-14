@@ -362,17 +362,17 @@ final class RhDossierWorkspaceController
         if (!EffectifsLmsAccess::canManageAssignments($gate) && !EffectifsLmsAccess::canManageStatus($gate)) {
             Session::flash('error', 'Vous n’êtes pas habilité à enregistrer une mobilité.');
 
-            return Response::redirect(effectifs_workspace_url('mobilite'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/mobilite'));
         }
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
-            return Response::redirect(effectifs_workspace_url('mobilite'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/mobilite'));
         }
         if (!$this->mobility->tableExists()) {
             Session::flash('error', 'Schéma mobilité indisponible. Relancez les migrations.');
 
-            return Response::redirect(effectifs_workspace_url('mobilite'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/mobilite'));
         }
         $tenantId = (int) Session::get('tenant_id');
         $userId = (int) $request->input('user_id');
@@ -410,7 +410,7 @@ final class RhDossierWorkspaceController
         if ($userId < 1 || $this->userRepository->findById($userId, $tenantId) === null) {
             Session::flash('error', 'Membre introuvable.');
 
-            return Response::redirect(effectifs_workspace_url('mobilite'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/mobilite'));
         }
         if (!in_array($type, PersonnelMobilityRequestRepository::TYPES, true)) {
             $type = 'career_wish';
@@ -418,7 +418,7 @@ final class RhDossierWorkspaceController
         if (in_array($type, PersonnelMobilityRequestRepository::RETIRED_TYPES, true)) {
             Session::flash('error', 'Un avancement se demande par une demande d’élévation (grade), plus par la mobilité.');
 
-            return Response::redirect(effectifs_workspace_url('mobilite'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/mobilite'));
         }
         $id = $this->mobility->create(
             $tenantId,
@@ -435,7 +435,7 @@ final class RhDossierWorkspaceController
             ? 'Demande de mobilité enregistrée.'
             : 'Impossible d’enregistrer la demande.');
 
-        return Response::redirect(effectifs_workspace_url('mobilite'));
+        return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/mobilite'));
     }
 
     public function resolveMobility(Request $request, array $params = []): Response
@@ -448,12 +448,12 @@ final class RhDossierWorkspaceController
         if (!EffectifsLmsAccess::canManageAssignments($gate) && !EffectifsLmsAccess::canManageStatus($gate)) {
             Session::flash('error', 'Vous n’êtes pas habilité à traiter une mobilité.');
 
-            return Response::redirect(effectifs_workspace_url('mobilite'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/mobilite'));
         }
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
-            return Response::redirect(effectifs_workspace_url('mobilite'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/mobilite'));
         }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? $request->input('id', 0));
@@ -462,7 +462,7 @@ final class RhDossierWorkspaceController
         if (!in_array($status, ['approved', 'rejected', 'cancelled', 'applied'], true)) {
             Session::flash('error', 'Statut non reconnu.');
 
-            return Response::redirect(effectifs_workspace_url('mobilite'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/mobilite'));
         }
         $ok = $this->mobility->resolve(
             $id,
@@ -502,7 +502,7 @@ final class RhDossierWorkspaceController
             ? 'Demande de mobilité mise à jour.' . $applyMessage
             : 'Demande introuvable ou déjà traitée.');
 
-        return Response::redirect(effectifs_workspace_url('mobilite'));
+        return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/mobilite'));
     }
 
     public function succession(Request $request, array $params = []): Response

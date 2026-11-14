@@ -4403,7 +4403,7 @@ class EffectifsWorkspaceController
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
-            return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/elevations'));
         }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
@@ -4416,18 +4416,18 @@ class EffectifsWorkspaceController
         if (!$existing) {
             Session::flash('error', 'Demande introuvable.');
 
-            return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/elevations'));
         }
         if (!in_array($status, ElevationRequestRepository::STATUSES, true)) {
             Session::flash('error', 'Statut non reconnu.');
 
-            return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/elevations'));
         }
         $currentStatus = (string) ($existing['status'] ?? 'pending');
         if (in_array($currentStatus, ['approved', 'rejected'], true)) {
             Session::flash('error', 'Cette demande a déjà été traitée (' . ($currentStatus === 'approved' ? 'acceptée' : 'refusée') . ') — action impossible.');
 
-            return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/elevations'));
         }
 
         $proposal = $this->readElevationProposalFromRequest($request);
@@ -4435,7 +4435,7 @@ class EffectifsWorkspaceController
         if ($validated['error'] !== null) {
             Session::flash('error', $validated['error']);
 
-            return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/elevations'));
         }
         $proposal = $validated['proposal'];
         // Droits demandés à l'origine : pour dire au membre ce qui est accordé et ce qui ne l'est pas.
@@ -4457,12 +4457,12 @@ class EffectifsWorkspaceController
             if (\App\Services\Effectifs\ElevationApprovalService::proposalGrantsAccess($proposal) && !EffectifsLmsAccess::canManageRoles($gate)) {
                 Session::flash('error', 'Cette demande accorde un niveau d’accès ou des droits : seuls les responsables des accès peuvent l’accepter. Retirez-les de la proposition, ou passez la demande à un responsable des accès.');
 
-                return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+                return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/elevations'));
             }
             if ($request->input('confirm_apply') !== '1') {
                 Session::flash('error', 'Confirmez l’application des changements avant d’accepter la demande.');
 
-                return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+                return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/elevations'));
             }
             $apply = $this->elevationApprovalService->applyApprovedChanges(
                 $tenantId,
@@ -4473,7 +4473,7 @@ class EffectifsWorkspaceController
             if (!$apply['ok']) {
                 Session::flash('error', $apply['message']);
 
-                return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+                return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/elevations'));
             }
             try {
                 $this->elevationRequestRepository->saveProposalChoices($id, $tenantId, $proposal);
@@ -4507,7 +4507,7 @@ class EffectifsWorkspaceController
                 }
             }
 
-            return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+            return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/elevations'));
         }
 
         if (in_array($status, ['pending', 'in_review'], true)) {
@@ -4532,7 +4532,7 @@ class EffectifsWorkspaceController
             $ok ? 'Le statut de la demande a été mis à jour.' : 'Statut invalide ou mise à jour impossible.'
         );
 
-        return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+        return Response::redirect(\App\Support\BackOfficeTabs::urlFor('back-office/ressources/effectifs/elevations'));
     }
 
     private function denyUnlessAccess(): ?Response
