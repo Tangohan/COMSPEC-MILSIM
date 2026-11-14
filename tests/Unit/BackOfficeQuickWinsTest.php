@@ -38,6 +38,6 @@ final class BackOfficeQuickWinsTest extends TestCase
     {
         $nav = self::src('views/partials/ath_sidebar_nav.php');
         self::assertStringNotContainsString("'label' => 'Droits par membre'", $nav);
-        self::assertStringContainsString("'label' => 'Rôles'", $nav);
+        self::assertStringContainsString("'label' => 'Rôles et accès'", $nav);
     }
 }
