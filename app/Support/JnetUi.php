@@ -31,8 +31,8 @@ final class JnetUi
     }
 
     /**
-     * Insigne d'unité : écusson à la couleur de l'unité ; l'emblème téléversé (ou, à défaut, le monogramme) est cadré
-     * dedans. La couleur vient de --u (ou --jn-unit), posée par le parent.
+     * Logo d'unité, sans écusson ni cadre : l'emblème téléversé seul ; à défaut, le monogramme en lettres de la
+     * couleur de l'unité (--u ou --jn-unit, posée par le parent).
      */
     public static function crest(string $monogram, ?string $emblem, string $class = 'ja-crest'): string
     {
@@ -42,10 +42,58 @@ final class JnetUi
             ? '<img src="' . $esc($emblem) . '" alt="" loading="lazy">'
             : '<b>' . $esc($monogram !== '' ? $monogram : 'U') . '</b>';
 
-        return '<span class="' . $esc($class) . ($emblem !== '' ? ' has-img' : '') . '" aria-hidden="true">'
-            . '<svg viewBox="0 0 48 56" focusable="false"><path class="ja-crest__body" d="M24 2.5 44.5 9.5V27c0 13.6-8.6 23.4-20.5 26.5C12.1 50.4 3.5 40.6 3.5 27V9.5z"/>'
-            . '<path class="ja-crest__line" d="M24 7.5 40 13v14c0 10.8-6.6 18.6-16 21.3C14.6 45.6 8 37.8 8 27V13z"/></svg>'
-            . $inner . '</span>';
+        return '<span class="' . $esc($class) . ($emblem !== '' ? ' has-img' : '') . '" aria-hidden="true">' . $inner . '</span>';
+    }
+
+    /** Icônes de l'en-tête (traits de 1,8 px, couleur du texte). */
+    public static function icon(string $name): string
+    {
+        $paths = [
+            'switch' => '<path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>',
+            'edit' => '<path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/>',
+            'extranet' => '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>',
+            'mail' => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/>',
+            'home' => '<path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/>',
+            'manage' => '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>',
+            'logout' => '<path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/>',
+        ];
+
+        return '<svg class="ja-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . ($paths[$name] ?? '') . '</svg>';
+    }
+
+    /**
+     * Pastille du compte connecté (portrait ou initiales) : un clic ramène sur « Mon compte ». Le portrait est celui
+     * de la fiche ; sans portrait, les initiales du nom affiché. Aucune erreur de lecture ne casse l'en-tête.
+     */
+    public static function account(string $name): string
+    {
+        $esc = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+        $photo = '';
+        try {
+            $uid = (int) \App\Core\Session::get('user_id');
+            if ($uid > 0) {
+                $profile = \App\Core\Container::get(\App\Repositories\PersonnelProfileRepository::class)->getByUserId($uid);
+                $path = is_array($profile) ? trim((string) ($profile['character_portrait_path'] ?? '')) : '';
+                if ($path !== '' && function_exists('user_media_public_url')) {
+                    $photo = (string) user_media_public_url($path);
+                }
+            }
+        } catch (\Throwable) {
+            $photo = '';
+        }
+        $name = trim($name);
+        $parts = preg_split('/[\s._-]+/u', $name, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $initials = '';
+        foreach (array_slice($parts, 0, 2) as $part) {
+            $initials .= mb_strtoupper(mb_substr($part, 0, 1));
+        }
+        $face = $photo !== '' ? '<img src="' . $esc($photo) . '" alt="">' : '<span>' . $esc($initials !== '' ? $initials : '·') . '</span>';
+        $label = $name !== '' ? 'Mon compte (' . $name . ')' : 'Mon compte';
+
+        return '<a class="ja-me" href="' . $esc(function_exists('url') ? url('account') : 'account') . '" title="' . $esc($label) . '" aria-label="' . $esc($label) . '">'
+            . '<span class="ja-me__face">' . $face . '</span>'
+            . ($name !== '' ? '<span class="ja-me__name" translate="no">' . $esc($name) . '</span>' : '')
+            . '</a>';
     }
 
     /** « Demi-section (section OTAN) » devient « Demi-section », « Équipe / équipage » devient « Équipe ». */

@@ -124,11 +124,12 @@ $itemRows = static function (array $section) use ($h, $pad, $arrow): string {
 <header class="ja-hd">
     <a class="ja-brand" href="<?= $h(url('jnet')) ?>"><i aria-hidden="true">A</i><span>ATHENA<em>.</em></span></a>
     <div class="ja-hd__r">
-        <span class="ja-who">extranet<?= $community !== '' ? ' · ' . $h($community) : '' ?><?= $operator !== '' ? ' · session <span translate="no">' . $h($operator) . '</span>' : '' ?></span>
-        <a class="ja-ib" href="<?= $h(url('jnet/courrier')) ?>">Messagerie<?= $unreadMail > 0 ? ' <b>' . min(99, $unreadMail) . '</b>' : '' ?></a>
-        <a class="ja-ib" href="<?= $h(url('dashboard')) ?>">Accueil Athena</a>
-        <?php if (!empty($hubCanTba)): ?><a class="ja-ib" href="<?= $h(url('back-office')) ?>">Gestion</a><?php endif; ?>
-        <form method="post" action="<?= $h(url('logout')) ?>"><?= \App\Core\Csrf::field() ?><button class="ja-ib" type="submit">Déconnexion</button></form>
+        <span class="ja-who">extranet<?= $community !== '' ? ' · ' . $h($community) : '' ?></span>
+        <?= JnetUi::account($operator) ?>
+        <a class="ja-ib" href="<?= $h(url('jnet/courrier')) ?>"><?= JnetUi::icon('mail') ?><span class="ja-ib__t">Messagerie</span><?= $unreadMail > 0 ? ' <b>' . min(99, $unreadMail) . '</b>' : '' ?></a>
+        <a class="ja-ib" href="<?= $h(url('dashboard')) ?>"><?= JnetUi::icon('home') ?><span class="ja-ib__t">Accueil Athena</span></a>
+        <?php if (!empty($hubCanTba)): ?><a class="ja-ib" href="<?= $h(url('back-office')) ?>"><?= JnetUi::icon('manage') ?><span class="ja-ib__t">Gestion</span></a><?php endif; ?>
+        <form method="post" action="<?= $h(url('logout')) ?>"><?= \App\Core\Csrf::field() ?><button class="ja-ib" type="submit" title="Déconnexion"><?= JnetUi::icon('logout') ?><span class="ja-ib__t">Déconnexion</span></button></form>
     </div>
 </header>
 

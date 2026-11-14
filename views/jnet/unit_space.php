@@ -101,7 +101,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
     <div class="ja-hd__r">
         <?php if (count($rail) > 1): ?>
         <details class="us-switch">
-            <summary class="ja-ib">Changer d’espace</summary>
+            <summary class="ja-ib"><?= JnetUi::icon('switch') ?><span class="ja-ib__t">Changer d’espace</span></summary>
             <ul>
                 <?php foreach ($rail as $r): ?>
                     <li><a href="<?= $h((string) $r['href']) ?>"<?= !empty($r['active']) ? ' aria-current="page"' : '' ?> style="--d: <?= min(5, max(0, (int) ($r['depth'] ?? 0))) ?>"><?= $h((string) $r['label']) ?><?= !empty($r['mine']) ? ' <small>votre unité</small>' : '' ?></a></li>
@@ -110,11 +110,11 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
         </details>
         <?php endif; ?>
         <span class="us-access"><?= $h((string) $look['access_label']) ?></span>
-        <?php if ($operator !== ''): ?><span class="ja-who" translate="no"><?= $h($operator) ?></span><?php endif; ?>
         <?php if (!empty($canCustomize)): ?>
-            <a class="ja-ib<?= $view === 'personnaliser' ? ' is-on' : '' ?>" href="<?= $h((string) ($customizeUrl ?? '')) ?>">Personnaliser</a>
+            <a class="ja-ib<?= $view === 'personnaliser' ? ' is-on' : '' ?>" href="<?= $h((string) ($customizeUrl ?? '')) ?>"><?= JnetUi::icon('edit') ?><span class="ja-ib__t">Personnaliser</span></a>
         <?php endif; ?>
-        <a class="ja-ib" href="<?= $h((string) ($usHome ?? url('jnet?commun=1'))) ?>" title="Retour : <?= $h((string) ($usHomeLabel ?? 'Espace commun')) ?>"><?= $h((string) ($usHomeLabel ?? 'Espace commun')) ?></a>
+        <a class="ja-ib" href="<?= $h((string) ($usHome ?? url('jnet?commun=1'))) ?>" title="Retour : <?= $h((string) ($usHomeLabel ?? 'Espace commun')) ?>"><?= JnetUi::icon('extranet') ?><span class="ja-ib__t"><?= $h((string) ($usHomeLabel ?? 'Espace commun')) ?></span></a>
+        <?= JnetUi::account($operator) ?>
     </div>
 </header>
 <main class="ja-main us-main jnet-embed" id="us-main">
