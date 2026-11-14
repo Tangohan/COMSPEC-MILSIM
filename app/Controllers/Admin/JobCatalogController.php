@@ -82,6 +82,11 @@ final class JobCatalogController
             return $denied;
         }
         $lang = JobCatalog::lang(function_exists('locale') ? locale() : 'fr');
+        // Une seule fiche (fenêtre ouverte sur un emploi précis) : réponse courte, sans attendre le catalogue entier.
+        $one = mb_substr(trim((string) $request->queryString('emploi', '')), 0, 120);
+        if ($one !== '') {
+            return Response::json(['ok' => true, 'entry' => JobCatalog::find($one, $lang)])->header('Cache-Control', 'private, no-cache')->header('Vary', 'Cookie');
+        }
         $query = trim((string) $request->queryString('q', ''));
         $filters = [];
         foreach (JobCatalog::FILTERS as $f) {

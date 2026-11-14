@@ -116,7 +116,11 @@ final class JobCatalogMatcherTest extends TestCase
         self::assertStringContainsString('job-catalog-detect.js', (string) file_get_contents(self::ROOT . 'views/admin/effectifs_workspace/fonctions.php'));
         $js = (string) file_get_contents(self::ROOT . 'public/assets/js/job-catalog-detect.js');
         self::assertStringContainsString('Hop hop !', $js);
-        self::assertStringContainsString('trigger.dataset.jobCatalogShow', (string) file_get_contents(self::ROOT . 'public/assets/js/job-catalog.js'));
+        $catalogJs = (string) file_get_contents(self::ROOT . 'public/assets/js/job-catalog.js');
+        self::assertStringContainsString('trigger.dataset.jobCatalogShow', $catalogJs);
+        // La fiche demandée s'affiche sans attendre le catalogue entier (fenêtre jamais vide).
+        self::assertStringContainsString("'emploi=' + encodeURIComponent(id)", $catalogJs);
+        self::assertStringContainsString("\$request->queryString('emploi', '')", (string) file_get_contents(self::ROOT . 'app/Controllers/Admin/JobCatalogController.php'));
         // Seuls les emplois créés par la communauté reçoivent une note.
         $ctrl = (string) file_get_contents(self::ROOT . 'app/Controllers/Admin/EffectifsWorkspaceController.php');
         self::assertStringContainsString("=== JobRoleEnrichmentService::ORIGIN_COMMUNITY));", $ctrl);
