@@ -353,3 +353,320 @@ html[data-bo-theme="dark"] .ed-page {
   --ed-soft: #1f2447;
   --ed-surface: #17201e;
 }
+
+/* ---------------------------------------------------------------------------------------------------------------
+ * Page candidat du recrutement par Discord (views/enlistment/discord.php) : même habillage sombre que la page
+ * publique de la communauté (community-public-dark.css fournit .cp, .cp__title, .cp__btn, .cp__card, .cp__chip).
+ * Ici : la mise en page en deux colonnes, les trois étapes, le panneau de droite et les champs sombres.
+ * ------------------------------------------------------------------------------------------------------------- */
+.ed-cp {
+  align-items: stretch;
+}
+.ed-cp__grid {
+  align-items: start;
+  padding: clamp(2rem, 6vw, 4.5rem) 0;
+}
+.ed-cp__brand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+.ed-cp .cp__lead {
+  display: block;
+  overflow: visible;
+}
+.edc-steps {
+  margin: 2rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0;
+}
+.edc-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  gap: 1rem;
+  padding-bottom: 1.6rem;
+}
+/* Fil entre les étapes. */
+.edc-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 1.25rem;
+  top: 2.5rem;
+  bottom: 0;
+  width: 1px;
+  background: var(--cp-line);
+}
+.edc-step__n {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid color-mix(in srgb, var(--cp-primary) 60%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cp-primary) 14%, #020617);
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--cp-accent-text);
+}
+.edc-step__title {
+  margin: 0.35rem 0 0;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  color: #fff;
+}
+.edc-step__text {
+  margin: 0.4rem 0 0;
+  max-width: 34rem;
+  font-size: 0.98rem;
+  line-height: 1.55;
+  color: var(--cp-muted);
+}
+.edc-discord {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  margin-top: 0.9rem;
+  padding: 0.6rem 1.4rem;
+  border-radius: 999px;
+  background: #5865f2;
+  color: #fff;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+.edc-discord:hover {
+  background: #4752c4;
+  color: #fff;
+}
+.edc-back {
+  display: inline-block;
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--cp-dim);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.edc-back:hover {
+  color: #fff;
+}
+
+.edc-panel {
+  padding: clamp(1.25rem, 3vw, 1.9rem);
+  border-radius: 1.25rem;
+}
+@media (min-width: 960px) {
+  .ed-cp__side {
+    position: sticky;
+    top: 1.5rem;
+  }
+}
+.edc-panel__title {
+  margin: 0;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.05;
+  color: #fff;
+}
+.edc-panel__text {
+  margin: 0.7rem 0 0;
+  font-size: 0.97rem;
+  line-height: 1.6;
+  color: var(--cp-muted);
+}
+.edc-panel__text strong {
+  color: #fff;
+}
+.edc-panel .dc-wrap {
+  margin: 1.3rem 0 0;
+}
+.edc-panel .dc-btn {
+  min-height: 3rem;
+  border-radius: 999px;
+  border-color: transparent;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.edc-panel__actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.7rem;
+  margin-top: 0.7rem;
+}
+.edc-panel__actions .cp__btn {
+  text-decoration: none;
+}
+
+.edc-form {
+  display: grid;
+  gap: 1.15rem;
+}
+.edc-label,
+.ed-cp .ce-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--cp-ink);
+}
+.edc-req {
+  color: #fca5a5;
+}
+.edc-hint,
+.ed-cp .ce-help {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--cp-dim);
+}
+.edc-input,
+.ed-cp .input-field {
+  display: block;
+  width: 100%;
+  min-height: 2.9rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid #475569;
+  border-radius: 0.75rem;
+  background: #060d1c;
+  color: var(--cp-ink);
+  font: inherit;
+  font-size: 1rem;
+  color-scheme: dark;
+}
+.edc-input:focus,
+.ed-cp .input-field:focus {
+  border-color: var(--cp-accent-text);
+  outline: 3px solid color-mix(in srgb, var(--cp-primary) 35%, transparent);
+  outline-offset: 1px;
+}
+textarea.edc-input {
+  min-height: 6rem;
+  resize: vertical;
+}
+.edc-code {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.edc-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.edc-choices label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.6rem;
+  padding: 0.4rem 1rem;
+  border: 1px solid #475569;
+  border-radius: 999px;
+  background: #060d1c;
+  font-weight: 600;
+  color: var(--cp-ink);
+  cursor: pointer;
+}
+.edc-choices label:has(input:checked) {
+  border-color: var(--cp-primary);
+  background: color-mix(in srgb, var(--cp-primary) 18%, #060d1c);
+}
+.edc-submit {
+  width: 100%;
+  cursor: pointer;
+}
+
+/* Blocs communs en version sombre (identité, consentement, invitation), stylés ici : leur feuille d'origine n'est pas chargée. */
+.ed-cp .ce-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem;
+  border: 1px solid var(--cp-line);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+.ed-cp .ce-identity__photo {
+  width: 3.75rem;
+  height: 3.75rem;
+  flex: none;
+  border-radius: 0.75rem;
+  object-fit: cover;
+  background: #0b1220;
+}
+.ed-cp .ce-identity__kicker {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--cp-dim);
+}
+.ed-cp .ce-identity__name {
+  margin: 0.1rem 0 0;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #fff;
+}
+.ed-cp .ce-identity__help {
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--cp-dim);
+}
+.ed-cp .ce-identity__help a {
+  color: var(--cp-accent-text);
+}
+.ed-cp .ce-field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.9rem;
+}
+.ed-cp .ce-label-optional {
+  font-weight: 400;
+  color: var(--cp-dim);
+}
+.ed-cp .ce-consent {
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--cp-line);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+.ed-cp .ce-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--cp-ink);
+  cursor: pointer;
+}
+.ed-cp .ce-check input {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.15rem;
+  flex: none;
+  accent-color: var(--cp-primary);
+}
+.ed-cp .ce-banner {
+  margin: 0;
+  border-color: color-mix(in srgb, var(--cp-primary) 50%, transparent);
+  background: color-mix(in srgb, var(--cp-primary) 14%, transparent);
+  color: var(--cp-ink);
+}
+.ed-cp .ce-banner__text {
+  color: var(--cp-muted);
+}
