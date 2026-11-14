@@ -53,8 +53,9 @@ final class MembershipStayIsolationTest extends TestCase
     {
         $l = self::src('app/Services/PublicCv/PublicCvDataLoader.php');
         self::assertStringContainsString("AND event_date >= ?", $l);
-        self::assertStringContainsString('KIND_COMMANDEMENT', $l);
         self::assertStringContainsString('listForUser($tenantId, $userId', $l);
+        // Mutations : historique des affectations de la communauté (l'historique du dossier n'a pas les changements d'unité).
+        self::assertStringContainsString('listAssignmentHistoryForTenantUser($tenantId, $userId', $l);
         self::assertStringContainsString("discord.com/users/", $l);
     }
 

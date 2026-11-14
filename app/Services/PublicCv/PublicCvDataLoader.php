@@ -10,8 +10,7 @@ use App\Repositories\AtakDistanceRepository;
 use App\Repositories\AtakScreenTimeRepository;
 use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelAwardRepository;
-use App\Repositories\PersonnelMobilityRequestRepository;
-use App\Repositories\PersonnelOrgHistoryRepository;
+use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelStageBilanRepository;
 use App\Repositories\PilotLogbookRepository;
 use App\Repositories\QualificationAwardRepository;
@@ -20,6 +19,7 @@ use App\Repositories\TrainingCertificateRepository;
 use App\Repositories\UserCommunityMembershipRepository;
 use App\Repositories\UserDiscordLinkRepository;
 use App\Repositories\UserRepository;
+use App\Services\Personnel\PersonnelAssignmentHistoryCoalescer;
 use App\Services\Personnel\PilotLogbookService;
 use App\Support\CommunityMediaDetails;
 use App\Support\OperatorPortraits;
@@ -113,8 +113,9 @@ class PublicCvDataLoader
     }
 
     /**
-     * Notes et commentaires des bilans du commandement de CETTE communauté, séjour en cours.
-     * Les bilans RH et de recrutement restent privés. Vide si la communauté a coupé les bilans.
+     * Notes et commentaires des bilans d'étape de CETTE communauté, séjour en cours (recrutement, RH, commandement).
+     * Rien n'est montré sans le choix du membre (section à cocher). Vide si la communauté a coupé les bilans.
+     * Avant : seuls les bilans « commandement » étaient lus, et la plupart des dossiers n'en ont pas (page vide, 14/11).
      *
      * @return array{average: ?float, items: list<array<string, mixed>>}
      */
@@ -122,19 +123,21 @@ class PublicCvDataLoader
     {
         $empty = ['average' => null, 'items' => []];
         $on = $this->safe(static fn () => \App\Services\Personnel\RoleplayFollowupSettings::individualBilansEnabled(\App\Services\Personnel\RoleplayFollowupSettings::forTenant($tenantId)));
-        if ($on !== true) {
+        if ($on === false) {
             return $empty;
         }
         $since = $this->periodStart($userId, $tenantId);
         $rows = $this->safe(static fn () => (new PersonnelStageBilanRepository())->listForUser($tenantId, $userId, 30)) ?? [];
+        $kinds = [
+            PersonnelStageBilanRepository::KIND_RECRUTEMENT => 'Recrutement',
+            PersonnelStageBilanRepository::KIND_RH => 'Suivi',
+            PersonnelStageBilanRepository::KIND_COMMANDEMENT => 'Commandement',
+        ];
         $items = [];
         $sum = 0;
         $n = 0;
         foreach ($rows as $r) {
-            if ((string) ($r['bilan_kind'] ?? '') !== PersonnelStageBilanRepository::KIND_COMMANDEMENT) {
-                continue;
-            }
-            $date = (string) ($r['event_date'] ?? '');
+            $date = substr((string) ($r['event_date'] ?? ''), 0, 10);
             if ($since !== null && $date !== '' && $date < $since) {
                 continue;
             }
@@ -143,9 +146,11 @@ class PublicCvDataLoader
                 $sum += $rating;
                 ++$n;
             }
+            $stage = trim((string) ($r['stage_label'] ?? ''));
+            $kind = $kinds[(string) ($r['bilan_kind'] ?? '')] ?? '';
             $items[] = [
                 'date' => $date,
-                'stage' => (string) ($r['stage_label'] ?? ''),
+                'stage' => implode(' · ', array_values(array_filter([$kind, $stage], static fn (string $v): bool => $v !== ''))),
                 'title' => (string) ($r['title'] ?? ''),
                 'rating' => $rating,
                 'comment' => mb_substr(trim((string) ($r['body'] ?? '')), 0, 400),
@@ -156,43 +161,37 @@ class PublicCvDataLoader
     }
 
     /**
-     * Mutations de CETTE communauté, séjour en cours : changements d'unité, de poste ou d'affectation
-     * (historique du dossier + demandes de mobilité acceptées). Jamais les motifs ni les notes du commandement.
+     * Mutations de CETTE communauté, séjour en cours : les affectations successives du membre (unité, rôle, date d'arrivée),
+     * lues dans l'historique des affectations, comme sur le dossier du personnel. Avant : lecture de l'historique du
+     * dossier, qui ne contient pas les changements d'unité (page vide, 14/11). Jamais les motifs.
      *
      * @return list<array{date: string, text: string}>
      */
     private function mutations(int $userId, int $tenantId): array
     {
         $since = $this->periodStart($userId, $tenantId);
+        $rows = $this->safe(function () use ($userId, $tenantId): array {
+            $repo = new PersonnelAssignmentRepository($this->pdo());
+
+            return PersonnelAssignmentHistoryCoalescer::coalesceForDisplay($repo->listAssignmentHistoryForTenantUser($tenantId, $userId, 60));
+        }) ?? [];
         $out = [];
-        $hist = $this->safe(static fn () => (new PersonnelOrgHistoryRepository())->listForUser($tenantId, $userId, 60)) ?? [];
-        foreach ($hist as $h) {
-            $text = trim((string) ($h['summary'] ?? ''));
-            $date = substr((string) ($h['created_at'] ?? ''), 0, 10);
-            if ($text === '' || preg_match('/(?:^|·)\s*(?:Unité|Poste|Fonction|Affectation)\s*:/u', $text) !== 1) {
+        foreach ($rows as $r) {
+            if (!is_array($r)) {
                 continue;
             }
-            if ($since !== null && $date !== '' && $date < $since) {
+            $unit = trim((string) ($r['unit_name'] ?? ''));
+            if ($unit === '') {
                 continue;
             }
-            $out[] = ['date' => $date, 'text' => $text];
-        }
-        $mob = $this->safe(static fn () => (new PersonnelMobilityRequestRepository())->listForUser($tenantId, $userId, 30)) ?? [];
-        foreach ($mob as $m) {
-            if (!in_array((string) ($m['status'] ?? ''), ['approved', 'applied'], true)) {
+            $date = substr((string) (($r['started_at'] ?? '') !== '' && $r['started_at'] !== null ? $r['started_at'] : ($r['created_at'] ?? '')), 0, 10);
+            $ended = substr((string) ($r['ended_at'] ?? ''), 0, 10);
+            // Affectation terminée avant l'arrivée dans ce séjour : elle appartient à un séjour précédent.
+            if ($since !== null && $ended !== '' && $ended < $since) {
                 continue;
             }
-            $type = (string) ($m['request_type'] ?? '');
-            if (!in_array($type, ['unit_change', 'specialty_change', 'assignment'], true)) {
-                continue;
-            }
-            $date = substr((string) ($m['created_at'] ?? ''), 0, 10);
-            if ($since !== null && $date !== '' && $date < $since) {
-                continue;
-            }
-            $label = PersonnelMobilityRequestRepository::TYPE_LABELS[$type] ?? $type;
-            $target = trim((string) ($m['target_label'] ?? ''));
-            $out[] = ['date' => $date, 'text' => $label . ($target !== '' ? ' : ' . $target : '')];
+            $role = trim((string) ($r['role_name'] ?? ''));
+            $out[] = ['date' => $date, 'text' => $unit . ($role !== '' && mb_strtolower($role) !== mb_strtolower($unit) ? ' · ' . $role : '')];
         }
         usort($out, static fn (array $a, array $b): int => strcmp($b['date'], $a['date']));
 
