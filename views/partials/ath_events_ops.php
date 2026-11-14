@@ -209,7 +209,7 @@ $chipClass = static function (array $ev): string {
     <a href="<?= $h(url('back-office/events') . '?vue=a_venir') ?>" class="ath-btn<?= $eventsVue === 'a_venir' ? ' ath-btn--solid' : '' ?>">À venir</a>
     <a href="<?= $h(url('back-office/events') . '?vue=passes') ?>" class="ath-btn<?= $eventsVue === 'passes' ? ' ath-btn--solid' : '' ?>">Passés</a>
     <a href="<?= $h(url('back-office/events') . '?vue=annules') ?>" class="ath-btn<?= $eventsVue === 'annules' ? ' ath-btn--solid' : '' ?>">Annulés</a>
-    <a href="<?= $h(url('back-office/events/insights')) ?>" class="ath-btn">Insights présence</a>
+    <a href="<?= $h(url('back-office/events/insights')) ?>" class="ath-btn">Bilan de participation</a>
 </div>
 
 <?php require base_path('views/partials/ath_event_discord_settings.php'); ?>

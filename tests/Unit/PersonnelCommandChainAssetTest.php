@@ -21,7 +21,7 @@ final class PersonnelCommandChainAssetTest extends TestCase
         $css = (string) file_get_contents($root . '/public/assets/css/back-office-effectifs-workspace.css');
         $settings = (string) file_get_contents($root . '/views/admin/effectifs_workspace/rh_settings.php');
 
-        self::assertStringContainsString("'chaine', 'Chaîne'", $shell);
+        self::assertStringContainsString("'chaine', 'Chaîne de commandement'", $shell);
         self::assertStringContainsString('effectifs/chaine', $routes);
         self::assertStringContainsString('function commandChain', $controller);
         self::assertStringContainsString('function saveCommandChain', $controller);

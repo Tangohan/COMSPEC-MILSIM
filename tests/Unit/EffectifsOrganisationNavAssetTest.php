@@ -14,8 +14,8 @@ final class EffectifsOrganisationNavAssetTest extends TestCase
 
         self::assertStringContainsString("'label' => 'Effectifs'", $nav);
         self::assertStringContainsString("'label' => 'Organisation'", $nav);
-        self::assertStringContainsString("'label' => 'DROITS ET PERMISSIONS'", $nav);
-        self::assertStringContainsString("'label' => 'Rôles et droits'", $nav);
+        self::assertStringContainsString("'label' => 'DROITS ET ACCÈS'", $nav);
+        self::assertStringContainsString("'label' => 'Rôles et habilitations'", $nav);
         self::assertStringContainsString("'label' => 'Fonctions et emplois'", $nav);
         self::assertStringContainsString("'label' => 'Dossiers RH'", $nav);
         self::assertStringContainsString("'label' => 'Organigramme'", $nav);
