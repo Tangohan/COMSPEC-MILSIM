@@ -1,9 +1,10 @@
-[h1]COMSPEC Lobby 0.2.0 — première publication / first release[/h1]
+[h1]COMSPEC Lobby 0.3.0 — première publication / first release[/h1]
 
 [h2]Français[/h2]
 [list]
 [*] Écran de choix des rôles refait, avec le dossier de l'opérateur.
 [*] Avec COMSPEC ATAK : votre identité Athena et votre portrait sur le poste choisi.
+[*] Bouton Synchroniser pour redemander votre dossier tout de suite.
 [*] Aucune dépendance.
 [/list]
 
@@ -11,5 +12,6 @@
 [list]
 [*] Role selection screen redone, with the operator dossier.
 [*] With COMSPEC ATAK: your Athena identity and portrait on the chosen slot.
+[*] Synchronise button to ask for your dossier right away.
 [*] No dependency.
 [/list]

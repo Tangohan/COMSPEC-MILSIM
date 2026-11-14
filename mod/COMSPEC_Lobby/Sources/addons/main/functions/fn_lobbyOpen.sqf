@@ -28,7 +28,7 @@ if (isNull _display) exitWith {};
 private _log = { diag_log ("[COMSPEC LOBBY] " + _this) };
 
 // ------------------------------------------------------------------ 1. contrôles indispensables
-private _need = [109, 114, 104, 118, 128, 1, 9100, 9101, 9102, 9103, 9104, 9105, 9110, 9111, 9112, 9106, 9113, 9114, 9115, 9116, 9117];
+private _need = [109, 114, 104, 118, 128, 1, 9107, 9108, 9101, 9102, 9103, 9104, 9105, 9110, 9111, 9112, 9106, 9113, 9114, 9115, 9116, 9117];
 private _missing = _need select { isNull (_display displayCtrl _x) };
 if (_missing isNotEqualTo []) exitWith { (format ["contrôles manquants %1 : l'écran du jeu est laissé tel quel", _missing]) call _log };
 ("écran ouvert, " + str (count _need) + " contrôles trouvés") call _log;
@@ -37,7 +37,7 @@ private _c = { _display displayCtrl _this };
 private _roles = 109 call _c;
 
 // Textes fixes du dossier.
-(9100 call _c) ctrlSetText "";
+(9108 call _c) ctrlSetText (toUpper (localize "STR_COMSPEC_LOBBY_Sync"));
 (9110 call _c) ctrlSetText (toUpper (localize "STR_COMSPEC_LOBBY_Grade"));
 (9111 call _c) ctrlSetText (toUpper (localize "STR_COMSPEC_LOBBY_Unit"));
 (9112 call _c) ctrlSetText (toUpper (localize "STR_COMSPEC_LOBBY_Role"));
@@ -47,10 +47,15 @@ private _roles = 109 call _c;
 
 // Carte Athena du joueur local (posée par COMSPEC ATAK dans le profil) : tableau de paires [clé, valeur].
 private _self = createHashMap;
-{
-    if (_x isEqualType [] && {(count _x) >= 2} && {(_x select 0) isEqualType ""} && {(_x select 1) isEqualType ""}) then { _self set [_x select 0, _x select 1]; };
-} forEach (profileNamespace getVariable ["COMSPEC_LOBBY_Self", []]);
-if ((_self getOrDefault ["surname", ""]) isEqualTo "") then { _self = createHashMap; };
+private _loadSelf = {
+    private _h = createHashMap;
+    {
+        if (_x isEqualType [] && {(count _x) >= 2} && {(_x select 0) isEqualType ""} && {(_x select 1) isEqualType ""}) then { _h set [_x select 0, _x select 1]; };
+    } forEach (profileNamespace getVariable ["COMSPEC_LOBBY_Self", []]);
+    if ((_h getOrDefault ["surname", ""]) isEqualTo "") then { _h = createHashMap; };
+    _h
+};
+_self = call _loadSelf;
 (format ["carte Athena du joueur : %1", ["absente", "présente"] select ((count _self) > 0)]) call _log;
 
 // ------------------------------------------------------------------ 2. étiquette et identité d'un poste
@@ -184,10 +189,78 @@ private _portrait = {
     };
 };
 
-// ------------------------------------------------------------------ 4. boucle de l'écran (suivi du poste choisi)
+// ------------------------------------------------------------------ 4. bouton « Synchroniser »
+// Redemande tout de suite la carte du joueur à Athena, par COMSPEC Link, sans attendre la prochaine partie. Possible
+// seulement si COMSPEC Link a déjà une session Athena dans ce lancement du jeu (une partie jouée) et si le SteamID est connu
+// (gardé par COMSPEC ATAK : rien ne permet de le lire avant une mission). Sinon le message dit quoi faire.
+// L'appel bloque le jeu le temps de la réponse du site (quelques secondes au plus) : il part d'un clic du joueur.
+uiNamespace setVariable ["COMSPEC_LOBBY_sync", { [] spawn (uiNamespace getVariable ["COMSPEC_LOBBY_syncRun", {}]) }];
+uiNamespace setVariable ["COMSPEC_LOBBY_syncRun", {
+    disableSerialization;
+    private _d = uiNamespace getVariable ["COMSPEC_LOBBY_Display", displayNull];
+    if (isNull _d) exitWith {};
+    private _say = { (_d displayCtrl 9107) ctrlSetText (localize _this); };
+    private _uid = profileNamespace getVariable ["COMSPEC_LOBBY_Uid", ""];
+    private _tenant = profileNamespace getVariable ["COMSPEC_LOBBY_Tenant", ""];
+    if !(_uid isEqualType "") then { _uid = ""; };
+    if !(_tenant isEqualType "") then { _tenant = ""; };
+    if (_uid isEqualTo "") exitWith { "STR_COMSPEC_LOBBY_SyncNoUid" call _say; };
+    "STR_COMSPEC_LOBBY_SyncRunning" call _say;
+    uiSleep 0.05;
+    private _ext = {
+        private _r = "COMSPECExtension" callExtension _this;
+        if (_r isEqualType []) then { _r = _r param [0, ""]; };
+        if !(_r isEqualType "") then { _r = ""; };
+        _r
+    };
+    private _raw = ["GetPlayerAvatarInfo", [_uid, _tenant]] call _ext;
+    if (_raw isEqualTo "") exitWith { "STR_COMSPEC_LOBBY_SyncNoAtak" call _say; };
+    if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith {
+        diag_log ("[COMSPEC LOBBY] synchronisation refusée : " + (_raw select [0, 60]));
+        "STR_COMSPEC_LOBBY_SyncNoLink" call _say;
+    };
+    // Colonnes séparées par des tabulations, vides gardées : nom, indicatif, adresse du portrait, unité… puis « Q: » (qualifications).
+    private _cols = [];
+    private _rest = _raw select [3];
+    private _tab = toString [9];
+    private _i = _rest find _tab;
+    while {_i >= 0} do { _cols pushBack (_rest select [0, _i]); _rest = _rest select [_i + 1]; _i = _rest find _tab; };
+    _cols pushBack _rest;
+    private _col = { private _v = _cols param [_this, ""]; ["", _v] select !((_v select [0, 2]) in ["Q:", "S:"]) };
+    private _name = 0 call _col;
+    private _cs = 1 call _col;
+    private _url = 2 call _col;
+    if ((_url find "/") < 0) then { _url = ""; };
+    private _q = _cols findIf { (_x select [0, 2]) isEqualTo "Q:" };
+    private _qn = if (_q < 0) then { "" } else { ((((_cols select _q) select [2]) splitString ";") apply { (_x splitString "~") param [0, ""] }) joinString " · " };
+    private _pic = "";
+    { if (_x isEqualType [] && {(_x param [0, ""]) isEqualTo "portrait"}) exitWith { _pic = _x param [1, ""]; }; } forEach (profileNamespace getVariable ["COMSPEC_LOBBY_Self", []]);
+    if (_url isEqualTo "") then { _pic = ""; } else {
+        private _dl = (["DownloadBriefingSlideImage", [_url, format ["avatar_%1_%2", _uid, hashValue _url]]] call _ext) splitString "|";
+        if ((_dl param [0, ""]) isEqualTo "OK" && {(_dl param [1, ""]) isNotEqualTo ""}) then { _pic = ((_dl select 1) splitString (toString [92])) joinString "/"; };
+    };
+    profileNamespace setVariable ["COMSPEC_LOBBY_Self", [
+        ["surname", [_cs, _name] select (_cs isEqualTo "")], ["given", ["", _name] select (_cs isNotEqualTo "")],
+        ["unit", 3 call _col], ["quals", _qn], ["source", "ATHENA"], ["portrait", _pic]
+    ]];
+    saveProfileNamespace;
+    uiNamespace setVariable ["COMSPEC_LOBBY_Reload", true];
+    "STR_COMSPEC_LOBBY_SyncDone" call _say;
+    diag_log "[COMSPEC LOBBY] synchronisation faite : carte du joueur mise à jour";
+}];
+uiNamespace setVariable ["COMSPEC_LOBBY_Display", _display];
+
+// ------------------------------------------------------------------ 5. boucle de l'écran (suivi du poste choisi)
 private _lastSig = "";
 private _dumped = false;
 while { !isNull _display } do {
+    // Carte mise à jour par « Synchroniser » : relue, et le dossier du poste choisi est redessiné.
+    if (uiNamespace getVariable ["COMSPEC_LOBBY_Reload", false]) then {
+        uiNamespace setVariable ["COMSPEC_LOBBY_Reload", false];
+        _self = call _loadSelf;
+        _webCache = createHashMap;
+        _lastSig = "";
+    };
     private _sel = lbCurSel _roles;
     private _size = lbSize _roles;
     private _text = if (_sel >= 0 && {_sel < _size}) then { _roles lbText _sel } else { "" };
@@ -223,5 +296,5 @@ while { !isNull _display } do {
 };
 
 uiNamespace setVariable ["COMSPEC_LOBBY_webPush", nil];
-uiNamespace setVariable ["COMSPEC_LOBBY_wba", nil];
+{ uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_LOBBY_wba", "COMSPEC_LOBBY_sync", "COMSPEC_LOBBY_syncRun", "COMSPEC_LOBBY_Display", "COMSPEC_LOBBY_Reload"];
 "écran fermé" call _log;

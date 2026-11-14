@@ -1,3 +1,23 @@
+[h1]COMSPEC ATAK 4.15.0 Washington — dossier mieux synchronisé, images gardées sur le PC, correctifs / dossier syncs better, images kept on your PC, fixes[/h1]
+
+[b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Dossier Athena[/b] : il est bien gardé à chaque partie pour l'écran des rôles (mod COMSPEC Lobby, bouton Synchroniser).
+[*] [b]Images[/b] : portraits et diapositives téléchargés restent dans Documents, dossier Arma 3 - COMSPEC. Plus de nouveau téléchargement après une mise à jour.
+[*] [b]Barre d'état[/b] : le type de liaison ne s'écrit plus par-dessus l'icône GPS.
+[*] [b]Compte rendu de fin d'opération[/b] : les réglages du site sont de nouveau pris en compte.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Athena dossier[/b]: properly saved every game for the role screen (COMSPEC Lobby mod, Synchronise button).
+[*] [b]Images[/b]: downloaded portraits and slides stay in Documents, folder Arma 3 - COMSPEC. No new download after an update.
+[*] [b]Status bar[/b]: the link type is no longer written over the GPS icon.
+[*] [b]End-of-operation report[/b]: the site's settings are taken into account again.
+[/list]
+
 [h1]COMSPEC ATAK 4.14.1 Washington — l'écran de chargement ATHENA laisse la place aux autres mods / the ATHENA loading screen yields to other mods[/h1]
 
 [b]Redémarrez complètement Arma 3 après la mise à jour. / Restart Arma 3 completely after the update.[/b]
