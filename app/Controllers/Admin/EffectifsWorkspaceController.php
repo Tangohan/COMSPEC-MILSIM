@@ -1470,10 +1470,12 @@ class EffectifsWorkspaceController
             ? $this->personnelStageBilanRepository->listForUser($tenantId, $id, 40)
             : [];
         $dutyPosition = '';
+        $dutyPositionSlug = null;
         $remainingTrainingDays = 0;
         try {
             $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
-            $dutyPosition = $duty->currentDutyLabel($tenantId, $id);
+            $dutyPositionSlug = $duty->currentDutySlug($tenantId, $id);
+            $dutyPosition = \App\Services\Personnel\PersonnelDutyPositionService::labelForSlug((string) $dutyPositionSlug);
             $remainingTrainingDays = $duty->remainingTrainingDays($tenantId, $id);
         } catch (\Throwable) {
         }
@@ -1586,6 +1588,7 @@ class EffectifsWorkspaceController
             'memberStageBilans' => $stageBilans,
             'memberIndividualBilansOn' => $individualBilansOn,
             'dutyPosition' => $dutyPosition,
+            'dutyPositionSlug' => $dutyPositionSlug,
             'remainingTrainingDays' => $remainingTrainingDays,
             'memberCommandChain' => $commandChain,
             'memberAdequacy' => $memberAdequacy,
@@ -2192,6 +2195,13 @@ class EffectifsWorkspaceController
             return Response::redirect(effectifs_workspace_url('membres/' . $id));
         }
         $duty = \App\Core\Container::get(\App\Services\Personnel\PersonnelDutyPositionService::class);
+        $wanted = trim((string) $request->input('position', ''));
+        if ($wanted !== '') {
+            [$level, $message] = self::positionChangeFlash($duty, $duty->applyPosition($tenantId, $id, $wanted, (int) Session::get('user_id')), $wanted, $tenantId, $id);
+            Session::flash($level, $message);
+
+            return Response::redirect(effectifs_workspace_url('membres/' . $id) . '#statut');
+        }
         $changed = $duty->applyActiveDuty($tenantId, $id, (int) Session::get('user_id'));
         $remaining = $duty->remainingTrainingDays($tenantId, $id);
         Session::flash(
@@ -2202,6 +2212,23 @@ class EffectifsWorkspaceController
         );
 
         return Response::redirect(effectifs_workspace_url('membres/' . $id));
+    }
+
+    /**
+     * Message après un changement de position choisi par un responsable (fiche effectifs ou fiche membre).
+     *
+     * @return array{0: string, 1: string}
+     */
+    public static function positionChangeFlash(\App\Services\Personnel\PersonnelDutyPositionService $duty, string $result, string $slug, int $tenantId, int $userId): array
+    {
+        $label = \App\Support\AdministrativePositionCatalog::label($slug);
+
+        return match ($result) {
+            \App\Services\Personnel\PersonnelDutyPositionService::RESULT_CHANGED => ['success', 'Position administrative mise à jour : ' . $label . '. Le grade, les fonctions et les niveaux d’accès sont inchangés.'],
+            \App\Services\Personnel\PersonnelDutyPositionService::RESULT_UNCHANGED => ['warning', 'Le membre a déjà cette position.'],
+            \App\Services\Personnel\PersonnelDutyPositionService::RESULT_TRAINING_MINIMUM => ['warning', 'Formation obligatoire : encore ' . $duty->remainingTrainingDays($tenantId, $userId) . ' jour(s) avant le passage en service actif.'],
+            default => ['error', 'Position inconnue ou membre introuvable.'],
+        };
     }
 
     public function updateOrgFounding(Request $request, array $params = []): Response

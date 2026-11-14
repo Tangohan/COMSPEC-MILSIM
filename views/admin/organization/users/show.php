@@ -463,6 +463,36 @@ $flashWarn = \App\Core\Session::getFlash('warning');
         </section>
     </div>
 
+    <?php if (!$isServiceAccount): ?>
+    <?php $showPositionInfo = \App\Support\AdministrativePositionCatalog::find(is_string($dutyPositionSlug ?? null) ? $dutyPositionSlug : null); ?>
+    <section class="ath-card ath-member-show__panel" id="position-administrative" style="margin-top:1.25rem;">
+        <div class="ath-member-show__section-head">
+            <h2>Position administrative</h2>
+            <p>Situation du membre dans la communauté. Elle ne change ni le grade, ni les fonctions, ni les niveaux d’accès.</p>
+        </div>
+        <div class="ath-member-show__section-body">
+            <p>Position actuelle : <strong><?= $h($showPositionInfo['label'] ?? 'Non attribuée') ?></strong></p>
+            <?php if ($showPositionInfo !== null): ?>
+            <p class="ath-member-show__hint"><?= $h($showPositionInfo['summary']) ?></p>
+            <?php endif; ?>
+            <form method="post" action="<?= $h(url('back-office/users/' . $uid . '/duty-position')) ?>" class="ath-member-show__inline-form">
+                <?= \App\Core\Csrf::field() ?>
+                <label for="member-duty-position">Changer la position</label>
+                <select id="member-duty-position" name="position">
+                    <?php foreach (\App\Support\AdministrativePositionCatalog::all() as $positionOption): ?>
+                    <option value="<?= $h($positionOption['slug']) ?>" <?= $positionOption['slug'] === ($showPositionInfo['slug'] ?? null) ? 'selected' : '' ?>><?= $h($positionOption['label']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="submit" class="ath-btn ath-btn--solid">Enregistrer la position</button>
+            </form>
+            <details>
+                <summary>Comprendre les positions administratives</summary>
+                <?php $apgCurrent = $showPositionInfo['slug'] ?? null; $apgShowLink = true; require base_path('views/partials/administrative_positions_guide.php'); ?>
+            </details>
+        </div>
+    </section>
+    <?php endif; ?>
+
     <?php
     $siblings = is_array($siblingMemberships ?? null) ? $siblingMemberships : [];
     if ($showPlatformDiagnostics && $siblings !== []):

@@ -419,6 +419,26 @@
     </p>
 </section>
 
+<section id="positions-administratives" class="site-docs__section">
+    <h2>Positions administratives</h2>
+    <p class="site-docs__lead">
+        La position administrative dit où en est un membre dans la communauté : en formation, disponible, en pause ou en renfort. Chaque membre a une seule position à la fois. Elle ne change ni son grade, ni ses fonctions, ni ses niveaux d’accès.
+    </p>
+
+    <h3>Les quatre positions</h3>
+    <p>
+        À l’arrivée, le site place le membre En formation. À la fin de son accueil, une fois la durée minimale de formation écoulée, il passe En service actif. Un responsable des effectifs peut ensuite choisir une autre position depuis la fiche du membre, dans la carte Statut du compte.
+    </p>
+    <?php $apgCurrent = null; $apgShowLink = false; require base_path('views/partials/administrative_positions_guide.php'); ?>
+
+    <h3>Bonnes pratiques</h3>
+    <ul>
+        <li>Placez En service non actif un membre qui prévient d’une absence longue, plutôt que de désactiver son compte : il garde tout son dossier.</li>
+        <li>Utilisez En service statutaire de renforcement pour un réserviste ou un joueur d’une autre unité qui vient en appui sur une opération.</li>
+        <li>Un membre En service non actif qui revient se remet En service actif depuis sa fiche, sans repasser par la formation.</li>
+    </ul>
+</section>
+
 <section id="navigation-et-recherche" class="site-docs__section">
     <h2>Navigation &amp; recherche</h2>
     <p class="site-docs__lead">

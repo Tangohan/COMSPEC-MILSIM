@@ -50,6 +50,6 @@ final class PersonnelDutyPositionAssetTest extends TestCase
         self::assertStringContainsString('DUTY_POSITION_V1', $seed);
         $list = (string) file_get_contents($this->root() . '/app/Repositories/UserRepository.php');
         self::assertStringContainsString('duty_position', $list);
-        self::assertStringContainsString('PersonnelDutyPositionService::SLUG_TRAINING', $list);
+        self::assertStringContainsString('PersonnelDutyPositionService::allSlugs()', $list);
     }
 }
