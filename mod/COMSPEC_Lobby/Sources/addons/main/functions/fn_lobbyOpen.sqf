@@ -38,7 +38,7 @@ private _cont = 1 call _c;
 private _gold = [0.94, 0.65, 0.23, 1];
 
 // Textes fixes du dossier.
-(9100 call _c) ctrlSetText (toUpper (localize "STR_COMSPEC_LOBBY_Dossier"));
+(9100 call _c) ctrlSetText "";
 (9110 call _c) ctrlSetText (toUpper (localize "STR_COMSPEC_LOBBY_Grade"));
 (9111 call _c) ctrlSetText (toUpper (localize "STR_COMSPEC_LOBBY_Unit"));
 (9112 call _c) ctrlSetText (toUpper (localize "STR_COMSPEC_LOBBY_Role"));
@@ -77,7 +77,8 @@ private _identity = {
         if (_card isEqualType createHashMap) then { { _h set [_x, _y]; } forEach _card; };
     };
     if ((_h getOrDefault ["surname", ""]) isEqualTo "") then {
-        private _name = trim ((_text splitString "[]") joinString " ");
+        private _rb = _text find "]";
+        private _name = trim ([_text, _text select [_rb + 1]] select (_rb >= 0));
         _h set ["surname", [_name, "-"] select (_name isEqualTo "")];
     };
     _h

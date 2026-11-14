@@ -20,7 +20,7 @@ private _add = {
     _n set [_src, (_n get _src) + 1];
 };
 { _x params [["_g", ""], ["_p", ""]]; [_g, _p, "ATHENA"] call _add; } forEach (missionNamespace getVariable ["COMSPEC_LOBBY_AthenaPins", []]);
-private _raw = loadFile "userconfig\comspec_lobby\pins.txt";
+private _raw = loadFile "\userconfig\comspec_lobby\pins.txt";
 {
     private _line = trim _x;
     if (_line isNotEqualTo "" && {(_line select [0, 1]) isNotEqualTo "#"}) then {
@@ -30,4 +30,3 @@ private _raw = loadFile "userconfig\comspec_lobby\pins.txt";
 } forEach (_raw splitString (toString [10, 13]));
 { _x params [["_g", ""], ["_p", ""]]; [_g, _p, "ZEUS"] call _add; } forEach (profileNamespace getVariable ["COMSPEC_LOBBY_Pins", []]);
 missionNamespace setVariable ["comspec_lobby_pins", _t];
-(format ["[COMSPEC LOBBY] codes de poste : %1 en tout (Athena %2, fichier %3, Zeus %4)", count _t, _n get "ATHENA", _n get "FICHIER", _n get "ZEUS"]) call { diag_log _this };

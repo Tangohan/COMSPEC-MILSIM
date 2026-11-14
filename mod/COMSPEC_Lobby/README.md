@@ -1,6 +1,6 @@
-# COMSPEC Lobby
+﻿# COMSPEC Lobby
 
-Écran de sélection des rôles refait pour Arma 3 : le **dossier de l'opérateur** (portrait, nom, prénom, grade, unité, fonction, qualifications) et le **code du poste**, vérifié par le serveur. Dépendance : **CBA_A3**. Version 0.1.0 (première version, **jamais essayée en jeu** : voir « État »).
+Écran de sélection des rôles refait pour Arma 3 : le **dossier de l'opérateur** (portrait, nom, prénom, grade, unité, fonction, qualifications) et le **code du poste**, vérifié par le serveur. Dépendance : **CBA_A3**. Version 0.1.0 (essayée en jeu sur serveur dédié : voir « État »).
 
 Le système de postes d'Arma est gardé tel quel : liste des rôles, camps, pool de joueurs, paramètres de mission, verrou, expulsion, Workshop, chat. Le mod restyle l'écran (fond noir, filets fins, un accent ambre), descend le pool de joueurs pour faire place au dossier, et ajoute le dossier. Rien n'est remplacé ni piloté par script.
 
@@ -44,7 +44,7 @@ Le code a quatre chiffres. Le joueur le saisit au pavé du dossier, dans l'écra
 | Source | Où | Pour qui |
 |---|---|---|
 | **Athena** | tableau `COMSPEC_LOBBY_AthenaPins` de paires `[étiquette, code]` posé par un autre module | serveurs reliés à Athena (prise prévue, voir plus bas) |
-| **Fichier serveur** | `userconfig\comspec_lobby\pins.txt`, une ligne `ÉTIQUETTE=CODE`, `#` pour un commentaire, lu au démarrage du serveur | serveurs dédiés |
+| **Fichier serveur** | `userconfig\comspec_lobby\pins.txt`, une ligne `ÉTIQUETTE=CODE`, `#` pour un commentaire, lu au démarrage du serveur ; **le serveur doit tourner avec `-filePatching`** (sinon le fichier est invisible et les postes protégés restent libres : le journal le dit) | serveurs dédiés |
 | **Zeus** | module Zeus Enhanced **COMSPEC Lobby > Code du poste** (posé sur une unité : l'étiquette est lue ; sinon on la saisit) ; code gardé dans le profil du serveur | missions locales, sans fichier ni Athena |
 
 Pour une même étiquette, la source la plus prioritaire gagne : Zeus, puis fichier, puis Athena. Un poste marqué `P` sans code configuré n'enferme jamais personne : accès libre, noté au journal du serveur. L'hôte d'un serveur local n'est jamais contrôlé. Les codes ne sont jamais écrits au journal.
@@ -80,3 +80,10 @@ cmd /c "<chemin>\mod\COMSPEC_Lobby\build_mod.bat"
 ```
 
 HEMTT (`winget install BrettMayson.HEMTT`), Arma 3 Tools. La clé de signature du mod (`comspec_lobby`) est créée une seule fois hors du dépôt, dans `%APPDATA%\COMSPEC\signing\lobby` : la garder, la même doit servir à toutes les versions.
+
+
+### Essai en jeu (2026-11-14, serveur dédié + client local)
+- Écran des rôles : 29 contrôles trouvés, étiquettes `[HQ-1|P]` visibles dans les lignes, dossier et pavé affichés sans chevauchement notable.
+- Code juste (A-1 = 4821) : poste déverrouillé (source FICHIER). Code faux : refusé, essai 1 sur 3, écran de débriefing « Code du poste refusé ».
+- Découvertes corrigées : `loadFile` ne voit `\userconfig` qu'avec `-filePatching` ; le titre du dossier affichait l'étiquette brute ; l'intitulé « DOSSIER » retiré.
+- Non essayé : verrou de 10 minutes, `#kick` après le délai, module Zeus, portrait Athena.
