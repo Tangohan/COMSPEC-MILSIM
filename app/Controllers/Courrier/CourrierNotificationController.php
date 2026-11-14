@@ -8,6 +8,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Support\CourrierRightGuard;
 use App\Repositories\Courrier\CourrierDocumentNotificationRepository;
 use App\Repositories\Courrier\CourrierDocumentRepository;
 
@@ -21,6 +22,9 @@ final class CourrierNotificationController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = CourrierRightGuard::deniedUnless($request, CourrierRightGuard::VIEW)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         $userId = (int) (Session::get('user_id') ?? 0);
         if (!$tenantId || !$userId) {
@@ -37,6 +41,9 @@ final class CourrierNotificationController
 
     public function notify(Request $request, array $params = []): Response
     {
+        if (($denied = CourrierRightGuard::deniedUnless($request, CourrierRightGuard::VIEW)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         $userId = (int) (Session::get('user_id') ?? 0);
         if (!$tenantId || !$userId) {

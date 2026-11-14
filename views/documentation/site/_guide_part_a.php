@@ -359,7 +359,7 @@
         le socle de gouvernance ; tous les autres rôles opérationnels s’organisent en dessous.
     </p>
     <p>
-        Les rôles opérationnels, quant à eux, correspondent chacun à une fonction précise et reconnaissable dans une unité milsim. L’<strong>Opérateur</strong> est le membre titulaire type, avec accès aux
+        Les rôles opérationnels, quant à eux, correspondent chacun à une fonction précise et reconnaissable dans une unité milsim. Le <strong>Membre</strong> est le membre titulaire type, avec accès aux
         documents standards et aux formations selon son affectation. Le <strong>Cadre</strong> assure l’encadrement et la coordination d’équipe, avec une visibilité renforcée sur les ressources
         utiles au commandement. L’<strong>Officier communication</strong> porte les annonces et traite les signalements des membres, uniquement à l’échelle de son organisation, pas
         de la plateforme entière. Le <strong>RH (S1)</strong> tient les dossiers personnel, les grades et le suivi administratif des effectifs, tandis que le <strong>Recruteur</strong> anime le pipeline
@@ -381,7 +381,7 @@
             <tbody>
                 <tr><td>Fondateur</td><td>Vision et validation stratégique</td><td>Gouvernance de l’unité</td></tr>
                 <tr><td>État-major</td><td>Direction courante et pilotage</td><td>Organisation entière</td></tr>
-                <tr><td>Opérateur</td><td>Membre titulaire</td><td>Documents, formations selon affectation</td></tr>
+                <tr><td>Membre</td><td>Membre titulaire</td><td>Documents, formations selon affectation</td></tr>
                 <tr><td>Cadre</td><td>Encadrement et coordination</td><td>Équipe / section</td></tr>
                 <tr><td>Officier communication</td><td>Annonces et signalements</td><td>Organisation</td></tr>
                 <tr><td>RH (S1)</td><td>Suivi administratif des effectifs</td><td>Personnel de l’organisation</td></tr>
@@ -403,7 +403,7 @@
         fonction sans reconstruire un jeu de permissions à la main.
     </p>
     <p>
-        Un même membre peut tout à fait porter plusieurs rôles à la fois — par exemple Opérateur et Instructeur — dès lors que sa fonction réelle dans l’unité le justifie ; les permissions des deux rôles
+        Un même membre peut tout à fait porter plusieurs rôles à la fois — par exemple Membre et Instructeur — dès lors que sa fonction réelle dans l’unité le justifie ; les permissions des deux rôles
         s’additionnent alors, comme expliqué dans le chapitre <a href="#droits-permissions-et-roles">Droits, permissions &amp; rôles</a>.
     </p>
 

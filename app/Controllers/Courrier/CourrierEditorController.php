@@ -9,6 +9,7 @@ use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Support\CourrierRightGuard;
 use App\Repositories\Courrier\CourrierDocumentRepository;
 use App\Repositories\Courrier\DocumentPresetRepository;
 use App\Repositories\Courrier\DocumentTemplateRepository;
@@ -99,6 +100,9 @@ class CourrierEditorController
 
     public function index(Request $request, array $params = []): Response
     {
+        if (($denied = CourrierRightGuard::deniedUnless($request, CourrierRightGuard::EDITOR_READ)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         $userId = (int) (Session::get('user_id') ?? 0);
         if (!$tenantId) {
@@ -137,6 +141,9 @@ class CourrierEditorController
 
     public function edit(Request $request, array $params = []): Response
     {
+        if (($denied = CourrierRightGuard::deniedUnless($request, CourrierRightGuard::EDITOR_READ)) !== null) {
+            return $denied;
+        }
         $id = (int) ($params['id'] ?? 0);
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         $userId = (int) (Session::get('user_id') ?? 0);
@@ -203,6 +210,9 @@ class CourrierEditorController
 
     public function save(Request $request, array $params = []): Response
     {
+        if (($denied = CourrierRightGuard::deniedUnless($request, CourrierRightGuard::WRITE)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         $userId = (int) (Session::get('user_id') ?? 0);
         if (!$tenantId) {

@@ -7,6 +7,7 @@ namespace App\Controllers\Courrier;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Support\CourrierRightGuard;
 use App\Core\Csrf;
 use App\Repositories\Courrier\CourrierDocumentRepository;
 use App\Repositories\Courrier\UserSignatureRepository;
@@ -103,6 +104,9 @@ class CourrierSignatureController
      */
     public function verify(Request $request, array $params = []): Response
     {
+        if (($denied = CourrierRightGuard::deniedUnless($request, CourrierRightGuard::VIEW)) !== null) {
+            return $denied;
+        }
         $id = (int) ($params['id'] ?? 0);
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         if (!$tenantId) {
@@ -165,6 +169,9 @@ class CourrierSignatureController
      */
     public function mySignatures(Request $request, array $params = []): Response
     {
+        if (($denied = CourrierRightGuard::deniedUnless($request, CourrierRightGuard::VIEW)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         $userId = (int) (Session::get('user_id') ?? 0);
         if (!$tenantId || !$userId) {
@@ -183,6 +190,9 @@ class CourrierSignatureController
      */
     public function signatureImage(Request $request, array $params = []): Response
     {
+        if (($denied = CourrierRightGuard::deniedUnless($request, CourrierRightGuard::VIEW)) !== null) {
+            return $denied;
+        }
         $id = (int) ($params['id'] ?? 0);
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         $userId = (int) (Session::get('user_id') ?? 0);
@@ -213,6 +223,9 @@ class CourrierSignatureController
      */
     public function documentSignatureImage(Request $request, array $params = []): Response
     {
+        if (($denied = CourrierRightGuard::deniedUnless($request, CourrierRightGuard::VIEW)) !== null) {
+            return $denied;
+        }
         $id = (int) ($params['id'] ?? 0);
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         if (!$tenantId) {
@@ -254,6 +267,9 @@ class CourrierSignatureController
      */
     public function manage(Request $request, array $params = []): Response
     {
+        if (($denied = CourrierRightGuard::deniedUnless($request, CourrierRightGuard::VIEW)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         $userId = (int) (Session::get('user_id') ?? 0);
         if (!$tenantId || !$userId) {
@@ -284,6 +300,9 @@ class CourrierSignatureController
      */
     public function store(Request $request, array $params = []): Response
     {
+        if (($denied = CourrierRightGuard::deniedUnless($request, CourrierRightGuard::VIEW)) !== null) {
+            return $denied;
+        }
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         $userId = (int) (Session::get('user_id') ?? 0);
         if (!$tenantId || !$userId) {
@@ -322,6 +341,9 @@ class CourrierSignatureController
      */
     public function setDefault(Request $request, array $params = []): Response
     {
+        if (($denied = CourrierRightGuard::deniedUnless($request, CourrierRightGuard::VIEW)) !== null) {
+            return $denied;
+        }
         $id = (int) ($params['id'] ?? 0);
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         $userId = (int) (Session::get('user_id') ?? 0);
@@ -347,6 +369,9 @@ class CourrierSignatureController
      */
     public function destroy(Request $request, array $params = []): Response
     {
+        if (($denied = CourrierRightGuard::deniedUnless($request, CourrierRightGuard::VIEW)) !== null) {
+            return $denied;
+        }
         $id = (int) ($params['id'] ?? 0);
         $tenantId = (int) (Session::get('tenant_id') ?? 0);
         $userId = (int) (Session::get('user_id') ?? 0);
