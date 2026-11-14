@@ -118,7 +118,7 @@ final class JnetMemberHubTest extends TestCase
         self::assertGreaterThanOrEqual(4, substr_count($auth, 'PortalAccessChoice::memberLandingUrl()'));
 
         $ctl = (string) file_get_contents(self::ROOT . 'app/Controllers/Web/JnetPortalController.php');
-        self::assertStringContainsString('!$this->spaces->isOrgWideReader()', $ctl);
+        self::assertStringNotContainsString('!$this->spaces->isOrgWideReader() && (string)', $ctl);
         self::assertStringContainsString("Response::view('jnet.hub'", $ctl);
     }
 

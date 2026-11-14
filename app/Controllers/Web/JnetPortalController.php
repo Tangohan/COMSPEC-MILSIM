@@ -54,8 +54,8 @@ final class JnetPortalController
             return $ctx;
         }
         // Un membre (pas l'encadrement de l'organisation) arrive sur l'extranet « Une unité. Un espace. » ; l'espace
-        // commun reste à ?commun=1 et ?type=. L'encadrement garde l'espace commun comme arrivée.
-        if (!$this->spaces->isOrgWideReader() && (string) $request->query('commun', '') === '' && (string) $request->query('type', '') === '') {
+        // commun reste à ?commun=1 et ?type=. L'encadrement l'y retrouve aussi : l'espace commun est la première ligne du registre.
+        if ((string) $request->query('commun', '') === '' && (string) $request->query('type', '') === '') {
             return $this->hubResponse($ctx);
         }
         $dash = $this->jnet->buildHome($ctx['tenant_id'], $ctx['user_id']);
@@ -187,7 +187,7 @@ final class JnetPortalController
             'canCustomize' => $this->canCustomize($ctx['tenant_id'], $ctx['user_id'], $chain),
             'customizeUrl' => url('jnet/u/' . $unitId . '/personnaliser'),
             'usHome' => $this->homeUrl(),
-            'usHomeLabel' => $this->spaces->isOrgWideReader() ? 'Espace commun' : 'Mon extranet',
+            'usHomeLabel' => 'Mon extranet',
         ], $extra));
     }
 
@@ -233,7 +233,7 @@ final class JnetPortalController
             'entryRole' => $isMember ? 'Membre de l’unité' : 'Visiteur autorisé',
             'entryNext' => url('jnet/u/' . $unitId . '?direct=1'),
             'entryLeave' => $this->homeUrl(),
-            'entryLeaveLabel' => $this->spaces->isOrgWideReader() ? 'Espace commun' : 'Mon extranet',
+            'entryLeaveLabel' => 'Mon extranet',
         ]);
     }
 
@@ -367,7 +367,7 @@ final class JnetPortalController
     /** Où ramène « retour » : l'extranet du membre, ou l'espace commun pour l'encadrement de l'organisation. */
     private function homeUrl(): string
     {
-        return $this->spaces->isOrgWideReader() ? url('jnet?commun=1') : url('jnet');
+        return url('jnet');
     }
 
     /** @param list<int> $chain de l'organisation à l'unité */
