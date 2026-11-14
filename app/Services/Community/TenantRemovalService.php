@@ -724,6 +724,7 @@ final class TenantRemovalService
             $this->now(),
             $tenantId,
         ]);
+        \App\Repositories\TenantRepository::forgetAllCaches();
     }
 
     private function tableExists(string $table): bool

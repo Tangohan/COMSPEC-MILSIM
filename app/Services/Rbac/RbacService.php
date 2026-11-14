@@ -19,9 +19,20 @@ class RbacService
     /** Mémoïsé : existence de user_permission_overrides (testé à chaque requête authentifiée). */
     private static ?bool $hasUserPermissionOverridesTable = null;
 
-    public function __construct()
+    /** Mémoïsé : existence de users.is_platform_admin (testée à chaque requête authentifiée d’un non-administrateur). */
+    private static ?bool $usersHasPlatformAdminColumn = null;
+
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo ?? Database::getPdo();
+    }
+
+    /** Tests : oublie les constats de schéma gardés pour la durée du processus. */
+    public static function resetSchemaMemo(): void
+    {
+        self::$permissionsHasRbacScope = null;
+        self::$hasUserPermissionOverridesTable = null;
+        self::$usersHasPlatformAdminColumn = null;
     }
 
     private function permissionsTableHasRbacScope(): bool
@@ -68,12 +79,32 @@ class RbacService
      */
     public function loadPermissionsForRoles(array $roleIds): array
     {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $roleIds), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        if (count($ids) === 1) {
+            return array_values(array_unique(array_map('strval', $this->loadPermissionsForRole($ids[0]))));
+        }
+        // Une seule lecture pour tous les rôles (au lieu d’une par rôle) ; les droits restent rangés rôle par rôle,
+        // dans l’ordre des rôles reçus, comme avant.
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT rp.role_id, p.slug FROM permissions p
+             INNER JOIN role_permissions rp ON rp.permission_id = p.id
+             WHERE rp.role_id IN ($placeholders)"
+        );
+        $stmt->execute($ids);
+        $byRole = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $byRole[(int) $row['role_id']][] = (string) $row['slug'];
+        }
         $slugs = [];
-        foreach (array_unique(array_values(array_filter(array_map('intval', $roleIds), static fn (int $id): bool => $id > 0))) as $rid) {
-            $slugs = array_merge($slugs, $this->loadPermissionsForRole($rid));
+        foreach ($ids as $rid) {
+            $slugs = array_merge($slugs, SystemReservedPermissions::filter($byRole[$rid] ?? []));
         }
 
-        return array_values(array_unique(array_map('strval', $slugs)));
+        return array_values(array_unique($slugs));
     }
 
     /**
@@ -234,11 +265,14 @@ class RbacService
             return false;
         }
         try {
-            $chk = $this->pdo->query(
-                "SELECT 1 FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'is_platform_admin' LIMIT 1"
-            );
-            if (!$chk || !$chk->fetchColumn()) {
+            if (self::$usersHasPlatformAdminColumn === null) {
+                $chk = $this->pdo->query(
+                    "SELECT 1 FROM information_schema.COLUMNS
+                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'is_platform_admin' LIMIT 1"
+                );
+                self::$usersHasPlatformAdminColumn = $chk && (bool) $chk->fetchColumn();
+            }
+            if (!self::$usersHasPlatformAdminColumn) {
                 return false;
             }
             $stmt = $this->pdo->prepare(

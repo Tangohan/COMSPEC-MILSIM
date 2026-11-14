@@ -33,7 +33,9 @@ final class TenantTypeModuleAccessMiddleware
 
     private function tenants(): TenantRepository
     {
-        return $this->tenantRepository ??= new TenantRepository();
+        // Dépôt partagé du Container : la ligne de la communauté lue ici est relue sans requête par l’en-tête,
+        // le menu et les contrôleurs (mémo de findById), au lieu d’être lue une seconde fois par requête.
+        return $this->tenantRepository ??= \App\Core\Container::get(TenantRepository::class);
     }
 
     public function __invoke(Request $request, callable $next): Response
