@@ -27,10 +27,10 @@ final class EffectifsBackOfficeShellAssetTest extends TestCase
         self::assertStringContainsString('Roleplay', $shell);
         self::assertStringContainsString("url('back-office/integration-membres')", $shell);
         self::assertStringContainsString('Réglages', $shell);
-        self::assertStringContainsString('Chaîne', $shell);
-        self::assertStringContainsString('Tableur', $shell);
-        self::assertStringContainsString('Accès', $shell);
-        self::assertStringContainsString('Emplois', $shell);
+        self::assertStringContainsString('Chaîne de commandement', $shell);
+        self::assertStringContainsString('Liste des membres', $shell);
+        self::assertStringContainsString('Rôles et accès', $shell);
+        self::assertStringContainsString('Fonctions et emplois', $shell);
         self::assertStringContainsString('Ajouter un membre', $shell);
         self::assertStringNotContainsString('centre de conduite', $shell);
         self::assertStringNotContainsString('Pilotage quotidien', $shell);

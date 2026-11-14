@@ -167,7 +167,7 @@ $showCockpit = $canEvents || $canArticles || $canAtak || $canSlides || $canEffec
             if ($firstMissionId > 0): ?>
                 <a class="bo-tbo-lever" href="<?= $h(url('back-office/cooperation/missions/' . $firstMissionId)) ?>">Coopération en cours</a>
             <?php else: ?>
-                <a class="bo-tbo-lever" href="<?= $h(url('back-office/cooperation')) ?>">Coopération</a>
+                <a class="bo-tbo-lever" href="<?= $h(url('back-office/cooperation/catalog')) ?>">Coopération</a>
             <?php endif; ?>
         <?php endif; ?>
         <?php if ($canAlerts): ?>

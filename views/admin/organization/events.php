@@ -107,7 +107,7 @@ $nEv = count($events);
                 </p>
             </div>
             <div class="bo-events__hero-actions">
-                <a href="<?= url('back-office/events/insights') ?>" class="bo-events__btn bo-events__btn--ghost">Insights présence</a>
+                <a href="<?= url('back-office/events/insights') ?>" class="bo-events__btn bo-events__btn--ghost">Bilan de participation</a>
                 <a href="<?= url('back-office') ?>" class="bo-events__btn bo-events__btn--solid">Centre de pilotage</a>
             </div>
         </div>

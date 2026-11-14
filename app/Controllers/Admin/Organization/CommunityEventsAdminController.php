@@ -483,7 +483,7 @@ final class CommunityEventsAdminController
         $tenantId = (int) Session::get('tenant_id');
         if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
             return Response::view('layout.main', [
-                'title' => 'Insights présence',
+                'title' => 'Bilan de participation',
                 'content' => 'platform.upgrade',
                 'feature' => 'events',
                 'planName' => 'pro',
@@ -493,7 +493,7 @@ final class CommunityEventsAdminController
         $insights = $this->buildAttendanceInsights($tenantId);
 
         return Response::view('layout.main', [
-            'title' => 'Insights présence',
+            'title' => 'Bilan de participation',
             'content' => 'admin.organization.events_insights',
             'eventsAttendanceKpis' => $insights['kpis'],
             'eventsAbsenceReasons' => $insights['absenceReasons'],

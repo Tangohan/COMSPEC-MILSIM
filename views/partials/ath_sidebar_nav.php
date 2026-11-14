@@ -128,9 +128,9 @@ $membersChildren = array_values(array_filter([
     $canMemberModeration
         ? ['label' => 'Sanctions & absences', 'href' => url('back-office/moderation'), 'active' => $navSanctionsActive]
         : null,
-    ['label' => 'Départs', 'href' => effectifs_workspace_url('departs'), 'active' => $navAt($effPath . '/departs')],
-    ['label' => 'Comptes en double', 'href' => effectifs_workspace_url('doublons'), 'active' => $navAt($effPath . '/doublons')],
-    ['label' => 'Personnes sans compte', 'href' => effectifs_workspace_url('sans-comptes'), 'active' => $navAt($effPath . '/sans-comptes')],
+    ['label' => 'Anciens membres', 'href' => effectifs_workspace_url('departs'), 'active' => $navAt($effPath . '/departs')],
+    ['label' => 'Fiches jumelles', 'href' => effectifs_workspace_url('doublons'), 'active' => $navAt($effPath . '/doublons')],
+    ['label' => 'Sans compte', 'href' => effectifs_workspace_url('sans-comptes'), 'active' => $navAt($effPath . '/sans-comptes')],
     ['label' => 'Tableaux de données', 'href' => effectifs_workspace_url('tableaux'), 'active' => $navAt($effPath . '/tableaux')],
     ['label' => 'Registre des droits', 'href' => effectifs_workspace_url('registre-droits'), 'active' => $navAt($effPath . '/registre-droits')],
     ['label' => 'Circuits de validation', 'href' => effectifs_workspace_url('circuits'), 'active' => $navAt($effPath . '/circuits')],
@@ -157,7 +157,7 @@ $rhChildren = [
     [
         'label' => 'Suivi des dossiers',
         'children' => [
-            ['label' => 'À traiter et alertes', 'href' => effectifs_workspace_url('a-traiter'), 'active' => $navAt($effPath . '/a-traiter')],
+            ['label' => 'À traiter', 'href' => effectifs_workspace_url('a-traiter'), 'active' => $navAt($effPath . '/a-traiter')],
             ['label' => 'Corrections de fiches', 'href' => url('back-office/personnel/corrections'), 'active' => $navAt('back-office/personnel/corrections')],
             ['label' => 'Demandes d’accès élevé', 'href' => effectifs_workspace_url('elevations'), 'active' => $navAt($effPath . '/elevations')],
             ['label' => 'Documents RH', 'href' => effectifs_workspace_url('documents-rh'), 'active' => $navAt($effPath . '/documents-rh')],
@@ -169,7 +169,7 @@ $rhChildren = [
             ['label' => 'Avancement', 'href' => url('back-office/rh/avancement'), 'active' => $navAt('back-office/rh/avancement')],
             ['label' => 'Ancienneté', 'href' => url('back-office/organisation/anciennete'), 'active' => $navAt('back-office/organisation/anciennete')],
             ['label' => 'Mobilité', 'href' => effectifs_workspace_url('mobilite'), 'active' => $navAt($effPath . '/mobilite')],
-            ['label' => 'Relève et succession', 'href' => effectifs_workspace_url('vivier'), 'active' => $navAt($effPath . '/vivier')],
+            ['label' => 'Vivier', 'href' => effectifs_workspace_url('vivier'), 'active' => $navAt($effPath . '/vivier')],
         ],
     ],
     ['label' => 'Réglages RH', 'href' => effectifs_workspace_url('reglages'), 'active' => $navAt($effPath . '/reglages')],
@@ -220,7 +220,7 @@ $referentialChildren = [
 ];
 
 $accessChildren = [
-    ['label' => 'Rôles', 'href' => effectifs_workspace_url('roles'), 'active' => $navAccessActive && !$navAt($effPath . '/droits')],
+    ['label' => 'Rôles et accès', 'href' => effectifs_workspace_url('roles'), 'active' => $navAccessActive && !$navAt($effPath . '/droits')],
     ['label' => 'Droits par membre', 'href' => effectifs_workspace_url('droits'), 'active' => $navAt($effPath . '/droits')],
     ['label' => 'Fonctions et emplois', 'href' => effectifs_workspace_url('fonctions'), 'active' => $navJobsActive],
     ['label' => 'Accès au renseignement', 'href' => url('back-office/renseignement/acces'), 'active' => $navAt('back-office/renseignement') && !$navAt('back-office/renseignement/fichiers')],
@@ -325,7 +325,7 @@ $atakDeviceChildren = [
     [
         'label' => 'Opérateurs',
         'children' => [
-            ['label' => 'Sessions et connexions', 'href' => url('back-office/atak/operateurs'), 'active' => $navAtakSessionsActive],
+            ['label' => 'Sessions & connexions', 'href' => url('back-office/atak/operateurs'), 'active' => $navAtakSessionsActive],
             ['label' => 'Fiche opérateur', 'href' => url('back-office/atak/fiche-operateur'), 'active' => $navAtakOpActive],
         ],
     ],
@@ -376,7 +376,7 @@ $communityChildren = array_values(array_filter([
 ], static fn (?array $row): bool => is_array($row)));
 
 $messagesChildren = [
-    ['label' => 'Annonces', 'href' => url('back-office/alerts'), 'active' => $boNavAlerts],
+    ['label' => 'Centre de diffusion', 'href' => url('back-office/alerts'), 'active' => $boNavAlerts],
     ['label' => 'Mini-articles', 'href' => url('back-office/articles'), 'active' => !empty($boNavArticles)],
     [
         'label' => 'E-mails',
