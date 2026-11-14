@@ -13,7 +13,7 @@ use App\Services\Jnet\JnetUnitWorkspaceService as WS;
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $page = is_array($usw['page'] ?? null) ? $usw['page'] : null;
 $canPost = !empty($usw['canPost']);
-$chief = !empty($usw['isChief']);
+$chief = !empty($usw['canModerate']);
 $me = (int) ($usw['viewerId'] ?? 0);
 $listUrl = $base . '?vue=pages&direct=1';
 if ($page === null): ?>
@@ -44,27 +44,24 @@ $action = static fn (string $suffix): string => $h($base . '/pages/' . $pid . $s
         <span>Modifiée par <?= $h((string) ($page['updated_by_label'] ?? 'un membre')) ?> · <?= $h(JnetSpaceService::relativeTime((string) $page['updated_at'])) ?></span>
         <span class="uw-page__sp"></span>
         <?php if ($canPost && !$edit): ?><a class="uw-link" href="<?= $h($self . '&edit=1#page-title') ?>">Modifier</a><?php endif; ?>
+        <?php if (!$edit && !empty($usw['shareTargets'])): ?><a class="uw-link" href="<?= $h($base . '?vue=partager&kind=page&item=' . $pid . '&titre=' . rawurlencode(mb_substr($title !== '' ? $title : 'Page sans titre', 0, 120)) . '&direct=1') ?>" data-uw-share data-kind="page" data-item="<?= $pid ?>" data-title="<?= $h($title !== '' ? $title : 'Page sans titre') ?>" data-back="<?= $h($self) ?>">Partager</a><?php endif; ?>
     </div>
 
 <?php if ($edit): ?>
     <?php $blocks = $blocks !== [] ? $blocks : [WS::newBlock('p')]; ?>
-    <form method="post" action="<?= $action('') ?>" class="uw-editor">
-        <?= \App\Core\Csrf::field() ?>
-        <input type="hidden" name="version" value="<?= $h((string) $page['updated_at']) ?>">
-        <button type="submit" name="act" value="save" class="ja-sr" tabindex="-1">Enregistrer</button>
-        <label class="ja-sr" for="page-title">Titre de la page</label>
-        <input id="page-title" class="uw-page__title" name="title" value="<?= $h($title) ?>" maxlength="<?= WS::TITLE_MAX ?>" placeholder="Sans titre" autocomplete="off">
-        <div id="blocks" class="uw-blocks">
-            <?php foreach ($blocks as $i => $b): ?>
-                <?php $t = (string) $b['t']; $name = 'blocks[' . $i . ']'; ?>
-                <fieldset class="uw-block uw-block--<?= $h($t) ?>">
-                    <legend class="ja-sr">Bloc <?= $i + 1 ?> : <?= $h(WS::BLOCK_TYPES[$t][0]) ?></legend>
+<?php
+/** Un bloc de l'éditeur ; $i vaut l'indice, ou « __I__ » dans les gabarits que le script clone (Entrée, palette « / »). */
+$renderBlock = static function (int|string $i, array $b, int $total) use ($h, $event): void {
+?>
+                <?php $t = (string) $b['t']; $name = 'blocks[' . $i . ']'; $num = is_int($i) ? $i + 1 : ''; ?>
+                <fieldset class="uw-block uw-block--<?= $h($t) ?>" data-uw-block>
+                    <legend class="ja-sr">Bloc <?= $num ?> : <?= $h(WS::BLOCK_TYPES[$t][0]) ?></legend>
                     <input type="hidden" name="<?= $name ?>[id]" value="<?= $h((string) $b['id']) ?>">
                     <input type="hidden" name="<?= $name ?>[t]" value="<?= $h($t) ?>">
                     <div class="uw-block__body">
                         <span class="uw-block__type"><?= $h(WS::BLOCK_TYPES[$t][0]) ?></span>
                         <?php if ($t === 'h'): ?>
-                            <input class="uw-block__h" name="<?= $name ?>[text]" value="<?= $h((string) $b['text']) ?>" maxlength="<?= WS::TEXT_MAX ?>" placeholder="Titre" aria-label="Titre du bloc <?= $i + 1 ?>">
+                            <input class="uw-block__h" name="<?= $name ?>[text]" value="<?= $h((string) $b['text']) ?>" maxlength="<?= WS::TEXT_MAX ?>" placeholder="Titre" aria-label="Titre du bloc <?= $num ?>">
                         <?php elseif ($t === 'div'): ?>
                             <hr>
                         <?php elseif ($t === 'count'): ?>
@@ -77,15 +74,28 @@ $action = static fn (string $suffix): string => $h($base . '/pages/' . $pid . $s
                             <?php if ($t === 'todo'): ?>
                                 <label class="uw-block__check"><input type="checkbox" name="<?= $name ?>[done]" value="1"<?= !empty($b['done']) ? ' checked' : '' ?>> Fait</label>
                             <?php endif; ?>
-                            <textarea name="<?= $name ?>[text]" rows="<?= $t === 'p' ? 3 : 2 ?>" maxlength="<?= WS::TEXT_MAX ?>" placeholder="<?= $t === 'todo' ? 'À faire' : ($t === 'call' ? 'Point d’attention' : 'Écrivez ici') ?>" aria-label="Contenu du bloc <?= $i + 1 ?>"><?= $h((string) $b['text']) ?></textarea>
+                            <textarea name="<?= $name ?>[text]" rows="<?= $t === 'p' ? 3 : 2 ?>" maxlength="<?= WS::TEXT_MAX ?>" placeholder="<?= $t === 'todo' ? 'À faire' : ($t === 'call' ? 'Point d’attention' : 'Écrivez ici') ?>" aria-label="Contenu du bloc <?= $num ?>"><?= $h((string) $b['text']) ?></textarea>
                         <?php endif; ?>
                     </div>
                     <div class="uw-block__tools">
-                        <button type="submit" name="act" value="up:<?= $i ?>" aria-label="Monter le bloc <?= $i + 1 ?>"<?= $i === 0 ? ' disabled' : '' ?>>↑</button>
-                        <button type="submit" name="act" value="down:<?= $i ?>" aria-label="Descendre le bloc <?= $i + 1 ?>"<?= $i === count($blocks) - 1 ? ' disabled' : '' ?>>↓</button>
-                        <button type="submit" name="act" value="del:<?= $i ?>" aria-label="Supprimer le bloc <?= $i + 1 ?>">×</button>
+                        <span class="uw-grip uw-js-only" draggable="true" hidden aria-hidden="true" title="Glisser pour déplacer le bloc">⋮⋮</span>
+                        <button type="submit" name="act" value="up:<?= $i ?>" aria-label="Monter le bloc <?= $num ?>"<?= $i === 0 ? ' disabled' : '' ?>>↑</button>
+                        <button type="submit" name="act" value="down:<?= $i ?>" aria-label="Descendre le bloc <?= $num ?>"<?= $i === $total - 1 ? ' disabled' : '' ?>>↓</button>
+                        <button type="submit" name="act" value="del:<?= $i ?>" aria-label="Supprimer le bloc <?= $num ?>">×</button>
                     </div>
                 </fieldset>
+<?php
+};
+?>
+    <form method="post" action="<?= $action('') ?>" class="uw-editor">
+        <?= \App\Core\Csrf::field() ?>
+        <input type="hidden" name="version" value="<?= $h((string) $page['updated_at']) ?>">
+        <button type="submit" name="act" value="save" class="ja-sr" tabindex="-1">Enregistrer</button>
+        <label class="ja-sr" for="page-title">Titre de la page</label>
+        <input id="page-title" class="uw-page__title" name="title" value="<?= $h($title) ?>" maxlength="<?= WS::TITLE_MAX ?>" placeholder="Sans titre" autocomplete="off">
+        <div id="blocks" class="uw-blocks" data-uw-blocks>
+            <?php foreach ($blocks as $i => $b): ?>
+                <?php $renderBlock($i, $b, count($blocks)); ?>
             <?php endforeach; ?>
         </div>
         <div class="uw-addblock">
@@ -96,6 +106,9 @@ $action = static fn (string $suffix): string => $h($base . '/pages/' . $pid . $s
                 <?php endforeach; ?>
             </div>
         </div>
+        <?php foreach (WS::BLOCK_TYPES as $type => [$typeName, $typeHint]): ?>
+            <template data-uw-block-tpl="<?= $h($type) ?>" data-label="<?= $h($typeName) ?>" data-hint="<?= $h($typeHint) ?>"><?php $renderBlock('__I__', WS::newBlock($type), 0); ?></template>
+        <?php endforeach; ?>
         <div class="uw-form-actions">
             <button class="ja-b1 sm" type="submit" name="act" value="save">Enregistrer la page</button>
             <a class="ja-b2 sm" href="<?= $h($self) ?>">Annuler</a>

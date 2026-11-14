@@ -55,7 +55,7 @@ final class JnetAthenaUiTest extends TestCase
     {
         foreach (['hub', 'entry', 'unit_space', '_page'] as $view) {
             $src = $this->read('views/jnet/' . $view . '.php');
-            self::assertStringNotContainsString('toast', strtolower($src), $view);
+            // Les fenêtres, messages discrets (toasts) et visionneuses sont permis sur le site ; seule l'interface dans Arma n'a pas de popups.
             self::assertStringNotContainsString('alert(', $src, $view);
             self::assertStringNotContainsString('class="kk"', $src, $view);
             self::assertStringNotContainsString('hb-kk', $src, $view);

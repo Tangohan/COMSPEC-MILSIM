@@ -107,6 +107,8 @@ final class JnetUnitFiles
                 'by' => (string) ($authors[(int) $f['uploaded_by']] ?? ''),
                 'href' => url('partage/fichiers/' . (int) $f['id']),
                 'preview' => url('partage/fichiers/' . (int) $f['id'] . '?apercu=1'),
+                'source' => 'file',
+                'shareKind' => 'file',
             ];
             if (self::isImage($name)) {
                 $photos[] = $item;
@@ -120,6 +122,55 @@ final class JnetUnitFiles
         usort($folderRows, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
 
         return ['ready' => true, 'photos' => $photos, 'documents' => $documents, 'folders' => $folderRows];
+    }
+
+    /**
+     * Ajoute aux fichiers partagés les autres sources réelles de l'unité (photos terrain et pièces jointes des échanges,
+     * documents de la bibliothèque), les plus récents d'abord. Une rubrique n'est « prête » que si le partage de fichiers
+     * est installé ou si une autre source a quelque chose à montrer.
+     *
+     * @param array{ready: bool, photos: list<array<string, mixed>>, documents: list<array<string, mixed>>, folders: list<array<string, mixed>>} $files
+     * @param array{photos?: list<array<string, mixed>>, documents?: list<array<string, mixed>>} $media
+     * @return array{ready: bool, photos: list<array<string, mixed>>, documents: list<array<string, mixed>>, folders: list<array<string, mixed>>}
+     */
+    public static function merge(array $files, array $media): array
+    {
+        $byDate = static fn (array $a, array $b): int => ((int) ($b['ts'] ?? 0)) <=> ((int) ($a['ts'] ?? 0));
+        $photos = array_merge((array) $files['photos'], (array) ($media['photos'] ?? []));
+        $documents = array_merge((array) $files['documents'], (array) ($media['documents'] ?? []));
+        usort($photos, $byDate);
+        usort($documents, $byDate);
+
+        return [
+            'ready' => (bool) $files['ready'] || $photos !== [] || $documents !== [],
+            'photos' => $photos,
+            'documents' => $documents,
+            'folders' => (array) $files['folders'],
+        ];
+    }
+
+    /**
+     * Fiche d'un élément non issu du partage de fichiers, au même format que les fichiers partagés.
+     *
+     * @return array<string, mixed>
+     */
+    public static function mediaItem(int $id, string $title, string $ext, string $album, string $by, string $createdAt, string $href, string $preview, string $source, string $shareKind): array
+    {
+        return [
+            'id' => $id,
+            'name' => $title,
+            'title' => $title,
+            'ext' => $ext,
+            'album' => $album,
+            'size' => '',
+            'date' => self::dateLabel($createdAt),
+            'ts' => (int) strtotime($createdAt),
+            'by' => $by,
+            'href' => $href,
+            'preview' => $preview,
+            'source' => $source,
+            'shareKind' => $shareKind,
+        ];
     }
 
     public static function sizeLabel(int $bytes): string

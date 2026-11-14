@@ -67,7 +67,8 @@ foreach (['taches', 'pages', 'photos', 'documents'] as $moduleKey) {
 if ($subTree === []) {
     unset($tabs['sous-unites']);
 }
-$activeTab = $view === 'page' ? 'pages' : $view;
+$activeTab = $view === 'page' ? 'pages' : ($view === 'partager' ? 'echanges' : $view);
+$shareTargets = is_array($usw['shareTargets'] ?? null) ? $usw['shareTargets'] : [];
 $tabUrl = static fn (string $key): string => $base . ($key === 'accueil' ? '?direct=1' : '?vue=' . $key . '&direct=1');
 $face = static function (array $p) use ($h): string {
     $photo = $p['photo'] ?? null;
@@ -100,9 +101,9 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_spaces.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_unit_space.css')) ?>">
     <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_unit_shell.css')) ?>">
-    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_unit_workspace.css')) ?>">
+    <link rel="stylesheet" href="<?= $h(asset_url('assets/css/jnet_unit_workspace.css?r=202611142100')) ?>">
 </head>
-<body class="ja us us--<?= $h($look['theme']) ?>" style="<?= $h(S::cssVars($look)) ?>">
+<body class="ja us us--<?= $h($look['theme']) ?>" style="<?= $h(S::cssVars($look)) ?>" data-uw-unit="<?= $unitId ?>" data-uw-label="<?= $h($label) ?>" data-uw-view="<?= $h($view) ?>">
 <a class="ja-skip" href="#us-main">Aller au contenu</a>
 
 <header class="ja-hd ja-hd--rows">
@@ -147,6 +148,7 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
 <main class="ja-main us-main jnet-embed" id="us-main">
     <?php if ($flashErr): ?><p class="us-flash is-bad" role="alert"><?= $h((string) $flashErr) ?></p><?php endif; ?>
     <?php if ($flashOk): ?><p class="us-flash" role="status"><?= $h((string) $flashOk) ?></p><?php endif; ?>
+    <?php if (!empty($usGate) && $view !== 'personnaliser'): ?><?php require base_path('views/jnet/unit/_gate.php'); ?><?php endif; ?>
 
 <?php if ($view === 'personnaliser'): ?>
     <?php require base_path('views/jnet/customize.php'); ?>
@@ -188,6 +190,9 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
                     <?php $exVariant = $col['variant']; $exPerspective = $col['perspective']; ?>
                     <?php foreach ($col['items'] as $ex): ?>
                         <?php require base_path('views/jnet/_exchange.php'); ?>
+                        <?php if ($shareTargets !== []): ?>
+                            <p class="uw-exchange-tools"><a class="uw-link" href="<?= $h($base . '?vue=partager&kind=exchange&item=' . (int) $ex['id'] . '&titre=' . rawurlencode(mb_substr((string) $ex['title'], 0, 120)) . '&direct=1') ?>" data-uw-share data-kind="exchange" data-item="<?= (int) $ex['id'] ?>" data-title="<?= $h((string) $ex['title']) ?>" data-back="<?= $h($exBack . '#ex-' . (int) $ex['id']) ?>">Partager avec une autre unité</a></p>
+                        <?php endif; ?>
                         <?php if ($col['key'] === 'down' && !empty($canPost) && $subTargets !== []): ?>
                             <details class="uw-relay">
                                 <summary>Relayer aux sous-unités</summary>
@@ -253,6 +258,9 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
 <?php elseif (($view === 'photos' || $view === 'documents') && !empty($wShown[$view])): ?>
     <?php $usKind = $view; require base_path('views/jnet/unit/_files.php'); ?>
 
+<?php elseif ($view === 'partager'): ?>
+    <?php require base_path('views/jnet/unit/_share.php'); ?>
+
 <?php elseif ($view === 'operations'): ?>
     <header class="us-page">
         <h1 class="ja-disp ja-disp--md">Opérations</h1>
@@ -293,7 +301,13 @@ $section = static function (string $title, string $moreHref = '', string $moreLa
     <a href="<?= $h(url('jnet/courrier')) ?>">Messagerie</a>
     <a href="<?= $h(url('dashboard')) ?>">Quitter JNET</a>
 </footer>
+<?php if ($shareTargets !== [] && $view !== 'partager'): ?>
+<template id="uw-share-tpl">
+    <?php $shareKind = 'exchange'; $shareId = 0; $shareTitle = ''; $shareUid = 'dlg'; require base_path('views/jnet/unit/_share_form.php'); ?>
+</template>
+<?php endif; ?>
+<div class="uw-toasts" role="status" aria-live="polite" data-uw-toasts></div>
 <script src="<?= $h(asset_url('assets/js/jnet_spaces.js')) ?>" defer></script>
-<script src="<?= $h(asset_url('assets/js/jnet_unit_workspace.js')) ?>" defer></script>
+<script src="<?= $h(asset_url('assets/js/jnet_unit_workspace.js?r=202611142100')) ?>" defer></script>
 </body>
 </html>

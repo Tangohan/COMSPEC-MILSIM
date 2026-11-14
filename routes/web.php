@@ -485,6 +485,9 @@ return function (Router $router) {
     $router->post('/jnet/u/{id}/taches', [\App\Controllers\Web\JnetUnitWorkspaceController::class, 'addTask'], [AuthMiddleware::class]);
     $router->post('/jnet/u/{id}/taches/{tid}', [\App\Controllers\Web\JnetUnitWorkspaceController::class, 'taskAction'], [AuthMiddleware::class]);
     $router->post('/jnet/u/{id}/pages', [\App\Controllers\Web\JnetUnitWorkspaceController::class, 'createPage'], [AuthMiddleware::class]);
+    $router->post('/jnet/u/{id}/pages/ordre', [\App\Controllers\Web\JnetUnitWorkspaceController::class, 'reorderPages'], [AuthMiddleware::class]);
+    $router->post('/jnet/u/{id}/partager', [\App\Controllers\Web\JnetUnitWorkspaceController::class, 'share'], [AuthMiddleware::class]);
+    $router->post('/jnet/u/{id}/relancer', [\App\Controllers\Web\JnetUnitWorkspaceController::class, 'remind'], [AuthMiddleware::class]);
     $router->post('/jnet/u/{id}/pages/{pid}', [\App\Controllers\Web\JnetUnitWorkspaceController::class, 'savePage'], [AuthMiddleware::class]);
     $router->post('/jnet/u/{id}/pages/{pid}/supprimer', [\App\Controllers\Web\JnetUnitWorkspaceController::class, 'deletePage'], [AuthMiddleware::class]);
     $router->post('/jnet/u/{id}/pages/{pid}/deplacer', [\App\Controllers\Web\JnetUnitWorkspaceController::class, 'movePage'], [AuthMiddleware::class]);

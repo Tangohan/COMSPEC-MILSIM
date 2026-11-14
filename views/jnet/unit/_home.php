@@ -237,7 +237,7 @@ $flow = [
                     <a class="ja-row uw-doc" href="<?= $h($d['href']) ?>">
                         <span class="uw-ext"><?= $h($d['ext']) ?></span>
                         <span class="t"><b><?= $h($d['title']) ?></b><small><?= $h($d['album']) ?></small></span>
-                        <span class="m uw-doc__meta"><?= $h($d['date']) ?> · <?= $h($d['size']) ?></span>
+                        <span class="m uw-doc__meta"><?= $h(trim($d['date'] . ($d['size'] !== '' ? ' · ' . $d['size'] : ''), ' ·')) ?></span>
                         <span class="ar" aria-hidden="true"><svg class="ja-i" viewBox="0 0 24 24"><path d="M12 4v12M6 12l6 6 6-6M5 20h14"/></svg></span>
                     </a>
                 <?php endforeach; ?>

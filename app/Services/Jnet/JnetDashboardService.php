@@ -230,6 +230,16 @@ final class JnetDashboardService
     }
 
     /**
+     * Documents publiés de la bibliothèque JNET (les mêmes que la page « Bibliothèque »).
+     *
+     * @return list<array{title: string, href: string, category: string, when: string}>
+     */
+    public function libraryDocuments(int $tenantId, int $limit = 40): array
+    {
+        return $this->loadPublishedDocuments($tenantId, $limit);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function buildExploitation(int $tenantId): array

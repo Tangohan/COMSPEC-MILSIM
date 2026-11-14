@@ -14,6 +14,7 @@ use App\Services\Auth\AuthService;
 use App\Services\Jnet\JnetDashboardService;
 use App\Services\Jnet\JnetMemberHub;
 use App\Services\Jnet\JnetMessagingService;
+use App\Services\Jnet\JnetSpaceRules;
 use App\Services\Jnet\JnetSpaceService;
 use App\Services\Jnet\JnetUnitSpaceSettings;
 use App\Services\Jnet\JnetUnitWorkspaceService;
@@ -149,6 +150,11 @@ final class JnetPortalController
 
             return Response::redirect($this->homeUrl());
         }
+        if (!$this->spaces->canRead($ctx['tenant_id'], $ctx['user_id'], $unitId)) {
+            Session::flash('error', 'Cet espace est réservé aux unités que son chef a autorisées.');
+
+            return Response::redirect($this->homeUrl());
+        }
         $settings = $this->spaceSettings->find($ctx['tenant_id'], $unitId);
         $look = JnetUnitSpaceSettings::look($settings, (array) $tree->node($unitId));
         if ($look['entry_screen'] && !$this->hasEntered($unitId) && (string) $request->query('direct', '') === '') {
@@ -166,12 +172,14 @@ final class JnetPortalController
         }
         $vue = in_array($vue, self::UNIT_VIEWS, true) ? $vue : 'accueil';
         $extra = $this->workspaceData($ctx, $unitId, $space, $settings, $vue, $request, $tree);
+        // Ordres non lus à prendre en compte avant d'utiliser l'espace (réglage « Prise en compte obligatoire »).
+        $extra['usGate'] = $this->spaces->pendingOrdersFor($ctx['tenant_id'], $unitId, array_merge((array) ($space['received'] ?? []), (array) ($space['internal'] ?? [])));
 
         return $this->unitShell($ctx, $unitId, $space, $look, $vue, $tree->chain($unitId), $extra);
     }
 
     /** Rubriques de l'espace d'une unité (?vue=). « page » est une page écrite, ouverte depuis la rubrique Pages. */
-    private const UNIT_VIEWS = ['accueil', 'echanges', 'effectif', 'taches', 'pages', 'page', 'photos', 'documents', 'operations', 'sous-unites'];
+    private const UNIT_VIEWS = ['accueil', 'echanges', 'effectif', 'taches', 'pages', 'page', 'photos', 'documents', 'operations', 'sous-unites', 'partager'];
 
     /**
      * Données des outils de l'espace pour la rubrique demandée : seules les lectures utiles à cette rubrique sont faites.
@@ -192,13 +200,16 @@ final class JnetPortalController
             $filesReady = (new \App\Repositories\FileShareRepository())->schemaReady();
         } catch (\Throwable) {
         }
+        // Photos et documents : partage de fichiers, mais aussi photos terrain et pièces jointes des échanges, bibliothèque.
+        $mediaReady = $filesReady || $this->spaces->exchangesReady();
         $shown = [
             'taches' => $wsReady && !in_array('taches', $hidden, true),
             'pages' => $wsReady && !in_array('pages', $hidden, true),
-            'photos' => $filesReady && !in_array('photos', $hidden, true),
-            'documents' => $filesReady && !in_array('documents', $hidden, true),
+            'photos' => $mediaReady && !in_array('photos', $hidden, true),
+            'documents' => $mediaReady && !in_array('documents', $hidden, true),
         ];
-        $canPost = $this->spaces->canPost($tenantId, $userId, $unitId);
+        $rights = $this->spaces->rights($tenantId, $userId, $unitId);
+        $canPost = $rights['write'];
         $isChief = $this->canCustomize($tenantId, $userId, $tree->chain($unitId));
         $memberCards = is_array($space['members'] ?? null) ? $space['members'] : [];
         $memberIds = array_values(array_map('intval', (array) (($tree->node($unitId) ?? [])['members'] ?? [])));
@@ -206,7 +217,11 @@ final class JnetPortalController
         $w = [
             'shown' => $shown,
             'canPost' => $canPost,
+            'canPublish' => $rights['publish'],
             'isChief' => $isChief,
+            'canModerate' => $isChief || $rights['lead'],
+            'shareTargets' => [],
+            'shareItem' => null,
             'viewerId' => $userId,
             'event' => null,
             'tasks' => [],
@@ -256,7 +271,21 @@ final class JnetPortalController
             }
         }
         if (in_array($view, ['accueil', 'photos', 'documents'], true) && ($shown['photos'] || $shown['documents'])) {
-            $w['files'] = (new \App\Services\Jnet\JnetUnitFiles())->forUnit($tenantId, $userId, $unitId);
+            $w['files'] = \App\Services\Jnet\JnetUnitFiles::merge(
+                (new \App\Services\Jnet\JnetUnitFiles())->forUnit($tenantId, $userId, $unitId),
+                $this->spaces->unitMedia($tenantId, $userId, $unitId)
+            );
+        }
+        // « Partager » : unités où le lecteur peut publier, seulement là où un lien de partage est affiché.
+        if (in_array($view, ['echanges', 'page', 'photos', 'documents', 'partager'], true)) {
+            $w['shareTargets'] = $this->spaces->shareTargets($tenantId, $userId, $unitId);
+        }
+        if ($view === 'partager') {
+            $w['shareItem'] = [
+                'kind' => in_array((string) $request->query('kind', ''), ['exchange', 'page', 'file'], true) ? (string) $request->query('kind', '') : 'exchange',
+                'id' => (int) $request->query('item', 0),
+                'title' => mb_substr(trim((string) $request->query('titre', '')), 0, 160),
+            ];
         }
 
         return ['usw' => $w];
@@ -303,7 +332,7 @@ final class JnetPortalController
         $unitId = (int) ($params['id'] ?? 0);
         $tree = $this->spaces->tree($ctx['tenant_id'], $ctx['user_id']);
         $q = trim((string) $request->query('q', ''));
-        if ($unitId <= 0 || !$tree->has($unitId) || mb_strlen($q) < 2) {
+        if ($unitId <= 0 || !$tree->has($unitId) || mb_strlen($q) < 2 || !$this->spaces->canRead($ctx['tenant_id'], $ctx['user_id'], $unitId)) {
             return Response::json(['results' => []]);
         }
         $q = mb_substr($q, 0, 80);
@@ -380,8 +409,8 @@ final class JnetPortalController
         }
         $unitId = (int) ($params['id'] ?? 0);
         $tree = $this->spaces->tree($ctx['tenant_id'], $ctx['user_id']);
-        if ($unitId <= 0 || !$tree->has($unitId)) {
-            Session::flash('error', 'Cet espace n’existe pas ou ne vous est pas accessible.');
+        if ($unitId <= 0 || !$tree->has($unitId) || !$this->spaces->canRead($ctx['tenant_id'], $ctx['user_id'], $unitId)) {
+            Session::flash('error', 'Cet espace n’existe pas, ne vous est pas accessible ou est réservé aux unités que son chef a autorisées.');
 
             return Response::redirect($this->homeUrl());
         }
@@ -453,8 +482,24 @@ final class JnetPortalController
         if ($space === null) {
             return Response::redirect($this->homeUrl());
         }
+        $rules = $this->spaceSettings->rules($ctx['tenant_id'], $unitId);
+        $units = [];
+        foreach ($tree->unitIds() as $uid) {
+            if ($uid !== $unitId) {
+                $units[] = ['id' => $uid, 'label' => (string) (($tree->node($uid) ?? [])['label'] ?? 'Unité'), 'depth' => (int) (($tree->node($uid) ?? [])['depth'] ?? 1)];
+            }
+        }
+        $managerCallsigns = $this->spaceSettings->callsigns((array) $rules['managers']);
+        $managers = [];
+        foreach ((array) $rules['managers'] as $mid) {
+            $managers[] = ['id' => (int) $mid, 'label' => ($managerCallsigns[(int) $mid] ?? '') !== '' ? (string) $managerCallsigns[(int) $mid] : 'Membre ' . (int) $mid];
+        }
 
         return $this->unitShell($ctx, $unitId, $space, JnetUnitSpaceSettings::look($settings, $node), 'personnaliser', $tree->chain($unitId), [
+            'customizeRules' => $rules,
+            'customizeRulesReady' => $this->spaceSettings->rulesColumnsReady() && $this->spaceSettings->rulesTablesReady(),
+            'customizeUnits' => $units,
+            'customizeManagers' => $managers,
             'customizeUnitId' => $unitId,
             'customizeUnit' => (string) ($node['label'] ?? 'Unité'),
             'customizeSettings' => $settings,
@@ -540,13 +585,57 @@ final class JnetPortalController
                     JnetUnitSpaceSettings::deleteImage($old, $tenantId);
                 }
             }
-            Session::flash('success', 'Espace enregistré. Les membres le voient à leur prochaine visite.');
+            $unknown = [];
+            if ((string) $request->input('rules_present', '') !== '' && $this->spaceSettings->rulesColumnsReady() && $this->spaceSettings->rulesTablesReady()) {
+                $unknown = $this->saveRules($request, $tenantId, $unitId, $ctx['user_id'], $tree);
+            }
+            Session::flash('success', 'Espace enregistré. Les membres le voient à leur prochaine visite.'
+                . ($unknown !== [] ? ' Indicatif introuvable parmi les membres de l’unité et de son encadrement : ' . implode(', ', $unknown) . '.' : ''));
         } catch (\Throwable $e) {
             error_log('[jnet] personnalisation espace ' . $unitId . ' : ' . $e->getMessage());
             Session::flash('error', 'L’espace n’a pas pu être enregistré. Réessayez dans un instant.');
         }
 
         return Response::redirect($back);
+    }
+
+    /**
+     * Réglages d'ordres, accès par unité et gestionnaires, envoyés par le formulaire « Personnaliser » (déjà réservé au
+     * chef de l'espace). Un réglage ne peut qu'ouvrir les outils de cet espace à des gens qui voient déjà l'unité, ou
+     * restreindre : voir JnetSpaceRules. Retourne les indicatifs de gestionnaires qui n'ont pas été reconnus.
+     *
+     * @return list<string>
+     */
+    private function saveRules(Request $request, int $tenantId, int $unitId, int $userId, JnetSpaceTree $tree): array
+    {
+        $this->spaceSettings->saveRules(
+            $tenantId,
+            $unitId,
+            (string) $request->input('require_ack', '') !== '',
+            (string) $request->input('auto_relay', '') !== '',
+            JnetSpaceRules::postMin($request->input('post_min', 'member')),
+            $userId
+        );
+        $this->spaceSettings->saveAccess($tenantId, $unitId, JnetSpaceRules::accessFromForm(
+            $request->input('access', []),
+            $request->input('access_add_unit', ''),
+            $request->input('access_add_level', ''),
+            $tree,
+            $unitId
+        ), $userId);
+        // Gestionnaires : seulement des membres de l'unité, de ses sous-unités ou de son encadrement.
+        $pool = $tree->memberIdsInSubtree($unitId);
+        foreach ($tree->ancestors($unitId) as $above) {
+            if ($above !== JnetSpaceTree::ORG) {
+                $pool = array_merge($pool, array_map('intval', (array) (($tree->node($above) ?? [])['members'] ?? [])));
+            }
+        }
+        $pool = array_values(array_unique(array_map('intval', $pool)));
+        $keep = array_values(array_intersect(array_map('intval', (array) $request->input('managers_keep', [])), $pool));
+        $found = JnetSpaceRules::managersFromCallsigns((string) $request->input('managers_add', ''), $this->spaceSettings->callsigns($pool));
+        $this->spaceSettings->saveManagers($tenantId, $unitId, array_slice(array_values(array_unique(array_merge($keep, $found['ids']))), 0, JnetSpaceRules::MANAGERS_MAX), $userId);
+
+        return $found['unknown'];
     }
 
     private function hasEntered(int $unitId): bool
@@ -622,12 +711,21 @@ final class JnetPortalController
         if ($back === '' || !JnetSpaceService::isInternalLink($back)) {
             $back = url('jnet');
         }
+        // Accusé envoyé sans rechargement (fenêtre « prise en compte ») : réponse JSON, sinon redirection en ligne.
+        $json = str_contains(strtolower((string) $request->header('Accept')), 'application/json');
         if (!\App\Core\Csrf::validate($request->input('_csrf_token'))) {
+            if ($json) {
+                return Response::json(['ok' => false, 'message' => 'Votre session a expiré, réessayez.'], 419);
+            }
             Session::flash('error', 'Votre session a expiré, réessayez.');
 
             return Response::redirect($back);
         }
-        if (!$this->spaces->acknowledge($ctx['tenant_id'], $ctx['user_id'], (int) ($params['id'] ?? 0))) {
+        $acknowledged = $this->spaces->acknowledge($ctx['tenant_id'], $ctx['user_id'], (int) ($params['id'] ?? 0));
+        if ($json) {
+            return Response::json(['ok' => $acknowledged, 'message' => $acknowledged ? 'Accusé de réception enregistré.' : 'Échange introuvable.'], $acknowledged ? 200 : 404);
+        }
+        if (!$acknowledged) {
             Session::flash('error', 'Échange introuvable.');
         }
 
