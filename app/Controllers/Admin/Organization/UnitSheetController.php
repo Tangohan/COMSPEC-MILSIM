@@ -16,7 +16,10 @@ use App\Repositories\UnitRepository;
 use App\Repositories\UnitTypeDefinitionRepository;
 use App\Repositories\UserRepository;
 use App\Services\Organization\OrbatBilletService;
+use App\Services\Organization\UnitSpacePanels;
+use App\Support\EffectifsLmsAccess;
 use App\Support\UnitAdminStatus;
+use App\Support\UnitSpaceTabs;
 use App\Support\VisibilityLevel;
 
 /**
@@ -48,6 +51,15 @@ final class UnitSheetController
             return Response::redirect(url('back-office/organisation/structure'));
         }
 
+        $gate = Gate::getInstance();
+        $canEdit = $gate->allows('organization.orbat.manage')
+            || $gate->allows('admin.organization');
+        // Espace d'unité : un onglet par requête (`?onglet=`), sans JavaScript ; chacun garde le droit de la page
+        // d'origine et ne calcule que ses propres données.
+        $effectifsAccess = EffectifsLmsAccess::allows($gate);
+        $resolved = UnitSpaceTabs::resolve($request->queryString('onglet', ''), $effectifsAccess);
+        $tab = $resolved['tab'];
+
         $this->billets->ensureKeyPosts($tenantId, $unitId, (int) Session::get('user_id'));
         $manning = $this->billets->unitManning($tenantId, $unitId);
         $types = $this->unitTypes->listForTenant($tenantId);
@@ -60,35 +72,13 @@ final class UnitSheetController
             $type['label'] = generated_label('unit_type', (string) ($type['label'] ?? ''), (string) ($type['code'] ?? ''), $tenantId);
         }
         unset($type);
-        $activityTypes = $this->activities->listTypesForTenant($tenantId);
-        $timeline = $this->activities->listForUnit($tenantId, $unitId, 40);
-        foreach ($timeline as &$row) {
-            $row['participants'] = $this->activities->participantsForActivity($tenantId, (int) ($row['id'] ?? 0));
-        }
-        unset($row);
 
-        $docs = $this->documents->listForUnit($tenantId, $unitId, null, 40);
         $commander = null;
         $cid = (int) ($unit['commander_user_id'] ?? 0);
         if ($cid > 0) {
             $commander = $this->users->findById($cid, $tenantId);
         }
         $derived = $this->billets->derivedCommand($tenantId, $unitId);
-        $canEdit = Gate::getInstance()->allows('organization.orbat.manage')
-            || Gate::getInstance()->allows('admin.organization');
-
-        // Adéquation de l’unité (chef, adjoint, effectif, sous-unités) : gestionnaires seulement.
-        $unitAdequacy = null;
-        if ($canEdit) {
-            try {
-                $unitAdequacy = \App\Services\Organization\OrgAdequacyView::forUnit(
-                    (new \App\Services\Organization\OrgAdequacyService())->evaluate($tenantId),
-                    $unitId
-                );
-            } catch (\Throwable) {
-                $unitAdequacy = null;
-            }
-        }
 
         $unitTypeLabel = '';
         $unitTypeId = (int) ($unit['unit_type_id'] ?? 0);
@@ -99,18 +89,17 @@ final class UnitSheetController
             }
         }
 
-        return Response::view('admin/organization/unit_sheet', [
+        $vars = [
+            'content' => 'admin.organization.unit_sheet',
             'title' => (string) ($unit['name'] ?? 'Unité'),
+            'isBackOfficeShell' => true,
+            'boSkipPageHead' => true,
             'unit' => $unit,
             'unitTypes' => $types,
             'unitTypeLabel' => $unitTypeLabel,
             'manning' => $manning,
-            'activityTypes' => $activityTypes,
-            'timeline' => $timeline,
-            'documents' => $docs,
             'commander' => $commander,
             'derivedCommand' => $derived,
-            'unitAdequacy' => $unitAdequacy,
             'adminStatusOptions' => UnitAdminStatus::options(),
             'visibilityOptions' => [
                 ['id' => VisibilityLevel::NORMAL, 'label' => 'Normale'],
@@ -118,14 +107,59 @@ final class UnitSheetController
                 ['id' => VisibilityLevel::HIDDEN, 'label' => 'Masquée'],
             ],
             'canEdit' => $canEdit,
-            'jobRoleOptions' => $canEdit ? $this->jobRoleOptions($tenantId) : [],
-            'jobRoleDecorations' => $this->jobRoleDecorations($tenantId),
-            'postsUrl' => url('back-office/organisation/unites/' . $unitId . '/postes'),
             'csrf' => Csrf::token(),
             'structureUrl' => url('back-office/organisation/structure'),
             'saveUrl' => url('back-office/organisation/unites/' . $unitId),
             'activityUrl' => url('back-office/organisation/unites/' . $unitId . '/activites'),
-        ]);
+            'postsUrl' => url('back-office/organisation/unites/' . $unitId . '/postes'),
+            'unitSpaceTab' => $tab,
+            'unitSpaceDenied' => $resolved['denied'],
+            'unitSpaceTabs' => UnitSpaceTabs::visible($effectifsAccess),
+            'jobRoleDecorations' => [],
+            'jobRoleOptions' => [],
+            'backOfficePageCss' => [],
+        ];
+
+        switch ($tab) {
+            case 'postes':
+                $vars['jobRoleOptions'] = $canEdit ? $this->jobRoleOptions($tenantId) : [];
+                $vars['jobRoleDecorations'] = $this->jobRoleDecorations($tenantId);
+                break;
+            case 'membres':
+                $vars['spaceMembers'] = (new UnitSpacePanels())->members($tenantId, $unitId, $request->query('page', 1));
+                break;
+            case 'chaine':
+                $vars['spaceChain'] = (new UnitSpacePanels())->chain($tenantId, $unitId);
+                $vars['canManageAssignments'] = EffectifsLmsAccess::canManageAssignments($gate);
+                break;
+            case 'qualifications':
+                $vars['spaceQualifications'] = (new UnitSpacePanels())->qualifications($tenantId, $unitId, $request->query('page', 1));
+                $vars['backOfficePageCss'] = ['qualifications-matrix.css'];
+                break;
+            default:
+                $vars['activityTypes'] = $this->activities->listTypesForTenant($tenantId);
+                $timeline = $this->activities->listForUnit($tenantId, $unitId, 40);
+                foreach ($timeline as &$row) {
+                    $row['participants'] = $this->activities->participantsForActivity($tenantId, (int) ($row['id'] ?? 0));
+                }
+                unset($row);
+                $vars['timeline'] = $timeline;
+                $vars['documents'] = $this->documents->listForUnit($tenantId, $unitId, null, 40);
+                // Adéquation de l’unité (chef, adjoint, effectif, sous-unités) : gestionnaires seulement.
+                $vars['unitAdequacy'] = null;
+                if ($canEdit) {
+                    try {
+                        $vars['unitAdequacy'] = \App\Services\Organization\OrgAdequacyView::forUnit(
+                            (new \App\Services\Organization\OrgAdequacyService())->evaluate($tenantId),
+                            $unitId
+                        );
+                    } catch (\Throwable) {
+                        $vars['unitAdequacy'] = null;
+                    }
+                }
+        }
+
+        return Response::view('layout.main', $vars);
     }
 
     public function update(Request $request, array $params = []): Response
@@ -276,7 +310,7 @@ final class UnitSheetController
     {
         $tenantId = (int) Session::get('tenant_id');
         $unitId = (int) ($params['id'] ?? 0);
-        $back = url('back-office/organisation/unites/' . max(1, $unitId) . '#postes');
+        $back = url(UnitSpaceTabs::path($unitId, 'postes')) . '#onglet-postes';
         if (!Csrf::verify($request)) {
             Session::flash('error', 'Session expirée. Réessayez.');
 

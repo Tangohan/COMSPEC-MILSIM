@@ -768,13 +768,20 @@ final class QualificationAwardRuleService
 
     /**
      * Matrice membres × qualifications de la page Effectifs > Qualifications.
+     * $onlyUserIds limite le calcul à ces membres (espace d'unité : un onglet n'évalue que sa page de membres) ;
+     * sans lui, tous les membres, comme la page Effectifs.
      *
+     * @param list<int>|null $onlyUserIds
      * @return array{definitions: list<array<string, mixed>>, members: list<array<string, mixed>>, cells: array<int, array<int, array<string, mixed>>>, counts: array<string, int>, units: list<array{id: int, name: string, short: string}>, coverage: array<int, array<int, int>>, totals: array<int, int>, unlinked_academy: int}
      */
-    public function matrix(int $tenantId): array
+    public function matrix(int $tenantId, ?array $onlyUserIds = null): array
     {
         unset($this->ctx[$tenantId]);
         $ctx = $this->context($tenantId);
+        if ($onlyUserIds !== null) {
+            $keep = array_flip(array_map('intval', $onlyUserIds));
+            $ctx['members'] = array_intersect_key($ctx['members'], $keep);
+        }
         $defs = array_values($ctx['definitions']);
         $settingsByDef = [];
         foreach ($defs as $d) {
