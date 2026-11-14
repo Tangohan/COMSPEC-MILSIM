@@ -123,11 +123,14 @@ if (isset($boTopAlerts) && is_array($boTopAlerts)) {
             </button>
         <?php endif; ?>
         <div class="ath-topbar__spacer" aria-hidden="true"></div>
+        <?php /* Recherche : seulement dans le back-office (le shell plateforme ne charge ni la fenêtre ni le script). */ ?>
+        <?php if (!empty($isBackOfficeShell)): ?>
         <label class="ath-topbar__search" for="ath-top-search">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8c979b" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>
             <input id="ath-top-search" type="search" placeholder="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Pages, membres, documents…') : 'Pages, membres, documents…') ?>" autocomplete="off" spellcheck="false" aria-label="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Rechercher dans le back-office') : 'Rechercher dans le back-office') ?>" readonly>
-            <span class="ath-topbar__search-kbd" aria-hidden="true">⌘K</span>
+            <span class="ath-topbar__search-kbd" data-ath-search-kbd aria-hidden="true">Ctrl K</span>
         </label>
+        <?php endif; ?>
         <?php if ($topAlerts !== []): ?>
         <div class="ath-topbar__alerts" role="list">
             <?php foreach ($topAlerts as $alert): ?>

@@ -10,6 +10,8 @@ $tasks = is_array($mon_service['tasks'] ?? null) ? $mon_service['tasks'] : [];
 $waiting = is_array($mon_service['waiting'] ?? null) ? $mon_service['waiting'] : [];
 $missionDuty = is_array($mon_service['mission_duty'] ?? null) ? $mon_service['mission_duty'] : null;
 $csrf = \App\Core\Csrf::token();
+$statusLabels = ['open' => 'À traiter', 'acknowledged' => 'Pris en compte', 'in_progress' => 'En cours', 'completed' => 'Terminée', 'cancelled' => 'Annulée'];
+$priorityLabels = ['critical' => 'Critique', 'high' => 'Haute priorité', 'normal' => 'Priorité normale', 'low' => 'Basse priorité'];
 ?>
 <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
     <header class="mb-8">
@@ -106,8 +108,8 @@ $csrf = \App\Core\Csrf::token();
                                     <p class="mt-1 text-xs leading-relaxed text-slate-600"><?= htmlspecialchars($desc, ENT_QUOTES, 'UTF-8') ?></p>
                                 <?php endif; ?>
                                 <p class="mt-2 text-[11px] uppercase tracking-wide text-slate-400">
-                                    <?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?>
-                                    · <?= htmlspecialchars($prio, ENT_QUOTES, 'UTF-8') ?>
+                                    <?= htmlspecialchars($statusLabels[$status] ?? $status, ENT_QUOTES, 'UTF-8') ?>
+                                    · <?= htmlspecialchars($priorityLabels[$prio] ?? $prio, ENT_QUOTES, 'UTF-8') ?>
                                     <?php if ($due !== ''): ?> · échéance <?= htmlspecialchars($due, ENT_QUOTES, 'UTF-8') ?><?php endif; ?>
                                 </p>
                             </div>
@@ -215,5 +217,6 @@ $csrf = \App\Core\Csrf::token();
 
     <p class="mt-12 text-center text-sm text-slate-500">
         <a href="<?= htmlspecialchars(url('hub'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-700 underline decoration-emerald-200 underline-offset-2 hover:text-emerald-800">Retour au centre de commandement</a>
+        · <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-700 underline decoration-emerald-200 underline-offset-2 hover:text-emerald-800">Retour au back-office</a>
     </p>
 </div>

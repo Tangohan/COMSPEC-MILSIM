@@ -169,6 +169,11 @@ $exportQuery = array_filter([
     'role_id' => !empty($filters['role_id']) ? (int) $filters['role_id'] : null,
     'sans_affectation' => !empty($filters['sans_affectation']) ? '1' : null,
     'sans_role' => !empty($filters['sans_role']) ? '1' : null,
+    'langue' => $filters['langue'] ?? null,
+    'fonction' => $filters['fonction'] ?? null,
+    'etiquette_fonction' => !empty($filters['etiquette_fonction']) ? (int) $filters['etiquette_fonction'] : null,
+    'unite' => (int) ($rosterUnitFilter ?? 0) > 0 ? (int) $rosterUnitFilter : null,
+    'categorie' => (string) ($rosterGradeCategory ?? '') !== '' ? (string) $rosterGradeCategory : null,
 ], static fn ($v) => $v !== null && $v !== '' && $v !== 0);
 $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_build_query($exportQuery) : '');
 // Export PDF : la vue (générale, médicale, heures de vol), les filtres et le tri affichés, sans pagination.

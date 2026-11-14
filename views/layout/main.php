@@ -496,10 +496,8 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
                     <span class="ath-sr-only"><?= htmlspecialchars($shellMenuLabel, ENT_QUOTES, 'UTF-8') ?></span>
                 </button>
                 <div class="ath-mobile-bar__titles">
-                    <span class="ath-mobile-bar__kicker"><?= htmlspecialchars($adminSidebarShellMobileTitle, ENT_QUOTES, 'UTF-8') ?></span>
-                    <?php if ($shellMobilePage !== ''): ?>
-                    <span class="ath-mobile-bar__title"><?= htmlspecialchars($shellMobilePage, ENT_QUOTES, 'UTF-8') ?></span>
-                    <?php endif; ?>
+                    <?php /* Pas de surtitre : le titre de la page, ou à défaut celui de l'espace (audit du back-office, 1.12). */ ?>
+                    <span class="ath-mobile-bar__title"><?= htmlspecialchars($shellMobilePage !== '' ? $shellMobilePage : $adminSidebarShellMobileTitle, ENT_QUOTES, 'UTF-8') ?></span>
                 </div>
                 <?php if (!empty($isBackOfficeShell)): ?>
                 <button type="button" class="ath-mobile-bar__icon" data-ath-search-open aria-label="<?= htmlspecialchars(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Rechercher dans le back-office') : 'Rechercher dans le back-office', ENT_QUOTES, 'UTF-8') ?>">

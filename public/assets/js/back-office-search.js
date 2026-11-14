@@ -16,6 +16,11 @@
     var dlg = document.getElementById('ath-bo-search');
     var topSearch = document.getElementById('ath-top-search');
     var lmsSearch = document.getElementById('eff-bo-search-open');
+    // Raccourci affiché selon le système : « ⌘ K » sur Mac, « Ctrl K » ailleurs.
+    var isMac = /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || '');
+    document.querySelectorAll('[data-ath-search-kbd]').forEach(function (el) {
+      el.textContent = isMac ? '⌘K' : 'Ctrl K';
+    });
     if (!dlg || typeof dlg.showModal !== 'function') {
       return;
     }

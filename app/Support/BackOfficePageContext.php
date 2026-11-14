@@ -73,9 +73,6 @@ final class BackOfficePageContext
         if (empty($vars['boPageTitle'])) {
             $vars['boPageTitle'] = !empty($match['title']) ? (string) $match['title'] : ($title !== '' ? $title : 'Gestion');
         }
-        if (empty($vars['boPageKicker']) && !empty($match['kicker'])) {
-            $vars['boPageKicker'] = (string) $match['kicker'];
-        }
         if (empty($vars['boPageSubtitle']) && !empty($match['subtitle'])) {
             $vars['boPageSubtitle'] = (string) $match['subtitle'];
         }
@@ -193,28 +190,19 @@ final class BackOfficePageContext
     private static function fallbackFromPath(string $path): array
     {
         $group = 'Administration';
-        $kicker = 'ADMINISTRATION';
         if (str_starts_with($path, 'back-office/atak/') || str_contains($path, '/events') || str_starts_with($path, 'jnet')) {
-            $group = 'Opérations';
-            $kicker = str_starts_with($path, 'jnet') ? 'UNITÉ · EXTRANET' : 'OPÉRATIONS';
-            if (str_starts_with($path, 'jnet')) {
-                $group = 'Unité';
-            }
+            $group = str_starts_with($path, 'jnet') ? 'Unité' : 'Opérations';
         } elseif (str_starts_with($path, 'back-office/users') || str_starts_with($path, 'formation/')) {
             $group = 'Personnel';
-            $kicker = 'PERSONNEL';
         } elseif (str_starts_with($path, 'back-office/audit') || str_contains($path, 'roles') || str_contains($path, 'moderation')) {
             $group = 'Système';
-            $kicker = 'SYSTÈME';
         } elseif (str_starts_with($path, 'back-office/ressources/') || str_starts_with($path, 'documents/')) {
             $group = 'Ressources';
-            $kicker = 'RESSOURCES';
         } elseif (str_starts_with($path, 'back-office/community') || str_starts_with($path, 'back-office/organisation/parametres')) {
             $group = 'Communauté';
-            $kicker = 'COMMUNAUTÉ';
         }
 
-        return ['group' => $group, 'kicker' => $kicker];
+        return ['group' => $group];
     }
 
     private static function shouldSkipPageHead(string $path): bool

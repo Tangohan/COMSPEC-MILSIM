@@ -12,7 +12,7 @@
   var form = document.getElementById('ath-fav-form');
   if (!nav || !form) return;
 
-  function fmt(n) { return n < 1 ? '' : (n > 9 ? '9+' : String(n)); }
+  function fmt(n) { return n < 1 ? '' : (n > 99 ? '99+' : String(n)); }
   function toast(kind, msg) {
     if (typeof window.athToast === 'function') { window.athToast(kind, msg); }
   }
