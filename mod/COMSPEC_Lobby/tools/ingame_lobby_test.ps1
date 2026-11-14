@@ -22,6 +22,8 @@ param(
     [string]$ArmaDir = 'F:\SteamLibrary\steamapps\common\Arma 3',
     [string]$WorkshopDir = 'F:\SteamLibrary\steamapps\workshop\content\107410',
     [string]$LobbyDir = '',
+    # Autres mods à charger avec le Lobby (dossiers séparés par ;), par exemple CBA et @COMSPEC_ATAK_Native pour le portrait Athena.
+    [string]$ModsEnPlus = '',
     [int]$Port = 2302,
     [int]$AttenteMaxSecondes = 420,
     [int]$Largeur = 1920,
@@ -143,13 +145,30 @@ switch ($Action) {
     [void](New-Item -ItemType Directory -Force -Path $Work, (Join-Path $Work 'captures'), (Join-Path $Work 'srvprof'), (Join-Path $Work 'mods'))
     # Le mod est copié : le dossier du dépôt reste libre (changement de branche, nouveau build).
     Copy-Item -LiteralPath $LobbyDir -Destination (Join-Path $Work 'mods\@COMSPEC_Lobby') -Recurse
-    $modsArg = '"-mod=' + (Join-Path $Work 'mods\@COMSPEC_Lobby') + '"'
+    $modsArg = '"-mod=' + $(if ($ModsEnPlus) { $ModsEnPlus.TrimEnd(';') + ';' } else { '' }) + (Join-Path $Work 'mods\@COMSPEC_Lobby') + '"'
 
     # Mission de test : copiée dans MPMissions, retirée par Stop.
     $src = Join-Path $ModRoot "missions\$NomMission"
     $dst = Join-Path $ArmaDir "MPMissions\$NomMission"
     if (Test-Path $dst) { Remove-Item -Recurse -Force $dst }
     Copy-Item -LiteralPath $src -Destination $dst -Recurse
+    # Carte Athena d'essai : la mission copiée reçoit un init.sqf qui range une carte et un portrait d'essai dans le profil
+    # COMSPECTest (ce que COMSPEC ATAK fait en vrai avec Athena). Le portrait est une image fabriquée ici, dans le cache
+    # de COMSPEC Link (%TEMP%\comspec_cache). La deuxième ouverture de l'écran des rôles doit montrer la carte.
+    $cache = Join-Path $env:TEMP 'comspec_cache'
+    [void](New-Item -ItemType Directory -Force -Path $cache)
+    $jpg = Join-Path $cache 'lobby_test_portrait.jpg'
+    Add-Type -AssemblyName System.Drawing
+    $bmp = New-Object Drawing.Bitmap 400, 500
+    $g = [Drawing.Graphics]::FromImage($bmp)
+    $g.Clear([Drawing.Color]::FromArgb(40, 70, 55))
+    $g.FillEllipse([Drawing.Brushes]::Khaki, 120, 70, 160, 190)
+    $g.FillRectangle([Drawing.Brushes]::DarkOliveGreen, 60, 300, 280, 200)
+    $g.DrawString('ESSAI', (New-Object Drawing.Font 'Arial', 34, ([Drawing.FontStyle]::Bold)), [Drawing.Brushes]::White, 110, 380)
+    $g.Dispose(); $bmp.Save($jpg, [Drawing.Imaging.ImageFormat]::Jpeg); $bmp.Dispose()
+    $sqf = 'if (hasInterface && {profileName isEqualTo "' + $Profil + '"}) then { profileNamespace setVariable ["COMSPEC_LOBBY_Self", [["surname", "VIPER 1-1"], ["given", "Thomas Vasseur"], ["unit", "ALPHA"], ["quals", "Chef de groupe · JTAC"], ["source", "ATHENA"], ["portrait", "' + ($jpg -replace '\\', '/') + '"]]]; saveProfileNamespace; diag_log "[COMSPEC LOBBY] essai : carte rangée dans le profil"; };'
+    [IO.File]::WriteAllText((Join-Path $dst 'init.sqf'), $sqf, (New-Object Text.UTF8Encoding($false)))
+
     # État écrit tout de suite : Stop sait retirer la mission de test même si le lancement échoue plus loin.
     @{ clientPid = 0; serverPid = 0; start = (Get-Date).ToString('o'); mission = $dst; sauv = @{} } | ConvertTo-Json -Depth 4 | Set-Content $StateFile -Encoding UTF8
 
@@ -263,6 +282,7 @@ class Missions {
         }
         if (Test-Path -LiteralPath $st.mission) { Remove-Item -Recurse -Force -LiteralPath $st.mission }
     }
+    $tj = Join-Path $env:TEMP 'comspec_cache\lobby_test_portrait.jpg'; if (Test-Path -LiteralPath $tj) { Remove-Item -Force -LiteralPath $tj }
     Write-Host 'Arma fermé, mission de test retirée.'
 }
 }

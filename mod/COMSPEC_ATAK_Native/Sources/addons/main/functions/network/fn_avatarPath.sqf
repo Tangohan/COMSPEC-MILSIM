@@ -61,6 +61,12 @@ _cache set [_uid, [_path, diag_tickTime]];
         if (_p isNotEqualTo "") then { _disk pushBack [_uid, _url, _p]; };
         while {count _disk > 200} do { _disk deleteAt 0; };
         profileNamespace setVariable ["COMSPEC_ATAK_AvatarDisk", _disk];
+        // Son propre portrait : aussi dans la carte lue par l'écran des rôles (mod COMSPEC Lobby), avant toute mission.
+        if (_uid isEqualTo (getPlayerUID player)) then {
+            private _card = (profileNamespace getVariable ["COMSPEC_LOBBY_Self", []]) select { (_x param [0, ""]) isNotEqualTo "portrait" };
+            _card pushBack ["portrait", _p];
+            profileNamespace setVariable ["COMSPEC_LOBBY_Self", _card];
+        };
         [] call comspec_atak_native_fnc_saveProfile;
     };
     // Image prête (ou retirée) : mémoire de session, vérification faite, redessin des pages qui l'affichent.
@@ -114,6 +120,20 @@ _cache set [_uid, [_path, diag_tickTime]];
         private _quals = uiNamespace getVariable ["COMSPEC_ATAK_Quals", createHashMap];
         _quals set [_uid, if (_q < 0) then { "olddll" } else { (((_cols select _q) select [2]) splitString ";") apply { private _f = _x splitString "~"; [_f param [0, ""], _f param [1, ""], _f param [2, ""], _f param [3, ""]] } }];
         uiNamespace setVariable ["COMSPEC_ATAK_Quals", _quals];
+        // Carte du joueur local pour l'écran des rôles (mod COMSPEC Lobby) : gardée dans le profil Arma, parce que cet
+        // écran s'ouvre avant toute mission, sans liaison Athena. Indicatif en grand, nom dessous, unité, qualifications.
+        if (_uid isEqualTo (getPlayerUID player)) then {
+            private _col = { private _v = _cols param [_this, ""]; ["", _v] select !((_v select [0, 2]) in ["Q:", "S:"]) };
+            private _name = 0 call _col;
+            private _cs = 1 call _col;
+            private _qn = if (_q < 0) then { "" } else { ((_quals get _uid) apply { _x param [0, ""] }) joinString " · " };
+            private _pic = "";
+            { if ((_x param [0, ""]) isEqualTo "portrait") exitWith { _pic = _x param [1, ""]; }; } forEach (profileNamespace getVariable ["COMSPEC_LOBBY_Self", []]);
+            profileNamespace setVariable ["COMSPEC_LOBBY_Self", [
+                ["surname", [_cs, _name] select (_cs isEqualTo "")], ["given", ["", _name] select (_cs isNotEqualTo "")],
+                ["unit", 3 call _col], ["quals", _qn], ["source", "ATHENA"], ["portrait", _pic]
+            ]];
+        };
         // Raison donnée par le site quand il n'envoie pas d'image (colonne « S: », COMSPEC Link 2.0.82+).
         private _st = _cols findIf { (_x select [0, 2]) isEqualTo "S:" };
         private _status = if (_st < 0) then { "" } else { (_cols select _st) select [2] };

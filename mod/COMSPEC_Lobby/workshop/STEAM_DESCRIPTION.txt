@@ -1,0 +1,21 @@
+[h1]COMSPEC Lobby[/h1]
+
+[h2]Français[/h2]
+L'écran de choix des rôles d'Arma 3, refait : sobre, sombre, et avec le [b]dossier de l'opérateur[/b] à droite (portrait, indicatif, nom, unité, fonction, qualifications).
+
+[list]
+[*] Le système de postes d'Arma est gardé tel quel : rôles, camps, joueurs, paramètres de mission, verrou, expulsion.
+[*] Avec [b]COMSPEC ATAK[/b] et un compte Athena relié, le dossier montre [b]votre[/b] identité Athena et votre portrait sur le poste que vous prenez, à partir de la deuxième connexion.
+[*] Les créateurs de mission peuvent donner une identité à chaque poste (étiquette [b][A-1][/b] dans la description du rôle, puis [b]class ComspecLobby[/b] dans description.ext).
+[*] Aucune dépendance. À charger sur les clients. Clé serveur fournie dans [b]keys[/b].
+[/list]
+
+[h2]English[/h2]
+The Arma 3 role selection screen, redone: clean, dark, with the [b]operator dossier[/b] on the right (portrait, callsign, name, unit, role, qualifications).
+
+[list]
+[*] Arma's slot system is kept as is: roles, sides, players, mission parameters, lock, kick.
+[*] With [b]COMSPEC ATAK[/b] and a linked Athena account, the dossier shows [b]your[/b] Athena identity and portrait on the slot you take, from the second connection on.
+[*] Mission makers can give each slot an identity (tag [b][A-1][/b] in the role description, then [b]class ComspecLobby[/b] in description.ext).
+[*] No dependency. Load it on clients. Server key provided in [b]keys[/b].
+[/list]
