@@ -1,0 +1,284 @@
+/**
+ * JNET — pages hors espaces d'unité (views/jnet/_page.php), sur jnet_athena.css : espace commun, fiche d'unité, personnel,
+ * opérations, renseignement, cibles, exploitation, bibliothèque, messagerie, système. Les composants de ces pages
+ * (jnet_portal.css, jnet_spaces.css) lisent leurs couleurs dans des jetons : ils sont ici repris du gabarit « Extranet »
+ * (fond noir, filets fins, vert Athena) sans toucher à leur structure.
+ */
+
+.jp {
+  /* Jetons de jnet_portal.css. */
+  --jnet-root: var(--ja-void);
+  --jnet-soft: var(--ja-c1);
+  --jnet-surface: var(--ja-c1);
+  --jnet-panel: var(--ja-c1);
+  --jnet-elevated: var(--ja-c3);
+  --jnet-panel-fill: var(--ja-c1);
+  --jnet-head: var(--ja-c2);
+  --jnet-inset: var(--ja-c2);
+  --jnet-hover: var(--ja-c2);
+  --jnet-search: var(--ja-c1);
+  --jnet-line: var(--ja-rule);
+  --jnet-line-soft: var(--ja-rule2);
+  --jnet-line-active: color-mix(in srgb, var(--u) 55%, transparent);
+  --jnet-text-strong: var(--ja-ink);
+  --jnet-text: color-mix(in srgb, var(--ja-ink) 74%, transparent);
+  --jnet-muted: var(--ja-muted);
+  --jnet-dim: var(--ja-dim);
+  --jnet-accent: var(--ja-muted);
+  --jnet-green: #059669;
+  --jnet-green-bright: var(--u);
+  --jnet-green-soft: color-mix(in srgb, var(--u) 12%, transparent);
+  --jnet-amber: var(--ja-warn);
+  --jnet-red: #dc2626;
+  --jnet-red-soft: color-mix(in srgb, var(--ja-bad) 12%, transparent);
+  --jnet-danger-bright: var(--ja-bad);
+  --jnet-ok-bright: var(--u);
+  --jnet-sans: var(--ja-font);
+  --jnet-radius: 8px;
+
+  /* Jetons de jnet_spaces.css. */
+  --ath-ink: var(--ja-ink);
+  --ath-ink-2: color-mix(in srgb, var(--ja-ink) 86%, transparent);
+  --ath-muted: var(--ja-muted);
+  --ath-subtle: var(--ja-dim);
+  --ath-line: var(--ja-rule);
+  --ath-line-soft: var(--ja-rule2);
+  --ath-surface: var(--ja-c1);
+  --ath-bg: var(--ja-void);
+  --ath-row-hover: var(--ja-c2);
+  --ath-table-head: var(--ja-c2);
+  --ath-accent: var(--u);
+  --ath-warn: var(--ja-warn);
+  --ath-warn-bg: color-mix(in srgb, var(--ja-warn) 14%, var(--ja-c1));
+  --ath-danger: var(--ja-bad);
+  --ath-danger-bg: color-mix(in srgb, var(--ja-bad) 14%, var(--ja-c1));
+  --ath-info: var(--ja-info);
+  --ath-info-bg: color-mix(in srgb, var(--ja-info) 14%, var(--ja-c1));
+  --ath-font: var(--ja-font);
+  --ath-mono: var(--ja-mono);
+
+  background: var(--ja-void);
+  background-image: none;
+  color: var(--ja-ink);
+  font-family: var(--ja-font);
+  font-size: 14px;
+}
+
+.jp-main {
+  padding-top: 0;
+}
+
+.jp-head {
+  padding: 56px 0 28px;
+}
+
+.jp-head .ja-lead {
+  max-width: 62ch;
+}
+
+.jp .jnet-embed {
+  color: var(--ja-ink);
+  font-family: var(--ja-font);
+}
+
+.jp .jnet-embed input,
+.jp .jnet-embed select,
+.jp .jnet-embed textarea {
+  color-scheme: dark;
+}
+
+.jp-gap {
+  height: 40px;
+}
+
+/* —— Titres : Inter 900 italique en capitales, comme le gabarit. —— */
+
+.jp .jnet-stage h1,
+.jp .jnet-embed .jn-head__name {
+  margin: 0;
+  color: var(--ja-ink);
+  font-size: clamp(34px, 5vw, 64px);
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: -0.045em;
+  line-height: 0.92;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+.jp .jnet-panel__head h2,
+.jp .jnet-section-title,
+.jp .jnet-embed .jn-section__head h2,
+.jp .jnet-embed .jn-flow__head h2 {
+  margin: 0;
+  color: var(--ja-ink);
+  font-size: clamp(20px, 2.2vw, 28px);
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.jp .jnet-section-title {
+  margin: 28px 0 12px;
+}
+
+/* Information sous le titre (jamais au-dessus). */
+.jp .jnet-kicker {
+  margin: 8px 0 0;
+  color: var(--ja-muted);
+  font: 500 12px/1.4 var(--ja-mono);
+  letter-spacing: 0.06em;
+  text-transform: none;
+}
+
+.jp .jnet-lead {
+  max-width: 62ch;
+  color: var(--ja-muted);
+  font-size: 15px;
+}
+
+.jp .jnet-meta {
+  color: var(--ja-muted);
+  font: 500 12px/1.4 var(--ja-mono);
+  letter-spacing: 0.04em;
+}
+
+/* —— Panneaux plats, filets fins. —— */
+
+.jp .jnet-panel {
+  border-radius: 0;
+  border-color: var(--ja-rule);
+  background: var(--ja-c1);
+  box-shadow: none;
+}
+
+.jp .jnet-panel__head {
+  min-height: 56px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--ja-rule2);
+  background: var(--ja-c2);
+}
+
+.jp .jnet-panel__body {
+  padding: 18px;
+}
+
+.jp .jnet-flash,
+.jp .jnet-embed .jnet-flash {
+  margin: 0 0 16px;
+  border-radius: 0;
+}
+
+/* —— Boutons : rectangles à 2 px, capitales espacées. —— */
+
+.jp .jnet-btn,
+.jp .jn-btn {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.jp .jnet-btn--accent,
+.jp .jnet-btn--solid {
+  border-color: var(--u);
+  background: var(--u);
+  color: var(--ja-on-u);
+}
+
+.jp .jnet-btn--accent:hover,
+.jp .jnet-btn--solid:hover {
+  border-color: var(--u);
+  background: var(--u);
+  box-shadow: none;
+  filter: brightness(1.15);
+}
+
+.jp .jnet-btn b {
+  background: var(--u);
+  color: var(--ja-on-u);
+}
+
+/* —— Puces de filtre et pastilles. —— */
+
+.jp .jnet-filters {
+  gap: 6px;
+}
+
+.jp .jnet-filter {
+  min-height: 32px;
+  padding: 0 13px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ja-muted);
+}
+
+.jp .jnet-filter:hover {
+  border-color: var(--ja-dim);
+  color: var(--ja-ink);
+}
+
+.jp .jnet-filter.is-active {
+  border-color: var(--ja-ink);
+  background: var(--ja-ink);
+  color: #050505;
+}
+
+.jp .jnet-badge,
+.jp .jnet-pill {
+  min-height: 23px;
+  padding: 0 9px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+/* —— Fiche d'unité, personne, dossier : l'en-tête n'est plus une carte. —— */
+
+.jp .jnet-unit-head {
+  padding: 0 0 28px;
+  border: 0;
+  border-bottom: 1px solid var(--ja-rule);
+  border-radius: 0;
+  background: none;
+}
+
+.jp .jnet-unit-head__names h1 {
+  font-size: clamp(34px, 5vw, 64px);
+}
+
+.jp .jnet-unit-head__motto {
+  color: var(--u);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* —— Messagerie —— */
+
+.jp .jnet-mail__compose {
+  background: var(--u) !important;
+  color: var(--ja-on-u) !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+/* —— Écrans étroits —— */
+
+@media (max-width: 640px) {
+  .jp-head {
+    padding-top: 36px;
+  }
+
+  .jp .jnet-panel__body {
+    padding: 12px;
+  }
+}

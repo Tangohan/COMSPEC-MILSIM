@@ -1,0 +1,868 @@
+/**
+ * JNET — habillage commun « Extranet » d'Athena : fond noir, Inter 900 italique en capitales, vert Athena (ou couleur de
+ * l'unité), filets fins, lignes de registre. Partagé par le hub (jnet_hub.css), l'écran d'entrée (jnet_entry.css),
+ * l'espace d'unité (jnet_unit_shell.css) et toutes les autres pages JNET (jnet_pages.css).
+ *
+ * Jetons : la page pose `class="ja"` sur <body>. Un espace d'unité y ajoute son thème par --jn-space-bg, --jn-space-panel,
+ * --jn-space-ink et --jn-unit (JnetUnitSpaceSettings::cssVars) ; sans eux, ce sont les valeurs du gabarit.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.ja {
+  --ja-void: var(--jn-space-bg, #050505);
+  --ja-c1: var(--jn-space-panel, #0b0f0e);
+  --ja-ink: var(--jn-space-ink, #f4f4f0);
+  --u: var(--jn-unit, #34d399);
+  --ja-accent: #34d399;
+  --ja-c2: color-mix(in srgb, var(--ja-ink) 3%, var(--ja-c1));
+  --ja-c3: color-mix(in srgb, var(--ja-ink) 7%, var(--ja-c1));
+  --ja-muted: color-mix(in srgb, var(--ja-ink) 58%, transparent);
+  --ja-dim: color-mix(in srgb, var(--ja-ink) 32%, transparent);
+  --ja-rule: color-mix(in srgb, var(--ja-ink) 14%, transparent);
+  --ja-rule2: color-mix(in srgb, var(--ja-ink) 8%, transparent);
+  --ja-on-u: #050505;
+  --ja-warn: #fbbf24;
+  --ja-bad: #f87171;
+  --ja-info: #60a5fa;
+  --ja-gut: max(clamp(16px, 3vw, 40px), calc((100% - 1320px) / 2 + clamp(16px, 3vw, 40px)));
+  --ja-font: Inter, system-ui, sans-serif;
+  --ja-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--ja-void);
+  color: var(--ja-ink);
+  color-scheme: dark;
+  font-family: var(--ja-font);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+}
+
+html:has(.ja) {
+  background: var(--jn-space-bg, #050505);
+}
+
+.ja a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ja :focus-visible {
+  outline: 2px solid var(--u);
+  outline-offset: 2px;
+}
+
+.ja-skip {
+  position: absolute;
+  left: -999px;
+}
+
+.ja-skip:focus {
+  left: 12px;
+  top: 12px;
+  z-index: 100;
+  padding: 8px 12px;
+  background: var(--u);
+  color: var(--ja-on-u);
+}
+
+.ja-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.ja-i {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ja-mono {
+  font-family: var(--ja-mono);
+}
+
+/* —— Titres d'affichage —— */
+
+.ja-disp {
+  margin: 0;
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: -0.045em;
+  line-height: 0.88;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+.ja-disp--xl {
+  font-size: clamp(48px, 9vw, 128px);
+}
+
+.ja-disp--lg {
+  font-size: clamp(40px, 7vw, 96px);
+}
+
+.ja-disp--md {
+  font-size: clamp(30px, 4.4vw, 56px);
+}
+
+.ja-disp--sm {
+  font-size: clamp(22px, 2.6vw, 34px);
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.ja-lead {
+  max-width: 56ch;
+  margin: 14px 0 0;
+  color: var(--ja-muted);
+  font-size: 15px;
+  text-wrap: pretty;
+}
+
+/* —— Barre du haut —— */
+
+.ja-hd {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 8px 20px;
+  min-height: 60px;
+  padding: 0 var(--ja-gut);
+  background: color-mix(in srgb, var(--ja-void) 86%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--ja-rule2);
+}
+
+.ja-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+
+.ja-brand i {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: #000;
+  font-style: normal;
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.ja-brand em {
+  color: var(--ja-accent);
+  font-style: normal;
+}
+
+.ja-unit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  min-width: 0;
+  padding: 4px 8px 4px 4px;
+  margin-left: -4px;
+  border-radius: 8px;
+}
+
+.ja-unit:hover {
+  background: var(--ja-c3);
+}
+
+.ja-unit b {
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.ja-hd__r {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  margin-left: auto;
+}
+
+.ja-who {
+  font-family: var(--ja-mono);
+  font-size: 12px;
+  color: var(--ja-muted);
+  white-space: nowrap;
+}
+
+.ja-ib,
+.ja-sbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--ja-rule);
+  border-radius: 8px;
+  background: none;
+  color: var(--ja-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ja-ib:hover,
+.ja-sbtn:hover {
+  border-color: var(--ja-dim);
+  color: var(--ja-ink);
+}
+
+.ja-ib b,
+.ja-tab em,
+.ja-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--u);
+  color: var(--ja-on-u);
+  display: inline-grid;
+  place-items: center;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ja-hd form {
+  margin: 0;
+}
+
+/* En-tête sur deux lignes : identité et actions, puis les rubriques sur toute la largeur. */
+.ja-hd--rows {
+  flex-wrap: wrap;
+  padding-top: 6px;
+  padding-bottom: 0;
+}
+
+.ja-hd--rows .ja-tabs {
+  order: 3;
+  flex: 1 1 100%;
+  min-height: 44px;
+  margin: 0 calc(-1 * var(--ja-gut));
+  padding: 0 var(--ja-gut);
+  border-top: 1px solid var(--ja-rule2);
+}
+
+.ja-hd--rows .ja-tab:first-child {
+  padding-left: 0;
+}
+
+.ja-hd--rows .ja-tab:first-child::after {
+  left: 0;
+}
+
+.ja-hd--rows .ja-unit {
+  margin-left: 0;
+  padding-left: 0;
+}
+
+/* —— Rubriques (onglets) —— */
+
+.ja-tabs {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ja-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.ja-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  padding: 0 13px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ja-muted);
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.ja-tab .ja-mono {
+  font-size: 11px;
+  color: var(--ja-dim);
+}
+
+.ja-tab:hover {
+  color: var(--ja-ink);
+}
+
+.ja-tab.is-on,
+.ja-tab[aria-selected='true'],
+.ja-tab[aria-current='page'] {
+  color: var(--ja-ink);
+}
+
+.ja-tab.is-on .ja-mono,
+.ja-tab[aria-selected='true'] .ja-mono,
+.ja-tab[aria-current='page'] .ja-mono {
+  color: var(--u);
+}
+
+.ja-tab.is-on::after,
+.ja-tab[aria-selected='true']::after,
+.ja-tab[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  left: 13px;
+  right: 13px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--u);
+}
+
+/* Onglets dans la page (hub) : même grammaire, sous le titre. */
+.ja-tabs--page {
+  flex: none;
+  min-height: 52px;
+  border-bottom: 1px solid var(--ja-rule);
+}
+
+/* —— Boutons —— */
+
+.ja-b1,
+.ja-b2 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 2px;
+  font: inherit;
+  font-weight: 800;
+  font-size: 11.5px;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.ja-b1 {
+  background: var(--u);
+  border: 0;
+  color: var(--ja-on-u) !important;
+  transition: filter 0.15s;
+}
+
+.ja-b1:hover {
+  filter: brightness(1.15);
+}
+
+.ja-b2 {
+  border: 1px solid var(--ja-rule);
+  background: none;
+  color: var(--ja-ink);
+  font-weight: 700;
+}
+
+.ja-b2:hover {
+  border-color: var(--ja-ink);
+}
+
+.ja-b1.sm,
+.ja-b2.sm {
+  height: 36px;
+  padding: 0 14px;
+  font-size: 11px;
+}
+
+/* —— Insigne d'unité —— */
+
+.ja-crest {
+  --cs: 46px;
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--cs);
+  height: calc(var(--cs) * 1.1667);
+  color: var(--u);
+  filter: drop-shadow(0 6px 14px color-mix(in srgb, var(--u) 22%, transparent));
+}
+
+.ja-crest svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.ja-crest__body {
+  fill: color-mix(in srgb, var(--u) 14%, var(--ja-void));
+  stroke: var(--u);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.ja-crest__line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--u) 38%, transparent);
+  stroke-width: 0.8;
+  stroke-linejoin: round;
+}
+
+.ja-crest b {
+  position: relative;
+  margin-top: calc(var(--cs) * -0.04);
+  font-size: calc(var(--cs) * 0.3);
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.ja-crest img {
+  position: relative;
+  width: 64%;
+  height: 58%;
+  margin-top: calc(var(--cs) * -0.02);
+  object-fit: contain;
+}
+
+.ja-crest--sm {
+  --cs: 30px;
+}
+
+.ja-crest--md {
+  --cs: 40px;
+}
+
+.ja-crest--lg {
+  --cs: 64px;
+}
+
+.ja-crest--xl {
+  --cs: 96px;
+}
+
+/* —— Pastilles, puces, champs —— */
+
+.ja-pill {
+  --p: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 23px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--p);
+  background: color-mix(in srgb, var(--p) 14%, transparent);
+  white-space: nowrap;
+}
+
+.ja-pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.ja-pill--chief {
+  --p: #34d399;
+}
+
+.ja-pill--admin {
+  --p: #a78bfa;
+}
+
+.ja-pill--write {
+  --p: #60a5fa;
+}
+
+.ja-pill--read {
+  --p: #fbbf24;
+}
+
+.ja-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ja-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 13px;
+  border: 1px solid var(--ja-rule);
+  border-radius: 999px;
+  background: none;
+  color: var(--ja-muted);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ja-chip:hover {
+  color: var(--ja-ink);
+  border-color: var(--ja-dim);
+}
+
+.ja-chip.is-on {
+  background: var(--ja-ink);
+  border-color: var(--ja-ink);
+  color: #050505;
+}
+
+.ja-fi {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 280px;
+  max-width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--ja-rule);
+  border-radius: 8px;
+  background: var(--ja-c1);
+  color: var(--ja-muted);
+}
+
+.ja-fi:focus-within {
+  border-color: var(--u);
+}
+
+.ja-fi input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: var(--ja-ink);
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.ja-fi input::placeholder {
+  color: var(--ja-dim);
+}
+
+/* —— Sections, lignes de registre —— */
+
+.ja-main {
+  flex: 1 0 auto;
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 3vw, 40px) 72px;
+}
+
+.ja-sec {
+  padding-top: 56px;
+}
+
+.ja-sh {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.ja-sh__link {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--u) !important;
+}
+
+.ja-sh__link:hover {
+  color: var(--ja-ink) !important;
+}
+
+.ja-rows {
+  border-top: 1px solid var(--ja-rule);
+}
+
+.ja-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto 20px;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+  padding: 16px 12px;
+  border-bottom: 1px solid var(--ja-rule2);
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.ja-row:hover {
+  background: var(--ja-c2);
+}
+
+.ja-row:focus-visible {
+  outline-offset: -2px;
+}
+
+.ja-row .n {
+  font-family: var(--ja-mono);
+  font-size: 12px;
+  color: var(--ja-dim);
+}
+
+.ja-row:hover .n {
+  color: var(--u);
+}
+
+.ja-row .t b {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.ja-row .t small {
+  display: block;
+  margin-top: 3px;
+  color: var(--ja-muted);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ja-row .m {
+  justify-self: end;
+  font-size: 12.5px;
+  color: var(--ja-muted);
+}
+
+.ja-row .ar {
+  justify-self: end;
+  color: var(--ja-dim);
+  transition: transform 0.15s, color 0.15s;
+}
+
+.ja-row:hover .ar {
+  color: var(--u);
+  transform: translateX(3px);
+}
+
+/* —— Bandeau de chiffres —— */
+
+.ja-stats {
+  display: grid;
+  grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr));
+  border-top: 1px solid var(--ja-rule);
+  background: color-mix(in srgb, var(--ja-void) 50%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.ja-stat {
+  position: relative;
+  padding: 18px clamp(16px, 3vw, 40px) 20px;
+  border-left: 1px solid var(--ja-rule);
+  text-align: left;
+}
+
+.ja-stat:first-child {
+  border-left: 0;
+}
+
+.ja-stat b {
+  display: block;
+  font-size: clamp(26px, 3.4vw, 40px);
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.ja-stat small {
+  font-size: 0.5em;
+  color: var(--ja-muted);
+  font-weight: 700;
+}
+
+.ja-stat span {
+  display: block;
+  margin-top: 6px;
+  color: var(--ja-muted);
+  font-size: 12.5px;
+}
+
+.ja-stat::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 100%;
+  top: -1px;
+  height: 2px;
+  background: var(--u);
+  transition: right 0.25s;
+}
+
+a.ja-stat:hover::after {
+  right: 0;
+}
+
+/* —— Messages, pied —— */
+
+.ja-flash {
+  margin: 24px 0 0;
+  padding: 12px 16px;
+  border: 1px solid color-mix(in srgb, var(--u) 40%, transparent);
+  background: color-mix(in srgb, var(--u) 9%, transparent);
+  font-size: 14px;
+}
+
+.ja-flash.is-bad {
+  border-color: color-mix(in srgb, var(--ja-bad) 50%, transparent);
+  background: color-mix(in srgb, var(--ja-bad) 10%, transparent);
+}
+
+.ja-empty {
+  padding: 28px 24px;
+  border: 1px solid var(--ja-rule);
+  background: var(--ja-c1);
+}
+
+.ja-empty p {
+  margin: 0 0 8px;
+  color: var(--ja-muted);
+  font-size: 15px;
+}
+
+.ja-empty p strong {
+  color: var(--ja-ink);
+}
+
+.ja-empty p:last-child {
+  margin: 18px 0 0;
+}
+
+.ja-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px 20px;
+  flex-wrap: wrap;
+  padding: 20px var(--ja-gut);
+  border-top: 1px solid var(--ja-rule2);
+  color: var(--ja-dim);
+  font-size: 12px;
+}
+
+.ja-foot a:hover {
+  color: var(--u);
+}
+
+/* —— Écrans étroits —— */
+
+@media (max-width: 980px) {
+  .ja-who {
+    display: none;
+  }
+
+  .ja-sbtn span {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .ja-hd {
+    gap: 8px 10px;
+    flex-wrap: wrap;
+    padding-top: 8px;
+  }
+
+  .ja-hd .ja-tabs {
+    order: 3;
+    flex: 1 1 100%;
+    min-height: 44px;
+  }
+
+  .ja-hd__r {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-left: 0;
+  }
+
+  .ja-hd__r .ja-ib {
+    height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .ja-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ja-stat:nth-child(3) {
+    border-left: 0;
+  }
+
+  .ja-stat:nth-child(n + 3) {
+    border-top: 1px solid var(--ja-rule);
+  }
+
+  .ja-row {
+    grid-template-columns: 36px minmax(0, 1fr) auto 20px;
+    gap: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ja * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

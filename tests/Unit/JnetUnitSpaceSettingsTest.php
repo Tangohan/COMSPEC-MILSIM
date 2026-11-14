@@ -83,8 +83,8 @@ final class JnetUnitSpaceSettingsTest extends TestCase
         // Un espace passe par son écran d'entrée une fois par session ; ?direct=1 (bouton « Entrer ») l'évite.
         self::assertStringContainsString("return Response::redirect(url('jnet/u/' . \$unitId . '/entree'));", $ctrl);
         self::assertStringContainsString("'entryNext' => url('jnet/u/' . \$unitId . '?direct=1')", $ctrl);
-        // Première arrivée : un membre va dans l'espace de son unité, pas l'encadrement de l'organisation.
-        self::assertStringContainsString('!$this->spaces->isOrgWideReader()', $ctrl);
+        // Un membre arrive sur l'extranet « Une unité. Un espace. » ; l'espace commun reste à ?commun=1.
+        self::assertStringContainsString('return $this->hubResponse($ctx);', $ctrl);
         // Personnaliser : jeton CSRF et droit vérifiés à l'enregistrement aussi.
         self::assertSame(2, substr_count($ctrl, 'Seuls le chef de l’unité et l’encadrement de l’organisation personnalisent cet espace.'));
         self::assertStringContainsString('JnetUnitSpaceSettings::deleteImage($old, $tenantId)', $ctrl);
@@ -94,7 +94,7 @@ final class JnetUnitSpaceSettingsTest extends TestCase
     {
         $view = (string) file_get_contents(self::ROOT . 'views/jnet/entry.php');
         self::assertStringContainsString('<meta http-equiv="refresh"', $view);
-        self::assertStringContainsString('class="jx-enter"', $view);
+        self::assertStringContainsString('jx-enter"', $view);
         self::assertStringNotContainsString('<script', $view);
         $css = (string) file_get_contents(self::ROOT . 'public/assets/css/jnet_entry.css');
         self::assertStringContainsString('prefers-reduced-motion: reduce', $css);

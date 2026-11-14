@@ -95,7 +95,8 @@ final class JnetPortalController
             $this->spaceSettings->commandedUnitIds($tenantId, $userId),
             $this->spaces->isOrgWideWriter(),
             $unread,
-            $this->spaceSettings->findAll($tenantId)
+            $this->spaceSettings->findAll($tenantId),
+            $this->spaces->strengthByUnit($tenantId, $userId)
         );
         $pilot = false;
         try {
@@ -112,6 +113,7 @@ final class JnetPortalController
             'hubOperator' => $callsign !== '' ? $callsign : (string) Session::get('display_name', ''),
             'hubMine' => $register['mine'],
             'hubOthers' => $register['others'],
+            'hubTree' => $register['tree'],
             'hubOrg' => [
                 'label' => (string) (($tree->node(JnetSpaceTree::ORG) ?? [])['label'] ?? 'Organisation'),
                 'href' => url('jnet?commun=1'),
@@ -221,7 +223,13 @@ final class JnetPortalController
                 $chain[] = (string) (($tree->node($id) ?? [])['label'] ?? '');
             }
         }
-        $isMember = in_array($unitId, $this->spaces->viewerUnitIds($ctx['tenant_id'], $ctx['user_id']), true);
+        $viewerUnits = $this->spaces->viewerUnitIds($ctx['tenant_id'], $ctx['user_id']);
+        $isMember = in_array($unitId, $viewerUnits, true);
+        // Les lignes de la séquence d'entrée ne disent que ce que le lecteur sait déjà : son droit, ses non-lus, l'effectif.
+        $right = JnetMemberHub::rightFor($tree, $unitId, $viewerUnits, $this->spaceSettings->commandedUnitIds($ctx['tenant_id'], $ctx['user_id']), $this->spaces->isOrgWideWriter());
+        $unread = (int) ($this->spaces->unreadByUnit($ctx['tenant_id'], $ctx['user_id'])[$unitId] ?? 0);
+        $strength = $this->spaces->strengthByUnit($ctx['tenant_id'], $ctx['user_id'])[$unitId] ?? [];
+        $desc = JnetMemberHub::describe($node, (int) ($strength['available'] ?? 0), (int) ($strength['total'] ?? 0) ?: (int) ($node['strength'] ?? 0), $chain !== [] ? (string) end($chain) : '', $strength !== []);
 
         return Response::view('jnet.entry', [
             'title' => (string) ($node['label'] ?? 'Unité'),
@@ -231,6 +239,11 @@ final class JnetPortalController
             'entryCommunity' => is_array($tenant) ? community_display_name($tenant) : '',
             'entryOperator' => trim((string) Session::get('callsign', '')) !== '' ? (string) Session::get('callsign', '') : (string) Session::get('display_name', ''),
             'entryRole' => $isMember ? 'Membre de l’unité' : 'Visiteur autorisé',
+            'entryUnitId' => $unitId,
+            'entryRight' => $right['label'],
+            'entryUnread' => $unread,
+            'entryKind' => $desc['kind'],
+            'entryFacts' => $desc['facts'],
             'entryNext' => url('jnet/u/' . $unitId . '?direct=1'),
             'entryLeave' => $this->homeUrl(),
             'entryLeaveLabel' => 'Mon extranet',
@@ -970,19 +983,13 @@ final class JnetPortalController
         $nav = $activeNav ?? $view;
         $unread = $this->unreadMailCount($ctx['tenant_id'], $ctx['user_id']);
 
+        // Page autonome au même habillage que l'extranet (views/jnet/_page.php), hors de la coque du back-office.
         $payload = array_merge([
-            'content' => 'jnet._bo_content',
             'jnetInnerView' => 'jnet.' . $view,
             'title' => $title . ' — Extranet d’unité',
-            'isBackOfficeShell' => true,
-            'boPageGroup' => 'Unité',
-            'boPageKicker' => 'UNITÉ · EXTRANET',
-            'boPageTitle' => $title,
-            'boPageSubtitle' => 'Espace commun de l’organisation et de chaque unité : situation, échanges, opérations et renseignement.',
-            'boPageQuick' => [],
-            'backOfficePageCss' => array_merge([
+            'jnetPageTitle' => $title,
+            'jnetPageCss' => array_merge([
                 'jnet_portal.css',
-                'jnet_bo_embed.css',
                 'jnet_spaces.css',
             ], $moreCss),
             'activeNav' => $nav,
@@ -995,7 +1002,7 @@ final class JnetPortalController
             'jnetDtg' => strtoupper(gmdate('dHi') . 'Z ' . gmdate('M y')),
         ], $extra);
 
-        return Response::view('layout.main', $payload);
+        return Response::view('jnet._page', $payload);
     }
 
     private function ensureAuth(): array|Response

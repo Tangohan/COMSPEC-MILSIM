@@ -1,46 +1,18 @@
 <?php
 declare(strict_types=1);
 /**
- * Contenu JNET embarqué dans la coque back-office ATHENA.
+ * Contenu d'une page JNET (flashs, page, retours de chargement), repris par la coque views/jnet/_page.php.
  * @var string $jnetInnerView
  * @var string $activeNav
- * @var int $jnetUnreadMail
  */
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $inner = (string) ($jnetInnerView ?? 'jnet.home');
 $activeNav = (string) ($activeNav ?? 'home');
-$unreadMail = (int) ($jnetUnreadMail ?? 0);
 $error = \App\Core\Session::getFlash('error');
 $success = \App\Core\Session::getFlash('success');
 
-$tabs = [
-    ['id' => 'hub', 'label' => 'Mon extranet', 'path' => 'jnet/espaces'],
-    ['id' => 'home', 'label' => 'Espace commun', 'path' => 'jnet?commun=1'],
-    ['id' => 'unit', 'label' => 'Fiche d’unité', 'path' => 'jnet/unite'],
-    ['id' => 'personnel', 'label' => 'Personnel', 'path' => 'jnet/personnel'],
-    ['id' => 'operations', 'label' => 'Opérations', 'path' => 'jnet/operations'],
-    ['id' => 'intelligence', 'label' => 'Renseignement', 'path' => 'jnet/renseignement'],
-    ['id' => 'targets', 'label' => 'Cibles', 'path' => 'jnet/cibles'],
-    ['id' => 'exploitation', 'label' => 'Exploitation', 'path' => 'jnet/exploitation'],
-    ['id' => 'library', 'label' => 'Bibliothèque', 'path' => 'jnet/bibliotheque'],
-    ['id' => 'inbox', 'label' => 'Messagerie', 'path' => 'jnet/courrier', 'count' => $unreadMail],
-    ['id' => 'system', 'label' => 'Système', 'path' => 'jnet/systeme'],
-];
 ?>
 <div class="jnet-embed">
-    <nav class="jnet-bo-tabs" aria-label="Sections de l’extranet d’unité">
-        <?php foreach ($tabs as $tab): ?>
-            <?php
-            $count = (int) ($tab['count'] ?? 0);
-            $isActive = $activeNav === ($tab['id'] ?? '');
-            ?>
-            <a href="<?= $h(url((string) $tab['path'])) ?>" class="jnet-bo-tabs__item<?= $isActive ? ' is-active' : '' ?>">
-                <?= $h((string) $tab['label']) ?>
-                <?php if ($count > 0): ?><i><?= min(99, $count) ?></i><?php endif; ?>
-            </a>
-        <?php endforeach; ?>
-    </nav>
-
     <?php if ($error): ?>
         <div class="jnet-flash jnet-flash--err" role="alert"><?= $h((string) $error) ?></div>
     <?php endif; ?>

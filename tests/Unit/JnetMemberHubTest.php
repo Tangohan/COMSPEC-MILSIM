@@ -51,6 +51,64 @@ final class JnetMemberHubTest extends TestCase
         self::assertTrue(str_ends_with($reg['others'][1]['href'], 'jnet/u/3'));
     }
 
+    public function testRegisterCarriesTheHierarchyAndAReadableSubline(): void
+    {
+        $tree = JnetSpaceTree::fromOrbat(['unitId' => 0, 'children' => [
+            ['unitId' => 1, 'label' => 'Hydra', 'role' => 'SOAR-B-A-1', 'echelon' => 'bataillon', 'symbolFunction' => 'infantry_light', 'leader' => 'LCL Marchetti', 'strength' => 34, 'children' => [
+                ['unitId' => 2, 'label' => 'Alpha', 'role' => 'XX-9', 'echelon' => 'compagnie', 'leader' => '—', 'strength' => 18, 'children' => []],
+            ]],
+        ]], 'Organisation');
+        $reg = H::register($tree, [2], [], false, [], [], [1 => ['total' => 34, 'available' => 27], 2 => ['total' => 18, 'available' => 12]]);
+
+        // Toutes les unités visibles, dans l'ordre de la hiérarchie, avec leur profondeur et leur filiation.
+        self::assertSame([1, 2], array_column($reg['tree'], 'id'));
+        self::assertSame([1, 2], array_column($reg['tree'], 'depth'));
+        self::assertSame(['Organisation', 'Hydra'], $reg['tree'][1]['chain']);
+        self::assertSame('Hydra', $reg['tree'][1]['parent']);
+
+        // Sous le nom : échelon et fonction lisibles, chef, effectif disponible sur total, parent. Jamais le code brut.
+        self::assertSame('Bataillon · Infanterie légère', $reg['tree'][0]['kind']);
+        self::assertSame(['Chef : LCL Marchetti', '27 / 34 disponibles'], $reg['tree'][0]['facts']);
+        self::assertSame('Compagnie', $reg['tree'][1]['kind']);
+        self::assertSame(['12 / 18 disponibles', 'Sous Hydra'], $reg['tree'][1]['facts']);
+        self::assertStringNotContainsString('SOAR-B', (string) json_encode($reg['tree']));
+        self::assertStringNotContainsString('XX-9', (string) json_encode($reg['tree']));
+        // Chaque unité a une photo de survol, la même à chaque fois.
+        self::assertSame($reg['tree'][0]['photo'], H::register($tree, [], [], false, [], [])['tree'][0]['photo']);
+    }
+
+    public function testDescribeFallsBackToUnitAndMembersWithoutAvailability(): void
+    {
+        $d = H::describe(['echelon' => '', 'function' => '', 'leader' => ''], 0, 12, '', false);
+        self::assertSame('Unité', $d['kind']);
+        self::assertSame(['12 membres'], $d['facts']);
+        self::assertSame(['1 membre'], H::describe([], 0, 1, '', false)['facts']);
+        self::assertSame([], H::describe([], 0, 0, '', false)['facts']);
+    }
+
+    /** Une rubrique par onglet, pilotée par l'ancre ; sans JavaScript toutes les rubriques restent affichées. */
+    public function testHubIsSplitIntoTabsDrivenByTheHashAndWorksWithoutScript(): void
+    {
+        $view = (string) file_get_contents(self::ROOT . 'views/jnet/hub.php');
+        self::assertStringContainsString("'hb-' . \$section['key']", $view);
+        self::assertStringContainsString('id="hb-autres"', $view);
+        self::assertStringContainsString('data-hb-tabs', $view);
+        self::assertStringContainsString('data-hb-panel', $view);
+        self::assertStringContainsString('Autres unités', $view);
+        self::assertStringContainsString('hb-reg-h', $view);
+        // Le HTML livre toutes les rubriques ; seul le script active le mode onglets.
+        self::assertStringNotContainsString('hb-js', $view);
+        self::assertStringNotContainsString('<section class="hb-panel" hidden', $view);
+        $css = (string) file_get_contents(self::ROOT . 'public/assets/css/jnet_hub.css');
+        self::assertStringContainsString('.hb-js .hb-panel {', $css);
+        self::assertStringNotContainsString("\n.hb-panel {\n  display: none", $css);
+        $js = (string) file_get_contents(self::ROOT . 'public/assets/js/jnet_hub.js');
+        foreach (['hashchange', 'popstate', 'aria-selected', 'ArrowRight', 'ArrowLeft', 'tabpanel', 'hb-js'] as $needle) {
+            self::assertStringContainsString($needle, $js, $needle);
+        }
+        self::assertStringNotContainsString('alert(', $js);
+    }
+
     public function testRegisterOnlyListsUnitsOfTheFilteredTree(): void
     {
         // Une unité masquée au lecteur n'est pas dans l'arbre : elle ne peut pas apparaître au registre.

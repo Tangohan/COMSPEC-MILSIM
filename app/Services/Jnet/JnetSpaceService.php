@@ -115,6 +115,8 @@ final class JnetSpaceService
             'isOrg' => $spaceId === JnetSpaceTree::ORG,
             'label' => (string) $node['label'],
             'code' => (string) $node['code'],
+            'echelon' => (string) ($node['echelon'] ?? ''),
+            'function' => (string) ($node['function'] ?? ''),
             'accent' => (string) $node['accent'],
             'badge' => $node['badge'],
             'motto' => (string) $node['motto'],
@@ -267,6 +269,30 @@ final class JnetSpaceService
         }
 
         return null;
+    }
+
+    /**
+     * Effectif de chaque unité visible du lecteur (sous-unités comprises), pour le registre des espaces.
+     *
+     * @return array<int, array{total:int, available:int, off:int}>
+     */
+    public function strengthByUnit(int $tenantId, int $viewerUserId): array
+    {
+        try {
+            $tree = $this->tree($tenantId, $viewerUserId);
+            $byUserId = [];
+            foreach ($this->dashboard->loadPersonnelCards($tenantId) as $p) {
+                $byUserId[(int) ($p['id'] ?? 0)] = $p;
+            }
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($tree->unitIds() as $id) {
+            $out[$id] = $this->strengthOf($tree->memberIdsInSubtree($id), $byUserId);
+        }
+
+        return $out;
     }
 
     /**

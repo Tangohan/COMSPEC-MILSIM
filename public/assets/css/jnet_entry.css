@@ -1,279 +1,197 @@
 /**
- * JNET — écran d'entrée d'un espace d'unité (views/jnet/entry.php). Page autonome, aux couleurs de l'unité :
- * --jn-space-bg, --jn-space-panel, --jn-space-ink (thème) et --jn-unit (couleur de l'unité), posées sur <body>.
+ * JNET — écran d'entrée d'un espace d'unité (views/jnet/entry.php), sur jnet_athena.css. Page autonome, aux couleurs de
+ * l'unité (--jn-space-*, --jn-unit posées sur <body>) : la photo en fond très atténuée, puis la séquence de connexion
+ * du gabarit « Extranet » (insigne, nom, vérifications, accès autorisé). Entièrement en CSS : aucun script.
  */
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  min-height: 100%;
-  margin: 0;
-}
-
 .jx {
-  --jx-muted: color-mix(in srgb, var(--jn-space-ink) 62%, transparent);
-  --jx-line: color-mix(in srgb, var(--jn-space-ink) 16%, transparent);
   position: relative;
-  display: grid;
-  grid-template-rows: auto 1fr;
   min-height: 100vh;
   min-height: 100dvh;
-  overflow-x: hidden;
-  background: var(--jn-space-bg);
-  color: var(--jn-space-ink);
-  font-family: Archivo, system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+}
+
+.jx .ja-hd {
+  position: relative;
+  background: transparent;
+  backdrop-filter: none;
 }
 
 .jx-bg,
-.jx-veil,
-.jx-grid {
+.jx-veil {
   position: fixed;
-  inset: 0;
+  inset: -4%;
   pointer-events: none;
 }
 
 .jx-bg {
   background-position: center;
   background-size: cover;
-  filter: saturate(0.85);
-  transform: scale(1.04);
-  animation: jx-drift 14s ease-out both;
+  opacity: 0.2;
+  animation: jx-zoom 8s ease-out both;
 }
 
 .jx-veil {
-  background:
-    radial-gradient(ellipse at 50% 38%, color-mix(in srgb, var(--jn-unit) 22%, transparent), transparent 60%),
-    linear-gradient(180deg, color-mix(in srgb, var(--jn-space-bg) 70%, transparent), var(--jn-space-bg) 92%);
+  inset: 0;
+  background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--ja-void) 50%, transparent), color-mix(in srgb, var(--ja-void) 97%, transparent) 70%);
 }
 
-.jx-grid {
-  background-image:
-    linear-gradient(var(--jx-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--jx-line) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse at 50% 45%, #000 0%, transparent 70%);
-  opacity: 0.35;
-}
-
-.jx-top {
+.jx .ja-hd,
+.jx-main {
   position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem 1rem;
-  padding: 1rem clamp(1rem, 4vw, 2.5rem);
-  border-bottom: 1px solid var(--jx-line);
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
+  z-index: 1;
+}
+
+.jx-access {
+  padding: 4px 8px;
+  border: 1px solid var(--u);
+  color: var(--u);
+  font: 600 11px/1.2 var(--ja-mono);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
-.jx-top__net {
-  color: var(--jx-muted);
-}
-
-.jx-top__access {
-  padding: 0.25rem 0.6rem;
-  border: 1px solid var(--jn-unit);
-  color: var(--jn-unit);
-  font-weight: 600;
-}
-
 .jx-main {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.9rem;
-  width: min(100%, 40rem);
-  margin: 0 auto;
-  padding: 2.5rem 1rem 3rem;
-  text-align: center;
-}
-
-.jx-emblem {
-  position: relative;
+  flex: 1;
   display: grid;
   place-items: center;
-  width: clamp(6.5rem, 22vw, 9rem);
-  aspect-ratio: 80 / 92;
-  margin-bottom: 0.4rem;
-  animation: jx-rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  padding: 32px 16px 56px;
 }
 
-.jx-emblem img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 10px 30px color-mix(in srgb, var(--jn-unit) 35%, transparent));
+.jx-in {
+  width: min(520px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  text-align: left;
 }
 
-.jx-emblem svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  filter: drop-shadow(0 10px 30px color-mix(in srgb, var(--jn-unit) 35%, transparent));
-}
-
-.jx-emblem__mark {
-  position: relative;
-  color: var(--jn-unit);
-  font-size: clamp(1.8rem, 6vw, 2.6rem);
-  font-weight: 900;
-  letter-spacing: 0.02em;
-}
-
-.jx-chain {
-  margin: 0;
-  color: var(--jx-muted);
-  font-size: 0.875rem;
-  animation: jx-rise 0.7s 0.1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+.jx-crest {
+  animation: jx-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
 }
 
 .jx-name {
-  margin: 0;
-  font-size: clamp(2rem, 7vw, 3.4rem);
-  font-weight: 900;
-  line-height: 1.02;
-  letter-spacing: -0.02em;
-  overflow-wrap: anywhere;
-  animation: jx-rise 0.7s 0.15s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  font-size: clamp(30px, 4.4vw, 52px);
+  animation: jx-up 0.55s 0.1s both;
+}
+
+.jx-sub {
+  margin: -4px 0 0;
+  color: var(--ja-muted);
+  font-size: 14px;
+  animation: jx-up 0.55s 0.15s both;
+}
+
+.jx-fil {
+  margin: -6px 0 0;
+  color: var(--ja-dim);
+  font: 400 11.5px/1.4 var(--ja-mono);
+  letter-spacing: 0.04em;
+  animation: jx-up 0.55s 0.18s both;
 }
 
 .jx-tagline {
   margin: 0;
-  color: var(--jn-unit);
-  font-size: clamp(1rem, 2.6vw, 1.15rem);
+  color: var(--u);
+  font-size: 16px;
   font-style: italic;
   font-weight: 600;
-  animation: jx-rise 0.7s 0.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-
-.jx-seq {
-  display: grid;
-  gap: 0.35rem;
-  width: min(100%, 24rem);
-  margin: 1rem 0 0;
-  padding: 0;
-  list-style: none;
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 0.8125rem;
-  text-align: left;
-}
-
-.jx-seq li {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.4rem 0;
-  border-bottom: 1px dashed var(--jx-line);
-  animation: jx-line 0.4s both;
-}
-
-.jx-seq li:nth-child(1) { animation-delay: 0.45s; }
-.jx-seq li:nth-child(2) { animation-delay: 0.85s; }
-.jx-seq li:nth-child(3) { animation-delay: 1.25s; }
-
-.jx-seq span {
-  color: var(--jx-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.jx-seq b {
-  min-width: 0;
-  overflow: hidden;
-  font-weight: 600;
-  text-align: right;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.jx-seq li:last-child b {
-  color: var(--jn-unit);
+  animation: jx-up 0.55s 0.2s both;
 }
 
 .jx-bar {
-  width: min(100%, 24rem);
+  width: 100%;
   height: 2px;
+  margin-top: 8px;
   overflow: hidden;
-  background: var(--jx-line);
+  background: var(--ja-rule);
 }
 
 .jx-bar i {
   display: block;
   height: 100%;
-  background: var(--jn-unit);
+  background: var(--u);
   transform-origin: left;
-  animation: jx-load 2.6s 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: jx-load 2.4s 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.jx-log {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: var(--ja-mono);
+  font-size: 12px;
+  color: var(--ja-muted);
+}
+
+.jx-log li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  animation: jx-fade 0.25s both;
+}
+
+.jx-log li:nth-child(1) { animation-delay: 0.35s; }
+.jx-log li:nth-child(2) { animation-delay: 0.75s; }
+.jx-log li:nth-child(3) { animation-delay: 1.15s; }
+.jx-log li:nth-child(4) { animation-delay: 1.55s; }
+
+.jx-log b {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--u);
+  font-weight: 500;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jx-stamp {
+  margin: 0;
+  color: var(--u);
+  font: 500 12.5px/1 var(--ja-mono);
+  letter-spacing: 0.08em;
+  animation: jx-stamp 0.3s 2s both;
 }
 
 .jx-welcome {
-  max-width: 32rem;
-  margin: 0.6rem 0 0;
-  padding: 0.9rem 1rem;
-  border-left: 3px solid var(--jn-unit);
-  background: color-mix(in srgb, var(--jn-space-panel) 85%, transparent);
-  font-size: 0.95rem;
+  max-width: 100%;
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--u) 30%, transparent);
+  background: color-mix(in srgb, var(--u) 9%, transparent);
+  font-size: 14.5px;
   line-height: 1.55;
-  text-align: left;
-  animation: jx-rise 0.6s 1.4s both;
+  animation: jx-up 0.5s 2.1s both;
 }
 
 .jx-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  gap: 0.75rem 1.25rem;
-  margin-top: 1rem;
-  animation: jx-rise 0.6s 1.5s both;
+  gap: 8px;
+  animation: jx-up 0.5s 2.2s both;
 }
 
-.jx-enter {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.75rem;
-  padding: 0 1.4rem;
-  background: var(--jn-unit);
-  color: var(--jn-space-bg);
-  font-weight: 800;
-  text-decoration: none;
+@keyframes jx-zoom {
+  from { transform: scale(1.1); }
+  to { transform: scale(1); }
 }
 
-.jx-enter:hover {
-  filter: brightness(1.1);
+@keyframes jx-pop {
+  from { transform: scale(0.6); opacity: 0; }
 }
 
-.jx-leave {
-  color: var(--jx-muted);
-  font-size: 0.875rem;
+@keyframes jx-up {
+  from { transform: translateY(14px); opacity: 0; }
 }
 
-.jx-enter:focus-visible,
-.jx-leave:focus-visible {
-  outline: 2px solid var(--jn-space-ink);
-  outline-offset: 3px;
-}
-
-@keyframes jx-rise {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: none; }
-}
-
-@keyframes jx-line {
-  from { opacity: 0; transform: translateX(-6px); }
-  to { opacity: 1; transform: none; }
+@keyframes jx-fade {
+  from { opacity: 0; }
 }
 
 @keyframes jx-load {
@@ -281,9 +199,8 @@ body {
   to { transform: scaleX(1); }
 }
 
-@keyframes jx-drift {
-  from { transform: scale(1.1); }
-  to { transform: scale(1.04); }
+@keyframes jx-stamp {
+  from { transform: scale(2.2) rotate(-3deg); opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

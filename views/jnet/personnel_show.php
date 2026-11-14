@@ -34,10 +34,10 @@ $dossierHref = (string) ($p['dossierHref'] ?? '');
                 <?php endif; ?>
             </div>
             <div>
+                <h1><?= $h((string) ($p['name'] ?? '')) ?></h1>
                 <?php if (trim((string) ($p['jnet_id'] ?? '')) !== ''): ?>
                     <p class="jnet-kicker"><?= $h((string) $p['jnet_id']) ?></p>
                 <?php endif; ?>
-                <h1><?= $h((string) ($p['name'] ?? '')) ?></h1>
                 <div class="jnet-record__grid">
                     <?php foreach ($facts as [$label, $value]): ?>
                         <?php if (trim($value) === ''): continue; endif; ?>
