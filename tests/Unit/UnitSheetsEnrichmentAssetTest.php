@@ -18,7 +18,10 @@ final class UnitSheetsEnrichmentAssetTest extends TestCase
         $billetSvc = (string) file_get_contents($root . '/app/Services/Organization/OrbatBilletService.php');
         $status = (string) file_get_contents($root . '/app/Support/UnitAdminStatus.php');
         $catalog = (string) file_get_contents($root . '/app/Services/ConfigurationUpdate/ConfigurationUpdateCatalog.php');
-        $sheet = (string) file_get_contents($root . '/views/admin/organization/unit_sheet.php');
+        // La fiche d'unité est découpée en onglets (espace d'unité) : coque, fiche et postes.
+        $sheet = (string) file_get_contents($root . '/views/admin/organization/unit_sheet.php')
+            . (string) file_get_contents($root . '/views/admin/organization/unit_space/fiche.php')
+            . (string) file_get_contents($root . '/views/admin/organization/unit_space/postes.php');
         $canvas = (string) file_get_contents($root . '/public/assets/js/orbat-app.js');
         $unite = (string) file_get_contents($root . '/views/admin/member_situation/unite.php');
         $dispatch = (string) file_get_contents($root . '/app/Support/DevDispatchCatalog.php');
