@@ -1948,6 +1948,14 @@ class Container
             \App\Repositories\WorkTaskRepository::class => new \App\Repositories\WorkTaskRepository(),
             \App\Repositories\MissionDutyAssignmentRepository::class => new \App\Repositories\MissionDutyAssignmentRepository(),
             \App\Repositories\DutyRosterRepository::class => new \App\Repositories\DutyRosterRepository(),
+            \App\Repositories\WorkflowRepository::class => new \App\Repositories\WorkflowRepository(),
+            \App\Services\Workflow\ApproverResolver::class => new \App\Services\Workflow\ApproverResolver(),
+            \App\Services\Workflow\WorkflowEngine::class => new \App\Services\Workflow\WorkflowEngine(
+                self::get(\App\Repositories\WorkflowRepository::class),
+                self::get(\App\Repositories\WorkTaskRepository::class),
+                self::get(\App\Services\Workflow\ApproverResolver::class),
+                self::get(\App\Repositories\MemberNotificationRepository::class),
+            ),
             \App\Services\Workflow\WorkTaskService::class => new \App\Services\Workflow\WorkTaskService(
                 self::get(\App\Repositories\WorkTaskRepository::class),
                 self::get(\App\Repositories\DutyRosterRepository::class),

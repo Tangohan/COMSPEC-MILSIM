@@ -20,6 +20,7 @@ use App\Services\Operator\OperatorHubCatalog;
 use App\Support\OrganizationRoleLabels;
 
 $requests = is_array($elevationRequests ?? null) ? $elevationRequests : [];
+$circuits = is_array($workflowSummaries ?? null) ? $workflowSummaries : [];
 $showAll = (bool) ($elevationShowAll ?? false);
 $elevPage = (int) ($elevationPage ?? 1);
 $elevTotalPages = (int) ($elevationTotalPages ?? 1);
@@ -205,6 +206,7 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
                         </td>
                         <td>
                             <span class="eff-sheets__badge <?= $statusBadgeClass($status) ?>"><?= htmlspecialchars($statusLabel($status), ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php $workflowSubjectId = $id; require base_path('views/admin/effectifs_workspace/partials/workflow_opinion.php'); ?>
                         </td>
                         <td>
                             <span class="eff-sheets__meta"><?= htmlspecialchars($createdFmt, ENT_QUOTES, 'UTF-8') ?></span>
@@ -272,6 +274,7 @@ $proposalSummary = static function (array $labels, array $requestedPermissionIds
                 Demandée par <?= htmlspecialchars($requesterName, ENT_QUOTES, 'UTF-8') ?>
                 · <?= htmlspecialchars($createdFmt, ENT_QUOTES, 'UTF-8') ?>
                 · <span class="eff-sheets__badge <?= $statusBadgeClass($status) ?>"><?= htmlspecialchars($statusLabel($status), ENT_QUOTES, 'UTF-8') ?></span>
+                <?php $workflowSubjectId = $id; require base_path('views/admin/effectifs_workspace/partials/workflow_opinion.php'); ?>
             </p>
         </div>
         <button type="button" class="eff-catalog__btn" data-elev-close>Fermer</button>

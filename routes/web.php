@@ -610,6 +610,7 @@ return function (Router $router) {
     $router->post('/mon-service/tache/{id}/accuser', [ActionCenterController::class, 'acknowledgeTask'], [AuthMiddleware::class]);
     $router->post('/mon-service/tache/{id}/demarrer', [ActionCenterController::class, 'startTask'], [AuthMiddleware::class]);
     $router->post('/mon-service/tache/{id}/terminer', [ActionCenterController::class, 'completeTask'], [AuthMiddleware::class]);
+    $router->post('/mon-service/circuit/{id}/avis', [ActionCenterController::class, 'giveOpinion'], [AuthMiddleware::class]);
     $router->get('/pointage', [PointageController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/pointage/rsvp', [PointageController::class, 'rsvp'], [AuthMiddleware::class]);
     $router->post('/pointage/check-in', [PointageController::class, 'checkIn'], [AuthMiddleware::class]);
