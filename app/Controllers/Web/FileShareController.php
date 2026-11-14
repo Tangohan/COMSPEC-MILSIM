@@ -16,13 +16,16 @@ use App\Support\FileShareWorkspace;
 use App\Support\NonDefaultTenantContextGuard;
 
 /**
- * Partage de fichiers de la communauté : /partage (membres) et /back-office/partage (même page dans la coque du
- * back-office). Rien n'est visible sans partage : chaque lecture et chaque action repasse par FileShareWorkspace.
+ * Partage de fichiers de la communauté : /partage (membres) et /back-office/partage (même page, même coque JNET :
+ * l'ancienne adresse reste valable et renvoie ses formulaires à elle-même). Rien n'est visible sans partage : chaque lecture et chaque action repasse par FileShareWorkspace.
  * Un élément d'une autre communauté, ou non partagé, répond comme s'il n'existait pas.
  */
 final class FileShareController
 {
     private const NOT_FOUND = 'Cet élément n’existe pas ou ne vous est pas partagé.';
+
+    /** Page autonome au même habillage que l'extranet JNET (views/partage/_page.php). */
+    private const PAGE = 'partage._page';
 
     public function __construct(private ?FileShareRepository $repo = null)
     {
@@ -41,15 +44,13 @@ final class FileShareController
         $bo = str_starts_with(ltrim($request->path(), '/'), 'back-office');
         $base = $bo ? 'back-office/partage' : 'partage';
         $view = [
-            'content' => 'admin.partage.index',
             'title' => 'Fichiers partagés',
-            'pageTitle' => 'Fichiers partagés',
             'fsBo' => $bo,
             'fsBase' => $base,
             'fsReady' => $this->repo->schemaReady(),
-        ];
+        ] + $this->shell($tenantId, $userId);
         if (!$view['fsReady']) {
-            return Response::view('layout.main', $view);
+            return Response::view(self::PAGE, $view);
         }
 
         $ws = $this->workspace($tenantId, $userId);
@@ -137,7 +138,7 @@ final class FileShareController
         }
         $view['fsUserLabels'] = $this->repo->userLabels($userIds);
 
-        return Response::view('layout.main', $view);
+        return Response::view(self::PAGE, $view);
     }
 
     public function download(Request $request, array $params = []): Response
@@ -498,6 +499,37 @@ final class FileShareController
     }
 
     // ——— Outils ———
+
+    /**
+     * Données de l'en-tête de la page (communauté, compte, courrier non lu, accès à la gestion). Une lecture qui échoue
+     * n'empêche jamais d'afficher les fichiers.
+     *
+     * @return array<string, mixed>
+     */
+    private function shell(int $tenantId, int $userId): array
+    {
+        $tenantName = '';
+        $unread = 0;
+        try {
+            $tenant = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tenantId);
+            $tenantName = is_array($tenant) && function_exists('community_display_name') ? community_display_name($tenant) : '';
+        } catch (\Throwable) {
+            $tenantName = '';
+        }
+        try {
+            $unread = \App\Core\Container::get(\App\Repositories\TenantMessageRepository::class)->unreadCountForUser($tenantId, $userId);
+        } catch (\Throwable) {
+            $unread = 0;
+        }
+
+        return [
+            'fsTenantName' => $tenantName,
+            'fsDisplayName' => (string) Session::get('display_name', ''),
+            'fsCallsign' => (string) Session::get('callsign', ''),
+            'fsCanTba' => \App\Support\PortalAccessChoice::canAccessTba(),
+            'fsUnreadMail' => $unread,
+        ];
+    }
 
     /** @return array{0:int, 1:int}|Response */
     private function context(): array|Response
