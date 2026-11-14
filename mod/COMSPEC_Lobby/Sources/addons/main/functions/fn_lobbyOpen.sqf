@@ -107,7 +107,9 @@ private _texOf = {
     private _i = (toLower _p) find "comspec_cache/";
     if (_i >= 0) then { _cands pushBack (((_p select [_i]) splitString "/") joinString "\"); };
     private _res = "";
-    { private _ti = getTextureInfo _x; if (_ti isEqualType [] && {((_ti param [0, -1]) max 0) > 0}) exitWith { _res = _x; }; } forEach _cands;
+    // fileExists et non getTextureInfo : sur un fichier illisible, getTextureInfo ouvre une fenêtre « Picture ... not found ».
+    // Seulement les chemins relatifs : fileExists refuse un chemin absolu et l'écrit au journal à chaque appel.
+    { if ((_x find ":") < 0 && {fileExists _x}) exitWith { _res = _x; }; } forEach _cands;
     _res
 };
 // Image d'un fichier local en base64, par COMSPEC Link (aucun réseau). Renvoie [type MIME, base64] ou ["", raison].
@@ -131,17 +133,19 @@ private _b64Of = {
     if (_err isEqualTo "" && {_b64 isEqualTo ""}) then { _err = "image vide"; };
     if (_err isEqualTo "") then { [_mime, _b64] } else { ["", _err] }
 };
+// ctrlWebBrowserAction passe par compile : HEMTT (vérification du SQF au build) ne connaît pas encore cette commande.
+uiNamespace setVariable ["COMSPEC_LOBBY_wba", compile "(_this select 0) ctrlWebBrowserAction (_this select 1)"];
 // Envoie l'image gardée sur le contrôle à la page (par morceaux : une très longue chaîne JavaScript passe mal d'un bloc).
 uiNamespace setVariable ["COMSPEC_LOBBY_webPush", {
     params [["_wb", controlNull]];
     if (isNull _wb) exitWith {};
     (_wb getVariable ["COMSPEC_LOBBY_Img", ["", ""]]) params ["_m", "_b"];
-    _wb ctrlWebBrowserAction ["ExecJS", "if(window.cs){cs.reset();}"];
+    [_wb, ["ExecJS", "if(window.cs){cs.reset();}"]] call (uiNamespace getVariable "COMSPEC_LOBBY_wba");
     if (_b isEqualTo "") exitWith {};
     for "_o" from 0 to ((count _b) - 1) step 100000 do {
-        _wb ctrlWebBrowserAction ["ExecJS", "if(window.cs){cs.add('" + (_b select [_o, 100000]) + "');}"];
+        [_wb, ["ExecJS", "if(window.cs){cs.add('" + (_b select [_o, 100000]) + "');}"]] call (uiNamespace getVariable "COMSPEC_LOBBY_wba");
     };
-    _wb ctrlWebBrowserAction ["ExecJS", "if(window.cs){cs.show('" + _m + "');}"];
+    [_wb, ["ExecJS", "if(window.cs){cs.show('" + _m + "');}"]] call (uiNamespace getVariable "COMSPEC_LOBBY_wba");
 }];
 private _webCache = createHashMap;
 private _blank = "#(argb,8,8,3)color(0.04,0.06,0.05,1)";
@@ -175,7 +179,7 @@ private _portrait = {
                 _wb setVariable ["COMSPEC_LOBBY_Ready", true];
                 [_wb] call (uiNamespace getVariable ["COMSPEC_LOBBY_webPush", {}]);
             }];
-            _wb ctrlWebBrowserAction ["LoadFile", "z\comspec_lobby\addons\main\data\portrait.html"];
+            [_wb, ["LoadFile", "z\comspec_lobby\addons\main\data\portrait.html"]] call (uiNamespace getVariable "COMSPEC_LOBBY_wba");
         };
     };
 };
@@ -219,4 +223,5 @@ while { !isNull _display } do {
 };
 
 uiNamespace setVariable ["COMSPEC_LOBBY_webPush", nil];
+uiNamespace setVariable ["COMSPEC_LOBBY_wba", nil];
 "écran fermé" call _log;

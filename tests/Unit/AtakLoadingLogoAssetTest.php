@@ -49,7 +49,9 @@ final class AtakLoadingLogoAssetTest extends TestCase
         $s = self::read(self::LOBBY . 'functions/fn_lobbyOpen.sqf');
         self::assertStringContainsString('profileNamespace getVariable ["COMSPEC_LOBBY_Self", []]', $s);
         self::assertStringContainsString('"COMSPECExtension" callExtension ["ImageDataChunk", ["local:" + _p', $s);
-        self::assertStringContainsString('getTextureInfo', $s);
+        // Jamais getTextureInfo sur un fichier hors PBO : le jeu ouvre une fenêtre d'erreur (essai du 14/11).
+        self::assertStringNotContainsString('private _ti = getTextureInfo', $s);
+        self::assertStringContainsString('fileExists _x', $s);
         self::assertStringNotContainsString('http', $s);
         $hpp = self::read(self::LOBBY . 'RscLobby.hpp');
         self::assertMatchesRegularExpression('/class PortraitWeb \{\s*type = 106; idc = 9106;/', $hpp);

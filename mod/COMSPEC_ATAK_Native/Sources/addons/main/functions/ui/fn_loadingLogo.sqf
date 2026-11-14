@@ -2,7 +2,7 @@
     Écran de chargement d'Arma (RscDisplayLoadMission, RscDisplayLoading : Extended_DisplayLoad de config.cpp) : fond
     sombre plein écran et le logo ATHENA en très grand, au centre. Rien d'autre : pas de texte, pas de son, pas de vidéo,
     pas d'animation (TTRD, 14/11). Remplace l'ancien cartouche du coin (fn_loadingBadge, gardé pour l'intro seule).
-    Les contrôles sont créés par script (ctrlCreate) : ils passent devant ceux de l'écran du jeu, sans patcher ses classes.
+    Les contrôles sont créés par script (ctrlCreate) : ils passent devant ceux de l'écran du jeu, qui sont masqués, sans patcher ses classes.
     Appelée par chemin : sur ces écrans les CfgFunctions ne sont pas toujours compilées.
     Texture : data\loading_logo_ca.paa (2048 x 2048, blanc sur transparent, tools/src/athena_logo.svg).
     Params : [display]
@@ -10,6 +10,8 @@
 params [["_display", displayNull, [displayNull]]];
 if (isNull _display) exitWith {};
 if (!isNull (_display getVariable ["COMSPEC_ATAK_LoadingLogo", controlNull])) exitWith {};
+// Les contrôles de l'écran du jeu (image, titre, astuce du bas, barre) sont masqués : il ne reste que le logo.
+{ _x ctrlShow false; } forEach (allControls _display);
 private _bg = _display ctrlCreate ["RscText", -1];
 _bg ctrlSetBackgroundColor [0.02, 0.025, 0.022, 1];
 _bg ctrlSetPosition [safeZoneX, safeZoneY, safeZoneW, safeZoneH];
