@@ -11,6 +11,7 @@ declare(strict_types=1);
 use App\Support\RoleplayFollowupBoard;
 
 $rpFeatureEnabled = !empty($rpFeatureEnabled);
+$rpBilansEnabled = !isset($rpBilansEnabled) || !empty($rpBilansEnabled);
 $rpRows = is_array($rpRows ?? null) ? $rpRows : [];
 $rpTrackedCount = (int) ($rpTrackedCount ?? 0);
 $rpEligibleCount = (int) ($rpEligibleCount ?? 0);
@@ -43,9 +44,9 @@ $counts = RoleplayFollowupBoard::counts($rpRows, $today);
 $defaultFilter = $counts['a-traiter'] > 0 ? 'a-traiter' : 'tous';
 $filters = [
     'a-traiter' => ['label' => 'À traiter', 'hint' => 'en retard ou sans tuteur', 'tone' => $counts['a-traiter'] > 0 ? 'warn' : ''],
-    'retard' => ['label' => 'En retard', 'hint' => 'échéance ou bilan dépassé', 'tone' => $counts['retard'] > 0 ? 'bad' : ''],
+    'retard' => ['label' => 'En retard', 'hint' => $rpBilansEnabled ? 'échéance ou bilan dépassé' : 'échéance dépassée', 'tone' => $counts['retard'] > 0 ? 'bad' : ''],
     'sans-tuteur' => ['label' => 'Sans tuteur', 'hint' => 'suivis, aucun tuteur', 'tone' => ''],
-    'prets' => ['label' => 'Dossiers prêts', 'hint' => 'minimums atteints', 'tone' => ''],
+    'prets' => ['label' => 'Dossiers prêts', 'hint' => 'minimums de la fiche atteints', 'tone' => ''],
     'non-suivis' => ['label' => 'Pas encore suivis', 'hint' => 'rien de renseigné', 'tone' => ''],
     'tous' => ['label' => 'Tous', 'hint' => 'membres actifs', 'tone' => ''],
 ];
@@ -59,9 +60,14 @@ $filters = [
 
     <?php if (!$rpFeatureEnabled): ?>
     <div class="rps-flash rps-flash--warn" role="status">
-        <strong>Le suivi est masqué sur les fiches.</strong>
-        Vous pouvez travailler ici, mais les fiches des membres n’en montrent rien.
-        <a href="<?= $h(url('back-office/roleplay-followup?onglet=immersion#activation-options')) ?>">L’afficher</a>
+        <strong>Le suivi n’est pas activé.</strong>
+        Tant qu’il est coupé, aucune fiche n’est évaluée : c’est pour cela que tout est vide ici (pas d’étape, pas de tuteur, rien de prévu) et que les dossiers ne sont ni « prêts » ni « à compléter ».
+        <form method="post" action="<?= $h(url('back-office/roleplay-followup/activation')) ?>" class="rps-bilans" style="display:inline">
+            <input type="hidden" name="_csrf_token" value="<?= $h($rpCsrfToken) ?>">
+            <input type="hidden" name="enabled" value="1">
+            <button type="submit" class="ath-btn ath-btn--solid">Activer le suivi</button>
+        </form>
+        <a href="<?= $h(url('back-office/roleplay-followup?onglet=immersion#activation-options')) ?>">Voir les réglages</a>
     </div>
     <?php endif; ?>
     <?php if (!$rpTimelineTableReady): ?>
@@ -93,6 +99,11 @@ $filters = [
         </label>
         <?php endif; ?>
         <span class="rps-tools__sp"></span>
+        <form method="post" action="<?= $h(url('back-office/roleplay-followup/bilans')) ?>" class="rps-bilans">
+            <input type="hidden" name="_csrf_token" value="<?= $h($rpCsrfToken) ?>">
+            <input type="hidden" name="enabled" value="<?= $rpBilansEnabled ? '0' : '1' ?>">
+            <button type="submit" class="ath-btn" title="<?= $h($rpBilansEnabled ? 'Plus d’échéance ni de retard de bilan sur ce bureau ni dans les rappels. Les bilans déjà faits sont conservés.' : 'Les échéances et retards de bilan reviennent sur ce bureau et dans les rappels.') ?>"><?= $rpBilansEnabled ? 'Désactiver les bilans' : 'Réactiver les bilans' ?></button>
+        </form>
         <a class="ath-btn" href="<?= $h(url('back-office/roleplay-followup/echeances')) ?>">Échéances</a>
         <a class="ath-btn" href="<?= $h(url('back-office/users')) ?>">Gérer les membres</a>
     </div>
@@ -140,10 +151,14 @@ $filters = [
                         'medicalLate' => !empty($row['medical_due_date']) && (string) $row['medical_due_date'] < $today,
                         'rotation' => $fmtDate($row['service_rotation_date'] ?? ''),
                         'rotationLate' => !empty($row['service_rotation_date']) && (string) $row['service_rotation_date'] < $today,
-                        'bilanNext' => $fmtDate($row['rp_bilan_next_due_at'] ?? ''),
-                        'bilanLate' => !empty($row['rp_bilan_overdue']),
+                        'bilansOn' => $rpBilansEnabled,
+                        'followupOn' => $rpFeatureEnabled,
+                        'bilanNext' => $rpBilansEnabled ? $fmtDate($row['rp_bilan_next_due_at'] ?? '') : '',
+                        'bilanLate' => $rpBilansEnabled && !empty($row['rp_bilan_overdue']),
                         'bilanLast' => $fmtDate($row['rp_last_review_at'] ?? ''),
                         'eligible' => !empty($row['eligible']),
+                        'evaluated' => !empty($row['evaluated']),
+                        'missing' => array_values(is_array($row['missing'] ?? null) ? $row['missing'] : []),
                         'eventTitle' => $latest ? (string) ($latest['title'] ?? '') : '',
                         'eventMeta' => $latest ? trim($timelineStatusFr((string) ($latest['status'] ?? 'planned')) . ' · ' . $fmtDate($latest['event_date'] ?? ''), ' ·') : '',
                         'dossier' => url('personnel/' . $uid . '/edit'),
@@ -186,7 +201,13 @@ $filters = [
                         <span class="rps-none">Rien de prévu</span>
                         <?php endif; ?>
                     </td>
-                    <td><span class="rps-badge <?= !empty($row['eligible']) ? 'is-ok' : 'is-watch' ?>"><?= !empty($row['eligible']) ? 'Prêt' : 'À compléter' ?></span></td>
+                    <td>
+                        <span class="rps-badge <?= !empty($row['eligible']) ? 'is-ok' : 'is-watch' ?>"><?= !empty($row['eligible']) ? 'Prêt' : ($rpFeatureEnabled ? 'À compléter' : 'Non évalué') ?></span>
+                        <?php if (empty($row['eligible']) && $rpFeatureEnabled): ?>
+                        <?php $rowMissing = is_array($row['missing'] ?? null) ? $row['missing'] : []; ?>
+                        <small class="rps-meta rps-why"><?php if (empty($row['evaluated'])): ?>Jamais évalué : ouvrez le dossier et enregistrez-le<?php elseif ($rowMissing !== []): ?>Manque : <?= $h(implode(' · ', array_slice($rowMissing, 0, 2))) ?><?= count($rowMissing) > 2 ? $h(' · +' . (count($rowMissing) - 2)) : '' ?><?php else: ?>Évaluation à refaire<?php endif; ?></small>
+                        <?php endif; ?>
+                    </td>
                     <td class="rps-open"><button type="button" class="ath-btn" data-rps-open>Ouvrir</button></td>
                 </tr>
                 <?php endforeach; ?>
@@ -236,7 +257,7 @@ $filters = [
                     <input type="hidden" name="_csrf_token" value="<?= $h($rpCsrfToken) ?>">
                     <button type="submit" class="ath-btn" title="Marquer l’étape actuelle comme validée par l’encadrement">Valider l’étape</button>
                 </form>
-                <form method="post" data-sheet-form="bilan">
+                <form method="post" data-sheet-form="bilan" data-sheet-bilan>
                     <input type="hidden" name="_csrf_token" value="<?= $h($rpCsrfToken) ?>">
                     <button type="submit" class="ath-btn" title="Marquer le bilan roleplay comme fait aujourd’hui (recalcule la prochaine échéance)">Bilan fait aujourd’hui</button>
                 </form>
@@ -250,11 +271,12 @@ $filters = [
             <div><dt>Filière</dt><dd data-sheet="track"></dd></div>
             <div><dt>Profil</dt><dd data-sheet="origin"></dd></div>
             <div><dt>Dossier</dt><dd data-sheet="eligible"></dd></div>
+            <div class="wide" data-sheet-missing hidden><dt>Pour être prêt</dt><dd data-sheet="missing"></dd></div>
             <div><dt>Entretien</dt><dd data-sheet="interview"></dd></div>
             <div><dt>Visite médicale</dt><dd data-sheet="medical"></dd></div>
             <div><dt>Rotation</dt><dd data-sheet="rotation"></dd></div>
-            <div><dt>Prochain bilan</dt><dd data-sheet="bilanNext"></dd></div>
-            <div><dt>Dernier bilan</dt><dd data-sheet="bilanLast"></dd></div>
+            <div data-sheet-bilan><dt>Prochain bilan</dt><dd data-sheet="bilanNext"></dd></div>
+            <div data-sheet-bilan><dt>Dernier bilan</dt><dd data-sheet="bilanLast"></dd></div>
             <div><dt>Dernier événement</dt><dd data-sheet="event"></dd></div>
             <div class="wide"><dt>Notes</dt><dd data-sheet="notes"></dd></div>
         </dl>

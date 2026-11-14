@@ -61,6 +61,8 @@ final class RoleplayFollowupAdminController
 
         $cfg = $this->roleplayFollowupConfig($tenantId);
         $cadence = RoleplayFollowupSettings::bilanCadence($cfg);
+        // « Suivre les bilans périodiques » (Réglages > Cadences) coupé : plus de bilan sur le bureau, ni échéance, ni retard.
+        $bilansOn = !empty($cadence['enabled']);
 
         $rows = [];
         $enabled = !empty($cfg['enabled']);
@@ -97,6 +99,13 @@ final class RoleplayFollowupAdminController
             if (!empty($snapshot['eligible'])) {
                 $countEligible++;
             }
+            // Ce qu'il manque pour être « prêt » : les contrôles non remplis de la dernière évaluation de la fiche.
+            $missing = [];
+            foreach (is_array($snapshot['checks'] ?? null) ? $snapshot['checks'] : [] as $check) {
+                if (is_array($check) && empty($check['ok']) && trim((string) ($check['label'] ?? '')) !== '') {
+                    $missing[] = trim((string) $check['label']);
+                }
+            }
             $tid = (int) ($p['rp_tutor_user_id'] ?? 0);
             $tutorLabel = $tid > 0 ? ($memberLabels[$tid] ?? null) : null;
             $timeline = $this->timelineRepository->listForUser($tenantId, $uid, 1);
@@ -113,7 +122,7 @@ final class RoleplayFollowupAdminController
             $rpProgress = $p['rp_followup_progress'] ?? null;
             $rpLastReviewAt = trim((string) ($p['rp_last_review_at'] ?? '')) ?: null;
             $rpJoinedAt = trim((string) ($u['created_at'] ?? '')) ?: null;
-            $rpBilanNextDueAt = RoleplayBilanPolicy::nextReviewDueAt($rpJoinedAt, $rpLastReviewAt, $cadence);
+            $rpBilanNextDueAt = $bilansOn ? RoleplayBilanPolicy::nextReviewDueAt($rpJoinedAt, $rpLastReviewAt, $cadence) : null;
             $rows[] = [
                 'user_id' => $uid,
                 'tracked' => $hasTracking,
@@ -135,8 +144,10 @@ final class RoleplayFollowupAdminController
                 'next_due_is_overdue' => $nextDue !== null && $nextDue < $today,
                 'rp_last_review_at' => $rpLastReviewAt,
                 'rp_bilan_next_due_at' => $rpBilanNextDueAt?->format('Y-m-d'),
-                'rp_bilan_overdue' => RoleplayBilanPolicy::isOverdue($rpJoinedAt, $rpLastReviewAt, $cadence),
+                'rp_bilan_overdue' => $bilansOn && RoleplayBilanPolicy::isOverdue($rpJoinedAt, $rpLastReviewAt, $cadence),
                 'eligible' => !empty($snapshot['eligible']),
+                'evaluated' => $snapshot !== [],
+                'missing' => $missing,
                 'latest_timeline' => $timeline[0] ?? null,
             ];
         }
@@ -177,6 +188,7 @@ final class RoleplayFollowupAdminController
             'rpEligibleCount' => $countEligible,
             'rpTotalActiveMembers' => count($rows),
             'rpTimelineTableReady' => $this->timelineRepository->tableExists(),
+            'rpBilansEnabled' => $bilansOn,
             'rpStagesOptions' => $cfg['stages'],
             'rpTracksOptions' => $cfg['recruitment_tracks'],
             'rpTutorChoices' => $tutorChoices,
@@ -741,6 +753,56 @@ final class RoleplayFollowupAdminController
         } catch (\Throwable) {
         }
         Session::flash('success', 'Réglages du suivi d’immersion enregistrés.');
+
+        return Response::redirect($redirectTo);
+    }
+
+    /**
+     * Couper ou rétablir les bilans périodiques depuis le bureau de suivi (même réglage que Réglages > Cadences > « Suivre les bilans
+     * périodiques » : bilans.enabled). Les bilans déjà enregistrés sont gardés ; seuls échéances, retards et rappels disparaissent.
+     */
+    public function toggleBilans(Request $request, array $params = []): Response
+    {
+        $redirectTo = url('back-office/roleplay-followup');
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($redirectTo);
+        }
+        $enable = (string) $request->input('enabled') === '1';
+        RoleplayFollowupSettings::saveForTenant($tenantId, ['bilans' => ['enabled' => $enable]], $this->tenantRepository);
+        Session::flash('success', $enable
+            ? 'Les bilans périodiques sont rétablis : échéances et retards reviennent sur le bureau.'
+            : 'Les bilans périodiques sont coupés : plus d’échéance ni de retard de bilan sur le bureau. Les bilans déjà faits sont conservés.');
+
+        return Response::redirect($redirectTo);
+    }
+
+    /**
+     * Activer le suivi depuis le bureau (Réglages > Activation : enabled). Tant qu'il est coupé, aucune fiche n'est évaluée : le bureau
+     * n'a ni étape, ni tuteur, ni échéance à montrer, et chaque dossier restait « À compléter » sans raison.
+     */
+    public function toggleFollowup(Request $request, array $params = []): Response
+    {
+        $redirectTo = url('back-office/roleplay-followup');
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($redirectTo);
+        }
+        $enable = (string) $request->input('enabled') === '1';
+        RoleplayFollowupSettings::saveForTenant($tenantId, ['enabled' => $enable], $this->tenantRepository);
+        Session::flash('success', $enable
+            ? 'Le suivi est activé. Les dossiers sont évalués quand une fiche est enregistrée : ouvrez un membre et enregistrez-le pour voir ce qui lui manque.'
+            : 'Le suivi est coupé : les fiches des membres n’en montrent plus rien.');
 
         return Response::redirect($redirectTo);
     }
