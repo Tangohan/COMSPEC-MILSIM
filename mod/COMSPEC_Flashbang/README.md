@@ -259,6 +259,8 @@ Les réglages « client » sont propres à chaque poste ; tous les autres sont i
 | Éblouissement | oui | Voile, image rémanente, halo | non pour ne garder que le son |
 | Perte d'acuité (flou) | oui | Flou fort qui se dissipe | non |
 | Multiplicateur nuit | 1.0 | Force la nuit / dans un local sombre ; de jour dehors : x0,45 en plein soleil, x0,7 à l'aube / au crépuscule | 1.3 pour des nuits plus dures |
+| Vignette sombre | non | Bords sombres qui se resserrent pendant l'éblouissement (texture `uib_vignette_ca.paa`) | oui pour un rendu plus immersif |
+| Effets réduits (confort), client | non | Atténue pour toi seul éblouissement, flou, vignette et acouphène, avec le coefficient du mode Réduit (confort, joueurs sensibles) | oui si les flashs te gênent |
 | Portée de l'éblouissement en extérieur | 100 % | Étire les distances de la table extérieure (50 à 150 %) | 70 % si les flashs portent trop loin dehors |
 | Intensité des effets en extérieur | 100 % | Multiplie l'éblouissement des grenades qui éclatent dehors (20 à 150 %) | 60 % pour des flashs discrets en terrain ouvert |
 | Multiplicateur JVN | 2 | Force avec JVN allumées | 3 |

@@ -229,6 +229,14 @@ if (_dbg) then {
     // Règle du camp (fn_sideRule), relue à chaque détonation : camp courant de l'unité, lanceur, camp du lanceur.
     private _rule = if (_concerned) then { [side group _u, _side, !isNull _thrower && {_u == _thrower}] call comspec_fb_fnc_sideRule } else { [0, 1, 1, 1, "normal"] };
     _rule params ["_ruleLevel", "_kVis", "_kDur", "_kAud", "_ruleName"];
+    // Option personnelle « Effets réduits » (accessibilité), propre au joueur : s'ajoute à la règle du camp, vision,
+    // durée ET audition, avec le coefficient du mode Réduit.
+    if (_isMe && {missionNamespace getVariable ["comspec_fb_reducedEffects", false]}) then {
+        private _rk = ((missionNamespace getVariable ["comspec_fb_reducedCoef", 0.35]) max 0.05) min 1;
+        _kVis = _kVis * _rk;
+        _kDur = _kDur * _rk;
+        _kAud = _kAud * _rk;
+    };
     if (_concerned && {_ruleLevel == 3}) then {
         _concerned = false;
         if (_isMe) then { _meShielded = true };

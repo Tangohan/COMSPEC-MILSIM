@@ -1052,6 +1052,16 @@
                 <English>Dark edges around the screen during the dazzle: the view narrows and darkens, then relaxes.  Example: ticked.</English>
                 <French>Bords sombres autour de l'écran pendant l'éblouissement : le champ se resserre et s'assombrit, puis se relâche.  Exemple : coché.</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Set_ReducedEffects">
+                <Original>Effets réduits (confort)</Original>
+                <English>Reduced effects (comfort)</English>
+                <French>Effets réduits (confort)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_ReducedEffects_Tip">
+                <Original>Atténue pour toi seul l'éblouissement, le flou, la vignette et l'acouphène, avec le coefficient du mode Réduit.  Pour les joueurs sensibles aux flashs ou aux sons forts.  Exemple : décoché.</Original>
+                <English>Softens, for you only, the dazzle, blur, vignette and tinnitus, using the Reduced mode coefficient.  For players sensitive to flashes or loud sounds.  Example: unticked.</English>
+                <French>Atténue pour toi seul l'éblouissement, le flou, la vignette et l'acouphène, avec le coefficient du mode Réduit.  Pour les joueurs sensibles aux flashs ou aux sons forts.  Exemple : décoché.</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Set_Damage">
                 <Original>Blessure à bout portant</Original>
                 <English>Point-blank injury</English>
