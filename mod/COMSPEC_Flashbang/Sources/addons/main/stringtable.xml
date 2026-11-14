@@ -1052,6 +1052,26 @@
                 <English>Dark edges around the screen during the dazzle: the view narrows and darkens, then relaxes.  Example: ticked.</English>
                 <French>Bords sombres autour de l'écran pendant l'éblouissement : le champ se resserre et s'assombrit, puis se relâche.  Exemple : coché.</French>
             </Key>
+            <Key ID="STR_COMSPEC_FB_Set_ReducedEffects">
+                <Original>Effets réduits (confort)</Original>
+                <English>Reduced effects (comfort)</English>
+                <French>Effets réduits (confort)</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_ReducedEffects_Tip">
+                <Original>Atténue pour toi seul l'éblouissement, le flou, la vignette et l'acouphène, avec le coefficient du mode Réduit.  Pour les joueurs sensibles aux flashs ou aux sons forts.  Exemple : décoché.</Original>
+                <English>Softens, for you only, the dazzle, blur, vignette and tinnitus, using the Reduced mode coefficient.  For players sensitive to flashes or loud sounds.  Example: unticked.</English>
+                <French>Atténue pour toi seul l'éblouissement, le flou, la vignette et l'acouphène, avec le coefficient du mode Réduit.  Pour les joueurs sensibles aux flashs ou aux sons forts.  Exemple : décoché.</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Startle">
+                <Original>Sursaut</Original>
+                <English>Startle</English>
+                <French>Sursaut</French>
+            </Key>
+            <Key ID="STR_COMSPEC_FB_Set_Startle_Tip">
+                <Original>Réflexe de sursaut au bang : secousse sèche de la vue, à-coup de visée et gestes freinés pendant 0,2 à 0,5 s. Plus fort par surprise, plus faible dans une rafale et pour le lanceur ; une protection auditive ne l'empêche pas.  Exemple : coché.</Original>
+                <English>Startle reflex at the bang: a sharp view jolt, an aim jerk and slowed movement for 0.2 to 0.5 s. Stronger by surprise, weaker within a burst and for the thrower; hearing protection does not prevent it.  Example: ticked.</English>
+                <French>Réflexe de sursaut au bang : secousse sèche de la vue, à-coup de visée et gestes freinés pendant 0,2 à 0,5 s. Plus fort par surprise, plus faible dans une rafale et pour le lanceur ; une protection auditive ne l'empêche pas.  Exemple : coché.</French>
+            </Key>
             <Key ID="STR_COMSPEC_FB_Set_Damage">
                 <Original>Blessure à bout portant</Original>
                 <English>Point-blank injury</English>
@@ -1278,9 +1298,9 @@
                 <French>Multiplicateur nuit</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_NightMult_Tip">
-                <Original>Force de l'éblouissement la nuit ou dans un local sombre (pupille ouverte). De jour dehors, la pupille se ferme : x0,45 en plein soleil, x0,7 à l'aube, au crépuscule ou sous un ciel très couvert (pas de réduction à moins de 2 m).  Exemple : 1.3 pour des nuits plus dures.</Original>
-                <English>Dazzle strength at night or in a dark room (open pupil). Outdoors by day the pupil closes: x0.45 in full sun, x0.7 at dawn, dusk or under a heavy overcast (no reduction within 2 m).  Example: 1.3 for harsher nights.</English>
-                <French>Force de l'éblouissement la nuit ou dans un local sombre (pupille ouverte). De jour dehors, la pupille se ferme : x0,45 en plein soleil, x0,7 à l'aube, au crépuscule ou sous un ciel très couvert (pas de réduction à moins de 2 m).  Exemple : 1.3 pour des nuits plus dures.</French>
+                <Original>Force de l'éblouissement la nuit ou dans un local sombre (pupille ouverte). De jour dehors, la pupille se ferme : x0,30 en plein soleil, x0,6 à l'aube, au crépuscule ou sous un ciel très couvert (pas de réduction à moins de 2 m).  Exemple : 1.3 pour des nuits plus dures.</Original>
+                <English>Dazzle strength at night or in a dark room (open pupil). Outdoors by day the pupil closes: x0.30 in full sun, x0.6 at dawn, dusk or under a heavy overcast (no reduction within 2 m).  Example: 1.3 for harsher nights.</English>
+                <French>Force de l'éblouissement la nuit ou dans un local sombre (pupille ouverte). De jour dehors, la pupille se ferme : x0,30 en plein soleil, x0,6 à l'aube, au crépuscule ou sous un ciel très couvert (pas de réduction à moins de 2 m).  Exemple : 1.3 pour des nuits plus dures.</French>
             </Key>
             <Key ID="STR_COMSPEC_FB_Set_NvgMult">
                 <Original>Multiplicateur JVN</Original>

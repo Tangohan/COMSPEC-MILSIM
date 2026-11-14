@@ -25,6 +25,9 @@ private _W = "white" call _val;
 private _B = "blur" call _val;
 private _A = "aim" call _val;
 private _H = "hear" call _val;
+private _T = "tts" call _val;
+(_st getOrDefault ["startle", [0, 0]]) params ["_sS", "_sUntil"];
+private _sOn = _now < _sUntil;
 // Récupération en vagues (éclaircies puis rechutes), clignements (courts retours de flou), « plocs » de l'ouïe,
 // pas hésitants : petites variations autour de la courbe moyenne, réglées par « Variation aléatoire ».
 private _v = missionNamespace getVariable ["comspec_fb_variation", 0.6];
@@ -43,7 +46,7 @@ private _spots = (_st getOrDefault ["spots", []]) select { _now < (_x select 3) 
 _st set ["spots", _spots];
 private _tinnOn = ((_st getOrDefault ["tinn2", createHashMap]) getOrDefault ["state", "fini"]) != "fini";
 
-if (_W + _B + _A + _H + _F < 0.003 && {_spots isEqualTo []} && {!_tinnOn}) exitWith {
+if (_W + _B + _A + _H + _T + _F < 0.003 && {_spots isEqualTo []} && {!_tinnOn} && {!_sOn}) exitWith {
     [] call comspec_fb_fnc_playerReset;
 };
 
@@ -99,6 +102,8 @@ if (!isNull _disp) then {
     (_disp displayCtrl 101) ctrlSetTextColor [_tr, _tg, _tb, _wa];
     // Taches : positives (claires) pendant 0,8 s, puis négatives sombres dont la teinte dérive lentement
     // (« fuite des couleurs » de l'image rémanente), avec un très léger tremblement (micro-saccades).
+    // Image rémanente plus visible sur une scène sombre (nuit), plus discrète en plein soleil.
+    private _dk = linearConversion [0, 1, sunOrMoon * (1 - 0.3 * overcast), 1, 0.7, true];
     for "_k" from 0 to 2 do {
         private _ctrl = _disp displayCtrl (111 + _k);
         if (_k < count _spots) then {
@@ -116,7 +121,7 @@ if (!isNull _disp) then {
             if (_age < 0.8) then {
                 _ctrl ctrlSetTextColor [1, 0.97, 0.88, 0.85 * _v];
             } else {
-                _ctrl ctrlSetTextColor [0.12 + 0.05 * sin (_age * 20), 0.08 + 0.04 * sin (_age * 13 + 60), 0.16 + 0.05 * sin (_age * 17 + 120), 0.8 * _v];
+                _ctrl ctrlSetTextColor [0.12 + 0.05 * sin (_age * 20), 0.08 + 0.04 * sin (_age * 13 + 60), 0.16 + 0.05 * sin (_age * 17 + 120), 0.8 * _v * _dk];
             };
         } else {
             _ctrl ctrlSetTextColor [1, 1, 1, 0];
@@ -156,7 +161,12 @@ if (_A > 0.2 && {_now > (_st getOrDefault ["hesitUntil", 0]) + 1.5} && {random 1
 };
 private _slow = 0.2 * (_A min 1) * (1 + 0.35 * _v * sin (deg (_now * 0.9 + _p3)));
 if (_now < (_st getOrDefault ["hesitUntil", 0])) then { _slow = _slow max (0.35 * (_A min 1)) };
-_unit setAnimSpeedCoef (((_st get "orig") getOrDefault ["anim", 1]) * (1 - (_slow min 0.4)));
+// Sursaut : à-coup de visée et gestes freinés (jamais d'arrêt complet) pendant 0,2 à 0,5 s.
+if (_sOn) then {
+    _aimNow = _aimNow max (_aim0 * (1 + 10 * _sS));
+    _slow = _slow max (0.6 * _sS);
+};
+_unit setAnimSpeedCoef (((_st get "orig") getOrDefault ["anim", 1]) * (1 - (_slow min 0.6)));
 if (missionNamespace getVariable ["ace_advanced_fatigue_enabled", false]) then {
     // ACE règle lui-même le coefficient à chaque image : on ne fait que l'augmenter.
     _unit setCustomAimCoef ((getCustomAimCoef _unit) max _aimNow);
@@ -164,5 +174,5 @@ if (missionNamespace getVariable ["ace_advanced_fatigue_enabled", false]) then {
     _unit setCustomAimCoef _aimNow;
 };
 if (missionNamespace getVariable ["comspec_fb_muffle", true]) then {
-    [1 - 0.75 * (_H min 1)] call comspec_fb_fnc_hearing;
+    [1 - 0.75 * ((_H max _T) min 1)] call comspec_fb_fnc_hearing;
 };

@@ -1,3 +1,25 @@
+[h1]COMSPEC Flashbang -BetterFlash- 1.0.0 — sursaut, lumière, audition, effets réduits / startle, light, hearing, reduced effects[/h1]
+
+[h2]Français[/h2]
+[list]
+[*] [b]Sursaut[/b] : au bang, la vue secoue, la visée part et les gestes se freinent un instant, même avec une protection auditive. Plus fort par surprise, plus faible dans une rafale. Les IA à pied s'arrêtent aussi une fraction de seconde. Réglage « Sursaut ».
+[*] [b]Lumière[/b] : un flash éblouit plus longtemps de nuit ou dans une pièce sombre, moins en plein soleil. L'image rémanente se voit mieux dans le noir.
+[*] [b]Audition en deux temps[/b] : une surdité forte et courte, puis une gêne légère qui dure jusqu'à deux minutes. Voix et radio sont plus difficiles à comprendre que les bruits.
+[*] [b]Effets réduits (confort)[/b] : nouvelle case, propre à chaque joueur, qui atténue l'éblouissement, le flou, la vignette et l'acouphène.
+[*] [b]Vignette sombre[/b] : la texture manquait, elle est ajoutée (réglage décoché par défaut).
+[*] [b]Protection auditive sans ACE[/b] : une mission peut la déclarer sur une unité.
+[/list]
+
+[h2]English[/h2]
+[list]
+[*] [b]Startle[/b]: at the bang the view jolts, the aim jerks and movement slows for an instant, even with hearing protection. Stronger by surprise, weaker within a burst. AI on foot also stop for a fraction of a second. "Startle" setting.
+[*] [b]Light[/b]: a flash dazzles longer at night or in a dark room, less in full sun. The afterimage is easier to see in the dark.
+[*] [b]Hearing in two stages[/b]: strong, short deafness, then a light discomfort that lasts up to two minutes. Voices and radio are harder to understand than noises.
+[*] [b]Reduced effects (comfort)[/b]: new per-player box that softens the dazzle, blur, vignette and tinnitus.
+[*] [b]Dark vignette[/b]: the texture was missing, it is now added (setting unticked by default).
+[*] [b]Hearing protection without ACE[/b]: a mission can declare it on a unit.
+[/list]
+
 [h1]COMSPEC Flashbang -BetterFlash- 1.0.0 — première version / first release[/h1]
 
 [h2]Français[/h2]

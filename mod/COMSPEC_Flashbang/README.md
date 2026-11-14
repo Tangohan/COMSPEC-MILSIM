@@ -109,6 +109,8 @@ Les 40 classes sont générées par des macros (`FB_AMMO_DELAYS`, `FB_MAG_DELAYS
     DRILL à 3 pops, son « Sifflet d'exercice » ;
   - `[getPosASL _obj, 8, 0.9, 3, true] call comspec_fb_fnc_serverArea` : effet de zone de 8 m, force 0,9, 3 fois ;
   - `_unit setVariable ["comspec_fb_eyeProtection", 0.5]` : protection des yeux de 50 % (masque, visière…).
+  - `_unit setVariable ["comspec_fb_earProtection", 1]` : protection auditive sans ACE (0 à 1, 1 = le réglage
+    « Protection auditive » en entier). Avec ACE, bouchons, casques et lunettes à protection sont lus tout seuls.
 
 ## Ce que ressent le joueur touché
 
@@ -183,7 +185,7 @@ Ce que ça change :
 - **Extérieur** :
   - le bang est sec et l'éblouissement chute bien plus vite avec la distance (table « extérieur dégagé » : plein
     effet jusqu'à 2 m, 0,60 à 5 m, 0,25 à 10 m, 0,08 à 15 m, rien au-delà de 19 m) ;
-  - de jour la pupille est fermée : x0,45 en plein soleil, x0,7 à l'aube, au crépuscule ou sous un ciel très
+  - de jour la pupille est fermée : x0,30 en plein soleil, x0,6 à l'aube, au crépuscule ou sous un ciel très
     couvert (sans réduction à moins de 2 m) ; la lumière de la scène et le halo sont eux aussi réduits de jour
     (lumière x0,35, portée 35 m au lieu de 60, reflet deux fois plus petit, encore réduit au-delà de 30 m et invisible
     au-delà de 350 m : pas de « soleil » à 200 m en plein jour) ;
@@ -258,13 +260,16 @@ Les réglages « client » sont propres à chaque poste ; tous les autres sont i
 | Blessure à bout portant | non | Petite blessure à moins de 1 m (jamais avec ACE Médical) | oui |
 | Éblouissement | oui | Voile, image rémanente, halo | non pour ne garder que le son |
 | Perte d'acuité (flou) | oui | Flou fort qui se dissipe | non |
-| Multiplicateur nuit | 1.0 | Force la nuit / dans un local sombre ; de jour dehors : x0,45 en plein soleil, x0,7 à l'aube / au crépuscule | 1.3 pour des nuits plus dures |
+| Multiplicateur nuit | 1.0 | Force la nuit / dans un local sombre ; de jour dehors : x0,30 en plein soleil, x0,6 à l'aube / au crépuscule | 1.3 pour des nuits plus dures |
+| Vignette sombre | non | Bords sombres qui se resserrent pendant l'éblouissement (texture `uib_vignette_ca.paa`) | oui pour un rendu plus immersif |
+| Effets réduits (confort), client | non | Atténue pour toi seul éblouissement, flou, vignette et acouphène, avec le coefficient du mode Réduit (confort, joueurs sensibles) | oui si les flashs te gênent |
 | Portée de l'éblouissement en extérieur | 100 % | Étire les distances de la table extérieure (50 à 150 %) | 70 % si les flashs portent trop loin dehors |
 | Intensité des effets en extérieur | 100 % | Multiplie l'éblouissement des grenades qui éclatent dehors (20 à 150 %) | 60 % pour des flashs discrets en terrain ouvert |
 | Multiplicateur JVN | 2 | Force avec JVN allumées | 3 |
 | Acouphène | oui | Sifflement qui décroît | non |
 | Durée max de l'acouphène (s) | 45 | Durée audible maximale | 20 |
-| Ouïe étouffée | oui | Sons, voix et radio baissent puis reviennent | non |
+| Ouïe étouffée | oui | Sons, voix et radio baissent puis reviennent, en deux temps : fort et court (~35 s), puis léger et long (jusqu'à ~2 min 30) ; les voix et la radio baissent plus que les bruits | non |
+| Sursaut | oui | Réflexe au bang : secousse sèche de la vue, à-coup de visée, gestes freinés 0,2 à 0,5 s ; plus fort par surprise, 30 % dans une rafale, moitié pour le lanceur ; part même avec une protection auditive ; les IA à pied s'arrêtent aussi 0,3 à 0,6 s | non pour un entraînement calme |
 | Radio étouffée | oui | Sans ACE : radio vanilla, ACRE2, TFAR baissent aussi | non |
 | Protection auditive (dB) | 25 | Réduction pour bouchons ou casque ACE | 30 |
 | IA affectée | oui | IA éblouie : vise et repère mal, hésite | non |
@@ -365,10 +370,10 @@ signalés.
 | Bruit | 170 dB à 1,5 m, -20 log10(d) | M84 : 170-180 dB à 1,5 m ([Wikipedia, M84](https://en.wikipedia.org/wiki/M84_stun_grenade)) ; Primetake PT4523C : 165 ± 5 dB ([fiche](https://www.primetake.com/wp-content/uploads/2023/10/PT_DataSheet_Pyro-Distraction_PT4523C_v5.pdf)) ; Rheinmetall 6 Bang : 165 dB ([fiche distributeur](https://rampartcorp.com/wp-content/uploads/2024/09/Rheinmetall-Sound-Flash-6-Bang.pdf)) | propagation sphérique simple, réverbération forfaitaire par type de local |
 | Seuil d'atteinte auditive | effet à partir de 140 dB crête, maximal à 170 dB | directive 2003/10/CE : valeur limite d'exposition 140 dB(C) crête | courbe d'effet en puissance 0,7 |
 | Acouphène | aigu continu qui décroît, ≤ 45 s | acouphène et assourdissement temporaires, de quelques secondes à quelques minutes (description M84) | durée bornée pour le jeu |
-| Ouïe étouffée | jusqu'à 25 % du volume, retour en ~35 s | décalage temporaire du seuil d'audition après un bruit impulsionnel | pas de vraie courbe audiométrique |
+| Ouïe étouffée | jusqu'à 25 % du volume, retour en ~35 s, puis perte légère (40 % du pic) qui remonte en ~2 min 30 | décalage temporaire du seuil d'audition après un bruit impulsionnel | pas de vraie courbe audiométrique |
 | Lumière | flash bref et très intense | 4 à 8 millions de candelas (M84 6-8 Mcd ; Primetake 8 Mcd ; Rheinmetall 4 Mcd) | lumière de jeu, pic ~2 images puis décroissance en 0,3 s |
 | Éblouissement | plein blanc ~1,5 s à 3 m, vision très dégradée 6-8 s, récupération ~12 s, image rémanente jusqu'à 25 s | récupération de 5 s à 2 min selon l'intensité et la tâche ([HFES 2023, Flash Blindness Recovery for Pilots in the Modern Cockpit](https://katalog.lib.cas.cz/KNAV/EdsRecord/edo,ejs64963113)) | durées fixes x exposition^0,6 |
-| Adaptation | plein soleil 0,45, aube / crépuscule 0,7, nuit et local sombre 1,0 (sans réduction sous 2 m) | la récupération dépend de la taille de la pupille et de l'adaptation (rapports DTIC, ex. [AD0627332](https://apps.dtic.mil/sti/pdfs/AD0627332.pdf)) | luminosité = `sunOrMoon` x (1 - 0,3 x couverture nuageuse), bornée à 0,25 sous un toit, au lieu d'une vraie luminance |
+| Adaptation | plein soleil 0,30, aube / crépuscule 0,6, nuit et local sombre 1,0 ; de nuit le blanc dure x1,2 et l'image rémanente x1,3, en plein soleil x0,85 (sans réduction sous 2 m) | la récupération dépend de la taille de la pupille et de l'adaptation (rapports DTIC, ex. [AD0627332](https://apps.dtic.mil/sti/pdfs/AD0627332.pdf)) | luminosité = `sunOrMoon` x (1 - 0,3 x couverture nuageuse), bornée à 0,25 sous un toit, au lieu d'une vraie luminance |
 | Distance et regard | table ci-dessous | à quelques mètres, plusieurs millions de candelas saturent toute la rétine, y compris en vision périphérique, et la pupille n'a pas le temps de se fermer ; de dos, la scène entière s'illumine | interpolation linéaire par morceaux |
 | Mèche | 1,5 s | M84 : 1 à 2,3 s ; Rheinmetall : 1,0 s ; NonLethal Technologies MP-FB-2 : 1,5 s | réglable 0,5-4 s ; variantes fixes 3 s et 8 s (choix de jeu, pour les entrées synchronisées) |
 | Multi-coups | 0,5 s ± 0,12 s, 1 à 9 coups | MP-FB-2 : 2e coup 0,5 s après le 1er ; Combined Systems 7290 : familles 2 à 9 coups | irrégularité aléatoire uniforme |
@@ -401,7 +406,7 @@ Adaptation de l'œil, multipliée ensuite (sans réduction à moins de 2 m, inst
 
 | Luminosité ambiante | Nuit, local sombre | Aube, crépuscule, ciel très couvert | Plein soleil |
 |---|---|---|---|
-| Facteur | 1,0 (multiplicateur nuit) | 0,70 | 0,45 |
+| Facteur | 1,0 (multiplicateur nuit) | 0,60 | 0,30 |
 
 Résultat dehors en plein soleil, de face : 2 m 1,00 ; 5 m 0,35 ; 10 m 0,11 ; 15 m 0,04 ; rien au-delà de 19 m
 (avant : 0,85 / 0,50 / 0,30 et encore 0,04 à 25 m). Dehors de nuit : 1,00 / 0,60 / 0,25 / 0,08. Ces valeurs sont
@@ -643,7 +648,7 @@ hangar (under 0.1 ms per grenade).
 
 **Calibration**: two dazzle tables (open pupil). Closed room: 1.0 within 3.5 m eye distance when looking within 65°,
 0.92 at 90°, 0.35 from behind; 5 m 0.85/0.5; 10 m 0.5/0.25; 15 m 0.3/0.1; 25 m negligible. Open ground: 1.0 within
-2 m, 0.60 at 5 m, 0.25 at 10 m, 0.08 at 15 m, nothing beyond 19 m. Eye adaptation on top: x0.45 in full sun, x0.7 at
+2 m, 0.60 at 5 m, 0.25 at 10 m, 0.08 at 15 m, nothing beyond 19 m. Eye adaptation on top: x0.30 in full sun, x0.6 at
 dawn/dusk, x1.0 at night or in a dark room (no reduction within 2 m). By day the world light and the halo are also
 smaller and shorter-ranged. Settings « Outdoor dazzle range » and « Outdoor effect intensity ».
 

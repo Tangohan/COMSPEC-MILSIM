@@ -229,6 +229,14 @@ if (_dbg) then {
     // Règle du camp (fn_sideRule), relue à chaque détonation : camp courant de l'unité, lanceur, camp du lanceur.
     private _rule = if (_concerned) then { [side group _u, _side, !isNull _thrower && {_u == _thrower}] call comspec_fb_fnc_sideRule } else { [0, 1, 1, 1, "normal"] };
     _rule params ["_ruleLevel", "_kVis", "_kDur", "_kAud", "_ruleName"];
+    // Option personnelle « Effets réduits » (accessibilité), propre au joueur : s'ajoute à la règle du camp, vision,
+    // durée ET audition, avec le coefficient du mode Réduit.
+    if (_isMe && {missionNamespace getVariable ["comspec_fb_reducedEffects", false]}) then {
+        private _rk = ((missionNamespace getVariable ["comspec_fb_reducedCoef", 0.35]) max 0.05) min 1;
+        _kVis = _kVis * _rk;
+        _kDur = _kDur * _rk;
+        _kAud = _kAud * _rk;
+    };
     if (_concerned && {_ruleLevel == 3}) then {
         _concerned = false;
         if (_isMe) then { _meShielded = true };
@@ -263,6 +271,8 @@ if (_dbg) then {
         _vis = _vis * _rv * _kVis;
         _aud = _aud * _ra * _kAud;
         _info set ["tirage", [_rv, _ra]];
+        // Sursaut : suit la règle du camp et l'option « Effets réduits » ; moitié moins pour le lanceur, qui s'y attend.
+        _info set ["startle", (_info getOrDefault ["startle", 0]) * _kAud * ([1, 0.5] select (!isNull _thrower && {_u == _thrower}))];
         // Mode Réduit : durées x coefficient (en plus de l'intensité).
         _info set ["durMult", (_info getOrDefault ["durMult", 1]) * _kDur];
         if (_isMe && {_ruleLevel == 2}) then { _meShielded = true };
@@ -274,7 +284,7 @@ if (_dbg) then {
                 ["aucun effet (trop faible : distance, mur ou dos tourné)", "effets appliqués"] select (_vis > 0.02 || {_aud > 0.02}),
                 _rv toFixed 2, _ra toFixed 2, side group _u, _ruleName]] call comspec_fb_fnc_log;
         };
-        if (_vis > 0.02 || {_aud > 0.02}) then {
+        if (_vis > 0.02 || {_aud > 0.02} || {(_info getOrDefault ["startle", 0]) > 0.15}) then {
             if (_isMe) then {
                 _meHit = true;
                 _info set ["tPlan", _tPlan];

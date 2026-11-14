@@ -31,7 +31,7 @@
 Une flashbang désoriente, elle ne tue pas. Durées et distances suivent des fiches techniques publiques. Pas de flou psychédélique ni de joueur figé. Trois préréglages : [b]Réaliste[/b] (défaut), [b]Arcade[/b] (plus fort, plus long), [b]Léger[/b].
 
 [h2]Réglages[/h2]
-45 réglages CBA (Options › Options des addons › COMSPEC Flashbang), chacun avec un exemple :
+51 réglages CBA (Options › Options des addons › COMSPEC Flashbang), chacun avec un exemple :
 [list]
 [*]Volume des flashbangs et de l'acouphène sur votre poste (sons forts par défaut : baissez le casque avant de tester).
 [*]Portée du son : 250 m, moins pour un petit terrain.
@@ -89,7 +89,7 @@ Bug ou idée : [url=https://discord.gg/CCpJA6Nks]Discord COMSPEC[/url]. © 2026 
 A flashbang disorients, it does not kill. Durations and distances follow public data sheets. No psychedelic blur, no frozen player. Three presets: [b]Realistic[/b] (default), [b]Arcade[/b] (stronger, longer), [b]Light[/b].
 
 [h2]Settings[/h2]
-45 CBA settings (Options › Addon Options › COMSPEC Flashbang), each with an example:
+51 CBA settings (Options › Addon Options › COMSPEC Flashbang), each with an example:
 [list]
 [*]Flashbang and tinnitus volume on your computer (loud by default: turn your headset down before testing).
 [*]Sound range: 250 m, less for a small area.

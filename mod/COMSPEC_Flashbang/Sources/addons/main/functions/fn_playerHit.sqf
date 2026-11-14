@@ -9,7 +9,13 @@
       spots  image rémanente (grande) au point de l'écran où était le flash : jusqu'à 25 s (positive puis sombre)
       aim    désorientation : visée très instable (setCustomAimCoef), pas plus lents (setAnimSpeedCoef jusqu'à 0,8),
              oscillation lente de la caméra (addCamShake basse fréquence), sans paralysie ni chute : 10 s
-      hear   ouïe étouffée, démarre 0,3 s après le bang (on l'entend)    : 35 s
+      hear   ouïe étouffée, démarre 0,3 s après le bang (on l'entend)    : 35 s (premier temps, remontée rapide)
+      tts    perte d'audition temporaire, second temps : légère (40 % du pic), remontée lente : jusqu'à ~2 min 30
+    Sursaut (réflexe acoustique, réglage « Sursaut ») : secousse sèche de la caméra, à-coup de visée et gestes
+    freinés pendant 0,2 à 0,5 s selon le niveau reçu ; plein effet par surprise, 30 % dans une rafale (habituation),
+    moitié pour le lanceur ; il part même avec une protection auditive (fn_exposure).
+    Lumière ambiante : de nuit ou dans un local sombre, le blanc dure plus (x1,2) et l'image rémanente aussi (x1,3) ;
+    en plein soleil ils durent moins (x0,85).
       flare  halo dans l'optique / les jumelles                          : 3 s
     Empilement de N flashs : chaque flash remonte le niveau (pic + 15 % du plus faible des deux) et prolonge la durée
     restante de moitié, sans jamais dépasser le plafond (réglage « Cécité cumulée max », 15 s par défaut).
@@ -51,6 +57,10 @@ private _rnd = {
     1 + ([_a] call comspec_fb_fnc_rand)
 };
 private _kW = [0.42] call _rnd;
+// Œil adapté à l'obscurité : récupération plus longue (blanc x1,2, image rémanente x1,3) ; plein soleil : x0,85.
+private _lum = _info getOrDefault ["lum", 0.5];
+private _kLumW = linearConversion [0, 1, _lum, 1.2, 0.85, true];
+private _kLumS = linearConversion [0, 1, _lum, 1.3, 0.85, true];
 private _kB = [0.3] call _rnd;
 private _kH = [0.33] call _rnd;
 _st set ["blurExp", 1.5 * ([0.3] call _rnd)];
@@ -59,7 +69,7 @@ _st set ["phase", [random 6.28, random 6.28, random 6.28, random 6.28]];
 
 // ------------------------------------------------------------------ vision
 if (missionNamespace getVariable ["comspec_fb_flash", true]) then {
-    ["white", _vis, 12 * _pd * _kW, 0.12, _cap, 1.3] call _bump;
+    ["white", _vis, 12 * _pd * _kW * _kLumW, 0.12, _cap, 1.3] call _bump;
     if (_info getOrDefault ["optic", false]) then { ["flare", _vis, 3, 0.1, 6, 2] call _bump };
     if (_info getOrDefault ["nvg", false]) then { _st set ["nvgUntil", _now + (8 * _pd * ((_vis min 1.5) ^ 0.6))] };
     // Image rémanente : seulement si le flash était dans le champ de vision et visible directement.
@@ -69,7 +79,7 @@ if (missionNamespace getVariable ["comspec_fb_flash", true]) then {
             && {(_scr select 1) > safeZoneY} && {(_scr select 1) < (safeZoneY + safeZoneH)}) then {
             private _spots = _st getOrDefault ["spots", []];
             private _peak = _vis min 1;
-            private _dur = (((25 * _pd * ((_vis min 1.5) ^ 0.6)) min 45) max 6) * ([0.3] call _rnd);
+            private _dur = (((25 * _pd * _kLumS * ((_vis min 1.5) ^ 0.6)) min 45) max 6) * ([0.3] call _rnd);
             // Dérive lente de la tache dans une direction tirée au hasard, taille variable.
             private _a = random 360;
             private _drift = [0.004 * sin _a, 0.004 * cos _a] apply { _x * (missionNamespace getVariable ["comspec_fb_variation", 0.6]) / 0.6 };
@@ -101,8 +111,20 @@ if (missionNamespace getVariable ["comspec_fb_blur", true]) then {
 if (missionNamespace getVariable ["comspec_fb_muffle", true]) then {
     // L'ouïe ne s'étouffe qu'après le pic du bang (0,3 s +/-20 %) : le bang lui-même reste entier.
     ["hear", _aud, 35 * _pd * _kH, 0.15, 60, 1.6, 0.3 * _kH] call _bump;
+    // Second temps : perte d'audition temporaire, légère et lente à remonter (~2 min 30 à pleine exposition).
+    ["tts", _aud * 0.4, 240 * _pd * _kH, 0.05, 300, 1.2, 0.3 * _kH] call _bump;
 };
 [_aud] call comspec_fb_fnc_tinnitus;
+// Sursaut (réflexe acoustique) : plein effet par surprise, 30 % si un bang a déjà retenti dans les 8 s (habituation).
+private _startle = (_info getOrDefault ["startle", 0]) min 1;
+if (_startle > 0.15) then {
+    private _s = _startle * (linearConversion [0.5, 8, _now - (_st getOrDefault ["startleAt", -100]), 0.3, 1, true]);
+    _st set ["startleAt", _now];
+    if (_s > 0.15 && {missionNamespace getVariable ["comspec_fb_startle", true]}) then {
+        _st set ["startle", [_s, _now + 0.2 + 0.3 * _s]];
+        addCamShake [3 + 9 * _s, 0.25 + 0.2 * _s, 28];
+    };
+};
 // Souffle de l'onde de pression : secousse brève de la caméra, proportionnelle au bruit reçu.
 if (_aud > 0.1) then { addCamShake [_aud * 4 * ([0.5] call _rnd), (0.4 + 0.6 * (_aud min 1)) * ([0.4] call _rnd), 14 + random 8] };
 // Désorientation : oscillation lente et décroissante de la vue (vertige), d'autant plus forte que l'exposition l'est.
@@ -111,10 +133,10 @@ if (_dis > 0.25) then { addCamShake [(1.2 + 2.3 * _dis) * ([0.5] call _rnd), (4 
 
 // Journal : premier flash d'un train (une ligne, pas une par flash).
 if (_now - _prevHit > 1) then {
-    ["joueur", format ["vision=%1 audition=%2 dist=%3 angle=%4 nvg=%5 optique=%6 mur=%7 tirages : blanc x%8 flou x%9 ouïe x%10 sensibilité x%11", _vis toFixed 2, _aud toFixed 2,
+    ["joueur", format ["vision=%1 audition=%2 dist=%3 angle=%4 nvg=%5 optique=%6 mur=%7 tirages : blanc x%8 flou x%9 ouïe x%10 sensibilité x%11 sursaut=%12 lumière=%13", _vis toFixed 2, _aud toFixed 2,
         (_info get "dist") toFixed 1, (_info getOrDefault ["angle", -1]) toFixed 0, _info getOrDefault ["nvg", false],
         _info getOrDefault ["optic", false], _info getOrDefault ["blocked", false], _kW toFixed 2, _kB toFixed 2, _kH toFixed 2,
-        (missionNamespace getVariable ["comspec_fb_sens", 1]) toFixed 2]] call comspec_fb_fnc_log;
+        (missionNamespace getVariable ["comspec_fb_sens", 1]) toFixed 2, _startle toFixed 2, _lum toFixed 2]] call comspec_fb_fnc_log;
 };
 
 // ------------------------------------------------------------------ boucle d'effet (une seule)
@@ -122,7 +144,11 @@ if ((_st getOrDefault ["pfh", -1]) < 0) then {
     private _orig = createHashMapFromArray [
         ["sound", soundVolume], ["radio", radioVolume], ["aim", getCustomAimCoef _unit], ["anim", getAnimSpeedCoef _unit]
     ];
-    if (!isNil "acre_api_fnc_getGlobalVolume") then { _orig set ["acre", call acre_api_fnc_getGlobalVolume] };
+    // ACRE2 : getGlobalVolume rend nil tant que personne n'a réglé le volume (source ACRE2) ; alors 1 au retour.
+    if (!isNil "acre_api_fnc_getGlobalVolume") then {
+        private _av = call acre_api_fnc_getGlobalVolume;
+        if (!isNil "_av" && {_av isEqualType 0}) then { _orig set ["acre", _av] };
+    };
     if (isClass (configFile >> "CfgPatches" >> "tfar_core") || {isClass (configFile >> "CfgPatches" >> "task_force_radio")}) then {
         _orig set ["tfar", _unit getVariable ["tf_globalVolume", 1]];
     };

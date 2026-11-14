@@ -387,6 +387,20 @@ def flare():
     Image.fromarray((rgba * 255).astype(np.uint8)).save(os.path.join(RENDER, "fb_flare_ca.png"))
 
 
+def vignette():
+    """Vignette d'éblouissement (RscTitles Vignette) : centre transparent, bords opaques. La couleur vient de
+    colorText (noir) ; seule la forme est dans l'alpha. python gen_fb_textures.py --vignette"""
+    S = 512
+    ys, xs = np.mgrid[0:S, 0:S].astype(float) - S / 2 + 0.5
+    r = np.sqrt(xs * xs + ys * ys) / (S / 2)
+    t = np.clip((r - 0.45) / (1.05 - 0.45), 0, 1)
+    a = t * t * (3 - 2 * t)
+    rgba = np.zeros((S, S, 4))
+    rgba[..., :3] = 1
+    rgba[..., 3] = a
+    Image.fromarray((rgba * 255).astype(np.uint8)).save(os.path.join(RENDER, "fb_vignette_ca.png"))
+
+
 def halos():
     """Halos des détonations (fn_halo) : 8 couronnes originales + 1 cœur, blanc sur transparent (alpha = lumière),
     teintées, tournées et étirées en jeu. 256 x 256, bord toujours transparent.
@@ -632,6 +646,10 @@ def themes():
 
 def main():
     os.makedirs(RENDER, exist_ok=True)
+    if "--vignette" in sys.argv:
+        vignette()
+        print("vignette écrite dans", RENDER)
+        return
     if "--halos" in sys.argv:
         halos()
         print("halos écrits dans", RENDER)
@@ -649,6 +667,7 @@ def main():
     metal()
     afterimage()
     flare()
+    vignette()
     module_icon()
     halos()
     # Puis les variantes à délai des modèles d'origine, et enfin le 50 (GANG BANG BF) : les textures déjà livrées

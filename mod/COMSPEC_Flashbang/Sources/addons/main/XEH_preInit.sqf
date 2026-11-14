@@ -55,6 +55,7 @@ private _add = {
 ["comspec_fb_tinnitus", "CHECKBOX", "Tinnitus", "Hearing", true] call _add;
 ["comspec_fb_tinnitusMax", "SLIDER", "TinnitusMax", "Hearing", [10, 58, 45, 0]] call _add;
 ["comspec_fb_muffle", "CHECKBOX", "Muffle", "Hearing", true] call _add;
+["comspec_fb_startle", "CHECKBOX", "Startle", "Hearing", true] call _add;
 ["comspec_fb_radioMuffle", "CHECKBOX", "RadioMuffle", "Hearing", true] call _add;
 ["comspec_fb_earProtectionDb", "SLIDER", "EarProtection", "Hearing", [0, 40, 25, 0]] call _add;
 // Écho de pièce (expérimental, désactivé par défaut) : dans un local fermé, une seconde réflexion courte et atténuée.
@@ -99,6 +100,7 @@ private _drillKeys = getArray (configFile >> "COMSPEC_FB_Sons" >> "drillChoix");
 ["comspec_fb_quality", "LIST", "Quality", "Client", [[0, 1, 2], [
     localize "STR_COMSPEC_FB_Quality_Low", localize "STR_COMSPEC_FB_Quality_Med", localize "STR_COMSPEC_FB_Quality_High"
 ], 1], 0] call _add;
+["comspec_fb_reducedEffects", "CHECKBOX", "ReducedEffects", "Client", false, 0] call _add;
 ["comspec_fb_bangVolume", "SLIDER", "BangVolume", "Client", [0.5, 10, 5, 0, true], 0] call _add;
 ["comspec_fb_tinnitusVolume", "SLIDER", "TinnitusVolume", "Client", [0.5, 10, 2.5, 0, true], 0] call _add;
 ["comspec_fb_tinnitusSound", "LIST", "TinnitusSound", "Client", [[0, 1], [
