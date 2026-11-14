@@ -12,6 +12,7 @@ declare(strict_types=1);
  * @var array{accent: string, motto: string, badge: mixed} $customizeOrbat
  * @var bool $customizeReady
  */
+use App\Services\Jnet\JnetSpaceRules as R;
 use App\Services\Jnet\JnetUnitSpaceSettings as S;
 
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
@@ -141,6 +142,99 @@ $defaultAccent = (string) $orbat['accent'] !== '' ? (string) $orbat['accent'] : 
             <?php endforeach; ?>
             <p class="jn-custom__hint">Une rubrique masquée disparaît des onglets de l’espace ; son contenu est conservé.</p>
         </fieldset>
+        <?php endif; ?>
+
+        <?php if (!empty($customizeRulesReady)): ?>
+        <?php
+        $rules = is_array($customizeRules ?? null) ? $customizeRules : R::defaults();
+        $unitsList = is_array($customizeUnits ?? null) ? $customizeUnits : [];
+        $unitLabel = [];
+        foreach ($unitsList as $u) {
+            $unitLabel[(int) $u['id']] = (string) $u['label'];
+        }
+        $accessRows = is_array($rules['access'] ?? null) ? $rules['access'] : [];
+        $managersList = is_array($customizeManagers ?? null) ? $customizeManagers : [];
+        ?>
+        <input type="hidden" name="rules_present" value="1">
+        <fieldset class="jn-custom__group">
+            <legend>Ordres et relais</legend>
+            <label class="jn-check">
+                <input type="checkbox" name="require_ack" value="1"<?= !empty($rules['require_ack']) ? ' checked' : '' ?>>
+                <span><b>Prise en compte obligatoire</b><small>Un ordre que le membre n’a pas encore accusé s’affiche dans une fenêtre bloquante à l’entrée de l’espace, jusqu’à « J’ai pris connaissance ».</small></span>
+            </label>
+            <label class="jn-check">
+                <input type="checkbox" name="auto_relay" value="1"<?= !empty($rules['auto_relay']) ? ' checked' : '' ?>>
+                <span><b>Relais automatique aux sous-unités</b><small>Un ordre adressé à cette unité repart tout seul, une fois, vers ses sous-unités directes, tel quel et avec la mention de son origine.</small></span>
+            </label>
+            <div class="jn-custom__field">
+                <label for="jn-postmin">Publication réservée à</label>
+                <select id="jn-postmin" name="post_min">
+                    <?php foreach (R::POST_MIN as $key => $name): ?>
+                        <option value="<?= $h($key) ?>"<?= (string) ($rules['post_min'] ?? 'member') === $key ? ' selected' : '' ?>><?= $h($name) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="jn-custom__hint">Qui peut publier un échange au nom de l’unité. Ce réglage resserre la règle de l’ORBAT, il ne l’élargit jamais.</p>
+            </div>
+        </fieldset>
+
+        <fieldset class="jn-custom__group">
+            <legend>Accès</legend>
+            <p class="jn-custom__hint">Tant que la liste est vide, tous ceux qui voient l’unité dans l’ORBAT ouvrent l’espace, comme aujourd’hui. Dès qu’une unité y figure, l’espace n’est ouvert qu’à l’unité elle-même, à son encadrement, à ses sous-unités et aux unités de la liste, chacune avec son droit. Un droit ne s’applique qu’aux outils de cet espace (tâches, pages, commentaires, réponses) ; il ne donne jamais le droit de publier un ordre.</p>
+            <?php if ($accessRows !== []): ?>
+                <ul class="jn-access">
+                    <?php foreach ($accessRows as $unitId => $level): ?>
+                        <li>
+                            <span><?= $unitId === 0 ? 'Toute l’organisation' : $h($unitLabel[$unitId] ?? 'Unité ' . $unitId) ?></span>
+                            <label class="ja-sr" for="jn-acc-<?= (int) $unitId ?>">Droit de <?= $unitId === 0 ? 'toute l’organisation' : $h($unitLabel[$unitId] ?? 'cette unité') ?></label>
+                            <select id="jn-acc-<?= (int) $unitId ?>" name="access[<?= (int) $unitId ?>]">
+                                <?php foreach (R::ACCESS_LEVELS as $key => $name): ?>
+                                    <option value="<?= $h($key) ?>"<?= $level === $key ? ' selected' : '' ?>><?= $h($name) ?></option>
+                                <?php endforeach; ?>
+                                <option value="remove">Retirer de la liste</option>
+                            </select>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+            <div class="jn-access__add">
+                <label class="ja-sr" for="jn-acc-add-unit">Unité à autoriser</label>
+                <select id="jn-acc-add-unit" name="access_add_unit">
+                    <option value="none">Ajouter une unité…</option>
+                    <?php if (!isset($accessRows[0])): ?><option value="0">Toute l’organisation</option><?php endif; ?>
+                    <?php foreach ($unitsList as $u): ?>
+                        <?php if (isset($accessRows[(int) $u['id']])) { continue; } ?>
+                        <option value="<?= (int) $u['id'] ?>"><?= str_repeat('— ', max(0, min(4, (int) $u['depth'] - 1))) . $h((string) $u['label']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <label class="ja-sr" for="jn-acc-add-level">Droit à lui donner</label>
+                <select id="jn-acc-add-level" name="access_add_level">
+                    <?php foreach (R::ACCESS_LEVELS as $key => $name): ?>
+                        <option value="<?= $h($key) ?>"><?= $h($name) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </fieldset>
+
+        <fieldset class="jn-custom__group">
+            <legend>Gestionnaires</legend>
+            <p class="jn-custom__hint">Les « chefs de module » modèrent les tâches et les pages de l’espace (retirer ce qu’un autre a écrit) et y écrivent. Ils sont choisis parmi les membres de l’unité, de ses sous-unités et de son encadrement.</p>
+            <?php if ($managersList !== []): ?>
+                <ul class="jn-access">
+                    <?php foreach ($managersList as $m): ?>
+                        <li>
+                            <label class="jn-check"><input type="checkbox" name="managers_keep[]" value="<?= (int) $m['id'] ?>" checked><span><?= $h((string) $m['label']) ?></span></label>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+                <p class="jn-custom__hint">Décochez pour retirer.</p>
+            <?php endif; ?>
+            <div class="jn-custom__field">
+                <label for="jn-managers-add">Ajouter par indicatif</label>
+                <input type="text" id="jn-managers-add" name="managers_add" maxlength="200" autocomplete="off" placeholder="Un ou plusieurs indicatifs, séparés par une virgule">
+            </div>
+        </fieldset>
+        <?php elseif (!empty($customizeReady)): ?>
+        <p class="jn-custom__hint">Les réglages d’ordres, d’accès et de gestionnaires arrivent avec la prochaine mise à jour du site (étape jnet_unit_space_rules).</p>
         <?php endif; ?>
 
         <div class="jn-custom__actions">

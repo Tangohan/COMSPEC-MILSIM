@@ -27,15 +27,17 @@ $pad2 = static fn (int $n): string => str_pad((string) $n, 2, '0', STR_PAD_LEFT)
         <button class="ja-b1 sm" type="submit">+ Nouvelle page</button>
     </form>
 <?php else: ?>
-    <p class="us-note">Vous consultez cet espace sans en être membre : les pages sont en lecture seule.</p>
+    <p class="us-note">Vous consultez cet espace sans en avoir l’écriture : les pages sont en lecture seule.</p>
 <?php endif; ?>
 <?php if ($pages === []): ?>
     <div class="jn-empty"><p>Aucune page pour l’instant.<?= $canPost ? ' Créez la première.' : '' ?></p></div>
 <?php else: ?>
-    <div class="ja-rows uw-pagerows">
+    <?php if ($canPost && count($pages) > 1): ?><p class="uw-note uw-js-only" hidden>Glissez une page par la poignée ⋮⋮ pour la déplacer, ou utilisez les flèches.</p><?php endif; ?>
+    <div class="ja-rows uw-pagerows"<?= $canPost && count($pages) > 1 ? ' data-uw-reorder="' . $h($base . '/pages/ordre') . '" data-uw-csrf="' . $h(\App\Core\Csrf::token()) . '"' : '' ?>>
         <?php foreach ($pages as $i => $p): ?>
             <?php $blocks = count(WS::blocksFromJson((string) $p['blocks'])); ?>
-            <div class="uw-pagerow">
+            <div class="uw-pagerow" data-uw-page="<?= (int) $p['id'] ?>">
+                <?php if ($canPost && count($pages) > 1): ?><span class="uw-grip uw-js-only" draggable="true" aria-hidden="true" hidden title="Glisser pour déplacer">⋮⋮</span><?php endif; ?>
                 <a class="ja-row" href="<?= $h($base . '?vue=page&p=' . (int) $p['id'] . '&direct=1') ?>">
                     <span class="n"><?= $pad2($i + 1) ?></span>
                     <span class="t"><b><?= $h((string) ($p['title'] !== '' ? $p['title'] : 'Sans titre')) ?></b><small>Modifiée par <?= $h((string) ($p['updated_by_label'] ?? 'un membre')) ?> · <?= $h(JnetSpaceService::relativeTime((string) $p['updated_at'])) ?></small></span>

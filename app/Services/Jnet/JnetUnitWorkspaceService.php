@@ -396,6 +396,104 @@ final class JnetUnitWorkspaceService
         return self::trackingRows($members, $viewerId, $ackIds, $readers, $event !== null ? (array) $event['byMember'] : null, $absent, $expired);
     }
 
+    // ——— Relance des sans-réponse ———
+
+    /** Délai pendant lequel un même rappel n'est pas renvoyé (heures). */
+    public const REMIND_COOLDOWN_HOURS = 6;
+
+    /**
+     * Membres de l'unité qui n'ont pas répondu au prochain rendez-vous, le lecteur exclu. Seuls les membres directs de
+     * l'unité (déjà pris dans $memberIds par le contrôleur, depuis l'ORBAT) sont retenus : jamais une liste envoyée par
+     * le navigateur.
+     *
+     * @param array<string, mixed>|null $event résultat de nextEvent()
+     * @param list<int> $memberIds
+     * @return list<int>
+     */
+    public static function unansweredIds(?array $event, array $memberIds, int $viewerId): array
+    {
+        if ($event === null) {
+            return [];
+        }
+        $by = is_array($event['byMember'] ?? null) ? $event['byMember'] : [];
+        $out = [];
+        foreach ($memberIds as $m) {
+            $m = (int) $m;
+            if ($m > 0 && $m !== $viewerId && ($by[$m] ?? 'none') === 'none') {
+                $out[$m] = $m;
+            }
+        }
+
+        return array_values($out);
+    }
+
+    /** Objet du rappel : stable pour un même rendez-vous et une même unité, ce qui sert à ne pas le renvoyer en boucle. */
+    public static function reminderSubject(string $eventTitle, string $unitLabel): string
+    {
+        return mb_substr('Rappel de présence : ' . self::clean($eventTitle, 80, true) . ' (' . self::clean($unitLabel, 50, true) . ')', 0, 150);
+    }
+
+    /**
+     * Envoie un rappel aux membres sans réponse par la messagerie JNET existante (un fil de diffusion, avec les notifications
+     * par e-mail du service existant quand la diffusion est petite). Retourne ['count' => n, 'error' => message ou null].
+     *
+     * @param array<string, mixed>|null $event
+     * @param list<int> $memberIds
+     * @return array{count: int, error: ?string}
+     */
+    public function remind(int $tenantId, int $senderId, string $unitLabel, string $unitUrl, ?array $event, array $memberIds): array
+    {
+        if ($event === null) {
+            return ['count' => 0, 'error' => 'Aucun rendez-vous n’est programmé : rien à relancer.'];
+        }
+        $recipients = self::unansweredIds($event, $memberIds, $senderId);
+        if ($recipients === []) {
+            return ['count' => 0, 'error' => 'Tout le monde a déjà répondu.'];
+        }
+        $subject = self::reminderSubject((string) $event['title'], $unitLabel);
+        if ($this->repo->reminderSentRecently($tenantId, $subject, self::REMIND_COOLDOWN_HOURS)) {
+            return ['count' => 0, 'error' => 'Un rappel a déjà été envoyé il y a moins de ' . self::REMIND_COOLDOWN_HOURS . ' h.'];
+        }
+        try {
+            $featureGate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
+            if (!$featureGate->allows($tenantId, 'messages')) {
+                return ['count' => 0, 'error' => 'La messagerie n’est pas disponible pour cette communauté.'];
+            }
+            if (!\App\Core\Container::get(\App\Services\Moderation\ModerationRestrictionResolver::class)->canSendMessages($tenantId, $senderId)) {
+                return ['count' => 0, 'error' => 'Vous ne pouvez pas envoyer de message pour le moment.'];
+            }
+        } catch (\Throwable) {
+        }
+        $body = 'Votre réponse est attendue pour « ' . (string) $event['title'] . ' »'
+            . ((string) ($event['when'] ?? '') !== '' ? ', ' . (string) $event['when'] : '') . '.'
+            . "\n\nRépondez en un clic depuis l'espace de " . $unitLabel . ' : ' . $unitUrl . ' Merci.';
+        try {
+            $messages = new \App\Repositories\TenantMessageRepository();
+            $threadId = $messages->createDiffusionThread(
+                $tenantId,
+                $senderId,
+                $subject,
+                array_fill_keys($recipients, null),
+                'routine',
+                count($recipients) . ' membre' . (count($recipients) > 1 ? 's' : '') . ' sans réponse',
+                'jnet'
+            );
+            $messages->addMessage($threadId, $senderId, $body);
+            $messages->markThreadRead($threadId, $senderId);
+            if (count($recipients) <= (new JnetMessagingService())->emailNotificationLimit()) {
+                try {
+                    \App\Core\Container::get(\App\Services\Community\TenantInternalMessageNotificationService::class)
+                        ->notifyAfterMessage($tenantId, $threadId, $senderId, $body);
+                } catch (\Throwable) {
+                }
+            }
+        } catch (\Throwable) {
+            return ['count' => 0, 'error' => 'Le rappel n’a pas pu être envoyé.'];
+        }
+
+        return ['count' => count($recipients), 'error' => null];
+    }
+
     // ——— Suivi des membres ———
 
     /**

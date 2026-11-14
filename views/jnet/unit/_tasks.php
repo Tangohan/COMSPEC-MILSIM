@@ -14,7 +14,7 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
 $tasks = WS::tasksByStatus(is_array($usw['tasks'] ?? null) ? $usw['tasks'] : []);
 $assignees = is_array($usw['assignees'] ?? null) ? $usw['assignees'] : [];
 $canPost = !empty($usw['canPost']);
-$chief = !empty($usw['isChief']);
+$chief = !empty($usw['canModerate']);
 $me = (int) ($usw['viewerId'] ?? 0);
 $action = static fn (int $id): string => $h($base . '/taches/' . $id);
 $next = ['todo' => ['doing', 'Démarrer'], 'doing' => ['done', 'Terminer'], 'done' => ['todo', 'Rouvrir']];
@@ -24,10 +24,12 @@ $emptyText = ['todo' => 'Rien à faire pour l’instant.', 'doing' => 'Rien en c
     <h1 class="ja-disp ja-disp--md">Qui fait quoi.</h1>
     <p>Les tâches de <?= $h($label) ?>. Chaque membre peut en ajouter, les prendre en charge et les faire avancer.</p>
 </header>
-<?php if (!$canPost): ?><p class="us-note">Vous consultez cet espace sans en être membre : les tâches sont en lecture seule.</p><?php endif; ?>
-<div class="uw-kanban" id="taches">
+<?php if (!$canPost): ?><p class="us-note">Vous consultez cet espace sans en avoir l’écriture : les tâches sont en lecture seule.</p><?php else: ?>
+<p class="uw-note uw-js-only" hidden>Glissez une carte d’une colonne à l’autre, ou utilisez les boutons de la carte.</p>
+<?php endif; ?>
+<div class="uw-kanban" id="taches"<?= $canPost ? ' data-uw-kanban data-uw-csrf="' . $h(\App\Core\Csrf::token()) . '"' : '' ?>>
     <?php foreach (WS::TASK_LABELS as $status => $title): ?>
-        <section class="uw-col" aria-labelledby="uw-col-<?= $h($status) ?>">
+        <section class="uw-col" aria-labelledby="uw-col-<?= $h($status) ?>" data-uw-col="<?= $h($status) ?>">
             <header class="uw-col__head">
                 <h2 id="uw-col-<?= $h($status) ?>"><?= $h($title) ?></h2>
                 <span class="ja-mono"><?= count($tasks[$status]) ?></span>
@@ -36,7 +38,7 @@ $emptyText = ['todo' => 'Rien à faire pour l’instant.', 'doing' => 'Rien en c
                 <p class="uw-col__empty"><?= $h($emptyText[$status]) ?></p>
             <?php endif; ?>
             <?php foreach ($tasks[$status] as $t): ?>
-                <article class="uw-task<?= (int) ($t['assignee_user_id'] ?? 0) === $me ? ' is-mine' : '' ?>">
+                <article class="uw-task<?= (int) ($t['assignee_user_id'] ?? 0) === $me ? ' is-mine' : '' ?>" data-uw-task="<?= (int) $t['id'] ?>" data-uw-url="<?= $action((int) $t['id']) ?>"<?= $canPost ? ' draggable="true"' : '' ?>>
                     <p class="uw-task__title"><?= $h((string) $t['title']) ?></p>
                     <p class="uw-task__who">
                         <?php if ((string) ($t['assignee_label'] ?? '') !== ''): ?>

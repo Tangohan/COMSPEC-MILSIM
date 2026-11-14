@@ -105,7 +105,7 @@ final class JnetUnitSpaceSettingsTest extends TestCase
     {
         $ctrl = (string) file_get_contents(self::ROOT . 'app/Controllers/Web/JnetPortalController.php');
         self::assertStringContainsString("Response::view('jnet.unit_space'", $ctrl);
-        self::assertStringContainsString("private const UNIT_VIEWS = ['accueil', 'echanges', 'effectif', 'taches', 'pages', 'page', 'photos', 'documents', 'operations', 'sous-unites'];", $ctrl);
+        self::assertStringContainsString("private const UNIT_VIEWS = ['accueil', 'echanges', 'effectif', 'taches', 'pages', 'page', 'photos', 'documents', 'operations', 'sous-unites', 'partager'];", $ctrl);
         $view = (string) file_get_contents(self::ROOT . 'views/jnet/unit_space.php');
         self::assertStringContainsString('<!DOCTYPE html>', $view);
         self::assertStringNotContainsString('layout.main', $view);

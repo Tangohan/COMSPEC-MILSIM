@@ -224,6 +224,36 @@ class JnetUnitWorkspaceRepository
         }
     }
 
+    /**
+     * Applique l'ordre donné aux pages de l'unité (glisser-déposer). Seules les pages de l'unité comptent : les
+     * identifiants inconnus sont ignorés, les pages non citées gardent leur rang relatif, à la suite.
+     *
+     * @param list<int> $orderedIds
+     */
+    public function setPageOrder(int $tenantId, int $unitId, array $orderedIds): void
+    {
+        $current = array_map(static fn (array $p): int => (int) $p['id'], $this->pages($tenantId, $unitId));
+        $first = array_values(array_filter(array_unique(array_map('intval', $orderedIds)), static fn (int $id): bool => in_array($id, $current, true)));
+        $ids = array_merge($first, array_values(array_diff($current, $first)));
+        $up = $this->pdo()->prepare('UPDATE jnet_unit_pages SET sort_order = ? WHERE tenant_id = ? AND unit_id = ? AND id = ? AND deleted_at IS NULL');
+        foreach ($ids as $order => $id) {
+            $up->execute([$order + 1, $tenantId, $unitId, $id]);
+        }
+    }
+
+    /** Un fil de messagerie de même objet a-t-il été créé dans les dernières heures ? (rappels non répétés) */
+    public function reminderSentRecently(int $tenantId, string $subject, int $hours): bool
+    {
+        try {
+            $st = $this->pdo()->prepare('SELECT 1 FROM tenant_message_threads WHERE tenant_id = ? AND subject = ? AND created_at > (NOW() - INTERVAL ' . max(1, $hours) . ' HOUR) LIMIT 1');
+            $st->execute([$tenantId, $subject]);
+
+            return $st->fetchColumn() !== false;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     // ——— Réactions, commentaires, votes ———
 
     /** @return array{counts: array<string,int>, mine: list<string>} */

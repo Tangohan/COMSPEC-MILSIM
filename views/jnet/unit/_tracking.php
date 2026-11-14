@@ -55,6 +55,20 @@ $filterCount = [
         <div class="uw-mini"><b class="is-warn"><?= $todoCount ?></b><span>avec un point à traiter</span></div>
     </div>
     <?php if ($event === null): ?><p class="uw-note">Aucun rendez-vous n’est programmé dans le module Événements : la réponse de présence apparaîtra dès qu’il y en aura un.</p><?php endif; ?>
+    <?php
+    $remindN = count(array_filter($rows, static fn (array $r): bool => $r['answer'] === 'none' && empty($r['me'])));
+    ?>
+    <?php if ($event !== null && !empty($usw['canPublish'])): ?>
+        <form class="uw-remind" method="post" action="<?= $h($base . '/relancer') ?>" data-uw-remind>
+            <?= \App\Core\Csrf::field() ?>
+            <?php if ($remindN > 0): ?>
+                <button class="ja-b1 sm" type="submit">Relancer les sans-réponse (<?= $remindN ?>)</button>
+                <span class="uw-note">Un message part, par la messagerie JNET, aux <?= $remindN ?> membre<?= $remindN > 1 ? 's' : '' ?> de l’unité qui n’ont pas répondu à « <?= $h((string) $event['title']) ?> ». Un même rappel n’est pas renvoyé avant 6 h.</span>
+            <?php else: ?>
+                <span class="uw-note">Tout le monde a répondu à « <?= $h((string) $event['title']) ?> » : rien à relancer.</span>
+            <?php endif; ?>
+        </form>
+    <?php endif; ?>
     <div class="uw-tools" data-uw-filter>
         <div class="ja-chips" role="group" aria-label="Filtrer les membres">
             <?php foreach ($filters as $key => $name): ?>

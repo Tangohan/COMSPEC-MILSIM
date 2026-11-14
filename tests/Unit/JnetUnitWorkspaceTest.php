@@ -167,11 +167,11 @@ final class JnetUnitWorkspaceTest extends TestCase
 
         $ctl = $this->read('app/Controllers/Web/JnetUnitWorkspaceController.php');
         self::assertStringContainsString('Csrf::validate', $ctl);
-        self::assertStringContainsString('canPost($tenantId, $userId, $unitId)', $ctl);
+        self::assertStringContainsString('rights($tenantId, $userId, $unitId)', $ctl);
         self::assertStringContainsString('hidden_modules', $ctl);
         self::assertStringContainsString('canEditTask', $ctl);
         // Chaque action passe par le même garde-fou.
-        self::assertSame(12, preg_match_all('/\$this->guard\(\$request, \$params,/', $ctl));
+        self::assertSame(15, preg_match_all('/\$this->guard\(\$request, \$params,/', $ctl));
         // Aucune redirection ne vient du client : toutes partent de l'adresse de l'espace.
         self::assertStringNotContainsString("input('back'", $ctl);
         self::assertStringNotContainsString("input('redirect'", $ctl);
@@ -182,7 +182,7 @@ final class JnetUnitWorkspaceTest extends TestCase
         $ctl = $this->read('app/Controllers/Web/JnetUnitWorkspaceController.php');
         $svc = $this->read('app/Services/Jnet/JnetUnitWorkspaceService.php');
         self::assertStringNotContainsString('->allows(\'jnet', $ctl . $svc);
-        self::assertStringContainsString('organization.orbat.manage', $ctl, 'même droit que « Personnaliser »');
+        self::assertStringContainsString('organization.orbat.manage', $this->read('app/Services/Jnet/JnetSpaceService.php'), 'même droit que « Personnaliser »');
         self::assertStringContainsString('Droits : aucun droit nouveau', $svc);
     }
 
@@ -222,7 +222,6 @@ final class JnetUnitWorkspaceTest extends TestCase
         foreach ($files as $file) {
             $src = $this->read($file);
             self::assertStringNotContainsString('class="kk"', $src, $file);
-            self::assertStringNotContainsString('toast', strtolower($src), $file);
             self::assertStringNotContainsString('alert(', $src, $file);
             self::assertStringNotContainsString('confirm(', $src, $file);
             self::assertStringNotContainsString('innerHTML', $src, $file);

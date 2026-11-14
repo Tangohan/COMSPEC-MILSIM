@@ -31,11 +31,15 @@ final class JnetSpaceService
     /** @var array<string, JnetSpaceTree> */
     private array $treeCache = [];
 
+    /** @var array<string, array{read: bool, write: bool, lead: bool, publish: bool, chief: bool}> */
+    private array $rightsCache = [];
+
     public function __construct(
         private ?JnetDashboardService $dashboard = null,
         private ?JnetExchangeRepository $exchanges = null,
         private ?UnitRepository $units = null,
         private ?TenantRepository $tenants = null,
+        private ?JnetUnitSpaceSettings $settings = null,
     ) {
         $this->dashboard ??= new JnetDashboardService();
         $this->exchanges ??= new JnetExchangeRepository();
@@ -142,7 +146,7 @@ final class JnetSpaceService
             'spaceOpsTotal' => count($spaceOps),
             'exchangeKinds' => self::KINDS,
             'exchangesReady' => $this->exchangesReady(),
-            'canPost' => $this->exchangesReady() && $tree->canPostIn($viewerUnits, $spaceId, $this->isOrgWideWriter()),
+            'canPost' => $this->exchangesReady() && $this->rights($tenantId, $viewerUserId, $spaceId)['publish'],
             'postTargets' => $this->postTargets($tree, $spaceId),
             'viewerUserId' => $viewerUserId,
         ];
@@ -217,8 +221,7 @@ final class JnetSpaceService
         if (!$tree->has($spaceId)) {
             return 'Espace introuvable.';
         }
-        $viewerUnits = $this->viewerUnitIds($tenantId, $viewerUserId);
-        if (!$tree->canPostIn($viewerUnits, $spaceId, $this->isOrgWideWriter())) {
+        if (!$this->rights($tenantId, $viewerUserId, $spaceId)['publish']) {
             return 'Vous ne pouvez pas publier dans cet espace.';
         }
         if (!isset(self::KINDS[$kind])) {
@@ -253,7 +256,7 @@ final class JnetSpaceService
         }
 
         try {
-            $this->exchanges->create(
+            $newId = $this->exchanges->create(
                 $tenantId,
                 $spaceId,
                 $viewerUserId,
@@ -267,16 +270,243 @@ final class JnetSpaceService
         } catch (\Throwable) {
             return 'L’échange n’a pas pu être enregistré.';
         }
+        if ($kind === 'ordre') {
+            try {
+                $this->autoRelay($tenantId, $viewerUserId, $newId, $spaceId, $targets, $title, $body, $link, 0);
+            } catch (\Throwable) {
+                // Le relais automatique ne doit jamais faire échouer la publication de l'ordre d'origine.
+            }
+        }
 
         return null;
     }
 
-    /** Le lecteur peut-il publier, et donc écrire dans les outils de l'espace (tâches, pages, réponses) ? */
+    /** Réglages d'espace (prise en compte obligatoire, relais automatique, accès par unité, gestionnaires). */
+    public function settings(): JnetUnitSpaceSettings
+    {
+        return $this->settings ??= new JnetUnitSpaceSettings();
+    }
+
+    /**
+     * Le lecteur est-il chef de l'espace (même droit que « Personnaliser ») : administrateur du JNET, gestionnaire de
+     * l'ORBAT, ou commandant de l'unité ou d'une unité au-dessus.
+     */
+    public function isSpaceChief(int $tenantId, int $userId, int $spaceId): bool
+    {
+        if ($this->isOrgWideWriter() || Gate::getInstance()->allows('organization.orbat.manage')) {
+            return true;
+        }
+        $tree = $this->tree($tenantId, $userId);
+        foreach ($this->settings()->commandedUnitIds($tenantId, $userId) as $c) {
+            if ($tree->has($c) && $tree->isWithin($spaceId, $c)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Droits du lecteur dans un espace, réglages de l'espace appliqués (JnetSpaceRules::rights) : read, write (outils),
+     * lead (modération), publish (échanges au nom de l'unité), chief. L'Organisation (0) n'a pas de réglages.
+     *
+     * @return array{read: bool, write: bool, lead: bool, publish: bool, chief: bool}
+     */
+    public function rights(int $tenantId, int $viewerUserId, int $spaceId): array
+    {
+        $key = $tenantId . ':' . $viewerUserId . ':' . $spaceId;
+        if (isset($this->rightsCache[$key])) {
+            return $this->rightsCache[$key];
+        }
+        $tree = $this->tree($tenantId, $viewerUserId);
+        $viewerUnits = $this->viewerUnitIds($tenantId, $viewerUserId);
+        if ($spaceId <= 0) {
+            $can = $tree->canPostIn($viewerUnits, JnetSpaceTree::ORG, $this->isOrgWideWriter());
+
+            return $this->rightsCache[$key] = ['read' => true, 'write' => $can, 'lead' => false, 'publish' => $can, 'chief' => $this->isOrgWideWriter()];
+        }
+
+        return $this->rightsCache[$key] = JnetSpaceRules::rights(
+            $tree,
+            $spaceId,
+            $viewerUserId,
+            $viewerUnits,
+            $this->settings()->commandedUnitIds($tenantId, $viewerUserId),
+            $this->isOrgWideWriter(),
+            $this->isOrgWideReader(),
+            $this->isSpaceChief($tenantId, $viewerUserId, $spaceId),
+            $this->settings()->rules($tenantId, $spaceId)
+        );
+    }
+
+    /** Peut ouvrir l'espace (réglage d'accès par unité compris). */
+    public function canRead(int $tenantId, int $viewerUserId, int $spaceId): bool
+    {
+        return $this->rights($tenantId, $viewerUserId, $spaceId)['read'];
+    }
+
+    /** Le lecteur peut-il écrire dans les outils de l'espace (tâches, pages, commentaires, réponses) ? */
     public function canPost(int $tenantId, int $viewerUserId, int $spaceId): bool
     {
-        $tree = $this->tree($tenantId, $viewerUserId);
+        return $this->rights($tenantId, $viewerUserId, $spaceId)['write'];
+    }
 
-        return $tree->has($spaceId) && $tree->canPostIn($this->viewerUnitIds($tenantId, $viewerUserId), $spaceId, $this->isOrgWideWriter());
+    /**
+     * Ordres à prendre en compte à l'entrée de l'espace, quand l'espace l'exige : vide si le réglage est coupé.
+     *
+     * @param list<array<string, mixed>> $exchanges échanges reçus puis internes, décorés
+     * @return list<array<string, mixed>>
+     */
+    public function pendingOrdersFor(int $tenantId, int $spaceId, array $exchanges): array
+    {
+        if (!$this->settings()->rules($tenantId, $spaceId)['require_ack']) {
+            return [];
+        }
+
+        return JnetSpaceRules::pendingOrders($exchanges);
+    }
+
+    /**
+     * Unités où le lecteur peut partager un élément : celles où il peut publier (réglages compris), sauf l'espace d'où
+     * part l'élément.
+     *
+     * @return list<array{id: int, label: string}>
+     */
+    public function shareTargets(int $tenantId, int $viewerUserId, int $fromSpaceId): array
+    {
+        $tree = $this->tree($tenantId, $viewerUserId);
+        $viewerUnits = $this->viewerUnitIds($tenantId, $viewerUserId);
+        $orgWriter = $this->isOrgWideWriter();
+        $out = [];
+        foreach ($tree->unitIds() as $id) {
+            if ($id === $fromSpaceId || !$tree->canPostIn($viewerUnits, $id, $orgWriter)) {
+                continue;
+            }
+            if (!$orgWriter && !$this->rights($tenantId, $viewerUserId, $id)['publish']) {
+                continue;
+            }
+            $out[] = ['id' => $id, 'label' => (string) ($tree->node($id)['label'] ?? 'Unité')];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Photos et documents d'un espace tirés des échanges et de la bibliothèque, pour les rubriques Photos et Documents.
+     *
+     * - Photos : les photos terrain (source « Photo terrain ») publiées dans les échanges que le lecteur voit et qui
+     *   concernent l'espace ; seule la vignette déjà publiée est utilisée, un cliché confidentiel ou du bureau SSE (sans
+     *   vignette : lien protégé) n'apparaît jamais ici.
+     * - Documents : le lien joint à un ordre ou à un document publié dans l'espace (pièce jointe), et les documents publiés
+     *   de la bibliothèque, qui sont ceux de la page « Bibliothèque ».
+     * Mêmes filtres de visibilité que les échanges (arbre ORBAT du lecteur) ; rien n'est inventé.
+     *
+     * @return array{photos: list<array<string, mixed>>, documents: list<array<string, mixed>>}
+     */
+    public function unitMedia(int $tenantId, int $viewerUserId, int $spaceId): array
+    {
+        $out = ['photos' => [], 'documents' => []];
+        $tree = $this->tree($tenantId, $viewerUserId);
+        if ($spaceId <= 0 || !$tree->has($spaceId)) {
+            return $out;
+        }
+        if ($this->exchangesReady()) {
+            $rows = $this->visibleExchanges($tenantId, $viewerUserId, $tree, $this->viewerUnitIds($tenantId, $viewerUserId), $this->isOrgWideReader());
+            foreach ($rows as $e) {
+                $touches = false;
+                foreach (array_merge([(int) $e['from_unit_id']], (array) $e['targets']) as $c) {
+                    $c = (int) $c;
+                    if ($c === JnetSpaceTree::ORG || $tree->isWithin($c, $spaceId) || $tree->isWithin($spaceId, $c)) {
+                        $touches = true;
+                        break;
+                    }
+                }
+                if (!$touches) {
+                    continue;
+                }
+                $by = trim((string) ($e['author_callsign'] ?? ''));
+                if ($by === '') {
+                    $by = trim((string) ($e['author_display_name'] ?? ''));
+                }
+                $source = (string) ($e['source_kind'] ?? '');
+                $image = trim((string) ($e['image_url'] ?? ''));
+                $link = trim((string) ($e['link_url'] ?? ''));
+                $title = (string) $e['title'];
+                $when = (string) $e['created_at'];
+                if ($source === JnetFieldReportBridge::SOURCE_IMAGE) {
+                    if ($image !== '' && count($out['photos']) < 60) {
+                        $out['photos'][] = JnetUnitFiles::mediaItem((int) $e['id'], $title, '', JnetFieldReportBridge::SOURCE_LABELS[$source], $by, $when, $link !== '' ? url($link) : $image, $image, 'exchange', 'exchange');
+                    }
+                    continue;
+                }
+                if ($source === '' && $link !== '' && in_array((string) $e['kind'], ['ordre', 'document'], true) && count($out['documents']) < 40) {
+                    $out['documents'][] = JnetUnitFiles::mediaItem((int) $e['id'], $title, $e['kind'] === 'ordre' ? 'ORDRE' : 'LIEN', 'Pièces jointes des ordres', $by, $when, url($link), '', 'exchange', 'exchange');
+                }
+            }
+        }
+        try {
+            foreach ($this->dashboard->libraryDocuments($tenantId, 40) as $doc) {
+                $out['documents'][] = JnetUnitFiles::mediaItem(0, (string) $doc['title'], 'DOC', trim((string) $doc['category']) !== '' ? (string) $doc['category'] : 'Bibliothèque', '', (string) $doc['when'], (string) $doc['href'], '', 'library', '');
+            }
+        } catch (\Throwable) {
+        }
+
+        return $out;
+    }
+
+    /** Un échange que le lecteur voit (pour le partager), ou null. @return array<string, mixed>|null */
+    public function visibleExchange(int $tenantId, int $viewerUserId, int $exchangeId): ?array
+    {
+        $row = $this->exchanges->find($tenantId, $exchangeId);
+        if ($row === null) {
+            return null;
+        }
+        $tree = $this->tree($tenantId, $viewerUserId);
+        $targets = array_map('intval', (array) $row['targets']);
+
+        return $tree->canSeeExchange($this->viewerUnitIds($tenantId, $viewerUserId), (int) $row['from_unit_id'], $targets, $this->isOrgWideReader()) ? $row : null;
+    }
+
+    /**
+     * Relais automatique d'un ordre reçu : si l'espace $space l'a demandé (réglage « Relais automatique aux sous-unités »),
+     * l'ordre repart tel quel vers ses sous-unités directes, une seule fois (journal par espace et par échange), sans
+     * revenir en arrière (seulement vers le bas) et sans doubler les sous-unités déjà destinataires. Mêmes règles que le
+     * relais manuel : l'ordre d'origine est transmis sans modification, avec une mention d'origine. Retourne le nombre
+     * d'échanges créés (en cascade, si les sous-unités relaient aussi).
+     *
+     * @param list<int> $targets destinataires de l'échange source
+     */
+    private function autoRelay(int $tenantId, int $authorId, int $sourceId, int $fromUnit, array $targets, string $title, string $body, string $link, int $depth = 0): int
+    {
+        if ($depth > 12 || $sourceId <= 0) {
+            return 0;
+        }
+        $tree = $this->tree($tenantId, $authorId);
+        $created = 0;
+        foreach ($targets as $space) {
+            if ($space <= 0 || $space === $fromUnit || !$tree->has($space) || $tree->directionFor($space, $fromUnit, $targets) !== JnetSpaceTree::DIR_DOWN) {
+                continue;
+            }
+            if (!$this->settings()->rules($tenantId, $space)['auto_relay'] || !$this->settings()->rulesTablesReady()) {
+                continue;
+            }
+            $children = array_values(array_filter($tree->childrenOf($space), static fn (int $c): bool => $c !== $fromUnit && !in_array($c, $targets, true)));
+            if ($children === [] || !$this->settings()->claimAutoRelay($tenantId, $space, $sourceId)) {
+                continue;
+            }
+            $origin = (string) ($tree->node($fromUnit)['label'] ?? 'l’échelon supérieur');
+            $text = 'Relayé automatiquement par ' . (string) ($tree->node($space)['label'] ?? 'l’unité') . ', depuis ' . $origin . "\n\n" . trim($body);
+            try {
+                $relayId = $this->exchanges->create($tenantId, $space, $authorId, 'ordre', $title, mb_substr(rtrim($text), 0, self::BODY_MAX), $link !== '' ? $link : null, true, $children);
+            } catch (\Throwable) {
+                continue;
+            }
+            $this->settings()->noteAutoRelay($tenantId, $space, $sourceId, $relayId);
+            $created++;
+            $created += $this->autoRelay($tenantId, $authorId, $relayId, $space, $children, $title, $text, $link, $depth + 1);
+        }
+
+        return $created;
     }
 
     /**

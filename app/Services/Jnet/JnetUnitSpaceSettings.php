@@ -41,6 +41,10 @@ final class JnetUnitSpaceSettings
     private const UPLOAD_MAX_BYTES = 8 * 1024 * 1024;
 
     private ?bool $ready = null;
+    private ?bool $tablesReady = null;
+
+    /** @var array<string, array<string, mixed>> */
+    private array $rulesCache = [];
 
     public function __construct(private ?PDO $pdo = null)
     {
@@ -64,6 +68,9 @@ final class JnetUnitSpaceSettings
             'banner_path' => '',
             'entry_screen' => true,
             'hidden_modules' => [],
+            'require_ack' => false,
+            'auto_relay' => false,
+            'post_min' => 'member',
         ];
     }
 
@@ -194,6 +201,9 @@ final class JnetUnitSpaceSettings
             'banner_path' => (string) ($row['banner_path'] ?? ''),
             'entry_screen' => (int) ($row['entry_screen'] ?? 1) === 1,
             'hidden_modules' => JnetUnitWorkspaceService::parseHidden($row['hidden_modules'] ?? ''),
+            'require_ack' => (int) ($row['require_ack'] ?? 0) === 1,
+            'auto_relay' => (int) ($row['auto_relay'] ?? 0) === 1,
+            'post_min' => JnetSpaceRules::postMin($row['post_min'] ?? 'member'),
         ];
     }
 
@@ -227,6 +237,9 @@ final class JnetUnitSpaceSettings
                 'banner_path' => (string) ($row['banner_path'] ?? ''),
                 'entry_screen' => (int) ($row['entry_screen'] ?? 1) === 1,
                 'hidden_modules' => JnetUnitWorkspaceService::parseHidden($row['hidden_modules'] ?? ''),
+                'require_ack' => (int) ($row['require_ack'] ?? 0) === 1,
+                'auto_relay' => (int) ($row['auto_relay'] ?? 0) === 1,
+                'post_min' => JnetSpaceRules::postMin($row['post_min'] ?? 'member'),
             ];
         }
 
@@ -257,9 +270,9 @@ final class JnetUnitSpaceSettings
             return;
         }
         $this->db()->prepare(
-            'INSERT INTO jnet_unit_spaces (tenant_id, unit_id, hidden_modules, updated_by, updated_at) VALUES (?, ?, ?, ?, NOW())
-             ON DUPLICATE KEY UPDATE hidden_modules = VALUES(hidden_modules), updated_by = VALUES(updated_by), updated_at = NOW()'
-        )->execute([$tenantId, $unitId, $hiddenCsv !== '' ? $hiddenCsv : null, $userId > 0 ? $userId : null]);
+            'INSERT INTO jnet_unit_spaces (tenant_id, unit_id, theme, hidden_modules, updated_by, updated_at) VALUES (?, ?, ?, ?, ?, NOW())
+             ON DUPLICATE KEY UPDATE hidden_modules = VALUES(hidden_modules), updated_by = IF(VALUES(updated_by) IS NULL, updated_by, VALUES(updated_by)), updated_at = NOW()'
+        )->execute([$tenantId, $unitId, self::DEFAULT_THEME, $hiddenCsv !== '' ? $hiddenCsv : null, $userId > 0 ? $userId : null]);
     }
 
     /**
@@ -309,12 +322,214 @@ final class JnetUnitSpaceSettings
         ]);
     }
 
+    /**
+     * Rétablit l'apparence par défaut. Les rubriques masquées et les réglages d'ordres (prise en compte obligatoire,
+     * relais automatique, publication réservée) restent : un retour à l'apparence ne lève pas une restriction.
+     */
     public function reset(int $tenantId, int $unitId): void
     {
         $row = $this->find($tenantId, $unitId);
         $this->db()->prepare('DELETE FROM jnet_unit_spaces WHERE tenant_id = ? AND unit_id = ?')->execute([$tenantId, $unitId]);
-        self::deleteImage((string) $row['emblem_path'], $tenantId);
-        self::deleteImage((string) $row['banner_path'], $tenantId);
+        self::deleteImage((string) ($row['emblem_path'] ?? ''), $tenantId);
+        self::deleteImage((string) ($row['banner_path'] ?? ''), $tenantId);
+        $hidden = implode(',', (array) ($row['hidden_modules'] ?? []));
+        if ($hidden !== '') {
+            $this->saveHiddenModules($tenantId, $unitId, $hidden, 0);
+        }
+        if ($this->rulesColumnsReady() && (!empty($row['require_ack']) || !empty($row['auto_relay']) || ($row['post_min'] ?? 'member') !== 'member')) {
+            $this->saveRules($tenantId, $unitId, !empty($row['require_ack']), !empty($row['auto_relay']), (string) $row['post_min'], 0);
+        }
+        unset($this->rulesCache[$tenantId . ':' . $unitId]);
+    }
+
+    // ——— Réglages d'ordres, accès par unité, gestionnaires (étape jnet_unit_space_rules) ———
+
+    /** Les colonnes require_ack, auto_relay et post_min de jnet_unit_spaces sont-elles en place ? */
+    public function rulesColumnsReady(): bool
+    {
+        if (!$this->ready()) {
+            return false;
+        }
+        try {
+            $this->db()->query('SELECT require_ack, auto_relay, post_min FROM jnet_unit_spaces LIMIT 0');
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /** Les tables d'accès par unité et de gestionnaires sont-elles en place ? */
+    public function rulesTablesReady(): bool
+    {
+        if ($this->tablesReady === null) {
+            try {
+                $this->db()->query('SELECT 1 FROM jnet_unit_space_access LIMIT 0');
+                $this->db()->query('SELECT 1 FROM jnet_unit_space_managers LIMIT 0');
+                $this->tablesReady = true;
+            } catch (\Throwable) {
+                $this->tablesReady = false;
+            }
+        }
+
+        return $this->tablesReady;
+    }
+
+    /**
+     * Tous les réglages de règles d'un espace, au format de JnetSpaceRules::defaults() : les trois réglages, les unités
+     * autorisées avec leur droit, les gestionnaires. Sans l'étape de migration, les valeurs par défaut (rien de restreint).
+     *
+     * @return array{require_ack: bool, auto_relay: bool, post_min: string, access: array<int, string>, managers: list<int>}
+     */
+    public function rules(int $tenantId, int $unitId): array
+    {
+        $rules = JnetSpaceRules::defaults();
+        if ($unitId <= 0 || !$this->ready()) {
+            return $rules;
+        }
+        $key = $tenantId . ':' . $unitId;
+        if (isset($this->rulesCache[$key])) {
+            return $this->rulesCache[$key];
+        }
+        $row = $this->find($tenantId, $unitId);
+        $rules['require_ack'] = !empty($row['require_ack']);
+        $rules['auto_relay'] = !empty($row['auto_relay']);
+        $rules['post_min'] = JnetSpaceRules::postMin($row['post_min'] ?? 'member');
+        if ($this->rulesTablesReady()) {
+            try {
+                $st = $this->db()->prepare('SELECT grantee_unit_id, level FROM jnet_unit_space_access WHERE tenant_id = ? AND unit_id = ? ORDER BY grantee_unit_id');
+                $st->execute([$tenantId, $unitId]);
+                foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+                    if (isset(JnetSpaceRules::ACCESS_LEVELS[(string) $r['level']])) {
+                        $rules['access'][(int) $r['grantee_unit_id']] = (string) $r['level'];
+                    }
+                }
+                $st = $this->db()->prepare('SELECT user_id FROM jnet_unit_space_managers WHERE tenant_id = ? AND unit_id = ? ORDER BY user_id');
+                $st->execute([$tenantId, $unitId]);
+                $rules['managers'] = array_values(array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []));
+            } catch (\Throwable) {
+            }
+        }
+
+        return $this->rulesCache[$key] = $rules;
+    }
+
+    /** Écrit les trois réglages ; crée la ligne de l'espace si besoin. Sans les colonnes, ne fait rien. */
+    public function saveRules(int $tenantId, int $unitId, bool $requireAck, bool $autoRelay, string $postMin, int $userId): void
+    {
+        if (!$this->rulesColumnsReady()) {
+            return;
+        }
+        $this->db()->prepare(
+            'INSERT INTO jnet_unit_spaces (tenant_id, unit_id, theme, require_ack, auto_relay, post_min, updated_by, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+             ON DUPLICATE KEY UPDATE require_ack = VALUES(require_ack), auto_relay = VALUES(auto_relay), post_min = VALUES(post_min),
+               updated_by = IF(VALUES(updated_by) IS NULL, updated_by, VALUES(updated_by)), updated_at = NOW()'
+        )->execute([$tenantId, $unitId, self::DEFAULT_THEME, $requireAck ? 1 : 0, $autoRelay ? 1 : 0, JnetSpaceRules::postMin($postMin), $userId > 0 ? $userId : null]);
+        unset($this->rulesCache[$tenantId . ':' . $unitId]);
+    }
+
+    /**
+     * Remplace la liste des unités autorisées (déjà nettoyée par JnetSpaceRules::normalizeAccess).
+     *
+     * @param array<int, string> $rows unité => droit
+     */
+    public function saveAccess(int $tenantId, int $unitId, array $rows, int $userId): void
+    {
+        if (!$this->rulesTablesReady()) {
+            return;
+        }
+        $pdo = $this->db();
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare('DELETE FROM jnet_unit_space_access WHERE tenant_id = ? AND unit_id = ?')->execute([$tenantId, $unitId]);
+            $ins = $pdo->prepare('INSERT INTO jnet_unit_space_access (tenant_id, unit_id, grantee_unit_id, level, created_by) VALUES (?, ?, ?, ?, ?)');
+            foreach ($rows as $grantee => $level) {
+                $ins->execute([$tenantId, $unitId, (int) $grantee, (string) $level, $userId > 0 ? $userId : null]);
+            }
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+        unset($this->rulesCache[$tenantId . ':' . $unitId]);
+    }
+
+    /**
+     * Réserve le relais automatique d'un échange pour cet espace : vrai la première fois seulement (clé primaire du
+     * journal), ce qui garantit qu'un ordre n'est relayé qu'une fois par espace, même en cas de nouvel essai.
+     */
+    public function claimAutoRelay(int $tenantId, int $unitId, int $exchangeId): bool
+    {
+        if (!$this->rulesTablesReady()) {
+            return false;
+        }
+        try {
+            $st = $this->db()->prepare('INSERT IGNORE INTO jnet_unit_auto_relays (tenant_id, unit_id, exchange_id) VALUES (?, ?, ?)');
+            $st->execute([$tenantId, $unitId, $exchangeId]);
+
+            return $st->rowCount() === 1;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function noteAutoRelay(int $tenantId, int $unitId, int $exchangeId, int $relayExchangeId): void
+    {
+        try {
+            $this->db()->prepare('UPDATE jnet_unit_auto_relays SET relay_exchange_id = ? WHERE tenant_id = ? AND unit_id = ? AND exchange_id = ?')
+                ->execute([$relayExchangeId, $tenantId, $unitId, $exchangeId]);
+        } catch (\Throwable) {
+        }
+    }
+
+    /** @param list<int> $userIds */
+    public function saveManagers(int $tenantId, int $unitId, array $userIds, int $userId): void
+    {
+        if (!$this->rulesTablesReady()) {
+            return;
+        }
+        $pdo = $this->db();
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare('DELETE FROM jnet_unit_space_managers WHERE tenant_id = ? AND unit_id = ?')->execute([$tenantId, $unitId]);
+            $ins = $pdo->prepare('INSERT INTO jnet_unit_space_managers (tenant_id, unit_id, user_id, created_by) VALUES (?, ?, ?, ?)');
+            foreach (array_values(array_unique(array_map('intval', $userIds))) as $uid) {
+                if ($uid > 0) {
+                    $ins->execute([$tenantId, $unitId, $uid, $userId > 0 ? $userId : null]);
+                }
+            }
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+        unset($this->rulesCache[$tenantId . ':' . $unitId]);
+    }
+
+    /**
+     * Indicatifs de personnes (pour désigner des gestionnaires et les afficher).
+     *
+     * @param list<int> $userIds
+     * @return array<int, string> identifiant => indicatif (vide s'il n'en a pas)
+     */
+    public function callsigns(array $userIds): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $i): bool => $i > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        try {
+            $st = $this->db()->prepare('SELECT id, callsign FROM users WHERE id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')');
+            $st->execute($ids);
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            $out[(int) $r['id']] = trim((string) ($r['callsign'] ?? ''));
+        }
+
+        return $out;
     }
 
     /**
