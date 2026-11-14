@@ -118,12 +118,12 @@ final class JnetAthenaUiTest extends TestCase
         self::assertStringNotContainsString('url(', $css);
     }
 
-    public function testCrestIsEscapedAndFramed(): void
+    public function testCrestIsEscapedAndHasNoShield(): void
     {
         $mono = JnetUi::crest('<b>1R', null);
         self::assertStringContainsString('&lt;b&gt;1R', $mono);
         self::assertStringNotContainsString('<b><b>', $mono);
-        self::assertStringContainsString('ja-crest__body', $mono);
+        self::assertStringNotContainsString('<svg', $mono);
         self::assertStringNotContainsString('has-img', $mono);
 
         $img = JnetUi::crest('1R', 'https://x.test/a.png?x="y"', 'ja-crest ja-crest--md');

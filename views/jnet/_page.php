@@ -87,10 +87,11 @@ $css = is_array($jnetPageCss ?? null) ? $jnetPageCss : ['jnet_portal.css', 'jnet
         <?php endforeach; ?>
     </nav>
     <div class="ja-hd__r">
-        <span class="ja-who">extranet<?= $community !== '' ? ' · ' . $h($community) : '' ?><?= $who !== '' ? ' · session <span translate="no">' . $h($who) . '</span>' : '' ?></span>
-        <a class="ja-ib" href="<?= $h(url('dashboard')) ?>">Accueil Athena</a>
-        <?php if (!empty($jnetCanTba)): ?><a class="ja-ib" href="<?= $h(url('back-office')) ?>">Gestion</a><?php endif; ?>
-        <form method="post" action="<?= $h(url('logout')) ?>"><?= \App\Core\Csrf::field() ?><button class="ja-ib" type="submit">Déconnexion</button></form>
+        <span class="ja-who">extranet<?= $community !== '' ? ' · ' . $h($community) : '' ?></span>
+        <?= JnetUi::account($who) ?>
+        <a class="ja-ib" href="<?= $h(url('dashboard')) ?>"><?= JnetUi::icon('home') ?><span class="ja-ib__t">Accueil Athena</span></a>
+        <?php if (!empty($jnetCanTba)): ?><a class="ja-ib" href="<?= $h(url('back-office')) ?>"><?= JnetUi::icon('manage') ?><span class="ja-ib__t">Gestion</span></a><?php endif; ?>
+        <form method="post" action="<?= $h(url('logout')) ?>"><?= \App\Core\Csrf::field() ?><button class="ja-ib" type="submit" title="Déconnexion"><?= JnetUi::icon('logout') ?><span class="ja-ib__t">Déconnexion</span></button></form>
     </div>
 </header>
 

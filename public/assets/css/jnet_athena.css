@@ -415,46 +415,20 @@ html:has(.ja) {
   font-size: 11px;
 }
 
-/* —— Insigne d'unité —— */
+/* —— Logo d'unité : l'emblème seul, sans écusson ni cadre —— */
 
 .ja-crest {
   --cs: 46px;
-  position: relative;
   flex: none;
   display: grid;
   place-items: center;
   width: var(--cs);
-  height: calc(var(--cs) * 1.1667);
+  height: var(--cs);
   color: var(--u);
-  filter: drop-shadow(0 6px 14px color-mix(in srgb, var(--u) 22%, transparent));
-}
-
-.ja-crest svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.ja-crest__body {
-  fill: color-mix(in srgb, var(--u) 14%, var(--ja-void));
-  stroke: var(--u);
-  stroke-width: 2;
-  stroke-linejoin: round;
-}
-
-.ja-crest__line {
-  fill: none;
-  stroke: color-mix(in srgb, var(--u) 38%, transparent);
-  stroke-width: 0.8;
-  stroke-linejoin: round;
 }
 
 .ja-crest b {
-  position: relative;
-  margin-top: calc(var(--cs) * -0.04);
-  font-size: calc(var(--cs) * 0.3);
+  font-size: calc(var(--cs) * 0.46);
   font-weight: 900;
   font-style: italic;
   letter-spacing: -0.03em;
@@ -463,10 +437,8 @@ html:has(.ja) {
 }
 
 .ja-crest img {
-  position: relative;
-  width: 64%;
-  height: 58%;
-  margin-top: calc(var(--cs) * -0.02);
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 
@@ -484,6 +456,75 @@ html:has(.ja) {
 
 .ja-crest--xl {
   --cs: 96px;
+}
+
+/* —— En-tête : icônes et compte —— */
+
+.ja-ic {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ja-me {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px 0 3px;
+  border: 1px solid var(--ja-rule);
+  border-radius: 999px;
+  color: var(--ja-muted);
+  font-family: var(--ja-mono);
+  font-size: 12px;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.ja-me:hover,
+.ja-me:focus-visible {
+  border-color: var(--ja-dim);
+  color: var(--ja-ink);
+}
+
+.ja-me__face {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--u) 18%, var(--ja-void));
+  color: var(--u);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ja-me__face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 900px) {
+  .ja-ib__t,
+  .ja-me__name {
+    display: none;
+  }
+
+  .ja-ib,
+  .ja-sbtn {
+    padding: 0 9px;
+  }
+
+  .ja-me {
+    padding-right: 3px;
+  }
 }
 
 /* —— Pastilles, puces, champs —— */
