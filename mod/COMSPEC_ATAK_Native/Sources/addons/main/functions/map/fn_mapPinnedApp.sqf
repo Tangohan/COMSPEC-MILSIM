@@ -5,7 +5,7 @@
     Choix du joueur : réglage CBA « comspec_atak_native_map_pinned_app » (par joueur, gardé entre les sessions), aussi dans
     Réglages > Carte et dans le panneau SITUATION de la carte.
     Appels :
-      ["app"]                        -> "" (aucune) ou la page épinglée : "CHAT", "SMS", "TASK"
+      ["app"]                        -> "" (aucune, ou app interdite, retirée ou désinstallée) ou la page épinglée : "CHAT", "SMS", "TASK"
       ["height", [taille du texte, marge]] -> hauteur du bandeau (deux lignes, comme le bandeau des coordonnées)
       ["build", [_ov, _mk, [x, y, w, h], [taille du texte, marge, marge des cases, largeur d'un caractère, ratio], interactif, page, opacité]]
                                      -> crée les contrôles (fn_pageMap) et les remplit
@@ -25,7 +25,10 @@ private _clip = {
     params ["_t", "_n"];
     if !(_t isEqualType "") then { _t = str _t; };
     _t = ((_t splitString (toString [10, 13])) joinString " ") regexReplace ["[<>&]", ""];
-    if ((count _t) > _n) then { _t = (_t select [0, (_n - 1) max 1]) + "…"; };
+    // forceUnicode 1 : la commande suivante compte en caractères, pas en octets (accents, chinois), sans rien changer ensuite.
+    forceUnicode 1;
+    private _len = count _t;
+    if (_len > _n) then { forceUnicode 1; _t = (_t select [0, (_n - 1) max 1]) + "…"; };
     _t
 };
 // Écrit un texte structuré seulement s'il a changé.
@@ -78,7 +81,8 @@ private _summary = {
             _n = ["TASK"] call comspec_atak_native_fnc_appBadge;
             _none = "Aucun ordre";
             // Dernier ordre à traiter (le plus récent) ; sinon le dernier reçu.
-            private _closed = ["DONE", "FAILED", "SUCCEEDED", "CANCELED", "CANCELLED"];
+            // Même liste que le nombre (fn_appBadge "TASK"), plus SUCCEEDED : le nombre et l'ordre montré parlent de la même chose.
+            private _closed = ["ACK", "EXEC", "FAILED", "DONE", "COMPLETED", "SUCCEEDED", "CANCELLED", "CANCELED"];
             private _best = createHashMap;
             private _bestStamp = -1e12;
             private _bestOpen = false;
@@ -139,7 +143,12 @@ private _page = missionNamespace getVariable [_var, "none"];
 if !(_page isEqualType "" && {_page in ["CHAT", "SMS", "TASK"]}) then { _page = ""; };
 
 switch (_act) do {
-    case "app": { _page };
+    case "app": {
+        // Règle de l'encadrement (fn_appInstall) : une app interdite, retirée ou désinstallée n'a pas de bandeau non plus.
+        if (_page isEqualTo "") exitWith { "" };
+        private _app = (([] call comspec_atak_native_fnc_appList) select { (_x get "page") isEqualTo _page }) param [0, createHashMap];
+        ["", _page] select ((count _app) > 0 && {["installed", _app get "id"] call comspec_atak_native_fnc_appInstall})
+    };
     case "height": {
         _a params ["_fs", "_in"];
         _fs * 1.45 + _fs * 1.12 + _in * 1.5
@@ -190,7 +199,8 @@ switch (_act) do {
     case "set": {
         private _v = _a param [0, "none"];
         if !(_v in ["none", "CHAT", "SMS", "TASK"]) then { _v = "none"; };
-        [_var, _v, false, "client"] call CBA_settings_fnc_set;
+        // 5e paramètre : enregistré dans le profil CBA (sans lui, le choix ne valait que pour la partie en cours).
+        [_var, _v, false, "client", true] call CBA_settings_fnc_set;
         ["refresh"] call comspec_atak_native_fnc_mapPinnedApp;
         true
     };
