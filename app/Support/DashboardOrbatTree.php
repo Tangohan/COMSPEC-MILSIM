@@ -118,12 +118,13 @@ final class DashboardOrbatTree
         }
 
         $placeholders = implode(',', array_fill(0, count($userIds), '?'));
-        $hasPortrait = self::columnExists($pdo, 'personnel_profiles', 'character_portrait_path');
+        $ppColumns = self::profileColumns($pdo);
+        $hasPortrait = $ppColumns['character_portrait_path'];
         $portraitSelect = $hasPortrait ? 'pp.character_portrait_path' : 'NULL AS character_portrait_path';
-        $rankSelect = self::columnExists($pdo, 'personnel_profiles', 'rank_display')
+        $rankSelect = $ppColumns['rank_display']
             ? 'pp.rank_display'
             : 'NULL AS rank_display';
-        $ppTenant = self::columnExists($pdo, 'personnel_profiles', 'tenant_id');
+        $ppTenant = $ppColumns['tenant_id'];
         $ppJoin = $ppTenant
             ? 'LEFT JOIN personnel_profiles pp ON pp.user_id = u.id AND pp.tenant_id = ?'
             : 'LEFT JOIN personnel_profiles pp ON pp.user_id = u.id';
@@ -184,19 +185,33 @@ final class DashboardOrbatTree
         return $out;
     }
 
-    private static function columnExists(PDO $pdo, string $table, string $column): bool
+    /**
+     * Colonnes facultatives de personnel_profiles : une lecture du schéma au lieu de trois, gardée 10 minutes
+     * (aucune donnée de communauté ni de personne ; une erreur de lecture n’est pas gardée).
+     *
+     * @return array{character_portrait_path: bool, rank_display: bool, tenant_id: bool}
+     */
+    public static function profileColumns(PDO $pdo): array
     {
+        $names = ['character_portrait_path', 'rank_display', 'tenant_id'];
+        $cached = \App\Support\ShortCache::get('schema:personnel_profiles:orbat_columns');
+        if (is_array($cached) && count($cached) === 3) {
+            return ['character_portrait_path' => !empty($cached[0]), 'rank_display' => !empty($cached[1]), 'tenant_id' => !empty($cached[2])];
+        }
         try {
             $st = $pdo->prepare(
-                'SELECT 1 FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+                "SELECT COLUMN_NAME FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_profiles' AND COLUMN_NAME IN (?, ?, ?)"
             );
-            $st->execute([$table, $column]);
-
-            return (bool) $st->fetchColumn();
+            $st->execute($names);
+            $found = array_map('strval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []);
         } catch (Throwable) {
-            return false;
+            return ['character_portrait_path' => false, 'rank_display' => false, 'tenant_id' => false];
         }
+        $flags = array_map(static fn (string $n): bool => in_array($n, $found, true), $names);
+        \App\Support\ShortCache::put('schema:personnel_profiles:orbat_columns', $flags, 600);
+
+        return ['character_portrait_path' => $flags[0], 'rank_display' => $flags[1], 'tenant_id' => $flags[2]];
     }
 
     /**
