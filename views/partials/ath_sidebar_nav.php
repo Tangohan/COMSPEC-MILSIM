@@ -389,6 +389,7 @@ $messagesChildren = [
     ],
 ];
 $isOperatorBoNav = !empty($isOperatorBoNav);
+$isDelegatedStaff = $isOperatorBoNav && !empty($isDelegatedStaff);
 
 $opOnglet = (string) ($_GET['onglet'] ?? '');
 $opFicheBase = str_starts_with($p, 'back-office/ma-situation/ma-fiche')
@@ -530,7 +531,10 @@ if ($isOperatorBoNav) {
             ],
         ],
     ];
-} else {
+}
+// Cadre délégué : les groupes opérateur sont gardés de côté, puis ajoutés sous les pages de gestion que ses droits ouvrent.
+$opNavGroups = $isDelegatedStaff ? $athNavGroups : null;
+if (!$isOperatorBoNav || $isDelegatedStaff) {
     // Pastilles des pages de gestion : config/back_office_menu.php (MenuDecorator), plus de compteur en dur ici.
     $moderationChildren = [
         [
@@ -752,6 +756,17 @@ if ($isOperatorBoNav) {
             ], static fn (?array $row): bool => is_array($row))),
         ],
     ];
+}
+
+if ($opNavGroups !== null) {
+    // « Mon espace » : les groupes opérateur sans le tableau de bord (déjà en tête du menu de gestion).
+    foreach ($opNavGroups as $opGroup) {
+        if (($opGroup['key'] ?? '') === 'pilotage') {
+            continue;
+        }
+        $opGroup['key'] = 'mon-' . (string) ($opGroup['key'] ?? 'espace');
+        $athNavGroups[] = $opGroup;
+    }
 }
 
 // Droits : chaque page passe par $boHrefAllowed (type de communauté + Gate) — rien n’est ajouté au-delà.

@@ -14,6 +14,11 @@ $isOperatorBoNav = !$gate->allows('admin.organization')
     && !$gate->allows('admin.access')
     && !$gate->allows('site.support');
 
+// Cadre délégué (RH, recruteur, responsable des accès, officier des opérations…) : menu de gestion filtré par ses droits,
+// puis « Mon espace ». Avant, il recevait le menu d'un simple membre et ne voyait aucune page de gestion.
+$isDelegatedStaff = \App\Support\BackOfficeDelegatedStaff::is(static fn (string $perm): bool => $gate->allows($perm))
+    || ($isOperatorBoNav && ($canTraining || $canMediaBo || $canMemberModeration));
+
 $tenantLabel = '';
 $tenantType = \App\Services\Community\TenantTypeConfig::TYPE_FULL;
 try {
@@ -257,14 +262,14 @@ require __DIR__ . '/ath_sidebar_nav.php';
         <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__logo" aria-label="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au tableau de bord') : 'Retour au tableau de bord') ?>" title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au tableau de bord') : 'Retour au tableau de bord') ?>">A</a>
         <div class="ath-sidebar__brand">
             <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__brand-name" title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au tableau de bord') : 'Retour au tableau de bord') ?>">ATHENA<span>.</span></a>
-            <div class="ath-sidebar__brand-sub"><?= $h(!empty($isOperatorBoNav) ? 'ESPACE OPÉRATEUR' : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'GESTION') : 'GESTION')) ?> · <?= $h($tenantShort) ?></div>
+            <div class="ath-sidebar__brand-sub"><?= $h(!empty($isDelegatedStaff) ? 'MON PÉRIMÈTRE' : (!empty($isOperatorBoNav) ? 'ESPACE OPÉRATEUR' : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'GESTION') : 'GESTION'))) ?> · <?= $h($tenantShort) ?></div>
         </div>
         <button type="button" class="ath-sidebar__toggle" data-ath-sidebar-toggle title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Plier le menu') : 'Plier le menu') ?>" aria-label="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Plier le menu') : 'Plier le menu') ?>">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
         </button>
     </div>
 
-    <?php if (empty($isOperatorBoNav)): ?>
+    <?php if (empty($isOperatorBoNav) || !empty($isDelegatedStaff)): ?>
     <div class="ath-sidebar__filter">
         <label for="ath-menu-search" class="ath-sr-only">Filtrer le menu</label>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>
