@@ -24,7 +24,11 @@
   z-index: 30;
   margin: clamp(28px, 5vh, 52px) calc(-1 * clamp(16px, 3vw, 40px)) 0;
   padding: 0 clamp(16px, 3vw, 40px);
-  background: color-mix(in srgb, var(--ja-void) 90%, transparent);
+  /* Filet du bas aligné sur le contenu (pas sur les marges négatives qui servent au fond du bandeau collant). */
+  border-bottom: 0;
+  background:
+    linear-gradient(var(--ja-rule), var(--ja-rule)) center bottom / calc(100% - 2 * clamp(16px, 3vw, 40px)) 1px no-repeat,
+    color-mix(in srgb, var(--ja-void) 90%, transparent);
   backdrop-filter: blur(10px);
 }
 

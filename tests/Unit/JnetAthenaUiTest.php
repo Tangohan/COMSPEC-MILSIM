@@ -88,15 +88,17 @@ final class JnetAthenaUiTest extends TestCase
     public function testUnitSpaceHasNumberedTabsHeroAndStats(): void
     {
         $view = $this->read('views/jnet/unit_space.php');
+        // L'accueil (bandeau, chiffres, sections) vit dans son partiel ; l'en-tête et les onglets restent dans la page.
+        $home = $this->read('views/jnet/unit/_home.php');
         self::assertStringContainsString('ja-hd ja-hd--rows', $view);
         self::assertStringContainsString('class="ja-tab', $view);
-        self::assertStringContainsString('us-hero__bg', $view);
-        self::assertStringContainsString('ja-stats', $view);
+        self::assertStringContainsString('us-hero__bg', $home);
+        self::assertStringContainsString('ja-stats', $home);
         self::assertStringContainsString('JnetUi::genericPhoto($unitId)', $view);
         self::assertStringContainsString('assets/css/jnet_unit_shell.css', $view);
         // Les composants d'échange gardent leurs actions et leurs droits (formulaires, accusé de réception).
-        self::assertStringContainsString('_exchange_composer.php', $view);
-        self::assertStringContainsString('_exchange.php', $view);
+        self::assertStringContainsString('_exchange_composer.php', $view . $home);
+        self::assertStringContainsString('_exchange.php', $view . $home);
     }
 
     public function testGenericPhotosAreStablePerUnitAndShipped(): void

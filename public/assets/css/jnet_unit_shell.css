@@ -676,3 +676,22 @@
   margin: 10px 0 0;
   color: var(--ja-muted);
 }
+
+/* Gouttière commune des voies d'échanges : tout ce qui n'est pas une carte (bouton de publication, composeur ouvert,
+   relais, état vide) prend les 18 px des cartes et des en-têtes de colonne, et sépare ses voisins du même filet. */
+.us .jnet-embed.jnet-embed .jn-flow .jn-compose {
+  margin: 0;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--ja-rule2);
+}
+
+.us .jnet-embed.jnet-embed .jn-flow .jn-compose > summary {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.us .jnet-embed.jnet-embed .jn-flow .jn-compose[open] > .jn-composer {
+  max-width: none;
+  margin-top: 12px;
+}

@@ -128,6 +128,21 @@ $defaultAccent = (string) $orbat['accent'] !== '' ? (string) $orbat['accent'] : 
             </label>
         </fieldset>
 
+        <?php if (!empty($customizeModulesReady)): ?>
+        <fieldset class="jn-custom__group">
+            <legend>Rubriques affichées</legend>
+            <input type="hidden" name="modules_present" value="1">
+            <?php $hiddenModules = is_array($set['hidden_modules'] ?? null) ? $set['hidden_modules'] : []; ?>
+            <?php foreach (\App\Services\Jnet\JnetUnitWorkspaceService::HIDEABLE as $moduleKey => $moduleLabel): ?>
+                <label class="jn-check">
+                    <input type="checkbox" name="modules_shown[]" value="<?= $h($moduleKey) ?>"<?= in_array($moduleKey, $hiddenModules, true) ? '' : ' checked' ?>>
+                    <span><?= $h($moduleLabel) ?></span>
+                </label>
+            <?php endforeach; ?>
+            <p class="jn-custom__hint">Une rubrique masquée disparaît des onglets de l’espace ; son contenu est conservé.</p>
+        </fieldset>
+        <?php endif; ?>
+
         <div class="jn-custom__actions">
             <button type="submit" name="action" value="save" class="jn-btn jn-btn--primary">Enregistrer</button>
             <?php if (!empty($set['custom'])): ?>

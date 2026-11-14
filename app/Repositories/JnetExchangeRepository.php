@@ -223,7 +223,7 @@ class JnetExchangeRepository
             return null;
         }
         $st = $this->pdo()->prepare(
-            'SELECT id, from_unit_id, author_user_id, kind, title, requires_ack FROM jnet_exchanges
+            'SELECT id, from_unit_id, author_user_id, kind, title, body, link_url, requires_ack FROM jnet_exchanges
              WHERE tenant_id = ? AND id = ? AND deleted_at IS NULL'
         );
         $st->execute([$tenantId, $exchangeId]);

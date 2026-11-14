@@ -63,6 +63,7 @@ final class JnetUnitSpaceSettings
             'emblem_path' => '',
             'banner_path' => '',
             'entry_screen' => true,
+            'hidden_modules' => [],
         ];
     }
 
@@ -192,6 +193,7 @@ final class JnetUnitSpaceSettings
             'emblem_path' => (string) ($row['emblem_path'] ?? ''),
             'banner_path' => (string) ($row['banner_path'] ?? ''),
             'entry_screen' => (int) ($row['entry_screen'] ?? 1) === 1,
+            'hidden_modules' => JnetUnitWorkspaceService::parseHidden($row['hidden_modules'] ?? ''),
         ];
     }
 
@@ -224,10 +226,40 @@ final class JnetUnitSpaceSettings
                 'emblem_path' => (string) ($row['emblem_path'] ?? ''),
                 'banner_path' => (string) ($row['banner_path'] ?? ''),
                 'entry_screen' => (int) ($row['entry_screen'] ?? 1) === 1,
+                'hidden_modules' => JnetUnitWorkspaceService::parseHidden($row['hidden_modules'] ?? ''),
             ];
         }
 
         return $out;
+    }
+
+    /** La colonne hidden_modules (étape jnet_unit_workspace) est-elle en place ? */
+    public function modulesReady(): bool
+    {
+        if (!$this->ready()) {
+            return false;
+        }
+        try {
+            $this->db()->query('SELECT hidden_modules FROM jnet_unit_spaces LIMIT 0');
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Modules masqués par le chef (« taches,pages »). Écrit seulement si la colonne existe ; crée la ligne si besoin.
+     */
+    public function saveHiddenModules(int $tenantId, int $unitId, string $hiddenCsv, int $userId): void
+    {
+        if (!$this->modulesReady()) {
+            return;
+        }
+        $this->db()->prepare(
+            'INSERT INTO jnet_unit_spaces (tenant_id, unit_id, hidden_modules, updated_by, updated_at) VALUES (?, ?, ?, ?, NOW())
+             ON DUPLICATE KEY UPDATE hidden_modules = VALUES(hidden_modules), updated_by = VALUES(updated_by), updated_at = NOW()'
+        )->execute([$tenantId, $unitId, $hiddenCsv !== '' ? $hiddenCsv : null, $userId > 0 ? $userId : null]);
     }
 
     /**
