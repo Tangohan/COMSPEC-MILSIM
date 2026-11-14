@@ -18,9 +18,9 @@ final class QualificationAwardRepository
     private PDO $pdo;
     private ?bool $enrichedReady = null;
 
-    public function __construct()
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo ?? Database::getPdo();
     }
 
     public function enrichedReady(): bool
@@ -153,6 +153,47 @@ final class QualificationAwardRepository
         $st->execute($params);
 
         return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Attributions de plusieurs membres en une lecture par tranche de 500 (au lieu d’une lecture par membre).
+     * Pour chaque membre : mêmes colonnes et même ordre que listForUser().
+     *
+     * @param list<int> $userIds
+     * @return array<int, list<array<string, mixed>>> indexé par id de membre (tableau vide si aucune attribution)
+     */
+    public function listForUsers(array $userIds, ?int $tenantId = null): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $id): bool => $id > 0)));
+        $out = array_fill_keys($ids, []);
+        foreach (array_chunk($ids, 500) as $chunk) {
+            $sql = 'SELECT pq.*,
+                           d.name AS definition_name, d.code AS definition_code, d.short_name AS definition_short_name,
+                           d.badge_media_path AS definition_badge_path, d.grace_period_days, d.alert_before_expiry_days,
+                           d.is_permanent, d.uses_levels,
+                           ql.name AS level_name, ql.short_name AS level_short_name, ql.badge_media_path AS level_badge_path,
+                           qi.name AS issuer_name,
+                           c.name AS category_name
+                    FROM personnel_qualifications pq
+                    LEFT JOIN personnel_qualification_definitions d ON d.id = pq.definition_id
+                    LEFT JOIN qualification_levels ql ON ql.id = pq.qualification_level_id
+                    LEFT JOIN qualification_issuers qi ON qi.id = pq.issuer_id
+                    LEFT JOIN qualification_categories c ON c.id = d.category_id
+                    WHERE pq.user_id IN (' . implode(',', array_fill(0, count($chunk), '?')) . ')';
+            $params = $chunk;
+            if ($tenantId !== null) {
+                $sql .= ' AND (pq.tenant_id = ? OR pq.tenant_id IS NULL)';
+                $params[] = $tenantId;
+            }
+            $sql .= ' ORDER BY pq.is_primary DESC, pq.expires_at IS NULL DESC, pq.expires_at DESC, pq.obtained_at DESC';
+            $st = $this->pdo->prepare($sql);
+            $st->execute($params);
+            while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+                $out[(int) $row['user_id']][] = $row;
+            }
+        }
+
+        return $out;
     }
 
     /** @return list<array<string, mixed>> */

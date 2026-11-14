@@ -135,19 +135,23 @@ final class UnitReadinessService
         $qualOk = 0;
         $qualTotal = 0;
         $lastActivity = null;
+        // Qualifications et dernière activité de tous les membres de l’unité : 3 lectures au plus pour l’unité,
+        // au lieu de 2 à 3 par membre.
+        $memberIdList = array_values(array_map('intval', $memberIds));
+        try {
+            $awardsByUser = $memberIdList !== [] ? $this->awards->listForUsers($memberIdList, $tenantId) : [];
+        } catch (\Throwable) {
+            $awardsByUser = [];
+        }
+        $activityByUser = $this->lastActivityForUsers($tenantId, $memberIdList);
         foreach ($memberIds as $uid) {
-            try {
-                $rows = $this->awards->listForUser((int) $uid, $tenantId);
-            } catch (\Throwable) {
-                $rows = [];
-            }
-            foreach ($rows as $row) {
+            foreach ($awardsByUser[(int) $uid] ?? [] as $row) {
                 $qualTotal++;
                 if ($this->temporal->isEffectivelyActive($row)) {
                     $qualOk++;
                 }
             }
-            $act = $this->lastActivityForUser($tenantId, (int) $uid);
+            $act = $activityByUser[(int) $uid] ?? null;
             if ($act !== null && ($lastActivity === null || $act > $lastActivity)) {
                 $lastActivity = $act;
             }
@@ -219,24 +223,40 @@ final class UnitReadinessService
         return [];
     }
 
-    private function lastActivityForUser(int $tenantId, int $userId): ?string
+    /**
+     * Dernière activité par membre : dernier événement du journal de carrière, sinon dernière connexion (même
+     * règle qu’avant, lue pour tous les membres à la fois).
+     *
+     * @param list<int> $userIds
+     * @return array<int, string>
+     */
+    private function lastActivityForUsers(int $tenantId, array $userIds): array
     {
+        $out = [];
+        if ($userIds === []) {
+            return $out;
+        }
         $pdo = Database::getPdo();
         foreach ([
-            'SELECT MAX(COALESCE(effective_at, created_at)) FROM personnel_career_journal WHERE tenant_id = ? AND user_id = ?',
-            'SELECT MAX(last_login_at) FROM users WHERE tenant_id = ? AND id = ?',
+            'SELECT user_id AS uid, MAX(COALESCE(effective_at, created_at)) AS v FROM personnel_career_journal WHERE tenant_id = ? AND user_id IN (%s) GROUP BY user_id',
+            'SELECT id AS uid, last_login_at AS v FROM users WHERE tenant_id = ? AND id IN (%s)',
         ] as $sql) {
-            try {
-                $st = $pdo->prepare($sql);
-                $st->execute([$tenantId, $userId]);
-                $v = $st->fetchColumn();
-                if (is_string($v) && $v !== '' && !str_starts_with($v, '0000')) {
-                    return $v;
+            $missing = array_values(array_filter($userIds, static fn (int $id): bool => !isset($out[$id])));
+            foreach (array_chunk($missing, 500) as $chunk) {
+                try {
+                    $st = $pdo->prepare(sprintf($sql, implode(',', array_fill(0, count($chunk), '?'))));
+                    $st->execute([$tenantId, ...$chunk]);
+                    foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                        $v = $row['v'] ?? null;
+                        if (is_string($v) && $v !== '' && !str_starts_with($v, '0000')) {
+                            $out[(int) $row['uid']] = $v;
+                        }
+                    }
+                } catch (\Throwable) {
                 }
-            } catch (\Throwable) {
             }
         }
 
-        return null;
+        return $out;
     }
 }
