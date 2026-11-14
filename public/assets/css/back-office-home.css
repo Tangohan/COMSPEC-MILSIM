@@ -188,3 +188,39 @@ input.bsh__hname:focus { border-color: var(--pil-primary, #059669); background: 
 @media (max-width: 560px) { .bsh__filter, .bsh__filter input { width: 100%; } .bsh__tools { width: 100%; } .bsh__scroll { max-height: 60vh; } }
 .bsh__corner, .bsh__num { width: 58px; min-width: 58px !important; white-space: nowrap; }
 .bsh__num { text-align: left !important; padding-left: 6px !important; }
+
+/* —— Accueil allégé (2026-11) : un titre par carte, grille sans trous, bloc opération plus sobre. —— */
+
+.pil { --pil-gap: 16px; }
+.pil-hello { align-items: center; padding-bottom: 4px; }
+.pil-hello__title { font-size: 28px; }
+.pil-hello__date { color: var(--pil-ink); font-weight: 600; }
+.pil-btn--ghost { background: transparent; }
+
+/* Blocs d'une même rangée à la même hauteur, sans pourcentage (qui fait déborder un bloc sur la rangée suivante). */
+.home-grid { grid-auto-flow: row dense; align-items: stretch; }
+.home-w { display: flex; flex-direction: column; }
+.home-w > .pil-card, .home-w > .pil-op, .home-w > details, .home-w > section { flex: 1 1 auto; height: auto; }
+
+.pil-card { border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+.pil-card__h { margin-bottom: 14px; align-items: center; }
+.pil-card__title { margin-top: 0 !important; font-size: 15px; }
+.pil-card__sub { margin: 2px 0 0 !important; color: var(--pil-muted); font-size: 12.5px; }
+
+/* Libellés des chiffres clés : en clair, pas en capitales espacées. */
+.pil-kicker { font-size: 12.5px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+
+/* Prochaine opération : vert profond plutôt que noir, titre droit, boutons en casse normale. */
+.pil-op { min-height: 300px; border-radius: 14px; background: linear-gradient(150deg, #0b2a20 0%, #07140f 70%); }
+.pil-op::after { background: radial-gradient(ellipse at 85% 0%, rgba(52, 211, 153, 0.18), transparent 55%); }
+.pil-op--cover::after { background: linear-gradient(90deg, rgba(7, 20, 15, 0.95) 0%, rgba(7, 20, 15, 0.72) 55%, rgba(7, 20, 15, 0.35) 100%); }
+.pil-op__in { padding: 24px 26px; gap: 14px; }
+.pil-op__title { font-size: clamp(24px, 2.6vw, 34px); font-weight: 800; font-style: normal; text-transform: none; letter-spacing: -0.02em; line-height: 1.1; }
+.pil-op__kicker { margin-top: -6px !important; font-size: 12.5px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.pil-cd div { border-radius: 8px; }
+.pil-cd small { letter-spacing: 0.04em; }
+.pil-op__rsvp { padding: 16px 26px; background: rgba(0, 0, 0, 0.25); }
+.pil-op__rsvp-k { font-size: 12px; letter-spacing: 0; text-transform: none; }
+.pil .pil-op__b1, .pil .pil-op__b2 { height: 38px; border-radius: 8px; font-size: 13px; font-weight: 700; letter-spacing: 0; text-transform: none; }
+
+html[data-bo-theme="dark"] .pil-card { box-shadow: none; }
