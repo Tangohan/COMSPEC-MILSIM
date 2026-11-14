@@ -47,6 +47,16 @@ if (_mode isEqualTo "live") exitWith {
     _shown
 };
 private _units = count (_data getOrDefault ["units", createHashMap]);
+// Vérification de la configuration (fn_setupCheck) : une ligne par contrôle, le correctif sous chaque ligne non réussie.
+private _checks = ["run"] call comspec_atak_native_fnc_setupCheck;
+private _checkRows = [["section", "Vérification de la configuration", ["Tout est en ordre", "Des points à corriger"] select ((["worst", _checks] call comspec_atak_native_fnc_setupCheck) > 0)]];
+{
+    _x params ["", "_lvl", "_lab", "_det", "_fix"];
+    private _hex = [(COMSPEC_ATAK_Th get "hexOk"), (COMSPEC_ATAK_Th get "hexWarn"), (COMSPEC_ATAK_Th get "hexAlert")] select _lvl;
+    private _mark = [("OK") call comspec_atak_native_fnc_tr, ("ATTENTION") call comspec_atak_native_fnc_tr, ("PROBLÈME") call comspec_atak_native_fnc_tr] select _lvl;
+    _checkRows pushBack ["info", _lab, format ["<t color='%1'>%2</t> · %3", _hex, _mark, _det]];
+    if (_fix isNotEqualTo "") then { _checkRows pushBack ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", _fix]]; };
+} forEach _checks;
 private _orders = count ([] call comspec_atak_native_fnc_tasksAll);
 private _rows = [
     ["hero", "\z\comspec_atak_native\addons\main\data\app_status.paa", format ["<t size='1.35' font='COMSPEC_BarlowBold'>STATUT</t>  <t color='%1' font='COMSPEC_BarlowBold'>● %2</t><br/><t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "' size='0.85'>%3</t>", _pillHex, _pill, _pillTxt]],
@@ -76,6 +86,8 @@ private _rows = [
         ["DEBUG", { ["DEBUG"] call comspec_atak_native_fnc_navigate; }]
     ]]
 ];
+// Vérification de la configuration : juste avant la barre d'actions (derniers éléments : « break » et « buttons »).
+_rows insert [(count _rows) - 2, _checkRows];
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 // Minuterie de la page (une seule) : valeurs vivantes chaque seconde, arrêtée dès que la page n'est plus affichée ou que le
 // téléphone est fermé.

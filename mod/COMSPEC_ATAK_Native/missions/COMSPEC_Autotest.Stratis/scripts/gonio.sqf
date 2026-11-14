@@ -81,3 +81,22 @@ if !("gonio" call AT_fnc_groupe) exitWith {};
     uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", _saveL];
     call AT_fnc_done;
 }, 30] call AT_fnc_run;
+
+["gonio_verification", {
+    if (["comspec_atak_native_fnc_setupCheck", "comspec_atak_native_fnc_eventSender"] call AT_fnc_nil) exitWith {};
+    private _run = ["run"] call comspec_atak_native_fnc_setupCheck;
+    [(count _run) isEqualTo 6, format ["vérification du joueur : 6 lignes attendues, %1 obtenue(s)", count _run]] call AT_fnc_check;
+    {
+        [(count _x) isEqualTo 5 && {(_x select 1) in [0, 1, 2]} && {(_x select 2) isEqualType ""}, format ["ligne mal formée : %1", _x select 0]] call AT_fnc_check;
+        (format ["%1 niveau %2 : %3", _x select 0, _x select 1, _x select 3]) call AT_fnc_info;
+    } forEach _run;
+    // Un problème doit toujours porter son correctif.
+    [(_run select { (_x select 1) isEqualTo 2 && {(_x select 4) isEqualTo ""} }) isEqualTo [], "un problème sans correctif"] call AT_fnc_check;
+    private _mis = ["mission"] call comspec_atak_native_fnc_setupCheck;
+    [(count _mis) >= 2, "vérification de la mission : au moins 2 lignes attendues"] call AT_fnc_check;
+    [(["worst", []] call comspec_atak_native_fnc_setupCheck) isEqualTo 0, "worst d'une liste vide doit valoir 0"] call AT_fnc_check;
+    [(["worst", [["a", 0], ["b", 2], ["c", 1]]] call comspec_atak_native_fnc_setupCheck) isEqualTo 2, "worst doit rendre le niveau le plus haut"] call AT_fnc_check;
+    // Appel local (pas distant) : l'expéditeur est inconnu, l'événement est cru comme avant.
+    [isNull ([] call comspec_atak_native_fnc_eventSender), "appel local : expéditeur inconnu attendu"] call AT_fnc_check;
+    call AT_fnc_done;
+}, 30] call AT_fnc_run;

@@ -149,6 +149,15 @@ addMissionEventHandler ["MarkerDeleted", { params ["_m"]; ["srvMeta", [_m, objNu
 ["comspec_atak_native_sideEvent", {
     params [["_ev", ""], ["_args", []], ["_side", ""]];
     if !(_ev in ["comspec_atak_native_logi", "comspec_atak_native_medevac", "comspec_atak_native_medevacStatus", "comspec_atak_native_bda", "comspec_atak_native_report", "comspec_atak_native_alert", "comspec_atak_native_orderAck", "comspec_atak_native_reportRcpt", "comspec_atak_native_tocMsg", "comspec_atak_native_localOrder", "comspec_atak_native_chatLocal", "comspec_atak_native_aiOrdState", "comspec_atak_native_fsState"]) exitWith {};
+    // Expéditeur réel (fn_eventSender) : le camp annoncé doit être le sien ; sinon l'événement est jeté (un client modifié ne peut
+    // pas écrire dans le flux d'un autre camp). Appel non distant (serveur, hôte) : cru comme avant.
+    private _snd = [] call comspec_atak_native_fnc_eventSender;
+    private _authentic = true;
+    if (!isNull _snd && {(str side group _snd) isNotEqualTo _side}) then {
+        _authentic = false;
+        ["WARN", "EVENT", format ["%1 jeté : camp annoncé %2, camp réel %3 (%4)", _ev, _side, str side group _snd, name _snd]] call comspec_atak_native_fnc_log;
+    };
+    if (!_authentic) exitWith {};
     [_ev, _args] call CBA_fnc_localEvent;
     private _to = allPlayers select { !local _x && {(str side group _x) isEqualTo _side} };
     // Compte rendu : auteur retenu pour ses accusés ; « MON GROUPE » ne part qu'aux joueurs du groupe (le client filtre aussi).
