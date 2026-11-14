@@ -11,7 +11,12 @@
       arma, render (FILL surligné | LINE contour | POINT point centré), aff (type par défaut des zones), area (zone de
       travail [RECT [[x0, y0], [x1, y1]] | POLY [points] | CIRCLE [[x, y], rayon]]), gp (réglages du découpage, HashMap),
       zones, axes, cps, lines (contours et traits tracés), st (style du plan, HashMap), from (auteur d'un plan reçu),
-      side / grp / ft (destinataires de la situation) ; en mémoire seulement : mk / mkz (marqueurs d'Arma et leur clé),
+      side / grp / ft (destinataires de la situation), alert (prévenir le TOC : chaque porteur du plan partagé signale ses
+      entrées et sorties de zone au flux du TOC, "fenceTick", événement serveur comspec_atak_native_zoneMove, via fn_netSend),
+      fence (diffusion à l'entrée dans la zone : chez un destinataire
+      hors de la zone de travail, le plan reçu reste en sommeil [dormant, mémoire seulement : masqué, sans annonce ni
+      alerte de situation] et se réveille à son entrée, action "fenceTick" toutes les 5 s, avec un résumé de ce qu'il
+      a manqué ; le rejeu du serveur fait de même pour qui arrive en cours de partie) ; en mémoire seulement : mk / mkz (marqueurs d'Arma et leur clé),
       genTok / busy (calcul en cours), syncTok, geo (boîtes et surfaces), palc (couleurs résolues).
     Zone : [id, nom, points [[x, y]...], point d'étiquette [x, y], type, rendu ("" : celui du plan), état, horodatage
       (serverTime), auteur de l'état, signalements, bâtiments [[x, y, demi-largeur, demi-longueur, cap, étages]...],
@@ -29,6 +34,61 @@
     Params : [action, argument] — voir les « case ».
 */
 params [["_act", ""], ["_arg", []]];
+// Diffusion à l'entrée dans la zone, servie avant la préparation des tables : "inArea" [plan, position] (la position
+// est-elle dans la zone de travail du plan, à défaut dans une de ses zones ?) et "fenceTick" (réveil des plans en sommeil).
+if (_act isEqualTo "inArea") exitWith {
+    _arg params [["_b", createHashMap], ["_p", []]];
+    if ((count _p) < 2) exitWith { false };
+    (_b getOrDefault ["area", []]) params [["_k", ""], ["_d", []]];
+    switch (_k) do {
+        case "RECT": {
+            _d params [["_c0", [0, 0]], ["_c1", [0, 0]]];
+            (_p select 0) >= ((_c0 select 0) min (_c1 select 0)) && {(_p select 0) <= ((_c0 select 0) max (_c1 select 0))}
+                && {(_p select 1) >= ((_c0 select 1) min (_c1 select 1))} && {(_p select 1) <= ((_c0 select 1) max (_c1 select 1))}
+        };
+        case "CIRCLE": { _d params [["_c", [0, 0]], ["_r", 0]]; ([_p select 0, _p select 1] distance2D [_c select 0, _c select 1]) <= _r };
+        case "POLY": { (count _d) >= 3 && {[_p select 0, _p select 1, 0] inPolygon (_d apply { [_x select 0, _x select 1, 0] })} };
+        default { (count (["zoneIn", [_b, _p]] call comspec_atak_native_fnc_zoneAction)) > 0 };
+    }
+};
+if (_act isEqualTo "fenceTick") exitWith {
+    if (isNull player || {!alive player}) exitWith {};
+    // Alerte au TOC : changement de zone du joueur, pour chaque plan partagé qui le demande. Le premier passage ne signale
+    // rien (le plan vient d'arriver : pas de fausse entrée).
+    private _lastZ = uiNamespace getVariable ["COMSPEC_ATAK_ZnAlertLast", createHashMap];
+    uiNamespace setVariable ["COMSPEC_ATAK_ZnAlertLast", _lastZ];
+    private _pp = getPosATL player;
+    {
+        private _pl = _x;
+        if !(_pl getOrDefault ["alert", false]) then { continue; };
+        if (_pl getOrDefault ["dormant", false] || {(_pl getOrDefault ["scope", 0]) isEqualTo 0}) then { continue; };
+        private _pid = _pl get "id";
+        private _zz = ["zoneIn", [_pl, _pp]] call comspec_atak_native_fnc_zoneAction;
+        private _zid = ""; private _zname = "";
+        if ((count _zz) > 0) then { _zid = _zz select 0; _zname = _zz select 1; };
+        if !(_pid in _lastZ) then { _lastZ set [_pid, [_zid, _zname]]; continue; };
+        (_lastZ get _pid) params ["_pzid", "_pzname"];
+        if (_zid isEqualTo _pzid) then { continue; };
+        _lastZ set [_pid, [_zid, _zname]];
+        private _what = switch (true) do {
+            case (_pzid isEqualTo ""): { format ["entre en %1", _zname] };
+            case (_zid isEqualTo ""): { format ["sort de %1", _pzname] };
+            default { format ["sort de %1, entre en %2", _pzname, _zname] };
+        };
+        [{ ["comspec_atak_native_zoneMove", _this] call CBA_fnc_serverEvent; }, [str side group player, [player] call comspec_atak_native_fnc_unitCallsign, _pl get "name", _what, getPosASL player, mapGridPosition player], "Zone", 1] call comspec_atak_native_fnc_netSend;
+    } forEach ((values (missionNamespace getVariable ["COMSPEC_ATAK_ZnMine", createHashMap])) + (values (missionNamespace getVariable ["COMSPEC_ATAK_ZnRx", createHashMap])));
+    {
+        private _b = _x;
+        if ((_b getOrDefault ["dormant", false]) && {["inArea", [_b, getPosATL player]] call comspec_atak_native_fnc_zoneAction}) then {
+            _b deleteAt "dormant";
+            ["set", [_b get "id", "vis", true]] call comspec_atak_native_fnc_zoneAction;
+            private _nRep = 0;
+            { _nRep = _nRep + (count (_x param [9, []])); } forEach (_b get "zones");
+            ["MESSAGE", format ["Entrée dans la zone %1 : plan de %2 reçu, %3 zone(s), %4 signalement(s)", _b get "name", _b getOrDefault ["from", ""], count (_b get "zones"), _nRep], 6, 50] call comspec_atak_native_fnc_notify;
+            [] call comspec_atak_native_fnc_vibrate;
+        };
+    } forEach (values (missionNamespace getVariable ["COMSPEC_ATAK_ZnRx", createHashMap]));
+};
 // Lectures faites à chaque image (fn_zoneDraw : chaque plan ; bandeau du curseur : chaque mouvement de souris) servies
 // avant la préparation des tables ci-dessous (près de 250 lignes refaites à chaque appel) : caches par révision
 // « geo » et « pal », triangles, zone sous un point et texte du curseur déjà calculé.
@@ -410,7 +470,7 @@ switch (_act) do {
     // Plan -> paires (profil, réseau) ; cases de grille envoyées sans leurs coins (refaits d'après le rectangle).
     case "pack": {
         private _b = _arg;
-        ((keys _b) select { !(_x in ["mk", "mkz", "mkTok", "genTok", "busy", "syncTok", "geo", "palc"]) }) apply {
+        ((keys _b) select { !(_x in ["mk", "mkz", "mkTok", "genTok", "busy", "syncTok", "geo", "palc", "dormant"]) }) apply {
             private _v = _b get _x;
             switch (_x) do {
                 case "gp": { _v = (keys _v) apply { [_x, _v get _x] }; };
@@ -440,7 +500,7 @@ switch (_act) do {
         if !(missionNamespace getVariable ["comspec_atak_native_zones_share", true]) then { _dsc = 0; };
         private _b = createHashMapFromArray [
             ["id", _id], ["name", [_name, 24] call _clean], ["owner", [player] call comspec_atak_native_fnc_unitCallsign], ["uid", getPlayerUID player],
-            ["rev", 1], ["scope", _dsc], ["live", _dsc > 0], ["vis", true], ["arma", (missionNamespace getVariable ["comspec_atak_native_zones_arma", true]) && {_dsc > 0}], ["render", "FILL"], ["aff", "GEN"], ["area", []], ["gp", _gp],
+            ["rev", 1], ["scope", _dsc], ["live", _dsc > 0], ["vis", true], ["fence", false], ["alert", false], ["arma", (missionNamespace getVariable ["comspec_atak_native_zones_arma", true]) && {_dsc > 0}], ["render", "FILL"], ["aff", "GEN"], ["area", []], ["gp", _gp],
             ["zones", []], ["axes", []], ["cps", []], ["lines", []], ["st", call _stDef], ["from", ""], ["side", str side group player], ["grp", netId group player], ["ft", ""], ["mk", []]
         ];
         _mine set [_id, _b];
@@ -1213,8 +1273,17 @@ switch (_act) do {
                     // Situation reçue entre-temps (plus récente que celle du plan) : gardée.
                     { [_b, _x select 0, _x select 6, _x select 7, _x select 8, _x select 9] call _apply; } forEach (_old get "zones");
                 };
+                // Diffusion à l'entrée dans la zone : reçu hors de la zone de travail, le plan dort (masqué, sans annonce)
+                // jusqu'à l'entrée du joueur (fenceTick) ; l'auteur qui retire l'option le réveille.
+                private _dorm = false;
+                if (_b getOrDefault ["fence", false]) then {
+                    _dorm = if ((count _old) > 0) then { _old getOrDefault ["dormant", false] } else { !(["inArea", [_b, getPosATL player]] call comspec_atak_native_fnc_zoneAction) };
+                    if (_dorm) then { _b set ["dormant", true]; _b set ["vis", false]; };
+                } else {
+                    if (_old getOrDefault ["dormant", false]) then { _b set ["vis", true]; };
+                };
                 _rx set [_id, _b];
-                if !(_quiet) then {
+                if (!_quiet && {!_dorm}) then {
                     if ((count _old) isEqualTo 0) then {
                         ["MESSAGE", format ["Plan de zones reçu de %1 (%2) : %3, %4 zone(s), %5 axe(s)", _b get "from", ["scopeName", _b get "scope"] call comspec_atak_native_fnc_zoneAction, _b get "name", count (_b get "zones"), count (_b get "axes")], 6, 50] call comspec_atak_native_fnc_notify;
                         [] call comspec_atak_native_fnc_vibrate;
@@ -1246,7 +1315,7 @@ switch (_act) do {
                 private _was = _z select 6;
                 if !([_b, _zid, _st, _stamp, _by, _reps2] call _apply) exitWith {};
                 [_b, false, false] call _changed;
-                if (!_quiet && {_op isEqualTo "sit"}) then {
+                if (!_quiet && {_op isEqualTo "sit"} && {!(_b getOrDefault ["dormant", false])}) then {
                     private _now = _z select 6;
                     private _r = _reps2 param [0, []];
                     private _det = if ((count _r) >= 8) then { ([["natureName", _r select 4] call comspec_atak_native_fnc_zoneAction, _r select 5, _r select 6] select { _x isNotEqualTo "" }) joinString " · " } else { "" };

@@ -677,7 +677,7 @@ addMissionEventHandler ["Ended", { ["MusicStop"] call comspec_atak_native_fnc_ex
 [{ ["publish"] call comspec_atak_native_fnc_feedLink; }, 10] call COMSPEC_ATAK_PfhSpread;
 
 // Détecteur de drones : balayage automatique en fond (réglage de l'app).
-[{ if (profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false]) then { ["auto"] call comspec_atak_native_fnc_droneDetectScan; }; }, 5] call COMSPEC_ATAK_PfhSpread;
+[{ if (profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false]) then { private _perfT = diag_tickTime; ["auto"] call comspec_atak_native_fnc_droneDetectScan; ["drones : détection auto", _perfT] call comspec_atak_native_fnc_perfAcc; }; }, 5] call COMSPEC_ATAK_PfhSpread;
 // Drones pilotés au téléphone : une seule main sur le drone (COMSPEC_DroneLock, fn_droneAction).
 //   "" : le téléphone pilote ; les autres joueurs ne peuvent pas connecter de terminal UAV. Le pilote (COMSPEC_DroneOwner)
 //        le peut toujours : connecter son terminal (UAV Terminal vanilla, tablette OTAN...) passe le drone en pilotage
@@ -816,8 +816,15 @@ addMissionEventHandler ["EntityKilled", {
     private _lq = [] call comspec_atak_native_fnc_linkQuality;
     if ((_lq get "bars") isEqualTo 0 || {!(_lq getOrDefault ["tx", true])}) exitWith {};
     // Au plus 5 envois toutes les 2 s : vider toute la file d'un coup figeait le jeu au retour du réseau.
+    // Liaison faible (fn_netSend) : les gros envois restent en file, seuls les petits partent.
+    private _held = [];
+    if ((missionNamespace getVariable ["comspec_atak_native_net_degraded", true]) && {_lq get "sim"} && {(_lq get "bars") <= 1 || {(_lq get "kbps") < 96}}) then {
+        _held = _queue select { (_x param [3, 1]) >= 100 };
+        _queue = _queue select { (_x param [3, 1]) < 100 };
+    };
+    if ((count _queue) isEqualTo 0) exitWith {};
     private _batch = _queue select [0, 5];
-    missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue select [5]];
+    missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", (_queue select [5]) + _held];
     if !(missionNamespace getVariable ["COMSPEC_ATAK_NetFlushing", false]) then { ["SUCCESS", format ["Réseau revenu : %1 envoi(s) en attente partent", count _queue], 4, 30] call comspec_atak_native_fnc_notify; };
     missionNamespace setVariable ["COMSPEC_ATAK_NetFlushing", (count _queue) > 5];
     { _x call comspec_atak_native_fnc_netSend; } forEach _batch;
@@ -1137,6 +1144,8 @@ addMissionEventHandler ["Ended", { ["selfFlush"] call comspec_atak_native_fnc_di
 // Décisions du poste web sur les demandes logistiques (mode passerelle).
 [{ ["poll"] call comspec_atak_native_fnc_logiWeb; }, 20] call COMSPEC_ATAK_PfhSpread;
 [{ ["tick"] call comspec_atak_native_fnc_ewAction; }, 5] call COMSPEC_ATAK_PfhSpread;
+// Zones diffusées à l'entrée (fn_zoneAction "fenceTick") : réveil des plans en sommeil quand le joueur entre dans leur zone.
+[{ ["fenceTick"] call comspec_atak_native_fnc_zoneAction; }, 5] call COMSPEC_ATAK_PfhSpread;
 
 // OSINT : publication sur le fil public (tous les camps).
 ["comspec_atak_native_osintPost", {

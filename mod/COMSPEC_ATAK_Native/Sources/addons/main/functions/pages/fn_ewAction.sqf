@@ -7,6 +7,14 @@
       "tick"            : entretien toutes les 5 s (PFH de XEH_postInitClient) : fin du brouilleur, purge, alerte de brouillage subi
       "scan"            : goniométrie à 3 km : téléphones ennemis et brouilleurs ; relèvement approximatif, bande de distance
       "clear"           : efface les relèvements     "locate" index : carte sur le point de relèvement
+      "fixes"           : points estimés par recoupement, gardés dans COMSPEC_ATAK_EwFixes et renvoyés :
+                          [[position, rayon d'erreur (m), type, heure du dernier relèvement, recoupements, code de l'émetteur]...].
+                          Deux relèvements du même type et du même émetteur, de moins de 10 min, pris à plus de 150 m
+                          l'un de l'autre et qui se croisent à 15 degrés ou plus donnent un point ; le rayon vient des
+                          erreurs angulaires et de l'angle de croisement (50 à 1500 m). Chaque relèvement porte un code
+                          anonyme stable de l'émetteur (9e élément) : deux codes différents ne se croisent jamais, le
+                          code 0 (inconnu, relèvements du maillage) se croise avec tout.
+      "locateFix" index : carte sur le point estimé
       "geoAllowed", "geoLocate", "geoTrack" i, "geoDel" i, "geoMap" i : onglet TRAÇAGE, passés à fn_traceAction
                           (allowed, submit, track, del, map) : la position tracée vient du serveur (fn_traceServer)
     Entrée de brouilleur : [position, rayon, uid, camp, fin (serverTime), filtrage ami]. Chaque client ne réécrit que la
@@ -124,15 +132,17 @@ switch (_act) do {
             private _err = 2 + 10 * ((_d / 3000) min 1.5);
             private _brg = ((_from getDir _pos) + (random [-_err, 0, _err]) + 360) mod 360;
             private _band = switch (true) do { case (_d < 500): { [0, 500] }; case (_d < 1000): { [500, 1000] }; case (_d < 2000): { [1000, 2000] }; case (_d < 3000): { [2000, 3000] }; default { [3000, 4500] }; };
-            _bearings pushBack [_from, _brg, _band select 0, _band select 1, _kind, time, _err, _hour];
+            // Code anonyme stable de l'émetteur (le même d'un relevé à l'autre) : le recoupement ne croise que le même émetteur.
+            private _code = 0;
+            { _code = (_code * 31 + _x) mod 9973; } forEach (toArray _id);
+            _bearings pushBack [_from, _brg, _band select 0, _band select 1, _kind, time, _err, _hour, _code];
             if (_tx && {_forEachIndex < 8}) then {
-                private _code = 0;
-                { _code = (_code * 31 + _x) mod 9973; } forEach (toArray _id);
                 (["COMSPECExtension", "SendSigint", [format ["GE %1-%2", ["EMETTEUR", "BROUILLEUR"] select (_kind isEqualTo "BROUILLEUR"), _code], str round (_from select 0), str round (_from select 1), str round _brg]] call comspec_overwatch_connect_fnc_extDirect);
             };
         } forEach _hits;
         while { (count _bearings) > 15 } do { _bearings deleteAt 0; };
         missionNamespace setVariable ["COMSPEC_ATAK_EwBearings", _bearings];
+        ["fixes"] call comspec_atak_native_fnc_ewAction;
         if ((count _hits) > 0) then {
             ["SUCCESS", format ["Goniométrie : %1 émission(s) relevée(s)", count _hits], 4, 40] call comspec_atak_native_fnc_notify;
             [] call comspec_atak_native_fnc_vibrate;
@@ -147,7 +157,52 @@ switch (_act) do {
     case "geoTrack": { ["track", _arg] call comspec_atak_native_fnc_traceAction; };
     case "geoDel": { ["del", _arg] call comspec_atak_native_fnc_traceAction; };
     case "geoMap": { ["map", _arg] call comspec_atak_native_fnc_traceAction; };
-    case "clear": { missionNamespace setVariable ["COMSPEC_ATAK_EwBearings", []]; call _rerender; };
+    case "clear": { missionNamespace setVariable ["COMSPEC_ATAK_EwBearings", []]; missionNamespace setVariable ["COMSPEC_ATAK_EwFixes", []]; call _rerender; };
+    case "fixes": {
+        private _b = (missionNamespace getVariable ["COMSPEC_ATAK_EwBearings", []]) select { (time - (_x select 5)) <= 600 };
+        private _raw = [];
+        for "_i" from 0 to ((count _b) - 2) do {
+            (_b select _i) params ["_p1", "_a1", "_n1", "_f1", "_k1", "_t1", "_e1", "", ["_c1", 0]];
+            for "_j" from (_i + 1) to ((count _b) - 1) do {
+                (_b select _j) params ["_p2", "_a2", "_n2", "_f2", "_k2", "_t2", "_e2", "", ["_c2", 0]];
+                if (_k1 isNotEqualTo _k2 || {(_p1 distance2D _p2) < 150} || {_c1 != 0 && {_c2 != 0} && {_c1 != _c2}}) then { continue; };
+                // Angle de croisement des deux droites (0 à 90 degrés) : trop fermé, le point n'a pas de sens.
+                private _df = abs (((_a1 - _a2 + 540) mod 360) - 180);
+                private _cross = _df min (180 - _df);
+                if (_cross < 15) then { continue; };
+                // Demi-droites p + s.d (d = [sin cap, cos cap]) : le point doit être devant les deux goniomètres.
+                private _den = (sin _a1) * (cos _a2) - (cos _a1) * (sin _a2);
+                private _dx = (_p2 select 0) - (_p1 select 0);
+                private _dy = (_p2 select 1) - (_p1 select 1);
+                private _s = (_dx * (cos _a2) - _dy * (sin _a2)) / _den;
+                private _u = (_dx * (cos _a1) - _dy * (sin _a1)) / _den;
+                if (_s <= 0 || {_u <= 0}) then { continue; };
+                // Cohérent avec les bandes de distance des deux relèvements (30 % de marge).
+                if (_s < _n1 * 0.7 || {_s > _f1 * 1.3} || {_u < _n2 * 0.7} || {_u > _f2 * 1.3}) then { continue; };
+                _raw pushBack [[(_p1 select 0) + _s * (sin _a1), (_p1 select 1) + _s * (cos _a1), 0],
+                    (((((_s * tan _e1) max (_u * tan _e2)) / (sin _cross)) max 50) min 1500), _k1, _t1 max _t2, [_c1, _c2] select (_c1 isEqualTo 0)];
+            };
+        };
+        // Points voisins du même type : un seul point (moyenne), plus sûr à chaque recoupement de plus.
+        private _out = [];
+        {
+            _x params ["_pt", "_r", "_k", "_t", "_c"];
+            private _i = _out findIf { (_x select 2) isEqualTo _k && {(_x select 5) isEqualTo _c} && {((_x select 0) distance2D _pt) < ((_x select 1) max _r)} };
+            if (_i < 0) then { _out pushBack [_pt, _r, _k, _t, 1, _c]; } else {
+                (_out select _i) params ["_p0", "_r0", "", "_t0", "_n0"];
+                _out set [_i, [[((_p0 select 0) * _n0 + (_pt select 0)) / (_n0 + 1), ((_p0 select 1) * _n0 + (_pt select 1)) / (_n0 + 1), 0],
+                    ((_r0 min _r) * 0.85) max 50, _k, _t0 max _t, _n0 + 1, _c]];
+            };
+        } forEach _raw;
+        missionNamespace setVariable ["COMSPEC_ATAK_EwFixes", _out];
+        _ret = _out;
+    };
+    case "locateFix": {
+        private _fx = (missionNamespace getVariable ["COMSPEC_ATAK_EwFixes", []]) param [_arg, []];
+        if ((count _fx) < 2) exitWith {};
+        ["MAP"] call comspec_atak_native_fnc_navigate;
+        [{ [_this, 0.08] call comspec_atak_native_fnc_mapCenter; }, [(_fx select 0) select 0, (_fx select 0) select 1]] call comspec_atak_native_fnc_nextFrame;
+    };
     case "locate": {
         private _b = (missionNamespace getVariable ["COMSPEC_ATAK_EwBearings", []]) param [_arg, []];
         if ((count _b) < 4) exitWith {};

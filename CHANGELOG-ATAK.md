@@ -38,6 +38,33 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## Goniométrie recoupée, plans diffusés par zone, vérification de la configuration, liaison faible (ATAK natif, regroupé dans 4.13.0)
+
+### À annoncer (devient « Résumé joueur » avec le numéro de version)
+Type : nouveauté
+FR : Trouver un émetteur en croisant deux relèvements, et des plans qui arrivent quand on entre dans la zone
+- Guerre électronique › GONIO : relevez la même émission depuis deux endroits (plus de 150 m d'écart, moins de 10 minutes) et le téléphone affiche un point estimé avec son cercle d'erreur, sur la page et sur la carte. Plus vous croisez de relèvements, plus le cercle se resserre.
+- Zones : l'auteur d'un plan peut cocher « Diffuser à l'entrée dans la zone ». Les autres ne reçoivent alors le plan, ses états et ses signalements qu'en entrant dans la zone ; celui qui arrive plus tard reçoit tout d'un coup à son entrée.
+- Réseau : avec une seule barre, les photos attendent en file et partent quand le réseau s'améliore. Messages, positions et rapports passent toujours. La barre d'état l'indique (« RELAIS · FAIBLE »). Un administrateur peut couper ce comportement (réglage « Liaison faible : gros envois retenus »).
+- Zones : option « Prévenir le TOC aux entrées et sorties » : le flux du TOC indique quand un équipier entre dans une zone du plan ou en sort.
+EN : Locate an emitter by crossing two bearings, and plans that arrive when you enter the area
+- Electronic warfare › DF: take a bearing on the same emission from two places (more than 150 m apart, within 10 minutes) and the phone shows an estimated point with its error circle, on the page and on the map. The more bearings you cross, the tighter the circle.
+- Zones: the author of a plan can tick "Deliver on entering the area". Others then only get the plan, its states and its reports when they enter the area; a late arrival gets everything at once on entering.
+- Network: with a single bar, photos wait in the queue and go when the network improves. Messages, positions and reports always pass. The status bar shows it ("RELAY · LOW"). An administrator can turn this off (setting "Weak link: large transfers held").
+- Zones: option "Alert the TOC on entries and exits": the TOC feed shows when a teammate enters or leaves a zone of the plan.
+
+### Détail technique
+- Goniométrie : `fn_ewAction` « fixes » (intersection de demi-droites par paires du même type, bandes de distance à 30 % près, croisement de 15° ou plus, rayon 50 à 1500 m, regroupement des points voisins) et « locateFix » ; `fn_pageEw` (section Points estimés), `fn_ewDraw` (cercle et étiquette). Chaque relèvement porte un code anonyme stable de l'émetteur : deux émetteurs distincts ne se croisent jamais (code 0, relèvements du maillage : croise avec tout).
+- Alerte au TOC : clé de plan `alert` ; `fn_zoneAction` « fenceTick » suit la zone du joueur pour chaque plan partagé qui la demande (premier passage muet), envoi par `fn_netSend` (libellé « Zone »), événement serveur `comspec_atak_native_zoneMove`, ligne « ZONE » du flux (`fn_tocFeed`).
+- Voyant : `fn_statusUpdate` ajoute « · FAIBLE » au type de liaison et une ligne à l'infobulle quand des gros envois attendent.
+- Test automatique : groupe `gonio` de la mission COMSPEC_Autotest (recoupement, zone de travail, liaison faible, vérification).
+- Vérification de la configuration : `fn_setupCheck` (« run » : installation, téléphone, objet radio, Athena, réseau, batterie ; « mission » : relais par camp et règle des relais obligatoires), affichée dans l'app Statut et en tête de l'onglet EN JEU de l'app Admin, correctif en une phrase sous chaque ligne non réussie, jamais de fenêtre d'alerte.
+- Événements authentifiés : `fn_eventSender` (expéditeur réel par `remoteExecutedOwner`) ; `comspec_atak_native_sideEvent` jette un événement dont le camp annoncé n'est pas celui de son expéditeur (ligne `WARN EVENT` au journal), `comspec_atak_native_zoneMove` impose le camp et l'indicatif réels. Si CBA ne transmet pas l'expéditeur, l'événement est cru comme avant. Non essayé en jeu.
+- Zones : clé de plan `fence` (empaquetée, `fn_zoneUnpack`), état `dormant` en mémoire chez le destinataire ; `fn_zoneAction` « inArea », « fenceTick » (5 s, `XEH_postInitClient`), réception « set » et « sit » muettes pour un plan en sommeil ; le rejeu du serveur passe par le même chemin.
+- Réseau : réglage serveur `comspec_atak_native_net_degraded` (coché) ; `fn_netSend` retient en file les envois de 100 Ko et plus sous 96 kbit/s ou à une barre ; la boucle de vidage ne renvoie que les petits tant que la liaison est faible. Le flux vidéo adaptatif (`fn_videoLink`) n'est pas changé.
+- Mesures `[PERF]` de plus : dessin du tableau et du panneau du TOC, rendu de la vue SAT, détection automatique des drones, calcul de la liaison.
+- Non essayé en jeu.
+
 ## À venir : contrôle et présentation des papiers entre joueurs (COMSPEC SSE, version à attribuer)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
@@ -59,7 +86,7 @@ EN : Check another player's papers, and present your own
 - Journal Athena : même forme qu'un contrôle d'identité (POST /api/sse/identity/checks, niveau N0 « non fait », constats `p2p`, `p2p_accepted` | `p2p_refused` | `p2p_no_answer` | `p2p_presented`, `p2p_show` | `p2p_give`, `p2p_docs:n`), par `fn_fileSubmit` (licence acceptée, file hors ligne), si la transmission automatique est active.
 - Essais hors jeu : `python mod/@COMSPEC_SSE/tools/test_id_p2p.py`, `tests/Unit/SseIdentityP2pAssetTest.php`. En jeu : `mod/@COMSPEC_SSE/tools/test_id_p2p.sqf`.
 
-## À venir : les réglages d'icônes marchent sur le petit téléphone (ATAK natif, version à attribuer)
+## Les réglages d'icônes marchent sur le petit téléphone (ATAK natif, regroupé dans 4.13.0)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : correctif
@@ -81,7 +108,7 @@ EN : Icon settings now apply to the small phone too
 - Tests : `AtakMapIconScaleTest` (table réglage × taille de la vue, bornes, chemins de dessin sans taille fixe ni lecture directe du réglage).
 
 ---
-## À venir : le TOC voit qui parle sur quelle fréquence (ATAK natif, version à attribuer)
+## Le TOC voit qui parle sur quelle fréquence (ATAK natif, regroupé dans 4.13.0)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : nouveauté
@@ -104,7 +131,7 @@ EN : The TOC sees who is talking on the radio, and on which frequency
 - Tests : `tests/Unit/AtakTocRadioAssetTest.php` (calculs rejoués sur la table `_vectors`, branchements, traductions).
 - Non vu en jeu : voir la fin de l'audit.
 
-## À venir : les caméras IP apparaissent dans Vidéo live et dans le TOC (ATAK natif, version à attribuer)
+## Les caméras IP apparaissent dans Vidéo live et dans le TOC (ATAK natif, regroupé dans 4.13.0)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : correctif
@@ -123,7 +150,7 @@ EN : IP cameras placed in the editor finally show up
 - `comspec_atak_native_fnc_camList` : `[] call` → `[[id, nom, type, état, position ASL, ptz], …]` des caméras visibles ; `["visible", […]]` : règle de visibilité, fonction pure.
 - Journal serveur, une ligne par caméra : `[COMSPEC CAM] caméra | classe=… nom=… camp=… lives=oui/non toc=oui/non raison=…`.
 - Test : `AtakCameraRegistryAssetTest`.
-## À venir : l'app WAVE RELAY et les relais refaits (ATAK natif, version à attribuer)
+## L'app WAVE RELAY et les relais refaits (ATAK natif, regroupé dans 4.13.0)
 
 ### À annoncer (devient « Résumé joueur » avec le numéro de version)
 Type : nouveauté
@@ -169,6 +196,40 @@ EN : A TOC console and operation plans on Athena
 ### Détail technique
 - Pages `/atak/toc` et `/atak/toc/plans`, droits `atak.toc.use` et `atak.toc.manage`, étapes 4370 et 4380. Détail : `docs/TOC-WEB.md`.
 - Lien avec le jeu par les canaux existants (BriefingPlan.Push canal `toc_room`, commandes web genre `toc`) : branche du mod `feat/atak-toc-web-sync`, sans changement de COMSPEC Link.
+
+## Pack 4.13.0 Washington : goniométrie recoupée, plans diffusés par zone, vérification de la configuration, relais et TOC refaits (ATAK natif 4.13.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : Goniométrie qui localise, relais refaits, vérification de la configuration
+- Guerre électronique : relevez la même émission depuis deux endroits et le téléphone place un point estimé, avec son cercle d'erreur, sur la carte.
+- Zones : un plan peut n'arriver qu'à l'entrée dans la zone, et le TOC est prévenu quand un équipier y entre ou en sort.
+- Réseau : avec un signal faible, les photos attendent et les messages passent. La barre d'état affiche FAIBLE.
+- Statut : une nouvelle vérification de la configuration liste le téléphone, le réseau, les relais et la batterie, avec le correctif sous chaque point. L'administrateur voit si sa mission a des relais.
+- App Wave Relay refaite : elle dit où vous en êtes et pourquoi il n'y a pas de réseau. Sans relais en service à portée, pas de réseau radio.
+- TOC : il voit qui parle à la radio et sur quelle fréquence, la console du poste est refaite et la vue satellite est plus fluide.
+- Les caméras IP posées dans l'éditeur apparaissent dans Vidéo live et dans le TOC.
+- Le petit téléphone suit enfin les réglages d'icônes de la carte.
+- Les drones ennemis ne sont plus détectés par défaut, et il faut avoir un téléphone sur soi pour en poser un sur un socle de recharge.
+- Les alertes de camp ne peuvent plus être envoyées au nom d'un autre camp.
+EN : Direction finding that locates, relays redone, configuration check
+- Electronic warfare: take a bearing on the same emission from two places and the phone drops an estimated point, with its error circle, on the map.
+- Zones: a plan can arrive only when you enter the area, and the TOC is told when a teammate enters or leaves it.
+- Network: with a weak signal, photos wait and messages go through. The status bar shows LOW.
+- Status: a new configuration check lists the phone, the network, the relays and the battery, with the fix under each point. The administrator sees whether the mission has relays.
+- Wave Relay app redone: it tells you where you stand and why there is no network. With no working relay in range, there is no radio network.
+- TOC: it sees who is talking on the radio and on which frequency, the station console is redone and the satellite view is smoother.
+- IP cameras placed in the editor show up in Live Feed and in the TOC.
+- The small phone finally follows the map icon settings.
+- Enemy drones are no longer detected by default, and you need a phone on you to put one on a charging dock.
+- Side alerts can no longer be sent in the name of another side.
+
+### Détail technique
+- Regroupe les parties ci-dessous : goniométrie recoupée, plans diffusés par zone, vérification de la configuration, liaison faible (cette entrée), réglages d'icônes du petit téléphone, activité radio du TOC, caméras IP, app Wave Relay et relais refaits, plus les PR #1572 (drones OPFOR non détectés par défaut, socles de recharge), #1573 (indicateur réseau SAT en bleu, onglet KIT lisible) et #1575 (console du poste TOC et vue SAT fluide, réglage de qualité SAT).
+- Pas de nouvelle version de COMSPEC Link : la DLL reste 2.0.123.
+- Flashbang (mod à part, 1.0.0) : texture de la vignette, option Effets réduits, sursaut, récupération selon la lumière, audition en deux temps.
+
+---
 
 ## Pack 4.12.0 Washington : postes, droits et journal de la salle TOC, TOC pilotable par script (ATAK natif 4.12.0.AG - Washington, COMSPEC Link 2.0.123, SSE 1.9.1)
 

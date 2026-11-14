@@ -176,8 +176,8 @@ final class AtakTocSatIsrTest extends TestCase
         foreach (['"brk"', '"cross"', '"bar"', '"barT"', '"tL1", "tL2", "tR1", "tR2", "bL", "bR"', '"grid"', '"edge"', '"mk"', '"sym"'] as $k) {
             self::assertStringContainsString($k, $sat);
         }
-        // PC : 4 fois par seconde, seulement onglet SAT ouvert ; mur : HUD 4 fois par seconde au plus.
-        self::assertStringContainsString('[{ ["satOverlay"] call comspec_atak_native_fnc_tocLaptop; }, 0.25] call CBA_fnc_addPerFrameHandler', $lap);
+        // PC : à chaque image (vue SAT fluide), seulement onglet SAT ouvert ; mur : HUD 4 fois par seconde au plus.
+        self::assertStringContainsString('[{ ["satOverlay"] call comspec_atak_native_fnc_tocLaptop; }, 0] call CBA_fnc_addPerFrameHandler', $lap);
         self::assertStringContainsString('if (!_sat && {(_st getOrDefault ["satPfh", -1]) >= 0}) then', $lap);
         self::assertStringContainsString('if (diag_tickTime - (_d getVariable ["COMSPEC_ATAK_HudAt", -1]) < 0.24) exitWith { true };', $board);
         // Résolution : PC 2048 x 1024, écran proche 1024 x 512, plus loin 512 x 256 ; une caméra par satellite et par poste.

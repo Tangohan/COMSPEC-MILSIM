@@ -626,6 +626,9 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_net_sim", "CHECKBOX",
     ["Réseau réaliste", "Le réseau dépend du terrain : bâtiments, relief, véhicule, météo, brouilleurs, relais et dégâts du téléphone réduisent le débit. Messages et photos peuvent mettre du temps à partir, se perdre et être renvoyés, ou attendre le retour du réseau. Décoché : réseau parfait partout."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_net_degraded", "CHECKBOX",
+    ["Liaison faible : gros envois retenus", "Coché (par défaut) : avec une seule barre de réseau ou un débit sous 96 kbit/s, les photos et autres gros envois (100 Ko et plus) restent en file et partent quand la liaison s'améliore ; messages, positions et rapports passent toujours. Décoché : tout part, lentement."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 // Radio maillée MPU5 (objet d'inventaire, fn_mpu5).
 ["comspec_atak_native_mpu5_range", "SLIDER",
     ["Portée de la MPU5 (m)", "Portée dans le maillage Wave Relay d'un joueur qui porte une radio MPU5 (objet « Radio maillée MPU5 » ou toute classe contenant MPU5). Le téléphone seul porte à 3 000 m."],

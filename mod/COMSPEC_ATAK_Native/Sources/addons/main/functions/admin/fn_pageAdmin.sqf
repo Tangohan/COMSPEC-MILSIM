@@ -152,6 +152,14 @@ switch (_tab) do {
         if (!_inGame) exitWith {
             _rows pushBack ["text", "<t color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Réservé au Zeus, à l'admin du serveur (#login) et aux gestionnaires désignés par le serveur (réglage « Gestionnaires en jeu »). Le parc Athena reste disponible selon vos droits sur le site.</t>"];
         };
+        // Cette mission : relais posés et règle réseau (fn_setupCheck), pour voir tout de suite qu'un camp n'a aucun réseau.
+        private _mcheck = ["mission"] call comspec_atak_native_fnc_setupCheck;
+        _rows pushBack ["section", "Cette mission", ["Réseau et relais en ordre", "Des points à corriger"] select ((["worst", _mcheck] call comspec_atak_native_fnc_setupCheck) > 0)];
+        {
+            _x params ["", "_lvl", "_lab", "_det", "_fix"];
+            _rows pushBack ["info", _lab, format ["<t color='%1'>%2</t>", [(COMSPEC_ATAK_Th get "hexOk"), (COMSPEC_ATAK_Th get "hexWarn"), (COMSPEC_ATAK_Th get "hexAlert")] select _lvl, _det]];
+            if (_fix isNotEqualTo "") then { _rows pushBack ["text", format ["<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>%1</t>", _fix]]; };
+        } forEach _mcheck;
         private _filter = _s getOrDefault ["admFilter", "ALL"];
         private _fBtn = { params ["_t", "_k"]; [_t, ["admFilter", _k] call _setS, _filter isEqualTo _k] };
         _rows pushBack ["segment", "Afficher", [["TOUS", "ALL"] call _fBtn, [format ["ALERTES (%1)", _nAlert], "ALERT"] call _fBtn, [format ["ZEUS (%1)", _nFx], "FX"] call _fBtn]];

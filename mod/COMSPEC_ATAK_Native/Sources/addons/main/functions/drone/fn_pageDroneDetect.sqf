@@ -135,7 +135,9 @@ if ((uiNamespace getVariable ["COMSPEC_ATAK_DronePfh", -1]) < 0) then {
         if !(profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false]) exitWith {};
         if (diag_tickTime < (uiNamespace getVariable ["COMSPEC_ATAK_DronePageScan", 0])) exitWith {};
         uiNamespace setVariable ["COMSPEC_ATAK_DronePageScan", diag_tickTime + 3];
+        private _perfT = diag_tickTime;
         ["auto"] call comspec_atak_native_fnc_droneDetectScan;
+        ["drones : détection auto", _perfT] call comspec_atak_native_fnc_perfAcc;
         private _sig = str ((missionNamespace getVariable ["COMSPEC_ATAK_DroneDetect", []]) apply { [_x select 0, _x select 2, _x select 5, _x select 8, (time - (_x select 7)) > 8] });
         if (_sig isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_DroneSig", ""])) then {
             uiNamespace setVariable ["COMSPEC_ATAK_DroneSig", _sig];

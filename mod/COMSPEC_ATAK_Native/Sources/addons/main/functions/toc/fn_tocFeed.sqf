@@ -47,6 +47,16 @@ switch (_mode) do {
             ["push", [_side, [[dayTime, "HH:MM"] call BIS_fnc_timeToString, _kind, ["URGENT", "FLASH"] select (_kind in ["TIC", "SOS", "MAN DOWN", "CONTACT"]), _who, _grid,
                 _txt select [0, 200], [[], [_pos select 0, _pos select 1]] select (_pos isEqualType [] && {(count _pos) >= 2})]]] call comspec_atak_native_fnc_tocFeed;
         }] call CBA_fnc_addEventHandler;
+        // Entrées et sorties de zone (fn_zoneAction « fenceTick », plan avec « Prévenir le TOC ») : une ligne du flux.
+        ["comspec_atak_native_zoneMove", {
+            params [["_side", ""], ["_who", ""], ["_plan", ""], ["_txt", ""], ["_pos", []], ["_grid", ""]];
+            if !(_side isEqualType "" && {_who isEqualType ""} && {_plan isEqualType ""} && {_txt isEqualType ""} && {_grid isEqualType ""}) exitWith {};
+            // Expéditeur réel (fn_eventSender) : le camp est le sien, l'auteur est son indicatif ; jamais ce que l'événement annonce.
+            private _snd = [] call comspec_atak_native_fnc_eventSender;
+            if (!isNull _snd) then { _side = str side group _snd; _who = [_snd] call comspec_atak_native_fnc_unitCallsign; };
+            ["push", [_side, [[dayTime, "HH:MM"] call BIS_fnc_timeToString, "ZONE", "", _who select [0, 24], _grid,
+                format ["%1 · %2", _plan select [0, 24], _txt select [0, 120]], [[], [_pos select 0, _pos select 1]] select (_pos isEqualType [] && {(count _pos) >= 2})]]] call comspec_atak_native_fnc_tocFeed;
+        }] call CBA_fnc_addEventHandler;
         ["comspec_atak_native_medevac", {
             params [["_r", createHashMap], ["_side", ""]];
             if !(_r isEqualType createHashMap) exitWith {};

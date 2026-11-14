@@ -34,6 +34,21 @@ switch (_tab) do {
             ["buttons", [[[format ["RÉCEPTEUR EN RECHARGE (%1 s)", ceil _next], "BALAYER"] select (_next <= 0), { ['scan'] call comspec_atak_native_fnc_ewAction; }, true], ["EFFACER", { ['clear'] call comspec_atak_native_fnc_ewAction; }]]]
         ];
         private _b = missionNamespace getVariable ["COMSPEC_ATAK_EwBearings", []];
+        // Recoupement (fn_ewAction "fixes") : point estimé là où se croisent des relèvements pris de points différents.
+        private _fx = ["fixes"] call comspec_atak_native_fnc_ewAction;
+        if ((count _fx) > 0) then {
+            _rows pushBack ["section", "Points estimés", "Recoupement de relèvements pris depuis des points différents"];
+            {
+                _x params ["_fp", "_fr", "_fk", "_ft", "_fn", ["_fc", 0]];
+                private _fcol = createHashMapFromArray [["BROUILLEUR", "#d940f2"], ["GONIO", (COMSPEC_ATAK_Th get "hexAlert")]] getOrDefault [_fk, (COMSPEC_ATAK_Th get "hexWarn")];
+                _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t size='1.1'>%3</t><br/><t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>à %4 près · %5 recoupement(s) · il y a %6 min</t>",
+                    _fcol, _fk + ([""] + [format [" n°%1", _fc]] select (_fc > 0)), mapGridPosition _fp, [_fr] call _km, _fn, floor ((time - _ft) / 60)]];
+                _rows pushBack ["buttons", [["VOIR LE POINT SUR LA CARTE", compile format ["['locateFix', %1] call comspec_atak_native_fnc_ewAction;", _forEachIndex], true]]];
+            } forEach _fx;
+            _rows pushBack ["section", "Relèvements", ""];
+        } else {
+            if ((count _b) > 0) then { _rows pushBack ["text", "<t size='0.8' color='" + (COMSPEC_ATAK_Th get "hexTextMuted") + "'>Pour un point estimé : relevez la même émission depuis un second endroit, à plus de 150 m, dans les 10 minutes.</t>"]; };
+        };
         for "_i" from ((count _b) - 1) to 0 step -1 do {
             (_b select _i) params ["_from", "_brg", "_b0", "_b1", "_kind", "_t", "_err", ["_hour", ""]];
             private _col = createHashMapFromArray [["BROUILLEUR", "#d940f2"], ["GONIO", (COMSPEC_ATAK_Th get "hexAlert")]] getOrDefault [_kind, (COMSPEC_ATAK_Th get "hexWarn")];

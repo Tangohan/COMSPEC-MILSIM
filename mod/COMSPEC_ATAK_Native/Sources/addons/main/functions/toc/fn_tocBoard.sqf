@@ -89,6 +89,7 @@ switch (_mode) do {
                         private _lt0 = diag_tickTime;
                         if (["overlay", _x] call comspec_atak_native_fnc_tocBoard) then { displayUpdate _ld; };
                         ["cost", diag_tickTime - _lt0] call comspec_atak_native_fnc_tocSat;
+                        ["TOC vue SAT (rendu)", _lt0] call comspec_atak_native_fnc_perfAcc;
                     };
                 };
             } forEach _l;
