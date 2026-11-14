@@ -107,6 +107,13 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["COMSPEC", "ATAK · Intro"], true, 0,
     { profileNamespace setVariable ["COMSPEC_ATAK_IntroSound", _this]; [] call comspec_atak_native_fnc_saveProfile; }] call comspec_atak_native_fnc_addSetting;
 
+// Écran de chargement ATHENA (fn_loadingLogo) : chaque joueur peut le couper (TTRD, 14/11). Recopié dans le profil : l'écran
+// de chargement s'affiche avant que CBA lise ses réglages.
+["comspec_atak_native_loading_screen", "CHECKBOX",
+    ["Écran de chargement ATHENA", "Coché par défaut : les affiches ATHENA remplacent l'écran de chargement du jeu. Décoché : l'écran de chargement d'Arma (ou d'un autre mod) reste tel quel. Prend effet au chargement suivant."],
+    ["COMSPEC", "ATAK · Intro"], true, 0,
+    { profileNamespace setVariable ["COMSPEC_ATAK_LoadingScreen", _this]; [] call comspec_atak_native_fnc_saveProfile; }] call comspec_atak_native_fnc_addSetting;
+
 // Check de démarrage (fn_startupCheck), par joueur : résultat du contrôle du mod posté dans le salon de debug du Discord Athena.
 ["comspec_atak_native_startup_report", "CHECKBOX",
     ["Envoyer le rapport de démarrage", "Coché par défaut. Une seule fois, au premier lancement : quand vous vous connectez à Athena en jeu (ou si la connexion échoue), un rapport sur l'état du mod est posté dans le salon de debug du Discord Athena, avec votre pseudo et votre indicatif : versions, DLL, connexion, numéro et IMEI du téléphone, appareil porté, FPS, erreurs. Ça aide l'équipe à vous dépanner. Pour le renvoyer : menu Échap > Dépannage liaison > Renvoyer le check de démarrage. Aucun UID Steam ni adresse IP. Décochez pour ne rien envoyer."],

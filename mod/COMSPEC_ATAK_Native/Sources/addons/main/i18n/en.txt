@@ -24459,5 +24459,7 @@
 ["à tout le camp, avec votre position", "to your whole side, with your position"],
 ["Le contact est terminé", "The contact is over"],
 ["OUVRIR ALERTES", "OPEN ALERTS"],
-["Détresse, journal complet et centrage sur une alerte", "Distress, full log and centring on an alert"]
+["Détresse, journal complet et centrage sur une alerte", "Distress, full log and centring on an alert"],
+["Écran de chargement ATHENA", "ATHENA loading screen"],
+["Coché par défaut : les affiches ATHENA remplacent l'écran de chargement du jeu. Décoché : l'écran de chargement d'Arma (ou d'un autre mod) reste tel quel. Prend effet au chargement suivant.", "Ticked by default: the ATHENA posters replace the game's loading screen. Unticked: Arma's loading screen (or another mod's) stays as it is. Takes effect at the next loading."]
 ]

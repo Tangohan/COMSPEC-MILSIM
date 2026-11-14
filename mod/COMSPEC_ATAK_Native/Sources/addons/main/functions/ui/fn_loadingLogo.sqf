@@ -8,12 +8,15 @@
     chargements ») : si un autre mod a retouché cet écran (sa classe d'écran, ou un gestionnaire Extended_DisplayLoad),
     rien n'est masqué ni recouvert ; seule la petite marque du coin (fn_loadingBadge, comme avant 4.14.0) est posée.
     Les contrôles sont créés par script (ctrlCreate) : ils passent devant ceux de l'écran du jeu, qui sont masqués, sans patcher ses classes.
+    Réglage par joueur « Écran de chargement ATHENA » (Options > Réglages de l'addon > COMSPEC) : décoché, rien n'est touché.
     Appelée par chemin : sur ces écrans les CfgFunctions ne sont pas toujours compilées.
     Textures en 2048 x 1024 (puissances de deux) : l'image d'origine est en 16:9, le contrôle lui rend ce rapport.
     Params : [display, nom de la classe de l'écran]
 */
 params [["_display", displayNull, [displayNull]], ["_class", "", [""]]];
 if (isNull _display) exitWith {};
+// Réglage « Écran de chargement ATHENA » décoché (XEH_preInit, recopié dans le profil) : l'écran du jeu reste tel quel.
+if !(profileNamespace getVariable ["COMSPEC_ATAK_LoadingScreen", true]) exitWith {};
 if (!isNull (_display getVariable ["COMSPEC_ATAK_LoadingLogo", controlNull])) exitWith {};
 
 // Un autre mod s'occupe-t-il de cet écran ? Réponse gardée pour la session (la config ne change pas en cours de jeu).

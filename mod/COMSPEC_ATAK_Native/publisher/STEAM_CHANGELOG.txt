@@ -5,7 +5,7 @@
 [h2]Français[/h2]
 [list]
 [*] [b]Carte[/b] : le volet de droite a des onglets CANAL, SMS et ALERTE. Message, SMS ou alerte sans quitter la carte.
-[*] [b]Écran de chargement[/b] : trois affiches ATHENA qui changent à chaque chargement, avec un vrai QR code vers le portail.
+[*] [b]Écran de chargement[/b] : trois affiches ATHENA qui changent à chaque chargement, avec un vrai QR code vers le portail. Réglage pour le couper : Options, Réglages de l'addon, COMSPEC.
 [*] [b]Dossier Athena[/b] : il est bien gardé à chaque partie pour l'écran des rôles (mod COMSPEC Lobby, bouton Synchroniser).
 [*] [b]Images[/b] : portraits et diapositives téléchargés restent dans Documents, dossier Arma 3 - COMSPEC. Plus de nouveau téléchargement après une mise à jour.
 [*] [b]Barre d'état[/b] : le type de liaison ne s'écrit plus par-dessus l'icône GPS.
@@ -15,7 +15,7 @@
 [h2]English[/h2]
 [list]
 [*] [b]Map[/b]: the right-hand panel has CHANNEL, SMS and ALERT tabs. Message, SMS or alert without leaving the map.
-[*] [b]Loading screen[/b]: three ATHENA posters that change at every loading, with a real QR code to the portal.
+[*] [b]Loading screen[/b]: three ATHENA posters that change at every loading, with a real QR code to the portal. Setting to turn it off: Options, Addon settings, COMSPEC.
 [*] [b]Athena dossier[/b]: properly saved every game for the role screen (COMSPEC Lobby mod, Synchronise button).
 [*] [b]Images[/b]: downloaded portraits and slides stay in Documents, folder Arma 3 - COMSPEC. No new download after an update.
 [*] [b]Status bar[/b]: the link type is no longer written over the GPS icon.

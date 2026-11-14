@@ -26,6 +26,10 @@ final class AtakLoadingLogoAssetTest extends TestCase
             self::assertMatchesRegularExpression('/class ' . $display . ' \{ comspec_atak_native_main="\[_this select 0, \'' . $display . '\'\] call [^"]*fn_loadingLogo\.sqf\'"; \};/', $cfg);
         }
         $s = self::read(self::MAIN . 'functions/ui/fn_loadingLogo.sqf');
+        // Chaque joueur peut couper l'écran : rien n'est touché, pas même la marque du coin.
+        self::assertStringContainsString('if !(profileNamespace getVariable ["COMSPEC_ATAK_LoadingScreen", true]) exitWith {};', $s);
+        self::assertTrue(strpos($s, 'COMSPEC_ATAK_LoadingScreen') < strpos($s, 'fn_loadingBadge.sqf";'), 'Le réglage passe avant tout le reste.');
+        self::assertStringContainsString('"comspec_atak_native_loading_screen", "CHECKBOX"', self::read(self::MAIN . 'XEH_preInit.sqf'));
         // Trois affiches, une différente à chaque chargement.
         self::assertStringContainsString('data\\loading_%1_co.paa", _idx + 1]', $s);
         self::assertStringContainsString('(_idx + 1) mod 3', $s);
