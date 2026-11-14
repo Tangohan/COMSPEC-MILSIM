@@ -106,6 +106,12 @@ final class BackOfficeLot2RegroupementsTest extends TestCase
         foreach (['Registre des droits', 'Circuits de validation', 'Positions administratives', 'Sécurité et blocages', 'Journal d’audit', 'Réglages RH', 'Catalogue de l’organisation'] as $page) {
             self::assertSame(1, substr_count($nav, "'label' => '" . $page . "'"), $page);
         }
+        // Organisation, Référentiels et Droits et accès sont dans le groupe Effectifs, devant Configuration.
+        [$effGroup] = explode("'key' => 'operations',", explode("'key' => 'effectifs',", $nav, 2)[1], 2);
+        foreach (["'label' => 'Organisation'", "'label' => 'Référentiels'", "'label' => 'Droits et accès'"] as $entry) {
+            self::assertStringContainsString($entry, $effGroup, $entry);
+            self::assertStringNotContainsString($entry, $config, $entry);
+        }
         // L’organigramme reste au quotidien, dans Effectifs.
         self::assertStringContainsString("['label' => 'Organigramme', 'href' => orbat_page_url()", $nav);
     }
