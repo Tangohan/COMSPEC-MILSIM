@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [ATAK 2.9.25](docs/dev/STEAM-CHANGELOG-2026-11
 
 ---
 
+## L'écran de chargement ATHENA laisse la place à celui des autres mods (ATAK natif 4.14.1.AG - Washington)
+
+### Résumé joueur
+Type : correctif
+FR : L'écran de chargement ATHENA ne remplace plus celui d'un autre mod
+- Si un autre mod a son propre écran de chargement (pack d'unité, par exemple), il s'affiche normalement : le logo ATHENA plein écran ne passe plus par-dessus.
+- Dans ce cas, seule la petite marque COMSPEC apparaît dans le coin, comme avant.
+- Sans autre mod d'écran de chargement, rien ne change : le logo ATHENA en grand sur fond sombre.
+EN : The ATHENA loading screen no longer replaces another mod's
+- If another mod has its own loading screen (a unit pack, for example), it shows normally: the full-screen ATHENA logo no longer covers it.
+- In that case only the small COMSPEC mark appears in the corner, as before.
+- With no other loading screen mod, nothing changes: the large ATHENA logo on a dark background.
+
+### Détail technique
+- `fn_loadingLogo` reçoit le nom de la classe de l'écran (`RscDisplayLoadMission`, `RscDisplayLoading`). Il lit `configSourceAddonList` de cette classe et les gestionnaires `Extended_DisplayLoad_EventHandlers` du même écran : dès qu'un addon qui n'est ni le jeu (`a3_…`), ni CBA, ni un mod COMSPEC y figure, rien n'est masqué ni recouvert et seule la marque du coin (`fn_loadingBadge`) est posée. Décision gardée pour la session et écrite au RPT (`[CHARGEMENT]`, avec le nom des addons trouvés).
+- Non essayé en jeu avec un pack qui a son écran de chargement : si un mod change cet écran par un autre moyen (script lancé à part), il n'est pas reconnu.
+- Test : `tests/Unit/AtakLoadingLogoAssetTest.php`.
+
 ## Écran de chargement au logo ATHENA, votre dossier Athena à l'écran des rôles (ATAK natif 4.14.0.AG - Washington, COMSPEC Lobby 0.2.0)
 
 ### Résumé joueur

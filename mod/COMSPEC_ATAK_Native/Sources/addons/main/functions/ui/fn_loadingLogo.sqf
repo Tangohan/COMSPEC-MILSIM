@@ -1,15 +1,45 @@
 /*
     Écran de chargement d'Arma (RscDisplayLoadMission, RscDisplayLoading : Extended_DisplayLoad de config.cpp) : fond
     sombre plein écran et le logo ATHENA en très grand, au centre. Rien d'autre : pas de texte, pas de son, pas de vidéo,
-    pas d'animation (TTRD, 14/11). Remplace l'ancien cartouche du coin (fn_loadingBadge, gardé pour l'intro seule).
+    pas d'animation (TTRD, 14/11).
+    Jamais par-dessus l'écran de chargement d'un autre mod (TTRD, 14/11 : « notre mod ne doit pas écraser les autres
+    chargements ») : si un autre mod a retouché cet écran (sa classe d'écran, ou un gestionnaire Extended_DisplayLoad),
+    rien n'est masqué ni recouvert ; seule la petite marque du coin (fn_loadingBadge, comme avant 4.14.0) est posée.
     Les contrôles sont créés par script (ctrlCreate) : ils passent devant ceux de l'écran du jeu, qui sont masqués, sans patcher ses classes.
     Appelée par chemin : sur ces écrans les CfgFunctions ne sont pas toujours compilées.
     Texture : data\loading_logo_ca.paa (2048 x 2048, blanc sur transparent, tools/src/athena_logo.svg).
-    Params : [display]
+    Params : [display, nom de la classe de l'écran]
 */
-params [["_display", displayNull, [displayNull]]];
+params [["_display", displayNull, [displayNull]], ["_class", "", [""]]];
 if (isNull _display) exitWith {};
 if (!isNull (_display getVariable ["COMSPEC_ATAK_LoadingLogo", controlNull])) exitWith {};
+
+// Un autre mod s'occupe-t-il de cet écran ? Réponse gardée pour la session (la config ne change pas en cours de jeu).
+private _memo = uiNamespace getVariable ["COMSPEC_ATAK_LoadingForeign", createHashMap];
+uiNamespace setVariable ["COMSPEC_ATAK_LoadingForeign", _memo];
+if !(_class in _memo) then {
+    // Sont de la maison : le jeu (a3_…, curator, 3den…), CBA (il porte les gestionnaires d'écran) et nos propres mods.
+    private _ours = {
+        private _n = toLower _this;
+        (_n select [0, 3]) in ["a3_", "cba"] || {(_n select [0, 7]) isEqualTo "comspec"} || {(_n select [0, 11]) isEqualTo "curatoronly"} || {_n in ["3den", "a3data"]}
+    };
+    private _foreign = [];
+    if (_class isNotEqualTo "") then {
+        // Addons qui définissent ou retouchent la classe de l'écran.
+        { if !(_x call _ours) then { _foreign pushBackUnique _x; }; } forEach (configSourceAddonList (configFile >> _class));
+        // Gestionnaires Extended_DisplayLoad d'autres mods sur ce même écran.
+        {
+            private _n = configName _x;
+            if !(_n call _ours) then { _foreign pushBackUnique _n; };
+        } forEach (configProperties [configFile >> "Extended_DisplayLoad_EventHandlers" >> _class, "true", true]);
+    };
+    _memo set [_class, _foreign];
+    diag_log format ["[COMSPEC ATAK NATIVE][CHARGEMENT] %1 : %2", _class, if (_foreign isEqualTo []) then { "logo ATHENA plein écran" } else { format ["écran d'un autre mod respecté (%1), marque du coin seulement", _foreign joinString ", "] }];
+};
+if ((_memo get _class) isNotEqualTo []) exitWith {
+    [_display] call compile preprocessFileLineNumbers "\z\comspec_atak_native\addons\main\functions\ui\fn_loadingBadge.sqf";
+};
+
 // Les contrôles de l'écran du jeu (image, titre, astuce du bas, barre) sont masqués : il ne reste que le logo.
 { _x ctrlShow false; } forEach (allControls _display);
 private _bg = _display ctrlCreate ["RscText", -1];
