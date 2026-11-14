@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantRepository;
 use App\Services\Community\TenantTypeConfig;
+use App\Services\Platform\ModuleAccessService;
 use Throwable;
 
 /**
@@ -70,15 +71,8 @@ final class TenantTypeModuleAccessMiddleware
             return $next($request);
         }
 
-        $label = TenantTypeConfig::label($tenantType);
         $module = (string) (TenantTypeConfig::moduleForUri($uri) ?? '');
-        $moduleLabel = (string) (TenantTypeConfig::moduleCatalog()[$module]['label'] ?? '');
-        $message = ($moduleLabel !== '' ? '« ' . $moduleLabel . ' » n’est' : 'Cette fonctionnalité n’est')
-            . ' pas incluse dans le profil « ' . $label . ' » de votre communauté.';
-        $including = array_values(array_diff(TenantTypeConfig::profilesIncludingModule($module), [$label]));
-        if ($including !== []) {
-            $message .= ' Elle fait partie du profil « ' . implode(' » ou « ', $including) . ' » : un Gestionnaire peut changer de profil dans Paramètres → Profil.';
-        }
+        $message = ModuleAccessService::typeRefusalMessage($tenantType, $module);
 
         if (str_starts_with($request->path(), '/api/')) {
             return Response::json(['ok' => false, 'error' => $message], 403);
