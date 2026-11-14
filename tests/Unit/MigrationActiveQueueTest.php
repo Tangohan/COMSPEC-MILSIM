@@ -140,7 +140,7 @@ final class MigrationActiveQueueTest extends TestCase
         $schema = new SchemaInspector($pdo);
         foreach (['academy_courses', 'academy_learners', 'personnel_job_role_structure', 'personnel_job_role_recovery_log', 'user_public_cv',
             'member_grade_changes', 'tenant_unit_codes', 'unit_codes', 'steam_conflict_reports', 'user_totp_used_steps',
-            'academy_course_shares', 'academy_course_links'] as $table) {
+            'academy_course_shares', 'academy_course_links', 'workflow_instances', 'workflow_events'] as $table) {
             self::assertTrue($schema->tableExists($table), $table);
         }
         self::assertTrue($schema->columnExists('user_public_cv', 'banner_path'));

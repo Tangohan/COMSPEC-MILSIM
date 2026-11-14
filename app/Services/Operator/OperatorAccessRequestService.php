@@ -140,6 +140,15 @@ final class OperatorAccessRequestService
             ['t' => $tenantId, 'u' => $userId, 'by' => $userId, 'note' => $note !== '' ? $note : null, 'ids' => json_encode(array_values($keep))]
         );
         $labels = self::labels(array_keys($keep));
+        // Circuit unique des demandes : avis du chef d'unité avant la décision du responsable (WorkflowEngine).
+        \App\Services\Workflow\WorkflowHooks::opened(
+            $tenantId,
+            \App\Services\Workflow\WorkflowEngine::SUBJECT_ELEVATION,
+            (int) $id,
+            $userId,
+            $userId,
+            trim('Accès demandés : ' . implode(', ', $labels) . ($note !== '' ? '. ' . $note : ''))
+        );
         $this->safely(fn () => ($this->audit)('operator.access_request.created', $tenantId, $userId, $id, ['permissions' => array_keys($keep), 'note' => $note]));
         $this->safely(function () use ($tenantId, $userId, $id, $labels, $note, $memberName): void {
             foreach (($this->managers)($tenantId) as $managerId) {
@@ -175,6 +184,13 @@ final class OperatorAccessRequestService
             $key = ['id' => $row['id'], 't' => $tenantId, 'u' => $userId, 'by' => $userId];
             if ($rest === []) {
                 $this->db->execute('DELETE FROM elevation_requests' . $where, $key);
+                \App\Services\Workflow\WorkflowHooks::statusChanged(
+                    $tenantId,
+                    \App\Services\Workflow\WorkflowEngine::SUBJECT_ELEVATION,
+                    (int) $row['id'],
+                    'withdrawn',
+                    $userId
+                );
             } else {
                 $this->db->execute('UPDATE elevation_requests SET proposed_permission_ids = :ids' . $where, $key + ['ids' => json_encode($rest)]);
             }

@@ -12,6 +12,7 @@ $targetGroups = is_array($assignmentTargets ?? null) ? $assignmentTargets : [];
 $kindLabels = \App\Services\Personnel\AssignmentTargetCatalog::KIND_LABELS;
 $schemaReady = !empty($mobilitySchemaReady);
 $canManage = !empty($canManage);
+$circuits = is_array($workflowSummaries ?? null) ? $workflowSummaries : [];
 $statusFilter = (string) ($mobilityStatusFilter ?? 'pending');
 $pendingCount = (int) ($mobilityPendingCount ?? 0);
 $csrf = htmlspecialchars((string) ($csrfToken ?? ''), ENT_QUOTES, 'UTF-8');
@@ -97,6 +98,7 @@ $statusTone = [
                 </span>
                 <select name="request_type" aria-label="Type de mouvement">
                     <?php foreach ($typeLabels as $k => $lab): ?>
+                        <?php if (in_array((string) $k, \App\Repositories\PersonnelMobilityRequestRepository::RETIRED_TYPES, true)) { continue; } ?>
                         <option value="<?= $h((string) $k) ?>"><?= $h((string) $lab) ?></option>
                     <?php endforeach; ?>
                 </select>
@@ -226,7 +228,7 @@ $statusTone = [
                             <td><strong class="eff-sheets__name"><?= $h($name) ?></strong></td>
                             <td><?= $h((string) ($typeLabels[$type] ?? $type)) ?></td>
                             <td><?= $h($target !== '' ? $target : '—') ?><?php if ($mot !== ''): ?><span class="eff-sheets__meta"><?= $h($mot) ?></span><?php endif; ?></td>
-                            <td><span class="eff-rh-chip<?= $tone !== '' ? ' eff-rh-chip--' . $h($tone) : '' ?>"><?= $h($statusLabels[$st] ?? $st) ?></span></td>
+                            <td><span class="eff-rh-chip<?= $tone !== '' ? ' eff-rh-chip--' . $h($tone) : '' ?>"><?= $h($statusLabels[$st] ?? $st) ?></span><?php $workflowSubjectId = $rid; require base_path('views/admin/effectifs_workspace/partials/workflow_opinion.php'); ?></td>
                             <td><?= $h($rhWhen((string) ($r['created_at'] ?? ''))) ?></td>
                             <td>
                                 <div class="eff-rh-row-actions">
@@ -243,6 +245,13 @@ $statusTone = [
                                             <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
                                             <input type="hidden" name="status" value="rejected">
                                             <button type="submit" class="eff-rh-btn eff-rh-btn--danger">Refuser</button>
+                                        </form>
+                                    <?php endif; ?>
+                                    <?php if ($canManage && in_array($st, ['pending', 'approved'], true) && $rid > 0 && in_array($type, ['unit_change', 'assignment'], true) && (int) ($r['target_unit_id'] ?? 0) > 0): ?>
+                                        <form method="post" action="<?= $h(effectifs_workspace_url('mobilite/' . $rid . '/statut')) ?>">
+                                            <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                                            <input type="hidden" name="status" value="applied">
+                                            <button type="submit" class="eff-rh-btn eff-rh-btn--ok" title="Affecte le membre à l’unité visée">Muter dans l’unité</button>
                                         </form>
                                     <?php endif; ?>
                                 </div>

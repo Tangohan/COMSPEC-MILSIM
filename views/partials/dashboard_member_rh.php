@@ -104,6 +104,7 @@ $elevStatusLabel = static function (string $status): string {
                     <label for="dash-rh-request-type">Type de demande</label>
                     <select id="dash-rh-request-type" name="request_type">
                         <?php foreach ($mobilityTypeLabels as $k => $lab): ?>
+                            <?php if (in_array((string) $k, \App\Repositories\PersonnelMobilityRequestRepository::RETIRED_TYPES, true)) { continue; } ?>
                             <option value="<?= htmlspecialchars((string) $k, ENT_QUOTES, 'UTF-8') ?>" <?= $k === 'career_wish' ? 'selected' : '' ?>><?= htmlspecialchars((string) $lab, ENT_QUOTES, 'UTF-8') ?></option>
                         <?php endforeach; ?>
                     </select>

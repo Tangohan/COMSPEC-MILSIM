@@ -218,6 +218,7 @@ $absencePeriodLabel = static function (array $row) use ($formatAbsenceDate): str
                     <label for="dash-rh-mob-type">Type de demande</label>
                     <select id="dash-rh-mob-type" name="request_type">
                         <?php foreach ($mobilityTypeLabels as $k => $lab): ?>
+                            <?php if (in_array((string) $k, \App\Repositories\PersonnelMobilityRequestRepository::RETIRED_TYPES, true)) { continue; } ?>
                             <option value="<?= htmlspecialchars((string) $k, ENT_QUOTES, 'UTF-8') ?>" <?= $k === 'career_wish' ? 'selected' : '' ?>><?= htmlspecialchars((string) $lab, ENT_QUOTES, 'UTF-8') ?></option>
                         <?php endforeach; ?>
                     </select>

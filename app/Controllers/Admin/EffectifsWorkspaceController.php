@@ -4237,6 +4237,11 @@ class EffectifsWorkspaceController
             'title' => 'Demandes d’élévation',
             'effectifsNav' => 'elevations',
             'elevationRequests' => $enrichedRequests,
+            'workflowSummaries' => \App\Services\Workflow\WorkflowHooks::summaries(
+                $tenantId,
+                \App\Services\Workflow\WorkflowEngine::SUBJECT_ELEVATION,
+                $enrichedRequests
+            ),
             'elevationShowAll' => $showAll,
             'elevationPage' => $elevationPage,
             'elevationPerPage' => $elevationPerPage,
