@@ -43,7 +43,6 @@ $topCount = count($unitTree);
                     </span>
                 <?php endif; ?>
                 <div class="jn-head__text">
-                    <p class="jn-chip">Échelon organisation</p>
                     <h1 id="jn-space-title" class="jn-head__name"><?= $h($label) ?></h1>
                     <p class="jn-head__lead">
                         <?= $topCount ?> commandement<?= $topCount > 1 ? 's' : '' ?> · <?= (int) $orgStats['units'] ?> unité<?= (int) $orgStats['units'] > 1 ? 's' : '' ?>

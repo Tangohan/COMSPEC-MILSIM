@@ -26,8 +26,8 @@ if ($sseHref === '') {
                 <?php endif; ?>
             </div>
             <div>
-                <p class="jnet-kicker"><?= $h(trim(implode(' · ', array_filter([(string) ($t['kind'] ?? ''), (string) ($t['code'] ?? '')])))) ?></p>
                 <h1><?= $h((string) ($t['name'] ?? '')) ?></h1>
+                <p class="jnet-kicker"><?= $h(trim(implode(' · ', array_filter([(string) ($t['kind'] ?? ''), (string) ($t['code'] ?? '')])))) ?></p>
                 <div class="jnet-tags">
                     <?php if (trim((string) ($t['priority'] ?? '')) !== ''): ?>
                         <span class="jnet-prio jnet-prio--<?= $h($prioKey) ?>"><?= $h((string) $t['priority']) ?></span>

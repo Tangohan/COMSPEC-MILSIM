@@ -38,10 +38,10 @@ $fillRate = $authorized > 0 ? (int) round(($present / $authorized) * 100) : 0;
 ?>
 <section class="jnet-unit-head">
     <div class="jnet-unit-head__id">
-        <div class="jnet-unit-badge jnet-unit-badge--lg" aria-hidden="true"><?= $h($badge) ?></div>
+        <?= \App\Support\JnetUi::crest($badge, null, 'ja-crest ja-crest--lg') ?>
         <div class="jnet-unit-head__names">
-            <p class="jnet-kicker">Fiche d’unité<?php if (trim((string) ($identity['code'] ?? '')) !== ''): ?> · <?= $h((string) $identity['code']) ?><?php endif; ?></p>
             <h1><?= $h($unitName) ?></h1>
+            <?php if (trim((string) ($identity['code'] ?? '')) !== ''): ?><p class="jnet-kicker"><?= $h((string) $identity['code']) ?></p><?php endif; ?>
             <?php if ($unitMotto !== ''): ?>
                 <p class="jnet-unit-head__motto">« <?= $h($unitMotto) ?> »</p>
             <?php endif; ?>

@@ -983,19 +983,13 @@ final class JnetPortalController
         $nav = $activeNav ?? $view;
         $unread = $this->unreadMailCount($ctx['tenant_id'], $ctx['user_id']);
 
+        // Page autonome au même habillage que l'extranet (views/jnet/_page.php), hors de la coque du back-office.
         $payload = array_merge([
-            'content' => 'jnet._bo_content',
             'jnetInnerView' => 'jnet.' . $view,
             'title' => $title . ' — Extranet d’unité',
-            'isBackOfficeShell' => true,
-            'boPageGroup' => 'Unité',
-            'boPageKicker' => 'UNITÉ · EXTRANET',
-            'boPageTitle' => $title,
-            'boPageSubtitle' => 'Espace commun de l’organisation et de chaque unité : situation, échanges, opérations et renseignement.',
-            'boPageQuick' => [],
-            'backOfficePageCss' => array_merge([
+            'jnetPageTitle' => $title,
+            'jnetPageCss' => array_merge([
                 'jnet_portal.css',
-                'jnet_bo_embed.css',
                 'jnet_spaces.css',
             ], $moreCss),
             'activeNav' => $nav,
@@ -1008,7 +1002,7 @@ final class JnetPortalController
             'jnetDtg' => strtoupper(gmdate('dHi') . 'Z ' . gmdate('M y')),
         ], $extra);
 
-        return Response::view('layout.main', $payload);
+        return Response::view('jnet._page', $payload);
     }
 
     private function ensureAuth(): array|Response
